@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner

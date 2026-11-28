@@ -49,6 +49,11 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   `‖u‖ * c ≤ 1` and `‖b‖ ≤ c`, then `φ u * b` is power-bounded.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
+* `TauCeti.Huber.setOf_forall_isPowerBounded_eq_closedBall`,
+  `TauCeti.Huber.isClosed_setOf_forall_isPowerBounded`, and
+  `TauCeti.Huber.completeSpace_subtype_forall_isPowerBounded`: power-bounded families form a closed
+  subset (the closed unit ball for finite index types) and hence a complete subspace when the ring
+  is complete.
 * `TauCeti.Huber.IsUniform.of_normedDivisionRing`: normed division rings are uniform.
 * `TauCeti.Huber.isPowerBounded_algebraMap_of_norm_le_one`: in a topological algebra over a
   nontrivially normed field, scalars of norm at most one are power-bounded.
@@ -247,6 +252,30 @@ theorem isPseudoUniformizer_iff_norm_lt_one {ϖ : K} :
     IsPseudoUniformizer ϖ ↔ ϖ ≠ 0 ∧ ‖ϖ‖ < 1 := by
   rw [isPseudoUniformizer_iff, isUnit_iff_ne_zero]
   exact and_congr_right fun _ ↦ tendsto_pow_atTop_nhds_zero_iff_norm_lt_one
+
+/-- In a normed division ring `K`, the finite tuples of power-bounded elements form the closed unit
+ball in `ι → K`. -/
+theorem setOf_forall_isPowerBounded_eq_closedBall {ι : Type*} [Fintype ι] :
+    {a : ι → K | ∀ i, IsPowerBounded (a i)} = Metric.closedBall (0 : ι → K) 1 := by
+  ext a
+  simp [Metric.mem_closedBall, pi_norm_le_iff_of_nonneg zero_le_one]
+
+/-- In a normed division ring `K`, the families of power-bounded elements form a closed subset of
+`ι → K`. -/
+theorem isClosed_setOf_forall_isPowerBounded {ι : Type*} :
+    IsClosed {a : ι → K | ∀ i, IsPowerBounded (a i)} := by
+  have h : {a : ι → K | ∀ i, IsPowerBounded (a i)} =
+      ⋂ i : ι, (fun a : ι → K ↦ a i) ⁻¹' Metric.closedBall (0 : K) 1 := by
+    ext a
+    simp
+  rw [h]
+  exact isClosed_iInter fun i ↦ Metric.isClosed_closedBall.preimage (continuous_apply i)
+
+/-- **Completeness of families of power-bounded elements.** Over a complete normed division ring
+`K`, the subtype of power-bounded families `ι → K` is a complete uniform space. -/
+theorem completeSpace_subtype_forall_isPowerBounded {ι : Type*} [CompleteSpace K] :
+    CompleteSpace {a : ι → K // ∀ i, IsPowerBounded (a i)} :=
+  (isClosed_setOf_forall_isPowerBounded (ι := ι) (K := K)).completeSpace_coe
 
 end NormedDivisionRing
 

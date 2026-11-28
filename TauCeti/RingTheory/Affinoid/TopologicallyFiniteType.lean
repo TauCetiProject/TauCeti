@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.AlmostNoetherian
 public import TauCeti.RingTheory.Affinoid.Basic
-public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.ResidueField
 
 import TauCeti.RingTheory.Affinoid.Continuity

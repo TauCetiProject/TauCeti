@@ -28,6 +28,13 @@ continuous **evaluation map** `TauCeti.MarkedUnparametrizedMap.eval` on one-mark
 maps. Forgetting the marked point gives a continuous surjection
 `TauCeti.MarkedUnparametrizedMap.forget` onto unparametrized maps.
 
+For a target `Y × M`, the **horizontal leaves** `[y ↦ (y, t), w]`
+(`TauCeti.MarkedUnparametrizedMap.horizontalLeaf`) are the marked classes of the slices
+`Y × {t}`. A class `[u, z]` is a horizontal leaf exactly when `u` is a reparametrized slice
+`y ↦ (g • y, t)` (`TauCeti.MarkedUnparametrizedMap.mk_mem_range_horizontalLeaf_iff`), and the
+evaluation map is a homeomorphism from the horizontal leaves onto `Y × M`, inverse to
+`horizontalLeaf` (`TauCeti.MarkedUnparametrizedMap.rangeHorizontalLeafHomeomorph`).
+
 The main example is the group `PSL(2, 𝕜)` of Möbius transformations acting on the projective line
 `OnePoint 𝕜`; for `𝕜 = ℂ` the two orbit spaces are the spaces of unparametrized and one-marked
 continuous spheres. That action on nonconstant maps is proper, so both orbit spaces are Hausdorff
@@ -42,12 +49,18 @@ continuous spheres. That action on nonconstant maps is proper, so both orbit spa
   point.
 * `TauCeti.MarkedUnparametrizedMap.eval`: the evaluation `[u, z] ↦ u z`.
 * `TauCeti.MarkedUnparametrizedMap.forget`: the map `[u, z] ↦ [u]`.
+* `TauCeti.MarkedUnparametrizedMap.horizontalLeaf`: the marked horizontal leaf `[y ↦ (y, t), w]`
+  in `Y × M`.
 
 ## Main results
 
 * `TauCeti.NonconstantMap.instContinuousSMul`: the reparametrization action is continuous when the
   action on `Y` is, as composition is continuous for the compact-open topology.
 * `TauCeti.MarkedUnparametrizedMap.continuous_eval`: the evaluation map is continuous.
+* `TauCeti.MarkedUnparametrizedMap.mk_mem_range_horizontalLeaf_iff`: the marked horizontal leaves
+  are the classes of the reparametrized slices `y ↦ (g • y, t)`.
+* `TauCeti.MarkedUnparametrizedMap.rangeHorizontalLeafHomeomorph`: the evaluation map identifies
+  the horizontal leaves with `Y × M`.
 * `TauCeti.MarkedUnparametrizedMap.continuous_forget`,
   `TauCeti.MarkedUnparametrizedMap.forget_surjective`: forgetting the marked point is a continuous
   surjection.
@@ -184,6 +197,29 @@ instance instContinuousSMul [ContinuousInv G] [LocallyCompactPair Y X] :
 
 end ContinuousSMul
 
+section ProdMkLeft
+
+variable [Nontrivial Y] {M : Type*} [TopologicalSpace M]
+
+/-- The inclusion `y ↦ (y, t)` of `Y` onto the horizontal slice `Y × {t}` of `Y × M`, a
+nonconstant map since `Y` has two points. -/
+def prodMkLeft (t : M) : NonconstantMap Y (Y × M) :=
+  mk ((ContinuousMap.id Y).prodMk (ContinuousMap.const Y t)) <| by
+    obtain ⟨z, w, h⟩ := exists_pair_ne Y
+    exact ⟨z, w, fun h' ↦ h (congrArg Prod.fst h')⟩
+
+@[simp]
+theorem prodMkLeft_apply (t : M) (y : Y) : prodMkLeft t y = (y, t) :=
+  (rfl)
+
+/-- The horizontal slice `y ↦ (y, t)` depends continuously on `t`. -/
+@[fun_prop]
+theorem continuous_prodMkLeft : Continuous (prodMkLeft : M → NonconstantMap Y (Y × M)) :=
+  isEmbedding_toContinuousMap.continuous_iff.2 <|
+    (ContinuousMap.curry ⟨fun p : M × Y ↦ (p.2, p.1), continuous_swap⟩).continuous
+
+end ProdMkLeft
+
 end NonconstantMap
 
 end Maps
@@ -245,6 +281,87 @@ theorem forget_surjective : Surjective (forget : MarkedUnparametrizedMap G Y X �
   rintro ⟨u⟩
   obtain ⟨z, -, -⟩ := u.exists_apply_ne
   exact ⟨Quotient.mk _ (u, z), rfl⟩
+
+section HorizontalLeaf
+
+variable [Nontrivial Y] {M : Type*} [TopologicalSpace M]
+
+variable (G) in
+/-- The **horizontal leaf** through `p = (w, t)`: the class `[y ↦ (y, t), w]` of the horizontal
+slice `Y × {t}` of `Y × M`, marked at `w`. -/
+def horizontalLeaf (p : Y × M) : MarkedUnparametrizedMap G Y (Y × M) :=
+  Quotient.mk _ (NonconstantMap.prodMkLeft p.2, p.1)
+
+/-- The horizontal leaf through `p` is the class of the horizontal slice through `p.2`, marked
+at `p.1`. -/
+theorem horizontalLeaf_def (p : Y × M) :
+    horizontalLeaf G p = Quotient.mk _ (NonconstantMap.prodMkLeft p.2, p.1) :=
+  (rfl)
+
+/-- The horizontal leaf through `p` evaluates to `p` at its marked point. -/
+@[simp]
+theorem eval_horizontalLeaf (p : Y × M) : eval (horizontalLeaf G p) = p :=
+  (rfl)
+
+theorem leftInverse_eval_horizontalLeaf :
+    LeftInverse (eval : MarkedUnparametrizedMap G Y (Y × M) → Y × M) (horizontalLeaf G) :=
+  eval_horizontalLeaf
+
+theorem horizontalLeaf_injective : Injective (horizontalLeaf G : Y × M → _) :=
+  leftInverse_eval_horizontalLeaf.injective
+
+@[fun_prop]
+theorem continuous_horizontalLeaf : Continuous (horizontalLeaf G : Y × M → _) :=
+  continuous_quotient_mk'.comp
+    ((NonconstantMap.continuous_prodMkLeft.comp continuous_snd).prodMk continuous_fst)
+
+/-- **The classes of horizontal leaves.** The class of a marked map `(u, z)` is a horizontal leaf
+exactly when `u` is a reparametrized horizontal slice `y ↦ (g • y, t)`. -/
+theorem mk_mem_range_horizontalLeaf_iff (u : NonconstantMap Y (Y × M)) (z : Y) :
+    (Quotient.mk _ (u, z) : MarkedUnparametrizedMap G Y (Y × M)) ∈ Set.range (horizontalLeaf G) ↔
+      ∃ (g : G) (t : M), ∀ y, u y = (g • y, t) := by
+  constructor
+  · rintro ⟨p, hp⟩
+    -- Some `g` carries `(u, z)` to the horizontal slice `(y ↦ (y, p.2), p.1)`.
+    obtain ⟨g, hg⟩ : (NonconstantMap.prodMkLeft p.2, p.1) ∈ MulAction.orbit G (u, z) :=
+      Quotient.exact hp
+    refine ⟨g, p.2, fun y ↦ ?_⟩
+    have := DFunLike.congr_fun (congrArg Prod.fst hg) (g • y)
+    rwa [Prod.smul_fst, NonconstantMap.smul_apply, inv_smul_smul,
+      NonconstantMap.prodMkLeft_apply] at this
+  · rintro ⟨g, t, hu⟩
+    refine ⟨(g • z, t), Quotient.sound ⟨g, Prod.ext (NonconstantMap.ext fun y ↦ ?_) rfl⟩⟩
+    rw [Prod.smul_fst, NonconstantMap.smul_apply, hu, smul_inv_smul,
+      NonconstantMap.prodMkLeft_apply]
+
+variable [LocallyCompactPair Y (Y × M)]
+
+variable (G Y M) in
+/-- **Evaluation identifies the horizontal leaves with `Y × M`.** The evaluation map restricts to a
+homeomorphism from the horizontal leaves onto `Y × M`, inverse to `horizontalLeaf`: through every
+point of `Y × M` passes exactly one marked horizontal leaf. -/
+def rangeHorizontalLeafHomeomorph : Set.range (horizontalLeaf G : Y × M → _) ≃ₜ Y × M where
+  toFun x := eval x.val
+  invFun p := ⟨horizontalLeaf G p, p, rfl⟩
+  left_inv := by
+    rintro ⟨_, p, rfl⟩
+    rfl
+  right_inv := eval_horizontalLeaf
+  continuous_toFun := continuous_eval.comp continuous_subtypeVal
+  continuous_invFun := continuous_horizontalLeaf.subtype_mk _
+
+@[simp]
+theorem rangeHorizontalLeafHomeomorph_apply (x : Set.range (horizontalLeaf G : Y × M → _)) :
+    rangeHorizontalLeafHomeomorph G Y M x = eval x.val :=
+  (rfl)
+
+@[simp]
+theorem coe_rangeHorizontalLeafHomeomorph_symm_apply (p : Y × M) :
+    ((rangeHorizontalLeafHomeomorph G Y M).symm p : MarkedUnparametrizedMap G Y (Y × M)) =
+      horizontalLeaf G p :=
+  (rfl)
+
+end HorizontalLeaf
 
 end MarkedUnparametrizedMap
 

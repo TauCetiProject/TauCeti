@@ -15,6 +15,10 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
 * `TauCeti.RCLike.mul_conj_eq_one_iff`: a scalar times its conjugate is `1` exactly when it has
   norm `1`.
+* `TauCeti.RCLike.mem_unitary_iff_norm_eq_one`: a scalar is unitary exactly when it has norm `1`.
+* `RCLike.star_inv_norm_smul_mul_self`, `RCLike.star_inv_norm_smul_mul`,
+  `RCLike.star_mul_inv_norm_smul`: the phase `ω = ‖z‖⁻¹ • z` of a nonzero scalar `z` satisfies
+  `conj ω * ω = 1` and `conj ω * z = conj z * ω = ‖z‖`.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
 * `RCLike.continuousSMul_of_continuousConstSMul`: on an `RCLike`-module with continuous addition
@@ -32,6 +36,10 @@ public import Mathlib.Analysis.RCLike.Basic
   `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
 * `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
+* `RCLike.ext_of_re_eq_of_re_I_mul_eq`: two scalars in `K` with equal real parts before and after
+  multiplying by `RCLike.I` are equal (uniformly over `ℝ` and `ℂ`).
+* `RCLike.apply_eq_of_re_eq_of_re_I_smul_eq`: the `I`-test equating `f v` and `g v` for `K`-action
+  homomorphisms from real-part equalities at `v` and `RCLike.I • v`.
 -/
 
 public section
@@ -59,6 +67,25 @@ theorem norm_I_le_one : ‖(I : K)‖ ≤ 1 := by
 /-- A scalar with zero imaginary part is the image of its real part. -/
 theorem re_eq_self_of_im_eq_zero {z : K} (h : im z = 0) : (re z : K) = z :=
   conj_eq_iff_re.mp (conj_eq_iff_im.mpr h)
+
+/-- The phase `ω = z / |z|` of a nonzero scalar `z` has `conj ω * ω = 1`. -/
+theorem star_inv_norm_smul_mul_self {z : K} (hz : z ≠ 0) :
+    star (‖z‖⁻¹ • z) * (‖z‖⁻¹ • z) = 1 := by
+  have : ((‖z‖ : ℝ) : K) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)
+  rw [real_smul_eq_coe_mul, star_mul', mul_mul_mul_comm, star_def, conj_ofReal, conj_mul]
+  push_cast
+  field_simp
+
+/-- The phase `ω = z / |z|` of a nonzero scalar `z` has `conj ω * z = |z|`. -/
+theorem star_inv_norm_smul_mul {z : K} (hz : z ≠ 0) : star (‖z‖⁻¹ • z) * z = (‖z‖ : K) := by
+  have : ((‖z‖ : ℝ) : K) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)
+  rw [real_smul_eq_coe_mul, star_mul', mul_assoc, star_def, conj_ofReal, conj_mul]
+  push_cast
+  field_simp
+
+/-- The phase `ω = z / |z|` of a nonzero scalar `z` has `conj z * ω = |z|`. -/
+theorem star_mul_inv_norm_smul {z : K} (hz : z ≠ 0) : star z * (‖z‖⁻¹ • z) = (‖z‖ : K) := by
+  rw [← star_star (‖z‖⁻¹ • z), ← star_mul, star_inv_norm_smul_mul hz, star_def, conj_ofReal]
 
 /-- On an `RCLike`-module whose addition and real scalar multiplication are jointly continuous,
 continuous multiplication by constant `K`-scalars upgrades to joint continuity of `K`-scalar
@@ -135,6 +162,24 @@ theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D :
 theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
   simpa [norm_sub_rev] using re_le_norm (1 - z)
 
+/-- Two scalars in an `RCLike` field are equal if they have the same real part and their products
+with `RCLike.I` also have the same real part. Over `ℝ` the second hypothesis is `0 = 0`; over `ℂ`
+it equates the imaginary parts via `re (I * z) = -im z`. -/
+theorem ext_of_re_eq_of_re_I_mul_eq {z w : K} (hre : re z = re w)
+    (him : re (I * z) = re (I * w)) : z = w := by
+  refine ext hre (neg_inj.mp ?_)
+  simpa only [I_mul_re] using him
+
+/-- **The `I`-test.** Two `K`-homogeneous maps `f` and `g` take the same value at `v` when their
+real parts agree both at `v` and at `(I : K) • v`. Over `ℂ`, testing `I • v` supplies the imaginary
+part; a single real-part equality does not suffice (`f 1 = I`, `g 1 = 0` has `re (f 1) = 0`). -/
+theorem apply_eq_of_re_eq_of_re_I_smul_eq {V F G : Type*} [SMul K V]
+    [FunLike F V K] [MulActionHomClass F K V K] [FunLike G V K] [MulActionHomClass G K V K]
+    {f : F} {g : G} {v : V} (hre : re (f v) = re (g v))
+    (him : re (f ((I : K) • v)) = re (g ((I : K) • v))) : f v = g v := by
+  refine ext_of_re_eq_of_re_I_mul_eq hre ?_
+  simpa only [map_smul, smul_eq_mul] using him
+
 end RCLike
 
 namespace TauCeti
@@ -148,5 +193,10 @@ theorem RCLike.mul_conj_eq_one_iff {K : Type*} [RCLike K] {z : K} :
   rw [RCLike.mul_conj]
   norm_cast
   exact pow_eq_one_iff_of_nonneg (norm_nonneg z) two_ne_zero
+
+/-- A scalar is unitary exactly when it has norm `1`. -/
+theorem RCLike.mem_unitary_iff_norm_eq_one {K : Type*} [RCLike K] {z : K} :
+    z ∈ unitary K ↔ ‖z‖ = 1 := by
+  rw [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj_eq_one_iff]
 
 end TauCeti

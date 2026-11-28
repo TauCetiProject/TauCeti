@@ -36,7 +36,8 @@ theorem isCompact_boundary : IsCompact A :=
 /-- The closed unit disc has a collar projection onto its boundary circle which is smooth when read
 on the Schottky double through the fold. -/
 example :
-    ∃ U : Set 𝕔𝔻, IsOpen U ∧ A ⊆ U ∧ ∃ ρ : 𝕔𝔻 → 𝕔𝔻, MapsTo ρ U A ∧ (∀ x ∈ A, ρ x = x) ∧
+    ∃ U : Set 𝕔𝔻, IsOpen U ∧ A ⊆ U ∧ ∃ ρ : 𝕔𝔻 → 𝕔𝔻, Continuous ρ ∧ MapsTo ρ U A ∧
+      (∀ x ∈ A, ρ x = x) ∧
       ContMDiffOn 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel ∞ (ρ ∘ DoubleAlong.fold A)
         (DoubleAlong.fold A ⁻¹' U) ∧
       ContMDiffOn closedUpperHalfPlaneModel closedUpperHalfPlaneModel ∞ ρ U :=
@@ -52,7 +53,7 @@ example (r : ℕ) (i j : SchottkyDouble 𝕔𝔻) :
       ((doubledBundleCore _ (FiniteRankBundleCore.isRealAlong_trivial r A)).core.coordChange i j)
       ((doubledBundleCore _ (FiniteRankBundleCore.isRealAlong_trivial r A)).core.baseSet i ∩
         (doubledBundleCore _ (FiniteRankBundleCore.isRealAlong_trivial r A)).core.baseSet j) := by
-  obtain ⟨U, hU, hAU, ρ, hρA, -, hρ, -⟩ := exists_collarProjection isCompact_boundary
+  obtain ⟨U, hU, hAU, ρ, -, hρA, -, hρ, -⟩ := exists_collarProjection isCompact_boundary
   exact contMDiffOn_coordChange_doubledBundleCore _ _
     (fun _ _ ↦ contMDiffOn_const.congr fun _ _ ↦ rfl) hU hAU hρA hρ
     (fun _ _ _ _ _ _ ↦ ⟨mem_univ _, mem_univ _, rfl⟩) i j

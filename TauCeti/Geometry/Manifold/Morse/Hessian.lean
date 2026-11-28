@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.ExtChartAt.Comp
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -220,6 +221,13 @@ theorem criticalHessian_neg : criticalHessian I (-f) x = -criticalHessian I f x 
   rw [criticalHessian_def, criticalHessian_def, hfun, hfd, fderiv_neg]
   -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   rfl
+
+/-- The critical Hessian of a constant function vanishes. -/
+@[simp]
+theorem criticalHessian_const (c : ℝ) : criticalHessian I (fun _ : M ↦ c) x = 0 := by
+  have h : fderiv ℝ (fderiv ℝ (fun _ : E ↦ c)) (extChartAt I x x) = 0 := by simp
+  -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
+  exact h
 
 /-- At an interior local minimum of a `C¹` function, the critical Hessian is nonnegative
 on the diagonal. No metric, finite dimensionality, or global smooth atlas is required. -/
@@ -760,15 +768,11 @@ theorem criticalHessian_comp_apply {x : M} (hφx : φ y = x) (hf : ContMDiffAt I
       criticalHessian I f x (mfderiv I' I φ y u) (mfderiv I' I φ y w) := by
   subst hφx
   have hφd : MDifferentiableAt I' I φ y := hφ.mdifferentiableAt two_ne_zero
-  have hy : writtenInExtChartAt I' I y φ (extChartAt I' y y) = extChartAt I (φ y) (φ y) := by
-    simp [writtenInExtChartAt]
+  have hy : writtenInExtChartAt I' I y φ (extChartAt I' y y) = extChartAt I (φ y) (φ y) :=
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source y)
   -- Near the chart image of `y`, the coordinate expression of `f ∘ φ` factors through the
   -- coordinate expression of `φ` in the charts at `y` and `φ y`.
-  have heq : (f ∘ φ) ∘ (extChartAt I' y).symm =ᶠ[𝓝 (extChartAt I' y y)]
-      (f ∘ (extChartAt I (φ y)).symm) ∘ writtenInExtChartAt I' I y φ := by
-    simpa [writtenInExtChartAt, I'.range_eq_univ, Function.comp_assoc] using
-      writtenInExtChartAt_comp (I := I') (I' := I) (I'' := 𝓘(ℝ)) (f := φ) (g := f) (s := univ)
-        hφd.continuousAt.continuousWithinAt
+  have heq := hφd.continuousAt.comp_comp_extChartAt_symm_eventuallyEq (I := I') (I' := I) f
   have hcrit' : fderiv ℝ (f ∘ (extChartAt I (φ y)).symm)
       (writtenInExtChartAt I' I y φ (extChartAt I' y y)) = 0 := by
     rw [hy, ← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]

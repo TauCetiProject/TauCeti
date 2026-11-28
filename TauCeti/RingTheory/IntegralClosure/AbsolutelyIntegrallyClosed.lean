@@ -8,9 +8,12 @@ module
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
+public import TauCeti.Algebra.CharP.Frobenius.Fixed
 
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.NumberTheory.Real.Irrational
+import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Polynomial.ScaleRoots
 
@@ -37,6 +40,9 @@ be stable under the quotients and localizations used to cut a valuation ring int
   and only if every monic polynomial over `A` is a product of monic linear factors.
 * `TauCeti.IsAbsolutelyIntegrallyClosed.exists_pow_nat_eq`: every element has `n`-th roots for
   all `n > 0`.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.natCard_frobeniusFixedSubring`: in an absolutely
+  integrally closed domain of characteristic `p`, the subring fixed by the `p ^ n`-power
+  Frobenius, `n ≠ 0`, has exactly `p ^ n` elements.
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isAlgClosed`: for a field, the notion is
   `IsAlgClosed`.
 * `TauCeti.IsAbsolutelyIntegrallyClosed.of_surjective` and
@@ -47,6 +53,8 @@ be stable under the quotients and localizations used to cut a valuation ring int
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isIntegrallyClosed_and_isAlgClosed`: a domain is
   absolutely integrally closed if and only if it is integrally closed and its fraction field is
   algebraically closed.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.isAlgClosed_residueField`: the residue field of an
+  absolutely integrally closed local ring is algebraically closed.
 * `Subfield.isAbsolutelyIntegrallyClosed_comap`: the trace of an integrally closed domain on an
   algebraically closed subfield of its fraction field is absolutely integrally closed.
 * `TauCeti.not_isAbsolutelyIntegrallyClosed_rat`: `ℚ` is not absolutely integrally closed, as
@@ -69,6 +77,7 @@ degree over `A` has a root in `A`. The positive-degree restriction excludes the 
 have no root in a nontrivial ring; the zero ring qualifies vacuously, since no polynomial over it
 has positive degree. See `IsAbsolutelyIntegrallyClosed.splits` for the equivalent formulation
 that every monic polynomial is a product of linear factors. -/
+@[stacks 0DCL "in the equivalent form of 0DCM (2)"]
 class IsAbsolutelyIntegrallyClosed (A : Type*) [CommRing A] : Prop where
   /-- Every monic polynomial of positive degree has a root. -/
   exists_root (p : A[X]) (hp : p.Monic) (hdeg : 0 < p.natDegree) : ∃ x, p.IsRoot x
@@ -101,12 +110,23 @@ theorem exists_pow_nat_eq [IsAbsolutelyIntegrallyClosed A] (x : A) {n : ℕ} (hn
     (by rwa [natDegree_X_pow_sub_C])
   exact ⟨z, by simpa [sub_eq_zero] using hz⟩
 
+/-- **The field of `q` elements inside an absolutely integrally closed domain.** In an absolutely
+integrally closed domain of characteristic `p` and for `n ≠ 0`, the subring of elements fixed by the
+`p ^ n`-power Frobenius has exactly `p ^ n` elements, since `X ^ p ^ n - X` splits. -/
+theorem natCard_frobeniusFixedSubring [IsAbsolutelyIntegrallyClosed A] [IsDomain A] (p : ℕ)
+    [Fact p.Prime] [CharP A p] {n : ℕ} (hn : n ≠ 0) :
+    Nat.card ↥(frobeniusFixedSubring A p n) = p ^ n :=
+  natCard_frobeniusFixedSubring_of_splits A p hn <| splits <| monic_X_pow_sub <| by
+    rw [degree_X]
+    exact_mod_cast Nat.one_lt_pow hn (Fact.out : p.Prime).one_lt
+
 /-- The zero ring is absolutely integrally closed: no polynomial over it has positive degree. -/
 theorem of_subsingleton [Subsingleton A] : IsAbsolutelyIntegrallyClosed A where
   exists_root p _ hdeg := by simp [natDegree_of_subsingleton] at hdeg
 
 /-- The image of an absolutely integrally closed ring under a surjective ring homomorphism is
 absolutely integrally closed. -/
+@[stacks 0DCN "first assertion"]
 theorem of_surjective [IsAbsolutelyIntegrallyClosed A] (f : A →+* B)
     (hf : Function.Surjective f) : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by
@@ -122,6 +142,7 @@ instance quotient [IsAbsolutelyIntegrallyClosed A] (I : Ideal A) :
   of_surjective _ Ideal.Quotient.mk_surjective
 
 /-- A localization of an absolutely integrally closed ring is absolutely integrally closed. -/
+@[stacks 0DCN "second assertion"]
 theorem of_isLocalization [IsAbsolutelyIntegrallyClosed A] [Algebra A B] (M : Submonoid A)
     [IsLocalization M B] : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by
@@ -224,6 +245,35 @@ theorem isAbsolutelyIntegrallyClosed_iff_isIntegrallyClosed_and_isAlgClosed :
     fun ⟨_, _⟩ ↦ IsAbsolutelyIntegrallyClosed.of_isIntegrallyClosed_of_isAlgClosed K⟩
 
 end FractionRing
+
+/-- The integral closure of a commutative ring `R` in an absolutely integrally closed ring `K`, for
+instance an algebraically closed field, is absolutely integrally closed: a root in `K` of a monic
+polynomial over the integral closure is integral over it, hence over `R`. -/
+instance IsAbsolutelyIntegrallyClosed.integralClosure {R K : Type*} [CommRing R] [CommRing K]
+    [Algebra R K] [IsAbsolutelyIntegrallyClosed K] :
+    IsAbsolutelyIntegrallyClosed (_root_.integralClosure R K) where
+  exists_root p hp hdeg := by
+    let O := _root_.integralClosure R K
+    nontriviality K
+    obtain ⟨x, hx⟩ := exists_root (p.map (algebraMap O K)) (hp.map _)
+      ((hp.natDegree_map (algebraMap O K)).symm ▸ hdeg)
+    rw [IsRoot, eval_map] at hx
+    refine ⟨⟨x, isIntegral_trans x ⟨p, hp, hx⟩⟩, FaithfulSMul.algebraMap_injective O K ?_⟩
+    rwa [← eval₂_at_apply, map_zero, Subalgebra.algebraMap_apply]
+
+/-- The fraction field of an absolutely integrally closed domain is algebraically closed. -/
+instance IsAbsolutelyIntegrallyClosed.isAlgClosed_fractionRing [IsDomain A]
+    [IsAbsolutelyIntegrallyClosed A] : IsAlgClosed (FractionRing A) :=
+  IsAbsolutelyIntegrallyClosed.isAlgClosed (A := A) _
+
+/-- The residue field of an absolutely integrally closed local ring is algebraically closed, being
+a quotient of the ring. With `IsAbsolutelyIntegrallyClosed.localization` this shows that the
+residue field `p.ResidueField` at a prime `p` of an absolutely integrally closed ring is
+algebraically closed. -/
+instance IsAbsolutelyIntegrallyClosed.isAlgClosed_residueField [IsLocalRing A]
+    [IsAbsolutelyIntegrallyClosed A] : IsAlgClosed (IsLocalRing.ResidueField A) :=
+  isAbsolutelyIntegrallyClosed_iff_isAlgClosed.mp
+    (.of_surjective _ IsLocalRing.residue_surjective)
 
 /-- `ℚ` is not absolutely integrally closed: the monic polynomial `X ^ 2 - 2` has no rational
 root. -/

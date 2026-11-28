@@ -79,6 +79,9 @@ intermediate value theorem, and the dependence on `t` enters only through the si
 ## Main results
 
 * `TauCeti.eventually_fold`: the zeros near a fold point and their signs.
+* `TauCeti.eventually_setOf_eq_of_deriv_eq_zero`: the solutions of `g σ = s` near a nondegenerate
+  critical point of `g`, and the signs of `g'` at them; `TauCeti.eq_and_eq_of_setOf_eq_pair`
+  identifies the two solutions found on nested intervals.
 * `TauCeti.eventually_pitchfork`: the zeros near a pitchfork point of an odd family and their
   signs.
 
@@ -114,35 +117,6 @@ private theorem eventually_contDiffAt_partialFst {n : ℕ} {p₀ : ℝ × ℝ} (
     hp.contDiffAt_iterate_deriv_fst (by exact_mod_cast (show n - k + k ≤ n by omega))
 
 /-! ### Zeros of the slices -/
-
-/-- The zeros of a strictly convex function on `[-δ, δ]` that is negative at `0` and positive at
-`±δ`: one in `(-δ, 0)`, where the derivative is negative, and one in `(0, δ)`, where it is
-positive. -/
-private theorem fold_slice {g : ℝ → ℝ} {δ : ℝ} (hδ : 0 < δ)
-    (hconv : StrictConvexOn ℝ (Icc (-δ) δ) g) (hd : ∀ x ∈ Icc (-δ) δ, DifferentiableAt ℝ g x)
-    (h0 : g 0 < 0) (hl : 0 < g (-δ)) (hr : 0 < g δ) :
-    ∃ x₁ ∈ Ioo (-δ) 0, ∃ x₂ ∈ Ioo 0 δ, {x ∈ Ioo (-δ) δ | g x = 0} = {x₁, x₂} ∧
-      deriv g x₁ < 0 ∧ 0 < deriv g x₂ := by
-  have hc : ContinuousOn g (Icc (-δ) δ) := fun x hx => (hd x hx).continuousAt.continuousWithinAt
-  obtain ⟨x₁, hx₁, hgx₁⟩ := intermediate_value_Ioo' (show -δ ≤ 0 by linarith)
-    (hc.mono (Icc_subset_Icc le_rfl hδ.le)) ⟨h0, hl⟩
-  obtain ⟨x₂, hx₂, hgx₂⟩ := intermediate_value_Ioo hδ.le
-    (hc.mono (Icc_subset_Icc (by linarith) le_rfl)) ⟨h0, hr⟩
-  have hm₁ : x₁ ∈ Icc (-δ) δ := ⟨hx₁.1.le, by linarith [hx₁.2]⟩
-  have hm₂ : x₂ ∈ Icc (-δ) δ := ⟨by linarith [hx₂.1], hx₂.2.le⟩
-  have h₁₂ : x₁ < x₂ := hx₁.2.trans hx₂.1
-  refine ⟨x₁, hx₁, x₂, hx₂, ?_, ?_, ?_⟩
-  · ext x
-    simp only [mem_sep_iff, mem_insert_iff, mem_singleton_iff]
-    refine ⟨fun ⟨hx, hgx⟩ =>
-      hconv.eq_or_eq_of_apply_eq hm₁ hm₂ (Ioo_subset_Icc_self hx) h₁₂ hgx₁ hgx₂ hgx, ?_⟩
-    rintro (rfl | rfl)
-    · exact ⟨⟨hx₁.1, hx₁.2.trans hδ⟩, hgx₁⟩
-    · exact ⟨⟨by linarith [hx₂.1], hx₂.2⟩, hgx₂⟩
-  · have h := hconv.lt_slope_of_hasDerivAt hm₁ hm₂ h₁₂ (hd x₁ hm₁).hasDerivAt
-    rwa [slope_def_field, hgx₁, hgx₂, sub_self, zero_div] at h
-  · have h := hconv.slope_lt_of_hasDerivAt hm₁ hm₂ h₁₂ (hd x₂ hm₂).hasDerivAt
-    rwa [slope_def_field, hgx₁, hgx₂, sub_self, zero_div] at h
 
 /-- A strictly convex function on `[0, δ]` that is odd on `(-δ, δ)`, with nonnegative derivative at
 `0`, has no zero in `(-δ, δ)` other than `0`. -/
@@ -335,8 +309,74 @@ theorem eventually_fold (hF : ContDiffAt ℝ 2 F 0) (h₀ : F 0 = 0)
   · have hF0t : F (0, t) < 0 := by
       have := (hsign h0δ₀ ht).2 hbt
       rwa [h₀'] at this
-    exact fold_slice hδpos (strictConvexOn_of_foldBox hbox hδδ₀ ht) (fun x hx =>
-      (hbox ((abs_le.2 hx).trans_lt hδδ₀) ht).hasDerivAt_fst.differentiableAt) hF0t hFn hFp
+    obtain ⟨x₁, hx₁, x₂, hx₂, hset, -, -, -, hd₁, hd₂⟩ :=
+      (strictConvexOn_of_foldBox hbox hδδ₀ ht).exists_setOf_eq_zero_eq_pair (fun x hx =>
+        (hbox ((abs_le.2 hx).trans_lt hδδ₀) ht).hasDerivAt_fst.differentiableAt) hFn hFp
+        ⟨neg_lt_zero.2 hδpos, hδpos⟩ hF0t
+    exact ⟨x₁, hx₁, x₂, hx₂, hset, hd₁, hd₂⟩
+
+/-- **A nondegenerate critical point folds the nearby values.** Let `g : ℝ → ℝ` be `C²` near `0`,
+with `g' (0) = 0` and `g'' (0) ≠ 0`. Then for all small `δ > 0` and all `s` near `g 0`, the
+solutions of `g σ = s` in `(-δ, δ)` are: none if `g'' (0) (s - g 0) < 0`; only `0` if `s = g 0`;
+and exactly two, `σ₁ ∈ (-δ, 0)` and `σ₂ ∈ (0, δ)`, at which `g'` has opposite signs, if
+`0 < g'' (0) (s - g 0)`. This is `eventually_fold` for `F (σ, u) = g'' (0) (g σ - g 0 - u)`. -/
+theorem eventually_setOf_eq_of_deriv_eq_zero {g : ℝ → ℝ} (hg : ContDiffAt ℝ 2 g 0)
+    (h₁ : deriv g 0 = 0) (h₂ : iteratedDeriv 2 g 0 ≠ 0) :
+    ∀ᶠ δ in 𝓝[>] 0, ∀ᶠ s in 𝓝 (g 0),
+      (iteratedDeriv 2 g 0 * (s - g 0) < 0 → ∀ σ ∈ Ioo (-δ) δ, g σ ≠ s) ∧
+      (s = g 0 → {σ ∈ Ioo (-δ) δ | g σ = s} = {0}) ∧
+      (0 < iteratedDeriv 2 g 0 * (s - g 0) → ∃ σ₁ ∈ Ioo (-δ) 0, ∃ σ₂ ∈ Ioo 0 δ,
+        {σ ∈ Ioo (-δ) δ | g σ = s} = {σ₁, σ₂} ∧ deriv g σ₁ * deriv g σ₂ < 0) := by
+  set a := iteratedDeriv 2 g 0
+  set F : ℝ × ℝ → ℝ := fun p ↦ a * (g p.1 - g 0 - p.2)
+  have hF : ContDiffAt ℝ 2 F 0 :=
+    contDiffAt_const.mul (((hg.comp (0 : ℝ × ℝ) contDiffAt_fst).sub contDiffAt_const).sub
+      contDiffAt_snd)
+  have hdF (u : ℝ) : deriv (fun σ ↦ F (σ, u)) = fun σ ↦ a * deriv g σ := by
+    simp only [F, deriv_const_mul_field', sub_sub, deriv_sub_const]
+  have hb : deriv (fun u ↦ F (0, u)) 0 = -a := by
+    rw [show (fun u ↦ F (0, u)) = fun u ↦ -a * u from funext fun u ↦ by simp only [F]; ring]
+    simp
+  have h2F : iteratedDeriv 2 (fun σ ↦ F (σ, 0)) 0 = a * a := by
+    rw [iteratedDeriv_succ', iteratedDeriv_one, hdF, deriv_const_mul_field']
+    simp only [a, iteratedDeriv_succ', iteratedDeriv_zero]
+  have hfold := eventually_fold hF (by simp [F]) (by simp [hdF, h₁])
+    (by rw [h2F]; exact mul_self_pos.2 h₂) (by rw [hb]; exact neg_ne_zero.2 h₂)
+  have hst : Tendsto (fun s ↦ s - g 0) (𝓝 (g 0)) (𝓝 0) := by
+    simpa using (continuous_sub_right (g 0)).tendsto (g 0)
+  filter_upwards [hfold] with δ hδ
+  filter_upwards [hst.eventually hδ] with s ⟨hlt, heq, hgt⟩
+  rw [hb] at hlt hgt
+  have hFs (σ : ℝ) : F (σ, s - g 0) = 0 ↔ g σ = s := by
+    simp only [F, mul_eq_zero, h₂, false_or]
+    constructor <;> intro h <;> linarith
+  have hset : {σ ∈ Ioo (-δ) δ | F (σ, s - g 0) = 0} = {σ ∈ Ioo (-δ) δ | g σ = s} := by
+    ext σ
+    simp [hFs]
+  refine ⟨fun h σ hσ hgσ ↦ ?_, fun h ↦ hset ▸ heq (by rw [h, sub_self]), fun h ↦ ?_⟩
+  · have := hlt (by nlinarith) σ hσ
+    rw [(hFs σ).2 hgσ] at this
+    exact lt_irrefl 0 this
+  · obtain ⟨σ₁, hσ₁, σ₂, hσ₂, hs, h₁, h₂'⟩ := hgt (by nlinarith)
+    refine ⟨σ₁, hσ₁, σ₂, hσ₂, hset ▸ hs, ?_⟩
+    rw [hdF] at h₁ h₂'
+    nlinarith [mul_neg_of_neg_of_pos h₁ h₂']
+
+/-- **The two solutions on nested intervals agree.** If `g` takes the value `s` on `(-δ₀, δ₀)`
+exactly at `x₁ < 0 < x₂`, and on the smaller interval `(-δ₁, δ₁)` exactly at `σ₁ < 0 < σ₂`, then
+`σ₁ = x₁` and `σ₂ = x₂`. -/
+theorem eq_and_eq_of_setOf_eq_pair {g : ℝ → ℝ} {s δ₀ δ₁ x₁ x₂ σ₁ σ₂ : ℝ} (hδ : δ₁ ≤ δ₀)
+    (hx₁ : x₁ < 0) (hx₂ : 0 < x₂) (h₀ : {σ ∈ Ioo (-δ₀) δ₀ | g σ = s} = {x₁, x₂})
+    (hσ₁ : σ₁ < 0) (hσ₂ : 0 < σ₂) (h₁ : {σ ∈ Ioo (-δ₁) δ₁ | g σ = s} = {σ₁, σ₂}) :
+    σ₁ = x₁ ∧ σ₂ = x₂ := by
+  have hsub : ∀ σ ∈ ({σ₁, σ₂} : Set ℝ), σ ∈ ({x₁, x₂} : Set ℝ) := fun σ hσ ↦ by
+    rw [← h₁] at hσ
+    rw [← h₀]
+    exact ⟨⟨by linarith [hσ.1.1], by linarith [hσ.1.2]⟩, hσ.2⟩
+  refine ⟨(hsub σ₁ (by simp)).resolve_right fun h ↦ ?_,
+    mem_singleton_iff.1 <| (hsub σ₂ (by simp)).resolve_left fun h ↦ ?_⟩
+  · linarith [mem_singleton_iff.1 h]
+  · linarith
 
 /-! ### The equivariant pitchfork -/
 

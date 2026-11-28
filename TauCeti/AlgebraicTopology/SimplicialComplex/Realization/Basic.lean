@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
 public import Mathlib.Topology.UnitInterval
 import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 import Mathlib.Geometry.Convex.ConvexSpace.Defs
@@ -48,6 +49,7 @@ space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 * `mem_range_faceInclusion_carrier`, `iUnion_range_faceInclusion`: closed faces cover the
   realization, with each point in the face of its carrier.
 * `isQuotientMap_sigma_faceInclusion`: the closed faces present the realization as a quotient.
+  By Mathlib's `compactlyGeneratedSpace_of_coinduced`, the realization is compactly generated.
 * `isClosedMap_of_locallyFinite_faceInclusion`: a continuous map into a Hausdorff space is closed
   when the images of the closed simplices form a locally finite family.
 * `vertex`: the canonical point of the realization corresponding to a vertex.
@@ -121,6 +123,16 @@ theorem support_faceBarycenter (K : AbstractSimplicialComplex ι) (σ : Face K) 
   · have hcard : (σ.val.card : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Finset.card_ne_zero_of_mem hv)
     simp [Finsupp.mem_support_iff, hv, hcard]
   · simp [Finsupp.mem_support_iff, hv]
+
+/-- The coordinates of the barycenter of a face `σ` sum to one over every finite set containing
+`σ`. -/
+theorem sum_faceBarycenter_eq_one_of_subset (K : AbstractSimplicialComplex ι) (σ : Face K)
+    {s : Finset ι} (hσs : σ.val ⊆ s) : ∑ v ∈ s, faceBarycenter K σ v = 1 := by
+  have hcard : (σ.val.card : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (K.isRelLowerSet_faces.prop_of_mem σ.property).card_pos.ne'
+  simp only [faceBarycenter_apply]
+  rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr hσs, Finset.sum_const, nsmul_eq_mul,
+    mul_inv_cancel₀ hcard]
 
 /-- The topology induced by the coordinatewise topology on `ι → ℝ`. These are the domain
 topologies used to define the weak topology on the whole realization. -/
@@ -488,6 +500,12 @@ theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realizati
     x.val.sum (fun _ r => r) = 1 :=
   StandardSimplex.sum_eq_one ⟨x.val, mem_convexHull_carrier K x⟩
 
+/-- The barycentric coordinates of a realization point sum to one over every finite set containing
+its support. -/
+theorem Realization.sum_eq_one_of_support_subset (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {s : Finset ι} (hx : x.val.support ⊆ s) : ∑ v ∈ s, x.val v = 1 := by
+  rw [← Realization.sum_eq_one K x, Finsupp.sum_of_support_subset _ hx _ fun _ _ => rfl]
+
 /-- The segment between two points of `|K|` whose supports together span a face of `K` lies
 in `|K|`. -/
 theorem lineMap_mem_realization [DecidableEq ι] {K : AbstractSimplicialComplex ι}
@@ -566,6 +584,11 @@ theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
     exact ⟨⟨carrier K x, y⟩, hy⟩
   · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
     simp only [preimage_preimage]
+
+/-- Every weak realization is compactly generated as a quotient of its closed simplices. -/
+instance : CompactlyGeneratedSpace (Realization K) := by
+  have h := isQuotientMap_sigma_faceInclusion K
+  exact compactlyGeneratedSpace_of_coinduced h.continuous h.isCoinducing.eq_coinduced
 
 /-- A continuous map from the realization into a Hausdorff space is closed when the images of the
 closed simplices form a locally finite family: the image of a closed set is the locally finite

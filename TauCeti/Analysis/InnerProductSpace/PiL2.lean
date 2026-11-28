@@ -14,7 +14,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.Algebra.BigOperators.Finset.Fiber
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Analysis.Asymptotics.Lemmas
@@ -48,15 +48,20 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
   coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
   (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
+* `EuclideanSpace.toLp_insertNth_eq_add_sub_smul_single`: inserting `t` as the `i`-th coordinate
+  is moving the point with `i`-th coordinate `s` along the `i`-th axis.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 * `EuclideanSpace.isBigO_apply_div_norm`: a real Euclidean coordinate divided by the norm,
   `x j / ‖x‖`, is `O(1)` along any filter.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
+* `EuclideanSpace.toDual_symm_proj`: the Riesz representative of the coordinate projection
+  `x ↦ xᵢ` is the basis vector `eᵢ`.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
+* `EuclideanSpace.norm_sq_fin_two`: the squared norm on `ℝ²` is `x₀² + x₁²`.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
   of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -87,6 +92,10 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `OrthonormalBasis.singleton_repr_symm`: the inverse coordinate equivalence of
+  `OrthonormalBasis.singleton` evaluates at `default`.
+* `EuclideanSpace.finrank_subtype_val_lt` and `EuclideanSpace.finrank_subtype_not_val_lt`: the two
+  factors of the splitting of `𝕜ⁿ` along `j < m` have dimensions `m` and `n - m`.
 * `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
   linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
@@ -104,6 +113,16 @@ public section
 noncomputable section
 
 open scoped BigOperators
+
+/-- The inverse coordinate equivalence of `OrthonormalBasis.singleton` reads the unique coordinate
+of `EuclideanSpace 𝕜 ι`. -/
+@[simp]
+theorem OrthonormalBasis.singleton_repr_symm {ι 𝕜 : Type*} [Unique ι] [RCLike 𝕜]
+    (v : EuclideanSpace 𝕜 ι) :
+    (OrthonormalBasis.singleton ι 𝕜).repr.symm v = v default := by
+  have h := OrthonormalBasis.singleton_repr (ι := ι) (𝕜 := 𝕜)
+    ((OrthonormalBasis.singleton ι 𝕜).repr.symm v) default
+  rwa [(OrthonormalBasis.singleton ι 𝕜).repr.apply_symm_apply, eq_comm] at h
 
 namespace EuclideanSpace
 
@@ -161,6 +180,22 @@ theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Finty
   LipschitzWith.of_dist_le_mul fun s t ↦ by
     simp [dist_eq_norm, ← sub_smul, norm_smul]
 
+/-- The point with `i`-th coordinate `t` and other coordinates `y` is obtained from the point with
+`i`-th coordinate `s` and the same other coordinates by moving along the `i`-th axis. -/
+theorem toLp_insertNth_eq_add_sub_smul_single {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} (i : Fin (n + 1))
+    (s t : 𝕜) (y : Fin n → 𝕜) :
+    (WithLp.toLp 2 (i.insertNth t y) : EuclideanSpace 𝕜 (Fin (n + 1))) =
+      WithLp.toLp 2 (i.insertNth s y) +
+        (t - (WithLp.toLp 2 (i.insertNth s y) : EuclideanSpace 𝕜 (Fin (n + 1))) i) •
+          EuclideanSpace.single i 1 := by
+  ext j
+  rw [add_sub_smul_single_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
@@ -185,6 +220,10 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
 /-- The Euclidean norm on `ℝ¹` is the absolute value of the coordinate. -/
 theorem norm_fin_one (x : EuclideanSpace ℝ (Fin 1)) : ‖x‖ = |x 0| := by
   rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, Real.sqrt_sq_eq_abs, abs_abs]
+
+/-- The squared Euclidean norm on `ℝ²` is the sum of the squared coordinates. -/
+theorem norm_sq_fin_two (x : EuclideanSpace ℝ (Fin 2)) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
 
 /-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
 theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
@@ -310,6 +349,23 @@ theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (�
   classical
   exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
 
+/-- The coordinates of the standard basis of Euclidean space are the identity: the inverse of its
+coordinate map fixes every vector. -/
+@[simp]
+theorem basisFun_repr_symm_apply (x : EuclideanSpace 𝕜 ι) : (basisFun ι 𝕜).repr.symm x = x := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  exact (basisFun_repr ι 𝕜 x i).symm
+
+/-- The Riesz representative of the coordinate projection `x ↦ xᵢ` is the basis vector `eᵢ`. -/
+@[simp]
+theorem toDual_symm_proj [DecidableEq ι] (i : ι) :
+    (InnerProductSpace.toDual 𝕜 (EuclideanSpace 𝕜 ι)).symm (EuclideanSpace.proj i) =
+      EuclideanSpace.single i 1 := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext y
+  simp [EuclideanSpace.inner_single_left]
+
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
 equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
@@ -348,6 +404,62 @@ theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
 theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
     ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
   simp [consEquivL_symm_apply, Fin.tail]
+
+@[simp]
+theorem consEquivL_symm_single_zero {n : ℕ} (a : 𝕜) :
+    (consEquivL 𝕜 n).symm (EuclideanSpace.single 0 a) = (a, 0) := by
+  ext i
+  · simp
+  · simp
+
+@[simp]
+theorem consEquivL_symm_single_succ {n : ℕ} (j : Fin n) (a : 𝕜) :
+    (consEquivL 𝕜 n).symm (EuclideanSpace.single j.succ a) = (0, EuclideanSpace.single j a) := by
+  ext i
+  · simp
+  · simp [Fin.succ_inj]
+
+/-- The inner product of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the sum of the inner products of the factors. -/
+theorem inner_consEquivL {n : ℕ} (z w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    inner 𝕜 (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) = inner 𝕜 z.1 w.1 + inner 𝕜 z.2 w.2 := by
+  simp [PiLp.inner_apply, Fin.sum_univ_succ]
+
+/-- The squared norm of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the sum of the squared norms of the factors. -/
+theorem norm_consEquivL_sq {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    ‖consEquivL 𝕜 n z‖ ^ 2 = ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 := by
+  simp [EuclideanSpace.norm_sq_eq, Fin.sum_univ_succ]
+
+/-- The distance of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the `ℓ²` combination of the distances of the factors. -/
+theorem dist_consEquivL_sq {n : ℕ} (z w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    dist (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) ^ 2 = dist z.1 w.1 ^ 2 + dist z.2 w.2 ^ 2 := by
+  rw [dist_eq_norm, dist_eq_norm, dist_eq_norm, ← map_sub, norm_consEquivL_sq, Prod.fst_sub,
+    Prod.snd_sub]
+
+/-- A ball of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` lies in the product of the balls of the same radius. -/
+theorem preimage_consEquivL_ball_subset {n : ℕ} (w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) (s : ℝ) :
+    consEquivL 𝕜 n ⁻¹' Metric.ball (consEquivL 𝕜 n w) s ⊆
+      Metric.ball w.1 s ×ˢ Metric.ball w.2 s := by
+  intro z hz
+  rw [Set.mem_preimage, Metric.mem_ball] at hz
+  have h := dist_consEquivL_sq z w
+  have hs : 0 ≤ s := dist_nonneg.trans hz.le
+  have hs2 : dist (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) ^ 2 < s ^ 2 :=
+    pow_lt_pow_left₀ hz dist_nonneg two_ne_zero
+  exact ⟨lt_of_pow_lt_pow_left₀ 2 hs (by nlinarith [sq_nonneg (dist z.2 w.2)]),
+    lt_of_pow_lt_pow_left₀ 2 hs (by nlinarith [sq_nonneg (dist z.1 w.1)])⟩
+
+/-- The product of the balls of half the radius lies in a ball of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ`. -/
+theorem ball_prod_ball_subset_preimage_consEquivL_ball {n : ℕ}
+    (w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) {s : ℝ} (hs : 0 < s) :
+    Metric.ball w.1 (s / 2) ×ˢ Metric.ball w.2 (s / 2) ⊆
+      consEquivL 𝕜 n ⁻¹' Metric.ball (consEquivL 𝕜 n w) s := by
+  rintro z ⟨h1, h2⟩
+  rw [Metric.mem_ball] at h1 h2
+  rw [Set.mem_preimage, Metric.mem_ball]
+  have h := dist_consEquivL_sq z w
+  have h3 := pow_lt_pow_left₀ h1 dist_nonneg two_ne_zero
+  have h4 := pow_lt_pow_left₀ h2 dist_nonneg two_ne_zero
+  exact lt_of_pow_lt_pow_left₀ 2 hs.le (by nlinarith)
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × (Fin n → 𝕜)`: the continuous
@@ -633,6 +745,20 @@ theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSp
     ← finCastLEEquiv_symm_fst_sumComplEquivProd, LinearIsometryEquiv.inner_map_eq_flip,
     LinearIsometryEquiv.symm_symm, inner_fst_sumComplEquivProd,
     sumComplEquivProd_symm_finCastLEEquiv]
+
+variable (𝕜) in
+/-- The first factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension `m`. -/
+theorem finrank_subtype_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // j.val < m}) = m :=
+  (finCastLEEquiv 𝕜 hm).toLinearEquiv.finrank_eq.symm.trans finrank_euclideanSpace_fin
+
+variable (𝕜) in
+/-- The second factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension
+`n - m`. -/
+theorem finrank_subtype_not_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // ¬ j.val < m}) = n - m := by
+  rw [finrank_euclideanSpace, Fintype.card_subtype_compl, Fintype.card_fin,
+    ← finrank_euclideanSpace (𝕜 := 𝕜), finrank_subtype_val_lt 𝕜 hm]
 
 end finCastLE
 

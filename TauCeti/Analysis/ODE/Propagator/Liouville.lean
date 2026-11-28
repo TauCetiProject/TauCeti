@@ -43,6 +43,9 @@ Carathéodory theorem.
   `trace P(t) * det N_P(t, s)` at almost every `t`.
 * `TauCeti.det_propagator`, `TauCeti.det_toMatrix'_propagator`: Liouville's formula, basis-free
   and for matrices.
+* `TauCeti.propagator_smul_one_apply_one`: the scalar equation `y' = h y`, `y(s) = 1`, is solved
+  by `y(t) = exp (∫ u in s..t, h u)`; Liouville's formula on `E = 𝕜`, where the determinant is the
+  value at `1`.
 
 ## References
 
@@ -141,5 +144,18 @@ theorem det_toMatrix'_propagator {n : ℕ} {P : ℝ → (Fin n → 𝕜) →L[�
   rw [LinearMap.det_toMatrix', det_propagator hP hs ht]
   simp only [LinearMap.trace_eq_matrix_trace 𝕜 (Pi.basisFun 𝕜 (Fin n)),
     LinearMap.toMatrix_eq_toMatrix']
+
+/-- **The scalar linear equation.** For `h : ℝ → 𝕜` integrable on `[a, b]` and `s, t ∈ [a, b]`, the
+propagator of the scalar coefficient `h • 1` on `𝕜` maps `1` to `exp (∫ u in s..t, h u)`. -/
+theorem propagator_smul_one_apply_one {h : ℝ → 𝕜} (hh : IntegrableOn h (Icc a b))
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    propagator (fun u ↦ h u • (1 : 𝕜 →L[𝕜] 𝕜)) t s 1 = NormedSpace.exp (∫ u in s..t, h u) := by
+  have hdet := det_propagator (hh.smul_const (1 : 𝕜 →L[𝕜] 𝕜)) hs ht
+  have htr (u : ℝ) :
+      LinearMap.trace 𝕜 𝕜 ((h u • (1 : 𝕜 →L[𝕜] 𝕜) : 𝕜 →L[𝕜] 𝕜) : 𝕜 →ₗ[𝕜] 𝕜) = h u := by
+    rw [ContinuousLinearMap.toLinearMap_smul, map_smul]
+    simp [LinearMap.trace_one]
+  rw [LinearMap.det_ring] at hdet
+  simpa only [htr, ContinuousLinearMap.coe_coe] using hdet
 
 end TauCeti

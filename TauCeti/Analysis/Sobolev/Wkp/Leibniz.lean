@@ -9,9 +9,10 @@ public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Sobolev.Wkp.BoundedMultiplication
 import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Sobolev.Wkp.Extension
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
@@ -346,46 +347,17 @@ theorem exists_mem_wkp0Submodule_iteratedGradient_ae_eq {q : ENNReal} [Fact (1 �
 almost everywhere on `Ω`.
 
 The hypothesis asks for as many derivatives of `ψ` as the Sobolev order. No bound on `ψ` or its
-derivatives is assumed: they are bounded on the compact set `closure Ω`, which is all the proof
-uses. The set `U` need not be open, so `ψ` may be `Cᵏ` only up to the
-boundary of `Ω`, as for the chart reading of a smooth function on a manifold with boundary. On
-`Ω` the derivative of `ψ` within `U` is its derivative. -/
+derivatives is assumed: they are bounded on the compact set `closure Ω`, so this is a case of
+`TauCeti.Wkp.exists_value_ae_eq_mul_of_bddDerivOn`. The set `U` need not be open, so `ψ` may be
+`Cᵏ` only up to the boundary of `Ω`, as for the chart reading of a smooth function on a manifold
+with boundary. On `Ω` the derivative of `ψ` within `U` is its derivative. -/
 theorem exists_value_ae_eq_mul_of_contDiffOn {U : Set E} (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     {psi : E → ℝ} (hpsi : ContDiffOn ℝ k psi U) (u : Wkp mu Omega p k) :
     ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x => psi x * value k u x := by
-  -- A function continuous on `U` is bounded on `Ω`, so multiplying by it preserves `Lᵖ(Ω)`.
-  have hLp : ∀ {phi : E → ℝ}, ContinuousOn phi U → ∀ f : Lp ℝ p (mu.restrict Omega),
-      ∃ g : Lp ℝ p (mu.restrict Omega), (g : E → ℝ) =ᵐ[mu.restrict Omega]
-        fun x => phi x * f x := fun {phi} hphi f => by
-    have h : MemLp (fun x => phi x * f x) p (mu.restrict Omega) :=
-      ((hphi.mono hΩU).memLp_top_restrict_of_subset_isCompact hΩ Omega.isOpen.measurableSet
-        subset_closure).fun_mul (Lp.memLp f)
-    exact ⟨h.toLp _, h.coeFn_toLp⟩
-  induction k generalizing psi with
-  | zero => simpa only [value_zero] using hLp hpsi.continuousOn (value 0 u)
-  | succ k ih =>
-    obtain ⟨g, hg⟩ := hLp hpsi.continuousOn (value (k + 1) u)
-    set b := stdOrthonormalBasis ℝ E
-    refine (exists_value_eq_of_forall_hasWeakLineDerivOn b g k fun i => ?_).imp
-      fun w (hw : value (k + 1) w = g) => hw ▸ hg
-    -- `∂ᵢ(ψ u) = ψ ∂ᵢu + (∂ᵢψ) u`, and both summands lie in `W^{k,p}(Ω)` by induction. On `Ω` the
-    -- derivative of `ψ` is its derivative within `U`, which is `Cᵏ` on `U`.
-    obtain ⟨d, hd⟩ := exists_hasWeakLineDerivOn_value k u (b i)
-    obtain ⟨w₁, hw₁⟩ := ih (hpsi.of_le (by simp)) d
-    obtain ⟨w₂, hw₂⟩ := ih ((hpsi.fderivWithin hU (by simp)).clm_apply contDiffOn_const)
-      (lowerOrder k u)
-    refine ⟨w₁ + w₂, (((hd.contDiffOn_smul_of_ne_zero (hpsi.mono (subset_closure.trans hΩU))
-      (by simp)).congr_ae
-      ?_).congr_ae_deriv ?_)⟩
-    · filter_upwards [hg] with x hx
-      rw [hx, smul_eq_mul]
-    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂,
-        ae_restrict_mem Omega.isOpen.measurableSet] with x hx h₁ h₂ hxΩ
-      rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul,
-        fderivWithin_of_mem_nhds (Filter.mem_of_superset (Omega.isOpen.mem_nhds hxΩ)
-          (subset_closure.trans hΩU))]
+      fun x => psi x * value k u x :=
+  exists_value_ae_eq_mul_of_bddDerivOn
+    (hpsi.bddDerivOn_of_isCompact_closure hU Omega.isOpen hΩ hΩU) u
 
 /-- **Multiplication by a compactly supported smooth function in `W^{k,p}`.** If `ψ` is smooth with
 compact support and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of
