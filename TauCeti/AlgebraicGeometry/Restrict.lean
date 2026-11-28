@@ -46,6 +46,8 @@ global functions of the base change.
   restriction `f ⁻¹ᵁ U ⟶ U` of `f` has image the part of `T` over the range of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_morphismRestrict_homOfLE`: for opens `V ≤ U`, `f ∣_ V`
   is the pullback of `f ∣_ U` along the inclusion `V ⟶ U`.
+* `AlgebraicGeometry.Scheme.Hom.restrictPreimageOverSpec`: restriction over an affine base open
+  as a scheme over its coordinate ring, with its cartesian square.
 * `AlgebraicGeometry.Scheme.Hom.exists_dense_open_of_comp_iso`: a property respecting isomorphisms
   that holds for the restriction of `f ≫ e.hom` over a dense open, for an isomorphism `e`, holds for
   the restriction of `f` over a dense open.
@@ -269,6 +271,35 @@ theorem Scheme.Hom.morphismRestrictArrowIso_hom_right_comp {U V : Scheme.{u}}
     (h : i ≫ f = g ≫ j) (he : f ⁻¹ᵁ j.opensRange = i.opensRange) :
     (f.morphismRestrictArrowIso g h he).hom.right ≫ j = j.opensRange.ι := by
   simp [morphismRestrictArrowIso, Arrow.isoMk']
+
+namespace Scheme.Hom
+
+variable {S : Scheme.{u}}
+
+/-- The scheme over `Spec Γ(S,V)` obtained by restricting `f` to an affine open `V` of `S`. -/
+@[instance_reducible]
+noncomputable def restrictPreimageOverSpec (f : X ⟶ S) (V : S.affineOpens) :
+    (f ⁻¹ᵁ V.val).toScheme.Over (Spec (.of Γ(S, V))) :=
+  ⟨(f ∣_ V.val) ≫ V.property.isoSpec.hom⟩
+
+/-- The induced structure morphism is the restriction of `f` followed by the affine-open
+isomorphism. -/
+@[simp]
+theorem restrictPreimageOverSpec_over (f : X ⟶ S) (V : S.affineOpens) :
+    CategoryTheory.over _ _ (f.restrictPreimageOverSpec V) =
+      (f ∣_ V.val) ≫ V.property.isoSpec.hom :=
+  (rfl)
+
+/-- Restricting a morphism over an affine open and identifying that open with its spectrum
+gives a cartesian square. -/
+theorem isPullback_restrictPreimageOverSpec (f : X ⟶ S) (V : S.affineOpens) :
+    IsPullback (f ⁻¹ᵁ V.val).ι (CategoryTheory.over _ _ (f.restrictPreimageOverSpec V)) f
+      (V.property.isoSpec.inv ≫ V.val.ι) :=
+  (isPullback_morphismRestrict f V.val).flip.of_iso
+    (.refl _) (.refl _) V.property.isoSpec (.refl _) (by simp)
+    (by simp [restrictPreimageOverSpec_over]) (by simp) (by simp)
+
+end Scheme.Hom
 
 end AlgebraicGeometry
 

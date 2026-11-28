@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Image
 public import TauCeti.AlgebraicGeometry.LineBundle.Dual
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.Pullback
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Relative
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rational
 public import TauCeti.AlgebraicGeometry.Modules.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
@@ -29,10 +29,10 @@ import TauCeti.RingTheory.Kaehler.BaseChange
 # The ramification ideal sheaf and the Picard-group Riemann–Hurwitz relation
 
 Let `f : X ⟶ Y` be a morphism of schemes over `Spec R`. The cotangent map
-`cotangentMap R f : f^* Ω_{Y/R} ⟶ Ω_{X/R}` has quasi-coherent cokernel whose sections over
-compatible affine opens `V ⊆ Y` and `U ⊆ f⁻¹(V)` are the relative Kähler differentials
-`Ω[Γ(X, U)⁄Γ(Y, V)]` (`cotangentCokernelSectionsEquiv`), and whose formation commutes with
-arbitrary base change `R → S` (`cotangentCokernelBaseChangeIso`).
+`cotangentMap R f : f^* Ω_{Y/R} ⟶ Ω_{X/R}` has quasi-coherent cokernel whose formation commutes
+with arbitrary base change `R → S` (`cotangentCokernelBaseChangeIso`). The comparison with
+relative Kähler differentials on compatible affine opens is `cotangentCokernelSectionsEquiv`
+in `TauCeti.AlgebraicGeometry.Modules.Differentials.Relative`.
 
 Whenever `cokernel (cotangentMap R f)` is of finite type (in particular whenever `Ω_{X/R}` is of
 finite type), its zeroth Fitting ideal sheaf is the **ramification ideal sheaf**
@@ -79,91 +79,6 @@ universe u
 /-! ### Cokernel of the cotangent map -/
 
 section CotangentCokernel
-
-/-- Over compatible affine opens `V` of `Y` and `U ≤ f⁻¹ V` of `X`, the sections of
-`cokernel (cotangentMap R f)` over `U` identify with the relative Kähler differentials
-`Ω[Γ(X, U)⁄Γ(Y, V)]`. -/
-def cotangentCokernelSectionsEquiv (R : Type u) [CommRing R] {X Y : Scheme.{u}}
-    [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
-    (V : Y.affineOpens) (U : X.affineOpens) (hUV : U.val ≤ f ⁻¹ᵁ V.val) :
-    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
-    Ω[Γ(X, U)⁄Γ(Y, V)] ≃ₗ[Γ(X, U)] Γ(cokernel (cotangentMap R f), U.val) := by
-  letI : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V.val)).hom.toAlgebra
-  letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
-  letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
-  haveI : IsScalarTower R Γ(Y, V) Γ(X, U) :=
-    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_appLE R f V.val U.val hUV
-  let F := Scheme.Modules.sectionsFunctor U.val
-  let eSrc := pullbackRelativeDifferentialsSectionsEquiv R f V U hUV
-  let eTgt : Ω[Γ(X, U)⁄R] ≃ₗ[Γ(X, U)] F.obj (X.relativeDifferentials R) :=
-    relativeDifferentialsSectionsEquiv R X U
-  have hker : Submodule.map eTgt.toLinearMap
-      (LinearMap.ker (KaehlerDifferential.map R Γ(Y, V) Γ(X, U) Γ(X, U))) =
-      LinearMap.range (F.map (cotangentMap R f)).hom := by
-    rw [← KaehlerDifferential.range_mapBaseChange R Γ(Y, V) Γ(X, U)]
-    ext s
-    constructor
-    · rintro ⟨_, ⟨η, rfl⟩, rfl⟩
-      exact ⟨eSrc η, cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv R f V U hUV η⟩
-    · rintro ⟨t, rfl⟩
-      refine ⟨KaehlerDifferential.mapBaseChange R Γ(Y, V) Γ(X, U) (eSrc.symm t),
-        ⟨eSrc.symm t, rfl⟩, ?_⟩
-      exact (cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv R f V U hUV
-        (eSrc.symm t)).symm.trans
-        (congrArg ((cotangentMap R f).app U.val) (eSrc.apply_symm_apply t))
-  let eQuot := Submodule.Quotient.equiv
-    (LinearMap.ker (KaehlerDifferential.map R Γ(Y, V) Γ(X, U) Γ(X, U)))
-    (LinearMap.range (F.map (cotangentMap R f)).hom) eTgt hker
-  exact (LinearMap.quotKerEquivOfSurjective _
-    (KaehlerDifferential.map_surjective R Γ(Y, V) Γ(X, U))).symm.trans
-      (eQuot.trans (cokernelSectionsEquiv (cotangentMap R f) U))
-
-/-- `cotangentCokernelSectionsEquiv` sends the relative Kähler differential `D a` of `a ∈ Γ(X, U)`
-to the image of `(X.universalDerivation R).d a` in `Γ(cokernel (cotangentMap R f), U)`. -/
-@[simp]
-theorem cotangentCokernelSectionsEquiv_D (R : Type u) [CommRing R] {X Y : Scheme.{u}}
-    [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
-    (V : Y.affineOpens) (U : X.affineOpens) (hUV : U.val ≤ f ⁻¹ᵁ V.val) (a : Γ(X, U)) :
-    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
-    cotangentCokernelSectionsEquiv R f V U hUV (KaehlerDifferential.D Γ(Y, V) Γ(X, U) a) =
-      (cokernel.π (cotangentMap R f)).app U.val ((X.universalDerivation R).d (X := op U.val) a)
-          := by
-  let : Algebra R Γ(Y, V) := ((Y.baseRingToStructurePresheaf R).app (op V.val)).hom.toAlgebra
-  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
-  let : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
-  have : IsScalarTower R Γ(Y, V) Γ(X, U) :=
-    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_appLE R f V.val U.val hUV
-  have hmk : (LinearMap.quotKerEquivOfSurjective
-      (KaehlerDifferential.map R Γ(Y, V) Γ(X, U) Γ(X, U))
-      (KaehlerDifferential.map_surjective R Γ(Y, V) Γ(X, U))).symm
-        (KaehlerDifferential.D Γ(Y, V) Γ(X, U) a) =
-      Submodule.Quotient.mk (KaehlerDifferential.D R Γ(X, U) a) :=
-    LinearEquiv.symm_apply_eq _ |>.mpr (KaehlerDifferential.map_D R Γ(Y, V) Γ(X, U) Γ(X, U) a).symm
-  dsimp only [cotangentCokernelSectionsEquiv, LinearEquiv.trans_apply]
-  rw [hmk]
-  let eTgt : Ω[Γ(X, U)⁄R] ≃ₗ[Γ(X, U)]
-      (Scheme.Modules.sectionsFunctor U.val).obj (X.relativeDifferentials R) :=
-    relativeDifferentialsSectionsEquiv R X U
-  exact (congrArg (cokernelSectionsEquiv (cotangentMap R f) U)
-    ((Submodule.Quotient.equiv_apply _ _ eTgt _ _).trans (Submodule.mapQ_apply _ _ _ _))).trans
-    ((cokernelSectionsEquiv_mk (cotangentMap R f) U _).trans
-      (congrArg ((cokernel.π (cotangentMap R f)).app U.val)
-        (relativeDifferentialsSectionsEquiv_D R X U a)))
-
-/-- The inverse of `cotangentCokernelSectionsEquiv` sends the image of
-`(X.universalDerivation R).d a` in `Γ(cokernel (cotangentMap R f), U)` to the relative Kähler
-differential `D a`. -/
-@[simp]
-theorem cotangentCokernelSectionsEquiv_symm_π_d (R : Type u) [CommRing R] {X Y : Scheme.{u}}
-    [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
-    (V : Y.affineOpens) (U : X.affineOpens) (hUV : U.val ≤ f ⁻¹ᵁ V.val) (a : Γ(X, U)) :
-    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
-    (cotangentCokernelSectionsEquiv R f V U hUV).symm
-        ((cokernel.π (cotangentMap R f)).app U.val ((X.universalDerivation R).d (X
-            := op U.val) a)) =
-      KaehlerDifferential.D Γ(Y, V) Γ(X, U) a := by
-  let : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
-  exact (LinearEquiv.symm_apply_eq _).mpr (cotangentCokernelSectionsEquiv_D R f V U hUV a).symm
 
 section BaseChange
 
