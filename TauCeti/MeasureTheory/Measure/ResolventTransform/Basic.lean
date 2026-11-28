@@ -191,6 +191,14 @@ theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
   rintro ⟨x, _, hx⟩
   exact hz (by simpa using (congrArg Complex.im hx).symm)
 
+/-- The squared norm of the real resolvent kernel is integrable for a finite measure off the real
+axis. -/
+theorem integrable_norm_resolvent_sq {z : ℂ} (hz : z.im ≠ 0) :
+    Integrable (fun x : ℝ ↦ ‖resolvent z x‖ ^ 2) μ :=
+  Integrable.of_bound (by fun_prop) (|z.im|⁻¹ ^ 2) (ae_of_all _ fun x ↦ by
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    exact pow_le_pow_left₀ (norm_nonneg _) (Complex.norm_resolvent_real_le z x hz) 2)
+
 /-- The imaginary part of the transform is the integral of the kernel
 `z.im / ((x - z.re)² + z.im²)`, which is the Poisson kernel without the factor `π⁻¹`
 when `0 < z.im`. -/
@@ -205,6 +213,34 @@ theorem im_resolventTransform {z : ℂ} :
   · simpa only [resolventTransform_apply, RCLike.im_eq_complex_im,
       Complex.im_resolvent_real] using
       (integral_im (integrable_resolvent_of_im_ne_zero (μ := μ) hz)).symm
+
+omit [IsFiniteMeasure μ] in
+/-- In the closed upper half-plane, the resolvent transform of any real measure has nonnegative
+imaginary part. -/
+theorem im_resolventTransform_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
+    0 ≤ (resolventTransform μ z).im := by
+  by_cases hi : Integrable (resolvent (R := ℝ) z) μ
+  · rw [resolventTransform_apply, ← RCLike.im_eq_complex_im, ← integral_im hi]
+    exact integral_nonneg fun x ↦ by
+      simp only [RCLike.im_eq_complex_im, Complex.im_resolvent_real]
+      exact div_nonneg hz (by positivity)
+  · simp [resolventTransform_apply, integral_undef hi]
+
+omit [IsFiniteMeasure μ] in
+/-- For every real measure `μ` and complex `z`, `(resolventTransform μ z).im` has the same weak
+sign as `z.im`. -/
+theorem im_mul_im_resolventTransform_nonneg (μ : Measure ℝ) (z : ℂ) :
+    0 ≤ z.im * (resolventTransform μ z).im := by
+  by_cases hi : Integrable (resolvent (R := ℝ) z) μ
+  · rw [resolventTransform_apply, ← RCLike.im_eq_complex_im, ← integral_im hi,
+      ← integral_const_mul]
+    exact integral_nonneg fun x ↦ by
+      simp only [RCLike.im_eq_complex_im, Complex.im_resolvent_real]
+      have : z.im * (z.im / ((x - z.re) ^ 2 + z.im ^ 2)) =
+          z.im ^ 2 / ((x - z.re) ^ 2 + z.im ^ 2) := by ring
+      rw [this]
+      positivity
+  · simp [resolventTransform_apply, integral_undef hi]
 
 /-- A uniform bound for the transform of a finite measure away from the real axis. -/
 theorem norm_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
