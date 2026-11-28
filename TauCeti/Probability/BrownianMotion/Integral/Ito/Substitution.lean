@@ -156,11 +156,12 @@ theorem IsItoIntegral.indicator_Ioi_mul (hW : IsFilteredPreBrownianReal ℱ W P)
         (Ioc s (max s t)).indicator (fun _ ↦ ξ ω) :=
       ae_mono (timeMeasure_mono (le_max_right s t))
         (indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure _ s (max s t))
-    rw [show (∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
+    have h_eq : (∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
         (Ioc s (max s t)).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t) =
         ∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
-          (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t from
-      lintegral_congr_ae (h_ae.mono fun r hr ↦ by dsimp only; rw [← hr])]),
+          (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t :=
+      lintegral_congr_ae (h_ae.mono fun r hr ↦ by dsimp only; rw [← hr])
+    rw [h_eq]),
     by simpa only [min_eq_right (le_max_right s t)] using hg⟩
 
 /-- Restricting an integrand to `(u, ∞)` yields the post-`u` Itô integral

@@ -187,6 +187,24 @@ theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
   refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
   exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
 
+/-- Restricting a predictable integrand to a predictable subset of `(0, t] × Ω` on which it has
+finite expected square energy up to horizon `t` produces an integrand in
+`BrownianIntegrable ℱ P`. -/
+theorem brownianIntegrable_indicator_of_subset_Ioc_prod [SFinite P]
+    (hHp : IsStronglyPredictable ℱ H) {t : ℝ≥0}
+    (hH : MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P))
+    {S : Set (ℝ≥0 × Ω)} (hS : MeasurableSet[ℱ.predictable] S) (hSt : S ⊆ Ioc 0 t ×ˢ univ) :
+    BrownianIntegrable ℱ P (fun u ω ↦ S.indicator (Function.uncurry H) (u, ω)) := by
+  refine ⟨hHp.indicator hS, fun T ↦ ?_⟩
+  rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def,
+    Function.uncurry_def (f := fun u ω ↦ S.indicator (Function.uncurry H) (u, ω))]
+  simp_rw [Prod.mk.eta]
+  rw [memLp_indicator_iff_restrict (ℱ.predictable_le_prod S hS).nullMeasurableSet]
+  refine (hH.mono_measure (Measure.prod_mono
+    (Probability.timeMeasure_mono (min_le_left t T)) le_rfl)).mono_measure ?_
+  rw [← Probability.timeMeasure_restrict, Measure.restrict_prod_eq_prod_univ]
+  exact Measure.restrict_mono hSt le_rfl
+
 /-- Restricting an integrand to `(s, ∞)` preserves finite expected square energy. -/
 theorem BrownianIntegrable.indicator_Ioi (hH : BrownianIntegrable ℱ P H) (s : ℝ≥0) :
     BrownianIntegrable ℱ P (fun u ω ↦ (Ioi s).indicator (H · ω) u) := by

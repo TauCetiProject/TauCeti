@@ -425,21 +425,6 @@ theorem martingale_sq_sub_integral (hI : IsItoIntegral ℱ P W H I)
   rw [heq]
   exact eLpNorm_sub_le le_rfl
 
-private theorem brownianIntegrable_indicator_of_subset_Ioc_prod [SFinite P]
-    (hHp : IsStronglyPredictable ℱ H) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
-    {S : Set (ℝ≥0 × Ω)} (hS : MeasurableSet[ℱ.predictable] S) (hSt : S ⊆ Ioc 0 t ×ˢ univ) :
-    BrownianIntegrable ℱ P (fun u ω ↦ S.indicator (Function.uncurry H) (u, ω)) := by
-  refine ⟨hHp.indicator hS, fun T ↦ ?_⟩
-  rw [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def,
-    show (Function.uncurry fun u ω ↦ S.indicator (Function.uncurry H) (u, ω)) =
-      S.indicator (Function.uncurry H) from rfl,
-    memLp_indicator_iff_restrict (ℱ.predictable_le_prod S hS).nullMeasurableSet]
-  refine (hH.mono_measure (Measure.prod_mono
-    (timeMeasure_mono (min_le_left t T)) le_rfl)).mono_measure ?_
-  rw [← timeMeasure_restrict, Measure.restrict_prod_eq_prod_univ]
-  exact Measure.restrict_mono hSt le_rfl
-
 /-- **Set-integral increment energy of the Brownian Itô integral**: for `s ≤ t` and any `ℱ s`-
 measurable event `A`, the set integral of `(I t - I s)²` over `A` equals the expected square energy
 of `H` over `(s, t] × A`, requiring square integrability only through horizon `t` and without
