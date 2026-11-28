@@ -439,12 +439,6 @@ lemma mapComp'_conj_eq_pullHom {X₀ X₁ X₂ Y : C} (x : X₁ ⟶ X₀) (q : X
   subst hg hx'
   obtain rfl : y₂ = y₁ := by rw [← h₁, ← h₂, Category.assoc]
   rw [pullHom_id]
-  have hM := mapComp'_hom_app_comp_map_mapComp'_hom_app F x.op.toLoc q.op.toLoc z.op.toLoc
-    (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl)
-    (by rw [← h₁]; rfl) M
-  have hN := mapComp'_hom_app_comp_map_mapComp'_hom_app F x.op.toLoc q.op.toLoc z.op.toLoc
-    (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl)
-    (by rw [← h₁]; rfl) N
   have hM' : (F.map z.op.toLoc).toFunctor.map
       ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).hom.toNatTrans.app M) ≫
       (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).inv.toNatTrans.app _ ≫
@@ -452,9 +446,8 @@ lemma mapComp'_conj_eq_pullHom {X₀ X₁ X₂ Y : C} (x : X₁ ⟶ X₀) (q : X
           (by rw [← h₁]; rfl)).inv.toNatTrans.app M =
       (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
         (by rw [← h₂]; rfl)).inv.toNatTrans.app M := by
-    rw [← cancel_epi ((F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
-      (by rw [← h₂]; rfl)).hom.toNatTrans.app M), reassoc_of% hM]
-    simp
+    exact (F.mapComp'₀₂₃_inv_app x.op.toLoc q.op.toLoc z.op.toLoc
+      (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl) M).symm
   have hN' : (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc
         (by rw [← h₁]; rfl)).hom.toNatTrans.app N ≫
       (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).hom.toNatTrans.app _ ≫
@@ -462,9 +455,8 @@ lemma mapComp'_conj_eq_pullHom {X₀ X₁ X₂ Y : C} (x : X₁ ⟶ X₀) (q : X
           ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).inv.toNatTrans.app N) =
       (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
         (by rw [← h₂]; rfl)).hom.toNatTrans.app N := by
-    rw [← reassoc_of% hN, ← Functor.map_comp, Cat.Hom.hom_inv_id_toNatTrans_app,
-      CategoryTheory.Functor.map_id]
-    exact Category.comp_id _
+    exact (F.mapComp'₀₂₃_hom_app x.op.toLoc q.op.toLoc z.op.toLoc
+      (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl) N).symm
   simp only [Category.assoc]
   rw [reassoc_of% hM', hN']
 
@@ -485,22 +477,16 @@ lemma mapComp'_conj_eq_mapId'_conj_pullHom {X₀ Y : C} (z : Y ⟶ X₀) (y₁ :
   subst hg
   obtain rfl : y₁ = z := by rw [← h₁, Category.comp_id]
   rw [pullHom_id]
-  have hM := mapComp'_hom_app_comp_map_mapId'_hom_app F (𝟙 X₀).op.toLoc (by simp) y₁.op.toLoc
-    (by simp) M
-  have hN := mapComp'_hom_app_comp_map_mapId'_hom_app F (𝟙 X₀).op.toLoc (by simp) y₁.op.toLoc
-    (by simp) N
   have hM' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
       (by simp)).inv.toNatTrans.app M = (F.map y₁.op.toLoc).toFunctor.map
         ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app M) := by
-    rw [← cancel_epi ((F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
-      (by simp)).hom.toNatTrans.app M), hM, Cat.Hom.hom_inv_id_toNatTrans_app]
+    simpa only [op_id, Quiver.Hom.id_toLoc, mapId'_eq_mapId] using
+      F.mapComp'_id_comp_inv_app y₁.op.toLoc M
   have hN' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
       (by simp)).hom.toNatTrans.app N = (F.map y₁.op.toLoc).toFunctor.map
         ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).inv.toNatTrans.app N) := by
-    rw [← cancel_mono ((F.map y₁.op.toLoc).toFunctor.map
-      ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app N)), hN, ← Functor.map_comp,
-      Cat.Hom.inv_hom_id_toNatTrans_app, CategoryTheory.Functor.map_id]
-    simp only [Cat.Hom.id_toFunctor, Functor.id_obj]
+    simpa only [op_id, Quiver.Hom.id_toLoc, mapId'_eq_mapId] using
+      F.mapComp'_id_comp_hom_app y₁.op.toLoc N
   rw [hM', hN']
 variable (F) in
 /-- The presheaves of morphisms out of `M`, as a functor of the target: `N ↦ F.presheafHom M N`,
