@@ -53,7 +53,8 @@ In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
 (`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`. In an
 Archimedean ordered semiring, truncating a finite `WithTop` element at natural casts eventually
-stabilizes (`WithTop.eventually_min_natCast_eq`).
+stabilizes (`WithTop.eventually_min_natCast_eq`). For any integer `m`, `min 0 (m - n)` tends to
+`-∞` as `n : ℕ` tends to `∞` (`TauCeti.tendsto_min_zero_sub_nat`).
 -/
 
 public section
@@ -253,6 +254,11 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact ⟨by simpa [hb] using hk', hb⟩
   · push Not at h
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
+
+/-- For any fixed integer `m`, `min 0 (m - n)` tends to `-∞` as `n : ℕ` tends to `∞`. -/
+theorem tendsto_min_zero_sub_nat (m : ℤ) :
+    Tendsto (fun n : ℕ ↦ min (0 : ℤ) (m - n)) atTop atBot :=
+  tendsto_atBot.2 fun N ↦ eventually_atTop.2 ⟨(m - N).toNat, fun n hn ↦ by omega⟩
 
 end TauCeti
 

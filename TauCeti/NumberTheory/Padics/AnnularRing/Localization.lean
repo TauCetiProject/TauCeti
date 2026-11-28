@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Padics.AnnularRing.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Away
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.Order.Filter.AtTopBot
 
 /-!
 # The `T`-adic completeness of `ℤ_p⟦T, p/T⟧` and its localization `H[1/T]`

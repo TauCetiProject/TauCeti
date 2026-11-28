@@ -601,16 +601,9 @@ theorem liftNoncomm_mk'_pow (g : R →+* K) (hg : IsUnit (g x)) (a : R) (n : ℕ
     IsLocalization.mk'_spec S a (⟨x ^ n, n, rfl⟩ : Submonoid.powers x)
   have hmap := congr_arg (liftNoncomm x g hg) hmul
   rw [map_mul, liftNoncomm_eq, liftNoncomm_eq, map_pow] at hmap
-  calc
-    liftNoncomm x g hg (IsLocalization.mk' S a (⟨x ^ n, n, rfl⟩ : Submonoid.powers x))
-        = liftNoncomm x g hg (IsLocalization.mk' S a (⟨x ^ n, n, rfl⟩ : Submonoid.powers x)) *
-            (((g x) ^ n) * ((↑hg.unit⁻¹ : K) ^ n)) := by
-          have huniv' : (g x ^ n) * ((↑hg.unit⁻¹ : K) ^ n) = 1 := by
-            simpa only [Units.val_mul, ← inv_pow, Units.val_pow_eq_pow_val, hg.unit_spec,
-              Units.val_one] using congr_arg Units.val (mul_inv_cancel (hg.unit ^ n))
-          rw [huniv', mul_one]
-    _ = g a * (↑hg.unit⁻¹ : K) ^ n := by
-          rw [← mul_assoc, hmap]
+  rw [← Units.val_pow_eq_pow_val, inv_pow]
+  refine (Units.eq_mul_inv_iff_mul_eq (hg.unit ^ n)).2 ?_
+  simpa only [Units.val_pow_eq_pow_val, hg.unit_spec] using hmap
 
 /-- Evaluating `liftNoncomm x g hg` on the distinguished fraction `a / x` gives `g a * (g x)⁻¹`. -/
 @[simp]

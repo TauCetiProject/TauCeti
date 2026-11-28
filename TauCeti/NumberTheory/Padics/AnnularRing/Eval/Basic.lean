@@ -542,11 +542,11 @@ def localizedEval₂ : A →+* K :=
   rw [hu] at hmap
   simpa only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] using hmap
 
-omit [CompleteSpace K] in
-include hf ht htinv in
 /-- For every `x ∈ H[1/T]`, the norms of the terms in the bilateral series
 `∑_{m ∈ ℤ} f(localizedCoeff p x m) * t ^ m` are summable over `ℤ`. -/
-theorem summable_norm_localizedEval₂ (x : A) :
+theorem summable_norm_localizedEval₂ {K : Type*} [SeminormedRing K] (f : ℤ_[p] →+* K)
+    (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖f a‖ ≤ C * ‖a‖)
+    (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) (x : A) :
     Summable fun m : ℤ ↦ ‖f (localizedCoeff p x m) * ((t ^ m : Kˣ) : K)‖ := by
   obtain ⟨k, a, ha⟩ := IsLocalization.Away.surj (T : AnnularRing p) x
   have hshift : Summable fun m : ℤ ↦
