@@ -88,7 +88,7 @@ theorem comap_algebraMap_eq_comap_algebraMap_iff_of_fixedPoints_le
     ((comap_eq_comap_iff_valuationSubring_comap_eq _).mp h)
   -- `hg` identifies the valuation subrings of `y'` and `g • y`
   refine ⟨g, valuationSubring_valuation_injective ?_⟩
-  change y'.valuation.valuationSubring = (g • y).valuation.valuationSubring
+  dsimp only
   rw [smul_def, valuationSubring_valuation_comap, ← ValuationSubring.pointwise_smul_eq_comap, hg]
 
 omit [Group G] [Finite G] [MulSemiringAction G L] [SMulCommClass G K L] in
