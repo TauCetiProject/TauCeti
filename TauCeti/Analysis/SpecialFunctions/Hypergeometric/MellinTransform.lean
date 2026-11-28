@@ -9,7 +9,7 @@ public import Mathlib.Analysis.MellinTransform
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.MellinTransform.Beta
 import TauCeti.Analysis.MellinTransform.Convolution
-import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
+import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes.Basic
 
 /-!
 # The Mellin transform of Euler's integral at negative argument

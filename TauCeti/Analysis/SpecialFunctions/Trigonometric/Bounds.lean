@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
 # Trigonometric bounds and nonvanishing criteria
@@ -39,6 +40,11 @@ For `|x| ≤ 1` the Taylor polynomials of degree `6` of the cosine and of degree
 approximate them within `|x| ^ 8 / 35840` and `|x| ^ 9 / 326592` (`TauCeti.cos_bound_six`,
 `TauCeti.sin_bound_seven`); these refine Mathlib's `Real.cos_bound` and `Real.sin_bound` enough to
 locate the roots of trigonometric equations to three decimal places.
+
+For complex arguments, `(Complex.sin z).re = Real.sin z.re * Real.cosh z.im` (`Complex.sin_re`),
+which yields the vertical-line lower bound `|Real.sin z.re| * Real.cosh z.im ≤ ‖Complex.sin z‖`
+(`Complex.abs_sin_re_mul_cosh_im_le_norm_sin`) and the reciprocal exponential decay bound
+`‖(Complex.sin z)⁻¹‖ ≤ 2 / |Real.sin z.re| * Real.exp (-|z.im|)` (`Complex.norm_inv_sin_le`).
 -/
 
 public section
@@ -266,3 +272,40 @@ theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < 
   field_simp
 
 end TauCeti
+
+namespace Complex
+
+/-- The real part of the complex sine is `Real.sin z.re * Real.cosh z.im`. -/
+theorem sin_re (z : ℂ) : (sin z).re = Real.sin z.re * Real.cosh z.im := by
+  rw [sin_eq]
+  simp only [add_re, mul_re, mul_im, I_re, I_im, sin_ofReal_re, sin_ofReal_im,
+    cos_ofReal_im, cosh_ofReal_re, cosh_ofReal_im, sinh_ofReal_im]
+  ring
+
+/-- The modulus of `Complex.sin z` is at least `|Real.sin z.re| * Real.cosh z.im`, the magnitude
+of its real part. -/
+theorem abs_sin_re_mul_cosh_im_le_norm_sin (z : ℂ) :
+    |Real.sin z.re| * Real.cosh z.im ≤ ‖sin z‖ := by
+  calc |Real.sin z.re| * Real.cosh z.im
+      = |(sin z).re| := by rw [sin_re, abs_mul, abs_of_pos (Real.cosh_pos _)]
+    _ ≤ ‖sin z‖ := abs_re_le_norm (sin z)
+
+/-- Whenever `Real.sin z.re ≠ 0`, the reciprocal of `Complex.sin z` decays exponentially in
+`|z.im|`: `‖(Complex.sin z)⁻¹‖ ≤ 2 / |Real.sin z.re| * Real.exp (-|z.im|)`. -/
+theorem norm_inv_sin_le {z : ℂ} (hz : Real.sin z.re ≠ 0) :
+    ‖(sin z)⁻¹‖ ≤ 2 / |Real.sin z.re| * Real.exp (-|z.im|) := by
+  have hsin_pos : 0 < |Real.sin z.re| := abs_pos.mpr hz
+  have hcosh : Real.exp |z.im| / 2 ≤ Real.cosh z.im := by
+    rw [← Real.cosh_abs, div_le_iff₀ two_pos, mul_comm]
+    exact Real.exp_le_two_mul_cosh |z.im|
+  have hge : |Real.sin z.re| * Real.exp |z.im| / 2 ≤ ‖sin z‖ :=
+    calc |Real.sin z.re| * Real.exp |z.im| / 2
+        = |Real.sin z.re| * (Real.exp |z.im| / 2) := by ring
+      _ ≤ |Real.sin z.re| * Real.cosh z.im := by gcongr
+      _ ≤ ‖sin z‖ := abs_sin_re_mul_cosh_im_le_norm_sin z
+  rw [norm_inv]
+  refine ((inv_le_inv₀ (lt_of_lt_of_le (by positivity) hge) (by positivity)).mpr hge).trans_eq ?_
+  rw [Real.exp_neg]
+  field_simp [hsin_pos.ne']
+
+end Complex

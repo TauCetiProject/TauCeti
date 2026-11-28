@@ -71,7 +71,9 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
 * `Complex.arg_one_sub_exp_mul_I`: `arg (1 - exp (θ i)) = (θ - π) / 2` for `0 < θ < 2π`.
-* `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
+* `Complex.inv_exp_arg_mul_le_exp_abs_arg_mul_abs`,
+  `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`:
+  `(exp (arg u * r))⁻¹ ≤ exp (|arg u| * |r|) ≤ exp (π * |r|)`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
   `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
   inequality when `arg z ≠ π` and `|arg z| < π` on `slitPlane`.
@@ -249,12 +251,17 @@ theorem arg_one_sub_exp_mul_I {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
   rw [hfac, arg_ofReal_mul (by positivity), arg_exp_mul_I, toIocMod_eq_self]
   constructor <;> linarith [hθ.1, hθ.2, Real.pi_pos]
 
+/-- The inverse of `exp (arg u * r)` is at most `exp (|arg u| * |r|)`. -/
+theorem inv_exp_arg_mul_le_exp_abs_arg_mul_abs (u : ℂ) (r : ℝ) :
+    (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (|u.arg| * |r|) := by
+  rw [← Real.exp_neg, Real.exp_le_exp, ← abs_mul]
+  exact neg_le_abs _
+
 /-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
 theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
-    (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (Real.pi * |r|) := by
-  rw [← Real.exp_neg, Real.exp_le_exp]
-  calc -(u.arg * r) ≤ |u.arg| * |r| := (neg_le_abs _).trans_eq (abs_mul _ _)
-    _ ≤ Real.pi * |r| := by gcongr; exact abs_arg_le_pi _
+    (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (Real.pi * |r|) :=
+  (inv_exp_arg_mul_le_exp_abs_arg_mul_abs u r).trans
+    (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_right (abs_arg_le_pi _) (abs_nonneg _)))
 
 /-- The unit complex number `exp (i arg z)` is `z / |z|` for `z ≠ 0`. -/
 theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ : ℂ) := by
