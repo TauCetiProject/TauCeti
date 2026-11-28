@@ -9,12 +9,12 @@ public import TauCeti.Algebra.Lie.CompactRealForm.CartanInvolution
 public import TauCeti.Algebra.Lie.RestrictScalars
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.Matrix.NegConjTranspose
-public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
 public import TauCeti.Examples.Algebra.Lie.CartanInvolution.Complex
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.Algebra.Lie.Sl2.Killing
+import TauCeti.Algebra.Lie.SpecialLinear.Cartan.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Positive
 
 /-!
@@ -264,45 +264,35 @@ theorem restrictRealForm_slFinTwoRealFormEquiv (Y : sl (Fin 2) ℝ) :
 
 /-- The complex-linear Chevalley involution `X ↦ -Xᵀ` of `𝔰𝔩₂(ℂ)`: `h ↦ -h`, `e ↦ -f`, `f ↦ -e`,
 with no conjugation of scalars. -/
-def slFinTwoChevalleyInvolution : sl (Fin 2) ℂ ≃ₗ⁅ℂ⁆ sl (Fin 2) ℂ :=
-  (sl (Fin 2) ℂ).restrictNegTranspose fun _ ↦ transpose_mem_sl
-
-/-- `slFinTwoChevalleyInvolution` sends `X` to `-Xᵀ`. -/
-@[simp]
-theorem coe_slFinTwoChevalleyInvolution_apply (X : sl (Fin 2) ℂ) :
-    (slFinTwoChevalleyInvolution X : Matrix (Fin 2) (Fin 2) ℂ) =
-      -(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ :=
-  LieSubalgebra.coe_restrictNegTranspose_apply _ _ X
+local notation "ω" => SpecialLinear.cartanInvolution (Fin 2) ℂ
 
 /-- The Chevalley involution sends `h ↦ -h`. -/
-theorem slFinTwoChevalleyInvolution_slFinTwoBasis_two :
-    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 2) = -slFinTwoBasis ℂ 2 := by
+private theorem cartanInvolution_slFinTwoBasis_two :
+    ω (slFinTwoBasis ℂ 2) = -slFinTwoBasis ℂ 2 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_two]
 
 /-- The Chevalley involution sends `e ↦ -f`. -/
-theorem slFinTwoChevalleyInvolution_slFinTwoBasis_zero :
-    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 0) = -slFinTwoBasis ℂ 1 := by
+private theorem cartanInvolution_slFinTwoBasis_zero :
+    ω (slFinTwoBasis ℂ 0) = -slFinTwoBasis ℂ 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_zero, slFinTwoBasis_one]
 
 /-- The Chevalley involution sends `f ↦ -e`. -/
-theorem slFinTwoChevalleyInvolution_slFinTwoBasis_one :
-    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 1) = -slFinTwoBasis ℂ 0 := by
+private theorem cartanInvolution_slFinTwoBasis_one :
+    ω (slFinTwoBasis ℂ 1) = -slFinTwoBasis ℂ 0 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_zero, slFinTwoBasis_one]
 
 /-- **The fixed set of the complex-linear Chevalley involution is not a real form**: it contains
 both `e - f` and `i (e - f)`, so it meets its image under multiplication by `i`. -/
 example :
-    slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈ slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra ∧
-      I • (slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1) ∈
-        slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra ∧
+    slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈ (ω).toLieHom.fixedSubalgebra ∧
+      I • (slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1) ∈ (ω).toLieHom.fixedSubalgebra ∧
       slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ≠ 0 := by
-  have hfix : slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈
-      slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra := by
+  have hfix : slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈ (ω).toLieHom.fixedSubalgebra := by
     rw [LieHom.mem_fixedSubalgebra, LieEquiv.coe_toLieHom, map_sub,
-      slFinTwoChevalleyInvolution_slFinTwoBasis_zero, slFinTwoChevalleyInvolution_slFinTwoBasis_one]
+      cartanInvolution_slFinTwoBasis_zero, cartanInvolution_slFinTwoBasis_one]
     abel
   refine ⟨hfix, LieSubalgebra.smul_mem _ I hfix, sub_ne_zero.mpr ?_⟩
   exact (slFinTwoBasis ℂ).injective.ne (by decide)
@@ -310,16 +300,14 @@ example :
 /-- **`-B(x, ω x)` is not positive for the complex-linear Chevalley involution `ω`**: it is `8` at
 `h` but `-8` at `i h`, since `x ↦ -B(x, ω x)` is quadratic rather than Hermitian. -/
 example :
-    -killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2)
-        (slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 2)) = 8 ∧
-      -killingForm ℂ (sl (Fin 2) ℂ) (I • slFinTwoBasis ℂ 2)
-        (slFinTwoChevalleyInvolution (I • slFinTwoBasis ℂ 2)) = -8 := by
+    -killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2) (ω (slFinTwoBasis ℂ 2)) = 8 ∧
+      -killingForm ℂ (sl (Fin 2) ℂ) (I • slFinTwoBasis ℂ 2) (ω (I • slFinTwoBasis ℂ 2)) = -8 := by
   have h8 : killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2) (slFinTwoBasis ℂ 2) = 8 := by
     rw [killingForm_slFinTwoBasis]
     simp
   constructor
-  · rw [slFinTwoChevalleyInvolution_slFinTwoBasis_two, map_neg, neg_neg, h8]
-  · simp only [map_smul, slFinTwoChevalleyInvolution_slFinTwoBasis_two, map_neg,
+  · rw [cartanInvolution_slFinTwoBasis_two, map_neg, neg_neg, h8]
+  · simp only [map_smul, cartanInvolution_slFinTwoBasis_two, map_neg,
       LinearMap.smul_apply, smul_neg, neg_neg, h8, smul_eq_mul]
     rw [← mul_assoc, I_mul_I]
     ring

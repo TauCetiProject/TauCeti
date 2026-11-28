@@ -6,26 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
-public import Mathlib.Algebra.Lie.Killing
+public import Mathlib.Algebra.Lie.TraceForm
+
+import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
-import TauCeti.Algebra.Lie.Killing.Subalgebra
+import TauCeti.LinearAlgebra.Trace.Exact
 
 /-!
 # The Killing form of the special linear Lie algebra
 
-The special linear Lie algebra `𝔰𝔩 n R = LieAlgebra.SpecialLinear.sl n R` is an ideal of
-`𝔤𝔩 n R`, since commutators have trace zero, so over a principal ideal domain its Killing form is
-the restriction of that of `𝔤𝔩 n R` (`LieSubalgebra.killingForm_eq_of_lie_mem`). By
-`Matrix.killingForm_apply` this is `2 n trace (X * Y) - 2 trace X * trace Y`, and the second term
-vanishes on trace-free matrices:
+The Killing form of `sl n R` is
 
-`κ(X, Y) = 2 n trace (X * Y)`
+`κ(X, Y) = 2 n trace (X * Y)`,
 
-for `n` the cardinality of the index type.
+where `n` is the cardinality of the index type, over every commutative ring `R`.
+
+When `n` is empty, `sl n R` is trivial and both sides vanish. When `n` is nonempty,
+`0 → sl n R → gl n R --trace--> R → 0` is a short exact sequence of finite free `R`-modules
+whose outer maps commute with `ad X ∘ ad Y` on `sl n R`, `ad X ∘ ad Y` on `gl n R`, and `0` on
+`R` (since commutators are trace-free). Additivity of the trace along this short exact sequence
+(`LinearMap.trace_eq_add_of_exact`) reduces `killingForm R (sl n R)` to `Matrix.killingForm_apply`,
+where the trace-squared term vanishes on trace-free matrices.
 
 ## Main results
 
-* `LieAlgebra.SpecialLinear.killingForm_apply`: `κ(X, Y) = 2 n trace (X * Y)` on `𝔰𝔩 n R`.
+* `LieAlgebra.SpecialLinear.killingForm_apply`: `κ(X, Y) = 2 n trace (X * Y)` on `sl n R`.
 
 ## References
 
@@ -42,16 +47,45 @@ open Matrix
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [IsDomain R]
-  [IsPrincipalIdealRing R]
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
-/-- **The Killing form of `𝔰𝔩 n R`**: `κ(X, Y) = 2 n trace (X * Y)`, over a principal ideal
-domain. -/
+/-- **The Killing form of `sl n R`**: `κ(X, Y) = 2 n trace (X * Y)`, over any commutative
+ring `R`. -/
 theorem killingForm_apply (X Y : sl n R) :
-    killingForm R (sl n R) X Y = 2 * Fintype.card n * ((X : Matrix n n R) * Y).trace := by
-  have hX : (X : Matrix n n R).trace = 0 := X.property
-  rw [LieSubalgebra.killingForm_eq_of_lie_mem (sl n R) fun x _ y ↦
-      LinearMap.mem_ker.2 <| matrix_trace_commutator_zero _ _ x y, Matrix.killingForm_apply, hX]
-  ring
+    killingForm R (sl n R) X Y =
+      2 * Fintype.card n * ((X : Matrix n n R) * (Y : Matrix n n R)).trace := by
+  rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
+  · have := hn
+    have hX : X = 0 := Subtype.ext (Subsingleton.elim _ _)
+    simp [hX]
+  · let i : sl n R →ₗ[R] Matrix n n R := (sl n R).incl.toLinearMap
+    let π : Matrix n n R →ₗ[R] R := Matrix.traceLinearMap n R R
+    have htrace_exact : Function.Exact i π := fun M ↦
+      ⟨fun hM ↦ ⟨⟨M, mem_sl_iff.mpr hM⟩, rfl⟩,
+       fun ⟨X, hX⟩ ↦ hX ▸ mem_sl_iff.mp X.property⟩
+    have htrace_add := LinearMap.trace_eq_add_of_exact
+      (i := i) (π := π)
+      Subtype.val_injective
+      (fun r ↦ ⟨Matrix.single i₀ i₀ r, by simp [π]⟩)
+      htrace_exact
+      (f := ad R (Matrix n n R) X ∘ₗ ad R (Matrix n n R) Y)
+      (fN := ad R (sl n R) X ∘ₗ ad R (sl n R) Y)
+      (fQ := 0)
+      (LinearMap.ext fun Z ↦ by
+        have hY : ad R (Matrix n n R) ↑Y (i Z) = i (ad R (sl n R) Y Z) :=
+          LinearMap.congr_fun ((sl n R).ad_comp_incl_eq Y) Z
+        have hX : ad R (Matrix n n R) ↑X (i (ad R (sl n R) Y Z)) =
+            i (ad R (sl n R) X (ad R (sl n R) Y Z)) :=
+          LinearMap.congr_fun ((sl n R).ad_comp_incl_eq X) (ad R (sl n R) Y Z)
+        dsimp only [LinearMap.comp_apply]
+        rw [hY, hX])
+      (by
+        ext M
+        simp [π, LieAlgebra.matrix_trace_commutator_zero])
+    have hK : killingForm R (Matrix n n R) X Y = killingForm R (sl n R) X Y := by
+      simpa only [killingForm_apply_apply, map_zero, add_zero] using htrace_add
+    rw [← hK, Matrix.killingForm_apply, mem_sl_iff.mp X.property,
+      mem_sl_iff.mp Y.property]
+    ring
 
 end LieAlgebra.SpecialLinear

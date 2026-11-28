@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.Trace.TransposeMul
 
 /-!
 # Positive diagonal-weighted matrix traces
@@ -13,7 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 Nonnegative diagonal weights give a positive functional on matrices. Strictly positive weights
 make this functional faithful on squares, including for rectangular matrices. These facts allow
 finite matrix representations with nonuniform weights to detect null vectors of trace forms.
-Without weights, `Matrix.trace_mul_conjTranspose_self_pos` gives `0 < tr(A Aᴴ)` for `A ≠ 0`.
+Without weights, `Matrix.trace_mul_conjTranspose_self_pos` gives `0 < tr(A Aᴴ)` for `A ≠ 0`, and
+`Matrix.trace_mul_transpose_pos` gives `0 < (X * Xᵀ).trace` over a strictly ordered ring.
 -/
 
 public section
@@ -26,6 +28,8 @@ theorem trace_mul_conjTranspose_self_pos {R m n : Type*} [Ring R] [PartialOrder 
     (hA : A ≠ 0) : 0 < (A * Aᴴ).trace :=
   (posSemidef_self_mul_conjTranspose A).trace_nonneg.lt_of_ne'
     (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hA)
+
+section
 
 variable {R m n : Type*} [Ring R] [PartialOrder R] [StarRing R] [IsOrderedRing R]
   [Fintype m] [Fintype n] [DecidableEq n]
@@ -59,5 +63,19 @@ theorem trace_diagonal_mul_conjTranspose_mul_self_eq_zero_iff
     exact trace_conjTranspose_mul_self_eq_zero_iff.mp (by simp [trace, hdiag])
   · rintro rfl
     simp
+
+end
+
+/-- The trace of `X * Xᵀ` is strictly positive for any nonzero matrix `X` over a strictly ordered
+ring. -/
+theorem trace_mul_transpose_pos {K m n : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K]
+    [Fintype m] [Fintype n] {X : Matrix m n K} (hX : X ≠ 0) :
+    0 < (X * Xᵀ).trace := by
+  have hnonneg : 0 ≤ (X * Xᵀ).trace := by
+    simpa only [transpose_transpose] using trace_transpose_mul_self_nonneg Xᵀ
+  have hne : (X * Xᵀ).trace ≠ 0 := fun h ↦
+    hX <| transpose_eq_zero.mp <| trace_transpose_mul_self_eq_zero_iff.mp <| by
+      simpa only [transpose_transpose] using h
+  exact lt_of_le_of_ne hnonneg hne.symm
 
 end Matrix

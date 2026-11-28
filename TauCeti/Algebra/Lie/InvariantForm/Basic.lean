@@ -43,6 +43,8 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 ## Main results
 
+* `LinearMap.BilinForm.center_le_orthogonal_derivedSeries_one`: for any invariant form over a
+  commutative ring, the centre is contained in the orthogonal complement of the derived ideal.
 * `LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center`: for a right-separating invariant
   form, the orthogonal complement of the derived ideal is the centre.
 * `LinearMap.BilinForm.lie_le_orthogonal_of_lie_eq_bot`: if `⁅I, J⁆ = 0` then `⁅I, I⁆ ⊥ J`.
@@ -169,28 +171,38 @@ open LieAlgebra
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
 
+/-- For any invariant bilinear form over a commutative ring, the centre is contained in the
+orthogonal complement of the derived ideal. -/
+theorem center_le_orthogonal_derivedSeries_one (B : LinearMap.BilinForm K L)
+    (hinv : B.lieInvariant L) :
+    center K L ≤ LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries K L 1) := by
+  intro z hz
+  rw [LieAlgebra.InvariantForm.mem_orthogonal]
+  intro d hd
+  rw [LieModule.mem_maxTrivSubmodule] at hz
+  have hker : (derivedSeries K L 1).toSubmodule ≤ LinearMap.ker (B.flip z) := by
+    rw [← LieIdeal.toLieSubalgebra_toSubmodule, coe_derivedSeries_one_eq]
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨x, y, rfl⟩
+    rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
+      map_zero, neg_zero]
+  simpa only [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] using hker hd
+
 /-- The orthogonal complement of the derived ideal for a right-separating invariant form
 is the centre. -/
 theorem orthogonal_derivedSeries_one_eq_center (B : LinearMap.BilinForm K L)
     (hB : B.SeparatingRight) (hinv : B.lieInvariant L) :
     LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries K L 1) = center K L := by
-  ext z
-  rw [LieAlgebra.InvariantForm.mem_orthogonal, LieModule.mem_maxTrivSubmodule]
-  constructor
-  · intro hz x
-    apply hB
-    intro y
-    have hxy : ⁅x, y⁆ ∈ derivedSeries K L 1 :=
-      LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
-    exact neg_eq_zero.mp ((hinv x y z).symm.trans (hz _ hxy))
-  · intro hz d hd
-    have hker : (derivedSeries K L 1).toSubmodule ≤ LinearMap.ker (B.flip z) := by
-      rw [← LieIdeal.toLieSubalgebra_toSubmodule, coe_derivedSeries_one_eq]
-      refine Submodule.span_le.mpr ?_
-      rintro _ ⟨x, y, rfl⟩
-      rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
-        map_zero, neg_zero]
-    simpa only [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] using hker hd
+  refine le_antisymm ?_ (center_le_orthogonal_derivedSeries_one B hinv)
+  intro z hz
+  rw [LieAlgebra.InvariantForm.mem_orthogonal] at hz
+  rw [LieModule.mem_maxTrivSubmodule]
+  intro x
+  apply hB
+  intro y
+  have hxy : ⁅x, y⁆ ∈ derivedSeries K L 1 :=
+    LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
+  exact neg_eq_zero.mp ((hinv x y z).symm.trans (hz _ hxy))
 
 /-- If the ideals `I` and `J` commute, `⁅I, J⁆ = 0`, then `⁅I, I⁆` is orthogonal to `J` for every
 invariant form: `B Z ⁅X, Y⁆ = -B ⁅X, Z⁆ Y = 0` for `X, Y ∈ I` and `Z ∈ J`. -/

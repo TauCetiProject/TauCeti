@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Semisimple
 import TauCeti.LinearAlgebra.End.Aeval
@@ -14,15 +15,17 @@ import TauCeti.RingTheory.SimpleModule.Basic
 # Products of endomorphisms
 
 This file proves that nilpotence and semisimplicity are preserved by componentwise products of
-endomorphisms, and describes the endomorphisms commuting with a componentwise product `f × g`
-when `f` and `g` have coprime minimal polynomials: they are themselves componentwise products.
-Since the minimal polynomial of `f × g` divides the product of those of `f` and `g`, this
-coprimality passes to iterated products.
+endomorphisms, identifies the eigenspaces of a product `f.prodMap g`, and describes the
+endomorphisms commuting with `f × g` when `f` and `g` have coprime minimal polynomials: they are
+themselves componentwise products. Since the minimal polynomial of `f × g` divides the product of
+those of `f` and `g`, this coprimality passes to iterated products.
 
 ## Main declarations
 
 * `IsNilpotent.prodMap`: a product of nilpotent endomorphisms is nilpotent.
 * `Module.End.IsSemisimple.prodMap`: a product of semisimple endomorphisms is semisimple.
+* `Module.End.eigenspace_prodMap`: the `μ`-eigenspace of `f.prodMap g` is the product of the
+  `μ`-eigenspaces of `f` and `g`.
 * `Module.End.commute_prodMap_iff_of_isCoprime`: if `f` and `g` have coprime minimal polynomials,
   the endomorphisms commuting with `f × g` are the products `a × b` with `a` commuting with `f`
   and `b` commuting with `g`.
@@ -86,6 +89,15 @@ section CommRing
 
 variable {K : Type u} {V : Type v} {W : Type w}
 variable [CommRing K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- The `μ`-eigenspace of a componentwise product of endomorphisms is the product of the
+`μ`-eigenspaces of the factors. -/
+theorem _root_.Module.End.eigenspace_prodMap (f : Module.End K V) (g : Module.End K W) (μ : K) :
+    Module.End.eigenspace (f.prodMap g) μ =
+      (Module.End.eigenspace f μ).prod (Module.End.eigenspace g μ) := by
+  rw [Module.End.eigenspace_def, Module.End.eigenspace_def, Module.End.eigenspace_def,
+    ← LinearMap.ker_prodMap]
+  congr 1
 
 /-- The componentwise product of two semisimple endomorphisms is semisimple. -/
 theorem _root_.Module.End.IsSemisimple.prodMap {f : Module.End K V} {g : Module.End K W}
