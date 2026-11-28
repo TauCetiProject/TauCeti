@@ -12,6 +12,7 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 import TauCeti.Algebra.Homology.ShortComplex.Abelian
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # The Euler characteristic of a bounded complex in abelian and exact `K₀`
@@ -517,16 +518,15 @@ private lemma extend_kernel_d_add_extend_kernel_d (hB : ∀ n, P (Abelian.image 
       extend v (Abelian.image (K.d i (i + 1))) +
         extend v (cokernel (K.sc' i (i + 1) (i + 1 + 1)).abelianImageToKernel) :=
     extend_X₂ v
-      ((ExactStructure.abelian_conflation _).mp
-        (ExactStructure.abelian_conflation_of_mono
-          (K.sc' i (i + 1) (i + 1 + 1)).abelianImageToKernel))
+      (TauCeti.cokernelSequence_shortExact (K.sc' i (i + 1) (i + 1 + 1)).abelianImageToKernel)
       (hB i) hC
   -- `Kⁱ` is an extension of the boundaries by `ker dⁱ`
-  have h₂ := extend_X₂ v
-    ((ExactStructure.abelian_conflation _).mp
-      (ExactStructure.abelian_conflation_of_epi (Abelian.factorThruImage (K.d i (i + 1)))))
-    (P.prop_of_iso ((Abelian.kernelFactorThruImage (K.d i (i + 1))).symm) hZ) (hB i)
-  dsimp only at h₂
+  have h₂ : extend v (K.X i) =
+      extend v (kernel (Abelian.factorThruImage (K.d i (i + 1)))) +
+        extend v (Abelian.image (K.d i (i + 1))) :=
+    extend_X₂ v
+      (TauCeti.kernelSequence_shortExact (Abelian.factorThruImage (K.d i (i + 1))))
+      (P.prop_of_iso ((Abelian.kernelFactorThruImage (K.d i (i + 1))).symm) hZ) (hB i)
   rw [h₁, h₂, extend_congr v e hC,
     ← extend_congr v ((Abelian.kernelFactorThruImage (K.d i (i + 1))).symm) hZ]
   abel

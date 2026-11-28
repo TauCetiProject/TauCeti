@@ -168,9 +168,7 @@ first-quadrant cohomological shapes `ComplexShape.spectralSequenceNat (r, 1 - r)
 def cohomologicalNat (r₀ : ℤ) :
     BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceNat ⟨r, 1 - r⟩) r₀ :=
   (cohomological r₀).comap 0 (fun pq ↦ ((pq.1 : ℤ), (pq.2 : ℤ)))
-    (fun ⟨_, _⟩ ⟨_, _⟩ h ↦ by
-      simp only [Prod.mk.injEq, Nat.cast_inj] at h
-      exact Prod.ext h.1 h.2)
+    (Nat.cast_injective.prodMap Nat.cast_injective)
     (fun r ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
       simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
       simp only [add_zero, ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq]
@@ -184,9 +182,7 @@ cohomological shapes `ComplexShape.spectralSequenceFin l (r, 1 - r)` on `ℤ × 
 def cohomologicalFin (l : ℕ) (r₀ : ℤ) :
     BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceFin l ⟨r, 1 - r⟩) r₀ :=
   (cohomological r₀).comap 0 (fun pq ↦ (pq.1, (pq.2.val : ℤ)))
-    (fun ⟨_, _⟩ ⟨_, _⟩ h ↦ by
-      simp only [Prod.mk.injEq, Nat.cast_inj, Fin.val_inj] at h
-      exact Prod.ext h.1 h.2)
+    (Function.injective_id.prodMap (Nat.cast_injective.comp Fin.val_injective))
     (fun r ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
       simp only [ComplexShape.spectralSequenceFin_rel_iff] at h
       simp only [add_zero, ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq]
@@ -223,9 +219,7 @@ spectral sequence of Mathlib's recipe `coreE₂HomologicalNat`. -/
 def homologicalNat (r₀ : ℤ) :
     BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceNat ⟨-r, r - 1⟩) r₀ :=
   (homological r₀).comap 0 (fun pq ↦ ((pq.1 : ℤ), (pq.2 : ℤ)))
-    (fun ⟨_, _⟩ ⟨_, _⟩ h ↦ by
-      simp only [Prod.mk.injEq, Nat.cast_inj] at h
-      exact Prod.ext h.1 h.2)
+    (Nat.cast_injective.prodMap Nat.cast_injective)
     (fun r ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
       simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
       simp only [add_zero, ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq]

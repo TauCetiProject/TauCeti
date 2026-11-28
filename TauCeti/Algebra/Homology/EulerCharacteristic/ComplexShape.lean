@@ -91,45 +91,31 @@ theorem sum_χ_smul_X_eq_sum_χ_smul_homology [c.EulerCharSigns]
   have hout : ∀ i ∈ s, v (Abelian.image (K.d i (c.next i))) =
       ∑ j ∈ s, if c.Rel i j then v (Abelian.image (K.d i j)) else 0 := by
     intro i _
-    calc v (Abelian.image (K.d i (c.next i)))
-        = if c.next i ∈ s then v (Abelian.image (K.d i (c.next i))) else 0 := by
-          split_ifs with hmem
-          · rfl
-          · exact P.map_eq_zero_of_isZero hv
-              (TauCeti.Abelian.isZero_abelianImage_of_isZero_tgt _ (hs _ hmem))
-      _ = ∑ j ∈ s, if j = c.next i then v (Abelian.image (K.d i j)) else 0 :=
-          (Finset.sum_ite_eq' s (c.next i) (fun j ↦ v (Abelian.image (K.d i j)))).symm
-      _ = ∑ j ∈ s, if c.Rel i j then v (Abelian.image (K.d i j)) else 0 := by
-          refine Finset.sum_congr rfl fun j _ ↦ ?_
-          by_cases hrel : c.Rel i j
-          · simp [hrel, c.next_eq' hrel]
-          · by_cases heq : j = c.next i
-            · subst heq
-              simp only [hrel, ↓reduceIte]
-              exact P.map_eq_zero_of_isZero hv
-                (TauCeti.Abelian.isZero_abelianImage_of_eq_zero (K.shape _ _ hrel))
-            · simp [hrel, heq]
+    symm
+    rw [Finset.sum_eq_single (c.next i)]
+    · split_ifs with hrel
+      · rfl
+      · exact (P.map_eq_zero_of_isZero hv
+          (TauCeti.Abelian.isZero_abelianImage_of_eq_zero (K.shape _ _ hrel))).symm
+    · intro j _ hne
+      exact ite_eq_right fun h ↦ absurd (c.next_eq' h).symm hne
+    · intro hmem
+      rw [P.map_eq_zero_of_isZero hv
+        (TauCeti.Abelian.isZero_abelianImage_of_isZero_tgt _ (hs _ hmem)), ite_self]
   have hin : ∀ j ∈ s, v (Abelian.image (K.d (c.prev j) j)) =
       ∑ i ∈ s, if c.Rel i j then v (Abelian.image (K.d i j)) else 0 := by
     intro j _
-    calc v (Abelian.image (K.d (c.prev j) j))
-        = if c.prev j ∈ s then v (Abelian.image (K.d (c.prev j) j)) else 0 := by
-          split_ifs with hmem
-          · rfl
-          · exact P.map_eq_zero_of_isZero hv
-              (TauCeti.Abelian.isZero_abelianImage_of_isZero_src _ (hs _ hmem))
-      _ = ∑ i ∈ s, if i = c.prev j then v (Abelian.image (K.d i j)) else 0 :=
-          (Finset.sum_ite_eq' s (c.prev j) (fun i ↦ v (Abelian.image (K.d i j)))).symm
-      _ = ∑ i ∈ s, if c.Rel i j then v (Abelian.image (K.d i j)) else 0 := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          by_cases hrel : c.Rel i j
-          · simp [hrel, c.prev_eq' hrel]
-          · by_cases heq : i = c.prev j
-            · subst heq
-              simp only [hrel, ↓reduceIte]
-              exact P.map_eq_zero_of_isZero hv
-                (TauCeti.Abelian.isZero_abelianImage_of_eq_zero (K.shape _ _ hrel))
-            · simp [hrel, heq]
+    symm
+    rw [Finset.sum_eq_single (c.prev j)]
+    · split_ifs with hrel
+      · rfl
+      · exact (P.map_eq_zero_of_isZero hv
+          (TauCeti.Abelian.isZero_abelianImage_of_eq_zero (K.shape _ _ hrel))).symm
+    · intro i _ hne
+      exact ite_eq_right fun h ↦ absurd (c.prev_eq' h).symm hne
+    · intro hmem
+      rw [P.map_eq_zero_of_isZero hv
+        (TauCeti.Abelian.isZero_abelianImage_of_isZero_src _ (hs _ hmem)), ite_self]
   -- Expand `v (K.X i)` in the sum and cancel the paired boundary sums using `c.χ_next`.
   have hsum : ∑ i ∈ s, (c.χ i : ℤ) • v (K.X i) =
       ∑ i ∈ s, (c.χ i : ℤ) • v (K.homology i) +
