@@ -37,6 +37,13 @@ public section
 
 variable {N : ℕ}
 
+/-- Additive homomorphisms from `ZMod N` are determined by the image of `1`. -/
+theorem AddMonoidHom.ext_zmod {A : Type*} [AddMonoid A] {f g : ZMod N →+ A}
+    (h : f 1 = g 1) : f = g := by
+  apply (AddMonoidHom.cancel_right (f := Int.castAddHom (ZMod N)) ZMod.intCast_surjective).mp
+  apply AddMonoidHom.ext_int
+  simpa only [AddMonoidHom.comp_apply, Int.coe_castAddHom, Int.cast_one] using h
+
 /-- The standard generator `1` of `ℤ/Nℤ`, written multiplicatively, generates the group. -/
 theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
     x ∈ Subgroup.zpowers (.ofAdd 1) :=
