@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Analysis.CStarAlgebra.Module.Gram
-public import TauCeti.Analysis.CStarAlgebra.Module.Self
 
-import Mathlib.Topology.Instances.Matrix
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -30,12 +27,9 @@ ring `A` and for finite `n`, `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)` is a finite fr
 * `CStarMatrix.mulVecCLM`: for finite `n` over a (possibly non-unital) normed complex
   algebra `A`, left matrix-vector multiplication bundled complex-linearly in the matrix as
   `CStarMatrix m n A →ₗ[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A)`.
-* `CStarMatrix.isAdjointPair_mulVecCLM_conjTranspose`,
-  `CStarMatrix.isAdjointPair_mulVecCLM_star`:
-  over a (possibly non-unital) C⋆-algebra `A` for finite `m` and `n` (resp. finite `n`),
-  `mulVecCLM M` and `mulVecCLM M.conjTranspose` form a C⋆-module adjoint pair.
-* `CStarMatrix.gram_cols`: over a (possibly non-unital) C⋆-algebra `A` and for finite `m`,
-  the Gram matrix of the columns of `M : CStarMatrix m n A` is `M.conjTranspose * M`.
+* `CStarMatrix.isAdjointPair_mulVecCLM_conjTranspose`: over a (possibly non-unital) C⋆-algebra `A`
+  for finite `m` and `n`, `mulVecCLM M` and `mulVecCLM M.conjTranspose` form a C⋆-module adjoint
+  pair.
 * `CStarMatrix.mulVecLinearMap`: over a unital ring `A` and finite `n`, left matrix-vector
   multiplication bundled additively in the matrix as
   `CStarMatrix m n A →ₗ[ℤ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A)`.
@@ -98,7 +92,7 @@ theorem mulVecCLM_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n
   simp [mulVecCLM_apply, Matrix.mulVec, dotProduct]
 
 /-- `mulVecCLM M` commutes with the right `A`-action on column vectors. -/
-theorem mulVecCLM_op_smul (M : CStarMatrix m n A) (a : A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
+@[simp] theorem mulVecCLM_op_smul (M : CStarMatrix m n A) (a : A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
     mulVecCLM M (op a • v) = op a • mulVecCLM M v := by
   let : DistribSMul Aᵐᵒᵖ A :=
     { smul_zero := fun _ ↦ zero_mul _, smul_add := fun _ _ _ ↦ add_mul _ _ _ }
@@ -129,25 +123,12 @@ theorem isAdjointPair_mulVecCLM_conjTranspose [Fintype m] (M : CStarMatrix m n A
       (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A))).flip
       (mulVecCLM M) (mulVecCLM M.conjTranspose) := by
   rw [isAdjointPair_inner_iff]; intro v w; apply unop_injective
-  simp only [WithCStarModule.pi_inner, Finset.unop_sum, unop_inner_mulOpposite,
-    mulVecCLM_apply_apply, star_sum, star_mul, Finset.sum_mul, conjTranspose_apply]
-  rw [Finset.sum_comm]; simp_rw [Finset.mul_sum, mul_assoc]
-
-/-- Column-vector multiplication by a square matrix `M` and by `star M` form a module adjoint pair
-on `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)`. -/
-theorem isAdjointPair_mulVecCLM_star (M : CStarMatrix n n A) : LinearMap.IsAdjointPair
-      (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A))).flip
-      (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A))).flip (mulVecCLM M) (mulVecCLM (star M)) :=
-  isAdjointPair_mulVecCLM_conjTranspose M
-
-omit [Fintype n] in
-/-- Over a (possibly non-unital) C⋆-algebra, the Gram matrix of the columns of
-`M : CStarMatrix m n A` is `M.conjTranspose * M`. -/
-theorem gram_cols [Fintype m] (M : CStarMatrix m n A) :
-    gram A (fun j ↦ (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (fun i ↦ M i j)) =
-      M.conjTranspose * M := by
-  ext i j
-  simp [gram_apply, WithCStarModule.pi_inner, Finset.unop_sum, mul_apply, conjTranspose_apply]
+  simp only [WithCStarModule.pi_inner, Finset.unop_sum, unop_inner_mulOpposite, mulVecCLM_apply]
+  change star (ofMatrix.symm M *ᵥ WithCStarModule.equiv Aᵐᵒᵖ (n → A) v) ⬝ᵥ
+      WithCStarModule.equiv Aᵐᵒᵖ (m → A) w =
+    star (WithCStarModule.equiv Aᵐᵒᵖ (n → A) v) ⬝ᵥ
+      ((ofMatrix.symm M)ᴴ *ᵥ WithCStarModule.equiv Aᵐᵒᵖ (m → A) w)
+  rw [Matrix.star_mulVec, Matrix.dotProduct_mulVec]
 
 end CStar
 
@@ -205,6 +186,15 @@ theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒ�
     mulVecLinearMap M (mulVecLinearMap N v) = mulVecLinearMap (M * N) v :=
   LinearMap.congr_fun (mulVecLinearMap_comp_mulVecLinearMap M N) v
 
+/-- Column-vector multiplication by `M` and by `M.conjTranspose` as right `A`-linear maps form
+a module adjoint pair on `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)` and `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A)`. -/
+theorem isAdjointPair_mulVecLinearMap_conjTranspose [Fintype m] [CStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] (M : CStarMatrix m n A) :
+    LinearMap.IsAdjointPair (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A))).flip
+      (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A))).flip
+      (mulVecLinearMap M) (mulVecLinearMap M.conjTranspose) := by
+  simpa only [coe_mulVecLinearMap] using isAdjointPair_mulVecCLM_conjTranspose M
+
 /-- Over a unital C⋆-algebra, the Gram matrix of the columns `j ↦ mulVecCLM M (e j)` of a matrix
 `M : CStarMatrix m n A` is `M.conjTranspose * M`. -/
 theorem gram_mulVecCLM_single_one [Fintype m] [DecidableEq n] [CStarAlgebra A] [PartialOrder A]
@@ -214,8 +204,8 @@ theorem gram_mulVecCLM_single_one [Fintype m] [DecidableEq n] [CStarAlgebra A] [
   have hcol (j : n) :
       mulVecCLM M ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm (Pi.single j (1 : A))) =
         (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (fun i ↦ M i j) := by
-    ext i
-    simp [mulVecCLM_apply_apply, Pi.single_apply]
+    rw [mulVecCLM_apply, Equiv.apply_symm_apply, Matrix.mulVec_single_one]
+    rfl
   simpa only [hcol] using gram_cols M
 
 /-- Over a unital C⋆-algebra, the Gram matrix of the columns `j ↦ mulVecCLM p (e j)` of a star

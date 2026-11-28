@@ -5,13 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Module.Self
-
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
-import TauCeti.Analysis.CStarAlgebra.Module.Basic
 
 /-!
 # Gram matrices in right Hilbert C⋆-modules
@@ -36,10 +31,14 @@ for the comparison between finite frames and projections.
 * `TauCeti.CStarMatrix.sum_inner_smul_of_gram_eq_one`: a family with identity Gram matrix
   reconstructs every vector in its right `A`-linear span.
 * `CStarMatrix.gram_nonneg`: Gram matrices are positive.
-* `CStarMatrix.algebraMap_le_gram_iff`: scalar lower bounds `r • 1 ≤ gram A y` in terms of
+* `CStarMatrix.gram_cols`: the Gram matrix of the columns of `M : CStarMatrix m n A` is
+  `M.conjTranspose * M`.
+* `TauCeti.CStarMatrix.algebraMap_le_gram_iff`: scalar lower bounds `r • 1 ≤ gram A y` in terms of
   right linear combinations.
-* `TauCeti.CStarMatrix.exists_gram_eq_one_of_isStrictlyPositive`: a finite family with strictly
-  positive Gram matrix can be renormalized to one with Gram matrix `1` spanning the same vectors.
+* `TauCeti.CStarMatrix.gram_sum_op_smul_sqrt_ringInverse`,
+  `TauCeti.CStarMatrix.sum_op_smul_sqrt_gram`: explicit renormalization of a finite family with
+  strictly positive Gram matrix `M = gram A y` via `CFC.sqrt (Ring.inverse M)` and recovery of the
+  original vectors via `CFC.sqrt M`.
 
 ## References
 
@@ -93,24 +92,13 @@ theorem gram_nonneg [Fintype n] (x : n → E) : 0 ≤ gram A x :=
     rw [sum_star_mul_gram_mul, unop_nonneg]
     exact CStarModule.inner_self_nonneg
 
-/-- Over a unital C⋆-algebra `A`, a real scalar matrix `algebraMap ℝ (CStarMatrix n n A) r` is
-dominated by `gram A y` if and only if every right `A`-linear combination `∑ i, op (w i) • y i`
-satisfies `r • ⟨w, w⟩_A ≤ ⟨∑ i, op (w i) • y i, ∑ i, op (w i) • y i⟩_A`. -/
-theorem algebraMap_le_gram_iff [Fintype n] [DecidableEq n] {A E : Type*}
-    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-    [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-    (y : n → E) {r : ℝ} :
-    algebraMap ℝ (CStarMatrix n n A) r ≤ gram A y ↔
-      ∀ w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A), r • unop (inner Aᵐᵒᵖ w w) ≤
-        unop (inner Aᵐᵒᵖ (∑ i, op (w i) • y i) (∑ i, op (w i) • y i)) := by
-  rw [(gram A y).algebraMap_le_iff_forall_sum_le]
-  refine (WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm.forall_congr fun w ↦ ?_
-  have hw : ∑ i, star (w i) * w i =
-      unop (inner Aᵐᵒᵖ ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm w)
-        ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm w)) := by
-    simp [WithCStarModule.pi_inner, Finset.unop_sum]
-  rw [hw, sum_star_mul_gram_mul]
-  rfl
+/-- Over a (possibly non-unital) C⋆-algebra, the Gram matrix of the columns of
+`M : CStarMatrix m n A` is `M.conjTranspose * M`. -/
+theorem gram_cols {m : Type*} [Fintype m] (M : CStarMatrix m n A) :
+    gram A (fun j ↦ (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (fun i ↦ M i j)) =
+      M.conjTranspose * M := by
+  ext i j
+  simp [gram_apply, WithCStarModule.pi_inner, Finset.unop_sum, mul_apply, conjTranspose_apply]
 
 end CStarMatrix
 
@@ -155,38 +143,68 @@ theorem sum_inner_smul_of_gram_eq_one {x : n → E} (hx : _root_.CStarMatrix.gra
 
 end UnitalAlgebraic
 
-/-- Over a unital C⋆-algebra `A`, a finite family `y : n → E` with strictly positive Gram matrix
-`IsStrictlyPositive (gram A y)` can be renormalized by `B = CFC.sqrt (Ring.inverse (gram A y))`
-to a family `j ↦ ∑ k, op (B k j) • y k` with Gram matrix `1` spanning the same vectors. -/
-theorem exists_gram_eq_one_of_isStrictlyPositive [Fintype n] [DecidableEq n] {A E : Type*}
+/-- Over a unital C⋆-algebra `A`, a real scalar matrix `algebraMap ℝ (CStarMatrix n n A) r` is
+dominated by `gram A y` if and only if every right `A`-linear combination `∑ i, op (w i) • y i`
+satisfies `r • ⟨w, w⟩_A ≤ ⟨∑ i, op (w i) • y i, ∑ i, op (w i) • y i⟩_A`. -/
+theorem algebraMap_le_gram_iff [Fintype n] [DecidableEq n] {A E : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+    (y : n → E) {r : ℝ} :
+    algebraMap ℝ (_root_.CStarMatrix n n A) r ≤ _root_.CStarMatrix.gram A y ↔
+      ∀ w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A), r • unop (inner Aᵐᵒᵖ w w) ≤
+        unop (inner Aᵐᵒᵖ (∑ i, op (w i) • y i) (∑ i, op (w i) • y i)) := by
+  rw [(_root_.CStarMatrix.gram A y).algebraMap_le_iff_forall_sum_le]
+  refine (WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm.forall_congr fun w ↦ ?_
+  have hw : ∑ i, star (w i) * w i =
+      unop (inner Aᵐᵒᵖ ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm w)
+        ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm w)) := by
+    simp [WithCStarModule.pi_inner, Finset.unop_sum]
+  rw [hw, _root_.CStarMatrix.sum_star_mul_gram_mul]
+  rfl
+
+/-- Over a unital C⋆-algebra `A`, renormalizing a finite family `y : n → E` whose Gram matrix
+`M = gram A y` is strictly positive by `B = CFC.sqrt (Ring.inverse M)` produces a family
+`j ↦ ∑ k, op (B k j) • y k` with Gram matrix `1`. -/
+theorem gram_sum_op_smul_sqrt_ringInverse [Fintype n] [DecidableEq n] {A E : Type*}
     [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
     [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E] {y : n → E}
     (hM : IsStrictlyPositive (_root_.CStarMatrix.gram A y)) :
-    ∃ B S : _root_.CStarMatrix n n A,
-      _root_.CStarMatrix.gram A (fun j ↦ ∑ k, op (B k j) • y k) = 1 ∧
-      ∀ k, ∑ j, op (S j k) • ∑ l, op (B l j) • y l = y k := by
+    _root_.CStarMatrix.gram A
+        (fun j ↦ ∑ k, op (CFC.sqrt (Ring.inverse (_root_.CStarMatrix.gram A y)) k j) • y k) =
+      1 := by
   have : ContinuousFunctionalCalculus ℝ (_root_.CStarMatrix n n A) IsSelfAdjoint :=
     IsSelfAdjoint.instContinuousFunctionalCalculus
   set M := _root_.CStarMatrix.gram A y
-  let S := CFC.sqrt M
   let B := CFC.sqrt (Ring.inverse M)
-  have hBS : B * S = 1 := by
-    dsimp only [B, S]
+  ext i j
+  rw [_root_.CStarMatrix.gram_apply, ← _root_.CStarMatrix.sum_star_mul_gram_mul]
+  have hmul : (star B * M * B) i j = ∑ k, ∑ l, star (B k i) * M k l * B l j := by
+    simp only [_root_.CStarMatrix.mul_apply, _root_.CStarMatrix.star_apply, Finset.sum_mul,
+      mul_assoc]
+    exact Finset.sum_comm
+  rw [← hmul, (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq, ← CFC.conjSqrt_apply,
+    CFC.conjSqrt_ringInverse_self M hM]
+
+/-- Over a unital C⋆-algebra `A`, if `M = gram A y` is strictly positive, multiplying the
+`CFC.sqrt (Ring.inverse M)`-renormalized family on the right by `CFC.sqrt M` recovers every
+original vector `y k`. -/
+theorem sum_op_smul_sqrt_gram [Fintype n] [DecidableEq n] {A E : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E] {y : n → E}
+    (hM : IsStrictlyPositive (_root_.CStarMatrix.gram A y)) (k : n) :
+    ∑ j, op (CFC.sqrt (_root_.CStarMatrix.gram A y) j k) •
+        ∑ l, op (CFC.sqrt (Ring.inverse (_root_.CStarMatrix.gram A y)) l j) • y l =
+      y k := by
+  have : ContinuousFunctionalCalculus ℝ (_root_.CStarMatrix n n A) IsSelfAdjoint :=
+    IsSelfAdjoint.instContinuousFunctionalCalculus
+  set M := _root_.CStarMatrix.gram A y
+  have hBS : CFC.sqrt (Ring.inverse M) * CFC.sqrt M = 1 := by
     rw [CFC.sqrt_ringInverse]
     exact Ring.inverse_mul_cancel (CFC.sqrt M) (hM.sqrt M).isUnit
-  refine ⟨B, S, ?_, fun k ↦ ?_⟩
-  · ext i j
-    rw [_root_.CStarMatrix.gram_apply, ← _root_.CStarMatrix.sum_star_mul_gram_mul]
-    have hmul : (star B * M * B) i j = ∑ k, ∑ l, star (B k i) * M k l * B l j := by
-      simp only [_root_.CStarMatrix.mul_apply, _root_.CStarMatrix.star_apply, Finset.sum_mul,
-        mul_assoc]
-      exact Finset.sum_comm
-    rw [← hmul, (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq, ← CFC.conjSqrt_apply,
-      CFC.conjSqrt_ringInverse_self M hM]
-  · simp only [Finset.smul_sum, smul_smul, ← op_mul]
-    rw [Finset.sum_comm]
-    simp_rw [← Finset.sum_smul, ← Finset.op_sum, ← _root_.CStarMatrix.mul_apply, hBS,
-      _root_.CStarMatrix.one_apply, apply_ite op, ite_smul]
-    simp
+  simp only [Finset.smul_sum, smul_smul, ← op_mul]
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.sum_smul, ← Finset.op_sum, ← _root_.CStarMatrix.mul_apply, hBS,
+    _root_.CStarMatrix.one_apply, apply_ite op, ite_smul]
+  simp
 
 end TauCeti.CStarMatrix

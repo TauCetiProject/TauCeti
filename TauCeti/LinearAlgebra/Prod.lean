@@ -452,7 +452,7 @@ theorem map_prodMap_graph {R M₁ M₂ M₃ M₄ : Type*} [Semiring R] [AddCommM
 /-- For a split linear surjection `f ∘ₗ g = LinearMap.id`, the graph of `g` consists of pairs
 `(x, y)` such that `f y = x` and `g (f y) = y`. -/
 theorem coe_graph_eq_of_comp_eq_id {R M N : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] [AddCommMonoid N] [Module R N] (f : N →ₗ[R] M) (g : M →ₗ[R] N)
+    [Module R M] [AddCommMonoid N] [Module R N] (g : M →ₗ[R] N) (f : N →ₗ[R] M)
     (hfg : f ∘ₗ g = LinearMap.id) :
     (g.graph : Set (M × N)) = {p : M × N | f p.2 = p.1 ∧ (g ∘ₗ f) p.2 = p.2} := by
   ext ⟨x, y⟩

@@ -823,3 +823,49 @@ theorem inner_map_eq_flip_cstarModule (f : E ≃ₗᵢ[A] F) (x : E) (y : F) :
 end Left
 
 end LinearIsometryEquiv
+
+namespace TauCeti.CStarModuleUnitary
+
+variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [Module A E] [CStarModule A E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [Module A F] [CStarModule A F]
+
+/-- Over a unital C⋆-algebra `A`, equivalence between bundled module unitaries
+`CStarModuleUnitary A E F` and `A`-linear isometric equivalences `E ≃ₗᵢ[A] F`. -/
+noncomputable def equivLinearIsometryEquiv : CStarModuleUnitary A E F ≃ (E ≃ₗᵢ[A] F) where
+  toFun U :=
+    { toLinearEquiv :=
+        { toFun := U
+          invFun := U.symm
+          left_inv := U.symm_apply_apply
+          right_inv := U.apply_symm_apply
+          map_add' := map_add U
+          map_smul' := U.map_smul_coeff }
+      norm_map' := norm_map U }
+  invFun f :=
+    have : IsScalarTower ℂ A E := CStarModule.isScalarTower A E
+    have : IsScalarTower ℂ A F := CStarModule.isScalarTower A F
+    { toLinearIsometryEquiv :=
+        { toLinearEquiv := f.toLinearEquiv.restrictScalars ℂ
+          norm_map' := f.norm_map }
+      inner_map_map' := f.inner_map_map_cstarModule }
+  left_inv _ := ext fun _ ↦ rfl
+  right_inv _ := LinearIsometryEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivLinearIsometryEquiv_apply (U : CStarModuleUnitary A E F) (x : E) :
+    equivLinearIsometryEquiv U x = U x := (rfl)
+
+@[simp]
+theorem equivLinearIsometryEquiv_symm_apply (f : E ≃ₗᵢ[A] F) (x : E) :
+    (equivLinearIsometryEquiv.symm f : CStarModuleUnitary A E F) x = f x := (rfl)
+
+@[simp]
+theorem equivLinearIsometryEquiv_symm_symm_apply (U : CStarModuleUnitary A E F) (y : F) :
+    (equivLinearIsometryEquiv U).symm y = U.symm y := (rfl)
+
+@[simp]
+theorem symm_equivLinearIsometryEquiv_symm_apply (f : E ≃ₗᵢ[A] F) (y : F) :
+    (equivLinearIsometryEquiv.symm f).symm y = f.symm y := (rfl)
+
+end TauCeti.CStarModuleUnitary

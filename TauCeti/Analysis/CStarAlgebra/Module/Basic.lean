@@ -68,7 +68,7 @@ Riesz theorem.
   `∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for
   any action-preserving function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded
   operator specialization `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`.
-* `CStarModule.tendsto_smul`, `TauCeti.CStarModule.tendsto_unitization_smul`: the action is
+* `CStarModule.tendsto_smul`, `Unitization.tendsto_smul_approximateUnit`: the action is
   essential, `e x → x` along an approximate unit, and
   `(v.fst • e + v.snd * e) z → v.fst • z + v.snd • z` for `v : Unitization ℂ A`.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
@@ -517,16 +517,14 @@ end Essential
 
 end CStarModule
 
-namespace TauCeti.CStarModule
-
-section Essential
+namespace Unitization
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NormedAddCommGroup E] [Module ℂ E]
 
 /-- The action of `Unitization ℂ A` on a Hilbert C⋆-module is approximated along the approximate
 unit of `A` by `(v.fst • e + v.snd * e) • z → v.fst • z + v.snd • z`. -/
-theorem tendsto_unitization_smul [SMul A E] [CStarModule A E] (v : Unitization ℂ A) (z : E) :
+theorem tendsto_smul_approximateUnit [SMul A E] [CStarModule A E] (v : Unitization ℂ A) (z : E) :
     Tendsto (fun e : A ↦ (v.fst • e + v.snd * e) • z)
       (CStarAlgebra.approximateUnit A) (𝓝 (v.fst • z + v.snd • z)) := by
   let : NormedSpace ℂ E := .ofCore (_root_.CStarModule.normedSpaceCore A)
@@ -544,7 +542,9 @@ theorem tendsto_unitization_smul [SMul A E] [CStarModule A E] (v : Unitization �
   refine ((hsmul.const_smul v.fst).add hsnd).congr fun e ↦
     _root_.CStarModule.ext_inner_left (A := A) fun w ↦ by simp [add_mul, mul_assoc, smul_mul_assoc]
 
-end Essential
+end Unitization
+
+namespace TauCeti.CStarModule
 
 /-- Right finite-sum inner product `⟪x, ∑ i ∈ s, y i⟫_A = ∑ i ∈ s, ⟪x, y i⟫_A`, without requiring
 `[StarModule ℂ A]` (compare Mathlib's `CStarModule.inner_sum_right`). -/
@@ -582,6 +582,29 @@ lemma unop_inner_add_add_self_le {A E : Type*} [NonUnitalRing A] [StarRing A] [M
       2 • (unop (inner Aᵐᵒᵖ x x) + unop (inner Aᵐᵒᵖ y y)) := by
   simpa only [unop_smul, unop_add] using
     unop_le_unop.mpr (inner_add_add_self_le (A := Aᵐᵒᵖ) x y)
+
+/-- Scalar-order combine bound for nonnegative elements: if `0 ≤ u`, `0 ≤ v`, and `0 ≤ c`, then
+`c • u + v ≤ (1 + c) • (u + v)`. -/
+lemma smul_add_le_one_add_smul {A : Type*} [AddCommMonoid A] [PartialOrder A]
+    [IsOrderedAddMonoid A] [Module ℝ A] [PosSMulMono ℝ A] {u v : A} (hu : 0 ≤ u) (hv : 0 ≤ v)
+    {c : ℝ} (hc : 0 ≤ c) : c • u + v ≤ (1 + c) • (u + v) :=
+  (add_le_add (le_add_of_nonneg_left hu) (le_add_of_nonneg_right (smul_nonneg hc hv))).trans_eq
+    (by rw [add_add_add_comm, add_smul, one_smul, smul_add])
+
+/-- Parallelogram lower-bound helper for a sum of two vectors when the first vector satisfies
+`⟨x, x⟩_A ≤ c • u` with `0 ≤ u` and `0 ≤ c`:
+`⟨x + y, x + y⟩_A ≤ (2 * (1 + c)) • (u + ⟨y, y⟩_A)`. -/
+lemma unop_inner_add_self_le_of_le_smul {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [PartialOrder A] [Norm Aᵐᵒᵖ] [IsOrderedAddMonoid A] [Module ℝ A] [PosSMulMono ℝ A]
+    [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+    (x y : E) {u : A} (hu : 0 ≤ u) {c : ℝ} (hc : 0 ≤ c)
+    (hx : unop (inner Aᵐᵒᵖ x x) ≤ c • u) :
+    unop (inner Aᵐᵒᵖ (x + y) (x + y)) ≤
+      (2 * (1 + c)) • (u + unop (inner Aᵐᵒᵖ y y)) :=
+  (unop_inner_add_add_self_le (A := A) x y).trans
+    (((nsmul_le_nsmul_right ((add_le_add hx le_rfl).trans
+      (smul_add_le_one_add_smul hu (unop_nonneg.mpr CStarModule.inner_self_nonneg) hc)) 2).trans_eq
+      (by rw [two_smul, ← two_smul ℝ])).trans_eq (mul_smul _ _ _).symm)
 
 end Parallelogram
 
@@ -663,9 +686,9 @@ theorem inner_self_le_of_norm_smul_le {E F : Type*} [AddCommGroup E] [Module ℂ
         (isStrictlyPositive_algebraMap hε))
       (le_add_of_nonneg_right (isStrictlyPositive_algebraMap hε).nonneg)
       (le_of_tendsto_of_tendsto'
-        (tendsto_unitization_smul
+        (Unitization.tendsto_smul_approximateUnit
           (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) y).norm
-        ((tendsto_unitization_smul
+        ((Unitization.tendsto_smul_approximateUnit
           (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) x).norm.const_mul C)
         fun e ↦ h _))
 

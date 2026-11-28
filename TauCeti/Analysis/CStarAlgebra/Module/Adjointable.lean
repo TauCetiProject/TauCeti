@@ -1177,6 +1177,55 @@ theorem le_iff_range_subset_of_isStarProjection [CompleteSpace E] {P Q : Adjoint
 
 end CStarProjections
 
+section CoeffLinear
+
+variable {A E F G : Type*} [Ring A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
+  [Norm A] [NormedAddCommGroup E] [NormedSpace ℂ E] [Module A E] [CStarModule A E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [Module A F] [CStarModule A F]
+  [NormedAddCommGroup G] [NormedSpace ℂ G] [Module A G] [CStarModule A G]
+
+/-- View an adjointable operator `T : AdjointableMap A E F` over a unital coefficient ring `A` as
+an `A`-linear map `E →ₗ[A] F`. -/
+def toCoeffLinearMap (T : AdjointableMap A E F) : E →ₗ[A] F where
+  toFun := T
+  map_add' := map_add T
+  map_smul' := T.map_smul_coeff
+
+@[simp] theorem toCoeffLinearMap_apply (T : AdjointableMap A E F) (x : E) :
+    T.toCoeffLinearMap x = T x := (rfl)
+
+@[simp] theorem coe_toCoeffLinearMap (T : AdjointableMap A E F) : ⇑T.toCoeffLinearMap = ⇑T := (rfl)
+
+@[simp] theorem toCoeffLinearMap_id : (AdjointableMap.id A E).toCoeffLinearMap = LinearMap.id :=
+  (rfl)
+
+@[simp] theorem toCoeffLinearMap_comp (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
+    (S.comp T).toCoeffLinearMap = S.toCoeffLinearMap.comp T.toCoeffLinearMap := (rfl)
+
+@[simp] theorem toCoeffLinearMap_one : (1 : AdjointableMap A E E).toCoeffLinearMap = 1 := (rfl)
+
+@[simp] theorem toCoeffLinearMap_mul (S T : AdjointableMap A E E) :
+    (S * T).toCoeffLinearMap = S.toCoeffLinearMap * T.toCoeffLinearMap := (rfl)
+
+@[simp] theorem toCoeffLinearMap_zero : (0 : AdjointableMap A E F).toCoeffLinearMap = 0 := (rfl)
+
+@[simp] theorem toCoeffLinearMap_add (T S : AdjointableMap A E F) :
+    (T + S).toCoeffLinearMap = T.toCoeffLinearMap + S.toCoeffLinearMap := (rfl)
+
+/-- The forgetful ring homomorphism `AdjointableMap A E E →+* Module.End A E` viewing an
+adjointable endomorphism over a unital coefficient ring `A` as an `A`-linear endomorphism. -/
+def toCoeffLinearMapRingHom : AdjointableMap A E E →+* Module.End A E where
+  toFun := toCoeffLinearMap
+  map_one' := toCoeffLinearMap_one
+  map_mul' := toCoeffLinearMap_mul
+  map_zero' := toCoeffLinearMap_zero
+  map_add' := toCoeffLinearMap_add
+
+@[simp] theorem toCoeffLinearMapRingHom_apply (T : AdjointableMap A E E) :
+    toCoeffLinearMapRingHom T = T.toCoeffLinearMap := (rfl)
+
+end CoeffLinear
+
 end AdjointableMap
 
 end TauCeti
