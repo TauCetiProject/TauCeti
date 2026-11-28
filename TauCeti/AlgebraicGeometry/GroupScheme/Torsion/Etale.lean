@@ -54,6 +54,7 @@ private theorem existsUnique_mulBy_lift (G : CommGrp (Over (Spec (.of K))))
   let G' := (CommGrp.forget₂Grp _).obj G
   let r : (Over.mk t ⟶ G.X) →* (Over.mk (i ≫ t) ⟶ G.X) :=
     ((yonedaGrp.obj G').map j.op).hom
+  -- The map of the group-valued Yoneda presheaf is precomposition by `j`.
   have hr (a : Over.mk t ⟶ G.X) : r a = j ≫ a := rfl
   have hunit : IsUnit (n : B) := by
     obtain ⟨t', _⟩ := Spec.map_surjective t
@@ -63,19 +64,18 @@ private theorem existsUnique_mulBy_lift (G : CommGrp (Over (Spec (.of K))))
     bijective_zpow_ker_squareZero G' t I hI n hunit
   -- Divide the discrepancy between the desired image and the current image in the kernel.
   let d : r.ker := ⟨y / x ^ n, by rw [MonoidHom.mem_ker, map_div, hr, hr, ← h, div_self']⟩
-  obtain ⟨w, hw⟩ := hb.2 d
-  have hw' : (w : Over.mk t ⟶ G.X) ^ n = y / x ^ n := congrArg Subtype.val hw
+  obtain ⟨w, hw⟩ : ∃ w, w ^ n = d := hb.2 d
+  have hw' : (w : Over.mk t ⟶ G.X) ^ n = y / x ^ n := by
+    rw [← Subgroup.coe_zpow, hw]
   refine ⟨(w : Over.mk t ⟶ G.X) * x, ⟨?_, ?_⟩, ?_⟩
   · rw [← hr, map_mul, MonoidHom.mem_ker.mp w.property, one_mul, hr]
   · rw [mul_zpow, hw', div_mul_cancel]
   · rintro z ⟨hz, hzy⟩
     let v : r.ker := ⟨z / x, by rw [MonoidHom.mem_ker, map_div, hr, hr, hz, div_self']⟩
     have hv : v ^ n = w ^ n := by
-      have hwn : w ^ n = d := hw
-      rw [hwn]
+      rw [hw]
       apply Subtype.ext
-      have hdiv : (z / x) ^ n = y / x ^ n := by rw [div_zpow, hzy]
-      exact hdiv
+      simp only [Subgroup.coe_zpow, v, d, div_zpow, hzy]
     have hwz : z / x = (w : Over.mk t ⟶ G.X) := congrArg Subtype.val (hb.1 hv)
     exact div_eq_iff_eq_mul.mp hwz
 
@@ -93,7 +93,6 @@ private theorem formallyEtale_openImmersion_comp_zpow
   have hπ : a ≫ u ≫ G.X.hom = i ≫ t := by
     rw [← Over.w f, reassoc_of% h]
   -- Lift the original point through the smooth affine chart first.
-  have hu : Smooth (u ≫ G.X.hom) := inferInstance
   obtain ⟨l, hl, hlπ⟩ := (AlgebraicGeometry.formallySmooth_iff_exists_lift_quotient
     (u ≫ G.X.hom)).mp inferInstance B I hI a t hπ
   let x : Over.mk t ⟶ G.X := Over.homMk (l ≫ u) (by
@@ -122,11 +121,11 @@ private theorem formallyEtale_openImmersion_comp_zpow
   refine ⟨z', ⟨(cancel_mono u).1 ?_, ?_⟩, ?_⟩
   · rwa [Category.assoc, hz'u]
   · rw [← Category.assoc, hz'u, ← Over.comp_left, hpow, hzb]
-    rfl
+    simp only [y, Over.homMk_left]
   · rintro z₀ ⟨hz₀, hz₀f⟩
     let z₁ : Over.mk t ⟶ G.X := Over.homMk (z₀ ≫ u) (by
       rw [Category.assoc, ← Over.w f, reassoc_of% hz₀f]
-      rfl)
+      simp only [Over.mk_hom, t])
     have hz₁ : j ≫ z₁ = j ≫ x := Over.OverMorphism.ext (by
       simp only [z₁, j, i, x, Over.comp_left, Over.homMk_left, ← Category.assoc, hz₀, hl])
     have hz₁f : z₁ ^ n = y := by

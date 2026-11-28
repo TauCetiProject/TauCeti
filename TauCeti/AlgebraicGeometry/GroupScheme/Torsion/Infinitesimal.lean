@@ -56,6 +56,21 @@ private def tripleLift {R B : Type u} [CommRing R] [CommRing B] (I : Ideal B)
   (f.prod (g.prod h)).codRestrict (squareZeroTriple I) fun x ↦
     ⟨DFunLike.congr_fun h₁ x, DFunLike.congr_fun h₂ x⟩
 
+private lemma triple_coordinate_products_eq_zero {B : Type u} [CommRing B] {I : Ideal B}
+    (hI : I ^ 2 = ⊥) (x y : squareZeroTriple I) :
+    (x.val.1 - x.val.2.2) * (y.val.1 - y.val.2.2) = 0 ∧
+    (x.val.2.1 - x.val.2.2) * (y.val.2.1 - y.val.2.2) = 0 ∧
+    (x.val.1 - x.val.2.2) * (y.val.2.1 - y.val.2.2) = 0 ∧
+    (x.val.2.1 - x.val.2.2) * (y.val.1 - y.val.2.2) = 0 := by
+  have hzero {r s : B} (hr : r ∈ I) (hs : s ∈ I) : r * s = 0 := by
+    have hrs := Ideal.mul_mem_mul hr hs
+    rwa [← pow_two, hI, Ideal.mem_bot] at hrs
+  have hx₁ : x.val.1 - x.val.2.2 ∈ I := Ideal.Quotient.eq.mp x.property.1
+  have hx₂ : x.val.2.1 - x.val.2.2 ∈ I := Ideal.Quotient.eq.mp x.property.2
+  have hy₁ : y.val.1 - y.val.2.2 ∈ I := Ideal.Quotient.eq.mp y.property.1
+  have hy₂ : y.val.2.1 - y.val.2.2 ∈ I := Ideal.Quotient.eq.mp y.property.2
+  exact ⟨hzero hx₁ hy₁, hzero hx₂ hy₂, hzero hx₁ hy₂, hzero hx₂ hy₁⟩
+
 private def tripleCombine {B : Type u} [CommRing B] (I : Ideal B) (hI : I ^ 2 = ⊥)
     (a b : B) : squareZeroTriple I →+* B where
   toFun x := x.val.2.2 + a * (x.val.1 - x.val.2.2) + b * (x.val.2.1 - x.val.2.2)
@@ -73,18 +88,11 @@ private def tripleCombine {B : Type u} [CommRing B] (I : Ideal B) (hI : I ^ 2 = 
       b * (x.val.2.1 + y.val.2.1 - (x.val.2.2 + y.val.2.2)) = _
     ring
   map_mul' x y := by
-    have hzero {r s : B} (hr : r ∈ I) (hs : s ∈ I) : r * s = 0 := by
-      have hrs := Ideal.mul_mem_mul hr hs
-      rwa [← pow_two, hI, Ideal.mem_bot] at hrs
-    have hx₁ : x.val.1 - x.val.2.2 ∈ I := Ideal.Quotient.eq.mp x.property.1
-    have hx₂ : x.val.2.1 - x.val.2.2 ∈ I := Ideal.Quotient.eq.mp x.property.2
-    have hy₁ : y.val.1 - y.val.2.2 ∈ I := Ideal.Quotient.eq.mp y.property.1
-    have hy₂ : y.val.2.1 - y.val.2.2 ∈ I := Ideal.Quotient.eq.mp y.property.2
+    obtain ⟨h₁₁, h₂₂, h₁₂, h₂₁⟩ := triple_coordinate_products_eq_zero hI x y
     -- Expand the two coordinate differences and discard products of corrections.
     change x.val.2.2 * y.val.2.2 + a * (x.val.1 * y.val.1 - x.val.2.2 * y.val.2.2) +
       b * (x.val.2.1 * y.val.2.1 - x.val.2.2 * y.val.2.2) = _
-    linear_combination (a - a ^ 2) * hzero hx₁ hy₁ + (b - b ^ 2) * hzero hx₂ hy₂ -
-      (a * b) * hzero hx₁ hy₂ - (a * b) * hzero hx₂ hy₁
+    linear_combination (a - a ^ 2) * h₁₁ + (b - b ^ 2) * h₂₂ - (a * b) * h₁₂ - (a * b) * h₂₁
 
 private lemma triple_ringHom_ext {R B : Type u} [CommRing R] [CommRing B] {I : Ideal B}
     {f g : R →+* squareZeroTriple I}
@@ -102,9 +110,6 @@ private lemma surjective_specMap_tripleTrd {B : Type u} [CommRing B] (I : Ideal 
   let p := CommRingCat.ofHom (tripleTrd I)
   have hsurj : Function.Surjective p :=
     fun b ↦ ⟨⟨(b, b, b), rfl, rfl⟩, rfl⟩
-  have hprod {a b : B} (ha : a ∈ I) (hb : b ∈ I) : a * b = 0 := by
-    have h := Ideal.mul_mem_mul ha hb
-    rwa [← pow_two, hI, Ideal.mem_bot] at h
   have : IsFirstOrderThickening (Spec.map p) := (IsFirstOrderThickening.SpecMap_iff p hsurj).2 <| by
     apply le_antisymm _ bot_le
     rw [Ideal.mul_le]
@@ -113,14 +118,9 @@ private lemma surjective_specMap_tripleTrd {B : Type u} [CommRing B] (I : Ideal 
     -- The projection is the third coordinate of the enclosing product ring.
     change a.val.2.2 = 0 at ha
     change b.val.2.2 = 0 at hb
-    refine Ideal.mem_bot.mpr (Subtype.ext (Prod.ext ?_ (Prod.ext ?_ ?_)))
-    · apply hprod
-      · simpa [p, ha] using Ideal.Quotient.eq.mp a.property.1
-      · simpa [p, hb] using Ideal.Quotient.eq.mp b.property.1
-    · apply hprod
-      · simpa [p, ha] using Ideal.Quotient.eq.mp a.property.2
-      · simpa [p, hb] using Ideal.Quotient.eq.mp b.property.2
-    · exact mul_eq_zero_of_left ha _
+    obtain ⟨h₁₁, h₂₂, -, -⟩ := triple_coordinate_products_eq_zero hI a b
+    simp only [ha, hb, sub_zero] at h₁₁ h₂₂
+    exact Ideal.mem_bot.mpr (Subtype.ext (Prod.ext h₁₁ (Prod.ext h₂₂ (mul_eq_zero_of_left ha _))))
   exact inferInstanceAs (Surjective (Spec.map p))
 
 private lemma exists_unit_chart {K : Type u} [Field K]
@@ -243,6 +243,15 @@ private abbrev triplePointTrd {S : Scheme.{u}} {B : CommRingCat.{u}}
     (t : Spec B ⟶ S) (I : Ideal B) : Over.mk t ⟶ Over.mk (tripleBase t I) :=
   overTripleMap t I (tripleTrd I) rfl
 
+private lemma overTripleMap_comp_specMap {S X : Scheme.{u}} {B R : CommRingCat.{u}}
+    {t : Spec B ⟶ S} {I : Ideal B} (inc : Spec R ⟶ X)
+    (a : R →+* squareZeroTriple I) (p : squareZeroTriple I →+* B)
+    (hp : p.comp (tripleDiagonal I) = RingHom.id B) :
+    (overTripleMap t I p hp).left ≫ Spec.map (CommRingCat.ofHom a) ≫ inc =
+      Spec.map (CommRingCat.ofHom (p.comp a)) ≫ inc := by
+  simp only [overTripleMap, Over.homMk_left, ← Category.assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp]
+
 private lemma exists_triple_point {A B R : CommRingCat.{u}}
     (G : Grp (Over (Spec A))) {t : Spec B ⟶ Spec A} (I : Ideal B) (inc : Spec R ⟶ G.X.left)
     {x y z : Over.mk t ⟶ G.X} {a b c : R →+* B}
@@ -255,30 +264,23 @@ private lemma exists_triple_point {A B R : CommRingCat.{u}}
       p.left = Spec.map (CommRingCat.ofHom (tripleLift I a b c h₁ h₂)) ≫ inc ∧
       triplePointFst t I ≫ p = x ∧ triplePointSnd t I ≫ p = y ∧
       triplePointTrd t I ≫ p = z := by
-  let f := Spec.map (CommRingCat.ofHom (tripleLift I a b c h₁ h₂)) ≫ inc
-  have hf₁ : (triplePointFst t I).left ≫ f = x.left := by
-    simp only [f, ← Category.assoc, triplePointFst, overTripleMap, Over.homMk_left,
-      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    exact ha
-  have hf₂ : (triplePointSnd t I).left ≫ f = y.left := by
-    simp only [f, ← Category.assoc, triplePointSnd, overTripleMap, Over.homMk_left,
-      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    exact hb
-  have hf₃ : (triplePointTrd t I).left ≫ f = z.left := by
-    simp only [f, ← Category.assoc, triplePointTrd, overTripleMap, Over.homMk_left,
-      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    exact hc
-  have hbase : f ≫ G.X.hom = tripleBase t I := by
-    apply tripleRing_spec_hom_ext I
-    · calc
-        _ = t := (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ G.X.hom) hf₁).trans (Over.w x))
-        _ = _ := (Over.w (triplePointFst t I)).symm
-    · calc
-        _ = t := (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ G.X.hom) hf₂).trans (Over.w y))
-        _ = _ := (Over.w (triplePointSnd t I)).symm
-    · calc
-        _ = t := (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ G.X.hom) hf₃).trans (Over.w z))
-        _ = _ := (Over.w (triplePointTrd t I)).symm
+  let lift := tripleLift I a b c h₁ h₂
+  let f := Spec.map (CommRingCat.ofHom lift) ≫ inc
+  have hf₁ : (triplePointFst t I).left ≫ f = x.left :=
+    (overTripleMap_comp_specMap (t := t) inc lift (tripleFst I) rfl).trans ha
+  have hf₂ : (triplePointSnd t I).left ≫ f = y.left :=
+    (overTripleMap_comp_specMap (t := t) inc lift (tripleSnd I) rfl).trans hb
+  have hf₃ : (triplePointTrd t I).left ≫ f = z.left :=
+    (overTripleMap_comp_specMap (t := t) inc lift (tripleTrd I) rfl).trans hc
+  have hbase_of_projection (j : Over.mk t ⟶ Over.mk (tripleBase t I))
+      (g : Over.mk t ⟶ G.X) (hj : j.left ≫ f = g.left) :
+      j.left ≫ f ≫ G.X.hom = j.left ≫ tripleBase t I := by
+    rw [← Category.assoc, hj]
+    exact (Over.w g).trans (Over.w j).symm
+  have hbase : f ≫ G.X.hom = tripleBase t I :=
+    tripleRing_spec_hom_ext I (hbase_of_projection (triplePointFst t I) x hf₁)
+      (hbase_of_projection (triplePointSnd t I) y hf₂)
+      (hbase_of_projection (triplePointTrd t I) z hf₃)
   exact ⟨Over.homMk f hbase, rfl, Over.OverMorphism.ext hf₁, Over.OverMorphism.ext hf₂,
     Over.OverMorphism.ext hf₃⟩
 
@@ -289,8 +291,8 @@ private lemma comp_chart {S : Scheme.{u}} (G : Grp (Over S))
     (f : squareZeroTriple I →+* B) (hf : f.comp (tripleDiagonal I) = RingHom.id B) :
     (overTripleMap t I f hf ≫ p).left =
       Spec.map (CommRingCat.ofHom (f.comp a)) ≫ inc := by
-  simp only [Over.comp_left, overTripleMap, Over.homMk_left, ha, ← Category.assoc,
-    CommRingCat.ofHom_comp, Spec.map_comp]
+  rw [Over.comp_left, ha]
+  exact overTripleMap_comp_specMap inc a f hf
 
 private lemma tripleCombine_comp_tripleDiagonal {B : Type u} [CommRing B] (I : Ideal B)
     (hI : I ^ 2 = ⊥) (a b : B) :
@@ -344,15 +346,11 @@ private lemma chart_coordinates_mul {A B R : CommRingCat.{u}}
     simp only [Set.range_subset_iff, Scheme.Hom.comp_apply]
     exact fun _ ↦ Set.mem_range_self _
   obtain ⟨d, hd⟩ := inc.exists_specMap_comp_eq_of_range_subset (p * q).left hrange
-  have hd₁ : (tripleFst I).comp d = c x :=
-    inc.eq_of_specMap_comp_eq ((comp_chart G inc hd.symm _ rfl).symm.trans
-      ((congrArg Over.Hom.left h₁).trans (hc x).symm))
-  have hd₂ : (tripleSnd I).comp d = c y :=
-    inc.eq_of_specMap_comp_eq ((comp_chart G inc hd.symm _ rfl).symm.trans
-      ((congrArg Over.Hom.left h₂).trans (hc y).symm))
-  have hd₃ : (tripleTrd I).comp d = c 1 :=
-    inc.eq_of_specMap_comp_eq ((comp_chart G inc hd.symm _ rfl).symm.trans
-      ((congrArg Over.Hom.left h₃).trans (hc 1).symm))
+  have hd_comp (f : squareZeroTriple I →+* B)
+      (hf : f.comp (tripleDiagonal I) = RingHom.id B) (z : reductionKernel G t I)
+      (hz : overTripleMap t I f hf ≫ (p * q) = z) : f.comp d = c z :=
+    inc.eq_of_specMap_comp_eq ((comp_chart G inc hd.symm f hf).symm.trans
+      ((congrArg Over.Hom.left hz).trans (hc z).symm))
   let f := tripleCombine I hI 1 1
   let j := overTripleMap t I f (tripleCombine_comp_tripleDiagonal I hI 1 1)
   have hpx : j ≫ p = x := Over.OverMorphism.ext (by
@@ -366,7 +364,8 @@ private lemma chart_coordinates_mul {A B R : CommRingCat.{u}}
   -- Read the three solved coordinate maps in the formula defining the combining map.
   change (tripleTrd I).comp d r + 1 * ((tripleFst I).comp d r - (tripleTrd I).comp d r) +
     1 * ((tripleSnd I).comp d r - (tripleTrd I).comp d r) - c 1 r = _
-  rw [hd₁, hd₂, hd₃]
+  rw [hd_comp (tripleFst I) rfl x h₁, hd_comp (tripleSnd I) rfl y h₂,
+    hd_comp (tripleTrd I) rfl 1 h₃]
   ring
 
 private lemma exists_scaled_coordinates {A B R : CommRingCat.{u}}
