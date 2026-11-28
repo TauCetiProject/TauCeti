@@ -55,6 +55,12 @@ force the commutation with `ω` of morphisms in `⟨X⟩`.
   `ObjectProperty.restrictEndAlgHom` from the algebra of `⟨X⟩` to that of `⟨Y⟩` followed by
   evaluation at `Y` is the component at `Y`. Unit and composition laws of the transition maps are
   `ObjectProperty.restrictEndAlgHom_refl` and `ObjectProperty.restrictEndAlgHom_comp`.
+* `CategoryTheory.Functor.hullRestrict`: the same transition map between the algebras
+  `hullAlgebra X → hullAlgebra Y`, with its unit and composition laws
+  `CategoryTheory.Functor.hullRestrict_self` and `CategoryTheory.Functor.hullRestrict_comp`.
+* `CategoryTheory.Functor.hullAction`: the action of `hullAlgebra X` on the fibre of every
+  `Y ∈ ⟨X⟩`, which commutes with `ω g` for every morphism `g` in `⟨X⟩`
+  (`CategoryTheory.Functor.map_hullAction_apply`).
 
 ## References
 
@@ -347,6 +353,82 @@ noncomputable def hullEndAlgEquiv : End ((subquotientHull X).ι ⋙ ω) ≃ₐ[R
 theorem coe_hullEndAlgEquiv_apply (η : End ((subquotientHull X).ι ⋙ ω)) :
     (ω.hullEndAlgEquiv X η : Module.End R (ω.obj X)) = ω.hullEvalAlgHom X η :=
   (rfl)
+
+/-! ### Transition maps and actions on members of the hull -/
+
+variable {Z Y' : C}
+
+/-- For `Y` in the hull of `X`, the transition map `hullAlgebra X → hullAlgebra Y` between nested
+hulls: `ObjectProperty.restrictEndAlgHom` read through the identifications `hullEndAlgEquiv` of
+both algebras. An element `f` of `hullAlgebra X` defines a natural endomorphism of `ω` on the
+hull of `X`, and `hullRestrict h f` is its component at `Y`
+(`CategoryTheory.Functor.coe_hullRestrict_apply`). -/
+noncomputable def hullRestrict (h : subquotientHull X Y) :
+    ω.hullAlgebra X →ₐ[R] ω.hullAlgebra Y :=
+  (ω.hullEndAlgEquiv Y).toAlgHom.comp
+    ((ObjectProperty.restrictEndAlgHom (subquotientHull_le_of_mem h) ω).comp
+      (ω.hullEndAlgEquiv X).symm.toAlgHom)
+
+/-- The transition map takes the component at `Y` of the natural endomorphism defined by an
+element of `hullAlgebra X`. -/
+theorem coe_hullRestrict_apply (h : subquotientHull X Y) (f : ω.hullAlgebra X) :
+    (ω.hullRestrict h f : Module.End R (ω.obj Y)) =
+      (((ω.hullEndAlgEquiv X).symm f).asHom.app ⟨Y, h⟩).hom := by
+  simp [hullRestrict, ObjectProperty.ιOfLE]
+
+/-- The transition map from the hull of `X` to itself is the identity. -/
+@[simp]
+theorem hullRestrict_self (h : subquotientHull X X) : ω.hullRestrict h = AlgHom.id R _ :=
+  AlgHom.ext fun f ↦ by simp [hullRestrict]
+
+/-- Transition maps between nested hulls compose. -/
+theorem hullRestrict_comp (h : subquotientHull X Y) (h' : subquotientHull Y Z) :
+    (ω.hullRestrict h').comp (ω.hullRestrict h) =
+      ω.hullRestrict (subquotientHull_le_of_mem h _ h') :=
+  AlgHom.ext fun f ↦ Subtype.ext <| by
+    simp [hullRestrict, ObjectProperty.ιOfLE]
+
+/-- The action of `hullAlgebra X` on the fibre of a member `Y` of the hull of `X`: an element
+`f` acts by the component at `Y` of the natural endomorphism it defines. Every `ω g`, for a
+morphism `g` in the hull, commutes with this action
+(`CategoryTheory.Functor.map_hullAction_apply`). -/
+noncomputable def hullAction (h : subquotientHull X Y) :
+    ω.hullAlgebra X →ₐ[R] Module.End R (ω.obj Y) :=
+  (ω.hullAlgebra Y).val.comp (ω.hullRestrict h)
+
+/-- An element of `hullAlgebra X` acts on the fibre of `Y` by the component at `Y` of the natural
+endomorphism it defines. -/
+theorem hullAction_apply (h : subquotientHull X Y) (f : ω.hullAlgebra X) :
+    ω.hullAction h f = (((ω.hullEndAlgEquiv X).symm f).asHom.app ⟨Y, h⟩).hom :=
+  ω.coe_hullRestrict_apply h f
+
+/-- The image under `hullEndAlgEquiv` of a natural endomorphism acts on the fibre of `Y` by its
+component at `Y`. -/
+@[simp]
+theorem hullAction_hullEndAlgEquiv (h : subquotientHull X Y)
+    (η : End ((subquotientHull X).ι ⋙ ω)) :
+    ω.hullAction h (ω.hullEndAlgEquiv X η) = (η.asHom.app ⟨Y, h⟩).hom := by
+  rw [hullAction_apply, AlgEquiv.symm_apply_apply]
+
+/-- `hullAlgebra X` acts on the fibre of `X` itself by evaluation. -/
+@[simp]
+theorem hullAction_self (h : subquotientHull X X) (f : ω.hullAlgebra X) :
+    ω.hullAction h f = f := by
+  simp [hullAction]
+
+/-- Acting through a transition map is acting directly. -/
+theorem hullAction_comp_hullRestrict (h : subquotientHull X Y) (h' : subquotientHull Y Z) :
+    (ω.hullAction h').comp (ω.hullRestrict h) =
+      ω.hullAction (subquotientHull_le_of_mem h _ h') := by
+  rw [hullAction, AlgHom.comp_assoc, hullRestrict_comp, hullAction]
+
+/-- The image under `ω` of a morphism between members of the hull of `X` commutes with the
+action of `hullAlgebra X`. -/
+theorem map_hullAction_apply (h : subquotientHull X Y) (h' : subquotientHull X Y')
+    (g : Y ⟶ Y') (f : ω.hullAlgebra X) (y : ω.obj Y) :
+    (ω.map g).hom (ω.hullAction h f y) = ω.hullAction h' f ((ω.map g).hom y) := by
+  simp only [hullAction_apply]
+  exact ω.map_hom_app_hom_apply _ (Y := ⟨Y, h⟩) (Y' := ⟨Y', h'⟩) g y
 
 end Exact
 
