@@ -22,7 +22,7 @@ Mathlib proves that the `n`-fold iterate `deriv^[n] f` of an analytic function `
 complete normed space is analytic (`AnalyticAt.iterated_deriv`). This file proves the parametric
 two-variable versions: if `f : E × 𝕜 → F` is jointly analytic at `p`, then
 `(q : E × 𝕜) ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2` is jointly analytic at `p`
-(`AnalyticAt.iteratedDeriv_snd`), its vertical Taylor coefficient
+(`AnalyticAt.iteratedDeriv_snd`, `AnalyticOnNhd.iteratedDeriv_snd`), its vertical Taylor coefficient
 `x ↦ iteratedDeriv n (fun y ↦ f (x, y)) p.2` is analytic at `p.1`
 (`AnalyticAt.curry_left_iteratedDeriv_snd`), the `n`-th iterated derivative in the first
 scalar variable is jointly analytic (`AnalyticAt.iteratedDeriv_fst`,
@@ -113,6 +113,13 @@ jointly analytic on `s`. -/
 theorem iteratedDeriv_fst {f : 𝕜 × E → F} {s : Set (𝕜 × E)} (hf : AnalyticOnNhd 𝕜 f s)
     (n : ℕ) : AnalyticOnNhd 𝕜 (fun q : 𝕜 × E ↦ iteratedDeriv n (fun x ↦ f (x, q.2)) q.1) s :=
   fun p hp ↦ (hf p hp).iteratedDeriv_fst n
+
+/-- If `f : E × 𝕜 → F` is jointly analytic on `s` and `F` is complete, then the `n`-th iterated
+derivative in the second variable `(q : E × 𝕜) ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2` is
+jointly analytic on `s`. -/
+theorem iteratedDeriv_snd {f : E × 𝕜 → F} {s : Set (E × 𝕜)} (hf : AnalyticOnNhd 𝕜 f s)
+    (n : ℕ) : AnalyticOnNhd 𝕜 (fun q : E × 𝕜 ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2) s :=
+  fun p hp ↦ (hf p hp).iteratedDeriv_snd n
 
 end AnalyticOnNhd
 

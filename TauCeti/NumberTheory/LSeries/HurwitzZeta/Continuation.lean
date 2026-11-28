@@ -276,7 +276,7 @@ private theorem neg_hurwitzStageIndex_lt_re (s : ℂ) : -(hurwitzStageIndex s : 
   have h2 : max 0 (1 - s.re) < (⌊max 0 (1 - s.re)⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
   push_cast; linarith
 
-private theorem hurwitzCore_eq_stage {M : ℕ} {s : ℂ} (hs : -(M : ℝ) < s.re) (c : ℂ) :
+private theorem hurwitzCore_eq_hurwitzStageCore {M : ℕ} {s : ℂ} (hs : -(M : ℝ) < s.re) (c : ℂ) :
     hurwitzCore s c = hurwitzStageCore M s c := by
   unfold hurwitzCore
   rcases le_total M (hurwitzStageIndex s) with hle | hge
@@ -294,7 +294,7 @@ private theorem analyticOnNhd_hurwitzCore :
       (isOpen_lt continuous_const (continuous_re.comp continuous_snd))).mem_nhds hp₀_mem
   refine (analyticOnNhd_hurwitzStageCore N p₀ hp₀_mem).congr ?_
   filter_upwards [hopen] with p hp
-  exact (hurwitzCore_eq_stage hp.1 p.2).symm
+  exact (hurwitzCore_eq_hurwitzStageCore hp.1 p.2).symm
 
 /-- For `0 < c.re`, the canonical meromorphic continuation of `complexHurwitzSeries s c` in
 `s ∈ ℂ`, jointly holomorphic on `{p : ℂ × ℂ | p.1 ≠ 1 ∧ 0 < p.2.re}`. -/
@@ -311,13 +311,13 @@ noncomputable def complexHurwitzZeta₁ (s c : ℂ) : ℂ :=
 theorem complexHurwitzZeta_eq_inv_Gamma_div_add_hurwitzStageCore {M : ℕ} {s : ℂ}
     (hs : -(M : ℝ) < s.re) (c : ℂ) :
     complexHurwitzZeta s c = (Gamma s)⁻¹ / (s - 1) + hurwitzStageCore M s c := by
-  rw [complexHurwitzZeta, hurwitzCore_eq_stage hs c]
+  rw [complexHurwitzZeta, hurwitzCore_eq_hurwitzStageCore hs c]
 
 /-- Stage-`M` representation of `complexHurwitzZeta₁ s c` on `-(M : ℝ) < s.re`. -/
 theorem complexHurwitzZeta₁_eq_inv_Gamma_add_mul_hurwitzStageCore {M : ℕ} {s : ℂ}
     (hs : -(M : ℝ) < s.re) (c : ℂ) :
     complexHurwitzZeta₁ s c = (Gamma s)⁻¹ + (s - 1) * hurwitzStageCore M s c := by
-  rw [complexHurwitzZeta₁, hurwitzCore_eq_stage hs c]
+  rw [complexHurwitzZeta₁, hurwitzCore_eq_hurwitzStageCore hs c]
 
 /-- Away from `s = 1`, `complexHurwitzZeta₁ s c = (s - 1) * complexHurwitzZeta s c`. -/
 theorem complexHurwitzZeta₁_eq_sub_one_mul {s : ℂ} (hs : s ≠ 1) (c : ℂ) :
@@ -515,7 +515,7 @@ theorem complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi {s c : ℂ} (hs : 1 < s
   have hint_Ioc : IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioc 0 1) :=
     (integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg hs hc).mono_set Ioc_subset_Ioi_self
-  rw [complexHurwitzZeta, hurwitzCore_eq_stage hs0 c]
+  rw [complexHurwitzZeta, hurwitzCore_eq_hurwitzStageCore hs0 c]
   unfold hurwitzStageCore
   rw [hurwitzTailIntegral_def]
   rw [Finset.Icc_eq_empty_of_lt one_pos, Finset.sum_empty, add_zero]
@@ -524,7 +524,7 @@ theorem complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi {s c : ℂ} (hs : 1 < s
       (Gamma s)⁻¹ * ((hurwitzHeadIntegral 0 s c + 1 / (s - 1)) + tail) := by ring
   rw [hcomb, hurwitzHeadIntegral_zero_add_one_div hs c,
     ← setIntegral_union (Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
-      hint_Ioc (integrableOn_Ioi_one_cpow_mul_exp_neg_mul_div_one_sub_exp_neg s hc),
+      hint_Ioc (integrableOn_Ioi_cpow_mul_exp_neg_mul_div_one_sub_exp_neg one_pos s hc),
     Ioc_union_Ioi_eq_Ioi zero_le_one]
 
 /-- For `1 < s.re` and `0 < c.re`, the continuation `complexHurwitzZeta s c` agrees with the
@@ -537,11 +537,11 @@ theorem complexHurwitzZeta_eq_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (
 
 /-! ### Nonpositive integer Bernoulli values -/
 
-private theorem complexHurwitzZeta_neg_nat_eq_hurwitzBernoulliCoeff (m : ℕ) (c : ℂ) :
+private theorem complexHurwitzZeta_neg_nat_eq_hurwitzBernoulliCoeff_mul (m : ℕ) (c : ℂ) :
     complexHurwitzZeta (-(m : ℂ)) c =
       hurwitzBernoulliCoeff (m + 1) c * ((-1 : ℂ) ^ m * m.factorial) := by
   have hlt : -((m + 1 : ℕ) : ℝ) < (-(m : ℂ)).re := by push_cast; simp
-  rw [complexHurwitzZeta, hurwitzCore_eq_stage hlt c]
+  rw [complexHurwitzZeta, hurwitzCore_eq_hurwitzStageCore hlt c]
   unfold hurwitzStageCore
   simp only [Gamma_neg_nat_eq_zero, inv_zero, zero_div, zero_mul, zero_add]
   have hterm : ∀ k ∈ Finset.Icc 1 (m + 1), hurwitzBernoulliCoeff k c *
@@ -563,7 +563,7 @@ private theorem complexHurwitzZeta_neg_nat_eq_hurwitzBernoulliCoeff (m : ℕ) (c
 theorem complexHurwitzZeta_neg_nat (m : ℕ) (c : ℂ) :
     complexHurwitzZeta (-(m : ℂ)) c =
       -((Polynomial.bernoulli (m + 1)).map (algebraMap ℚ ℂ)).eval c / (m + 1) := by
-  rw [complexHurwitzZeta_neg_nat_eq_hurwitzBernoulliCoeff, hurwitzBernoulliCoeff_def,
+  rw [complexHurwitzZeta_neg_nat_eq_hurwitzBernoulliCoeff_mul, hurwitzBernoulliCoeff_def,
     Polynomial.eval_map_algebraMap, Nat.factorial_succ]
   have hfm : (m.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero m)
   have hm1 : (m + 1 : ℂ) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero m
@@ -575,7 +575,7 @@ theorem complexHurwitzZeta_neg_nat (m : ℕ) (c : ℂ) :
 /-- At `s = 0`, `complexHurwitzZeta 0 c = 1 / 2 - c`. -/
 @[simp]
 theorem complexHurwitzZeta_zero_left (c : ℂ) : complexHurwitzZeta 0 c = 1 / 2 - c := by
-  simpa using complexHurwitzZeta_neg_nat_eq_hurwitzBernoulliCoeff 0 c
+  simpa using complexHurwitzZeta_neg_nat_eq_hurwitzBernoulliCoeff_mul 0 c
 
 example : complexHurwitzZeta (-1) 1 = -1 / 12 := by
   have h := complexHurwitzZeta_neg_nat 1 1

@@ -146,6 +146,7 @@ theorem abs_im_snd_lt_subset_dslope_exp_neg_ne_zero {E : Type*} :
   fun _ hp => dslope_exp_ne_zero_of_abs_im_sub_lt (by simpa using hp)
 
 /-- On the real axis, `dslope Complex.exp (x : ℂ) (y : ℂ)` does not vanish. -/
+@[simp]
 theorem dslope_exp_ofReal_ne_zero (x y : ℝ) : dslope exp (x : ℂ) (y : ℂ) ≠ 0 :=
   dslope_exp_ne_zero_of_abs_im_sub_lt (by simp [Real.pi_pos])
 
