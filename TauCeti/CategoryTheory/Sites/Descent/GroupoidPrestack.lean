@@ -169,6 +169,12 @@ lemma toPseudofunctor_map_map_arr {U V : LocallyDiscrete Cᵒᵖ} (f : U ⟶ V)
     (((toPseudofunctor.{w'} G).map f).toFunctor.map φ).arr = G.R.obj.map f.as φ.arr :=
   (rfl)
 
+/-- The unit comparison of the pseudofunctor of `G` is induced by preservation of identities
+by `fiberFunctor`. -/
+lemma toPseudofunctor_mapId (U : LocallyDiscrete Cᵒᵖ) :
+    (toPseudofunctor.{w'} G).mapId U = eqToIso ((fiberFunctor.{w'} G).map_id U.as) :=
+  Functor.toPseudofunctor'_mapId _ _
+
 /-- The comparison isomorphisms of the pseudofunctor of `G` for composites are identities. -/
 lemma toPseudofunctor_mapComp' {U V W : LocallyDiscrete Cᵒᵖ} (f : U ⟶ V) (g : V ⟶ W)
     (fg : U ⟶ W) (h : f ≫ g = fg) :
@@ -263,3 +269,22 @@ instance isPrestack_toPseudofunctor : (toPseudofunctor.{w'} G).IsPrestack J wher
         (hf.2.trans (Over.map_left_op_map_hom_op G.X.obj f y.as).symm)
 
 end TauCeti.CategoryTheory.GroupoidObject
+
+namespace CategoryTheory.Sheaf.MulActionSheaf.actionGroupoid
+
+open TauCeti.CategoryTheory
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} {G : Sheaf J GrpCat.{w}}
+  {X : MulActionSheaf G}
+
+/-- Restricting an action-groupoid morphism restricts its corresponding group section. -/
+@[simp]
+lemma homEquiv_pullFunctor_map {U V : Cᵒᵖ} (f : U ⟶ V)
+    {x y : GroupoidObject.Fiber.{w'} X.actionGroupoid U} (φ : x ⟶ y) :
+    (homEquiv ((X.actionGroupoid.pullFunctor f).obj x)
+      ((X.actionGroupoid.pullFunctor f).obj y) ((X.actionGroupoid.pullFunctor f).map φ) :
+        G.obj.obj V) = G.obj.map f (homEquiv x y φ) := by
+  rw [homEquiv_apply_coe, homEquiv_apply_coe, GroupoidObject.pullFunctor_map_arr]
+  rfl
+
+end CategoryTheory.Sheaf.MulActionSheaf.actionGroupoid
