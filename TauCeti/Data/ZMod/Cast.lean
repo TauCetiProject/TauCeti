@@ -38,7 +38,7 @@ theorem preimage_cast_setOf_cast_eq {n m d : ℕ} (hm : n ∣ m) (hd : m ∣ d) 
 /-- Reducing a class through the identification `ZMod.ringEquivCongr` of `ZMod m` with `ZMod n`,
 for `m = n`, is reducing it directly. -/
 @[simp]
-theorem cast_ringEquivCongr {m n : ℕ} {R : Type*} [Ring R] (h : m = n) (x : ZMod m) :
+theorem cast_ringEquivCongr {m n : ℕ} {R : Type*} [AddGroupWithOne R] (h : m = n) (x : ZMod m) :
     (cast (ringEquivCongr h x) : R) = cast x := by
   subst h
   rw [ringEquivCongr_refl_apply]

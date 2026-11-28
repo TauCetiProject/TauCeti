@@ -154,8 +154,12 @@ reduction of `a`. -/
 theorem unitsMap_unitsEquivProd_symm_of_dvd {d : ℕ} (h : Q ∥ N) (hd : d ∣ Q)
     (a : (ZMod Q)ˣ) (b : (ZMod (N / Q))ˣ) :
     ZMod.unitsMap (hd.trans h.dvd) (h.unitsEquivProd.symm (a, b)) = ZMod.unitsMap hd a := by
-  rw [← ZMod.unitsMap_comp hd h.dvd, MonoidHom.comp_apply, ← h.unitsEquivProd_apply_fst,
-    MulEquiv.apply_symm_apply]
+  rw [← ZMod.unitsMap_comp hd h.dvd, MonoidHom.comp_apply]
+  congr 1
+  apply Units.ext
+  simpa [unitsEquivProd, ZMod.unitsMap_val, ZMod.ringEquivCongr_symm,
+    -ZMod.unitsMap_unitsChineseRemainder_symm_fst] using
+    congrArg Units.val (ZMod.unitsMap_unitsChineseRemainder_symm_fst h.coprime (a, b))
 
 /-- **Reducing a Chinese remainder lift modulo a divisor of `N / Q`.** For `Q ∥ N` and
 `d ∣ N / Q`, the unit modulo `N` with residues `a` modulo `Q` and `b` modulo `N / Q` reduces modulo
@@ -164,8 +168,12 @@ theorem unitsMap_unitsEquivProd_symm_of_dvd_div {d : ℕ} (h : Q ∥ N) (hd : d 
     (a : (ZMod Q)ˣ) (b : (ZMod (N / Q))ˣ) :
     ZMod.unitsMap (hd.trans (Nat.div_dvd_of_dvd h.dvd)) (h.unitsEquivProd.symm (a, b)) =
       ZMod.unitsMap hd b := by
-  rw [← ZMod.unitsMap_comp hd (Nat.div_dvd_of_dvd h.dvd), MonoidHom.comp_apply,
-    ← h.unitsEquivProd_apply_snd, MulEquiv.apply_symm_apply]
+  rw [← ZMod.unitsMap_comp hd (Nat.div_dvd_of_dvd h.dvd), MonoidHom.comp_apply]
+  congr 1
+  apply Units.ext
+  simpa [unitsEquivProd, ZMod.unitsMap_val, ZMod.ringEquivCongr_symm,
+    -ZMod.unitsMap_unitsChineseRemainder_symm_snd] using
+    congrArg Units.val (ZMod.unitsMap_unitsChineseRemainder_symm_snd h.coprime (a, b))
 
 /-- A Chinese remainder lift reduces to the lift of the reduced pair when both target factors
 divide the corresponding source factors. -/

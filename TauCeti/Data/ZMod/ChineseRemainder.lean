@@ -17,10 +17,11 @@ For coprime `m` and `n`, Mathlib's ring equivalence `ZMod.chineseRemainder` is t
 reductions modulo `m` and modulo `n` (`ZMod.chineseRemainder_eq_prod_castHom`), and
 `ZMod.unitsChineseRemainder` identifies `(ZMod (m * n))ˣ` with `(ZMod m)ˣ × (ZMod n)ˣ` through
 the two reductions (`ZMod.unitsChineseRemainder_apply_fst`,
-`ZMod.unitsChineseRemainder_apply_snd`), and `ZMod.eq_mul_comp_unitsMap_of_coprime` splits a hom
-out of `(ZMod (m * n))ˣ` as the product of its restrictions to the two factors, composed with the
-reductions. This is the splitting used for the Dirichlet character factorizations at coprime
-product levels.
+`ZMod.unitsChineseRemainder_apply_snd`). The inverse lifts a pair of units to the unit with those
+reductions (`ZMod.unitsMap_unitsChineseRemainder_symm_fst`,
+`ZMod.unitsMap_unitsChineseRemainder_symm_snd`). The splitting theorem
+`ZMod.eq_mul_comp_unitsMap_of_mulEquiv` expresses a hom on units as the product of its
+restrictions to the two factors, composed with the reductions.
 
 Mathlib's `ZMod.chineseRemainder` splits `ZMod (m * n)` as `ZMod m × ZMod n` for coprime `m` and
 `n`. Without coprimality, `ZMod a × ZMod b` is still isomorphic to
@@ -68,6 +69,20 @@ theorem unitsChineseRemainder_apply_snd (h : m.Coprime n) (u : (ZMod (m * n))ˣ)
     (unitsChineseRemainder h u).2 = unitsMap (dvd_mul_left n m) u :=
   Units.ext congr(($(chineseRemainder_eq_prod_castHom h) u).2)
 
+/-- A Chinese remainder lift of a pair of units reduces modulo `m` to its first component. -/
+@[simp]
+theorem unitsMap_unitsChineseRemainder_symm_fst (h : m.Coprime n)
+    (p : (ZMod m)ˣ × (ZMod n)ˣ) :
+    unitsMap (dvd_mul_right m n) ((unitsChineseRemainder h).symm p) = p.1 := by
+  rw [← unitsChineseRemainder_apply_fst h, MulEquiv.apply_symm_apply]
+
+/-- A Chinese remainder lift of a pair of units reduces modulo `n` to its second component. -/
+@[simp]
+theorem unitsMap_unitsChineseRemainder_symm_snd (h : m.Coprime n)
+    (p : (ZMod m)ˣ × (ZMod n)ˣ) :
+    unitsMap (dvd_mul_left n m) ((unitsChineseRemainder h).symm p) = p.2 := by
+  rw [← unitsChineseRemainder_apply_snd h, MulEquiv.apply_symm_apply]
+
 /-- A hom out of `(ZMod N)ˣ` into a commutative monoid splits along any identification
 `e : (ZMod N)ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ` whose components are the reductions modulo `m` and
 modulo `n`: it is the product of its restrictions to the two factors, composed with the
@@ -85,17 +100,6 @@ theorem eq_mul_comp_unitsMap_of_mulEquiv {N : ℕ} {G : Type*} [CommMonoid G] (h
     χ u = χ' (e u) := by simp [χ']
     _ = (χ'.comp (MonoidHom.inl _ _)) (e u).1 * (χ'.comp (MonoidHom.inr _ _)) (e u).2 := hu.symm
     _ = _ := by simp only [he₁, he₂, MonoidHom.mul_apply, MonoidHom.comp_apply, χ']
-
-/-- For coprime `m` and `n`, a hom out of `(ZMod (m * n))ˣ` into a commutative monoid splits as the
-product of its restrictions to the Chinese remainder factors modulo `m` and `n`. -/
-theorem eq_mul_comp_unitsMap_of_coprime {G : Type*} [CommMonoid G] (h : m.Coprime n)
-    (χ : (ZMod (m * n))ˣ →* G) :
-    χ = ((χ.comp (unitsChineseRemainder h).symm.toMonoidHom).comp
-        (MonoidHom.inl (ZMod m)ˣ (ZMod n)ˣ)).comp (unitsMap (dvd_mul_right m n)) *
-      ((χ.comp (unitsChineseRemainder h).symm.toMonoidHom).comp
-        (MonoidHom.inr (ZMod m)ˣ (ZMod n)ˣ)).comp (unitsMap (dvd_mul_left n m)) :=
-  eq_mul_comp_unitsMap_of_mulEquiv _ _ _ (unitsChineseRemainder_apply_fst h)
-    (unitsChineseRemainder_apply_snd h) χ
 
 end Units
 

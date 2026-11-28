@@ -46,16 +46,18 @@ section Ball
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1)]
 
-attribute [local instance] normSqSublevelChartedSpace
-
 /-- **The outward criterion on the closed unit ball.** At a point `x` of the unit sphere, a tangent
 vector `v` of the closed unit ball `{‖x‖² ≤ 1}`, with its sublevel atlas, points outward iff
 `⟪x, dj v⟫ > 0`, where `j` is the inclusion. -/
 theorem isOutwardPointing_normSqSublevel_iff {x : {x : E | ‖x‖ ^ 2 ≤ 1}}
-    (hx : ‖(x : E)‖ ^ 2 = 1) (v : TangentSpace (𝓡∂ (n + 1)) x) :
+    (hx : ‖(x : E)‖ ^ 2 = 1)
+    (v : letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
+      TangentSpace (𝓡∂ (n + 1)) x) :
+    letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
     IsOutwardPointing x v ↔
       0 < ⟪(x : E),
         mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | ‖x‖ ^ 2 ≤ 1} → E) x v⟫ := by
+  let := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
   rw [isOutwardPointing_scalarRegularSublevel_iff_mfderiv _ Fact.out _ hx, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, fderiv_norm_sq_apply]
   simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, nsmul_eq_mul, Nat.cast_ofNat]
@@ -65,8 +67,12 @@ theorem isOutwardPointing_normSqSublevel_iff {x : {x : E | ‖x‖ ^ 2 ≤ 1}}
 /-- On the closed unit ball, the tangent vector over the radius `x` at a point `x` of the unit
 sphere points outward. -/
 theorem isOutwardPointing_normSqSublevel_of_mfderiv_eq_self {x : {x : E | ‖x‖ ^ 2 ≤ 1}}
-    (hx : ‖(x : E)‖ ^ 2 = 1) {v : TangentSpace (𝓡∂ (n + 1)) x}
-    (hv : mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | ‖x‖ ^ 2 ≤ 1} → E) x v = (x : E)) :
+    (hx : ‖(x : E)‖ ^ 2 = 1)
+    {v : letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
+      TangentSpace (𝓡∂ (n + 1)) x}
+    (hv : letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
+      mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | ‖x‖ ^ 2 ≤ 1} → E) x v = (x : E)) :
+    letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
     IsOutwardPointing x v := by
   rw [isOutwardPointing_normSqSublevel_iff hx, hv, real_inner_self_eq_norm_sq, hx]
   exact one_pos
@@ -74,8 +80,12 @@ theorem isOutwardPointing_normSqSublevel_of_mfderiv_eq_self {x : {x : E | ‖x�
 /-- On the closed unit ball, the tangent vector over `-x` at a point `x` of the unit sphere does
 not point outward. -/
 theorem not_isOutwardPointing_normSqSublevel_of_mfderiv_eq_neg_self {x : {x : E | ‖x‖ ^ 2 ≤ 1}}
-    (hx : ‖(x : E)‖ ^ 2 = 1) {v : TangentSpace (𝓡∂ (n + 1)) x}
-    (hv : mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | ‖x‖ ^ 2 ≤ 1} → E) x v = -(x : E)) :
+    (hx : ‖(x : E)‖ ^ 2 = 1)
+    {v : letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
+      TangentSpace (𝓡∂ (n + 1)) x}
+    (hv : letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
+      mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | ‖x‖ ^ 2 ≤ 1} → E) x v = -(x : E)) :
+    letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
     ¬IsOutwardPointing x v := by
   rw [isOutwardPointing_normSqSublevel_iff hx, hv, inner_neg_right, real_inner_self_eq_norm_sq,
     hx]

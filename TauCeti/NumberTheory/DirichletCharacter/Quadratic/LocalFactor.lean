@@ -45,6 +45,10 @@ monoid with zero, and specialised to quadratic characters with values in a commu
   `MulChar.IsQuadratic.squarefree_ordCompl_two_conductor`,
   `MulChar.IsQuadratic.factorization_two_conductor_eq_zero_or_two_or_three`: the shape of the
   conductor.
+* `DirichletCharacter.conductor_dvd_lcm_eight_of_sq_eq_one`: if a conductor divides `2 ^ k * m`
+  and the character has order dividing two, the conductor already divides `lcm 8 m`.
+* `DirichletCharacter.conductor_dvd_eight_mul_of_sq_eq_one`: at level `2 ^ k * m`, a character
+  of order dividing two has conductor dividing `8 * m`.
 
 ## References
 
@@ -102,6 +106,36 @@ theorem factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one (hχ : 
   have : NeZero N := ⟨hN⟩
   exact χ.primitiveCharacter_isPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one
     (primitiveCharacter_pow_eq_one hχ)
+
+/-- If the conductor of a character of order dividing two divides `2 ^ k * m`, then it
+already divides `lcm 8 m`, independently of the exponent `k`. -/
+theorem conductor_dvd_lcm_eight_of_sq_eq_one {m k : ℕ}
+    (χ : DirichletCharacter R N) (hχ : χ ^ 2 = 1) (hm : χ.conductor ∣ 2 ^ k * m) :
+    χ.conductor ∣ Nat.lcm 8 m := by
+  rcases eq_or_ne m 0 with rfl | hm₀
+  · simp
+  have hpow : (2 : ℕ) ^ k ≠ 0 := pow_ne_zero _ (by decide)
+  have hprod := mul_ne_zero hpow hm₀
+  have hχ₀ := ne_zero_of_dvd_ne_zero hprod hm
+  have hle := (Nat.factorization_le_iff_dvd hχ₀ hprod).mpr hm
+  rw [← Nat.factorization_le_iff_dvd hχ₀ (Nat.lcm_ne_zero (by decide) hm₀),
+    Nat.factorization_lcm (by decide) hm₀]
+  intro p
+  rcases eq_or_ne p 2 with rfl | hp
+  · have h₂ : (8 : ℕ).factorization 2 = 3 := by
+      rw [← (show (2 : ℕ) ^ 3 = 8 by decide), Nat.prime_two.factorization_pow]
+      simp
+    have ht := factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one hχ
+    exact (show χ.conductor.factorization 2 ≤ (8 : ℕ).factorization 2 by omega).trans le_sup_left
+  · refine le_trans ?_ le_sup_right
+    simpa [Nat.factorization_mul hpow hm₀, Nat.prime_two.factorization_pow, hp] using hle p
+
+/-- Increasing the dyadic part of a level introduces no characters of order dividing two
+whose conductor fails to divide eight times the original level. -/
+theorem conductor_dvd_eight_mul_of_sq_eq_one {m k : ℕ}
+    {χ : DirichletCharacter R (2 ^ k * m)} (hχ : χ ^ 2 = 1) : χ.conductor ∣ 8 * m :=
+  (χ.conductor_dvd_lcm_eight_of_sq_eq_one hχ χ.conductor_dvd_level).trans
+    (Nat.lcm_dvd (dvd_mul_right 8 m) (dvd_mul_left m 8))
 
 end SqEqOne
 

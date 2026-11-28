@@ -21,6 +21,8 @@ output end. This file records how these charts sit relative to the centers and t
 
 In the namespace `TauCeti.Floer`:
 
+* `positiveEndChart_eq_realChart`: the positive end chart `φ'_q` of any end is the real chart of
+  `w ↦ φ_q(ε_q w)`, where `ε_q` is the sign of the end.
 * `subset_preimage_puncturedSphereTruncation_union`: the sphere is covered by `Σ_T` and the images
   of the bands `(T, ∞) × [0, 1)` of its ends.
 -/
@@ -34,6 +36,14 @@ open TauCeti.Complex (realChart realChart_apply)
 namespace TauCeti.Floer
 
 variable {ι : Type*} {c a : ι → ℂ}
+
+/-- The positive end chart of `q` is the real chart of `w ↦ φ_q(ε_q w)`, where `ε_q` is the sign
+of the end. -/
+theorem positiveEndChart_eq_realChart (q : Puncture) :
+    positiveEndChart q = realChart fun w ↦ q.cylindricalEndLift ((q.endSign : ℂ) * w) := by
+  funext z
+  rw [positiveEndChart_apply, endChart_eq_realChart, realChart_apply, realChart_apply, map_smul,
+    Complex.real_smul]
 
 /-- Every point of the sphere with moving input ends, in real coordinates, lies in the truncation
 `Σ_T`, or in the image of the band `(T, ∞) × [0, 1)` under the chart

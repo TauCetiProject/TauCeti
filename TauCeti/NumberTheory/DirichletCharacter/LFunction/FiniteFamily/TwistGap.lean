@@ -10,8 +10,8 @@ public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LegendreTwist
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
-import TauCeti.NumberTheory.DirichletCharacter.Quadratic.PowerLevel
-import TauCeti.NumberTheory.DirichletCharacter.Quadratic.TwoPrimeTwists
+import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LocalFactor
+import TauCeti.NumberTheory.DirichletCharacter.Quadratic.TwistDecomposition
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
