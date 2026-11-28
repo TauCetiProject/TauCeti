@@ -206,6 +206,13 @@ theorem eq_extend_iff_genericι {Y : Over S} {hY : P Y.hom}
   refine ⟨fun h ↦ by rw [h], fun h ↦ Over.OverMorphism.ext ?_⟩
   exact M.isPullback_genericι.hom_ext h (by simp)
 
+/-- Precomposing an extension with the base change projection gives the original morphism to
+the marked fibre followed by its map to the total space. -/
+@[reassoc (attr := simp)]
+theorem fst_comp_extend_left {Y : Over S} (hY : P Y.hom) (f : (Over.pullback j).obj Y ⟶ A) :
+    pullback.fst Y.hom j ≫ (M.extend Y hY f).left = f.left ≫ M.genericι :=
+  M.eq_extend_iff_genericι.mp rfl
+
 /-- Every section of the marked fibre extends uniquely to a section of the model when the
 base itself belongs to the test class. -/
 theorem existsUnique_section (hP : P (𝟙 S)) (x : Over.mk (𝟙 η) ⟶ A) :
