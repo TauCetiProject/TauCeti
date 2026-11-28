@@ -148,6 +148,8 @@ end ToVectorMeasure
 
 end ContinuousLinearMap
 
+section RCLike
+
 variable [RCLike 𝕜] [NormedSpace 𝕜 X]
 
 namespace MeasureTheory.VectorMeasure
@@ -226,9 +228,12 @@ theorem opNNNorm_le_iff_variation_toVectorMeasure_le {C : ℝ≥0} :
 
 end ContinuousLinearMap
 
-namespace MeasureTheory.Lp
+end RCLike
 
-variable [NormedSpace ℝ X] [IsScalarTower ℝ 𝕜 X] [CompleteSpace X]
+variable [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 X] [NormedSpace ℝ X] [SMulCommClass ℝ 𝕜 X]
+  [CompleteSpace X]
+
+namespace MeasureTheory.Lp
 
 variable (𝕜) in
 /-- The operator on scalar `L¹(μ)` represented by an essentially bounded density `g ∈ L∞(μ; X)`:
@@ -274,10 +279,9 @@ end MeasureTheory.Lp
 
 namespace ContinuousLinearMap
 
-variable [IsFiniteMeasure μ] [NormedSpace ℝ X] [IsScalarTower ℝ 𝕜 X] [CompleteSpace X]
-  (T : Lp 𝕜 1 μ →L[𝕜] X)
+variable [IsFiniteMeasure μ] (T : Lp 𝕜 1 μ →L[𝕜] X)
 
-omit [IsScalarTower ℝ 𝕜 X] in
+omit [SMulCommClass ℝ 𝕜 X] in
 /-- An integrable density `f` of the vector measure of `T` is essentially bounded by `‖T‖`, since
 `∫_s ‖f‖ = |m_T|(s) ≤ ‖T‖ μ(s)` for every measurable `s`. -/
 theorem ae_eNorm_le_of_toVectorMeasure_eq_withDensityᵥ {f : S → X} (hf : Integrable f μ)
