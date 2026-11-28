@@ -200,7 +200,7 @@ def reductionFiberBundle : FiberBundle H (ReductionFiber S) :=
 theorem trivializationAt_reductionFiberBundle (x : B) :
     letI := reductionFiberBundle hS
     trivializationAt H (ReductionFiber S) x =
-      (hS.atlas.trivAt x).compTotalSpaceHomeomorph (reductionTotalSpaceHomeomorph H S)
+      (hS.atlas.trivAt x).compHomeomorphOfEq (reductionTotalSpaceHomeomorph H S)
         (fun _ ↦ by simp) :=
   hS.atlas.trivializationAt_fiberBundleOfHomeomorph _ _ _ x
 
@@ -209,7 +209,9 @@ theorem principalBundle_reductionFiber [SMulMemIff H S] :
     letI := reductionFiberBundle hS
     PrincipalBundle H (ReductionFiber S) :=
   hS.atlas.principalBundle_of_homeomorph _ _ _
-    (fun x φ g ↦ reductionTotalSpaceEquiv_smul g ⟨x, φ⟩) fun x p hp g ↦ by
+    (fun x φ g ↦ reductionTotalSpaceEquiv_smul g ⟨x, φ⟩) fun t ht p hp g ↦ by
+    rw [hS.atlas_charts] at ht
+    obtain ⟨x, rfl⟩ := ht
     rw [SMulMemIff.smul_eq_mk g p ((SMulMemIff.smul_mem_iff p.property).2 g.property)]
     exact congrArg Prod.snd (hS.atlas_trivAt_mk_smul x g p _ hp)
 

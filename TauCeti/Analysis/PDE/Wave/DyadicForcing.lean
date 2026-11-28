@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Wave.InhomogeneousStrichartz
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.SpecificLimits.DyadicSum
+import TauCeti.Analysis.PDE.Wave.WeakSolution
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
 
@@ -52,8 +53,26 @@ time exponent `2` in dimension `n ≥ 4` only
 (`ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_setIntegral_Iio_waveSinPropagator_sub`), and
 at the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, with `γ = n / 2 - n / r`
 (`ContDiffBump.exists_tendsto_eLpNorm_top_eLpNorm_sub_sum_setIntegral_Iio_waveSinPropagator_sub`);
-at `(∞, ∞)` the limit is bounded uniformly in space and time. The file does not show that `U`
-solves the wave equation.
+at `(∞, ∞)` the limit is bounded uniformly in space and time.
+
+Every such limit solves `∂ₜ²U - ΔU = ∑ⱼ Gⱼ` in the sense of distributions, tested against products
+`θ(t) ψ(x)` of a compactly supported `C²` function of time and a Schwartz function: the series
+`∑ⱼ ∫ θ(t) ∫ conj (ψ(x)) Gⱼ(t)(x) dx dt` converges, with sum
+
+`∫ θ''(t) ∫ conj (ψ(x)) U(t)(x) dx dt - ∫ θ(t) ∫ conj (Δψ(x)) U(t)(x) dx dt`
+
+(`hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub` in the
+namespace `ContDiffBump`). The forcing enters through its blocks only, since they determine `F`
+only modulo distributions with spectrum at the origin. Each block is frequency-localized away from
+the origin, so `s ↦ D⁻¹ sin (sD) Gⱼ(s)` is integrable
+(`ContDiffBump.integrable_waveSinPropagator_apply_of_eq_homogeneousLittlewoodPaleyBlock`), and the
+theorem is the case of dyadic blocks of
+`TauCeti.hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub`:
+the retarded integral of each `Gⱼ` solves the wave equation with forcing `Gⱼ`
+(`TauCeti.integral_deriv_deriv_mul_inner_setIntegral_Iio_waveSinPropagator_sub`), and both sides of
+the tested equation pass to the limit in mixed norm
+(`TauCeti.tendsto_integral_mul_inner_of_tendsto_eLpNorm_eLpNorm_sub`), as for the evolutions
+of Besov data (`TauCeti.Analysis.PDE.Wave.BesovData`).
 
 When the forcing is a function `f : ℝ → L²(E)` whose retarded integral exists at almost every
 time, any such limit agrees with that retarded integral for almost every `t`
@@ -88,6 +107,8 @@ and in `L^r` are both limits in measure, so they agree almost everywhere
   the same at the pairs `(∞, r)`.
 * `ContDiffBump.ae_ae_eq_setIntegral_Iio_waveSinPropagator_sub_of_tendsto`: for an `L²` forcing
   term the sum is its retarded integral.
+* `hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub` in the
+  namespace `ContDiffBump`: the sum solves the forced wave equation in the sense of distributions.
 
 ## References
 
@@ -101,7 +122,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Topology TauCeti TemperedDistribution
-open scoped ENNReal NNReal FourierTransform SchwartzMap
+open scoped ENNReal NNReal FourierTransform SchwartzMap InnerProductSpace Laplacian
 
 namespace ContDiffBump
 
@@ -302,5 +323,70 @@ theorem ae_ae_eq_setIntegral_Iio_waveSinPropagator_sub_of_tendsto {r : ℝ≥0�
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← ContinuousLinearMap.integral_comp_comm _ hft]
   simp only [fourierMultiplierCLM_waveSinPropagator_apply]
+
+/-! ### The limit solves the wave equation -/
+
+omit [Nontrivial E] in
+/-- **Forcing terms made of `j`-th blocks have integrable retarded integrands.** If
+`G : ℝ → L²(E)` is integrable and each `G(s)` is the `j`-th block of a tempered distribution, then
+`s ↦ D⁻¹ sin (sD) G(s)` is integrable: on frequencies `‖ξ‖ ≈ 2^j` the operators `D⁻¹ sin (sD)` are
+bounded uniformly in `s`. -/
+theorem integrable_waveSinPropagator_apply_of_eq_homogeneousLittlewoodPaleyBlock {j : ℤ}
+    {G : ℝ → Lp ℂ 2 (volume : Measure E)} (hG : Integrable G)
+    (hblock : ∀ s, ∃ v : 𝓢'(E, ℂ), (G s : 𝓢'(E, ℂ)) = homogeneousLittlewoodPaleyBlock ℂ φ j v) :
+    Integrable fun s ↦ waveSinPropagator ℂ s (G s) := by
+  obtain ⟨L, hL⟩ :=
+    exists_eq_sum_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock (G := ℂ) φ
+  set m : ℤ → Lp ℂ ∞ (volume : Measure E) := fun k ↦ (φ.memLp_ofReal_littlewoodPaley k ∞).toLp _
+  have hm (k : ℤ) : m k =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ) :=
+    (φ.memLp_ofReal_littlewoodPaley k ∞).coeFn_toLp
+  -- `D⁻¹ sin (sD) = -D⁻¹ sin ((0 - s)D)` on each block.
+  have hk (k : ℤ) : Integrable fun s ↦
+      waveSinPropagator ℂ s (Lp.fourierMultiplierCLM ℂ (m k) (G s)) :=
+    (φ.integrable_waveSinPropagator_sub_littlewoodPaley (hm k) hG 0).neg.congr
+      (ae_of_all _ fun s ↦ by simp)
+  -- Each `G(s)` is the sum of its blocks `Pₖ G(s)` with `j - L ≤ k < j + L`.
+  have h : (fun s ↦ waveSinPropagator ℂ s (G s)) = fun s ↦ ∑ k ∈ Finset.Ico (j - L) (j + L),
+      waveSinPropagator ℂ s (Lp.fourierMultiplierCLM ℂ (m k) (G s)) := by
+    ext1 s
+    obtain ⟨v, hv⟩ := hblock s
+    rw [← map_sum, ← hL j hm (G s) v hv]
+  rw [h]
+  exact integrable_finsetSum _ fun k _ ↦ hk k
+
+omit [Nontrivial E] in
+/-- **The retarded wave integral of a forcing term given by its blocks solves the wave
+equation.** Let `F(s)` be tempered distributions whose blocks `Gⱼ(s) = Pⱼ F(s)` are `L²`
+functions, integrable in time, and let `U : ℝ → L^r` be a limit of the dyadic series
+`∑ⱼ ∫_{s < t} D⁻¹ sin ((t - s)D) Gⱼ(s) ds`, in `L^r` for almost every `t` and in the mixed norm
+`L^q_t L^r_x` for some `1 ≤ q`, such as the limits of
+`ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_setIntegral_Iio_waveSinPropagator_sub` and
+`ContDiffBump.exists_tendsto_eLpNorm_top_eLpNorm_sub_sum_setIntegral_Iio_waveSinPropagator_sub`.
+Then `∂ₜ²U - ΔU = ∑ⱼ Gⱼ` in the sense of distributions, tested against `θ(t) ψ(x)`: for every
+Schwartz function `ψ` and every compactly supported `C²` function `θ` of time, the series
+`∑ⱼ ∫ θ(t) ∫ conj (ψ(x)) Gⱼ(t)(x) dx dt` converges, with sum
+
+`∫ θ''(t) ∫ conj (ψ(x)) U(t)(x) dx dt - ∫ θ(t) ∫ conj (Δψ(x)) U(t)(x) dx dt`.
+
+This is the general
+`TauCeti.hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub`,
+whose integrability hypothesis on `s ↦ D⁻¹ sin (sD) Gⱼ(s)` holds for blocks
+(`ContDiffBump.integrable_waveSinPropagator_apply_of_eq_homogeneousLittlewoodPaleyBlock`). -/
+theorem hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub
+    {q r : ℝ≥0∞} [Fact (1 ≤ r)] (hq : 1 ≤ q) {F : ℝ → 𝓢'(E, ℂ)}
+    {G : ℤ → ℝ → Lp ℂ 2 (volume : Measure E)}
+    (hG : ∀ j s, (G j s : 𝓢'(E, ℂ)) = homogeneousLittlewoodPaleyBlock ℂ φ j (F s))
+    (hint : ∀ j, Integrable (G j)) {U : ℝ → Lp ℂ r (volume : Measure E)}
+    (hae : ∀ᵐ t, Tendsto (fun s : Finset ℤ ↦ eLpNorm (⇑(U t) - ⇑(∑ j ∈ s,
+      ∫ τ in Set.Iio t, waveSinPropagator ℂ (t - τ) (G j τ))) r volume) atTop (𝓝 0))
+    (hlim : Tendsto (fun s : Finset ℤ ↦ eLpNorm (fun t ↦ eLpNorm (⇑(U t) - ⇑(∑ j ∈ s,
+      ∫ τ in Set.Iio t, waveSinPropagator ℂ (t - τ) (G j τ))) r volume) q volume) atTop (𝓝 0))
+    (ψ : 𝓢(E, ℂ)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) :
+    HasSum (fun j ↦ ∫ t, θ t * ∫ x, ⟪ψ x, G j t x⟫_ℂ)
+      ((∫ t, deriv (deriv θ) t * ∫ x, ⟪ψ x, U t x⟫_ℂ) -
+        ∫ t, θ t * ∫ x, ⟪(Δ ψ) x, U t x⟫_ℂ) :=
+  TauCeti.hasSum_integral_mul_integral_inner_of_tendsto_sum_setIntegral_Iio_waveSinPropagator_sub
+    hq hint (fun j ↦ φ.integrable_waveSinPropagator_apply_of_eq_homogeneousLittlewoodPaleyBlock
+      (hint j) fun s ↦ ⟨F s, hG j s⟩) hae hlim ψ hθ hθc
 
 end ContDiffBump

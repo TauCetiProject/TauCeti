@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Functor
+public import Mathlib.CategoryTheory.Core
 
 /-!
 # Tensor powers of line bundles
@@ -28,6 +30,8 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 ## Main declarations
 
 * `TauCeti.tensorPow L n`: the tensor power `L^{⊗n}`.
+* `TauCeti.AlgebraicGeometry.LineBundle.powerFunctor`: tensor powers as a functor on the core
+  of invertible sheaves.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow`: the class of `L^{⊗n}` is the `n`-th
   power of the class of `L` in the Picard group.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_obj_iso`: tensor powers of
@@ -56,6 +60,40 @@ namespace AlgebraicGeometry
 universe u
 
 variable {X Y : Scheme.{u}}
+
+namespace LineBundle
+
+noncomputable section
+
+/-- The tensor-power functor on the core of invertible sheaves. Its objects use the
+right-associated tensor-power convention `TauCeti.tensorPow`. -/
+abbrev powerFunctor (X : Scheme.{u}) (n : ℕ) :
+    Core (InvertibleSheaf X) ⥤ Core (InvertibleSheaf X) :=
+  ((Functor.pi' (fun _ : Fin n ↦ 𝟭 (InvertibleSheaf X)) ⋙
+    (𝟭 (InvertibleSheaf X)).tensorPow n).copyObj
+      (fun M ↦ TauCeti.tensorPow M n)
+      (fun M ↦ eqToIso ((𝟭 (InvertibleSheaf X)).tensorPow_obj_const M n))).core
+
+@[simp]
+lemma powerFunctor_obj (n : ℕ) (M : Core (InvertibleSheaf X)) :
+    (powerFunctor X n).obj M = ⟨TauCeti.tensorPow M.of n⟩ := (rfl)
+
+/-- The power functor acts on arrows by the specified tensor power of an isomorphism. -/
+@[simp]
+lemma powerFunctor_map_iso (n : ℕ) {M N : Core (InvertibleSheaf X)} (e : M ⟶ N) :
+    ((powerFunctor X n).map e).iso = TauCeti.tensorPowMapIso e.iso n := by
+  apply Iso.ext
+  dsimp [powerFunctor, Functor.core, Core.functorToCore, Functor.copyObj]
+  symm
+  apply (conj_eqToHom_iff_heq' ..).mpr
+  · simpa only [TauCeti.tensorPowMapIso_hom, Functor.pi', Functor.id_map, Functor.id_obj] using
+      ((𝟭 (InvertibleSheaf X)).tensorPow_map_const e.iso.hom n).symm
+  · simp [Functor.pi', Functor.tensorPow_obj_const]
+  · simp [Functor.pi', Functor.tensorPow_obj_const]
+
+end
+
+end LineBundle
 
 namespace InvertibleSheaf
 

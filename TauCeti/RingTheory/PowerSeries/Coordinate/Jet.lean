@@ -47,6 +47,12 @@ groups is then an isomorphism of topological groups.
 * `TauCeti.FormalCoordinate.tendsto_iff_X_pow_dvd`: convergence of coordinates is eventual
   agreement modulo each power of `X`.
 * `TauCeti.FormalCoordinate.isClosed_jetLimit`: the compatible families form a closed subgroup.
+* `TauCeti.FormalCoordinate.Jet.oneEquivUnits` identifies first jets with the group of units
+  via the linear coefficient.
+* `TauCeti.FormalCoordinate.Jet.coeffEquiv` identifies an `(N + 1)`-jet with its unit linear
+  coefficient and the tuple of coefficients in degrees `2` through `N + 1`.
+* `TauCeti.FormalCoordinate.Jet.coeff_mul` computes the retained coefficients of a product by
+  composing the polynomial of the left factor after that of the right factor.
 * `TauCeti.FormalCoordinate.Jet.map_jet`, `TauCeti.FormalCoordinate.Jet.truncate_map`: passing to
   jets and truncating jets are natural in the coefficients.
 * `TauCeti.FormalCoordinate.continuous_map`: base change of formal coordinates is continuous.
@@ -153,7 +159,95 @@ theorem jet_eq_one_iff {N : ℕ} {φ : FormalCoordinate R} :
     jet N φ = 1 ↔ X ^ (N + 1) ∣ φ.toPowerSeries - X := by
   rw [← MonoidHom.mem_ker, ker_jet, mem_jetKernel]
 
+/-- A coordinate has trivial first jet exactly when its linear coefficient is `1`. -/
+theorem jetKernel_one : jetKernel R 1 = (linearCoeff (R := R)).ker := by
+  ext φ
+  -- Compare the coefficients of the coordinate and the identity through degree one.
+  rw [← ker_jet, MonoidHom.mem_ker, MonoidHom.mem_ker, ← map_one (jet 1),
+    jet_eq_jet_iff_coeff, ← Units.val_inj]
+  constructor
+  · intro h
+    simpa only [← val_linearCoeff, map_one] using h 1 le_rfl
+  · intro h i hi
+    interval_cases i
+    · simp only [coeff_zero_eq_constantCoeff, constantCoeff_toPowerSeries]
+    · simpa only [← val_linearCoeff, map_one] using h
+
 namespace Jet
+
+-- Apply `QuotientGroup.quotientKerEquivOfRightInverse` to the homothety section.
+/-- A first jet is determined by its unit linear coefficient. -/
+noncomputable def oneEquivUnits : Jet R 1 ≃* Rˣ :=
+  (QuotientGroup.quotientMulEquivOfEq jetKernel_one).trans
+    (QuotientGroup.quotientKerEquivOfRightInverse _ homothety linearCoeff_homothety)
+
+/-- The first jet of a coordinate corresponds to its linear coefficient. -/
+@[simp]
+theorem oneEquivUnits_jet (φ : FormalCoordinate R) : oneEquivUnits (jet 1 φ) = φ.linearCoeff :=
+  (rfl)
+
+/-- The inverse sends a unit to the first jet of its homothety. -/
+@[simp]
+theorem oneEquivUnits_symm_apply (u : Rˣ) : oneEquivUnits.symm u = jet 1 (homothety u) :=
+  oneEquivUnits.injective (by
+    rw [MulEquiv.apply_symm_apply, oneEquivUnits_jet, linearCoeff_homothety])
+
+/-- The coefficient at an index `i ≤ N` of an `N`-jet, independent of its representative. -/
+noncomputable def coeff {N : ℕ} (x : Jet R N) (i : Fin (N + 1)) : R :=
+  Quotient.liftOn x (fun φ : FormalCoordinate R ↦ PowerSeries.coeff i φ.toPowerSeries)
+    (fun φ ψ h ↦ by
+      have hjet : jet N φ = jet N ψ := Quotient.sound h
+      exact (jet_eq_jet_iff_coeff.mp hjet) i (Nat.le_of_lt_succ i.isLt))
+
+/-- The coefficients of a jet are those of any representative, up to its jet order. -/
+@[simp]
+theorem coeff_jet {N : ℕ} (φ : FormalCoordinate R) (i : Fin (N + 1)) :
+    (jet N φ).coeff i = PowerSeries.coeff i φ.toPowerSeries :=
+  (rfl)
+
+/-- The unit of a first jet has value equal to its degree-one coefficient. -/
+@[simp]
+theorem coe_oneEquivUnits (x : Jet R 1) : (oneEquivUnits x : R) = x.coeff (Fin.last 1) := by
+  obtain ⟨φ, rfl⟩ := jet_surjective 1 x
+  rw [oneEquivUnits_jet, val_linearCoeff, coeff_jet, Fin.val_last]
+
+/-- The constant coefficient of any jet is zero. -/
+@[simp]
+theorem coeff_zero {N : ℕ} (x : Jet R N) : x.coeff 0 = 0 := by
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  simp only [coeff_jet, Fin.val_zero, coeff_zero_eq_constantCoeff, constantCoeff_toPowerSeries]
+
+/-- The identity jet has the retained coefficients of `X`. -/
+@[simp]
+theorem coeff_one {N : ℕ} (i : Fin (N + 1)) :
+    (1 : Jet R N).coeff i = if (i : ℕ) = 1 then 1 else 0 := by
+  rw [← map_one (jet N), coeff_jet, toPowerSeries_one, coeff_X]
+
+/-- Jet multiplication composes the polynomials of retained coefficients. -/
+theorem coeff_mul {N : ℕ} (x y : Jet R N) (i : Fin (N + 1)) :
+    (x * y).coeff i =
+      ((∑ j : Fin (N + 1), Polynomial.monomial j (x.coeff j)).comp
+        (∑ j : Fin (N + 1), Polynomial.monomial j (y.coeff j))).coeff i := by
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  obtain ⟨ψ, rfl⟩ := jet_surjective N y
+  have htrunc (χ : FormalCoordinate R) :
+      (∑ j : Fin (N + 1), Polynomial.monomial j ((jet N χ).coeff j)) =
+        trunc (N + 1) χ.toPowerSeries := by
+    simp only [coeff_jet]
+    rw [Fin.sum_univ_eq_sum_range
+      (fun k ↦ Polynomial.monomial k (PowerSeries.coeff k χ.toPowerSeries)),
+      PowerSeries.trunc_apply, Nat.Ico_zero_eq_range]
+  -- `coeff_trunc_comp_trunc` compares truncated polynomial composition with substitution.
+  rw [← map_mul, coeff_jet, toPowerSeries_mul, htrunc, htrunc,
+    coeff_trunc_comp_trunc _ ψ.constantCoeff_toPowerSeries i.isLt i.isLt]
+
+/-- Jets are equal if they agree at every coefficient through their jet order. -/
+@[ext]
+theorem ext {N : ℕ} {x y : Jet R N} (h : ∀ i, x.coeff i = y.coeff i) : x = y := by
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  obtain ⟨ψ, rfl⟩ := jet_surjective N y
+  exact jet_eq_jet_iff_coeff.mpr fun i hi ↦ by
+    simpa only [coeff_jet, Fin.val_mk] using h ⟨i, Nat.lt_succ_of_le hi⟩
 
 /-- For `N ≤ M`, the truncation of `M`-jets to `N`-jets. -/
 noncomputable def truncate {N M : ℕ} (h : N ≤ M) : Jet R M →* Jet R N :=
@@ -163,6 +257,13 @@ noncomputable def truncate {N M : ℕ} (h : N ≤ M) : Jet R M →* Jet R N :=
 theorem truncate_jet {N M : ℕ} (h : N ≤ M) (φ : FormalCoordinate R) :
     truncate h (jet M φ) = jet N φ :=
   (rfl)
+
+/-- Truncation preserves each coefficient in the retained range. -/
+@[simp]
+theorem coeff_truncate {N M : ℕ} (h : N ≤ M) (x : Jet R M) (i : Fin (N + 1)) :
+    (truncate h x).coeff i = x.coeff (i.castLE (Nat.succ_le_succ h)) := by
+  obtain ⟨φ, rfl⟩ := jet_surjective M x
+  simp only [truncate_jet, coeff_jet, Fin.val_castLE]
 
 theorem truncate_comp_jet {N M : ℕ} (h : N ≤ M) :
     (truncate h).comp (jet M) = jet (R := R) N :=
@@ -183,6 +284,56 @@ theorem truncate_truncate {N M L : ℕ} (h₁ : N ≤ M) (h₂ : M ≤ L) (x : J
     truncate h₁ (truncate h₂ x) = truncate (h₁.trans h₂) x := by
   obtain ⟨φ, rfl⟩ := jet_surjective L x
   simp
+
+/-- Positive-order jets are specified by a unit linear coefficient and the higher coefficients
+in degrees `2` through `N + 1`. -/
+noncomputable def coeffEquiv (N : ℕ) : Jet R (N + 1) ≃ Rˣ × (Fin N → R) :=
+  Equiv.ofBijective (fun x ↦ (oneEquivUnits (truncate (Nat.succ_pos N) x),
+    fun i ↦ x.coeff i.succ.succ)) (by
+    constructor
+    · intro x y h
+      apply Jet.ext
+      intro i
+      refine Fin.cases (by simp only [coeff_zero]) (Fin.cases ?_ ?_) i
+      · have hindex : (Fin.last 1).castLE (Nat.succ_le_succ (Nat.succ_pos N)) =
+            (0 : Fin (N + 1)).succ := Fin.ext rfl
+        simpa only [coe_oneEquivUnits, coeff_truncate, hindex] using
+          congrArg (fun p : Rˣ × (Fin N → R) ↦ (p.1 : R)) h
+      · exact congrFun (congrArg Prod.snd h)
+    · rintro ⟨u, b⟩
+      -- `ofStrictCoeffs` prescribes the higher coefficients before scaling by the linear unit.
+      let c : ℕ+ → R := fun i ↦ if h : (i : ℕ) - 1 < N then ↑u⁻¹ * b ⟨_, h⟩ else 0
+      refine ⟨jet _ (homothety u * ofStrictCoeffs c), Prod.ext ?_ (funext fun i ↦ ?_)⟩
+      · -- The strict factor has unit linear coefficient, so the homothety gives the first jet.
+        simp only [truncate_jet, oneEquivUnits_jet, map_mul, linearCoeff_homothety,
+          MonoidHom.mem_ker.mp (ofStrictCoeffs_mem_ker_linearCoeff c), mul_one]
+      · have hc := coeff_succ_ofStrictCoeffs c i.val.succPNat
+        rw [Nat.succPNat_coe] at hc
+        have hi : (i.val.succPNat : ℕ) - 1 < N := by
+          simpa only [Nat.succPNat_coe, Nat.succ_sub_one] using i.isLt
+        have hb : c i.val.succPNat = (↑u⁻¹ : R) * b i := by
+          simp only [c, dite_eq_left hi, Nat.succPNat_coe, Nat.succ_sub_one, Fin.eta]
+        simp only [coeff_jet, Fin.val_succ, toPowerSeries_homothety_mul, coeff_smul, smul_eq_mul,
+          hc, hb, Units.mul_inv_cancel_left])
+
+-- Use the simp projections so that whole equivalence applications can cancel with their inverse.
+/-- Read the unit of the first jet and the higher coefficients of a positive-order jet. -/
+theorem coeffEquiv_apply {N : ℕ} (x : Jet R (N + 1)) :
+    coeffEquiv N x =
+      (oneEquivUnits (truncate (Nat.succ_pos N) x), fun i ↦ x.coeff i.succ.succ) :=
+  (rfl)
+
+/-- The unit in the coefficient tuple is the first jet read as a unit. -/
+@[simp]
+theorem coeffEquiv_fst {N : ℕ} (x : Jet R (N + 1)) :
+    (coeffEquiv N x).1 = oneEquivUnits (truncate (Nat.succ_pos N) x) :=
+  congrArg Prod.fst (coeffEquiv_apply x)
+
+/-- The higher entries in the coefficient tuple read degrees `i + 2`. -/
+@[simp]
+theorem coeffEquiv_snd {N : ℕ} (x : Jet R (N + 1)) (i : Fin N) :
+    (coeffEquiv N x).2 i = x.coeff i.succ.succ :=
+  congrFun (congrArg Prod.snd (coeffEquiv_apply x)) i
 
 end Jet
 
@@ -210,6 +361,13 @@ noncomputable def map (N : ℕ) : Jet R N →* Jet S N :=
 theorem map_jet (N : ℕ) (φ : FormalCoordinate R) :
     Jet.map f N (jet N φ) = jet N (FormalCoordinate.map f φ) :=
   (rfl)
+
+/-- Base change applies the ring homomorphism to each jet coefficient. -/
+@[simp]
+theorem coeff_map {N : ℕ} (x : Jet R N) (i : Fin (N + 1)) :
+    (Jet.map f N x).coeff i = f (x.coeff i) := by
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  simp only [map_jet, coeff_jet, toPowerSeries_map, PowerSeries.coeff_map]
 
 theorem map_comp_jet (N : ℕ) :
     (Jet.map f N).comp (jet N) = (jet N).comp (FormalCoordinate.map f) :=
@@ -247,7 +405,7 @@ theorem map_injective {f : R →+* S} (hf : Function.Injective f) (N : ℕ) :
   rw [jet_eq_one_iff, X_pow_dvd_iff]
   intro m hm
   apply hf
-  rw [map_zero, ← coeff_map, map_sub, PowerSeries.map_X, ← toPowerSeries_map]
+  rw [map_zero, ← PowerSeries.coeff_map, map_sub, PowerSeries.map_X, ← toPowerSeries_map]
   exact hx m hm
 
 end Jet

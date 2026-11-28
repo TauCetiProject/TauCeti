@@ -54,6 +54,7 @@ Derivatives are taken for the Frobenius norm on matrices; matrix norms are only 
 * `Matrix.unitaryGroupOf.cayleyChartUnitary`: the chart with values in the unitary group.
 * `Matrix.unitaryGroupOf.cayleyChartEquiv`: the chart as a bijection from the skew-Hermitian `S`
   with `1 - A⁻¹ S / 2` invertible onto the `g ∈ U(A)` with `1 + g` invertible.
+* `Matrix.unitaryGroupOf.congrSkew`: the congruence `S ↦ t bᴴ S b` of skew-Hermitian matrices.
 
 ## Main results
 
@@ -66,6 +67,12 @@ Derivatives are taken for the Frobenius norm on matrices; matrix norms are only 
 * `Matrix.unitaryGroupOf.cayleyChartSource`: the open set of the `S` with `1 - A⁻¹ S / 2`
   invertible, on which the chart is continuous, and injective for invertible `A`
   (`Matrix.unitaryGroupOf.continuousOn_cayleyChart`, `Matrix.unitaryGroupOf.injOn_cayleyChart`).
+* `Matrix.unitaryGroupOf.cayleyChart_congrSkew`,
+  `Matrix.unitaryGroupOf.cayleyChartUnitary_congrSkew`: for invertible `A` and `bᴴ (t A) b = A'`
+  with `t` real and nonzero, the chart of `A'` at `t bᴴ S b` is `b⁻¹ φ(S) b`, the image of `φ(S)`
+  under `Matrix.unitaryGroupOf.conjEquiv`.
+* `Matrix.unitaryGroupOf.abs_det_congrSkew`: the absolute value of the determinant of the
+  congruence is `(|det A'| / |det A|) ^ n`.
 
 ## Provenance
 
@@ -636,6 +643,109 @@ theorem isOpen_image_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A)
   rw [this]
   exact ContinuousOn.isOpen_inter_preimage (continuousOn_cayleyChartInv.comp
     (Units.continuous_val.comp continuous_subtypeVal).continuousOn fun g hg ↦ hg) hW hV
+
+section Congruence
+
+variable {A' : Matrix n n ℂ} {b : GL n ℂ} {t : ℝ}
+
+variable (b t) in
+/-- The **congruence** `S ↦ t bᴴ S b` of skew-Hermitian matrices, which represents the
+conjugation `g ↦ b⁻¹ g b` in Cayley coordinates (`Matrix.unitaryGroupOf.cayleyChart_congrSkew`). -/
+noncomputable def congrSkew :
+    skewAdjoint.submodule ℝ (Matrix n n ℂ) →ₗ[ℝ] skewAdjoint.submodule ℝ (Matrix n n ℂ) :=
+  t • skewAdjointConjugate ℝ (star (b : Matrix n n ℂ))
+
+@[simp]
+theorem coe_congrSkew_apply (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    (congrSkew b t S : Matrix n n ℂ) = t • (star (b : Matrix n n ℂ) * S * b) := by
+  simp [congrSkew, star_eq_conjTranspose]
+
+/-- In Cayley coordinates, `A'⁻¹ (t bᴴ S b) = b⁻¹ (A⁻¹ S) b`. -/
+theorem inv_mul_congrSkew (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    A'⁻¹ * (congrSkew b t S : Matrix n n ℂ) =
+      (b : Matrix n n ℂ)⁻¹ * (A⁻¹ * (S : Matrix n n ℂ)) * b := by
+  have hB : IsUnit (b : Matrix n n ℂ) := b.isUnit
+  have hBd : IsUnit (b : Matrix n n ℂ).det := (isUnit_iff_isUnit_det _).1 hB
+  have hAd : IsUnit A.det := (isUnit_iff_isUnit_det _).1 hA
+  have key : A' * ((b : Matrix n n ℂ)⁻¹ * (A⁻¹ * (S : Matrix n n ℂ)) * b) =
+      congrSkew b t S := by
+    rw [coe_congrSkew_apply, ← hb]
+    simp only [Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_assoc,
+      mul_nonsing_inv_cancel_left _ _ hBd, mul_nonsing_inv_cancel_left _ _ hAd]
+  rw [← key, nonsing_inv_mul_cancel_left _ _
+    ((isUnit_iff_isUnit_det _).1 (isUnit_of_star_mul_smul_mul_eq hA ht hb))]
+
+/-- The congruence conjugates `1 + c A⁻¹ S` by `b`. -/
+theorem one_add_smul_inv_mul_congrSkew (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') (c : ℂ)
+    (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    1 + c • (A'⁻¹ * (congrSkew b t S : Matrix n n ℂ)) =
+      (b : Matrix n n ℂ)⁻¹ * (1 + c • (A⁻¹ * (S : Matrix n n ℂ))) * b := by
+  rw [inv_mul_congrSkew hA ht hb, Matrix.mul_add, Matrix.add_mul, Matrix.mul_one,
+    nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).1 b.isUnit), Matrix.mul_smul, Matrix.smul_mul]
+
+/-- The congruence conjugates `1 - A⁻¹ S / 2` by `b`. -/
+theorem one_sub_smul_inv_mul_congrSkew (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    1 - (2 : ℂ)⁻¹ • (A'⁻¹ * (congrSkew b t S : Matrix n n ℂ)) =
+      (b : Matrix n n ℂ)⁻¹ * (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) * b := by
+  simpa only [neg_smul, ← sub_eq_add_neg] using
+    one_add_smul_inv_mul_congrSkew hA ht hb (-(2 : ℂ)⁻¹) S
+
+/-- The congruence preserves the source of the Cayley chart. -/
+theorem congrSkew_mem_cayleyChartSource_iff (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') {S : skewAdjoint.submodule ℝ (Matrix n n ℂ)} :
+    congrSkew b t S ∈ cayleyChartSource A' ↔ S ∈ cayleyChartSource A := by
+  rw [mem_cayleyChartSource_iff_det_ne_zero, mem_cayleyChartSource_iff_det_ne_zero,
+    one_sub_smul_inv_mul_congrSkew hA ht hb, det_conj' b.isUnit]
+
+/-- **The Cayley chart intertwines the congruence with conjugation**:
+`φ_{A'}(t bᴴ S b) = b⁻¹ φ_A(S) b`. -/
+theorem cayleyChart_congrSkew (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    cayleyChart A' (congrSkew b t S) =
+      (b : Matrix n n ℂ)⁻¹ * cayleyChart A S * b := by
+  have hBd : IsUnit (b : Matrix n n ℂ).det := (isUnit_iff_isUnit_det _).1 b.isUnit
+  rw [cayleyChart_eq, cayleyChart_eq, one_sub_smul_inv_mul_congrSkew hA ht hb,
+    one_add_smul_inv_mul_congrSkew hA ht hb, Matrix.mul_inv_rev, Matrix.mul_inv_rev,
+    nonsing_inv_nonsing_inv _ hBd]
+  simp only [Matrix.mul_assoc, mul_nonsing_inv_cancel_left _ _ hBd]
+
+/-- **The group-valued Cayley chart intertwines the congruence with conjugation.** -/
+theorem cayleyChartUnitary_congrSkew (hA : A.IsHermitian) (hA' : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    cayleyChartUnitary A' (congrSkew b t S) = conjEquiv ht hb (cayleyChartUnitary A S) := by
+  have hA'' : A'.IsHermitian :=
+    hb ▸ isHermitian_conjTranspose_mul_mul (b : Matrix n n ℂ) (hA.smul (IsSelfAdjoint.all t))
+  by_cases hS : S ∈ cayleyChartSource A
+  · apply unitaryGroupOf.ext
+    rw [coe_conjEquiv_apply, coe_cayleyChartUnitary hA hS,
+      coe_cayleyChartUnitary hA''
+        ((congrSkew_mem_cayleyChartSource_iff hA' ht hb).2 hS), cayleyChart_congrSkew hA' ht hb]
+  · rw [cayleyChartUnitary_of_notMem hS, map_one, cayleyChartUnitary_of_notMem
+      (mt (congrSkew_mem_cayleyChartSource_iff hA' ht hb).1 hS)]
+
+/-- The determinant of the congruence is `t ^ (n ^ 2) |det b| ^ (2 n)`. -/
+theorem det_congrSkew :
+    LinearMap.det (congrSkew b t) =
+      t ^ (Fintype.card n ^ 2) * normSq (b : Matrix n n ℂ).det ^ Fintype.card n := by
+  rw [congrSkew, det_smul_skewAdjointConjugate Complex.mem_range_algebraMap_of_isSelfAdjoint
+    Complex.val_mk0_I_mem_skewAdjoint]
+  simp [star_eq_conjTranspose, det_conjTranspose, Algebra.norm_complex_apply]
+
+/-- The absolute value of the determinant of the congruence is `(|det A'| / |det A|) ^ n`. -/
+theorem abs_det_congrSkew (hA : IsUnit A) (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') :
+    |LinearMap.det (congrSkew b t)| = (‖A'.det‖ / ‖A.det‖) ^ Fintype.card n := by
+  have hAd : ‖A.det‖ ≠ 0 := norm_ne_zero_iff.2 ((isUnit_iff_isUnit_det _).1 hA).ne_zero
+  have hdet : ‖A'.det‖ = |t| ^ Fintype.card n * ‖(b : Matrix n n ℂ).det‖ ^ 2 * ‖A.det‖ := by
+    rw [← hb, det_mul, det_mul, det_smul_of_tower, star_eq_conjTranspose, det_conjTranspose]
+    simp only [norm_mul, norm_star, norm_smul, norm_pow, Real.norm_eq_abs]
+    ring
+  rw [det_congrSkew, hdet, mul_div_cancel_right₀ _ hAd]
+  simp [abs_mul, abs_pow, normSq_eq_norm_sq, mul_pow, ← pow_mul, sq]
+
+end Congruence
 
 end unitaryGroupOf
 
