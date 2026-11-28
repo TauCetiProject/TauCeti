@@ -38,15 +38,16 @@ series converge via the bundled operators:
 
 and `B^{α+β}_{r,q₁} ⊆ B^α_{r,q₁}` since `β > 0`.
 
-For two factors of the same positive regularity `s > 0` that are also bounded functions, the same
+For two factors of the same positive regularity `s > 0` that are also Lebesgue functions, the same
 decomposition gives the **tame product estimate**
-`‖u v‖_{B^s_{p,q}} ≤ C (‖u‖_∞ ‖v‖_{B^s_{p,q}} + ‖u‖_{B^s_{p,q}} ‖v‖_∞)`
-(`TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`): now `T_u v` and `T_v u` are bounded by
-the paraproduct estimates with the `L^∞` factor at low frequency
-(`TauCeti.BesovSpace.paraproductLpCLM`, `TauCeti.BesovSpace.paraproductRightLpCLM`), and `R(u, v)`
-by the resonant estimate with `v ∈ L^∞ ⊆ B^0_{∞,∞}` (`TauCeti.BesovSpace.ofLpCLM`). The products
-`S_M u · S_M v` converge to the pointwise product `u v` in `Lᵖ`, since `S_M v` is bounded in `L^∞`
-and `S_M u → u`, `S_M v → v` in `Lᵖ`.
+`‖u v‖_{B^s_{r,q}} ≤ C (‖u‖_{p₃} ‖v‖_{B^s_{p₂,q}} + ‖u‖_{B^s_{p₁,q}} ‖v‖_{p₄})` for
+`1/r = 1/p₁ + 1/p₄ = 1/p₃ + 1/p₂` (`TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`); the
+classical case is `p₃ = p₄ = ∞`. Now `T_u v` and `T_v u` are bounded by the paraproduct estimates
+with the Lebesgue factor at low frequency (`TauCeti.BesovSpace.paraproductLpCLM`,
+`TauCeti.BesovSpace.paraproductRightLpCLM`), and `R(u, v)` by the resonant estimate with
+`v ∈ L^{p₄} ⊆ B^0_{p₄,∞}` (`TauCeti.BesovSpace.ofLpCLM`). The products `S_M u · S_M v` converge to
+the pointwise product `u v` in `Lʳ`, since `S_M v` is bounded in `L^{p₄}` and `S_M u → u` in
+`L^{p₁}`, `S_M v → v` in `L^{p₂}`.
 
 The time-weighted product estimate lives in
 `TauCeti.Analysis.FunctionalSpaces.BesovSpace.TimeWeighted`.
@@ -63,9 +64,9 @@ The time-weighted product estimate lives in
   `T_u^N v + T_v^N u + R_N(u, v)` for any admissible gap `N`.
 * Single-block (`toDistr_smulL_of_block_eq_zero`) and constant-`1` (`smulL_one_left`,
   `smulL_one_right`) identities.
-* `TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`: for `s > 0`, the product of two bounded
-  elements of `B^s_{p,q}` lies in `B^s_{p,q}`, with the tame estimate above, uniformly in `p` and
-  `q`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`: for `s > 0`, the product of
+  `u ∈ B^s_{p₁,q} ∩ L^{p₃}` and `v ∈ B^s_{p₂,q} ∩ L^{p₄}` lies in `B^s_{r,q}`, with the tame
+  estimate above, uniformly in the exponents.
 
 ## References
 
@@ -291,32 +292,23 @@ section Tame
 
 /-! ### Positive regularity: the tame product estimate -/
 
-variable {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {s : ℝ} {p₃ p₄ q : ℝ≥0∞}
 
-omit [CompleteSpace F] [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] in
-/-- Products of almost everywhere equal factors, taken in different Hölder triples, agree. -/
-private theorem smul_eq_smul_of_ae_eq {p₁' p₂' : ℝ≥0∞} [p₁'.HolderTriple p₂' r]
-    {a : Lp ℂ p₁ (volume : Measure E)} {b : Lp F p₂ (volume : Measure E)}
-    {a' : Lp ℂ p₁' (volume : Measure E)} {b' : Lp F p₂' (volume : Measure E)}
-    (ha : a =ᵐ[volume] a') (hb : b =ᵐ[volume] b') :
-    (a • b : Lp F r (volume : Measure E)) = a' • b' :=
-  Lp.ext <| by
-    filter_upwards [Lp.coeFn_lpSMul (r := r) a b, Lp.coeFn_lpSMul (r := r) a' b', ha, hb]
-      with x h₁ h₂ h₃ h₄
-    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', h₃, h₄]
-
+omit [p₁.HolderTriple p₂ r] in
 open scoped FourierTransform in
-/-- For `s > 0`, let `u ∈ B^s_{p,q}` be represented by `f ∈ L^∞` and `v ∈ B^s_{p,q}` by
-`g ∈ L^∞`. Then `S_M u · S_M g → u g` in `Lᵖ`: the factor `S_M g` is bounded in `L^∞`, and
-`S_M g - g = S_M v - v` almost everywhere tends to `0` in `Lᵖ`, against the bounded factor `f`. -/
-private theorem tendsto_lowPass_smul_lowPass_ofLpCLM [Fact (1 ≤ q)] (hs : 0 < s)
-    (u : BesovSpace ℂ φ s p q) (v : BesovSpace F φ s p q) {f : Lp ℂ ∞ (volume : Measure E)}
-    {g : Lp F ∞ (volume : Measure E)} (hf : u.toDistr = f) (hg : v.toDistr = g) :
-    Tendsto (fun M ↦ (u.lowPass M • (ofLpCLM F φ ∞ g).lowPass M : Lp F p (volume : Measure E)))
-      atTop (𝓝 (toLpCLM ℂ φ p q hs u • g)) := by
-  set U := toLpCLM ℂ φ p q hs u
-  set V := toLpCLM F φ p q hs v
-  set g' := ofLpCLM F φ ∞ g
+/-- For `s > 0`, let `u ∈ B^s_{p₁,q}` be represented by `f ∈ L^{p₃}` and `v ∈ B^s_{p₂,q}` by
+`g ∈ L^{p₄}`, with `1/r = 1/p₁ + 1/p₄ = 1/p₃ + 1/p₂`. Then `S_M u · S_M g → u g` in `Lʳ`: the
+factor `S_M g` is bounded in `L^{p₄}`, and `S_M g - g = S_M v - v` almost everywhere tends to `0`
+in `L^{p₂}`, against the factor `f ∈ L^{p₃}`. -/
+private theorem tendsto_lowPass_smul_lowPass_ofLpCLM [Fact (1 ≤ p₃)] [Fact (1 ≤ p₄)]
+    [Fact (1 ≤ q)] [p₁.HolderTriple p₄ r] [p₃.HolderTriple p₂ r] (hs : 0 < s)
+    (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q) {f : Lp ℂ p₃ (volume : Measure E)}
+    {g : Lp F p₄ (volume : Measure E)} (hf : u.toDistr = f) (hg : v.toDistr = g) :
+    Tendsto (fun M ↦ (u.lowPass M • (ofLpCLM F φ p₄ g).lowPass M : Lp F r (volume : Measure E)))
+      atTop (𝓝 (toLpCLM ℂ φ p₁ q hs u • g)) := by
+  set U := toLpCLM ℂ φ p₁ q hs u
+  set V := toLpCLM F φ p₂ q hs v
+  set g' := ofLpCLM F φ p₄ g
   set A := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hUf : U =ᵐ[volume] f := Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
     rw [coe_toLpCLM, hf]
@@ -326,10 +318,10 @@ private theorem tendsto_lowPass_smul_lowPass_ofLpCLM [Fact (1 ≤ q)] (hs : 0 < 
     Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
       rw [coe_lowPass, coe_lowPass, toDistr_ofLpCLM, hg]
   -- Split `S_M u · S_M g - U g = (S_M u - U) · S_M g + f · (S_M v - V)`.
-  have key : ∀ M, (u.lowPass M • g'.lowPass M - U • g : Lp F p (volume : Measure E)) =
+  have key : ∀ M, (u.lowPass M • g'.lowPass M - U • g : Lp F r (volume : Measure E)) =
       (u.lowPass M - U) • g'.lowPass M + f • (v.lowPass M - V) := fun M ↦ by
-    have h : (U • (g'.lowPass M - g) : Lp F p (volume : Measure E)) = f • (v.lowPass M - V) :=
-      smul_eq_smul_of_ae_eq hUf <| by
+    have h : (U • (g'.lowPass M - g) : Lp F r (volume : Measure E)) = f • (v.lowPass M - V) :=
+      Lp.smul_eq_smul_of_ae_eq hUf <| by
         filter_upwards [Lp.coeFn_sub (g'.lowPass M) g, Lp.coeFn_sub (v.lowPass M) V, hgv M, hgV]
           with x h₁ h₂ h₃ h₄
         rw [h₁, h₂, Pi.sub_apply, Pi.sub_apply, h₃, h₄]
@@ -349,20 +341,24 @@ private theorem tendsto_lowPass_smul_lowPass_ofLpCLM [Fact (1 ≤ q)] (hs : 0 < 
 variable (F φ) in
 /-- **The tame product estimate on Besov spaces** (Bahouri–Chemin–Danchin, Corollary 2.86). Let
 `s > 0`. There is `C ≥ 0`, depending only on `E`, `F`, `φ` and `s`, with the following property
-for all `1 ≤ p, q ≤ ∞`. If `u ∈ B^s_{p,q}` and `v ∈ B^s_{p,q}` are bounded functions, represented by
-`f, g ∈ L^∞`, then their product lies in `B^s_{p,q}` with
+for all exponents `1 ≤ p₁, p₂, p₃, p₄, r, q ≤ ∞` with `1/r = 1/p₁ + 1/p₄ = 1/p₃ + 1/p₂`. If
+`u ∈ B^s_{p₁,q}` is represented by `f ∈ L^{p₃}` and `v ∈ B^s_{p₂,q}` by `g ∈ L^{p₄}`, then their
+product lies in `B^s_{r,q}` with
 
-`‖u v‖_{B^s_{p,q}} ≤ C (‖f‖_∞ ‖v‖_{B^s_{p,q}} + ‖u‖_{B^s_{p,q}} ‖g‖_∞)`.
+`‖u v‖_{B^s_{r,q}} ≤ C (‖f‖_{p₃} ‖v‖_{B^s_{p₂,q}} + ‖u‖_{B^s_{p₁,q}} ‖g‖_{p₄})`.
 
-Here the product is the pointwise product of the `Lᵖ` function `toLpCLM ℂ φ p q hs u` of `u` with
-`g`. Each factor enters the estimate with its full `B^s_{p,q}` norm only once, against the `L^∞`
-norm of the other. -/
+Here the product is the pointwise product of the `L^{p₁}` function `toLpCLM ℂ φ p₁ q hs u` of `u`
+with `g`. Each factor enters the estimate with its full Besov norm only once, against the Lebesgue
+norm of the other. The classical case is `p₁ = p₂ = r = p` and `p₃ = p₄ = ∞`: bounded elements of
+`B^s_{p,q}` multiply in `B^s_{p,q}`. -/
 theorem exists_toDistr_eq_smul_and_norm_le (hs : 0 < s) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (u : BesovSpace ℂ φ s p q)
-      (v : BesovSpace F φ s p q) {f : Lp ℂ ∞ (volume : Measure E)}
-      {g : Lp F ∞ (volume : Measure E)}, u.toDistr = f → v.toDistr = g →
-      ∃ w : BesovSpace F φ s p q,
-        w.toDistr = ((toLpCLM ℂ φ p q hs u • g : Lp F p (volume : Measure E)) : 𝓢'(E, F)) ∧
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ p₃ p₄ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)]
+      [Fact (1 ≤ p₃)] [Fact (1 ≤ p₄)] [Fact (1 ≤ r)] [Fact (1 ≤ q)] [p₁.HolderTriple p₄ r]
+      [p₃.HolderTriple p₂ r] (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q)
+      {f : Lp ℂ p₃ (volume : Measure E)} {g : Lp F p₄ (volume : Measure E)},
+      u.toDistr = f → v.toDistr = g →
+      ∃ w : BesovSpace F φ s r q,
+        w.toDistr = ((toLpCLM ℂ φ p₁ q hs u • g : Lp F r (volume : Measure E)) : 𝓢'(E, F)) ∧
         ‖w‖ ≤ C * (‖f‖ * ‖v‖ + ‖u‖ * ‖g‖) := by
   obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   have hs₀ : 0 < s + 0 := by simpa using hs
@@ -371,37 +367,38 @@ theorem exists_toDistr_eq_smul_and_norm_le (hs : 0 < s) :
   obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_paraproductRightLpCLM_le (F := F) hN s
   obtain ⟨C₃, hC₃, h₃⟩ := exists_norm_resonantCLM_le (F := F) (φ := φ) N s 0 hs₀
   obtain ⟨C₀, hC₀, h₀⟩ := exists_norm_ofLpCLM_le F φ
-  refine ⟨C₁ + C₂ + C₃ * C₀, by positivity, fun {p q} _ _ u v f g hf hg ↦ ?_⟩
-  -- Bony's decomposition `u g = T_f v + T_g u + R(u, g)`, all three terms in `B^s_{p,q}`.
-  set g' := ofLpCLM F φ ∞ g
-  set w₁ := paraproductLpCLM (F := F) (β := s) (p₁ := ∞) (p₂ := p) (q := q) p hN f v
-  set w₂ := paraproductRightLpCLM (F := F) (α := s) (p₁ := p) (p₂ := ∞) (q := q) p hN u g
-  set w₃ := resonantCLM p q N hs₀ u g'
-  refine ⟨w₁ + w₂ + inclusion F φ p hle le_rfl w₃, ?_, ?_⟩
-  · have hT₁ : HasSum (fun j ↦ ((u.lowPass (j - N) • g'.block j : Lp F p (volume : Measure E)) :
+  refine ⟨C₁ + C₂ + C₃ * C₀, by positivity,
+    fun {p₁ p₂ p₃ p₄ r q} _ _ _ _ _ _ _ _ u v f g hf hg ↦ ?_⟩
+  -- Bony's decomposition `u g = T_f v + T_g u + R(u, g)`, all three terms in `B^s_{r,q}`.
+  set g' := ofLpCLM F φ p₄ g
+  set w₁ := paraproductLpCLM (F := F) (β := s) (p₁ := p₃) (p₂ := p₂) (q := q) r hN f v
+  set w₂ := paraproductRightLpCLM (F := F) (α := s) (p₁ := p₁) (p₂ := p₄) (q := q) r hN u g
+  set w₃ := resonantCLM r q N hs₀ u g'
+  refine ⟨w₁ + w₂ + inclusion F φ r hle le_rfl w₃, ?_, ?_⟩
+  · have hT₁ : HasSum (fun j ↦ ((u.lowPass (j - N) • g'.block j : Lp F r (volume : Measure E)) :
         𝓢'(E, F))) w₁.toDistr :=
-      (hasSum_paraproductLpCLM (r := p) hN f v).congr_fun fun j ↦ congrArg _ <|
-        smul_eq_smul_of_ae_eq
+      (hasSum_paraproductLpCLM (r := r) hN f v).congr_fun fun j ↦ congrArg _ <|
+        Lp.smul_eq_smul_of_ae_eq
           (Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
             rw [coe_lowPass, coe_lowPass, toDistr_ofLpCLM, hf])
           (Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
             rw [coe_block, coe_block, toDistr_ofLpCLM, hg])
-    have hlim := tendsto_lowPass_smul_lowPass_of_hasSum (r := p) u g' hT₁
-      (hasSum_paraproductRightLpCLM (r := p) hN u g)
-      (tendsto_sum_block_smul_sum_resonantCLM (r := p) (q := q) N hs₀ u g')
+    have hlim := tendsto_lowPass_smul_lowPass_of_hasSum (r := r) u g' hT₁
+      (hasSum_paraproductRightLpCLM (r := r) hN u g)
+      (tendsto_sum_block_smul_sum_resonantCLM (r := r) (q := q) N hs₀ u g')
     rw [toDistr_add, toDistr_add, toDistr_inclusion]
-    exact tendsto_nhds_unique hlim <| ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto
+    exact tendsto_nhds_unique hlim <| ((Lp.toTemperedDistributionCLM F volume r).continuous.tendsto
       _).comp (tendsto_lowPass_smul_lowPass_ofLpCLM hs u v hf hg)
   · have hn₁ : ‖w₁‖ ≤ C₁ * ‖f‖ * ‖v‖ :=
-      ((paraproductLpCLM p hN).le_opNorm₂ f v).trans (by gcongr; exact h₁)
+      ((paraproductLpCLM r hN).le_opNorm₂ f v).trans (by gcongr; exact h₁)
     have hn₂ : ‖w₂‖ ≤ C₂ * ‖u‖ * ‖g‖ :=
-      ((paraproductRightLpCLM p hN).le_opNorm₂ u g).trans (by gcongr; exact h₂)
-    have hn₃ : ‖inclusion F φ p hle le_rfl w₃‖ ≤ C₃ * ‖u‖ * (C₀ * ‖g‖) :=
-      (norm_inclusion_le _ _ _).trans <| ((resonantCLM p q N hs₀).le_opNorm₂ u g').trans
+      ((paraproductRightLpCLM r hN).le_opNorm₂ u g).trans (by gcongr; exact h₂)
+    have hn₃ : ‖inclusion F φ r hle le_rfl w₃‖ ≤ C₃ * ‖u‖ * (C₀ * ‖g‖) :=
+      (norm_inclusion_le _ _ _).trans <| ((resonantCLM r q N hs₀).le_opNorm₂ u g').trans
         (by gcongr; exacts [h₃, h₀ g])
     have ha : 0 ≤ ‖f‖ * ‖v‖ := by positivity
     have hb : 0 ≤ ‖u‖ * ‖g‖ := by positivity
-    calc _ ≤ ‖w₁‖ + ‖w₂‖ + ‖inclusion F φ p hle le_rfl w₃‖ := norm_add₃_le
+    calc _ ≤ ‖w₁‖ + ‖w₂‖ + ‖inclusion F φ r hle le_rfl w₃‖ := norm_add₃_le
       _ ≤ C₁ * ‖f‖ * ‖v‖ + C₂ * ‖u‖ * ‖g‖ + C₃ * ‖u‖ * (C₀ * ‖g‖) :=
           add_le_add_three hn₁ hn₂ hn₃
       _ ≤ (C₁ + C₂ + C₃ * C₀) * (‖f‖ * ‖v‖ + ‖u‖ * ‖g‖) := by

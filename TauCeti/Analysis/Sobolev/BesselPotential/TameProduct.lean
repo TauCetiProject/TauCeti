@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Product
-public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
+public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Product
+import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 
 /-!
 # The tame product estimate on `H^s(ℝⁿ)`
@@ -29,9 +30,9 @@ which nonlinear terms are bounded in energy estimates on the scale `H^s`: a quad
 in a field costs one factor `‖·‖_{H^s}` against one factor `‖·‖_∞`, the latter controlled by a
 lower norm.
 
-The estimate is the case `p = q = 2` of the tame product estimate on Besov spaces,
-`TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`, since `H^{s,2} = B^s_{2,2}` with
-equivalent norms (`TauCeti.BesovSpace.besselPotentialSpaceEquiv`).
+The estimate is the case `p₁ = p₂ = r = q = 2`, `p₃ = p₄ = ∞` of the tame product estimate on
+Besov spaces, `TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`, since
+`H^{s,2} = B^s_{2,2}` with equivalent norms (`TauCeti.BesovSpace.besselPotentialSpaceEquiv`).
 
 ## References
 
@@ -75,7 +76,7 @@ private theorem exists_besselPotentialSpace_toDistr_eq_smul_and_norm_le (hs : 0 
   set V := e.symm hv.toBesselPotentialSpace
   have hU : U.toDistr = u := by simp [U, e']
   have hV : V.toDistr = v := by simp [V, e]
-  obtain ⟨w, hw, hwn⟩ := hCw U V
+  obtain ⟨w, hw, hwn⟩ := hCw (r := 2) U V
     (hU.trans (Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.2 hf))
     (hV.trans (Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.2 hg))
   have hUu : toLpCLM ℂ φ 2 2 hs U = u :=
