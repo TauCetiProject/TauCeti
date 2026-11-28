@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Data.Int.Interval
 
 /-!
@@ -21,7 +22,8 @@ This file records the resulting two statements: outside `Finset.Icc a b`, the te
 bounded complex vanish, while its cohomology vanishes under the corresponding cohomological
 bounds. They are the finiteness input to alternating-sum (Euler characteristic) computations over
 a bounded complex. It also records that the canonical truncation `K.truncGE a` keeps an upper
-bound of `K`.
+bound of `K`, and that in an abelian category a strict lower bound passes from the middle term to
+the third term of a short exact sequence of `ℤ`-indexed cochain complexes.
 
 ## Main results
 
@@ -30,6 +32,8 @@ bound of `K`.
   bounding interval.
 * `CochainComplex.isStrictlyLE_truncGE`: the truncation `K.truncGE a` is strictly bounded above
   by any strict upper bound of `K`.
+* `CategoryTheory.ShortComplex.ShortExact.isStrictlyGE_X₃`: a strict lower bound passes to the
+  quotient in a short exact sequence of `ℤ`-indexed cochain complexes.
 -/
 
 public section
@@ -70,3 +74,19 @@ instance isStrictlyLE_truncGE [HasZeroObject A] (K : CochainComplex A ℤ) [∀ 
   · exact (K.truncGE a).isZero_of_isStrictlyGE a i
 
 end CochainComplex
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+/-- In an abelian category, if `0 ⟶ K₁ ⟶ K₂ ⟶ K₃ ⟶ 0` is a short exact sequence of `ℤ`-indexed
+cochain complexes and `K₂` is strictly supported in degrees `≥ b`, then so is `K₃`. -/
+lemma isStrictlyGE_X₃ {C : Type*} [Category* C] [Abelian C]
+    {S : ShortComplex (CochainComplex C ℤ)} (hS : S.ShortExact) (b : ℤ) [S.X₂.IsStrictlyGE b] :
+    S.X₃.IsStrictlyGE b := by
+  have hSq := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
+  rw [CochainComplex.isStrictlyGE_iff]
+  intro q hq
+  have : Epi (S.g.f q) := (hSq q).epi_g
+  rw [IsZero.iff_id_eq_zero, ← cancel_epi (S.g.f q), Category.comp_id, Limits.comp_zero]
+  exact (S.X₂.isZero_of_isStrictlyGE b q hq).eq_of_src _ _
+
+end CategoryTheory.ShortComplex.ShortExact

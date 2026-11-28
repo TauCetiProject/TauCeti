@@ -333,6 +333,13 @@ instance (b : ℤ) [K.IsStrictlyLE b] : CochainComplex.IsStrictlyLE
       ← cancel_mono ((kernel.ι (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).f i)]
     exact (K.isZero_of_isStrictlyLE b i hi).eq_of_tgt _ _
 
+/-- The kernel of `K ⟶ σ^{≤ n} K` vanishes in degrees `≤ n`, so it is strictly supported in
+degrees `≥ n + 1`. -/
+instance isStrictlyGE_kernel_πStupidTruncLE :
+    CochainComplex.IsStrictlyGE
+      (kernel (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))) (n + 1) :=
+  (isStrictlyGE_iff _ _).2 fun _ hi ↦ K.isZero_kernel_πStupidTruncLE_X n (by lia)
+
 /-- The sequence `σ^{≥ 0} K ⟶ σ^{≥ -1} K ⟶ ⋯` of brutal truncations of `K`. Its `m`-th term is
 the kernel of `K ⟶ σ^{≤ -m-1} K`, the subcomplex of the terms of `K` in degrees `≥ -m`. -/
 @[simps obj]
