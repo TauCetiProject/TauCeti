@@ -30,8 +30,9 @@ and `X₀`, `Y₀` satisfy `IsBaseChange S`, extension and restriction are mutua
 * `RootPairing.latticeAut`, `IsDualLatticePair`, and `IsDualLatticePair.restrict`:
   lattice-preserving automorphisms, dual `R`-lattice pairs, and the restricted `R`-root pairing.
 * `RootPairing.IsDualLatticePair.restrictAutHom`, `baseChangeEquiv`, `extendAutHom`,
-  `autMulEquiv`, and `autMulEquivOfIsFullLattice`: restriction/extension of automorphisms and
-  `hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀`.
+  `autMulEquiv`, `weylGroupMulEquiv`, and `autMulEquivOfIsFullLattice`:
+  restriction/extension of automorphisms, `hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀`, and
+  `hXY.restrict.weylGroup ≃* P.weylGroup`.
 * `RootPairing.unitTmulRootPairingEquiv` and `RootPairing.autMulEquivLatticeAutBaseChange`:
   comparison of `D` with the unit-tensor lattices `1 ⊗ X` and `1 ⊗ Y` in `D.baseChange S`.
 
@@ -40,6 +41,10 @@ and `X₀`, `Y₀` satisfy `IsBaseChange S`, extension and restriction are mutua
 * `RootPairing.mem_latticeAut_iff`, `RootPairing.mem_latticeAut_iff_forall`, and
   `RootPairing.IsDualLatticePair.weylGroup_le_latticeAut`: characterizations of `latticeAut` and
   invariance of dual lattices under `P.weylGroup`.
+* `RootPairing.IsDualLatticePair.weylGroup_subgroupOf_map_restrictAutHom`,
+  `RootPairing.IsDualLatticePair.restrictAutHom_mem_weylGroup_iff`, and
+  `RootPairing.IsDualLatticePair.extendAutHom_mem_weylGroup_iff`: image and membership reflection
+  for the Weyl group under lattice restriction and extension.
 * `RootPairing.IsDualLatticePair.restrictAutHom_extendAutHom` and `extendAutHom_restrictAutHom`:
   scalar extension and restriction of automorphisms are mutually inverse.
 * `RootPairing.isDualLatticePair_range_mk_one` and `RootPairing.range_autBaseChangeHom`: the
@@ -306,6 +311,11 @@ noncomputable def restrictAutHom : P.latticeAut X₀ Y₀ →* hXY.restrict.Aut 
 @[simp] theorem coe_restrictAutHom_smul (g : P.latticeAut X₀ Y₀) (x : X₀) :
     ((hXY.restrictAutHom g • x : X₀) : M) = (g : P.Aut) • (x : M) := (rfl)
 
+/-- Coercing the restricted contravariant coweight map back to `N` agrees with the ambient
+coweight map. -/
+@[simp] theorem coe_restrictAutHom_coweightMap (g : P.latticeAut X₀ Y₀) (y : Y₀) :
+    ((hXY.restrictAutHom g).coweightMap y : N) = (g : P.Aut).coweightMap y := (rfl)
+
 /-- Coercing the restricted contravariant coweight action back to `N` agrees with the ambient
 coweight action. -/
 theorem coe_restrictAutHom_coweightEquiv (g : P.latticeAut X₀ Y₀) (y : Y₀) :
@@ -315,7 +325,9 @@ theorem coe_restrictAutHom_coweightEquiv (g : P.latticeAut X₀ Y₀) (y : Y₀)
 coweight action. -/
 @[simp] theorem coe_restrictAutHom_coweightEquiv_symm (g : P.latticeAut X₀ Y₀) (y : Y₀) :
     ((hXY.restrictAutHom g).coweightEquiv.symm y : N) = (g : P.Aut).coweightEquiv.symm y :=
-  (g : P.Aut).coweightEquiv.injective <| by simp [← hXY.coe_restrictAutHom_coweightEquiv]
+  (g : P.Aut).coweightEquiv.injective <| by
+    rw [← hXY.coe_restrictAutHom_coweightEquiv, LinearEquiv.apply_symm_apply,
+      LinearEquiv.apply_symm_apply]
 
 /-- Restriction of automorphisms preserves the root-index permutation. -/
 @[simp] theorem restrictAutHom_indexEquiv (g : P.latticeAut X₀ Y₀) :
@@ -327,6 +339,26 @@ coweight action. -/
       Equiv.reflection hXY.restrict i :=
   Equiv.weightHom_injective _ <| LinearEquiv.ext fun x ↦
     Subtype.ext (hXY.restrict_coe_reflection i x).symm
+
+/-- Restriction maps the ambient Weyl subgroup viewed inside `P.latticeAut X₀ Y₀` onto
+`hXY.restrict.weylGroup`. -/
+theorem weylGroup_subgroupOf_map_restrictAutHom :
+    (P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀)).map hXY.restrictAutHom =
+      hXY.restrict.weylGroup := by
+  let S₀ : Set (P.latticeAut X₀ Y₀) :=
+    range fun i ↦ ⟨Equiv.reflection P i, hXY.reflection_mem_latticeAut i⟩
+  have hS₀ : (Subgroup.closure S₀).map (P.latticeAut X₀ Y₀).subtype = P.weylGroup := by
+    rw [MonoidHom.map_closure, ← range_comp, weylGroup]
+    rfl
+  have hsub : P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀) = Subgroup.closure S₀ := by
+    refine le_antisymm (fun g hg ↦ ?_) ((Subgroup.closure_le _).mpr ?_)
+    · rw [Subgroup.mem_subgroupOf, ← hS₀, Subgroup.mem_map] at hg
+      obtain ⟨g', hg', hgg'⟩ := hg
+      exact (Subtype.ext hgg') ▸ hg'
+    · rintro _ ⟨i, rfl⟩
+      exact Subgroup.subset_closure (mem_range_self i)
+  rw [hsub, MonoidHom.map_closure, ← range_comp, weylGroup]
+  exact congrArg Subgroup.closure <| congrArg range <| funext hXY.restrictAutHom_reflection
 
 section IsBaseChange
 
@@ -455,6 +487,70 @@ noncomputable def autMulEquiv : hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀ whe
 @[simp] theorem autMulEquiv_symm_apply (g : P.latticeAut X₀ Y₀) :
     (hXY.autMulEquiv hX hY).symm g = hXY.restrictAutHom g := (rfl)
 
+/-- Scalar extension sends each restricted reflection to the ambient reflection. -/
+@[simp] theorem extendAutHom_reflection (i : ι) :
+    (hXY.extendAutHom hX hY (Equiv.reflection hXY.restrict i) : P.Aut) =
+      Equiv.reflection P i := by
+  rw [← hXY.restrictAutHom_reflection i, hXY.extendAutHom_restrictAutHom]
+
+include hX hY in
+/-- Restriction reflects and preserves membership in the Weyl group. -/
+@[simp] theorem restrictAutHom_mem_weylGroup_iff {g : P.latticeAut X₀ Y₀} :
+    hXY.restrictAutHom g ∈ hXY.restrict.weylGroup ↔ (g : P.Aut) ∈ P.weylGroup := by
+  rw [← hXY.weylGroup_subgroupOf_map_restrictAutHom,
+    Subgroup.mem_map_iff_mem (hXY.autMulEquiv hX hY).symm.injective, Subgroup.mem_subgroupOf]
+
+include hX hY in
+/-- Extension preserves and reflects membership in the Weyl group. -/
+@[simp] theorem extendAutHom_mem_weylGroup_iff {u : hXY.restrict.Aut} :
+    (hXY.extendAutHom hX hY u : P.Aut) ∈ P.weylGroup ↔ u ∈ hXY.restrict.weylGroup := by
+  rw [← hXY.restrictAutHom_mem_weylGroup_iff hX hY, hXY.restrictAutHom_extendAutHom]
+
+/-- Extension maps `hXY.restrict.weylGroup` onto `P.weylGroup` viewed inside
+`P.latticeAut X₀ Y₀`. -/
+theorem weylGroup_map_extendAutHom :
+    hXY.restrict.weylGroup.map (hXY.extendAutHom hX hY) =
+      P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀) := by
+  ext g
+  simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
+  refine ⟨?_, fun hg ↦ ⟨hXY.restrictAutHom g,
+    (hXY.restrictAutHom_mem_weylGroup_iff hX hY).mpr hg, hXY.extendAutHom_restrictAutHom hX hY g⟩⟩
+  rintro ⟨u, hu, rfl⟩
+  exact (hXY.extendAutHom_mem_weylGroup_iff hX hY).mpr hu
+
+include hX hY in
+/-- **Scalar extension and lattice restriction identify `hXY.restrict.weylGroup` with
+`P.weylGroup`** when `Y₀` is finite free over `R` and `X₀.subtype`, `Y₀.subtype` satisfy
+`IsBaseChange S`. -/
+noncomputable def weylGroupMulEquiv : hXY.restrict.weylGroup ≃* P.weylGroup :=
+  ((hXY.autMulEquiv hX hY).subgroupMap hXY.restrict.weylGroup).trans
+    ((MulEquiv.subgroupCongr (hXY.weylGroup_map_extendAutHom hX hY)).trans
+      (Subgroup.subgroupOfEquivOfLe hXY.weylGroup_le_latticeAut))
+
+/-- Coercing `hXY.weylGroupMulEquiv hX hY w` to `P.Aut` applies `hXY.extendAutHom hX hY`. -/
+@[simp] theorem coe_weylGroupMulEquiv_apply (w : hXY.restrict.weylGroup) :
+    (hXY.weylGroupMulEquiv hX hY w : P.Aut) = hXY.extendAutHom hX hY w :=
+  congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
+    ((MulEquiv.coe_subgroupMap_apply _ _ w).trans (hXY.autMulEquiv_apply hX hY w))
+
+/-- Coercing `(hXY.weylGroupMulEquiv hX hY).symm w` to `hXY.restrict.Aut` applies
+`hXY.restrictAutHom`. -/
+@[simp] theorem coe_weylGroupMulEquiv_symm_apply (w : P.weylGroup) :
+    ((hXY.weylGroupMulEquiv hX hY).symm w : hXY.restrict.Aut) =
+      hXY.restrictAutHom ⟨w.val, hXY.weylGroup_le_latticeAut w.property⟩ :=
+  hXY.autMulEquiv_symm_apply hX hY ⟨w.val, hXY.weylGroup_le_latticeAut w.property⟩
+
+/-- `hXY.weylGroupMulEquiv hX hY` preserves indexed reflections. -/
+@[simp] theorem weylGroupMulEquiv_ofIdx (i : ι) :
+    hXY.weylGroupMulEquiv hX hY (weylGroup.ofIdx hXY.restrict i) = weylGroup.ofIdx P i :=
+  Subtype.ext (hXY.extendAutHom_reflection hX hY i)
+
+/-- `(hXY.weylGroupMulEquiv hX hY).symm` sends each indexed reflection of `P` to that of
+`hXY.restrict`. -/
+@[simp] theorem weylGroupMulEquiv_symm_ofIdx (i : ι) :
+    (hXY.weylGroupMulEquiv hX hY).symm (weylGroup.ofIdx P i) = weylGroup.ofIdx hXY.restrict i :=
+  Subtype.ext (hXY.restrictAutHom_reflection i)
+
 end IsBaseChange
 
 end IsDualLatticePair
@@ -475,7 +571,7 @@ pairing.** -/
 noncomputable def IsDualLatticePair.autMulEquivOfIsFullLattice (hXY : P.IsDualLatticePair X₀ Y₀) :
     hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀ := by
   have : Module.Finite R Y₀ := Submodule.IsLattice.finite K Y₀
-  have : Module.Free R X₀ := .of_equiv hXY.restrict.toLinearMap.toPerfPair.symm
+  have : Module.Free R X₀ := .of_isPerfPair hXY.restrict.toLinearMap
   exact hXY.autMulEquiv (Submodule.isBaseChange_subtype X₀) (Submodule.isBaseChange_subtype Y₀)
 
 /-- On `(X₀, Y₀)`, `autMulEquivOfIsFullLattice.symm` is lattice restriction `restrictAutHom`. -/
@@ -526,8 +622,6 @@ section UnitTmul
 variable {ι R X Y : Type*} [CommRing R] [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y]
   (D : RootPairing ι R X Y) [Free R Y] [Module.Finite R Y]
 
-include D in private theorem free_weight : Free R X := .of_equiv D.toLinearMap.toPerfPair.symm
-
 variable (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
 
 /-- **The unit-tensor submodules `1 ⊗ X` and `1 ⊗ Y` form a dual `R`-lattice pair inside
@@ -540,7 +634,7 @@ theorem isDualLatticePair_range_mk_one :
       range_coroot_subset := by rintro _ ⟨i, rfl⟩; exact ⟨D.coroot i, by simp⟩
       pairing_mem_range := by rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩; exact ⟨D.toLinearMap x y, by simp⟩
       isPerfPair := ?_ }
-  have := D.free_weight
+  have : Free R X := .of_isPerfPair D.toLinearMap
   refine LinearMap.IsPerfPair.congr (p := D.toLinearMap)
     (TensorProduct.unitTmulEquiv R S X).symm (TensorProduct.unitTmulEquiv R S Y).symm _ ?_
   ext x y; apply FaithfulSMul.algebraMap_injective R S
@@ -552,7 +646,7 @@ theorem isDualLatticePair_range_mk_one :
 restriction of `D.baseChange S` to the unit-tensor lattices `1 ⊗ X` and `1 ⊗ Y`.** -/
 noncomputable def unitTmulRootPairingEquiv :
     D.Equiv (D.isDualLatticePair_range_mk_one S).restrict := by
-  have := D.free_weight
+  have : Free R X := .of_isPerfPair D.toLinearMap
   refine
     { weightMap := (TensorProduct.unitTmulEquiv R S X).toLinearMap
       coweightMap := (TensorProduct.unitTmulEquiv R S Y).symm.toLinearMap
@@ -571,7 +665,8 @@ noncomputable def unitTmulRootPairingEquiv :
 /-- Coercing `(D.unitTmulRootPairingEquiv S).weightMap x` to `S ⊗[R] X` gives `1 ⊗ₜ[R] x`. -/
 @[simp] theorem coe_unitTmulRootPairingEquiv_weightMap (x : X) :
     ((D.unitTmulRootPairingEquiv S).weightMap x : S ⊗[R] X) = 1 ⊗ₜ[R] x := by
-  have := D.free_weight; exact TensorProduct.coe_unitTmulEquiv_apply x
+  have : Free R X := .of_isPerfPair D.toLinearMap
+  exact TensorProduct.coe_unitTmulEquiv_apply x
 
 /-- The weight equivalence of `D.unitTmulRootPairingEquiv S` is `TensorProduct.unitTmulEquiv`. -/
 @[simp] theorem unitTmulRootPairingEquiv_weightEquiv [Module.Flat R X] :
@@ -594,7 +689,7 @@ noncomputable def unitTmulRootPairingEquiv :
 noncomputable def autMulEquivLatticeAutBaseChange :
     D.Aut ≃* (D.baseChange S).latticeAut (LinearMap.range (TensorProduct.mk R S X 1))
       (LinearMap.range (TensorProduct.mk R S Y 1)) :=
-  have := D.free_weight
+  have : Free R X := .of_isPerfPair D.toLinearMap
   have : Module.Finite R (LinearMap.range (TensorProduct.mk R S Y 1)) :=
     .equiv (TensorProduct.unitTmulEquiv R S Y)
   (D.unitTmulRootPairingEquiv S).autCongr.trans
@@ -606,7 +701,7 @@ noncomputable def autMulEquivLatticeAutBaseChange :
 `D.autBaseChangeHom S g`. -/
 @[simp] theorem coe_autMulEquivLatticeAutBaseChange_apply (g : D.Aut) :
     (D.autMulEquivLatticeAutBaseChange S g : (D.baseChange S).Aut) = D.autBaseChangeHom S g := by
-  have := D.free_weight
+  have : Free R X := .of_isPerfPair D.toLinearMap
   refine Equiv.weightHom_injective (D.baseChange S) <| LinearEquiv.toLinearMap_injective <|
     (TensorProduct.isBaseChange R X S).algHom_ext _ _ fun x ↦ ?_
   change (D.autMulEquivLatticeAutBaseChange S g : (D.baseChange S).Aut) • ((1 : S) ⊗ₜ[R] x) =

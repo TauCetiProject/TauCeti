@@ -36,23 +36,6 @@ namespace TauCeti
 
 open RootPairing Function Matrix TensorProduct
 
-section
-
-variable {κ R : Type*} (S : Type*) [Fintype κ] [DecidableEq κ]
-  [CommRing R] [CommRing S] [Algebra R S]
-
-private theorem piScalarRight_tmul (a : S) (x : κ → R) :
-    TensorProduct.piScalarRight R S S κ (a ⊗ₜ[R] x) = fun j ↦ x j • a := by
-  rw [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul]
-
-private theorem piScalarRight_one_tmul (x : κ → R) :
-    TensorProduct.piScalarRight R S S κ (1 ⊗ₜ[R] x) = Pi.algebraMap κ R S x := by
-  rw [piScalarRight_tmul]
-  ext j
-  simp [Pi.algebraMap, Algebra.smul_def]
-
-end
-
 variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S] [Algebra R S]
   [FaithfulSMul R S] (P : RootPairing ι R (κ → R) (κ → R))
   (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y)
@@ -60,55 +43,21 @@ variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S] [A
 local notation "Q" => rootPairingBaseChange S P hP
 local notation "A" => Pi.algebraMap κ R S
 
-open Classical in
-private noncomputable def piEquiv : (P.baseChange S).Equiv Q :=
-  let e : S ⊗[R] (κ → R) ≃ₗ[S] (κ → S) := TensorProduct.piScalarRight R S S κ
-  { weightMap := e.toLinearMap
-    coweightMap := e.symm.toLinearMap
-    indexEquiv := _root_.Equiv.refl ι
-    weight_coweight_transpose := LinearMap.ext fun n ↦ by
-      have hcomp :
-          (e.toLinearMap.dualMap ∘ₗ (Q).flip.toPerfPair.toLinearMap) ∘ₗ e.toLinearMap =
-            (P.baseChange S).flip.toPerfPair.toLinearMap := by
-        refine AlgebraTensorModule.ext fun a y ↦ AlgebraTensorModule.ext fun b x ↦ ?_
-        simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, LinearEquiv.coe_coe,
-          LinearMap.toPerfPair_apply, flip_toLinearMap, LinearMap.flip_apply,
-          toLinearMap_rootPairingBaseChange, baseChange_toLinearMap,
-          LinearMap.baseChangePairing_tmul_tmul, e, piScalarRight_tmul, dotProduct,
-          Algebra.smul_def, Finset.mul_sum, map_sum, map_mul, hP]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        ring
-      simpa using congr($hcomp (e.symm n))
-    root_weightMap := by
-      ext i j
-      simp only [Function.comp_apply, root_rootPairingBaseChange, baseChange_root,
-        _root_.Equiv.refl_apply, LinearEquiv.coe_coe]
-      exact congrFun (piScalarRight_one_tmul S (P.root i)) j
-    coroot_coweightMap := by
-      ext i
-      simp only [Function.comp_apply, baseChange_coroot, coroot_rootPairingBaseChange,
-        LinearEquiv.coe_coe]
-      exact (congrArg e.symm (piScalarRight_one_tmul S (P.coroot i)).symm).trans
-        (e.symm_apply_apply _)
-    bijective_weightMap := e.bijective
-    bijective_coweightMap := e.symm.bijective }
-
-private theorem piEquiv_weightEquiv_one_tmul (x : κ → R) :
-    (piEquiv S P hP).weightEquiv (1 ⊗ₜ[R] x) = A x := by
-  classical exact piScalarRight_one_tmul S x
-
 /-- Entrywise extension of coefficients identifies Weyl groups.
 The identification preserves the permutation of root indices. -/
 noncomputable def weylGroupBaseChangeEquiv : P.weylGroup ≃* (Q).weylGroup :=
-  (P.weylGroupBaseChangeMulEquiv S).trans (piEquiv S P hP).weylGroupEquiv
+  (P.weylGroupBaseChangeMulEquiv S).trans (rootPairingBaseChangeEquiv S P hP).weylGroupEquiv
 
 /-- Entrywise scalar extension intertwines the Weyl-group actions on weight vectors. -/
 @[simp]
 theorem weylGroupBaseChangeEquiv_smul (w : P.weylGroup) (x : κ → R) :
     weylGroupBaseChangeEquiv S P hP w • A x = A (w • x) := by
-  rw [weylGroupBaseChangeEquiv, MulEquiv.trans_apply, ← piEquiv_weightEquiv_one_tmul S P hP x,
-    (piEquiv S P hP).weylGroupEquiv_smul, P.weylGroupBaseChangeMulEquiv_smul_tmul S,
-    piEquiv_weightEquiv_one_tmul]
+  classical
+  rw [weylGroupBaseChangeEquiv, MulEquiv.trans_apply,
+    ← rootPairingBaseChangeEquiv_weightEquiv_one_tmul S P hP x,
+    (rootPairingBaseChangeEquiv S P hP).weylGroupEquiv_smul,
+    P.weylGroupBaseChangeMulEquiv_smul_tmul S,
+    rootPairingBaseChangeEquiv_weightEquiv_one_tmul]
 
 /-- The inverse comparison intertwines the Weyl-group actions on weight vectors. -/
 @[simp low]
@@ -138,7 +87,6 @@ theorem weylGroupToPerm_weylGroupBaseChangeEquiv_symm (w : (Q).weylGroup) :
 theorem weylGroupBaseChangeEquiv_ofIdx (i : ι) :
     weylGroupBaseChangeEquiv S P hP (weylGroup.ofIdx P i) = weylGroup.ofIdx Q i := by
   simp [weylGroupBaseChangeEquiv]
-  rfl
 
 /-- The inverse base-change comparison preserves indexed reflections. -/
 @[simp]

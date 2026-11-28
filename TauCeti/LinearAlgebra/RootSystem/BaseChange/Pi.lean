@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.Chain
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.Matrix.Dual
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Pi
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Algebra.Group.Submonoid.Closure
 
@@ -29,7 +31,8 @@ source pairing to be the dot product too, and every axiom of `RootPairing` then 
 `Pi.algebraMap`, entrywise application of `algebraMap R S`. The extension of scalars of an
 arbitrary root pairing, on `S ⊗[R] M` and `S ⊗[R] N`, is `RootPairing.baseChange` in
 `TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic`; this file instead stays in the coordinates
-`κ → S`, so that no tensor product appears.
+`κ → S`, so that no tensor product appears, and provides the canonical equivalence
+`TauCeti.rootPairingBaseChangeEquiv` between `P.baseChange S` and `rootPairingBaseChange S P hP`.
 
 The properties a downstream Lie-theoretic consumer needs are transported separately, each under its
 own hypotheses: being crystallographic, being reduced, spanning, carrying a base with a prescribed
@@ -41,11 +44,17 @@ proved over the new base ring rather than transported.
 
 * `TauCeti.rootPairingBaseChange`: the base change of a dot-product root pairing along an injective
   algebra map `R → S`, expressed by `[FaithfulSMul R S]`.
+* `TauCeti.rootPairingBaseChangeEquiv`: the canonical equivalence between `P.baseChange S` and
+  `rootPairingBaseChange S P hP`.
 * `TauCeti.rootPairingBaseChangeBase`: the base of the base change attached to a base of the
   original pairing, supported on the same indices.
 
 ## Main results
 
+* `TauCeti.rootPairingBaseChangeEquiv_weightEquiv`,
+  `TauCeti.rootPairingBaseChangeEquiv_coweightEquiv_symm`, and
+  `TauCeti.rootPairingBaseChangeEquiv_indexEquiv`: formulas for the weight, forward coweight, and
+  index maps of `rootPairingBaseChangeEquiv`.
 * `TauCeti.isCrystallographic_rootPairingBaseChange`: base change preserves being crystallographic.
 * `TauCeti.isReduced_rootPairingBaseChange`: base change preserves being reduced.
 * `TauCeti.span_range_root_rootPairingBaseChange_eq_top` and
@@ -169,6 +178,85 @@ theorem linearIndependent_pair_root_rootPairingBaseChange_iff [IsDomain S] (i j 
   fin_cases k <;> rfl
 
 end Defs
+
+/-! ## Comparison with tensor-product base change -/
+
+section Equiv
+
+open scoped TensorProduct
+
+variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S] [Algebra R S]
+  [FaithfulSMul R S] (P : RootPairing ι R (κ → R) (κ → R))
+  (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y)
+
+open Classical in
+/-- Canonical equivalence between the tensor-product base change `P.baseChange S` and the
+entrywise coordinate base change `rootPairingBaseChange S P hP`. -/
+noncomputable def rootPairingBaseChangeEquiv :
+    (P.baseChange S).Equiv (rootPairingBaseChange S P hP) :=
+  let e : S ⊗[R] (κ → R) ≃ₗ[S] (κ → S) := TensorProduct.piScalarRight R S S κ
+  { weightMap := e.toLinearMap
+    coweightMap := e.symm.toLinearMap
+    indexEquiv := _root_.Equiv.refl ι
+    weight_coweight_transpose := LinearMap.ext fun n ↦ by
+      have hcomp :
+          (e.toLinearMap.dualMap ∘ₗ (rootPairingBaseChange S P hP).flip.toPerfPair.toLinearMap) ∘ₗ
+              e.toLinearMap =
+            (P.baseChange S).flip.toPerfPair.toLinearMap := by
+        refine TensorProduct.AlgebraTensorModule.ext fun a y ↦
+          TensorProduct.AlgebraTensorModule.ext fun b x ↦ ?_
+        simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, LinearEquiv.coe_coe,
+          LinearMap.toPerfPair_apply, RootPairing.flip_toLinearMap, LinearMap.flip_apply,
+          toLinearMap_rootPairingBaseChange, RootPairing.baseChange_toLinearMap,
+          LinearMap.baseChangePairing_tmul_tmul, e, TensorProduct.piScalarRight_apply,
+          TensorProduct.piScalarRightHom_tmul, dotProduct, Algebra.smul_def, Finset.mul_sum,
+          map_sum, map_mul, hP]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        ring
+      simpa using congr($hcomp (e.symm n))
+    root_weightMap := by
+      ext i j
+      simp only [Function.comp_apply, root_rootPairingBaseChange, RootPairing.baseChange_root,
+        _root_.Equiv.refl_apply, LinearEquiv.coe_coe, e]
+      exact congrFun (TensorProduct.piScalarRight_one_tmul R S κ (P.root i)) j
+    coroot_coweightMap := by
+      ext i
+      simp only [Function.comp_apply, RootPairing.baseChange_coroot,
+        coroot_rootPairingBaseChange, LinearEquiv.coe_coe, e]
+      exact TensorProduct.piScalarRight_symm_algebraMap_comp (P.coroot i)
+    bijective_weightMap := e.bijective
+    bijective_coweightMap := e.symm.bijective }
+
+/-- The weight equivalence of `rootPairingBaseChangeEquiv` is `TensorProduct.piScalarRight`. -/
+@[simp] theorem rootPairingBaseChangeEquiv_weightEquiv [DecidableEq κ] :
+    (rootPairingBaseChangeEquiv S P hP).weightEquiv = TensorProduct.piScalarRight R S S κ :=
+  LinearEquiv.toLinearMap_injective rfl
+
+/-- The forward coweight equivalence of `rootPairingBaseChangeEquiv` is
+`TensorProduct.piScalarRight`. -/
+@[simp] theorem rootPairingBaseChangeEquiv_coweightEquiv_symm [DecidableEq κ] :
+    (rootPairingBaseChangeEquiv S P hP).coweightEquiv.symm =
+      TensorProduct.piScalarRight R S S κ := by
+  have h : (rootPairingBaseChangeEquiv S P hP).coweightEquiv =
+      (TensorProduct.piScalarRight R S S κ).symm := by
+    refine LinearEquiv.toLinearMap_injective ?_
+    change ((letI := Classical.decEq κ; TensorProduct.piScalarRight R S S κ)).symm.toLinearMap = _
+    congr!
+  rw [h, LinearEquiv.symm_symm]
+
+/-- `rootPairingBaseChangeEquiv` acts as the identity on root indices. -/
+@[simp] theorem rootPairingBaseChangeEquiv_indexEquiv :
+    (rootPairingBaseChangeEquiv S P hP).indexEquiv = _root_.Equiv.refl ι :=
+  (rfl)
+
+/-- On unit tensors, the weight map of `rootPairingBaseChangeEquiv` applies `Pi.algebraMap`. -/
+theorem rootPairingBaseChangeEquiv_weightEquiv_one_tmul (x : κ → R) :
+    (rootPairingBaseChangeEquiv S P hP).weightEquiv (1 ⊗ₜ[R] x) = Pi.algebraMap κ R S x := by
+  classical
+  rw [rootPairingBaseChangeEquiv_weightEquiv]
+  exact TensorProduct.piScalarRight_one_tmul R S κ x
+
+end Equiv
 
 /-! ## Transport of the axioms a Lie-theoretic consumer needs -/
 

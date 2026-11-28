@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Dual.BaseChange
-public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
+public import TauCeti.LinearAlgebra.PerfectPairing.Basic
 
 /-!
 # Extension of scalars of a pairing
@@ -109,8 +109,8 @@ free, then the extended pairing of `S ⊗[R] M` with `S ⊗[R] N` is perfect ove
 is then finite and free too, being isomorphic to `Dual R N`.) -/
 instance isPerfPair_baseChangePairing [p.IsPerfPair] [Free R N] [Module.Finite R N] :
     (p.baseChangePairing S).IsPerfPair := by
-  have : Free R M := .of_equiv p.toPerfPair.symm
-  have : Module.Finite R M := .equiv p.toPerfPair.symm
+  have : Free R M := .of_isPerfPair p
+  have : Module.Finite R M := .of_isPerfPair p
   refine ⟨p.bijective_baseChangePairing S (IsPerfPair.bijective_left p), ?_⟩
   rw [flip_baseChangePairing]
   exact p.flip.bijective_baseChangePairing S (IsPerfPair.bijective_right p)

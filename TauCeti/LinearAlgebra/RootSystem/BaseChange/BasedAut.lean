@@ -248,10 +248,9 @@ include hW
 `IsDualLatticePair.weylGroup_le_latticeAut`). -/
 theorem isComplement'_weylGroup_basedAut_subgroupOf :
     (P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀)).IsComplement'
-      (b.basedAut.subgroupOf (P.latticeAut X₀ Y₀)) := by
-  have hsub : (b.basedAut ⊓ P.latticeAut X₀ Y₀).subgroupOf (P.latticeAut X₀ Y₀) =
-      b.basedAut.subgroupOf (P.latticeAut X₀ Y₀) := by ext x; simp
-  exact hsub ▸ (b.isLocalComplement_weylGroup_basedAut hW).isComplement'_subgroupOf
+      (b.basedAut.subgroupOf (P.latticeAut X₀ Y₀)) :=
+  Subgroup.inf_subgroupOf_right b.basedAut (P.latticeAut X₀ Y₀) ▸
+    (b.isLocalComplement_weylGroup_basedAut hW).isComplement'_subgroupOf
 
 /-- **Restricted semidirect product decomposition of `P.latticeAut X₀ Y₀`**: for a finite
 reduced crystallographic pairing over a characteristic-zero domain and any submodule pair

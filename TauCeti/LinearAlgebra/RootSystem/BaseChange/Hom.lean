@@ -224,8 +224,8 @@ theorem weylGroup_map_autBaseChangeHom :
 /-- An extended automorphism lies in `(P.baseChange S).weylGroup` iff `g ∈ P.weylGroup`. -/
 @[simp] theorem autBaseChangeHom_mem_weylGroup_iff {g : P.Aut} :
     P.autBaseChangeHom S g ∈ (P.baseChange S).weylGroup ↔ g ∈ P.weylGroup := by
-  rw [← P.weylGroup_map_autBaseChangeHom S]
-  exact ⟨fun ⟨_, hh, heq⟩ ↦ P.autBaseChangeHom_injective S heq ▸ hh, fun hg ↦ ⟨g, hg, rfl⟩⟩
+  rw [← P.weylGroup_map_autBaseChangeHom S,
+    Subgroup.mem_map_iff_mem (P.autBaseChangeHom_injective S)]
 
 /-- **Scalar extension identifies the Weyl group of `P` with that of `P.baseChange S`.** -/
 noncomputable def weylGroupBaseChangeMulEquiv : P.weylGroup ≃* (P.baseChange S).weylGroup :=
