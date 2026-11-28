@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LegendreTwist
+import TauCeti.NumberTheory.Chebyshev.ResidueClass
 
 /-!
 # The remainders `R_q` of the one-sided prime sum bound
@@ -151,6 +152,7 @@ section Bounds
 
 /-- The weight vanishes when the Legendre prime divides the progression modulus: any
 `n ≡ 1 (mod q)` is then `1` modulo `d`, so its Legendre symbol is `1`. -/
+@[simp]
 theorem primeWeight_eq_zero_of_dvd_level {d q : ℕ} [Fact d.Prime] (hdq : d ∣ q) (n : ℕ) :
     primeWeight d q n = 0 := by
   by_cases hn : (n : ZMod q) = 1
@@ -197,6 +199,20 @@ theorem sum_primeWeight_le {z : ℝ} (hz : 0 ≤ z) :
     _ = 2 * Chebyshev.psi z := by rw [← Finset.mul_sum, hψ]
     _ ≤ 2 * (Real.log 4 + 4) * z := by
         linarith [Chebyshev.psi_le_const_mul_self hz]
+
+/-- For the Legendre prime `2`, only even prime powers contribute to the weight, so its
+sum up to `t ≥ 1` is at most `log t`. -/
+theorem sum_primeWeight_two_le_log {q : ℕ} {t : ℝ} (ht : 1 ≤ t) :
+    ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, primeWeight 2 q n ≤ Real.log t := by
+  refine le_trans (b := Chebyshev.psiAP 2 0 t) ?_ (Chebyshev.psiAP_zero_le_log Nat.prime_two ht)
+  rw [Chebyshev.psiAP_def, Finset.sum_filter, ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
+  refine Finset.sum_le_sum fun n _ ↦ ?_
+  by_cases hn : (n : ZMod 2) = 0
+  · simp only [primeWeight_def, legendreSym, Int.cast_natCast, hn, quadraticChar_zero,
+      Int.cast_zero, sub_zero, mul_one, ite_true]
+    split_ifs <;> simp [vonMangoldt_nonneg]
+  · simp [primeWeight_def, legendreSym, hn,
+      quadraticChar_eq_one_of_char_two (ZMod.ringChar_zmod_n 2) hn]
 
 /-- For `0 < y` and `⌊y⌋ ≤ N`, a sum against `(1/n - 1/y)₊` over `1 ≤ n ≤ N` is the sum
 against `1/n - 1/y` over `1 ≤ n ≤ y`. -/

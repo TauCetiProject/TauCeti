@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Remainder
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.SummatoryTail
-import TauCeti.NumberTheory.Chebyshev.ResidueClass
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 
 /-!
@@ -79,19 +78,6 @@ private theorem not_integrableOn_of_primeWeight_sum_small
          _ ≤ (q.totient : ℝ)⁻¹ * t - ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, primeWeight d q n := by
            linarith
   exact not_integrableOn_Ioi_inv ((integrable_smul_iff hc.ne' (fun t : ℝ ↦ t⁻¹)).mp hmajor)
-
-omit [NeZero q] in
-private theorem sum_primeWeight_two_le_log {t : ℝ} (ht : 1 ≤ t) :
-    ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, primeWeight 2 q n ≤ Real.log t := by
-  refine le_trans (b := Chebyshev.psiAP 2 0 t) ?_ (Chebyshev.psiAP_zero_le_log Nat.prime_two ht)
-  rw [Chebyshev.psiAP_def, Finset.sum_filter, ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
-  refine Finset.sum_le_sum fun n _ ↦ ?_
-  by_cases hn : (n : ZMod 2) = 0
-  · simp only [primeWeight_def, legendreSym, Int.cast_natCast, hn, quadraticChar_zero,
-      Int.cast_zero, sub_zero, mul_one, ite_true]
-    split_ifs <;> simp [ArithmeticFunction.vonMangoldt_nonneg]
-  · simp [primeWeight_def, legendreSym, hn,
-      quadraticChar_eq_one_of_char_two (ZMod.ringChar_zmod_n 2) hn]
 
 private theorem primeRemainder_eq_neg_integral_tail_of_one_le
     (hE : IntegrableOn (fun t : ℝ ↦ ((∑ n ∈ Finset.Icc 1 ⌊t⌋₊, primeWeight d q n) -
