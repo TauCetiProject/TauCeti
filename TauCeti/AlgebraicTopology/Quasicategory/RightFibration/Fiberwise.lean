@@ -36,6 +36,16 @@ open modelCategoryQuillen
 
 variable {X Y S : SSet.{u}}
 
+private theorem rlp_monomorphisms_iff_forall_fiber_map_of_isWeaklyContractible_fiber
+    (f : X ⟶ Y) (p : Y ⟶ S)
+    (hf : (∀ y : Y _⦋0⦌, IsWeaklyContractible (fiber f y : SSet.{u})) →
+      (monomorphisms SSet.{u}).rlp f) :
+    (monomorphisms SSet.{u}).rlp f ↔
+      ∀ s : S _⦋0⦌, (monomorphisms SSet.{u}).rlp (fiber.map f (q := f ≫ p) rfl s) := by
+  refine ⟨fun h s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
+    (fiber.isPullback_map f rfl s) h, fun h ↦ hf ?_⟩
+  exact fun y ↦ fiber.isWeaklyContractible_of_rlp_map f p y (h (p.app _ y))
+
 private theorem forall_rlp_monomorphisms_iff_forall_isWeakHomotopyEquivalence_fiber_map
     (f : X ⟶ Y) (p : Y ⟶ S)
     (hp : ∀ s : S _⦋0⦌, KanComplex (fiber p s : SSet.{u}))
@@ -58,10 +68,8 @@ theorem rlp_monomorphisms_iff_forall_fiber_map (f : X ⟶ Y) [RightFibration f]
     (p : Y ⟶ S) :
     (monomorphisms SSet.{u}).rlp f ↔
       ∀ s : S _⦋0⦌, (monomorphisms SSet.{u}).rlp (fiber.map f (q := f ≫ p) rfl s) := by
-  refine ⟨fun hf s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
-    (fiber.isPullback_map f rfl s) hf, fun h ↦ ?_⟩
-  rw [rlp_monomorphisms_iff_isWeaklyContractible_fiber]
-  exact fun y ↦ fiber.isWeaklyContractible_of_rlp_map f p y (h (p.app _ y))
+  exact rlp_monomorphisms_iff_forall_fiber_map_of_isWeaklyContractible_fiber f p
+    (rlp_monomorphisms_iff_isWeaklyContractible_fiber f).2
 
 /-- For a right fibration over `S`, if the fibres of `Y ⟶ S` are Kan complexes,
 triviality is detected by intrinsic weak homotopy equivalences on these fibres. -/
@@ -88,10 +96,8 @@ theorem rlp_monomorphisms_iff_forall_fiber_map (f : X ⟶ Y) [LeftFibration f]
     (p : Y ⟶ S) :
     (monomorphisms SSet.{u}).rlp f ↔
       ∀ s : S _⦋0⦌, (monomorphisms SSet.{u}).rlp (fiber.map f (q := f ≫ p) rfl s) := by
-  refine ⟨fun hf s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
-    (fiber.isPullback_map f rfl s) hf, fun h ↦ ?_⟩
-  rw [rlp_monomorphisms_iff_isWeaklyContractible_fiber]
-  exact fun y ↦ fiber.isWeaklyContractible_of_rlp_map f p y (h (p.app _ y))
+  exact rlp_monomorphisms_iff_forall_fiber_map_of_isWeaklyContractible_fiber f p
+    (rlp_monomorphisms_iff_isWeaklyContractible_fiber f).2
 
 /-- For a left fibration over `S`, if the fibres of `Y ⟶ S` are Kan complexes,
 triviality is detected by intrinsic weak homotopy equivalences on these fibres. -/

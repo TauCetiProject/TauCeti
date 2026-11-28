@@ -101,7 +101,7 @@ theorem fiber.isWeaklyContractible_of_rlp_map {S : SSet.{u}} (f : X ⟶ Y) (p : 
       (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))).1 ?_).2
   intro A B i hi
   have := h i hi
-  exact fiber.hasLiftingProperty_of_map f p y i
+  exact (fiber.isPullback_map_toPoint f p y).hasLiftingProperty i
 
 /-- A Kan fibration whose fibres over all vertices of the base are weakly contractible has the
 right lifting property with respect to all monomorphisms: it is a trivial fibration. -/

@@ -39,8 +39,8 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 * `SSet.range_le_fiber_iff`: a map lands in the fiber of `q` over `y` exactly when its composite
   with `q` is constant at `y`.
 * `SSet.fiber.isPullback_map`: a map induced on fibres is a base change of the original map.
-* `SSet.fiber.hasLiftingProperty_of_map`: lifting for a map on fibres over a further base
-  gives lifting for the fibres of the original map to a point.
+* `SSet.fiber.isPullback_map_toPoint`: a fibre of the original map is a fibre of the induced
+  map over a further base.
 * `SSet.fiber.isTerminalOfIsIso`: the fibers of an isomorphism are terminal.
 * `SSet.fiber.quasicategory`, `SSet.fiber.kanComplex`: the fibers of inner fibrations are
   quasicategories, and those of Kan fibrations are Kan complexes.
@@ -262,15 +262,6 @@ lemma fiber.isPullback_map_toPoint {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
   refine outer.of_right ?_ (fiber.isPullback_map f (q := f ≫ p) rfl (p.app _ y))
   apply (cancel_mono (fiber p (p.app _ y)).ι).1
   simp
-
-/-- Lifting against a map on the fibres over `S` gives lifting against the map
-from each fibre over `Y` to a point. Here the relevant vertex of `S` is the image
-of the chosen vertex `y` of `Y`. -/
-theorem fiber.hasLiftingProperty_of_map {S A B : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
-    (y : Y _⦋0⦌) (i : A ⟶ B)
-    [HasLiftingProperty i (fiber.map f (q := f ≫ p) rfl (p.app _ y))] :
-    HasLiftingProperty i (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u})) :=
-  (fiber.isPullback_map_toPoint f p y).hasLiftingProperty i
 
 /-- A terminal simplicial set is a quasicategory. -/
 lemma quasicategory_of_isTerminal (h : IsTerminal X) : Quasicategory X :=
