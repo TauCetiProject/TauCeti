@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Constructions
+public import Mathlib.Analysis.Normed.Group.Real
 
 /-!
 # Norms on products
@@ -18,6 +19,11 @@ about `0` by an element of norm at most `R` stays in that ball (`Pi.norm_update_
 
 Over an arbitrary index type, every coordinate of `Pi.single i c` has norm at most `‖c‖`
 (`Pi.norm_single_apply_le`).
+
+In a finite product of copies of one seminormed group, a difference of two coordinates has norm at
+most twice the norm (`Pi.norm_sub_le_two_mul_norm`). For real coordinates this is
+`|v i - v j| ≤ 2 * ‖v‖` (`Pi.abs_sub_le_two_mul_norm`), with equality at `v = eᵢ - eⱼ`
+(`Pi.abs_sub_eq_two_mul_norm_single_sub_single`).
 -/
 
 public section
@@ -58,3 +64,24 @@ theorem Pi.norm_update_le {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι →
     rcases eq_or_ne j i with rfl | hj
     · simpa using hy
     · simpa [Function.update_of_ne hj] using (norm_le_pi_norm x j).trans hx
+
+/-- In the sup norm, a difference of two coordinates has norm at most twice the norm. -/
+theorem Pi.norm_sub_le_two_mul_norm {ι : Type*} [Fintype ι] {E : Type*} [SeminormedAddGroup E]
+    (v : ι → E) (i j : ι) : ‖v i - v j‖ ≤ 2 * ‖v‖ := by
+  linarith [norm_sub_le (v i) (v j), norm_le_pi_norm v i, norm_le_pi_norm v j]
+
+/-- In the sup norm, a difference of two real coordinates is at most twice the norm. -/
+theorem Pi.abs_sub_le_two_mul_norm {ι : Type*} [Fintype ι] (v : ι → ℝ) (i j : ι) :
+    |v i - v j| ≤ 2 * ‖v‖ := by
+  rw [← Real.norm_eq_abs]
+  exact Pi.norm_sub_le_two_mul_norm v i j
+
+/-- The vector `eᵢ - eⱼ` attains the bound `Pi.abs_sub_le_two_mul_norm`. -/
+theorem Pi.abs_sub_eq_two_mul_norm_single_sub_single {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (i j : ι) :
+    |(Pi.single i 1 - Pi.single j 1 : ι → ℝ) i - (Pi.single i 1 - Pi.single j 1 : ι → ℝ) j| =
+      2 * ‖(Pi.single i 1 - Pi.single j 1 : ι → ℝ)‖ := by
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  rw [← dist_eq_norm, dist_single_single i j _ _ hij]
+  norm_num [hij, hij.symm]

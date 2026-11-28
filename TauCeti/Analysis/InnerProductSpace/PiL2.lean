@@ -69,6 +69,10 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
   point of the standard simplex is within `K * √(1 - ‖x‖ ^ 2)` of the coordinate-weighted average
   of its values at the vertices.
+* `EuclideanSpace.abs_sub_le_sqrt_two_mul_norm`: a difference `v i - v j` of two coordinates of a
+  real Euclidean vector is at most `√2 * ‖v‖` in absolute value, with equality at `v = eᵢ - eⱼ`
+  for `i ≠ j` (`EuclideanSpace.abs_sub_eq_sqrt_two_mul_norm_single_sub_single`); so
+  `v ↦ v i - v j` is `√2`-Lipschitz (`EuclideanSpace.lipschitzWith_apply_sub_apply`).
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
 * `EuclideanSpace.consPiEquivL`: the same splitting onto `𝕜 × (Fin n → 𝕜)`, linear over any ring of
@@ -292,6 +296,41 @@ theorem abs_sub_sum_mul_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ 
       exact Finset.sum_congr rfl fun i _ ↦ by ring
     _ ≤ K * √(1 - ‖x‖ ^ 2) :=
       mul_le_mul_of_nonneg_left (sum_mul_dist_basisFun_le_sqrt hx0 hx1) K.coe_nonneg
+
+/-- A difference of two coordinates of a real Euclidean vector is at most `√2` times its norm. -/
+theorem abs_sub_le_sqrt_two_mul_norm (v : EuclideanSpace ℝ ι) (i j : ι) :
+    |v i - v j| ≤ √2 * ‖v‖ := by
+  classical
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  have hpair : v i ^ 2 + v j ^ 2 ≤ ‖v‖ ^ 2 := by
+    have := Finset.sum_le_univ_sum_of_nonneg (s := {i, j}) fun p => sq_nonneg (v p)
+    rwa [Finset.sum_pair hij, ← EuclideanSpace.real_norm_sq_eq] at this
+  have hsq : (v i - v j) ^ 2 ≤ 2 * ‖v‖ ^ 2 := by nlinarith [sq_nonneg (v i + v j)]
+  calc |v i - v j| ≤ √(2 * ‖v‖ ^ 2) := Real.abs_le_sqrt hsq
+    _ = √2 * ‖v‖ := by rw [Real.sqrt_mul zero_le_two, Real.sqrt_sq (norm_nonneg v)]
+
+/-- The vector `eᵢ - eⱼ` attains the bound `abs_sub_le_sqrt_two_mul_norm`. -/
+theorem abs_sub_eq_sqrt_two_mul_norm_single_sub_single [DecidableEq ι] (i j : ι) :
+    |(single i 1 - single j 1 : EuclideanSpace ℝ ι) i -
+        (single i 1 - single j 1 : EuclideanSpace ℝ ι) j| =
+      √2 * ‖(single i 1 - single j 1 : EuclideanSpace ℝ ι)‖ := by
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  have hnorm : ‖(single i 1 - single j 1 : EuclideanSpace ℝ ι)‖ = √2 := by
+    rw [← Real.sqrt_sq (norm_nonneg _), norm_sub_sq_real]
+    norm_num [EuclideanSpace.inner_single_left, hij.symm]
+  rw [hnorm, Real.mul_self_sqrt zero_le_two]
+  norm_num [hij, hij.symm]
+
+/-- The map `v ↦ v i - v j` on real Euclidean space is `√2`-Lipschitz. -/
+theorem lipschitzWith_apply_sub_apply (i j : ι) :
+    LipschitzWith (NNReal.sqrt 2) fun v : EuclideanSpace ℝ ι => v i - v j := by
+  refine LipschitzWith.of_dist_le_mul fun v w => ?_
+  rw [Real.dist_eq, dist_eq_norm, Real.coe_sqrt, NNReal.coe_ofNat]
+  calc |v i - v j - (w i - w j)| = |(v - w) i - (v - w) j| := by
+        simp only [PiLp.sub_apply]; congr 1; ring
+    _ ≤ √2 * ‖v - w‖ := abs_sub_le_sqrt_two_mul_norm (v - w) i j
 
 section take
 
