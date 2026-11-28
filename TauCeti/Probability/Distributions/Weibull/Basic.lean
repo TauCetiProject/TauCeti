@@ -597,7 +597,8 @@ theorem ae_pos_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P) :
     ∀ᵐ ω ∂P, 0 < X ω :=
   hX.ae (TauCeti.Probability.ae_pos_weibullMeasure k lam)
 
-/-- A real power of a Weibull random variable is integrable exactly above the negative shape. -/
+/-- For positive shape and scale, a real power of a Weibull random variable is integrable exactly
+above the negative shape. -/
 theorem integrable_rpow_weibullMeasure_iff (hX : HasLaw X (weibullMeasure k lam) P)
     (hk : 0 < k) (hlam : 0 < lam) (q : ℝ) :
     Integrable (fun ω ↦ X ω ^ q) P ↔ -k < q := by
@@ -605,7 +606,8 @@ theorem integrable_rpow_weibullMeasure_iff (hX : HasLaw X (weibullMeasure k lam)
     (integrable_comp_iff hX (f := fun x : ℝ ↦ x ^ q) (by fun_prop)).trans
       (TauCeti.Probability.integrable_rpow_weibullMeasure_iff hk hlam q)
 
-/-- The real-power moment of a Weibull random variable on its exact integrability domain. -/
+/-- For positive shape and scale, the real-power moment of a Weibull random variable on its exact
+integrability domain. -/
 theorem integral_rpow_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P)
     (hk : 0 < k) (hlam : 0 < lam) (hq : -k < q) :
     ∫ ω, X ω ^ q ∂P = lam ^ q * Real.Gamma (1 + q / k) := by
