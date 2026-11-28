@@ -155,7 +155,8 @@ theorem IsOfType.eq_zero_of_delBar_eq_zero_projectivization
   -- By Liouville's theorem and the transformation law, the coefficients vanish.
   have hc₀ {i j : Fin 2} (hij : i ≠ j) (t : ℂ) : (η i).val t ![(1 : ℂ)] = 0 :=
     (hc i).eq_zero_of_eq_neg_inv_sq_smul (hc j).continuous.continuousAt
-      (fun _ hs ↦ hα.mpullback_affineParam_apply_inv hij hs) t
+      (mem_of_superset isCompact_singleton.compl_mem_cocompact
+        fun _ hs ↦ hα.mpullback_affineParam_apply_inv hij hs) t
   -- Every point `x` is `[t : 1]` or `[1 : s]`, and `α` vanishes on the nonzero derivative there.
   refine Subtype.ext (funext fun x ↦ ?_)
   obtain ⟨i, hi⟩ := exists_mem_affineOpen x

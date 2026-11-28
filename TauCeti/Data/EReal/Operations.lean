@@ -16,7 +16,8 @@ subtraction in which one operand is a *real* number: both `a - (r : EReal)` and 
 are defined for every extended real `a`, are never of the form `∞ - ∞`, and behave like real
 subtraction in the ways recorded here. The file also records that adding a finite extended
 nonnegative real to a real number is real addition, that the positive part `EReal.toENNReal` is
-left adjoint to the coercion from `ℝ≥0∞`, so that this coercion commutes with infima, how
+left adjoint to the coercion from `ℝ≥0∞`, so that this coercion commutes with infima, that a
+nonnegative real bound on the image of `x : ℝ≥0∞` is the bound `x ≤ ENNReal.ofReal r`, how
 combinations `s a + t b - r` with real weights and subtrahend behave, and that negation
 distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
@@ -51,6 +52,8 @@ for every positive real `δ`.
 * `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima;
 * `TauCeti.EReal.neg_coe_ennreal_biInf_le_iff` — a bound `-(⨅ x ∈ s, f x) ≤ b` holds exactly
   when `-(f x) ≤ b` for every `x ∈ s`, the form of a large deviation lower bound over an open set;
+* `TauCeti.EReal.coe_ennreal_le_coe_iff_le_ofReal` — a nonnegative real bound `(x : EReal) ≤ r` on
+  `x : ℝ≥0∞` is the bound `x ≤ ENNReal.ofReal r`;
 * `TauCeti.EReal.le_neg_coe_ennreal_of_forall_ofReal_le` — a bound `a ≤ -d` by an extended
   nonnegative real `d` follows from the bounds `a ≤ -s` at the real thresholds `s` with
   `ofReal s ≤ d`;
@@ -393,6 +396,12 @@ exactly when the negated value at every point of the set is. -/
 theorem neg_coe_ennreal_biInf_le_iff {α : Type*} {s : Set α} {f : α → ℝ≥0∞} {b : EReal} :
     -((⨅ x ∈ s, f x : ℝ≥0∞) : EReal) ≤ b ↔ ∀ x ∈ s, -(f x : EReal) ≤ b := by
   simp_rw [EReal.neg_le (b := b), EReal.coe_ennreal_iInf, le_iInf_iff]
+
+/-- A nonnegative real bound on the `EReal` image of `x : ℝ≥0∞` is the bound `ENNReal.ofReal r`
+in `ℝ≥0∞`. -/
+theorem coe_ennreal_le_coe_iff_le_ofReal {x : ℝ≥0∞} {r : ℝ} (hr : 0 ≤ r) :
+    (x : EReal) ≤ r ↔ x ≤ ENNReal.ofReal r := by
+  rw [← EReal.coe_ennreal_le_coe_ennreal_iff, EReal.coe_ennreal_ofReal, max_eq_left hr]
 
 /-- An extended real that is at most `-s` for every real `s` with `ENNReal.ofReal s ≤ d` is at
 most `-d`. For `d = ∞` the hypothesis covers every real `s`, and the conclusion is `a = ⊥`. -/

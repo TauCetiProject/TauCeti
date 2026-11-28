@@ -223,13 +223,19 @@ theorem finite_setOf_range_subset {K : Set M} (hK : IsCompact K) :
     have := h.nonempty a
     (range_nonempty (i a)).mono (subset_inter subset_rfl ha)
 
+/-- Only finitely many pieces lie inside a compact band `f⁻¹[a, b]`. So only finitely many indices
+satisfy a condition `p` which puts the piece in that band. -/
+theorem finite_subtype_of_forall_mem_Icc {a b : ℝ} (hK : IsCompact (f ⁻¹' Icc a b))
+    {p : ι → Prop} (hp : ∀ j, p j → ∀ s, f (i j s) ∈ Icc a b) : Finite {j // p j} :=
+  ((h.finite_setOf_range_subset hK).subset (t := {j | p j}) fun j hj ↦
+    range_subset_iff.2 (hp j hj)).to_subtype
+
 /-- Only finitely many pieces lie on a level `f = c` inside a compact band `f⁻¹[a, b]`, since they
 all lie in the band. So only finitely many indices satisfy a condition `p` which puts the piece on
 that level. -/
 theorem finite_subtype_of_forall_apply_eq {a b c : ℝ} (hK : IsCompact (f ⁻¹' Icc a b))
     (hc : c ∈ Icc a b) {p : ι → Prop} (hp : ∀ j, p j → ∀ s, f (i j s) = c) : Finite {j // p j} :=
-  ((h.finite_setOf_range_subset hK).subset (t := {j | p j}) fun j hj ↦
-    range_subset_iff.2 fun s ↦ by rw [mem_preimage, hp j hj s]; exact hc).to_subtype
+  h.finite_subtype_of_forall_mem_Icc hK fun j hj s ↦ hp j hj s ▸ hc
 
 /-- A piece on a level `f = c` inside a compact band `f⁻¹[a, b]` is compact, since it lies in the
 band. -/

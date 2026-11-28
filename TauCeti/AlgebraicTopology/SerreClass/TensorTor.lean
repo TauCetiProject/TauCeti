@@ -15,8 +15,9 @@ public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 /-!
 # Tensor and Tor closure of torsion classes
 
-The torsion abelian groups and the groups annihilated by some power of a fixed natural number
-are closed under tensor products and Tor with arbitrary abelian groups. More generally, these
+The torsion abelian groups, the `S`-torsion abelian groups for any submonoid `S` of `ℤ`, and
+the groups annihilated by some power of a fixed natural number are closed under tensor products
+and Tor with arbitrary abelian groups (`Module.IsTorsion'.tor_left`). More generally, these
 properties hold for the underlying abelian groups of modules over any commutative ring. For
 bounded power torsion, the tensor product retains the same annihilating power.
 For tensor closure, the scalars may be a commutative semiring and the other factor need only
@@ -29,7 +30,7 @@ through a projective resolution in every degree.
 
 These are the tensor and Tor axioms for the classes used in Hurewicz theorems modulo a Serre
 class. No finiteness assumptions are imposed. This file does not establish the separate axioms
-concerning the homology of Eilenberg--MacLane spaces.
+concerning the homology of Eilenberg--Mac Lane spaces.
 
 ## References
 
@@ -43,6 +44,25 @@ open CategoryTheory MonoidalCategory
 open scoped TensorProduct
 
 universe u
+
+namespace Module.IsTorsion'
+
+open CategoryTheory
+
+/-- Every Tor group of a module whose underlying abelian group is `S`-torsion on the left and an
+arbitrary module on the right is `S`-torsion as an abelian group. -/
+theorem tor_left {R : Type u} [CommRing R] {M N : ModuleCat.{u} R}
+    {S : Submonoid ℤ} (h : Module.IsTorsion' M S) (n : ℕ) :
+    Module.IsTorsion' (((Tor (ModuleCat.{u} R) n).obj M).obj N) S := by
+  let P := (AddCommGrpCat.isSubmonoidTorsion S).inverseImage
+    (forget₂ (ModuleCat.{u} R) AddCommGrpCat)
+  apply (AddCommGrpCat.prop_isSubmonoidTorsion_iff S
+    (AddCommGrpCat.of (((Tor (ModuleCat.{u} R) n).obj M).obj N))).1
+  exact P.prop_leftDerived_obj ((tensoringLeft (ModuleCat.{u} R)).obj M)
+    (fun Y _ ↦ (AddCommGrpCat.prop_isSubmonoidTorsion_iff S _).2
+      (h.tensorProduct_left (R := R) (R₀ := ℤ))) N n
+
+end Module.IsTorsion'
 
 namespace TauCeti
 
@@ -63,12 +83,9 @@ variable {R : Type u} [CommRing R] {M N : ModuleCat.{u} R}
 /-- Every Tor group of a module whose underlying abelian group is torsion on the left and an
 arbitrary module on the right is torsion as an abelian group. -/
 theorem isAddTorsion_Tor_left (h : IsAddTorsion M) (n : ℕ) :
-    IsAddTorsion (((Tor (ModuleCat.{u} R) n).obj M).obj N) := by
-  let P := AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{u} R) AddCommGrpCat)
-  exact (AddCommGrpCat.prop_inverseImage_isTorsion_iff _).1
-    (P.prop_leftDerived_obj ((tensoringLeft (ModuleCat.{u} R)).obj M)
-      (fun Y _ ↦ (AddCommGrpCat.prop_inverseImage_isTorsion_iff _).2
-        (isAddTorsion_tensorProduct_left (R := R) h)) N n)
+    IsAddTorsion (((Tor (ModuleCat.{u} R) n).obj M).obj N) :=
+  isAddTorsion_iff_isTorsion_int.2
+    (Module.IsTorsion'.tor_left (isAddTorsion_iff_isTorsion_int.1 h) n)
 
 /-- Every Tor group of a module annihilated by some power of `d` on the left and an arbitrary
 module on the right is annihilated by some power of `d` as an abelian group. -/

@@ -14,7 +14,7 @@ import TauCeti.Topology.Covering.Clopen
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Monodromy
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`
@@ -412,6 +412,28 @@ theorem ConnectedFiberNumberedCoverClass.ind
 theorem ConnectedPointedCoverClass.mk_surjective :
     Function.Surjective (mk : ConnectedPointedCover x n → _) :=
   Quotient.mk_surjective
+
+/-- A function on pointed covers that is constant on pointed isomorphism classes, as a function
+on the classes. -/
+def ConnectedPointedCoverClass.lift {α : Sort*} (f : ConnectedPointedCover x n → α)
+    (hf : ∀ c c', ConnectedPointedCoverIso c c' → f c = f c') :
+    ConnectedPointedCoverClass x n → α :=
+  Quotient.lift f hf
+
+/-- The lift of `f` takes the class of `c` to `f c`. -/
+@[simp]
+theorem ConnectedPointedCoverClass.lift_mk {α : Sort*} (f : ConnectedPointedCover x n → α)
+    (hf : ∀ c c', ConnectedPointedCoverIso c c' → f c = f c') (c : ConnectedPointedCover x n) :
+    ConnectedPointedCoverClass.lift f hf (ConnectedPointedCoverClass.mk c) = f c :=
+  (rfl)
+
+/-- A property of the classes of pointed covers holds for every class once it holds for the class
+of every pointed cover. -/
+@[elab_as_elim]
+theorem ConnectedPointedCoverClass.ind {motive : ConnectedPointedCoverClass x n → Prop}
+    (h : ∀ c, motive (ConnectedPointedCoverClass.mk c)) (C : ConnectedPointedCoverClass x n) :
+    motive C :=
+  Quotient.ind h C
 
 /-- Every class of covers is the class of a cover. -/
 theorem ConnectedCoverClass.mk_surjective :

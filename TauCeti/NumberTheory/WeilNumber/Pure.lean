@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
@@ -33,10 +32,11 @@ invertible. The zero space is pure of every weight. Because being a Weil number 
 reflected by field homomorphisms, purity can be tested in any algebraically closed field over
 `K`, and it is preserved and reflected by extension of scalars to any field over `K`.
 
-The characteristic polynomial of an endomorphism of a short exact sequence is the product of those
-of its two ends, so the endomorphisms pure of weight `n` are closed under subobjects, quotients and
-extensions, and under direct sums. An extension of two endomorphisms pure of weight `n` is pure of
-weight `n` even when it does not split.
+The characteristic polynomial is multiplicative along an invariant subspace, with no invariant
+complement needed. So `F` is pure of weight `n` exactly when its restriction to an invariant
+subspace and the endomorphism induced on the quotient both are; more generally purity is
+preserved and reflected along short exact sequences, which need not split, and the pure
+endomorphisms of weight `n` are closed under subobjects, quotients, extensions and direct sums.
 
 ## Main definitions
 
@@ -56,12 +56,10 @@ weight `n` even when it does not split.
 * `TauCeti.IsPure.unique`: a pure endomorphism of a nonzero space has a unique weight.
 * `TauCeti.IsPure.of_injective`, `TauCeti.IsPure.of_surjective`: purity passes to subobjects and
   quotients.
-* `TauCeti.isPure_iff_of_exact`, `TauCeti.isPure_iff_isPure_restrict_and_isPure_mapQ`: along a
-  short exact sequence, or an invariant subspace and its quotient, the middle endomorphism is pure
-  of weight `n` if and only if both ends are.
-* `TauCeti.isPure_prodMap_iff`: a direct sum is pure of weight `n` if and only if both summands
-  are.
 * `TauCeti.isPure_of_subsingleton`: every endomorphism of the zero space is pure of every weight.
+* `TauCeti.isPure_iff_of_exact`, `TauCeti.isPure_iff_restrict_and_mapQ`: purity along a short
+  exact sequence, and on an invariant subspace and its quotient.
+* `TauCeti.isPure_prodMap_iff`: a direct sum is pure exactly when both summands are.
 
 The file closes with examples: a Jordan block `[[q, 1], [0, q]]` is pure of weight `2` without
 being semisimple, the matrix `[[0, -q], [1, 0]]` is pure of weight `1` although it has no
@@ -158,7 +156,7 @@ end IsPure
 
 /-! ### Subobjects, quotients, extensions and direct sums -/
 
-section Subquotient
+section Extension
 
 variable {V₁ V₂ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
   [AddCommGroup V₂] [Module K V₂] [FiniteDimensional K V₂] {F₁ : End K V₁} {F₂ : End K V₂}
@@ -169,13 +167,6 @@ theorem IsPure.of_charpoly_dvd (h : IsPure q n F) (hd : F₁.charpoly ∣ F.char
     IsPure q n F₁ := fun α hα ↦
   h α <| Multiset.mem_of_le
     (roots.le_of_dvd (F.charpoly_monic.map _).ne_zero (Polynomial.map_dvd _ hd)) hα
-
-/-- If the characteristic polynomial of `F` is the product of those of `F₁` and `F₂`, then `F` is
-pure of weight `n` if and only if `F₁` and `F₂` both are. -/
-theorem isPure_iff_of_charpoly_eq_mul (h : F.charpoly = F₁.charpoly * F₂.charpoly) :
-    IsPure q n F ↔ IsPure q n F₁ ∧ IsPure q n F₂ := by
-  simp only [IsPure, h, aroots_mul (F₁.charpoly_monic.mul F₂.charpoly_monic).ne_zero,
-    Multiset.mem_add, or_imp, forall_and]
 
 /-- If an injective linear map `i` carries `F₁` into a pure endomorphism `F`, then `F₁` is pure of
 the same weight. -/
@@ -189,27 +180,34 @@ theorem IsPure.of_surjective (h : IsPure q n F) {π : V →ₗ[K] V₂} (hπ : F
     (hF : π ∘ₗ F = F₂ ∘ₗ π) : IsPure q n F₂ :=
   h.of_charpoly_dvd (LinearMap.charpoly_dvd_of_surjective_of_comp_eq_comp F₂ F π hπ hF)
 
-/-- **Purity along a short exact sequence.** For an endomorphism of a short exact sequence
-`0 → V₁ → V → V₂ → 0`, the middle endomorphism is pure of weight `n` if and only if both outer
-ones are. In particular pure endomorphisms of weight `n` are closed under extensions, although such
-an extension need not split. -/
+/-- If the characteristic polynomial of `F` is the product of those of `F₁` and `F₂`, then `F` is
+pure of weight `n` exactly when `F₁` and `F₂` both are: the characteristic roots of `F` are those
+of `F₁` together with those of `F₂`. -/
+theorem isPure_iff_of_charpoly_eq_mul (h : F.charpoly = F₁.charpoly * F₂.charpoly) :
+    IsPure q n F ↔ IsPure q n F₁ ∧ IsPure q n F₂ := by
+  simp only [IsPure, h, aroots_mul (F₁.charpoly_monic.mul F₂.charpoly_monic).ne_zero,
+    Multiset.mem_add, or_imp, forall_and]
+
+/-- **Purity along a short exact sequence.** Let `0 → V₁ --i--> V --π--> V₂ → 0` be exact, and
+let `F₁`, `F`, `F₂` be endomorphisms commuting with `i` and `π`. Then `F` is pure of weight `n`
+exactly when `F₁` and `F₂` both are. The sequence need not split. -/
 theorem isPure_iff_of_exact {i : V₁ →ₗ[K] V} {π : V →ₗ[K] V₂} (hi : Function.Injective i)
     (hπ : Function.Surjective π) (hex : Function.Exact i π) (h₁ : F ∘ₗ i = i ∘ₗ F₁)
     (h₂ : π ∘ₗ F = F₂ ∘ₗ π) : IsPure q n F ↔ IsPure q n F₁ ∧ IsPure q n F₂ :=
   isPure_iff_of_charpoly_eq_mul (LinearMap.charpoly_eq_mul_of_exact hi hπ hex h₁ h₂)
 
-/-- An endomorphism preserving a subspace `W` is pure of weight `n` if and only if its restriction
-to `W` and the endomorphism it induces on `V ⧸ W` both are. -/
-theorem isPure_iff_isPure_restrict_and_isPure_mapQ (W : Submodule K V) (hW : W ≤ W.comap F) :
+/-- An endomorphism is pure of weight `n` exactly when its restriction to an invariant subspace
+and the endomorphism it induces on the quotient both are. -/
+theorem isPure_iff_restrict_and_mapQ (W : Submodule K V) (hW : W ≤ W.comap F) :
     IsPure q n F ↔ IsPure q n (F.restrict hW) ∧ IsPure q n (W.mapQ W F hW) :=
   isPure_iff_of_charpoly_eq_mul (LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W F hW)
 
-/-- A direct sum of endomorphisms is pure of weight `n` if and only if both summands are. -/
+/-- A direct sum of endomorphisms is pure of weight `n` exactly when both summands are. -/
 @[simp]
 theorem isPure_prodMap_iff : IsPure q n (F₁.prodMap F₂) ↔ IsPure q n F₁ ∧ IsPure q n F₂ :=
   isPure_iff_of_charpoly_eq_mul (LinearMap.charpoly_prodMap F₁ F₂)
 
-end Subquotient
+end Extension
 
 /-! ### Examples -/
 

@@ -18,8 +18,9 @@ basis `e₁, e₂, e₃` of `𝔰𝔲(2)` with `⁅e₂, e₃⁆ = e₁`, the pu
 `K = SU(3)`, with matrices indexed by `Fin 2 ⊕ Fin 1`, its diagonal torus and the root
 `α = ε₁ - ε₂`, where the rank-one representative is the block inclusion of `SU(2)` onto the
 upper-left `2 × 2` block. The Checks are stated for the Lie algebra block inclusion
-`df = TauCeti.specialUnitaryBlockInclusion` and the Lie algebras only: the group homomorphism
-`SU(2) → SU(3)` and the identification of its differential with `df` are not formalized here.
+`df = TauCeti.specialUnitaryBlockInclusion` and the Lie algebras only. The group homomorphism
+`SU(2) → SU(3)` is checked in `TauCeti.Examples.Geometry.Lie.SpecialUnitaryBlock`, where its
+differential is computed in matrix coordinates as `X ↦ diag(X, 0)`, the formula of `df`.
 
 * The differential sends `diag(i, -i)` to the coroot `α^∨ = diag(i, -i, 0)`, and `α(α^∨) = 2`.
 * With `B(X, Y) = 6 Re tr(X Y)` on `𝔰𝔲(3)` and `e₁ = ½ diag(i, -i)`,
@@ -87,8 +88,9 @@ theorem lie_suTwoE₂_suTwoE₃ : ⁅suTwoE₂, suTwoE₃⁆ = suTwoE₁ := by
   fin_cases i <;> fin_cases j <;>
     simp [suTwoE₂, suTwoE₃] <;> ring
 
-/-- The Lie algebra block inclusion `𝔰𝔲(2) → 𝔰𝔲(3)`, standing in for the differential of the
-block inclusion `SU(2) → SU(3)` (that identification is not formalized here). -/
+/-- The Lie algebra block inclusion `𝔰𝔲(2) → 𝔰𝔲(3)`, the differential of the block inclusion
+`SU(2) → SU(3)` in matrix coordinates
+(`TauCeti.GLSpecialUnitary.unitsLieAlgebraEquiv_lieMapSubtypeVal_lieMap_fromBlocksInlSmoothHom`). -/
 private abbrev df :
     specialUnitaryLieAlgebra (Fin 2) →ₗ⁅ℝ⁆ specialUnitaryLieAlgebra (Fin 2 ⊕ Fin 1) :=
   specialUnitaryBlockInclusion (Fin 2) (Fin 1)

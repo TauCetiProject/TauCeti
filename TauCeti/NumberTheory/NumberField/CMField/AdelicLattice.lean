@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.CMField
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
+public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Lattice
 import TauCeti.LinearAlgebra.Matrix.Range
 
@@ -14,10 +13,10 @@ import TauCeti.LinearAlgebra.Matrix.Range
 # Discriminants of lattices in the finite adeles of a CM field
 
 Let `E` be a CM field, `𝔸_f` its finite adeles, `Ô` the integral ones, `κ` a finite set and
-`x ↦ conj x` the complex conjugation. Transporting finite adeles along it sends the component at
-a finite place `v` to the component at `conj v`, permuting the finite places
-(`NumberField.IsCMField.finiteAdeleConj`). For a lattice `L` of rank `r` in `𝔸_f^κ`, the `Ô`-span
-of the columns of `B = x a` (`NumberField.FiniteAdeleRing.IsLatticeOfRank`), the *discriminant* is
+`x ↦ conj x` the complex conjugation, extended to the finite adeles
+(`NumberField.IsCMField.finiteAdeleConj`, which permutes the finite places). For a lattice `L` of
+rank `r` in `𝔸_f^κ`, the `Ô`-span of the columns of `B = x a`
+(`NumberField.FiniteAdeleRing.IsLatticeOfRank`), the *discriminant* is
 `d_r(L) = [det(B^*B)]^(1/2)`, with `B^*` the conjugate transpose and `[·]` the generalised index
 (`NumberField.IsCMField.latticeDiscriminant`). It does not depend on the choice of `B`, because two
 such matrices spanning `L` differ by a matrix in `GL_r(Ô)`, whose determinant has index `1`. It is
@@ -27,7 +26,8 @@ of `M` is `B u` with `[det u] = [L : M]`
 
 ## Main declarations
 
-* `NumberField.IsCMField.finiteAdeleConj`: complex conjugation on the finite adeles.
+* `NumberField.IsCMField.genIndex_star`: the generalised index is invariant under complex
+  conjugation.
 * `NumberField.IsCMField.gramDet`: the Gram determinant `det(B^*B)` of an adelic matrix.
 * `NumberField.IsCMField.latticeDiscriminant`: the discriminant of a lattice of rank `r`.
 * `NumberField.IsCMField.latticeDiscriminant_span_col`: the discriminant computed from any basis.
@@ -52,12 +52,10 @@ Adapted from the file `src/New/Spanning/RemainingTerms/Discriminants.lean` of gr
 * `NumberField.FiniteAdeleRing.IsLatticeOfRank.latticeDiscriminant_eq_mul_relIndex` from (the
   second half of) `New.Filling.IsLatticeOfRank.of_le_and_discriminant_eq_mul_index`.
 
-That complex conjugation preserves `Ô`
-(`NumberField.IsCMField.finiteAdeleConj_mem_integralAdeles_iff`) is `New.star_mem_Ô` in
-`src/Lib/Adelic/Adeles/Basic.lean` of grh-lean, and the invariance of the generalised index under
-it (`NumberField.IsCMField.genIndex_finiteAdeleConj`) is `New.genIndex_star` in
-`src/Lib/General/Measure/HaarModulus.lean`. In grh-lean `E` is also assumed to contain a
-primitive root of unity of order `5040`; nothing here needs it.
+The invariance of the generalised index under complex conjugation
+(`NumberField.IsCMField.genIndex_star`) is `New.genIndex_star` in
+`src/Lib/General/Measure/HaarModulus.lean` of grh-lean. In grh-lean `E` is also assumed to contain
+a primitive root of unity of order `5040`; nothing here needs it.
 -/
 
 public section
@@ -73,42 +71,11 @@ open TauCeti.GlobalNumberFields
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
-variable (E) in
-/-- Complex conjugation on the finite adeles of a CM field: the transport of finite adeles along
-`complexConj E`, which sends the component at a finite place `v` to the component at `conj v`. -/
-def finiteAdeleConj : 𝔸ᶠ[E] ≃+* 𝔸ᶠ[E] :=
-  finiteAdeleEquiv E E (complexConj E).toRingEquiv
-
-theorem finiteAdeleConj_def :
-    finiteAdeleConj E = finiteAdeleEquiv E E (complexConj E).toRingEquiv :=
-  (rfl)
-
-/-- Complex conjugation on the finite adeles extends that of `E`. -/
-@[simp]
-theorem finiteAdeleConj_algebraMap (x : E) :
-    finiteAdeleConj E (algebraMap E 𝔸ᶠ[E] x) = algebraMap E 𝔸ᶠ[E] (complexConj E x) :=
-  finiteAdeleEquiv_algebraMap E E _ x
-
-/-- Complex conjugation on the finite adeles is an involution. -/
-@[simp]
-theorem finiteAdeleConj_finiteAdeleConj (a : 𝔸ᶠ[E]) :
-    finiteAdeleConj E (finiteAdeleConj E a) = a := by
-  have h : (complexConj E).toRingEquiv.trans (complexConj E).toRingEquiv = RingEquiv.refl E :=
-    RingEquiv.ext fun x ↦ complexConj_apply_apply (K := E) x
-  rw [finiteAdeleConj_def, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans, h,
-    finiteAdeleEquiv_refl, RingEquiv.refl_apply]
-
-/-- Complex conjugation preserves the integral finite adeles. It takes priority over the
-place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp` lemma. -/
-@[simp high]
-theorem finiteAdeleConj_mem_integralAdeles_iff {x : 𝔸ᶠ[E]} :
-    finiteAdeleConj E x ∈ integralAdeles (𝓞 E) E ↔ x ∈ integralAdeles (𝓞 E) E :=
-  finiteAdeleEquiv_mem_integralAdeles_iff _
-
 /-- The generalised index is invariant under complex conjugation. -/
 @[simp]
-theorem genIndex_finiteAdeleConj (a : 𝔸ᶠ[E]) : genIndex E (finiteAdeleConj E a) = genIndex E a :=
-  genIndex_map _ (fun _ ↦ finiteAdeleConj_mem_integralAdeles_iff) a
+theorem genIndex_star (a : 𝔸ᶠ[E]) : genIndex E (star a) = genIndex E a := by
+  rw [← finiteAdeleConj_apply]
+  exact genIndex_map _ (fun _ ↦ by rw [coe_finiteAdeleConj]; exact star_mem_integralAdeles_iff) a
 
 variable {κ : Type*} [Fintype κ] {r : ℕ}
 
@@ -141,7 +108,7 @@ theorem gramDet_mul (B : Matrix κ (Fin r) 𝔸ᶠ[E]) (M : Matrix (Fin r) (Fin 
 Gram determinant by `[det M]²`. -/
 theorem genIndex_gramDet_mul (B : Matrix κ (Fin r) 𝔸ᶠ[E]) (M : Matrix (Fin r) (Fin r) 𝔸ᶠ[E]) :
     genIndex E (gramDet (B * M)) = genIndex E M.det ^ 2 * genIndex E (gramDet B) := by
-  rw [gramDet_mul, map_mul, map_mul, genIndex_finiteAdeleConj]
+  rw [gramDet_mul, map_mul, map_mul, finiteAdeleConj_apply, genIndex_star]
   ring
 
 /-- Two matrices over the finite adeles whose columns span the same `Ô`-submodule, the first with

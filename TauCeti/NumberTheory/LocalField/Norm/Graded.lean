@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
 import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 
 /-!
@@ -536,14 +537,19 @@ theorem exists_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGraded
   set y : unitFiltration K (t + 1) := ⟨Algebra.normUnits K (x : Lˣ),
     map_normUnits_unitFiltration_psiNat_le K L (t + 1) (Subgroup.mem_map_of_mem _ x.property)⟩
   obtain ⟨b, hb⟩ : ∃ b : 𝒪[K], b * Algebra.norm 𝒪[K] π ^ (t + 1) =
-      (unitFiltrationDifference t y : 𝒪[K]) := by
+      (unitFiltrationToIntegerUnits (t + 1) y : 𝒪[K]) - 1 := by
     have hspan : 𝓂[K] ^ (t + 1) = Ideal.span {Algebra.norm 𝒪[K] π ^ (t + 1)} := by
       rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK, Ideal.span_singleton_pow]
-    exact Ideal.mem_span_singleton'.1 (hspan ▸ (unitFiltrationDifference t y).property)
+    have hyMem : (unitFiltrationToIntegerUnits (t + 1) y : 𝒪[K]) - 1 ∈ 𝓂[K] ^ (t + 1) := by
+      simpa using
+        TauCeti.IsLocalRing.mem_unitFiltration_iff.1
+          (unitFiltrationEquivInteger (t + 1) y).property
+    exact Ideal.mem_span_singleton'.1 (hspan ▸ hyMem)
   refine ⟨b, ?_, ?_⟩
   · apply Subtype.ext
     have hb' := congrArg (fun z : 𝒪[K] ↦ (z : K)) hb
-    simp only [coe_coe_unitFiltrationDifference, y, Algebra.coe_normUnits] at hb'
+    simp only [AddSubgroupClass.coe_sub, OneMemClass.coe_one, coe_unitFiltrationToIntegerUnits,
+      y, Algebra.coe_normUnits] at hb'
     have hx : ((1 + a * π ^ (t + 1) : 𝒪[L]) : L) = ((x : Lˣ) : L) := by
       rw [hxa]
       simp
@@ -629,7 +635,7 @@ private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {
       unitFiltrationGradedCongr_mk, AddEquiv.toEquiv_eq_coe, AddEquiv.coe_toEquiv]
     refine unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue t π hπ _ a
       (Subtype.ext ?_)
-    rw [coe_coe_unitFiltrationDifference, hxa]
+    rw [AddSubgroupClass.coe_sub, OneMemClass.coe_one, coe_unitFiltrationToIntegerUnits, hxa]
     push_cast
     ring
   rw [hE, MonoidHom.mem_ker,

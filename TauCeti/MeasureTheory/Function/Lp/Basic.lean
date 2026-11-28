@@ -39,6 +39,8 @@ operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ 
 * `MeasureTheory.Lp.coeFn_add_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_sub_ae_eq_of_ae_eq`,
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
+* `MeasureTheory.Lp.coeFn_sub_ae_eq_zero_iff`: `⇑(u - v)` vanishes almost everywhere on `s`
+  exactly when `⇑u` and `⇑v` agree almost everywhere on `s`.
 * `ContinuousLinearMap.compLp_comp_linear`, `ContinuousLinearMap.compLp_comp_toSpanSingleton`:
   simplification laws for linear composition and scalar-functional reconstruction at every
   exponent.
@@ -96,6 +98,13 @@ theorem coeFn_add_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) :
 /-- If `u` and `v` are almost everywhere `g` and `h`, then `u - v` is almost everywhere `g - h`. -/
 theorem coeFn_sub_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) : ⇑(u - v) =ᵐ[μ] g - h :=
   (coeFn_sub u v).trans (hu.sub hv)
+
+/-- Two `Lᵖ` functions agree almost everywhere on `s` exactly when their difference vanishes
+almost everywhere on `s`. -/
+theorem coeFn_sub_ae_eq_zero_iff {s : Set α} (u v : Lp E p μ) :
+    ⇑(u - v) =ᵐ[μ.restrict s] 0 ↔ ⇑u =ᵐ[μ.restrict s] ⇑v :=
+  (Filter.EventuallyEq.congr_left (ae_restrict_of_ae (coeFn_sub u v))).trans
+    Filter.eventuallyEq_iff_sub.symm
 
 /-- If `u` is almost everywhere `g`, then `-u` is almost everywhere `-g`. -/
 theorem coeFn_neg_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) : ⇑(-u) =ᵐ[μ] -g :=

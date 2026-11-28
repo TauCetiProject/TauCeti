@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.AlgebraicTopology.Disk.Prod
 public import TauCeti.Topology.Category.TopCat.Pushout
 import TauCeti.Analysis.Normed.Module.Basic
 
@@ -35,6 +35,12 @@ the one given by a Morse function across a critical level, yields a cell decompo
 handles may be infinitely many and of any indices; a handle of index `0` has an empty attaching
 region and its core is a disk attached along the empty sphere.
 
+For handles `TauCeti.TopCat.handle (k i) m` attached along a map of the disjoint union of their
+attaching regions, as a pushout of `TauCeti.TopCat.attachingRegionIncl k m`, the same statement
+reads as a strong deformation retraction: a retraction `r` of the attachment space onto the union
+of `X` and of the cores, homotopic to the identity relative to that union
+(`CategoryTheory.IsPushout.exists_strong_deformation_retraction_cores`).
+
 ## Main declarations
 
 * `TauCeti.TopCat.handleCoreRetraction`: the retraction of `D^k × D^l` onto
@@ -46,6 +52,9 @@ region and its core is a disk attached along the empty sphere.
 * `CategoryTheory.IsPushout.exists_coreAttachment_deformation`: a handle attachment deformation
   retracts, relative to the attached space, onto the attachment of the cores along the core
   spheres.
+* `CategoryTheory.IsPushout.exists_strong_deformation_retraction_cores`: the same for a pushout of
+  `TauCeti.TopCat.attachingRegionIncl k m`, as a strong deformation retraction onto the union of the
+  attached space and the cores.
 
 ## References
 
@@ -476,5 +485,44 @@ theorem exists_coreAttachment_deformation
       rw [hx, hΦχ, hKχ, handleCoreHomotopy_diskCenter]
 
 end HandleAttachment
+
+section AttachingRegionIncl
+
+variable {ι : Type u} {k : ι → ℕ} {m : ℕ} {X P : _root_.TopCat.{u}}
+
+/-- **A handle attachment deformation retracts onto its cores.** Let `P` be obtained from `X` by
+attaching the handles `𝔻 (k i) × 𝔻 (m - k i)` along a map `φ` of the disjoint union of their
+attaching regions, with characteristic map `χ`, as a pushout of `φ` and
+`TauCeti.TopCat.attachingRegionIncl k m`. Then there is a retraction `r` of `P` onto the union of
+the image of `X` and of the cores `χ (i, 𝔻 (k i) × {0})` of the handles, such that `r` is homotopic
+to the identity of `P` relative to that union. -/
+theorem exists_strong_deformation_retraction_cores
+    {φ : _root_.TopCat.of ((i : ι) × attachingRegion.{u} (k i) m) ⟶ X} {j : X ⟶ P}
+    {χ : _root_.TopCat.of ((i : ι) × handle.{u} (k i) m) ⟶ P}
+    (h : IsPushout φ (_root_.TopCat.ofHom (attachingRegionIncl k m)) j χ) :
+    ∃ r : C(P, P), range r = range j ∪ ⋃ i, range (fun x : TopCat.disk.{u} (k i) ↦
+        χ ⟨i, x, diskCenter (m - k i)⟩) ∧
+      (∀ y ∈ range r, r y = y) ∧ (ContinuousMap.id P).HomotopicRel r (range r) := by
+  -- Attach to `X` the cores `𝔻 (k i)` along the core spheres `s ↦ φ (i, s, 0)`, and compare with
+  -- the handle attachment through `CategoryTheory.IsPushout.exists_coreAttachment_deformation`.
+  let F := Sigma.desc fun i ↦ _root_.TopCat.ofHom ((ContinuousMap.id _).prodMk
+    (ContinuousMap.const _ (diskCenter (m - k i)))) ≫ _root_.TopCat.ofHom
+      (φ.hom.comp (ContinuousMap.sigmaMk (X := fun i ↦ attachingRegion.{u} (k i) m) i))
+  let G := Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion.{u} (k i)
+  have hQ : IsPushout F G (pushout.inl F G)
+      (Sigma.desc fun i ↦ Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i ≫ pushout.inr F G) := by
+    convert IsPushout.of_hasPushout F G
+    exact Sigma.hom_ext _ _ fun i ↦ by simp
+  obtain ⟨Φ, g, -, -, hΦ, hg, hH⟩ :=
+    (isPushout_attachingRegionIncl_iff.1 h).exists_coreAttachment_deformation hQ
+  -- The retraction is `Φ ∘ g`, whose range is that of `Φ` since `g` is a left inverse of `Φ`.
+  have hr : range (Φ.hom.comp g) = range Φ := hg.surjective.range_comp _
+  refine ⟨Φ.hom.comp g, ?_, ?_, hr ▸ hH⟩
+  · rw [hr, hΦ]
+    simp
+  · rintro _ ⟨y, rfl⟩
+    simp [hg (g y)]
+
+end AttachingRegionIncl
 
 end CategoryTheory.IsPushout
