@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DualNumber
+public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
@@ -16,6 +19,9 @@ public import TauCeti.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.LinearAlgebra.QuadraticForm.FreeBaseChange
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
+import TauCeti.RingTheory.MvPolynomial.DualNumber
 
 /-!
 # Coordinate scalar extension of quadratic forms
@@ -61,6 +67,8 @@ derived from this characterization. Anisotropy is not preserved in general: the 
 * `QuadraticForm.extendScalars_apply_algebraMap_comp`,
   `QuadraticForm.extendScalars_apply_smul_algebraMap_comp`: the extension agrees with `Q` on
   `K`-points and scales by `c²` along scalars.
+* `QuadraticForm.extendScalars_apply_inl_add_inr`: over the dual numbers, the coefficient of
+  `ε` is the polar pairing.
 * `QuadraticForm.toMatrix'_polarBilin_extendScalars`: the Gram matrix of the polar form of the
   extension is the image of the Gram matrix of the polar form of `Q`.
 * `QuadraticForm.extendScalars_self`, `QuadraticForm.extendScalars_extendScalars`: extension to
@@ -218,6 +226,27 @@ theorem polar_extendScalars_algebraMap_comp (Q : QuadraticForm K (ι → K)) (v 
     simp
   simp only [polar, hadd, extendScalars_apply_algebraMap_comp, map_sub]
 
+/-- Over the dual numbers, the coefficient of `ε` in `Q (v + ε w)` is the polar pairing of
+`v` and `w`. -/
+theorem extendScalars_apply_inl_add_inr (Q : QuadraticForm K (ι → K)) (v w : ι → K) :
+    Q.extendScalars (DualNumber K) (fun j ↦ TrivSqZeroExt.inl (v j) + TrivSqZeroExt.inr (w j)) =
+      TrivSqZeroExt.inl (Q v) + TrivSqZeroExt.inr (polar Q v w) := by
+  let f := algebraMap K (DualNumber K)
+  let ε : DualNumber K := DualNumber.eps
+  have hinr (r : K) : TrivSqZeroExt.inr r = ε * f r := by
+    rw [DualNumber.inr_eq_smul_eps, mul_comm, TrivSqZeroExt.algebraMap_eq_inl,
+      TrivSqZeroExt.inl_mul_eq_smul]
+  have hpoint : (fun j ↦ TrivSqZeroExt.inl (v j) + TrivSqZeroExt.inr (w j)) =
+      f ∘ v + ε • (f ∘ w) := by
+    funext j
+    simp only [hinr, f, Pi.add_apply, Pi.smul_apply, Function.comp_apply,
+      TrivSqZeroExt.algebraMap_eq_inl, smul_eq_mul]
+  rw [hpoint, QuadraticMap.map_add (Q.extendScalars (DualNumber K)),
+    extendScalars_apply_algebraMap_comp, extendScalars_apply_smul_algebraMap_comp,
+    polar_smul_right, polar_extendScalars_algebraMap_comp]
+  simp only [hinr, f, smul_eq_mul, ε, DualNumber.eps_pow_two, zero_mul, add_zero,
+    TrivSqZeroExt.algebraMap_eq_inl]
+
 /-- The Gram matrix of the polar form of the extension is the image of the Gram matrix of the
 polar form of `Q`. -/
 @[simp]
@@ -251,6 +280,18 @@ theorem extendScalars_apply_eq_aeval (Q : QuadraticForm K (ι → K)) (x : ι �
     extendScalars L Q x = MvPolynomial.aeval x Q.toMvPolynomial := by
   rw [MvPolynomial.aeval_def, ← MvPolynomial.eval_map, ← toMvPolynomial_extendScalars,
     eval_toMvPolynomial]
+
+/-- The partial derivative in coordinate `i` at `x` is the polar pairing of `x`
+with the `i`-th basis vector. -/
+@[simp]
+theorem _root_.QuadraticMap.eval_pderiv_toMvPolynomial (Q : QuadraticForm K (ι → K))
+    (x : ι → K) (i : ι) :
+    MvPolynomial.eval x (MvPolynomial.pderiv i Q.toMvPolynomial) =
+      Q.polarBilin x (Pi.single i 1) := by
+  let e : ι → K := Pi.single i 1
+  have h := MvPolynomial.aeval_inl_add_inr Q.toMvPolynomial x e
+  rw [← Q.extendScalars_apply_eq_aeval (DualNumber K), Q.extendScalars_apply_inl_add_inr] at h
+  simpa [e, Pi.single_apply] using (congrArg TrivSqZeroExt.snd h).symm
 
 /-- An algebra homomorphism `L →ₐ[K] M` carries values of the extension to `L` to values of the
 extension to `M`. -/
@@ -489,6 +530,26 @@ theorem extendScalarsOfBasis_eq_baseChange [Invertible (2 : K)] (Q : QuadraticFo
 end Basis
 
 end CommRing
+
+section Field
+
+variable {K ι : Type*} [Field K] [Fintype ι] [DecidableEq ι]
+
+/-- Nondegeneracy in coordinates is preserved and reflected by scalar extension
+from a field to a nonzero reduced algebra. -/
+@[simp]
+theorem nondegenerate_extendScalars_iff (A : Type*) [CommRing A] [Algebra K A]
+    [Nontrivial A] [IsReduced A] (Q : QuadraticForm K (ι → K)) :
+    (Q.extendScalars A).Nondegenerate ↔ Q.Nondegenerate := by
+  let e := TensorProduct.piScalarRight K A A ι
+  have he : (Q.extendScalars A).comp e.toLinearMap = Q.freeBaseChange A :=
+    eq_freeBaseChange_iff.mpr fun v ↦ by
+      rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap,
+        TensorProduct.piScalarRight_one_tmul, extendScalars_apply_algebraMap_comp]
+  have hnd := ((Q.extendScalars A).isometryEquivOfCompLinearEquiv e).nondegenerate_iff
+  simpa only [he, nondegenerate_freeBaseChange_iff] using hnd
+
+end Field
 
 section IsDomain
 

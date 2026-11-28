@@ -9,9 +9,12 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.MeasureTheory.Function.L2Space.MeanZero
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
@@ -53,6 +56,10 @@ measure is a probability measure) tends to zero in measure when the variances te
 * `TauCeti.integral_norm_sub_sq_prod`: the identity above.
 * `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
   composition with a measure-preserving measurable embedding.
+* `ProbabilityTheory.variance_eq_norm_sub_const_sq`: for `f ∈ L²(μ)` on a finite measure space,
+  `Var[f; μ] = ‖f - ∫ f dμ‖²`.
+* `MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq_eq_variance`: on a probability space,
+  the squared `L²` norm of the projection onto `L²₀(P)` equals the variance.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
   L² convergence on a finite measure space.
 * `TauCeti.variance_eq_integral_sq_add`: the variance of a square-integrable function under a
@@ -107,6 +114,24 @@ open scoped ENNReal NNReal RealInnerProductSpace Topology
 
 namespace ProbabilityTheory
 
+/-- For `f ∈ L²(μ)` on a finite measure space, the variance of `f` equals
+`‖f - Lp.const 2 μ (∫ x, f x ∂μ)‖ ^ 2`. -/
+theorem variance_eq_norm_sub_const_sq {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] (f : Lp ℝ 2 μ) :
+    variance (f : α → ℝ) μ = ‖f - Lp.const 2 μ (∫ x, f x ∂μ)‖ ^ 2 := by
+  rw [variance_eq_integral (Lp.aestronglyMeasurable f).aemeasurable,
+    ← Lp.integral_norm_sq_eq_norm_sq]
+  refine integral_congr_ae ?_
+  filter_upwards [Lp.coeFn_sub_const f (∫ x, f x ∂μ)] with x hx
+  rw [hx, Real.norm_eq_abs, sq_abs]
+
+/-- On a probability space, the squared `L²` norm of the projection onto `L²₀(P)` is the
+variance. -/
+theorem _root_.MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq_eq_variance
+    {X : Type*} [MeasurableSpace X] {P : Measure X} [IsProbabilityMeasure P] (f : Lp ℝ 2 P) :
+    ‖(MeasureTheory.Measure.meanZeroL2 P ℝ).starProjection f‖ ^ 2 = variance (f : X → ℝ) P := by
+  rw [MeasureTheory.Measure.starProjection_meanZeroL2, variance_eq_norm_sub_const_sq]
+
 /-- The variance is continuous under L² convergence on a finite measure space. -/
 theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace α]
     {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} {g : ι → α → ℝ} {l : Filter ι}
@@ -118,7 +143,7 @@ theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace
     simpa only [Lp.edist_toLp_toLp] using ht
   have hmean_eq (u : α → ℝ) (hu : MemLp u 2 μ) :
       inner ℝ (Lp.const 2 μ (1 : ℝ)) (hu.toLp u) = ∫ x, u x ∂μ := by
-    rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_one, setIntegral_univ]
+    rw [L2.inner_const_one]
     exact integral_congr_ae hu.coeFn_toLp
   have hmeanLp : Tendsto (fun i ↦ inner ℝ (Lp.const 2 μ (1 : ℝ)) ((hg i).toLp (g i))) l
       (𝓝 (inner ℝ (Lp.const 2 μ (1 : ℝ)) (hf.toLp f))) :=
@@ -131,11 +156,8 @@ theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace
       ((Lp.constL 2 μ ℝ : ℝ →L[ℝ] Lp ℝ 2 μ).continuous.tendsto _).comp hmean
   have hvar (u : α → ℝ) (hu : MemLp u 2 μ) :
       variance u μ = ‖hu.toLp u - Lp.const 2 μ (∫ x, u x ∂μ)‖ ^ 2 := by
-    rw [variance_eq_integral hu.aemeasurable, ← Lp.integral_norm_sq_eq_norm_sq]
-    apply integral_congr_ae
-    filter_upwards [Lp.coeFn_sub (hu.toLp u) (Lp.const 2 μ (∫ x, u x ∂μ)),
-      hu.coeFn_toLp, Lp.coeFn_const 2 μ (∫ x, u x ∂μ)] with x hx hu hc
-    simp only [hx, Pi.sub_apply, hu, hc, Function.const_apply, Real.norm_eq_abs, sq_abs]
+    rw [← variance_congr hu.coeFn_toLp, variance_eq_norm_sub_const_sq,
+      integral_congr_ae hu.coeFn_toLp]
   simpa only [← hvar] using (hLp.sub hconst).norm.pow 2
 
 end ProbabilityTheory

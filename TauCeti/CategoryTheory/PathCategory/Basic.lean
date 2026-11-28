@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.PathCategory.Basic
+public import Mathlib.CategoryTheory.Category.Quiv
 
 /-!
 # The path category of an explicit quiver, on the original objects
@@ -22,11 +22,13 @@ structure; its identities are empty paths and its composition is concatenation o
 * `TauCeti.pathCategory`: the free category on an explicitly supplied quiver, on its objects.
 * `Quiver.pathCategory_id` and `Quiver.pathCategory_comp`: its identities and composition, as
   operations on `Quiver.Path`.
+* `Quiver.Hom.toPath_injective`: singleton paths determine their generating arrows.
+* `CategoryTheory.Functor.map_eq_mapPath`: singleton preservation determines the action on paths.
 -/
 
 public section
 
-universe u h
+universe u h u₁ u₂ h₁ h₂
 
 namespace TauCeti
 
@@ -46,6 +48,13 @@ open CategoryTheory TauCeti
 
 variable {O : Type u}
 
+/-- The singleton-path embedding of a quiver's arrows is injective. -/
+theorem Hom.toPath_injective [Q : Quiver.{h} O] {a b : O} :
+    Function.Injective (@Hom.toPath O Q a b) := by
+  intro f g hfg
+  unfold Hom.toPath at hfg
+  exact eq_of_heq (Path.hom_heq_of_cons_eq_cons hfg)
+
 /-- The identity morphism of the path category is the empty path. -/
 @[simp]
 theorem pathCategory_id (Q : Quiver.{h} O) (a : O) :
@@ -60,3 +69,31 @@ theorem pathCategory_comp (Q : Quiver.{h} O) {a b c : O} (p : @Path O Q a b)
   rfl
 
 end Quiver
+
+namespace CategoryTheory.Functor
+
+/-- A functor between path categories that preserves singleton paths acts on every path
+by extending its map on generators. The generator map shares the functor's object map.
+
+`Paths O` is definitionally `O`, and `TauCeti.pathCategory O Q` is `Paths.categoryPaths`.
+Thus this also applies to functors on the original object types with explicit path-category
+structures, without changing their object or morphism maps. -/
+theorem map_eq_mapPath {O₁ : Type u₁} [Q₁ : Quiver.{h₁} O₁]
+    {O₂ : Type u₂} [Q₂ : Quiver.{h₂} O₂]
+    (F : Paths O₁ ⥤ Paths O₂)
+    (map : ∀ {a b : O₁}, @Quiver.Hom O₁ Q₁ a b →
+      @Quiver.Hom O₂ Q₂ (F.obj a) (F.obj b))
+    (hmap : ∀ {a b : O₁} (f : @Quiver.Hom O₁ Q₁ a b),
+      F.map (@Quiver.Hom.toPath O₁ Q₁ a b f) = @Quiver.Hom.toPath O₂ Q₂ _ _ (map f))
+    {a b : O₁} (p : @Quiver.Path O₁ Q₁ a b) :
+    F.map p = @Prefunctor.mapPath O₁ Q₁ O₂ Q₂ ⟨F.obj, map⟩ a b p := by
+  let φ : @Prefunctor O₁ Q₁ O₂ Q₂ := ⟨F.obj, map⟩
+  have h : F = Cat.freeMap φ := by
+    apply Paths.ext_functor (F := F) (G := Cat.freeMap φ) rfl
+    intro a b f
+    -- The object maps agree definitionally, so both eqToHom transports are identities.
+    -- Conversion reduces these path identities and Cat.freeMap on a singleton to hmap.
+    convert! hmap f using 1
+  exact eq_of_heq (Functor.hcongr_hom h p)
+
+end CategoryTheory.Functor

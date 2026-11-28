@@ -8,8 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Pushing Lebesgue measure forward by half the squared radius
@@ -25,6 +29,18 @@ Lebesgue measure to `(2π)^|ι|` times Lebesgue measure on the closed positive o
 Read on `ℂ^ι` with `z_i = q_i + i p_i`, these maps are the moment maps `|z_i|² / 2` of the reversed
 rotation actions `z_i ↦ exp(-i θ_i) z_i` of the circle and of the torus, and the statements
 compute their Duistermaat–Heckman measures.
+
+Pushing forward instead by the total squared radius `ω ↦ ∑ ‖ω i‖²` of `ℂ^ι`, `k = card ι ≥ 1`,
+gives the measure on `(0, ∞)` with density `π ^ k r ^ (k - 1) / (k - 1)!`
+(`TauCeti.measurePreserving_sum_norm_sq`), read off from the volume `a ^ k π ^ k / k!` of the
+ball `∑ ‖ω i‖² < a` (`TauCeti.volume_sum_norm_sq_lt`).
+
+## Provenance
+
+`TauCeti.volume_sum_norm_sq_lt` and `TauCeti.measurePreserving_sum_norm_sq` are adapted from
+`New.volume_map_normSq_Iio` and `New.measurePreserving_normSq_sphereDensity` in
+`src/Lib/DiscreteSeries/Haar/TotalMass.lean` of grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic, PBC).
 
 ## References
 
@@ -142,5 +158,67 @@ theorem map_volume_euclideanSpace_half_sq_add_sq :
     (rfl)
   rw [hfun, ← Measure.map_map (by fun_prop) hP.measurable, hP.map_eq,
     map_volume_pi_half_sq_add_sq]
+
+section SumNormSq
+
+open scoped Nat
+
+/-- The volume of the set `∑ ‖ω i‖² < a` in `ℂ ^ ι` is `a ^ k π ^ k / k!`, `k = card ι`. -/
+theorem volume_sum_norm_sq_lt [Nonempty ι] {a : ℝ} (ha : 0 ≤ a) :
+    volume {ω : ι → ℂ | ∑ i, ‖ω i‖ ^ 2 < a} =
+      ENNReal.ofReal (a ^ Fintype.card ι * (π ^ Fintype.card ι / (Fintype.card ι)!)) := by
+  have h_set : {ω : ι → ℂ | ∑ i, ‖ω i‖ ^ 2 < a} =
+      {ω : ι → ℂ | (∑ i, ‖ω i‖ ^ (2 : ℝ)) ^ (1 / 2 : ℝ) < √a} := by
+    ext ω
+    rw [mem_ofPred_eq, mem_ofPred_eq, ← Real.sqrt_eq_rpow, Real.sqrt_lt_sqrt_iff (by positivity)]
+    simp only [Real.rpow_two]
+  rw [h_set, Complex.volume_sum_rpow_lt _ one_le_two, ← ENNReal.ofReal_pow (by positivity),
+    ← ENNReal.ofReal_mul (by positivity), pow_mul, Real.sq_sqrt ha]
+  congr 2
+  have h2 : Real.Gamma (2 / 2 + 1) = 1 := by simpa using Real.Gamma_nat_eq_factorial 1
+  rw [h2, mul_one, mul_div_cancel_left₀ _ two_ne_zero, Real.Gamma_nat_eq_factorial]
+
+/-- The map `ω ↦ ∑ ‖ω i‖²` carries Lebesgue measure on `ℂ ^ ι` to the measure on `(0, ∞)` with
+density `π ^ k r ^ (k - 1) / (k - 1)!`, where `k = card ι ≥ 1`: the sphere of radius `√r` has
+area `2 π ^ k r ^ (k - 1 / 2) / (k - 1)!`. -/
+theorem measurePreserving_sum_norm_sq [Nonempty ι] :
+    MeasurePreserving (fun ω : ι → ℂ ↦ ∑ i, ‖ω i‖ ^ 2) volume
+      ((volume.restrict (Ioi 0)).withDensity fun r ↦
+        ENNReal.ofReal (π ^ Fintype.card ι * r ^ (Fintype.card ι - 1) /
+          (Fintype.card ι - 1)!)) := by
+  obtain ⟨m, hm⟩ : ∃ m, Fintype.card ι = m + 1 :=
+    Nat.exists_eq_succ_of_ne_zero Fintype.card_ne_zero
+  rw [hm, Nat.add_sub_cancel]
+  have h_pre (a : ℝ) :
+      (fun ω : ι → ℂ ↦ ∑ i, ‖ω i‖ ^ 2) ⁻¹' Iio a = {ω | ∑ i, ‖ω i‖ ^ 2 < a} := (rfl)
+  -- Both measures give `Iio a` the volume of the ball of radius `√a`.
+  refine ⟨by fun_prop, Measure.ext_of_generateFrom_of_iUnion _ (fun n : ℕ ↦ Iio (n : ℝ))
+    (borel_eq_generateFrom_Iio ℝ) isPiSystem_Iio (iUnion_eq_univ_iff.2 exists_nat_gt) ?_ ?_ ?_⟩
+  · simp
+  · intro n
+    rw [Measure.map_apply (by fun_prop) measurableSet_Iio, h_pre,
+      volume_sum_norm_sq_lt n.cast_nonneg]
+    exact ENNReal.ofReal_ne_top
+  rintro _ ⟨a, rfl⟩
+  rw [Measure.map_apply (by fun_prop) measurableSet_Iio, withDensity_apply _ measurableSet_Iio,
+    Measure.restrict_restrict measurableSet_Iio]
+  rcases le_or_gt a 0 with ha | ha
+  · have h_empty : (fun ω : ι → ℂ ↦ ∑ i, ‖ω i‖ ^ 2) ⁻¹' Iio a = ∅ :=
+      eq_empty_of_forall_notMem fun ω (hω : _ < a) ↦ hω.not_ge (ha.trans (by positivity))
+    have h_inter : Iio a ∩ Ioi (0 : ℝ) = ∅ :=
+      eq_empty_of_forall_notMem fun r ⟨h₁, h₂⟩ ↦ (lt_trans h₂ h₁).not_ge ha
+    simp [h_empty, h_inter]
+  rw [h_pre, volume_sum_norm_sq_lt ha.le, hm, inter_comm, Ioi_inter_Iio,
+    Measure.restrict_congr_set Ioo_ae_eq_Ioc,
+    ← ofReal_integral_eq_lintegral_ofReal (Continuous.integrableOn_Ioc (by fun_prop))
+      (ae_restrict_of_forall_mem measurableSet_Ioc fun r hr ↦ by have := hr.1.le; positivity),
+    ← intervalIntegral.integral_of_le ha.le]
+  congr 1
+  simp only [intervalIntegral.integral_div, intervalIntegral.integral_const_mul, integral_pow]
+  push_cast [Nat.factorial_succ]
+  field_simp
+  ring
+
+end SumNormSq
 
 end TauCeti
