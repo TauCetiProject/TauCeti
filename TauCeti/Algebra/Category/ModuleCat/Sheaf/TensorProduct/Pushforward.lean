@@ -57,8 +57,8 @@ maps of the pullback along a composite are the composites of the comparison maps
   (`TauCeti.SheafOfModules.presheafPushforward`);
 * `SheafOfModules.pushforwardLaxMonoidal` and `SheafOfModules.pushforwardLaxBraided`, with
   `SheafOfModules.pushforward_ε` and `SheafOfModules.pushforward_μ`;
-* `SheafOfModules.pullbackOplaxMonoidal`, with `SheafOfModules.pullback_η` and
-  `SheafOfModules.pullback_δ`;
+* `SheafOfModules.pullbackOplaxMonoidal`, with `SheafOfModules.pullback_η`,
+  `SheafOfModules.pullback_δ`, and its section formula `SheafOfModules.pullback_δ_app_unit_tmul`;
 * `SheafOfModules.forget_μ_comp_map_pushforward_μ`: the tensor map of the pushforward on underlying
   presheaves;
 * `SheafOfModules.pushforward_μ_app_tmul`: on sections, the tensor map of the pushforward sends
@@ -78,7 +78,8 @@ maps of the pullback along a composite are the composites of the comparison maps
 
 public section
 
-open CategoryTheory Category MonoidalCategory TauCeti TauCeti.SheafOfModules
+open CategoryTheory Category MonoidalCategory Opposite TauCeti TauCeti.SheafOfModules
+open scoped TensorProduct
 
 universe u
 
@@ -420,6 +421,34 @@ lemma pullback_δ (M N : SheafOfModules.{u} (ringCatSheaf S)) :
             (pullbackPushforwardAdjunction φ).unit.app N) ≫
           Functor.LaxMonoidal.μ (pushforward φ) _ _) :=
   Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
+
+/-- On sections over an object of an arbitrary site, the tensor comparison of pullback sends
+an adjunction-unit image of a pure tensor to the tensor of its adjunction-unit images. -/
+lemma pullback_δ_app_unit_tmul (M N : SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
+    (m : M.val.obj U) (n : N.val.obj U) :
+    (Functor.OplaxMonoidal.δ (pullback φ) M N).val.app (F.op.obj U)
+      (((pullbackPushforwardAdjunction φ).unit.app (M ⊗ N)).val.app U
+        ((Functor.LaxMonoidal.μ (SheafOfModules.forget (ringCatSheaf S)) M N).app U
+          (m ⊗ₜ[S.obj.obj U] n))) =
+      (Functor.LaxMonoidal.μ (SheafOfModules.forget (ringCatSheaf R))
+        ((pullback φ).obj M) ((pullback φ).obj N)).app (F.op.obj U)
+          (((pullbackPushforwardAdjunction φ).unit.app M).val.app U m ⊗ₜ[R.obj.obj (F.op.obj U)]
+            ((pullbackPushforwardAdjunction φ).unit.app N).val.app U n) := by
+  have h := (pullbackPushforwardAdjunction φ).unit_app_tensor_comp_map_δ M N
+  have hh := congrArg (fun k ↦
+    (Functor.LaxMonoidal.μ (SheafOfModules.forget (ringCatSheaf S)) M N) ≫
+      (SheafOfModules.forget (ringCatSheaf S)).map k) h
+  simp only [Functor.map_comp] at hh
+  rw [← Functor.LaxMonoidal.μ_natural_assoc] at hh
+  have he := congrArg (fun k ↦ k.app U (m ⊗ₜ[S.obj.obj U] n)) hh
+  -- Pushforward leaves the section carriers unchanged and restricts their scalars.
+  change _ = (Functor.LaxMonoidal.μ (pushforward φ) _ _).val.app U
+    ((Functor.LaxMonoidal.μ (SheafOfModules.forget (ringCatSheaf S))
+      ((pushforward φ).obj ((pullback φ).obj M))
+      ((pushforward φ).obj ((pullback φ).obj N))).app U
+        (((pullbackPushforwardAdjunction φ).unit.app M).val.app U m ⊗ₜ[S.obj.obj U]
+          ((pullbackPushforwardAdjunction φ).unit.app N).val.app U n)) at he
+  exact he.trans (pushforward_μ_app_tmul φ _ _ U _ _)
 
 /-- The canonical tensor comparison of pullback commutes with interchanging the factors.
 This statement does not require that the comparison be invertible. -/

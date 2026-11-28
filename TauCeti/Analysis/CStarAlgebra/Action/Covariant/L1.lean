@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
+public import TauCeti.MeasureTheory.Measure.Count.Topology
 public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.Topology.Separation.TypeTags
 import Mathlib.Analysis.CStarAlgebra.Spectrum
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
+import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # Vector-valued integrated forms of covariant pairs on Bochner `L¹`
@@ -66,11 +68,17 @@ measures need not have full support.
   `CovariantRepresentation.integratedOperatorBochnerL1_trivial`: comparison with the scalar
   `ContRepresentation.integratedOperatorL1` on elementary tensors `φ ⊗ a` and specialization to the
   trivial covariant representation.
+* `CovariantRepresentation.hasSum_integratedOperatorBochnerL1_count_apply`,
+  `CovariantRepresentation.integratedOperatorBochnerL1_count_apply`,
+  `CovariantRepresentation.hasSum_integratedOperatorBochnerL1_count_toL1`,
+  `CovariantRepresentation.integratedOperatorBochnerL1_count_toL1`,
+  `CovariantRepresentation.norm_integratedOperatorBochnerL1_count_toL1_le`: unconditional `ℓ¹`
+  series formula and norm bound for counting measure on an arbitrary discrete group.
 
 ## References
 
 * Dana P. Williams, *Crossed Products of C*-Algebras*, Mathematical Surveys and Monographs,
-  vol. 134, American Mathematical Society (2007), Chapter 2 (§2.3, Proposition 2.23).
+  vol. 134, American Mathematical Society (2007), Chapter 2 (§2.3, Proposition 2.23; Chapter 7).
 * Gerald B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC Press (2016), §3.2.
 -/
 
@@ -415,12 +423,9 @@ theorem integratedOperatorBochnerL1_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) 
         fun x : Additive G => φ (Additive.toMul x) • P.group (Additive.toMul x) v)
     filter_upwards [Lp.coeFn_compMeasurePreserving φ hmp] with x hx
     rw [hx, Function.comp_apply]
-  have hi : Integrable (fun g => φ g • P.group g v) μ := by
-    refine ((L1.integrable_coeFn φ).norm.mul_const ‖v‖).mono'
-      ((L1.integrable_coeFn φ).aefinStronglyMeasurable.aestronglyMeasurable_smul
-        (P.continuous_orbit v))
-      (.of_forall fun g => ?_)
-    rw [norm_smul, P.isUnitary.norm_map]
+  have hi : Integrable (fun g => φ g • P.group g v) μ :=
+    (L1.integrable_coeFn φ).smul_bdd_of_continuous ‖v‖ (P.continuous_orbit v) fun g =>
+      (P.isUnitary.norm_map g v).le
   calc
     P.integratedOperatorBochnerL1 μ
         ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).compLp φ) v =
@@ -435,5 +440,59 @@ theorem integratedOperatorBochnerL1_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) 
       exact congrArg (P.coefficient a) hs.symm
 
 end ScalarComparison
+
+section Discrete
+
+variable {G A H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {α : CStarAction G A} (P : CovariantRepresentation α H)
+
+/-- For counting measure on a discrete group, `integratedOperatorBochnerL1` acts on `v` by the
+unconditionally convergent series `∑ g, π (u g) (U g v)`. -/
+theorem hasSum_integratedOperatorBochnerL1_count_apply
+    (u : Lp A 1 (Measure.count : Measure G)) (v : H) :
+    HasSum (fun g => P.coefficient (u g) (P.group g v))
+      (P.integratedOperatorBochnerL1 Measure.count u v) := by
+  rw [integratedOperatorBochnerL1_apply]
+  exact hasSum_integral_count (P.integrable_integrand_of_integrable (L1.integrable_coeFn u) v)
+
+/-- Series formula for `integratedOperatorBochnerL1` with respect to counting measure on a
+discrete group. -/
+theorem integratedOperatorBochnerL1_count_apply
+    (u : Lp A 1 (Measure.count : Measure G)) (v : H) :
+    P.integratedOperatorBochnerL1 Measure.count u v =
+      ∑' g, P.coefficient (u g) (P.group g v) :=
+  (P.hasSum_integratedOperatorBochnerL1_count_apply u v).tsum_eq.symm
+
+/-- For an `ℓ¹` family `f : G → A` on a discrete group, `g ↦ π (f g) (U g v)` sums unconditionally
+to `integratedOperatorBochnerL1` of `(integrable_count_iff.2 hf).toL1 f`. -/
+theorem hasSum_integratedOperatorBochnerL1_count_toL1 {f : G → A} (hf : Summable (‖f ·‖))
+    (v : H) :
+    HasSum (fun g => P.coefficient (f g) (P.group g v))
+      (P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.2 hf).toL1 f) v) := by
+  have hcoe : ∀ g, ((integrable_count_iff.2 hf).toL1 f : G → A) g = f g :=
+    Measure.ae_count_iff.1 (integrable_count_iff.2 hf).coeFn_toL1
+  simpa only [hcoe] using
+    P.hasSum_integratedOperatorBochnerL1_count_apply ((integrable_count_iff.2 hf).toL1 f) v
+
+/-- For an `ℓ¹` family `f : G → A` on a discrete group, `integratedOperatorBochnerL1` acts by
+`∑' g, π (f g) (U g v)`. -/
+theorem integratedOperatorBochnerL1_count_toL1 {f : G → A} (hf : Summable (‖f ·‖)) (v : H) :
+    P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.2 hf).toL1 f) v =
+      ∑' g, P.coefficient (f g) (P.group g v) :=
+  (P.hasSum_integratedOperatorBochnerL1_count_toL1 hf v).tsum_eq.symm
+
+/-- For an `ℓ¹` family `f : G → A` on a discrete group, the operator norm of
+`integratedOperatorBochnerL1` is bounded by `∑' g, ‖f g‖`. -/
+theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A} (hf : Summable (‖f ·‖)) :
+    ‖P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.2 hf).toL1 f)‖ ≤
+      ∑' g, ‖f g‖ := by
+  refine (P.norm_integratedOperatorBochnerL1_apply_le
+    ((integrable_count_iff.2 hf).toL1 f)).trans_eq ?_
+  rw [L1.norm_of_fun_eq_integral_norm (integrable_count_iff.2 hf)]
+  exact integral_count_eq_tsum (integrable_count_iff.2 hf).norm
+
+end Discrete
 
 end TauCeti.CStarAction.CovariantRepresentation

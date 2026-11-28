@@ -5,7 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.IdealSheaf.Basic
+public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 import TauCeti.RingTheory.Localization.Colon
 import TauCeti.RingTheory.Ideal.Colon
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
@@ -213,5 +213,21 @@ theorem eq_colon_mul (D E : X.IdealSheafData)
       ∃ a : Γ(X, U), E.ideal U = Ideal.span {a}) (hle : D ≤ E) :
     D = D.colon E * E := by
   rw [← inf_eq_colon_mul D E hE, inf_eq_left.mpr hle]
+
+/-- **Colon ideal sheaves commute with restriction along open immersions** when the denominator
+is finitely generated on every affine open. -/
+theorem comap_colon_of_isOpenImmersion {Y : Scheme.{u}} (D E : Y.IdealSheafData)
+    (hE : ∀ U : Y.affineOpens, (E.ideal U).FG) (f : X ⟶ Y) [IsOpenImmersion f] :
+    (D.colon E).comap f = (D.comap f).colon (E.comap f) := by
+  have hEf (U : X.affineOpens) : ((E.comap f).ideal U).FG := by
+    have h (K : Ideal Γ(Y, f ''ᵁ U)) :
+        K.comap (f.appIso U).inv.hom = K.map (f.appIso U).hom.hom :=
+      Ideal.comap_symm (f.appIso U).commRingCatIsoToRingEquiv
+    rw [ideal_comap_of_isOpenImmersion, h]
+    exact (hE ⟨f ''ᵁ U.val, U.property.image_of_isOpenImmersion f⟩).map _
+  ext U : 2
+  simp only [ideal_comap_of_isOpenImmersion, ideal_colon _ _ hE, ideal_colon _ _ hEf]
+  exact Ideal.comap_colon_of_surjective
+    (f.appIso U).commRingCatIsoToRingEquiv.symm.surjective _ _
 
 end AlgebraicGeometry.Scheme.IdealSheafData
