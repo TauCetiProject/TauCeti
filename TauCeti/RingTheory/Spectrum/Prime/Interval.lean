@@ -28,6 +28,15 @@ Bhatt–Mathew, *The arc-topology*, Definition 4.6, for the spectrum of a valuat
 
 public section
 
+/-- The quotient spectrum order isomorphism sends a prime to its contraction along
+`Ideal.Quotient.mk`. -/
+theorem Ideal.primeSpectrumQuotientOrderIsoZeroLocus_apply_coe {R : Type*} [CommRing R]
+    (I : Ideal R) (r : PrimeSpectrum (R ⧸ I)) :
+    (I.primeSpectrumQuotientOrderIsoZeroLocus r : PrimeSpectrum R) =
+      r.comap (Ideal.Quotient.mk I) := by
+  simp only [Ideal.primeSpectrumQuotientOrderIsoZeroLocus.eq_1,
+    Ideal.primeSpectrumOrderIsoZeroLocusOfSurj.eq_1, RelIso.coe_fn_mk, Equiv.coe_fn_mk]
+
 namespace PrimeSpectrum
 
 variable {R : Type*} [CommRing R]
@@ -105,8 +114,8 @@ noncomputable def intervalRingOrderIso (p q : PrimeSpectrum R) :
   have hdisj (r : PrimeSpectrum (R ⧸ p.asIdeal)) :
       Disjoint (M : Set (R ⧸ p.asIdeal)) r.asIdeal ↔
         (e r : PrimeSpectrum R) ≤ q := by
-    have he : (e r : PrimeSpectrum R) = r.comap (Ideal.Quotient.mk p.asIdeal) := rfl
-    rw [he, ← asIdeal_le_asIdeal, comap_asIdeal, disjoint_comm]
+    rw [Ideal.primeSpectrumQuotientOrderIsoZeroLocus_apply_coe, ← asIdeal_le_asIdeal,
+      comap_asIdeal, disjoint_comm]
     exact Ideal.disjoint_map_primeCompl_iff_comap_le
   (IsLocalization.primeSpectrumOrderIso M (IntervalRing p q)).trans
     { toFun := fun r ↦ ⟨e r, (e r).property, (hdisj r).mp r.property⟩
@@ -124,8 +133,20 @@ This computation rule permits simplification without unfolding the order isomorp
 @[simp]
 theorem intervalRingOrderIso_apply (p q : PrimeSpectrum R)
     (r : PrimeSpectrum (IntervalRing p q)) :
-    (p.intervalRingOrderIso q r : PrimeSpectrum R) = r.comap (algebraMap R (IntervalRing p q)) :=
-  (rfl)
+    (p.intervalRingOrderIso q r : PrimeSpectrum R) = r.comap (algebraMap R (IntervalRing p q)) := by
+  let s := IsLocalization.primeSpectrumOrderIso (intervalDenominators p q) (IntervalRing p q) r
+  have hs : (s : PrimeSpectrum (R ⧸ p.asIdeal)) =
+      r.comap (algebraMap (R ⧸ p.asIdeal) (IntervalRing p q)) := by
+    apply PrimeSpectrum.ext (SetLike.coe_injective ?_)
+    simpa only [comap_asIdeal, Ideal.coe_comap] using
+      IsLocalization.coe_primeSpectrumOrderIso_apply_coe_asIdeal _ _ r
+  calc
+    (p.intervalRingOrderIso q r : PrimeSpectrum R) =
+        (s : PrimeSpectrum (R ⧸ p.asIdeal)).comap (Ideal.Quotient.mk p.asIdeal) :=
+      p.asIdeal.primeSpectrumQuotientOrderIsoZeroLocus_apply_coe s
+    _ = _ := by
+      rw [hs, IsScalarTower.algebraMap_eq R (R ⧸ p.asIdeal), Ideal.Quotient.algebraMap_eq,
+        comap_comp_apply]
 
 /-- For ordered endpoints, the canonical map to the interval ring vanishes exactly on the
 lower endpoint. -/
