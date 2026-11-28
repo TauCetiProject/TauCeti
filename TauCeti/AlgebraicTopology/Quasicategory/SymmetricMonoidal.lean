@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.CategoricalEquivalence
+public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Uniqueness
 public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad
 public import TauCeti.AlgebraicTopology.Quasicategory.Product
 
@@ -23,8 +24,10 @@ tensor product. The fiber `C_⟨0⟩` is contractible, and the functor associate
 
 The functors `(ρ i)_!` are given by coCartesian transports (`SSet.CoCartesianTransport`), and the
 Segal condition asks for transports along the projections whose product is a categorical
-equivalence. Associated functors are unique up to equivalence, so this does not depend on the
-choice of transports, but that comparison is not proved here.
+equivalence. Associated functors are unique up to equivalence
+(`SSet.CoCartesianTransport.exists_isEquivalence`), so the Segal maps of two choices of transports
+are equivalent in the functor quasicategory, and the Segal condition does not depend on the choice
+of transports (`SSet.isSegal_iff_isCategoricalEquivalence_segalMap`).
 
 A symmetric monoidal functor between symmetric monoidal quasicategories `p` and `q` is a map
 `C^⊗ ⟶ D^⊗` over `N(Fin_*)` preserving coCartesian edges; a lax symmetric monoidal functor is only
@@ -49,17 +52,25 @@ required to preserve the coCartesian edges lying over inert maps, that is, it is
   instance the identity of `N(Fin_*)`, the terminal symmetric monoidal quasicategory.
 * `SSet.not_symmetricMonoidal_of_not_nonempty`: the empty simplicial set over `N(Fin_*)` is not
   symmetric monoidal, since its fiber over `⟨0⟩` is not a point.
+* `SSet.exists_isEquivalence_segalMap`: the Segal maps given by two choices of transports are
+  equivalent in the functor quasicategory `Fun(C_⟨n⟩, ∏_{i < n} C_⟨1⟩)`.
+* `SSet.IsSegal.isCategoricalEquivalence_segalMap`,
+  `SSet.isSegal_iff_isCategoricalEquivalence_segalMap`: **the Segal condition does not depend on
+  the choice of transports**: under it, the Segal map of every choice of transports is a
+  categorical equivalence.
 
 ## References
 
 * J. Lurie, *Higher Algebra*, Definition 2.0.0.7, Definition 2.1.3.7 and Remark 2.1.3.8.
+* J. Lurie, *Higher Topos Theory*, §2.4.1, for the uniqueness of the functors associated to an
+  edge.
 -/
 
 public section
 
 universe u
 
-open CategoryTheory Limits Simplicial TauCeti
+open CategoryTheory Limits MonoidalClosed Simplicial TauCeti
 
 namespace SSet
 
@@ -98,6 +109,63 @@ lemma isSegal_iff (p : X ⟶ nerve FinPointed.{u}) [InnerFibration p] :
         (Y := ⟨∏ᶜ fun _ : Fin n.len ↦ (fiber p (FinPointed.mk 1).vertex : SSet), inferInstance⟩)
         (ObjectProperty.homMk (segalMap T)) :=
   Iff.rfl
+
+/-! ### Independence of the choice of transports -/
+
+/-- **Segal maps of two choices of transports are equivalent.** For an inner fibration
+`p : C^⊗ ⟶ N(Fin_*)` and two choices `T` and `T'` of coCartesian transports along the inert
+projections `ρ i : ⟨n⟩ ⟶ ⟨1⟩`, the Segal maps `C_⟨n⟩ ⟶ ∏_{i < n} C_⟨1⟩` are joined by an
+equivalence of the functor quasicategory: its components are the equivalences
+`(T i).functor ≃ (T' i).functor` of `SSet.CoCartesianTransport.exists_isEquivalence`. -/
+theorem exists_isEquivalence_segalMap {p : X ⟶ nerve FinPointed.{u}} [InnerFibration p]
+    {n : FinPointed.{u}}
+    (T T' : ∀ i : Fin n.len, CoCartesianTransport p (nerve.edgeMk (FinPointed.ρ i))) :
+    ∃ α : Edge ((ihomObj₀Equiv (fiber p n.vertex : SSet) _).symm (segalMap T))
+      ((ihomObj₀Equiv (fiber p n.vertex : SSet) _).symm (segalMap T')), α.IsEquivalence := by
+  choose α hα using fun i ↦ (T i).exists_isEquivalence (T' i)
+  let H (i : Fin n.len) := ihomEdgeEquiv _ _ (α i)
+  -- The homotopies of the components assemble into a homotopy of Segal maps.
+  let K : Homotopy (segalMap T) (segalMap T') := .mk' (Pi.lift fun i ↦ (H i).h)
+    (Pi.hom_ext _ _ fun i ↦ by rw [Category.assoc, limit.lift_π, Fan.mk_π_app, (H i).h₀,
+      segalMap_π])
+    (Pi.hom_ext _ _ fun i ↦ by rw [Category.assoc, limit.lift_π, Fan.mk_π_app, (H i).h₁,
+      segalMap_π])
+  refine ⟨(ihomEdgeEquiv _ _).symm K,
+    (Edge.isEquivalence_iff_forall_isEquivalence_map_evalAt _).2 fun x ↦
+      (Edge.isEquivalence_iff_forall_isEquivalence_map_π _).2 fun i ↦
+        (Edge.isEquivalence_iff_of_edge_eq ?_).1 ((hα i).map (evalAt x _))⟩
+  have hαi : (α i).edge = yonedaEquiv (curry (H i).h) := by
+    rw [← ihomEdgeEquiv_symm_apply_edge, Equiv.symm_apply_apply]
+  have hK : CartesianMonoidalCategory.lift (const x) (𝟙 Δ[1]) ≫ (H i).h =
+      (curry K.h ≫ evalAt x _) ≫ Pi.π _ i := by
+    rw [curry_evalAt, Category.assoc, Homotopy.mk'_h, limit.lift_π, Fan.mk_π_app]
+  rw [Edge.map_edge, Edge.map_edge, Edge.map_edge, hαi, ihomEdgeEquiv_symm_apply_edge,
+    ← yonedaEquiv_comp, ← yonedaEquiv_comp, ← yonedaEquiv_comp, curry_evalAt]
+  exact congrArg yonedaEquiv (hK.trans (Category.assoc _ _ _))
+
+/-- **Under the Segal condition, the Segal map of every choice of transports is a categorical
+equivalence**: the Segal condition does not depend on the choice of transports. -/
+theorem IsSegal.isCategoricalEquivalence_segalMap {p : X ⟶ nerve FinPointed.{u}}
+    [InnerFibration p] (hp : IsSegal p) {n : FinPointed.{u}}
+    (T : ∀ i : Fin n.len, CoCartesianTransport p (nerve.edgeMk (FinPointed.ρ i))) :
+    QCat.IsCategoricalEquivalence (X := ⟨fiber p n.vertex, inferInstance⟩)
+      (Y := ⟨∏ᶜ fun _ : Fin n.len ↦ (fiber p (FinPointed.mk 1).vertex : SSet), inferInstance⟩)
+      (ObjectProperty.homMk (segalMap T)) := by
+  obtain ⟨T', hT'⟩ := hp n
+  obtain ⟨α, hα⟩ := exists_isEquivalence_segalMap T' T
+  exact hT'.of_isEquivalence α hα
+
+/-- For any choice `T` of coCartesian transports along the inert projections, the Segal
+condition holds exactly when the Segal maps of `T` are categorical equivalences. -/
+theorem isSegal_iff_isCategoricalEquivalence_segalMap {p : X ⟶ nerve FinPointed.{u}}
+    [InnerFibration p]
+    (T : ∀ (n : FinPointed.{u}) (i : Fin n.len),
+      CoCartesianTransport p (nerve.edgeMk (FinPointed.ρ i))) :
+    IsSegal p ↔ ∀ n : FinPointed.{u},
+      QCat.IsCategoricalEquivalence (X := ⟨fiber p n.vertex, inferInstance⟩)
+        (Y := ⟨∏ᶜ fun _ : Fin n.len ↦ (fiber p (FinPointed.mk 1).vertex : SSet), inferInstance⟩)
+        (ObjectProperty.homMk (segalMap (T n))) :=
+  ⟨fun hp n ↦ hp.isCategoricalEquivalence_segalMap (T n), fun h n ↦ ⟨T n, h n⟩⟩
 
 /-- A symmetric monoidal quasicategory: a coCartesian fibration `p : C^⊗ ⟶ N(Fin_*)` satisfying
 the Segal condition. Its underlying quasicategory is the fiber `C_⟨1⟩`. -/

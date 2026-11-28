@@ -40,6 +40,8 @@ coefficients `map f` acts on the constant coefficient.
   `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`.
 * `PowerSeries.exists_degree_lt_coe_eq`: a power series whose coefficients vanish from `d₀` on is a
   polynomial of degree less than `d₀`.
+* `PowerSeries.coeff_neg_X_pow_mul`: the `Xᵏ`-coefficient of `(-X) ^ n * f` is
+  `(-1) ^ n * coeff (k - n) f` for `n ≤ k` and `0` otherwise.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 * `Polynomial.coe_sum`, `Polynomial.smul_eq_coe_mul`: viewing polynomials as power series
@@ -208,6 +210,18 @@ theorem exists_degree_lt_coe_eq (f : R⟦X⟧) {d₀ : ℕ} (h : ∀ d ≥ d₀,
   · exact (h d (not_lt.1 hd)).symm
 
 end Coeff
+
+section CoeffRing
+
+variable {R : Type*} [Ring R]
+
+/-- Coefficient of `(-X) ^ n * f` at degree `k`. -/
+theorem coeff_neg_X_pow_mul (k n : ℕ) (f : R⟦X⟧) :
+    coeff k ((-X : R⟦X⟧) ^ n * f) = (-1) ^ n * if n ≤ k then coeff (k - n) f else 0 := by
+  rw [neg_eq_neg_one_mul, (Commute.one_left (X : R⟦X⟧)).neg_left.mul_pow, mul_assoc,
+    ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_X_pow_mul']
+
+end CoeffRing
 
 end PowerSeries
 
