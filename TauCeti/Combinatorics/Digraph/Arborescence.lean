@@ -43,12 +43,15 @@ directed matrix-tree theorem.
 * `TauCeti.map_arborescenceSum`: a ring homomorphism maps the arborescence sum of `w` to the
   arborescence sum of the image weights.
 * `TauCeti.arborescenceSum_of_subsingleton`: on one vertex the arborescence sum is `1`.
-* `TauCeti.arborescenceSum_fin_two_zero`, `TauCeti.arborescenceSum_fin_two_one`: on two vertices
-  the arborescence sum at one vertex is the weight of the arc from the other vertex to it.
+* `TauCeti.arborescenceSum_of_univ_eq_pair`: on two vertices the arborescence sum at one vertex
+  is the weight of the arc from the other vertex to it.
+* `TauCeti.arborescenceSum_fin_two_zero`, `TauCeti.arborescenceSum_fin_two_one`: the two-vertex
+  case on `Fin 2`.
 
 ## References
 
-* R. P. Stanley, *Algebraic Combinatorics*, 2nd ed., Section 10 (oriented subtrees with a root).
+* R. P. Stanley, *Topics in Algebraic Combinatorics*, author's draft of 1 February 2013,
+  Chapter 10, p. 191 (oriented subtrees with root `r`).
 -/
 
 public section
@@ -153,21 +156,33 @@ theorem arborescenceSum_of_subsingleton [Subsingleton V] (w : V → V → R) (r 
     simp [Subsingleton.elim v r]
   simp [arborescenceSum, hfilter, herase]
 
-/-- On two vertices the only arborescence converging to `0` sends `1` to `0`, so the
-arborescence sum at `0` is the weight of the arc from `1` to `0`. -/
-theorem arborescenceSum_fin_two_zero (w : Fin 2 → Fin 2 → R) :
-    arborescenceSum w 0 = w 1 0 := by
-  have hfilter : univ.filter (IsArborescence (0 : Fin 2)) = {fun _ ↦ 0} := by decide
-  have herase : univ.erase (0 : Fin 2) = {1} := by decide
+/-- On two vertices `r` and `v`, the only arborescence converging to `r` sends `v` to `r`, so the
+arborescence sum at `r` is the weight of the arc from `v` to `r`. -/
+theorem arborescenceSum_of_univ_eq_pair (w : V → V → R) {r v : V} (hvr : v ≠ r)
+    (huniv : (univ : Finset V) = {r, v}) :
+    arborescenceSum w r = w v r := by
+  have hmem (u : V) : u = r ∨ u = v := by
+    simpa [huniv] using mem_univ u
+  have hfilter : univ.filter (IsArborescence r) = {fun _ ↦ r} := by
+    ext p
+    simp only [mem_filter, mem_univ, true_and, mem_singleton]
+    refine ⟨fun hp ↦ funext fun u ↦ ?_, fun hp ↦ hp ▸ isArborescence_const r⟩
+    rcases hmem u with rfl | rfl
+    · exact hp.apply_root
+    · exact (hmem (p u)).resolve_right fun h ↦ hvr (hp.apply_eq_self_iff.1 h)
+  have herase : univ.erase r = {v} := by
+    rw [huniv, erase_insert_eq_erase, erase_eq_of_notMem (by simpa using hvr.symm)]
   simp [arborescenceSum, hfilter, herase]
 
-/-- On two vertices the only arborescence converging to `1` sends `0` to `1`, so the
-arborescence sum at `1` is the weight of the arc from `0` to `1`. -/
+/-- On `Fin 2` the arborescence sum at `0` is the weight of the arc from `1` to `0`. -/
+theorem arborescenceSum_fin_two_zero (w : Fin 2 → Fin 2 → R) :
+    arborescenceSum w 0 = w 1 0 :=
+  arborescenceSum_of_univ_eq_pair w (by decide) (by decide)
+
+/-- On `Fin 2` the arborescence sum at `1` is the weight of the arc from `0` to `1`. -/
 theorem arborescenceSum_fin_two_one (w : Fin 2 → Fin 2 → R) :
-    arborescenceSum w 1 = w 0 1 := by
-  have hfilter : univ.filter (IsArborescence (1 : Fin 2)) = {fun _ ↦ 1} := by decide
-  have herase : univ.erase (1 : Fin 2) = {0} := by decide
-  simp [arborescenceSum, hfilter, herase]
+    arborescenceSum w 1 = w 0 1 :=
+  arborescenceSum_of_univ_eq_pair w (by decide) (by decide)
 
 end arborescenceSum
 
