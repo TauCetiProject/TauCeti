@@ -456,6 +456,25 @@ theorem dgComp_dgId {X Y : C} {p : ℤ} (f : DGHom R p X Y) :
     ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.hom_id, LinearMap.id_coe,
     id_eq] using key
 
+/-- Inverting the degree-zero sides of a homogeneous naturality square preserves commutativity.
+Only the two inverse identities used to cancel those sides are required. -/
+theorem dgComp_inv_naturality {X X' Y Y' : C} {p : ℤ}
+    (f : DGHom R p X Y) (g : DGHom R p X' Y')
+    (α : DGHom R 0 X X') (α' : DGHom R 0 X' X)
+    (β : DGHom R 0 Y Y') (β' : DGHom R 0 Y' Y)
+    (hα : dgComp R α' α (zero_add 0) = dgId R X')
+    (hβ : dgComp R β β' (zero_add 0) = dgId R Y)
+    (h : dgComp R f β (add_zero p) = dgComp R α g (zero_add p)) :
+    dgComp R g β' (add_zero p) = dgComp R α' f (zero_add p) := by
+  have h₁ := congrArg (fun t ↦ dgComp R α' t (zero_add p)) h
+  rw [← dgComp_assoc R α' α g (zero_add 0) (zero_add p) (by omega),
+    hα, dgId_dgComp] at h₁
+  have h₂ := congrArg (fun t ↦ dgComp R t β' (add_zero p)) h₁
+  rw [← dgComp_assoc R α' f β (zero_add p) (add_zero p) (by omega),
+    dgComp_assoc R (dgComp R α' f (zero_add p)) β β' (add_zero p) (zero_add 0)
+      (by omega), hβ, dgComp_dgId] at h₂
+  exact h₂.symm
+
 /-- A degree transport of the identity is a cycle, for the differential between arbitrary
 indices. -/
 @[simp]
