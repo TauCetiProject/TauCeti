@@ -226,6 +226,39 @@ theorem adjoin_sectionRingGrade_one_eq_top (hF : IsFunctionField k F)
 
 /-! ### Functions regular where a section attains its bound -/
 
+/-- The forward direction of `mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace`: if `z`
+is regular at the places where `f` attains the bound `-n D(P)`, then a high power of `f` absorbs the
+poles of `z`. -/
+private theorem exists_mul_pow_mem_riemannRochSpace_of_forall_ord_nonneg
+    (hF : IsFunctionField k F) {D : Divisor k F} {n : ℕ} {f : F} (hf0 : f ≠ 0)
+    (hfP : ∀ P : Place k F, 0 ≤ P.ord f + n * D.coeff P) {z : F}
+    (hz : ∀ P : Place k F, P.ord f = -(n * D.coeff P) → 0 ≤ P.ord z) :
+    ∃ r : ℕ, z * f ^ r ∈ riemannRochSpace ((n * r) • D) := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · exact ⟨0, by simp⟩
+  have hT : {P : Place k F | P.ord z < 0}.Finite := Place.finite_setOf_ord_neg hF z
+  set r : ℕ := hT.toFinset.sup fun P ↦ (-P.ord z).toNat
+  refine ⟨r, (mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hz0 (pow_ne_zero r hf0))).mpr
+    fun P ↦ ?_⟩
+  rw [P.ord_mul hz0 (pow_ne_zero r hf0), P.ord_pow, WeilDivisor.coeff_nsmul]
+  push_cast
+  by_cases hPz : P.ord z < 0
+  · -- `P` is a pole of `z`, hence a zero of `div f + nD`, and `r` absorbs it.
+    have hpos : 1 ≤ P.ord f + n * D.coeff P := by
+      by_contra h
+      have := hfP P
+      have := hz P (by omega)
+      omega
+    have hle : (-P.ord z).toNat ≤ r :=
+      Finset.le_sup (f := fun P : Place k F ↦ (-P.ord z).toNat) (hT.mem_toFinset.mpr hPz)
+    have h1 : ((-P.ord z).toNat : ℤ) = -P.ord z := Int.toNat_of_nonneg (by omega)
+    have h2 : (r : ℤ) ≤ r * (P.ord f + n * D.coeff P) :=
+      le_mul_of_one_le_right (Nat.cast_nonneg r) hpos
+    linarith
+  · have h2 : 0 ≤ (r : ℤ) * (P.ord f + n * D.coeff P) :=
+      mul_nonneg (Nat.cast_nonneg r) (hfP P)
+    linarith
+
 /-- **Functions regular where a section attains its bound.** Let `f ∈ L(nD)`. A function `z` is
 regular at every place `P` at which `f` has valuation `exp (n D(P))`, that is,
 `ord_P f = -n D(P)`, so that `f` attains the bound defining `L(nD)`, exactly when `z fʳ ∈ L(nrD)`
@@ -252,31 +285,7 @@ theorem mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace (hF : IsFunct
     rw [P.ord_eq_iff_valuation_eq_exp_neg hf0, neg_neg]
   simp only [mem_holomorphyRing_iff_forall_ord_nonneg, Set.mem_ofPred_eq, hval]
   constructor
-  · intro hz
-    rcases eq_or_ne z 0 with rfl | hz0
-    · exact ⟨0, by simp⟩
-    have hT : {P : Place k F | P.ord z < 0}.Finite := Place.finite_setOf_ord_neg hF z
-    set r : ℕ := hT.toFinset.sup fun P ↦ (-P.ord z).toNat
-    refine ⟨r, (mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hz0 (pow_ne_zero r hf0))).mpr
-      fun P ↦ ?_⟩
-    rw [P.ord_mul hz0 (pow_ne_zero r hf0), P.ord_pow, WeilDivisor.coeff_nsmul]
-    push_cast
-    by_cases hPz : P.ord z < 0
-    · -- `P` is a pole of `z`, hence a zero of `div f + nD`, and `r` absorbs it.
-      have hpos : 1 ≤ P.ord f + n * D.coeff P := by
-        by_contra h
-        have := hfP P
-        have := hz P (by omega)
-        omega
-      have hle : (-P.ord z).toNat ≤ r :=
-        Finset.le_sup (f := fun P : Place k F ↦ (-P.ord z).toNat) (hT.mem_toFinset.mpr hPz)
-      have h1 : ((-P.ord z).toNat : ℤ) = -P.ord z := Int.toNat_of_nonneg (by omega)
-      have h2 : (r : ℤ) ≤ r * (P.ord f + n * D.coeff P) :=
-        le_mul_of_one_le_right (Nat.cast_nonneg r) hpos
-      linarith
-    · have h2 : 0 ≤ (r : ℤ) * (P.ord f + n * D.coeff P) :=
-        mul_nonneg (Nat.cast_nonneg r) (hfP P)
-      linarith
+  · exact exists_mul_pow_mem_riemannRochSpace_of_forall_ord_nonneg hF hf0 hfP
   · rintro ⟨r, hr⟩ P hP
     rcases eq_or_ne z 0 with rfl | hz0
     · simp
@@ -474,6 +483,39 @@ private theorem span_range_div_pow_eq_top (hF : IsFunctionField k F) {D : Diviso
     div_self (pow_ne_zero m WithZero.exp_ne_zero)] at hlt
   exact lt_irrefl _ hlt
 
+/-- A section `s ∈ L(D)` has `sᵐ / a` regular at the places `P` where `ord_P a = -m D(P)`. -/
+private theorem div_pow_mem_holomorphyRing_toSubring {D : Divisor k F} {m : ℕ} {a s : F}
+    (hs : s ∈ riemannRochSpace D) :
+    s ^ m / a ∈ (holomorphyRing
+      {P : Place k F | P.valuation a = WithZero.exp (m * D.coeff P)}).toSubring := by
+  refine mem_holomorphyRing_iff.mpr fun P hP ↦ ?_
+  rw [Set.mem_ofPred_eq] at hP
+  have hsi := mem_riemannRochSpace_iff.mp hs P
+  rw [Place.mem_integers_iff, map_div₀, map_pow, hP, div_le_one₀ (pos_iff_ne_zero.mpr
+    WithZero.exp_ne_zero), ← nsmul_eq_mul, WithZero.exp_nsmul]
+  exact pow_le_pow_left₀ zero_le hsi m
+
+/-- Finitely many functions `cᵢ`, each regular where `ord_P a = -m D(P)`, are simultaneously
+brought into `L(m R D)` by one power `aᴿ`, when `a ∈ L(m D)`. -/
+private theorem exists_forall_mul_pow_mem_riemannRochSpace (hF : IsFunctionField k F)
+    {D : Divisor k F} {ι : Type*} {m : ℕ} {a : F} (ha : a ∈ riemannRochSpace (m • D))
+    (c : ι →₀ (holomorphyRing
+      {P : Place k F | P.valuation a = WithZero.exp (m * D.coeff P)}).toSubring) :
+    ∃ R : ℕ, ∀ i, (c i : F) * a ^ R ∈ riemannRochSpace ((m * R) • D) := by
+  have hr (i : ι) : ∃ r : ℕ, (c i : F) * a ^ r ∈ riemannRochSpace ((m * r) • D) :=
+    (mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace hF ha).mp (c i).property
+  choose r hr using hr
+  set R := c.support.sup r
+  have hR (i : ι) : (c i : F) * a ^ R ∈ riemannRochSpace ((m * R) • D) := by
+    by_cases hi : i ∈ c.support
+    · have hle : r i ≤ R := Finset.le_sup hi
+      have := mul_mem_riemannRochSpace_add (hr i) (pow_mem_riemannRochSpace_zsmul ha (R - r i))
+      rwa [mul_assoc, ← pow_add, Nat.add_sub_cancel' hle, natCast_zsmul, smul_smul, ← add_smul,
+        mul_comm (R - r i) m, ← mul_add, Nat.add_sub_cancel' hle] at this
+    · rw [Finsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, zero_mul]
+      exact zero_mem _
+  exact ⟨R, hR⟩
+
 /-- A homogeneous element `f Xᵐ` of positive degree has a power in the ideal generated by the
 elements `sᵢ X` of degree one, when the sections `sᵢ ∈ L(D)` have no common base point.
 
@@ -493,17 +535,11 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
     (coeffSubalgebra.mem_grade_iff_monomial_coeff.mp hy).symm
   rcases eq_or_ne a 0 with ha0 | ha0
   · refine ⟨1, ?_⟩
-    rw [(coeffSubalgebra.coeff_eq_zero_iff_of_mem_grade hy).mp ha0, pow_one]
-    exact zero_mem _
+    rw [(coeffSubalgebra.coeff_eq_zero_iff_of_mem_grade hy).mp ha0, pow_one]; exact zero_mem _
   set O := holomorphyRing {P : Place k F | P.valuation a = WithZero.exp (m * D.coeff P)}
   -- The generators `sᵢᵐ / a` are regular at the places where `ord_P a = -m D(P)`.
-  have hgen (i : ι) : s i ^ m / a ∈ O.toSubring := by
-    refine mem_holomorphyRing_iff.mpr fun P hP ↦ ?_
-    rw [Set.mem_ofPred_eq] at hP
-    have hsi := mem_riemannRochSpace_iff.mp (hs i) P
-    rw [Place.mem_integers_iff, map_div₀, map_pow, hP, div_le_one₀ (pos_iff_ne_zero.mpr
-      WithZero.exp_ne_zero), ← nsmul_eq_mul, WithZero.exp_nsmul]
-    exact pow_le_pow_left₀ zero_le hsi m
+  have hgen (i : ι) : s i ^ m / a ∈ O.toSubring :=
+    div_pow_mem_holomorphyRing_toSubring (hs i)
   set I : Ideal O.toSubring := Ideal.span (Set.range fun i ↦ (⟨_, hgen i⟩ : O.toSubring))
   have hI : I = ⊤ := span_range_div_pow_eq_top hF hbase ha0 hgen
   -- Write `1 = ∑ cᵢ sᵢᵐ / a` and clear denominators with a common power of `a`.
@@ -511,18 +547,7 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
   obtain ⟨c, hc⟩ := (Finsupp.mem_span_range_iff_exists_finsupp).mp hone
   have hc' : ∑ i ∈ c.support, (c i : F) * (s i ^ m / a) = 1 := by
     simpa [Finsupp.sum] using congr_arg Subtype.val hc
-  have hr (i : ι) : ∃ r : ℕ, (c i : F) * a ^ r ∈ riemannRochSpace ((m * r) • D) :=
-    (mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace hF ha).mp (c i).property
-  choose r hr using hr
-  set R := c.support.sup r
-  have hR (i : ι) : (c i : F) * a ^ R ∈ riemannRochSpace ((m * R) • D) := by
-    by_cases hi : i ∈ c.support
-    · have hle : r i ≤ R := Finset.le_sup hi
-      have := mul_mem_riemannRochSpace_add (hr i) (pow_mem_riemannRochSpace_zsmul ha (R - r i))
-      rwa [mul_assoc, ← pow_add, Nat.add_sub_cancel' hle, natCast_zsmul, smul_smul, ← add_smul,
-        mul_comm (R - r i) m, ← mul_add, Nat.add_sub_cancel' hle] at this
-    · rw [Finsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, zero_mul]
-      exact zero_mem _
+  obtain ⟨R, hR⟩ := exists_forall_mul_pow_mem_riemannRochSpace hF ha c
   refine ⟨R + 1, ?_⟩
   have hsum : y ^ (R + 1) = ∑ i ∈ c.support,
       coeffSubalgebra.monomial _ (m * R) _ (hR i) * monomialDegreeOne (hs i) ^ m := by
@@ -549,16 +574,8 @@ theorem irrelevant_le_radical_span_monomialDegreeOne (hF : IsFunctionField k F)
     (hbase : ∀ P : Place k F, ∃ i, P.valuation (s i) = WithZero.exp (D.coeff P)) :
     (HomogeneousIdeal.irrelevant (sectionRingGrade D)).toIdeal ≤
       (Ideal.span (Set.range fun i ↦ monomialDegreeOne (hs i))).radical := by
-  classical
-  intro y hy
-  rw [← DirectSum.sum_support_decompose (sectionRingGrade D) y]
-  refine Ideal.sum_mem _ fun m _ ↦ ?_
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · -- The degree-zero component of an element of the irrelevant ideal vanishes.
-    rw [HomogeneousIdeal.mem_iff, HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply] at hy
-    rw [hy]
-    exact zero_mem _
-  · exact pow_mem_span_monomialDegreeOne hF hs hbase hm (SetLike.coe_mem _)
+  exact (HomogeneousIdeal.toIdeal_irrelevant_le _).mpr fun m hm y hy ↦
+    pow_mem_span_monomialDegreeOne hF hs hbase hm hy
 
 /-! ### The pole divisor of a function -/
 
