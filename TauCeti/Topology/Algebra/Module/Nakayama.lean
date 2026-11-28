@@ -279,16 +279,15 @@ bijective upgrades to a continuous `R`-linear equivalence `M ≃L[R] N`. -/
 noncomputable def continuousLinearEquivOfBijectiveMapQ : M ≃L[R] N :=
   have ⟨_, _, _, _⟩ := hM; have ⟨_, _, _, _⟩ := hN
   have := hM.t2Space; have := hN.t2Space
-  let e := LinearEquiv.ofBijective Φ.toLinearMap <|
+  ContinuousLinearEquiv.ofBijectiveOfCompactSpace Φ <|
     LinearMap.bijective_of_bijective_mapQ_of_compactSpace
       hI ha hreg Φ.toLinearMap Φ.continuous hbij
-  ContinuousLinearEquiv.ofIsHomeomorph e
-    (isHomeomorph_iff_continuous_bijective.mpr ⟨Φ.continuous, e.bijective⟩)
 
 @[simp, grind =]
 theorem continuousLinearEquivOfBijectiveMapQ_apply (m : M) :
-    hM.continuousLinearEquivOfBijectiveMapQ hN hI ha hreg Φ hbij m = Φ m := by
-  rfl
+    hM.continuousLinearEquivOfBijectiveMapQ hN hI ha hreg Φ hbij m = Φ m :=
+  have := hM.compactSpace; have := hN.t2Space
+  ContinuousLinearEquiv.ofBijectiveOfCompactSpace_apply Φ _ m
 
 @[simp, grind =]
 theorem apply_continuousLinearEquivOfBijectiveMapQ_symm (y : N) :

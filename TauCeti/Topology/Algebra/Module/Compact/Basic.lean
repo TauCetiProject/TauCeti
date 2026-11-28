@@ -81,6 +81,8 @@ disconnected topological ring is a compact module over itself.
   `I • ⊤`, and the self-module witness.
 * `TauCeti.IsCompactModule.of_finite`: a finitely generated Hausdorff topological module over a
   compact totally disconnected ring is a compact module.
+* `ContinuousLinearEquiv.ofBijectiveOfCompactSpace`: a bijective continuous semilinear map from
+  a compact space to a Hausdorff space is a continuous semilinear equivalence.
 
 ## References
 
@@ -454,6 +456,32 @@ end IsCompactModule
 end TauCeti
 
 namespace ContinuousLinearEquiv
+
+section OfBijective
+
+variable {R₁ R₂ M N : Type*} [Semiring R₁] [Semiring R₂] {σ₁₂ : R₁ →+* R₂} {σ₂₁ : R₂ →+* R₁}
+  [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R₁ M] [CompactSpace M]
+  [TopologicalSpace N] [AddCommMonoid N] [Module R₂ N] [T2Space N]
+
+/-- A bijective continuous (semi)linear map from a compact space to a Hausdorff space is a
+continuous (semi)linear equivalence. -/
+noncomputable def ofBijectiveOfCompactSpace (f : M →SL[σ₁₂] N) (hf : Function.Bijective f) :
+    M ≃SL[σ₁₂] N :=
+  let e := LinearEquiv.ofBijective f.toLinearMap hf
+  ofIsHomeomorph e (isHomeomorph_iff_continuous_bijective.mpr ⟨f.continuous, e.bijective⟩)
+
+@[simp, grind =]
+theorem ofBijectiveOfCompactSpace_apply (f : M →SL[σ₁₂] N) (hf : Function.Bijective f) (m : M) :
+    ofBijectiveOfCompactSpace f hf m = f m :=
+  (rfl)
+
+@[simp, grind =]
+theorem apply_ofBijectiveOfCompactSpace_symm (f : M →SL[σ₁₂] N) (hf : Function.Bijective f)
+    (n : N) : f ((ofBijectiveOfCompactSpace f hf).symm n) = n := by
+  rw [← ofBijectiveOfCompactSpace_apply f hf, ContinuousLinearEquiv.apply_symm_apply]
+
+end OfBijective
 
 /-- A continuous linear equivalence preserves `TauCeti.IsCompactModule`. -/
 theorem isCompactModule_iff {R M N : Type*} [Ring R] [TopologicalSpace R] [AddCommGroup M]

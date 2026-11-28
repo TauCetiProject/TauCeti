@@ -67,15 +67,14 @@ variable {K V ι : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
 noncomputable def continuousDualEquivPi (b : Module.Basis ι K (V →L[K] K)) :
     V ≃L[K] (ι → K) :=
   have := TauCeti.separatingDual_of_isLinearTopology K V
-  let e := LinearEquiv.ofBijective (ContinuousLinearMap.pi b).toLinearMap
+  ContinuousLinearEquiv.ofBijectiveOfCompactSpace (ContinuousLinearMap.pi b)
     ⟨SeparatingDual.injective_continuousLinearMap_pi b.span_eq,
       b.linearIndependent.surjective_continuousLinearMap_pi⟩
-  ContinuousLinearEquiv.ofIsHomeomorph e
-    (isHomeomorph_iff_continuous_bijective.mpr ⟨(ContinuousLinearMap.pi b).continuous, e.bijective⟩)
 
 @[simp, grind =]
 theorem continuousDualEquivPi_apply (b : Module.Basis ι K (V →L[K] K)) (v : V) (i : ι) :
-    b.continuousDualEquivPi v i = b i v := (rfl)
+    b.continuousDualEquivPi v i = b i v :=
+  congr_fun (ContinuousLinearEquiv.ofBijectiveOfCompactSpace_apply _ _ v) i
 
 @[simp, grind =]
 theorem apply_continuousDualEquivPi_symm (b : Module.Basis ι K (V →L[K] K)) (c : ι → K)
