@@ -24,6 +24,8 @@ This file establishes closure properties for stacks and the local effective-desc
   stack for any coarser topology.
 * `CategoryTheory.Pseudofunctor.isStackFor_top`: every pseudofunctor has effective descent for
   the maximal presieve `⊤`.
+* `CategoryTheory.Pseudofunctor.isStack_bot`: every pseudofunctor is a stack for the bottom
+  topology `⊥`, whose only covering sieves are maximal.
 * `CategoryTheory.Pseudofunctor.IsStackFor.comp`: transitivity of effective descent along
   `J`-covering compositions when `F` is a `J`-prestack.
 * `CategoryTheory.Pseudofunctor.IsStackFor.of_pullback'`,
@@ -80,6 +82,14 @@ lemma isStackFor_top (S : C) : F.IsStackFor (⊤ : Presieve S) := by
             f₂ f₂ (Category.comp_id f₂),
           Category.comp_id, Category.id_comp]⟩⟩⟩
   exact {}
+
+/-- **Every pseudofunctor is a stack for the bottom topology**, whose only covering sieves are
+the maximal ones (`isStackFor_top`). -/
+instance isStack_bot : F.IsStack (⊥ : GrothendieckTopology C) :=
+  .of_isStackFor fun S R hR ↦ by
+    rw [GrothendieckTopology.bot_covering] at hR
+    subst hR
+    exact F.isStackFor_top S
 
 namespace Comp
 

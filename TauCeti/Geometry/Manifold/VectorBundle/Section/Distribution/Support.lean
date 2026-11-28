@@ -36,12 +36,16 @@ supported exactly at `x` (`TauCeti.BundleTest.dsupport_delta`).
 * `TauCeti.BundleTest.dsupport`: the support of a map on bundle tests, a closed set
   (`TauCeti.BundleTest.isClosed_dsupport`), characterized by
   `TauCeti.BundleTest.notMem_dsupport_iff`.
+* `TauCeti.BundleTest.dsupport_inter_eq_of_forall_tsupport_subset`: maps agreeing on the tests
+  supported in an open set have the same support there.
 * `TauCeti.BundleTest.isVanishingOn_compl_dsupport`: the localization principle, with
   `TauCeti.BundleTest.map_eq_zero_of_disjoint_dsupport` and
   `TauCeti.BundleTest.map_eq_map_of_eventuallyEq`.
 * `TauCeti.BundleTest.dsupport_eq_empty_iff`, `TauCeti.BundleTest.dsupport_add_subset`,
   `TauCeti.BundleTest.dsupport_smul_subset`, `TauCeti.BundleTest.dsupport_smulLeftDualCLM_subset`,
   `TauCeti.BundleTest.dsupport_delta_subset` and `TauCeti.BundleTest.dsupport_delta`.
+* `TauCeti.BundleTest.exists_eventually_eq_one_smulLeftDualCLM_eq_zero`: a smooth cutoff equal to
+  one near a compact set off the support of a functional kills the functional.
 
 ## References
 
@@ -117,6 +121,24 @@ theorem dsupport_subset_dsupport (h : ∀ U, IsOpen U → IsVanishingOn T U → 
     dsupport T' ⊆ dsupport T :=
   compl_subset_compl.2 <| sUnion_subset_sUnion fun U hU ↦ ⟨hU.1, h U hU.1 hU.2⟩
 
+/-- If two maps on bundle tests agree on the tests supported in an open set `U`, their supports
+agree over `U`. -/
+theorem dsupport_inter_eq_of_forall_tsupport_subset (hU : IsOpen U)
+    (h : ∀ s : BundleTest I F V, closure {x | s x ≠ 0} ⊆ U → T s = T' s) :
+    dsupport T ∩ U = dsupport T' ∩ U := by
+  -- Near a point of `U`, an open set on which one map vanishes, cut down to `U`, is one on which
+  -- the other vanishes.
+  have key {A B : BundleTest I F V → W}
+      (hAB : ∀ s : BundleTest I F V, closure {x | s x ≠ 0} ⊆ U → A s = B s) :
+      dsupport A ∩ U ⊆ dsupport B ∩ U := by
+    refine fun x ⟨hx, hxU⟩ ↦ ⟨?_, hxU⟩
+    by_contra hxB
+    obtain ⟨N, hN, hxN, hBN⟩ := notMem_dsupport_iff.1 hxB
+    refine notMem_dsupport_iff.2 ⟨N ∩ U, hN.inter hU, ⟨hxN, hxU⟩, fun s hs ↦ ?_⟩ hx
+    rw [hAB s (hs.trans inter_subset_right)]
+    exact hBN s (hs.trans inter_subset_left)
+  exact (key h).antisymm (key fun s hs ↦ (h s hs).symm)
+
 end Zero
 
 /-- The support of a sum of maps on bundle tests lies in the union of their supports. -/
@@ -160,13 +182,9 @@ theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
     fun x hx ↦ (hU x (hs hx)).1.mem_nhds (hU x (hs hx)).2.1
   let ρ := f.toSmoothPartitionOfUnity
   -- `s` is the sum of its products with the partition of unity.
-  have hsum : s = ∑ i, smulLeftCLM (ρ i) s := by
-    ext x
-    rw [sum_apply]
-    by_cases hx : x ∈ closure {x | s x ≠ 0}
-    · simp_rw [smulLeftCLM_apply, ← Finset.sum_smul]
-      rw [← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx, one_smul]
-    · simp [Bundle.apply_eq_zero_of_notMem_closure hx]
+  have hsum : s = ∑ i, smulLeftCLM (ρ i) s :=
+    (sum_smulLeftCLM_eq_self _ (s := s) fun x hx ↦ by
+      rw [← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx]).symm
   rw [hsum, map_sum]
   refine Finset.sum_eq_zero fun i _ ↦ (hU _ (hs (f.c_mem' i))).2.2 _ ?_
   exact (tsupport_smulLeftCLM_subset (ρ i) s).trans
@@ -226,6 +244,16 @@ theorem dsupport_smulLeftDualCLM_subset (ρ : C^∞⟮I, M; ℝ⟯) (T : BundleT
     by_cases hy : y ∈ tsupport ρ
     · simp [Bundle.apply_eq_zero_of_notMem_closure fun h' ↦ hs h' hy]
     · simp [image_eq_zero_of_notMem_tsupport hy]
+
+/-- **A cutoff killing a functional.** For a compact set `L` off the support of `T`, there is a
+smooth function `ρ` equal to one near `L` whose product `ρ T` with `T` vanishes. -/
+theorem exists_eventually_eq_one_smulLeftDualCLM_eq_zero (T : BundleTest I F V →L_c[ℝ] W)
+    {L : Set M} (hL : IsCompact L) (hLT : L ⊆ (dsupport T)ᶜ) :
+    ∃ ρ : C^∞⟮I, M; ℝ⟯, (∀ᶠ x in 𝓝ˢ L, ρ x = 1) ∧ smulLeftDualCLM ρ T = 0 := by
+  obtain ⟨ρ, hρ, hρ1, -, hρT, -⟩ :=
+    hL.exists_contMDiff_one_nhds_tsupport_subset I (isClosed_dsupport T).isOpen_compl hLT
+  refine ⟨⟨ρ, hρ⟩, hρ1, DFunLike.coe_injective <| (dsupport_eq_empty_iff _).1 ?_⟩
+  exact subset_empty_iff.1 ((dsupport_smulLeftDualCLM_subset _ T).trans fun x hx ↦ hρT hx.2 hx.1)
 
 omit [FiniteDimensional ℝ E] [IsTopologicalAddGroup W] [ContinuousConstSMul ℝ W] in
 /-- A point mass `δ_x ℓ` is supported in `{x}`. -/

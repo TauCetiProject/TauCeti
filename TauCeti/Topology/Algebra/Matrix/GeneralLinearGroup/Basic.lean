@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Prod
 public import TauCeti.Topology.Algebra.Group.Units
+import Mathlib.Topology.Algebra.Group.Matrix
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Continuity of homomorphisms into the general linear group
@@ -15,12 +19,31 @@ public import TauCeti.Topology.Algebra.Group.Units
 For the units topology on `GL n A = Matrix.GeneralLinearGroup n A`, a homomorphism from a group
 with continuous inversion into `GL n A` is continuous exactly when its matrix entries are
 continuous: by `MonoidHom.continuous_iff_continuous_val` the inverse matrices `ρ(g)⁻¹ = ρ(g⁻¹)`
-come for free, and a matrix-valued map is continuous exactly when its entries are.
+come for free, and a matrix-valued map is continuous exactly when its entries are. Assembling an
+invertible matrix over a product `A × B` from its two components is continuous as well.
+
+Entrywise application of a ring homomorphism `f : R →+* S` that is an open embedding, such as the
+inclusion of an open subring, is an open embedding `GL n R → GL n S`: its range consists of the
+invertible matrices whose entries and inverse entries lie in the open range of `f`.
+
+Reindexing rows and columns along an equivalence `e : m ≃ n` is an isomorphism of topological
+groups `GL m A ≃ₜ* GL n A` (`Matrix.GeneralLinearGroup.reindexContinuousMulEquiv`), the continuous
+version of `Matrix.GeneralLinearGroup.reindex`: it is `Units.map` of the reindexing of matrices,
+which is continuous, and so is its inverse.
+
+## Main definitions
+
+* `Matrix.GeneralLinearGroup.reindexContinuousMulEquiv`: `Matrix.GeneralLinearGroup.reindex` as an
+  isomorphism of topological groups.
 
 ## Main results
 
 * `MonoidHom.continuous_iff_continuous_matrix_elem`: continuity of a homomorphism into `GL n A`
   through its matrix entries.
+* `Topology.IsOpenEmbedding.generalLinearGroup_map`: `GL n R → GL n S` is an open embedding when
+  `f` is.
+* `TauCeti.continuous_prodEquivGL_symm`: the inverse of `GL n (A × B) ≃* GL n A × GL n B` is
+  continuous.
 -/
 
 public section
@@ -34,3 +57,69 @@ theorem MonoidHom.continuous_iff_continuous_matrix_elem {G n A : Type*} [Group G
     [TopologicalSpace A] (ρ : G →* GL n A) :
     Continuous ρ ↔ ∀ i j, Continuous fun g => (ρ g : Matrix n n A) i j :=
   ρ.continuous_iff_continuous_val.trans ⟨fun h i j => h.matrix_elem i j, continuous_matrix⟩
+
+/-- **Change of scalars along an open embedding is an open embedding** `GL n R → GL n S`, for a
+ring homomorphism `f : R →+* S` that is an open embedding. It is an embedding as `f` is one, and its
+range, the invertible matrices whose entries and inverse entries lie in the range of `f`
+(`Matrix.GeneralLinearGroup.mem_range_map_iff_of_injective`), is open as that range is. -/
+theorem Topology.IsOpenEmbedding.generalLinearGroup_map {n R S : Type*} [Fintype n]
+    [DecidableEq n] [CommRing R] [TopologicalSpace R] [CommRing S] [TopologicalSpace S]
+    {f : R →+* S} (hf : IsOpenEmbedding f) :
+    IsOpenEmbedding (Matrix.GeneralLinearGroup.map (n := n) f) := by
+  refine ⟨hf.isEmbedding.generalLinearGroup_map, ?_⟩
+  have h : Set.range (Matrix.GeneralLinearGroup.map (n := n) f) =
+      Units.val ⁻¹' (Set.range f).matrix ∩
+        (fun g : GL n S ↦ ((g⁻¹ : GL n S) : Matrix n n S)) ⁻¹' (Set.range f).matrix := by
+    ext g
+    rw [← MonoidHom.coe_range, SetLike.mem_coe,
+      Matrix.GeneralLinearGroup.mem_range_map_iff_of_injective hf.injective]
+    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_matrix, RingHom.mem_range,
+      Set.mem_range]
+  rw [h]
+  exact (hf.isOpen_range.matrix.preimage Units.continuous_val).inter
+    (hf.isOpen_range.matrix.preimage Units.continuous_coe_inv)
+
+/-- Assembling an invertible matrix over `A × B` from its components, the inverse of
+`TauCeti.prodEquivGL`, is continuous for the units topologies. -/
+theorem TauCeti.continuous_prodEquivGL_symm {n A B : Type*} [Fintype n] [DecidableEq n]
+    [Semiring A] [TopologicalSpace A] [Semiring B] [TopologicalSpace B] :
+    Continuous (prodEquivGL n A B).symm := by
+  refine Units.continuous_iff.2 ⟨continuous_matrix fun i j ↦ ?_, continuous_matrix fun i j ↦ ?_⟩
+  · simp only [Function.comp_apply, coe_prodEquivGL_symm_apply, Matrix.of_apply]
+    exact ((Units.continuous_val.comp continuous_fst).matrix_elem i j).prodMk
+      ((Units.continuous_val.comp continuous_snd).matrix_elem i j)
+  · simp only [← map_inv, coe_prodEquivGL_symm_apply, Matrix.of_apply, Prod.fst_inv,
+      Prod.snd_inv]
+    exact ((Units.continuous_coe_inv.comp continuous_fst).matrix_elem i j).prodMk
+      ((Units.continuous_coe_inv.comp continuous_snd).matrix_elem i j)
+
+namespace Matrix.GeneralLinearGroup
+
+variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+  (A : Type*) [CommRing A] [TopologicalSpace A]
+
+/-- Reindexing rows and columns along an equivalence `e : m ≃ n` is an isomorphism of topological
+groups `GL m A ≃ₜ* GL n A` for the units topologies: the continuous version of
+`Matrix.GeneralLinearGroup.reindex`. -/
+def reindexContinuousMulEquiv (e : m ≃ n) : GL m A ≃ₜ* GL n A where
+  toMulEquiv := reindex A e
+  continuous_toFun := Continuous.units_map (reindexRingEquiv A e).toMonoidHom
+    (continuous_id.matrix_reindex e e)
+  continuous_invFun := Continuous.units_map (reindexRingEquiv A e.symm).toMonoidHom
+    (continuous_id.matrix_reindex e.symm e.symm)
+
+variable {A}
+
+/-- As a map, `reindexContinuousMulEquiv A e` is `Matrix.GeneralLinearGroup.reindex A e`. -/
+@[simp]
+theorem reindexContinuousMulEquiv_apply (e : m ≃ n) (g : GL m A) :
+    reindexContinuousMulEquiv A e g = reindex A e g := by
+  rfl
+
+/-- The inverse of reindexing along `e` is reindexing along `e.symm`. -/
+@[simp]
+theorem symm_reindexContinuousMulEquiv (e : m ≃ n) :
+    (reindexContinuousMulEquiv A e).symm = reindexContinuousMulEquiv A e.symm :=
+  ContinuousMulEquiv.ext fun _ ↦ by rfl
+
+end Matrix.GeneralLinearGroup

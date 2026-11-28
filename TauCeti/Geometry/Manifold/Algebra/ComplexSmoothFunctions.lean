@@ -189,11 +189,36 @@ theorem ofReal_im (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
   ext x
   simp
 
+/-- Real part of the product of a real-valued and a complex-valued smooth function. -/
+@[simp]
+theorem re_ofReal_mul (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal f * g).re = f * g.re := by
+  ext x
+  simp
+
+/-- Imaginary part of the product of a real-valued and a complex-valued smooth function. -/
+@[simp]
+theorem im_ofReal_mul (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal f * g).im = f * g.im := by
+  ext x
+  simp
+
 /-- Inclusion of real-valued functions is injective. -/
 theorem ofReal_injective :
     Function.Injective (ofReal (I := I) (M := M) (n := n)) := by
   intro f g h
   simpa using congrArg re h
+
+/-- **Splitting by a partition of unity on a set.** If real-valued smooth functions `ρ i` add up
+to `1` on a set `K`, then a complex-valued smooth function `g` agrees on `K` with the sum of the
+products `ρ i · g`. -/
+theorem eqOn_sum_mulLeft_ofReal {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I, M; ℝ⟯) {K : Set M}
+    (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
+    Set.EqOn g ⇑(∑ i ∈ s, LinearMap.mulLeft ℂ (ofReal (ρ i)) g) K := by
+  intro x hx
+  simp only [coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply, coe_mul, Pi.mul_apply,
+    ofReal_apply, ← Finset.sum_mul]
+  rw [← Complex.ofReal_sum, hρ x hx, Complex.ofReal_one, one_mul]
 
 /-- **Splitting by a partition of unity.** If real-valued smooth functions `ρ i` add up to `1` on a
 set `K` containing the support of a complex-valued smooth function `g`, then `g` is the sum of the
@@ -203,11 +228,9 @@ theorem eq_sum_mulLeft_ofReal {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I,
     (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
     g = ∑ i ∈ s, LinearMap.mulLeft ℂ (ofReal (ρ i)) g := by
   ext x
-  simp only [coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply, coe_mul, Pi.mul_apply,
-    ofReal_apply, ← Finset.sum_mul]
   by_cases hx : x ∈ K
-  · rw [← Complex.ofReal_sum, hρ x hx, Complex.ofReal_one, one_mul]
-  · rw [Function.notMem_support.1 fun h ↦ hx (hg h), mul_zero]
+  · exact eqOn_sum_mulLeft_ofReal s ρ g hρ hx
+  · simp [Function.notMem_support.1 fun h ↦ hx (hg h)]
 
 /-- Real and imaginary parts reconstruct the original smooth function. -/
 theorem ofReal_re_add_I_smul_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :

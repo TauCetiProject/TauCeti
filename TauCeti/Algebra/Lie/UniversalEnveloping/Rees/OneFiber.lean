@@ -40,17 +40,15 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 /-- The quotient of the PBW Rees algebra by `t - 1` is the enveloping algebra. -/
 noncomputable def quotientReesParameterSubOneEquiv :
     (reesAlgebra R L ⧸ (Ideal.span {reesParameter R L - 1})) ≃ₐ[R] U :=
-  (Ideal.quotientEquivAlgOfEq R (by rw [map_one])).trans
-    (coeffSubalgebra.quotientSpanXSubAlgebraMapEquiv (pbwFiltration R L)
-      (one_mem_pbwFiltration R L 1) (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L)
-      isUnit_one)
+  coeffSubalgebra.quotientSpanXSubOneEquiv (pbwFiltration R L)
+    (one_mem_pbwFiltration R L 1) (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L)
 
 /-- The quotient comparison evaluates any representative at parameter one. -/
 @[simp]
 theorem quotientReesParameterSubOneEquiv_mk (p : reesAlgebra R L) :
     quotientReesParameterSubOneEquiv R L (Ideal.Quotient.mk _ p) =
-      coeffSubalgebra.evalOne (pbwFiltration R L) p := by
-  simp [quotientReesParameterSubOneEquiv, coeffSubalgebra.evalOne_eq_eval]
+      coeffSubalgebra.evalOne (pbwFiltration R L) p :=
+  coeffSubalgebra.quotientSpanXSubOneEquiv_mk _ _ _ _ p
 
 /-- The inverse quotient comparison takes an enveloping generator to the Rees generator class. -/
 -- Rewrite before the simplifier expands the canonical enveloping generator.
@@ -58,25 +56,24 @@ theorem quotientReesParameterSubOneEquiv_mk (p : reesAlgebra R L) :
 theorem quotientReesParameterSubOneEquiv_symm_ι (x : L) :
     (quotientReesParameterSubOneEquiv R L).symm (_root_.UniversalEnvelopingAlgebra.ι R x) =
       Ideal.Quotient.mk _ (reesGenerator R L x) := by
-  rw [AlgEquiv.symm_apply_eq, quotientReesParameterSubOneEquiv_mk, evalOne_reesGenerator]
+  rw [← evalOne_reesGenerator R L x]
+  exact coeffSubalgebra.quotientSpanXSubOneEquiv_symm_evalOne _ _ _ _ _
 
 /-- Tensor base change of the PBW Rees algebra at one is the enveloping algebra.
 The polynomial parameter acts on the left tensor factor by evaluation at one. -/
 noncomputable def reesOneFiberEquiv :
     letI := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
     (R ⊗[R[X]] reesAlgebra R L) ≃ₐ[R] U :=
-  coeffSubalgebra.baseChangeEvalEquiv (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
-    (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L) isUnit_one
+  coeffSubalgebra.baseChangeEvalOneEquiv (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
+    (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L)
 
 /-- The fibre comparison evaluates the Rees factor and multiplies by the scalar factor. -/
 @[simp]
 theorem reesOneFiberEquiv_tmul (r : R) (p : reesAlgebra R L) :
     letI := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
     reesOneFiberEquiv R L (r ⊗ₜ[R[X]] p) =
-      r • coeffSubalgebra.evalOne (pbwFiltration R L) p := by
-  let := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
-  rw [coeffSubalgebra.evalOne_eq_eval]
-  exact coeffSubalgebra.baseChangeEvalEquiv_tmul _ _ _ _ _ r p
+      r • coeffSubalgebra.evalOne (pbwFiltration R L) p :=
+  coeffSubalgebra.baseChangeEvalOneEquiv_tmul _ _ _ _ r p
 
 /-- The inverse fibre comparison takes an enveloping generator to the specialized Rees generator. -/
 @[simp↓]
@@ -85,6 +82,7 @@ theorem reesOneFiberEquiv_symm_ι (x : L) :
     (reesOneFiberEquiv R L).symm (_root_.UniversalEnvelopingAlgebra.ι R x) =
       1 ⊗ₜ[R[X]] reesGenerator R L x := by
   let := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
-  rw [AlgEquiv.symm_apply_eq, reesOneFiberEquiv_tmul, one_smul, evalOne_reesGenerator]
+  rw [← evalOne_reesGenerator R L x]
+  exact coeffSubalgebra.baseChangeEvalOneEquiv_symm_evalOne _ _ _ _ _
 
 end TauCeti.UniversalEnvelopingAlgebra

@@ -25,9 +25,11 @@ differential operator.
 Scaling by a constant `c ≥ 0` multiplies the `Lᵖ` norm by `c`
 (`MeasureTheory.lpNorm_const_smul_of_nonneg`). More generally, scalar multiplication by a function
 bounded by `c` multiplies the `Lᵖ` norm by at most `c`
-(`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, the lower-order terms
-`⟪b, G⟫ + c V` of a second-order operator over `ℝ` or `ℂ`, with `‖b‖ ≤ β` and `‖c‖ ≤ γ`, lie in
-`Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
+(`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`), and keeps an `Lᵖ` function in `Lᵖ` when it
+is measurable (`MeasureTheory.memLp_smul_and_lpNorm_smul_le_of_ae_le`). For `1 ≤ p`, the
+lower-order terms `⟪b, G⟫ + c V` of a second-order operator over `ℝ` or `ℂ`, with `‖b‖ ≤ β` and
+`‖c‖ ≤ γ`, lie in `Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖`
+(`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
 they can be moved to the right-hand side of an equation
 (`MeasureTheory.Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq`).
 
@@ -113,6 +115,17 @@ theorem lpNorm_smul_le_mul_lpNorm_of_ae_le {𝕜 : Type*} [NormedAddCommGroup �
   rw [lpNorm_of_not_aestronglyMeasurable hm]
   exact mul_nonneg hc lpNorm_nonneg
 
+/-- **Multiplying by a bounded measurable function stays in `Lᵖ`.** If `f ∈ Lᵖ(μ)` and `ψ` is
+almost everywhere strongly measurable with `‖ψ x‖ ≤ c` for almost every `x`, then `ψ • f ∈ Lᵖ(μ)`
+and `lpNorm (ψ • f) p μ ≤ c * lpNorm f p μ`. -/
+theorem memLp_smul_and_lpNorm_smul_le_of_ae_le {𝕜 : Type*} [NormedAddCommGroup 𝕜]
+    [SMulZeroClass 𝕜 F] [IsBoundedSMul 𝕜 F] {ψ : α → 𝕜} {f : α → F} {c : ℝ} (hf : MemLp f p μ)
+    (hψ : AEStronglyMeasurable ψ μ) (h : ∀ᵐ x ∂μ, ‖ψ x‖ ≤ c) :
+    MemLp (fun x => ψ x • f x) p μ ∧ lpNorm (fun x => ψ x • f x) p μ ≤ c * lpNorm f p μ :=
+  ⟨hf.of_le_mul (hψ.smul hf.aestronglyMeasurable) (h.mono fun _ hx =>
+      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))),
+    lpNorm_smul_le_mul_lpNorm_of_ae_le hf h⟩
+
 /-- **The lower-order terms lie in `Lᵖ`.** For `1 ≤ p`, let `G ∈ Lᵖ(μ)` take values in an inner
 product space over `𝕜 = ℝ` or `ℂ` and `V ∈ Lᵖ(μ)` be `𝕜`-valued, and let `b` and `c` be
 measurable with `‖b‖ ≤ β` and `‖c‖ ≤ γ` almost everywhere. Then `⟪b, G⟫ + c V` lies in `Lᵖ(μ)`,
@@ -161,6 +174,22 @@ theorem lpNorm_two_sq_eq_integral_norm_sq {f : α → F} (hf : AEStronglyMeasura
     ENNReal.toReal_ofNat, ← Real.rpow_natCast,
     ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
   norm_num
+
+/-- **The `L²` norm as the square root of the integral.** -/
+theorem lpNorm_two_eq_sqrt_integral_norm_sq {f : α → F} (hf : AEStronglyMeasurable f μ) :
+    lpNorm f 2 μ = √(∫ x, ‖f x‖ ^ 2 ∂μ) := by
+  rw [lpNorm_eq_integral_norm_rpow_toReal two_ne_zero ENNReal.ofNat_ne_top hf,
+    ENNReal.toReal_ofNat, Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **The `L²` Minkowski triangle inequality** in square-root-of-integral form. -/
+theorem MemLp.sqrt_integral_norm_add_sq_le {f g : α → F}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    √(∫ x, ‖(f + g) x‖ ^ 2 ∂μ) ≤ √(∫ x, ‖f x‖ ^ 2 ∂μ) + √(∫ x, ‖g x‖ ^ 2 ∂μ) := by
+  have h := lpNorm_add_le hf one_le_two (g := g)
+  rwa [lpNorm_two_eq_sqrt_integral_norm_sq (hf.add hg).aestronglyMeasurable,
+    lpNorm_two_eq_sqrt_integral_norm_sq hf.aestronglyMeasurable,
+    lpNorm_two_eq_sqrt_integral_norm_sq hg.aestronglyMeasurable] at h
 
 /-- **Translation invariance of `lpNorm`.** For a right-invariant measure on an additive group,
 translating a function does not change its `Lᵖ` norm: `‖u (· - c)‖_p = ‖u‖_p`. -/

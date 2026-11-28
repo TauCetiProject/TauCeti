@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Ordered
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.MonomialWord
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Enveloping
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Seminorm
 
@@ -26,14 +26,15 @@ half of the Poincaré–Birkhoff–Witt theorem
 (`TauCeti.UniversalEnvelopingAlgebra.span_orderedPBWMonomials_eq_pbwFiltration`), `X_w` is a real
 linear combination of ordered monomials of degree at most `k`, and these are exactly the monomials
 `X^α` with `α` in `SobolevIndex m k`
-(`TauCeti.UniversalEnvelopingAlgebra.range_pbwMonomial_monomialWord_eq_orderedPBWMonomials`). Each
-`‖dπ(X^α) v‖` is at most `Q_k(v)`, so the triangle inequality gives the bound, with `C_k` the sum
-of the absolute values of the coefficients.
+(`TauCeti.UniversalEnvelopingAlgebra.range_pbwMonomial_monomialWord_eq_orderedPBWMonomials`). So
+in any algebra receiving `U(L)`, the image of a word of length at most `k` is a combination of the
+images of the ordered monomials of degree at most `k`
+(`TauCeti.UniversalEnvelopingAlgebra.prod_map_mem_span_monomialWord`). For the operators
+`dπ(X_i)` the comparison of the word and Sobolev seminorms along a family of operators
+(`LinearMap.exists_endWordSeminorm_le_mul_endSobolevSeminorm`) then gives the bound.
 
 ## Main results
 
-* `TauCeti.UniversalEnvelopingAlgebra.range_pbwMonomial_monomialWord_eq_orderedPBWMonomials`: the
-  ordered PBW monomials of degree at most `k` are the monomials `X^α` with `|α| ≤ k`.
 * `ContRepresentation.wordAction_eq_lieSmoothVectorsEnvelopingAction`: `dπ(X_w)` is the action of
   the PBW monomial `X_w`.
 * `ContRepresentation.exists_wordSeminorm_le_mul_sobolevSeminorm`: `P_k ≤ C_k Q_k`.
@@ -49,27 +50,6 @@ public section
 noncomputable section
 
 open scoped ContDiff Manifold
-
-namespace TauCeti.UniversalEnvelopingAlgebra
-
-/-- The ordered PBW monomials of degree at most `k` in a family `X₁, …, X_m` are exactly the
-monomials `X^α = X₁^{α₁} ⋯ X_m^{α_m}` of the exponent vectors `α` in `SobolevIndex m k`. -/
-theorem range_pbwMonomial_monomialWord_eq_orderedPBWMonomials (R : Type*) (L : Type*)
-    [CommRing R] [LieRing L] [LieAlgebra R L] {m : ℕ} (X : Fin m → L) (k : ℕ) :
-    Set.range (fun α : SobolevIndex m k ↦ pbwMonomial R L X (monomialWord α.exponent)) =
-      orderedPBWMonomials R L X k := by
-  ext a
-  refine ⟨?_, ?_⟩
-  · rintro ⟨α, rfl⟩
-    refine pbwMonomial_mem_orderedPBWMonomials R L X (pairwise_monomialWord _) ?_
-    rw [length_monomialWord]
-    simpa only [SobolevIndex.exponent_apply] using α.property
-  · intro ha
-    obtain ⟨word, hsorted, hlength, rfl⟩ := (mem_orderedPBWMonomials_iff R L X).1 ha
-    obtain ⟨α, hα⟩ := exists_sobolevIndex_monomialWord_eq hsorted hlength
-    exact ⟨α, congrArg (pbwMonomial R L X) hα⟩
-
-end TauCeti.UniversalEnvelopingAlgebra
 
 namespace ContRepresentation
 
@@ -101,46 +81,17 @@ theorem wordAction_eq_lieSmoothVectorsEnvelopingAction {R : Type*} [Ring R] [Mod
 variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 V] [SMulCommClass ℝ 𝕜 V]
   [NormedAlgebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 V] {π : ContRepresentation 𝕜 G V} {m : ℕ}
 
-omit [NormedAlgebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 V] in
-/-- The term of an ordered monomial is bounded by the Sobolev seminorm. -/
-theorem norm_wordAction_monomialWord_le_sobolevSeminorm
-    (X : Fin m → LeftInvariantDerivation I G) {k : ℕ} (α : SobolevIndex m k)
-    (v : lieSmoothVectors I π) :
-    ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ≤ sobolevSeminorm I π X k v := by
-  rw [← sobolevVector_apply]
-  refine (PiLp.norm_apply_le (sobolevVector I π X k v) α).trans_eq ?_
-  rw [sobolevSeminorm_apply, PiLp.norm_eq_of_L2]
-  simp only [sobolevVector_apply]
-
 /-- **The word seminorm is bounded by a multiple of the Sobolev seminorm.** For a spanning family
 `X₁, …, X_m` of the Lie algebra and every order `k` there is `C_k` with `P_k ≤ C_k Q_k`. -/
 theorem exists_wordSeminorm_le_mul_sobolevSeminorm (X : Fin m → LeftInvariantDerivation I G)
     (hX : Submodule.span ℝ (Set.range X) = ⊤) (k : ℕ) :
     ∃ C : ℝ, ∀ v : lieSmoothVectors I π,
       wordSeminorm I π X k v ≤ C * sobolevSeminorm I π X k v := by
-  classical
-  -- Every word of length at most `k` is a combination of the ordered monomials `X^α`.
-  have hspan : ∀ w : BoundedWord (Fin m) k, ∃ c : SobolevIndex m k → ℝ,
-      ∑ α, c α • UniversalEnvelopingAlgebra.pbwMonomial ℝ _ X (monomialWord α.exponent) =
-        UniversalEnvelopingAlgebra.pbwMonomial ℝ _ X (List.ofFn w.2) := by
-    intro w
-    refine (Submodule.mem_span_range_iff_exists_fun ℝ).1 ?_
-    rw [UniversalEnvelopingAlgebra.range_pbwMonomial_monomialWord_eq_orderedPBWMonomials,
-      UniversalEnvelopingAlgebra.span_orderedPBWMonomials_eq_pbwFiltration ℝ _ X hX]
-    refine UniversalEnvelopingAlgebra.pbwFiltration_mono ℝ _ ?_
-      (UniversalEnvelopingAlgebra.pbwMonomial_mem_pbwFiltration ℝ _ X _)
-    rw [List.length_ofFn]
-    exact Nat.lt_succ_iff.1 w.1.isLt
-  choose c hc using hspan
-  refine ⟨∑ w, ∑ α, |c w α|, fun v ↦ ?_⟩
-  rw [wordSeminorm_apply, Finset.sum_mul]
-  refine Finset.sum_le_sum fun w _ ↦ ?_
-  rw [wordAction_eq_lieSmoothVectorsEnvelopingAction, ← hc w, Finset.sum_mul]
-  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, Submodule.coe_sum,
-    Submodule.coe_smul_of_tower, ← wordAction_eq_lieSmoothVectorsEnvelopingAction]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun α _ ↦ ?_)
-  rw [norm_smul, Real.norm_eq_abs]
-  exact mul_le_mul_of_nonneg_left (norm_wordAction_monomialWord_le_sobolevSeminorm X α v)
-    (abs_nonneg _)
+  simp only [wordSeminorm_eq_endWordSeminorm, sobolevSeminorm_eq_endSobolevSeminorm]
+  refine LinearMap.exists_endWordSeminorm_le_mul_endSobolevSeminorm _ _ fun _ hw ↦
+    Submodule.span_le_restrictScalars ℝ 𝕜 _ ?_
+  simpa only [lieSmoothVectorsEnvelopingAction_ι] using
+    UniversalEnvelopingAlgebra.prod_map_mem_span_monomialWord ℝ
+      (lieSmoothVectorsEnvelopingAction I π) X hX hw
 
 end ContRepresentation

@@ -136,13 +136,10 @@ variable (E) in
 trivializations are `C^k` diffeomorphisms onto open subsets of `B × GL n 𝕜`. -/
 theorem isContMDiff_atlas (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
     (atlas E σ).IsContMDiff k IB 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜)
-      (IB.prod 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] F)) where
-  contMDiffOn_trivAt b := by
-    rw [atlas_trivAt]
-    exact (trivializationAt F E b).contMDiffOn_frameBundle σ
-  contMDiffOn_trivAt_symm b := by
-    rw [atlas_trivAt]
-    exact (trivializationAt F E b).contMDiffOn_frameBundle_symm σ
+      (IB.prod 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] F)) := by
+  refine ⟨?_, ?_⟩ <;> rw [atlas_charts] <;> rintro _ ⟨b, rfl⟩
+  · exact (trivializationAt F E b).contMDiffOn_frameBundle σ
+  · exact (trivializationAt F E b).contMDiffOn_frameBundle_symm σ
 
 variable (E) in
 /-- **The frame bundle is a smooth fibre bundle.** For an isomorphism `σ : F ≃ 𝕜ⁿ`, the fibres of

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Data.Int.Round
 import TauCeti.LinearAlgebra.Basis.Fin

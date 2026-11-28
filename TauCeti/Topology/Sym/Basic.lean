@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.Data.Sym.Basic
 import Mathlib.Algebra.BigOperators.Fin
@@ -39,6 +40,8 @@ facts about it used below.
 * `Sym.isOpenMap_ofFn`, `Sym.isClosedMap_ofFn` and
   `Sym.isOpenQuotientMap_ofFn`: the quotient map is open and closed, the permutation group
   being finite.
+* `Sym.frequently_ofFn_eq_ofFn_and_ne`: in a space without isolated points, the quotient map is
+  not injective near a tuple with two equal points.
 * `Sym.continuous_map`, `Sym.isOpenMap_map` and
   `Sym.isOpenEmbedding_map`: the `n`-th symmetric power of a continuous, open, or open
   embedding map is again one; in particular the symmetric power of an open subspace is an open
@@ -120,6 +123,34 @@ theorem isClosedMap_ofFn : IsClosedMap (ofFn : (Fin n → α) → Sym α n) := f
 theorem isOpenQuotientMap_ofFn : IsOpenQuotientMap (ofFn : (Fin n → α) → Sym α n) :=
   .of_isOpenMap_isQuotientMap isOpenMap_ofFn isQuotientMap_ofFn
 
+open Filter Function in
+/-- In a space without isolated points, such as a manifold, if two points of a tuple `p` coincide,
+then the quotient map onto the symmetric power is not injective on any neighbourhood of `p`:
+arbitrarily close to `p` there are two different tuples with the same underlying unordered tuple,
+obtained by moving one of the two coinciding points and then exchanging them. -/
+theorem frequently_ofFn_eq_ofFn_and_ne [PerfectSpace α] {p : Fin n → α} {i j : Fin n}
+    (hij : i ≠ j) (hp : p i = p j) :
+    ∃ᶠ w : (Fin n → α) × (Fin n → α) in 𝓝 (p, p), Sym.ofFn w.1 = Sym.ofFn w.2 ∧ w.1 ≠ w.2 := by
+  classical
+  -- move the `i`-th point to a nearby `q ≠ p i`, and swap the `i`-th and `j`-th points
+  set w : α → Fin n → α := fun q => update p i q
+  have hw : Tendsto (fun q => (w q, w q ∘ Equiv.swap i j)) (𝓝[≠] (p i)) (𝓝 (p, p)) := by
+    have h₁ : Tendsto w (𝓝[≠] (p i)) (𝓝 p) := by
+      simpa [w] using
+        ((continuous_const.update (f := fun _ : α => p) i continuous_id).tendsto (p i)).mono_left
+          nhdsWithin_le_nhds
+    have hswap : (fun k => p (Equiv.swap i j k)) = p := funext (Equiv.apply_swap_eq_self hp)
+    have h₂ : Tendsto (fun q => w q ∘ Equiv.swap i j) (𝓝[≠] (p i)) (𝓝 p) := by
+      have h := ((continuous_pi fun k => continuous_apply (Equiv.swap i j k)).tendsto p).comp h₁
+      rw [hswap] at h
+      exact h
+    exact h₁.prodMk_nhds h₂
+  refine hw.frequently (Eventually.frequently ?_)
+  filter_upwards [self_mem_nhdsWithin] with q hq
+  refine ⟨(ofFn_comp_perm _ _).symm, fun h => hq ?_⟩
+  -- the two tuples differ at `i`, where they are `q` and `p j = p i`
+  simpa [w, update_of_ne hij.symm, ← hp] using congrFun h i
+
 /-! ### Functoriality -/
 
 /-- The symmetric power of a continuous map is continuous. -/
@@ -195,6 +226,28 @@ theorem continuous_sum_map {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [C
     simp [Fin.sum_ofFn]
   rw [h]
   exact continuous_finsetSum _ fun i _ => hg.comp (continuous_apply i)
+
+/-! ### The first symmetric power -/
+
+/-- **The first symmetric power of a space is the space itself**: `Sym.oneEquiv`, sending a
+point to the singleton, is a homeomorphism `α ≃ₜ Sym α 1`. -/
+def oneHomeomorph : α ≃ₜ Sym α 1 where
+  toEquiv := oneEquiv
+  continuous_toFun := (continuous_ofFn.comp (continuous_pi fun _ => continuous_id)).congr
+    fun a => ofFn_eq_oneEquiv fun _ => a
+  continuous_invFun := by
+    rw [continuous_iff_comp_ofFn]
+    exact (continuous_apply 0).congr fun f => by
+      rw [Function.comp_apply, ofFn_eq_oneEquiv]
+      exact (oneEquiv.left_inv (f 0)).symm
+
+@[simp]
+theorem oneHomeomorph_apply (a : α) : oneHomeomorph a = oneEquiv a :=
+  (rfl)
+
+@[simp]
+theorem oneHomeomorph_symm_apply (s : Sym α 1) : oneHomeomorph.symm s = oneEquiv.symm s :=
+  (rfl)
 
 /-! ### Separation and compactness -/
 

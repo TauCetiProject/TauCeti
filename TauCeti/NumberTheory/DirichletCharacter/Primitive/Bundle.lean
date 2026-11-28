@@ -37,6 +37,12 @@ counterpart of `TauCeti.LFunctions.PrimitiveRayClassCharacter`, built on Mathlib
   `TauCeti.PrimitiveDirichletCharacter.of_changeLevel`,
   `TauCeti.PrimitiveDirichletCharacter.of_one`, `TauCeti.PrimitiveDirichletCharacter.of_inv`: the
   bundle of the character of a bundle, of a lift, of a principal character and of an inverse.
+* `TauCeti.PrimitiveDirichletCharacter.of_injective`,
+  `TauCeti.PrimitiveDirichletCharacter.of_zpow`: at a fixed level `of` is injective, and the bundle
+  of a power depends only on the bundle of the base.
+* `TauCeti.PrimitiveDirichletCharacter.of_eq_one_iff`,
+  `TauCeti.PrimitiveDirichletCharacter.of_ofUnitHom_comp_eq_one_iff`: the bundle of a character,
+  or of its pullback along a surjection, is trivial exactly when the character is.
 -/
 
 public section
@@ -104,6 +110,12 @@ noncomputable def of [NeZero N] (χ : DirichletCharacter ℂ N) : PrimitiveDiric
 theorem level_of [NeZero N] (χ : DirichletCharacter ℂ N) : ((of χ).level : ℕ) = χ.conductor :=
   (rfl)
 
+/-- Evaluation of the bundled character on a natural number agrees with evaluation of the
+primitive character inducing the input character. -/
+@[simp] theorem character_of_apply_natCast [NeZero N] (χ : DirichletCharacter ℂ N) (n : ℕ) :
+    (of χ).character n = χ.primitiveCharacter (n : ZMod χ.conductor) :=
+  (rfl)
+
 /-- The level of the bundle of a character divides the level at which the character is
 presented. -/
 theorem level_of_dvd [NeZero N] (χ : DirichletCharacter ℂ N) : ((of χ).level : ℕ) ∣ N :=
@@ -123,6 +135,11 @@ theorem of_eq_iff [NeZero N] {χ : DirichletCharacter ℂ N} {ψ : PrimitiveDiri
     exact ⟨level_of_dvd χ, changeLevel_character_of χ⟩
   · rw [changeLevel_character_of, hψ]
 
+/-- At a fixed level, different characters have different bundles. -/
+theorem of_injective [NeZero N] : Function.Injective (of (N := N)) := fun χ χ' h ↦ by
+  obtain ⟨_, hχ'⟩ := of_eq_iff.mp h
+  exact hχ'.symm.trans (changeLevel_character_of χ')
+
 /-- The bundle of the character of a bundle is that bundle. -/
 @[simp]
 theorem of_character (ψ : PrimitiveDirichletCharacter) : of ψ.character = ψ :=
@@ -138,6 +155,12 @@ theorem of_changeLevel [NeZero N] (h : M ∣ N) (χ : DirichletCharacter ℂ M) 
   have : NeZero M := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne N) h⟩
   exact of_eq_iff.2 ⟨(level_of_dvd χ).trans h, by
     rw [changeLevel_trans _ (level_of_dvd χ) h, changeLevel_character_of]⟩
+
+/-- The bundle of an integer power of `χ` is the bundle of the same power of the character of
+the bundle of `χ`. -/
+theorem of_zpow [NeZero N] (χ : DirichletCharacter ℂ N) (l : ℤ) :
+    of (χ ^ l) = of ((of χ).character ^ l) := by
+  rw [← of_changeLevel (level_of_dvd χ), map_zpow, changeLevel_character_of]
 
 /-- The trivial bundle: the character modulo `1`. -/
 noncomputable instance : One PrimitiveDirichletCharacter :=
@@ -162,6 +185,21 @@ theorem character_one_apply (n : ℕ) : (1 : PrimitiveDirichletCharacter).charac
 @[simp]
 theorem of_one [NeZero N] : of (1 : DirichletCharacter ℂ N) = 1 :=
   of_eq_iff.2 ⟨one_dvd N, changeLevel_one _⟩
+
+/-- The bundle of a character is trivial exactly when the character is principal. -/
+@[simp]
+theorem of_eq_one_iff [NeZero N] {χ : DirichletCharacter ℂ N} : of χ = 1 ↔ χ = 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ of_one⟩
+  obtain ⟨hd, hχ⟩ := of_eq_iff.1 h
+  rw [← hχ, character_one, changeLevel_one]
+
+/-- The bundle of the pullback of a character `χ` along a surjection `f` onto its domain is
+trivial exactly when `χ` is. -/
+theorem of_ofUnitHom_comp_eq_one_iff [NeZero N] {G : Type*} [MulOneClass G]
+    {f : (ZMod N)ˣ →* G} (hf : Function.Surjective f) {χ : G →* ℂˣ} :
+    of (MulChar.ofUnitHom (χ.comp f)) = 1 ↔ χ = 1 := by
+  rw [of_eq_one_iff, MulChar.ofUnitHom_eq, ← MulChar.equivToUnitHom_symm_one,
+    Equiv.apply_eq_iff_eq, ← MonoidHom.one_comp f, MonoidHom.cancel_right hf]
 
 /-- A bundle is trivial exactly when its character is the principal character of its level. -/
 theorem character_eq_one_iff (ψ : PrimitiveDirichletCharacter) : ψ.character = 1 ↔ ψ = 1 :=

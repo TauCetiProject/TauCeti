@@ -29,6 +29,8 @@ falling-factorial form `1 - (|κ|)_|ι| / |κ| ^ |ι|`, and the pairwise union-b
   `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_le_exact_collision`,
   `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_le` (and reversed companions):
   measurable-event excess bounds;
+* `iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm`: symmetry of the largest
+  measurable-event excess when an embedding `ι ↪ κ` exists;
 * `etvDist_sampleWithoutReplacement_sampleWithReplacement_le_collision`,
   `etvDist_sampleWithoutReplacement_sampleWithReplacement_le_exact_collision`,
   `etvDist_sampleWithoutReplacement_sampleWithReplacement_le`: random-population `etvDist` bounds,
@@ -117,6 +119,21 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_le
       (Fintype.card ι).choose 2 / Fintype.card κ :=
   (iSup_sampleWithReplacement_sub_sampleWithoutReplacement_le_collision ρ).trans
     uniformOn_not_injective_le
+
+omit [Fintype κ] in
+/-- When an embedding `ι ↪ κ` exists, both sampling laws of a probability population law `ρ` are
+probability measures, so the largest eventwise excess of sampling with replacement over sampling
+without replacement equals the largest excess in the opposite direction. -/
+theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm
+    [Finite κ] (ρ : Measure (κ → α)) [IsProbabilityMeasure ρ] (e : ι ↪ κ) :
+    (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+        sampleWithReplacement ρ A - sampleWithoutReplacement ρ A) =
+      ⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+        sampleWithoutReplacement ρ A - sampleWithReplacement ρ A := by
+  have : Nonempty (ι → κ) := ⟨e⟩
+  have := isProbabilityMeasure_sampleWithReplacement (ι := ι) ρ
+  have := isProbabilityMeasure_sampleWithoutReplacement ρ e
+  exact iSup_measure_sub_comm (by rw [measure_univ, measure_univ])
 
 omit [Fintype κ] in
 /-- **Total-variation collision bound for random populations.** For any probability population law
