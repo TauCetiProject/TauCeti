@@ -142,9 +142,9 @@ theorem involute_of_mem_grading {p : ℤ} {x : ExteriorAlgebra S Ω[S⁄R]}
 
 /-- Elements of `S` sit in degree zero of the algebraic de Rham grading. -/
 theorem algebraMap_mem_grading_zero (s : S) :
-    algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s ∈ grading R S 0 := by
-  rw [← Nat.cast_zero, mem_grading_natCast, _root_.ExteriorAlgebra.exteriorPower, pow_zero]
-  exact Submodule.algebraMap_mem s
+    algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s ∈ grading R S 0 :=
+  mem_grading_iff.mpr <| SetLike.algebraMap_mem_graded
+    (TauCeti.ExteriorAlgebra.integerGrading S Ω[S⁄R]) s
 
 /-- Kähler `1`-forms sit in degree one of the algebraic de Rham grading. -/
 theorem ι_mem_grading_one (ω : Ω[S⁄R]) :

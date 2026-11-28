@@ -34,14 +34,13 @@ open KaehlerDifferential
 section
 
 variable {R B M : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
-  [AddCommMonoid M] [Module B M] [Module R M] [IsScalarTower R B M] {I : Ideal B}
+  [AddCommMonoid M] [Module B M] [Module R M] {I : Ideal B}
 
 /-- A divided power derivation satisfies the chain rule for every positive divided power on
 the ideal. -/
 def Derivation.IsPD (d : Derivation R B M) (δ : DividedPowers I) : Prop :=
   ∀ n x, x ∈ I → d (δ.dpow (n + 1) x) = δ.dpow n x • d x
 
-omit [IsScalarTower R B M] in
 /-- The chain rule for a divided power of successor degree. -/
 theorem Derivation.IsPD.apply_dpow_succ {d : Derivation R B M} {δ : DividedPowers I}
     (hd : d.IsPD δ) (n : ℕ) {x : B} (hx : x ∈ I) :
@@ -50,7 +49,7 @@ theorem Derivation.IsPD.apply_dpow_succ {d : Derivation R B M} {δ : DividedPowe
 
 /-- The submodule of derivations compatible with the divided powers `δ`. -/
 def DividedPowers.derivations (δ : DividedPowers I) (R M : Type*) [CommSemiring R]
-    [Algebra R B] [AddCommMonoid M] [Module R M] [Module B M] [IsScalarTower R B M] :
+    [Algebra R B] [AddCommMonoid M] [Module R M] [Module B M] [SMulCommClass R B M] :
     Submodule B (Derivation R B M) where
   carrier := {d | d.IsPD δ}
   zero_mem' := by intro n x _; simp
@@ -62,7 +61,8 @@ def DividedPowers.derivations (δ : DividedPowers I) (R M : Type*) [CommSemiring
     simp [hd.apply_dpow_succ n hx, smul_comm a (δ.dpow n x)]
 
 /-- Membership in the submodule of divided power derivations is the divided power chain rule. -/
-theorem DividedPowers.mem_derivations_iff {δ : DividedPowers I} {d : Derivation R B M} :
+theorem DividedPowers.mem_derivations_iff [SMulCommClass R B M]
+    {δ : DividedPowers I} {d : Derivation R B M} :
     d ∈ δ.derivations R M ↔ d.IsPD δ :=
   (Iff.rfl)
 
@@ -145,10 +145,9 @@ theorem span_range_d : Submodule.span B (Set.range (d R δ)) = ⊤ := by
 
 variable {R δ}
 
-omit [Algebra R C] in
 /-- Two semilinear maps from the divided power differentials agree if they agree on `dx`. -/
 @[ext]
-theorem hom_ext {N : Type*} [AddCommGroup N] [Module C N] {σ : B →+* C}
+theorem hom_ext {T N : Type*} [Semiring T] [AddCommMonoid N] [Module T N] {σ : B →+* T}
     {f g : PDKaehlerDifferential R δ →ₛₗ[σ] N}
     (h : ∀ x, f (d R δ x) = g (d R δ x)) : f = g :=
   LinearMap.ext_on (span_range_d R δ) (by rintro _ ⟨x, rfl⟩; exact h x)

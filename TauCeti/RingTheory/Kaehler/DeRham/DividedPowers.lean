@@ -7,7 +7,8 @@ module
 
 public import TauCeti.RingTheory.Kaehler.DeRham.Quotient
 public import TauCeti.RingTheory.Kaehler.DividedPowers
-import TauCeti.Algebra.Subalgebra.Centralizer
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Quotient
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 
 /-!
 # The divided power de Rham algebra
@@ -165,10 +166,9 @@ theorem mem_grading_iff {n : ℤ} {x : Forms R δ} :
 
 /-- Scalars from the divided power ring have degree zero. -/
 theorem algebraMap_mem_grading_zero (b : B) :
-    algebraMap B (Forms R δ) b ∈ grading R δ 0 := by
-  rw [mem_grading_iff, ← Nat.cast_zero, TauCeti.ExteriorAlgebra.integerGrading_natCast,
-    _root_.ExteriorAlgebra.exteriorPower, pow_zero]
-  exact Submodule.algebraMap_mem b
+    algebraMap B (Forms R δ) b ∈ grading R δ 0 :=
+  (mem_grading_iff R δ).mpr <| SetLike.algebraMap_mem_graded
+    (TauCeti.ExteriorAlgebra.integerGrading B (PDKaehlerDifferential R δ)) b
 
 /-- The exterior derivative raises exterior degree by one. -/
 theorem extDeriv_mem_grading {n : ℤ} {x : Forms R δ}
@@ -202,72 +202,32 @@ section UniversalProperty
 variable {P : Type*} [Ring P] [Algebra R P] {ℬ : ℤ → Submodule R P} [GradedAlgebra ℬ]
   {dP : P →ₗ[R] P}
 
-private def factorAlgHom (F : ExteriorAlgebra B Ω[B⁄R] →ₐ[R] P)
-    (hF : ∀ (n : ℕ) (x : B), x ∈ I →
-      F (ExteriorAlgebra.ι B (D R B (δ.dpow (n + 1) x) - δ.dpow n x • D R B x)) = 0) :
-    { G : Forms R δ →ₐ[R] P // ∀ ω, G (ofKaehler R δ ω) = F ω } := by
-  let f := F.comp (IsScalarTower.toAlgHom R B (ExteriorAlgebra B Ω[B⁄R]))
-  let S := Subalgebra.centralizer R (Set.range f)
-  letI : Algebra B S := f.centralizerRangeAlgebra
-  letI : IsScalarTower R B S := f.centralizerRangeIsScalarTower
-  have hS (b : B) : (algebraMap B S b : P) = f b := f.coe_algebraMap_centralizerRange b
-  have hi (ω : Ω[B⁄R]) : F (ExteriorAlgebra.ι B ω) ∈ S := by
-    apply (Subalgebra.mem_centralizer_iff R).mpr
-    rintro _ ⟨b, rfl⟩
-    simpa only [f, AlgHom.comp_apply, IsScalarTower.toAlgHom_apply, map_mul] using
-      congrArg F (Algebra.commutes b (ExteriorAlgebra.ι B ω))
-  let L : Ω[B⁄R] →ₗ[B] S :=
-    { toFun := fun ω ↦ ⟨F (ExteriorAlgebra.ι B ω), hi ω⟩
-      map_add' := fun x y ↦ Subtype.ext <| by simp
-      map_smul' := fun b ω ↦ Subtype.ext <| by
-        simp [Algebra.smul_def, hS, f] }
-  let L' := (PDKaehlerDifferential.relations R δ).liftQ L <| by
-    rw [PDKaehlerDifferential.relations_le_iff]
-    intro n x hx
-    exact LinearMap.mem_ker.mpr (Subtype.ext (hF n x hx))
-  have hL (ω : Ω[B⁄R]) : L' (PDKaehlerDifferential.mkQ R δ ω) = L ω :=
-    Submodule.liftQ_apply _ L ω
-  have hsq (ω : PDKaehlerDifferential R δ) : L' ω * L' ω = 0 := by
-    obtain ⟨ω, rfl⟩ := Submodule.mkQ_surjective (PDKaehlerDifferential.relations R δ) ω
-    rw [hL]
-    apply Subtype.ext
-    rw [Subalgebra.coe_mul, Subalgebra.coe_zero]
-    exact (map_mul F _ _).symm.trans (by rw [ExteriorAlgebra.ι_sq_zero, map_zero])
-  let G := ExteriorAlgebra.lift B ⟨L', hsq⟩
-  refine ⟨S.val.comp (G.restrictScalars R), ?_⟩
-  intro ω
-  induction ω using ExteriorAlgebra.induction with
-  | algebraMap b =>
-    rw [AlgHom.commutes, AlgHom.comp_apply, AlgHom.coe_restrictScalars', AlgHom.commutes]
-    exact hS b
-  | ι ω =>
-    rw [ofKaehler_ι, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
-      ExteriorAlgebra.lift_ι_apply, hL]
-    exact Subalgebra.val_apply _ _
-  | mul x y hx hy => simp only [map_mul, hx, hy]
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-private theorem exists_ofKaehler_of_mem_grading {n : ℤ} {x : Forms R δ}
-    (hx : x ∈ grading R δ n) :
-    ∃ y ∈ KaehlerDeRham.grading R B n, ofKaehler R δ y = x := by
-  obtain ⟨y, rfl⟩ := ofKaehler_surjective δ x
-  let z := DirectSum.decompose (KaehlerDeRham.grading R B) y n
-  refine ⟨z, z.property, ?_⟩
-  rw [← ofKaehlerDGAlgHom_apply,
-    map_directSumDecompose (KaehlerDeRham.grading R B) (grading R δ),
-    ofKaehlerDGAlgHom_apply, DirectSum.decompose_of_mem_same _ hx]
-
 private theorem ordinaryLift_kills_relations (hP : IsDGAlgebra ℬ dP) (f : B →ₐ[R] P)
     (hf₀ : ∀ b : B, f b ∈ ℬ 0)
     (hcomm : ∀ b c : B, f b * dP (f c) = dP (f c) * f b)
     (hsq : ∀ b : B, dP (f b) * dP (f b) = 0)
     (hPD : ∀ (n : ℕ) (x : B), x ∈ I →
       dP (f (δ.dpow (n + 1) x)) = f (δ.dpow n x) * dP (f x))
-    (n : ℕ) (x : B) (hx : x ∈ I) :
-    KaehlerDeRham.liftDGAlgHom hP f hf₀ hcomm hsq
-      (ExteriorAlgebra.ι B (D R B (δ.dpow (n + 1) x) - δ.dpow n x • D R B x)) = 0 := by
-  simp only [map_sub, LinearMap.map_smul, KaehlerDeRham.liftDGAlgHom_smul,
-    KaehlerDeRham.liftDGAlgHom_ι_D, hPD n x hx, sub_self]
+    (ω : Ω[B⁄R]) (hω : ω ∈ PDKaehlerDifferential.relations R δ) :
+    KaehlerDeRham.liftDGAlgHom hP f hf₀ hcomm hsq (ExteriorAlgebra.ι B ω) = 0 := by
+  let F := KaehlerDeRham.liftDGAlgHom hP f hf₀ hcomm hsq
+  let N : Submodule B Ω[B⁄R] :=
+    { carrier := {η | F (ExteriorAlgebra.ι B η) = 0}
+      zero_mem' := by simp
+      add_mem' := by
+        intro x y hx hy
+        simp only [Set.mem_ofPred_eq] at hx hy ⊢
+        simp only [map_add, hx, hy, add_zero]
+      smul_mem' := by
+        intro b x hx
+        simp only [Set.mem_ofPred_eq] at hx ⊢
+        rw [LinearMap.map_smul, KaehlerDeRham.liftDGAlgHom_smul, hx, mul_zero] }
+  have hN : PDKaehlerDifferential.relations R δ ≤ N :=
+    (PDKaehlerDifferential.relations_le_iff R δ).mpr fun n x hx ↦ by
+      simp only [N, Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk,
+        Set.mem_ofPred_eq, map_sub, LinearMap.map_smul, KaehlerDeRham.liftDGAlgHom_smul,
+        KaehlerDeRham.liftDGAlgHom_ι_D, hPD n x hx, sub_self, F]
+  exact hN hω
 
 /-- An algebra map to degree zero of a DG algebra extends to divided power forms if its
 differential satisfies the divided power chain rule. The differential of each image element
@@ -280,12 +240,15 @@ def liftDGAlgHom (hP : IsDGAlgebra ℬ dP) (f : B →ₐ[R] P)
       dP (f (δ.dpow (n + 1) x)) = f (δ.dpow n x) * dP (f x)) :
     DGAlgHom (isDGAlgebra R δ) hP := by
   let F := KaehlerDeRham.liftDGAlgHom hP f hf₀ hcomm hsq
-  let G := factorAlgHom R δ F.toGradedAlgHom.toAlgHom
+  let G := F.toGradedAlgHom.toAlgHom.factorExteriorAlgebraQuotient
+    (PDKaehlerDifferential.relations R δ)
     (ordinaryLift_kills_relations R δ hP f hf₀ hcomm hsq hPD)
   refine ⟨⟨G.val, ?_⟩, ?_⟩
   · intro n x hx
-    obtain ⟨y, hy, rfl⟩ := exists_ofKaehler_of_mem_grading R δ hx
-    exact G.property y ▸ F.toGradedAlgHom.map_mem hy
+    obtain ⟨y, hy, hxy⟩ :=
+      Graded.surjOn_of_surjective (ofKaehlerDGAlgHom R δ) (ofKaehler_surjective δ) n hx
+    rw [ofKaehlerDGAlgHom_apply] at hxy
+    exact hxy ▸ (G.property y ▸ F.toGradedAlgHom.map_mem hy)
   · intro x
     obtain ⟨y, rfl⟩ := ofKaehler_surjective δ x
     rw [extDeriv_ofKaehler]
@@ -304,7 +267,9 @@ variable (hP : IsDGAlgebra ℬ dP) (f : B →ₐ[R] P) (hf₀ : ∀ b : B, f b �
 theorem liftDGAlgHom_ofKaehler (ω : ExteriorAlgebra B Ω[B⁄R]) :
     liftDGAlgHom R δ hP f hf₀ hcomm hsq hPD (ofKaehler R δ ω) =
       KaehlerDeRham.liftDGAlgHom hP f hf₀ hcomm hsq ω :=
-  (factorAlgHom R δ _ (ordinaryLift_kills_relations R δ hP f hf₀ hcomm hsq hPD)).property ω
+  let F := KaehlerDeRham.liftDGAlgHom hP f hf₀ hcomm hsq
+  (F.toGradedAlgHom.toAlgHom.factorExteriorAlgebraQuotient (PDKaehlerDifferential.relations R δ)
+    (ordinaryLift_kills_relations R δ hP f hf₀ hcomm hsq hPD)).property ω
 
 /-- On scalars the divided power de Rham lift agrees with the given algebra map. -/
 @[simp]

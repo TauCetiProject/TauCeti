@@ -76,12 +76,21 @@ theorem irrelevant_le_map_of_surjective (f : 𝒜 →+*ᵍ ℬ) (hf : Function.S
 
 end HomogeneousIdeal
 
-section Injective
+section GradedMaps
 
 variable {ι A B σ τ F : Type*} [Semiring A] [Semiring B] [SetLike σ A] [SetLike τ B]
   [AddSubmonoidClass σ A] [AddSubmonoidClass τ B] [DecidableEq ι] [AddMonoid ι]
   {𝒜 : ι → σ} {ℬ : ι → τ} [GradedRing 𝒜] [GradedRing ℬ]
   [FunLike F A B] [GradedFunLike F 𝒜 ℬ] [RingHomClass F A B]
+
+/-- A surjective graded ring homomorphism maps each homogeneous piece onto the corresponding
+piece of the target. -/
+theorem Graded.surjOn_of_surjective (f : F) (hf : Function.Surjective f) (i : ι) :
+    Set.SurjOn f (𝒜 i : Set A) (ℬ i : Set B) := by
+  intro b hb
+  obtain ⟨a, rfl⟩ := hf b
+  refine ⟨DirectSum.decompose 𝒜 a i, SetLike.coe_mem _, ?_⟩
+  rw [map_directSumDecompose 𝒜 ℬ, DirectSum.decompose_of_mem_same ℬ hb]
 
 /-- An injective graded ring homomorphism reflects homogeneity: `f x` is homogeneous of degree
 `i` exactly when `x` is. In particular the inverse of a bijective graded ring homomorphism is
@@ -93,7 +102,7 @@ theorem Graded.map_mem_iff_of_injective (f : F) (hf : Function.Injective f) {i :
   rw [← hf ((map_directSumDecompose 𝒜 ℬ f).trans (DirectSum.decompose_of_mem_same ℬ h))]
   exact SetLike.coe_mem _
 
-end Injective
+end GradedMaps
 
 namespace TauCeti.HomogeneousIdeal
 
