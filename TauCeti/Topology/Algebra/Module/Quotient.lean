@@ -21,7 +21,9 @@ the product of the two quotient topological modules.
 
 The quotient of a topological module by an open submodule is discrete; in particular the quotient
 of a discrete topological module by any submodule is discrete, since in a discrete module every
-submodule is open.
+submodule is open. Consequently only finitely many submodules `L ≤ P` contain `U ⊓ P` and lie in a
+compact set, for an open submodule `U` (`Submodule.finite_setOf_inf_le_le_subset`): their images
+in the discrete quotient by `U` lie in a finite set and determine them.
 
 Mathlib's `QuotientAddGroup.discreteTopology` is the statement for the quotient of a topological
 additive group by an *open* subgroup, and supplies the whole proof; because it is a theorem
@@ -100,6 +102,31 @@ instance discreteTopology [DiscreteTopology M] (p : Submodule R M) : DiscreteTop
   discreteTopology_of_isOpen p (isOpen_discrete _)
 
 end Submodule.Quotient
+
+namespace Submodule
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+  [SeparatelyContinuousAdd M]
+
+/-- **Finitely many submodules are squeezed between an open submodule and a compact set.** For an
+open submodule `U`, a submodule `P` and a compact set `C`, only finitely many submodules `L ≤ P`
+contain `U ⊓ P` and lie in `C`. Such an `L` is recovered from its image in the discrete quotient
+`M ⧸ U` as `(L ⊔ U) ⊓ P`, and that image lies in the finite image of `C`. -/
+theorem finite_setOf_inf_le_le_subset {U : Submodule R M} (hU : IsOpen (U : Set M))
+    (P : Submodule R M) {C : Set M} (hC : IsCompact C) :
+    {L : Submodule R M | U ⊓ P ≤ L ∧ L ≤ P ∧ (L : Set M) ⊆ C}.Finite := by
+  have := Quotient.discreteTopology_of_isOpen U hU
+  have hfin : (U.mkQ '' C).Finite := (hC.image U.continuous_mkQ).finite_of_discrete
+  -- `L` is the preimage of its image, cut down to `P`, by the modular law.
+  have hrec {L : Submodule R M} (hUL : U ⊓ P ≤ L) (hLP : L ≤ P) :
+      (L.map U.mkQ).comap U.mkQ ⊓ P = L := by
+    rw [comap_map_mkQ, sup_comm, sup_inf_assoc_of_le U hLP, sup_eq_left.2 hUL]
+  refine Set.Finite.of_injOn (f := fun L : Submodule R M ↦ ((L.map U.mkQ : Submodule R (M ⧸ U)) :
+    Set (M ⧸ U))) (fun L hL ↦ (map_coe U.mkQ L).trans_subset (Set.image_mono hL.2.2))
+    (fun L hL L' hL' h ↦ ?_) hfin.finite_subsets
+  rw [← hrec hL.1 hL.2.1, ← hrec hL'.1 hL'.2.1, SetLike.coe_injective h]
+
+end Submodule
 
 /-- The quotient of a second countable topological module by translations by a submodule is
 second countable. -/

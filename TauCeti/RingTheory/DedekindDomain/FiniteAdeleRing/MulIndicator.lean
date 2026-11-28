@@ -148,4 +148,18 @@ theorem indicatorOne_mem_integralAdeles (S : Set (HeightOneSpectrum R)) :
     indicatorOne (K := K) S ∈ integralAdeles R K :=
   mulIndicator_mem_integralAdeles.2 fun _ _ ↦ zero_mem _
 
+/-- **Membership splits along a set of places.** A vector of a module over the finite adeles lies
+in a submodule over the integral finite adeles if and only if its part `e_S • y` at the places of
+`S` and its part `e_{Sᶜ} • y` away from `S` do. -/
+theorem mem_iff_indicatorOne_smul_mem_and_indicatorOne_compl_smul_mem
+    {M : Type*} [AddCommGroup M] [Module (FiniteAdeleRing R K) M]
+    (S : Set (HeightOneSpectrum R)) {L : Submodule (integralAdeles R K) M} {y : M} :
+    y ∈ L ↔ indicatorOne (K := K) S • y ∈ L ∧ indicatorOne (K := K) Sᶜ • y ∈ L := by
+  have hsmul (T : Set (HeightOneSpectrum R)) (hy : y ∈ L) : indicatorOne (K := K) T • y ∈ L := by
+    have := L.smul_mem (⟨_, indicatorOne_mem_integralAdeles T⟩ : integralAdeles R K) hy
+    rwa [Subalgebra.smul_def] at this
+  have hsum : indicatorOne (K := K) S • y + indicatorOne (K := K) Sᶜ • y = y := by
+    rw [← one_sub_indicatorOne, ← add_smul, add_sub_cancel, one_smul]
+  exact ⟨fun hy ↦ ⟨hsmul S hy, hsmul Sᶜ hy⟩, fun h ↦ hsum ▸ L.add_mem h.1 h.2⟩
+
 end IsDedekindDomain.FiniteAdeleRing
