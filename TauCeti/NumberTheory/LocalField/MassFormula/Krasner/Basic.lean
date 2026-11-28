@@ -228,7 +228,7 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow {n j : ℕ}
   have hq_sub : q * (1 - 1 / q) = q - 1 := by
     rw [ENNReal.mul_sub fun _ _ ↦ hqt, mul_one, one_div, ENNReal.mul_inv_cancel hq0 hqt]
   have hpowS : q ^ (2 + S) = q * q ^ (1 + S) := by
-    rw [show 2 + S = 1 + (1 + S) by omega, pow_add, pow_one]
+    simp [pow_add, pow_two, mul_assoc]
   have hpow_cancel : q ^ (1 + S) * (1 / q ^ (1 + S)) = 1 := by
     rw [one_div, ENNReal.mul_inv_cancel (pow_ne_zero _ hq0) (ENNReal.pow_ne_top hqt)]
   apply Nat.cast_injective (R := ℝ≥0∞)

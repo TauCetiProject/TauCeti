@@ -384,13 +384,6 @@ private theorem le_addVal_Eisenstein_top_iff {n j : ℕ} (hn : 0 < n) {f : R[X]}
         have : n * (j / n + 2) = n * (j / n + 1) + n := by ring
         omega
 
-/-- Any index `i : Fin n` other than the last index `n - 1` satisfies `(i : ℕ) + 1 < n`. -/
-private theorem val_add_one_lt_of_ne_last {n : ℕ} (hn : 0 < n) {i : Fin n}
-    (hi : i ≠ ⟨n - 1, by omega⟩) : (i : ℕ) + 1 < n := by
-  have := Fin.val_ne_of_ne hi
-  dsimp at this
-  omega
-
 /-- Core algebraic equivalence: for an Eisenstein polynomial `f : R[X]` of positive degree `n`,
 the shifted derivative infimum `⨅ i : Fin n, (n • v_R(f_{i+1} * (i+1)) + (i+1))` equals `j + n`
 if and only if `IsOreAdmissible R n j` holds and the coefficients of `f` satisfy the Ore depth
@@ -448,7 +441,10 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
     rcases eq_or_ne i iTop with rfl | hi_ne
     · have hi' := hT_top_eq.mp hi
       exact ⟨⟨hn, .inl hi'⟩, hcoeff, fun hb ↦ absurd hi'.1 hb.ne'⟩
-    · have hiLow := val_add_one_lt_of_ne_last hn hi_ne
+    · have hiLow : (i : ℕ) + 1 < n := by
+        cases n with
+        | zero => exact absurd hn (lt_irrefl 0)
+        | succ _ => exact Nat.succ_lt_succ (Fin.lt_last_iff_ne_last.mpr hi_ne)
       obtain ⟨hmod, hvb, heq_m⟩ := (nsmul_add_eq_iff (j := j) hn hiLow
         (hf.one_le_addVal_coeff (hdeg ▸ hiLow))).mp hi
       have hb_pos : 0 < j % n := by omega
@@ -467,7 +463,10 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
     · rcases eq_or_ne i iTop with rfl | hi_ne
       · exact hle_T_top.mpr
           (hadm.2.imp (fun ⟨h0, heq⟩ ↦ ⟨h0, heq.le⟩) fun ⟨hp, _, hvn⟩ ↦ ⟨hp, hvn⟩)
-      · have hiLow := val_add_one_lt_of_ne_last hn hi_ne
+      · have hiLow : (i : ℕ) + 1 < n := by
+          cases n with
+          | zero => exact absurd hn (lt_irrefl 0)
+          | succ _ => exact Nat.succ_lt_succ (Fin.lt_last_iff_ne_last.mpr hi_ne)
         exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hiLow
           (hf.one_le_addVal_coeff (hdeg ▸ hiLow))).mpr
           (hcoeff ((i : ℕ) + 1) (Nat.succ_pos _) hiLow)
