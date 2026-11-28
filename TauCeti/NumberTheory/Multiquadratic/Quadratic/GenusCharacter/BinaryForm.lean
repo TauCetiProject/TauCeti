@@ -28,6 +28,8 @@ that domain. Its definition gives precedence to a represented value with charact
 
 ## Main results
 
+* `IsEvenPrimeDiscriminant.isGenusChar_mul`: an even prime-discriminant character is a genus
+  character when the complementary factor is divisible by four.
 * `isGenusChar_genusChar`: the bundled product character is a genus character on the
   fundamental-divisor domain.
 * `binaryFormGenusChar_eq_binaryQuadraticFormGenusChar`: comparison of the total character
@@ -53,6 +55,41 @@ namespace TauCeti.Multiquadratic
 
 open BinaryQuadraticForm
 
+/-- An even prime-discriminant character is a genus character of discriminant `P * e`
+when the complementary factor `e` is divisible by four. -/
+theorem IsEvenPrimeDiscriminant.isGenusChar_mul {P e : ℤ}
+    (hP : IsEvenPrimeDiscriminant P) (he : e % 4 = 0) :
+    IsGenusChar (P * e) (primeDiscriminantChar P hP.isPrimeDiscriminant) := by
+  have h₈ (s : ℤ) (χ : MulChar (ZMod 8) ℤ) : IsGenusChar (8 * (s * e)) χ := by
+    have hdiscr : 8 * (s * e) = 4 * (s * (2 * e)) := by ring
+    have hmod : (2 * e) % 8 = 0 := by omega
+    rw [hdiscr]
+    apply isGenusChar_of_emod_eight_eq_zero
+    rw [Int.mul_emod, hmod]
+    simp
+  rw [isGenusChar_iff]
+  intro x y hunit
+  rw [primeDiscriminantChar_apply_int]
+  rcases hP with hP | hP | hP
+  · have hmod : P.natAbs = 4 := by norm_num [hP]
+    rw [hmod, hP] at hunit
+    rw [hP, primeDiscriminantCharFun_neg_four]
+    have h : (-4 : ℤ) * e = 4 * (-e) := by ring
+    rw [h] at hunit ⊢
+    exact isGenusChar_iff.mp (isGenusChar_χ₄ (Or.inl (by omega))) x y hunit
+  · have hmod : P.natAbs = 8 := by norm_num [hP]
+    rw [hmod, hP] at hunit
+    rw [hP, primeDiscriminantCharFun_eight]
+    have hχ := h₈ 1 ZMod.χ₈
+    simp only [one_mul] at hχ
+    exact isGenusChar_iff.mp hχ x y hunit
+  · have hmod : P.natAbs = 8 := by norm_num [hP]
+    rw [hmod, hP] at hunit
+    rw [hP, primeDiscriminantCharFun_neg_eight]
+    have h : (-8 : ℤ) * e = 8 * (-1 * e) := by ring
+    rw [h] at hunit ⊢
+    exact isGenusChar_iff.mp (h₈ (-1) ZMod.χ₈') x y hunit
+
 /-- A prime-discriminant character is trivial on coprime values of the principal form
 when its complementary factor satisfies the dyadic congruence. -/
 private theorem primeDiscriminantCharFun_principalForm_eq_one {P e : ℤ}
@@ -62,34 +99,9 @@ private theorem primeDiscriminantCharFun_principalForm_eq_one {P e : ℤ}
     primeDiscriminantCharFun P ((principalForm (P * e)).eval x y) = 1 := by
   by_cases hzero : IsEvenPrimeDiscriminant P ∧ e % 4 = 0
   · obtain ⟨hPe, he₀⟩ := hzero
-    have hunit : IsUnit (((principalForm (P * e)).eval x y : ℤ) : ZMod P.natAbs) :=
-      (ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).mpr hcop
-    -- An even prime discriminant with a cofactor divisible by four reduces to the
-    -- already established genus-character laws for the principal form of discriminant `4N`.
-    rcases hPe with rfl | rfl | rfl
-    · have hmod : (-4 : ℤ).natAbs = 4 := rfl
-      have hunit' : IsUnit (((principalForm (-4 * e)).eval x y : ℤ) : ZMod 4) :=
-        hmod ▸ hunit
-      have h : (-4 : ℤ) * e = 4 * (-e) := by ring
-      rw [h] at hunit' ⊢
-      rw [primeDiscriminantCharFun_neg_four]
-      exact isGenusChar_iff.mp (isGenusChar_χ₄ (N := -e) (Or.inl (by omega))) x y hunit'
-    · have hmod : (8 : ℤ).natAbs = 8 := rfl
-      have hunit' : IsUnit (((principalForm (8 * e)).eval x y : ℤ) : ZMod 8) :=
-        hmod ▸ hunit
-      have h : (8 : ℤ) * e = 4 * (2 * e) := by ring
-      rw [h] at hunit' ⊢
-      rw [primeDiscriminantCharFun_eight]
-      exact isGenusChar_iff.mp
-        (isGenusChar_of_emod_eight_eq_zero (N := 2 * e) (by omega) ZMod.χ₈) x y hunit'
-    · have hmod : (-8 : ℤ).natAbs = 8 := rfl
-      have hunit' : IsUnit (((principalForm (-8 * e)).eval x y : ℤ) : ZMod 8) :=
-        hmod ▸ hunit
-      have h : (-8 : ℤ) * e = 4 * (-2 * e) := by ring
-      rw [h] at hunit' ⊢
-      rw [primeDiscriminantCharFun_neg_eight]
-      exact isGenusChar_iff.mp
-        (isGenusChar_of_emod_eight_eq_zero (N := -2 * e) (by omega) ZMod.χ₈') x y hunit'
+    rw [← primeDiscriminantChar_apply_int P hPe.isPrimeDiscriminant]
+    exact isGenusChar_iff.mp (hPe.isGenusChar_mul he₀) x y
+      ((ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).mpr hcop)
   · exact primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq hP
       (fun hPe => (he hPe).resolve_left (fun h => hzero ⟨hPe, h⟩)) hcop
       (four_mul_eval_principalForm hD x y)
