@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Colon
 public import Mathlib.RingTheory.Length
 public import TauCeti.RingTheory.Ideal.AffineBlowup.RegularPair
 import Mathlib.Algebra.Polynomial.Lifts
@@ -44,8 +43,6 @@ length is `ℓ(A ⧸ I) - ℓ(A ⧸ 𝔪ʳ)`.
 
 ## Main results
 
-* `Ideal.map_algebraMap_affineBlowup_eq_span_pow_mul_colon`: for `I ⊆ Jʳ`, the extension of `I`
-  to `A[J/a]` is `aʳ (I A[J/a] : aʳ)`.
 * `RingTheory.Sequence.IsWeaklyRegular.length_quotient_colon_add_length_quotient_pow_le`: the
   colength inequality `ℓ(B ⧸ I') + ℓ(A ⧸ 𝔪ʳ) ≤ ℓ(A ⧸ I)` for an `𝔪`-primary ideal `I` of order `r`.
 * `RingTheory.Sequence.IsWeaklyRegular.length_quotient_colon_lt`: the strict inequality
@@ -64,39 +61,6 @@ length is `ℓ(A ⧸ I) - ℓ(A ⧸ 𝔪ʳ)`.
 public section
 
 open Polynomial TauCeti.Localization RingTheory.Sequence
-
-namespace Ideal
-
-variable {A : Type*} [CommRing A] {J : Ideal A} {a : A} {S : Type*} [CommRing S] [Algebra A S]
-  [IsLocalization.Away a S]
-
-/-- **The total transform factors through the exceptional divisor.** For an ideal `I ⊆ Jʳ`, the
-extension of `I` to the affine blowup algebra `A[J/a]` is `aʳ` times the ideal `(I A[J/a] : aʳ)`:
-on the chart, `I A[J/a] ⊆ Jʳ A[J/a] ⊆ aʳ A[J/a]`. -/
-theorem map_algebraMap_affineBlowup_eq_span_pow_mul_colon {I : Ideal A} {r : ℕ}
-    (hI : I ≤ J ^ r) :
-    I.map (algebraMap A (J.affineBlowup a S)) =
-      span {algebraMap A (J.affineBlowup a S) a ^ r} *
-        (I.map (algebraMap A (J.affineBlowup a S))).colon
-          {algebraMap A (J.affineBlowup a S) a ^ r} := by
-  set φ := algebraMap A (J.affineBlowup a S)
-  refine le_antisymm (map_le_iff_le_comap.mpr fun i hi ↦ ?_)
-    (span_singleton_mul_le_iff.mpr fun z hz ↦ ?_)
-  · -- `J A[J/a] ⊆ (a)`, as `j = a · (j/a)`; so `φ i = aʳ c` with `c` in the colon ideal.
-    have hJ : J.map φ ≤ span {φ a} := map_le_iff_le_comap.mpr fun j hj ↦
-      mem_span_singleton'.mpr ⟨⟨divBy j a, divBy_mem_affineBlowup hj⟩, Subtype.ext (by simp [φ])⟩
-    have h : φ i ∈ span {φ a ^ r} := by
-      rw [← span_singleton_pow]
-      exact pow_right_mono hJ r (Ideal.map_pow φ J r ▸ mem_map_of_mem _ (hI hi))
-    obtain ⟨c, hc⟩ := mem_span_singleton'.mp h
-    rw [mem_comap, ← hc]
-    refine mul_mem_mul_rev (mem_span_singleton_self _) (Submodule.mem_colon_singleton.mpr ?_)
-    rw [smul_eq_mul, hc]
-    exact mem_map_of_mem _ hi
-  · rw [mul_comm, ← smul_eq_mul]
-    exact Submodule.mem_colon_singleton.mp hz
-
-end Ideal
 
 namespace RingTheory.Sequence.IsWeaklyRegular
 

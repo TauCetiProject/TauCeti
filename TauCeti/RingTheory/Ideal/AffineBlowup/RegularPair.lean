@@ -148,9 +148,10 @@ private noncomputable def toPolynomialQuot (hag : IsWeaklyRegular R [a, g]) :
 private theorem toPolynomialQuot_apply (hag : IsWeaklyRegular R [a, g]) (f : R[X]) :
     toPolynomialQuot S hag (adjoinRootEquivAffineBlowup S hag (AdjoinRoot.mk _ f)) =
       f.map (Ideal.Quotient.mk _) := by
-  rw [toPolynomialQuot, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply, AdjoinRoot.liftAlgHom_mk, Algebra.toRingHom_ofId,
-    IsScalarTower.algebraMap_eq R (R ⧸ span {a, g}), ← eval₂_map, Ideal.Quotient.algebraMap_eq,
+  simp only [toPolynomialQuot, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    AlgEquiv.symm_apply_apply, AdjoinRoot.liftAlgHom_mk, Algebra.toRingHom_ofId]
+  -- `eval₂ (R → (R ⧸ (a, g))[X]) X f` is the reduction of `f`.
+  rw [IsScalarTower.algebraMap_eq R (R ⧸ span {a, g}), ← eval₂_map, Ideal.Quotient.algebraMap_eq,
     Polynomial.algebraMap_eq, eval₂_C_X]
 
 private theorem ker_toPolynomialQuot (hag : IsWeaklyRegular R [a, g]) :
@@ -202,8 +203,7 @@ theorem affineBlowupQuotEquivPolynomial_mk_divBy (hag : IsWeaklyRegular R [a, g]
         (Ideal.Quotient.mk _ ⟨divBy g a, divBy_mem_affineBlowup
           (subset_span (Set.mem_insert_of_mem a rfl))⟩) = X := by
   rw [affineBlowupQuotEquivPolynomial, AlgEquiv.trans_apply, quotientEquivAlgOfEq_mk,
-    quotientKerAlgEquivOfSurjective_mk, toPolynomialQuot, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, adjoinRootEquivAffineBlowup_symm_divBy,
-    AdjoinRoot.liftAlgHom_root]
+    quotientKerAlgEquivOfSurjective_mk]
+  simp [toPolynomialQuot]
 
 end Ideal
