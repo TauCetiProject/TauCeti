@@ -93,17 +93,17 @@ example : ¬ Integrable (fun x : ℝ => |x| ^ (0 : ℝ) * exp (-0 * x ^ 2)) := b
   have hparams := TauCeti.integrable_abs_rpow_mul_exp_neg_mul_sq_iff.mp h
   norm_num at hparams
 
-example : gaussianBetaGasPartitionFunction 2 1 = 4 * sqrt π := by
-  rw [gaussianBetaGasPartitionFunction_two_eq (by norm_num : (0 : ℝ) < 1)]
+example : betaGasPartitionFunction 2 1 (fun t : ℝ => t ^ 2 / 2) = 4 * sqrt π := by
+  rw [betaGasPartitionFunction_two_quadratic_eq (by norm_num : (0 : ℝ) < 1)]
   norm_num [Real.Gamma_one, Real.rpow_natCast]
 
-example : gaussianBetaGasPartitionFunction 2 2 = π := by
+example : betaGasPartitionFunction 2 2 (fun t : ℝ => t ^ 2 / 2) = π := by
   have hGamma : Gamma (3 / 2 : ℝ) = sqrt π / 2 := by
     have h := Real.Gamma_add_one (s := (1 / 2 : ℝ)) (by norm_num)
     rw [Real.Gamma_one_half_eq] at h
     norm_num at h ⊢
     convert h using 1; ring
-  rw [gaussianBetaGasPartitionFunction_two_eq (by norm_num : (0 : ℝ) < 2)]
+  rw [betaGasPartitionFunction_two_quadratic_eq (by norm_num : (0 : ℝ) < 2)]
   norm_num [Real.rpow_natCast, Real.rpow_neg, hGamma]
   calc
     _ = sqrt π * sqrt π := by ring

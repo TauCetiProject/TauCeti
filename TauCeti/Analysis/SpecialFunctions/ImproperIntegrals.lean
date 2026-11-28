@@ -32,6 +32,8 @@ zero and one.
 * `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
   `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
   roots is dominated by a Cauchy integrand and is integrable for positive radii.
+* `TauCeti.eventually_mul_log_abs_le_of_eventually_le_div_log`: an eventual lower bound on
+  `V x / log |x|` yields the corresponding lower bound on `V x`.
 
 * `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth`: sufficient logarithmic
   growth makes an exponentially weighted polynomial integrable.
@@ -67,6 +69,15 @@ namespace TauCeti
 
 open Asymptotics Filter MeasureTheory Real Set
 open scoped Topology
+
+/-- If `|x|` tends to infinity along `l`, an eventual lower bound on `V x / log |x|`
+implies the corresponding lower bound on `V x`. -/
+theorem eventually_mul_log_abs_le_of_eventually_le_div_log {l : Filter ℝ} {V : ℝ → ℝ} {c : ℝ}
+    (habs : Tendsto (fun x : ℝ ↦ |x|) l atTop)
+    (hV : ∀ᶠ x in l, c ≤ V x / Real.log |x|) :
+    ∀ᶠ x in l, c * Real.log |x| ≤ V x := by
+  filter_upwards [hV, habs.eventually_gt_atTop 1] with x hx hxlarge
+  exact (le_div_iff₀ (Real.log_pos hxlarge)).mp hx
 
 private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
     (hp : 0 ≤ p) (ha : 0 < a) (hq : p - a * c ≤ 0)

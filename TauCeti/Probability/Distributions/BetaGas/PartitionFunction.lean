@@ -23,8 +23,8 @@ choices `β = 1` and `β = 2` give the `2 × 2` GOE and GUE eigenvalue weights i
 
 ## Main results
 
-* `gaussianBetaGasPartitionFunction_two_eq` evaluates the general Gaussian beta-gas partition
-  function at `n = 2` for `0 < β`.
+* `betaGasPartitionFunction_two_quadratic_eq` evaluates the general beta-gas partition function
+  for the quadratic potential at `n = 2` and `0 < β`.
 -/
 
 public section
@@ -43,13 +43,6 @@ private theorem twoParticleGaussianBetaGasWeight_def (β : ℝ) (p : ℝ × ℝ)
       exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β := by
   rw [twoParticleGaussianBetaGasWeight]
 
-private def twoParticleGaussianBetaGasPartitionFunction (β : ℝ) : ℝ :=
-  ∫ p : ℝ × ℝ, twoParticleGaussianBetaGasWeight β p
-
-private theorem twoParticleGaussianBetaGasPartitionFunction_def (β : ℝ) :
-    twoParticleGaussianBetaGasPartitionFunction β =
-      ∫ p : ℝ × ℝ, twoParticleGaussianBetaGasWeight β p := rfl
-
 private lemma betaGasUncenter_weight (β : ℝ) (p : ℝ × ℝ) :
     twoParticleGaussianBetaGasWeight β (TauCeti.MeasureTheory.differenceMidpointEquiv p) =
       (|p.1| ^ β * exp (-(β / 4 * p.1 ^ 2))) * exp (-(β * p.2 ^ 2)) := by
@@ -60,6 +53,10 @@ private lemma betaGasUncenter_weight (β : ℝ) (p : ℝ × ℝ) :
         -(β / 4 * p.1 ^ 2) + -(β * p.2 ^ 2) := by ring
   rw [hd, hexp, exp_add]
   ring
+
+private lemma rpow_div_eq_mul_rpow_neg {a b q : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    (a / b) ^ q = a ^ q * b ^ (-q) := by
+  rw [div_rpow ha hb, div_eq_mul_inv, ← rpow_neg hb]
 
 private lemma betaGas_integral_algebra {β : ℝ} (hβ : 0 < β) :
     (β / 4) ^ (-((β + 1) / 2)) * Gamma ((β + 1) / 2) *
@@ -74,8 +71,10 @@ private lemma betaGas_integral_algebra {β : ℝ} (hβ : 0 < β) :
   have hfactor :
       (β / 4) ^ (-((β + 1) / 2)) =
         β ^ (-((β + 1) / 2)) * 2 ^ (β + 1) := by
-    rw [div_rpow hβ.le (by norm_num : (0 : ℝ) ≤ 4)]
-    rw [rpow_neg (by norm_num : (0 : ℝ) ≤ 4), div_eq_mul_inv, inv_inv, h4]
+    calc
+      _ = β ^ (-((β + 1) / 2)) * 4 ^ ((β + 1) / 2) := by
+        rw [rpow_div_eq_mul_rpow_neg hβ.le (by norm_num : (0 : ℝ) ≤ 4), neg_neg]
+      _ = _ := by rw [h4]
   have hβpow :
       β ^ (-((β + 1) / 2)) * β ^ (-(1 : ℝ) / 2) =
         β ^ (-((β + 2) / 2)) := by
@@ -96,10 +95,10 @@ private lemma betaGas_difference_integral {β : ℝ} (hβ : 0 < β) :
   rw [neg_div] at h
   simpa only [neg_mul] using h
 
-private theorem twoParticleGaussianBetaGasPartitionFunction_eq {β : ℝ} (hβ : 0 < β) :
-    twoParticleGaussianBetaGasPartitionFunction β =
+private theorem twoParticleGaussianBetaGasWeight_integral_eq {β : ℝ} (hβ : 0 < β) :
+    (∫ p : ℝ × ℝ, twoParticleGaussianBetaGasWeight β p) =
       2 ^ (β + 1) * sqrt π * β ^ (-(β + 2) / 2) * Gamma ((β + 1) / 2) := by
-  rw [twoParticleGaussianBetaGasPartitionFunction_def, Measure.volume_eq_prod]
+  rw [Measure.volume_eq_prod]
   let f : ℝ × ℝ → ℝ := twoParticleGaussianBetaGasWeight β
   let g : ℝ → ℝ := fun d => |d| ^ β * exp (-(β / 4 * d ^ 2))
   let h : ℝ → ℝ := fun z => exp (-(β * z ^ 2))
@@ -123,31 +122,34 @@ private theorem twoParticleGaussianBetaGasPartitionFunction_eq {β : ℝ} (hβ :
   rw [hchange, integral_prod_mul, hg, hh]
   exact betaGas_integral_algebra hβ
 
-private theorem gaussianBetaGasWeight_two_eq (β : ℝ) (x : Fin 2 → ℝ) :
-    gaussianBetaGasWeight 2 β x = twoParticleGaussianBetaGasWeight β (x 0, x 1) := by
+private theorem betaGasWeight_two_quadratic_eq (β : ℝ) (x : Fin 2 → ℝ) :
+    betaGasWeight 2 β (fun t => t ^ 2 / 2) x =
+      twoParticleGaussianBetaGasWeight β (x 0, x 1) := by
   have hpairs : betaGasPairs 2 = {(0, 1)} := by
     ext ⟨i, j⟩
     simp only [mem_betaGasPairs, Finset.mem_singleton]
     fin_cases i <;> fin_cases j <;> decide
-  rw [gaussianBetaGasWeight_eq_exp_mul_prod, twoParticleGaussianBetaGasWeight_def, hpairs]
+  rw [betaGasWeight_def, twoParticleGaussianBetaGasWeight_def, hpairs]
   simp only [Fin.sum_univ_two, Nat.cast_ofNat, Finset.prod_singleton]
   congr 2
   ring
 
-private theorem gaussianBetaGasPartitionFunction_two_eq_pair (β : ℝ) :
-    gaussianBetaGasPartitionFunction 2 β = twoParticleGaussianBetaGasPartitionFunction β := by
-  rw [gaussianBetaGasPartitionFunction_def, twoParticleGaussianBetaGasPartitionFunction_def,
+private theorem betaGasPartitionFunction_two_quadratic_eq_pair (β : ℝ) :
+    betaGasPartitionFunction 2 β (fun t => t ^ 2 / 2) =
+      ∫ p : ℝ × ℝ, twoParticleGaussianBetaGasWeight β p := by
+  rw [betaGasPartitionFunction_def,
     ← (volume_preserving_finTwoArrow ℝ).integral_comp' (twoParticleGaussianBetaGasWeight β)]
   apply integral_congr_ae
   filter_upwards with x
   simpa only [MeasurableEquiv.finTwoArrow_apply, Function.comp_apply] using
-    gaussianBetaGasWeight_two_eq β x
+    betaGasWeight_two_quadratic_eq β x
 
-/-- The Gaussian beta-gas partition function at `n = 2`, for positive inverse temperature. -/
-theorem gaussianBetaGasPartitionFunction_two_eq {β : ℝ} (hβ : 0 < β) :
-    gaussianBetaGasPartitionFunction 2 β =
+/-- The quadratic-potential beta-gas partition function at `n = 2`, for positive inverse
+temperature. -/
+theorem betaGasPartitionFunction_two_quadratic_eq {β : ℝ} (hβ : 0 < β) :
+    betaGasPartitionFunction 2 β (fun t => t ^ 2 / 2) =
       2 ^ (β + 1) * sqrt π * β ^ (-(β + 2) / 2) * Gamma ((β + 1) / 2) := by
-  rw [gaussianBetaGasPartitionFunction_two_eq_pair,
-    twoParticleGaussianBetaGasPartitionFunction_eq hβ]
+  rw [betaGasPartitionFunction_two_quadratic_eq_pair]
+  exact twoParticleGaussianBetaGasWeight_integral_eq hβ
 
 end TauCeti.Probability

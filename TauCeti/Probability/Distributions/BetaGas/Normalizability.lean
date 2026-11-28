@@ -33,26 +33,6 @@ open MeasureTheory Real Set
 
 namespace TauCeti.Probability
 
-private theorem betaGasPairs_prod_mul {M : Type*} [CommMonoid M] (n : ℕ) (f : Fin n → M) :
-    (∏ z ∈ betaGasPairs n, f z.1 * f z.2) = ∏ i : Fin n, f i ^ (n - 1) := by
-  classical
-  have hfst :
-      (∏ z ∈ betaGasPairs n, f z.1) = ∏ i : Fin n, f i ^ (n - 1 - i.val) := by
-    rw [Finset.prod_finset_product (betaGasPairs n) Finset.univ
-      (fun i => Finset.Ioi i) (by intro z; simp)]
-    simp only [Finset.prod_const, Fin.card_Ioi]
-  have hsnd :
-      (∏ z ∈ betaGasPairs n, f z.2) = ∏ i : Fin n, f i ^ i.val := by
-    rw [Finset.prod_finset_product_right (betaGasPairs n) Finset.univ
-      (fun i => Finset.Iio i) (by intro z; simp)]
-    simp only [Finset.prod_const, Fin.card_Iio]
-  rw [Finset.prod_mul_distrib, hfst, hsnd, ← Finset.prod_mul_distrib]
-  apply Finset.prod_congr rfl
-  intro i _
-  rw [← pow_add]
-  congr 1
-  omega
-
 /-- Bound the Vandermonde interaction by a product of one-coordinate powers. -/
 theorem betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
     (x : Fin n → ℝ) :
@@ -129,13 +109,8 @@ theorem integrable_betaGasWeight_of_eventually_le_div_log_of_exponent
   have ha : 0 < a := by
     dsimp [a]
     positivity
-  have hlarge : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, 1 < |x| := by
-    exact Filter.tendsto_comap.eventually (Filter.eventually_gt_atTop 1)
-  have hGrowth :
-      ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, c * log |x| ≤ V x := by
-    filter_upwards [hRatio, hlarge] with x hratio hx
-    have hlog : 0 < log |x| := Real.log_pos hx
-    exact (le_div_iff₀ hlog).mp hratio
+  have hGrowth := TauCeti.eventually_mul_log_abs_le_of_eventually_le_div_log
+    Filter.tendsto_comap hRatio
   have hmajor : Integrable
       (fun x : Fin n → ℝ =>
         ∏ i, ((1 + |x i|) ^ p * exp (-a * V (x i))))

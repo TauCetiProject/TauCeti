@@ -48,6 +48,27 @@ def betaGasPairs (n : ℕ) : Finset (Fin n × Fin n) :=
     p ∈ betaGasPairs n ↔ p.1 < p.2 := by
   simp [betaGasPairs]
 
+/-- Each particle index occurs in exactly `n - 1` factors of the pairwise product. -/
+theorem betaGasPairs_prod_mul {M : Type*} [CommMonoid M] (n : ℕ) (f : Fin n → M) :
+    (∏ z ∈ betaGasPairs n, f z.1 * f z.2) = ∏ i : Fin n, f i ^ (n - 1) := by
+  classical
+  have hfst :
+      (∏ z ∈ betaGasPairs n, f z.1) = ∏ i : Fin n, f i ^ (n - 1 - i.val) := by
+    rw [Finset.prod_finset_product (betaGasPairs n) Finset.univ
+      (fun i => Finset.Ioi i) (by intro z; simp)]
+    simp only [Finset.prod_const, Fin.card_Ioi]
+  have hsnd :
+      (∏ z ∈ betaGasPairs n, f z.2) = ∏ i : Fin n, f i ^ i.val := by
+    rw [Finset.prod_finset_product_right (betaGasPairs n) Finset.univ
+      (fun i => Finset.Iio i) (by intro z; simp)]
+    simp only [Finset.prod_const, Fin.card_Iio]
+  rw [Finset.prod_mul_distrib, hfst, hsnd, ← Finset.prod_mul_distrib]
+  apply Finset.prod_congr rfl
+  intro i _
+  rw [← pow_add]
+  congr 1
+  omega
+
 /-- The unnormalized beta-gas weight for a potential `V`. -/
 def betaGasWeight (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) : ℝ :=
   exp (-(β * (n : ℝ) / 2) * ∑ i, V (x i)) *
