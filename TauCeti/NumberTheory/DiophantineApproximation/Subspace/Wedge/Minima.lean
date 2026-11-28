@@ -235,7 +235,7 @@ theorem exists_successiveMinimum_wedge :
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
   have hμ (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ hl
   obtain ⟨y, σ, hspan, hmem⟩ := hE S₀ L c Q x μ hLinf hLfin hQ hQ₁ hx
-    (monotoneOn_successiveMinimum_approx hLinf hLfin c hQ) hμ hxΛ
+    (monotoneOn_successiveMinimum_approx S₀ L c hQ) hμ hxΛ
     fun v i l ↦ (mixedEmbedding_mem_smul_approxBody_iff (hμ l l.isLt)).1 (hxB l) v i
   set L' : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K) :=
     fun v ↦ wedgeForms (L v) p

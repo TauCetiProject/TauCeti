@@ -304,14 +304,8 @@ private theorem exists_ne_zero_mem_smul_approxBody {S₀ : Finset (FinitePlace K
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q := by
   let _ := discreteTopology_mixedImage_approxModule hLFin c Q
   let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLInf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q := ConvexBody.coe_mk _ _ _ _
-  have hB : 0 ∈ interior (B : Set (ι → mixedSpace K)) := by
-    rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
-  have hpos := Submodule.successiveMinimum_pos (Λ := approxModule S₀ L c Q) hB hl
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLInf c hQ
+  have hpos := (approxModule S₀ L c Q).successiveMinimum_pos hB hl
   obtain ⟨x, hx, hxB⟩ := (Submodule.successiveMinimum_le_iff hB hl hpos).1 le_rfl
   rw [hcoe] at hpos hxB
   exact ⟨hpos, x 0, (hxB 0).1, hx.ne_zero 0, (hxB 0).2⟩

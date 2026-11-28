@@ -61,15 +61,9 @@ theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
       0 ∈ interior (B : Set (ι → mixedSpace K)) ∧
       approxSpan S₀ L c Q = Submodule.span K {x | x ∈ approxModule S₀ L c Q ∧
         (fun j ↦ mixedEmbedding K (x j)) ∈ (1 : ℝ) • (B : Set (ι → mixedSpace K))} := by
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLinf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q :=
-    ConvexBody.coe_mk _ _ _ _
-  refine ⟨B, hcoe, ?_, ?_⟩
-  · rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
-  · rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  refine ⟨B, hcoe, hB, ?_⟩
+  rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
 
 open scoped Classical in
 /-- The rank of an approximation domain of positive level is the number of its successive
@@ -105,19 +99,16 @@ theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
   exact Submodule.successiveMinimum_pos hB hl
 
 /-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
-nondecreasing. -/
-theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
+nondecreasing. For any forms the module spans the ambient space and the body is absorbent. -/
+theorem monotoneOn_successiveMinimum_approx (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
+    (hQ : 0 < Q) :
     MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
       (Iio (Fintype.card ι)) := by
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  rw [← hcoe]
-  exact Submodule.monotoneOn_successiveMinimum hB
+  have h := Submodule.monotoneOn_successiveMinimum (Λ := approxModule S₀ L c Q)
+    (absorbent_nhds_zero (approxBody_mem_nhds_zero L c hQ))
+  rwa [span_approxModule_eq_top S₀ L c hQ.ne', finrank_top, Module.finrank_fintype_fun_eq_card]
+    at h
 
 /-- Below `#ι`, a successive minimum over `K` of an approximation domain of positive level is at
 most one exactly when its index is below the rank of the domain. -/
