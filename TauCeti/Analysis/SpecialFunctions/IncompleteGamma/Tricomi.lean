@@ -195,6 +195,7 @@ theorem differentiable_tricomiIncompleteGamma (a : ℂ) :
 
 /-- The `n`th derivative of Tricomi's function in its argument:
 `∂ⁿγ*(a, z)/∂zⁿ = (−1)ⁿ (a)ₙ γ*(a + n, z)`. -/
+@[simp]
 theorem iteratedDeriv_tricomiIncompleteGamma (n : ℕ) (a : ℂ) :
     iteratedDeriv n (tricomiIncompleteGamma a) =
       fun z => (-1) ^ n * (ascPochhammer ℂ n).eval a * tricomiIncompleteGamma (a + n) z := by
