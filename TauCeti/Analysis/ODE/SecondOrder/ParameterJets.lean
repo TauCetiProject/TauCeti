@@ -54,12 +54,13 @@ theorem norm_jacobiODECoeff_le (R : F →L[𝕜] F) :
       (ContinuousLinearMap.norm_fst_le 𝕜 F F)))
 
 /-- The part of the first-order Jacobi system that depends linearly on curvature. -/
-private def jacobiODECoeffVariation :
+def jacobiODECoeffVariation :
     (F →L[𝕜] F) →L[𝕜] ((F × F) →L[𝕜] (F × F)) :=
   -((LinearIsometry.inr 𝕜 F F).postcomp.toContinuousLinearMap.comp
     ((ContinuousLinearMap.compL 𝕜 (F × F) F F).flip (ContinuousLinearMap.fst 𝕜 F F)))
 
-@[simp] private theorem jacobiODECoeffVariation_apply (R : F →L[𝕜] F) (z : F × F) :
+/-- Evaluation of the linear variation of the Jacobi coefficient. -/
+@[simp] theorem jacobiODECoeffVariation_apply (R : F →L[𝕜] F) (z : F × F) :
     jacobiODECoeffVariation R z = (0, -R z.1) := by
   simp [jacobiODECoeffVariation, LinearIsometry.postcomp]
 
@@ -80,9 +81,15 @@ private theorem norm_jacobiODECoeffVariation_le :
     (by simpa only [one_mul] using ContinuousLinearMap.norm_fst_le 𝕜 F F)
 
 /-- The Jacobi coefficient is a fixed free system plus its linear curvature variation. -/
-private theorem jacobiODECoeff_eq_jacobiODECoeff_zero_add (R : F →L[𝕜] F) :
+theorem jacobiODECoeff_eq_jacobiODECoeff_zero_add (R : F →L[𝕜] F) :
     jacobiODECoeff R = jacobiODECoeff (0 : F →L[𝕜] F) + jacobiODECoeffVariation R := by
   ext z <;> simp [jacobiODECoeff_apply]
+
+/-- Adding curvature adds its linear variation to the Jacobi coefficient. -/
+theorem jacobiODECoeff_add (R S : F →L[𝕜] F) :
+    jacobiODECoeff (R + S) = jacobiODECoeff R + jacobiODECoeffVariation S := by
+  rw [jacobiODECoeff_eq_jacobiODECoeff_zero_add (R + S),
+    jacobiODECoeff_eq_jacobiODECoeff_zero_add R, map_add, add_assoc]
 
 /-- The first-order Jacobi coefficient depends smoothly on its curvature operator. -/
 theorem contDiff_jacobiODECoeff {n : ℕ∞ω} :

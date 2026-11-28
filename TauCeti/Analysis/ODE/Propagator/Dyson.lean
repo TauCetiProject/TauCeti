@@ -156,14 +156,28 @@ theorem hasSum_propagatorDysonTerm [CompleteSpace E] (hP : IntegrableOn P (Icc a
   rw [propagator_eq_of_forall_mem_Icc hP hs ht hSc hSeq]
   exact hS ht
 
-omit [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E] in
+noncomputable section DysonAgreement
+
+/-- The real normed-algebra structure compatible with the given real action on operators. -/
+local instance instNormedAlgebraRealContinuousLinearMap : NormedAlgebra ℝ (E →L[𝕜] E) :=
+  { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
+
 /-- **Agreement with the left Dyson series.** For a continuous coefficient
-`P : ℝ → E →L[ℝ] E`, `N_P(t, 0) = dysonSeriesLeft P t`. -/
-theorem propagator_zero_eq_dysonSeriesLeft [CompleteSpace E] {P : ℝ → E →L[ℝ] E}
+`P : ℝ → E →L[𝕜] E`, `N_P(t, 0) = dysonSeriesLeft P t`. -/
+theorem propagator_zero_eq_dysonSeriesLeft [CompleteSpace E]
     (hP : Continuous P) (t : ℝ) : propagator P t 0 = dysonSeriesLeft P t :=
   propagator_eq_of_hasDerivAt (a := min 0 t) (b := max 0 t) hP.continuousOn.integrableOn_Icc
     ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩
     (fun r _ ↦ by simpa [ContinuousLinearMap.mul_def] using hasDerivAt_dysonSeriesLeft hP r)
     (dysonSeriesLeft_zero P)
+
+/-- For a continuous coefficient, the propagator from zero solves the operator ODE
+at every real time. -/
+theorem hasDerivAt_propagator_zero [CompleteSpace E] (hP : Continuous P) (t : ℝ) :
+    HasDerivAt (fun r ↦ propagator P r 0) (P t ∘L propagator P t 0) t := by
+  simp_rw [propagator_zero_eq_dysonSeriesLeft hP]
+  simpa only [ContinuousLinearMap.mul_def] using hasDerivAt_dysonSeriesLeft hP t
+
+end DysonAgreement
 
 end TauCeti

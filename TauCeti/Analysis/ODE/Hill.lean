@@ -11,13 +11,16 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.Trigonometric
-import Mathlib.Analysis.Calculus.Deriv.Shift
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import TauCeti.Analysis.ODE.Propagator
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
+import TauCeti.Analysis.ODE.Propagator.Dyson
 import TauCeti.Analysis.ODE.Propagator.Holomorphic.Basic
 import TauCeti.Analysis.ODE.SecondOrder.Linear
-import TauCeti.Analysis.ODE.SecondOrder.ParameterJets
+public import TauCeti.Analysis.ODE.SecondOrder.ParameterJets
 import TauCeti.Analysis.ODE.Wronskian
 
 /-!
@@ -28,7 +31,8 @@ For a continuous real potential `Q`, Hill's equation on the real line is
 `hillWI Q λ` and `hillWII Q λ` have initial data `(1, 0)` and `(0, 1)` at zero.
 They span the solution space, have Wronskian one, and give the translation formulas
 for any period of `Q`. At each point of the real line their values and first derivatives
-are entire in `λ`.
+are entire in `λ`. The values and first derivatives of the normalized pair at a period
+form the columns of the monodromy matrix, which propagates initial data through that period.
 
 The construction applies `TauCeti.propagator` to the system
 `(w, v)' = (v, -(λ + Q) w)`, using `ContinuousLinearMap.jacobiODECoeff` for the companion
@@ -106,10 +110,11 @@ private theorem continuous_hillCoefficient (hQ : Continuous Q) :
 /-- The affine form of the companion operator in the spectral parameter. -/
 private theorem hillCoefficient_eq_smul_add (x : ℝ) :
     hillCoefficient Q lam x =
-      lam • (0 : (ℂ × ℂ) →L[ℂ] ℂ).prod (-fst ℂ ℂ ℂ) + hillCoefficient Q 0 x := by
-  apply ContinuousLinearMap.ext
-  intro v
-  simp [hillCoefficient_apply, add_mul, add_comm]
+      lam • jacobiODECoeffVariation (1 : ℂ →L[ℂ] ℂ) + hillCoefficient Q 0 x := by
+  have hs := (add_smul lam (Q x : ℂ) (1 : ℂ →L[ℂ] ℂ)).trans (add_comm _ _)
+  have h := (congrArg (jacobiODECoeff (𝕜 := ℂ) (F := ℂ)) hs).trans
+    (jacobiODECoeff_add ((Q x : ℂ) • 1) (lam • 1))
+  simpa only [hillCoefficient, zero_add, map_smul] using h.trans (add_comm _ _)
 
 /-- The state of the first-order system, evolved from the data `v` at zero. -/
 private noncomputable def hillState (Q : ℝ → ℝ) (lam : ℂ) (v : ℂ × ℂ)
@@ -123,20 +128,11 @@ private theorem hillState_zero (v : ℂ × ℂ) : hillState Q lam v 0 = v := by
 private theorem hasDerivAt_hillState (hQ : Continuous Q) (v : ℂ × ℂ) (x : ℝ) :
     HasDerivAt (hillState Q lam v)
       ((hillState Q lam v x).2, -(lam + (Q x : ℂ)) * (hillState Q lam v x).1) x := by
-  let P := hillCoefficient Q lam
-  have hP : Continuous P := continuous_hillCoefficient hQ
-  have heq (t : ℝ) : propagator P t 0 = dysonSeriesLeft P t :=
-    propagator_eq_of_hasDerivAt (hP.integrableOn_Icc (a := min 0 t) (b := max 0 t))
-      (left_mem_uIcc : (0 : ℝ) ∈ uIcc 0 t) (right_mem_uIcc : t ∈ uIcc 0 t)
-      (fun r _ ↦ by simpa only [ContinuousLinearMap.mul_def] using hasDerivAt_dysonSeriesLeft hP r)
-      (dysonSeriesLeft_zero P)
-  have h : HasDerivAt (fun t ↦ dysonSeriesLeft P t v)
-      (P x (dysonSeriesLeft P x v)) x := by
-    simpa [Function.comp_def] using
-      ((ContinuousLinearMap.apply ℂ (ℂ × ℂ) v).restrictScalars ℝ).hasFDerivAt.comp_hasDerivAt x
-        (hasDerivAt_dysonSeriesLeft hP x)
   unfold hillState
-  simpa only [← heq, P, hillCoefficient_apply] using h
+  simpa only [Function.comp_def, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.apply_apply, ContinuousLinearMap.comp_apply, hillCoefficient_apply] using
+    ((ContinuousLinearMap.apply ℂ (ℂ × ℂ) v).restrictScalars ℝ).hasFDerivAt.comp_hasDerivAt x
+      (hasDerivAt_propagator_zero (continuous_hillCoefficient (lam := lam) hQ) x)
 
 private theorem hasDerivAt_fst_hillState (hQ : Continuous Q) (v : ℂ × ℂ) (x : ℝ) :
     HasDerivAt (fun t ↦ (hillState Q lam v t).1) (hillState Q lam v x).2 x :=
@@ -149,20 +145,36 @@ private theorem isHillSolution_fst_hillState (hQ : Continuous Q) (v : ℂ × ℂ
     (ContinuousLinearMap.snd ℝ ℂ ℂ).hasFDerivAt.comp_hasDerivAt x
       (hasDerivAt_hillState (lam := lam) hQ v x)
 
-private theorem differentiable_hillState_parameter (hQ : Continuous Q) (v : ℂ × ℂ) (x : ℝ) :
+private theorem differentiable_hillState_parameter (x : ℝ)
+    (hQ : MeasureTheory.IntegrableOn Q (uIcc 0 x)) (v : ℂ × ℂ) :
     Differentiable ℂ (fun lam ↦ hillState Q lam v x) := by
-  let A := (0 : (ℂ × ℂ) →L[ℂ] ℂ).prod (-fst ℂ ℂ ℂ)
-  have hB : Continuous (hillCoefficient Q 0) := continuous_hillCoefficient hQ
+  let A := jacobiODECoeffVariation (1 : ℂ →L[ℂ] ℂ)
+  have hB : MeasureTheory.IntegrableOn (hillCoefficient Q 0) (uIcc 0 x) := by
+    have hR := (Complex.ofRealCLM.integrableOn_comp hQ).smul_const (1 : ℂ →L[ℂ] ℂ)
+    have hV := (jacobiODECoeffVariation (𝕜 := ℂ) (F := ℂ)).integrableOn_comp hR
+    have heq : hillCoefficient Q 0 = fun r ↦ jacobiODECoeff (0 : ℂ →L[ℂ] ℂ) +
+        jacobiODECoeffVariation ((Q r : ℂ) • (1 : ℂ →L[ℂ] ℂ)) := by
+      funext r
+      simpa only [hillCoefficient, zero_add] using
+        jacobiODECoeff_eq_jacobiODECoeff_zero_add ((Q r : ℂ) • (1 : ℂ →L[ℂ] ℂ))
+    rw [heq]
+    exact (MeasureTheory.integrableOn_const (μ := MeasureTheory.volume)
+      (s := uIcc 0 x) (by simp [uIcc])).add hV
   have h (z : ℂ) : hillCoefficient Q z = fun r ↦ z • A + hillCoefficient Q 0 r :=
     funext (hillCoefficient_eq_smul_add (lam := z))
   have heq : (fun z ↦ hillState Q z v x) =
       fun z ↦ propagator (fun r ↦ z • A + hillCoefficient Q 0 r) x 0 v :=
     funext fun z ↦ congrArg (fun P ↦ propagator P x 0 v) (h z)
   rw [heq]
-  exact (differentiable_propagator_smul_add A
-    (hB.integrableOn_Icc (a := min 0 x) (b := max 0 x))
+  exact (differentiable_propagator_smul_add A hB
     (left_mem_uIcc : (0 : ℝ) ∈ uIcc 0 x) (right_mem_uIcc : x ∈ uIcc 0 x)).clm_apply
     (differentiable_const v)
+
+private theorem analyticOnNhd_deriv_fst_hillState (hQ : Continuous Q) (v : ℂ × ℂ) (x : ℝ) :
+    AnalyticOnNhd ℂ (fun lam ↦ deriv (fun t ↦ (hillState Q lam v t).1) x) univ := by
+  simp_rw [(hasDerivAt_fst_hillState hQ v x).deriv]
+  have h := (differentiable_hillState_parameter x hQ.integrableOn_Icc v).snd
+  exact h.differentiableOn.analyticOnNhd isOpen_univ
 
 /-- The first fundamental solution of Hill's equation, with value one and derivative zero
 at the origin for continuous `Q`. -/
@@ -199,45 +211,52 @@ theorem isHillSolution_hillWII (hQ : Continuous Q) : IsHillSolution Q lam (hillW
   isHillSolution_fst_hillState hQ (0, 1)
 
 /-- For fixed time, the first fundamental solution is entire in the spectral parameter. -/
-theorem analyticOnNhd_hillWI (hQ : Continuous Q) (x : ℝ) :
+theorem analyticOnNhd_hillWI (x : ℝ) (hQ : MeasureTheory.IntegrableOn Q (uIcc 0 x)) :
     AnalyticOnNhd ℂ (fun lam ↦ hillWI Q lam x) univ :=
-  (differentiable_hillState_parameter hQ (1, 0) x).fst.differentiableOn.analyticOnNhd isOpen_univ
+  (differentiable_hillState_parameter x hQ (1, 0)).fst.differentiableOn.analyticOnNhd isOpen_univ
 
 /-- For fixed time, the second fundamental solution is entire in the spectral parameter. -/
-theorem analyticOnNhd_hillWII (hQ : Continuous Q) (x : ℝ) :
+theorem analyticOnNhd_hillWII (x : ℝ) (hQ : MeasureTheory.IntegrableOn Q (uIcc 0 x)) :
     AnalyticOnNhd ℂ (fun lam ↦ hillWII Q lam x) univ :=
-  (differentiable_hillState_parameter hQ (0, 1) x).fst.differentiableOn.analyticOnNhd isOpen_univ
+  (differentiable_hillState_parameter x hQ (0, 1)).fst.differentiableOn.analyticOnNhd isOpen_univ
 
 /-- For fixed time, the time derivative of the first fundamental solution is entire in the
 spectral parameter. -/
 theorem analyticOnNhd_deriv_hillWI (hQ : Continuous Q) (x : ℝ) :
-    AnalyticOnNhd ℂ (fun lam ↦ deriv (hillWI Q lam) x) univ := by
-  unfold hillWI
-  simpa only [funext (fun lam ↦ (hasDerivAt_fst_hillState (lam := lam) hQ (1, 0) x).deriv)]
-    using (differentiable_hillState_parameter hQ (1, 0) x).snd.differentiableOn.analyticOnNhd
-      isOpen_univ
+    AnalyticOnNhd ℂ (fun lam ↦ deriv (hillWI Q lam) x) univ :=
+  analyticOnNhd_deriv_fst_hillState hQ (1, 0) x
 
 /-- For fixed time, the time derivative of the second fundamental solution is entire in the
 spectral parameter. -/
 theorem analyticOnNhd_deriv_hillWII (hQ : Continuous Q) (x : ℝ) :
-    AnalyticOnNhd ℂ (fun lam ↦ deriv (hillWII Q lam) x) univ := by
-  unfold hillWII
-  simpa only [funext (fun lam ↦ (hasDerivAt_fst_hillState (lam := lam) hQ (0, 1) x).deriv)]
-    using (differentiable_hillState_parameter hQ (0, 1) x).snd.differentiableOn.analyticOnNhd
-      isOpen_univ
+    AnalyticOnNhd ℂ (fun lam ↦ deriv (hillWII Q lam) x) univ :=
+  analyticOnNhd_deriv_fst_hillState hQ (0, 1) x
+
+private theorem fst_hillState_eq_linearCombination (a b : ℂ) :
+    (fun x ↦ (hillState Q lam (a, b) x).1) =
+      fun x ↦ a * hillWI Q lam x + b * hillWII Q lam x := by
+  funext x
+  have hv : (a, b) = a • ((1, 0) : ℂ × ℂ) + b • ((0, 1) : ℂ × ℂ) := by
+    simp [Prod.smul_mk]
+  conv_lhs => rw [hv]
+  simp only [hillState, hillWI, hillWII, map_add, map_smul, Prod.fst_add, Prod.smul_fst,
+    smul_eq_mul]
+
+/-- The propagated initial data are the value and derivative of the corresponding
+linear combination of the normalized Hill pair. -/
+theorem propagator_hill_eq_linearCombination (hQ : Continuous Q) (a b : ℂ) (x : ℝ) :
+    let w := fun t ↦ a * hillWI Q lam t + b * hillWII Q lam t
+    propagator (fun t ↦ jacobiODECoeff ((lam + (Q t : ℂ)) • (1 : ℂ →L[ℂ] ℂ))) x 0 (a, b) =
+      (w x, deriv w x) := by
+  apply Prod.ext
+  · exact congrFun (fst_hillState_eq_linearCombination a b) x
+  · exact (hasDerivAt_fst_hillState (lam := lam) hQ (a, b) x).deriv.symm.trans
+      (congrArg (fun f : ℝ → ℂ ↦ deriv f x) (fst_hillState_eq_linearCombination a b))
 
 /-- A linear combination of the fundamental solutions again solves Hill's equation. -/
 theorem isHillSolution_linearCombination (hQ : Continuous Q) (a b : ℂ) :
     IsHillSolution Q lam (fun x ↦ a * hillWI Q lam x + b * hillWII Q lam x) := by
-  have h : (fun x ↦ (hillState Q lam (a, b) x).1) =
-      fun x ↦ a * hillWI Q lam x + b * hillWII Q lam x := by
-    funext x
-    have hv : (a, b) = a • ((1, 0) : ℂ × ℂ) + b • ((0, 1) : ℂ × ℂ) := by
-      simp [Prod.smul_mk]
-    conv_lhs => rw [hv]
-    simp only [hillState, hillWI, hillWII, map_add, map_smul, Prod.fst_add, Prod.smul_fst,
-      smul_eq_mul]
-  rw [← h]
+  rw [← fst_hillState_eq_linearCombination]
   exact isHillSolution_fst_hillState hQ (a, b)
 
 /-- A Hill solution is the linear combination of the fundamental solutions with coefficients
@@ -252,8 +271,27 @@ theorem IsHillSolution.eq_linearCombination (hw : IsHillSolution Q lam w) (hQ : 
   · simp only [hillWI_zero, hillWII_zero, mul_one, mul_zero, add_zero]
   · simpa [Pi.add_def, hQ] using hd.deriv.symm
 
+/-- A classical Hill solution is exactly a unique linear combination of the normalized pair.
+The unique coefficient pair is its value and first derivative at zero. -/
+theorem isHillSolution_iff_existsUnique_linearCombination (hQ : Continuous Q) :
+    IsHillSolution Q lam w ↔ ∃! c : ℂ × ℂ,
+      w = fun x ↦ c.1 * hillWI Q lam x + c.2 * hillWII Q lam x := by
+  constructor
+  · intro hw
+    refine ⟨(w 0, deriv w 0), funext (hw.eq_linearCombination hQ), ?_⟩
+    rintro ⟨a, b⟩ hc
+    have h₀ : w 0 = a := by simpa using congrFun hc 0
+    have h₁ : deriv w 0 = b := by
+      rw [hc]
+      simpa using (congrArg Prod.snd
+        (propagator_hill_eq_linearCombination (lam := lam) hQ a b 0)).symm
+    exact Prod.ext h₀.symm h₁.symm
+  · rintro ⟨c, hc, _⟩
+    rw [hc]
+    exact isHillSolution_linearCombination hQ c.1 c.2
+
 /-- The Wronskian of the ordered fundamental pair of Hill solutions is one. -/
-theorem hillWI_mul_deriv_hillWII_sub (hQ : Continuous Q) (x : ℝ) :
+@[simp] theorem hill_wronskian_eq_one (hQ : Continuous Q) (x : ℝ) :
     hillWI Q lam x * deriv (hillWII Q lam) x - deriv (hillWI Q lam) x * hillWII Q lam x = 1 := by
   have hI := isHillSolution_hillWI (lam := lam) hQ
   have hII := isHillSolution_hillWII (lam := lam) hQ
@@ -267,9 +305,7 @@ theorem hillWI_mul_deriv_hillWII_sub (hQ : Continuous Q) (x : ℝ) :
 theorem IsHillSolution.comp_add_period (hw : IsHillSolution Q lam w)
     {p : ℝ} (hp : Function.Periodic Q p) : IsHillSolution Q lam (fun x ↦ w (x + p)) := by
   refine ⟨hw.contDiff.comp (contDiff_id.add contDiff_const), fun x ↦ ?_⟩
-  simp only [iteratedDeriv_succ, iteratedDeriv_zero]
-  rw [funext (deriv_comp_add_const w p), deriv_comp_add_const, ← hp x]
-  exact (hw.hasDerivAt_deriv (x + p)).deriv
+  simpa only [iteratedDeriv_comp_add_const, hp x] using hw.iteratedDeriv_two (x + p)
 
 /-- Translation by a period acts on the solution by re-expanding its value and derivative at
 the end of that period in the fundamental pair. Applied to the two basic solutions at
@@ -288,21 +324,49 @@ theorem IsHillSolution.conj (hw : IsHillSolution Q lam w) :
   rw [(hw.hasDerivAt_deriv x).deriv]
   simp
 
+private theorem conj_hillState (hQ : Continuous Q) (v : ℂ × ℂ) (x : ℝ) :
+    (conj (hillState Q lam v x).1, conj (hillState Q lam v x).2) =
+      hillState Q (conj lam) (conj v.1, conj v.2) x := by
+  have heq : (fun t ↦ conj (hillState Q lam v t).1) =
+      fun t ↦ (hillState Q (conj lam) (conj v.1, conj v.2) t).1 := by
+    refine (isHillSolution_fst_hillState (lam := lam) hQ v).conj.eq_of_initial_data
+      (isHillSolution_fst_hillState hQ (conj v.1, conj v.2)) hQ (x := 0) (by simp) ?_
+    simp only [← Complex.star_def, deriv.star,
+      (hasDerivAt_fst_hillState hQ _ 0).deriv, hillState_zero]
+  apply Prod.ext (congrFun heq x)
+  have hd := congrArg (fun f : ℝ → ℂ ↦ deriv f x) heq
+  simpa only [← Complex.star_def, deriv.star, (hasDerivAt_fst_hillState hQ _ x).deriv]
+    using hd
+
 /-- Conjugating the first fundamental solution conjugates its spectral parameter. -/
 @[simp] theorem conj_hillWI (hQ : Continuous Q) (x : ℝ) :
     conj (hillWI Q lam x) = hillWI Q (conj lam) x := by
-  have hI := isHillSolution_hillWI (lam := lam) hQ
-  refine congrFun (hI.conj.eq_of_initial_data (isHillSolution_hillWI hQ) hQ
-    (x := 0) (by simp) ?_) x
-  rw [← Complex.star_def, deriv.star, deriv_hillWI_zero hQ, deriv_hillWI_zero hQ, star_zero]
+  simpa only [hillWI, map_one, map_zero] using
+    congrArg Prod.fst (conj_hillState (lam := lam) hQ (1, 0) x)
 
 /-- Conjugating the second fundamental solution conjugates its spectral parameter. -/
 @[simp] theorem conj_hillWII (hQ : Continuous Q) (x : ℝ) :
     conj (hillWII Q lam x) = hillWII Q (conj lam) x := by
-  have hII := isHillSolution_hillWII (lam := lam) hQ
-  refine congrFun (hII.conj.eq_of_initial_data (isHillSolution_hillWII hQ) hQ
-    (x := 0) (by simp) ?_) x
-  rw [← Complex.star_def, deriv.star, deriv_hillWII_zero hQ, deriv_hillWII_zero hQ, star_one]
+  simpa only [hillWII, map_one, map_zero] using
+    congrArg Prod.fst (conj_hillState (lam := lam) hQ (0, 1) x)
+
+/-- Conjugation commutes with the time derivative and conjugates the spectral parameter. -/
+@[simp] theorem conj_deriv_hillWI (hQ : Continuous Q) (x : ℝ) :
+    conj (deriv (hillWI Q lam) x) = deriv (hillWI Q (conj lam)) x := by
+  unfold hillWI
+  rw [(hasDerivAt_fst_hillState (lam := lam) hQ (1, 0) x).deriv,
+    (hasDerivAt_fst_hillState (lam := conj lam) hQ (1, 0) x).deriv]
+  simpa only [map_one, map_zero] using
+    congrArg Prod.snd (conj_hillState (lam := lam) hQ (1, 0) x)
+
+/-- Conjugation commutes with the time derivative and conjugates the spectral parameter. -/
+@[simp] theorem conj_deriv_hillWII (hQ : Continuous Q) (x : ℝ) :
+    conj (deriv (hillWII Q lam) x) = deriv (hillWII Q (conj lam)) x := by
+  unfold hillWII
+  rw [(hasDerivAt_fst_hillState (lam := lam) hQ (0, 1) x).deriv,
+    (hasDerivAt_fst_hillState (lam := conj lam) hQ (0, 1) x).deriv]
+  simpa only [map_one, map_zero] using
+    congrArg Prod.snd (conj_hillState (lam := lam) hQ (0, 1) x)
 
 /-- At a real spectral parameter the first fundamental solution is real-valued. -/
 @[simp] theorem hillWI_ofReal_im (hQ : Continuous Q) (a x : ℝ) :
@@ -316,21 +380,13 @@ theorem IsHillSolution.conj (hw : IsHillSolution Q lam w) :
 
 /-- The first fundamental solution has a real first derivative at a real spectral parameter. -/
 @[simp] theorem deriv_hillWI_ofReal_im (hQ : Continuous Q) (a x : ℝ) :
-    (deriv (hillWI Q (a : ℂ)) x).im = 0 := by
-  apply Complex.conj_eq_iff_im.mp
-  have h := congrArg (fun f : ℝ → ℂ ↦ deriv f x)
-    (funext (conj_hillWI (lam := (a : ℂ)) hQ))
-  have ha : star (a : ℂ) = (a : ℂ) := by simp
-  simpa only [← Complex.star_def, deriv.star, ha] using h
+    (deriv (hillWI Q (a : ℂ)) x).im = 0 :=
+  Complex.conj_eq_iff_im.mp (by simpa using conj_deriv_hillWI (lam := (a : ℂ)) hQ x)
 
 /-- The second fundamental solution has a real first derivative at a real spectral parameter. -/
 @[simp] theorem deriv_hillWII_ofReal_im (hQ : Continuous Q) (a x : ℝ) :
-    (deriv (hillWII Q (a : ℂ)) x).im = 0 := by
-  apply Complex.conj_eq_iff_im.mp
-  have h := congrArg (fun f : ℝ → ℂ ↦ deriv f x)
-    (funext (conj_hillWII (lam := (a : ℂ)) hQ))
-  have ha : star (a : ℂ) = (a : ℂ) := by simp
-  simpa only [← Complex.star_def, deriv.star, ha] using h
+    (deriv (hillWII Q (a : ℂ)) x).im = 0 :=
+  Complex.conj_eq_iff_im.mp (by simpa using conj_deriv_hillWII (lam := (a : ℂ)) hQ x)
 
 /-- The cosine and the normalized sine satisfy the zero-potential equation with their
 respective initial slopes. -/
