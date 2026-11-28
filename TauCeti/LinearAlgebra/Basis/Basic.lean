@@ -30,10 +30,14 @@ vectors indexed by `ι`.
   that coordinate times the corresponding basis vector.
 * `Module.Basis.sum_repr_mul_repr'`: expanding a vector in a finite basis `b'` and reading a
   coordinate in a basis `b`, in the multiplication order valid over a noncommutative semiring.
+* `Module.Basis.repr_finsetSum_smul_self_apply`: the coordinates of a combination of basis vectors
+  over a `Finset` are its coefficients.
 * `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
   linear equivalence are the coordinates of the vector transported back.
+* `Module.Basis.coord_injective_of_subsingleton`: for a basis indexed by a subsingleton type, the
+  coordinate along any basis vector is injective.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
 * `Module.Basis.span_range_coe`: the vectors of a basis of a submodule `U`, viewed in the ambient
@@ -47,6 +51,8 @@ vectors indexed by `ι`.
   coordinate sum of any finite basis of `U`.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
   zero coordinate at every basis vector outside the submodule.
+* `Module.Basis.repr_inr_eq_zero_of_mem`: if the basis vectors at the indices `Sum.inl i` form a
+  basis of a submodule `U`, the vectors of `U` have zero coordinates at the indices `Sum.inr j`.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
@@ -124,6 +130,17 @@ theorem sum_repr_mul_repr' {κ : Type*} [Fintype κ] (b : Basis ι K V) (b' : Ba
   have h := congrArg (fun y ↦ b.repr y i) (b'.sum_repr x)
   simpa only [map_sum, map_smul, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul] using h
 
+/-- The `i`-th coordinate of a combination `∑ j ∈ S, f j • b j` of basis vectors is `f i`, when
+`f` vanishes at `i` outside `S`: a `Finset` counterpart of `Module.Basis.repr_sum_self`. -/
+theorem repr_finsetSum_smul_self_apply (b : Basis ι K V) (S : Finset ι) (f : ι → K) {i : ι}
+    (hf : i ∉ S → f i = 0) : b.repr (∑ j ∈ S, f j • b j) i = f i := by
+  classical
+  simp only [map_sum, map_smul, repr_self, Finsupp.finsetSum_apply, Finsupp.smul_apply,
+    Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq']
+  split_ifs with hi
+  · rfl
+  · exact (hf hi).symm
+
 /-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
 theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
     (b : Module.Basis ι K V) (e : V →ₗ[K] W) (f : Module.End K V) (g : Module.End K W)
@@ -141,6 +158,12 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
     [AddCommMonoid M'] [Module R M'] (b : Module.Basis ι R M) (f : M ≃ₗ[R] M') (i : ι) (x : M') :
     (b.map f).coord i x = b.coord i (f.symm x) := by
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
+
+/-- For a basis indexed by a subsingleton type, the coordinate along any basis vector is
+injective, since it is the only coordinate. -/
+theorem coord_injective_of_subsingleton [Subsingleton ι] (b : Module.Basis ι K V) (i : ι) :
+    Function.Injective (b.coord i) := fun w w' h ↦
+  b.ext_elem fun j ↦ by simpa [Subsingleton.elim j i] using h
 
 /-- A family of vectors indexed by a finite set `S` of indices, whose `s`-th member has the
 coordinates of `b s` at the indices in `S`, is linearly independent. -/
@@ -236,6 +259,14 @@ theorem repr_eq_zero_of_mem_of_notMem (cb : Basis ι R M) {S : Submodule R M}
     (hz : z ∈ S) : cb.repr z j = 0 := by
   by_contra hn
   exact hj ((cb.mem_span_image.mp (hS ▸ hz)) (Finsupp.mem_support_iff.mpr hn))
+
+/-- If the basis vectors `b (Sum.inl i)` form a basis `e` of a submodule `U`, then the vectors of
+`U` have zero coordinate at every index `Sum.inr j`. -/
+theorem repr_inr_eq_zero_of_mem {κ : Type*} (b : Basis (ι ⊕ κ) R M) {e : Basis ι R U}
+    (hbe : ∀ i, b (Sum.inl i) = e i) {x : M} (hx : x ∈ U) (j : κ) :
+    b.repr x (Sum.inr j) = 0 := by
+  have h : b.coord (Sum.inr j) ∘ₗ U.subtype = 0 := e.ext fun i ↦ by simp [← hbe]
+  simpa using LinearMap.congr_fun h ⟨x, hx⟩
 
 end Submodule
 

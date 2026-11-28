@@ -8,8 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -54,6 +57,10 @@ Christoffel map, which is the input of the coordinate curvature formula of
   field along a curve is its ordinary derivative, within a parameter set or unrestricted.
 * `TauCeti.Manifold.alongCurveWithin_add_smul_model_space` and
   `TauCeti.Manifold.alongCurve_add_smul_model_space`: the covariant derivative of an affine field.
+* `TauCeti.Manifold.sectionCoord_model_space`: a field along a map into `F` is its own coordinate
+  reading in every tangent trivialization of `F`.
+* `TauCeti.Manifold.alongMap_leviCivitaConnection_model_space`: the covariant derivative of a
+  field along a map into `F` is its ordinary derivative.
 
 ## References
 
@@ -224,6 +231,22 @@ theorem leviCivitaConnection_eq_fderiv_model_space
 
 end Christoffel
 
+/-! ### Fields along a map into the model space -/
+
+section SectionCoord
+
+/-- For a map into the model space `F`, the coordinate reading of a field along the map in any
+tangent trivialization of `F` is the field itself, as an `F`-valued map. -/
+@[simp]
+theorem sectionCoord_model_space {M : Type*} (f : M → F)
+    (V : Π y, TangentSpace 𝓘(ℝ, F) (f y)) (a : F) :
+    sectionCoord ℝ (F := F) f V a = fun y ↦ (V y : F) := by
+  funext t
+  rw [sectionCoord_apply, TangentBundle.continuousLinearMapAt_model_space]
+  exact one_apply_eq_self (F := F →L[ℝ] F) (V t : F)
+
+end SectionCoord
+
 /-! ### The standard inner-product metric -/
 
 section InnerProductSpace
@@ -291,11 +314,7 @@ theorem alongCurveWithin_leviCivitaConnection_model_space (γ V : ℝ → F) (s 
   change alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ W s t = _
   rw [alongCurveWithin_apply, alongCurveInChartWithin_apply]
   simp only [christoffelMap_leviCivita_model_space, zero_apply, add_zero]
-  have hcoord : sectionCoord (𝕜 := ℝ) γ W (γ t) = V := by
-    funext r
-    rw [sectionCoord_apply, TangentBundle.continuousLinearMapAt_model_space]
-    rfl
-  rw [hcoord, TangentBundle.symmL_model_space]
+  rw [sectionCoord_model_space, TangentBundle.symmL_model_space]
   rfl
 
 /-- In an inner-product space the Levi-Civita covariant derivative along a curve is the
@@ -327,6 +346,32 @@ theorem alongCurve_add_smul_model_space (γ : ℝ → F) (u w : F) (t : ℝ) :
   exact (alongCurveWithin_univ _ γ
     (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) t).symm.trans
       (alongCurveWithin_add_smul_model_space γ uniqueDiffWithinAt_univ u w)
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- **Covariant differentiation along a map into a Euclidean space is differentiation.** For the
+flat Levi-Civita connection of a finite-dimensional inner product space `F`, the covariant
+derivative of a field `V` along a map `f : M → F` is the derivative of `V`, read as an `F`-valued
+map. -/
+theorem alongMap_leviCivitaConnection_model_space {f : M → F}
+    {V : Π y, TangentSpace 𝓘(ℝ, F) (f y)} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, F) f x)
+    (hV : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ (V y : F)) x) (v : TangentSpace I x) :
+    (leviCivitaConnection 𝓘(ℝ, F) F).alongMap I f V x v =
+      mfderiv I 𝓘(ℝ, F) (fun y ↦ (V y : F)) x v := by
+  have hT : MDifferentiableAt I 𝓘(ℝ, F).tangent
+      (fun y ↦ TotalSpace.mk' F (E := TangentSpace 𝓘(ℝ, F)) (f y) (V y)) x := by
+    rw [mdifferentiableAt_totalSpace]
+    exact ⟨hf, by simpa [trivializationAt_model_space_apply] using hV⟩
+  rw [alongMap_apply_of_mem_baseSet _ hT (FiberBundle.mem_baseSet_trivializationAt' (f x))]
+  simp only [christoffelMap_leviCivita_model_space, TangentBundle.symmL_model_space,
+    sectionCoord_model_space]
+  refine Eq.trans ?_ (mvfderiv_apply_eq_mfderiv_apply (I := I) (fun y ↦ (V y : F)) x v)
+  -- The goal is well typed only after unfolding `TangentSpace 𝓘(ℝ, F) (f x)` to `F`, so the
+  -- zero Christoffel term must be rewritten up to that unfolding.
+  erw [zero_apply, add_zero]
+  exact one_apply_eq_self (F := F →L[ℝ] F) _
 
 end InnerProductSpace
 

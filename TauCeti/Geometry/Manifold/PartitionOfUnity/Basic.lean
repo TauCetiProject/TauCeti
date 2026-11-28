@@ -25,26 +25,8 @@ This file collects basic facts about `BumpCovering` and `SmoothPartitionOfUnity`
 
 public section
 
-open Function Set
+open Set
 open scoped ContDiff Manifold
-
-section BumpCovering
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- If every function in a `BumpCovering` is `C^n`, each weight of its associated partition of
-unity is `C^n`. Adapted from Mathlib's `BumpCovering.contMDiff_toPartitionOfUnity`, generalized
-from `C^∞` to `C^n`. -/
-theorem BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff {ι : Type*} {s : Set M} {n : ℕ∞ω}
-    (f : BumpCovering ι M s) (hf : ∀ i, ContMDiff I 𝓘(ℝ) n (f i)) (i : ι) :
-    ContMDiff I 𝓘(ℝ) n (f.toPartitionOfUnity i) :=
-  (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
-    simp only [mulSupport_one_sub]
-    exact f.locallyFinite
-
-end BumpCovering
 
 namespace SmoothPartitionOfUnity
 
@@ -65,3 +47,18 @@ theorem sum_finsupport_smul_eq_of_forall_eq {A : Type*} [AddCommMonoid A] [Modul
   ρ.toPartitionOfUnity.sum_finsupport_smul_eq_of_forall_eq hx hw
 
 end SmoothPartitionOfUnity
+
+namespace BumpCovering
+
+variable {ι E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {s : Set M}
+
+/-- A `BumpCovering` whose functions are `C^k` generates a `C^k` partition of unity. -/
+theorem contMDiff_toPartitionOfUnity_of_contMDiff {k : ℕ∞ω} (f : BumpCovering ι M s)
+    (hf : ∀ i, ContMDiff I 𝓘(ℝ) k (f i)) (i : ι) :
+    ContMDiff I 𝓘(ℝ) k (f.toPartitionOfUnity i) :=
+  (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
+    simp only [Function.mulSupport_one_sub]
+    exact f.locallyFinite
+
+end BumpCovering

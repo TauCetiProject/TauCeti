@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Gluing
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
+import TauCeti.CategoryTheory.Sites.Descent.DescentData
 import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 import Mathlib.CategoryTheory.Sites.Descent.Precoverage
 
@@ -60,27 +61,16 @@ private def underlyingDatum (D : qcohPseudofunctor.DescentData p) :
   hom_comp Y q i j k a b c ha hb hc := congrArg (fun f ↦ f.hom)
     (D.hom_comp q a b c ha hb hc)
 
-private def moduleDatumIsoComponent {D E : modulesPseudofunctor.DescentData p}
-    (e : D ≅ E) (i : ι) : (D.obj i : (X i).Modules) ≅ (E.obj i : (X i).Modules) where
-  hom := e.hom.hom i
-  inv := e.inv.hom i
-  hom_inv_id := by
-    simpa only [Pseudofunctor.DescentData.comp_hom, Pseudofunctor.DescentData.id_hom] using
-      congrArg (fun φ ↦ φ.hom i) e.hom_inv_id
-  inv_hom_id := by
-    simpa only [Pseudofunctor.DescentData.comp_hom, Pseudofunctor.DescentData.id_hom] using
-      congrArg (fun φ ↦ φ.hom i) e.inv_hom_id
-
 private def liftDatumIso (D : qcohPseudofunctor.DescentData p) (M : QuasicoherentSheaf S)
     (e : Pseudofunctor.DescentData.ofObj (F := modulesPseudofunctor) (f := p) M.obj ≅
       underlyingDatum p D) :
     Pseudofunctor.DescentData.ofObj (F := qcohPseudofunctor) (f := p) M ≅ D :=
   Pseudofunctor.DescentData.isoMk
-    (fun i ↦ ObjectProperty.isoMk _ (moduleDatumIsoComponent p e i))
+    (fun i ↦ ObjectProperty.isoMk _ (Pseudofunctor.DescentData.isoApp e i))
     (by
       intro Y q i j a b ha hb
       apply ObjectProperty.hom_ext
-      exact e.hom.comm q a b ha hb)
+      exact Pseudofunctor.DescentData.isoApp_hom_comm e q a b ha hb)
 
 -- These typed presentations keep pullback coherence in the native module categories.
 -- Repeatedly unfolding the Cat-valued presentations in the comparison proofs is expensive.

@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 
 /-!
 # Differentiation involving the logarithm
 
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
-Where `0 < f ≤ 1`, the gradient of `f = exp (log f)` is at most that of `log f`.
-The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and that of
-`r ↦ log (c / r)` wherever `c ≠ 0` and `r ≠ 0`.
+Where `0 < f ≤ 1`, the gradient of `f = exp (log f)` is at most that of `log f`, and at a zero of
+a continuous `f` the derivative of `log f` is `0`.
+The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, together with its
+real-exponent analogue `x / log x ^ k` wherever `log x > 0`, that of `r ↦ log (c / r)`
+wherever `c ≠ 0` and `r ≠ 0`, and the higher derivatives `iteratedDeriv k Real.log` for `k ≥ 1`.
 
 ## Main results
 
@@ -22,9 +28,14 @@ The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and t
   differentiability of `v` at `log x`.
 * `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
 * `TauCeti.norm_fderiv_le_norm_fderiv_log`: where `0 < f z ≤ 1`, `‖∇ f‖ ≤ ‖∇ log f‖`.
+* `TauCeti.fderiv_log_comp_eq_zero_of_continuousAt`: where `f` is continuous with `f z = 0`,
+  `∇ log f (z) = 0`.
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
+* `TauCeti.Real.hasDerivAt_div_log_rpow`: the derivative of `x / log x ^ k` for every real
+  exponent, assuming `log x > 0`.
 * `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
+* `Real.iteratedDeriv_log`: for `k ≥ 1`, `iteratedDeriv k log x = (-1)^(k-1) (k-1)! / x^k`.
 
 The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
 [PrimeNumberTheoremAnd project][PNTLogPower].
@@ -35,6 +46,7 @@ The reciprocal-log-power derivative is adapted from the Ramanujan estimates in t
 public section
 
 open Real Filter Topology
+open scoped ContDiff Nat
 
 namespace TauCeti
 
@@ -84,6 +96,30 @@ theorem norm_fderiv_le_norm_fderiv_log {f : E → ℝ} {z : E} (hf : Differentia
     le_inv_mul_iff₀ h₀]
   exact mul_le_of_le_one_left (norm_nonneg _) h₁
 
+/-- If `f` is continuous at `z` with `f z = 0`, then `log ∘ f` has derivative `0` at `z`: either it
+is not differentiable there, or it is continuous at `z` with value `log 0 = 0`, which forces
+`f = 0` near `z` since `log |f|` tends to `-∞` along the points where `f ≠ 0`. -/
+theorem fderiv_log_comp_eq_zero_of_continuousAt {f : E → ℝ} {z : E} (hf : ContinuousAt f z)
+    (hz : f z = 0) : fderiv ℝ (fun y ↦ log (f y)) z = 0 := by
+  by_cases hd : DifferentiableAt ℝ (fun y ↦ log (f y)) z
+  swap
+  · exact fderiv_zero_of_not_differentiableAt hd
+  have hc : Tendsto (fun y ↦ log (f y)) (𝓝 z) (𝓝 0) := by
+    simpa [hz] using hd.continuousAt.tendsto
+  have hf0 : Tendsto f (𝓝 z) (𝓝 0) := by simpa [hz] using hf.tendsto
+  have h0 : (fun y ↦ log (f y)) =ᶠ[𝓝 z] fun _ ↦ 0 := by
+    filter_upwards [hc.eventually (Ioo_mem_nhds (by norm_num : (-1 : ℝ) < 0) one_pos),
+      hf0.eventually (Ioo_mem_nhds (neg_lt_zero.2 (exp_pos (-1))) (exp_pos (-1)))]
+      with y (hy : log (f y) ∈ Set.Ioo (-1) 1) (hy' : f y ∈ Set.Ioo (-exp (-1)) (exp (-1)))
+    by_contra hne
+    have hfy : f y ≠ 0 := fun h ↦ hne (by simp [h])
+    have : log |f y| < -1 := by
+      rw [log_lt_iff_lt_exp (abs_pos.2 hfy)]
+      exact abs_lt.2 hy'
+    rw [log_abs] at this
+    exact lt_irrefl _ (this.trans hy.1)
+  exact h0.fderiv_eq.trans (fderiv_const_apply 0)
+
 end TauCeti
 
 namespace TauCeti.Real
@@ -107,6 +143,29 @@ theorem hasDerivAt_div_log_pow (n : ℕ) {t : ℝ} (ht : Real.log t ≠ 0) :
       field_simp [pow_succ, ht, ht₀]
       ring
 
+/-- The derivative of `t ↦ t / log t ^ k` wherever `log t > 0`, for every real exponent `k`. -/
+theorem hasDerivAt_div_log_rpow (k : ℝ) {t : ℝ} (ht : 0 < log t) :
+    HasDerivAt (fun u : ℝ ↦ u / log u ^ k)
+      ((log t ^ k)⁻¹ - k * (log t ^ (k + 1))⁻¹) t := by
+  have ht₀ : t ≠ 0 := by
+    intro h
+    simp [h] at ht
+  have hpow :
+      HasDerivAt (fun u : ℝ ↦ log u ^ k) (k * log t ^ (k - 1) * t⁻¹) t := by
+    simpa [Function.comp_def] using
+      (hasDerivAt_rpow_const (x := log t) (p := k) (Or.inl ht.ne')).comp t (hasDerivAt_log ht₀)
+  have hd := (hasDerivAt_id' t).div hpow (rpow_pos_of_pos ht k).ne'
+  refine hd.congr_deriv ?_
+  have hrpow_pos : 0 < log t ^ k := rpow_pos_of_pos ht k
+  have hadd : log t ^ (k + 1) = log t ^ k * log t := by
+    rw [rpow_add ht, rpow_one]
+  have hsub : log t ^ (k - 1) * log t = log t ^ k := by
+    rw [← rpow_add_one ht.ne', sub_add_cancel]
+  rw [hadd]
+  have hlne : log t ≠ 0 := ht.ne'
+  field_simp [ht₀, hrpow_pos.ne', hlne]
+  linear_combination -k * hsub
+
 end TauCeti.Real
 
 namespace Real
@@ -119,5 +178,14 @@ theorem hasDerivAt_log_const_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
       (hasDerivAt_inv hr).const_mul c
   refine (hdiv.log (div_ne_zero hc hr)).congr_deriv ?_
   field_simp
+
+/-- For `k ≥ 1`, the `k`-th derivative of `Real.log` at `x` is
+`(-1) ^ (k - 1) * (k - 1)! / x ^ k` (at `x = 0` both sides vanish). -/
+theorem iteratedDeriv_log {k : ℕ} (hk : 1 ≤ k) (x : ℝ) :
+    iteratedDeriv k log x = (-1 : ℝ) ^ (k - 1) * ((k - 1)! : ℝ) / x ^ k := by
+  have hk_eq : k = (k - 1) + 1 := (Nat.sub_add_cancel hk).symm
+  conv_lhs => rw [hk_eq, iteratedDeriv_succ', deriv_log']
+  simpa [one_div, Nat.sub_add_cancel hk] using
+    TauCeti.iteratedDeriv_const_div (k - 1) (1 : ℝ) x
 
 end Real

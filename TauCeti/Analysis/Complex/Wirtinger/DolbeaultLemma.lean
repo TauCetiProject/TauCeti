@@ -8,10 +8,11 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Complex.Runge.Approximation
+import TauCeti.Analysis.Complex.Runge.Basic
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
+import TauCeti.Analysis.Normed.Module.Exhaustion
 
 /-!
 # The Dolbeault lemma on open subsets of the plane
@@ -28,7 +29,7 @@ transform gives a solution `h k` of `\bar∂ (h k) = f` on `K (k + 1)`
 (`IsCompact.exists_contDiff_conjWirtingerDeriv_apply_one_eq`). These local solutions do not
 converge, but consecutive ones differ by a function `h (k + 1) - h k` that is holomorphic on the
 interior of `K (k + 1)`, a neighbourhood of `K k`. Since `K k` is filled in `Ω`, Runge's theorem
-(`TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt`) gives a function `P k`,
+(`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`) gives a function `P k`,
 holomorphic on all of `Ω`, within `2⁻ᵏ` of that difference on `K k`. The corrected solutions
 `h k - ∑_{j < k} P j` then converge on `Ω`: on the interior of `K m` the limit is `h m` plus a
 uniform limit of holomorphic functions (`IsOpen.exists_differentiableOn_eqOn_add_tsum`), so it is
@@ -41,6 +42,10 @@ the structure sheaf of holomorphic functions has no first cohomology on open sub
 
 * `IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`: the Dolbeault lemma on an open set
   `Ω ⊆ ℂ`.
+* `IsOpen.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv`: closed completion
+  `\bar∂ g = ∂ f` on an open set `Ω ⊆ ℂ`.
+* `TauCeti.contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff`: affine characterization of
+  solutions to `\bar∂ u = f` on `Ω` modulo holomorphic functions.
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq`: every `Cⁿ` function on the plane is
   `\bar∂` of a `Cⁿ` function, without any support condition.
 * `IsOpen.exists_contDiffOn_differentiableOn_sub`: smooth functions `g k` on open sets covering
@@ -91,7 +96,8 @@ theorem _root_.IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq {f : ℂ
   -- Runge corrections `P k`, holomorphic on `Ω` and within `2⁻ᵏ` of the differences on `K k`.
   have happrox (k : ℕ) : ∃ P : ℂ → W, DifferentiableOn ℂ P Ω ∧
       ∀ z ∈ K k, ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
-    (hΩ.isRungeCompactPair_filledExhaustion k).exists_differentiableOn_norm_sub_lt isOpen_interior
+    (hΩ.isFilledIn_filledExhaustion k).exists_differentiableOn_norm_sub_lt
+      (isCompact_filledExhaustion Ω k) (filledExhaustion_subset Ω k) isOpen_interior
       (hK_int k) (hdiff k) (by positivity)
   choose P hP hP_lt using happrox
   -- On the interior of `K m`, the limit is `h m` plus a holomorphic function.
@@ -113,6 +119,42 @@ theorem _root_.IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq {f : ℂ
         fun w hw _ ↦ hh_eq (m + 1) w (hK_mono (m + 1).le_succ (interior_subset hw)),
         hR.contDiffOn isOpen_interior, hGR⟩
   exact ⟨G, hglue.1, fun z hz ↦ hglue.2 z hz ()⟩
+
+/-- **Affine solution space of `\bar∂ u = f`.** Given a particular `Cⁿ` solution `u₀` of
+`\bar∂ u₀ = f` on an open set `Ω ⊆ ℂ`, for `n ≥ 1`, another function `u` is a `Cⁿ` solution of
+`\bar∂ u = f` on `Ω` if and only if `u - u₀` is holomorphic on `Ω`. -/
+theorem contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff {u₀ u f : ℂ → W}
+    {Ω : Set ℂ} {n : WithTop ℕ∞} (hn : 1 ≤ n) (hΩ : IsOpen Ω) (hu₀ : ContDiffOn ℝ n u₀ Ω)
+    (hsol : ∀ z ∈ Ω, conjWirtingerDeriv u₀ z 1 = f z) :
+    (ContDiffOn ℝ n u Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv u z 1 = f z) ↔
+      DifferentiableOn ℂ (u - u₀) Ω := by
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  constructor
+  · rintro ⟨hu, huf⟩
+    exact differentiableOn_sub_of_conjWirtingerDeriv_eq hΩ (hu.differentiableOn hn0)
+      (hu₀.differentiableOn hn0) fun z hz ↦ by rw [huf z hz, hsol z hz]
+  · intro hdiff
+    have hcd : ContDiffOn ℝ n (u - u₀) Ω :=
+      ((DifferentiableOn.contDiffOn hdiff hΩ).of_le le_top).restrict_scalars ℝ
+    have hu_eq : u = u₀ + (u - u₀) := by ext z; simp
+    refine ⟨hu_eq ▸ hu₀.add hcd, fun z hz ↦ ?_⟩
+    have hd₀ : DifferentiableAt ℝ u₀ z :=
+      (hu₀.contDiffAt (hΩ.mem_nhds hz)).differentiableAt hn0
+    have hdh : DifferentiableAt ℂ (u - u₀) z := hdiff.differentiableAt (hΩ.mem_nhds hz)
+    rw [hu_eq, conjWirtingerDeriv_add hd₀ (hdh.restrictScalars ℝ), add_apply, hsol z hz,
+      hdh.conjWirtingerDeriv_eq_zero, zero_apply, add_zero]
+
+/-- **Closed completion on an open subset of `ℂ`.** For every `Cⁿ` function `f : ℂ → W` on an
+arbitrary open set `Ω ⊆ ℂ` with `1 ≤ m` and `m + 1 ≤ n`, there exists a `Cᵐ` function
+`g : ℂ → W` on `Ω` solving `\bar∂ g = ∂ f` on `Ω`. When `W = ℂ`, this is the coefficient equation
+for `g dz + f dbar z` to be closed. -/
+theorem _root_.IsOpen.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv {m n : ℕ∞}
+    {f : ℂ → W} {Ω : Set ℂ} (hΩ : IsOpen Ω) (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (hf : ContDiffOn ℝ n f Ω) :
+    ∃ g : ℂ → W, ContDiffOn ℝ m g Ω ∧
+      ∀ z ∈ Ω, conjWirtingerDeriv g z 1 = wirtingerDeriv f z 1 :=
+  hΩ.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hm
+    (hf.wirtingerDeriv_apply_of_isOpen hΩ (by exact_mod_cast hmn) 1)
 
 /-- **The Dolbeault lemma on the plane.** Every `Cⁿ` function `f : ℂ → W`, `n ≥ 1`, is `\bar∂ g`
 for a `Cⁿ` function `g`; no support condition on `f` is needed. -/

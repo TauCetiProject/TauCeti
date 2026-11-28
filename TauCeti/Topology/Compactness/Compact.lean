@@ -22,7 +22,9 @@ cocompact filter, whose images therefore lie in no fixed compact set, and passin
 valid near each point of a compact set to one constant valid on all of it, also for eventual
 bounds along a filter (`IsCompact.exists_eventually_forall_le_of_forall`). Maps converging
 continuously on a compact set eventually map it into any open set containing the image under the
-limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). A property that eventually holds
+limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`), and the same holds for a family
+jointly continuous within `P × s` along `{p₀} × K` with `K ⊆ s`
+(`IsCompact.eventually_forall_mem_of_continuousWithinAt`). A property that eventually holds
 along a filter on a neighbourhood of each point of a compact set eventually holds on one open set
 containing it (`IsCompact.exists_isOpen_eventually_forall`). The fibres over `w` of a closed set
 `C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually contained in every open
@@ -34,7 +36,9 @@ embedding of `K` (`IsCompact.isClosedEmbedding_domRestrict`). So neighbourhoods 
 eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) and limits of maps whose values
 eventually lie in `K` (`IsCompact.exists_tendsto_of_tendsto_comp`) can be read through it. These
 are the versions, for compact sets, of the results for an inducing restriction in
-`TauCeti.Topology.Maps.IsInducing`.
+`TauCeti.Topology.Maps.IsInducing`. Without injectivity, the points of `K` mapped near `y` still
+lie in any open set containing the points of `K` mapped to `y`
+(`IsCompact.exists_mem_nhds_inter_preimage_subset_of_forall_eq`).
 
 A nonempty compact set totally ordered by specialization contains a point specializing all of its
 points (`IsCompact.exists_forall_specializes`).
@@ -146,6 +150,21 @@ theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset {Y : Type*} [Topo
     (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝[K] x) :
     ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s :=
   (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.exists_mem_nhds_inter_preimage_subset hx hs
+
+/-- **Points of a compact set mapped near `y` stay near the fibre over `y`.** Let `f` be continuous
+on a compact set `K` with values in a Hausdorff space. If every point of `K` that `f` maps to `y`
+lies in an open set `N`, then there is a neighbourhood `t` of `y` such that every point of `K` that
+`f` maps into `t` lies in `N`. -/
+theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset_of_forall_eq {Y : Type*}
+    [TopologicalSpace Y] [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K)
+    (hf : ContinuousOn f K) {N : Set X} (hN : IsOpen N) {y : Y} (hy : ∀ x ∈ K, f x = y → x ∈ N) :
+    ∃ t ∈ 𝓝 y, K ∩ f ⁻¹' t ⊆ N := by
+  -- The image of the compact set `K \ N` is closed and does not contain `y`.
+  have hc : IsCompact (f '' (K \ N)) := (hK.diff hN).image_of_continuousOn (hf.mono sdiff_subset)
+  refine ⟨(f '' (K \ N))ᶜ, hc.isClosed.isOpen_compl.mem_nhds
+    fun ⟨x, ⟨hxK, hxN⟩, hxy⟩ => hxN (hy x hxK hxy), fun x ⟨hxK, hxt⟩ => ?_⟩
+  by_contra hxN
+  exact hxt ⟨x, ⟨hxK, hxN⟩, rfl⟩
 
 /-- **Convergence in a compact set is read through a continuous injection.** Let `f` be continuous
 and injective on a compact set `K` with values in a Hausdorff space, and let `g` eventually take
@@ -371,6 +390,20 @@ theorem _root_.IsCompact.eventually_forall_mem_of_tendsto_prod_nhds {Y ι : Type
   have h := hA.mem_prod_nhdsSet_of_forall (s := {p : ι × X | f p.1 p.2 ∈ t})
     fun a ha ↦ (hconv a ha).eventually (ht.mem_nhds (hmem a ha))
   exact (Filter.Eventually.curry h).mono fun _ hi ↦ hi.self_of_nhdsSet
+
+/-- **Tube lemma within a set.** If a family `F` is jointly continuous within `P × s` at every
+point of `{p₀} × K`, for a compact `K ⊆ s`, and `F p₀` maps `K` into an open set `O`, then `F p`
+maps `K` into `O` for every `p` near `p₀`. -/
+theorem _root_.IsCompact.eventually_forall_mem_of_continuousWithinAt {P Y : Type*}
+    [TopologicalSpace P] [TopologicalSpace Y] {F : P → X → Y} {p₀ : P} {s K : Set X} {O : Set Y}
+    (hK : IsCompact K) (hKs : K ⊆ s) (hO : IsOpen O)
+    (hF : ∀ t ∈ K, ContinuousWithinAt (Function.uncurry F) (univ ×ˢ s) (p₀, t))
+    (hFK : ∀ t ∈ K, F p₀ t ∈ O) : ∀ᶠ p in 𝓝 p₀, ∀ t ∈ K, F p t ∈ O := by
+  have h := hK.eventually_forall_of_forall_eventually (x₀ := p₀)
+    (P := fun p t ↦ t ∈ s → F p t ∈ O) fun t ht ↦
+      (eventually_nhdsWithin_iff.1 ((hF t ht).preimage_mem_nhdsWithin
+        (hO.mem_nhds (hFK t ht)))).mono fun y hy hy₂ ↦ hy ⟨mem_univ _, hy₂⟩
+  exact h.mono fun p hp t ht ↦ hp t ht (hKs ht)
 
 /-- If every point of a compact set `K` has a neighbourhood on which `P i` eventually holds along
 `l`, then some open set containing `K` has the same property. -/

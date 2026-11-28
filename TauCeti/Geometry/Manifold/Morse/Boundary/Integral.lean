@@ -68,6 +68,8 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
 ## Main results
 
 * `TauCeti.IsAdaptedPseudoGradient.nonempty_morseOrientation`: orientation data exist.
+* `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_eq_finsum_mem`: the boundary
+  coefficient as a sum of trajectory signs over the trajectory slice.
 * `TauCeti.IsAdaptedPseudoGradient.morseIndex_eq_add_one_of_signedMorseBoundaryCoeff_ne_zero`:
   the boundary lowers the index by one.
 * `TauCeti.IsAdaptedPseudoGradient.value_lt_of_signedMorseBoundaryCoeff_ne_zero`: the boundary
@@ -77,8 +79,8 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
 * `TauCeti.IsAdaptedPseudoGradient.mapRange_signedMorseBoundary`: change of coefficients.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundary_eq_morseBoundary`: with
   coefficients in `ZMod 2` it is the mod-two Morse boundary.
-* `TauCeti.MorseOrientation.exists_reverse_eq`: two choices of orientations in the same charts
-  differ by a reversal.
+* `TauCeti.MorseOrientation.reverse_eq_mk` and `TauCeti.MorseOrientation.exists_reverse_eq`: two
+  choices of orientations in the same charts differ by a reversal.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse`: reversing orientations conjugates
   the boundary by `Finsupp.signReversal`.
 
@@ -164,25 +166,33 @@ theorem reverse_reverse : (𝔬.reverse S).reverse S = 𝔬 := by
     · simp only [hS, ↓reduceIte]
       rfl
 
-open scoped Classical in
-/-- **Any two choices of orientations in the same Morse charts differ by a reversal**, on the set
-of critical points where they disagree: any two orientations of a finite-dimensional real vector
-space are equal or opposite. -/
-theorem exists_reverse_eq {𝔬' : MorseOrientation f X} (h : 𝔬.chart = 𝔬'.chart) :
-    ∃ S : Set (criticalPoints 𝓘(ℝ, E) f), 𝔬.reverse S = 𝔬' := by
-  obtain ⟨chart, hc, o₀⟩ := 𝔬
-  obtain ⟨chart', hc', o⟩ := 𝔬'
-  obtain rfl : chart = chart' := h
-  refine ⟨{p | o p ≠ o₀ p}, ?_⟩
+/-- **Orientations in the same Morse charts differ by a reversal**: reversing the orientations of
+`𝔬` at the critical points where they disagree with orientations `o` in the same charts gives the
+orientation data with orientations `o`, since any two orientations of a finite-dimensional real
+vector space are equal or opposite. -/
+theorem reverse_eq_mk (o : (p : criticalPoints 𝓘(ℝ, E) f) →
+      Orientation ℝ ({i // (𝔬.chart p).weight i < 0} → ℝ)
+        (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+    [DecidablePred (· ∈ {p | o p ≠ 𝔬.orientation p})] :
+    𝔬.reverse {p | o p ≠ 𝔬.orientation p} = ⟨𝔬.chart, 𝔬.coord_mfderiv_chart, o⟩ := by
   simp only [reverse]
   congr 1
   funext p
-  by_cases hp : o p = o₀ p
+  by_cases hp : o p = 𝔬.orientation p
   · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_true_eq_false, ↓reduceIte]
   · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_false_eq_true, ↓reduceIte]
-    exact (((o p).eq_or_eq_neg (o₀ p)
+    exact (((o p).eq_or_eq_neg (𝔬.orientation p)
       (Nat.card_eq_fintype_card.trans
-        (chart p).card_fin_manifoldMorseIndex_eq_finrank)).resolve_left hp).symm
+        (𝔬.chart p).card_fin_manifoldMorseIndex_eq_finrank)).resolve_left hp).symm
+
+open scoped Classical in
+/-- **Any two choices of orientations in the same Morse charts differ by a reversal**, on the set
+of critical points where they disagree (`TauCeti.MorseOrientation.reverse_eq_mk`). -/
+theorem exists_reverse_eq {𝔬' : MorseOrientation f X} (h : 𝔬.chart = 𝔬'.chart) :
+    ∃ S : Set (criticalPoints 𝓘(ℝ, E) f), 𝔬.reverse S = 𝔬' := by
+  obtain ⟨chart', hc', o⟩ := 𝔬'
+  obtain rfl : 𝔬.chart = chart' := h
+  exact ⟨{p | o p ≠ 𝔬.orientation p}, by convert 𝔬.reverse_eq_mk o⟩
 
 end MorseOrientation
 
@@ -210,6 +220,19 @@ theorem signedMorseBoundaryCoeff_of_morseIndex_eq_add_one {p q : criticalPoints 
     hX.signedMorseBoundaryCoeff 𝔬 p q =
       hX.signedTrajectoryCount (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq :=
   dite_eq_left hpq
+
+/-- For critical points of consecutive index, the boundary coefficient is the sum of the signs over
+the trajectory slice, written with the index condition inside. This is the shape in which signed
+counts of broken trajectories split as sums over intermediate critical points. -/
+theorem signedMorseBoundaryCoeff_eq_finsum_mem {p q : criticalPoints 𝓘(ℝ, E) f}
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    hX.signedMorseBoundaryCoeff 𝔬 p q =
+      ∑ᶠ z ∈ hX.morseTrajectorySlice p q,
+        if h : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 then
+          hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) h z
+        else 0 := by
+  rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def]
+  exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpq]
 
 /-- The boundary coefficient vanishes between critical points whose indices do not differ by
 one. -/

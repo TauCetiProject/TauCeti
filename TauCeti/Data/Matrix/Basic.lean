@@ -16,10 +16,14 @@ This file complements the `RingHom.mapMatrix` and `Matrix.prodEquiv` API of
 ## Main results
 
 * `RingHom.mapMatrix_smul_one`: `f.mapMatrix` sends the scalar matrix `a • 1` to `f a • 1`.
+* `Matrix.map_sub_smul_one`: the entrywise image of `A - c • 1` under a ring homomorphism `φ` is
+  `A.map φ - φ c • 1`.
 * `Matrix.map_fst_prodEquiv_symm`, `Matrix.map_snd_prodEquiv_symm`: the components of the matrix
   over `α × β` built from a pair of matrices are the two matrices of the pair.
 * `Matrix.mul_eq_of_map_fst_of_map_snd`: a product of matrices over `A × B` is determined by its
   two components.
+* `Matrix.mul_eq_of_forall_map_apply`: a product of matrices over `Π j, A j` is determined by its
+  components.
 -/
 
 public section
@@ -36,6 +40,14 @@ theorem mapMatrix_smul_one {m α β : Type*} [Fintype m] [DecidableEq m]
 end RingHom
 
 namespace Matrix
+
+/-- The entrywise image of `A - c • 1` under a ring homomorphism `φ` is `A.map φ - φ c • 1`. -/
+@[simp]
+theorem map_sub_smul_one {n B C : Type*} [DecidableEq n] [NonAssocRing B] [NonAssocRing C]
+    (A : Matrix n n B) (c : B) (φ : B →+* C) :
+    (A - c • (1 : Matrix n n B)).map φ = A.map φ - φ c • (1 : Matrix n n C) := by
+  ext i j
+  by_cases h : i = j <;> simp [h]
 
 /-! ### Matrices over a product -/
 
@@ -66,5 +78,22 @@ theorem mul_eq_of_map_fst_of_map_snd {A B ν : Type*} [NonUnitalNonAssocSemiring
   · simpa only [prodEquiv_apply, ← NonUnitalRingHom.coe_snd, ← Matrix.map_mul] using hsnd
 
 end Prod
+
+/-! ### Matrices over a product of a family -/
+
+section Pi
+
+variable {m n : Type*}
+
+/-- A product of matrices over a product `Π j, A j` of semirings is determined by its
+components: evaluation at each `j` is multiplicative. -/
+theorem mul_eq_of_forall_map_apply {J ν : Type*} {A : J → Type*}
+    [∀ j, NonUnitalNonAssocSemiring (A j)] [Fintype ν] {P : Matrix m ν (∀ j, A j)}
+    {Q : Matrix ν n (∀ j, A j)} {R : Matrix m n (∀ j, A j)}
+    (h : ∀ j, P.map (· j) * Q.map (· j) = R.map (· j)) : P * Q = R := by
+  ext a b j
+  simpa [Matrix.mul_apply] using congr_fun₂ (h j) a b
+
+end Pi
 
 end Matrix

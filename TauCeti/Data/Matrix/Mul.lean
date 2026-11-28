@@ -20,12 +20,15 @@ matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero. A submatrix of a product can be computed through part of the inner index, provided the
-relevant rows of the left factor vanish off that part. Products of matrices respect gradings of
-their indices: the identity matrix and a product of degree-preserving matrices are
-degree-preserving, and a product of matrices intertwining square matrices intertwines them.
+relevant rows of the left factor, or the relevant columns of the right factor, vanish off that
+part. Products of matrices respect gradings of their indices: the identity matrix and a product of
+degree-preserving matrices are degree-preserving, and a product of matrices intertwining square
+matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
 The outer product of two constant vectors is the constant matrix of their product.
+An outer product has vanishing `2 × 2` minors; conversely, a matrix with vanishing `2 × 2` minors
+and a unit entry is the outer product of a column and a rescaled row through that entry.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
@@ -50,6 +53,8 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
   is nonempty and neither factor is zero.
 * `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
   through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.submatrix_mul_of_injective_right`: the same when the range carries the relevant columns
+  of the right factor.
 * `Matrix.submatrix_val_mul_of_forall`: the same through the inclusions of subtypes, when the
   relevant rows of the left factor vanish off the inner subtype.
 * `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
@@ -61,6 +66,11 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
 * `Matrix.vecMulVec_const_const`: the outer product of constant vectors is a constant matrix.
+* `Matrix.map_vecMulVec`: a multiplicative map sends an outer product to the outer product of the
+  images of the vectors.
+* `Matrix.vecMulVec_apply_mul_vecMulVec_apply`: the `2 × 2` minors of an outer product vanish.
+* `Matrix.eq_vecMulVec_of_isUnit_apply`: conversely, a matrix with vanishing `2 × 2` minors and a
+  unit entry `A i j` is the outer product of its column `j` and its row `i` divided by `A i j`.
 * `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
   `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
   opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
@@ -140,6 +150,16 @@ theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K
   ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
     (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
 
+/-- The rows `e₁` and columns `e₃` of a matrix product can be computed through the inner indices
+`e₂` alone, when `e₂` is injective and the columns `e₃` of the right factor vanish outside its
+range. This is the right-factor version of `Matrix.submatrix_mul_of_injective`. -/
+theorem submatrix_mul_of_injective_right {l o q : Type*} [Fintype o] (A : Matrix m n K)
+    (B : Matrix n p K) (e₁ : l → m) (e₂ : o → n) (e₃ : q → p) (he₂ : Function.Injective e₂)
+    (hB : ∀ j k, B j (e₃ k) ≠ 0 → j ∈ Set.range e₂) :
+    (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
+  ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
+    (fun j hj ↦ by simp [not_ne_iff.mp (mt (hB j k) hj)]) fun _ ↦ rfl).symm
+
 /-- The rows satisfying `r` of a matrix product can be computed through the inner indices
 satisfying `s` alone, when the rows satisfying `r` of the left factor vanish at the inner indices
 not satisfying `s`. This is `Matrix.submatrix_mul_of_injective` for the inclusions of subtypes. -/
@@ -214,6 +234,30 @@ theorem submatrix_vecMulVec {α l m n o : Type*} [Mul α] (u : m → α) (v : n 
     (g : o → n) : (vecMulVec u v).submatrix f g = vecMulVec (u ∘ f) (v ∘ g) := by
   ext
   simp [vecMulVec_apply]
+
+/-- The entrywise image of an outer product under a multiplicative map is the outer product of the
+images of the vectors. -/
+@[simp]
+theorem map_vecMulVec {F α β m n : Type*} [Mul α] [Mul β] [FunLike F α β] [MulHomClass F α β]
+    (f : F) (u : m → α) (v : n → α) : (vecMulVec u v).map f = vecMulVec (f ∘ u) (f ∘ v) := by
+  ext
+  simp [vecMulVec_apply]
+
+/-- The `2 × 2` minors of an outer product vanish. -/
+theorem vecMulVec_apply_mul_vecMulVec_apply {α m n : Type*} [CommSemigroup α] (u : m → α)
+    (v : n → α) (i k : m) (j l : n) :
+    vecMulVec u v i j * vecMulVec u v k l = vecMulVec u v i l * vecMulVec u v k j := by
+  simp only [vecMulVec_apply]
+  ac_rfl
+
+/-- A matrix whose `2 × 2` minors vanish and whose entry `A i j` is a unit is the outer product of
+its column `j` and of its row `i` divided by `A i j`. -/
+theorem eq_vecMulVec_of_isUnit_apply {α m n : Type*} [CommMonoid α] {A : Matrix m n α}
+    (hA : ∀ i j k l, A i j * A k l = A i l * A k j) {i : m} {j : n} (h : IsUnit (A i j)) :
+    A = vecMulVec (A.col j) ((↑h.unit⁻¹ : α) • A.row i) := by
+  ext k l
+  rw [vecMulVec_apply, col_apply, Pi.smul_apply, row_apply, smul_eq_mul, mul_left_comm,
+    hA k j i l, mul_left_comm, h.val_inv_mul, mul_one]
 
 section MulOpposite
 

@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The trace–determinant formula and Lefschetz zeta functions
@@ -165,7 +165,7 @@ theorem subst_exp_det_one_sub_pow_mul_fin_two (A : Matrix (Fin 2) (Fin 2) R) :
 `exp (∑ₙ det (1 - A ^ n) Xⁿ / n) = det (1 - X A) / (1 - X) ^ 2`. -/
 theorem subst_exp_det_one_sub_pow_fin_two_of_det_eq_one (hA : A.det = 1) :
     (exp R).subst (mk fun n ↦ (n : ℚ)⁻¹ • (1 - A ^ n).det) =
-      (A.charpolyRev : R⟦X⟧) * mk 1 ^ 2 := by
+      (A.charpolyRev : R⟦X⟧) * PowerSeries.mk 1 ^ 2 := by
   have h := subst_exp_det_one_sub_pow_mul_fin_two A
   rw [hA, map_one, one_mul] at h
   rw [← h, mul_assoc, ← sq, ← mul_pow, mul_comm (1 - X), mk_one_mul_one_sub_eq_one, one_pow,
@@ -175,7 +175,7 @@ omit [Algebra ℚ R] in
 /-- For a `2 × 2` matrix `A` of determinant one and `n ≠ 0`, the coefficient of `Xⁿ` in
 `det (1 - X A) / (1 - X) ^ 2 = det (1 - X A) (∑ Xᵏ) ^ 2` is `n det (1 - A)`. -/
 theorem coeff_coe_charpolyRev_mul_mk_one_sq_fin_two (hA : A.det = 1) {n : ℕ} (hn : n ≠ 0) :
-    coeff n ((A.charpolyRev : R⟦X⟧) * mk 1 ^ 2) = n * (1 - A).det := by
+    coeff n ((A.charpolyRev : R⟦X⟧) * PowerSeries.mk 1 ^ 2) = n * (1 - A).det := by
   rw [Polynomial.coeff_coe_mul_mk_one_sq _ ((natDegree_charpolyRev_le A).trans (by simp; omega)),
     eval_one_charpolyRev, charpolyRev_fin_two, det_one_sub_fin_two, hA]
   simp only [map_one, one_mul, Polynomial.derivative_add, Polynomial.derivative_sub,
@@ -205,6 +205,14 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R
 theorem constantCoeff_coe_reverse_charpoly (f : Module.End R M) :
     constantCoeff (f.charpoly.reverse : R⟦X⟧) = 1 := by
   rw [charpoly_def, Matrix.reverse_charpoly, Matrix.constantCoeff_coe_charpolyRev]
+
+/-- A finite product of power series `det (1 - X fᵢ)` has constant coefficient one. -/
+theorem constantCoeff_prod_coe_reverse_charpoly {ι : Type*} (s : Finset ι) {V : ι → Type*}
+    [∀ i, AddCommGroup (V i)] [∀ i, Module R (V i)] [∀ i, Module.Free R (V i)]
+    [∀ i, Module.Finite R (V i)] (f : ∀ i, Module.End R (V i)) :
+    constantCoeff (∏ i ∈ s, ((f i).charpoly.reverse : R⟦X⟧)) = 1 := by
+  rw [map_prod]
+  exact Finset.prod_eq_one fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i)
 
 variable [Algebra ℚ R]
 
@@ -252,9 +260,7 @@ theorem subst_exp_mul_prod_even_eq_prod_odd (s : Finset ℕ) {V : ℕ → Type*}
     PowerSeries.mk fun k ↦ (k : ℚ)⁻¹ • ∑ i ∈ s, (-1) ^ i * trace R (V i) (f i ^ k)
   have hL : constantCoeff L = 0 := by
     simp [L]
-  have hc (t : Finset ℕ) : constantCoeff (∏ i ∈ t, ((f i).charpoly.reverse : R⟦X⟧)) = 1 := by
-    rw [map_prod]
-    exact Finset.prod_eq_one fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i)
+  have hc (t : Finset ℕ) := constantCoeff_prod_coe_reverse_charpoly t f
   rw [← logOf_inj (by rw [map_mul, constantCoeff_subst_exp hL, hc, one_mul]) (hc _),
     logOf_mul (constantCoeff_subst_exp hL) (hc _), logOf_subst_exp hL,
     logOf_prod fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i),
@@ -286,7 +292,7 @@ theorem subst_exp_eq_prod_odd_mul_inv {K : Type*} [Field K] [Algebra ℚ K] (s :
       (∏ i ∈ s with Odd i, ((f i).charpoly.reverse : K⟦X⟧)) *
         (∏ i ∈ s with Even i, ((f i).charpoly.reverse : K⟦X⟧))⁻¹ := by
   have hc : constantCoeff (∏ i ∈ s with Even i, ((f i).charpoly.reverse : K⟦X⟧)) ≠ 0 := by
-    rw [map_prod, Finset.prod_eq_one fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i)]
+    rw [constantCoeff_prod_coe_reverse_charpoly]
     exact one_ne_zero
   rw [← subst_exp_mul_prod_even_eq_prod_odd, mul_assoc, PowerSeries.mul_inv_cancel _ hc, mul_one]
 
