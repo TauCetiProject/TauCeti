@@ -10,14 +10,13 @@ public import TauCeti.RingTheory.PolynomialLaw.Determinant
 /-!
 # `D(1 + r r') = D(1 + r' r)`
 
-For a determinant `D` on an `A`-algebra `R` and `r, r' ∈ R`, `D(1 + r r') = D(1 + r' r)`, the
-analogue of Mathlib's `Matrix.det_one_add_mul_comm`.
+For a determinant `D` on an `A`-algebra `R` over an additively cancellative semiring `A`,
+`D(1 + r r') = D(1 + r' r)` for any `r, r' ∈ R`, the analogue of Mathlib's
+`Matrix.det_one_add_mul_comm`.
 
-The proof avoids inverting `r`. After scalar extension to `A[X]`, the element `u = X + r` satisfies
-`u (1 + r' u) = (1 + u r') u`, so multiplicativity gives `D(u) D(1 + r' u) = D(1 + u r') D(u)`.
-Here `D(u)` is the characteristic polynomial of `(-1) • r`, monic, hence a non-zero-divisor of
-`A[X]`, so `D(1 + r' u) = D(1 + u r')` in `A[X]`. Evaluating at `X = 0`, which the law commutes
-with, gives the claim.
+This follows from the cyclicity of each characteristic coefficient
+(`TauCeti.Determinant.charCoeff_mul_comm`) and the evaluation formula for a scalar translate
+(`TauCeti.Determinant.map_smul_add_algebraMap`).
 
 ## Main declarations
 
@@ -35,37 +34,20 @@ noncomputable section
 
 universe u
 
-open TensorProduct Polynomial
-
 namespace TauCeti
 
 namespace Determinant
 
-variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {d : ℕ}
-  (D : Determinant A R d)
+variable {A : Type u} [CommSemiring A] [IsCancelAdd A] {R : Type*} [Semiring R] [Algebra A R]
+  {d : ℕ} (D : Determinant A R d)
 
-/-- **`D(1 + r r') = D(1 + r' r)`** for a determinant `D` and any `r, r' ∈ R`. -/
+/-- For a determinant over an additively cancellative semiring,
+`D(1 + r r') = D(1 + r' r)` for any `r, r'`. -/
 theorem map_one_add_mul_comm (r r' : R) : D (1 + r * r') = D (1 + r' * r) := by
-  set u : A[X] ⊗[A] R := X ⊗ₜ 1 + 1 ⊗ₜ r
-  set v : A[X] ⊗[A] R := 1 ⊗ₜ r'
-  let F : A[X] ⊗[A] R → A[X] := fun z ↦ Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun A[X] z)
-  have hF (z w : A[X] ⊗[A] R) : F (z * w) = F z * F w := by
-    simp only [F, D.isMultiplicative.toFun_mul, _root_.map_mul]
-  have hcomm : u * (1 + v * u) = (1 + u * v) * u := by
-    simp only [mul_add, add_mul, mul_one, one_mul, mul_assoc]
-  have hcancel : F (1 + v * u) = F (1 + u * v) := by
-    have h := congrArg F hcomm
-    rw [hF, hF, mul_comm (F (1 + u * v))] at h
-    have hu : F u = D.charpoly ((-1 : A) • r) := by
-      rw [charpoly_def, PolynomialLaw.toFun'_eq_toFun, ← smul_tmul, neg_one_smul,
-        neg_tmul, sub_neg_eq_add]
-    exact (hu ▸ D.charpoly_monic _).isRegular.left h
-  have h1 : LinearMap.rTensor R (aeval (0 : A)).toLinearMap (1 + v * u) = 1 ⊗ₜ (1 + r' * r) := by
-    simp [u, v, Algebra.TensorProduct.one_def, mul_add, tmul_add]
-  have h2 : LinearMap.rTensor R (aeval (0 : A)).toLinearMap (1 + u * v) = 1 ⊗ₜ (1 + r * r') := by
-    simp [u, v, Algebra.TensorProduct.one_def, add_mul, tmul_add]
-  rw [D.apply_eq_rid_toFun_of_rTensor_eq _ h2, D.apply_eq_rid_toFun_of_rTensor_eq _ h1]
-  exact congrArg (aeval (0 : A)) hcancel.symm
+  have h (x : R) : D (1 + x) = ∑ i ∈ Finset.range (d + 1), D.charCoeff i x := by
+    simpa only [one_smul, _root_.map_one, one_pow, mul_one, one_mul, add_comm (1 : R)]
+      using D.map_smul_add_algebraMap 1 1 x
+  simp only [h, D.charCoeff_mul_comm]
 
 end Determinant
 
