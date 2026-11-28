@@ -79,6 +79,17 @@ theorem adjoin_eq_top_of_ι_one_mem {s : Set (SymmetricAlgebra R R)} (h : ι R R
   simpa only [SetLike.mem_coe, ← map_smul, smul_eq_mul, mul_one] using
     Subalgebra.smul_mem _ (Algebra.subset_adjoin h) r
 
+/-- Every subset of an `R`-algebra `A` equivalent to `SymmetricAlgebra R R` via `e` that contains
+`e.symm (ι R R 1)` generates `A` as an `R`-algebra. -/
+theorem adjoin_eq_top_of_algEquiv_symm_ι_one_mem {A : Type*} [Semiring A] [Algebra R A]
+    (e : A ≃ₐ[R] SymmetricAlgebra R R) {s : Set A} (h : e.symm (ι R R 1) ∈ s) :
+    Algebra.adjoin R s = ⊤ := by
+  have htop : Algebra.adjoin R (e '' s) = ⊤ :=
+    adjoin_eq_top_of_ι_one_mem ⟨_, h, e.apply_symm_apply _⟩
+  rw [show s = e.symm '' (e '' s) by ext x; simp, ← AlgEquiv.coe_toAlgHom e.symm,
+    ← AlgHom.map_adjoin, htop]
+  exact top_le_iff.mp fun x _ ↦ ⟨e x, Algebra.mem_top, e.symm_apply_apply x⟩
+
 /-- A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
 generators. See note [partially-applied ext lemmas]. -/
 @[ext high]

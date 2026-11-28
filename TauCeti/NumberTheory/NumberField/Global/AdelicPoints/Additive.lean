@@ -127,18 +127,6 @@ theorem scaledAdditive_toGenericFiber_ι (c : Kˣ) (r : S.integer K) :
     AdditiveGroup.gaScalarTensorBialgEquiv_tmul_ι, one_smul]
   simp [Units.smul_def]
 
-private theorem adjoin_algEquiv_symm_ι_one_eq_top {C : Type*} [CommRing C]
-    [Algebra (S.integer K) C]
-    (e : C ≃ₐ[S.integer K] SymmetricAlgebra (S.integer K) (S.integer K)) :
-    Algebra.adjoin (S.integer K)
-        (Set.range fun _ : Unit ↦ e.symm (SymmetricAlgebra.ι (S.integer K) (S.integer K) 1)) =
-      ⊤ := by
-  have htop : Algebra.adjoin (S.integer K)
-      (Set.range fun _ : Unit ↦ SymmetricAlgebra.ι (S.integer K) (S.integer K) 1) = ⊤ :=
-    SymmetricAlgebra.adjoin_eq_top_of_ι_one_mem ⟨(), rfl⟩
-  rw [Set.range_comp' e.symm, ← AlgEquiv.coe_toAlgHom e.symm, ← AlgHom.map_adjoin, htop]
-  exact top_le_iff.mp fun x _ ↦ ⟨e x, Algebra.mem_top, e.symm_apply_apply x⟩
-
 /-- At `v ∉ S`, `g ∈ (scaledAdditive R K S c).localPoints v hv` iff `c * (gaPointsMulEquiv g).toAdd`
 lies in `v.adicCompletionIntegers K`. -/
 @[simp high]
@@ -148,7 +136,10 @@ theorem mem_localPoints_scaledAdditive_iff (c : Kˣ) {v : HeightOneSpectrum R} (
       algebraMap K (v.adicCompletion K) (c : K) *
         Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv g) ∈ v.adicCompletionIntegers K := by
   rw [(scaledAdditive R K S c).mem_localPoints_iff_of_adjoin_eq_top hv
-    (adjoin_algEquiv_symm_ι_one_eq_top (scaledAdditiveCoordinateEquiv R K S c)),
+    (a := fun _ : Unit ↦
+      (scaledAdditiveCoordinateEquiv R K S c).symm (SymmetricAlgebra.ι (S.integer K) _ 1))
+    (SymmetricAlgebra.adjoin_eq_top_of_algEquiv_symm_ι_one_mem
+      (scaledAdditiveCoordinateEquiv R K S c) ⟨(), rfl⟩),
     Unique.forall_iff, scaledAdditive_toGenericFiber_ι, Subalgebra.coe_one, mul_one,
     AdditiveGroup.ofConv_ι]
 
@@ -159,7 +150,10 @@ theorem mem_localPoints_additive_iff {v : HeightOneSpectrum R} (hv : v ∉ S)
     g ∈ (additive R K S).localPoints v hv ↔
       Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv g) ∈ v.adicCompletionIntegers K := by
   rw [(additive R K S).mem_localPoints_iff_of_adjoin_eq_top hv
-    (adjoin_algEquiv_symm_ι_one_eq_top (additiveCoordinateEquiv R K S)),
+    (a := fun _ : Unit ↦
+      (additiveCoordinateEquiv R K S).symm (SymmetricAlgebra.ι (S.integer K) _ 1))
+    (SymmetricAlgebra.adjoin_eq_top_of_algEquiv_symm_ι_one_mem
+      (additiveCoordinateEquiv R K S) ⟨(), rfl⟩),
     Unique.forall_iff, additive_toGenericFiber_ι, Subalgebra.coe_one,
     AdditiveGroup.toAdd_gaPointsMulEquiv]
 
