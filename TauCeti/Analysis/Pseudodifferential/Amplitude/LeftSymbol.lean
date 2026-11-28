@@ -665,6 +665,19 @@ private theorem HasProperInputSupport.extendCompletion_support [CompleteSpace W]
     refine ⟨L, hL, fun x hx y hy ξ ↦ ?_⟩
     rw [coefficient_extendCompletion, hLa x hx y hy ξ, map_zero]
 
+private theorem quantizeAmplitudeValue_eq_quantizeSchwartzValue_extendCompletion [CompleteSpace W]
+    {a : Amplitude n V W m} (ha : a.HasProperInputSupport) (u : 𝓢(CoordinateSpace n, V)) :
+    quantizeAmplitudeValue a.coefficient u = quantizeSchwartzValue
+      ((extendCompletion a).leftSymbol ha.extendCompletion_support).coefficient
+      (u.postcompCLM (UniformSpace.Completion.toComplL : V →L[ℂ] UniformSpace.Completion V)) := by
+  let uExt : 𝓢(CoordinateSpace n, UniformSpace.Completion V) :=
+    u.postcompCLM (UniformSpace.Completion.toComplL : V →L[ℂ] UniformSpace.Completion V)
+  funext x
+  rw [quantizeSchwartzValue_leftSymbol ha.extendCompletion_support uExt x]
+  refine quantizeAmplitudeValue_congr_apply_at fun y ξ ↦ ?_
+  have hcoe : uExt y = (u y : UniformSpace.Completion V) := SchwartzMap.postcompCLM_apply _ u y
+  rw [hcoe, coefficient_extendCompletion, ContinuousLinearMap.fromCompletionL_apply_coe]
+
 /-- **Proper input support implies smooth outputs.** Unconditional on completeness of `V` and `W`:
 for any amplitude `a` with proper input support and any Schwartz function `u`, `Op(a) u` is `C^∞`
 on `ℝⁿ`. -/
@@ -676,18 +689,31 @@ theorem HasProperInputSupport.contDiff_quantizeAmplitudeValue
       funext fun x ↦ by rw [quantizeAmplitudeValue_def, integral_of_not_completeSpace hW]; rfl
     rw [hzero]
     exact contDiff_const
-  let uExt : 𝓢(CoordinateSpace n, UniformSpace.Completion V) :=
-    u.postcompCLM (UniformSpace.Completion.toComplL : V →L[ℂ] UniformSpace.Completion V)
-  have hquant : quantizeAmplitudeValue a.coefficient u = quantizeSchwartzValue
-      ((extendCompletion a).leftSymbol ha.extendCompletion_support).coefficient uExt := by
-    funext x
-    rw [quantizeSchwartzValue_leftSymbol ha.extendCompletion_support uExt x]
-    refine quantizeAmplitudeValue_congr_apply_at fun y ξ ↦ ?_
-    have hcoe : uExt y = (u y : UniformSpace.Completion V) := SchwartzMap.postcompCLM_apply _ u y
-    rw [hcoe, coefficient_extendCompletion, ContinuousLinearMap.fromCompletionL_apply_coe]
-  rw [hquant]
+  rw [quantizeAmplitudeValue_eq_quantizeSchwartzValue_extendCompletion ha u]
   exact ((extendCompletion a).leftSymbol ha.extendCompletion_support
-    ).contDiff_quantizeSchwartzValue uExt
+    ).contDiff_quantizeSchwartzValue _
+
+/-- Quantization of an amplitude with proper input support is additive in the input Schwartz
+function, unconditionally on completeness of `V` and `W`. -/
+theorem HasProperInputSupport.quantizeAmplitudeValue_add_right
+    {a : Amplitude n V W m} (ha : a.HasProperInputSupport) (u v : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeAmplitudeValue a.coefficient (u + v) x =
+      quantizeAmplitudeValue a.coefficient u x + quantizeAmplitudeValue a.coefficient v x := by
+  by_cases hW : CompleteSpace W; swap
+  · simp [quantizeAmplitudeValue_def, integral_of_not_completeSpace hW]
+  have h_eq (w : 𝓢(CoordinateSpace n, V)) : quantizeAmplitudeValue a.coefficient w x =
+      quantizeSchwartzValue
+        ((extendCompletion a).leftSymbol ha.extendCompletion_support).coefficient
+        (w.postcompCLM (UniformSpace.Completion.toComplL : V →L[ℂ] UniformSpace.Completion V))
+        x :=
+    congrFun (quantizeAmplitudeValue_eq_quantizeSchwartzValue_extendCompletion ha w) x
+  obtain ⟨C, -, hC⟩ :=
+    ((extendCompletion a).leftSymbol ha.extendCompletion_support).exists_bound_coefficient_slice x
+  rw [h_eq (u + v), h_eq u, h_eq v, map_add]
+  exact quantizeSchwartzValue_add_right
+    (((extendCompletion a).leftSymbol ha.extendCompletion_support
+      ).continuous_coefficient_slice x).aestronglyMeasurable hC _ _
 
 end Amplitude
 

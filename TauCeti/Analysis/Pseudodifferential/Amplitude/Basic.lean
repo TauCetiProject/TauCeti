@@ -166,6 +166,13 @@ theorem quantizeAmplitudeValue_def (a : E × E × E → V →L[ℂ] W) (u : 𝓢
     quantizeAmplitudeValue a u x = ∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 (fun y ↦ a (x, y, (2 * π) • ζ) (u y)) ζ :=
   (rfl)
 
+/-- Amplitude quantization is homogeneous in the input Schwartz function. -/
+@[simp]
+theorem quantizeAmplitudeValue_smul_right (a : E × E × E → V →L[ℂ] W) (c : ℂ) (u : 𝓢(E, V))
+    (x : E) : quantizeAmplitudeValue a (c • u) x = c • quantizeAmplitudeValue a u x := by
+  simp only [quantizeAmplitudeValue_def, smul_apply, map_smul, Real.fourier_eq,
+    smul_comm _ c, integral_smul]
+
 /-- Two amplitude-function pairs whose applied input slices agree at output position `x` quantize
 to the same value at `x`. -/
 theorem quantizeAmplitudeValue_congr_apply_at {V₁ V₂ : Type*} [NormedAddCommGroup V₁]

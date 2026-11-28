@@ -46,6 +46,7 @@ when the opposite factor is noncompact and the fixed factor is nonempty
 * `TauCeti.hasProperInputSupport_iff`, `TauCeti.hasProperOutputSupport_iff`.
 * `TauCeti.hasProperInputSupport_comp_sub`, `TauCeti.hasProperOutputSupport_comp_sub`,
   `TauCeti.hasProperSupport_comp_sub`.
+* `HasCompactSupport.hasProperSupport`.
 * `TauCeti.not_hasProperInputSupport_const`, `TauCeti.not_hasProperOutputSupport_const`,
   `TauCeti.not_hasProperSupport_const`.
 -/
@@ -145,6 +146,33 @@ theorem HasProperSupport.of_tsupport_subset {K : X → Y → M} {K' : X → Y �
     (hK : HasProperSupport K) (hsub : tsupport (uncurry K') ⊆ tsupport (uncurry K)) :
     HasProperSupport K' :=
   ⟨hK.1.of_tsupport_subset hsub, hK.2.of_tsupport_subset hsub⟩
+
+/-- Any kernel whose closed support in `X × Y` is compact has proper input support. No separation
+axiom is needed. -/
+private theorem hasProperInputSupport_of_hasCompactSupport {K : X → Y → M}
+    (hK : HasCompactSupport (uncurry K)) : HasProperInputSupport K := by
+  rw [HasProperInputSupport, isProperMap_iff_ultrafilter]
+  refine ⟨continuous_fst.comp continuous_subtypeVal, fun 𝒰 x hx ↦ ?_⟩
+  obtain ⟨q, -, hqu⟩ := hK.ultrafilter_le_nhds (𝒰.map Subtype.val)
+    (le_principal_iff.2 (mem_map.2 (univ_mem' Subtype.coe_prop)))
+  have hy : Tendsto (fun p : tsupport (uncurry K) ↦ p.val.2) 𝒰 (𝓝 q.2) :=
+    (continuous_snd.tendsto q).comp hqu
+  have hxy : Tendsto (Subtype.val : tsupport (uncurry K) → X × Y) 𝒰 (𝓝 (x, q.2)) :=
+    hx.prodMk_nhds hy
+  exact ⟨⟨(x, q.2), (isClosed_tsupport _).mem_of_tendsto hxy (univ_mem' Subtype.coe_prop)⟩, rfl,
+    tendsto_subtype_rng.2 hxy⟩
+
+/-- A binary kernel with compact joint support `(x, y) ↦ K x y` is properly supported. Project
+onto `TauCeti.HasProperInputSupport` or `TauCeti.HasProperOutputSupport` with
+`TauCeti.HasProperSupport.hasProperInputSupport` and
+`TauCeti.HasProperSupport.hasProperOutputSupport`. -/
+theorem _root_.HasCompactSupport.hasProperSupport {K : X → Y → M}
+    (hK : HasCompactSupport (uncurry K)) : HasProperSupport K := by
+  refine ⟨hasProperInputSupport_of_hasCompactSupport hK, ?_⟩
+  rw [← hasProperInputSupport_flip_iff]
+  exact hasProperInputSupport_of_hasCompactSupport <| by
+    simpa [uncurry_def, _root_.flip, Function.comp_def] using
+      hK.comp_homeomorph (Homeomorph.prodComm Y X)
 
 @[simp]
 theorem hasProperInputSupport_zero : HasProperInputSupport (0 : X → Y → M) := by

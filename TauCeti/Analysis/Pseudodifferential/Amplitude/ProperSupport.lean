@@ -130,6 +130,22 @@ theorem hasProperSupport_iff_kernel {a : Amplitude n V W m} :
   rw [HasProperSupport, TauCeti.hasProperSupport_iff, hasProperInputSupport_iff_kernel,
     hasProperOutputSupport_iff_kernel]
 
+@[simp]
+theorem hasProperInputSupport_inclusion_iff {m' : ℝ} (h : m ≤ m') (a : Amplitude n V W m) :
+    (inclusion h a).HasProperInputSupport ↔ a.HasProperInputSupport := by
+  simp only [hasProperInputSupport_iff, coefficient_inclusion]
+
+@[simp]
+theorem hasProperOutputSupport_inclusion_iff {m' : ℝ} (h : m ≤ m') (a : Amplitude n V W m) :
+    (inclusion h a).HasProperOutputSupport ↔ a.HasProperOutputSupport := by
+  simp only [hasProperOutputSupport_iff, coefficient_inclusion]
+
+@[simp]
+theorem hasProperSupport_inclusion_iff {m' : ℝ} (h : m ≤ m') (a : Amplitude n V W m) :
+    (inclusion h a).HasProperSupport ↔ a.HasProperSupport := by
+  simp only [hasProperSupport_iff, hasProperInputSupport_inclusion_iff,
+    hasProperOutputSupport_inclusion_iff]
+
 /-- An amplitude vanishing at all pairs of positions at distance more than `R` has proper output
 support. -/
 theorem hasProperOutputSupport_of_lt_dist {a : Amplitude n V W m} {R : ℝ}
