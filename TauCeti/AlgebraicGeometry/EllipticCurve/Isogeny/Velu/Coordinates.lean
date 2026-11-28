@@ -19,9 +19,11 @@ For a finite subgroup `Φ` of rational points of an elliptic curve, Vélu's func
 They are functions in the original function field, invariant under every translation in `Φ`.
 Their poles are exactly the places in the `Φ`-orbit of infinity, with orders two and three,
 respectively. At infinity only the identity translation contributes a pole. In particular these
-functions are nonconstant, even when the characteristic divides the order of `Φ`. They are the
-candidate coordinates for an explicit Weierstrass presentation of the translation fixed field;
-the equation relating them is not established here.
+functions are nonconstant, even when the characteristic divides the order of `Φ`.
+The lemmas `infinityPlace_veluX_sub_genericX_lt_one` and
+`infinityPlace_veluY_sub_genericY_lt_one` sharpen this comparison: the differences vanish at
+infinity, by the point–place dictionary and the valuation formula for translations.
+The equation relating the coordinates is established in `Isogeny/Velu/Equation.lean`.
 
 The sums below include the identity. The coordinate accessors are zero there, and translation
 by the identity fixes `x` and `y`, so this is precisely the displayed normalization, not an
@@ -116,6 +118,52 @@ private theorem valuation_normalized_sum (r : W.CoordinateRing) (c : F)
         intro h; exact hQ0 (Subtype.ext h)) r).trans_lt hr
   rw [Valuation.map_sub_eq_of_lt_left _ (lt_of_le_of_lt
     (Valuation.IsTrivialOn.valuation_algebraMap_le_one W.infinityPlace c) (hsum ▸ hr)), hsum]
+
+/-- The normalized sum differs from its identity summand by a function vanishing at infinity
+if the subtracted constants are the values at the nonzero points. -/
+private theorem infinityPlace_sum_translation_sub_lt_one (f : W.FunctionField)
+    (c : (W⁄F).toAffine.Point → F) (hc : c 0 = 0)
+    (h : ∀ (P : W.Point), Point.equivBaseChangeSelf W P ∈ Φ → P ≠ 0 →
+      (pointEquivDegreeOnePlace W P).val.valuation
+        (f - algebraMap F W.FunctionField (c (Point.equivBaseChangeSelf W P))) < 1) :
+    W.infinityPlace ((∑ Q : Φ, (translation W Q f -
+      algebraMap F W.FunctionField (c Q))) - f) < 1 := by
+  classical
+  -- The identity summand cancels the untranslated function.
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ 0), AddSubgroup.coe_zero,
+    translation_zero, AlgEquiv.one_apply, hc, map_zero, sub_zero, add_sub_cancel_left]
+  refine W.infinityPlace.map_sum_lt one_ne_zero fun Q hQ ↦ ?_
+  obtain ⟨P, hP⟩ := (Point.equivBaseChangeSelf W).surjective Q.val
+  rw [← AlgEquiv.commutes (translation W (Q : (W⁄F).toAffine.Point)), ← map_sub, ← hP,
+    P.infinityPlace_translation]
+  refine h P (hP.symm ▸ Q.property) ?_
+  intro hzero
+  exact (Finset.mem_erase.mp hQ).1 (Subtype.ext
+    (by simpa only [hzero, map_zero, AddSubgroup.coe_zero] using hP.symm))
+
+/-- The difference between Vélu's normalized `x`-coordinate and `x` vanishes at infinity
+(Vélu, 1971). -/
+theorem _root_.WeierstrassCurve.Affine.infinityPlace_veluX_sub_genericX_lt_one :
+    W.infinityPlace (veluX W Φ - genericX W) < 1 := by
+  rw [veluX]
+  refine infinityPlace_sum_translation_sub_lt_one W Φ _ _ (by simp) fun P _ hP ↦ ?_
+  rw [Point.xCoord_equivBaseChangeSelf]
+  rcases P with _ | ⟨x, y, he⟩
+  · exact (hP rfl).elim
+  · rw [Point.xCoord_some, coe_pointEquivDegreeOnePlace_some]
+    exact valuation_pointPlace_genericX_sub_lt_one W he.1
+
+/-- The difference between Vélu's normalized `y`-coordinate and `y` vanishes at infinity
+(Vélu, 1971). -/
+theorem _root_.WeierstrassCurve.Affine.infinityPlace_veluY_sub_genericY_lt_one :
+    W.infinityPlace (veluY W Φ - genericY W) < 1 := by
+  rw [veluY]
+  refine infinityPlace_sum_translation_sub_lt_one W Φ _ _ (by simp) fun P _ hP ↦ ?_
+  rw [Point.yCoord_equivBaseChangeSelf]
+  rcases P with _ | ⟨x, y, he⟩
+  · exact (hP rfl).elim
+  · rw [Point.yCoord_some, coe_pointEquivDegreeOnePlace_some]
+    exact valuation_pointPlace_genericY_sub_lt_one W he.1
 
 /-- Vélu's `x`-coordinate has the same double pole at infinity as `x`. -/
 @[simp]

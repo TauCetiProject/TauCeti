@@ -23,6 +23,8 @@ divisor of the function, which is what the divisor calculus of the Weil pairing 
 
 * `WeierstrassCurve.Affine.translation_smul_pointEquivDegreeOnePlace`: `τ_P^*` carries the
   place of `Q` to the place of `Q - P`.
+* `WeierstrassCurve.Affine.Point.infinityPlace_translation`: the valuation of a translated function
+  at infinity is its original valuation at the translating point.
 
 ## References
 
@@ -60,6 +62,18 @@ theorem translation_smul_pointEquivDegreeOnePlace (P Q : W.Point) :
     reductionOfDegreeEqOne_genericPoint, reductionOfDegreeEqOne_baseChange, map_sub,
     sub_eq_add_neg]
 
+variable {W} in
+/-- At infinity, a translated function has the same valuation as the original function at
+the place of the translating point. -/
+theorem Point.infinityPlace_translation (P : W.Point) (f : W.FunctionField) :
+    W.infinityPlace (translation W (Point.equivBaseChangeSelf W P) f) =
+      (pointEquivDegreeOnePlace W P).val.valuation f := by
+  -- The inverse translation sends infinity to the place of `P`.
+  rw [← Place.valuation_infinity, ← AlgEquiv.symm_symm (translation W _),
+    ← Place.valuation_smul, ← AlgEquiv.aut_inv, ← translation_neg, ← map_neg,
+    ← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
+    translation_smul_pointEquivDegreeOnePlace, zero_sub, neg_neg]
+
 end WeierstrassCurve.Affine
 
 namespace TauCeti
@@ -73,22 +87,11 @@ theorem _root_.WeierstrassCurve.Affine.valuation_translation_le_one
     {P : (W⁄F).toAffine.Point} (hP : P ≠ 0)
     (r : W.CoordinateRing) :
     W.infinityPlace (translation W P (algebraMap W.CoordinateRing W.FunctionField r)) ≤ 1 := by
-  let Q := (Point.equivBaseChangeSelf W).symm P
-  have hQ : Q ≠ 0 := by
-    intro h
-    have := congrArg (Point.equivBaseChangeSelf W) h
-    exact hP (by simpa [Q] using this)
-  -- The inverse translation carries infinity to the place of the nonzero point `Q`.
-  have hplace : (translation W P)⁻¹ • Place.infinity W ≠ Place.infinity W := by
-    rw [← translation_neg, ← (Point.equivBaseChangeSelf W).apply_symm_apply P, ← map_neg,
-      ← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
-      translation_smul_pointEquivDegreeOnePlace, zero_sub, neg_neg]
-    intro h
-    have := (pointEquivDegreeOnePlace W).injective (Subtype.ext h)
-    exact hQ (by simpa [Q] using this)
-  simpa only [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm,
-    Place.valuation_infinity] using
-    Place.valuation_algebraMap_le_one_of_ne_infinity hplace r
+  obtain ⟨Q, rfl⟩ := (Point.equivBaseChangeSelf W).surjective P
+  rw [Q.infinityPlace_translation]
+  apply Place.valuation_algebraMap_le_one_of_ne_infinity _ r
+  rw [← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def]
+  exact fun h ↦ hP (by rw [(pointEquivDegreeOnePlace W).injective (Subtype.ext h), map_zero])
 
 end TauCeti
 
