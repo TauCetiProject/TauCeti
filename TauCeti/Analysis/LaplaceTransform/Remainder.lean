@@ -15,11 +15,13 @@ import TauCeti.MeasureTheory.Integral.RpowLaplace
 # The remainder bound of Watson's lemma
 
 If `G : ℝ → E`, with values in a real normed space, is `O(t^{s-1})` as `t → 0+`, then its
-Laplace integral `∫₀^∞ e^{-xt} G(t) dt` is `O(x^{-s})` as `x → +∞`. One splits the integral at a
-small `δ`: near `0` the bound on `G` gives `O(x^{-s})` through the Gamma integral, and beyond `δ`
-the factor `e^{-xt}` contributes `O(e^{-δx})`, which is smaller than every power of `x`. This is
-the estimate behind Watson's lemma, `Asymptotics.hasAsymptoticExpansion_laplace` of
-`TauCeti.Analysis.LaplaceTransform.Watson`; it is kept apart from that file so that the real
+Laplace integral `∫₀^∞ e^{-xt} G(t) dt` is `O(x^{-s})` as `x → +∞`, and for `G` with values in a
+complex normed space, `∫₀^∞ e^{-zt} G(t) dt` is `O((re z)^{-s})` as `re z → +∞`. One splits
+the integral at a small `δ`: near `0` the bound on `G` gives `O(x^{-s})` through the Gamma
+integral, and beyond `δ` the factor `e^{-xt}` contributes `O(e^{-δx})`, which is smaller than
+every power of `x`. This is the estimate behind Watson's lemma,
+`Asymptotics.hasAsymptoticExpansion_laplace` and `Asymptotics.hasAsymptoticExpansion_laplace_sector`
+of `TauCeti.Analysis.LaplaceTransform.Watson`; it is kept apart from that file so that the real
 estimate does not need the complex expansion, and apart from
 `TauCeti.MeasureTheory.Integral.RpowLaplace` so that its importers do not need
 `TauCeti.MeasureTheory.Integral.Exp.Damped`.
@@ -32,6 +34,10 @@ estimate does not need the complex expansion, and apart from
   `TauCeti.MeasureTheory.Integral.RpowLaplace`, and beyond a small `δ` the tail bound
   `TauCeti.norm_setIntegral_Ioi_exp_neg_mul_smul_le` of
   `TauCeti.MeasureTheory.Integral.Exp.Damped`, which is `O(e^{-δx})`.
+* `TauCeti.isBigO_integral_cexp_neg_mul_smul`: the same bound at a complex rate. If
+  `G(t) = O(t^{s-1})` as `t → 0+`, then `∫₀^∞ e^{-zt} G(t) dt = O((re z)^{-s})` along every filter
+  on `ℂ` along which `re z → +∞`, such as `z → ∞` in a closed sector `|arg z| ≤ θ < π/2`. The
+  norm of the integral is at most the real Laplace integral of `‖G‖` at `re z`.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMFMathlib/Analysis/Asymptotics/Watson.lean`.
@@ -109,5 +115,24 @@ theorem isBigO_integral_exp_neg_mul_smul {G : ℝ → E} {s : ℝ}
       funext fun x => integral_undef (hex x)
     rw [h0]
     exact isBigO_zero _ _
+
+/-- **Watson's remainder bound at a complex rate.** If `G(t) = O(t^{s-1})` as `t → 0+`, then
+`∫₀^∞ e^{-zt} G(t) dt = O((re z)^{-s})` along every filter `l` on `ℂ` along which `re z → +∞`.
+The integral is at most the real Laplace integral of `‖G‖` at `re z`, which
+`isBigO_integral_exp_neg_mul_smul` bounds. -/
+theorem isBigO_integral_cexp_neg_mul_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    {G : ℝ → F} {s : ℝ} {l : Filter ℂ} (hl : Tendsto Complex.re l atTop)
+    (hG : G =O[𝓝[>] 0] fun t => t ^ (s - 1)) :
+    (fun z : ℂ => ∫ t in Ioi (0 : ℝ), Complex.exp (-(z * t)) • G t) =O[l]
+      fun z => z.re ^ (-s) := by
+  -- the real Laplace integral of `‖G‖`, which dominates the norm of the complex one
+  have hH := (isBigO_integral_exp_neg_mul_smul hG.norm_left).comp_tendsto hl
+  refine IsBigO.trans (IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_)) hH
+  refine (norm_integral_le_integral_norm _).trans ?_
+  have hnorm (t : ℝ) : ‖Complex.exp (-(z * t)) • G t‖ = Real.exp (-z.re * t) • ‖G t‖ := by
+    rw [norm_smul, Complex.norm_exp, smul_eq_mul]
+    simp
+  simp only [hnorm, Function.comp_apply, one_mul]
+  exact le_abs_self _
 
 end TauCeti
