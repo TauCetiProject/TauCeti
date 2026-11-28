@@ -51,8 +51,9 @@ For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with 
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
 Postcomposition with an isometry keeps the constant and the exponent, and postcomposition with a
-`K`-Lipschitz map keeps the exponent and multiplies the constant by `K`. A function bounded by `M`
-is Hölder of exponent zero with constant `2 M`.
+`K`-Lipschitz map keeps the exponent and multiplies the constant by `K`; precomposition with a
+`K`-Lipschitz map keeps the exponent `r` and multiplies the constant by `K ^ r`. A function bounded
+by `M` is Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -109,10 +110,14 @@ every compact subset of an open subset of a locally compact space is continuous 
   `K`-Lipschitz map keeps the exponent and multiplies the Hölder constant by `K`.
 * `HolderWith.comp_lipschitzWith_one`: precomposition with a `1`-Lipschitz map keeps the Hölder
   constant and exponent.
+* `HolderOnWith.comp_lipschitzOnWith`: precomposition with a `K`-Lipschitz map keeps the exponent
+  and multiplies the Hölder constant by `K ^ r`.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.congr`: Hölder continuity on a set transfers to a function agreeing there.
 * `HolderOnWith.prodMk`: a pair of Hölder functions with a common exponent is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `TauCeti.exists_forall_holderOnWith_of_finite`: finitely many Hölder functions on a set have
+  a common Hölder constant.
 * `HolderOnWith.smul`: scalar multiples of Hölder functions on a set.
 * `HolderWith.norm_add_add_sub_two_nsmul_le`: the second differences of an `r`-Hölder function
   with constant `C` are at most `2 C ‖h‖ ^ r`.
@@ -264,6 +269,14 @@ theorem HolderWith.comp_lipschitzWith_one {X Y Z : Type*} [PseudoEMetricSpace X]
     (hg : HolderWith C r g) (hf : LipschitzWith 1 f) : HolderWith C r (g ∘ f) := by
   have h := hg.comp (holderWith_one.2 hf)
   rwa [mul_one, NNReal.one_rpow, mul_one] at h
+
+/-- An `r`-Hölder function on `t` after a map that is `K`-Lipschitz on `s` and maps `s` into `t`
+is `r`-Hölder on `s`, with constant `C K ^ r`. -/
+theorem HolderOnWith.comp_lipschitzOnWith {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {C r K : ℝ≥0} {g : Y → Z} {t : Set Y}
+    (hg : HolderOnWith C r g t) {f : X → Y} {s : Set X} (hf : LipschitzOnWith K f s)
+    (hst : MapsTo f s t) : HolderOnWith (C * K ^ (r : ℝ)) r (g ∘ f) s := by
+  simpa only [mul_one] using hg.comp hf.holderOnWith hst
 
 /-- Postcomposition with an isometry neither creates nor destroys a global Hölder bound: `g ∘ f`
 is Hölder with constant `C` and exponent `r` exactly when `f` is. -/
@@ -464,6 +477,20 @@ theorem HolderOnWith.fintype_sum {ι X Y : Type*} [Fintype ι] [PseudoMetricSpac
     (hf : ∀ i, HolderOnWith C r (f i) t) :
     HolderOnWith (Fintype.card ι * C) r (fun x => ∑ i, f i x) t := by
   simpa using HolderOnWith.sum (s := Finset.univ) fun i _ => hf i
+
+namespace TauCeti
+
+/-- Finitely many functions, each `r`-Hölder on `t` with its own constant, are `r`-Hölder on `t`
+with one common constant. -/
+theorem exists_forall_holderOnWith_of_finite {ι X Y : Type*} [Finite ι]
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Y] {r : ℝ≥0} {f : ι → X → Y} {t : Set X}
+    (hf : ∀ i, ∃ C, HolderOnWith C r (f i) t) : ∃ C, ∀ i, HolderOnWith C r (f i) t := by
+  cases nonempty_fintype ι
+  choose C hC using hf
+  exact ⟨∑ i, C i, fun i => (hC i).mono_const
+    (Finset.single_le_sum (fun _ _ => zero_le) (Finset.mem_univ i))⟩
+
+end TauCeti
 
 /-- A scalar multiple `a • f` of a function that is Hölder on `s` is Hölder on `s`, with the
 constant multiplied by `‖a‖₊`. Compare Mathlib's `HolderWith.smul`. -/
