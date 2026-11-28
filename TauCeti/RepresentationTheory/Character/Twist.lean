@@ -304,6 +304,35 @@ theorem coe_charTwistLinearEquiv_symm (f : IntertwiningMap (charTwist χ ρ) (ch
 
 end IntertwiningMap
 
+namespace Equiv
+
+/-- Twist both representations in an equivariant equivalence by a common character,
+keeping the underlying linear equivalence. -/
+def charTwist (e : ρ.Equiv σ) (χ : G →* kˣ) :
+    (Representation.charTwist χ ρ).Equiv (Representation.charTwist χ σ) :=
+  .mk e.toLinearEquiv fun g ↦
+    (comp_charTwist_eq_charTwist_comp_iff χ _ g).mpr (e.toIntertwiningMap.isIntertwining' g)
+
+/-- A common character twist preserves the underlying linear equivalence. -/
+@[simp]
+theorem toLinearEquiv_charTwist (e : ρ.Equiv σ) (χ : G →* kˣ) :
+    (e.charTwist χ).toLinearEquiv = e.toLinearEquiv :=
+  (rfl)
+
+/-- A common character twist preserves evaluation of an equivariant equivalence. -/
+@[simp]
+theorem charTwist_apply (e : ρ.Equiv σ) (χ : G →* kˣ) (v : V) :
+    e.charTwist χ v = e v :=
+  (rfl)
+
+/-- A common character twist preserves inverse evaluation of an equivariant equivalence. -/
+@[simp]
+theorem charTwist_symm_apply (e : ρ.Equiv σ) (χ : G →* kˣ) (w : W) :
+    (e.charTwist χ).symm w = e.symm w :=
+  (rfl)
+
+end Equiv
+
 end CommSemiring
 
 section Group
