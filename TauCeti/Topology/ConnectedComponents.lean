@@ -105,6 +105,8 @@ space by them.
 * `TauCeti.isPreconnected_compl_of_isDiscrete`: removing from a preconnected space a closed
   discrete set, each point of which has small connected punctured neighbourhoods, leaves it
   preconnected.
+* `IsPreconnected.sdiff_of_isDiscrete`: relative version for removing a relatively closed discrete
+  set from a preconnected subset `U`.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
   space is a T1 space.
 * `TauCeti.connectedComponentsSigmaHomeomorph`: a space whose connected components form a
@@ -988,6 +990,20 @@ theorem isPreconnected_compl_of_isDiscrete [PreconnectedSpace X] {s : Set X} (hs
       · exact hnot y hyu.1 hyu.2 hyv.2) with h | h
   · exact Or.inl fun y hy ↦ ((h (mem_univ y)).resolve_right fun h' ↦ hy h'.1).1
   · exact Or.inr fun y hy ↦ ((h (mem_univ y)).resolve_right fun h' ↦ hy h'.1).1
+
+/-- **Removing a relatively closed discrete set keeps a set preconnected**, provided each removed
+point of `U` has arbitrarily small neighbourhoods in `U` whose punctured versions are connected. -/
+theorem _root_.IsPreconnected.sdiff_of_isDiscrete {U s : Set X} (hUc : IsPreconnected U)
+    (hs : IsClosed (Subtype.val ⁻¹' s : Set U)) (hd : IsDiscrete (Subtype.val ⁻¹' s : Set U))
+    (h : ∀ x : U, x.val ∈ s → ∀ W ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ W ∧ IsConnected (V \ {x})) :
+    IsPreconnected (U \ s) := by
+  let : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp hUc
+  have hc : IsPreconnected (Subtype.val ⁻¹' s : Set U)ᶜ :=
+    isPreconnected_compl_of_isDiscrete hs hd h
+  have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set U)ᶜ = U \ s := by
+    rw [image_compl_preimage, Subtype.range_val]
+  rw [← himage]
+  exact hc.image _ continuous_subtypeVal.continuousOn
 
 /-- The quotient of a topological space by its connected components is a T1 space. -/
 instance instT1SpaceConnectedComponents : T1Space (ConnectedComponents X) :=

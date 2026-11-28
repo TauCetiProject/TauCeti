@@ -222,6 +222,12 @@ theorem gaussianMellin_def (j : Fin 2) :
 
 variable {j : Fin 2} {c : ℕ → ℂ}
 
+/-- The norm of the normalized theta series is the theta sum's norm times the square root
+of the scale. -/
+theorem norm_gaussianThetaSeries (u : ℝ) :
+    ‖gaussianThetaSeries j c u‖ = √u * ‖gaussianTheta j c u‖ := by
+  rw [gaussianThetaSeries_def, norm_mul, Complex.norm_real, norm_of_nonneg (sqrt_nonneg u)]
+
 /-- The Gaussian Mellin factor is half the real archimedean gamma factor shifted by the parity. -/
 theorem gaussianMellin_eq_Gammaℝ_div_two {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
     gaussianMellin j s = Complex.Gammaℝ (s + j.val) / 2 := by
@@ -313,9 +319,9 @@ theorem norm_gaussianTheta_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) {u : ℝ} (hu
 At nonpositive scales both sides vanish under the real square-root convention. -/
 theorem norm_gaussianThetaSeries_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) (u : ℝ) :
     ‖gaussianThetaSeries j c u‖ ≤ 3 * exp (-u) / √u := by
+  rw [norm_gaussianThetaSeries]
   obtain hu | hu := le_or_gt u 0
-  · simp [gaussianThetaSeries_def, sqrt_eq_zero_of_nonpos hu]
-  rw [gaussianThetaSeries_def, norm_mul, Complex.norm_real, norm_of_nonneg (sqrt_nonneg u)]
+  · simp [sqrt_eq_zero_of_nonpos hu]
   calc √u * ‖gaussianTheta j c u‖ ≤ √u * (3 * exp (-u) / u) := by
         gcongr
         exact norm_gaussianTheta_le hc hu
@@ -352,6 +358,13 @@ theorem gaussianDirichletTheta_def (j : ℕ) (a : ℕ → ℂ) (t : ℝ) :
     ∑' n : ℕ, a (n + 1) *
       (((n + 1 : ℕ) * t) ^ j * Real.exp (-Real.pi * ((n + 1 : ℕ) * t) ^ 2) : ℝ) :=
   (rfl)
+
+/-- At parity degrees, the positive-natural and successor-indexed theta sums agree. -/
+theorem gaussianTheta_eq_gaussianDirichletTheta (j : Fin 2) (a : ℕ → ℂ) (t : ℝ) :
+    gaussianTheta j a t = gaussianDirichletTheta j.val a t := by
+  rw [gaussianTheta_def, gaussianDirichletTheta_def]
+  simpa only [gaussianMonomial, PNat.mk_coe] using
+    (tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ a n * (gaussianMonomial j (n * t) : ℂ)))
 
 /-- The theta sum with the zero coefficient sequence vanishes. -/
 @[simp] theorem gaussianDirichletTheta_zero (j : ℕ) (t : ℝ) :

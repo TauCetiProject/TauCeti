@@ -110,7 +110,7 @@ private theorem IsKillingField.norm_variationField_flowOf (h : IsKillingField I 
         uniqueDiffWithinAt_univ
   have heq := h.norm_variationField_eq isOpen_maximalIntegralCurveInterval
     isPreconnected_maximalIntegralCurveInterval hF hcurve (mem_flowDomain.mp ht)
-      (mem_flowDomain.mp (mem_flowDomain_zero hX (c 0)))
+      (mem_flowDomain.mp (mem_flowDomain_zero (hX (c 0))))
   have hzero : (fun q ↦ F q 0) = c := funext fun q ↦ flowOf_zero _ (c q)
   simp only [variationField_apply] at heq
   rw [hzero] at heq

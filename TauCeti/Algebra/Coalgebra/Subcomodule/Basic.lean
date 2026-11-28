@@ -28,6 +28,8 @@ groups.
 
 * `TauCeti.Subcomodule`: a submodule stable under the coaction.
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
+* `TauCeti.Subcomodule.toSubmoduleEquiv`: the linear equivalence between a subcomodule and its
+  underlying submodule.
 * `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
 * `TauCeti.Subcomodule.instModuleFinite`: the same finiteness for the subtype of a subcomodule.
 * `TauCeti.Subcomodule.ext` and `TauCeti.Subcomodule.coact_mem`: subcomodules are determined by
@@ -134,6 +136,26 @@ theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m ∈ N.toSubmodule �
   Iff.rfl
 
 theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier :=
+  rfl
+
+/-- The tautological linear equivalence between a subcomodule and the subtype of its underlying
+submodule. -/
+def toSubmoduleEquiv (N : Subcomodule R C M) : N ≃ₗ[R] N.toSubmodule where
+  toFun x := ⟨x, x.property⟩
+  invFun x := ⟨x, x.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_toSubmoduleEquiv_apply (N : Subcomodule R C M) (x : N) :
+    ((N.toSubmoduleEquiv x : N.toSubmodule) : M) = x := by
+  rfl
+
+@[simp]
+theorem coe_toSubmoduleEquiv_symm_apply (N : Subcomodule R C M) (x : N.toSubmodule) :
+    ((N.toSubmoduleEquiv.symm x : N) : M) = x := by
   rfl
 
 /-- A subcomodule of a noetherian module is finitely generated as an `R`-module. -/

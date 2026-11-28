@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
 public import Mathlib.Topology.UnitInterval
 import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 import Mathlib.Geometry.Convex.ConvexSpace.Defs
@@ -48,6 +49,7 @@ space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 * `mem_range_faceInclusion_carrier`, `iUnion_range_faceInclusion`: closed faces cover the
   realization, with each point in the face of its carrier.
 * `isQuotientMap_sigma_faceInclusion`: the closed faces present the realization as a quotient.
+  By Mathlib's `compactlyGeneratedSpace_of_coinduced`, the realization is compactly generated.
 * `isClosedMap_of_locallyFinite_faceInclusion`: a continuous map into a Hausdorff space is closed
   when the images of the closed simplices form a locally finite family.
 * `vertex`: the canonical point of the realization corresponding to a vertex.
@@ -582,6 +584,11 @@ theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
     exact ⟨⟨carrier K x, y⟩, hy⟩
   · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
     simp only [preimage_preimage]
+
+/-- Every weak realization is compactly generated as a quotient of its closed simplices. -/
+instance : CompactlyGeneratedSpace (Realization K) := by
+  have h := isQuotientMap_sigma_faceInclusion K
+  exact compactlyGeneratedSpace_of_coinduced h.continuous h.isCoinducing.eq_coinduced
 
 /-- A continuous map from the realization into a Hausdorff space is closed when the images of the
 closed simplices form a locally finite family: the image of a closed set is the locally finite

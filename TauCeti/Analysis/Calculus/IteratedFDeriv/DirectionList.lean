@@ -32,8 +32,8 @@ evaluated on the directions.
 ## Main declarations
 
 * `TauCeti.iteratedFDerivAlong`: the iterated directional derivative along a list of directions.
-* `ContDiff.iteratedFDerivAlong`: differentiating a `C^n` map along `k` directions gives a map
-  which is `C^m` whenever `m + k ≤ n`.
+* `ContDiffAt.iteratedFDerivAlong`, `ContDiff.iteratedFDerivAlong`: differentiating a `C^n` map
+  along `k` directions gives a map which is `C^m` whenever `m + k ≤ n`.
 * `ContDiffOn.iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_add_apply_of_isOpen`: the
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
 * `TauCeti.tsupport_iteratedFDerivAlong_subset`, `HasCompactSupport.iteratedFDerivAlong`:
@@ -151,16 +151,26 @@ theorem _root_.HasCompactSupport.iteratedFDerivAlong {f : E → F} (hf : HasComp
 
 variable {n : ℕ∞ω}
 
+/-- Differentiating a map which is `C^n` at `x` along `k` directions gives a map which is `C^m`
+at `x` whenever `m + k ≤ n`. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {x : E}
+    (hf : ContDiffAt 𝕜 n f x) (vs : List E) (hvs : m + vs.length ≤ n) :
+    ContDiffAt 𝕜 m (iteratedFDerivAlong 𝕜 vs f) x := by
+  induction vs generalizing m with
+  | nil =>
+    rw [iteratedFDerivAlong_nil]
+    exact hf.of_le (by simpa using hvs)
+  | cons v vs ih =>
+    rw [iteratedFDerivAlong_cons]
+    refine ((ih (m := m + 1) ?_).fderiv_right le_rfl).clm_apply contDiffAt_const
+    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
+
 /-- Differentiating a map which is `C^n` on an open set `s` along `k` directions gives a map which
 is `C^m` on `s` whenever `m + k ≤ n`. -/
 theorem _root_.ContDiffOn.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : m + vs.length ≤ n) :
-    ContDiffOn 𝕜 m (iteratedFDerivAlong 𝕜 vs f) s := by
-  induction vs generalizing m with
-  | nil => exact hf.of_le (by simpa using hvs)
-  | cons v vs ih =>
-    refine ((ih (m := m + 1) ?_).fderiv_of_isOpen hs le_rfl).clm_apply contDiffOn_const
-    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
+    ContDiffOn 𝕜 m (iteratedFDerivAlong 𝕜 vs f) s :=
+  fun _ hx => ((hf.contDiffAt (hs.mem_nhds hx)).iteratedFDerivAlong vs hvs).contDiffWithinAt
 
 theorem _root_.ContDiffOn.differentiableOn_iteratedFDerivAlong {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : vs.length < n) :

@@ -29,6 +29,8 @@ extend continuously to `t = 1`.
 
 ## Main declarations
 
+* `MeasureTheory.Lp.coeFn_sub_const`: subtracting a constant class `Lp.const p μ c` agrees almost
+  everywhere with subtracting `c` pointwise.
 * `TauCeti.eLpNorm_sub_const_eq_enorm`: the deviation from a constant as a distance in `Lᵖ`.
 * `TauCeti.eLpNorm_sub_const_restrict_le_liminf`: Fatou along an exhaustion for the deviation from
   a constant.
@@ -38,6 +40,22 @@ extend continuously to `t = 1`.
 -/
 
 public section
+
+namespace MeasureTheory.Lp
+
+open scoped ENNReal
+
+variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F] {μ : Measure α}
+  [IsFiniteMeasure μ] {p : ℝ≥0∞}
+
+/-- On a finite measure space, subtracting a constant element `Lp.const p μ c` agrees almost
+everywhere with subtracting `c` pointwise. -/
+theorem coeFn_sub_const (f : Lp F p μ) (c : F) :
+    ⇑(f - Lp.const p μ c) =ᵐ[μ] fun x ↦ f x - c := by
+  filter_upwards [Lp.coeFn_sub f (Lp.const p μ c), Lp.coeFn_const p μ c] with x hx hc
+  rw [hx, Pi.sub_apply, hc, Function.const_apply]
+
+end MeasureTheory.Lp
 
 namespace TauCeti
 
@@ -52,7 +70,7 @@ variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F] {μ : Measur
 theorem eLpNorm_sub_const_eq_enorm (a : F) (f : Lp F p μ) :
     eLpNorm (fun x => f x - a) p μ = ‖f - Lp.const p μ a‖ₑ := by
   rw [Lp.eNorm_def]
-  exact eLpNorm_congr_ae ((Lp.coeFn_sub _ _).trans (.sub .rfl (Lp.coeFn_const p μ a))).symm
+  exact eLpNorm_congr_ae (Lp.coeFn_sub_const f a).symm
 
 /-- On a finite measure space, if `fun x => u x - c` is in `Lᵖ`, then `u` is in `Lᵖ`. -/
 theorem _root_.MeasureTheory.MemLp.of_sub_const {u : α → F} {c : F}
