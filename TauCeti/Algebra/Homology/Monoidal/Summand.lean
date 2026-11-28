@@ -36,6 +36,8 @@ totalizations of morphisms, on which these formulas rest, is in
 
 ## Main results
 
+* `CategoryTheory.Functor.map_tensorObj_hom_ext`: extensionality on mapped tensor summands
+  for a functor preserving the diagonal coproduct.
 * `HomologicalComplex.ι_tensorHom` and `HomologicalComplex.ι_tensorHom_f`: the tensor product of
   two morphisms on a homogeneous summand, for `HomologicalComplex.tensorHom` and for `⊗ₘ`.
 * `HomologicalComplex.XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj`: identifying the degrees of
@@ -273,3 +275,28 @@ lemma ι_ι_associator_inv (X Y Z : HomologicalComplex C c)
 end General
 
 end HomologicalComplex
+
+namespace CategoryTheory.Functor
+
+open HomologicalComplex
+
+variable {C D : Type*} [Category* C] [Category* D] [MonoidalCategory C] [Preadditive C]
+  [(curriedTensor C).Additive] [∀ X : C, ((curriedTensor C).obj X).Additive]
+  {I : Type*} [AddMonoid I] {c : ComplexShape I} [c.TensorSigns] [DecidableEq I]
+
+/-- Maps out of a functor's image of a tensor degree are determined by the mapped homogeneous
+summands, provided the functor preserves that degree's diagonal coproduct. No projection formula
+or additivity of the functor is required. -/
+lemma map_tensorObj_hom_ext (F : C ⥤ D) {K E : HomologicalComplex C c} [HasTensor K E]
+    {n : I} [PreservesColimit (Discrete.functor
+      (fun pq : { pq : I × I // pq.1 + pq.2 = n } ↦ K.X pq.val.1 ⊗ E.X pq.val.2)) F]
+    {Y : D} {f g : F.obj ((tensorObj K E).X n) ⟶ Y}
+    (h : ∀ (p q : I) (hpq : p + q = n),
+      F.map (ιTensorObj K E p q n hpq) ≫ f = F.map (ιTensorObj K E p q n hpq) ≫ g) :
+    f = g := by
+  let t := fun pq : { pq : I × I // pq.1 + pq.2 = n } ↦ K.X pq.val.1 ⊗ E.X pq.val.2
+  let : HasCoproduct t := (inferInstance : HasTensor K E) n
+  exact Cofan.IsColimit.hom_ext (isColimitOfHasCoproductOfPreservesColimit F t) f g
+    (fun pq ↦ h pq.val.1 pq.val.2 pq.property)
+
+end CategoryTheory.Functor
