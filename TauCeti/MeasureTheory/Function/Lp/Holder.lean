@@ -29,7 +29,9 @@ Pointwise application `f ↦ (x ↦ Φ x (f x))` of an `L^∞` function `Φ` of 
 Hölder multiplication `L^∞ × L^p → L^p`. Where `Ψ Φ = 1` almost everywhere it is undone by
 application of `Ψ` (`ContinuousLinearMap.holder_holder_of_comp_eq_id`), so for a two-sided
 pointwise inverse it is a continuous linear equivalence `MeasureTheory.Lp.pointwiseApplyEquiv`
-from `L^p(E)` to `L^p(F)`.
+from `L^p(E)` to `L^p(F)`. Multiplication and scalar multiplication via `ContinuousLinearMap.mul`
+and `ContinuousLinearMap.lsmul` coincide with heterogeneous `Lp` scalar multiplication
+(`ContinuousLinearMap.holder_mul_eq_smul`, `ContinuousLinearMap.holder_lsmul_eq_smul`).
 -/
 
 public section
@@ -104,6 +106,30 @@ theorem holder_holder_of_comp_eq_id {α 𝕜 E F : Type*} [MeasurableSpace α] {
     (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).coeFn_holder (r := p) Φ f, hΨΦ] with x h₁ h₂ hx
   rw [h₁, h₂]
   simpa using congrArg (fun T : E →L[𝕜] E ↦ T (f x)) hx
+
+/-- Hölder multiplication via `ContinuousLinearMap.mul 𝕜 R` coincides with heterogeneous `Lp`
+scalar multiplication. -/
+theorem holder_mul_eq_smul {α 𝕜 R : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NontriviallyNormedField 𝕜] [NormedRing R] [NormedAlgebra 𝕜 R]
+    {p q r : ℝ≥0∞} [ENNReal.HolderTriple p q r] (a : Lp R p μ) (f : Lp R q μ) :
+    (ContinuousLinearMap.mul 𝕜 R).holder r a f = a • f := by
+  apply Lp.ext
+  filter_upwards [(ContinuousLinearMap.mul 𝕜 R).coeFn_holder (r := r) a f,
+    Lp.coeFn_lpSMul (r := r) a f] with x hx hy
+  rw [hx, ContinuousLinearMap.mul_apply', hy, Pi.smul_apply', smul_eq_mul]
+
+/-- Hölder multiplication via `ContinuousLinearMap.lsmul 𝕜 R` coincides with heterogeneous `Lp`
+scalar multiplication. -/
+theorem holder_lsmul_eq_smul {α 𝕜 R E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NontriviallyNormedField 𝕜] [NormedRing R] [NormedAlgebra 𝕜 R]
+    [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+    [NormedSpace 𝕜 E] [IsScalarTower 𝕜 R E]
+    {p q r : ℝ≥0∞} [ENNReal.HolderTriple p q r] (a : Lp R p μ) (f : Lp E q μ) :
+    (ContinuousLinearMap.lsmul 𝕜 R : R →L[𝕜] E →L[𝕜] E).holder r a f = a • f := by
+  apply Lp.ext
+  filter_upwards [(ContinuousLinearMap.lsmul 𝕜 R : R →L[𝕜] E →L[𝕜] E).coeFn_holder (r := r) a f,
+    Lp.coeFn_lpSMul (r := r) a f] with x hx hy
+  rw [hx, ContinuousLinearMap.lsmul_apply, hy, Pi.smul_apply']
 
 end ContinuousLinearMap
 

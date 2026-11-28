@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 
 /-!

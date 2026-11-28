@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 import TauCeti.Probability.Process.ElementaryDensity
+import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
@@ -60,11 +61,11 @@ theorem coeFn_l2Integral_indicator_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ 
   let hD := measurableSet_predictable_Ioc_prod s t (𝓕 := ℱ) MeasurableSet.univ
   let J := (hW.l2Integral T).toContinuousLinearMap
   let R := (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ 2 2
-    (linftyIndicator μ (Ioc s t ×ˢ A) hR)
+    (linftyIndicator μ ℝ (Ioc s t ×ˢ A) hR)
   let D := (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ 2 2
-    (linftyIndicator μ (Ioc s t ×ˢ univ) hD)
+    (linftyIndicator μ ℝ (Ioc s t ×ˢ univ) hD)
   let E := (ContinuousLinearMap.mul ℝ ℝ).holderL P ∞ 2 2
-    (linftyIndicator P A (ℱ.le s _ hA))
+    (linftyIndicator P ℝ A (ℱ.le s _ hA))
   -- Both sides are continuous linear maps; compare predictable rectangles.
   have hmaps : J.comp R = E.comp (J.comp D) := by
     apply ContinuousLinearMap.ext_indicatorConstLp_Ioc_prod_predictableMeasure T
@@ -73,12 +74,13 @@ theorem coeFn_l2Integral_indicator_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ 
     have hAB := ((ℱ.mono (le_max_left s u)) _ hA).inter hB'
     have hstep (C : Set Ω) (hC : MeasurableSet[ℱ s] C) :
         (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ 2 2
-          (linftyIndicator μ (Ioc s t ×ˢ C) (measurableSet_predictable_Ioc_prod s t hC))
+          (linftyIndicator μ ℝ (Ioc s t ×ˢ C) (measurableSet_predictable_Ioc_prod s t hC))
           (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod u v hB)
             (measure_ne_top _ _) 1) =
         indicatorConstLp 2 (measurableSet_predictable_Ioc_prod (max s u) (min t v)
           (((ℱ.mono (le_max_left _ _)) _ hC).inter hB')) (measure_ne_top _ _) 1 := by
-      rw [ContinuousLinearMap.holderL_apply_apply, holder_mul_linftyIndicator_indicatorConstLp]
+      rw [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holder_mul_eq_smul,
+        linftyIndicator_smul_indicatorConstLp]
       congr 1
       ext p
       simp only [mem_inter_iff, mem_prod, mem_Ioc, max_lt_iff, le_min_iff]
@@ -90,20 +92,22 @@ theorem coeFn_l2Integral_indicator_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ 
     apply Lp.ext
     filter_upwards [hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T (max s u) (min t v) hAB 1,
       hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T (max s u) (min t v) hB' 1,
-      coeFn_holder_mul_linftyIndicator (ℱ.le s _ hA)
+      coeFn_linftyIndicator_smul (𝕜 := ℝ) (ℱ.le s _ hA)
         (hW.l2Integral T (indicatorConstLp 2
           (measurableSet_predictable_Ioc_prod (max s u) (min t v) hB')
             (measure_ne_top _ _) 1))] with ω h₁ h₂ h₃
     simp only [J, E, LinearIsometry.coe_toContinuousLinearMap,
-      ContinuousLinearMap.holderL_apply_apply] at *
+      ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holder_mul_eq_smul] at *
     rw [h₁, h₃]
     by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB, h₂]
   have heq := congrArg (fun L : Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 P ↦ L f) hmaps
   simp only [ContinuousLinearMap.comp_apply, J, R, D,
     LinearIsometry.coe_toContinuousLinearMap, ContinuousLinearMap.holderL_apply_apply,
-    holder_mul_linftyIndicator_eq_toLp] at heq
+    ContinuousLinearMap.holder_mul_eq_smul, linftyIndicator_smul_eq_toLp] at heq
   rw [heq]
-  exact coeFn_holder_mul_linftyIndicator (ℱ.le s _ hA) _
+  dsimp only [E]
+  rw [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holder_mul_eq_smul]
+  exact coeFn_linftyIndicator_smul (ℱ.le s _ hA) _
 
 /-- If two predictable L² integrands agree on an event known at `s` during `(s,t]`,
 their integrals over that strip agree on that event, at any ambient horizon `T`. -/

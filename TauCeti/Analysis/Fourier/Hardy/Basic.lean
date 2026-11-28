@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 
 /-!
 # The boundary Hardy Hilbert space

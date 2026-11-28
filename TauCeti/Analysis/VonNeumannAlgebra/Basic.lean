@@ -23,9 +23,10 @@ be applied directly to concrete algebras, including those acting on the zero Hil
 The instances use Mathlib's generic subobject constructions, in particular
 `StarSubalgebra.cstarAlgebra` and, for the order inherited from the Loewner order on operators,
 `Subtype.starOrderedRing`. The underlying star subalgebra has the same instances;
-no new norm, completion, or algebra carrier is introduced. Because `M` is a closed complex
-subspace, it also contains the linear span and norm-closed linear span of any subset
-(`VonNeumannAlgebra.span_subset`, `VonNeumannAlgebra.closure_span_subset`).
+no new norm, completion, or algebra carrier is introduced. We also provide the canonical
+star algebra isomorphism `VonNeumannAlgebra.equivOfEq` between equal von Neumann algebras.
+Because `M` is a closed complex subspace, it also contains the linear span and norm-closed linear
+span of any subset (`VonNeumannAlgebra.span_subset`, `VonNeumannAlgebra.closure_span_subset`).
 
 Conjugation along a linear isometric equivalence `U : H₁ ≃ₗᵢ[ℂ] H₂` transports concrete von Neumann
 algebras as an order isomorphism (`VonNeumannAlgebra.mapLinearIsometryEquiv`) commuting with
@@ -66,6 +67,33 @@ instance isClosed (M : VonNeumannAlgebra H) : IsClosed (M : Set (H →L[ℂ] H))
 instance instIsClosedToStarSubalgebra (M : VonNeumannAlgebra H) :
     IsClosed (M.toStarSubalgebra : Set (H →L[ℂ] H)) := by
   simpa only [coe_toStarSubalgebra] using M.isClosed
+
+/-- Equal concrete von Neumann algebras on `H` are canonically star-isomorphic. -/
+noncomputable def equivOfEq {M N : VonNeumannAlgebra H} (h : M = N) : M ≃⋆ₐ[ℂ] N :=
+  StarAlgEquiv.ofAlgEquiv
+    (Subalgebra.equivOfEq M.toStarSubalgebra.toSubalgebra N.toStarSubalgebra.toSubalgebra
+      congr(($h).toStarSubalgebra.toSubalgebra))
+    fun _ ↦ rfl
+
+@[simp]
+theorem coe_equivOfEq_apply {M N : VonNeumannAlgebra H} (h : M = N) (x : M) :
+    ((equivOfEq h x : N) : H →L[ℂ] H) = x := by
+  rfl
+
+@[simp]
+theorem equivOfEq_symm {M N : VonNeumannAlgebra H} (h : M = N) :
+    (equivOfEq h).symm = equivOfEq h.symm := by
+  rfl
+
+@[simp]
+theorem equivOfEq_rfl {M : VonNeumannAlgebra H} :
+    equivOfEq (rfl : M = M) = StarAlgEquiv.refl ℂ M := by
+  ext; rfl
+
+@[simp]
+theorem equivOfEq_trans {M N P : VonNeumannAlgebra H} (hMN : M = N) (hNP : N = P) :
+    (equivOfEq hMN).trans (equivOfEq hNP) = equivOfEq (hMN.trans hNP) := by
+  ext; rfl
 
 /-- The order on a von Neumann algebra inherited from the Loewner order on operators makes it a
 star-ordered ring, so that positive functionals on it are those of the C⋆-algebra `M`. This

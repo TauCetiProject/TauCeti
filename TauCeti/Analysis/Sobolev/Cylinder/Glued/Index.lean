@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Parametric
 public import TauCeti.Analysis.Sobolev.Cylinder.Stabilizer
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 public import TauCeti.Topology.Algebra.Module.Complement
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import TauCeti.Analysis.Fredholm.ClosedRange
@@ -64,7 +64,7 @@ Write `β = neckCutoff (-(2 / R))` for the cutoff equal to `1` on `s ≤ 0` and 
   This is injective, because the pregluing is `ξ₁(· + R, ·)` on `s < 0` and `ξ₂(· - R, ·)` on
   `s > R / 2`, so it controls `ξ₁` and `ξ₂` up to their tails beyond the neck. These tails are
   uniformly small on the finite-dimensional spaces `Eᵢ` for long necks
-  (`TauCeti.CylinderSobolev.eventually_forall_norm_multiplicationOperator_le`).
+  (`TauCeti.CylinderSobolev.eventually_forall_norm_indicatorMultiplication_le`).
 
 **The gluing isomorphism and the obstruction map.** Since the dimensions agree, the corrected
 pregluing is a linear isomorphism `E₁ × E₂ ≃ E_R` for long necks and every right inverse `Q` of
@@ -344,37 +344,34 @@ private theorem norm_le_norm_cutoffL_add_cutoffL {R : ℝ} {β γ : ℝ → ℝ}
     (hβR : ∀ s, R / 2 < s → β =ᶠ[𝓝 s] fun _ ↦ 0) (hγR : ∀ s, R / 2 < s → γ =ᶠ[𝓝 s] fun _ ↦ 1)
     (f₁ f₂ : H1 V) :
     ‖f₁‖ ≤ ‖cutoffL 2 hβ hβ1 hβ'1 f₁ + cutoffL 2 hγ hγ1 hγ'1 f₂‖ +
-        ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | z.1 < 0}ᶜ
-          (measurableSet_lt measurable_fst measurable_const).compl)
+        ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | z.1 < 0}ᶜ)
+          (measurableSet_lt measurable_fst measurable_const).compl
           (f₁ : Lp (V × V × V) 2 stripMeasure)‖ ∧
       ‖f₂‖ ≤ ‖cutoffL 2 hβ hβ1 hβ'1 f₁ + cutoffL 2 hγ hγ1 hγ'1 f₂‖ +
-        ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | R / 2 < z.1}ᶜ
-          (measurableSet_lt measurable_const measurable_fst).compl)
+        ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | R / 2 < z.1}ᶜ)
+          (measurableSet_lt measurable_const measurable_fst).compl
           (f₂ : Lp (V × V × V) 2 stripMeasure)‖ := by
   set g := cutoffL 2 hβ hβ1 hβ'1 f₁ + cutoffL 2 hγ hγ1 hγ'1 f₂
   have key {A : Set (ℝ × ℝ)} (hA : MeasurableSet A) (f : H1 V)
-      (hg : Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-        (g : Lp (V × V × V) 2 stripMeasure) =
-        Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-          (f : Lp (V × V × V) 2 stripMeasure)) :
-      ‖f‖ ≤ ‖g‖ + ‖Lp.multiplicationOperator (linftyIndicator stripMeasure Aᶜ hA.compl)
+      (hg : Lp.indicatorMultiplication ℝ 2 hA (g : Lp (V × V × V) 2 stripMeasure) =
+        Lp.indicatorMultiplication ℝ 2 hA (f : Lp (V × V × V) 2 stripMeasure)) :
+      ‖f‖ ≤ ‖g‖ + ‖Lp.indicatorMultiplication ℝ 2 hA.compl
         (f : Lp (V × V × V) 2 stripMeasure)‖ := by
-    set m := Lp.multiplicationOperator (linftyIndicator stripMeasure Aᶜ hA.compl)
-      (f : Lp (V × V × V) 2 stripMeasure)
-    calc ‖f‖ = ‖Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-          (g : Lp (V × V × V) 2 stripMeasure) + m‖ := by
-          rw [hg, Lp.multiplicationOperator_linftyIndicator_add_compl, Submodule.norm_coe]
+    set m := Lp.indicatorMultiplication ℝ 2 hA.compl (f : Lp (V × V × V) 2 stripMeasure)
+    calc ‖f‖ = ‖Lp.indicatorMultiplication ℝ 2 hA (g : Lp (V × V × V) 2 stripMeasure) + m‖ := by
+          rw [hg, Lp.indicatorMultiplication_add_compl, Submodule.norm_coe]
       _ ≤ ‖g‖ + ‖m‖ := (norm_add_le _ _).trans (add_le_add_left
-          ((Lp.norm_multiplicationOperator_linftyIndicator_apply_le hA _).trans_eq
-            (Submodule.norm_coe g)) _)
+          ((Lp.norm_indicatorMultiplication_apply_le hA _).trans_eq (Submodule.norm_coe g)) _)
   refine ⟨key (measurableSet_lt measurable_fst measurable_const) f₁ ?_,
     key (measurableSet_lt measurable_const measurable_fst) f₂ ?_⟩
-  · rw [Submodule.coe_add, map_add, multiplicationOperator_linftyIndicator_cutoffL hβ hβ1 hβ'1 _
-      (fun z hz ↦ hβ₀ z.1 hz), multiplicationOperator_linftyIndicator_cutoffL hγ hγ1 hγ'1 _
-      (fun z hz ↦ hγ₀ z.1 hz), one_smul, zero_smul, add_zero]
-  · rw [Submodule.coe_add, map_add, multiplicationOperator_linftyIndicator_cutoffL hβ hβ1 hβ'1 _
-      (fun z hz ↦ hβR z.1 hz), multiplicationOperator_linftyIndicator_cutoffL hγ hγ1 hγ'1 _
-      (fun z hz ↦ hγR z.1 hz), one_smul, zero_smul, zero_add]
+  · rw [Submodule.coe_add, map_add,
+      indicatorMultiplication_cutoffL hβ hβ1 hβ'1 _ (fun z hz ↦ hβ₀ z.1 hz),
+      indicatorMultiplication_cutoffL hγ hγ1 hγ'1 _ (fun z hz ↦ hγ₀ z.1 hz),
+      one_smul, zero_smul, add_zero]
+  · rw [Submodule.coe_add, map_add,
+      indicatorMultiplication_cutoffL hβ hβ1 hβ'1 _ (fun z hz ↦ hβR z.1 hz),
+      indicatorMultiplication_cutoffL hγ hγ1 hγ'1 _ (fun z hz ↦ hγR z.1 hz),
+      one_smul, zero_smul, zero_add]
 
 /-- The kernel of an operator on `W^{1,2} × S` is a free module. (The instance is found through
 its image in `L² × S`, where instance search identifies the additive structures directly.) -/
@@ -541,13 +538,13 @@ private theorem norm_le_norm_preglue_add {R : ℝ} {β : ℝ → ℝ} (hβ : Con
     (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0) (f₁ f₂ : H1 V) :
     ‖f₁‖ ≤ ‖cutoffL 2 hβ hβ1 hβ'1 (translate 2 (testSection V) R f₁) +
         cutoffL 2 hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) f₂)‖ +
-        ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | R ≤ z.1}
-          (measurableSet_le measurable_const measurable_fst))
+        ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | R ≤ z.1})
+          (measurableSet_le measurable_const measurable_fst)
           (f₁ : Lp (V × V × V) 2 stripMeasure)‖ ∧
       ‖f₂‖ ≤ ‖cutoffL 2 hβ hβ1 hβ'1 (translate 2 (testSection V) R f₁) +
         cutoffL 2 hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) f₂)‖ +
-        ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | z.1 ≤ -(R / 2)}
-          (measurableSet_le measurable_fst measurable_const))
+        ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | z.1 ≤ -(R / 2)})
+          (measurableSet_le measurable_fst measurable_const)
           (f₂ : Lp (V × V × V) 2 stripMeasure)‖ := by
   have hβ₀ (s : ℝ) (hs : s < 0) : β =ᶠ[𝓝 s] fun _ ↦ 1 :=
     (eventually_lt_nhds hs).mono fun t ht ↦ hβ0 t ht.le
@@ -559,11 +556,11 @@ private theorem norm_le_norm_preglue_add {R : ℝ} {β : ℝ → ℝ} (hβ : Con
     (translate 2 (testSection V) (-R) f₂)
   -- The parts of the translates beyond the neck are the tails of the original sections.
   rw [LinearIsometryEquiv.norm_map, coe_translate,
-    ← translateLp_multiplicationOperator_linftyIndicator (A := {z : ℝ × ℝ | R ≤ z.1})
+    ← translateLp_indicatorMultiplication (A := {z : ℝ × ℝ | R ≤ z.1})
       (measurableSet_le measurable_const measurable_fst) _ R (fun z ↦ by simp),
     LinearIsometryEquiv.norm_map] at l₁
   rw [LinearIsometryEquiv.norm_map, coe_translate,
-    ← translateLp_multiplicationOperator_linftyIndicator (A := {z : ℝ × ℝ | z.1 ≤ -(R / 2)})
+    ← translateLp_indicatorMultiplication (A := {z : ℝ × ℝ | z.1 ≤ -(R / 2)})
       (measurableSet_le measurable_fst measurable_const) _ (-R) (fun z ↦ by
         simp only [mem_compl_iff, mem_ofPred_eq, Prod.fst_add, not_lt]
         constructor <;> intro h <;> linarith), LinearIsometryEquiv.norm_map] at l₂
@@ -592,12 +589,12 @@ private theorem eq_zero_of_preglue {M₁ M₂ : ℝ × ℝ → V × V × V →L[
     {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂)}
     {θ : ℝ} (hθ : 0 ≤ θ)
     (ht₁ : ∀ k ∈ (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker,
-      ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | R ≤ z.1}
-        (measurableSet_le measurable_const measurable_fst))
+      ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | R ≤ z.1})
+        (measurableSet_le measurable_const measurable_fst)
         ((k : H1 V × S₁).1 : Lp (V × V × V) 2 stripMeasure)‖ ≤ θ * ‖k‖)
     (ht₂ : ∀ k ∈ (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker,
-      ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | z.1 ≤ -(R / 2)}
-        (measurableSet_le measurable_fst measurable_const))
+      ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | z.1 ≤ -(R / 2)})
+        (measurableSet_le measurable_fst measurable_const)
         ((k : H1 V × S₂).1 : Lp (V × V × V) 2 stripMeasure)‖ ≤ θ * ‖k‖)
     (hsmall : 2 * ‖Q‖ * (ε + d * B) + θ < 1) {k₁ : H1 V × S₁} {k₂ : H1 V × S₂}
     (hk₁ : k₁ ∈ (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker)
@@ -820,13 +817,11 @@ private abbrev jetComponents {S : Type*} [NormedAddCommGroup S] [NormedSpace ℝ
 
 /-- A bound on the tails of the `L²` jets of a space of elements of `W^{1,2} × S` bounds the
 tails of its elements. -/
-private theorem norm_multiplicationOperator_fst_le {S : Type*} [NormedAddCommGroup S]
+private theorem norm_indicatorMultiplication_fst_le {S : Type*} [NormedAddCommGroup S]
     [NormedSpace ℝ S] {K : Submodule ℝ (H1 V × S)} {A : Set (ℝ × ℝ)} (hA : MeasurableSet A)
-    (ht : ∀ f ∈ jetComponents K,
-      ‖Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) f‖ ≤ 1 / 2 * ‖f‖)
+    (ht : ∀ f ∈ jetComponents K, ‖Lp.indicatorMultiplication ℝ 2 hA f‖ ≤ 1 / 2 * ‖f‖)
     {k : H1 V × S} (hk : k ∈ K) :
-    ‖Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-      (k.1 : Lp (V × V × V) 2 stripMeasure)‖ ≤ 1 / 2 * ‖k‖ :=
+    ‖Lp.indicatorMultiplication ℝ 2 hA (k.1 : Lp (V × V × V) 2 stripMeasure)‖ ≤ 1 / 2 * ‖k‖ :=
   (ht _ (Submodule.mem_map_of_mem hk)).trans (mul_le_mul_of_nonneg_left
     ((Submodule.norm_coe _).trans_le (norm_fst_le k)) (by norm_num))
 
@@ -857,12 +852,12 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
     [FiniteDimensional ℝ (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker]
     (ht₁ : ∀ f ∈
       jetComponents (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker,
-      ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | R ≤ z.1}
-        (measurableSet_le measurable_const measurable_fst)) f‖ ≤ 1 / 2 * ‖f‖)
+      ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | R ≤ z.1})
+        (measurableSet_le measurable_const measurable_fst) f‖ ≤ 1 / 2 * ‖f‖)
     (ht₂ : ∀ f ∈
       jetComponents (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker,
-      ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | z.1 ≤ -(R / 2)}
-        (measurableSet_le measurable_fst measurable_const)) f‖ ≤ 1 / 2 * ‖f‖)
+      ‖Lp.indicatorMultiplication ℝ 2 (s := {z : ℝ × ℝ | z.1 ≤ -(R / 2)})
+        (measurableSet_le measurable_fst measurable_const) f‖ ≤ 1 / 2 * ‖f‖)
     (hsmall₁ : (‖Q₁‖ + ‖Q₂‖) * (ε + 2 / R * L * B) < 1)
     (hsmall₂ : 2 * ‖Q‖ * (ε + 2 / R * L * B) + 1 / 2 < 1) :
     FiniteDimensional ℝ (((jetOperator 2 stripMeasure
@@ -902,8 +897,8 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
   -- The gluing map is injective: an element of its kernel has a pregluing fixed by `Q A_R`.
   have hinj := gluingKerMap_injective_of_forall hQ fun k₁ hk₁ k₂ hk₂ h ↦ eq_zero_of_preglue hM₁
     hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ0 hβR hB0 hB hβd hγd hε hn hn₂ (by norm_num)
-    (fun _ hk ↦ norm_multiplicationOperator_fst_le _ ht₁ hk)
-    (fun _ hk ↦ norm_multiplicationOperator_fst_le _ ht₂ hk) hsmall₂ hk₁ hk₂
+    (fun _ hk ↦ norm_indicatorMultiplication_fst_le _ ht₁ hk)
+    (fun _ hk ↦ norm_indicatorMultiplication_fst_le _ ht₂ hk) hsmall₂ hk₁ hk₂
     (by rwa [neckPreglue_apply hβ hβ1 hβ'1 hγ hγ1 hγ'1] at h)
   have := free_ker (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)
   have := free_ker (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)
@@ -987,10 +982,10 @@ private theorem exists_forall_ge_forall_rightInverse
     Module.Finite.map _ _
   -- Instance search times out on `FiniteDimensional` of these kernels (the instance mismatch of
   -- `free_ker`), so `hf₁` and `hf₂` are passed explicitly.
-  obtain ⟨ht₁, -⟩ := @eventually_forall_norm_multiplicationOperator_le 2 _ (V × V × V) _ _
+  obtain ⟨ht₁, -⟩ := @eventually_forall_norm_indicatorMultiplication_le 2 _ (V × V × V) _ _
     ENNReal.ofNat_ne_top _ hf₁
     (1 / 2) (by norm_num)
-  obtain ⟨-, ht₂⟩ := @eventually_forall_norm_multiplicationOperator_le 2 _ (V × V × V) _ _
+  obtain ⟨-, ht₂⟩ := @eventually_forall_norm_indicatorMultiplication_le 2 _ (V × V × V) _ _
     ENNReal.ofNat_ne_top _ hf₂
     (1 / 2) (by norm_num)
   obtain ⟨R₂, hR₂⟩ :=

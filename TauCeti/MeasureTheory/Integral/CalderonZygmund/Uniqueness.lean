@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Operator
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Local
 import TauCeti.MeasureTheory.Function.Lp.Multiplication.Commutant
 

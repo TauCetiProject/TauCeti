@@ -8,8 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -37,12 +40,21 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
 Multiplication by the indicator of a measurable set `s` is the operator
-`MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from the class of `1_s` in
-scalar `L∞`. It acts as `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`,
-`indicatorMultiplication_eq_iff`), it is the identity for `univ`, zero for `∅` and composes by
-intersection (`indicatorMultiplication_comp_indicatorMultiplication`), it is a contraction
-(`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
-(`eLpNorm_indicatorMultiplication`), and it is self-adjoint on `L²`
+`MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from
+`TauCeti.linftyIndicator μ 𝕜 s hs` in scalar `L∞` (`indicatorMultiplication_apply`). It acts as
+`f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`, `indicatorMultiplication_eq_iff`,
+`indicatorMultiplication_eq_self_of_ae_notMem`), agrees with restricting to `s` and extending
+by zero (`TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM`), is the identity for `univ`,
+zero for `∅` and composes by intersection (`indicatorMultiplication_comp_indicatorMultiplication`),
+cut-offs to a set and its complement add up to the identity (`indicatorMultiplication_add_compl`),
+it restricts constant indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a
+contraction (`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
+(`eLpNorm_indicatorMultiplication`), cutoffs along shrinking sets with empty intersection tend to
+zero (`tendsto_norm_indicatorMultiplication`), cutoffs along `spanningSets μ` on a `σ`-finite space
+converge strongly to the identity (`tendsto_indicatorMultiplication_spanningSets`),
+almost-everywhere equal sets induce equal operators (`indicatorMultiplication_congr`) and
+conversely on finite-measure sets (`ae_eq_of_indicatorMultiplication_eq`,
+`indicatorMultiplication_inj`), and it is self-adjoint on `L²`
 (`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
 
 Compare `MeasureTheory.Lp.multiplicationOperator` and `BoundedContinuousFunction.mulLp`.
@@ -224,26 +236,131 @@ variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
 
 variable (𝕜 p) in
 /-- Multiplication by the indicator of a measurable set `s`, as a bounded operator on `Lp E p μ`:
-the Hölder product with the class of `1_s` in `L∞`. -/
+the Hölder product with `TauCeti.linftyIndicator μ 𝕜 s hs`. -/
 def indicatorMultiplication (hs : MeasurableSet s) : Lp E p μ →L[𝕜] Lp E p μ :=
-  (ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ p p
-    (((memLp_top_const (1 : 𝕜)).indicator hs.nullMeasurableSet).toLp (s.indicator fun _ ↦ 1))
+  (ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ p p (TauCeti.linftyIndicator μ 𝕜 s hs)
+
+/-- Applying `indicatorMultiplication` is heterogeneous `Lp` scalar multiplication by
+`TauCeti.linftyIndicator μ 𝕜 s hs`. -/
+theorem indicatorMultiplication_apply (hs : MeasurableSet s) (f : Lp E p μ) :
+    indicatorMultiplication 𝕜 p hs f = TauCeti.linftyIndicator μ 𝕜 s hs • f := by
+  rw [indicatorMultiplication, holderL_apply_apply, ContinuousLinearMap.holder_lsmul_eq_smul]
 
 /-- `indicatorMultiplication` multiplies by the indicator of `s` almost everywhere. -/
 theorem indicatorMultiplication_ae (hs : MeasurableSet s) (f : Lp E p μ) :
     indicatorMultiplication 𝕜 p hs f =ᵐ[μ] s.indicator f := by
-  filter_upwards [(ContinuousLinearMap.lsmul 𝕜 𝕜).coeFn_holder (r := p)
-    (((memLp_top_const (1 : 𝕜)).indicator hs.nullMeasurableSet).toLp (s.indicator fun _ ↦ 1)) f,
-    MemLp.coeFn_toLp ((memLp_top_const (1 : 𝕜) (μ := μ)).indicator hs.nullMeasurableSet)]
-    with x h h₁
-  rw [indicatorMultiplication, holderL_apply_apply, h, h₁]
-  by_cases hx : x ∈ s <;> simp [hx]
+  rw [indicatorMultiplication_apply]
+  exact TauCeti.coeFn_linftyIndicator_smul hs f
 
 /-- `indicatorMultiplication` is characterized by its almost-everywhere pointwise action. -/
 theorem indicatorMultiplication_eq_iff {hs : MeasurableSet s} {f g : Lp E p μ} :
     indicatorMultiplication 𝕜 p hs f = g ↔ s.indicator f =ᵐ[μ] g :=
   ⟨fun h ↦ h ▸ (indicatorMultiplication_ae hs f).symm,
     fun h ↦ Lp.ext ((indicatorMultiplication_ae hs f).trans h)⟩
+
+/-- Almost-everywhere equal measurable sets induce the same indicator multiplication operator. -/
+theorem indicatorMultiplication_congr {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (h : s =ᵐ[μ] t) :
+    indicatorMultiplication (E := E) (μ := μ) 𝕜 p hs =
+      indicatorMultiplication (E := E) (μ := μ) 𝕜 p ht := by
+  rw [indicatorMultiplication, indicatorMultiplication, (TauCeti.linftyIndicator_inj hs ht).mpr h]
+
+/-- Multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` intersects the sets. -/
+theorem indicatorMultiplication_indicatorConstLp {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
+      indicatorConstLp p (hs.inter ht)
+        (measure_ne_top_of_subset Set.inter_subset_right hμt) v := by
+  rw [indicatorMultiplication_apply]
+  exact TauCeti.linftyIndicator_smul_indicatorConstLp hs ht hμt v
+
+/-- If `s ⊆ t`, multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` restricts
+it to `s`. -/
+theorem indicatorMultiplication_indicatorConstLp_of_subset {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (hst : s ⊆ t) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
+      indicatorConstLp p hs (measure_ne_top_of_subset hst hμt) v := by
+  rw [indicatorMultiplication_indicatorConstLp]
+  simp [Set.inter_eq_left.mpr hst]
+
+/-- Multiplying an `Lᵖ` constant indicator of `s` by the indicator of `s` fixes it. -/
+@[simp] theorem indicatorMultiplication_indicatorConstLp_self (hs : MeasurableSet s)
+    (hμs : μ s ≠ ∞) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p hs hμs v) = indicatorConstLp p hs hμs v :=
+  indicatorMultiplication_indicatorConstLp_of_subset hs hs hμs Set.Subset.rfl v
+
+/-- If two finite-measure measurable sets induce the same indicator multiplication operator on
+`Lp E p μ` (for a nontrivial space `E`), then the two sets agree almost everywhere (with no
+`SigmaFinite` hypothesis on `μ`). -/
+theorem ae_eq_of_indicatorMultiplication_eq [Nontrivial E] {t : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (ht : MeasurableSet t) (hμt : μ t ≠ ∞)
+    (h : indicatorMultiplication (E := E) (μ := μ) 𝕜 p hs =
+      indicatorMultiplication (E := E) (μ := μ) 𝕜 p ht) :
+    s =ᵐ[μ] t := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : E)
+  have hmem_of {u w : Set α} (hu : MeasurableSet u) (hμu : μ u ≠ ∞) (hw : MeasurableSet w)
+      (heq : indicatorMultiplication (E := E) (μ := μ) 𝕜 p hu =
+        indicatorMultiplication (E := E) (μ := μ) 𝕜 p hw) :
+      ∀ᵐ x ∂μ, x ∈ u → x ∈ w := by
+    have happly : indicatorConstLp p hu hμu v =
+        indicatorConstLp p (hw.inter hu)
+          (measure_ne_top_of_subset Set.inter_subset_right hμu) v := by
+      have happly' :=
+        congrArg (fun T : Lp E p μ →L[𝕜] Lp E p μ ↦ T (indicatorConstLp p hu hμu v)) heq
+      simpa only [indicatorMultiplication_indicatorConstLp_self,
+        indicatorMultiplication_indicatorConstLp] using happly'
+    filter_upwards [Lp.ext_iff.mp happly,
+      indicatorConstLp_coeFn (p := p) (hs := hu) (hμs := hμu) (c := v),
+      indicatorConstLp_coeFn (p := p) (hs := hw.inter hu)
+        (hμs := measure_ne_top_of_subset Set.inter_subset_right hμu) (c := v)]
+      with x hxe hxu hxwu hmem
+    rw [hxu, Set.indicator_of_mem hmem] at hxe
+    rw [hxwu] at hxe
+    by_contra hnot
+    rw [Set.indicator_of_notMem fun (h' : x ∈ w ∩ u) ↦ hnot h'.1] at hxe
+    exact hv hxe
+  filter_upwards [hmem_of hs hμs ht h, hmem_of ht hμt hs h.symm] with x hst hts
+  exact ⟨hst, hts⟩
+
+/-- Two finite-measure measurable sets induce the same indicator multiplication operator on
+`Lp E p μ` (for a nontrivial space `E`) if and only if they agree almost everywhere. -/
+theorem indicatorMultiplication_inj [Nontrivial E] {t : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (ht : MeasurableSet t) (hμt : μ t ≠ ∞) :
+    indicatorMultiplication (E := E) (μ := μ) 𝕜 p hs =
+      indicatorMultiplication (E := E) (μ := μ) 𝕜 p ht ↔ s =ᵐ[μ] t :=
+  ⟨ae_eq_of_indicatorMultiplication_eq hs hμs ht hμt, indicatorMultiplication_congr hs ht⟩
+
+/-- If `f` vanishes almost everywhere outside `s`, then `indicatorMultiplication 𝕜 p hs f = f`. -/
+theorem indicatorMultiplication_eq_self_of_ae_notMem (hs : MeasurableSet s) {f : Lp E p μ}
+    (hf : ∀ᵐ x ∂μ, x ∉ s → f x = 0) :
+    indicatorMultiplication 𝕜 p hs f = f := by
+  refine indicatorMultiplication_eq_iff.mpr ?_
+  filter_upwards [hf] with x hfx
+  by_cases hxs : x ∈ s
+  · rw [Set.indicator_of_mem hxs]
+  · rw [Set.indicator_of_notMem hxs, hfx hxs]
+
+/-- Restricting an `Lᵖ` class to a measurable set `s` and extending back by zero to the whole
+space equals `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs`. -/
+theorem _root_.TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM {s : Set α}
+    (hs : MeasurableSet s) (f : Lp E p μ) :
+    TauCeti.castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
+      (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s)
+        (LpToLpRestrictCLM α E 𝕜 μ p s f)) =
+      indicatorMultiplication 𝕜 p hs f := by
+  refine Lp.ext ((TauCeti.coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 hs.nullMeasurableSet _).trans ?_)
+  filter_upwards [(ae_restrict_iff' hs).mp (LpToLpRestrictCLM_coeFn 𝕜 s f),
+    (indicatorMultiplication_ae (𝕜 := 𝕜) hs f).symm] with x hxR hind
+  rw [← hind]
+  by_cases hxs : x ∈ s
+  · simp [hxs, hxR hxs]
+  · simp [hxs]
+
+/-- Commuting with `indicatorMultiplication` commutes its action on `Lp` functions. -/
+theorem _root_.Commute.indicatorMultiplication_apply {T : Lp E p μ →L[𝕜] Lp E p μ}
+    {hs : MeasurableSet s} (h : Commute T (indicatorMultiplication 𝕜 p hs)) (f : Lp E p μ) :
+    T (indicatorMultiplication 𝕜 p hs f) = indicatorMultiplication 𝕜 p hs (T f) := by
+  simpa only [mul_apply_eq_comp] using congr($h.eq f)
 
 /-- Multiplication by the indicator of the whole space is the identity. -/
 @[simp] theorem indicatorMultiplication_univ :
@@ -267,6 +384,16 @@ theorem indicatorMultiplication_comp_indicatorMultiplication {t : Set α} (hs : 
   rw [hst, ← Set.indicator_indicator]
   by_cases hxs : x ∈ s <;> simp [hxs, hx]
 
+/-- The cut-offs of an `Lᵖ` class to a measurable set and to its complement add up to the class. -/
+theorem indicatorMultiplication_add_compl (hs : MeasurableSet s) (f : Lp E p μ) :
+    indicatorMultiplication 𝕜 p hs f + indicatorMultiplication 𝕜 p hs.compl f = f := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_add (indicatorMultiplication 𝕜 p hs f)
+      (indicatorMultiplication 𝕜 p hs.compl f),
+    indicatorMultiplication_ae (𝕜 := 𝕜) hs f,
+    indicatorMultiplication_ae (𝕜 := 𝕜) hs.compl f] with x hx h₁ h₂
+  rw [hx, Pi.add_apply, h₁, h₂, Set.indicator_self_add_compl_apply]
+
 /-- Applying `indicatorMultiplication` does not increase the `Lᵖ` norm. -/
 theorem norm_indicatorMultiplication_apply_le (hs : MeasurableSet s) (f : Lp E p μ) :
     ‖indicatorMultiplication 𝕜 p hs f‖ ≤ ‖f‖ :=
@@ -285,6 +412,60 @@ theorem norm_indicatorMultiplication_le (hs : MeasurableSet s) :
     eLpNorm (indicatorMultiplication 𝕜 p hs f) r μ = eLpNorm f r (μ.restrict s) := by
   rw [eLpNorm_congr_ae (indicatorMultiplication_ae hs f),
     eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
+
+open Filter Topology in
+/-- **Cut-offs to shrinking sets.** Cutting an `Lᵖ` class, `p < ∞`, off to the sets of a decreasing
+family with empty intersection gives classes whose norms tend to zero: the `p`-th powers of the
+norms are the measures of the sets for the finite measure `‖f‖ᵖ μ`. -/
+theorem tendsto_norm_indicatorMultiplication {ι : Type*} [Preorder ι]
+    [IsCountablyGenerated (atTop : Filter ι)] (hp : p ≠ ∞) {s : ι → Set α}
+    (hs : ∀ i, MeasurableSet (s i)) (hanti : Antitone s) (hempty : ⋂ i, s i = ∅)
+    (f : Lp E p μ) :
+    Tendsto (fun i ↦ ‖indicatorMultiplication 𝕜 p (hs i) f‖) atTop (𝓝 0) := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · rw [atTop.filter_eq_bot_of_isEmpty]
+    exact tendsto_bot
+  have hp0 : p ≠ 0 := (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p)).ne'
+  have hpos : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
+  -- The `p`-th powers of the norms are the measures of the sets for `‖f‖ᵖ μ`.
+  set ν := μ.withDensity fun x ↦ ‖f x‖ₑ ^ p.toReal
+  have hν (i : ι) :
+      ‖indicatorMultiplication 𝕜 p (hs i) f‖ = (ν (s i) ^ (1 / p.toReal)).toReal := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (indicatorMultiplication_ae (hs i) f),
+      eLpNorm_indicator_eq_eLpNorm_restrict (hs i).nullMeasurableSet,
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable f).restrict,
+      withDensity_apply _ (hs i)]
+  have hfin : ν (s i₀) ≠ ∞ := by
+    refine ne_top_of_le_ne_top ?_ (measure_mono (Set.subset_univ _))
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    exact (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp (Lp.eLpNorm_lt_top f)).ne
+  have h := tendsto_measure_iInter_atTop (μ := ν) (fun i ↦ (hs i).nullMeasurableSet) hanti
+    ⟨i₀, hfin⟩
+  rw [hempty, measure_empty] at h
+  have h' := ((ENNReal.continuous_rpow_const (y := 1 / p.toReal)).tendsto 0).comp h
+  rw [ENNReal.zero_rpow_of_pos hpos] at h'
+  simp only [hν]
+  simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h'
+
+open Filter Topology in
+/-- On a sigma-finite measure space and for `p < ∞`, the indicator multiplications along
+`spanningSets μ` converge strongly to the identity on `Lp E p μ`. -/
+theorem tendsto_indicatorMultiplication_spanningSets [SigmaFinite μ] (hp : p ≠ ∞)
+    (f : Lp E p μ) :
+    Tendsto (fun n ↦ indicatorMultiplication 𝕜 p (measurableSet_spanningSets μ n) f)
+      atTop (𝓝 f) := by
+  have hmem (n : ℕ) : MemLp ((spanningSets μ n).indicator ⇑f) p μ :=
+    (Lp.memLp f).indicator (measurableSet_spanningSets μ n).nullMeasurableSet
+  have heq (n : ℕ) : indicatorMultiplication 𝕜 p (measurableSet_spanningSets μ n) f =
+      (hmem n).toLp _ :=
+    Lp.ext <| (indicatorMultiplication_ae (measurableSet_spanningSets μ n) f).trans
+      (hmem n).coeFn_toLp.symm
+  simp_rw [heq]
+  refine TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le hp hmem
+    EventuallyEq.rfl (fun n ↦ .of_forall fun x ↦ norm_indicator_le_norm_self _ _) ?_
+  refine .of_forall fun x ↦ tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_mem_spanningSets μ x] with n hn
+  exact (Set.indicator_of_mem hn _).symm
 
 end Indicator
 

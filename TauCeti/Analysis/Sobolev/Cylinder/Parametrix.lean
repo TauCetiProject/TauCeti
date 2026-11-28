@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Cylinder
 import TauCeti.Analysis.Sobolev.Cylinder.Frame
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
@@ -169,19 +169,18 @@ theorem cutoffL_add_cutoffL {γ₁ γ₂ : ℝ → ℝ} {B₁ B₂ : ℝ} (hγ�
 
 /-- Multiplying by a cutoff `β(s)` that is locally constant, equal to `b`, on the first
 coordinates of a measurable set `A` is multiplication by `b` on `A`. -/
-theorem multiplicationOperator_linftyIndicator_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β)
+theorem indicatorMultiplication_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β)
     {B : ℝ} (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) {A : Set (ℝ × ℝ)}
     (hA : MeasurableSet A) {b : ℝ} (h : ∀ z ∈ A, β =ᶠ[𝓝 z.1] fun _ ↦ b) (x : W1p V p) :
-    Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
+    Lp.indicatorMultiplication ℝ p hA
         (cutoffL p hβ hβB hβ'B x : Lp (V × V × V) p stripMeasure) =
-      b • Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-        (x : Lp (V × V × V) p stripMeasure) := by
+      b • Lp.indicatorMultiplication ℝ p hA (x : Lp (V × V × V) p stripMeasure) := by
   refine Lp.ext ?_
-  filter_upwards [Lp.multiplicationOperator_linftyIndicator_ae hA
+  filter_upwards [Lp.indicatorMultiplication_ae (𝕜 := ℝ) hA
       (cutoffL p hβ hβB hβ'B x : Lp (V × V × V) p stripMeasure),
-    Lp.coeFn_smul b (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
+    Lp.coeFn_smul b (Lp.indicatorMultiplication ℝ p hA
       (x : Lp (V × V × V) p stripMeasure)),
-    Lp.multiplicationOperator_linftyIndicator_ae hA (x : Lp (V × V × V) p stripMeasure),
+    Lp.indicatorMultiplication_ae (𝕜 := ℝ) hA (x : Lp (V × V × V) p stripMeasure),
     coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B)
       (x : Lp (V × V × V) p stripMeasure)] with z h₁ h₂ h₃ h₄
   rw [h₁, h₂, Pi.smul_apply, h₃]

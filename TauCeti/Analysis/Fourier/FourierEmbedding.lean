@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 
 /-!
 # The polynomials in `z` of degree `< n` as a copy of `ℂⁿ`
