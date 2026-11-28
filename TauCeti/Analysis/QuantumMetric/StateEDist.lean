@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.QuantumMetric.ExtendedLipschitzSeminorm
+public import Mathlib.Topology.Semicontinuity.Basic
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # The state distance of an extended Lipschitz seminorm
@@ -137,6 +139,43 @@ theorem edist_apply_le_mul_stateEDist (h : φ e = ψ e) (a : E) :
   · simp [(L.stateEDist_eq_zero_iff).1 h0]
   · simp [ha, ENNReal.top_mul h0]
 
+/-- The state distance is lower semicontinuous in the pair of weak-star functionals. -/
+theorem lowerSemicontinuous_stateEDist :
+    LowerSemicontinuous (fun p : WeakDual ℝ E × WeakDual ℝ E => L.stateEDist p.1 p.2) := by
+  simp only [stateEDist_def]
+  exact lowerSemicontinuous_iSup fun a => lowerSemicontinuous_iSup fun _ =>
+    ((WeakDual.eval_continuous a).comp continuous_fst |>.edist
+      ((WeakDual.eval_continuous a).comp continuous_snd)).lowerSemicontinuous
+
+/-- A sublevel set of the state distance is weak-star closed, jointly in both functionals. -/
+theorem isClosed_setOf_stateEDist_le (r : ℝ≥0∞) :
+    IsClosed {p : WeakDual ℝ E × WeakDual ℝ E | L.stateEDist p.1 p.2 ≤ r} :=
+  L.lowerSemicontinuous_stateEDist.isClosed_preimage r
+
+/-- The explicit extended metric given by the state distance on the weak dual. -/
+@[instance_reducible]
+noncomputable def weakDualEMetricSpace : EMetricSpace (WeakDual ℝ E) where
+  edist := L.stateEDist
+  edist_self := L.stateEDist_self
+  edist_comm := L.stateEDist_comm
+  edist_triangle := L.stateEDist_triangle
+  eq_of_edist_eq_zero := L.stateEDist_eq_zero_iff.mp
+
+/-- The extended distance of the explicit weak-dual metric is the state distance. -/
+@[simp]
+theorem edist_weakDualEMetricSpace (φ ψ : WeakDual ℝ E) :
+    @edist _ L.weakDualEMetricSpace.toEDist φ ψ = L.stateEDist φ ψ :=
+  (rfl)
+
+/-- On each slice of functionals with prescribed value at `e`, evaluation at a finite-domain
+element is Lipschitz for the state distance with constant equal to its seminorm. -/
+theorem lipschitzOnWith_eval (a : L.domain) (c : ℝ) :
+    letI := L.weakDualEMetricSpace
+    LipschitzOnWith (L a).toNNReal (fun φ : WeakDual ℝ E => φ a) {φ | φ e = c} := by
+  intro φ hφ ψ hψ
+  rw [ENNReal.coe_toNNReal (L.mem_domain.1 a.property)]
+  exact L.edist_apply_le_mul_stateEDist (Eq.trans hφ (Eq.symm hψ)) a
+
 /-- A larger extended Lipschitz seminorm has a smaller unit ball, hence a smaller state
 distance. -/
 theorem stateEDist_antitone (φ ψ : WeakDual ℝ E) :
@@ -205,6 +244,40 @@ theorem stateEDist_comapEquiv (T : F ≃L[ℝ] E) (hT : T f = e) {φ' ψ' : Weak
     (hφ : ∀ a, φ' a = φ (T a)) (hψ : ∀ a, ψ' a = ψ (T a)) :
     (L.comapEquiv T hT).stateEDist φ' ψ' = L.stateEDist φ ψ :=
   stateEDist_eq_of_apply_eq (L.comapEquiv_apply T hT) T.surjective hφ hψ
+
+section Normed
+
+open Filter
+open scoped Topology
+
+variable {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V] {u : V}
+  (L : ExtendedLipschitzSeminorm u)
+
+/-- For an eventually norm-bounded family of functionals, convergence in state distance
+implies weak-star convergence. -/
+theorem tendsto_weakDual_of_stateEDist_tendsto_zero {ι : Type*} {l : Filter ι}
+    {φ : ι → WeakDual ℝ V} {ψ : WeakDual ℝ V} {C : ℝ}
+    (hbound : ∀ᶠ i in l, ‖WeakDual.toStrongDual (φ i)‖ ≤ C)
+    (h : Tendsto (fun i => L.stateEDist (φ i) ψ) l (𝓝 0)) : Tendsto φ l (𝓝 ψ) := by
+  rw [tendsto_iff_forall_eval_tendsto_topDualPairing]
+  intro a
+  change Tendsto (fun i => topDualPairing ℝ V (WeakDual.toStrongDual (φ i)) a) l
+    (𝓝 (topDualPairing ℝ V (WeakDual.toStrongDual ψ) a))
+  simp only [topDualPairing_apply]
+  have hfinite (x : V) (hx : x ∈ L.domain) : Tendsto (fun i => φ i x) l (𝓝 (ψ x)) := by
+    let := L.weakDualEMetricSpace
+    let : TopologicalSpace (WeakDual ℝ V) :=
+      L.weakDualEMetricSpace.toUniformSpace.toTopologicalSpace
+    have hslice : ∀ᶠ i in l, φ i u = ψ u := by
+      filter_upwards [h.eventually_lt_const ENNReal.zero_lt_top] with i hi
+      exact of_not_not fun hne => hi.ne (L.stateEDist_eq_top_of_apply_ne hne)
+    exact ((L.lipschitzOnWith_eval ⟨x, hx⟩ (ψ u)).continuousOn (x := ψ) rfl).tendsto.comp
+      (tendsto_nhdsWithin_iff.2 ⟨tendsto_iff_edist_tendsto_0.2 h, hslice⟩)
+  exact ContinuousLinearMap.tendsto_apply_of_dense (σ₁₂ := RingHom.id ℝ) L.dense_domain
+    (f := fun i => WeakDual.toStrongDual (φ i)) (g := WeakDual.toStrongDual ψ) hbound
+    (fun x hx => by simpa only [WeakDual.toStrongDual_apply] using hfinite x hx) a
+
+end Normed
 
 end ExtendedLipschitzSeminorm
 
