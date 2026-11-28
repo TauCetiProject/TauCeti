@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Reduction of an integral finite idele
@@ -50,5 +51,40 @@ theorem integralUnitsReduction_surjective (v : HeightOneSpectrum R) :
     (Valuation.mem_unitGroup_iff _ Valued.v _).1 u.property
   obtain ⟨x, hx, hxu⟩ := (image_unitsProj_integralUnits (K := K) v).ge hu
   exact ⟨⟨x, hx⟩, integralUnitsReduction_eq_of_unitsProj_eq v ⟨x, hx⟩ u hxu⟩
+
+/-- A finite idele reduces to `1` at `v` exactly when its `v`-component differs from `1`
+by an element of the maximal ideal of the completed valuation ring. -/
+theorem integralUnitsReduction_eq_one_iff (v : HeightOneSpectrum R) (x : integralUnits R K) :
+    v.integralUnitsReduction x = 1 ↔ Valued.v ((unitsProj K v x : v.adicCompletion K) - 1) < 1 := by
+  let u : (v.adicCompletionIntegers K).unitGroup := ⟨unitsProj K v x, by
+    apply (Valuation.mem_unitGroup_iff _ Valued.v _).2
+    simpa only [coe_unitsProj_apply] using mem_integralUnits_iff.1 x.property v⟩
+  rw [integralUnitsReduction_eq_of_unitsProj_eq v x u rfl, ← MonoidHom.mem_ker,
+    ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap,
+    Subgroup.coe_subtype, ValuationSubring.mem_principalUnitGroup_iff]
+  exact (Valuation.isEquiv_valuation_valuationSubring Valued.v).symm.lt_one_iff_lt_one
+
+/-- The kernel of reduction at `v` is open in the integral finite ideles. -/
+theorem isOpen_ker_integralUnitsReduction (v : HeightOneSpectrum R) :
+    IsOpen ((v.integralUnitsReduction (K := K)).ker : Set (integralUnits R K)) := by
+  have hball : IsOpen {y : v.adicCompletion K | Valued.v y < 1} := by
+    simpa only [Valuation.restrict_lt_iff_lt_embedding, map_one] using
+      (Valued.isOpen_ball (v.adicCompletion K) 1)
+  have hker : ((v.integralUnitsReduction (K := K)).ker : Set (integralUnits R K)) =
+      (fun x : integralUnits R K ↦ (unitsProj K v x : v.adicCompletion K) - 1) ⁻¹'
+        {y | Valued.v y < 1} := Set.ext v.integralUnitsReduction_eq_one_iff
+  rw [hker]
+  exact hball.preimage (((Units.continuous_val.comp (continuous_unitsProj v)).comp
+    continuous_subtypeVal).sub continuous_const)
+
+/-- Any character of the residue-field units pulls back to a continuous homomorphism on
+integral finite ideles. Continuity does not require putting a topology on the residue field. -/
+theorem continuous_comp_integralUnitsReduction (v : HeightOneSpectrum R) {A : Type*}
+    [MulOneClass A] [TopologicalSpace A]
+    (χ : (IsLocalRing.ResidueField (v.adicCompletionIntegers K))ˣ →* A) :
+    Continuous (χ.comp v.integralUnitsReduction) :=
+  (χ.comp v.integralUnitsReduction).continuous_of_isOpen_ker <|
+    Subgroup.isOpen_mono (fun _ hx ↦ by simp [MonoidHom.mem_ker.mp hx])
+      v.isOpen_ker_integralUnitsReduction
 
 end IsDedekindDomain.HeightOneSpectrum
