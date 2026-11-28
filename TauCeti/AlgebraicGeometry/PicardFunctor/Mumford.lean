@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange.Monoid
 public import TauCeti.AlgebraicGeometry.GroupScheme.Mumford.Basic
 public import TauCeti.AlgebraicGeometry.PicardFunctor.BaseChange
 
@@ -74,14 +75,19 @@ theorem uliftYonedaEquiv_mumfordPicardMap (L : InvertibleSheaf G.left) :
       RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L) :=
   uliftYonedaEquiv.apply_symm_apply _
 
+private theorem toLineBundleClass_injective_baseChangeUnit (T : Over S) :
+    Function.Injective (RigidifiedLineBundleClass.toLineBundleClass
+      (s := baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)) :=
+  RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
+    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
+
 /-- The Mumford family depends only on the line-bundle class of its input. -/
 theorem mumfordPicardMap_congr {L M : InvertibleSheaf G.left}
     (h : LineBundleClass.mk L = LineBundleClass.mk M) :
     mumfordPicardMap L = mumfordPicardMap M := by
   apply uliftYonedaEquiv.injective
   rw [uliftYonedaEquiv_mumfordPicardMap, uliftYonedaEquiv_mumfordPicardMap]
-  apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
-    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) G)
+  apply toLineBundleClass_injective_baseChangeUnit (G := G) G
   simp only [RigidifiedLineBundleClass.toLineBundleClass_mk,
     mumfordRigidifiedLineBundle_eq, mk_mumfordLineBundle, h]
 
@@ -120,8 +126,7 @@ theorem mumfordPicardMap_app_pullback {H : Over S} [MonObj H] (f : G ⟶ H) [IsM
         apply congrArg (fun k : T ⟶ T ⊗ H ↦ k.left)
         simp only [lift_whiskerLeft, Category.assoc, IsMonHom.one_hom])
         ((mumfordPicardMap L).app (op T) ⟨a ≫ f⟩) := by
-  apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
-    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
+  apply toLineBundleClass_injective_baseChangeUnit (G := G) T
   have h : (a ▷ G) ≫ (f ⊗ₘ f) = (T ◁ f) ≫ (a ≫ f) ▷ H := by
     rw [whiskerRight_comp_tensorHom, tensorHom_def']
   refine Eq.trans ?_ (RigidifiedLineBundleClass.toLineBundleClass_pullback _ _).symm
@@ -158,8 +163,7 @@ theorem mumfordPicardMap_app_one (L : InvertibleSheaf G.left) (T : Over S) :
     · simp only [whiskerRight_fst, Category.assoc, lift_fst, Hom.one_def,
         comp_toUnit_assoc]
     · simp only [whiskerRight_snd, Category.assoc, lift_snd, Category.comp_id]
-  apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
-    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
+  apply toLineBundleClass_injective_baseChangeUnit (G := G) T
   rw [toLineBundleClass_mumfordPicardMap_app_eq_pullback,
     RigidifiedLineBundleClass.toLineBundleClass_one, h, Over.comp_left,
     ← LineBundleClass.pullback_comp]
@@ -176,8 +180,7 @@ theorem mumfordPicardMap_app_pullback_hom (L : InvertibleSheaf S) {T : Over S} (
   -- Use the explicit class group instance so `toLineBundleClass_one` can rewrite.
   change _ = (1 : RigidifiedLineBundleClass
     (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T))
-  apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
-    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
+  apply toLineBundleClass_injective_baseChangeUnit (G := G) T
   rw [toLineBundleClass_mumfordPicardMap_app_eq_pullback,
     RigidifiedLineBundleClass.toLineBundleClass_one, ← LineBundleClass.pullback_mk,
     mumfordClass_pullback_hom, LineBundleClass.pullback_one]
@@ -189,8 +192,7 @@ theorem mumfordPicardMap_app_tensorProduct (L M : InvertibleSheaf G.left) {T : O
       ((mumfordPicardMap L).app (op T) ⟨a⟩ : RigidifiedLineBundleClass
         (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)) *
         (mumfordPicardMap M).app (op T) ⟨a⟩ := by
-  apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
-    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
+  apply toLineBundleClass_injective_baseChangeUnit (G := G) T
   refine Eq.trans ?_ (RigidifiedLineBundleClass.toLineBundleClass_mul
     (s := baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
     ((mumfordPicardMap L).app (op T) ⟨a⟩) ((mumfordPicardMap M).app (op T) ⟨a⟩)).symm
@@ -202,77 +204,7 @@ section BaseChange
 
 variable {S S' : Scheme.{u}} {G : Over S} [MonObj G] (g : S' ⟶ S)
 
-private def mumfordBaseChangeOverIso :
-    (Over.pullback g).obj G ≅ Over.mk (pullback.fst g G.hom) :=
-  Over.isoMk (pullbackSymmetry _ _) (by simp)
-
-private abbrev transportedMonObj : MonObj (Over.mk (pullback.fst g G.hom)) :=
-  letI := Functor.monObjObj (F := Over.pullback g) G
-  MonObj.ofIso (mumfordBaseChangeOverIso g)
-
-private theorem mumfordBaseChange_one :
-    (transportedMonObj (G := G) g).one =
-      Over.homMk (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) (Over.mk g))
-        (baseChangeSection_fst ..) := by
-  apply Over.OverMorphism.ext
-  have hε : (Functor.LaxMonoidal.ε (Over.pullback g)).left ≫ pullback.snd (𝟙 S) g =
-      𝟙 S' := by simp
-  have hε' : (Functor.LaxMonoidal.ε (Over.pullback g)).left ≫ pullback.fst (𝟙 S) g = g := by
-    calc
-      _ = (Functor.LaxMonoidal.ε (Over.pullback g)).left ≫
-          (pullback.fst (𝟙 S) g ≫ 𝟙 S) := by simp
-      _ = g := by
-        rw [pullback.condition, ← Category.assoc, hε]
-        simp
-  -- Expose the transported unit so both sides can be compared by their pullback projections.
-  change (Functor.LaxMonoidal.ε (Over.pullback g) ≫ (Over.pullback g).map η[G] ≫
-    (mumfordBaseChangeOverIso g).hom).left = _
-  apply pullback.hom_ext
-  · simpa [mumfordBaseChangeOverIso] using
-      (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) (Over.mk g)).symm
-  · simpa [mumfordBaseChangeOverIso, hε'] using
-      (baseChangeSection_snd G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) (Over.mk g)).symm
-
-/-- The monoid structure on `S' ×_S G`, with the base-changed unit as its section. Use this
-structure to evaluate the Mumford family in the domain of the rigidified Picard comparison. -/
-abbrev mumfordBaseChangeMonObj : MonObj (Over.mk (pullback.fst g G.hom)) :=
-  letI := Functor.monObjObj (F := Over.pullback g) G
-  let m := MonObj.ofIso (Over.isoMk (pullbackSymmetry G.hom g)
-    (by simp) : (Over.pullback g).obj G ≅ Over.mk (pullback.fst g G.hom))
-  { m with
-    one := Over.homMk
-      (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) (Over.mk g))
-      (baseChangeSection_fst ..)
-    one_mul := by
-      have eq := mumfordBaseChange_one (G := G) g
-      change m.one = _ at eq
-      simpa only [eq] using m.one_mul
-    mul_one := by
-      have eq := mumfordBaseChange_one (G := G) g
-      change m.one = _ at eq
-      simpa only [eq] using m.mul_one }
-
-attribute [local instance] mumfordBaseChangeMonObj
-
-private theorem mumfordBaseChange_mul :
-    μ[Over.mk (pullback.fst g G.hom)].left ≫ pullback.snd g G.hom =
-      pullback.map _ _ _ _ (pullback.snd g G.hom) (pullback.snd g G.hom) g
-        pullback.condition pullback.condition ≫ μ[G].left := by
-  -- The multiplication first swaps the factors back, then uses the product comparison.
-  change (((mumfordBaseChangeOverIso g).inv ⊗ₘ (mumfordBaseChangeOverIso g).inv) ≫
-      Functor.LaxMonoidal.μ (Over.pullback g) G G ≫ (Over.pullback g).map μ[G] ≫
-      (mumfordBaseChangeOverIso g).hom).left ≫ _ = _
-  simp only [Over.comp_left, Category.assoc, mumfordBaseChangeOverIso, Over.isoMk_hom_left,
-    pullbackSymmetry_hom_comp_snd, Over.pullback_map_left, pullback.lift_fst]
-  rw [← Category.assoc, ← Category.assoc]
-  congr 1
-  apply pullback.hom_ext
-  · simp only [Category.assoc, Over.μ_pullback_left_fst_fst, Over.tensorHom_left,
-      pullback.map, pullback.lift_fst, pullback.lift_fst_assoc, Over.mk_hom,
-      Over.isoMk_inv_left, pullbackSymmetry_inv_comp_fst]
-  · simp only [Category.assoc, Over.μ_pullback_left_fst_snd, Over.tensorHom_left,
-      pullback.map, pullback.lift_snd, pullback.lift_snd_assoc, Over.mk_hom,
-      Over.isoMk_inv_left, pullbackSymmetry_inv_comp_fst]
+attribute [local instance] baseChangeMonObj
 
 private theorem pullback_toLineBundleClass_mumfordPicardMap_app_baseChange
     (L : InvertibleSheaf G.left) {T : Over S'} (a : T ⟶ Over.mk (pullback.fst g G.hom))
@@ -296,7 +228,7 @@ private theorem pullback_toLineBundleClass_mumfordPicardMap_app_baseChange
     simp [q, G']
   have hmul : q ≫ ((fst T G' ≫ a) * snd T G').left ≫ pullback.snd g G.hom =
       ((fst ((Over.map g).obj T) G ≫ a₀) * snd ((Over.map g).obj T) G).left := by
-    simp only [Hom.mul_def, Over.comp_left, Category.assoc, mumfordBaseChange_mul]
+    simp only [Hom.mul_def, Over.comp_left, Category.assoc, baseChangeMonObj_mul_left_snd]
     rw [← Category.assoc, ← Category.assoc]
     congr 1
     apply pullback.hom_ext
@@ -308,16 +240,12 @@ private theorem pullback_toLineBundleClass_mumfordPicardMap_app_baseChange
       exact hsnd
   have hone : q ≫ (toUnit (T ⊗ G') ≫ η[G']).left ≫ pullback.snd g G.hom =
       (toUnit (((Over.map g).obj T) ⊗ G) ≫ η[G]).left := by
-    have h := baseChangeSection_snd G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom)
-      (Over.mk g)
     -- The class uses the terminal map, whose underlying map is the structure morphism.
     change
       q ≫ (pullback.fst T.hom (pullback.fst g G.hom) ≫ T.hom) ≫
-        baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) (Over.mk g) ≫
-        pullback.snd g G.hom =
+        η[G'].left ≫ pullback.snd g G.hom =
       (toUnit (((Over.map g).obj T) ⊗ G) ≫ η[G]).left
-    simp only [Over.mk_hom] at h
-    simp [q, h, Over.comp_left]
+    simp [q, G', Over.comp_left]
   rw [hmul, hfst, hsnd, hone]
 
 /-- The comparison of rigidified Picard functors carries the Mumford family of a pulled-back
@@ -333,8 +261,7 @@ theorem mumfordPicardMap_app_baseChange (L : InvertibleSheaf G.left) {T : Over S
         (by
           rw [Category.assoc, ← pullback.condition, ← Category.assoc]
           exact congrArg (fun f ↦ f ≫ g) a.w)⟩ := by
-  apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
-    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) ((Over.map g).obj T))
+  apply toLineBundleClass_injective_baseChangeUnit (G := G) ((Over.map g).obj T)
   let b : RigidifiedLineBundleClass (baseChangeSection (pullback.fst g G.hom)
       (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) (Over.mk g))
       (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) (Over.mk g)) T) :=
