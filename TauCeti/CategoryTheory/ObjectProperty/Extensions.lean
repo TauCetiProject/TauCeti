@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 
 /-!
-# Weak Serre subcategories and five-term exact sequences
+# Weak Serre subcategories, five-term exact sequences and closed classes
 
 Let `P` be a property of objects of an abelian category which is closed under kernels, cokernels
 and extensions; such a `P` is called a weak Serre subcategory. If `A ⟶ B ⟶ M ⟶ D ⟶ E` is exact at
@@ -22,10 +24,26 @@ Applied to the long exact homology sequence of a distinguished triangle, this sh
 objects of a derived category whose homology objects all satisfy `P` form a triangulated
 subcategory.
 
+A *closed class* (`CategoryTheory.ObjectProperty.IsClosedClass`) is a property that holds for
+zero objects and, in a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with `X₁` in it, holds for
+`X₂` exactly when it holds for `X₃`. A closed class is closed under extensions
+(`CategoryTheory.ObjectProperty.IsClosedClass.isClosedUnderExtensions`).
+
+A property of objects of a preadditive category with a zero object and finite biproducts which
+contains zero and is closed under isomorphisms and extensions, for instance a Serre class, is closed
+under finite coproducts
+(`CategoryTheory.ObjectProperty.isClosedUnderFiniteCoproducts_of_isClosedUnderExtensions`), since a
+binary coproduct is a biproduct, an extension of its two summands
+(`CategoryTheory.ObjectProperty.isClosedUnderBinaryCoproducts_of_isClosedUnderExtensions`).
+
 ## References
 
 * The Stacks project, chapter Homological Algebra, section Serre subcategories: the
   characterization of weak Serre subcategories by five-term exact sequences.
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/Cohomology/Etale/BijectiveComparisons.lean` (declaration `New.Variety.IsClosedClass`);
+  Apache 2.0, Copyright 2026 Anthropic, PBC. `CategoryTheory.ObjectProperty.IsClosedClass` is
+  adapted from it and stated for an arbitrary abelian category.
 -/
 
 public section
@@ -61,5 +79,61 @@ theorem prop_X₂_of_exact_of_exact_of_exact {S : ShortComplex C} (hS : S.Exact)
   have hT : T.Exact := (ShortComplex.exact_iff_of_epi_of_isIso_of_mono ψ).2
     ((ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1 hS)
   exact P.prop_X₂_of_shortExact (S := T) ⟨hT⟩ (P.prop_cokernel a hA h₁) (P.prop_kernel e h₃ hE)
+
+end CategoryTheory.ObjectProperty
+
+namespace CategoryTheory.ObjectProperty
+
+open Limits
+
+variable {C : Type*} [Category* C] [Abelian C]
+
+/-- A property `P` of objects of an abelian category is a *closed class* if it holds for every
+zero object and, for every short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with `P X₁`, `P X₂`
+holds exactly when `P X₃` does. Such a class is closed under extensions
+(`CategoryTheory.ObjectProperty.IsClosedClass.isClosedUnderExtensions`). -/
+class IsClosedClass (P : ObjectProperty C) : Prop where
+  /-- A closed class contains every zero object. -/
+  prop_of_isZero {X : C} : IsZero X → P X
+  /-- In a short exact sequence whose first term is in the class, the middle term is in it
+  exactly when the last one is. -/
+  prop_X₂_iff_prop_X₃ {S : ShortComplex C} (hS : S.ShortExact) (h₁ : P S.X₁) : P S.X₂ ↔ P S.X₃
+
+/-- A closed class is closed under extensions. -/
+instance IsClosedClass.isClosedUnderExtensions (P : ObjectProperty C) [P.IsClosedClass] :
+    P.IsClosedUnderExtensions where
+  prop_X₂_of_shortExact hS h₁ h₃ := (IsClosedClass.prop_X₂_iff_prop_X₃ hS h₁).2 h₃
+
+end CategoryTheory.ObjectProperty
+
+namespace CategoryTheory.ObjectProperty
+
+open Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C]
+
+/-- **A property closed under isomorphisms and extensions is closed under binary coproducts.** In
+a preadditive category with a zero object and binary biproducts, a binary coproduct of `X` and `Y`
+is isomorphic to the biproduct `X ⊞ Y`, an extension of `Y` by `X`. -/
+theorem isClosedUnderBinaryCoproducts_of_isClosedUnderExtensions (P : ObjectProperty C)
+    [HasBinaryBiproducts C] [P.IsClosedUnderIsomorphisms] [P.IsClosedUnderExtensions] :
+    P.IsClosedUnderBinaryCoproducts where
+  colimitsOfShape_le := by
+    rintro X ⟨p⟩
+    refine P.prop_of_iso ?_
+      (P.prop_biprod (p.prop_diag_obj (.mk .left)) (p.prop_diag_obj (.mk .right)))
+    exact IsColimit.coconePointUniqueUpToIso (BinaryBiproduct.isColimit _ _)
+      ((IsColimit.precomposeHomEquiv (diagramIsoPair p.diag).symm _).invFun p.isColimit)
+
+/-- **A property containing zero and closed under isomorphisms and extensions is closed under
+finite coproducts**, for instance a Serre class: a finite coproduct is an iterated extension of its
+summands. -/
+instance isClosedUnderFiniteCoproducts_of_isClosedUnderExtensions (P : ObjectProperty C)
+    [HasFiniteBiproducts C] [P.ContainsZero] [P.IsClosedUnderIsomorphisms]
+    [P.IsClosedUnderExtensions] :
+    P.IsClosedUnderFiniteCoproducts :=
+  have := hasBinaryBiproducts_of_finite_biproducts C
+  have := P.isClosedUnderBinaryCoproducts_of_isClosedUnderExtensions
+  .mk'
 
 end CategoryTheory.ObjectProperty

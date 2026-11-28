@@ -8,7 +8,7 @@ module
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.TraceMinimality
 public import TauCeti.GroupTheory.Perm.FinThree.Complement
-public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.NormalPSubgroup
 
 /-!

@@ -27,6 +27,15 @@ restriction to a normal subgroup whose index is invertible detects semisimplicit
 `ℂ`. Symmetric powers commute with restriction, so the `W_ℂ` case gives the
 `W_ℝ` case.
 
+For a continuous representation `ρ : TauCeti.ContinuousRep W ℂ V` of `W = W_ℂ` or `W_ℝ` on a space
+with its module topology, the symmetric power `ρ.symmetricPower m` is again continuous
+(`TauCeti.ContinuousRep.symmetricPower`), and semisimplicity of its underlying representation
+follows from `TauCeti.ContinuousRep.isSemisimpleRepresentation_symmetricPower` together with
+`Representation.isSemisimpleRepresentation_symmetricPower` (for `W_ℂ`) or
+`TauCeti.ClassFieldTheory.WeilGroupReal.isSemisimpleRepresentation_symmetricPower` (for `W_ℝ`).
+So the symmetric powers of a semisimple continuous `n`-dimensional representation of `W_ℂ` or `W_ℝ`
+are semisimple continuous representations of dimension `binom(n + m - 1, m)`.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.WeilGroupReal.isSemisimpleRepresentation_comp_includeComplex_iff`: a

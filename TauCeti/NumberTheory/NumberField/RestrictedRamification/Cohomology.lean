@@ -37,6 +37,8 @@ the finiteness of `H¹(G_{K,S}, M)` to that of `H¹(V, A) = Hom_cont(V, A)` for 
 
 * `TauCeti.RestrictedRamification.finite_setOf_isOpen_index_le`: `G_{K,S}` has only finitely
   many open subgroups of index at most `n`.
+* `TauCeti.RestrictedRamification.finite_continuousMonoidHom`: an open subgroup of `G_{K,S}` has
+  only finitely many continuous homomorphisms to a finite group.
 * `TauCeti.RestrictedRamification.finite_H1_galoisGroupS`: `H¹(G_{K,S}, M)` is finite for every
   finite discrete `G_{K,S}`-module `M`.
 
@@ -86,6 +88,18 @@ theorem finite_setOf_isOpen_index_le [Normal K Ω] (S : Set (HeightOneSpectrum (
       ← TauCeti.fixingSubgroup_fixedField (Subgroup.isClosed_of_isOpen W' hW'.1),
       lift_injective _ h]
 
+/-- **Finitely many continuous homomorphisms to a finite group.** For `Ω / K` normal and `S`
+finite, an open subgroup `V` of `G_{K,S}` has only finitely many continuous homomorphisms to a
+finite discrete group `Q`, by Hermite's theorem. -/
+theorem finite_continuousMonoidHom [Normal K Ω] (S : Set (HeightOneSpectrum (𝓞 K)))
+    (hS : S.Finite) {V : Subgroup (galoisGroupS K Ω S)} (hV : IsOpen (V : Set (galoisGroupS K Ω S)))
+    (Q : Type*) [Group Q] [TopologicalSpace Q] [DiscreteTopology Q] [Finite Q] :
+    Finite (V →ₜ* Q) :=
+  have : V.FiniteIndex := OpenSubgroup.finiteIndex_toSubgroup ⟨V, hV⟩
+  finite_continuousMonoidHom_of_finite_setOf_isOpen_index_le
+    (finite_setOf_isOpen_index_le_of_isOpen hV _
+      ((finite_setOf_isOpen_index_le S hS _).subset fun _ hW ↦ ⟨hW.1, hW.2.2⟩))
+
 /-- **Finiteness of `H¹(G_{K,S}, M)`.** For `Ω` a normal extension of the number field `K`, such as
 a separable closure, `S` a finite set of finite places of `K` and `M` a finite discrete
 `G_{K,S}`-module, of any order, the continuous cohomology group `H¹(G_{K,S}, M)` is finite. -/
@@ -105,10 +119,7 @@ theorem finite_H1_galoisGroupS [Normal K Ω]
   intro j hj₀ hj A _ _ _ _ _ _ _ _ htriv
   obtain rfl : j = 1 := by omega
   -- `H¹(V, A) = Hom_cont(V, A)` is finite, by Hermite's theorem
-  have : Finite (V →ₜ* Multiplicative A) :=
-    finite_continuousMonoidHom_of_finite_setOf_isOpen_index_le
-      (finite_setOf_isOpen_index_le_of_isOpen hV _
-        ((finite_setOf_isOpen_index_le S hS _).subset fun W hW ↦ ⟨hW.1, hW.2.2⟩))
+  have := finite_continuousMonoidHom S hS hV (Multiplicative A)
   exact Finite.of_equiv _ ((ContCohomology.H1EquivOfSmulEqSelf htriv).symm.trans
     (ContCohomology.explicitH1AddEquivContinuousCohomology V A)).toEquiv
 

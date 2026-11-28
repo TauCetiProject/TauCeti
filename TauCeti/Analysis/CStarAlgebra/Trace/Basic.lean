@@ -53,6 +53,8 @@ functional (`TauCeti.PositiveTracialFunctional`) defines a trace
   `TauCeti.IsTrace.mul_mem_sqIntegrable_left`, `TauCeti.IsTrace.mul_mem_sqIntegrable_right`:
   `𝔫_τ` is a self-adjoint complex subspace and a two-sided ideal; these are collected in
   `TauCeti.IsTrace.sqIntegrable_ideal`.
+* `TauCeti.IsTrace.iSup`: the pointwise supremum of an upward directed family of traces is a
+  trace.
 * `TauCeti.IsTrace.comp`, `TauCeti.IsFaithful.comp`: pullback along star homomorphisms.
 * `TauCeti.PositiveTracialFunctional.isTrace_toTrace`,
   `TauCeti.PositiveTracialFunctional.toTrace_lt_top`: a positive tracial functional is a trace
@@ -124,6 +126,12 @@ theorem mem_sqIntegrable {x : B} : x ∈ sqIntegrable τ ↔ τ (star x * x) < �
 theorem star_mul_self_mem_finitePart_iff {x : B} :
     star x * x ∈ finitePart τ ↔ x ∈ sqIntegrable τ := by
   simp [star_mul_self_nonneg x]
+
+/-- Every `x ∈ 𝔪_τ⁺` is `b⋆b` for some `b ∈ 𝔫_τ`. -/
+theorem exists_eq_star_mul_self_of_mem_finitePart {x : B} (hx : x ∈ finitePart τ) :
+    ∃ b ∈ sqIntegrable τ, x = star b * b := by
+  obtain ⟨b, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 (mem_finitePart.1 hx).1
+  exact ⟨b, star_mul_self_mem_finitePart_iff.1 hx, rfl⟩
 
 namespace IsTrace
 
@@ -295,6 +303,21 @@ protected theorem const_mul (hτ : IsTrace τ) (c : ℝ≥0∞) : IsTrace fun x 
   map_nnreal_smul_of_nonneg d x hx := by rw [hτ.map_nnreal_smul_of_nonneg d hx, mul_left_comm]
   map_star_mul_self x := by rw [hτ.map_star_mul_self]
 
+omit [StarOrderedRing B] in
+/-- **Directed suprema of traces**: the pointwise supremum of an upward directed family of
+traces is a trace. -/
+protected theorem iSup {ι : Type*} {τ : ι → B → ℝ≥0∞} (hτ : ∀ i, IsTrace (τ i))
+    (hd : Directed (· ≤ ·) τ) : IsTrace (⨆ i, τ i) where
+  map_add_of_nonneg x y hx hy := by
+    simp only [iSup_apply, (hτ _).map_add_of_nonneg hx hy]
+    refine (ENNReal.iSup_add_iSup fun i j ↦ ?_).symm
+    obtain ⟨k, hik, hjk⟩ := hd i j
+    exact ⟨k, add_le_add (hik x) (hjk y)⟩
+  map_nnreal_smul_of_nonneg c x hx := by
+    simp only [iSup_apply, (hτ _).map_nnreal_smul_of_nonneg c hx, ENNReal.mul_iSup]
+  map_star_mul_self x := by
+    simp only [iSup_apply, (hτ _).map_star_mul_self]
+
 end IsTrace
 
 variable [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -330,6 +353,14 @@ noncomputable def toTrace (ω : PositiveTracialFunctional B) : B → ℝ≥0∞ 
 theorem toTrace_apply (ω : PositiveTracialFunctional B) (x : B) :
     ω.toTrace x = ENNReal.ofReal (ω x).re :=
   (rfl)
+
+/-- On `B₊`, a positive tracial functional is the real number `Re ω(x)`, which its trace records:
+`ω(x) = (ω.toTrace x).toReal`. -/
+theorem apply_eq_toReal_toTrace (ω : PositiveTracialFunctional B) {x : B} (hx : 0 ≤ x) :
+    ω x = ((ω.toTrace x).toReal : ℂ) := by
+  have hω := map_nonneg ω hx
+  rw [toTrace_apply, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp hω).1]
+  exact Complex.eq_re_of_ofReal_le hω
 
 /-- The trace of a positive tracial functional is finite everywhere. -/
 theorem toTrace_lt_top (ω : PositiveTracialFunctional B) (x : B) : ω.toTrace x < ∞ :=

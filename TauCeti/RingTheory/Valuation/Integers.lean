@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Hom.InjSurj
 public import Mathlib.FieldTheory.Perfect
+public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.RingTheory.Valuation.Integers
 
 /-!
@@ -28,6 +29,11 @@ valuations on Witt vectors, apply to a perfect field with its trivial valuation.
 Multiplication by a unit of valuation one maps the ring of integers `v.integer` onto itself; on a
 local field this says that the units of `𝒪[K]` preserve additive Haar measure.
 
+For a ring homomorphism `σ : S → R`, the elements `e` of `S` with `σ e` integral form the ring of
+integers of the pulled-back valuation `v.comap σ`. A bound `v (f y) ≤ γ` on the values of a
+`σ`-semilinear map `f` on a set persists on the span of that set over this ring, by the ultrametric
+inequality.
+
 ## Main results
 
 * `Valuation.Integers.isDomain`: the ring of integers of a domain is a domain.
@@ -38,6 +44,8 @@ local field this says that the units of `𝒪[K]` preserve additive Haar measure
 * `Valuation.integers_self_iff`: a ring is the ring of integers of a valuation on it iff the
   valuation is at most `1` everywhere.
 * `Valuation.units_smul_integer`: a unit of valuation one maps the ring of integers onto itself.
+* `Valuation.map_apply_le_of_mem_span_comap_integer`: a valuation bound on the values of a
+  semilinear map on a set holds on its span over the pulled-back ring of integers.
 -/
 
 public section
@@ -121,5 +129,24 @@ theorem units_smul_integer {u : Rˣ} (hu : v u = 1) : u • (v.integer : Set R) 
   ext y
   rw [Set.mem_smul_set_iff_inv_smul_mem]
   simp [Units.smul_def, Valuation.mem_integer_iff, hu]
+
+/-- **A valuation bound on the values of a semilinear map persists on spans over the pulled-back
+integers.** For `σ : S →+* R` and a `σ`-semilinear `f : M → R`, if `v (f y) ≤ γ` for `y ∈ T`, the
+same bound holds on the span of `T` over the ring of `e : S` with `v (σ e) ≤ 1`. -/
+theorem map_apply_le_of_mem_span_comap_integer {S M : Type*} [Ring S] [AddCommMonoid M]
+    [Module S M] {σ : S →+* R} (f : M →ₛₗ[σ] R) {T : Set M} {γ : Γ₀}
+    (hT : ∀ y ∈ T, v (f y) ≤ γ) {y : M} (hy : y ∈ Submodule.span (v.comap σ).integer T) :
+    v (f y) ≤ γ := by
+  induction hy using Submodule.span_induction with
+  | mem y hy => exact hT y hy
+  | zero => simp
+  | add y z _ _ hy hz =>
+    rw [map_add]
+    exact (v.map_add _ _).trans (max_le hy hz)
+  | smul e y _ hy =>
+    have he : v (σ e) ≤ 1 := by
+      simpa [Valuation.comap_apply] using (Valuation.mem_integer_iff _ _).mp e.property
+    rw [Subring.smul_def, map_smulₛₗ, smul_eq_mul, map_mul]
+    exact mul_le_of_le_one_of_le he hy
 
 end Valuation

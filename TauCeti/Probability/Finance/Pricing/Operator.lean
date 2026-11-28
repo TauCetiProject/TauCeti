@@ -11,7 +11,7 @@ public import TauCeti.Probability.Finance.WeightedLogSpot
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The weighted log-spot pricing operator on parabolic Hölder spaces
@@ -158,6 +158,33 @@ theorem weightedLogSpotZerothOrderCoeff_apply (p : slab (E := ℝ) t₀ t₁) (v
       -(r p * (1 - sigmoid (p : ParabolicSpaceTime ℝ).space)) * v := by
   simp [weightedLogSpotZerothOrderCoeff]
   ring
+
+@[simp]
+theorem weightedLogSpotSecondOrderCoeff_sub
+    (a' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
+    weightedLogSpotSecondOrderCoeff (a - a') =
+      weightedLogSpotSecondOrderCoeff a - weightedLogSpotSecondOrderCoeff a' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun H ↦ by
+    simp only [weightedLogSpotSecondOrderCoeff_apply, HolderSpace.sub_apply, _root_.sub_apply]
+    ring
+
+@[simp]
+theorem weightedLogSpotFirstOrderCoeff_sub
+    (a' r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
+    weightedLogSpotFirstOrderCoeff hα (a - a') (r - r') =
+      weightedLogSpotFirstOrderCoeff hα a r - weightedLogSpotFirstOrderCoeff hα a' r' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun D ↦ by
+    simp only [weightedLogSpotFirstOrderCoeff_apply, HolderSpace.sub_apply, _root_.sub_apply]
+    ring
+
+@[simp]
+theorem weightedLogSpotZerothOrderCoeff_sub
+    (r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
+    weightedLogSpotZerothOrderCoeff hα (r - r') =
+      weightedLogSpotZerothOrderCoeff hα r - weightedLogSpotZerothOrderCoeff hα r' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by
+    simp only [weightedLogSpotZerothOrderCoeff_apply, HolderSpace.sub_apply, _root_.sub_apply]
+    ring
 
 /-- The backward pricing operator after division by `1 + exp y`, as a bounded linear
 map from bounded order-two parabolic Hölder functions to parabolic Hölder functions. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
@@ -46,7 +47,10 @@ Two ingredients drive the proof, and neither needs the Poincaré-Birkhoff-Witt t
 abelian `L = R x` one may take the polynomial `ι x` itself, since `LieAlgebra.ad R L x = 0`; its
 image in `U(L')` for `L' = ⟨x, y⟩` with `⁅x, y⁆ = y` is `ι x`, which is not central there.  What
 does survive is naturality along *surjections*, where the image of `ι (L)` still generates, and
-that is `TauCeti.UniversalEnvelopingAlgebra.pPolynomial_map_mem_center_of_surjective` below.
+that is `TauCeti.UniversalEnvelopingAlgebra.pPolynomial_map_mem_center_of_surjective` below.  It
+also survives extension of scalars `L ↦ A ⊗[R] L`, where the elements `ι (1 ⊗ y)` span the
+generators of the target over `A`: that is
+`TauCeti.UniversalEnvelopingAlgebra.pPolynomial_baseChange_mem_center`.
 
 ## Main statements
 
@@ -69,6 +73,8 @@ that is `TauCeti.UniversalEnvelopingAlgebra.pPolynomial_map_mem_center_of_surjec
   `LieAlgebra.ad R U(L) (ι x)` is itself nilpotent.
 * `TauCeti.UniversalEnvelopingAlgebra.pPolynomial_map_mem_center_of_surjective`: centrality is
   natural along surjective Lie homomorphisms.
+* `TauCeti.UniversalEnvelopingAlgebra.pPolynomial_baseChange_mem_center`: centrality is natural
+  under extension of scalars, with the same exponent and coefficients.
 
 ## References
 
@@ -223,6 +229,24 @@ theorem pPolynomial_map_mem_center_of_surjective {L' : Type w} [LieRing L'] [Lie
       _root_.UniversalEnvelopingAlgebra.ι R (f x) ^ n := fun n => by rw [map_pow, map_ι]
   rw [map_add, map_sum, hpow]
   exact congrArg _ (Finset.sum_congr rfl fun i _ => by rw [map_smul, hpow])
+
+open TensorProduct in
+/-- **Centrality of a `p`-polynomial is natural under extension of scalars.**  For a commutative
+`R`-algebra `A` (for instance a field extension of a field `R`), a central `p`-polynomial of `x` in
+`U_R(L)` gives the central `p`-polynomial of `1 ⊗ x` in `U_A(A ⊗[R] L)` with the same exponent and
+the same coefficients, read in `A`. -/
+theorem pPolynomial_baseChange_mem_center (A : Type w) [CommRing A] [Algebra R A] {p e : ℕ}
+    {a : Fin e → R} {x : L}
+    (h : _root_.UniversalEnvelopingAlgebra.ι R x ^ p ^ e +
+        ∑ i : Fin e, a i • _root_.UniversalEnvelopingAlgebra.ι R x ^ p ^ (i : ℕ) ∈
+      Subalgebra.center R U) :
+    _root_.UniversalEnvelopingAlgebra.ι A ((1 : A) ⊗ₜ[R] x) ^ p ^ e +
+        ∑ i : Fin e, algebraMap R A (a i) •
+          _root_.UniversalEnvelopingAlgebra.ι A ((1 : A) ⊗ₜ[R] x) ^ p ^ (i : ℕ) ∈
+      Subalgebra.center A (_root_.UniversalEnvelopingAlgebra A (A ⊗[R] L)) := by
+  simpa only [map_add, map_sum, _root_.UniversalEnvelopingAlgebra.baseChangeRingHom_smul, map_pow,
+    _root_.UniversalEnvelopingAlgebra.baseChangeRingHom_ι] using
+    _root_.UniversalEnvelopingAlgebra.baseChangeRingHom_mem_center (A := A) h
 
 end CommRing
 

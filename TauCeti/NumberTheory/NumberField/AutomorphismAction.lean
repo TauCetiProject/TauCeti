@@ -39,6 +39,8 @@ recorded once here rather than reconstructed at each use site.
 * `NumberField.algebraMap_smul_eq_apply`: `algebraMap (𝓞 K) K (σ • z) = σ (algebraMap (𝓞 K) K z)`.
 * `NumberField.algebraMap_restrictNormal_smul`: mapping the action of a restricted automorphism
   into the top ring of integers gives the action of the original automorphism.
+* `NumberField.smulCommClass_ringOfIntegers`: a group acting on `F` and commuting with the
+  `K`-action commutes with the `𝓞 K`-action on `F`.
 * `NumberField.RingOfIntegers.smulCommClass`: a group acting on `F` and commuting with the
   `K`-action, such as `Gal(F/K)`, acts on `𝓞 F` commuting with the `𝓞 K`-action.
 * `NumberField.RingOfIntegers.unitsMulDistribMulAction`: `Gal(F/K)` acts on the units
@@ -47,6 +49,8 @@ recorded once here rather than reconstructed at each use site.
   conjugation of automorphisms along an algebra equivalence.
 * `Ideal.map_ringOfIntegers_mapRingEquiv`: pushing an ideal of `𝓞 K` forward along
   `RingOfIntegers.mapRingEquiv τ.toRingEquiv` coincides with the pointwise Galois action `τ • I`.
+* `AlgEquiv.restrictScalars_smul_ideal`: `σ.restrictScalars R` acts on the ideals of `𝓞 L` as
+  `σ` does.
 -/
 
 public section
@@ -84,6 +88,13 @@ theorem algebraMap_restrictNormal_smul (σ : L ≃ₐ[K] L) (x : 𝓞 M) :
     IsScalarTower.algebraMap_apply (𝓞 M) M L]
 
 variable {F : Type*} [Field F] [Algebra K F]
+
+/-- A group acting on `F` by ring automorphisms that commute with the `K`-action, such as
+`Gal(F/K)`, commutes with the `𝓞 K`-action on `F`. -/
+instance smulCommClass_ringOfIntegers {G : Type*} [Group G] [MulSemiringAction G F]
+    [SMulCommClass G K F] : SMulCommClass G (𝓞 K) F where
+  smul_comm g r x := by
+    rw [← algebraMap_smul K r x, ← algebraMap_smul K r (g • x), smul_comm]
 
 /-- **A `K`-linear action on `F` restricts to `𝓞 F` commuting with the `𝓞 K`-action.** A group
 acting on `F` by ring automorphisms that commute with the `K`-action, such as `Gal(F/K)`, fixes
@@ -150,3 +161,20 @@ theorem map_ringOfIntegers_mapRingEquiv (I : Ideal (𝓞 K)) (τ : K ≃ₐ[R] K
     RingOfIntegers.coe_eq_algebraMap, NumberField.algebraMap_smul_eq_apply]
 
 end Ideal
+
+namespace AlgEquiv
+
+variable {R K L : Type*} [CommSemiring R] [CommSemiring K] [Field L] [Algebra R K] [Algebra K L]
+  [Algebra R L] [IsScalarTower R K L]
+
+/-- **Restricting scalars does not change the action on ideals.** `σ.restrictScalars R` is `σ`
+with its base ring changed, so it induces the same action on the ideals of `𝓞 L`. -/
+@[simp]
+theorem restrictScalars_smul_ideal (σ : L ≃ₐ[K] L) (Q : Ideal (𝓞 L)) :
+    σ.restrictScalars R • Q = σ • Q := by
+  rw [Ideal.pointwise_smul_def, Ideal.pointwise_smul_def]
+  refine congrArg (Ideal.map · Q) (RingHom.ext fun x ↦ NumberField.RingOfIntegers.ext ?_)
+  simp only [MulSemiringAction.toRingHom_apply, NumberField.algebraMap_smul_eq_apply,
+    restrictScalars_apply]
+
+end AlgEquiv

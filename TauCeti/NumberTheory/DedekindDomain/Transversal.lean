@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.Tactic
 import TauCeti.Combinatorics.Enumerative.InvolutionTransversal
 import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+import TauCeti.RingTheory.DedekindDomain.Ideal.Squarefree
 
 /-!
 # Conjugate-transversal ideal families in a Dedekind domain
@@ -47,17 +48,6 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 include R
 
-/-- A nonzero prime ideal of a Dedekind domain does not divide a finite product of nonzero
-prime ideals unless it equals one of the factors. -/
-private theorem isPrime_not_dvd_prod (p : IsDedekindDomain.HeightOneSpectrum R)
-    {T : Finset (IsDedekindDomain.HeightOneSpectrum R)} (hpT : p ∉ T) :
-    ¬ p.asIdeal ∣ ∏ q ∈ T, q.asIdeal := by
-  have hpprime : Prime p.asIdeal := p.prime
-  rw [Prime.dvd_finsetProd_iff hpprime]
-  rintro ⟨q, hqT, hpq⟩
-  have heq : q.asIdeal = p.asIdeal := q.isMaximal.eq_of_le p.isMaximal.ne_top (Ideal.le_of_dvd hpq)
-  exact hpT (IsDedekindDomain.HeightOneSpectrum.ext heq ▸ hqT)
-
 /-- For a distinct prime `q ≠ p` and a family `G'` no member of which is divisible by `p.asIdeal`,
 multiplying `G'` by `p.asIdeal` and by `q.asIdeal` gives disjoint images. -/
 private theorem disjoint_image_mul_asIdeal {p q : IsDedekindDomain.HeightOneSpectrum R}
@@ -72,8 +62,7 @@ private theorem disjoint_image_mul_asIdeal {p q : IsDedekindDomain.HeightOneSpec
     have hpdvd' : p.asIdeal ∣ b * q.asIdeal := hab.symm ▸ dvd_mul_left p.asIdeal a
     rcases ((Ideal.prime_iff_isPrime p.ne_bot).mpr p.isPrime).dvd_or_dvd hpdvd' with h | h
     · exact h
-    · exact absurd (q.isMaximal.eq_of_le p.isMaximal.ne_top (Ideal.le_of_dvd h))
-        (fun hpqIdeal => hpq (IsDedekindDomain.HeightOneSpectrum.ext hpqIdeal))
+    · exact absurd (IsDedekindDomain.HeightOneSpectrum.asIdeal_dvd_asIdeal_iff.1 h) hpq.symm
   exact hpFree b hb hpdvd
 
 omit R [CommRing R] [IsDedekindDomain R] in
@@ -154,7 +143,8 @@ private theorem exists_transversal_family_of_sdiff_pair (σ : R ≃+* R)
   · -- The two images are disjoint, so the union doubles the family.
     have hdisj : Disjoint (G'.image (· * p.asIdeal)) (G'.image (· * q.asIdeal)) :=
       disjoint_image_mul_asIdeal hpq (fun A hA hpA =>
-        isPrime_not_dvd_prod p hpS' (hprod' A hA ▸ dvd_mul_of_dvd_left hpA (Ideal.map σ A)))
+        IsDedekindDomain.HeightOneSpectrum.asIdeal_dvd_prod_asIdeal_iff.not.2 hpS'
+          (hprod' A hA ▸ dvd_mul_of_dvd_left hpA (Ideal.map σ A)))
     exact two_pow_le_card_union_image_mul hdisj hcard' (by omega)
   · have hmapq : Ideal.map σ q.asIdeal = p.asIdeal := by
       rw [← IsDedekindDomain.HeightOneSpectrum.asIdeal_equivOfRingEquiv σ q]

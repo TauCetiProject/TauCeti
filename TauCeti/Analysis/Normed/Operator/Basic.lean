@@ -43,7 +43,9 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). For a real endomorphism
 `T` with `‖T‖ ≤ M`, `‖a v + b T v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`
-(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`). The difference of two
+(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`), and over `ℝ` or `ℂ` an endomorphism `B`
+with `‖B‖ ≤ 1` satisfies `‖v • B f + conj v • f‖ ≤ 2 ‖v‖ ‖f‖`
+(`ContinuousLinearMap.norm_smul_apply_add_conj_smul_le`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
 (`ContinuousLinearMap.enorm_comp_sub_comp_le` in extended norms,
@@ -93,10 +95,13 @@ both operators and both vectors (`ContinuousLinearMap.norm_smul_apply_add_smul_a
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
-(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra, an operator sending
+(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra the operator norm is
+homogeneous for integer multiples (`ContinuousLinearMap.normSMulClass_int`), and an operator sending
 the ball `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most `s / r`
 (`ContinuousLinearMap.opNorm_le_of_mapsTo_ball`), so at most one when it maps `ball 0 r` into
-itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`).
+itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`). Conversely, a continuous semilinear
+map of operator norm at most `κ` maps `ball y (r / κ)` into `ball (L y) r`
+(`ContinuousLinearMap.mapsTo_ball_div_of_opNorm_le`).
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
@@ -264,6 +269,17 @@ theorem norm_smul_add_smul_apply_sq_le {E : Type*} [SeminormedAddCommGroup E] [N
         TauCeti.norm_smul_add_smul_sq_le a b v (T v)
     _ ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + (M * ‖v‖) ^ 2) := by gcongr
     _ = (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by ring
+
+/-- For an endomorphism `B` of norm at most one over `ℝ` or `ℂ`, `‖v • B f + conj v • f‖` is at
+most `2 ‖v‖ ‖f‖`. -/
+theorem norm_smul_apply_add_conj_smul_le {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {B : E →L[𝕜] E} (hB : ‖B‖ ≤ 1) (v : 𝕜) (f : E) :
+    ‖v • B f + (starRingEnd 𝕜) v • f‖ ≤ 2 * ‖v‖ * ‖f‖ := by
+  have hB' : ‖B f‖ ≤ ‖f‖ := (B.le_of_opNorm_le hB f).trans (one_mul _).le
+  calc ‖v • B f + (starRingEnd 𝕜) v • f‖ ≤ ‖v‖ * ‖B f‖ + ‖v‖ * ‖f‖ := by
+        refine (norm_add_le _ _).trans_eq ?_
+        rw [norm_smul, norm_smul, RCLike.norm_conj]
+    _ ≤ 2 * ‖v‖ * ‖f‖ := by nlinarith [norm_nonneg v]
 
 section SemilinearFamily
 
@@ -601,7 +617,37 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
 
 end Net
 
+section IntSMul
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The operator norm is homogeneous for integer multiples, `‖n • L‖ = ‖n‖ * ‖L‖`, when the scalar
+field is a normed `ℝ`-algebra: the operators then form a real normed space. -/
+instance normSMulClass_int : NormSMulClass ℤ (E →L[𝕜] F) :=
+  let _ : NormedSpace ℝ (E →L[𝕜] F) := NormedSpace.restrictScalars ℝ 𝕜 (E →L[𝕜] F)
+  ⟨fun n L ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n L⟩
+
+end IntSMul
+
 section MapsToBall
+
+section
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- A continuous semilinear map `L` with `‖L‖ ≤ κ` maps the ball `ball y (r / κ)` into
+`ball (L y) r`. -/
+theorem mapsTo_ball_div_of_opNorm_le (L : E →SL[σ₁₂] F) {κ : NNReal} (hL : ‖L‖ ≤ κ) (y : E)
+    (r : ℝ) : Set.MapsTo L (Metric.ball y (r / κ)) (Metric.ball (L y) r) := fun x hx => by
+  rcases eq_or_ne κ 0 with rfl | hκ
+  · simp at hx
+  have h := (L.lipschitzWith.weaken (by exact_mod_cast hL)).mapsTo_ball hκ y (r / κ) hx
+  rwa [mul_div_cancel₀ r (NNReal.coe_ne_zero.2 hκ)] at h
+
+end
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]

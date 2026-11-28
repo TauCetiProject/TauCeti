@@ -104,13 +104,15 @@ instance (priority := 100) IsRegular.isCohenMacaulay [X.IsRegular] : X.IsCohenMa
 theorem IsRegular.of_isOpenImmersion (f : X ⟶ Y)
     [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] [Y.IsRegular] :
     X.IsRegular :=
-  ⟨fun x ↦ .of_ringEquiv (stalkRingEquivOfIsOpenImmersion f x)⟩
+  ⟨fun x ↦ .of_ringEquiv (R := Y.presheaf.stalk (f.hom.base x))
+    (LocallyRingedSpace.IsOpenImmersion.stalkRingEquiv (forgetToLocallyRingedSpace.map f) x)⟩
 
 /-- The source of an open immersion into a Cohen–Macaulay formal scheme is Cohen–Macaulay. -/
 theorem IsCohenMacaulay.of_isOpenImmersion (f : X ⟶ Y)
     [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] [Y.IsCohenMacaulay] :
     X.IsCohenMacaulay :=
-  ⟨fun x ↦ (stalkRingEquivOfIsOpenImmersion f x).isCohenMacaulay⟩
+  ⟨fun x ↦ RingEquiv.isCohenMacaulay (R := Y.presheaf.stalk (f.hom.base x))
+    (LocallyRingedSpace.IsOpenImmersion.stalkRingEquiv (forgetToLocallyRingedSpace.map f) x)⟩
 
 /-- Open formal subschemes of a regular formal scheme are regular. -/
 instance IsRegular.restrict [X.IsRegular] (U : TopologicalSpace.Opens X) :

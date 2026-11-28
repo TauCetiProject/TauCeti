@@ -112,9 +112,7 @@ noncomputable def vertexTensorDGBimodule : DGBimoduleCat hd hd :=
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
 local instance : SetLike.GradedSMul (Ξ).piece U :=
-  (arrowTensorDifferential k Q).gradedSMul_of_mem_iff (Ξ).piece U V (by
-    intro q x
-    rw [mem_arrowTensorGrading_piece_iff, mem_vertexTensorGrading_piece_iff])
+  ⟨fun _ _ _ _ hu hz ↦ smul_mem_arrowTensorGrading k Q wt hu hz⟩
 
 local instance : SetLike.GradedSMul (gradeBy k wt) U :=
   (G).gradedSMul_moduleLeft (G).opposite U

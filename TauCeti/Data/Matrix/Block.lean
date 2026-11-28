@@ -19,7 +19,9 @@ or unital coefficient ring.
 
 The block-diagonal matrix `Matrix.fromBlocks e 0 0 f` is the direct sum of the square matrices `e`
 and `f`. It is idempotent when `e` and `f` are, which is how direct sums of idempotent matrices,
-and hence the addition of algebraic `K₀`, are formed.
+and hence the addition of algebraic `K₀`, are formed. The direct sum of two matrix representations
+`ρ₁ : R →ₐ[A] Matrix n₁ n₁ A` and `ρ₂ : R →ₐ[A] Matrix n₂ n₂ A` is the block-diagonal
+representation `AlgHom.fromBlocks ρ₁ ρ₂`.
 
 Idempotent matrices `e` and `f`, possibly of different sizes, are Murray–von Neumann equivalent when
 `e = a * b` and `f = b * a` for rectangular matrices `a` and `b`. After normalizing `a` and `b`, the
@@ -46,8 +48,15 @@ blocks. Its off-diagonal block is the finite convolution of the powers of the tw
 blocks with the original off-diagonal block. This holds over semirings, including zeroth powers
 and empty blocks.
 
+## Main definitions
+
+* `Matrix.blockDiagonal'AlgHom`: `Matrix.blockDiagonal'` bundled as an `R`-algebra homomorphism.
+
 ## Main results
 
+* `Matrix.blockDiagonal'AlgHom_apply`: evaluation of `Matrix.blockDiagonal'AlgHom`.
+* `Matrix.sum_smul_fromBlocks_zero₁₂_zero₂₁`: a block-diagonal matrix acts separately on the two
+  parts of a family of vectors.
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.toBlocks₁₁_add`, `Matrix.toBlocks₁₁_sub`, `Matrix.toBlocks₁₁_smul` and their analogues
@@ -57,6 +66,8 @@ and empty blocks.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks₁₁NonUnitalStarAlgHom`: the corner embedding `y ↦ fromBlocks y 0 0 0` as a
   non-unital `⋆`-algebra homomorphism.
+* `AlgHom.fromBlocks ρ₁ ρ₂`: the block-diagonal representation `x ↦ diag(ρ₁ x, ρ₂ x)` of two
+  matrix representations, as an algebra homomorphism.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
   the direct sum of idempotent matrices is idempotent, and that of star projections is a star
@@ -100,6 +111,15 @@ public theorem forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff {m n p q �
         (∀ i j, i ≠ j → |D (row₂ i) j * D (row₂ j) i| ≤ bound) := by
   have hzero : |(0 : α)| = 0 := by simp [abs]
   simp [Sum.forall, hzero, hbound]
+
+/-- A block-diagonal matrix acts on a sum-indexed family by taking linear combinations separately
+in each block. -/
+public theorem sum_smul_fromBlocks_zero₁₂_zero₂₁ {m n p q R E : Type*}
+    [Fintype p] [Fintype q] [Zero R] [AddCommMonoid E] [SMulWithZero R E]
+    (A : Matrix m p R) (D : Matrix n q R) (x : p → E) (y : q → E) (i : m ⊕ n) :
+    (∑ j, fromBlocks A 0 0 D i j • Sum.elim x y j) =
+      Sum.elim (fun a ↦ ∑ j, A a j • x j) (fun d ↦ ∑ j, D d j • y j) i := by
+  cases i <;> simp [Fintype.sum_sum_type]
 
 section ToBlocksMul
 
@@ -286,6 +306,24 @@ public theorem fromBlocks_zero₂₁_pow {R m n : Type*} [Semiring R]
       omega
     rw [Matrix.mul_assoc, ← pow_succ, hidx]
 
+/-- `Matrix.blockDiagonal'` bundled as an `R`-algebra homomorphism on a finite dependent family of
+square matrix algebras over an `R`-algebra `α`. -/
+public def blockDiagonal'AlgHom {o : Type*} (m' : o → Type*) (R α : Type*) [DecidableEq o]
+    [Fintype o] [∀ i, DecidableEq (m' i)] [∀ i, Fintype (m' i)] [CommSemiring R] [Semiring α]
+    [Algebra R α] :
+    (∀ i, Matrix (m' i) (m' i) α) →ₐ[R] Matrix (Σ i, m' i) (Σ i, m' i) α :=
+  { blockDiagonal'RingHom m' α with
+    toFun := blockDiagonal'
+    commutes' _ := by simp [Algebra.algebraMap_eq_smul_one] }
+
+/-- Applying `Matrix.blockDiagonal'AlgHom` yields `Matrix.blockDiagonal'`. -/
+@[simp]
+public theorem blockDiagonal'AlgHom_apply {o : Type*} {m' : o → Type*} {R α : Type*}
+    [DecidableEq o] [Fintype o] [∀ i, DecidableEq (m' i)] [∀ i, Fintype (m' i)]
+    [CommSemiring R] [Semiring α] [Algebra R α] (M : ∀ i, Matrix (m' i) (m' i) α) :
+    blockDiagonal'AlgHom m' R α M = blockDiagonal' M :=
+  (rfl)
+
 /-- The corner embedding `y ↦ fromBlocks y 0 0 0` of `Matrix l l α` into
 `Matrix (l ⊕ m) (l ⊕ m) α`, as a non-unital `⋆`-algebra homomorphism. -/
 public def fromBlocks₁₁NonUnitalStarAlgHom (R α l m : Type*) [Fintype l] [Fintype m]
@@ -306,6 +344,30 @@ public theorem fromBlocks₁₁NonUnitalStarAlgHom_apply {R α l m : Type*} [Fin
   (rfl)
 
 end Matrix
+
+namespace AlgHom
+
+variable {A : Type*} [CommSemiring A] {R : Type*} [Semiring R] [Algebra A R]
+  {n₁ n₂ : Type*} [Fintype n₁] [Fintype n₂] [DecidableEq n₁] [DecidableEq n₂]
+
+/-- The **block-diagonal representation** `x ↦ diag(ρ₁ x, ρ₂ x)` of two matrix representations,
+the direct sum of `ρ₁` and `ρ₂`. -/
+public def fromBlocks (ρ₁ : R →ₐ[A] Matrix n₁ n₁ A) (ρ₂ : R →ₐ[A] Matrix n₂ n₂ A) :
+    R →ₐ[A] Matrix (n₁ ⊕ n₂) (n₁ ⊕ n₂) A where
+  toFun x := Matrix.fromBlocks (ρ₁ x) 0 0 (ρ₂ x)
+  map_one' := by simp
+  map_mul' x y := by simp [Matrix.fromBlocks_multiply]
+  map_zero' := by simp
+  map_add' x y := by simp [Matrix.fromBlocks_add]
+  commutes' a := by
+    simp [Algebra.algebraMap_eq_smul_one, ← Matrix.fromBlocks_one, Matrix.fromBlocks_smul]
+
+@[simp]
+public theorem fromBlocks_apply (ρ₁ : R →ₐ[A] Matrix n₁ n₁ A) (ρ₂ : R →ₐ[A] Matrix n₂ n₂ A)
+    (x : R) : ρ₁.fromBlocks ρ₂ x = Matrix.fromBlocks (ρ₁ x) 0 0 (ρ₂ x) :=
+  (rfl)
+
+end AlgHom
 
 /-- The difference of the two products of block matrices, computed in each block. -/
 public theorem Matrix.fromBlocks_mul_sub_mul {m n R : Type*} [Fintype m] [Fintype n]
