@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
+public import TauCeti.Analysis.PDE.FullyNonlinear.HessianCone.Pair
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 
@@ -22,7 +23,11 @@ quotient pairs, with and without an added multiple of `σ₁`.
 
 * The Hessian pair `(σ₂^{1/2}, Γ₂)` in `ℝ³`: at `e = (1, 1, 1)` every partial derivative of
   `σ₂^{1/2}` is `3^{-1/2}` (`fderiv_sqrtEsymmTwo_one_single`), which is
-  `binom(3, 2)^{1/2} / 3` (`sqrt_choose_div_three`).
+  `binom(3, 2)^{1/2} / 3` (`sqrt_choose_div_three`), as the general formula
+  `TauCeti.fderiv_esymm_rpow_one_single` gives (`fderiv_esymm_two_rpow_one_single`).
+* The Hessian constant `(binom(n, k)^{1/k} / n)ⁿ` is `1` at `k = 1`, the Laplace constant
+  (`choose_one_rpow_div_pow_eq_one`), and `n^{-n}` at `k = n`, the Monge–Ampère constant
+  (`choose_self_rpow_div_pow_eq_inv_pow`).
 * The pure quotient `σ₂/σ₁` in `ℝ²`: `∏_j ∂_j f = λ₁²λ₂²/(λ₁ + λ₂)⁴`
   (`prod_fderiv_quotTwo_single`), which is `1/16` at `e` (`prod_fderiv_quotTwo_one_single`) and
   `ε²/(1 + ε)⁴` at `(ε, 1)`, so no positive structural constant holds on `Γ₂`
@@ -77,6 +82,27 @@ theorem sqrt_choose_div_three : √(Nat.choose 3 2 : ℝ) / 3 = (√3)⁻¹ := b
   rw [show (Nat.choose 3 2 : ℝ) = 3 by norm_num [Nat.choose]]
   field_simp
   rw [Real.sq_sqrt (by norm_num)]
+
+/-- The general formula `∂_j σ_k^{1/k}(e) = binom(n, k)^{1/k} / n` at `n = 3`, `k = 2` agrees
+with the direct computation `fderiv_sqrtEsymmTwo_one_single`. -/
+theorem fderiv_esymm_two_rpow_one_single (j : Fin 3) :
+    fderiv ℝ (fun μ ↦ eval μ (esymm (Fin 3) ℝ 2) ^ ((2 : ℕ) : ℝ)⁻¹) 1 (Pi.single j 1) =
+      (√3)⁻¹ := by
+  rw [fderiv_esymm_rpow_one_single (by norm_num) (by norm_num), ← sqrt_choose_div_three,
+    Real.sqrt_eq_rpow, one_div]
+  norm_num
+
+/-- The Hessian constant at `k = 1` is the Laplace constant `1`. -/
+theorem choose_one_rpow_div_pow_eq_one (n : ℕ) :
+    ((n.choose 1 : ℝ) ^ ((1 : ℕ) : ℝ)⁻¹ / n) ^ n = 1 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · simp [hn.ne']
+
+/-- The Hessian constant at `k = n` is the Monge–Ampère constant `n^{-n}`. -/
+theorem choose_self_rpow_div_pow_eq_inv_pow (n : ℕ) :
+    ((n.choose n : ℝ) ^ (n : ℝ)⁻¹ / n) ^ n = ((n : ℝ) ^ n)⁻¹ := by
+  simp
 
 /-! ### The pure quotient `σ₂/σ₁` in `ℝ²` -/
 

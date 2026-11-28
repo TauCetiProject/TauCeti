@@ -13,6 +13,11 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 
 This file records elementary consequences of the quadratic-map axioms.
 
+## Main definitions
+
+* `QuadraticMap.codRestrict`: a quadratic map whose values lie in a submodule, regarded as
+  taking values in that submodule.
+
 ## Main results
 
 * `QuadraticMap.Anisotropic.comp`: injective pullback preserves anisotropy.
@@ -23,16 +28,51 @@ This file records elementary consequences of the quadratic-map axioms.
 * `QuadraticMap.isRefl_polarBilin`: the polar bilinear map of any quadratic map is reflexive.
 * `QuadraticMap.isSymm_polarBilin`: the polar bilinear form of a scalar-valued quadratic map is
   symmetric.
+* `QuadraticMap.polar_eq_two_nsmul_associated`: when `2` is invertible, the polar form is twice
+  the associated bilinear map.
+* `QuadraticMap.ext_of_span_range_eq_top`: agreement on a spanning linear image determines a
+  quadratic map, giving uniqueness of scalar extensions.
 * `QuadraticMap.comp_mem_span_range_comp`, `QuadraticMap.comp_mem_span_range_comp_iff`:
   precomposition with a linear map carries spans of quadratic maps into spans, and with a linear
   equivalence identifies them.
 * `RingEquiv.congrPiQuadraticForm`: additive equivalence of coordinate quadratic forms induced by
   a ring isomorphism of scalars, preserving scalar multiplication and anisotropy.
+
+## References
+
+* Mathlib's `QuadraticMap.ofPolar` for codomain restriction.
 -/
 
 public section
 
 namespace QuadraticMap
+
+section CodRestrict
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- Regard a quadratic map whose values lie in a submodule as taking values in that submodule.
+Composing with the subtype inclusion recovers the original map. -/
+def codRestrict (Q : QuadraticMap R M N) (P : Submodule R N) (h : ∀ x, Q x ∈ P) :
+    QuadraticMap R M P :=
+  ofPolar (fun x ↦ (⟨Q x, h x⟩ : P))
+    (fun a x ↦ Subtype.ext (Q.map_smul a x))
+    (fun x y z ↦ Subtype.ext (Q.polar_add_left x y z))
+    (fun a x y ↦ Subtype.ext (Q.polar_smul_left a x y))
+
+/-- Including a codomain-restricted value recovers the original value. -/
+@[simp]
+theorem coe_codRestrict_apply (Q : QuadraticMap R M N) (P : Submodule R N)
+    (h : ∀ x, Q x ∈ P) (x : M) : (Q.codRestrict P h x : N) = Q x := (rfl)
+
+/-- Composing codomain restriction with the subtype inclusion recovers the original map. -/
+@[simp]
+theorem subtype_compQuadraticMap_codRestrict (Q : QuadraticMap R M N) (P : Submodule R N)
+    (h : ∀ x, Q x ∈ P) : P.subtype.compQuadraticMap (Q.codRestrict P h) = Q :=
+  QuadraticMap.ext fun x ↦ by
+    rw [LinearMap.compQuadraticMap_apply, Submodule.subtype_apply, coe_codRestrict_apply]
+
+end CodRestrict
 
 /-- The source of a nonzero quadratic map is nontrivial. -/
 theorem nontrivial_of_ne_zero {S V N : Type*} [CommSemiring S] [AddCommMonoid V]
@@ -86,6 +126,49 @@ theorem isRefl_polarBilin {R M P : Type*} [CommRing R] [AddCommGroup M] [Module 
 theorem isSymm_polarBilin {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     (Q : QuadraticForm R M) : LinearMap.BilinForm.IsSymm Q.polarBilin :=
   ⟨fun x y ↦ polar_comm Q x y⟩
+
+/-- When `2` is invertible, the polar form of a quadratic map is twice its associated bilinear
+map. -/
+theorem polar_eq_two_nsmul_associated {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] [Invertible (2 : Module.End R N)] (Q : QuadraticMap R M N)
+    (x y : M) : polar Q x y = 2 • associated Q x y := by
+  rw [← polarBilin_apply_apply, ← two_nsmul_associated R Q, LinearMap.smul_apply,
+    LinearMap.smul_apply]
+
+section SpanningImage
+
+variable {R A M U D : Type*} [CommSemiring R] [CommSemiring A]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid U] [Module R U] [Module A U]
+  [AddCancelCommMonoid D] [Module A D]
+
+/-- Two quadratic maps agree if their values coincide on the image of a linear map and that
+image spans the domain over the scalars of the quadratic maps. -/
+theorem ext_of_span_range_eq_top (f : M →ₗ[R] U)
+    (hf : Submodule.span A (LinearMap.range f : Set U) = ⊤)
+    {Q Q' : QuadraticMap A U D} (h : ∀ x, Q (f x) = Q' (f x)) : Q = Q' := by
+  obtain ⟨B, hB⟩ := Q.exists_companion
+  obtain ⟨B', hB'⟩ := Q'.exists_companion
+  have hpair (x y : M) : B (f x) (f y) = B' (f x) (f y) := by
+    have hxy := hB (f x) (f y)
+    have hxy' := hB' (f x) (f y)
+    simp only [← map_add, h] at hxy hxy'
+    exact add_left_cancel (hxy.symm.trans hxy')
+  have hcompanion : B = B' := by
+    apply LinearMap.ext_on_range hf
+    intro x
+    exact LinearMap.ext_on_range hf (hpair x)
+  apply QuadraticMap.ext
+  intro x
+  have hx : x ∈ Submodule.span A (LinearMap.range f : Set U) := hf ▸ Submodule.mem_top
+  induction hx using Submodule.span_induction with
+  | mem _ hx =>
+    obtain ⟨y, rfl⟩ := hx
+    exact h y
+  | zero => simp
+  | add x y _ _ hx hy => rw [hB, hB', hx, hy, hcompanion]
+  | smul a x _ hx => rw [Q.map_smul, Q'.map_smul, hx]
+
+end SpanningImage
 
 section Span
 

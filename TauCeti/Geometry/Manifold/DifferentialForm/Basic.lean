@@ -92,6 +92,16 @@ theorem RoughForm.apply_congr {I : ModelWithCorners ℝ E H} {M : Type*} [Topolo
   subst h
   exact congrArg (φ x) (funext hvw)
 
+/-- Evaluating a rough form after transporting its degree across an equality. -/
+theorem RoughForm.cast_apply {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [ContinuousConstSMul ℝ F] {n m : ℕ} (h : n = m)
+    (φ : RoughForm I M F n) (x : M) (v : Fin m → TangentSpace I x) :
+    (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ RoughForm I M F q) h φ) x v =
+      φ x (v ∘ Fin.cast h) := by
+  cases h
+  rfl
+
 section Kernel
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]

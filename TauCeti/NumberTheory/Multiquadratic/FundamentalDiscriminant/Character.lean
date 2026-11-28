@@ -118,6 +118,14 @@ theorem fundamentalDiscriminantChar_two_eq_one_iff {D : ℤ} (hD : Int.IsFundame
   rw [fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
   split_ifs <;> simp <;> omega
 
+/-- The fundamental-discriminant character is `-1` at `2` iff `D ≡ 5 (mod 8)`, that is, iff `2`
+is inert in the associated quadratic field. -/
+theorem fundamentalDiscriminantChar_two_eq_neg_one_iff {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantChar D hD 2 = -1 ↔ D % 8 = 5 := by
+  have := hD.emod_four_eq_zero_or_one
+  rw [fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
+  split_ifs <;> simp <;> omega
+
 /-- **The character of a fundamental discriminant `D ≠ 1` is nontrivial.** -/
 theorem fundamentalDiscriminantChar_ne_one {D : ℤ} (hD : Int.IsFundamentalDiscr D)
     (h1 : D ≠ 1) : fundamentalDiscriminantChar D hD ≠ 1 := by

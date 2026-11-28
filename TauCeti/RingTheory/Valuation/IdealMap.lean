@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.IntegralClosure.AbsolutelyIntegrallyClosed
 
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.RingTheory.Ideal.Maps
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # Extending a prime ideal along a map into a valuation ring

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
+import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 
 /-!
 # Lie-stable subspaces in characteristic zero
@@ -16,7 +18,8 @@ public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 Let `G` be a connected affine group of finite type over an algebraically closed field `k` of
 characteristic zero, and `M` a representation of `G`, that is, a comodule over its coordinate
 Hopf algebra `H`. A subspace `W ≤ M` is a subrepresentation exactly when it is stable under the
-differentiated action of the Lie algebra `Lie(G)`.
+differentiated action of the Lie algebra `Lie(G)` (and likewise over any characteristic-zero field
+when `G` is geometrically connected).
 
 One direction holds over any base ring: subcomodules are stable under the differentiated action.
 For the converse, the Lie algebra of the stabilizer `G_W` of `W` consists of the tangent vectors
@@ -34,13 +37,20 @@ exactly when every `Lie(G)`-stable subspace has a `Lie(G)`-stable complement.
 
 ## Main declarations
 
-* `Submodule.coact_mem_range_of_forall_differential_mem`: in characteristic zero, the coaction of
-  a vector of a `Lie(G)`-stable subspace `W` lies in `W ⊗ H`.
-* `Submodule.exists_subcomodule_iff_forall_differential_mem`: in characteristic zero, a subspace
-  is a subcomodule exactly when it is `Lie(G)`-stable.
-* `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem`: in characteristic zero,
-  a representation is completely reducible exactly when its `Lie(G)`-stable subspaces have
-  `Lie(G)`-stable complements.
+* `Submodule.coact_mem_range_of_forall_differential_mem_of_geometricallyConnected`: over any
+  characteristic-zero field, the coaction of a vector of a `Lie(G)`-stable subspace `W` of a
+  representation of a geometrically connected finite-type affine group lies in `W ⊗ H`.
+* `Submodule.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected`: over any
+  characteristic-zero field, a subspace of a representation of a geometrically connected
+  finite-type affine group is a subcomodule iff it is `Lie(G)`-stable.
+* `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem_of_geometricallyConnected`:
+  over any characteristic-zero field, a representation of a geometrically connected finite-type
+  affine group is completely reducible iff its `Lie(G)`-stable subspaces have `Lie(G)`-stable
+  complements.
+* `Submodule.coact_mem_range_of_forall_differential_mem`,
+  `Submodule.exists_subcomodule_iff_forall_differential_mem`, and
+  `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem`: specializations to
+  connected finite-type affine groups over an algebraically closed field of characteristic zero.
 
 ## References
 
@@ -52,9 +62,39 @@ public section
 
 open TauCeti
 
-universe u w
+universe u v w
 
 namespace Submodule
+
+section GeometricallyConnected
+
+variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{v} k}
+  [Algebra.FiniteType k H] {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
+
+/-- Over any field of characteristic zero, the coaction of a vector of a `Lie(G)`-stable subspace of
+a representation of a geometrically connected finite-type affine group lies in `W ⊗ H`. -/
+theorem coact_mem_range_of_forall_differential_mem_of_geometricallyConnected
+    (hH : geometricallyConnectedCommHopfAlgProperty k H) (W : Submodule k M)
+    (hW : ∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W,
+      Comodule.differential (R := k) (H := H) (M := M) d w ∈ W) {w : M} (hw : w ∈ W) :
+    Comodule.coact (R := k) (C := H) (M := M) w ∈
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : H →ₗ[k] H)) :=
+  (stabilizerHopfIdeal_eq_bot_iff W).mp
+    (HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected hH _
+      (eq_top_iff.mpr fun d _ ↦ (mem_lieSubalgebra_stabilizerHopfIdeal_iff W d).mpr (hW d))) w hw
+
+/-- Over any field of characteristic zero, a subspace of a representation of a geometrically
+connected finite-type affine group is a subcomodule iff it is `Lie(G)`-stable. -/
+theorem exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected
+    (hH : geometricallyConnectedCommHopfAlgProperty k H) (W : Submodule k M) :
+    (∃ N : Subcomodule k H M, N.toSubmodule = W) ↔
+      ∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W,
+        Comodule.differential (R := k) (H := H) (M := M) d w ∈ W :=
+  ⟨by rintro ⟨N, rfl⟩ d _ hw; exact N.differential_mem d hw, fun hW ↦
+    ⟨⟨W, fun _ hw ↦ W.coact_mem_range_of_forall_differential_mem_of_geometricallyConnected
+      hH hW hw⟩, rfl⟩⟩
+
+end GeometricallyConnected
 
 variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
@@ -68,16 +108,9 @@ theorem coact_mem_range_of_forall_differential_mem (W : Submodule k M)
       Comodule.differential (R := k) (H := H) (M := M) d w ∈ W)
     {w : M} (hw : w ∈ W) :
     Comodule.coact (R := k) (C := H) (M := M) w ∈
-      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : H →ₗ[k] H)) := by
-  let _ : Algebra.Smooth k H :=
-    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H.obj)
-  let _ : Algebra.Smooth k (H ⧸ (W.stabilizerHopfIdeal H).toIdeal) :=
-    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k
-      (_root_.CommHopfAlgCat.of k (H ⧸ (W.stabilizerHopfIdeal H).toIdeal)))
-  have hlie : (W.stabilizerHopfIdeal H).lieSubalgebra (B := k) = ⊤ :=
-    eq_top_iff.mpr fun d _ ↦ (mem_lieSubalgebra_stabilizerHopfIdeal_iff W d).mpr (hW d)
-  exact (stabilizerHopfIdeal_eq_bot_iff W).mp (HopfIdeal.eq_bot_of_lieSubalgebra_eq_top _ hlie)
-    w hw
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : H →ₗ[k] H)) :=
+  W.coact_mem_range_of_forall_differential_mem_of_geometricallyConnected
+    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H.obj).mpr inferInstance) hW hw
 
 /-- In characteristic zero, a subspace of a representation of a connected group over an
 algebraically closed field is a subrepresentation exactly when it is stable under the
@@ -85,16 +118,42 @@ differentiated action of the Lie algebra. -/
 theorem exists_subcomodule_iff_forall_differential_mem (W : Submodule k M) :
     (∃ N : Subcomodule k H M, N.toSubmodule = W) ↔
       ∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W,
-        Comodule.differential (R := k) (H := H) (M := M) d w ∈ W := by
-  constructor
-  · rintro ⟨N, rfl⟩ d w hw
-    exact N.differential_mem d hw
-  · intro hW
-    exact ⟨⟨W, fun _ hw ↦ coact_mem_range_of_forall_differential_mem W hW hw⟩, rfl⟩
+        Comodule.differential (R := k) (H := H) (M := M) d w ∈ W :=
+  W.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected
+    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H.obj).mpr inferInstance)
 
 end Submodule
 
 namespace TauCeti.Comodule
+
+section GeometricallyConnected
+
+variable {k : Type u} [Field k] [CharZero k] {H : _root_.CommHopfAlgCat.{v} k}
+  [Algebra.FiniteType k H] {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
+
+/-- Over any field of characteristic zero, a representation of a geometrically connected finite-type
+affine group is completely reducible iff every `Lie(G)`-stable subspace has a `Lie(G)`-stable
+complement. -/
+theorem isCompletelyReducible_iff_forall_differential_mem_of_geometricallyConnected
+    (hH : geometricallyConnectedCommHopfAlgProperty k H) :
+    IsCompletelyReducible k H M ↔
+      ∀ W : Submodule k M,
+        (∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W,
+          differential (R := k) (H := H) (M := M) d w ∈ W) →
+        ∃ W' : Submodule k M,
+          (∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W',
+            differential (R := k) (H := H) (M := M) d w ∈ W') ∧ IsCompl W W' := by
+  refine ⟨fun h W hW ↦ ?_, fun h ↦ IsCompletelyReducible.of_exists_isCompl fun N ↦ ?_⟩
+  · obtain ⟨N, rfl⟩ :=
+      (W.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected hH).2 hW
+    obtain ⟨Q, hQ⟩ := h.exists_isCompl N
+    exact ⟨Q.toSubmodule, fun d _ hw ↦ Q.differential_mem d hw, hQ⟩
+  · obtain ⟨W', hW', hNW'⟩ := h N.toSubmodule fun d _ hw ↦ N.differential_mem d hw
+    obtain ⟨Q, rfl⟩ :=
+      (W'.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected hH).2 hW'
+    exact ⟨Q, hNW'⟩
+
+end GeometricallyConnected
 
 variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
@@ -110,16 +169,8 @@ theorem isCompletelyReducible_iff_forall_differential_mem :
           differential (R := k) (H := H) (M := M) d w ∈ W) →
         ∃ W' : Submodule k M,
           (∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W',
-            differential (R := k) (H := H) (M := M) d w ∈ W') ∧ IsCompl W W' := by
-  constructor
-  · intro h W hW
-    obtain ⟨N, rfl⟩ := (Submodule.exists_subcomodule_iff_forall_differential_mem W).2 hW
-    obtain ⟨Q, hQ⟩ := h.exists_isCompl N
-    exact ⟨Q.toSubmodule, fun d _ hw ↦ Q.differential_mem d hw, hQ⟩
-  · intro h
-    refine IsCompletelyReducible.of_exists_isCompl fun N ↦ ?_
-    obtain ⟨W', hW', hNW'⟩ := h N.toSubmodule fun d _ hw ↦ N.differential_mem d hw
-    obtain ⟨Q, rfl⟩ := (Submodule.exists_subcomodule_iff_forall_differential_mem W').2 hW'
-    exact ⟨Q, hNW'⟩
+            differential (R := k) (H := H) (M := M) d w ∈ W') ∧ IsCompl W W' :=
+  isCompletelyReducible_iff_forall_differential_mem_of_geometricallyConnected
+    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H.obj).mpr inferInstance)
 
 end TauCeti.Comodule

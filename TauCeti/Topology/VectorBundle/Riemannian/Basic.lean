@@ -35,6 +35,8 @@ continuous reference inner products on the fibres.
 
 ## Main results
 
+* `TauCeti.inner_eq_of_totalSpaceMk_eq`: equal points in a bundle total space with fibrewise inner
+  products have equal fibre inner products.
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
 * `Bundle.Trivialization.continuousAt_norm_symmL`: in a continuous Riemannian bundle, the fiber
@@ -49,6 +51,10 @@ continuous reference inner products on the fibres.
   subset of the total space.
 * `IsCompact.norm_le_bundle_of_continuous`: the same for a continuous fiber norm with locally
   bounded trivializations.
+* `Bundle.RiemannianMetric.ext`: bare Riemannian metrics are equal when their fibrewise inner
+  products agree.
+* `Bundle.RiemannianMetric.inner_riemannianBundle`: the inner product induced by
+  `[RiemannianBundle]` is `RiemannianBundle.g.inner`.
 * `Bundle.RiemannianMetric.isSymm_toBilinForm_inner`: the inner product of a Riemannian metric
   on a fiber is a symmetric bilinear form.
 * `Bundle.RiemannianMetric.inner_self_nonneg`: the diagonal values `g(v, v)` of a metric are
@@ -64,6 +70,21 @@ public section
 
 open Bundle Filter Set
 open scoped Topology
+
+namespace TauCeti
+
+/-- Equal points of the total space of a bundle with fibrewise inner products have equal inner
+products of their fibre components. -/
+theorem inner_eq_of_totalSpaceMk_eq {𝕜 B F : Type*} {V : B → Type*} [∀ x, Inner 𝕜 (V x)]
+    {x y : B} {u v : V x} {u' v' : V y}
+    (hu : TotalSpace.mk' F x u = TotalSpace.mk' F y u')
+    (hv : TotalSpace.mk' F x v = TotalSpace.mk' F y v') :
+    inner 𝕜 u v = inner 𝕜 u' v' := by
+  cases hu
+  cases hv
+  rfl
+
+end TauCeti
 
 variable
   {B : Type*} [TopologicalSpace B]
@@ -209,6 +230,24 @@ namespace Bundle.RiemannianMetric
 
 variable {B : Type*} {E : B → Type*} [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)]
+
+/-- Bare Riemannian metrics are equal when all their fibrewise inner products agree. -/
+@[ext]
+theorem ext {g h : RiemannianMetric E} (heq : ∀ b v w, g.inner b v w = h.inner b v w) :
+    g = h := by
+  cases g
+  cases h
+  congr 1
+  funext b
+  ext v w
+  exact heq b v w
+
+/-- The inner product induced by `[RiemannianBundle E]` is given by `RiemannianBundle.g.inner`. -/
+theorem inner_riemannianBundle [RiemannianBundle E]
+    [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)]
+    (b : B) (v w : E b) :
+    Inner.inner ℝ v w = (RiemannianBundle.g (E := E)).inner b v w :=
+  rfl
 
 /-- The inner product of a Riemannian metric on a fiber is a symmetric bilinear form. -/
 theorem isSymm_toBilinForm_inner (g : RiemannianMetric E) (b : B) :

@@ -7,13 +7,17 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
+public import TauCeti.Analysis.Pseudodifferential.CharacteristicSet
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Distribution
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Closure
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Microlocal
+import TauCeti.Analysis.Pseudodifferential.ProperSupport.EllipticRegularity
+import TauCeti.Analysis.Pseudodifferential.ProperSupport.LocalSobolev
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
@@ -47,6 +51,33 @@ spatial support acting on `H^t` this is
 Unlike `TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_subset_cthickening`, the
 `H^{s - m}` singular support of `Op(a) T` lies in the `H^s` singular support of `T` itself, not
 only in its closed `R`-neighbourhood.
+
+Conversely, properly supported elliptic operators of order `0` detect the covectors at which a
+distribution is smooth. If `(x₀, ξ₀) ∉ WF(T)`, then for every `ε > 0` some symbol `c` of order `0`
+whose quantization has kernel supported within distance `ε` of the diagonal is not characteristic at
+`(x₀, ξ₀)` and makes `Op(c) T` smooth
+(`TauCeti.Symbol.exists_notMem_characteristicSet_and_waveFrontSet_quantizeDistribution_eq_empty`).
+With microlocal elliptic regularity this identifies the Fourier-decay definition of the wave front
+set with the definition by elliptic test operators,
+
+`WF(T) = ⋂ {Char(c) | c of order 0 properly supported, Op(c) T smooth}`
+
+(`TauCeti.Symbol.waveFrontSet_eq_iInter_characteristicSet`), for every distribution `T`, with no
+Sobolev regularity or compact support assumed. For `T` in a Bessel-potential space `H^t` and test
+symbols with compact spatial support this is
+`TauCeti.Symbol.waveFrontSet_toDistribution_eq_iInter_characteristicSet`.
+
+For **systems**, symbols `a` with values in `V →L[ℂ] W` for finite-dimensional complex inner
+product spaces `V` and `W`, acting on `V`-valued distributions, microlocality and microlocal
+elliptic regularity hold for the wave front set of vector-valued distributions, the union of the
+wave front sets of the components (`Distribution.vectorWaveFrontSet`):
+
+`WF(Op(a) T) ⊆ WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`
+
+(`TauCeti.Symbol.vectorWaveFrontSet_quantizeDistribution_subset`,
+`TauCeti.Symbol.vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet`).
+In a local frame this is how a properly supported operator between vector bundles acts on
+distributional sections in a chart.
 
 ## Proof
 
@@ -105,6 +136,21 @@ and every `H^s` wave front set are preserved up to the shift by `m`.
 * `TauCeti.Symbol.IsEllipticAbove.waveFrontSet_quantizeDistribution`,
   `TauCeti.ClassicalSymbol.IsElliptic.waveFrontSet_quantizeDistribution`: for elliptic `a`,
   `WF(Op(a) T) = WF(T)`.
+* `TauCeti.Symbol.notMem_waveFrontSet_quantizeDistribution_of_isSmoothing_sub`: `Op(a) T` is
+  microlocally smooth where `a` agrees, up to a smoothing symbol, with a symbol vanishing conically.
+* `TauCeti.Symbol.exists_notMem_characteristicSet_and_waveFrontSet_quantizeDistribution_eq_empty`:
+  **elliptic test operators detect regular covectors** of an arbitrary distribution.
+* `TauCeti.Symbol.notMem_waveFrontSet_iff_exists_quantizeDistribution`,
+  `TauCeti.Symbol.waveFrontSet_eq_iInter_characteristicSet`: **the wave front set by elliptic test
+  operators**, `WF(T) = ⋂ Char(c)` over the properly supported `c` of order `0` with `Op(c) T`
+  smooth.
+* `TauCeti.Symbol.vectorWaveFrontSet_quantizeDistribution_subset`: **microlocality of systems**,
+  `WF(Op(a) T) ⊆ WF(T)` for `V`-valued `T`.
+* `TauCeti.Symbol.vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn`,
+  `TauCeti.Symbol.vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet`:
+  **microlocal elliptic regularity of systems**, `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`.
+* `TauCeti.Symbol.vectorWaveFrontSet_quantizeDistribution_sdiff_characteristicSet_eq`:
+  `WF(Op(a) T) \ Char(a) = WF(T) \ Char(a)` for systems.
 
 ## References
 
@@ -112,7 +158,9 @@ and every `H^s` wave front set are preserved up to the shift by `m`.
   Proposition 7.3 (`WF(Pu) ⊆ WF(u)` for properly supported operators) and §7 (microlocal
   parametrices, `WF(u) ⊆ WF(Pu) ∪ Char(P)`).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
-  §18.1 (properly supported pseudodifferential operators and wave front sets).
+  §18.1 (properly supported pseudodifferential operators and wave front sets, and the description
+  of `WF(u)` as the intersection of the characteristic sets of the properly supported operators of
+  order `0` mapping `u` to a smooth function).
 * L. Hörmander, *Lectures on Nonlinear Hyperbolic Differential Equations*, Springer, 1997,
   §11.1 (the `H^s` wave front set and its behaviour under pseudodifferential operators).
 -/
@@ -572,5 +620,288 @@ theorem ClassicalSymbol.IsElliptic.waveFrontSet_quantizeDistribution
     (Symbol.quantizeDistribution ha T).waveFrontSet = T.waveFrontSet :=
   Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
     hell.forall_exists_isEllipticOn ha T
+
+end TauCeti
+
+/-! ### Elliptic test operators
+
+Properly supported operators of order `0` detect the covectors at which a distribution is smooth.
+If `T` is microlocally smooth at `(x₀, ξ₀)`, a microlocal cutoff `c₀` living in a conic
+neighbourhood of `(x₀, ξ₀)` on which `T` is smooth is the identity near `(x₀, ξ₀)`. Cutting its
+kernel off near the diagonal changes it by a smoothing symbol
+(`TauCeti.Symbol.exists_isSmoothing_sub_and_hasNearDiagonalKernel`), which changes neither the
+characteristic set (`TauCeti.Symbol.characteristicSet_eq_of_isSmoothing_sub`) nor the
+singularities of the output away from the conic support of `c₀`
+(`TauCeti.Symbol.notMem_waveFrontSet_quantizeDistribution_of_isSmoothing_sub`). So the resulting
+properly supported `c` is not characteristic at `(x₀, ξ₀)`, and `Op(c) T` is smooth. With
+microlocal elliptic regularity this identifies the Fourier-decay definition of the wave front set
+of an arbitrary distribution with the definition by elliptic test operators. -/
+
+namespace TauCeti
+
+namespace Symbol
+
+open Distribution Set Metric
+open scoped Topology
+
+variable {n : ℕ} {m R : ℝ} {a : Symbol n ℂ ℂ m}
+
+/-- **Properly supported operators are smoothing where their symbol vanishes conically, up to a
+smoothing symbol.** Let `a` be a scalar symbol whose quantization has kernel supported within
+distance `R` of the diagonal, and let `a - b` be smoothing for a symbol `b` which vanishes at large
+frequencies conically near `(x₀, ξ₀)`: `b(x, ξ) = 0` for `x` in a neighbourhood `U` of `x₀` and `ξ`
+of norm at least `R'` in an open cone `Γ` containing `ξ₀`. Then `(x₀, ξ₀)` does not lie in the
+wave front set of `Op(a) T`, for every distribution `T` on `ℝⁿ`. The symbol `b` need not be
+properly supported. -/
+theorem notMem_waveFrontSet_quantizeDistribution_of_isSmoothing_sub
+    (ha : a.HasNearDiagonalKernel R) {b : Symbol n ℂ ℂ m} (hab : (a - b).IsSmoothing)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) {x₀ ξ₀ : CoordinateSpace n}
+    {U Γ : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x₀) (hΓ : IsOpen Γ) (hξ₀ : ξ₀ ∈ Γ)
+    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) {R' : ℝ}
+    (hbΓ : ∀ x ∈ U, ∀ ξ ∈ Γ, R' ≤ ‖ξ‖ → b.coefficient (x, ξ) = 0) :
+    (x₀, ξ₀) ∉ (quantizeDistribution ha T).waveFrontSet := by
+  intro hp
+  obtain ⟨-, hξ0, hnot⟩ := mem_waveFrontSet_iff.1 hp
+  -- `Op(a) T` agrees near `x₀` with `Op(a) (χ T) = Op(a') u`, where `u ∈ H^t` and `a'` has compact
+  -- spatial support and agrees with `a` on `supp χ`, a neighbourhood of `x₀`.
+  obtain ⟨χ, -, hOpTD, hχx₀⟩ := exists_notMem_dsupport_sub_cutoffTempered ha T x₀
+  obtain ⟨a', ha', t, u, -, hOp, ha'a⟩ :=
+    exists_quantizeDistribution_toDistribution_cutoffTempered_eq ha T χ
+  refine hnot ?_
+  rw [← add_sub_cancel (toDistribution ⊤ (T.cutoffTempered χ)) T, map_add, hOp]
+  refine IsMicrolocallySmoothAt.add ?_ (isMicrolocallySmoothAt_of_notMem_dsupport trivial hOpTD ξ₀)
+  -- A cutoff `φ` equal to `1` on the unit ball about `x₀`, and the smoothing symbol `s = φ (a - b)`
+  -- with compact spatial support: `Op(a') u = Op(a' - s) u + Op(s) u`.
+  let ρ : ContDiffBump x₀ := ⟨1, 2, one_pos, one_lt_two⟩
+  have hφ : ContDiff ℝ ∞ fun x ↦ (ρ x : ℂ) := ofRealCLM.contDiff.comp ρ.contDiff
+  have hφc : HasCompactSupport fun x ↦ (ρ x : ℂ) := ρ.hasCompactSupport.comp_left ofReal_zero
+  set s : Symbol n ℂ ℂ (0 + m) := inclusion (zero_add m).ge (smulLeft hφ (a - b))
+  have hs : s.IsSmoothing := (hab.smulLeft hφ).inclusion _
+  have hsc : s.HasCompactSpatialSupport :=
+    (hasCompactSpatialSupport_smulLeft hφ hφc _).of_coefficient_eq (coefficient_inclusion _ _)
+  have he := ha'.sub hsc
+  rw [← sub_add_cancel (a'.quantizeSobolev ha' t u).toDistr (s.quantizeSobolev hsc t u).toDistr,
+    ← toDistr_quantizeSobolev_sub_apply ha' hsc he, map_add]
+  refine IsMicrolocallySmoothAt.add (isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ0 ?_)
+    (isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ0 ?_)
+  · -- Near `x₀`, `a' - s = a - (a - b) = b`, which vanishes conically.
+    refine notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero he t u
+      (Filter.inter_mem (Filter.inter_mem hU (ball_mem_nhds x₀ one_pos)) hχx₀) hΓ hξ₀ hcone
+      (R := R') fun x hx ξ hξ hR ↦ ?_
+    have hρ : ρ x = 1 := ρ.one_of_mem_closedBall (ball_subset_closedBall hx.1.2)
+    simp [s, ha'a x hx.2 ξ, hρ, hbΓ x hx.1.1 ξ hξ hR]
+  · -- `Op(s) u` lies in every `H^r`.
+    rw [TemperedDistribution.waveFrontSet_toDistribution_eq_empty
+      fun r ↦ hs.memSobolev_toDistr_quantizeSobolev hsc t r u]
+    exact notMem_empty _
+
+/-- **Elliptic test operators detect regular covectors.** If a distribution `T` on `ℝⁿ` is
+microlocally smooth at `(x₀, ξ₀)`, then for every `ε > 0` there is a symbol `c` of order `0` whose
+quantization has kernel supported within distance `ε` of the diagonal, not characteristic at
+`(x₀, ξ₀)`, such that `Op(c) T` has empty wave front set. -/
+theorem exists_notMem_characteristicSet_and_waveFrontSet_quantizeDistribution_eq_empty
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) {x₀ ξ₀ : CoordinateSpace n}
+    (hT : (x₀, ξ₀) ∉ T.waveFrontSet) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (c : Symbol n ℂ ℂ 0) (hc : c.HasNearDiagonalKernel ε), (x₀, ξ₀) ∉ c.characteristicSet ∧
+      (quantizeDistribution hc T).waveFrontSet = ∅ := by
+  -- At the zero frequency every symbol is noncharacteristic, and a smoothing symbol will do.
+  rcases eq_or_ne ξ₀ 0 with rfl | hξ₀
+  · obtain ⟨c, hc0, hc⟩ :=
+      exists_isSmoothing_sub_and_hasNearDiagonalKernel (0 : Symbol n ℂ ℂ 0) hε
+    refine ⟨c, hc, fun h ↦ (mem_characteristicSet_iff.1 h).1 rfl, ?_⟩
+    rw [← image_eq_empty (f := Prod.fst), fst_image_waveFrontSet]
+    exact IsSmoothing.singularSupport_quantizeDistribution_eq_empty hc (by simpa using hc0) T
+  have hs := isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ₀ hT
+  -- The witnesses of microlocal smoothness at `(x₀, ξ₀)`, a cutoff `φ` and an open cone `Γ`,
+  -- witness it at every `(x, η)` with `φ x ≠ 0` and `η ∈ Γ`.
+  obtain ⟨φ, hφ, Γ, hΓ, hξ₀Γ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hs
+  have hsm (x : CoordinateSpace n) (hx : φ x ≠ 0) (η : CoordinateSpace n) (hη : η ∈ Γ) :
+      T.IsMicrolocallySmoothAt x η :=
+    isMicrolocallySmoothAt_iff.2 ⟨φ, hx, Γ, hΓ, hη, hcone, hdecay⟩
+  obtain ⟨δ, hδ, hδφ⟩ := Metric.isOpen_iff.1 (isOpen_ne_fun φ.continuous continuous_const) x₀ hφ
+  -- A closed cone `F` with `Γ' ⊆ F` and `F \ {0} ⊆ Γ`, a cutoff `c₀` living in
+  -- `ball x₀ (δ / 2) × Γ'` which is the identity near `(x₀, ξ₀)`, and a properly supported `c`
+  -- differing from `c₀` by a smoothing symbol.
+  obtain ⟨F, Γ', hF, hFcone, hFΓ, hΓ', hξ₀Γ', hcone', hΓ'F⟩ :=
+    hΓ.exists_isOpen_cone_subset_isClosed_cone hcone hξ₀Γ
+  obtain ⟨c₀, -, hc₀0, U', Γ'', hU', hx₀U', hΓ'', hξ₀Γ'', hcone'', R', hc₀1⟩ :=
+    exists_microlocalCutoff_of_mem (V := ℂ) isOpen_ball (mem_ball_self (half_pos hδ)) hΓ'
+      hξ₀Γ' hcone' 0
+  obtain ⟨c, hcs, hc⟩ := exists_isSmoothing_sub_and_hasNearDiagonalKernel c₀ hε
+  refine ⟨c, hc, ?_, eq_empty_iff_forall_notMem.2 fun ⟨x, ξ⟩ hp ↦ ?_⟩
+  · rw [characteristicSet_eq_of_isSmoothing_sub hcs]
+    exact notMem_characteristicSet_of_eq_id (hU'.mem_nhds hx₀U') hΓ'' hξ₀Γ'' hcone'' hc₀1
+  -- A covector of `WF(Op(c) T)` lies in `WF(T)`, so outside `closedBall x₀ (δ / 2) × F`, where
+  -- `c₀` vanishes conically.
+  obtain ⟨-, hξ0, hns⟩ := mem_waveFrontSet_iff.1 (waveFrontSet_quantizeDistribution_subset hc T hp)
+  by_cases hx : x ∈ closedBall x₀ (δ / 2)
+  · by_cases hξ : ξ ∈ F
+    · exact hns (hsm x (hδφ (closedBall_subset_ball (half_lt_self hδ) hx)) ξ (hFΓ ξ hξ hξ0))
+    · exact notMem_waveFrontSet_quantizeDistribution_of_isSmoothing_sub hc hcs T Filter.univ_mem
+        hF.isOpen_compl hξ (forall_smul_mem_compl hFcone) (R' := 0)
+        (fun _ _ _ hξ' _ ↦ hc₀0 _ fun hq ↦ hξ' (hΓ'F hq.2.1)) hp
+  · exact notMem_waveFrontSet_quantizeDistribution_of_isSmoothing_sub hc hcs T
+      (isClosed_closedBall.isOpen_compl.mem_nhds hx) isOpen_univ (mem_univ ξ)
+      (fun _ _ _ _ ↦ mem_univ _) (R' := 0)
+      (fun _ hx' _ _ _ ↦ hc₀0 _ fun hq ↦ hx' (ball_subset_closedBall hq.1)) hp
+
+/-- **The wave front set by elliptic test operators.** For a distribution `T` on `ℝⁿ`, the
+covector `(x₀, ξ₀)` lies outside `WF(T)` if and only if some symbol `c` of order `0` whose
+quantization has kernel supported near the diagonal, not characteristic at `(x₀, ξ₀)`, gives
+`Op(c) T` empty wave front set. -/
+theorem notMem_waveFrontSet_iff_exists_quantizeDistribution
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) {x₀ ξ₀ : CoordinateSpace n} :
+    (x₀, ξ₀) ∉ T.waveFrontSet ↔
+      ∃ (c : Symbol n ℂ ℂ 0) (R : ℝ) (hc : c.HasNearDiagonalKernel R),
+        (x₀, ξ₀) ∉ c.characteristicSet ∧ (quantizeDistribution hc T).waveFrontSet = ∅ := by
+  refine ⟨fun hT ↦ ?_, fun ⟨c, R, hc, hchar, hWF⟩ hp ↦ ?_⟩
+  · obtain ⟨c, hc, h⟩ :=
+      exists_notMem_characteristicSet_and_waveFrontSet_quantizeDistribution_eq_empty T hT one_pos
+    exact ⟨c, 1, hc, h⟩
+  -- `c` is elliptic on a conic neighbourhood of `(x₀, ξ₀)`, where `Op(c) T` is smooth.
+  obtain ⟨-, hξ₀, hns⟩ := mem_waveFrontSet_iff.1 hp
+  obtain ⟨U, hU, Γ, hΓ, hξ₀Γ, hcone, R', hell⟩ :=
+    not_not.1 (not_and.1 (mem_characteristicSet_iff.not.1 hchar) hξ₀)
+  exact hns (IsMicrolocallySmoothAt.of_quantizeDistribution hc hU hΓ hcone hξ₀Γ hell
+    (isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ₀ (by simp [hWF])))
+
+/-- **The wave front set as an intersection of characteristic sets.** For a distribution `T` on
+`ℝⁿ`, `WF(T)` is the intersection of the characteristic sets of the symbols `c` of order `0` whose
+quantization has kernel supported near the diagonal and for which `Op(c) T` has empty wave front
+set. -/
+theorem waveFrontSet_eq_iInter_characteristicSet (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    T.waveFrontSet = ⋂ (c : Symbol n ℂ ℂ 0) (R : ℝ) (hc : c.HasNearDiagonalKernel R)
+      (_ : (quantizeDistribution hc T).waveFrontSet = ∅), c.characteristicSet := by
+  ext ⟨x, ξ⟩
+  simp only [mem_iInter]
+  refine ⟨fun hp c R hc hWF ↦ ?_, fun h ↦ by_contra fun hp ↦ ?_⟩
+  · by_contra hchar
+    exact (notMem_waveFrontSet_iff_exists_quantizeDistribution T).2 ⟨c, R, hc, hchar, hWF⟩ hp
+  · obtain ⟨c, R, hc, hchar, hWF⟩ := (notMem_waveFrontSet_iff_exists_quantizeDistribution T).1 hp
+    exact hchar (h c R hc hWF)
+
+end Symbol
+
+end TauCeti
+
+/-! ### Systems
+
+A symbol `a` with values in `V →L[ℂ] W`, for finite-dimensional complex inner product spaces `V`
+and `W`, whose quantization has kernel supported within distance `R` of the diagonal, acts on all
+`V`-valued distributions on `ℝⁿ` (`TauCeti.Symbol.quantizeDistribution`). In a local frame this is
+how a properly supported operator between vector bundles acts on distributional sections in a
+chart. Both microlocality and microlocal elliptic regularity hold for these systems, for the wave
+front sets of vector-valued distributions (`Distribution.vectorWaveFrontSet`). Microlocality
+reduces to the scalar case entry by entry
+(`TauCeti.Symbol.mapCLM_quantizeDistribution_eq_sum`). Microlocal elliptic regularity reduces to the
+statement for systems on `H^r`,
+`TauCeti.Symbol.vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn`:
+a cut-off distribution `χ T` lies in some `H^r(ℝⁿ; V)`, and the components of `Op(ψ a) (χ T)` are
+`ψ (ℓ ∘ Op(a) T)` when `χ = 1` on the closed `R`-neighbourhood of the support of `ψ`
+(`TauCeti.Symbol.toDistr_postcomp_quantizeSobolev_smulLeft`). -/
+
+namespace TauCeti
+
+namespace Symbol
+
+open Distribution Set Metric
+open scoped Topology
+
+variable {n : ℕ} {m R R' : ℝ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+  [CompleteSpace V] [FiniteDimensional ℂ V] [NormedAddCommGroup W] [InnerProductSpace ℂ W]
+  [CompleteSpace W] [FiniteDimensional ℂ W] {a : Symbol n V W m}
+
+/-- **Microlocality of properly supported systems.** For a symbol `a` with values in `V →L[ℂ] W`
+whose quantization has kernel supported within distance `R` of the diagonal, and every `V`-valued
+distribution `T` on `ℝⁿ`, `WF(Op(a) T) ⊆ WF(T)`, for the wave front sets of vector-valued
+distributions. -/
+theorem vectorWaveFrontSet_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    (quantizeDistribution ha T).vectorWaveFrontSet ⊆ T.vectorWaveFrontSet := by
+  intro p hp
+  obtain ⟨ℓ, hp⟩ := mem_vectorWaveFrontSet_iff.1 hp
+  rw [mapCLM_quantizeDistribution_eq_sum ha (Module.finBasis ℂ V) ℓ] at hp
+  obtain ⟨j, -, hj⟩ := mem_iUnion₂.1 (waveFrontSet_sum_subset _ _ hp)
+  exact waveFrontSet_mapCLM_subset_vectorWaveFrontSet _ _
+    (waveFrontSet_quantizeDistribution_subset _ _ hj)
+
+/-- **Microlocal elliptic regularity of properly supported systems on a conic region.** Let `a` be
+a symbol with values in `V →L[ℂ] W` whose quantization has kernel supported within distance `R` of
+the diagonal, and which is elliptic on the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R'`,
+for an open set `U` and an open cone `Γ`. Then `Op(a)` keeps every singularity in `U × Γ` of a
+`V`-valued distribution `T` on `ℝⁿ`: `WF(T) ∩ (U × Γ) ⊆ WF(Op(a) T)`. No a priori regularity of
+`T` is assumed, and the symbol needs neither compact spatial support nor estimates uniform in the
+position. -/
+theorem vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V))
+    {U Γ : Set (CoordinateSpace n)} (hU : IsOpen U) (hΓ : IsOpen Γ)
+    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ)
+    (hell : a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖}) :
+    T.vectorWaveFrontSet ∩ U ×ˢ Γ ⊆ (quantizeDistribution ha T).vectorWaveFrontSet := by
+  rintro ⟨x, ξ⟩ ⟨hp, hx, hξ⟩
+  -- A cutoff `ψ` equal to `1` on an open neighbourhood `O` of `x`, and a cutoff `χ` equal to `1`
+  -- on the closed `R`-neighbourhood of the support of `ψ`.
+  obtain ⟨ψ, O, hO, hxO, hψO, -⟩ := TestFunction.exists_eqOn_one_tsupport_subset (n := ⊤)
+    (𝕜 := ℂ) (Ω := ⊤) Filter.univ_mem (mem_univ x)
+  obtain ⟨χ, hχ1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤) (Ω := ⊤)
+    (ψ.hasCompactSupport.isCompact.cthickening (r := R)) isOpen_univ (subset_univ _) (by simp)
+  have hχψ (y : CoordinateSpace n) (hy : y ∈ cthickening R (tsupport ψ)) : χ y = 1 :=
+    hχ1.self_of_nhdsSet y hy
+  have hOψ : O ⊆ tsupport ψ := fun y hy ↦ subset_tsupport _ (by simp [hψO hy])
+  -- Some `u ∈ H^r(ℝⁿ; V)` has the cut-off coordinates `χ (c_j ∘ T)`, so it agrees with `T` on
+  -- `O` and is singular at `(x, ξ)`.
+  set b := Module.finBasis ℂ V
+  obtain ⟨r, u, hu⟩ := exists_toDistr_postcomp_coord_eq_cutoffTempered b T χ
+  have hpu : (x, ξ) ∈ (toDistribution ⊤ u.toDistr).vectorWaveFrontSet := by
+    rw [vectorWaveFrontSet_eq_iUnion_basis b] at hp ⊢
+    obtain ⟨j, hj⟩ := mem_iUnion.1 hp
+    refine mem_iUnion.2 ⟨j, ?_⟩
+    rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp, hu j]
+    exact (mem_waveFrontSet_iff_of_isVanishingOn_sub hO hxO
+      (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦
+        hχψ y (self_subset_cthickening _ (hOψ hy)))).1 hj
+  -- `ψ a` agrees with `a` on `O`, so it is elliptic on `(U ∩ O) × Γ` at large frequencies, and the
+  -- statement on `H^r` puts `(x, ξ)` in the wave front set of `Op(ψ a) u`.
+  have hb := hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a
+  have hellb : (smulLeft ψ.contDiff a).IsEllipticOn
+      {q | q.1 ∈ U ∩ O ∧ q.2 ∈ Γ ∧ R' ≤ ‖q.2‖} :=
+    (hell.mono (S' := {q | q.1 ∈ U ∩ O ∧ q.2 ∈ Γ ∧ R' ≤ ‖q.2‖})
+      fun _ hq ↦ ⟨hq.1.1, hq.2⟩).congr rfl fun q hq ↦ by
+      rw [coefficient_smulLeft, hψO hq.1.2, Pi.one_apply, one_smul]
+  obtain ⟨ℓ, hℓ⟩ := mem_vectorWaveFrontSet_iff.1
+    (vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn hb r u
+      (hU.inter hO) hΓ hcone hellb ⟨hpu, ⟨hx, hxO⟩, hξ⟩)
+  -- The component of `Op(ψ a) u` along `ℓ` is `ψ (ℓ ∘ Op(a) T)`, which agrees with `ℓ ∘ Op(a) T`
+  -- on `O`.
+  rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp,
+    toDistr_postcomp_quantizeSobolev_smulLeft b ha hχψ T u hu ℓ] at hℓ
+  exact waveFrontSet_mapCLM_subset_vectorWaveFrontSet ℓ _
+    ((mem_waveFrontSet_iff_of_isVanishingOn_sub hO hxO
+      (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦ hψO hy)).2 hℓ)
+
+/-- **Microlocal elliptic regularity of properly supported systems.** For a symbol `a` with values
+in `V →L[ℂ] W` whose quantization has kernel supported within distance `R` of the diagonal, and
+every `V`-valued distribution `T` on `ℝⁿ`, every singularity of `T` is a singularity of `Op(a) T`
+or a characteristic point of `a`: `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`. -/
+theorem vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    T.vectorWaveFrontSet ⊆
+      (quantizeDistribution ha T).vectorWaveFrontSet ∪ a.characteristicSet :=
+  subset_union_characteristicSet (fun _ hp ↦ (vectorWaveFrontSet_subset _ hp).2)
+    fun hU hΓ hcone _ hell ↦
+      vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn ha T hU hΓ hcone hell
+
+/-- Off the characteristic set of a symbol `a` with values in `V →L[ℂ] W` whose quantization has
+kernel supported within distance `R` of the diagonal, `Op(a)` neither creates nor removes
+singularities: `WF(Op(a) T) \ Char(a) = WF(T) \ Char(a)` for every `V`-valued distribution `T` on
+`ℝⁿ`. -/
+theorem vectorWaveFrontSet_quantizeDistribution_sdiff_characteristicSet_eq
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    (quantizeDistribution ha T).vectorWaveFrontSet \ a.characteristicSet =
+      T.vectorWaveFrontSet \ a.characteristicSet :=
+  sdiff_characteristicSet_eq_of_subset (vectorWaveFrontSet_quantizeDistribution_subset ha T)
+    (vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet ha T)
+
+end Symbol
 
 end TauCeti

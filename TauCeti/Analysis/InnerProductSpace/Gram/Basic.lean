@@ -18,6 +18,9 @@ space. Over `ℝ` it reads `LinearMap.BilinForm.toMatrix b (innerₗ E) = Matrix
 (`LinearMap.BilinForm.toMatrix_innerₗ`), which is the form in which Gram matrices enter the
 bilinear-form API, for instance through dual bases. In an orthonormal basis it is the identity
 matrix (`LinearMap.BilinForm.toMatrix_innerₗ_orthonormalBasis`).
+
+The Gram matrix of the sum of two families that are pairwise orthogonal across the two families is
+the sum of their Gram matrices (`Matrix.gram_add_of_inner_eq_zero`).
 -/
 
 public section
@@ -43,3 +46,14 @@ theorem LinearMap.BilinForm.toMatrix_innerₗ_orthonormalBasis [NormedAddCommGro
     [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) : toMatrix b.toBasis (innerₗ E) = 1 := by
   rw [toMatrix_innerₗ, OrthonormalBasis.coe_toBasis, Matrix.gram_eq_one_iff_orthonormal]
   exact b.orthonormal
+
+/-- The Gram matrix of a sum of two families of vectors that are pairwise orthogonal across the two
+families is the sum of their Gram matrices. -/
+theorem Matrix.gram_add_of_inner_eq_zero {ι 𝕜 E : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E] {u v : ι → E}
+    (h : ∀ i j, ⟪u i, v j⟫_𝕜 = 0) :
+    Matrix.gram 𝕜 (u + v) = Matrix.gram 𝕜 u + Matrix.gram 𝕜 v := by
+  ext i j
+  have h' : ⟪v i, u j⟫_𝕜 = 0 := by
+    rw [← inner_conj_symm, h j i, map_zero]
+  simp [Pi.add_apply, inner_add_left, inner_add_right, h i j, h']
