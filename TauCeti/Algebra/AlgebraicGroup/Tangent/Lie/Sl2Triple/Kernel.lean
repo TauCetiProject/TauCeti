@@ -78,11 +78,9 @@ theorem moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple 
 /-- **The scheme-theoretic kernel of `t.sl2CoordinateMap` is central in `SL₂`.** -/
 theorem isCentral_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple h e f) :
     (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap).IsCentral := by
-  let A := SpecialLinear.coordinateHopfAlgebra k 2
   let _ := t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
   let _ := t.algebraEtale_quotient_kernelHopfIdeal_sl2CoordinateMap
   exact HopfIdeal.IsNormal.isCentral_of_finite_of_isGeometricallyReduced
-    (H := ⟨A, inferInstanceAs (Algebra.FiniteType k _)⟩)
     (CommHopfAlgCat.isNormal_kernelHopfIdeal t.sl2CoordinateMap)
     (SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
 

@@ -18,8 +18,8 @@ import TauCeti.RingTheory.Ideal.Quotient.Finite
 For an isogeny from a geometrically connected affine group in characteristic zero to a
 group with finite center, the inverse image of the target center is the source center.
 Indeed, that inverse image is a finite normal closed subgroup. Cartier's theorem makes it
-geometrically reduced, and a finite geometrically reduced normal subgroup of a connected
-smooth affine group is central.
+geometrically reduced, and a finite geometrically reduced normal subgroup of a geometrically
+connected affine group is central.
 
 Consequently, if the kernel of the isogeny is the entire source center, the target is
 centerless. This applies to the represented center quotient of a semisimple group.
@@ -40,7 +40,6 @@ universe u
 
 variable {k : Type u} [Field k] [CharZero k]
   {H K : _root_.CommHopfAlgCat.{u} k}
-  [Algebra.FiniteType k K]
   [Module.Finite k (centerCoordinateHopfAlgebra H)]
 
 /-- In characteristic zero, an isogeny with geometrically connected source and finite
@@ -61,13 +60,11 @@ theorem IsIsogeny.map_centerDefiningIdeal_eq {f : H ⟶ K} (hf : IsIsogeny f)
     finite_quotient_of_map_algebraMap_le (A := k) (R := H) (B := K)
       (I := (centerDefiningIdeal H).toIdeal) (J := J.toIdeal)
       (by rw [hJ]; exact le_rfl) inferInstance
-  let _ : Algebra.Smooth k K :=
-    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
   let _ : Algebra.Smooth k (_root_.CommHopfAlgCat.quotient K J) :=
     (smoothCommHopfAlgProperty_iff _).mp
       (smoothCommHopfAlgProperty_of_charZero k (_root_.CommHopfAlgCat.quotient K J))
   have hcentral : J.IsCentral :=
-    hnormal.isCentral_of_finite_of_isGeometricallyReduced (H := FiniteTypeCommHopfAlgCat.of k K) hK
+    hnormal.isCentral_of_finite_of_isGeometricallyReduced hK
   exact le_antisymm
     (HopfIdeal.map_le_iff.mpr fun _ hx ↦
       HopfIdeal.mem_comap.mp (centerDefiningIdeal_le_comap f hf.injective hx))
