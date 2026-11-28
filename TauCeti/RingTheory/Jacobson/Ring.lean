@@ -19,12 +19,23 @@ theory: Weierstrass division makes the quotient by a nonzero element finite over
 so that `isJacobsonRing_of_isIntegral` applies to it, while the vanishing of the Jacobson radical
 is checked separately.
 
+In a Jacobson ring the radical of an ideal `I` is its Jacobson radical, so a finitely generated
+ideal contained in every maximal ideal containing `I` has a power contained in `I`
+(`Ideal.exists_pow_le_of_le_jacobson_of_fg`).
+
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§5.2.5–5.2.6.
 -/
 
 public section
+
+/-- **Powers of ideals in a Jacobson ring.** In a Jacobson ring, a finitely generated ideal `M`
+contained in the Jacobson radical of `I`, that is, in every maximal ideal containing `I`, has a
+power contained in `I`. -/
+theorem Ideal.exists_pow_le_of_le_jacobson_of_fg {R : Type*} [CommRing R] [IsJacobsonRing R]
+    {I M : Ideal R} (h : M ≤ I.jacobson) (hM : M.FG) : ∃ n : ℕ, M ^ n ≤ I :=
+  Ideal.exists_pow_le_of_le_radical_of_fg (I.radical_eq_jacobson ▸ h) hM
 
 namespace TauCeti
 

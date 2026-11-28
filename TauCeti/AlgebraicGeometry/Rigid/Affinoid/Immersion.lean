@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Stalk.Map
 
 import TauCeti.RingTheory.Finiteness.Nakayama
+import TauCeti.RingTheory.Jacobson.Ring
 
 /-!
 # Locally closed and open immersions of affinoid spaces
@@ -87,6 +88,19 @@ structure IsAffinoidOpenImmersion (φ : A →ₐ[K] B) : Prop where
   /-- Every stalk map is bijective. -/
   bijective_stalkMap (y : MaximalSpectrum B) : Function.Bijective (φ.stalkMap y)
 
+/-- A locally closed immersion is a map injective on classical points with surjective stalk
+maps. -/
+theorem isAffinoidLocallyClosedImmersion_iff {φ : A →ₐ[K] B} :
+    IsAffinoidLocallyClosedImmersion φ ↔ Function.Injective (hB.out.maximalSpectrumComap φ) ∧
+      ∀ y, Function.Surjective (φ.stalkMap y) :=
+  ⟨fun h ↦ ⟨h.maximalSpectrumComap_injective, h.surjective_stalkMap⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂⟩⟩
+
+/-- An open immersion is a map injective on classical points with bijective stalk maps. -/
+theorem isAffinoidOpenImmersion_iff {φ : A →ₐ[K] B} :
+    IsAffinoidOpenImmersion φ ↔ Function.Injective (hB.out.maximalSpectrumComap φ) ∧
+      ∀ y, Function.Bijective (φ.stalkMap y) :=
+  ⟨fun h ↦ ⟨h.maximalSpectrumComap_injective, h.bijective_stalkMap⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂⟩⟩
+
 /-- Open immersions are locally closed immersions. -/
 theorem IsAffinoidOpenImmersion.isAffinoidLocallyClosedImmersion {φ : A →ₐ[K] B}
     (h : IsAffinoidOpenImmersion φ) : IsAffinoidLocallyClosedImmersion φ :=
@@ -99,8 +113,15 @@ theorem IsAffinoidSubdomainMap.isAffinoidOpenImmersion {φ : A →ₐ[K] B} {U :
 
 omit hB in
 /-- The identity is an open immersion. -/
+@[simp]
 theorem isAffinoidOpenImmersion_id : IsAffinoidOpenImmersion (AlgHom.id K A) :=
   (IsAffinoidSubdomainMap.id hA.out).isAffinoidOpenImmersion
+
+omit hB in
+/-- The identity is a locally closed immersion. -/
+@[simp]
+theorem isAffinoidLocallyClosedImmersion_id : IsAffinoidLocallyClosedImmersion (AlgHom.id K A) :=
+  isAffinoidOpenImmersion_id.isAffinoidLocallyClosedImmersion
 
 /-- Locally closed immersions are closed under composition. -/
 theorem IsAffinoidLocallyClosedImmersion.comp {φ : A →ₐ[K] B} {ψ : B →ₐ[K] C}
@@ -136,9 +157,8 @@ private theorem exists_pow_le_map_of_injective {φ : A →ₐ[K] B}
     ∃ n : ℕ, y.asIdeal ^ n ≤ (hB.out.maximalSpectrumComap φ y).asIdeal.map φ := by
   have := hB.out.isNoetherianRing
   have := hB.out.isJacobsonRing
-  refine Ideal.exists_pow_le_of_le_radical_of_fg ?_ (IsNoetherian.noetherian _)
-  rw [Ideal.radical_eq_jacobson, Ideal.jacobson]
-  refine le_sInf fun P ⟨hle, hP⟩ ↦ ?_
+  refine Ideal.exists_pow_le_of_le_jacobson_of_fg (le_sInf fun P ⟨hle, hP⟩ ↦ ?_)
+    (IsNoetherian.noetherian _)
   -- A maximal ideal `P ⊇ 𝔪_{φ(y)} B` lies over `𝔪_{φ(y)}`, so it is the point `y` by injectivity.
   have hPy : (⟨P, hP⟩ : MaximalSpectrum B) = y :=
     hinj (hB.out.maximalSpectrumComap_eq_of_map_le φ (P := ⟨P, hP⟩) hle)

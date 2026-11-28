@@ -132,34 +132,24 @@ theorem _root_.TauCeti.IsAffinoidSubdomainMap.mem_imageSubdomain_of_mem {B : Typ
     (hy : y ∈ W) : hU.isAffinoidAlgebra.maximalSpectrumComap φ y ∈ hU.imageSubdomain hA W :=
   ⟨y, hy, rfl⟩
 
-/-- Push an affinoid subdomain of `Sp U.sections` forward along `U.toSections` to an affinoid
-subdomain of `Sp A` contained in `U`. -/
-noncomputable def mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    (W : AffinoidSubdomain K U.sections) : AffinoidSubdomain K A :=
-  U.isAffinoidSubdomainMap.imageSubdomain hA W
+/-- The image subdomain lies in the set `U` represented by `φ`. -/
+theorem _root_.TauCeti.IsAffinoidSubdomainMap.coe_imageSubdomain_subset {B : Type u}
+    [CommRing B] [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
+    (hU : IsAffinoidSubdomainMap φ U) (hA : IsAffinoidAlgebra K A) (W : AffinoidSubdomain K B) :
+    (hU.imageSubdomain hA W : Set (MaximalSpectrum A)) ⊆ U := by
+  rw [hU.coe_imageSubdomain]
+  exact (Set.image_subset_range _ _).trans hU.range_maximalSpectrumComap_subset
 
-@[simp]
-theorem coe_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    (W : AffinoidSubdomain K U.sections) :
-    (U.mapSubdomain hA W : Set (MaximalSpectrum A)) =
-      U.isAffinoidAlgebra.maximalSpectrumComap U.toSections ''
-        (W : Set (MaximalSpectrum U.sections)) :=
-  U.isAffinoidSubdomainMap.coe_imageSubdomain hA W
-
-theorem mapSubdomain_le (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    (W : AffinoidSubdomain K U.sections) : U.mapSubdomain hA W ≤ U := by
-  rw [← SetLike.coe_subset_coe, coe_mapSubdomain]
-  exact (Set.image_subset_range _ _).trans
-    U.isAffinoidSubdomainMap.range_maximalSpectrumComap_subset
-
-/-- Pushing forward a cover of `Sp U.sections` gives a family covering `U`. -/
-theorem sUnion_image_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    {Q : Set (AffinoidSubdomain K U.sections)}
-    (hQ : ⋃₀ ((fun W : AffinoidSubdomain K U.sections ↦
-      (W : Set (MaximalSpectrum U.sections))) '' Q) = Set.univ) :
+/-- The images of a cover of `Sp B` cover the set `U` represented by `φ`. -/
+theorem _root_.TauCeti.IsAffinoidSubdomainMap.sUnion_image_imageSubdomain {B : Type u}
+    [CommRing B] [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
+    (hU : IsAffinoidSubdomainMap φ U) (hA : IsAffinoidAlgebra K A)
+    {Q : Set (AffinoidSubdomain K B)}
+    (hQ : ⋃₀ ((fun W : AffinoidSubdomain K B ↦ (W : Set (MaximalSpectrum B))) '' Q) = Set.univ) :
     ⋃₀ ((fun Z : AffinoidSubdomain K A ↦ (Z : Set (MaximalSpectrum A))) ''
-      (U.mapSubdomain hA '' Q)) = (U : Set (MaximalSpectrum A)) := by
-  rw [← U.isAffinoidSubdomainMap.range_maximalSpectrumComap hA, ← Set.image_univ, ← hQ]
+      (hU.imageSubdomain hA '' Q)) = U := by
+  refine Eq.trans ?_ (hU.range_maximalSpectrumComap hA)
+  rw [← Set.image_univ, ← hQ]
   simp [Set.image_image, Set.sUnion_image, Set.image_iUnion]
 
 /-- Restriction of functions along an inclusion of affinoid subdomains. -/

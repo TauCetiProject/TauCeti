@@ -56,6 +56,7 @@ local description of immersions, are built on.
 * `TauCeti.AffinoidSubdomain.toStalk`: the germ map `A → 𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.stalkLift`: the ring homomorphism out of the stalk induced by
   compatible ring homomorphisms out of the coordinate algebras of affinoid neighbourhoods.
+* `TauCeti.AffinoidSubdomain.stalkCongr`: transport of stalks along an equality of points.
 * `TauCeti.AffinoidSubdomain.localizationToStalk`: the factorisation `A_𝔪 → 𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.quotientPowEquiv`: `A ⧸ 𝔪ₓⁿ ≃ 𝒪_{Sp A,x} ⧸ 𝔪ⁿ`.
 * `TauCeti.AffinoidSubdomain.completionRingEquiv`: the `𝔪ₓ`-adic completion of `A` is the
@@ -208,6 +209,19 @@ theorem stalk_ringHom_ext {S : Type*} [Semiring S] {φ ψ : stalk K x →+* S}
   obtain ⟨U, hx, f, rfl⟩ := exists_germ_eq s
   exact h U hx f
 
+variable (K) in
+/-- Transport of analytic stalks along an equality `x = x'` of classical points. -/
+noncomputable def stalkCongr {x x' : MaximalSpectrum A} (h : x = x') :
+    stalk K x ≃+* stalk K x' :=
+  h ▸ RingEquiv.refl _
+
+/-- Transport of stalks sends the germ of `f` at `x` to the germ of `f` at `x'`. -/
+@[simp]
+theorem stalkCongr_germ {x' : MaximalSpectrum A} (h : x = x') {U : AffinoidSubdomain K A}
+    (hx : x ∈ U) (f : U.sections) : stalkCongr K h (germ U hx f) = germ U (h ▸ hx) f := by
+  subst h
+  rfl
+
 /-- Germs at `x` of sections over `U` factor through restriction to a smaller neighbourhood. -/
 theorem germ_comp_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) (hx : x ∈ U) :
     (germ U hx).comp (restrict h).toRingHom = germ V (h hx) :=
@@ -292,18 +306,19 @@ theorem exists_isUnit_restrict {U : AffinoidSubdomain K A} (hx : x ∈ U) {f : U
       z ∈ W' ↔ pointNorm K z f ≠ 0 ∧ ‖ϖ‖ ^ n ≤ pointNorm K z f := by
     rw [← SetLike.mem_coe, coe_rational, mem_rationalDomain]
     simp only [forall_const, pointNorm_algebraMap, norm_pow, ne_eq]
-  refine ⟨U.mapSubdomain hA.out W', U.mapSubdomain_le hA.out W', ?_, ?_⟩
-  · rw [← SetLike.mem_coe, coe_mapSubdomain]
-    exact ⟨y, (hW' y).mpr ⟨(hn.trans_le' (by positivity)).ne', hn.le⟩, hy⟩
-  · have hW := (U.mapSubdomain hA.out W').isAffinoidAlgebra
+  have hW'U : U.isAffinoidSubdomainMap.imageSubdomain hA.out W' ≤ U :=
+    U.isAffinoidSubdomainMap.coe_imageSubdomain_subset hA.out W'
+  refine ⟨U.isAffinoidSubdomainMap.imageSubdomain hA.out W', hW'U, ?_, ?_⟩
+  · exact (IsAffinoidSubdomainMap.mem_imageSubdomain _ _).mpr
+      ⟨y, (hW' y).mpr ⟨(hn.trans_le' (by positivity)).ne', hn.le⟩, hy⟩
+  · have hW := (U.isAffinoidSubdomainMap.imageSubdomain hA.out W').isAffinoidAlgebra
     refine hW.isUnit_iff_forall_pointNorm_ne_zero.mpr fun z ↦ ?_
     rw [← hW.pointNorm_maximalSpectrumComap]
     have hz : hB.maximalSpectrumComap U.toSections
-        (hW.maximalSpectrumComap (restrict (U.mapSubdomain_le hA.out W')) z) ∈
-          (U.mapSubdomain hA.out W' : Set (MaximalSpectrum A)) :=
-      (isAffinoidSubdomainMap_restrict (U.mapSubdomain_le hA.out W')
-        ).range_maximalSpectrumComap_subset ⟨z, rfl⟩
-    rw [coe_mapSubdomain,
+        (hW.maximalSpectrumComap (restrict hW'U) z) ∈
+          (U.isAffinoidSubdomainMap.imageSubdomain hA.out W' : Set (MaximalSpectrum A)) :=
+      (isAffinoidSubdomainMap_restrict hW'U).range_maximalSpectrumComap_subset ⟨z, rfl⟩
+    rw [IsAffinoidSubdomainMap.coe_imageSubdomain,
       (U.isAffinoidSubdomainMap.maximalSpectrumComap_injective hA.out).mem_set_image] at hz
     exact ((hW' _).mp hz).1
 

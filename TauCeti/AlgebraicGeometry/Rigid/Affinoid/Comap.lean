@@ -16,8 +16,9 @@ G-site of `Sp B` to that of `Sp A`. Inverse images are the actual inverse images
 points, and preserve finite affinoid covers. The universal property of subdomains supplies
 pullback of functions, natural under restriction and compatible with identities and composition.
 The restriction compatibility is the naturality square for the coordinate presheaves.
-For a map `φ` representing an affinoid subdomain, restricting to the image of an affinoid
-subdomain `W ≤ φ⁻¹(V)` of `Sp B` is pullback along `φ` followed by restriction to `W`.
+For a map `φ` representing an affinoid subdomain, the image of an affinoid subdomain `W` of `Sp B`
+lies in `V` exactly when `W ≤ φ⁻¹(V)`, its inverse image is `W` again, and restricting to it is
+pullback along `φ` followed by restriction to `W`.
 
 Only algebraic affinoidness is assumed: no norms on `A` or `B` are selected. The coordinate
 algebras retain nilpotents. This constructs morphisms of sites and their coordinate presheaves,
@@ -164,13 +165,28 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   [hA : Fact (IsAffinoidAlgebra K A)] [hB : Fact (IsAffinoidAlgebra K B)]
   {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)}
 
+/-- The image of `W` under the affinoid subdomain map `φ` lies in `V` if and only if `W` lies in
+the inverse image `φ⁻¹(V)`. -/
+theorem imageSubdomain_le_iff (hU : IsAffinoidSubdomainMap φ U) {W : AffinoidSubdomain K B}
+    {V : AffinoidSubdomain K A} : hU.imageSubdomain hA.out W ≤ V ↔ W ≤ V.comap φ :=
+  ⟨fun h w hw ↦ (mem_comap V φ w).mpr (h (hU.mem_imageSubdomain_of_mem hA.out hw)),
+    fun h x hx ↦ by
+      obtain ⟨w, hw, rfl⟩ := (hU.mem_imageSubdomain hA.out).mp hx
+      exact (mem_comap V φ w).mp (h hw)⟩
+
 /-- If `W ≤ φ⁻¹(V)`, then the image of `W` under the affinoid subdomain map `φ` lies in `V`. -/
 theorem imageSubdomain_le (hU : IsAffinoidSubdomainMap φ U) {W : AffinoidSubdomain K B}
-    {V : AffinoidSubdomain K A} (hWV : W ≤ V.comap φ) : hU.imageSubdomain hA.out W ≤ V := by
-  rintro x hx
-  rw [← SetLike.mem_coe, coe_imageSubdomain] at hx
-  obtain ⟨w, hw, rfl⟩ := hx
-  exact (mem_comap V φ w).mp (hWV hw)
+    {V : AffinoidSubdomain K A} (hWV : W ≤ V.comap φ) : hU.imageSubdomain hA.out W ≤ V :=
+  hU.imageSubdomain_le_iff.mpr hWV
+
+/-- The inverse image of the image of `W` under the affinoid subdomain map `φ` is `W`, as `φ` is
+injective on classical points. -/
+@[simp]
+theorem comap_imageSubdomain (hU : IsAffinoidSubdomainMap φ U) (W : AffinoidSubdomain K B) :
+    (hU.imageSubdomain hA.out W).comap φ = W :=
+  SetLike.coe_injective <| by
+    rw [coe_comap, coe_imageSubdomain]
+    exact (hU.maximalSpectrumComap_injective hA.out).preimage_image _
 
 /-- Under the identification `hU.imageSectionsAlgEquiv` of coordinate algebras, restriction from
 `V` to the image of `W ≤ φ⁻¹(V)` is pullback along `φ` followed by restriction to `W`. -/

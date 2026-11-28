@@ -41,7 +41,9 @@ The stalk maps are what the locally closed and open immersions of affinoid space
 * `AlgHom.stalkMap_germ`: the stalk map sends the germ of `f` to the germ of its pullback.
 * `AlgHom.stalkMap_toStalk`: the stalk map is compatible with the germ maps of `A` and `B`.
 * `AlgHom.isLocalHom_stalkMap`: the stalk map is a local homomorphism.
-* `AlgHom.stalkMap_id_germ`, `AlgHom.stalkMap_comp_germ`: identity and composition.
+* `AlgHom.stalkMap_id`, `AlgHom.stalkMap_comp`: identity and composition, up to the transport
+  `TauCeti.AffinoidSubdomain.stalkCongr` of stalks along equalities of points; on germs,
+  `AlgHom.stalkMap_id_germ` and `AlgHom.stalkMap_comp_germ`.
 * `AlgHom.surjective_stalkMap_comp`, `AlgHom.injective_stalkMap_comp`: surjective and injective
   stalk maps compose.
 * `AlgHom.exists_sub_mem_pow_of_surjective_stalkMap`: if the stalk map at `y` is surjective, then
@@ -131,6 +133,25 @@ theorem stalkMap_comp_germ (φ : A →ₐ[K] B) (ψ : B →ₐ[K] C) {z : Maxima
   rw [stalkMap_germ, stalkMap_germ, stalkMap_germ, ← AlgHom.comp_apply _ (U.comapSections φ),
     ← comapSections_comp, AlgHom.comp_apply, germ_restrict]
 
+/-- **The stalk map of the identity is the identity**, up to the transport of stalks along the
+equality `id(x) = x` of points of `Sp A`. -/
+theorem stalkMap_id (x : MaximalSpectrum A) :
+    (AlgHom.id K A).stalkMap x =
+      (stalkCongr K (congrFun (IsAffinoidAlgebra.maximalSpectrumComap_id hA.out) x)).toRingHom := by
+  ext U hx f
+  rw [stalkMap_id_germ, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, stalkCongr_germ]
+
+/-- **Stalk maps compose.** The stalk map of `ψ ∘ φ` at `z` is the stalk map of `φ` at `ψ(z)`
+followed by that of `ψ` at `z`, up to the transport of stalks along the equality
+`(ψ ∘ φ)(z) = φ(ψ(z))` of points of `Sp A`. -/
+theorem stalkMap_comp (φ : A →ₐ[K] B) (ψ : B →ₐ[K] C) (z : MaximalSpectrum C) :
+    (ψ.comp φ).stalkMap z = (ψ.stalkMap z).comp ((φ.stalkMap _).comp
+      (stalkCongr K (congrFun (IsAffinoidAlgebra.maximalSpectrumComap_comp hB.out hC.out φ ψ)
+        z)).toRingHom) := by
+  ext U hz f
+  rw [stalkMap_comp_germ, RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, stalkCongr_germ]
+
 /-- A composite of surjective stalk maps is surjective. -/
 theorem surjective_stalkMap_comp {φ : A →ₐ[K] B} {ψ : B →ₐ[K] C} {z : MaximalSpectrum C}
     (hφ : Function.Surjective (φ.stalkMap (hC.out.maximalSpectrumComap ψ z)))
@@ -200,8 +221,7 @@ theorem bijective_stalkMap (hU : IsAffinoidSubdomainMap φ U) (y : MaximalSpectr
     rw [hU.imageSectionsAlgEquiv_restrict hWV, hW, map_zero]
   · -- A germ on `W ∋ y` is the pullback of the corresponding germ on the image of `W`.
     obtain ⟨W, hy, g, rfl⟩ := exists_germ_eq s
-    have hWW : W ≤ (hU.imageSubdomain hA.out W).comap φ := fun w hw ↦
-      (mem_comap _ φ w).mpr (hU.mem_imageSubdomain_of_mem hA.out hw)
+    have hWW : W ≤ (hU.imageSubdomain hA.out W).comap φ := (hU.comap_imageSubdomain W).ge
     refine ⟨germ _ (hU.mem_imageSubdomain_of_mem hA.out hy)
       ((hU.imageSectionsAlgEquiv hA.out W).symm g), ?_⟩
     rw [AlgHom.stalkMap_germ, ← germ_restrict hWW hy, ← hU.imageSectionsAlgEquiv_restrict hWW,

@@ -146,16 +146,17 @@ theorem biUnion {U : Set (MaximalSpectrum A)} {ℱ : Set (Set (MaximalSpectrum A
         ((Set.image_mono W.isAffinoidSubdomainMap.range_maximalSpectrumComap_subset).trans
           (Set.image_subset_iff.mpr (hWV W hW)))
   choose! Q hQfin hQuniv hQ𝒯 using hW_test
-  refine ⟨⋃ W ∈ R, W.mapSubdomain hB '' Q W,
+  refine ⟨⋃ W ∈ R, W.isAffinoidSubdomainMap.imageSubdomain hB '' Q W,
     hRfin.biUnion fun W hW ↦ (hQfin W hW).image _, ?_, ?_⟩
   · simp only [Set.image_iUnion, Set.sUnion_iUnion]
-    rw [Set.iUnion₂_congr fun W hW ↦ W.sUnion_image_mapSubdomain hB (hQuniv W hW)]
+    rw [Set.iUnion₂_congr fun W hW ↦
+      W.isAffinoidSubdomainMap.sUnion_image_imageSubdomain hB (hQuniv W hW)]
     simpa only [Set.sUnion_image] using hRuniv
   · rintro P hp
     obtain ⟨W, hW, Z, hZ, rfl⟩ := Set.mem_iUnion₂.mp hp
     obtain ⟨T, hT, hZT⟩ := hQ𝒯 W hW Z hZ
     refine ⟨T, Set.mem_biUnion (hVℱ W hW) hT, ?_⟩
-    rwa [AffinoidSubdomain.coe_mapSubdomain, Set.image_subset_iff, ← Set.preimage_comp,
+    rwa [IsAffinoidSubdomainMap.coe_imageSubdomain, Set.image_subset_iff, ← Set.preimage_comp,
       ← IsAffinoidAlgebra.maximalSpectrumComap_comp hB W.isAffinoidAlgebra]
 
 theorem preimage {B : Type u} [CommRing B] [Algebra K B] (hB : IsAffinoidAlgebra K B)
@@ -534,12 +535,12 @@ theorem slightlyFiner_strongGTopology :
     simp only [setEmbedding_apply, AffinoidSubdomain.setEmbedding_apply] at hVU
     obtain ⟨Q, hQfin, hQuniv, hQS⟩ := hS.2 U.isAffinoidAlgebra U.toSections
       (hVU.symm ▸ U.isAffinoidSubdomainMap.range_maximalSpectrumComap_subset)
-    refine ⟨U.mapSubdomain hA.out '' Q,
+    refine ⟨U.isAffinoidSubdomainMap.imageSubdomain hA.out '' Q,
       (AffinoidSubdomain.weakGTopology_covers_iff_of_finite (hQfin.image _)).mpr
-        (U.sUnion_image_mapSubdomain hA.out hQuniv), ?_⟩
+        (U.isAffinoidSubdomainMap.sUnion_image_imageSubdomain hA.out hQuniv), ?_⟩
     rintro _ ⟨W, hW, rfl⟩
     obtain ⟨_, ⟨V', hV', rfl⟩, hWV'⟩ := hQS W hW
-    rw [AffinoidSubdomain.setEmbedding_apply, AffinoidSubdomain.coe_mapSubdomain]
+    rw [AffinoidSubdomain.setEmbedding_apply, IsAffinoidSubdomainMap.coe_imageSubdomain]
     exact ⟨V', hV', Set.image_subset_iff.mpr hWV'⟩
 
 /-- The weak affinoid site is a dense subsite of the strong affinoid site along `strongToWeak`. -/
