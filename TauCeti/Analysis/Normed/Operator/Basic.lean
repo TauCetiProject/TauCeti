@@ -35,8 +35,8 @@ In particular, it supplies the common continuity step for
 uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
 Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
-`AddMonoidHomClass.continuous_apply_of_bound`). Continuous semilinear maps over an isometric
-scalar homomorphism whose operator norms tend to zero eventually map any bounded set into any
+`AddMonoidHomClass.continuous_apply_of_bound`). Continuous semilinear maps over an isometric scalar
+homomorphism whose operator norms tend to zero eventually map any bounded set into any
 neighbourhood of `0` (`Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_zero`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate

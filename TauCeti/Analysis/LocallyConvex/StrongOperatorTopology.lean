@@ -10,8 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Operator.Basic
-import Mathlib.Analysis.Normed.Operator.Completeness
-import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Bounded composition in the strong operator topology
@@ -20,14 +18,11 @@ Composition preserves pointwise convergence when the outer operators are uniform
 in operator norm. Only that family needs a bound, and neither space needs completeness.
 For sequences on a Banach space the bound follows automatically from Banach–Steinhaus.
 
-Closed operator-norm balls are closed in the strong operator topology
-(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
-
 On a complete real or complex Hilbert space, orthogonal projections form a strongly closed
 set. Their uniform norm bound lets idempotence pass to the strong limit; self-adjointness
 passes through inner products. Positivity also passes to strong limits, on any real or complex
 inner product space (`ContinuousLinearMap.IsPositive.of_tendsto_pointwise`). The closedness
-statements use Mathlib's `PointwiseConvergenceCLM` copy, leaving the norm topology on continuous
+statement uses Mathlib's `PointwiseConvergenceCLM` copy, leaving the norm topology on continuous
 linear maps unchanged.
 
 For normal operators with a normal strong limit, the adjoints also converge strongly
@@ -183,32 +178,6 @@ theorem of_tendsto_pointwise {l : Filter ι} [l.NeBot]
 end IsStarProjection
 
 namespace PointwiseConvergenceCLM
-
-section ClosedBall
-
-variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
-  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [NormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-
-/-- Every closed operator-norm ball is closed in the topology of pointwise convergence (the strong
-operator topology). Neither space needs completeness. -/
-theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] F) (r : ℝ) :
-    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F ''
-      Metric.closedBall f₀ r) := by
-  convert (ContinuousLinearMap.isClosed_image_coe_closedBall f₀ r).preimage
-    (PointwiseConvergenceCLM.isEmbedding_coeFn σ E F).continuous using 1
-  ext T
-  simp only [Set.mem_image, Set.mem_preimage]
-  constructor
-  · rintro ⟨f, hf, rfl⟩
-    exact ⟨f, hf, funext fun x ↦ ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply f x⟩
-  · rintro ⟨f, hf, hT⟩
-    obtain ⟨g, rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective T
-    refine ⟨f, hf, congrArg (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F)
-      (ContinuousLinearMap.ext fun x ↦ ?_)⟩
-    exact (congrFun hT x).trans (ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply g x)
-
-end ClosedBall
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
   [InnerProductSpace 𝕜 H] [CompleteSpace H]

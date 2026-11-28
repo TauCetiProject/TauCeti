@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Analysis.RCLike.Basic
 
-import TauCeti.Analysis.Normed.Module.Ball.StarConvex
-import TauCeti.Topology.Algebra.Star.SelfAdjoint
+import Mathlib.Topology.Algebra.Module.Star
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
 # Self-adjoint elements of a ball in the closure of a star-closed submodule
@@ -17,9 +17,10 @@ import TauCeti.Topology.Algebra.Star.SelfAdjoint
 In a normed space over `ℝ` or `ℂ` with a continuous involution, the self-adjoint elements of norm
 at most `r` of the norm closure of a star-closed submodule `s`, such as a star subalgebra, are
 exactly the norm limits of self-adjoint elements of norm at most `r` of `s`
-(`TauCeti.closure_inter_selfAdjoint_inter_closedBall`). This follows by intersecting the real
-submodule `s ∩ selfAdjoint A` with `closedBall 0 r` via `Submodule.closure_inter_closedBall_zero`
-and commuting closure with `selfAdjoint A` via `StarMemClass.closure_inter_selfAdjoint`.
+(`TauCeti.closure_inter_selfAdjoint_inter_closedBall`). The continuous map taking the real part
+`selfAdjointPart ℝ a` of `a` and then the radial retraction `TauCeti.radialRetraction r` onto the
+closed ball of radius `r` sends `s` into its self-adjoint elements of norm at most `r` and fixes
+every self-adjoint element of norm at most `r`.
 
 This lets an approximation by elements of the norm closure of a star subalgebra `S`, such as the
 continuous functional calculus of elements of `S`, be replaced by one through elements of `S`
@@ -44,16 +45,30 @@ include 𝕜 in
 theorem closure_inter_selfAdjoint_inter_closedBall (s : S) (r : ℝ) :
     closure ((s : Set A) ∩ selfAdjoint A ∩ closedBall 0 r) =
       closure (s : Set A) ∩ selfAdjoint A ∩ closedBall 0 r := by
+  refine subset_antisymm (closure_minimal
+    (Set.inter_subset_inter_left _ (Set.inter_subset_inter_left _ subset_closure))
+    ((isClosed_closure.inter (isClosed_eq continuous_star continuous_id)).inter
+      isClosed_closedBall)) ?_
+  rintro z ⟨⟨hz, hzsa⟩, hzr⟩
+  have hr : 0 ≤ r := dist_nonneg.trans hzr
   let : NormedSpace ℝ A := NormedSpace.restrictScalars ℝ 𝕜 A
   have : IsScalarTower ℝ 𝕜 A := IsScalarTower.restrictScalars ℝ 𝕜 A
   have : StarModule ℝ A := ⟨fun c a => by
     rw [star_trivial c, RCLike.real_smul_eq_coe_smul (K := 𝕜),
       RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def, RCLike.conj_ofReal]⟩
   have : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜 A
-  have h := Submodule.closure_inter_closedBall_zero
-    (Submodule.ofClass s ⊓ selfAdjoint.submodule ℝ A) r
-  rw [Submodule.coe_inf, Submodule.coe_ofClass, ← Submodule.coe_toAddSubgroup,
-    selfAdjoint.toAddSubgroup_submodule] at h
-  rwa [StarMemClass.closure_inter_selfAdjoint ℝ s] at h
+  -- The real part followed by the radial retraction onto the ball sends `s` into the
+  -- left-hand side and fixes `z`.
+  let f : A → A := fun a => radialRetraction r (selfAdjointPart ℝ a : A)
+  have hf : Continuous f := (lipschitzWith_radialRetraction hr).continuous.comp
+    (continuous_subtypeVal.comp (continuous_selfAdjointPart ℝ A))
+  have hfz : f z = z := by
+    simp only [f, IsSelfAdjoint.coe_selfAdjointPart_apply ℝ hzsa]
+    exact radialRetraction_of_norm_le (mem_closedBall_zero_iff.mp hzr)
+  refine hfz ▸ map_mem_closure hf hz fun a ha =>
+    ⟨⟨?_, ?_⟩, radialRetraction_mem_closedBall hr _⟩ <;> simp only [f, radialRetraction_def]
+  · rw [selfAdjointPart_apply_coe]
+    exact SMulMemClass.smul_mem _ (SMulMemClass.smul_mem _ (add_mem ha (star_mem ha)))
+  · exact (selfAdjoint.submodule ℝ A).smul_mem _ (selfAdjointPart ℝ a).property
 
 end TauCeti

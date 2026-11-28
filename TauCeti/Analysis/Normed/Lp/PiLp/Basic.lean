@@ -46,8 +46,6 @@ The finite sum against a zero-extended vector reduces to the sum over its origin
 Over an index type with at most one element and for `p ≠ 0`, the `Lᵖ` norm is the norm of the
 coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
-Without any finiteness assumption on `ι`, the product topology on `PiLp p β` inherits topological
-additive-group and continuous-constant-scalar-multiplication instances from the fibres.
 Maps into `PiLp p β` converge uniformly exactly when each coordinate does. A product
 `PiLp p E` of nonempty uniform spaces is complete if and only if every factor `E i` is
 (`PiLp.completeSpace_iff`).
@@ -78,22 +76,6 @@ public section
 open scoped ENNReal
 
 namespace PiLp
-
-section Topology
-
-variable {ι : Type*} {p : ℝ≥0∞} {β : ι → Type*} [∀ i, TopologicalSpace (β i)]
-
--- Priority 10 (< 100) avoids shadowing `SeminormedAddCommGroup.toIsTopologicalAddGroup` and other
--- finite-product normed-space instances (e.g. on `EuclideanSpace`).
-instance (priority := 10) instIsTopologicalAddGroup [∀ i, AddCommGroup (β i)]
-    [∀ i, IsTopologicalAddGroup (β i)] : IsTopologicalAddGroup (PiLp p β) :=
-  Topology.IsInducing.isTopologicalAddGroup (WithLp.addEquiv p (∀ i, β i)) ⟨rfl⟩
-
-instance (priority := 10) instContinuousConstSMul {R : Type*} [∀ i, SMul R (β i)]
-    [∀ i, ContinuousConstSMul R (β i)] : ContinuousConstSMul R (PiLp p β) :=
-  Topology.IsInducing.continuousConstSMul (g := WithLp.ofLp) ⟨rfl⟩ id rfl
-
-end Topology
 
 variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} {E F : ι → Type*}
 
@@ -427,7 +409,7 @@ theorem toContinuousLinearMap_singleLI [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring
   simp
 
 /-- The coordinate projections and inclusions decompose the identity on `PiLp p β`. -/
-theorem sum_singleCLM_comp_proj {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
+theorem sum_singleCLM_comp_proj [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
     [∀ i, NormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] :
     ∑ i, (singleCLM p 𝕜 β i).comp (proj p β i) = ContinuousLinearMap.id 𝕜 (PiLp p β) := by
   ext x j

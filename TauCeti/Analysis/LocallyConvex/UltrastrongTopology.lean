@@ -12,7 +12,6 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.MapCLM
 import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.Analysis.LocallyConvex.StrongOperatorTopology
 import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 import TauCeti.Topology.Closure
 

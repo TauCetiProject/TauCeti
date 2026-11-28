@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
+
+import Mathlib.Analysis.Normed.Operator.Completeness
 
 /-!
 # Basic facts on the topology of pointwise convergence
@@ -31,6 +34,8 @@ Finite-vector approximation neighborhoods are open
 (`PointwiseConvergenceCLM.isOpen_setOf_forall_norm_sub_apply_lt`) and yield witnesses in the set
 from closure membership
 (`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
+Every closed operator-norm ball is closed in the topology of pointwise convergence
+(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
 -/
 
 public section
@@ -201,3 +206,30 @@ theorem PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closu
     (ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm.mp hx)
       (Finset.univ.image v) hε
   exact ⟨a, ha, fun i ↦ hlt (v i) (Finset.mem_image_of_mem v (Finset.mem_univ i))⟩
+
+section ClosedBall
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [NormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- Every closed operator-norm ball is closed in the topology of pointwise convergence (the strong
+operator topology). Neither space needs completeness. -/
+theorem PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall
+    (f₀ : E →SL[σ] F) (r : ℝ) :
+    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F ''
+      Metric.closedBall f₀ r) := by
+  convert (ContinuousLinearMap.isClosed_image_coe_closedBall f₀ r).preimage
+    (PointwiseConvergenceCLM.isEmbedding_coeFn σ E F).continuous using 1
+  ext T
+  simp only [Set.mem_image, Set.mem_preimage]
+  constructor
+  · rintro ⟨f, hf, rfl⟩
+    exact ⟨f, hf, funext fun x ↦ ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply f x⟩
+  · rintro ⟨f, hf, hT⟩
+    obtain ⟨g, rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective T
+    refine ⟨f, hf, congrArg (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F)
+      (ContinuousLinearMap.ext fun x ↦ ?_)⟩
+    exact (congrFun hT x).trans (ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply g x)
+
+end ClosedBall

@@ -7,11 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import TauCeti.Analysis.InnerProductSpace.PiL2
-import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Amplification and operator matrices on a finite Hilbert sum
@@ -23,10 +21,7 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 `s` (`PiLp.diagStarAlgHom_eq_piMap`). Conversely, every operator `T` on the Hilbert sum has matrix
 entries `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
 (`ContinuousLinearMap.apply_eq_sum_piLpEntry`), so it is determined by them
-(`ContinuousLinearMap.ext_piLpEntry`), and converges pointwise if and only if every matrix entry
-converges pointwise (`ContinuousLinearMap.forall_tendsto_apply_iff_forall_tendsto_piLpEntry_apply`).
-Extracting a matrix entry is also a continuous linear map for the strong operator topology
-(`PointwiseConvergenceCLM.piLpEntryCLM`). Every family of entries arises from the operator
+(`ContinuousLinearMap.ext_piLpEntry`). Every family of entries arises from the operator
 `ContinuousLinearMap.ofPiLpEntries`. Entries compute products as matrix products
 (`ContinuousLinearMap.piLpEntry_mul`) and adjoints as conjugate transposes
 (`ContinuousLinearMap.piLpEntry_star`), and are bounded in norm by the operator
@@ -35,8 +30,7 @@ Extracting a matrix entry is also a continuous linear map for the strong operato
 and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 In the opposite direction, `PiLp.singleEntryCLM i j s` places `s` in the `(i, j)` block and `0`
-elsewhere, decomposing every operator on the Hilbert sum into a finite double sum of matrix units
-(`PiLp.sum_sum_singleEntryCLM_piLpEntry`). For `i ≠ j`, the self-adjoint off-diagonal block
+elsewhere. For `i ≠ j`, the self-adjoint off-diagonal block
 `singleEntryCLM i j s + singleEntryCLM j i (star s)` has operator norm equal to `‖s‖`
 (`PiLp.norm_singleEntryCLM_add_singleEntryCLM_star`).
 
@@ -48,7 +42,6 @@ copy, which is how the von Neumann density theorem passes from one vector to fin
 
 public section
 
-open Filter Topology
 open scoped InnerProductSpace
 
 variable {𝕜 H ι : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
@@ -75,25 +68,28 @@ theorem piLpEntry_zero (i j : ι) :
     (0 : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)).piLpEntry i j = 0 := by ext; simp
 
 @[simp]
-theorem piLpEntry_add (S T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
+theorem piLpEntry_add [IsTopologicalAddGroup (PiLp 2 (fun _ : ι => H))]
+    (S T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
     (S + T).piLpEntry i j = S.piLpEntry i j + T.piLpEntry i j := by ext; simp
 
 @[simp]
-theorem piLpEntry_neg (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
+theorem piLpEntry_neg [IsTopologicalAddGroup (PiLp 2 (fun _ : ι => H))]
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
     (-T).piLpEntry i j = -T.piLpEntry i j := by ext; simp
 
 @[simp]
-theorem piLpEntry_sub (S T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
+theorem piLpEntry_sub [IsTopologicalAddGroup (PiLp 2 (fun _ : ι => H))]
+    (S T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
     (S - T).piLpEntry i j = S.piLpEntry i j - T.piLpEntry i j := by ext; simp
 
 @[simp]
 theorem piLpEntry_smul {R : Type*} [Semiring R] [Module R H] [SMulCommClass 𝕜 R H]
-    [ContinuousConstSMul R H] (c : R)
+    [ContinuousConstSMul R H] [ContinuousConstSMul R (PiLp 2 (fun _ : ι => H))] (c : R)
     (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
     (c • T).piLpEntry i j = c • T.piLpEntry i j := by ext; simp
 
 @[simp]
-theorem piLpEntry_sum {α : Type*} (s : Finset α)
+theorem piLpEntry_sum [IsTopologicalAddGroup (PiLp 2 (fun _ : ι => H))] {α : Type*} (s : Finset α)
     (T : α → PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
     (∑ a ∈ s, T a).piLpEntry i j = ∑ a ∈ s, (T a).piLpEntry i j := by ext; simp [sum_apply]
 
@@ -118,24 +114,6 @@ theorem ext_piLpEntry [Finite ι]
   have := Fintype.ofFinite ι
   ext w i
   simp only [apply_eq_sum_piLpEntry, h]
-
-/-- Pointwise convergence of operators on the finite Hilbert sum is equivalent to pointwise
-convergence of every matrix entry. -/
-theorem forall_tendsto_apply_iff_forall_tendsto_piLpEntry_apply [Finite ι] {α : Type*}
-    {l : Filter α}
-    {T : α → PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)}
-    {T₀ : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)} :
-    (∀ w, Tendsto (fun a => T a w) l (𝓝 (T₀ w))) ↔
-      ∀ i j h, Tendsto (fun a => (T a).piLpEntry i j h) l (𝓝 (T₀.piLpEntry i j h)) := by
-  have := Fintype.ofFinite ι
-  refine ⟨fun hw i j h => by
-    simpa [piLpEntry_apply, Function.comp_def] using
-      ((PiLp.proj (𝕜 := 𝕜) 2 (fun _ : ι => H) i).continuous.tendsto _).comp
-        (hw (PiLp.single 2 j h)), fun h w => ?_⟩
-  have hcoord (i : ι) : Tendsto (fun a => T a w i) l (𝓝 (T₀ w i)) := by
-    simp_rw [apply_eq_sum_piLpEntry]; exact tendsto_finsetSum _ fun j _ => h i j (w j)
-  exact ((PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.continuous.tendsto _).comp
-    (tendsto_pi_nhds.2 hcoord)
 
 /-- The matrix entries of a product are the matrix products of the entries. -/
 theorem piLpEntry_mul [Fintype ι]
@@ -227,40 +205,6 @@ theorem ofPiLpEntries_piLpEntry (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 
 
 end ContinuousLinearMap
 
-namespace PointwiseConvergenceCLM
-
-variable [DecidableEq ι]
-
-variable (𝕜 H) in
-/-- Extracting the `(i, j)` matrix entry of an operator on `PiLp 2 (fun _ : ι => H)`, as a
-continuous linear map for the strong operator (pointwise convergence) topology. -/
-noncomputable def piLpEntryCLM (i j : ι) :
-    (PiLp 2 (fun _ : ι => H) →Lₚₜ[𝕜] PiLp 2 (fun _ : ι => H)) →L[𝕜] (H →Lₚₜ[𝕜] H) :=
-  (postcomp H (PiLp.proj 2 (fun _ : ι => H) i)).comp
-    (precomp (PiLp 2 (fun _ : ι => H)) (PiLp.singleCLM 2 𝕜 (fun _ : ι => H) j))
-
-/-- Evaluating `piLpEntryCLM 𝕜 H i j T` at `h` gives the `i`-th coordinate of `T` applied to the
-single-entry vector supported at `j`. -/
-@[simp]
-theorem piLpEntryCLM_apply (i j : ι)
-    (T : PiLp 2 (fun _ : ι => H) →Lₚₜ[𝕜] PiLp 2 (fun _ : ι => H)) (h : H) :
-    piLpEntryCLM 𝕜 H i j T h = T (PiLp.single 2 j h) i := by
-  rw [piLpEntryCLM, ContinuousLinearMap.comp_apply, postcomp_apply_apply, precomp_apply_apply,
-    PiLp.singleCLM_apply, PiLp.proj_apply]
-
-/-- On the image of `toPointwiseConvergenceCLM`, `piLpEntryCLM` agrees with
-`ContinuousLinearMap.piLpEntry`. -/
-theorem piLpEntryCLM_toPointwiseConvergenceCLM [ContinuousSMul 𝕜 (PiLp 2 (fun _ : ι => H))]
-    (i j : ι) (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) :
-    piLpEntryCLM 𝕜 H i j
-        (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) _ _ T) =
-      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H (T.piLpEntry i j) := by
-  ext h
-  rw [piLpEntryCLM_apply, ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply,
-    ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, ContinuousLinearMap.piLpEntry_apply]
-
-end PointwiseConvergenceCLM
-
 namespace PiLp
 
 section SingleEntry
@@ -287,23 +231,27 @@ theorem _root_.ContinuousLinearMap.piLpEntry_singleEntryCLM (i j k l : ι) (s : 
 theorem singleEntryCLM_zero (i j : ι) : singleEntryCLM i j (0 : H →L[𝕜] H) = 0 := by ext w k; simp
 
 @[simp]
-theorem singleEntryCLM_add (i j : ι) (s t : H →L[𝕜] H) :
+theorem singleEntryCLM_add [IsTopologicalAddGroup (PiLp 2 (fun _ : ι => H))] (i j : ι)
+    (s t : H →L[𝕜] H) :
     singleEntryCLM i j (s + t) = singleEntryCLM i j s + singleEntryCLM i j t := by
   ext w k; simp [PiLp.single_add]
 
 @[simp]
-theorem singleEntryCLM_neg (i j : ι) (s : H →L[𝕜] H) :
+theorem singleEntryCLM_neg [IsTopologicalAddGroup (PiLp 2 (fun _ : ι => H))] (i j : ι)
+    (s : H →L[𝕜] H) :
     singleEntryCLM i j (-s) = -singleEntryCLM i j s := by
   ext w k; by_cases hki : k = i <;> simp [hki]
 
 @[simp]
-theorem singleEntryCLM_sub (i j : ι) (s t : H →L[𝕜] H) :
+theorem singleEntryCLM_sub [IsTopologicalAddGroup (PiLp 2 (fun _ : ι => H))] (i j : ι)
+    (s t : H →L[𝕜] H) :
     singleEntryCLM i j (s - t) = singleEntryCLM i j s - singleEntryCLM i j t := by
   ext w k; simp [PiLp.single_sub]
 
 @[simp]
 theorem singleEntryCLM_smul {R : Type*} [Semiring R] [Module R H] [SMulCommClass 𝕜 R H]
-    [ContinuousConstSMul R H] (i j : ι) (c : R) (s : H →L[𝕜] H) :
+    [ContinuousConstSMul R H] [ContinuousConstSMul R (PiLp 2 (fun _ : ι => H))] (i j : ι)
+    (c : R) (s : H →L[𝕜] H) :
     singleEntryCLM i j (c • s) = c • singleEntryCLM i j s := by
   ext w m; by_cases hm : m = i <;> simp [hm]
 
@@ -334,12 +282,6 @@ theorem _root_.ContinuousLinearMap.piLpEntry_mul_singleEntryCLM (i j k l : ι) (
   · simp [hlj, mul_apply_eq_comp, ← PiLp.toLp_single]
 
 variable [Fintype ι]
-
-/-- Every operator on the finite Hilbert sum is the sum of its single-entry blocks. -/
-theorem sum_sum_singleEntryCLM_piLpEntry
-    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) :
-    (∑ i, ∑ j, singleEntryCLM i j (T.piLpEntry i j)) = T := by
-  refine ContinuousLinearMap.ext_piLpEntry fun k l => by simp [ite_and]
 
 @[simp]
 theorem norm_singleEntryCLM (i j : ι) (s : H →L[𝕜] H) :
