@@ -286,7 +286,7 @@ theorem infiniteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M]
 
 /-- Evaluating `infiniteAdeleBaseChangeEquiv K L s` at a place `w ∣ v` of `L` agrees with
 applying the archimedean semilocal comparison at `v` to the `v`-component tensor of `s`. -/
-theorem infiniteAdeleBaseChangeEquiv_eval (v : InfinitePlace K)
+theorem infiniteAdeleBaseChangeEquiv_apply_of_liesOver (v : InfinitePlace K)
     [TopologicalSpace (v.Completion ⊗[K] L)]
     [IsModuleTopology v.Completion (v.Completion ⊗[K] L)]
     (s : InfiniteAdeleRing K ⊗[K] L) (w : {w : InfinitePlace L // w.LiesOver v}) :
@@ -303,14 +303,14 @@ theorem infiniteAdeleBaseChangeEquiv_eval (v : InfinitePlace K)
     simp only [map_add, Pi.add_apply]
     exact congrArg₂ (· + ·) hs₁ hs₂
 
-/-- Pure-tensor form of `infiniteAdeleBaseChangeEquiv_eval`. -/
-theorem infiniteAdeleBaseChangeEquiv_eval_tmul (v : InfinitePlace K)
+/-- Pure-tensor form of `infiniteAdeleBaseChangeEquiv_apply_of_liesOver`. -/
+theorem infiniteAdeleBaseChangeEquiv_tmul_apply_of_liesOver (v : InfinitePlace K)
     [TopologicalSpace (v.Completion ⊗[K] L)]
     [IsModuleTopology v.Completion (v.Completion ⊗[K] L)]
     (a : InfiniteAdeleRing K) (x : L) (w : {w : InfinitePlace L // w.LiesOver v}) :
     infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ[K] x) w.val =
       infiniteSemilocalContinuousEquiv L v (a v ⊗ₜ[K] x) w := by
   simpa only [Algebra.TensorProduct.rTensor, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-    Pi.evalAlgHom_apply] using infiniteAdeleBaseChangeEquiv_eval K L v (a ⊗ₜ[K] x) w
+    Pi.evalAlgHom_apply] using infiniteAdeleBaseChangeEquiv_apply_of_liesOver K L v (a ⊗ₜ[K] x) w
 
 end TauCeti.GlobalNumberFields

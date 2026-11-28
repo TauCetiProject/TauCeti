@@ -718,6 +718,18 @@ theorem pointsMulEquiv_pointsMulEquivOfBaseChange_symm (e : T ⊗[A] B ≃ₐ[T]
       AlgHom.mapValue (e.ofCommRight he).symm.toAlgHom y := by
   simp [pointsMulEquivOfBaseChange]
 
+private theorem mapValue_pointsMulEquiv_comm {T₁ T₂ S₁ S₂ : Type*}
+    [CommRing T₁] [CommRing T₂] [CommRing S₁] [CommRing S₂]
+    [Algebra A T₁] [Algebra A T₂] [Algebra B S₁] [Algebra B S₂]
+    (p : T₁ →ₐ[A] T₂) (ψ₁ : B ⊗[A] T₁ →ₐ[B] S₁) (ψ₂ : B ⊗[A] T₂ →ₐ[B] S₂) (q : S₁ →ₐ[B] S₂)
+    (hmap : ψ₂.comp (Algebra.TensorProduct.lTensor (S := B) B p) = q.comp ψ₁)
+    (x : WithConv (WeilRestriction A B H →ₐ[A] T₁)) :
+    AlgHom.mapValue ψ₂ (pointsMulEquiv A B H T₂ (AlgHom.mapValue p x)) =
+      AlgHom.mapValue q (AlgHom.mapValue ψ₁ (pointsMulEquiv A B H T₁ x)) := by
+  refine WithConv.ofConv_injective ?_
+  simp only [AlgHom.mapValue_apply, ofConv_toConv]
+  rw [pointsMulEquiv_naturality, ofConv_toConv, ← AlgHom.comp_assoc, hmap, AlgHom.comp_assoc]
+
 /-- **Rational diagonal compatibility.** Under `pointsMulEquivOfBaseChange`, the image of an
 `A`-point of `Res_{B/A} G` along `A → T` corresponds to the image along `B → S` of the associated
 `B`-point under `basePointsMulEquiv`. -/
@@ -726,22 +738,19 @@ theorem pointsMulEquivOfBaseChange_mapValue_ofId (e : T ⊗[A] B ≃ₐ[T] S)
     (x : WithConv (WeilRestriction A B H →ₐ[A] A)) :
     pointsMulEquivOfBaseChange A B H e he (AlgHom.mapValue (Algebra.ofId A T) x) =
       AlgHom.mapValue (Algebra.ofId B S) (basePointsMulEquiv A B H x) := by
-  have hmap : (e.ofCommRight he : B ⊗[A] T →ₐ[B] S).comp
-        (Algebra.TensorProduct.lTensor (S := B) B (Algebra.ofId A T)) =
-      (Algebra.ofId B S).comp (Algebra.TensorProduct.rid A B B).toAlgHom := by
-    refine AlgHom.ext fun z ↦ ?_
-    induction z using TensorProduct.inductionOn with
-    | tmul b a =>
-      simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
-        Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq, Algebra.ofId_apply,
-        AlgEquiv.ofCommRight_apply, Algebra.TensorProduct.comm_tmul,
-        Algebra.TensorProduct.rid_tmul]
-      rw [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul, he]
-    | add y z hy hz => simp only [map_add, hy, hz]
-  refine WithConv.ofConv_injective ?_
   simp only [pointsMulEquivOfBaseChange, basePointsMulEquiv, MulEquiv.trans_apply,
-    AlgEquiv.mapValueMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv]
-  rw [pointsMulEquiv_naturality, ofConv_toConv, ← AlgHom.comp_assoc, hmap, AlgHom.comp_assoc]
+    AlgEquiv.mapValueMulEquiv_apply]
+  refine mapValue_pointsMulEquiv_comm (Algebra.ofId A T)
+    (Algebra.TensorProduct.rid A B B).toAlgHom (e.ofCommRight he : B ⊗[A] T →ₐ[B] S)
+    (Algebra.ofId B S) (AlgHom.ext fun z ↦ ?_) x
+  induction z using TensorProduct.inductionOn with
+  | tmul b a =>
+    simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
+      Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq, Algebra.ofId_apply,
+      AlgEquiv.ofCommRight_apply, Algebra.TensorProduct.comm_tmul,
+      Algebra.TensorProduct.rid_tmul]
+    rw [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul, he]
+  | add y z hy hz => simp only [map_add, hy, hz]
 
 /-- **Compatibility with coefficient homomorphisms.** If `pT : T →ₐ[A] T'` and `pS : S →ₐ[B] S'`
 intertwine two base-change equivalences `e` and `e'` on pure tensors, then
@@ -755,17 +764,12 @@ theorem pointsMulEquivOfBaseChange_mapValue {T' S' : Type*} [CommRing T'] [CommR
     (x : WithConv (WeilRestriction A B H →ₐ[A] T)) :
     pointsMulEquivOfBaseChange A B H e' he' (AlgHom.mapValue pT x) =
       AlgHom.mapValue pS (pointsMulEquivOfBaseChange A B H e he x) := by
-  have hmap : (e'.ofCommRight he' : B ⊗[A] T' →ₐ[B] S').comp
-        (Algebra.TensorProduct.lTensor (S := B) B pT) =
-      pS.comp (e.ofCommRight he : B ⊗[A] T →ₐ[B] S) := by
-    refine AlgHom.ext fun z ↦ ?_
-    induction z using TensorProduct.inductionOn with
-    | tmul b t => simp [hp]
-    | add y z hy hz => simp only [map_add, hy, hz]
-  refine WithConv.ofConv_injective ?_
-  simp only [pointsMulEquivOfBaseChange, MulEquiv.trans_apply, AlgEquiv.mapValueMulEquiv_apply,
-    AlgHom.mapValue_apply, ofConv_toConv]
-  rw [pointsMulEquiv_naturality, ofConv_toConv, ← AlgHom.comp_assoc, hmap, AlgHom.comp_assoc]
+  simp only [pointsMulEquivOfBaseChange, MulEquiv.trans_apply, AlgEquiv.mapValueMulEquiv_apply]
+  refine mapValue_pointsMulEquiv_comm pT (e.ofCommRight he : B ⊗[A] T →ₐ[B] S)
+    (e'.ofCommRight he' : B ⊗[A] T' →ₐ[B] S') pS (AlgHom.ext fun z ↦ ?_) x
+  induction z using TensorProduct.inductionOn with
+  | tmul b t => simp [hp]
+  | add y z hy hz => simp only [map_add, hy, hz]
 
 end Single
 
