@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.RingTheory.Regular.IsSMulRegular
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Module.Projective.Schanuel
+public import TauCeti.RingTheory.Adjoin.Polynomial.Basic
 public import TauCeti.RingTheory.Flat.Extensions
 public import TauCeti.RingTheory.PowerSeries.Ideal
 
@@ -50,7 +51,7 @@ all of `R⟦X⟧` (`PowerSeries.smul_mem_of_forall_X_smul_mem`), so it is an `R�
 
 public section
 
-open scoped PowerSeries TensorProduct
+open scoped Polynomial PowerSeries TensorProduct
 open TensorProduct LinearMap
 
 namespace PowerSeries
@@ -129,15 +130,9 @@ series. -/
 theorem smul_mem_of_forall_X_smul_mem (hk : ∀ m : M, (X ^ k : R⟦X⟧) • m = 0)
     {W : Submodule R M} (hW : ∀ w ∈ W, (X : R⟦X⟧) • w ∈ W) (a : R⟦X⟧) {w : M} (hw : w ∈ W) :
     a • w ∈ W := by
-  have hpow (n : ℕ) {v : M} (hv : v ∈ W) : (X ^ n : R⟦X⟧) • v ∈ W := by
-    induction n with
-    | zero => simpa using hv
-    | succ n ih => rw [pow_succ', mul_smul]; exact hW _ ih
   rw [eq_shift_mul_X_pow_add_trunc k a, add_smul, mul_smul, hk, smul_zero, zero_add,
-    ← Polynomial.eval₂_C_X_eq_coe, eval₂_trunc_eq_sum_range, Finset.sum_smul]
-  refine sum_mem fun n _ ↦ ?_
-  rw [mul_smul, ← algebraMap_eq, algebraMap_smul]
-  exact W.smul_mem _ (hpow n hw)
+    ← Polynomial.eval₂_C_X_eq_coe, ← algebraMap_eq, ← Polynomial.aeval_def]
+  exact Polynomial.aeval_apply_smul_mem_of_le_comap' hw _ X hW
 
 /-- An `R`-submodule stable under `X` of a module killed by `X ^ k`, as an `R⟦X⟧`-submodule. -/
 def submoduleOfXSMulMem (hk : ∀ m : M, (X ^ k : R⟦X⟧) • m = 0) (W : Submodule R M)
@@ -168,38 +163,37 @@ theorem submoduleOfXSMulMem_restrictScalars (hk : ∀ m : M, (X ^ k : R⟦X⟧) 
 over `R`: it is spanned by the `X ^ i • x` for `i < k` and `x` among its generators. -/
 theorem fg_restrictScalars_of_fg (hk : ∀ m : M, (X ^ k : R⟦X⟧) • m = 0)
     {W : Submodule R⟦X⟧ M} (hW : W.FG) : (W.restrictScalars R).FG := by
-  classical
-  obtain ⟨s, rfl⟩ := hW
-  let f : ℕ × M → M := fun p ↦ (X ^ p.1 : R⟦X⟧) • p.2
-  let T : Submodule R M := Submodule.span R ↑((Finset.range k ×ˢ s).image f)
-  have hT : ∀ w ∈ T, (X : R⟦X⟧) • w ∈ T := by
-    intro w hw
-    induction hw using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨⟨i, y⟩, hiy, rfl⟩ := Finset.mem_image.mp hx
-      rw [Finset.mem_product, Finset.mem_range] at hiy
-      simp only [f, smul_smul, ← pow_succ']
-      rcases (Nat.add_one_le_iff.mpr hiy.1).lt_or_eq with h | h
-      · exact Submodule.subset_span (Finset.mem_image.mpr
-          ⟨⟨i + 1, y⟩, Finset.mem_product.mpr ⟨Finset.mem_range.mpr h, hiy.2⟩, rfl⟩)
-      · rw [h, hk]
-        exact T.zero_mem
-    | zero => simp
-    | add x y _ _ hx hy => rw [smul_add]; exact add_mem hx hy
-    | smul r x _ hx => rw [smul_comm]; exact T.smul_mem r hx
-  refine ⟨(Finset.range k ×ˢ s).image f, le_antisymm (Submodule.span_le.mpr ?_) ?_⟩
-  · intro x hx
-    obtain ⟨⟨i, y⟩, hiy, rfl⟩ := Finset.mem_image.mp hx
-    exact Submodule.smul_mem _ _ (Submodule.subset_span (Finset.mem_product.mp hiy).2)
-  · have : Submodule.span R⟦X⟧ (s : Set M) ≤ submoduleOfXSMulMem hk T hT := by
-      refine Submodule.span_le.mpr fun y hy ↦ ?_
-      rcases Nat.eq_zero_or_pos k with rfl | hk0
-      · have hy0 : y = 0 := by simpa using hk y
-        rw [hy0]
-        exact zero_mem _
-      · exact Submodule.subset_span (Finset.mem_image.mpr
-          ⟨⟨0, y⟩, Finset.mem_product.mpr ⟨Finset.mem_range.mpr hk0, hy⟩, one_smul _ _⟩)
-    exact fun x hx ↦ this hx
+  let : Module R[X] M := Module.compHom M (algebraMap R[X] R⟦X⟧)
+  have : IsScalarTower R[X] R⟦X⟧ M := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : IsScalarTower R R[X] M := IsScalarTower.of_algebraMap_smul fun r m ↦ by
+    -- The polynomial module was defined by restriction along this algebra map.
+    change (algebraMap R[X] R⟦X⟧ (Polynomial.C r)) • m = r • m
+    simp [algebraMap_apply', ← algebraMap_eq]
+  let W' := W.restrictScalars R[X]
+  have hW' : W'.FG := by
+    obtain ⟨s, hs⟩ := hW
+    refine ⟨s, le_antisymm (Submodule.span_le.mpr ?_) ?_⟩
+    · intro x hx
+      -- Restriction of scalars retains the carrier, so use the power-series generating set.
+      change x ∈ W
+      rw [← hs]
+      exact Submodule.subset_span hx
+    · -- Expand the local name to rewrite the generating-set equality under restriction.
+      change W.restrictScalars R[X] ≤ _
+      rw [← hs]
+      intro x hx
+      induction hx using Submodule.span_induction with
+      | mem x hx => exact Submodule.subset_span hx
+      | zero => exact Submodule.zero_mem _
+      | add x y _ _ hx hy => exact Submodule.add_mem _ hx hy
+      | smul a x _ hx =>
+        rw [eq_shift_mul_X_pow_add_trunc k a, add_smul, mul_smul, hk, smul_zero, zero_add]
+        exact (Submodule.span R[X] (s : Set M)).smul_mem (a.trunc k) hx
+  exact TauCeti.Algebra.fg_restrictScalars_of_forall_pow_smul_eq_zero
+    (Polynomial.adjoin_X (R := R)) hW' (fun y _ ↦ ⟨k, by
+      -- Compute the restricted polynomial action through the defining algebra map.
+      change (algebraMap R[X] R⟦X⟧ (Polynomial.X ^ k)) • y = 0
+      simpa [algebraMap_apply'] using hk y⟩)
 
 end XStable
 
@@ -269,18 +263,19 @@ theorem range_koszulDiff {k : ℕ} (hk : ∀ q : Q, (X ^ k : R⟦X⟧) • q = 0
 /-- For `Q` killed by a power of `X`, the map `X ⊗ 1 - 1 ⊗ X` on `R⟦X⟧ ⊗[R] Q` is injective. -/
 theorem injective_koszulDiff {k : ℕ} (hk : ∀ q : Q, (X ^ k : R⟦X⟧) • q = 0) :
     Function.Injective (koszulDiff R Q) := by
-  set f : Module.End R Q := (LinearMap.lsmul R⟦X⟧ Q X).restrictScalars R
+  set f : Module.End R Q := Algebra.lsmul R R Q (X : R⟦X⟧)
   set x : Module.End R⟦X⟧ (R⟦X⟧ ⊗[R] Q) := f.baseChange R⟦X⟧
   set y : Module.End R⟦X⟧ (R⟦X⟧ ⊗[R] Q) := (X : R⟦X⟧) • 1
   have hf (n : ℕ) (q : Q) : (f ^ n) q = (X ^ n : R⟦X⟧) • q := by
-    induction n generalizing q with
-    | zero => simp
-    | succ n ih => rw [pow_succ', mul_apply_eq_comp, ih, pow_succ', mul_smul]; rfl
+    rw [← map_pow (Algebra.lsmul R R Q) (X : R⟦X⟧) n]
+    rfl
   have hfk : f ^ k = 0 := LinearMap.ext fun q ↦ by simp [hf, hk]
   have hxk : x ^ k = 0 := by
     rw [← LinearMap.baseChange_pow, hfk, LinearMap.baseChange_zero]
   -- `(∑ yⁱ x^(k-1-i)) (y - x) = y ^ k - x ^ k = X ^ k`, and `X ^ k ⊗ 1` has a left inverse.
-  have hd : koszulDiff R Q = y - x := by rw [koszulDiff, ← Module.End.one_eq_id]
+  have hd : koszulDiff R Q = y - x := by
+    have hf' : (LinearMap.lsmul R⟦X⟧ Q X).restrictScalars R = f := LinearMap.ext fun _ ↦ rfl
+    rw [koszulDiff, hf', ← Module.End.one_eq_id]
   have hgeom : (∑ i ∈ Finset.range k, y ^ i * x ^ (k - 1 - i)) * koszulDiff R Q = y ^ k := by
     have hc : Commute y x := (Commute.one_left x).smul_left (X : R⟦X⟧)
     rw [hd, Commute.geom_sum₂_mul (R := Module.End R⟦X⟧ (R⟦X⟧ ⊗[R] Q)) hc k, hxk]
@@ -288,9 +283,7 @@ theorem injective_koszulDiff {k : ℕ} (hk : ∀ q : Q, (X ^ k : R⟦X⟧) • q
   have hyk : y ^ k = (X ^ k : R⟦X⟧) • 1 := by simp [y, smul_pow]
   have hy (z : R⟦X⟧ ⊗[R] Q) : (y ^ k) z = (LinearMap.mulLeft R (X ^ k : R⟦X⟧)).rTensor Q z := by
     rw [hyk]
-    induction z with
-    | tmul a q => simp [smul_tmul']
-    | add z w hz hw => simp only [map_add, ← hz, ← hw]
+    exact AlgebraTensorModule.smul_eq_lsmul_rTensor (R := R) (M := R⟦X⟧) _ _
   -- Multiplication by `X ^ k` on `R⟦X⟧` has the `R`-linear left inverse shifting coefficients.
   let s : R⟦X⟧ →ₗ[R] R⟦X⟧ :=
     { toFun a := mk fun i ↦ coeff (i + k) a

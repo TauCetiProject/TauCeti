@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Equalizer
 import Mathlib.Algebra.FiveLemma
+import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.RingTheory.LocalRing.Module
 
 /-!
@@ -91,37 +92,32 @@ theorem Module.Flat.of_surjective_of_ker_inf_smul_top_le [Module.Flat R M] (f : 
     (hf : Function.Surjective f)
     (h : ∀ ⦃I : Ideal R⦄, I.FG → LinearMap.ker f ⊓ I • ⊤ ≤ I • LinearMap.ker f) :
     Module.Flat R N := by
-  rw [Module.Flat.iff_rTensor_injective]
+  apply Module.Flat.of_exact_of_lTensor_quotient_injective (LinearMap.ker f).subtype f
+    (LinearMap.exact_subtype_ker_map f) hf
   intro I hI
-  rw [injective_iff_map_eq_zero]
-  intro τ hτ
-  obtain ⟨σ, rfl⟩ := LinearMap.lTensor_surjective I hf τ
-  -- The multiplication maps `I ⊗ M → M` and `I ⊗ N → N`; the first is injective as `M` is flat.
-  let μM : I ⊗[R] M →ₗ[R] M := (TensorProduct.lid R M).toLinearMap ∘ₗ I.subtype.rTensor M
-  let μN : I ⊗[R] N →ₗ[R] N := (TensorProduct.lid R N).toLinearMap ∘ₗ I.subtype.rTensor N
-  have hμ : Function.Injective μM :=
-    (TensorProduct.lid R M).injective.comp (Module.Flat.iff_rTensor_injective'.mp ‹_› I)
-  have hfμ : f ∘ₗ μM = μN ∘ₗ f.lTensor I := TensorProduct.ext' fun i m ↦ by simp [μM, μN]
-  have hmem : μM σ ∈ LinearMap.ker f ⊓ I • ⊤ := by
-    refine ⟨LinearMap.mem_ker.mpr ?_, ?_⟩
-    · rw [← LinearMap.comp_apply, hfμ, LinearMap.comp_apply]
-      simp [μN, hτ]
-    · rw [← Ideal.subtype_rTensor_range]
-      exact ⟨σ, rfl⟩
-  have hker : I • LinearMap.ker f = (I • (⊤ : Submodule R (LinearMap.ker f))).map
-      (LinearMap.ker f).subtype := by
-    rw [Submodule.map_smul'', Submodule.map_subtype_top]
-  obtain ⟨z, hz, hzσ⟩ := (hker ▸ h hI hmem :)
-  rw [← Ideal.subtype_rTensor_range] at hz
-  obtain ⟨w, rfl⟩ := hz
-  have hσ : σ = (LinearMap.ker f).subtype.lTensor I w := by
-    refine hμ ?_
-    rw [← hzσ, ← LinearMap.comp_apply μM, ← LinearMap.comp_apply (LinearMap.ker f).subtype]
-    congr 1
-    exact TensorProduct.ext' fun i m ↦ by simp [μM]
-  rw [hσ, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp]
-  have : f ∘ₗ (LinearMap.ker f).subtype = 0 := LinearMap.ext fun x ↦ x.property
-  rw [this, LinearMap.lTensor_zero, LinearMap.zero_apply]
+  let K := LinearMap.ker f
+  let q := (I • (⊤ : Submodule R K)).mapQ (I • (⊤ : Submodule R M)) K.subtype (by
+    rw [← Submodule.map_le_iff_le_comap, Submodule.map_smul'', Submodule.map_subtype_top]
+    exact Submodule.smul_mono le_rfl le_top)
+  have hq : Function.Injective q := by
+    rw [← LinearMap.ker_eq_bot, Submodule.ker_mapQ]
+    apply le_antisymm _ bot_le
+    rw [Submodule.map_le_iff_le_comap, Submodule.comap_bot, Submodule.ker_mkQ]
+    intro z hz
+    exact (Submodule.mem_smul_top_iff I K z).mpr (h hI ⟨z.property, hz⟩)
+  have he : (quotTensorEquivQuotSMul M I).toLinearMap ∘ₗ K.subtype.lTensor (R ⧸ I) =
+      q ∘ₗ (quotTensorEquivQuotSMul K I).toLinearMap := by
+    refine TensorProduct.ext' fun r z ↦ ?_
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+    simp [q]
+  intro x y hxy
+  apply (quotTensorEquivQuotSMul K I).injective
+  apply hq
+  -- Package function evaluation as composition to apply the named commuting-square identity.
+  change (q ∘ₗ (quotTensorEquivQuotSMul K I).toLinearMap) x =
+    (q ∘ₗ (quotTensorEquivQuotSMul K I).toLinearMap) y
+  rw [← he]
+  exact congrArg (quotTensorEquivQuotSMul M I) hxy
 
 /-- The first term of a short exact sequence whose middle and last terms are flat is flat. -/
 theorem Function.Exact.flat_left_of_injective_of_surjective

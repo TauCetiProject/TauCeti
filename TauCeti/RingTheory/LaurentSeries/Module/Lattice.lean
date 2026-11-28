@@ -216,6 +216,21 @@ instance latticeQuotientPowerSeriesScalarTower (a b : ℤ) :
   inferInstanceAs (IsScalarTower R R⟦X⟧ (powerSeriesLattice R V a ⧸
     (powerSeriesLattice R V b).comap (powerSeriesLattice R V a).subtype))
 
+/-- The quotient of power-series lattices is the existing Hahn jet, with its
+power-series action. This identifies the two presentations without unfolding their lattices. -/
+noncomputable def powerSeriesLatticeQuotientEquiv (a b : ℤ) :
+    (powerSeriesLattice R V a ⧸
+      (powerSeriesLattice R V b).comap (powerSeriesLattice R V a).subtype) ≃ₗ[R⟦X⟧]
+        latticeQuotient R V a b :=
+  LinearEquiv.refl _ _
+
+/-- The comparison of the two quotient presentations preserves representatives. -/
+@[simp]
+theorem powerSeriesLatticeQuotientEquiv_mk (a b : ℤ) (f : powerSeriesLattice R V a) :
+    powerSeriesLatticeQuotientEquiv R V a b (Submodule.Quotient.mk f) =
+      Submodule.Quotient.mk (⟨f.val, (mem_powerSeriesLattice R V).mp f.property⟩ : lattice R V a) :=
+  (rfl)
+
 /-- The power-series action on a finite jet can be computed on any representative. -/
 @[simp]
 theorem smul_latticeQuotient_mk (a b : ℤ) (p : R⟦X⟧) (f : lattice R V a) :
