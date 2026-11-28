@@ -118,18 +118,9 @@ theorem exists_norm_continuedL_neg_line_le_analyticConductorAt_rpow {δ : ℝ} (
     apply Complex.ext <;> simp [hs]
   have hq := hfactor d hd hR hC' s.im
   rw [hs'] at hq
-  have hγ : d.dual.gammaFactor (1 - s) ≠ 0 := by
-    refine d.dual.gammaFactor_ne_zero_of_forall_re_add_pos (fun μ hμ ↦ ?_) (fun ν hν ↦ ?_)
-    · rw [dual_gammaR] at hμ
-      obtain ⟨μ₀, hμ₀, rfl⟩ := Multiset.mem_map.mp hμ
-      have := (hR μ₀ hμ₀).2
-      simp only [sub_re, one_re, hs, conj_re]
-      linarith
-    · rw [dual_gammaC] at hν
-      obtain ⟨ν₀, hν₀, rfl⟩ := Multiset.mem_map.mp hν
-      have := (hC' ν₀ hν₀).2
-      simp only [sub_re, one_re, hs, conj_re]
-      linarith
+  have hγ : d.dual.gammaFactor (1 - s) ≠ 0 :=
+    d.dual_gammaFactor_one_sub_ne_zero (fun μ hμ ↦ by linarith [(hR μ hμ).2])
+      (fun ν hν ↦ by linarith [(hC' ν hν).2])
   have h1s : (1 - s).re = 1 + δ := by
     simp only [sub_re, one_re, hs]
     ring
