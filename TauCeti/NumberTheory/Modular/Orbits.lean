@@ -43,6 +43,8 @@ right of `i` — exactly once.
 * `TauCeti.ModularGroup.orbit_mk_injOn_fd_left`: the orbit map is injective on `𝒟` minus the
   right vertical edge and the part of the unit arc right of `i`.
 * `TauCeti.ModularGroup.exists_smul_mem_fd_left`: every orbit meets that part of `𝒟`.
+* `ModularGroup.im_smul_eq_or_le_inv`: the imaginary part of an `SL(2, ℤ)`-translate of `z` is
+  either `Im z` or at most `(Im z)⁻¹`.
 
 ## References
 
@@ -259,5 +261,36 @@ lemma exists_smul_mem_fd_left (z : ℍ) :
 end ModularGroup
 
 end TauCeti
+
+namespace ModularGroup
+
+/-- The imaginary part of a translate of `z` by `SL(2, ℤ)` is either that of `z` or at most its
+inverse: `Im (g • z) = Im z / |c z + d|²`, where `c = 0` forces `d² = 1` and `c ≠ 0` gives
+`|c z + d|² ≥ c² (Im z)² ≥ (Im z)²`. -/
+theorem im_smul_eq_or_le_inv (g : SL(2, ℤ)) (z : ℍ) :
+    (g • z).im = z.im ∨ (g • z).im ≤ z.im⁻¹ := by
+  have hz := z.im_pos
+  have hden : 0 < Complex.normSq (denom g z) := Complex.normSq_pos.mpr (denom_ne_zero _ z)
+  rw [im_smul_eq_div_normSq]
+  by_cases hc : g 1 0 = 0
+  · -- `c = 0` forces `a d = 1`, so `denom g z = d = ± 1`
+    left
+    have hdet := g.det_coe
+    rw [Matrix.det_fin_two, hc, mul_zero, sub_zero] at hdet
+    rcases Int.eq_one_or_neg_one_of_mul_eq_one' hdet with ⟨-, h⟩ | ⟨-, h⟩ <;>
+      simp [denom_apply, hc, h]
+  · -- `c ≠ 0` gives `(Im z)² ≤ c² (Im z)² ≤ |denom g z|²`
+    right
+    have hc1 : (1 : ℝ) ≤ (g 1 0 : ℝ) ^ 2 := by
+      have : (1 : ℤ) ≤ g 1 0 ^ 2 := by
+        have := sq_pos_of_ne_zero hc
+        omega
+      exact_mod_cast this
+    have hcz : ((g 1 0 : ℝ) * z.im) ^ 2 ≤ Complex.normSq (denom g z) := by
+      simpa using z.c_mul_im_sq_le_normSq_denom g
+    rw [div_le_iff₀ hden, inv_mul_eq_div, le_div_iff₀ hz]
+    nlinarith
+
+end ModularGroup
 
 end

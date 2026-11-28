@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
+public import TauCeti.Topology.Instances.AddCircle.Flow
 
 import TauCeti.Algebra.Group.ZMultiples
 
@@ -34,7 +35,11 @@ half line (`AddCircle.lintegral_comp_norm_le`).
 
 Mathlib's translation action of `ℝ` on `AddCircle T`, `t +ᵥ x = t + x` (`AddCircle.vadd_eq_add`),
 is jointly measurable and preserves every additively left-invariant measure, such as circle
-volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`).
+volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`). Likewise every
+time-`t` map of the translation flow `x ↦ x + [t]` preserves every additively right-invariant
+measure (`AddCircle.measurePreserving_translationFlow`). For the
+normalized Haar measure, the Fourier mode `fourier n` has integral `1` for `n = 0` and `0`
+otherwise (`AddCircle.integral_fourier_haarAddCircle`).
 -/
 
 public section
@@ -64,7 +69,21 @@ instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
   ⟨fun t s _ ↦ by
     simpa only [AddCircle.vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
 
+/-- Every time-`t` map of the translation flow of `AddCircle T` preserves every additively
+right-invariant measure, such as circle volume and the normalized Haar measure. -/
+theorem measurePreserving_translationFlow {T : ℝ} (μ : Measure (AddCircle T))
+    [μ.IsAddRightInvariant] (t : ℝ) : MeasurePreserving (translationFlow T t) μ μ := by
+  rw [translationFlow_eq_add_right]
+  exact measurePreserving_add_right μ _
+
 variable {T : ℝ} [hT : Fact (0 < T)]
+
+/-- The integral of the Fourier mode `fourier n` for the normalized Haar measure is `1` for
+`n = 0` and `0` otherwise. -/
+theorem integral_fourier_haarAddCircle (n : ℤ) :
+    ∫ x, fourier n x ∂(haarAddCircle (T := T)) = if n = 0 then 1 else 0 := by
+  simpa [fourierCoeff, fourier_zero, Pi.single_apply, eq_comm] using
+    congrFun (fourierCoeff_fourier (T := T) n) 0
 
 /-- Reading a circle point in `[a, a + T)` sends circle volume to Lebesgue measure
 restricted to that interval. -/

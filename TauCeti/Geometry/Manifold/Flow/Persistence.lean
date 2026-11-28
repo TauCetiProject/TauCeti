@@ -97,7 +97,7 @@ theorem exists_eventually_flowOf_mem_level_and_tendsto [CompleteSpace E] {g : M 
     contMDiff_verticalField hv
   -- The time is the hitting time of the vertical field, and the point reached is read off from
   -- the time-`0` transition of the vertical field onto the section `{g ∘ Prod.snd = g p}`.
-  have h0 : ((0 : ℝ), (a₀, p)) ∈ flowDomain V := mem_flowDomain_zero hV _
+  have h0 : ((0 : ℝ), (a₀, p)) ∈ flowDomain V := mem_flowDomain_zero (hV _)
   have hflow0 : flowOf V 0 (a₀, p) = (a₀, p) := flowOf_zero V _
   have hG : ContMDiffAt (J.prod I) 𝓘(ℝ) 1 (g ∘ Prod.snd) (flowOf V 0 (a₀, p)) := by
     rw [hflow0]
@@ -154,7 +154,7 @@ theorem eventually_not_hasEigenvalue_returnDerivative_of_flowOf_eq {g : M → �
   -- The point `x' = flowOf (v a) (σ (a, x)) x` lies on the section through `p` and returns to
   -- itself at time `t`, so it is the continued orbit `c a`, with return time `τ a = t`.
   set x' := flowOf (v a) (σ (a, x)) x
-  obtain ⟨-, hper'⟩ := flowOf_flowOf_of_flowOf_eq (hv.apply_param a) hσdom htx hper
+  obtain ⟨-, hper'⟩ := flowOf_flowOf_of_flowOf_eq (hv.apply_param a) htx hper
   obtain ⟨ht, hx'⟩ := hu.1 ⟨hper', hσg⟩
   rw [← ht, ← hx'] at hndc
   refine ⟨hgx, hgvx, ?_⟩

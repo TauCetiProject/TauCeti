@@ -66,6 +66,9 @@ lying under a line above a block lower polygon.
   number at most `y - z + 1`, for `z ≤ y` with `0 ≤ y`.
 * `TauCeti.lt_mul_floor_add_two_of_mul_sum_range_div_le`: if `c > 0` and
   `c ∑ i < n, ⌊i / H⌋ ≤ n x`, then `n < H (⌊2 x / c⌋₊ + 2)`.
+* `TauCeti.natFloor_one_div_pos`: `0 < ⌊1 / δ⌋₊` for `0 < δ ≤ 1`.
+* `TauCeti.natFloor_one_div_add_div_le`: `⌊1 / δ⌋₊ + (c / δ ^ 2) / ⌊1 / δ⌋₊ ≤ 2 / δ` for
+  `0 < δ ≤ 1 / 2` and `c ≤ 8 / 9`.
 -/
 
 public section
@@ -176,6 +179,10 @@ theorem exists_pos_nat_mul_bounds {t a : K} (ht : 0 ≤ t) (ha : 0 < a) :
   · push_cast
     rw [add_mul, one_mul]
     exact add_le_add_left ((le_div_iff₀ ha).mp (Nat.floor_le htdiv)) a
+
+/-- For `0 < δ ≤ 1`, the integer floor `⌊1 / δ⌋₊` is positive. -/
+theorem natFloor_one_div_pos {δ : K} (hδ : 0 < δ) (hδ' : δ ≤ 1) : 0 < ⌊1 / δ⌋₊ :=
+  Nat.floor_pos.mpr ((le_div_iff₀ hδ).mpr (by simpa using hδ'))
 
 /-- For `n = 3` and `B = 1 / 2`, `⌊B⌋₊ = 0` and `⌊n / B⌋₊ = 6`, giving `1 * 7 > 3`; for `n = 2`
 and `B = 3`, `⌊B⌋₊ = 3` and `⌊n / B⌋₊ = 0`, giving `7 * 1 > 2`. -/
@@ -301,6 +308,33 @@ theorem lt_mul_floor_add_two_of_mul_sum_range_div_le {H n : ℕ} (hH : 0 < H) {c
   calc n = H * q + ρ := hn.symm
     _ < H * (q + 1) := by nlinarith
     _ ≤ H * (⌊2 * x / c⌋₊ + 2) := Nat.mul_le_mul_left _ (by omega)
+
+/-- For `0 < δ ≤ 1 / 2` and `c ≤ 8 / 9`, setting `L = ⌊1 / δ⌋₊` gives
+`L + (c / δ ^ 2) / L ≤ 2 / δ`. -/
+theorem natFloor_one_div_add_div_le {δ c : K} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2) (hc : c ≤ 8 / 9) :
+    (⌊1 / δ⌋₊ : K) + (c / δ ^ 2) / (⌊1 / δ⌋₊ : K) ≤ 2 / δ := by
+  let L : ℕ := ⌊1 / δ⌋₊
+  have hL_ge_two : 2 ≤ L := Nat.le_floor (by rw [Nat.cast_ofNat, le_div_iff₀ hδ]; linarith)
+  have hL_pos : (0 : K) < (L : K) := Nat.cast_pos.mpr (by omega)
+  have hr_le : (L : K) * δ ≤ 1 := (le_div_iff₀ hδ).mp (Nat.floor_le (by positivity))
+  have hr_ge : 2 / 3 ≤ (L : K) * δ := by
+    have h1 : (1 : K) < ((L : K) + 1) * δ := (div_lt_iff₀ hδ).mp (Nat.lt_floor_add_one (1 / δ))
+    have h2 : (2 : K) ≤ (L : K) := by exact_mod_cast hL_ge_two
+    nlinarith [mul_nonneg (sub_nonneg.mpr h2) hδ.le]
+  have hsq : (1 - (L : K) * δ) ^ 2 ≤ (1 / 3 : K) ^ 2 := by
+    nlinarith [hr_le, hr_ge]
+  have hquad : ((L : K) * δ) ^ 2 + c ≤ 2 * ((L : K) * δ) := by
+    linarith [hsq, hc]
+  have hmul :
+      ((L : K) + (c / δ ^ 2) / (L : K)) * ((L : K) * δ ^ 2) ≤ (2 / δ) * ((L : K) * δ ^ 2) := by
+    have hLHS :
+        ((L : K) + (c / δ ^ 2) / (L : K)) * ((L : K) * δ ^ 2) = ((L : K) * δ) ^ 2 + c := by
+      field_simp [hL_pos.ne', hδ.ne']
+    have hRHS : (2 / δ) * ((L : K) * δ ^ 2) = 2 * ((L : K) * δ) := by
+      field_simp [hδ.ne']
+    rw [hLHS, hRHS]
+    exact hquad
+  exact le_of_mul_le_mul_right hmul (by positivity)
 
 end Field
 

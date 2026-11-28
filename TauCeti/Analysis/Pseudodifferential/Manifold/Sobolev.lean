@@ -40,9 +40,12 @@ in the Hilbert sum `⨁ᵢ H^s(ℝⁿ)` (`TauCeti.chartSobolevSpace`), the estim
 (`TauCeti.exists_norm_chartReading_apply_le`) makes the continuous extension
 `TauCeti.chartSobolevExtension` of `P` to `H^s(M) → H^t(M)`, `t ≤ s - m`, agree with `P` on smooth
 functions (`TauCeti.chartSobolevExtension_toChartSobolevSpace_of_mem`). These extensions compose
-(`TauCeti.chartSobolevExtension_comp_of_mem`), and by Rellich's theorem they are compact when
-`t < s - m` (`TauCeti.isCompactOperator_chartSobolevExtension_of_mem`), in particular for operators
-of negative order.
+(`TauCeti.chartSobolevExtension_comp_of_mem`), commute with the inclusions between the Sobolev
+spaces
+(`TauCeti.chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem`),
+and by Rellich's theorem they are compact when `t < s - m`
+(`TauCeti.isCompactOperator_chartSobolevExtension_of_mem`), in particular for operators of negative
+order.
 
 ## The argument
 
@@ -62,15 +65,20 @@ symbol with compact spatial support
 
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le`: the
   estimate between two charts, in `H^{s - m,p}` and `H^{s,p}` for `1 < p < ∞`.
-* `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
-  reading of `P u` in one chart is bounded in `H^{s - m,p}` by the `H^{s,p}` norm of `u` for a
-  partition, `1 < p < ∞`.
 * `TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
   Sobolev estimate `‖P u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` in these norms, for `1 < p < ∞`.
+* `TauCeti.IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum`: on
+  any manifold, the reading of `P u` in one chart is bounded by the readings of `u` through
+  cutoffs adding up to `1` on a compact set depending only on `P` and the chart cutoff.
 * `TauCeti.chartSobolevExtension_toChartSobolevSpace_of_mem`: `P` extends to a bounded operator
   `H^s(M) → H^t(M)` for `t ≤ s - m`.
 * `TauCeti.isCompactOperator_chartSobolevExtension_of_mem`: the extension is compact for
   `t < s - m`.
+* `TauCeti.chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem`:
+  the extensions commute with the inclusions `H^{s'}(M) ⊆ H^s(M)`.
+* `TauCeti.chartSobolevExtension_add_of_mem`, `TauCeti.chartSobolevExtension_sub_of_mem` and
+  `TauCeti.chartSobolevExtension_sum_of_mem`: the extension of a sum, a difference or a finite sum
+  is the sum, the difference or the sum of the extensions.
 
 ## References
 
@@ -126,36 +134,6 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mu
       ⟨C, hC⟩)
     he he' φ ψ
 
-/-- **The Sobolev estimate in one chart.** Let `P` be a classical pseudodifferential operator of
-order `m` and `ψᵢ` finitely many cutoffs in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`,
-extended by `0`, add up to `1`; such cutoffs exist on every compact manifold
-(`IsCompact.exists_sum_cutoffPullback_eq_one`). For a cutoff `φ` in a chart `e`, every real `s`
-and `1 < p < ∞` there is a constant `C` such that every smooth `u` on `M` satisfies
-
-`‖φ · ((P u) ∘ e⁻¹)‖_{H^{s - m,p}} ≤ C ∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^{s,p}}`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum
-    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] (hP : P ∈ classicalPseudodifferentialOperators m)
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {ι : Type*} [Fintype ι]
-    {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ))
-    (hψ : ∀ x, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) (hp : 1 < p) (hp_top : p ≠ ⊤)
-    (s : ℝ) :
-    ∃ C, ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
-      ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) p (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
-        C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s p
-          ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ :=
-  exists_norm_cutoffPushforwardSchwartz_apply_le_sum hP
-    (SchwartzMap.toBesselPotentialSpaceCLM_injective s p)
-    (fun hκ hκ' _ hθ hθc hθs ↦
-      BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
-        hθc hθs hp hp_top s)
-    _ (fun _ ha ↦ let ⟨C, hC⟩ :=
-      ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
-      ⟨C, hC⟩)
-    he φ he' ψ hψ
-
 /-- **Sobolev estimate for classical pseudodifferential operators on a manifold.** Let `P` be a
 classical pseudodifferential operator of order `m` and `ψᵢ` finitely many cutoffs in charts `e'ᵢ`
 whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`, extended by `0`, add up to `1`, which forces `M` to be
@@ -190,6 +168,48 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_appl
       ⟨C, hC⟩)
     he φ he' ψ hψ
 
+/-- **The Sobolev estimate in one chart, on any manifold.** Let `P` be a properly supported
+operator and `φ` a cutoff in a chart `e`. There is a compact set `K ⊆ M` with the following
+property. Let `ψᵢ` be finitely many cutoffs in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`,
+extended by `0`, add up to `1` on `K`. If `P` is a classical pseudodifferential operator of order
+`m`, then for every real `s` and `1 < p < ∞` there is a constant `C` such that every smooth `u` on
+`M` satisfies
+
+`‖φ · ((P u) ∘ e⁻¹)‖_{H^{s - m,p}} ≤ C ∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^{s,p}}`.
+
+The cutoffs `ψᵢ` need only add up to `1` on the compact set `K`, so `M` need not be compact. On a
+compact manifold every operator is properly supported
+(`TauCeti.isProperlySupported_of_compactSpace`) and cutoffs adding up to `1` everywhere qualify.
+The set `K` depends only on `P` and `φ`, not on the order `m`, on `s` or on `p`. -/
+theorem IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] (hP : IsProperlySupported P)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    ∃ K : Set M, IsCompact K ∧ ∀ {ι : Type*} [Fintype ι]
+      {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+      (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+      (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ)),
+      (∀ x ∈ K, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) →
+      ∀ m : ℝ, P ∈ classicalPseudodifferentialOperators m →
+      ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)], 1 < p → p ≠ ⊤ → ∀ s : ℝ, ∃ C,
+        ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+          ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) p
+              (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
+            C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s p
+              ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
+  -- On `e⁻¹(supp φ)`, `P u` only depends on `u` on a compact set `K`.
+  obtain ⟨K, hK, hPK⟩ := hP.exists_isCompact_forall_eqOn (e.isCompact_symm_image_tsupport φ)
+  exact ⟨K, hK, fun he' ψ hψ m hPm p _ hp hp_top s ↦
+    exists_norm_cutoffPushforwardSchwartz_apply_le_sum hPm
+      (SchwartzMap.toBesselPotentialSpaceCLM_injective s p)
+      (fun hκ hκ' _ hθ hθc hθs ↦
+        BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
+          hθc hθs hp hp_top s)
+      _ (fun _ ha ↦ let ⟨C, hC⟩ :=
+        ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
+        ⟨C, hC⟩)
+      he φ hPK he' ψ hψ⟩
+
 /-! ### Extension to the Sobolev spaces of a compact manifold -/
 
 section Extension
@@ -214,21 +234,12 @@ theorem exists_norm_chartReading_apply_le (hP : P ∈ classicalPseudodifferentia
   obtain ⟨C, hC⟩ :=
     exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum hP hc' φ hc ψ
       hψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
-  refine ⟨|C| * Real.sqrt (Fintype.card ι), fun u ↦ ?_⟩
-  calc ‖chartReading hc' φ t (P u)‖
-      ≤ ∑ j, ‖chartReading hc' φ t (P u) j‖ := PiLp.norm_le_sum_norm _
-    _ ≤ ∑ j, ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
-          ((c' j).cutoffPushforwardSchwartz (hc' j) (φ j) (P u))‖ :=
-      Finset.sum_le_sum fun j _ ↦ by
-        rw [chartReading_apply, ← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM ht]
-        exact BesselPotentialSpace.norm_inclusion_apply_le ht _
-    _ ≤ |C| * ∑ i, ‖chartReading hc ψ s u i‖ := by
-      simp only [chartReading_apply]
-      exact (hC u).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
-        (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _))
-    _ ≤ |C| * (Real.sqrt (Fintype.card ι) * ‖chartReading hc ψ s u‖) :=
-      mul_le_mul_of_nonneg_left (PiLp.sum_norm_le_sqrt_card_mul_norm _) (abs_nonneg C)
-    _ = |C| * Real.sqrt (Fintype.card ι) * ‖chartReading hc ψ s u‖ := (mul_assoc ..).symm
+  refine PiLp.exists_norm_le_mul_norm_of_sum_norm_le (f := fun u ↦ chartReading hc' φ t (P u))
+    (C := C) fun u ↦ ?_
+  simp only [chartReading_apply]
+  refine (Finset.sum_le_sum fun j _ ↦ ?_).trans (hC u)
+  rw [← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM ht]
+  exact BesselPotentialSpace.norm_inclusion_apply_le ht _
 
 /-- **Classical pseudodifferential operators act on Sobolev spaces.** On a compact manifold, with
 the Sobolev spaces `H^s(M)` of a chart partition `ψᵢ` (`TauCeti.chartSobolevSpace`), a classical
@@ -241,7 +252,7 @@ theorem chartSobolevExtension_toChartSobolevSpace_of_mem
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     chartSobolevExtension hc ψ hc' φ P s t (toChartSobolevSpace hc ψ s u) =
       toChartSobolevSpace hc' φ t (P u) :=
-  chartSobolevExtension_toChartSobolevSpace (exists_norm_chartReading_apply_le hP hψ ht) u
+  LinearMap.rangeClosureExtension_toRangeClosure (exists_norm_chartReading_apply_le hP hψ ht) u
 
 /-- **Operators gaining more than their order are compact.** On a compact manifold, the extension
 of a classical pseudodifferential operator `P` of order `m` to `H^s(M) → H^t(M)` is a compact
@@ -251,8 +262,8 @@ theorem isCompactOperator_chartSobolevExtension_of_mem
     (hP : P ∈ classicalPseudodifferentialOperators m)
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t < s - m) :
     IsCompactOperator (chartSobolevExtension hc ψ hc' φ P s t) := by
-  rw [← chartSobolevInclusion_comp_chartSobolevExtension ht.le
-    (exists_norm_chartReading_apply_le hP hψ le_rfl)]
+  rw [chartSobolevExtension, ← LinearMap.rangeClosureMap_comp_rangeClosureExtension
+    (piMap_inclusion_chartReading hc' φ ht.le) (exists_norm_chartReading_apply_le hP hψ le_rfl)]
   exact (isCompactOperator_chartSobolevInclusion hc' φ ht).comp_clm _
 
 /-- **Extensions of classical pseudodifferential operators compose.** If `Q` and `P` are classical
@@ -271,8 +282,65 @@ theorem chartSobolevExtension_comp_of_mem {c'' : ν → OpenPartialHomeomorph M 
     (hr : r ≤ t - m) :
     chartSobolevExtension hc' φ hc'' χ P t r ∘L chartSobolevExtension hc ψ hc' φ Q s t =
       chartSobolevExtension hc ψ hc'' χ (P ∘ₗ Q) s r :=
-  chartSobolevExtension_comp (exists_norm_chartReading_apply_le hP hφ hr)
+  LinearMap.rangeClosureExtension_comp (exists_norm_chartReading_apply_le hP hφ hr)
     (exists_norm_chartReading_apply_le hQ hψ ht)
+
+/-- **Extensions of classical pseudodifferential operators commute with the inclusions.** Let `P` be
+a classical pseudodifferential operator of order `m`, with `s ≤ s'`, `t ≤ t'`, `t ≤ s - m` and
+`t' ≤ s' - m`. Extending `P` to `H^{s'}(M) → H^{t'}(M)` and then including `H^{t'}(M) ⊆ H^t(M)`
+is including `H^{s'}(M) ⊆ H^s(M)` and then extending `P` to `H^s(M) → H^t(M)`. -/
+theorem chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem
+    {s' t' : ℝ}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (hs : s ≤ s') (ht : t ≤ t')
+    (hts : t ≤ s - m) (hts' : t' ≤ s' - m) :
+    chartSobolevExtension hc ψ hc' φ P s t ∘L chartSobolevInclusion hc ψ hs =
+      chartSobolevInclusion hc' φ ht ∘L chartSobolevExtension hc ψ hc' φ P s' t' := by
+  rw [LinearMap.rangeClosureExtension_comp_rangeClosureMap (piMap_inclusion_chartReading hc ψ hs)
+      (exists_norm_chartReading_apply_le hP hψ hts),
+    LinearMap.rangeClosureMap_comp_rangeClosureExtension (piMap_inclusion_chartReading hc' φ ht)
+      (exists_norm_chartReading_apply_le hP hψ hts')]
+
+/-- **Extensions of sums.** The extension to `H^s(M) → H^t(M)`, `t ≤ s - m`, of the sum of two
+classical pseudodifferential operators of order `m` is the sum of their extensions. -/
+theorem chartSobolevExtension_add_of_mem
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t ≤ s - m) :
+    chartSobolevExtension hc ψ hc' φ (P + Q) s t =
+      chartSobolevExtension hc ψ hc' φ P s t + chartSobolevExtension hc ψ hc' φ Q s t :=
+  LinearMap.rangeClosureExtension_add (exists_norm_chartReading_apply_le hP hψ ht)
+    (exists_norm_chartReading_apply_le hQ hψ ht)
+
+/-- **Extensions of differences.** The extension to `H^s(M) → H^t(M)`, `t ≤ s - m`, of the
+difference of two classical pseudodifferential operators of order `m` is the difference of their
+extensions. -/
+theorem chartSobolevExtension_sub_of_mem
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t ≤ s - m) :
+    chartSobolevExtension hc ψ hc' φ (P - Q) s t =
+      chartSobolevExtension hc ψ hc' φ P s t - chartSobolevExtension hc ψ hc' φ Q s t :=
+  LinearMap.rangeClosureExtension_sub (exists_norm_chartReading_apply_le hP hψ ht)
+    (exists_norm_chartReading_apply_le hQ hψ ht)
+
+/-- **Extensions of finite sums.** The extension to `H^s(M) → H^t(M)`, `t ≤ s - m`, of a finite
+sum of classical pseudodifferential operators of order `m` is the sum of their extensions. -/
+theorem chartSobolevExtension_sum_of_mem {α : Type*} (S : Finset α)
+    {A : α → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hA : ∀ k ∈ S, A k ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t ≤ s - m) :
+    chartSobolevExtension hc ψ hc' φ (∑ k ∈ S, A k) s t =
+      ∑ k ∈ S, chartSobolevExtension hc ψ hc' φ (A k) s t :=
+  LinearMap.rangeClosureExtension_eq _ fun u ↦ by
+    rw [sum_apply, LinearMap.sum_apply, map_sum]
+    exact Finset.sum_congr rfl fun k hk ↦
+      chartSobolevExtension_toChartSobolevSpace_of_mem (hA k hk) hψ ht u
 
 end Extension
 

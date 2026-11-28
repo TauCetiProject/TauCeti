@@ -40,7 +40,11 @@ The space is defined relative to the bump function `φ`, but membership is not: 
 blocks of two bump functions interact only at nearby indices
 (`TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico`), so
 `u ∈ \dot B^s_{p,q}` for one bump function implies the same for every other
-(`TemperedDistribution.MemHomogeneousBesov.of_bump`).
+(`TemperedDistribution.MemHomogeneousBesov.of_bump`), and the seminorms are equivalent: a weighted
+block for one bump function is at most a constant times a window sum of `2L` weighted blocks for
+the other, and over `ℤ` such window sums have `ℓ^q` norm at most `2L` times that of the sequence
+(`lp.exists_eq_sum_Ico_add_and_norm_le`). The bundled spaces for two bump functions are therefore
+isomorphic seminormed spaces (`TauCeti.HomogeneousBesovSpace.bumpEquiv`).
 
 The decomposition of `u ∈ \dot B^s_{p,q}` into its blocks converges up to the critical regularity
 `n / p`. If `s < n / p`, or `s = n / p` and `q ≤ 1`, the two-sided partial sums
@@ -84,12 +88,26 @@ low-frequency blocks sum in `L^∞`
   `ℓ^q(ℤ, Lᵖ)`, and `TauCeti.HomogeneousBesovSpace.block` is the block `Pⱼ u` as an `Lᵖ` function.
 * `TauCeti.HomogeneousBesovSpace.tsum_eNorm_weightedBlocks`: for `q = 1` the seminorm is the sum
   of the weighted block norms.
+* `TauCeti.HomogeneousBesovSpace.block_eq_fourierMultiplierCLM`: the blocks of an `L²` element of
+  `\dot B^s_{2,q}` are its `L²` Fourier multiplier blocks.
 * `TauCeti.HomogeneousBesovSpace.exists_sum_fourierMultiplierCLM_block_eq`: the blocks of an element
   of `\dot B^s_{2,q}` are reproduced by their neighbouring blocks, acting as `L²` Fourier
   multipliers.
 * `TauCeti.HomogeneousBesovSpace.norm_eq_zero_iff` and
   `TauCeti.HomogeneousBesovSpace.inseparable_iff`: the seminorm vanishes exactly on the
   distributions with spectrum at the origin.
+* `exists_toDistr_eq_and_norm_le_of_homogeneousLittlewoodPaleyBlock_eq`, in the
+  `TauCeti.HomogeneousBesovSpace` namespace: a tempered distribution whose blocks are `Lᵖ`
+  functions with weighted norms bounded by a sequence `b ∈ ℓ^q(ℤ)` is an element of
+  `\dot B^s_{p,q}` of seminorm at most `‖b‖`.
+* `TauCeti.HomogeneousBesovSpace.inclusion`: `\dot B^s_{p,q} ⊆ \dot B^s_{p,q'}` for `q ≤ q'`, of
+  norm at most one.
+* `TauCeti.HomogeneousBesovSpace.inclusionOfExponentLE`: the Bernstein embedding
+  `\dot B^s_{p,q} ⊆ \dot B^{s - n (1/p - 1/r)}_{r,q}` for `p ≤ r`, as a continuous linear map,
+  bounded uniformly in `s` and `q`
+  (`TauCeti.HomogeneousBesovSpace.exists_norm_inclusionOfExponentLE_le`).
+* `TauCeti.HomogeneousBesovSpace.bumpEquiv`: the homogeneous Besov spaces built from two bump
+  functions are isomorphic seminormed spaces, through the identity on tempered distributions.
 * `TauCeti.two_rpow_mul_norm_sum_Ico_add_le`: the weighted estimate
   `2^{js} ‖∑_{-L ≤ i < L} g_{j + i}‖ ≤ max C 0 2^{|s| L} ∑_{-L ≤ i < L} 2^{(j + i)s} ‖x_{j + i}‖`
   over `ℤ` when `‖gⱼ‖ ≤ C ‖xⱼ‖`, by which a block of one bump function is controlled by the
@@ -569,6 +587,13 @@ theorem block_smul (c : ℂ) (u : HomogeneousBesovSpace F φ s p q) (j : ℤ) :
     (c • u).block j = c • u.block j := by
   rw [block, block, weightedBlocks_smul, lp.coeFn_smul, Pi.smul_apply, smul_comm]
 
+/-- Elements of two homogeneous Besov spaces with the same tempered distribution and the same
+integrability exponent have the same blocks. -/
+theorem block_eq_of_toDistr_eq {s' : ℝ} {q' : ℝ≥0∞} {u : HomogeneousBesovSpace F φ s p q}
+    {v : HomogeneousBesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) (j : ℤ) :
+    u.block j = v.block j :=
+  Lp.toTemperedDistribution_injective <| by simp only [coe_block, h]
+
 /-- A tempered distribution in `\dot B^s_{p,q}`, as an element of the bundled homogeneous Besov
 space. -/
 def _root_.TemperedDistribution.MemHomogeneousBesov.toHomogeneousBesovSpace {u : 𝓢'(E, F)}
@@ -682,11 +707,196 @@ theorem inseparable_iff (u v : HomogeneousBesovSpace F φ s p q) :
     Inseparable u v ↔ IsVanishingOn (𝓕 (u.toDistr - v.toDistr) : 𝓢'(E, F)) {0}ᶜ := by
   rw [Metric.inseparable_iff, dist_eq_norm, norm_eq_zero_iff, toDistr_sub]
 
+/-- **Membership from a bound on the blocks.** If the homogeneous blocks `Pⱼ u` of a tempered
+distribution are `Lᵖ` functions `gⱼ` with `2^{js} ‖gⱼ‖_p ≤ bⱼ` for a sequence `b ∈ ℓ^q(ℤ)`, then
+`u` is an element of `\dot B^s_{p,q}` of seminorm at most `‖b‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_homogeneousLittlewoodPaleyBlock_eq {u : 𝓢'(E, F)}
+    (g : ℤ → Lp F p (volume : Measure E)) (b : lp (fun _ : ℤ ↦ ℝ) q)
+    (hg : ∀ j, homogeneousLittlewoodPaleyBlock F φ j u = g j)
+    (hb : ∀ j : ℤ, 2 ^ (s * j) * ‖g j‖ ≤ b j) :
+    ∃ v : HomogeneousBesovSpace F φ s p q, v.toDistr = u ∧ ‖v‖ ≤ ‖b‖ := by
+  have hu : u.MemHomogeneousBesov φ s p q := memHomogeneousBesov_iff.2 ⟨g, hg,
+    (lp.memℓp b).mono fun j ↦ (Real.norm_of_nonneg (by positivity)).trans_le (hb j)⟩
+  refine ⟨hu.toHomogeneousBesovSpace, hu.toDistr_toHomogeneousBesovSpace, ?_⟩
+  rw [← norm_weightedBlocks]
+  refine lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
+  have hj : hu.toHomogeneousBesovSpace.block j = g j := Lp.toTemperedDistribution_injective <| by
+    simp only [coe_block, MemHomogeneousBesov.toDistr_toHomogeneousBesovSpace, hg j]
+  rw [norm_weightedBlocks_apply, hj]
+  exact (hb j).trans (Real.le_norm_self _)
+
 end Seminormed
+
+section Inclusion
+
+variable {q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')]
+
+/-- For `q ≤ q'`, the `\dot B^s_{p,q'}` seminorm of a distribution is at most its
+`\dot B^s_{p,q}` seminorm. -/
+private theorem norm_le_of_toDistr_eq_of_le (hq : q ≤ q') {u : HomogeneousBesovSpace F φ s p q}
+    {v : HomogeneousBesovSpace F φ s p q'} (h : u.toDistr = v.toDistr) : ‖v‖ ≤ ‖u‖ := by
+  rw [← norm_weightedBlocks, ← norm_weightedBlocks]
+  refine lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq fun j ↦ ?_
+  rw [norm_weightedBlocks_apply, norm_weightedBlocks_apply, block_eq_of_toDistr_eq h j]
+
+variable (F φ s p) in
+/-- **Monotonicity in the fine index.** For `q ≤ q'`, `\dot B^s_{p,q} ⊆ \dot B^s_{p,q'}` with
+`‖u‖_{\dot B^s_{p,q'}} ≤ ‖u‖_{\dot B^s_{p,q}}`. At the level of the predicate this is
+`TemperedDistribution.MemHomogeneousBesov.mono`. -/
+def inclusion (hq : q ≤ q') :
+    HomogeneousBesovSpace F φ s p q →L[ℂ] HomogeneousBesovSpace F φ s p q' :=
+  LinearMap.mkContinuous
+    { toFun u := (u.memHomogeneousBesov_toDistr.mono hq).toHomogeneousBesovSpace
+      map_add' _ _ := ext rfl
+      map_smul' _ _ := ext rfl }
+    1 fun _ ↦ (norm_le_of_toDistr_eq_of_le hq rfl).trans_eq (one_mul _).symm
+
+@[simp]
+theorem toDistr_inclusion (hq : q ≤ q') (u : HomogeneousBesovSpace F φ s p q) :
+    (inclusion F φ s p hq u).toDistr = u.toDistr := (rfl)
+
+@[simp]
+theorem block_inclusion (hq : q ≤ q') (u : HomogeneousBesovSpace F φ s p q) (j : ℤ) :
+    (inclusion F φ s p hq u).block j = u.block j :=
+  block_eq_of_toDistr_eq (toDistr_inclusion hq u) j
+
+theorem norm_inclusion_le (hq : q ≤ q') (u : HomogeneousBesovSpace F φ s p q) :
+    ‖inclusion F φ s p hq u‖ ≤ ‖u‖ :=
+  norm_le_of_toDistr_eq_of_le hq (toDistr_inclusion hq u).symm
+
+end Inclusion
+
+section Bernstein
+
+variable {r : ℝ≥0∞} [Fact (1 ≤ r)]
+
+/-- For `p ≤ r` there is `C`, independent of `s` and `q`, such that the
+`\dot B^{s - n (1/p - 1/r)}_{r,q}` seminorm of a distribution is at most `C` times its
+`\dot B^s_{p,q}` seminorm. -/
+private theorem exists_norm_le_of_toDistr_eq_of_exponent_le (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)] {u : HomogeneousBesovSpace F φ s p q}
+      {v : HomogeneousBesovSpace F φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q},
+      u.toDistr = v.toDistr → ‖v‖ ≤ C * ‖u‖ := by
+  obtain ⟨C, hC, hB⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
+  refine ⟨C, hC, fun {s q} _ {u v} h ↦ ?_⟩
+  rw [← norm_weightedBlocks, ← norm_weightedBlocks]
+  calc ‖v.weightedBlocks‖ ≤ ‖(C : ℂ) • u.weightedBlocks‖ :=
+        lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
+    _ = C * ‖u.weightedBlocks‖ := by
+        rw [lp.norm_const_smul (zero_lt_one.trans_le Fact.out).ne', Complex.norm_of_nonneg hC]
+  -- The block `Pⱼ v = Pⱼ u` is the `Lʳ` function given by Bernstein's inequality.
+  obtain ⟨g, hg, hgf⟩ := hB j u.toDistr (u.block j) (coe_block u j).symm
+  have hvg : v.block j = g := Lp.toTemperedDistribution_injective <| by
+    simp only [coe_block, ← h, hg]
+  rw [norm_weightedBlocks_apply, hvg, lp.coeFn_smul, Pi.smul_apply, norm_smul,
+    Complex.norm_of_nonneg hC, norm_weightedBlocks_apply,
+    ← Real.rpow_sub_mul_mul_rpow_mul two_pos s (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) j]
+  exact (mul_le_mul_of_nonneg_left hgf (by positivity)).trans_eq (by ring)
+
+variable [Fact (1 ≤ q)]
+
+variable (F φ q) in
+/-- **The Bernstein embedding.** For `p ≤ r`, `\dot B^s_{p,q} ⊆ \dot B^{s - n (1/p - 1/r)}_{r,q}`
+continuously, where `n` is the dimension of `E` and `1/∞ = 0`. The norm of the inclusion is
+bounded independently of `s` and `q`
+(`TauCeti.HomogeneousBesovSpace.exists_norm_inclusionOfExponentLE_le`). At the level of the
+predicate this is `TemperedDistribution.MemHomogeneousBesov.mono_exponent`. -/
+def inclusionOfExponentLE (hpr : p ≤ r) :
+    HomogeneousBesovSpace F φ s p q →L[ℂ]
+      HomogeneousBesovSpace F φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun u := (u.memHomogeneousBesov_toDistr.mono_exponent hpr).toHomogeneousBesovSpace
+      map_add' _ _ := ext rfl
+      map_smul' _ _ := ext rfl } <| by
+    obtain ⟨C, -, hC⟩ := exists_norm_le_of_toDistr_eq_of_exponent_le (F := F) (φ := φ) hpr
+    exact ⟨C, fun _ ↦ hC rfl⟩
+
+@[simp]
+theorem toDistr_inclusionOfExponentLE (hpr : p ≤ r) (u : HomogeneousBesovSpace F φ s p q) :
+    (inclusionOfExponentLE F φ q hpr u).toDistr = u.toDistr := (rfl)
+
+variable (F φ) in
+/-- **The Bernstein embedding is bounded uniformly in `s` and `q`.** For `p ≤ r` there is `C`,
+depending only on `E`, `F`, `p`, `r` and `φ`, with
+`‖u‖_{\dot B^{s - n (1/p - 1/r)}_{r,q}} ≤ C ‖u‖_{\dot B^s_{p,q}}` for every `s`, every `q ≥ 1`
+and every `u ∈ \dot B^s_{p,q}`. -/
+theorem exists_norm_inclusionOfExponentLE_le (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)] (u : HomogeneousBesovSpace F φ s p q),
+      ‖inclusionOfExponentLE F φ q hpr u‖ ≤ C * ‖u‖ := by
+  obtain ⟨C, hC, h⟩ := exists_norm_le_of_toDistr_eq_of_exponent_le (F := F) (φ := φ) hpr
+  exact ⟨C, hC, fun u ↦ h (toDistr_inclusionOfExponentLE hpr u).symm⟩
+
+end Bernstein
+
+section ChangeOfBump
+
+variable [Fact (1 ≤ q)]
+
+/-- The homogeneous Besov seminorms built from two bump functions are comparable: there is `C`,
+depending only on `φ`, `φ'` and `s`, with `‖u‖_{\dot B'} ≤ C ‖u‖_{\dot B}`. -/
+private theorem exists_norm_toHomogeneousBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E)) :
+    ∃ C : ℝ, ∀ u : HomogeneousBesovSpace F φ s p q,
+      ‖(u.memHomogeneousBesov_toDistr.of_bump φ').toHomogeneousBesovSpace‖ ≤ C * ‖u‖ := by
+  obtain ⟨K, L, hK, hKL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
+  refine ⟨K * (2 * L), fun u ↦ ?_⟩
+  obtain ⟨f', hf', hle⟩ := hKL u.block fun k ↦ (coe_block u k).symm
+  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q(ℤ)`.
+  set b := lp.normSeq u.weightedBlocks
+  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_add_and_norm_le b L
+  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_homogeneousLittlewoodPaleyBlock_eq f'
+    (K • w) hf' fun j ↦ by
+      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
+      simpa only [b, lp.normSeq_apply, norm_weightedBlocks_apply] using hle j
+  rw [← ext (hv.trans (MemHomogeneousBesov.toDistr_toHomogeneousBesovSpace _).symm)]
+  calc ‖v‖ ≤ ‖K • w‖ := hvn
+    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
+    _ ≤ K * (2 * L * ‖b‖) := by gcongr
+    _ = K * (2 * L) * ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks, mul_assoc K]
+
+variable (F) in
+/-- **Independence of the bump function.** The homogeneous Besov spaces `\dot B^s_{p,q}` built
+from the Littlewood–Paley partitions of two bump functions `φ` and `φ'` consist of the same
+tempered distributions, with equivalent seminorms: the identity on tempered distributions is an
+isomorphism of seminormed spaces between them (Triebel, *Theory of Function Spaces*, Chapter 5).
+At the level of the predicate this is `TemperedDistribution.MemHomogeneousBesov.of_bump`. -/
+def bumpEquiv (φ φ' : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] :
+    HomogeneousBesovSpace F φ s p q ≃L[ℂ] HomogeneousBesovSpace F φ' s p q :=
+  LinearEquiv.toContinuousLinearEquivOfBounds
+    { toFun u := (u.memHomogeneousBesov_toDistr.of_bump φ').toHomogeneousBesovSpace
+      invFun v := (v.memHomogeneousBesov_toDistr.of_bump φ).toHomogeneousBesovSpace
+      map_add' _ _ := ext rfl
+      map_smul' _ _ := ext rfl
+      left_inv _ := ext rfl
+      right_inv _ := ext rfl }
+    _ _ (exists_norm_toHomogeneousBesovSpace_of_bump_le φ').choose_spec
+    (exists_norm_toHomogeneousBesovSpace_of_bump_le φ).choose_spec
+
+@[simp]
+theorem toDistr_bumpEquiv (φ' : ContDiffBump (0 : E)) (u : HomogeneousBesovSpace F φ s p q) :
+    (bumpEquiv F φ φ' s p q u).toDistr = u.toDistr := (rfl)
+
+@[simp]
+theorem bumpEquiv_symm (φ' : ContDiffBump (0 : E)) :
+    (bumpEquiv F φ φ' s p q).symm = bumpEquiv F φ' φ s p q := by
+  ext u
+  rfl
+
+end ChangeOfBump
 
 section L2
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+
+/-- **The blocks of an `L²` function.** If `u ∈ \dot B^s_{2,q}` is an `L²` function `u₀`, its block
+`Pⱼ u` is the `L²` Fourier multiplier with any symbol `m` almost everywhere equal to `ψⱼ`, applied
+to `u₀`. -/
+theorem block_eq_fourierMultiplierCLM {u : HomogeneousBesovSpace G φ s 2 q}
+    {u₀ : Lp G 2 (volume : Measure E)} (hu : u.toDistr = u₀) {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure E)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    u.block j = Lp.fourierMultiplierCLM G m u₀ :=
+  Lp.toTemperedDistribution_injective <| by
+    dsimp only
+    rw [coe_block, hu, homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ hm]
 
 variable (φ) in
 /-- **The blocks are reproduced by their neighbours.** There is `L`, depending only on `φ`, such
@@ -699,15 +909,13 @@ theorem exists_sum_fourierMultiplierCLM_block_eq :
       ∀ (u : HomogeneousBesovSpace G φ s 2 q) (j : ℤ),
         ∑ d ∈ Finset.Ico (-(L : ℤ)) L, Lp.fourierMultiplierCLM G (m (d + j)) (u.block j) =
           u.block j := by
-  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (F := G) φ φ
-  refine ⟨L, fun {m} hm u j ↦ Lp.toTemperedDistribution_injective ?_⟩
-  dsimp only
-  rw [Lp.toTemperedDistribution_sum]
-  simp_rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm _), coe_block]
-  conv_rhs => rw [hL j u.toDistr]
+  obtain ⟨L, hL⟩ :=
+    exists_eq_sum_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock (G := G) φ
+  refine ⟨L, fun {m} hm u j ↦ ?_⟩
+  conv_rhs => rw [hL j hm (u.block j) u.toDistr (coe_block u j)]
   rw [show Finset.Ico (j - L) (j + L) = (Finset.Ico (-(L : ℤ)) L).map (addRightEmbedding j) by
     rw [Finset.map_add_right_Ico, neg_add_eq_sub, add_comm (L : ℤ)], Finset.sum_map]
-  simp only [addRightEmbedding_apply, homogeneousLittlewoodPaleyBlock_comm φ φ j]
+  simp only [addRightEmbedding_apply]
 
 end L2
 

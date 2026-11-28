@@ -19,6 +19,9 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 -- `AlgHom.fromBlocks`, the block-diagonal representation, appears in the statement of
 -- `TauCeti.Algebra.matrixBaseChangeAlgEquiv_map_fromBlocks`.
 public import TauCeti.Data.Matrix.Block
+-- `Matrix.BlockTriangular` appears in the statement of
+-- `TauCeti.Algebra.blockTriangular_matrixBaseChangeAlgEquiv_map`.
+public import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
@@ -41,7 +44,9 @@ Both directions are characterized on generators by the `simp` lemmas
 The isomorphism is natural in `S`: an `R`-algebra map `S → S'` acts on the matrices entrywise
 (`TauCeti.Algebra.matrixBaseChangeAlgEquiv_rTensor`). Base change of the block-diagonal
 representation `AlgHom.fromBlocks ρ₁ ρ₂` is block diagonal with the base changes of `ρ₁` and `ρ₂`
-as blocks (`TauCeti.Algebra.matrixBaseChangeAlgEquiv_map_fromBlocks`).
+as blocks (`TauCeti.Algebra.matrixBaseChangeAlgEquiv_map_fromBlocks`), and base change of a
+representation with block-triangular image is block triangular
+(`TauCeti.Algebra.blockTriangular_matrixBaseChangeAlgEquiv_map`).
 
 The same statement with an arbitrary, possibly noncommutative, coefficient algebra `A` in place of
 `R` is `TauCeti.Algebra.matrixCoeffBaseChangeAlgEquiv`:
@@ -115,6 +120,21 @@ theorem matrixBaseChangeAlgEquiv_map_fromBlocks {A : Type*} [Semiring A] [Algebr
   induction x using TensorProduct.inductionOn with
   | tmul s r => simp [Matrix.fromBlocks_map, Matrix.fromBlocks_smul]
   | add x y hx hy => simp only [map_add, hx, hy, Matrix.fromBlocks_add, add_zero]
+
+variable {R S n} in
+/-- **Scalar extension preserves block-triangular image**: if every matrix `ρ a` is block
+triangular for `b : n → α`, then so is every matrix of the extension of `ρ` to `S`. Upper
+triangular image is the case `b = id`. -/
+theorem blockTriangular_matrixBaseChangeAlgEquiv_map {A : Type*} [Semiring A] [Algebra R A]
+    {α : Type*} [LT α] {b : n → α} (ρ : A →ₐ[R] Matrix n n R) (hρ : ∀ a, (ρ a).BlockTriangular b)
+    (x : S ⊗[R] A) :
+    (matrixBaseChangeAlgEquiv R S n
+      (Algebra.TensorProduct.map (AlgHom.id R S) ρ x)).BlockTriangular b := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s a =>
+    intro i j hij
+    simp [hρ a hij]
+  | add x y hx hy => simpa using hx.add hy
 
 variable (A : Type*) [Semiring A] [Algebra R A]
 

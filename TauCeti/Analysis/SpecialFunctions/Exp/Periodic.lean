@@ -47,6 +47,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
   `(a / 2πi) • v = (b / 2πi) • v + k • v` for an integer `k`.
 * `Complex.exp_log_add_inv_mul_log_div_pow`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
   `m`-th root of every `t ≠ 0`.
+* `Complex.eq_of_exp_eq_of_abs_im_sub_lt`, `Complex.eq_of_exp_eq_of_norm_sub_lt`: local
+  injectivity of `exp` when `|(a - b).im| < 2 π` or `‖a - b‖ < 2 π`.
 -/
 
 public section
@@ -180,5 +182,22 @@ theorem exp_log_add_inv_mul_log_div_pow {m : ℕ} [NeZero m] {z₀ t : ℂ} (hz�
   rw [← exp_natCast_mul, mul_add, ← mul_assoc, mul_inv_cancel₀ hm, one_mul, exp_add,
     exp_natCast_mul, exp_log hz₀, exp_log (div_ne_zero ht (pow_ne_zero m hz₀)),
     mul_div_cancel₀ _ (pow_ne_zero m hz₀)]
+
+/-- Two complex numbers with equal exponentials whose imaginary parts differ by strictly less than
+the period `2 π` are equal. -/
+theorem eq_of_exp_eq_of_abs_im_sub_lt {a b : ℂ} (h : exp a = exp b)
+    (him : |(a - b).im| < 2 * π) : a = b := by
+  obtain ⟨k, hk⟩ := exp_eq_exp_iff_exists_int.mp h
+  have him' : |(k : ℝ)| * (2 * π) < 1 * (2 * π) := by
+    have hsub : (a - b).im = k * (2 * π) := by simp [sub_eq_iff_eq_add'.mpr hk]
+    simpa [hsub, abs_mul, abs_of_pos two_pi_pos] using him
+  have hk0 : k = 0 :=
+    Int.abs_lt_one_iff.mp (by exact_mod_cast lt_of_mul_lt_mul_right him' two_pi_pos.le)
+  simp [hk, hk0]
+
+/-- Two complex numbers within distance `2 π` with equal exponentials are equal. -/
+theorem eq_of_exp_eq_of_norm_sub_lt {a b : ℂ} (h : exp a = exp b)
+    (hnorm : ‖a - b‖ < 2 * π) : a = b :=
+  eq_of_exp_eq_of_abs_im_sub_lt h ((abs_im_le_norm (a - b)).trans_lt hnorm)
 
 end Complex

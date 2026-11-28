@@ -10,13 +10,15 @@ public import Mathlib.CategoryTheory.Abelian.SerreClass.MorphismProperty
 public import Mathlib.Data.Rat.Init
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.AlgebraicTopology.SerreClass.PowerTorsion
+public import TauCeti.AlgebraicTopology.SerreClass.SubmonoidTorsion
 import Mathlib.Algebra.Category.ModuleCat.Kernels
 import TauCeti.Algebra.Module.Torsion.Localization
 
 /-!
 # The Serre class of torsion abelian groups
 
-The torsion abelian groups, those in which every element has finite order, form a Serre class:
+The torsion abelian groups, those in which every element has finite order, form a Serre class
+(`AddCommGrpCat.isTorsion = AddCommGrpCat.isSubmonoidTorsion (nonZeroDivisors ℤ)`):
 the class contains the zero group and is closed under subgroups, quotients and extensions.
 Equivalently, by `TauCeti.isAddTorsion_iff_subsingleton_rat_tensorProduct`, it is the class of
 abelian groups `G` with `ℚ ⊗ G = 0`. It is the class of the rational form of Serre's Hurewicz
@@ -66,21 +68,25 @@ def isTorsion : ObjectProperty AddCommGrpCat.{u} := fun M ↦ IsAddTorsion M
 @[simp]
 lemma prop_isTorsion_iff (M : AddCommGrpCat.{u}) : isTorsion M ↔ IsAddTorsion M := Iff.rfl
 
+/-- For the submonoid of nonzero integers, `isSubmonoidTorsion` is the class of torsion abelian
+groups. -/
+@[simp]
+lemma isSubmonoidTorsion_nonZeroDivisors :
+    isSubmonoidTorsion.{u} (nonZeroDivisors ℤ) = isTorsion := by
+  ext M
+  rw [prop_isSubmonoidTorsion_iff, prop_isTorsion_iff]
+  exact (isAddTorsion_iff_isTorsion_int (M := M)).symm
+
+/-- Whenever `0 ∉ S`, every `S`-torsion abelian group is a torsion group. -/
+lemma isSubmonoidTorsion_le_isTorsion {S : Submonoid ℤ} (h0 : (0 : ℤ) ∉ S) :
+    isSubmonoidTorsion.{u} S ≤ isTorsion := fun _ hM ↦ (prop_isTorsion_iff _).2 fun x ↦ by
+  obtain ⟨⟨s, hs⟩, hsx⟩ := (prop_isSubmonoidTorsion_iff S _).1 hM (x := x)
+  exact isOfFinAddOrder_iff_zsmul_eq_zero.2 ⟨s, fun h ↦ h0 (h ▸ hs), hsx⟩
+
 /-- Torsion abelian groups contain the zero group and are closed under subgroups, quotients and
 extensions, so they form a Serre class. -/
-instance : isTorsion.{u}.IsSerreClass where
-  exists_zero := ⟨AddCommGrpCat.of PUnit, isZero_of_subsingleton _, isAddTorsion_of_finite⟩
-  prop_of_mono {M N} f hf hN := by
-    rw [AddCommGrpCat.mono_iff_injective] at hf
-    exact fun x ↦ (hf.isOfFinAddOrder_iff (f := f.hom)).1 (hN (f x))
-  prop_of_epi {M N} f hf hM := by
-    rw [AddCommGrpCat.epi_iff_surjective] at hf
-    exact IsAddTorsion.of_surjective (f := f.hom) hf hM
-  prop_X₂_of_shortExact {S} hS h₁ h₃ := by
-    refine IsAddTorsion.extension_closed (f := S.g.hom) rfl h₃ fun x ↦ ?_
-    obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff S).1 hS.exact x
-        (AddMonoidHom.mem_ker.1 x.property)
-    exact AddSubmonoid.isOfFinAddOrder_coe.1 (hx₁ ▸ S.f.hom.isOfFinAddOrder (h₁ x₁))
+instance : isTorsion.{u}.IsSerreClass :=
+  isSubmonoidTorsion_nonZeroDivisors ▸ inferInstance
 
 /-- A group annihilated by some power of a nonzero natural number `d` is a torsion group. -/
 lemma isKilledBySomePower_le_isTorsion {d : ℕ} (hd : d ≠ 0) :
@@ -103,19 +109,8 @@ finite sum of elements of the summands. -/
 instance isClosedUnderColimitsOfShape_discrete_inverseImage_isTorsion (R : Type u) [Ring R]
     (J : Type u) :
     (isTorsion.inverseImage (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}))
-      |>.IsClosedUnderColimitsOfShape (Discrete J) := by
-  classical
-  refine .mk' ?_
-  rintro _ ⟨F, hF⟩
-  -- The colimit of `F` is the direct sum of its values.
-  have hc := (IsColimit.precomposeHomEquiv Discrete.natIsoFunctor _).symm
-    (ModuleCat.coproductCoconeIsColimit fun j ↦ F.obj ⟨j⟩)
-  refine ObjectProperty.prop_of_iso _ ((colimit.isColimit F).coconePointUniqueUpToIso hc).symm
-    fun x ↦ ?_
-  induction x using DirectSum.induction_on with
-  | zero => exact IsOfFinAddOrder.zero
-  | of j a => exact (DirectSum.of (fun j ↦ F.obj ⟨j⟩) j).isOfFinAddOrder (hF ⟨j⟩ a)
-  | add x y hx hy => exact hx.add hy
+      |>.IsClosedUnderColimitsOfShape (Discrete J) :=
+  isSubmonoidTorsion_nonZeroDivisors ▸ inferInstance
 
 /-- **Isomorphisms modulo torsion are the rational isomorphisms.** A morphism `f` of `ℤ`-modules
 is an isomorphism modulo the Serre class of torsion groups, its kernel and cokernel being torsion,
