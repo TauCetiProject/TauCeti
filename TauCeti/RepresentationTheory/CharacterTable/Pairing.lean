@@ -166,6 +166,24 @@ end Semifield
 
 variable [Field k]
 
+/-- If the group order is invertible in the coefficient field and the sum of a class function and
+its left translate is constant, that constant is twice the coefficient of the trivial character.
+The identity also applies in characteristic two. -/
+theorem two_mul_characterPairing_trivial_of_add_apply_mul_left_eq_const (f : ClassFunction k G)
+    {c : G} {d : k} (hf : ∀ g, f.val g + f.val (c * g) = d)
+    (hG : (Nat.card G : k) ≠ 0) :
+    2 * characterPairing (ofCharacter (Representation.trivial k G k)) f = d := by
+  have hsum := congrArg (fun u : G → k ↦ ∑ g, u g) (funext hf)
+  simp only [Finset.sum_add_distrib, Finset.sum_const,
+    Finset.card_univ, Fintype.card_eq_nat_card, nsmul_eq_mul] at hsum
+  have hreindex : ∑ g, f.val (c * g) = ∑ g, f.val g := Equiv.sum_comp (Equiv.mulLeft c) f.val
+  rw [hreindex] at hsum
+  rw [characterPairing_symm, characterPairing_apply]
+  simp only [ofCharacter_apply, Representation.char_trivial, Module.finrank_self, Nat.cast_one,
+    mul_one]
+  field_simp
+  linear_combination hsum
+
 /-- The pairing of two representation characters is Mathlib's normalized character sum. -/
 theorem characterPairing_ofCharacter {V W : Type*} [AddCommGroup V] [Module k V]
     [AddCommGroup W] [Module k W] (ρ : Representation k G V) (σ : Representation k G W) :

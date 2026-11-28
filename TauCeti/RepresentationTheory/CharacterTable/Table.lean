@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Degree.Basic
 -- `FDRep.character_mem_irreducibleCharacters` is stated for a simple object of `FDRep k G`.
 public import TauCeti.RepresentationTheory.Simple.Basic
+import TauCeti.RepresentationTheory.CharacterTable.Complement
 import TauCeti.SetTheory.Cardinal.Finite
 import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: irreducibility transports along an equivariant linear equivalence, used to move an
@@ -597,6 +598,28 @@ theorem characterPairing_self_of_mem_irreducibleCharacters {f : ClassFunction k 
     inv_mul_cancel₀ hG]
 
 end Orthonormal
+
+namespace ClassFunction
+
+/-- Over an algebraically closed field with invertible group order, the sum of a class function and
+its left translate equals `d` precisely when twice the trivial coefficient equals `d` and every
+nontrivial row of the canonical character table with nonzero coefficient acts as minus the identity
+at the translating element. -/
+theorem add_apply_mul_left_eq_const_iff_characterPairing_trivial_and_apply_eq_neg_one
+    {k G : Type*} [Field k] [Group G] [Fintype G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
+    (f : ClassFunction k G) (c : G) (d : k) :
+    (∀ g, f.val g + f.val (c * g) = d) ↔
+      2 * characterPairing (ofCharacter (Representation.trivial k G k)) f = d ∧
+      ∀ i : Fin (Nat.card (ConjClasses G)),
+        irreducibleRepresentation k i ≠ Representation.trivial k G _ →
+        characterPairing (ofCharacter (irreducibleRepresentation k i)) f ≠ 0 →
+          irreducibleRepresentation k i c = -1 :=
+  add_apply_mul_left_eq_const_iff_characterPairing_trivial_and_apply_eq_neg_one_of_expansion f
+    (irreducibleRepresentation k)
+    (apply_eq_sum_characterPairing_mul_character _
+      (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) f) (Invertible.ne_zero _) c d
+
+end ClassFunction
 
 section Restriction
 
