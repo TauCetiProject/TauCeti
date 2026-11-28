@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.Rescale
 import TauCeti.Data.Finsupp.MapDomain
 
 import TauCeti.Algebra.MvPolynomial.Division
@@ -52,6 +53,8 @@ conditions of the construction be imposed on derivatives.
   under products and are preserved by sums.
 * `MvPolynomial.IsHomogeneous.isMultiHomogeneous_rename`: a form of degree `m` written in the
   variables of block `h` is multihomogeneous of multidegree `Pi.single h m`.
+* `MvPolynomial.IsMultiHomogeneous.rescale_eq_prod_pow_smul`: multiplying the variables of block
+  `h` by `x h` multiplies a multihomogeneous polynomial by `∏ h, x h ^ d h`.
 * `MvPolynomial.IsMultiHomogeneous.isHomogeneous`: a multihomogeneous polynomial is homogeneous of
   total degree `∑ h, d h`, and `MvPolynomial.IsMultiHomogeneous.degreeOf_le` bounds the degree in
   each variable of block `h` by `d h`.
@@ -118,6 +121,20 @@ theorem IsMultiHomogeneous.coeff_eq_zero (hP : IsMultiHomogeneous d P) {n : κ �
   exact hn (isMultiHomogeneous_iff.mp hP n hc h)
 
 end Fintype
+
+/-- **Rescaling the blocks.** Multiplying every variable `X (h, i)` of block `h` by `x h` multiplies
+a multihomogeneous polynomial of multidegree `d` by `∏ h, x h ^ d h`. -/
+theorem IsMultiHomogeneous.rescale_eq_prod_pow_smul [Fintype κ] (hP : IsMultiHomogeneous d P)
+    (x : κ → R) : rescale (fun p : κ × ι ↦ x p.1) P = (∏ h, x h ^ d h) • P := by
+  ext n
+  rw [coeff_rescale, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
+  by_cases hn : P.coeff n = 0
+  · rw [hn, mul_zero, mul_zero]
+  congr 1
+  -- The factor of a monomial `n` only sees its degrees `n.mapDomain Prod.fst` in the blocks.
+  rw [← Finsupp.prod_mapDomain_index (h := fun h k ↦ x h ^ k) (fun _ ↦ pow_zero _)
+    fun _ _ _ ↦ pow_add _ _ _, Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
+  exact prod_congr rfl fun h _ ↦ by rw [← Finsupp.weight_ite_eq_mapDomain_apply, hP h hn]
 
 /-- The degree of a multihomogeneous polynomial in a variable of block `h` is at most `d h`. -/
 theorem IsMultiHomogeneous.degreeOf_le (hP : IsMultiHomogeneous d P) (h : κ) (i : ι) :

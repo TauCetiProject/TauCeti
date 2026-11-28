@@ -43,6 +43,14 @@ each of its rows is shorter (`YoungDiagram.le_iff_forall_rowLen_le`), from which
 has only finitely many sub-diagrams (`YoungDiagram.finite_Iic`).  Columns are monotone in
 containment as well (`YoungDiagram.colLen_le_of_le`).
 
+Rows also describe prepending full columns.  If `μ` and `ν` have at most `N` rows and
+`ν.rowLen i = μ.rowLen i + d` for every `i < N`, then `ν` is `μ` with `d` columns of the full
+height `N` prepended: its cells are those of `μ` shifted `d` columns to the right
+(`YoungDiagram.add_mem_iff_of_rowLen_eq_add`) together with the first `d` columns
+(`YoungDiagram.mem_of_rowLen_eq_add`), which have height `N`
+(`YoungDiagram.colLen_eq_of_rowLen_eq_add`), followed by the columns of `μ`
+(`YoungDiagram.colLen_add_of_rowLen_eq_add`).
+
 The file closes with the two degenerate shapes, at the bottom and at the top of the dominance
 order.  A diagram with at most one column has its cells described one row at a time by
 `YoungDiagram.mem_iff_of_rowLen_le_one` and counted by
@@ -290,6 +298,45 @@ theorem finite_Iic (μ : YoungDiagram) : (Set.Iic μ).Finite := by
   refine Set.Finite.subset (μ.cells.powerset : Finset (Finset (ℕ × ℕ))).finite_toSet ?_
   rintro s ⟨ξ, hξ, rfl⟩
   exact Finset.mem_coe.mpr (Finset.mem_powerset.mpr fun c hc => Set.mem_Iic.mp hξ hc)
+
+section FullColumns
+
+variable {N d : ℕ} {μ ν : YoungDiagram}
+
+/-- Let `ν` be `μ` with `d` columns of the full height `N` prepended, both with at most `N` rows.
+Shifting a cell of `μ` by the `d` prepended columns gives a cell of `ν`, and conversely. -/
+theorem add_mem_iff_of_rowLen_eq_add (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N)
+    (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) {i j : ℕ} : (i, j + d) ∈ ν ↔ (i, j) ∈ μ := by
+  rcases lt_or_ge i N with hi | hi
+  · rw [mem_iff_lt_rowLen, mem_iff_lt_rowLen, h i hi]
+    omega
+  · exact iff_of_false (fun hc => absurd ((lt_colLen_zero_of_mem hc).trans_le hν) (not_lt.mpr hi))
+      fun hc => absurd ((lt_colLen_zero_of_mem hc).trans_le hμ) (not_lt.mpr hi)
+
+/-- If the first `N` rows of `ν` are `d` cells longer than those of `μ`, the first `d` columns of
+`ν` contain the full height `N`. -/
+theorem mem_of_rowLen_eq_add (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) {i j : ℕ}
+    (hi : i < N) (hj : j < d) : (i, j) ∈ ν := by
+  rw [mem_iff_lt_rowLen, h i hi]
+  omega
+
+/-- If `ν` is `μ` with `d` columns of the full height `N` prepended, these columns have height
+`N`. -/
+theorem colLen_eq_of_rowLen_eq_add (hν : ν.colLen 0 ≤ N)
+    (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) {j : ℕ} (hj : j < d) : ν.colLen j = N :=
+  eq_of_forall_lt_iff fun i => by
+    rw [← mem_iff_lt_colLen]
+    exact ⟨fun hc => (lt_colLen_zero_of_mem hc).trans_le hν, fun hi => mem_of_rowLen_eq_add h hi hj⟩
+
+/-- If `ν` is `μ` with `d` columns of the full height `N` prepended (both with at most `N` rows),
+the column `j + d` of `ν` is the column `j` of `μ`. -/
+theorem colLen_add_of_rowLen_eq_add (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N)
+    (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) (j : ℕ) : ν.colLen (j + d) = μ.colLen j :=
+  eq_of_forall_lt_iff fun i => by
+    rw [← mem_iff_lt_colLen, ← mem_iff_lt_colLen]
+    exact add_mem_iff_of_rowLen_eq_add hμ hν h
+
+end FullColumns
 
 /-- **The cells of a Young diagram with at most one column.**  Every row is then either empty or
 the single cell in column `0`, so a cell is a cell of the first column, and the diagram reaches

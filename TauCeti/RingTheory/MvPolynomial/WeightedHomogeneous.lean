@@ -9,6 +9,7 @@ public import Mathlib.Basic.ENNReal.Operations
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Weighted homogeneity under substitution and evaluation
@@ -46,7 +47,10 @@ weight zero (for canonically ordered weights) ignores the variables of nonzero w
 indicator weight of a block `b` of variables `X_{b,l}`, so that weighted homogeneity is
 homogeneity in block `b`: a polynomial that does not vanish at a point with zero block `b` has
 degree zero in block `b`, and the blocks of degree zero can be replaced simultaneously by
-arbitrary vectors without changing the value.
+arbitrary vectors without changing the value. The degrees in all the blocks `l` of variables
+`X_{a,l}` of the second factor are prescribed at once by the vector-valued weight
+`Pi.single l 1 : κ → ℕ` of `X_{a,l}`: a polynomial is weighted homogeneous of weight `d : κ → ℕ`
+for it exactly when each of its monomials has degree `d l` in every block `l`.
 
 A polynomial algebra presentation also transports the weighted grading to its target: the
 images of the homogeneous pieces form an internal graded algebra. A ring map from an integral
@@ -105,6 +109,8 @@ degree-zero part `R`.
   depends on the coordinates of weight zero.
 * `MvPolynomial.eval₂_congr_of_block_isWeightedHomogeneous_zero`: the block form, replacing all
   blocks of degree zero simultaneously preserves the value.
+* `MvPolynomial.isWeightedHomogeneous_pi_single_snd_iff`: weighted homogeneity for the weights
+  `Pi.single l 1` prescribes the degree of every monomial in every block `l`.
 * `MvPolynomial.iInf_support_weight_mul`: without zero divisors, the least `ℝ≥0∞`-weight of a
   monomial of a product is the sum of the least weights for the factors.
 * `MvPolynomial.IsWeightedHomogeneous.weightedHomogeneousComponent_mul_right`: the weighted
@@ -340,6 +346,17 @@ theorem eval₂_congr_of_block_isWeightedHomogeneous_zero {S ι κ : Type*} [Com
     eval₂ f g₁ F = eval₂ f g₂ F :=
   MvPolynomial.eval₂_congr _ _ _ fun {p} {_} hi hc ↦ h p fun hp ↦ by
     simpa using (hF p.1 hp).apply_eq_zero_of_coeff_ne_zero hc (Finsupp.mem_support_iff.mp hi)
+
+/-- **Degrees in all the blocks at once.** Give the variable `X_{a,l}` of block `l` the weight
+`Pi.single l 1 : κ → ℕ`. A polynomial is weighted homogeneous of weight `d : κ → ℕ` for these
+weights exactly when each of its monomials has degree `d l` in the variables of every block `l`. -/
+theorem isWeightedHomogeneous_pi_single_snd_iff {ι κ : Type*} [Fintype ι] [DecidableEq κ]
+    {F : MvPolynomial (ι × κ) R} {d : κ → ℕ} :
+    F.IsWeightedHomogeneous (fun p : ι × κ ↦ (Pi.single p.2 1 : κ → ℕ)) d ↔
+      ∀ m ∈ F.support, ∀ l, ∑ a, m (a, l) = d l := by
+  refine ⟨fun hF m hm l ↦ ?_, fun hF m hm ↦ funext fun l ↦ ?_⟩
+  · rw [← Finsupp.weight_pi_single_snd_apply, hF (mem_support_iff.mp hm)]
+  · rw [Finsupp.weight_pi_single_snd_apply, hF m (mem_support_iff.mpr hm)]
 
 section TopWeight
 

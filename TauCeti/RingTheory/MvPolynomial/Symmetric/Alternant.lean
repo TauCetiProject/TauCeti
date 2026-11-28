@@ -50,6 +50,7 @@ sign appears: that is the dual Pieri rule.
 
 ## Main statements
 
+* `TauCeti.eval_alternant`: the value of `a_α` at `x` is `det (x_i ^ α_j)`.
 * `TauCeti.alternant_eq_sum`: the Leibniz expansion of the alternant as a signed sum of monomials,
   and `TauCeti.coeff_alternant` with `TauCeti.coeff_alternant_of_injective` its coefficients.
 * `TauCeti.alternant_ne_zero_of_injective`: an alternant of pairwise distinct exponents is
@@ -104,6 +105,14 @@ variable {σ R}
 theorem alternant_def (α : σ → ℕ) :
     alternant σ R α = (Matrix.of fun i j => (X i : MvPolynomial σ R) ^ α j).det :=
   (rfl)
+
+/-- Evaluating the alternant `a_α` at `x` gives the determinant `det (x i ^ α j)`. -/
+theorem eval_alternant (x : σ → R) (α : σ → ℕ) :
+    eval x (alternant σ R α) = (Matrix.of fun i j => x i ^ α j).det := by
+  rw [alternant_def, RingHom.map_det]
+  congr 1
+  ext i j
+  simp
 
 /-- **The Leibniz expansion of an alternant**: `a_α` is the signed sum, over the permutations `τ`
 of the alphabet, of the monomials `∏ᵢ X_{τ i} ^ α_i`. -/

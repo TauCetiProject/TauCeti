@@ -35,6 +35,8 @@ lexicographic order and weighted degree.
 
 On a product `ι × κ` of blocks indexed by `ι`, the weight given by the indicator of block `b`
 sums the coefficients in that block. For natural-valued exponents, this is the degree in block `b`.
+All the blocks of the second factor of `ι × κ` are read off at once from the vector-valued weight
+`Pi.single l 1 : κ → R` of the coordinates in block `l`.
 More generally, for a block map `b : σ → τ`, the indicator weight of the fibre over `h` is the value
 at `h` of the pushforward `Finsupp.mapDomain b`.
 
@@ -68,6 +70,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   `f (∑ i, u i • w i)`, for an additive map `f`.
 * `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
   natural-valued exponents, this is the degree in that block.
+* `Finsupp.weight_pi_single_snd_apply`: the same for the blocks of the second factor, read off
+  componentwise from the vector-valued weight `Pi.single l 1` of the coordinates in block `l`.
 * `Finsupp.weight_ite_eq_mapDomain_apply`: the indicator weight of a fibre of `b : σ → τ` is the
   corresponding value of `Finsupp.mapDomain b`.
 * `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
@@ -276,6 +280,24 @@ theorem weight_ite_fst_eq_sum {ι κ R : Type*} [Fintype κ] [DecidableEq ι] [S
       classical
       simp [Finsupp.weight_single, Finsupp.single_apply]
     · simp [Finsupp.weight_single, hb]
+
+/-- For the vector-valued weight `Pi.single l 1` of the coordinate `(a, l)` of `ι × κ`, recording
+its block `l` of the second factor, the component at `l` of the weight of `e` is the sum of the
+coefficients of `e` in block `l`; for natural-valued exponents, this is the degree in that block. -/
+theorem weight_pi_single_snd_apply {ι κ R : Type*} [Fintype ι] [DecidableEq κ] [Semiring R]
+    (e : ι × κ →₀ R) (l : κ) :
+    weight (fun p : ι × κ ↦ (Pi.single p.2 1 : κ → R)) e l = ∑ a, e (a, l) := by
+  induction e using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, Pi.add_apply, hf, hg, Finsupp.add_apply,
+      Finset.sum_add_distrib]
+  | single p n =>
+    obtain ⟨b, h⟩ := p
+    by_cases hl : h = l
+    · subst hl
+      classical
+      simp [Finsupp.weight_single, Finsupp.single_apply]
+    · simp [Finsupp.weight_single, Ne.symm hl]
 
 end Finsupp
 

@@ -24,6 +24,8 @@ these basic order facts about tableaux do not oblige a consumer to import that t
 
 * `SemistandardYoungTableau.entry_le_of_le`: entries increase weakly to the right and downwards.
 * `SemistandardYoungTableau.le_entry`: the entry in row `i` is at least `i`.
+* `SemistandardYoungTableau.entry_add_sub_le_entry`: down a column the entries increase by at
+  least the number of rows.
 -/
 
 public section
@@ -50,6 +52,17 @@ theorem le_entry (T : SemistandardYoungTableau μ) {i j : ℕ} (h : (i, j) ∈ �
   | succ m ih =>
     exact Nat.succ_le_of_lt <|
       (ih (μ.up_left_mem m.le_succ le_rfl h)).trans_lt (T.col_strict m.lt_succ_self h)
+
+/-- The entries of a semistandard Young tableau increase strictly down a column, so from the row
+`i` to the row `i' ≥ i` they increase by at least `i' - i`. -/
+theorem entry_add_sub_le_entry (T : SemistandardYoungTableau μ) {i i' j : ℕ} (hi : i ≤ i')
+    (h : (i', j) ∈ μ) : T i j + (i' - i) ≤ T i' j := by
+  induction i', hi using Nat.le_induction with
+  | base => simp
+  | succ k hik ih =>
+    have h₁ : T k j < T (k + 1) j := T.col_strict k.lt_succ_self h
+    have h₂ := ih (μ.up_left_mem k.le_succ le_rfl h)
+    omega
 
 open Finset in
 /-- If some cell in a column at least `j` holds the letter `a`, there is a lowest row `k`
