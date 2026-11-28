@@ -71,13 +71,7 @@ theorem _root_.AlgHom.apply_awayMk_eq_lift {A : Type w} [CommRing A] [Algebra R 
   have hx := ι_mem_homogeneousSubmodule R M x
   induction ha using Submodule.pow_induction_on_left' with
   | algebraMap r =>
-    have : Away.mk _ hx 0 (algebraMap R _ r) (by simp) = algebraMap R (Away _ _) r := by
-      apply val_injective
-      rw [Away.val_mk, val_algebraMap,
-        IsScalarTower.algebraMap_apply R (SymmetricAlgebra R M) (Localization.Away _) r,
-        ← Localization.mk_one_eq_algebraMap]
-      exact congrArg _ (Subtype.ext (pow_zero _))
-    rw [this]
+    rw [Away.mk_zero_eq_algebraMap]
     simp
   | add a b i ha hb iha ihb =>
     have : Away.mk _ hx i (a + b) (by simpa using add_mem ha hb) =

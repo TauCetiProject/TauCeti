@@ -295,6 +295,15 @@ theorem awayMap_algebraMap {e : ι} {f g x : A} (hg : g ∈ 𝒜 e) (hx : x = f 
     awayMap 𝒜 hg hx (algebraMap R (Away 𝒜 f) r) = algebraMap R (Away 𝒜 x) r := by
   simp only [algebraMap_eq_comp, RingHom.comp_apply, awayMap_fromZeroRingHom]
 
+/-- A coefficient `r` is the fraction `r / f⁰` with exponent zero. -/
+theorem Away.mk_zero_eq_algebraMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (r : R) :
+    Away.mk 𝒜 hf 0 (algebraMap R A r) (by simpa using SetLike.algebraMap_mem_graded 𝒜 r) =
+      algebraMap R (Away 𝒜 f) r := by
+  apply val_injective
+  rw [Away.val_mk, val_algebraMap, IsScalarTower.algebraMap_apply R A (Localization.Away f),
+    ← Localization.mk_one_eq_algebraMap]
+  exact congrArg _ (Subtype.ext (pow_zero _))
+
 /-- Fractions with a fixed homogeneous denominator depend linearly on the numerator. -/
 noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) :
     𝒜 (n • d) →ₗ[R] Away 𝒜 f where
