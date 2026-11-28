@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.CategoryTheory.Bicategory.Functor.TwoFiberProduct
+public import TauCeti.CategoryTheory.Sites.Descent.DescentData
 
 /-!
 # The 2-fiber product of stacks
@@ -201,15 +202,15 @@ noncomputable def fullyFaithfulToDescentData (hF : (F.toDescentData f).FullyFait
       snd := hG.preimage (homSnd α β f Φ)
       w := (H.toDescentData f).map_injective (by
         ext i
-        have h₁ := congrArg (fun φ ↦ φ.hom i) (hF.map_preimage (homFst α β f Φ))
-        have h₂ := congrArg (fun φ ↦ φ.hom i) (hG.map_preimage (homSnd α β f Φ))
-        simp only [toDescentData_map_hom, homFst_hom, homSnd_hom] at h₁ h₂
+        have h₁ := DescentData.toDescentData_preimage_hom hF (homFst α β f Φ) i
+        have h₂ := DescentData.toDescentData_preimage_hom hG (homSnd α β f Φ) i
+        simp only [homFst_hom, homSnd_hom] at h₁ h₂
         exact map_map_comp_iso_hom α β (f i).op _ _ (Φ.hom i) h₁ h₂) }
   map_preimage {M N} Φ := by
     ext i
     refine CategoricalPullback.hom_ext ?_ ?_
-    · exact congrArg (fun φ ↦ φ.hom i) (hF.map_preimage (homFst α β f Φ))
-    · exact congrArg (fun φ ↦ φ.hom i) (hG.map_preimage (homSnd α β f Φ))
+    · exact DescentData.toDescentData_preimage_hom hF (homFst α β f Φ) i
+    · exact DescentData.toDescentData_preimage_hom hG (homSnd α β f Φ) i
   preimage_map {M N} φ := by
     refine CategoricalPullback.hom_ext ?_ ?_
     · exact hF.preimage_map φ.fst
@@ -399,7 +400,7 @@ lemma essSurj_toDescentData [(F.toDescentData f).EssSurj] [(G.toDescentData f).E
     -- It descends to the structure isomorphism of the glued object.
     let m := hH.preimageIso Ψ
     let M : (twoFiberProduct α β).obj (.mk (op S)) := ⟨_, _, m⟩
-    have hm (i : ι) := congrArg (fun φ ↦ φ.hom i) (hH.map_preimage Ψ.hom)
+    have hm (i : ι) := DescentData.toDescentData_preimage_hom hH Ψ.hom i
     refine ⟨M, ⟨DescentData.isoMk (fun i ↦ mkIso
       ⟨e₁.hom.hom i, e₁.inv.hom i, congrArg (fun φ ↦ φ.hom i) e₁.hom_inv_id,
         congrArg (fun φ ↦ φ.hom i) e₁.inv_hom_id⟩

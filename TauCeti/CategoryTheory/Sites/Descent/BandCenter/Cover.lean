@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Sites.Descent.DescentData
+public import TauCeti.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Basic
 
 /-!
@@ -222,9 +222,9 @@ theorem map_coverAut_hom (hR : R ∈ J U) (hz : IsCompatible z) (x : F.obj (.mk 
     (i : R.arrows.category) :
     (F.map i.obj.hom.op.toLoc).toFunctor.map (coverAut hR hz x).asIso.hom =
       (localAut z x i).asIso.hom := by
-  have h := congrArg (fun φ ↦ DescentData.Hom.hom φ i)
-    ((F.isPrestackFor' R hR).fullyFaithful.map_preimage (coverIso hz x).hom)
-  rw [toDescentData_map_hom, coverIso_hom_hom] at h
+  have h := DescentData.toDescentData_preimage_hom
+    (F.isPrestackFor' R hR).fullyFaithful (coverIso hz x).hom i
+  rw [coverIso_hom_hom] at h
   exact h
 
 /-- The descended automorphism restricts to the local evaluations, as automorphisms. -/
