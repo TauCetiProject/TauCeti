@@ -366,7 +366,7 @@ private theorem norm_symm_le_of_ne_top {q : ℝ≥0∞} [Fact (1 ≤ q)] {θ : �
   have hα := TauCeti.one_sub_mul_toReal_mul_inv_add_mul_eq_one_of_inv_eq hq₀ hq₁ hq_top
     ⟨hθ.1.le, hθ.2.le⟩ hq
   refine le_of_forall_pos_le_add fun ε hε => ?_
-  obtain ⟨b, B, hB, hB_le, hb, hsum⟩ :=
+  obtain ⟨b, B, rfl, hB, hB_le, hb, -⟩ :=
     PiLp.exists_pos_le_norm_add_and_norm_apply_lt_and_sum_rpow_eq hq_top v hε
   choose g hg_eq hg using fun i => norm_lt_iff.1 (hb i).2
   choose g' hg'_eq hg'_0 hg'_1 using fun i =>
@@ -374,11 +374,11 @@ private theorem norm_symm_le_of_ne_top {q : ℝ≥0∞} [Fact (1 ≤ q)] {θ : �
   refine (norm_piLpFamilyCLE_symm_le_of_mk C v g' (fun i => (hg'_eq i).trans (hg_eq i))
     (norm_prod_le_iff.2 ⟨
       (ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t => (PiLp.norm_mono fun i => by
-        simpa using (hg'_0 i t).trans (le_abs_self _)).trans
-        (TauCeti.norm_toLp_mul_div_rpow_le hq₀ hB (fun i => (hb i).1) hsum),
+        simpa [div_eq_mul_inv, ENNReal.toReal_inv] using (hg'_0 i t).trans (le_abs_self _)).trans
+        (PiLp.norm_toLp_mul_div_rpow hq_top hq₀ (fun i => (hb i).1)).le,
       (ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t => (PiLp.norm_mono fun i => by
-        simpa using (hg'_1 i t).trans (le_abs_self _)).trans
-        (TauCeti.norm_toLp_mul_div_rpow_le hq₁ hB (fun i => (hb i).1) hsum)⟩)).trans hB_le
+        simpa [div_eq_mul_inv, ENNReal.toReal_inv] using (hg'_1 i t).trans (le_abs_self _)).trans
+        (PiLp.norm_toLp_mul_div_rpow hq_top hq₁ (fun i => (hb i).1)).le⟩)).trans hB_le
 
 private theorem norm_piLpFamilyContinuousLinearEquiv_symm_le {q : ℝ≥0∞} [Fact (1 ≤ q)] {θ : ℝ}
     (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)

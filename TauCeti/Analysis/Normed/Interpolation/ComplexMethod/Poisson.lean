@@ -24,7 +24,7 @@ and `stripPoisson₁` satisfy uniform one-sided approximate-identity lower bound
 bounded uniformly continuous data along contracted boundary centers
 (`TauCeti.exists_forall_sub_le_integral_mul_contracted_stripPoisson₀`,
 `TauCeti.exists_forall_sub_le_integral_mul_contracted_stripPoisson₁`). Applying these to the
-clipped logarithmic envelopes `ZeroAtInftyContinuousMap.logMaxDiv` yields Bergh–Löfström's
+clipped logarithmic envelopes `TauCeti.logMaxDiv` yields Bergh–Löfström's
 Poisson estimates for Calderón's complex method:
 
 * `CompatibleCouple.ComplexMethodSpace.norm_mk_le_exp_integral_log_max_of_pos`: for `0 < θ < 1`
@@ -43,9 +43,10 @@ public noncomputable section
 
 open Complex Complex.HadamardThreeLines TauCeti.Complex.HadamardThreeLines
 open Filter MeasureTheory Metric Real Set Topology
-open ZeroAtInftyContinuousMap (logMaxDiv logMaxDiv_nonneg continuous_logMaxDiv
-  hasCompactSupport_logMaxDiv integrable_logMaxDiv integral_log_max_mul_eq log_add_logMaxDiv
-  exp_integral_log_max_le_rpow exists_forall_norm_le_of_le_abs)
+open BoundedContinuousFunction (integral_log_max_mul_eq exp_integral_log_max_le_rpow)
+open TauCeti (logMaxDiv logMaxDiv_nonneg continuous_logMaxDiv log_add_logMaxDiv)
+open ZeroAtInftyContinuousMap (hasCompactSupport_logMaxDiv integrable_logMaxDiv
+  exists_forall_norm_le_of_le_abs)
 open scoped ZeroAtInfty
 
 namespace TauCeti.CompatibleCouple.ComplexMethodSpace
@@ -137,12 +138,12 @@ private theorem norm_contracted_smul_fst_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
     (t : ℝ) : ‖contractedExpNegHoloPotential g δ ε (t * I) • g.val.1 t‖ ≤ Real.exp κ := by
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (t * I)
     (by simp [verticalClosedStrip]) t _ (hg₀ t) fun ht => ?_
-  rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε (by
+  have hζ : (1 - 2 * (ε : ℂ)) * (t * I) + ε ∈ verticalStrip 0 1 :=
+    mapsTo_contracted_verticalStrip hε (by
       simp only [mem_verticalStrip_iff, mem_Ioo, mul_I_re, ofReal_im, neg_zero]
-      exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)),
-    show (fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε) (t * I) = (ε : ℂ) + ((1 - 2 * ε) * t : ℝ) * I by
-      dsimp only; push_cast; ring]
-  simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
+      exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)
+  rw [re_holoPotential g hδ hζ, (re_im_contracted ε (t * I)).1, (re_im_contracted ε (t * I)).2,
+    mul_I_re, ofReal_im, neg_zero, mul_zero, zero_add, mul_I_im, ofReal_re]
   linarith [happrox₀ t (abs_le.1 (not_le.1 ht).le), log_add_logMaxDiv g.val.1 hδ t,
     integral_logMaxDiv_mul_stripPoisson₁_nonneg g.val.2 hδ
       (r := ε) (y := (1 - 2 * ε) * t) ⟨hε.1, by linarith [hε.2]⟩]
@@ -154,12 +155,15 @@ private theorem norm_contracted_smul_snd_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
     (t : ℝ) : ‖contractedExpNegHoloPotential g δ ε (1 + t * I) • g.val.2 t‖ ≤ Real.exp κ := by
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (1 + t * I)
     (by simp [verticalClosedStrip]) t _ (hg₁ t) fun ht => ?_
-  rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε (by
+  have hζ : (1 - 2 * (ε : ℂ)) * (1 + t * I) + ε ∈ verticalStrip 0 1 :=
+    mapsTo_contracted_verticalStrip hε (by
       simp only [mem_verticalStrip_iff, mem_Ioo, add_re, one_re, mul_I_re, ofReal_im, neg_zero,
-        add_zero]; exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)),
-    show (fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε) (1 + t * I) =
-      ((1 - ε : ℝ) : ℂ) + ((1 - 2 * ε) * t : ℝ) * I by dsimp only; push_cast; ring]
-  simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
+        add_zero]
+      exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)
+  rw [re_holoPotential g hδ hζ, (re_im_contracted ε (1 + t * I)).1,
+    (re_im_contracted ε (1 + t * I)).2, add_re, one_re, mul_I_re, ofReal_im, neg_zero, add_zero,
+    mul_one, show (1 - 2 * ε + ε : ℝ) = 1 - ε by ring, add_im, one_im, mul_I_im, ofReal_re,
+    zero_add]
   linarith [happrox₁ t (abs_le.1 (not_le.1 ht).le), log_add_logMaxDiv g.val.2 hδ t,
     integral_logMaxDiv_mul_stripPoisson₀_nonneg g.val.1 hδ
       (r := 1 - ε) (y := (1 - 2 * ε) * t) ⟨by linarith [hε.2], by linarith [hε.1]⟩]
@@ -194,8 +198,8 @@ private theorem norm_mk_le_exp_re_holoPotential {θ δ : ℝ} (hθ : θ ∈ Ioo 
   refine Real.le_of_forall_pos_le_exp_mul (c := 1) fun κ hκ => ?_; rw [mul_one]
   have hs₀ := hasCompactSupport_logMaxDiv g.val.1 hδ
   have hs₁ := hasCompactSupport_logMaxDiv g.val.2 hδ
-  have hc₀ := continuous_logMaxDiv g.val.1 hδ
-  have hc₁ := continuous_logMaxDiv g.val.2 hδ
+  have hc₀ := continuous_logMaxDiv (map_continuous g.val.1) hδ
+  have hc₁ := continuous_logMaxDiv (map_continuous g.val.2) hδ
   obtain ⟨ε₀, hε₀, happrox₀⟩ := exists_forall_sub_le_integral_mul_contracted_stripPoisson₀
     (hs₀.uniformContinuous_of_continuous hc₀) (hs₀.exists_bound_of_continuous hc₀)
     (logMaxDiv_nonneg _ hδ) T hκ
@@ -235,8 +239,15 @@ theorem norm_mk_le_exp_integral_log_max_of_pos {θ δ : ℝ} (hθ : θ ∈ Ioo 0
       ∫ s, Real.log δ * stripPoisson₁ θ s := by
     rw [integral_const_mul, integral_const_mul, integral_stripPoisson₀ ⟨hθ.1, hθ.2.le⟩,
       integral_stripPoisson₁ ⟨hθ.1.le, hθ.2⟩]; ring
-  linarith [integral_log_max_mul_eq g.val.1 hδ (integrable_stripPoisson₀ θ),
-    integral_log_max_mul_eq g.val.2 hδ (integrable_stripPoisson₁ θ)]
+  have h1 : (∫ s, Real.log (max ‖g.val.1 s‖ δ) * stripPoisson₀ θ s) =
+      (∫ s, Real.log δ * stripPoisson₀ θ s) +
+        ∫ s, logMaxDiv g.val.1 δ s * stripPoisson₀ θ s :=
+    integral_log_max_mul_eq g.val.1.toBCF hδ (integrable_stripPoisson₀ θ)
+  have h2 : (∫ s, Real.log (max ‖g.val.2 s‖ δ) * stripPoisson₁ θ s) =
+      (∫ s, Real.log δ * stripPoisson₁ θ s) +
+        ∫ s, logMaxDiv g.val.2 δ s * stripPoisson₁ θ s :=
+    integral_log_max_mul_eq g.val.2.toBCF hδ (integrable_stripPoisson₁ θ)
+  linarith
 
 /-- **Bergh–Löfström Lemma 4.3.2 (Poisson log-convexity of the complex method norm).**
 For `0 < θ < 1` and any admissible trace pair `g = (g₀, g₁)`, the quotient norm in `[X₀, X₁]_θ` is
@@ -253,10 +264,10 @@ theorem norm_mk_le_integral_stripPoisson_rpow_mul_rpow {θ : ℝ} (hθ : θ ∈ 
     (inv_pos.2 h1θ).le (integral_nonneg fun s => mul_nonneg (norm_nonneg _)
       (stripPoisson₀_pos hθ s).le)) hδ.le
   exact (norm_mk_le_exp_integral_log_max_of_pos hθ hδ g).trans (((Real.exp_add _ _).trans_le
-    (mul_le_mul (exp_integral_log_max_le_rpow g.val.1 h1θ hδ (integrable_stripPoisson₀ θ)
+    (mul_le_mul (exp_integral_log_max_le_rpow g.val.1.toBCF h1θ hδ (integrable_stripPoisson₀ θ)
         (ae_of_all _ fun s => (stripPoisson₀_pos hθ s).le)
         (integral_stripPoisson₀ ⟨hθ.1, hθ.2.le⟩))
-      (exp_integral_log_max_le_rpow g.val.2 hθ.1 hδ (integrable_stripPoisson₁ θ)
+      (exp_integral_log_max_le_rpow g.val.2.toBCF hθ.1 hδ (integrable_stripPoisson₁ θ)
         (ae_of_all _ fun s => (stripPoisson₁_pos hθ s).le)
         (integral_stripPoisson₁ ⟨hθ.1.le, hθ.2⟩))
       (Real.exp_nonneg _) (Real.rpow_nonneg hI₀ _))).trans_eq (mul_one _).symm)

@@ -71,15 +71,17 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
             (((le_max_left _ _).trans (le_max_right _ _)).trans_lt hAgt)]
         rw [hc_norm, show ((t * I : ℂ).re - 1) ^ 2 - (t * I : ℂ).im ^ 2 = 1 - t ^ 2 by simp]
         rw [show -A + A * (1 - t ^ 2) = -(A * t ^ 2) by ring]
-        exact (exp_neg_mul_le_half_of_le (norm_nonneg _) (g.val.1.norm_coe_le_norm t)
-          (by positivity) (by nlinarith) hε hA1').trans (le_add_of_nonneg_left (norm_nonneg _)))
+        exact ((exp_neg_mul_le_div (norm_nonneg _) (g.val.1.norm_coe_le_norm t) (x := A * δ ^ 2)
+          (by positivity) (by nlinarith)).trans ((div_le_iff₀ (by positivity)).2
+          (by nlinarith [(div_lt_iff₀ hε).1 hA1']))).trans (le_add_of_nonneg_left (norm_nonneg _)))
     (fun t => by
       rw [norm_smul, hc_norm, show ((1 + t * I : ℂ).re - 1) ^ 2 - (1 + t * I : ℂ).im ^ 2 =
         -(t ^ 2) by simp, show -A + A * -(t ^ 2) = -(A * (1 + t ^ 2)) by ring]
-      exact (exp_neg_mul_le_half_of_le (norm_nonneg _) (g.val.2.norm_coe_le_norm t)
-        hA (by nlinarith [sq_nonneg t]) hε
-        (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt)).trans
-        (le_add_of_nonneg_left (norm_nonneg _)))
+      have hA2 : 2 * ‖g.val.2‖ / ε < A :=
+        ((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt
+      exact ((exp_neg_mul_le_div (norm_nonneg _) (g.val.2.norm_coe_le_norm t) hA
+        (by nlinarith [sq_nonneg t])).trans ((div_le_iff₀ hA).2
+        (by nlinarith [(div_lt_iff₀ hε).1 hA2]))).trans (le_add_of_nonneg_left (norm_nonneg _)))
   rw [norm_smul, show ‖c ((0 : ℝ) : ℂ)‖ = 1 from by rw [hc_norm]; simp, one_mul] at hbound
   linarith [half_lt_self hε]
 

@@ -123,32 +123,46 @@ private def piLpFamilySumInvSingle (i : ι) :
 private def piLpFamilySumInv : (∀ i, (C i).SumSpace) →L[𝕜] (piLpFamily C q₀ q₁).SumSpace :=
   ∑ i : ι, (piLpFamilySumInvSingle C q₀ q₁ i).comp (ContinuousLinearMap.proj i)
 
+@[simp] private theorem sumSpaceEmbed_piLpFamilySumFwd (u : (piLpFamily C q₀ q₁).SumSpace)
+    (j : ι) :
+    (C j).sumSpaceEmbed (piLpFamilySumFwd C q₀ q₁ u j) =
+      (piLpFamily C q₀ q₁).sumSpaceEmbed u j := by
+  obtain ⟨x₀, x₁, rfl⟩ := (piLpFamily C q₀ q₁).exists_fstToSum_add_sndToSum_eq u
+  simp [piLpFamilySumFwd]
+
+open Classical in
+@[simp] private theorem sumSpaceEmbed_piLpFamilySumInvSingle (i j : ι) (x : (C i).SumSpace) :
+    (piLpFamily C q₀ q₁).sumSpaceEmbed (piLpFamilySumInvSingle C q₀ q₁ i x) j =
+      Pi.single i ((C i).sumSpaceEmbed x) j := by
+  obtain ⟨x₀, x₁, rfl⟩ := (C i).exists_fstToSum_add_sndToSum_eq x
+  rcases eq_or_ne j i with rfl | hji <;>
+    simp [piLpFamilySumInvSingle, PiLp.single_eq_of_ne, *]
+
+@[simp] private theorem sumSpaceEmbed_piLpFamilySumInv (v : ∀ i, (C i).SumSpace) (j : ι) :
+    (piLpFamily C q₀ q₁).sumSpaceEmbed (piLpFamilySumInv C q₀ q₁ v) j =
+      (C j).sumSpaceEmbed (v j) := by
+  classical
+  simp [piLpFamilySumInv, map_sum]
+
+open Classical in
+@[simp] private theorem piLpFamilySumFwd_piLpFamilySumInvSingle (i j : ι) (x : (C i).SumSpace) :
+    piLpFamilySumFwd C q₀ q₁ (piLpFamilySumInvSingle C q₀ q₁ i x) j =
+      Pi.single (M := fun k => (C k).SumSpace) i x j := by
+  apply (C j).sumSpace_ext
+  rw [sumSpaceEmbed_piLpFamilySumFwd, sumSpaceEmbed_piLpFamilySumInvSingle]
+  rcases eq_or_ne j i with rfl | hji <;> simp [Pi.single_eq_of_ne, *]
+
 /-- The sum space of `CompatibleCouple.piLpFamily C q₀ q₁` identifies canonically with the product
 of the coordinate sum spaces `∀ i, (C i).SumSpace`. -/
 def piLpFamilySumEquiv : (piLpFamily C q₀ q₁).SumSpace ≃L[𝕜] ∀ i, (C i).SumSpace :=
   ContinuousLinearEquiv.ofContinuousLinearMap (piLpFamilySumFwd C q₀ q₁)
     (piLpFamilySumInv C q₀ q₁)
     (ContinuousLinearMap.ext fun v => by
-      classical
-      ext j; apply (C j).sumSpace_ext
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, piLpFamilySumInv,
-        FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.proj_apply, map_sum]
-      refine (Fintype.sum_eq_single j fun i hij => ?_).trans ?_
-      · obtain ⟨_, _, hz⟩ := (C i).exists_fstToSum_add_sndToSum_eq (v i)
-        rw [← hz]; simp [piLpFamilySumInvSingle, piLpFamilySumFwd, PiLp.single_eq_of_ne _ hij.symm]
-      · obtain ⟨_, _, hy⟩ := (C j).exists_fstToSum_add_sndToSum_eq (v j)
-        rw [← hy]; simp [piLpFamilySumInvSingle, piLpFamilySumFwd])
+      ext j
+      simp [piLpFamilySumInv, map_sum])
     (ContinuousLinearMap.ext fun u => by
-      classical
-      obtain ⟨_, _, rfl⟩ := (piLpFamily C q₀ q₁).exists_fstToSum_add_sndToSum_eq u
       apply (piLpFamily C q₀ q₁).sumSpace_ext; ext j
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, piLpFamilySumInv,
-        piLpFamilySumInvSingle, piLpFamilySumFwd, FunLike.coe_sum, Finset.sum_apply,
-        ContinuousLinearMap.proj_apply, map_add, map_sum, ContinuousLinearMap.pi_apply,
-        sumLift_fstToSum, sumLift_sndToSum, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum,
-        Pi.add_apply, piLpFamily_embed₀_apply, piLpFamily_embed₁_apply, PiLp.singleCLM_apply]
-      rw [Fintype.sum_eq_single j (fun i hij => by simp [PiLp.single_eq_of_ne _ hij.symm]),
-        Fintype.sum_eq_single j (fun i hij => by simp [PiLp.single_eq_of_ne _ hij.symm])]; simp)
+      simp)
 
 /-- Coordinatewise application formula for `piLpFamilySumEquiv` in terms of `sumLift`. -/
 theorem piLpFamilySumEquiv_apply_eq_sumLift (u : (piLpFamily C q₀ q₁).SumSpace) (i : ι) :
@@ -168,8 +182,8 @@ theorem piLpFamilySumEquiv_apply_eq_sumLift (u : (piLpFamily C q₀ q₁).SumSpa
 
 @[simp] theorem sumSpaceEmbed_piLpFamilySumEquiv_apply (u : (piLpFamily C q₀ q₁).SumSpace)
     (i : ι) : (C i).sumSpaceEmbed (piLpFamilySumEquiv C q₀ q₁ u i) =
-      (piLpFamily C q₀ q₁).sumSpaceEmbed u i := by
-  obtain ⟨x₀, x₁, rfl⟩ := (piLpFamily C q₀ q₁).exists_fstToSum_add_sndToSum_eq u; simp
+      (piLpFamily C q₀ q₁).sumSpaceEmbed u i :=
+  sumSpaceEmbed_piLpFamilySumFwd C q₀ q₁ u i
 
 @[simp] theorem sumSpaceEmbed_piLpFamilySumEquiv_symm (v : ∀ i, (C i).SumSpace) (i : ι) :
     (piLpFamily C q₀ q₁).sumSpaceEmbed ((piLpFamilySumEquiv C q₀ q₁).symm v) i =

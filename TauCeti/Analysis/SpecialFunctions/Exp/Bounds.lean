@@ -430,12 +430,11 @@ theorem exp_neg_mul_le_exp_of_log_sub_le {a b κ r : ℝ} (ha : 0 ≤ a) (hab : 
   (mul_le_mul (exp_le_exp.2 (by linarith : -r ≤ κ - log b)) hab ha (exp_pos _).le).trans_eq <| by
     rw [exp_sub, div_mul_eq_mul_div, exp_log hb, mul_div_cancel_right₀ _ hb.ne']
 
-/-- If `0 ≤ a ≤ M`, `0 < x ≤ y`, `0 < ε`, and `2 * M / ε < x`, then `exp (-y) * a ≤ ε / 2`. -/
-theorem exp_neg_mul_le_half_of_le {a M x y ε : ℝ} (ha : 0 ≤ a) (haM : a ≤ M)
-    (hx : 0 < x) (hy : x ≤ y) (hε : 0 < ε) (hA : 2 * M / ε < x) :
-    exp (-y) * a ≤ ε / 2 :=
-  (mul_le_mul (exp_neg_le_inv hx hy) haM ha (inv_pos.2 hx).le).trans
-    ((inv_mul_eq_div _ _).trans_le ((div_le_iff₀ hx).2 (by nlinarith [(div_lt_iff₀ hε).1 hA])))
+/-- If `0 ≤ a ≤ M` and `0 < x ≤ y`, then `exp (-y) * a ≤ M / x`. -/
+theorem exp_neg_mul_le_div {a M x y : ℝ} (ha : 0 ≤ a) (haM : a ≤ M)
+    (hx : 0 < x) (hy : x ≤ y) :
+    exp (-y) * a ≤ M / x :=
+  (mul_le_mul (exp_neg_le_inv hx hy) haM ha (inv_pos.2 hx).le).trans_eq (inv_mul_eq_div _ _)
 
 /-- Comparison of two geometric rates against exponential factors: for `0 < s` and `0 ≤ d`, if
 `k (s / d - 1) + t ≤ c` then `exp t / d ^ k ≤ exp c / s ^ k`. For `0 < d` it follows from

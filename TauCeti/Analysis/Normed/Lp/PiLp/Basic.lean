@@ -22,7 +22,7 @@ of multiples of one vector (for `p ≠ 0`), and the invariance of the norm under
 norm at most `‖s‖ * ∑ i, ‖v i‖`. For `p ≥ 1`, a real family with a positive coordinate has
 positive `Lᵖ` norm (`PiLp.norm_toLp_pos`), and for `1 ≤ q < ∞` rescaling a positive family `c` to
 `(‖c‖_q (c i / ‖c‖_q) ^ (q / p))_i` moves it from `ℓ^q` to `ℓ^p` without changing its norm
-(`PiLp.norm_toLp_mul_div_rpow`). We also prove measure-free scaling and positive-perturbation
+(`PiLp.norm_toLp_mul_div_rpow`). We also prove positive-perturbation
 estimates for finite `Lᵖ` norms.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
@@ -338,13 +338,13 @@ end PseudoMetricSpace
 section Scaling
 
 /-- Perturbing a vector `v : PiLp q β` over a nonempty finite index type by `ε > 0`, for
-`1 ≤ q < ∞`, gives strictly positive weights `b i > ‖v i‖` whose `ℓ^q` norm `B` satisfies
-`B ≤ ‖v‖ + ε` and `∑ i, b i ^ q.toReal = B ^ q.toReal`. -/
+`1 ≤ q < ∞`, gives strictly positive weights `b i > ‖v i‖` whose `ℓ^q` norm `B = ‖WithLp.toLp q b‖`
+satisfies `0 < B ≤ ‖v‖ + ε` and `∑ i, b i ^ q.toReal = B ^ q.toReal`. -/
 theorem exists_pos_le_norm_add_and_norm_apply_lt_and_sum_rpow_eq [Nonempty ι] {q : ℝ≥0∞}
     [Fact (1 ≤ q)] (hq_top : q ≠ ∞) {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)]
     (v : PiLp q β) {ε : ℝ} (hε : 0 < ε) :
-    ∃ (b : ι → ℝ) (B : ℝ), 0 < B ∧ B ≤ ‖v‖ + ε ∧ (∀ i, 0 < b i ∧ ‖v i‖ < b i) ∧
-      ∑ i, b i ^ q.toReal = B ^ q.toReal := by
+    ∃ (b : ι → ℝ) (B : ℝ), B = ‖WithLp.toLp q b‖ ∧ 0 < B ∧ B ≤ ‖v‖ + ε ∧
+      (∀ i, 0 < b i ∧ ‖v i‖ < b i) ∧ ∑ i, b i ^ q.toReal = B ^ q.toReal := by
   have hq0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
   let u1 : PiLp q (fun _ : ι ↦ ℝ) := WithLp.toLp q (fun _ ↦ 1)
   let δ : ℝ := ε / (‖u1‖ + 1)
@@ -354,7 +354,7 @@ theorem exists_pos_le_norm_add_and_norm_apply_lt_and_sum_rpow_eq [Nonempty ι] {
   obtain ⟨i₀⟩ := ‹Nonempty ι›
   have hB : 0 < ‖WithLp.toLp q b‖ := (hb i₀).trans_le ((le_abs_self (b i₀)).trans
     (PiLp.norm_apply_le (WithLp.toLp q b) i₀))
-  refine ⟨b, ‖WithLp.toLp q b‖, hB, ?_, fun i ↦ ⟨hb i, lt_add_of_pos_right ‖v i‖ hδ⟩, ?_⟩
+  refine ⟨b, ‖WithLp.toLp q b‖, rfl, hB, ?_, fun i ↦ ⟨hb i, lt_add_of_pos_right ‖v i‖ hδ⟩, ?_⟩
   · have hδu : δ * ‖u1‖ ≤ ε := by
       dsimp only [δ]; rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
       nlinarith [norm_nonneg u1, hε.le]
@@ -442,35 +442,6 @@ theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedFie
 end Single
 
 end PiLp
-
-namespace TauCeti
-
-/-- Scaling estimate for finite `Lᵖ` norms (`p ≠ 0`): if `∑ i, b i ^ qr = B ^ qr` with `B > 0`
-and `b i > 0`, then `‖toLp p (i ↦ B * (b i / B) ^ (qr * (p⁻¹).toReal))‖ ≤ B`. -/
-theorem norm_toLp_mul_div_rpow_le {ι : Type*} [Fintype ι] {p : ℝ≥0∞} (hp0 : p ≠ 0) {B qr : ℝ}
-    (hB : 0 < B) {b : ι → ℝ} (hb : ∀ i, 0 < b i) (hsum : ∑ i, b i ^ qr = B ^ qr) :
-    ‖WithLp.toLp p (fun i ↦ B * (b i / B) ^ (qr * (p⁻¹).toReal))‖ ≤ B := by
-  rcases eq_or_ne p ∞ with rfl | hp
-  · rw [PiLp.norm_eq_ciSup]
-    cases isEmpty_or_nonempty ι
-    · simp [hB.le]
-    · exact ciSup_le fun i ↦ by simp [abs_of_pos hB]
-  · have hp_pos := ENNReal.toReal_pos hp0 hp
-    rw [PiLp.norm_eq_sum hp_pos]
-    have hterm (i : ι) :
-        ‖WithLp.toLp p (fun j ↦ B * (b j / B) ^ (qr * (p⁻¹).toReal)) i‖ ^ p.toReal =
-          B ^ p.toReal * (b i ^ qr / B ^ qr) := by
-      have hpos : 0 < b i / B := div_pos (hb i) hB
-      rw [PiLp.toLp_apply, Real.norm_of_nonneg (by positivity),
-        Real.mul_rpow hB.le (Real.rpow_nonneg hpos.le _),
-        ← Real.rpow_mul hpos.le, ENNReal.toReal_inv, inv_mul_cancel_right₀ hp_pos.ne',
-        Real.div_rpow (hb i).le hB.le]
-    simp_rw [hterm, ← Finset.mul_sum, ← Finset.sum_div, hsum,
-      div_self (Real.rpow_pos_of_pos hB qr).ne', mul_one, one_div,
-      Real.rpow_rpow_inv hB.le hp_pos.ne']
-    exact le_rfl
-
-end TauCeti
 
 namespace ContinuousLinearMap
 

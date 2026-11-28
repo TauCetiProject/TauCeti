@@ -22,6 +22,12 @@ continuous ones in a distributional identity tested against a compactly supporte
 Integration against `w` is then a continuous linear functional `u ↦ ∫ w • u ∂μ` on
 `α →ᵇ F` (`BoundedContinuousFunction.integralSMulCLM`), of norm at most `∫ ‖w‖ ∂μ`
 (`BoundedContinuousFunction.norm_integralSMulCLM_le`).
+
+For any `f : Ω →ᵇ E`, threshold `δ`, and integrable real weight `w`, the truncated norm product
+`s ↦ max ‖f s‖ δ * w s` is integrable (`BoundedContinuousFunction.integrable_max_norm_mul`), and
+when `δ ≥ 0`, `w ≥ 0` a.e., and `∫ w ∂μ = α`,
+`α⁻¹ * ∫ s, max ‖f s‖ δ * w s ∂μ ≤ α⁻¹ * (∫ s, ‖f s‖ * w s ∂μ) + δ`
+(`BoundedContinuousFunction.inv_mul_integral_max_le`).
 -/
 
 public section
@@ -89,3 +95,40 @@ theorem _root_.BoundedContinuousFunction.norm_integralSMulCLM_le (hw : Integrabl
   LinearMap.mkContinuous_norm_le _ (integral_nonneg fun _ ↦ norm_nonneg _) _
 
 end MeasureTheory
+
+namespace BoundedContinuousFunction
+
+open MeasureTheory
+
+/-- For a bounded continuous function `f : Ω →ᵇ E`, any threshold `δ : ℝ`, and an integrable
+weight `w`, `s ↦ max ‖f s‖ δ * w s` is integrable. -/
+theorem integrable_max_norm_mul {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
+    [OpensMeasurableSpace Ω] {μ : Measure Ω} [SeminormedAddCommGroup E] (f : Ω →ᵇ E) (δ : ℝ)
+    {w : Ω → ℝ} (hw_int : Integrable w μ) : Integrable (fun s ↦ max ‖f s‖ δ * w s) μ :=
+  hw_int.bdd_mul (f.continuous.norm.max continuous_const).aestronglyMeasurable
+    (ae_of_all _ fun s ↦ Real.norm_of_nonneg ((norm_nonneg (f s)).trans (le_max_left _ _)) ▸
+      max_le_max (f.norm_coe_le_norm s) le_rfl)
+
+/-- For a bounded continuous function `f : Ω →ᵇ E`, threshold `δ ≥ 0`, and an almost everywhere
+nonnegative integrable weight `w` of total mass `∫ s, w s ∂μ = α`,
+`α⁻¹ * ∫ s, max ‖f s‖ δ * w s ∂μ ≤ α⁻¹ * (∫ s, ‖f s‖ * w s ∂μ) + δ`. -/
+theorem inv_mul_integral_max_le {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
+    [OpensMeasurableSpace Ω] {μ : Measure Ω} [SeminormedAddCommGroup E] (f : Ω →ᵇ E)
+    {w : Ω → ℝ} {α δ : ℝ} (hδ : 0 ≤ δ) (hw_int : Integrable w μ)
+    (hw_nonneg : 0 ≤ᵐ[μ] w) (hw_sum : ∫ s, w s ∂μ = α) :
+    α⁻¹ * ∫ s, max ‖f s‖ δ * w s ∂μ ≤ α⁻¹ * (∫ s, ‖f s‖ * w s ∂μ) + δ := by
+  rcases eq_or_lt_of_le (hw_sum ▸ integral_nonneg_of_ae hw_nonneg) with rfl | hα
+  · simpa using hδ
+  · have hf_int : Integrable (fun s ↦ ‖f s‖ * w s) μ := hw_int.bdd_mul
+      f.continuous.norm.aestronglyMeasurable
+      (ae_of_all _ fun s ↦ norm_norm (f s) ▸ f.norm_coe_le_norm s)
+    have hint : ∫ s, max ‖f s‖ δ * w s ∂μ ≤ (∫ s, ‖f s‖ * w s ∂μ) + δ * α :=
+      (integral_mono_ae (f.integrable_max_norm_mul δ hw_int) (hf_int.add (hw_int.const_mul δ))
+        (hw_nonneg.mono fun s hs ↦ by
+          rw [Pi.add_apply, ← add_mul]; exact mul_le_mul_of_nonneg_right (max_le
+            (le_add_of_nonneg_right hδ) (le_add_of_nonneg_left (norm_nonneg _))) hs)).trans_eq
+        (by simp [integral_add hf_int (hw_int.const_mul δ), integral_const_mul, hw_sum])
+    refine (mul_le_mul_of_nonneg_left hint (inv_pos.2 hα).le).trans_eq ?_
+    rw [mul_add, mul_left_comm, inv_mul_cancel₀ hα.ne', mul_one]
+
+end BoundedContinuousFunction
