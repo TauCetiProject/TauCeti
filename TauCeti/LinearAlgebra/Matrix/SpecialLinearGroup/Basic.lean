@@ -101,8 +101,9 @@ proof is independent of the source's.
   `SL₂(ℤ)` with even first entry, the second entry is odd.
 * `Matrix.SpecialLinearGroup.coe_GL_eq_mapGL`: the coercion of `SL(n, ℤ)` into `GL(n, S)` is
   `mapGL S`.
-* `Matrix.SpecialLinearGroup.coe_mapGL_int`: the matrix of `mapGL S` on `SL(n, ℤ)` is the
-  entrywise integer cast.
+* `Matrix.SpecialLinearGroup.coe_mapGL_int` and `Matrix.SpecialLinearGroup.mapGL_map_intCast`:
+  the matrix of `mapGL S` on `SL(n, ℤ)` is the entrywise integer cast, and `mapGL S` absorbs
+  base change from `ℤ`.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
@@ -127,7 +128,8 @@ proof is independent of the source's.
   exactly when it contains `-I`.
 * `Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
   `Matrix.SpecialLinearGroup.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
-  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`.
+  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`, alongside the `Subgroup` companion
+  `Subgroup.relIndex_withCenter_eq_one_or_two`.
 * `Matrix.SpecialLinearGroup.disjoint_center_iff_neg_one_notMem`: the simp-normal form of the
   `= 1` case, `Disjoint (center _) Γ ↔ -I ∉ Γ`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff` and
@@ -328,6 +330,12 @@ lemma coe_mapGL_int {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRin
     (↑(mapGL S σ) : Matrix n n S) = (σ : Matrix n n ℤ).map (Int.cast : ℤ → S) := by
   simp [mapGL_coe_matrix, algebraMap_int_eq]
 
+/-- `mapGL S` absorbs entrywise base change from `ℤ` to an intermediate coefficient ring `R`. -/
+lemma mapGL_map_intCast {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+    [Algebra R S] (g : SpecialLinearGroup n ℤ) :
+    mapGL S (map (Int.castRingHom R) g) = mapGL S g := by
+  ext i j; simp [mapGL_coe_matrix]
+
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     (σ : SL(2, R)) :
@@ -502,7 +510,7 @@ theorem card_center_le_two [NoZeroDivisors R] :
 /-- `-I ≠ I` in `SL₂` is exactly `(2 : R) ≠ 0`, read off the `(0,0)` entry. Stated as a helper so
 the `@[simp]` lemmas below can take `[NeZero (2 : R)]`, which simp's discharger can settle by
 typeclass synthesis, rather than an explicit hypothesis, which it cannot. -/
-private theorem neg_one_ne_one_of_neZero_two [NeZero (2 : R)] :
+theorem neg_one_ne_one_of_neZero_two [NeZero (2 : R)] :
     (-1 : SpecialLinearGroup (Fin 2) R) ≠ 1 := fun h ↦ by
   have h00 := congrArg (fun g : SpecialLinearGroup (Fin 2) R ↦
     (g : Matrix (Fin 2) (Fin 2) R) 0 0) h
@@ -654,6 +662,17 @@ theorem relIndex_withCenter_eq_two_of_neg_one_notMem [NoZeroDivisors R]
   Subgroup.relIndex_withCenter_eq_two
     (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
     fun _ hc ↦ mem_center_iff_eq_one_or_eq_neg_one.mp hc
+
+/-- Over a commutative ring `R` without zero divisors, the relative index `[±Γ : Γ]` of any
+subgroup `Γ ≤ SL₂(R)` is either `1` or `2`. -/
+theorem _root_.Subgroup.relIndex_withCenter_eq_one_or_two [NoZeroDivisors R]
+    (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
+    Γ.relIndex Γ.withCenter = 1 ∨ Γ.relIndex Γ.withCenter = 2 := by
+  by_cases h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ
+  · exact Or.inl (by
+      rw [Subgroup.withCenter_eq_self_iff.mpr (center_le_iff_neg_one_mem.mpr h),
+        Subgroup.relIndex_self])
+  · exact Or.inr (relIndex_withCenter_eq_two_of_neg_one_notMem h)
 
 /-- **The `±I` factor is `2` exactly when `-I ∈ Γ`.** The part of the centre that `Γ` contains is
 `{I}` or `{±I}` according to whether `Γ` contains `-I`, so the centre factor in the stabiliser

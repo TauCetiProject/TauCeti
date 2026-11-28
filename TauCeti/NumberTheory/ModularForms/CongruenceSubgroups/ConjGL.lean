@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.StrictLevel
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Cusps.LevelRaise
 import TauCeti.NumberTheory.ModularForms.WithCenter
 

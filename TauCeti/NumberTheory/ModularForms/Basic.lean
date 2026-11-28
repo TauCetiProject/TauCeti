@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.Basic
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import Mathlib.Analysis.Calculus.FDeriv.Star
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -57,6 +58,9 @@ AINTLIB `LeanModularForms` project
 
 ## Main results
 
+* `ModularForm.slash_apply_of_apply_one_zero_eq_zero`: explicit slash formula for
+  positive-determinant upper-triangular matrices in `GL(2, ℝ)`, with
+  `TauCeti.periodic_slash_of_apply_one_zero_eq_zero` giving the rescaled period.
 * `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
   at `s • τ`, is `denom s τ ^ k * f τ`.
 * `MDifferentiableAt.slash`: the slash preserves holomorphy at a point.
@@ -286,6 +290,30 @@ theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, �
   rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
     Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
   simp [mul_comm]
+
+/-- For a positive-determinant upper-triangular matrix `M ∈ GL(2, ℝ)`, the weight-`k` slash action
+has constant automorphy factor `|det M| ^ (k - 1) * M₁₁ ^ (-k)`. -/
+theorem _root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ}
+    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0) (k : ℤ)
+    (f : ℍ → ℂ) (τ : ℍ) :
+    (f ∣[k] M) τ = ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k) * f (M • τ) := by
+  rw [ModularForm.slash_apply_of_det_pos k hdet]
+  simp only [UpperHalfPlane.denom, hM, Complex.ofReal_zero, zero_mul, zero_add]
+  ring
+
+/-- Slashing an `h`-periodic function by positive-determinant upper-triangular `M ∈ GL(2, ℝ)`
+gives period `(M 1 1 / M 0 0) * h`. -/
+lemma TauCeti.periodic_slash_of_apply_one_zero_eq_zero {h : ℝ} {g : ℍ → ℂ} {k : ℤ}
+    {M : GL (Fin 2) ℝ} (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
+    (hg_per : Function.Periodic (g ∘ ofComplex) h) :
+    Function.Periodic ((g ∣[k] M) ∘ ofComplex) ((M 1 1 / M 0 0) * h : ℝ) := by
+  have h00 := M.a_ne_zero_of_c_eq_zero hM
+  have h11 := M.d_ne_zero_of_c_eq_zero hM
+  have hscale : (M 0 0 / M 1 1) * ((M 1 1 / M 0 0) * h) = h := by field_simp
+  refine TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mpr fun τ ↦ ?_
+  simp only [_root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM,
+    UpperHalfPlane.smul_vadd_of_apply_one_zero_eq_zero hM, hscale]
+  rw [TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mp hg_per]
 
 /-- A function is invariant under the weight-`k` slash action of `h ∈ SL(2, ℝ)` exactly when it
 satisfies the weight-`k` transformation law `f (h • τ) = denom h τ ^ k * f τ`. -/

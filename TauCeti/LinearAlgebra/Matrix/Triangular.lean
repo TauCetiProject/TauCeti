@@ -50,6 +50,9 @@ Lie-algebra theory.
   matrix with nonnegative diagonal is the identity.
 * `Matrix.IsLowerTriangular.eq_of_mul_transpose_self_eq` — lower-triangular matrices with positive
   diagonal are determined by their product with their transpose.
+* `Matrix.apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero` — for a
+  `2 × 2` upper-triangular matrix with positive determinant over an ordered field, the diagonal
+  ratio `M 1 1 / M 0 0` is positive.
 * `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
   lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
 * `Matrix.mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular` — an entry of a product
@@ -570,6 +573,17 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
     L = L * 1 := (Matrix.mul_one L).symm
     _ = L * (L⁻¹ * M) := by rw [hQone]
     _ = M := by rw [← Matrix.mul_assoc, mul_nonsing_inv L hLdet, Matrix.one_mul]
+
+/-- For a `2 × 2` upper-triangular matrix with positive determinant over an ordered field,
+the ratio `M 1 1 / M 0 0` of its diagonal entries is positive. -/
+theorem apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero
+    {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {M : Matrix (Fin 2) (Fin 2) K} (hdet : 0 < M.det) (hM : M 1 0 = 0) :
+    0 < M 1 1 / M 0 0 := by
+  have hmul : 0 < M 0 0 * M 1 1 := by simpa [Matrix.det_fin_two, hM] using hdet
+  have h00 : M 0 0 ≠ 0 := left_ne_zero_of_mul hmul.ne'
+  rw [← mul_div_mul_left (M 1 1) (M 0 0) h00]
+  exact div_pos hmul (mul_self_pos.mpr h00)
 
 section IntervalRestriction
 

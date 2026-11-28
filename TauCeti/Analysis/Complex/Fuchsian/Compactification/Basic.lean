@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.Analysis.Complex.Fuchsian.Covolume
 
 /-!
@@ -42,6 +43,9 @@ the complex structure at the cusps are not part of this file.
 
 * `Subgroup.CompactifiedQuotient`: the carrier, with its topology for a discrete `Γ`.
 * `Subgroup.CompactifiedQuotient.equivSum`: the identification with the sum type.
+* `Subgroup.CompactifiedQuotient.effectiveStabilizerOrder`: the stabilizer-order weight
+  (`TauCeti.cardStabilizerOnOrbit q`, i.e. `Nat.card (stabilizer Γ z)` when finite and `0` when
+  infinite, at an interior orbit `q`, and `1` by convention at an adjoined cusp).
 * `Subgroup.CompactifiedQuotient.cuspNhd`: the basic neighbourhoods of a cusp orbit.
 * `Subgroup.CompactifiedQuotient.nhds_basis_cuspNhd`: they form a neighbourhood basis, for
   every cusp datum representing the orbit and every lower bound on the height.
@@ -130,6 +134,35 @@ theorem ofQuotient_surjective_iff :
 theorem compl_range_ofQuotient : (range (ofQuotient (Γ := Γ)))ᶜ = range ofCusp := by
   ext x
   cases x <;> simp
+
+/-- The stabilizer-order weight on `Γ.CompactifiedQuotient`: `TauCeti.cardStabilizerOnOrbit q`
+(`Nat.card (stabilizer Γ z)` when finite, `0` when infinite) at an interior orbit `q`, and `1` by
+convention at an adjoined cusp. -/
+noncomputable def effectiveStabilizerOrder : Γ.CompactifiedQuotient → ℕ := fun x ↦ match x with
+  | ofQuotient q => TauCeti.cardStabilizerOnOrbit q
+  | ofCusp _ => 1
+
+/-- On an interior orbit `q`, `effectiveStabilizerOrder` is `TauCeti.cardStabilizerOnOrbit q`. -/
+@[simp]
+theorem effectiveStabilizerOrder_ofQuotient (q : orbitRel.Quotient Γ ℍ) :
+    effectiveStabilizerOrder (ofQuotient q) = TauCeti.cardStabilizerOnOrbit q := (rfl)
+
+/-- At an adjoined cusp, `effectiveStabilizerOrder` is `1`. -/
+@[simp]
+theorem effectiveStabilizerOrder_ofCusp (C : Γ.CuspOrbit) :
+    effectiveStabilizerOrder (ofCusp C : Γ.CompactifiedQuotient) = 1 := (rfl)
+
+/-- Every point of `Γ.CompactifiedQuotient` has positive effective stabilizer order when every
+point stabilizer of `Γ` on `ℍ` is finite. -/
+theorem effectiveStabilizerOrder_pos [∀ z : ℍ, Finite (stabilizer Γ z)]
+    (x : Γ.CompactifiedQuotient) : 0 < effectiveStabilizerOrder x :=
+  match x with | ofQuotient q => TauCeti.cardStabilizerOnOrbit_pos q | ofCusp _ => Nat.one_pos
+
+/-- Every point of `Γ.CompactifiedQuotient` has nonzero effective stabilizer order when every
+point stabilizer of `Γ` on `ℍ` is finite. -/
+theorem effectiveStabilizerOrder_ne_zero [∀ z : ℍ, Finite (stabilizer Γ z)]
+    (x : Γ.CompactifiedQuotient) : effectiveStabilizerOrder x ≠ 0 :=
+  (effectiveStabilizerOrder_pos x).ne'
 
 /-! ### Cusp neighbourhoods -/
 

@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.Codimension
 public import TauCeti.NumberTheory.ModularForms.Cusps.Residue
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Projective
 
 /-!
 # The weight-one cusp codimension bound

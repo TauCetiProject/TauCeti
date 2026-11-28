@@ -208,6 +208,10 @@ theorem scaling_smul_cusp : D.scaling • D.cusp = ∞ := by
   rwa [(isParabolic_upperRightHom_iff.mpr D.width_pos.ne').smul_eq_self_iff,
     parabolicFixedPoint_upperRightHom] at hfix
 
+/-- The cusp of a cusp datum is the image of `∞` under the inverse scaling. -/
+theorem cusp_eq_inv_scaling_smul_infty : D.cusp = D.scaling⁻¹ • ∞ :=
+  (inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm).symm
+
 /-- The inverse of a lift of the scaling of a cusp datum carries `∞` to the cusp, so that
 it can be used as a scaling matrix for the cusp. -/
 theorem mapGL_inv_smul_infty {D : Γ.CuspDatum} {s : SL(2, ℝ)}

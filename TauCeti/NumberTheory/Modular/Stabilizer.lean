@@ -54,9 +54,12 @@ positive-determinant matrix fixing a point as elliptic.
   orbits.
 * `TauCeti.ModularGroup.card_stabilizer_eq_two_of_orbit_ne_I_of_orbit_ne_ρ`: order `2` on every
   other orbit.
-* `TauCeti.ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl`: for any
-  `Γ ≤ SL(2, ℤ)`, the stabiliser order in `Γ` splits off the part of the centre that `Γ`
-  contains, leaving the projective order in `Γ`'s image in `PSL(2, ℤ)`.
+* `TauCeti.ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl`,
+  `Subgroup.card_stabilizer_eq_card_center_mul_card_stabilizer_effective`,
+  `Subgroup.card_stabilizer_mapGL`, and
+  `TauCeti.ModularGroup.cardStabilizerOnOrbit_eq_card_center_mul_cardStabilizerOnOrbit_effective`:
+  for `Γ ≤ SL(2, ℤ)`, the pointwise and orbitwise stabiliser orders in `Γ` (and its `GL(2, ℝ)`
+  image) split off `{±I} ∩ Γ`, leaving the projective order in `PSL(2, ℤ)` or `PSL(2, ℝ)`.
 * `TauCeti.ModularGroup.card_stabilizer_eq_two_mul_card_stabilizer_psl`: the projective order is
   the matrix one halved.
 * `TauCeti.ModularGroup.card_stabilizer_psl_I`, `TauCeti.ModularGroup.card_stabilizer_psl_ρ` and
@@ -198,6 +201,42 @@ theorem card_stabilizer_eq_card_center_mul_card_stabilizer_psl {Γ : Subgroup SL
         Nat.card (stabilizer (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) z) :=
   TauCeti.card_stabilizer_eq_card_subgroupOf_mul_card_stabilizer_map _ Γ z
     fun _ ↦ UpperHalfPlane.pslMk_smul _ _
+
+/-- **The stabiliser order in `Γ ≤ SL(2, ℤ)` splits off `{±I} ∩ Γ` above the effective image in
+`PSL(2, ℝ)`.** This is the `PSL(2, ℝ)` counterpart of
+`TauCeti.ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl`, stated directly on
+`Γ.map sl2zToPSL2R`. -/
+theorem _root_.Subgroup.card_stabilizer_eq_card_center_mul_card_stabilizer_effective
+    (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
+    Nat.card (stabilizer Γ z) =
+      Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
+        Nat.card (stabilizer (Γ.map sl2zToPSL2R) z) := by
+  have h := TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer
+    (sl2zToPSL2R.subgroupMap Γ) (MonoidHom.subgroupMap_surjective _ _) z
+    fun g ↦ by simp [Subgroup.smul_def]
+  rwa [Subgroup.ker_subgroupMap, sl2zToPSL2R_ker] at h
+
+/-- The matrix image `Γ.map (mapGL ℝ)` has the same point stabiliser orders on `ℍ` as
+`Γ ≤ SL(2, ℤ)`. -/
+theorem _root_.Subgroup.card_stabilizer_mapGL (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
+    Nat.card (stabilizer (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)) z) =
+      Nat.card (stabilizer Γ z) :=
+  TauCeti.card_stabilizer_congr
+    (Γ.equivMapOfInjective (Matrix.SpecialLinearGroup.mapGL ℝ)
+      Matrix.SpecialLinearGroup.mapGL_injective)
+    (f := id) z (fun g ↦ by simp [Subgroup.smul_def, MulAction.compHom_smul_def])
+    fun _ h ↦ h
+
+/-- Orbitwise stabiliser splitting: `|Stab_Γ o| = |{±I} ∩ Γ| · e_P`. -/
+theorem cardStabilizerOnOrbit_eq_card_center_mul_cardStabilizerOnOrbit_effective
+    {Γ : Subgroup SL(2, ℤ)} (o : orbitRel.Quotient (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)) ℍ) :
+    cardStabilizerOnOrbit o =
+      Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
+        cardStabilizerOnOrbit (Γ.subgroupOrbitEquivEffectiveOrbit o) := by
+  induction o using Quotient.inductionOn' with | h z =>
+    rw [Subgroup.subgroupOrbitEquivEffectiveOrbit_mk, cardStabilizerOnOrbit_mk,
+      cardStabilizerOnOrbit_mk, Γ.card_stabilizer_mapGL,
+      Γ.card_stabilizer_eq_card_center_mul_card_stabilizer_effective]
 
 /-- **The `SL(2, ℤ)`-stabiliser order is twice the `PSL(2, ℤ)` one.** The two differ exactly by
 the centre `±1`, which acts trivially on `ℍ`, so every projective stabiliser is the matrix one
@@ -383,6 +422,25 @@ theorem cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit
     exact card_stabilizer_congr
       (Γ.equivMapOfInjective _ Matrix.SpecialLinearGroup.mapGL_injective) (f := id) p
       (fun _ ↦ rfl) fun _ h ↦ h
+
+/-- **The effective-orbit stabiliser order equals `ellipticOrderOnSubgroupOrbit`**: transporting a
+`Γ`-orbit of `ℍ` along `Γ.subgroupOrbitEquivEffectiveOrbit` preserves the effective stabiliser
+order. -/
+@[simp]
+theorem cardStabilizerOnOrbit_subgroupOrbitEquivEffectiveOrbit_eq_ellipticOrderOnSubgroupOrbit
+    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
+    cardStabilizerOnOrbit (Γ.subgroupOrbitEquivEffectiveOrbit o) =
+      ellipticOrderOnSubgroupOrbit o := by
+  induction o using Quotient.inductionOn' with
+  | h p =>
+    have h := (cardStabilizerOnOrbit_eq_card_center_mul_cardStabilizerOnOrbit_effective
+      (Quotient.mk'' p : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ)).symm.trans
+      (cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit
+        (Quotient.mk'' p : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ))
+    have hpos : 0 < Nat.card (stabilizer Γ p) := Nat.card_pos
+    rw [← Γ.card_stabilizer_mapGL, ← cardStabilizerOnOrbit_mk,
+      cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit] at hpos
+    exact mul_left_cancel₀ (left_ne_zero_of_mul hpos.ne') h
 
 /-- The effective elliptic order is positive. -/
 theorem ellipticOrderOnSubgroupOrbit_pos

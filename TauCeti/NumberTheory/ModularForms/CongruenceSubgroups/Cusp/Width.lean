@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
+public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Basic
 public import TauCeti.NumberTheory.Modular.ConjugateTranslation
 import Mathlib.Algebra.GCDMonoid.Nat
 

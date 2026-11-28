@@ -5,14 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
+public import Mathlib.GroupTheory.GroupAction.Quotient
 
 /-!
 # The period of a group element along its orbit
 
 For a group `G` acting on `α`, the period of `g : G` at a point (the least `n > 0` with
-`g ^ n • a = a`) is constant along the orbit of `a` under the powers of `g`
-(`MulAction.minimalPeriod_zpow_smul`). Mathlib has `MulAction.period` and its divisibility API
+`g ^ n • a = a`, or `0` if no such `n > 0` exists) is constant along the orbit of `a` under the
+powers of `g` (`MulAction.minimalPeriod_zpow_smul`), and any point `a` is a `g ^ j`-translate of
+its `Subgroup.zpowers g`-orbit representative `⟦a⟧.out` (`MulAction.exists_zpow_smul_eq_out`).
+Mathlib has `MulAction.period` and its divisibility API
 (`MulAction.pow_smul_eq_iff_minimalPeriod_dvd`) but not this invariance.
 -/
 
@@ -33,5 +37,16 @@ theorem minimalPeriod_zpow_smul {G α : Type*} [Group G] [MulAction G α] (g : G
   refine Nat.dvd_antisymm (key a j) ?_
   have h := key (g ^ j • a) (-j)
   rwa [← mul_smul, ← zpow_add, neg_add_cancel, zpow_zero, one_smul] at h
+
+/-- Any point `a` is a `g ^ j`-translate of its `Subgroup.zpowers g`-orbit representative
+`⟦a⟧.out`. -/
+@[to_additive /-- Any point `a` is a `(j • g) +ᵥ ·`-translate of its
+`AddSubgroup.zmultiples g`-orbit representative `⟦a⟧.out`. -/]
+theorem exists_zpow_smul_eq_out {G α : Type*} [Group G] [MulAction G α] (g : G) (a : α) :
+    ∃ j : ℤ, g ^ j • a = (⟦a⟧ : orbitRel.Quotient (Subgroup.zpowers g) α).out := by
+  obtain ⟨h, hh⟩ := (orbitRel_apply (G := Subgroup.zpowers g)).mp
+    (Quotient.eq.mp (Quotient.out_eq (⟦a⟧ : orbitRel.Quotient (Subgroup.zpowers g) α)))
+  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.property
+  exact ⟨j, by rw [hj]; exact hh⟩
 
 end MulAction

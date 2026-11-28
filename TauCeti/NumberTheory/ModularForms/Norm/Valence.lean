@@ -37,10 +37,9 @@ norm is not even well defined; the projective statement
 
 ## Main declarations
 
-* `TauCeti.ModularForm.weightedOrderOfVanishingOnSubgroupOrbit`: the general-level weighted
-  vanishing order `2 · ord_P f / |Stab_Γ P|`, with
-  `TauCeti.ModularForm.weightedOrderOfVanishingOnOrbit_eq_two_mul_div` identifying the level-one
-  weight `ord_P f / e_P` as the same expression.
+* `TauCeti.ModularForm.weightedOrderOfVanishingOnOrbit_eq_two_mul_div`: identifying the
+  level-one weight `ord_P f / e_P` with the general-level weight
+  `TauCeti.ModularForm.weightedOrderOfVanishingOnSubgroupOrbit` (`Order/SubgroupOrbits.lean`).
 * `TauCeti.ModularForm.weightedOrderOfVanishingOnOrbit_norm_eq_finsum_mem`: the local
   redistribution — the level-one weight of the norm at one `SL(2, ℤ)`-orbit is the sum of the
   general-level weights of `f` over the `Γ`-orbits inside it.
@@ -83,53 +82,6 @@ namespace ModularForm
 
 variable {Γ : Subgroup SL(2, ℤ)} {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
 
-/-- **The weighted vanishing order of a form on a `Γ`-orbit**: `2 · ord_P f / |Stab_Γ P|`, the
-summand of the valence formula at general level.
-
-The weight is written through the **matrix** stabiliser order, not through the projective one:
-`Nat.card (stabilizer Γ P) = Nat.card ((center SL(2, ℤ)).subgroupOf Γ) * e_P` by
-`TauCeti.card_stabilizer_eq_card_subgroupOf_mul_card_stabilizer_map`, so the weight is `1 / e_P`
-when `-I ∈ Γ` and `2 / e_P` when `-I ∉ Γ`. That is the right normalisation for the norm map,
-whose weight is `k · [SL(2, ℤ) : Γ]` for the **full** coset index: both sides of the general-level
-formula double when `-I ∉ Γ`, and dividing by `2` there recovers the projective statement
-`∑_P (1 / e_P) · ord_P f + (|{±I} ∩ Γ| / 2) · ord_∞(Nm f) =
-  k · [SL(2, ℤ) : ±Γ] / 12`.
-
-At level one this is the same weight: `weightedOrderOfVanishingOnOrbit_eq_two_mul_div` below. -/
-noncomputable def weightedOrderOfVanishingOnSubgroupOrbit
-    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) : ℚ :=
-  2 * (orderOfVanishingOnSubgroupOrbit f o : ℚ) / (cardStabilizerOnOrbit o : ℚ)
-
-/-- The defining equation of `weightedOrderOfVanishingOnSubgroupOrbit`. -/
-lemma weightedOrderOfVanishingOnSubgroupOrbit_def
-    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    weightedOrderOfVanishingOnSubgroupOrbit f o =
-      2 * (orderOfVanishingOnSubgroupOrbit f o : ℚ) / (cardStabilizerOnOrbit o : ℚ) :=
-  (rfl)
-
-/-- Evaluating the weighted order on the orbit of `p` recovers twice the pointwise order divided
-by the order of its stabiliser in `Γ`. -/
-@[simp]
-lemma weightedOrderOfVanishingOnSubgroupOrbit_mk
-    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (p : ℍ) :
-    weightedOrderOfVanishingOnSubgroupOrbit f (Quotient.mk'' p) =
-      2 * (orderOfVanishingAt ⇑f p : ℚ) /
-        (Nat.card (stabilizer (Γ : Subgroup (GL (Fin 2) ℝ)) p) : ℚ) := by
-  rw [weightedOrderOfVanishingOnSubgroupOrbit_def, orderOfVanishingOnSubgroupOrbit_mk,
-    cardStabilizerOnOrbit_mk]
-
-/-- Multiplying the weighted order by the stabiliser order recovers twice the plain vanishing
-order. -/
-lemma cardStabilizerOnOrbit_mul_weightedOrderOfVanishingOnSubgroupOrbit
-    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    (cardStabilizerOnOrbit o : ℚ) * weightedOrderOfVanishingOnSubgroupOrbit f o =
-      2 * (orderOfVanishingOnSubgroupOrbit f o : ℚ) := by
-  rw [weightedOrderOfVanishingOnSubgroupOrbit_def]
-  exact mul_div_cancel₀ _ (by exact_mod_cast cardStabilizerOnOrbit_ne_zero o)
-
 /-- **The level-one weight is the same weight.** `ord_P f / e_P` is `2 · ord_P f` divided by the
 order of the matrix stabiliser, because `-I` lies in `SL(2, ℤ)` and fixes every point. This is
 what makes `weightedOrderOfVanishingOnSubgroupOrbit` the general-level form of
@@ -165,7 +117,7 @@ private lemma card_fiber_smul_orderOfVanishingOnSubgroupOrbit_mul_ellipticOrder_
   · rw [Set.indicator_of_mem (by simpa using ho), weightedOrderOfVanishingOnSubgroupOrbit_def]
     have hprod := card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit_eq p ho
     have hc : (cardStabilizerOnOrbit o : ℚ) ≠ 0 := by
-      exact_mod_cast cardStabilizerOnOrbit_ne_zero o
+      exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero o
     have hprod' : (Nat.card {q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ //
         orbitOfCosetTranslate p q = o} : ℚ) * (cardStabilizerOnOrbit o : ℚ) =
         2 * (ModularGroup.ellipticOrder
@@ -207,26 +159,6 @@ lemma weightedOrderOfVanishingOnOrbit_norm_eq_finsum_mem
       finsum_mem_def, div_eq_mul_inv, hcast, finsum_mul]
     exact finsum_congr
       (card_fiber_smul_orderOfVanishingOnSubgroupOrbit_mul_ellipticOrder_inv_eq_indicator f p)
-
-/-- The general-level weighted order is nonnegative: a modular form is holomorphic and the
-weight is positive. -/
-lemma weightedOrderOfVanishingOnSubgroupOrbit_nonneg
-    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    0 ≤ weightedOrderOfVanishingOnSubgroupOrbit f o := by
-  rw [weightedOrderOfVanishingOnSubgroupOrbit_def]
-  refine div_nonneg ?_ (by positivity)
-  have := orderOfVanishingOnSubgroupOrbit_nonneg f o
-  positivity
-
-/-- Only finitely many `Γ`-orbits carry nonzero weighted order: the weight cannot create support
-where the order has none. -/
-lemma hasFiniteSupport_weightedOrderOfVanishingOnSubgroupOrbit [Γ.FiniteIndex]
-    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) :
-    Function.HasFiniteSupport (weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f) := by
-  refine (hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).subset fun o ho ↦ ?_
-  simp only [Function.mem_support, ne_eq] at ho ⊢
-  exact fun h0 ↦ ho (by rw [weightedOrderOfVanishingOnSubgroupOrbit_def, h0]; simp)
 
 /-- **The interior mass of the norm, redistributed over the `Γ`-orbits.** The level-one weighted
 divisor sum of `ModularForm.norm 𝒮ℒ f` is the general-level weighted divisor sum of `f`.
@@ -277,9 +209,9 @@ indexed by the `Γ`-orbits, weighted as the level-one `1 / e_P` up to the factor
 `|Stab_Γ P| = |{±I} ∩ Γ| · e_P` (see `weightedOrderOfVanishingOnSubgroupOrbit`), and the index
 is the **full** coset index, as it must be for odd weight with `-I ∉ Γ`.
 
-The cusp term is still read at level one, on the norm. Distributing it over the cusps of `Γ`,
-each weighted by its width, is the remaining step of the general-level formula; the norm's
-`q`-expansion order at `∞` is decomposed in `TauCeti.ModularForm.qExpansion_one_norm_order_eq`. -/
+The cusp term is still read at level one, on the norm. Distributing it over the cusp translation
+orbits of `Γ`, each read in its own width parameter and summed without additional weights, is
+carried out and combined in `Norm/Cusps.lean`. -/
 theorem valence_formula_finiteIndex_norm [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
     (∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,
@@ -308,7 +240,7 @@ theorem twentyFour_mul_orderOfVanishingOnSubgroupOrbit_le_weight_mul_index_mul_c
       k * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) *
         cardStabilizerOnOrbit o := by
   have hc : (0 : ℚ) < (cardStabilizerOnOrbit o : ℚ) := by
-    exact_mod_cast Nat.pos_of_ne_zero (cardStabilizerOnOrbit_ne_zero o)
+    exact_mod_cast TauCeti.cardStabilizerOnOrbit_pos o
   have hsingle := single_le_finsum o (hasFiniteSupport_weightedOrderOfVanishingOnSubgroupOrbit f)
     (weightedOrderOfVanishingOnSubgroupOrbit_nonneg f)
   have hcusp : (0 : ℚ) ≤ (qExpansionOrderAtCusp 1 ⇑(_root_.ModularForm.norm 𝒮ℒ f) : ℚ) := by

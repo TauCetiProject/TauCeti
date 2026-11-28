@@ -90,6 +90,8 @@ elements has no proper subgroup of index less than `p`.
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
+* `Subgroup.relIndex_withCenter_mul_card_center_subgroupOf`: in any group,
+  `[Γ·Z(G) : Γ] · |Z(G) ⊓ Γ| = |Z(G)|`.
 -/
 
 
@@ -526,6 +528,15 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
+
+/-- **Product of the central relative index and central intersection order**:
+`[Γ·Z(G) : Γ] · |Z(G) ⊓ Γ| = |Z(G)|`. -/
+theorem relIndex_withCenter_mul_card_center_subgroupOf (Γ : Subgroup G) :
+    Γ.relIndex Γ.withCenter * Nat.card ((Subgroup.center G).subgroupOf Γ) =
+      Nat.card (Subgroup.center G) := by
+  rw [withCenter_def, relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal,
+    ← Subgroup.card_subtype Γ, Subgroup.subgroupOf_map_subtype, inf_comm]
+  exact Subgroup.relIndex_mul_card (H := Γ) (K := Subgroup.center G)
 
 end Subgroup
 

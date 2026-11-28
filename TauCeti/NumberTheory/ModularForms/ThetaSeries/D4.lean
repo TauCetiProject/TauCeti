@@ -13,6 +13,7 @@ import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
 import TauCeti.NumberTheory.Divisors
 import TauCeti.NumberTheory.ModularForms.SturmBound
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 
 /-!
 # The theta series of D₄

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ENat.BigOperators
+public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
@@ -24,7 +26,11 @@ modular form all of them are supplied by the `ModularFormClass` machinery.
 at every cusp; `orderAtCusp` supplies the width-normalized `ℚ`-valued convention
 on top of it — the doubled-width exponent halved, which is the integral order for an
 `h`-periodic function and the conventional half-integer at an irregular cusp of odd
-weight.
+weight. When the corresponding cusp function (`cuspFunction h g` or `cuspFunction (2 * h) g`)
+is analytic at `0`, both cusp orders are invariant under nonzero scalar multiples; when in
+addition `0 < h` and `g ∘ ofComplex` is periodic (`h`-periodic for `qExpansionOrderAtCusp`,
+`(2 * h)`-periodic for `orderAtCusp`), they are invariant under positive-determinant
+upper-triangular `GL(2, ℝ)` scalings at the rescaled width `(M 1 1 / M 0 0) * h`.
 
 ## Main declarations
 
@@ -32,7 +38,12 @@ weight.
 * `TauCeti.qExpansionOrderAtCusp_eq_analyticOrderAt`: the analytic-order dictionary.
 * `TauCeti.qExpansionOrderAtCusp_nat_mul`: linear rescaling in the width.
 * `TauCeti.orderAtCusp`: the `ℚ`-valued cusp order — the doubled-width exponent halved,
-  the conventional half-integral order at irregular cusps.
+  the conventional half-integral order at irregular cusps (with
+  `TauCeti.exists_orderAtCusp_eq_natCast_div_two`).
+* `TauCeti.qExpansionOrderAtCusp_smul`, `TauCeti.orderAtCusp_smul`: scalar invariance.
+* `TauCeti.qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero`,
+  `TauCeti.orderAtCusp_slash_of_apply_one_zero_eq_zero`, `TauCeti.orderAtCusp_slash_mapGL_inv`:
+  upper-triangular `GL(2, ℝ)` and `SL(2, ℝ)` scaling invariance.
 * `TauCeti.ModularForm.qExpansionOrderAtCusp_eq_zero_iff`: for a nonzero modular form, order zero
   is a nonzero constant term (the class-level interface lives in `TauCeti.ModularForm`).
 * `TauCeti.qExpansionOrderAtCusp_mul`: additivity on products (with `qExpansionOrderAtCusp_pow` and
@@ -306,6 +317,83 @@ lemma qExpansionOrderAtCusp_pos_iff (hg : AnalyticAt ℂ (cuspFunction h g) 0)
   rw [(qExpansionOrderAtCusp_nonneg h g).lt_iff_ne, ne_comm,
     ← not_not (a := cuspFunction h g 0 = 0)]
   exact not_congr (qExpansionOrderAtCusp_eq_zero_iff hg hg')
+
+/-- Multiplying by a nonzero complex scalar leaves the rational cusp order unchanged. -/
+lemma orderAtCusp_smul (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) {c : ℂ} (hc : c ≠ 0) :
+    orderAtCusp h (c • g) = orderAtCusp h g := by
+  rw [orderAtCusp_def, orderAtCusp_def, qExpansionOrderAtCusp_smul hc hg]
+
+/-- The rational cusp order is always a half-integer `m / 2` for some `m : ℕ`. -/
+lemma exists_orderAtCusp_eq_natCast_div_two (h : ℝ) (f : ℍ → ℂ) :
+    ∃ m : ℕ, orderAtCusp h f = (m : ℚ) / 2 := by
+  rw [orderAtCusp_def, qExpansionOrderAtCusp_def]
+  exact ⟨(qExpansion (2 * h) f).order.toNat, by simp⟩
+
+section UpperTriangularScaling
+
+open Matrix Matrix.SpecialLinearGroup
+open scoped MatrixGroups
+
+variable {k : ℤ} {M : GL (Fin 2) ℝ} {t : SL(2, ℝ)}
+
+/-- **Upper-triangular `GL(2, ℝ)` scaling invariance of `qExpansionOrderAtCusp`**: for `h > 0`,
+`M ∈ GL(2, ℝ)` upper triangular with `det M > 0`, `g ∘ ofComplex` `h`-periodic, and
+`cuspFunction h g` analytic at `0`, slashing by `M` preserves `qExpansionOrderAtCusp` at the
+rescaled width `(M 1 1 / M 0 0) * h`. -/
+theorem qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
+    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
+    (hg_per : Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
+    qExpansionOrderAtCusp ((M 1 1 / M 0 0) * h) (g ∣[k] M) = qExpansionOrderAtCusp h g := by
+  have h11 := M.d_ne_zero_of_c_eq_zero hM
+  set c : ℂ := ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k)
+  set ζ : ℂ := Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h)
+  have hc : c ≠ 0 := mul_ne_zero (zpow_ne_zero _ <| Complex.ofReal_ne_zero.mpr <|
+    abs_ne_zero.mpr (M.det : ℝˣ).ne_zero) (zpow_ne_zero _ (Complex.ofReal_ne_zero.mpr h11))
+  have hmul : AnalyticAt ℂ (fun q : ℂ ↦ ζ * q) 0 := analyticAt_const.mul analyticAt_id
+  have hev : cuspFunction ((M 1 1 / M 0 0) * h) (g ∣[k] M) =ᶠ[𝓝 0]
+      fun q : ℂ ↦ c * (cuspFunction h g ∘ (fun q : ℂ ↦ ζ * q)) q :=
+    (cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero hh hdet hM hg_per
+      hg.continuousAt).mono fun _ hq ↦ by simpa only [c, ζ, Function.comp_apply] using hq
+  rw [qExpansionOrderAtCusp_eq_analyticOrderAt
+      (analyticAt_cuspFunction_slash_of_apply_one_zero_eq_zero hh hdet hM hg_per hg),
+    qExpansionOrderAtCusp_eq_analyticOrderAt hg, analyticOrderAt_congr hev,
+    analyticOrderAt_fun_const_mul (hg.comp_of_eq hmul (mul_zero ζ)) c, ite_eq_right hc,
+    analyticOrderAt_comp_of_deriv_ne_zero hmul (by
+      rw [((hasDerivAt_id' (0 : ℂ)).const_mul ζ).deriv, mul_one]; exact Complex.exp_ne_zero _),
+    mul_zero]
+
+/-- **Upper-triangular `GL(2, ℝ)` scaling invariance of `orderAtCusp`**: for `h > 0`,
+`M ∈ GL(2, ℝ)` upper triangular with `det M > 0`, `g ∘ ofComplex` `2 * h`-periodic, and
+`cuspFunction (2 * h) g` analytic at `0`, slashing by `M` preserves `orderAtCusp` at the
+rescaled width `(M 1 1 / M 0 0) * h`. -/
+theorem orderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
+    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
+    (hg_per : Periodic (g ∘ ofComplex) (2 * h : ℝ))
+    (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) :
+    orderAtCusp ((M 1 1 / M 0 0) * h) (g ∣[k] M) = orderAtCusp h g := by
+  rw [orderAtCusp_def, orderAtCusp_def, mul_left_comm (2 : ℝ),
+    qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (by positivity) hdet hM hg_per hg]
+
+/-- **Upper-triangular `SL(2, ℝ)` scaling invariance of `orderAtCusp`**: for `h > 0`,
+`t ∈ SL(2, ℝ)` upper triangular, `g ∘ ofComplex` `2 * h`-periodic, and
+`cuspFunction (2 * h) g` analytic at `0`, slashing by `mapGL ℝ t⁻¹` preserves `orderAtCusp` at
+the rescaled width `t 0 0 ^ 2 * h`. -/
+theorem orderAtCusp_slash_mapGL_inv (hh : 0 < h) (ht : t 1 0 = 0)
+    (hg_per : Periodic (g ∘ ofComplex) (2 * h : ℝ))
+    (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) :
+    orderAtCusp (t 0 0 ^ 2 * h) (g ∣[k] mapGL ℝ t⁻¹) = orderAtCusp h g := by
+  set M : GL (Fin 2) ℝ := mapGL ℝ t⁻¹
+  have hcoe (i j : Fin 2) : M i j = t⁻¹ i j := by dsimp only [M]; rw [mapGL_coe_matrix]; simp
+  have hratio : M 1 1 / M 0 0 = t 0 0 ^ 2 := by
+    rw [hcoe, hcoe, inv_apply_one_one, inv_apply_zero_zero, div_eq_mul_inv,
+      inv_eq_of_mul_eq_one_left
+        (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero ht), sq]
+  rw [← hratio]
+  exact orderAtCusp_slash_of_apply_one_zero_eq_zero hh
+    (by rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL]; exact one_pos)
+    (by rw [hcoe, inv_apply_one_zero, ht, neg_zero]) hg_per hg
+
+end UpperTriangularScaling
 
 namespace ModularForm
 

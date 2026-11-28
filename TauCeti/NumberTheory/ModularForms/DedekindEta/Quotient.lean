@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.OrderAtInfty
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Width
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledTransformation
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt

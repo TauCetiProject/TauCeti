@@ -123,4 +123,40 @@ theorem cuspDatum_norm_coordinate_eq (hc : D.cusp = D'.cusp) (z : ℍ) :
   rw [cuspDatum_coordinate_eq hc hσ, norm_mul, Complex.norm_exp]
   simp [Complex.div_re, Complex.mul_re, Complex.mul_im]
 
+section LiftTransition
+
+variable {D' : Γ.CuspDatum} {s s' h : SL(2, ℝ)} {γ : Γ}
+
+/-- The lift `s' * h * s⁻¹` of `σ' γ σ⁻¹` in `PSL(2, ℝ)`. -/
+theorem coe_scaling_mul_mul_inv (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ) :
+    ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) = D'.scaling * γ * D.scaling⁻¹ := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv, hs, hs', hh]
+
+/-- If `γ ∈ Γ` carries the cusp of `D` to that of `D'`, then `σ' γ σ⁻¹` fixes `∞`, so its lift
+`s' * h * s⁻¹` is upper triangular. -/
+theorem scaling_mul_mul_inv_apply_one_zero_eq_zero (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
+    (hγ : γ • D.cusp = D'.cusp) : (s' * h * s⁻¹) 1 0 = 0 := by
+  have hg : ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = ∞ := by
+    rw [coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul,
+      inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm, ← Subgroup.smul_def, hγ,
+      D'.scaling_smul_cusp]
+  rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
+    Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hg
+
+/-- In the scaling coordinates, `γ ∈ Γ` acts as the affine map `x ↦ t₀₀ ^ 2 * x + t₀₀ * t₀₁`
+for `t = s' * h * s⁻¹`. -/
+theorem coe_scaling_smul_eq_affine_of_smul (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
+    (hγ : γ • D.cusp = D'.cusp) (x : ℍ) :
+    ((D'.scaling • (γ : PSL(2, ℝ)) • x : ℍ) : ℂ) =
+      ((s' * h * s⁻¹) 0 0 : ℂ) ^ 2 * (D.scaling • x : ℍ) +
+        (s' * h * s⁻¹) 0 0 * (s' * h * s⁻¹) 0 1 := by
+  have ht : (s' * h * s⁻¹) 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero_eq_zero hs hs' hh hγ
+  rw [← coe_smul_of_apply_zero_one_eq_zero ht, ← UpperHalfPlane.pslMk_smul,
+    coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
+
+end LiftTransition
+
 end TauCeti

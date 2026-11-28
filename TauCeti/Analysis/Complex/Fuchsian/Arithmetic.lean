@@ -20,6 +20,8 @@ and two such orbits agree exactly when `γ⁻¹ h γ'` fixes `∞` for some `h` 
 These facts allow the compactified Fuchsian quotient and its cusp charts to be used for
 congruence modular curves, and reduce counting cusps to arithmetic in `SL(2, ℤ)`; in
 particular there are finitely many cusp orbits.
+It also identifies the Fuchsian cusp orbit `D.cuspOrbit` at an integral scaling
+`sl2zToPSL2R γ⁻¹` with `Γ.cuspOrbitOfSL2Z γ`.
 
 The same criterion describes Mathlib's cusp orbits `CuspOrbits` of the image of the subgroup in
 `GL(2, ℝ)`, so these are in canonical bijection with the cusp orbits of its image in `PSL(2, ℝ)`
@@ -197,3 +199,22 @@ theorem cuspOrbitsEquivCuspOrbit_mk (γ : SL(2, ℤ))
   exact congrArg H.cuspOrbitOfSL2Z (inv_inv γ)
 
 end Subgroup
+
+namespace TauCeti
+
+section IntegralCuspDatum
+
+variable {Γ : Subgroup SL(2, ℤ)}
+
+/-- If `D.scaling = sl2zToPSL2R γ⁻¹`, then `D.cuspOrbit = Γ.cuspOrbitOfSL2Z γ`. -/
+theorem cuspDatum_cuspOrbit_eq_of_scaling_eq [Γ.FiniteIndex] {D : (Γ.map sl2zToPSL2R).CuspDatum}
+    {γ : SL(2, ℤ)} (hσ : D.scaling = sl2zToPSL2R γ⁻¹) : D.cuspOrbit = Γ.cuspOrbitOfSL2Z γ :=
+  Subtype.ext <| by
+    rw [D.cuspOrbit_val, Γ.cuspOrbitOfSL2Z_val, D.cusp_eq_inv_scaling_smul_infty, hσ, ← map_inv,
+      inv_inv]
+
+end IntegralCuspDatum
+
+end TauCeti
+
+end

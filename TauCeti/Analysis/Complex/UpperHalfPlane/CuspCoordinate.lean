@@ -12,6 +12,8 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.PuncturedManifold
 public import Mathlib.Topology.Maps.Strict.Basic
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Topology.LimUnder
 
 /-!
@@ -52,6 +54,8 @@ removable singularity theorem.
   q-extension is holomorphic on the disc of radius `exp (-2 * π * A / w)`, including at `q = 0`.
 * `TauCeti.UpperHalfPlane.differentiableAt_cuspFunction_qParam_of_lt_im`: the pointwise form
   away from `q = 0`, at a point above the height at which the function is holomorphic.
+* `UpperHalfPlane.qParam_smul_of_apply_one_zero_eq_zero`: action of a positive-determinant
+  upper-triangular `GL(2, ℝ)` matrix on `Function.Periodic.qParam`.
 
 ## References
 
@@ -459,3 +463,23 @@ theorem cuspTranslationQuotientHomeomorph_symm_apply (w : ℝ) (hw : 0 < w)
   simp
 
 end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+/-- Under positive-determinant upper-triangular `M ∈ GL(2, ℝ)`, `qParam h` rescales the period by
+`M 1 1 / M 0 0` and multiplies by the phase `exp (2 π i (M 0 1 / M 1 1) / h)`. -/
+theorem qParam_smul_of_apply_one_zero_eq_zero {h : ℝ} {M : Matrix.GeneralLinearGroup (Fin 2) ℝ}
+    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0) (τ : ℍ) :
+    Function.Periodic.qParam h ((M • τ : ℍ) : ℂ) =
+      Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h) *
+        Function.Periodic.qParam ((M 1 1 / M 0 0) * h) (τ : ℂ) := by
+  rcases eq_or_ne h 0 with rfl | hh
+  · simp [Function.Periodic.qParam]
+  have := Complex.ofReal_ne_zero.mpr hh
+  have := Complex.ofReal_ne_zero.mpr (M.a_ne_zero_of_c_eq_zero hM)
+  have := Complex.ofReal_ne_zero.mpr (M.d_ne_zero_of_c_eq_zero hM)
+  rw [Function.Periodic.qParam, Function.Periodic.qParam,
+    _root_.UpperHalfPlane.coe_smul_of_apply_one_zero_eq_zero hdet hM, ← Complex.exp_add]
+  congr 1; push_cast; field_simp; ring
+
+end UpperHalfPlane

@@ -42,8 +42,9 @@ Mathlib's `GL(2, ℝ)`-invariance).
   mapping to `ℝ`) on `(ℍ, volume)`.
 * `UpperHalfPlane.psl2zToPSL2R_smul` and `UpperHalfPlane.sl2zToPSL2R_smul` — the integral
   actions factor through the `PSL(2, ℝ)`-action along `psl2zToPSL2R` and `sl2zToPSL2R`.
-* `Subgroup.orbitRel_map_sl2zToPSL2R_iff` — the orbits of the image in `PSL(2, ℝ)` of a
-  subgroup `Γ ≤ SL(2, ℤ)` are the orbits of `Γ`.
+* `Subgroup.orbitRel_map_sl2zToPSL2R_iff` and `Subgroup.subgroupOrbitEquivEffectiveOrbit` — the
+  orbits of the image in `PSL(2, ℝ)` of a subgroup `Γ ≤ SL(2, ℤ)` are the orbits of `Γ`, giving a
+  canonical equivalence `(Γ.map (mapGL ℝ)) \ ℍ ≃ (Γ.map sl2zToPSL2R) \ ℍ`.
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
@@ -208,6 +209,33 @@ theorem _root_.Subgroup.orbitRel_map_sl2zToPSL2R_iff (Γ : Subgroup SL(2, ℤ)) 
   · rintro ⟨g, hg, h⟩
     exact ⟨⟨sl2zToPSL2R g, Subgroup.mem_map_of_mem _ hg⟩,
       by rwa [Subgroup.smul_def, sl2zToPSL2R_smul]⟩
+
+/-- The `mapGL ℝ` image and the effective `sl2zToPSL2R` image of `Γ ≤ SL(2, ℤ)` induce the
+same orbit relation on `ℍ`. -/
+theorem _root_.Subgroup.orbitRel_map_mapGL_iff_orbitRel_map_sl2zToPSL2R (Γ : Subgroup SL(2, ℤ))
+    {z w : ℍ} :
+    MulAction.orbitRel (Γ.map (mapGL ℝ)) ℍ z w ↔
+      MulAction.orbitRel (Γ.map sl2zToPSL2R) ℍ z w := by
+  rw [Subgroup.orbitRel_map_sl2zToPSL2R_iff, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+  refine ⟨fun ⟨⟨_, g, hg, rfl⟩, h⟩ ↦ ⟨g, hg, ?_⟩, fun ⟨g, hg, h⟩ ↦
+    ⟨⟨mapGL ℝ g, Subgroup.mem_map_of_mem _ hg⟩, ?_⟩⟩
+  all_goals simpa only [Subgroup.smul_def, MulAction.compHom_smul_def] using h
+
+/-- Canonical equivalence `(Γ.map (mapGL ℝ)) \ ℍ ≃ (Γ.map sl2zToPSL2R) \ ℍ`. -/
+def _root_.Subgroup.subgroupOrbitEquivEffectiveOrbit (Γ : Subgroup SL(2, ℤ)) :
+    MulAction.orbitRel.Quotient (Γ.map (mapGL ℝ)) ℍ ≃
+      MulAction.orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ :=
+  Quotient.congrRight fun _ _ ↦ Subgroup.orbitRel_map_mapGL_iff_orbitRel_map_sl2zToPSL2R Γ
+
+/-- `subgroupOrbitEquivEffectiveOrbit` acts as the identity on orbit representatives. -/
+@[simp]
+theorem _root_.Subgroup.subgroupOrbitEquivEffectiveOrbit_mk (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
+    Γ.subgroupOrbitEquivEffectiveOrbit (Quotient.mk'' z) = Quotient.mk'' z := (rfl)
+
+/-- `subgroupOrbitEquivEffectiveOrbit.symm` acts as the identity on orbit representatives. -/
+@[simp]
+theorem _root_.Subgroup.subgroupOrbitEquivEffectiveOrbit_symm_mk (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
+    Γ.subgroupOrbitEquivEffectiveOrbit.symm (Quotient.mk'' z) = Quotient.mk'' z := (rfl)
 
 /-- The `PSL(2, ℤ)`-action on `ℍ` is faithful, through the injective descent
 `psl2zToPSL2R` and the faithfulness of the `PSL(2, ℝ)`-action. -/

@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.QuotientGroup
+public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
 public import TauCeti.NumberTheory.ModularForms.Norm.Valence
+public import TauCeti.NumberTheory.ModularForms.Order.AtCusp
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.GroupAction.Period
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 /-!
@@ -16,36 +20,27 @@ import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 For `𝒢 ≤ GL(2, ℝ)` of finite relative index in `𝒮ℒ`, the norm
 `ModularForm.norm 𝒮ℒ f = ∏_{q ∈ 𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ} f ∣[k] q⁻¹` of a weight-`k` form on `𝒢` is a
-level-one form, and `TauCeti/NumberTheory/ModularForms/Norm/Valence.lean` reads the level-one
-valence formula back along it as
-
-`Σ_{P ∈ 𝒢 \ ℍ} (2 / |Stab_𝒢 P|) · ord_P f + ord_∞(Nm f) = k · [SL(2, ℤ) : 𝒢] / 12`,
-
-whose cusp term is still one order at `∞`, taken on the norm. This file distributes that term
-over the cusps of `𝒢`, each read in its own width parameter, and so closes the general-level
-valence formula (`valence_formula_finiteIndex`).
+level-one form, whose order at `∞` forms the cusp term of the norm-intermediate general-level
+valence formula (`TauCeti/NumberTheory/ModularForms/Norm/Valence.lean`). This file distributes
+that cusp term over the cusp translation orbits of `𝒢`, each read in its own width parameter,
+and closes the general-level valence formula (`valence_formula_finiteIndex`).
 
 ## Indexing the cusp translation orbits
 
 The coset of `x` contributes the factor `f ∣[k] x⁻¹`, which is `f` read at the cusp `x⁻¹ ∞`, and
-two cosets contribute at the same cusp exactly when they differ by left multiplication by an
-element of the stabiliser `⟨T, -I⟩` of `∞` in `SL(2, ℤ)`. Here the cusp term is indexed by the
-orbits of `⟨T⟩` alone (`CuspTranslationOrbit`), so a classical cusp of `𝒢` corresponds to one
-cusp translation orbit or two, according as its `⟨T⟩`-orbit is stable under `-I` or not. That is
-the **full**-coset convention that
-`Norm/Valence.lean` already makes on the interior term — the weight there is read on the matrix
-stabiliser, and the norm's weight is `k · [SL(2, ℤ) : 𝒢]` for the full index — so both halves of
-the identity are read for the full coset space, which is what makes them match.
+two cosets contribute at the same cusp orbit of `𝒢 ⊓ 𝒮ℒ` when they differ by left multiplication
+by an element of the stabiliser `⟨T, -I⟩` of `∞` in `SL(2, ℤ)`. Here the cusp term is indexed by
+the orbits of `⟨T⟩` alone (`CuspTranslationOrbit`), so a projective cusp orbit of `𝒢 ⊓ 𝒮ℒ` (and
+in particular of an integral subgroup `Γ ≤ SL(2, ℤ)`, see
+`cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff`) corresponds to one cusp translation orbit or
+two, according as its `⟨T⟩`-orbit is stable under `-I` or not. That is the **full**-coset
+convention that `Norm/Valence.lean` already makes on the interior term — the weight there is read
+on the matrix stabiliser, and the norm's weight is `k · [𝒮ℒ : 𝒢 ⊓ 𝒮ℒ]` for the full relative index
+(equal to `k · [SL(2, ℤ) : Γ]` when `𝒢` is the image of `Γ ≤ SL(2, ℤ)`) — so both halves of the
+identity are read for the full coset space, which is what makes them match.
 
-The **width** of an orbit is the period of that action: the least `m > 0` with
-`x⁻¹ T ^ m x ∈ 𝒢` (`minimalPeriod_TSL_dvd_iff`, `cuspTranslationOrbitWidth_mk`). It is the
-classical width of the cusp `x⁻¹ ∞` when `-I ∈ 𝒢`, and otherwise that width or twice it, in step
-with the same convention. For `Γ ≤ SL(2, ℤ)` it is read on integral representatives by
-`cuspTranslationOrbitWidth_mk_dvd_iff`, and the width for an intersection `𝒢₁ ⊓ 𝒢₂` is the least
-common multiple of the two widths (`cuspTranslationOrbitWidth_mk_inf`).
-The widths sum to the index (`sum_cuspTranslationOrbitWidth`), and the orbit of the base coset —
-the cusp `∞` — has width `Subgroup.integerCuspWidth 𝒢`
-(`cuspTranslationOrbitWidth_mk_one`).
+The **width** of an orbit (`cuspTranslationOrbitWidth`) and its finiteness and index-sum
+properties live in `TauCeti/NumberTheory/ModularForms/Cusps/TranslationOrbit/Basic.lean`.
 
 ## The mechanism
 
@@ -60,9 +55,6 @@ Nothing here divides by an order that could be `⊤`: each factor of a nonzero f
 
 ## Main definitions
 
-* `TauCeti.ModularForm.CuspTranslationOrbit`: the `T`-orbits on `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ` that index the
-  cusp term under the full-coset convention.
-* `TauCeti.ModularForm.cuspTranslationOrbitWidth`: the width of a cusp translation orbit.
 * `TauCeti.ModularForm.orderAtCuspTranslationOrbit`: the vanishing order of a form at a cusp
   translation orbit, read in that orbit's width.
 
@@ -70,64 +62,30 @@ Nothing here divides by an order that could be `⊤`: each factor of a nonzero f
 
 * `TauCeti.ModularForm.orderAtCuspTranslationOrbit_mk`: the order at an orbit may be read at any
   representative coset, so the `Quotient.out` of the definition is only a spelling.
+* `TauCeti.ModularForm.orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp` and
+  `TauCeti.ModularForm.orderAtCuspTranslationOrbit_mk_neg_inv`: evaluation at an integral
+  representative `γ⁻¹` and sign invariance.
 * `TauCeti.ModularForm.qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit`: the cusp
   distribution — `ord_∞(Nm f) = Σ_c ord_c f`.
 * `TauCeti.ModularForm.valence_formula_finiteIndex`: **the valence formula at general level**,
-  with both halves distributed.
-* `TauCeti.ModularForm.twelve_mul_orderAtCuspTranslationOrbit_le_weight_mul_index`: the mass at
-  one cusp translation orbit is bounded by the total mass.
+  closing the full general-level identity.
 
 ## References
 
-* [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005], §3.
+* [F. Diamond and J. Shurman, *A First Course in Modular Forms*][diamondshurman2005], §3.
 -/
 
 public section
 
 open UpperHalfPlane Complex Function SlashInvariantForm MulAction Filter
 
-open scoped ModularForm Topology Filter Manifold MatrixGroups
+open scoped ModularForm Topology Filter Manifold MatrixGroups Pointwise
 
 namespace TauCeti
 
 namespace ModularForm
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} {F : Type*} [FunLike F ℍ ℂ] {k : ℤ}
-
-/-- The translation `T = [1, 1; 0, 1]`, viewed as an element of `𝒮ℒ`. Its powers generate the
-translations of `ℍ` by integers, and left multiplication by them is the action whose orbits on
-`𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ` are the cusp translation orbits. -/
-def TSL : 𝒮ℒ := (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict ModularGroup.T
-
-/-- The image of `TSL ^ j` in `GL(2, ℝ)` is the image of `T ^ j`. -/
-lemma coe_TSL_zpow (j : ℤ) :
-    ((TSL ^ j : 𝒮ℒ) : GL (Fin 2) ℝ) = ((ModularGroup.T ^ j : SL(2, ℤ)) : GL (Fin 2) ℝ) := by
-  rw [TSL, ← map_zpow, MonoidHom.coe_rangeRestrict,
-    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
-
-/-- The **cusp translation orbits** of `𝒢`: the orbits of left translation by `T` on the coset
-space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. The orbit of the coset of `x` represents the cusp `x⁻¹ ∞` of `𝒢`, indexed
-for the full coset space rather than its projective quotient; see the module docstring. -/
-abbrev CuspTranslationOrbit (𝒢 : Subgroup (GL (Fin 2) ℝ)) : Type :=
-  orbitRel.Quotient (Subgroup.zpowers TSL) (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)
-
-/-- To prove a property of cusp translation orbits, it suffices to consider the orbits of
-cosets represented by integral matrices. -/
-@[elab_as_elim]
-theorem CuspTranslationOrbit.induction_on {P : CuspTranslationOrbit 𝒢 → Prop}
-    (c : CuspTranslationOrbit 𝒢)
-    (h : ∀ γ : SL(2, ℤ), P
-      (⟦(QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) :
-        𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢)) : P c := by
-  induction c using Quotient.inductionOn with
-  | h q =>
-    induction q using Quotient.inductionOn with
-    | h x =>
-      obtain ⟨γ, hγ⟩ := x.property
-      have hx : x = (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ :=
-        Subtype.ext hγ.symm
-      rw [hx]
-      exact h γ
 
 section Translate
 
@@ -162,91 +120,6 @@ lemma valueAtInfty_quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subg
   rw [valueAtInfty, valueAtInfty, hfun, limUnder, limUnder, ← map_map, hmap]
 
 end Translate
-
-
-section Width
-
-/-- The **width** of a cusp translation orbit of `𝒢`: the period of the `T`-action. Under
-`[𝒢.IsFiniteRelIndex 𝒮ℒ]`, `minimalPeriod_TSL_dvd_iff` and
-`cuspTranslationOrbitWidth_mk` identify it with the least `m > 0` such that
-`x⁻¹ T ^ m x ∈ 𝒢` for any representative `x` of the orbit. -/
-noncomputable def cuspTranslationOrbitWidth (c : CuspTranslationOrbit 𝒢) : ℕ :=
-  minimalPeriod (TSL • ·) c.out
-
-private lemma exists_zpow_smul_eq_out (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
-    ∃ j : ℤ, TSL ^ j • q = (⟦q⟧ : CuspTranslationOrbit 𝒢).out := by
-  obtain ⟨h, hh⟩ := (orbitRel_apply (G := Subgroup.zpowers TSL)).mp
-    (Quotient.eq.mp (Quotient.out_eq (⟦q⟧ : CuspTranslationOrbit 𝒢)))
-  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.property
-  refine ⟨j, ?_⟩
-  rw [hj]
-  exact hh
-
-/-- The width of a cusp translation orbit is the period of the `T`-action at any representative
-coset. -/
-@[simp] lemma cuspTranslationOrbitWidth_mk (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
-    cuspTranslationOrbitWidth (⟦q⟧ : CuspTranslationOrbit 𝒢) =
-      minimalPeriod (TSL • ·) q := by
-  obtain ⟨j, hj⟩ := exists_zpow_smul_eq_out (𝒢 := 𝒢) q
-  rw [cuspTranslationOrbitWidth, ← hj, minimalPeriod_zpow_smul]
-
-/-- **What the period of a coset says about the group**: `T ^ n` fixes the coset of `x` exactly
-when `x⁻¹ T ^ n x ∈ 𝒢`. Thus the action period is characterized by divisibility of exactly these
-exponents. When the period is positive — in particular under `[𝒢.IsFiniteRelIndex 𝒮ℒ]` — it is
-the least positive such `n`, the classical width of the cusp `x⁻¹ ∞`, read for the full coset
-space rather than its projective quotient. -/
-lemma minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (n : ℕ) :
-    minimalPeriod (TSL • ·) (QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) ∣ n ↔
-      ((x⁻¹ * TSL ^ n * x : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒢 := by
-  have hconj : ((TSL ^ n * x : 𝒮ℒ)⁻¹ * x : 𝒮ℒ) =
-      (x⁻¹ * TSL ^ n * x : 𝒮ℒ)⁻¹ := by
-    group
-  rw [← MulAction.pow_smul_eq_iff_minimalPeriod_dvd, MulAction.Quotient.smul_mk, smul_eq_mul,
-    QuotientGroup.eq, Subgroup.mem_subgroupOf, hconj, InvMemClass.coe_inv, Subgroup.inv_mem_iff]
-
-/-- For `Γ ≤ SL(2, ℤ)`, the width of the cusp translation orbit of the coset of `γ` (the cusp
-`γ⁻¹ ∞`) divides `m` exactly when `γ⁻¹ T ^ m γ ∈ Γ`. -/
-lemma cuspTranslationOrbitWidth_mk_dvd_iff {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) (m : ℕ) :
-    cuspTranslationOrbitWidth
-        (⟦(QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) :
-          𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
-            CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) ∣ m ↔
-      γ⁻¹ * ModularGroup.T ^ m * γ ∈ Γ := by
-  have hconj : (((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ)⁻¹ * TSL ^ m *
-      (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) : 𝒮ℒ) : GL (Fin 2) ℝ) =
-        Matrix.SpecialLinearGroup.mapGL ℝ (γ⁻¹ * ModularGroup.T ^ m * γ) := by
-    have hT : ((TSL ^ m : 𝒮ℒ) : GL (Fin 2) ℝ) =
-        Matrix.SpecialLinearGroup.mapGL ℝ (ModularGroup.T ^ m) := by
-      rw [← zpow_natCast, coe_TSL_zpow, zpow_natCast,
-        Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
-    simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, map_inv, hT,
-      map_mul]
-  rw [cuspTranslationOrbitWidth_mk, minimalPeriod_TSL_dvd_iff, hconj,
-    Subgroup.mem_map_iff_mem Matrix.SpecialLinearGroup.mapGL_injective]
-
-/-- **Widths of an intersection**: at every coset, the width of the cusp translation orbit for
-`𝒢₁ ⊓ 𝒢₂` is the least common multiple of the widths for `𝒢₁` and for `𝒢₂`. -/
-lemma cuspTranslationOrbitWidth_mk_inf (𝒢₁ 𝒢₂ : Subgroup (GL (Fin 2) ℝ)) (x : 𝒮ℒ) :
-    cuspTranslationOrbitWidth
-        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ (𝒢₁ ⊓ 𝒢₂).subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit (𝒢₁ ⊓ 𝒢₂)) =
-      (cuspTranslationOrbitWidth
-        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢₁.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢₁)).lcm
-      (cuspTranslationOrbitWidth
-        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢₂.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢₂)) :=
-  Nat.dvd_right_iff_eq.mp fun n ↦ by
-    simp only [cuspTranslationOrbitWidth_mk, Nat.lcm_dvd_iff, minimalPeriod_TSL_dvd_iff,
-      Subgroup.mem_inf]
-
-instance [𝒢.IsFiniteRelIndex 𝒮ℒ] (c : CuspTranslationOrbit 𝒢) :
-    NeZero (cuspTranslationOrbitWidth c) :=
-  inferInstanceAs (NeZero (minimalPeriod (TSL • ·) c.out))
-
-lemma cuspTranslationOrbitWidth_pos [𝒢.IsFiniteRelIndex 𝒮ℒ] (c : CuspTranslationOrbit 𝒢) :
-    0 < cuspTranslationOrbitWidth c :=
-  Nat.pos_of_neZero _
-
-end Width
-
 section Product
 
 variable [SlashInvariantFormClass F 𝒢 k]
@@ -263,8 +136,9 @@ lemma periodic_quotientFunc (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
 /-- Each factor of the norm is periodic with the width of its cusp translation orbit as a
 period. -/
 lemma periodic_quotientFunc_out (f : F) (c : CuspTranslationOrbit 𝒢) :
-    Periodic (quotientFunc f c.out ∘ ofComplex) (cuspTranslationOrbitWidth c : ℝ) :=
-  periodic_quotientFunc f c.out
+    Periodic (quotientFunc f c.out ∘ ofComplex) (cuspTranslationOrbitWidth c : ℝ) := by
+  rw [cuspTranslationOrbitWidth_def]
+  exact periodic_quotientFunc f c.out
 
 /-- The product of the norm factors over one cusp translation orbit is the Galois product of that
 orbit's factor at its own width. -/
@@ -343,7 +217,7 @@ lemma qExpansionOrderAtCusp_quotientFunc_TSL_zpow_smul (f : F)
   have hw : 0 < minimalPeriod (TSL • ·) q := Nat.pos_of_neZero _
   have hper : Periodic (quotientFunc f (TSL ^ j • q) ∘ ofComplex)
       ((minimalPeriod (TSL • ·) q : ℕ) : ℝ) :=
-    minimalPeriod_zpow_smul TSL j q ▸ periodic_quotientFunc f (TSL ^ j • q)
+    MulAction.minimalPeriod_zpow_smul TSL j q ▸ periodic_quotientFunc f (TSL ^ j • q)
   rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def,
     ← qExpansion_one_galoisProd_order_eq hw hper
       (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)
@@ -358,11 +232,6 @@ end Representative
 section Decomposition
 
 variable [𝒢.IsFiniteRelIndex 𝒮ℒ]
-
-/-- A subgroup of finite relative index has finitely many cusp translation orbits: they are the
-orbits of an action on the finite coset space. -/
-noncomputable instance fintypeCuspTranslationOrbit : Fintype (CuspTranslationOrbit 𝒢) :=
-  Fintype.ofFinite _
 
 variable [SlashInvariantFormClass F 𝒢 k]
 
@@ -379,9 +248,15 @@ lemma slashInvariantForm_norm_apply_eq_prod_galoisProd (f : F) (τ : ℍ) :
       (fun q ↦ quotientFunc f q τ), Fintype.prod_sigma]
   refine Finset.prod_congr rfl fun c _ ↦ ?_
   rw [← prod_cuspTranslationOrbit_quotientFunc f c τ]
-  exact Finset.prod_congr rfl fun x _ ↦ by
+  have h : ∀ (m : ℕ) [NeZero m], minimalPeriod (TSL • ·) c.out = m →
+      (∏ x : ZMod (minimalPeriod (TSL • ·) c.out),
+          quotientFunc f
+            ((Subgroup.quotientEquivSigmaZMod (𝒢.subgroupOf 𝒮ℒ) TSL).symm ⟨c, x⟩) τ) =
+        ∏ x : ZMod m, quotientFunc f (TSL ^ (ZMod.cast x : ℤ) • c.out) τ := by
+    rintro m _ rfl
+    convert Finset.prod_congr rfl fun x _ ↦ ?_
     rw [Subgroup.quotientEquivSigmaZMod_symm_apply]
-    rfl
+  exact h (cuspTranslationOrbitWidth c) (cuspTranslationOrbitWidth_def c).symm
 
 end Decomposition
 
@@ -411,7 +286,7 @@ coset's own period; the `Quotient.out` in the definition is therefore only a cho
 @[simp] lemma orderAtCuspTranslationOrbit_mk (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
     orderAtCuspTranslationOrbit f (⟦q⟧ : CuspTranslationOrbit 𝒢) =
       qExpansionOrderAtCusp ((minimalPeriod (TSL • ·) q : ℕ) : ℝ) (quotientFunc f q) := by
-  obtain ⟨j, hj⟩ := exists_zpow_smul_eq_out (𝒢 := 𝒢) q
+  obtain ⟨j, hj⟩ := MulAction.exists_zpow_smul_eq_out TSL q
   rw [orderAtCuspTranslationOrbit, cuspTranslationOrbitWidth_mk, ← hj,
     qExpansionOrderAtCusp_quotientFunc_TSL_zpow_smul]
 
@@ -458,31 +333,6 @@ private lemma qExpansion_cuspTranslationOrbit_ne_zero {f : F} (hf : (⇑f : ℍ 
     (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)).mp
     ((SlashInvariantForm.quotientFunc_eq_zero_iff _).not.2 hf)
 
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
-/-- The period of the base coset is the integer cusp width of `𝒢`: both are characterised by
-divisibility of the exponents `n` with `T ^ n ∈ 𝒢`. -/
-private lemma minimalPeriod_TSL_mk_one :
-    minimalPeriod (TSL • ·) (QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) =
-      Subgroup.integerCuspWidth 𝒢 := by
-  have hsmul : ∀ n : ℕ, (TSL ^ n • (QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)) =
-      QuotientGroup.mk (TSL ^ n) := fun n ↦ by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
-  have key : ∀ n : ℕ,
-      minimalPeriod (TSL • ·) (QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) ∣ n ↔
-      Subgroup.integerCuspWidth 𝒢 ∣ n := fun n ↦ by
-    rw [← MulAction.pow_smul_eq_iff_minimalPeriod_dvd, hsmul n,
-      ← Subgroup.natCast_mem_strictPeriods_iff]
-    exact ⟨fun h ↦ Subgroup.mk_T_pow_eq_iff.mp h, fun h ↦ Subgroup.mk_T_pow_eq_iff.mpr h⟩
-  exact Nat.dvd_antisymm ((key _).mpr dvd_rfl) ((key _).mp dvd_rfl)
-
-omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
-/-- The orbit of the base coset represents the cusp `∞`, whose width is the integer cusp width. -/
-@[simp 1100] lemma cuspTranslationOrbitWidth_mk_one :
-    cuspTranslationOrbitWidth
-        (⟦(QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢) =
-      Subgroup.integerCuspWidth 𝒢 := by
-  rw [cuspTranslationOrbitWidth_mk, minimalPeriod_TSL_mk_one]
-
 /-- **At the cusp `∞` the order is the one the `∞`-decomposition reads**: the order of `f`
 itself at the integer cusp width. -/
 @[simp 1100] lemma orderAtCuspTranslationOrbit_mk_one (f : F) :
@@ -524,15 +374,9 @@ theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F
 end Order
 
 
-section ValenceFormula
+section IntegralRep
 
-/-- **The widths of the cusp translation orbits sum to the index**
-`[SL(2, ℤ) : 𝒢 ⊓ SL(2, ℤ)]`. -/
-lemma sum_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ] :
-    ∑ c : CuspTranslationOrbit 𝒢, cuspTranslationOrbitWidth c =
-      Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :=
-  ((𝒢.subgroupOf 𝒮ℒ).index_eq_card ▸
-    Subgroup.index_eq_sum_minimalPeriod (𝒢.subgroupOf 𝒮ℒ) TSL).symm
+open _root_.Matrix.SpecialLinearGroup
 
 /-- **A cusp translation orbit of width `m` contains `m` cosets**, in the form of a sum: weighting
 each coset by the reciprocal width of its orbit, a sum over the cosets is the sum over the
@@ -555,10 +399,44 @@ lemma sum_div_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ]
   have hw : (cuspTranslationOrbitWidth c : ℚ) ≠ 0 := by
     exact_mod_cast (cuspTranslationOrbitWidth_pos c).ne'
   simp only [hc, Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]
-  rw [← cuspTranslationOrbitWidth, mul_div_cancel₀ _ hw]
+  rw [← cuspTranslationOrbitWidth_def, mul_div_cancel₀ _ hw]
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
   [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+
+/-- The vanishing order at the cusp translation orbit of `γ⁻¹` is the `q`-expansion order of
+`f ∣[k] γ` at `strictWidthInfty` of `γ⁻¹ Γ γ`. -/
+theorem orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp (f : F) (γ : SL(2, ℤ)) :
+    orderAtCuspTranslationOrbit f
+        (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ :
+          CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
+      qExpansionOrderAtCusp
+        (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).strictWidthInfty
+        (⇑f ∣[k] mapGL ℝ γ) := by
+  rw [orderAtCuspTranslationOrbit_mk, ← cuspTranslationOrbitWidth_mk,
+    natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty,
+    _root_.SlashInvariantForm.quotientFunc_mk, MonoidHom.coe_rangeRestrict,
+    map_inv (mapGL ℝ) γ, inv_inv]
+
+/-- The cusp translation orbits of `-γ⁻¹` and `γ⁻¹` carry the same vanishing order (the slashes
+differ by the nonzero scalar `(-1) ^ k`). -/
+theorem orderAtCuspTranslationOrbit_mk_neg_inv (f : F) (γ : SL(2, ℤ)) :
+    orderAtCuspTranslationOrbit f
+        (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict (-γ⁻¹))⟧ :
+          CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
+      orderAtCuspTranslationOrbit f ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ := by
+  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
+  let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
+  have hΓ : ConjAct.toConjAct (mapGL ℝ (-γ))⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) = Γγ := by
+    rw [mapGL_neg, inv_neg, Subgroup.toConjAct_neg_smul]
+  rw [← inv_neg, orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp,
+    orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp, hΓ,
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (-γ), ← _root_.ModularForm.SL_slash, SL_slash_neg,
+    _root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL γ,
+    ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
+  exact TauCeti.qExpansionOrderAtCusp_smul (zpow_ne_zero k (by norm_num))
+    (ModularFormClass.analyticAt_cuspFunction_zero fγ Γγ.strictWidthInfty_pos
+      Γγ.strictWidthInfty_mem_strictPeriods)
 
 /-- **The valence formula at general level**: for a nonzero weight-`k` form on a finite-index
 `Γ ≤ SL(2, ℤ)`, the interior orders — weighted by `2 / |Stab_Γ P|` — together with the orders
@@ -601,7 +479,7 @@ theorem twelve_mul_orderAtCuspTranslationOrbit_le_weight_mul_index (f : F)
       (k : ℚ) * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by linarith
   exact_mod_cast hq
 
-end ValenceFormula
+end IntegralRep
 
 end ModularForm
 
