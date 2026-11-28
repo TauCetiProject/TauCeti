@@ -89,8 +89,10 @@ the closure of `H`.
   Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.fixedField_le_iff_fixingSubgroup_le_of_isClosed` and
+  `IntermediateField.fixingSubgroup_le_fixingSubgroup_iff`, with
   `IntermediateField.finiteDimensional_fixedField_of_isOpen`: the infinite Galois correspondence
-  for a closed subgroup, and finiteness of the field fixed by an open one
+  for a closed subgroup, inclusion reversal for fixing subgroups, and finiteness of the field
+  fixed by an open one
 * `IntermediateField.fixingSubgroup_fixedField_of_isOpen`,
   `IntermediateField.finrank_fixedField_of_isOpen` and
   `IntermediateField.finrank_fixedField_stabilizer_of_isOpen`: an open subgroup is the fixing
@@ -210,6 +212,14 @@ theorem fixedField_le_iff_fixingSubgroup_le_of_isClosed [IsGalois K M]
   ⟨fun h ↦ (fixingSubgroup_antitone h).trans
       (InfiniteGalois.fixingSubgroup_fixedField ⟨H, hH⟩).le,
     fun h ↦ (fixedField_le h).trans (InfiniteGalois.fixedField_fixingSubgroup E).le⟩
+
+/-- **A subfield lies in another iff its fixing subgroup contains the other's**, whenever the
+ambient extension is Galois over the larger field. -/
+theorem fixingSubgroup_le_fixingSubgroup_iff (E₁ E₂ : IntermediateField K M) [IsGalois E₂ M] :
+    E₂.fixingSubgroup ≤ E₁.fixingSubgroup ↔ E₁ ≤ E₂ :=
+  ⟨fun h ↦ ((le_fixedField_iff_le_fixingSubgroup _ _).mpr le_rfl).trans
+      ((fixedField_antitone h).trans (fixedField_fixingSubgroup E₂).le),
+    fixingSubgroup_le⟩
 
 /-- **An open subgroup is recovered from its fixed field**, for a Galois extension `M / K` of any
 degree: an open subgroup is closed for the Krull topology, and Mathlib's
@@ -894,16 +904,6 @@ end TauCeti
 namespace InfiniteGalois
 
 variable (k K : Type*) [Field k] [Field K] [Algebra k K] [IsGalois k K]
-
-private theorem fixingSubgroup_le_fixingSubgroup_iff
-    {k K : Type*} [Field k] [Field K] [Algebra k K] [IsGalois k K]
-    (E₁ E₂ : IntermediateField k K) :
-    E₂.fixingSubgroup ≤ E₁.fixingSubgroup ↔ E₁ ≤ E₂ :=
-  (OrderDual.toDual_le_toDual (a := (⟨E₁.fixingSubgroup,
-    InfiniteGalois.fixingSubgroup_isClosed E₁⟩ : ClosedSubgroup Gal(K/k)))
-    (b := ⟨E₂.fixingSubgroup, InfiniteGalois.fixingSubgroup_isClosed E₂⟩)).symm.trans
-    ((InfiniteGalois.IntermediateFieldEquivClosedSubgroup (k := k) (K := K)).map_rel_iff
-      (a := E₁) (b := E₂))
 
 /-- The infinite Galois correspondence restricted to finite intermediate fields and open subgroups
 of `Gal(K/k)`. -/

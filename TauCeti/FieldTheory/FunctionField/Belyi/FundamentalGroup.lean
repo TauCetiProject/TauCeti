@@ -39,9 +39,12 @@ with `maximalUnramifiedOutside K (Place.zeroOneInfty k)`
 (`TauCeti.maximalBelyiExtension_eq_maximalUnramifiedOutside`), giving a topological isomorphism
 `TauCeti.maximalBelyiGaloisGroupEquivThreePoint`:
 `TauCeti.MaximalBelyiGaloisGroup k ≃ₜ* TauCeti.threePointGaloisGroup k`.
-Over a non-algebraically-closed field `k` of characteristic zero, `MaximalBelyiGaloisGroup k` is
-strictly larger than `threePointGaloisGroup k`, because `IsAlgebraicBelyiPair k` additionally
-enforces exact constant field `k`. Through `InfiniteGalois.intermediateFieldEquivOpenSubgroup` and
+Over a general field `k` of characteristic zero, `TauCeti.maximalBelyiExtension k K` is
+contained in `maximalUnramifiedOutside K (Place.zeroOneInfty k)`
+(`TauCeti.maximalBelyiExtension_le_maximalUnramifiedOutside`), because `IsAlgebraicBelyiPair k`
+additionally enforces exact constant field `k`; by Galois restriction,
+`TauCeti.MaximalBelyiGaloisGroup k` is therefore a quotient of `TauCeti.threePointGaloisGroup k`.
+Through `InfiniteGalois.intermediateFieldEquivOpenSubgroup` and
 `InfiniteGalois.intermediateFieldEquivOpenNormalSubgroup` (as well as
 `TauCeti.maximalUnramifiedOutside.openNormalSubgroupEquiv`), open (normal) subgroups correspond
 order-reversingly to embedded finite (Galois) subextensions, and forgetting the base-point
@@ -381,6 +384,14 @@ def restrictNormalOpenNormalSubgroup [Normal (RatFunc k) F] : OpenNormalSubgroup
 @[simp]
 theorem restrictNormalOpenNormalSubgroup_toSubgroup [Normal (RatFunc k) F] :
     (restrictNormalOpenNormalSubgroup hF f).toSubgroup = (liftF).restrictNormalHom.ker := (rfl)
+
+/-- As an open subgroup of `MaximalBelyiGaloisGroup k`, `restrictNormalOpenNormalSubgroup hF f`
+coincides with `fixingOpenSubgroup hF f`. -/
+theorem restrictNormalOpenNormalSubgroup_toOpenSubgroup [Normal (RatFunc k) F] :
+    (restrictNormalOpenNormalSubgroup hF f).toOpenSubgroup = fixingOpenSubgroup hF f := by
+  apply OpenSubgroup.toSubgroup_injective
+  rw [restrictNormalOpenNormalSubgroup_toSubgroup, AlgHom.ker_restrictNormalHom,
+    fixingOpenSubgroup_toSubgroup]
 
 /-- The fixed field of `restrictNormalOpenNormalSubgroup hF f` in
 `maximalBelyiExtension k (AlgebraicClosure (RatFunc k))` is the field range of

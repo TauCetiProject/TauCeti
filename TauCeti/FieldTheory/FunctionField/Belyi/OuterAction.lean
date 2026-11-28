@@ -449,29 +449,16 @@ theorem belyiConjByLift_smul_closedSubgroup_restrictNormalOpenNormalSubgroup :
   have := RatFunc.isScalarTower_mapAlgebra F K
   intro τ τ' hτ E E' _ _ _ _ _ _ hE f _ _ _ _ _ _ hE' f' eE he
   rw [belyiConjByLift_smul_closedSubgroup_eq_of_belyiArithmeticRestrict_eq hX₀ hτ]
-  have hsub :
-      (⟨(MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup hE f).toSubgroup,
+  change belyiConjByLift hX₀ τ •
+      (⟨(MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup hE f).toOpenSubgroup.toSubgroup,
         (MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup
           hE f).toOpenSubgroup.isClosed⟩ :
           ClosedSubgroup (MaximalBelyiGaloisGroup K)) =
-        ⟨(MaximalBelyiGaloisGroup.fixingOpenSubgroup hE f).toSubgroup,
-          (MaximalBelyiGaloisGroup.fixingOpenSubgroup hE f).isClosed⟩ := by
-    apply ClosedSubgroup.toSubgroup_injective
-    dsimp only
-    rw [MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup_toSubgroup,
-      AlgHom.ker_restrictNormalHom, MaximalBelyiGaloisGroup.fixingOpenSubgroup_toSubgroup]
-  have hsub' :
-      (⟨(MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup hE' f').toSubgroup,
-        (MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup
-          hE' f').toOpenSubgroup.isClosed⟩ :
-          ClosedSubgroup (MaximalBelyiGaloisGroup K)) =
-        ⟨(MaximalBelyiGaloisGroup.fixingOpenSubgroup hE' f').toSubgroup,
-          (MaximalBelyiGaloisGroup.fixingOpenSubgroup hE' f').isClosed⟩ := by
-    apply ClosedSubgroup.toSubgroup_injective
-    dsimp only
-    rw [MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup_toSubgroup,
-      AlgHom.ker_restrictNormalHom, MaximalBelyiGaloisGroup.fixingOpenSubgroup_toSubgroup]
-  rw [hsub, hsub']
+    ⟨(MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup hE' f').toOpenSubgroup.toSubgroup,
+      (MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup
+        hE' f').toOpenSubgroup.isClosed⟩
+  rw [MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup_toOpenSubgroup,
+    MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup_toOpenSubgroup]
   exact belyiConjByLift_smul_closedSubgroup_fixingOpenSubgroup F K τ hE f hE' f' eE he
 
 /-- **Fixed-field characterization of `maximalBelyiGaloisGroupOuterAction` on open-subgroup
