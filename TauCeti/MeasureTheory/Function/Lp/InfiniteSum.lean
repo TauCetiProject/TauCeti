@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
 
@@ -23,6 +24,9 @@ Conversely, a series `∑ᵢ xᵢ` of `Lᵖ` functions whose `L^r` seminorms are
 the Banach space `L^r`, even though the `xᵢ` are a priori elements of a different space `Lᵖ`, and
 the tails of the series obey `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`.
 
+For `1 ≤ p < ∞`, cutting an `Lᵖ` function off to the pieces of a countable measurable partition of
+almost every point decomposes it as a sum in `Lᵖ`, by dominated convergence.
+
 ## Main declarations
 
 * `MeasureTheory.Lp.ae_enorm_le_tsum_enorm_of_hasSum`: the pointwise bound.
@@ -35,6 +39,8 @@ the tails of the series obey `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ 
   `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`.
 * `MeasureTheory.ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum`: a sum in `L^r` agrees almost
   everywhere with a limit in `Lᵖ` of partial sums along an exhausting sequence of finite sets.
+* `MeasureTheory.MemLp.hasSum_toLp_indicator`: for `1 ≤ p < ∞`, a function in `Lᵖ` is the sum in
+  `Lᵖ` of its cut-offs to the pieces of a countable partition of almost every point.
 * `CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp`: for a countable family of compactly
   supported continuous functions whose `Lᵖ` classes sum to `v` with summable `Lᵖ` norms, the
   pointwise series converges absolutely to `v` almost everywhere.
@@ -151,6 +157,44 @@ theorem ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum [Fact (1 ≤ p)] {g : ι
   refine tendstoInMeasure_of_tendsto_eLpNorm (zero_lt_one.trans_le (Fact.out : 1 ≤ r)).ne' ?_
   refine (hU.comp hs).congr fun n ↦ ?_
   rw [Function.comp_apply, eLpNorm_sub_comm]
+
+namespace MemLp
+
+open Function
+
+variable {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
+  {p : ℝ≥0∞} {f : α → E} {s : ι → Set α}
+
+/-- Cutting `f` off to the union of finitely many pairwise disjoint null-measurable sets gives the
+sum of its cut-offs to these sets, in `Lᵖ`. -/
+theorem sum_toLp_indicator (hf : MemLp f p μ)
+    (hs : ∀ i, NullMeasurableSet (s i) μ) (hd : Pairwise (Disjoint on s)) (F : Finset ι) :
+    ∑ i ∈ F, (hf.indicator (hs i)).toLp ((s i).indicator f) =
+      (hf.indicator (F.nullMeasurableSet_biUnion fun i _ ↦ hs i)).toLp
+        ((⋃ i ∈ F, s i).indicator f) := by
+  refine Lp.ext ((Lp.coeFn_finsetSum _ _).trans ?_)
+  filter_upwards [MemLp.coeFn_toLp (hf.indicator (F.nullMeasurableSet_biUnion fun i _ ↦ hs i)),
+    ae_all_iff.2 fun i : F ↦ MemLp.coeFn_toLp (hf.indicator (hs i))] with x hx hxi
+  rw [hx, Finset.indicator_biUnion_apply F s (hd.set_pairwise _), Finset.sum_apply]
+  exact Finset.sum_congr rfl fun i hi ↦ hxi ⟨i, hi⟩
+
+/-- **Decomposition of an `Lᵖ` function along a countable partition**, for `1 ≤ p < ∞`. If pairwise
+disjoint null-measurable sets `sᵢ` cover almost every point, the classes of the cut-offs of `f` to
+the `sᵢ` sum to the class of `f` in `Lᵖ`. -/
+theorem hasSum_toLp_indicator [Countable ι] [Fact (1 ≤ p)] (hf : MemLp f p μ) (hp : p ≠ ∞)
+    (hs : ∀ i, NullMeasurableSet (s i) μ) (hd : Pairwise (Disjoint on s))
+    (hcov : ∀ᵐ x ∂μ, x ∈ ⋃ i, s i) :
+    HasSum (fun i ↦ (hf.indicator (hs i)).toLp ((s i).indicator f)) (hf.toLp f) := by
+  unfold HasSum
+  simp only [SummationFilter.unconditional_filter, hf.sum_toLp_indicator hs hd]
+  refine TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le hp _ (MemLp.coeFn_toLp hf)
+    (fun _ ↦ .of_forall fun _ ↦ norm_indicator_le_norm_self _ _) ?_
+  filter_upwards [hcov] with x hx
+  obtain ⟨i, hi⟩ := Set.mem_iUnion.1 hx
+  refine tendsto_const_nhds.congr' ((eventually_ge_atTop {i}).mono fun F hF ↦ ?_)
+  exact (Set.indicator_of_mem (Set.mem_biUnion (Finset.singleton_subset_iff.1 hF) hi) f).symm
+
+end MemLp
 
 end MeasureTheory
 

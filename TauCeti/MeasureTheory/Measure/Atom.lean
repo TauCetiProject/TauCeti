@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NoAtoms
@@ -21,7 +22,9 @@ import TauCeti.MeasureTheory.Measure.ZeroOne
 An atom (`MeasureTheory.Measure.IsAtom`) of a measure is a measurable positive-mass set whose
 measurable subsets have either zero or full mass. When the atom has finite mass, every
 almost-everywhere measurable map sends it to one point of a standard Borel target: the image of the
-measure restricted to the atom is a scalar multiple of a Dirac measure.
+measure restricted to the atom is a scalar multiple of a Dirac measure. The same holds for
+almost-everywhere strongly measurable maps into metrizable spaces, such as Banach-space-valued
+functions.
 
 The finite-mass hypothesis is essential: a zero-infinity measure may make its whole carrier an
 atom while vanishing on every singleton.
@@ -30,6 +33,11 @@ atom while vanishing on every singleton.
 
 * `AEMeasurable.exists_ae_eq_const_restrict_of_atom` — an a.e.-measurable map into a standard
   Borel space is a.e. constant on every positive finite-mass measurable atom;
+* `MeasureTheory.AEStronglyMeasurable.exists_ae_eq_const_restrict_of_atom` — an a.e. strongly
+  measurable map into a metrizable space is a.e. constant on every positive finite-mass measurable
+  atom;
+* `MeasureTheory.Measure.IsAtom.ae_mem_or_ae_notMem_restrict` — almost every point of a
+  finite-mass atom lies in a given null-measurable set, or almost every point lies outside it;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — an a.e.-measurable map from a
   positive finite-mass measurable atom into a standard Borel space has the corresponding point
   mass as its restricted pushforward;
@@ -177,20 +185,23 @@ theorem IsAtom.measure_ne_top {s : Set X} [SigmaFinite (μ.restrict s)] (hs : μ
   rw [restrict_apply ht, inter_eq_left.2 hts] at ht₀ htop
   exact (hs t hts ht).resolve_left ht₀.ne' ▸ htop.ne
 
+/-- **A finite-mass atom does not split a set.** Almost every point of a finite-mass atom `s` lies
+in a given null-measurable set `U`, or almost every point of `s` lies outside `U`. -/
+theorem IsAtom.ae_mem_or_ae_notMem_restrict {s U : Set X} (hs : μ.IsAtom s) (hfin : μ s ≠ ∞)
+    (hU : NullMeasurableSet U (μ.restrict s)) :
+    (∀ᵐ x ∂μ.restrict s, x ∈ U) ∨ ∀ᵐ x ∂μ.restrict s, x ∉ U := by
+  have hUs : μ.restrict s U = μ (U ∩ s) := restrict_apply' hs.measurableSet
+  rcases hs.measure_eq_zero_or_eq inter_subset_right with h0 | heq
+  · exact Or.inr (measure_eq_zero_iff_ae_notMem.1 (hUs.trans h0))
+  · have := isFiniteMeasure_restrict.2 hfin
+    exact Or.inl ((ae_mem_iff_measure_eq hU).2 (by rw [hUs, heq, restrict_apply_univ]))
+
 /-- **Finite-mass atoms are points.** A finite-mass atom of a measure on a countably separated
 measurable space is concentrated on one of its points. -/
 theorem IsAtom.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top [CountablySeparated X]
     {s : Set X} (hs : μ.IsAtom s) (hfin : μ s ≠ ∞) : ∃ x ∈ s, μ (s \ {x}) = 0 := by
-  have hl : ∀ U, MeasurableSet U → U ∈ ae (μ.restrict s) ∨ Uᶜ ∈ ae (μ.restrict s) := by
-    intro U hU
-    rw [mem_ae_iff, mem_ae_iff, compl_compl, restrict_apply hU.compl, restrict_apply hU,
-      ← sdiff_eq_compl_inter]
-    rcases hs.measure_eq_zero_or_eq inter_subset_right with h0 | heq
-    · exact Or.inr h0
-    · refine Or.inl ?_
-      have hadd := measure_inter_add_sdiff (μ := μ) s hU
-      rw [inter_comm, heq] at hadd
-      exact (ENNReal.add_right_inj hfin).1 (hadd.trans (add_zero _).symm)
+  have hl : ∀ U, MeasurableSet U → U ∈ ae (μ.restrict s) ∨ Uᶜ ∈ ae (μ.restrict s) :=
+    fun U hU ↦ hs.ae_mem_or_ae_notMem_restrict hfin hU.nullMeasurableSet
   have : HasCountableSeparatingOn X MeasurableSet s :=
     HasCountableSeparatingOn.mono (fun _ h ↦ h) (subset_univ s)
   obtain ⟨x, hxs, hx⟩ := exists_mem_singleton_mem_of_mem_of_nonempty_of_forall_separating
@@ -213,3 +224,27 @@ theorem not_isAtom_of_nullSingletonClass [CountablySeparated X] [SigmaFinite μ]
     (measure_mono_null (subset_sdiff_union s {x}) (measure_union_null hx (measure_singleton x)))
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+open Filter Measure TopologicalSpace
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- **An a.e. strongly measurable map is a.e. constant on a finite-mass atom.** A map into a
+metrizable space that is a.e. strongly measurable on a measurable atom `A` of finite mass agrees
+almost everywhere on `A` with a constant. Unlike `AEMeasurable.exists_ae_eq_const_restrict_of_atom`,
+the target need not be a standard Borel space: the map takes its values almost everywhere in a
+separable subset. The proof follows Mathlib's `QuasiErgodic.ae_eq_const_of_ae_eq_comp_ae`, with the
+atom dichotomy `IsAtom.ae_mem_or_ae_notMem_restrict` in place of quasi-ergodicity. -/
+theorem AEStronglyMeasurable.exists_ae_eq_const_restrict_of_atom {Y : Type*} [TopologicalSpace Y]
+    [MetrizableSpace Y] {f : X → Y} {A : Set X} (hf : AEStronglyMeasurable f (μ.restrict A))
+    (hAfin : μ A ≠ ∞) (hAatom : μ.IsAtom A) : ∃ y : Y, f =ᵐ[μ.restrict A] fun _ ↦ y := by
+  have : Nonempty Y := ⟨f hAatom.nonempty.some⟩
+  borelize Y
+  obtain ⟨t, ht, hft⟩ := hf.isSeparable_ae_range
+  have := ht.secondCountableTopology
+  exact exists_eventuallyEq_const_of_eventually_mem_of_forall_separating MeasurableSet hft
+    fun U hU ↦ hAatom.ae_mem_or_ae_notMem_restrict hAfin (hf.aemeasurable.nullMeasurable hU)
+
+end MeasureTheory

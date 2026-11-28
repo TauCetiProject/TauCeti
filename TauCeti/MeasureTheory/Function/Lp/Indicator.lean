@@ -52,6 +52,10 @@ constant indicator classes it intersects the supporting sets.
   in `c`.
 * `TauCeti.indicatorConstLpL`: the same map `c ↦ indicatorConstLp p hs hμs c` as a continuous
   linear map.
+* `ContinuousLinearMap.norm_comp_indicatorConstLpL_le`: for a continuous linear map `T` on `Lᵖ`,
+  the map `c ↦ T (1_s c)` has norm at most `‖T‖ μ(s) ^ (1 / p)`.
+* `MeasureTheory.MemLp.toLp_indicator_eq_indicatorConstLp`: the cut-off to `s` of a function that is
+  a.e. equal to a constant `c` on `s` is the indicator class of `c`.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
 * `TauCeti.tendsto_indicatorConstLp_of_monotone`: for a finite exponent, the indicator classes of
@@ -161,6 +165,18 @@ variable (𝕜 E) in
 theorem norm_indicatorConstLpL_le [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
     ‖(indicatorConstLpL 𝕜 p hs hμs : E →L[𝕜] Lp E p μ)‖ ≤ μ.real s ^ (1 / p.toReal) :=
   LinearMap.mkContinuous_norm_le _ (Real.rpow_nonneg measureReal_nonneg _) _
+
+/-- For a continuous linear map `T` on `Lᵖ`, the map `c ↦ T (1_s c)` on the constants has norm at
+most `‖T‖ μ(s) ^ (1 / p)`. On an atom `s` this is the bound of the discussion of atomic measure
+spaces before Proposition 1.3.3 of Hytönen, van Neerven, Veraar and Weis, *Analysis in Banach
+Spaces*, Vol. I, as corrected in the authors' Volume I errata, entry for p. 39
+(<https://fa.ewi.tudelft.nl/~neerven/ABS/errata-vol1.pdf>). -/
+theorem _root_.ContinuousLinearMap.norm_comp_indicatorConstLpL_le {F : Type*}
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Fact (1 ≤ p)] (T : Lp E p μ →L[𝕜] F)
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    ‖T.comp (indicatorConstLpL 𝕜 p hs hμs)‖ ≤ ‖T‖ * μ.real s ^ (1 / p.toReal) :=
+  (T.opNorm_comp_le _).trans
+    (mul_le_mul_of_nonneg_left (norm_indicatorConstLpL_le 𝕜 E hs hμs) (norm_nonneg T))
 
 end NormedField
 
@@ -361,6 +377,16 @@ theorem tendsto_toLp_indicator {α E ι : Type*} {_ : MeasurableSpace α}
   simp_rw [eLpNorm_indicator_sub_indicator f (hs _) ht,
     eLpNorm_indicator_eq_eLpNorm_restrict ((hs _).symmDiff ht)]
   exact hf.tendsto_eLpNorm_restrict_of_tendsto_measure Fact.out hp h
+
+/-- On a set where `f` agrees almost everywhere with a constant `c`, the cut-off of `f` to the set
+is the indicator class of `c` in `Lᵖ`. -/
+theorem toLp_indicator_eq_indicatorConstLp {α E : Type*} {_ : MeasurableSpace α}
+    [NormedAddCommGroup E] {μ : Measure α} {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ)
+    {s : Set α} (hs : MeasurableSet s) (hμs : μ s ≠ ∞) {c : E}
+    (hfc : f =ᵐ[μ.restrict s] fun _ ↦ c) :
+    (hf.indicator hs.nullMeasurableSet).toLp (s.indicator f) = indicatorConstLp p hs hμs c :=
+  Lp.ext <| (hf.indicator hs.nullMeasurableSet).coeFn_toLp.trans <|
+    ((ae_eq_restrict_iff_indicator_ae_eq hs).1 hfc).trans indicatorConstLp_coeFn.symm
 
 end MeasureTheory.MemLp
 
