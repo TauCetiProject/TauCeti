@@ -242,6 +242,18 @@ private theorem galRepOfZModModuleTransport_galRepOfZModModuleEquiv
   congrArg (fun z ↦ galRepOfZModModuleEquiv n F N (f z))
     ((galRepOfZModModuleEquiv n F M).symm_apply_apply m)
 
+/-- An equivariant additive homomorphism remains equivariant when viewed as a `ZMod n`-linear
+map via `AddMonoidHom.toZModLinearMap`. -/
+private theorem toZModLinearMap_smul {P : Type u} [AddCommGroup P] [Module (ZMod n) P]
+    [DistribMulAction (AbsoluteGaloisGroup F) P]
+    {Q : Type u} [AddCommGroup Q] [Module (ZMod n) Q]
+    [DistribMulAction (AbsoluteGaloisGroup F) Q]
+    (f : P →+[AbsoluteGaloisGroup F] Q) (g : AbsoluteGaloisGroup F) (p : P) :
+    (f.toAddMonoidHom.toZModLinearMap n) (g • p) =
+      g • (f.toAddMonoidHom.toZModLinearMap n) p := by
+  rw [AddMonoidHom.coe_toZModLinearMap]
+  exact f.map_smul g p
+
 /-- **Bundle an equivariant additive homomorphism of discrete `ZMod n[G_F]`-modules as a morphism
 in `GalRep n F`.** -/
 def galRepOfZModModuleMap (f : M →+[AbsoluteGaloisGroup F] N) :
@@ -251,9 +263,7 @@ def galRepOfZModModuleMap (f : M →+[AbsoluteGaloisGroup F] N) :
   (TopRep.resFunctor
       (absoluteGaloisGroupRestrictEquiv F :
         Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)).map
-    (ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n)
-      (fun g m ↦ show (f.toAddMonoidHom.toZModLinearMap n) (g • m) =
-        g • (f.toAddMonoidHom.toZModLinearMap n) m from f.map_smul g m))
+    (ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n) (toZModLinearMap_smul n F f))
 
 /-- `galRepOfZModModuleMap` intertwines the coefficient dictionaries `galRepOfZModModuleEquiv`. -/
 @[simp]
@@ -267,14 +277,20 @@ theorem galRepOfZModModuleMap_hom_galRepOfZModModuleEquiv
       (absoluteGaloisGroupRestrictEquiv F :
         Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)).map
     (ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n)
-      (fun g x ↦ show (f.toAddMonoidHom.toZModLinearMap n) (g • x) =
-        g • (f.toAddMonoidHom.toZModLinearMap n) x from f.map_smul g x))).hom m = f m := by
+      (toZModLinearMap_smul n F f))).hom m = f m := by
     rw [TopRep.resFunctor_map_hom]
     exact ofDiscreteModuleMap_hom_apply (G := AbsoluteGaloisGroup F)
-      (f.toAddMonoidHom.toZModLinearMap n)
-      (fun g x ↦ show (f.toAddMonoidHom.toZModLinearMap n) (g • x) =
-        g • (f.toAddMonoidHom.toZModLinearMap n) x from f.map_smul g x) m
+      (f.toAddMonoidHom.toZModLinearMap n) (toZModLinearMap_smul n F f) m
   exact h
+
+/-- `galRepOfZModModuleMap` acts on the underlying carrier as `galRepOfZModModuleTransport`. -/
+private theorem galRepOfZModModuleMap_hom_apply
+    (f : M →+[AbsoluteGaloisGroup F] N) (m : (galRepOfZModModule n F M).V) :
+    (galRepOfZModModuleMap n F f).hom m = galRepOfZModModuleTransport n F f m := by
+  have hm : m = galRepOfZModModuleEquiv n F M ((galRepOfZModModuleEquiv n F M).symm m) :=
+    ((galRepOfZModModuleEquiv n F M).apply_symm_apply m).symm
+  rw [hm, galRepOfZModModuleMap_hom_galRepOfZModModuleEquiv,
+    galRepOfZModModuleTransport_galRepOfZModModuleEquiv]
 
 /-- The identity coefficient map induces the identity morphism in `GalRep n F`. -/
 @[simp]
@@ -285,8 +301,7 @@ theorem galRepOfZModModuleMap_id :
   have hid : ofDiscreteModuleMap
       ((DistribMulActionHom.id (AbsoluteGaloisGroup F) :
         M →+[_] M).toAddMonoidHom.toZModLinearMap n)
-      (fun g m ↦ show _ = _ from
-        (DistribMulActionHom.id (AbsoluteGaloisGroup F) : M →+[_] M).map_smul g m) =
+      (toZModLinearMap_smul n F (DistribMulActionHom.id (AbsoluteGaloisGroup F) : M →+[_] M)) =
       𝟙 (ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup F) M) := by
     rw [← ofDiscreteModuleMap_id (R := ZMod n) (G := AbsoluteGaloisGroup F) (M := M)]
     congr 1
@@ -305,11 +320,9 @@ theorem galRepOfZModModuleMap_comp {P : Type u} [AddCommGroup P] [Module (ZMod n
   have : ContinuousSMul (ZMod n) N := ⟨continuous_of_discreteTopology⟩
   have : ContinuousSMul (ZMod n) P := ⟨continuous_of_discreteTopology⟩
   have hcomp : ofDiscreteModuleMap ((q.comp f).toAddMonoidHom.toZModLinearMap n)
-      (fun g m ↦ show _ = _ from (q.comp f).map_smul g m) =
-      ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n)
-        (fun g m ↦ show _ = _ from f.map_smul g m) ≫
-      ofDiscreteModuleMap (q.toAddMonoidHom.toZModLinearMap n)
-        (fun g m ↦ show _ = _ from q.map_smul g m) := by
+      (toZModLinearMap_smul n F (q.comp f)) =
+      ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n) (toZModLinearMap_smul n F f) ≫
+      ofDiscreteModuleMap (q.toAddMonoidHom.toZModLinearMap n) (toZModLinearMap_smul n F q) := by
     rw [ofDiscreteModuleMap_comp_ofDiscreteModuleMap]
     congr 1
   exact (congrArg (TopRep.resFunctor
@@ -331,8 +344,9 @@ theorem galRepOfZModModuleH0Equiv_coeffMap
   let fGal := galRepOfZModModuleTransport n F f
   let Fint := ofDiscreteModuleMap fGal.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul fGal g m
   have hf : ∀ m, Fint.hom m = (galRepOfZModModuleMap n F f).hom m := fun m ↦
-    ofDiscreteModuleMap_hom_apply fGal.toAddMonoidHom.toIntLinearMap
-      (fun g x ↦ map_smul fGal g x) m
+    (ofDiscreteModuleMap_hom_apply fGal.toAddMonoidHom.toIntLinearMap
+      (fun g x ↦ map_smul fGal g x) m).trans
+      (galRepOfZModModuleMap_hom_apply n F f m).symm
   rw [galRepOfZModModuleH0Equiv_apply, galRepOfZModModuleH0Equiv_apply,
     ofDiscreteModuleRestrictScalarsIntEquiv_coeffMap (galRepOfZModModuleMap n F f) Fint hf 0,
     explicitH0Iso_coeffMap (Field.absoluteGaloisGroup F)
@@ -369,7 +383,7 @@ theorem galRepOfZModModuleH1Equiv_coeffMap
   let Fhom : galRepOfZModModule n F M ⟶ galRepOfZModModule n F N := galRepOfZModModuleMap n F f
   have h1 := (galRepOfZModModule n F M).explicitH1AddEquivContinuousCohomologyOfDiscrete_map
     (galRepOfZModModule n F N) (ContinuousMonoidHom.id (Field.absoluteGaloisGroup F))
-    Fhom fGal.toAddMonoidHom (fun _ ↦ rfl) (fun g m ↦ map_smul fGal g m)
+    Fhom fGal.toAddMonoidHom (galRepOfZModModuleMap_hom_apply n F f) (fun g m ↦ map_smul fGal g m)
     (explicitMap1 (AbsoluteGaloisGroup F) M (Field.absoluteGaloisGroup F)
       (galRepOfZModModule n F M).V (absoluteGaloisGroupRestrictEquiv F)
       (galRepOfZModModuleEquiv n F M).toAddMonoidHom continuous_of_discreteTopology
@@ -407,7 +421,7 @@ theorem galRepOfZModModuleH2Equiv_coeffMap
   let Fhom : galRepOfZModModule n F M ⟶ galRepOfZModModule n F N := galRepOfZModModuleMap n F f
   have h2 := (galRepOfZModModule n F M).explicitH2AddEquivContinuousCohomologyOfDiscrete_map
     (galRepOfZModModule n F N) (ContinuousMonoidHom.id (Field.absoluteGaloisGroup F))
-    Fhom fGal.toAddMonoidHom (fun _ ↦ rfl) (fun g m ↦ map_smul fGal g m)
+    Fhom fGal.toAddMonoidHom (galRepOfZModModuleMap_hom_apply n F f) (fun g m ↦ map_smul fGal g m)
     (explicitMap2 (AbsoluteGaloisGroup F) M (Field.absoluteGaloisGroup F)
       (galRepOfZModModule n F M).V (absoluteGaloisGroupRestrictEquiv F)
       (galRepOfZModModuleEquiv n F M).toAddMonoidHom continuous_of_discreteTopology
