@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
-import TauCeti.RingTheory.MvPowerSeries.Derivative
 
 /-!
 # Commutative formal Lie groups in coordinates
@@ -60,23 +59,6 @@ theorem ext {F G : FormalLieGroup R n} (h : F.law = G.law) : F = G := by
 
 variable (F : FormalLieGroup R n) {S : Type*} [CommRing S] [Algebra R S]
 
-/-- Every coordinate of a formal Lie group law vanishes at the origin. -/
-@[simp]
-theorem constantCoeff_law (i : Fin n) : constantCoeff (F.law i) = 0 := by
-  have h := congrArg constantCoeff (congrFun F.right_unit i)
-  have hz : HasSubst (0 : Fin n → MvPowerSeries (Fin n) R) := HasSubst.zero
-  rw [substLaw_def, constantCoeff_subst_of_constantCoeff_zero (HasSubst.X.pair hz)] at h
-  · simpa using h
-  · rintro ⟨k, j⟩
-    fin_cases k <;> simp [Function.uncurry]
-
-/-- A formal sum of admissible tuples is admissible. -/
-theorem hasSubst_substLaw {x y : Fin n → MvPowerSeries σ S} (hx : HasSubst x)
-    (hy : HasSubst y) : HasSubst (substLaw F.law x y) :=
-  hasSubst_of_constantCoeff_nilpotent fun i ↦ by
-    rw [substLaw_def]
-    exact IsNilpotent_subst (hx.pair hy) (F.constantCoeff_law i ▸ IsNilpotent.zero)
-
 /-- The right unit identity on admissible tuples. -/
 @[simp]
 theorem substLaw_zero_right {x : Fin n → MvPowerSeries σ S} (hx : HasSubst x) :
@@ -100,7 +82,7 @@ theorem substLaw_comm {x y : Fin n → MvPowerSeries σ S} (hx : HasSubst x) (hy
   have ha : HasSubst (Function.uncurry a) := hx.pair hy
   funext i
   have h := congrArg (subst (Function.uncurry a)) (congrFun F.comm i)
-  simpa only [subst_substLaw_blocks _ ha, a₀, a₁] using h
+  simpa only [subst_substLaw_X_blocks _ ha, a₀, a₁] using h
 
 /-- The left unit identity on admissible tuples. -/
 @[simp]
@@ -108,40 +90,82 @@ theorem substLaw_zero_left {x : Fin n → MvPowerSeries σ S} (hx : HasSubst x) 
     substLaw F.law 0 x = x := by
   exact (F.substLaw_comm (x := 0) HasSubst.zero hx).trans (F.substLaw_zero_right hx)
 
+private def blockEmbedding (b : Fin 2) : Fin n ↪ Fin 2 × Fin n :=
+  ⟨fun j ↦ (b, j), Prod.mk_right_injective b⟩
+
+open WithPiTopology in
+private theorem killCompl_block_eq_subst (b : Fin 2) (f : MvPowerSeries (Fin 2 × Fin n) R) :
+    killCompl (blockEmbedding b) f = f.subst
+      (fun k ↦ if k.1 = b then X k.2 else 0) := by
+  let e : Fin n ↪ Fin 2 × Fin n := blockEmbedding b
+  let a (k : Fin 2 × Fin n) : MvPowerSeries (Fin n) R := if k.1 = b then X k.2 else 0
+  have ha : HasSubst a := hasSubst_of_constantCoeff_zero fun k ↦
+    by simp [a, apply_ite constantCoeff]
+  have hX (k : Fin 2 × Fin n) : killCompl e (X (R := R) k) = a k := by
+    rcases k with ⟨c, j⟩
+    by_cases h : c = b
+    · subst c
+      have he : e j = (b, j) := rfl
+      simpa only [he, a, ite_true] using (killCompl_X (R := R) (e := e) j)
+    · simp only [a, h, ite_false]
+      apply killCompl_X_eq_zero
+      rintro ⟨l, hl⟩
+      exact h (congrArg Prod.fst hl).symm
+  let : UniformSpace R := ⊥
+  let : DiscreteUniformity R := ⟨rfl⟩
+  have hc : Continuous (killCompl (R := R) e) := by
+    apply continuous_pi
+    intro d
+    change Continuous (fun g ↦ coeff d (killCompl e g))
+    simp only [coeff_killCompl]
+    exact continuous_coeff R _
+  have hs : Continuous (substAlgHom (R := R) ha) := by
+    simpa only [coe_substAlgHom] using (continuous_subst (R := R) ha)
+  have h : (aeval (HasEval.X.map hc) : MvPowerSeries (Fin 2 × Fin n) R →ₐ[R]
+      MvPowerSeries (Fin n) R) = aeval (HasEval.X.map hs) := by
+    apply DFunLike.ext'
+    simp only [coe_aeval, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, substAlgHom_X, hX]
+  simpa only [substAlgHom_apply] using
+    DFunLike.congr_fun ((aeval_unique hc).symm.trans (h.trans (aeval_unique hs))) f
+
+/-- The coefficients supported in one input block are those of the corresponding variable. -/
+theorem coeff_embDomain_law (b : Fin 2) (d : Fin n →₀ ℕ) (i : Fin n) :
+    coeff (Finsupp.embDomain (⟨fun j ↦ (b, j), Prod.mk_right_injective b⟩ :
+      Fin n ↪ Fin 2 × Fin n) d) (F.law i) = coeff d (X i) := by
+  change coeff (Finsupp.embDomain (blockEmbedding b) d) (F.law i) = _
+  rw [← coeff_killCompl, killCompl_block_eq_subst]
+  congr 1
+  fin_cases b
+  · convert congrFun F.right_unit i using 1
+    rw [substLaw_def]
+    congr 1
+    funext ⟨k, j⟩
+    fin_cases k <;> simp [Function.uncurry]
+  · convert congrFun (F.substLaw_zero_left (HasSubst.X (S := R))) i using 1
+    rw [substLaw_def]
+    congr 1
+    funext ⟨k, j⟩
+    fin_cases k <;> simp [Function.uncurry]
+
+/-- Every coordinate of a formal Lie group law vanishes at the origin. -/
+@[simp]
+theorem constantCoeff_law (i : Fin n) : constantCoeff (F.law i) = 0 := by
+  simpa [Finsupp.embDomain_zero, coeff_zero_eq_constantCoeff_apply] using
+    F.coeff_embDomain_law 0 0 i
+
 /-- The linear part in either input block is the identity matrix. -/
 @[simp]
 theorem coeff_single_law (b : Fin 2) (j i : Fin n) :
     coeff (Finsupp.single (b, j) 1) (F.law i) = if j = i then 1 else 0 := by
-  let a (k : Fin 2 × Fin n) : MvPowerSeries (Fin n) R := if k.1 = b then X k.2 else 0
-  have h₀ (k) : constantCoeff (a k) = 0 := by simp [a, apply_ite constantCoeff]
-  have ha := hasSubst_of_constantCoeff_zero h₀
-  -- Keeping just one block specializes the unit identity to the independent variables.
-  have hu : (F.law i).subst a = X i := by
-    fin_cases b
-    · convert congrFun F.right_unit i using 1
-      rw [substLaw_def]
-      congr 1
-      funext ⟨k, l⟩
-      fin_cases k <;> simp [a, Function.uncurry]
-    · convert congrFun (F.substLaw_zero_left (HasSubst.X (S := R))) i using 1
-      rw [substLaw_def]
-      congr 1
-      funext ⟨k, l⟩
-      fin_cases k <;> simp [a, Function.uncurry]
-  have hd (k : Fin 2 × Fin n) : pderiv j (a k) = if k = (b, j) then 1 else 0 := by
-    rcases k with ⟨c, l⟩
-    by_cases hc : c = b <;> by_cases hl : l = j <;> simp_all [a, pderiv_X_of_ne]
-  -- Differentiate the unit identity and take its constant coefficient.
-  have h := congrArg (pderiv j) hu
-  simp only [pderiv_subst ha, hd, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq',
-    Finset.mem_univ, ite_true] at h
-  have hc := congrArg constantCoeff h
-  rw [constantCoeff_subst_of_constantCoeff_zero ha h₀] at hc
-  rw [Algebra.algebraMap_self_apply, ← coeff_zero_eq_constantCoeff_apply, coeff_pderiv] at hc
-  by_cases hij : j = i
-  · subst i
-    simpa using hc
-  · simpa [hij, pderiv_X_of_ne (Ne.symm hij)] using hc
+  simpa [Finsupp.embDomain_single, coeff_X, Finsupp.single_left_inj one_ne_zero] using
+    F.coeff_embDomain_law b (Finsupp.single j 1) i
+
+/-- A formal sum of admissible tuples is admissible. -/
+theorem hasSubst_substLaw {x y : Fin n → MvPowerSeries σ S} (hx : HasSubst x)
+    (hy : HasSubst y) : HasSubst (substLaw F.law x y) :=
+  hasSubst_of_constantCoeff_nilpotent fun i ↦ by
+    rw [substLaw_def]
+    exact IsNilpotent_subst (hx.pair hy) (F.constantCoeff_law i ▸ IsNilpotent.zero)
 
 /-- Associativity of the formal sum on admissible tuples. -/
 theorem substLaw_assoc {x y z : Fin n → MvPowerSeries σ S}
@@ -160,22 +184,23 @@ theorem substLaw_assoc {x y z : Fin n → MvPowerSeries σ S}
   funext i
   have h := congrArg (subst (Function.uncurry a)) (congrFun F.assoc i)
   simpa only [subst_substLaw _ hxy (hb 2) ha,
-    subst_substLaw _ (hb 0) hyz ha, subst_substLaw_blocks _ ha,
+    subst_substLaw _ (hb 0) hyz ha, subst_substLaw_X_blocks _ ha,
     subst_X ha, Function.uncurry_apply_pair, a₀, a₁, a₂] using h
+
+private theorem substLaw_additive_raw (R : Type*) [CommRing R] [Algebra R S]
+    (x y : Fin n → MvPowerSeries σ S) :
+    substLaw (fun i ↦ X (R := R) ((0 : Fin 2), i) + X (1, i)) x y = x + y := by
+  funext i
+  simp [substLaw_def, Function.uncurry]
 
 /-- The additive formal Lie group in `n` coordinates, with coordinatewise addition. -/
 def additive (R : Type*) [CommRing R] (n : ℕ) : FormalLieGroup R n where
   law i := X ((0 : Fin 2), i) + X (1, i)
-  right_unit := by
-    funext i
-    simp [substLaw_def, Function.uncurry]
-  comm := by
-    funext i
-    simp [substLaw_def, Function.uncurry, add_comm]
+  right_unit := by simp only [substLaw_additive_raw, add_zero]
+  comm := by simp only [substLaw_additive_raw, add_comm]
   assoc := by
     dsimp only
-    funext i
-    simp [substLaw_def, Function.uncurry, add_assoc]
+    simp only [substLaw_additive_raw, add_assoc]
 
 @[simp]
 theorem additive_law (i : Fin n) :
@@ -184,9 +209,8 @@ theorem additive_law (i : Fin n) :
 /-- The additive formal Lie group sums arbitrary tuples coordinatewise. -/
 @[simp]
 theorem substLaw_additive (x y : Fin n → MvPowerSeries σ S) :
-    substLaw (additive R n).law x y = x + y := by
-  funext i
-  simp [substLaw_def, Function.uncurry]
+    substLaw (additive R n).law x y = x + y :=
+  substLaw_additive_raw R x y
 
 end FormalLieGroup
 

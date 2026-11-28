@@ -241,59 +241,6 @@ theorem subst_X_add_X {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
   simp only [← MvPolynomial.coe_X, ← MvPolynomial.coe_add, subst_coe, map_add,
     MvPolynomial.aeval_X]
 
-section Blocks
-
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {n : ℕ}
-
-/-- Substitute two blocks of coordinates using the total operation `MvPowerSeries.subst`.
-For general power series, formal evaluation requires admissible tuples. Polynomial coordinates
-evaluate on arbitrary tuples. -/
-noncomputable def substLaw (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
-    (x y : Fin n → MvPowerSeries σ S) (i : Fin n) : MvPowerSeries σ S :=
-  (φ i).subst (Function.uncurry ![x, y])
-
-/-- The coordinate formula for substituting two tuples into a binary law. -/
-theorem substLaw_def (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
-    (x y : Fin n → MvPowerSeries σ S) (i : Fin n) :
-    substLaw φ x y i = (φ i).subst (Function.uncurry ![x, y]) := (rfl)
-
-/-- Evaluating a binary law on its two blocks of independent variables recovers the law. -/
-@[simp]
-theorem substLaw_X (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R) :
-    substLaw φ (fun i ↦ X (0, i)) (fun i ↦ X (1, i)) = φ := by
-  have h : Function.uncurry ![(fun i : Fin n ↦ X (R := R) ((0 : Fin 2), i)),
-      (fun i : Fin n ↦ X (R := R) ((1 : Fin 2), i))] = X := by
-    funext ⟨j, i⟩
-    fin_cases j <;> simp [Function.uncurry]
-  funext i
-  simp only [substLaw_def, h, subst_self, id_eq]
-
-/-- For admissible input tuples and an admissible subsequent family, substitution composes. -/
-theorem subst_substLaw {T : Type*} [CommRing T] [Algebra S T] [Algebra R T] [IsScalarTower R S T]
-    (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
-    {x y : Fin n → MvPowerSeries σ S} (hx : HasSubst x) (hy : HasSubst y)
-    {a : σ → MvPowerSeries τ T} (ha : HasSubst a) (i : Fin n) :
-    (substLaw φ x y i).subst a =
-      substLaw φ (fun j ↦ (x j).subst a) (fun j ↦ (y j).subst a) i := by
-  unfold substLaw
-  rw [subst_comp_subst_apply (hx.pair hy) ha]
-  congr 1
-  funext ⟨k, j⟩
-  fin_cases k <;> simp [Function.uncurry]
-
-/-- Substituting a family into a law on two universal blocks selects the corresponding tuples. -/
-theorem subst_substLaw_blocks {k : ℕ}
-    (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
-    {a : Fin k → Fin n → MvPowerSeries σ S} (ha : HasSubst (Function.uncurry a))
-    (j₁ j₂ : Fin k) (i : Fin n) :
-    (substLaw φ (fun j ↦ X (R := R) (j₁, j)) (fun j ↦ X (j₂, j)) i).subst (Function.uncurry a) =
-      substLaw φ (a j₁) (a j₂) i := by
-  simpa only [subst_X ha, Function.uncurry_apply_pair] using
-    (subst_substLaw φ (x := fun j ↦ X (R := R) (j₁, j)) (y := fun j ↦ X (j₂, j))
-      (HasSubst.X.curry j₁) (HasSubst.X.curry j₂) ha i)
-
-end Blocks
-
 section CoordSpecialize
 
 variable {O : Type*} [CommRing O] {σ' : Type*}
@@ -798,3 +745,70 @@ theorem eval₂_id_toMvPowerSeries {σ : Type*} {a : σ → R} (ha : MvPowerSeri
 end SelfEval
 
 end PowerSeries
+
+namespace TauCeti
+
+open MvPowerSeries
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {ι κ σ τ : Type*}
+
+/-- Substitute two blocks of coordinates using the total operation `MvPowerSeries.subst`.
+For general power series, formal evaluation requires admissible tuples. Polynomial coordinates
+evaluate on arbitrary tuples. -/
+noncomputable def substLaw (φ : ι → MvPowerSeries (Fin 2 × κ) R)
+    (x y : κ → MvPowerSeries σ S) (i : ι) : MvPowerSeries σ S :=
+  (φ i).subst (Function.uncurry ![x, y])
+
+/-- The coordinate formula for substituting two tuples into a binary law. -/
+theorem substLaw_def (φ : ι → MvPowerSeries (Fin 2 × κ) R)
+    (x y : κ → MvPowerSeries σ S) (i : ι) :
+    substLaw φ x y i = (φ i).subst (Function.uncurry ![x, y]) := (rfl)
+
+/-- Evaluating a binary law on its two blocks of independent variables recovers the law. -/
+@[simp]
+theorem substLaw_X (φ : ι → MvPowerSeries (Fin 2 × κ) R) :
+    substLaw φ (fun i ↦ X (0, i)) (fun i ↦ X (1, i)) = φ := by
+  have h : Function.uncurry ![(fun i : κ ↦ X (R := R) ((0 : Fin 2), i)),
+      (fun i : κ ↦ X (R := R) ((1 : Fin 2), i))] = X := by
+    funext ⟨j, i⟩
+    fin_cases j <;> simp [Function.uncurry]
+  funext i
+  simp only [substLaw_def, h, subst_self, id_eq]
+
+/-- For admissible input tuples and an admissible subsequent family, substitution composes. -/
+theorem subst_substLaw {T : Type*} [CommRing T] [Algebra S T] [Algebra R T] [IsScalarTower R S T]
+    (φ : ι → MvPowerSeries (Fin 2 × κ) R)
+    {x y : κ → MvPowerSeries σ S} (hx : HasSubst x) (hy : HasSubst y)
+    {a : σ → MvPowerSeries τ T} (ha : HasSubst a) (i : ι) :
+    (substLaw φ x y i).subst a =
+      substLaw φ (fun j ↦ (x j).subst a) (fun j ↦ (y j).subst a) i := by
+  unfold substLaw
+  rw [subst_comp_subst_apply (hx.pair hy) ha]
+  congr 1
+  funext ⟨k, j⟩
+  fin_cases k <;> simp [Function.uncurry]
+
+/-- An admissible uncurried family replaces each universal block with the corresponding tuple. -/
+theorem subst_substLaw_X_blocks {β : Type*}
+    (φ : ι → MvPowerSeries (Fin 2 × κ) R)
+    {a : β → κ → MvPowerSeries σ S} (ha : HasSubst (Function.uncurry a))
+    (j₁ j₂ : β) (i : ι) :
+    (substLaw φ (fun j ↦ X (R := R) (j₁, j)) (fun j ↦ X (j₂, j)) i).subst (Function.uncurry a) =
+      substLaw φ (a j₁) (a j₂) i := by
+  simpa only [subst_X ha, Function.uncurry_apply_pair] using
+    (subst_substLaw φ (x := fun j ↦ X (R := R) (j₁, j)) (y := fun j ↦ X (j₂, j))
+      (HasSubst.X.curry j₁) (HasSubst.X.curry j₂) ha i)
+
+/-- Substituting two finite tuples with zero constant coefficients sends the law's constant
+coefficient along the coefficient algebra map. -/
+theorem constantCoeff_substLaw_of_zero [Finite κ] (φ : ι → MvPowerSeries (Fin 2 × κ) R)
+    {x y : κ → MvPowerSeries σ S} (hx : ∀ j, constantCoeff (x j) = 0)
+    (hy : ∀ j, constantCoeff (y j) = 0) (i : ι) :
+    constantCoeff (substLaw φ x y i) = algebraMap R S (constantCoeff (φ i)) := by
+  have h : ∀ k, constantCoeff (Function.uncurry ![x, y] k) = 0 := by
+    rintro ⟨b, j⟩
+    fin_cases b <;> simp [Function.uncurry, hx, hy]
+  rw [substLaw_def, constantCoeff_subst_of_constantCoeff_zero
+    (hasSubst_of_constantCoeff_zero h) h]
+
+end TauCeti
