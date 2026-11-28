@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Order
 public import TauCeti.RingTheory.Ideal.Order.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Ideals and local order of multivariate power series
@@ -265,10 +266,8 @@ theorem basisComp_subst_finTwo {τ A k ι : Type*} [CommRing A] [CommRing k] [Fi
     {x y : MvPowerSeries τ A} (hxy : HasSubst ![x, y]) (i : ι) :
     basisComp b (coeff_subst_mem_of_coeff_mem hxy hf) i =
       (basisComp b hf i).subst ![x.map π, y.map π] := by
-  rw [basisComp_subst hπ hsmul b hf hxy i]
-  congr 2
-  funext s
-  fin_cases s <;> rfl
+  rw [basisComp_subst hπ hsmul b hf hxy i, ← Function.comp_def (MvPowerSeries.map π),
+    Matrix.comp_vec2]
 
 end Basis
 

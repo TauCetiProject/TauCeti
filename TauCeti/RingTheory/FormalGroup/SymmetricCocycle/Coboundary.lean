@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
+import TauCeti.Data.Fin.VecNotation
 import TauCeti.Data.Finsupp.Fin
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.Obstruction
@@ -171,38 +172,35 @@ theorem subst_zero_X (hΦ : F.IsSymmetricCocycle Φ) :
   simp only [subst_add ha, subst_comp_subst_apply .X_X ha,
     subst_comp_subst_apply (.cons_subst_zero_left 0 1 2 F.zero_constantCoeff) ha,
     subst_comp_subst_apply (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff) ha] at h
-  have h00 : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
-      (![(X 0 : MvPowerSeries (Fin 3) R), X 1] i)) = 0 := by
-    funext i; fin_cases i <;> simp [subst_X ha]
-  have h0X : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
-      (![(X 1 : MvPowerSeries (Fin 3) R), X 2] i)) = ![0, PowerSeries.X] := by
-    funext i; fin_cases i <;> simp [subst_X ha]
-  have hF00 : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
-      (![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1], X 2] i)) =
-      ![0, PowerSeries.X] :=
-    funext <| Fin.forall_fin_two.mpr ⟨by simp only [Matrix.cons_val_zero,
-      subst_comp_subst_apply .X_X ha, h00, subst_zero_of_constantCoeff_zero F.zero_constantCoeff],
-      by simp [subst_X ha]⟩
-  have h0FX : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
-      (![X 0, F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]] i)) =
-      ![0, PowerSeries.X] :=
-    funext <| Fin.forall_fin_two.mpr ⟨by simp [subst_X ha], by simp only [Matrix.cons_val_one,
-      Matrix.cons_val_fin_one, subst_comp_subst_apply .X_X ha, h0X,
-      F.zero_add PowerSeries.HasSubst.X']⟩
-  simp only [h00, hF00, h0FX, h0X, subst_zero_eq_C_constantCoeff, Algebra.algebraMap_self,
-    MvPowerSeries.map_id] at h
+  have h00 : subst ![(0 : PowerSeries R), 0, PowerSeries.X] ∘
+      ![(X 0 : MvPowerSeries (Fin 3) R), X 1] = 0 := by
+    rw [Matrix.comp_vec2, subst_X ha, subst_X ha]; ext i; fin_cases i <;> rfl
+  have h0X : subst ![(0 : PowerSeries R), 0, PowerSeries.X] ∘
+      ![(X 1 : MvPowerSeries (Fin 3) R), X 2] = ![0, PowerSeries.X] := by
+    rw [Matrix.comp_vec2, subst_X ha, subst_X ha]; rfl
+  have hF00 : subst ![(0 : PowerSeries R), 0, PowerSeries.X] ∘
+      ![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1], X 2] =
+      ![0, PowerSeries.X] := by
+    rw [Matrix.comp_vec2, subst_comp_subst_apply .X_X ha, ← Function.comp_def, h00,
+      subst_zero_of_constantCoeff_zero F.zero_constantCoeff, subst_X ha]; rfl
+  have h0FX : subst ![(0 : PowerSeries R), 0, PowerSeries.X] ∘
+      ![X 0, F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]] =
+      ![0, PowerSeries.X] := by
+    rw [Matrix.comp_vec2, subst_X ha, subst_comp_subst_apply .X_X ha, ← Function.comp_def, h0X,
+      F.zero_add PowerSeries.HasSubst.X']; rfl
+  simp only [← Function.comp_def, h00, hF00, h0FX, h0X, subst_zero_eq_C_constantCoeff,
+    Algebra.algebraMap_self, MvPowerSeries.map_id] at h
   exact (add_right_cancel h).symm
 
 /-- Setting `Y = 0` in a symmetric 2-cocycle collapses it to its constant term:
 `Φ(T, 0) = Φ(0, 0)`. -/
 theorem subst_X_zero (hΦ : F.IsSymmetricCocycle Φ) :
     Φ.subst ![PowerSeries.X, 0] = PowerSeries.C (constantCoeff Φ) := by
-  have ha : HasSubst ![PowerSeries.X (R := R), 0] :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [PowerSeries.X]
+  have ha : HasSubst ![(PowerSeries.X : PowerSeries R), 0] := .X_zero
   nth_rw 1 [← hΦ.subst_swap]
-  rw [subst_comp_subst_apply .X_X ha]
-  convert hΦ.subst_zero_X using 2
-  funext i; fin_cases i <;> simp [subst_X ha]
+  rw [subst_comp_subst_apply .X_X ha, ← Function.comp_def, Matrix.comp_vec2, subst_X ha,
+    subst_X ha]
+  simpa using hΦ.subst_zero_X
 
 /-- Every pure power `Yⁿ` with `n ≠ 0` has coefficient `0` in a symmetric 2-cocycle. -/
 theorem coeff_single_one_eq_zero (hΦ : F.IsSymmetricCocycle Φ) {n : ℕ} (hn : n ≠ 0) :

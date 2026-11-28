@@ -36,8 +36,9 @@ finite sums of these polynomial components
 polynomial evaluated at the linear parts of the `a i`
 (`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). In degree one no order hypothesis is
 needed, since a constant term contributes nothing (`MvPowerSeries.homogeneousComponent_one_subst`).
-Homogeneous components and total-degree truncations also commute with variable renaming
-(`MvPowerSeries.rename_homogeneousComponent`, `MvPowerSeries.rename_homogeneousComponentPolynomial`,
+Homogeneous components and total-degree truncations also commute with ring homomorphisms and
+variable renaming (`MvPowerSeries.map_homogeneousComponent`,
+`MvPowerSeries.rename_homogeneousComponent`, `MvPowerSeries.rename_homogeneousComponentPolynomial`,
 `MvPowerSeries.rename_truncTotal`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
@@ -279,6 +280,15 @@ theorem homogeneousComponent_C_of_ne_zero {p : ℕ} (hp : p ≠ 0) (r : R) :
   ext d
   rw [coeff_homogeneousComponent, coeff_C, map_zero]
   split_ifs with hd h0 <;> simp_all
+
+/-- Homogeneous component extraction commutes with coefficient ring homomorphisms. -/
+theorem map_homogeneousComponent {S : Type*} [Semiring S] (φ : R →+* S) (p : ℕ)
+    (f : MvPowerSeries σ R) :
+    (homogeneousComponent p f).map φ = homogeneousComponent p (f.map φ) := by
+  classical
+  ext d
+  simp only [coeff_map, coeff_homogeneousComponent]
+  split_ifs <;> simp
 
 end Components
 

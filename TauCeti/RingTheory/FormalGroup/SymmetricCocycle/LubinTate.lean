@@ -184,6 +184,17 @@ theorem deformationCocycle_symm {F G : FormalGroup A} {I : Ideal A} (hI : I * I 
   rw [deformationCocycle_self] at h
   exact eq_neg_of_add_eq_zero_right h.symm
 
+/-- Perturbing the inputs of an `I`-valued series by an `I`-valued family whose entries pairwise
+multiply to zero leaves the substitution unchanged when `I * I = ⊥`. -/
+private theorem subst_add_eq_of_coeff_mem {σ τ R : Type*} [CommRing R] [Finite σ]
+    {I : Ideal R} (hI : I * I = ⊥) {a δ : σ → MvPowerSeries τ R} (ha : HasSubst a)
+    (hh : ∀ i j, δ i * δ j = 0) (hδI : ∀ i d, coeff d (δ i) ∈ I)
+    {Δ : MvPowerSeries σ R} (hΔI : ∀ d, coeff d Δ ∈ I) :
+    Δ.subst (a + δ) = Δ.subst a :=
+  subst_eq_subst_of_coeff_mem (ha.add (.of_sq_eq_zero fun i ↦ by rw [sq, hh])) ha
+    (fun s e ↦ by simpa using hδI s e)
+    fun d x hx ↦ by rw [← Ideal.mem_bot, ← hI]; exact Ideal.mul_mem_mul (hΔI d) hx
+
 /-- First-order expansion of `(F + Δ)((F + Δ)(X₀, X₁), X₂) - (F + Δ)(X₀, (F + Δ)(X₁, X₂))` when `Δ`
 has coefficients in a square-zero ideal `I`. -/
 private theorem assocDefect_add_eq {I : Ideal A} (hI : I * I = ⊥) (F : FormalGroup A)
@@ -208,16 +219,18 @@ private theorem assocDefect_add_eq {I : Ideal A} (hI : I * I = ⊥) (F : FormalG
     | 1, d => coeff_subst_mem_of_coeff_mem .X_X hΔI d
   have hhL i j := mul_eq_zero_of_coeff_mem hI (hδLI i) (hδLI j)
   have hhR i j := mul_eq_zero_of_coeff_mem hI (hδRI i) (hδRI j)
-  have heqL : (![S.subst ![X 0, X 1], X 2] : Fin 2 → MvPowerSeries (Fin 3) A) = ![F₀₁, X 2] + δL :=
-    by funext s; fin_cases s <;> simp [S, F₀₁, δL, subst_add .X_X]
-  have heqR : (![X 0, S.subst ![X 1, X 2]] : Fin 2 → MvPowerSeries (Fin 3) A) = ![X 0, F₁₂] + δR :=
-    by funext s; fin_cases s <;> simp [S, F₁₂, δR, subst_add .X_X]
+  have heqL : (![S.subst ![X 0, X 1], X 2] : Fin 2 → MvPowerSeries (Fin 3) A) =
+      ![F₀₁, X 2] + δL := by
+    dsimp only [S, F₀₁, δL]; rw [subst_add .X_X, Matrix.vec2_add, _root_.add_zero]
+  have heqR : (![X 0, S.subst ![X 1, X 2]] : Fin 2 → MvPowerSeries (Fin 3) A) =
+      ![X 0, F₁₂] + δR := by
+    dsimp only [S, F₁₂, δR]; rw [subst_add .X_X, Matrix.vec2_add, _root_.add_zero]
   rw [heqL, heqR, subst_add (haL.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhL])),
     subst_add (haR.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhR])),
-    subst_add_of_mul_eq_zero haL hhL F.toPowerSeries, subst_add_of_mul_eq_zero haL hhL Δ,
-    sum_mul_pderiv_subst_eq_zero hI haL hδLI hΔI,
-    subst_add_of_mul_eq_zero haR hhR F.toPowerSeries, subst_add_of_mul_eq_zero haR hhR Δ,
-    sum_mul_pderiv_subst_eq_zero hI haR hδRI hΔI, Fin.sum_univ_two, Fin.sum_univ_two, ← F.assoc]
+    subst_add_of_mul_eq_zero haL hhL F.toPowerSeries,
+    subst_add_eq_of_coeff_mem hI haL hhL hδLI hΔI,
+    subst_add_of_mul_eq_zero haR hhR F.toPowerSeries,
+    subst_add_eq_of_coeff_mem hI haR hhR hδRI hΔI, Fin.sum_univ_two, Fin.sum_univ_two, ← F.assoc]
   simp only [δL, δR, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
     zero_mul, _root_.add_zero]
   ring
@@ -462,11 +475,11 @@ theorem deformationCocycle_smul_eq_homDefect_𝔾ₐ (F : FormalGroup A) [F.IsCo
   have hh i j := mul_eq_zero_of_coeff_mem hI (hδvI i) (hδvI j)
   have harg : (![PowerSeries.subst (X 0) φ.toPowerSeries,
       PowerSeries.subst (X 1) φ.toPowerSeries] : Fin 2 → MvPowerSeries (Fin 2) A) = X + δv := by
-    funext i; fin_cases i <;>
-      simp [hφeq, δv, PowerSeries.subst_add (hX _), PowerSeries.subst_X (hX _)]
-  have hΔsub : Δ.subst (X + δv) = Δ := by
-    have h0 := sum_mul_pderiv_subst_eq_zero hI HasSubst.X hδvI (F.coeff_smul_sub_mem hφ)
-    simp only [subst_self, id_eq] at h0; rw [subst_X_add_of_mul_eq_zero hh, h0, _root_.add_zero]
+    rw [hφeq, PowerSeries.subst_add (hX 0), PowerSeries.subst_add (hX 1),
+      PowerSeries.subst_X (hX 0), PowerSeries.subst_X (hX 1), ← Matrix.vec2_add, finTwo_X_eq_X]
+  have hΔsub : Δ.subst (X + δv) = Δ :=
+    (subst_add_eq_of_coeff_mem hI HasSubst.X hh hδvI (F.coeff_smul_sub_mem hφ)).trans
+      (congrFun subst_self Δ)
   rw [harg, hFsmul, hφeq, PowerSeries.subst_add hF, PowerSeries.subst_X hF,
     subst_add (HasSubst.X.add (.of_sq_eq_zero fun i ↦ by rw [sq, hh])),
     subst_X_add_of_mul_eq_zero hh, hΔsub, Fin.sum_univ_two] at hhom
@@ -575,6 +588,21 @@ private theorem le_order_universalShiftSeries (n : ℕ+) :
   have hd0 := coeff_of_lt_order (hd.trans_le hord)
   simpa [TrivSqZeroExt.algebraMap_eq_inl] using congrArg TrivSqZeroExt.snd hd0
 
+private theorem eq_of_eps_smul_map_eq {σ R : Type*} [CommRing R] {U V : MvPowerSeries σ R}
+    (h : (DualNumber.eps : DualNumber R) • U.map (algebraMap R (DualNumber R)) =
+      (DualNumber.eps : DualNumber R) • V.map (algebraMap R (DualNumber R))) :
+    U = V := by
+  ext d
+  simpa [TrivSqZeroExt.algebraMap_eq_inl] using congrArg (TrivSqZeroExt.snd ∘ coeff d) h
+
+private theorem map_lazardCocycle_coe {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    (m : ℕ) :
+    MvPowerSeries.map f (TauCeti.lazardCocycle m R : MvPowerSeries (Fin 2) R) =
+      (TauCeti.lazardCocycle m S : MvPowerSeries (Fin 2) S) := by
+  ext d
+  rw [coeff_map, MvPolynomial.coeff_coe, MvPolynomial.coeff_coe, ← TauCeti.map_lazardCocycle f,
+    MvPolynomial.coeff_map]
+
 private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
     homogeneousComponent ((n : ℕ) + 1) (universalShiftSeries n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
@@ -583,18 +611,9 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
     fun m hm ↦ by simp [shiftGeneratorHom_apply_generator, hm.ne]
   rw [← smul_eps_map_universalShiftSeries, shiftGeneratorHom_apply_generator] at hcomp
   simp only [ite_true, add_sub_cancel_left] at hcomp
-  ext d
-  by_cases hdeg : d.degree = (n : ℕ) + 1
-  · have hd := congrArg (TrivSqZeroExt.snd ∘ coeff d) hcomp
-    simp only [Function.comp_apply, coeff_homogeneousComponent, hdeg, ↓reduceIte,
-      MvPolynomial.coe_smul, coeff_smul, coeff_map, MvPolynomial.coeff_coe,
-      ← TauCeti.map_lazardCocycle (algebraMap LazardRing (DualNumber LazardRing)),
-      MvPolynomial.coeff_map, smul_eq_mul, TrivSqZeroExt.snd_mul, DualNumber.fst_eps,
-      DualNumber.snd_eps, TrivSqZeroExt.algebraMap_eq_inl, TrivSqZeroExt.fst_inl,
-      TrivSqZeroExt.snd_inl] at hd
-    simpa [coeff_homogeneousComponent, hdeg] using hd
-  · have hdeg' : d 0 + d 1 ≠ (n : ℕ) + 1 := Finsupp.degree_finTwo d ▸ hdeg
-    simp [coeff_homogeneousComponent, hdeg, TauCeti.coeff_lazardCocycle, hdeg']
+  refine eq_of_eps_smul_map_eq ?_
+  rw [map_homogeneousComponent, ← _root_.map_smul, hcomp, MvPolynomial.coe_smul,
+    ← map_lazardCocycle_coe (algebraMap LazardRing (DualNumber LazardRing))]
 
 private noncomputable def universalLubinTateCocycle (n : ℕ+) :
     MvPowerSeries (Fin 2) LazardRing :=
@@ -673,15 +692,8 @@ theorem homogeneousComponent_lubinTateCocycle {R : Type*} [CommRing R] (F : Form
     [F.IsComm] (n : ℕ+) :
     homogeneousComponent ((n : ℕ) + 1) (F.lubinTateCocycle n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) R) := by
-  ext d; rw [coeff_homogeneousComponent, lubinTateCocycle, coeff_map, MvPolynomial.coeff_coe]
-  have hd := congrArg (coeff d) (homogeneousComponent_universalLubinTateCocycle n)
-  rw [coeff_homogeneousComponent, MvPolynomial.coeff_coe] at hd
-  by_cases hdeg : d.degree = (n : ℕ) + 1
-  · rw [ite_eq_left hdeg] at hd ⊢
-    rw [hd, ← TauCeti.map_lazardCocycle (LazardRing.lift ⟨F, inferInstance⟩),
-      MvPolynomial.coeff_map]
-  · have : d 0 + d 1 ≠ (n : ℕ) + 1 := Finsupp.degree_finTwo d ▸ hdeg
-    rw [ite_eq_right hdeg, TauCeti.coeff_lazardCocycle, ite_eq_right (by tauto)]
+  rw [lubinTateCocycle, ← map_homogeneousComponent, homogeneousComponent_universalLubinTateCocycle,
+    map_lazardCocycle_coe]
 
 /-- `FormalGroup.lubinTateCocycle` commutes with base change of the coefficient ring. -/
 @[simp]

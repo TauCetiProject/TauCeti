@@ -673,21 +673,40 @@ theorem bijective_map_of_height_eq_one [IsLocalRing B] [IsHausdorff (maximalIdea
   exact congrArg Subtype.val (@Subsingleton.elim _ hsub ⟨x₁, hx⟩ ⟨⟦F⟧, map_mk q hq F⟩)
 
 private noncomputable def piKerFstEquiv (k : Type*) [CommRing k] (n : ℕ) :
-    (Fin n → k) ≃ (Fin n → TrivSqZeroExt.kerIdeal k k) :=
-  Equiv.piCongrRight fun _ ↦ (TrivSqZeroExt.kerIdealLinearEquiv k k).toEquiv
+    (Fin n → k) ≃ (Fin n → RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom) where
+  toFun c j := ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩
+  invFun z j := (z j).val.snd
+  left_inv c := by ext j; simp
+  right_inv z := by
+    funext j
+    exact Subtype.ext ((TrivSqZeroExt.mem_kerIdeal_iff_inr k k _).mp (z j).property).symm
 
 private theorem piKerFstEquiv_apply (k : Type*) [CommRing k] {n : ℕ} (c : Fin n → k) :
-    piKerFstEquiv k n c = fun j ↦
-      ⟨TrivSqZeroExt.inr (c j), (TrivSqZeroExt.mem_kerIdeal_iff_inr k k _).mpr rfl⟩ := by
-  funext j
-  exact Subtype.ext <| by
-    rw [piKerFstEquiv, Equiv.piCongrRight_apply, Pi.map_apply, LinearEquiv.coe_toEquiv,
-      TrivSqZeroExt.coe_kerIdealLinearEquiv]
+    piKerFstEquiv k n c = fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩ :=
+  (rfl)
 
 private noncomputable def dualNumberTrivialLift (F₀ : FormalGroup k) [F₀.IsComm] :
     FormalGroupLift (TrivSqZeroExt.fstHom k k k).toRingHom F₀ :=
   FormalGroupLift.ofSection F₀ (TrivSqZeroExt.fstHom k k k).toRingHom
-    (algebraMap k (DualNumber k)) (RingHom.ext fun _ ↦ by simp)
+    (algebraMap k (DualNumber k)) (RingHom.ext fun x ↦ by simp)
+
+private theorem dualNumberTrivialLift_def (F₀ : FormalGroup k) [F₀.IsComm] :
+    dualNumberTrivialLift F₀ =
+      FormalGroupLift.ofSection F₀ (TrivSqZeroExt.fstHom k k k).toRingHom
+        (algebraMap k (DualNumber k)) (RingHom.ext fun x ↦ by simp) := (rfl)
+
+private theorem fstHom_surjective (k : Type*) [CommRing k] :
+    Function.Surjective (TrivSqZeroExt.fstHom k k k).toRingHom :=
+  TrivSqZeroExt.fst_surjective
+
+private theorem fg_ker_fstHom (k : Type*) [CommRing k] :
+    (RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom).FG :=
+  TrivSqZeroExt.fg_kerIdeal (R := k) (M := k)
+
+private theorem ker_fstHom_mul_ker_fstHom (k : Type*) [CommRing k] :
+    RingHom.ker ((RingHom.id k).comp (TrivSqZeroExt.fstHom k k k).toRingHom) *
+      RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom = ⊥ :=
+  (pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k)
 
 /-- **The Lubin–Tate tangent space.** For a commutative formal group law `F₀` of finite height `h`
 over a field `k` of characteristic `p`, the set of deformations of `F₀` over the dual numbers
@@ -700,8 +719,7 @@ noncomputable def dualNumberEquiv {p h : ℕ} [Fact p.Prime] [CharP k p]
     (squareZeroFiberEquiv (B := k) (π_B := RingHom.id k)
       (q := (TrivSqZeroExt.fstHom k k k).toRingHom)
       Function.surjective_id (RingHom.id_comp _)
-      TrivSqZeroExt.fst_surjective (TrivSqZeroExt.fg_kerIdeal (R := k) (M := k))
-      ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
+      (fstHom_surjective k) (fg_ker_fstHom k) (ker_fstHom_mul_ker_fstHom k)
       hF₀ (dualNumberTrivialLift F₀)).trans
       (Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _)
 
@@ -714,10 +732,8 @@ theorem dualNumberEquiv_apply {p h : ℕ} [Fact p.Prime] [CharP k p]
           (algebraMap k (DualNumber k)) (RingHom.ext fun x ↦ by simp))
         (RingHom.id_comp _) ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
         p h (fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩) := by
-  rw [dualNumberEquiv]
-  erw [Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
-    squareZeroFiberEquiv_apply_coe, piKerFstEquiv_apply]
-  rfl
+  rw [dualNumberEquiv, Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
+    squareZeroFiberEquiv_apply_coe, piKerFstEquiv_apply, dualNumberTrivialLift_def]
 
 end SquareZeroFiber
 
