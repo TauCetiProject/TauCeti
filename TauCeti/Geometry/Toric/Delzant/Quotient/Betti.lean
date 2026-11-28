@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Toric.Delzant.Quotient.Hamiltonian
 public import TauCeti.Geometry.Toric.Delzant.Simplex
 import TauCeti.Geometry.Manifold.Algebra.TypeTags
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
-import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
+import TauCeti.Geometry.Toric.Delzant.Quotient.Topology
 
 /-!
 # The Betti numbers of a Delzant toric manifold
@@ -322,13 +322,10 @@ theorem isPerfectMorse_reducedMomentMap_apply (k : Type w) [DivisionRing k]
   have := hΔ.contMDiffVAdd_delzantQuotient hi
   have := hi.t2Space_delzantQuotient (u := u) (c := c)
   have := compactSpace_delzantQuotient (c := c) hΔ.isBounded
-  have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
-  have hσ := (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
-  have hσG := fun g ↦
-    ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply
+  obtain ⟨h, hσ, hσG, -⟩ := hΔ.isMomentMap_and_isolated_fixedPoints_delzantQuotient hi hβ
   -- The component `⟨μ_Δ, x⟩` is the component of the torus moment map along a preimage of `x`.
   obtain ⟨ξ, rfl⟩ := hβ x
-  exact h.toIsMomentMap.isPerfectMorse hσ hσG k (ξ := ξ)
+  exact h.isPerfectMorse hσ (fun g ↦ (hσG g).apply) k (ξ := ξ)
     (hΔ.isMorse_reducedMomentMap_apply hi hβ hx)
 
 /-- **The Betti numbers of a Delzant toric manifold.** For `x ∈ V` on which no edge vector at any

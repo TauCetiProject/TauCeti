@@ -54,6 +54,8 @@ self-duality, and monoidal functors out of `TLCat R δ`.
 * `TauCeti.TLCat.linearize_map_tensorHom`: linearization preserves tensor products of morphisms.
 * `TauCeti.TLCat.instMonoidalPreadditive`, `TauCeti.TLCat.instMonoidalLinear`: the tensor product
   is `R`-bilinear.
+* `TauCeti.TLCat.coeff_whiskerRight`, `TauCeti.TLCat.tensorRight_faithful`: adding straight
+  strands on the right preserves coefficients and is faithful at every loop value.
 * `TauCeti.TLCat.associator_hom`, `TauCeti.TLCat.leftUnitor_hom`, `TauCeti.TLCat.rightUnitor_hom`
   and their inverses: the monoidal structure is strict.
 * `TauCeti.TLCat.liftDiag_ε`, `TauCeti.TLCat.liftDiag_μ`: the structure morphisms of the
@@ -348,6 +350,30 @@ instance instMonoidalPreadditive : MonoidalPreadditive (TLCat R δ) where
 instance instMonoidalLinear : MonoidalLinear R (TLCat R δ) where
   whiskerLeft_smul _ _ _ r f := tensorHom_smul r _ f
   smul_whiskerRight r _ _ f _ := smul_tensorHom r f _
+
+/-- Adding straight strands on the right pushes coefficients forward along block insertion.
+No loops are created, so the coefficients do not depend on the loop parameter. -/
+theorem coeff_whiskerRight (f : X ⟶ Y) (Z : TLCat R δ) :
+    (f ▷ Z).coeff = Finsupp.mapDomain
+      (fun x => (TLDiagram.tensor ⟨x, 0⟩ (TLDiagram.id Z.as)).matching) f.coeff := by
+  induction f using hom_induction with
+  | zero => simp
+  | add f g hf hg => simp [hf, hg, Finsupp.mapDomain_add]
+  | smul r f hf => simp [hf, Finsupp.mapDomain_smul]
+  | basis x =>
+    simp only [diagBasis_whiskerRight, coeff_diagBasis, Finsupp.mapDomain_single]
+
+/-- Right tensoring by any boundary is faithful: the original matching can be recovered by
+deleting the added straight strands, independently of the loop value. -/
+instance tensorRight_faithful (Z : TLCat R δ) : (tensorRight Z).Faithful where
+  map_injective {X Y} f g h := by
+    apply hom_ext
+    apply Finsupp.mapDomain_injective (f := fun x : PlanarMatching (X.as + Y.as) =>
+      (TLDiagram.tensor ⟨x, 0⟩ (TLDiagram.id Z.as)).matching)
+      (fun _ _ hxy => (TLDiagram.matching_tensor_eq_iff.mp hxy).1)
+    have h' : f ▷ Z = g ▷ Z := by
+      simpa only [Functor.flip_obj_map, curriedTensor_map_app] using h
+    simpa only [coeff_whiskerRight] using congrArg Hom.coeff h'
 
 /-! ### Linearization is a monoidal functor -/
 

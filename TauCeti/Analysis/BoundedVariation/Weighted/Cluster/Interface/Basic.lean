@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Basic
 public import TauCeti.Analysis.BoundedVariation.Weighted.ReducedBoundary
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Analysis.BoundedVariation.Interface
+import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Support
 
 /-!
 # The interface decomposition of a cluster
@@ -23,9 +24,10 @@ the interfaces and their areas (`TauCeti.Cluster.interface_permute`,
 reduced boundary of a union of cells `⋃_{i ∈ S} Ω_i` is the union of the interfaces `Σ_ij` with
 `i ∈ S` and `j ∉ S` (`TauCeti.Cluster.reducedBoundary_biUnion_cell_ae_eq`), almost every point of
 `∂*Ω_i` lies on exactly one interface `Σ_ij`
-(`TauCeti.Cluster.ae_existsUnique_mem_interface_of_mem_reducedBoundary_cell`), and distinct
-interfaces meet in an `Hⁿ⁻¹`-null set (`TauCeti.Cluster.aedisjoint_interface`), since almost no
-point lies on the reduced boundaries of three cells
+(`TauCeti.Cluster.ae_existsUnique_mem_interface_of_mem_reducedBoundary_cell`), so the closure of
+`∂*Ω_i` is the closure of `⋃_{j ≠ i} Σ_ij` (`TauCeti.Cluster.closure_reducedBoundary_cell`), and
+distinct interfaces meet in an `Hⁿ⁻¹`-null set (`TauCeti.Cluster.aedisjoint_interface`), since
+almost no point lies on the reduced boundaries of three cells
 (`TauCeti.Cluster.ae_notMem_reducedBoundary_cell_of_mem_interface`). Hence:
 
 * `P_μ(⋃_{i ∈ S} Ω_i) = Σ_{i ∈ S, j ∉ S} A_ij`
@@ -193,6 +195,24 @@ theorem ae_existsUnique_mem_interface_of_mem_reducedBoundary_cell (hW : ContDiff
   exact congrArg Prod.snd
     (huniq (k, j') ⟨Finset.mem_singleton_self k, by simpa using hj', (mem_interface.1 hxj').1,
       (mem_interface.1 hxj').2⟩)
+
+/-- **The closure form of the interface decomposition.** For a `C¹` weight, in dimension
+`n ≥ 2`, the closure of the reduced boundary `∂*Ω_i` of a cell is the closure of the union of its
+interfaces `Σ_ij`, `j ≠ i`. The literal equality `∂*Ω_i = ⋃_{j ≠ i} Σ_ij` can fail at an
+`Hⁿ⁻¹`-null set of points; such points are limits of interface points, since every ball around a
+point of `∂*Ω_i` meets `∂*Ω_i` in positive `Hⁿ⁻¹` measure. -/
+theorem closure_reducedBoundary_cell (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
+    (Ω : Cluster W q) (i : Fin q) :
+    closure (reducedBoundary volume ⊤ (Ω.cell i)) =
+      closure (⋃ (j) (_ : j ≠ i), Ω.interface i j) := by
+  have hsub : ⋃ (j) (_ : j ≠ i), Ω.interface i j ⊆ reducedBoundary volume ⊤ (Ω.cell i) :=
+    iUnion₂_subset fun _ _ _ hx => (mem_interface.1 hx).1
+  rw [closure_reducedBoundary_eq_closure_inter_of_ae hn
+    (T := ⋃ (j) (_ : j ≠ i), Ω.interface i j) ?_, inter_eq_right.2 hsub]
+  filter_upwards [Ω.ae_existsUnique_mem_interface_of_mem_reducedBoundary_cell hW hn i]
+    with x hx hxi
+  obtain ⟨j, ⟨hj, hxj⟩, -⟩ := hx hxi
+  exact mem_iUnion₂.2 ⟨j, hj, hxj⟩
 
 /-- **The perimeter of a union of cells is the area of its interfaces with the other cells.**
 For a `C¹` weight, in dimension `n ≥ 2`, `P_μ(⋃_{i ∈ S} Ω_i) = Σ_{i ∈ S} Σ_{j ∉ S} A_ij`. -/

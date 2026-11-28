@@ -10,6 +10,7 @@ public import Mathlib.Data.Int.Interval
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Homology.SpectralObject.Basic
 public import TauCeti.Algebra.Homology.SpectralObject.Stabilization
+public import TauCeti.Algebra.Homology.ShortComplex.SubquotientPresentation
 
 /-!
 # The abutment of a spectral object indexed by `EInt` and its filtration
@@ -22,7 +23,11 @@ by `X.abutmentFiltrationι q n` (a monomorphism, by exactness). The pieces incre
 (`X.abutmentFiltrationMap q n`, a monomorphism compatible with the embeddings), and the limit object
 `X.EInfty q n = E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece: the cokernel
 of `F_q H^n ⟶ F_{q+1} H^n` (`X.EInftyIsoCokernel`), from Mathlib's short exact sequence
-`shortComplexOpcyclesThreeδ₂Toδ₁_shortExact`.
+`shortComplexOpcyclesThreeδ₂Toδ₁_shortExact`. Since `X.EInfty q n` is the homology of a short
+complex whose middle object is `H^n(q ≤ q + 1)`, the object at `(n - q, q)` on the first page of
+the spectral sequence, each graded piece is a subquotient of that first-page object
+(`nonempty_subquotientPresentation_page_two_X_cokernel_abutmentFiltrationMap`), whatever the
+filtration.
 
 The filtration is bounded below and exhaustive in degree `n` as soon as `H^n(⊥ ≤ q)` vanishes for
 small `q` (`isZero_abutmentFiltration`, and `isZero_abutmentFiltration_of_le` for all `q ≤ a`) and
@@ -55,6 +60,11 @@ when it also contains zero and is closed under isomorphisms, passes to the abutm
   `CategoryTheory.Abelian.SpectralObject.prop_abutment_of_prop_cokernel`, and
   `CategoryTheory.Abelian.SpectralObject.isZero_abutment_of_isZero_cokernel`: extension-closed
   properties and vanishing of filtration stages and the abutment from the graded pieces.
+
+## Main results
+
+* `nonempty_subquotientPresentation_page_two_X_cokernel_abutmentFiltrationMap`: each graded piece
+  of the abutment is a subquotient of the corresponding first-page object.
 -/
 
 public section
@@ -138,6 +148,24 @@ lemma opcyclesToE_EInftyIsoCokernel_hom (q n : ℤ) :
   exact IsColimit.comp_coconePointUniqueUpToIso_hom
     (X.shortComplexOpcyclesThreeδ₂Toδ₁_shortExact ..).gIsCokernel (colimit.isColimit _)
     WalkingParallelPair.one
+
+/-- **The graded pieces of the abutment are subquotients of the first page.** The graded piece
+`F_{q+1} H^{p+q} / F_q H^{p+q}` of the filtration of the abutment is a subquotient of the object at
+`pq = (p, q)` on the first page (numbered `2`) of the spectral sequence of `X`. No boundedness of
+the filtration is needed. -/
+lemma nonempty_subquotientPresentation_page_two_X_cokernel_abutmentFiltrationMap (pq : ℤ × ℤ) :
+    Nonempty (TauCeti.SubquotientPresentation
+      (((X.spectralSequence coreE₂Cohomological).page 2).X pq)
+      (cokernel (X.abutmentFiltrationMap pq.2 (pq.1 + pq.2)))) :=
+  -- The first-page object is `H^{p+q}(q ≤ q + 1)`, and `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` is the
+  -- homology of a short complex with this middle object.
+  ⟨((TauCeti.SubquotientPresentation.refl _).mapIso
+    (X.spectralSequenceFirstPageXIso coreE₂Cohomological pq pq.2 ((pq.2 + 1 : ℤ) : EInt) rfl rfl
+      _ rfl)).trans
+    ((X.shortComplex (homOfLE (bot_le : (⊥ : EInt) ≤ pq.2)) (homOfLE (coe_le_coe_add_one pq.2))
+      (homOfLE (le_top : ((pq.2 + 1 : ℤ) : EInt) ≤ ⊤)) (pq.1 + pq.2 - 1) (pq.1 + pq.2)
+      (pq.1 + pq.2 + 1)).homologyPresentation.mapIso
+      (X.EInftyIsoCokernel pq.2 (pq.1 + pq.2)))⟩
 
 /-- The `q`th filtration piece vanishes when `H^n(⊥ ≤ q)` does: the filtration is bounded below
 in degree `n` when these vanish for small `q`. -/
