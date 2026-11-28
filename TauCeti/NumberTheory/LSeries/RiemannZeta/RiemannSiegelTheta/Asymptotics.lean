@@ -34,9 +34,9 @@ and `1/(2T)` (the remainder, from Stieltjes' bound
 
 * E. C. Titchmarsh, *The Theory of the Riemann Zeta-Function*, 2nd ed. (revised by
   D. R. Heath-Brown), §9.3.
-* G. Nemes, *Error bounds and exponential improvements for the asymptotic expansions of the gamma
-  function and its reciprocal*, Proc. Roy. Soc. Edinburgh Sect. A 145 (2015), 571–596, for the
-  bound on the Stirling remainder used in the asymptotic.
+* F. W. J. Olver, *Asymptotics and Special Functions*, Chapter 8, §4, eq. (8.4.06).
+* T. J. Stieltjes, *Sur le développement de `log Γ(a)`*, J. Math. Pures Appl. (4) 5 (1889),
+  425–444, for the `1 / (6 * ‖z‖)` right half-plane bound on the Stirling remainder.
 -/
 
 public section

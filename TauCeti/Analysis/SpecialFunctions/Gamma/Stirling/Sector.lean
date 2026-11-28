@@ -25,7 +25,7 @@ form `‖r₁(z)‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`, the sharp `1 / 12`
 
 ## Main declarations
 
-* `norm_iteratedDeriv_stirlingSeriesRemainder_le_realStirlingSeriesRemainder_div_cos_half_arg`:
+* `TauCeti.norm_iteratedDeriv_stirlingSeriesRemainder_le_abs_iteratedDeriv_real_div_cos_half_arg`:
   slit-plane derivative comparison against the positive real axis at `‖z‖`.
 * `TauCeti.norm_iteratedDeriv_stirlingSeriesRemainder_lt`,
   `TauCeti.norm_stirlingSeriesRemainder_lt`,
@@ -64,7 +64,7 @@ private theorem sin_half_pos_le_cos_half_arg {z : ℂ} {δ : ℝ} (hδ : 0 < δ)
 /-- Comparison of the slit-plane derivative `‖r_n^{(k)}(z)‖` to its positive real-axis value at
 `‖z‖`: for `n ≥ 1`, `k : ℕ`, and `z ∈ slitPlane`,
 `‖r_n^{(k)}(z)‖ ≤ |r_n^{(k)}(‖z‖)| / cos (arg z / 2) ^ (2n + k)`. -/
-theorem norm_iteratedDeriv_stirlingSeriesRemainder_le_realStirlingSeriesRemainder_div_cos_half_arg
+theorem norm_iteratedDeriv_stirlingSeriesRemainder_le_abs_iteratedDeriv_real_div_cos_half_arg
     {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
     ‖iteratedDeriv k (stirlingSeriesRemainder n) z‖ ≤
       |iteratedDeriv k (realStirlingSeriesRemainder n) ‖z‖| /
@@ -94,7 +94,7 @@ theorem norm_iteratedDeriv_stirlingSeriesRemainder_le_realStirlingSeriesRemainde
       (by omega : 2 ≤ 2 * n + k) hz_pos).const_mul _)
     measurableSet_Ioi fun u hu ↦ ?_)
   have hu0 : 0 ≤ u := (mem_Ioi.mp hu).le
-  have hnn := neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u
+  have hnn := neg_one_pow_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u
   have habs : |(bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)| =
       (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
     simpa [abs_mul] using abs_of_nonneg hnn
@@ -124,7 +124,7 @@ theorem norm_iteratedDeriv_stirlingSeriesRemainder_lt {n : ℕ} (hn : 1 ≤ n) (
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
   have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
   exact lt_of_le_of_lt
-    (norm_iteratedDeriv_stirlingSeriesRemainder_le_realStirlingSeriesRemainder_div_cos_half_arg
+    (norm_iteratedDeriv_stirlingSeriesRemainder_le_abs_iteratedDeriv_real_div_cos_half_arg
       hn k hz)
     (div_lt_div_of_pos_right
       (abs_iteratedDeriv_realStirlingSeriesRemainder_lt_abs_iteratedDeriv_stirlingTerm hn k hz_pos)
@@ -147,10 +147,9 @@ theorem norm_iteratedDeriv_stirlingRemainder_lt (k : ℕ) {z : ℂ} (hz : z ∈ 
   have hT1 : |iteratedDeriv k (stirlingTerm 1) ‖z‖| = (k ! : ℝ) / (12 * ‖z‖ ^ (k + 1)) := by
     have heq : (stirlingTerm 1 : ℝ → ℝ) = fun t ↦ (12⁻¹ : ℝ) / t := by
       ext t; rw [stirlingTerm_one]; ring
-    rw [heq, TauCeti.iteratedDeriv_const_div, abs_div, abs_mul, abs_mul, abs_pow, abs_neg,
-      abs_one, one_pow, one_mul, Nat.abs_cast, abs_of_nonneg (by positivity : (0 : ℝ) ≤ 12⁻¹),
-      abs_pow, abs_norm]
-    simp only [div_eq_mul_inv, mul_inv]
+    rw [heq, TauCeti.iteratedDeriv_const_div]
+    simp only [abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul, Nat.abs_cast,
+      abs_of_nonneg (by positivity : (0 : ℝ) ≤ 12⁻¹), abs_inv, abs_norm, div_eq_mul_inv, mul_inv]
     ring
   rw [stirlingSeriesRemainder_one, hT1] at h
   have hidx : 2 * 1 + k = k + 2 := by omega

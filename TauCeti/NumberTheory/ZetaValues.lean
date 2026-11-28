@@ -29,10 +29,10 @@ series (`hasSum_one_div_nat_pow_mul_cos`, `hasSum_one_div_nat_pow_mul_fourier`, 
   `B_{2k} - B_{2k}(x)` has the sign `(-1)^(k+1)` of `B_{2k}` (or vanishes). This makes the
   remainder of the Euler–Maclaurin formula of even order a one-signed integral, so that for
   monotone derivatives the remainder is enclosed by the first neglected term.
-* `TauCeti.neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos`:
+* `TauCeti.neg_one_pow_mul_bernoulli_sub_bernoulliFun_pos`:
   `(-1) ^ (k + 1) * (B_{2k} - B_{2k}(x))` is strictly positive on `(0, 1)` for `k ≥ 1`.
 * `TauCeti.abs_bernoulliFun_even_le`: for all `k` and `x ∈ [0, 1]`, `|B_{2k}(x)| ≤ |B_{2k}|`.
-* `TauCeti.neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg`,
+* `TauCeti.neg_one_pow_mul_bernoulli_sub_bernoulliFun_fract_nonneg`,
   `TauCeti.abs_bernoulliFun_even_fract_le`: the corresponding periodic statements at `Int.fract u`.
 * `TauCeti.abs_bernoulliFun_le_mul_tsum`: for `2 ≤ k` and `x ∈ [0, 1]`,
   `|B_k(x)| ≤ 2 · k! / (2π)^k · ∑_{n : ℕ} 1 / n^k`, the last sum being `ζ(k)`.
@@ -133,7 +133,7 @@ theorem neg_one_pow_mul_bernoulli_sub_bernoulliFun_nonneg (k : ℕ) {x : ℝ}
 
 /-- For `k ≥ 1` and `x ∈ (0, 1)`, the difference `B_{2k} - B_{2k}(x)` strictly has the sign of
 `B_{2k}`: `0 < (-1) ^ (k + 1) * (B_{2k} - B_{2k}(x))`. -/
-theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos {k : ℕ} (hk : k ≠ 0) {x : ℝ}
+theorem neg_one_pow_mul_bernoulli_sub_bernoulliFun_pos {k : ℕ} (hk : k ≠ 0) {x : ℝ}
     (hx : x ∈ Set.Ioo (0 : ℝ) 1) :
     0 < (-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x) := by
   have hsum := hasSum_one_sub_cos_div_nat_pow hk (Set.Ioo_subset_Icc_self hx)
@@ -181,7 +181,7 @@ theorem abs_bernoulliFun_even_le (k : ℕ) {x : ℝ} (hx : x ∈ Set.Icc (0 : �
 
 /-- Periodic form of `neg_one_pow_mul_bernoulli_sub_bernoulliFun_nonneg`: for every `k : ℕ`
 and every real `u`, `0 ≤ (-1) ^ (k + 1) * (B_{2k} - B_{2k}({u}))`. -/
-theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg (k : ℕ) (u : ℝ) :
+theorem neg_one_pow_mul_bernoulli_sub_bernoulliFun_fract_nonneg (k : ℕ) (u : ℝ) :
     0 ≤ (-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract u)) :=
   neg_one_pow_mul_bernoulli_sub_bernoulliFun_nonneg k
     ⟨Int.fract_nonneg u, (Int.fract_lt_one u).le⟩

@@ -36,10 +36,10 @@ representations in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Series.lean
 
 ## References
 
-* G. Nemes, *Error bounds and exponential improvements for the asymptotic expansions of the gamma
-  function and its reciprocal*, Proc. Roy. Soc. Edinburgh Sect. A **145** (2015), 571–596, §2
-  (eq. (2.5) and Lemma 2.1).
+* F. W. J. Olver, *Asymptotics and Special Functions*, Chapter 8, §4, eq. (8.4.06).
 * [F. W. J. Olver et al., *NIST Digital Library of Mathematical Functions*, §5.11](https://dlmf.nist.gov/5.11).
+* T. J. Stieltjes, *Sur le développement de `log Γ(a)`*, J. Math. Pures Appl. (4) 5 (1889),
+  425–444.
 * E. T. Whittaker and G. N. Watson, *A Course of Modern Analysis*, 4th ed., §12.33.
 -/
 

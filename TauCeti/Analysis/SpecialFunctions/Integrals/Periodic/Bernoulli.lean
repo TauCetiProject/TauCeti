@@ -114,7 +114,7 @@ theorem integral_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_pos {n 
   have hnn : 0 ≤ᵐ[volume.restrict (Ioi (0 : ℝ))] f := by
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
     have hu0 : 0 < u := mem_Ioi.mp hu
-    exact div_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u)
+    exact div_nonneg (neg_one_pow_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u)
       (by positivity)
   rw [setIntegral_pos_iff_support_of_nonneg_ae hnn
     (integrableOn_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk hx)]
@@ -122,7 +122,7 @@ theorem integral_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_pos {n 
     have hnum : 0 < (-1 : ℝ) ^ (n + 1) *
         ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
       rw [Int.fract_eq_self.mpr ⟨hu.1.le, hu.2⟩]
-      exact neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos (by omega : n ≠ 0) hu
+      exact neg_one_pow_mul_bernoulli_sub_bernoulliFun_pos (by omega : n ≠ 0) hu
     have hu0 : 0 < u := hu.1
     exact ⟨(div_pos hnum (by positivity)).ne', hu.1⟩
   exact lt_of_lt_of_le (by rw [Real.volume_Ioo]; norm_num) (measure_mono hsub)
