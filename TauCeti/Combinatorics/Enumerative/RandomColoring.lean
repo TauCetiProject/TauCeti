@@ -39,9 +39,8 @@ sets in which every color has nearly the same density on every large rectangle.
 * `TauCeti.two_mul_two_pow_mul_two_pow_add_mul_exp_lt` and
   `TauCeti.two_mul_two_pow_mul_two_pow_mul_exp_lt`: exponential union bounds for families of
   subrectangles of `s ×ˢ t` (with `r` optional auxiliary test sets).
-* `TauCeti.two_mul_mul_exp_lt_of_le_two_pow` and
-  `TauCeti.two_mul_add_one_mul_exp_lt_of_le_two_pow`: exponential union bounds for at most `2 ^ m`
-  test sets at deviation `η * N`.
+* `TauCeti.two_mul_mul_exp_lt_of_le_two_pow`: exponential union bound for at most `2 ^ m` test
+  sets at deviation `η * N`.
 
 ## Implementation notes
 
@@ -256,20 +255,6 @@ theorem two_mul_mul_exp_lt_of_le_two_pow {cardI q m : ℕ} {η N : ℝ}
         rw [← exp_add, ← exp_add, sub_eq_add_neg]
     _ ≤ exp 0 := exp_le_exp.2 (by push_cast; linarith)
     _ = 1 := exp_zero
-
-/-- **Exponential union bound.** If at most `2 ^ m` test sets are checked across `q` colors at
-relative deviation `η` on a sample of size `N` satisfying `m + q + 2 ≤ 2 * η ^ 2 * N`, then
-`2 * (cardI + 1) * q * exp (-2 * (η * N) ^ 2 / N) < 1`. -/
-theorem two_mul_add_one_mul_exp_lt_of_le_two_pow {cardI q m : ℕ} {η N : ℝ}
-    (hI : cardI ≤ 2 ^ m) (hN : (m : ℝ) + q + 2 ≤ 2 * η ^ 2 * N) :
-    2 * ((cardI : ℝ) + 1) * q * exp (-2 * (η * N) ^ 2 / N) < 1 := by
-  have h1 : cardI + 1 ≤ 2 ^ (m + 1) := by
-    have := Nat.one_le_pow m 2 two_pos
-    calc cardI + 1 ≤ 2 ^ m + 2 ^ m := Nat.add_le_add hI this
-      _ = 2 ^ (m + 1) := by ring
-  simpa [Nat.cast_add, Nat.cast_one] using
-    two_mul_mul_exp_lt_of_le_two_pow (cardI := cardI + 1) (m := m + 1) h1
-      (by push_cast; linarith)
 
 omit [DecidableEq κ] in
 /-- **Exponential union bound for rectangle tests.** If `card κ + r + 1 ≤ η ^ 2 * #s` and

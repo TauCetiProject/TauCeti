@@ -23,18 +23,17 @@ The file also records `Nat.sq_eq_descFactorial_two_add`, the expansion `n ^ 2 = 
 square into falling factorials, which converts second factorial moments into second moments;
 `Nat.pow_succ_le_descFactorial_succ_add`, `n ^ (k + 1) ≤ (n)_{k + 1} + ((k + 1).choose 2) * n ^ k`,
 the pairwise-collision upper bound on `n ^ (k + 1) - (n)_{k + 1}`;
-`Nat.pow_le_mul_descFactorial`, the falling-factorial lower bound `n ^ k ≤ c * (n)_k` whenever
-`c * k.choose 2 ≤ (c - 1) * n` (including `Nat.pow_le_two_mul_descFactorial`, `n ^ k ≤ 2 * (n)_k`
-whenever `k * (k - 1) ≤ n`); `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`,
-`6 ^ n * n ! ≤ (2 * n + 1)!`, the termwise comparison of the power series of `x * exp (x ^ 2 / 6)`
-and `sinh x`; `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`,
-`((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the termwise comparison that sums moment bounds `((n + 1)!)² aⁿ`
-against the series of `cosh`; `Nat.factorial_add_mul_factorial_add_le`,
-`(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds products of factorials in double
-hypergeometric series; `Nat.ascFactorial_two_mul_le_pow_add`,
-`n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, the inequality of arithmetic and geometric means for
-a rising factorial of even length; and `Nat.factorial_div_mul_factorial_div_dvd`,
-`(i / d)! * (j / d)! ∣ ((i + j) / d)!`.
+`Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
+termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`;
+`Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
+termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`;
+`Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
+number of triples of `n` elements with the number of injective ones;
+`Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
+products of factorials in double hypergeometric series;
+`Nat.ascFactorial_two_mul_le_pow_add`, `n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, the inequality
+of arithmetic and geometric means for a rising factorial of even length; and
+`Nat.factorial_div_mul_factorial_div_dvd`, `(i / d)! * (j / d)! ∣ ((i + j) / d)!`.
 -/
 
 public section
@@ -73,33 +72,6 @@ theorem pow_succ_le_descFactorial_succ_add (n k : ℕ) :
             (Nat.add_le_add_left (Nat.mul_le_mul_left _ (descFactorial_le_pow n (k + 1))) _) _
       _ = n.descFactorial (k + 1 + 1) + (k + 1 + 1).choose 2 * n ^ (k + 1) := by
           rw [choose_succ_succ (k + 1) 1, choose_one_right, Nat.add_mul (k + 1), ← Nat.add_assoc]
-
-/-- If `0 < c` and `c * k.choose 2 ≤ (c - 1) * n`, then `n ^ k ≤ c * n.descFactorial k`. -/
-theorem pow_le_mul_descFactorial {n k c : ℕ} (hc : 0 < c) (h : c * k.choose 2 ≤ (c - 1) * n) :
-    n ^ k ≤ c * n.descFactorial k := by
-  cases k with
-  | zero => simpa using Nat.succ_le_of_lt hc
-  | succ m =>
-    have hpow := Nat.mul_le_mul_left c (pow_succ_le_descFactorial_succ_add n m)
-    have herr : c * ((m + 1).choose 2 * n ^ m) ≤ (c - 1) * n ^ (m + 1) := by
-      calc c * ((m + 1).choose 2 * n ^ m)
-          = (c * (m + 1).choose 2) * n ^ m := by rw [Nat.mul_assoc]
-        _ ≤ ((c - 1) * n) * n ^ m := Nat.mul_le_mul_right _ h
-        _ = (c - 1) * n ^ (m + 1) := by rw [Nat.mul_assoc, Nat.mul_comm n, ← Nat.pow_succ]
-    have hsum : c * n ^ (m + 1) ≤ c * n.descFactorial (m + 1) + (c - 1) * n ^ (m + 1) :=
-      hpow.trans (Nat.mul_add _ _ _ ▸ Nat.add_le_add_left herr _)
-    have hsplit : c * n ^ (m + 1) = n ^ (m + 1) + (c - 1) * n ^ (m + 1) := by
-      calc c * n ^ (m + 1) = (1 + (c - 1)) * n ^ (m + 1) := by congr 1; omega
-        _ = n ^ (m + 1) + (c - 1) * n ^ (m + 1) := by rw [Nat.add_mul, Nat.one_mul]
-    omega
-
-/-- If `k * (k - 1) ≤ n`, then `n ^ k ≤ 2 * n.descFactorial k`. In particular, `n ^ 3 ≤ 2 * (n)₃`
-for `n ≥ 6`. -/
-theorem pow_le_two_mul_descFactorial {n k : ℕ} (h : k * (k - 1) ≤ n) :
-    n ^ k ≤ 2 * n.descFactorial k := by
-  refine pow_le_mul_descFactorial (c := 2) Nat.two_pos ?_
-  rw [Nat.choose_two_right, Nat.one_mul]
-  exact (Nat.mul_div_le (k * (k - 1)) 2).trans h
 
 /-- `6 ^ n * n ! ≤ (2 * n + 1)!`, with equality at `n = 0` and `n = 1`. -/
 theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :
@@ -163,6 +135,14 @@ theorem ascFactorial_two_mul_le_pow_add (n k : ℕ) : n.ascFactorial (2 * k) ≤
         nlinarith [sq_nonneg (((n : ℤ) + (2 * k - 1 - j : ℕ)) - (n + j))]
     _ = ((n + k) ^ (2 * k)) ^ 2 := by
         rw [Finset.prod_const, Finset.card_range, ← pow_mul, ← pow_mul, mul_comm]
+
+/-- From `n = 6` on, the cube of `n` is at most twice the third falling factorial:
+`n ^ 3 ≤ 2 * (n)₃`. -/
+theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
+    n ^ 3 ≤ 2 * n.descFactorial 3 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  simp only [descFactorial_succ, descFactorial_zero]
+  grind
 
 /-- Factorial divisibility under Euclidean division: `(i / d)! * (j / d)! ∣ ((i + j) / d)!`. -/
 theorem factorial_div_mul_factorial_div_dvd (d i j : ℕ) :

@@ -147,35 +147,6 @@ private theorem abs_relDensityOn_unionSupport_sub_ref_mul_card_le [Fintype κ₂
     ha₁
   linarith
 
-/-- Common count-to-density reduction for `(δ, r)`-top regularity over `P`. -/
-private theorem isTopRegularOverPolyad_of_count_le (H : Colored3Graph κ V) {P : Polyad3 S}
-    (hδ : 0 < δ) (hηθ : η + θ ≤ δ ^ 2) (hθ : ∀ _ : κ, 0 ≤ θ * (#P.support : ℝ))
-    (hcount : ∀ c (U : Fin r → Subpolyad3 P), η ≤ 1 →
-      |(H.relDensityOn c (unionSupport U) : ℝ) - H.relativeDensity c P| * #(unionSupport U) ≤
-        (η + θ) * #P.support) :
-    H.IsTopRegularOverPolyad P δ r := by
-  obtain hδ₁ | hδ₁ := le_or_gt 1 δ
-  · exact isTopRegularOverPolyad_of_one_le (H := H) (P := P) (r := r) hδ₁
-  rw [isTopRegularOverPolyad_iff]
-  intro c U hU
-  set W := unionSupport U
-  obtain hW | hW := (Nat.cast_nonneg (α := ℝ) #W).eq_or_lt
-  · have hW' : W = ∅ := card_eq_zero.1 (by exact_mod_cast hW.symm)
-    have hP' : P.support = ∅ := by
-      have := nonpos_of_mul_nonpos_right (hU.trans hW.symm.le) hδ
-      exact card_eq_zero.1 (by exact_mod_cast this.antisymm (Nat.cast_nonneg _))
-    rw [hW', relDensityOn_empty, H.relativeDensity_of_support_eq_empty c hP']
-    simpa using hδ.le
-  have hPpos : (0 : ℝ) < #P.support :=
-    hW.trans_le (Nat.cast_le.2 (card_le_card (unionSupport_subset U)))
-  have hθ₀ : 0 ≤ θ := nonneg_of_mul_nonneg_left (hθ c) hPpos
-  have hη₁ : η ≤ 1 := by nlinarith [pow_pos hδ 2]
-  refine le_of_mul_le_mul_right ?_ hW
-  calc |(H.relDensityOn c W : ℝ) - H.relativeDensity c P| * #W
-      ≤ (η + θ) * #P.support := hcount c U hη₁
-    _ ≤ δ * (δ * #P.support) := by nlinarith [hPpos.le]
-    _ ≤ δ * #W := mul_le_mul_of_nonneg_left hU hδ.le
-
 open Classical in
 /-- **Top regularity over a coarse polyad along a polyad map.** Let `π : Polyad3 T → Polyad3 S`
 assign coarse parents, and let `M = {x | Polyad3.ofTriple S x ≠ π (Polyad3.ofTriple T x)}`. Suppose
@@ -195,11 +166,20 @@ theorem isTopRegularOverPolyad_of_sum_polyadMap_le [Fintype κ₂']
         #(({x | Polyad3.ofTriple S x ≠ π (Polyad3.ofTriple T x)} : Finset _) ∩ P.support) ≤
       θ * #P.support) :
     H.IsTopRegularOverPolyad P δ r := by
-  refine isTopRegularOverPolyad_of_count_le H hδ hηθ
-    (fun c ↦ (add_nonneg (add_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
+  obtain hδ₁ | hδ₁ := le_or_gt 1 δ
+  · exact isTopRegularOverPolyad_of_one_le (H := H) (P := P) (r := r) hδ₁
+  refine H.isTopRegularOverPolyad_of_count_le hδ hηθ fun c U ↦ ?_
+  obtain hP0 | hPpos := P.support.eq_empty_or_nonempty
+  · have hU0 : unionSupport U = ∅ := subset_empty.1 (hP0 ▸ unionSupport_subset U)
+    simp [hP0, hU0]
+  have hθ₀ : 0 ≤ θ := nonneg_of_mul_nonneg_left
+    ((add_nonneg (add_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
       (sum_nonneg fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (abs_nonneg _)))
       (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)) (Nat.cast_nonneg _)).trans (hP c))
-    fun c U hη₁ ↦ ?_
+    (Nat.cast_pos.2 hPpos.card_pos)
+  have hη₁ : η ≤ 1 := by
+    have hδ₂ : δ ^ 2 < 1 := by nlinarith [hδ₁]
+    linarith [hηθ]
   have h₁ := abs_relDensityOn_unionSupport_sub_ref_mul_card_le H π hη hη₁ U c
     (a := (H.relativeDensity c P : ℝ))
     (mod_cast H.relativeDensity_nonneg c P) (mod_cast H.relativeDensity_le_one c P)
@@ -223,12 +203,21 @@ theorem isTopRegularOverPolyad_of_sum_abs_relativeDensity_sub_le [Fintype κ₂'
         2 * #(({x | Polyad3.ofTriple S x ≠ π (Polyad3.ofTriple T x)} : Finset _) ∩ P.support) ≤
       θ * #P.support) :
     H.IsTopRegularOverPolyad P δ r := by
-  refine isTopRegularOverPolyad_of_count_le H hδ hηθ
-    (fun c ↦ (add_nonneg (add_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
+  obtain hδ₁ | hδ₁ := le_or_gt 1 δ
+  · exact isTopRegularOverPolyad_of_one_le (H := H) (P := P) (r := r) hδ₁
+  refine H.isTopRegularOverPolyad_of_count_le hδ hηθ fun c U ↦ ?_
+  obtain hP0 | hPpos := P.support.eq_empty_or_nonempty
+  · have hU0 : unionSupport U = ∅ := subset_empty.1 (hP0 ▸ unionSupport_subset U)
+    simp [hP0, hU0]
+  have hθ₀ : 0 ≤ θ := nonneg_of_mul_nonneg_left
+    ((add_nonneg (add_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
       (mul_nonneg zero_le_two (sum_nonneg fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (abs_nonneg _))))
       (mul_nonneg zero_le_two (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)))
       (mul_nonneg zero_le_two (Nat.cast_nonneg _))).trans (hP c))
-    fun c U hη₁ ↦ ?_
+    (Nat.cast_pos.2 hPpos.card_pos)
+  have hη₁ : η ≤ 1 := by
+    have hδ₂ : δ ^ 2 < 1 := by nlinarith [hδ₁]
+    linarith [hηθ]
   set W := unionSupport U
   set a' := Set.projIcc 0 1 zero_le_one (a c)
   have hclamp : ∑ Q : Polyad3 T with π Q = P, #Q.support * |(H.relativeDensity c Q : ℝ) - a'| ≤

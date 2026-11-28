@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Set.PowersetCard
-public import TauCeti.Logic.Embedding.Basic
 import Mathlib.Data.Fintype.CardEmbedding
 
 import TauCeti.Algebra.BigOperators.Finset.Powerset
@@ -49,9 +48,7 @@ of `TauCeti.natCard_embedding_map_univ_eq_factorial`). Precomposing an embedding
 `r`-tuple by a permutation of `Fin r` leaves its unordered image unchanged
 (`Set.powersetCard.ofFinEmb_trans_perm`, `Set.powersetCard.ofFinEmb_comp_perm`), and two embeddings
 `Fin r ↪ β` have the same unordered image precisely when they differ by a permutation of `Fin r`
-(`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`), and mapping a finite set of injective
-`r`-tuples by `Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl β)` preserves its unordered image
-(`Set.powersetCard.image_ofFinEmb_map_subtypeInjectiveCongr`).
+(`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`).
 -/
 
 public section
@@ -294,16 +291,6 @@ theorem ofFinEmb_comp_perm (σ : Equiv.Perm (Fin r)) (x : Fin r → β)
   have htr : (⟨x ∘ σ, h⟩ : Fin r ↪ β) = σ.toEmbedding.trans ⟨x, (σ.injective_comp x).1 h⟩ :=
     Function.Embedding.ext fun _ ↦ rfl
   rw [htr, ofFinEmb_trans_perm]
-
-/-- Mapping a finite set of injective `r`-tuples by precomposition with `σ` leaves its image
-under `Set.powersetCard.ofFinEmb r β` unchanged. -/
-theorem image_ofFinEmb_map_subtypeInjectiveCongr [DecidableEq β]
-    (s : Finset {x : Fin r → β // Function.Injective x}) (σ : Equiv.Perm (Fin r)) :
-    (s.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl β)).toEmbedding).image
-        (fun x ↦ ofFinEmb r β ⟨x.val, x.property⟩) =
-      s.image (fun x ↦ ofFinEmb r β ⟨x.val, x.property⟩) := by
-  rw [Finset.map_eq_image, Finset.image_image]
-  exact Finset.image_congr fun x _ ↦ by simp [Equiv.subtypeInjectiveCongr_apply]
 
 /-- Two embeddings `Fin r ↪ β` have the same unordered image if and only if they differ by a
 permutation of `Fin r`. -/

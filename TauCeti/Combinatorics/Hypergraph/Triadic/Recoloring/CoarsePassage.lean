@@ -116,31 +116,24 @@ private theorem isTopRegularOverPolyad_of_good_children
         (#Q.support : ℝ) ≤ θ * #P.support) :
     H'.IsTopRegularOverPolyad P δ 1 := by
   have hsub := abs_relDensityOn_sub_coarse_mul_card_le_of_good_children H H' hV f hf hτ0 hgood hbad
-  rw [isTopRegularOverPolyad_one_iff]
-  intro c U hU
-  obtain hP0 | hPpos := P.support.eq_empty_or_nonempty
-  · have hU0 : U.support = ∅ := subset_empty.1 (hP0 ▸ U.support_subset)
-    simpa [hU0, H'.relativeDensity_of_support_eq_empty c hP0] using hδ.le
-  · have hUpos : (0 : ℝ) < #U.support := (mul_pos hδ (Nat.cast_pos.2 hPpos.card_pos)).trans_le hU
-    have hUP : (#U.support : ℝ) ≤ #P.support := by exact_mod_cast card_le_card U.support_subset
-    have hU_dev := hsub c U
-    have hP_dev := hsub c (Subpolyad3.ofSubcells P P.c₀ P.c₁ P.c₂)
-    rw [Subpolyad3.support_ofSubcells_cells, ← H'.relativeDensity_def] at hP_dev
-    rw [abs_mul, Nat.abs_cast] at hU_dev hP_dev
-    have hbase : |(H'.relativeDensity c P : ℝ) - H.relativeDensity c P| * #U.support ≤
-        (τ + θ) * #P.support :=
-      (mul_le_mul_of_nonneg_left hUP (abs_nonneg _)).trans hP_dev
-    have hsplit : |(H'.relDensityOn c U.support : ℝ) - H'.relativeDensity c P| ≤
-        |(H'.relDensityOn c U.support : ℝ) - H.relativeDensity c P| +
-          |(H'.relativeDensity c P : ℝ) - H.relativeDensity c P| := by
-      rw [abs_sub_comm (H'.relativeDensity c P : ℝ)]; exact abs_sub_le _ _ _
-    have hmul := mul_le_mul_of_nonneg_right hsplit hUpos.le
-    rw [add_mul] at hmul
-    refine le_of_mul_le_mul_right ?_ hUpos
-    calc |(H'.relDensityOn c U.support : ℝ) - H'.relativeDensity c P| * #U.support
-        ≤ 2 * (τ + θ) * #P.support := by linarith
-      _ ≤ δ ^ 2 * #P.support := by gcongr
-      _ ≤ δ * #U.support := by nlinarith
+  refine H'.isTopRegularOverPolyad_of_count_le hδ htol fun c U ↦ ?_
+  rw [Subpolyad3.unionSupport_unique]
+  set U₀ := U default
+  have hUP : (#U₀.support : ℝ) ≤ #P.support := by exact_mod_cast card_le_card U₀.support_subset
+  have hU_dev := hsub c U₀
+  have hP_dev := hsub c (Subpolyad3.ofSubcells P P.c₀ P.c₁ P.c₂)
+  rw [Subpolyad3.support_ofSubcells_cells, ← H'.relativeDensity_def] at hP_dev
+  rw [abs_mul, Nat.abs_cast] at hU_dev hP_dev
+  have hbase : |(H'.relativeDensity c P : ℝ) - H.relativeDensity c P| * #U₀.support ≤
+      (τ + θ) * #P.support :=
+    (mul_le_mul_of_nonneg_left hUP (abs_nonneg _)).trans hP_dev
+  have hsplit : |(H'.relDensityOn c U₀.support : ℝ) - H'.relativeDensity c P| ≤
+      |(H'.relDensityOn c U₀.support : ℝ) - H.relativeDensity c P| +
+        |(H'.relativeDensity c P : ℝ) - H.relativeDensity c P| := by
+    rw [abs_sub_comm (H'.relativeDensity c P : ℝ)]; exact abs_sub_le _ _ _
+  have hmul := mul_le_mul_of_nonneg_right hsplit (Nat.cast_nonneg (α := ℝ) #U₀.support)
+  rw [add_mul] at hmul
+  linarith
 
 /-- If `H'` tracks `H.relativeDensity c P` within `τ * #Q.support` on subpolyads of `Good`
 fine children `Q` of `Keep` coarse polyads `P`, non-kept coarse mass is at most `repMass`,

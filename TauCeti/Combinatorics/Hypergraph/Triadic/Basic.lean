@@ -253,16 +253,6 @@ theorem IsPolyadDecomposition.existsUnique (h : C.IsPolyadDecomposition)
   refine ⟨P, ⟨hP, hx⟩, fun Q hQ ↦ ?_⟩
   rw [Polyad3.mem_support_iff_eq_ofTriple.1 hQ.2, Polyad3.mem_support_iff_eq_ofTriple.1 hx]
 
-/-- The supports of the selected polyads of a decomposition contain `|V| (|V| - 1) (|V| - 2)`
-triples in total, the number of injective triples. -/
-theorem IsPolyadDecomposition.sum_card_support (h : C.IsPolyadDecomposition) :
-    ∑ P ∈ C.polyads, #P.support = (Fintype.card V).descFactorial 3 := by
-  rw [← card_biUnion fun P _ Q _ hPQ ↦ Polyad3.pairwise_disjoint_support hPQ]
-  have hU : C.polyads.biUnion Polyad3.support = univ :=
-    eq_univ_of_forall fun x ↦ mem_biUnion.2 (h x)
-  rw [hU, card_univ, Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding _ _),
-    Fintype.card_embedding_eq, Fintype.card_fin]
-
 /-- In a polyad decomposition, filtering a sum of support sizes over the selected polyads gives
 the same total as filtering over all polyads of the skeleton, because omitted polyads have empty
 support. -/
@@ -276,14 +266,23 @@ theorem IsPolyadDecomposition.sum_filter_card_support (h : C.IsPolyadDecompositi
     hP (C.isPolyadDecomposition_iff_forall_mem_of_nonempty.1 h P hne)
   simp [hzero]
 
+/-- The supports of the selected polyads of a decomposition contain `|V| (|V| - 1) (|V| - 2)`
+triples in total, the number of injective triples. -/
+theorem IsPolyadDecomposition.sum_card_support (h : C.IsPolyadDecomposition) :
+    ∑ P ∈ C.polyads, #P.support = (Fintype.card V).descFactorial 3 := by
+  classical
+  have hfilt := h.sum_filter_card_support (fun _ ↦ True)
+  simp only [filter_true] at hfilt
+  exact hfilt.trans (Polyad3.sum_card_support_eq_descFactorial C.skeleton)
+
 variable (C)
 
 /-- The supports of the selected polyads contain at most `|V| (|V| - 1) (|V| - 2)` triples in
 total, with equality for a polyad decomposition (`IsPolyadDecomposition.sum_card_support`). -/
 theorem sum_card_support_le :
-    ∑ P ∈ C.polyads, #P.support ≤ (Fintype.card V).descFactorial 3 := by
-  rw [← card_biUnion fun P _ Q _ hPQ ↦ Polyad3.pairwise_disjoint_support hPQ]
-  exact (card_le_univ _).trans_eq (by rw [Fintype.card_subtype_injective, Fintype.card_fin])
+    ∑ P ∈ C.polyads, #P.support ≤ (Fintype.card V).descFactorial 3 :=
+  (sum_le_univ_sum_of_nonneg fun _ ↦ Nat.zero_le _).trans_eq
+    (Polyad3.sum_card_support_eq_descFactorial C.skeleton)
 
 /-! ### Controlled vertex cells -/
 
