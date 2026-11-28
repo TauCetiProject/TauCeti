@@ -21,6 +21,8 @@ endomorphism of `Matrix n n A`, hence induces a group endomorphism `IsIdempotent
 
 * `IsIdempotentElem.cutGL`: the endomorphism `g ↦ e • g + (1 - e) • 1` of `GL n A`.
 * `IsIdempotentElem.val_cutGL`: characterizing formula for the underlying matrix of `he.cutGL g`.
+* `IsIdempotentElem.val_cutGL_mulVec_smul`, `IsIdempotentElem.val_cutGL_mulVec_one_sub_smul`: the
+  cut of `g` acts as `g` on the vectors `e • v` and as the identity on the vectors `(1 - e) • v`.
 * `IsIdempotentElem.continuous_cutGL`: cutting is continuous when addition and multiplication by
   constants are.
 * `IsIdempotentElem.val_mul_cutGL_inv_mul`: patching `c` and `d` along `e` gives
@@ -61,6 +63,18 @@ def cutGL (he : IsIdempotentElem e) : GL n A →* GL n A :=
 theorem val_cutGL (he : IsIdempotentElem e) (g : GL n A) :
     (he.cutGL g).val = e • g.val + (1 - e) • 1 := by
   rfl
+
+/-- On vectors of the form `e • v` the cut of `g` along `e` acts as `g`. -/
+theorem val_cutGL_mulVec_smul (he : IsIdempotentElem e) (g : GL n A) (v : n → A) :
+    (he.cutGL g).val *ᵥ (e • v) = g.val *ᵥ (e • v) := by
+  rw [val_cutGL, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec, mulVec_smul,
+    smul_smul, he.eq, smul_smul, he.one_sub_mul_self, zero_smul, add_zero]
+
+/-- On vectors of the form `(1 - e) • v` the cut of `g` along `e` acts as the identity. -/
+theorem val_cutGL_mulVec_one_sub_smul (he : IsIdempotentElem e) (g : GL n A) (v : n → A) :
+    (he.cutGL g).val *ᵥ ((1 - e) • v) = (1 - e) • v := by
+  rw [val_cutGL, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec, mulVec_smul,
+    smul_smul, he.mul_one_sub_self, zero_smul, zero_add, smul_smul, he.one_sub.eq]
 
 /-- If addition and multiplication by constants are continuous on `A`, then cutting along an
 idempotent is continuous. -/
