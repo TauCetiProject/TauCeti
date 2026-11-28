@@ -8,11 +8,12 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
-public import Mathlib.RingTheory.Polynomial.GaussLemma
+import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.Roots
+import TauCeti.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Block
-import TauCeti.RingTheory.Polynomial.Monic.Pow
 
 /-!
 # Matrices with a simple zero modulo a maximal ideal
@@ -36,11 +37,12 @@ The property is invariant under conjugation by `GL_n(R)` (`Matrix.hasSimpleZero_
 holds for `diag(ϖ, 1, …, 1)` with `ϖ` in the maximal ideal
 (`Matrix.hasSimpleZero_diagonal_mulSingle`), and more generally whenever modulo the maximal ideal
 one column vanishes and the complementary block is invertible
-(`Matrix.HasSimpleZero.of_forall_mem_maximalIdeal`). Over an integrally closed local domain with
-fraction field `K`, the characteristic polynomial of a matrix with a simple zero is not a proper
-power over `K` (`Matrix.HasSimpleZero.charpoly_ne_pow`): by Gauss's lemma a power decomposition
-over `K` comes from one over `R`, and modulo the maximal ideal every root of a `j`-th power has
-multiplicity divisible by `j`.
+(`Matrix.HasSimpleZero.of_forall_mem_maximalIdeal`). If `K` is a domain, the characteristic
+polynomial of a matrix with a simple zero is not a proper power over `K`
+(`Matrix.HasSimpleZero.charpoly_ne_pow`): up to a root of unity, a `j`-th root of a monic
+polynomial over `R` has coefficients in the integral closure of `R` in the fraction field of `K`,
+and modulo a maximal ideal of that closure lying over the maximal ideal of `R` every root of a
+`j`-th power has multiplicity divisible by `j`.
 
 ## Main definitions
 
@@ -51,18 +53,20 @@ multiplicity divisible by `j`.
 
 * `Matrix.hasSimpleZero_iff`: `g` has a simple zero exactly when it comes from a matrix `M` over `R`
   with `det M` in the maximal ideal and a unit linear coefficient of the characteristic polynomial.
+  The simp lemmas `Matrix.hasSimpleZero_map_iff` and `Matrix.hasSimpleZero_self_iff` state this for
+  the image of a given `M`, and for `M` itself over `R`.
 * `Matrix.hasSimpleZero_conj_iff`: conjugation by `GL_n(R)` preserves simple zeros.
 * `Matrix.HasSimpleZero.of_forall_mem_maximalIdeal`, `Matrix.hasSimpleZero_diagonal_mulSingle`:
   matrices of block shape `(0 ∗; 0 g')` modulo the maximal ideal, with `g'` invertible, have a
   simple zero.
-* `Matrix.HasSimpleZero.charpoly_ne_pow`: over an integrally closed local domain, the
-  characteristic polynomial of a matrix with a simple zero is no `j`-th power for `j > 1`.
+* `Matrix.HasSimpleZero.charpoly_ne_pow`: over a domain, the characteristic polynomial of a matrix
+  with a simple zero is no `j`-th power for `j > 1`.
 
 ## References
 
 The definition and the statements `HasSimpleZero.charpoly_ne_pow` and the block-shape criterion
-follow `New.HasSimpleZero`, `New.HasSimpleZero.charpoly_ne_pow`,
-`New.exists_eq_pow_of_monic_of_map_eq_pow` and `New.KeepsLine.rootMultiplicity_charpoly` in
+follow `New.HasSimpleZero`, `New.HasSimpleZero.charpoly_ne_pow` and
+`New.KeepsLine.rootMultiplicity_charpoly` in
 grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), files
 `src/Lib/Adelic/TraceFormula/TestFunction.lean` and `src/Lib/Adelic/TraceFormula/LineCount.lean`.
 -/
@@ -139,16 +143,31 @@ theorem hasSimpleZero_iff {g : Matrix n n K} :
       M.det ∈ maximalIdeal R ∧ IsUnit (M.charpoly.coeff 1) := by
   simp only [hasSimpleZero_def, rootMultiplicity_zero_charpoly_map_residue_eq_one_iff]
 
-/-- If `R → K` is injective, the image of a matrix `M` over `R` has a simple zero exactly when
-`det M` lies in the maximal ideal and the characteristic polynomial of `M` has a unit linear
-coefficient. -/
+/-- If `K` is nontrivial, the image of a matrix `M` over `R` has a simple zero exactly when `det M`
+lies in the maximal ideal and the characteristic polynomial of `M` has a unit linear coefficient. -/
 @[simp]
-theorem hasSimpleZero_map_iff [FaithfulSMul R K] {M : Matrix n n R} :
+theorem hasSimpleZero_map_iff [Nontrivial K] {M : Matrix n n R} :
     HasSimpleZero R (M.map (algebraMap R K)) ↔
       M.det ∈ maximalIdeal R ∧ IsUnit (M.charpoly.coeff 1) := by
-  rw [hasSimpleZero_iff]
+  rw [← rootMultiplicity_zero_charpoly_map_residue_eq_one_iff]
   refine ⟨fun ⟨M', hM', h⟩ ↦ ?_, fun h ↦ ⟨M, rfl, h⟩⟩
-  rwa [← (map_injective (FaithfulSMul.algebraMap_injective R K)) hM']
+  -- The kernel of `R → K` is a proper ideal, so two lifts of `g` have the same reduction.
+  have h_ker : RingHom.ker (algebraMap R K) ≤ maximalIdeal R :=
+    le_maximalIdeal (RingHom.ker_ne_top _)
+  have h_red : M'.map (residue R) = M.map (residue R) := by
+    ext a b
+    rw [map_apply, map_apply, ← sub_eq_zero, ← map_sub, residue_eq_zero_iff]
+    refine h_ker ?_
+    rw [RingHom.mem_ker, map_sub, sub_eq_zero]
+    exact congr_fun (congr_fun hM' a) b
+  rwa [← h_red]
+
+/-- A matrix `M` over the local ring `R` itself has a simple zero exactly when `det M` lies in the
+maximal ideal and its characteristic polynomial has a unit linear coefficient. -/
+@[simp]
+theorem hasSimpleZero_self_iff {M : Matrix n n R} :
+    HasSimpleZero R M ↔ M.det ∈ maximalIdeal R ∧ IsUnit (M.charpoly.coeff 1) := by
+  simpa using hasSimpleZero_map_iff (K := R) (M := M)
 
 /-- Conjugating a matrix with a simple zero by an element of `GL_n(R)` gives a matrix with a simple
 zero. -/
@@ -185,13 +204,7 @@ theorem HasSimpleZero.of_forall_mem_maximalIdeal {M : Matrix n n R} {i : n}
     exact hM j
   refine ⟨M, rfl,
     (rootMultiplicity_zero_charpoly_eq_one_iff_det_toSquareBlockProp_ne_zero h_col).2 ?_⟩
-  -- The block of the reduction is the reduction of the block.
-  have h_block : (M.map (residue R)).toSquareBlockProp (· ≠ i) =
-      (M.toSquareBlockProp (· ≠ i)).map (residue R) := by
-    ext
-    simp [toSquareBlockProp_def]
-  rw [h_block, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
-  exact (residue_ne_zero_iff_isUnit _).2 h_det
+  exact isUnit_iff_ne_zero.mp (h_det.det_map_toSquareBlockProp (residue R))
 
 /-- For `ϖ` in the maximal ideal of `R`, the diagonal matrix `diag(1, …, ϖ, …, 1)`, with `ϖ` at the
 index `i`, has a simple zero. -/
@@ -217,29 +230,56 @@ theorem hasSimpleZero_diagonal_mulSingle {ϖ : R} (hϖ : ϖ ∈ maximalIdeal R) 
 
 end LocalRing
 
-section IntegrallyClosed
+section Domain
 
-variable {R K : Type*} [CommRing R] [IsLocalRing R] [IsIntegrallyClosed R] [Field K] [Algebra R K]
-  [IsFractionRing R K]
+variable {R K : Type*} [CommRing R] [IsLocalRing R] [CommRing K] [IsDomain K] [Algebra R K]
 
-/-- Over an integrally closed local domain `R` with fraction field `K`, the characteristic
-polynomial of a matrix with a simple zero is not a `j`-th power over `K` for any `j > 1`. -/
+/-- If `K` is a domain, the characteristic polynomial of a matrix with a simple zero is not a
+`j`-th power over `K` for any `j > 1`. -/
 theorem HasSimpleZero.charpoly_ne_pow {g : Matrix n n K} (hg : HasSimpleZero R g) (Q : K[X])
     {j : ℕ} (hj : 1 < j) : g.charpoly ≠ Q ^ j := by
   classical
   intro h_pow
   obtain ⟨M, rfl, hM⟩ := hg
-  -- By Gauss's lemma, the characteristic polynomial of `M` is a `j`-th power over `R`.
-  obtain ⟨P, hP⟩ : ∃ P : R[X], M.charpoly = P ^ j :=
-    M.charpoly_monic.exists_eq_pow_of_map_eq_pow (K := K) (Q := Q)
-      (by rw [← charpoly_map, h_pow])
-  have h_red : (M.map (residue R)).charpoly = P.map (residue R) ^ j := by
-    rw [charpoly_map, hP, Polynomial.map_pow]
-  -- Modulo the maximal ideal every root of `P ^ j` has multiplicity divisible by `j`.
-  have h_count : j * (P.map (residue R)).roots.count 0 = 1 := by
-    rw [← Multiset.count_nsmul, ← roots_pow, ← h_red, count_roots, hM]
+  -- Pass to the fraction field `L` of `K`.
+  set L := FractionRing K
+  set Q' := Q.map (algebraMap K L)
+  have h_map : M.charpoly.map (algebraMap R L) = Q' ^ j := by
+    rw [IsScalarTower.algebraMap_eq R K L, ← Polynomial.map_map, ← charpoly_map, h_pow,
+      Polynomial.map_pow]
+  -- The leading coefficient of `Q'` is a `j`-th root of unity, so `Q'` is monic up to a unit.
+  have hQ : Q' ≠ 0 := by
+    rintro h
+    rw [h, zero_pow (by omega)] at h_map
+    exact (M.charpoly_monic.map _).ne_zero h_map
+  have h_lead : Q'.leadingCoeff ^ j = 1 := by
+    rw [← leadingCoeff_pow, ← h_map, (M.charpoly_monic.map _).leadingCoeff]
+  have h_map₀ : M.charpoly.map (algebraMap R L) = (Q' * C Q'.leadingCoeff⁻¹) ^ j := by
+    rw [mul_pow, ← C_pow, inv_pow, h_lead, inv_one, C_1, mul_one, h_map]
+  -- Dividing a monic polynomial over `R`, the monic polynomial `Q' / lc(Q')` is integral over `R`.
+  obtain ⟨P, hP⟩ := integralClosure.mem_lifts_of_monic_of_dvd_map L M.charpoly_monic
+    (monic_mul_leadingCoeff_inv hQ) (h_map₀ ▸ dvd_pow_self _ (by omega))
+  have h_int : M.charpoly.map (algebraMap R (integralClosure R L)) = P ^ j := by
+    refine Polynomial.map_injective _ (FaithfulSMul.algebraMap_injective (integralClosure R L) L) ?_
+    rw [coe_mapRingHom] at hP
+    rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq, Polynomial.map_pow, hP, h_map₀]
+  -- Reduce modulo a maximal ideal of the integral closure lying over that of `R`.
+  obtain ⟨𝔓, h𝔓, h_under⟩ := Ideal.exists_ideal_over_maximal_of_isIntegral
+    (S := integralClosure R L) (maximalIdeal R) (le_maximalIdeal (RingHom.ker_ne_top _))
+  let f := (Ideal.Quotient.mk 𝔓).comp (algebraMap R (integralClosure R L))
+  have h_red : (M.map f).charpoly.rootMultiplicity 0 = 1 := by
+    obtain ⟨h_det, h_unit⟩ := (rootMultiplicity_zero_charpoly_map_residue_eq_one_iff M).1 hM
+    rw [rootMultiplicity_zero_charpoly_eq_one_iff, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
+      RingHom.mapMatrix_apply, charpoly_map, coeff_map]
+    refine ⟨Ideal.Quotient.eq_zero_iff_mem.2 ?_, (h_unit.map f).ne_zero⟩
+    rw [← h_under] at h_det
+    exact h_det
+  -- Over the field `𝒪 / 𝔓` every root of a `j`-th power has multiplicity divisible by `j`.
+  have h_count : j * (P.map (Ideal.Quotient.mk 𝔓)).roots.count 0 = 1 := by
+    rw [← Multiset.count_nsmul, ← roots_pow, ← Polynomial.map_pow, ← h_int, Polynomial.map_map,
+      ← charpoly_map, count_roots, h_red]
   exact hj.ne' (Nat.eq_one_of_mul_eq_one_right h_count)
 
-end IntegrallyClosed
+end Domain
 
 end Matrix
