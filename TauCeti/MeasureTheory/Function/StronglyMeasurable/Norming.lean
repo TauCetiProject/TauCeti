@@ -69,11 +69,12 @@ private theorem mul_norm_le_norm_apply_of_norm_sub_le {G T : E →L[𝕜] F} {v 
     _ ≤ ‖G v‖ := by linarith
 
 /-- **Measurable norming vectors.** For a strongly measurable operator field
-`G : S → E →L[𝕜] F` and `c < 1`, there is a strongly measurable `x : S → E` with `‖x s‖ ≤ 1` and
-`c ‖G s‖ ≤ ‖G s (x s)‖` for every `s`. -/
+`G : S → E →L[𝕜] F` and `c < 1`, there is a strongly measurable, countably valued `x : S → E`
+with `‖x s‖ ≤ 1` and `c ‖G s‖ ≤ ‖G s (x s)‖` for every `s`. -/
 theorem StronglyMeasurable.exists_stronglyMeasurable_norming {G : S → E →L[𝕜] F}
     (hG : StronglyMeasurable G) {c : ℝ} (hc : c < 1) :
-    ∃ x : S → E, StronglyMeasurable x ∧ (∀ s, ‖x s‖ ≤ 1) ∧ ∀ s, c * ‖G s‖ ≤ ‖G s (x s)‖ := by
+    ∃ x : S → E, StronglyMeasurable x ∧ (range x).Countable ∧ (∀ s, ‖x s‖ ≤ 1) ∧
+      ∀ s, c * ‖G s‖ ≤ ‖G s (x s)‖ := by
   classical
   -- Work with `m = max c 0 ∈ [0, 1)`, a norming ratio `c' = (1 + m) / 2` for each `yₙ` and a
   -- relative approximation error `δ = (1 - m) / 4`, so that `c' - 2 δ = m`.
@@ -110,6 +111,7 @@ theorem StronglyMeasurable.exists_stronglyMeasurable_norming {G : S → E →L[�
   -- Choose `x s = v (y n)` for the least `n` with `y n` relatively close to `G s`.
   refine ⟨fun s ↦ v (y (Nat.find (hex s))),
     (StronglyMeasurable.of_discrete (f := fun n : ℕ ↦ v (y n))).comp_measurable hN,
+    (countable_range fun n ↦ v (y n)).mono (by rintro _ ⟨s, rfl⟩; exact mem_range_self _),
     fun s ↦ hv1 _, fun s ↦ ?_⟩
   calc c * ‖G s‖ ≤ (c' - 2 * δ) * ‖G s‖ := by
         refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
@@ -119,14 +121,15 @@ theorem StronglyMeasurable.exists_stronglyMeasurable_norming {G : S → E →L[�
         (by simp only [c']; linarith) hδ.le (hv1 _) (hv _) (Nat.find_spec (hex s))
 
 /-- **Measurable norming vectors, almost everywhere version.** For an almost everywhere strongly
-measurable operator field `G : S → E →L[𝕜] F` and `c < 1`, there is a strongly measurable
-`x : S → E` with `‖x s‖ ≤ 1` for every `s` and `c ‖G s‖ ≤ ‖G s (x s)‖` for almost every `s`. -/
+measurable operator field `G : S → E →L[𝕜] F` and `c < 1`, there is a strongly measurable,
+countably valued `x : S → E` with `‖x s‖ ≤ 1` for every `s` and `c ‖G s‖ ≤ ‖G s (x s)‖` for almost
+every `s`. -/
 theorem AEStronglyMeasurable.exists_stronglyMeasurable_norming {G : S → E →L[𝕜] F}
     (hG : AEStronglyMeasurable G μ) {c : ℝ} (hc : c < 1) :
-    ∃ x : S → E, StronglyMeasurable x ∧ (∀ s, ‖x s‖ ≤ 1) ∧
+    ∃ x : S → E, StronglyMeasurable x ∧ (range x).Countable ∧ (∀ s, ‖x s‖ ≤ 1) ∧
       ∀ᵐ s ∂μ, c * ‖G s‖ ≤ ‖G s (x s)‖ := by
-  obtain ⟨x, hx, hx1, hxG⟩ := hG.stronglyMeasurable_mk.exists_stronglyMeasurable_norming hc
-  exact ⟨x, hx, hx1, hG.ae_eq_mk.mono fun s hs ↦ by rw [hs]; exact hxG s⟩
+  obtain ⟨x, hx, hxc, hx1, hxG⟩ := hG.stronglyMeasurable_mk.exists_stronglyMeasurable_norming hc
+  exact ⟨x, hx, hxc, hx1, hG.ae_eq_mk.mono fun s hs ↦ by rw [hs]; exact hxG s⟩
 
 /-- **Norming an operator field by measurable unit vector fields.** If the `Lʳ` norm of
 `s ↦ G s (x s)` is at most `C` for every strongly measurable `x : S → E` with `‖x s‖ ≤ 1`, then
@@ -138,7 +141,7 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_eLpNorm_apply_le {G : S → E 
     eLpNorm G r μ ≤ C := by
   refine ENNReal.le_of_forall_lt_one_mul_le fun a ha ↦ ?_
   have ha_top : a ≠ ∞ := ha.ne_top
-  obtain ⟨x, hx, hx1, hGx⟩ := hG.exists_stronglyMeasurable_norming
+  obtain ⟨x, hx, -, hx1, hGx⟩ := hG.exists_stronglyMeasurable_norming
     (ENNReal.toReal_lt_of_lt_ofReal (by simpa using ha))
   calc a * eLpNorm G r μ = eLpNorm (fun s ↦ a * ‖G s‖ₑ) r μ := by
         rw [eLpNorm_const_mul_ennreal hG.eNorm.aestronglyMeasurable, eLpNorm_eNorm G hG]
