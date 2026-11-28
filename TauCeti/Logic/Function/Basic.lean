@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Function.Defs
+import Mathlib.Basic.Logic.Basic
 
 /-!
 # Basic facts about functions
@@ -13,7 +14,8 @@ public import Mathlib.Logic.Function.Defs
 Two distinct dependent functions witness that their domain is nonempty (`Function.nonempty_of_ne`).
 A function that is a retract of a bijection is bijective (`Function.bijective_of_retract`). A map
 into a subtype whose values are those of an injective map is injective
-(`Function.Injective.of_val_eq`).
+(`Function.Injective.of_val_eq`). If every pair of inputs agrees under one of two maps,
+then one map is constant (`Function.forall_eq_or_forall_eq_of_forall_eq_or_eq`).
 -/
 
 public section
@@ -41,5 +43,22 @@ theorem bijective_of_retract {A B A' B' : Type*} {Φ : A → B} {Φ' : A' → B'
 theorem Injective.of_val_eq {α β : Sort*} {p : β → Prop} {f : α → β} {g : α → Subtype p}
     (hf : Injective f) (h : ∀ a, (g a : β) = f a) : Injective g :=
   fun a b hab => hf (by rw [← h, ← h, hab])
+
+/-- If every pair of inputs agrees under one of two maps, one of the maps is constant. -/
+theorem forall_eq_or_forall_eq_of_forall_eq_or_eq {ι α β : Sort*} {a : ι → α} {b : ι → β}
+    (h : ∀ i j, a i = a j ∨ b i = b j) :
+    (∀ i j, a i = a j) ∨ (∀ i j, b i = b j) := by
+  classical
+  by_cases ha : ∀ i j, a i = a j
+  · exact Or.inl ha
+  obtain ⟨i, hi⟩ := not_forall.mp ha
+  obtain ⟨j, hij⟩ := not_forall.mp hi
+  have hbij := (h i j).resolve_left hij
+  have hb (k : ι) : b k = b i := by
+    rcases h i k with hik | hik
+    · have hjk : a j ≠ a k := fun hjk ↦ hij (hik.trans hjk.symm)
+      exact ((h j k).resolve_left hjk).symm.trans hbij.symm
+    · exact hik.symm
+  exact Or.inr fun k l ↦ (hb k).trans (hb l).symm
 
 end Function

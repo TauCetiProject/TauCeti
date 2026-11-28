@@ -37,6 +37,9 @@ weighted variance `∑ i, w i * b i ^ 2 - m ^ 2`.
 
 ## Main results
 
+* `Finset.sum_sum_weight_mul_cross` and `Finset.sum_sum_weight_mul_diagonal`: the two
+  subtraction-free weighted pairings, without normalization of the weights.
+
 * `Finset.sum_mul_sub_sq_eq`: the weighted variance decomposition.
 * `Finset.sum_sum_mul_smul_sub_sub_add_eq`: the second-difference form of the defect of a
   quadratic form from the average of its diagonal.
@@ -83,5 +86,25 @@ theorem sum_sum_mul_smul_sub_sub_add_eq {ι R M : Type*} [CommSemiring R] [AddCo
     exact sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ by rw [mul_comm]
   simp only [smul_add, smul_sub, sum_add_distrib, sum_sub_distrib, h₁, h₂, h₃, two_smul]
   abel
+
+/-- The weighted sum of the two cross products is twice the product of weighted sums. -/
+theorem sum_sum_weight_mul_cross {ι R : Type*} [CommSemiring R]
+    (s : Finset ι) (w a b : ι → R) :
+    (∑ i ∈ s, ∑ j ∈ s, w i * w j * (a i * b j + a j * b i)) =
+      2 * ((∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i)) := by
+  have heq (i j : ι) : w i * w j * (a i * b j + a j * b i) =
+      (w i * a i) * (w j * b j) + (w i * b i) * (w j * a j) := by ring
+  simp_rw [heq, sum_add_distrib, ← mul_sum, ← sum_mul]
+  ring
+
+/-- The weighted sum of two diagonal products is twice the total weight times their moment. -/
+theorem sum_sum_weight_mul_diagonal {ι R : Type*} [CommSemiring R]
+    (s : Finset ι) (w a b : ι → R) :
+    (∑ i ∈ s, ∑ j ∈ s, w i * w j * (a i * b i + a j * b j)) =
+      2 * ((∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i)) := by
+  have heq (i j : ι) : w i * w j * (a i * b i + a j * b j) =
+      (w i * a i * b i) * w j + w i * (w j * a j * b j) := by ring
+  simp_rw [heq, sum_add_distrib, ← mul_sum, ← sum_mul]
+  ring
 
 end Finset
