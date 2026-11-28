@@ -71,7 +71,11 @@ whole family, not on each continuation `V λ` separately. For a transverse famil
 maps are continuous jointly in the parameter and the point, and differentiable at the digon
 trajectories, the digon trajectories between critical points whose indices rise by at least one
 are finitely many (`TauCeti.IsContinuationFamily.finite_morseDigonSlice`), which is the finiteness
-hypothesis of the digon identity above.
+hypothesis of the digon identity above. When the family `V` is jointly `C¹` in the parameter and
+the point, its transition maps are jointly `C¹`
+(`TauCeti.contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField`), so this finiteness holds
+for every transverse family of this kind
+(`TauCeti.IsContinuationFamily.finite_morseDigonSlice_of_contMDiff`).
 
 ## Main declarations
 
@@ -88,6 +92,9 @@ hypothesis of the digon identity above.
   continuation fields.
 * `TauCeti.IsContinuationFamily.finite_morseDigonSlice`: for a transverse family, the rigid digon
   trajectories are finitely many.
+* `TauCeti.IsContinuationFamily.finite_morseDigonSlice_of_contMDiff`: the same for a transverse
+  family which is jointly `C¹` in the parameter and the point, with no hypothesis on its
+  transition maps.
 
 ## References
 
@@ -432,6 +439,25 @@ theorem finite_morseDigonSlice (htr : IsTransverseContinuationFamily C V hX₀ h
   rw [(hbij p q).image_eq, morseDigonTransitionSlice_eq_parametrizedPairSlice]
   exact htrb.finite_parametrizedPairSlice h₀ h₁ hf₀ hf₁ hΦb.1
     (fun z hz ↦ hΦb.2 z (by rwa [morseDigonTransitionSlice_eq_parametrizedPairSlice])) hind
+
+include hV hC h₀ hf₀ h₁ hf₁ in
+/-- **Rigid digon trajectories of a smooth transverse family are finitely many.** Let `V` be a
+family of continuation fields from `X₀` to `X₁` at rate `C > 0`, between Morse–Smale
+pseudo-gradients adapted to Morse functions `f₀` and `f₁`, and suppose that the family is jointly
+`C¹` in the parameter and the point, and transverse. Then between critical points `p` of `f₀` and
+`q` of `f₁` with `ind q ≥ ind p + 1` there are finitely many digon trajectories. -/
+theorem finite_morseDigonSlice_of_contMDiff
+    (hVj : ContMDiff (𝓘(ℝ, ℝ).prod (𝓘(ℝ, E).prod 𝓘(ℝ))) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent 1
+      fun w : ℝ × (M × ℝ) ↦ (⟨w.2, V w.1 w.2⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)))
+    (htr : IsTransverseContinuationFamily C V hX₀ hX₁) {p q : M}
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 ≤ manifoldMorseIndex 𝓘(ℝ, E) f₁ q) :
+    (morseDigonSlice V p q).Finite := by
+  -- The transition maps are jointly `C¹`, hence continuous and differentiable everywhere.
+  have hΦ (a b : ℝ) := contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField (C := C)
+    (n := 1) le_rfl (hVj.of_le (by simp)) a b
+  exact hV.finite_morseDigonSlice hC (fun l _ ↦ hVj.apply_param l) h₀ hf₀ h₁ hf₁ htr
+    (Eventually.of_forall fun a ↦ Eventually.of_forall fun b ↦
+      ⟨(hΦ a b).continuous, fun _ _ ↦ (hΦ a b).mdifferentiableAt one_ne_zero⟩) hind
 
 end IsContinuationFamily
 

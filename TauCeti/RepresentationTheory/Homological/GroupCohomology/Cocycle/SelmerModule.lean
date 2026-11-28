@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RingTheory.Length
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.LinearAlgebra.Matrix.Module
-public import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
+public import TauCeti.RingTheory.MatlisDuality.PrincipalIdealRing
 
 /-!
 # Selmer modules of cocycles
@@ -317,7 +317,7 @@ end Length
 
 section Matrix
 
-open _root_.IsDiscreteValuationRing Matrix.Module
+open Matrix.Module
 
 variable {G : Type*} [Mul G] [TopologicalSpace G] {O : Type*} [CommRing O] {n : Type*}
   [Fintype n] [DecidableEq n] (ρ : G → Matrix n n O) (X : Set G) (L : Set (G →₀ Matrix n n O))

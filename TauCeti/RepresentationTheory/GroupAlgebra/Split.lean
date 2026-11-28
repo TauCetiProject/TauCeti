@@ -30,7 +30,8 @@ the splitting condition from the invertibility of the group order.
 The converse recovers scalar Schur from any split presentation, so the two
 conditions are equivalent when the group order is invertible. Without that hypothesis,
 scalar Schur still gives a one-dimensional endomorphism space for every simple module of the group
-algebra (`TauCeti.finrank_end_eq_one_of_scalarSchur`).
+algebra (`TauCeti.finrank_end_eq_one_of_scalarSchur`), and of any quotient algebra of it
+(`TauCeti.finrank_end_eq_one_of_scalarSchur_of_surjective`).
 
 ## References
 
@@ -74,6 +75,39 @@ theorem finrank_end_eq_one_of_scalarSchur
       (e.symm.conjAlgEquiv k).toLinearEquiv.finrank_eq
     _ = Module.finrank k (V ⟶ V) := (FDRep.finrank_end_eq_finrank_moduleEnd V).symm
     _ = 1 := hk V inferInstance
+
+variable {k G} in
+/-- **Simple modules of a quotient of `k[G]` over a splitting field.** If every simple
+finite-dimensional representation of `G` over `k` has a one-dimensional endomorphism space, and
+`φ : k[G] → A` is a surjective `k`-algebra homomorphism, then every simple `A`-module has a
+one-dimensional space of `A`-linear endomorphisms. -/
+theorem finrank_end_eq_one_of_scalarSchur_of_surjective
+    (hk : ∀ V : FDRep k G, Simple V → Module.finrank k (V ⟶ V) = 1) {A : Type*} [Ring A]
+    [Algebra k A] (φ : k[G] →ₐ[k] A) (hφ : Function.Surjective φ) (M : Type*)
+    [AddCommGroup M] [Module A M] [Module k M] [IsScalarTower k A M] [IsSimpleModule A M] :
+    Module.finrank k (Module.End A M) = 1 := by
+  -- `M` as a `k[G]`-module along `φ`, with `x • m = φ x • m`.
+  let _ : Module k[G] M := Module.compHom M φ.toRingHom
+  have hsmul (x : k[G]) (m : M) : x • m = φ x • m := rfl
+  have : IsScalarTower k k[G] M :=
+    ⟨fun c x m ↦ by rw [hsmul, hsmul, map_smul, smul_assoc]⟩
+  have : RingHomSurjective φ.toRingHom := ⟨hφ⟩
+  let l : M →ₛₗ[φ.toRingHom] M := { AddMonoidHom.id M with map_smul' := hsmul }
+  have : IsSimpleModule k[G] M :=
+    (l.isSimpleModule_iff_of_bijective Function.bijective_id).2 inferInstance
+  -- `A`-linear and `k[G]`-linear endomorphisms of `M` agree.
+  let e : Module.End A M ≃ₗ[k] Module.End k[G] M :=
+    { toFun f := { f.toAddMonoidHom with map_smul' x m := by simp [hsmul] }
+      invFun f := { f.toAddMonoidHom with
+        map_smul' a m := by
+          obtain ⟨x, rfl⟩ := hφ a
+          simpa [hsmul] using f.map_smul x m }
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  rw [e.finrank_eq]
+  exact finrank_end_eq_one_of_scalarSchur hk M
 
 /-- Scalar Schur for finite-dimensional representations is equivalent to the
 one-dimensionality of the endomorphism algebras of simple left ideals of the group

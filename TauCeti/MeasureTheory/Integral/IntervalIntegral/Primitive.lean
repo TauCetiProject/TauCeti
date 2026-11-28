@@ -52,6 +52,10 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo` and
   `TauCeti.intervalIntegral.integral_norm_primitive_le`: such a primitive is integrable on
   `(a, b)`, with `L¹(a, b)` norm at most `(b - a) ‖f‖₁`.
+* `MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left`: if `f` is integrable on
+  `[a, b]`, the primitive `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
+  `[a, b]`; this is the `Icc` form of Mathlib's
+  `intervalIntegral.continuousOn_primitive_interval_left`.
 * `Continuous.contDiff_one_primitive`: the primitive of a continuous function is `C¹`.
 * `TauCeti.intervalIntegral.memLp_primitive`: on a bounded interval `(a, b)`, the primitive based
   at a point of `[a, b]` of a function integrable on `(a, b)` lies in every `Lᵖ(a, b)`, for any
@@ -466,6 +470,18 @@ theorem integral_deriv_smul_primitive_eq_sub_of_le {𝕜 : Type*} [RCLike 𝕜] 
 end intervalIntegral
 
 end TauCeti
+
+/-- An interval integral `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
+`[a, b]` when `f` is integrable on `[a, b]`. This is the `Icc` form of Mathlib's
+`intervalIntegral.continuousOn_primitive_interval_left`. -/
+theorem MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {a b : ℝ} (hf : IntegrableOn f (Icc a b)) :
+    ContinuousOn (fun s ↦ ∫ r in s..b, f r) (Icc a b) := by
+  rcases le_or_gt a b with hab | hab
+  · rw [← uIcc_of_le hab] at hf ⊢
+    exact intervalIntegral.continuousOn_primitive_interval_left hf
+  · simp [Icc_eq_empty_of_lt hab]
 
 /-- The primitive `z ↦ ∫ s in a..z, f s` of a continuous function is `C¹`, with derivative `f`. -/
 theorem Continuous.contDiff_one_primitive {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

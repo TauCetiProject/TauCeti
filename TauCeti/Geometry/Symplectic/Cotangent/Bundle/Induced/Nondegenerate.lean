@@ -34,7 +34,9 @@ namespace `TauCeti.CotangentBundle`). The descended form is `G`-invariant, so it
 (`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff`, an
 instance of `TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_smul_iff`); as `[g, n] = g • [1, n]`,
 nondegeneracy at `[1, n]` gives nondegeneracy at every `[g, n]`
-(`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk`).
+(`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk`), and, since the
+nondegenerate points form an open set, on an open `G`-invariant neighbourhood of the orbit
+(`TauCeti.CotangentBundle.exists_isOpen_nondegenerate_bilinFormAt_balancedProductInducedForm`).
 
 The main application is the **Marle–Guillemin–Sternberg local model** `G ×_H (𝔪* × V)` of a
 Hamiltonian action near the orbit of a point `p` with stabilizer `H` and moment value `ν`. There
@@ -70,8 +72,13 @@ All declarations are in the namespace `TauCeti.CotangentBundle`.
   a point fixed by `K`.
 * `nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff`: nondegeneracy of the induced
   form at a point is `G`-invariant.
+* `nondegenerate_bilinFormAt_balancedProductInducedForm_mk_iff`: the induced form is nondegenerate
+  at `[g, n]` exactly when it is at `[1, n]`.
 * `nondegenerate_bilinFormAt_balancedProductInducedForm_mk`: under the null-space criterion at
   `[1, n]` the induced form is nondegenerate at every `[g, n]`.
+* `exists_isOpen_nondegenerate_bilinFormAt_balancedProductInducedForm`: if the induced form is
+  nondegenerate at `[1, n]`, it is nondegenerate on an open `G`-invariant neighbourhood of the
+  orbit of `[1, n]`.
 * `nondegenerate_bilinFormAt_balancedProductInducedForm_mk_of_dual_prod`: a criterion for
   nondegeneracy along the orbit of `[1, n]` in Marle–Guillemin–Sternberg coordinates.
 * `nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one`: the induced form of the
@@ -236,6 +243,21 @@ theorem nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff (g : G)
     (mpullback_smul_balancedProductInducedForm (hf := hf) (hfK := hfK) (hσK := hσK) (hμ := hμ) g)
     y
 
+/-- **Nondegeneracy of the induced form along an orbit.** The induced form on `G ×_K N` is
+nondegenerate at `[g, n]` exactly when it is nondegenerate at `[1, n]`, since
+`[g, n] = g • [1, n]` and the form is `G`-invariant. -/
+theorem nondegenerate_bilinFormAt_balancedProductInducedForm_mk_iff (g : G) (n : N) :
+    letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+    haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt
+        (BalancedProduct.mk K (K.toRightTranslation g) n)).Nondegenerate ↔
+      ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt
+        (BalancedProduct.mk K (K.toRightTranslation 1) n)).Nondegenerate := by
+  have h := nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff (hf := hf) (hfK := hfK)
+    (hσK := hσK) (hμ := hμ) g (BalancedProduct.mk K (K.toRightTranslation 1) n)
+  rwa [BalancedProduct.smul_mk_toRightTranslation, mul_one] at h
+
 /-- **The induced form is nondegenerate along the orbit of `[1, n]`.** If every `(ξ, u)` null for
 `B_n` is an orbit direction `(-ι κ, κ_N(n))` of some `κ ∈ 𝔨`, the induced form on `G ×_K N` is
 nondegenerate at every point `[g, n]`. -/
@@ -252,12 +274,35 @@ theorem nondegenerate_bilinFormAt_balancedProductInducedForm_mk {n : N}
     haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
       (F := F)
     ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt
-        (BalancedProduct.mk K (K.toRightTranslation g) n)).Nondegenerate := by
-  -- `[g, n] = g • [1, n]`.
-  have h := (nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff (hf := hf) (hfK := hfK)
-    (hσK := hσK) (hμ := hμ) g (BalancedProduct.mk K (K.toRightTranslation 1) n)).2
+        (BalancedProduct.mk K (K.toRightTranslation g) n)).Nondegenerate :=
+  (nondegenerate_bilinFormAt_balancedProductInducedForm_mk_iff g n).2
     ((nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff n).2 hn)
-  rwa [BalancedProduct.smul_mk_toRightTranslation, mul_one] at h
+
+/-- **The induced form is nondegenerate on a `G`-invariant neighbourhood of an orbit.** If the
+induced form on `G ×_K N` is nondegenerate at `[1, n]`, then it is nondegenerate on an open
+`G`-invariant set containing every point `[g, n]`: the set of all its nondegenerate points, which
+is open in finite dimensions and `G`-invariant because the form is. -/
+theorem exists_isOpen_nondegenerate_bilinFormAt_balancedProductInducedForm {n : N}
+    (hn : letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+      haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+        (F := F)
+      ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt
+        (BalancedProduct.mk K (K.toRightTranslation 1) n)).Nondegenerate) :
+    letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+    haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    ∃ U : Set (BalancedProduct K K.RightTranslation N), IsOpen U ∧
+      (∀ (g : G) (y : BalancedProduct K K.RightTranslation N), y ∈ U → g • y ∈ U) ∧
+      (∀ g : G, BalancedProduct.mk K (K.toRightTranslation g) n ∈ U) ∧
+      ∀ y ∈ U, ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt y).Nondegenerate := by
+  let _ := BalancedProduct.rightTranslationChartedSpace K N I IN F
+  have := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+    (F := F)
+  refine ⟨{y | ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt y).Nondegenerate},
+    SmoothTwoForm.isOpen_setOf_nondegenerate_bilinFormAt _, fun g y hy ↦
+      (nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff g y).2 hy, fun g ↦ ?_,
+    fun _ hy ↦ hy⟩
+  exact (nondegenerate_bilinFormAt_balancedProductInducedForm_mk_iff g n).2 hn
 
 /-- **Nondegeneracy along the orbit of `[1, n]` in Marle–Guillemin–Sternberg coordinates.** Let
 `n ∈ N` be a zero of every fundamental vector field of `K`, with `f n = ν`. Suppose the tangent

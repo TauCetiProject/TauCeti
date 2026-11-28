@@ -116,20 +116,17 @@ theorem exists_pos_forall_exists_isMIntegralCurveOn_Ico_of_isOutwardPointing_neg
     (hin : ∀ a ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing a (-v a)) :
     ∃ ε > (0 : ℝ), ∀ x : M, ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ico 0 ε) ∧
       MapsTo γ (Ioo 0 ε) ((𝓡∂ (n + 1)).interior M) := by
-  rcases isEmpty_or_nonempty M with hM | hM
-  · exact ⟨1, one_pos, fun x ↦ isEmptyElim x⟩
   choose U hU ε hε hγ using exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ico hv hin
-  -- Finitely many of the neighbourhoods cover `M`; take the least of their times.
-  obtain ⟨s, -, hs⟩ := isCompact_univ.elim_nhds_subcover U fun x _ ↦ hU x
-  have hne : s.Nonempty := by
-    obtain ⟨x⟩ := hM
-    obtain ⟨y, hy, -⟩ := mem_iUnion₂.1 (hs (mem_univ x))
-    exact ⟨y, hy⟩
-  refine ⟨s.inf' hne ε, (Finset.lt_inf'_iff hne).2 fun y _ ↦ hε y, fun x ↦ ?_⟩
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (hs (mem_univ x))
-  obtain ⟨γ, hγ0, hγ, hγS⟩ := hγ y x hxy
-  have hle : s.inf' hne ε ≤ ε y := Finset.inf'_le ε hy
-  exact ⟨γ, hγ0, hγ.mono (Ico_subset_Ico_right hle), hγS.mono_left (Ioo_subset_Ioo_right hle)⟩
+  -- By the tube lemma, the curves exist from every point for all small positive times.
+  obtain ⟨t, ht, ht0⟩ := (((isCompact_univ.eventually_forall_of_forall_eventually (x₀ := (0 : ℝ))
+      (P := fun t x ↦ 0 < t → ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ico 0 t) ∧
+        MapsTo γ (Ioo 0 t) ((𝓡∂ (n + 1)).interior M)) fun y _ ↦ by
+      filter_upwards [prod_mem_nhds (Iio_mem_nhds (hε y)) (hU y)] with p hp _
+      obtain ⟨γ, hγ0, hγ, hγS⟩ := hγ y p.2 hp.2
+      exact ⟨γ, hγ0, hγ.mono (Ico_subset_Ico_right hp.1.le),
+        hγS.mono_left (Ioo_subset_Ioo_right hp.1.le)⟩).filter_mono nhdsWithin_le_nhds).and
+    (self_mem_nhdsWithin (s := Ioi 0))).exists
+  exact ⟨t, ht0, fun x ↦ ht x (mem_univ x) ht0⟩
 
 variable [T2Space M] [CompactSpace M]
 

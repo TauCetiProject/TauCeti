@@ -302,6 +302,34 @@ theorem twistedMorseBoundary_neg_one_pow_smul
   · rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hpq, LinearMap.zero_apply, smul_zero,
       smul_zero, neg_zero]
 
+/-- **The twisted boundary of `-f` as a sum over the trajectories of `X`.** For orientation data
+`𝔬'` for `-X` and critical points `q`, `p` whose index rises by one for `-f`, the component of the
+twisted boundary of `-f` from `q` to `p` is the sum over the trajectories `y` of `X` from `p` to `q`
+of the sign of `y` for `-X` times the transport along the path traced by `y` as a trajectory of
+`-X` from `q` to `p` (`neg_morseTrajectorySlice`); this path is the reverse of the one traced for
+`X` (`neg_trajectoryPathClass`). -/
+theorem twistedMorseBoundaryMap_neg_eq_sum (𝔬' : MorseOrientation (-f) (-X))
+    {q p : criticalPoints 𝓘(ℝ, E) (-f)}
+    (hqp : manifoldMorseIndex 𝓘(ℝ, E) (-f) q = manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1)
+    [Fintype (hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p : M)
+      (Set.equivOfEq criticalPoints_neg q))] :
+    (hX.neg hf).twistedMorseBoundaryMap 𝔬' L q p =
+      ∑ y : hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p : M)
+          (Set.equivOfEq criticalPoints_neg q),
+        (hX.neg hf).trajectorySign (𝔬'.chart q) (𝔬'.chart p) (𝔬'.orientation q)
+            (𝔬'.orientation p) hqp y •
+          (LocalCoefficientSystem.transport L ((hX.neg hf).trajectoryPathClass
+            ⟨y, (Set.ext_iff.1 (hX.neg_morseTrajectorySlice hf p q) y).2
+              y.property⟩)).toLinearMap := by
+  -- Read the trajectories of `-X` from `q` to `p` as those of `X` from `p` to `q`.
+  have hslice : ∀ y, y ∈ hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p : M)
+      (Set.equivOfEq criticalPoints_neg q) ↔ y ∈ (hX.neg hf).morseTrajectorySlice q p :=
+    fun y ↦ (Set.ext_iff.1 (hX.neg_morseTrajectorySlice hf p q) y).symm
+  rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hqp,
+    ← finsum_comp_equiv (Equiv.subtypeEquivRight hslice), finsum_eq_sum_of_fintype]
+  -- `Equiv.subtypeEquivRight` keeps the underlying point of each trajectory.
+  rfl
+
 namespace IsMorseSmale
 
 variable (h : hX.IsMorseSmale)
