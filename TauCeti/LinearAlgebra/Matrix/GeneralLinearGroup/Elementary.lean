@@ -105,7 +105,9 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   elimination; the Schur complement `W - Z u⁻¹ Y` of an invertible upper-left block `u` of an
   invertible matrix `fromBlocks u Y Z W` is invertible, and the matrix is the product of block
   unipotent matrices and the block diagonal matrix of `u` and its Schur complement.
-* `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
+* `TauCeti.fromBlocksGL_inv_eq_upperBlockGL_mul`,
+  `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's factorization of `u ⊕ u⁻¹`
+  into six block unipotent matrices, and Whitehead's lemma `u ⊕ u⁻¹ ∈ E`.
 * `TauCeti.map_commutator_le_elementarySubgroup`: the stabilized commutator subgroup is elementary.
 * `TauCeti.fromBlocksGL_conj_mem_elementarySubgroup`: the stabilization of a conjugate of an
   elementary matrix is elementary.
@@ -889,15 +891,20 @@ theorem blockComplGL_eq_extendGL {n : Type*} [DecidableEq n] [Fintype n] (T : Se
     intro hij
     simp_all
 
-/-- **Whitehead's lemma.** For an invertible matrix `u`, the block diagonal matrix `u ⊕ u⁻¹` is
-elementary: it is the product of six block unipotent matrices,
+/-- **Whitehead's factorization.** For an invertible matrix `u`, the block diagonal matrix
+`u ⊕ u⁻¹` is the product of six block unipotent matrices,
 `u ⊕ u⁻¹ = U(u) L(-u⁻¹) U(u) U(-1) L(1) U(-1)`. -/
+theorem fromBlocksGL_inv_eq_upperBlockGL_mul (u : GL m A) :
+    fromBlocksGL (u, u⁻¹) = upperBlockGL (u : Matrix m m A) * lowerBlockGL (-↑u⁻¹) *
+      upperBlockGL (u : Matrix m m A) * upperBlockGL (-1) * lowerBlockGL 1 * upperBlockGL (-1) :=
+  Units.ext (by simp [fromBlocks_multiply])
+
+/-- **Whitehead's lemma.** For an invertible matrix `u`, the block diagonal matrix `u ⊕ u⁻¹` is
+elementary, by the factorization `TauCeti.fromBlocksGL_inv_eq_upperBlockGL_mul` into block
+unipotent matrices. -/
 theorem fromBlocksGL_inv_mem_elementarySubgroup (u : GL m A) :
     fromBlocksGL (u, u⁻¹) ∈ elementarySubgroup (m ⊕ m) A := by
-  have h : fromBlocksGL (u, u⁻¹) = upperBlockGL (u : Matrix m m A) * lowerBlockGL (-↑u⁻¹) *
-      upperBlockGL (u : Matrix m m A) * upperBlockGL (-1) * lowerBlockGL 1 * upperBlockGL (-1) :=
-    Units.ext (by simp [fromBlocks_multiply])
-  rw [h]
+  rw [fromBlocksGL_inv_eq_upperBlockGL_mul]
   refine mul_mem (mul_mem (mul_mem (mul_mem (mul_mem ?_ ?_) ?_) ?_) ?_) ?_ <;>
     first
     | exact upperBlockGL_mem_elementarySubgroup _
