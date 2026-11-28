@@ -102,7 +102,7 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 
 /-- Forget the framing of a framed orthogonal relevant pair, keeping only the isometric embedding
 and the odd-dimensional hyperbolic-plus-line complement condition. -/
-@[expose] def toOrthogonalRelevantPair (F : FramedOrthogonalRelevantPair Q_W Q_V j) :
+def toOrthogonalRelevantPair (F : FramedOrthogonalRelevantPair Q_W Q_V j) :
     OrthogonalRelevantPair Q_W Q_V j where
   embed := F.embed
   nondegenerate_domain := F.nondegenerate_domain

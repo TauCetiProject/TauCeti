@@ -1068,8 +1068,7 @@ noncomputable def orthogonalRangeInlEquiv
         (LinearMap.range (Isometry.inl Q₁ Q₂).toLinearMap))
       (LinearMap.range (Isometry.inr Q₁ Q₂).toLinearMap)
       (by
-        rw [show (IsometryEquiv.refl (Q₁.prod Q₂)).toLinearMap = LinearMap.id from rfl,
-          Submodule.map_id]
+        rw [IsometryEquiv.refl_toLinearMap, Submodule.map_id]
         exact orthogonal_polarBilin_range_inl Q₁ Q₂ hQ₁)).trans
     ((Isometry.inr Q₁ Q₂).equivRestrictRange
       (show Function.Injective (Isometry.inr Q₁ Q₂) from

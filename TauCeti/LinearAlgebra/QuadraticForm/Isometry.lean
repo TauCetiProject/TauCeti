@@ -42,7 +42,8 @@ This file records general properties of quadratic-map isometries.
   matching submodules and to the orthogonal complements of transported embeddings.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
-* `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
+* `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.refl_toLinearMap`,
+  `QuadraticMap.IsometryEquiv.symm_symm`, and
   `QuadraticMap.IsometryEquiv.trans_apply`: basic evaluation and involution lemmas for isometric
   equivalences.
 * `QuadraticMap.IsometryEquiv.ofEq`: the identity isometric equivalence between equal quadratic
@@ -368,6 +369,14 @@ theorem _root_.QuadraticMap.IsometryEquiv.refl_apply {R : Type u} {M : Type v} {
     [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
     (Q : QuadraticMap R M N) (x : M) :
     IsometryEquiv.refl Q x = x :=
+  (rfl)
+
+/-- The linear map underlying the identity isometric equivalence is `LinearMap.id`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.refl_toLinearMap {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (Q : QuadraticMap R M N) :
+    (IsometryEquiv.refl Q).toLinearMap = LinearMap.id :=
   (rfl)
 
 /-- Taking the inverse of an isometric equivalence twice recovers the original equivalence. -/

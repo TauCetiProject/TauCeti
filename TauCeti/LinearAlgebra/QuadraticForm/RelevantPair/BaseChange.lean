@@ -72,8 +72,7 @@ noncomputable def orthogonalBaseChangeIsometryEquiv (P : OrthogonalRelevantPair 
           (LinearMap.range (P.embed.baseChange L).toLinearMap))) :=
   (Q_V.baseChangeRestrict L P.orthogonal).trans
     ((IsometryEquiv.refl (Q_V.baseChange L)).ofSubmodules _ _ (by
-      rw [show (IsometryEquiv.refl (Q_V.baseChange L)).toLinearMap = LinearMap.id from rfl,
-        Submodule.map_id]
+      rw [IsometryEquiv.refl_toLinearMap, Submodule.map_id]
       exact P.orthogonal_baseChange_eq L))
 
 /-- On pure tensors, `orthogonalBaseChangeIsometryEquiv` sends `a ⊗ₜ u` to the vector with
@@ -160,12 +159,14 @@ theorem baseChange_embed_tmul (P : OrthogonalRelevantPair Q_W Q_V j)
   QuadraticMap.Isometry.baseChange_tmul P.embed a w
 
 /-- Scalar extension commutes with the stabilizer embedding `SO(Q_W) →* SO(Q_V)`. -/
-theorem stabilizerHom_baseChange [FiniteDimensional K W] [FiniteDimensional K V]
+theorem stabilizerHom_baseChange [FiniteDimensional K W]
     (P : OrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)]
     (g : specialOrthogonalGroup Q_W) :
+    letI := P.finiteDimensional_codomain
     specialOrthogonalGroupBaseChange (A := L) Q_V (P.stabilizerHom g) =
       (P.baseChange L).stabilizerHom (specialOrthogonalGroupBaseChange (A := L) Q_W g) := by
+  have := P.finiteDimensional_codomain
   apply Subtype.ext
   apply LinearEquiv.toLinearMap_injective
   apply TensorProduct.AlgebraTensorModule.ext
@@ -197,7 +198,13 @@ noncomputable def baseChange (F : FramedOrthogonalRelevantPair Q_W Q_V j)
   nondegenerate_domain := QuadraticForm.Nondegenerate.baseChange F.nondegenerate_domain
   lineCoeff := Units.map (algebraMap K L : K →* L) F.lineCoeff
   complementEquiv :=
-    F.toOrthogonalRelevantPair.baseChangeComplementEquiv L F.lineCoeff F.complementEquiv
+    ((IsometryEquiv.refl (Q_V.baseChange L)).ofSubmodules _ _ (by
+      rw [IsometryEquiv.refl_toLinearMap, Submodule.map_id,
+        F.toOrthogonalRelevantPair_embed])).trans
+      (F.toOrthogonalRelevantPair.baseChangeComplementEquiv L F.lineCoeff
+        (((IsometryEquiv.refl Q_V).ofSubmodules _ _ (by
+          rw [IsometryEquiv.refl_toLinearMap, Submodule.map_id, OrthogonalRelevantPair.orthogonal,
+            F.toOrthogonalRelevantPair_embed])).trans F.complementEquiv))
 
 /-- Scalar extension of a framed pair extends its underlying isometric embedding `F.embed`. -/
 @[simp]
@@ -231,8 +238,38 @@ theorem baseChange_complementEquiv_symm_tmul (F : FramedOrthogonalRelevantPair Q
     (((F.baseChange L).complementEquiv.symm (fun i k ↦ y.1 i k • a, y.2 • a) :
         LinearMap.BilinForm.orthogonal (Q_V.baseChange L).polarBilin
           (LinearMap.range (F.baseChange L).embed.toLinearMap)) : L ⊗[K] V) =
-      a ⊗ₜ[K] (F.complementEquiv.symm y : V) :=
-  F.toOrthogonalRelevantPair.baseChangeComplementEquiv_symm_tmul L F.lineCoeff F.complementEquiv a y
+      a ⊗ₜ[K] (F.complementEquiv.symm y : V) := by
+  let eL := (IsometryEquiv.refl (Q_V.baseChange L)).ofSubmodules
+    (LinearMap.BilinForm.orthogonal (Q_V.baseChange L).polarBilin
+      (LinearMap.range (F.embed.baseChange L).toLinearMap))
+    (LinearMap.BilinForm.orthogonal (Q_V.baseChange L).polarBilin
+      (LinearMap.range (F.toOrthogonalRelevantPair.embed.baseChange L).toLinearMap))
+    (by rw [IsometryEquiv.refl_toLinearMap, Submodule.map_id, F.toOrthogonalRelevantPair_embed])
+  let e₀ := ((IsometryEquiv.refl Q_V).ofSubmodules F.toOrthogonalRelevantPair.orthogonal _ (by
+    rw [IsometryEquiv.refl_toLinearMap, Submodule.map_id, OrthogonalRelevantPair.orthogonal,
+      F.toOrthogonalRelevantPair_embed])).trans F.complementEquiv
+  let eB := F.toOrthogonalRelevantPair.baseChangeComplementEquiv L F.lineCoeff e₀
+  have he₀ : (e₀.symm y : V) = (F.complementEquiv.symm y : V) := by
+    have h1 : e₀.symm y = ((IsometryEquiv.refl Q_V).ofSubmodules
+        F.toOrthogonalRelevantPair.orthogonal _ (by
+          rw [IsometryEquiv.refl_toLinearMap, Submodule.map_id, OrthogonalRelevantPair.orthogonal,
+            F.toOrthogonalRelevantPair_embed])).symm (F.complementEquiv.symm y) :=
+      e₀.symm_apply_eq.mpr (by simp [e₀])
+    have h2 : (IsometryEquiv.refl Q_V).symm (F.complementEquiv.symm y : V) =
+        (F.complementEquiv.symm y : V) :=
+      (IsometryEquiv.refl Q_V).symm_apply_eq.mpr rfl
+    simpa [h2] using congrArg Subtype.val h1
+  have hB : (F.baseChange L).complementEquiv.symm (fun i k ↦ y.1 i k • a, y.2 • a) =
+      eL.symm (eB.symm (fun i k ↦ y.1 i k • a, y.2 • a)) := by
+    refine (F.baseChange L).complementEquiv.symm_apply_eq.mpr ?_
+    change _ = (eL.trans eB) (eL.symm (eB.symm (fun i k ↦ y.1 i k • a, y.2 • a)))
+    rw [IsometryEquiv.trans_apply, eL.apply_symm_apply, eB.apply_symm_apply]
+  have hL : (IsometryEquiv.refl (Q_V.baseChange L)).symm
+        (eB.symm (fun i k ↦ y.1 i k • a, y.2 • a) : L ⊗[K] V) =
+      (eB.symm (fun i k ↦ y.1 i k • a, y.2 • a) : L ⊗[K] V) :=
+    (IsometryEquiv.refl (Q_V.baseChange L)).symm_apply_eq.mpr rfl
+  rw [hB, IsometryEquiv.coe_ofSubmodules_symm_apply, hL,
+    F.toOrthogonalRelevantPair.baseChangeComplementEquiv_symm_tmul L F.lineCoeff e₀ a y, he₀]
 
 /-- The distinguished line vector of the scalar-extended frame is the pure tensor
 `1 ⊗ₜ F.lineVector`. -/
