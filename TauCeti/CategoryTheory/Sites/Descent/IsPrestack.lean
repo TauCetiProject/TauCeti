@@ -33,9 +33,27 @@ This file also shows that `pullHom` is compatible with composition and identitie
 hence sends isomorphisms to isomorphisms
 (`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.inv_pullHom`), and that it sends the
 pullback `f^* φ` of a morphism `φ` to its pullback along the composite
-(`CategoryTheory.Pseudofunctor.pullHom_map`). Composition and identities of local morphisms are
+(`CategoryTheory.Pseudofunctor.pullHom_map`).
+Composition and identities of local morphisms are
 therefore morphisms of presheaves on `Over S`
-(`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`).
+(`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`), and
+so are pre- and postcomposition with the pullbacks of a morphism
+(`CategoryTheory.Pseudofunctor.presheafHomPrecomp`,
+`CategoryTheory.Pseudofunctor.presheafHomPostcomp`), which are composition with the global section
+of pullbacks of that morphism (`CategoryTheory.Pseudofunctor.presheafHomGlobalSection`).
+Mathlib's identification `Pseudofunctor.overMapCompPresheafHomIso` of the restriction of a presheaf
+of morphisms with the presheaf of morphisms between pullbacks conjugates by the comparison
+isomorphisms of `F` (`CategoryTheory.Pseudofunctor.overMapCompPresheafHomIso_hom_app`), and its
+inverse conjugates by their inverses
+(`CategoryTheory.Pseudofunctor.overMapCompPresheafHomIso_inv_app`), so it is compatible with
+composition and identities.
+Conjugating a local morphism by composites of comparison isomorphisms of `F` is conjugating its
+pullback along an identity by a single comparison isomorphism
+(`CategoryTheory.Pseudofunctor.mapComp'_conj_eq_pullHom`,
+`CategoryTheory.Pseudofunctor.mapComp'_conj_eq_mapId'_conj_pullHom`).
+Postcomposition also makes `presheafHom M N` and, for a prestack, `sheafHom J M N` functors
+of `N` (`CategoryTheory.Pseudofunctor.presheafHomFunctor`,
+`CategoryTheory.Pseudofunctor.sheafHomFunctor`).
 
 It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
@@ -70,8 +88,12 @@ Mathlib's sheaf criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_f
   `CategoryTheory.Pseudofunctor.pullHom_map`,
   `CategoryTheory.Pseudofunctor.pullHom_mapComp'_hom`,
   `CategoryTheory.Pseudofunctor.pullHom_mapComp'_inv`,
-  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`:
+  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`,
+  `CategoryTheory.Functor.pullHom_toPseudofunctor'_eq`:
   composition, identity, comparison, and restriction laws for `pullHom`.
+* `CategoryTheory.Pseudofunctor.overMapCompPresheafHomIso_hom_app`,
+  `CategoryTheory.Pseudofunctor.overMapCompPresheafHomIso_inv_app`: the components of Mathlib's
+  comparison `overMapCompPresheafHomIso`.
 * `CategoryTheory.Pseudofunctor.IsPrestack.hom_ext`,
   `CategoryTheory.Pseudofunctor.IsPrestack.pullHom_ext`,
   `CategoryTheory.Pseudofunctor.IsPrestack.glue`,
@@ -149,6 +171,25 @@ lemma isSeparatedFor_presheafHom_of_hom_ext {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ 
     map_eq_pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl, h']
 
 namespace LocallyDiscreteOpToCat
+
+/-- For a category-valued presheaf, `pullHom` is the restriction functor on morphisms
+transported along the two equalities of iterated and composite restrictions. -/
+lemma _root_.CategoryTheory.Functor.pullHom_toPseudofunctor'_eq (K : Cᵒᵖ ⥤ Cat.{v', u'})
+    {U₁ U₂ V W : C} {M : K.obj (op U₁)} {N : K.obj (op U₂)}
+    {p : V ⟶ U₁} {q : V ⟶ U₂}
+    (a : (K.map p.op).toFunctor.obj M ⟶ (K.map q.op).toFunctor.obj N) (f : W ⟶ V) :
+    pullHom (F := K.toPseudofunctor') a f (f ≫ p) (f ≫ q) =
+      eqToHom (congrArg (fun k ↦ k.toFunctor.obj M) (K.map_comp p.op f.op)) ≫
+        (K.map f.op).toFunctor.map a ≫
+        eqToHom (congrArg (fun k ↦ k.toFunctor.obj N) (K.map_comp q.op f.op).symm) := by
+  have hcomp {U : C} (r : V ⟶ U) : K.toPseudofunctor'.mapComp' r.op.toLoc f.op.toLoc
+      (f ≫ r).op.toLoc = eqToIso (K.map_comp r.op f.op) := by
+    rw [Pseudofunctor.mapComp', PrelaxFunctor.map₂Iso_eqToIso, Functor.toPseudofunctor'_mapComp]
+    -- The two maps being compared are definitionally the ordinary functor maps of `K`.
+    exact eqToIso_trans _ _
+  simp only [pullHom, hcomp p, hcomp q, eqToIso.hom, eqToIso.inv, Cat.eqToHom_app]
+  -- The remaining map of `K.toPseudofunctor'` on `f.op.toLoc` is definitionally `K.map f.op`.
+  rfl
 
 variable {D : Type*} [Category* D] (p : D ⥤ C)
 
@@ -271,6 +312,38 @@ lemma presheafHomId_app_apply (M : F.obj (.mk (op S))) (T : (Over S)ᵒᵖ)
     (p : (𝟙_ ((Over S)ᵒᵖ ⥤ Type _)).obj T) :
     (presheafHomId M).app T p = 𝟙 _ := (rfl)
 
+/-- The component of Mathlib's comparison `overMapCompPresheafHomIso M N q` at `T` over `S'`, for
+`q : S' ⟶ S`: a local morphism `p` over `t ≫ q` goes to `k(M)⁻¹ ≫ p ≫ k(N)`, where `k` is the
+composition isomorphism `F(t ≫ q) ≅ F(t) ∘ F(q)`. -/
+lemma overMapCompPresheafHomIso_hom_app (M N : F.obj (.mk (op S))) {S' : C} (q : S' ⟶ S)
+    (T : (Over S')ᵒᵖ) (p : (F.presheafHom M N).obj (op ((Over.map q).obj T.unop))) :
+    (F.overMapCompPresheafHomIso M N q).hom.app T p =
+      (F.mapComp' q.op.toLoc T.unop.hom.op.toLoc
+          ((Over.map q).obj T.unop).hom.op.toLoc).inv.toNatTrans.app M ≫ p ≫
+        (F.mapComp' q.op.toLoc T.unop.hom.op.toLoc
+          ((Over.map q).obj T.unop).hom.op.toLoc).hom.toNatTrans.app N := by
+  -- Mathlib's definition has no component lemmas; its component is `(k(M)⁻¹ ≫ p) ≫ k(N)`.
+  dsimp [overMapCompPresheafHomIso]
+  exact Category.assoc _ _ _
+
+/-- The components of `Pseudofunctor.overMapCompPresheafHomIso` are compatible with composition
+of local morphisms. -/
+lemma overMapCompPresheafHomIso_hom_app_comp {M N P : F.obj (.mk (op S))} {S' : C} (q : S' ⟶ S)
+    (T : (Over S')ᵒᵖ) (a : (F.presheafHom M N).obj (op ((Over.map q).obj T.unop)))
+    (b : (F.presheafHom N P).obj (op ((Over.map q).obj T.unop))) :
+    (F.overMapCompPresheafHomIso M P q).hom.app T (a ≫ b) =
+      (F.overMapCompPresheafHomIso M N q).hom.app T a ≫
+        (F.overMapCompPresheafHomIso N P q).hom.app T b := by
+  simp only [overMapCompPresheafHomIso_hom_app, Category.assoc,
+    Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
+
+/-- The components of `Pseudofunctor.overMapCompPresheafHomIso` send identities to identities. -/
+lemma overMapCompPresheafHomIso_hom_app_id (M : F.obj (.mk (op S))) {S' : C} (q : S' ⟶ S)
+    (T : (Over S')ᵒᵖ) :
+    (F.overMapCompPresheafHomIso M M q).hom.app T (𝟙 _) = 𝟙 _ := by
+  rw [overMapCompPresheafHomIso_hom_app]
+  exact (congrArg (_ ≫ ·) (Category.id_comp _)).trans (Cat.Hom.inv_hom_id_toNatTrans_app _ _)
+
 /-- The pullback of `f^* φ` is `(g ≫ f)^* φ`. -/
 @[simp]
 lemma pullHom_map ⦃X : C⦄ ⦃M N : F.obj (.mk (op X))⦄ (φ : M ⟶ N) ⦃Y : C⦄ (f : Y ⟶ X) ⦃Y' : C⦄
@@ -278,6 +351,51 @@ lemma pullHom_map ⦃X : C⦄ ⦃M N : F.obj (.mk (op X))⦄ (φ : M ⟶ N) ⦃Y
     pullHom ((F.map f.op.toLoc).toFunctor.map φ) g gf gf hgf hgf =
       (F.map gf.op.toLoc).toFunctor.map φ := by
   simp [pullHom]
+
+variable (F) in
+/-- **Postcomposition with a morphism `φ : N ⟶ N'`** as a morphism of presheaves of morphisms
+`F.presheafHom M N ⟶ F.presheafHom M N'`: at `(Y, f)` a local morphism `p : f^* M ⟶ f^* N` goes
+to `p ≫ f^* φ`. -/
+def presheafHomPostcomp (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))} (φ : N ⟶ N') :
+    F.presheafHom M N ⟶ F.presheafHom M N' where
+  app T := TypeCat.ofHom fun p ↦ p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ
+  naturality T T' g := by
+    ext p
+    dsimp
+    rw [pullHom_comp _ _ g.unop.left T'.unop.hom T'.unop.hom T'.unop.hom (Over.w g.unop)
+      (Over.w g.unop) (Over.w g.unop), pullHom_map]
+
+lemma presheafHomPostcomp_app_apply (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))}
+    (φ : N ⟶ N') (T : (Over S)ᵒᵖ) (p : (F.presheafHom M N).obj T) :
+    (F.presheafHomPostcomp M φ).app T p = p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ :=
+  (rfl)
+
+open MonoidalCategory in
+/-- The global section `T ↦ T.hom^* ψ` of the presheaf of morphisms from `N` to `P` given by a
+morphism `ψ : N ⟶ P`. -/
+def presheafHomGlobalSection {N P : F.obj (.mk (op S))} (ψ : N ⟶ P) :
+    𝟙_ ((Over S)ᵒᵖ ⥤ Type _) ⟶ F.presheafHom N P where
+  app T := TypeCat.ofHom fun _ ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map ψ
+  naturality T T' g := by
+    ext
+    exact (pullHom_map ψ _ _ _ (Over.w g.unop)).symm
+
+open MonoidalCategory in
+lemma presheafHomGlobalSection_app_apply {N P : F.obj (.mk (op S))} (ψ : N ⟶ P)
+    (T : (Over S)ᵒᵖ) (p : (𝟙_ ((Over S)ᵒᵖ ⥤ Type _)).obj T) :
+    (presheafHomGlobalSection ψ).app T p = (F.map T.unop.hom.op.toLoc).toFunctor.map ψ := (rfl)
+
+/-- Postcomposition with the pullbacks of `ψ` is composition of local morphisms with the global
+section `presheafHomGlobalSection ψ`. -/
+lemma presheafHomPostcomp_eq_lift_comp_presheafHomComp {M N P : F.obj (.mk (op S))}
+    (ψ : N ⟶ P) :
+    F.presheafHomPostcomp M ψ = CartesianMonoidalCategory.lift (𝟙 _)
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection ψ) ≫
+        presheafHomComp M N P := by
+  ext T a
+  exact (F.presheafHomPostcomp_app_apply M ψ T a).trans
+    (presheafHomComp_app_apply M N P T ((CartesianMonoidalCategory.lift (𝟙 _)
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection ψ)).app T a)).symm
 
 /-- The pullback of the comparison isomorphism `f^* (p^* N) ⟶ k^* N` (for `f ≫ p = k`) is the
 comparison isomorphism. -/
@@ -314,6 +432,131 @@ lemma pullHom_mapComp'_hom ⦃Z X : C⦄ (p : X ⟶ Z) (N : F.obj (.mk (op Z))) 
     (f₀₂ := (f ≫ p).op.toLoc) (f₁₃ := (g ≫ f).op.toLoc) (h₀₂ := rfl) (h₁₃ := rfl)
     (hf := by simp [← Quiver.Hom.comp_toLoc, ← op_comp])]
   simp [pullHom]
+
+/-- Conjugating a local morphism `w : y₁^* M ⟶ y₁^* N`, for `y₁ = (z ≫ q) ≫ x`, by the comparison
+isomorphisms of `F` along `x` and `z ≫ q`, then along `q` and `z`, and then by the pullback along
+`z` of the comparison isomorphism along `x` and `q` (with `q ≫ x = x'`), is conjugating its
+pullback `pullHom w g` along `g = 𝟙` by the comparison isomorphism along `x'` and `z`. -/
+lemma mapComp'_conj_eq_pullHom {X₀ X₁ X₂ Y : C} (x : X₁ ⟶ X₀) (q : X₂ ⟶ X₁) (x' : X₂ ⟶ X₀)
+    (hx' : q ≫ x = x') (z : Y ⟶ X₂) (y₁ y₂ : Y ⟶ X₀) (h₁ : (z ≫ q) ≫ x = y₁)
+    (h₂ : z ≫ x' = y₂) (g : Y ⟶ Y) (hg : g = 𝟙 Y) (M N : F.obj (.mk (op X₀)))
+    (w : (F.map y₁.op.toLoc).toFunctor.obj M ⟶ (F.map y₁.op.toLoc).toFunctor.obj N) :
+    (F.map z.op.toLoc).toFunctor.map ((F.mapComp' x.op.toLoc q.op.toLoc x'.op.toLoc
+        (by rw [← hx']; rfl)).hom.toNatTrans.app M) ≫
+      ((F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).inv.toNatTrans.app _ ≫
+        ((F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₁.op.toLoc
+          (by rw [← h₁]; rfl)).inv.toNatTrans.app M ≫ w ≫
+            (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₁.op.toLoc
+              (by rw [← h₁]; rfl)).hom.toNatTrans.app N) ≫
+        (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).hom.toNatTrans.app _) ≫
+      (F.map z.op.toLoc).toFunctor.map ((F.mapComp' x.op.toLoc q.op.toLoc x'.op.toLoc
+        (by rw [← hx']; rfl)).inv.toNatTrans.app N) =
+    (F.mapComp' x'.op.toLoc z.op.toLoc y₂.op.toLoc (by rw [← h₂]; rfl)).inv.toNatTrans.app M ≫
+      pullHom w g y₂ y₂ (by rw [hg, Category.id_comp, ← h₁, ← h₂, ← hx', Category.assoc])
+          (by rw [hg, Category.id_comp, ← h₁, ← h₂, ← hx', Category.assoc]) ≫
+        (F.mapComp' x'.op.toLoc z.op.toLoc y₂.op.toLoc
+          (by rw [← h₂]; rfl)).hom.toNatTrans.app N := by
+  subst hg hx'
+  obtain rfl : y₂ = y₁ := by rw [← h₁, ← h₂, Category.assoc]
+  rw [pullHom_id]
+  have hM' : (F.map z.op.toLoc).toFunctor.map
+      ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).hom.toNatTrans.app M) ≫
+      (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).inv.toNatTrans.app _ ≫
+        (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc
+          (by rw [← h₁]; rfl)).inv.toNatTrans.app M =
+      (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
+        (by rw [← h₂]; rfl)).inv.toNatTrans.app M := by
+    exact (F.mapComp'₀₂₃_inv_app x.op.toLoc q.op.toLoc z.op.toLoc
+      (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl) M).symm
+  have hN' : (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc
+        (by rw [← h₁]; rfl)).hom.toNatTrans.app N ≫
+      (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).hom.toNatTrans.app _ ≫
+        (F.map z.op.toLoc).toFunctor.map
+          ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).inv.toNatTrans.app N) =
+      (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
+        (by rw [← h₂]; rfl)).hom.toNatTrans.app N := by
+    exact (F.mapComp'₀₂₃_hom_app x.op.toLoc q.op.toLoc z.op.toLoc
+      (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl) N).symm
+  simp only [Category.assoc]
+  rw [reassoc_of% hM', hN']
+
+/-- Conjugating a local morphism `w : y₁^* M ⟶ y₁^* N`, for `y₁ = z ≫ 𝟙`, by the comparison
+isomorphism of `F` along `𝟙` and `z` is conjugating its pullback `pullHom w g` along `g = 𝟙` by the
+pullback along `z` of the unit isomorphism of `F`. -/
+lemma mapComp'_conj_eq_mapId'_conj_pullHom {X₀ Y : C} (z : Y ⟶ X₀) (y₁ : Y ⟶ X₀)
+    (h₁ : z ≫ 𝟙 X₀ = y₁) (g : Y ⟶ Y) (hg : g = 𝟙 Y) (M N : F.obj (.mk (op X₀)))
+    (w : (F.map y₁.op.toLoc).toFunctor.obj M ⟶ (F.map y₁.op.toLoc).toFunctor.obj N) :
+    (F.mapComp' (𝟙 X₀).op.toLoc z.op.toLoc y₁.op.toLoc (by rw [← h₁]; rfl)).inv.toNatTrans.app M ≫
+        w ≫ (F.mapComp' (𝟙 X₀).op.toLoc z.op.toLoc y₁.op.toLoc
+          (by rw [← h₁]; rfl)).hom.toNatTrans.app N =
+      (F.map z.op.toLoc).toFunctor.map
+          ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app M) ≫
+        pullHom w g z z (by rw [hg, Category.id_comp, ← h₁, Category.comp_id])
+          (by rw [hg, Category.id_comp, ← h₁, Category.comp_id]) ≫ (F.map z.op.toLoc).toFunctor.map
+          ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).inv.toNatTrans.app N) := by
+  subst hg
+  obtain rfl : y₁ = z := by rw [← h₁, Category.comp_id]
+  rw [pullHom_id]
+  have hM' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
+      (by simp)).inv.toNatTrans.app M = (F.map y₁.op.toLoc).toFunctor.map
+        ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app M) := by
+    simpa only [op_id, Quiver.Hom.id_toLoc, mapId'_eq_mapId] using
+      F.mapComp'_id_comp_inv_app y₁.op.toLoc M
+  have hN' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
+      (by simp)).hom.toNatTrans.app N = (F.map y₁.op.toLoc).toFunctor.map
+        ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).inv.toNatTrans.app N) := by
+    simpa only [op_id, Quiver.Hom.id_toLoc, mapId'_eq_mapId] using
+      F.mapComp'_id_comp_hom_app y₁.op.toLoc N
+  rw [hM', hN']
+variable (F) in
+/-- The presheaves of morphisms out of `M`, as a functor of the target: `N ↦ F.presheafHom M N`,
+with `φ : N ⟶ N'` acting by postcomposition (`Pseudofunctor.presheafHomPostcomp`). -/
+@[expose, simps]
+def presheafHomFunctor (M : F.obj (.mk (op S))) :
+    F.obj (.mk (op S)) ⥤ (Over S)ᵒᵖ ⥤ Type _ where
+  obj N := F.presheafHom M N
+  map φ := F.presheafHomPostcomp M φ
+  map_id N := by
+    ext T p
+    simp [presheafHomPostcomp]
+  map_comp φ ψ := by
+    ext T p
+    simp [presheafHomPostcomp]
+
+variable (F) in
+/-- For a prestack, the sheaves of morphisms out of `M`, as a functor of the target:
+`N ↦ F.sheafHom J M N`, with morphisms acting by postcomposition. -/
+@[expose]
+def sheafHomFunctor (J : GrothendieckTopology C) [F.IsPrestack J] (M : F.obj (.mk (op S))) :
+    F.obj (.mk (op S)) ⥤ Sheaf (J.over S) (Type _) :=
+  ObjectProperty.lift _ (F.presheafHomFunctor M) fun N ↦ IsPrestack.isSheaf J M N
+
+@[simp]
+lemma sheafHomFunctor_obj (J : GrothendieckTopology C) [F.IsPrestack J] (M N : F.obj (.mk (op S))) :
+    (F.sheafHomFunctor J M).obj N = F.sheafHom J M N :=
+  (rfl)
+
+@[simp]
+lemma sheafHomFunctor_map_hom (J : GrothendieckTopology C) [F.IsPrestack J]
+    (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))} (φ : N ⟶ N') :
+    ((F.sheafHomFunctor J M).map φ).hom = F.presheafHomPostcomp M φ :=
+  (rfl)
+
+/-- The inverse of Mathlib's comparison `overMapCompPresheafHomIso M N q` at `T` over `S'`: a local
+morphism `p` from `t^* (q^* M)` to `t^* (q^* N)` goes to `k(M) ≫ p ≫ k(N)⁻¹`, where `k` is the
+composition isomorphism `F(t ≫ q) ≅ F(t) ∘ F(q)`. -/
+lemma overMapCompPresheafHomIso_inv_app (M N : F.obj (.mk (op S))) {S' : C} (q : S' ⟶ S)
+    (T : (Over S')ᵒᵖ)
+    (p : (F.presheafHom ((F.map q.op.toLoc).toFunctor.obj M)
+      ((F.map q.op.toLoc).toFunctor.obj N)).obj T) :
+    (F.overMapCompPresheafHomIso M N q).inv.app T p =
+      (F.mapComp' q.op.toLoc T.unop.hom.op.toLoc
+          ((Over.map q).obj T.unop).hom.op.toLoc).hom.toNatTrans.app M ≫ p ≫
+        (F.mapComp' q.op.toLoc T.unop.hom.op.toLoc
+          ((Over.map q).obj T.unop).hom.op.toLoc).inv.toNatTrans.app N := by
+  -- Mathlib's definition has no component lemmas; its inverse component is this composite.
+  dsimp [overMapCompPresheafHomIso]
+  rfl
 
 namespace LocallyDiscreteOpToCat
 

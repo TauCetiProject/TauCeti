@@ -86,6 +86,9 @@ space by them.
 * `Topology.IsInducing.image_connectedComponentIn_preimage`: a connected component of `F`
   contained in the range of an inducing map `f` is the image of the connected component of the
   preimage of `F`, for instance in a subspace containing it.
+* `Topology.IsInducing.preimage_connectedComponentIn`: for an inducing map into `F` whose range
+  contains the connected component of `F` through `f y`, that component pulls back to the connected
+  component of `y`.
 * `TauCeti.isClopen_connectedComponentIn_compl`: a component of `X \ K` that starts outside a
   neighbourhood `L` of `K` and misses its frontier is clopen.
 * `TauCeti.connectedComponentIn_compl_inter_frontier_nonempty`: in a preconnected, locally
@@ -102,6 +105,8 @@ space by them.
 * `TauCeti.isPreconnected_compl_of_isDiscrete`: removing from a preconnected space a closed
   discrete set, each point of which has small connected punctured neighbourhoods, leaves it
   preconnected.
+* `IsPreconnected.sdiff_of_isDiscrete`: relative version for removing a relatively closed discrete
+  set from a preconnected subset `U`.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
   space is a T1 space.
 * `TauCeti.connectedComponentsSigmaHomeomorph`: a space whose connected components form a
@@ -735,6 +740,23 @@ theorem _root_.Topology.IsInducing.image_connectedComponentIn_preimage {Y : Type
       connectedComponentIn_eq_empty (mt mem_preimage.1 hyF),
       image_empty]
 
+/-- **Connected components of a subspace of a set.** If an inducing map `f` takes values in `F`
+and its range contains the connected component of `f y` in `F`, then the preimage of that
+component is the connected component of `y`. For the inclusion of a subspace `s ⊆ F` containing
+the connected component in `F` of a point of `s`, that component, read in `s`, is the point's
+connected component in `s`. -/
+theorem _root_.Topology.IsInducing.preimage_connectedComponentIn {Y : Type*}
+    [TopologicalSpace Y] {f : Y → X} (hf : IsInducing f) {F : Set X} {y : Y}
+    (hF : range f ⊆ F) (hs : connectedComponentIn F (f y) ⊆ range f) :
+    f ⁻¹' connectedComponentIn F (f y) = connectedComponent y := by
+  have himage := hf.image_connectedComponentIn_preimage hs
+  rw [preimage_eq_univ_iff.2 hF, connectedComponentIn_univ] at himage
+  refine ((preimage_mono himage.ge).trans fun z ⟨w, hw, hwz⟩ ↦ ?_).antisymm
+    (himage ▸ subset_preimage_image _ _)
+  -- points with the same image are inseparable, and a connected component is closed
+  exact ((hf.inseparable_iff.1 (hwz ▸ Inseparable.rfl)).mem_closed_iff
+    isClosed_connectedComponent).2 hw
+
 /-- **A complementary component missing the frontier of a neighbourhood is clopen.** Let `K` be a
 closed set lying in the interior of a set `L`. If the component of a point `y ∉ L` in `X \ K`
 misses the frontier of `L`, then it stays outside `L`, so its frontier, which lies in `K`, is empty:
@@ -968,6 +990,20 @@ theorem isPreconnected_compl_of_isDiscrete [PreconnectedSpace X] {s : Set X} (hs
       · exact hnot y hyu.1 hyu.2 hyv.2) with h | h
   · exact Or.inl fun y hy ↦ ((h (mem_univ y)).resolve_right fun h' ↦ hy h'.1).1
   · exact Or.inr fun y hy ↦ ((h (mem_univ y)).resolve_right fun h' ↦ hy h'.1).1
+
+/-- **Removing a relatively closed discrete set keeps a set preconnected**, provided each removed
+point of `U` has arbitrarily small neighbourhoods in `U` whose punctured versions are connected. -/
+theorem _root_.IsPreconnected.sdiff_of_isDiscrete {U s : Set X} (hUc : IsPreconnected U)
+    (hs : IsClosed (Subtype.val ⁻¹' s : Set U)) (hd : IsDiscrete (Subtype.val ⁻¹' s : Set U))
+    (h : ∀ x : U, x.val ∈ s → ∀ W ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ W ∧ IsConnected (V \ {x})) :
+    IsPreconnected (U \ s) := by
+  let : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp hUc
+  have hc : IsPreconnected (Subtype.val ⁻¹' s : Set U)ᶜ :=
+    isPreconnected_compl_of_isDiscrete hs hd h
+  have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set U)ᶜ = U \ s := by
+    rw [image_compl_preimage, Subtype.range_val]
+  rw [← himage]
+  exact hc.image _ continuous_subtypeVal.continuousOn
 
 /-- The quotient of a topological space by its connected components is a T1 space. -/
 instance instT1SpaceConnectedComponents : T1Space (ConnectedComponents X) :=

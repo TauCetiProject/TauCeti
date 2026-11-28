@@ -11,6 +11,7 @@ import Mathlib.Analysis.Meromorphic.Complex
 import TauCeti.Analysis.Contour.ConnectorLimit
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
@@ -32,7 +33,9 @@ contour (`Complex.eulerIntegral_eq_mellinBarnes`). In general no vertical line s
 families, and the contour is the line `Re t = σ` for some `σ < 0` avoiding the poles, deformed
 to pass to the right of the finitely many poles of `Γ(a + t) Γ(b + t)` with real part above `σ`.
 By the residue theorem its integral is the line integral plus `2πi` times the residues at those
-poles. This file defines that value and proves that it does not depend on the line.
+poles. This file defines that value and proves that it does not depend on the line. See
+`Barnes/Continuation.lean` for the identification with Euler's integral
+(`Complex.eulerIntegral_eq_hypergeometricMellinBarnes`) and the Gauss hypergeometric series.
 
 ## Main definitions
 
@@ -48,12 +51,12 @@ poles. This file defines that value and proves that it does not depend on the li
 * `Complex.hypergeometricMellinBarnes_eq`: for `-z ∈ slitPlane`, the value does not depend on
   the line `Re t = σ`, among lines with `σ < 0` that avoid the poles of `Γ(a + t) Γ(b + t)`.
   This holds for all complex `a`, `b`, `c`.
-* `Complex.eulerIntegral_eq_hypergeometricMellinBarnes`: for `0 < Re a`, `0 < Re b < Re c` and
-  `-z ∈ slitPlane`, Euler's integral is `(Γ(a) Γ(b))⁻¹` times the contour integral, on every such
-  line, including lines with poles of `Γ(a + t) Γ(b + t)` to their right.
+* `Complex.gammaPolesRightOf_antitone`: `gammaPolesRightOf a` is antitone in `σ`.
 * `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`: the residue at a simple
   pole `t = -a - k` that is not a pole of `Γ(b + t)` or of `Γ(-t)`, which is
   `(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`.
+* `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right`: the corresponding
+  residue at `t = -b - k`, obtained by symmetry.
 
 ## Implementation notes
 
@@ -136,6 +139,13 @@ theorem gammaPolesRightOf_eq_empty_iff {a : ℂ} {σ : ℝ} :
     gammaPolesRightOf a σ = ∅ ↔ -a.re ≤ σ := by
   simp [gammaPolesRightOf, Nat.ceil_eq_zero]
 
+/-- `gammaPolesRightOf a` is antitone in the abscissa `σ`: shifting `σ` to the left only adds
+poles of `t ↦ Γ(a + t)` to the right of `Re t = σ`. -/
+theorem gammaPolesRightOf_antitone (a : ℂ) : Antitone (gammaPolesRightOf a) :=
+  fun _ _ h s hs ↦ by
+    rw [mem_gammaPolesRightOf] at hs ⊢
+    exact ⟨h.trans_lt hs.1, hs.2⟩
+
 /-- The poles of `t ↦ Γ(a + t) Γ(b + t)` to the right of the line `Re t = σ`. -/
 theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :
     t ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ ↔
@@ -150,8 +160,9 @@ over the contour `C` that runs up the line `Re t = σ` and is deformed to pass t
 poles of `Γ(a + t) Γ(b + t)` with real part `> σ`: the line integral `(2π)⁻¹ ∫ F(σ + i y) dy` plus
 the residues of the integrand at those poles. For `σ < 0` avoiding the poles of
 `Γ(a + t) Γ(b + t)` and `-z ∈ slitPlane`, it does not depend on `σ`
-(`Complex.hypergeometricMellinBarnes_eq`), and when moreover `0 < Re a`, `0 < Re b < Re c` it is
-`Γ(a) Γ(b)` times Euler's integral (`Complex.eulerIntegral_eq_hypergeometricMellinBarnes`). -/
+(`Complex.hypergeometricMellinBarnes_eq`), and in `Barnes/Continuation.lean` it is shown that when
+moreover `a ∉ -ℕ` and `0 < Re b < Re c` it is `Γ(a) Γ(b)` times Euler's integral
+(`Complex.eulerIntegral_eq_hypergeometricMellinBarnes`). -/
 def hypergeometricMellinBarnes (a b c z : ℂ) (σ : ℝ) : ℂ :=
   (2 * (π : ℂ))⁻¹ * (∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ + y * I)) +
     ∑ p ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ,
@@ -187,10 +198,10 @@ private theorem exists_norm_hypergeometricMellinBarnesIntegrand_strip_le (a b c 
     ∃ C K T₀ : ℝ, ∀ x ∈ Icc A B, ∀ T : ℝ, T₀ ≤ |T| →
       ‖hypergeometricMellinBarnesIntegrand a b c z (x + T * I)‖ ≤
         C * ((1 + |T|) ^ K * Real.exp (-((π - |arg (-z)|) * |T|))) := by
-  obtain ⟨Ca, hCa, Ka, Ta, ha⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le a A B
-  obtain ⟨Cb, hCb, Kb, Tb, hb⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le b A B
-  obtain ⟨Cs, hCs, Ks, Ts, hs⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le 0 (-B) (-A)
-  obtain ⟨Cc, hCc, Kc, hc⟩ := TauCeti.exists_norm_inv_Gamma_add_vertical_strip_le c A B
+  obtain ⟨Ca, _, Ka, Ta, ha⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le a A B
+  obtain ⟨Cb, _, Kb, Tb, hb⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le b A B
+  obtain ⟨Cs, _, Ks, Ts, hs⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le 0 (-B) (-A)
+  obtain ⟨Cc, _, Kc, hc⟩ := TauCeti.exists_norm_inv_Gamma_add_vertical_strip_le c A B
   obtain ⟨Cz, hzb⟩ := TauCeti.exists_norm_cpow_strip_le (neg_ne_zero.mpr hz) A B
   refine ⟨Ca * Cb * Cs * Cc * Cz, Ka + Kb + Ks + Kc, max (max Ta Tb) Ts, fun x hx T hT ↦ ?_⟩
   -- `Γ(-t)` is the case `w = 0` at the reflected point `-x - i T`.
@@ -198,29 +209,30 @@ private theorem exists_norm_hypergeometricMellinBarnesIntegrand_strip_le (a b c 
     (by rw [abs_neg]; exact le_trans (le_max_right _ _) hT)
   rw [show (0 : ℂ) + (((-x : ℝ) : ℂ) + ((-T : ℝ) : ℂ) * I) = -((x : ℂ) + T * I) by push_cast; ring,
     abs_neg] at h3
+  have h1 : ‖Gamma (a + (x + T * I))‖ ≤ Ca * (1 + |T|) ^ Ka * Real.exp (-(π / 2) * |T|) :=
+    ha x hx T (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hT)
+  have h2 : ‖Gamma (b + (x + T * I))‖ ≤ Cb * (1 + |T|) ^ Kb * Real.exp (-(π / 2) * |T|) :=
+    hb x hx T (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hT)
+  have h4 : ‖(Gamma (c + (x + T * I)))⁻¹‖ ≤ Cc * (1 + |T|) ^ Kc * Real.exp ((π / 2) * |T|) :=
+    hc x hx T
+  have h5 : ‖(-z) ^ ((x : ℂ) + T * I)‖ ≤
+      Cz * (1 + |T|) ^ (0 : ℝ) * Real.exp (|arg (-z)| * |T|) := by
+    simpa only [Real.rpow_zero, mul_one] using hzb x hx T
+  have h12 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) h1 h2
+  have h123 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
+    (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _) h12 h3
+  have h1234 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
+    (mul_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _))
+    (norm_nonneg _) h123 h4
+  have h12345 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
+    (mul_nonneg (mul_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _))
+      (norm_nonneg _))
+    (norm_nonneg _) h1234 h5
+  have hrate : (-(π / 2) + -(π / 2) + -(π / 2) + π / 2 + |arg (-z)|) * |T| =
+      -((π - |arg (-z)|) * |T|) := by ring
   rw [hypergeometricMellinBarnesIntegrand_def, norm_mul, norm_mul, norm_mul, norm_mul]
-  calc ‖Gamma (a + (x + T * I))‖ * ‖Gamma (b + (x + T * I))‖ * ‖Gamma (-(x + T * I))‖ *
-        ‖(Gamma (c + (x + T * I)))⁻¹‖ * ‖(-z) ^ ((x : ℂ) + T * I)‖
-      ≤ (Ca * (1 + |T|) ^ Ka * Real.exp (-(π * |T| / 2))) *
-          (Cb * (1 + |T|) ^ Kb * Real.exp (-(π * |T| / 2))) *
-          (Cs * (1 + |T|) ^ Ks * Real.exp (-(π * |T| / 2))) *
-          (Cc * (1 + |T|) ^ Kc * Real.exp (π * |T| / 2)) *
-          (Cz * Real.exp (|arg (-z)| * |T|)) := by
-        gcongr
-        · exact ha x hx T (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hT)
-        · exact hb x hx T (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hT)
-        · exact hc x hx T
-        · exact hzb x hx T
-    _ = Ca * Cb * Cs * Cc * Cz * (((1 + |T|) ^ Ka * (1 + |T|) ^ Kb * (1 + |T|) ^ Ks *
-          (1 + |T|) ^ Kc) * (Real.exp (-(π * |T| / 2)) * Real.exp (-(π * |T| / 2)) *
-          Real.exp (-(π * |T| / 2)) * Real.exp (π * |T| / 2) * Real.exp (|arg (-z)| * |T|))) := by
-        ring
-    _ = Ca * Cb * Cs * Cc * Cz * ((1 + |T|) ^ (Ka + Kb + Ks + Kc) *
-          Real.exp (-((π - |arg (-z)|) * |T|))) := by
-        rw [← Real.rpow_add (by positivity), ← Real.rpow_add (by positivity),
-          ← Real.rpow_add (by positivity), ← Real.exp_add, ← Real.exp_add, ← Real.exp_add,
-          ← Real.exp_add]
-        ring_nf
+  refine h12345.trans_eq ?_
+  rw [add_zero, hrate, mul_assoc]
 
 /-- On a vertical strip `A ≤ Re t ≤ B`, the integrand of Barnes's integral tends to `0` as
 `|Im t| → ∞`, uniformly in `Re t`, when `-z ∈ slitPlane`. -/
@@ -349,27 +361,6 @@ theorem hypergeometricMellinBarnes_eq (a b c : ℂ) {z : ℂ} (hz : -z ∈ slitP
   · exact hypergeometricMellinBarnes_eq_of_le a b c hz h hσ₂ ha₁ hb₁ ha₂ hb₂
   · exact (hypergeometricMellinBarnes_eq_of_le a b c hz h hσ₁ ha₂ hb₂ ha₁ hb₁).symm
 
-/-- **Barnes's integral for Euler's integral over a separating contour** (DLMF 15.6.6). For
-`0 < Re a`, `0 < Re b < Re c` and `-z ∈ slitPlane`, Euler's integral is `(Γ(a) Γ(b))⁻¹` times
-Barnes's integral over the line `Re t = σ` plus the residues at the poles of `Γ(a + t) Γ(b + t)`
-to its right, for every `σ < 0` whose line avoids those poles. -/
-theorem eulerIntegral_eq_hypergeometricMellinBarnes {a b c z : ℂ} (ha : 0 < a.re) (hb : 0 < b.re)
-    (hbc : b.re < c.re) (hz : -z ∈ slitPlane) {σ : ℝ} (hσ : σ < 0)
-    (haσ : ∀ n : ℕ, a.re + σ ≠ -n) (hbσ : ∀ n : ℕ, b.re + σ ≠ -n) :
-    eulerIntegral a b c z = (Gamma a * Gamma b)⁻¹ * hypergeometricMellinBarnes a b c z σ := by
-  -- A line between `-min (Re a, Re b)` and `0`, with no poles to its right.
-  set σ' := max (-a.re) (-b.re) / 2
-  have ha' : -a.re < σ' := by have := le_max_left (-a.re) (-b.re); simp only [σ']; linarith
-  have hb' : -b.re < σ' := by have := le_max_right (-a.re) (-b.re); simp only [σ']; linarith
-  have hσ' : σ' < 0 := by simp only [σ']; linarith [max_lt (neg_neg_of_pos ha) (neg_neg_of_pos hb)]
-  have hpa : ∀ n : ℕ, a.re + σ' ≠ -n := fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
-  have hpb : ∀ n : ℕ, b.re + σ' ≠ -n := fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
-  rw [hypergeometricMellinBarnes_eq a b c hz hσ hσ' haσ hbσ hpa hpb,
-    hypergeometricMellinBarnes_eq_integral a b c z ha'.le hb'.le,
-    eulerIntegral_eq_mellinBarnes a hbc hz hσ' ha' hb']
-  simp only [hypergeometricMellinBarnesIntegrand_def, mul_inv]
-  ring
-
 /-! ### Residues -/
 
 /-- The residue of Barnes's integrand at a pole `t = -a - k` of `Γ(a + t)` that is not a pole of
@@ -406,5 +397,17 @@ theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast (c : ℂ) {a
   simp only [G]
   rw [show b + (-(k : ℂ) - a) = b - a - k by ring, show -(-(k : ℂ) - a) = a + k by ring,
     show c + (-(k : ℂ) - a) = c - a - k by ring, show -(k : ℂ) - a = -a - k by ring]
+
+/-- Residue evaluation of `hypergeometricMellinBarnesIntegrand a b c z` at the candidate
+left-family pole `t = -b - k` when `-b - k` avoids both `-a - ℕ` and `ℕ`. Note that the
+reciprocal Gamma factor `(Γ(c - b - k))⁻¹` vanishes when `c - b - k ∈ -ℕ`, which cancels the pole
+of `Γ(b + t)` and makes the singularity removable (with residue `0`). -/
+theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right (c : ℂ) {a b z : ℂ}
+    (k : ℕ) (hb : ∀ m : ℕ, b + k ≠ -m) (hba : ∀ m : ℕ, a - b - k ≠ -m) :
+    TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) (-b - k) =
+      (-1) ^ k / k ! * (Gamma (a - b - k) * Gamma (b + k) * (Gamma (c - b - k))⁻¹ *
+        (-z) ^ (-b - k)) := by
+  rw [hypergeometricMellinBarnesIntegrand_comm]
+  exact residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast c k hb hba
 
 end Complex

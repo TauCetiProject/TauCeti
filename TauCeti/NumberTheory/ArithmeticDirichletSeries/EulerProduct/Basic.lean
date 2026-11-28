@@ -248,6 +248,14 @@ theorem localPowerSeries_delta (P : HeightOneSpectrum (𝓞 K)) :
               congrArg Subtype.val hpow) (Nat.succ_ne_zero n)
         exact P.isPrime.ne_top (Ideal.isUnit_iff.mp hunit)
 
+/-- The canonical local power series of the trivial ideal function `1` is the geometric series
+`∑ X ^ n`. -/
+@[simp]
+theorem localPowerSeries_one (P : HeightOneSpectrum (𝓞 K)) :
+    localPowerSeries (1 : IdealArithmeticFunction K) P = PowerSeries.mk 1 := by
+  ext n
+  simp
+
 section IsDedekindDomain
 
 variable [IsDedekindDomain (𝓞 K)]

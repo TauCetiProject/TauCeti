@@ -38,6 +38,8 @@ has class `1`, a product of `n` conjugates of `T` equal to `1` forces `12 ∣ n`
 
 * `TauCeti.ModularGroup.abelianizationMulEquiv`: the abelianization of `PSL(2, ℤ)` is
   `Multiplicative (ZMod 6)`, with the class of `T` sent to `1`.
+* `TauCeti.ModularGroup.psl2zAbelianizationAddEquiv`: the additive abelianization
+  `Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6`.
 * `TauCeti.ModularGroup.abelianizationMulEquiv_of_coe_S`, `_of_coe_T`, `_of_coe_U`,
   `_of_coe_R`: the images `3`, `1`, `2` and `4` of `S`, `T`, `U` and `R = S T`.
 * `TauCeti.ModularGroup.sl2zAbelianizationMulEquiv`: the abelianization of `SL(2, ℤ)` is
@@ -155,6 +157,25 @@ theorem abelianizationMulEquiv_of_coe_R :
   rw [R_def, QuotientGroup.mk_mul, map_mul, map_mul, abelianizationMulEquiv_of_coe_S,
     abelianizationMulEquiv_of_coe_T, ← ofAdd_add]
   decide
+
+/-- **The additive abelianization of the modular group**, identifying
+`Additive (Group.Abelianization PSL(2, ℤ))` with `ZMod 6`. -/
+noncomputable def psl2zAbelianizationAddEquiv :
+    Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6 :=
+  abelianizationMulEquiv.toAdditiveLeft
+
+/-- `psl2zAbelianizationAddEquiv` acts on `Additive.ofMul x` via `abelianizationMulEquiv x`. -/
+@[simp]
+theorem psl2zAbelianizationAddEquiv_ofMul (x : Group.Abelianization PSL(2, ℤ)) :
+    psl2zAbelianizationAddEquiv (Additive.ofMul x) = (abelianizationMulEquiv x).toAdd := by
+  simp [psl2zAbelianizationAddEquiv]
+
+/-- The inverse of `psl2zAbelianizationAddEquiv` acts via `abelianizationMulEquiv.symm`. -/
+@[simp]
+theorem psl2zAbelianizationAddEquiv_symm_apply (a : ZMod 6) :
+    psl2zAbelianizationAddEquiv.symm a =
+      Additive.ofMul (abelianizationMulEquiv.symm (.ofAdd a)) := by
+  simp [psl2zAbelianizationAddEquiv]
 
 /-! ### The abelianization of `SL(2, ℤ)` -/
 

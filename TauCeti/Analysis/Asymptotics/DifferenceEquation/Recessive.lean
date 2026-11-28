@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 public import TauCeti.Analysis.Asymptotics.DifferenceEquation.FormalSolution
 import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.SpecificLimits.Normed

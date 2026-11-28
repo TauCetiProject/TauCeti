@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
+public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.RingTheory.DedekindDomain.Different.Derivative
@@ -35,6 +36,8 @@ has ramification index `p - 1`, so `ζ_p - 1` is a uniformizer at every prime ab
   of `𝓞 M` over `𝓞 K`.
 * `IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem`: primes above an ideal not
   containing the level are unramified.
+* `Ideal.isUnramifiedAt_int_of_isCyclotomicExtension`: a prime away from the cyclotomic level
+  is unramified over `ℤ` if its contraction to the base number field is.
 * `IsCyclotomicExtension.prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr`: a prime dividing
   `discr M` divides `discr K` or divides `m` — the extension ramifies only below or at the level.
 * `IsCyclotomicExtension.Rat.intValuation_sub_one_eq_exp_neg_one`: in `ℚ(ζ_{p k})` with `p ∤ k`,
@@ -110,6 +113,23 @@ theorem prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr (K M : Type*) [Field K
   · exact Or.inl (hp.dvd_of_dvd_pow h)
 
 end IsCyclotomicExtension
+
+namespace Ideal
+
+open NumberField
+
+/-- In a cyclotomic extension of level `m`, a prime not containing `m` is unramified over `ℤ`
+if its contraction to the base number field is unramified over `ℤ`. -/
+theorem isUnramifiedAt_int_of_isCyclotomicExtension {K E : Type*} [Field K] [NumberField K]
+    [Field E] [Algebra K E] {m : ℕ} [IsCyclotomicExtension {m} K E]
+    (Q : Ideal (𝓞 E)) [Q.IsPrime] [Algebra.IsUnramifiedAt ℤ (Q.under (𝓞 K))]
+    (hm : (m : 𝓞 E) ∉ Q) : Algebra.IsUnramifiedAt ℤ Q := by
+  have hmK : (m : 𝓞 K) ∉ Q.under (𝓞 K) := by
+    simpa only [mem_under, map_natCast] using hm
+  have := IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem E m hmK Q
+  exact Algebra.IsUnramifiedAt.comp (Q.under (𝓞 K)) Q
+
+end Ideal
 
 namespace IsCyclotomicExtension.Rat
 

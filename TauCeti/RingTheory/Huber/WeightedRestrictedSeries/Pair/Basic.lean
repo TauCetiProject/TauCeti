@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Pair
+public import TauCeti.RingTheory.Huber.WeightedEval.Basic
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
@@ -56,6 +57,8 @@ as it carries those generators into `B⁺`.
   sending the generators into a ring of integral elements `B⁺` sends the whole plus ring into `B⁺`.
 * `TauCeti.Huber.PairOfDefinition.weighted_ringOfDefinition_le_weighted_plus`: the ring of
   definition `A₀⟨X⟩_T` lies in the plus ring when `A₀ ⊆ A⁺`.
+* `TauCeti.Huber.isWeightBounded_one_weight_of_mem_plus`: every tuple in a plus ring is unit-weight
+  bounded along any ring homomorphism.
 
 ## References
 
@@ -220,5 +223,14 @@ theorem PairOfDefinition.weighted_ringOfDefinition_le_weighted_plus (P : PairOfD
     (P.weighted hT).ringOfDefinition ≤ (S.weighted hT).plus := by
   rw [PairOfDefinition.weighted_ringOfDefinition, PairOfDefinition.weightedRingOfDefinition_def]
   exact (weightedSubring_mono hP).trans (S.weightedSubring_le_weighted_plus hT)
+
+/-- A tuple of elements in the plus ring `Bplus.plus` is unit-weight bounded along any ring
+homomorphism `φ : R →+* B`. -/
+theorem isWeightBounded_one_weight_of_mem_plus {N : ℕ} {R B : Type*} [CommSemiring R]
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+    (φ : R →+* B) (Bplus : Pair B) {u : Fin N → B} (hu : ∀ i, u i ∈ Bplus.plus) :
+    IsWeightBounded φ (fun _ : Fin N ↦ ({1} : Set R)) u :=
+  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
+    Bplus.isRingOfIntegralElements.isPowerBounded_of_mem (hu i)
 
 end TauCeti.Huber

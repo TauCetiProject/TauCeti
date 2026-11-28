@@ -62,6 +62,12 @@ product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
 For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
 divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
 
+`Nat.divisorsAntidiagonal_prime_pow` identifies the factor pairs of a prime power `p ^ k` with the
+image of `Finset.antidiagonal k` under `(i, j) ↦ (p ^ i, p ^ j)`.
+
+For coprime `m` and `n`, `Nat.Coprime.divisors_filter_pow_dvd_mul` splits the divisors `d` of
+`m * n` with `d ^ k ∣ m * n` as products of the corresponding divisors of `m` and of `n`.
+
 For `N ≠ 0`, `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the
 subtype of `N.divisors` omitting the unit divisor. `TauCeti.pnatDvdEquivDivisors`,
 `TauCeti.pnatMulDvdEquivSigma`, and `TauCeti.pnatMulDvdAndEquivSigma` identify positive divisors
@@ -184,6 +190,19 @@ theorem injOn_add_divisorsAntidiagonal_filter_lt (n : ℕ) :
   rcases _root_.mul_eq_zero.mp hprod with h | h
   · exact Prod.ext (by omega) (by omega)
   · omega
+
+/-- The factor pairs of a prime power `p ^ k` are the pairs `(p ^ i, p ^ j)` with `i + j = k`. -/
+theorem divisorsAntidiagonal_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    letI ι : ℕ ↪ ℕ := ⟨(p ^ ·), Nat.pow_right_injective hp.one_lt⟩
+    (p ^ k).divisorsAntidiagonal = (Finset.antidiagonal k).map (.prodMap ι ι) := by
+  refine Finset.Subset.antisymm (fun ⟨a, b⟩ hab ↦ ?_)
+    (Nat.antidiagonal_map_subset_divisorsAntidiagonal_pow hp.one_lt k)
+  obtain ⟨hmul, -⟩ := Nat.mem_divisorsAntidiagonal.mp hab
+  obtain ⟨i, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro b hmul)
+  obtain ⟨j, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro_left (p ^ i) hmul)
+  rw [← pow_add] at hmul
+  exact Finset.mem_map.mpr ⟨(i, j),
+    Finset.mem_antidiagonal.mpr (Nat.pow_right_injective hp.one_lt hmul), rfl⟩
 
 /-- A proper divisor of `n` is at most `n / 2`. -/
 theorem le_div_two_of_mem_properDivisors {n d : ℕ} (hd : d ∈ n.properDivisors) :
@@ -538,5 +557,24 @@ theorem prod_Ioc_prod_divisors {M : Type*} [CommMonoid M] (N : ℕ) (f : ℕ →
       exact ⟨⟨⟨hi, hiN⟩, hdi⟩, Nat.pos_of_dvd_of_pos hdi hi, (Nat.le_of_dvd hi hdi).trans hiN⟩
     · rintro ⟨⟨⟨hi, hiN⟩, hdi⟩, -⟩
       exact ⟨⟨hi, hiN⟩, hdi, hi.ne'⟩
+
+/-- For coprime `m` and `n`, the divisors `d` of `m * n` with `d ^ k ∣ m * n` are the products
+`a * b` of divisors `a` of `m` with `a ^ k ∣ m` and `b` of `n` with `b ^ k ∣ n`. -/
+theorem Coprime.divisors_filter_pow_dvd_mul {m n : ℕ} (hmn : m.Coprime n) (k : ℕ) :
+    {d ∈ (m * n).divisors | d ^ k ∣ m * n} =
+      ({a ∈ m.divisors | a ^ k ∣ m} ×ˢ {b ∈ n.divisors | b ^ k ∣ n}).image
+        fun p ↦ p.1 * p.2 := by
+  ext d
+  simp only [mem_filter, mem_image, mem_product, mem_divisors, Prod.exists]
+  constructor
+  · rintro ⟨⟨hd, hmn0⟩, hdk⟩
+    obtain ⟨a, b, ha, hb, rfl⟩ := Nat.dvd_mul.mp hd
+    rw [mul_pow] at hdk
+    refine ⟨a, b, ⟨⟨⟨ha, left_ne_zero_of_mul hmn0⟩, ?_⟩, ⟨hb, right_ne_zero_of_mul hmn0⟩, ?_⟩, rfl⟩
+    · exact ((hmn.coprime_dvd_left ha).pow_left k).dvd_of_dvd_mul_right (dvd_of_mul_right_dvd hdk)
+    · exact ((hmn.symm.coprime_dvd_left hb).pow_left k).dvd_of_dvd_mul_left
+        (dvd_of_mul_left_dvd hdk)
+  · rintro ⟨a, b, ⟨⟨⟨ha, hm⟩, hak⟩, ⟨hb, hn⟩, hbk⟩, rfl⟩
+    exact ⟨⟨mul_dvd_mul ha hb, mul_ne_zero hm hn⟩, mul_pow a b k ▸ mul_dvd_mul hak hbk⟩
 
 end Nat

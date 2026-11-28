@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.RelativeGluing
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import TauCeti.Geometry.Toric.Algebraic.BaseChange.AffineChart
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
+import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness
 
 /-!
 # Toric schemes of finite fans over an arbitrary commutative ring
@@ -18,7 +21,9 @@ morphisms. These are open immersions, singular cones included, and the diagram i
 directed: the charts of two faces of a cone meet in the chart of their intersection. Mathlib glues
 such a diagram to its colimit, the toric scheme `X_{Φ,R}` of the fan over `R`. Each affine chart
 is an open subscheme, the charts cover `X_{Φ,R}`, and morphisms out of `X_{Φ,R}` are exactly the
-families of morphisms out of the charts compatible with the face maps.
+families of morphisms out of the charts compatible with the face maps. The zero-cone chart is
+dense when it exists. The structure morphism is of finite type, and the scheme is Noetherian
+when `R` is Noetherian.
 
 For an `R`-algebra `S`, changing coefficients in the charts glues to a morphism
 `X_{Φ,S} ⟶ X_{Φ,R}`, compatible with identities and composites of coefficient changes. The square
@@ -201,6 +206,22 @@ theorem affineChartι_apply_eq_affineChartι_apply_iff {σ τ : Φ.cones}
 
 variable (Φ)
 
+/-- The zero-cone chart, the split torus over `R`, has dense image in the toric scheme. -/
+theorem denseRange_affineChartι_bot (h₀ : (⊥ : PointedCone ℝ V) ∈ Φ.cones) :
+    DenseRange (Φ.affineChartι R ⟨⊥, h₀⟩) := by
+  intro x
+  obtain ⟨σ, y, rfl⟩ := Φ.exists_affineChartι_apply_eq R x
+  let hface := (Φ.isToricCone σ.property).salient.bot_isFaceOf
+  have hdense := denseRange_faceAffineChartMap R Φ.lattice hface y
+  have hy := mem_closure_image (Φ.affineChartι R σ).continuous.continuousAt hdense
+  have hcomp : ⇑(Φ.affineChartι R σ) ∘ ⇑(faceAffineChartMap R Φ.lattice hface) =
+      ⇑(Φ.affineChartι R ⟨⊥, h₀⟩) := by
+    funext z
+    simpa only [Scheme.Hom.comp_apply, Function.comp_apply] using
+      congrArg (fun f : affineChart R Φ.lattice ⊥ ⟶ Φ.finiteFanScheme R ↦ f z)
+        (Φ.faceAffineChartMap_comp_affineChartι R (τ := ⟨⊥, h₀⟩) (σ := σ) hface)
+  rwa [← Set.range_comp, hcomp] at hy
+
 /-- The canonical affine open cover of the toric scheme of a finite fan, indexed by its cones. -/
 -- Expose the cover so that its index type is the cone type in importing modules.
 @[expose]
@@ -217,6 +238,15 @@ theorem affineChartOpenCover_X (σ : Φ.cones) :
 @[simp]
 theorem affineChartOpenCover_f (σ : Φ.cones) :
     (Φ.affineChartOpenCover R).f σ = Φ.affineChartι R σ := (rfl)
+
+/-- The toric scheme of a finite fan is quasi-compact. -/
+instance compactSpace_finiteFanScheme : CompactSpace (Φ.finiteFanScheme R) := by
+  let 𝒰 := Φ.affineChartOpenCover R
+  have : Finite 𝒰.I₀ := inferInstanceAs (Finite Φ.cones)
+  have : ∀ σ : 𝒰.I₀, CompactSpace (𝒰.X σ) := fun (σ : Φ.cones) ↦ by
+    rw [affineChartOpenCover_X]
+    infer_instance
+  exact 𝒰.compactSpace
 
 /-- The cones of a fan index its affine chart open cover, ordered by inclusion. -/
 instance : Category (Φ.affineChartOpenCover R).I₀ := inferInstanceAs (Category Φ.cones)
@@ -266,6 +296,27 @@ theorem affineChartι_finiteFanSchemeToSpec (σ : Φ.cones) :
     Φ.affineChartι R σ ≫ Φ.finiteFanSchemeToSpec R =
       Spec.algebraMap R (affineChartRing R Φ.lattice σ) :=
   Φ.affineChartι_finiteFanSchemeDesc R _ (Φ.faceAffineChartMap_comp_specAlgebraMap_of_le R) σ
+
+/-- The structure morphism of a finite fan scheme is locally of finite type. -/
+instance locallyOfFiniteType_finiteFanSchemeToSpec :
+    LocallyOfFiniteType (Φ.finiteFanSchemeToSpec R) := by
+  have : IsZariskiLocalAtSource @LocallyOfFiniteType :=
+    HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.FiniteType)
+  have hchart (σ : Φ.cones) :
+      LocallyOfFiniteType (Φ.affineChartι R σ ≫ Φ.finiteFanSchemeToSpec R) := by
+    rw [affineChartι_finiteFanSchemeToSpec]
+    have := (Φ.isToricCone σ.property).fg_dualSemigroup Φ.lattice
+    exact LocallyOfFiniteType.Spec_algebraMap_iff.mpr inferInstance
+  refine (IsZariskiLocalAtSource.iff_of_openCover (P := @LocallyOfFiniteType)
+    (Φ.affineChartOpenCover R)).mpr fun (σ : Φ.cones) ↦ ?_
+  rw [affineChartOpenCover_f]
+  exact hchart σ
+
+/-- A finite fan scheme over a Noetherian coefficient ring is Noetherian. -/
+instance isNoetherian_finiteFanScheme [IsNoetherianRing R] :
+    IsNoetherian (Φ.finiteFanScheme R) where
+  toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (Φ.finiteFanSchemeToSpec R)
+  toCompactSpace := inferInstance
 
 /-! ### Change of coefficients -/
 

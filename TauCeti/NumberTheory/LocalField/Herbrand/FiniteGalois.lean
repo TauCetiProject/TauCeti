@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.GaloisClosure
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Basic
+import TauCeti.FieldTheory.Galois.FiniteLevel
 
 import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 
@@ -176,12 +177,8 @@ theorem comap_restrictNormalHom_finiteGaloisUpperRamificationGroup_antitone
     Antitone fun M : FiniteGaloisIntermediateField K Ω ↦
       (finiteGaloisUpperRamificationGroup K Ω M v).comap
         (AlgEquiv.restrictNormalHom (K₁ := Ω) M.toIntermediateField) := by
-  intro M N hMN σ hσ
-  rw [Subgroup.mem_comap, ← map_restrictNormalHom_finiteGaloisUpperRamificationGroup K Ω hMN v]
-  refine ⟨AlgEquiv.restrictNormalHom N.toIntermediateField σ, hσ, ?_⟩
-  rw [← IntermediateField.restrictNormalHom_val N.toIntermediateField,
-    ← IntermediateField.restrictNormalHom_val M.toIntermediateField,
-    AlgHom.restrictNormalHom_restrictNormalHom]
-  rfl
+  exact antitone_comap_restrictNormalHom
+    (fun M ↦ finiteGaloisUpperRamificationGroup K Ω M v)
+    fun _ _ h ↦ (map_restrictNormalHom_finiteGaloisUpperRamificationGroup K Ω h v).le
 
 end TauCeti.LocalFieldsRamification

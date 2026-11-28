@@ -28,6 +28,7 @@ of the flow and its generator, the unit vector field `∂_t`, are developed in
 
 ## Main results
 
+* `AddCircle.translationFlow_eq_add_right`: the time-`t` map is the translation by `[t]`.
 * `AddCircle.translationFlow_apply_eq_self_iff`, `AddCircle.translationFlow_eq_id_iff`,
   `AddCircle.translationFlow_add_period`: the time-`t` map fixes a point, equivalently is the
   identity, exactly when `t ∈ pℤ`; in particular the flow has period `p`.
@@ -62,6 +63,11 @@ def translationFlow : Flow ℝ (AddCircle p) where
 @[simp]
 theorem translationFlow_apply (t : ℝ) (x : AddCircle p) :
     translationFlow p t x = x + (t : AddCircle p) :=
+  (rfl)
+
+/-- The time-`t` map of the translation flow is the translation by the class of `t`. -/
+theorem translationFlow_eq_add_right (t : ℝ) :
+    translationFlow p t = (· + (t : AddCircle p)) :=
   (rfl)
 
 /-- The time-`t` map of the translation flow fixes the point `x` exactly when `t` is an integer

@@ -1,0 +1,215 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.GrowthOrder
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
+
+/-!
+# Centered global bounds for entire functions of order at most one
+
+An entire function `f : ℂ → ℂ` satisfies `TauCeti.IsCenteredOrderOne f` when for every `ε > 0`
+there exists `C > 0` such that `‖f z‖ ≤ exp (C * (1 + ‖z‖ ^ (1 + ε)))` for all `z : ℂ`. Unlike
+`TauCeti.OrderLE`, this formulation bundles entirety with a single global bound valid across both
+compact sets and infinity.
+
+The main theorem `TauCeti.isCenteredOrderOne_iff` proves that `IsCenteredOrderOne f` is equivalent
+to `Differentiable ℂ f ∧ OrderLE f 1`: a centered bound with exponent `1 + (A' - 1) / 2` is
+dominated at infinity by `exp (‖z‖ ^ A')`, while conversely the asymptotic bound at `1 + ε` holds
+outside a closed ball on which continuity of `f` supplies a uniform bound absorbed into `exp C`.
+
+Consequently `IsCenteredOrderOne` is closed under ring operations, affine substitutions,
+polynomials, and linear exponentials, while excluding higher-order functions such as `exp (z ^ 2)`.
+
+## Main results
+
+* `TauCeti.IsCenteredOrderOne`: global centered order-at-most-one predicate for entire functions.
+* `TauCeti.isCenteredOrderOne_def`, `TauCeti.IsCenteredOrderOne.exists_norm_le`, and
+  `TauCeti.IsCenteredOrderOne.of_bound`: defining bound interface.
+* `TauCeti.isCenteredOrderOne_iff`: equivalence with `Differentiable ℂ f ∧ OrderLE f 1`.
+* `TauCeti.IsCenteredOrderOne.add`, `TauCeti.IsCenteredOrderOne.neg`,
+  `TauCeti.IsCenteredOrderOne.sub`, `TauCeti.IsCenteredOrderOne.const_mul`,
+  `TauCeti.IsCenteredOrderOne.mul`, `TauCeti.IsCenteredOrderOne.pow`,
+  `TauCeti.IsCenteredOrderOne.comp_mul_add`, `TauCeti.IsCenteredOrderOne.comp_neg`,
+  `Polynomial.isCenteredOrderOne_eval`, `TauCeti.isCenteredOrderOne_cexp_mul`: algebraic and
+  analytic closure properties.
+* `TauCeti.not_isCenteredOrderOne_cexp_sq`: `exp (z ^ 2)` does not satisfy `IsCenteredOrderOne`.
+
+## References
+
+* Z. Yun and W. Zhang, *Shtukas and the Taylor expansion of L-functions*, Ann. of Math. (2) **186**
+  (2017), no. 3, 767–911, Appendix B.1.
+* H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapter 11.
+-/
+
+public section
+
+open Complex Filter Metric Asymptotics Bornology Topology
+open scoped BigOperators
+
+namespace TauCeti
+
+/-- Entire growth of order at most one in global centered form: `f` is complex differentiable on
+`ℂ` and for every `ε > 0` there exists `C > 0` such that
+`‖f z‖ ≤ exp (C * (1 + ‖z‖ ^ (1 + ε)))` for all `z : ℂ`. -/
+def IsCenteredOrderOne (f : ℂ → ℂ) : Prop :=
+  Differentiable ℂ f ∧ ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧
+    ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε)))
+
+variable {f g : ℂ → ℂ}
+
+/-- The defining property of `IsCenteredOrderOne`. -/
+theorem isCenteredOrderOne_def :
+    IsCenteredOrderOne f ↔
+      Differentiable ℂ f ∧ ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧
+        ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) :=
+  Iff.rfl
+
+namespace IsCenteredOrderOne
+
+/-- A function satisfying `IsCenteredOrderOne` is entire. -/
+theorem differentiable (hf : IsCenteredOrderOne f) : Differentiable ℂ f :=
+  hf.1
+
+/-- A function satisfying `IsCenteredOrderOne` satisfies the centered exponential bound
+`‖f z‖ ≤ exp (C * (1 + ‖z‖ ^ (1 + ε)))` for every `ε > 0`. -/
+theorem exists_norm_le (hf : IsCenteredOrderOne f) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C : ℝ, 0 < C ∧ ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) :=
+  hf.2 ε hε
+
+/-- An entire function satisfying the global centered growth bound for every `ε > 0` satisfies
+`IsCenteredOrderOne`. -/
+theorem of_bound (hf : Differentiable ℂ f)
+    (hb : ∀ ε : ℝ, 0 < ε → ∃ C : ℝ,
+      ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε)))) :
+    IsCenteredOrderOne f := by
+  refine ⟨hf, fun ε hε ↦ ?_⟩
+  obtain ⟨C, hC⟩ := hb ε hε
+  refine ⟨max C 1, lt_of_lt_of_le zero_lt_one (le_max_right C 1), fun z ↦ (hC z).trans ?_⟩
+  refine Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_right (le_max_left C 1) ?_)
+  exact add_nonneg zero_le_one (Real.rpow_nonneg (norm_nonneg z) _)
+
+/-- A global centered order-one bound implies `OrderLE f 1`. -/
+theorem orderLE_one (hf : IsCenteredOrderOne f) : OrderLE f 1 := by
+  rw [orderLE_def]
+  intro A' hA'
+  have hε : 0 < (A' - 1) / 2 := by linarith
+  obtain ⟨C, _, hC⟩ := hf.2 ((A' - 1) / 2) hε
+  have hexp : 1 + (A' - 1) / 2 < A' := by linarith
+  have hdom : f =O[cobounded ℂ] fun z : ℂ ↦ Real.exp (C * ‖z‖ ^ (1 + (A' - 1) / 2)) := by
+    refine IsBigO.of_bound (Real.exp C) (Eventually.of_forall fun z ↦ ?_)
+    rw [Real.norm_eq_abs, Real.abs_exp, ← Real.exp_add]
+    exact (hC z).trans_eq (by ring_nf)
+  exact hdom.trans (isBigO_exp_mul_norm_rpow C hexp)
+
+end IsCenteredOrderOne
+
+/-- An entire function of order at most one satisfies the global centered bound
+`IsCenteredOrderOne`. -/
+theorem OrderLE.isCenteredOrderOne (h : OrderLE f 1) (hf : Differentiable ℂ f) :
+    IsCenteredOrderOne f := by
+  refine ⟨hf, fun ε hε ↦ ?_⟩
+  obtain ⟨c, _, hc⟩ := h.exists_norm_le_mul_exp_rpow hf.continuous (by linarith : (1 : ℝ) < 1 + ε)
+  set C : ℝ := max c 1
+  have hC1 : 1 ≤ C := le_max_right c 1
+  have hc_exp : c ≤ Real.exp C :=
+    (le_max_left c 1).trans ((le_add_of_nonneg_right zero_le_one).trans (Real.add_one_le_exp C))
+  refine ⟨C, zero_lt_one.trans_le hC1, fun z ↦ ?_⟩
+  have hr : 0 ≤ ‖z‖ ^ (1 + ε) := Real.rpow_nonneg (norm_nonneg z) _
+  have hr_exp : Real.exp (‖z‖ ^ (1 + ε)) ≤ Real.exp (C * ‖z‖ ^ (1 + ε)) :=
+    Real.exp_le_exp.mpr (by nlinarith)
+  calc ‖f z‖ ≤ c * Real.exp (‖z‖ ^ (1 + ε)) := hc z
+    _ ≤ Real.exp C * Real.exp (C * ‖z‖ ^ (1 + ε)) :=
+      mul_le_mul hc_exp hr_exp (Real.exp_nonneg _) (Real.exp_nonneg _)
+    _ = Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) := by
+      rw [← Real.exp_add]
+      ring_nf
+
+/-- `IsCenteredOrderOne f` holds if and only if `f` is entire and has order at most one. -/
+theorem isCenteredOrderOne_iff :
+    IsCenteredOrderOne f ↔ Differentiable ℂ f ∧ OrderLE f 1 :=
+  ⟨fun h ↦ ⟨h.differentiable, h.orderLE_one⟩, fun ⟨hf, h⟩ ↦ h.isCenteredOrderOne hf⟩
+
+namespace IsCenteredOrderOne
+
+/-- Any entire function of order at most `A ≤ 1` satisfies `IsCenteredOrderOne`. -/
+theorem of_orderLE {A : ℝ} (hf : Differentiable ℂ f) (h : OrderLE f A) (hA : A ≤ 1) :
+    IsCenteredOrderOne f :=
+  (h.mono hA).isCenteredOrderOne hf
+
+/-- A sum of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
+theorem add (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
+    IsCenteredOrderOne (fun z ↦ f z + g z) :=
+  (hf.orderLE_one.add hg.orderLE_one).isCenteredOrderOne (hf.differentiable.add hg.differentiable)
+
+/-- The negative of a function satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
+theorem neg (hf : IsCenteredOrderOne f) :
+    IsCenteredOrderOne (fun z ↦ -f z) :=
+  hf.orderLE_one.neg.isCenteredOrderOne hf.differentiable.neg
+
+/-- A difference of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
+theorem sub (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
+    IsCenteredOrderOne (fun z ↦ f z - g z) :=
+  (hf.orderLE_one.sub hg.orderLE_one).isCenteredOrderOne (hf.differentiable.sub hg.differentiable)
+
+/-- Scaling by a complex constant preserves `IsCenteredOrderOne`. -/
+theorem const_mul (hf : IsCenteredOrderOne f) (c : ℂ) :
+    IsCenteredOrderOne (fun z ↦ c * f z) :=
+  (hf.orderLE_one.const_mul c).isCenteredOrderOne (hf.differentiable.const_mul c)
+
+/-- A product of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
+theorem mul (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
+    IsCenteredOrderOne (fun z ↦ f z * g z) :=
+  (hf.orderLE_one.mul hg.orderLE_one).isCenteredOrderOne (hf.differentiable.mul hg.differentiable)
+
+/-- Natural powers preserve `IsCenteredOrderOne`. -/
+theorem pow (hf : IsCenteredOrderOne f) (n : ℕ) :
+    IsCenteredOrderOne (fun z ↦ f z ^ n) :=
+  (hf.orderLE_one.pow n).isCenteredOrderOne (hf.differentiable.pow n)
+
+/-- Pullback along an affine map `z ↦ a * z + b` preserves `IsCenteredOrderOne`. -/
+theorem comp_mul_add (hf : IsCenteredOrderOne f) (a b : ℂ) :
+    IsCenteredOrderOne (fun z ↦ f (a * z + b)) :=
+  (hf.orderLE_one.comp_mul_add a b).isCenteredOrderOne
+    (hf.differentiable.comp ((differentiable_id.const_mul a).add_const b))
+
+/-- Pullback along negation `z ↦ -z` preserves `IsCenteredOrderOne`. -/
+theorem comp_neg (hf : IsCenteredOrderOne f) :
+    IsCenteredOrderOne (fun z ↦ f (-z)) := by
+  simpa using hf.comp_mul_add (-1) 0
+
+end IsCenteredOrderOne
+
+/-- Every constant function satisfies `IsCenteredOrderOne`. -/
+@[simp]
+theorem isCenteredOrderOne_const (c : ℂ) : IsCenteredOrderOne (fun _ ↦ c) :=
+  (orderLE_const c 1).isCenteredOrderOne (differentiable_const c)
+
+/-- Every complex polynomial satisfies `IsCenteredOrderOne`. -/
+theorem _root_.Polynomial.isCenteredOrderOne_eval (p : Polynomial ℂ) :
+    IsCenteredOrderOne p.eval :=
+  IsCenteredOrderOne.of_orderLE (Polynomial.differentiable p) p.orderLE_eval zero_le_one
+
+/-- The identity map `z ↦ z` satisfies `IsCenteredOrderOne`. -/
+@[simp]
+theorem isCenteredOrderOne_id : IsCenteredOrderOne (fun z ↦ z) := by
+  simpa using (Polynomial.X : Polynomial ℂ).isCenteredOrderOne_eval
+
+/-- For every `a : ℂ`, the linear exponential `z ↦ exp (a * z)` satisfies `IsCenteredOrderOne`. -/
+theorem isCenteredOrderOne_cexp_mul (a : ℂ) : IsCenteredOrderOne (fun z ↦ cexp (a * z)) :=
+  (orderLE_cexp_mul a).isCenteredOrderOne (by fun_prop)
+
+/-- The complex exponential satisfies `IsCenteredOrderOne`. -/
+theorem isCenteredOrderOne_cexp : IsCenteredOrderOne cexp := by
+  simpa using isCenteredOrderOne_cexp_mul 1
+
+/-- The Gaussian exponential `z ↦ exp (z ^ 2)` has order two and therefore fails
+`IsCenteredOrderOne`. -/
+theorem not_isCenteredOrderOne_cexp_sq : ¬ IsCenteredOrderOne (fun z ↦ cexp (z ^ 2)) := by
+  rw [isCenteredOrderOne_iff, orderLE_cexp_pow_iff (by norm_num)]
+  norm_num
+
+end TauCeti

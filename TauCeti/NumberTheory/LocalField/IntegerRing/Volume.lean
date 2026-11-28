@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.NumberTheory.LocalField.Monogenic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # Volumes of balls of `𝒪[L]` in uniformizer coordinates

@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Primitive.Matrix
+public import TauCeti.LinearAlgebra.Matrix.RaisesDegree
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Elementary.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Coordinate
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Elementary.Coordinate
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Triangular
-import TauCeti.LinearAlgebra.Matrix.RaisesDegree
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
-# Ordered products of positive Kostant root subgroups determine their parameters
+# Integral recovery of ordered Kostant root parameters
 
 Let a Kostant form act on an integral lattice `M` with a finite weight basis, and let `l` be a list
 of root vectors whose roots `α i` are distinct and positive for a degree functional
@@ -32,7 +34,14 @@ The proof writes each root-subgroup element in the weight basis as `1 + t X_i` p
 of `X_i` shifting weights by multiples `n α_i` with `n ≥ 2`, and applies the matrix uniqueness
 theorem `TauCeti.Matrix.list_prod_map_inj_of_raisesDegree`. It uses no commutator relations.
 
+If every root operator has a primitive vector in its image, the stronger recovery theorem
+puts every parameter in any integral subalgebra containing the entries of the product. This
+recovers polynomial coordinates without inverting any integer.
+
 ## Main declarations
+
+* `TauCeti.UniversalEnvelopingAlgebra.parameters_mem_of_list_prod_kostantRootSubgroupMatrix_mem`:
+  integral subalgebra recovery of ordered root parameters.
 
 * `TauCeti.UniversalEnvelopingAlgebra.list_prod_map_kostantRootSubgroupParam_inj`: an ordered
   product of positive root-subgroup elements determines its parameters.
@@ -118,6 +127,49 @@ private theorem raisesDegree_kostantRootSubgroupMatrix_sub [Fintype η] [Decidab
   rw [Function.comp_apply, Function.comp_apply, hshift, map_add, map_nsmul, nsmul_eq_mul]
   push_cast
   nlinarith
+
+/-- The parameters of an ordered product of positive Kostant root matrices lie in every
+integral subalgebra containing its entries, provided each root operator has a primitive
+vector in its image. This gives integral polynomial recovery, even over nonreduced rings. -/
+theorem parameters_mem_of_list_prod_kostantRootSubgroupMatrix_mem
+    [Fintype η] [DecidableEq η] {A : Type*} [CommRing A]
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) {l : List ι}
+    (hl : (l.map α).Nodup) (hα : ∀ i ∈ l, ∀ j, ⁅h j, e i⁆ = (α i j : ℚ) • e i)
+    (hdeg : ∀ i ∈ l, 0 < degree (α i))
+    (hprim : ∀ i ∈ l, ∃ m : M, IsPrimitive (kostantRootOperator e h ρ M hM i m))
+    (S : Subalgebra ℤ A) (u : ι → A)
+    (hprod : ∀ r s, (l.map fun i ↦
+      (kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
+          (Multiplicative.ofAdd (u i))) : Matrix η η A)).prod r s ∈ S) :
+    ∀ i ∈ l, u i ∈ S := by
+  classical
+  let X (i : ι) := (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
+    (Int.cast : ℤ → A)
+  apply TauCeti.Matrix.parameters_mem_of_list_prod_mem wt degree α
+    (fun i a ↦ (kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
+        (Multiplicative.ofAdd a)) : Matrix η η A)) X hl hdeg ?_ ?_ ?_ S ?_ u hprod
+  · intro i hi r s hrs
+    have hrs' : LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) r s ≠ 0 :=
+      fun h0 ↦ hrs (by simp [X, h0])
+    rw [kostantRootOperator_def] at hrs'
+    simpa using eq_add_nsmul_of_toMatrix_integralDividedPower_ne_zero e h ρ M hM
+      hwt (hα i hi) 1 hrs'
+  · exact fun i hi a ↦ raisesDegree_kostantRootSubgroupMatrix_sub e h ρ M hM hnil
+      hwt (hα i hi) (hdeg i hi) a
+  · intro i hi
+    obtain ⟨m, hm⟩ := hprim i hi
+    obtain ⟨c, hc⟩ := LinearMap.exists_sum_smul_toMatrix_eq_one_of_isPrimitive
+      (kostantRootOperator e h ρ M hM i) b b m hm
+    refine ⟨c, ?_⟩
+    have hcA := congrArg (Int.cast : ℤ → A) hc
+    simpa only [Int.cast_sum, zsmul_eq_mul, Int.cast_mul, Int.cast_id, Int.cast_one, X,
+      Matrix.map_apply] using hcA
+  · intro i _ a ha r s
+    rw [kostantRootSubgroupMatrix_apply, repr_kostantRootSubgroupPoints_baseChange]
+    simp only [MulEquiv.apply_symm_apply, toAdd_ofAdd]
+    exact S.sum_mem fun k _ ↦ S.zsmul_mem (S.pow_mem ha k) _
 
 /-- **An ordered product of positive Kostant root-subgroup elements determines its parameters.**
 

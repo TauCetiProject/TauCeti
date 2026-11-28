@@ -287,9 +287,7 @@ theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
   constructor
   · rintro ⟨g, hg⟩
     obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 hg
-    simp only [MonoidHom.prod_apply, ← IntermediateField.restrictNormalHom_val,
-      AlgHom.restrictNormalHom_restrictNormalHom]
-    rfl
+    simp only [MonoidHom.prod_apply, restrictNormalHom_inclusion]
   · intro h
     obtain ⟨a, ha⟩ := AlgEquiv.restrictNormalHom_surjective E σ
     obtain ⟨b, hb⟩ := AlgEquiv.restrictNormalHom_surjective E τ
@@ -298,14 +296,10 @@ theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
         MonoidHom.mem_ker, map_mul, map_inv, inv_mul_eq_one]
       have ha' : AlgEquiv.restrictNormalHom ↥(K ⊓ L) a =
           (inclusion (inf_le_left : K ⊓ L ≤ K)).restrictNormalHom σ := by
-        rw [← ha, ← IntermediateField.restrictNormalHom_val,
-          ← IntermediateField.restrictNormalHom_val, AlgHom.restrictNormalHom_restrictNormalHom]
-        rfl
+        rw [← ha, restrictNormalHom_inclusion]
       have hb' : AlgEquiv.restrictNormalHom ↥(K ⊓ L) b =
           (inclusion (inf_le_right : K ⊓ L ≤ L)).restrictNormalHom τ := by
-        rw [← hb, ← IntermediateField.restrictNormalHom_val,
-          ← IntermediateField.restrictNormalHom_val, AlgHom.restrictNormalHom_restrictNormalHom]
-        rfl
+        rw [← hb, restrictNormalHom_inclusion]
       rw [ha', hb', h]
     obtain ⟨y, hy, z, hz, hyz⟩ := Subgroup.mem_sup_of_normal_right.1 hab
     rw [← IntermediateField.restrictNormalHom_ker, MonoidHom.mem_ker] at hy hz

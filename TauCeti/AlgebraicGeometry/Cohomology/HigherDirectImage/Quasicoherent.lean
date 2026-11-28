@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.LocallyBijective
 import TauCeti.Algebra.Module.LocalizedModule.Map
 import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Restrict
 import TauCeti.AlgebraicGeometry.Cohomology.Localization
+import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
 /-!
 # Higher direct images of quasi-coherent modules
@@ -64,7 +65,9 @@ quasi-coherent
   is natural in the quasi-coherent module `M`;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyHigherDirectImageGlobalSectionsLinearEquiv`: over an
   affine base `Y` with `f : X ⟶ Y` a morphism over `Spec R`, the `R`-linear equivalence
-  `Hⁿ(X, M) ≃ₗ[R] Γ(Rⁿ f_* M, ⊤)`.
+  `Hⁿ(X, M) ≃ₗ[R] Γ(Rⁿ f_* M, ⊤)`;
+* `AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_of_subsingleton_cohomology`: over an
+  affine base `Y`, vanishing of `H^q(X, M)` implies `R^q f_* M = 0`.
 
 ## References
 
@@ -394,6 +397,20 @@ theorem cohomologyHigherDirectImageGlobalSectionsLinearEquiv_naturality
       ← cohomologyOnTopBaseLinearEquiv_apply M₁ R n, LinearEquiv.apply_symm_apply]
   exact (congrArg (f.higherDirectImageSectionsAddEquiv M₂ n (isAffineOpen_top Y)) htop).trans
     (f.higherDirectImageSectionsAddEquiv_naturality n φ (isAffineOpen_top Y) x₀)
+
+/-- For a quasi-compact quasi-separated morphism `f : X ⟶ Y` to an affine scheme and a
+quasi-coherent `𝒪_X`-module `M`, if `H^q(X, M)` is subsingleton then `R^q f_* M` is zero. -/
+theorem isZero_higherDirectImage_of_subsingleton_cohomology (M : X.Modules) [M.IsQuasicoherent]
+    (q : ℕ) [Subsingleton (Cohomology M q)] :
+    Limits.IsZero ((f.higherDirectImage q).obj M) := by
+  have : Subsingleton (cohomologyOn M q ⊤) :=
+    (cohomologyOnTopIso M q).addCommGroupIsoToAddEquiv.injective.subsingleton
+  have : Subsingleton (cohomologyOn M q (f ⁻¹ᵁ ⊤)) :=
+    (eqToIso (congrArg (cohomologyOn M q) f.preimage_top)).addCommGroupIsoToAddEquiv
+      |>.injective.subsingleton
+  have : Subsingleton Γ((f.higherDirectImage q).obj M, ⊤) :=
+    (f.higherDirectImageSectionsAddEquiv M q (isAffineOpen_top Y)).symm.injective.subsingleton
+  exact ((f.higherDirectImage q).obj M).isZero_of_subsingleton_sections_top
 
 end Affine
 

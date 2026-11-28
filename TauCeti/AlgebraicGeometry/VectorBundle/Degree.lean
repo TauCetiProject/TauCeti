@@ -15,6 +15,8 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 public import TauCeti.AlgebraicGeometry.VectorBundle.FreeSubsheaf
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Tensor
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.Cohomology.PushforwardAcyclic.Affine
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
@@ -690,13 +692,14 @@ from `V ⊗ 𝒪_X^r ≅ V^{⊕r}` and `χ(X, V^{⊕r}) = r · χ(X, V)`. -/
 theorem vectorBundleDegree_tensor_free {s : ℕ} (V : FixedRank X s) :
     vectorBundleDegree k (V.tensor (free X r)) = r * vectorBundleDegree k V := by
   have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
-  have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
+  have : HasBiproduct (C := X.Modules) fun _ : ULift.{u} (Fin r) ↦ V.obj.obj :=
+    HasBiproduct.of_hasCoproduct _
   let e : (V.tensor (free X r)).obj.obj ≅ ⨁ fun _ : Fin r ↦ V.obj.obj :=
-    eqToIso (by rw [tensor_obj_obj, free_obj, FiniteLocallyFreeSheaf.free_obj]) ≪≫
-      whiskerLeftIso V.obj.obj ((TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) _).symm ≪≫
-        biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ 𝟙_ X.Modules)
-          (g := fun _ : Fin r ↦ 𝟙_ X.Modules) Equiv.ulift fun _ ↦ Iso.refl _) ≪≫
-      leftDistributor V.obj.obj _ ≪≫ biproduct.mapIso fun _ ↦ ρ_ V.obj.obj
+    -- `X.ringCatSheaf` and `TauCeti.SheafOfModules.ringCatSheaf X.sheaf` are definitionally equal.
+    eqToIso (by rw [tensor_obj_obj, free_obj, FiniteLocallyFreeSheaf.free_obj]; rfl) ≪≫
+      (V.obj.obj.biproductConstIsoTensorFree (R := X.sheaf) (ULift.{u} (Fin r))).symm ≪≫
+      biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ V.obj.obj)
+        (g := fun _ : Fin r ↦ V.obj.obj) Equiv.ulift fun _ ↦ Iso.refl _
   rw [vectorBundleDegree_def, vectorBundleDegree_def, eulerCharBelow_congr k e,
     eulerCharBelow_biproduct_const, Fintype.card_fin]
   push_cast
