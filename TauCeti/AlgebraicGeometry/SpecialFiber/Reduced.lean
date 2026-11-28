@@ -11,16 +11,12 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Reduced
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 
 /-!
-# Reducedness criteria for special fibres
-
-For any scheme `X` over a local ring `R`, the reduced special fibre `X_{s,red}`
-(`TauCeti.reducedSpecialFiber`) and its inclusion, residue-field, and properness API live in
-`TauCeti.AlgebraicGeometry.SpecialFiber.Subscheme`.
+# Reduced special fibres and component multiplicities
 
 For an integral Noetherian scheme with factorial local rings over a one-dimensional local
-base with principal maximal ideal, this file proves that the special fibre is reduced exactly when
-every component has multiplicity one. The generic point must lie outside the special fibre. No
-flatness, properness, or residue-field perfection hypothesis is needed for this criterion.
+base with principal maximal ideal, the special fibre is reduced exactly when every component
+has multiplicity one. The generic point must lie outside the special fibre. No flatness,
+properness, or residue-field perfection hypothesis is needed for this criterion.
 
 On a regular scheme of dimension at most two, the factoriality hypothesis follows from
 regularity. Thus the criterion applies to regular models over discrete valuation rings. It
@@ -35,7 +31,7 @@ requires control after residue-field extension.
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry IsLocalRing TopologicalSpace
+open CategoryTheory AlgebraicGeometry IsLocalRing TopologicalSpace
 open TauCeti TauCeti.AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.Hom

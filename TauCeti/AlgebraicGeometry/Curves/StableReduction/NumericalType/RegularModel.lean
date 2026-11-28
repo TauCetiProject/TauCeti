@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
-public import TauCeti.AlgebraicGeometry.SpecialFiber.Reduced
+import TauCeti.AlgebraicGeometry.SpecialFiber.Reduced
 
 /-!
 # The numerical type of a regular model
@@ -40,11 +40,7 @@ The axioms of a numerical type are the properties of these data proved in
 `TauCeti.AlgebraicGeometry.IntersectionNumber.Weight`: the intersection matrix is symmetric with
 nonnegative off-diagonal entries and kills the multiplicity vector, its graph is connected
 because the special fibre is, and `wᵢ` divides its `i`-th row. The component set is nonempty by
-`AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint`. Generator independence
-(`AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_congr`) is proved here; the
-uniformizer-free adapter `TauCeti.Model.numericalType` for proper regular integral models over a
-discrete valuation ring lives in
-`TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Model`.
+`AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint`.
 
 The combinatorial theory of `TauCeti.NumericalType`, such as its signed genus
 `TauCeti.NumericalType.arithmeticGenus` and its weighted Picard group
@@ -58,14 +54,11 @@ The combinatorial theory of `TauCeti.NumericalType`, such as its signed genus
   `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight`,
   `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_intersection` and
   `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_genus`: its data.
-* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_congr`: independence of the chosen
-  generator of the maximal ideal.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight_mul_genus`:
   `wᵢ gᵢ = dim_k H¹(Cᵢ, 𝒪_{Cᵢ})`, comparing the genus over the constant field with the genus
   over the residue field.
-* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_adj_iff` and
-  `forall_specialFiberNumericalType_multiplicity_eq_one_iff`: graph adjacency and reducedness of the
-  scheme-theoretic special fibre.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_adj_iff`: two distinct components are
+  adjacent exactly when they intersect.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight_mul_genus_sub_one` and
   `specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfIntersection`:
   `wᵢ (gᵢ - 1) = -χ_k(𝒪_{Cᵢ})` and the total arithmetic-genus identity, derived formally from
@@ -79,7 +72,7 @@ codimension-one points of `X` in the special fibre that indexes
 for those points.
 
 The `H¹` finiteness hypothesis is bundled in the structure
-`AlgebraicGeometry.Scheme.Hom.SpecialFiberCohomologyFiniteDimensional`, from
+`AlgebraicGeometry.Scheme.Hom.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne`, from
 `TauCeti.AlgebraicGeometry.SpecialFiber.Weight`, rather than passed to the
 definition as a separate hypothesis. A hypothesis whose statement contains a proof term, here
 the closedness of `closure {η}`, has that proof abstracted into an auxiliary lemma when it is a
@@ -89,9 +82,7 @@ statements, and checking the definition stays fast.
 
 ## References
 
-* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y)
-  ([Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z), for the numerical type and its signed
-  genus `TauCeti.NumericalType.arithmeticGenus`) and
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y) and
   [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y).
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
@@ -114,7 +105,7 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X 
 variable [Ring.DimensionLEOne R] [IsIntegral X] [IsNoetherian X]
   [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] [Flat toBase]
   (hX : ∀ x : X, coheight x ≤ 2) (hη : toBase (genericPoint X) ≠ closedPoint R)
-  (hC : toBase.SpecialFiberCohomologyFiniteDimensional 1)
+  (hC : toBase.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne)
   {π : R} (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π)
   (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}))
 
@@ -148,18 +139,18 @@ def specialFiberNumericalType : NumericalType.{u} where
   intersection := toBase.specialFiberIntersectionMatrix hX hη
   intersection_isSymm := toBase.specialFiberIntersectionMatrix_isSymm hX hη
     (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
-    hC.finiteDimensional
+    hC.finiteDimensional_one
   offDiagonal_nonneg _ _ := toBase.specialFiberIntersectionMatrix_nonneg_of_ne hX hη
     (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
-    hC.finiteDimensional
+    hC.finiteDimensional_one
   connected := toBase.specialFiberIntersectionMatrix_reflTransGen hX hη
     (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
-    hC.finiteDimensional hconn
+    hC.finiteDimensional_one hconn
   fiber_relation i := by
     simpa [Matrix.mulVec, dotProduct, mul_comm] using congrFun
       (toBase.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity hX hη
         (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
-        hC.finiteDimensional hπ hreg) i
+        hC.finiteDimensional_one hπ hreg) i
   weight_dvd i j := toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix hX hη i j
   genus i := Module.finrank
     Γ((vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme, ⊤)
@@ -220,7 +211,7 @@ theorem specialFiberNumericalType_adj_iff
     (T := toBase.specialFiberNumericalType hX hη hC hπ hreg hconn) (i := i) (j := j)).trans
       (and_congr_right fun hij ↦ toBase.specialFiberIntersectionMatrix_pos_iff hX hη
         (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
-        hC.finiteDimensional hij)
+        hC.finiteDimensional_one hij)
 
 /-- The genus of a component `C` of the special fibre in the numerical type of a regular model is
 `dim_κ H¹(C, 𝒪_C)` over the constant field `κ = H⁰(C, 𝒪_C)` of `C`. -/
@@ -250,36 +241,27 @@ theorem specialFiberNumericalType_weight_mul_genus
         ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme).obj 1) :=
   toBase.specialFiberWeight_mul_finrank_cohomology_one _
 
-/-- **Generator independence of the special-fibre numerical type.** Any two generators of
-`maximalIdeal R` define the same `NumericalType`. -/
-theorem specialFiberNumericalType_congr {π' : R} (hπ' : maximalIdeal R = Ideal.span {π'}) :
-    let hreg' : IsSMulRegular R π' := by
-      obtain ⟨u, hu⟩ := Ideal.mem_span_singleton.mp (hπ' ▸ hπ ▸ Ideal.mem_span_singleton_self π)
-      intro x y (hxy : π' * x = π' * y)
-      exact hreg (show π * x = π * y by rw [hu, mul_right_comm, hxy, mul_right_comm])
+/-- **Uniformizer independence of `specialFiberNumericalType`.** Any two nonzerodivisor generators
+of `maximalIdeal R` define the same `TauCeti.NumericalType`. -/
+theorem specialFiberNumericalType_congr {π' : R}
+    (hπ' : maximalIdeal R = Ideal.span {π'}) (hreg' : IsSMulRegular R π') :
     toBase.specialFiberNumericalType hX hη hC hπ hreg hconn =
       toBase.specialFiberNumericalType hX hη hC hπ' hreg' hconn :=
-  let hreg' : IsSMulRegular R π' := by
-    obtain ⟨u, hu⟩ := Ideal.mem_span_singleton.mp (hπ' ▸ hπ ▸ Ideal.mem_span_singleton_self π)
-    intro x y (hxy : π' * x = π' * y)
-    exact hreg (show π * x = π * y by rw [hu, mul_right_comm, hxy, mul_right_comm])
   let T := toBase.specialFiberNumericalType hX hη hC hπ hreg hconn
-  let T' := toBase.specialFiberNumericalType hX hη hC hπ' hreg' hconn
-  T.reindex_refl.symm.trans (T.reindex_eq (T' := T') (.refl _) (fun i ↦ Subtype.ext
-    (toBase.specialFiberMultiplicity_eq_of_span_eq (hπ'.symm.trans hπ) i.val))
+  (T.reindex_refl).symm.trans (T.reindex_eq
+    (T' := toBase.specialFiberNumericalType hX hη hC hπ' hreg' hconn)
+    (Equiv.refl T.Component)
+    (fun i ↦ PNat.eq (toBase.specialFiberMultiplicity_congr (hπ.symm.trans hπ') i.val).symm)
     (fun _ ↦ rfl) (fun _ _ ↦ rfl) fun _ ↦ rfl)
 
-/-- Every component of `specialFiberNumericalType` has multiplicity one if and only if the
-scheme-theoretic special fibre is reduced. -/
-theorem forall_specialFiberNumericalType_multiplicity_eq_one_iff :
-    (∀ i, (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i = 1) ↔
-      IsReduced (specialFiber R toBase).left := by
+/-- The special fibre is reduced iff every component has multiplicity `1` in
+`specialFiberNumericalType`. -/
+theorem isReduced_specialFiber_iff_multiplicity_eq_one :
+    IsReduced (specialFiber R toBase).left ↔
+      ∀ i, (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i = 1 := by
   rw [toBase.isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one_of_isRegular hX hη hπ]
-  refine ⟨fun h x hx ↦ ?_, fun h i ↦ PNat.coe_eq_one_iff.mp
-    (h i.val (toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn i))⟩
-  obtain ⟨i, rfl⟩ :=
-    (toBase.exists_specialFiberNumericalType_component_iff hX hη hC hπ hreg hconn x).mpr hx
-  exact PNat.coe_eq_one_iff.mpr (h i)
+  exact ⟨fun h i ↦ PNat.eq (h i.val ((Set.Finite.mem_toFinset _).mp i.property)),
+    fun h x hx ↦ congrArg PNat.val (h ⟨x, (Set.Finite.mem_toFinset _).mpr hx⟩)⟩
 
 /-- For each component `Cᵢ` of the special fibre, `wᵢ (gᵢ - 1) = -χ_k(𝒪_{Cᵢ})`, where `χ_k` is the
 degree-`2` truncated Euler characteristic `dim_k H⁰ - dim_k H¹` over the residue field. -/
@@ -296,7 +278,7 @@ theorem specialFiberNumericalType_weight_mul_genus_sub_one
   have hi := toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn i
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
   have := toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton hi
-  have := hC.finiteDimensional i.val hi
+  have := hC.finiteDimensional_one i.val hi
   have hwg : ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℤ) *
       ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).genus i : ℤ) =
     (Module.finrank (ResidueField R) (Cohomology (InvertibleSheaf.trivial

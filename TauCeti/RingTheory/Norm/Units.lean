@@ -22,7 +22,7 @@ No finiteness hypothesis is needed here, because `Algebra.norm` itself has none:
 determinant of multiplication, which is `1` when `S` is not module-finite over `R`
 (`Algebra.norm_eq_one_of_not_module_finite`). A consumer that cares about the value — for instance
 the non-split torus of `GL₂` in
-`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NonSplitTorus.lean` — supplies its own
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NonSplitTorus/Basic.lean` — supplies its own
 finiteness where the value is computed.
 
 ## Main definitions

@@ -47,6 +47,8 @@ complete list of linear characters.
 * `MonoidHom.exists_comp_eq_iff_ker_le_ker`: a character extends along a homomorphism into a
   finite commutative group exactly when it kills the kernel of that homomorphism. This is
   Mathlib's `MonoidHom.domRestrict_surjective` applied to the range of the homomorphism.
+* `MonoidHom.dual_ker_eq_zpowers`: the characters of a finite commutative group trivial on
+  `ker ψ` are exactly the powers of `ψ`.
 
 ## References
 
@@ -127,5 +129,21 @@ theorem exists_comp_eq_iff_ker_le_ker [CommGroup A] [Finite A]
       (f.rangeRestrict.liftOfSurjective f.rangeRestrict_surjective ⟨χ, by rwa [ker_rangeRestrict]⟩)
     refine ⟨ψ, MonoidHom.ext fun b ↦ ?_⟩
     simpa using DFunLike.congr_fun hψ (f.rangeRestrict b)
+
+/-- The characters trivial on the kernel of a character of a finite abelian group are exactly
+its powers. -/
+theorem dual_ker_eq_zpowers [CommGroup A] [Finite A]
+    [HasEnoughRootsOfUnity R (Monoid.exponent A)] (ψ : A →* Rˣ) :
+    (CommGroup.subgroupOrderIsoSubgroupMonoidHom A R ψ.ker).ofDual = Subgroup.zpowers ψ := by
+  have h : (CommGroup.subgroupOrderIsoSubgroupMonoidHom A R).symm
+      (OrderDual.toDual (Subgroup.zpowers ψ)) = ψ.ker := by
+    ext g
+    rw [CommGroup.mem_subgroupOrderIsoSubgroupMonoidHom_symm_iff, mem_ker]
+    constructor
+    · exact fun h ↦ h ψ (Subgroup.mem_zpowers ψ)
+    · intro hg φ hφ
+      obtain ⟨n, rfl⟩ := hφ
+      simp [hg]
+  exact congrArg OrderDual.ofDual ((OrderIso.symm_apply_eq _).mp h).symm
 
 end MonoidHom

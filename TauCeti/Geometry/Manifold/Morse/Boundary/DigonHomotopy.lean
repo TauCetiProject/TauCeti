@@ -28,8 +28,10 @@ the middle level `t = 1 / 2` (`TauCeti.morseDigonSlice`). They are rigid when
 `ind q = ind p + 1`: such trajectories, of continuation index `-1`, appear only at isolated
 parameters. The homotopy `K = TauCeti.morseDegreeOneMap f₀ hf₁ (morseDigonSlice V)`, of degree
 `+1`, counts them modulo two. As for the continuation map, the definitions take no hypothesis on
-`V`; they are the trajectory counts only when the slices are finite, which is expected for
-admissible families under the parametrized transversality condition, and is not proved here.
+`V`; they are the trajectory counts only when the slices are finite, which holds for transverse
+families of `C¹` continuation fields between Morse–Smale pseudo-gradients of Morse functions whose
+transition maps are continuous jointly in the parameter and the point, and differentiable at the
+digon trajectories (`TauCeti.IsContinuationFamily.finite_morseDigonSlice`).
 
 **The ends of the one-dimensional digon trajectory spaces.** When `ind p = ind q`, the digon
 trajectories from `p` to `q` are expected to form a one-dimensional space with four kinds of ends:

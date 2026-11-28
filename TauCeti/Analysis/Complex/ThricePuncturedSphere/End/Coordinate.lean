@@ -54,7 +54,10 @@ taken; an open set on which all three are at most `R` already lies in `S_R`
 `R q` gives the truncation at these heights (`TauCeti.ThricePuncturedSphere.truncationAt`), also
 compact (`TauCeti.ThricePuncturedSphere.isCompact_truncationAt`); with a smaller height on one end
 it is `S_R` cut short along a circle of that end
-(`TauCeti.ThricePuncturedSphere.truncation_inter_eq_truncationAt`). In the real coordinates
+(`TauCeti.ThricePuncturedSphere.truncation_inter_eq_truncationAt`). For `R ≥ 0`, `S_R` is
+`S₀ = {1/2 ≤ ‖w‖, 1/2 ≤ ‖w - 1‖, ‖w‖ ≤ 2}` (`TauCeti.ThricePuncturedSphere.mem_truncation_zero_iff`)
+together with the annuli of the three ends between the heights `0` and `R`
+(`TauCeti.ThricePuncturedSphere.truncation_eq_union`). In the real coordinates
 `ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
 (`Puncture.measurable_re_endCoord`), and so are the truncation and its parts `±s ≤ c` on an end
 (`TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation`,
@@ -383,6 +386,13 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
   · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
     linarith
 
+/-- A point of the closed disc `‖w‖ ≤ 2 exp (2πρ)` lies outside the circle `s = -L/2` of the end at
+`∞` for every `L ≥ 0` with `L ≥ 2ρ`. -/
+theorem endSign_mul_re_endCoord_inf_le {ρ L : ℝ} (hL : 0 ≤ L) (hLρ : 2 * ρ ≤ L) {w : ℂ}
+    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π * ρ)) : inf.endSign * (inf.endCoord w).re ≤ L / 2 := by
+  rw [endSign_inf, neg_one_mul]
+  exact neg_re_endCoord_inf_le (by linarith) (hw.trans (by gcongr; linarith))
+
 /-- Away from `0`, the signed longitudinal coordinate `-s` of the end at `∞` exceeds `r` exactly
 off the closed disc `‖w‖ ≤ 2 exp (2πr)` bounded by the circle `s = -r` of that end. -/
 theorem lt_neg_re_endCoord_inf_iff {r : ℝ} {w : ℂ} (hw : w ≠ 0) :
@@ -660,14 +670,60 @@ theorem exists_mem_neighborhood_cylindricalEndLift (q : Puncture) {z : ℂ}
     rw [coe_negativeEnd_apply_mk]
     simp [Complex.re_add_im]
 
+/-- **The end lift slightly beyond height `0`.** The end lift of `q` stays in the thrice-punctured
+sphere on the half-plane `2π (±Re z) > -log 2`, which contains the circle at height `0` of the end:
+on the input ends it stays within distance `exp (-2π Re z) / 2 < 1` of the centre `0` or `1` of the
+end, and on the output end at distance `2 exp (-2π Re z) > 1` from `0`, so it never meets the other
+puncture. -/
+theorem cylindricalEndLift_ne_zero_and_ne_one_of_neg_log_two_lt (q : Puncture) {z : ℂ}
+    (hz : -Real.log 2 < 2 * π * (q.endSign * z.re)) :
+    q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 := by
+  have he : Complex.exp (-(2 * (π : ℂ)) * z) ≠ 0 := Complex.exp_ne_zero _
+  have hn : ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ = Real.exp (-(2 * π * z.re)) := by
+    rw [Complex.norm_exp, re_neg_two_pi_mul, neg_mul]
+  -- The bound on the input ends, where `±Re z = Re z`, and on the output end, where it is `-Re z`.
+  have hlt (h : -Real.log 2 < 2 * π * z.re) : ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ < 2 := by
+    rw [hn]
+    exact (Real.exp_lt_exp.2 (by linarith)).trans_eq (Real.exp_log two_pos)
+  have hgt (h : -Real.log 2 < 2 * π * -z.re) : 2⁻¹ < ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ := by
+    have h2 : Real.exp (-Real.log 2) = 2⁻¹ := by rw [Real.exp_neg, Real.exp_log two_pos]
+    rw [hn, ← h2]
+    exact Real.exp_lt_exp.2 (by linarith)
+  cases q with
+  | zero =>
+    simp only [endSign_zero, one_mul] at hz
+    have h₂ := hlt hz
+    rw [cylindricalEndLift_zero]
+    refine ⟨div_ne_zero he two_ne_zero, fun h ↦ ?_⟩
+    rw [div_eq_one_iff_eq two_ne_zero] at h
+    rw [h] at h₂
+    norm_num at h₂
+  | one =>
+    simp only [endSign_one, one_mul] at hz
+    have h₂ := hlt hz
+    rw [cylindricalEndLift_one]
+    refine ⟨fun h ↦ ?_, fun h ↦ he ?_⟩
+    · rw [sub_eq_zero, eq_comm, div_eq_one_iff_eq two_ne_zero] at h
+      rw [h] at h₂
+      norm_num at h₂
+    · rw [sub_eq_self, div_eq_zero_iff] at h
+      exact h.resolve_right two_ne_zero
+  | inf =>
+    simp only [endSign_inf, neg_one_mul] at hz
+    have h₂ := hgt hz
+    rw [cylindricalEndLift_inf]
+    refine ⟨mul_ne_zero two_ne_zero he, fun h ↦ ?_⟩
+    have h' := congrArg norm h
+    rw [norm_mul, norm_one, Complex.norm_ofNat] at h'
+    linarith
+
 /-- A point of an end with positive signed longitudinal coordinate lies in the thrice-punctured
 sphere: it is neither `0` nor `1`. -/
 theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
     (hz : 0 < q.endSign * z.re) :
-    q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 := by
-  obtain ⟨p, -, hp⟩ := q.exists_mem_neighborhood_cylindricalEndLift hz
-  rw [← hp]
-  exact p.property
+    q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 :=
+  q.cylindricalEndLift_ne_zero_and_ne_one_of_neg_log_two_lt (by
+    nlinarith [Real.log_pos one_lt_two, Real.pi_pos])
 
 /-- A point with positive signed longitudinal coordinate on an end lies in the thrice-punctured
 sphere: it is neither `0` nor `1`. -/
@@ -847,6 +903,41 @@ theorem truncation_eq (R : ℝ) :
       {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
         Metric.closedBall 0 (2 * Real.exp (2 * π * R)) := by
   rw [← truncationAt_const, truncationAt_eq]
+
+/-- **Membership in the truncation `S₀`.** A point lies in `S₀` exactly when it is at distance at
+least `1/2` from both inputs `0` and `1` and at distance at most `2` from `0`. -/
+theorem mem_truncation_zero_iff {w : ℂ} :
+    w ∈ truncation 0 ↔ 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ ∧ ‖w‖ ≤ 2 := by
+  rw [truncation_eq]
+  simp [and_assoc]
+
+/-- For `R ≥ 0`, the truncation `S_R` is the truncation `S₀` together with the annuli of the three
+ends between the heights `0` and `R`. -/
+theorem truncation_eq_union {R : ℝ} (hR : 0 ≤ R) :
+    truncation R = ((truncation 0 ∪ {w | 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * Real.exp (2 * π * R)}) ∪
+      {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 1 / 2}) ∪
+        {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ ∧ ‖w - 1‖ ≤ 1 / 2} := by
+  have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have he' : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp_iff.2 (by nlinarith [Real.pi_pos])
+  ext w
+  have h₁ : ‖w‖ - 1 ≤ ‖w - 1‖ := by simpa using norm_sub_norm_le w 1
+  have h₂ : 1 - ‖w‖ ≤ ‖w - 1‖ := by simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
+  simp only [truncation_eq, mul_zero, neg_zero, Real.exp_zero, mul_one, mem_union, mem_inter_iff,
+    mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
+  constructor
+  · rintro ⟨⟨ha, hb⟩, hc⟩
+    by_cases h₃ : 2 < ‖w‖
+    · exact .inl (.inl (.inr ⟨h₃.le, hc⟩))
+    by_cases h₄ : ‖w‖ < 1 / 2
+    · exact .inl (.inr ⟨ha, h₄.le⟩)
+    by_cases h₅ : ‖w - 1‖ < 1 / 2
+    · exact .inr ⟨hb, h₅.le⟩
+    exact .inl (.inl (.inl ⟨⟨by linarith, by linarith⟩, by linarith⟩))
+  · rintro (((⟨⟨ha, hb⟩, hc⟩ | ⟨ha, hb⟩) | ⟨ha, hb⟩) | ⟨ha, hb⟩)
+    · exact ⟨⟨by linarith, by linarith⟩, by linarith⟩
+    · exact ⟨⟨by linarith, by linarith⟩, hb⟩
+    · exact ⟨⟨ha, by linarith⟩, by linarith⟩
+    · exact ⟨⟨by linarith, ha⟩, by linarith⟩
 
 /-- The points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in the open disc
 `‖w‖ < 2 exp (2π)`: for `R ≥ 0` they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`, and for

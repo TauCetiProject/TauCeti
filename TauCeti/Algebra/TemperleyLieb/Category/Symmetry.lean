@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.Category
+import Mathlib.LinearAlgebra.Basis.Bilinear
 
 /-!
 # Symmetries and corner-dragging on morphisms of `TLCat R δ`
@@ -22,7 +23,9 @@ loop value `δ : R`:
   (`TauCeti.TLCat.rotateHom_iterate_self`).
 * `TauCeti.TLCat.verticalReflectHom`: vertical reflection (turning a diagram upside down) as a
   linear equivalence `((of n : TLCat R δ) ⟶ of m) ≃ₗ[R] (of m ⟶ of n)`, swapping `cup` and `cap`
-  and fixing `𝟙 (of n)`.
+  and fixing `𝟙 (of n)`. The composition law `TauCeti.TLCat.verticalReflectHom_comp` lifts
+  `TauCeti.TLDiagram.verticalReflect_comp` using Mathlib’s `LinearMap.ext_basis` on
+  `TauCeti.TLCat.diagBasis`.
 * `TauCeti.TLCat.reflectHom`: horizontal (left–right) reflection as a linear involution of
   `(of n : TLCat R δ) ⟶ of m`, commuting with `verticalReflectHom` and intertwining `dragRight`
   with `dragLeft`.
@@ -239,6 +242,33 @@ theorem verticalReflectHom_id (n : ℕ) :
   have h := congrArg TLDiagram.matching (TLDiagram.verticalReflect_id n)
   rw [TLDiagram.matching_verticalReflect, TLDiagram.matching_id] at h
   exact congrArg (diagBasis (of n : TLCat R δ) (of n)) h
+
+/-- Vertical reflection reverses composition of linear Temperley–Lieb morphisms.
+The underlying diagram reflection is Chen, Definition 2.1.5. -/
+@[simp]
+theorem verticalReflectHom_comp {n m p : ℕ}
+    (f : (of n : TLCat R δ) ⟶ of m) (g : (of m : TLCat R δ) ⟶ of p) :
+    verticalReflectHom n p (f ≫ g) =
+      verticalReflectHom m p g ≫ verticalReflectHom n m f := by
+  let X : TLCat R δ := of n
+  let Y : TLCat R δ := of m
+  let Z : TLCat R δ := of p
+  -- Compare the two bilinear maps on the images of diagrams without circles.
+  let reflectAfter := (Linear.comp (S := R) X Y Z).compr₂
+    (verticalReflectHom n p).toLinearMap
+  let reflectBefore := (Linear.comp (S := R) Z Y X).flip.compl₁₂
+    (verticalReflectHom n m).toLinearMap (verticalReflectHom m p).toLinearMap
+  suffices h : reflectAfter = reflectBefore from LinearMap.ext_iff₂.mp h f g
+  apply LinearMap.ext_basis (diagBasis X Y) (diagBasis Y Z)
+  intro x y
+  simp only [reflectAfter, reflectBefore, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
+    LinearMap.flip_apply, Linear.comp_apply, Linear.leftComp_apply, LinearEquiv.coe_coe]
+  rw [diagBasis_eq_linearize_map, diagBasis_eq_linearize_map, ← Functor.map_comp]
+  -- Compare the two reflected stacks before linearizing.
+  rw [verticalReflectHom_linearize_map, verticalReflectHom_linearize_map,
+    verticalReflectHom_linearize_map, ← Functor.map_comp]
+  refine congrArg (linearize R δ).map (TLDiagCat.hom_ext ?_)
+  simp only [TLDiagCat.diagram_comp, TLDiagram.verticalReflect_comp, Y]
 
 @[simp]
 theorem verticalReflectHom_cup :

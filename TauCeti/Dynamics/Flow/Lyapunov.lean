@@ -30,6 +30,8 @@ point with trivial stable set, and a strict minimum is a fixed point with trivia
 
 ## Main declarations
 
+* `Flow.antitone_apply_of_lt`: a function strictly decreasing along nonconstant orbits is antitone
+  along every orbit.
 * `Flow.exists_tendsto_atTop_of_antitone` and `Flow.exists_tendsto_atBot_of_antitone`: an orbit
   converges forward, and backward, in time to a point of `C`.
 * `Flow.isGLB_of_mapClusterPt_of_antitone` and `Flow.apply_flow_eq_of_mapClusterPt_of_antitone`:
@@ -59,6 +61,20 @@ variable {α : Type*} [TopologicalSpace α]
 section Limit
 
 variable {φ : Flow ℝ α} {g : α → ℝ} {x y : α}
+
+/-- **A strict Lyapunov function is antitone along orbits.** A function which strictly decreases
+along every nonconstant orbit, `g (φ t x) < g x` whenever `t > 0` and `φ t x ≠ x`, never increases
+along the flow. -/
+theorem antitone_apply_of_lt (hlt : ∀ x t, 0 < t → φ t x ≠ x → g (φ t x) < g x) (x : α) :
+    Antitone fun t ↦ g (φ t x) := by
+  intro s t hst
+  dsimp only
+  rw [show t = (t - s) + s by ring, map_add]
+  rcases (sub_nonneg.2 hst).eq_or_lt with h | h
+  · rw [← h, map_zero_apply]
+  by_cases hne : φ (t - s) (φ s x) = φ s x
+  · rw [hne]
+  · exact (hlt _ _ h hne).le
 
 /-- If the orbit of `y` converges to `x` in forward time, a function antitone along the orbit and
 continuous at `x` takes at `y` a value at least its value at `x`. -/

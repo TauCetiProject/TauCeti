@@ -59,6 +59,8 @@ finite-dimensional `ℚ`-algebra, such as a finite product of CM fields, by the 
 * `TauCeti.CMType.typeTrace_induced`, `TauCeti.CMType.reflexField_induced`: for number fields
   `K ⊆ L`, the type induced on `L` by `Φ₀` has type trace `typeTrace_{Φ₀} ∘ Tr_{L/K}` and the
   reflex field of `Φ₀`.
+* `TauCeti.CMType.finrank_reflexField_of_finrank_eq_two`: a CM type on a quadratic number field
+  has a quadratic reflex field.
 
 ## References
 
@@ -87,6 +89,11 @@ noncomputable def typeTrace (Φ : CMType E) : E →+ ℂ where
 theorem typeTrace_apply (Φ : CMType E) (a : E) :
     Φ.typeTrace a = ∑ᶠ φ ∈ (Φ : Set (E →+* ℂ)), φ a :=
   (rfl)
+
+/-- For a CM type consisting of the single embedding `φ`, the type trace is `φ`. -/
+theorem typeTrace_eq_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
+    (hΦ : (Φ : Set (E →+* ℂ)) = {φ}) (a : E) : Φ.typeTrace a = φ a := by
+  rw [typeTrace_apply, hΦ, finsum_mem_singleton]
 
 /-- The type trace as a finite sum over the embeddings in the type. -/
 theorem typeTrace_eq_sum [Fintype (E →+* ℂ)] (Φ : CMType E) [DecidablePred (· ∈ Φ)] (a : E) :
@@ -288,5 +295,42 @@ theorem reflexField_induced (Φ₀ : CMType K) :
     exact mul_mem (inv_mem (IntermediateField.natCast_mem _ _)) (typeTrace_mem_reflexField _ _)
 
 end Induced
+
+/-! ### One-element types -/
+
+section Singleton
+
+variable {K : Type*} [Field K] [CharZero K] [Finite (K →+* ℂ)]
+
+/-- The reflex field of a CM type consisting of the single embedding `φ` is the image `φ(K)`. -/
+theorem reflexField_eq_fieldRange_of_coe_eq_singleton {Φ : CMType K} {φ : K →+* ℂ}
+    (hΦ : (Φ : Set (K →+* ℂ)) = {φ}) : Φ.reflexField = φ.toRatAlgHom.fieldRange := by
+  refine le_antisymm
+    (reflexField_le_iff.2 fun x ↦ ⟨x, (typeTrace_eq_of_coe_eq_singleton hΦ x).symm⟩) ?_
+  rintro _ ⟨x, rfl⟩
+  exact typeTrace_eq_of_coe_eq_singleton hΦ x ▸ typeTrace_mem_reflexField Φ x
+
+end Singleton
+
+/-! ### Quadratic fields -/
+
+section Quadratic
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **A CM type on a quadratic field has a quadratic reflex field**: the type is a single
+embedding `φ`, and its reflex field is the image `φ(K)`. -/
+theorem finrank_reflexField_of_finrank_eq_two (Φ : CMType K) (h : Module.finrank ℚ K = 2) :
+    Module.finrank ℚ Φ.reflexField = 2 := by
+  have hcard : Nat.card Φ = 1 := by
+    have := Φ.two_mul_card_eq_finrank
+    omega
+  obtain ⟨⟨φ, hmem⟩, huniq⟩ := Nat.card_eq_one_iff_exists.1 hcard
+  have hΦ : (Φ : Set (K →+* ℂ)) = {φ} := Set.eq_singleton_iff_unique_mem.2
+    ⟨hmem, fun ψ hψ ↦ congrArg Subtype.val (huniq ⟨ψ, hψ⟩)⟩
+  rw [reflexField_eq_fieldRange_of_coe_eq_singleton hΦ, ← h]
+  exact (AlgEquiv.ofInjectiveField φ.toRatAlgHom).toLinearEquiv.finrank_eq.symm
+
+end Quadratic
 
 end TauCeti.CMType
