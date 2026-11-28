@@ -54,25 +54,38 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+private theorem isBaseChange_kaehlerDifferential_integers (P' : Place k' F') :
+    letI := algebraIntegralClosureIntegers k F P'
+    haveI : IsScalarTower (P'.restrict k F).integers
+        (integralClosure (P'.restrict k F).integers F') P'.integers :=
+      isScalarTower_integers_integralClosure_integers k F P'
+    _root_.IsBaseChange P'.integers
+      (KaehlerDifferential.map (P'.restrict k F).integers (P'.restrict k F).integers
+        (integralClosure (P'.restrict k F).integers F') P'.integers) :=
+  letI := algebraIntegralClosureIntegers k F P'
+  haveI : IsScalarTower (P'.restrict k F).integers
+      (integralClosure (P'.restrict k F).integers F') P'.integers :=
+    isScalarTower_integers_integralClosure_integers k F P'
+  haveI : IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers :=
+    isLocalization_centerIntegralClosure_integers k F P'
+  haveI : Algebra.FormallyEtale (integralClosure (P'.restrict k F).integers F') P'.integers :=
+    .of_isLocalization (centerIntegralClosure k F P').asIdeal.primeCompl
+  KaehlerDifferential.isBaseChange_of_formallyEtale _ _ _
+
 /-- **Finiteness of relative differentials of valuation rings**: for a finite separable extension
 `F' / F` of function fields and a place `P'` over `P = P'.restrict k F`, `Ω[𝒪_{P'}⁄𝒪_P]` is a
 finitely generated `𝒪_{P'}`-module, because `𝒪_{P'}` is a localization of the module-finite local
 model `𝒪'_P`. -/
 theorem moduleFinite_kaehlerDifferential_integers (P' : Place k' F') :
-    Module.Finite P'.integers Ω[P'.integers⁄(P'.restrict k F).integers] := by
-  let O := (P'.restrict k F).integers
-  let B := integralClosure O F'
-  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ := P'.integersAlgebra hB
-  have := P'.isScalarTower_integers hB
-  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
-  have : IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers := by
-    simpa only [centerIntegralClosure_def] using P'.isLocalization_integers_center hB
-  have : Algebra.FormallyEtale B P'.integers :=
-    .of_isLocalization (centerIntegralClosure k F P').asIdeal.primeCompl
-  have : Module.Finite O B := IsIntegralClosure.finite O F F' B
-  exact Module.Finite.equiv
-    (KaehlerDifferential.isBaseChange_of_formallyEtale O B P'.integers).equiv
+    Module.Finite P'.integers Ω[P'.integers⁄(P'.restrict k F).integers] :=
+  letI := algebraIntegralClosureIntegers k F P'
+  haveI : IsScalarTower (P'.restrict k F).integers
+      (integralClosure (P'.restrict k F).integers F') P'.integers :=
+    isScalarTower_integers_integralClosure_integers k F P'
+  haveI : Module.Finite (P'.restrict k F).integers
+      (integralClosure (P'.restrict k F).integers F') :=
+    IsIntegralClosure.finite _ F F' _
+  Module.Finite.equiv (isBaseChange_kaehlerDifferential_integers (k := k) (F := F) P').equiv
 
 /-- **The Kähler different at a place with separable residue field**: if `F' / F` is finite and
 separable and the residue extension `F'_{P'} / F_P` at `P'` over `P = P'.restrict k F` is
@@ -85,19 +98,17 @@ theorem fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (P' : Plac
   let O := (P'.restrict k F).integers
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
-  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ := P'.integersAlgebra hB
-  have := P'.isScalarTower_integers hB
-  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
-  have : IsLocalization q.asIdeal.primeCompl P'.integers := by
-    simpa only [q, centerIntegralClosure_def] using P'.isLocalization_integers_center hB
+  let _ := algebraIntegralClosureIntegers k F P'
+  have : IsScalarTower O B P'.integers :=
+    isScalarTower_integers_integralClosure_integers k F P'
+  have : IsLocalization q.asIdeal.primeCompl P'.integers :=
+    isLocalization_centerIntegralClosure_integers k F P'
   have : IsLocalization.AtPrime P'.integers q.asIdeal := ‹_›
-  have : Algebra.FormallyEtale B P'.integers := .of_isLocalization q.asIdeal.primeCompl
   have : Module.Finite O B := IsIntegralClosure.finite O F F' B
   have hbc : (haveI := moduleFinite_kaehlerDifferential_integers (k := k) (F := F) P'
       fittingIdeal P'.integers Ω[P'.integers⁄O] 0) =
       (fittingIdeal B Ω[B⁄O] 0).map (algebraMap B P'.integers) :=
-    (KaehlerDifferential.isBaseChange_of_formallyEtale O B P'.integers).fittingIdeal_eq_map 0
+    (isBaseChange_kaehlerDifferential_integers (k := k) (F := F) P').fittingIdeal_eq_map 0
   have : q.asIdeal.IsMaximal := q.isPrime.isMaximal q.ne_bot
   let _ : Field (O ⧸ maximalIdeal O) := Ideal.Quotient.field _
   let _ : Field (B ⧸ q.asIdeal) := Ideal.Quotient.field _

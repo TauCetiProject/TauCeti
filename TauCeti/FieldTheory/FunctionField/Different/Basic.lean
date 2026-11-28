@@ -8,8 +8,9 @@ module
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 
--- Proof-only: the scalar tower `k → 𝒪_P → 𝒪_{P'}` of valuation rings.
+-- Proof-only: the scalar tower `k → 𝒪_P → 𝒪_{P'}` of valuation rings and ideal multiplicities.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # The different exponent of a place
@@ -170,6 +171,24 @@ variable (k F) (P' : Place k' F')
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+omit [FiniteDimensional F F'] in
+/-- The local integral closure `integralClosure 𝒪_P F'` acts on `𝒪_{P'}` via
+`TauCeti.Place.integersAlgebra`. -/
+@[instance_reducible]
+noncomputable def algebraIntegralClosureIntegers :
+    Algebra (integralClosure (P'.restrict k F).integers F') P'.integers :=
+  P'.integersAlgebra (algebraMap_mem_integers_of_mem_integralClosure k F P')
+
+/-- The scalar tower `𝒪_P → integralClosure 𝒪_P F' → 𝒪_{P'}` for the local model of `P'`. -/
+theorem isScalarTower_integers_integralClosure_integers :
+    letI := algebraIntegralClosureIntegers k F P'
+    IsScalarTower (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F')
+      P'.integers :=
+  letI := algebraIntegralClosureIntegers k F P'
+  have := P'.isScalarTower_integers (algebraMap_mem_integers_of_mem_integralClosure k F P')
+  IsScalarTower.to₁₂₃ (P'.restrict k F).integers
+    (integralClosure (P'.restrict k F).integers F') P'.integers F'
+
 variable [Algebra.IsSeparable F F']
 
 /-- **The centre of `P'` on the local model `𝒪'_P`**: the height one prime of the integral closure
@@ -188,6 +207,16 @@ instance centerIntegralClosure_liesOver_maximalIdeal :
       (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
   rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
   exact center_liesOver k F P' _
+
+/-- **`𝒪_{P'}` is the localization of the local model `integralClosure 𝒪_P F'` at the centre of
+`P'`**. -/
+theorem isLocalization_centerIntegralClosure_integers :
+    letI := algebraIntegralClosureIntegers k F P'
+    IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers :=
+  letI := algebraIntegralClosureIntegers k F P'
+  have := P'.isScalarTower_integers (algebraMap_mem_integers_of_mem_integralClosure k F P')
+  by simpa only [centerIntegralClosure_def] using
+    P'.isLocalization_integers_center (algebraMap_mem_integers_of_mem_integralClosure k F P')
 
 /-- **Residue-field separability on the local model**: the residue extension of
 `integralClosure 𝒪_P F'` over `𝒪_P` at the centre of `P'` is separable if and only if the residue
@@ -216,10 +245,12 @@ theorem isSeparable_quotient_centerIntegralClosure_iff :
     refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
     simp only [RingHom.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver,
       e, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingEquiv.trans_apply]
-    -- `e₀` is the identity and `Ideal.Quotient.mk` of the maximal ideal is `IsLocalRing.residue`,
-    -- but only after unfolding `IsLocalRing.ResidueField` to the quotient type.
-    change algebraMap _ _ (IsLocalRing.residue _ r) = _
-    rw [IsLocalRing.ResidueField.algebraMap_residue, Ideal.quotEquivOfEq_mk,
+    -- `IsLocalRing.ResidueField O` is definitionally `O ⧸ IsLocalRing.maximalIdeal O` and `e₀` is
+    -- `RingEquiv.refl`, so `e₀ (Ideal.Quotient.mk _ r)` agrees definitionally with
+    -- `IsLocalRing.residue O r`; rewriting under `e₀` directly would have an ill-typed motive.
+    have he₀_mk : e₀ (Ideal.Quotient.mk (IsLocalRing.maximalIdeal O) r) =
+        IsLocalRing.residue O r := rfl
+    rw [he₀_mk, IsLocalRing.ResidueField.algebraMap_residue, Ideal.quotEquivOfEq_mk,
       quotientRingEquivResidueField_mk, residueRingHom_apply]
     exact congrArg (IsLocalRing.residue P'.integers)
       (Subtype.ext (by rw [coe_algebraMap_integers]; simp [IsScalarTower.algebraMap_apply O F F']))
@@ -303,12 +334,11 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
   let O := (P'.restrict k F).integers
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
-  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ := P'.integersAlgebra hB
-  have := P'.isScalarTower_integers hB
-  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
+  let _ := algebraIntegralClosureIntegers k F P'
+  have : IsScalarTower O B P'.integers :=
+    isScalarTower_integers_integralClosure_integers k F P'
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    P'.isLocalization_integers_center hB
+    isLocalization_centerIntegralClosure_integers k F P'
   exact Algebra.FormallyUnramified.iff_of_equiv
     ((IsLocalization.algEquiv q.asIdeal.primeCompl (Localization.AtPrime q.asIdeal)
       P'.integers).restrictScalars O)
@@ -316,7 +346,7 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
 /-- **The different ideal extended to the valuation ring `𝒪_{P'}`**: extending the different ideal
 of the local model `𝒪'_P / 𝒪_P` to `𝒪_{P'}` yields `𝔪_{P'} ^ d(P' ∣ P)`. -/
 theorem differentIdeal_map_integers_eq_maximalIdeal_pow :
-    letI := P'.integersAlgebra (algebraMap_mem_integers_of_mem_integralClosure k F P')
+    letI := algebraIntegralClosureIntegers k F P'
     (differentIdeal (P'.restrict k F).integers
         (integralClosure (P'.restrict k F).integers F')).map
       (algebraMap (integralClosure (P'.restrict k F).integers F') P'.integers) =
@@ -324,52 +354,30 @@ theorem differentIdeal_map_integers_eq_maximalIdeal_pow :
   let O := (P'.restrict k F).integers
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
-  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ := P'.integersAlgebra hB
-  have := P'.isScalarTower_integers hB
-  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
+  let _ := algebraIntegralClosureIntegers k F P'
+  have : IsScalarTower O B P'.integers :=
+    isScalarTower_integers_integralClosure_integers k F P'
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    P'.isLocalization_integers_center hB
+    isLocalization_centerIntegralClosure_integers k F P'
   have : IsLocalization.AtPrime P'.integers q.asIdeal := ‹_›
   have hB0 : differentIdeal O B ≠ ⊥ := differentIdeal_ne_bot_of_isSeparable (K := F) (L := F')
   have hInj : Function.Injective (algebraMap B P'.integers) := fun a b hab ↦
     IsIntegralClosure.algebraMap_injective B O F'
       (by simpa only [coe_algebraMap_integersAlgebra] using
         congrArg (fun x : P'.integers ↦ (x : F')) hab)
-  have hmap0 : (differentIdeal O B).map (algebraMap B P'.integers) ≠ ⊥ := by
-    intro h
-    refine hB0 (eq_bot_iff.mpr fun x hx ↦ hInj.eq_iff.mp ?_)
-    rw [map_zero]
-    exact Ideal.mem_bot.mp (h ▸ Ideal.mem_map_of_mem (algebraMap B P'.integers) hx)
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible P'.integers
-  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hmap0 hϖ
-  have hmapq : q.asIdeal.map (algebraMap B P'.integers) = IsLocalRing.maximalIdeal P'.integers :=
-    IsLocalization.AtPrime.map_eq_maximalIdeal q.asIdeal P'.integers
-  have hlies : (IsLocalRing.maximalIdeal P'.integers).LiesOver q.asIdeal := by
-    rw [Ideal.liesOver_iff, IsLocalization.AtPrime.under_maximalIdeal P'.integers q.asIdeal]
-  have hM0 : IsLocalRing.maximalIdeal P'.integers ≠ ⊥ :=
-    IsDiscreteValuationRing.not_a_field P'.integers
-  have hone : q.asIdeal.ramificationIdx' (IsLocalRing.maximalIdeal P'.integers) = 1 := by
-    have h : q.asIdeal.ramificationIdx' (q.asIdeal.map (algebraMap B P'.integers)) = 1 :=
-      Ideal.ramificationIdx'_map_self_eq_one
-        (by rw [hmapq]; exact (IsLocalRing.maximalIdeal.isMaximal P'.integers).isPrime.ne_top)
-        (by rwa [hmapq])
-    rwa [hmapq] at h
   have : FaithfulSMul B P'.integers :=
     (faithfulSMul_iff_algebraMap_injective B P'.integers).mpr hInj
-  have heq : n = differentExponent k F P' := by
-    have hmul := Ideal.IsDedekindDomain.emultiplicity_map_eq_ramificationIdx'_mul hB0
-      (Ideal.prime_of_isPrime q.ne_bot q.isPrime).irreducible
-      (Ideal.prime_of_isPrime hM0 inferInstance).irreducible hM0
-    rw [hone, Nat.cast_one, one_mul,
-      (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hM0 inferInstance)
-        hmap0).emultiplicity_eq_multiplicity,
-      (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime q.ne_bot q.isPrime)
-        hB0).emultiplicity_eq_multiplicity, hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq,
-      multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime hM0 inferInstance)] at hmul
-    rw [differentExponent_def]
-    exact_mod_cast hmul
-  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, heq]
+  have hmap0 : (differentIdeal O B).map (algebraMap B P'.integers) ≠ ⊥ :=
+    Ideal.map_ne_bot_of_ne_bot hB0
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible P'.integers
+  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hmap0 hϖ
+  have hM0 : IsLocalRing.maximalIdeal P'.integers ≠ ⊥ :=
+    IsDiscreteValuationRing.not_a_field P'.integers
+  have hmul := Ideal.multiplicity_map_of_map_eq hM0
+    (IsLocalization.AtPrime.map_eq_maximalIdeal q.asIdeal P'.integers) hB0
+  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq,
+    multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime hM0 inferInstance)] at hmul
+  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, hmul, differentExponent_def]
 
 /-- **The different exponent vanishes away from the discriminant**: if some `F`-basis of `F'` has
 integral vectors and unit discriminant at the place `P = P'.restrict k F` below `P'`, then

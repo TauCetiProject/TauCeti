@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+import Mathlib.NumberTheory.RamificationInertia.Ramification
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.RingTheory.UniqueFactorizationDomain.FactorSet
 
@@ -187,6 +188,32 @@ theorem multiplicity_eq_zero_of_isPrime_ne {P Q : Ideal B} (hP0 : P ≠ ⊥) [P.
   -- `Q ∣ P` means `P ≤ Q`; `P` is maximal and `Q ≠ ⊤`, so the two agree.
   exact (Ideal.IsMaximal.eq_of_le (‹P.IsPrime›.isMaximal hP0) (Ideal.IsPrime.ne_top ‹Q.IsPrime›)
     (Ideal.dvd_iff_le.mp hdvd)).symm
+
+/-- **Extending along a homomorphism of Dedekind domains where a prime `p` maps onto a nonzero
+prime `q` preserves the multiplicity of any nonzero ideal `I`**: because `p` extends directly to
+`q`, the ramification index `e(q ∣ p)` is `1`. -/
+theorem multiplicity_map_of_map_eq {R S : Type*} [CommRing R] [IsDedekindDomain R]
+    [CommRing S] [IsDedekindDomain S] [Algebra R S] [FaithfulSMul R S]
+    {p : Ideal R} {q : Ideal S} [p.IsPrime] [q.IsPrime] (hq : q ≠ ⊥)
+    (hmap : p.map (algebraMap R S) = q) {I : Ideal R} (hI : I ≠ ⊥) :
+    multiplicity q (I.map (algebraMap R S)) = multiplicity p I := by
+  have hp : p ≠ ⊥ := fun h ↦ hq (by rw [← hmap, h, Ideal.map_bot])
+  have : p.IsMaximal := ‹p.IsPrime›.isMaximal hp
+  have : q.LiesOver p := (Ideal.liesOver_iff_dvd_map Ideal.IsPrime.ne_top').2 (by rw [hmap])
+  have hone : p.ramificationIdx' q = 1 := by
+    rw [← hmap]
+    exact Ideal.ramificationIdx'_map_self_eq_one
+      (by rw [hmap]; exact Ideal.IsPrime.ne_top') (by rw [hmap]; exact hq)
+  have hmapI : I.map (algebraMap R S) ≠ ⊥ := Ideal.map_ne_bot_of_ne_bot hI
+  have hmul := Ideal.IsDedekindDomain.emultiplicity_map_eq_ramificationIdx'_mul hI
+    (Ideal.prime_of_isPrime hp ‹_›).irreducible
+    (Ideal.prime_of_isPrime hq ‹_›).irreducible hq
+  rw [hone, Nat.cast_one, one_mul,
+    (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hq ‹_›)
+      hmapI).emultiplicity_eq_multiplicity,
+    (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hp ‹_›)
+      hI).emultiplicity_eq_multiplicity] at hmul
+  exact_mod_cast hmul
 
 end Multiplicity
 

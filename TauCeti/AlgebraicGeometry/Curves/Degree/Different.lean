@@ -168,10 +168,10 @@ theorem orderAt_ramificationCartierDivisor_eq_differentExponent
       (X.toPlace (k := k) (x : X)).ResidueField] :
     (ramificationCartierDivisor k f).orderAt x =
       Place.differentExponent k Y.functionField (X.toPlace (k := k) (x : X)) := by
-  exact Scheme.CartierDivisor.IsEffective.orderAt_eq_of_stalkIdeal_eq_maximalIdeal_pow
-    (isEffective_ramificationCartierDivisor k f) x <| by
-    rw [idealSheaf_ramificationCartierDivisor]
-    exact ramificationIdealSheaf_stalkIdeal_eq_maximalIdeal_pow_differentExponent k f hmap (x : X)
+  refine (Scheme.CartierDivisor.IsEffective.orderAt_eq_iff_stalkIdeal_eq_maximalIdeal_pow
+    (isEffective_ramificationCartierDivisor k f) x).mpr ?_
+  rw [idealSheaf_ramificationCartierDivisor]
+  exact ramificationIdealSheaf_stalkIdeal_eq_maximalIdeal_pow_differentExponent k f hmap (x : X)
 
 /-- **Identification of the Cartier ramification divisor with the trace-dual different on the
 separable-residue branch.** Let `f : X ⟶ Y` be a dominant morphism of regular integral proper curves

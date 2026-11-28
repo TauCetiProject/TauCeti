@@ -27,6 +27,7 @@ import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.ZeroLocus
 import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Image
 import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Invertible
 import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Pullback
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Flat
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 import TauCeti.RingTheory.Kaehler.BaseChange
 import TauCeti.RingTheory.Kaehler.UnramifiedBase
@@ -287,33 +288,6 @@ theorem ramificationIdealSheaf_ideal_eq_fittingIdeal_kaehlerDifferential
   rw [ramificationIdealSheaf_eq_fittingIdeal_cokernel R f, Scheme.Modules.fittingIdeal_ideal]
   exact (TauCeti.fittingIdeal_congr (cotangentCokernelSectionsEquiv R f V U hUV) 0).symm
 
-private theorem isScalarTower_sections_stalk {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
-    {V : Y.Opens} {U : X.Opens} (hxV : f x ∈ V) (hxU : x ∈ U) (hUV : U ≤ f ⁻¹ᵁ V) :
-    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
-    letI : Algebra Γ(X, U) (X.presheaf.stalk x) := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-    letI : Algebra Γ(Y, V) (Y.presheaf.stalk (f x)) :=
-      Y.presheaf.algebra_section_stalk ⟨f x, hxV⟩
-    letI : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
-    letI : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
-      (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
-    IsScalarTower Γ(Y, V) Γ(X, U) (X.presheaf.stalk x) ∧
-      IsScalarTower Γ(Y, V) (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-  let _ : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
-  let _ : Algebra Γ(X, U) (X.presheaf.stalk x) := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  let _ : Algebra Γ(Y, V) (Y.presheaf.stalk (f x)) :=
-    Y.presheaf.algebra_section_stalk ⟨f x, hxV⟩
-  let _ : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
-  let _ : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
-    (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
-  have hnat : f.appLE V U hUV ≫ X.presheaf.germ U x hxU =
-      Y.presheaf.germ V (f x) hxV ≫ f.stalkMap x := by
-    rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
-      ← X.presheaf.germ_res (homOfLE hUV) x hxU, Scheme.Hom.appLE_map_assoc]
-  refine ⟨.of_algebraMap_eq fun r ↦ ?_, .of_algebraMap_eq fun r ↦ ?_⟩
-  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, RingHom.comp_apply]
-  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_ext_iff.mp hnat,
-      CommRingCat.hom_comp, RingHom.comp_apply]
-
 private theorem exists_fittingIdeal_kaehlerDifferential_stalk
     [(cokernel (cotangentMap R f)).IsFiniteType] (x : X) :
     letI : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
@@ -330,7 +304,7 @@ private theorem exists_fittingIdeal_kaehlerDifferential_stalk
   let : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
   let : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
     (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
-  obtain ⟨_, _⟩ := isScalarTower_sections_stalk f x hxV hxU hUV
+  obtain ⟨_, _⟩ := f.isScalarTower_sections_stalk x hxV hxU hUV
   have := hU.isLocalization_stalk ⟨x, hxU⟩
   have := hV.isLocalization_stalk ⟨f x, hxV⟩
   have : Algebra.FormallyEtale Γ(X, U) (X.presheaf.stalk x) :=
@@ -626,6 +600,23 @@ theorem mk_relativeDifferentials_eq_pullback_mul_ramificationCartierDivisor
 
 end OverCommRing
 
+section BaseChangeInvertible
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+  {X X' : Scheme.{u}} [X.Over (Spec (.of R))] [X'.Over (Spec (.of S))] {g_X : X' ⟶ X}
+
+/-- Pullback along any base change `X' = X ×_{Spec R} Spec S` preserves invertibility of relative
+differentials. -/
+theorem isInvertible_relativeDifferentials_of_isPullback
+    [SheafOfModules.isInvertible X (X.relativeDifferentials R)]
+    (H_X : IsPullback g_X (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S)))) :
+    SheafOfModules.isInvertible X' (X'.relativeDifferentials S) :=
+  (SheafOfModules.isInvertible X').prop_of_iso (relativeDifferentialsBaseChangeIso H_X)
+    (SheafOfModules.isInvertible_pullback g_X _)
+
+end BaseChangeInvertible
+
 section BaseChangeCartier
 
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
@@ -633,6 +624,22 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
   [X'.Over (Spec (.of S))] [Y'.Over (Spec (.of S))]
   {f : X ⟶ Y} [f.IsOver (Spec (.of R))] {f' : X' ⟶ Y'} [f'.IsOver (Spec (.of S))]
   {g_X : X' ⟶ X} {g_Y : Y' ⟶ Y}
+
+/-- Under a flat base change along `R → S`, monicity of `cotangentMap R f` is preserved. -/
+theorem mono_cotangentMap_of_flat [Flat g_X] [Mono (cotangentMap R f)]
+    (H_X : IsPullback g_X (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (w : g_X ≫ f = f' ≫ g_Y) :
+    Mono (cotangentMap S f') := by
+  have heq : cotangentMap S f' = (cotangentSourceBaseChangeIso H_Y w).inv ≫
+      (Scheme.Modules.pullback g_X).map (cotangentMap R f) ≫
+      (relativeDifferentialsBaseChangeIso H_X).hom :=
+    (Iso.eq_inv_comp _).mpr (cotangentSourceBaseChangeIso_hom_comp_cotangentMap H_X H_Y w)
+  rw [heq]
+  have : Mono ((Scheme.Modules.pullback g_X).map (cotangentMap R f)) := Functor.map_mono _ _
+  exact mono_comp _ _
 
 /-- Under a flat base change `g_X : X' ⟶ X` of a morphism `f : X ⟶ Y` whose ramification ideal
 sheaf is effective Cartier, the base-changed ramification ideal sheaf is again effective Cartier. -/
@@ -676,6 +683,31 @@ theorem ramificationCartierDivisor_baseChange_eq_toCartierDivisor_comap
   rw [ramificationCartierDivisor, Scheme.IdealSheafData.IsEffectiveCartier.toCartierDivisor_eq_iff]
   exact (comap_ramificationIdealSheaf H_X H_Y w).symm
 
+/-- Flat base-change version of
+`ramificationCartierDivisor_baseChange_eq_toCartierDivisor_comap`, deriving target invertibility and
+cotangent monicity from the original morphism. -/
+theorem ramificationCartierDivisor_baseChange_eq_toCartierDivisor_comap_of_flat
+    [IsIntegral X'] [Flat g_X]
+    [SheafOfModules.isInvertible X (X.relativeDifferentials R)]
+    [SheafOfModules.isInvertible Y (Y.relativeDifferentials R)]
+    [Mono (cotangentMap R f)]
+    (H_X : IsPullback g_X (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (w : g_X ≫ f = f' ≫ g_Y) :
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_X
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_Y
+    haveI := mono_cotangentMap_of_flat H_X H_Y w
+    letI hcomap : ((ramificationIdealSheaf R f).comap g_X).IsEffectiveCartier :=
+      (comap_ramificationIdealSheaf H_X H_Y w).symm ▸
+        isEffectiveCartier_ramificationIdealSheaf S f'
+    ramificationCartierDivisor S f' = hcomap.toCartierDivisor := by
+  have := isInvertible_relativeDifferentials_of_isPullback H_X
+  have := isInvertible_relativeDifferentials_of_isPullback H_Y
+  have := mono_cotangentMap_of_flat H_X H_Y w
+  exact ramificationCartierDivisor_baseChange_eq_toCartierDivisor_comap H_X H_Y w
+
 /-- Local equations of the base-changed Cartier ramification divisor are the pullbacks along `g_X`
 of local equations of `ramificationIdealSheaf R f`. -/
 theorem ramificationCartierDivisor_baseChange_restrict
@@ -690,14 +722,52 @@ theorem ramificationCartierDivisor_baseChange_restrict
       (Spec.map (CommRingCat.ofHom (algebraMap R S))))
     (w : g_X ≫ f = f' ≫ g_Y)
     (U : X.affineOpens) (V : X'.affineOpens) [Nonempty V.val] (hVU : V.val ≤ g_X ⁻¹ᵁ U.val)
-    {a : Γ(X, U)} (ha0 : g_X.appLE U.val V.val hVU a ≠ 0)
-    (hUa : (ramificationIdealSheaf R f).ideal U = Ideal.span {a}) :
+    {a : Γ(X, U)} (hUa : (ramificationIdealSheaf R f).ideal U = Ideal.span {a}) :
+    letI hcomap : ((ramificationIdealSheaf R f).comap g_X).IsEffectiveCartier :=
+      (comap_ramificationIdealSheaf H_X H_Y w).symm ▸
+        isEffectiveCartier_ramificationIdealSheaf S f'
+    have ha0 : g_X.appLE U.val V.val hVU a ≠ 0 :=
+      hcomap.ne_zero_of_ideal_eq_span V (b := g_X.appLE U.val V.val hVU a) (by
+        rw [Scheme.IdealSheafData.ideal_comap_of_le _ g_X U V hVU, hUa, Ideal.map_span,
+          Set.image_singleton])
     (ramificationCartierDivisor S f') |_ V.val = Scheme.rationalUnitClass X' V.val
       (Additive.ofMul (Units.mk0 (X'.germToFunctionField V.val (g_X.appLE U.val V.val hVU a))
         ((map_ne_zero_iff _ (X'.germToFunctionField_injective V.val)).mpr ha0))) := by
   rw [ramificationCartierDivisor_baseChange_eq_toCartierDivisor_comap H_X H_Y w]
   exact Scheme.IdealSheafData.IsEffectiveCartier.toCartierDivisor_comap_restrict
-    _ U V hVU ha0 hUa
+    _ U V hVU hUa
+
+/-- Flat base-change version of `ramificationCartierDivisor_baseChange_restrict`, deriving target
+invertibility and cotangent monicity from the original morphism. -/
+theorem ramificationCartierDivisor_baseChange_restrict_of_flat
+    [IsIntegral X'] [Flat g_X]
+    [SheafOfModules.isInvertible X (X.relativeDifferentials R)]
+    [SheafOfModules.isInvertible Y (Y.relativeDifferentials R)]
+    [Mono (cotangentMap R f)]
+    (H_X : IsPullback g_X (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (w : g_X ≫ f = f' ≫ g_Y)
+    (U : X.affineOpens) (V : X'.affineOpens) [Nonempty V.val] (hVU : V.val ≤ g_X ⁻¹ᵁ U.val)
+    {a : Γ(X, U)} (hUa : (ramificationIdealSheaf R f).ideal U = Ideal.span {a}) :
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_X
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_Y
+    haveI := mono_cotangentMap_of_flat H_X H_Y w
+    letI hcomap : ((ramificationIdealSheaf R f).comap g_X).IsEffectiveCartier :=
+      (comap_ramificationIdealSheaf H_X H_Y w).symm ▸
+        isEffectiveCartier_ramificationIdealSheaf S f'
+    have ha0 : g_X.appLE U.val V.val hVU a ≠ 0 :=
+      hcomap.ne_zero_of_ideal_eq_span V (b := g_X.appLE U.val V.val hVU a) (by
+        rw [Scheme.IdealSheafData.ideal_comap_of_le _ g_X U V hVU, hUa, Ideal.map_span,
+          Set.image_singleton])
+    (ramificationCartierDivisor S f') |_ V.val = Scheme.rationalUnitClass X' V.val
+      (Additive.ofMul (Units.mk0 (X'.germToFunctionField V.val (g_X.appLE U.val V.val hVU a))
+        ((map_ne_zero_iff _ (X'.germToFunctionField_injective V.val)).mpr ha0))) := by
+  have := isInvertible_relativeDifferentials_of_isPullback H_X
+  have := isInvertible_relativeDifferentials_of_isPullback H_Y
+  have := mono_cotangentMap_of_flat H_X H_Y w
+  exact ramificationCartierDivisor_baseChange_restrict H_X H_Y w U V hVU hUa
 
 /-- When `g_X` is dominant between integral schemes, restricting `ramificationCartierDivisor S f'`
 to compatible affine opens gives the Cartier class of the pulled-back rational function `g_X^* a`.
@@ -714,15 +784,58 @@ theorem ramificationCartierDivisor_baseChange_restrict_of_isDominant
       (Spec.map (CommRingCat.ofHom (algebraMap R S))))
     (w : g_X ≫ f = f' ≫ g_Y)
     (U : X.affineOpens) [Nonempty U.val] (V : X'.affineOpens) [Nonempty V.val]
-    (hVU : V.val ≤ g_X ⁻¹ᵁ U.val) {a : Γ(X, U)} (ha0 : a ≠ 0)
+    (hVU : V.val ≤ g_X ⁻¹ᵁ U.val) {a : Γ(X, U)}
     (hUa : (ramificationIdealSheaf R f).ideal U = Ideal.span {a}) :
+    letI hcomap : ((ramificationIdealSheaf R f).comap g_X).IsEffectiveCartier :=
+      (comap_ramificationIdealSheaf H_X H_Y w).symm ▸
+        isEffectiveCartier_ramificationIdealSheaf S f'
+    have ha0 : a ≠ 0 :=
+      mt (fun h ↦ by simp [h])
+        (hcomap.ne_zero_of_ideal_eq_span V (b := g_X.appLE U.val V.val hVU a) (by
+          rw [Scheme.IdealSheafData.ideal_comap_of_le _ g_X U V hVU, hUa, Ideal.map_span,
+            Set.image_singleton]))
     (ramificationCartierDivisor S f') |_ V.val = Scheme.rationalUnitClass X' V.val
       (Additive.ofMul (Units.map g_X.functionFieldMap.hom
         (Units.mk0 (X.germToFunctionField U.val a)
           ((map_ne_zero_iff _ (X.germToFunctionField_injective U.val)).mpr ha0)))) := by
   rw [ramificationCartierDivisor_baseChange_eq_toCartierDivisor_comap H_X H_Y w]
   exact Scheme.IdealSheafData.IsEffectiveCartier.toCartierDivisor_comap_restrict_of_isDominant
-    _ U V hVU ha0 hUa
+    _ U V hVU hUa
+
+/-- Flat base-change version of `ramificationCartierDivisor_baseChange_restrict_of_isDominant`,
+deriving target invertibility and cotangent monicity from the original morphism. -/
+theorem ramificationCartierDivisor_baseChange_restrict_of_isDominant_of_flat
+    [IsIntegral X] [IsIntegral X'] [IsDominant g_X] [Flat g_X]
+    [SheafOfModules.isInvertible X (X.relativeDifferentials R)]
+    [SheafOfModules.isInvertible Y (Y.relativeDifferentials R)]
+    [Mono (cotangentMap R f)]
+    (H_X : IsPullback g_X (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (w : g_X ≫ f = f' ≫ g_Y)
+    (U : X.affineOpens) [Nonempty U.val] (V : X'.affineOpens) [Nonempty V.val]
+    (hVU : V.val ≤ g_X ⁻¹ᵁ U.val) {a : Γ(X, U)}
+    (hUa : (ramificationIdealSheaf R f).ideal U = Ideal.span {a}) :
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_X
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_Y
+    haveI := mono_cotangentMap_of_flat H_X H_Y w
+    letI hcomap : ((ramificationIdealSheaf R f).comap g_X).IsEffectiveCartier :=
+      (comap_ramificationIdealSheaf H_X H_Y w).symm ▸
+        isEffectiveCartier_ramificationIdealSheaf S f'
+    have ha0 : a ≠ 0 :=
+      mt (fun h ↦ by simp [h])
+        (hcomap.ne_zero_of_ideal_eq_span V (b := g_X.appLE U.val V.val hVU a) (by
+          rw [Scheme.IdealSheafData.ideal_comap_of_le _ g_X U V hVU, hUa, Ideal.map_span,
+            Set.image_singleton]))
+    (ramificationCartierDivisor S f') |_ V.val = Scheme.rationalUnitClass X' V.val
+      (Additive.ofMul (Units.map g_X.functionFieldMap.hom
+        (Units.mk0 (X.germToFunctionField U.val a)
+          ((map_ne_zero_iff _ (X.germToFunctionField_injective U.val)).mpr ha0)))) := by
+  have := isInvertible_relativeDifferentials_of_isPullback H_X
+  have := isInvertible_relativeDifferentials_of_isPullback H_Y
+  have := mono_cotangentMap_of_flat H_X H_Y w
+  exact ramificationCartierDivisor_baseChange_restrict_of_isDominant H_X H_Y w U V hVU hUa
 
 /-- The line-bundle class of the base-changed Cartier ramification divisor is the pullback along
 `g_X` of the line-bundle class of the original Cartier ramification divisor. -/
@@ -746,6 +859,28 @@ theorem toLineBundleClass_ramificationCartierDivisor_baseChange
     Scheme.IdealSheafData.IsEffectiveCartier.toLineBundleClass_toCartierDivisor,
     LineBundleClass.pullback_inv,
     (isEffectiveCartier_ramificationIdealSheaf R f).pullback_mk_toInvertibleSheaf _]
+
+/-- Flat base-change version of `toLineBundleClass_ramificationCartierDivisor_baseChange`, deriving
+target invertibility and cotangent monicity from the original morphism. -/
+theorem toLineBundleClass_ramificationCartierDivisor_baseChange_of_flat
+    [IsIntegral X] [IsIntegral X'] [Flat g_X]
+    [SheafOfModules.isInvertible X (X.relativeDifferentials R)]
+    [SheafOfModules.isInvertible Y (Y.relativeDifferentials R)]
+    [Mono (cotangentMap R f)]
+    (H_X : IsPullback g_X (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    (w : g_X ≫ f = f' ≫ g_Y) :
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_X
+    haveI := isInvertible_relativeDifferentials_of_isPullback H_Y
+    haveI := mono_cotangentMap_of_flat H_X H_Y w
+    (ramificationCartierDivisor S f').toLineBundleClass =
+      LineBundleClass.pullback g_X (ramificationCartierDivisor R f).toLineBundleClass := by
+  have := isInvertible_relativeDifferentials_of_isPullback H_X
+  have := isInvertible_relativeDifferentials_of_isPullback H_Y
+  have := mono_cotangentMap_of_flat H_X H_Y w
+  exact toLineBundleClass_ramificationCartierDivisor_baseChange H_X H_Y w
 
 end BaseChangeCartier
 
