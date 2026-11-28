@@ -238,4 +238,76 @@ theorem surfacePart_mul {c : realSpace K} (hc : archNorm c = 1) (y : realSpace K
   ext w
   simp [surfacePart_def, map_mul, hc, mul_assoc]
 
+/-- If `g : realSpace K → E` is continuous at all positive parameters, then
+`x ↦ g (surfaceScale x t)` is continuous on `normOneSurface K` for any `t > 0`. -/
+theorem continuous_comp_surfaceScale {E : Type*} [TopologicalSpace E] {g : realSpace K → E}
+    (hg : ∀ {y₀ : realSpace K}, (∀ w, 0 < y₀ w) → ContinuousAt g y₀)
+    {t : ℝ} (ht : 0 < t) :
+    Continuous fun x : normOneSurface K ↦ g (surfaceScale (x : realSpace K) t) :=
+  continuous_iff_continuousAt.mpr fun x ↦ ContinuousAt.comp (g := g)
+    (hg (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
+    (continuous_surfaceScale.comp (continuous_subtypeVal.prodMk continuous_const)).continuousAt
+
+/-- If `g : realSpace K → E` is uniformly bounded on every closed positive orthant
+`{y | ∀ w, δ ≤ y w}` (`δ > 0`), then `g (surfaceScale x t)` is uniformly bounded for
+`x ∈ D ∩ normOneSurface K` and `t ≥ t₀ > 0`. -/
+theorem exists_norm_surfaceScale_le_of_isBounded {E : Type*} [Norm E] {g : realSpace K → E}
+    (hg : ∀ {δ : ℝ}, 0 < δ → ∃ B : ℝ, ∀ y : realSpace K, (∀ w, δ ≤ y w) → ‖g y‖ ≤ B)
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D) {t₀ : ℝ} (ht₀ : 0 < t₀) :
+    ∃ B : ℝ, ∀ t ≥ t₀, ∀ x : normOneSurface K, (x : realSpace K) ∈ D →
+      ‖g (surfaceScale (x : realSpace K) t)‖ ≤ B := by
+  obtain ⟨C, _, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  let δ := C⁻¹ * t₀ ^ (1 / (Module.finrank ℚ K : ℝ))
+  have hδ : 0 < δ := by positivity
+  obtain ⟨B, hB⟩ := hg hδ
+  refine ⟨B, fun t ht x hx ↦ hB _ fun w ↦ ?_⟩
+  rw [surfaceScale_apply]
+  exact mul_le_mul (hC x hx x.property w).1
+    (Real.rpow_le_rpow ht₀.le ht (by positivity)) (by positivity)
+    ((mem_normOneSurface.mp x.property).1 w).le
+
+/-- Any function on `realSpace K` that decays as `C * exp (-c * t)` whenever all coordinates
+are at least `t ≥ 1` decays uniformly as `C * exp (-c' * u ^ (1 / [K : ℚ]))` along
+`surfaceScale x u` for `x` in any bounded subset of `normOneSurface K`. -/
+theorem exists_norm_surfaceScale_le_of_forall_le {E : Type*} [Norm E] {f : realSpace K → E}
+    {c C : ℝ} (hc : 0 < c) (hC : 0 ≤ C)
+    (hf : ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) → ‖f y‖ ≤ C * Real.exp (-c * t))
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ c' > 0, ∃ C' ≥ 0, ∀ᶠ u : ℝ in Filter.atTop, ∀ x ∈ D,
+      ‖f (surfaceScale x u)‖ ≤ C' * Real.exp (-c' * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  obtain ⟨b, hb, hbx⟩ := exists_pos_le_of_isBounded_normOneSurface hD hS
+  have hn : 0 < (Module.finrank ℚ K : ℝ)⁻¹ :=
+    inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K)))
+  have hu : Filter.Tendsto (fun u : ℝ ↦ b * u ^ (Module.finrank ℚ K : ℝ)⁻¹)
+      Filter.atTop Filter.atTop :=
+    (tendsto_rpow_atTop hn).const_mul_atTop hb
+  refine ⟨c * b, mul_pos hc hb, C, hC, ?_⟩
+  filter_upwards [hu.eventually_ge_atTop 1, Filter.eventually_ge_atTop (0 : ℝ)] with u hu hu0 x hx
+  have h := hf (b * u ^ (Module.finrank ℚ K : ℝ)⁻¹) hu (surfaceScale x u) fun w ↦ by
+    rw [surfaceScale_apply]
+    simpa only [one_div] using
+      mul_le_mul_of_nonneg_right (hbx x hx w)
+        (Real.rpow_nonneg hu0 (Module.finrank ℚ K : ℝ)⁻¹)
+  simpa only [neg_mul, mul_assoc] using h
+
+open scoped Classical in
+/-- Every bounded set `D` of archimedean parameters has preimage on `normOneSurface K` enclosed
+in a compact subset of `normOneSurface K`. -/
+theorem exists_isCompact_superset_preimage {D : Set (realSpace K)}
+    (hD : Bornology.IsBounded D) :
+    ∃ S : Set (normOneSurface K), IsCompact S ∧ Subtype.val ⁻¹' D ⊆ S := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  let B : Set (realSpace K) :=
+    Set.univ.pi (fun _ : InfinitePlace K ↦ Set.Icc C⁻¹ C) ∩ archNorm ⁻¹' {1}
+  have hB : IsCompact B :=
+    (isCompact_univ_pi fun _ ↦ isCompact_Icc).inter_right
+      (isClosed_singleton.preimage continuous_archNorm)
+  have hrange : B ⊆ Set.range (Subtype.val : normOneSurface K → realSpace K) := by
+    rintro y ⟨hy, hN⟩
+    have hpos : ∀ w, 0 < y w := fun w ↦
+      lt_of_lt_of_le (inv_pos.mpr (zero_lt_one.trans_le hC1)) (hy w trivial).1
+    exact ⟨⟨y, mem_normOneSurface.mpr ⟨hpos, hN⟩⟩, rfl⟩
+  refine ⟨Subtype.val ⁻¹' B, Topology.IsInducing.subtypeVal.isCompact_preimage' hB hrange, ?_⟩
+  exact fun x hx ↦ ⟨fun w _ ↦ hC x hx x.property w, (mem_normOneSurface.mp x.property).2⟩
+
 end TauCeti.LFunctions

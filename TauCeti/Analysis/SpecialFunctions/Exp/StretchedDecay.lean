@@ -105,6 +105,27 @@ theorem exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_eventually {F : Type*} [Semin
   filter_upwards [h] with u hu
   rwa [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
 
+/-- Promotes an existential eventual stretched-exponential bound at `∞` (`∃ c > 0, ∃ C ≥ 0, ...`)
+to rapid power decay `f =O[atTop] (· ^ r)` for every real `r`, when `0 < α`. -/
+theorem isBigO_rpow_of_eventually_norm_le_exp_neg {E : Type*} [Norm E] {f : ℝ → E} {α : ℝ}
+    (hα : 0 < α)
+    (hf : ∃ c > 0, ∃ C ≥ 0, ∀ᶠ t in atTop, ‖f t‖ ≤ C * exp (-c * t ^ α)) (r : ℝ) :
+    f =O[atTop] fun t ↦ t ^ r := by
+  obtain ⟨c, hc, C, _, h⟩ := hf
+  refine isBigO_rpow_of_isBigO_exp_neg hc hα (IsBigO.of_bound C ?_) r
+  filter_upwards [h] with t ht
+  rwa [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
+
+/-- Promotes an existential eventual stretched-exponential bound at `∞` on a function continuous on
+`[a, ∞)` (with `0 < a ∨ 0 ≤ α`) to a uniform bound on all of `[a, ∞)`. -/
+theorem exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_exists_eventually {F : Type*}
+    [SeminormedAddGroup F] {f : ℝ → F} {a α : ℝ} (ha : 0 < a ∨ 0 ≤ α)
+    (hf : ContinuousOn f (Ici a))
+    (h : ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u in atTop, ‖f u‖ ≤ C * exp (-c * u ^ α)) :
+    ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici a, ‖f u‖ ≤ C * exp (-c * u ^ α) := by
+  obtain ⟨c, hc, _, _, hu⟩ := h
+  exact ⟨c, hc, exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_eventually ha hf hu⟩
+
 section Cpow
 
 open Complex Bornology

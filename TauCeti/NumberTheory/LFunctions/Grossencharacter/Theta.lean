@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Conductor
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.FiniteCharacter
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
+import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
 /-!
 # Hecke's twisted theta series of a Grossencharacter
@@ -50,7 +51,13 @@ All names are in the namespace `TauCeti.LFunctions.Grossencharacter`.
 * `finiteCharacter_mul_harmonicFactor_unit`: `χ_f(u) N(u ^ p) = ∏_w |u_w| ^ P_w` on a unit.
 * `summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian`: the series converges
   absolutely at positive parameters.
+* `heckeTheta_mk0`: specialization to integral ideals.
+* `norm_heckeTheta_le`: monotone domination by the absolute series majorant.
 * `archWeight_mul_heckeTheta_unitScale`: Neukirch VII (8.2).
+* `continuousAt_heckeTheta`: continuity at positive parameters.
+* `exists_norm_heckeTheta_sub_heckeEpsilon_le` and
+  `exists_norm_heckeTheta_surfaceScale_sub_heckeEpsilon_le`: exponential and stretched-exponential
+  decay of `χ.heckeTheta I y - χ.heckeEpsilon`.
 * `heckeTheta_eq_latticeTheta`: the untwisted case.
 
 ## References
@@ -61,10 +68,9 @@ All names are in the namespace `TauCeti.LFunctions.Grossencharacter`.
 public section
 noncomputable section
 
-open Complex NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+open Complex Filter NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
   TauCeti.NumberField.mixedEmbedding
-open scoped NumberField nonZeroDivisors
-open scoped Topology
+open scoped NumberField Topology nonZeroDivisors
 
 namespace TauCeti.LFunctions
 
@@ -133,22 +139,16 @@ theorem summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian
 theorem continuousAt_heckeTheta (χ : Grossencharacter K 𝔪)
     (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {y : realSpace K} (hy : ∀ w, 0 < y w) :
     ContinuousAt (χ.heckeTheta I) y := by
-  let z : realSpace K := fun w ↦ y w / 2
-  let U : Set (realSpace K) := {p | ∀ w, z w < p w}
-  have hU : IsOpen U := by
-    simp only [U, Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
-  have hyU : y ∈ U := fun w ↦ half_lt_self (hy w)
-  have hsum := (χ.summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian I
-    (y := z) (fun w ↦ half_pos (hy w))).norm
   rw [funext (χ.heckeTheta_def I)]
-  refine continuousAt_const.add ((continuousOn_tsum (s := U) ?_ hsum ?_).continuousAt
-    (hU.mem_nhds hyU))
-  · exact fun a ↦ (continuous_const.mul (continuous_archGaussian (mixedEmbedding K a))).continuousOn
-  · intro a p hp
-    simp only [norm_mul]
-    exact mul_le_mul_of_nonneg_left
-      (norm_archGaussian_le (fun w ↦ (hp w).le) (mixedEmbedding K a)) (by positivity)
+  refine continuousAt_const.add ?_
+  simpa only [mul_assoc] using continuousAt_tsum_mul_archGaussian
+    (fun a : (I : Submodule (𝓞 K) K) ↦
+      χ.primitive.finiteCharacterField (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)))
+    (fun a ↦ mixedEmbedding K (a : K))
+    (fun δ hδ ↦ by
+      simpa only [mul_assoc] using
+        (χ.summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian I fun _ ↦ hδ).norm)
+    hy
 
 /-- The weighted, centered twisted theta series is bounded by a constant times the centered
 ordinary theta series at half the parameter. The bound is uniform in the fractional ideal
@@ -213,6 +213,102 @@ theorem heckeTheta_congr {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K
 @[simp]
 theorem heckeTheta_primitive (χ : Grossencharacter K 𝔪) : χ.primitive.heckeTheta = χ.heckeTheta :=
   heckeTheta_congr χ.toHeckeCharacter_primitive
+
+open scoped Classical in
+/-- At an integral ideal `𝔞`, `χ.heckeTheta (FractionalIdeal.mk0 K 𝔞) y` is the sum over `a : 𝔞`
+weighted by `χ.primitive.finiteCharacter (a : 𝓞 K)`. -/
+theorem heckeTheta_mk0 (χ : Grossencharacter K 𝔪) (𝔞 : (Ideal (𝓞 K))⁰) (y : realSpace K) :
+    χ.heckeTheta (FractionalIdeal.mk0 K 𝔞) y =
+      χ.heckeEpsilon +
+        ∑' a : (𝔞 : Ideal (𝓞 K)), χ.primitive.finiteCharacter (a : 𝓞 K) *
+          χ.harmonicFactor (mixedEmbedding K ((a : 𝓞 K) : K)) *
+          archGaussian y (mixedEmbedding K ((a : 𝓞 K) : K)) := by
+  rw [heckeTheta_def, FractionalIdeal.coe_mk0,
+    ← (FractionalIdeal.coeIdealEquiv (S := (𝓞 K)⁰) (P := K)
+      (𝔞 : Ideal (𝓞 K))).symm.toEquiv.tsum_eq]
+  congr 1
+  refine tsum_congr fun a ↦ ?_
+  rw [LinearEquiv.coe_toEquiv, FractionalIdeal.coe_coeIdealEquiv_symm_apply,
+    χ.primitive.finiteCharacterField_algebraMap]
+
+/-- Monotone domination of `‖χ.heckeTheta I y‖` by the absolute series majorant at any smaller
+positive parameter `y' ≤ y`. -/
+theorem norm_heckeTheta_le (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    {y y' : realSpace K} (hy' : ∀ w, 0 < y' w) (h : ∀ w, y' w ≤ y w) :
+    ‖χ.heckeTheta I y‖ ≤ ‖χ.heckeEpsilon‖ +
+      ∑' a : (I : Submodule (𝓞 K) K),
+        ‖χ.primitive.finiteCharacterField (a : K) *
+          χ.harmonicFactor (mixedEmbedding K (a : K)) *
+          archGaussian y' (mixedEmbedding K (a : K))‖ := by
+  have hsum' := χ.summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian I hy'
+  rw [heckeTheta_def]
+  refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
+  refine tsum_of_norm_bounded hsum'.norm.hasSum fun a ↦ ?_
+  rw [norm_mul, norm_mul, norm_mul, norm_mul]
+  exact mul_le_mul_of_nonneg_left (norm_archGaussian_le h _)
+    (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+
+open scoped Classical in
+/-- Separating the constant term `χ.heckeEpsilon` from the nonzero elements of `I` in
+`χ.heckeTheta I y`. -/
+theorem heckeTheta_eq_heckeEpsilon_add (χ : Grossencharacter K 𝔪)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (y : realSpace K) :
+    χ.heckeTheta I y =
+      χ.heckeEpsilon +
+        ∑' a : {a : (I : Submodule (𝓞 K) K) // a ≠ 0},
+          χ.primitive.finiteCharacterField ((a : (I : Submodule (𝓞 K) K)) : K) *
+            χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) *
+            archGaussian y (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) := by
+  have hsupp : Function.support (fun a : (I : Submodule (𝓞 K) K) ↦
+      χ.primitive.finiteCharacterField (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
+        archGaussian y (mixedEmbedding K (a : K))) ⊆
+      {a : (I : Submodule (𝓞 K) K) | a ≠ 0} := by
+    intro a ha h0
+    simp [h0] at ha
+  rw [heckeTheta_def, ← tsum_subtype_eq_of_support_subset hsupp]
+  rfl
+
+/-- Exponential decay of `χ.heckeTheta I y - χ.heckeEpsilon` when every parameter coordinate is
+at least `t ≥ 1`. -/
+theorem exists_norm_heckeTheta_sub_heckeEpsilon_le (χ : Grossencharacter K 𝔪)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    ∃ c > 0, ∃ C ≥ 0, ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) →
+      ‖χ.heckeTheta I y - χ.heckeEpsilon‖ ≤ C * Real.exp (-c * t) := by
+  classical
+  obtain ⟨δ, hδ, hL⟩ := exists_pos_le_mixedInner (idealLattice K I)
+  have ha : Summable fun a : {a : (I : Submodule (𝓞 K) K) // a ≠ 0} ↦
+      ‖(χ.primitive.finiteCharacterField ((a : (I : Submodule (𝓞 K) K)) : K) *
+          χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K))) *
+        archGaussian (fun _ ↦ (1 / 2 : ℝ))
+          (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K))‖ := by
+    simpa only [mul_assoc, Function.comp_def] using
+      (χ.summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian I
+        (fun _ ↦ by norm_num)).norm.comp_injective Subtype.coe_injective
+  obtain ⟨c, hc, C, hC, h⟩ := exists_norm_tsum_mul_archGaussian_le
+    (fun a : {a : (I : Submodule (𝓞 K) K) // a ≠ 0} ↦
+      χ.primitive.finiteCharacterField ((a : (I : Submodule (𝓞 K) K)) : K) *
+        χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)))
+    (fun a ↦ mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) hδ
+    (fun a ↦ by
+      simpa only [coe_idealLatticeEquiv] using
+        hL (idealLatticeEquiv I a.val) fun h0 ↦ a.property (Subtype.ext
+          (mixedEmbedding_injective K
+            (by simpa [coe_idealLatticeEquiv] using congrArg Subtype.val h0))))
+    ha
+  refine ⟨c, hc, C, hC, fun t ht y hy ↦ ?_⟩
+  rw [χ.heckeTheta_eq_heckeEpsilon_add I y, add_sub_cancel_left]
+  simpa only [mul_assoc] using h t ht y hy
+
+/-- Uniform stretched-exponential decay of `χ.heckeTheta I (surfaceScale x u) - χ.heckeEpsilon`
+along any bounded subset of `normOneSurface K`. -/
+theorem exists_norm_heckeTheta_surfaceScale_sub_heckeEpsilon_le (χ : Grossencharacter K 𝔪)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)} (hD : Bornology.IsBounded D)
+    (hS : D ⊆ normOneSurface K) :
+    ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop, ∀ x ∈ D,
+      ‖χ.heckeTheta I (surfaceScale x u) - χ.heckeEpsilon‖ ≤
+        C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  obtain ⟨c, hc, C, hC, h⟩ := χ.exists_norm_heckeTheta_sub_heckeEpsilon_le I
+  exact exists_norm_surfaceScale_le_of_forall_le hc hC h hD hS
 
 /-! ### Unit invariance, Neukirch VII (8.2) -/
 

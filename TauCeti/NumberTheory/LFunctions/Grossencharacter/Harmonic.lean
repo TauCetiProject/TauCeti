@@ -315,6 +315,28 @@ theorem archWeight_unitScale (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) (y 
   simp only [archWeight_eq_infinityType, ContinuousInfinityType.archWeight_unitScale,
     harmonicExponent_eq_infinityType]
 
+/-- When `harmonicDegree` vanishes, `archWeight` is identically `1`. -/
+theorem archWeight_of_harmonicDegree_eq_zero {χ : Grossencharacter K 𝔪}
+    (h : χ.harmonicDegree = 0) (y : realSpace K) : χ.archWeight y = 1 := by
+  rw [archWeight_eq_infinityType]
+  exact χ.toHeckeCharacter.infinityType.archWeight_of_harmonicDegree_eq_zero
+    (χ.harmonicDegree_eq_infinityType ▸ h) y
+
+/-- `archWeight` is continuous on `realSpace K`. -/
+@[fun_prop]
+theorem continuous_archWeight (χ : Grossencharacter K 𝔪) : Continuous χ.archWeight := by
+  simpa only [funext χ.archWeight_eq_infinityType] using
+    χ.toHeckeCharacter.infinityType.continuous_archWeight
+
+/-- **Radial scaling of `archWeight`** (Neukirch VII (8.3)): for `0 ≤ t`, scaling by
+`surfaceScale x t` multiplies `archWeight x` by `t ^ (Tr(p) / (2 [K : ℚ]))`. -/
+theorem archWeight_surfaceScale (χ : Grossencharacter K 𝔪) (x : realSpace K) {t : ℝ}
+    (ht : 0 ≤ t) :
+    χ.archWeight (surfaceScale x t) =
+      χ.archWeight x * t ^ ((χ.harmonicDegree : ℝ) / (2 * Module.finrank ℚ K)) := by
+  simp only [archWeight_eq_infinityType, harmonicDegree_eq_infinityType]
+  exact χ.toHeckeCharacter.infinityType.archWeight_surfaceScale x ht
+
 /-! ### Constant term of Hecke's theta series -/
 
 /-- Neukirch's `ε(χ)`: the constant term of the twisted theta series, equal to `1` when the finite

@@ -267,6 +267,29 @@ theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K))
     ((summable_norm_archGaussian L y hy).tsum_le_tsum (fun x ↦ norm_archGaussian_le h x)
       (summable_norm_archGaussian L y' hy'))
 
+/-- A weighted sum of archimedean Gaussians is continuous at every positive parameter `y₀`,
+provided its terms are summable in norm at every positive constant parameter `δ > 0`. -/
+theorem continuousAt_tsum_mul_archGaussian {α : Type*} (c : α → ℂ) (emb : α → mixedSpace K)
+    (hc : ∀ δ > 0, Summable fun x : α ↦ ‖c x * archGaussian (fun _ ↦ δ) (emb x)‖)
+    {y₀ : realSpace K} (hy₀ : ∀ w, 0 < y₀ w) :
+    ContinuousAt (fun y ↦ ∑' x : α, c x * archGaussian y (emb x)) y₀ := by
+  obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
+  set δ := y₀ w₀ / 2
+  have hδ : 0 < δ := half_pos (hy₀ w₀)
+  have hU : IsOpen {y : realSpace K | ∀ w, δ < y w} := by
+    rw [Set.ofPred_forall]
+    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
+  have hy₀U : y₀ ∈ {y : realSpace K | ∀ w, δ < y w} := fun w ↦
+    (half_lt_self (hy₀ w₀)).trans_le (hw₀ w (Finset.mem_univ w))
+  have hcont : ContinuousOn (fun y ↦ ∑' x : α, c x * archGaussian y (emb x))
+      {y : realSpace K | ∀ w, δ < y w} :=
+    continuousOn_tsum (fun x ↦ (continuous_const.mul (continuous_archGaussian _)).continuousOn)
+      (hc δ hδ) fun x y hy ↦ by
+        rw [norm_mul, norm_mul]
+        exact mul_le_mul_of_nonneg_left (norm_archGaussian_le (fun w ↦ (hy w).le) _)
+          (norm_nonneg _)
+  exact hcont.continuousAt (hU.mem_nhds hy₀U)
+
 /-- The theta series is continuous at every positive parameter: for a discrete lattice, on the
 parameters bounded below by a positive constant, its terms are dominated by the Gaussian at that
 constant. -/
@@ -278,19 +301,13 @@ theorem continuousAt_latticeTheta (L : Submodule ℤ (mixedSpace K))
       funext (latticeTheta_eq_zero_of_not_discreteTopology L hL)
     rw [hzero]
     exact continuousAt_const
-  obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
-  set δ := y₀ w₀ / 2
-  have hδ : 0 < δ := half_pos (hy₀ w₀)
-  have hU : IsOpen {y : realSpace K | ∀ w, δ < y w} := by
-    rw [Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
-  have hy₀U : y₀ ∈ {y : realSpace K | ∀ w, δ < y w} := fun w ↦
-    (half_lt_self (hy₀ w₀)).trans_le (hw₀ w (Finset.mem_univ w))
-  have hcont : ContinuousOn (latticeTheta L) {y : realSpace K | ∀ w, δ < y w} :=
-    continuousOn_tsum (fun x ↦ (continuous_archGaussian (x : mixedSpace K)).continuousOn)
-      (summable_norm_archGaussian L (fun _ ↦ δ) fun _ ↦ hδ)
-      fun x y hy ↦ norm_archGaussian_le (fun w ↦ (hy w).le) x
-  exact hcont.continuousAt (hU.mem_nhds hy₀U)
+  have hθ : latticeTheta L = fun y ↦ ∑' x : L, (1 : ℂ) * archGaussian y (x : mixedSpace K) := by
+    ext y
+    simp [latticeTheta_def]
+  rw [hθ]
+  exact continuousAt_tsum_mul_archGaussian
+    (fun _ : L ↦ (1 : ℂ)) (fun x ↦ (x : mixedSpace K))
+    (fun δ hδ ↦ by simpa using summable_norm_archGaussian L (fun _ ↦ δ) fun _ ↦ hδ) hy₀
 
 /-- The theta series of an ideal lattice descends to the quotient of positive parameters
 by the unit action. No restriction on the unit rank is needed. -/
@@ -302,5 +319,51 @@ theorem latticeTheta_unitScale (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (u : (�
   conv_rhs => rw [← (u.unitSMulIdealLatticeEquiv I).tsum_eq]
   exact tsum_congr fun x ↦ by
     rw [Units.unitSMulIdealLatticeEquiv_apply, archGaussian_unit_smul]
+
+/-- A Gaussian at parameters at least `t`, `t ≥ 1`, is bounded by a fixed summable Gaussian
+times an exponentially decreasing factor, provided the vector has squared length at least `δ`. -/
+private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
+    (hδ : δ ≤ mixedInner K x x) (ht : 1 ≤ t) {y : realSpace K} (hy : ∀ w, t ≤ y w) :
+    ‖archGaussian y x‖ ≤ Real.exp (-(Real.pi * δ / 2) * t) *
+      ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) x‖ := by
+  classical
+  have hQ := mixedInner_self_nonneg K x
+  have hsum : t * mixedInner K x x ≤ ∑ w, y w * normAtPlace w x ^ 2 := by
+    rw [mixedInner_self_eq_sum, Finset.mul_sum]
+    exact Finset.sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_right (hy w) (sq_nonneg _)
+  have hsplit : δ / 2 * t + 1 / 2 * mixedInner K x x ≤ t * mixedInner K x x := by
+    nlinarith [mul_nonneg (sub_nonneg.mpr ht) hQ,
+      mul_nonneg (by linarith : 0 ≤ t) (sub_nonneg.mpr hδ)]
+  simp only [archGaussian_apply, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos (Real.exp_pos _), ← Real.exp_add]
+  apply Real.exp_le_exp.mpr
+  rw [← Finset.mul_sum, ← mixedInner_self_eq_sum]
+  nlinarith [Real.pi_pos]
+
+/-- Exponential decay of a weighted Gaussian sum whose embedding vectors have squared mixed
+length bounded below by `δ > 0` and whose terms are summable in norm at parameter `1 / 2`. -/
+theorem exists_norm_tsum_mul_archGaussian_le {α : Type*} (c : α → ℂ) (emb : α → mixedSpace K)
+    {δ : ℝ} (hδ : 0 < δ) (hL : ∀ x : α, δ ≤ mixedInner K (emb x) (emb x))
+    (hc : Summable fun x : α ↦ ‖c x * archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖) :
+    ∃ c₀ > 0, ∃ C ≥ 0, ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) →
+      ‖∑' x : α, c x * archGaussian y (emb x)‖ ≤ C * Real.exp (-c₀ * t) := by
+  let a : α → ℝ := fun x ↦ ‖c x * archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖
+  refine ⟨Real.pi * δ / 2, by positivity, ∑' x, a x,
+    tsum_nonneg (fun _ ↦ norm_nonneg _), fun t ht y hy ↦ ?_⟩
+  calc
+    ‖∑' x : α, c x * archGaussian y (emb x)‖
+        ≤ ∑' x, Real.exp (-(Real.pi * δ / 2) * t) * a x :=
+          tsum_of_norm_bounded (hc.mul_left _).hasSum fun x ↦ by
+            rw [norm_mul]
+            calc
+              ‖c x‖ * ‖archGaussian y (emb x)‖
+                  ≤ ‖c x‖ * (Real.exp (-(Real.pi * δ / 2) * t) *
+                      ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖) :=
+                    mul_le_mul_of_nonneg_left (norm_archGaussian_le_exp_mul (hL x) ht hy)
+                      (norm_nonneg _)
+              _ = Real.exp (-(Real.pi * δ / 2) * t) * a x := by
+                  simp only [a, norm_mul]; ring
+    _ = (∑' x, a x) * Real.exp (-(Real.pi * δ / 2) * t) := by
+        rw [tsum_mul_left, mul_comm]
 
 end TauCeti.LFunctions

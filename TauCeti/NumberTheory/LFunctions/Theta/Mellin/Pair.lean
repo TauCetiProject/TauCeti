@@ -123,6 +123,15 @@ theorem mellinConstant_eq_mul_surfaceHaar_real {D : Set (realSpace K)}
     ENNReal.toReal_ofReal (by positivity), mellinConstant_def]
   field_simp
 
+/-- Complex-cast form of `mellinConstant_eq_mul_surfaceHaar_real`. -/
+theorem coe_mellinConstant_eq_mul_surfaceHaar_real {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) :
+    (mellinConstant K : ℂ) = (2 : ℂ) ^ nrComplexPlaces K / (torsionOrder K : ℂ) *
+      ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) := by
+  rw [mellinConstant_eq_mul_surfaceHaar_real hD]
+  push_cast
+  rfl
+
 open scoped Classical in
 /-- Over a unit fundamental domain `D` the kernel of a full lattice minus its constant term `a₀`
 decays faster than every power. -/
@@ -130,12 +139,8 @@ theorem isBigO_mellinKernel_sub_mellinConstant {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] (r : ℝ) :
     (fun u ↦ mellinKernel D L u - mellinConstant K) =O[atTop] (· ^ r) := by
-  have h : (mellinConstant K : ℂ) = (2 : ℂ) ^ nrComplexPlaces K / (torsionOrder K : ℂ) *
-      ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) := by
-    rw [mellinConstant_eq_mul_surfaceHaar_real hD]
-    push_cast
-    rfl
-  simpa only [h] using isBigO_mellinKernel_sub_rpow hD.measurableSet hD.isBounded L r
+  simpa only [coe_mellinConstant_eq_mul_surfaceHaar_real hD] using
+    isBigO_mellinKernel_sub_rpow hD.isBounded L r
 
 open scoped Classical in
 /-- Over a unit fundamental domain `D`, `mellinKernel D L - mellinConstant K` satisfies a
@@ -146,13 +151,8 @@ theorem exists_norm_mellinKernel_sub_mellinConstant_le_on_Ici {D : Set (realSpac
     ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici a,
       ‖mellinKernel D L u - mellinConstant K‖ ≤
         C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
-  have hcst : (mellinConstant K : ℂ) = (2 : ℂ) ^ nrComplexPlaces K / (torsionOrder K : ℂ) *
-      ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) := by
-    rw [mellinConstant_eq_mul_surfaceHaar_real hD]
-    push_cast
-    rfl
-  simpa only [hcst] using
-    exists_norm_mellinKernel_sub_le_on_Ici hD.measurableSet hD.isBounded L ha
+  simpa only [coe_mellinConstant_eq_mul_surfaceHaar_real hD] using
+    exists_norm_mellinKernel_sub_le_on_Ici hD.isBounded L ha
 
 /-! ### The functional-equation pair -/
 
@@ -173,9 +173,9 @@ def mellinKernelFEPair {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D
   g₀ := mellinConstant K
   N := 1
   hN := one_pos
-  hf_int := ((continuousOn_mellinKernel hD.measurableSet hD.isBounded L).congr
+  hf_int := ((continuousOn_mellinKernel hD.isBounded L).congr
     fun _ ht ↦ indicator_of_mem ht _).locallyIntegrableOn measurableSet_Ioi
-  hg_int := ((continuousOn_mellinKernel hD.inv.measurableSet hD.inv.isBounded
+  hg_int := ((continuousOn_mellinKernel hD.inv.isBounded
     (mixedDual K L)).congr fun _ ht ↦ indicator_of_mem ht _).locallyIntegrableOn measurableSet_Ioi
   hf_nonpos _ ht := indicator_of_notMem (notMem_Ioi.mpr ht) _
   hg_nonpos _ ht := indicator_of_notMem (notMem_Ioi.mpr ht) _

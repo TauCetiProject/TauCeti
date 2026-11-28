@@ -395,6 +395,39 @@ theorem archWeight_unitScale (t : ContinuousInfinityType K) (u : (𝓞 K)ˣ) (y 
     rw [TauCeti.LFunctions.unitScale_apply, normAtPlace_apply]
   rw [h, t.archWeight_mul_sq_normAtPlace, norm_harmonicFactor]
 
+/-- When `harmonicDegree` vanishes, `archWeight` is identically `1`. -/
+theorem archWeight_of_harmonicDegree_eq_zero (t : ContinuousInfinityType K)
+    (h : t.harmonicDegree = 0) (y : realSpace K) : t.archWeight y = 1 := by
+  have hw : ∀ w, t.harmonicExponent w = 0 := by
+    classical simpa [harmonicDegree_def] using h
+  simp [archWeight_def, hw]
+
+/-- `archWeight` is continuous on `realSpace K`. -/
+@[fun_prop]
+theorem continuous_archWeight (t : ContinuousInfinityType K) : Continuous t.archWeight := by
+  rw [funext t.archWeight_def]
+  exact continuous_finsetProd _ fun w _ ↦ (continuous_apply w).rpow_const fun _ ↦
+    Or.inr (by positivity)
+
+/-- **Radial scaling of `archWeight`** (Neukirch VII (8.3)): for `0 ≤ s`, scaling by
+`surfaceScale x s` multiplies `archWeight x` by `s ^ (Tr(p) / (2 [K : ℚ]))`. -/
+theorem archWeight_surfaceScale (t : ContinuousInfinityType K) (x : realSpace K) {s : ℝ}
+    (hs : 0 ≤ s) :
+    t.archWeight (TauCeti.LFunctions.surfaceScale x s) =
+      t.archWeight x * s ^ ((t.harmonicDegree : ℝ) / (2 * Module.finrank ℚ K)) := by
+  have hmul : TauCeti.LFunctions.surfaceScale x s =
+      (fun _ ↦ s ^ (1 / (Module.finrank ℚ K : ℝ))) * x := by
+    ext w
+    rw [TauCeti.LFunctions.surfaceScale_apply, Pi.mul_apply, mul_comm]
+  rw [hmul, t.archWeight_mul (fun _ ↦ Real.rpow_nonneg hs _) x, mul_comm (t.archWeight _)]
+  congr 1
+  simp only [archWeight_def, ← Real.rpow_mul hs]
+  rw [← Real.rpow_sum_of_nonneg hs fun _ _ ↦ by positivity]
+  congr 1
+  rw [harmonicDegree_def, Nat.cast_sum]
+  simp_rw [div_eq_mul_inv, ← Finset.mul_sum, ← Finset.sum_mul]
+  ring
+
 end NumberField
 
 end TauCeti.GlobalNumberFields.ContinuousInfinityType
