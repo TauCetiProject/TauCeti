@@ -117,14 +117,14 @@ lemma toOverHom_homEquivPointed_symm_apply {A B : AbelianScheme (Spec (.of K))}
 /-- `toAbelianVariety` sends `identity (Spec K)` to `AbelianVariety.trivial K`. -/
 def toAbelianVarietyIdentityIso (K : Type u) [Field K] :
     toAbelianVariety (identity (Spec (.of K))) ≅ AbelianVariety.trivial K :=
-  ((identityIsTerminal (S := Spec (.of K))).isTerminalObj
+  (((isZeroIdentity (Spec (.of K))).isTerminal).isTerminalObj
     (toAbelianVarietyFunctor (K := K))).uniqueUpToIso (AbelianVariety.isTerminalTrivial K)
 
 /-- `ofAbelianVariety` sends `AbelianVariety.trivial K` to `identity (Spec K)`. -/
 def ofAbelianVarietyTrivialIso (K : Type u) [Field K] :
     ofAbelianVariety (AbelianVariety.trivial K) ≅ identity (Spec (.of K)) :=
   ((AbelianVariety.isTerminalTrivial K).isTerminalObj
-    (ofAbelianVarietyFunctor (K := K))).uniqueUpToIso (identityIsTerminal (S := Spec (.of K)))
+    (ofAbelianVarietyFunctor (K := K))).uniqueUpToIso (isZeroIdentity (Spec (.of K))).isTerminal
 
 private def toAbelianVarietyProdIsLimit (A B : AbelianScheme (Spec (.of K))) :
     IsLimit (BinaryFan.mk (toAbelianVarietyFunctor.map (prod.fst A B))
@@ -197,6 +197,10 @@ def toAbelianVarietyBaseChangeNatIso (L : Type u) [Field L] [Algebra K L] :
         toOverHom_toAbelianVarietyFunctor_map, toOverHom_baseChangeFunctor_map,
         AbelianVariety.Hom.toOverHom_baseChangeFunctor_map, AbelianVariety.Hom.toOverHom_eqToHom,
         eqToHom_trans_assoc]
+      -- The `eqToHom` on the left of the RHS connects `((A.baseChange _).toAbelianVariety).toOver`
+      -- to `(Over.pullback _).obj A.toAbelianVariety.toOver`, both of which unfold definitionally
+      -- to `(Over.pullback _).obj A.toOver`; `rw` cannot rewrite endpoints inside `eqToHom`'s
+      -- type inside a composition, so `change` displays the common endpoint before `eqToHom_refl`.
       change (Over.pullback _).map (toOverHom φ) ≫ eqToHom _ =
         eqToHom rfl ≫ (Over.pullback _).map (toOverHom φ) ≫ eqToHom _
       rw [eqToHom_refl, Category.id_comp]
@@ -210,8 +214,8 @@ theorem relativeDimension_ofAbelianVariety (A : AbelianVariety K) (s : Spec (.of
     exact (eqToHom (ofAbelianVariety_toOver A)).w.symm
   have hsm : SmoothOfRelativeDimension (Module.finrank K A.TangentSpace)
       (ofAbelianVariety A).toOver.hom := by
-    rw [hhom, ← Nat.zero_add (Module.finrank K A.TangentSpace)]
-    exact inferInstance
+    rw [hhom]
+    exact SmoothOfRelativeDimension.of_zero_comp
   rw [((ofAbelianVariety A).smoothOfRelativeDimension_iff
     (Module.finrank K A.TangentSpace)).mp hsm s]
   exact AbelianVariety.finrank_tangentSpace_eq_dim A

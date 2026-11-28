@@ -183,6 +183,12 @@ lemma comp_mulBy (A : AbelianScheme S) {T : Over S} (x : T ⟶ A.toOver) (n : �
     x ≫ A.mulBy n = x ^ n :=
   GrpObj.comp_zpowMap x n
 
+/-- Multiplication by `n` on a commutative abelian scheme is a homomorphism of group schemes over
+`S`. -/
+instance isMonHom_mulBy (A : AbelianScheme S) [IsCommMonObj A.toOver] (n : ℤ) :
+    IsMonHom (A.mulBy n) :=
+  GrpObj.isMonHom_zpowMap A.toOver n
+
 /-- Construct an abelian scheme from a group object in `Over S` whose structure morphism is proper
 and smooth with geometrically connected fibres. -/
 @[expose] noncomputable def ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
@@ -373,6 +379,17 @@ lemma toOverHom_homMk {A B : AbelianScheme S} (f : A.toOver ⟶ B.toOver)
     (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) :
     toOverHom (homMk f one_f mul_f) = f :=
   (rfl)
+
+/-- Multiplication by `n` on a commutative abelian scheme, as a homomorphism `A ⟶ A` in
+`AbelianScheme S`. -/
+def mulByHom (A : AbelianScheme S) [IsCommMonObj A.toOver] (n : ℤ) : A ⟶ A :=
+  homMk (A.mulBy n) (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
+
+/-- The morphism over `S` underlying `A.mulByHom n` is `A.mulBy n`. -/
+@[simp]
+lemma toOverHom_mulByHom (A : AbelianScheme S) [IsCommMonObj A.toOver] (n : ℤ) :
+    toOverHom (A.mulByHom n) = A.mulBy n :=
+  toOverHom_homMk _ _ _
 
 /-- Two homomorphisms of abelian schemes are equal when their underlying scheme morphisms are
 equal. -/

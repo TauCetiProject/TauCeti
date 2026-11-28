@@ -17,8 +17,8 @@ This file extends `TauCeti.AlgebraicGeometry.AbelianScheme.Basic` with:
 * `AbelianScheme.instCommGroup`, `AbelianScheme.homMulEquiv`, and `AbelianScheme.toOverHom_one`,
   `toOverHom_mul`, `toOverHom_inv`, `toOverHom_div`: when the target has a commutative group law
   (`[IsCommMonObj B.toOver]`), `A ⟶ B` is a commutative group under the pointwise operations;
-* `AbelianScheme.isInitialIdentity` and `AbelianScheme.isZeroIdentity`: `AbelianScheme.identity S`
-  is a zero object of `AbelianScheme S`.
+* `AbelianScheme.isZeroIdentity`: `AbelianScheme.identity S` is a zero object of
+  `AbelianScheme S`.
 -/
 
 public section
@@ -167,13 +167,21 @@ instance uniqueHomFromIdentity (A : AbelianScheme S) : Unique (identity S ⟶ A)
       (X := identity S) (Y := A)).trans
     (e.homCongr (Iso.refl _))).unique
 
+/-- The identity abelian scheme is a zero object of `AbelianScheme S`. -/
+lemma isZeroIdentity (S : Scheme.{u}) : IsZero (identity S) where
+  unique_to A := nonempty_unique (identity S ⟶ A)
+  unique_from A := nonempty_unique (A ⟶ identity S)
+
+instance (S : Scheme.{u}) : HasZeroObject (AbelianScheme S) :=
+  ⟨identity S, isZeroIdentity S⟩
+
 /-- The unique homomorphism from an abelian scheme to the identity abelian scheme over `S`. -/
 def toIdentity (A : AbelianScheme S) : A ⟶ identity S :=
-  default
+  (isZeroIdentity S).isTerminal.from A
 
 /-- The unique homomorphism from the identity abelian scheme over `S` to an abelian scheme. -/
 def fromIdentity (A : AbelianScheme S) : identity S ⟶ A :=
-  default
+  (isZeroIdentity S).isInitial.to A
 
 /-- The morphism over `S` underlying `toIdentity A` is the terminal map `toUnit A.toOver`, after
 transporting along `identity_toOver`. -/
@@ -205,18 +213,6 @@ lemma toSchemeHom_fromIdentity (A : AbelianScheme S) :
     eqToHom (identity_toScheme S).symm ≫ toSchemeHom (fromIdentity A) = A.zeroSection := by
   rw [← Over.eqToHom_left (identity_toOver S).symm]
   exact congrArg Over.Hom.left (toOverHom_fromIdentity A)
-
-/-- The identity abelian scheme is initial in `AbelianScheme S`. -/
-def isInitialIdentity (S : Scheme.{u}) : IsInitial (identity S) :=
-  IsInitial.ofUnique _
-
-/-- The identity abelian scheme is a zero object of `AbelianScheme S`. -/
-lemma isZeroIdentity (S : Scheme.{u}) : IsZero (identity S) where
-  unique_to A := nonempty_unique (identity S ⟶ A)
-  unique_from A := nonempty_unique (A ⟶ identity S)
-
-instance (S : Scheme.{u}) : HasZeroObject (AbelianScheme S) :=
-  ⟨identity S, isZeroIdentity S⟩
 
 end
 
