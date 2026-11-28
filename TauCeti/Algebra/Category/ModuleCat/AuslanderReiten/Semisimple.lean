@@ -40,13 +40,11 @@ universe u v w
 
 variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A] [IsSemisimpleRing A]
 
-/-- The valued quiver of finitely generated modules over a semisimple ring has no arrows. -/
+/-- The valued quiver of any class of modules over a semisimple ring has no arrows. -/
 @[simp]
-theorem valuationMatrix_eq_none_of_isSemisimpleRing
-    (a b : IrreducibleMorphismQuiver R fun M : ModuleCat.{w} A ↦ Module.Finite A M) :
-    valuationMatrix R (fun M : ModuleCat.{w} A ↦ Module.Finite A M) a b = none := by
-  have hsimple (x : IrreducibleMorphismQuiver R fun M : ModuleCat.{w} A ↦ Module.Finite A M) :
-      Simple x.representative :=
+theorem valuationMatrix_eq_none_of_isSemisimpleRing (P : ObjectProperty (ModuleCat.{w} A))
+    (a b : IrreducibleMorphismQuiver R P) : valuationMatrix R P a b = none := by
+  have hsimple (x : IrreducibleMorphismQuiver R P) : Simple x.representative :=
     (simple_iff_isSimpleModule' _).mpr
       ((indecomposable_iff_isIndecomposableModule _).mp x.representative_property.2).isSimpleModule
   have := hsimple a
@@ -58,13 +56,13 @@ theorem valuationMatrix_eq_none_of_isSemisimpleRing
     Module.finrank_zero_of_subsingleton]
   simp
 
-variable (R A) in
-/-- Each vertex of the valued quiver of a semisimple ring gives a distinct weak component,
-and every weak component is of this form. -/
-noncomputable def equivWeaklyConnectedComponentOfIsSemisimpleRing :
-    (IrreducibleMorphismQuiver R fun M : ModuleCat.{w} A ↦ Module.Finite A M) ≃
-      Quiver.WeaklyConnectedComponent
-        (ValuedQuiver (valuationMatrix R fun M : ModuleCat.{w} A ↦ Module.Finite A M)) :=
+variable (R) in
+/-- Each vertex of the valued quiver of a class of modules over a semisimple ring gives a
+distinct weak component, and every weak component is of this form. -/
+noncomputable def equivWeaklyConnectedComponentOfIsSemisimpleRing
+    (P : ObjectProperty (ModuleCat.{w} A)) :
+    IrreducibleMorphismQuiver R P ≃
+      Quiver.WeaklyConnectedComponent (ValuedQuiver (valuationMatrix R P)) :=
   Equiv.ofBijective (fun a ↦ Quiver.WeaklyConnectedComponent.mk (ValuedQuiver.of a)) (by
     constructor
     · intro a b hab
@@ -81,25 +79,26 @@ noncomputable def equivWeaklyConnectedComponentOfIsSemisimpleRing :
 /-- The component equivalence sends each vertex to the component of that vertex. -/
 @[simp]
 theorem equivWeaklyConnectedComponentOfIsSemisimpleRing_apply
-    (a : IrreducibleMorphismQuiver R fun M : ModuleCat.{w} A ↦ Module.Finite A M) :
-    equivWeaklyConnectedComponentOfIsSemisimpleRing R A a =
+    (P : ObjectProperty (ModuleCat.{w} A)) (a : IrreducibleMorphismQuiver R P) :
+    equivWeaklyConnectedComponentOfIsSemisimpleRing R P a =
       Quiver.WeaklyConnectedComponent.mk (ValuedQuiver.of a) :=
   (rfl)
 
 /-- The inverse component equivalence recovers the vertex from its component. -/
 @[simp]
 theorem equivWeaklyConnectedComponentOfIsSemisimpleRing_symm_mk
-    (a : IrreducibleMorphismQuiver R fun M : ModuleCat.{w} A ↦ Module.Finite A M) :
-    (equivWeaklyConnectedComponentOfIsSemisimpleRing R A).symm
+    (P : ObjectProperty (ModuleCat.{w} A)) (a : IrreducibleMorphismQuiver R P) :
+    (equivWeaklyConnectedComponentOfIsSemisimpleRing R P).symm
       (Quiver.WeaklyConnectedComponent.mk (ValuedQuiver.of a)) = a :=
-  (equivWeaklyConnectedComponentOfIsSemisimpleRing R A).symm_apply_apply a
+  (equivWeaklyConnectedComponentOfIsSemisimpleRing R P).symm_apply_apply a
 
 /-- The valued Auslander–Reiten quiver of `k × k` has exactly two weak components. -/
 theorem card_weaklyConnectedComponent_valuationMatrix_prod_field (k : Type u) [Field k] :
     Nat.card (Quiver.WeaklyConnectedComponent
       (ValuedQuiver (valuationMatrix k fun M : ModuleCat.{u} (k × k) ↦
         Module.Finite (k × k) M))) = 2 := by
-  rw [← Nat.card_congr (equivWeaklyConnectedComponentOfIsSemisimpleRing k (k × k)),
+  rw [← Nat.card_congr (equivWeaklyConnectedComponentOfIsSemisimpleRing k
+      fun M : ModuleCat.{u} (k × k) ↦ Module.Finite (k × k) M),
     Nat.card_congr IrreducibleMorphismQuiver.equivSkeleton,
     card_skeleton_finite_indecomposable_eq_card_maximalSpectrum,
     ← Nat.card_congr (IsArtinianRing.primeSpectrumEquivMaximalSpectrum (R := k × k)),
