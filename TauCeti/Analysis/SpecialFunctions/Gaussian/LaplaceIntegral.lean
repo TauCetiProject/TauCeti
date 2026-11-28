@@ -24,8 +24,9 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 # Half-line Gaussian–Laplace integrals
 
 This file develops integrability, vertical-strip norm bounds, positive scaling, and complex
-differentiation with respect to both the Laplace parameter and the Mellin exponent for half-line
-integrals of the form
+differentiation with respect to the Mellin exponent (see
+`TauCeti.MeasureTheory.Integral.Exp.PowerDecay` for differentiation in the Laplace parameter) for
+half-line integrals of the form
 
   `∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)`
 
@@ -37,8 +38,8 @@ holomorphic function of `s` on the open right half-plane `{s : ℂ | 0 < s.re}` 
 inserts `Complex.log u` into the integrand.
 
 At `b = 1 / 2` and `s = a + 1 / 2`, this integral is the half-line Laplace kernel of Weber's
-parabolic cylinder function `U(a, z)` (DLMF 12.5.1), providing both its differential-equation
-derivative shifts and the termwise shifted integrals of the Laplace–Hermite rotational series.
+parabolic cylinder function `U(a, z)` (DLMF 12.5.1), providing the termwise shifted integrals,
+vertical-strip bounds, and Mellin-parameter holomorphy of the Laplace–Hermite rotational series.
 
 ## Main results
 

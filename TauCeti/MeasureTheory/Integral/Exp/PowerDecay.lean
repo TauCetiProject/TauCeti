@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
@@ -174,18 +175,6 @@ theorem integral_cpow_mul_cexp_neg_mul_cpow_Ioi {p : ℝ} (hp : 0 < p) {b s : �
             neg_div]
           ring
 
-/-- Weighted exponential power-series identity over a commutative Banach field (`ℝ` or `ℂ`). -/
-private theorem hasSum_mul_pow_div_factorial_mul_normedExp {𝕜 : Type*}
-    [NormedField 𝕜] [NormedAlgebra ℚ 𝕜] [CompleteSpace 𝕜] (a t u v : 𝕜) :
-    HasSum (fun n : ℕ => (a ^ n / (n ! : 𝕜)) * (u * t ^ n * NormedSpace.exp v))
-      (u * NormedSpace.exp (a * t + v)) := by
-  convert (NormedSpace.expSeries_div_hasSum_exp (a * t)).mul_right
-    (u * NormedSpace.exp v) using 1
-  · ext n
-    rw [mul_pow]
-    ring
-  · rw [← mul_assoc, mul_comm (NormedSpace.exp (a * t)), mul_assoc, ← NormedSpace.exp_add]
-
 /-- **Series expansion of a superlinear exponential-power Laplace integral.** For `1 < p`,
 `0 < b.re`, `-1 < s.re`, and every `z : ℂ`,
 `∫ t in Ioi 0, (t : ℂ) ^ s * exp (z * t - b * (t : ℂ) ^ (p : ℂ)) =
@@ -205,7 +194,7 @@ theorem hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p
   have hbound_sum : ∀ t : ℝ, 0 < t →
       HasSum (fun n => bound n t) (t ^ s.re * rexp (‖z‖ * t - b.re * t ^ p)) := fun t ht => by
     have hexp := Real.exp_eq_exp_ℝ ▸
-      hasSum_mul_pow_div_factorial_mul_normedExp ‖z‖ t (t ^ s.re) (-b.re * t ^ p)
+      hasSum_mul_pow_div_factorial_mul_exp ‖z‖ t (t ^ s.re) (-b.re * t ^ p)
     convert hexp using 1
     · ext n
       simp only [bound]
@@ -228,7 +217,7 @@ theorem hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p
     · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
       have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
       have hexp := Complex.exp_eq_exp_ℂ ▸
-        hasSum_mul_pow_div_factorial_mul_normedExp z (t : ℂ) ((t : ℂ) ^ s) (-b * (t : ℂ) ^ (p : ℂ))
+        hasSum_mul_pow_div_factorial_mul_exp z (t : ℂ) ((t : ℂ) ^ s) (-b * (t : ℂ) ^ (p : ℂ))
       convert hexp using 1
       · ext n
         simp only [F]

@@ -46,6 +46,9 @@ Baker--Campbell--Hausdorff expansion.
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
+* `TauCeti.hasSum_mul_pow_div_factorial_mul_exp`: weighted exponential power-series identity
+  `HasSum (fun n : ℕ => (a ^ n / n!) * (u * t ^ n * exp v)) (u * exp (a * t + v))` in a
+  complete normed field that is a normed `ℚ`-algebra.
 -/
 
 public section
@@ -208,5 +211,19 @@ theorem norm_exp_smul_one_le [NormedAlgebra ℝ 𝔸] (h_one : ‖(1 : 𝔸)‖ 
   rw [← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm, ← Real.exp_eq_exp_ℝ,
     norm_algebraMap, Real.norm_of_nonneg (Real.exp_nonneg c)]
   exact mul_le_of_le_one_right (Real.exp_nonneg c) h_one
+
+/-! ### Weighted exponential series -/
+
+/-- In a complete normed field that is a normed `ℚ`-algebra,
+`∑' n, (a ^ n / n!) * (u * t ^ n * exp v) = u * exp (a * t + v)`. -/
+theorem hasSum_mul_pow_div_factorial_mul_exp {𝕜 : Type*}
+    [NormedField 𝕜] [NormedAlgebra ℚ 𝕜] [CompleteSpace 𝕜] (a t u v : 𝕜) :
+    HasSum (fun n : ℕ => (a ^ n / (n ! : 𝕜)) * (u * t ^ n * exp v))
+      (u * exp (a * t + v)) := by
+  convert (expSeries_div_hasSum_exp (a * t)).mul_right (u * exp v) using 1
+  · ext n
+    rw [mul_pow]
+    ring
+  · rw [← mul_assoc, mul_comm (exp (a * t)), mul_assoc, ← exp_add]
 
 end TauCeti
