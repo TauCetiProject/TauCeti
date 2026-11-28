@@ -194,11 +194,8 @@ instance {n : ℕ∞ω} [ENat.LEInfty n] (θ : SmoothForm I M ℝ 1) (ℏ : ℝ)
     CovariantDerivative.ContMDiffCovariantDerivative (exactPrequantumConnection θ ℏ) n := by
   refine CovariantDerivative.contMDiffCovariantDerivative_addOneForm_smulRightOneForm
     (cov := CovariantDerivative.trivial (I := I) ℂ) inferInstance θ ?_
-  refine contMDiff_hom_bundle_of_inCoordinates_eq_const
-    (c := fun _ ↦ ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I) fun x y _ _ ↦ ?_
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id]
+  exact contMDiff_const_trivialHom (I := I) (M := M)
+    (ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I : ℂ →L[ℝ] ℂ)
 
 end Smooth
 

@@ -56,6 +56,8 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * `TauCeti.inner_self_toEuclideanLin_diagonal_apply` — the quadratic form `⟪x, diag(w) x⟫` of
   `diag(w)` is `∑ᵢ |xᵢ|² wᵢ`; for real weights the real part of `⟪diag(w) x, x⟫` is the same sum
   (`Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
+* `Matrix.inner_toEuclideanLin_toLp_eq_dotProduct_mulVec` — for a real matrix `A`, the form
+  `⟪A x, x⟫` on Euclidean space is the coordinate dot product `xᵀAx`;
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
   form of `A` on an orthonormal basis are the diagonal entries of a unitary conjugate `U A Uᴴ`;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
@@ -74,6 +76,9 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
   the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
+* `Matrix.inner_toEuclideanCLM_left_of_conjTranspose_eq_neg`,
+  `Matrix.re_inner_toEuclideanCLM_self_eq_zero_of_conjTranspose_eq_neg` — a skew-Hermitian matrix
+  acts by a skew-adjoint operator, whose quadratic form has zero real part;
 * `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group isomorphism from the unitary group to
   the linear isometry group of Euclidean space, acting as the matrix does
   (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it preserves determinants
@@ -94,6 +99,10 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
   continuous linear map of a matrix, whose columns have squared norms
   `Matrix.norm_toEuclideanCLM_single_sq`, and which depends continuously on the matrix
   (`Matrix.continuous_toEuclideanCLM`) and conversely (`Matrix.continuous_toEuclideanCLM_symm`);
+* `TauCeti.euclideanEntryCLM` — the entry `(T e_j)_i` of an operator `T` on Euclidean space, as
+  a continuous linear functional of `T`, which reads off the matrix entries of
+  `Matrix.toEuclideanCLM` (`TauCeti.euclideanEntryCLM_toEuclideanCLM`,
+  `TauCeti.euclideanEntryCLM_comp_toEuclideanCLM`);
 * `Matrix.toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply` — the map of an invertible
   matrix undoes the map of its inverse;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
@@ -133,6 +142,40 @@ theorem toEuclideanCLM_symm_eq_toMatrix {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype
   simp
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+variable (𝕜) in
+/-- The `(i, j)` entry `(T e_j)_i` of an operator `T` on `EuclideanSpace 𝕜 ι`, as a continuous
+linear functional of `T`. -/
+noncomputable def euclideanEntryCLM (i j : ι) :
+    (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) →L[𝕜] 𝕜 :=
+  (EuclideanSpace.proj i).comp
+    (ContinuousLinearMap.apply 𝕜 (EuclideanSpace 𝕜 ι) (EuclideanSpace.single j 1))
+
+@[simp]
+theorem euclideanEntryCLM_apply (i j : ι) (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :
+    euclideanEntryCLM 𝕜 i j T = T (EuclideanSpace.single j 1) i := by
+  simp [euclideanEntryCLM]
+
+/-- The entry functional reads off the entries of the operator of a matrix. -/
+theorem euclideanEntryCLM_toEuclideanCLM (i j : ι) (A : Matrix ι ι 𝕜) :
+    euclideanEntryCLM 𝕜 i j (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) A) = A i j := by
+  simp
+
+/-- The entries of `T ∘L A`, for the operator of a matrix `A`, are `∑ₖ Tᵢₖ Aₖⱼ`. -/
+theorem euclideanEntryCLM_comp_toEuclideanCLM (i j : ι)
+    (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (A : Matrix ι ι 𝕜) :
+    euclideanEntryCLM 𝕜 i j (T ∘L Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) A) =
+      ∑ k, euclideanEntryCLM 𝕜 i k T * A k j := by
+  obtain ⟨B, rfl⟩ : ∃ B, Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) B = T :=
+    ⟨_, StarAlgEquiv.apply_symm_apply _ T⟩
+  rw [← ContinuousLinearMap.mul_def, ← map_mul]
+  simp only [euclideanEntryCLM_toEuclideanCLM, Matrix.mul_apply]
+
+end TauCeti
 
 namespace Matrix
 
@@ -182,6 +225,12 @@ theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : Euclid
   rw [inner_re_symm]
   simp only [TauCeti.inner_self_toEuclideanLin_diagonal_apply, ← RCLike.ofReal_pow,
     ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
+
+/-- The real quadratic form `⟪A x, x⟫` of a real square matrix `A` on Euclidean space, read on
+coordinates, is the dot product `xᵀAx`. -/
+theorem inner_toEuclideanLin_toLp_eq_dotProduct_mulVec (A : Matrix ι ι ℝ) (x : ι → ℝ) :
+    ⟪toEuclideanLin A (WithLp.toLp 2 x), WithLp.toLp 2 x⟫_ℝ = x ⬝ᵥ (A *ᵥ x) := by
+  simp [EuclideanSpace.inner_toLp_toLp]
 
 /-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives a unitary matrix `U`, whose rows are
 the conjugates of the vectors `e k`, such that the diagonal entries of `U A Uᴴ` are the values
@@ -341,6 +390,21 @@ transpose. -/
 theorem adjoint_toEuclideanCLM (A : Matrix ι ι 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) A).adjoint = toEuclideanCLM (𝕜 := 𝕜) Aᴴ := by
   rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star, star_eq_conjTranspose]
+
+/-- A skew-Hermitian matrix, `Aᴴ = -A`, acts by a skew-adjoint operator:
+`⟪A x, y⟫ = -⟪x, A y⟫`. -/
+theorem inner_toEuclideanCLM_left_of_conjTranspose_eq_neg {A : Matrix ι ι 𝕜} (hA : Aᴴ = -A)
+    (x y : EuclideanSpace 𝕜 ι) :
+    ⟪toEuclideanCLM (𝕜 := 𝕜) A x, y⟫_𝕜 = -⟪x, toEuclideanCLM (𝕜 := 𝕜) A y⟫_𝕜 := by
+  rw [← ContinuousLinearMap.adjoint_inner_left, adjoint_toEuclideanCLM, hA, map_neg,
+    neg_apply, inner_neg_left, neg_neg]
+
+/-- The quadratic form `⟪x, A x⟫` of a skew-Hermitian matrix, `Aᴴ = -A`, has zero real part. -/
+theorem re_inner_toEuclideanCLM_self_eq_zero_of_conjTranspose_eq_neg {A : Matrix ι ι 𝕜}
+    (hA : Aᴴ = -A) (x : EuclideanSpace 𝕜 ι) : RCLike.re ⟪x, toEuclideanCLM (𝕜 := 𝕜) A x⟫_𝕜 = 0 := by
+  have h := congrArg RCLike.re (inner_toEuclideanCLM_left_of_conjTranspose_eq_neg hA x x)
+  rw [← inner_conj_symm, RCLike.conj_re, map_neg] at h
+  linarith
 
 /-- Congruence by `A` on the operator side: the sesquilinear form of `A * B * Aᴴ` at `x, y` is
 the sesquilinear form of `B` at `Aᴴ x, Aᴴ y`. -/

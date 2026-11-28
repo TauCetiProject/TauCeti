@@ -72,8 +72,9 @@ structures are (`TauCeti.Floer.tames_cappedAlmostComplex`,
 The comparison family is `TauCeti.Floer.cappedComparisonAlmostComplex h₀ J hJ R`, the structure
 with `r = 3R - 1` and the neck length `L = TauCeti.Floer.comparisonNeckLength R` of the family of
 Hamiltonian data `TauCeti.Floer.cutoffNeckFamily`. It is the domain-independent `J₀` for
-`R ≤ 1/3`, in particular at `R = 0`; it is constant, without necks, on the collar
-`2/3 ≤ R ≤ 3/2`; it has necks of length `R - 1` for `R ≥ 2`, so on the truncation `S_T` it is
+`R ≤ 1/3`, in particular at `R = 0`; it is compatible when the end structures are
+(`TauCeti.Floer.compatible_cappedComparisonAlmostComplex`); it is constant, without necks, on the
+collar `2/3 ≤ R ≤ 3/2`; it has necks of length `R - 1` for `R ≥ 2`, so on the truncation `S_T` it is
 the structure with neck length `T` once `T ≤ R + 1`
 (`TauCeti.Floer.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation`); and it
 is smooth in `R`. The structure is switched on during `1/3 ≤ R ≤ 2/3`, where the cutoff
@@ -523,6 +524,13 @@ theorem cappedComparisonAlmostComplex_def (h₀ : ω.Compatible J₀) (R : ℝ) 
     cappedComparisonAlmostComplex h₀ J hJ R =
       cappedAlmostComplex h₀ J hJ (3 * R - 1) (comparisonNeckLength R) :=
   (rfl)
+
+/-- The structures of the comparison family are `ω`-compatible when the structures on the ends
+are. -/
+theorem compatible_cappedComparisonAlmostComplex (h₀ : ω.Compatible J₀)
+    (hJc : ∀ q t x, ω.Compatible (J q t x)) (R : ℝ) (w : ℂ) (x : M) :
+    ω.Compatible (cappedComparisonAlmostComplex h₀ J hJ R w x) :=
+  compatible_cappedAlmostComplex h₀ hJc _ _ w x
 
 /-- For `R ≤ 1/3`, in particular at the start `R = 0` of the family, the structure is the
 domain-independent base structure `J₀`. -/

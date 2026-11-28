@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Dirac
+public import TauCeti.Geometry.Symplectic.Complex.ZeroOneCovector
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Geometry.Symplectic.Complex.AntilinearPart
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
@@ -43,6 +44,15 @@ operator norm is `‖g₁ + J p‖ / 2`
 Hilbert–Schmidt norm `|∂bar L|² = ∑ᵢ |∂bar L (bᵢ)|² = 2 ‖∂bar L‖²` of
 `TauCeti.AlmostComplexStructure.sum_norm_sq_complexAntilinearPart` this is Taubes's factor `√2`.
 
+**The symbol as a `(0,1)`-covector.** The vector `g₁ + J p` is the one whose `(0,1)`-dual
+`v♭ = ⟪v, ·⟫ - i ⟪J v, ·⟫` (`TauCeti.AlmostComplexStructure.zeroOneFlat`) is `2 ∂bar L`. So for
+every `v` with `v♭ = 2 ∂bar L`, `∑ᵢ L(bᵢ) c(bᵢ) u₀ = c(v) u₀`
+(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`). This is a pointwise
+statement on the model space. It is the model of reading the Dirac symbol on `α u₀` as `2 ∂bar_a α`
+through the identification `W⁻ = Λ^(0,1)`, `c(v) u₀ ↦ v♭`, of
+`TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorZeroOneEquiv`; that bundle-level
+comparison is not formalised here.
+
 **The Dirac equation.** If `∑ᵢ c(bᵢ) (L(bᵢ) u₀ + wᵢ) = 0`, then
 `2 ‖∂bar L‖ ‖u₀‖ = ‖∑ᵢ c(bᵢ) wᵢ‖`
 (`TauCeti.SeibergWitten.two_mul_norm_mul_norm_eq_norm_sum_ι_apply_of_sum_ι_apply_eq_zero`). For the
@@ -64,6 +74,8 @@ negative part of the slice measures of the cutoff current.
 
 * `TauCeti.SeibergWitten.norm_sum_smul_ι_apply_of_cliffordProjection_apply_eq_self`:
   `‖∑ᵢ L(bᵢ) c(bᵢ) u₀‖ = 2 ‖∂bar L‖ ‖u₀‖`.
+* `TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`:
+  `∑ᵢ L(bᵢ) c(bᵢ) u₀ = c(v) u₀` when `v♭ = 2 ∂bar L`.
 * `TauCeti.SeibergWitten.two_mul_norm_mul_norm_eq_norm_sum_ι_apply_of_sum_ι_apply_eq_zero`: the
   Dirac equation determines `‖∂bar L‖`.
 * `TauCeti.SeibergWitten.norm_le_norm_mul_sqrt_div_four_add_sqrt_of_sum_ι_apply_eq_zero` and
@@ -142,6 +154,25 @@ theorem two_mul_norm_mul_norm_eq_norm_sum_ι_apply_of_sum_ι_apply_eq_zero
   simp only [map_add, map_smul, Finset.sum_add_distrib] at hdirac
   rw [← norm_sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hJ b h₁ h₂ hρ hψ hD,
     eq_neg_of_add_eq_zero_left hdirac, norm_neg]
+
+omit h₁ h₂ in
+include hQ hJ in
+/-- **On the canonical eigenspace the Dirac symbol is Clifford multiplication by the vector dual to
+`2 ∂bar L`.** If `P_α ψ = ψ` and `v♭ = ⟪v, ·⟫ - i ⟪J v, ·⟫` is twice the complex-antilinear part of
+a real-linear `L : V → ℂ`, `v♭ w = L w + i L (J w)`, then in every orthonormal basis
+`∑ᵢ L(bᵢ) c(bᵢ) ψ = c(v) ψ`. -/
+theorem sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq {ψ : positiveHalfSpinors o ρ}
+    (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (L : V →L[ℝ] ℂ) {v : V}
+    (hv : ∀ w, J.zeroOneFlat v w = L w + Complex.I * L (J w)) :
+    ∑ i, L (b i) • ρ (ι Q (b i)) ψ = ρ (ι Q v) ψ := by
+  -- `v` is `g₁ + J p` for the vectors `g₁` and `p` dual to the real and imaginary parts of `L`.
+  have hv' : v = L.reGradient + J L.imGradient := AlmostComplexStructure.zeroOneFlat_injective <| by
+    ext w
+    rw [hv, AlmostComplexStructure.zeroOneFlat_add_apply_apply hJ L.inner_reGradient
+      L.inner_imGradient]
+  rw [hv']
+  exact sum_smul_ι_apply_eq_ι_add_apply_of_cliffordProjection_apply_eq_self hQ hJ b
+    L.inner_reGradient L.inner_imGradient hψ
 
 end Orthogonal
 

@@ -40,6 +40,8 @@ manifold-derivative API and the derivatives of extended charts.
 * `TauCeti.injective_mfderiv_of_injective_mfderiv_comp`: if `d(g ∘ f)_x` is injective and `f`, `g`
   are differentiable at `x`, `f x`, then `df_x` is injective.
 * `TauCeti.injective_mfderiv_comp`: if `df_x` and `dg_(f x)` are injective, so is `d(g ∘ f)_x`.
+* `TauCeti.range_mfderiv_comp`: the range of `d(g ∘ f)_x` is the image under `dg_(f x)` of the
+  range of `df_x`.
 * `TauCeti.mfderiv_ne_zero_of_injective`: an injective differential out of a manifold with a
   nontrivial model space is nonzero.
 * `TauCeti.injective_mfderiv_of_eventuallyEq_comp_extChartAt`: a map agreeing near `x` with
@@ -236,6 +238,16 @@ theorem injective_mfderiv_comp {f : M → N} {g : N → P}
   rw [mfderiv_comp x (mdifferentiableAt_of_mfderiv_injective hg)
     (mdifferentiableAt_of_mfderiv_injective hf), ContinuousLinearMap.coe_comp]
   exact hg.comp hf
+
+/-- The range of the differential of `g ∘ f` at `x`, where `f` is differentiable at `x` and `g`
+at `f x`, is the image under `dg_(f x)` of the range of `df_x`. -/
+theorem range_mfderiv_comp {f : M → N} {g : N → P}
+    (hg : MDifferentiableAt J K g (f x)) (hf : MDifferentiableAt I J f x) :
+    LinearMap.range (mfderiv I K (g ∘ f) x).toLinearMap =
+      (LinearMap.range (mfderiv I J f x).toLinearMap).map
+        (mfderiv J K g (f x) : TangentSpace J (f x) →ₗ[𝕜] TangentSpace K (g (f x))) := by
+  rw [mfderiv_comp x hg hf]
+  exact LinearMap.range_comp _ _
 
 end Comp
 

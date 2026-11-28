@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import TauCeti.RingTheory.MvPolynomial.BinaryMonomial
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.RingTheory.MvPolynomial.Trace
 import Mathlib.Algebra.MvPolynomial.Funext
@@ -31,7 +32,6 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
   `w`, as a representation of `(Matrix (Fin 2) (Fin 2) ℤ)ᵐᵒᵖ`.
 * `TauCeti.binaryFormAdjugateRep R w`: the left action `P ↦ P ∣ adj M` of integral matrices, the
   right action precomposed with the anti-multiplicative adjugate.
-* `TauCeti.binaryFormMonomialBasis R w`: the monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`.
 * `TauCeti.linearFormPow R w x y`: the binary form `(xY - yX)ʷ`.
 * `TauCeti.binaryFormDual R w`: the linear map `φ ↦ D φ` from functionals to binary forms.
 
@@ -192,26 +192,6 @@ theorem binaryFormRep_upperTriangular_X_one_pow {M : Matrix (Fin 2) (Fin 2) ℤ}
   simp [Fin.sum_univ_two, hM, Algebra.smul_def, mul_pow]
 
 /-! ### Binary forms attached to linear functionals -/
-
-/-- The monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`, of the binary forms of degree `w`, indexed by the
-exponent `j` of `X`. -/
-noncomputable def binaryFormMonomialBasis (R : Type*) [CommSemiring R] (w : ℕ) :
-    Module.Basis (Fin (w + 1)) R (homogeneousSubmodule (Fin 2) R w) :=
-  (homogeneousMonomialBasis w).reindex (finsuppDegreeFinTwoEquiv w)
-
-@[simp]
-theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : Fin (w + 1)) :
-    (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) = X 0 ^ (j : ℕ) * X 1 ^ (w - j) := by
-  rw [binaryFormMonomialBasis, Module.Basis.reindex_apply, coe_homogeneousMonomialBasis]
-  simp only [coe_finsuppDegreeFinTwoEquiv_symm, X_pow_eq_monomial, monomial_mul_monomial,
-    one_mul]
-
-/-- The coordinate of a binary form on `Xʲ Yʷ⁻ʲ` in the monomial basis is its coefficient. -/
-theorem binaryFormMonomialBasis_repr_apply {R : Type*} [CommSemiring R] {w : ℕ}
-    (P : homogeneousSubmodule (Fin 2) R w) (j : Fin (w + 1)) :
-    (binaryFormMonomialBasis R w).repr P j =
-      (P : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 (j : ℕ) + Finsupp.single 1 (w - j)) := by
-  simp [binaryFormMonomialBasis]
 
 /-- The monomial `Xʲ Yʷ⁻ʲ` takes the value `1` at `(1, 0)` for `j = w`, and `0` otherwise. -/
 theorem eval_one_zero_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ}
