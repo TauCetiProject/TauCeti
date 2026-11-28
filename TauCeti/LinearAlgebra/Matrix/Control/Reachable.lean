@@ -86,6 +86,24 @@ theorem ctrbMatrix_apply (i : n) (k : Fin (Fintype.card n)) (j : m) :
     ctrbMatrix A B i (k, j) = (A ^ (k : ℕ) * B) i j :=
   (rfl)
 
+omit [Fintype m] in
+/-- The entry `(k, i), j` of the transposed controllability matrix is the corresponding entry of
+`C * A ^ k`. -/
+@[simp]
+theorem transpose_ctrbMatrix_apply {p : Type*} (A : Matrix n n R) (C : Matrix p n R)
+    (k : Fin (Fintype.card n)) (i : p) (j : n) :
+    (ctrbMatrix Aᵀ Cᵀ)ᵀ (k, i) j = (C * A ^ (k : ℕ)) i j := by
+  simp [ctrbMatrix_apply, ← transpose_pow, ← transpose_mul]
+
+omit [Fintype m] in
+/-- Application of the transpose of the controllability matrix of `(Aᵀ, Cᵀ)` agrees with the
+free output `(C * A ^ k) *ᵥ x`. -/
+@[simp]
+theorem transpose_ctrbMatrix_mulVec {p : Type*} (A : Matrix n n R) (C : Matrix p n R)
+    (x : n → R) (k : Fin (Fintype.card n)) (i : p) :
+    ((ctrbMatrix Aᵀ Cᵀ)ᵀ *ᵥ x) (k, i) = ((C * A ^ (k : ℕ)) *ᵥ x) i := by
+  simp only [mulVec, dotProduct, transpose_ctrbMatrix_apply]
+
 variable {A B}
 
 /-- The columns of each `A ^ k * B` span a submodule of the reachable subspace. -/

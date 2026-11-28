@@ -39,6 +39,8 @@ is controllable.
   already determine the unobservable subspace.
 * `Matrix.ker_mulVecLin_transpose_ctrbMatrix`: the kernel of `(ctrbMatrix Aᵀ Cᵀ)ᵀ` is the
   unobservable subspace of `(A, C)`.
+* `Matrix.isObservable_iff_free_outputs_eq_zero`: observability is equivalent to the only state
+  whose free output vanishes at every time being zero.
 * `Matrix.isObservable_iff_injective`: over a commutative ring, `(A, C)` is observable if and only
   if the first `Fintype.card n` free outputs determine the initial state.
 * `Matrix.isObservable_iff_isControllable_transpose`: over a field, `(A, C)` is observable if and
@@ -89,6 +91,21 @@ theorem mem_unobservableSubspace {x : n → R} :
     x ∈ unobservableSubspace A C ↔ ∀ k : ℕ, (C * A ^ k) *ᵥ x = 0 := by
   simp [unobservableSubspace, Submodule.mem_iInf]
 
+/-- `(A, C)` is observable if and only if the only state whose free output vanishes at every time
+is zero. -/
+theorem isObservable_iff_free_outputs_eq_zero :
+    IsObservable A C ↔ ∀ x : n → R, (∀ k : ℕ, (C * A ^ k) *ᵥ x = 0) → x = 0 := by
+  rw [isObservable_iff]
+  constructor
+  · intro h x hx
+    have hx' : x ∈ unobservableSubspace A C := mem_unobservableSubspace.2 hx
+    rw [h] at hx'
+    exact (Submodule.mem_bot R).1 hx'
+  · intro h
+    apply eq_bot_iff.2
+    intro x hx
+    exact (Submodule.mem_bot R).2 (h x (mem_unobservableSubspace.1 hx))
+
 /-- The unobservable subspace is contained in the kernel of each `C * A ^ k`. -/
 theorem unobservableSubspace_le_ker_mulVecLin_mul_pow (k : ℕ) :
     unobservableSubspace A C ≤ LinearMap.ker (C * A ^ k).mulVecLin :=
@@ -129,14 +146,6 @@ theorem unobservableSubspace_eq_top_of_isEmpty [IsEmpty p] : unobservableSubspac
 theorem isObservable_of_isEmpty [IsEmpty n] : IsObservable A C :=
   (isObservable_iff A C).2 (Subsingleton.elim _ _)
 
-/-- Entrywise identification of `(ctrbMatrix Aᵀ Cᵀ)ᵀ *ᵥ x` with the free outputs
-`(C * A ^ k) *ᵥ x`. -/
-private theorem transpose_ctrbMatrix_mulVec (A : Matrix n n R) (C : Matrix p n R) (x : n → R)
-    (k : Fin (Fintype.card n)) (i : p) :
-    ((ctrbMatrix Aᵀ Cᵀ)ᵀ *ᵥ x) (k, i) = ((C * A ^ (k : ℕ)) *ᵥ x) i := by
-  simp only [mulVec, dotProduct, transpose_apply, ctrbMatrix_apply, ← transpose_pow,
-    ← transpose_mul]
-
 /-- The powers `A ^ k` with `k < Fintype.card n` already determine the unobservable subspace. -/
 theorem unobservableSubspace_eq_iInf_fin_card (A : Matrix n n R) (C : Matrix p n R) :
     unobservableSubspace A C =
@@ -161,6 +170,7 @@ theorem unobservableSubspace_eq_iInf_fin_card (A : Matrix n n R) (C : Matrix p n
       exact hmul
 
 /-- The kernel of `(ctrbMatrix Aᵀ Cᵀ)ᵀ` is the unobservable subspace of `(A, C)`. -/
+@[simp]
 theorem ker_mulVecLin_transpose_ctrbMatrix (A : Matrix n n R) (C : Matrix p n R) :
     LinearMap.ker (ctrbMatrix Aᵀ Cᵀ)ᵀ.mulVecLin = unobservableSubspace A C := by
   rw [unobservableSubspace_eq_iInf_fin_card]
