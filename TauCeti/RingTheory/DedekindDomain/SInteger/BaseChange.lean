@@ -41,6 +41,15 @@ variable {R B K L : Type*} [CommRing R] [CommRing B] [IsDedekindDomain R]
   [IsFractionRing B L] [Algebra K L] [Algebra R L] [IsScalarTower R K L] [IsScalarTower R B L]
   {S T : Set (HeightOneSpectrum R)}
 
+omit [Algebra R L] [IsScalarTower R K L] in
+private theorem isScalarTower_integer_field
+    [Algebra (S.integer K) (T.integer K)] [IsScalarTower R (S.integer K) (T.integer K)] :
+    IsScalarTower (S.integer K) (T.integer K) L :=
+  .of_algebraMap_eq fun x ↦ by
+    rw [IsScalarTower.algebraMap_apply (S.integer K) K L,
+      IsScalarTower.algebraMap_apply (T.integer K) K L]
+    exact congrArg (algebraMap K L) (coe_algebraMap_integer K x).symm
+
 section Localization
 
 variable [Algebra (S.integer K) (T.integer K)] [IsScalarTower R (S.integer K) (T.integer K)]
@@ -53,10 +62,7 @@ theorem integer_primesAbove_isLocalization (M : Submonoid (S.integer K))
     [IsLocalization M (T.integer K)] :
     IsLocalization (Algebra.algebraMapSubmonoid ((primesAbove R B S).integer L) M)
       ((primesAbove R B T).integer L) := by
-  have : IsScalarTower (S.integer K) (T.integer K) L := .of_algebraMap_eq fun x ↦ by
-    rw [IsScalarTower.algebraMap_apply (S.integer K) K L,
-      IsScalarTower.algebraMap_apply (T.integer K) K L]
-    exact congrArg (algebraMap K L) (coe_algebraMap_integer K x).symm
+  have := isScalarTower_integer_field (R := R) (K := K) (L := L) (S := S) (T := T)
   have : IsScalarTower ((primesAbove R B S).integer L) ((primesAbove R B T).integer L) L :=
     .of_algebraMap_eq fun x ↦ (coe_algebraMap_integer L x).symm
   exact TauCeti.isLocalization_algebraMapSubmonoid_of_isIntegralClosure
@@ -106,18 +112,22 @@ theorem finite_integer_primesAbove_of_subset (h : S ⊆ T) :
   let f := Subalgebra.inclusion (Set.integer_mono K h)
   let := f.toRingHom.toAlgebra
   have : IsScalarTower R (S.integer K) (T.integer K) :=
-    .of_algebraMap_eq fun x ↦ (f.commutes x).symm
-  have : IsScalarTower (S.integer K) (T.integer K) L := .of_algebraMap_eq fun x ↦ by
-    rw [IsScalarTower.algebraMap_apply (S.integer K) K L,
-      IsScalarTower.algebraMap_apply (T.integer K) K L]
-    exact congrArg (algebraMap K L) (coe_algebraMap_integer K x).symm
+    .of_algebraMap_eq fun x ↦ by
+      rw [RingHom.algebraMap_toAlgebra]
+      exact (f.commutes x).symm
+  have := isScalarTower_integer_field (R := R) (K := K) (L := L) (S := S) (T := T)
   let ι := (IsScalarTower.toAlgHom (S.integer K) ((primesAbove R B S).integer L) L).toLinearMap
   have hfg : (LinearMap.range ι).FG := by simp
   let P := Submodule.span (T.integer K) (LinearMap.range ι : Set L)
   have : Module.Finite (T.integer K) P := Module.Finite.of_fg hfg.span
   let j := (IsScalarTower.toAlgHom (T.integer K) ((primesAbove R B T).integer L) L).toLinearMap
+  have hj : Function.Injective j := by
+    intro x y hxy
+    simp only [j, AlgHom.toLinearMap_apply, IsScalarTower.toAlgHom_apply,
+      Subalgebra.algebraMap_eq] at hxy
+    exact Subtype.val_injective hxy
   refine Module.Finite.of_injective (j.codRestrict P fun x ↦ ?_)
-    ((LinearMap.injective_codRestrict_iff _).mpr Subtype.val_injective)
+    ((LinearMap.injective_codRestrict_iff _).mpr hj)
   apply (Submodule.span_le.mpr ?_) (mem_span_of_mem_integer_primesAbove L T x.property)
   rintro _ ⟨b, rfl⟩
   exact Submodule.subset_span ⟨algebraMap B ((primesAbove R B S).integer L) b, by simp [ι]⟩
@@ -141,14 +151,20 @@ theorem relNorm_integer_primesAbove_map_inclusion [Fact (IsMulTorsion (ClassGrou
   let := g.toRingHom.toAlgebra
   let := ((algebraMap (T.integer K) ((primesAbove R B T).integer L)).comp f.toRingHom).toAlgebra
   have : IsScalarTower R (S.integer K) (T.integer K) :=
-    .of_algebraMap_eq fun x ↦ (f.commutes x).symm
+    .of_algebraMap_eq fun x ↦ by
+      rw [RingHom.algebraMap_toAlgebra]
+      exact (f.commutes x).symm
   have : IsScalarTower B ((primesAbove R B S).integer L) ((primesAbove R B T).integer L) :=
-    .of_algebraMap_eq fun x ↦ (g.commutes x).symm
+    .of_algebraMap_eq fun x ↦ by
+      rw [RingHom.algebraMap_toAlgebra]
+      exact (g.commutes x).symm
   have : IsScalarTower (S.integer K) (T.integer K) ((primesAbove R B T).integer L) :=
-    .of_algebraMap_eq' rfl
+    .of_algebraMap_eq' (by simp only [RingHom.algebraMap_toAlgebra])
   have : IsScalarTower (S.integer K) ((primesAbove R B S).integer L)
       ((primesAbove R B T).integer L) :=
-    .of_algebraMap_eq' (algebraMap_integer_primesAbove_comp_inclusion K L h)
+    .of_algebraMap_eq' (by
+      simp only [RingHom.algebraMap_toAlgebra]
+      exact algebraMap_integer_primesAbove_comp_inclusion K L h)
   let M := Algebra.algebraMapSubmonoid (S.integer K) (Localization.submonoid T)
   have : IsLocalization M (T.integer K) :=
     integer_isLocalization_algebraMapSubmonoid K (Localization.submonoid T)

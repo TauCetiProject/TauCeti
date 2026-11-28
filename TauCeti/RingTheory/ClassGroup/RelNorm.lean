@@ -182,29 +182,16 @@ theorem relNorm_map_eq_map_relNorm (c : ClassGroup S) (M : Submonoid R)
     [IsLocalization M Rₘ] [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ] :
     let hM := TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial M Rₘ
     let hSM : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
-      Submonoid.map_le_of_le_comap _ (hM.trans
-        (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-          (FaithfulSMul.algebraMap_injective R S)))
-    letI := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
-    letI := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hSM
-    letI := IsLocalization.isDedekindDomain R hM Rₘ
-    letI := IsLocalization.isDedekindDomain S hSM Sₘ
-    letI := Module.IsTorsionFree.of_isLocalization R S hM (Rₚ := Rₘ) (Sₚ := Sₘ)
-    letI := Module.Finite.of_isLocalization R S M (Rₚ := Rₘ) (Sₚ := Sₘ)
+      map_le_nonZeroDivisors_of_injective _ (FaithfulSMul.algebraMap_injective R S) hM
+    let _ := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
+    let _ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hSM
+    let _ := IsLocalization.isDedekindDomain R hM Rₘ
+    let _ := IsLocalization.isDedekindDomain S hSM Sₘ
+    let _ := Module.IsTorsionFree.of_isLocalization R S hM (Rₚ := Rₘ) (Sₚ := Sₘ)
+    let _ := Module.Finite.of_isLocalization R S M (Rₚ := Rₘ) (Sₚ := Sₘ)
     relNorm Rₘ (map (algebraMap S Sₘ) (IsLocalization.injective Sₘ hSM) c) =
       map (algebraMap R Rₘ) (IsLocalization.injective Rₘ hM) (relNorm R c) := by
-  have hM := TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial M Rₘ
-  have hSM : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
-    Submonoid.map_le_of_le_comap _ (hM.trans
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-        (FaithfulSMul.algebraMap_injective R S)))
-  have := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
-  have := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hSM
-  have := IsLocalization.isDedekindDomain R hM Rₘ
-  have := IsLocalization.isDedekindDomain S hSM Sₘ
-  have := Module.IsTorsionFree.of_isLocalization R S hM (Rₚ := Rₘ) (Sₚ := Sₘ)
-  have := Module.Finite.of_isLocalization R S M (Rₚ := Rₘ) (Sₚ := Sₘ)
-  dsimp only
+  intro hM hSM hRₘ hSₘ hDRₘ hDSₘ hTF hF
   obtain ⟨I, rfl⟩ := mk0_surjective c
   rw [map_mk0, relNorm_mk0, relNorm_mk0, map_mk0]
   apply congrArg mk0
