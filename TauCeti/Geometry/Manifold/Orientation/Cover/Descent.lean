@@ -143,9 +143,12 @@ theorem exists_mextDerivₗ_eq_of_mextDerivₗ_eq_mpullback_proj {φ : SmoothFor
     rw [← SmoothForm.coe_mpullback _ contMDiff_proj, hψ, hη']⟩
   -- Pullbacks along the projection are deck-invariant, so the averaged primitive still works.
   have hτφ := exists_smoothForm_mpullback_proj_eq_iff.mp ⟨φ, rfl⟩
-  rw [← SmoothForm.mextDerivₗ_mpullback, hψ, map_smul, map_add, SmoothForm.mextDerivₗ_mpullback,
-    hη, hτφ]
-  module
+  rw [← SmoothForm.mextDerivₗ_mpullback, hψ]
+  refine Subtype.ext ?_
+  -- The exterior derivative commutes with deck averaging.
+  rw [mextDerivₗ_apply, hη',
+    mextDeriv_invariantPart contMDiff_deck (η.isSmoothForm.of_le (by simp)), ← mextDerivₗ_apply,
+    hη, invariantPart_eq_self_iff, ← SmoothForm.coe_mpullback τ contMDiff_deck, hτφ]
 
 end Primitive
 

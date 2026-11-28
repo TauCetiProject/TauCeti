@@ -300,6 +300,15 @@ theorem mextDerivWithin_sub (hs : UniqueMDiffWithinAt I s x)
   rw [sub_eq_add_neg, mextDerivWithin_add hs hφ (by simpa using hη.neg),
     mextDerivWithin_neg hs, sub_eq_add_neg]
 
+/-- The exterior derivative is subtractive on forms whose coordinate expressions in the chart at
+the point are differentiable within `range I` there. -/
+theorem mextDeriv_sub
+    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) (range I) (extChartAt I x x))
+    (hη : DifferentiableWithinAt ℝ (η.inChartAt x) (range I) (extChartAt I x x)) :
+    mextDeriv (φ - η) x = mextDeriv φ x - mextDeriv η x := by
+  simp only [← mextDerivWithin_univ]
+  exact mextDerivWithin_sub (uniqueMDiffWithinAt_univ I) (by simpa using hφ) (by simpa using hη)
+
 /-- Swapping two tangent vectors negates the exterior derivative of a one-form. -/
 theorem mextDeriv_apply_swap (φ : RoughForm I M F 1) (x : M) (v w : TangentSpace I x) :
     mextDeriv φ x ![v, w] = -mextDeriv φ x ![w, v] :=
