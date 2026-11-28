@@ -25,7 +25,8 @@ public section
 
 namespace BoundedContinuousFunction
 
-variable (𝕜 V : Type*) [NormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+variable (𝕜 V : Type*) [Semiring 𝕜] [PseudoMetricSpace 𝕜]
+  [SeminormedAddCommGroup V] [Module 𝕜 V] [IsBoundedSMul 𝕜 V]
 
 section Monoid
 
@@ -33,9 +34,9 @@ variable (G : Type*) [Monoid G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-- Right translation on bounded continuous functions. -/
 noncomputable def rightRegular : Representation 𝕜 G (G →ᵇ V) where
-  toFun g := (compContinuousCLM V 𝕜 (ContinuousMap.mulRight g)).toLinearMap
-  map_one' := by ext f x; simp
-  map_mul' g h := by ext f x; simp [mul_assoc]
+  toFun g := compContinuousₗ V 𝕜 (ContinuousMap.mulRight g)
+  map_one' := by ext f x; simp [compContinuousₗ_apply]
+  map_mul' g h := by ext f x; simp [compContinuousₗ_apply, mul_assoc]
 
 variable {𝕜 V G}
 
@@ -43,23 +44,22 @@ variable {𝕜 V G}
 @[simp]
 theorem rightRegular_apply (g : G) (f : G →ᵇ V) (x : G) :
     rightRegular 𝕜 V G g f x = f (x * g) := by
-  simp only [rightRegular, MonoidHom.coe_mk, OneHom.coe_mk, ContinuousLinearMap.coe_coe,
-    compContinuousCLM_apply, compContinuous_apply, ContinuousMap.coe_mulRight]
+  simp only [rightRegular, MonoidHom.coe_mk, OneHom.coe_mk, compContinuousₗ_apply,
+    compContinuous_apply, ContinuousMap.coe_mulRight]
 
 /-- A surjective right translation preserves the supremum norm. -/
 theorem norm_rightRegular_of_surjective (g : G) (hg : Function.Surjective (· * g))
     (f : G →ᵇ V) : ‖rightRegular 𝕜 V G g f‖ = ‖f‖ := by
-  simpa only [rightRegular, MonoidHom.coe_mk, OneHom.coe_mk, ContinuousLinearMap.coe_coe,
-    compContinuousCLM_apply] using
+  simpa only [rightRegular, MonoidHom.coe_mk, OneHom.coe_mk, compContinuousₗ_apply] using
     f.norm_compContinuous_eq_of_surjective (ContinuousMap.mulRight g) hg
 
 private theorem mem_iInf_fixedSubmodule_mulLeft_iff (S : Set G) (f : G →ᵇ V) :
     f ∈ ⨅ γ : S,
-      (compContinuousCLM V 𝕜 (ContinuousMap.mulLeft (γ : G))).toLinearMap.fixedSubmodule ↔
+      (compContinuousₗ V 𝕜 (ContinuousMap.mulLeft (γ : G))).fixedSubmodule ↔
       ∀ γ ∈ S, ∀ x, f (γ * x) = f x := by
   simp only [Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff,
-    BoundedContinuousFunction.ext_iff, Subtype.forall, ContinuousLinearMap.coe_coe,
-    compContinuousCLM_apply, compContinuous_apply, ContinuousMap.coe_mulLeft]
+    BoundedContinuousFunction.ext_iff, Subtype.forall, compContinuousₗ_apply,
+    compContinuous_apply, ContinuousMap.coe_mulLeft]
 
 variable (𝕜 V) {H : Type*} [Monoid H] (S : Set G) (i : H →* G)
 
@@ -68,7 +68,7 @@ with right translation restricted along `i`. -/
 noncomputable def leftInvariantSubrepresentation :
     Subrepresentation ((rightRegular 𝕜 V G).comp i) where
   toSubmodule := ⨅ γ : S,
-    (compContinuousCLM V 𝕜 (ContinuousMap.mulLeft (γ : G))).toLinearMap.fixedSubmodule
+    (compContinuousₗ V 𝕜 (ContinuousMap.mulLeft (γ : G))).fixedSubmodule
   apply_mem_toSubmodule h f hf := by
     rw [mem_iInf_fixedSubmodule_mulLeft_iff] at hf ⊢
     simp only [MonoidHom.comp_apply, rightRegular_apply]
