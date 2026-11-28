@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.NumberTheory.Divisors
 
 /-!
@@ -19,7 +19,8 @@ import TauCeti.NumberTheory.Divisors
 
 Let `g` be a function on the natural numbers with values in a real Banach space, and put
 `a(t) = ∑_{d ∣ t} g(d)`. If `∑_d ‖g(d)‖ / √d` converges, then `a` has the mean value
-`C = ∑_d g(d) / d`, with a square-root error term:
+`C = ∑_d g(d) / d` (the series converges by
+`TauCeti.summable_inv_smul_of_summable_norm_div_sqrt`), with a square-root error term:
 
 `‖∑_{1 ≤ t ≤ x} a(t) - x C‖ ≤ √x ∑_d ‖g(d)‖ / √d` for every real `x ≥ 0`.
 
@@ -30,7 +31,6 @@ divisor `d > x` contributes `-(x / d) g(d)`, of norm at most `√(x / d) ‖g(d)
 
 ## Main results
 
-* `TauCeti.summable_inv_smul_of_summable_norm_div_sqrt`: the series `∑_d g(d) / d` converges.
 * `TauCeti.norm_sum_Ioc_sum_divisors_sub_smul_tsum_le`: the mean value estimate above.
 * `TauCeti.isBigO_sum_Ioc_sum_divisors_sub_smul_tsum`: `∑_{t ≤ x} a(t) - x C = O(√x)`.
 * `TauCeti.norm_sum_Ioc_mul_zeta_sub_mul_tsum_le`: the estimate for the Dirichlet convolution
@@ -76,17 +76,6 @@ private theorem abs_ite_natFloor_div_sub_mul_inv_le {x : ℝ} (hx : 0 ≤ x) (d 
       _ ≤ √x * √d * √d :=
           mul_le_mul_of_nonneg_left hs (mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))
       _ = √x * d := by rw [mul_assoc, Real.mul_self_sqrt hd'.le]
-
-/-- If `∑_d ‖g(d)‖ / √d` converges, then so does the series `∑_d g(d) / d` of the mean value. -/
-theorem summable_inv_smul_of_summable_norm_div_sqrt [CompleteSpace E] {g : ℕ → E}
-    (hg : Summable fun d : ℕ ↦ ‖g d‖ / √d) : Summable fun d : ℕ ↦ (d : ℝ)⁻¹ • g d := by
-  refine Summable.of_norm_bounded hg fun d ↦ ?_
-  rcases d.eq_zero_or_pos with rfl | hd
-  · simp
-  have hd' : (1 : ℝ) ≤ d := mod_cast hd
-  rw [norm_smul, norm_inv, Real.norm_natCast, inv_mul_eq_div]
-  exact div_le_div_of_nonneg_left (norm_nonneg _) (Real.sqrt_pos.2 (by linarith))
-    ((Real.sqrt_le_left (by linarith)).2 (by nlinarith))
 
 /-- **The mean value of a divisor sum.** If `∑_d ‖g(d)‖ / √d` converges, then for every real
 `x ≥ 0`,
