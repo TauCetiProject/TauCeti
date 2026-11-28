@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # The action of a decomposition group on its valuation subring
@@ -28,6 +29,8 @@ maximal ideal.
   and its complement in `L`.
 * `ValuationSubring.mem_decompositionSubgroup_iff`: an automorphism of `L` lies in the
   decomposition group exactly when it preserves `A` and its complement.
+* `ValuationSubring.mem_decompositionSubgroup_of_sub_mem_nonunits`: nonunit displacements
+  suffice for membership in the decomposition group.
 * `ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff`: decomposition-group membership
   is unchanged by restricting scalars along a tower of fields `K ⊆ E ⊆ L`.
 * `ValuationSubring.decompositionSubgroup.ext`: two elements of the decomposition group that agree
@@ -38,6 +41,8 @@ maximal ideal.
   inertia group exactly when it fixes the residue of every element of `A`.
 * `ValuationSubring.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal`: equivalently, when it moves
   every element of `A` by an element of the maximal ideal.
+* `ValuationSubring.mem_map_inertiaSubgroup_iff`: the displacement criterion for inertia
+  viewed inside the full Galois group.
 * `ValuationSubring.residue_smul_eq_pow_iff`: an element of the decomposition group acts on the
   residue of `x` as the `q`-th power exactly when `g x - x ^ q` is a nonunit of `A`.
 * `ValuationSubring.map_restrictScalarsHom_inertiaSubgroup`: the inertia group of `A` over an
@@ -82,6 +87,20 @@ theorem mem_decompositionSubgroup_iff (A : ValuationSubring L) (σ : L ≃ₐ[K]
   rw [← inv_mem_iff, MulAction.mem_stabilizer_iff]
   ext x
   rw [mem_inv_pointwise_smul_iff, AlgEquiv.smul_def, h]
+
+/-- An automorphism lies in the decomposition group if it moves each element of the
+valuation subring by a nonunit of that subring. -/
+theorem mem_decompositionSubgroup_of_sub_mem_nonunits (A : ValuationSubring L) {σ : L ≃ₐ[K] L}
+    (h : ∀ x ∈ A, σ x - x ∈ A.nonunits) : σ ∈ A.decompositionSubgroup K := by
+  have heq : A = A.comap σ.toRingHom := by
+    refine eq_of_le_of_nonunits_le (fun x hx ↦ ?_) (fun x hx ↦ ?_) <;>
+      simp only [mem_comap, mem_nonunits_comap, RingEquiv.toRingHom_eq_coe,
+        RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
+    · simpa only [sub_add_cancel] using A.add_mem _ _ (A.nonunits_subset (h x hx)) hx
+    · simpa only [sub_add_cancel] using A.nonunits.add_mem (h x (A.nonunits_subset hx)) hx
+  refine (A.mem_decompositionSubgroup_iff σ).mpr fun x ↦ ?_
+  simpa only [mem_comap, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv] using Iff.of_eq (congrArg (x ∈ ·) heq.symm)
 
 /-- **Decomposition-group membership is unchanged by restricting scalars**: for a tower of fields
 `K ⊆ E ⊆ L`, an automorphism of `L` over `E` lies in the decomposition group of `A` over `E`
@@ -134,6 +153,24 @@ theorem residue_smul_eq_pow_iff (A : ValuationSubring L) (g : A.decompositionSub
   rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff,
     ← coe_mem_nonunits_iff]
   simp [AlgEquiv.smul_def]
+
+/-- An automorphism belongs to the image of inertia in the ambient Galois group exactly
+when it moves every element of the valuation subring by a nonunit of that subring. -/
+theorem mem_map_inertiaSubgroup_iff {A : ValuationSubring L} {σ : L ≃ₐ[K] L} :
+    σ ∈ (A.inertiaSubgroup K).map (A.decompositionSubgroup K).subtype ↔
+      ∀ x ∈ A, σ x - x ∈ A.nonunits := by
+  rw [Subgroup.mem_map]
+  constructor
+  · rintro ⟨g, hg, rfl⟩ x hx
+    have h := (A.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal g).mp hg ⟨x, hx⟩
+    simpa only [AddSubgroupClass.coe_sub, coe_decompositionSubgroup_smul,
+      Subgroup.subtype_apply] using
+      (A.coe_mem_nonunits_iff).mpr h
+  · intro h
+    let g : A.decompositionSubgroup K := ⟨σ, A.mem_decompositionSubgroup_of_sub_mem_nonunits h⟩
+    refine ⟨g, (A.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal g).mpr fun x ↦ ?_, rfl⟩
+    apply (A.coe_mem_nonunits_iff).mp
+    simpa only [AddSubgroupClass.coe_sub, coe_decompositionSubgroup_smul] using h x x.property
 
 /-- **The inertia group over an intermediate field**: the inertia group of `A` over an intermediate
 field `E` of `L / K`, read as automorphisms over `K`, is the part of the inertia group of `A` over
