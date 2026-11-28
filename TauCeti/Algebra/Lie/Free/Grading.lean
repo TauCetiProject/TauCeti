@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.Lie.Loop
-public import TauCeti.Algebra.Lie.Presentation.Basic
+public import TauCeti.Algebra.Lie.Free.Basic
 
 /-!
 # Word-length grading of a free Lie algebra

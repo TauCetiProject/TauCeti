@@ -86,10 +86,8 @@ variable (h : IsSerreSystem R CM H E F)
 include h
 
 /-- `ad Eᵢ` kills each `Hⱼ` in two steps: `⁅Eᵢ, Hⱼ⁆` is a multiple of `Eᵢ`. -/
-private theorem H_mem_engel_E (i j : B) : H j ∈ LieSubalgebra.engel R (E i) := by
-  refine (LieSubalgebra.mem_engel_iff R _ _).2 ⟨2, ?_⟩
-  rw [ad_pow_succ_apply, pow_one, ad_apply, ← lie_skew (E i) (H j), h.lie_H_E j i]
-  simp
+private theorem H_mem_engel_E (i j : B) : H j ∈ LieSubalgebra.engel R (E i) :=
+  LieSubalgebra.mem_engel_of_lie_eq_smul (h.lie_H_E_smul j i)
 
 /-- The higher Serre relation, one step later: `ad Eᵢ` kills each `Eⱼ`. -/
 private theorem E_mem_engel_E (i j : B) : E j ∈ LieSubalgebra.engel R (E i) :=

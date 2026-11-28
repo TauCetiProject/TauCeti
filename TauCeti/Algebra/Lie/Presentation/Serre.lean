@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.SerreConstruction
 public import Mathlib.Algebra.Lie.Sl2
-public import TauCeti.Algebra.Lie.Presentation.Basic
-public import TauCeti.Algebra.Lie.Quotient
+public import TauCeti.Algebra.Lie.Basic
+public import TauCeti.Algebra.Lie.Free.Quotient
 
 /-!
 # The Serre presentation: generators, relations, and the universal property
@@ -592,13 +592,10 @@ theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
     (hF : ∀ i, g₁ (serreF R CM i) = g₂ (serreF R CM i)) : g₁ = g₂ := by
   have hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i) := fun i => by
     rw [← lie_serreE_serreF_self, LieHom.map_lie, LieHom.map_lie, hE, hF]
-  have hcomp : g₁.comp (serreMk R CM) = g₂.comp (serreMk R CM) := by
-    refine FreeLieAlgebra.hom_ext fun g => ?_
-    cases g with
-    | H i => exact hH i
-    | E i => exact hE i
-    | F i => exact hF i
-  exact (Relations.toIdeal R CM).lieHom_qext (DFunLike.congr_fun hcomp)
+  exact TauCeti.FreeLieAlgebra.quotient_hom_ext fun
+    | .H i => hH i
+    | .E i => hE i
+    | .F i => hF i
 
 /-- Two equivalences out of `Matrix.ToLieAlgebra R CM` agreeing on the raising and lowering
 generators are equal. -/

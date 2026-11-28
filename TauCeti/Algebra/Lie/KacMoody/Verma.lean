@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.KacMoody.CartanInjective
 public import TauCeti.Algebra.Lie.KacMoody.HighestWeight
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cyclic
+
+import TauCeti.Algebra.Lie.KacMoody.HighestWeightExistence
 
 /-!
 # Verma modules of a Kac–Moody algebra
@@ -181,14 +182,13 @@ end UniversalProperty
 
 section GeneralizedCartanMatrix
 
-variable {R} (hdiag : ∀ i, A i i = 2) (hneg : ∀ i j, i ≠ j → A i j ≤ 0)
-  (hzero : ∀ i j, A i j = 0 → A j i = 0)
-include hdiag hneg hzero
+variable {R} (hA : A.IsGeneralizedCartan)
+include hA
 
 /-- **The Verma module is nonzero.** For a generalized Cartan matrix, the canonical generator of
 `M(lam)` is nonzero for every weight `lam`. -/
 theorem vermaGenerator_ne_zero : vermaGenerator R lam ≠ 0 := by
-  obtain ⟨V, _, _, _, _, w, hw, hcartan, hpos⟩ := exists_highestWeightVector hdiag hneg hzero lam
+  obtain ⟨V, _, _, _, _, w, hw, hcartan, hpos⟩ := exists_highestWeightVector hA lam
   obtain ⟨φ, hφ, -⟩ := existsUnique_lieModuleHom_apply_vermaGenerator R lam
     (mem_weightSpace_iff.mpr hcartan) hpos
   intro h
@@ -197,11 +197,11 @@ theorem vermaGenerator_ne_zero : vermaGenerator R lam ≠ 0 := by
 
 /-- For a generalized Cartan matrix, the Verma ideal is a proper left ideal of `U(𝔤)`. -/
 theorem vermaIdeal_ne_top : vermaIdeal R lam ≠ ⊤ :=
-  (cyclicGenerator_eq_zero_iff _).not.mp (vermaGenerator_ne_zero lam hdiag hneg hzero)
+  (cyclicGenerator_eq_zero_iff _).not.mp (vermaGenerator_ne_zero lam hA)
 
 /-- For a generalized Cartan matrix, every Verma module is nontrivial. -/
 theorem nontrivial_vermaModule : Nontrivial (VermaModule R lam) :=
-  ⟨⟨vermaGenerator R lam, 0, vermaGenerator_ne_zero lam hdiag hneg hzero⟩⟩
+  ⟨⟨vermaGenerator R lam, 0, vermaGenerator_ne_zero lam hA⟩⟩
 
 end GeneralizedCartanMatrix
 
@@ -237,11 +237,10 @@ instance (μ : Module.Dual K H) : FiniteDimensional K (weightSpace R (VermaModul
 
 /-- For a generalized Cartan matrix over a field of characteristic zero, the weight space of `lam`
 in `M(lam)` is one-dimensional. -/
-theorem finrank_weightSpace_vermaModule_self (hdiag : ∀ i, A i i = 2)
-    (hneg : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 → A j i = 0) :
+theorem finrank_weightSpace_vermaModule_self (hA : A.IsGeneralizedCartan) :
     Module.finrank K (weightSpace R (VermaModule R lam) lam) = 1 := by
   rw [weightSpace_vermaModule_self_eq_span_singleton, finrank_span_singleton]
-  exact vermaGenerator_ne_zero lam hdiag hneg hzero
+  exact vermaGenerator_ne_zero lam hA
 
 end KacMoody
 
