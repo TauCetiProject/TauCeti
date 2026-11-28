@@ -203,22 +203,28 @@ private noncomputable def ramificationResiduePost (ht : P.ord t = 1) (i : ℕ) :
     Multiplicative (P.integers →
       ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)) ⧸
         (IsLocalRing.maximalIdeal P.integers • ⊤ :
-          Submodule P.integers ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)))) →*
+          Submodule P.integers ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)))) ≃*
       Multiplicative (P.integers → P.ResidueField) :=
   let π : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
   let hπ : Irreducible π :=
     P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
-  ((residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm.toAddMonoidHom.compLeft
-    P.integers).toMultiplicative
+  (AddEquiv.piCongrRight fun _ ↦
+    (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm.toAddEquiv
+  ).toMultiplicative
 
-private theorem ramificationResiduePost_injective (ht : P.ord t = 1) (i : ℕ) :
-    Function.Injective (ramificationResiduePost P ht i) := by
-  intro a b hab
-  apply Multiplicative.toAdd.injective
-  funext x
-  have h := congrFun (congrArg Multiplicative.toAdd hab) x
-  dsimp only [ramificationResiduePost] at h
-  exact (residueFieldEquivMaximalIdealGradedOfUniformizer _ _ (i + 2)).symm.injective h
+private theorem toAdd_ramificationResiduePost_apply (ht : P.ord t = 1) (i : ℕ)
+    (f : Multiplicative (P.integers →
+      ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)) ⧸
+        (IsLocalRing.maximalIdeal P.integers • ⊤ :
+          Submodule P.integers ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)))))
+    (x : P.integers) :
+    let π : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
+    let hπ : Irreducible π :=
+      P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
+    Multiplicative.toAdd (ramificationResiduePost P ht i f) x =
+      (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm
+        (Multiplicative.toAdd f x) :=
+  rfl
 
 /-- **The ramification residue** (Stichtenoth, Proposition 3.8.5): for a uniformizer `t` at `P`,
 the map sending an automorphism `σ` of `G_{i+1}(P)` to the function `z ↦ ((σ z - z)/t^{i+2})(P)`
@@ -227,7 +233,7 @@ the uniformizer coordinate `TauCeti.residueFieldEquivMaximalIdealGradedOfUniform
 depends on the choice of `t`; its kernel, `TauCeti.Place.ker_ramificationResidueHom`, does not. -/
 noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     ramificationGroup F P (i + 1) →* Multiplicative (P.integers → P.ResidueField) :=
-  (ramificationResiduePost P ht i).comp
+  (ramificationResiduePost P ht i).toMonoidHom.comp
     ((IsLocalRing.ramificationGroupToMaximalIdealGraded
         (P.integers.decompositionSubgroup F) P.integers i).comp
       (MulEquiv.subgroupCongr (by rw [ramificationGroup_def, Nat.cast_succ])).toMonoidHom)
@@ -253,12 +259,10 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
           IsLocalRing.mem_ramificationGroup_add_one_iff.mp g'.property x⟩) := by
     have hg' : (MulEquiv.subgroupCongr (by rw [ramificationGroup_def, Nat.cast_succ])) g = g' :=
       Subtype.ext (MulEquiv.subgroupCongr_apply _ _)
-    rw [ramificationResidueHom, ramificationResiduePost, MonoidHom.comp_apply, MonoidHom.comp_apply,
-      MulEquiv.coe_toMonoidHom, hg']
-    exact congrArg
-      (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm
-      (IsLocalRing.toAdd_ramificationGroupToMaximalIdealGraded_apply
-        (P.integers.decompositionSubgroup F) P.integers i g' x)
+    rw [ramificationResidueHom, MonoidHom.comp_apply, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, hg',
+      toAdd_ramificationResiduePost_apply,
+      IsLocalRing.toAdd_ramificationGroupToMaximalIdealGraded_apply]
   have hsub : (g' : P.integers.decompositionSubgroup F) • x - x = y * π ^ (i + 2) :=
     Subtype.ext <| by
       rw [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
@@ -281,7 +285,7 @@ theorem ker_ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     (ramificationResidueHom F P ht i).ker =
       (ramificationGroup F P (i + 2)).subgroupOf (ramificationGroup F P (i + 1)) := by
   rw [ramificationResidueHom,
-    MonoidHom.ker_comp_of_injective _ _ (ramificationResiduePost_injective P ht i),
+    MonoidHom.ker_comp_of_injective _ _ (ramificationResiduePost P ht i).injective,
     ← MonoidHom.comap_ker, IsLocalRing.ker_ramificationGroupToMaximalIdealGraded]
   ext g
   simp only [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, Subgroup.mem_subgroupOf,

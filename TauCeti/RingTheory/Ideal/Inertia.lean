@@ -43,7 +43,9 @@ namespace TauCeti.Ideal
 variable {G : Type*} [Group G] {S : Type*} [Ring S] [MulSemiringAction G S]
 
 /-- If `σ ∈ J.inertia G` moves every element of `J` into `I`, then powers of `σ` act to first
-order modulo `I` like multiples of `σ`: `σ ^ m x - x ≡ m (σ x - x)` modulo `I`. -/
+order modulo `I` like multiples of `σ`: `σ ^ m x - x ≡ m (σ x - x)` modulo `I`. This generalizes
+the former `smul_pow_sub_sub_nsmul_mem` in
+`TauCeti/RingTheory/LocalRing/RamificationGroup/Graded.lean`. -/
 theorem smul_pow_sub_sub_nsmul_mem_of_inertia {I J : Ideal S} {σ : G}
     (hσ : σ ∈ J.inertia G) (hJ : ∀ w ∈ J, σ • w - w ∈ I) (m : ℕ) (x : S) :
     σ ^ m • x - x - m • (σ • x - x) ∈ I := by

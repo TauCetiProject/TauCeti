@@ -37,7 +37,11 @@ commutative and `G_0` acts trivially on `G_0 / G_1` by conjugation.
 Without any base ring or separability assumption, conjugation equivariance holds for
 `TauCeti.IsLocalRing.tameCharacter`, `TauCeti.IsLocalRing.tameCharacterGraded`, and
 `TauCeti.IsLocalRing.ramificationGroupGradedToResidueField`, and in residue characteristic zero a
-faithful action with finite `G_0` has injective tame character and cyclic inertia `G_0`.
+faithful action with finite `G_0` has injective tame character and cyclic inertia `G_0`. The
+conjugation formulas (`ramificationGroupGradedConj_zero`, `tameCharacter_conj`,
+`tameCharacterGraded_ramificationGroupGradedConj`, and `ramificationGroupGradedToResidueField_conj`)
+generalize the local-field formalization in
+`TauCeti/NumberTheory/LocalField/UnitFiltration/Conjugation.lean`.
 
 ## Main definitions
 
@@ -127,6 +131,12 @@ private theorem coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (uniformizerRatio i hϖ σ : Bˣ) = uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ hσϖ :=
   rfl
 
+/-- The uniformizer ratio of the identity element is `1`. -/
+@[simp]
+theorem uniformizerRatio_one (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ) :
+    uniformizerRatio (G := G) i hϖ 1 = 1 := by
+  exact Subtype.ext (Units.ext (mul_left_cancel₀ hϖ.ne_zero (by simp)))
+
 /-- The 1-cocycle identity `u_{στ} = u_σ * σ(u_τ)` in `Bˣ` for the uniformizer ratio. -/
 theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ τ : ramificationGroup G B (i : ℤ)) :
@@ -174,7 +184,9 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (i : ℕ) {ϖ : B} (hϖ : 
       QuotientGroup.mk (uniformizerRatio i hϖ σ) :=
   (rfl)
 
-private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irreducible ϖ)
+/-- **Change-of-uniformizer coboundary law** for the uniformizer ratio: if `ϖ' = ϖ * a`, then
+`a * u_σ(ϖ') = u_σ(ϖ) * σ(a)` in `Bˣ`. -/
+theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irreducible ϖ)
     (hϖ' : Irreducible ϖ') (σ : ramificationGroup G B (i : ℤ)) :
     uniformizerChangeUnit ϖ ϖ' hϖ hϖ' * (uniformizerRatio i hϖ' σ : Bˣ) =
       (uniformizerRatio i hϖ σ : Bˣ) *
@@ -447,6 +459,16 @@ theorem tameCharacterGraded_ramificationGroupGradedConj (g : G)
     rw [ramificationGroupGradedConj_mk, tameCharacterGraded_mk, tameCharacterGraded_mk,
       tameCharacter_conj]
 
+private theorem residue_uniformizerChangeUnit_inv_smul {ϖ : S} (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G S 0) (hσϖ : Irreducible ((σ : G)⁻¹ • ϖ) := hϖ.smul _) :
+    residue S (uniformizerChangeUnit ϖ ((σ : G)⁻¹ • ϖ) hϖ hσϖ : S) =
+      (tameCharacter G S σ : ResidueField S)⁻¹ := by
+  have h1 : (tameCharacter G S σ⁻¹ : ResidueField S) =
+      residue S (uniformizerChangeUnit ϖ ((σ : G)⁻¹ • ϖ) hϖ hσϖ : S) :=
+    coe_tameCharacter_of_smul_eq_mul hϖ
+      (by simp)
+  rw [← h1, map_inv, Units.val_inv_eq_inv_val]
+
 /-- **Conjugation action formula on positive ramification quotients** (Serre, *Local Fields*,
 IV §2, Proposition 9): in the residue coordinate determined by `ϖ`, conjugation by `σ ∈ G_0` acts
 on `G_{n+1} / G_{n+2}` as multiplication by `(tameCharacter G S σ) ^ (n + 1)`. -/
@@ -484,26 +506,12 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) {ϖ : S} (hϖ : Irr
       rw [ramificationGroupToResidueField_apply_of_smul_sub_eq hϖ hconjMove, toAdd_ofAdd]
     have hresidue : residue S (g • y) = residue S y :=
       residue_smul_eq_of_mem_ramificationGroup_zero G S σ.property y
-    set a : Sˣ := uniformizerChangeUnit ϖ ϖ' hϖ hϖ'
-    have hprodB : ((IsDiscreteValuationRing.uniformizerRatio 0 hϖ σ : Sˣ) : S) * (g • (a : S)) =
-        1 := by
-      apply mul_left_cancel₀ hϖ.ne_zero
-      calc ϖ * (((IsDiscreteValuationRing.uniformizerRatio 0 hϖ σ : Sˣ) : S) * (g • (a : S)))
-          = (g • ϖ) * (g • (a : S)) := by
-            rw [← mul_assoc, IsDiscreteValuationRing.mul_coe_uniformizerRatio]
-        _ = g • (ϖ * (a : S)) := (smul_mul' g _ _).symm
-        _ = g • ϖ' := by rw [mul_uniformizerChangeUnit]
-        _ = ϖ * 1 := by simp [ϖ']
-    have hprod : (tameCharacter G S σ : ResidueField S) * residue S (a : S) = 1 := by
-      rw [coe_tameCharacter_of_smul_eq_mul hϖ
-          (IsDiscreteValuationRing.mul_coe_uniformizerRatio 0 hϖ σ).symm,
-        ← residue_smul_eq_of_mem_ramificationGroup_zero G S σ.property (a : S),
-        ← map_mul, hprodB, map_one]
     have hchange := toAdd_ramificationGroupToResidueField_of_mul_eq hϖ hϖ'
       (mul_uniformizerChangeUnit ϖ ϖ' hϖ hϖ') τ
     rw [ramificationGroupGradedConj_mk, ramificationGroupGradedToResidueField_mk,
       ramificationGroupGradedToResidueField_mk, hconjCoord, hresidue, ← hτcoord, hchange,
-      ← mul_assoc, ← mul_pow, hprod, one_pow, one_mul]
+      residue_uniformizerChangeUnit_inv_smul hϖ σ hϖ', inv_pow, ← mul_assoc,
+      mul_inv_cancel₀ (pow_ne_zero _ (Units.ne_zero _)), one_mul]
 
 end Conjugation
 

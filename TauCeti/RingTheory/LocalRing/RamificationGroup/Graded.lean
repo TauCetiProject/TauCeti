@@ -43,7 +43,9 @@ The positive-depth homomorphism `ramificationGroupToMaximalIdealGraded` and its 
 generalize the uniformizer-dependent residue map of
 `TauCeti/FieldTheory/FunctionField/Place/Extension/RamificationGroup.lean`; maximal-ideal
 propagation (`mem_inertia_of_forall_mem_maximalIdeal`) is adapted from
-`TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`; and the Sylow API
+`TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean` using the separable
+polynomial lift `TauCeti.IsLocalRing.exists_aeval_mem_maximalIdeal_isUnit_aeval_derivative` from
+`TauCeti/RingTheory/LocalRing/Monogenic.lean`; and the Sylow API
 (`ramificationGroupOneSylow`, `natCard_ramificationGroup_one`,
 `ramificationGroup_one_eq_bot_iff_not_dvd_natCard`) generalizes
 `TauCeti/NumberTheory/LocalField/UnitFiltration/RamificationGroup.lean`.
@@ -216,6 +218,22 @@ theorem mem_ramificationGroup_add_one_of_pow_mem {i : ℤ} (hi : 0 < i) {σ : G}
       (smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup hσ hw))
     hm hpow
 
+/-- Two elements of `𝔪 ^ m` represent the same class in `𝔪 ^ m ⧸ (𝔪 • ⊤)` iff their difference
+lies in `𝔪 ^ (m + 1)`. -/
+private theorem maximalIdealPowQuotient_mk_eq_mk_iff {m : ℕ} {x y : ↥(maximalIdeal S ^ m)} :
+    (Submodule.Quotient.mk x :
+        ↥(maximalIdeal S ^ m) ⧸ (maximalIdeal S • ⊤ : Submodule S ↥(maximalIdeal S ^ m))) =
+      Submodule.Quotient.mk y ↔ (x : S) - (y : S) ∈ maximalIdeal S ^ (m + 1) := by
+  rw [Submodule.Quotient.eq, Ideal.smul_top_eq_comap_mul, Submodule.mem_comap,
+    Submodule.coe_subtype, Submodule.coe_sub, pow_succ]
+
+/-- An element of `𝔪 ^ m` vanishes in `𝔪 ^ m ⧸ (𝔪 • ⊤)` iff it lies in `𝔪 ^ (m + 1)`. -/
+private theorem maximalIdealPowQuotient_mk_eq_zero_iff {m : ℕ} {x : ↥(maximalIdeal S ^ m)} :
+    (Submodule.Quotient.mk x :
+        ↥(maximalIdeal S ^ m) ⧸ (maximalIdeal S • ⊤ : Submodule S ↥(maximalIdeal S ^ m))) =
+      0 ↔ (x : S) ∈ maximalIdeal S ^ (m + 1) := by
+  simpa using maximalIdealPowQuotient_mk_eq_mk_iff (x := x) (y := 0)
+
 variable (G S) in
 /-- At positive depth `n + 1`, sending `σ ∈ G_{n+1}` to the function
 `x ↦ [σ • x - x] ∈ 𝔪 ^ (n + 2) ⧸ 𝔪 • ⊤` is a group homomorphism into the multiplicative form of an
@@ -234,9 +252,8 @@ def ramificationGroupToMaximalIdealGraded (n : ℕ) :
     fun σ τ ↦ by
       rw [← ofAdd_add]
       refine congrArg Multiplicative.ofAdd (funext fun x ↦ ?_)
-      rw [Pi.add_apply, ← Submodule.Quotient.mk_add, Submodule.Quotient.eq,
-        Ideal.smul_top_eq_comap_mul, Submodule.mem_comap, Submodule.coe_subtype,
-        Submodule.coe_sub, Submodule.coe_add]
+      rw [Pi.add_apply, ← Submodule.Quotient.mk_add, maximalIdealPowQuotient_mk_eq_mk_iff,
+        Submodule.coe_add]
       have hdiff : ((σ * τ : ramificationGroup G S ((n : ℤ) + 1)) : G) • x - x -
           (((σ : G) • x - x) + ((τ : G) • x - x)) =
           (σ : G) • ((τ : G) • x - x) - ((τ : G) • x - x) := by
@@ -245,7 +262,7 @@ def ramificationGroupToMaximalIdealGraded (n : ℕ) :
       have hσ' : (σ : G) ∈ ramificationGroup G S (n + 1 : ℕ) := by exact_mod_cast σ.property
       have hτ' : (τ : G) • x - x ∈ maximalIdeal S ^ (n + 1 + 1) :=
         mem_ramificationGroup_add_one_iff.mp τ.property x
-      rw [hdiff, ← pow_succ]
+      rw [hdiff]
       exact Ideal.pow_le_pow_right (by omega)
         (smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup (k := n + 1) hσ' hτ')
 
@@ -271,8 +288,7 @@ theorem ker_ramificationGroupToMaximalIdealGraded (n : ℕ) :
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, ← toAdd_eq_zero, funext_iff,
     hidx, mem_ramificationGroup_natCast_iff]
   simp only [toAdd_ramificationGroupToMaximalIdealGraded_apply, Pi.zero_apply,
-    Submodule.Quotient.mk_eq_zero, Ideal.smul_top_eq_comap_mul, Submodule.mem_comap,
-    Submodule.coe_subtype, ← pow_succ]
+    maximalIdealPowQuotient_mk_eq_zero_iff]
 
 variable (G S) in
 /-- The canonical positive-depth embedding

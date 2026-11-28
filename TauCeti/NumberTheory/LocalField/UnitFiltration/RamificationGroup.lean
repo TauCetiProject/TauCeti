@@ -163,6 +163,12 @@ theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G �
   simp [← Subring.coe_mul, TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio,
     coe_smul_integer]
 
+/-- The uniformizer ratio of the identity element is `1`. -/
+@[simp]
+theorem uniformizerRatio_one (hϖ : Irreducible ϖ) :
+    uniformizerRatio (G := G) i hϖ 1 = 1 := by
+  simp [uniformizerRatio]
+
 /-- For `σ` in the `i`-th ramification group and `ϖ` a uniformizer, the ratio `σ ϖ / ϖ` lies in
 the `i`-th step `U(L,i)` of the unit filtration. -/
 theorem mem_unitFiltration_of_val_eq_smul_div (hϖ : Irreducible ϖ)
