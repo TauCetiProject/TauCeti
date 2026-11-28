@@ -1074,6 +1074,12 @@ lemma stackification_obj (U : LocallyDiscrete Cᵒᵖ) :
     (stackification.{w} J F).obj U = Cat.of (Obj.{w} J F U.as.unop) :=
   (rfl)
 
+/-- The stackification of a prestack in groupoids has groupoid fibres. -/
+instance isGroupoid_stackification_obj [∀ T : C, IsGroupoid (F.obj (.mk (op T)))]
+    (U : LocallyDiscrete Cᵒᵖ) : IsGroupoid ((stackification.{w} J F).obj U) := by
+  rw [stackification_obj]
+  exact Obj.isGroupoid
+
 /-- The pullback functors of the stackification are the functors `Obj.pullFunctor`. -/
 @[simp]
 lemma stackification_map_toFunctor {U V : LocallyDiscrete Cᵒᵖ} (f : U ⟶ V) :
