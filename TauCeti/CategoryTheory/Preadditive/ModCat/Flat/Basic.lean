@@ -55,6 +55,13 @@ class Flat (F : ModCat.{w} C) : Prop where
 
 variable {F : ModCat.{w} C}
 
+/-- Evaluating a module morphism on a relation sum commutes with forming the sum. -/
+theorem map_relation_sum {G : ModCat.{w} C} (f : F ⟶ G) {X : C} {ι : Type*} [Fintype ι]
+    {Y : ι → C} (β : ∀ j, X ⟶ Y j) (y : ∀ j, F.obj.obj (op (Y j))) :
+    f.hom.app (op X) (∑ j, F.obj.map (β j).op (y j)) =
+      ∑ j, G.obj.map (β j).op (f.hom.app (op (Y j)) (y j)) := by
+  simp only [map_sum, f.hom.naturality_apply]
+
 /-- A module morphism sends a trivial relation to a trivial relation with the same
 coefficient matrix. -/
 theorem IsTrivialRelation.map {F G : ModCat.{w} C} {X : C} {n : ℕ} {Y : Fin n → C}
@@ -64,19 +71,37 @@ theorem IsTrivialRelation.map {F G : ModCat.{w} C} {X : C} {n : ℕ} {Y : Fin n 
   obtain ⟨m, Z, z, α, hy, hα⟩ := isTrivialRelation_def.mp h
   refine isTrivialRelation_def.mpr ⟨m, Z, fun i ↦ f.hom.app (op (Z i)) (z i), α, ?_, hα⟩
   intro j
-  simpa only [map_sum, f.hom.naturality_apply] using
-    congrArg (f.hom.app (op (Y j))) (hy j)
+  rw [← map_relation_sum, hy j]
+
+/-- The pointwise sum of two trivial relations for the same row is trivial. -/
+theorem IsTrivialRelation.add {X : C} {n : ℕ} {Y : Fin n → C}
+    {β : ∀ j, X ⟶ Y j} {y y' : ∀ j, F.obj.obj (op (Y j))}
+    (h : F.IsTrivialRelation β y) (h' : F.IsTrivialRelation β y') :
+    F.IsTrivialRelation β (fun j ↦ y j + y' j) := by
+  obtain ⟨m, Z, z, α, hy, hα⟩ := isTrivialRelation_def.mp h
+  obtain ⟨m', Z', z', α', hy', hα'⟩ := isTrivialRelation_def.mp h'
+  let W : Fin m ⊕ Fin m' → C := Sum.elim Z Z'
+  let t : ∀ i, F.obj.obj (op (W i)) := Sum.rec z z'
+  let γ : ∀ i j, Y j ⟶ W i := Sum.rec α α'
+  have ha : ∀ i : Fin m ⊕ Fin m', ∑ j, β j ≫ γ i j = 0
+    | .inl i => hα i
+    | .inr i => hα' i
+  have hs (j : Fin n) : y j + y' j = ∑ i, F.obj.map (γ i j).op (t i) := by
+    rw [Fintype.sum_sum_type]
+    exact congrArg₂ (· + ·) (hy j) (hy' j)
+  let e : Fin (m + m') ≃ Fin m ⊕ Fin m' := finSumFinEquiv.symm
+  refine isTrivialRelation_def.mpr
+    ⟨m + m', W ∘ e, fun i ↦ t (e i), fun i ↦ γ (e i), fun j ↦ (hs j).trans ?_, fun i ↦ ha (e i)⟩
+  exact (e.sum_comp fun i ↦ F.obj.map (γ i j).op (t i)).symm
 
 /-- A retract of a flat module is flat. -/
 theorem Flat.of_retract {F G : ModCat.{w} C} [G.Flat] (e : Retract F G) : F.Flat where
   isTrivialRelation {X n Y} β y h := by
     have hG : ∑ j, G.obj.map (β j).op (e.i.hom.app (op (Y j)) (y j)) = 0 := by
-      simpa only [map_sum, e.i.hom.naturality_apply, map_zero] using
-        congrArg (e.i.hom.app (op X)) h
+      rw [← map_relation_sum, h, map_zero]
     have hFG (j : Fin n) :
-        e.r.hom.app (op (Y j)) (e.i.hom.app (op (Y j)) (y j)) = y j := by
-      have he := congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j))) e.retract
-      exact ConcreteCategory.congr_hom he (y j)
+        e.r.hom.app (op (Y j)) (e.i.hom.app (op (Y j)) (y j)) = y j :=
+      congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j)) (y j)) e.retract
     simpa only [hFG] using (Flat.isTrivialRelation β _ hG).map e.r
 
 /-- An isomorphism transports flatness from its source to its target. -/
@@ -86,6 +111,15 @@ theorem Flat.of_iso [F.Flat] {G : ModCat.{w} C} (e : F ≅ G) : G.Flat :=
 /-- Flatness is invariant under isomorphism. -/
 theorem flat_iff_of_iso {G : ModCat.{w} C} (e : F ≅ G) : F.Flat ↔ G.Flat :=
   ⟨fun _ ↦ Flat.of_iso e, fun _ ↦ Flat.of_iso e.symm⟩
+
+/-- A zero module is flat. -/
+theorem Flat.of_isZero (hF : IsZero F) : F.Flat where
+  isTrivialRelation {X n Y} β y _ := by
+    refine isTrivialRelation_def.mpr
+      ⟨0, Fin.elim0, (fun i ↦ i.elim0), (fun i ↦ i.elim0), ?_, fun i ↦ i.elim0⟩
+    intro j
+    rw [Finset.univ_eq_empty, Finset.sum_empty]
+    exact congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j)) (y j)) ((IsZero.iff_id_eq_zero F).mp hF)
 
 private theorem sum_map_sum_map {X : C} {n m : ℕ} {Y : Fin n → C} {Z : Fin m → C}
     (β : ∀ j, X ⟶ Y j) (α : ∀ i j, Y j ⟶ Z i) (z : ∀ i, F.obj.obj (op (Z i))) :

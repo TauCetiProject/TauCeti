@@ -42,38 +42,6 @@ namespace TauCeti.ModCat
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-/-- The pointwise sum of two trivial relations for the same row is trivial. -/
-theorem IsTrivialRelation.add {F : ModCat.{w} C} {X : C} {n : ℕ} {Y : Fin n → C}
-    {β : ∀ j, X ⟶ Y j} {y y' : ∀ j, F.obj.obj (op (Y j))}
-    (h : F.IsTrivialRelation β y) (h' : F.IsTrivialRelation β y') :
-    F.IsTrivialRelation β (fun j ↦ y j + y' j) := by
-  obtain ⟨m, Z, z, α, hy, hα⟩ := isTrivialRelation_def.mp h
-  obtain ⟨m', Z', z', α', hy', hα'⟩ := isTrivialRelation_def.mp h'
-  let W : Fin m ⊕ Fin m' → C := Sum.elim Z Z'
-  let t : ∀ i, F.obj.obj (op (W i)) := Sum.rec z z'
-  let γ : ∀ i j, Y j ⟶ W i := Sum.rec α α'
-  have ha : ∀ i : Fin m ⊕ Fin m', ∑ j, β j ≫ γ i j = 0
-    | .inl i => hα i
-    | .inr i => hα' i
-  have hs (j : Fin n) : y j + y' j = ∑ i, F.obj.map (γ i j).op (t i) := by
-    rw [Fintype.sum_sum_type]
-    exact congrArg₂ (· + ·) (hy j) (hy' j)
-  let e : Fin (m + m') ≃ Fin m ⊕ Fin m' := finSumFinEquiv.symm
-  refine isTrivialRelation_def.mpr
-    ⟨m + m', W ∘ e, fun i ↦ t (e i), fun i ↦ γ (e i), fun j ↦ (hs j).trans ?_, fun i ↦ ha (e i)⟩
-  exact (e.sum_comp fun i ↦ F.obj.map (γ i j).op (t i)).symm
-
-/-- A zero module is flat. -/
-theorem Flat.of_isZero {F : ModCat.{w} C} (hF : IsZero F) : F.Flat where
-  isTrivialRelation {X n Y} β y _ := by
-    refine isTrivialRelation_def.mpr
-      ⟨0, Fin.elim0, (fun i ↦ i.elim0), (fun i ↦ i.elim0), ?_, fun i ↦ i.elim0⟩
-    intro j
-    rw [Finset.univ_eq_empty, Finset.sum_empty]
-    have hF' := (IsZero.iff_id_eq_zero F).mp hF
-    have hz := congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j))) hF'
-    exact ConcreteCategory.congr_hom hz (y j)
-
 /-- The binary biproduct of flat modules is flat. -/
 instance flat_biprod (F G : ModCat.{w} C) [F.Flat] [G.Flat] : (F ⊞ G).Flat where
   isTrivialRelation {X n Y} β y h := by
@@ -82,16 +50,14 @@ instance flat_biprod (F G : ModCat.{w} C) [F.Flat] [G.Flat] : (F ⊞ G).Flat whe
     let i : F ⟶ F ⊞ G := biprod.inl
     let j : G ⟶ F ⊞ G := biprod.inr
     have hp : ∑ l, F.obj.map (β l).op (p.hom.app (op (Y l)) (y l)) = 0 := by
-      simpa only [map_sum, p.hom.naturality_apply, map_zero] using
-        congrArg (p.hom.app (op X)) h
+      rw [← map_relation_sum, h, map_zero]
     have hq : ∑ l, G.obj.map (β l).op (q.hom.app (op (Y l)) (y l)) = 0 := by
-      simpa only [map_sum, q.hom.naturality_apply, map_zero] using
-        congrArg (q.hom.app (op X)) h
+      rw [← map_relation_sum, h, map_zero]
     have hsum (l : Fin n) :
         i.hom.app (op (Y l)) (p.hom.app (op (Y l)) (y l)) +
           j.hom.app (op (Y l)) (q.hom.app (op (Y l)) (y l)) = y l := by
       have ht : p ≫ i + q ≫ j = 𝟙 (F ⊞ G) := biprod.total
-      exact ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom.app (op (Y l))) ht) (y l)
+      exact congrArg (fun f : F ⊞ G ⟶ F ⊞ G ↦ f.hom.app (op (Y l)) (y l)) ht
     simpa only [hsum] using
       ((Flat.isTrivialRelation β _ hp).map i).add ((Flat.isTrivialRelation β _ hq).map j)
 
@@ -116,21 +82,20 @@ theorem Flat.of_isColimit {J : Type*} [Category* J] [IsFiltered J] [EssentiallyS
     let f (l : Fin n) : j l ⟶ k := (hk (Finset.mem_image_of_mem j (Finset.mem_univ l))).some
     let b (l : Fin n) := (D.map (f l)).hom.app (op (Y l)) (a l)
     have hb (l : Fin n) : (ι k).hom.app (op (Y l)) (b l) = y l := by
-      have hf := congrArg (fun g ↦ g.hom.app (op (Y l))) (c.w (f l))
-      exact (ConcreteCategory.congr_hom hf (a l)).trans (ha l)
+      exact (congrArg (fun g : D.obj (j l) ⟶ c.pt ↦ g.hom.app (op (Y l)) (a l))
+        (c.w (f l))).trans (ha l)
     have hk₀ : (ι k).hom.app (op X) (∑ l, (D.obj k).obj.map (β l).op (b l)) =
         (ι k).hom.app (op X) 0 := by
-      simp only [map_sum, (ι k).hom.naturality_apply, hb, h, map_zero]
+      simp only [map_relation_sum, hb, h, map_zero]
     obtain ⟨m, g, g', hg⟩ := Concrete.isColimit_exists_of_rep_eq (D ⋙ ev X) (hc' X) _ _ hk₀
     let b' (l : Fin n) := (D.map g).hom.app (op (Y l)) (b l)
     have hm : ∑ l, (D.obj m).obj.map (β l).op (b' l) = 0 := by
       -- The maps of the evaluated diagram are the components of the module morphisms.
       change (D.map g).hom.app (op X) (∑ l, (D.obj k).obj.map (β l).op (b l)) =
         (D.map g').hom.app (op X) 0 at hg
-      simpa only [map_sum, (D.map g).hom.naturality_apply, map_zero, b'] using hg
+      simpa only [map_relation_sum, map_zero, b'] using hg
     have hb' (l : Fin n) : (ι m).hom.app (op (Y l)) (b' l) = y l := by
-      have hg' := congrArg (fun f ↦ f.hom.app (op (Y l))) (c.w g)
-      exact (ConcreteCategory.congr_hom hg' (b l)).trans (hb l)
+      exact (congrArg (fun f : D.obj k ⟶ c.pt ↦ f.hom.app (op (Y l)) (b l)) (c.w g)).trans (hb l)
     simpa only [hb'] using (Flat.isTrivialRelation β b' hm).map (ι m)
 
 /-- Flatness as an object property on the category of modules. -/
