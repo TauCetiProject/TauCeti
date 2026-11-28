@@ -97,12 +97,21 @@ end TauCeti.QuaternionAlgebra
 namespace TauCeti.IntegralOrder.IsOrder
 
 variable {R F : Type*} [CommRing R] [Field F] [Algebra R F] {c₁ c₂ c₃ : F}
-  [IsFractionRing R F] [IsIntegrallyClosed R] {Λ : Subalgebra R ℍ[F,c₁,c₂,c₃]}
+  [IsFractionRing R F] [IsIntegrallyClosed R]
 
 /-- **Orders are stable under conjugation.** If `R` is integrally closed with fraction field `F`,
 every `R`-order in `ℍ[F,c₁,c₂,c₃]` contains the conjugates of its elements. -/
-theorem star_mem (h : IsOrder F Λ) {x : ℍ[F,c₁,c₂,c₃]} (hx : x ∈ Λ) : star x ∈ Λ :=
-  TauCeti.QuaternionAlgebra.star_mem_of_isIntegral (h.isIntegral hx) hx
+theorem star_mem [alg : Algebra R ℍ[F,c₁,c₂,c₃]]
+    [tower : @IsScalarTower R F ℍ[F,c₁,c₂,c₃] _ _ alg.toSMul]
+    {Λ : Subalgebra R ℍ[F,c₁,c₂,c₃]} (h : IsOrder F Λ) {x : ℍ[F,c₁,c₂,c₃]}
+    (hx : x ∈ Λ) : star x ∈ Λ := by
+  have halg : alg = QuaternionAlgebra.instAlgebra :=
+    Algebra.algebra_ext _ _ fun r =>
+      @IsScalarTower.algebraMap_apply R F ℍ[F,c₁,c₂,c₃] _ _ _ _ _ alg tower r
+  subst alg
+  exact TauCeti.QuaternionAlgebra.star_mem_of_isIntegral (h.isIntegral hx) hx
+
+variable {Λ : Subalgebra R ℍ[F,c₁,c₂,c₃]}
 
 /-- If `R` is integrally closed with fraction field `F`, every element of an `R`-order in
 `ℍ[F,c₁,c₂,c₃]` has reduced trace `2 x.re + c₂ x.imI` in `R`. -/
