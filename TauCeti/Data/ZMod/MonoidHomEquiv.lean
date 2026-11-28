@@ -107,9 +107,8 @@ theorem zmodMonoidHomEquiv_symm_apply_ofAdd_one {G : Type*} [Group G]
 @[simp]
 theorem zmodMonoidHomEquiv_symm_apply {G : Type*} [Group G] (g : {g : G // g ^ N = 1})
     (a : ZMod N) : (zmodMonoidHomEquiv N G).symm g (.ofAdd a) = g.val ^ a.val := by
-  change zmodLift g.val g.property (.ofAdd a) = g.val ^ a.val
   conv_lhs => rw [← ZMod.natCast_zmod_val a, ← nsmul_one a.val, ofAdd_nsmul, map_pow,
-    zmodLift_ofAdd_one]
+    zmodMonoidHomEquiv_symm_apply_ofAdd_one]
 
 variable (N) in
 /-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`**, through the
