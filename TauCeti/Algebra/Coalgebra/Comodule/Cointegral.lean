@@ -34,6 +34,7 @@ variable {I : H →ₗ[R] R} {M : Type*} [AddCommMonoid M] [Module R M] [Comodul
 
 /-- Contracting the second factor of the coproduct against a left cointegral gives a scalar
 multiple of the unit. -/
+@[simp]
 theorem tensorComponent_comul (hI : IsLeftCointegral I) (a : H) :
     LinearMap.tensorComponent I (Coalgebra.comul a) = I a • (1 : H) := by
   simpa only [LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
@@ -58,5 +59,21 @@ theorem isProj_coactComponent (hI : IsLeftCointegral I) (h1 : I 1 = 1) (M : Type
   map_id m hm := by
     rw [coactComponent_apply, mem_fixedSubcomodule.mp hm, LinearMap.tensorComponent_tmul,
       h1, one_smul]
+
+/-- The Reynolds retraction commutes with a comodule morphism and its restriction to invariants. -/
+theorem fixedMap_comp_codRestrict_coactComponent (hI : IsLeftCointegral I) (h1 : I 1 = 1)
+    {N : Type*} [AddCommMonoid N] [Module R N] [Comodule R H N] (f : Hom R H M N) :
+    f.fixedMap.comp (hI.isProj_coactComponent h1 M).codRestrict =
+      (hI.isProj_coactComponent h1 N).codRestrict.comp f.toLinearMap := by
+  refine LinearMap.ext fun m ↦ Subtype.ext ?_
+  -- `fixedMap` and `codRestrict` use the fixed subcomodule and its underlying submodule
+  -- respectively. Expose the pointwise compositions because rewriting cannot match those types.
+  change (f.fixedMap ((hI.isProj_coactComponent h1 M).codRestrict m) : N) =
+    ((hI.isProj_coactComponent h1 N).codRestrict (f m) : N)
+  refine (f.fixedMap_apply ((hI.isProj_coactComponent h1 M).codRestrict m)).trans ?_
+  change f ((hI.isProj_coactComponent h1 M).codRestrict m : M) = _
+  simp only [LinearMap.IsProj.codRestrict_apply, coactComponent_apply]
+  rw [← f.map_coact_apply, ← LinearMap.rTensor_def, LinearMap.tensorComponent_rTensor,
+    Hom.coe_toLinearMap]
 
 end TauCeti.IsLeftCointegral

@@ -45,46 +45,50 @@ variable (M : Type v) [AddCommGroup M] [Module R M]
 
 /-- Integration in the last variable of a Hochschild cochain, with the sign for a
 degree-lowering homotopy. -/
-def averagingContraction (I : H →ₗ[R] R) (n : ℕ) :
+def signedContractLast (I : H →ₗ[R] R) (n : ℕ) :
     cochains R H M (n + 1) →ₗ[R] cochains R H M n :=
   (-1 : R) ^ (n + 1) • LinearMap.tensorComponent I
 
 /-- The signed integral sends `x ⊗ a` to the scalar multiple `(-1)^(n + 1) I(a) x`. -/
 @[simp]
-theorem averagingContraction_tmul (I : H →ₗ[R] R) (n : ℕ) (x : cochains R H M n) (a : H) :
-    averagingContraction M I n (x ⊗ₜ[R] a) = (-1 : R) ^ (n + 1) • (I a • x) := by
-  simp [averagingContraction]
+theorem signedContractLast_tmul (I : H →ₗ[R] R) (n : ℕ) (x : cochains R H M n) (a : H) :
+    signedContractLast M I n (x ⊗ₜ[R] a) = (-1 : R) ^ (n + 1) • (I a • x) := by
+  simp [signedContractLast]
 
 variable [Comodule R H M]
 
 /-- Integrating the last variable commutes with a morphism on the coefficient factor. -/
-theorem averagingContraction_cochainsMap {N : Type v} [AddCommGroup N] [Module R N]
+theorem signedContractLast_cochainsMap {N : Type v} [AddCommGroup N] [Module R N]
     [Comodule R H N] (f : Hom R H M N) (I : H →ₗ[R] R) (n : ℕ) (z : cochains R H M (n + 1)) :
-    averagingContraction N I n (cochainsMap f (n + 1) z) =
-      cochainsMap f n (averagingContraction M I n z) := by
+    signedContractLast N I n (cochainsMap f (n + 1) z) =
+      cochainsMap f n (signedContractLast M I n z) := by
   rw [cochainsMap_succ]
-  simp [averagingContraction]
+  simp [signedContractLast]
 
 /-- In degree zero, the homotopy measures the difference between scalar multiplication by
 `I 1` and the integral applied to the coaction. -/
-theorem averagingContraction_d_zero (I : H →ₗ[R] R) (m : M) :
-    averagingContraction M I 0 (d R H M 0 m) =
+-- Apply this rule before `d_zero_apply` and index it independently of the
+-- degree-zero cochain types in the coercions.
+@[simp↓]
+theorem signedContractLast_d_zero (I : H →ₗ[R] R) (m : M) :
+    DFunLike.coe (F := no_index _) (α := no_index _) (signedContractLast M I 0)
+        (DFunLike.coe (F := no_index _) (α := no_index _) (d R H M 0) m) =
       I 1 • m - coactComponent (M := M) I m := by
   rw [d_zero_apply R H M m]
-  simp [averagingContraction, coactComponent_apply]
+  simp [signedContractLast, coactComponent_apply]
 
 /-- In positive degrees, integrating a coboundary and differentiating the integral sum to
 multiplication by the mass of the integral. The normalization `I 1 = 1` gives a contraction. -/
-theorem averagingContraction_d_add_d_averagingContraction {I : H →ₗ[R] R}
+theorem signedContractLast_d_add_d_signedContractLast {I : H →ₗ[R] R}
     (hI : I.IsLeftInvariantIntegral) (n : ℕ) (z : cochains R H M (n + 1)) :
-    averagingContraction M I (n + 1) (d R H M (n + 1) z) +
-      d R H M n (averagingContraction M I n z) = I 1 • z := by
+    signedContractLast M I (n + 1) (d R H M (n + 1) z) +
+      d R H M n (signedContractLast M I n z) = I 1 • z := by
   have hcointegral := LinearMap.isLeftInvariantIntegral_iff_isLeftCointegral.mp hI
   induction z using TensorProduct.inductionOn with
   | add x y hx hy => simpa only [map_add, smul_add, add_add_add_comm] using congrArg₂ (· + ·) hx hy
   | tmul x a =>
     rw [d_succ_tmul]
-    simp only [averagingContraction, LinearMap.smul_apply, map_add, map_smul, map_sub,
+    simp only [signedContractLast, LinearMap.smul_apply, map_add, map_smul, map_sub,
       LinearMap.tensorComponent_tmul, LinearMap.tensorComponent_assoc_symm,
       LinearMap.lTensor_tmul, hcointegral.tensorComponent_comul, TensorProduct.tmul_smul]
     rw [sub_self, zero_sub]
@@ -92,24 +96,25 @@ theorem averagingContraction_d_add_d_averagingContraction {I : H →ₗ[R] R}
 
 /-- Integrating a cocycle gives a primitive of its multiple by `I 1`. For a normalized
 integral this is a primitive of the original cocycle. -/
-theorem d_averagingContraction_of_cocycle {I : H →ₗ[R] R} (hI : I.IsLeftInvariantIntegral)
+theorem d_signedContractLast_of_cocycle {I : H →ₗ[R] R} (hI : I.IsLeftInvariantIntegral)
     (n : ℕ) {z : cochains R H M (n + 1)} (hz : d R H M (n + 1) z = 0) :
-    d R H M n (averagingContraction M I n z) = I 1 • z := by
-  simpa [hz] using averagingContraction_d_add_d_averagingContraction M hI n z
+    d R H M n (signedContractLast M I n z) = I 1 • z := by
+  simpa [hz] using signedContractLast_d_add_d_signedContractLast M hI n z
 
 /-- A left invariant integral of invertible mass makes the Hochschild complex of every comodule
 exact in all positive degrees. -/
-theorem exactAt_of_isLeftInvariantIntegral {I : H →ₗ[R] R} (hI : I.IsLeftInvariantIntegral)
-    (h1 : IsUnit (I 1)) (n : ℕ) : (cochainComplex R H M).ExactAt (n + 1) := by
+theorem exactAt_succ_of_isLeftInvariantIntegral_of_isUnit {I : H →ₗ[R] R}
+    (hI : I.IsLeftInvariantIntegral) (h1 : IsUnit (I 1)) (n : ℕ) :
+    (cochainComplex R H M).ExactAt (n + 1) := by
   rw [HomologicalComplex.exactAt_iff' _ n (n + 1) (n + 2) (by simp) (by simp),
     ShortComplex.moduleCat_exact_iff]
-  dsimp only [HomologicalComplex.sc', HomologicalComplex.shortComplexFunctor']
-  simp only [cochainComplex_d_succ]
+  simp only [HomologicalComplex.shortComplexFunctor'_obj_f,
+    HomologicalComplex.shortComplexFunctor'_obj_g, cochainComplex_d_succ]
   refine fun (z : cochains R H M (n + 1)) hz ↦ ?_
   obtain ⟨a, ha⟩ := h1
-  refine ⟨(↑a⁻¹ : R) • averagingContraction M I n z, ?_⟩
+  refine ⟨(↑a⁻¹ : R) • signedContractLast M I n z, ?_⟩
   exact (map_smul (d R H M n) _ _).trans (by
-    rw [d_averagingContraction_of_cocycle M hI n hz, ← ha, smul_smul, a.inv_mul, one_smul])
+    rw [d_signedContractLast_of_cocycle M hI n hz, ← ha, smul_smul, a.inv_mul, one_smul])
 
 /-- A normalized left invariant integral retracts the Hochschild complex onto the fixed
 submodule placed in degree zero. The projection in degree zero is the Reynolds operator. -/
@@ -131,27 +136,32 @@ def homotopyEquivFixed {I : H →ₗ[R] R} (hI : I.IsLeftInvariantIntegral) (h1 
   refine ⟨p, i, Homotopy.symm (Homotopy.equivSubZero.symm ?_), Homotopy.ofEq ?_⟩
   · refine Homotopy.mkCochainComplex _ (fun n ↦ ConcreteCategory.ofHom (C := ModuleCat R)
       (X := (cochainComplex R H M).X (n + 1)) (Y := (cochainComplex R H M).X n)
-      (averagingContraction M I n)) ?_ ?_
+      (signedContractLast M I n)) ?_ ?_
+    -- State the local equalities on explicit module objects: `simp` cannot match the
+    -- application lemmas through the dependent types involving `(cochainComplex R H M).X`.
     · simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.id_f, HomologicalComplex.comp_f,
         p, i, CochainComplex.toSingle₀Equiv_symm_apply_f_zero,
         CochainComplex.fromSingle₀Equiv_symm_apply_f_zero, cochainComplex_d_succ]
-      apply ModuleCat.hom_ext
-      ext (m : M)
-      -- The bundled difference has degree-zero object K.X 0. Expose its value in M so
-      -- that the projection lemma matches the codomain restriction.
-      change m - (hP.codRestrict m : M) = averagingContraction M I 0 (d R H M 0 m)
-      rw [LinearMap.IsProj.codRestrict_apply, averagingContraction_d_zero, h1, one_smul]
+      suffices hzero : 𝟙 (ModuleCat.of R M) -
+          (ModuleCat.ofHom hP.codRestrict ≫
+            ModuleCat.ofHom (fixedSubcomodule R H M).toSubmodule.subtype) =
+          ModuleCat.ofHom (d R H M 0) ≫ ModuleCat.ofHom (signedContractLast M I 0) from hzero
+      refine ModuleCat.hom_ext (LinearMap.ext fun m ↦ ?_)
+      simpa only [ModuleCat.hom_sub, ModuleCat.hom_id, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+        LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply, Submodule.subtype_apply,
+        LinearMap.IsProj.codRestrict_apply, h1, one_smul] using
+        (signedContractLast_d_zero M I m).symm
     · intro n
       simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.id_f, HomologicalComplex.comp_f,
         p, CochainComplex.toSingle₀Equiv_symm_apply_f_succ, Limits.zero_comp, sub_zero,
         cochainComplex_d_succ]
-      apply ModuleCat.hom_ext
-      refine LinearMap.ext fun (z : cochains R H M (n + 1)) ↦ ?_
-      -- Rewrite the bundled maps on K.X (n + 1) as the linear maps on cochains
-      -- appearing in the positive-degree identity.
-      change z = averagingContraction M I (n + 1) (d R H M (n + 1) z) +
-        d R H M n (averagingContraction M I n z)
-      rw [averagingContraction_d_add_d_averagingContraction M hI, h1, one_smul]
+      suffices hsucc : 𝟙 (ModuleCat.of R (cochains R H M (n + 1))) =
+          ModuleCat.ofHom (d R H M (n + 1)) ≫ ModuleCat.ofHom (signedContractLast M I (n + 1)) +
+            ModuleCat.ofHom (signedContractLast M I n) ≫ ModuleCat.ofHom (d R H M n) from hsucc
+      refine ModuleCat.hom_ext (LinearMap.ext fun z ↦ ?_)
+      simpa only [ModuleCat.hom_id, ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+        LinearMap.id_apply, LinearMap.add_apply, LinearMap.comp_apply, h1, one_smul] using
+        (signedContractLast_d_add_d_signedContractLast M hI n z).symm
   · apply HomologicalComplex.from_single_hom_ext
     simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f, i, p,
       CochainComplex.fromSingle₀Equiv_symm_apply_f_zero,
@@ -166,8 +176,16 @@ theorem homotopyEquivFixed_hom_f_zero {I : H →ₗ[R] R} (hI : I.IsLeftInvarian
       ConcreteCategory.ofHom (C := ModuleCat R) (X := (cochainComplex R H M).X 0)
         (Y := ModuleCat.of R (fixedSubcomodule R H M))
         (((LinearMap.isLeftInvariantIntegral_iff_isLeftCointegral.mp hI).isProj_coactComponent
-          h1 M).codRestrict) :=
-  CochainComplex.toSingle₀Equiv_symm_apply_f_zero _
+          h1 M).codRestrict) := by
+  unfold homotopyEquivFixed
+  exact CochainComplex.toSingle₀Equiv_symm_apply_f_zero _
+
+/-- The retraction to the fixed submodule vanishes in positive degrees. -/
+@[simp]
+theorem homotopyEquivFixed_hom_f_succ {I : H →ₗ[R] R} (hI : I.IsLeftInvariantIntegral)
+    (h1 : I 1 = 1) (n : ℕ) : (homotopyEquivFixed M hI h1).hom.f (n + 1) = 0 := by
+  unfold homotopyEquivFixed
+  exact CochainComplex.toSingle₀Equiv_symm_apply_f_succ _ n
 
 /-- In degree zero the inverse is the inclusion of the fixed vectors. -/
 @[simp]
@@ -175,8 +193,16 @@ theorem homotopyEquivFixed_inv_f_zero {I : H →ₗ[R] R} (hI : I.IsLeftInvarian
     (h1 : I 1 = 1) :
     (homotopyEquivFixed M hI h1).inv.f 0 =
       ConcreteCategory.ofHom (C := ModuleCat R) (X := ModuleCat.of R (fixedSubcomodule R H M))
-        (Y := (cochainComplex R H M).X 0) (fixedSubcomodule R H M).toSubmodule.subtype :=
-  CochainComplex.fromSingle₀Equiv_symm_apply_f_zero _ _
+        (Y := (cochainComplex R H M).X 0) (fixedSubcomodule R H M).toSubmodule.subtype := by
+  unfold homotopyEquivFixed
+  exact CochainComplex.fromSingle₀Equiv_symm_apply_f_zero _ _
+
+/-- The inclusion from the fixed submodule complex vanishes in positive degrees. -/
+@[simp]
+theorem homotopyEquivFixed_inv_f_succ {I : H →ₗ[R] R} (hI : I.IsLeftInvariantIntegral)
+    (h1 : I 1 = 1) (n : ℕ) : (homotopyEquivFixed M hI h1).inv.f (n + 1) = 0 :=
+  (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℕ) 0 _ (n + 1)
+    (Nat.succ_ne_zero n)).eq_of_src _ _
 
 /-- From degree `n + 1` to degree `n`, the homotopy from projection followed by inclusion
 to the identity is the negative of the averaging contraction. -/
@@ -185,16 +211,20 @@ theorem homotopyEquivFixed_homotopyHomInvId_hom_succ {I : H →ₗ[R] R}
     (hI : I.IsLeftInvariantIntegral) (h1 : I 1 = 1) (n : ℕ) :
     (homotopyEquivFixed M hI h1).homotopyHomInvId.hom (n + 1) n =
       -ConcreteCategory.ofHom (C := ModuleCat R) (X := (cochainComplex R H M).X (n + 1))
-        (Y := (cochainComplex R H M).X n) (averagingContraction M I n) := by
+        (Y := (cochainComplex R H M).X n) (signedContractLast M I n) := by
   unfold homotopyEquivFixed
-  exact congrArg Neg.neg (Homotopy.mkCochainComplex_hom_succ _ _ _ _ n)
+  simp only [Homotopy.symm_hom]
+  rw [← Homotopy.equivSubZero_apply_hom (Homotopy.equivSubZero.symm _), Equiv.apply_symm_apply,
+    Homotopy.mkCochainComplex_hom_succ]
 
 /-- All components of the homotopy from inclusion followed by projection to the identity
 on the fixed submodule complex are zero. -/
 @[simp]
 theorem homotopyEquivFixed_homotopyInvHomId_hom {I : H →ₗ[R] R}
     (hI : I.IsLeftInvariantIntegral) (h1 : I 1 = 1) (i j : ℕ) :
-    (homotopyEquivFixed M hI h1).homotopyInvHomId.hom i j = 0 := (rfl)
+    (homotopyEquivFixed M hI h1).homotopyInvHomId.hom i j = 0 := by
+  unfold homotopyEquivFixed
+  simp only [Homotopy.ofEq_hom, Pi.zero_apply]
 
 end TauCeti.Comodule.Cohomology
 
@@ -207,7 +237,7 @@ every coefficient comodule. -/
 theorem isZero_cohomology_succ {k : Type u} [Field k] {H : Type v} [Ring H] [Bialgebra k H]
     (hH : IsLinearlyReductive.{u, v, u} k H) (M : Type v) [AddCommGroup M] [Module k M]
     [Comodule k H M] (n : ℕ) : Limits.IsZero (cohomology k H M (n + 1)) :=
-  (exactAt_of_isLeftInvariantIntegral M
+  (exactAt_succ_of_isLeftInvariantIntegral_of_isUnit M
     (isLeftInvariantIntegral_sweedlerIntegral hH.sSup_simpleCoefficientSubmodules_eq_top)
     (by simp) n).isZero_homology
 
