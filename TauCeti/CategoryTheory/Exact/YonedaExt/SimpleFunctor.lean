@@ -7,8 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Resolution.ProjectiveResolution
 public import TauCeti.CategoryTheory.Exact.YonedaExt.AlmostSplit
-public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.AlmostSplit
-public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
+public import TauCeti.CategoryTheory.Preadditive.ModCat.SimpleFunctor
 
 /-!
 # The minimal projective resolution of the simple functor of an almost-split conflation
@@ -26,6 +25,9 @@ Thus the only cover condition to check is the map `Hom(-, Y) ⟶ rad(-, Z)` onto
 
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras*, Vol. 1, LMS Student Texts 65, CUP (2006), Theorem IV.6.11(a)(ii) for module categories.
+* Haruhisa Enomoto, *Classifications of exact structures and Cohen-Macaulay-finite algebras*,
+  Adv. Math. 335 (2018), 838–877, [Proposition A.2(2)](https://arxiv.org/abs/1705.02163v4).
+  The resolution extends the simple-functor presentation given there for a right almost split map.
 -/
 
 public section
@@ -37,23 +39,6 @@ open CategoryTheory Limits Preadditive
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
-
-namespace ModCat
-
-/-- The radical subfunctor `rad(-, Z)` of the representable module on `Z`. -/
-abbrev radical (Z : C) : ModCat.{v} C := ⟨radicalFunctor Z, (additiveFunctor_iff _).2
-  { map_add := by
-      intro W W' k l
-      let i := radicalFunctorι Z
-      have : Mono (i.app W') := inferInstanceAs (Mono ((radicalFunctorι Z).app W'))
-      rw [← cancel_mono (i.app W'), add_comp, i.naturality, i.naturality, i.naturality]
-      simp [comp_add] }⟩
-
-/-- The quotient `Hom(-, Z) / rad(-, Z)` as a module on the preadditive category. -/
-noncomputable abbrev simple (Z : C) : ModCat.{v} C :=
-  ⟨simpleFunctor Z, (additiveFunctor_iff _).2 inferInstance⟩
-
-end ModCat
 
 namespace ExactStructure.Extension
 
@@ -175,6 +160,12 @@ theorem simpleFunctorResolution_syzygy_one (hg : IsRightAlmostSplit e.g) :
     (e.simpleFunctorResolution hg).syzygy 1 = ModCat.radical Z :=
   (rfl)
 
+/-- The second syzygy of the simple functor in this resolution represents `X`. -/
+@[simp]
+theorem simpleFunctorResolution_syzygy_two (hg : IsRightAlmostSplit e.g) :
+    (e.simpleFunctorResolution hg).syzygy 2 = (ModCat.yoneda C).obj X :=
+  (rfl)
+
 /-- The augmentation of the simple functor resolution is the quotient by the radical. -/
 @[simp]
 theorem simpleFunctorResolution_aug (hg : IsRightAlmostSplit e.g) :
@@ -183,6 +174,31 @@ theorem simpleFunctorResolution_aug (hg : IsRightAlmostSplit e.g) :
         ObjectProperty.homMk (Y := ModCat.simple Z) (simpleFunctorπ Z) := by
   simp only [simpleFunctorResolution, FiniteResolution.aug_step]
   erw [eqToHom_refl, Category.id_comp]
+
+/-- The augmentation onto the first syzygy is the radical lift of the deflation. -/
+@[simp]
+theorem simpleFunctorResolution_truncate_one_aug (hg : IsRightAlmostSplit e.g) :
+    ((e.simpleFunctorResolution hg).truncate 1).aug =
+      eqToHom (by simp [simpleFunctorResolution]) ≫
+        ObjectProperty.homMk (X := (ModCat.yoneda C).obj e.obj) (Y := ModCat.radical Z)
+          (radicalFunctorLift e.g hg.mem_jacobsonRadical) ≫
+        eqToHom (e.simpleFunctorResolution_syzygy_one hg).symm := by
+  apply (conj_eqToHom_iff_heq' _ _ _ _).2
+  simp only [simpleFunctorResolution]
+  rw [FiniteResolution.truncate_step_succ (n := 0), FiniteResolution.truncate_step_zero]
+  exact heq_of_eq (FiniteResolution.aug_step ..)
+
+/-- The augmentation onto the second syzygy is the identity after identifying the two objects. -/
+@[simp]
+theorem simpleFunctorResolution_truncate_two_aug (hg : IsRightAlmostSplit e.g) :
+    ((e.simpleFunctorResolution hg).truncate 2).aug =
+      eqToHom (by simp [simpleFunctorResolution]) ≫ 𝟙 ((ModCat.yoneda C).obj X) ≫
+        eqToHom (e.simpleFunctorResolution_syzygy_two hg).symm := by
+  apply (conj_eqToHom_iff_heq' _ _ _ _).2
+  simp only [simpleFunctorResolution]
+  rw [FiniteResolution.truncate_step_succ (n := 1), FiniteResolution.truncate_step_succ (n := 0),
+    FiniteResolution.truncate_base]
+  exact heq_of_eq (FiniteResolution.aug_base _)
 
 /-- The differential in degree one is the Yoneda map of the deflation. -/
 @[simp]
