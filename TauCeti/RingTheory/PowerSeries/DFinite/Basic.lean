@@ -65,11 +65,11 @@ than `r`; differentiating it `r` more times gives a differential equation.
   `PowerSeries.IsDFinite.smul`: closure under sums, products, differentiation and scalar
   multiplication (with `neg`, `sub` and `iterate_derivative`).
 * `PowerSeries.isDFinite_derivative_iff`, `PowerSeries.IsDFinite.rescale`,
-  `PowerSeries.IsDFinite.map`, `PowerSeries.isDFinite_mk_coeff_add_iff`,
-  `PowerSeries.isDFinite_polynomial_smul_iff`, `PowerSeries.isDFinite_algebraMap_mul_iff`,
-  `PowerSeries.isDFinite_one_sub_X_mul_iff`: closure under integration, rescaling by `k`,
-  compatible ring homomorphisms, coefficient shifts, and nonzero `k[X]`-multiples (including
-  `1 - X`).
+  `PowerSeries.IsDFinite.map`, `PowerSeries.isDFinite_map_iff`,
+  `PowerSeries.isDFinite_mk_coeff_add_iff`, `PowerSeries.isDFinite_polynomial_smul_iff`,
+  `PowerSeries.isDFinite_algebraMap_mul_iff`, `PowerSeries.isDFinite_one_sub_X_mul_iff`: closure
+  under integration, rescaling by `k`, compatible ring homomorphisms, coefficient shifts, and
+  nonzero `k[X]`-multiples (including `1 - X`).
 * `PowerSeries.IsDFinite.tower_top`: D-finiteness over `k` implies D-finiteness over every field
   `k'` between `k` and `K`.
 * `PowerSeries.isDFinite_polynomial`, `PowerSeries.isDFinite_algebraMap`,
@@ -731,6 +731,25 @@ protected theorem IsDFinite.map {k' K' : Type*} [Field k'] [CommRing K'] [Algebr
   have heval : Polynomial.eval₂ σ₀ (σ₀ (n : k)) (q i) = σ₀ ((q i).eval (n : k)) := by simp
   rw [Polynomial.eval_map, ← _root_.map_natCast σ₀ n, heval, coeff_map, Algebra.smul_def,
     Algebra.smul_def, _root_.map_mul, hσ]
+
+/-- Mapping coefficients along an injective ring homomorphism `σ : K →+* K'` compatible with a
+ring isomorphism `σ₀ : k ≃+* k'` preserves and reflects D-finiteness. -/
+theorem isDFinite_map_iff {k' K' : Type*} [Field k'] [CommRing K'] [Algebra k' K']
+    (σ₀ : k ≃+* k') {σ : K →+* K'} (hσ_inj : Function.Injective σ)
+    (hσ : ∀ x, σ (algebraMap k K x) = algebraMap k' K' (σ₀ x)) {f : K⟦X⟧} :
+    IsDFinite k' (map σ f) ↔ IsDFinite k f := by
+  refine ⟨fun hmap ↦ ?_, fun hf ↦ hf.map σ₀.toRingHom σ hσ⟩
+  obtain ⟨r, q, hq, h⟩ := isDFinite_iff_pRecursive.mp hmap
+  refine isDFinite_iff_pRecursive.mpr ⟨r, fun i ↦ (q i).map σ₀.symm.toRingHom,
+    (Polynomial.map_ne_zero_iff σ₀.symm.injective).mpr hq, fun n ↦ hσ_inj ?_⟩
+  rw [_root_.map_zero, map_sum, ← h n]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hmap_eval :
+      σ₀ (((q i).map σ₀.symm.toRingHom).eval (n : k)) = (q i).eval (n : k') := by
+    have hn_eq : (n : k) = σ₀.symm (n : k') := by simp
+    rw [Polynomial.eval_map, hn_eq]
+    simp
+  rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, hσ, hmap_eval, coeff_map]
 
 /-- Scalar multiplication by a nonzero polynomial `p ∈ k[X]` preserves and reflects D-finiteness
 over `k`. -/

@@ -43,13 +43,15 @@ E-series into Hurwitz convolution and shifts of their coefficient sequences.
 * `TauCeti.hurwitzMul_zero`, `TauCeti.hurwitzMul_succ`, `TauCeti.hurwitzMul_comm`,
   `TauCeti.hurwitzMul_assoc`, `TauCeti.hurwitzMul_single_single`,
   `TauCeti.hurwitzMul_single_zero_one_left`, `TauCeti.hurwitzMul_single_zero_one_right`,
-  `TauCeti.hurwitzMul_const_one`, `TauCeti.map_hurwitzMul`, `TauCeti.comp_hurwitzMul`: algebraic
-  laws, evaluations, and ring-homomorphism compatibility of Hurwitz convolution.
-* `TauCeti.ePowerSeries_hurwitzMul`, `TauCeti.derivative_ePowerSeries`,
-  `TauCeti.iterate_derivative_ePowerSeries`, `TauCeti.rescale_ePowerSeries`,
-  `TauCeti.map_ePowerSeries`, `TauCeti.ePowerSeries_const_one`: compatibility of `ePowerSeries`
-  with Hurwitz multiplication, differentiation, rescaling, coefficient maps, and the formal
-  exponential.
+  `TauCeti.hurwitzMul_const_one`, `TauCeti.map_hurwitzMul`, `TauCeti.comp_hurwitzMul`,
+  `TauCeti.comp_fold_hurwitzMul`, `TauCeti.smul_fold_hurwitzMul_univ`: algebraic laws,
+  evaluations, ring-homomorphism compatibility, and finite-orbit invariance of Hurwitz convolution.
+* `TauCeti.ePowerSeries_hurwitzMul`, `TauCeti.ePowerSeries_fold_hurwitzMul`,
+  `TauCeti.fold_hurwitzMul_eq_zero_iff`, `TauCeti.fold_hurwitzMul_smul_univ_eq_zero_iff`,
+  `TauCeti.derivative_ePowerSeries`, `TauCeti.iterate_derivative_ePowerSeries`,
+  `TauCeti.rescale_ePowerSeries`, `TauCeti.map_ePowerSeries`, `TauCeti.ePowerSeries_const_one`:
+  compatibility of `ePowerSeries` with binary and finite Hurwitz products, differentiation,
+  rescaling, coefficient maps, and the formal exponential.
 
 ## References
 
@@ -325,6 +327,37 @@ theorem hurwitzMul_succ {R : Type*} [Semiring R] (a b : ℕ → R) (n : ℕ) :
     rw [hsub]
   rw [add_assoc, h1, h2]
 
+/-- `hurwitzMul` is an associative binary operation on `ℕ → R`. -/
+instance instAssociativeHurwitzMul {R : Type*} [Semiring R] :
+    Std.Associative (hurwitzMul (R := R)) :=
+  ⟨hurwitzMul_assoc⟩
+
+/-- Over a commutative semiring, `hurwitzMul` is a commutative binary operation on `ℕ → R`. -/
+instance instCommutativeHurwitzMul {R : Type*} [CommSemiring R] :
+    Std.Commutative (hurwitzMul (R := R)) :=
+  ⟨hurwitzMul_comm⟩
+
+/-- Post-composing with a ring homomorphism commutes with a finite Hurwitz product. -/
+theorem comp_fold_hurwitzMul {ι F R S : Type*} [CommSemiring R] [CommSemiring S]
+    [FunLike F R S] [RingHomClass F R S] (σ : F) (s : Finset ι) (f : ι → ℕ → R) :
+    σ ∘ s.fold hurwitzMul (Pi.single 0 1) f =
+      s.fold hurwitzMul (Pi.single 0 1) fun i ↦ σ ∘ f i := by
+  have h0 : σ ∘ (Pi.single 0 1 : ℕ → R) = Pi.single 0 1 := by
+    ext (_ | n) <;> simp
+  rw [← Finset.fold_hom (comp_hurwitzMul σ), h0]
+
+/-- Acting by `g : G` fixes the Hurwitz product of the `G`-orbit `h ↦ h • a` of any sequence `a`. -/
+@[simp]
+theorem smul_fold_hurwitzMul_univ {G R : Type*} [Group G] [Fintype G] [CommSemiring R]
+    [MulSemiringAction G R] (g : G) (a : ℕ → R) :
+    g • (Finset.univ : Finset G).fold hurwitzMul (Pi.single 0 1) (fun h ↦ h • a) =
+      (Finset.univ : Finset G).fold hurwitzMul (Pi.single 0 1) fun h ↦ h • a := by
+  have hsmul (b : ℕ → R) : g • b = MulSemiringAction.toRingHom G R g ∘ b := by
+    ext n; simp
+  rw [hsmul, comp_fold_hurwitzMul]
+  conv_rhs => rw [← Finset.univ_map_equiv_to_embedding (Equiv.mulLeft g), Finset.fold_map]
+  exact Finset.fold_congr fun h _ ↦ by ext n; simp [mul_smul]
+
 end HurwitzMul
 
 /-! ### Factorial-divided formal power series -/
@@ -451,6 +484,35 @@ theorem ePowerSeries_hurwitzMul {K : Type*} [Semifield K] [CharZero K] (a b : �
   calc (n.choose ij.1 : K) * (a ij.1 * b ij.2) * (ij.1.factorial * ij.2.factorial)
       = a ij.1 * b ij.2 * ((n.choose ij.1 : K) * ij.1.factorial * ij.2.factorial) := by ring
     _ = a ij.1 * b ij.2 * n.factorial := by rw [hchoose]
+
+/-- The factorial-divided formal power series of a finite Hurwitz product is the product of the
+individual factorial-divided series. -/
+@[simp]
+theorem ePowerSeries_fold_hurwitzMul {ι K : Type*} [Semifield K] [CharZero K]
+    (s : Finset ι) (f : ι → ℕ → K) :
+    ePowerSeries (s.fold hurwitzMul (Pi.single 0 1) f) = ∏ i ∈ s, ePowerSeries (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih => rw [Finset.fold_cons hi, ePowerSeries_hurwitzMul, ih, Finset.prod_cons]
+
+/-- Over a field of characteristic zero, a finite Hurwitz product vanishes if and only if one of its
+factors vanishes. -/
+@[simp]
+theorem fold_hurwitzMul_eq_zero_iff {ι K : Type*} [Field K] [CharZero K]
+    {s : Finset ι} {f : ι → ℕ → K} :
+    s.fold hurwitzMul (Pi.single 0 1) f = 0 ↔ ∃ i ∈ s, f i = 0 := by
+  rw [← ePowerSeries_inj, ePowerSeries_fold_hurwitzMul, ePowerSeries_zero,
+    Finset.prod_eq_zero_iff]
+  simp [← ePowerSeries_inj]
+
+/-- Over a field of characteristic zero, the Hurwitz product of the finite `G`-orbit of `a`
+vanishes if and only if `a = 0`. -/
+theorem fold_hurwitzMul_smul_univ_eq_zero_iff {G K : Type*} [Group G] [Fintype G]
+    [Field K] [CharZero K] [MulSemiringAction G K] {a : ℕ → K} :
+    ((Finset.univ : Finset G).fold hurwitzMul (Pi.single 0 1) fun g ↦ g • a) = 0 ↔ a = 0 := by
+  rw [fold_hurwitzMul_eq_zero_iff]
+  exact ⟨fun ⟨g, _, hg⟩ ↦ inv_smul_smul g a ▸ by simp [hg],
+    fun ha ↦ ⟨1, Finset.mem_univ 1, by simp [ha]⟩⟩
 
 /-- Differentiating `ePowerSeries a` shifts the coefficient sequence by `1`. -/
 @[simp]
