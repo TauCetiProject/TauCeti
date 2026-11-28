@@ -16,6 +16,7 @@ import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Branch
 
 /-!
 # Holomorphic branches of `log` and of `n`-th roots on a simply connected domain
@@ -115,23 +116,6 @@ namespace TauCeti
 
 open Complex Set
 
-/-- The branch of the logarithm **based at `a`**: the translate of Mathlib's principal branch that
-takes the value `a` at the point `Complex.exp a`, its branch cut rotated away from there. -/
-private noncomputable def logBranch (a v : ℂ) : ℂ := a + Complex.log (v / Complex.exp a)
-
-/-- The branch based at `a` is complex differentiable wherever the translated point misses the
-branch cut. -/
-private theorem differentiableAt_logBranch {a v : ℂ} (h : v / Complex.exp a ∈ Complex.slitPlane) :
-    DifferentiableAt ℂ (logBranch a) v :=
-  ((differentiableAt_id.div_const _).clog h).const_add _
-
-/-- **The branch based at `a` inverts `Complex.exp`** on the strip of height `2 π` centred at `a`,
-because `Complex.log_exp` inverts it on `-π < im ≤ π`. -/
-private theorem logBranch_exp {a w : ℂ} (h₁ : -Real.pi < (w - a).im) (h₂ : (w - a).im ≤ Real.pi) :
-    logBranch a (Complex.exp w) = w := by
-  rw [logBranch, ← Complex.exp_sub, Complex.log_exp h₁ h₂]
-  ring
-
 /-- Near any point of an open set, a continuous branch `L` of `log ∘ g` coincides with the
 branch of the logarithm based at `L z₀`, composed with `g`: continuity confines `L z - L z₀` to
 the strip on which that branch inverts `Complex.exp`. -/
@@ -169,7 +153,8 @@ private theorem differentiableAt_of_continuousOn_exp_comp {U : Set ℂ} (hU : Is
     {L g : ℂ → ℂ} (hL : ContinuousOn L U) (hEq : EqOn (Complex.exp ∘ L) g U)
     (hg : DifferentiableOn ℂ g U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
     DifferentiableAt ℂ L z₀ :=
-  ((differentiableAt_logBranch (div_exp_mem_slitPlane hEq hz₀)).comp z₀
+  (((Complex.contDiffAt_logBranch (n := 1)
+      (div_exp_mem_slitPlane hEq hz₀)).differentiableAt_one).comp z₀
     ((hg z₀ hz₀).differentiableAt (hU.mem_nhds hz₀))).congr_of_eventuallyEq
     (eventuallyEq_logBranch_comp hU hL hEq hz₀)
 
@@ -197,8 +182,7 @@ theorem exists_contDiffOn_eqOn_exp_comp {U : Set ℂ} (hUc : IsSimplyConnected U
     Complex.exists_continuousOn_eqOn_exp_comp hUc hUo hg.continuousOn hU₀
   refine ⟨L, fun z hz => ?_, hLeq⟩
   have hbranch : ContDiffAt ℂ n (logBranch (L z)) (g z) :=
-    contDiffAt_const.add ((Complex.contDiffAt_log (div_exp_mem_slitPlane hLeq hz)).comp (g z)
-      (contDiffAt_id.div_const _))
+    Complex.contDiffAt_logBranch (div_exp_mem_slitPlane hLeq hz)
   exact (((hbranch.restrict_scalars ℝ).comp z ((hg z hz).contDiffAt (hUo.mem_nhds hz)))
     |>.congr_of_eventuallyEq (eventuallyEq_logBranch_comp hUo hLc hLeq hz)).contDiffWithinAt
 

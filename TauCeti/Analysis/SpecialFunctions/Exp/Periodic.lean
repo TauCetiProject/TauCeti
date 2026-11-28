@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Branch
 
 /-!
 # The periods of `exp (π i ·)` and `exp (2 π i ·)`, and branches of the logarithm
@@ -45,6 +46,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 * `Complex.norm_exp_two_pi_mul_ofReal_mul_I`: the same with the factors ordered `2 π x i`.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
   `(a / 2πi) • v = (b / 2πi) • v + k • v` for an integer `k`.
+* `Complex.div_two_pi_I_smul_nsmul`: `(a / 2πi) • (m • v) = ((m * a) / 2πi) • v`.
+* `Complex.exp_log_add_log_div`: `exp (log z₀ + log (z / z₀)) = z` for nonzero `z₀` and `z`.
 * `Complex.exp_log_add_inv_mul_log_div_pow`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
   `m`-th root of every `t ≠ 0`.
 * `Complex.eq_of_exp_eq_of_abs_im_sub_lt`, `Complex.eq_of_exp_eq_of_norm_sub_lt`: local
@@ -173,6 +176,19 @@ theorem exists_div_two_pi_I_smul_eq_add_zsmul {E : Type*} [AddCommGroup E] [Modu
   refine ⟨k, ?_⟩
   have h2 : (2 * π * I : ℂ) ≠ 0 := two_pi_I_ne_zero
   rw [hk, ← Int.cast_smul_eq_zsmul ℂ, ← add_smul, add_div, mul_div_cancel_right₀ _ h2]
+
+/-- Moving a natural-number factor out of a vector into the numerator of
+`(a / (2 * π * I)) • (m • v)`. -/
+theorem div_two_pi_I_smul_nsmul {E : Type*} [AddCommMonoid E] [Module ℂ E]
+    (a : ℂ) (m : ℕ) (v : E) :
+    (a / (2 * π * I)) • (m • v) = (((m : ℂ) * a) / (2 * π * I)) • v := by
+  rw [← Nat.cast_smul_eq_nsmul ℂ, smul_smul, div_mul_eq_mul_div, mul_comm a (m : ℂ)]
+
+/-- The centered branch `z ↦ log z₀ + log (z / z₀)` satisfies `exp (log z₀ + log (z / z₀)) = z`
+for all nonzero `z₀` and `z`. -/
+theorem exp_log_add_log_div {z₀ z : ℂ} (hz₀ : z₀ ≠ 0) (hz : z ≠ 0) :
+    exp (log z₀ + log (z / z₀)) = z := by
+  simpa only [logBranch_apply, exp_log hz₀] using exp_logBranch (a := log z₀) hz
 
 /-- A branch of the `m`-th root near `z₀ ^ m`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
 `m`-th root of every `t ≠ 0`. -/

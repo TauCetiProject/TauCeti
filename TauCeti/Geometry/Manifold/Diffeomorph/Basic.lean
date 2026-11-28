@@ -65,6 +65,15 @@ theorem toPartialDiffeomorph_toPartialEquiv (h : M ≃ₘ^n⟮I, J⟯ N) :
 Not a simp lemma: `toPartialDiffeomorph_toPartialEquiv` already lets simp prove it. -/
 theorem coe_toPartialDiffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) : ⇑h.toPartialDiffeomorph = h := (rfl)
 
+/-- The underlying equivalence of a composition of diffeomorphisms is the composition of their
+underlying equivalences. -/
+@[simp]
+theorem trans_toEquiv {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H'' : Type*} [TopologicalSpace H''] {I' : ModelWithCorners 𝕜 E' H''}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H'' M']
+    (h₁ : M ≃ₘ^n⟮I, I'⟯ M') (h₂ : M' ≃ₘ^n⟮I', J⟯ N) :
+    (h₁.trans h₂).toEquiv = h₁.toEquiv.trans h₂.toEquiv := (rfl)
+
 /-- Pulling back a chart `φ` of the maximal `C^m` atlas of `N'` along a `C^n` diffeomorphism
 `h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart of the maximal `C^m` atlas of `M`. -/
 theorem trans_mem_maximalAtlas {N' : Type*} [TopologicalSpace N'] [ChartedSpace H N']

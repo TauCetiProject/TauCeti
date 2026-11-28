@@ -51,6 +51,8 @@ trivialization of the family built from it is in
 * `TauCeti.periodBasis`: the periods at `y` of a `ℤ`-basis of `Λ`, as a real basis of `E`.
 * `TauCeti.periodAddAction`: the period translation action of `Λ` on `Y × E`.
 * `TauCeti.torusFamilyProjection`: the projection `(Y × E)/Λ → Y` descended from `Prod.fst`.
+* `TauCeti.torusFamilyNonzeroOpens`: the punctured locus `{φ ∘ p ≠ 0}` as an open subset of
+  `(Y × E)/Λ`.
 
 ## Main results
 
@@ -323,6 +325,25 @@ theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E
     IsOpenMap (torusFamilyProjection P) :=
   let _ := periodAddAction P
   IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective isOpenMap_fst
+
+/-- The punctured locus `{φ ∘ p ≠ 0}` as an open subset of the torus family `(Y × E) / Λ`. -/
+def torusFamilyNonzeroOpens {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E]
+    [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F] [T1Space F]
+    (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ) :
+    letI := periodAddAction P
+    TopologicalSpace.Opens (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+  letI := periodAddAction P
+  ⟨{y | φ (torusFamilyProjection P y) ≠ 0},
+    isOpen_compl_singleton.preimage (hφ.comp (continuous_torusFamilyProjection P))⟩
+
+/-- A point of the torus family belongs to `torusFamilyNonzeroOpens φ P hφ` iff `φ` does not
+vanish at its base projection. -/
+@[simp] theorem mem_torusFamilyNonzeroOpens {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E]
+    [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F] [T1Space F]
+    (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ)
+    (y : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) :
+    y ∈ torusFamilyNonzeroOpens φ P hφ ↔ φ (torusFamilyProjection P y) ≠ 0 :=
+  Iff.rfl
 
 /-- **A family of tori over a second-countable base is second countable.** If the periods depend
 continuously on the parameter, the orbit space `(Y × E)/Λ` of the period translation action is

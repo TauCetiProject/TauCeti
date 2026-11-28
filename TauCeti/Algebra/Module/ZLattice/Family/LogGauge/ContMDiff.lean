@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Basic
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 public import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.ContMDiff
+import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Twist
 
 /-!
 # Regularity of the upstairs logarithmic gauge
@@ -95,41 +95,57 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
       (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (torusFamilyLogGauge P l) x := by
-  let _ := periodAddAction P
-  let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-  let _ := periodAddAction (powPullbackPeriod m r P)
-  let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-    (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+  have haux : ∀ (Q : rootsOfUnityBall m r → Λ →ₗ[ℤ] E)
+      (_ : Q = P ∘ rootsOfUnityBall.powMap m r)
+      [∀ z, DiscreteTopology (LinearMap.range (Q z))]
+      [∀ z, IsZLattice ℝ (LinearMap.range (Q z))]
+      (hQinj : ∀ z, Function.Injective (Q z))
+      (hQP : ∀ l', ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun z ↦ Q z l')
+      (G : letI := periodAddAction Q; letI := periodAddAction P;
+        AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E) →
+          AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E))
+      (_ : ∀ z e, (letI := periodAddAction Q; letI := periodAddAction P;
+        G (Quotient.mk _ (z, e))) =
+        (letI := periodAddAction P;
+          Quotient.mk _ (rootsOfUnityBall.powMap m r z,
+            e - (log (z : ℂ) / (2 * π * I)) • Q z l)))
+      {y : letI := periodAddAction Q; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)},
+      ((torusFamilyProjection Q y : rootsOfUnityBall m r) : ℂ) ≠ 0 →
+        letI := periodAddAction P
+        letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+        letI := periodAddAction Q
+        letI := torusFamilyChartedSpace (H := ℂ) Q (fun l ↦ (hQP l).continuous) hQinj
+        ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n G y := by
+    intro Q hQ _ _ hQinj hQP G hG y hy
+    subst hQ
+    let _ := periodAddAction P
+    let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    let _ := periodAddAction (P ∘ rootsOfUnityBall.powMap m r)
+    let _ := torusFamilyChartedSpace (H := ℂ) (P ∘ rootsOfUnityBall.powMap m r)
+      (fun l ↦ ((hP l).comp rootsOfUnityBall.contMDiff_powMap).continuous)
+      (fun z ↦ hinj (rootsOfUnityBall.powMap m r z))
+    have heq : G = torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r) ∘
+        ⇑(torusFamilyLogTwistMap Subtype.val (P ∘ rootsOfUnityBall.powMap m r) (-l)) := by
+      funext w
+      induction w using Quotient.inductionOn with
+      | h p =>
+        obtain ⟨z, e⟩ := p
+        dsimp only [Function.comp_apply]
+        rw [hG, torusFamilyLogTwistMap_mk, torusFamilyBaseChangeMap_mk]
+        simp [sub_eq_add_neg]
+    rw [heq]
+    have hbc := contMDiff_torusFamilyBaseChangeMap P hinj hP (rootsOfUnityBall.powMap m r)
+      rootsOfUnityBall.contMDiff_powMap
+    have htw := contMDiffAt_torusFamilyLogTwistMap Subtype.val (P ∘ rootsOfUnityBall.powMap m r)
+      (fun z ↦ hinj (rootsOfUnityBall.powMap m r z)) rootsOfUnityBall.contMDiff_val
+      (fun l' ↦ (hP l').comp rootsOfUnityBall.contMDiff_powMap) (-l) hy
+    exact (hbc _).comp y htw
+  exact haux (powPullbackPeriod m r P) (powPullbackPeriod_eq_comp P)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  obtain ⟨⟨z₀, e₀⟩, rfl⟩ := Quotient.exists_rep x
-  have hz₀ : (z₀ : ℂ) ≠ 0 := by rwa [torusFamilyProjection_mk] at hx
-  rw [← (isLocalDiffeomorph_torusFamily_mk (powPullbackPeriod m r P)
-    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-    (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (z₀, e₀)).contMDiffAt_comp_iff le_rfl]
-  -- A branch centred at `z₀` is holomorphic even if `z₀` lies on the principal branch cut.
-  let L : ℂ → ℂ := fun z ↦ log z₀ + log (z / z₀)
-  have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by
-    simp only [L]
-    rw [Complex.exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
-  have hLc : ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) n
-      (fun p : rootsOfUnityBall m r × E ↦ L p.1) (z₀, e₀) := by
-    apply contMDiffAt_const.add
-    exact (Complex.contDiffAt_log (x := 1) one_mem_slitPlane).contMDiffAt.comp_of_eq
-      ((contDiff_id.div_const (z₀ : ℂ)).contMDiff.comp
-        (rootsOfUnityBall.contMDiff_val.comp contMDiff_fst)).contMDiffAt
-      (by simp [hz₀])
-  have hpow : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (rootsOfUnityBall.powMap m r) :=
-    rootsOfUnityBall.contMDiff_powMap
-  have hq := (isLocalDiffeomorph_torusFamily_mk P hinj hP).contMDiff
-  have hs := hq.contMDiffAt.comp (z₀, e₀)
-    ((hpow.comp contMDiff_fst).contMDiffAt.prodMk
-      (contMDiffAt_snd.sub ((hLc.div_const (2 * π * I)).smul
-        ((contMDiff_powPullbackPeriod P (hP l)).comp contMDiff_fst).contMDiffAt)))
-  apply hs.congr_of_eventuallyEq
-  have hopen : IsOpen {p : rootsOfUnityBall m r × E | (p.1 : ℂ) ≠ 0} :=
-    isOpen_ne_fun (continuous_subtypeVal.comp continuous_fst) continuous_const
-  filter_upwards [hopen.mem_nhds hz₀] with p hp
-  simpa [Function.comp_def, powPullbackPeriod_apply] using
-    (torusFamilyLogGauge_mk_of_exp_eq P l (hL hp) p.2)
+    (fun l' ↦ contMDiff_powPullbackPeriod P (hP l'))
+    (torusFamilyLogGauge P l)
+    (fun z e ↦ by
+      rw [torusFamilyLogGauge_mk, powPullbackPeriod_apply])
+    hx
 
 end TauCeti
