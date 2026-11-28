@@ -58,6 +58,9 @@ nonzero block below `a`, and the sum over the last diagonal block of `x` is the 
 ## Main results
 
 * `MulChar.SquareLaw.card_mul_apply_eq`: the square law at the block points.
+* `TauCeti.nextDatum_apply`, `TauCeti.nextDatum_eq_zero`: the next datum on and off the matrices
+  with lower blocks `0` and `1`; `TauCeti.nextDatum_zero`, `TauCeti.nextDatum_add`,
+  `TauCeti.nextDatum_smul`: it is linear in the datum.
 * `TauCeti.sum_nextDatum_mul`: pairing a next datum with a function.
 * `MulChar.SquareLaw.card_mul_sum_eq_mul_card_mul_sum_nextDatum`: the square law for the
   splitting `a ⊕ (n ⊕ b) ≃ n ⊕ (a ⊕ b)`, against a datum and its next datum.
@@ -132,16 +135,50 @@ noncomputable def nextDatum (p : Matrix n a R → Λ) (x : Matrix (n ⊕ b) (a �
 
 variable {b}
 
+/-- The next datum at a matrix `x` with lower blocks `0` and `1` is `p (-x₁₁) / #M_{n×b}(R)`, where
+`x₁₁` is the upper left block of `x`. -/
+theorem nextDatum_apply (p : Matrix n a R → Λ) {x : Matrix (n ⊕ b) (a ⊕ b) R}
+    (h₂₁ : x.toBlocks₂₁ = 0) (h₂₂ : x.toBlocks₂₂ = 1) :
+    nextDatum b p x = p (-x.toBlocks₁₁) / Nat.card (Matrix n b R) := by
+  simp [nextDatum, h₂₁, h₂₂]
+
 /-- The next datum at a block matrix `(η s; 0 1)` is `p (-η) / #M_{n×b}(R)`. -/
 @[simp]
 theorem nextDatum_fromBlocks (p : Matrix n a R → Λ) (η : Matrix n a R) (s : Matrix n b R) :
     nextDatum b p (fromBlocks η s 0 1) = p (-η) / Nat.card (Matrix n b R) := by
-  simp [nextDatum]
+  rw [nextDatum_apply] <;> simp
 
 /-- The next datum vanishes off the block matrices `(η s; 0 1)`. -/
+@[simp]
 theorem nextDatum_eq_zero (p : Matrix n a R → Λ) {x : Matrix (n ⊕ b) (a ⊕ b) R}
     (hx : ¬(x.toBlocks₂₁ = 0 ∧ x.toBlocks₂₂ = 1)) : nextDatum b p x = 0 := by
   rw [nextDatum, ite_eq_right hx]
+
+/-- The next datum of the zero function is zero. -/
+@[simp]
+theorem nextDatum_zero : nextDatum b (0 : Matrix n a R → Λ) = 0 := by
+  funext x
+  by_cases hx : x.toBlocks₂₁ = 0 ∧ x.toBlocks₂₂ = 1
+  · simp [nextDatum_apply _ hx.1 hx.2]
+  · simp [nextDatum_eq_zero _ hx]
+
+/-- The next datum of a sum is the sum of the next data. -/
+@[simp]
+theorem nextDatum_add (p q : Matrix n a R → Λ) :
+    nextDatum b (p + q) = nextDatum b p + nextDatum b q := by
+  funext x
+  by_cases hx : x.toBlocks₂₁ = 0 ∧ x.toBlocks₂₂ = 1
+  · simp [nextDatum_apply _ hx.1 hx.2, add_div]
+  · simp [nextDatum_eq_zero _ hx]
+
+/-- The next datum of a scalar multiple is the scalar multiple of the next datum. -/
+@[simp]
+theorem nextDatum_smul (c : Λ) (p : Matrix n a R → Λ) :
+    nextDatum b (c • p) = c • nextDatum b p := by
+  funext x
+  by_cases hx : x.toBlocks₂₁ = 0 ∧ x.toBlocks₂₂ = 1
+  · simp [nextDatum_apply _ hx.1 hx.2, mul_div_assoc]
+  · simp [nextDatum_eq_zero _ hx]
 
 /-- Pairing the next datum of `p` with a function `g` is averaging `p (-η) * g (η s; 0 1)` over the
 blocks `s`, summed over `η`. -/
@@ -191,11 +228,9 @@ private theorem apply_fromCols_fromBlocks_mul [CommMonoidWithZero Λ] {χ : MulC
   have hdet : IsUnit (fromBlocks (1 : Matrix n n R) s 0 (g : Matrix b b R)).det := by
     simp [det_fromBlocks_zero₂₁]
   have h := hL (GeneralLinearGroup.mk'' _ hdet) (fromCols (fromRows 1 0) (fromBlocks A B 0 D))
-  rw [GeneralLinearGroup.val_mk'', det_fromBlocks_zero₂₁, det_one, one_mul] at h
-  rw [← h]
-  congr 1
-  ext (i | i) (j | j | j) <;> simp [fromBlocks, Matrix.mul_apply, Fintype.sum_sum_type,
-    Matrix.one_apply, add_comm]
+  rw [GeneralLinearGroup.val_mk'', det_fromBlocks_zero₂₁, det_one, one_mul, mul_fromCols,
+    fromBlocks_mul_fromRows, fromBlocks_multiply] at h
+  simpa using h
 
 omit [Fintype R] [Fintype a] [DecidableEq a] in
 /-- A function of `(n ⊕ b) × (n ⊕ (a ⊕ b))` matrices that transforms by `χ ∘ det` under

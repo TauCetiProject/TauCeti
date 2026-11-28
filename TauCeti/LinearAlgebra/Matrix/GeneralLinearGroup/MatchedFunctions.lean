@@ -181,113 +181,38 @@ section Stabilizer
 
 variable [Fintype b] [DecidableEq b]
 
-omit [Fintype b] [DecidableEq b] in
-/-- The indices `a` of a splitting `σ : b ⊕ a ≃ n` of a finite type form a finite type. -/
-private noncomputable abbrev fintypeOfSplitting (σ : b ⊕ a ≃ n) : Fintype a :=
-  Fintype.ofInjective (σ ∘ Sum.inr) (σ.injective.comp Sum.inr_injective)
-
-/-- If the rows indexed by `a` of `m ∈ GL_n(R)` are those of the identity matrix, then `k` and
-`k m` have the same shadow `x`, the shadow `y` of `k m` is that of `k` times the square block of `m`
-on the indices `b`, and this block has the determinant of `m`. -/
-private theorem shadows_mul_of_rows_eq_one (m : GL n R)
-    (hm : ∀ i j, (m : Matrix n n R) (σ (.inr i)) j = (1 : Matrix n n R) (σ (.inr i)) j)
-    (k : GL n R) :
-    (((k * m)⁻¹ : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inr) id =
-        ((k⁻¹ : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inr) id ∧
-      ((k * m : GL n R) : Matrix n n R).submatrix id (σ ∘ Sum.inl) =
-        (k : Matrix n n R).submatrix id (σ ∘ Sum.inl) *
-          (m : Matrix n n R).submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl) ∧
-      (m : Matrix n n R).det = ((m : Matrix n n R).submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl)).det := by
-  classical
-  let _ := fintypeOfSplitting σ
-  -- The rows indexed by `a` of `m⁻¹` are those of the identity as well.
-  have hinv (i : a) (j : n) :
-      (m : Matrix n n R)⁻¹ (σ (.inr i)) j = (1 : Matrix n n R) (σ (.inr i)) j := by
-    have h1 : ((m : Matrix n n R) * (m : Matrix n n R)⁻¹) (σ (.inr i)) j =
-        (1 : Matrix n n R) (σ (.inr i)) j := by
-      rw [mul_nonsing_inv _ (isUnits_det_units m)]
-    rw [Matrix.mul_apply] at h1
-    simpa [hm, Matrix.one_apply] using h1
-  refine ⟨?_, ?_, ?_⟩
-  · rw [_root_.mul_inv_rev, GeneralLinearGroup.coe_mul, coe_units_inv, coe_units_inv]
-    ext i j
-    simp [Matrix.mul_apply, hinv, Matrix.one_apply]
-  · rw [GeneralLinearGroup.coe_mul]
-    ext i j
-    simp [Matrix.mul_apply, ← σ.sum_comp, Fintype.sum_sum_type, hm]
-  · have hblocks : (m : Matrix n n R).submatrix σ σ =
-        fromBlocks ((m : Matrix n n R).submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl))
-          ((m : Matrix n n R).submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inr)) 0 1 := by
-      ext (i | i) (j | j) <;> simp [hm, Matrix.one_apply, σ.injective.eq_iff]
-    rw [← det_submatrix_equiv_self σ, hblocks, det_fromBlocks_zero₂₁, det_one, mul_one]
-
-/-- The reindex along `σ` of the block diagonal matrix `h ⊕ 1` is the identity on the rows indexed
-by `a`. -/
-private theorem reindexGL_fromBlocksGL_one_apply_inr [Fintype a] [DecidableEq a] (h : GL b R)
-    (i : a) (j : n) :
-    (σ.reindexGL R (TauCeti.fromBlocksGL (h, 1)) : Matrix n n R) (σ (.inr i)) j =
-      (1 : Matrix n n R) (σ (.inr i)) j := by
-  obtain ⟨j, rfl⟩ := σ.surjective j
-  rcases j with j | j <;> simp [Matrix.one_apply]
-
-/-- The reindex along `σ` of the block diagonal matrix `h ⊕ 1` is `h` on the indices `b`. -/
-private theorem submatrix_reindexGL_fromBlocksGL_one [Fintype a] [DecidableEq a] (h : GL b R) :
-    (σ.reindexGL R (TauCeti.fromBlocksGL (h, 1)) : Matrix n n R).submatrix (σ ∘ Sum.inl)
-      (σ ∘ Sum.inl) = h := by
-  ext i j
-  simp
-
 /-- The second function of a matched pair transforms by `χ⁻¹ ∘ det` under `GL_b(R)` acting on the
 right: `χ (det h) * Ψ (y h) = Ψ y`. -/
 theorem AreMatched.mul_apply_mul (hm : χ.AreMatched σ Φ Ψ) (h : GL b R) (y : Matrix n b R) :
     χ (h : Matrix b b R).det * Ψ (y * (h : Matrix b b R)) = Ψ y := by
-  classical
-  let _ := fintypeOfSplitting σ
+  -- `g ∈ GL_b(R)` extended by the identity along `σ ∘ Sum.inl` is `g` on the indices `b` and has
+  -- the rows of the identity on the indices `a`.
+  let e : b ↪ n := Function.Embedding.inl.trans σ.toEmbedding
+  have hrows (g : GL b R) (i : a) (j : n) : (e.extendGL R g : Matrix n n R) (σ (.inr i)) j =
+      (1 : Matrix n n R) (σ (.inr i)) j :=
+    Function.Embedding.coe_extendGL_apply_of_notMem_left g (by simp [e]) j
+  have hblock (g : GL b R) :
+      (e.extendGL R g : Matrix n n R).submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl) = g := by
+    ext i j
+    exact Function.Embedding.coe_extendGL_apply_apply (e := e) g i j
   by_cases hy : ∃ k : GL n R, (k : Matrix n n R).submatrix id (σ ∘ Sum.inl) = y
   · obtain ⟨k, rfl⟩ := hy
-    obtain ⟨hx, hyk, hdet⟩ := shadows_mul_of_rows_eq_one
-      (σ.reindexGL R (TauCeti.fromBlocksGL (h, 1))) (reindexGL_fromBlocksGL_one_apply_inr h) k
-    rw [submatrix_reindexGL_fromBlocksGL_one] at hyk hdet
-    have e := hm.apply_eq (k * σ.reindexGL R (TauCeti.fromBlocksGL (h, 1)))
-    rw [hx, hyk, GeneralLinearGroup.coe_mul, det_mul, hdet, hm.apply_eq k, map_mul,
-      mul_assoc] at e
-    exact ((isUnit_apply_det χ k).mul_left_cancel e).symm
+    have hk := hm.apply_eq (k * e.extendGL R h)
+    rw [GeneralLinearGroup.submatrix_inv_mul_of_rows_eq_one σ (hrows h),
+      GeneralLinearGroup.submatrix_mul_of_rows_eq_one σ (hrows h), hblock,
+      GeneralLinearGroup.coe_mul, det_mul,
+      GeneralLinearGroup.det_eq_det_submatrix_of_rows_eq_one σ (hrows h), hblock, hm.apply_eq k,
+      map_mul, mul_assoc] at hk
+    exact ((isUnit_apply_det χ k).mul_left_cancel hk).symm
   · push Not at hy
     have hy' (k : GL n R) :
         (k : Matrix n n R).submatrix id (σ ∘ Sum.inl) ≠ y * (h : Matrix b b R) := by
       intro hk
-      obtain ⟨-, hyk, -⟩ := shadows_mul_of_rows_eq_one
-        (σ.reindexGL R (TauCeti.fromBlocksGL (h⁻¹, 1)))
-        (reindexGL_fromBlocksGL_one_apply_inr h⁻¹) k
-      rw [submatrix_reindexGL_fromBlocksGL_one, hk, Matrix.mul_assoc, ← Units.val_mul,
-        mul_inv_cancel, Units.val_one, Matrix.mul_one] at hyk
+      have hyk := GeneralLinearGroup.submatrix_mul_of_rows_eq_one σ (hrows h⁻¹) k
+      rw [hblock, hk, Matrix.mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one,
+        Matrix.mul_one] at hyk
       exact hy _ hyk
     rw [hm.eq_zero_right hy, hm.eq_zero_right hy', mul_zero]
-
-/-- If two invertible matrices have the same shadow `x`, their shadows `y` differ by an invertible
-matrix `h` on the right, and their determinants by `det h`. -/
-private theorem exists_submatrix_eq_mul_of_submatrix_inv_eq {k k' : GL n R}
-    (hkk' : ((k⁻¹ : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inr) id =
-      ((k'⁻¹ : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inr) id) :
-    ∃ h : GL b R, (k' : Matrix n n R).submatrix id (σ ∘ Sum.inl) =
-        (k : Matrix n n R).submatrix id (σ ∘ Sum.inl) * (h : Matrix b b R) ∧
-      (k' : Matrix n n R).det = (k : Matrix n n R).det * (h : Matrix b b R).det := by
-  have hm (i : a) (j : n) : ((k⁻¹ * k' : GL n R) : Matrix n n R) (σ (.inr i)) j =
-      (1 : Matrix n n R) (σ (.inr i)) j := by
-    have hrow (l : n) : ((k⁻¹ : GL n R) : Matrix n n R) (σ (.inr i)) l =
-        ((k'⁻¹ : GL n R) : Matrix n n R) (σ (.inr i)) l := by
-      simpa using congrArg (fun M : Matrix a n R ↦ M i l) hkk'
-    rw [GeneralLinearGroup.coe_mul, Matrix.mul_apply]
-    simp_rw [hrow]
-    rw [← Matrix.mul_apply, ← GeneralLinearGroup.coe_mul, inv_mul_cancel,
-      GeneralLinearGroup.coe_one]
-  obtain ⟨-, hyk, hdet⟩ := shadows_mul_of_rows_eq_one _ hm k
-  rw [mul_inv_cancel_left] at hyk
-  refine ⟨GeneralLinearGroup.mk''
-    (((k⁻¹ * k' : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl))
-    (hdet ▸ isUnits_det_units _), hyk, ?_⟩
-  rw [GeneralLinearGroup.val_mk'', ← hdet, ← det_mul, ← GeneralLinearGroup.coe_mul,
-    mul_inv_cancel_left]
 
 /-- **Existence of matched partners.** A function `Ψ` of `n × b` matrices has a matched partner if
 and only if it vanishes off the `n × b` matrices of columns indexed by `b` of invertible matrices
@@ -306,7 +231,7 @@ theorem exists_areMatched_iff (χ : MulChar R Λ) :
         ((k'⁻¹ : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inr) id) :
       χ (k' : Matrix n n R).det * Ψ ((k' : Matrix n n R).submatrix id (σ ∘ Sum.inl)) =
         χ (k : Matrix n n R).det * Ψ ((k : Matrix n n R).submatrix id (σ ∘ Sum.inl)) := by
-    obtain ⟨h, hy, hdet⟩ := exists_submatrix_eq_mul_of_submatrix_inv_eq hkk'
+    obtain ⟨h, hy, hdet⟩ := GeneralLinearGroup.exists_submatrix_eq_mul_of_submatrix_inv_eq σ hkk'
     rw [hy, hdet, map_mul, mul_assoc, hΨ]
   refine ⟨fun x ↦ if hx : ∃ k : GL n R,
       ((k⁻¹ : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inr) id = x then
@@ -368,12 +293,14 @@ theorem colBlockFun_apply [Fintype b] [DecidableEq b] (y : Matrix n b R) :
   (rfl)
 
 /-- The row block function vanishes where the square block of the columns `a` is singular. -/
+@[simp]
 theorem rowBlockFun_eq_zero [Fintype a] [DecidableEq a] {x : Matrix a n R}
     (hx : ¬IsUnit (x.submatrix id (σ ∘ Sum.inr)).det) :
     χ.rowBlockFun σ f x = 0 := by
   rw [rowBlockFun_apply, χ⁻¹.map_nonunit hx, zero_mul]
 
 /-- The column block function vanishes where the square block of the rows `b` is singular. -/
+@[simp]
 theorem colBlockFun_eq_zero [Fintype b] [DecidableEq b] {y : Matrix n b R}
     (hy : ¬IsUnit (y.submatrix (σ ∘ Sum.inl) id).det) :
     χ.colBlockFun σ f y = 0 := by
