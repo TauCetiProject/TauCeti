@@ -31,9 +31,10 @@ noncomputable section
 
 open KaehlerDifferential
 
-variable {R B C E M : Type*} [CommRing R] [CommRing B] [CommRing C] [CommRing E]
-  [Algebra R B] [Algebra R C] [Algebra R E] [AddCommGroup M] [Module B M] [Module R M]
-  [IsScalarTower R B M] {I : Ideal B} {J : Ideal C} {K : Ideal E}
+section
+
+variable {R B M : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
+  [AddCommMonoid M] [Module B M] [Module R M] [IsScalarTower R B M] {I : Ideal B}
 
 /-- A divided power derivation satisfies the chain rule for every positive divided power on
 the ideal. -/
@@ -48,8 +49,8 @@ theorem Derivation.IsPD.apply_dpow_succ {d : Derivation R B M} {δ : DividedPowe
   hd n x hx
 
 /-- The submodule of derivations compatible with the divided powers `δ`. -/
-def DividedPowers.derivations (δ : DividedPowers I) (R M : Type*) [CommRing R]
-    [Algebra R B] [AddCommGroup M] [Module R M] [Module B M] [IsScalarTower R B M] :
+def DividedPowers.derivations (δ : DividedPowers I) (R M : Type*) [CommSemiring R]
+    [Algebra R B] [AddCommMonoid M] [Module R M] [Module B M] [IsScalarTower R B M] :
     Submodule B (Derivation R B M) where
   carrier := {d | d.IsPD δ}
   zero_mem' := by intro n x _; simp
@@ -64,6 +65,12 @@ def DividedPowers.derivations (δ : DividedPowers I) (R M : Type*) [CommRing R]
 theorem DividedPowers.mem_derivations_iff {δ : DividedPowers I} {d : Derivation R B M} :
     d ∈ δ.derivations R M ↔ d.IsPD δ :=
   (Iff.rfl)
+
+end
+
+variable {R B C E M : Type*} [CommRing R] [CommRing B] [CommRing C] [CommRing E]
+  [Algebra R B] [Algebra R C] [Algebra R E] [AddCommGroup M] [Module B M] [Module R M]
+  [IsScalarTower R B M] {I : Ideal B} {J : Ideal C} {K : Ideal E}
 
 namespace TauCeti.PDKaehlerDifferential
 
