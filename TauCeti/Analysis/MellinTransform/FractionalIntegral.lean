@@ -529,7 +529,8 @@ private theorem integrableOn_Ioi_pow_smul_rem (hα₀ : 0 < α) (hα₁ : α < 1
     IntegrableOn (fun τ ↦ τ ^ k • rem f a α m τ) (Ioi 0) := by
   rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
   refine (integrableOn_Ioc_pow_smul_rem hα₁ hf hkm.ge).union ?_
-  have h := integrableOn_Ioi_sub_pow_smul (continuousOn_rem hfc m) hn (i := k)
+  have h := integrableOn_Ioi_sub_pow_smul
+    ((continuousOn_rem hfc m).locallyIntegrableOn measurableSet_Ioi) hn (i := k)
     (by rw [← hkm]; push_cast; linarith) one_pos 0
   simpa using h
 
@@ -539,7 +540,8 @@ private theorem integrableOn_Ioi_sub_pow_smul_rem (hfc : ContinuousOn f (Ioi 0))
     (hn : rem f a α m =O[atTop] fun t ↦ t ^ (-((m : ℝ) + α))) (hα₀ : 0 < α) {i : ℕ} (hi : i < m)
     {s : ℝ} (hs : 0 < s) (u : ℝ) :
     IntegrableOn (fun τ ↦ (τ - u) ^ i • rem f a α m τ) (Ioi s) :=
-  integrableOn_Ioi_sub_pow_smul (continuousOn_rem hfc m) hn
+  integrableOn_Ioi_sub_pow_smul
+    ((continuousOn_rem hfc m).locallyIntegrableOn measurableSet_Ioi) hn
     (by have : (i : ℝ) + 1 ≤ m := by exact_mod_cast hi
         linarith) hs u
 
@@ -602,7 +604,8 @@ private theorem integrableOn_Ioi_sub_pow_smul_rpow_smul (hα₀ : 0 < α) (n : �
     IntegrableOn (fun τ ↦ (τ - u) ^ i • τ ^ (-((n : ℝ) + α)) • c) (Ioi s) := by
   have hin : (i : ℝ) + 1 ≤ n := by exact_mod_cast hi
   exact integrableOn_Ioi_sub_pow_smul (h := fun τ ↦ τ ^ (-((n : ℝ) + α)) • c)
-    ((continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).smul continuousOn_const)
+    (((continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).smul
+      continuousOn_const).locallyIntegrableOn measurableSet_Ioi)
     (IsBigO.of_bound ‖c‖ (Eventually.of_forall fun τ ↦ by rw [norm_smul, mul_comm]))
     (by linarith) hs u
 
