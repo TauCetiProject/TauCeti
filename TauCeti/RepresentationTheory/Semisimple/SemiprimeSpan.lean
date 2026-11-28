@@ -190,13 +190,12 @@ theorem exists_mul_eq_mul_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zer
     (Representation.ofGL r).nonempty_equiv_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero
       ρ hρ (Matrix.toLinAlgEquiv'.toAlgHom.comp φ) fun g ↦ by simp [hlin, htr g]
   -- `Q` is the matrix of the inverse of the equivalence `e`.
-  set f := e.symm.toLinearEquiv
-  refine ⟨⟨LinearMap.toMatrix' f, LinearMap.toMatrix' f.symm, ?_, ?_⟩,
-    fun g ↦ Matrix.toLin'.injective ?_⟩
-  · simp [← LinearMap.toMatrix'_comp]
-  · simp [← LinearMap.toMatrix'_comp]
-  · have := e.symm.toIntertwiningMap.isIntertwining' g
-    simp only [Matrix.toLin'_mul, Matrix.toLin'_toMatrix']
-    simpa [f, hlin] using this.symm
+  set Q := Matrix.GeneralLinearGroup.toLin.symm
+    (LinearMap.GeneralLinearGroup.ofLinearEquiv e.symm.toLinearEquiv)
+  have hQ : Matrix.toLinAlgEquiv' (Q : Matrix n n k) = e.symm.toLinearEquiv :=
+    congrArg Units.val (Matrix.GeneralLinearGroup.toLin.apply_symm_apply _)
+  refine ⟨Q, fun g ↦ Matrix.toLinAlgEquiv'.injective ?_⟩
+  rw [map_mul, map_mul, hQ]
+  simpa [hlin, Module.End.mul_eq_comp] using (e.symm.toIntertwiningMap.isIntertwining' g).symm
 
 end MonoidHom
