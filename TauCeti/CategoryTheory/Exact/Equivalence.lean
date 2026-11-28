@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Square
 
 /-!
-# Transporting exact structures along equivalences
+# Exact equivalences and transport of exact structures
 
 An additive equivalence transports a Quillen exact structure to its target. A short complex in
 the target is distinguished precisely when its image under the inverse equivalence is
@@ -31,6 +31,11 @@ shows that both functors of the equivalence preserve and reflect conflations.
 * `TauCeti.ExactStructure.isConflationExact_inverse_iff_reflectsConflations`: for an equivalence
   between two *given* exact structures, conflation-exactness of the inverse is the same
   condition as reflection of conflations by the forward functor.
+* `TauCeti.ExactEquiv`: an equivalence preserving conflations in both directions.
+  `ExactEquiv.refl`, `ExactEquiv.symm` and `ExactEquiv.trans` use Mathlib's equivalence
+  operations and the identity and composition laws for `ExactStructure.IsConflationExact`.
+  `ExactEquiv.ofReflects` constructs one from an equivalence that preserves and reflects
+  conflations, and `ExactStructure.exactEquivTransport` packages transport as an exact equivalence.
 
 ## References
 
@@ -44,7 +49,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace ExactStructure
 
@@ -337,5 +342,119 @@ theorem isConflationExact_inverse_iff_reflectsConflations (e : C ≌ D) [e.funct
 end InverseExactness
 
 end ExactStructure
+
+section ExactEquiv
+
+variable {C : Type u₁} {D : Type u₂} {K : Type u₃}
+variable [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+variable [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+variable [Category.{v₃} K] [Preadditive K] [HasZeroObject K] [HasBinaryBiproducts K]
+
+local instance (e : C ≌ D) : e.functor.Additive :=
+  e.functor.additive_of_preserves_binary_products
+
+/-- An exact equivalence of Quillen exact categories is an additive equivalence whose functor
+and inverse preserve the distinguished conflations. See Bühler, *Exact categories*, Section 5. -/
+@[ext]
+structure ExactEquiv (E : ExactStructure C) (E' : ExactStructure D) where
+  /-- The underlying equivalence of categories. -/
+  equiv : C ≌ D
+  /-- The forward functor preserves conflations. -/
+  isConflationExact : E.IsConflationExact E' equiv.functor
+  /-- The inverse functor preserves conflations. -/
+  inverse_isConflationExact : E'.IsConflationExact E equiv.inverse
+
+namespace ExactEquiv
+
+variable {E : ExactStructure C} {E' : ExactStructure D} {E'' : ExactStructure K}
+
+/-- The functor of an exact equivalence is additive because it preserves binary products. -/
+instance functor_additive (e : ExactEquiv E E') : e.equiv.functor.Additive :=
+  e.equiv.functor.additive_of_preserves_binary_products
+
+/-- The identity equivalence preserves an exact structure in both directions. -/
+protected def refl (E : ExactStructure C) : ExactEquiv E E where
+  equiv := CategoryTheory.Equivalence.refl
+  isConflationExact := ExactStructure.IsConflationExact.id
+  inverse_isConflationExact := ExactStructure.IsConflationExact.id
+
+/-- The underlying equivalence of the identity exact equivalence is the identity. -/
+@[simp]
+theorem refl_equiv (E : ExactStructure C) :
+    (ExactEquiv.refl E).equiv = CategoryTheory.Equivalence.refl :=
+  (rfl)
+
+/-- Reversing an exact equivalence gives an exact equivalence. -/
+protected def symm (e : ExactEquiv E E') : ExactEquiv E' E where
+  equiv := e.equiv.symm
+  isConflationExact := e.inverse_isConflationExact
+  inverse_isConflationExact := e.isConflationExact
+
+/-- Reversing an exact equivalence reverses its underlying equivalence. -/
+@[simp]
+theorem symm_equiv (e : ExactEquiv E E') : e.symm.equiv = e.equiv.symm :=
+  (rfl)
+
+/-- Composing exact equivalences gives an exact equivalence. -/
+protected def trans (e : ExactEquiv E E') (e' : ExactEquiv E' E'') : ExactEquiv E E'' where
+  equiv := e.equiv.trans e'.equiv
+  isConflationExact := e.isConflationExact.comp e'.isConflationExact
+  inverse_isConflationExact := e'.inverse_isConflationExact.comp e.inverse_isConflationExact
+
+/-- Composition of exact equivalences composes their underlying equivalences. -/
+@[simp]
+theorem trans_equiv (e : ExactEquiv E E') (e' : ExactEquiv E' E'') :
+    (e.trans e').equiv = e.equiv.trans e'.equiv :=
+  (rfl)
+
+/-- An additive equivalence is exact if it preserves and reflects conflations. -/
+def ofReflects (e : C ≌ D)
+    (he : E.IsConflationExact E' e.functor) (hr : E.ReflectsConflations E' e.functor) :
+    ExactEquiv E E' where
+  equiv := e
+  isConflationExact := he
+  inverse_isConflationExact := ExactStructure.isConflationExact_inverse_of_reflectsConflations e hr
+
+/-- Bundling an equivalence that preserves and reflects conflations leaves it unchanged. -/
+@[simp]
+theorem ofReflects_equiv (e : C ≌ D)
+    (he : E.IsConflationExact E' e.functor) (hr : E.ReflectsConflations E' e.functor) :
+    (ofReflects e he hr).equiv = e :=
+  (rfl)
+
+/-- The forward functor of an exact equivalence reflects conflations. -/
+theorem reflectsConflations (e : ExactEquiv E E') : E.ReflectsConflations E' e.equiv.functor :=
+  ExactStructure.reflectsConflations_of_isConflationExact_inverse e.equiv
+    e.inverse_isConflationExact
+
+/-- A short complex is a conflation if and only if its image by an exact equivalence is. -/
+@[simp]
+theorem conflation_map_iff (e : ExactEquiv E E') {S : ShortComplex C} :
+    E'.Conflation (S.map e.equiv.functor) ↔ E.Conflation S :=
+  ExactStructure.conflation_map_iff e.isConflationExact e.reflectsConflations S
+
+/-- A short complex is a conflation if and only if its image by the inverse is. -/
+@[simp]
+theorem conflation_map_inverse_iff (e : ExactEquiv E E') {S : ShortComplex D} :
+    E.Conflation (S.map e.equiv.inverse) ↔ E'.Conflation S := by
+  simpa only [symm_equiv, CategoryTheory.Equivalence.symm_functor] using
+    e.symm.conflation_map_iff (S := S)
+
+end ExactEquiv
+
+/-- An additive equivalence is exact between an exact structure and its transport. -/
+noncomputable def ExactStructure.exactEquivTransport (E : ExactStructure C) (e : C ≌ D) :
+    ExactEquiv E (E.transport e) where
+  equiv := e
+  isConflationExact := E.isConflationExact_functor_transport e
+  inverse_isConflationExact := E.isConflationExact_inverse_transport e
+
+/-- The exact equivalence to the transported structure has the specified underlying equivalence. -/
+@[simp]
+theorem ExactStructure.exactEquivTransport_equiv (E : ExactStructure C) (e : C ≌ D) :
+    (E.exactEquivTransport e).equiv = e :=
+  (rfl)
+
+end ExactEquiv
 
 end TauCeti
