@@ -20,21 +20,19 @@ images of those of `(X, Y)`, conjugated by the unit and tensor comparisons of `F
 objects with a left or right dual (`CategoryTheory.Functor.mapHasLeftDual` and
 `CategoryTheory.Functor.mapHasRightDual`).
 
-Since duals are unique up to unique isomorphism, the image `F.obj Xᘁ` of a right dual of `X` is
-canonically isomorphic to the right dual `(F.obj X)ᘁ` of its image
-(`CategoryTheory.Functor.mapRightDualIso`), and dually `F.obj (ᘁY) ≅ ᘁ(F.obj Y)` for left duals
-(`CategoryTheory.Functor.mapLeftDualIso`). These comparisons are natural with respect to adjoint
+Since right duals are unique up to unique isomorphism, the image `F.obj Xᘁ` of a right dual of
+`X` is canonically isomorphic to the right dual `(F.obj X)ᘁ` of its image
+(`CategoryTheory.Functor.mapRightDualIso`). These comparisons are natural with respect to adjoint
 mates, are identities for the identity functor, and compose along a composite of functors. They
 are the comparisons against which a monoidal functor between pivotal categories is required to
 preserve the pivotal structure. They are also natural in the functor: a monoidal natural
 transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X` and
-`(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹`, and dually for left duals. Moreover, for any exact
-pairing `(X, Y)` in `C`, the explicit mate of `τ_X` is a two-sided inverse to `τ_Y`, so every
-monoidal natural transformation between strong monoidal functors out of a left or right rigid
-category is an isomorphism (`CategoryTheory.NatTrans.isIso_of_leftRigidCategory` and
-`CategoryTheory.NatTrans.isIso_of_rightRigidCategory`). Even when `G` is only lax monoidal,
-the component of a monoidal natural transformation `F ⟶ G` at one member of an exact pairing
-determines its component at the other (`CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
+`(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹`. Likewise the image
+`F.obj (ᘁY)` of a left dual of `Y` is canonically isomorphic to the left dual `ᘁ(F.obj Y)`
+(`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations. Even when `G`
+is only lax monoidal, the component of a monoidal natural transformation `F ⟶ G` at one member of
+an exact pairing determines its component at the other
+(`CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
 `CategoryTheory.NatTrans.app_left_eq_of_exactPairing`).
 
 Between right rigid categories, applying the comparison twice gives the bidual comparison
@@ -89,14 +87,11 @@ equivalence.
 * `CategoryTheory.Functor.mapLeftDualIso`: the comparison `F.obj (ᘁY) ≅ ᘁ(F.obj Y)`,
   characterized by `CategoryTheory.Functor.whiskerLeft_mapLeftDualIso_hom_evaluation`, with its
   inverse compatible with coevaluation by
-  `CategoryTheory.Functor.coevaluation_mapLeftDualIso_inv_whiskerRight`, naturality
-  `mapLeftDualIso_hom_naturality`, `mapLeftDualIso_id`, `mapLeftDualIso_comp`, and expressed as
-  a left mate of the identity by `CategoryTheory.Functor.mapLeftDualIso_hom_eq_leftMate`;
-* `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate`,
-  `CategoryTheory.NatTrans.app_comp_mapLeftDualIso_hom_comp_leftAdjointMate`,
-  `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`, and
-  `CategoryTheory.Iso.hom_app_comp_mapLeftDualIso_hom`: naturality of dual comparisons with
-  respect to monoidal natural transformations and isomorphisms;
+  `CategoryTheory.Functor.coevaluation_mapLeftDualIso_inv_whiskerRight`, and expressed as a left
+  mate of the identity by `CategoryTheory.Functor.mapLeftDualIso_hom_eq_leftMate`;
+* `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
+  `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
+  monoidal natural transformations and isomorphisms;
 * `CategoryTheory.NatTrans.tensorHom_app_comp_μ_map_comp_η` and
   `CategoryTheory.NatTrans.ε_map_comp_δ_comp_tensorHom_app`: a monoidal natural transformation
   between strong monoidal functors is compatible with the images of morphisms into and out of the
@@ -104,12 +99,9 @@ equivalence.
 * `CategoryTheory.NatTrans.app_comp_rightMate_app`, `CategoryTheory.NatTrans.rightMate_app_comp_app`
   and their left-mate counterparts: the component of such a transformation at one member of an
   exact pairing is inverse to the mate of its component at the other member, with respect to the
-  image pairings. So `CategoryTheory.NatTrans.isIso_app_right_of_exactPairing`,
-  `CategoryTheory.NatTrans.isIso_app_left_of_exactPairing`,
-  `CategoryTheory.NatTrans.isIso_of_rightRigidCategory`,
-  `CategoryTheory.NatTrans.isIso_of_leftRigidCategory`, and
-  `CategoryTheory.NatTrans.app_right_eq_of_app_left_eq` /
-  `CategoryTheory.NatTrans.app_left_eq_of_app_right_eq` (with lax-target generalizations
+  image pairings. So `CategoryTheory.NatTrans.app_right_eq_of_app_left_eq` and
+  `CategoryTheory.NatTrans.app_left_eq_of_app_right_eq`: two such transformations which agree at
+  one member of an exact pairing agree at the other (with lax-target generalizations
   `CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
   `CategoryTheory.NatTrans.app_left_eq_of_exactPairing`);
 * `TauCeti.doubleRightDualFunctor_mapRightDualIso`: the comparison is the identity for the double
@@ -364,49 +356,6 @@ theorem mapLeftDualIso_inv_eq_leftMate (Y : C) [HasLeftDual Y] [HasLeftDual (F.o
     (F.mapLeftDualIso Y).inv =
       ExactPairing.leftMate (F.mapExactPairing (ᘁY) Y) HasLeftDual.exact (𝟙 (F.obj Y)) := by
   rw [mapLeftDualIso, ExactPairing.leftDualIso_inv]
-
-/-- Naturality of `F.mapLeftDualIso`: it intertwines the image of the left mate of `f` with the
-left mate of the image of `f`. -/
-@[reassoc]
-theorem mapLeftDualIso_hom_naturality {X Y : C} [HasLeftDual X] [HasLeftDual Y]
-    [HasLeftDual (F.obj X)] [HasLeftDual (F.obj Y)] (f : X ⟶ Y) :
-    F.map (ᘁf) ≫ (F.mapLeftDualIso X).hom = (F.mapLeftDualIso Y).hom ≫ ᘁ(F.map f) := by
-  refine ExactPairing.leftDualHom_ext (Y := F.obj X) ?_
-  have h : F.map (X ◁ ᘁf) ≫ F.map (ε_ (ᘁX) X) = F.map (f ▷ ᘁY) ≫ F.map (ε_ (ᘁY) Y) := by
-    rw [← F.map_comp, leftAdjointMate_comp_evaluation, F.map_comp]
-  simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc,
-    whiskerLeft_mapLeftDualIso_hom_evaluation, leftAdjointMate_comp_evaluation,
-    whisker_exchange_assoc, μ_natural_left_assoc, μ_natural_right_assoc, reassoc_of% h]
-
-/-- Naturality of the inverse of `F.mapLeftDualIso`. -/
-@[reassoc]
-theorem mapLeftDualIso_inv_naturality {X Y : C} [HasLeftDual X] [HasLeftDual Y]
-    [HasLeftDual (F.obj X)] [HasLeftDual (F.obj Y)] (f : X ⟶ Y) :
-    (ᘁF.map f) ≫ (F.mapLeftDualIso X).inv = (F.mapLeftDualIso Y).inv ≫ F.map (ᘁf) := by
-  rw [Iso.comp_inv_eq, Category.assoc, mapLeftDualIso_hom_naturality, Iso.inv_hom_id_assoc]
-
-/-- For the identity functor, the comparison between the image of a left dual and the left dual of
-an image is the identity. Only `Y` needs a left dual; it is passed explicitly as the left dual of
-`(𝟭 C).obj Y`, which instance search does not unfold to `Y`. -/
-@[simp]
-theorem mapLeftDualIso_id (Y : C) [hY : HasLeftDual Y] :
-    (𝟭 C).mapLeftDualIso Y (_hFY := hY) = Iso.refl _ := by
-  ext; refine ExactPairing.leftDualHom_ext (X := ᘁY) (Y := Y) ?_
-  refine (whiskerLeft_mapLeftDualIso_hom_evaluation (F := 𝟭 C) Y (_hFY := hY)).trans ?_; simp
-
-/-- For a composite `F ⋙ G`, the comparison between the image of a left dual and the left dual of
-an image is the image under `G` of the comparison for `F`, followed by the comparison for `G`. -/
-@[simp]
-theorem mapLeftDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
-    (G : D ⥤ E) [G.Monoidal] (Y : C) [HasLeftDual Y] [HasLeftDual (F.obj Y)]
-    [hGFY : HasLeftDual (G.obj (F.obj Y))] :
-    (F ⋙ G).mapLeftDualIso Y (_hFY := hGFY) =
-      G.mapIso (F.mapLeftDualIso Y) ≪≫ G.mapLeftDualIso (F.obj Y) := by
-  ext; refine ExactPairing.leftDualHom_ext (X := ᘁ(G.obj (F.obj Y))) (Y := G.obj (F.obj Y)) ?_
-  refine (whiskerLeft_mapLeftDualIso_hom_evaluation (F := F ⋙ G) Y (_hFY := hGFY)).trans ?_
-  dsimp only [Functor.comp_obj, Iso.trans_hom, Functor.mapIso_hom]
-  rw [MonoidalCategory.whiskerLeft_comp_assoc, whiskerLeft_mapLeftDualIso_hom_evaluation,
-    μ_natural_right_assoc, ← G.map_comp_assoc, whiskerLeft_mapLeftDualIso_hom_evaluation]; simp
 
 /-! ### Internal Hom comparisons -/
 
@@ -668,55 +617,6 @@ theorem Iso.hom_app_comp_mapRightDualIso_hom (α : F ≅ G) [α.hom.IsMonoidal] 
   rw [← NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate α.hom X, Category.assoc,
     Category.assoc, ← comp_rightAdjointMate, Iso.inv_hom_id_app, rightAdjointMate_id,
     Category.comp_id]
-
-/-- A monoidal natural transformation `τ : F ⟶ G` between strong monoidal functors is compatible
-with the comparisons between images of left duals and left duals of images:
-`τ_{ᘁY} ≫ δ^G_Y ≫ ᘁ(τ_Y) = δ^F_Y` as morphisms `F.obj (ᘁY) ⟶ ᘁ(F.obj Y)`. -/
-@[reassoc]
-theorem NatTrans.app_comp_mapLeftDualIso_hom_comp_leftAdjointMate (τ : F ⟶ G) [τ.IsMonoidal]
-    (Y : C) [HasLeftDual Y] [HasLeftDual (F.obj Y)] [HasLeftDual (G.obj Y)] :
-    τ.app (ᘁY) ≫ (G.mapLeftDualIso Y).hom ≫ (ᘁτ.app Y) = (F.mapLeftDualIso Y).hom := by
-  refine ExactPairing.leftDualHom_ext (Y := F.obj Y) ?_
-  rw [Functor.whiskerLeft_mapLeftDualIso_hom_evaluation]
-  simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc, leftAdjointMate_comp_evaluation]
-  rw [whisker_exchange_assoc, Functor.whiskerLeft_mapLeftDualIso_hom_evaluation,
-    ← tensorHom_def'_assoc, NatTrans.tensorHom_app_comp_μ_map_comp_η]
-
-/-- A monoidal natural isomorphism `α : F ≅ G` intertwines the comparisons between images of left
-duals and left duals of images: `α_{ᘁY} ≫ δ^G_Y = δ^F_Y ≫ ᘁ(α_Y⁻¹)`. -/
-@[reassoc]
-theorem Iso.hom_app_comp_mapLeftDualIso_hom (α : F ≅ G) [α.hom.IsMonoidal] (Y : C)
-    [HasLeftDual Y] [HasLeftDual (F.obj Y)] [HasLeftDual (G.obj Y)] :
-    α.hom.app (ᘁY) ≫ (G.mapLeftDualIso Y).hom = (F.mapLeftDualIso Y).hom ≫ (ᘁα.inv.app Y) := by
-  rw [← NatTrans.app_comp_mapLeftDualIso_hom_comp_leftAdjointMate α.hom Y, Category.assoc,
-    Category.assoc, ← comp_leftAdjointMate, Iso.inv_hom_id_app, leftAdjointMate_id,
-    Category.comp_id]
-
-/-- A monoidal natural transformation between strong monoidal functors is invertible at the right
-member of any exact pairing. -/
-theorem NatTrans.isIso_app_right_of_exactPairing (τ : F ⟶ G) [τ.IsMonoidal] (X Y : C)
-    [ExactPairing X Y] : IsIso (τ.app Y) :=
-  ⟨⟨ExactPairing.rightMate (F.mapExactPairing X Y) (G.mapExactPairing X Y) (τ.app X),
-    τ.app_comp_rightMate_app X Y, τ.rightMate_app_comp_app X Y⟩⟩
-
-/-- A monoidal natural transformation between strong monoidal functors is invertible at the left
-member of any exact pairing. -/
-theorem NatTrans.isIso_app_left_of_exactPairing (τ : F ⟶ G) [τ.IsMonoidal] (X Y : C)
-    [ExactPairing X Y] : IsIso (τ.app X) :=
-  ⟨⟨ExactPairing.leftMate (F.mapExactPairing X Y) (G.mapExactPairing X Y) (τ.app Y),
-    τ.app_comp_leftMate_app X Y, τ.leftMate_app_comp_app X Y⟩⟩
-
-/-- Every monoidal natural transformation between strong monoidal functors out of a right rigid
-category is an isomorphism. -/
-theorem NatTrans.isIso_of_rightRigidCategory [RightRigidCategory C] (τ : F ⟶ G) [τ.IsMonoidal] :
-    IsIso τ :=
-  (NatTrans.isIso_iff_isIso_app τ).2 fun X => τ.isIso_app_left_of_exactPairing X Xᘁ
-
-/-- Every monoidal natural transformation between strong monoidal functors out of a left rigid
-category is an isomorphism. -/
-theorem NatTrans.isIso_of_leftRigidCategory [LeftRigidCategory C] (τ : F ⟶ G) [τ.IsMonoidal] :
-    IsIso τ :=
-  (NatTrans.isIso_iff_isIso_app τ).2 fun Y => τ.isIso_app_right_of_exactPairing (ᘁY) Y
 
 /-- Two monoidal natural transformations between strong monoidal functors which agree at the left
 member `X` of an exact pairing `(X, Y)` also agree at its right member `Y`. -/
