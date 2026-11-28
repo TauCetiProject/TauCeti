@@ -38,13 +38,14 @@ R-series equals its variance.
   `PositiveLinearMap.ofReal_freeCumulant_law`,
   `PositiveLinearMap.map_ofReal_rSeries_law`: agreement of scalar-measure formal series and free
   cumulants of `φ.law a` with those of a selfadjoint element `a`.
-* `MeasureTheory.Measure.rSeries_def`,
+* `MeasureTheory.Measure.freeCumulant_def`,
+  `MeasureTheory.Measure.rSeries_def`,
   `MeasureTheory.Measure.coeff_rSeries`,
   `MeasureTheory.Measure.constantCoeff_rSeries`,
   `MeasureTheory.Measure.freeCumulant_eq_coeff_freeCumulantSeries`,
   `MeasureTheory.Measure.freeCumulant_succ_eq_coeff_rSeries`,
   `MeasureTheory.Measure.freeCumulant_zero`,
-  `MeasureTheory.Measure.zero_freeCumulant_succ`,
+  `MeasureTheory.Measure.zero_freeCumulant`,
   `MeasureTheory.Measure.freeCumulant_one`,
   `MeasureTheory.Measure.freeCumulant_two_eq_variance`,
   `MeasureTheory.Measure.freeCumulant_integral_const_eq`,
@@ -88,6 +89,13 @@ moment). -/
 def freeCumulant (μ : Measure ℝ) (n : ℕ) : ℝ :=
   TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ) (fun _ : Fin n => (id : ℝ → ℝ)) univ
 
+/-- Characterization of `μ.freeCumulant n` as the `n`-th word free cumulant of `id : ℝ → ℝ` under
+integration against `μ`. -/
+theorem freeCumulant_def (μ : Measure ℝ) (n : ℕ) :
+    μ.freeCumulant n =
+      TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ) (fun _ : Fin n => (id : ℝ → ℝ)) univ := by
+  rfl
+
 /-- The **formal R-series** `R_μ(z) = ∑_{n ≥ 0} κ_{n+1}(μ) z ^ n` of a real Borel measure `μ`. -/
 def rSeries (μ : Measure ℝ) : ℝ⟦X⟧ :=
   TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id
@@ -119,10 +127,12 @@ theorem freeCumulant_succ_eq_coeff_rSeries (μ : Measure ℝ) (n : ℕ) :
     TauCeti.constantCoeff_freeCumulantSeries]
 
 /-- Every positive-order free cumulant of the zero measure is `0`. -/
-@[simp] theorem zero_freeCumulant_succ (n : ℕ) : (0 : Measure ℝ).freeCumulant (n + 1) = 0 := by
-  rw [freeCumulant, TauCeti.freeCumulant_eq_sum_mu_mul_partitionMoment]
+@[simp] theorem zero_freeCumulant {n : ℕ} (hn : n ≠ 0) :
+    (0 : Measure ℝ).freeCumulant n = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [freeCumulant_def, TauCeti.freeCumulant_eq_sum_mu_mul_partitionMoment]
   refine Finset.sum_eq_zero fun π _ => ?_
-  obtain ⟨B, hB, -⟩ := π.val.exists_mem (mem_univ (0 : Fin (n + 1)))
+  obtain ⟨B, hB, -⟩ := π.val.exists_mem (mem_univ (0 : Fin (k + 1)))
   simp [TauCeti.partitionMoment_def, prod_eq_zero hB]
 
 /-- The formal R-series of the zero measure is `0`. -/
@@ -284,43 +294,34 @@ theorem rSeries_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (a b : ℝ) :
     (μ.map fun x => a + b * x).rSeries = b • PowerSeries.rescale b μ.rSeries + PowerSeries.C a := by
   have : CompactSpace μ.support := isCompact_iff_compactSpace.mp hμ
-  let φ : C(μ.support, ℂ) →ₚ[ℂ] ℂ :=
-    ContinuousMap.integralPositiveLinearMap (μ.comap ((↑) : μ.support → ℝ))
-  let x : C(μ.support, ℂ) := (ContinuousMap.restrict μ.support (ContinuousMap.id ℝ)).realToRCLike ℂ
+  let ν : Measure μ.support := μ.comap ((↑) : μ.support → ℝ)
+  let φ : C(μ.support, ℝ) →ₚ[ℝ] ℝ := ContinuousMap.integralPositiveLinearMap ν
+  let x : C(μ.support, ℝ) := ContinuousMap.restrict μ.support (ContinuousMap.id ℝ)
   have hφ : φ 1 = 1 :=
     ContinuousMap.integralPositiveLinearMap_comap_subtypeVal_one (Measure.measure_compl_support)
-  have hx : IsSelfAdjoint x := ContinuousMap.isSelfAdjoint_realToRCLike ℂ
-  have hlaw : φ.law x = μ :=
-    PositiveLinearMap.law_integralPositiveLinearMap_comap_restrict_id
-      (Measure.measure_compl_support)
-  have haff : φ.law ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) = μ.map fun t => a + b * t := by
-    have h1 := φ.law_smul_add_algebraMap hx b a
-    rw [hlaw] at h1
-    refine h1.trans ?_
-    congr 1; funext t; ring
-  have hsa : IsSelfAdjoint ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) := by
-    simpa [Complex.coe_smul, IsScalarTower.algebraMap_apply ℝ ℂ C(μ.support, ℂ)] using
-      ((IsSelfAdjoint.all b).smul hx).add (IsSelfAdjoint.algebraMap _ (.all a))
-  have hr_aff :
-      PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ) (μ.map fun x => a + b * x).rSeries =
-        TauCeti.rSeries φ ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) := by
-    rw [← haff, φ.map_ofReal_rSeries_law hsa]
-  have hr_alg :
-      TauCeti.rSeries φ ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) =
-        (b : ℂ) • PowerSeries.rescale (b : ℂ) (TauCeti.rSeries φ x) + PowerSeries.C (a : ℂ) := by
-    rw [← PositiveLinearMap.coe_toLinearMap, TauCeti.rSeries_add_algebraMap hφ _ (a : ℂ),
-      TauCeti.rSeries_smul φ.toLinearMap (b : ℂ) x, PositiveLinearMap.coe_toLinearMap]
-  have hRx :
-      PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ) μ.rSeries = TauCeti.rSeries φ x := by
-    simpa [hlaw] using φ.map_ofReal_rSeries_law hx
-  have hr_map :
-      PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ)
-          (b • PowerSeries.rescale b μ.rSeries + PowerSeries.C a) =
-        (b : ℂ) • PowerSeries.rescale (b : ℂ) (TauCeti.rSeries φ x) + PowerSeries.C (a : ℂ) := by
-    simp only [PowerSeries.smul_eq_C_mul, map_add, map_mul, PowerSeries.map_C,
-      ← PowerSeries.rescale_map, Complex.ofRealHom_eq_coe, hRx]
-  exact PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-    (hr_aff.trans (hr_alg.trans hr_map.symm))
+  have hmap : ν.map Subtype.val = μ :=
+    (map_comap_subtypeVal isClosed_support.measurableSet μ).trans
+      (Measure.restrict_eq_self_of_ae_mem (ae_iff.2 Measure.measure_compl_support))
+  have hx : TauCeti.momentSeries (fun f : ℝ → ℝ => ∫ t, f t ∂μ) id =
+      TauCeti.momentSeries φ.toLinearMap x := by
+    ext n
+    simp only [TauCeti.coeff_momentSeries, Pi.pow_def, id_eq, PositiveLinearMap.coe_toLinearMap,
+      φ, ContinuousMap.integralPositiveLinearMap_apply]
+    conv_lhs => rw [← hmap, integral_map measurable_subtypeVal.aemeasurable (by fun_prop)]
+    rfl
+  have haff : TauCeti.momentSeries (fun f : ℝ → ℝ => ∫ t, f t ∂(μ.map fun t => a + b * t)) id =
+      TauCeti.momentSeries φ.toLinearMap (b • x + algebraMap ℝ _ a) := by
+    ext n
+    simp only [TauCeti.coeff_momentSeries, Pi.pow_def, id_eq, PositiveLinearMap.coe_toLinearMap,
+      φ, ContinuousMap.integralPositiveLinearMap_apply]
+    conv_lhs =>
+      rw [integral_map (by fun_prop) (by fun_prop), ← hmap,
+        integral_map measurable_subtypeVal.aemeasurable (by fun_prop)]
+    refine integral_congr_ae (ae_of_all _ fun y => ?_)
+    simp [x, add_comm]
+  rw [rSeries_def, rSeries_def, TauCeti.rSeries_congr _ _ haff, TauCeti.rSeries_congr _ _ hx,
+    TauCeti.rSeries_add_algebraMap (φ := φ.toLinearMap) hφ _ a,
+    TauCeti.rSeries_smul φ.toLinearMap b x]
 
 /-- Under `x ↦ a + b * x`, the first free cumulant (mean) transforms by
 `κ₁(μ.map (a + b * ·)) = a + b * κ₁(μ)`. -/

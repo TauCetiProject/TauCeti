@@ -109,14 +109,14 @@ variable (μ : ι → Measure ℝ)
   [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
 /-- In `algebra μ`, the sum of distinct generators `i ≠ j` has law `(μ i).freeConv (μ j)`. -/
-theorem law_add_generator {i j : ι} (hij : i ≠ j) :
+@[simp] theorem law_add_generator {i j : ι} (hij : i ≠ j) :
     (state μ).law (generator μ i + generator μ j) = (μ i).freeConv (μ j) := by
   simpa using (isFreelyIndependentElements_generator μ).law_add (state_one μ) hij
     (isSelfAdjoint_generator μ i) (isSelfAdjoint_generator μ j)
 
 /-- In `vonNeumannAlgebra μ`, the sum of distinct generators `i ≠ j` has law
 `(μ i).freeConv (μ j)`. -/
-theorem law_add_vonNeumannGenerator {i j : ι} (hij : i ≠ j) :
+@[simp] theorem law_add_vonNeumannGenerator {i j : ι} (hij : i ≠ j) :
     (vonNeumannState μ).law (vonNeumannGenerator μ i + vonNeumannGenerator μ j) =
       (μ i).freeConv (μ j) := by
   simpa using (isFreelyIndependentElements_vonNeumannGenerator μ).law_add (vonNeumannState_one μ)
@@ -149,18 +149,26 @@ theorem neg_freeConv_neg (μ ν : Measure ℝ) : μ.neg.freeConv ν.neg = (μ.fr
 theorem rSeries_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     (μ.freeConv ν).rSeries = μ.rSeries + ν.rSeries := by
-  obtain ⟨A, _, _, _, φ, a, hφ1, ha, hfree, hl0, hl1, -, -⟩ :=
-    exists_isFreelyIndependentElements_law_eq_pair μ ν hμ hν
-  have hladd : φ.law (a 0 + a 1) = μ.freeConv ν := by
-    simpa [hl0, hl1] using hfree.law_add hφ1 (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1)
-  have h1 := φ.map_ofReal_rSeries_law (ha 0)
-  have h2 := φ.map_ofReal_rSeries_law (ha 1)
-  rw [hl0] at h1
-  rw [hl1] at h2
+  let ρ : Fin 2 → Measure ℝ := ![μ, ν]
+  have : ∀ i, IsProbabilityMeasure (ρ i) := Fin.forall_fin_two.2 ⟨‹_›, ‹_›⟩
+  have : ∀ i, CompactSpace (ρ i).support :=
+    Fin.forall_fin_two.2 ⟨isCompact_iff_compactSpace.mp hμ, isCompact_iff_compactSpace.mp hν⟩
+  have hadd := TauCeti.FreeLawRealization.law_add_generator ρ (by decide : (0 : Fin 2) ≠ 1)
+  dsimp [ρ] at hadd
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [map_add, ← hladd, φ.map_ofReal_rSeries_law ((ha 0).add (ha 1))]
-  exact (hfree.rSeries_add hφ1 (by decide : (0 : Fin 2) ≠ 1)).trans
-    (by simpa using congrArg₂ (· + ·) h1.symm h2.symm)
+  rw [map_add, ← hadd,
+    (TauCeti.FreeLawRealization.state ρ).map_ofReal_rSeries_law
+      ((TauCeti.FreeLawRealization.isSelfAdjoint_generator ρ 0).add
+        (TauCeti.FreeLawRealization.isSelfAdjoint_generator ρ 1))]
+  refine ((TauCeti.FreeLawRealization.isFreelyIndependentElements_generator ρ).rSeries_add
+    (TauCeti.FreeLawRealization.state_one ρ) (by decide : (0 : Fin 2) ≠ 1)).trans ?_
+  have h0 := (TauCeti.FreeLawRealization.state ρ).map_ofReal_rSeries_law
+    (TauCeti.FreeLawRealization.isSelfAdjoint_generator ρ 0)
+  have h1 := (TauCeti.FreeLawRealization.state ρ).map_ofReal_rSeries_law
+    (TauCeti.FreeLawRealization.isSelfAdjoint_generator ρ 1)
+  simp only [TauCeti.FreeLawRealization.law_generator, ρ, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one] at h0 h1
+  exact congrArg₂ (· + ·) h0.symm h1.symm
 
 /-- **Additivity of free cumulants under free additive convolution.** -/
 theorem freeCumulant_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]

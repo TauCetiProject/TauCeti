@@ -291,14 +291,14 @@ variable (μ : ι → Measure ℝ)
   [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
 /-- In `algebra μ`, `∑ i ∈ s, generator μ i` has law `s.fold freeConv (dirac 0) μ`. -/
-theorem law_sum_generator (s : Finset ι) :
+@[simp] theorem law_sum_generator (s : Finset ι) :
     (state μ).law (∑ i ∈ s, generator μ i) = s.fold Measure.freeConv (Measure.dirac 0) μ := by
   simp [(isFreelyIndependentElements_generator μ).law_sum (state_one μ) s
     fun i _ => isSelfAdjoint_generator μ i]
 
 /-- In `vonNeumannAlgebra μ`, `∑ i ∈ s, vonNeumannGenerator μ i` realizes the folded free
 convolution of `μ` over `s`. -/
-theorem law_sum_vonNeumannGenerator (s : Finset ι) :
+@[simp] theorem law_sum_vonNeumannGenerator (s : Finset ι) :
     (vonNeumannState μ).law (∑ i ∈ s, vonNeumannGenerator μ i) =
       s.fold Measure.freeConv (Measure.dirac 0) μ := by
   simp [(isFreelyIndependentElements_vonNeumannGenerator μ).law_sum (vonNeumannState_one μ) s

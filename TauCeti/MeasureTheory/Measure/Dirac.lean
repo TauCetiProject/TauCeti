@@ -133,10 +133,7 @@ topological support. -/
 theorem isCompact_support_dirac [TopologicalSpace X] [OpensMeasurableSpace X] [R0Space X]
     (a : X) : IsCompact (dirac a).support := by
   rw [support_dirac]
-  refine isCompact_iff_finite_subcover.2 fun U hUo hU => ?_
-  obtain ⟨i, hi⟩ := Set.mem_iUnion.1 (hU (subset_closure (Set.mem_singleton a)))
-  refine ⟨{i}, fun x hx => Set.mem_biUnion (Finset.mem_singleton_self i) ?_⟩
-  exact ((specializes_iff_mem_closure.2 hx).inseparable.mem_open_iff (hUo i)).mp hi
+  exact isCompact_closure_singleton
 
 /-- A measure vanishing on every measurable set avoiding `x` is its total mass times the
 Dirac measure at `x`. No measurability assumption on `{x}` is needed. -/

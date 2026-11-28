@@ -49,18 +49,29 @@ namespace TauCeti.Probability
       semicircleReal (m₁ + m₂) (v₁ + v₂) := by
   have hcentred : (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) =
       semicircleReal 0 (v₁ + v₂) := by
-    obtain ⟨A, _, _, _, φ, a, hφ1, ha, hfree, hl0, hl1, -, -⟩ :=
-      Measure.exists_isFreelyIndependentElements_law_eq_pair
-        (semicircleReal 0 v₁) (semicircleReal 0 v₂)
-        (isCompact_support_semicircleReal 0 v₁) (isCompact_support_semicircleReal 0 v₂)
-    have hladd : φ.law (a 0 + a 1) = (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) := by
-      simpa [hl0, hl1] using hfree.law_add hφ1 (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1)
-    have hsum : IsSemicircular φ.toLinearMap (a 0 + a 1) (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
+    let μ : Fin 2 → Measure ℝ := ![semicircleReal 0 v₁, semicircleReal 0 v₂]
+    have : ∀ i, IsProbabilityMeasure (μ i) := Fin.forall_fin_two.2
+      ⟨(inferInstance : IsProbabilityMeasure (semicircleReal 0 v₁)),
+        (inferInstance : IsProbabilityMeasure (semicircleReal 0 v₂))⟩
+    have : ∀ i, CompactSpace (μ i).support := Fin.forall_fin_two.2
+      ⟨isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₁),
+        isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₂)⟩
+    have hsum : IsSemicircular (FreeLawRealization.state μ).toLinearMap
+        (FreeLawRealization.generator μ 0 + FreeLawRealization.generator μ 1)
+        (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
       simpa [NNReal.coe_add] using
-        hfree.isSemicircular_add (by decide : (0 : Fin 2) ≠ 1)
-          ((φ.law_eq_semicircleReal_iff (ha 0) v₁).mp hl0)
-          ((φ.law_eq_semicircleReal_iff (ha 1) v₂).mp hl1)
-    exact hladd.symm.trans <| (φ.law_eq_semicircleReal_iff ((ha 0).add (ha 1)) _).mpr hsum
+        (FreeLawRealization.isFreelyIndependentElements_generator μ).isSemicircular_add
+          (by decide : (0 : Fin 2) ≠ 1)
+          ((PositiveLinearMap.law_eq_semicircleReal_iff _
+            (FreeLawRealization.isSelfAdjoint_generator μ 0) v₁).mp (by simp [μ]))
+          ((PositiveLinearMap.law_eq_semicircleReal_iff _
+            (FreeLawRealization.isSelfAdjoint_generator μ 1) v₂).mp (by simp [μ]))
+    have hadd := FreeLawRealization.law_add_generator μ (by decide : (0 : Fin 2) ≠ 1)
+    dsimp [μ] at hadd
+    rw [← hadd]
+    exact (PositiveLinearMap.law_eq_semicircleReal_iff _
+      ((FreeLawRealization.isSelfAdjoint_generator μ 0).add
+        (FreeLawRealization.isSelfAdjoint_generator μ 1)) _).mpr hsum
   have hshift (m : ℝ) (v : ℝ≥0) :
       semicircleReal m v = (semicircleReal 0 v).map fun x => m + 1 * x := by
     simpa using (map_affine_semicircleReal 0 m 1 v).symm
