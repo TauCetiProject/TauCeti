@@ -48,8 +48,9 @@ R-series equals its variance.
 * `MeasureTheory.Measure.ext_of_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_iff_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_iff_forall_freeCumulant_eq`,
-  `MeasureTheory.Measure.coeff_one_rSeries_integral_eq_variance`: R-series/cumulant determinacy and
-  variance.
+  `MeasureTheory.Measure.coeff_zero_rSeries_integral`,
+  `MeasureTheory.Measure.coeff_one_rSeries_integral_eq_variance`: R-series/cumulant determinacy,
+  mean, and variance.
 
 ## References
 
@@ -194,6 +195,13 @@ theorem eq_iff_forall_freeCumulant_eq {μ ν : Measure ℝ} [IsProbabilityMeasur
   · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
     simpa [freeCumulant_succ_eq_coeff_rSeries] using h k
   · simpa [freeCumulant_succ_eq_coeff_rSeries] using h (n + 1) n.succ_ne_zero
+
+/-- The constant coefficient of the formal R-series of a real random variable `X` equals its mean
+`∫ ω, X ω ∂μ`. -/
+theorem coeff_zero_rSeries_integral {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
+    (X : Ω → ℝ) :
+    PowerSeries.coeff 0 (TauCeti.rSeries (fun f : Ω → ℝ => ∫ ω, f ω ∂μ) X) = ∫ ω, X ω ∂μ := by
+  rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, TauCeti.constantCoeff_rSeries]
 
 /-- The linear coefficient of the formal R-series of a square-integrable real random variable `X`
 equals its variance. -/

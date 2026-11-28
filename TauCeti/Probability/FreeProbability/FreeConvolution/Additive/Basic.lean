@@ -22,7 +22,7 @@ Building on `MeasureTheory.Measure.freeConv` in
 `TauCeti.Probability.FreeProbability.Law.AdditiveConvolution`, this file equips free additive
 convolution with zero/probability characterizations, canonical C⋆- and concrete von Neumann
 realizations (`TauCeti.FreeLawRealization`), subalgebra transport, simultaneous
-affine and reflection equivariance, and additivity/determinacy of the formal R-series, free
+translation and reflection equivariance, and additivity/determinacy of the formal R-series, free
 cumulants, mean, and variance.
 
 ## Main results
@@ -35,8 +35,8 @@ cumulants, mean, and variance.
   `TauCeti.FreeLawRealization.law_add_generator`,
   `TauCeti.FreeLawRealization.law_add_vonNeumannGenerator`: binary realization and transport across
   C⋆- and concrete von Neumann probability spaces.
-* `MeasureTheory.Measure.freeConv_map_affine`, `MeasureTheory.Measure.freeConv_map_add`,
-  `MeasureTheory.Measure.neg_freeConv_neg`: simultaneous affine, translation, and reflection laws.
+* `MeasureTheory.Measure.freeConv_map_add`,
+  `MeasureTheory.Measure.neg_freeConv_neg`: simultaneous translation and reflection laws.
 * `MeasureTheory.Measure.rSeries_integral_freeConv`,
   `MeasureTheory.Measure.freeCumulant_freeConv`,
   `MeasureTheory.Measure.eq_freeConv_iff_rSeries_integral_eq`,
@@ -121,7 +121,7 @@ theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure 
     (TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 1),
     TauCeti.FreeLawRealization.law_generator τ 0,
     TauCeti.FreeLawRealization.law_generator τ 1]
-  rfl
+  simp [τ]
 
 end MeasureTheory.Measure
 
@@ -140,24 +140,6 @@ theorem IsFreelyIndependent.law_add {φ : A →ₚ[ℂ] ℂ} {B : ι → Subalge
       hij.symm)).isFreelyIndependentElements_of_mem
     (a := (cond · x y)) fun b => by cases b <;> assumption).law_add hφ Bool.false_ne_true.symm
     hx hy
-
-private theorem IsFreelyIndependentElements.law_smul_add_algebraMap_add {φ : A →ₚ[ℂ] ℂ}
-    {a : ι → A} (ha : IsFreelyIndependentElements φ.toLinearMap a) (hφ : φ 1 = 1)
-    {i j : ι} (hij : i ≠ j) (hai : IsSelfAdjoint (a i)) (haj : IsSelfAdjoint (a j))
-    (r₁ c₁ r₂ c₂ : ℝ) :
-    φ.law ((r₁ • a i + algebraMap ℝ A c₁) + (r₂ • a j + algebraMap ℝ A c₂)) =
-      ((φ.law (a i)).map fun x => r₁ * x + c₁).freeConv
-        ((φ.law (a j)).map fun x => r₂ * x + c₂) := by
-  have hadd := (isFreelyIndependentElements_iff.mp ha).law_add hφ hij
-    (add_mem (((Algebra.adjoin ℂ {a i}).restrictScalars ℝ).smul_mem
-        (Algebra.self_mem_adjoin_singleton ℂ (a i)) r₁)
-      (((Algebra.adjoin ℂ {a i}).restrictScalars ℝ).algebraMap_mem c₁))
-    (add_mem (((Algebra.adjoin ℂ {a j}).restrictScalars ℝ).smul_mem
-        (Algebra.self_mem_adjoin_singleton ℂ (a j)) r₂)
-      (((Algebra.adjoin ℂ {a j}).restrictScalars ℝ).algebraMap_mem c₂))
-    (((IsSelfAdjoint.all r₁).smul hai).add (IsSelfAdjoint.algebraMap A (.all c₁)))
-    (((IsSelfAdjoint.all r₂).smul haj).add (IsSelfAdjoint.algebraMap A (.all c₂)))
-  rwa [φ.law_smul_add_algebraMap hai r₁ c₁, φ.law_smul_add_algebraMap haj r₂ c₂] at hadd
 
 namespace FreeLawRealization
 
@@ -182,29 +164,13 @@ end FreeLawRealization
 
 end TauCeti
 
-/-! ### Algebraic typeclasses, affine pushforwards, and reflection -/
+/-! ### Algebraic typeclasses, translations, and reflection -/
 
 namespace MeasureTheory.Measure
 
 instance : Std.Commutative (α := Measure ℝ) freeConv := ⟨freeConv_comm⟩
 
 instance : Std.Associative (α := Measure ℝ) freeConv := ⟨freeConv_assoc⟩
-
-/-- **Affine equivariance of free additive convolution** (valid for all real slopes `b`, including
-`b = 0` and `b < 0`). -/
-theorem freeConv_map_affine {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
-    (hμ : IsCompact μ.support) (hν : IsCompact ν.support) (a c b : ℝ) :
-    (μ.map fun x => a + b * x).freeConv (ν.map fun x => c + b * x) =
-      (μ.freeConv ν).map fun x => a + c + b * x := by
-  obtain ⟨A, _, _, _, φ, g, hφ, hg, hgt, hgf, _, _, hlt, hlf, hladd⟩ :=
-    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
-  have halg : (b • g true + algebraMap ℝ _ a) + (b • g false + algebraMap ℝ _ c) =
-      b • (g true + g false) + algebraMap ℝ _ (a + c) := by
-    simp only [smul_add, map_add]; abel
-  have hL := hg.law_smul_add_algebraMap_add hφ Bool.false_ne_true.symm hgt hgf b a b c
-  have hR := φ.law_smul_add_algebraMap (hgt.add hgf) b (a + c)
-  rw [halg, hR, hladd, hlt, hlf] at hL
-  simpa [add_comm (b * _)] using hL.symm
 
 /-- Translating `μ` by `a` and `ν` by `b` translates `μ.freeConv ν` by `a + b`, unconditionally. -/
 theorem freeConv_map_add (μ ν : Measure ℝ) (a b : ℝ) :
@@ -239,16 +205,26 @@ theorem rSeries_integral_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ
     TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConv ν)) id =
       TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id +
         TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ν) id := by
-  obtain ⟨A, _, _, _, φ, g, hφ, hg, hgt, hgf, _, _, hlt, hlf, hladd⟩ :=
-    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
-  have h1 := φ.map_ofReal_rSeries_integral_law hgt
-  have h2 := φ.map_ofReal_rSeries_integral_law hgf
-  rw [hlt] at h1
-  rw [hlf] at h2
+  let τ : Fin 2 → Measure ℝ := ![μ, ν]
+  have : ∀ i, IsProbabilityMeasure (τ i) := Fin.forall_fin_two.2 ⟨‹_›, ‹_›⟩
+  have : ∀ i, CompactSpace (τ i).support :=
+    Fin.forall_fin_two.2 ⟨isCompact_iff_compactSpace.mp hμ, isCompact_iff_compactSpace.mp hν⟩
+  let φ := TauCeti.FreeLawRealization.state τ
+  let x := TauCeti.FreeLawRealization.generator τ 0
+  let y := TauCeti.FreeLawRealization.generator τ 1
+  have hx := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 0
+  have hy := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 1
+  have h1 := φ.map_ofReal_rSeries_integral_law hx
+  have h2 := φ.map_ofReal_rSeries_integral_law hy
+  rw [TauCeti.FreeLawRealization.law_generator τ 0] at h1
+  rw [TauCeti.FreeLawRealization.law_generator τ 1] at h2
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [map_add, ← hladd, φ.map_ofReal_rSeries_integral_law (hgt.add hgf)]
-  exact (hg.rSeries_add hφ Bool.false_ne_true.symm).trans
-    (by simpa using congrArg₂ (· + ·) h1.symm h2.symm)
+  rw [map_add, ← show φ.law (x + y) = μ.freeConv ν by
+    simpa [τ] using TauCeti.FreeLawRealization.law_add_generator τ (by decide : (0 : Fin 2) ≠ 1),
+    φ.map_ofReal_rSeries_integral_law (hx.add hy)]
+  exact ((TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).rSeries_add
+    (TauCeti.FreeLawRealization.state_one τ) (by decide : (0 : Fin 2) ≠ 1)).trans
+    (by simpa [τ] using congrArg₂ (· + ·) h1.symm h2.symm)
 
 /-- **Additivity of free cumulants under free additive convolution.** -/
 theorem freeCumulant_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
@@ -272,8 +248,8 @@ theorem eq_freeConv_iff_rSeries_integral_eq {ρ μ ν : Measure ℝ} [IsProbabil
 
 /-- A compactly supported probability measure `ρ` equals `μ.freeConv ν` iff all positive-order free
 cumulants of `ρ` equal the sums of those of `μ` and `ν`. -/
-theorem eq_freeConv_iff_forall_freeCumulant_eq {ρ μ ν : Measure ℝ}
-    [IsProbabilityMeasure ρ] [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+theorem eq_freeConv_iff_forall_freeCumulant_eq {ρ μ ν : Measure ℝ} [IsProbabilityMeasure ρ]
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hρ : IsCompact ρ.support) (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     ρ = μ.freeConv ν ↔ ∀ n : ℕ, n ≠ 0 →
       ρ.freeCumulant n = μ.freeCumulant n + ν.freeCumulant n := by
@@ -285,7 +261,7 @@ theorem eq_freeConv_iff_forall_freeCumulant_eq {ρ μ ν : Measure ℝ}
 theorem integral_id_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     ∫ x, x ∂(μ.freeConv ν) = (∫ x, x ∂μ) + ∫ x, x ∂ν := by
-  simpa [PowerSeries.coeff_zero_eq_constantCoeff_apply, TauCeti.constantCoeff_rSeries] using
+  simpa [coeff_zero_rSeries_integral] using
     congrArg (PowerSeries.coeff 0) (rSeries_integral_freeConv hμ hν)
 
 /-- The variance is additive under free additive convolution. -/

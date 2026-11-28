@@ -14,6 +14,7 @@ public import TauCeti.Probability.FreeProbability.WeakClosure
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 import Mathlib.Topology.ContinuousMap.Units
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Restrict
 import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
 import TauCeti.MeasureTheory.Measure.Support
 import TauCeti.Topology.Homeomorph.SetCongr
@@ -290,31 +291,16 @@ def spectrumHomeomorphSupport (i : ι) : spectrum ℂ (generator μ i) ≃ₜ (�
   ((isSelfAdjoint_generator μ i).spectrumRestricts.homeomorph
     (f := (Complex.reCLM : C(ℂ, ℝ)))).trans (Homeomorph.setCongr (spectrum_generator μ i))
 
-private lemma coe_spectrumRestricts_homeomorph {R S A : Type*} [Semifield R] [Semifield S]
-    [Ring A] [Algebra R S] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
-    [TopologicalSpace R] [TopologicalSpace S] [ContinuousSMul R S] {a : A} {f : C(S, R)}
-    (h : SpectrumRestricts a f) (x : spectrum S a) :
-    ((h.homeomorph x : spectrum R a) : R) = f x :=
-  rfl
-
-private lemma coe_symm_spectrumRestricts_homeomorph {R S A : Type*} [Semifield R] [Semifield S]
-    [Ring A] [Algebra R S] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
-    [TopologicalSpace R] [TopologicalSpace S] [ContinuousSMul R S] {a : A} {f : C(S, R)}
-    (h : SpectrumRestricts a f) (x : spectrum R a) :
-    ((h.homeomorph.symm x : spectrum S a) : S) = algebraMap R S x :=
-  rfl
-
 /-- Coercing `spectrumHomeomorphSupport μ i x` to `ℝ` takes the real part of `x`. -/
 @[simp] theorem coe_spectrumHomeomorphSupport (i : ι) (x : spectrum ℂ (generator μ i)) :
     ((spectrumHomeomorphSupport μ i x : (μ i).support) : ℝ) = (x : ℂ).re := by
-  simp [spectrumHomeomorphSupport, Homeomorph.setCongr_apply, coe_spectrumRestricts_homeomorph]
+  simp [spectrumHomeomorphSupport]
 
 /-- Coercing `(spectrumHomeomorphSupport μ i).symm x` to `ℂ` embeds `x : (μ i).support` into
 `ℂ`. -/
 @[simp] theorem coe_symm_spectrumHomeomorphSupport (i : ι) (x : (μ i).support) :
     (((spectrumHomeomorphSupport μ i).symm x : spectrum ℂ (generator μ i)) : ℂ) = (x : ℝ) := by
-  simp [spectrumHomeomorphSupport, Homeomorph.setCongr_symm_apply,
-    coe_symm_spectrumRestricts_homeomorph]
+  simp [spectrumHomeomorphSupport]
 
 private theorem restrict_comp_factorHomeomorph_symm (i : ι) :
     (ContinuousMap.restrict (spectrum ℂ (generator μ i)) (ContinuousMap.id ℂ)).comp

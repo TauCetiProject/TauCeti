@@ -49,15 +49,30 @@ namespace TauCeti.Probability
       semicircleReal (m₁ + m₂) (v₁ + v₂) := by
   have hcentred : (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) =
       semicircleReal 0 (v₁ + v₂) := by
-    obtain ⟨A, _, _, _, φ, g, _, hg, hgt, hgf, _, _, hlt, hlf, hladd⟩ :=
-      Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv
-        (isCompact_support_semicircleReal 0 v₁) (isCompact_support_semicircleReal 0 v₂)
-    have hsum : IsSemicircular φ.toLinearMap (g true + g false) (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
+    let τ : Fin 2 → Measure ℝ := ![semicircleReal 0 v₁, semicircleReal 0 v₂]
+    have : ∀ i, IsProbabilityMeasure (τ i) := Fin.forall_fin_two.2
+      ⟨isProbabilityMeasure_semicircleReal 0 v₁, isProbabilityMeasure_semicircleReal 0 v₂⟩
+    have : ∀ i, CompactSpace (τ i).support := Fin.forall_fin_two.2
+      ⟨isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₁),
+       isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₂)⟩
+    let φ := FreeLawRealization.state τ
+    let x := FreeLawRealization.generator τ 0
+    let y := FreeLawRealization.generator τ 1
+    have hx := FreeLawRealization.isSelfAdjoint_generator τ 0
+    have hy := FreeLawRealization.isSelfAdjoint_generator τ 1
+    have h0 : φ.law x = semicircleReal 0 v₁ := by
+      rw [FreeLawRealization.law_generator τ 0]; simp [τ]
+    have h1 : φ.law y = semicircleReal 0 v₂ := by
+      rw [FreeLawRealization.law_generator τ 1]; simp [τ]
+    have hsum : IsSemicircular φ.toLinearMap (x + y) (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
       simpa [NNReal.coe_add] using
-        hg.isSemicircular_add Bool.false_ne_true.symm
-          ((φ.law_eq_semicircleReal_iff hgt v₁).mp hlt)
-          ((φ.law_eq_semicircleReal_iff hgf v₂).mp hlf)
-    exact hladd.symm.trans <| (φ.law_eq_semicircleReal_iff (hgt.add hgf) _).mpr hsum
+        (FreeLawRealization.isFreelyIndependentElements_generator τ).isSemicircular_add
+          (by decide : (0 : Fin 2) ≠ 1)
+          ((φ.law_eq_semicircleReal_iff hx v₁).mp h0)
+          ((φ.law_eq_semicircleReal_iff hy v₂).mp h1)
+    have hadd : φ.law (x + y) = (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) := by
+      rw [FreeLawRealization.law_add_generator τ (by decide : (0 : Fin 2) ≠ 1)]; simp [τ]
+    exact hadd.symm.trans <| (φ.law_eq_semicircleReal_iff (hx.add hy) _).mpr hsum
   have hshift (m : ℝ) (v : ℝ≥0) :
       semicircleReal m v = (semicircleReal 0 v).map fun x => m + 1 * x := by
     simpa using (map_affine_semicircleReal 0 m 1 v).symm

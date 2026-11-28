@@ -497,8 +497,8 @@ theorem eq_freeConvPow_iff_forall_freeCumulant_eq {ρ μ : Measure ℝ}
 theorem integral_id_freeConvPow {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) :
     ∫ x, x ∂(μ.freeConvPow n) = n * ∫ x, x ∂μ := by
-  simpa [PowerSeries.coeff_zero_eq_constantCoeff_apply, TauCeti.constantCoeff_rSeries, nsmul_eq_mul]
-    using congrArg (PowerSeries.coeff 0) (rSeries_integral_freeConvPow hμ n)
+  simpa [coeff_zero_rSeries_integral, nsmul_eq_mul] using
+    congrArg (PowerSeries.coeff 0) (rSeries_integral_freeConvPow hμ n)
 
 /-- The variance of `μ.freeConvPow n` is `n` times the variance of `μ`. -/
 theorem variance_id_freeConvPow {μ : Measure ℝ} [IsProbabilityMeasure μ]
