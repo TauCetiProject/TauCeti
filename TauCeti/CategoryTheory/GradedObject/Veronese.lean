@@ -175,4 +175,34 @@ theorem veronese_toMon : (A.veronese d).toMon = A.toMon.veronese d :=
 theorem veronese_X (k : ℕ) : (A.veronese d).X k = A.X (d * k) :=
   (rfl)
 
+/-- The unit of the Veronese subalgebra, transported to degree `d · 0` of `A`, is the unit of
+`A`. -/
+theorem veronese_one_comp_eqToHom :
+    (A.veronese d).toMon.one ≫ eqToHom (A.veronese_X d 0) =
+      A.toMon.veroneseOne d := by
+  -- CommMon.veronese is not exposed; generalize its monoid and transport equalities
+  -- so that veronese_toMon lets us use the Mon.veronese formulas.
+  have key : ∀ M : Mon (GradedObject ℕ C), M = A.toMon.veronese d →
+      ∀ e : M.X 0 = A.toMon.X (d * 0), M.one ≫ eqToHom e =
+        A.toMon.veroneseOne d := by
+    rintro M rfl e
+    simp
+  exact key _ (A.veronese_toMon d) _
+
+/-- The homogeneous multiplication of the Veronese subalgebra, transported to degree
+`d (i + j)` of `A`, is the multiplication of `A` in degrees `d i` and `d j`. -/
+theorem veronese_mul_comp_eqToHom (i j : ℕ) :
+    (A.veronese d).toMon.mul i j ≫ eqToHom (A.veronese_X d (i + j)) =
+      (eqToHom (A.veronese_X d i) ⊗ₘ eqToHom (A.veronese_X d j)) ≫
+        A.toMon.veroneseMul d i j := by
+  -- CommMon.veronese is not exposed; generalize its monoid and transport equalities
+  -- so that veronese_toMon lets us use the Mon.veronese formulas.
+  have key : ∀ M : Mon (GradedObject ℕ C), M = A.toMon.veronese d →
+      ∀ (e : ∀ k, M.X k = A.toMon.X (d * k)), M.mul i j ≫ eqToHom (e (i + j)) =
+        (eqToHom (e i) ⊗ₘ eqToHom (e j)) ≫
+          A.toMon.veroneseMul d i j := by
+    rintro M rfl e
+    simp
+  exact key _ (A.veronese_toMon d) (A.veronese_X d)
+
 end CategoryTheory.CommMon

@@ -31,7 +31,9 @@ affine-local input for comparing the relative `Proj` of `A^{(d)}` with that of `
 * `CategoryTheory.CommMon.veroneseSectionsEquiv`: for `d ≠ 0`, the isomorphism of
   `Γ(X, U)`-algebras from `⨁ₖ Γ(A_{dk}, U)` onto the Veronese subalgebra of `⨁ₙ Γ(Aₙ, U)`,
   carrying the degree-`k` summand onto the degree-`k` part of the Veronese grading
-  (`veroneseSectionsEquiv_mem_veroneseGrading`).
+  (`veroneseSectionsEquiv_mem_veroneseGrading`);
+* `CategoryTheory.CommMon.veroneseSectionsGradedHom`: the degree-preserving ring homomorphism
+  underlying this equivalence, commuting with graded restriction.
 -/
 
 public section
@@ -62,36 +64,6 @@ private lemma of_eqToHom_app {m n : ℕ} (h : m = n) (x : Γ(A.X m, U)) :
   subst h
   rfl
 
-/-- The unit of the Veronese subalgebra, transported to degree `d · 0` of `A`, is the unit of
-`A`. -/
-private lemma veronese_one_comp_eqToHom :
-    (A.veronese d).toMon.one ≫ eqToHom (A.veronese_X d 0) =
-      A.toMon.one ≫ eqToHom (congrArg A.X (mul_zero d).symm) := by
-  -- CommMon.veronese is not exposed; generalize its monoid and transport equalities
-  -- so that veronese_toMon lets us use the Mon.veronese formulas.
-  have key : ∀ M : Mon (GradedObject ℕ X.Modules), M = A.toMon.veronese d →
-      ∀ e : M.X 0 = A.X (d * 0), M.one ≫ eqToHom e =
-        A.toMon.one ≫ eqToHom (congrArg A.X (mul_zero d).symm) := by
-    rintro M rfl e
-    simp [Mon.veroneseOne_eq]
-  exact key _ (A.veronese_toMon d) _
-
-/-- The homogeneous multiplication of the Veronese subalgebra, transported to degree
-`d (i + j)` of `A`, is the multiplication of `A` in degrees `d i` and `d j`. -/
-private lemma veronese_mul_comp_eqToHom (i j : ℕ) :
-    (A.veronese d).toMon.mul i j ≫ eqToHom (A.veronese_X d (i + j)) =
-      (eqToHom (A.veronese_X d i) ⊗ₘ eqToHom (A.veronese_X d j)) ≫
-        A.toMon.mul (d * i) (d * j) ≫ eqToHom (congrArg A.X (mul_add d i j).symm) := by
-  -- CommMon.veronese is not exposed; generalize its monoid and transport equalities
-  -- so that veronese_toMon lets us use the Mon.veronese formulas.
-  have key : ∀ M : Mon (GradedObject ℕ X.Modules), M = A.toMon.veronese d →
-      ∀ (e : ∀ k, M.X k = A.toMon.X (d * k)), M.mul i j ≫ eqToHom (e (i + j)) =
-        (eqToHom (e i) ⊗ₘ eqToHom (e j)) ≫
-          A.toMon.mul (d * i) (d * j) ≫ eqToHom (congrArg A.toMon.X (mul_add d i j).symm) := by
-    rintro M rfl e
-    simp [Mon.veroneseMul_eq]
-  exact key _ (A.veronese_toMon d) (A.veronese_X d)
-
 /-- Placing the unit of the graded sections of the Veronese subalgebra in degree `d · 0` gives the
 unit of the graded sections of `A`. -/
 private lemma of_veronese_gOne :
@@ -102,7 +74,7 @@ private lemma of_veronese_gOne :
   change DirectSum.of (fun n ↦ Γ(A.X n, U)) (d * 0)
     (((A.veronese d).toMon.one ≫ eqToHom (A.veronese_X d 0)).app U
       (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) 1)) = 1
-  rw [veronese_one_comp_eqToHom]
+  rw [veronese_one_comp_eqToHom, Mon.veroneseOne_eq]
   calc
     _ = DirectSum.of (fun n ↦ Γ(A.X n, U)) 0
         (A.toMon.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) 1)) :=
@@ -124,7 +96,7 @@ private lemma of_veronese_gMul {i j : ℕ} (x : Γ((A.veronese d).X i, U))
   change DirectSum.of (fun n ↦ Γ(A.X n, U)) (d * (i + j))
     ((((A.veronese d).toMon.mul i j ≫ eqToHom (A.veronese_X d (i + j))).app U)
       (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) _ _ (x ⊗ₜ y))) = _
-  rw [veronese_mul_comp_eqToHom]
+  rw [veronese_mul_comp_eqToHom, Mon.veroneseMul_eq]
   calc
     _ = DirectSum.of (fun n ↦ Γ(A.X n, U)) (d * i + d * j)
         ((A.toMon.mul (d * i) (d * j)).app U
@@ -164,10 +136,15 @@ private lemma veroneseSectionsAlgHom_of_inv (k : ℕ) (y : Γ(A.X (d * k), U)) :
         (DirectSum.of (fun k ↦ Γ((A.veronese d).X k, U)) k
           (((Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))).inv y)) =
       DirectSum.of (fun n ↦ Γ(A.X n, U)) (d * k) y := by
-  erw [veroneseSectionsAlgHom_of]
-  exact congrArg _
-    (((Scheme.Modules.sectionsFunctor U).mapIso
-      (eqToIso (A.veronese_X d k))).inv_hom_id_apply y)
+  let e := (Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))
+  calc
+    _ = DirectSum.of (fun n ↦ Γ(A.X n, U)) (d * k)
+        ((eqToHom (A.veronese_X d k)).app U (e.inv y)) :=
+      A.veroneseSectionsAlgHom_of d U k (e.inv y)
+    _ = DirectSum.of (fun n ↦ Γ(A.X n, U)) (d * k) (e.hom (e.inv y)) :=
+      congrArg _
+        (Scheme.Modules.sectionsFunctor_map_hom_apply U (eqToHom (A.veronese_X d k)) _).symm
+    _ = _ := congrArg _ (e.inv_hom_id_apply y)
 
 /-- The degree-`d k` component of the image of `x` under `veroneseSectionsAlgHom` is the
 degree-`k` component of `x`. -/
@@ -187,7 +164,8 @@ lemma veroneseSectionsAlgHom_apply_mul (hd : d ≠ 0)
   | add x y hx hy => rw [map_add, DirectSum.add_apply, DirectSum.add_apply, hx, hy, map_add]
 
 /-- The image of `veroneseSectionsAlgHom` has no component in degrees not divisible by `d`. -/
-lemma veroneseSectionsAlgHom_apply_of_not_dvd
+@[simp]
+lemma veroneseSectionsAlgHom_apply_eq_zero_of_not_dvd
     (x : ⨁ k, Γ((A.veronese d).X k, U)) {n : ℕ} (hn : ¬d ∣ n) :
     A.veroneseSectionsAlgHom d U x n = 0 := by
   classical
@@ -203,35 +181,32 @@ lemma injective_veroneseSectionsAlgHom (hd : d ≠ 0) :
     Function.Injective (A.veroneseSectionsAlgHom d U) := fun x y h ↦
   DFinsupp.ext fun k ↦ by
     let e := (Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))
-    have hk := congrArg (fun z ↦ e.inv (z (d * k))) h
+    have hk := congrArg (fun z ↦ z (d * k)) h
     simp only [veroneseSectionsAlgHom_apply_mul A d U hd] at hk
-    exact (e.hom_inv_id_apply (x k)).symm.trans (hk.trans (e.hom_inv_id_apply (y k)))
+    exact e.toLinearEquiv.injective
+      ((Scheme.Modules.sectionsFunctor_map_hom_apply U (eqToHom (A.veronese_X d k)) (x k)).trans
+        (hk.trans
+          (Scheme.Modules.sectionsFunctor_map_hom_apply U (eqToHom (A.veronese_X d k)) _).symm))
 
 /-- The image of `veroneseSectionsAlgHom` is the Veronese subalgebra of the graded ring of
 sections of `A`. -/
 lemma range_veroneseSectionsAlgHom :
     (A.veroneseSectionsAlgHom d U).range =
       TauCeti.GradedAlgebra.veronese (A.gradedSectionsGrading U) d := by
-  apply Subalgebra.toSubmodule_injective
   refine le_antisymm ?_ ?_
   · rintro _ ⟨x, rfl⟩
     induction x using DirectSum.induction_on with
     | zero => rw [map_zero]; exact zero_mem _
     | of k y =>
-      -- Express membership in the underlying submodule using the original algebra map.
-      change A.veroneseSectionsAlgHom d U _ ∈ _
-      rw [veroneseSectionsAlgHom_of]
+      rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, veroneseSectionsAlgHom_of]
       exact TauCeti.GradedAlgebra.mem_veronese_of_mem (A.of_mem_gradedSectionsGrading (d * k) _)
     | add x y hx hy => rw [map_add]; exact add_mem hx hy
-  · intro x hx
-    induction hx using Submodule.iSup_induction' with
-    | mem k x hx =>
-      obtain ⟨y, rfl⟩ := DirectSum.mem_summand.mp hx
-      let e := (Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))
-      exact ⟨DirectSum.of (fun k ↦ Γ((A.veronese d).X k, U)) k (e.inv y),
-        veroneseSectionsAlgHom_of_inv A d U k y⟩
-    | zero => exact zero_mem _
-    | add x y _ _ hx hy => exact add_mem hx hy
+  · apply (TauCeti.GradedAlgebra.veronese_le_iff).mpr
+    intro k x hx
+    obtain ⟨y, rfl⟩ := DirectSum.mem_summand.mp hx
+    exact ⟨DirectSum.of (fun k ↦ Γ((A.veronese d).X k, U)) k
+      (((Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))).inv y),
+      veroneseSectionsAlgHom_of_inv A d U k y⟩
 
 /-- For `d ≠ 0`, the graded ring of sections `⨁ₖ Γ(A_{dk}, U)` of the `d`-th Veronese
 subalgebra of `A` is isomorphic, as a `Γ(X, U)`-algebra, to the Veronese subalgebra of the graded
@@ -249,6 +224,24 @@ lemma coe_veroneseSectionsEquiv (hd : d ≠ 0)
     (x : ⨁ k, Γ((A.veronese d).X k, U)) :
     (A.veroneseSectionsEquiv d U hd x : ⨁ n, Γ(A.X n, U)) = A.veroneseSectionsAlgHom d U x := by
   simp [veroneseSectionsEquiv, AlgEquiv.ofInjective_apply]
+
+/-- The degree-`k` component of the inverse Veronese sections equivalence is obtained by
+transporting the degree-`d k` component back along `veronese_X`. -/
+@[simp]
+lemma veroneseSectionsEquiv_symm_apply (hd : d ≠ 0)
+    (y : TauCeti.GradedAlgebra.veronese (A.gradedSectionsGrading U) d) (k : ℕ) :
+    (A.veroneseSectionsEquiv d U hd).symm y k =
+      ((Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))).inv
+        (y.val (d * k)) := by
+  let e := (Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))
+  have hmap : A.veroneseSectionsAlgHom d U ((A.veroneseSectionsEquiv d U hd).symm y) =
+      y.val := by
+    rw [← coe_veroneseSectionsEquiv A d U hd, AlgEquiv.apply_symm_apply]
+  have h : e.hom ((A.veroneseSectionsEquiv d U hd).symm y k) = y.val (d * k) :=
+    (Scheme.Modules.sectionsFunctor_map_hom_apply U (eqToHom (A.veronese_X d k)) _).trans
+      ((A.veroneseSectionsAlgHom_apply_mul d U hd _ k).symm.trans
+        (congrArg (fun z ↦ z (d * k)) hmap))
+  exact (e.hom_inv_id_apply _).symm.trans (congrArg e.inv h)
 
 /-- The isomorphism `veroneseSectionsEquiv` carries the degree-`k` summand of the graded sections
 of the Veronese subalgebra into the degree-`k` part of the Veronese grading. -/
@@ -272,12 +265,38 @@ theorem map_veroneseSectionsEquiv_gradedSectionsGrading
   refine le_antisymm ?_ fun x hx ↦ ?_
   · rintro _ ⟨x, hx, rfl⟩
     exact A.veroneseSectionsEquiv_mem_veroneseGrading d U hd hx
-  · obtain ⟨y, hy⟩ := DirectSum.mem_summand.mp hx
+  · have hx' := TauCeti.GradedAlgebra.mem_veroneseGrading.mp hx
+    obtain ⟨y, hy⟩ := DirectSum.mem_summand.mp hx'
     let e := (Scheme.Modules.sectionsFunctor U).mapIso (eqToIso (A.veronese_X d k))
     refine ⟨DirectSum.of (fun k ↦ Γ((A.veronese d).X k, U)) k (e.inv y),
       (A.veronese d).of_mem_gradedSectionsGrading k _, Subtype.ext ?_⟩
-    erw [coe_veroneseSectionsEquiv A d U hd, veroneseSectionsAlgHom_of_inv]
+    simp only [AlgEquiv.toLinearEquiv_toLinearMap, AlgEquiv.toLinearMap_apply]
+    rw [coe_veroneseSectionsEquiv A d U hd, veroneseSectionsAlgHom_of_inv]
     exact hy
+
+/-- The Veronese sections map with codomain restricted to the Veronese grading.
+For nonzero `d`, it is the graded ring homomorphism underlying `veroneseSectionsEquiv`. -/
+def veroneseSectionsGradedHom :
+    (A.veronese d).gradedSectionsGrading U →+*ᵍ
+      TauCeti.GradedAlgebra.veroneseGrading (A.gradedSectionsGrading U) d where
+  __ := ((A.veroneseSectionsAlgHom d U).codRestrict _ fun x ↦
+    (A.range_veroneseSectionsAlgHom d U) ▸
+      (A.veroneseSectionsAlgHom d U).mem_range_self x).toRingHom
+  map_mem {k x} hx := by
+    apply TauCeti.GradedAlgebra.mem_veroneseGrading.mpr
+    obtain ⟨y, rfl⟩ := DirectSum.mem_summand.mp hx
+    rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.coe_codRestrict,
+      veroneseSectionsAlgHom_of]
+    exact A.of_mem_gradedSectionsGrading (d * k) _
+
+/-- The graded Veronese sections homomorphism acts in the ambient section ring by
+`veroneseSectionsAlgHom`. -/
+@[simp]
+lemma coe_veroneseSectionsGradedHom_apply
+    (x : ⨁ k, Γ((A.veronese d).X k, U)) :
+    (A.veroneseSectionsGradedHom d U x : ⨁ n, Γ(A.X n, U)) =
+      A.veroneseSectionsAlgHom d U x := by
+  rfl
 
 variable {U} {V : X.Opens} (f : V ⟶ U)
 
@@ -303,6 +322,19 @@ theorem veroneseSectionsAlgHom_restrictGradedSections
           (DirectSum.of (fun k ↦ Γ((A.veronese d).X k, U)) k y)) :=
         ((congrArg _ (veroneseSectionsAlgHom_of A d U k y)).trans
           (A.restrictGradedSections_of f (d * k) _)).symm
+
+/-- The degree-preserving Veronese sections homomorphisms commute with restriction. -/
+theorem veroneseSectionsGradedHom_comp_restrictGradedSectionsGradedHom :
+    (A.veroneseSectionsGradedHom d V).comp
+        ((A.veronese d).restrictGradedSectionsGradedHom f) =
+      (TauCeti.GradedAlgebra.veroneseMap d (A.restrictGradedSectionsGradedHom f)).comp
+        (A.veroneseSectionsGradedHom d U) := by
+  apply GradedRingHom.ext
+  intro x
+  apply Subtype.ext
+  simp only [GradedRingHom.comp_apply, coe_veroneseSectionsGradedHom_apply,
+    TauCeti.GradedAlgebra.coe_veroneseMap_apply, restrictGradedSectionsGradedHom_apply]
+  exact A.veroneseSectionsAlgHom_restrictGradedSections d f x
 
 end CategoryTheory.CommMon
 
