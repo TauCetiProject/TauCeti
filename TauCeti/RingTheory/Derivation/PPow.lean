@@ -210,16 +210,6 @@ private lemma mapCoeffs_add_derivative_iterate_X_pow (D : Derivation R A A) (m k
       split_ifs <;> simp
     simp [hcoeff]
 
-private lemma coeff_zero_iterate_derivative_X_pow (m k : ℕ) :
-    (Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])).coeff 0 =
-      if k = m then (m ! : A) else 0 := by
-  rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
-  rcases lt_trichotomy k m with hlt | rfl | hgt
-  · have : 0 ≠ m - k := by omega
-    simp [this, hlt.ne]
-  · simp [Nat.descFactorial_self]
-  · simp [Nat.descFactorial_of_lt hgt, hgt.ne']
-
 /-- In prime characteristic `p`, the middle coefficients `smulIterCoeff D b p k` (`2 ≤ k < p`)
 of the expansion `(b • D)^[p] = ∑ k ≤ p, smulIterCoeff D b p k * D^[k]` vanish, over any
 commutative semiring `A`. -/
