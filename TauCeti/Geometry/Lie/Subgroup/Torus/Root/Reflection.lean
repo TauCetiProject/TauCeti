@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Weyl.Group
 import TauCeti.Algebra.Lie.InvariantForm.RankOne
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
+import TauCeti.Geometry.Lie.Subgroup.Torus.Root.Plane
 import TauCeti.Geometry.Lie.Subgroup.Weyl.Faithful
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
@@ -201,14 +202,8 @@ private theorem IsMaximalTorus.exists_lie_eq_smul_of_isRootPlane {T : Subgroup G
       ∃ hxy : ⁅x, y⁆ ∈ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule, α ⟨_, hxy⟩ = 1 := by
   have : Nontrivial V := Submodule.nontrivial_iff_ne_bot.mpr hV
   obtain ⟨w, hw⟩ := exists_ne (0 : V)
-  -- `⁅w, J w⁆` commutes with `𝔱`, so it lies in `𝔱` by maximality.
-  have hwt : ⁅(w : LeftInvariantDerivation I G), (J w : LeftInvariantDerivation I G)⁆ ∈
-      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule :=
-    lie_mem_of_lie_eq_smul (fun z hz ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero
-        fun Y hY ↦ by rw [← lie_skew, hz ⟨Y, hY⟩, neg_zero])
-      (h.lie_apply · w) fun X ↦ by rw [h.lie_apply, h.apply_apply, Submodule.coe_neg, smul_neg]
   obtain ⟨f, -, ⟨c, -, hf₀, hf₁⟩, hf₂, hα₁⟩ :=
-    h.exists_injective_lieHom_soThree hBs hBp hB hα hw hwt
+    h.exists_injective_lieHom_soThree hBs hBp hB hα hw (hT.lie_mem_of_isRootPlane h w)
   have hxy : ⁅f (soThreeEquiv ℝ (Pi.single 0 1)), f (soThreeEquiv ℝ (Pi.single 1 1))⁆ =
       f (soThreeEquiv ℝ (Pi.single 2 1)) := by
     rw [← LieHom.map_lie, lie_soThreeEquiv_single_zero_one]

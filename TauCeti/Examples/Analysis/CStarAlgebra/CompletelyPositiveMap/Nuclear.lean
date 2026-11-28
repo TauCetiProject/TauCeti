@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Nuclear
+public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Nuclear.Commutative
+public import Mathlib.Topology.UnitInterval
 
 /-!
 # Checks for nuclear completely positive maps
@@ -15,7 +17,7 @@ C⋆-algebras: the identity factors exactly through a matrix algebra. So is the 
 `M_1(ℂ) ⊕ M_2(ℂ) ⊕ M_3(ℂ)`, through its block-diagonal embedding in `M_6(ℂ)` and the compression
 back to the diagonal blocks. The zero map between any two C⋆-algebras is a nuclear contraction,
 through the zero matrix algebra `M_0`, and multiples `c • φ` with `c ≤ 1` of nuclear contractions
-are nuclear contractions.
+are nuclear contractions. The commutative C⋆-algebra `C[0,1]` is nuclear.
 -/
 
 public section
@@ -45,5 +47,8 @@ example : (0 : ℂ →CP CStarMatrix (Fin 2) (Fin 2) ℂ).IsNuclearContraction :
 /-- Half the identity of `ℂ` is a nuclear contraction, and so it is nuclear. -/
 example : ((1 / 2 : NNReal) • CompletelyPositiveMap.id ℂ).IsNuclear :=
   (TauCeti.CStarAlgebra.IsNuclear.isNuclearContraction_id.smul (by norm_num)).isNuclear
+
+/-- The identity of `C[0,1]` is a nuclear completely positive map. -/
+example : TauCeti.CStarAlgebra.IsNuclear C(unitInterval, ℂ) := inferInstance
 
 end TauCeti.NuclearExample

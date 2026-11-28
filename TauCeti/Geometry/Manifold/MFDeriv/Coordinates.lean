@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -20,6 +22,10 @@ differentiability order.
 These operator families give the ranges whose quotients are the intrinsic normal
 fibres of an embedding. Their regularity on one chart overlap permits a single
 smooth family of fixed complementary coordinates for that normal bundle.
+
+Pointwise, `MDifferentiableAt.trivializationAt_mfderiv_apply` reads the differential at `x`
+in the target tangent trivialization at `f x₀` as the Fréchet derivative of the coordinate
+expression `writtenInExtChartAt I I' x₀ f` at the chart image of `x`.
 
 Reuse Mathlib's `ContMDiffAt.mfderiv_const` for regularity in charts centred at
 the evaluation point, and its smooth tangent-bundle transitions to change centres.
@@ -100,3 +106,23 @@ theorem ContMDiff.mfderiv_inTangentCoordinates (hf : ContMDiff I I' n f)
       (inTangentCoordinates I I' id f (mfderiv I I' f) x₀)
       ((chartAt H x₀).source ∩ f ⁻¹' (chartAt H' (f x₀)).source) := by
   simpa using hf.contMDiffOn.mfderiv_inTangentCoordinates hmn isOpen_univ x₀
+
+/-- Away from the chart centre `x₀`, the tangent trivialization at `f x₀` reads `mfderiv f x w`
+as the Fréchet derivative of the coordinate expression `writtenInExtChartAt I I' x₀ f` at the chart
+image of `x`, applied to the chart image of `w`. At `x = x₀` on a boundaryless manifold this is
+`MDifferentiableAt.fderiv_writtenInExtChartAt`. -/
+theorem MDifferentiableAt.trivializationAt_mfderiv_apply [IsManifold I 1 M] [IsManifold I' 1 M']
+    (hf : MDifferentiableAt I I' f x) (hx : x ∈ (extChartAt I x₀).source)
+    (hfx : f x ∈ (chartAt H' (f x₀)).source)
+    (hd : DifferentiableAt 𝕜 (writtenInExtChartAt I I' x₀ f) (extChartAt I x₀ x))
+    (w : TangentSpace I x) :
+    (trivializationAt E' (TangentSpace I') (f x₀) ⟨f x, mfderiv I I' f x w⟩).2 =
+      fderiv 𝕜 (writtenInExtChartAt I I' x₀ f) (extChartAt I x₀ x)
+        (mfderiv I 𝓘(𝕜, E) (extChartAt I x₀) x w) := by
+  rw [TangentBundle.trivializationAt_apply, ← extChartAt, ← extChartAt, ← tangentCoordChange_def,
+    ← mfderiv_chartAt_eq_tangentCoordChange hfx, ← (hasMFDerivAt_extChartAt hfx).mfderiv]
+  -- Reduce the projections of the pair `⟨f x, mfderiv f x w⟩`, then apply the chain rule.
+  dsimp only
+  exact (DFunLike.congr_fun (mfderiv_comp x (mdifferentiableAt_extChartAt hfx) hf) w).symm.trans
+    (DFunLike.congr_fun
+      (TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt (f := extChartAt I' (f x₀) ∘ f) hx hd) w)

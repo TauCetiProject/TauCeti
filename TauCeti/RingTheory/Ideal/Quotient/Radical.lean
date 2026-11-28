@@ -13,7 +13,11 @@ import Mathlib.RingTheory.Finiteness.NilpotentKer
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
 /-!
-# Finiteness from a radical quotient
+# The quotient by the radical of an ideal
+
+For an ideal `I` of a commutative ring `A`, the quotient `A ⧸ √I` is the universal reduced
+quotient of `A ⧸ I`: every ring homomorphism from `A ⧸ I` to a reduced ring factors uniquely
+through `A ⧸ √I` (`Ideal.Quotient.bijective_comp_factor_radical`).
 
 A quotient algebra is module-finite if its reduced quotient is module-finite and its
 nilradical is finitely generated (for instance, when the radical of the defining ideal is
@@ -29,6 +33,20 @@ public section
 namespace Ideal
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- **The universal reduced quotient of `A ⧸ I`.** Every ring homomorphism from `A ⧸ I` to a
+reduced ring factors uniquely through `A ⧸ √I`: precomposition with the projection
+`A ⧸ I → A ⧸ √I` is a bijection. -/
+theorem Quotient.bijective_comp_factor_radical (I : Ideal A) (T : Type*) [Semiring T]
+    [IsReduced T] :
+    Function.Bijective fun g : A ⧸ I.radical →+* T ↦ g.comp (Quotient.factor I.le_radical) := by
+  refine ⟨fun g₁ g₂ h ↦ (RingHom.cancel_right (Quotient.factor_surjective I.le_radical)).mp h,
+    fun f ↦ ⟨Quotient.lift _ (f.comp (Quotient.mk I)) fun a ⟨n, hn⟩ ↦ ?_, ?_⟩⟩
+  · -- `f [a]` is nilpotent, since `a ^ n ∈ I`
+    refine IsNilpotent.eq_zero ⟨n, ?_⟩
+    rw [RingHom.comp_apply, ← map_pow, ← map_pow, Quotient.eq_zero_iff_mem.mpr hn, map_zero]
+  · refine Quotient.ringHom_ext (RingHom.ext fun a ↦ ?_)
+    simp
 
 /-- Finiteness of the quotient by the radical descends to the original quotient when the
 nilradical of the original quotient is finitely generated. That hypothesis holds in particular

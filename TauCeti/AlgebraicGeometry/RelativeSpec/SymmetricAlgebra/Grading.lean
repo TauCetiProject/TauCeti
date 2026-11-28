@@ -42,7 +42,9 @@ extending it by `cⁿ` on `Symⁿ F`.
 * `TauCeti.AlgebraicGeometry.ιTotal_relativeSpecHomIso_lift_comp_smul`: scalar multiplication
   acts on regular functions of degree `n` by the `n`-th power of the scalar;
 * `TauCeti.AlgebraicGeometry.ιTotal_relativeSpecHomIso_zero`: the zero section kills regular
-  functions of positive degree.
+  functions of positive degree;
+* `TauCeti.AlgebraicGeometry.gradedRelativeSpecVertex_gradedSymmetricAlgebra`: hence the zero
+  section is the vertex of `Spec_X (Sym F)` as the relative spectrum of a graded algebra.
 
 ## References
 
@@ -96,31 +98,38 @@ theorem ιTotal_relativeSpecHomIso_zero (T : Over X) (n : ℕ) :
             ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F))))).hom.hom = 0 := by
   -- The module map of the zero point is zero, so it is unchanged by multiplication by the
   -- function `0`, which acts by `0ⁿ⁺¹ = 0` in degree `n + 1`.
-  have hm : (Scheme.Modules.pushforward T.hom).map
-      (Scheme.Modules.globalSectionsSmul (𝟙_ T.left.Modules) 0) = 0 := by
-    rw [Scheme.Modules.globalSectionsSmul_zero, (Scheme.Modules.pushforward T.hom).map_zero]
   have h : relativeSpecSymmetricAlgebraHomEquiv F T 0 =
       relativeSpecSymmetricAlgebraHomEquiv F T 0 ≫ (Scheme.Modules.pushforward T.hom).map
         (Scheme.Modules.globalSectionsSmul (𝟙_ T.left.Modules) 0) := by
-    rw [hm, ← relativeSpecSymmetricAlgebraHomAddEquiv_apply, map_zero]
+    rw [T.hom.pushforward_map_globalSectionsSmul_of_eq_zero _ rfl,
+      ← relativeSpecSymmetricAlgebraHomAddEquiv_apply, map_zero]
     -- the zero of the group of module maps `F ⟶ q_* 𝒪_T` is the zero morphism of `X.Modules`
     exact (zero_comp (C := X.Modules)).symm
   rw [relativeSpecHomIso_hom_app_app_eq_symmetricAlgebraLift]
   refine ((congrArg (fun φ ↦ ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫
     (symmetricAlgebraLift (B := T.hom.pushforwardStructureAlgebra) φ).hom.hom) h).trans
       (ιTotal_symmetricAlgebraLift_comp_globalSectionsSmul T.hom _ 0 (n + 1))).trans ?_
-  refine (congrArg (fun a ↦ ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫
-    (symmetricAlgebraLift (B := T.hom.pushforwardStructureAlgebra)
-      (relativeSpecSymmetricAlgebraHomEquiv F T 0)).hom.hom ≫ (Scheme.Modules.pushforward T.hom).map
-        (Scheme.Modules.globalSectionsSmul (𝟙_ T.left.Modules) a))
-          (zero_pow n.succ_ne_zero)).trans ?_
-  -- `rw [hm]` cannot build its motive here, as the goal mixes the `X.Modules` and
-  -- `SheafOfModules` category instances, so `hm` is applied as a term
+  -- `rw` cannot build its motive here, as the goal mixes the `X.Modules` and
+  -- `SheafOfModules` category instances, so the vanishing is applied as a term
   exact (congrArg (fun f ↦ ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫
     (symmetricAlgebraLift (B := T.hom.pushforwardStructureAlgebra)
-      (relativeSpecSymmetricAlgebraHomEquiv F T 0)).hom.hom ≫ f) hm).trans
+      (relativeSpecSymmetricAlgebraHomEquiv F T 0)).hom.hom ≫ f)
+        (T.hom.pushforward_map_globalSectionsSmul_of_eq_zero _ (zero_pow n.succ_ne_zero))).trans
         ((congrArg (ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫ ·)
           (comp_zero (C := X.Modules))).trans (comp_zero (C := X.Modules)))
+
+open scoped AddMonObj in
+/-- **The vertex of `Spec_X (Sym F)` is its zero section.** The vertex of the relative spectrum of
+the graded algebra `Sym F`, given by the augmentation `Sym F ⟶ Sym⁰ F = 𝒪_X`, is the zero section
+of the additive group scheme `Spec_X (Sym F)`. -/
+@[simp]
+theorem gradedRelativeSpecVertex_gradedSymmetricAlgebra :
+    gradedRelativeSpecVertex ((gradedSymmetricAlgebra X).obj F) =
+      (0 : 𝟙_ (Over X) ⟶ (MorphismProperty.Over.forget _ _ X).obj
+        ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) := by
+  apply relativeSpecHomIso_hom_app_app_injective
+  rw [relativeSpecHomIso_hom_app_app_gradedRelativeSpecVertex]
+  exact ((eq_augmentation_iff _ _).2 (ιTotal_relativeSpecHomIso_zero _)).symm
 
 end
 

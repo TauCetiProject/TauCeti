@@ -21,7 +21,8 @@ smoothness of `f` than `C^{j+1}`.
 ## Main declarations
 
 * `TauCeti.Wkp.iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn`: `ContDiffOn` identification for
-  `iteratedLineDerivZeroL`.
+  `iteratedLineDerivZeroL`, and its every-order form
+  `TauCeti.Wkp.iteratedLineDerivZeroL_ae_eq_of_contDiffOn`.
 * `TauCeti.Wkp.value_iteratedLineDerivL_succ_ae_eq_of_contDiffOn`: general-order `ContDiffOn`
   identification for `iteratedLineDerivL`.
 * `TauCeti.Wkp.value_lineDerivL_ae_eq_of_contDiffOn`: single-direction specialization for
@@ -56,6 +57,21 @@ theorem iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn (j : ℕ) (u : Wkp mu Om
   filter_upwards [iteratedLineDerivZeroL_succ_ae j m u,
     iteratedGradient_ae_eq_of_contDiffOn j u hf hu] with x hx hgx
   rw [hx, hgx, IteratedGradient.evalTupleL_comp_rev_iteratedGradientChain]
+
+/-- Every-order form of `TauCeti.Wkp.iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn`: if
+`u ∈ W^{j,p}(Ω)` is represented on `Ω` by a `Cʲ` function `f`, then
+`iteratedLineDerivZeroL j m u` agrees almost everywhere on `Ω` with
+`x ↦ iteratedFDeriv ℝ j f x m`. At `j = 0` both sides are the value of `u`. -/
+theorem iteratedLineDerivZeroL_ae_eq_of_contDiffOn :
+    ∀ (j : ℕ) (u : Wkp mu Omega p j) (m : Fin j → E) {f : E → ℝ},
+      ContDiffOn ℝ j f Omega → (value j u : E → ℝ) =ᵐ[mu.restrict Omega] f →
+      (iteratedLineDerivZeroL j m u : E → ℝ) =ᵐ[mu.restrict Omega]
+        fun x => iteratedFDeriv ℝ j f x m
+  | 0, u, m, f, _, hu => by
+      rw [iteratedLineDerivZeroL_zero, ContinuousLinearMap.id_apply, ← value_zero u]
+      filter_upwards [hu] with x hx
+      rw [hx, iteratedFDeriv_zero_apply]
+  | j + 1, u, m, _, hf, hu => iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn j u m hf hu
 
 /-- General-order form of `TauCeti.Wkp.iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn`: only
 `C^{j+1}` regularity of `f` on `Ω` is required, even when `u` lies in `W^{k+j+1,p}(Ω)`. -/

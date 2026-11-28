@@ -33,6 +33,8 @@ hypothesis under which that sheaf is built.
 * `SchemeWeilDivisor.inv_localEquation_mem_sections` and
   `SchemeWeilDivisor.coeff_eq_of_sections_eq`: the inverse of a local equation is a section of
   `𝒪_X(D)`, and locally principal divisors with the same sections have the same coefficients;
+* `SchemeWeilDivisor.le_of_sections_le`: a locally principal divisor whose sections are sections
+  of `𝒪_X(E)` is at most `E`;
 * `SchemeWeilDivisor.principalSubgroup_le_locallyPrincipalSubgroup` records that principal
   divisors are locally principal;
 * `WeilDivisor.OrderSystem.LinearlyEquivalent.isLocallyPrincipal_iff` shows that local
@@ -188,38 +190,31 @@ lemma inv_localEquation_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens} [No
   refine mem_sections.mpr fun y hy ↦ Or.inr ?_
   rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, hf y hy, orderAt_apply]
 
+/-- A locally principal divisor `D` whose sections over every open subset are sections of
+`𝒪_X(E)` is at most `E`: near a codimension-one point `y`, the inverse of a local equation of `D`
+is a section of `𝒪_X(D)` of order exactly `-D(y)` at `y`, so `-D(y) ≥ -E(y)`. The converse is
+`SchemeWeilDivisor.sections_mono`. -/
+lemma le_of_sections_le {D E : SchemeWeilDivisor X} (hD : IsLocallyPrincipal D)
+    (h : ∀ U : X.Opens, sections D U ≤ sections E U) : D ≤ E := by
+  refine WeilDivisor.le_iff.mpr fun y ↦ ?_
+  obtain ⟨U, hy, f, hf⟩ := isLocallyPrincipal_iff.mp hD (y : X)
+  have : Nonempty U := ⟨⟨_, hy⟩⟩
+  have hmem := (mem_sections.mp (h U (inv_localEquation_mem_sections hf)) y hy).resolve_left (by
+    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
+    exact Units.ne_zero _)
+  rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, ← orderAt_apply,
+    ← hf y hy] at hmem
+  omega
+
 /-- Locally principal divisors with the same sections over every open subset have the same
-coefficient at every codimension-one point: local equations at the point give sections of each
-other's divisor sheaf, which compares the coefficients. -/
+coefficient at every codimension-one point: each is at most the other by
+`SchemeWeilDivisor.le_of_sections_le`. -/
 lemma coeff_eq_of_sections_eq {F E : SchemeWeilDivisor X}
     (hF : IsLocallyPrincipal F) (hE : IsLocallyPrincipal E)
     (hsec : ∀ U : X.Opens, sections F U = sections E U) (y : CodimensionOnePoint X) :
-    WeilDivisor.coeff F y = WeilDivisor.coeff E y := by
-  obtain ⟨U₁, hy₁, h₁, hh₁⟩ := isLocallyPrincipal_iff.mp hF (y : X)
-  obtain ⟨U₂, hy₂, h₂, hh₂⟩ := isLocallyPrincipal_iff.mp hE (y : X)
-  have hyU : (y : X) ∈ (U₁ ⊓ U₂ : X.Opens) := ⟨hy₁, hy₂⟩
-  have : Nonempty (U₁ ⊓ U₂ : X.Opens) := ⟨⟨_, hyU⟩⟩
-  have m1 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
-      ((Additive.toMul h₁ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
-        sections E (U₁ ⊓ U₂ : X.Opens) := by
-    rw [← hsec]
-    exact inv_localEquation_mem_sections fun z hz ↦ hh₁ z hz.1
-  have m2 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
-      ((Additive.toMul h₂ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
-        sections F (U₁ ⊓ U₂ : X.Opens) := by
-    rw [hsec]
-    exact inv_localEquation_mem_sections fun z hz ↦ hh₂ z hz.2
-  have b1 := (mem_sections.mp m1 y hyU).resolve_left (by
-    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
-    exact Units.ne_zero _)
-  have b2 := (mem_sections.mp m2 y hyU).resolve_left (by
-    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
-    exact Units.ne_zero _)
-  rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, ← orderAt_apply,
-    ← hh₁ y hy₁] at b1
-  rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, ← orderAt_apply,
-    ← hh₂ y hy₂] at b2
-  omega
+    WeilDivisor.coeff F y = WeilDivisor.coeff E y :=
+  congrArg (WeilDivisor.coeff · y) <| le_antisymm
+    (le_of_sections_le hF fun U ↦ (hsec U).le) (le_of_sections_le hE fun U ↦ (hsec U).ge)
 
 end LocallyNoetherian
 

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
+import Mathlib.Data.Nat.Factorial.BigOperators
 
 /-!
 # The weight string of a primitive vector for an `sl₂` triple
@@ -250,6 +251,27 @@ theorem pow_toEnd_e_pow_toEnd_f_self (P : t.HasPrimitiveVectorWith m μ) (j : �
       P.lie_e_pow_succ_toEnd_f j, map_smul, ih, smul_smul, Finset.prod_range_succ]
     congr 1
     ring
+
+/-- **Raising the bottom of an integral-weight string back to the top.** Applying the raising
+operator `N` times to `fᴺ • m`, where `m` is primitive of natural weight `N`, returns
+`(N! * N!) • m` over any commutative ring. -/
+theorem pow_toEnd_e_pow_toEnd_f_self_nat {N : ℕ} (P : t.HasPrimitiveVectorWith m (N : K)) :
+    (toEnd K L M e ^ N) ((toEnd K L M f ^ N) m) = (N.factorial * N.factorial) • m := by
+  rw [pow_toEnd_e_pow_toEnd_f_self P N, Finset.prod_mul_distrib]
+  have h1 : (∏ i ∈ Finset.range N, ((i : K) + 1)) = (N.factorial : K) := by
+    rw [← Finset.prod_range_add_one_eq_factorial N, Nat.cast_prod]
+    simp
+  have h2 : (∏ i ∈ Finset.range N, ((N : K) - i)) = (N.factorial : K) := by
+    have hnat : (∏ i ∈ Finset.range N, (N - i)) = N.factorial := by
+      rw [← Nat.descFactorial_eq_prod_range, Nat.descFactorial_self]
+    calc
+      (∏ i ∈ Finset.range N, ((N : K) - i))
+          = ∏ i ∈ Finset.range N, ((N - i : ℕ) : K) := by
+        refine Finset.prod_congr rfl fun i hi ↦ ?_
+        rw [Nat.cast_sub (Finset.mem_range.mp hi).le]
+      _ = ((∏ i ∈ Finset.range N, (N - i) : ℕ) : K) := by rw [Nat.cast_prod]
+      _ = (N.factorial : K) := by rw [hnat]
+  rw [h1, h2, ← Nat.cast_mul, Nat.cast_smul_eq_nsmul]
 
 /-- **Raising past the top of the string gives zero.** Applying the raising operator more times
 than the string vector has been lowered lands above the primitive vector, which the raising

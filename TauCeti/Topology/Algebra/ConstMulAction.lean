@@ -48,6 +48,8 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
 ## Main results
 
 * `TauCeti.continuousSMul_of_forall_smul_eq_self`: a trivial action is jointly continuous.
+* `TauCeti.continuousConstSMul_of_smul_apply`: an action on functions `I → S` given by
+  `(g • ω) i = ω (g⁻¹ • i)` is by continuous maps for the product topology.
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
 * `IterateMulAct.continuousConstSMul`: the iterates of a continuous map act by continuous maps.
@@ -72,6 +74,9 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
 * `TauCeti.isClopen_preimage_val_orbit_of_finite`: if a set meets finitely many orbits, all
   closed, then every orbit is open and closed in the set.
 * `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
+* `TauCeti.specializes_iff_orbit_subset_closure_orbit`: in the orbit space of a group acting by
+  homeomorphisms, `q ⤳ q'` exactly when the orbit `q'` lies in the closure of the orbit `q`, with
+  the additive form `TauCeti.specializes_iff_addOrbit_subset_closure_addOrbit`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
@@ -108,6 +113,16 @@ topologies on the scalars and on the space acted on. -/
 theorem continuousSMul_of_forall_smul_eq_self {G M : Type*} [TopologicalSpace G]
     [TopologicalSpace M] [SMul G M] (h : ∀ (g : G) (m : M), g • m = m) : ContinuousSMul G M :=
   ⟨continuous_snd.congr fun p ↦ (h p.1 p.2).symm⟩
+
+/-- An action on functions `I → S` given by `(g • ω) i = ω (g⁻¹ • i)`, such as Mathlib's
+`arrowAction`, is by continuous maps for the product topology. -/
+theorem continuousConstSMul_of_smul_apply {Γ I S : Type*} [Group Γ] [MulAction Γ I]
+    [TopologicalSpace S] [SMul Γ (I → S)]
+    (hσ : ∀ (g : Γ) (ω : I → S) i, (g • ω) i = ω (g⁻¹ • i)) : ContinuousConstSMul Γ (I → S) where
+  continuous_const_smul g := by
+    rw [show (fun ω : I → S => g • ω) = fun ω i => ω (g⁻¹ • i) from
+      funext fun ω => funext (hσ g ω)]
+    exact continuous_pi fun i => continuous_apply _
 
 /-- The fixed set of an element acting continuously on a Hausdorff space is closed. -/
 theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSpace X]
@@ -190,6 +205,24 @@ theorem frontier_smul₀ {G₀ X : Type*} [GroupWithZero G₀] [MulAction G₀ X
     [ContinuousConstSMul G₀ X] {c : G₀} (hc : c ≠ 0) (s : Set X) :
     frontier (c • s) = c • frontier s :=
   ((Homeomorph.smulOfNeZero c hc).image_frontier s).symm
+
+/-- **Specialization of orbits.** For a group acting by homeomorphisms, one point of the orbit space
+specializes to another exactly when the second orbit lies in the closure of the first. The orbit
+projection is an open quotient map, so it commutes with taking closures of saturated sets. -/
+@[to_additive specializes_iff_addOrbit_subset_closure_addOrbit
+  /-- **Specialization of orbits.** For an additive group acting by homeomorphisms, one point of
+  the orbit space specializes to another exactly when the second orbit lies in the closure of the
+  first. -/]
+theorem specializes_iff_orbit_subset_closure_orbit {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] [ContinuousConstSMul G X] {q q' : MulAction.orbitRel.Quotient G X} :
+    q ⤳ q' ↔ q'.orbit ⊆ closure q.orbit := by
+  have hπ := MulAction.isOpenQuotientMap_quotientMk (Γ := G) (T := X)
+  have horbit (p : MulAction.orbitRel.Quotient G X) :
+      p.orbit = Quotient.mk (MulAction.orbitRel G X) ⁻¹' {p} :=
+    Set.ext fun _ ↦ MulAction.orbitRel.Quotient.mem_orbit
+  rw [horbit, horbit, ← hπ.isOpenMap.preimage_closure_eq_closure_preimage hπ.continuous,
+    Set.preimage_subset_preimage_iff (hπ.surjective.range_eq ▸ Set.subset_univ _),
+    Set.singleton_subset_iff, specializes_iff_mem_closure]
 
 section DisjointTranslates
 

@@ -285,21 +285,23 @@ theorem tangentSpaceCastModel_symm_trivializationAt (α x : UpperHalfSpace E)
     Bundle.Trivialization.symmL_apply _ (FiberBundle.mem_baseSet_trivializationAt' _)] at h
   exact h
 
-/-- If a self-map `f` of the upper half-space is the restriction of a map `A` of `E × ℝ` with
-derivative `L` at `x`, then the differential of `f` at `x` is `L`. -/
-theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfSpace E}
-    {A : WithLp 2 (E × ℝ) → WithLp 2 (E × ℝ)} {L : WithLp 2 (E × ℝ) →L[ℝ] WithLp 2 (E × ℝ)}
+/-- If a map `f` between upper half-spaces is the restriction of a map `A` from `E × ℝ` to
+`F × ℝ` with derivative `L` at `x`, then the differential of `f` at `x` is `L`. -/
+theorem tangentSpaceCastModel_mfderiv_apply
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : UpperHalfSpace E → UpperHalfSpace F}
+    {A : WithLp 2 (E × ℝ) → WithLp 2 (F × ℝ)} {L : WithLp 2 (E × ℝ) →L[ℝ] WithLp 2 (F × ℝ)}
     {x : UpperHalfSpace E}
     (hA : HasFDerivAt A L (x : WithLp 2 (E × ℝ))) (hcomp : coe ∘ f = A ∘ coe)
     (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
-    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (f x)
-        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) =
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (F × ℝ)) (f x)
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (F × ℝ)) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
   have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).val := hA
   have h := TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq
-    (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (E × ℝ)))
-    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hcomp v
+    (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (F × ℝ)))
+    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens F) (f := f) hcomp v
   rw [hA'.hasMFDerivAt.mfderiv] at h
   -- `tangentSpaceCastModel` is the identity of the model.
   exact h
