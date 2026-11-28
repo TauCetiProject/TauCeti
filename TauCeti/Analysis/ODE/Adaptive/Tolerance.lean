@@ -50,6 +50,7 @@ tolerances `atol`, relative tolerances `rtol` and the two states `u` and `v` of 
 def toleranceScale (atol rtol u v : ι → ℝ) (i : ι) : ℝ :=
   atol i + rtol i * max |u i| |v i|
 
+/-- The definition of `toleranceScale`, as an equation. -/
 theorem toleranceScale_def (atol rtol u v : ι → ℝ) (i : ι) :
     toleranceScale atol rtol u v i = atol i + rtol i * max |u i| |v i| := (rfl)
 
@@ -76,9 +77,11 @@ variable [Fintype ι]
 noncomputable def scaledError (atol rtol u v Δ : ι → ℝ) : ℝ :=
   ‖fun i ↦ Δ i / toleranceScale atol rtol u v i‖
 
+/-- The definition of `scaledError`, as an equation. -/
 theorem scaledError_def (atol rtol u v Δ : ι → ℝ) :
     scaledError atol rtol u v Δ = ‖fun i ↦ Δ i / toleranceScale atol rtol u v i‖ := (rfl)
 
+/-- The normalised indicator is nonnegative. -/
 theorem scaledError_nonneg (atol rtol u v Δ : ι → ℝ) : 0 ≤ scaledError atol rtol u v Δ :=
   norm_nonneg _
 
@@ -89,21 +92,21 @@ theorem scaledError_of_isEmpty [IsEmpty ι] (atol rtol u v Δ : ι → ℝ) :
   rw [scaledError_def, Subsingleton.elim (fun i ↦ Δ i / toleranceScale atol rtol u v i) 0,
     norm_zero]
 
-/-- For `c ≥ 0`, the normalised indicator is at most `c` if and only if `|Δ i| ≤ c * s i` in
-every component. -/
-theorem scaledError_le_iff (atol rtol u v Δ : ι → ℝ) (ha : ∀ i, 0 < atol i)
-    (hr : ∀ i, 0 ≤ rtol i) {c : ℝ} (hc : 0 ≤ c) :
+/-- For `c ≥ 0` and positive scales, the normalised indicator is at most `c` if and only if
+`|Δ i| ≤ c * s i` in every component. -/
+theorem scaledError_le_iff (atol rtol u v Δ : ι → ℝ)
+    (hs : ∀ i, 0 < toleranceScale atol rtol u v i) {c : ℝ} (hc : 0 ≤ c) :
     scaledError atol rtol u v Δ ≤ c ↔ ∀ i, |Δ i| ≤ c * toleranceScale atol rtol u v i := by
   rw [scaledError_def, pi_norm_le_iff_of_nonneg hc]
   refine forall_congr' fun i ↦ ?_
-  have hs := toleranceScale_pos u v (ha i) (hr i)
-  rw [Real.norm_eq_abs, abs_div, abs_of_pos hs, div_le_iff₀ hs]
+  rw [Real.norm_eq_abs, abs_div, abs_of_pos (hs i), div_le_iff₀ (hs i)]
 
 /-- The acceptance test `w ≤ 1` holds if and only if `|Δ i| ≤ s i` in every component. -/
 theorem scaledError_le_one_iff (atol rtol u v Δ : ι → ℝ) (ha : ∀ i, 0 < atol i)
     (hr : ∀ i, 0 ≤ rtol i) :
     scaledError atol rtol u v Δ ≤ 1 ↔ ∀ i, |Δ i| ≤ toleranceScale atol rtol u v i := by
-  simpa only [one_mul] using scaledError_le_iff atol rtol u v Δ ha hr zero_le_one
+  simpa only [one_mul] using
+    scaledError_le_iff atol rtol u v Δ (fun i ↦ toleranceScale_pos u v (ha i) (hr i)) zero_le_one
 
 /-- The normalised indicator does not depend on the units of the components: multiplying
 `atol i`, `u i`, `v i` and `Δ i` by the same `λ i > 0`, with `rtol` unchanged, leaves it fixed. -/
