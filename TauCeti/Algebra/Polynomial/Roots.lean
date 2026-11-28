@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Order.Filter.Basic
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Multiplicities of labelled roots
@@ -41,6 +42,13 @@ its factors (`Polynomial.rootMultiplicity_multiset_prod`), and pushing a factori
 `P = C c * s.prod` forward along `φ : A →+* K` gives the nonvanishing criterion
 `Polynomial.map_ne_zero_iff_of_eq_C_mul_multiset_prod` and root-multiplicity sum formula
 `Polynomial.rootMultiplicity_map_eq_sum`.
+
+Over an infinite commutative ring `R`, polynomial root counting also implies that no positive
+power sends every nonzero element to `1` (`TauCeti.not_forall_pow_eq_one`), that no two ring
+homomorphisms `g, g' : R →+* S` into a nontrivial commutative ring satisfy a nontrivial identity
+`g x ^ d * g' x ^ n = 1` on all nonzero elements (`RingHom.not_forall_map_pow_mul_map_pow_eq_one`),
+and that if `R` has no zero divisors then any subring containing all `a`-th powers (`0 < a`) is
+infinite (`Subring.infinite_of_pow_mem`).
 -/
 
 public section
@@ -65,6 +73,17 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
   rw [← count_roots, ← count_roots, hxroots, hroots₀,
     Multiset.count_map, Multiset.count_map]
   exact congrArg _ (Multiset.filter_congr fun j hj ↦ hx i hi j (Finset.mem_val.mp hj))
+
+/-- No positive power sends every nonzero element of an infinite commutative ring to `1`. -/
+theorem not_forall_pow_eq_one {R : Type*} [CommRing R] [Infinite R] {n : ℕ} (hn : n ≠ 0) :
+    ¬ ∀ x : R, x ≠ 0 → x ^ n = 1 := fun h => by
+  have : Nontrivial R := Infinite.instNontrivial R
+  have : IsDomain R := RingHom.isDomain_of_forall_map_pow_mul_map_pow_eq_one
+    (RingHom.id R) (RingHom.id R) (n := 0) (.inl hn) fun x hx => by simpa using h x hx
+  exact mul_ne_zero (M₀ := R[X]) X_ne_zero
+    (fun h1 => by simpa [hn] using congrArg (eval (0 : R)) h1)
+    (Polynomial.zero_of_eval_zero (X * (X ^ n - 1) : R[X]) fun c => by
+      by_cases hc : c = 0 <;> simp [hc, h])
 
 end TauCeti
 
@@ -210,6 +229,65 @@ theorem rootMultiplicity_map_eq_sum {A K : Type*} [CommSemiring A] [CommRing K] 
   simp only [Function.comp_apply, coe_mapRingHom]
 
 end Polynomial
+
+namespace RingHom
+
+private theorem not_forall_map_pow_mul_map_pow_eq_one_of_ne_zero {R S : Type*} [CommRing R]
+    [Infinite R] [CommRing S] [Nontrivial S] (g g' : R →+* S) {d n : ℕ} (hd : d ≠ 0) :
+    ¬ ∀ x : R, x ≠ 0 → g x ^ d * g' x ^ n = 1 := fun h => by
+  have : Nontrivial R := Infinite.instNontrivial R
+  have hginj : Function.Injective g := (injective_iff_map_eq_zero g).mpr fun x hx => by_contra
+    fun hx0 => (zero_ne_one (α := S)) (by simpa [hx, zero_pow hd] using h x hx0)
+  have : IsDomain R := isDomain_of_forall_map_pow_mul_map_pow_eq_one g g' (.inl hd) h
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact TauCeti.not_forall_pow_eq_one hd fun x hx => hginj (by simpa [map_pow] using h x hx)
+  let Q : R[X] := (X ^ n + 1) ^ d * (X ^ d + 1) ^ n - X ^ (d * n)
+  let P : R[X] := X * (X ^ n + 1) * Q
+  refine mul_ne_zero (mul_ne_zero X_ne_zero fun h1 => by simpa [hn] using congrArg (eval 0) h1)
+    (fun h2 => by simpa [Q, hd, hn, Nat.mul_ne_zero hd hn] using congrArg (eval 0) h2)
+    (Polynomial.zero_of_eval_zero P fun c => ?_)
+  simp only [P, Q, eval_mul, eval_sub, eval_pow, eval_add, eval_X, eval_one]
+  by_cases hc0 : c = 0; · simp [hc0]
+  by_cases hcn1 : c ^ n + 1 = 0; · simp [hcn1]
+  -- When `c ≠ 0` and `c ^ n + 1 ≠ 0`, `g c ^ d * g' c ^ n = 1` gives the linking identity
+  -- `g (c ^ d + 1) = g c ^ d * g' (c ^ n + 1)` (`hlink`); substituting this into
+  -- `g ((c ^ n + 1) ^ d * (c ^ d + 1) ^ n)` collapses `g (c ^ n + 1) ^ d * g' (c ^ n + 1) ^ n`
+  -- to `1`, leaving `g (c ^ (d * n))`. Injectivity of `g` then forces `Q.eval c = 0`, so `P`
+  -- vanishes everywhere.
+  have hlink : g c ^ d * g' (c ^ n + 1) = g (c ^ d + 1) := by
+    simp [mul_add, h c hc0, add_comm]
+  have hgeq : g ((c ^ n + 1) ^ d * (c ^ d + 1) ^ n) = g (c ^ (d * n)) := by
+    rw [map_mul, map_pow, map_pow, ← hlink, mul_pow]
+    calc g (c ^ n + 1) ^ d * ((g c ^ d) ^ n * g' (c ^ n + 1) ^ n)
+      _ = (g c ^ d) ^ n * (g (c ^ n + 1) ^ d * g' (c ^ n + 1) ^ n) := by ring
+      _ = g (c ^ (d * n)) := by rw [h _ hcn1, mul_one, ← pow_mul, map_pow]
+  rw [sub_eq_zero.mpr (hginj hgeq), mul_zero]
+
+/-- **No two ring homomorphisms out of an infinite commutative ring into a nontrivial commutative
+ring satisfy a nontrivial negative-exponent power law on nonzero elements.** -/
+theorem not_forall_map_pow_mul_map_pow_eq_one {R S : Type*} [CommRing R] [Infinite R]
+    [CommRing S] [Nontrivial S] (g g' : R →+* S) {d n : ℕ} (hdn : d ≠ 0 ∨ n ≠ 0) :
+    ¬ ∀ x : R, x ≠ 0 → g x ^ d * g' x ^ n = 1 :=
+  hdn.elim (not_forall_map_pow_mul_map_pow_eq_one_of_ne_zero g g') fun hn h =>
+    not_forall_map_pow_mul_map_pow_eq_one_of_ne_zero g' g hn fun x hx => by
+      rw [mul_comm]; exact h x hx
+
+end RingHom
+
+namespace Subring
+
+/-- A subring of an infinite commutative ring without zero divisors containing every `a`-th power
+(`0 < a`) is infinite. -/
+theorem infinite_of_pow_mem {R : Type*} [CommRing R] [NoZeroDivisors R] [Infinite R]
+    (E : Subring R) {a : ℕ} (ha : 0 < a) (hpow : ∀ x : R, x ^ a ∈ E) : Infinite E := by
+  classical
+  have : IsDomain R := NoZeroDivisors.to_isDomain R
+  by_contra hfin; rw [not_infinite_iff_finite] at hfin
+  exact Set.infinite_univ
+    ((Set.finite_iUnion fun c : E => (Polynomial.nthRootsFinset a c.val).finite_toSet).subset
+      fun x _ => Set.mem_iUnion.mpr ⟨⟨x ^ a, hpow x⟩, by simp [Polynomial.mem_nthRootsFinset ha]⟩)
+
+end Subring
 
 namespace Polynomial
 

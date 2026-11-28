@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+import Mathlib.Algebra.Ring.Int.Units
+import TauCeti.Algebra.Module.LinearMap.End
 import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
@@ -30,6 +32,9 @@ coordinate equivalence over a nontrivial target module, and respects multiplicat
 inverses of coordinate permutations (`LinearEquiv.funCongrLeft_mul_symm`,
 `LinearEquiv.funCongrLeft_one_symm`, `LinearEquiv.funCongrLeft_inv_symm_cancel`,
 `LinearEquiv.funCongrLeft_inv_cancel`).
+Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring `R`
+is scalar multiplication by a unit (`LinearEquiv.exists_eq_smulOfUnit_of_unique`), specializing over
+`ℤ` to `LinearMap.id` or `-LinearMap.id` (`LinearEquiv.toLinearMap_eq_id_or_neg_of_unique`).
 Conjugating an algebra homomorphism into `Module.End` by `LinearEquiv.conjAlgEquiv` agrees with
 pointwise intertwining (`LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff`).
 Following the identification of equal submodules by an inclusion is the other inclusion,
@@ -141,6 +146,30 @@ theorem funCongrLeft_inv_cancel (a : Equiv.Perm σ) (v : σ → M) :
   rw [← funCongrLeft_mul_symm, mul_inv_cancel, funCongrLeft_one_symm, refl_apply]
 
 end FunCongrLeftPerm
+
+/-- Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring
+`R` is scalar multiplication by a unit of `R`. -/
+theorem exists_eq_smulOfUnit_of_unique {R ι : Type*} [CommSemiring R] [Unique ι]
+    (e : (ι → R) ≃ₗ[R] (ι → R)) : ∃ u : Rˣ, e = LinearEquiv.smulOfUnit u := by
+  let φ := LinearEquiv.funUnique ι R R
+  let e' : R ≃ₗ[R] R := (φ.symm.trans e).trans φ
+  obtain ⟨u, hu⟩ := e'.isUnit_apply_one
+  refine ⟨u, ?_⟩
+  have he' : (e' : R →ₗ[R] R) = ((LinearEquiv.smulOfUnit u : R ≃ₗ[R] R) : R →ₗ[R] R) :=
+    LinearMap.ext_ring (by simp [← hu, smulOfUnit, Units.smul_def])
+  ext x i
+  rw [Unique.eq_default i]
+  have hval : e x default = φ (e x) := (congrFun (LinearEquiv.funUnique_apply ι R R) (e x)).symm
+  have hx : φ (e x) = e' (φ x) := by simp [e']
+  rw [hval, hx]
+  simpa [φ, smulOfUnit] using LinearMap.congr_fun he' (φ x)
+
+/-- Every `ℤ`-linear automorphism of `ι → ℤ` (`Unique ι`) is `id` or `-id`. -/
+theorem toLinearMap_eq_id_or_neg_of_unique {ι : Type*} [Unique ι] (e : (ι → ℤ) ≃ₗ[ℤ] (ι → ℤ)) :
+    (e : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) = LinearMap.id ∨ (e : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) = -LinearMap.id := by
+  obtain ⟨u, rfl⟩ := e.exists_eq_smulOfUnit_of_unique
+  rcases Int.units_eq_one_or u with rfl | rfl <;>
+    [left; right] <;> exact LinearMap.ext fun x => by simp [smulOfUnit]
 
 /-- Conjugating an algebra homomorphism `φ` into `Module.End S M₁` along `e : M₁ ≃ₗ[S] M₂` equals
 `ψ` into `Module.End S M₂` exactly when `e` intertwines `φ a` with `ψ a` for every `a`. -/

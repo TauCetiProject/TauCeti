@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
+public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 
 /-!
@@ -23,6 +24,11 @@ This is not a statement only about the image of the full-weight parametrization:
 image can be smaller than the actual torus. The proof uses the existing pinning equation
 and the simple-coroot root-word identity, rather than extending torus parameters to the
 full weight lattice.
+
+The `ℤ`-linear map `D.simpleReflectionCharacterMap i` represents the simple reflection `sᵢ`
+on `D.weightLattice`, induces `D.simpleReflectionTorusParameter i A` on torus points, is the
+character map of conjugation by the simple Weyl element `D.weylElement (t.simpleIndex ht i) A 1`,
+and equals `-1` in rank one.
 
 ## References
 
@@ -106,7 +112,7 @@ private theorem torusPoints_conj_simpleWeylElement (s : Fin t.rank → Aˣ) :
 
 /-- Conjugation by a pinned simple Weyl representative acts by the simple reflection on
 all points of the actual torus, not just those extending to the full weight lattice. -/
-theorem weylElement_conj_torusPoints (s : Fin t.rank → Aˣ) :
+@[simp] theorem weylElement_conj_torusPoints (s : Fin t.rank → Aˣ) :
     D.weylElement (t.simpleIndex ht i) A 1 * D.torusPoints A s *
         (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
       D.torusPoints A (D.simpleReflectionTorusParameter i A s) := by
@@ -173,4 +179,104 @@ theorem corootPoints_mem_weylSubgroup (γ : Fin t.numRoots) (s : Aˣ) :
 
 end
 
+/-! ## The character map of a simple reflection on the actual weight lattice -/
+
+noncomputable section
+universe v
+variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
+
+/-- The `ℤ`-linear endomorphism of `Fin t.rank → ℤ` representing `s_i` in `D.weightLatticeBasis`. -/
+def simpleReflectionCharacterMap (i : Fin t.rank) : Module.End ℤ (Fin t.rank → ℤ) :=
+  LinearMap.id -
+    (LinearMap.proj i ∘ₗ D.weightLatticeEmbedding).smulRight (D.coordinateRoot (t.simpleIndex ht i))
+
+/-- Explicit coordinate formula for `D.simpleReflectionCharacterMap i`. -/
+theorem simpleReflectionCharacterMap_apply (i : Fin t.rank) (χ : Fin t.rank → ℤ) :
+    D.simpleReflectionCharacterMap i χ =
+      χ - (D.weightLatticeEmbedding χ i) • D.coordinateRoot (t.simpleIndex ht i) := by
+  simp [simpleReflectionCharacterMap]
+
+/-- `D.weightLatticeEmbedding` intertwines `D.simpleReflectionCharacterMap i` with the simple
+reflection of `t.simplyConnectedRootDatum ht`. -/
+theorem weightLatticeEmbedding_simpleReflectionCharacterMap (i : Fin t.rank) (χ : Fin t.rank → ℤ) :
+    D.weightLatticeEmbedding (D.simpleReflectionCharacterMap i χ) =
+      (t.simplyConnectedRootDatum ht).reflection (t.simpleIndex ht i)
+        (D.weightLatticeEmbedding χ) := by
+  rw [simpleReflectionCharacterMap_apply, map_sub, map_smul,
+    D.weightLatticeEmbedding_coordinateRoot, RootPairing.reflection_apply,
+    t.coroot'_simpleIndex_apply ht]
+
+/-- `D.simpleReflectionCharacterMap i` permutes coordinate roots by `reflectionPerm`. -/
+@[simp] theorem simpleReflectionCharacterMap_coordinateRoot (i : Fin t.rank) (γ : Fin t.numRoots) :
+    D.simpleReflectionCharacterMap i (D.coordinateRoot γ) =
+      D.coordinateRoot ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) :=
+  D.weightLatticeEmbedding_injective (by
+    rw [D.weightLatticeEmbedding_simpleReflectionCharacterMap,
+      D.weightLatticeEmbedding_coordinateRoot, D.weightLatticeEmbedding_coordinateRoot,
+      RootPairing.root_reflectionPerm])
+
+/-- The simple reflection character map negates its own simple coordinate root. -/
+theorem simpleReflectionCharacterMap_coordinateRoot_simpleIndex (i : Fin t.rank) :
+    D.simpleReflectionCharacterMap i (D.coordinateRoot (t.simpleIndex ht i)) =
+      -D.coordinateRoot (t.simpleIndex ht i) := by
+  rw [D.simpleReflectionCharacterMap_coordinateRoot, D.coordinateRoot_reflectionPerm_self]
+
+/-- `D.simpleReflectionCharacterMap i` is an involutive `ℤ`-linear map. -/
+theorem simpleReflectionCharacterMap_involutive (i : Fin t.rank) :
+    Function.Involutive (D.simpleReflectionCharacterMap i) := fun χ =>
+  D.weightLatticeEmbedding_injective (by
+    rw [D.weightLatticeEmbedding_simpleReflectionCharacterMap,
+      D.weightLatticeEmbedding_simpleReflectionCharacterMap, RootPairing.reflection_same])
+
+/-- Applying `D.simpleReflectionCharacterMap i` twice returns the original character. -/
+@[simp] theorem simpleReflectionCharacterMap_simpleReflectionCharacterMap (i : Fin t.rank)
+    (χ : Fin t.rank → ℤ) : D.simpleReflectionCharacterMap i (D.simpleReflectionCharacterMap i χ) =
+      χ := D.simpleReflectionCharacterMap_involutive i χ
+
+/-- Squaring `D.simpleReflectionCharacterMap i` in `Module.End ℤ (Fin t.rank → ℤ)` gives `1`. -/
+@[simp] theorem simpleReflectionCharacterMap_mul_self (i : Fin t.rank) :
+    D.simpleReflectionCharacterMap i * D.simpleReflectionCharacterMap i = 1 :=
+  LinearMap.ext (D.simpleReflectionCharacterMap_involutive i)
+
+/-- `D.simpleReflectionCharacterMap i` is bijective. -/
+theorem simpleReflectionCharacterMap_bijective (i : Fin t.rank) :
+    Function.Bijective (D.simpleReflectionCharacterMap i) :=
+  (D.simpleReflectionCharacterMap_involutive i).bijective
+
+/-- `D.simpleReflectionCharacterMap i` is injective. -/
+theorem simpleReflectionCharacterMap_injective (i : Fin t.rank) :
+    Function.Injective (D.simpleReflectionCharacterMap i) :=
+  (D.simpleReflectionCharacterMap_involutive i).injective
+
+/-- **The torus map induced by `D.simpleReflectionCharacterMap i` is
+`D.simpleReflectionTorusParameter i A`**, over every commutative ring `A`. -/
+@[simp] theorem torusPointMap_simpleReflectionCharacterMap (i : Fin t.rank) (A : Type v)
+    [CommRing A] : torusPointMap (R := A) (D.simpleReflectionCharacterMap i) =
+      D.simpleReflectionTorusParameter i A := MonoidHom.ext fun s => funext fun j => by
+  rw [torusPointMap_apply, simpleReflectionCharacterMap_apply, D.weightLatticeEmbedding_single,
+    torusCharacter_sub, torusCharacter_zsmul, torusCharacter_single, zpow_one,
+    D.simpleReflectionTorusParameter_apply]
+
+/-- **In rank one (`t.rank = 1`), `D.simpleReflectionCharacterMap i` is `-1`**, regardless of
+`D.weightLattice` or `D.weightLatticeBasis`. -/
+theorem simpleReflectionCharacterMap_eq_neg_one_of_rank_eq_one (hr : t.rank = 1) (i : Fin t.rank) :
+    D.simpleReflectionCharacterMap i = -1 :=
+  LinearMap.ext fun χ => D.weightLatticeEmbedding_injective (funext fun j => by
+    obtain rfl : j = i := Fin.ext (by omega)
+    simp only [D.weightLatticeEmbedding_simpleReflectionCharacterMap, RootPairing.reflection_apply,
+      t.coroot'_simpleIndex_apply ht, root_simpleIndex, zsmul_eq_mul, Pi.sub_apply, Pi.mul_apply,
+      Pi.intCast_apply, Int.cast_eq, cartanMatrix_apply_same, LinearMap.neg_apply,
+      one_apply_eq_self, map_neg, Pi.neg_apply]
+    ring)
+
+/-- Conjugation by `D.weylElement (t.simpleIndex ht i) A 1` has character map
+`D.simpleReflectionCharacterMap i` on `D.torusPoints A`. -/
+theorem isCharacterMap_conj_weylElement (i : Fin t.rank) (A : Type v) [CommRing A] :
+    IsCharacterMap (D.torusPoints A)
+      (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A)
+      (D.simpleReflectionCharacterMap i) := isCharacterMap_iff.mpr fun _ => by
+  rw [MonoidHom.coe_ofClass, MulAut.conj_apply, D.weylElement_conj_torusPoints,
+    D.torusPointMap_simpleReflectionCharacterMap]
+
+end
 end TauCeti.DynkinType.ChevalleyDatum

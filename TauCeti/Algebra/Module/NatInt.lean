@@ -22,6 +22,8 @@ with multiplication, because `(-1) • a` is the additive inverse of `a`.
 
 When a natural number `n` is a unit of the scalar ring, `Ring.inverse_natCast_smul_nsmul` divides
 `n • v` by `n`.
+Cross-multiplication of natural scalar-multiple relations is given by
+`TauCeti.nsmul_eq_nsmul_of_nsmul_eq`.
 -/
 
 public section
@@ -43,6 +45,14 @@ theorem intUnits_smul_mul_smul {R A : Type*} [Ring R] [NonUnitalNonAssocSemiring
   let : NonUnitalNonAssocRing A := { ‹NonUnitalNonAssocSemiring A›, this with }
   rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or v with rfl | rfl <;>
     simp
+
+/-- Cross-multiplication for natural scalar multiples: if `d₁ • x = m₁ • y₁` and
+`d₂ • x = m₂ • y₂`, then `(d₂ * m₁) • y₁ = (d₁ * m₂) • y₂`. -/
+theorem nsmul_eq_nsmul_of_nsmul_eq {M : Type*} [AddMonoid M]
+    {d₁ m₁ d₂ m₂ : ℕ} {x y₁ y₂ : M}
+    (h₁ : d₁ • x = m₁ • y₁) (h₂ : d₂ • x = m₂ • y₂) :
+    (d₂ * m₁) • y₁ = (d₁ * m₂) • y₂ := by
+  rw [mul_smul, ← h₁, ← mul_smul, mul_comm d₂ d₁, mul_smul, h₂, ← mul_smul]
 
 end TauCeti
 

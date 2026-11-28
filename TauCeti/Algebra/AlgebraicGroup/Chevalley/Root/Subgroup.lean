@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
+import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Conjugate
 public import Mathlib.GroupTheory.Subgroup.Centralizer
@@ -222,6 +223,7 @@ theorem coe_weylElement_simpleIndex_one (i : Fin t.rank) (A : Type v) [CommRing 
 /-- **Conjugating a root subgroup by a simple Weyl element.** Over every ring of points,
 `nᵢ x_γ(u) nᵢ⁻¹ = x_{sᵢ γ}(ε u)` for the Weyl element `nᵢ = n_{αᵢ}(1)` of the simple root `αᵢ`
 and the sign `ε = chevalleyWeylSign αᵢ γ`. -/
+@[simp]
 theorem weylElement_conj_rootSubgroupPoints (i : Fin t.rank) (γ : Fin t.numRoots) (A : Type v)
     [CommRing A] (u : A) :
     D.weylElement (t.simpleIndex ht i) A 1 * D.rootSubgroupPoints γ A (Multiplicative.ofAdd u) *
@@ -234,6 +236,39 @@ theorem weylElement_conj_rootSubgroupPoints (i : Fin t.rank) (γ : Fin t.numRoot
   exact congrArg _ (kostantWeylGL_conj_chevalleyRootSubgroup D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator i γ
     (CommAlgCat.of ℤ A) u)
+
+open Multiplicative in
+/-- If a homomorphism `F : D.points A →* D.points B` intertwines `D.rootSubgroupPoints γ A` with
+`D.rootSubgroupPoints β B` along a surjective additive map `f : A →+ B`, then `F` maps the
+`γ`-root subgroup onto the `β`-root subgroup. -/
+theorem map_range_rootSubgroupPoints_of_comp_eq {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    {F : D.points A →* D.points B} {γ β : Fin t.numRoots} {f : A →+ B}
+    (hf : Function.Surjective f)
+    (h : ∀ u : A, F (D.rootSubgroupPoints γ A (ofAdd u)) =
+      D.rootSubgroupPoints β B (ofAdd (f u))) :
+    (D.rootSubgroupPoints γ A).range.map F = (D.rootSubgroupPoints β B).range := by
+  have hcomp : F.comp (D.rootSubgroupPoints γ A) =
+      (D.rootSubgroupPoints β B).comp f.toMultiplicative :=
+    MonoidHom.ext fun u => by
+      simpa only [MonoidHom.comp_apply, AddMonoidHom.coe_toMultiplicative, Function.comp_apply,
+        ofAdd_toAdd] using h (toAdd u)
+  rw [MonoidHom.map_range, hcomp]
+  exact MonoidHom.range_comp_of_surjective _ f.toMultiplicative fun y =>
+    let ⟨x, hx⟩ := hf (toAdd y); ⟨ofAdd x, by simp [hx]⟩
+
+/-- Conjugation by `D.weylElement (t.simpleIndex ht i) A 1` maps each root subgroup onto the
+reflected root subgroup, over every commutative ring `A`. -/
+@[simp] theorem map_range_rootSubgroupPoints_conj_weylElement (i : Fin t.rank) (A : Type v)
+    [CommRing A] (γ : Fin t.numRoots) :
+    (D.rootSubgroupPoints γ A).range.map
+        (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A) =
+      (D.rootSubgroupPoints
+        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A).range :=
+  let ε : ℤˣ := t.chevalleyWeylSign ht (t.simpleIndex ht i) γ
+  D.map_range_rootSubgroupPoints_of_comp_eq
+    (f := AddMonoidHom.mulLeft ((ε : ℤ) : A))
+    (fun y => ⟨(((ε⁻¹ : ℤˣ) : ℤ) : A) * y, by simp [← mul_assoc, ← Int.cast_mul]⟩)
+    (D.weylElement_conj_rootSubgroupPoints i γ A)
 
 /-- **Conjugating Steinberg's Weyl element by a simple Weyl representative.** Over every
 commutative ring `A`, `nᵢ * n_γ(s) * nᵢ⁻¹ = n_{sᵢ γ}(ε s)` where
@@ -360,6 +395,17 @@ theorem torusPoints_mem_rootTorusSubgroup (A : Type v) [CommRing A] (s : Fin t.r
     D.torusPoints A s ∈ D.rootTorusSubgroup A := by
   rw [rootTorusSubgroup_def]
   exact Subgroup.subset_closure (Or.inr ⟨s, rfl⟩)
+
+/-- The range of every root subgroup is contained in the root-and-torus subgroup. -/
+theorem range_rootSubgroupPoints_le_rootTorusSubgroup (γ : Fin t.numRoots) (A : Type v)
+    [CommRing A] :
+    (D.rootSubgroupPoints γ A).range ≤ D.rootTorusSubgroup A := by
+  rintro _ ⟨u, rfl⟩; exact D.rootSubgroupPoints_mem_rootTorusSubgroup γ A u
+
+/-- The range of the actual torus is contained in the root-and-torus subgroup. -/
+theorem range_torusPoints_le_rootTorusSubgroup (A : Type v) [CommRing A] :
+    (D.torusPoints A).range ≤ D.rootTorusSubgroup A := by
+  rintro _ ⟨s, rfl⟩; exact D.torusPoints_mem_rootTorusSubgroup A s
 
 /-- To contain the root-and-torus subgroup, it suffices and is necessary to contain every
 root subgroup and every point of the actual torus. -/

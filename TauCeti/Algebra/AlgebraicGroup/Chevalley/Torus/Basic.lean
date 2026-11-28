@@ -80,6 +80,13 @@ theorem weightLatticeEmbedding_coordinateWeight (j : Fin D.dim) :
   simpa only [Module.Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul] using
     D.sum_coordinateWeight_smul j
 
+/-- Embedding `D.coordinateRoot γ` from the chosen basis of `Λ(D)` into the full weight lattice
+recovers the root of `t.simplyConnectedRootDatum ht`. -/
+@[simp]
+theorem weightLatticeEmbedding_coordinateRoot (γ : Fin t.numRoots) :
+    D.weightLatticeEmbedding (D.coordinateRoot γ) = (t.simplyConnectedRootDatum ht).root γ := by
+  rw [coordinateRoot_def, weightLatticeEmbedding_repr]
+
 /-- The coordinate lattice inclusion is injective, even when the weight lattice is proper. -/
 theorem weightLatticeEmbedding_injective : Function.Injective D.weightLatticeEmbedding :=
   Subtype.val_injective.comp D.weightLatticeBasis.equivFun.symm.injective
@@ -181,6 +188,11 @@ theorem torusPoints_injective : Function.Injective (D.torusPoints A) := by
   exact kostantTorusPoints_injective D.lattice D.basis D.coordinateWeight
     D.span_range_coordinateWeight_eq_top
     (Units.map_injective (MulEquiv.injective _) hmatrix)
+
+/-- Points of the actual torus commute with one another over every commutative ring. -/
+@[simp] theorem torusPoints_conj_torusPoints (r s : Fin t.rank → Aˣ) :
+    D.torusPoints A r * D.torusPoints A s * (D.torusPoints A r)⁻¹ = D.torusPoints A s := by
+  rw [← map_inv, ← map_mul, ← map_mul]; exact congrArg (D.torusPoints A) (by ext j; simp)
 
 end
 

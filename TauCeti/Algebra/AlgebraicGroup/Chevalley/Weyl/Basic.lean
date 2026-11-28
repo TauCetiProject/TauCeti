@@ -490,10 +490,9 @@ theorem rootSubgroupPoints_ofAdd_one_ne_one
     intro hx
     apply hγ
     apply (conj_eq_one_iff (a := D.weylElement (t.simpleIndex ht i) A 1)).mp
-    have hconj := D.weylElement_conj_rootSubgroupPoints i γ A 1
     rcases Int.units_eq_one_or (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) with hε | hε
-    · simpa [hε, hx] using hconj
-    · simpa [hε, ofAdd_neg, map_inv, hx] using hconj
+    · simp [hε, hx]
+    · simp [hε, ofAdd_neg, map_inv, hx]
 
 /-- The Weyl projection is surjective: the pinned representatives lift every word in the
 simple reflections. -/
