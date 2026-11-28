@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.RingTheory.Discriminant
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # Discriminants of two bases differ by a unit square
@@ -49,5 +50,14 @@ theorem exists_discr_eq_sq_mul_discr (b : Basis ι A B) (b' : Basis ι' A B) :
   refine ⟨hunit.unit, ?_⟩
   conv_lhs => rw [← c.toMatrix_map_vecMul b']
   rw [IsUnit.unit_spec, Algebra.discr_of_matrix_vecMul, Basis.coe_reindex, Algebra.discr_reindex]
+
+/-- Over a discrete valuation ring, the discriminant valuation is independent of the basis. -/
+theorem addVal_discr_eq [IsDomain A] [IsDiscreteValuationRing A]
+    (b : Basis ι A B) (b' : Basis ι' A B) :
+    IsDiscreteValuationRing.addVal A (Algebra.discr A b) =
+      IsDiscreteValuationRing.addVal A (Algebra.discr A b') := by
+  classical
+  obtain ⟨u, hu⟩ := b'.exists_discr_eq_sq_mul_discr b
+  simp [hu, IsDiscreteValuationRing.addVal_eq_zero_of_unit]
 
 end Module.Basis

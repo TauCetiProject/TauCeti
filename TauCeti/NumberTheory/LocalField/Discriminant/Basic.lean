@@ -205,10 +205,9 @@ theorem addVal_discr_eq_discriminantExponent (b : Module.Basis ι 𝒪[K] 𝒪[L
 `𝒪[K]`-basis `b` of `𝒪[L]`, `(Algebra.discr 𝒪[K] b) = 𝔩(L/K)`. -/
 theorem span_discr_eq_discriminantIdeal (b : Module.Basis ι 𝒪[K] 𝒪[L]) :
     Ideal.span {Algebra.discr 𝒪[K] b} = discriminantIdeal K L := by
-  ext y
-  rw [Ideal.mem_span_singleton, ← IsDiscreteValuationRing.addVal_le_iff_dvd,
-    addVal_discr_eq_discriminantExponent, discriminantIdeal_eq_maximalIdeal_pow,
-    IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+  rw [discriminantIdeal_eq_maximalIdeal_pow]
+  exact IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow_of_addVal_eq
+    (addVal_discr_eq_discriminantExponent b)
 
 end Basis
 

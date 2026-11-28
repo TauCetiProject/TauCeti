@@ -20,7 +20,7 @@ isomorphism classes. This file identifies it with the étale mass `TauCeti.etale
 as `1 / n!` times a sum over labelled Galois sets of size `n`
 (`TauCeti.tsum_etaleDiscriminantExponent`).
 The weight `v(Disc A)` is the normalized valuation of the trace discriminant of an integral basis
-of the maximal order (`TauCeti.addVal_discr_eq_etaleDiscriminantExponent`).
+of the maximal order (`Module.Basis.addVal_discr_eq_etaleDiscriminantExponent`).
 
 The labelled Galois set of an étale algebra `A` has the discriminant weight of `A`
 (`TauCeti.GaloisSet.discriminantExponent_ofAlgebra`). The relabelling orbits of labelled Galois

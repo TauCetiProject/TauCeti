@@ -9,8 +9,8 @@ public import Mathlib.RingTheory.Etale.Field
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.EtaleWeight
 import TauCeti.RingTheory.Discriminant.Basis
 import TauCeti.RingTheory.Discriminant.Pi
-import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.IntegralClosure.Pi
+import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
 # The integral discriminant of a finite étale algebra
@@ -20,9 +20,12 @@ field equals the normalized valuation of the trace discriminant of any basis of 
 integral closure. Thus the exponent in the étale mass is the exponent of the
 discriminant ideal of the maximal order.
 
-The comparison uses `TauCeti.etaleDiscriminantExponent_pi` on the field factors and
-`Module.Basis.discr_pi` on their rings of integers. It includes the zero algebra, whose
-empty integral basis has discriminant one.
+The comparison uses Mathlib's `Algebra.Etale.iff_exists_algEquiv_prod` to obtain field factors.
+`TauCeti.integralClosurePiAlgEquiv` and `TauCeti.integerRingEquivIntegralClosure` identify the
+integral order with the product of their rings of integers. Then
+`TauCeti.addVal_discr_eq_discriminantExponent` computes each factor's discriminant valuation,
+and `TauCeti.etaleDiscriminantExponent_pi` and `TauCeti.Algebra.discr_pi_basis` assemble the
+comparison. It includes the zero algebra, whose empty integral basis has discriminant one.
 
 ## References
 
@@ -32,9 +35,9 @@ empty integral basis has discriminant one.
 
 public section
 
-open ValuativeRel IsDiscreteValuationRing IsLocalRing
+open ValuativeRel IsDiscreteValuationRing IsLocalRing TauCeti
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
@@ -66,30 +69,29 @@ theorem addVal_discr_eq_etaleDiscriminantExponent {A : Type*} [CommRing A] [Alge
       (AlgEquiv.piCongrRight fun i ↦ (integerRingEquivIntegralClosure K (L i)).symm)
   let c := b.map eInt.toLinearEquiv
   let c₀ (i : I) := Module.finBasis 𝒪[K] 𝒪[L i]
-  have hd : Algebra.discr 𝒪[K] b = Algebra.discr 𝒪[K] c :=
-    Algebra.discr_eq_discr_of_algEquiv b eInt
-  obtain ⟨u, hu⟩ := (Pi.basis c₀).exists_discr_eq_sq_mul_discr c
-  rw [hd, hu, addVal_mul, addVal_pow, addVal_eq_zero_of_unit, nsmul_zero, zero_add,
-    Module.Basis.discr_pi, etaleDiscriminantExponent_eq_of_algEquiv K eL,
-    etaleDiscriminantExponent_pi, Nat.cast_sum]
-  let d (i : I) := Algebra.discr 𝒪[K] (c₀ i)
-  have hval (i : I) : addVal 𝒪[K] (d i) = (L i).discriminantExponent := by
-    rw [IntermediateField.discriminantExponent_eq]
-    exact addVal_discr_eq_discriminantExponent (c₀ i)
-  -- In the codomain of `toValuation` multiplication is addition of exponents.
   calc
-    addVal 𝒪[K] (∏ i, d i) = ∑ i, addVal 𝒪[K] (d i) :=
-      map_prod (AddValuation.toValuation (addVal 𝒪[K])) d Finset.univ
-    _ = _ := Finset.sum_congr rfl fun i _ ↦ hval i
+    addVal 𝒪[K] (Algebra.discr 𝒪[K] b) = addVal 𝒪[K] (Algebra.discr 𝒪[K] c) :=
+      congrArg (addVal 𝒪[K]) (Algebra.discr_eq_discr_of_algEquiv b eInt)
+    _ = addVal 𝒪[K] (Algebra.discr 𝒪[K] (Pi.basis c₀)) := c.addVal_discr_eq _
+    _ = ∑ i, addVal 𝒪[K] (Algebra.discr 𝒪[K] (c₀ i)) := by
+      rw [TauCeti.Algebra.discr_pi_basis, AddValuation.map_prod]
+    _ = ∑ i, ((L i).discriminantExponent : ℕ∞) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [IntermediateField.discriminantExponent_eq]
+      exact TauCeti.addVal_discr_eq_discriminantExponent (c₀ i)
+    _ = etaleDiscriminantExponent K A := by
+      rw [etaleDiscriminantExponent_eq_of_algEquiv K eL, etaleDiscriminantExponent_pi,
+        Nat.cast_sum]
 
 /-- The discriminant of any integral basis generates the power of the maximal ideal given by
-the étale discriminant exponent. -/
+the étale discriminant exponent. This extends `TauCeti.span_discr_eq_discriminantIdeal`
+from field extensions, using the same DVR valuation-to-ideal comparison. -/
 theorem span_discr_eq_maximalIdeal_pow_etaleDiscriminantExponent {A : Type*} [CommRing A]
     [Algebra K A] [Algebra.Etale K A] {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι 𝒪[K] (integralClosure 𝒪[K] A)) :
     Ideal.span {Algebra.discr 𝒪[K] b} = 𝓂[K] ^ etaleDiscriminantExponent K A := by
-  ext x
-  rw [Ideal.mem_span_singleton, ← addVal_le_iff_dvd, addVal_discr_eq_etaleDiscriminantExponent,
-    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+  exact TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow_of_addVal_eq
+    b.addVal_discr_eq_etaleDiscriminantExponent
 
-end TauCeti
+end Module.Basis
