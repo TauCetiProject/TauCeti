@@ -195,6 +195,38 @@ attribute [reassoc (attr := simp)] ι₀_homotopy ι₁_homotopy homotopy_comp
 
 variable {X S : SSet.{u}}
 
+/-- CoCartesian transports agree when their homotopies agree: their functors are determined
+by the final endpoint of the homotopy. -/
+@[ext]
+lemma ext {p : X ⟶ S} {s t : S _⦋0⦌} {e : Edge s t} {T U : CoCartesianTransport p e}
+    (h : T.homotopy = U.homotopy) : T = U := by
+  have hf : T.functor = U.functor := by
+    rw [← cancel_mono (fiber p t).ι, ← T.ι₁_homotopy, ← U.ι₁_homotopy, h]
+  cases T
+  cases U
+  congr
+
+/-- Reindex a chosen transport along an equality of base edges, retaining its functor
+and homotopy. -/
+def ofEdgeEq {p : X ⟶ S} {s t : S _⦋0⦌} {e e' : Edge s t}
+    (T : CoCartesianTransport p e) (h : e = e') : CoCartesianTransport p e' where
+  functor := T.functor
+  homotopy := T.homotopy
+  ι₀_homotopy := T.ι₀_homotopy
+  ι₁_homotopy := T.ι₁_homotopy
+  homotopy_comp := by rw [← h]; exact T.homotopy_comp
+  isCoCartesian := T.isCoCartesian
+
+@[simp]
+lemma ofEdgeEq_functor {p : X ⟶ S} {s t : S _⦋0⦌} {e e' : Edge s t}
+    (T : CoCartesianTransport p e) (h : e = e') :
+    (T.ofEdgeEq h).functor = T.functor := (rfl)
+
+@[simp]
+lemma ofEdgeEq_homotopy {p : X ⟶ S} {s t : S _⦋0⦌} {e e' : Edge s t}
+    (T : CoCartesianTransport p e) (h : e = e') :
+    (T.ofEdgeEq h).homotopy = T.homotopy := (rfl)
+
 /-- Along an isomorphism `p`, every edge `e` of the base has a coCartesian transport: the
 fibers are terminal, and the homotopy is `e` lifted along the inverse of `p`. -/
 noncomputable def ofIsIso (p : X ⟶ S) [IsIso p] {s t : S _⦋0⦌} (e : Edge s t) :

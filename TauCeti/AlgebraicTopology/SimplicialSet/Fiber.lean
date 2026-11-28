@@ -29,6 +29,8 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 * `SSet.fiber.lift`: a morphism to `X` whose composite with `q` is constant at `y`, as a morphism
   to the fiber.
 * `SSet.fiber.basePoint`: a vertex of `X` over `y`, as a vertex of the fiber.
+* `SSet.fiber.isoOfIsPullback`: the canonical fibre isomorphism for a pullback square,
+  compatible with identity squares and horizontal pasting.
 
 ## Main results
 
@@ -225,6 +227,54 @@ def fiber.lift {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg :
 lemma fiber.lift_ι {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg : g ≫ q = const y) :
     fiber.lift g q y hg ≫ (fiber q y).ι = g :=
   Subcomplex.lift_ι _ _
+
+/-- In a pullback square, the fibre over a vertex of the new base is canonically isomorphic
+to the fibre over its image in the original base. -/
+noncomputable def fiber.isoOfIsPullback {X' Y' : SSet.{u}} {t : X' ⟶ X} {q' : X' ⟶ Y'}
+    {q : X ⟶ Y} {b : Y' ⟶ Y} (sq : IsPullback t q' q b) (y : Y' _⦋0⦌) :
+    (fiber q' y : SSet) ≅ (fiber q (b.app _ y) : SSet) where
+  hom := fiber.lift ((fiber q' y).ι ≫ t) q (b.app _ y) (by
+    rw [Category.assoc, sq.w, fiber.ι_comp_assoc, const_comp])
+  inv := fiber.lift (sq.lift (fiber q (b.app _ y)).ι (const y) (by simp)) q' y (by simp)
+  hom_inv_id := by
+    rw [← cancel_mono (fiber q' y).ι, Category.assoc, fiber.lift_ι, Category.id_comp]
+    apply sq.hom_ext <;> simp
+  inv_hom_id := by
+    rw [← cancel_mono (fiber q (b.app _ y)).ι]
+    simp
+
+@[reassoc (attr := simp)]
+lemma fiber.isoOfIsPullback_hom_ι {X' Y' : SSet.{u}} {t : X' ⟶ X} {q' : X' ⟶ Y'}
+    {q : X ⟶ Y} {b : Y' ⟶ Y} (sq : IsPullback t q' q b) (y : Y' _⦋0⦌) :
+    (fiber.isoOfIsPullback sq y).hom ≫ (fiber q (b.app _ y)).ι = (fiber q' y).ι ≫ t :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+lemma fiber.isoOfIsPullback_inv_ι {X' Y' : SSet.{u}} {t : X' ⟶ X} {q' : X' ⟶ Y'}
+    {q : X ⟶ Y} {b : Y' ⟶ Y} (sq : IsPullback t q' q b) (y : Y' _⦋0⦌) :
+    (fiber.isoOfIsPullback sq y).inv ≫ (fiber q' y).ι =
+      sq.lift (fiber q (b.app _ y)).ι (const y) (by simp) :=
+  (rfl)
+
+/-- The fibre comparison for an identity square is the identity isomorphism. -/
+@[simp]
+lemma fiber.isoOfIsPullback_id (q : X ⟶ Y) (y : Y _⦋0⦌) :
+    fiber.isoOfIsPullback (IsPullback.id_horiz q) y = Iso.refl (fiber q y : SSet) := by
+  apply Iso.ext
+  rw [← cancel_mono (fiber q y).ι]
+  simp [fiber.isoOfIsPullback]
+
+/-- Fibre comparison is compatible with iterated change of base. -/
+lemma fiber.isoOfIsPullback_paste_horiz {X' Y' X'' Y'' : SSet.{u}}
+    {t : X' ⟶ X} {q' : X' ⟶ Y'} {q : X ⟶ Y} {b : Y' ⟶ Y}
+    {t' : X'' ⟶ X'} {q'' : X'' ⟶ Y''} {b' : Y'' ⟶ Y'}
+    (sq' : IsPullback t' q'' q' b') (sq : IsPullback t q' q b) (y : Y'' _⦋0⦌) :
+    fiber.isoOfIsPullback (sq'.paste_horiz sq) y =
+      fiber.isoOfIsPullback sq' y ≪≫ fiber.isoOfIsPullback sq (b'.app _ y) := by
+  apply Iso.ext
+  rw [← cancel_mono (fiber q ((b' ≫ b).app _ y)).ι]
+  rw [fiber.isoOfIsPullback_hom_ι (sq'.paste_horiz sq) y]
+  simp
 
 /-- A vertex `x` of `X` over `y`, as a vertex of the fiber of `q` over `y`. -/
 def fiber.basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :

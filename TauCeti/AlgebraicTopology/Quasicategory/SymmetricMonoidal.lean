@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Quasicategory.CategoricalEquivalence
+public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.BaseChange
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Uniqueness
 public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad
-public import TauCeti.AlgebraicTopology.Quasicategory.Product
 
 /-!
 # Symmetric monoidal quasicategories
@@ -83,14 +82,19 @@ noncomputable def segalMap {p : X ⟶ nerve FinPointed.{u}} {n : FinPointed.{u}}
     (T : ∀ i : Fin n.len, CoCartesianTransport p (nerve.edgeMk (FinPointed.ρ i))) :
     (fiber p n.vertex : SSet) ⟶
       ∏ᶜ fun _ : Fin n.len ↦ (fiber p (FinPointed.mk 1).vertex : SSet) :=
-  Pi.lift fun i ↦ (T i).functor
+  CoCartesianTransport.piFunctor T
+
+/-- The Segal map is the product map of its family of chosen transports. -/
+lemma segalMap_eq_piFunctor {p : X ⟶ nerve FinPointed.{u}} {n : FinPointed.{u}}
+    (T : ∀ i : Fin n.len, CoCartesianTransport p (nerve.edgeMk (FinPointed.ρ i))) :
+    segalMap T = CoCartesianTransport.piFunctor T := (rfl)
 
 @[reassoc (attr := simp)]
 lemma segalMap_π {p : X ⟶ nerve FinPointed.{u}} {n : FinPointed.{u}}
     (T : ∀ i : Fin n.len, CoCartesianTransport p (nerve.edgeMk (FinPointed.ρ i)))
     (i : Fin n.len) :
     segalMap T ≫ Pi.π _ i = (T i).functor := by
-  simp [segalMap]
+  exact CoCartesianTransport.piFunctor_π T i
 
 /-- The Segal condition on an inner fibration `p : C^⊗ ⟶ N(Fin_*)`: for every `n` there are
 coCartesian transports along the inert projections `ρ i : ⟨n⟩ ⟶ ⟨1⟩` whose Segal map
