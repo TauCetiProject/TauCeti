@@ -117,8 +117,9 @@ private theorem divergenceCLM_sum_sub_eq_zero (hK : ∀ i j, ContDiffOn ℝ ∞ 
     (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
     (hr : ∀ i, ContDiffOn ℝ ∞ (fun x ↦ WithLp.toLp 2 (K x i)) Ω) (hgs : ContDiffOn ℝ ∞ g Ω)
     (ψ : 𝓓(Ω, ℝ)) (x : EuclideanSpace ℝ ι) :
-    divergenceCLM (∑ i, smulTestField (hr i) (lineDerivCLM ℝ (EuclideanSpace.single i 1) ψ) -
-      smulTestField hgs ψ) x = 0 := by
+    divergenceCLM (∑ i, (lineDerivCLM ℝ (EuclideanSpace.single i 1) ψ).smulOfContDiffOn
+        Ω.isOpen (lineDerivCLM ℝ (EuclideanSpace.single i 1) ψ).tsupport_subset (hr i) -
+      ψ.smulOfContDiffOn Ω.isOpen ψ.tsupport_subset hgs) x = 0 := by
   by_cases hx : x ∈ Ω
   swap
   · exact image_eq_zero_of_notMem_tsupport fun h ↦ hx ((divergenceCLM _).tsupport_subset h)
@@ -151,7 +152,7 @@ private theorem divergenceCLM_sum_sub_eq_zero (hK : ∀ i j, ContDiffOn ℝ ∞ 
     simp [-inner_gradient_left, PiLp.inner_apply, gradient_apply_eq_fderiv_apply_single,
       TestFunction.lineDeriv_eq_fderiv ψ, mul_comm]
   rw [map_sub, map_sum, sub_apply, sum_apply, Finset.sum_congr rfl fun i _ ↦
-      divergenceCLM_smulTestField (hr i) _ hx, divergenceCLM_smulTestField hgs ψ hx,
+      divergenceCLM_smulOfContDiffOn (hr i) _ hx, divergenceCLM_smulOfContDiffOn hgs ψ hx,
     Finset.sum_add_distrib]
   simp only [coe_lineDerivCLM]
   rw [hhess, htrg, hgrad]
@@ -220,8 +221,9 @@ theorem energyFormH1_ofTestFunctionₗ_eq_of_transpose_eq_neg
   have hgs := contDiffOn_of_eq_sum_fderiv hK hg
   have hdiv := divergenceCLM_sum_sub_eq_zero hK hKt hg hr hgs ψ
   set Φ : 𝓓(Ω, EuclideanSpace ℝ ι) :=
-    ∑ i, smulTestField (hr i) (lineDerivCLM ℝ (EuclideanSpace.single i 1) ψ)
-  set Ψ : 𝓓(Ω, EuclideanSpace ℝ ι) := smulTestField hgs ψ
+    ∑ i, (lineDerivCLM ℝ (EuclideanSpace.single i 1) ψ).smulOfContDiffOn
+      Ω.isOpen (lineDerivCLM ℝ (EuclideanSpace.single i 1) ψ).tsupport_subset (hr i)
+  set Ψ : 𝓓(Ω, EuclideanSpace ℝ ι) := ψ.smulOfContDiffOn Ω.isOpen ψ.tsupport_subset hgs
   have hloc := W1p.locallyIntegrableOn_gradient u
   -- A test vector field vanishes off `Ω`, so its pairing with `∇u` may be integrated over `E`.
   have hpair : ∀ Θ : 𝓓(Ω, EuclideanSpace ℝ ι), ∫ x in Ω, ⟪Θ x, W1p.gradient u x⟫_ℝ ∂mu =

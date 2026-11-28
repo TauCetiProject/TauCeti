@@ -43,12 +43,14 @@ total variation of a function and the perimeter of a set are suprema of the pair
   test function to a line is its directional derivative along the line.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in a basis `b`, it is the sum of the derivatives of
   the coordinate functions `b.repr (φ ·) i` in the directions `b i`.
-* `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
+* `TestFunction.tsupport_divergenceCLM_subset`: the support of `div φ` is contained in the
+  support of `φ`.
+* `TestFunction.divergenceCLM_translateOfMapsTo`: the divergence of a translated test vector field
   is the translate of its divergence.
 * `TauCeti.integral_divergenceCLM_mul_congr_ae`: the pairing `∫ u div φ` only depends on `u`
   almost everywhere on `Ω`.
-* `TauCeti.smulTestField`: a scalar test function times a vector field smooth on `Ω`.
-* `TauCeti.divergenceCLM_smulTestField`: the divergence product rule for this test field.
+* `TestFunction.divergenceCLM_smulOfContDiffOn`: the divergence product rule for
+  `φ.smulOfContDiffOn`.
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
@@ -66,7 +68,7 @@ public section
 
 namespace TestFunction
 
-open LineDeriv TopologicalSpace
+open LineDeriv Set TopologicalSpace Topology
 open scoped ContDiff Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -94,6 +96,14 @@ theorem divergenceCLM_apply (φ : 𝓓(Ω, E)) (x : E) :
     divergenceCLM φ x = LinearMap.trace ℝ E (fderiv ℝ (φ : E → E) x : E →ₗ[ℝ] E) := by
   simp [divergenceCLM]
 
+/-- The support of the divergence of a test vector field is contained in the support of the vector
+field. -/
+theorem tsupport_divergenceCLM_subset (φ : 𝓓(Ω, E)) :
+    tsupport (divergenceCLM φ : E → ℝ) ⊆ tsupport (φ : E → E) := by
+  rw [show (divergenceCLM φ : E → ℝ) = fun x ↦ TauCeti.traceCLM ℝ E (fderiv ℝ (φ : E → E) x) from
+    funext fun x ↦ by simp [divergenceCLM_apply]]
+  exact (tsupport_comp_subset (map_zero (TauCeti.traceCLM ℝ E)) _).trans (tsupport_fderiv_subset ℝ)
+
 /-- The divergence of a test vector field extended from `Ω'` to a larger open set `Ω` is the
 divergence of the original field. -/
 @[simp]
@@ -101,6 +111,15 @@ theorem divergenceCLM_monoCLM (h : Ω' ≤ Ω) (φ : 𝓓(Ω', E)) :
     (divergenceCLM (monoCLM ℝ φ : 𝓓(Ω, E)) : E → ℝ) = divergenceCLM φ := by
   ext x
   simp [monoCLM_apply, h]
+
+/-- The divergence of a translated test vector field is the translate of its divergence. -/
+@[simp]
+theorem divergenceCLM_translateOfMapsTo (φ : 𝓓(Ω', E)) {x : E}
+    (h : MapsTo (· + x) (tsupport (φ : E → E)) Ω) :
+    divergenceCLM (φ.translateOfMapsTo h) =
+      (divergenceCLM φ).translateOfMapsTo (h.mono_left (tsupport_divergenceCLM_subset φ)) := by
+  ext y
+  simp [fderiv_translateOfMapsTo]
 
 /-- The divergence of the test vector field `φ v`, for a scalar test function `φ` and a fixed
 vector `v`, is the directional derivative `∂_v φ`. -/
@@ -157,29 +176,6 @@ open scoped ContDiff Distributions
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω V : Opens E} {h : E}
 
-omit [FiniteDimensional ℝ E] in
-/-- The test vector field `φ b`, for a test function `φ` and a vector field `b` smooth on `Ω`. -/
-noncomputable def smulTestField {b : E → E} (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ)) :
-    𝓓(Ω, E) :=
-  ⟨fun x ↦ φ x • b x, hb.contDiff_smul_of_tsupport_subset Ω.isOpen φ.contDiff.contDiffOn
-    φ.tsupport_subset, φ.hasCompactSupport.smul_right,
-    (tsupport_smul_subset_left _ _).trans φ.tsupport_subset⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- The test field `φ b` evaluated at a point. -/
-@[simp]
-theorem smulTestField_apply {b : E → E} (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ))
-    (x : E) : smulTestField hb φ x = φ x • b x :=
-  (rfl)
-
-/-- The divergence of a translated test vector field is the translate of its divergence. -/
-@[simp]
-theorem divergenceCLM_translateTestFunction (hVO : MapsTo (· + h) V Ω) (φ : 𝓓(V, E)) :
-    divergenceCLM (translateTestFunction hVO φ) =
-      translateTestFunction hVO (divergenceCLM φ) := by
-  ext y
-  simp only [divergenceCLM_apply, fderiv_translateTestFunction, translateTestFunction_apply]
-
 /-- **Leibniz rule for the divergence**: `div (χ φ) = χ div φ + Dχ φ`, where the divergence of a
 vector field is the trace of its Fréchet derivative. -/
 theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : DifferentiableAt ℝ χ x)
@@ -208,22 +204,37 @@ theorem trace_fderiv_eq_sum_fderiv_apply_single {ι : Type*} [Fintype ι] [Decid
   rw [hd.fderiv]
   simp [EuclideanSpace.inner_single_left]
 
-open scoped Gradient InnerProductSpace in
+end TauCeti
+
+namespace TestFunction
+
+open Set TopologicalSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace
+
 /-- On `Ω`, the divergence of `φ b` is `φ div b + ⟪∇φ, b⟫`. -/
-theorem divergenceCLM_smulTestField {F : Type*} [NormedAddCommGroup F]
+theorem divergenceCLM_smulOfContDiffOn {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {Ω : Opens F} {b : F → F}
     (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ))
     {x : F} (hx : x ∈ Ω) :
-    TestFunction.divergenceCLM (smulTestField hb φ) x =
+    divergenceCLM (φ.smulOfContDiffOn Ω.isOpen φ.tsupport_subset hb) x =
       φ x * LinearMap.trace ℝ F (fderiv ℝ b x : F →ₗ[ℝ] F) +
         ⟪∇ (φ : F → ℝ) x, b x⟫_ℝ := by
-  have hcoe : (smulTestField hb φ : F → F) = fun y ↦ φ y • b y := by
-    funext y
-    exact smulTestField_apply hb φ y
-  rw [TestFunction.divergenceCLM_apply, hcoe, trace_fderiv_smul
+  have hcoe : (φ.smulOfContDiffOn Ω.isOpen φ.tsupport_subset hb : F → F) = fun y ↦ φ y • b y :=
+    funext (φ.smulOfContDiffOn_apply Ω.isOpen φ.tsupport_subset hb)
+  rw [divergenceCLM_apply, hcoe, TauCeti.trace_fderiv_smul
       (φ.contDiff.differentiable (by simp) x)
       ((hb.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)), gradient,
     InnerProductSpace.toDual_symm_apply]
+
+end TestFunction
+
+namespace TauCeti
+
+open Set TestFunction TopologicalSpace
+open scoped ContDiff Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω : Opens E}
 
 /-- **The weighted divergence.** For a differentiable weight `W` and vector field `X`,
 `div (e^{−W} X) = (div X − DW X) e^{−W}`, where `div = tr ∘ D`. -/

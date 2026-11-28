@@ -33,8 +33,8 @@ passing to the `Lᵖ` class commutes with the vector space structure of the test
 `TauCeti.gradientTestFunctionLp` and `TauCeti.gradientTestFunctionLpₗ` provide the parallel
 construction for the gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function
 space a subspace. On the whole space, passing a test function or its gradient to `Lᵖ`
-commutes with translation, as recorded by `TauCeti.testFunctionLp_translateTestFunction` and
-`TauCeti.gradientTestFunctionLp_translateTestFunction`, and turns dilation of test functions into
+commutes with translation, as recorded by `TauCeti.testFunctionLp_translateOfMapsTo` and
+`TauCeti.gradientTestFunctionLp_translateOfMapsTo`, and turns dilation of test functions into
 the normalized `Lᵖ` dilation `MeasureTheory.Measure.dilateLp`, up to an explicit power of the
 factor, as recorded by `TauCeti.testFunctionLp_dilateTestFunction` and
 `TauCeti.gradientTestFunctionLp_dilateTestFunction`.
@@ -421,21 +421,21 @@ local instance : (mu.restrict (⊤ : Opens E)).IsAddRightInvariant := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using
     (inferInstance : mu.IsAddRightInvariant)
 
-/-- Passing a translated whole-space test function to `Lᵖ` translates its class. The sign
-is reversed because `translateTestFunction h` evaluates at `x - h`, whereas `translateLp h`
-evaluates at `x + h`. -/
+/-- Passing a translated whole-space test function to `Lᵖ` translates its class. The sign is
+reversed because `translateOfMapsTo` with `x = -h` evaluates at `y + h`, matching
+`translateLp h`. -/
 @[simp]
-theorem testFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+theorem testFunctionLp_translateOfMapsTo (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     testFunctionLp (mu := mu) q
-        (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi) =
+        (phi.translateOfMapsTo (x := -h) (by intro x _; exact Opens.mem_top _)) =
       (mu.restrict (⊤ : Opens E)).translateLp q h (testFunctionLp q phi) := by
   apply Lp.ext
   filter_upwards [testFunctionLp_apply_ae (mu := mu) q
-      (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi),
+      (phi.translateOfMapsTo (x := -h) (by intro x _; exact Opens.mem_top _)),
     Measure.coeFn_translateLp h (testFunctionLp (mu := mu) q phi),
     (measurePreserving_add_right (mu.restrict (⊤ : Opens E)) h).quasiMeasurePreserving.ae_eq_comp
       (testFunctionLp_apply_ae (mu := mu) q phi)] with x hx hy hz
-  exact hx.trans ((translateTestFunction_apply _ phi x).trans
+  exact hx.trans ((TestFunction.translateOfMapsTo_apply phi _ x).trans
     ((congrArg phi (sub_neg_eq_add x h)).trans (hz.symm.trans hy.symm)))
 
 end Translation
@@ -452,20 +452,20 @@ local instance : (mu.restrict (⊤ : Opens E)).IsAddRightInvariant := by
 
 /-- Taking the gradient's `Lᵖ` class commutes with whole-space translation. -/
 @[simp]
-theorem gradientTestFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+theorem gradientTestFunctionLp_translateOfMapsTo (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     gradientTestFunctionLp (mu := mu) q
-        (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi) =
+        (phi.translateOfMapsTo (x := -h) (by intro x _; exact Opens.mem_top _)) =
       (mu.restrict (⊤ : Opens E)).translateLp q h (gradientTestFunctionLp q phi) := by
   apply Lp.ext
   filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) q
-      (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi),
+      (phi.translateOfMapsTo (x := -h) (by intro x _; exact Opens.mem_top _)),
     Measure.coeFn_translateLp h (gradientTestFunctionLp (mu := mu) q phi),
     (measurePreserving_add_right (mu.restrict (⊤ : Opens E)) h).quasiMeasurePreserving.ae_eq_comp
       (gradientTestFunctionLp_apply_ae (mu := mu) q phi)] with x hx hy hz
   rw [hx, hy, hz]
   apply (InnerProductSpace.toDual ℝ E).injective
   simp only [Function.comp_apply, toDual_gradient]
-  exact (fderiv_translateTestFunction _ phi x).trans
+  exact (TestFunction.fderiv_translateOfMapsTo phi _ x).trans
     (congrArg (fderiv ℝ (phi : E → ℝ)) (sub_neg_eq_add x h))
 
 end GradientTranslation

@@ -90,16 +90,16 @@ variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddRightInvar
 theorem totalVariationOn_comp_add_right_le (hVO : MapsTo (· + h) V Ω) :
     totalVariationOn μ V (fun x => u (x + h)) ≤ totalVariationOn μ Ω u := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
-  let ψ : 𝓓(Ω, E) := translateTestFunction hVO φ
+  let ψ : 𝓓(Ω, E) := φ.translateOfMapsTo (hVO.mono_left φ.tsupport_subset)
   have hpair :
       (∫ x, divergenceCLM φ x * u (x + h) ∂μ) =
         ∫ y, divergenceCLM ψ y * u y ∂μ := by
-    simpa only [ψ, divergenceCLM_translateTestFunction, translateTestFunction_apply,
+    simpa only [ψ, divergenceCLM_translateOfMapsTo, translateOfMapsTo_apply,
       add_sub_cancel_right] using
       integral_add_right_eq_self (fun y => divergenceCLM ψ y * u y) h
   rw [hpair]
   exact ofReal_integral_le_totalVariationOn ψ fun y => by
-    simpa only [ψ, translateTestFunction_apply] using hφ (y - h)
+    simpa only [ψ, translateOfMapsTo_apply] using hφ (y - h)
 
 /-- **Translation invariance of total variation.** If translation by `h` maps `V` into `Ω` and
 translation by `-h` maps `Ω` back into `V`, then translating the function and its domain together
@@ -200,7 +200,8 @@ private theorem exists_integral_comp_add_sub_mul_eq (hu : LocallyIntegrableOn u 
   have hg₀ : Integrable (fun x => g x * u x) μ := by
     simpa using g.integrable_smul (hu.mono_set hV0)
   have hgh : Integrable (fun y => g (y - h) * u y) μ := by
-    simpa using TestFunction.integrable_smul (translateTestFunction hV1 g) hu
+    simpa using TestFunction.integrable_smul
+      (g.translateOfMapsTo (hV1.mono_left g.tsupport_subset)) hu
   have hgh' : Integrable (fun x => g x * u (x + h)) μ := by
     simpa using hgh.comp_add_right h
   have htrans : ∫ x, g x * u (x + h) ∂μ = ∫ y, g (y - h) * u y ∂μ := by

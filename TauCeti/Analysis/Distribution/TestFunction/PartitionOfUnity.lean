@@ -106,6 +106,23 @@ theorem tsupport_cutoffCLM_subset (hχ : ContDiff ℝ n χ) (hχU : tsupport χ 
     (φ : 𝓓^{n}(Ω, F)) : tsupport (cutoffCLM hχ hχU φ : E → F) ⊆ tsupport χ ∩ tsupport φ :=
   tsupport_subset_inter_of_apply_eq_smul (cutoffCLM_apply hχ hχU φ)
 
+/-- Multiplying a global test function on `⊤` by a cutoff test function `χ : 𝓓^{n}(U, ℝ)` gives
+a test function on `U`, as a continuous linear map `𝓓^{n}(⊤, F) →L[ℝ] 𝓓^{n}(U, F)`. -/
+noncomputable def cutoffTopCLM (χ : 𝓓^{n}(U, ℝ)) :
+    𝓓^{n}((⊤ : Opens E), F) →L[ℝ] 𝓓^{n}(U, F) :=
+  cutoffCLM χ.contDiff (inter_subset_left.trans χ.tsupport_subset)
+
+@[simp]
+theorem cutoffTopCLM_apply (χ : 𝓓^{n}(U, ℝ)) (φ : 𝓓^{n}((⊤ : Opens E), F)) (x : E) :
+    cutoffTopCLM χ φ x = χ x • φ x :=
+  cutoffCLM_apply _ _ φ x
+
+/-- Multiplying a global test function by a cutoff test function `χ` does not enlarge its
+support. -/
+theorem tsupport_cutoffTopCLM_subset (χ : 𝓓^{n}(U, ℝ)) (φ : 𝓓^{n}((⊤ : Opens E), F)) :
+    tsupport (cutoffTopCLM χ φ : E → F) ⊆ tsupport (χ : E → ℝ) ∩ tsupport φ :=
+  tsupport_cutoffCLM_subset χ.contDiff (inter_subset_left.trans χ.tsupport_subset) φ
+
 end Cutoff
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

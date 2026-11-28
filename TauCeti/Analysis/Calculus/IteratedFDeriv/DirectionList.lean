@@ -315,6 +315,14 @@ theorem _root_.ContinuousLinearMap.iteratedFDerivAlong_cons_cons (L : E →L[�
   | nil => rw [iteratedFDerivAlong_cons, L.iteratedFDerivAlong_singleton]; funext x; simp
   | cons w ws ih => rw [iteratedFDerivAlong_cons, ih v w]; funext x; simp
 
+/-- Iterated directional derivatives commute with right-subtraction of a constant. -/
+theorem iteratedFDerivAlong_comp_sub (f : E → F) (vs : List E) (a x : E) :
+    iteratedFDerivAlong 𝕜 vs (fun z => f (z - a)) x = iteratedFDerivAlong 𝕜 vs f (x - a) := by
+  induction vs generalizing x with
+  | nil => rfl
+  | cons v vs ih =>
+    rw [iteratedFDerivAlong_cons_apply, funext ih, fderiv_comp_sub, iteratedFDerivAlong_cons_apply]
+
 /-- Differentiating a product of fewer than `vs.length` continuous linear maps along `vs`
 vanishes. -/
 theorem iteratedFDerivAlong_prod_clm_eq_zero {α A : Type*} [NormedCommRing A] [NormedAlgebra 𝕜 A]

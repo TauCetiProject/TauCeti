@@ -125,25 +125,38 @@ private theorem exists_profile [FiniteDimensional ℝ E] [Nontrivial E] {r : ℝ
   · linarith [norm_le_norm_add_norm_sub' a y, norm_sub_rev a y]
   · linarith [norm_le_norm_add_norm_sub' y a]
 
+/-- Scaling by `0 < ε ≤ 1` maps `ball (0 : E) r` into itself. -/
+private theorem mapsTo_smul_ball {r : ℝ} {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) :
+    MapsTo (ε • ·) ((⟨ball (0 : E) r, isOpen_ball⟩ : Opens E) : Set E)
+      ((⟨ball (0 : E) r, isOpen_ball⟩ : Opens E) : Set E) := by
+  intro z hz
+  rw [SetLike.mem_coe, Opens.mem_mk, mem_ball_zero_iff] at hz ⊢
+  rw [norm_smul, Real.norm_of_nonneg h0.le]
+  exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt hz
+
+/-- Translating by `x₀` maps the support of any test function on `ball (0 : E) r` into `Ω`
+whenever `ball x₀ r ⊆ Ω`. -/
+private theorem mapsTo_add_ball {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
+    (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) :
+    MapsTo (· + x₀) (tsupport (φ : E → ℝ)) Omega := fun z hz => hΩ <| by
+  rw [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff]
+  exact TestFunction.tsupport_subset _ hz
+
 /-- The rescaled profile `y ↦ ε ^ l φ(ε⁻¹ (y - x₀))` as a test function on `Ω`, for a test
 function `φ` on `ball 0 r`, `ball x₀ r ⊆ Ω` and `0 < ε ≤ 1`: the profile dilated by `ε` and
 translated by `x₀`. -/
 private def concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
     (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
     𝓓(Omega, ℝ) :=
-  ε ^ l • translateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) (h := x₀)
-    (show MapsTo (· + x₀) (ball (0 : E) r) Omega from fun z hz => hΩ <| by
-      rwa [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff])
-    (dilateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) h0.ne'
-      (show MapsTo (ε • ·) (ball (0 : E) r) (ball 0 r) from fun z hz => by
-        rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg h0.le]
-        exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt (mem_ball_zero_iff.1 hz)) φ)
+  ε ^ l •
+    (dilateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) (Ω := ⟨ball (0 : E) r, isOpen_ball⟩)
+      h0.ne' (mapsTo_smul_ball h0 h1) φ).translateOfMapsTo (x := x₀) (mapsTo_add_ball hΩ _)
 
 private theorem coe_concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
     (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
     (concentrate hΩ φ h0 h1 l : E → ℝ) = fun y => ε ^ l * φ (ε⁻¹ • (y - x₀)) := by
   ext y
-  rw [concentrate, FunLike.coe_smul, Pi.smul_apply, translateTestFunction_apply,
+  rw [concentrate, FunLike.coe_smul, Pi.smul_apply, TestFunction.translateOfMapsTo_apply,
     dilateTestFunction_apply, smul_eq_mul]
 
 /-- The `l`-th derivative of the rescaled profile is `D^l φ(ε⁻¹ (y - x₀))`: the factor `ε ^ l`

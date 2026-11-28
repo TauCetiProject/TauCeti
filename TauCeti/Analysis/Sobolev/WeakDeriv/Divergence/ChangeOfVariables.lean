@@ -41,13 +41,14 @@ theorem HasWeakDivergenceOn.comp_add_right (hu : HasWeakDivergenceOn μ Ω u g)
     HasWeakDivergenceOn μ V (fun x ↦ u (x + a)) (fun x ↦ g (x + a)) := by
   refine hasWeakDivergenceOn_iff.mpr ⟨hu.locallyIntegrableOn.comp_add_right_of_mapsTo hV,
     hu.locallyIntegrableOn_divergence.comp_add_right_of_mapsTo hV, fun φ ↦ ?_⟩
-  let ψ := translateTestFunction hV φ
+  let ψ := φ.translateOfMapsTo (hV.mono_left φ.tsupport_subset)
   have hleft :
       ∫ x, ⟪u (x + a), ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = ∫ y, ⟪u y, ∇ (ψ : E → ℝ) y⟫_ℝ ∂μ := by
-    simpa only [ψ, inner_gradient_right, fderiv_translateTestFunction, add_sub_cancel_right] using
+    simpa only [ψ, inner_gradient_right, TestFunction.fderiv_translateOfMapsTo,
+      add_sub_cancel_right] using
       integral_add_right_eq_self (fun y ↦ ⟪u y, ∇ (ψ : E → ℝ) y⟫_ℝ) a
   have hright : ∫ x, φ x * g (x + a) ∂μ = ∫ y, ψ y * g y ∂μ := by
-    simpa only [ψ, translateTestFunction_apply, add_sub_cancel_right] using
+    simpa only [ψ, TestFunction.translateOfMapsTo_apply, add_sub_cancel_right] using
       integral_add_right_eq_self (fun y ↦ ψ y * g y) a
   rw [hleft, hright, hu.integral_inner_gradient_eq_neg_integral_mul]
 

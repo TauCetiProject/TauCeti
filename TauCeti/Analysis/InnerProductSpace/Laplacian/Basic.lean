@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.InnerProductSpace.Trace.Continuous
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -100,6 +101,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
   directional derivatives along an orthonormal basis.
+* `ContDiffAt.laplacian_eq_sum_iteratedFDerivAlong`: the Laplacian of a `C²` function as the sum
+  of its second iterated directional derivatives along an orthonormal basis.
 * `TauCeti.laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I`: its planar form in
   the orthonormal directions `1` and `I`.
 * `OrthonormalBasis.norm_gradient_fderiv_sub_le_of_laplacian`: the gradient of `∂_{b₀} f` moves
@@ -237,6 +240,15 @@ theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [iteratedFDeriv_two_apply, fderiv_clm_apply hf (differentiableAt_const _)]
   simp
+
+/-- The Laplacian of a `C²` function at `x` is the sum of its second iterated directional
+derivatives along any orthonormal basis. -/
+theorem _root_.ContDiffAt.laplacian_eq_sum_iteratedFDerivAlong {f : E → F} {x : E}
+    (hf : ContDiffAt ℝ 2 f x) {ι : Type*} [Fintype ι] (v : OrthonormalBasis ι ℝ E) :
+    Δ f x = ∑ i, iteratedFDerivAlong ℝ [v i, v i] f x := by
+  rw [laplacian_eq_iteratedFDeriv_orthonormalBasis f v]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simpa using (hf.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl ![v i, v i]).symm
 
 open Gradient in
 /-- **The normal second derivatives from the Laplacian.** For an orthonormal basis `(bᵢ)` and a

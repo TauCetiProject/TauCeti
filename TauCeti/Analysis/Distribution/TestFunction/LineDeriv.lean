@@ -13,22 +13,25 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 
 /-!
 # Directional derivatives of test functions
 
-Mathlib equips the test functions `𝓓(Ω, F)` with the directional derivative `∂_{v}`. This file
-evaluates it pointwise as the classical directional derivative, and shows that two directional
-derivatives of a test function commute, `∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ)`, because the second
-derivative of a smooth function is symmetric. Moving derivatives between the two sides of an
-integration-by-parts identity uses exactly this, for instance to show that weak derivatives
-commute. Summing over an orthonormal basis, the Laplacian of a test function commutes with every
-directional derivative. Finally, a test function `φ` on `Ω` times a function `g` differentiable on
-`Ω` obeys the classical product rule for its directional derivatives; with
-`TestFunction.exists_coe_eq_smul_of_contDiffOn`, which makes `g φ` a test function, this is what
-lets a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`. On a real inner
+Mathlib equips the test functions `𝓓(Ω, F)` with the directional derivative `∂_{v}` and its
+iteration `∂^{m}`. This file evaluates them pointwise as the classical directional and iterated
+Fréchet derivatives, and shows that two directional derivatives of a test function commute,
+`∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ)`, because the second derivative of a smooth function is
+symmetric. Moving derivatives between the two sides of an integration-by-parts identity uses
+exactly this, for instance to show that weak derivatives commute. Summing over an orthonormal basis,
+the Laplacian of a test function commutes with every directional derivative. Finally, a test
+function `φ` on `Ω` times a function `g` differentiable on `Ω` obeys the classical product rule
+for its directional derivatives; with `TestFunction.exists_coe_eq_smul_of_contDiffOn`, which makes
+`g φ` a test function, this is what lets a weak derivative be tested against `g φ` when `g` is only
+smooth inside `Ω`. On a real inner
 product space, the directional derivative of a scalar test function is the pairing with its
 gradient, and the product of a scalar test function with a smooth function supported in `Ω` is a
 test function on `Ω` whose gradient obeys the product rule.
@@ -39,10 +42,17 @@ test function on `Ω` whose gradient obeys the product rule.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`, `TestFunction.coe_lineDerivOp_eq_fderiv`:
   `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.tsupport_iteratedLineDerivOp_subset`: iterated directional derivatives of `φ`
+  are supported in `tsupport φ`.
 * `TestFunction.exists_lineDerivOp_apply_ne_zero`: a nonzero test function has a nonzero
   derivative in every nonzero direction.
 * `TestFunction.norm_iteratedFDeriv_lineDerivOp_le`: the derivatives of order at most `r` of
   `∂_{v} φ` are bounded by `‖v‖` times a bound on those of order at most `r + 1` of `φ`.
+* `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv`,
+  `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDerivAlong`: `∂^{m} φ` agrees pointwise with
+  the iterated Fréchet derivative and `TauCeti.iteratedFDerivAlong`.
+* `TestFunction.smul_neg_one_pow_iteratedLineDerivOp_sub_apply`: `((-1)^k • ∂^{m} φ) (y - z)` is
+  the iterated directional derivative of `w ↦ φ (y - w)` at `z`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
   factor equal to `1` on `Ω`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
@@ -57,10 +67,9 @@ test function on `Ω` whose gradient obeys the product rule.
   by a continuous linear map.
 * `TestFunction.iteratedLineDerivOp_postcompCLM`: so do iterated directional derivatives.
 * `TestFunction.lineDerivCLM_lineDerivCLM_apply`: `∂_{v} (∂_{w} φ) x = D²φ(x) v w`.
-* `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv`: an iterated directional derivative
-  is the iterated Fréchet derivative evaluated on the directions.
-* `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
-  derivatives of test functions commute.
+* `TestFunction.lineDerivOp_comm`, `TestFunction.lineDeriv_lineDerivOp_comm`,
+  `TestFunction.iteratedLineDerivOp_lineDerivOp`, `TestFunction.iteratedLineDerivOp_comp_rev`:
+  directional and iterated directional derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
   directional derivatives.
 * `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: the product of a test function on `Ω`
@@ -276,6 +285,61 @@ in the direction `v`. -/
 theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
     lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, F)) x w = lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, F)) x v := by
   rw [← lineDerivOp_apply, ← lineDerivOp_apply, lineDerivOp_comm]
+
+/-! ### Iterated directional derivatives -/
+
+/-- An iterated directional derivative of a test function is supported in the support of the
+function. -/
+theorem tsupport_iteratedLineDerivOp_subset (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) :
+    tsupport (∂^{m} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
+  have h := SchwartzMap.tsupport_iteratedLineDerivOp_subset m (toSchwartzMapCLM ℝ φ)
+  rwa [← toSchwartzMapCLM_iteratedLineDerivOp, coe_toSchwartzMapCLM, coe_toSchwartzMapCLM] at h
+
+/-- An iterated directional derivative of a test function agrees pointwise with
+`TauCeti.iteratedFDerivAlong` along the list of directions. -/
+theorem iteratedLineDerivOp_apply_eq_iteratedFDerivAlong (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (x : E) :
+    ∂^{m} φ x = TauCeti.iteratedFDerivAlong ℝ (List.ofFn m) (φ : E → F) x := by
+  rw [iteratedLineDerivOp_apply_eq_iteratedFDeriv,
+    (φ.contDiff.contDiffAt.of_le (mod_cast le_top)).iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
+      le_rfl]
+
+/-- An iterated directional derivative of a test function commutes with a single directional
+derivative. -/
+theorem iteratedLineDerivOp_lineDerivOp (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) (v : E) :
+    ∂^{m} (∂_{v} φ) = ∂_{v} (∂^{m} φ) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, ih, lineDerivOp_comm]
+
+/-- Reversing the order of directions does not change an iterated directional derivative of a test
+function. -/
+theorem iteratedLineDerivOp_comp_rev (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) :
+    ∂^{m ∘ Fin.rev} φ = ∂^{m} φ := by
+  ext x
+  rw [iteratedLineDerivOp_apply_eq_iteratedFDeriv, iteratedLineDerivOp_apply_eq_iteratedFDeriv]
+  exact φ.contDiff.contDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness
+    (by simp) m Fin.revPerm
+
+/-- Differentiating `w ↦ φ (y - w)` along the directions `m` at `z` agrees with evaluating
+`(-1)^k • ∂^{m} φ` at `y - z`. -/
+theorem smul_neg_one_pow_iteratedLineDerivOp_sub_apply (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (y z : E) :
+    ((-1 : ℝ) ^ k • ∂^{m} φ) (y - z) =
+      TauCeti.iteratedFDerivAlong ℝ (List.ofFn m) (fun w ↦ φ (y - w)) z := by
+  have hL : ∀ w, HasFDerivAt (fun w ↦ y - w) (-ContinuousLinearMap.id ℝ E) w := fun w ↦ by
+    simpa using (hasFDerivAt_const y w).fun_sub (hasFDerivAt_id w)
+  rw [TauCeti.iteratedFDerivAlong_comp_of_hasFDerivAt (n := (⊤ : ℕ∞)) hL φ.contDiff
+      (List.ofFn m) (by simp),
+    List.map_ofFn,
+    TauCeti.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv (φ.contDiff.of_le (by simp)),
+    smul_apply, iteratedLineDerivOp_apply_eq_iteratedFDeriv]
+  have hneg : ((-ContinuousLinearMap.id ℝ E) ∘ m) = fun i ↦ (-1 : ℝ) • m i := by
+    ext1 i
+    simp
+  rw [hneg, ContinuousMultilinearMap.map_smul_univ]
+  simp [Finset.prod_const]
 
 /-! ### Multiplication by a function differentiable on `Ω` -/
 

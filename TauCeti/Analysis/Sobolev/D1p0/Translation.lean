@@ -47,7 +47,7 @@ theorem translateLp_mem_d1p0Submodule (h : E) {u : Lp E p (mu.restrict (⊤ : Op
     (mu.restrict (⊤ : Opens E)).translateLp p h u ∈
       (d1p0Submodule mu ⊤ p : Set _) :=
   mapsTo_d1p0Submodule ((mu.restrict (⊤ : Opens E)).translateLp p h).continuous
-    (fun phi ↦ ⟨_, (gradientTestFunctionLp_translateTestFunction h phi).symm⟩) hu
+    (fun phi ↦ ⟨_, (gradientTestFunctionLp_translateOfMapsTo h phi).symm⟩) hu
 
 namespace D1p0
 
@@ -75,10 +75,10 @@ theorem coe_translate (h : E) (u : D1p0 mu ⊤ p) :
 @[simp↓]
 theorem translate_ofTestFunctionₗ (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     translate mu p h (ofTestFunctionₗ mu ⊤ p phi) =
-      ofTestFunctionₗ mu ⊤ p (translateTestFunction (Omega := ⊤) (h := -h)
-        (mapsTo_univ _ _) phi) := by
+      ofTestFunctionₗ mu ⊤ p (phi.translateOfMapsTo (x := -h)
+        (mapsTo_univ _ _)) := by
   apply Subtype.ext
-  simp only [coe_translate, coe_ofTestFunctionₗ, gradientTestFunctionLp_translateTestFunction]
+  simp only [coe_translate, coe_ofTestFunctionₗ, gradientTestFunctionLp_translateOfMapsTo]
 
 /-- Translation by zero is the identity. -/
 @[simp↓]
@@ -124,7 +124,7 @@ theorem sobolevEmbeddingL_translate {pstar : ENNReal} (hpstar : pstar ≠ ∞)
       (((mu.restrict (⊤ : Opens E)).translateLp pstar h).continuous.comp
         (sobolevEmbeddingL hexp).continuous)) fun phi ↦ ?_
   simp only [translate_ofTestFunctionₗ, sobolevEmbeddingL_ofTestFunctionₗ hpstar hexp,
-    testFunctionLp_translateTestFunction]
+    testFunctionLp_translateOfMapsTo]
 
 end D1p0
 

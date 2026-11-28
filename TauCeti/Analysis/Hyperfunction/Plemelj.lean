@@ -253,17 +253,19 @@ private theorem integral_smul_cauchyTransform_sub_eq (u : 𝓓'((⊤ : Opens ℝ
   have htrans (x : ℝ) (hx : x ∈ tsupport φ) :
       u (TestFunction.smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x γ) χ) =
         translatePairing u (truncatedPoissonKernel b γ) x := by
-    have hmaps : MapsTo (· + x) ((⊤ : Opens ℝ) : Set ℝ) ((⊤ : Opens ℝ) : Set ℝ) := by simp
+    have hmaps : MapsTo (· + x)
+        (tsupport ((truncatedPoissonKernel b γ : 𝓓((⊤ : Opens ℝ), ℝ)) : ℝ → ℝ))
+        ((⊤ : Opens ℝ) : Set ℝ) := by simp
     rw [translatePairing_eq u
-      (φ := TauCeti.translateTestFunction hmaps (truncatedPoissonKernel b γ))
-      (TauCeti.translateTestFunction_apply hmaps _)]
+      (φ := (truncatedPoissonKernel b γ).translateOfMapsTo hmaps)
+      (TestFunction.translateOfMapsTo_apply _ hmaps)]
     apply map_eq_map_of_eventuallyEq
     filter_upwards [hχ, isOpen_ball.mem_nhdsSet.2 hdsupp] with t ht1 htb
     have hx' : ‖x‖ ≤ B := mem_closedBall_zero_iff.1 (hB hx)
     have htb' : ‖t‖ < A + 1 := mem_ball_zero_iff.1 htb
     have hb1 : b (t - x) = 1 := b.one_of_mem_closedBall (mem_closedBall_zero_iff.2
       ((norm_sub_le t x).trans (by linarith)))
-    rw [TauCeti.translateTestFunction_apply, truncatedPoissonKernel_apply, hb1,
+    rw [TestFunction.translateOfMapsTo_apply, truncatedPoissonKernel_apply, hb1,
       TestFunction.smulLeftCLM_apply, ht1]
     simp [cauchyPDFReal_def]
   rw [apply_eq_integral_smul_translatePairing u (truncatedPoissonKernel b γ)

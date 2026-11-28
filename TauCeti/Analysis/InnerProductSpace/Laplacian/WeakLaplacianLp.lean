@@ -213,9 +213,9 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
   -- the test function `t ↦ ρ(y - t)`.
   have hΔu : ∀ y, Δ u y = c * u y := by
     intro y
-    let ψ : 𝓓((⊤ : Opens E), ℝ) := translateTestFunction (h := y) (fun _ _ ↦ Opens.mem_top _) φ
+    let ψ : 𝓓((⊤ : Opens E), ℝ) := φ.translateOfMapsTo (x := y) (fun _ _ ↦ Opens.mem_top _)
     have hψ_apply : (ψ : E → ℝ) = fun t ↦ φ (t - y) :=
-      funext (translateTestFunction_apply _ φ)
+      funext (TestFunction.translateOfMapsTo_apply φ _)
     have hΔψ : Δ (ψ : E → ℝ) = fun t ↦ Δ (φ : E → ℝ) (t - y) := by
       simpa only [hψ_apply, ← sub_eq_add_neg] using laplacian_comp_add_right (φ : E → ℝ) (-y)
     have hlap : Δ u y = ∫ t, Δ (φ : E → ℝ) (t - y) • v t := by

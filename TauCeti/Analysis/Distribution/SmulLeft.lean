@@ -56,6 +56,9 @@ compactly supported distribution `g T` from `Ω` to the whole space.
 * `Distribution.cutoffCLM`: the distribution `φ ↦ T (g φ)` on `Ω'`, with
   `Distribution.cutoffCLM_apply`, `Distribution.dsupport_cutoffCLM_subset_inter` and
   `Distribution.complexPairing_cutoffCLM`.
+* `Distribution.cutoffTopCLM`: extending `χ • T` by zero to `⊤` for a cutoff test function
+  `χ : 𝓓^{n}(Ω, ℝ)`, with `Distribution.cutoffTopCLM_apply` and
+  `Distribution.dsupport_cutoffTopCLM_subset_inter`.
 
 ## References
 
@@ -266,6 +269,38 @@ theorem complexPairing_cutoffCLM (T : 𝓓'^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(Ω', �
       T.complexPairing (TestFunction.cutoffCLM hg hgΩ ψ) :=
   complexPairing_eq_of_coe_eq_comp (coe_cutoffCLM hg hgΩ T) (TestFunction.cutoffCLM_apply hg hgΩ)
     (TestFunction.cutoffCLM_apply hg hgΩ ψ)
+
+/-- Extending `χ • T` by zero from `Ω` to the whole space `⊤` for a cutoff test function
+`χ : 𝓓^{n}(Ω, ℝ)`, as a continuous linear map `𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(⊤, F)`. -/
+def cutoffTopCLM (χ : 𝓓^{n}(Ω, ℝ)) :
+    𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}((⊤ : Opens E), F) :=
+  cutoffCLM (Ω' := ⊤) χ.contDiff (inter_subset_left.trans χ.tsupport_subset)
+
+@[simp]
+theorem cutoffTopCLM_apply (χ : 𝓓^{n}(Ω, ℝ)) (T : 𝓓'^{n}(Ω, F))
+    (φ : 𝓓^{n}((⊤ : Opens E), ℝ)) :
+    cutoffTopCLM χ T φ = T (TestFunction.cutoffTopCLM χ φ) := by
+  rw [cutoffTopCLM, cutoffCLM_apply]; congr 1; ext x; simp
+
+/-- As a function on test functions, `cutoffTopCLM χ T` is `T` composed with
+`TestFunction.cutoffTopCLM χ`. -/
+theorem coe_cutoffTopCLM (χ : 𝓓^{n}(Ω, ℝ)) (T : 𝓓'^{n}(Ω, F)) :
+    ⇑(cutoffTopCLM χ T) = ⇑T ∘ ⇑(TestFunction.cutoffTopCLM χ) :=
+  funext (cutoffTopCLM_apply χ T)
+
+/-- The support of `cutoffTopCLM χ T` lies both in the support of `χ` and in the support of `T`. -/
+theorem dsupport_cutoffTopCLM_subset_inter (χ : 𝓓^{n}(Ω, ℝ)) (T : 𝓓'^{n}(Ω, F)) :
+    dsupport (cutoffTopCLM χ T) ⊆ tsupport (χ : E → ℝ) ∩ dsupport T :=
+  dsupport_cutoffCLM_subset_inter _ _ T
+
+/-- The complex-linear extension of `cutoffTopCLM χ T` to complex test functions pairs it with
+`ψ` as `T` with `TestFunction.cutoffTopCLM χ ψ`. -/
+@[simp]
+theorem complexPairing_cutoffTopCLM (χ : 𝓓^{n}(Ω, ℝ)) (T : 𝓓'^{n}(Ω, ℂ))
+    (ψ : 𝓓^{n}((⊤ : Opens E), ℂ)) :
+    (cutoffTopCLM χ T).complexPairing ψ =
+      T.complexPairing (TestFunction.cutoffTopCLM χ ψ) := by
+  rw [cutoffTopCLM, complexPairing_cutoffCLM]; congr 1; ext x; simp [-real_smul]
 
 end Cutoff
 
