@@ -73,6 +73,11 @@ weight is read (`TauCeti.SymplecticForm.floerConformalJetCoeff_comp_add_right`),
 the norm of the latter
 (`TauCeti.SymplecticForm.norm_floerConformalJetCoeff_sub_floerConformalJetCoeff_comp_add_le`).
 
+For a constant structure `J₀` and the zero perturbation the zeroth-order part vanishes, so along
+every map the coefficient field is that of the Cauchy–Riemann operator `∂s + J₀ ∂t`
+(`TauCeti.SymplecticForm.floerConformalJetCoeff_const`), and the realization does not depend on the
+map (`TauCeti.SymplecticForm.floerConformalSobolevOperator_const_eq`).
+
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
 one-form and of the area cancel; for the pair of pants this is the norm in which the energy and
@@ -186,6 +191,19 @@ theorem floerConformalJetCoeff_fun_add_eq_comp_add_right (ω : SymplecticForm V)
         (fun w y ↦ Kt w (y + d w) - ω (fderiv ℝ d w stdComplexLineImag) y) u z := by
   rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
     ω.floerLinearizationCoeff_fun_add_eq_comp_add_right J Ks Kt hu hd hKt]
+
+/-- For a constant structure `J₀` and the zero perturbation the linearized operator has no
+zeroth-order part, so along every map its coefficient field on conformal jets is that of the
+Cauchy–Riemann operator `∂s + J₀ ∂t`, and the operator does not depend on the map. -/
+@[simp]
+theorem floerConformalJetCoeff_const (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ) (J₀ : V →L[ℝ] V)
+    (u : ℝ × ℝ → V) :
+    ω.floerConformalJetCoeff ρ (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u =
+      fun _ ↦ firstOrderJetCoeff J₀ 0 := by
+  funext z
+  rw [floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_eq_zero_of_eq_base u (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl),
+    smul_zero]
 
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
@@ -446,6 +464,16 @@ theorem floerConformalSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × �
       (jetOperator 2 (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
         (H1 V U ρ).subtypeL :=
   (rfl)
+
+/-- For a constant structure `J₀` and the zero perturbation, the realization of `D_u` is the
+realization of the Cauchy–Riemann operator `∂s + J₀ ∂t` and does not depend on the map `u`
+(`floerConformalJetCoeff_const`). -/
+theorem floerConformalSobolevOperator_const_eq (ω : SymplecticForm V) (J₀ : V →L[ℝ] V)
+    (u u' : ℝ × ℝ → V) :
+    ω.floerConformalSobolevOperator U ρ (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u =
+      ω.floerConformalSobolevOperator U ρ (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u' := by
+  rw [floerConformalSobolevOperator_def, floerConformalSobolevOperator_def,
+    floerConformalJetCoeff_const, floerConformalJetCoeff_const]
 
 variable {U ρ}
 

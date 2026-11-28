@@ -7,11 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -35,6 +38,11 @@ on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by two-sided and by affin
 * `MeasureTheory.lintegral_eq_enorm_det_pow_mul_enorm_det_pow_mul_lintegral_comp_matrix_mul_mul`:
   the same substitution `Y ↦ P * Y * Q` on `Matrix ι κ ℂ` with its product Lebesgue measure, in
   the form `∫⁻ Y, g Y = ‖P.det‖ₑ ^ (2 |κ|) * ‖Q.det‖ₑ ^ (2 |ι|) * ∫⁻ Y, g (P * Y * Q)`.
+* `MeasureTheory.isAddHaarMeasure_volume_matrix_complex`: the product Lebesgue measure on
+  `Matrix ι κ ℂ` is an additive Haar measure.
+* `MeasureTheory.lintegral_image_eq_lintegral_abs_det_fderiv_mul_matrix`: the change of variables
+  formula on `Matrix ι κ ℂ` for its product Lebesgue measure, with derivatives taken for the
+  Frobenius norm.
 
 ## Provenance
 
@@ -56,6 +64,32 @@ does not chain `Measure.pi.isAddHaarMeasure` across the nested `Pi` type on its 
 instance isAddHaarMeasure_volume_pi_pi_complex {ι κ : Type*} [Fintype ι] [Fintype κ] :
     (volume : Measure (ι → κ → ℂ)).IsAddHaarMeasure :=
   Measure.pi.isAddHaarMeasure _
+
+/-- The product Lebesgue measure on complex matrices is an additive Haar measure. -/
+instance isAddHaarMeasure_volume_matrix_complex {ι κ : Type*} [Fintype ι] [Fintype κ] :
+    (volume : Measure (Matrix ι κ ℂ)).IsAddHaarMeasure := by
+  let e : (ι → κ → ℂ) ≃L[ℝ] Matrix ι κ ℂ := (Matrix.ofLinearEquiv ℝ).toContinuousLinearEquiv
+  rw [← (Matrix.volume_preserving_ofMeasurableEquiv ι κ ℂ).map_eq]
+  exact e.isAddHaarMeasure_map _
+
+open scoped Matrix.Norms.Frobenius in
+/-- **The change of variables formula on complex matrices**, for the product Lebesgue measure and
+derivatives for the Frobenius norm, whose topology is the topology of entries. -/
+theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul_matrix {ι κ : Type*} [Fintype ι]
+    [Fintype κ] {s : Set (Matrix ι κ ℂ)} {f : Matrix ι κ ℂ → Matrix ι κ ℂ}
+    {f' : Matrix ι κ ℂ → Matrix ι κ ℂ →L[ℝ] Matrix ι κ ℂ} (hs : MeasurableSet s)
+    (hf' : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x) (hf : Set.InjOn f s)
+    (g : Matrix ι κ ℂ → ENNReal) :
+    ∫⁻ x in f '' s, g x = ∫⁻ x in s, ENNReal.ofReal |(f' x).det| * g (f x) := by
+  -- Restate the Borel and Haar instances, which hold for the topology of entries, for the
+  -- Frobenius topology, which agrees with it but not syntactically.
+  have : @BorelSpace (Matrix ι κ ℂ)
+      NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace _ := by
+    exact (inferInstance : BorelSpace (Matrix ι κ ℂ))
+  have : @Measure.IsAddHaarMeasure (Matrix ι κ ℂ) _
+      NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace _ volume := by
+    exact isAddHaarMeasure_volume_matrix_complex
+  exact lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs hf' hf g
 
 /-- Change of variables on `κ → ℂ` for an invertible complex matrix `u`. -/
 theorem lintegral_comp_mulVec {κ : Type*} [Fintype κ] [DecidableEq κ]

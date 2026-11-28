@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.FiberedCategory.Cocartesian
 public import Mathlib.CategoryTheory.FiberedCategory.Fiber
+public import Mathlib.CategoryTheory.IsoCat
 public import TauCeti.CategoryTheory.Category.Pointed.Fin
 public import TauCeti.CategoryTheory.Monoidal.Braided.ListTensor
 
@@ -448,6 +449,28 @@ noncomputable def fiberEquivalence (n : FinPointed.{w}) :
 lemma fiberEquivalence_functor (n : FinPointed.{w}) :
     (fiberEquivalence C n).functor = toFiber C n :=
   (rfl)
+
+/-- The inclusion of families is a strict isomorphism onto the ordinary fiber: its object
+map is bijective, in addition to being fully faithful. -/
+instance (n : FinPointed.{w}) : (toFiber C n).IsIso where
+  bijective_obj := by
+    constructor
+    · intro Y Z h
+      exact eq_of_heq (CategoryOfOperators.mk.inj (congrArg Subtype.val h)).2
+    · rintro ⟨⟨b, Y⟩, rfl⟩
+      exact ⟨Y, rfl⟩
+
+/-- The operators of a monoidal category with one object and one morphism are exactly
+the finite pointed sets. The tensor unit supplies the unique member of each family. -/
+instance [Subsingleton C] [Quiver.IsThin C] : (toFinPointed.{w} C).IsIso where
+  faithful.map_injective {X Y} f g h := hom_ext h fun _ ↦ Subsingleton.elim _ _
+  full.map_surjective f := ⟨⟨f, fun _ ↦ eqToHom (Subsingleton.elim _ _)⟩, rfl⟩
+  bijective_obj := by
+    constructor
+    · rintro ⟨a, X⟩ ⟨b, Y⟩ h
+      obtain rfl : a = b := h
+      exact congrArg (CategoryOfOperators.mk a) (Subsingleton.elim X Y)
+    · exact fun n ↦ ⟨⟨n, fun _ ↦ 𝟙_ C⟩, rfl⟩
 
 end CategoryOfOperators
 

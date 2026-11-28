@@ -46,6 +46,10 @@ variable {F A₁ A₂ : Type*} [NonUnitalCStarAlgebra A₁]
 @[simp] theorem coe_toCompletelyPositiveLinearMap (f : F) :
     ⇑(toCompletelyPositiveLinearMap (A₁ := A₁) (A₂ := A₂) f) = f := (rfl)
 
+@[simp] theorem toLinearMap_toCompletelyPositiveLinearMap (f : F) :
+    (toCompletelyPositiveLinearMap (A₁ := A₁) (A₂ := A₂) f).toLinearMap = (f : A₁ →ₗ[ℂ] A₂) :=
+  (rfl)
+
 end CompletelyPositiveMapClass
 
 namespace CompletelyPositiveMap
