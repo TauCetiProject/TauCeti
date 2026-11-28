@@ -251,94 +251,30 @@ theorem coactAlgHom_comp_mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModul
   let _ := Comodule.cofree R K A
   let _ := Comodule.cofree R H A
   let _ := Comodule.cofree R H B
-  have hν : (linearEquivTensor ν).toLinearMap ∘ₗ (linearEquivTensor ν).symm.toLinearMap =
-      LinearMap.id := LinearMap.ext fun y => (linearEquivTensor ν).apply_symm_apply y
-  have hμ : (linearEquivTensor μ).toLinearMap ∘ₗ (linearEquivTensor μ).symm.toLinearMap =
-      LinearMap.id := LinearMap.ext fun y => (linearEquivTensor μ).apply_symm_apply y
-  have htrν :
-      Comodule.transportCoact (R := R) (C := H) (linearEquivTensor ν).symm =
-        TensorProduct.map (linearEquivTensor ν).symm.toLinearMap (LinearMap.id : H →ₗ[R] H) ∘ₗ
-          Comodule.coact (R := R) (C := H) (M := B ⊗[R] H) ∘ₗ
-          (linearEquivTensor ν).toLinearMap :=
-    LinearMap.ext fun y => by
-      simp [Comodule.transportCoact_apply]
-  have htrμ :
-      Comodule.transportCoact (R := R) (C := K) (linearEquivTensor μ).symm =
-        TensorProduct.map (linearEquivTensor μ).symm.toLinearMap (LinearMap.id : K →ₗ[R] K) ∘ₗ
-          Comodule.coact (R := R) (C := K) (M := A ⊗[R] K) ∘ₗ
-          (linearEquivTensor μ).toLinearMap :=
-    LinearMap.ext fun y => by
-      simp [Comodule.transportCoact_apply]
-  have hlin :
-      Comodule.coact (R := R) (C := H) (M := SmashProduct ν) ∘ₗ (mapBialg g f).toLinearMap =
-        TensorProduct.map (mapBialg g f).toLinearMap g.toAlgHom.toLinearMap ∘ₗ
-          Comodule.coact (R := R) (C := K) (M := SmashProduct μ) := by
-    rw [Comodule.transport_coact (R := R) (C := H) (linearEquivTensor ν).symm,
-      Comodule.transport_coact (R := R) (C := K) (linearEquivTensor μ).symm,
-      htrν, htrμ, toLinearMap_mapBialg]
-    calc
-      (TensorProduct.map (linearEquivTensor ν).symm.toLinearMap (LinearMap.id : H →ₗ[R] H) ∘ₗ
-          Comodule.coact (R := R) (C := H) (M := B ⊗[R] H) ∘ₗ
-          (linearEquivTensor ν).toLinearMap) ∘ₗ
-          ((linearEquivTensor ν).symm.toLinearMap ∘ₗ
-            TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap ∘ₗ
-            (linearEquivTensor μ).toLinearMap)
-        = TensorProduct.map (linearEquivTensor ν).symm.toLinearMap (LinearMap.id : H →ₗ[R] H) ∘ₗ
-            (Comodule.coact (R := R) (C := H) (M := B ⊗[R] H) ∘ₗ
-              f.toAlgHom.toLinearMap.rTensor H) ∘ₗ
-            (g.toCoalgHom : K →ₗc[R] H).toLinearMap.lTensor A ∘ₗ
-            (linearEquivTensor μ).toLinearMap := by
-          simp only [LinearMap.comp_assoc]
-          rw [show (linearEquivTensor ν).toLinearMap ∘ₗ ((linearEquivTensor ν).symm.toLinearMap ∘ₗ
-              (TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap ∘ₗ
-                (linearEquivTensor μ).toLinearMap)) =
-              TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap ∘ₗ
-                (linearEquivTensor μ).toLinearMap by
-            rw [← LinearMap.comp_assoc, hν, LinearMap.id_comp]]
-          rw [← LinearMap.rTensor_comp_lTensor (f := f.toAlgHom.toLinearMap)
-            (g := g.toAlgHom.toLinearMap)]
-          simp only [LinearMap.comp_assoc]
-          rfl
-      _ = TensorProduct.map (linearEquivTensor ν).symm.toLinearMap (LinearMap.id : H →ₗ[R] H) ∘ₗ
-            ((f.toAlgHom.toLinearMap.rTensor H).rTensor H ∘ₗ
-              (Comodule.coact (R := R) (C := H) (M := A ⊗[R] H) ∘ₗ
-                (g.toCoalgHom : K →ₗc[R] H).toLinearMap.lTensor A)) ∘ₗ
-            (linearEquivTensor μ).toLinearMap := by
-          rw [Comodule.cofree_coact, ← Comodule.cofreeCoact_def,
-            Comodule.cofreeCoact_comp_rTensor, Comodule.cofreeCoact_def, ← Comodule.cofree_coact]
-          simp only [LinearMap.comp_assoc]
-      _ = (TensorProduct.map (linearEquivTensor ν).symm.toLinearMap (LinearMap.id : H →ₗ[R] H) ∘ₗ
-            (f.toAlgHom.toLinearMap.rTensor H).rTensor H ∘ₗ
-            TensorProduct.map ((g.toCoalgHom : K →ₗc[R] H).toLinearMap.lTensor A)
-              (g.toCoalgHom : K →ₗc[R] H).toLinearMap) ∘ₗ
-            Comodule.coact (R := R) (C := K) (M := A ⊗[R] K) ∘ₗ
-            (linearEquivTensor μ).toLinearMap := by
-          rw [show (g.toCoalgHom : K →ₗc[R] H).toLinearMap = (g.toCoalgHom : K →ₗc[R] H) from rfl,
-            Comodule.coact_comp_lTensor_coalgHom]
-          simp only [LinearMap.comp_assoc]
-      _ = TensorProduct.map
-            ((linearEquivTensor ν).symm.toLinearMap ∘ₗ
-              TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap ∘ₗ
-              (linearEquivTensor μ).toLinearMap)
-            g.toAlgHom.toLinearMap ∘ₗ
-            (TensorProduct.map (linearEquivTensor μ).symm.toLinearMap (LinearMap.id : K →ₗ[R] K) ∘ₗ
-              Comodule.coact (R := R) (C := K) (M := A ⊗[R] K) ∘ₗ
-              (linearEquivTensor μ).toLinearMap) := by
-          simp only [← LinearMap.comp_assoc]
-          congr 2
-          rw [LinearMap.rTensor_def, LinearMap.comp_assoc (TensorProduct.map _ _),
-            ← TensorProduct.map_comp, ← TensorProduct.map_comp,
-            LinearMap.id_comp, LinearMap.id_comp, LinearMap.rTensor_comp_lTensor]
-          symm
-          rw [← TensorProduct.map_comp, LinearMap.comp_assoc _ (linearEquivTensor μ).toLinearMap,
-            hμ, LinearMap.comp_id, LinearMap.comp_id]
-          rfl
+  let _ : Comodule R H (SmashProduct μ) := Comodule.Corestrict g.toCoalgHom
+  let _ : Comodule R H (A ⊗[R] K) := Comodule.Corestrict g.toCoalgHom
+  let φ : Comodule.Hom R H (SmashProduct μ) (SmashProduct ν) :=
+    (Comodule.transportToHom (linearEquivTensor ν).symm).comp
+      ((Comodule.Hom.cofreeMap (C := H) f.toAlgHom.toLinearMap).comp
+        ((Comodule.Hom.cofreeLTensor A g.toCoalgHom).comp
+          (Comodule.corestrictHom g.toCoalgHom
+            (Comodule.transportInvHom (linearEquivTensor μ).symm))))
+  have hφ : φ.toLinearMap = (mapBialg g f).toLinearMap := by
+    rw [toLinearMap_mapBialg]
+    simp only [φ, Comodule.Hom.comp_toLinearMap, Comodule.transportToHom_toLinearMap,
+      Comodule.Hom.cofreeMap_toLinearMap, Comodule.Hom.cofreeLTensor_toLinearMap,
+      Comodule.corestrictHom_toLinearMap, Comodule.transportInvHom_toLinearMap,
+      LinearEquiv.symm_symm, LinearMap.comp_assoc, ← LinearMap.rTensor_comp_lTensor]
+    rfl
   exact AlgHom.ext fun x => by
-    have h := LinearMap.congr_fun hlin x
-    simpa only [AlgHom.comp_apply, ComoduleAlgebra.coactAlgHom_apply, LinearMap.comp_apply,
-      AlgHom.toLinearMap_apply] using
-      h.trans (congr_arg (· (Comodule.coact (R := R) (C := K) x))
-        (Algebra.TensorProduct.toLinearMap_map (mapBialg g f) g.toAlgHom).symm)
+    have h := Comodule.Hom.map_coact_apply φ x
+    have hφx : φ x = mapBialg g f x := LinearMap.congr_fun hφ x
+    simp only [Comodule.corestrict_coact_apply, hφ, hφx] at h
+    rw [AlgHom.comp_apply, ComoduleAlgebra.coactAlgHom_apply, ← h, AlgHom.comp_apply,
+      ComoduleAlgebra.coactAlgHom_apply, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
+      LinearMap.id_comp, LinearMap.comp_id]
+    exact (LinearMap.congr_fun
+      (Algebra.TensorProduct.toLinearMap_map (mapBialg g f) g.toAlgHom) _).symm
 
 /-- Pointwise form of `coactAlgHom_comp_mapBialg`. -/
 theorem coact_mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
