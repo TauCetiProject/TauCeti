@@ -280,22 +280,35 @@ def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
     ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
 
 /-- Evaluating the supported-submodule presheaf at an open gives supported sections on it. -/
-lemma supportedSubmoduleSectionsFunctor_eq_evaluation (W : (Opens X)ᵒᵖ) :
-    supportedSubmoduleSectionsFunctor (R := R) S W.unop =
+noncomputable def supportedSubmoduleSectionsIsoEvaluation (W : (Opens X)ᵒᵖ) :
+    supportedSubmoduleSectionsFunctor (R := R) S W.unop ≅
       (supportedSubmoduleFunctor S ⋙
         sheafToPresheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) ⋙
         (evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).obj W :=
-  (rfl)
+  Functor.isoWhiskerLeft (supportedSubmoduleFunctor S)
+      (sheafSectionsNatIsoEvaluation (J := Opens.grothendieckTopology X)
+        (A := ModuleCat.{u} R) (X := W.unop)) ≪≫
+    (Functor.associator _ _ _).symm
 
-/-- Restriction of supported sections is induced by presheaf evaluation. -/
-lemma supportedSubmoduleSectionsRestrict_eq_whiskerLeft_evaluation {W' W : Opens X}
-    (i : W' ⟶ W) :
-    supportedSubmoduleSectionsRestrict (R := R) S i =
+/-- The identification of supported sections with presheaf evaluation commutes with
+restriction of opens. -/
+lemma supportedSubmoduleSectionsIsoEvaluation_inv_naturality {V W : (Opens X)ᵒᵖ}
+    (i : V ⟶ W) :
       Functor.whiskerLeft
-        (supportedSubmoduleFunctor S ⋙
+        (supportedSubmoduleFunctor (R := R) S ⋙
           sheafToPresheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
-        ((evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).map i.op) :=
-  (rfl)
+        ((evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).map i) ≫
+      (supportedSubmoduleSectionsIsoEvaluation S W).inv =
+    (supportedSubmoduleSectionsIsoEvaluation S V).inv ≫
+      supportedSubmoduleSectionsRestrict S i.unop := by
+  apply NatTrans.ext
+  funext F
+  simp only [supportedSubmoduleSectionsIsoEvaluation, supportedSubmoduleSectionsRestrict,
+    NatTrans.comp_app, Iso.trans_inv, Iso.symm_inv, Functor.associator_hom_app,
+    Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app, Functor.comp_obj,
+    sheafSectionsNatIsoEvaluation_inv_app, Category.id_comp, evaluation_map_app,
+    Quiver.Hom.op_unop, Functor.flip_map_app, Opposite.op_unop, ObjectProperty.ι_obj]
+  exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 /-- Restriction of supported sections leaves the usual restriction in the ambient sheaf. -/
 -- Rewrite before evaluation simplifies the bundled section object.

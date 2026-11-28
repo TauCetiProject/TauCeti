@@ -199,24 +199,31 @@ lemma Functor.rightDerivedFunctorPlusHomologyIso_hom_naturality (τ : F ⟶ G) (
   have hResolutionMap := congrArg Hℤ.map hResolution.symm
   have hExtension :=
     congrArg Hℤ.map (F.mapHomotopyCategoryExtendIso_hom_app_naturality (e := upNat) τ I)
-  have hHomology :=
-    ((upNat).extendHomotopyFunctorCompHomologyFunctorIso D (j := n) rfl).hom.naturality
-      ((τ.mapHomotopyCategory (.up ℕ)).app I)
-  simp only [Functor.map_comp] at hAugmentation hUnit hInclusion hResolutionMap hExtension
-  simp only [NatTrans.comp_app, whiskerLeft_app, whiskerRight_app,
-    rightDerivedFunctorPlusHomologyIso_hom_app, rightDerived_app_eq_homotopy]
-  dsimp only [H, Hℤ, K, I, A, Functor.comp_obj, Functor.comp_map]
-    at hAugmentation hUnit hLocalization hInclusion hResolutionMap hExtension hHomology
-  dsimp only [Functor.rightDerived, Functor.rightDerivedToHomotopyCategory, Functor.comp_obj]
-  simp only [ComplexShape.embeddingUpNat_f] at hHomology
-  simp only [Category.assoc]
+  let e := (upNat).extendHomotopyFunctorCompHomologyFunctorIso D (j := n) rfl
+  let m := (τ.mapHomotopyCategory (.up ℕ)).app I
+  have hHomology :
+      Hℤ.map (((upNat).extendHomotopyFunctor D).map m) ≫
+          e.hom.app ((G.mapHomotopyCategory (.up ℕ)).obj I) =
+        e.hom.app ((F.mapHomotopyCategory (.up ℕ)).obj I) ≫ (τ.rightDerived n).app X := by
+    rw [rightDerived_app_eq_homotopy]
+    have h := e.hom.naturality m
+    simp only [Functor.comp_map, ComplexShape.embeddingUpNat_f] at h
+    exact h
+  simp only [NatTrans.comp_app, whiskerLeft_app, whiskerRight_app]
+  simp only [Functor.map_comp, Functor.comp_map, Functor.comp_obj]
+    at hAugmentation hUnit hLocalization hInclusion hResolutionMap hExtension
+  -- Compose from the classical endpoint so the horizontal arrows have the same association
+  -- as the component formula.
+  have hSquare := (CommSq.mk hAugmentation.symm).horiz_comp <|
+    (CommSq.mk hUnit.symm).horiz_comp <|
+    (CommSq.mk hLocalization.symm).horiz_comp <|
+    (CommSq.mk hInclusion.symm).horiz_comp <|
+    (CommSq.mk hResolutionMap.symm).horiz_comp <|
+    (CommSq.mk hExtension.symm).horiz_comp (CommSq.mk hHomology.symm)
   calc
-    _ = _ := (reassoc_of% hAugmentation) _
-    _ = _ := by rw [reassoc_of% hUnit]
-    _ = _ := by rw [reassoc_of% hLocalization]
-    _ = _ := by rw [reassoc_of% hInclusion]
-    _ = _ := by rw [reassoc_of% hResolutionMap]
-    _ = _ := by rw [reassoc_of% hExtension]
-    _ = _ := by rw [hHomology]
+    _ = _ := congrArg (_ ≫ ·) (G.rightDerivedFunctorPlusHomologyIso_hom_app n X)
+    _ = _ := hSquare.w.symm
+    _ = _ := congrArg (· ≫ (τ.rightDerived n).app X)
+      (F.rightDerivedFunctorPlusHomologyIso_hom_app n X).symm
 
 end CategoryTheory

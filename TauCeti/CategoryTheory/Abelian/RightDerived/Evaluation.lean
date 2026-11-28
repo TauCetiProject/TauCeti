@@ -34,8 +34,7 @@ local notation "ev" => evaluation J D
 /-- Evaluating a diagram-valued right derived functor agrees with deriving its evaluation. -/
 noncomputable def Functor.rightDerivedEvaluationIso (n : ℕ) (j : J) :
     F.rightDerived n ⋙ (ev).obj j ≅ (F ⋙ (ev).obj j).rightDerived n :=
-  Functor.rightDerivedCompIso F ((ev).obj j) (𝟭 C) (F ⋙ (ev).obj j)
-    (Functor.leftUnitor _).symm n ≪≫ Functor.leftUnitor _
+  F.rightDerivedPostcompIso ((ev).obj j) n
 
 /-- On an injective resolution, evaluation commutes with cohomology by exactness. -/
 @[reassoc]
@@ -45,49 +44,8 @@ lemma Functor.rightDerivedEvaluationIso_hom_app_injectiveResolution (n : ℕ) (j
       ((ev).obj j).map (I.isoRightDerivedObj F n).hom ≫
         (((ev).obj j).mapHomologicalComplexCompHomologyFunctorIso _ n).inv.app
           ((F.mapHomologicalComplex _).obj I.cocomplex) ≫
-        (I.isoRightDerivedObj (F ⋙ (ev).obj j) n).inv := by
-  let G := F ⋙ (ev).obj j
-  let c := ComplexShape.up ℕ
-  have hcomp :
-      ((Functor.mapHomologicalComplexCompIso (Functor.leftUnitor G).symm c).app I.cocomplex ≪≫
-        ((Functor.mapHomologicalComplexCompIso (Iso.refl (𝟭 C ⋙ G)) c).app I.cocomplex).symm).hom =
-        𝟙 ((G.mapHomologicalComplex c).obj I.cocomplex) := by
-    ext k
-    simp only [Iso.trans_hom, HomologicalComplex.comp_f, Iso.app_hom, Iso.symm_hom, Iso.app_inv,
-      mapHomologicalComplexCompIso_hom_app_f, mapHomologicalComplexCompIso_inv_app_f,
-      Functor.leftUnitor_inv_app, Iso.refl_inv, NatTrans.id_app,
-      HomologicalComplex.id_f]
-    exact Category.id_comp _
-  have hres : (((𝟭 C).mapInjectiveResolution I).isoRightDerivedObj G n).inv =
-      (I.isoRightDerivedObj G n).inv := by
-    have h := I.isoRightDerivedObj_inv_naturality (𝟙 X) ((𝟭 C).mapInjectiveResolution I)
-      (𝟙 I.cocomplex)
-      (by
-        rw [HomologicalComplex.id_f, Functor.mapInjectiveResolution_ι_f_zero, Functor.id_map]
-        -- The degree-zero object of the single complex is X, and the identity functor
-        -- leaves the resolution complex unchanged.
-        exact (Category.comp_id _).trans (Category.id_comp _).symm) G n
-    -- The identity functor leaves the cocomplex unchanged, so its identity chain map
-    -- compares the two resolutions.
-    rw [Functor.map_id, Category.comp_id] at h
-    have hmap := (G.mapHomologicalComplex c ⋙ HomologicalComplex.homologyFunctor D c n).map_id
-      I.cocomplex
-    calc
-      _ = 𝟙 _ ≫ _ := (Category.id_comp _).symm
-      _ = _ := congrArg (· ≫ _) hmap.symm
-      _ = _ := h.symm
-  rw [← Iso.app_hom]
-  rw [rightDerivedEvaluationIso, NatIso.trans_app,
-    Functor.rightDerivedCompIso_app_injectiveResolution F ((ev).obj j) (𝟭 C) G _ I]
-  simp only [Iso.trans_hom, Iso.app_hom, Functor.leftUnitor_hom_app, Functor.mapIso_hom,
-    Iso.symm_hom, Iso.app_inv]
-  refine (Category.comp_id _).trans (congrArg (_ ≫ ·) (congrArg (_ ≫ ·) ?_))
-  let H := HomologicalComplex.homologyFunctor D c n
-  have hmap := (congrArg H.map hcomp).trans (H.map_id _)
-  calc
-    _ = 𝟙 _ ≫ _ := congrArg (· ≫ _) hmap
-    _ = _ := Category.id_comp _
-    _ = _ := hres
+        (I.isoRightDerivedObj (F ⋙ (ev).obj j) n).inv :=
+  F.rightDerivedPostcompIso_hom_app_injectiveResolution ((ev).obj j) I n
 
 private lemma homologyFunctor_map_evaluation (K : HomologicalComplex (J ⥤ D) (.up ℕ))
     (n : ℕ) {i j : J} (f : i ⟶ j) :

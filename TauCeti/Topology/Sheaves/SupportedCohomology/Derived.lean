@@ -163,49 +163,46 @@ local notation "P" => supportedSubmoduleFunctor (R := R) S ⋙ sheafToPresheaf J
 local notation "ev" => evaluation (Opens X)ᵒᵖ A
 
 /-- The presheaf-valued right derived functors of supported sections agree with the
-supported Ext presheaves. The isomorphism on each open is the supported-section-to-Ext
-comparison evaluated on that open. -/
+supported Ext presheaves. On each open, the isomorphism evaluates the derived presheaf
+and identifies the result with the derived supported sections before comparing with Ext. -/
 def rightDerivedSupportedSubmodulePresheafIso (n : ℕ) :
     (P).rightDerived n ≅ supportedModuleHPresheafFunctor (R := R) S n :=
   NatIso.ofComponents (fun F ↦ NatIso.ofComponents
     (fun W ↦ ((P).rightDerivedEvaluationIso n W).app F ≪≫
+      (NatIso.rightDerived (supportedSubmoduleSectionsIsoEvaluation (R := R) S W).symm n).app F ≪≫
       (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).app F)
     (fun i ↦ by
       have he := congrArg (fun τ ↦ τ.app F)
         ((P).rightDerivedEvaluationIso_hom_naturality n i)
+      have hs := congrArg (fun τ ↦ (τ.rightDerived n).app F)
+        (supportedSubmoduleSectionsIsoEvaluation_inv_naturality (R := R) S i)
       have hr := congrArg (fun τ ↦ τ.app F)
         (rightDerivedSupportedSubmoduleSectionsIso_hom_restrict (R := R) S i.unop n)
-      simp only [supportedSubmoduleSectionsRestrict_eq_whiskerLeft_evaluation,
-        NatTrans.comp_app, Functor.whiskerLeft_app, Quiver.Hom.op_unop] at hr
-      simp only [NatTrans.comp_app, Functor.whiskerLeft_app] at he
-      simp only [Iso.trans_hom, Iso.app_hom]
-      rw [evaluation_map_app] at he
-      rw [reassoc_of% he, hr, evaluation_map_app, Category.assoc]))
+      simp only [NatTrans.rightDerived_comp, NatTrans.comp_app] at hs
+      simp only [NatTrans.comp_app, Functor.whiskerLeft_app, evaluation_map_app,
+        Quiver.Hom.op_unop] at he hr
+      simp only [Iso.trans_hom, Iso.app_hom, NatIso.rightDerived_hom, Iso.symm_hom, Category.assoc]
+      rw [reassoc_of% he, reassoc_of% hs, hr]))
     (fun f ↦ by
       apply NatTrans.ext
       funext W
       simp only [NatTrans.comp_app, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.app_hom,
         Category.assoc]
       have he := ((P).rightDerivedEvaluationIso n W).hom.naturality f
+      have hs := (NatIso.rightDerived
+        (supportedSubmoduleSectionsIsoEvaluation (R := R) S W).symm n).hom.naturality f
       have hr := (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).hom.naturality f
-      have rightDerived_congr {E E' : Sheaf J A ⥤ A} [E.Additive] [E'.Additive] (h : E = E') :
-          E.rightDerived n = E'.rightDerived n := by
-        subst E'
-        rfl
-      have hEval := rightDerived_congr
-        (supportedSubmoduleSectionsFunctor_eq_evaluation (R := R) S W).symm
-      have hMap := eq_of_heq (Functor.hcongr_hom hEval f)
       simp only [Functor.comp_map, evaluation_obj_map] at he hr
-      rw [hMap] at he
-      rw [reassoc_of% he, hr])
+      rw [reassoc_of% he, reassoc_of% hs, hr])
 
-/-- The presheaf comparison on an open is evaluation followed by the Ext comparison
-for supported sections on that open. -/
+/-- The presheaf comparison on an open is evaluation, transport to the derived supported
+sections on that open, and the Ext comparison. -/
 @[simp]
 lemma rightDerivedSupportedSubmodulePresheafIso_hom_app_app (n : ℕ) (F : Sheaf J A)
     (W : (Opens X)ᵒᵖ) :
     ((rightDerivedSupportedSubmodulePresheafIso S n).hom.app F).app W =
       ((P).rightDerivedEvaluationIso n W).hom.app F ≫
+        (NatIso.rightDerived (supportedSubmoduleSectionsIsoEvaluation S W).symm n).hom.app F ≫
         (rightDerivedSupportedSubmoduleSectionsIso S W.unop n).hom.app F :=
   (rfl)
 
