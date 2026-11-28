@@ -181,12 +181,14 @@ private theorem gaugeFixedFlatOperator_normalPerturbation_snd_fst
       inner_flatDeformationCurvature_normalModel_zero_one hQ hkl he h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη']
   have hc1 : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl, c⟫ =
       Vortex.gaugeFixedAdjoint x η z 0 := by
-    rw [hinner AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge,
+    unfold AlmostComplexStructure.antiInvariantSelfDual₁
+    rw [hinner rfl,
       inner_flatDeformationCurvature_normalModel_zero_two hQ hkl he h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη',
       hadj, PiLp.neg_apply, neg_neg]
   have hc2 : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl, c⟫ =
       Vortex.gaugeFixedAdjoint x η z 1 := by
-    rw [hinner AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
+    unfold AlmostComplexStructure.antiInvariantSelfDual₂
+    rw [hinner rfl,
       inner_flatDeformationCurvature_normalModel_zero_three hQ hkl he h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη',
       hadj, PiLp.neg_apply, neg_neg]
   rw [AlmostComplexStructure.eq_inner_kahlerSelfDual_add_antiInvariantSelfDual

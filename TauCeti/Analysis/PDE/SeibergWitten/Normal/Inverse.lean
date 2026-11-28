@@ -132,6 +132,33 @@ def normalModelAdjointKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
 @[simp] theorem mem_normalModelAdjointKernel :
     ξ ∈ normalModelAdjointKernel x ↔ ContDiff ℝ 2 ξ ∧ MemLp (Prod.fst ∘ ξ) 2 volume ∧
       MemLp (Prod.snd ∘ ξ) 2 volume ∧ ∀ z, normalModelAdjoint x ξ z = 0 := (Iff.rfl)
+private def normalModelKernelSwapEquiv (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    normalModelKernel x ≃ₗ[ℝ] normalModelAdjointKernel x where
+  toFun w :=
+    let hw := mem_normalModelKernel.1 w.property
+    let f : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4) :=
+      fun z ↦ LinearEquiv.prodComm ℝ _ _ (w.val z)
+    have hf₁ : Prod.fst ∘ f = Prod.snd ∘ w.val := rfl
+    have hf₂ : Prod.snd ∘ f = Prod.fst ∘ w.val := rfl
+    ⟨f, (contDiff_snd.comp hw.1).prodMk (contDiff_fst.comp hw.1), hw.2.2.1, hw.2.1, fun z ↦ by
+      rw [normalModelAdjoint_apply, hf₁, hf₂]
+      exact Prod.ext (by simpa [normalModelOperator_apply] using (Prod.mk.inj (hw.2.2.2 z)).2)
+        (by simpa [normalModelOperator_apply] using (Prod.mk.inj (hw.2.2.2 z)).1)⟩
+  map_add' _ _ := by ext z <;> rfl
+  map_smul' _ _ := by ext z <;> rfl
+  invFun ξ :=
+    let hξ := mem_normalModelAdjointKernel.1 ξ.property
+    let f : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4) :=
+      fun z ↦ (LinearEquiv.prodComm ℝ _ _).symm (ξ.val z)
+    have hf₁ : Prod.fst ∘ f = Prod.snd ∘ ξ.val := rfl
+    have hf₂ : Prod.snd ∘ f = Prod.fst ∘ ξ.val := rfl
+    ⟨f, (contDiff_snd.comp hξ.1).prodMk (contDiff_fst.comp hξ.1), hξ.2.2.1, hξ.2.1, fun z ↦ by
+      rw [normalModelOperator_apply, hf₁, hf₂]
+      exact Prod.ext (by simpa [normalModelAdjoint_apply] using (Prod.mk.inj (hξ.2.2.2 z)).2)
+        (by simpa [normalModelAdjoint_apply] using (Prod.mk.inj (hξ.2.2.2 z)).1)⟩
+  left_inv _ := by ext z <;> rfl
+  right_inv _ := by ext z <;> rfl
+
 /-- At a differentiable plane vortex, the `L_x*` block of `normalModelOperator x` has trivial
 classical `C²` square-integrable kernel, so the second component of every element of
 `normalModelKernel x` vanishes. -/
@@ -140,15 +167,15 @@ theorem snd_eq_zero_of_mem_normalModelKernel (hx : Differentiable ℝ x)
   rcases (mem_normalModelKernel.1 hw) with ⟨hwc, -, hw₂, hwk⟩
   exact Vortex.eq_zero_of_memLp_of_gaugeFixedAdjoint_eq_zero hx (contDiff_snd.comp hwc) hw₂ hsol
     (funext fun z ↦ by simpa [normalModelOperator_apply] using (Prod.mk.inj (hwk z)).2)
+
 /-- At a differentiable plane vortex, the `L_x*` block of `normalModelAdjoint x` has trivial
 classical `C²` square-integrable kernel, so the first component of every element of
 `normalModelAdjointKernel x` vanishes. -/
 theorem fst_eq_zero_of_mem_normalModelAdjointKernel (hx : Differentiable ℝ x)
     (hsol : ∀ z, Vortex.equation x z = 0) (hξ : ξ ∈ normalModelAdjointKernel x) :
-    Prod.fst ∘ ξ = 0 := by
-  rcases (mem_normalModelAdjointKernel.1 hξ) with ⟨hξc, hξ₁, -, hξk⟩
-  exact Vortex.eq_zero_of_memLp_of_gaugeFixedAdjoint_eq_zero hx (contDiff_fst.comp hξc) hξ₁ hsol
-    (funext fun z ↦ by simpa [normalModelAdjoint_apply] using (Prod.mk.inj (hξk z)).1)
+    Prod.fst ∘ ξ = 0 :=
+  snd_eq_zero_of_mem_normalModelKernel hx hsol
+    ((normalModelKernelSwapEquiv x).symm ⟨ξ, hξ⟩).property
 
 section KernelEquivs
 variable (hx : Differentiable ℝ x) (hsol : ∀ z, Vortex.equation x z = 0)
@@ -168,20 +195,8 @@ def normalModelKernelEquiv : Vortex.gaugeFixedKernel x ≃ₗ[ℝ] normalModelKe
   right_inv w := Subtype.ext <| funext fun z ↦ Prod.ext rfl
     (congrFun (snd_eq_zero_of_mem_normalModelKernel hx hsol w.property) z).symm
 /-- **Classical adjoint-kernel identification at a plane vortex**: `g ↦ (0, g)`. -/
-def normalModelAdjointKernelEquiv : Vortex.gaugeFixedKernel x ≃ₗ[ℝ] normalModelAdjointKernel x where
-  toFun g := let hg := Vortex.mem_gaugeFixedKernel.1 g.property
-    ⟨fun z ↦ (0, g.val z), contDiff_const.prodMk hg.1, MemLp.zero, hg.2.1, fun z ↦ by
-      rw [normalModelAdjoint_apply]
-      exact Prod.ext (congrFun (Vortex.gaugeFixedAdjoint_zero x) z) (hg.2.2 z)⟩
-  map_add' _ _ := by ext z <;> simp
-  map_smul' _ _ := by ext z <;> simp
-  invFun ξ := let hξ := mem_normalModelAdjointKernel.1 ξ.property
-    ⟨Prod.snd ∘ ξ.val, Vortex.mem_gaugeFixedKernel.2
-      ⟨contDiff_snd.comp hξ.1, hξ.2.2.1, fun z ↦ by
-        simpa [normalModelAdjoint_apply] using (Prod.mk.inj (hξ.2.2.2 z)).2⟩⟩
-  left_inv _ := by ext z; simp
-  right_inv ξ := Subtype.ext <| funext fun z ↦ Prod.ext
-    (congrFun (fst_eq_zero_of_mem_normalModelAdjointKernel hx hsol ξ.property) z).symm rfl
+def normalModelAdjointKernelEquiv : Vortex.gaugeFixedKernel x ≃ₗ[ℝ] normalModelAdjointKernel x :=
+  (normalModelKernelEquiv hx hsol).trans (normalModelKernelSwapEquiv x)
 @[simp] theorem coe_normalModelKernelEquiv_apply (y : Vortex.gaugeFixedKernel x) (z : ℂ) :
     (normalModelKernelEquiv hx hsol y : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) z =
       (y.val z, 0) := (rfl)
@@ -374,41 +389,32 @@ theorem range_normalTargetSlowProj (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hsol : ∀ z, Vortex.equation x z = 0) :
     (normalTargetSlowProj x).range = LinearMap.range (normalModelAdjointKernelToLp x) := by
-  refine le_antisymm ?_ ?_
-  · rintro _ ⟨v, rfl⟩
-    have hmem : (normalTargetSlowProj x v).snd ∈
-        LinearMap.range (Vortex.gaugeFixedKernelToLp x) := by
-      rw [snd_normalTargetSlowProj, Vortex.range_gaugeFixedKernelToLp hx hbound]
-      exact Submodule.starProjection_apply_mem _ _
-    obtain ⟨g, hg⟩ := hmem
-    refine ⟨normalModelAdjointKernelEquiv (hx.differentiable (by simp)) hsol g,
-      WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)⟩
-    · rw [WithLp.ofLp_fst, fst_normalModelAdjointKernelToLp, ContinuousLinearMap.coe_coe,
-        WithLp.ofLp_fst, fst_normalTargetSlowProj]
-      have h0 : MemLp (0 : ℂ → EuclideanSpace ℝ (Fin 4)) 2 volume := MemLp.zero
-      rw [← MemLp.toLp_zero h0]
-      exact MemLp.toLp_congr _ h0 (Filter.EventuallyEq.of_eq (funext fun _ ↦ rfl))
-    · rw [WithLp.ofLp_snd, snd_normalModelAdjointKernelToLp, ContinuousLinearMap.coe_coe,
-        WithLp.ofLp_snd, ← hg, Vortex.gaugeFixedKernelToLp_apply]
-      exact MemLp.toLp_congr _ _ (Filter.EventuallyEq.of_eq (funext fun _ ↦ rfl))
-  · rintro _ ⟨ξ, rfl⟩
-    have hξ := mem_normalModelAdjointKernel.1 ξ.property
-    have hmem : (normalModelAdjointKernelToLp x ξ).snd ∈ Vortex.weakGaugeFixedKernel x := by
-      rw [snd_normalModelAdjointKernelToLp]
-      exact Vortex.toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero hx.continuous
-        (contDiff_snd.comp (hξ.1.of_le one_le_two)) hξ.2.2.1
-        fun z ↦ by simpa [normalModelAdjoint_apply] using (Prod.mk.inj (hξ.2.2.2 z)).2
-    have hfst : (normalModelAdjointKernelToLp x ξ).fst = 0 := by
-      rw [fst_normalModelAdjointKernelToLp]
-      have h0 : MemLp (0 : ℂ → EuclideanSpace ℝ (Fin 4)) 2 volume := MemLp.zero
-      rw [← MemLp.toLp_zero h0]
-      exact MemLp.toLp_congr _ h0 (Filter.EventuallyEq.of_eq
-        (fst_eq_zero_of_mem_normalModelAdjointKernel (hx.differentiable (by simp)) hsol
-          ξ.property))
-    refine ⟨normalModelAdjointKernelToLp x ξ, WithLp.ofLp_injective 2 ?_⟩
-    rw [ContinuousLinearMap.coe_coe, ofLp_normalTargetSlowProj]
-    exact Prod.ext (by simpa [WithLp.ofLp_fst] using hfst.symm)
-      (by simpa [WithLp.ofLp_snd] using Submodule.starProjection_eq_self_iff.2 hmem)
+  let S := LinearIsometryEquiv.withLpProdComm 2 ℝ
+    (Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ))
+    (Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ))
+  have hproj : (normalTargetSlowProj x).range =
+      (normalDomainSlowProj x).range.map S.toLinearEquiv.toLinearMap := by
+    ext w
+    refine ⟨fun ⟨v, hv⟩ ↦ ⟨normalDomainSlowProj x (S v), ⟨S v, rfl⟩, ?_⟩,
+      fun ⟨_, ⟨u, rfl⟩, hu⟩ ↦ ⟨S u, ?_⟩⟩
+    · rw [← hv]; apply WithLp.ofLp_injective 2; simp [S]
+    · rw [← hu]; apply WithLp.ofLp_injective 2; simp [S]
+  have hker : LinearMap.range (normalModelAdjointKernelToLp x) =
+      (LinearMap.range (normalModelKernelToLp x)).map S.toLinearEquiv.toLinearMap := by
+    have hcomp : normalModelAdjointKernelToLp x ∘ₗ (normalModelKernelSwapEquiv x).toLinearMap =
+        S.toLinearEquiv.toLinearMap ∘ₗ normalModelKernelToLp x := by
+      refine LinearMap.ext fun w ↦ WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
+      · simp only [S, LinearMap.comp_apply, LinearEquiv.coe_coe, WithLp.ofLp_fst,
+          fst_normalModelAdjointKernelToLp, LinearIsometryEquiv.coe_toLinearEquiv,
+          LinearIsometryEquiv.withLpProdComm_apply, snd_normalModelKernelToLp]
+        exact MemLp.toLp_congr _ _ (Filter.EventuallyEq.of_eq rfl)
+      · simp only [S, LinearMap.comp_apply, LinearEquiv.coe_coe, WithLp.ofLp_snd,
+          snd_normalModelAdjointKernelToLp, LinearIsometryEquiv.coe_toLinearEquiv,
+          LinearIsometryEquiv.withLpProdComm_apply, fst_normalModelKernelToLp]
+        exact MemLp.toLp_congr _ _ (Filter.EventuallyEq.of_eq rfl)
+    have hrange := congrArg LinearMap.range hcomp
+    rwa [LinearMap.range_comp, LinearEquiv.range, Submodule.map_top, LinearMap.range_comp] at hrange
+  rw [hproj, hker, range_normalDomainSlowProj hx hbound hsol]
 end SlowProj
 
 section ComplementaryInverse

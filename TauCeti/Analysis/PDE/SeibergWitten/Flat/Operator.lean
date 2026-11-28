@@ -10,6 +10,9 @@ public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Weitzenbock
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
+import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
@@ -115,15 +118,6 @@ theorem flatChiralDirac_smul (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (c : ℂ)
 @[simp] theorem flatChiralDirac_zero (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (p : V) :
     flatChiralDirac o ρ b 0 p = 0 := by
   simp [flatChiralDirac_eq_sum (refBasis V)]
-
-/-- Action of `flatChiralDirac` on a scalar multiple `α • ψ₀` of a constant positive
-half-spinor. -/
-theorem coe_flatChiralDirac_smul_const (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {α : V → ℂ} {p : V}
-    (hα : DifferentiableAt ℝ α p) (ψ₀ : positiveHalfSpinors o ρ)
-    (e : OrthonormalBasis (Fin 4) ℝ V) :
-    (flatChiralDirac o ρ b (fun q ↦ α q • ψ₀) p : W) =
-      ∑ k, covariantDeriv b α p (e k) • ρ (ι Q (e k)) ψ₀ := by
-  simpa [coe_flatChiralDirac] using flatDirac_smul_const ρ hα (ψ₀ : W) e
 
 variable (o ρ) in
 /-- The **curvature side of the flat limiting curvature equation** at a pair `(b, ψ)`:
@@ -410,6 +404,21 @@ theorem hasDerivAt_flatCurvature_add_smul (hkl : 2 + 2 = finrank ℝ V)
   simp_rw [flatCurvature_add_smul hkl hb hb']
   exact hasDerivAt_add_smul_add_sq_smul _ _ _
 
+private theorem hasDerivAt_submodule {𝕜' F : Type*} [NontriviallyNormedField 𝕜']
+    [NormedAlgebra ℝ 𝕜'] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜' F]
+    [IsScalarTower ℝ 𝕜' F] {S : Submodule 𝕜' F} {g : ℝ → S} {d : S} {t₀ : ℝ}
+    (hg : HasDerivAt (fun t ↦ (g t : F)) (d : F) t₀) :
+    HasDerivAt g d t₀ := by
+  let incl : S →L[ℝ] F := S.subtypeL.restrictScalars ℝ
+  have hcomp : incl.comp (ContinuousLinearMap.toSpanSingleton ℝ d) =
+      ContinuousLinearMap.toSpanSingleton ℝ (d : F) := by
+    ext; simp [incl]
+  simpa using (HasFDerivAt.of_comp_of_isEmbedding (f := incl) (f' := incl) (g := g)
+    (g' := ContinuousLinearMap.toSpanSingleton ℝ d)
+    (Topology.IsEmbedding.subtypeVal.continuousAt_iff.2 hg.continuousAt)
+    incl.hasFDerivAt Topology.IsEmbedding.subtypeVal
+    (by rw [hcomp]; exact hg.hasFDerivAt) Filter.EventuallyEq.rfl).hasDerivAt
+
 /-- `(√2 / 2) • flatDeformationCurvature` is the directional derivative of `flatCurvatureDefect`
 along `(b + t • δb, χ + t • ζ)` at `t = 0`. -/
 theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
@@ -420,24 +429,11 @@ theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
       ⟨(√2 / 2 : ℝ) • flatDeformationCurvature o ρ hkl δb χ ζ p,
         Submodule.smul_mem _ _ (by
           rw [Module.End.mem_eigenspace_iff, one_smul]
-          exact hodgeStar_flatDeformationCurvature hkl δb χ ζ p)⟩ 0 := by
-  have hexp (t : ℝ) :
-      flatCurvatureDefect o ρ J hkl hω (b + t • δb) (χ + t • ζ) p =
-        flatCurvatureDefect o ρ J hkl hω b χ p +
-          t • ⟨(√2 / 2 : ℝ) • flatDeformationCurvature o ρ hkl δb χ ζ p,
-            Submodule.smul_mem _ _ (by
-              rw [Module.End.mem_eigenspace_iff, one_smul]
-              exact hodgeStar_flatDeformationCurvature hkl δb χ ζ p)⟩ +
-          t ^ 2 • ⟨(√2 / 4 : ℝ) • (quadraticTwoForm o ρ hkl (ζ p) : ⋀[ℝ]^2 V),
-            Submodule.smul_mem _ _ (by
-              rw [Module.End.mem_eigenspace_iff, one_smul]
-              exact o.hodgeStar_coe_of_mem_eigenspace_one hkl _)⟩ := by
-    apply Subtype.ext
-    simp only [Submodule.coe_add, Submodule.coe_smul, coe_flatCurvatureDefect,
-      flatCurvature_add_smul hkl hb hδb]
-    module
-  simp_rw [hexp]
-  exact hasDerivAt_add_smul_add_sq_smul _ _ _
+          exact hodgeStar_flatDeformationCurvature hkl δb χ ζ p)⟩ 0 :=
+  hasDerivAt_submodule <| by
+    simpa only [coe_flatCurvatureDefect, Pi.smul_def] using
+      ((hasDerivAt_flatCurvature_add_smul hkl hb hδb).sub_const
+        ((8⁻¹ : ℝ) • J.kahlerForm)).const_smul (√2 / 2 : ℝ)
 
 section
 
@@ -624,22 +620,10 @@ theorem hasDerivAt_flatChiralDirac (b δb : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     (hχ : DifferentiableAt ℝ χ p) (hζ : DifferentiableAt ℝ ζ p) :
     HasDerivAt (fun t : ℝ ↦ flatChiralDirac o ρ (b + t • δb) (χ + t • ζ) p)
       ⟨flatDeformationDirac e b δb χ ζ p,
-        mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩ 0 := by
-  have hχ' : DifferentiableAt ℝ (fun q ↦ (χ q : W)) p :=
-    ((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hχ
-  have hζ' : DifferentiableAt ℝ (fun q ↦ (ζ q : W)) p :=
-    ((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hζ
-  have hexp (t : ℝ) :
-      flatChiralDirac o ρ (b + t • δb) (χ + t • ζ) p =
-        flatChiralDirac o ρ b χ p +
-          t • ⟨flatDeformationDirac e b δb χ ζ p,
-            mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩ +
-          t ^ 2 • flatChiralDirac o ρ δb (fun _ ↦ ζ p) p := by
-    apply Subtype.ext
-    simp only [Submodule.coe_add, Submodule.coe_smul_of_tower, coe_flatChiralDirac,
-      flatDirac_add_smul e hχ' hζ']
-  simp_rw [hexp]
-  exact hasDerivAt_add_smul_add_sq_smul _ _ _
+        mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩ 0 :=
+  hasDerivAt_submodule <| hasDerivAt_flatDirac_add_smul e
+    (((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hχ)
+    (((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hζ)
 
 end Deformation
 

@@ -701,6 +701,7 @@ theorem norm_kahlerSelfDual {J : AlmostComplexStructure V} {o : Orientation ℝ 
 to an orthonormal frame `e`. When `e` is positively oriented (`he : e.toBasis.orientation = o`), it
 equals `(√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)` (`coe_antiInvariantSelfDual₁`), and for any `J` with
 `J e₀ = e₁` and `J e₂ = e₃`, `ρ₁` is orthogonal to `J.kahlerSelfDual`. -/
+@[expose]
 def antiInvariantSelfDual₁ (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBasis (Fin 4) ℝ V)
     (hkl : 2 + 2 = finrank ℝ V) :
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
@@ -720,6 +721,7 @@ theorem coe_antiInvariantSelfDual₁ {o : Orientation ℝ V (Fin 4)} {e : Orthon
 to an orthonormal frame `e`. When `e` is positively oriented (`he : e.toBasis.orientation = o`), it
 equals `(√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)` (`coe_antiInvariantSelfDual₂`), and for any `J` with
 `J e₀ = e₁` and `J e₂ = e₃`, `ρ₂` is orthogonal to `J.kahlerSelfDual` and `ρ₁`. -/
+@[expose]
 def antiInvariantSelfDual₂ (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBasis (Fin 4) ℝ V)
     (hkl : 2 + 2 = finrank ℝ V) :
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
@@ -748,16 +750,6 @@ theorem kahlerSelfDual_eq_selfDualWedge (he : e.toBasis.orientation = o) (h₀ :
   rw [coe_kahlerSelfDual, Orientation.coe_selfDualWedge_apply,
     kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, o.hodgeStar_ιMulti_zero_one hkl he]
 
-/-- In an orthonormal frame `e`, `antiInvariantSelfDual₁` is `o.selfDualWedge hkl (e 0) (e 2)`. -/
-theorem antiInvariantSelfDual₁_eq_selfDualWedge :
-    antiInvariantSelfDual₁ o e hkl = o.selfDualWedge hkl (e 0) (e 2) :=
-  (rfl)
-
-/-- In an orthonormal frame `e`, `antiInvariantSelfDual₂` is `o.selfDualWedge hkl (e 0) (e 3)`. -/
-theorem antiInvariantSelfDual₂_eq_selfDualWedge :
-    antiInvariantSelfDual₂ o e hkl = o.selfDualWedge hkl (e 0) (e 3) :=
-  (rfl)
-
 /-- `antiInvariantSelfDual₁` has unit norm in `Λ⁺ V`. -/
 theorem norm_antiInvariantSelfDual₁ : ‖antiInvariantSelfDual₁ o e hkl‖ = 1 :=
   o.norm_selfDualWedge_of_orthonormal hkl e.orthonormal (by decide)
@@ -769,7 +761,7 @@ theorem norm_antiInvariantSelfDual₂ : ‖antiInvariantSelfDual₂ o e hkl‖ =
 /-- `antiInvariantSelfDual₁` and `antiInvariantSelfDual₂` are orthogonal in `Λ⁺ V`. -/
 theorem inner_antiInvariantSelfDual₁_antiInvariantSelfDual₂ :
     ⟪antiInvariantSelfDual₁ o e hkl, antiInvariantSelfDual₂ o e hkl⟫ = 0 := by
-  rw [antiInvariantSelfDual₁_eq_selfDualWedge, antiInvariantSelfDual₂_eq_selfDualWedge,
+  rw [antiInvariantSelfDual₁, antiInvariantSelfDual₂,
     o.inner_selfDualWedge_of_orthonormal hkl e.orthonormal (by decide),
     e.orthonormal.inner_eq_zero (by decide)]
 
@@ -778,7 +770,7 @@ theorem inner_kahlerSelfDual_antiInvariantSelfDual₁ (he : e.toBasis.orientatio
     (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
     ⟪J.kahlerSelfDual o hkl hω, antiInvariantSelfDual₁ o e hkl⟫ = 0 := by
-  rw [kahlerSelfDual_eq_selfDualWedge he h₀ h₂ hω, antiInvariantSelfDual₁_eq_selfDualWedge,
+  rw [kahlerSelfDual_eq_selfDualWedge he h₀ h₂ hω, antiInvariantSelfDual₁,
     o.inner_selfDualWedge_of_orthonormal hkl e.orthonormal (by decide),
     e.orthonormal.inner_eq_zero (by decide)]
 
@@ -787,7 +779,7 @@ theorem inner_kahlerSelfDual_antiInvariantSelfDual₂ (he : e.toBasis.orientatio
     (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
     ⟪J.kahlerSelfDual o hkl hω, antiInvariantSelfDual₂ o e hkl⟫ = 0 := by
-  rw [kahlerSelfDual_eq_selfDualWedge he h₀ h₂ hω, antiInvariantSelfDual₂_eq_selfDualWedge,
+  rw [kahlerSelfDual_eq_selfDualWedge he h₀ h₂ hω, antiInvariantSelfDual₂,
     o.inner_selfDualWedge_of_orthonormal hkl e.orthonormal (by decide),
     e.orthonormal.inner_eq_zero (by decide)]
 

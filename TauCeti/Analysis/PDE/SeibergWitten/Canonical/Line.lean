@@ -652,14 +652,14 @@ theorem smul_quadraticTwoFormPolar_smul_pairedSpinor
     simp
   have hρ₁ : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl, q⟫ =
       √2 * ((α * conj β).im / 2) := by
-    rw [AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge,
-      o.inner_selfDualWedge_left hkl q]
+    unfold AlmostComplexStructure.antiInvariantSelfDual₁
+    rw [o.inner_selfDualWedge_left hkl q]
     dsimp only [q]
     rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl h₀ h₂₃ hρ hu₀ hu₀₁]
   have hρ₂ : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl, q⟫ =
       √2 * ((α * conj β).re / 2) := by
-    rw [AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
-      o.inner_selfDualWedge_left hkl q]
+    unfold AlmostComplexStructure.antiInvariantSelfDual₂
+    rw [o.inner_selfDualWedge_left hkl q]
     dsimp only [q]
     rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl h₀ h₂₃ hρ hu₀ hu₀₁]
   have him : (α * conj β).im = -(conj α * β).im := by simp [mul_comm]
@@ -680,8 +680,8 @@ theorem norm_halfSpinCliffordMul_ofEq_eq_one
     {u₀ : positiveHalfSpinors o ρ} (hu₀₁ : ‖u₀‖ = 1) :
     ‖halfSpinCliffordMul o ρ 1 v
         (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ) u₀)‖ = 1 := by
-  rw [norm_halfSpinCliffordMul_apply o hQ hρ 1 v, hv, one_mul,
-    ← Submodule.norm_coe, LinearEquiv.coe_ofEq_apply, Submodule.norm_coe, hu₀₁]
+  rw [← Submodule.norm_coe, coe_halfSpinCliffordMul_apply_apply, norm_map_ι_apply hQ hρ, hv,
+    one_mul, LinearEquiv.coe_ofEq_apply, Submodule.norm_coe, hu₀₁]
 
 /-- The negative half-spinors `c(e₂) u₀` and `c(e₀) u₀` are orthogonal in `W⁻`. -/
 theorem inner_halfSpinCliffordMul_two_zero (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
