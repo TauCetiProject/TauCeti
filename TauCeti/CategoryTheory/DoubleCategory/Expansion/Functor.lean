@@ -198,11 +198,13 @@ theorem expand_hom (e : StrictDoubleIso D₁ D₂) :
 theorem expand_inv (e : StrictDoubleIso D₁ D₂) :
     e.expand.inv = e.inv.expand.toStrictDoubleFunctor := (rfl)
 
+/-- Expansion preserves identity double isomorphisms. -/
 @[simp]
 theorem expand_refl : (refl D₁).expand = refl D₁.expand := by
   apply ext
   simp
 
+/-- Expansion commutes with taking inverses of double isomorphisms. -/
 @[simp]
 theorem expand_symm (e : StrictDoubleIso D₁ D₂) : e.symm.expand = e.expand.symm := by
   apply ext
