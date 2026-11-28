@@ -295,6 +295,7 @@ theorem sum_mul_fderiv_fderiv_const_mul (A : Matrix ι ι ℝ) (u : EuclideanSpa
   exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- Adding a constant does not change the principal part `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ`. -/
+@[simp]
 theorem sum_mul_fderiv_fderiv_add_const (A : Matrix ι ι ℝ) (u : EuclideanSpace ℝ ι → ℝ)
     (c : ℝ) (x : EuclideanSpace ℝ ι) :
     ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ u y + c) x

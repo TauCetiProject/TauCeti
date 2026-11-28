@@ -27,17 +27,20 @@ import TauCeti.Topology.Order.OrderClosed
 # The weak Harnack inequality of Krylov and Safonov
 
 Let `a` be uniformly elliptic on a ball `B(x₀, R) ⊆ ℝⁿ`, `n ≥ 1`, with constants `λ ≤ Λ ≤ κ λ`,
-and let `u ≥ 0` be a classical supersolution of the non-divergence-form equation,
-`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` in `B(x₀, R)`. For every `0 < θ < 1`, the **weak Harnack inequality** bounds a
-small power mean of `u` on `B(x₀, θ R)` by the values of `u` there and the size of `f⁺`: there are
-`p > 0` depending only on `n` and `κ`, and `C > 0` depending only on `n`, `κ`, and `θ`, with
+and let `u ≥ 0` be a `C²` classical supersolution of the non-divergence-form equation,
+`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` in `B(x₀, R)`, with `f⁺ ∈ Lⁿ(B(x₀, R))`. For every `0 < θ < 1`, the
+**weak Harnack inequality** bounds a small power mean of `u` on `B(x₀, θ R)` by the values of `u`
+there and the size of `f⁺`: there are `p > 0` depending only on `n` and `κ`, and `C > 0` depending
+only on `n`, `κ`, and `θ`, with
 
 `(θ R)^(-n / p) ‖u‖_{Lᵖ(B(x₀, θ R))} ≤ C (u(y) + R ‖f⁺‖_{Lⁿ(B(x₀, R))} / λ)`
 
 for every `y ∈ B(x₀, θ R)`
-(`TauCeti.PDE.exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le`). Dividing by
-`(θ R)^(n / p) ≈ |B(x₀, θ R)|^(1 / p)`, this says that the `Lᵖ` average of `u` over `B(x₀, θ R)` is
-at most a multiple of `inf_{B(x₀, θ R)} u` plus the right-hand-side term. The coefficients need no
+(`TauCeti.PDE.exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le`). Since
+`(θ R)^(n / p)` equals `|B(x₀, θ R)|^(1 / p)` up to a dimensional factor `|B(0, 1)|^(1 / p)`, the
+displayed left-hand side is already the `Lᵖ` power mean of `u` over `B(x₀, θ R)` up to a
+dimensional factor, so this says that the `Lᵖ` average of `u` over `B(x₀, θ R)` is at most a
+multiple of `inf_{B(x₀, θ R)} u` plus the right-hand-side term. The coefficients need no
 regularity, not even measurability, and need not be symmetric.
 
 Together with the local maximum principle
@@ -299,7 +302,8 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_of_le [Nonempty ι] {κ : ℝ} (h
 
 /-- Small-ball weak Harnack estimate on `B(c, R / (16 √n))` for `y ∈ B(c, R / 4)`, the starting
 step for the chaining argument. -/
-private theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart {κ : ℝ} (hκ : 0 < κ) :
+private theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart [Nonempty ι] {κ : ℝ}
+    (hκ : 0 < κ) :
     ∃ p C : ℝ, 0 < p ∧ 0 < C ∧
       ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
         ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, UniformlyEllipticOn (ball c R) a lam Lam →
@@ -313,14 +317,6 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart {κ : ℝ} (h
             ENNReal.ofReal (C * R ^ ((Fintype.card ι : ℝ) / p)) *
               (ENNReal.ofReal (u y) + ENNReal.ofReal (R / lam) *
                 eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball c R))) := by
-  -- In dimension `0` the small ball has radius `R / 0 = 0`.
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · refine ⟨1, 1, one_pos, one_pos, fun lam Lam R c a u f _ _ _ _ _ _ y _ ↦ ?_⟩
-    rw [show ball c (R / (16 * √(Fintype.card ι : ℝ))) = ∅ by
-        simp only [Fintype.card_eq_zero, Nat.cast_zero, Real.sqrt_zero, mul_zero, div_zero,
-          ball_zero],
-      Measure.restrict_empty, eLpNorm_measure_zero]
-    exact zero_le
   obtain ⟨p, K, ε₀, hp, hK, hε₀, H⟩ := exists_eLpNorm_le_mul_rpow_mul_of_le (ι := ι) hκ
   refine ⟨p, K * max 1 ε₀⁻¹, hp, by positivity, ?_⟩
   intro lam Lam R c a u f ha hLam hcont hu hnonneg hsuper y hy
@@ -634,8 +630,9 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le (κ :
         have hc_est := Hchain hR ha hLam' hu hnn hsuper hf (ball_subset_closedBall hy) hc
         rwa [neg_div, Real.rpow_neg (mul_pos hη₀ hR).le,
           inv_mul_le_iff₀ (Real.rpow_pos_of_pos (mul_pos hη₀ hR) _)] at hc_est
-    rw [ENNReal.toReal_ofReal hp.le, finrank_euclideanSpace,
-      show 4 * (θ * R) / (η₀ * R) = 4 * θ / η₀ by field_simp] at h
+    have hcover_ratio : 4 * (θ * R) / (η₀ * R) = 4 * θ / η₀ := by
+      rw [← mul_assoc 4 θ R, mul_div_mul_right _ _ hR.ne']
+    rw [ENNReal.toReal_ofReal hp.le, finrank_euclideanSpace, hcover_ratio] at h
     exact h
   have hratio : (θ * R) ^ (-n / p) * (η₀ * R) ^ (n / p) = (η₀ / θ) ^ (n / p) := by
     rw [neg_div, Real.mul_rpow_neg_mul_mul_rpow hθ0 hη₀.le hR]

@@ -66,8 +66,10 @@ exact form of the bounded-overlap count.
 * `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le`:
   off-centre Chebyshev point selection on a ball `B(q', r)` from the `Lᵖ` norm on `B(q, r)` when
   `dist q' q ≤ r / 2`.
-* `TauCeti.toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: covering `closedBall x₀ r`
-  by balls of radius `s` upgrades uniform finite local `Lᵖ` bounds to a bound on `B(x₀, r)`.
+* `TauCeti.eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: covering `closedBall x₀ r` by
+  balls of radius `s` upgrades uniform local `Lᵖ` bounds in `ℝ≥0∞` to a bound on `B(x₀, r)`.
+* `TauCeti.toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: real-valued covering bound
+  on `B(x₀, r)` from uniform finite local `Lᵖ` bounds.
 -/
 
 public section
@@ -459,17 +461,16 @@ variable {E ε : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
 
 /-- **Covering bound for `eLpNorm` on a ball.** Let `E` be a finite-dimensional real normed space
 and `0 < p < ∞`. If `r ≥ 0`, `s > 0`, and on every ball `B(c, s)` with `c ∈ closedBall x₀ r` the
-function `f` has finite `Lᵖ` seminorm at most `B ≥ 0`, then covering `closedBall x₀ r` by at most
+function `f` has `Lᵖ` seminorm at most `B : ℝ≥0∞`, then covering `closedBall x₀ r` by at most
 `(1 + 4 r / s) ^ dim E` balls `B(c, s)` gives
 
-`(eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤ ((1 + 4 r / s) ^ dim E) ^ (1 / p.toReal) * B`. -/
-theorem toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall {μ : Measure E} (f : E → ε)
-    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {x₀ : E} {r s B : ℝ} (hr : 0 ≤ r) (hs : 0 < s)
-    (hB : 0 ≤ B)
-    (hfin : ∀ c ∈ closedBall x₀ r, eLpNorm f p (μ.restrict (ball c s)) ≠ ∞)
-    (hle : ∀ c ∈ closedBall x₀ r, (eLpNorm f p (μ.restrict (ball c s))).toReal ≤ B) :
-    (eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤
-      ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
+`eLpNorm f p (μ.restrict (ball x₀ r)) ≤`
+`  ENNReal.ofReal ((1 + 4 * r / s) ^ dim E) ^ p.toReal⁻¹ * B`. -/
+theorem eLpNorm_restrict_ball_le_of_forall_mem_closedBall {μ : Measure E} (f : E → ε)
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {x₀ : E} {r s : ℝ} {B : ℝ≥0∞} (hr : 0 ≤ r)
+    (hs : 0 < s) (hle : ∀ c ∈ closedBall x₀ r, eLpNorm f p (μ.restrict (ball c s)) ≤ B) :
+    eLpNorm f p (μ.restrict (ball x₀ r)) ≤
+      ENNReal.ofReal ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
   set ε₀ : ℝ≥0 := NNReal.mk (s / 2) (half_pos hs).le
   have hε₀ : ε₀ ≠ 0 := mt (congrArg NNReal.toReal) (half_pos hs).ne'
   obtain ⟨S, hSsub, hScov, hScard⟩ := exists_finset_isCover_of_subset_closedBall
@@ -483,9 +484,36 @@ theorem toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall {μ : Measure E
   have hcover : ball x₀ r ⊆ ⋃ c ∈ S, ball c s :=
     ball_subset_closedBall.trans <| hScov.subset_iUnion_closedBall.trans <|
       Set.iUnion₂_mono fun _ _ => closedBall_subset_ball (half_lt_self hs)
-  have hcov_le := toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion f hp0 hp hB hcover
-    (fun c hc => hfin c (hSsub hc)) (fun c hc => hle c (hSsub hc))
-  exact hcov_le.trans (by gcongr)
+  have hcov_le := eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion f hp0 hp hcover
+    fun c hc => hle c (hSsub hc)
+  refine hcov_le.trans (mul_le_mul' (ENNReal.rpow_le_rpow ?_ (by positivity)) le_rfl)
+  rw [← ENNReal.ofReal_natCast]
+  exact ENNReal.ofReal_le_ofReal hS_le
+
+/-- **Real-valued covering bound for `eLpNorm` on a ball.** Let `E` be a finite-dimensional real
+normed space and `0 < p < ∞`. If `r ≥ 0`, `s > 0`, and on every ball `B(c, s)` with
+`c ∈ closedBall x₀ r` the function `f` has finite `Lᵖ` seminorm at most `B ≥ 0`, then covering
+`closedBall x₀ r` by at most `(1 + 4 r / s) ^ dim E` balls `B(c, s)` gives
+
+`(eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤ ((1 + 4 * r / s) ^ dim E) ^ p.toReal⁻¹ * B`. -/
+theorem toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall {μ : Measure E} (f : E → ε)
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {x₀ : E} {r s B : ℝ} (hr : 0 ≤ r) (hs : 0 < s)
+    (hB : 0 ≤ B)
+    (hfin : ∀ c ∈ closedBall x₀ r, eLpNorm f p (μ.restrict (ball c s)) ≠ ∞)
+    (hle : ∀ c ∈ closedBall x₀ r, (eLpNorm f p (μ.restrict (ball c s))).toReal ≤ B) :
+    (eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤
+      ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
+  have hcov : eLpNorm f p (μ.restrict (ball x₀ r)) ≤
+      ENNReal.ofReal ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * ENNReal.ofReal B :=
+    eLpNorm_restrict_ball_le_of_forall_mem_closedBall f hp0 hp hr hs fun c hc =>
+      (ENNReal.le_ofReal_iff_toReal_le (hfin c hc) hB).2 (hle c hc)
+  calc (eLpNorm f p (μ.restrict (ball x₀ r))).toReal
+      ≤ (ENNReal.ofReal ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * ENNReal.ofReal B).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
+          (by positivity) ENNReal.ofReal_ne_top) ENNReal.ofReal_ne_top) hcov
+    _ = ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
+        rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow,
+          ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofReal hB]
 
 end Covering
 

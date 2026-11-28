@@ -21,7 +21,7 @@ The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two b
 support of a function lies outside its closed support
 (`TauCeti.notMem_tsupport_of_support_subset_closedBall`). Given `a < r` and two points in
 `ball x₀ r`, there is an intermediate radius `a < s < r` keeping both points in `ball x₀ s`
-(`TauCeti.exists_lt_mem_ball_of_mem_ball`). A closed ball of radius `η * R` centred in
+(`TauCeti.exists_lt_mem_ball_of_mem_ball`). When `0 < R`, a closed ball of radius `η * R` centred in
 `closedBall x₀ (θ * R)` lies in `ball x₀ R` whenever `η < 1 - θ`
 (`TauCeti.closedBall_mul_subset_ball_of_mem_closedBall`).
 

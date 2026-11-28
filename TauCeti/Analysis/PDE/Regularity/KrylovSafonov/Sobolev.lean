@@ -17,6 +17,7 @@ import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.LocalMaximumPrinciple
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Sobolev
 import TauCeti.Analysis.Sobolev.Wkp.InteriorMorrey
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Order
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
@@ -53,15 +54,19 @@ matrix `a`.
 On any compact concentric sub-ball `closedBall x₀ s ⊂ B(x₀, R) ⊆ Ω`, interior mollification
 (`TauCeti.PDE.exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp`,
 `TauCeti.PDE.exists_contDiff_le_and_le_add_and_sum_mul_fderiv_fderiv_le_of_wkp`,
-`TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`,
-`TauCeti.PDE.exists_contDiff_le_and_le_add_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`, and
-`TauCeti.PDE.exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp`) produces a smooth function
-`w` within `η` of `ū` on `closedBall x₀ s` whose classical principal part controls the weak
-principal part up to an `Lⁿ` error of norm at most `η`:
+`TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`, and
+`TauCeti.PDE.exists_contDiff_le_and_le_add_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`) produces a
+smooth function `w` within `η` of `ū` on `closedBall x₀ s` whose classical principal part controls
+the weak principal part up to an `Lⁿ` error of norm at most `η`:
 
 * For **power decay**
-  (`TauCeti.PDE.exists_measure_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`), a rescaled
-  mollification `w` with `ū / (1 + 3 ζ) ≤ w ≤ (ū + 2 ζ) / (1 + 3 ζ)` lets `ζ → 0`.
+  (`TauCeti.PDE.exists_measure_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`), for each `ζ > 0`
+  the rescaled mollification
+  (`TauCeti.PDE.exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp`) produces a smooth
+  function `w` on `closedBall c R` satisfying the multiplicative comparison
+  `ū / (1 + 3 ζ) ≤ w ≤ (ū + 2 ζ) / (1 + 3 ζ)` and controlling `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼw ≤ g` with the
+  right-hand-side bound `‖g⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ / R` preserved; letting `ζ → 0` yields the
+  decay estimate.
 * For **strong subsolutions** (`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f` a.e.), approximating from below gives `w` with
   `ū - η ≤ w ≤ ū` on `closedBall c s`, so `w⁺ ≤ ū⁺` pointwise on `B(c, s)` while avoiding any
   quasi-triangle loss when `0 < p < 1`.
@@ -69,11 +74,13 @@ principal part up to an `Lⁿ` error of norm at most `η`:
   `θ' = √θ` so that `closedBall x₀ (θ' R) ⊂ B(x₀, R)` and `θ' (θ' R) = θ R`, approximating from
   above on `closedBall x₀ (θ' R)` gives `0 ≤ ū ≤ w ≤ ū + η`, so `‖ū‖_{Lᵖ} ≤ ‖w‖_{Lᵖ}` on
   `B(x₀, θ R)`.
-* For **strong solutions** (`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` a.e. on `B(x₀, 2 r)`), approximating from above
-  (for Harnack) or uniformly within `η` (for Hölder) on `closedBall x₀ (2 s) ⊂ B(x₀, 2 r)`
-  transfers both estimates directly from their classical counterparts as `η → 0`. Consequently
-  `u` itself satisfies `u(x) ≤ C (u(y) + r ‖f‖ / λ)` for almost every `x` and almost every `y` in
-  `B(x₀, r)` (`TauCeti.PDE.exists_ae_value_le_mul_add_of_sum_mul_iteratedGradient_eq`).
+* For **strong solutions** (`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` a.e. and `f ∈ Lⁿ(B(x₀, 2 r))` on `B(x₀, 2 r)`),
+  approximating from above when `u ≥ 0` a.e. (for Harnack) or uniformly within `η` when `|u| ≤ M`
+  a.e. (for Hölder) on `closedBall x₀ (2 s) ⊂ B(x₀, 2 r)` transfers each estimate directly from
+  its classical counterpart as `η → 0`. Under the Harnack hypotheses (`u ≥ 0` a.e. and
+  `f ∈ Lⁿ(B(x₀, 2 r))`), `u` itself consequently satisfies
+  `u(x) ≤ C (u(y) + r ‖f‖ / λ)` for almost every `x` and almost every `y` in `B(x₀, r)`
+  (`TauCeti.PDE.exists_ae_value_le_mul_add_of_sum_mul_iteratedGradient_eq`).
 
 ## Main declarations
 
@@ -309,23 +316,13 @@ private theorem memLp_and_mul_eLpNorm_div_le_of_isAddHaarMeasure
     MemLp g (Fintype.card ι) (volume.restrict S) ∧
       s * (eLpNorm g (Fintype.card ι) (volume.restrict S)).toReal / lam ≤
         K * (R * ((eLpNorm f (Fintype.card ι) (mu.restrict U)).toReal + η) / lam) := by
-  have hle : eLpNorm g (Fintype.card ι) (mu.restrict S) ≤
-      eLpNorm f (Fintype.card ι) (mu.restrict U) + ENNReal.ofReal η :=
-    hg.trans (add_le_add_left (eLpNorm_mono_measure _ (Measure.restrict_mono_set mu hSU)) _)
-  have hfin : eLpNorm f (Fintype.card ι) (mu.restrict U) + ENNReal.ofReal η < ∞ :=
-    ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, ENNReal.ofReal_lt_top⟩
-  refine ⟨(memLp_iff.2 (hle.trans_lt hfin)).restrict_of_isAddHaarMeasure volume, ?_⟩
-  have hmu_le : (eLpNorm g (Fintype.card ι) (mu.restrict S)).toReal ≤
-      (eLpNorm f (Fintype.card ι) (mu.restrict U)).toReal + η := by
-    simpa only [ENNReal.toReal_ofReal hη] using
-      (ENNReal.toReal_mono hfin.ne hle).trans_eq
-        (ENNReal.toReal_add hf.eLpNorm_ne_top ENNReal.ofReal_ne_top)
+  refine ⟨hf.restrict_of_isAddHaarMeasure_of_eLpNorm_le_add hSU ENNReal.ofReal_ne_top hg volume, ?_⟩
   have htr : (eLpNorm g (Fintype.card ι) (volume.restrict S)).toReal ≤
       (Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ *
         ((eLpNorm f (Fintype.card ι) (mu.restrict U)).toReal + η) := by
-    rw [toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul g (Fintype.card ι) volume mu S,
-      ENNReal.toReal_natCast]
-    exact mul_le_mul_of_nonneg_left hmu_le (by positivity)
+    have htr' := toReal_eLpNorm_restrict_le_addHaarScalarFactor_rpow_mul_add (Fintype.card ι)
+      volume mu hSU hf hη hg
+    rwa [ENNReal.toReal_natCast] at htr'
   have htr2 : (eLpNorm g (Fintype.card ι) (volume.restrict S)).toReal ≤
       K * ((eLpNorm f (Fintype.card ι) (mu.restrict U)).toReal + η) :=
     htr.trans (mul_le_mul_of_nonneg_right hK (by positivity))
@@ -848,22 +845,16 @@ omit [DecidableEq ι] in
 /-- Rescale `s ^ (-α) ≤ 2 r ^ (-α)` for `r / 2 < s` and absorb the `2 η` approximation error in
 the interior Hölder estimate. -/
 private theorem holder_absorb_subball {α : ℝ≥0} {n α₀ C₀ lam r s M G F du dv d η : ℝ}
-    (hα0 : 0 < α) (hα1 : α ≤ 1) (hC₀ : 0 ≤ C₀) (hM0 : 0 ≤ M) (hr : 0 < r) (hs_r2 : r / 2 < s)
+    (hα1 : α ≤ 1) (hC₀ : 0 ≤ C₀) (hM0 : 0 ≤ M) (hr : 0 < r) (hs_r2 : r / 2 < s)
     (hlam : 0 < lam) (hF : 0 ≤ F) (hη : 0 ≤ η) (hd : 0 ≤ d) (hdist_u : du ≤ dv + 2 * η)
     (hv_dist : dv ≤ C₀ * s ^ (-(α : ℝ)) * (M + η + G) * d ^ (α : ℝ))
     (h12 : M + η + G ≤ max 1 (α₀ ^ n⁻¹) * (M + r * F / lam + η * (1 + r / lam))) :
     du ≤ (2 * C₀ * max 1 (α₀ ^ n⁻¹)) * r ^ (-(α : ℝ)) * (M + r * F / lam) * d ^ (α : ℝ) +
       η * ((2 * C₀ * max 1 (α₀ ^ n⁻¹)) * r ^ (-(α : ℝ)) * (1 + r / lam) * d ^ (α : ℝ) + 2) := by
   have hs0 : 0 < s := by linarith
-  have hs_rpow : s ^ (-(α : ℝ)) ≤ 2 * r ^ (-(α : ℝ)) := by
-    have hα0' : (0 : ℝ) < α := NNReal.coe_pos.2 hα0
-    have hα1' : (α : ℝ) ≤ 1 := by exact_mod_cast hα1
-    calc s ^ (-(α : ℝ)) ≤ 2 ^ (α : ℝ) * r ^ (-(α : ℝ)) :=
-          Real.rpow_neg_le_mul_rpow_neg hr zero_le_two hα0'.le (by linarith)
-      _ ≤ 2 ^ (1 : ℝ) * r ^ (-(α : ℝ)) :=
-          mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_exponent_le one_le_two hα1')
-            (by positivity)
-      _ = 2 * r ^ (-(α : ℝ)) := by rw [Real.rpow_one]
+  have hs_rpow : s ^ (-(α : ℝ)) ≤ 2 * r ^ (-(α : ℝ)) :=
+    (Real.rpow_le_rpow_of_nonpos (half_pos hr) hs_r2.le (neg_nonpos.2 α.coe_nonneg)).trans
+      (Real.div_rpow_neg_le_mul_rpow_neg (by exact_mod_cast hα1) one_le_two hr.le)
   have hv_bound :
       dv ≤ (2 * C₀ * max 1 (α₀ ^ n⁻¹)) * r ^ (-(α : ℝ)) *
         (M + r * F / lam + η * (1 + r / lam)) * d ^ (α : ℝ) := by
@@ -1003,7 +994,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
       C₀ * s ^ (-(α : ℝ)) * (M + η + s * (eLpNorm g (Fintype.card ι)
         (volume.restrict (ball x₀ (2 * s)))).toReal / lam) * dist x y ^ (α : ℝ) :=
     hhold.trans_eq (by rw [Real.coe_toNNReal _ (by positivity)])
-  exact holder_absorb_subball hα0 hα1 hC₀.le hM0 hr hs_r2 hlam ENNReal.toReal_nonneg hη.le
+  exact holder_absorb_subball hα1 hC₀.le hM0 hr hs_r2 hlam ENNReal.toReal_nonneg hη.le
     dist_nonneg hdist_u hv_dist h12
 
 /-- **The interior Hölder estimate of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
