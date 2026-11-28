@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import Mathlib.NumberTheory.Primorial
 public import TauCeti.NumberTheory.Bernoulli.Basic
 public import TauCeti.RingTheory.PowerSeries.CharacteristicSeries
+import Mathlib.NumberTheory.Chebyshev
 
 /-!
-# Exponential generating series and midpoint values of Bernoulli polynomials
+# Identities and integrality for Bernoulli polynomials
 
 Over a `ℚ`-algebra `A`, Mathlib's `Polynomial.bernoulli_generating_function` states that
 `(∑ Bₙ(t) Xⁿ / n!) · (e^X - 1) = X e^{tX}`, while `bernoulliPowerSeries_mul_exp_sub_one` states
@@ -44,9 +46,14 @@ polylogarithms.
 * `TauCeti.bernoulli_eval_inv_two_eq_zero_of_odd`: `Bₙ(1/2) = 0` for odd `n`.
 * `TauCeti.sum_choose_mul_two_pow_mul_bernoulli`:
   `∑_{j ≤ n} C(n, j) 2ʲ Bⱼ = 2ⁿ Bₙ(1/2)`.
-* `TauCeti.pow_mul_bernoulli_eval_div`: `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`, and
-  `TauCeti.exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval`: `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an
-  integer for `Pₖ₊₁ = primorial (k + 1)`.
+* `Polynomial.coeff_taylor_bernoulli`, `Polynomial.bernoulli_eval_add_eq_sum`: Taylor
+  coefficients and the addition formula for Bernoulli polynomials.
+* `TauCeti.succ_mul_sum_range_add_pow_eq_bernoulli_sub`: Faulhaber's identity for a shifted range.
+* `TauCeti.pow_mul_bernoulli_eval_div`: `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`.
+  Both the primorial `Pₖ₊₁` and the factorial `(k + 1)!` clear its denominators at integer
+  numerators and natural denominators (with `M ≠ 0` for the primorial result).
+* `TauCeti.factorial_mul_sum_range_add_mul_pow_eq_bernoulli_sub`: the factorial-scaled power sum
+  along an arithmetic progression as a difference of homogenized Bernoulli values.
 
 ## References
 
@@ -58,9 +65,63 @@ polylogarithms.
 
 public section
 
-open Nat Finset PowerSeries
+open Nat Finset
+
+namespace Polynomial
+
+/-- The `k`th derivative of the `n`th Bernoulli polynomial is the `(n - k)`th Bernoulli
+polynomial scaled by the descending factorial `n.descFactorial k`. -/
+theorem iterate_derivative_bernoulli (n k : ℕ) :
+    derivative^[k] (bernoulli n) = n.descFactorial k • bernoulli (n - k) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, derivative_smul, derivative_bernoulli,
+      Nat.descFactorial_succ, ← Nat.sub_sub]
+    simp only [nsmul_eq_mul, Nat.cast_mul]
+    ring
+
+/-- The coefficients of the Bernoulli polynomial translated by `x` are binomial multiples of
+lower Bernoulli polynomials evaluated at `x`. -/
+theorem coeff_taylor_bernoulli (x : ℚ) (n j : ℕ) :
+    (taylor x (bernoulli n)).coeff j = (n.choose j : ℚ) * (bernoulli (n - j)).eval x := by
+  have hz := congrFun (factorial_smul_hasseDeriv (R := ℚ) j) (bernoulli n)
+  have hj : j.factorial • hasseDeriv j (bernoulli n) = _ :=
+    hz.trans (iterate_derivative_bernoulli n j)
+  have he := congrArg (eval x) hj
+  simp only [nsmul_eq_mul, eval_mul, eval_natCast, Nat.descFactorial_eq_factorial_mul_choose,
+    Nat.cast_mul, mul_assoc] at he
+  rw [taylor_coeff]
+  exact mul_left_cancel₀ (Nat.cast_ne_zero.mpr (factorial_ne_zero j)) he
+
+/-- The translation identity for Bernoulli polynomials, with coefficients in the Bernoulli basis. -/
+theorem bernoulli_eval_add_eq_sum (n : ℕ) (x y : ℚ) :
+    (bernoulli n).eval (x + y) = ∑ j ∈ range (n + 1),
+      (n.choose j : ℚ) * (bernoulli (n - j)).eval x * y ^ j := by
+  have hd : (taylor x (bernoulli n)).natDegree ≤ n :=
+    natDegree_le_iff_coeff_eq_zero.mpr fun j hj ↦ by
+      simp [coeff_taylor_bernoulli, Nat.choose_eq_zero_of_lt hj]
+  rw [add_comm x, ← taylor_eval, eval_eq_sum_range' (Nat.lt_succ_of_le hd)]
+  simp only [coeff_taylor_bernoulli]
+
+end Polynomial
+
+open PowerSeries
 
 namespace TauCeti
+
+/-- Faulhaber's identity for a shifted range of rational arguments. -/
+theorem succ_mul_sum_range_add_pow_eq_bernoulli_sub (k m : ℕ) (x : ℚ) :
+    ((k + 1 : ℕ) : ℚ) * (∑ j ∈ range m, (x + j) ^ k) =
+      (Polynomial.bernoulli (k + 1)).eval (x + m) - (Polynomial.bernoulli (k + 1)).eval x := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [sum_range_succ, mul_add, ih]
+    have hadd : x + (↑(m + 1) : ℚ) = 1 + (x + ↑m) := by push_cast; ring
+    rw [hadd, Polynomial.bernoulli_eval_one_add]
+    simp only [Nat.add_sub_cancel]
+    ring
 
 section GeneratingSeries
 
@@ -156,6 +217,19 @@ theorem pow_mul_bernoulli_eval_div {M : ℚ} (hM : M ≠ 0) (k : ℕ) (x : ℚ) 
   rw [Polynomial.eval_monomial, div_pow, hik]
   field_simp
 
+/-- For a rational arithmetic progression with nonzero step `N`, its factorial-scaled power
+sum is a difference of homogenized Bernoulli values. -/
+theorem factorial_mul_sum_range_add_mul_pow_eq_bernoulli_sub {N : ℚ} (hN : N ≠ 0)
+    (k m : ℕ) (a : ℚ) :
+    ((k + 1).factorial : ℚ) * (∑ j ∈ range m, (a + N * j) ^ k) =
+      (k.factorial : ℚ) * N ^ k * ((Polynomial.bernoulli (k + 1)).eval (a / N + m) -
+        (Polynomial.bernoulli (k + 1)).eval (a / N)) := by
+  have hterm (j : ℕ) : (a + N * j) ^ k = N ^ k * (a / N + j) ^ k := by
+    rw [← mul_pow, mul_add, mul_comm N (a / N), div_mul_cancel₀ _ hN]
+  simp_rw [hterm, ← mul_sum]
+  rw [← succ_mul_sum_range_add_pow_eq_bernoulli_sub, Nat.factorial_succ, Nat.cast_mul]
+  ring
+
 /-- For `M ≠ 0` and an integer `x`, `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an integer, where
 `Pₖ₊₁ = primorial (k + 1)`. -/
 theorem exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval (k : ℕ) {M : ℕ} (hM : M ≠ 0)
@@ -168,6 +242,24 @@ theorem exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval (k : ℕ) {M : �
   push_cast
   refine sum_congr rfl fun i hi ↦ ?_
   rw [hc i (mem_range.1 hi)]
+  ring
+
+/-- A factorial of index greater than `l` clears the denominators of the homogenized Bernoulli
+polynomial of degree `l` at every integer numerator and natural denominator. -/
+theorem exists_intCast_eq_factorial_mul_pow_mul_bernoulli_eval {l k : ℕ} (hl : l < k)
+    (N : ℕ) (a : ℤ) :
+    ∃ b : ℤ, (b : ℚ) = (k.factorial : ℚ) * (N : ℚ) ^ l *
+      (Polynomial.bernoulli l).eval ((a : ℚ) / N) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · cases l with
+    | zero => exact ⟨k.factorial, by simp⟩
+    | succ l => exact ⟨0, by simp⟩
+  obtain ⟨d, hd⟩ := (primorial_dvd_primorial hl).trans
+    ((Nat.primorial_dvd_lcmUpto k).trans (Nat.lcmUpto_dvd_factorial k))
+  obtain ⟨b, hb⟩ := exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval l hN a
+  refine ⟨(d : ℤ) * b, ?_⟩
+  push_cast
+  rw [hb, hd, Nat.cast_mul]
   ring
 
 end Homogenized
