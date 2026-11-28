@@ -36,6 +36,8 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
   `ℤ^ι`.
 * `MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop`: sine-modulated integrals
   tend to zero as the real frequency tends to positive infinity.
+* `MeasureTheory.Integrable.tendsto_integral_mul_sin_atTop`: the same for a real function and
+  the frequency written as a factor, `∫ g(u) sin (T u) du → 0`.
 
 * `TauCeti.continuous_cpow_mul_I`, `TauCeti.norm_cpow_mul_I`: the factor `x ^ (t * I)` is
   continuous in `t` and has modulus `1`.
@@ -226,3 +228,21 @@ theorem MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop
       -- The reflected parameter -T supplies the opposite frequency in the second phase.
       rw [show (2 * π * T) * u = -2 * π * u * -T by ring]
     exact heq ▸ hi (2 * π * T)
+
+/-- **Riemann--Lebesgue for real sine modulation**: for an integrable real function `g`, the
+integral `∫ g(u) sin (T u) du` tends to zero as the frequency `T` tends to positive infinity. -/
+theorem MeasureTheory.Integrable.tendsto_integral_mul_sin_atTop {g : ℝ → ℝ} (hg : Integrable g) :
+    Tendsto (fun T : ℝ ↦ ∫ u, g u * Real.sin (T * u)) atTop (nhds 0) := by
+  have h := ((hg.ofReal (𝕜 := ℂ)).tendsto_integral_sin_smul_atTop.comp
+    (tendsto_id.atTop_div_const (by positivity : (0 : ℝ) < 2 * π)))
+  have h' := (Complex.continuous_re.tendsto _).comp h
+  rw [Complex.zero_re] at h'
+  refine h'.congr fun T ↦ ?_
+  have hT (u : ℝ) : 2 * π * (id T / (2 * π)) * u = T * u := by
+    simp only [id]
+    field_simp
+  simp only [Function.comp_apply, hT, smul_eq_mul]
+  rw [← Complex.ofReal_re (∫ u, g u * Real.sin (T * u)), ← integral_complex_ofReal]
+  congr 1
+  refine integral_congr_ae (Eventually.of_forall fun u ↦ ?_)
+  simp [mul_comm]

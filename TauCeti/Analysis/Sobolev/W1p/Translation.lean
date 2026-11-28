@@ -27,6 +27,7 @@ and on a domain mapped onto itself by the translation it preserves zero boundary
 * `TauCeti.W1p.gradient_translate_ae`: the weak gradient of a local translation.
 * `TauCeti.W1p.translateL`, `TauCeti.W1p.continuous_translate`: local translation is a bounded
   linear operator.
+* `TauCeti.W1p.norm_translate`: translation is an isometry when it maps the domain onto itself.
 * `TauCeti.W1p.translate_mem_w1p0Submodule`: translation preserves `W^{1,p}_0(Ω)` when it maps
   `Ω` onto itself.
 -/
@@ -112,6 +113,32 @@ theorem W1p.continuous_translate {Omega V : Opens E} {h : E} (hVO : MapsTo (· +
     Continuous (W1p.translate (mu := mu) (p := p) hVO) := by
   simpa only [← funext (W1p.translateL_apply (mu := mu) (p := p) hVO)] using
     (W1p.translateL hVO).continuous
+
+/-- **Translation is an isometry** of `W^{1,p}(Ω)` when it maps `Ω` onto itself, that is
+`x + h ∈ Ω ↔ x ∈ Ω`: the translate `x ↦ u (x + h)` has the norm of `u`. On the whole space this
+holds for every `h`. -/
+theorem W1p.norm_translate {h : E} (hVO : MapsTo (· + h) Omega Omega)
+    (hΩ : ∀ x, x + h ∈ Omega → x ∈ Omega) (u : W1p mu Omega p) :
+    ‖W1p.translate hVO u‖ = ‖u‖ := by
+  have hpre : (· + h) ⁻¹' (Omega : Set E) = Omega :=
+    Subset.antisymm (fun x hx => hΩ x hx) fun x hx => hVO hx
+  have hmp : MeasurePreserving (· + h) (mu.restrict Omega) (mu.restrict Omega) := by
+    simpa only [hpre] using (measurePreserving_add_right mu h).restrict_preimage_emb
+      (measurableEmbedding_addRight h) Omega
+  -- The jet of the translate is the translate of the jet.
+  have hjet : ((W1p.translate hVO u : W1p mu Omega p) : Sobolev1JetLp mu Omega p)
+      =ᵐ[mu.restrict Omega] (u : Sobolev1JetLp mu Omega p) ∘ (· + h) := by
+    filter_upwards [W1p.coe_ae_eq_toLp_value_gradient (W1p.translate hVO u),
+      W1p.value_translate_ae hVO u, W1p.gradient_translate_ae hVO u,
+      hmp.quasiMeasurePreserving.ae_eq_comp (W1p.coe_ae_eq_toLp_value_gradient u)]
+      with x h1 h2 h3 h4
+    rw [h1, h2, h3, h4, Function.comp_apply]
+  have hJ : eLpNorm (⇑(u : Sobolev1JetLp mu Omega p) ∘ (· + h)) p (mu.restrict Omega) =
+      eLpNorm (u : Sobolev1JetLp mu Omega p) p (mu.restrict Omega) :=
+    eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hmp
+  have e1 : ‖W1p.translate hVO u‖ = ‖((W1p.translate hVO u : W1p mu Omega p) :
+      Sobolev1JetLp mu Omega p)‖ := (Submodule.norm_coe _).symm
+  rw [e1, ← Submodule.norm_coe u, Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hjet, hJ]
 
 /-- **Translation preserves zero boundary values.** If translation by `h` maps `Ω` onto itself,
 that is `x + h ∈ Ω ↔ x ∈ Ω`, then the translate `x ↦ u (x + h)` of
