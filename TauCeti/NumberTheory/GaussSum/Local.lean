@@ -128,7 +128,7 @@ theorem exists_setIntegral_mul_addChar_eq (hO : IsOpen (O : Set F)) (hμO : μ O
         convert hπs using 2
         ext
         simp
-      rw [hgx, mul_add, AddChar.map_add_eq_mul, show t * ((ϖ : F) * s) = (ϖ : F) * t * s by ring]
+      rw [hgx, mul_add, AddChar.map_add_eq_mul, mul_left_comm t, ← mul_assoc (ϖ : F) t s]
       ring
     rw [htr] at hfac
     exact (mul_eq_right₀ hne).mp hfac.symm
