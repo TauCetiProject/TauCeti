@@ -63,6 +63,26 @@ variable {X Y : SSet.{u}}
 
 namespace Subcomplex
 
+/-- Restricting a map to the preimage of a subcomplex gives a pullback square. -/
+lemma isPullback_fromPreimage (q : X ⟶ Y) (A : Y.Subcomplex) :
+    IsPullback (A.preimage q).ι (A.fromPreimage q) q A.ι := by
+  refine IsPullback.mk' (fromPreimage_ι A q).symm
+    (fun _ _ _ h _ ↦ (cancel_mono _).1 h) ?_
+  intro T a b h
+  refine ⟨lift a ?_, lift_ι _ _, ?_⟩
+  · rw [← image_top, image_le_iff, ← preimage_comp, h, preimage_comp, preimage_ι]
+    exact top_le_iff.2 (by ext; simp)
+  · rw [← cancel_mono A.ι, Category.assoc, fromPreimage_ι, lift_ι_assoc, h]
+
+/-- A constant map to a subcomplex, followed by its inclusion, is constant at the underlying
+vertex. -/
+@[reassoc (attr := simp)]
+lemma const_comp_ι {Z : SSet.{u}} (A : Y.Subcomplex) (y : (A : SSet.{u}) _⦋0⦌) :
+    (const y : Z ⟶ A) ≫ A.ι = const y.val := by
+  rw [const_comp]
+  -- The inclusion sends a vertex of the subcomplex to its underlying vertex.
+  rfl
+
 /-- The restriction `A.fromPreimage q` of `q` over a subcomplex `A` has the right lifting property
 with respect to every map against which `q` has it: a lift for `q` of a square over `A` lands in
 the preimage of `A`. -/
@@ -222,16 +242,14 @@ over `y`, through the inclusion of `A.preimage q` into `X`. -/
 noncomputable def fiber.fromPreimageIso (q : X ⟶ Y) (A : Y.Subcomplex) (y : (A : SSet.{u}) _⦋0⦌) :
     (fiber (A.fromPreimage q) y : SSet.{u}) ≅ (fiber q y.val : SSet.{u}) where
   hom := fiber.lift ((fiber (A.fromPreimage q) y).ι ≫ (A.preimage q).ι) q y.val (by
-    rw [Category.assoc, ← Subcomplex.fromPreimage_ι, fiber.ι_comp_assoc, const_comp]
-    simp only [Subfunctor.ι_app, ConcreteCategory.hom_ofHom, TypeCat.Fun.coe_mk])
+    rw [Category.assoc, ← Subcomplex.fromPreimage_ι, fiber.ι_comp_assoc, Subcomplex.const_comp_ι])
   inv := fiber.lift (Subcomplex.lift (fiber q y.val).ι (by
-    apply le_trans (show Subcomplex.range (fiber q y.val).ι ≤ fiber q y.val by simp)
+    apply le_trans (Subfunctor.range_ι _).le
     rw [fiber_eq_preimage]
     exact Subcomplex.preimage_monotone q ((Subcomplex.ofSimplex_le_iff y.val A).2 y.property)))
     (A.fromPreimage q) y (by
       rw [← cancel_mono A.ι, Category.assoc, Subcomplex.fromPreimage_ι, Subcomplex.lift_ι_assoc,
-        fiber.ι_comp, const_comp]
-      simp only [Subfunctor.ι_app, ConcreteCategory.hom_ofHom, TypeCat.Fun.coe_mk])
+        fiber.ι_comp, Subcomplex.const_comp_ι])
   hom_inv_id := by
     rw [← cancel_mono (fiber _ y).ι, ← cancel_mono (A.preimage q).ι]
     simp

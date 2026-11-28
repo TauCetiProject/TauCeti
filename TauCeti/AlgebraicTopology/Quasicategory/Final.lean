@@ -95,20 +95,6 @@ lemma IsFinal.exists_edge {f : K ⟶ L} (hf : IsFinal f) (y : L _⦋0⦌) :
   rw [coslice.π_app (p := const y) s]
   exact (yonedaEquiv.symm_apply_apply _).symm.trans (yonedaEquiv_symm_zero _)
 
-/-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[0 + n + 1]`, the last vertex of the face opposite to `0` is the last
-vertex of the base `Δ[n]`. -/
-private lemma const_last_comp_δ_zero (n : ℕ) :
-    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋0 + n⦌ (Fin.last _)) ≫ stdSimplex.δ 0 =
-      stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ join.inr Δ[0] Δ[n] ≫
-        (join.stdSimplexIso.{u} 0 n).hom := by
-  apply yonedaEquiv.injective
-  refine stdSimplex.ext _ _ fun i ↦ ?_
-  rw [stdSimplex.yonedaEquiv_comp_apply, stdSimplex.yonedaEquiv_comp_apply,
-    join.yonedaEquiv_inr_comp_stdSimplexIso_hom]
-  ext
-  simp [CosimplicialObject.δ, SimplexCategory.δ]
-  omega
-
 namespace IsTerminalVertex
 
 variable {x : L _⦋0⦌}
@@ -135,17 +121,10 @@ private lemma exists_extension (hx : L.IsTerminalVertex x) {n : ℕ} (τ : join 
   have hU : U.preimage e.inv = ∂Δ[0 + n + 1] := join.preimage_unionJoin_boundary_boundary 0 n
   let i := Subcomplex.isoOfPreimageEq e hU
   -- The last vertex of `∂Δ[0 + n + 1]` is the last vertex `n` of `∂Δ[0] ⋆ Δ[n] ≅ Δ[n]`.
-  have hv :
-      stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋0 + n⦌ (Fin.last _)) ≫ boundary.ι 0 ≫ i.inv =
-      (stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ join.inr _ _) ≫
-        Subcomplex.unionJoin.ι₁ _ _ := by
-    rw [← cancel_mono U.ι, ← cancel_mono e.hom]
-    simp only [U, i, Category.assoc, Subcomplex.isoOfPreimageEq_inv_ι, boundary.ι_ι_assoc,
-      Iso.inv_hom_id, Category.comp_id, Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc,
-      Category.id_comp]
-    exact const_last_comp_δ_zero n
   obtain ⟨σ', hσ'⟩ := (isTerminalVertex_iff x).1 hx (i.inv ≫ g) (by
-    rw [yonedaEquiv_naturality, reassoc_of% hv, hg₁, comp_const, comp_const, yonedaEquiv_const])
+    rw [yonedaEquiv_naturality,
+      reassoc_of% join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv 0 n, hg₁,
+      comp_const, comp_const, yonedaEquiv_const])
   have key : U.ι ≫ e.hom ≫ σ' = g := by
     rw [← Subcomplex.isoOfPreimageEq_hom_ι_assoc e hU, ← hσ', i.hom_inv_id_assoc]
   refine ⟨e.hom ≫ σ', ?_, ?_⟩

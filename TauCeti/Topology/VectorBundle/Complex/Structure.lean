@@ -218,6 +218,10 @@ instance (b : B) : ContinuousSMul ℂ (J.Fiber b) where
         ((Complex.continuous_im.comp continuous_fst).smul ((J b).continuous.comp continuous_snd))
     exact hf.congr fun p ↦ (J.fiberEquiv_smul b p.1 p.2).symm
 
+/-- The real scalar multiplication of `J.Fiber b`, restricted from `ℂ`, is continuous. -/
+instance (b : B) : ContinuousSMul ℝ (J.Fiber b) :=
+  IsScalarTower.continuousSMul ℂ
+
 /-! ### `J` in the trivializations of `V` -/
 
 /-- `J` read in the trivialization of `V` at `b₀`, as an operator on the model fibre `F`. -/
@@ -639,8 +643,6 @@ private theorem continuous_ofTotalSpace :
   simp only [Function.comp_apply, trivializationAt_apply, fiberMap, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hq']
-
-local instance (b : B) : ContinuousSMul ℝ (J.Fiber b) := IsScalarTower.continuousSMul ℂ
 
 /-- `J.Fiber` as a real vector bundle, by restriction of scalars. -/
 local instance : VectorBundle ℝ G J.Fiber := VectorBundle.restrictScalars ℝ ℂ G J.Fiber

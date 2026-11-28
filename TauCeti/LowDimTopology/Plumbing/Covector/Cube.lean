@@ -78,6 +78,8 @@ vanishes, the two faces of `[0, {v}]` coincide and cancel, and `[0, {v}]` is a c
 * `TauCeti.PlumbingGraph.covectorDifferential_comp_toCovectorChain`: the comparison map is a
   chain map.
 * `TauCeti.PlumbingGraph.covectorDifferential_comp_self`: `∂ ∘ ∂ = 0`.
+* `TauCeti.PlumbingGraph.covectorDifferentialOnGenerator_mk_empty`: a generator `[K, ∅]` with no
+  directions has zero differential.
 * `TauCeti.PlumbingGraph.covectorDifferential_single_mk_singleton`: the differential of a
   one-dimensional generator, with exponents `max(0, -f_K(v))` and `max(0, f_K(v))`.
 * `TauCeti.PlumbingGraph.covectorDifferential_mem_covectorOrbitPart`: the differential preserves
@@ -143,6 +145,12 @@ theorem covectorDifferentialOnGenerator_mk (K : P.characteristicVectors) (E : Fi
             (Polynomial.X ^ P.characteristicUpperFaceExponent K 0 E v.property) :=
   (rfl)
 
+/-- A generator `[K, ∅]` with no directions has zero differential. -/
+@[simp]
+theorem covectorDifferentialOnGenerator_mk_empty (K : P.characteristicVectors) :
+    P.covectorDifferentialOnGenerator ⟨K, ∅⟩ = 0 := by
+  simp [covectorDifferentialOnGenerator_mk]
+
 /-- The `𝔽₂[U]`-linear differential of the lattice complex on characteristic covectors. -/
 noncomputable def covectorDifferential :
     P.CovectorChain →ₗ[PlumbingCoefficient] P.CovectorChain :=
@@ -153,6 +161,26 @@ noncomputable def covectorDifferential :
 theorem covectorDifferential_single (C : P.CovectorCube) (a : PlumbingCoefficient) :
     P.covectorDifferential (Finsupp.single C a) = a • P.covectorDifferentialOnGenerator C :=
   Finsupp.linearCombination_single _ _ _
+
+/-- The component at `D` of the differential of a finitely supported chain is a sum over any finite
+set containing the generators whose differential involves `D`. -/
+theorem covectorDifferential_apply_eq_sum (x : P.CovectorChain) (D : P.CovectorCube)
+    {s : Finset P.CovectorCube}
+    (hs : ∀ C, P.covectorDifferentialOnGenerator C D ≠ 0 → C ∈ s) :
+    P.covectorDifferential x D = ∑ C ∈ s, x C * P.covectorDifferentialOnGenerator C D := by
+  classical
+  conv_lhs => rw [← Finsupp.sum_single x]
+  rw [map_finsuppSum, Finsupp.sum, Finsupp.finsetSum_apply]
+  simp only [covectorDifferential_single, Finsupp.smul_apply, smul_eq_mul]
+  have h₁ : ∑ C ∈ x.support, x C * P.covectorDifferentialOnGenerator C D =
+      ∑ C ∈ x.support ∪ s, x C * P.covectorDifferentialOnGenerator C D :=
+    Finset.sum_subset Finset.subset_union_left fun C _ hC => by
+      rw [Finsupp.notMem_support_iff.mp hC, zero_mul]
+  have h₂ : ∑ C ∈ s, x C * P.covectorDifferentialOnGenerator C D =
+      ∑ C ∈ x.support ∪ s, x C * P.covectorDifferentialOnGenerator C D :=
+    Finset.sum_subset Finset.subset_union_right fun C _ hC => by
+      rw [not_not.mp (mt (hs C) hC), mul_zero]
+  rw [h₁, h₂]
 
 /-! ### Comparison with Némethi's complex -/
 

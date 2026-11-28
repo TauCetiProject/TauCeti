@@ -25,6 +25,8 @@ equality when `exp (c * n) * u n` is monotone for some real `c`. This extends Ma
   `a` real, then `expGrowthSup (u * v) = a + expGrowthSup v`.
 * `ExpGrowth.expGrowthSup_exp_mul` — `expGrowthSup (fun n ↦ exp (a * n) * v n) = a +
   expGrowthSup v` for real `a`.
+* `ExpGrowth.expGrowthSup_const_mul` — `expGrowthSup (fun n ↦ b * v n) = expGrowthSup v` for a
+  constant `b ≠ 0, ∞`.
 * `ExpGrowth.expGrowthSup_comp_mul_le` — `expGrowthSup (fun n ↦ u (k * n)) ≤ k * expGrowthSup u`
   for `k ≠ 0`.
 * `ExpGrowth.expGrowthSup_comp_mul_of_monotone_exp_mul` — if `exp (c * n) * u n` is monotone
@@ -33,6 +35,8 @@ equality when `exp (c * n) * u n` is monotone for some real `c`. This extends Ma
   along the shifted times `n + k`.
 * `ExpGrowth.expGrowthSup_rpow` — `expGrowthSup (fun n ↦ u n ^ t) = t * expGrowthSup u` for
   real `t ≥ 0`.
+* `ExpGrowth.expGrowthSup_eq_log_of_tendsto_rpow` — if `u n ^ (1 / n) → a`, then
+  `expGrowthSup u = log a`.
 -/
 
 public section
@@ -58,6 +62,13 @@ theorem expGrowthSup_mul_of_expGrowthInf_eq {a : ℝ} (hinf : expGrowthInf u = a
 theorem expGrowthSup_exp_mul (a : ℝ) (v : ℕ → ℝ≥0∞) :
     expGrowthSup (fun n ↦ exp (a * n) * v n) = a + expGrowthSup v :=
   expGrowthSup_mul_of_expGrowthInf_eq (u := fun n ↦ exp (a * n)) expGrowthInf_exp expGrowthSup_exp
+
+/-- Multiplying by a constant `b ≠ 0, ∞` does not change the upper exponential growth. -/
+theorem expGrowthSup_const_mul {b : ℝ≥0∞} (h : b ≠ 0) (h' : b ≠ ∞) (v : ℕ → ℝ≥0∞) :
+    expGrowthSup (fun n ↦ b * v n) = expGrowthSup v := by
+  rw [← Pi.mul_def (fun _ ↦ b) v, expGrowthSup_mul_of_expGrowthInf_eq (a := 0)
+    (by rw [expGrowthInf_const h h', EReal.coe_zero])
+    (by rw [expGrowthSup_const h h', EReal.coe_zero]), EReal.coe_zero, zero_add]
 
 /-- The upper exponential growth rate of `u` along the times `k * n` is at most `k` times that of
 `u`, for `k ≠ 0`. -/
@@ -96,6 +107,16 @@ theorem expGrowthSup_rpow {t : ℝ} (ht : 0 ≤ t) (u : ℕ → ℝ≥0∞) :
     expGrowthSup (fun n ↦ u n ^ t) = t * expGrowthSup u := by
   simp only [expGrowthSup, ENNReal.log_rpow, ← EReal.mul_div]
   exact limsup_const_mul_of_nonneg_of_ne_top (EReal.coe_nonneg.mpr ht) (EReal.coe_ne_top t)
+
+open Topology in
+/-- A sequence `u` with `u n ^ (1 / n) → a` has upper exponential growth `log a`. -/
+theorem expGrowthSup_eq_log_of_tendsto_rpow {a : ℝ≥0∞}
+    (h : Tendsto (fun n : ℕ ↦ u n ^ (1 / n : ℝ)) atTop (𝓝 a)) :
+    expGrowthSup u = log a := by
+  refine (limsup_congr (Eventually.of_forall fun n ↦ ?_)).trans
+    ((continuous_log.tendsto a).comp h).limsup_eq
+  rw [Function.comp_apply, log_rpow, EReal.div_eq_inv_mul, one_div, EReal.coe_inv,
+    EReal.coe_natCast]
 
 end ExpGrowth
 

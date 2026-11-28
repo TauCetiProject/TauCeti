@@ -183,10 +183,13 @@ private lemma hasLiftingProperty_π_of_isTerminalVertex {x : X _⦋0⦌} (hx : X
   let e := join.stdSimplexIso.{u} n 0
   have key : U.preimage e.inv = ∂Δ[n + 1] := join.preimage_unionJoin_boundary_boundary n 0
   let i := Subcomplex.isoOfPreimageEq e key
+  have hlast := join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv.{u} n 0
+  simp only [Nat.add_zero, Fin.last_zero, SimplexCategory.const_eq_id,
+    CategoryTheory.Functor.map_id, Category.id_comp] at hlast
   -- Extend the glued map, whose last vertex is `x`, to `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`.
   obtain ⟨σ, hσ⟩ := hx (i.inv ≫ g) (by
     rw [yonedaEquiv_naturality,
-      reassoc_of% join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv n, hg₁,
+      reassoc_of% hlast, hg₁,
       (slice.homEquiv a).property, Equiv.apply_symm_apply])
   have hσU : U.ι ≫ e.hom ≫ σ = g := by
     rw [← Subcomplex.isoOfPreimageEq_hom_ι_assoc e key, ← hσ, i.hom_inv_id_assoc]
@@ -204,10 +207,13 @@ private lemma isTerminalVertex_of_hasLiftingProperty_π {x : X _⦋0⦌}
   let e := join.stdSimplexIso.{u} n 0
   have key : U.preimage e.inv = ∂Δ[n + 1] := join.preimage_unionJoin_boundary_boundary n 0
   let i := Subcomplex.isoOfPreimageEq e key
+  have hlast := join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv.{u} n 0
+  simp only [Nat.add_zero, Fin.last_zero, SimplexCategory.const_eq_id,
+    CategoryTheory.Functor.map_id, Category.id_comp] at hlast
   let g : (U : SSet.{u}) ⟶ X := i.hom ≫ σ₀
   -- The map `g` on `U` is a cone `a` over `x` on `∂Δ[n]` and a simplex `b` on `Δ[n]`.
   have ha : join.inr _ _ ≫ Subcomplex.unionJoin.ι₁ _ _ ≫ g = yonedaEquiv.symm x := by
-    rw [← reassoc_of% join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv n,
+    rw [← reassoc_of% hlast,
       i.inv_hom_id_assoc, ← hσ₀]
     apply yonedaEquiv.injective
     rw [Equiv.apply_symm_apply, yonedaEquiv_naturality]

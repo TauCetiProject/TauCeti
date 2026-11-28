@@ -44,12 +44,14 @@ complex torus.
 
 * `PeriodPair.hasProdLocallyUniformlyOn_weierstrassFactor_two_div`: the canonical product
   converges locally uniformly on `ℂ`.
-* `PeriodPair.differentiable_weierstrassSigma`: `σ` is entire.
+* `PeriodPair.differentiable_weierstrassSigma`, `PeriodPair.continuous_weierstrassSigma`: `σ` is
+  entire, hence continuous.
 * `PeriodPair.weierstrassSigma_eq_zero_iff`: `σ(z) = 0` exactly when `z ∈ Λ`.
 * `PeriodPair.analyticOrderAt_weierstrassSigma_coe`: these zeros are simple.
 * `PeriodPair.weierstrassSigma_neg`, `PeriodPair.hasDerivAt_weierstrassSigma_zero`: `σ` is odd
   and `σ'(0) = 1`.
-* `PeriodPair.logDeriv_weierstrassSigma`: `σ' / σ = ζ` away from `Λ`.
+* `PeriodPair.logDeriv_weierstrassSigma`, `PeriodPair.hasDerivAt_weierstrassSigma`: `σ' / σ = ζ`
+  away from `Λ`.
 * `PeriodPair.weierstrassSigma_add_coe_of_div_two_notMem`,
   `PeriodPair.weierstrassSigma_add_coe_of_div_two_mem`, `PeriodPair.weierstrassSigma_add_coe`:
   the quasi-periodicity of `σ`.
@@ -114,6 +116,11 @@ private theorem differentiable_tprod_weierstrassFactor_two_div :
 theorem differentiable_weierstrassSigma : Differentiable ℂ L.weierstrassSigma := by
   rw [weierstrassSigma_eq]
   exact differentiable_id.mul L.differentiable_tprod_weierstrassFactor_two_div
+
+/-- `σ` is continuous. -/
+@[fun_prop]
+theorem continuous_weierstrassSigma : Continuous L.weierstrassSigma :=
+  L.differentiable_weierstrassSigma.continuous
 
 private theorem weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattice) (l : L.lattice) :
     weierstrassFactor 2 (z / l) ≠ 0 := by
@@ -219,6 +226,13 @@ theorem hasDerivAt_logDeriv_weierstrassSigma {z : ℂ} (hz : z ∉ L.lattice) :
   refine (L.hasDerivAt_weierstrassZeta hz).congr_of_eventuallyEq ?_
   filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hz] with w hw
   exact L.logDeriv_weierstrassSigma hw
+
+/-- **`σ' = ζ σ`** away from the lattice. -/
+theorem hasDerivAt_weierstrassSigma {z : ℂ} (hz : z ∉ L.lattice) :
+    HasDerivAt L.weierstrassSigma (L.weierstrassZeta z * L.weierstrassSigma z) z := by
+  have h := L.logDeriv_weierstrassSigma hz
+  rw [logDeriv_apply, div_eq_iff (L.weierstrassSigma_ne_zero hz)] at h
+  exact h ▸ (L.differentiable_weierstrassSigma z).hasDerivAt
 
 /-- For `l ∈ Λ`, the functions `σ(z + l)` and `exp(η(l) z) σ(z)` have the same logarithmic
 derivative `ζ(z) + η(l)` on the connected set `ℂ ∖ Λ`, so they are proportional there. -/
@@ -326,12 +340,7 @@ theorem weierstrassSigma_add_coe (z : ℂ) (l : L.lattice) {a b : ℤ}
     rw [← not_iff_not, ← Int.even_add_one, show a + b + a * b + 1 = (a + 1) * (b + 1) by ring,
       Int.even_mul, Int.even_add_one, Int.even_add_one]
     tauto
-  have hdiv : (l : ℂ) / 2 ∈ L.lattice ↔ Even a ∧ Even b := by
-    rw [show (l : ℂ) / 2 = ((a / 2 : ℚ) : ℂ) * L.ω₁ + ((b / 2 : ℚ) : ℂ) * L.ω₂ by
-        rw [← h]; push_cast; ring,
-      mul_ω₁_add_mul_ω₂_mem_lattice, even_iff_two_dvd, even_iff_two_dvd,
-      ← Rat.den_div_intCast_eq_one_iff a 2 two_ne_zero,
-      ← Rat.den_div_intCast_eq_one_iff b 2 two_ne_zero, Int.cast_ofNat]
+  have hdiv : (l : ℂ) / 2 ∈ L.lattice ↔ Even a ∧ Even b := h ▸ L.div_two_mem_lattice_iff a b
   by_cases hab : Even a ∧ Even b
   · rw [L.weierstrassSigma_add_coe_of_div_two_mem z (hdiv.mpr hab),
       Even.neg_one_zpow (hsign.mpr hab), one_mul]

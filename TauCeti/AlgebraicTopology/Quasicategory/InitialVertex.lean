@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Op
-public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 
 /-!

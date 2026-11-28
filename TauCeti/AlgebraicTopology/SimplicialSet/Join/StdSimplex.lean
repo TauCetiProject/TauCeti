@@ -1060,31 +1060,26 @@ theorem innerAnodyneExtensions_unionJoin_boundary_horn {j : Fin (m + 1)} (hj : j
     (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_zero]; omega))
     (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_last]; omega))
 
-/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 0 + 1]`, the last vertex of the face opposite to `0` is the vertex
-`Δ[0]`. -/
-private lemma const_last_comp_δ_zero (n : ℕ) :
-    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ stdSimplex.δ 0 =
-      join.inr Δ[n] Δ[0] ≫ (stdSimplexIso.{u} n 0).hom := by
-  apply yonedaEquiv.injective
-  refine stdSimplex.ext _ _ fun i ↦ ?_
-  rw [yonedaEquiv_inr_comp_stdSimplexIso_hom.{u} (n := n) (m := 0) i,
-    stdSimplex.yonedaEquiv_comp_apply]
-  ext
-  simp [CosimplicialObject.δ, SimplexCategory.δ]
-
-/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, the vertex `Δ[0]` of `(∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0])` is the
-last vertex of the face opposite to `0` of `∂Δ[n + 1]`. -/
-lemma const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv (n : ℕ) :
-    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ boundary.ι 0 ≫
-      (Subcomplex.isoOfPreimageEq (stdSimplexIso.{u} n 0)
-        (preimage_unionJoin_boundary_boundary n 0 : _ = ∂Δ[n + 1])).inv =
-        join.inr _ _ ≫ Subcomplex.unionJoin.ι₁ ∂Δ[n] ∂Δ[0] := by
-  rw [← cancel_mono (Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]).ι,
-    ← cancel_mono (stdSimplexIso.{u} n 0).hom]
+/-- Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, the last vertex of the union boundary
+comes from the last vertex of the right join factor. -/
+lemma const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv (n m : ℕ) :
+    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n + m⦌ (Fin.last _)) ≫ boundary.ι 0 ≫
+      (Subcomplex.isoOfPreimageEq (stdSimplexIso.{u} n m)
+        (preimage_unionJoin_boundary_boundary n m)).inv =
+        (stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋m⦌ (Fin.last m)) ≫ join.inr _ _) ≫
+          Subcomplex.unionJoin.ι₁ ∂Δ[n] ∂Δ[m] := by
+  rw [← cancel_mono (Subcomplex.unionJoin ∂Δ[n] ∂Δ[m]).ι,
+    ← cancel_mono (stdSimplexIso.{u} n m).hom]
   simp only [Category.assoc, Subcomplex.isoOfPreimageEq_inv_ι, boundary.ι_ι_assoc,
     Iso.inv_hom_id, Category.comp_id, Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc,
     Category.id_comp]
-  exact const_last_comp_δ_zero n
+  apply yonedaEquiv.injective
+  refine stdSimplex.ext _ _ fun i ↦ ?_
+  rw [stdSimplex.yonedaEquiv_comp_apply, stdSimplex.yonedaEquiv_comp_apply,
+    yonedaEquiv_inr_comp_stdSimplexIso_hom]
+  ext
+  simp [CosimplicialObject.δ, SimplexCategory.δ]
+  omega
 
 end join
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Join
+public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 
@@ -22,6 +22,8 @@ map of slices `X_{/x} ⟶ S_{/p x}` is a trivial fibration (`SSet.slice.rlp_map_
 since `∂Δ[n] ⋆ Δ[0] ⟶ Δ[n] ⋆ Δ[0]` is the horn `Λ[n + 1, n + 1]`; dually, for a left fibration,
 so is the map of coslices `X_{x/} ⟶ S_{p x/}` (`SSet.coslice.rlp_map_of_leftFibration`), which is
 the opposite of a map of slices of the right fibration `pᵒᵖ`.
+The vertex is the right join factor in the boundary-join inclusion; its right-anodyne property
+supplies the lifts for vertex slices of right fibrations.
 
 Through the universal properties of slices and coslices, lifting problems, ranging over all
 diagrams, correspond to extension problems along the pushout-join of `j : A ⟶ B` and
@@ -49,27 +51,39 @@ universe u
 
 namespace SSet
 
-variable {A B K L X S : SSet.{u}} {m : ℕ} {k : Fin (m + 1)}
+namespace join
+
+/-- **The inclusion `∂Δ[n] ⋆ Δ[0] ⟶ Δ[n] ⋆ Δ[0]` is right anodyne**: under
+`Δ[n] ⋆ Δ[0] ≅ Δ[n + 0 + 1]`, it is the inclusion of the horn `Λ[n + 0 + 1, n + 1]` opposite to the
+last vertex (`SSet.join.preimage_range_map_boundary_ι_id`). -/
+lemma rightAnodyneExtensions_map_boundary_ι_id (n : ℕ) :
+    rightAnodyneExtensions (map ∂Δ[n].ι (𝟙 (Δ[0] : SSet.{u}))) := by
+  have h : rightAnodyneExtensions (Subcomplex.range (map ∂Δ[n].ι (𝟙 (Δ[0] : SSet.{u})))).ι :=
+    (Subcomplex.morphismProperty_ι_iff_of_preimage_eq _ (stdSimplexIso n 0)
+      (preimage_range_map_boundary_ι_id n)).2 (rightAnodyneExtensions.horn_ι (Fin.last_pos))
+  rw [← Subcomplex.toRange_ι (map ∂Δ[n].ι (𝟙 _))]
+  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _) h
+
+end join
+
+variable {A B K L X S : SSet.{u}}
 
 /-! ### Relative slices and coslices of inner fibrations -/
 
 namespace coslice
 
-/-- For an inner fibration `p : X ⟶ S`, a simplex `τ : Δ[m] ⟶ X` and `0 < k`, **the relative
-coslice map `X_{τ/} ⟶ X_{(Λ[m, k] ⟶ Δ[m] ⟶ X)/} ×_{S_{(Λ[m, k] ⟶ Δ[m] ⟶ S)/}} S_{τ ≫ p/}` is a
-trivial fibration**: it has the right lifting property with respect to every monomorphism
-`j : A ⟶ B`. Through the universal property of the coslice, this says that a map
-`(Λ[m, k] ⋆ B) ∪ (Δ[m] ⋆ A) ⟶ X` extending `τ` extends to `Δ[m] ⋆ B` over every map
-`Δ[m] ⋆ B ⟶ S` whose restriction to `(Λ[m, k] ⋆ B) ∪ (Δ[m] ⋆ A)` is its composite with `p`. -/
-private theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration p] (hk : 0 < k)
-    (τ : Δ[m] ⟶ X) (j : A ⟶ B) [Mono j] :
-    HasLiftingProperty j (restrictionMap Λ[m, k].ι p τ) := by
-  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ[m, k].ι p τ) from
+/-- If `p` lifts against the union-join of a subcomplex with every boundary, its relative
+coslice map along that subcomplex lifts against every monomorphism. -/
+theorem hasLiftingProperty_restrictionMap_of_unionJoin (Λ : K.Subcomplex) (p : X ⟶ S)
+    (h : ∀ n, HasLiftingProperty (Subcomplex.unionJoin Λ ∂Δ[n]).ι p)
+    (τ : K ⟶ X) (j : A ⟶ B) [Mono j] :
+    HasLiftingProperty j (restrictionMap Λ.ι p τ) := by
+  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ.ι p τ) from
     this j (monomorphisms.infer_property j)
   rw [rlp_monomorphisms]
   rintro _ _ _ ⟨n⟩
-  have := join.innerAnodyneExtensions_unionJoin_horn_boundary n hk p (mem_innerFibrations p)
-  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout Λ[m, k].ι ∂Δ[n].ι p
+  have := h n
+  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout Λ.ι ∂Δ[n].ι p
     (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
     (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance τ
 
@@ -77,21 +91,18 @@ end coslice
 
 namespace slice
 
-/-- For an inner fibration `p : X ⟶ S`, a simplex `σ : Δ[m] ⟶ X` and `k < m`, **the relative
-slice map `X_{/σ} ⟶ X_{/(Λ[m, k] ⟶ Δ[m] ⟶ X)} ×_{S_{/(Λ[m, k] ⟶ Δ[m] ⟶ S)}} S_{/σ ≫ p}` is a
-trivial fibration**: it has the right lifting property with respect to every monomorphism
-`j : A ⟶ B`. Through the universal property of the slice, this says that a map
-`(A ⋆ Δ[m]) ∪ (B ⋆ Λ[m, k]) ⟶ X` extending `σ` extends to `B ⋆ Δ[m]` over every map
-`B ⋆ Δ[m] ⟶ S` whose restriction to `(A ⋆ Δ[m]) ∪ (B ⋆ Λ[m, k])` is its composite with `p`. -/
-private theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration p]
-    (hk : k < Fin.last m) (σ : Δ[m] ⟶ X) (j : A ⟶ B) [Mono j] :
-    HasLiftingProperty j (restrictionMap Λ[m, k].ι p σ) := by
-  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ[m, k].ι p σ) from
+/-- If `p` lifts against the union-join of every boundary with a subcomplex, its relative
+slice map along that subcomplex lifts against every monomorphism. -/
+theorem hasLiftingProperty_restrictionMap_of_unionJoin (Λ : K.Subcomplex) (p : X ⟶ S)
+    (h : ∀ n, HasLiftingProperty (Subcomplex.unionJoin ∂Δ[n] Λ).ι p)
+    (σ : K ⟶ X) (j : A ⟶ B) [Mono j] :
+    HasLiftingProperty j (restrictionMap Λ.ι p σ) := by
+  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ.ι p σ) from
     this j (monomorphisms.infer_property j)
   rw [rlp_monomorphisms]
   rintro _ _ _ ⟨n⟩
-  have := join.innerAnodyneExtensions_unionJoin_boundary_horn n hk p (mem_innerFibrations p)
-  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout ∂Δ[n].ι Λ[m, k].ι p
+  have := h n
+  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout ∂Δ[n].ι Λ.ι p
     (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
     (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance σ
 
@@ -103,7 +114,9 @@ instance rightFibration_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L �
     (σ : K ⟶ X) : RightFibration (restrictionMap i p σ) :=
   (rightFibration_iff_hasLiftingProperty _).2 fun _ _ hk ↦
     (forall_hasLiftingProperty_restrictionMap_iff _ i p).2
-      (fun τ ↦ coslice.hasLiftingProperty_restrictionMap_horn_ι p hk τ i) σ
+      (fun τ ↦ coslice.hasLiftingProperty_restrictionMap_of_unionJoin _ p
+        (fun n ↦ join.innerAnodyneExtensions_unionJoin_horn_boundary n hk p
+          (mem_innerFibrations p)) τ i) σ
 
 end slice
 
@@ -117,7 +130,9 @@ instance leftFibration_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L �
     (τ : K ⟶ X) : LeftFibration (restrictionMap i p τ) :=
   (leftFibration_iff_hasLiftingProperty _).2 fun _ _ hk ↦
     (slice.forall_hasLiftingProperty_restrictionMap_iff i _ p).1
-      (fun σ ↦ slice.hasLiftingProperty_restrictionMap_horn_ι p hk σ i) τ
+      (fun σ ↦ slice.hasLiftingProperty_restrictionMap_of_unionJoin _ p
+        (fun n ↦ join.innerAnodyneExtensions_unionJoin_boundary_horn n hk p
+          (mem_innerFibrations p)) σ i) τ
 
 end coslice
 
