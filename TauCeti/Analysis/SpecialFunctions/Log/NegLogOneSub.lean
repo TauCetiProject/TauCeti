@@ -32,6 +32,8 @@ together with its exact domain of summability and truncated power-series remaind
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
 * `Real.neg_log_one_sub_le_two_mul`: for `0 ≤ x ≤ 1/2`, `-log (1 - x)` is at most `2 x`.
+* `Real.neg_log_one_sub_le_div_mul`: by convexity, for `0 ≤ v ≤ c < 1`,
+  `-log (1 - v) ≤ (-log (1 - c) / c) * v`.
 * `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
 * `Real.neg_log_one_sub_nonneg`: `0 ≤ -log (1 - x)` for `0 ≤ x ≤ 1`.
 * `Real.neg_log_one_sub_le_iff`: for `x < 1`, `-log (1 - x) ≤ c ↔ x ≤ 1 - exp (-c)`.
@@ -151,6 +153,23 @@ theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx : x ≤ 1 / 2) :
   refine h.trans ?_
   rw [div_le_iff₀ h1]
   nlinarith [mul_nonneg (sq_nonneg x) (by linarith : 0 ≤ 1 - 2 * x)]
+
+/-- Secant bound by convexity of `-log (1 - v)`: for `0 ≤ v ≤ c < 1`,
+`-log (1 - v) ≤ (-log (1 - c) / c) * v`. -/
+theorem neg_log_one_sub_le_div_mul {c v : ℝ} (hc1 : c < 1) (hv0 : 0 ≤ v)
+    (hvc : v ≤ c) : -log (1 - v) ≤ (-log (1 - c) / c) * v := by
+  rcases hv0.eq_or_lt with rfl | hv_pos
+  · simp
+  have hc0 : 0 < c := hv_pos.trans_le hvc
+  have hconc := strictConcaveOn_log_Ioi.concaveOn.2
+    (Set.mem_Ioi.mpr zero_lt_one) (Set.mem_Ioi.mpr (sub_pos.mpr hc1))
+    (sub_nonneg.mpr ((div_le_one hc0).mpr hvc)) (div_nonneg hv0 hc0.le) (sub_add_cancel _ _)
+  simp only [log_one, smul_eq_mul, mul_zero, zero_add, mul_one] at hconc
+  have hcomb : (1 - v / c : ℝ) + v / c * (1 - c) = 1 - v := by
+    field_simp [hc0.ne']; ring
+  have hcoef : (-log (1 - c) / c) * v = -(v / c * log (1 - c)) := by ring
+  rw [hcomb] at hconc
+  linarith [hconc, hcoef]
 
 /-- For `0 ≤ x ≤ 1/2`, `-log (1 - x) ≤ 2 x`, since `x + 2 x ^ 2 ≤ 2 x` there. -/
 theorem neg_log_one_sub_le_two_mul {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 1 / 2) :

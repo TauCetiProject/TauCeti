@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.Calculus.DSlope
+import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 
 /-!
 # Limits of the real exponential
@@ -27,12 +30,15 @@ decaying bound `c e^{-κ s}`, `κ > 0`, tends to zero as `s → ∞`.
 * `Real.isBigO_exp_comp_sub_one`: if `f → 0` and `f = O(g)` along a filter, then
   `e^f - 1 = O(g)`.
 * `Real.tendsto_const_mul_exp_neg_mul_atTop`: `c e^{-κ s} → 0` as `s → ∞`, for `κ > 0`.
+* `Real.continuous_update_one_sub_exp_neg_div_zero`: the filled-in quotient
+  `Function.update (fun t ↦ (1 - e^{-t}) / t) 0 1` is continuous on `ℝ`.
+* `Real.tendsto_exp_sub_one_sub_div_sq`: `(e^h - 1 - h) / h² → 1 / 2` as `h → 0`, `h ≠ 0`.
 -/
 
 public section
 
 open Asymptotics Filter
-open scoped Topology
+open scoped Topology Nat
 
 namespace Real
 
@@ -78,5 +84,35 @@ theorem isBigO_exp_comp_sub_one {α F : Type*} [Norm F] {l : Filter α} {f : α 
 theorem tendsto_const_mul_exp_neg_mul_atTop (c : ℝ) {κ : ℝ} (hκ : 0 < κ) :
     Tendsto (fun s => c * exp (-(κ * s))) atTop (𝓝 0) := by
   simpa using (tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop hκ)).const_mul c
+
+/-- The filled-in quotient `Function.update (fun t : ℝ ↦ (1 - exp (-t)) / t) 0 1` is continuous on
+`ℝ`. -/
+theorem continuous_update_one_sub_exp_neg_div_zero :
+    Continuous (Function.update (fun t : ℝ ↦ (1 - exp (-t)) / t) 0 1) := by
+  have heq : Function.update (fun t : ℝ ↦ (1 - exp (-t)) / t) 0 1 =
+      fun t : ℝ ↦ dslope exp 0 (-t) := by
+    ext t
+    rcases eq_or_ne t 0 with rfl | ht
+    · simp
+    · simp [ht, TauCeti.dslope_exp_zero_of_ne (neg_ne_zero.mpr ht)]
+      ring
+  rw [heq]
+  exact TauCeti.continuous_dslope_exp_zero.comp continuous_neg
+
+/-- Second-order difference quotient `(e^h - 1 - h) / h² → 1 / 2` as `h → 0`, `h ≠ 0`. -/
+theorem tendsto_exp_sub_one_sub_div_sq :
+    Tendsto (fun h : ℝ ↦ (exp h - 1 - h) / h ^ 2) (𝓝[≠] 0) (𝓝 (1 / 2 : ℝ)) := by
+  have h0 := (exp_sub_sum_range_succ_isLittleO_pow 2).tendsto_div_nhds_zero.mono_left
+    (nhdsWithin_le_nhds (s := {0}ᶜ))
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add] at h0
+  norm_num at h0
+  have h1 : Tendsto (fun h : ℝ ↦ (exp h - (1 + h + h ^ 2 / 2)) / h ^ 2 + 1 / 2)
+      (𝓝[≠] 0) (𝓝 (1 / 2 : ℝ)) := by
+    simpa using h0.add tendsto_const_nhds
+  refine h1.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with h hh
+  have hh0 : h ≠ 0 := hh
+  field_simp [hh0]
+  ring
 
 end Real

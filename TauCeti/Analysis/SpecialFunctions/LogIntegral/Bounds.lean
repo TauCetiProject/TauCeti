@@ -47,11 +47,15 @@ the unconditional enclosure `0.96 < li 2 < 1.14`, and under `|γ - 0.5772156649|
   `TauCeti.Real.le_li_two_sub_eulerMascheroniConstant`,
   `TauCeti.Real.li_two_sub_eulerMascheroniConstant_le`, `TauCeti.Real.lt_li_two`,
   `TauCeti.Real.li_two_lt`, `TauCeti.Real.le_li_two_of_abs_eulerMascheroniConstant_sub_lt`,
-  `TauCeti.Real.li_two_le_of_abs_eulerMascheroniConstant_sub_lt` — enclosures of the `y = log 2`
-  entire-part series, `li 2 - γ`, and `li 2`.
+  `TauCeti.Real.li_two_le_of_abs_eulerMascheroniConstant_sub_lt`,
+  `TauCeti.Real.li_two_mem_Icc`, `TauCeti.Real.li_two_mem_Icc_coarse`,
+  `TauCeti.Real.lt_li_three_div_two` — enclosures of the `y = log 2`
+  entire-part series, `li 2 - γ`, `li 2`, and `0.04 < li (3 / 2)`.
 * `TauCeti.Real.logIntegral_eq_log_div_add_tsum_sub`,
   `TauCeti.Real.existsUnique_logIntegral_sub_div_log_eq_zero_Ioi`,
   `TauCeti.Real.existsUnique_logIntegral_sub_div_log_eq_zero_Ioo`,
+  `TauCeti.Real.mem_Ioo_of_logIntegral_sub_div_log_eq_zero`,
+  `TauCeti.Real.logIntegral_sub_div_log_eq_iff`,
   `TauCeti.Real.logIntegral_sub_div_log_neg`, `TauCeti.Real.logIntegral_sub_div_log_pos`,
   `TauCeti.Real.sub_div_log_sq_le_logIntegral_sub_div_log` — series representation eliminating `γ`,
   unique zero, sign bounds, and Fiori–Kadiri–Swidinsky Lemma 20 for `Li x - x / log x`.
@@ -158,6 +162,37 @@ theorem li_two_le_of_abs_eulerMascheroniConstant_sub_lt
   rw [abs_lt] at hγ
   norm_num at hγ
   linarith [hγ.2, li_two_sub_eulerMascheroniConstant_le]
+
+/-- Conditional sharp enclosure `li 2 ∈ [1.0451, 1.0452]` under `|γ - 0.5772156649| < 10⁻⁹`. -/
+theorem li_two_mem_Icc
+    (hγ : |eulerMascheroniConstant - 0.5772156649| < 10 ^ (-(9 : ℤ))) :
+    li 2 ∈ Icc (1.0451 : ℝ) 1.0452 :=
+  ⟨le_li_two_of_abs_eulerMascheroniConstant_sub_lt hγ,
+    li_two_le_of_abs_eulerMascheroniConstant_sub_lt hγ⟩
+
+/-- Coarse conditional enclosure `li 2 ∈ [1.039, 1.06]` under `|γ - 0.5772156649| < 10⁻⁹`. -/
+theorem li_two_mem_Icc_coarse
+    (hγ : |eulerMascheroniConstant - 0.5772156649| < 10 ^ (-(9 : ℤ))) :
+    li 2 ∈ Icc (1.039 : ℝ) 1.06 := by
+  have h := li_two_mem_Icc hγ
+  exact ⟨by linarith [h.1], by linarith [h.2]⟩
+
+/-- Unconditional lower bound `0.04 < li (3 / 2)`. -/
+theorem lt_li_three_div_two : (0.04 : ℝ) < li (3 / 2) := by
+  have hlog32 : 0 < log (3 / 2) := log_pos (by norm_num)
+  have hser_lo : (0.446 : ℝ) <
+      ∑' n : ℕ, log (3 / 2) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
+    have hge := sum_range_le_tsum_pow_div_mul_factorial hlog32.le 2
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_zero] at hge
+    norm_num at hge
+    have hq := le_log_three_halves
+    have h2 : (0.40546 : ℝ) + (0.40546 : ℝ) ^ 2 / 4 ≤
+        log (3 / 2) + log (3 / 2) ^ 2 / 4 := by
+      gcongr
+    have hnum : (0.446 : ℝ) < (0.40546 : ℝ) + (0.40546 : ℝ) ^ 2 / 4 := by norm_num
+    linarith [hge, h2, hnum]
+  rw [li_def]
+  linarith [one_half_lt_eulerMascheroniConstant, lt_log_log_three_halves]
 
 /-! ### Zero localization and Lemma 20 for `Li x - x / log x` -/
 
@@ -293,6 +328,26 @@ theorem existsUnique_logIntegral_sub_div_log_eq_zero_Ioi :
   refine ⟨x₀, ⟨mem_Ioi.mpr (by linarith), hfx₀⟩, fun y ⟨hy, hfy⟩ ↦ ?_⟩
   exact strictMonoOn_logIntegral_sub_div_log.injOn hy (mem_Ioi.mpr (by linarith))
     (hfy.trans hfx₀.symm)
+
+/-- Any zero of `Li x - x / log x` on `(1, ∞)` lies in `(6.5797, 6.5798)`. -/
+theorem mem_Ioo_of_logIntegral_sub_div_log_eq_zero {x : ℝ} (hx : 1 < x)
+    (h : logIntegral x - x / log x = 0) :
+    x ∈ Ioo (6.5797 : ℝ) 6.5798 := by
+  refine ⟨?_, ?_⟩
+  · by_contra! hle
+    exact (logIntegral_sub_div_log_neg hx hle).ne h
+  · by_contra! hle
+    exact (logIntegral_sub_div_log_pos hle).ne' h
+
+/-- For `x ≥ 2`, equality `Li x - x / log x = x / log x ^ 2 - 2 / log 2 - 2 / log 2 ^ 2` holds
+if and only if `x = 2`. -/
+theorem logIntegral_sub_div_log_eq_iff {x : ℝ} (hx : 2 ≤ x) :
+    logIntegral x - x / log x = x / log x ^ 2 - 2 / log 2 - 2 / log 2 ^ 2 ↔ x = 2 := by
+  refine ⟨fun h ↦ (hx.eq_or_lt.resolve_right fun hgt ↦ (lt_logIntegral_sub_div_log hgt).ne' h).symm,
+    ?_⟩
+  rintro rfl
+  rw [logIntegral_two]
+  ring
 
 /-- **Fiori–Kadiri–Swidinsky (2023), Lemma 20**: for every `x ≥ 6.58`,
 `(x - 6.58) / log x ^ 2 ≤ Li x - x / log x`. -/

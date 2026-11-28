@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Elementary bounds for the real logarithm
@@ -22,8 +23,9 @@ real cutoff `x` when passing between inclusive and strict prime sums. Conversely
 (`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
 integral below `3 / 2`.
 
-This file also records the explicit decimal lower bound `0.4054 < log (3 / 2)` and the numerical
-enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the iterated logarithm at `2`, used in
+This file also records the explicit decimal lower bounds `0.4054 < log (3 / 2)` and
+`0.40546 ≤ log (3 / 2)`, `-0.903 < log (log (3 / 2))`, and the numerical enclosure
+`-0.366513 ≤ log (log 2) ≤ -0.366512` for the iterated logarithm at `2`, used in
 logarithmic-integral estimates.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
@@ -58,7 +60,9 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `TauCeti.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
+* `TauCeti.le_log_three_halves`: `0.40546 ≤ log (3 / 2)`.
 * `TauCeti.le_log_log_two` and `TauCeti.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
+* `TauCeti.lt_log_log_three_halves`: `-0.903 < log (log (3 / 2))`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.min_neg_log_one_le_two_mul_one_sub`: `min (-log x) 1 ≤ 2 (1 - x)` for `x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
@@ -69,6 +73,12 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
   `0 ≤ ε ≤ 1 / 2`.
 * `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
+* `Real.sub_sq_div_two_le_log_one_add`: `u - u ^ 2 / 2 ≤ log (1 + u)` for `0 ≤ u`.
+* `TauCeti.Real.artanhPartial`, `TauCeti.Real.two_mul_artanhPartial_le_log`,
+  `TauCeti.Real.log_le_two_mul_artanhPartial_add`,
+  `TauCeti.Real.neg_two_mul_artanhPartial_add_le_log`,
+  `TauCeti.Real.log_le_neg_two_mul_artanhPartial`: two-sided rational enclosures for `Real.log` via
+  `artanh` partial sums.
 -/
 
 public section
@@ -191,6 +201,13 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
       (log_nonpos (div_nonneg (Nat.cast_nonneg p) (Nat.cast_nonneg q)) (le_of_not_ge h))).trans
       (log_natCast_nonneg N)
 
+/-- Quadratic lower bound `u - u ^ 2 / 2 ≤ log (1 + u)` for all `u ≥ 0`. -/
+theorem sub_sq_div_two_le_log_one_add {u : ℝ} (hu : 0 ≤ u) :
+    u - u ^ 2 / 2 ≤ log (1 + u) := by
+  refine le_trans ?_ (le_log_one_add_of_nonneg hu)
+  rw [le_div_iff₀ (by linarith)]
+  nlinarith [sq_nonneg u]
+
 /-- The logarithm grows by at most `1 / m` over a step of length one: for `0 ≤ m` and
 `0 ≤ a ≤ m + 1`, `log a - 1 / m ≤ log m`. At `m = 0` this reads `log a ≤ 0`. -/
 theorem log_sub_one_div_le_log {a m : ℝ} (ha : 0 ≤ a) (hm : 0 ≤ m) (h : a ≤ m + 1) :
@@ -252,5 +269,112 @@ theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
   simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
   norm_num at hb
   linarith
+
+end TauCeti
+
+namespace TauCeti.Real
+
+/-- Partial sum `∑ i < n, x ^ (2 * i + 1) / (2 * i + 1)` of `artanh x`, used in rational
+enclosures of `Real.log` via `log a = 2 * artanh ((a - 1) / (a + 1))`. -/
+noncomputable def artanhPartial (n : ℕ) (x : ℝ) : ℝ :=
+  ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1)
+
+/-- Defining equation of `TauCeti.Real.artanhPartial`. -/
+theorem artanhPartial_def (n : ℕ) (x : ℝ) :
+    artanhPartial n x = ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1) :=
+  (rfl)
+
+/-- The empty `artanh` partial sum vanishes. -/
+@[simp]
+theorem artanhPartial_zero (x : ℝ) : artanhPartial 0 x = 0 := by
+  simp [artanhPartial_def]
+
+/-- Successor recurrence for `TauCeti.Real.artanhPartial`. -/
+theorem artanhPartial_succ (n : ℕ) (x : ℝ) :
+    artanhPartial (n + 1) x = artanhPartial n x + x ^ (2 * n + 1) / (2 * (n : ℝ) + 1) := by
+  simp [artanhPartial_def, Finset.sum_range_succ]
+
+private theorem artanh_arg_spec {a : ℝ} (ha : 1 ≤ a) :
+    0 ≤ (a - 1) / (a + 1) ∧ (a - 1) / (a + 1) < 1 ∧
+      (1 + (a - 1) / (a + 1)) / (1 - (a - 1) / (a + 1)) = a := by
+  have ha1 : 0 < a + 1 := by linarith
+  refine ⟨div_nonneg (by linarith) ha1.le, (div_lt_one ha1).mpr (by linarith), ?_⟩
+  field_simp [ha1.ne']
+  ring
+
+private theorem artanh_inv_spec {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) :
+    1 ≤ a⁻¹ ∧ (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) :=
+  ⟨one_le_inv₀ ha0 |>.mpr ha1, by field_simp [ha0.ne']⟩
+
+/-- Lower rational enclosure `2 * artanhPartial n ((a - 1) / (a + 1)) ≤ log a` for `1 ≤ a`. -/
+theorem two_mul_artanhPartial_le_log {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
+    2 * artanhPartial n ((a - 1) / (a + 1)) ≤ _root_.Real.log a := by
+  obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
+  have hle := _root_.Real.sum_range_le_log_div hx0 hx1 n
+  rw [hdiv] at hle
+  rw [artanhPartial_def]
+  linarith
+
+/-- Upper rational enclosure of `log a` for `1 ≤ a` via `artanhPartial` and a geometric tail. -/
+theorem log_le_two_mul_artanhPartial_add {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
+    _root_.Real.log a ≤ 2 * (artanhPartial n ((a - 1) / (a + 1)) +
+      ((a - 1) / (a + 1)) ^ (2 * n + 1) / (1 - ((a - 1) / (a + 1)) ^ 2)) := by
+  obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
+  have hle := _root_.Real.log_div_le_sum_range_add hx0 hx1 n
+  rw [hdiv] at hle
+  rw [artanhPartial_def]
+  linarith
+
+/-- Lower rational enclosure of `log a` for `0 < a ≤ 1` via `artanhPartial` and a geometric
+tail. -/
+theorem neg_two_mul_artanhPartial_add_le_log {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
+    -2 * (artanhPartial n ((1 - a) / (1 + a)) +
+      ((1 - a) / (1 + a)) ^ (2 * n + 1) / (1 - ((1 - a) / (1 + a)) ^ 2)) ≤ _root_.Real.log a := by
+  obtain ⟨hinv, harg⟩ := artanh_inv_spec ha0 ha1
+  have hle := log_le_two_mul_artanhPartial_add hinv n
+  rw [_root_.Real.log_inv, harg] at hle
+  linarith
+
+/-- Upper rational enclosure `log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a))` for `0 < a ≤ 1`.
+-/
+theorem log_le_neg_two_mul_artanhPartial {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
+    _root_.Real.log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a)) := by
+  obtain ⟨hinv, harg⟩ := artanh_inv_spec ha0 ha1
+  have hle := two_mul_artanhPartial_le_log hinv n
+  rw [_root_.Real.log_inv, harg] at hle
+  linarith
+
+end TauCeti.Real
+
+namespace TauCeti
+
+open _root_.Real
+
+/-- Explicit decimal lower bound `0.40546 ≤ log (3 / 2)`. -/
+theorem le_log_three_halves : (0.40546 : ℝ) ≤ log (3 / 2) := by
+  have hle := TauCeti.Real.two_mul_artanhPartial_le_log (a := (3 / 2 : ℝ)) (by norm_num) 4
+  have hnum : (0.40546 : ℝ) ≤
+      2 * TauCeti.Real.artanhPartial 4 (((3 / 2 : ℝ) - 1) / ((3 / 2 : ℝ) + 1)) := by
+    simp only [TauCeti.Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
+    norm_num
+  exact hnum.trans hle
+
+/-- Lower bound `-0.903 < log (log (3 / 2))`. -/
+theorem lt_log_log_three_halves : (-0.903 : ℝ) < log (log (3 / 2)) := by
+  have h2_lo : (0.81092 : ℝ) ≤ 2 * log (3 / 2) := by linarith [le_log_three_halves]
+  have hsplit : log (log (3 / 2)) = log (2 * log (3 / 2)) - log 2 := by
+    rw [log_mul two_ne_zero (log_pos (by norm_num : (1 : ℝ) < 3 / 2)).ne']
+    ring
+  have hmono : log (0.81092 : ℝ) ≤ log (2 * log (3 / 2)) :=
+    log_le_log (by norm_num) h2_lo
+  have hlow := TauCeti.Real.neg_two_mul_artanhPartial_add_le_log (a := (0.81092 : ℝ))
+    (by norm_num) (by norm_num) 3
+  have hnum : (-0.20985 : ℝ) <
+      -2 * (TauCeti.Real.artanhPartial 3 ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) +
+        ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) ^ (2 * 3 + 1) /
+          (1 - ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) ^ 2)) := by
+    simp only [TauCeti.Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
+    norm_num
+  linarith [log_two_lt_d9]
 
 end TauCeti
