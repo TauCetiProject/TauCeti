@@ -491,20 +491,14 @@ theorem variance_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a 
     variance X P = (b - a) ^ 2 / 12 := by
   rw [hX.variance_eq, TauCeti.Probability.variance_id_uniformMeasure hab]
 
-/-- Every real exponential moment of an interval-uniform random variable is integrable. -/
-theorem integrable_exp_mul_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (t : ℝ) :
-    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
-  simpa only [Function.comp_def] using
-    hX.integrable_comp
-      (TauCeti.Probability.integrable_exp_mul_id_uniformMeasure (a := a) (b := b) (t := t))
-
 /-- The exact exponential-integrability domain of an interval-uniform random variable is all of
 the real line. -/
 theorem integrableExpSet_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) :
     integrableExpSet X P = Set.univ := by
-  ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-  exact hX.integrable_exp_mul_uniformMeasure t
+  refine Set.eq_univ_of_forall fun t ↦ ?_
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, Function.comp_def] using
+    hX.integrable_comp
+      (TauCeti.Probability.integrable_exp_mul_id_uniformMeasure (a := a) (b := b) (t := t))
 
 /-- The moment-generating function of an interval-uniform random variable away from zero. -/
 theorem mgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b)
