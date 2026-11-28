@@ -341,3 +341,31 @@ theorem coe_extChartAtDiffeomorph_symm_apply [I.Boundaryless] [IsManifold I n M]
   (rfl)
 
 end TauCeti
+
+
+namespace TauCeti.Manifold
+
+open Set Filter
+open scoped Topology
+
+variable {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup X] [NormedSpace ℝ X]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A smooth model-space germ eventually in the model range composes smoothly with the
+inverse chart, even at a boundary point. -/
+theorem _root_.ContDiffAt.contMDiffAt_extChartAt_symm_comp_of_eventually_mem_range
+    {n : ℕ∞ω} [IsManifold I n M] {P : X → E} {x : X} {a : M}
+    (hP : ContDiffAt ℝ n P x) (hrange : ∀ᶠ z in 𝓝 x, P z ∈ range I)
+    (htarget : P x ∈ (extChartAt I a).target) :
+    ContMDiffAt 𝓘(ℝ, X) I n ((extChartAt I a).symm ∘ P) x := by
+  have hwithin : ContMDiffWithinAt 𝓘(ℝ, X) I n
+      ((extChartAt I a).symm ∘ P) (univ ∩ P ⁻¹' range I) x :=
+    (contMDiffWithinAt_extChartAt_symm_range a htarget).comp' x
+      hP.contMDiffAt.contMDiffWithinAt
+  apply hwithin.contMDiffAt
+  apply inter_mem univ_mem
+  exact Filter.eventually_mem_set.mp hrange
+
+end TauCeti.Manifold

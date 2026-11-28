@@ -1395,3 +1395,33 @@ theorem fromTangentSpace_curveVelocityWithin {γ : ℝ → U} {s : Set ℝ} {t :
   exact congrArg (NormedSpace.fromTangentSpace (γ t).val) h.symm
 
 end TauCeti.Manifold
+
+
+namespace TauCeti.Manifold
+
+open Set Filter
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- Curves in the model range with the same value and first derivative have the same
+manifold velocity after composition with an inverse chart. -/
+theorem _root_.HasDerivAt.curveVelocity_extChartAt_symm_comp_eq_of_hasDerivAt
+    {P Q : ℝ → E} {x : ℝ} {a : M} {v : E}
+    (hP : HasDerivAt P v x) (hQ : HasDerivAt Q v x) (hvalue : P x = Q x)
+    (htarget : P x ∈ (extChartAt I a).target)
+    (hPrange : ∀ᶠ z in 𝓝 x, P z ∈ range I)
+    (hQrange : ∀ᶠ z in 𝓝 x, Q z ∈ range I) :
+    curveVelocity I ((extChartAt I a).symm ∘ P) x =
+      curveVelocity I ((extChartAt I a).symm ∘ Q) x := by
+  have hp := hasMFDerivWithinAt_extChartAt_symm_comp (J := univ) htarget
+    (by simpa only [nhdsWithin_univ] using hPrange) hP.hasDerivWithinAt
+  have hq := hasMFDerivWithinAt_extChartAt_symm_comp (J := univ)
+    (hvalue ▸ htarget) (by simpa only [nhdsWithin_univ] using hQrange) hQ.hasDerivWithinAt
+  have hpv := curveVelocityWithin_eq_of_hasMFDerivWithinAt hp uniqueDiffWithinAt_univ
+  have hqv := curveVelocityWithin_eq_of_hasMFDerivWithinAt hq uniqueDiffWithinAt_univ
+  rw [← hvalue] at hqv
+  simpa only [curveVelocityWithin_univ, Function.comp_def] using hpv.trans hqv.symm
+
+end TauCeti.Manifold

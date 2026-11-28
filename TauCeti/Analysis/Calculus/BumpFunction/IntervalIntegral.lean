@@ -22,6 +22,9 @@ products, so the lemma applies to a function `g` that is only meaningful near `t
 pairing of a curve's velocity with a vector field in one chart. This is the final step of the
 first variation arguments showing that the critical points of action functionals solve their
 Euler–Lagrange equations.
+
+The scalar localization adapts the bump argument in
+`TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`.
 -/
 
 public section
@@ -30,26 +33,30 @@ open Set Metric Filter
 
 namespace TauCeti
 
-/-- The positive half of `TauCeti.eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero`: `g` is not
-positive at `t₀`. A bump equal to `1` near `t₀` shows that `g` is continuous at `t₀` within
-`[a, b]`; if `g t₀ > 0`, a bump centred at an interior time near `t₀`, where `g > 0`, has a
-positive integral against `g`. -/
-private theorem not_pos_of_intervalIntegral_contDiffBump_mul_eq_zero {g : ℝ → ℝ} {a b t₀ δ : ℝ}
+/-- If the product with every bump supported near `t₀` is continuous on `s`, then `g` is
+continuous at `t₀` within `s`. -/
+theorem continuousWithinAt_of_continuousOn_contDiffBump_mul {g : ℝ → ℝ} {s : Set ℝ}
+    {t₀ δ : ℝ} (ht₀ : t₀ ∈ s) (hδ : 0 < δ)
+    (hcont : ∀ φ : ContDiffBump t₀, tsupport φ ⊆ ball t₀ δ →
+      ContinuousOn (fun t ↦ φ t * g t) s) : ContinuousWithinAt g s t₀ := by
+  obtain ⟨φ, hφ⟩ := exists_contDiffBump_tsupport_subset_ball t₀ hδ
+  refine (hcont φ hφ t₀ ht₀).congr_of_eventuallyEq ?_ (by rw [φ.one_of_mem_closedBall
+    (mem_closedBall_self φ.rIn_pos.le), one_mul])
+  filter_upwards [mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds t₀ φ.rIn_pos)] with t ht
+  rw [φ.one_of_mem_closedBall ht, one_mul]
+
+/-- The vanishing of integrals against supported bumps rules out positive values at `t₀`.
+A bump centred at a nearby interior time where `g > 0` would give a positive integral. -/
+theorem le_zero_of_intervalIntegral_contDiffBump_mul_eq_zero {g : ℝ → ℝ} {a b t₀ δ : ℝ}
     (hab : a < b) (ht₀ : t₀ ∈ Icc a b) (hδ : 0 < δ)
     (hcont : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ →
       ContinuousOn (fun t ↦ φ t * g t) (Icc a b))
     (hint : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ ∩ Ioo a b →
       ∫ t in a..b, φ t * g t = 0) :
-    ¬0 < g t₀ := by
-  intro hg₀
-  -- `g` is continuous at `t₀` within `[a, b]`, where it agrees with `φ g` for a bump `φ` equal to
-  -- `1` near `t₀`
-  have hgcont : ContinuousWithinAt g (Icc a b) t₀ := by
-    obtain ⟨φ, hφ⟩ := exists_contDiffBump_tsupport_subset_ball t₀ hδ
-    refine (hcont φ hφ t₀ ht₀).congr_of_eventuallyEq ?_ (by rw [φ.one_of_mem_closedBall
-      (mem_closedBall_self φ.rIn_pos.le), one_mul])
-    filter_upwards [mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds t₀ φ.rIn_pos)] with t ht
-    rw [φ.one_of_mem_closedBall ht, one_mul]
+    g t₀ ≤ 0 := by
+  by_contra! hg₀
+  have hgcont := continuousWithinAt_of_continuousOn_contDiffBump_mul ht₀ hδ
+    (fun φ hφ ↦ hcont φ hφ)
   obtain ⟨ε, hε, hεg⟩ := Metric.mem_nhdsWithin_iff.mp (hgcont.eventually (lt_mem_nhds hg₀))
   -- an interior time `t₁` near `t₀`, and a ball around it inside `(a, b)` where `g > 0`
   obtain ⟨t₁, ht₁, ht₁₀⟩ : ∃ t₁ ∈ Ioo a b, dist t₀ t₁ < min δ ε :=
@@ -81,13 +88,12 @@ theorem eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero {g : ℝ → ℝ} {
     (hint : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ ∩ Ioo a b →
       ∫ t in a..b, φ t * g t = 0) :
     g t₀ = 0 := by
-  refine le_antisymm (not_lt.mp (not_pos_of_intervalIntegral_contDiffBump_mul_eq_zero hab ht₀ hδ
-    hcont hint)) ?_
-  -- the same argument for `-g`
-  have := not_pos_of_intervalIntegral_contDiffBump_mul_eq_zero (g := -g) hab ht₀ hδ
+  refine le_antisymm (le_zero_of_intervalIntegral_contDiffBump_mul_eq_zero hab ht₀ hδ
+    hcont hint) ?_
+  have := le_zero_of_intervalIntegral_contDiffBump_mul_eq_zero (g := -g) hab ht₀ hδ
     (fun φ hφ ↦ by simp only [Pi.neg_apply, mul_neg]; exact (hcont φ hφ).neg)
     (fun φ hφ ↦ by simp only [Pi.neg_apply, mul_neg, intervalIntegral.integral_neg, hint φ hφ,
       neg_zero])
-  rwa [Pi.neg_apply, neg_pos, not_lt] at this
+  simpa only [Pi.neg_apply, neg_nonpos] using this
 
 end TauCeti
