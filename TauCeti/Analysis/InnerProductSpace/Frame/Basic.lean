@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+
 /-!
 # Finite frames: analysis, synthesis, frame and Gram operators
 
@@ -60,6 +62,8 @@ adjoints and eigenvalues assume `E` finite-dimensional.
 * `TauCeti.isPositive_frameOperator`, `TauCeti.isPositive_gramOperator`: both are positive.
 * `OrthonormalBasis.frameOperator_eq_id`: an orthonormal basis has the identity as frame
   operator.
+* `TauCeti.exists_orthonormalBasis_of_frameOperator_eq_id`: a unit-norm Parseval frame is an
+  orthonormal basis with the same vectors.
 * `OrthonormalBasis.synthesisMap_eq_repr_symm`: the synthesis map of an orthonormal basis is the
   inverse of its coordinate map.
 * `TauCeti.norm_analysisMap_sq`: `‖analysis x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
@@ -208,8 +212,8 @@ theorem gramOperator_eq_toEuclideanLin_gram [DecidableEq ι] (v : ι → E) :
 /-- The sesquilinear form of the frame operator is the inner product of analysis
 coefficients. -/
 theorem inner_frameOperator_left (v : ι → E) (x y : E) :
-    ⟪frameOperator 𝕜 v x, y⟫_𝕜 = ⟪analysisMap 𝕜 v x, analysisMap 𝕜 v y⟫_𝕜 :=
-  inner_synthesisMap_left v _ y
+    ⟪frameOperator 𝕜 v x, y⟫_𝕜 = ⟪analysisMap 𝕜 v x, analysisMap 𝕜 v y⟫_𝕜 := by
+  rw [frameOperator_def, LinearMap.comp_apply, inner_synthesisMap_left]
 
 /-- The sesquilinear form of the Gram operator is the inner product of the synthesized
 vectors. -/
@@ -308,6 +312,14 @@ theorem adjoint_overlapOperator (u : ι → E) (v : κ → E) :
 end Overlap
 
 /-! ### Parseval frames -/
+
+/-- A finite Parseval frame of unit vectors is an orthonormal basis with the same vectors. -/
+theorem exists_orthonormalBasis_of_frameOperator_eq_id {v : ι → E} (hv : ∀ i, ‖v i‖ = 1)
+    (hframe : frameOperator 𝕜 v = LinearMap.id) : ∃ b : OrthonormalBasis ι 𝕜 E, ⇑b = v := by
+  apply exists_orthonormalBasis_of_sum_rankOne_eq_one hv
+  ext x
+  simpa only [sum_apply, InnerProductSpace.rankOne_apply, one_apply_eq_self, frameOperator_apply,
+    LinearMap.id_apply] using DFunLike.congr_fun hframe x
 
 /-- A family whose frame operator is the identity, a *Parseval frame*, has an isometric analysis
 map: `‖(⟪vᵢ, x⟫)ᵢ‖ = ‖x‖`. -/
