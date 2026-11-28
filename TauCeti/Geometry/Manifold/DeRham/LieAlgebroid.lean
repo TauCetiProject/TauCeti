@@ -118,7 +118,8 @@ def tangentCochainComplexIso : (tangent I M).cochainComplex ≅ deRhamComplex I 
 /-- On degree-`k` components read through `cochainComplexXIso` and `deRhamComplexXIso`, the
 forward isomorphism `(tangentCochainComplexIso I M).hom.f k` is `SmoothForm.ofContMDiffSection`. -/
 @[simp]
-theorem tangentCochainComplexIso_hom_f_apply (k : ℕ) (x : (tangent I M).cochainComplex.X k) :
+theorem deRhamComplexXIso_hom_tangentCochainComplexIso_hom_f (k : ℕ)
+    (x : (tangent I M).cochainComplex.X k) :
     (deRhamComplexXIso I k).hom ((tangentCochainComplexIso I M).hom.f k x) =
       SmoothForm.ofContMDiffSection (((tangent I M).cochainComplexXIso k).hom x) := by
   simp [tangentCochainComplexIso, -SmoothBundleForm.toContMDiffSectionEquiv_symm_apply,
@@ -127,7 +128,8 @@ theorem tangentCochainComplexIso_hom_f_apply (k : ℕ) (x : (tangent I M).cochai
 /-- On degree-`k` components read through `deRhamComplexXIso` and `cochainComplexXIso`, the
 inverse isomorphism `(tangentCochainComplexIso I M).inv.f k` is `SmoothForm.toContMDiffSection`. -/
 @[simp]
-theorem tangentCochainComplexIso_inv_f_apply (k : ℕ) (x : (deRhamComplex I M).X k) :
+theorem cochainComplexXIso_hom_tangentCochainComplexIso_inv_f (k : ℕ)
+    (x : (deRhamComplex I M).X k) :
     ((tangent I M).cochainComplexXIso k).hom ((tangentCochainComplexIso I M).inv.f k x) =
       SmoothForm.toContMDiffSection ((deRhamComplexXIso I k).hom x) := by
   simp [tangentCochainComplexIso, -SmoothBundleForm.toContMDiffSectionEquiv_apply,

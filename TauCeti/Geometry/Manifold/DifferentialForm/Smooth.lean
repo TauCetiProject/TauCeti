@@ -671,30 +671,6 @@ theorem coe_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   funext v
   exact cast_apply h α x v
 
-/-- Transporting a smooth form along a trivial degree equality leaves it unchanged. -/
-theorem cast_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n : ℕ} (h : n = n) (α : SmoothForm I M F n) :
-    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α = α :=
-  (rfl)
-
-/-- Successive degree transports collapse to the transport along their composite equality. -/
-theorem cast_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n m o : ℕ} (h : n = m) (h' : m = o)
-    (α : SmoothForm I M F n) :
-    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h'
-        (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α) =
-      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) (h.trans h') α := by
-  cases h
-  cases h'
-  rfl
-
-/-- Inverting a degree transport gives the transport along the inverse equality. -/
-theorem cast_symm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n m : ℕ} (h : n = m) :
-    (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h).symm =
-      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h.symm :=
-  LinearEquiv.cast_symm h
-
 /-- The section underlying a smooth form is differentiable. -/
 theorem mdifferentiable (φ : SmoothForm I M F k) :
     MDiff (fun x ↦

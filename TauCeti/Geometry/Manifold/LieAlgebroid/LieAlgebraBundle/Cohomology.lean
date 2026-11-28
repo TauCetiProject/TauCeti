@@ -166,7 +166,7 @@ theorem trivialLieAlgebraCochainEquiv_symm_apply (k : ℕ)
 
 /-- Under `trivialLieAlgebraCochainEquiv`, the algebroid exterior derivative on
 `trivialLieAlgebra I M 𝔤` corresponds to the Lie-algebra Chevalley–Eilenberg differential `d`. -/
-theorem trivialLieAlgebra_extDeriv_cochainEquiv (k : ℕ)
+theorem trivialLieAlgebraCochainEquiv_extDeriv (k : ℕ)
     (φ : Cₛ^∞⟮I; TrivialModel ℝ 𝔤 [⋀^Fin k]→L[ℝ] ℝ,
       fun x ↦ Bundle.Trivial M 𝔤 x [⋀^Fin k]→L[ℝ] ℝ⟯) :
     trivialLieAlgebraCochainEquiv I M 𝔤 (k + 1) ((trivialLieAlgebra I M 𝔤).extDeriv k φ) =
@@ -229,7 +229,7 @@ def trivialLieAlgebraCochainComplexIso :
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
       LinearEquiv.toModuleIso_hom, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
       ULift.moduleEquiv_symm_apply]
-    have h := trivialLieAlgebra_extDeriv_cochainEquiv I M 𝔤 k
+    have h := trivialLieAlgebraCochainEquiv_extDeriv I M 𝔤 k
       (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom φ)
     exact congrArg ULift.up h.symm
 

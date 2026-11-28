@@ -442,7 +442,9 @@ def cochainComplex : CochainComplex (ModuleCat ℝ) ℕ :=
 /-- The canonical identification of the degree-`k` object of `A.cochainComplex` with the
 `ℝ`-module of smooth degree-`k` cochains. -/
 def cochainComplexXIso (k : ℕ) : A.cochainComplex.X k ≅ ModuleCat.of ℝ Ω[k] :=
-  by unfold cochainComplex; exact Iso.refl _
+  -- `A.cochainComplex` is built via `CochainComplex.of`, so `A.cochainComplex.X k` is defeq to
+  -- `ModuleCat.of ℝ Ω[k]` (`CochainComplex.of_X`).
+  Iso.refl _
 
 /-- Under `cochainComplexXIso`, the successor differential of `A.cochainComplex` is
 `A.extDeriv k`. -/
@@ -450,7 +452,7 @@ def cochainComplexXIso (k : ℕ) : A.cochainComplex.X k ≅ ModuleCat.of ℝ Ω[
 theorem cochainComplex_d_succ (k : ℕ) :
     A.cochainComplex.d k (k + 1) ≫ (A.cochainComplexXIso (k + 1)).hom =
       (A.cochainComplexXIso k).hom ≫ ModuleCat.ofHom (A.extDeriv k) := by
-  dsimp +instances [cochainComplexXIso, cochainComplex]; simp
+  simp [cochainComplex, cochainComplexXIso, CochainComplex.of_d]
 
 /-- Evaluating the successor differential of `A.cochainComplex` on an element via
 `cochainComplexXIso`. -/
@@ -602,8 +604,16 @@ theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k]) (ψ 
     sub_mul, mul_sub, Finset.sum_mul, Finset.mul_sum]
   ring
 
-private theorem neg_one_pow_mul_self (k : ℕ) : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
-  rw [← mul_pow]; norm_num
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F V I] in
+private theorem interior_cast_add_smul {m n : ℕ} (h : m + 1 = n + 1)
+    (α : Ω[m + 1]) (c : ℝ) (β : Ω[n + 1]) (a : Cₛ^∞⟮I; F, V⟯) :
+    (LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h α + c • β).interior a =
+      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.succ.inj h)
+          (α.interior a) +
+        c • β.interior a := by
+  simp only [ContMDiffSection.interior_add_left, ContMDiffSection.interior_cast,
+    ContMDiffSection.interior_const_smul_left]
 
 private theorem extDeriv_wedge_zero_zero (φ ψ : Ω[0]) :
     A.extDeriv (0 + 0) (φ.wedge ψ) =
@@ -611,13 +621,11 @@ private theorem extDeriv_wedge_zero_zero (φ ψ : Ω[0]) :
           ((A.extDeriv 0 φ).wedge ψ) +
         (-1 : ℝ) ^ 0 • φ.wedge (A.extDeriv 0 ψ) := by
   refine ContMDiffSection.eq_of_interior_eq fun a ↦ ?_
-  have hL : A.lieDeriv 0 a (φ.wedge ψ) =
-      (A.lieDeriv 0 a φ).wedge ψ + φ.wedge (A.lieDeriv 0 a ψ) :=
-    A.lieDeriv_wedge (k := 0) (l := 0) a φ ψ
-  rw [A.interior_extDeriv_zero, hL, ContMDiffSection.interior_add_left,
-    ContMDiffSection.interior_cast, LinearEquiv.cast_refl_apply,
-    ContMDiffSection.interior_wedge_zero_right, A.interior_extDeriv_zero, pow_zero, one_smul,
-    ContMDiffSection.interior_wedge_zero_left, A.interior_extDeriv_zero]
+  rw [A.interior_extDeriv_zero, A.lieDeriv_wedge (k := 0) (l := 0),
+    interior_cast_add_smul]
+  simp only [ContMDiffSection.interior_wedge_zero_right,
+    ContMDiffSection.interior_wedge_zero_left, A.interior_extDeriv_zero,
+    LinearEquiv.cast_refl, LinearEquiv.refl_apply, pow_zero, one_smul]
 
 private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
     (ih : ∀ φ' : Ω[k], A.extDeriv (k + 0) (φ'.wedge ψ) =
@@ -629,23 +637,14 @@ private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
           ((A.extDeriv (k + 1) φ).wedge ψ) +
         (-1 : ℝ) ^ (k + 1) • φ.wedge (A.extDeriv 0 ψ) := by
   refine ContMDiffSection.eq_of_interior_eq fun a ↦ ?_
-  have hL : A.lieDeriv (k + 1) a (φ.wedge ψ) =
-      (A.lieDeriv (k + 1) a φ).wedge ψ + φ.wedge (A.lieDeriv 0 a ψ) :=
-    A.lieDeriv_wedge (k := k + 1) (l := 0) a φ ψ
-  have hIH : A.extDeriv k ((φ.interior a).wedge ψ) =
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.succ_add k 0)
-          ((A.extDeriv k (φ.interior a)).wedge ψ) +
-        (-1 : ℝ) ^ k • (φ.interior a).wedge (A.extDeriv 0 ψ) :=
-    ih (φ.interior a)
-  rw [A.interior_extDeriv_succ, hL, ContMDiffSection.interior_wedge_zero_right, hIH]
-  rw [ContMDiffSection.interior_add_left, ContMDiffSection.interior_cast,
-    ContMDiffSection.interior_wedge_zero_right, A.interior_extDeriv_succ,
-    ContMDiffSection.wedge_sub_left, map_sub, LinearEquiv.cast_refl_apply,
-    LinearEquiv.cast_refl_apply, ContMDiffSection.interior_const_smul_left,
-    ContMDiffSection.interior_wedge_succ, A.interior_extDeriv_zero, smul_add, smul_smul,
-    neg_one_pow_mul_self, one_smul]
-  rw [pow_succ (-1 : ℝ), mul_neg_one, neg_smul, sub_eq_add_neg, sub_eq_add_neg, neg_add]
-  abel
+  rw [A.interior_extDeriv_succ (k := k + 0), A.lieDeriv_wedge (k := k + 1) (l := 0),
+    ContMDiffSection.interior_wedge_zero_right, ih (φ.interior a), interior_cast_add_smul]
+  simp only [ContMDiffSection.interior_wedge_zero_right, ContMDiffSection.interior_wedge_succ,
+    A.interior_extDeriv_succ, A.interior_extDeriv_zero, ContMDiffSection.wedge_sub_left, map_sub,
+    LinearEquiv.cast_refl, LinearEquiv.refl_apply, smul_add, smul_smul, ← mul_pow, neg_mul,
+    one_mul, neg_neg, one_pow, one_smul]
+  simp only [pow_succ, mul_neg_one]
+  module
 
 private theorem extDeriv_wedge_zero_succ {l : ℕ} (φ : Ω[0]) (ψ : Ω[l + 1])
     (ih : ∀ ψ' : Ω[l], A.extDeriv (0 + l) (φ.wedge ψ') =
@@ -658,23 +657,15 @@ private theorem extDeriv_wedge_zero_succ {l : ℕ} (φ : Ω[0]) (ψ : Ω[l + 1])
         (-1 : ℝ) ^ 0 • φ.wedge (A.extDeriv (l + 1) ψ) := by
   refine ContMDiffSection.eq_of_interior_eq fun a ↦ ?_
   have hC : ((A.extDeriv (0 + (l + 1))) (φ.wedge ψ)).interior a =
-      A.lieDeriv (0 + (l + 1)) a (φ.wedge ψ) -
-        A.extDeriv (0 + l) ((φ.wedge ψ).interior a) :=
+      A.lieDeriv (0 + (l + 1)) a (φ.wedge ψ) - A.extDeriv (0 + l) ((φ.wedge ψ).interior a) :=
     A.interior_extDeriv_succ (k := 0 + l) (φ.wedge ψ) a
-  have hL : A.lieDeriv (0 + (l + 1)) a (φ.wedge ψ) =
-      (A.lieDeriv 0 a φ).wedge ψ + φ.wedge (A.lieDeriv (l + 1) a ψ) :=
-    A.lieDeriv_wedge (k := 0) (l := l + 1) a φ ψ
-  rw [hC, hL, ContMDiffSection.interior_wedge_zero_left, ih (ψ.interior a)]
-  rw [ContMDiffSection.interior_add_left, ContMDiffSection.interior_cast,
-    ContMDiffSection.interior_wedge_succ, map_add, LinearEquiv.cast_cast,
-    LinearEquiv.cast_refl_apply,
-    LinearEquiv.cast_congr _ (Nat.succ.inj (Nat.succ_add 0 (l + 1))),
-    A.interior_extDeriv_zero, LinearMapClass.map_smul_of_tower, pow_zero, one_smul,
-    ContMDiffSection.interior_const_smul_left, one_smul,
-    ContMDiffSection.interior_wedge_zero_left, A.interior_extDeriv_succ,
-    ContMDiffSection.wedge_sub_right]
-  rw [pow_one, neg_one_smul, sub_eq_add_neg, sub_eq_add_neg, neg_add]
-  abel
+  rw [hC, A.lieDeriv_wedge (k := 0) (l := l + 1),
+    ContMDiffSection.interior_wedge_zero_left, ih (ψ.interior a), interior_cast_add_smul]
+  simp only [ContMDiffSection.interior_wedge_succ, ContMDiffSection.interior_wedge_zero_left,
+    A.interior_extDeriv_zero, A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_right,
+    map_add, LinearEquiv.cast_cast, LinearEquiv.cast_refl, LinearEquiv.refl_apply]
+  rw [LinearMapClass.map_smul_of_tower, pow_succ (-1 : ℝ) 0, pow_zero, one_mul]
+  module
 
 private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l + 1])
     (ih₁ : ∀ φ' : Ω[k], A.extDeriv (k + (l + 1)) (φ'.wedge ψ) =
@@ -694,41 +685,17 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l
       A.lieDeriv ((k + 1) + (l + 1)) a (φ.wedge ψ) -
         A.extDeriv ((k + 1) + l) ((φ.wedge ψ).interior a) :=
     A.interior_extDeriv_succ (k := (k + 1) + l) (φ.wedge ψ) a
-  have hIH₁ : A.extDeriv (k + l + 1) ((φ.interior a).wedge ψ) =
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.succ_add k (l + 1))
-          ((A.extDeriv k (φ.interior a)).wedge ψ) +
-        (-1 : ℝ) ^ k • (φ.interior a).wedge (A.extDeriv (l + 1) ψ) :=
-    ih₁ (φ.interior a)
-  have hIH₂ :
-      (-1 : ℝ) ^ (k + 1) • A.extDeriv ((k + 1) + l) (φ.wedge (ψ.interior a)) =
-        -((-1 : ℝ) ^ k •
-            LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-              (Nat.succ.inj (Nat.succ_add (k + 1) (l + 1)))
-              ((A.extDeriv (k + 1) φ).wedge (ψ.interior a))) +
-          φ.wedge (A.extDeriv l (ψ.interior a)) := by
-    rw [ih₂ (ψ.interior a),
-      LinearEquiv.cast_congr _ (Nat.succ.inj (Nat.succ_add (k + 1) (l + 1)))]
-    ext x v
-    simp only [ContMDiffSection.coe_add, ContMDiffSection.coe_neg, ContMDiffSection.coe_smul,
-      Pi.add_apply, Pi.neg_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
-      ContinuousAlternatingMap.neg_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-    rw [mul_add, ← mul_assoc, neg_one_pow_mul_self, one_mul, pow_succ, mul_neg_one, neg_mul]
-  rw [hC, A.lieDeriv_wedge, ContMDiffSection.interior_wedge_succ, map_add,
-    A.extDeriv_cast, hIH₁, map_add, LinearMapClass.map_smul_of_tower, LinearEquiv.cast_cast,
-    map_smul, hIH₂]
-  rw [ContMDiffSection.interior_add_left, ContMDiffSection.interior_cast,
-    ContMDiffSection.interior_wedge_succ, map_add, LinearMapClass.map_smul_of_tower,
-    LinearEquiv.cast_cast, A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_left,
-    ContMDiffSection.interior_const_smul_left, ContMDiffSection.interior_wedge_succ,
-    A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_right, smul_add, smul_smul,
-    neg_one_pow_mul_self, one_smul]
-  have hp1 : (-1 : ℝ) ^ (k + 1) = -((-1 : ℝ) ^ k) := by rw [pow_succ, mul_neg_one]
-  have hp2 : (-1 : ℝ) ^ (k + 1 + 1) = (-1 : ℝ) ^ k := by
-    rw [pow_succ, pow_succ, mul_neg_one, mul_neg_one, neg_neg]
-  rw [LinearEquiv.cast_refl_apply, LinearEquiv.cast_refl_apply,
-    LinearEquiv.cast_congr _ (Nat.add_right_comm k 1 (l + 1)).symm, hp1, hp2, neg_smul]
-  simp only [sub_eq_add_neg, neg_add]
-  abel
+  have hIH₁ : A.extDeriv (k + l + 1) ((φ.interior a).wedge ψ) = _ := ih₁ (φ.interior a)
+  rw [hC, A.lieDeriv_wedge (k := k + 1) (l := l + 1),
+    ContMDiffSection.interior_wedge_succ, map_add, A.extDeriv_cast, hIH₁,
+    LinearMap.map_smul, ih₂ (ψ.interior a), interior_cast_add_smul]
+  simp only [ContMDiffSection.interior_wedge_succ, A.interior_extDeriv_succ,
+    ContMDiffSection.wedge_sub_left, ContMDiffSection.wedge_sub_right, map_add, map_sub,
+    LinearEquiv.cast_cast, LinearEquiv.cast_refl, LinearEquiv.refl_apply,
+    smul_add, smul_sub, smul_smul, ← mul_pow, neg_mul, one_mul, neg_neg, one_pow, one_smul]
+  rw [LinearMapClass.map_smul_of_tower, LinearMapClass.map_smul_of_tower]
+  simp only [pow_succ, mul_neg_one, neg_neg]
+  module
 
 /-- **Graded derivation law** for the algebroid exterior derivative on the fibrewise wedge product:
 `d_A (φ ∧ ψ) = LinearEquiv.cast ... (Nat.succ_add k l) (d_A φ ∧ ψ) + (-1)^k • (φ ∧ d_A ψ)`. -/

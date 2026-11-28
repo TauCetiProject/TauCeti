@@ -283,6 +283,10 @@ theorem interior_apply {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) (
     φ.interior a x v = φ x (Matrix.vecCons (a x) v) :=
   ContinuousAlternatingMap.curryLeftTopological_apply_apply (φ x) (a x) v
 
+/-- Pointwise fibre value of `ContMDiffSection.interior`. -/
+theorem interior_apply' {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) (x : M) :
+    φ.interior a x = (φ x).curryLeftTopological (a x) := (rfl)
+
 /-- Evaluating a `C^n` alternating section at `x` on `v : Fin (k + 1) → V x` equals contracting
 first with any `C^n` section `a` satisfying `a x = v 0` and evaluating on `Fin.tail v`. -/
 theorem apply_eq_interior_tail {k : ℕ} (φ : Ω₂[k + 1]) {a : Cₛ^n⟮I; F, V⟯}
@@ -460,8 +464,7 @@ theorem wedgeWith_apply {k l : ℕ}
     (φ : Cₛ^n⟮I; F₀ [⋀^Fin k]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin k]→L[ℝ] V₁ x⟯)
     (ψ : Cₛ^n⟮I; F₀ [⋀^Fin l]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin l]→L[ℝ] V₂ x⟯) (x : M) :
     wedgeWith μ hμ hpair φ ψ x =
-      ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x) := by
-  rw [wedgeWith, LinearMap.mk₂_apply]; rfl
+      ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x) := (rfl)
 
 /-- Pointwise signed-permutation expansion of `ContMDiffSection.wedgeWith`. -/
 theorem wedgeWith_apply_sum {k l : ℕ}
@@ -521,13 +524,8 @@ theorem interior_wedgeWith_succ_apply {k l : ℕ}
     (wedgeWith μ hμ hpair φ ψ).interior a x w =
       wedgeWith μ hμ hpair (φ.interior a) ψ x (w ∘ Fin.cast (Nat.add_right_comm k 1 l).symm) +
         (-1 : ℝ) ^ (k + 1) • wedgeWith μ hμ hpair φ (ψ.interior a) x w := by
-  have hLHS : (wedgeWith μ hμ hpair φ ψ).interior a x w =
-      ((ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x)).curryLeftTopological
-        (a x)) w := by
-    rw [interior_apply, wedgeWith_apply, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
-  have hφ : φ.interior a x = (φ x).curryLeftTopological (a x) := rfl
-  have hψ : ψ.interior a x = (ψ x).curryLeftTopological (a x) := rfl
-  rw [hLHS, wedgeWith_apply, wedgeWith_apply, hφ, hψ]
+  rw [interior_apply', wedgeWith_apply, wedgeWith_apply, wedgeWith_apply, interior_apply',
+    interior_apply']
   exact ContinuousAlternatingMap.curryLeftTopological_pairedWedge (μ x) (hμ x) (φ x) (ψ x) (a x) w
 
 /-- Graded antiderivation law for `ContMDiffSection.interior` across `wedgeWith` of two sections of
@@ -886,7 +884,7 @@ theorem alternatingMap_apply_eq_of_forall_apply_eq {ι : Type*} [Finite ι] (Φ 
       · have hsm : CMDiff n (T% (f • u)) := hf.smul_section hu
         let gf : C^n⟮I, M; ℝ⟯ := ⟨f, hf⟩
         have hsm_eq : gf • (⟨u, hu⟩ : Cₛ^n⟮I; F, V⟯) = ⟨f • u, hsm⟩ := by
-          ext y; rw [smul_apply]; rfl
+          ext y; rw [smul_apply]; simp [gf]
         simp only [Ψ, hu, hsm, ↓reduceDIte, ← hsm_eq]
         exact congr($(Φ.map_update_smul w j gf ⟨u, hu⟩) x)
     rw [hw, hstep, hself, ih]

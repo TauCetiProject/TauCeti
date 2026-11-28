@@ -122,7 +122,7 @@ private theorem IsOfType.exists_delBar_eventually_eq_of_holInterior {m p q : ℕ
         (Nat.add_comm 1 (m + 1))
           (SmoothForm.wedgeWith μ (dz i) ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (g i))) := by
     simp only [map_smul, map_sum, delBar_cast, delBar_wedgeWith _ hμ₁ hμ₂, delBar_dz,
-      map_zero, LinearMap.zero_apply, zero_add, cast_cast, pow_one]
+      map_zero, LinearMap.zero_apply, zero_add, LinearEquiv.cast_cast, pow_one]
     -- `simp` does not match `neg_one_smul` against the real action on smooth forms directly.
     have hneg (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (m + 1 + 1)) : (-1 : ℝ) • φ = -φ :=
       neg_one_smul ℝ φ
