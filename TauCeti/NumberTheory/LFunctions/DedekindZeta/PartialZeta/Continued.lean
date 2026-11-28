@@ -112,23 +112,10 @@ theorem analyticOnNhd_partialZeta (𝔪 : Modulus K) (c : RayClassGroup 𝔪) :
 
 section ModulusOne
 
-/-- The reciprocal of the Dedekind completion factor times a completed partial zeta function is
-meromorphic. -/
-private theorem meromorphic_invDedekindZetaCompletionFactor_mul_completedPartialZeta
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    Meromorphic (invDedekindZetaCompletionFactor K * completedPartialZeta I) :=
-  fun s ↦ (analyticAt_invDedekindZetaCompletionFactor K s).meromorphicAt.mul
-    (meromorphic_completedPartialZeta I s)
-
-/-- On `Re s > 1` the reciprocal completion factor cancels the archimedean factor of `Z(I, s)`,
-leaving the Dirichlet series of the ideal class of `I⁻¹`. -/
-private theorem invDedekindZetaCompletionFactor_mul_completedPartialZeta
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
-    invDedekindZetaCompletionFactor K s * completedPartialZeta I s =
-      LSeries (normCoeff K (rayClassCoeff (Modulus.one K)
-        (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) s := by
-  rw [completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hs, ← mul_assoc,
-    invDedekindZetaCompletionFactor_mul_eq_one K (zero_lt_one.trans hs), one_mul]
+/-- The completed partial zeta function is analytic on `Re s > 1`. -/
+private theorem analyticOnNhd_completedPartialZeta_of_one_lt_re (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    AnalyticOnNhd ℂ (completedPartialZeta I) {s | 1 < s.re} := fun s (hs : 1 < s.re) ↦
+  analyticAt_completedPartialZeta I (ne_zero_of_one_lt_re hs) (by rintro rfl; norm_num at hs)
 
 /-- At the trivial modulus, the partial zeta function of the ideal class of `I⁻¹` is the normal form
 of the reciprocal completion factor times the completed partial zeta function of `I`. -/
@@ -136,13 +123,9 @@ private theorem partialZeta_eq_toMeromorphicNFOn (I : (FractionalIdeal (𝓞 K)�
     partialZeta (Modulus.one K) (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹) =
       toMeromorphicNFOn (invDedekindZetaCompletionFactor K * completedPartialZeta I) univ := by
   rw [partialZeta_def]
-  refine meromorphicContinuation_eq_toMeromorphicNFOn
-    (meromorphic_invDedekindZetaCompletionFactor_mul_completedPartialZeta I)
-    (fun s hs ↦ ?_) fun s hs ↦ invDedekindZetaCompletionFactor_mul_completedPartialZeta I hs
-  have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
-  have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
-  exact (analyticAt_invDedekindZetaCompletionFactor K s).mul
-    (analyticAt_completedPartialZeta I h0 h1)
+  exact meromorphicContinuation_eq_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul K
+    (meromorphic_completedPartialZeta I) (analyticOnNhd_completedPartialZeta_of_one_lt_re I)
+    fun _ hs ↦ completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hs
 
 /-- Every ideal class is the class of `I⁻¹` for some invertible fractional ideal `I`. -/
 private theorem exists_oneEquivClassGroup_symm_eq (c : RayClassGroup (Modulus.one K)) :
@@ -159,13 +142,10 @@ theorem partialZeta_eq_LSeries_of_modulus_one (c : RayClassGroup (Modulus.one K)
     partialZeta (Modulus.one K) c s =
       LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s := by
   obtain ⟨I, rfl⟩ := exists_oneEquivClassGroup_symm_eq c
-  have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
-  have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
-  rw [partialZeta_eq_toMeromorphicNFOn, toMeromorphicNFOn_apply_of_analyticAt
-    (meromorphic_invDedekindZetaCompletionFactor_mul_completedPartialZeta I)
-    ((analyticAt_invDedekindZetaCompletionFactor K s).mul
-      (analyticAt_completedPartialZeta I h0 h1)), Pi.mul_apply,
-    invDedekindZetaCompletionFactor_mul_completedPartialZeta I hs]
+  rw [partialZeta_def]
+  exact meromorphicContinuation_eqOn_of_eq_completionFactor_mul K
+    (meromorphic_completedPartialZeta I) (analyticOnNhd_completedPartialZeta_of_one_lt_re I)
+    (fun _ hs ↦ completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hs) hs
 
 /-- **The completed partial zeta function completes the partial zeta function of its class**,
 Neukirch VII (5.4): on `Re s > 1`,
@@ -229,8 +209,9 @@ theorem tendsto_sub_one_mul_partialZeta_of_modulus_one (c : RayClassGroup (Modul
     refine (((analyticAt_invDedekindZetaCompletionFactor K 1).continuousAt.tendsto.mono_left
       nhdsWithin_le_nhds).mul (tendsto_sub_one_mul_completedPartialZeta I)).congr' ?_
     rw [partialZeta_eq_toMeromorphicNFOn]
-    filter_upwards [(meromorphic_invDedekindZetaCompletionFactor_mul_completedPartialZeta I)
-      |>.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ 1)] with s hs
+    filter_upwards [(meromorphic_invDedekindZetaCompletionFactor_mul K
+      (meromorphic_completedPartialZeta I)).meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE
+        (mem_univ 1)] with s hs
     rw [hs, Pi.mul_apply]
     ring
   have hreal : Tendsto (fun s : ℝ ↦ (s - 1 : ℂ) *
@@ -284,7 +265,7 @@ theorem partialZeta_eq_mul_completedPartialZeta (I : (FractionalIdeal (𝓞 K)�
   rcases eq_or_ne s 1 with rfl | h1
   · simp
   · rw [partialZeta_eq_toMeromorphicNFOn, toMeromorphicNFOn_apply_of_analyticAt
-      (meromorphic_invDedekindZetaCompletionFactor_mul_completedPartialZeta I)
+      (meromorphic_invDedekindZetaCompletionFactor_mul K (meromorphic_completedPartialZeta I))
       ((analyticAt_invDedekindZetaCompletionFactor K s).mul
         (analyticAt_completedPartialZeta I h0 h1)), Pi.mul_apply,
       invDedekindZetaCompletionFactor_def]

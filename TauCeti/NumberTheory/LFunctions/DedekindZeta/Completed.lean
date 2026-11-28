@@ -72,6 +72,10 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
   `Λ_K(1 - s) = Λ_K(s)` for every `s : ℂ`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`: away from `0` and `1`,
   `ζ_K(s) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Λ_K(s)`.
+* `meromorphicContinuation_eq_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul` and
+  `TauCeti.LFunctions.meromorphicContinuation_eqOn_of_eq_completionFactor_mul`: a function that is
+  the completion factor times `f` on `Re s > 1` yields the canonical continuation of `f` by
+  stripping that factor off, shared by `ζ_K` and the partial zeta functions of the ideal classes.
 * `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`: `dedekindZetaC K` agrees with
   `NumberField.dedekindZeta K` on `Re s > 1`.
 * `TauCeti.LFunctions.eqOn_dedekindZetaC_of_eqOn_dedekindZeta`: uniqueness away from `1` of
@@ -517,25 +521,68 @@ theorem analyticAt_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul {Z : �
   · exact ((analyticAt_invDedekindZetaCompletionFactor K s).mul
       (hZan h0 hs)).meromorphicOrderAt_nonneg
 
-/-- The reciprocal of the completion factor times `Λ_K` is meromorphic on `ℂ`. -/
-private theorem meromorphic_invDedekindZetaCompletionFactor_mul :
-    Meromorphic (invDedekindZetaCompletionFactor K * completedDedekindZeta K) :=
-  fun s ↦ (analyticAt_invDedekindZetaCompletionFactor K s).meromorphicAt.mul
-    (meromorphic_completedDedekindZeta K s)
+/-- The reciprocal of the completion factor times a meromorphic function is meromorphic. -/
+theorem meromorphic_invDedekindZetaCompletionFactor_mul {Z : ℂ → ℂ} (hZ : Meromorphic Z) :
+    Meromorphic (invDedekindZetaCompletionFactor K * Z) :=
+  fun s ↦ (analyticAt_invDedekindZetaCompletionFactor K s).meromorphicAt.mul (hZ s)
+
+/-- The reciprocal of the completion factor times a function analytic on `Re s > 1` is analytic
+there. -/
+private theorem analyticOnNhd_invDedekindZetaCompletionFactor_mul {Z : ℂ → ℂ}
+    (hZan : AnalyticOnNhd ℂ Z {s | 1 < s.re}) :
+    AnalyticOnNhd ℂ (invDedekindZetaCompletionFactor K * Z) {s | 1 < s.re} := fun s hs ↦
+  (analyticAt_invDedekindZetaCompletionFactor K s).mul (hZan s hs)
+
+/-- On `Re s > 1` the reciprocal completion factor strips the completion factor off `Z`. -/
+private theorem eqOn_invDedekindZetaCompletionFactor_mul {Z f : ℂ → ℂ}
+    (hZf : ∀ ⦃s : ℂ⦄, 1 < s.re → Z s = ((|discr K| : ℤ) : ℂ) ^ (s / 2) *
+      Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K * f s) :
+    EqOn (invDedekindZetaCompletionFactor K * Z) f {s | 1 < s.re} := fun s (hs : 1 < s.re) ↦ by
+  rw [Pi.mul_apply, hZf hs, ← mul_assoc,
+    invDedekindZetaCompletionFactor_mul_eq_one K (zero_lt_one.trans hs), one_mul]
+
+/-- **Continuation by stripping off the completion factor.** If `Z` is meromorphic, analytic on
+`Re s > 1`, and equals `|d_K| ^ (s / 2) Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂ f(s)` on `Re s > 1`, then the
+canonical continuation of `f` from `Re s > 1` is the normal form of
+`invDedekindZetaCompletionFactor K * Z`. This builds both `dedekindZetaC K` from `Λ_K` and the
+partial zeta functions of the ideal classes from the completed partial zeta functions. -/
+theorem meromorphicContinuation_eq_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul
+    {Z f : ℂ → ℂ} (hZ : Meromorphic Z) (hZan : AnalyticOnNhd ℂ Z {s | 1 < s.re})
+    (hZf : ∀ ⦃s : ℂ⦄, 1 < s.re → Z s = ((|discr K| : ℤ) : ℂ) ^ (s / 2) *
+      Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K * f s) :
+    meromorphicContinuation 1 f = toMeromorphicNFOn (invDedekindZetaCompletionFactor K * Z) univ :=
+  meromorphicContinuation_eq_toMeromorphicNFOn
+    (meromorphic_invDedekindZetaCompletionFactor_mul K hZ)
+    (analyticOnNhd_invDedekindZetaCompletionFactor_mul K hZan)
+    (eqOn_invDedekindZetaCompletionFactor_mul K hZf)
+
+/-- **Agreement on `Re s > 1` of a continuation by the completion factor.** Under the hypotheses of
+`meromorphicContinuation_eq_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul`, the canonical
+continuation of `f` agrees with `f` on `Re s > 1`. -/
+theorem meromorphicContinuation_eqOn_of_eq_completionFactor_mul {Z f : ℂ → ℂ}
+    (hZ : Meromorphic Z) (hZan : AnalyticOnNhd ℂ Z {s | 1 < s.re})
+    (hZf : ∀ ⦃s : ℂ⦄, 1 < s.re → Z s = ((|discr K| : ℤ) : ℂ) ^ (s / 2) *
+      Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K * f s) :
+    EqOn (meromorphicContinuation 1 f) f {s | 1 < s.re} := fun _ hs ↦
+  (meromorphicContinuation_apply (meromorphic_invDedekindZetaCompletionFactor_mul K hZ)
+    (analyticOnNhd_invDedekindZetaCompletionFactor_mul K hZan)
+    (eqOn_invDedekindZetaCompletionFactor_mul K hZf)
+    (analyticOnNhd_invDedekindZetaCompletionFactor_mul K hZan _ hs)).trans
+    (eqOn_invDedekindZetaCompletionFactor_mul K hZf hs)
+
+/-- `Λ_K` is analytic on `Re s > 1`. -/
+private theorem analyticOnNhd_completedDedekindZeta_of_one_lt_re :
+    AnalyticOnNhd ℂ (completedDedekindZeta K) {s | 1 < s.re} := fun s (hs : 1 < s.re) ↦
+  analyticAt_completedDedekindZeta K (ne_zero_of_one_lt_re hs) (by rintro rfl; norm_num at hs)
 
 /-- `dedekindZetaC K` is the normal form of the reciprocal completion factor times `Λ_K`. -/
 private theorem dedekindZetaC_eq_toMeromorphicNFOn :
     dedekindZetaC K =
       toMeromorphicNFOn (invDedekindZetaCompletionFactor K * completedDedekindZeta K) univ := by
   rw [dedekindZetaC_def]
-  refine meromorphicContinuation_eq_toMeromorphicNFOn
-    (meromorphic_invDedekindZetaCompletionFactor_mul K) (fun s hs ↦ ?_) fun s hs ↦ ?_
-  · have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
-    have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
-    exact (analyticAt_invDedekindZetaCompletionFactor K s).mul
-      (analyticAt_completedDedekindZeta K h0 h1)
-  · rw [Pi.mul_apply, completedDedekindZeta_eq_mul_dedekindZeta K hs, ← mul_assoc,
-      invDedekindZetaCompletionFactor_mul_eq_one K (zero_lt_one.trans hs), one_mul]
+  exact meromorphicContinuation_eq_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul K
+    (meromorphic_completedDedekindZeta K) (analyticOnNhd_completedDedekindZeta_of_one_lt_re K)
+    fun _ hs ↦ completedDedekindZeta_eq_mul_dedekindZeta K hs
 
 /-- **`ζ_K` is the reciprocal of the completion factor times `Λ_K`**: away from `s = 0` and
 `s = 1`, `ζ_K(s) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Λ_K(s)`, where `Γ_ℝ⁻¹` and `Γ_ℂ⁻¹`
@@ -545,7 +592,7 @@ theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ} (h0 : s ≠ 0) (h1 
     dedekindZetaC K s = ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
       (Gammaℂ s)⁻¹ ^ nrComplexPlaces K * completedDedekindZeta K s := by
   rw [dedekindZetaC_eq_toMeromorphicNFOn, toMeromorphicNFOn_apply_of_analyticAt
-    (meromorphic_invDedekindZetaCompletionFactor_mul K)
+    (meromorphic_invDedekindZetaCompletionFactor_mul K (meromorphic_completedDedekindZeta K))
     ((analyticAt_invDedekindZetaCompletionFactor K s).mul
       (analyticAt_completedDedekindZeta K h0 h1)), Pi.mul_apply, invDedekindZetaCompletionFactor]
 
@@ -553,11 +600,10 @@ theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ} (h0 : s ≠ 0) (h1 
 `NumberField.dedekindZeta K` there, since `ζ_K` has a meromorphic continuation to `ℂ`. -/
 theorem dedekindZetaC_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
     dedekindZetaC K s = dedekindZeta K s := by
-  have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
-  have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
-  rw [dedekindZetaC_eq_mul_completedDedekindZeta K h0 h1,
-    completedDedekindZeta_eq_mul_dedekindZeta K hs, ← mul_assoc, ← invDedekindZetaCompletionFactor,
-    invDedekindZetaCompletionFactor_mul_eq_one K (zero_lt_one.trans hs), one_mul]
+  rw [dedekindZetaC_def]
+  exact meromorphicContinuation_eqOn_of_eq_completionFactor_mul K
+    (meromorphic_completedDedekindZeta K) (analyticOnNhd_completedDedekindZeta_of_one_lt_re K)
+    (fun _ hs ↦ completedDedekindZeta_eq_mul_dedekindZeta K hs) hs
 
 /-- **`ζ_K` is analytic away from `s = 1`.** At `s = 0` the simple pole of `Λ_K` is cancelled by
 the zero of the reciprocal completion factor. -/
