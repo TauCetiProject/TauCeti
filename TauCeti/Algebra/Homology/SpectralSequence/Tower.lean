@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Basic
+public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
+public import TauCeti.Algebra.Homology.SpectralSequence.Reindex
 public import TauCeti.Algebra.Homology.ShortComplex.SubquotientPresentation
 
 /-!
@@ -67,6 +69,10 @@ sequences identifies the towers.
 * `CategoryTheory.SpectralSequence.pullback_cyclesSubobject_of_iso`,
   `CategoryTheory.SpectralSequence.pullback_boundariesSubobject_of_iso`: isomorphic spectral
   sequences have towers corresponding under the first-page isomorphism.
+* `CategoryTheory.SpectralSequence.pagePresentation_eq_trans_fromPage`,
+  `CategoryTheory.SpectralSequence.cyclesSubobject_eq_preimage_fromPage`,
+  `CategoryTheory.SpectralSequence.boundariesSubobject_eq_preimage_fromPage`: rebasing
+  compatibility with `CategoryTheory.SpectralSequence.fromPage`.
 
 ## References
 
@@ -118,9 +124,9 @@ noncomputable def cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
     Subobject ((E.page r₀).X pq) :=
   (E.pagePresentation pq r hr).Z
 
-/-- The boundary tower `B_r(pq)`: the subobject of the object at `pq` on the first page that is
-divided out in the object at `pq` on the page `r`. It consists of the elements that are boundaries
-by the page `r`. -/
+/-- The boundary tower `B_r(pq)`: the subobject of the object at `pq` on the first page whose
+quotient in `Z_r(pq)` is the object at `pq` on the page `r`. It consists of the elements that
+become boundaries on or before the page `r`. -/
 noncomputable def boundariesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
     Subobject ((E.page r₀).X pq) :=
   (E.pagePresentation pq r hr).B
@@ -227,6 +233,42 @@ lemma boundariesSubobject_add_one_eq_iff (r : ℤ) (hr : r₀ ≤ r) :
   rw [← bot_factors_iff_zero, ← h]
   simpa using imageSubobject_factors_comp_self ((E.page r).dTo pq) (𝟙 _)
 
+/-- If the leaving differential at `pq` vanishes on all pages `t` with `s ≤ t < r`, then
+`Z_r(pq) = Z_s(pq)`. -/
+lemma cyclesSubobject_eq_of_dFrom_eq_zero {s r : ℤ} (hs : r₀ ≤ s) (hsr : s ≤ r)
+    (h : ∀ t (hst : s ≤ t), t < r → (E.page t (hs.trans hst)).dFrom pq = 0) :
+    E.cyclesSubobject pq r (hs.trans hsr) = E.cyclesSubobject pq s hs := by
+  induction r, hsr using Int.leInduction with
+  | base => rfl
+  | succ r hsr ih =>
+    rw [(E.cyclesSubobject_add_one_eq_iff pq r (hs.trans hsr)).2
+        (h r hsr (Int.lt_add_one_iff.2 le_rfl)),
+      ih (fun t hst htr ↦ h t hst (htr.trans (Int.lt_add_one_iff.2 le_rfl)))]
+
+/-- If the entering differential at `pq` vanishes on all pages `t` with `s ≤ t < r`, then
+`B_r(pq) = B_s(pq)`. -/
+lemma boundariesSubobject_eq_of_dTo_eq_zero {s r : ℤ} (hs : r₀ ≤ s) (hsr : s ≤ r)
+    (h : ∀ t (hst : s ≤ t), t < r → (E.page t (hs.trans hst)).dTo pq = 0) :
+    E.boundariesSubobject pq r (hs.trans hsr) = E.boundariesSubobject pq s hs := by
+  induction r, hsr using Int.leInduction with
+  | base => rfl
+  | succ r hsr ih =>
+    rw [(E.boundariesSubobject_add_one_eq_iff pq r (hs.trans hsr)).2
+        (h r hsr (Int.lt_add_one_iff.2 le_rfl)),
+      ih (fun t hst htr ↦ h t hst (htr.trans (Int.lt_add_one_iff.2 le_rfl)))]
+
+/-- If all leaving differentials at `pq` on pages `< r` vanish, then `Z_r(pq) = ⊤`. -/
+lemma cyclesSubobject_eq_top_of_dFrom_eq_zero {r : ℤ} (hr : r₀ ≤ r)
+    (h : ∀ t (ht : r₀ ≤ t), t < r → (E.page t ht).dFrom pq = 0) :
+    E.cyclesSubobject pq r hr = ⊤ := by
+  simpa using E.cyclesSubobject_eq_of_dFrom_eq_zero pq le_rfl hr h
+
+/-- If all entering differentials at `pq` on pages `< r` vanish, then `B_r(pq) = ⊥`. -/
+lemma boundariesSubobject_eq_bot_of_dTo_eq_zero {r : ℤ} (hr : r₀ ≤ r)
+    (h : ∀ t (ht : r₀ ≤ t), t < r → (E.page t ht).dTo pq = 0) :
+    E.boundariesSubobject pq r hr = ⊥ := by
+  simpa using E.boundariesSubobject_eq_of_dTo_eq_zero pq le_rfl hr h
+
 /-- The object at `pq` on the page `r` is zero exactly when its boundary and cycle subobjects
 agree. -/
 lemma isZero_page_X_iff (r : ℤ) (hr : r₀ ≤ r) :
@@ -265,22 +307,111 @@ lemma boundariesSubobject_le_pullback (f : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r)
       (Subobject.pullback ((f.hom r₀).f pq)).obj (E'.boundariesSubobject pq r) :=
   (pagePresentation_mapsTo pq f r hr).B_le_pullback
 
+/-- A morphism of spectral sequences carries `B_r(E, pq)` into `B_r(E', pq)` (in `Factors` form). -/
+lemma Hom.factors_boundariesSubobject (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
+    (E'.boundariesSubobject pq r hr).Factors
+      ((E.boundariesSubobject pq r hr).arrow ≫ (f.hom r₀).f pq) :=
+  (pagePresentation_mapsTo pq f r hr).factors_B
+
+/-- A morphism of spectral sequences carries `Z_r(E, pq)` into `Z_r(E', pq)` (in `Factors` form). -/
+lemma Hom.factors_cyclesSubobject (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
+    (E'.cyclesSubobject pq r hr).Factors
+      ((E.cyclesSubobject pq r hr).arrow ≫ (f.hom r₀).f pq) :=
+  (pagePresentation_mapsTo pq f r hr).factors_Z
+
+/-- **Naturality on boundaries.** The direct image of `B_r(E, pq)` along `(f.hom r₀).f pq` lies
+below `B_r(E', pq)`. -/
+lemma Hom.exists_boundariesSubobject_le (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
+    (Subobject.exists ((f.hom r₀).f pq)).obj (E.boundariesSubobject pq r hr) ≤
+      E'.boundariesSubobject pq r hr :=
+  (Subobject.exists_le_iff _ _ _).2 (f.factors_boundariesSubobject pq r hr)
+
+/-- **Naturality of presentations.** The morphism induced by `(f.hom r₀).f pq` between the page-`r`
+presentations of `E` and `E'` at `pq` is `(f.hom r hr).f pq`. -/
+theorem Hom.pagePresentation_map (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
+    (hB : (E'.pagePresentation pq r hr).B.Factors
+      ((E.pagePresentation pq r hr).B.arrow ≫ (f.hom r₀).f pq) :=
+        (pagePresentation_mapsTo pq f r hr).factors_B)
+    (hZ : (E'.pagePresentation pq r hr).Z.Factors
+      ((E.pagePresentation pq r hr).Z.arrow ≫ (f.hom r₀).f pq) :=
+        (pagePresentation_mapsTo pq f r hr).factors_Z) :
+    (E.pagePresentation pq r hr).map (E'.pagePresentation pq r hr) ((f.hom r₀).f pq)
+        hB hZ =
+      (f.hom r hr).f pq :=
+  (pagePresentation_mapsTo pq f r hr).map_eq hB hZ
+
 /-- Under an isomorphism of spectral sequences, the cycles of `E` are the pullback of the cycles
 of `E'` along the first-page component. -/
 lemma pullback_cyclesSubobject_of_iso (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) :
-    (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.cyclesSubobject pq r) =
-      E.cyclesSubobject pq r :=
+    (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.cyclesSubobject pq r hr) =
+      E.cyclesSubobject pq r hr :=
   pullback_eq_of_comp_eq_id (hom_inv_id_hom_f e r₀ le_rfl pq)
     (cyclesSubobject_le_pullback pq e.hom r hr) (cyclesSubobject_le_pullback pq e.inv r hr)
 
 /-- Under an isomorphism of spectral sequences, the boundaries of `E` are the pullback of the
 boundaries of `E'` along the first-page component. -/
 lemma pullback_boundariesSubobject_of_iso (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) :
-    (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.boundariesSubobject pq r) =
-      E.boundariesSubobject pq r :=
+    (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.boundariesSubobject pq r hr) =
+      E.boundariesSubobject pq r hr :=
   pullback_eq_of_comp_eq_id (hom_inv_id_hom_f e r₀ le_rfl pq)
     (boundariesSubobject_le_pullback pq e.hom r hr) (boundariesSubobject_le_pullback pq e.inv r hr)
 
+/-- Isomorphic spectral sequences have corresponding cycle towers under the first-page
+isomorphism. -/
+lemma map_cyclesSubobject_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
+    (Subobject.map (pageXIsoOfIso e r₀ le_rfl pq).hom).obj (E.cyclesSubobject pq r hr) =
+      E'.cyclesSubobject pq r hr := by
+  rw [← pullback_cyclesSubobject_of_iso pq e r hr, ← pageXIsoOfIso_hom e r₀ le_rfl pq,
+    ← Subobject.exists_iso_map]
+  exact Subobject.exists_pullback_eq_self_of_epi _ _
+
+/-- Isomorphic spectral sequences have corresponding boundary towers under the first-page
+isomorphism. -/
+lemma map_boundariesSubobject_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
+    (Subobject.map (pageXIsoOfIso e r₀ le_rfl pq).hom).obj (E.boundariesSubobject pq r hr) =
+      E'.boundariesSubobject pq r hr := by
+  rw [← pullback_boundariesSubobject_of_iso pq e r hr, ← pageXIsoOfIso_hom e r₀ le_rfl pq,
+    ← Subobject.exists_iso_map]
+  exact Subobject.exists_pullback_eq_self_of_epi _ _
+
 end Naturality
+
+section Rebasing
+
+variable {E} (E' : SpectralSequence C c r₀)
+
+/-- **Rebasing presentations.** For `s ≥ r₀` and `r ≥ s`, the page-`r` presentation of `E'` inside
+page `r₀` is the composite of the page-`s` presentation of `E'` with the page-`r` presentation of
+`E'.fromPage s hs`. -/
+theorem pagePresentation_eq_trans_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
+    (r : ℤ) (hsr : s ≤ r) :
+    E'.pagePresentation pq r (hs.trans hsr) =
+      (E'.pagePresentation pq s hs).trans ((E'.fromPage s hs).pagePresentation pq r hsr) := by
+  induction r, hsr using Int.leInduction with
+  | base =>
+    rw [pagePresentation_self, SubquotientPresentation.trans_refl]
+  | succ r hsr ih =>
+    rw [E'.pagePresentation_add_one pq r (hs.trans hsr), ih,
+      (E'.fromPage s hs).pagePresentation_add_one pq r hsr,
+      SubquotientPresentation.trans_mapIso, SubquotientPresentation.trans_assoc]
+
+/-- **Rebasing the cycle tower.** For `s ≥ r₀` and `r ≥ s`, `Z_r(pq)` is the preimage along the
+page-`s` presentation of the `r`-th cycle subobject of `E'.fromPage s hs`. -/
+lemma cyclesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ) (r : ℤ) (hsr : s ≤ r) :
+    E'.cyclesSubobject pq r (hs.trans hsr) =
+      (E'.pagePresentation pq s hs).preimage ((E'.fromPage s hs).cyclesSubobject pq r hsr) := by
+  rw [cyclesSubobject, cyclesSubobject, E'.pagePresentation_eq_trans_fromPage s hs pq r hsr,
+    SubquotientPresentation.trans_Z]
+
+/-- **Rebasing the boundary tower.** For `s ≥ r₀` and `r ≥ s`, `B_r(pq)` is the preimage along the
+page-`s` presentation of the `r`-th boundary subobject of `E'.fromPage s hs`. -/
+lemma boundariesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ) (r : ℤ)
+    (hsr : s ≤ r) :
+    E'.boundariesSubobject pq r (hs.trans hsr) =
+      (E'.pagePresentation pq s hs).preimage ((E'.fromPage s hs).boundariesSubobject pq r hsr) := by
+  rw [boundariesSubobject, boundariesSubobject, E'.pagePresentation_eq_trans_fromPage s hs pq r hsr,
+    SubquotientPresentation.trans_B]
+
+end Rebasing
 
 end CategoryTheory.SpectralSequence

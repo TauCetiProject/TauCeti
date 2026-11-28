@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Order.Bounds.Basic
 public import TauCeti.CategoryTheory.Abelian.Subobject
+public import TauCeti.CategoryTheory.Subobject.Basic
 public import TauCeti.CategoryTheory.Subobject.Pullback
 import Mathlib.CategoryTheory.Abelian.Refinements
+import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
 # Subquotient presentations
@@ -141,17 +143,11 @@ lemma kernelSubobject_π : kernelSubobject P.π = (Subobject.pullback P.Z.arrow)
   rw [← cokernel_π_iso_hom, kernelSubobject_comp_mono, kernelSubobject_cokernel_π,
     pullback_arrow_of_le]
 
-end Basic
+/-- The projection `P.π` exhibits `X` as the cokernel of the inclusion `P.B ⟶ P.Z`. -/
+noncomputable def isColimit : IsColimit (CokernelCofork.ofπ P.π P.ofLE_π) :=
+  IsColimit.ofIsoColimit (cokernelIsCokernel (ofLE P.B P.Z P.le)) (Cofork.ext P.iso rfl)
 
-omit [Abelian C] in
-/-- Composing with the inclusion of a subobject into itself does nothing. The hypothesis `S ≤ S`
-is stated for a single `S`, so this applies wherever the source and target of `ofLE` agree only
-after unfolding a definition: the larger subobjects of `ofEpi`, `trans` and `mapIso` are, by
-definition, the subobjects they are built from, but cannot be rewritten in the source of a
-morphism. -/
-private lemma ofLE_self_comp {S : Subobject A} (h : S ≤ S) (f : (S : C) ⟶ X) :
-    ofLE S S h ≫ f = f := by
-  rw [ofLE_refl, Category.id_comp]
+end Basic
 
 /-- Two subquotient presentations are equal when they have the same subobjects and the same
 projection. -/
@@ -597,6 +593,15 @@ lemma trans_mapIso (Q : SubquotientPresentation X Y) (e : Y ≅ W) :
   ext (by simp) (by simp) (by
     simp only [π_trans', π_mapIso', preimageπ_ofLE_assoc, ofLE_comp_ofLE_assoc, Category.assoc])
 
+/-- Transporting a presentation along two composable isomorphisms equals transporting along their
+composite. -/
+@[simp]
+lemma mapIso_mapIso (e₁ : X ≅ Y) (e₂ : Y ≅ W) :
+    (P.mapIso e₁).mapIso e₂ = P.mapIso (e₁ ≪≫ e₂) :=
+  ext rfl rfl (by
+    rw [π_mapIso', π_mapIso', π_mapIso']
+    simp only [Category.assoc, ofLE_comp_ofLE_assoc, Iso.trans_hom])
+
 /-- The isomorphism between two objects presented inside `A` by the same subobjects: it is
 induced by the identity of the larger subobject. -/
 noncomputable def isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
@@ -616,6 +621,25 @@ subobjects gives that presentation. -/
 lemma mapIso_isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
     P.mapIso (P.isoOfEq P' hB hZ) = P' :=
   ext hB hZ (by rw [π_mapIso', π_isoOfEq_hom, ofLE_comp_ofLE_assoc])
+
+/-- If transporting `P` along `e : X ≅ Y` equals `P'`, then `e` equals `P.isoOfEq P'`. -/
+lemma eq_isoOfEq_of_mapIso_eq {P' : SubquotientPresentation A Y} {e : X ≅ Y}
+    (h : P.mapIso e = P') (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
+    e = P.isoOfEq P' hB hZ := by
+  subst h
+  ext
+  rw [← cancel_epi P.π, π_isoOfEq_hom, π_mapIso', Subobject.ofLE_comp_ofLE_assoc,
+    Subobject.ofLE_refl, Category.id_comp]
+
+/-- Composing `isoOfEq` isomorphisms between presentations of the same subobjects. -/
+lemma isoOfEq_trans {P₁ : SubquotientPresentation A X} {P₂ : SubquotientPresentation A Y}
+    {P₃ : SubquotientPresentation A W} (hB₁ : P₁.B = P₂.B) (hZ₁ : P₁.Z = P₂.Z)
+    (hB₂ : P₂.B = P₃.B) (hZ₂ : P₂.Z = P₃.Z) :
+    P₁.isoOfEq P₂ hB₁ hZ₁ ≪≫ P₂.isoOfEq P₃ hB₂ hZ₂ =
+      P₁.isoOfEq P₃ (hB₁.trans hB₂) (hZ₁.trans hZ₂) := by
+  ext
+  rw [Iso.trans_hom, ← cancel_epi P₁.π, π_isoOfEq_hom_assoc, π_isoOfEq_hom,
+    π_isoOfEq_hom, ofLE_comp_ofLE_assoc]
 
 end MapIso
 
@@ -655,6 +679,173 @@ lemma subquotient_subquotient_image {I I' K' K : Subobject X} (h : I ≤ K) (hI 
   P.trans_subquotient_image _ hI h' hK
 
 end Naturality
+
+section Map
+
+variable {A' A'' X' X'' : C}
+
+/-- A morphism `f : A ⟶ A'` carrying `P.B` into `Q.B` and `P.Z` into `Q.Z` induces a canonical
+morphism `X ⟶ X'` between the presented subquotients. -/
+noncomputable def map (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
+    (f : A ⟶ A') (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
+    X ⟶ X' :=
+  P.iso.inv ≫ cokernel.map (ofLE P.B P.Z P.le) (ofLE Q.B Q.Z Q.le)
+    (Q.B.factorThru (P.B.arrow ≫ f) hB) (Q.Z.factorThru (P.Z.arrow ≫ f) hZ)
+    (ofLE_comp_factorThru P.le Q.le f hB hZ).symm ≫ Q.iso.hom
+
+@[reassoc (attr := simp)]
+lemma π_comp_map (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
+    (f : A ⟶ A') (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
+    P.π ≫ P.map Q f hB hZ = Q.Z.factorThru (P.Z.arrow ≫ f) hZ ≫ Q.π := by
+  rw [map, ← cokernel_π_iso_hom_assoc, Iso.hom_inv_id_assoc, cokernel.π_desc_assoc,
+    Category.assoc, cokernel_π_iso_hom]
+
+lemma map_eq_of_π_comp (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
+    (f : A ⟶ A') (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f))
+    {g : X ⟶ X'} (hg : P.π ≫ g = Q.Z.factorThru (P.Z.arrow ≫ f) hZ ≫ Q.π) :
+    P.map Q f hB hZ = g := by
+  rw [← cancel_epi P.π, π_comp_map, hg]
+
+/-- `SubquotientPresentation.map` depends only on the ambient morphism, not on the choice of
+`Factors` witnesses or definitional representative of the morphism. -/
+lemma map_congr {P : SubquotientPresentation A X} {Q : SubquotientPresentation A' X'}
+    {f f' : A ⟶ A'} (h : f = f')
+    {hB : Q.B.Factors (P.B.arrow ≫ f)} {hZ : Q.Z.Factors (P.Z.arrow ≫ f)}
+    {hB' : Q.B.Factors (P.B.arrow ≫ f')} {hZ' : Q.Z.Factors (P.Z.arrow ≫ f')} :
+    P.map Q f hB hZ = P.map Q f' hB' hZ' := by
+  subst h
+  rfl
+
+@[simp]
+lemma map_id (P : SubquotientPresentation A X)
+    (hB : P.B.Factors (P.B.arrow ≫ 𝟙 A)) (hZ : P.Z.Factors (P.Z.arrow ≫ 𝟙 A)) :
+    P.map P (𝟙 A) hB hZ = 𝟙 X := by
+  apply map_eq_of_π_comp
+  have h1 : P.Z.factorThru (P.Z.arrow ≫ 𝟙 A) hZ = 𝟙 (P.Z : C) := by
+    rw [← cancel_mono P.Z.arrow]
+    simp
+  rw [h1, Category.comp_id, Category.id_comp]
+
+lemma map_comp (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
+    (R : SubquotientPresentation A'' X'') (f : A ⟶ A') (g : A' ⟶ A'')
+    (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f))
+    (hB' : R.B.Factors (Q.B.arrow ≫ g)) (hZ' : R.Z.Factors (Q.Z.arrow ≫ g))
+    (hB'' : R.B.Factors (P.B.arrow ≫ (f ≫ g))) (hZ'' : R.Z.Factors (P.Z.arrow ≫ (f ≫ g))) :
+    P.map Q f hB hZ ≫ Q.map R g hB' hZ' = P.map R (f ≫ g) hB'' hZ'' := by
+  symm
+  apply map_eq_of_π_comp
+  rw [π_comp_map_assoc, π_comp_map, ← Category.assoc]
+  congr 1
+  rw [← cancel_mono R.Z.arrow]
+  simp
+
+@[simp]
+lemma map_mapIso_left (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
+    (e : X ≅ Y) (f : A ⟶ A')
+    (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
+    (P.mapIso e).map Q f hB hZ = e.inv ≫ P.map Q f hB hZ := by
+  apply map_eq_of_π_comp
+  rw [π_mapIso', Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, π_comp_map]
+  dsimp only [mapIso]
+  rw [ofLE_refl, Category.id_comp]
+
+@[simp]
+lemma map_mapIso_right (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
+    (e : X' ≅ Y) (f : A ⟶ A')
+    (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
+    P.map (Q.mapIso e) f hB hZ = P.map Q f hB hZ ≫ e.hom := by
+  apply map_eq_of_π_comp
+  rw [π_comp_map_assoc, π_mapIso]
+  rfl
+
+/-- Transporting both presentations along isomorphisms conjugates `SubquotientPresentation.map`. -/
+lemma map_mapIso (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
+    (e : X ≅ Y) {Y' : C} (e' : X' ≅ Y') (f : A ⟶ A')
+    (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
+    (P.mapIso e).map (Q.mapIso e') f hB hZ = e.inv ≫ P.map Q f hB hZ ≫ e'.hom :=
+  (map_mapIso_left P (Q.mapIso e') e f hB hZ).trans
+    (congrArg (e.inv ≫ ·) (map_mapIso_right P Q e' f hB hZ))
+
+/-- The morphism induced by `f : A ⟶ A'` between identity presentations `refl A` and `refl A'`
+is `f` itself. -/
+@[simp]
+lemma map_refl (f : A ⟶ A')
+    (hB : (refl A').B.Factors ((refl A).B.arrow ≫ f))
+    (hZ : (refl A').Z.Factors ((refl A).Z.arrow ≫ f)) :
+    (refl A).map (refl A') f hB hZ = f := by
+  apply map_eq_of_π_comp
+  simp
+
+/-- If `f : A ⟶ A'` induces `P.map Q f hB hZ : X ⟶ X'`, and `P.map Q f hB hZ` maps `S` into `S'`,
+then `f` maps `P.preimage S` into `Q.preimage S'`. -/
+lemma factors_preimage_of_factors_map (P : SubquotientPresentation A X)
+    (Q : SubquotientPresentation A' X') (f : A ⟶ A')
+    (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f))
+    {S : Subobject X} {S' : Subobject X'}
+    (hS : S'.Factors (S.arrow ≫ P.map Q f hB hZ)) :
+    (Q.preimage S').Factors ((P.preimage S).arrow ≫ f) := by
+  have h1 : ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ Q.Z.factorThru (P.Z.arrow ≫ f) hZ ≫
+      Q.π = P.preimageπ S ≫ S.arrow ≫ P.map Q f hB hZ := by
+    rw [← π_comp_map, ← Category.assoc, ← preimageπ_arrow, Category.assoc]
+  have h2 : (Q.preimage S').Factors
+      ((ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫
+        Q.Z.factorThru (P.Z.arrow ≫ f) hZ) ≫ Q.Z.arrow) := by
+    rw [Q.factors_preimage_iff S', Category.assoc, h1]
+    exact factors_of_factors_right (P.preimageπ S) hS
+  simpa using h2
+
+/-- Naturality of the restricted projection `preimageπ` with respect to
+`SubquotientPresentation.map`. -/
+@[reassoc]
+lemma preimageπ_comp_factorThru (P : SubquotientPresentation A X)
+    (P' : SubquotientPresentation A' X') (f : A ⟶ A')
+    (hB : P'.B.Factors (P.B.arrow ≫ f)) (hZ : P'.Z.Factors (P.Z.arrow ≫ f))
+    {S : Subobject X} {S' : Subobject X'}
+    (hS : S'.Factors (S.arrow ≫ P.map P' f hB hZ)) :
+    P.preimageπ S ≫ S'.factorThru (S.arrow ≫ P.map P' f hB hZ) hS =
+      (P'.preimage S').factorThru ((P.preimage S).arrow ≫ f)
+          (P.factors_preimage_of_factors_map P' f hB hZ hS) ≫
+        P'.preimageπ S' := by
+  rw [← cancel_mono S'.arrow, Category.assoc, factorThru_arrow, preimageπ_arrow_assoc,
+    π_comp_map, Category.assoc, preimageπ_arrow]
+  have hfac := ofLE_comp_factorThru (P.preimage_le_Z S) (P'.preimage_le_Z S') f
+    (P.factors_preimage_of_factors_map P' f hB hZ hS) hZ
+  rw [reassoc_of% hfac]
+
+/-- Functoriality of composition of subquotient presentations: the morphism induced by `f : A ⟶ A'`
+between `P.trans Q` and `P'.trans Q'` equals the morphism induced by `P.map P' f hB hZ` between
+`Q` and `Q'`. -/
+theorem trans_map (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+    (Q : SubquotientPresentation X Y) (Q' : SubquotientPresentation X' Y') (f : A ⟶ A')
+    (hB : P'.B.Factors (P.B.arrow ≫ f)) (hZ : P'.Z.Factors (P.Z.arrow ≫ f))
+    (hBQ : Q'.B.Factors (Q.B.arrow ≫ P.map P' f hB hZ))
+    (hZQ : Q'.Z.Factors (Q.Z.arrow ≫ P.map P' f hB hZ)) :
+    (P.trans Q).map (P'.trans Q') f
+        (P.factors_preimage_of_factors_map P' f hB hZ hBQ)
+        (P.factors_preimage_of_factors_map P' f hB hZ hZQ) =
+      Q.map Q' (P.map P' f hB hZ) hBQ hZQ := by
+  apply map_eq_of_π_comp
+  rw [π_trans', π_trans', Category.assoc, Category.assoc, π_comp_map,
+    preimageπ_comp_factorThru_assoc]
+  have hfac := ofLE_comp_factorThru (P.trans_Z Q).le (P'.trans_Z Q').le f
+    (P.factors_preimage_of_factors_map P' f hB hZ hZQ)
+    (P.factors_preimage_of_factors_map P' f hB hZ hZQ)
+  rw [reassoc_of% hfac]
+
+/-- Naturality of `isoOfEq` with respect to `map`: comparing presentations with equal subobjects
+commutes with the morphisms induced by `f : A ⟶ A'`. -/
+lemma isoOfEq_hom_comp_map {P : SubquotientPresentation A X} {Q : SubquotientPresentation A Y}
+    {P' : SubquotientPresentation A' X'} {Q' : SubquotientPresentation A' Y'}
+    (hB : P.B = Q.B) (hZ : P.Z = Q.Z) (hB' : P'.B = Q'.B) (hZ' : P'.Z = Q'.Z) (f : A ⟶ A')
+    (hBP : P'.B.Factors (P.B.arrow ≫ f)) (hZP : P'.Z.Factors (P.Z.arrow ≫ f))
+    (hBQ : Q'.B.Factors (Q.B.arrow ≫ f)) (hZQ : Q'.Z.Factors (Q.Z.arrow ≫ f)) :
+    (P.isoOfEq Q hB hZ).hom ≫ Q.map Q' f hBQ hZQ =
+      P.map P' f hBP hZP ≫ (P'.isoOfEq Q' hB' hZ').hom := by
+  have hfac := ofLE_comp_factorThru hZ.le hZ'.le f hZP hZQ
+  rw [← cancel_epi P.π, π_isoOfEq_hom_assoc, π_comp_map, π_comp_map_assoc, π_isoOfEq_hom,
+    reassoc_of% hfac]
+
+end Map
 
 section MapsTo
 
@@ -698,6 +889,25 @@ lemma MapsTo.Z_le_pullback (h : P.MapsTo P' φ g) : P.Z ≤ (Subobject.pullback 
 /-- If `φ` maps `P` to `P'`, it maps the smaller subobject of `P` into that of `P'`. -/
 lemma MapsTo.B_le_pullback (h : P.MapsTo P' φ g) : P.B ≤ (Subobject.pullback φ).obj P'.B :=
   (P.B_le_preimage _).trans (by simpa using h.le_pullback_preimage ⊥)
+
+/-- If `φ` maps `P` to `P'` over `g`, then `P.B` factors through `P'.B` via `φ`. -/
+lemma MapsTo.factors_B (h : P.MapsTo P' φ g) : P'.B.Factors (P.B.arrow ≫ φ) :=
+  (le_pullback_iff φ P.B P'.B).1 h.B_le_pullback
+
+/-- If `φ` maps `P` to `P'` over `g`, then `P.Z` factors through `P'.Z` via `φ`. -/
+lemma MapsTo.factors_Z (h : P.MapsTo P' φ g) : P'.Z.Factors (P.Z.arrow ≫ φ) :=
+  (le_pullback_iff φ P.Z P'.Z).1 h.Z_le_pullback
+
+/-- If `φ` maps `P` to `P'` over `g`, the induced map `P.map P' φ` equals `g`. -/
+lemma MapsTo.map_eq (h : P.MapsTo P' φ g)
+    (hB : P'.B.Factors (P.B.arrow ≫ φ) := h.factors_B)
+    (hZ : P'.Z.Factors (P.Z.arrow ≫ φ) := h.factors_Z) :
+    P.map P' φ hB hZ = g := by
+  obtain ⟨ψ, hψ, hψπ⟩ := h
+  apply map_eq_of_π_comp
+  have hfac : ψ = P'.Z.factorThru (P.Z.arrow ≫ φ) hZ := by
+    rw [← cancel_mono P'.Z.arrow, factorThru_arrow, hψ]
+  rw [← hψπ, hfac]
 
 /-- The identity presentations are mapped to each other by any morphism, over itself. -/
 lemma mapsTo_refl (φ : A ⟶ A') : (refl A).MapsTo (refl A') φ φ :=

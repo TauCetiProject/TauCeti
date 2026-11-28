@@ -113,4 +113,28 @@ lemma homologyPresentation_mapsTo {S' : ShortComplex C} (α : S ⟶ S') :
   rw [π_homologyPresentation', π_homologyPresentation']
   simp [ofLE_comp_ofLE_assoc, reassoc_of% h]
 
+/-- When both morphisms of `S` vanish, the comparison isomorphism between `refl S.X₂` and
+`S.homologyPresentation` is `(S.cyclesIsoX₂ hg).symm ≪≫ S.asIsoHomologyπ hf`. -/
+lemma homologyPresentation_isoOfEq_of_eq_zero (hf : S.f = 0) (hg : S.g = 0) :
+    (TauCeti.SubquotientPresentation.refl S.X₂).isoOfEq S.homologyPresentation
+        (by rw [TauCeti.SubquotientPresentation.refl_B, homologyPresentation_B, hf,
+          imageSubobject_zero])
+        (by rw [TauCeti.SubquotientPresentation.refl_Z, homologyPresentation_Z, hg,
+          kernelSubobject_zero]) =
+      (S.cyclesIsoX₂ hg).symm ≪≫ S.asIsoHomologyπ hf := by
+  ext
+  rw [← cancel_epi (TauCeti.SubquotientPresentation.refl S.X₂).π,
+    TauCeti.SubquotientPresentation.π_isoOfEq_hom,
+    TauCeti.SubquotientPresentation.π_refl, π_homologyPresentation',
+    ofLE_comp_ofLE_assoc]
+  have hcyc : Subobject.ofLE (TauCeti.SubquotientPresentation.refl S.X₂).Z
+        (kernelSubobject S.g) (by rw [TauCeti.SubquotientPresentation.refl_Z, hg,
+          kernelSubobject_zero]) ≫
+        S.kernelSubobjectIsoCycles.hom =
+      (TauCeti.SubquotientPresentation.refl S.X₂).Z.arrow ≫ (S.cyclesIsoX₂ hg).inv := by
+    rw [← cancel_mono S.iCycles]
+    simp
+  rw [Iso.trans_hom, Iso.symm_hom, reassoc_of% hcyc]
+  simp [asIsoHomologyπ]
+
 end CategoryTheory.ShortComplex
