@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalize
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori
 public import TauCeti.LinearAlgebra.Matrix.Permutation
 
+import TauCeti.RingTheory.Valuation.Basic
+
 /-!
 # The Iwasawa–Bruhat decomposition of `GL_m` over a valued field
 
@@ -117,6 +119,75 @@ theorem mem_map_iwahoriOne_iff {g : GL m K} :
     · ext i j
       rw [GeneralLinearGroup.map_apply, GeneralLinearGroup.val_mk'']
       simp [M, ValuationSubring.algebraMap_apply]
+
+/-- A diagonal matrix lies in the pro-`p` Iwahori subgroup of `GL m K` exactly when every diagonal
+entry satisfies `v (t i - 1) < 1`. -/
+theorem diagGL_mem_map_iwahoriOne_iff {t : m → Kˣ} :
+    diagGL t ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) ↔
+      ∀ i : m, A.valuation ((t i : K) - 1) < 1 := by
+  rw [mem_map_iwahoriOne_iff]
+  constructor
+  · rintro ⟨-, -, hdiag⟩
+    simpa [diagGL_coe] using hdiag
+  · intro hdiag
+    refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ by simpa [diagGL_coe] using hdiag i⟩
+    · simp only [diagGL_coe, diagonal_apply]
+      split_ifs with hij
+      · subst hij
+        have h1 : A.valuation ((t i : K) - 1 + 1) = A.valuation (1 : K) :=
+          Valuation.map_add_eq_of_lt_right A.valuation (by simpa using hdiag i)
+        simpa using h1.le
+      · simp
+    · simp [hji.ne']
+
+/-- Conjugating an upper-triangular element of `I₁` by a dominant diagonal matrix keeps it in
+`I₁`. -/
+theorem diagGL_mul_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular {t : m → Kˣ}
+    (ht : Monotone fun i ↦ A.valuation (t i : K)) {u : GL m K}
+    (hu : u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
+    (hutri : (u : Matrix m m K).IsUpperTriangular) :
+    diagGL t * u * (diagGL t)⁻¹ ∈
+      (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
+  obtain ⟨h1, -, hdiag⟩ := (mem_map_iwahoriOne_iff A).mp hu
+  rw [mem_map_iwahoriOne_iff]
+  refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ ?_⟩
+  · rw [diagGL_mul_mul_inv_apply]
+    rcases lt_or_ge j i with hji | hij
+    · simp [hutri hji]
+    · rw [Units.val_inv_eq_inv_val]
+      exact (A.valuation.map_mul_mul_inv_le (ht hij)).trans (h1 i j)
+  · rw [diagGL_mul_mul_inv_apply, hutri hji]
+    simp
+  · rw [diagGL_mul_mul_inv_apply]
+    simpa [mul_comm, mul_assoc] using hdiag i
+
+/-- Conjugating a lower-triangular element of `I₁` by the inverse of a dominant diagonal matrix
+keeps it in `I₁`. -/
+theorem diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular {t : m → Kˣ}
+    (ht : Monotone fun i ↦ A.valuation (t i : K)) {l : GL m K}
+    (hl : l ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
+    (hltri : (l : Matrix m m K).IsLowerTriangular) :
+    (diagGL t)⁻¹ * l * diagGL t ∈
+      (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
+  obtain ⟨h1, hlow, hdiag⟩ := (mem_map_iwahoriOne_iff A).mp hl
+  have hinv : (diagGL t)⁻¹ = diagGL t⁻¹ := (map_inv diagGL t).symm
+  rw [hinv, show diagGL t = (diagGL t⁻¹)⁻¹ by simp, mem_map_iwahoriOne_iff]
+  have hstep (i j : m) (hji : j ≤ i) :
+      A.valuation (((t⁻¹ i : Kˣ) : K) * l i j * ((t⁻¹ j)⁻¹ : Kˣ)) ≤ A.valuation (l i j) := by
+    have heq : ((t⁻¹ i : Kˣ) : K) * l i j * ((t⁻¹ j)⁻¹ : Kˣ) = (t j : K) * l i j * (t i : K)⁻¹ := by
+      simp [Pi.inv_apply, Units.val_inv_eq_inv_val]
+      ring
+    rw [heq]
+    exact A.valuation.map_mul_mul_inv_le (ht hji)
+  refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ ?_⟩
+  · rw [diagGL_mul_mul_inv_apply]
+    rcases lt_or_ge i j with hij | hji
+    · simp [hltri hij]
+    · exact (hstep i j hji).trans (h1 i j)
+  · rw [diagGL_mul_mul_inv_apply]
+    exact (hstep i j hji.le).trans_lt (hlow hji)
+  · rw [diagGL_mul_mul_inv_apply]
+    simpa [Pi.inv_apply, Units.val_inv_eq_inv_val, mul_comm, mul_assoc] using hdiag i
 
 /-! ### Pivots -/
 

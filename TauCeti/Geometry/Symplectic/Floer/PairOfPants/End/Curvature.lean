@@ -211,7 +211,7 @@ theorem integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip (ω : 
       (injOn_endChart q)]
     refine (hR q).congr_fun (fun w hw ↦ ?_) (measurableSet_endStrip q)
     have hS := mem_thricePuncturedSphereReal_iff.1
-      (endChart_mem_thricePuncturedSphereReal (endSign_mul_pos_of_mem_endStrip hw))
+      (endChart_mem_thricePuncturedSphereReal (endSign_mul_pos_of_mem_endStrip hw).le)
     rw [smul_eq_mul, abs_of_pos (det_fderiv_endChart_pos q w)]
     exact ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := w)
       (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
@@ -287,7 +287,7 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
       ∫⁻ s, f s := by
   have hS {z : ℝ × ℝ} (hz : z ∈ endStrip q) :=
     mem_thricePuncturedSphereReal_iff.1
-      (endChart_mem_thricePuncturedSphereReal (endSign_mul_pos_of_mem_endStrip hz))
+      (endChart_mem_thricePuncturedSphereReal (endSign_mul_pos_of_mem_endStrip hz).le)
   -- The datum is differentiable in the domain point, read in real coordinates, at points of `S`.
   have hdom {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) (x : M) (v : ℂ) :

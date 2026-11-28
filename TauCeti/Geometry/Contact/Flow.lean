@@ -385,13 +385,13 @@ def IsContactForm.kerFlowEquiv (hα : α.IsContactForm) {t : ℝ} {p q : M}
     (LinearMap.ext fun u ↦ Subtype.ext <| by
       rw [LinearMap.comp_apply, hα.coe_kerFlowLinearMap_apply, hα.coe_kerFlowLinearMap_apply,
         LinearMap.id_apply]
-      exact (mfderiv_flowOf_add_apply hv hneg hback ht u.val).trans
-        (by rw [neg_add_cancel]; exact mfderiv_flowOf_zero_apply_eq_self _ q u.val))
+      subst hq
+      exact mfderiv_flowOf_mfderiv_flowOf_neg_apply hv ht u.val)
     (LinearMap.ext fun v ↦ Subtype.ext <| by
       rw [LinearMap.comp_apply, hα.coe_kerFlowLinearMap_apply, hα.coe_kerFlowLinearMap_apply,
         LinearMap.id_apply]
-      exact (mfderiv_flowOf_add_apply hv ht hq hneg v.val).trans
-        (by rw [add_neg_cancel]; exact mfderiv_flowOf_zero_apply_eq_self _ p v.val))
+      subst hq
+      exact mfderiv_flowOf_neg_mfderiv_flowOf_apply hv ht v.val)
 
 @[simp]
 theorem IsContactForm.toLinearMap_kerFlowEquiv (hα : α.IsContactForm) {t : ℝ} {p q : M}

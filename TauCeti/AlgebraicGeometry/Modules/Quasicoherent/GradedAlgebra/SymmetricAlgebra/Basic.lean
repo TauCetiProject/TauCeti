@@ -51,6 +51,8 @@ tag 01M1).
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_map_degreeOne`: a graded algebra morphism
   `Sym F ⟶ Sym G` is the graded symmetric algebra of its degree-one component, and
   `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_preimage` computes its preimage accordingly;
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.epi_gradedSymmetricAlgebra_map_one`:
+  the symmetric algebra map of an epimorphism is an epimorphism in degree one.;
 * the instances `(gradedSymmetricAlgebra X).Faithful` and `(gradedSymmetricAlgebra X).Full`.
 -/
 
@@ -351,6 +353,21 @@ theorem gradedSymmetricAlgebra_map_degreeOne {F G : QuasicoherentSheaf X}
   refine gradedSymmetricAlgebra_hom_ext ?_
   rw [← cancel_mono ((gradedSymmetricAlgebraDegreeOneIso X).hom.app G)]
   exact ((gradedSymmetricAlgebraDegreeOneIso X).hom.naturality _).trans (by simp)
+
+/-- The symmetric algebra map of an epimorphism of quasi-coherent modules is epic in degree one. -/
+theorem QuasicoherentSheaf.epi_gradedSymmetricAlgebra_map_one
+    (F : QuasicoherentSheaf X) {G : QuasicoherentSheaf X} (q : F.obj ⟶ G.obj) [Epi q] :
+    Epi (((gradedSymmetricAlgebra X).map (ObjectProperty.homMk q)).hom.hom.hom 1) := by
+  apply GradedQuasicoherentAlgebra.epi_hom_hom_of_epi_degree_map _ 1
+  let e := gradedSymmetricAlgebraDegreeOneIso X
+  have h :
+      ((degree 1).map ((gradedSymmetricAlgebra X).map (ObjectProperty.homMk q))).hom ≫
+          (ObjectProperty.ι _).map (e.hom.app G) =
+        (ObjectProperty.ι _).map (e.hom.app F) ≫ q :=
+    (ObjectProperty.ι _).congr_map (e.hom.naturality (ObjectProperty.homMk q))
+  have he : Epi ((ObjectProperty.ι _).map (e.hom.app F) ≫ q) := inferInstance
+  rw [← h] at he
+  exact (epi_comp_iff_of_isIso _ ((ObjectProperty.ι _).map (e.hom.app G))).mp he
 
 /-- The graded symmetric algebra functor is full: a morphism of graded algebras `Sym F ⟶ Sym G`
 is the graded symmetric algebra of its degree-one component

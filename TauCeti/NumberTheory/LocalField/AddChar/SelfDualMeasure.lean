@@ -179,6 +179,12 @@ theorem addHaar_eq_selfDualMeasure_iff (μ : Measure K) [μ.IsAddHaarMeasure] (m
   rw [addHaarMeasure_unique μ (integerPositiveCompacts K), coe_integerPositiveCompacts, hc,
     selfDualMeasure]
 
+/-- The positive and negative Fourier kernels have the same self-dual measure. -/
+@[simp]
+theorem selfDualMeasure_inv {N : Type*} [CommMonoid N] (χ : AddChar K N) :
+    χ⁻¹.selfDualMeasure = χ.selfDualMeasure := by
+  simp [selfDualMeasure]
+
 end Measure
 
 section Fourier

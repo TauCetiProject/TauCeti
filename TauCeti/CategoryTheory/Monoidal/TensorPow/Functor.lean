@@ -114,6 +114,17 @@ theorem tensorPow_obj_const (X : C) (n : ℕ) :
   | zero => rfl
   | succ n ih => exact congrArg (F.obj X ⊗ ·) ih
 
+/-- On a constant tuple of morphisms, the tensor functor gives the tensor power of the
+image morphism. The equality is heterogeneous because the two object recursions are identified
+by `tensorPow_obj_const`. -/
+theorem tensorPow_map_const {X Y : C} (f : X ⟶ Y) (n : ℕ) :
+    (F.tensorPow n).map (fun _ : Fin n ↦ f) ≍ TauCeti.tensorPowMap (F.map f) n := by
+  induction n with
+  | zero => simp [TauCeti.tensorPowMap_zero]
+  | succ n ih =>
+    simp only [tensorPow_succ_map, TauCeti.tensorPowMap_succ]
+    congr! 1 <;> apply tensorPow_obj_const
+
 /-- Varying the first entry of the tuple, the tensor functor whiskers `F` on the right. -/
 theorem prod'_comp_piInsertNth_zero_comp_tensorPow_map {n : ℕ} (y : Fin n → C) {X X' : C}
     (f : X ⟶ X') :

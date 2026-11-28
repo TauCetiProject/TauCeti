@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
+public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.FiberBundle.MapFiber
+import TauCeti.Geometry.Manifold.FiberBundle.Submersion
 
 /-!
 # Smooth fibre bundles given by their total space
@@ -43,6 +45,8 @@ case, the fibres are the orbits of `G`, so this applies to invariant maps
 ## Main results
 
 * `TauCeti.MapFiber.Atlas.IsContMDiff.contMDiff_proj`: `proj` is `C^n`.
+* `TauCeti.MapFiber.Atlas.IsContMDiff.isRegularPoint_proj`: for `n ≠ 0`, every point of `P` is a
+  regular point of `proj`.
 * `TauCeti.MapFiber.Atlas.contMDiffFiberBundle`: the fibres of `proj` form a `C^n` fibre bundle.
 * `TauCeti.MapFiber.Atlas.proj_totalSpaceDiffeomorph`: the diffeomorphism lies over `B`.
 * `TauCeti.MapFiber.Atlas.totalSpaceDiffeomorph_smul`: it is equivariant for a fibre-preserving
@@ -217,6 +221,18 @@ theorem proj_totalSpaceDiffeomorph (x : ManifoldTotalSpace F (MapFiber proj)) :
     proj (A.totalSpaceDiffeomorph hA x) =
       ((ManifoldTotalSpace.homeomorph F (MapFiber proj)).symm x).proj := by
   rw [totalSpaceDiffeomorph_apply, proj_totalSpaceHomeomorph (proj := proj)]
+
+/-- For a `C^n` atlas of `proj` with `n ≠ 0`, every point of `P` is a regular point of `proj`: the
+diffeomorphism `totalSpaceDiffeomorph` carries `proj` to the projection of the fibre bundle, which
+is regular everywhere (`TauCeti.ManifoldTotalSpace.isRegularPoint_proj`). -/
+theorem IsContMDiff.isRegularPoint_proj (hA : A.IsContMDiff n IB IF IP) (hn : n ≠ 0) (p : P) :
+    IsRegularPoint IP IB proj p := by
+  let := A.fiberBundle
+  obtain ⟨x, rfl⟩ := (A.totalSpaceDiffeomorph hA).surjective p
+  have h : IsRegularPoint (IB.prod IF) IB (proj ∘ A.totalSpaceDiffeomorph hA) x :=
+    (ManifoldTotalSpace.isRegularPoint_proj IB IF x).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall (A.proj_totalSpaceDiffeomorph hA))
+  exact ((A.totalSpaceDiffeomorph hA).isRegularPoint_comp_iff hn).1 h
 
 /-- For a right action on `P` preserving the fibres of `proj`, the diffeomorphism
 `totalSpaceDiffeomorph` carries the fibrewise action on the total space to the action on `P`. -/

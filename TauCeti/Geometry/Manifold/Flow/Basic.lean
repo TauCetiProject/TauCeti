@@ -70,6 +70,10 @@ compact set.
 * `TauCeti.flowOf_add`: the domain-aware group law, and `TauCeti.mem_flowDomain_flowOf_iff`, the
   times of the flow through a point of a trajectory.
 * `TauCeti.mfderiv_flowOf_add_apply`: the differential of the composition of two local flow maps.
+* `TauCeti.mfderiv_flowOf_neg_mfderiv_flowOf_apply`,
+  `TauCeti.mfderiv_flowOf_mfderiv_flowOf_neg_apply`: the differential of the time-`(-t)` map at
+  `φₜ x` is a two-sided inverse of the differential of the time-`t` map at `x`, so the latter is
+  bijective (`TauCeti.bijective_mfderiv_flowOf`), even for incomplete fields.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
 * `TauCeti.exists_pos_period_le_nhds_flowOf`: positive return times near a point where the field
   is nonzero are bounded away from zero.
@@ -733,6 +737,42 @@ theorem mfderiv_flowOf_add_apply [IsManifold I 1 M] {v : (x : M) → TangentSpac
     exact (flowOf_add hv hsz htz).2
   exact (mfderiv_comp_apply_of_eq p (hΦt.mdifferentiableAt one_ne_zero)
     (hΦs.mdifferentiableAt one_ne_zero) hq w).symm.trans (DFunLike.congr_fun hev.mfderiv_eq w)
+
+/-- Flowing back for time `-t` undoes the differential of the time-`t` map of a local flow:
+`dφ₋ₜ (dφₜ w) = w` for every tangent vector `w` at `x`, wherever `φₜ x` is defined. -/
+theorem mfderiv_flowOf_neg_mfderiv_flowOf_apply [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {t : ℝ} {x : M} (ht : (t, x) ∈ flowDomain v) (w : TangentSpace I x) :
+    -- The two sides are tangent vectors at `flowOf v (-t) (flowOf v t x)` and at `x`, which are
+    -- equal but not definitionally; all tangent spaces are the model space `E`.
+    @Eq E (mfderiv I I (flowOf v (-t)) (flowOf v t x) (mfderiv I I (flowOf v t) x w)) w :=
+  (mfderiv_flowOf_add_apply hv ht rfl (neg_mem_flowDomain_flowOf hv ht) w).trans <| by
+    rw [add_neg_cancel]
+    exact mfderiv_flowOf_zero_apply_eq_self v x w
+
+/-- The differential of the time-`t` map of a local flow undoes flowing back for time `-t`:
+`dφₜ (dφ₋ₜ u) = u` for every tangent vector `u` at `φₜ x`, wherever `φₜ x` is defined. -/
+theorem mfderiv_flowOf_mfderiv_flowOf_neg_apply [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {t : ℝ} {x : M} (ht : (t, x) ∈ flowDomain v) (u : TangentSpace I (flowOf v t x)) :
+    -- `dφ₋ₜ u` is a tangent vector at `flowOf v (-t) (flowOf v t x)`, which equals `x` but not
+    -- definitionally; all tangent spaces are the model space, so the equation is stated in `E`.
+    @Eq E (mfderiv I I (flowOf v t) x (mfderiv I I (flowOf v (-t)) (flowOf v t x) u)) u :=
+  (mfderiv_flowOf_add_apply hv (neg_mem_flowDomain_flowOf hv ht) (flowOf_neg_flowOf hv ht) ht
+    u).trans <| by
+    rw [neg_add_cancel]
+    exact mfderiv_flowOf_zero_apply_eq_self v _ u
+
+/-- **The differential of a local flow map is bijective.** For a `C¹` vector field `v`, the
+differential at `x` of the time-`t` map of its maximal flow is a bijection
+`T_x M → T_(φₜ x) M` wherever `φₜ x` is defined, with inverse the differential at `φₜ x` of the
+time-`(-t)` map. The field need not be complete. -/
+theorem bijective_mfderiv_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : Function.Bijective (mfderiv I I (flowOf v t) x) :=
+  ⟨Function.LeftInverse.injective (g := mfderiv I I (flowOf v (-t)) (flowOf v t x))
+      (mfderiv_flowOf_neg_mfderiv_flowOf_apply hv ht),
+    Function.RightInverse.surjective (mfderiv_flowOf_mfderiv_flowOf_neg_apply hv ht)⟩
 
 /-- At a finite right endpoint of a maximal interval, the trajectory eventually leaves every
 compact set. -/

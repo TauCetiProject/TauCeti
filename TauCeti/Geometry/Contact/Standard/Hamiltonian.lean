@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Flow
 import TauCeti.Geometry.Manifold.Flow.NormedSpace
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Contact Hamiltonian vector fields and flows of the standard contact form
@@ -80,18 +81,11 @@ theorem contactHamiltonianVectorField_standardContactForm (f : ℝ × ℝ × ℝ
     · rw [standardContactForm_apply]
       simp only [X]
       ring
-    · -- Expand `df_q(v)` in the coordinates of `v`.
-      have hv : (v : ℝ × ℝ × ℝ) = v.1 • ((1, 0, 0) : ℝ × ℝ × ℝ) +
-          v.2.1 • ((0, 1, 0) : ℝ × ℝ × ℝ) + v.2.2 • ((0, 0, 1) : ℝ × ℝ × ℝ) := by
-        refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp
-      have hdf : fderiv ℝ f q v = v.1 * fderiv ℝ f q (1, 0, 0) +
-          v.2.1 * fderiv ℝ f q (0, 1, 0) + v.2.2 * fderiv ℝ f q (0, 0, 1) := by
-        conv_lhs => rw [hv]
-        simp only [map_add, map_smul, smul_eq_mul]
-      rw [mextDeriv_standardContactForm_apply, standardContactForm_apply,
+    · rw [mextDeriv_standardContactForm_apply, standardContactForm_apply,
         reebVectorField_standardContactForm, mvfderiv_eq_fderiv_apply, mvfderiv_eq_fderiv_apply,
-        standardReebField_apply, hdf]
-      simp only [X]
+        standardReebField_apply, ← ContinuousLinearMap.coe_coe (fderiv ℝ f q),
+        LinearMap.apply_eq_smul_add_smul_add_smul _ v]
+      simp only [X, ContinuousLinearMap.coe_coe, smul_eq_mul]
       ring
   exact congrFun ((isContactForm_standardContactForm.isContactHamiltonianVectorField_iff_eq).1
     hX).symm p
