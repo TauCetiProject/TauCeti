@@ -141,7 +141,8 @@ theorem two_notMem_and_exists_sub_notMem_of_isPrimitiveRoot {ζ₄ ζ₇ : K}
   -- conjugation moves `i` modulo `w`
   refine ⟨h2, i, ?_⟩
   have hneg : -i - i = -(2 * i) := by ring
-  rw [ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi, hneg, neg_mem_iff]
+  have hconj := ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_natCast (d := 1) (by simpa using hi)
+  rw [hconj, hneg, neg_mem_iff]
   refine fun h ↦ (Ideal.IsPrime.mem_or_mem inferInstance h).elim h2 fun hiw ↦ ?_
   refine Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one w).mpr ?_)
   convert w.mul_mem_left (-i) hiw using 1
@@ -190,7 +191,8 @@ theorem natCard_quotient_under_mod_four_eq_three (w : Ideal (𝓞 K)) [w.IsMaxim
     h2 (Ideal.IsPrime.mem_of_pow_mem inferInstance 2 (by norm_num at h ⊢; exact h))
   -- so conjugation, the Frobenius at `w`, sends `i` to `i ^ q`; it also sends `i` to `-i = i ^ 3`
   have h := (isArithFrobAt_ringOfIntegersComplexConj w hw).apply_of_pow_eq_one hi4.pow_eq_one h4
-  rw [AlgEquiv.coe_toAlgHom, ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi] at h
+  have hconj := ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_natCast (d := 1) (by simpa using hi)
+  rw [AlgEquiv.coe_toAlgHom, hconj] at h
   have hpow : i ^ Nat.card (𝓞 K⁺ ⧸ w.under (𝓞 K⁺)) = i ^ 3 := by
     linear_combination -h - i * hi
   rwa [(hi4.isOfFinOrder four_ne_zero).pow_inj_mod, ← hi4.eq_orderOf] at hpow

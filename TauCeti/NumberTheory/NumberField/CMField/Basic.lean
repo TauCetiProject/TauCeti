@@ -54,8 +54,8 @@ Hilbert's Theorem 90, and then `x / bⁿ` is fixed by complex conjugation.
   `x * conj x = 1` satisfy the same identity.
 * `NumberField.IsCMField.mul_ringOfIntegersComplexConj_eq_one_of_pow_eq_one`: a root of unity `ζ`
   in the ring of integers satisfies `ζ * conj ζ = 1`.
-* `NumberField.IsCMField.ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one`: conjugation sends a
-  square root `i` of `-1` to `-i`.
+* `NumberField.IsCMField.complexConj_eq_neg_of_sq_eq_neg_natCast`: conjugation sends a
+  square root of a nonpositive integer to its negative.
 * `NumberField.IsCMField.exists_mem_maximalRealSubfield_div_eq_pow_iff`: a unit `x` of a CM field
   is a totally real unit times an `n`-th power if and only if `x / conj x` is an `n`-th power.
 * `NumberField.IsCMField.exists_ringOfIntegersComplexConj_ne`: complex conjugation moves some
@@ -179,13 +179,50 @@ theorem mul_ringOfIntegersComplexConj_eq_one_of_pow_eq_one {ζ : 𝓞 K} {n : �
   rw [← coe_ringOfIntegersComplexConj] at h
   exact_mod_cast h
 
-/-- Complex conjugation sends a square root `i` of `-1` in the ring of integers of a CM field to
-`-i`. -/
-theorem ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one {i : 𝓞 K} (hi : i ^ 2 = -1) :
-    ringOfIntegersComplexConj K i = -i := by
-  have h := mul_ringOfIntegersComplexConj_eq_one_of_pow_eq_one four_ne_zero
-    (by linear_combination (i ^ 2 - 1) * hi)
-  linear_combination (-i) * h + ringOfIntegersComplexConj K i * hi
+/-- An element of a CM field whose square is `-d`, for `d : ℕ`, is negated by complex
+conjugation. -/
+theorem complexConj_eq_neg_of_sq_eq_neg_natCast {b : K} {d : ℕ}
+    (hb : b ^ 2 = -(d : K)) : complexConj K b = -b := by
+  let φ : K →+* ℂ := Classical.choice (inferInstance : Nonempty _)
+  have hsq : (φ b) ^ 2 = -(d : ℂ) := by
+    simpa only [map_pow, map_neg, map_natCast] using congrArg φ hb
+  have hnorm : ‖φ b‖ ^ 2 = d := by
+    rw [← norm_pow, hsq, norm_neg, Complex.norm_natCast]
+  apply φ.injective
+  rw [complexEmbedding_complexConj, map_neg]
+  by_cases hz : φ b = 0
+  · simp [hz]
+  · apply mul_left_cancel₀ hz
+    rw [Complex.mul_conj', mul_neg, ← pow_two, hsq, neg_neg]
+    exact_mod_cast hnorm
+
+/-- The product of a conjugation-fixed element and a square root of `-d`, for `d : ℕ`, is
+negated by complex conjugation. -/
+theorem complexConj_mul_eq_neg_of_sq_eq_neg_natCast {a b : K} {d : ℕ}
+    (ha : complexConj K a = a) (hb : b ^ 2 = -(d : K)) :
+    complexConj K (a * b) = -(a * b) := by
+  rw [map_mul, ha, complexConj_eq_neg_of_sq_eq_neg_natCast hb, mul_neg]
+
+/-- Complex conjugation negates an integral square root of a nonpositive integer. -/
+theorem ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_natCast {b : 𝓞 K} {d : ℕ}
+    (hb : b ^ 2 = -(d : 𝓞 K)) : ringOfIntegersComplexConj K b = -b := by
+  apply RingOfIntegers.ext
+  rw [coe_ringOfIntegersComplexConj]
+  change complexConj K (b : K) = -(b : K)
+  apply complexConj_eq_neg_of_sq_eq_neg_natCast (d := d)
+  simpa only [map_pow, map_neg, map_natCast] using congrArg (algebraMap (𝓞 K) K) hb
+
+/-- The product of a conjugation-fixed algebraic integer and a square root of `-d`, for `d : ℕ`,
+is negated by complex conjugation. -/
+theorem ringOfIntegersComplexConj_mul_eq_neg_of_sq_eq_neg_natCast {a b : 𝓞 K} {d : ℕ}
+    (ha : ringOfIntegersComplexConj K a = a) (hb : b ^ 2 = -(d : 𝓞 K)) :
+    ringOfIntegersComplexConj K (a * b) = -(a * b) := by
+  have ha' : complexConj K (a : K) = (a : K) := by rw [← coe_ringOfIntegersComplexConj, ha]
+  apply RingOfIntegers.ext
+  rw [coe_ringOfIntegersComplexConj]
+  change complexConj K ((a : K) * (b : K)) = -((a : K) * (b : K))
+  apply complexConj_mul_eq_neg_of_sq_eq_neg_natCast (d := d) ha'
+  simpa only [map_pow, map_neg, map_natCast] using congrArg (algebraMap (𝓞 K) K) hb
 
 /-- **Real-times-power decomposition in a CM field.** A unit `x` of a CM field is a totally real
 unit times an `n`-th power if and only if `x / conj x` is an `n`-th power. -/

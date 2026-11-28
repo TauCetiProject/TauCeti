@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.CMField
 import Mathlib.Analysis.Real.Sqrt
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Expand
 
@@ -83,19 +83,13 @@ theorem exists_pos_apply_cyclotomic_different_generator {E : Type*} [Field E] [C
       |Real.log A| ≤ ∑ w ∈ primitiveRoots n ℂ, |Real.log ‖(cyclotomic n ℂ).derivative.eval w‖| := by
   obtain rfl | hm := eq_or_ne m 0
   · exact ⟨1, one_pos, by simp, by simp [Finset.sum_nonneg]⟩
-  have hu' : v u * v u = 1 := by simpa using congrArg v hu
-  have huv : v u = 1 := (sq_eq_sq₀ (apply_nonneg v u) zero_le_one).mp (by simpa [sq] using hu')
-  have hbv : v b = √(d : ℝ) := by
-    have hs : v b ^ 2 = (d : ℝ) := by
-      rw [← map_pow, hb, ← norm_embedding_eq]
-      simp
-    rw [← hs, Real.sqrt_sq (apply_nonneg v b)]
+  rw [v.apply_mul_mul_eq_mul_sqrt_of_mul_complexConj_eq_one hu hb]
   have hder : v ((cyclotomic (n * m) E).derivative.eval ζ) =
       ‖(cyclotomic (n * m) ℂ).derivative.eval (v.embedding ζ)‖ := by
     rw [← norm_embedding_eq, ← eval_map_apply, ← derivative_map, map_cyclotomic]
   obtain ⟨A, hA, heq, hlog⟩ := TauCeti.exists_pos_norm_eval_derivative_cyclotomic_mul
     (mul_ne_zero hn hm) hprimes (hζ.map_of_injective v.embedding.injective)
   refine ⟨A, hA, ?_, hlog⟩
-  simp only [map_mul, huv, one_mul, hder, heq, hbv, mul_comm (m : ℝ) A]
+  simp only [hder, heq, mul_comm (m : ℝ) A]
 
 end NumberField.InfinitePlace

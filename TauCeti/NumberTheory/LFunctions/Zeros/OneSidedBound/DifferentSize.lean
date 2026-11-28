@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.DifferentSize
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Different.Size
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
