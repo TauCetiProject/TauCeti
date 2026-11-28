@@ -10,10 +10,13 @@ public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
-# Finiteness of modules under scalar pullback
+# Finiteness of modules under scalar pullback and change of rings
 
 For a surjective ring homomorphism `f : S →+* R`, an `R`-module `M` is finitely generated over `S`
 under scalar pullback `Module.compHom M f` if and only if it is finitely generated over `R`.
+Similarly, a surjective ring homomorphism `f : R →+* S` makes `S` a finitely generated `R`-module
+via `f.toModule`, including the factor projections of a binary product ring `R × S` and their
+opposites.
 
 ## Main results
 
@@ -21,6 +24,9 @@ under scalar pullback `Module.compHom M f` if and only if it is finitely generat
   preserves and reflects `Module.Finite`.
 * `Module.Finite.compHom_of_surjective`: scalar pullback along a surjective ring homomorphism
   preserves `Module.Finite`.
+* `RingHom.finite_toModule_fst`, `RingHom.finite_toModule_snd`, `RingHom.finite_toModule_op_fst`,
+  `RingHom.finite_toModule_op_snd`: factor projections of `R × S` (and their opposites) make
+  each factor finitely generated.
 -/
 
 public section
@@ -48,3 +54,27 @@ theorem compHom_of_surjective {R S M : Type*} [Semiring R] [Semiring S] [AddComm
   (compHom_iff_of_surjective f hf).2 inferInstance
 
 end Module.Finite
+
+namespace RingHom
+
+/-- `R` is finitely generated as an `(R × S)`-module via `RingHom.fst R S`. -/
+theorem finite_toModule_fst (R S : Type*) [Ring R] [Ring S] :
+    letI := (fst R S).toModule; Module.Finite (R × S) R :=
+  Module.Finite.compHom_of_surjective (M := _) _ Prod.fst_surjective
+
+/-- `S` is finitely generated as an `(R × S)`-module via `RingHom.snd R S`. -/
+theorem finite_toModule_snd (R S : Type*) [Ring R] [Ring S] :
+    letI := (snd R S).toModule; Module.Finite (R × S) S :=
+  Module.Finite.compHom_of_surjective (M := _) _ Prod.snd_surjective
+
+/-- `Rᵐᵒᵖ` is finitely generated as an `(R × S)ᵐᵒᵖ`-module via `RingHom.op (RingHom.fst R S)`. -/
+theorem finite_toModule_op_fst (R S : Type*) [Ring R] [Ring S] :
+    letI := (op (fst R S)).toModule; Module.Finite (R × S)ᵐᵒᵖ Rᵐᵒᵖ :=
+  Module.Finite.compHom_of_surjective (M := _) _ fun a ↦ ⟨MulOpposite.op (a.unop, 0), rfl⟩
+
+/-- `Sᵐᵒᵖ` is finitely generated as an `(R × S)ᵐᵒᵖ`-module via `RingHom.op (RingHom.snd R S)`. -/
+theorem finite_toModule_op_snd (R S : Type*) [Ring R] [Ring S] :
+    letI := (op (snd R S)).toModule; Module.Finite (R × S)ᵐᵒᵖ Sᵐᵒᵖ :=
+  Module.Finite.compHom_of_surjective (M := _) _ fun b ↦ ⟨MulOpposite.op (0, b.unop), rfl⟩
+
+end RingHom

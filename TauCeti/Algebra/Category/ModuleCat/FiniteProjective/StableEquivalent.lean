@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
-public import TauCeti.Algebra.Module.Projective.FreeComplement
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 public import TauCeti.Algebra.Module.StableEquivalent
 
 /-!
@@ -29,21 +28,16 @@ The file defines `TauCeti.FiniteProjectiveModules.classOf R M n = [M] - n[R]`, w
 isomorphism invariance, stable-freeness and stable-equivalence criteria, additivity on products,
 and vanishing on finite free modules. These classes measure the obstruction to stable freeness.
 
-The file also records additivity on products of modules, `[P × Q] = [P] + [Q]` and
-`[Rⁿ] = n[R]`, in the form consumed by classes `[M] - n[R]`.
+Additivity on binary and finite products (`TauCeti.SplitK0.of_eq_add_of_linearEquiv_prod`,
+`TauCeti.SplitK0.of_eq_sum_of_linearEquiv_pi`) and finite-free class formulas (`[Rⁿ] = n[R]`)
+are in `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic`.
 
 ## Main results
 
-* `TauCeti.FiniteProjectiveModules.biprodLinearEquiv`: the underlying module of a biproduct
-  of finite projective modules is linearly isomorphic to the product.
 * `TauCeti.FiniteProjectiveModules.classOf_eq_zero_iff`: the class `[M] - n[R]` vanishes
   exactly when `M` is stably free of rank `n`.
 * `TauCeti.FiniteProjectiveModules.classOf_eq_classOf_iff`: equality of classes in the same
   rank is stable equivalence.
-* `TauCeti.SplitK0.of_eq_add_of_linearEquiv_prod`: the class of a module isomorphic to `P × Q` is
-  the sum of the classes of `P` and `Q`.
-* `TauCeti.SplitK0.of_eq_nsmul_of_linearEquiv_fin`: the class of a module isomorphic to `Rⁿ` is
-  `n` times the class of `R`.
 * `TauCeti.SplitK0.of_eq_of_iff_stableEquivalent`: two finitely generated projective modules have
   the same class in split `K₀` if and only if they are stably equivalent.
 * `TauCeti.SplitK0.of_eq_of_iff_exists_prod_linearEquiv_fin`: a finitely generated projective
@@ -66,16 +60,6 @@ universe u
 
 variable {R : Type u} [Ring R]
 
-/-- The underlying module of a biproduct of finitely generated projective modules is the product of
-the underlying modules: the inclusion into `ModuleCat R` is additive, so it carries biproducts to
-products. -/
-noncomputable def FiniteProjectiveModules.biprodLinearEquiv
-    (X Y : (finiteProjectiveModules R).FullSubcategory) :
-    (X ⊞ Y).obj ≃ₗ[R] X.obj × Y.obj :=
-  letI : PreservesBinaryBiproduct X Y (finiteProjectiveModules R).ι :=
-    preservesBinaryBiproduct_of_preservesBinaryCoproduct _
-  (((finiteProjectiveModules R).ι.mapBiprod X Y).trans (ModuleCat.biprodIsoProd _ _)).toLinearEquiv
-
 /-- Two biproducts of finitely generated projective modules are isomorphic exactly when the
 products of the underlying modules are linearly isomorphic. -/
 private theorem nonempty_biprod_iso_biprod_iff
@@ -90,49 +74,6 @@ private theorem nonempty_biprod_iso_biprod_iff
 
 namespace SplitK0
 
-/-- **Additivity on products.** The class of a finitely generated projective module isomorphic to
-a product `P × Q` is the sum of the classes of `P` and `Q`. -/
-theorem of_eq_add_of_linearEquiv_prod {X P Q : (finiteProjectiveModules R).FullSubcategory}
-    (e : X.obj ≃ₗ[R] (P.obj × Q.obj)) : of.{u} X = of.{u} P + of.{u} Q := by
-  rw [← of_biprod]
-  exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
-    (e.trans (FiniteProjectiveModules.biprodLinearEquiv P Q).symm).toModuleIso)
-
-/-- **Additivity on finite products.** The class of a finitely generated projective module
-isomorphic to a finite product is the sum of the classes of the factors. -/
-theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
-    {X : (finiteProjectiveModules R).FullSubcategory}
-    (P : ι → (finiteProjectiveModules R).FullSubcategory)
-    (e : X.obj ≃ₗ[R] (i : ι) → (P i).obj) : of.{u} X = ∑ i, of.{u} (P i) := by
-  have := hasFiniteProducts_of_has_binary_and_terminal
-    (C := (finiteProjectiveModules R).FullSubcategory)
-  have := HasFiniteBiproducts.of_hasFiniteProducts
-    (C := (finiteProjectiveModules R).FullSubcategory)
-  have := PreservesFiniteProducts.of_preserves_binary_and_terminal (finiteProjectiveModules R).ι
-  have : PreservesBiproduct P (finiteProjectiveModules R).ι :=
-    preservesBiproduct_of_preservesProduct _
-  rw [← of_biproduct.{u} P]
-  exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
-    (e.toModuleIso ≪≫ (ModuleCat.biproductIsoPi fun i ↦ (P i).obj).symm ≪≫
-      ((finiteProjectiveModules R).ι.mapBiproduct P).symm))
-
-/-- The class of a finitely generated projective module isomorphic to `Rⁿ` is `n` times the class
-of `R`. -/
-theorem of_eq_nsmul_of_linearEquiv_fin {X R' : (finiteProjectiveModules R).FullSubcategory}
-    {n : ℕ} (e : X.obj ≃ₗ[R] (Fin n → R)) (e' : R'.obj ≃ₗ[R] R) : of.{u} X = n • of.{u} R' := by
-  induction n generalizing X with
-  | zero =>
-    have : Subsingleton ((finiteProjectiveModules R).ι.obj X) := e.toEquiv.subsingleton
-    rw [zero_smul]
-    exact of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero (finiteProjectiveModules R).ι
-      X (ModuleCat.isZero_of_subsingleton _))
-  | succ n ih =>
-    -- Split `Rⁿ⁺¹ ≃ R × Rⁿ` and use additivity on products.
-    let Y := FiniteProjectiveModules.of R (Fin n → R)
-    rw [of_eq_add_of_linearEquiv_prod (P := R') (Q := Y)
-      (e.trans ((Fin.consLinearEquiv R fun _ ↦ R).symm.trans (e'.symm.prodCongr (.refl _ _)))),
-      ih (X := Y) (.refl _ _), succ_nsmul']
-
 /-- **Equality in projective `K₀` is stable equivalence.** Two finitely generated projective
 `R`-modules have the same class in split `K₀` if and only if `P × Rⁿ ≃ₗ[R] Q × Rⁿ` for some `n`. -/
 theorem of_eq_of_iff_stableEquivalent {P Q : (finiteProjectiveModules R).FullSubcategory} :
@@ -141,12 +82,16 @@ theorem of_eq_of_iff_stableEquivalent {P Q : (finiteProjectiveModules R).FullSub
   constructor
   · rintro ⟨T, h⟩
     obtain ⟨e⟩ := nonempty_biprod_iso_biprod_iff.1 h
-    obtain ⟨N, _, _, _, _, n, ⟨c⟩⟩ := Module.Projective.exists_prod_linearEquiv_fin R T.obj
+    obtain ⟨N, n, ⟨iso⟩⟩ := FiniteProjectiveModules.exists_biprod_iso_fin T
+    let c : (T.obj × N.obj) ≃ₗ[R] (Fin n → R) :=
+      (FiniteProjectiveModules.biprodLinearEquiv T N).symm.trans
+        (((finiteProjectiveModules R).ι.mapIso iso ≪≫
+          eqToIso (FiniteProjectiveModules.finFreeObj_obj R n)).toLinearEquiv)
     -- Enlarge the common summand `T` to the finite free module `T × N ≃ₗ[R] Rⁿ`.
     exact ⟨n, ⟨((LinearEquiv.refl R P.obj).prodCongr c.symm).trans <|
-      (LinearEquiv.prodAssoc R P.obj T.obj N).symm.trans <|
-      (e.prodCongr (LinearEquiv.refl R N)).trans <|
-      (LinearEquiv.prodAssoc R Q.obj T.obj N).trans <| (LinearEquiv.refl R Q.obj).prodCongr c⟩⟩
+      (LinearEquiv.prodAssoc R P.obj T.obj N.obj).symm.trans <|
+      (e.prodCongr (LinearEquiv.refl R N.obj)).trans <|
+      (LinearEquiv.prodAssoc R Q.obj T.obj N.obj).trans <| (LinearEquiv.refl R Q.obj).prodCongr c⟩⟩
   · rintro ⟨n, h⟩
     exact ⟨FiniteProjectiveModules.of R (Fin n → R), nonempty_biprod_iso_biprod_iff.2 h⟩
 

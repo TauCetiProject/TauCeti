@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.CategoryTheory.Exact.Functor
 
@@ -53,6 +54,8 @@ and `f.finiteProjectiveModulesK0Extend`.
   idempotent matrix `e` is sent to the class of the image of `f(e)`.
 * `RingHom.finiteProjectiveModulesK0Extend_of_linearEquiv_pi`: the class of `Rⁿ` is sent to the
   class of `Sⁿ`.
+* `TauCeti.finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars`: compatibility of the
+  split/exact `K₀` comparison with extension of scalars.
 
 ## References
 
@@ -116,37 +119,6 @@ theorem finiteProjectiveModulesK0Extend_of_linearEquiv
   exact ExactK0.of_congr (ObjectProperty.isoMk _
     (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫ θ.toModuleIso))
 
-/-! ### Functoriality in the ring homomorphism
-
-Extension along the identity is the identity and extension along a composite is the composite
-of the extensions, up to the natural isomorphisms `TauCeti.BalancedExtension.lid` and
-`TauCeti.BalancedExtension.cancelBaseChange`; isomorphic modules have the same class. -/
-
-/-- Extension of scalars along the identity ring homomorphism induces the identity on
-`K₀(proj R)`. -/
-@[simp]
-theorem finiteProjectiveModulesK0Extend_id :
-    (RingHom.id R).finiteProjectiveModulesK0Extend = AddMonoidHom.id _ :=
-  ExactK0.hom_ext fun P ↦
-    (RingHom.id R).finiteProjectiveModulesK0Extend_of_linearEquiv P P
-      (BalancedExtension.lid R P.obj)
-
-/-- Extension of scalars along a composite `g ∘ f` induces the composite of the extensions along
-`f` and along `g`. -/
-@[simp]
-theorem finiteProjectiveModulesK0Extend_comp (g : S →+* T) :
-    (g.comp f).finiteProjectiveModulesK0Extend =
-      g.finiteProjectiveModulesK0Extend.comp f.finiteProjectiveModulesK0Extend :=
-  ExactK0.hom_ext fun P ↦ by
-    rw [AddMonoidHom.comp_apply, f.finiteProjectiveModulesK0Extend_of,
-      g.finiteProjectiveModulesK0Extend_of, (g.comp f).finiteProjectiveModulesK0Extend_of]
-    exact ExactK0.of_congr (ObjectProperty.isoMk _
-      (eqToIso ((g.comp f).finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫
-        (BalancedExtension.cancelBaseChange f g (P := P.obj)).symm.toModuleIso ≪≫
-          eqToIso (by
-            rw [finiteProjectiveModulesExtendScalars_obj_obj,
-              finiteProjectiveModulesExtendScalars_obj_obj])))
-
 /-! ### Idempotent matrices -/
 
 /-- **Extension of scalars on idempotent matrices.** If a finitely generated projective
@@ -174,5 +146,54 @@ theorem finiteProjectiveModulesK0Extend_of_linearEquiv_pi {ι : Type*} [_root_.F
   have := Fintype.ofFinite ι
   f.finiteProjectiveModulesK0Extend_of_linearEquiv P Q
     ((BalancedExtension.congr f θ).trans ((BalancedExtension.piScalarRight f ι).trans θ'.symm))
+
+end RingHom
+
+namespace TauCeti
+
+/-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines extension of scalars on `SplitK0` and
+`ExactK0`. -/
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars {R S : Type u} [Ring R]
+    [Ring S] (f : R →+* S) (x) : finiteProjectiveModulesSplitK0EquivExactK0 S
+      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
+    f.finiteProjectiveModulesK0Extend (finiteProjectiveModulesSplitK0EquivExactK0 R x) := by
+  rw [finiteProjectiveModulesSplitK0EquivExactK0_apply,
+    finiteProjectiveModulesSplitK0EquivExactK0_apply]
+  exact DFunLike.congr_fun f.finiteProjectiveModulesK0Extend_comp_fromSplit.symm x
+
+end TauCeti
+
+/-! ### Functoriality in the ring homomorphism
+
+Extension along the identity is the identity and extension along a composite is the composite
+of the extensions, transported from the corresponding laws on `SplitK0` along
+`TauCeti.finiteProjectiveModulesSplitK0EquivExactK0`. -/
+
+namespace RingHom
+
+variable {R S T : Type u} [Ring R] [Ring S] [Ring T] (f : R →+* S)
+
+/-- Extension of scalars along the identity ring homomorphism induces the identity on
+`K₀(proj R)`. -/
+@[simp]
+theorem finiteProjectiveModulesK0Extend_id :
+    (RingHom.id R).finiteProjectiveModulesK0Extend = AddMonoidHom.id _ := by
+  refine AddMonoidHom.ext fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := (finiteProjectiveModulesSplitK0EquivExactK0 R).surjective y
+  rw [← finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars,
+    SplitK0.map_finiteProjectiveModulesExtendScalars_id, AddMonoidHom.id_apply,
+    AddMonoidHom.id_apply]
+
+/-- Extension of scalars along a composite `g ∘ f` induces the composite of the extensions along
+`f` and along `g`. -/
+@[simp]
+theorem finiteProjectiveModulesK0Extend_comp (g : S →+* T) :
+    (g.comp f).finiteProjectiveModulesK0Extend =
+      g.finiteProjectiveModulesK0Extend.comp f.finiteProjectiveModulesK0Extend := by
+  refine AddMonoidHom.ext fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := (finiteProjectiveModulesSplitK0EquivExactK0 R).surjective y
+  simp only [AddMonoidHom.comp_apply,
+    ← finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars,
+    SplitK0.map_finiteProjectiveModulesExtendScalars_comp]
 
 end RingHom

@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.StablyFree.Basic
-public import Mathlib.LinearAlgebra.FreeModule.PID
-public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.LocalRing.Module
+public import TauCeti.RingTheory.PrincipalIdealDomain.MulOpposite
+
+import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
 # `K₀` of rings whose projective modules are stably free
@@ -27,16 +27,17 @@ the class of a free module to its rank.
 Both hypotheses are also necessary for `n ↦ n[A]` to be an isomorphism. If it is injective, then
 `Aⁿ ≃ Aᵐ` forces `n = m`, as it gives `n[A] = m[A]`. The class of a module `P` is a multiple of
 `[A]` only when `P` is stably free, since `[P] = a[A] - b[A]` makes `P × Aᵇ` stably equivalent to
-`Aᵃ`. In general every class is `[P] - n[A]`: adding a complement `N` of `Q`, with `Q × N ≃ Aⁿ`,
-turns `[P] - [Q]` into `[P × N] - n[A]`.
+`Aᵃ`. In general every class is `[P] - n[A]` (established in
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic`).
 
 Following the right-module convention of algebraic `K`-theory, `K₀(R)` is the split Grothendieck
 group of finitely generated projective right `R`-modules, encoded as left `Rᵐᵒᵖ`-modules:
 `TauCeti.FiniteProjectiveRight R` and `TauCeti.KZero R`, defined in
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`. The criterion applies to
-division rings, where every module is free, to possibly noncommutative local rings and to
-commutative principal ideal domains such as `ℤ`, where every finitely generated projective module
-is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is zero and `K₀` is trivial.
+division rings, where every module is free, to possibly noncommutative local rings, and to
+principal right-ideal domains (including commutative principal ideal domains such as `ℤ`), where
+every finitely generated projective right module is free; for these `K₀(R) ≅ ℤ`. Over the zero
+ring every module is zero and `K₀` is trivial.
 
 ## Main definitions
 
@@ -46,6 +47,9 @@ is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is zero an
 * `TauCeti.FiniteProjectiveModules.rankEquiv A h`: the isomorphism of the split `K₀` of finitely
   generated projective `A`-modules with `ℤ`, when `A` has invariant basis number and every such
   module is stably free.
+* `TauCeti.KZero.rankEquivOfIsPrincipalIdealRing`: explicit rank isomorphism `KZero R ≃+ ℤ` over
+  a principal right-ideal domain `R` (including commutative PIDs and division rings), sending
+  `[R] ↦ 1`.
 
 ## Main results
 
@@ -64,8 +68,6 @@ is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is zero an
 * `TauCeti.FiniteProjectiveModules.zsmul_of_finiteProjectiveModulesRegular_bijective_iff`:
   `n ↦ n[A]` is bijective exactly when `A` has invariant basis number and every finitely generated
   projective module is stably free.
-* `TauCeti.FiniteProjectiveModules.exists_of_sub_nsmul_of_finiteProjectiveModulesRegular_eq`: every
-  class is `[P] - n[A]`.
 * `TauCeti.FiniteProjectiveModules.rankEquiv_of`: the class of a free module goes to its rank.
 * `TauCeti.FiniteProjectiveModules.subsingleton_splitK0`: `K₀` of the zero ring is trivial.
 * `TauCeti.FiniteProjectiveModules.isAddTorsionFree_splitK0`: the split `K₀` of finitely
@@ -205,22 +207,6 @@ theorem zsmul_of_finiteProjectiveModulesRegular_bijective_iff :
   and_congr (zsmul_of_finiteProjectiveModulesRegular_injective_iff A)
     (zsmul_of_finiteProjectiveModulesRegular_surjective_iff A)
 
-/-- **Normal form in projective `K₀`.** Every class in the split `K₀` of finitely generated
-projective `A`-modules is `[P] - n[A]` for a finitely generated projective `A`-module `P` and a
-natural number `n`. -/
-theorem exists_of_sub_nsmul_of_finiteProjectiveModulesRegular_eq
-    (x : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) :
-    ∃ (P : (finiteProjectiveModules A).FullSubcategory) (n : ℕ),
-      SplitK0.of.{u} P - n • SplitK0.of.{u} (finiteProjectiveModulesRegular A) = x := by
-  obtain ⟨X, Y, rfl⟩ := SplitK0.exists_eq_sub x
-  -- Add a complement `N` of `Y`, with `Y × N ≃ Aⁿ`, to both terms.
-  obtain ⟨N, _, _, _, _, n, ⟨e⟩⟩ := Module.Projective.exists_prod_linearEquiv_fin A Y.obj
-  refine ⟨X ⊞ of A N, n, ?_⟩
-  rw [SplitK0.of_biprod, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin
-    (R' := finiteProjectiveModulesRegular A) ((biprodLinearEquiv Y (of A N)).trans e) (.refl _ _),
-    SplitK0.of_biprod]
-  abel
-
 variable [InvariantBasisNumber A]
   (h : ∀ P : (finiteProjectiveModules A).FullSubcategory, IsStablyFree A P.obj)
 
@@ -285,12 +271,43 @@ instance FiniteProjectiveModules.isAddTorsionFree_splitK0 (B : Type u) [Ring B]
     inferInstance
   e.injective.isAddTorsionFree e.toAddMonoidHom
 
+namespace KZero
+
+section IsPrincipalIdealRing
+variable (R : Type u) [Ring R] [Nontrivial R] [NoZeroDivisors R] [IsPrincipalIdealRing Rᵐᵒᵖ]
+
+/-- **Rank isomorphism `KZero R ≃+ ℤ` over a principal right-ideal domain `R`** (including any
+commutative PID and any division ring), sending the class of a finitely generated projective right
+module to its rank (`Module.finrank` over `Rᵐᵒᵖ`) and `[R] ↦ 1`. -/
+noncomputable def rankEquivOfIsPrincipalIdealRing : KZero R ≃+ ℤ :=
+  FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun _ ↦
+    Module.IsStablyFree.of_projective_of_isPrincipalIdealRing
+
+/-- Under `KZero.rankEquivOfIsPrincipalIdealRing`, the class of a finitely generated projective
+right `R`-module maps to its rank, computed as `Module.finrank` over `Rᵐᵒᵖ`. -/
+@[simp] theorem rankEquivOfIsPrincipalIdealRing_of (P) :
+    rankEquivOfIsPrincipalIdealRing R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
+  have : Module.Free Rᵐᵒᵖ P.obj := Module.Free.of_projective_of_isPrincipalIdealRing
+  FiniteProjectiveModules.rankEquiv_of Rᵐᵒᵖ _ P
+
+@[simp] theorem rankEquivOfIsPrincipalIdealRing_regular :
+    rankEquivOfIsPrincipalIdealRing R (regular R) = 1 :=
+  regular_def R ▸ FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular Rᵐᵒᵖ _
+
+@[simp] theorem rankEquivOfIsPrincipalIdealRing_symm_apply (n : ℤ) :
+    (rankEquivOfIsPrincipalIdealRing R).symm n = n • regular R :=
+  regular_def R ▸ FiniteProjectiveModules.rankEquiv_symm_apply Rᵐᵒᵖ _ n
+
+end IsPrincipalIdealRing
+
+end KZero
+
 /-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
 to `1`. -/
 theorem kZero_divisionRing (D : Type u) [DivisionRing D] :
     ∃ e : KZero D ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Dᵐᵒᵖ)) = 1 :=
-  ⟨FiniteProjectiveModules.rankEquiv Dᵐᵒᵖ fun _ ↦ inferInstance,
-    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
+  ⟨KZero.rankEquivOfIsPrincipalIdealRing D,
+    KZero.regular_def D ▸ KZero.rankEquivOfIsPrincipalIdealRing_regular D⟩
 
 /-- `K₀` of a possibly noncommutative local ring `R` is `ℤ`, with the class of the free right
 module of rank one going to `1`: every finitely generated projective module is free, and a local
@@ -306,11 +323,9 @@ theorem kZero_of_isLocalRing (R : Type u) [Ring R] [IsLocalRing R] :
 module of rank one going to `1`: every finitely generated projective module is free. -/
 theorem kZero_of_isPrincipalIdealRing (R : Type u) [CommRing R] [IsDomain R]
     [IsPrincipalIdealRing R] :
-    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 := by
-  have : IsPrincipalIdealRing Rᵐᵒᵖ :=
-    .of_surjective (RingEquiv.toOpposite R) (RingEquiv.toOpposite R).surjective
-  exact ⟨FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun _ ↦ inferInstance,
-    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
+    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 :=
+  ⟨KZero.rankEquivOfIsPrincipalIdealRing R,
+    KZero.regular_def R ▸ KZero.rankEquivOfIsPrincipalIdealRing_regular R⟩
 
 /-- `K₀(ℤ)` is `ℤ`, with the class of the free module of rank one going to `1`. -/
 theorem kZero_int :

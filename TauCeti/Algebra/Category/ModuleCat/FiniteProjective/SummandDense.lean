@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.CategoryTheory.Functor.SummandDense
 
+import TauCeti.Algebra.Module.Projective.FreeComplement
+
 /-!
 # Extension of scalars is summand-dense on finitely generated projective modules
 

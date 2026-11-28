@@ -56,6 +56,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   homomorphism, as a functor between the categories of finitely generated modules.
 * `RingHom.finiteModulesRestrictScalarsCompιIso`: the underlying module of an image under
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
+* `ModuleCat.restrictScalarsAddEquiv`: the additive equivalence
+  `M ≃+ (ModuleCat.restrictScalars f).obj M` transporting elements across the shared carrier.
 * `ModuleCat.uliftUnitToRestrictScalars`: the `R`-linear map `ULift R → S`, `x ↦ f x.down`, into
   the restriction of scalars of `S` along `f : R →+* S`.
 * `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
@@ -83,6 +85,9 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
 * `ModuleCat.preservesColimitsOfShape_restrictScalars`: restriction of scalars preserves colimits
   of any shape that exist in `AddCommGrpCat`, with independent ring and module universes.
+* `ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply` and
+  `ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply`: the counit of
+  restriction of scalars along a ring equivalence and its inverse keep each element.
 -/
 
 public section
@@ -271,6 +276,35 @@ end Function.Exact
 
 namespace ModuleCat
 
+section AddEquiv
+variable {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S)
+
+/-- Additive equivalence transporting elements between `M` and `(restrictScalars f).obj M`. -/
+def restrictScalarsAddEquiv (M : ModuleCat.{v} S) : M ≃+ (restrictScalars.{v} f).obj M where
+  toFun m := m; invFun m := m; left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl
+
+theorem restrictScalarsAddEquiv_apply (M : ModuleCat.{v} S) (m : M) :
+    restrictScalarsAddEquiv f M m = m := (rfl)
+
+theorem restrictScalarsAddEquiv_symm_apply (M : ModuleCat.{v} S) (x) :
+    (restrictScalarsAddEquiv f M).symm x = x := (rfl)
+
+theorem smul_restrictScalarsAddEquiv (M : ModuleCat.{v} S) (r : R) (m : M) :
+    r • restrictScalarsAddEquiv f M m = restrictScalarsAddEquiv f M (f r • m) := (rfl)
+
+theorem restrictScalarsAddEquiv_symm_smul (M : ModuleCat.{v} S) (r : R) (x) :
+    (restrictScalarsAddEquiv f M).symm (r • x) = f r • (restrictScalarsAddEquiv f M).symm x := (rfl)
+
+theorem restrictScalarsAddEquiv_map_apply {M N : ModuleCat.{v} S} (g : M ⟶ N) (m : M) :
+    restrictScalarsAddEquiv f N (g m) =
+      (restrictScalars f).map g (restrictScalarsAddEquiv f M m) := (rfl)
+
+theorem restrictScalarsAddEquiv_symm_map_apply {M N : ModuleCat.{v} S} (g : M ⟶ N) (x) :
+    (restrictScalarsAddEquiv f N).symm ((restrictScalars f).map g x) =
+      g ((restrictScalarsAddEquiv f M).symm x) := (rfl)
+
+end AddEquiv
+
 section SemilinearMap
 
 variable {R₀ : Type*} {S₁ : Type*} {S₂ : Type*} [Ring R₀] [Ring S₁] [Ring S₂]
@@ -409,6 +443,27 @@ noncomputable def restrictScalarsOpOpIso :
   e.toModuleIso
 
 end OpOp
+
+section RestrictScalars
+
+-- Mathlib's `ModuleCat` and its scalar-restriction equivalence require rings.
+variable {R S : Type*} [Ring R] [Ring S]
+
+-- Simplify before Mathlib expands the counit into scalar-restriction comparison maps.
+-- The component simp lemmas alone leave their bundled linear-map composite unreduced.
+/-- The counit of restriction of scalars along a ring equivalence keeps each element. -/
+@[simp↓]
+theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply (e : R ≃+* S)
+    (M : ModuleCat.{v} R) (x : M) :
+    (restrictScalarsEquivalenceOfRingEquiv e).counitIso.hom.app M x = x := (rfl)
+
+/-- The inverse counit of restriction of scalars along a ring equivalence keeps each element. -/
+@[simp↓]
+theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply (e : R ≃+* S)
+    (M : ModuleCat.{v} R) (x : M) :
+    (restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
+
+end RestrictScalars
 
 end ModuleCat
 

@@ -6,16 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
-public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
-public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
-public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Exact
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 public import TauCeti.Algebra.Module.Projective.Complement
 public import TauCeti.Algebra.Module.Submodule.Finite
+public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 
 /-!
 # The Cartan map of a ring
@@ -38,9 +34,11 @@ structure is the split one, by
 `TauCeti.finiteProjectiveModulesExactStructure_eq_split`, because a short exact sequence of
 modules with projective quotient splits.
 
-The two subcategories are essentially small — every finitely generated module is a quotient of
-some `Rⁿ` — which is what makes their Grothendieck groups small types, and the Cartan map lives
-in the same universe as `R`.
+Both subcategories are essentially `u`-small (via the imported essential-smallness instances for
+`ModuleCat.isFG` in `TauCeti/Algebra/Category/FGModuleCat/Basic.lean` and
+`TauCeti.finiteProjectiveModules` in
+`TauCeti/Algebra/Category/ModuleCat/FiniteProjective/Basic.lean`), which makes their Grothendieck
+groups small types, and the Cartan map lives in the same universe as `R`.
 
 The main theorem is the module form of the resolution theorem: if every finitely generated
 `R`-module admits a finite resolution by finitely generated projectives, then `c_R` is an
@@ -56,15 +54,13 @@ Artinian ring, in the indecomposable-projective and simple bases.
 
 ## Main definitions
 
-* `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
-* `TauCeti.finiteProjectiveModulesRegular`: the regular module `R`, as a finitely generated
-  projective `R`-module.
-* `TauCeti.FiniteProjectiveModules.of R P`: a finitely generated projective `R`-module `P` as an
-  object of the subcategory of finitely generated projective modules.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
-  `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
-  the modules admitting finite resolutions by finitely generated projectives, by the canonical
-  exact structure of `ModuleCat R`.
+  `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on
+  `ModuleCat.isFG` (imported from `TauCeti/Algebra/Category/FGModuleCat/Basic.lean`),
+  `TauCeti.finiteProjectiveModules` (imported from
+  `TauCeti/Algebra/Category/ModuleCat/FiniteProjective/Basic.lean`), and on the modules
+  admitting finite resolutions by finitely generated projectives, by the canonical exact structure
+  of `ModuleCat R`.
 * `TauCeti.cartanMap`: the Cartan map `K₀(proj R) ⟶ G₀(mod R)`.
 * `TauCeti.moduleResolutionEquiv`: the resolution theorem in `ModuleCat R`, comparing `K₀(proj R)`
   with the Grothendieck group of the modules admitting finite resolutions by finitely generated
@@ -78,6 +74,8 @@ Artinian ring, in the indecomposable-projective and simple bases.
 * `TauCeti.cartanInverse` and `TauCeti.cartanEquiv`: the inverse of the Cartan map and the
   resulting isomorphism, under the hypothesis that every finitely generated module has a finite
   resolution by finitely generated projectives.
+* `TauCeti.finiteProjectiveModulesSplitK0EquivExactK0`: comparison between split and exact `K₀`
+  of finitely generated projective modules.
 
 ## Main results
 
@@ -131,79 +129,6 @@ universe u v
 
 variable (R : Type u) [Ring R]
 
-/-! ### The finitely generated projectives -/
-
-/-- The object property of being a finitely generated projective module. -/
-def finiteProjectiveModules : ObjectProperty (ModuleCat.{u} R) :=
-  fun M => Module.Finite R M ∧ Module.Projective R M
-
-variable {R}
-
-@[simp] theorem finiteProjectiveModules_iff {M : ModuleCat.{u} R} :
-    finiteProjectiveModules R M ↔ Module.Finite R M ∧ Module.Projective R M := Iff.rfl
-
-/-- The underlying module of an object of the subcategory of finitely generated projectives is
-finitely generated. -/
-instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Finite R X.obj :=
-  (finiteProjectiveModules_iff.mp X.property).1
-
-/-- The underlying module of an object of the subcategory of finitely generated projectives is
-projective. -/
-instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Projective R X.obj :=
-  (finiteProjectiveModules_iff.mp X.property).2
-
-variable (R)
-
-theorem finiteProjectiveModules_le_finiteModules :
-    finiteProjectiveModules R ≤ ModuleCat.isFG R := fun _ h =>
-  (ModuleCat.isFG_iff _).mpr (finiteProjectiveModules_iff.mp h).1
-
-/-- A direct summand of a finitely generated projective module is finitely generated and
-projective. In particular the finitely generated projective modules are closed under
-isomorphisms. -/
-instance : (finiteProjectiveModules R).IsStableUnderRetracts where
-  of_retract {M N} h hN := by
-    have : Module.Finite R N := (finiteProjectiveModules_iff.mp hN).1
-    have : Module.Projective R N := (finiteProjectiveModules_iff.mp hN).2
-    have hs : h.r.hom ∘ₗ h.i.hom = LinearMap.id := by
-      rw [← ModuleCat.hom_comp, h.retract, ModuleCat.hom_id]
-    exact finiteProjectiveModules_iff.mpr
-      ⟨Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, congr($hs x)⟩,
-        Module.Projective.of_split h.i.hom h.r.hom hs⟩
-
-instance : (finiteProjectiveModules R).ContainsZero where
-  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
-    finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
-
-/-- The regular module `R`, as a finitely generated projective `R`-module. -/
-@[expose] def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2
-    ⟨inferInstanceAs (Module.Finite R R), inferInstanceAs (Module.Projective R R)⟩⟩
-
-/-- The underlying module of `TauCeti.finiteProjectiveModulesRegular R` is `R`. -/
-@[simp]
-theorem finiteProjectiveModulesRegular_obj :
-    (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
-  (rfl)
-
-namespace FiniteProjectiveModules
-
-/-- A finitely generated projective module as an object of the subcategory of finitely generated
-projective modules. -/
-abbrev of (P : Type u) [AddCommGroup P] [Module R P] [Module.Finite R P]
-    [Module.Projective R P] : (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-
-end FiniteProjectiveModules
-
-/-! ### Essential smallness -/
-
-instance : ObjectProperty.EssentiallySmall.{u} (ModuleCat.isFG.{u} R) :=
-  (ObjectProperty.exists_equivalence_iff _).1
-    ⟨_, _, ⟨equivSmallModel.{u} (FGModuleCat.{u} R)⟩⟩
-
-instance : ObjectProperty.EssentiallySmall.{u} (finiteProjectiveModules R) :=
-  ObjectProperty.EssentiallySmall.of_le (finiteProjectiveModules_le_finiteModules R)
 
 /-! ### The two exact structures -/
 
@@ -219,16 +144,6 @@ theorem finiteProjectiveModules_le_isProjective :
 theorem finiteProjectiveModules_le_categoryTheory_isProjective :
     finiteProjectiveModules R ≤ CategoryTheory.isProjective (ModuleCat.{u} R) := fun M hM ↦
   (ExactStructure.abelian_isProjective_iff M).mp (finiteProjectiveModules_le_isProjective R M hM)
-
-instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts := by
-  refine ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN => ?_
-  have hproj := (ExactStructure.abelian_isProjective_iff (M ⊞ N)).1
-    (ExactStructure.isProjective_biprod (finiteProjectiveModules_le_isProjective R M hM)
-      (finiteProjectiveModules_le_isProjective R N hN))
-  apply finiteProjectiveModules_iff.mpr
-  exact ⟨(ModuleCat.isFG_iff _).mp ((ModuleCat.isFG R).prop_biprod_of_isClosedUnderBinaryProducts
-    (finiteProjectiveModules_le_finiteModules R M hM)
-    (finiteProjectiveModules_le_finiteModules R N hN)), inferInstance⟩
 
 /-- **The exact structure of the finitely generated modules**: the short exact sequences of
 `R`-modules all of whose terms are finitely generated. -/
@@ -253,15 +168,38 @@ theorem finiteProjectiveModulesExactStructure_eq_split :
       ExactStructure.split (finiteProjectiveModules R).FullSubcategory :=
   ExactStructure.fullSubcategory_eq_split (finiteProjectiveModules_le_isProjective R)
 
+private theorem finiteProjectiveModulesExactStructure_conflation_split
+    {S : ShortComplex (finiteProjectiveModules R).FullSubcategory}
+    (hS : (finiteProjectiveModulesExactStructure R).Conflation S) : Nonempty S.Splitting :=
+  (ExactStructure.split_conflation S).mp
+    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+
+/-- **Comparison between split and exact `K₀` of finitely generated projective modules.** Every
+short exact sequence splits (`TauCeti.finiteProjectiveModulesExactStructure_eq_split`). -/
+noncomputable def finiteProjectiveModulesSplitK0EquivExactK0 :
+    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
+      ExactK0.{u} (finiteProjectiveModulesExactStructure R) :=
+  ExactK0.fromSplitEquiv.{u} (finiteProjectiveModulesExactStructure_conflation_split R)
+
+theorem finiteProjectiveModulesSplitK0EquivExactK0_apply (x) :
+    finiteProjectiveModulesSplitK0EquivExactK0 R x =
+      ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R) x := by
+  rw [finiteProjectiveModulesSplitK0EquivExactK0, ExactK0.fromSplitEquiv_apply.{u}]
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_of (P) :
+    finiteProjectiveModulesSplitK0EquivExactK0 R (SplitK0.of.{u} P) = ExactK0.of.{u} P := by
+  rw [finiteProjectiveModulesSplitK0EquivExactK0_apply, ExactK0.fromSplit_of.{u}]
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_symm_of (P) :
+    (finiteProjectiveModulesSplitK0EquivExactK0 R).symm (ExactK0.of.{u} P) = SplitK0.of.{u} P :=
+  (finiteProjectiveModulesSplitK0EquivExactK0 R).injective (by simp)
+
 /-- The comparison from split to exact `K₀` of the finitely generated projective modules is
 injective, because their exact structure is the split one. -/
 theorem fromSplit_finiteProjectiveModules_injective :
-    Function.Injective (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R)) := by
-  intro x y h
-  apply (ExactK0.fromSplitEquiv.{u} (E := finiteProjectiveModulesExactStructure R)
-    (fun hS ↦ by simpa only [finiteProjectiveModulesExactStructure_eq_split,
-      ExactStructure.split_conflation] using hS)).injective
-  simpa only [ExactK0.fromSplitEquiv_apply] using h
+    Function.Injective (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R)) :=
+  fun x y h ↦ (finiteProjectiveModulesSplitK0EquivExactK0 R).injective
+    (by simpa only [finiteProjectiveModulesSplitK0EquivExactK0_apply] using h)
 
 /-- The conflations of finitely generated modules are the short exact sequences of `R`-modules
 whose three terms are finitely generated. -/

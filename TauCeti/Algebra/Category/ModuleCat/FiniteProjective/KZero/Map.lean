@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Idempotent
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 
+import TauCeti.Algebra.Ring.Opposite
+
 /-!
 # Functoriality of the projective `K₀` of a ring
 
@@ -72,6 +74,11 @@ of scalars of the left `Rᵐᵒᵖ`-module `P` along `fᵐᵒᵖ : Rᵐᵒᵖ �
 def map (f : R →+* S) : KZero R →+ KZero S :=
   SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars
 
+/-- `TauCeti.KZero.map` is `TauCeti.SplitK0.map` of extension of scalars along `RingHom.op f`. -/
+theorem map_eq_splitK0Map (f : R →+* S) :
+    map f = SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars := by
+  rfl
+
 /-- `K₀(f)` sends the class of `P` to the class of its extension of scalars. -/
 @[simp]
 theorem map_of (f : R →+* S) (P : FiniteProjectiveRight R) :
@@ -89,22 +96,15 @@ theorem map_of_linearEquiv (f : R →+* S) (P : FiniteProjectiveRight R)
 variable (R) in
 /-- Extension of scalars along the identity induces the identity on `K₀`. -/
 @[simp]
-theorem map_id : map (RingHom.id R) = AddMonoidHom.id (KZero R) :=
-  SplitK0.hom_ext fun P ↦ map_of_linearEquiv _ P P
-    ((BalancedExtension.congrRingHom (RingHom.ext fun _ ↦ rfl)).trans
-      (BalancedExtension.lid Rᵐᵒᵖ P.obj))
+theorem map_id : map (RingHom.id R) = AddMonoidHom.id (KZero R) := by
+  simpa only [map_eq_splitK0Map, RingHom.op_id] using
+    SplitK0.map_finiteProjectiveModulesExtendScalars_id (R := Rᵐᵒᵖ)
 
 /-- Extension of scalars along a composite `g ∘ f` induces the composite of the maps induced by
 `f` and by `g`. -/
 theorem map_comp (f : R →+* S) (g : S →+* T) : map (g.comp f) = (map g).comp (map f) := by
-  -- Extending along `fᵐᵒᵖ` and then `gᵐᵒᵖ` agrees with extending along `(g ∘ f)ᵐᵒᵖ` and then
-  -- along the identity, around the commuting square of opposite ring homomorphisms.
-  have h : (map g).comp (map f) = (map (RingHom.id T)).comp (map (g.comp f)) :=
-    (SplitK0.map_comp.{u, u, u} _ _).symm.trans <|
-      (SplitK0.map_congr.{u, u} fun P ↦ ⟨(RingHom.finiteProjectiveModulesExtendScalarsCompIso
-        (RingHom.op f) (RingHom.op g) (RingHom.op (g.comp f)) (RingHom.op (RingHom.id T))
-        (RingHom.ext fun _ ↦ rfl)).app P⟩).trans (SplitK0.map_comp.{u, u, u} _ _)
-  rw [h, map_id, AddMonoidHom.id_comp]
+  simpa only [map_eq_splitK0Map, RingHom.op_comp] using
+    SplitK0.map_finiteProjectiveModulesExtendScalars_comp (f := RingHom.op f) (RingHom.op g)
 
 /-- Applying the maps induced by `f` and then by `g` is applying the map induced by `g ∘ f`. -/
 @[simp]

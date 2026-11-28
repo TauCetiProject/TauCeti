@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Ring.Prod
 # Products of rings
 
 Over a ring with invertible `2`, the half-sum and half-difference of a pair
-have sum and difference equal to that pair (`Prod.invOf_two_mul_add_sub`).
+have sum and difference equal to that pair (`Prod.invOf_two_mul_add_sub`). We also record how
+multiplication in `R × S` interacts with `AddMonoidHom.inl` and `AddMonoidHom.inr`.
 
 The projections `RingHom.fst` and `RingHom.snd`, viewed as non-unital ring homomorphisms, are
 `NonUnitalRingHom.fst` and `NonUnitalRingHom.snd` (`RingHom.toNonUnitalRingHom_fst`,
@@ -24,6 +25,24 @@ A ring endomorphism of `R × R` acting as the swap `(a, b) ↦ (b, a)` is an inv
 -/
 
 public section
+
+namespace AddMonoidHom
+
+variable {R S : Type*} [NonUnitalNonAssocSemiring R] [NonUnitalNonAssocSemiring S]
+
+/-- Left multiplication in `R × S` pulls through `AddMonoidHom.inl` via the first coordinate. -/
+theorem mul_inl (x : R × S) (r : R) : x * inl R S r = inl R S (x.1 * r) := by ext <;> simp
+
+/-- Right multiplication in `R × S` pulls through `AddMonoidHom.inl` via the first coordinate. -/
+theorem inl_mul (r : R) (x : R × S) : inl R S r * x = inl R S (r * x.1) := by ext <;> simp
+
+/-- Left multiplication in `R × S` pulls through `AddMonoidHom.inr` via the second coordinate. -/
+theorem mul_inr (x : R × S) (s : S) : x * inr R S s = inr R S (x.2 * s) := by ext <;> simp
+
+/-- Right multiplication in `R × S` pulls through `AddMonoidHom.inr` via the second coordinate. -/
+theorem inr_mul (s : S) (x : R × S) : inr R S s * x = inr R S (s * x.2) := by ext <;> simp
+
+end AddMonoidHom
 
 namespace Prod
 
