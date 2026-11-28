@@ -187,10 +187,8 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
   obtain ⟨c⟩ := nonempty_coloring_graph_coxeterMatrixOfBase P b
   let g := (weylCoxeterSystem P b).bipartiteCoxeterElement c
   have := P.finite_weylGroup_of_base b
-  obtain ⟨x, ζ, hx, hgx, hζ⟩ :=
-    P.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot b c
-  have hchar := P.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot b hf hbij hx hgx
-    hζ hζ
+  obtain ⟨ζ, hζ, hchar⟩ :=
+    P.exists_isPrimitiveRoot_charpoly_bipartiteCoxeterElement_eq_prod b c hf hbij
   obtain ⟨l₁, l₂, -, -, hnd, hall, hw⟩ :=
     (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
   rw [weylCoxeterSystem_wordProd] at hw
@@ -229,22 +227,12 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
     intro a ha
     rw [hs₂, Multiset.mem_coe] at ha
     exact hh ▸ t.lt_coxeterNumber_of_mem_exponents ht ha
-  refine Multiset.ext.mpr fun a ↦ ?_
-  by_cases ha : a < orderOf g
-  · have hc (s : Multiset ℕ) (hs : ∀ b ∈ s, b < orderOf g) :
-        (s.map (ζ ^ ·)).count (ζ ^ a) = s.count a := by
-      by_cases has : a ∈ s
-      · exact Multiset.count_map_eq_count (ζ ^ ·) s
-          (fun b hb c hc hbc ↦ hζ.pow_inj (hs b hb) (hs c hc) hbc) a has
-      · rw [Multiset.count_eq_zero.mpr has, Multiset.count_eq_zero.mpr]
-        intro hmem
-        obtain ⟨b, hb, hba⟩ := Multiset.mem_map.mp hmem
-        exact has (hζ.pow_inj (hs b hb) ha hba ▸ hb)
-    have hmap : s₁.map (ζ ^ ·) = s₂.map (ζ ^ ·) := by
-      simpa [s₁, s₂, Multiset.map_map, Function.comp_def] using hrootsEq
-    rw [← hc s₁ hlt₁, ← hc s₂ hlt₂, hmap]
-  · rw [Multiset.count_eq_zero.mpr (fun h ↦ ha (hlt₁ a h)),
-      Multiset.count_eq_zero.mpr (fun h ↦ ha (hlt₂ a h))]
+  have hfin : s₁.pmap Fin.mk hlt₁ = s₂.pmap Fin.mk hlt₂ := by
+    refine Multiset.map_injective
+      (fun a b hab ↦ Fin.ext (hζ.pow_inj a.isLt b.isLt hab)) ?_
+    simpa [s₁, s₂, Multiset.map_pmap, Multiset.pmap_eq_map, Multiset.map_map,
+      Function.comp_def] using hrootsEq
+  simpa [Multiset.map_pmap, Multiset.pmap_eq_map] using congrArg (Multiset.map Fin.val) hfin
 
 /-- **The basic invariant degrees of `Sym(M*)^W` equal the fundamental degrees of the classified
 Dynkin type.** For any base `b` of a finite irreducible reduced crystallographic root system over
