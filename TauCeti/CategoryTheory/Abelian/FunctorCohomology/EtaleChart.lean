@@ -278,10 +278,22 @@ images of the coordinates: a chart étale over a torus
 @[expose] noncomputable def awayProd : X.EtaleChart d :=
   c.away (∏ i, c.coord i) (fun i ↦ algebraMap c.R _ (c.coord i)) (c.etale_aeval_away _)
 
+/-- The algebra of `c.awayProd` is `R[1/(x₁ ⋯ x_d)]`. -/
+@[simp]
+lemma awayProd_R : c.awayProd.R = CommAlgCat.of k (Localization.Away (∏ i, c.coord i)) :=
+  rfl
+
 /-- The coordinates of `c.awayProd` are the images of those of `c` in `R[1/(x₁ ⋯ x_d)]`. -/
 @[simp]
 lemma awayProd_coord (i : Fin d) :
     c.awayProd.coord i = (algebraMap c.R (Localization.Away (∏ j, c.coord j)) (c.coord i) :) :=
+  rfl
+
+/-- The point of `c.awayProd` is the image of the point of `c` in `X(R[1/(x₁ ⋯ x_d)])`. -/
+@[simp]
+lemma awayProd_pt : c.awayProd.pt =
+    X.map (CommAlgCat.ofHom
+      (IsScalarTower.toAlgHom k c.R (Localization.Away (∏ i, c.coord i)))) c.pt :=
   rfl
 
 /-- The coordinates of `c.awayProd` are units. -/

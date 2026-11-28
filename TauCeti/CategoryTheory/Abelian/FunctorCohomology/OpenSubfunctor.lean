@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import TauCeti.CategoryTheory.Abelian.FunctorCohomology.ZariskiDescent
 
 import Mathlib.RingTheory.Localization.Ideal
+import TauCeti.Algebra.Category.CommAlgCat.Basic
 import TauCeti.Algebra.Category.CommAlgCat.Localization
 
 /-!
@@ -251,18 +252,6 @@ lemma isOpen_forget₂_iff {V : Subfunctor X} :
         X.map f x ∈ V.obj B ↔ I.map f.hom = ⊤ :=
   Iff.rfl
 
-/-- The ring map that the forgetful functor makes of a map `f` of `k`-algebras extends ideals as
-`f` does. -/
-private lemma map_forget₂_map_hom {A B : CommAlgCat.{u} k} (f : A ⟶ B) (T : Ideal A) :
-    T.map ((forget₂ (CommAlgCat.{u} k) CommRingCat.{u}).map f).hom = T.map f.hom :=
-  rfl
-
-/-- The quotient map `B ⟶ B ⧸ 𝔫` of `k`-algebras extends ideals as `Ideal.Quotient.mk 𝔫` does. -/
-private lemma map_ofHom_mkₐ {B : CommAlgCat.{u} k} (T 𝔫 : Ideal B) :
-    T.map (CommAlgCat.ofHom (Ideal.Quotient.mkₐ k 𝔫)).hom = T.map (Ideal.Quotient.mk 𝔫) := by
-  rw [CommAlgCat.hom_ofHom, ← Ideal.map_coe, ← AlgHom.toRingHom_eq_coe,
-    Ideal.Quotient.mkₐ_toRingHom]
-
 /-- Open subfunctors of a functor on commutative `k`-algebras that together contain every point
 with values in a field have a Zariski-locally everything union: the residue fields `A ⧸ m` of an
 algebra `A` provide the maps required by `isZariskiLocallyTop_iSup_of_isOpen`. -/
@@ -278,14 +267,8 @@ lemma isZariskiLocallyTop_iSup_of_isOpen_of_isField {J : Sort*} {V : J → Subfu
   obtain ⟨j, hj⟩ := h _ hK (X.map π x)
   refine ⟨_, π, j, ?_, hj⟩
   have : Nontrivial (A ⧸ m') := hK.nontrivial
-  rw [map_forget₂_map_hom, map_ofHom_mkₐ, Ideal.map_quotient_self]
+  rw [CommAlgCat.ideal_map_forget₂_map, CommAlgCat.ideal_map_ofHom_mkₐ, Ideal.map_quotient_self]
   exact bot_ne_top
-
-/-- Extending an ideal along a composite of maps of `k`-algebras extends it in two steps. -/
-private lemma map_comp_hom {A B B' : CommAlgCat.{u} k} (T : Ideal A) (f : A ⟶ B) (g : B ⟶ B') :
-    T.map (f ≫ g).hom = (T.map f.hom).map g.hom := by
-  rw [CommAlgCat.hom_comp, ← Ideal.map_coe (g.hom.comp f.hom), AlgHom.comp_toRingHom,
-    ← Ideal.map_map, Ideal.map_coe, Ideal.map_coe]
 
 variable {V : Subfunctor X} {W : Subfunctor V.toFunctor} {A : CommAlgCat.{u} k} {x : X.obj A}
 
@@ -361,7 +344,8 @@ private lemma map_iSup_eq_top_of_mem {I : Ideal A}
     rw [Ideal.map_mul, (key a _ ha (map_comp_mem f q hx)).1 (mk_map_comp_mem f q hx hw),
       Ideal.map_span, Set.image_singleton, Ideal.span_singleton_eq_top.2 ha, Ideal.top_mul]
   have hle' : (Ideal.span {(a : A)} * (J a).under A).map (f ≫ q).hom ≤ ⊥ := by
-    rw [map_comp_hom, map_ofHom_mkₐ, ← Ideal.map_mk_eq_bot_of_le (le_refl 𝔫)]
+    rw [CommAlgCat.ideal_map_comp, CommAlgCat.ideal_map_ofHom_mkₐ,
+      ← Ideal.map_mk_eq_bot_of_le (le_refl 𝔫)]
     exact Ideal.map_mono ((Ideal.map_mono
       (le_iSup (fun b : I ↦ Ideal.span {(b : A)} * (J b).under A) a)).trans hle)
   exact top_ne_bot (le_bot_iff.1 (hT ▸ hle'))
@@ -387,7 +371,7 @@ private lemma mem_of_map_iSup_eq_top {I : Ideal A}
   let := Ideal.Quotient.field 𝔫
   let q : B ⟶ CommAlgCat.of k (B ⧸ 𝔫) := CommAlgCat.ofHom (Ideal.Quotient.mkₐ k 𝔫)
   have htop : (⨆ a : I, Ideal.span {(a : A)} * (J a).under A).map (f ≫ q).hom = ⊤ := by
-    rw [map_comp_hom, hf, Ideal.map_top]
+    rw [CommAlgCat.ideal_map_comp, hf, Ideal.map_top]
   obtain ⟨a, ha⟩ : ∃ a : I, (Ideal.span {(a : A)} * (J a).under A).map (f ≫ q).hom = ⊤ := by
     by_contra! H
     rw [Ideal.map_iSup] at htop
@@ -400,7 +384,7 @@ private lemma mem_of_map_iSup_eq_top {I : Ideal A}
   have h₁ := (hIw q).1 (by
     rw [toFunctor_map_mk]
     exact (key a (f ≫ q) hunit _).2 (top_le_iff.1 (ha ▸ Ideal.mul_le_right)))
-  rw [map_ofHom_mkₐ, Ideal.map_mk_eq_bot_of_le hle] at h₁
+  rw [CommAlgCat.ideal_map_ofHom_mkₐ, Ideal.map_mk_eq_bot_of_le hle] at h₁
   exact bot_ne_top h₁
 
 /-- **Openness is transitive.** If `V` is an open subfunctor of a functor `X` on commutative
