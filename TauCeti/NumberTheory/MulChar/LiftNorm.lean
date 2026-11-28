@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 public import Mathlib.RingTheory.Norm.Defs
 import Mathlib.FieldTheory.Finite.GaloisField
 import Mathlib.RingTheory.Norm.Basic
-import TauCeti.FieldTheory.Finite.Card.Basic
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.FieldTheory.Finite.EulerCriterion
 import TauCeti.RingTheory.Norm.Units
 

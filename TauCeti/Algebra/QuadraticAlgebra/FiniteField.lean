@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-import TauCeti.FieldTheory.Finite.Card.Basic
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.FieldTheory.Finite.EulerCriterion
 
 /-!

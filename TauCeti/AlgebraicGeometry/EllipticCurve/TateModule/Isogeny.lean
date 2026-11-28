@@ -28,7 +28,7 @@ import TauCeti.GroupTheory.Torsion
 -- Proof-only: a prime different from the residue characteristic is nonzero in `K^{alg}`.
 import TauCeti.NumberTheory.LocalField.NatCastValuation
 -- Proof-only: the order of the residue field is prime to the integers nonzero in it.
-import TauCeti.FieldTheory.Finite.Card.Basic
+import TauCeti.FieldTheory.Finite.Card
 -- Proof-only: `E[ℓ]` is free of rank two over `ℤ/ℓ`, so it has a point of order `ℓ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
 
