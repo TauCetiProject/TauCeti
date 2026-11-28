@@ -6,22 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
+public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import Mathlib.Algebra.Homology.DerivedCategory.TStructure
+public import Mathlib.CategoryTheory.Triangulated.TStructure.TruncLEGT
 public import Mathlib.CategoryTheory.Triangulated.TStructure.TruncLTGE
 
 /-!
-# Cohomology of the truncations of the canonical t-structure
+# Cohomology of canonical truncations in the derived category
 
 For the canonical t-structure `DerivedCategory.TStructure.t` on the derived category `D(C)` of an
 abelian category, an object is `≥ n` (resp. `≤ n`) exactly when its cohomology vanishes in
 degrees `< n` (resp. `> n`) (Mathlib's `DerivedCategory.isGE_iff`, `DerivedCategory.isLE_iff`).
-This file records how the truncation functors act on cohomology and identifies the objects of the
-heart with the objects of `C`.
+This file records how the truncation functors act on cohomology, identifies the objects of the
+heart with the objects of `C`, and provides morphism-factorization results for truncated
+objects.
 
 * The map `τ_{<n} X ⟶ X` induces an isomorphism on `Hᵠ` for `q < n`
-  (`DerivedCategory.isIso_homologyFunctor_map_truncLTι_app`), and the map `X ⟶ τ_{≥n} X` induces an
-  isomorphism on `Hᵠ` for `n ≤ q` (`DerivedCategory.isIso_homologyFunctor_map_truncGEπ_app`). Both
-  follow from the long exact cohomology sequence of the truncation triangle.
+  (`DerivedCategory.isIso_homologyFunctor_map_truncLTι_app`), the map `τ_{≤n} X ⟶ X` induces an
+  isomorphism on `Hᵠ` for `q ≤ n`
+  (`DerivedCategory.isIso_homologyFunctor_map_truncLEι_app`), and the map `X ⟶ τ_{≥n} X` induces
+  an isomorphism on `Hᵠ` for `n ≤ q` (`DerivedCategory.isIso_homologyFunctor_map_truncGEπ_app`).
+  All follow from the long exact cohomology sequence of the truncation triangle.
 * An object `Y` that is both `≥ q` and `≤ q` is isomorphic to its cohomology `Hᵠ(Y)` placed in
   degree `q` (`DerivedCategory.isoSingleFunctorHomology`), by an isomorphism which induces the
   canonical one on `Hᵠ` (`DerivedCategory.homologyFunctor_map_isoSingleFunctorHomology_hom`).
@@ -34,6 +39,17 @@ heart with the objects of `C`.
   (`DerivedCategory.truncGETruncLTIsoSingleFunctor_hom_naturality`). This is the identification of
   the `t`-cohomology objects of `X` with its cohomology, which computes the first page of the
   spectral sequence of the truncations of `X`.
+* `DerivedCategory.homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE`: under `X.IsLE n` and
+  `Y.IsGE n`, a morphism `f : X ⟶ Y` vanishes if and only if `H^n(f) = 0`.
+* `DerivedCategory.exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero` and
+  `DerivedCategory.exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero`: when
+  `X.IsLE b₁` and `H^{b₁}(f) = 0`, `f : X ⟶ Y` factors through `τ_{≤ b₀} Y ⟶ Y` (`b₀ + 1 = b₁`);
+  dually, when `Y.IsGE a₀` and `H^{a₀}(f) = 0`, `f` factors through `X ⟶ τ_{≥ a₁} X`
+  (`a₀ + 1 = a₁`).
+
+The isomorphism lemmas allow degreewise finiteness of cohomology to pass to truncations
+(`TauCeti.Algebra.Homology.DerivedCategory.FiniteHom`), while the factorization lemmas drive
+ghost-nilpotence inductions (`TauCeti.Algebra.Homology.DerivedCategory.CohomologyAction`).
 
 ## References
 
@@ -42,13 +58,15 @@ heart with the objects of `C`.
 
 public section
 
-open CategoryTheory Limits Triangulated
+open CategoryTheory Limits Pretriangulated Triangulated
 
 universe w v u
 
 namespace DerivedCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
+
+section
 
 open TStructure
 
@@ -242,5 +260,56 @@ lemma truncGETruncLTIsoSingleFunctor_hom_naturality {X X' : DerivedCategory C} (
   simp only [truncGETruncLTIsoSingleFunctor, Iso.trans_hom, Functor.mapIso_hom,
     Category.assoc, isoSingleFunctorHomology_hom_naturality_assoc, ← Functor.map_comp,
     homologyTruncGETruncLTIso_hom_naturality]
+
+end
+
+/-- For `q ≤ n`, the canonical truncation morphism `(τ_{≤ n} X) ⟶ X` induces an isomorphism on
+`q`-th cohomology. -/
+theorem isIso_homologyFunctor_map_truncLEι_app (X : DerivedCategory C) {q n : ℤ} (hqn : q ≤ n) :
+    IsIso ((homologyFunctor C q).map ((TStructure.t.truncLEι n).app X)) :=
+  isIso_homologyFunctor_map_truncLTι_app X (Int.lt_add_one_iff.mpr hqn)
+
+/-- If `X` is concentrated in degrees `≤ n` and `Y` in degrees `≥ n`, then a morphism `f : X ⟶ Y`
+is zero if and only if it induces zero on `H^n`. -/
+theorem homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE {X Y : DerivedCategory C}
+    (f : X ⟶ Y) (n : ℤ) [X.IsLE n] [Y.IsGE n] :
+    (homologyFunctor C n).map f = 0 ↔ f = 0 := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ by simp [hf]⟩
+  have : IsIso ((homologyFunctor C n).map ((TStructure.t.truncLEι n).app Y)) :=
+    isIso_homologyFunctor_map_truncLEι_app Y le_rfl
+  let g : X ⟶ (TStructure.t.truncLE n).obj Y := TStructure.t.liftTruncLE f n
+  have hg : (homologyFunctor C n).map g = 0 := by
+    rw [← cancel_mono ((homologyFunctor C n).map ((TStructure.t.truncLEι n).app Y)),
+      ← Functor.map_comp, TStructure.t.liftTruncLE_ι, hf, zero_comp]
+  let e := isoSingleFunctorHomology ((TStructure.t.truncLE n).obj Y) n
+  have hge : g ≫ e.hom = 0 := hom_ext_of_isLE (by simp [hg])
+  have hg0 : TStructure.t.liftTruncLE f n = 0 := (cancel_mono e.hom).1 (by simpa using hge)
+  rw [← TStructure.t.liftTruncLE_ι f n, hg0, zero_comp]
+
+/-- If `X` is concentrated in degrees `≤ b₁` and `f : X ⟶ Y` induces zero on `H^{b₁}`, then `f`
+factors through `(τ_{≤ b₀} Y) ⟶ Y` whenever `b₀ + 1 = b₁`. -/
+theorem exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero {X Y : DerivedCategory C}
+    (f : X ⟶ Y) (b₀ b₁ : ℤ) [X.IsLE b₁] (hf : (homologyFunctor C b₁).map f = 0)
+    (hb : b₀ + 1 = b₁ := by lia) :
+    ∃ g : X ⟶ (TStructure.t.truncLE b₀).obj Y,
+      g ≫ (TStructure.t.truncLEι b₀).app Y = f := by
+  have hcomp : f ≫ (TStructure.t.truncGEπ b₁).app Y = 0 := by
+    rw [← homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE _ b₁, Functor.map_comp, hf, zero_comp]
+  obtain ⟨g, hg⟩ := Triangle.coyoneda_exact₂ _
+    (TStructure.t.triangleLEGE_distinguished b₀ b₁ hb Y) f hcomp
+  exact ⟨g, hg.symm⟩
+
+/-- If `Y` is concentrated in degrees `≥ a₀` and `f : X ⟶ Y` induces zero on `H^{a₀}`, then `f`
+factors through `X ⟶ (τ_{≥ a₁} X)` whenever `a₀ + 1 = a₁`. -/
+theorem exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero {X Y : DerivedCategory C}
+    (f : X ⟶ Y) (a₀ a₁ : ℤ) [Y.IsGE a₀] (hf : (homologyFunctor C a₀).map f = 0)
+    (ha : a₀ + 1 = a₁ := by lia) :
+    ∃ g : (TStructure.t.truncGE a₁).obj X ⟶ Y,
+      (TStructure.t.truncGEπ a₁).app X ≫ g = f := by
+  have hcomp : (TStructure.t.truncLEι a₀).app X ≫ f = 0 := by
+    rw [← homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE _ a₀, Functor.map_comp, hf, comp_zero]
+  obtain ⟨g, hg⟩ := Triangle.yoneda_exact₂ _
+    (TStructure.t.triangleLEGE_distinguished a₀ a₁ ha X) f hcomp
+  exact ⟨g, hg.symm⟩
 
 end DerivedCategory
