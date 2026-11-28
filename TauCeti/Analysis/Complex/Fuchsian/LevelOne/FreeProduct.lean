@@ -12,6 +12,7 @@ public import TauCeti.GroupTheory.CoprodI
 public import TauCeti.NumberTheory.Modular.Generators
 import TauCeti.Algebra.Group.Submonoid.Torsion
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
+import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.GroupTheory.Index.Torsion
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
 
@@ -97,29 +98,29 @@ theorem psl2zEquivCoprod_coe_U :
   rw [← coe_S_mul_coe_R_inv_mul_coe_S_inv]
   simp
 
+/-- The inverse of `psl2zEquivCoprod` sends `inl (ofAdd 1)` to `S`. -/
+@[simp]
+theorem psl2zEquivCoprod_symm_inl_ofAdd_one :
+    psl2zEquivCoprod.symm (.inl (.ofAdd 1)) = (S : PSL(2, ℤ)) :=
+  psl2zEquivCoprod.symm_apply_eq.mpr psl2zEquivCoprod_coe_S.symm
+
+/-- The inverse of `psl2zEquivCoprod` sends `inr (ofAdd 1)` to `R`. -/
+@[simp]
+theorem psl2zEquivCoprod_symm_inr_ofAdd_one :
+    psl2zEquivCoprod.symm (.inr (.ofAdd 1)) = (R : PSL(2, ℤ)) :=
+  psl2zEquivCoprod.symm_apply_eq.mpr psl2zEquivCoprod_coe_R.symm
+
 /-- The inverse of `psl2zEquivCoprod` sends `inl (ofAdd k)` to `S ^ k`. -/
 @[simp]
 theorem psl2zEquivCoprod_symm_inl_ofAdd_intCast (k : ℤ) :
     psl2zEquivCoprod.symm (.inl (.ofAdd (k : ZMod 2))) = (S : PSL(2, ℤ)) ^ k := by
-  simp [psl2zEquivCoprod, MulEquiv.symm_trans_apply]
+  rw [Multiplicative.ofAdd_intCast, map_zpow, map_zpow, psl2zEquivCoprod_symm_inl_ofAdd_one]
 
 /-- The inverse of `psl2zEquivCoprod` sends `inr (ofAdd k)` to `R ^ k`. -/
 @[simp]
 theorem psl2zEquivCoprod_symm_inr_ofAdd_intCast (k : ℤ) :
     psl2zEquivCoprod.symm (.inr (.ofAdd (k : ZMod 3))) = (R : PSL(2, ℤ)) ^ k := by
-  simp [psl2zEquivCoprod, MulEquiv.symm_trans_apply, coe_S_mul_coe_T]
-
-/-- The inverse of `psl2zEquivCoprod` sends `inl (ofAdd 1)` to `S`. -/
-@[simp]
-theorem psl2zEquivCoprod_symm_inl_ofAdd_one :
-    psl2zEquivCoprod.symm (.inl (.ofAdd 1)) = (S : PSL(2, ℤ)) := by
-  simpa using psl2zEquivCoprod_symm_inl_ofAdd_intCast 1
-
-/-- The inverse of `psl2zEquivCoprod` sends `inr (ofAdd 1)` to `R`. -/
-@[simp]
-theorem psl2zEquivCoprod_symm_inr_ofAdd_one :
-    psl2zEquivCoprod.symm (.inr (.ofAdd 1)) = (R : PSL(2, ℤ)) := by
-  simpa using psl2zEquivCoprod_symm_inr_ofAdd_intCast 1
+  rw [Multiplicative.ofAdd_intCast, map_zpow, map_zpow, psl2zEquivCoprod_symm_inr_ofAdd_one]
 
 /-- The orders `2` and `3` of the cyclic free-product factors of `PSL(2, ℤ)` indexed by `Fin 2`. -/
 @[expose]
@@ -150,14 +151,20 @@ theorem finTwoEquivCoprod_psl2zEquivCoprodI (g : PSL(2, ℤ)) :
 theorem psl2zEquivCoprodI_coe_S :
     psl2zEquivCoprodI (S : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) := by
   apply (Monoid.CoprodI.finTwoEquivCoprod _).injective
-  simp; rfl
+  rw [finTwoEquivCoprod_psl2zEquivCoprodI, psl2zEquivCoprod_coe_S,
+    Monoid.CoprodI.finTwoEquivCoprod_of_zero]
+  -- `psl2zCoprodOrder 0 = 2` and `psl2zCoprodOrder 1 = 3` hold definitionally.
+  rfl
 
 /-- `psl2zEquivCoprodI` maps `R` to the generator of the factor at `1 : Fin 2`. -/
 @[simp]
 theorem psl2zEquivCoprodI_coe_R :
     psl2zEquivCoprodI (R : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) := by
   apply (Monoid.CoprodI.finTwoEquivCoprod _).injective
-  simp; rfl
+  rw [finTwoEquivCoprod_psl2zEquivCoprodI, psl2zEquivCoprod_coe_R,
+    Monoid.CoprodI.finTwoEquivCoprod_of_one]
+  -- `psl2zCoprodOrder 0 = 2` and `psl2zCoprodOrder 1 = 3` hold definitionally.
+  rfl
 
 /-- `psl2zEquivCoprodI` maps the cusp translation `T` to
 `of 0 (ofAdd 1) * of 1 (ofAdd 1)`. -/
@@ -201,7 +208,7 @@ theorem psl2zEquivCoprodI_symm_of_zero_ofAdd_intCast (k : ℤ) :
     psl2zEquivCoprodI.symm
         (Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd (k : ZMod (psl2zCoprodOrder 0)))) =
       (S : PSL(2, ℤ)) ^ k := by
-  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow,
+  rw [Multiplicative.ofAdd_intCast, map_zpow, map_zpow,
     psl2zEquivCoprodI_symm_of_zero_ofAdd_one]
 
 /-- The inverse of `psl2zEquivCoprodI` maps `ofAdd (k : ZMod (psl2zCoprodOrder 1))` at `1 : Fin 2`
@@ -211,7 +218,7 @@ theorem psl2zEquivCoprodI_symm_of_one_ofAdd_intCast (k : ℤ) :
     psl2zEquivCoprodI.symm
         (Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd (k : ZMod (psl2zCoprodOrder 1)))) =
       (R : PSL(2, ℤ)) ^ k := by
-  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow,
+  rw [Multiplicative.ofAdd_intCast, map_zpow, map_zpow,
     psl2zEquivCoprodI_symm_of_one_ofAdd_one]
 
 /-! ### Subgroup index divisibility for torsion-free subgroups -/

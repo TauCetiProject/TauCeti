@@ -32,8 +32,8 @@ decompositions with trivial factors are trimmed to their nontrivial factors.
 ## Main declarations
 
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
-* `MulEquiv.coprodICongrLeft`: the isomorphism of free products induced by reindexing along an
-  equivalence of index types.
+* `MulEquiv.coprodICongrLeft`, `Monoid.CoprodI.lift_comp_coprodICongrLeft`: the isomorphism of
+  free products induced by reindexing along an equivalence of index types, and lift transport.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
@@ -154,6 +154,16 @@ theorem coprodIUnique_symm_apply (m : M default) : (coprodIUnique M).symm m = Co
 end MulEquiv
 
 namespace Monoid.CoprodI
+
+/-- Under `MulEquiv.coprodICongrLeft`, the homomorphism `CoprodI (fun i => M (e i)) →* N`
+induced by `CoprodI.lift f` on `CoprodI M` is `CoprodI.lift (fun i => f (e i))`. -/
+@[simp]
+theorem lift_comp_coprodICongrLeft {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
+    (e : ι ≃ κ) {N : Type*} [Monoid N] (f : ∀ k, M k →* N) :
+    (lift f).comp (MulEquiv.coprodICongrLeft M e : CoprodI (fun i => M (e i)) →* CoprodI M) =
+      lift fun i => f (e i) := by
+  ext i m
+  simp
 
 section Bool
 

@@ -49,12 +49,12 @@ def equivCoprod (a b : ℕ) :
     TriangleGroup a b 0 ≃* Monoid.Coprod (Multiplicative (ZMod a)) (Multiplicative (ZMod b)) :=
   MonoidHom.toMulEquiv
     (lift (.inl (.ofAdd 1)) (.inr (.ofAdd 1)) (.inr (.ofAdd 1) * .inl (.ofAdd 1))⁻¹
-      (by rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one])
-      (by rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one])
+      (by rw [← map_pow, Multiplicative.ofAdd_one_pow, map_one])
+      (by rw [← map_pow, Multiplicative.ofAdd_one_pow, map_one])
       (pow_zero _)
       (by rw [mul_assoc, inv_mul_cancel]))
-    (Monoid.Coprod.lift (zmodLift (x a b 0) (x_pow a b 0))
-      (zmodLift (y a b 0) (y_pow a b 0)))
+    (Monoid.Coprod.lift (zmodLift (x a b 0) (x_pow a b 0) (fun _ ↦ Group.isUnit _))
+      (zmodLift (y a b 0) (y_pow a b 0) (fun _ ↦ Group.isUnit _)))
     (by ext <;> simp)
     (Monoid.Coprod.hom_ext (MonoidHom.ext_mzmod (by simp)) (MonoidHom.ext_mzmod (by simp)))
 
@@ -92,13 +92,13 @@ theorem equivCoprod_symm_inr_ofAdd_one (a b : ℕ) :
 @[simp]
 theorem equivCoprod_symm_inl_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (.inl (.ofAdd (k : ZMod a))) = x a b 0 ^ k := by
-  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, equivCoprod_symm_inl_ofAdd_one]
+  rw [Multiplicative.ofAdd_intCast, map_zpow, map_zpow, equivCoprod_symm_inl_ofAdd_one]
 
 /-- The inverse of `equivCoprod` sends `inr (ofAdd k)` to `y a b 0 ^ k`. -/
 @[simp]
 theorem equivCoprod_symm_inr_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (.inr (.ofAdd (k : ZMod b))) = y a b 0 ^ k := by
-  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, equivCoprod_symm_inr_ofAdd_one]
+  rw [Multiplicative.ofAdd_intCast, map_zpow, map_zpow, equivCoprod_symm_inr_ofAdd_one]
 
 /-- The first generator `x a b 0` of `Δ(a, b, 0)` has order `a` (for `a = 0`, infinite order). -/
 @[simp]
