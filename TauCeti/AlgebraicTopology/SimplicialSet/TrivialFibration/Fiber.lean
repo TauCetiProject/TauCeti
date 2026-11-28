@@ -93,13 +93,13 @@ theorem rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
 /-- If the map induced by `f` on the fibre over `p y` is a trivial fibration,
 then the fibre of `f` over `y` is weakly contractible. No fibration hypothesis on `f` is needed. -/
 theorem fiber.isWeaklyContractible_of_rlp_map {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
-    (y : Y _⦋0⦌)
-    (h : (monomorphisms SSet.{u}).rlp (fiber.map f (q := f ≫ p) rfl (p.app _ y))) :
+    {q : X ⟶ S} (hq : f ≫ p = q) (y : Y _⦋0⦌)
+    (h : (monomorphisms SSet.{u}).rlp (fiber.map f hq (p.app _ y))) :
     IsWeaklyContractible (fiber f y : SSet.{u}) := by
   apply ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
     stdSimplex.isTerminalObj₀
       (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))).1 ?_).2
-  exact (monomorphisms SSet.{u}).rlp.of_isPullback (fiber.isPullback_map_toPoint f p y) h
+  exact (monomorphisms SSet.{u}).rlp.of_isPullback (fiber.isPullback_map_const f p hq y) h
 
 /-- A Kan fibration whose fibres over all vertices of the base are weakly contractible has the
 right lifting property with respect to all monomorphisms: it is a trivial fibration. -/

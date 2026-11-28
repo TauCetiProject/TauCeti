@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexOp
-public import Mathlib.CategoryTheory.LiftingProperties.Limits
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
 
 /-!
@@ -39,7 +38,7 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 * `SSet.range_le_fiber_iff`: a map lands in the fiber of `q` over `y` exactly when its composite
   with `q` is constant at `y`.
 * `SSet.fiber.isPullback_map`: a map induced on fibres is a base change of the original map.
-* `SSet.fiber.isPullback_map_toPoint`: a fibre of the original map is a fibre of the induced
+* `SSet.fiber.isPullback_map_const`: a fibre of the original map is a fibre of the induced
   map over a further base.
 * `SSet.fiber.isTerminalOfIsIso`: the fibers of an isomorphism are terminal.
 * `SSet.fiber.quasicategory`, `SSet.fiber.kanComplex`: the fibers of inner fibrations are
@@ -245,13 +244,14 @@ lemma fiber.ι_app_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx
 
 /-- The fibre of `f` over `y` is also the fibre of its induced map over a further base,
 taken over the vertex of `fiber p (p.app _ y)` represented by `y`. -/
-lemma fiber.isPullback_map_toPoint {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
-    (y : Y _⦋0⦌) :
+lemma fiber.isPullback_map_const {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
+    {q : X ⟶ S} (hq : f ≫ p = q) (y : Y _⦋0⦌) :
     IsPullback
-      (fiber.lift (fiber f y).ι (f ≫ p) (p.app _ y) (by simp))
+      (fiber.lift (fiber f y).ι q (p.app _ y) (by simp [← hq]))
       (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))
-      (fiber.map f (q := f ≫ p) rfl (p.app _ y))
+      (fiber.map f hq (p.app _ y))
       (const (fiber.basePoint p rfl) : Δ[0] ⟶ (fiber p (p.app _ y) : SSet.{u})) := by
+  subst q
   have outer : IsPullback
       (fiber.lift (fiber f y).ι (f ≫ p) (p.app _ y) (by simp) ≫
         (fiber (f ≫ p) (p.app _ y)).ι)
