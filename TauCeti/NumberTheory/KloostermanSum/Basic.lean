@@ -7,8 +7,6 @@ module
 
 public import Mathlib.NumberTheory.GaussSum
 public import TauCeti.NumberTheory.HyperKloosterman.Basic
-import Mathlib.Analysis.RCLike.Basic
-import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 import Mathlib.NumberTheory.MulChar.Lemmas
 import TauCeti.NumberTheory.MulChar.Basic
 
@@ -44,9 +42,9 @@ hyper-Kloosterman sum `TauCeti.hyperKloosterman R 2 ψ (a b)`, through the bijec
   `K(χ; u, 0) = χ⁻¹(u) g(χ, ψ)` and `K(χ; 0, u) = χ(u) g(χ⁻¹, ψ)`.
 * `TauCeti.kloostermanSum_one_zero_right`: over a finite field, with values in a domain,
   `K(1; a, 0) = -1` for `a ≠ 0` and `ψ ≠ 1`.
-* `TauCeti.kloostermanSum_inv`: `K(χ⁻¹; b, a) = K(χ; a, b)`.
+* `TauCeti.kloostermanSum_inv_comm`: `K(χ⁻¹; b, a) = K(χ; a, b)`.
 * `TauCeti.kloostermanSum_mul_mul_inv`: `K(χ; u a, u⁻¹ b) = χ⁻¹(u) K(χ; a, b)` for a unit `u`.
-* `TauCeti.kloostermanSum_units`: `K(χ; u, b) = χ⁻¹(u) K(χ; 1, u b)` for a unit `u`.
+* `TauCeti.kloostermanSum_unit_left`: `K(χ; u, b) = χ⁻¹(u) K(χ; 1, u b)` for a unit `u`.
 * `TauCeti.kloostermanSum_neg_neg`, `TauCeti.kloostermanSum_inv_addChar`:
   `K(χ; -a, -b) = χ(-1) K(χ; a, b)`, and `ψ⁻¹` in place of `ψ` replaces `(a, b)` by `(-a, -b)`.
 * `TauCeti.star_kloostermanSum_eq`, `TauCeti.kloostermanSum_inv_eq_conj`: over `ℂ`,
@@ -56,10 +54,12 @@ hyper-Kloosterman sum `TauCeti.hyperKloosterman R 2 ψ (a b)`, through the bijec
   is real, and `conj K(χ; a, b) = χ(-1) K(χ; a, b)` for a quadratic `χ`.
 * `TauCeti.kloostermanSum_one_eq_hyperKloosterman`: for units `a, b`, `K(1, ψ; a, b)` is the
   rank-two hyper-Kloosterman sum at `a b`.
+* `TauCeti.kloostermanSum_zero_zero`, `TauCeti.kloostermanSum_addChar_one`: the degenerate
+  parameters. `K(χ, ψ; 0, 0)` and `K(χ, 1; a, b)` are `∑_{x ∈ Rˣ} χ(x)`, with values in any
+  commutative semiring.
 * `TauCeti.kloostermanSum_one_zero_zero`, `TauCeti.kloostermanSum_zero_zero_eq_zero`,
-  `TauCeti.kloostermanSum_one_addChar_one`, `TauCeti.kloostermanSum_addChar_one_eq_zero`: the
-  degenerate parameters. `K(χ; 0, 0)` and `K(χ, 1; a, b)` are `#Rˣ` for `χ = 1`, and `0` otherwise
-  when the values lie in a domain.
+  `TauCeti.kloostermanSum_one_addChar_one`, `TauCeti.kloostermanSum_addChar_one_eq_zero`: these
+  sums are `#Rˣ` for `χ = 1`, and `0` otherwise when the values lie in a domain.
 
 ## References
 
@@ -75,7 +75,7 @@ open Finset
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] [Fintype R]
+variable {R : Type*} [CommRing R] [Finite R]
 
 section Semiring
 
@@ -85,6 +85,7 @@ variable {R' : Type*} [CommSemiring R']
 commutative ring `R`. -/
 noncomputable def kloostermanSum (χ : MulChar R R') (ψ : AddChar R R') (a b : R) : R' := by
   classical
+  letI := Fintype.ofFinite R
   exact ∑ x : Rˣ, χ x * ψ (a * x + b * ↑x⁻¹)
 
 /-- The defining sum of `kloostermanSum`, for any `Fintype` instance on `Rˣ`. -/
@@ -94,9 +95,10 @@ theorem kloostermanSum_def [Fintype Rˣ] (χ : MulChar R R') (ψ : AddChar R R')
   congr!
 
 /-- **Symmetry.** The substitution `x ↦ x⁻¹` gives `K(χ⁻¹; b, a) = K(χ; a, b)`. -/
-theorem kloostermanSum_inv (χ : MulChar R R') (ψ : AddChar R R') (a b : R) :
+theorem kloostermanSum_inv_comm (χ : MulChar R R') (ψ : AddChar R R') (a b : R) :
     kloostermanSum χ⁻¹ ψ b a = kloostermanSum χ ψ a b := by
   classical
+  have := Fintype.ofFinite R
   rw [kloostermanSum_def, kloostermanSum_def]
   refine Fintype.sum_equiv (Equiv.inv Rˣ) _ _ fun x ↦ ?_
   rw [Equiv.inv_apply, MulChar.inv_apply_coe, inv_inv, add_comm]
@@ -106,6 +108,7 @@ theorem kloostermanSum_inv (χ : MulChar R R') (ψ : AddChar R R') (a b : R) :
 theorem kloostermanSum_mul_mul_inv (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) (a b : R) :
     kloostermanSum χ ψ (u * a) (↑u⁻¹ * b) = χ⁻¹ u * kloostermanSum χ ψ a b := by
   classical
+  have := Fintype.ofFinite R
   rw [kloostermanSum_def, kloostermanSum_def, mul_sum]
   refine Fintype.sum_equiv (Equiv.mulLeft u) _ _ fun x ↦ ?_
   have hχ : χ⁻¹ u * χ ↑(u * x) = χ x := by
@@ -115,27 +118,24 @@ theorem kloostermanSum_mul_mul_inv (χ : MulChar R R') (ψ : AddChar R R') (u : 
     ring
   rw [Equiv.coe_mulLeft, ← mul_assoc, hχ, harg]
 
-/-- For a unit `u`, `K(χ; u, b) = χ⁻¹(u) K(χ; 1, u b)`: the sum depends on `u b` and on `χ(u)`. -/
-theorem kloostermanSum_units (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) (b : R) :
+/-- For a unit `u` in the first frequency, `K(χ; u, b) = χ⁻¹(u) K(χ; 1, u b)`: the sum depends on
+`u b` and on `χ(u)`. -/
+theorem kloostermanSum_unit_left (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) (b : R) :
     kloostermanSum χ ψ u b = χ⁻¹ u * kloostermanSum χ ψ 1 (u * b) := by
   rw [← kloostermanSum_mul_mul_inv, mul_one, ← mul_assoc, Units.inv_mul, one_mul]
 
 /-- The substitution `x ↦ -x` gives `K(χ; -a, -b) = χ(-1) K(χ; a, b)`. -/
 theorem kloostermanSum_neg_neg (χ : MulChar R R') (ψ : AddChar R R') (a b : R) :
     kloostermanSum χ ψ (-a) (-b) = χ (-1) * kloostermanSum χ ψ a b := by
-  classical
-  rw [kloostermanSum_def, kloostermanSum_def, mul_sum]
-  have h1 : χ (-1) * χ (-1) = 1 := by rw [← map_mul, neg_one_mul, neg_neg, map_one]
-  refine Fintype.sum_equiv (Equiv.neg Rˣ) _ _ fun x ↦ ?_
-  have hx : χ (-(x : R)) = χ (-1) * χ x := by rw [← map_mul, neg_one_mul]
-  have harg : a * -(x : R) + b * -↑x⁻¹ = -a * x + -b * ↑x⁻¹ := by ring
-  rw [Equiv.neg_apply, Units.val_neg, inv_neg, Units.val_neg, harg, hx, ← mul_assoc, ← mul_assoc,
-    h1, one_mul]
+  have h := kloostermanSum_mul_mul_inv χ ψ (-1) a b
+  rw [MulChar.inv_apply_coe] at h
+  simpa only [inv_neg, inv_one, Units.val_neg, Units.val_one, neg_one_mul] using h
 
 /-- Replacing `ψ` by `ψ⁻¹` replaces `(a, b)` by `(-a, -b)`. -/
 theorem kloostermanSum_inv_addChar (χ : MulChar R R') (ψ : AddChar R R') (a b : R) :
     kloostermanSum χ ψ⁻¹ a b = kloostermanSum χ ψ (-a) (-b) := by
   classical
+  have := Fintype.ofFinite R
   simp only [kloostermanSum_def, AddChar.inv_apply, neg_add, neg_mul]
 
 /-- For units `a, b`, the Kloosterman sum with the trivial multiplicative character is the
@@ -144,32 +144,39 @@ with product `a b`. -/
 theorem kloostermanSum_one_eq_hyperKloosterman (ψ : AddChar R R') (a b : Rˣ) :
     kloostermanSum 1 ψ a b = hyperKloosterman R 2 ψ (a * b) := by
   classical
-  rw [kloostermanSum_def, ← sum_add_mul_prod_inv_eq_hyperKloosterman]
-  -- Identify a tuple `y` of length one with the unit `a⁻¹ y₀`.
-  refine (Fintype.sum_equiv ((Equiv.funUnique (Fin 1) Rˣ).trans (Equiv.mulLeft a⁻¹)) _ _
-    fun y ↦ ?_).symm
-  simp only [Equiv.trans_apply, Equiv.funUnique_apply, Equiv.coe_mulLeft, Fin.default_eq_zero,
-    Fin.sum_univ_one, Fin.prod_univ_one, MulChar.one_apply_coe, one_mul]
-  -- In `Rˣ`: `a (a⁻¹ y₀) = y₀` and `b (a⁻¹ y₀)⁻¹ = (a b) y₀⁻¹`.
-  have h1 : a * (a⁻¹ * y 0) = y 0 := mul_inv_cancel_left a (y 0)
-  have h2 : b * (a⁻¹ * y 0)⁻¹ = a * b * (y 0)⁻¹ := by
-    rw [mul_inv_rev, inv_inv]
-    ac_rfl
-  rw [← Units.val_mul, ← Units.val_mul, h1, h2]
+  have := Fintype.ofFinite R
+  rw [kloostermanSum_unit_left, inv_one, MulChar.one_apply_coe, one_mul, kloostermanSum_def,
+    ← sum_add_mul_prod_inv_eq_hyperKloosterman]
+  -- A tuple `y` of length one is the unit `y₀`.
+  refine (Fintype.sum_equiv (Equiv.funUnique (Fin 1) Rˣ) _ _ fun y ↦ ?_).symm
+  simp only [Equiv.funUnique_apply, Fin.default_eq_zero, Fin.sum_univ_one, Fin.prod_univ_one,
+    MulChar.one_apply_coe, one_mul, Units.val_mul]
+
+/-- With both frequencies zero, `K(χ, ψ; 0, 0) = ∑_{x ∈ Rˣ} χ(x)`. -/
+theorem kloostermanSum_zero_zero [Fintype Rˣ] (χ : MulChar R R') (ψ : AddChar R R') :
+    kloostermanSum χ ψ 0 0 = ∑ x : Rˣ, χ x := by
+  simp [kloostermanSum_def]
+
+/-- With the trivial additive character, `K(χ, 1; a, b) = ∑_{x ∈ Rˣ} χ(x)`. -/
+theorem kloostermanSum_addChar_one [Fintype Rˣ] (χ : MulChar R R') (a b : R) :
+    kloostermanSum χ (1 : AddChar R R') a b = ∑ x : Rˣ, χ x := by
+  simp [kloostermanSum_def]
 
 /-- `K(1; 0, 0) = #Rˣ`. -/
 @[simp]
 theorem kloostermanSum_one_zero_zero (ψ : AddChar R R') :
     kloostermanSum (1 : MulChar R R') ψ 0 0 = Nat.card Rˣ := by
   classical
-  simp [kloostermanSum_def, Nat.card_eq_fintype_card]
+  have := Fintype.ofFinite R
+  simp [kloostermanSum_zero_zero, Nat.card_eq_fintype_card]
 
 /-- With the trivial additive character, `K(1, 1; a, b) = #Rˣ`. -/
 @[simp]
 theorem kloostermanSum_one_addChar_one (a b : R) :
     kloostermanSum (1 : MulChar R R') (1 : AddChar R R') a b = Nat.card Rˣ := by
   classical
-  simp [kloostermanSum_def, Nat.card_eq_fintype_card]
+  have := Fintype.ofFinite R
+  simp [kloostermanSum_addChar_one, Nat.card_eq_fintype_card]
 
 end Semiring
 
@@ -179,43 +186,48 @@ variable {R' : Type*} [CommRing R']
 
 /-- With `b = 0` the Kloosterman sum is the Gauss sum of `χ` and `x ↦ ψ(a x)`: the terms off the
 units vanish because `χ` does. -/
-theorem kloostermanSum_zero_right (χ : MulChar R R') (ψ : AddChar R R') (a : R) :
+theorem kloostermanSum_zero_right [Fintype R] (χ : MulChar R R') (ψ : AddChar R R') (a : R) :
     kloostermanSum χ ψ a 0 = gaussSum χ (ψ.mulShift a) := by
   classical
   rw [kloostermanSum_def, gaussSum, MulChar.sum_mul_eq_sum_units]
   simp [AddChar.mulShift_apply]
 
 /-- For a unit `u`, `K(χ; u, 0) = χ⁻¹(u) g(χ, ψ)`. -/
-theorem kloostermanSum_units_zero (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
+theorem kloostermanSum_units_zero [Fintype R] (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
     kloostermanSum χ ψ u 0 = χ⁻¹ u * gaussSum χ ψ := by
   rw [kloostermanSum_zero_right, gaussSum_mulShift_eq]
 
 /-- For a unit `u`, `K(χ; 0, u) = χ(u) g(χ⁻¹, ψ)`. -/
-theorem kloostermanSum_zero_units (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
+theorem kloostermanSum_zero_units [Fintype R] (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
     kloostermanSum χ ψ 0 u = χ u * gaussSum χ⁻¹ ψ := by
-  rw [← kloostermanSum_inv, ← inv_inv χ, kloostermanSum_units_zero, inv_inv, inv_inv]
+  calc kloostermanSum χ ψ 0 u
+      = kloostermanSum χ⁻¹ ψ u 0 := (kloostermanSum_inv_comm χ ψ 0 u).symm
+    _ = χ u * gaussSum χ⁻¹ ψ := by simpa only [inv_inv] using kloostermanSum_units_zero χ⁻¹ ψ u
 
 /-- For `χ ≠ 1` with values in a domain, `K(χ; 0, 0) = 0`. -/
+@[simp]
 theorem kloostermanSum_zero_zero_eq_zero [IsDomain R'] {χ : MulChar R R'} (hχ : χ ≠ 1)
     (ψ : AddChar R R') : kloostermanSum χ ψ 0 0 = 0 := by
-  classical
-  have h := MulChar.sum_mul_eq_sum_units χ 1
-  simp only [Pi.one_apply, mul_one, MulChar.sum_eq_zero_of_ne_one hχ] at h
-  simp [kloostermanSum_def, ← h]
+  have := Fintype.ofFinite R
+  rw [kloostermanSum_zero_right, AddChar.mulShift_zero, gaussSum_one_right hχ]
 
 /-- For `χ ≠ 1` with values in a domain, the Kloosterman sum with the trivial additive character
 vanishes. -/
+@[simp]
 theorem kloostermanSum_addChar_one_eq_zero [IsDomain R'] {χ : MulChar R R'} (hχ : χ ≠ 1)
     (a b : R) : kloostermanSum χ (1 : AddChar R R') a b = 0 := by
-  rw [← kloostermanSum_zero_zero_eq_zero hχ (1 : AddChar R R')]
   classical
-  simp [kloostermanSum_def]
+  have := Fintype.ofFinite R
+  rw [kloostermanSum_addChar_one, ← kloostermanSum_zero_zero χ 1,
+    kloostermanSum_zero_zero_eq_zero hχ]
 
 /-- Over a finite field, with values in a domain, `K(1; a, 0) = -1` for `a ≠ 0` and a nontrivial
 `ψ`. -/
-theorem kloostermanSum_one_zero_right {F : Type*} [Field F] [Fintype F] [IsDomain R']
+@[simp]
+theorem kloostermanSum_one_zero_right {F : Type*} [Field F] [Finite F] [IsDomain R']
     {ψ : AddChar F R'} (hψ : ψ ≠ 1) {a : F} (ha : a ≠ 0) :
     kloostermanSum (1 : MulChar F R') ψ a 0 = -1 := by
+  have := Fintype.ofFinite F
   rw [kloostermanSum_zero_right, gaussSum_one_left (AddChar.IsPrimitive.of_ne_one hψ ha)]
 
 end Ring
@@ -227,6 +239,7 @@ section Complex
 theorem star_kloostermanSum_eq (χ : MulChar R ℂ) (ψ : AddChar R ℂ) (a b : R) :
     star (kloostermanSum χ ψ a b) = kloostermanSum χ⁻¹ ψ⁻¹ a b := by
   classical
+  have := Fintype.ofFinite R
   simp only [kloostermanSum_def, star_sum, star_mul', MulChar.star_apply', AddChar.inv_apply,
     AddChar.map_neg_eq_conj, RCLike.star_def]
 
@@ -234,10 +247,11 @@ theorem star_kloostermanSum_eq (χ : MulChar R ℂ) (ψ : AddChar R ℂ) (a b : 
 theorem kloostermanSum_inv_eq_conj (χ : MulChar R ℂ) (ψ : AddChar R ℂ) (a b : R) :
     kloostermanSum χ⁻¹ ψ a b = χ (-1) * starRingEnd ℂ (kloostermanSum χ ψ a b) := by
   rw [starRingEnd_apply, star_kloostermanSum_eq, kloostermanSum_inv_addChar,
-    kloostermanSum_neg_neg, ← mul_assoc, ← MulChar.mul_apply, mul_inv_cancel,
-    MulChar.one_apply isUnit_neg_one, one_mul]
+    kloostermanSum_neg_neg, ← mul_assoc, ← MulChar.mul_apply]
+  simp [MulChar.one_apply isUnit_neg_one]
 
 /-- Over `ℂ`, the Kloosterman sum with the trivial multiplicative character is real. -/
+@[simp]
 theorem star_kloostermanSum_one (ψ : AddChar R ℂ) (a b : R) :
     star (kloostermanSum 1 ψ a b) = kloostermanSum 1 ψ a b := by
   have h := kloostermanSum_inv_eq_conj (1 : MulChar R ℂ) ψ a b
