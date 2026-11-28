@@ -26,20 +26,23 @@ By the averaging identity, the unit `Z ⟶ I (forget Z)` of the right adjunction
 counit `I (forget Z) ⟶ Z` of the left adjunction is multiplication by the global dimension
 `TauCeti.normGlobalDim C a`, an endomorphism of the simple unit, hence a scalar.
 
-When the global dimension is nonzero, dividing the counit by it gives a retraction of the unit and
-a section of the counit. So every object of the centre is a retract of an induced object, and the
-Maschke-type criterion `TauCeti.IsFiniteSemisimpleCategory.of_natTrans` shows that `Center C` is
-finite semisimple. Since the forgetful functor is a faithful left adjoint, the centre then has
-finitely many simple classes, by
-`CategoryTheory.Functor.finite_simpleClasses_of_faithful_leftAdjoint`.
+When the global dimension is nonzero, dividing the counit by it gives a retraction of the unit,
+and dividing the unit by it gives a section of the counit. So every object of the centre is a
+retract of an induced object, and the Maschke-type criterion
+`TauCeti.IsFiniteSemisimpleCategory.of_natTrans` shows that `Center C` is finite semisimple. Since
+the forgetful functor is a faithful left adjoint, the centre then has finitely many simple classes,
+by `CategoryTheory.Functor.finite_simpleClasses_of_faithful_leftAdjoint`.
 
 No pivotal structure is assumed for semisimplicity: the hypothesis is the nonvanishing of the
 pivot-free global dimension. When `C` admits a pivotal structure and `k` has characteristic zero,
 this hypothesis holds by the theorem of Etingof, Nikshych and Ostrik (`TauCeti.globalDim_ne_zero`,
 transported by `TauCeti.normGlobalDim_eq_globalDim`). In characteristic `p` it can fail: for
 `C = Vec(C₂)` in characteristic `2` the global dimension is `0` and the centre is not semisimple.
-In the pivotal case, Frobenius reciprocity gives `dim((induction k C).obj X) = dim(C) · dim(X)`
-and `dim(Center C) = (dim C)²`.
+In the pivotal case, the biproduct decomposition of induction gives
+`leftDim ((induction k C).obj X) = dim(C) · leftDim(X)` and
+`rightDim ((induction k C).obj X) = dim(C) · rightDim(X)` (read on underlying endomorphisms of
+`𝟙_ C`). When `Center C` is finite semisimple with finitely many simple classes, Frobenius
+reciprocity yields `dim(Center C) = (dim C)²`.
 
 ## Main declarations
 
@@ -64,7 +67,9 @@ and `dim(Center C) = (dim C)²`.
   for a pivotal fusion category when `globalDim C ≠ 0`;
 * `CategoryTheory.Center.leftDim_induction_obj_f`, `CategoryTheory.Center.rightDim_induction_obj_f`,
   `CategoryTheory.Center.endAlgEquivOfSimple_globalDim`, `CategoryTheory.Center.globalDim_f`:
-  `dim((induction k C).obj X) = dim(C) · dim(X)` and `dim(Center C) = (dim C)²`.
+  left and right dimensions of `(induction k C).obj X` (`globalDim C ≫ leftDim X` and
+  `globalDim C ≫ rightDim X`) and, when `Center C` is finite semisimple with finitely many simple
+  classes, `dim(Center C) = (dim C)²`.
 
 ## References
 
