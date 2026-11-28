@@ -23,6 +23,11 @@ comparable to `x ^ q` near the origin, which is not integrable there.
 
 These integrals normalize the generalized normal (exponential power) densities
 `exp (-|x| ^ p)` and compute all of their absolute moments.
+
+The substitution `s = 1/σ` turns the Gamma integral into the inverse-Gamma integral
+`∫ s in (0, ∞), s ^ (-α - 1) * exp (-b / s) = Γ(α) b ^ (-α)` for `0 < α` and `0 < b`; its
+integrand is the time profile `s ↦ s ^ (-α - 1) exp (-‖x‖² / (4s))` of the heat kernel at a fixed
+point `x ≠ 0`.
 -/
 
 public section
@@ -57,6 +62,35 @@ theorem integral_abs_rpow_mul_exp_neg_abs_rpow {p q : ℝ} (hp : 0 < p) (hq : -1
     ∫ x : ℝ, |x| ^ q * Real.exp (-|x| ^ p) = 2 / p * Real.Gamma ((q + 1) / p) := by
   rw [integral_comp_abs (f := fun x : ℝ => x ^ q * Real.exp (-x ^ p)),
     integral_rpow_mul_exp_neg_rpow hp hq]
+  ring
+
+/-- The substitution `s = 1/σ` turns the inverse-Gamma integrand into the Gamma integrand
+`σ ^ (α - 1) * exp (-b σ)`, with the Jacobian `|-1| σ ^ (-2)`. -/
+private theorem smul_rpow_neg_sub_one_mul_exp_neg_div_rpow_neg_one {α b y : ℝ} (hy : 0 < y) :
+    (|(-1 : ℝ)| * y ^ ((-1 : ℝ) - 1)) •
+        ((y ^ (-1 : ℝ)) ^ (-α - 1) * Real.exp (-b / y ^ (-1 : ℝ))) =
+      y ^ (α - 1) * Real.exp (-b * y ^ (1 : ℝ)) := by
+  rw [smul_eq_mul, abs_neg, abs_one, one_mul, Real.rpow_one, ← Real.rpow_mul hy.le,
+    Real.rpow_neg_one, div_inv_eq_mul, ← mul_assoc, ← Real.rpow_add hy, neg_mul]
+  ring_nf
+
+/-- **Integrability of the inverse-Gamma integrand.** For `0 < α` and `0 < b`, the function
+`s ↦ s ^ (-α - 1) * exp (-b / s)` is integrable on `(0, ∞)`. -/
+theorem integrableOn_rpow_neg_sub_one_mul_exp_neg_div {α b : ℝ} (hα : 0 < α) (hb : 0 < b) :
+    IntegrableOn (fun s : ℝ => s ^ (-α - 1) * Real.exp (-b / s)) (Ioi 0) := by
+  rw [← integrableOn_Ioi_comp_rpow_iff _ (p := -1) (by norm_num)]
+  exact (integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith) one_pos hb).congr_fun
+    (fun y hy => (smul_rpow_neg_sub_one_mul_exp_neg_div_rpow_neg_one hy).symm) measurableSet_Ioi
+
+/-- **The inverse-Gamma integral.** For `0 < α` and `0 < b`,
+`∫ s in (0, ∞), s ^ (-α - 1) * exp (-b / s) = Γ(α) b ^ (-α)`. -/
+theorem integral_rpow_neg_sub_one_mul_exp_neg_div {α b : ℝ} (hα : 0 < α) (hb : 0 < b) :
+    ∫ s in Ioi (0 : ℝ), s ^ (-α - 1) * Real.exp (-b / s) = Real.Gamma α * b ^ (-α) := by
+  rw [← integral_comp_rpow_Ioi _ (p := -1) (by norm_num),
+    setIntegral_congr_fun measurableSet_Ioi fun y hy =>
+      smul_rpow_neg_sub_one_mul_exp_neg_div_rpow_neg_one hy,
+    integral_rpow_mul_exp_neg_mul_rpow one_pos (by linarith) hb]
+  simp only [sub_add_cancel, div_one, mul_one]
   ring
 
 end TauCeti

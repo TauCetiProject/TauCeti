@@ -13,7 +13,7 @@ import TauCeti.MeasureTheory.Function.Lp.Dilation
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.MeasureTheory.Integral.Gamma
 
 /-!
 # The Oseen kernel
@@ -158,7 +158,7 @@ private theorem integral_heatKernel_div_pow_le_of_ne_zero {t : ℝ} (ht : 0 < t)
   set b : ℝ := ‖x‖ ^ 2 / 4 with hb_def
   have hn' : (2 : ℝ) ≤ n := by exact_mod_cast hn
   have : 0 ≤ d := Nat.cast_nonneg _
-  have : 0 < α := by linarith
+  have hα : 0 < α := by linarith
   have hb : 0 < b := by have := norm_pos_iff.2 hx; positivity
   set g : ℝ → ℝ := fun s => s ^ (-α - 1) * exp (-b / s) with hg_def
   have heq : ∀ s, 0 < s → heatKernel s x / s ^ n = (4 * π) ^ (-d / 2) * g s := by
@@ -168,25 +168,7 @@ private theorem integral_heatKernel_div_pow_le_of_ne_zero {t : ℝ} (ht : 0 < t)
     rw [show -α - 1 = -d / 2 - n by rw [hα_def]; ring, rpow_sub hs, rpow_natCast,
       show -‖x‖ ^ 2 / (4 * s) = -b / s by rw [hb_def]; ring]
     ring
-  have hsub : ∀ y ∈ Ioi (0 : ℝ), (|(-1 : ℝ)| * y ^ ((-1 : ℝ) - 1)) • g (y ^ (-1 : ℝ)) =
-      y ^ (α - 1) * exp (-b * y ^ (1 : ℝ)) := by
-    intro y hy
-    have hy : 0 < y := hy
-    rw [hg_def]
-    dsimp only
-    rw [smul_eq_mul, abs_neg, abs_one, one_mul, rpow_one, ← rpow_mul hy.le, rpow_neg_one,
-      div_inv_eq_mul, ← mul_assoc, ← rpow_add hy, neg_mul]
-    ring_nf
-  have hg_int : IntegrableOn g (Ioi 0) := by
-    rw [← integrableOn_Ioi_comp_rpow_iff g (p := -1) (by norm_num)]
-    exact (integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith) one_pos hb).congr_fun
-      (fun y hy => (hsub y hy).symm) measurableSet_Ioi
-  have hg_val : ∫ s in Ioi 0, g s = Gamma α * b ^ (-α) := by
-    rw [← integral_comp_rpow_Ioi g (p := -1) (by norm_num),
-      setIntegral_congr_fun measurableSet_Ioi hsub,
-      integral_rpow_mul_exp_neg_mul_rpow one_pos (by linarith) hb]
-    simp only [sub_add_cancel, div_one, mul_one]
-    ring
+  have hg_int : IntegrableOn g (Ioi 0) := integrableOn_rpow_neg_sub_one_mul_exp_neg_div hα hb
   have hg_nonneg : ∀ s ∈ Ioi (0 : ℝ), 0 ≤ g s := fun s hs => by
     have hs : 0 < s := hs
     rw [hg_def]
@@ -198,7 +180,9 @@ private theorem integral_heatKernel_div_pow_le_of_ne_zero {t : ℝ} (ht : 0 < t)
         refine mul_le_mul_of_nonneg_left (setIntegral_mono_set hg_int
           ((ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall hg_nonneg))
           (Eventually.of_forall fun y hy => Ioi_subset_Ioi ht.le hy)) (by positivity)
-    _ = (4 * π) ^ (-d / 2) * Gamma α * b ^ (-α) := by rw [hg_val]; ring
+    _ = (4 * π) ^ (-d / 2) * Gamma α * b ^ (-α) := by
+        rw [integral_rpow_neg_sub_one_mul_exp_neg_div hα hb]
+        ring
 
 /-- The time integrals of the heat kernel are related by the heat equation:
 `(d + 2)/4 ∫_t^∞ K_s(x)/s² ds - ‖x‖²/8 ∫_t^∞ K_s(x)/s³ ds = K_t(x)/(2t)`, since the integrand is
@@ -211,13 +195,10 @@ private theorem integral_heatKernel_div_sq_sub {t : ℝ} (ht : 0 < t) (x : E) :
       ((d + 2) / 4 * (heatKernel s x / s ^ 2) - ‖x‖ ^ 2 / 8 * (heatKernel s x / s ^ 3)) s := by
     intro s hs
     have hs0 : 0 < s := ht.trans hs
-    have h := ((hasDerivAt_heatKernel hs0 x).div ((hasDerivAt_id s).const_mul 2)
+    have h := ((hasDerivAt_heatKernel hs0 x).div ((hasDerivAt_id' s).const_mul 2)
       (mul_ne_zero two_ne_zero hs0.ne')).neg
     convert h using 1
-    · funext y
-      rfl
     rw [laplacian_heatKernel, hd_def]
-    simp only [id]
     field_simp
     ring
   have hlim : Tendsto (fun s => -(heatKernel s x / (2 * s))) atTop (𝓝 0) := by
@@ -491,7 +472,7 @@ private theorem exists_norm_oseenKernel_one_le :
   have h2 : ‖x‖ * (∫ s in Ioi 1, heatKernel s x / s ^ 2) ≤
       C₂ * (1 + ‖x‖) ^ (-(Module.finrank ℝ E + 1 : ℝ)) := by
     have := hC₂ x
-    rwa [show 2 * 2 - 3 = 1 from rfl, pow_one] at this
+    rwa [show 2 * 2 - 3 = 1 by norm_num, pow_one] at this
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun A => ?_
   refine (norm_oseenKernel_apply_le hτ one_pos x A).trans ?_
   calc ‖A‖ * (a * (‖x‖ * ∫ s in Ioi 1, heatKernel s x / s ^ 2) +
@@ -512,13 +493,13 @@ theorem exists_norm_oseenKernel_le :
   have hu : 0 < √t := sqrt_pos.2 ht
   have e1 : (√t)⁻¹ ^ (Module.finrank ℝ E + 1) =
       √t ^ (-(Module.finrank ℝ E + 1 : ℝ)) := by
-    rw [rpow_neg hu.le, inv_pow, ← rpow_natCast]
-    push_cast
-    rfl
+    rw [rpow_neg hu.le, inv_pow, ← rpow_natCast, Nat.cast_add_one]
   have e2 : √t * (1 + ‖(√t)⁻¹ • x‖) = ‖x‖ + √t := by
     rw [norm_smul, norm_inv, Real.norm_of_nonneg hu.le]
     field_simp
     ring
+  -- Instance search does not find `NormSMulClass` on this doubly nested operator space, so the
+  -- instance is supplied from its `NormedSpace` structure; `norm_smul` needs it.
   have : NormSMulClass ℝ ((E →L[ℝ] E) →L[ℝ] E) :=
     @NormedSpace.toNormSMulClass ℝ ((E →L[ℝ] E) →L[ℝ] E) _ _ _
   rw [oseenKernel_eq_smul_oseenKernel_one ht, norm_smul, norm_pow, norm_inv,
@@ -613,29 +594,6 @@ theorem exists_eLpNorm_oseenKernel_le :
         gcongr
         exact hMb ht hr
 
-/-- The exponent of Young's inequality between `Lᵖ` and `L^q` for `1 ≤ p ≤ q ≤ ∞`:
-`r` with `1/r + 1/p = 1 + 1/q`, so that `1 - 1/r = 1/p - 1/q`. -/
-private theorem exists_young_exponent {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) :
-    ∃ r : ℝ≥0∞, 1 ≤ r ∧ r⁻¹ + p⁻¹ = 1 + q⁻¹ ∧
-      1 - 1 / r.toReal = 1 / p.toReal - 1 / q.toReal := by
-  set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
-  have hpi : p⁻¹ ≤ 1 := ENNReal.inv_le_one.2 hp
-  have hqi : q⁻¹ ≤ p⁻¹ := ENNReal.inv_le_inv.2 hpq
-  have hr : 1 ≤ r := by
-    apply ENNReal.one_le_inv.2
-    exact tsub_le_iff_right.2 (by simpa [add_comm] using add_le_add_left hqi 1)
-  have hrp : r⁻¹ + p⁻¹ = 1 + q⁻¹ := by
-    simp only [r, inv_inv]
-    exact tsub_add_cancel_of_le (hpi.trans le_self_add)
-  have hreal : 1 / r.toReal + 1 / p.toReal = 1 + 1 / q.toReal := by
-    have h := congrArg ENNReal.toReal hrp
-    rw [ENNReal.toReal_add (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hr).ne')
-        (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp).ne'),
-      ENNReal.toReal_add ENNReal.one_ne_top
-        (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le (hp.trans hpq)).ne')] at h
-    simpa only [ENNReal.toReal_inv, ENNReal.toReal_one, one_div] using h
-  exact ⟨r, hr, hrp, by linarith⟩
-
 /-- **The `Lᵖ`–`L^q` estimate for `e^{tΔ} ℙ div`.** There is a constant `C` depending only on the
 dimension such that, for all `t > 0`, all `1 ≤ p ≤ q ≤ ∞` and every matrix field `F`,
 `‖O_t ⋆ F‖_q ≤ C t^(-1/2 - (d/2)(1/p - 1/q)) ‖F‖_p`. The endpoints `p = 1` and `q = ∞` are
@@ -647,39 +605,24 @@ theorem exists_eLpNorm_oseenKernel_convolution_le :
             (ContinuousLinearMap.id ℝ ((E →L[ℝ] E) →L[ℝ] E)) volume) q volume ≤
           ENNReal.ofReal (C * t ^ (-(1 / 2 : ℝ) - Module.finrank ℝ E / 2 *
             (1 / p.toReal - 1 / q.toReal))) * eLpNorm F p volume := by
-  set d : ℝ := (Module.finrank ℝ E : ℝ)
-  obtain ⟨C₀, hC₀, hb⟩ := exists_norm_oseenKernel_le (E := E)
-  obtain ⟨M, hM, hMb⟩ := exists_eLpNorm_rpow_norm_add_sqrt_le (E := E)
-  refine ⟨C₀ * M, by positivity, fun t ht p q hp hpq F hF => ?_⟩
+  obtain ⟨C, hC, hb⟩ := exists_eLpNorm_oseenKernel_le (E := E)
+  refine ⟨C, hC, fun t ht p q hp hpq F hF => ?_⟩
   -- Young's inequality with the exponent `r` given by `1/r + 1/p = 1 + 1/q`.
-  obtain ⟨r, hr, hrp, he⟩ := exists_young_exponent hp hpq
-  -- The kernel is dominated by the scalar majorant `m(y) = C₀ (‖y‖ + √t)^(-(d + 1))`.
-  set m : E → ℝ := fun y => C₀ * (‖y‖ + √t) ^ (-(d + 1))
-  have hm : AEStronglyMeasurable m volume := by fun_prop
-  have hO : AEStronglyMeasurable (oseenKernel t : E → (E →L[ℝ] E) →L[ℝ] E) volume :=
-    (continuous_oseenKernel ht).aestronglyMeasurable
-  -- Pointwise, `‖(O_t ⋆ F)(x)‖ ≤ ∫ m(y) ‖F(x - y)‖ dy`.
-  have hpt : ∀ x, ‖convolution (𝕜 := ℝ) (oseenKernel t) F
-      (ContinuousLinearMap.id ℝ ((E →L[ℝ] E) →L[ℝ] E)) volume x‖ₑ ≤
-      ‖((fun y => ‖m y‖ₑ) ⋆ₗ[volume] fun y => ‖F y‖ₑ) x‖ₑ := fun x => by
-    rw [eNorm_eq_self, lconvolution_def, convolution_def]
-    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun y => ?_)
-    rw [neg_add_eq_sub, ContinuousLinearMap.id_apply]
-    exact ((oseenKernel t y).le_opENorm _).trans (by gcongr; exact eNorm_oseenKernel_le hC₀ hb ht y)
-  calc eLpNorm (convolution (𝕜 := ℝ) (oseenKernel t) F
-        (ContinuousLinearMap.id ℝ ((E →L[ℝ] E) →L[ℝ] E)) volume) q volume
-      ≤ eLpNorm ((fun y => ‖m y‖ₑ) ⋆ₗ[volume] fun y => ‖F y‖ₑ) q volume :=
-        eLpNorm_mono_eNorm (hO.convolution _ hF) hpt
-    _ ≤ eLpNorm (fun y => ‖m y‖ₑ) r volume * eLpNorm (fun y => ‖F y‖ₑ) p volume :=
-        eLpNorm_lconvolution_le hr hp hrp hm.eNorm hF.eNorm
-    _ = eLpNorm (C₀ • fun x : E => (‖x‖ + √t) ^ (-(d + 1))) r volume * eLpNorm F p volume := by
-        rw [eLpNorm_eNorm _ hm, eLpNorm_eNorm _ hF]
-        rfl
-    _ ≤ _ := by
-        rw [eLpNorm_const_smul, Real.eNorm_eq_ofReal hC₀, mul_assoc C₀,
-          ENNReal.ofReal_mul hC₀, ← he]
+  obtain ⟨r, hr, hrp, he⟩ := ENNReal.exists_inv_add_inv_eq_one_add_inv hp hpq
+  -- The spaces are named, and the kernel's measurability is elaborated last, because unifying
+  -- the operator-norm topology with the topology of the operator space needs them fixed first.
+  have h := eLpNorm_convolution_le_of_inv_add_inv_eq (𝕜 := ℝ) (μ := volume)
+    (E := (E →L[ℝ] E) →L[ℝ] E) (E' := E →L[ℝ] E) (F := E)
+    (ContinuousLinearMap.id ℝ ((E →L[ℝ] E) →L[ℝ] E)) hr hp hrp
+    (by exact (continuous_oseenKernel ht).aestronglyMeasurable) hF
+  calc _ ≤ _ := h
+    _ ≤ 1 * ENNReal.ofReal (C * t ^ (-(1 / 2 : ℝ) - Module.finrank ℝ E / 2 *
+          (1 - 1 / r.toReal))) * eLpNorm F p volume := by
         gcongr
-        exact hMb ht hr
+        · rw [← ofReal_norm]
+          exact ENNReal.ofReal_le_one.2 ContinuousLinearMap.norm_id_le
+        · exact hb ht hr
+    _ = _ := by rw [one_mul, he]
 
 end Kernel
 
