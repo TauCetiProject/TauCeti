@@ -12,7 +12,6 @@ public import Mathlib.Data.Set.Card
 
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Data.Set.Finite.Range
 import TauCeti.Data.Int.Interval
 
 /-!
