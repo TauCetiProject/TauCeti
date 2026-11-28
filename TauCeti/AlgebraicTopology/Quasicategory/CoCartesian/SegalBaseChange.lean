@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.BaseChange
 public import TauCeti.AlgebraicTopology.Quasicategory.SymmetricMonoidal
 public import TauCeti.CategoryTheory.CategoryOfOperators.LM
 
@@ -31,21 +30,25 @@ open CategoryTheory Limits Simplicial SSet
 
 namespace TauCeti
 
-private lemma assoc_projection_map (a : Assoc.{u}) (i : Fin a.len) :
+/-- The associative operator projection maps to the designated finite pointed projection. -/
+@[simp]
+lemma Assoc.edgeMk_ρ_map_toFinPointed (a : Assoc.{u}) (i : Fin a.len) :
     (nerve.edgeMk (Assoc.ρ i)).map (nerveMap Assoc.toFinPointed) =
       nerve.edgeMk (FinPointed.ρ (n := FinPointed.mk a.len) i) := by
-  apply Edge.ext
-  exact (nerveMap_app_mk₁ _ _).trans (by
-    simp only [Assoc.toFinPointed_map, Assoc.ρ_base]
-    exact (nerve.edgeMk_edge _).symm)
+  apply nerve.homEquiv.injective
+  erw [nerve.homEquiv_edgeMk_map_nerveMap, nerve.homEquiv_edgeMk]
+  simp only [Assoc.toFinPointed_map, Assoc.ρ_base]
+  rfl
 
-private lemma lm_projection_map (a : LM.{u}) (i : Fin a.len) :
+/-- The left-module operator projection maps to the designated finite pointed projection. -/
+@[simp]
+lemma LM.edgeMk_ρ_map_toFinPointed (a : LM.{u}) (i : Fin a.len) :
     (nerve.edgeMk (LM.ρ i)).map (nerveMap LM.toFinPointed) =
       nerve.edgeMk (FinPointed.ρ (n := FinPointed.mk a.len) i) := by
-  apply Edge.ext
-  exact (nerveMap_app_mk₁ _ _).trans (by
-    simp only [LM.toFinPointed_map, LM.ρ_toAssoc, Assoc.ρ_base]
-    exact (nerve.edgeMk_edge _).symm)
+  apply nerve.homEquiv.injective
+  erw [nerve.homEquiv_edgeMk_map_nerveMap, nerve.homEquiv_edgeMk]
+  simp only [LM.toFinPointed_map, LM.ρ_toAssoc, Assoc.ρ_base]
+  rfl
 
 variable {X X' : SSet.{u}} {p : X ⟶ nerve FinPointed.{u}} {t : X' ⟶ X}
 
@@ -71,24 +74,9 @@ theorem Assoc.exists_isCategoricalEquivalence_piFunctor_of_isPullback
               (fun _ ↦ (fiber p' (nerveEquiv.symm (Assoc.mk 1)) : SSet)) inferInstance
               (fun _ ↦ @fiber.quasicategory _ _ p' inferInstance _)⟩)
         (ObjectProperty.homMk (CoCartesianTransport.piFunctor U)) := by
-  let : InnerFibration p' := ⟨innerFibrations.of_isPullback sq (mem_innerFibrations p)⟩
-  let V : ∀ i : Fin a.len, CoCartesianTransport p
-      ((nerve.edgeMk (Assoc.ρ i)).map (nerveMap Assoc.toFinPointed)) :=
-    fun i ↦ (assoc_projection_map a i).symm ▸ T i
-  have hcast {s r : (nerve FinPointed.{u}) _⦋0⦌} {e e' : Edge s r}
-      (T₀ : CoCartesianTransport p e) (h : e = e') : (h ▸ T₀).functor = T₀.functor := by
-    cases h
-    rfl
-  have hV : CoCartesianTransport.piFunctor V = segalMap (n := FinPointed.mk a.len) T := by
-    apply Pi.hom_ext
-    intro i
-    exact (CoCartesianTransport.piFunctor_π V i).trans
-      ((hcast (T i) (assoc_projection_map a i).symm).trans
-        (segalMap_π (p := p) (n := FinPointed.mk a.len) T i).symm)
-  refine ⟨fun i ↦ (V i).baseChange sq, ?_⟩
-  apply (CoCartesianTransport.isCategoricalEquivalence_piFunctor_baseChange_iff V sq).2
-  rw [hV]
-  exact hT
+  exact CoCartesianTransport.exists_isCategoricalEquivalence_piFunctor_of_isPullback
+    (fun i ↦ nerve.edgeMk (Assoc.ρ i)) (Assoc.edgeMk_ρ_map_toFinPointed a) T sq
+    (by rwa [segalMap_eq_piFunctor] at hT)
 
 /-- A Segal family over finite pointed sets restricts to the projections of `LM`, giving a
 categorical equivalence to the product of the fibres over the individual output colors. -/
@@ -113,23 +101,8 @@ theorem LM.exists_isCategoricalEquivalence_piFunctor_of_isPullback
               (fun i ↦ (fiber p' (nerveEquiv.symm (⟨1, fun _ ↦ a.color i⟩ : LM)) : SSet))
               inferInstance (fun _ ↦ @fiber.quasicategory _ _ p' inferInstance _)⟩)
         (ObjectProperty.homMk (CoCartesianTransport.piFunctor U)) := by
-  let : InnerFibration p' := ⟨innerFibrations.of_isPullback sq (mem_innerFibrations p)⟩
-  let V : ∀ i : Fin a.len, CoCartesianTransport p
-      ((nerve.edgeMk (LM.ρ i)).map (nerveMap LM.toFinPointed)) :=
-    fun i ↦ (lm_projection_map a i).symm ▸ T i
-  have hcast {s r : (nerve FinPointed.{u}) _⦋0⦌} {e e' : Edge s r}
-      (T₀ : CoCartesianTransport p e) (h : e = e') : (h ▸ T₀).functor = T₀.functor := by
-    cases h
-    rfl
-  have hV : CoCartesianTransport.piFunctor V = segalMap (n := FinPointed.mk a.len) T := by
-    apply Pi.hom_ext
-    intro i
-    exact (CoCartesianTransport.piFunctor_π V i).trans
-      ((hcast (T i) (lm_projection_map a i).symm).trans
-        (segalMap_π (p := p) (n := FinPointed.mk a.len) T i).symm)
-  refine ⟨fun i ↦ (V i).baseChange sq, ?_⟩
-  apply (CoCartesianTransport.isCategoricalEquivalence_piFunctor_baseChange_iff V sq).2
-  rw [hV]
-  exact hT
+  exact CoCartesianTransport.exists_isCategoricalEquivalence_piFunctor_of_isPullback
+    (fun i ↦ nerve.edgeMk (LM.ρ i)) (LM.edgeMk_ρ_map_toFinPointed a) T sq
+    (by rwa [segalMap_eq_piFunctor] at hT)
 
 end TauCeti

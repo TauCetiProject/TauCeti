@@ -193,12 +193,8 @@ lemma isCategoricalEquivalence_piFunctor_baseChange_iff [InnerFibration p]
     rw [hw] at h'
     have he : a.inv ≫ (a.hom ≫ f ≫ c.inv) ≫ c.hom = f := by
       apply ObjectProperty.hom_ext
-      -- The bicategory and full-subcategory category structures coincide only after
-      -- unfolding; express their composite in simplicial sets before simplifying.
-      change (fiber.isoOfIsPullback sq s).inv ≫
-        ((fiber.isoOfIsPullback sq s).hom ≫ f.hom ≫
-          (Pi.mapIso fun i ↦ fiber.isoOfIsPullback sq (r i)).inv) ≫
-            (Pi.mapIso fun i ↦ fiber.isoOfIsPullback sq (r i)).hom = f.hom
+      erw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
+        ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom]
       simp [Category.assoc]
     rw [he] at h'
     exact h'
@@ -206,5 +202,32 @@ lemma isCategoricalEquivalence_piFunctor_baseChange_iff [InnerFibration p]
     rw [hw]
     exact (QCat.IsCategoricalEquivalence.of_isIso a.hom).comp
       (h.comp (QCat.IsCategoricalEquivalence.of_isIso c.inv))
+
+/-- A family whose edges match under a pullback admits pulled-back transports giving a
+categorical equivalence whenever its original product map is a categorical equivalence. -/
+theorem exists_isCategoricalEquivalence_piFunctor_of_isPullback [InnerFibration p]
+    {ι : Type v} [HasProductsOfShape ι SSet.{u}]
+    {s : S' _⦋0⦌} {r : ι → S' _⦋0⦌}
+    (e' : ∀ i, Edge s (r i)) {e : ∀ i, Edge (b.app _ s) (b.app _ (r i))}
+    (he : ∀ i, (e' i).map b = e i) (T : ∀ i, CoCartesianTransport p (e i))
+    (sq : IsPullback t p' p b)
+    (hT : QCat.IsCategoricalEquivalence
+      (X := ⟨fiber p (b.app _ s), inferInstance⟩)
+      (Y := ⟨∏ᶜ fun i ↦ (fiber p (b.app _ (r i)) : SSet), inferInstance⟩)
+      (ObjectProperty.homMk (piFunctor T))) :
+    letI : InnerFibration p' := ⟨innerFibrations.of_isPullback sq (mem_innerFibrations p)⟩
+    ∃ U : ∀ i, CoCartesianTransport p' (e' i),
+      QCat.IsCategoricalEquivalence
+        (X := ⟨fiber p' s, inferInstance⟩)
+        (Y := ⟨∏ᶜ fun i ↦ (fiber p' (r i) : SSet), inferInstance⟩)
+        (ObjectProperty.homMk (piFunctor U)) := by
+  let V := fun i ↦ (T i).ofEdgeEq (he i).symm
+  have hV : piFunctor V = piFunctor T := by
+    apply Pi.hom_ext
+    intro i
+    simp [V]
+  refine ⟨fun i ↦ (V i).baseChange sq, ?_⟩
+  apply (isCategoricalEquivalence_piFunctor_baseChange_iff V sq).2
+  rwa [hV]
 
 end SSet.CoCartesianTransport

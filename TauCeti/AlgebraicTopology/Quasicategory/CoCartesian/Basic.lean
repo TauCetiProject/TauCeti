@@ -206,6 +206,27 @@ lemma ext {p : X ⟶ S} {s t : S _⦋0⦌} {e : Edge s t} {T U : CoCartesianTran
   cases U
   congr
 
+/-- Reindex a chosen transport along an equality of base edges, retaining its functor
+and homotopy. -/
+def ofEdgeEq {p : X ⟶ S} {s t : S _⦋0⦌} {e e' : Edge s t}
+    (T : CoCartesianTransport p e) (h : e = e') : CoCartesianTransport p e' where
+  functor := T.functor
+  homotopy := T.homotopy
+  ι₀_homotopy := T.ι₀_homotopy
+  ι₁_homotopy := T.ι₁_homotopy
+  homotopy_comp := by rw [← h]; exact T.homotopy_comp
+  isCoCartesian := T.isCoCartesian
+
+@[simp]
+lemma ofEdgeEq_functor {p : X ⟶ S} {s t : S _⦋0⦌} {e e' : Edge s t}
+    (T : CoCartesianTransport p e) (h : e = e') :
+    (T.ofEdgeEq h).functor = T.functor := (rfl)
+
+@[simp]
+lemma ofEdgeEq_homotopy {p : X ⟶ S} {s t : S _⦋0⦌} {e e' : Edge s t}
+    (T : CoCartesianTransport p e) (h : e = e') :
+    (T.ofEdgeEq h).homotopy = T.homotopy := (rfl)
+
 /-- Along an isomorphism `p`, every edge `e` of the base has a coCartesian transport: the
 fibers are terminal, and the homotopy is `e` lifted along the inverse of `p`. -/
 noncomputable def ofIsIso (p : X ⟶ S) [IsIso p] {s t : S _⦋0⦌} (e : Edge s t) :
