@@ -209,6 +209,13 @@ theorem mgradient_const (c : ℝ) : mgradient I (fun _ : M ↦ c) = 0 := by
   funext x
   simp only [mgradient, mvfderiv_const, LinearIsometryEquiv.map_zero, Pi.zero_apply]
 
+/-- Adding a constant does not change the gradient, without a differentiability assumption. -/
+@[simp]
+theorem mgradient_add_const (f : M → ℝ) (a : ℝ) :
+    mgradient I (fun x ↦ f x + a) = mgradient I f := by
+  funext x
+  rw [mgradient_def, mgradient_def, mvfderiv_add_const]
+
 /-- The gradient is additive on differentiable functions. -/
 theorem mgradient_add {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
     (hg : MDifferentiable I 𝓘(ℝ) g) :

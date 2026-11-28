@@ -53,6 +53,8 @@ place is such a `b`.
   global unit is a square at a real place exactly when it is positive there.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one_atRealPlace`: a *prescribed* negative global unit at a
   real place has a negative partner with symbol `-1` there.
+* `TauCeti.hilbertSymbol_completion_neg_one_left_eq_neg_one`: over the completion at a real place
+  where `b` is negative, the symbol of `-1` and `b` is `-1`.
 * `TauCeti.hilbertSymbol_completion_eq_one_of_isComplex` and
   `TauCeti.hilbertSymbol_completion_mul_left`: over the completion `K_w` at an infinite place
   itself, the symbol is `1` at a complex place and multiplicative in its first argument at every
@@ -162,6 +164,15 @@ theorem hilbertSymbol_completion_eq_unitAtRealPlace (w : {w : InfinitePlace K //
       hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) := by
   rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.property),
     units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap]
+
+/-- At a real place `w` at which `b ∈ Kˣ` is negative, `-1` is a local non-norm from `K_w(√b)`:
+the Hilbert symbol of `-1` and `b` over the completion `K_w` is `-1`. -/
+theorem hilbertSymbol_completion_neg_one_left_eq_neg_one (w : {w : InfinitePlace K // w.IsReal})
+    {b : Kˣ} (hb : embedding_of_isReal w.property (b : K) < 0) :
+    hilbertSymbol (Units.map (algebraMap K w.val.Completion).toMonoidHom (-1))
+      (Units.map (algebraMap K w.val.Completion).toMonoidHom b) = -1 := by
+  rw [hilbertSymbol_completion_eq_unitAtRealPlace, hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
+  exact ⟨by simp, hb⟩
 
 /-- Over the completion at a complex place, every Hilbert symbol is `1`: the completion is
 isomorphic to `ℂ`, where every element is a square. -/

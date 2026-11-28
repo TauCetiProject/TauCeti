@@ -410,9 +410,6 @@ instance reflectsIsomorphisms_pullback [∀ {Z : C} (g : Z ⟶ S), EffectiveEpi 
     have : IsIso (DescentDatum.baseChangeHom p u).hom := by
       rw [DescentDatum.baseChangeHom_hom]
       infer_instance
-    have : IsIso (DescentDatum.Hom.id (DescentDatum.baseChange p Y)).hom := by
-      rw [DescentDatum.Hom.id_hom]
-      infer_instance
     have h : ((DescentDatum.baseChangeHom p u).descendIso
         (DescentDatum.Hom.id (DescentDatum.baseChange p Y))).hom = u := by
       rw [DescentDatum.Hom.descendIso_hom, ← DescentDatum.Hom.descend_baseChangeHom p u]

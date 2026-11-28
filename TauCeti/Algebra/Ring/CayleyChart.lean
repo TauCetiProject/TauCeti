@@ -346,9 +346,9 @@ theorem map_cayleyParam {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass
     (f : F) (j η : A) : f (cayleyParam j η) = cayleyParam (f j) (f η) := by
   simp only [cayleyParam_def, map_mul, map_add, map_one, map_ringInverse]
 
-/-- Ring isomorphisms commute with the Cayley coordinate. -/
-theorem map_cayleyCoord {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass F A S]
-    (f : F) (j J : A) : f (cayleyCoord j J) = cayleyCoord (f j) (f J) := by
+/-- Local ring homomorphisms commute with the Cayley coordinate. -/
+theorem map_cayleyCoord {S F : Type*} [Ring S] [FunLike F A S] [RingHomClass F A S]
+    (f : F) [IsLocalHom f] (j J : A) : f (cayleyCoord j J) = cayleyCoord (f j) (f J) := by
   simp only [cayleyCoord_def, map_mul, map_add, map_sub, map_ringInverse]
 
 /-- Every ring homomorphism commutes with the Cayley coordinate of `J` relative to `j` when the
