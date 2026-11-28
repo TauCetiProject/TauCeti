@@ -67,7 +67,7 @@ has no antiderivative.
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
 
-Over a commutative ring, the derivative of a combination of the products
+Over a ring, not necessarily commutative, the derivative of a combination of the products
 `(X - a) ^ (n + 1 - k) (X - b) ^ k` is a combination of the products `(X - a) ^ (n - k) (X - b) ^ k`
 with explicit coefficients (`Polynomial.derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow`).
 
@@ -380,18 +380,28 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
 `(X - a) ^ (n + 1 - k) (X - b) ^ k`, `k ≤ n + 1`, is the combination of the products
 `(X - a) ^ (n - k) (X - b) ^ k`, `k ≤ n`, in which the coefficient of the `k`-th product is
 `(n - k + 1) f k + (k + 1) f (k + 1)`. For `a - b` invertible the products of total degree `n`
-form a basis of the polynomials of degree at most `n`; in general they are only a family. -/
-theorem derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow {R : Type*} [CommRing R] (a b : R)
+form a basis of the polynomials of degree at most `n`; in general they are only a family. The ring
+need not be commutative: `X - C a` and the natural numbers are the only factors that are moved. -/
+theorem derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow {R : Type*} [Ring R] (a b : R)
     (f : ℕ → R) (n : ℕ) :
     derivative (∑ k ∈ Finset.range (n + 2), f k • ((X - C a) ^ (n + 1 - k) * (X - C b) ^ k)) =
       ∑ k ∈ Finset.range (n + 1), ((((n - k : ℕ) : R) + 1) * f k + ((k : R) + 1) * f (k + 1)) •
         ((X - C a) ^ (n - k) * (X - C b) ^ k) := by
+  -- Mathlib's `derivative_X_sub_C_pow` asks for a commutative ring.
+  have hp (c : R) (m : ℕ) : derivative ((X - C c) ^ m) = C (m : R) * (X - C c) ^ (m - 1) := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [pow_succ, derivative_mul, ih, derivative_X_sub_C, mul_one, Nat.add_sub_cancel]
+      rcases m with _ | m
+      · simp
+      · rw [Nat.add_sub_cancel, mul_assoc, ← pow_succ, Nat.cast_succ (m + 1), C_add, C_1, add_mul,
+          one_mul]
   have h (m k : ℕ) : derivative ((X - C a) ^ m * (X - C b) ^ k) =
       C (m : R) * ((X - C a) ^ (m - 1) * (X - C b) ^ k) +
         C (k : R) * ((X - C a) ^ m * (X - C b) ^ (k - 1)) := by
-    simp only [derivative_mul, derivative_pow, derivative_sub, derivative_X, derivative_C,
-      sub_zero, mul_one]
-    ring
+    rw [derivative_mul, hp, hp, mul_assoc, ← mul_assoc ((X - C a) ^ m), map_natCast C k,
+      ← Nat.cast_comm k ((X - C a) ^ m), mul_assoc]
   simp only [derivative_sum, derivative_smul, h, smul_add, Finset.sum_add_distrib]
   -- The first sum loses its top term and the second its bottom term, both with coefficient `0`.
   rw [Finset.sum_range_succ, Finset.sum_range_succ' (fun k =>
@@ -403,8 +413,9 @@ theorem derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow {R : Type*} [CommRing R]
   -- The exponent of `X - C a` in the `k`-th term of the first sum, as a successor.
   have hexp : n + 1 - k = n - k + 1 := by omega
   rw [Nat.add_sub_add_right, Nat.add_sub_cancel, hexp, Nat.add_sub_cancel]
-  simp only [smul_eq_C_mul, C_add, C_mul, Nat.cast_add, Nat.cast_one, C_1]
-  ring
+  -- Natural numbers are central, so the coefficients collect without commutativity.
+  rw [← smul_eq_C_mul, ← smul_eq_C_mul, smul_smul, smul_smul, ← add_smul,
+    ← Nat.cast_comm (n - k + 1), ← Nat.cast_comm (k + 1), Nat.cast_succ, Nat.cast_succ]
 
 /-- Over a ring in which multiplication by each nonzero natural number is injective, such as a
 `ℚ`-algebra, two polynomials with equal derivatives and equal values at one point `x` agree.
