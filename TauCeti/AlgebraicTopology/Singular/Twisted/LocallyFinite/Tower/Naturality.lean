@@ -261,17 +261,6 @@ lemma relativeChainComplexTowerCoefficientMap_comp
   funext ⟨n⟩
   exact TopPair.twistedChainComplexCoefficientMap_comp (TopPair.ofSubset (S n)ᶜ) η θ
 
-/-- Congruence of relative classes of locally finite chains along an equality of subsets. -/
-lemma locallyFiniteChainComplexToRelative_congr
-    (L : LocalCoefficientSystem.{u, v, max v w} R X) {S T : Set X} (h : S = T)
-    (hS : IsCompact (Set.range (TopPair.ofSubset S).map)ᶜ)
-    (hT : IsCompact (Set.range (TopPair.ofSubset T).map)ᶜ) :
-    (TopPair.ofSubset S).locallyFiniteChainComplexToRelative L hS ≫
-        eqToHom (congrArg (fun A : Set X ↦ (TopPair.ofSubset A).twistedChainComplex L) h) =
-      (TopPair.ofSubset T).locallyFiniteChainComplexToRelative L hT := by
-  subst h
-  simp
-
 /-- The map from locally finite chains to the limit complex of a tower of compact subsets is
 natural in morphisms of local coefficient systems. -/
 @[reassoc]

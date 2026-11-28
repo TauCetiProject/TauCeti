@@ -16,7 +16,7 @@ On a discrete space `X` in degree zero, `borelMooreHomologyZeroIsoPi` identifies
 the product `∏ x, L.obj x` of the fibres of the local coefficient system `L`. This file proves that
 under `borelMooreHomologyZeroIsoPi`, open restriction `borelMooreHomologyRestrict j hj L 0` along
 an open embedding `j : V ⟶ X` corresponds to precomposing families of point coefficients with `j`
-(`TauCeti.LocalCoefficientSystem.borelMooreHomologyRestrict_zero_comp_isoPi`).
+(`TauCeti.LocalCoefficientSystem.borelMooreHomologyZeroIsoPi_hom_borelMooreHomologyRestrict_apply`).
 
 ## References
 
@@ -108,7 +108,7 @@ private lemma ofSubsetMap_zero_comp_coeff {V X : TopCat.{v}}
 /-- **Discrete check.** On a discrete space in degree zero, open restriction along an open
 embedding `j : V ⟶ X` corresponds under `borelMooreHomologyZeroIsoPi` to precomposing families
 of point coefficients with `j`. -/
-theorem borelMooreHomologyRestrict_zero_comp_isoPi {V X : TopCat.{v}}
+theorem borelMooreHomologyZeroIsoPi_hom_borelMooreHomologyRestrict_apply {V X : TopCat.{v}}
     [DiscreteTopology X] [DiscreteTopology V] [SigmaCompactSpace V]
     (j : V ⟶ X) (hj : IsOpenEmbedding j.hom)
     (L : LocalCoefficientSystem.{u, v, max v w} R X)
@@ -190,7 +190,7 @@ example (L : LocalCoefficientSystem.{u, 0, w} R (TopCat.of ℕ))
           (TopCat.ofHom (ContinuousMap.subtypeVal (Set.ofPred Even)))
           (isOpen_discrete _).isOpenEmbedding_subtypeVal L 0).hom x) n =
       (borelMooreHomologyZeroIsoPi L).hom.hom x n.val :=
-  borelMooreHomologyRestrict_zero_comp_isoPi
+  borelMooreHomologyZeroIsoPi_hom_borelMooreHomologyRestrict_apply
     (TopCat.ofHom (ContinuousMap.subtypeVal (Set.ofPred Even)))
     (isOpen_discrete _).isOpenEmbedding_subtypeVal L x n
 

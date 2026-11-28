@@ -268,6 +268,17 @@ namespace TauCeti.LocalCoefficientSystem
 
 variable {R : Type u} [Ring R]
 
+/-- Congruence of relative classes of locally finite chains along an equality of subsets. -/
+lemma locallyFiniteChainComplexToRelative_congr {X : TopCat.{v}}
+    (L : LocalCoefficientSystem.{u, v, max v w} R X) {S T : Set X} (h : S = T)
+    (hS : IsCompact (Set.range (TopPair.ofSubset S).map)ᶜ)
+    (hT : IsCompact (Set.range (TopPair.ofSubset T).map)ᶜ) :
+    (TopPair.ofSubset S).locallyFiniteChainComplexToRelative L hS ≫
+        eqToHom (congrArg (fun A : Set X ↦ (TopPair.ofSubset A).twistedChainComplex L) h) =
+      (TopPair.ofSubset T).locallyFiniteChainComplexToRelative L hT := by
+  subst h
+  simp
+
 section Tower
 
 /-
