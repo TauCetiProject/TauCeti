@@ -41,33 +41,45 @@ the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas t
 
 ## Main declarations
 
-* `TwoSidedIdeal.IsQuasicentralApproximateUnit`: predicate that a filter `l : Filter A` is a
-  proper filter eventually supported in the nonnegative closed unit ball of `I` along which left
-  and right multiplications fix elements of `I` and commutators with elements of `A` tend to `0`.
+* `TwoSidedIdeal.IsQuasicentralApproximateUnit`: predicate that a filter `l : Filter A` on a
+  seminormed ring `A` with a partial order is a proper filter eventually supported in
+  `{e ∈ I | 0 ≤ e ∧ ‖e‖ ≤ 1}` along which left and right multiplications fix elements of `I` and
+  commutators with elements of `A` tend to `0`.
 * `TwoSidedIdeal.IsQuasicentralApproximateUnit.of_tendsto_mul_right_of_dense` and
   `of_tendsto_mul_left_of_dense`: check quasicentrality on a subset `sI` whose closure contains `I`
   and a dense subset `sA` of `A`.
 * `TwoSidedIdeal.IsQuasicentralApproximateUnit.tendstoUniformlyOn_mul_right`,
   `tendstoUniformlyOn_commutator`, `tendstoUniformlyOn_mul_left`: uniform convergence of ideal
-  multiplications on compact subsets of `I` and of commutators on arbitrary compact subsets of `A`.
-* `TwoSidedIdeal.IsQuasicentralApproximateUnit.isIncreasingApproximateUnit_comap_coe` and
-  `TwoSidedIdeal.isQuasicentralApproximateUnit_map_coe_iff`: subtype pullback and pushforward
-  characterizations between quasicentral approximate units of a closed ideal `I` and
-  `Filter.IsIncreasingApproximateUnit` on `I`.
+  multiplications on totally bounded subsets of `I` and of commutators on arbitrary totally
+  bounded subsets of `A`.
+* `TwoSidedIdeal.IsQuasicentralApproximateUnit.isApproximateUnit_comap_subtypeVal`,
+  `TwoSidedIdeal.isQuasicentralApproximateUnit_map_subtypeVal_iff`, and
+  `Filter.IsApproximateUnit.isQuasicentralApproximateUnit_map_subtypeVal`: subtype pullback and
+  pushforward characterizations for an arbitrary two-sided ideal `I` of a seminormed ring. The
+  pullback unconditionally gives an approximate unit on `I` with `0 ≤ e` and `‖e‖ ≤ 1` eventually;
+  conversely, the pushforward of a filter on `I` is quasicentral iff it is an eventually
+  nonnegative contractive approximate unit of `I` **and** ambient commutators with elements of `A`
+  tend to `0` (automatic when `A` is commutative).
+* `TwoSidedIdeal.IsQuasicentralApproximateUnit.isIncreasingApproximateUnit_comap_subtypeVal`,
+  `TwoSidedIdeal.isQuasicentralApproximateUnit_map_subtypeVal_iff_isIncreasingApproximateUnit`, and
+  `Filter.IsIncreasingApproximateUnit.isQuasicentralApproximateUnit_map_subtypeVal`: the
+  specialized pullback and pushforward characterizations with
+  `Filter.IsIncreasingApproximateUnit` on `I` when `I` is a closed ideal of a C⋆-algebra.
 * `TwoSidedIdeal.IsQuasicentralApproximateUnit.map`: a surjective `⋆`-algebra homomorphism carries
   a quasicentral approximate unit of `I` to one of `I.map f` (and hence of its closure).
 * `TwoSidedIdeal.quasicentralSet`, `TwoSidedIdeal.mem_quasicentralSet_iff`,
-  `TwoSidedIdeal.quasicentralSet_subset_quasicentralSet`, and
-  `TwoSidedIdeal.quasicentralApproximateUnit`: the finite-set quasicentral approximation
-  neighborhoods of `I` and the canonical filter they generate, characterized by
-  `hasBasis_quasicentralApproximateUnit`,
+  `TwoSidedIdeal.quasicentralSet_subset_quasicentralSet`,
+  `TwoSidedIdeal.quasicentralApproximateUnit`, and
+  `TwoSidedIdeal.map_subtypeVal_comap_subtypeVal_quasicentralApproximateUnit`: the finite-set
+  quasicentral approximation neighborhoods of `I` and the canonical filter they generate,
+  characterized by `hasBasis_quasicentralApproximateUnit`,
   `mem_quasicentralApproximateUnit_iff`, and the universal property
   `isQuasicentralApproximateUnit_iff_neBot_and_le`.
 * `TwoSidedIdeal.quasicentralSet_nonempty`,
   `TwoSidedIdeal.quasicentralApproximateUnit_neBot`,
   `TwoSidedIdeal.isQuasicentralApproximateUnit_quasicentralApproximateUnit`, and
   `TwoSidedIdeal.exists_isQuasicentralApproximateUnit`: Arveson's existence theorem for closed
-  two-sided ideals.
+  two-sided ideals of a C⋆-algebra.
 * `TwoSidedIdeal.exists_isQuasicentralApproximateUnit_iff_exists_seq` and
   `TwoSidedIdeal.exists_seq_isQuasicentralApproximateUnit`: sequential quasicentral approximate
   units when `A` is separable.
@@ -104,11 +116,12 @@ private theorem eventually_forall_mem_mul_sub_lt {α A : Type*} [NonUnitalSemino
 
 section Basic
 
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+variable {A : Type*} [NonUnitalSeminormedRing A] [PartialOrder A]
 
-/-- A *quasicentral approximate unit* for a two-sided ideal `I` of a C⋆-algebra `A` is a proper
-filter `l` on `A` eventually supported in the nonnegative closed unit ball of `I` such that
-`e * x → x` and `x * e → x` for every `x ∈ I`, and `e * a - a * e → 0` for every `a : A`. -/
+/-- A *quasicentral approximate unit* for a two-sided ideal `I` of a seminormed ring `A` with a
+partial order is a proper filter `l` on `A` eventually supported in `{e ∈ I | 0 ≤ e ∧ ‖e‖ ≤ 1}`
+such that `e * x → x` and `x * e → x` for every `x ∈ I`, and `e * a - a * e → 0` for every
+`a : A`. -/
 structure IsQuasicentralApproximateUnit (I : TwoSidedIdeal A) (l : Filter A) : Prop where
   /-- The filter is proper (`l ≠ ⊥`). -/
   protected [neBot : l.NeBot]
@@ -122,7 +135,7 @@ structure IsQuasicentralApproximateUnit (I : TwoSidedIdeal A) (l : Filter A) : P
   tendsto_mul_right {x : A} (hx : x ∈ I) : Tendsto (· * x) l (𝓝 x)
   /-- Right multiplication along `l` approximates every element of `I`. -/
   tendsto_mul_left {x : A} (hx : x ∈ I) : Tendsto (x * ·) l (𝓝 x)
-  /-- Commutators with every element of the ambient algebra `A` tend to `0` along `l`. -/
+  /-- Commutators with every element of the ambient ring `A` tend to `0` along `l`. -/
   tendsto_commutator (a : A) : Tendsto (fun e => e * a - a * e) l (𝓝 0)
 
 /-- Explicit conjunction characterization of `TwoSidedIdeal.IsQuasicentralApproximateUnit`. -/
@@ -175,7 +188,7 @@ theorem of_tendsto_mul_left [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
   tendsto_commutator := hcomm
 
 /-- Dense-subset criterion for `IsQuasicentralApproximateUnit`: for a proper filter `l` eventually
-in the nonnegative closed unit ball of `I`, checking `e * x → x` on a subset `sI` with
+in `{e ∈ I | 0 ≤ e ∧ ‖e‖ ≤ 1}`, checking `e * x → x` on a subset `sI` with
 `(I : Set A) ⊆ closure sI` and `e * a - a * e → 0` on a dense subset `sA` of `A` suffices for
 `I.IsQuasicentralApproximateUnit l`. -/
 theorem of_tendsto_mul_right_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
@@ -191,7 +204,7 @@ theorem of_tendsto_mul_right_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
     (TauCeti.tendsto_commutator_of_dense hnorm hsA hcomm)
 
 /-- Dense-subset criterion for `IsQuasicentralApproximateUnit`: for a proper filter `l` eventually
-in the nonnegative closed unit ball of `I`, checking `x * e → x` on a subset `sI` with
+in `{e ∈ I | 0 ≤ e ∧ ‖e‖ ≤ 1}`, checking `x * e → x` on a subset `sI` with
 `(I : Set A) ⊆ closure sI` and `e * a - a * e → 0` on a dense subset `sA` of `A` suffices for
 `I.IsQuasicentralApproximateUnit l`. -/
 theorem of_tendsto_mul_left_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
@@ -241,58 +254,67 @@ theorem topologicalClosure (hl : I.IsQuasicentralApproximateUnit l) :
     (fun _ hx => I.mem_topologicalClosure.mp hx) dense_univ
     (fun _ hx => hl.tendsto_mul_right hx) (fun a _ => hl.tendsto_commutator a)
 
-/-- Along a quasicentral approximate unit of `I`, `e * x → x` uniformly on compact subsets of
-`I`. -/
+/-- Along a quasicentral approximate unit of `I`, `e * x → x` uniformly on totally bounded
+subsets of `I`. -/
 theorem tendstoUniformlyOn_mul_right (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
-    (hK : IsCompact K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => e * x) id l K :=
+    (hK : TotallyBounded K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => e * x) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
     (TauCeti.eventually_lipschitzWith_mul_left hl.eventually_norm)
     hK fun _ hx => hl.tendsto_mul_right (hKI hx)
 
 /-- Along a quasicentral approximate unit, commutators `e * a - a * e` tend to `0` uniformly on
-every compact subset `K` of `A`. -/
+every totally bounded subset `K` of `A`. -/
 theorem tendstoUniformlyOn_commutator (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
-    (hK : IsCompact K) : TendstoUniformlyOn (fun e a => e * a - a * e) 0 l K :=
+    (hK : TotallyBounded K) : TendstoUniformlyOn (fun e a => e * a - a * e) 0 l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
     (TauCeti.eventually_lipschitzWith_commutator_left hl.eventually_norm)
     hK fun a _ => hl.tendsto_commutator a
 
-/-- Along a quasicentral approximate unit of `I`, `x * e → x` uniformly on compact subsets of
-`I`. -/
+/-- Along a quasicentral approximate unit of `I`, `x * e → x` uniformly on totally bounded
+subsets of `I`. -/
 theorem tendstoUniformlyOn_mul_left (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
-    (hK : IsCompact K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => x * e) id l K := by
+    (hK : TotallyBounded K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => x * e) id l K := by
   simpa only [Pi.sub_def, id_eq, Pi.zero_apply, sub_zero, sub_sub_cancel] using
     (hl.tendstoUniformlyOn_mul_right hK hKI).sub (hl.tendstoUniformlyOn_commutator hK)
 
-/-- Pulling a quasicentral approximate unit of a closed two-sided ideal `I` back along the subtype
-coercion `I → A` produces an increasing approximate unit of the C⋆-algebra `I`. -/
-theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
-    (hl : I.IsQuasicentralApproximateUnit l) :
-    (l.comap ((↑) : I → A)).IsIncreasingApproximateUnit where
+/-- Pulling a quasicentral approximate unit of `I` back along `Subtype.val : I → A` produces an
+approximate unit of `I`. -/
+theorem isApproximateUnit_comap_subtypeVal (hl : I.IsQuasicentralApproximateUnit l) :
+    (l.comap (Subtype.val : I → A)).IsApproximateUnit where
   neBot := hl.neBot.comap_of_range_mem (by rw [Subtype.range_coe]; exact hl.eventually_mem)
   tendsto_mul_left x :=
-    TauCeti.tendsto_mul_left_coe_iff.mp ((hl.tendsto_mul_left x.property).comp tendsto_comap)
+    TauCeti.tendsto_mul_left_subtypeVal_iff.mp ((hl.tendsto_mul_left x.property).comp tendsto_comap)
   tendsto_mul_right x :=
-    TauCeti.tendsto_mul_right_coe_iff.mp ((hl.tendsto_mul_right x.property).comp tendsto_comap)
-  eventually_nonneg := (hl.eventually_nonneg.comap _).mono fun _ h => Subtype.coe_le_coe.mp h
-  eventually_norm := (hl.eventually_norm.comap _).mono fun _ h => by
-    rwa [AddSubgroupClass.coe_norm]
+    TauCeti.tendsto_mul_right_subtypeVal_iff.mp
+      ((hl.tendsto_mul_right x.property).comp tendsto_comap)
 
-/-- Pushing `l.comap ((↑) : I → A)` forward to `A` recovers `l`. -/
-theorem map_coe_comap_coe (hl : I.IsQuasicentralApproximateUnit l) :
-    (l.comap ((↑) : I → A)).map ((↑) : I → A) = l :=
+/-- Pulling a quasicentral approximate unit of `I` back along `Subtype.val : I → A` preserves
+eventual nonnegativity. -/
+theorem eventually_nonneg_comap_subtypeVal (hl : I.IsQuasicentralApproximateUnit l) :
+    ∀ᶠ e : I in l.comap Subtype.val, 0 ≤ e :=
+  (hl.eventually_nonneg.comap _).mono fun _ h => Subtype.coe_le_coe.mp h
+
+/-- Pulling a quasicentral approximate unit of `I` back along `Subtype.val : I → A` preserves
+eventual contractivity (`‖e‖ ≤ 1`). -/
+theorem eventually_norm_comap_subtypeVal (hl : I.IsQuasicentralApproximateUnit l) :
+    ∀ᶠ e : I in l.comap Subtype.val, ‖e‖ ≤ 1 :=
+  (hl.eventually_norm.comap _).mono fun _ h => by rwa [AddSubgroupClass.coe_norm]
+
+/-- Pushing `l.comap (Subtype.val : I → A)` forward to `A` recovers `l`. -/
+theorem map_subtypeVal_comap_subtypeVal (hl : I.IsQuasicentralApproximateUnit l) :
+    (l.comap (Subtype.val : I → A)).map Subtype.val = l :=
   map_comap_of_mem (by rw [Subtype.range_coe]; exact hl.eventually_mem)
 
-/-- Elements along a quasicentral approximate unit in a star-ordered C⋆-algebra are eventually
+/-- Elements along a quasicentral approximate unit in a star-ordered ring are eventually
 self-adjoint. -/
-theorem eventually_isSelfAdjoint [StarOrderedRing A] (hl : I.IsQuasicentralApproximateUnit l) :
-    ∀ᶠ e in l, IsSelfAdjoint e :=
+theorem eventually_isSelfAdjoint [StarRing A] [StarOrderedRing A]
+    (hl : I.IsQuasicentralApproximateUnit l) : ∀ᶠ e in l, IsSelfAdjoint e :=
   hl.eventually_nonneg.mono fun _ => IsSelfAdjoint.of_nonneg
 
-/-- Elements along a quasicentral approximate unit in a star-ordered C⋆-algebra are eventually
+/-- Elements along a quasicentral approximate unit in a star-ordered ring are eventually
 fixed by `star`. -/
-theorem eventually_star_eq [StarOrderedRing A] (hl : I.IsQuasicentralApproximateUnit l) :
-    ∀ᶠ e in l, star e = e :=
+theorem eventually_star_eq [StarRing A] [StarOrderedRing A]
+    (hl : I.IsQuasicentralApproximateUnit l) : ∀ᶠ e in l, star e = e :=
   hl.eventually_isSelfAdjoint.mono fun _ => IsSelfAdjoint.star_eq
 
 end IsQuasicentralApproximateUnit
@@ -324,6 +346,45 @@ theorem isQuasicentralApproximateUnit_bot_iff {l : Filter A} :
   ⟨fun hl => hl.neBot.eq_pure_iff.mpr (hl.eventually_mem.mono fun _ h => by simpa using h),
    fun h => h ▸ IsQuasicentralApproximateUnit.bot_pure_zero⟩
 
+/-- Pushing a filter `l : Filter I` on a two-sided ideal `I` forward along `Subtype.val` yields a
+quasicentral approximate unit of `I` if and only if `l` is an eventually nonnegative contractive
+approximate unit of `I` along which ambient commutators tend to `0`. -/
+theorem isQuasicentralApproximateUnit_map_subtypeVal_iff {I : TwoSidedIdeal A} {l : Filter I} :
+    I.IsQuasicentralApproximateUnit (l.map (Subtype.val : I → A)) ↔
+      l.IsApproximateUnit ∧ (∀ᶠ e : I in l, 0 ≤ e) ∧ (∀ᶠ e : I in l, ‖e‖ ≤ 1) ∧
+        ∀ a : A, Tendsto (fun e : I => (e : A) * a - a * (e : A)) l (𝓝 0) := by
+  refine ⟨fun hl => ⟨?_, ?_, ?_, fun a => tendsto_map'_iff.mp (hl.tendsto_commutator a)⟩,
+    fun ⟨hl, hnonneg, hnorm, hc⟩ => ?_⟩
+  · simpa only [comap_map Subtype.coe_injective] using hl.isApproximateUnit_comap_subtypeVal
+  · simpa only [comap_map Subtype.coe_injective] using hl.eventually_nonneg_comap_subtypeVal
+  · simpa only [comap_map Subtype.coe_injective] using hl.eventually_norm_comap_subtypeVal
+  · have := hl.neBot
+    exact .of_tendsto_mul_right
+      (eventually_map.mpr (Eventually.of_forall fun e => e.property))
+      (eventually_map.mpr <| hnonneg.mono fun _ h => Subtype.coe_le_coe.mpr h)
+      (eventually_map.mpr <| hnorm.mono fun _ h => by rwa [← AddSubgroupClass.coe_norm])
+      (fun x hx => tendsto_map'_iff.mpr <|
+        TauCeti.tendsto_mul_right_subtypeVal_iff.mpr (hl.tendsto_mul_right ⟨x, hx⟩))
+      (fun a => tendsto_map'_iff.mpr (hc a))
+
+/-- In a commutative seminormed ring, pushing an eventually nonnegative contractive approximate unit
+of a two-sided ideal forward along `Subtype.val` automatically yields a quasicentral approximate
+unit. -/
+theorem _root_.Filter.IsApproximateUnit.isQuasicentralApproximateUnit_map_subtypeVal
+    {A : Type*} [NonUnitalSeminormedCommRing A] [PartialOrder A] {I : TwoSidedIdeal A}
+    {l : Filter I} (hl : l.IsApproximateUnit) (hnonneg : ∀ᶠ e : I in l, 0 ≤ e)
+    (hnorm : ∀ᶠ e : I in l, ‖e‖ ≤ 1) :
+    I.IsQuasicentralApproximateUnit (l.map (Subtype.val : I → A)) :=
+  isQuasicentralApproximateUnit_map_subtypeVal_iff.mpr ⟨hl, hnonneg, hnorm, fun a => by
+    simp only [mul_comm _ a, sub_self]
+    exact tendsto_const_nhds⟩
+
+end Basic
+
+section CStarAlgebra
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+
 /-- A quasicentral approximate unit for `⊤` is precisely an increasing approximate unit of `A`. -/
 @[simp]
 theorem isQuasicentralApproximateUnit_top_iff {l : Filter A} :
@@ -342,28 +403,27 @@ theorem isQuasicentralApproximateUnit_top_iff {l : Filter A} :
                tendsto_commutator := fun a => by
                  simpa only [sub_self] using (hl.tendsto_mul_right a).sub (hl.tendsto_mul_left a) }⟩
 
-/-- Pushing a filter `l : Filter I` on a closed two-sided ideal `I` forward to `A` yields a
-quasicentral approximate unit of `I` if and only if `l` is an increasing approximate unit of `I`
-along which ambient commutators tend to `0`. -/
-theorem isQuasicentralApproximateUnit_map_coe_iff {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
-    {l : Filter I} :
-    I.IsQuasicentralApproximateUnit (l.map ((↑) : I → A)) ↔
+/-- Pulling a quasicentral approximate unit of a closed two-sided ideal `I` back along
+`Subtype.val : I → A` produces an increasing approximate unit of the C⋆-algebra `I`. -/
+theorem IsQuasicentralApproximateUnit.isIncreasingApproximateUnit_comap_subtypeVal
+    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] {l : Filter A}
+    (hl : I.IsQuasicentralApproximateUnit l) :
+    (l.comap (Subtype.val : I → A)).IsIncreasingApproximateUnit where
+  toIsApproximateUnit := hl.isApproximateUnit_comap_subtypeVal
+  eventually_nonneg := hl.eventually_nonneg_comap_subtypeVal
+  eventually_norm := hl.eventually_norm_comap_subtypeVal
+
+/-- Pushing a filter `l : Filter I` on a closed two-sided ideal `I` forward along `Subtype.val`
+yields a quasicentral approximate unit of `I` if and only if `l` is an increasing approximate unit
+of `I` along which ambient commutators tend to `0`. -/
+theorem isQuasicentralApproximateUnit_map_subtypeVal_iff_isIncreasingApproximateUnit
+    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] {l : Filter I} :
+    I.IsQuasicentralApproximateUnit (l.map (Subtype.val : I → A)) ↔
       l.IsIncreasingApproximateUnit ∧
         ∀ a : A, Tendsto (fun e : I => (e : A) * a - a * (e : A)) l (𝓝 0) := by
-  refine ⟨fun hl => ⟨?_, fun a => tendsto_map'_iff.mp (hl.tendsto_commutator a)⟩,
-    fun ⟨hl, hc⟩ => ?_⟩
-  · simpa only [comap_map Subtype.coe_injective] using hl.isIncreasingApproximateUnit_comap_coe
-  · have := hl.neBot
-    exact .of_tendsto_mul_right
-      (eventually_map.mpr (Eventually.of_forall fun e => e.property))
-      (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ h => Subtype.coe_le_coe.mpr h)
-      (eventually_map.mpr <| hl.eventually_norm.mono fun _ h => by
-        rwa [← AddSubgroupClass.coe_norm])
-      (fun x hx => tendsto_map'_iff.mpr <|
-        TauCeti.tendsto_mul_right_coe_iff.mpr (hl.tendsto_mul_right ⟨x, hx⟩))
-      (fun a => tendsto_map'_iff.mpr (hc a))
-
-end Basic
+  rw [isQuasicentralApproximateUnit_map_subtypeVal_iff]
+  exact ⟨fun ⟨hl, hn, hno, hc⟩ => ⟨⟨hl, hn, hno⟩, hc⟩,
+    fun ⟨hl, hc⟩ => ⟨hl.toIsApproximateUnit, hl.eventually_nonneg, hl.eventually_norm, hc⟩⟩
 
 /-- In a unital C⋆-algebra, `pure 1` is a quasicentral approximate unit for `⊤`. -/
 theorem IsQuasicentralApproximateUnit.top_pure_one {A : Type*} [CStarAlgebra A] [PartialOrder A]
@@ -371,14 +431,15 @@ theorem IsQuasicentralApproximateUnit.top_pure_one {A : Type*} [CStarAlgebra A] 
   isQuasicentralApproximateUnit_top_iff.mpr (.pure_one A)
 
 /-- In a commutative C⋆-algebra, every increasing approximate unit of a closed two-sided ideal
-pushed forward to the ambient algebra is automatically quasicentral. -/
-theorem IsQuasicentralApproximateUnit.map_coe_of_isIncreasingApproximateUnit {A : Type*}
-    [NonUnitalCommCStarAlgebra A] [PartialOrder A] {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
-    {l : Filter I} (hl : l.IsIncreasingApproximateUnit) :
-    I.IsQuasicentralApproximateUnit (l.map ((↑) : I → A)) :=
-  isQuasicentralApproximateUnit_map_coe_iff.mpr ⟨hl, fun a => by
-    simp only [mul_comm _ a, sub_self]
-    exact tendsto_const_nhds⟩
+pushed forward along `Subtype.val` to the ambient algebra is automatically quasicentral. -/
+theorem _root_.Filter.IsIncreasingApproximateUnit.isQuasicentralApproximateUnit_map_subtypeVal
+    {A : Type*} [NonUnitalCommCStarAlgebra A] [PartialOrder A] {I : TwoSidedIdeal A}
+    [IsClosed (I : Set A)] {l : Filter I} (hl : l.IsIncreasingApproximateUnit) :
+    I.IsQuasicentralApproximateUnit (l.map (Subtype.val : I → A)) :=
+  hl.toIsApproximateUnit.isQuasicentralApproximateUnit_map_subtypeVal
+    hl.eventually_nonneg hl.eventually_norm
+
+end CStarAlgebra
 
 section Map
 
@@ -413,11 +474,11 @@ end Map
 
 section CanonicalFilter
 
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+variable {A : Type*} [NonUnitalSeminormedRing A] [PartialOrder A]
 
 /-- Finite-set quasicentral approximation neighborhood of a two-sided ideal `I`: the set of
-positive contractions `e ∈ I` fixing `G ⊆ I` on both sides within `ε` and commuting with `F ⊆ A`
-within `ε`. -/
+contractions `e ∈ I` satisfying `0 ≤ e` in the supplied order that fix `G ⊆ I` on both sides
+within `ε` and commute with `F ⊆ A` within `ε`. -/
 def quasicentralSet (I : TwoSidedIdeal A) (G : Finset I) (F : Finset A) (ε : ℝ) : Set A :=
   {e : A | e ∈ I ∧ 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
     (∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε) ∧
@@ -439,7 +500,7 @@ theorem mem_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I} {F : Fin
   obtain ⟨hI, _, _, _, _⟩ := mem_quasicentralSet_iff.mp he
   exact hI
 
-/-- An element of `I.quasicentralSet G F ε` is nonnegative. -/
+/-- An element of `I.quasicentralSet G F ε` satisfies `0 ≤ e`. -/
 theorem nonneg_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I} {F : Finset A}
     {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) : 0 ≤ e := by
   obtain ⟨_, h₀, _, _, _⟩ := mem_quasicentralSet_iff.mp he
@@ -508,11 +569,11 @@ theorem mem_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {s : Set A} :
   rw [(hasBasis_quasicentralApproximateUnit I).mem_iff]
   simp only [Prod.exists]
 
-/-- Pushing `I.quasicentralApproximateUnit.comap ((↑) : I → A)` forward to `A` recovers
+/-- Pushing `I.quasicentralApproximateUnit.comap (Subtype.val : I → A)` forward to `A` recovers
 `I.quasicentralApproximateUnit`. -/
 @[simp]
-theorem map_coe_comap_coe_quasicentralApproximateUnit (I : TwoSidedIdeal A) :
-    (I.quasicentralApproximateUnit.comap ((↑) : I → A)).map ((↑) : I → A) =
+theorem map_subtypeVal_comap_subtypeVal_quasicentralApproximateUnit (I : TwoSidedIdeal A) :
+    (I.quasicentralApproximateUnit.comap (Subtype.val : I → A)).map Subtype.val =
       I.quasicentralApproximateUnit :=
   map_comap_of_mem <| by
     rw [Subtype.range_coe]
@@ -585,8 +646,8 @@ theorem exists_isQuasicentralApproximateUnit_iff_neBot (I : TwoSidedIdeal A) :
     isQuasicentralApproximateUnit_iff_neBot_and_le.mpr ⟨h, le_rfl⟩⟩⟩
 
 /-- Finite-set criterion: `I` admits a quasicentral approximate unit iff every finite subset `G` of
-`I` and finite subset `F` of `A` admit a single positive contraction in `I` fixing `G` and
-commuting with `F` up to `ε`. -/
+`I` and finite subset `F` of `A` admit a single contraction `e ∈ I` satisfying `0 ≤ e` in the
+supplied order that fixes `G` and commutes with `F` up to `ε`. -/
 theorem exists_isQuasicentralApproximateUnit_iff_forall_finset (I : TwoSidedIdeal A) :
     (∃ l : Filter A, I.IsQuasicentralApproximateUnit l) ↔
       ∀ G : Finset I, ∀ F : Finset A, ∀ ε > 0,
@@ -625,7 +686,7 @@ private theorem norm_mul_commutator_le (d v a : A) :
 /-- Single inductive step along `CStarAlgebra.approximateUnit`: given `u_0, …, u_{n-1} ∈ I`, find a
 positive contraction `v ∈ I` that approximates `G` within `ε` and satisfies
 `‖star (u_i * a - a * u_i) * (v * a - a * v)‖ ≤ δ * (‖a‖ + 1)` for all `i < n` and `a ∈ F`. -/
-private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+private theorem exists_mem_with_commutator_products_le (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     {n : ℕ} {u : ℕ → A} (hu : ∀ i < n, u i ∈ I)
     (G : Finset I) (F : Finset A) {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) :
     ∃ v ∈ I, 0 ≤ v ∧ ‖v‖ ≤ 1 ∧
@@ -636,9 +697,9 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
   have hl₀ : l₀.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit I
   have := hl₀.neBot
   have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) :=
-    TauCeti.tendsto_mul_left_coe_iff.mpr (hl₀.tendsto_mul_left ⟨y, hy⟩)
+    TauCeti.tendsto_mul_left_subtypeVal_iff.mpr (hl₀.tendsto_mul_left ⟨y, hy⟩)
   have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) :=
-    TauCeti.tendsto_mul_right_coe_iff.mpr (hl₀.tendsto_mul_right ⟨y, hy⟩)
+    TauCeti.tendsto_mul_right_subtypeVal_iff.mpr (hl₀.tendsto_mul_right ⟨y, hy⟩)
   have hG : ∀ᶠ v : I in l₀, ∀ x ∈ G,
       ‖(v : A) * (x : A) - x‖ < ε ∧ ‖(x : A) * (v : A) - x‖ < ε :=
     eventually_forall_mem_mul_sub_lt (I := I) (φ := ((↑) : I → A)) G hε
@@ -664,10 +725,11 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
     by rwa [AddSubgroupClass.coe_norm] at hv₁, hvG,
     fun i hi a ha => hvF i (Finset.mem_range.mpr hi) a ha⟩
 
-/-- Iterated choice of `n` positive contractions `u_0, …, u_{n-1} ∈ I` with pairwise controlled
-commutator inner products. -/
-private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (G : Finset I) (F : Finset A) {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) (n : ℕ) :
+/-- Iterated choice of `n` positive contractions `u_0, …, u_{n-1} ∈ I` with off-diagonal
+commutator products bounded by `δ * (‖a‖ + 1)`. -/
+private theorem exists_family_with_offDiagonal_commutator_products_le (I : TwoSidedIdeal A)
+    [IsClosed (I : Set A)] (G : Finset I) (F : Finset A) {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ)
+    (n : ℕ) :
     ∃ u : ℕ → A,
       (∀ k < n, u k ∈ I.quasicentralSet G ∅ ε) ∧
       (∀ i j, i < j → j < n → ∀ a ∈ F,
@@ -678,7 +740,7 @@ private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : S
     classical
     obtain ⟨u, hu, hoff⟩ := ih
     obtain ⟨v, hvI, hv₀, hv₁, hvG, hvF⟩ :=
-      exists_next_quasicentral_step I (fun i hi => mem_of_mem_quasicentralSet (hu i hi))
+      exists_mem_with_commutator_products_le I (fun i hi => mem_of_mem_quasicentralSet (hu i hi))
         G F hε hδ
     have hv : v ∈ I.quasicentralSet G ∅ ε :=
       mem_quasicentralSet_iff.mpr ⟨hvI, hv₀, hv₁, hvG, by simp⟩
@@ -776,7 +838,8 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
   have hn_pos : 0 < n := Nat.succ_pos m
   have hnR : (0 : ℝ) < n := by positivity
   let δ : ℝ := ε ^ 2 / (4 * (M + 1))
-  obtain ⟨u, hu, hoff⟩ := exists_tuple_quasicentral I G F hε (δ := δ) (by positivity) n
+  obtain ⟨u, hu, hoff⟩ :=
+    exists_family_with_offDiagonal_commutator_products_le I G F hε (δ := δ) (by positivity) n
   let e : A := (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k
   obtain ⟨heI, he₀, he₁, heG⟩ := cesaro_mem_and_mul_lt I hn_pos hu
   refine ⟨e, mem_quasicentralSet_iff.mpr ⟨heI, he₀, he₁, heG, fun a ha => ?_⟩⟩
@@ -826,12 +889,11 @@ end Existence
 
 section Sequential
 
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [TopologicalSpace.SeparableSpace A]
-
-/-- On a separable C⋆-algebra `A`, a two-sided ideal `I` admits a quasicentral approximate unit
-filter if and only if it admits a sequential quasicentral approximate unit `u : ℕ → A` with
-`u n ∈ I`, `0 ≤ u n`, and `‖u n‖ ≤ 1` for every `n`. -/
-theorem exists_isQuasicentralApproximateUnit_iff_exists_seq (I : TwoSidedIdeal A) :
+/-- On a separable seminormed ring `A` with a partial order, a two-sided ideal `I` admits a
+quasicentral approximate unit filter if and only if it admits a sequential quasicentral approximate
+unit `u : ℕ → A` with `u n ∈ I`, `0 ≤ u n`, and `‖u n‖ ≤ 1` for every `n`. -/
+theorem exists_isQuasicentralApproximateUnit_iff_exists_seq {A : Type*} [NonUnitalSeminormedRing A]
+    [PartialOrder A] [TopologicalSpace.SeparableSpace A] (I : TwoSidedIdeal A) :
     (∃ l : Filter A, I.IsQuasicentralApproximateUnit l) ↔
       ∃ u : ℕ → A, (∀ n, u n ∈ I ∧ 0 ≤ u n ∧ ‖u n‖ ≤ 1) ∧
         I.IsQuasicentralApproximateUnit (atTop.map u) := by
@@ -876,7 +938,8 @@ theorem exists_isQuasicentralApproximateUnit_iff_exists_seq (I : TwoSidedIdeal A
 
 /-- Every closed two-sided ideal `I` of a separable C⋆-algebra `A` admits a sequential
 quasicentral approximate unit `u : ℕ → A` in the nonnegative closed unit ball of `I`. -/
-theorem exists_seq_isQuasicentralApproximateUnit [StarOrderedRing A] (I : TwoSidedIdeal A)
+theorem exists_seq_isQuasicentralApproximateUnit {A : Type*} [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] [TopologicalSpace.SeparableSpace A] (I : TwoSidedIdeal A)
     [IsClosed (I : Set A)] :
     ∃ u : ℕ → A, (∀ n, u n ∈ I ∧ 0 ≤ u n ∧ ‖u n‖ ≤ 1) ∧
       I.IsQuasicentralApproximateUnit (atTop.map u) :=

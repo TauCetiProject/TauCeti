@@ -151,7 +151,8 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
     · simp [hgC s hs r hr.2, hgC' s hs, hδ.le]
   -- Eventually `e * g s` is uniformly close to `g s`.
   have he := Metric.tendstoUniformlyOn_iff.1
-    (hlA.tendstoUniformlyOn_mul_right (g.hasCompactSupport.isCompact_range g.continuous)) δ hδ
+    (hlA.tendstoUniformlyOn_mul_right
+      (g.hasCompactSupport.isCompact_range g.continuous).totallyBounded) δ hδ
   filter_upwards [tendsto_fst.eventually (hφ.and (hφ1.and
       (tendsto_smallSets_iff.1 hφs _ (inter_mem hV hV₀)))),
     tendsto_snd.eventually (he.and hlA.eventually_norm)] with ⟨i, e⟩ ⟨hi0, hi1, hiV⟩ ⟨hie, hien⟩
@@ -208,7 +209,8 @@ theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l 
   set b : G → A := fun x => α x⁻¹ (g x)
   have hb : HasCompactSupport b := g.hasCompactSupport.mono fun x hx h0 => hx (by simp [b, h0])
   have he := Metric.tendstoUniformlyOn_iff.1
-    (hlA.tendstoUniformlyOn_mul_left (hb.isCompact_range (by fun_prop))) δ hδ
+    (hlA.tendstoUniformlyOn_mul_left
+      (hb.isCompact_range (by fun_prop)).totallyBounded) δ hδ
   filter_upwards [tendsto_fst.eventually (hφ.and (hφ1.and (tendsto_smallSets_iff.1 hφs _
       (inter_mem (inter_mem (nhdsWithin_univ (1 : G) ▸ hV) hV₀) hc2)))),
     tendsto_snd.eventually he] with ⟨i, e⟩ ⟨hi0, hi1, hiV⟩ hie

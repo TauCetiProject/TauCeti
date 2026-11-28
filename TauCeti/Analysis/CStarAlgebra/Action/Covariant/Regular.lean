@@ -191,7 +191,7 @@ private theorem tendsto_regular_coefficient_indicatorConstLp [PartialOrder A] {l
   set ξ := indicatorConstLp 2 ht hμt (ρ b w)
   set C := μ.real t ^ (1 / (2 : ℝ≥0∞).toReal) * ‖w‖
   have hunif := Metric.tendstoUniformlyOn_iff.1 <|
-    hl.tendstoUniformlyOn_mul_right (htc.image (α.continuous_orbit b))
+    hl.tendstoUniformlyOn_mul_right (htc.image (α.continuous_orbit b)).totallyBounded
   refine Metric.tendsto_nhds.2 fun ε hε => ?_
   filter_upwards [hunif (ε / (C + 1)) (by positivity)] with e he
   rw [dist_eq_norm]

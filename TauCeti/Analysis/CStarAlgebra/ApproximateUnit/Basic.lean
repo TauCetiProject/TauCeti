@@ -24,7 +24,7 @@ norm of a positive functional, from a C⋆-algebra to its quotients.
 
 Since an increasing approximate unit eventually lies in the closed unit ball, two-sided
 compressions `e * a * e` converge to `a` (`Filter.IsIncreasingApproximateUnit.tendsto_mul_self`),
-the convergence `e * a → a` is uniform for `a` in a compact set
+the convergence `e * a → a` is uniform for `a` in a totally bounded (in particular, compact) set
 (`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`), and so is the convergence
 `a * e → a` (`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`). This controls
 `e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
@@ -65,16 +65,18 @@ theorem tendsto_mul_self {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (a 
   TauCeti.tendsto_mul_mul_of_isBoundedUnder ⟨1, eventually_map.mpr hl.eventually_norm⟩
     (hl.tendsto_mul_right a) (hl.tendsto_mul_left a)
 
-/-- Along an increasing approximate unit, `e * a → a` uniformly for `a` in a compact set. -/
+/-- Along an increasing approximate unit, `e * a → a` uniformly for `a` in a totally bounded
+set. -/
 theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
-    {K : Set A} (hK : IsCompact K) : TendstoUniformlyOn (fun e a => e * a) id l K :=
+    {K : Set A} (hK : TotallyBounded K) : TendstoUniformlyOn (fun e a => e * a) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
     (TauCeti.eventually_lipschitzWith_mul_left hl.eventually_norm)
     hK fun a _ => hl.tendsto_mul_right a
 
-/-- Along an increasing approximate unit, `a * e → a` uniformly for `a` in a compact set. -/
+/-- Along an increasing approximate unit, `a * e → a` uniformly for `a` in a totally bounded
+set. -/
 theorem tendstoUniformlyOn_mul_left {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
-    {K : Set A} (hK : IsCompact K) : TendstoUniformlyOn (fun e a => a * e) id l K :=
+    {K : Set A} (hK : TotallyBounded K) : TendstoUniformlyOn (fun e a => a * e) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
     (TauCeti.eventually_lipschitzWith_mul_right hl.eventually_norm)
     hK fun a _ => hl.tendsto_mul_left a

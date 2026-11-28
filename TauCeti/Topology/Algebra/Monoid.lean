@@ -42,10 +42,11 @@ is contracting two adjacent entries of a tuple by a continuous multiplication (`
 * `TauCeti.tendsto_mulSingle_cofinite`: in a product `∀ i, M i` of pointed topological spaces, the
   elements `Pi.mulSingle i (x i)` supported at a single coordinate tend to `1` along the cofinite
   filter on the index type.
-* `TauCeti.tendsto_mul_left_coe_iff` and `TauCeti.tendsto_mul_right_coe_iff` (with additive
-  versions `TauCeti.tendsto_add_left_coe_iff` and `TauCeti.tendsto_add_right_coe_iff`): filter
-  convergence of left or right multiplication in an ambient space along a filter on a `MulMemClass`
-  subobject is equivalent to convergence in the subobject subtype.
+* `TauCeti.tendsto_mul_left_subtypeVal_iff` and `TauCeti.tendsto_mul_right_subtypeVal_iff` (with
+  additive versions `TauCeti.tendsto_add_left_subtypeVal_iff` and
+  `TauCeti.tendsto_add_right_subtypeVal_iff`): filter convergence of left or right multiplication
+  in an ambient space along a filter on a `MulMemClass` subobject is equivalent to convergence in
+  the subobject subtype.
 -/
 
 public section
@@ -143,7 +144,7 @@ theorem tendsto_mulSingle_cofinite (x : ∀ i, M i) :
 `s` is equivalent to convergence in the subtype `s`. -/
 @[to_additive /-- Convergence of left addition `x + e` in `A` along a filter on an additive
 subobject `s` is equivalent to convergence in the subtype `s`. -/]
-theorem tendsto_mul_left_coe_iff {S A : Type*} [Mul A] [TopologicalSpace A]
+theorem tendsto_mul_left_subtypeVal_iff {S A : Type*} [Mul A] [TopologicalSpace A]
     [SetLike S A] [MulMemClass S A] {s : S} {l : Filter s} {x y : s} :
     Tendsto (fun e : s ↦ (x : A) * (e : A)) l (𝓝 (y : A)) ↔ Tendsto (x * ·) l (𝓝 y) := by
   rw [IsInducing.subtypeVal.tendsto_nhds_iff]
@@ -153,7 +154,7 @@ theorem tendsto_mul_left_coe_iff {S A : Type*} [Mul A] [TopologicalSpace A]
 `s` is equivalent to convergence in the subtype `s`. -/
 @[to_additive /-- Convergence of right addition `e + x` in `A` along a filter on an additive
 subobject `s` is equivalent to convergence in the subtype `s`. -/]
-theorem tendsto_mul_right_coe_iff {S A : Type*} [Mul A] [TopologicalSpace A]
+theorem tendsto_mul_right_subtypeVal_iff {S A : Type*} [Mul A] [TopologicalSpace A]
     [SetLike S A] [MulMemClass S A] {s : S} {l : Filter s} {x y : s} :
     Tendsto (fun e : s ↦ (e : A) * (x : A)) l (𝓝 (y : A)) ↔ Tendsto (· * x) l (𝓝 y) := by
   rw [IsInducing.subtypeVal.tendsto_nhds_iff]

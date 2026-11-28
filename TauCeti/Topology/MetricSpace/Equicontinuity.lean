@@ -10,8 +10,6 @@ public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.MetricSpace.UniformConvergence
-import TauCeti.Topology.UniformSpace.Ascoli
-import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Equicontinuity from slice distance bounds, and uniform attainment from rate bounds
@@ -30,8 +28,9 @@ smallness `F k p < ε` for all `k` once `s p` is small enough.
 Finally, the iterates of a `1`-Lipschitz map are `1`-Lipschitz, so they form a uniformly
 equicontinuous family; maps that are Hölder on a set with one constant and one positive exponent
 form a family uniformly equicontinuous on that set; and a family that is eventually `K`-Lipschitz
-along a filter `l` upgrades pointwise convergence on a subset to its closure and pointwise
-convergence on a compact set to uniform convergence on that set.
+along a filter `l` upgrades pointwise convergence on a subset to any point of its closure where the
+pointwise limit has a within-set limit, and upgrades pointwise convergence on a totally bounded set
+to uniform convergence on that set.
 
 ## Main statements
 
@@ -46,10 +45,11 @@ convergence on a compact set to uniform convergence on that set.
 * `HolderOnWith.uniformEquicontinuousOn`: maps sharing a Hölder constant and a positive exponent on
   a set are uniformly equicontinuous on it.
 * `TauCeti.tendsto_of_mem_closure_of_lipschitzWith`: pointwise convergence on a subset extends to
-  its closure for an eventually `K`-Lipschitz family.
+  a closure point where the pointwise limit has a within-set limit, for an eventually `K`-Lipschitz
+  family.
 * `TauCeti.tendstoUniformlyOn_of_lipschitzOnWith` and
-  `TauCeti.tendstoUniformlyOn_of_lipschitzWith`: pointwise convergence on a compact set upgrades to
-  uniform convergence on that set for an eventually `K`-Lipschitz family.
+  `TauCeti.tendstoUniformlyOn_of_lipschitzWith`: pointwise convergence on a totally bounded set
+  upgrades to uniform convergence on that set for an eventually `K`-Lipschitz family.
 -/
 
 public section
@@ -169,7 +169,7 @@ theorem HolderOnWith.uniformEquicontinuousOn {ι X Y : Type*} [PseudoEMetricSpac
 
 namespace TauCeti
 
-open scoped NNReal
+open scoped NNReal ENNReal
 
 variable {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
 
@@ -190,27 +190,68 @@ theorem tendsto_of_mem_closure_of_lipschitzWith {l : Filter ι} {F : ι → X �
     heq.tendsto_of_mem_closure hf (fun y hy => (hs y hy).comp tendsto_comap) hx
   rwa [← hmap, tendsto_map'_iff]
 
-/-- If a family `F : ι → X → Y` is eventually `K`-Lipschitz on a compact set `s` along
+/-- If a family `F : ι → X → Y` is eventually `K`-Lipschitz on a totally bounded set `s` along
 `l : Filter ι` and converges pointwise to `f` on `s`, then `F` converges uniformly to `f` on `s`
 along `l`. -/
 theorem tendstoUniformlyOn_of_lipschitzOnWith {l : Filter ι} {F : ι → X → Y} {f : X → Y}
-    {s : Set X} {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzOnWith K (F i) s) (hs : IsCompact s)
+    {s : Set X} {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzOnWith K (F i) s) (hs : TotallyBounded s)
     (hpt : ∀ x ∈ s, Tendsto (F · x) l (𝓝 (f x))) : TendstoUniformlyOn F f l s := by
-  let S : Set ι := {i | LipschitzOnWith K (F i) s}
-  have hmap : (l.comap ((↑) : S → ι)).map ((↑) : S → ι) = l :=
-    map_comap_of_mem (by rw [Subtype.range_coe]; exact hF)
-  have heq : EquicontinuousOn (fun j : S => F j.val) s :=
-    (LipschitzOnWith.uniformEquicontinuousOn (fun j : S => F j.val) K
-      fun j => j.property).equicontinuousOn
-  have hunif : TendstoUniformlyOn (fun j : S => F j.val) f (l.comap (↑)) s :=
-    heq.tendstoUniformlyOn_of_tendsto hs fun x hx => (hpt x hx).comp tendsto_comap
-  rw [← hmap]
-  exact tendstoUniformlyOn_map_iff.mpr hunif
+  rcases eq_or_neBot l with rfl | _
+  · exact fun _ _ => eventually_bot
+  have hf : LipschitzOnWith K f s := fun x hx y hy =>
+    le_of_tendsto ((hpt x hx).edist (hpt y hy)) (hF.mono fun _ hi => hi hx hy)
+  rw [EMetric.tendstoUniformlyOn_iff]
+  intro ε hε
+  let ε' : ℝ≥0∞ := min ε 1
+  have hε' : 0 < ε' := lt_min hε zero_lt_one
+  have hε'ε : ε' ≤ ε := min_le_left _ _
+  have hε'top : ε' ≠ ⊤ := ((min_le_right ε 1).trans_lt ENNReal.one_lt_top).ne
+  have hKtop : (3 : ℝ≥0∞) * ((K : ℝ≥0∞) + 1) ≠ ⊤ :=
+    ENNReal.mul_ne_top (by norm_num)
+      (ENNReal.add_ne_top.mpr ⟨ENNReal.coe_ne_top, ENNReal.one_ne_top⟩)
+  let δ : ℝ≥0∞ := ε' / (3 * ((K : ℝ≥0∞) + 1))
+  have hδ : 0 < δ := ENNReal.div_pos hε'.ne' hKtop
+  obtain ⟨t, hts, htfin, hcov⟩ := EMetric.totallyBounded_iff'.mp hs δ hδ
+  have hKδ : (K : ℝ≥0∞) * δ ≤ ε' / 3 := by
+    dsimp only [δ]
+    rw [ENNReal.div_eq_inv_mul, ENNReal.mul_inv (Or.inl (by norm_num)) (Or.inr (by norm_num))]
+    calc (K : ℝ≥0∞) * (3⁻¹ * ((K : ℝ≥0∞) + 1)⁻¹ * ε')
+        = ((K : ℝ≥0∞) / ((K : ℝ≥0∞) + 1)) * (ε' / 3) := by
+          simp only [ENNReal.div_eq_inv_mul]; ring
+      _ ≤ 1 * (ε' / 3) :=
+          mul_le_mul_left (ENNReal.div_le_of_le_mul (by simp)) _
+      _ = ε' / 3 := one_mul _
+  have hconv : ∀ᶠ i in l, ∀ y ∈ t, edist (f y) (F i y) < ε' / 3 :=
+    (eventually_all_finite htfin).mpr fun y hy =>
+      (EMetric.tendsto_nhds.mp (hpt y (hts hy)) (ε' / 3)
+        (ENNReal.div_pos hε'.ne' (by norm_num))).mono fun _ h => by rwa [edist_comm]
+  filter_upwards [hF, hconv] with i hiF hicov x hx
+  obtain ⟨y, hyt, hxy⟩ := Set.mem_iUnion₂.mp (hcov hx)
+  have hxy' : edist x y ≤ δ := (Metric.mem_eball.mp hxy).le
+  have h1 : edist (f x) (f y) ≤ ε' / 3 :=
+    (hf hx (hts hyt)).trans ((mul_le_mul_right hxy' _).trans hKδ)
+  have h2 : edist (f y) (F i y) < ε' / 3 := hicov y hyt
+  have h3 : edist (F i y) (F i x) ≤ ε' / 3 :=
+    (hiF (hts hyt) hx).trans ((mul_le_mul_right (edist_comm x y ▸ hxy') _).trans hKδ)
+  have htri : edist (f x) (F i x) ≤
+      edist (f x) (f y) + edist (f y) (F i y) + edist (F i y) (F i x) :=
+    edist_triangle4 _ _ _ _
+  have hsum : edist (f x) (f y) + edist (f y) (F i y) + edist (F i y) (F i x) < ε' := by
+    calc edist (f x) (f y) + edist (f y) (F i y) + edist (F i y) (F i x)
+        ≤ ε' / 3 + edist (f y) (F i y) + ε' / 3 := add_le_add (add_le_add h1 le_rfl) h3
+      _ = (ε' / 3 + ε' / 3) + edist (f y) (F i y) := by ac_rfl
+      _ < (ε' / 3 + ε' / 3) + ε' / 3 :=
+        ENNReal.add_lt_add_left (ENNReal.add_ne_top.mpr ⟨ENNReal.div_ne_top hε'top (by norm_num),
+          ENNReal.div_ne_top hε'top (by norm_num)⟩) h2
+      _ = 3 * (ε' / 3) := by ring
+      _ = ε' := ENNReal.mul_div_cancel (by norm_num) (by norm_num)
+  exact (htri.trans_lt hsum).trans_le hε'ε
 
 /-- If a family `F : ι → X → Y` is eventually `K`-Lipschitz along `l : Filter ι` and converges
-pointwise to `f` on a compact set `s`, then `F` converges uniformly to `f` on `s` along `l`. -/
+pointwise to `f` on a totally bounded set `s`, then `F` converges uniformly to `f` on `s` along
+`l`. -/
 theorem tendstoUniformlyOn_of_lipschitzWith {l : Filter ι} {F : ι → X → Y} {f : X → Y}
-    {s : Set X} {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzWith K (F i)) (hs : IsCompact s)
+    {s : Set X} {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzWith K (F i)) (hs : TotallyBounded s)
     (hpt : ∀ x ∈ s, Tendsto (F · x) l (𝓝 (f x))) : TendstoUniformlyOn F f l s :=
   tendstoUniformlyOn_of_lipschitzOnWith (hF.mono fun _ h => h.lipschitzOnWith) hs hpt
 

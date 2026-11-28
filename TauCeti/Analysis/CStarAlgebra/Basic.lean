@@ -45,7 +45,8 @@ bounds `‖star (d i) * d j‖ ≤ η` (`TauCeti.CStarAlgebra.norm_sum_sq_le`).
 * `TauCeti.CStarAlgebra.norm_sum_sq_le`: C⋆-identity bound on the squared norm of a finite sum in a
   C⋆-ring with bounded diagonal norms and off-diagonal products `star (d i) * d j`.
 * `TauCeti.CStarAlgebra.norm_average_sq_le`: C⋆-identity bound on the squared norm of an
-  equal-weight finite average in a C⋆-ring.
+  equal-weight finite average in a C⋆-ring equipped with a bounded real scalar action preserving
+  zero.
 -/
 
 public section
@@ -137,7 +138,8 @@ theorem norm_sum_sq_le {A ι : Type*} [NonUnitalNormedRing A] [StarRing A] [CSta
         rw [Finset.sum_ite_of_true fun _ hx => hx, Finset.sum_const, nsmul_eq_mul]
         ring
 
-/-- C⋆-identity estimate on the squared norm of an equal-weight average in a C⋆-ring: if every
+/-- C⋆-identity estimate on the squared norm of an equal-weight average in a C⋆-ring equipped with
+a bounded real scalar action preserving zero (`SMulZeroClass ℝ A` and `IsBoundedSMul ℝ A`): if every
 term `d i` (`i ∈ s`) has norm at most `C` and every off-diagonal product `star (d i) * d j`
 (`i ≠ j`) has norm at most `η` (`0 ≤ η`), then
 `‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2 ≤ C ^ 2 / s.card + η`. -/
