@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.Holder.Inclusion
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Intrinsic
 public import TauCeti.Analysis.Sobolev.W1p.SupercriticalMultiplication
 public import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
+import TauCeti.Analysis.Normed.Module.DiamFrontier
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Morrey's embedding on bounded Lipschitz domains
@@ -33,6 +36,16 @@ the product `TauCeti.W1p.mulL`), and restriction to `closure Ω` or to `Ω`. The
 unique (`IsOpen.ext_closure_of_ae_eq`): a continuous function on `closure Ω` is determined by its
 values at almost every point of `Ω`, so the maps below do not depend on the extension chosen.
 
+The embedding, its compactness, the continuous representative and its boundary values also hold on
+a bounded Lipschitz domain `Ω` of a nontrivial finite-dimensional real inner product space `F`,
+such as `EuclideanSpace ℝ (Fin n)`, in the sense of the intrinsic predicate
+`Set.IsLipschitzDomain`, for every additive Haar measure `μ` on `F`, with the trace
+`TauCeti.W1p.frontierTraceOfIsLipschitzDomain`. A boundary chart is an affine isometry
+`g : F ≃ᵃⁱ[ℝ] ℝ × E` carrying `Ω` onto a bounded Lipschitz domain `W` of the model space
+(`Set.IsLipschitzDomain.exists_isLipschitzDomainWith_image`); the Hölder representative of
+`u ∘ g⁻¹` on `closure W`, read on `closure Ω` through the isometry `g`, is one of `u`, and
+`W^{1,p}(Ω)` does not depend on the Haar measure (`TauCeti.W1p.addHaarEquivL`).
+
 ## Main declarations
 
 * `TauCeti.W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith`: Morrey's embedding
@@ -45,6 +58,11 @@ values at almost every point of `Ω`, so the maps below do not depend on the ext
   the continuous representative.
 * `TauCeti.W1p.exists_mulL_of_isLipschitzDomainWith`: multiplication on `W^{1,p}(Ω)` as a bounded
   bilinear map.
+* `TauCeti.W1p.exists_morreyEmbeddingL_of_isLipschitzDomain`,
+  `TauCeti.W1p.exists_isCompactOperator_holder_of_isLipschitzDomain`,
+  `TauCeti.W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomain` and
+  `TauCeti.W1p.exists_continuousOn_frontierTraceOfIsLipschitzDomain_ae_eq`: the same on bounded
+  Lipschitz domains of a Euclidean space, for every additive Haar measure.
 
 ## References
 
@@ -61,6 +79,53 @@ open Bornology MeasureTheory Module Set TopologicalSpace
 open scoped ENNReal NNReal
 
 namespace TauCeti
+
+section Representative
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [MeasurableSpace F]
+  [BorelSpace F]
+  {Ω : Opens F} {mu : Measure F} [mu.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)] {γ : ℝ≥0}
+
+/-- A bounded linear map into `C^{0,γ}(closure Ω)` whose values agree almost everywhere on `Ω`
+with those of `W1p.value` gives a compact operator into `C^{0,β}(closure Ω)` for every `β < γ`,
+when `closure Ω` is compact. -/
+private theorem W1p.exists_isCompactOperator_holder_of_ae_eq
+    (hc : IsCompact (closure (Ω : Set F)))
+    {T : W1p mu Ω p →L[ℝ] HolderSpace γ (closure (Ω : Set F)) ℝ}
+    (hT : ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x)
+    {β : ℝ≥0} (hβ : β < γ) :
+    ∃ T : W1p mu Ω p →L[ℝ] HolderSpace β (closure (Ω : Set F)) ℝ,
+      IsCompactOperator T ∧
+        ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
+  have : CompactSpace (closure (Ω : Set F)) := isCompact_iff_compactSpace.1 hc
+  refine ⟨(HolderSpace.inclusionL hβ.le).comp T,
+    (HolderSpace.isCompactOperator_inclusionL hβ).comp_clm T, fun u => ?_⟩
+  filter_upwards [hT u] with x hx hxΩ
+  rw [ContinuousLinearMap.comp_apply, HolderSpace.inclusionL_apply, hx hxΩ]
+
+/-- A bounded linear map into `C^{0,γ}(closure Ω)` whose values agree almost everywhere on `Ω`
+with those of `W1p.value` gives every `u ∈ W^{1,p}(Ω)` a representative continuous on
+`closure Ω`. -/
+private theorem W1p.exists_continuousOn_closure_ae_eq_of_ae_eq
+    {T : W1p mu Ω p →L[ℝ] HolderSpace γ (closure (Ω : Set F)) ℝ}
+    (hT : ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x)
+    (u : W1p mu Ω p) :
+    ∃ f : F → ℝ, ContinuousOn f (closure (Ω : Set F)) ∧
+      W1p.value u =ᵐ[mu.restrict (Ω : Set F)] f := by
+  classical
+  refine ⟨fun x => if hx : x ∈ closure (Ω : Set F) then T u ⟨x, hx⟩ else 0, ?_, ?_⟩
+  · rw [continuousOn_iff_continuous_domRestrict]
+    convert (T u).continuous using 1
+    ext x
+    exact dite_eq_left x.property
+  · refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
+    filter_upwards [hT u] with x hx hxΩ
+    rw [dite_eq_left (subset_closure hxΩ)]
+    exact (hx hxΩ).symm
+
+end Representative
+
+section ModelSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -107,13 +172,8 @@ theorem W1p.exists_isCompactOperator_holder_of_isLipschitzDomainWith
     ∃ T : W1p volume Ω p →L[ℝ] HolderSpace β (closure (Ω : Set (WithLp 2 (ℝ × E)))) ℝ,
       IsCompactOperator T ∧
         ∀ u, ∀ᵐ x ∂volume, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
-  have : CompactSpace (closure (Ω : Set (WithLp 2 (ℝ × E)))) :=
-    isCompact_iff_compactSpace.1 hb.isCompact_closure
   obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith hp hΩ hb
-  refine ⟨(HolderSpace.inclusionL hβ.le).comp T,
-    (HolderSpace.isCompactOperator_inclusionL hβ).comp_clm T, fun u => ?_⟩
-  filter_upwards [hT u] with x hx hxΩ
-  rw [ContinuousLinearMap.comp_apply, HolderSpace.inclusionL_apply, hx hxΩ]
+  exact W1p.exists_isCompactOperator_holder_of_ae_eq hb.isCompact_closure hT hβ
 
 /-- **Continuous representatives up to the boundary.** If `Ω ⊆ ℝ × E` is a bounded Lipschitz
 domain of dimension `n` and `n < p < ∞`, then every `u ∈ W^{1,p}(Ω)` agrees almost everywhere on
@@ -124,18 +184,8 @@ theorem W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω p) :
     ∃ f : WithLp 2 (ℝ × E) → ℝ, ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))) ∧
       W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f := by
-  classical
   obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith hp hΩ hb
-  refine ⟨fun x => if hx : x ∈ closure (Ω : Set (WithLp 2 (ℝ × E))) then T u ⟨x, hx⟩ else 0,
-    ?_, ?_⟩
-  · rw [continuousOn_iff_continuous_domRestrict]
-    convert (T u).continuous using 1
-    ext x
-    exact dite_eq_left x.property
-  · refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hT u] with x hx hxΩ
-    rw [dite_eq_left (subset_closure hxΩ)]
-    exact (hx hxΩ).symm
+  exact W1p.exists_continuousOn_closure_ae_eq_of_ae_eq hT u
 
 /-- **The trace is the boundary value of the continuous representative.** If `Ω ⊆ ℝ × E` is a
 bounded Lipschitz domain of dimension `n` and `n < p < ∞`, then every `u ∈ W^{1,p}(Ω)` agrees
@@ -184,6 +234,124 @@ theorem W1p.exists_mulL_of_isLipschitzDomainWith
     ContinuousLinearMap.bilinearComp_apply]
   rw [W1p.mulL_apply] at h₀ ⊢
   rw [h₀, h₁, ← h₂, ← h₃, ← h₄, ← h₅]
+
+end ModelSpace
+
+/-! ### Bounded Lipschitz domains of a Euclidean space -/
+
+section Intrinsic
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] [Nontrivial F] {Ω : Opens F} {mu : Measure F}
+  [mu.IsAddHaarMeasure] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
+
+/-- Morrey's embedding of `TauCeti.W1p.exists_morreyEmbeddingL_of_isLipschitzDomain`, for Lebesgue
+measure. -/
+private theorem exists_morreyEmbeddingL_volume_of_isLipschitzDomain
+    (hp : (finrank ℝ F : ℝ≥0) < p) (hΩ : (Ω : Set F).IsLipschitzDomain E)
+    (hb : IsBounded (Ω : Set F)) :
+    ∃ T : W1p volume Ω p →L[ℝ] HolderSpace (1 - finrank ℝ F / p) (closure (Ω : Set F)) ℝ,
+      ∀ u, ∀ᵐ x ∂volume, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
+  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | hne
+  · -- A bounded open set with empty frontier is empty.
+    have hΩe := hb.eq_empty_of_frontier_eq_empty hfr
+    exact ⟨0, fun u => Filter.Eventually.of_forall fun x hx =>
+      absurd (SetLike.mem_coe.2 hx) (by simp [hΩe])⟩
+  -- A boundary chart `g` carries `Ω` onto a bounded Lipschitz domain `W` of the model space, and
+  -- the tangential model `E` inherits an inner product from `F`.
+  obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
+  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := g.linearIsometryEquiv
+  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.symmInr
+  have _ : FiniteDimensional ℝ E := e.finiteDimensional_snd
+  let _ : MeasurableSpace E := borel E
+  have _ : BorelSpace E := ⟨rfl⟩
+  let W : Opens (WithLp 2 (ℝ × E)) :=
+    ⟨g '' (Ω : Set F), ((isLipschitzDomainWith_iff _ _).1 hL).1⟩
+  have hWΩ : (W : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' Ω :=
+    g.toHomeomorph.image_eq_preimage_symm _
+  rw [e.toLinearEquiv.finrank_eq] at hp ⊢
+  obtain ⟨M, hM⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith (Ω := W) hp hL
+    (g.lipschitzWith.isBounded_image hb)
+  -- Read the representative of `u ∘ g⁻¹` on `closure W` back on `closure Ω` through `g`.
+  let k : closure (Ω : Set F) → closure (W : Set (WithLp 2 (ℝ × E))) := fun x =>
+    ⟨g x, image_closure_subset_closure_image g.continuous (mem_image_of_mem g x.property)⟩
+  have hk : LipschitzWith 1 k := LipschitzWith.of_dist_le_mul fun x y => by
+    simp [k, Subtype.dist_eq]
+  refine ⟨(HolderSpace.compLipschitzL k hk).comp
+    (M.comp (W1p.compAffineIsometryEquivL g.symm hWΩ)), fun u => ?_⟩
+  have hv := (ae_restrict_iff' W.isOpen.measurableSet).1
+    (W1p.value_compAffineIsometryEquivL_ae g.symm hWΩ u)
+  filter_upwards [g.measurePreserving.quasiMeasurePreserving.ae
+      (hM (W1p.compAffineIsometryEquivL g.symm hWΩ u)),
+    g.measurePreserving.quasiMeasurePreserving.ae hv] with x h₁ h₂ hx
+  have hxW : g x ∈ W := mem_image_of_mem g hx
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    HolderSpace.compLipschitzL_apply, h₁ hxW, h₂ hxW, g.symm_apply_apply]
+
+/-- **Morrey's embedding on bounded Lipschitz domains of a Euclidean space.** Let `Ω` be a bounded
+Lipschitz domain in a nontrivial finite-dimensional real inner product space `F` of dimension `n`,
+such as `EuclideanSpace ℝ (Fin n)`, and let `μ` be an additive Haar measure on `F`. If
+`n < p < ∞`, every `u ∈ W^{1,p}(Ω)` agrees `μ`-almost everywhere on `Ω` with a function on
+`closure Ω` which is Hölder of exponent `1 - n/p`, and this representative depends linearly and
+boundedly on `u`. By `IsOpen.ext_closure_of_ae_eq` the representative is unique. -/
+theorem W1p.exists_morreyEmbeddingL_of_isLipschitzDomain (hp : (finrank ℝ F : ℝ≥0) < p)
+    (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
+    ∃ T : W1p mu Ω p →L[ℝ] HolderSpace (1 - finrank ℝ F / p) (closure (Ω : Set F)) ℝ,
+      ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
+  obtain ⟨T, hT⟩ := exists_morreyEmbeddingL_volume_of_isLipschitzDomain hp hΩ hb
+  refine ⟨T.comp ((W1p.addHaarEquivL mu volume : W1p mu Ω p ≃L[ℝ] W1p volume Ω p) :
+    W1p mu Ω p →L[ℝ] W1p volume Ω p), fun u => ?_⟩
+  -- Both statements hold Lebesgue-almost everywhere, and `μ` is absolutely continuous.
+  have hA := (ae_restrict_iff' Ω.isOpen.measurableSet).1
+    (W1p.value_addHaarEquivL_ae (p := (p : ℝ≥0∞)) mu volume u)
+  refine (Measure.absolutelyContinuous_isAddHaarMeasure mu volume).ae_le ?_
+  filter_upwards [hT (W1p.addHaarEquivL mu volume u), hA] with x h₁ h₂ hx
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, h₁ hx, h₂ hx]
+
+/-- **Hölder compactness on bounded Lipschitz domains of a Euclidean space.** If `Ω` is a bounded
+Lipschitz domain in a nontrivial finite-dimensional real inner product space `F` of dimension `n`
+with an additive Haar measure and `n < p < ∞`, then for every `β < 1 - n/p` the Morrey
+representative gives a compact operator `W^{1,p}(Ω) → C^{0,β}(closure Ω)`. -/
+theorem W1p.exists_isCompactOperator_holder_of_isLipschitzDomain (hp : (finrank ℝ F : ℝ≥0) < p)
+    (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) {β : ℝ≥0}
+    (hβ : β < 1 - finrank ℝ F / p) :
+    ∃ T : W1p mu Ω p →L[ℝ] HolderSpace β (closure (Ω : Set F)) ℝ,
+      IsCompactOperator T ∧
+        ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
+  obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomain (mu := mu) hp hΩ hb
+  exact W1p.exists_isCompactOperator_holder_of_ae_eq hb.isCompact_closure hT hβ
+
+/-- **Continuous representatives up to the boundary of a Euclidean Lipschitz domain.** If `Ω` is a
+bounded Lipschitz domain in a nontrivial finite-dimensional real inner product space of dimension
+`n` with an additive Haar measure `μ` and `n < p < ∞`, then every `u ∈ W^{1,p}(Ω)` agrees
+`μ`-almost everywhere on `Ω` with a function continuous on `closure Ω`. -/
+theorem W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomain
+    (hp : (finrank ℝ F : ℝ≥0) < p) (hΩ : (Ω : Set F).IsLipschitzDomain E)
+    (hb : IsBounded (Ω : Set F)) (u : W1p mu Ω p) :
+    ∃ f : F → ℝ, ContinuousOn f (closure (Ω : Set F)) ∧
+      W1p.value u =ᵐ[mu.restrict (Ω : Set F)] f := by
+  obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomain (mu := mu) hp hΩ hb
+  exact W1p.exists_continuousOn_closure_ae_eq_of_ae_eq hT u
+
+/-- **The trace on a Euclidean Lipschitz domain is the boundary value of the continuous
+representative.** If `Ω` is a bounded Lipschitz domain in a nontrivial finite-dimensional real
+inner product space `F` of dimension `n` with an additive Haar measure `μ` and `n < p < ∞`, then
+every `u ∈ W^{1,p}(Ω)` agrees `μ`-almost everywhere on `Ω` with a function continuous on
+`closure Ω` whose restriction to the frontier is the trace
+`TauCeti.W1p.frontierTraceOfIsLipschitzDomain u`, almost everywhere for surface measure. -/
+theorem W1p.exists_continuousOn_frontierTraceOfIsLipschitzDomain_ae_eq
+    (hp : (finrank ℝ F : ℝ≥0) < p) (hΩ : (Ω : Set F).IsLipschitzDomain E)
+    (hb : IsBounded (Ω : Set F)) (u : W1p mu Ω p) :
+    ∃ f : F → ℝ, ContinuousOn f (closure (Ω : Set F)) ∧
+      W1p.value u =ᵐ[mu.restrict (Ω : Set F)] f ∧
+      W1p.frontierTraceOfIsLipschitzDomain ENNReal.coe_ne_top hΩ hb u
+        =ᵐ[(μHE[finrank ℝ F - 1] : Measure F).restrict (frontier (Ω : Set F))] f := by
+  obtain ⟨f, hf, hu⟩ := W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomain hp hΩ hb u
+  exact ⟨f, hf, hu,
+    W1p.frontierTraceOfIsLipschitzDomain_ae_eq_of_continuousOn ENNReal.coe_ne_top hΩ hb hf hu⟩
+
+end Intrinsic
 
 end TauCeti
 

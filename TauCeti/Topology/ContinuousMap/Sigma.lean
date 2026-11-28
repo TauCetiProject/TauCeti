@@ -23,6 +23,10 @@ a closed subset of `Σ j, Z j` is sent to a locally finite union of closed subse
 local finiteness this fails: the points `1 / (n + 1)` of `ℝ`, one in each summand of
 `Σ n : ℕ, Unit`, have a closed union whose image is not closed.
 
+A map of disjoint unions `Sigma.map f₁ f₂`, injective on the indices, is a closed embedding exactly
+when every `f₂ i` is one (`Topology.isClosedEmbedding_sigmaMap`), as Mathlib's
+`Topology.isEmbedding_sigmaMap` says for embeddings.
+
 ## Main definitions
 
 * `ContinuousMap.sigmaRetraction i z`: the retraction of `Σ j, Z j` onto `Z i` collapsing the
@@ -32,6 +36,8 @@ local finiteness this fails: the points `1 / (n + 1)` of `ℝ`, one in each summ
 
 * `ContinuousMap.isClosedEmbedding_sigma`: closed embeddings with pairwise disjoint, locally
   finite ranges glue to a closed embedding of the disjoint union.
+* `Topology.isClosedEmbedding_sigmaMap`: a map of disjoint unions, injective on the indices, is a
+  closed embedding exactly when it is one on every summand.
 -/
 
 public section
@@ -86,3 +92,29 @@ theorem isClosedEmbedding_sigma {A : Type*} [TopologicalSpace A] {f : ∀ i, C(Z
       (hf i).isClosedMap _ (hs.preimage continuous_sigmaMk)
 
 end ContinuousMap
+
+open Function Set in
+/-- **A map of disjoint unions is a closed embedding when it is one on every summand.** For an
+injective map `f₁` of index sets, `Sigma.map f₁ f₂` is a closed embedding exactly when every `f₂ i`
+is a closed embedding. -/
+theorem Topology.isClosedEmbedding_sigmaMap {ι κ : Type*} {σ : ι → Type*} {τ : κ → Type*}
+    [∀ i, TopologicalSpace (σ i)] [∀ k, TopologicalSpace (τ k)] {f₁ : ι → κ}
+    {f₂ : ∀ i, σ i → τ (f₁ i)} (h : Injective f₁) :
+    IsClosedEmbedding (Sigma.map f₁ f₂) ↔ ∀ i, IsClosedEmbedding (f₂ i) := by
+  refine ⟨fun hf i ↦ ?_, fun hf ↦ ⟨(isEmbedding_sigmaMap h).2 fun i ↦ (hf i).isEmbedding, ?_⟩⟩
+  · exact IsClosedEmbedding.sigmaMk.of_comp_iff.1 (hf.comp IsClosedEmbedding.sigmaMk)
+  · -- The range is the union of the ranges of the summands, which lie in pairwise disjoint open
+    -- summands of the target.
+    have hr : range (Sigma.map f₁ f₂) = ⋃ i, Sigma.mk (f₁ i) '' range (f₂ i) := by
+      ext ⟨k, y⟩
+      simp [Sigma.map, Sigma.exists]
+    rw [hr]
+    refine LocallyFinite.isClosed_iUnion ?_ fun i ↦ isClosedMap_sigmaMk _ (hf i).isClosed_range
+    rintro ⟨k, y⟩
+    refine ⟨range (Sigma.mk k), isOpen_range_sigmaMk.mem_nhds ⟨y, rfl⟩, ?_⟩
+    -- Only a summand `i` with `f₁ i = k` meets the summand `k` of the target.
+    have hk (i : ι) (hi : (Sigma.mk (f₁ i) '' range (f₂ i) ∩ range (Sigma.mk k)).Nonempty) :
+        f₁ i = k := by
+      obtain ⟨_, ⟨_, -, rfl⟩, ⟨y, hy⟩⟩ := hi
+      exact (congrArg Sigma.fst hy).symm
+    exact Set.Subsingleton.finite fun i hi i' hi' ↦ h ((hk i hi).trans (hk i' hi').symm)

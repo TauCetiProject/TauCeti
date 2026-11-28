@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Quasicategory.EquivalenceCartesian
 public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Extension
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.UnionProd
-public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!

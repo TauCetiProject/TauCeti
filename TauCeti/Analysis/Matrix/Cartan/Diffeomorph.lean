@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Cartan.Closed
+public import TauCeti.Analysis.Matrix.Cartan.Closed.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Algebra.Star.Unitary

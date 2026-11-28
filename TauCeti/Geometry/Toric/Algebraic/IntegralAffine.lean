@@ -412,6 +412,12 @@ theorem eq_of_eqOn_open {e f : IntegralAffineEquiv h h'} {s : Set V}
 
 open Set Filter Topology
 
+/-- Two integral affine equivalences with the same germ at a point are equal. -/
+theorem eq_of_eventuallyEq {e f : IntegralAffineEquiv h h'} {x : V}
+    (he : (e : V → V') =ᶠ[𝓝 x] f) : e = f := by
+  obtain ⟨s, hs, hso, hxs⟩ := mem_nhds_iff.mp he
+  exact eq_of_eqOn_open hso ⟨x, hxs⟩ hs
+
 /-- On a nonempty connected open set, a map that near each point agrees with one global integral
 affine equivalence agrees with a unique global integral affine equivalence on the whole set. -/
 theorem existsUnique_extension {f : V → V'} {s : Set V}

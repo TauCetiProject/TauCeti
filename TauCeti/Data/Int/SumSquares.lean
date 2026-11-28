@@ -17,7 +17,8 @@ unit `±eᵢ`. The classification works over any finite index type and separates
 fact from its applications to lattice roots.
 
 Four integers whose squares sum to a multiple of `4` all have the same parity, because
-`X ^ 2 % 4 = X % 2`.
+`X ^ 2 % 4 = X % 2`. Two integers whose squares sum to `4 n` are both even, so halving them
+writes `n` as a sum of two squares.
 -/
 
 public section
@@ -54,5 +55,17 @@ theorem exists_eq_add_two_mul_of_four_dvd_sq_add_sq_add_sq_add_sq {A B C D : ℤ
   have := Int.sq_emod_four C
   have := Int.sq_emod_four D
   exact ⟨(B - A) / 2, (C - A) / 2, (D - A) / 2, by omega, by omega, by omega⟩
+
+/-- If the squares of two integers `a` and `b` sum to `4 n`, then `a` and `b` are even and
+`(a / 2)² + (b / 2)² = n`. -/
+theorem div_two_sq_add_div_two_sq_of_sq_add_sq_eq_four_mul {a b n : ℤ}
+    (h : a ^ 2 + b ^ 2 = 4 * n) : (a / 2) ^ 2 + (b / 2) ^ 2 = n := by
+  have := Int.sq_emod_four a
+  have := Int.sq_emod_four b
+  obtain ⟨k, rfl⟩ : 2 ∣ a := by omega
+  obtain ⟨m, rfl⟩ : 2 ∣ b := by omega
+  rw [Int.mul_ediv_cancel_left _ two_ne_zero, Int.mul_ediv_cancel_left _ two_ne_zero]
+  rw [mul_pow, mul_pow, show (2 : ℤ) ^ 2 = 4 from rfl] at h
+  omega
 
 end TauCeti

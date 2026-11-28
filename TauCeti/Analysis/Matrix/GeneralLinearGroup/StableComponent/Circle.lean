@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Winding.Units
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent.Basic
 import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Topology.Algebra.Group.Connected
 

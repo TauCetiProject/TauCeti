@@ -44,6 +44,8 @@ supported exactly at `x` (`TauCeti.BundleTest.dsupport_delta`).
 * `TauCeti.BundleTest.dsupport_eq_empty_iff`, `TauCeti.BundleTest.dsupport_add_subset`,
   `TauCeti.BundleTest.dsupport_smul_subset`, `TauCeti.BundleTest.dsupport_smulLeftDualCLM_subset`,
   `TauCeti.BundleTest.dsupport_delta_subset` and `TauCeti.BundleTest.dsupport_delta`.
+* `TauCeti.BundleTest.exists_eventually_eq_one_smulLeftDualCLM_eq_zero`: a smooth cutoff equal to
+  one near a compact set off the support of a functional kills the functional.
 
 ## References
 
@@ -180,13 +182,9 @@ theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
     fun x hx ↦ (hU x (hs hx)).1.mem_nhds (hU x (hs hx)).2.1
   let ρ := f.toSmoothPartitionOfUnity
   -- `s` is the sum of its products with the partition of unity.
-  have hsum : s = ∑ i, smulLeftCLM (ρ i) s := by
-    ext x
-    rw [sum_apply]
-    by_cases hx : x ∈ closure {x | s x ≠ 0}
-    · simp_rw [smulLeftCLM_apply, ← Finset.sum_smul]
-      rw [← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx, one_smul]
-    · simp [Bundle.apply_eq_zero_of_notMem_closure hx]
+  have hsum : s = ∑ i, smulLeftCLM (ρ i) s :=
+    (sum_smulLeftCLM_eq_self _ (s := s) fun x hx ↦ by
+      rw [← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx]).symm
   rw [hsum, map_sum]
   refine Finset.sum_eq_zero fun i _ ↦ (hU _ (hs (f.c_mem' i))).2.2 _ ?_
   exact (tsupport_smulLeftCLM_subset (ρ i) s).trans
@@ -246,6 +244,16 @@ theorem dsupport_smulLeftDualCLM_subset (ρ : C^∞⟮I, M; ℝ⟯) (T : BundleT
     by_cases hy : y ∈ tsupport ρ
     · simp [Bundle.apply_eq_zero_of_notMem_closure fun h' ↦ hs h' hy]
     · simp [image_eq_zero_of_notMem_tsupport hy]
+
+/-- **A cutoff killing a functional.** For a compact set `L` off the support of `T`, there is a
+smooth function `ρ` equal to one near `L` whose product `ρ T` with `T` vanishes. -/
+theorem exists_eventually_eq_one_smulLeftDualCLM_eq_zero (T : BundleTest I F V →L_c[ℝ] W)
+    {L : Set M} (hL : IsCompact L) (hLT : L ⊆ (dsupport T)ᶜ) :
+    ∃ ρ : C^∞⟮I, M; ℝ⟯, (∀ᶠ x in 𝓝ˢ L, ρ x = 1) ∧ smulLeftDualCLM ρ T = 0 := by
+  obtain ⟨ρ, hρ, hρ1, -, hρT, -⟩ :=
+    hL.exists_contMDiff_one_nhds_tsupport_subset I (isClosed_dsupport T).isOpen_compl hLT
+  refine ⟨⟨ρ, hρ⟩, hρ1, DFunLike.coe_injective <| (dsupport_eq_empty_iff _).1 ?_⟩
+  exact subset_empty_iff.1 ((dsupport_smulLeftDualCLM_subset _ T).trans fun x hx ↦ hρT hx.2 hx.1)
 
 omit [FiniteDimensional ℝ E] [IsTopologicalAddGroup W] [ContinuousConstSMul ℝ W] in
 /-- A point mass `δ_x ℓ` is supported in `{x}`. -/

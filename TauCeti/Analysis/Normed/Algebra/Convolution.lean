@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Finite.Dual
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Ultra
 public import TauCeti.Algebra.Coalgebra.Convolution.Scalar
+public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 
 /-!
 # Sup norms on convolution algebras
@@ -15,7 +16,8 @@ public import TauCeti.Algebra.Coalgebra.Convolution.Scalar
 The dual of a finite module over a ring mapping into the unit ball of an ultrametric
 field carries the sup norm `LinearMap.supNorm`. Exterior products have exactly the
 product norm. Convolution is submultiplicative, since it is an exterior product
-precomposed with comultiplication; its unit has norm at most one.
+precomposed with comultiplication; its unit has norm at most one. The convolution sup norm
+is also bundled as the ultrametric ring seminorm `WithConv.supNormRingSeminorm`.
 
 For a bialgebra, transposing multiplication maps its convolution algebra into that of its
 tensor square without increasing the sup norm. For coalgebras `M` and `N`, the counit maps
@@ -113,6 +115,33 @@ theorem supNorm_convOne_le_one [CoalgebraStruct R M]
 end WithConv
 
 namespace WithConv
+
+section Seminorm
+
+variable {R C M : Type*} [CommRing R] [NormedField C] [Algebra R C]
+  [AddCommGroup M] [Module R M] [Coalgebra R M] [Module.Finite R M]
+
+/-- The sup norm on the finite convolution algebra, bundled as a ring seminorm. -/
+noncomputable def supNormRingSeminorm (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
+    RingSeminorm (WithConv (M →ₗ[R] C)) where
+  toFun f := f.ofConv.supNorm
+  map_zero' := LinearMap.supNorm_zero
+  add_le' _ _ := (LinearMap.supNorm_add_le_max _ _ hR).trans
+    (max_le_add_of_nonneg (LinearMap.supNorm_nonneg _) (LinearMap.supNorm_nonneg _))
+  neg' f := LinearMap.supNorm_neg f.ofConv
+  mul_le' f g := supNorm_convMul_le f g hR
+
+/-- The bundled convolution seminorm is the sup norm of the underlying functional. -/
+@[simp]
+theorem supNormRingSeminorm_apply (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1)
+    (f : WithConv (M →ₗ[R] C)) : supNormRingSeminorm (M := M) hR f = f.ofConv.supNorm := (rfl)
+
+/-- The convolution sup seminorm is ultrametric. -/
+theorem isNonarchimedean_supNormRingSeminorm (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
+    IsNonarchimedean (supNormRingSeminorm (M := M) hR) :=
+  fun f g ↦ LinearMap.supNorm_add_le_max f.ofConv g.ofConv hR
+
+end Seminorm
 
 variable {R C A : Type*} [CommSemiring R] [NormedField C] [Algebra R C]
   [Semiring A] [_root_.Bialgebra R A] [Module.Finite R A]
