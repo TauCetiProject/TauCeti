@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import Mathlib.Topology.Algebra.LinearTopology
+public import Mathlib.Algebra.Ring.Action.Invariant
+public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import TauCeti.Topology.Algebra.Valued.NormedValued
@@ -29,7 +31,9 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 
 A ring homomorphism `φ : K → L` of nonarchimedean fields with `‖φ x‖ ≤ ‖x‖` maps `𝒪[K]` into
 `𝒪[L]`, and the restriction is local, so it induces a homomorphism of residue fields. Such maps
-are the coefficient maps along which reductions modulo the maximal ideal are functorial.
+are the coefficient maps along which reductions modulo the maximal ideal are functorial. In the
+same way an action of a monoid on `K` by isometric ring endomorphisms, such as that of
+`Gal(PadicAlgCl p / ℚ_p)` on `ℂ_p`, restricts to an action on `𝒪[K]`.
 
 ## Main results
 
@@ -46,6 +50,8 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   of norm at most that of one of its elements.
 * `Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal`: every `𝒪[K]`-linear map
   `𝓂[K] → K` is multiplication by an element of `K`.
+* `Valued.integer.isInvariantSubring`: a monoid acting on `K` by isometric ring endomorphisms acts
+  on `𝒪[K]`.
 * `RingHom.integerRestrict`: a norm-nonincreasing homomorphism of nonarchimedean fields restricts
   to a local homomorphism `𝒪[K] →+* 𝒪[L]` of valuation rings
   (`RingHom.isLocalHom_integerRestrict`), hence induces a map of residue fields.
@@ -240,6 +246,23 @@ instance RingHom.isLocalHom_integerRestrict : IsLocalHom (φ.integerRestrict hφ
     exact le_antisymm (Valued.integer.norm_le_one x) (hx.symm.le.trans (hφ x))
 
 end IntegerRestrict
+
+section Action
+
+variable {K G : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Monoid G]
+  [MulSemiringAction G K] [IsIsometricSMul G K]
+
+/-- A monoid acting on a nonarchimedean field `K` by isometric ring endomorphisms preserves the
+valuation ring `𝒪[K]`, so it acts on `𝒪[K]` by ring endomorphisms
+(`IsInvariantSubring.toMulSemiringAction`), compatibly with the inclusion `𝒪[K] → K`. -/
+instance Valued.integer.isInvariantSubring : IsInvariantSubring G (Valued.integer K) where
+  smul_mem g x hx := by
+    rw [Valued.integer.mem_iff] at hx ⊢
+    have h := dist_smul g x 0
+    rw [smul_zero, dist_zero_right, dist_zero_right] at h
+    exact h.le.trans hx
+
+end Action
 
 section DenselyNormed
 

@@ -33,12 +33,17 @@ map sends `τ` to `ζ - 1`, where `ζ` is the sharp of `ε^(1/p)`; this is nonze
 * `TauCeti.Perfectoid.mu_eq_xi_mul_frobeniusEquiv_symm`: `μ = ξ * φ^(-1)(μ)`.
 * `TauCeti.Perfectoid.iterate_frobeniusEquiv_mu`: `φ^j(μ(ε)) = μ(ε ^ p ^ j)`.
 * `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(xiTilde(ε)) = xiTilde(ε ^ p ^ j)`.
+* `TauCeti.Perfectoid.frobeniusEquiv_symm_mu`: `φ^(-1)(μ(ε)) = μ(ε ^ (1 / p))`.
 * `TauCeti.Perfectoid.coeff_zero_mu`: the zeroth Witt coordinate of `μ` is `ε - 1`.
 * `TauCeti.Perfectoid.mu_ne_zero`: for `ε ≠ 1`, `μ ≠ 0`.
 * `TauCeti.Perfectoid.not_natCast_dvd_mu`,
   `TauCeti.Perfectoid.not_natCast_dvd_frobeniusEquiv_symm_mu`: for `ε ≠ 1`, `p` divides neither
   `μ` nor `φ^(-1)(μ)`.
 * `TauCeti.Perfectoid.map_xi`: base change of `ξ` between perfect rings.
+* `PreTilt.isPrimitiveRoot_untilt_iterate_frobeniusEquiv_symm`: if the sharp of `ε ^ (1 / p)` is a
+  primitive `p`-th root of unity, the sharp of `ε ^ (1 / p ^ n)` is a primitive `p ^ n`-th root of
+  unity.
+* `PreTilt.fontaineTheta_iterate_frobeniusEquiv_teichmuller`: `θ(φ^j([y])) = (y♯) ^ p ^ j`.
 * `PreTilt.fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero`,
   `PreTilt.fontaineTheta_iterate_frobeniusEquiv_succ_xi`: values of `θ ∘ φ^j` on `μ` and `ξ`.
 * `PreTilt.fontaineTheta_frobeniusEquiv_symm_mu_ne_zero`: `θ(φ^(-1)(μ)) ≠ 0` when the sharp `ζ`
@@ -141,6 +146,12 @@ theorem iterate_frobeniusEquiv_xiTilde (ε : S) (j : ℕ) :
         frobenius_teichmuller]
     rw [Function.iterate_succ_apply', ih, h, ← pow_mul, ← pow_succ]
 
+/-- The inverse of Frobenius on `μ` replaces `ε` by `ε ^ (1 / p)`: it sends `μ(ε)` to the period
+`μ(ε ^ (1 / p)) = [ε ^ (1 / p)] - 1`. -/
+theorem frobeniusEquiv_symm_mu (ε : S) :
+    (frobeniusEquiv p S).symm (mu p ε) = mu p ((_root_.frobeniusEquiv S p).symm ε) := by
+  rw [mu_eq, mu_eq, map_sub, frobeniusEquiv_symm_teichmuller, map_one]
+
 omit [CharP S p] [PerfectRing S p] in
 /-- The zeroth Witt coordinate of `μ = [ε] - 1` is `ε - 1`. -/
 @[simp]
@@ -242,6 +253,24 @@ theorem ne_one_of_isPrimitiveRoot (ε : PreTilt A p)
   rintro rfl
   exact hε.ne_one (Fact.out : p.Prime).one_lt (by rw [map_one, map_one])
 
+/-- If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, then the sharp of
+`ε ^ (1 / p ^ n)` is a primitive `p ^ n`-th root of unity for every `n`. -/
+theorem isPrimitiveRoot_untilt_iterate_frobeniusEquiv_symm (ε : PreTilt A p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) (n : ℕ) :
+    IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm^[n] ε)) (p ^ n) := by
+  cases n with
+  | zero => simpa using ε.untilt_eq_one_of_isPrimitiveRoot hε
+  | succ n =>
+    -- the `p ^ n`-th power of this sharp is the sharp of `ε ^ (1 / p)`, which is not one, and its
+    -- `p ^ (n + 1)`-th power is `ε♯ = 1`
+    rw [IsPrimitiveRoot.iff_orderOf]
+    refine orderOf_eq_prime_pow ?_ ?_
+    · rw [Function.iterate_succ_apply, untilt_iterate_frobeniusEquiv_symm_pow]
+      exact hε.ne_one (Fact.out : p.Prime).one_lt
+    · rw [untilt_iterate_frobeniusEquiv_symm_pow, ε.untilt_eq_one_of_isPrimitiveRoot hε]
+
 /-- A root system with sharp one gives `θ(μ) = 0`. -/
 @[simp high]
 theorem fontaineTheta_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1) :
@@ -274,6 +303,19 @@ theorem fontaineTheta_frobeniusEquiv_symm_mu_ne_zero (ε : PreTilt A p)
     (hε : PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε) ≠ 1) :
     fontaineTheta A p ((frobeniusEquiv p (PreTilt A p)).symm (mu p ε)) ≠ 0 := by
   rwa [← fontaineThetaShifted_apply, fontaineThetaShifted_mu, sub_ne_zero]
+
+/-- `θ ∘ φ ^ j` sends the Teichmüller representative `[y]` to `(y♯) ^ (p ^ j)`. -/
+theorem fontaineTheta_iterate_frobeniusEquiv_teichmuller (y : PreTilt A p) (j : ℕ) :
+    fontaineTheta A p ((frobeniusEquiv p (PreTilt A p))^[j] (teichmuller p y)) =
+      y.untilt ^ p ^ j := by
+  have h : (frobeniusEquiv p (PreTilt A p))^[j] (teichmuller p y) =
+      teichmuller p (y ^ p ^ j) := by
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      rw [Function.iterate_succ_apply', ih, WittVector.frobeniusEquiv_apply, frobenius_teichmuller,
+        ← map_pow, ← pow_mul, ← pow_succ]
+  rw [h, fontaineTheta_teichmuller, map_pow]
 
 /-- If `ε♯ = 1`, then Fontaine's map kills every Frobenius iterate of `μ`. -/
 theorem fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1)
