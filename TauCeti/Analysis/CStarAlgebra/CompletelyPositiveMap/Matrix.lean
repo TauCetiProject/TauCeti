@@ -88,9 +88,8 @@ theorem exists_matrix_approximant_with_pos_size {k : ℕ}
         CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b)) ∧
       ∀ a b, ‖ψ (a * b) - ψ a * ψ b‖ = ‖φ (a * b) - φ a * φ b‖ := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · have hzero (m : CStarMatrix (Fin 0) (Fin 0) ℂ) : m = 0 := by
-      ext i
-      exact Fin.elim0 i
+  · have hzero (m : CStarMatrix (Fin 0) (Fin 0) ℂ) : m = 0 :=
+      Subsingleton.elim (α := Matrix (Fin 0) (Fin 0) ℂ) _ _
     exact ⟨1, 0, one_pos, fun a => by rw [hzero (φ a)]; simp,
       fun a => by rw [hzero (φ a)]; simp, fun a b => by simp [hzero (φ (a * b) - φ a * φ b)],
       fun a b => by simp [hzero (φ (a * b) - φ a * φ b)]⟩

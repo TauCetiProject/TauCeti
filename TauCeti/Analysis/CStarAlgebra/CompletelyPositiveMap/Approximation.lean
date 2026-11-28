@@ -40,15 +40,15 @@ theorem approxBy_iff {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
   Iff.rfl
 
 /-- An approximant for `(F', ε')` is one for every `F ⊆ F'` and `ε' ≤ ε`, as soon as the recovery
-clause is antitone in the finite set and monotone in the error. -/
+clause passes from this larger set and smaller error to the requested pair. -/
 theorem ApproxBy.mono {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
     {R : Finset A → ℝ → ∀ k : ℕ, (A →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop}
     {F F' : Finset A} {ε ε' : ℝ} (h : ApproxBy d R F' ε')
-    (hR : ∀ ⦃F F' : Finset A⦄ ⦃ε ε' : ℝ⦄ ⦃k : ℕ⦄ ⦃φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ⦄,
-      F ⊆ F' → ε' ≤ ε → R F' ε' k φ → R F ε k φ)
+    (hR : ∀ ⦃k : ℕ⦄ ⦃φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ⦄,
+      R F' ε' k φ → R F ε k φ)
     (hF : F ⊆ F') (hε : ε' ≤ ε) : ApproxBy d R F ε := by
   obtain ⟨k, φ, hφ, hmul, hrec⟩ := h
-  exact ⟨k, φ, hφ, fun a ha b hb => (hmul a (hF ha) b (hF hb)).trans_le hε, hR hF hε hrec⟩
+  exact ⟨k, φ, hφ, fun a ha b hb => (hmul a (hF ha) b (hF hb)).trans_le hε, hR hrec⟩
 
 /-- Transport an approximant from the image of a finite test set when the new witness is
 contractive, satisfies the new recovery clause, and has no larger defect on corresponding pairs. -/
@@ -62,13 +62,13 @@ theorem ApproxBy.transport {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B
       (∀ b, ‖φ b‖ ≤ ‖b‖) → RB (S.image f) δ k φ →
       ∃ (l : ℕ) (ψ : A →CP CStarMatrix (Fin l) (Fin l) ℂ),
         (∀ a, ‖ψ a‖ ≤ ‖a‖) ∧
-        (∀ a b, d l (ψ (a * b) - ψ a * ψ b) ≤
+        (∀ a ∈ S, ∀ b ∈ S, d l (ψ (a * b) - ψ a * ψ b) ≤
           d k (φ (f a * f b) - φ (f a) * φ (f b))) ∧
         RA S ε l ψ)
     (h : ApproxBy d RB (S.image f) δ) : ApproxBy d RA S ε := by
   obtain ⟨k, φ, hφ, hmul, hrec⟩ := h
   obtain ⟨l, ψ, hψ, hdefect, hrec'⟩ := transfer k φ hφ hrec
-  refine ⟨l, ψ, hψ, fun a ha b hb => (hdefect a b).trans_lt ?_, hrec'⟩
+  refine ⟨l, ψ, hψ, fun a ha b hb => (hdefect a ha b hb).trans_lt ?_, hrec'⟩
   exact (hmul _ (Finset.mem_image_of_mem f ha) _ (Finset.mem_image_of_mem f hb)).trans_le hδε
 
 /-- Composing an approximant `φ` for `(S.image f, ε)` with a star homomorphism `f : A → B` gives an
@@ -84,7 +84,7 @@ theorem ApproxBy.comp {B H : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B]
       RB (S.image f) ε k φ → RA S ε k (φ.comp (f : A →CP B))) : ApproxBy d RA S ε := by
   refine h.transport f le_rfl fun k φ hφ hrec => ⟨k, φ.comp (f : A →CP B),
     fun a => by simpa using (hφ (f a)).trans (NonUnitalStarAlgHom.norm_apply_le f a),
-    fun a b => by simp,
+    fun a _ b _ => by simp,
     hR hrec⟩
 
 /-- On `M_k` the identity map is an exact approximant: it is a contraction, its multiplicativity
@@ -109,6 +109,6 @@ theorem forall_approxBy_iff_exists_superset
         ApproxBy d R F' ε' :=
   ⟨fun h F ε hε => ⟨F, subset_rfl, ε, le_rfl, h F ε hε⟩, fun h F ε hε => by
     obtain ⟨F', hF, ε', hε', h'⟩ := h F ε hε
-    exact h'.mono hR hF hε'⟩
+    exact h'.mono (fun {_ _} hrec => hR hF hε' hrec) hF hε'⟩
 
 end TauCeti

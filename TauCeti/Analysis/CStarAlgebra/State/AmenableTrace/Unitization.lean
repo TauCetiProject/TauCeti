@@ -30,7 +30,7 @@ into `M_1`.
 
 public section
 
-open TauCeti (ApproxBy RecoverOn RecoverUniform)
+open TauCeti (ApproxBy)
 open scoped CStarAlgebra ComplexOrder
 
 namespace PositiveContinuousLinearMap
@@ -78,7 +78,7 @@ private theorem approxBy_unitization {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin 
     (h : ApproxBy d RA (F.image (fun x : A⁺¹ => x.snd)) δ) : ApproxBy d RB F ε := by
   refine h.transport (fun x : A⁺¹ => x.snd) hδε fun k φ hφ hrec => ?_
   obtain ⟨l, ψ, hψ, htwo, hnorm, htrace⟩ := exists_matrixUnitization φ hφ hτ
-  exact ⟨l, ψ, hψ, fun x y => (hd _ _ (htwo x y) (hnorm x y)).le, hR φ ψ htrace hrec⟩
+  exact ⟨l, ψ, hψ, fun x _ y _ => (hd _ _ (htwo x y) (hnorm x y)).le, hR φ ψ htrace hrec⟩
 
 private theorem approxBy_unitization_recoverOn
     {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
@@ -91,7 +91,7 @@ private theorem approxBy_unitization_recoverOn
     (h : ApproxBy d (RecoverOn τ) (F.image (fun x : A⁺¹ => x.snd)) ε) :
     ApproxBy d (RecoverOn τ.unitization) F ε := by
   refine approxBy_unitization hd hτ le_rfl (fun φ ψ htrace hrec => ?_) h
-  rw [TauCeti.recoverOn_iff] at hrec ⊢
+  rw [recoverOn_iff] at hrec ⊢
   intro x hx
   rw [htrace]
   exact hrec x.snd (Finset.mem_image_of_mem _ hx)
@@ -138,7 +138,7 @@ theorem isUniformAmenableTrace_unitization_iff (hτ : ‖(τ : A →L[ℂ] ℂ)�
       (RA := RecoverUniform τ) (RB := RecoverUniform τ.unitization)
       (fun _ _ htwo _ => htwo) hτ (by linarith) (fun φ ψ htrace hrec => ?_)
       (h (F.image (fun x : A⁺¹ => x.snd)) (ε / 2) (by positivity))
-    rw [TauCeti.recoverUniform_iff] at hrec ⊢
+    rw [recoverUniform_iff] at hrec ⊢
     intro x
     rw [htrace]
     refine (hrec x.snd).trans ?_

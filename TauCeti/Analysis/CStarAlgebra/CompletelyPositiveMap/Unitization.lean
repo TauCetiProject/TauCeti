@@ -54,6 +54,8 @@ continuous `2`-positive map is the limit of `‖φ e‖` along any increasing ap
   preserves identities and commutes with composition.
 * `CompletelyPositiveMap.unitalExtension`: the unital completely positive extension
   `A⁺¹ →CP B` when the target is already unital.
+* `CompletelyPositiveMap.unitalExtension_unique`: this is the unique unital completely positive
+  map agreeing with the original map on the embedded algebra.
 
 ## References
 
@@ -268,6 +270,22 @@ theorem unitalExtension_apply_inr (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ 
 theorem unitalExtension_apply_one (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) :
     φ.unitalExtension hφ 1 = 1 := by
   simp
+
+/-- A unital completely positive map agreeing with `φ` on the embedded algebra is its unital
+extension. -/
+theorem unitalExtension_unique (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
+    {ψ : A⁺¹ →CP B} (hψ : ψ 1 = 1) (hφψ : ∀ a : A, ψ (a : A⁺¹) = φ a) :
+    ψ = φ.unitalExtension hφ := by
+  apply toLinearMap_injective
+  apply Unitization.linearMap_ext
+  · intro c
+    change ψ (Unitization.inl c) = φ.unitalExtension hφ (Unitization.inl c)
+    have hc : Unitization.inl c = c • (1 : A⁺¹) := by
+      simp [← Unitization.inl_one, ← Unitization.inl_smul]
+    rw [hc, map_smul, map_smul, hψ, unitalExtension_apply_one]
+  · intro a
+    change ψ (a : A⁺¹) = φ.unitalExtension hφ (a : A⁺¹)
+    rw [unitalExtension_apply_inr, hφψ]
 
 /-- The extension is contractive for the unitization norm. -/
 theorem norm_unitalExtension_apply_le (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
