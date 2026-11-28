@@ -19,7 +19,8 @@ satisfies `P.relative F` once every base change `hf.snd g` along `g : F.obj a �
 This file weakens the hypothesis when `P` descends along `Q`: it suffices that each such base
 change satisfies `P` after a further base change along a morphism satisfying `Q`. It also shows
 that a relatively representable monomorphism is relatively a monomorphism, computes the base
-changes of a relatively representable diagonal `X ⟶ X ⨯ X`, and shows that the kernel pair
+changes of a relatively representable diagonal `X ⟶ X ⨯ X`, deduces that the relative diagonals
+`X ⟶ X ×_Y X` are then relatively representable, and shows that the kernel pair
 `U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y` is an internal equivalence relation on
 `U`, the diagonal when `f` is a monomorphism. Finally, relative representability is unchanged
 when the target is replaced through an equivalence `e : D ≌ D'` and `F` by a functor `F'` with
@@ -36,6 +37,8 @@ when the target is replaced through an equivalence `e : D ≌ D'` and `F` by a f
   relatively representable, `b : F.obj V ⟶ X`, and `G : F.obj T ⟶ X ⨯ X` with components
   `F.map u ≫ a` and `F.map v ≫ b`, the base change of the diagonal of `X` along `G` is the base
   change of `(fst, snd) : U ×_X V ⟶ U ⨯ V` along `(u, v) : T ⟶ U ⨯ V`.
+* `CategoryTheory.Functor.relativelyRepresentable.pullback_diagonal`: if the diagonal of `X` is
+  relatively representable, so is the relative diagonal `X ⟶ X ×_Y X` of every `g : X ⟶ Y`.
 * `CategoryTheory.Functor.relativelyRepresentable.ofPairHom_iff`: for `f : F.obj U ⟶ Y`
   relatively representable, the kernel pair `U ×_Y U` relates `u` to `v` exactly when
   `F.map u ≫ f = F.map v ≫ f`.
@@ -109,6 +112,15 @@ theorem map_diag_snd_comp_eq (hu : G ≫ prod.fst = F.map u ≫ a)
   simp only [Category.assoc, Limits.diag, prod.lift_fst, prod.lift_snd, Category.comp_id, hu,
     hv] at e₁ e₂
   simpa using e₁.symm.trans e₂
+
+include hX in
+/-- If the diagonal `X ⟶ X ⨯ X` is relatively representable, so is the relative diagonal
+`X ⟶ X ×_Y X` of every morphism `g : X ⟶ Y`: it is the base change of the diagonal of `X` along
+the monomorphism `X ×_Y X ⟶ X ⨯ X`. -/
+theorem pullback_diagonal {Y : D} (g : X ⟶ Y) [HasPullback g g] :
+    F.relativelyRepresentable (pullback.diagonal g) :=
+  MorphismProperty.of_isPullback (IsPullback.of_horiz_isIso_mono (fst := 𝟙 X)
+    (g := prod.lift (pullback.fst g g) (pullback.snd g g)) ⟨by ext <;> simp⟩) hX
 
 /-- Let `a : F.obj U ⟶ X` be relatively representable, `b : F.obj V ⟶ X`, and let
 `G : F.obj T ⟶ X ⨯ X` have components `F.map u ≫ a` and `F.map v ≫ b`. Then the base change of the

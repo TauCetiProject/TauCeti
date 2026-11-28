@@ -17,9 +17,11 @@ spaces. The functor `AlgSpace.ofScheme` embeds schemes fully faithfully, and mor
 an embedded scheme to a space are identified with its sections by `AlgSpace.homFromSchemeEquiv`.
 This lets schemes serve as test objects without choosing an atlas.
 
-The embedded empty scheme is initial, using the empty fppf covering. The embedded spectrum of
-the integers is terminal. In particular, these are the geometric initial and terminal objects,
-even though the initial presheaf itself is not a sheaf on the empty scheme.
+The embedding of schemes preserves limits, so fibre products of schemes are fibre products of
+algebraic spaces. The embedded empty scheme is initial, using the empty fppf covering. The
+embedded spectrum of the integers is terminal. In particular, these are the geometric initial
+and terminal objects, even though the initial presheaf itself is not a sheaf on the empty
+scheme.
 
 The construction uses Mathlib's `ObjectProperty.FullSubcategory`, its functor lifting API,
 and the Yoneda lemma. See the Stacks Project, Definition 65.6.1 (025Y) and Section 65.7 (02X0).
@@ -33,7 +35,7 @@ namespace TauCeti.AlgebraicGeometry.Spaces
 
 open _root_.AlgebraicGeometry
 
-universe u
+universe w w' u
 
 /-- Algebraic spaces, with natural transformations of their presheaves as morphisms. -/
 abbrev AlgSpace :=
@@ -119,6 +121,14 @@ lemma homFromSchemeEquiv_postcomp (X : Scheme.{u}) {F G : AlgSpace.{u}}
     (f : ofScheme.obj X ⟶ F) (g : F ⟶ G) :
     homFromSchemeEquiv X G (f ≫ g) = g.hom.app (op X) (homFromSchemeEquiv X F f) :=
   (rfl)
+
+/-- The embedding of schemes into algebraic spaces preserves limits: its composite with the
+fully faithful inclusion into presheaves is the Yoneda embedding. In particular a fibre product
+of schemes is a fibre product of algebraic spaces. -/
+instance : PreservesLimitsOfSize.{w, w'} ofScheme.{u} :=
+  have : PreservesLimitsOfSize.{w, w'} (ofScheme.{u} ⋙ toPresheaf) :=
+    preservesLimits_of_natIso ofSchemeCompToPresheafIso.symm
+  preservesLimits_of_reflects_of_preserves _ toPresheaf
 
 /-- A terminal scheme remains terminal as an algebraic space. -/
 noncomputable def isTerminalOfScheme {X : Scheme.{u}} (hX : IsTerminal X) :
