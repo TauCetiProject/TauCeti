@@ -614,33 +614,23 @@ theorem exists_eventually_difference_solution_of_norm_sq_lt {f g fs gs : ℕ →
     ∃ w : ℕ → ℂ, (∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0) ∧
       HasAsymptoticExpansion atTop (fun s (n : ℕ) ↦ ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ s)
         (differenceCoeff fs gs ρ α) w := by
-  set a := differenceCoeff fs gs ρ α
-  have hg₀ : Tendsto g atTop (𝓝 (gs 0)) := by
-    have h := (hg.isBigO 1).trans_tendsto
-      (by simpa using tendsto_inv_atTop_nhds_zero_nat (𝕜 := ℂ))
-    simpa using h.add_const (gs 0)
+  have hg₀ := hg.tendsto_coeff_zero_of_pow tendsto_inv_atTop_nhds_zero_nat
   -- a remainder `O(|ρ|ⁿ n^{Re α - 1})` after the leading term is `o(ρⁿ n^α)`
   have hlead {v : ℕ → ℂ}
-      (hv : (fun n ↦ v n - formalDifferenceSolution a ρ α 1 n) =O[atTop]
+      (hv : (fun n ↦ v n - formalDifferenceSolution (differenceCoeff fs gs ρ α) ρ α 1 n) =O[atTop]
         fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (1 : ℕ))) :
-      (fun n ↦ v n - ρ ^ n * (n : ℂ) ^ α) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
-    refine (hv.trans_isLittleO (isLittleO_norm_pow_mul_rpow_pow_mul_cpow ρ ?_)).congr_left
-      fun n ↦ ?_
-    · simp
-    · simp [formalDifferenceSolution_def, a]
+      (fun n ↦ v n - ρ ^ n * (n : ℂ) ^ α) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α :=
+    (isEquivalent_of_isBigO_sub_formalDifferenceSolution_one (differenceCoeff_zero fs gs ρ α)
+      (by simpa using hv)).isLittleO
   obtain ⟨w, hw, hwO⟩ := exists_eventually_solution_isBigO hf hg hg₀ hρ hα hlt 1
-  refine ⟨w, hw, .of_isBigO fun N ↦ ?_⟩
+  refine ⟨w, hw, hasAsymptoticExpansion_of_isBigO_sub_formalDifferenceSolution fun N ↦ ?_⟩
   -- the solution built to order `N + 1` is `w`
   obtain ⟨w', hw', hw'O⟩ := exists_eventually_solution_isBigO hf hg hg₀ hρ hα hlt (N + 1)
   have heq := difference_solution_unique_of_norm_sq_lt hg₀ hlt hw hw' (hlead (hwO 1 le_rfl))
     (hlead (hw'O 1 (by omega)))
-  refine ((hw'O N (by omega)).trans (IsBigO.of_bound 1 ?_)).congr' ?_ EventuallyEq.rfl
-  · filter_upwards [eventually_ge_atTop 1] with n hn
-    rw [one_mul, norm_pow_mul_cpow_mul_inv_pow ρ α N (by omega),
-      Real.norm_of_nonneg (by positivity)]
-  · filter_upwards [heq] with n hn
-    rw [hn, formalDifferenceSolution_def, mul_sum]
-    exact congrArg _ (sum_congr rfl fun s _ ↦ by rw [smul_eq_mul]; ring)
+  refine (hw'O N (by omega)).congr' ?_ EventuallyEq.rfl
+  filter_upwards [heq] with n hn
+  rw [hn]
 
 /-- **The recessive solution of a difference equation** (DLMF 2.9.8). Under the hypotheses of
 `TauCeti.exists_eventually_difference_solution_of_norm_sq_lt`, if moreover `g` vanishes nowhere,

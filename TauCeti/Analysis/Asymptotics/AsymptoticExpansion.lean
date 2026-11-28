@@ -51,6 +51,8 @@ elimination lemmas `IsAsymptoticScale.isLittleO`, `HasAsymptoticExpansion.isBigO
   `comp_inv_atTop`: the substitution `t ↦ t⁻¹` turns an expansion at `+∞` in the powers
   `t ^ (-w k)` into one at `0+` in the powers `t ^ w k`.
 * `Asymptotics.HasAsymptoticExpansion.isLittleO`: the remainder after `N + 1` terms is `o(φ N)`.
+* `Asymptotics.HasAsymptoticExpansion.tendsto_coeff_zero_of_pow`: an expansion in the powers of a
+  function tending to `0` gives the limit `f → a 0`.
 * `Asymptotics.HasAsymptoticExpansion.unique`: uniqueness of the coefficients.
 * `Asymptotics.isAsymptoticScale_pow`: the powers of a function tending to `0` form a scale.
 
@@ -295,6 +297,14 @@ theorem isLittleO (hφ : IsAsymptoticScale l φ) (hf : HasAsymptoticExpansion l 
 theorem sub_smul_isLittleO (hφ : IsAsymptoticScale l φ) (hf : HasAsymptoticExpansion l φ a f)
     (N : ℕ) : (fun x => f x - ∑ n ∈ range N, φ n x • a n - φ N x • a N) =o[l] φ N :=
   (hf.isLittleO hφ N).congr_left fun x => by rw [sum_range_succ]; abel
+
+/-- An expansion in the powers `w x ^ n` of a function `w` tending to `0` along `l` gives the
+limit of `f`: `f → a 0`. -/
+theorem tendsto_coeff_zero_of_pow {w : α → 𝕜}
+    (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) a f) (hw : Tendsto w l (𝓝 0)) :
+    Tendsto f l (𝓝 (a 0)) := by
+  have h := (hf.isBigO 1).trans_tendsto (by simpa using hw)
+  simpa using h.add_const (a 0)
 
 /-- `-f` has the coefficients `-a` iff `f` has the coefficients `a`. -/
 @[simp]

@@ -7,10 +7,11 @@ module
 
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import TauCeti.Analysis.Asymptotics.DifferenceEquation.FormalSolution
-import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Analysis.PSeries
 import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
-import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.SpecificLimits.ForcedIncrements
 
 /-!
@@ -40,6 +41,8 @@ equality: adding a multiple of the recessive solution does not change its expans
 * `TauCeti.isBigO_div_pow_of_tendsto_div`: if `‖g n‖ ≤ γ` for large `n` and `w` is a solution
   with `rⁿ = O(w n)` where `γ < r²`, then every solution `v` with `v / w → 0` satisfies
   `v / w = O((γ / r²)ⁿ)`.
+* `TauCeti.isBigO_sub_of_isEquivalent_of_norm_sq_gt`: two solutions for large `n` that are both
+  asymptotic to `ρⁿ n^α` differ by `O(|ρ|ⁿ n^{Re α - N})` for every `N`.
 * `TauCeti.exists_eventually_difference_solution_of_norm_sq_gt`: a solution for large `n` with the
   expansion `ρⁿ n^α ∑ aₛ n⁻ˢ`.
 * `TauCeti.exists_difference_solution_of_norm_sq_gt`: if moreover `g` vanishes nowhere, a solution
@@ -76,7 +79,7 @@ each step, so it is `O(γⁿ)`.
 
 public section
 
-open Filter Finset Asymptotics
+open Filter Asymptotics
 open scoped Topology
 
 namespace TauCeti
@@ -149,18 +152,6 @@ theorem isBigO_div_pow_of_tendsto_div {𝕜 : Type*} [NormedField 𝕜] {f g w v
 
 /-! ### A solution near an approximate solution -/
 
-/-- The solution of `w (k + 2) + f k * w (k + 1) + g k * w k = 0` with `w 0 = a` and `w 1 = b`. -/
-private noncomputable def forwardSolution (f g : ℕ → ℂ) (a b : ℂ) : ℕ → ℂ
-  | 0 => a
-  | 1 => b
-  | k + 2 => -(f k * forwardSolution f g a b (k + 1) + g k * forwardSolution f g a b k)
-
-private lemma forwardSolution_add_two (f g : ℕ → ℂ) (a b : ℂ) (k : ℕ) :
-    forwardSolution f g a b (k + 2) + f k * forwardSolution f g a b (k + 1) +
-      g k * forwardSolution f g a b k = 0 := by
-  simp only [forwardSolution]
-  ring
-
 /-- For a solution `v` of the difference equation, the increments of `x = v / u` satisfy
 `‖x (k + 2) - x (k + 1)‖ ≤ q ‖x (k + 1) - x k‖ + B φ k ‖x (k + 1)‖` when
 `‖g k‖ ‖u k‖ ≤ q ‖u (k + 2)‖` and the residual of `u` is at most `B φ k ‖u (k + 2)‖`: the
@@ -204,52 +195,49 @@ private theorem exists_solution_of_forward_bounds {f g u : ℕ → ℂ} {φ : �
     (hqθ : q < θ) (hB : 0 ≤ B) (hsmall : 2 * B / (θ - q) * ∑' k, φ k ≤ 1 / 2) :
     ∃ w : ℕ → ℂ, (∀ k, w (k + 2) + f k * w (k + 1) + g k * w k = 0) ∧
       ∀ k, ‖w k - u k‖ ≤ 4 * B / (θ - q) * ‖u k‖ * ∑' j, φ (j + k) := by
-  set v := forwardSolution f g (u 0) (u 1) with hv_def
-  have hv := forwardSolution_add_two f g (u 0) (u 1)
-  rw [← hv_def] at hv
+  -- `v` is the solution with `v 0 = u 0` and `v 1 = u 1`
+  set v : ℕ → ℂ := Nat.twoStepInduction (motive := fun _ ↦ ℂ) (u 0) (u 1)
+    fun k a b ↦ -(f k * b + g k * a) with hv_def
+  have hv (k : ℕ) : v (k + 2) + f k * v (k + 1) + g k * v k = 0 := by
+    simp only [hv_def, Nat.twoStepInduction]
+    ring
   set x : ℕ → ℂ := fun k ↦ v k / u k with hx_def
   set D := 2 * B / (θ - q)
   have hq : 0 ≤ q := le_of_mul_le_mul_right (by simpa using
     (mul_nonneg (norm_nonneg (g 0)) (norm_nonneg (u 0))).trans (hgu 0)) (norm_pos_iff.2 (hu 2))
-  -- the increments `δ k = x (k + 1) - x k` are at most `D φ k`, so `x` tends to `L ≠ 0`
-  have hx0 : x 0 = 1 := by simp [hx_def, hv_def, forwardSolution, div_self (hu 0)]
-  have hx1 : x 1 = 1 := by simp [hx_def, hv_def, forwardSolution, div_self (hu 1)]
+  have hx0 : x 0 = 1 := by simp [hx_def, hv_def, Nat.twoStepInduction, div_self (hu 0)]
+  have hx1 : x 1 = 1 := by simp [hx_def, hv_def, Nat.twoStepInduction, div_self (hu 1)]
   have hD : 0 ≤ D := div_nonneg (by positivity) (sub_pos.2 hqθ).le
   have hDθ : q * D + B * 2 = D * θ := by
     simp only [D]
     field_simp [(sub_pos.2 hqθ).ne']
     ring
-  have hδφ : ∀ k, ‖x (k + 1) - x k‖ ≤ D * φ k :=
-    norm_sub_le_mul_of_norm_sub_add_two_le (M := 2) (norm_div_sub_div_le hu hv hgu hr) hφ0 hφ hq hB
-      hD (by rw [hx1, hx0, sub_self, norm_zero]; exact mul_nonneg hD (hφ0 0))
-      (by rw [hx0, norm_one]; linarith)
-      fun k ↦ by rw [hDθ, mul_assoc]; gcongr; exact hφθ k
-  set δ : ℕ → ℂ := fun k ↦ x (k + 1) - x k
-  have hδs : Summable δ := Summable.of_norm_bounded (hφ.mul_left D) hδφ
-  set L := 1 + ∑' j, δ j with hL_def
-  have htail (k : ℕ) : ‖∑' j, δ (j + k)‖ ≤ D * ∑' j, φ (j + k) :=
-    tsum_of_norm_bounded (((summable_nat_add_iff k).2 hφ).hasSum.mul_left D) fun j ↦ hδφ _
+  -- the increments `x (k + 1) - x k` are at most `D φ k`
+  have hdist (k : ℕ) : dist (x k) (x k.succ) ≤ D * φ k :=
+    ((dist_comm _ _).trans (dist_eq_norm _ _)).trans_le <|
+      norm_sub_le_mul_of_norm_sub_add_two_le (M := 2) (norm_div_sub_div_le hu hv hgu hr) hφ0 hφ hq
+        hB hD (by rw [hx1, hx0, sub_self, norm_zero]; exact mul_nonneg hD (hφ0 0))
+        (by rw [hx0, norm_one]; linarith) (fun j ↦ by rw [hDθ, mul_assoc]; gcongr; exact hφθ j) k
+  -- so `x` tends to some `L`, with `‖x k - L‖ ≤ D ∑_{j ≥ k} φ j`, and `‖L‖ ≥ 1 / 2`
+  have hDφ : Summable fun k ↦ D * φ k := hφ.mul_left D
+  obtain ⟨L, hxL⟩ := cauchySeq_tendsto_of_complete (cauchySeq_of_dist_le_of_summable _ hdist hDφ)
+  have htail (k : ℕ) : ‖x k - L‖ ≤ D * ∑' j, φ (j + k) := by
+    rw [← dist_eq_norm, ← tsum_mul_left]
+    simpa only [add_comm k] using dist_le_tsum_of_dist_le_of_tendsto _ hdist hDφ hxL k
   have hL : 1 / 2 ≤ ‖L‖ := by
     have h := (htail 0).trans (by simpa using hsmall)
-    simp only [add_zero] at h
-    have h₂ := norm_sub_norm_le (1 : ℂ) (-∑' j, δ j)
-    rw [norm_one, norm_neg, sub_neg_eq_add, ← hL_def] at h₂
-    linarith
-  have hxL (k : ℕ) : x k - L = -∑' j, δ (j + k) := by
-    rw [← sub_add_cancel (x k) (x 0), ← sum_range_sub x k, hx0, hL_def,
-      ← hδs.sum_add_tsum_nat_add k]
-    ring
+    rw [hx0] at h
+    linarith [norm_le_norm_add_norm_sub' (1 : ℂ) L, norm_one (α := ℂ)]
   -- the solution is `v / L`
   refine ⟨fun k ↦ v k / L, fun k ↦ ?_, fun k ↦ ?_⟩
   · linear_combination hv k / L
   · have heq : v k / L - u k = u k * (x k - L) / L := by
       simp only [hx_def]
       field_simp [hu k, norm_pos_iff.1 (by linarith : (0 : ℝ) < ‖L‖)]
-    rw [heq, hxL, norm_div, norm_mul, norm_neg, div_le_iff₀ (by linarith)]
+    rw [heq, norm_div, norm_mul, div_le_iff₀ (by linarith)]
     have hT : 0 ≤ ∑' j, φ (j + k) := tsum_nonneg fun j ↦ hφ0 _
-    calc ‖u k‖ * ‖∑' j, δ (j + k)‖ ≤ ‖u k‖ * (D * ∑' j, φ (j + k)) := by
-          gcongr
-          exact htail k
+    calc ‖u k‖ * ‖x k - L‖ ≤ ‖u k‖ * (D * ∑' j, φ (j + k)) :=
+          mul_le_mul_of_nonneg_left (htail k) (norm_nonneg _)
       _ = 4 * B / (θ - q) * ‖u k‖ * (∑' j, φ (j + k)) * (1 / 2) := by
           simp only [D]
           ring
@@ -455,10 +443,11 @@ private theorem exists_eventually_solution_isBigO_of_norm_sq_gt {f g fs gs : ℕ
 
 /-! ### The dominant solution -/
 
-/-- Two solutions for large `n` that are both asymptotic to `ρⁿ n^α`, where `g n → g₀` with
-`‖g₀‖ < ‖ρ‖²`, differ by `O(|ρ|ⁿ n^{Re α - N})` for every `N`: their difference is `o(ρⁿ n^α)`,
-hence exponentially small by `TauCeti.isBigO_div_pow_of_tendsto_div`. -/
-private lemma isBigO_sub_of_isEquivalent_of_norm_sq_gt {f g w w' : ℕ → ℂ} {ρ α g₀ : ℂ}
+/-- **Dominant solutions agree to all orders.** Two solutions for large `n` that are both
+asymptotic to `ρⁿ n^α`, where `g n → g₀` with `‖g₀‖ < ‖ρ‖²`, differ by `O(|ρ|ⁿ n^{Re α - N})`
+for every `N`: their difference is `o(ρⁿ n^α)`, hence exponentially small by
+`TauCeti.isBigO_div_pow_of_tendsto_div`. -/
+theorem isBigO_sub_of_isEquivalent_of_norm_sq_gt {f g w w' : ℕ → ℂ} {ρ α g₀ : ℂ}
     (hg : Tendsto g atTop (𝓝 g₀)) (hgt : ‖g₀‖ < ‖ρ‖ ^ 2)
     (hw : ∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0)
     (hw' : ∀ᶠ n in atTop, w' (n + 2) + f n * w' (n + 1) + g n * w' n = 0)
@@ -503,35 +492,22 @@ theorem exists_eventually_difference_solution_of_norm_sq_gt {f g fs gs : ℕ →
     ∃ w : ℕ → ℂ, (∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0) ∧
       HasAsymptoticExpansion atTop (fun s (n : ℕ) ↦ ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ s)
         (differenceCoeff fs gs ρ α) w := by
-  set a := differenceCoeff fs gs ρ α
-  have hg₀ : Tendsto g atTop (𝓝 (gs 0)) := by
-    have h := (hg.isBigO 1).trans_tendsto
-      (by simpa using tendsto_inv_atTop_nhds_zero_nat (𝕜 := ℂ))
-    simpa using h.add_const (gs 0)
+  have hg₀ := hg.tendsto_coeff_zero_of_pow tendsto_inv_atTop_nhds_zero_nat
   -- a remainder `O(|ρ|ⁿ n^{Re α - 1})` after the leading term makes `v` asymptotic to `ρⁿ n^α`
   have hlead {v : ℕ → ℂ}
-      (hv : (fun n ↦ v n - formalDifferenceSolution a ρ α 1 n) =O[atTop]
+      (hv : (fun n ↦ v n - formalDifferenceSolution (differenceCoeff fs gs ρ α) ρ α 1 n) =O[atTop]
         fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (1 : ℕ))) :
-      v ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α := by
-    refine (hv.trans_isLittleO (isLittleO_norm_pow_mul_rpow_pow_mul_cpow ρ ?_)).congr_left
-      fun n ↦ ?_
-    · simp
-    · simp [formalDifferenceSolution_def, a]
+      v ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α :=
+    isEquivalent_of_isBigO_sub_formalDifferenceSolution_one (differenceCoeff_zero fs gs ρ α)
+      (by simpa using hv)
   obtain ⟨w, hw, hwO⟩ := exists_eventually_solution_isBigO_of_norm_sq_gt hf hg hg₀ hρ hα hgt 1
-  refine ⟨w, hw, .of_isBigO fun N ↦ ?_⟩
+  refine ⟨w, hw, hasAsymptoticExpansion_of_isBigO_sub_formalDifferenceSolution fun N ↦ ?_⟩
   -- the solution `w'` built to order `N` differs from `w` by `O(|ρ|ⁿ n^{Re α - N})`
   obtain ⟨w', hw', hw'O⟩ := exists_eventually_solution_isBigO_of_norm_sq_gt hf hg hg₀ hρ hα hgt
     (N + 1)
   have hsub := isBigO_sub_of_isEquivalent_of_norm_sq_gt hg₀ hgt hw hw' (hlead (hwO 1 le_rfl))
     (hlead (hw'O 1 (by omega))) N
-  refine (((hw'O N (by omega)).sub hsub).trans (IsBigO.of_bound 1 ?_)).congr'
-    (Eventually.of_forall fun n ↦ ?_) EventuallyEq.rfl
-  · filter_upwards [eventually_ge_atTop 1] with n hn
-    rw [one_mul, norm_pow_mul_cpow_mul_inv_pow ρ α N (by omega),
-      Real.norm_of_nonneg (by positivity)]
-  · simp only [formalDifferenceSolution_def, mul_sum, smul_eq_mul]
-    rw [sub_sub_sub_cancel_left]
-    exact congrArg _ (sum_congr rfl fun s _ ↦ by ring)
+  exact ((hw'O N (by omega)).sub hsub).congr_left fun n ↦ by ring
 
 /-- **The dominant solution of a difference equation** (DLMF 2.9.8). Under the hypotheses of
 `TauCeti.exists_eventually_difference_solution_of_norm_sq_gt`, if moreover `g` vanishes nowhere,

@@ -12,8 +12,8 @@ public import Mathlib.Analysis.SpecificLimits.Basic
 
 This module extends `Mathlib.Analysis.SpecificLimits.Basic` with asymptotic divergence for real
 sequences under eventual multiplicative step growth, with the comparison of two geometric
-sequences of different ratios, and with the summability over `ℤ` of a geometric sequence cut off
-below.
+sequences of different ratios, with the summability over `ℤ` of a geometric sequence cut off
+below, and with the eventual bound `θ k⁻ᵐ ≤ (k + 1)⁻ᵐ` for `θ < 1`.
 
 ## Main results
 
@@ -25,6 +25,8 @@ below.
   `y ^ n ≤ x ^ n + z ^ n`.
 * `TauCeti.summable_ite_le_zpow`: for `0 < ρ < 1`, `n ↦ ρ ^ n` on `n ≥ N` (and `0` below) is
   summable over `ℤ`.
+* `TauCeti.eventually_mul_inv_pow_le_inv_add_one_pow`: for `θ < 1` and every `m`,
+  `θ k⁻ᵐ ≤ (k + 1)⁻ᵐ` for large natural `k`.
 -/
 
 public section
@@ -86,5 +88,20 @@ theorem summable_ite_le_zpow (N : ℤ) {ρ : ℝ} (hρ₀ : 0 < ρ) (hρ : ρ < 
   · refine summable_of_ne_finset_zero (s := Finset.range (-N).toNat) fun k hk ↦ ?_
     rw [Finset.mem_range, not_lt] at hk
     exact ite_eq_right_iff.2 fun h ↦ absurd h (by omega)
+
+/-- For `θ < 1` and every exponent `m`, `θ k⁻ᵐ ≤ (k + 1)⁻ᵐ` for large natural `k`, since
+`(k / (k + 1))ᵐ → 1`. -/
+theorem eventually_mul_inv_pow_le_inv_add_one_pow {θ : ℝ} (hθ : θ < 1) (m : ℕ) :
+    ∀ᶠ k : ℕ in atTop, θ * ((k : ℝ) ^ m)⁻¹ ≤ (((k + 1 : ℕ) : ℝ) ^ m)⁻¹ := by
+  have h := (tendsto_natCast_div_add_atTop (1 : ℝ)).pow m
+  rw [one_pow] at h
+  filter_upwards [h.eventually (lt_mem_nhds hθ), eventually_ne_atTop 0] with k hk hk0
+  have hk' : (k : ℝ) ^ m ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.2 hk0)
+  calc θ * ((k : ℝ) ^ m)⁻¹ ≤ ((k : ℝ) / (k + 1)) ^ m * ((k : ℝ) ^ m)⁻¹ := by
+        gcongr
+    _ = (((k + 1 : ℕ) : ℝ) ^ m)⁻¹ := by
+        rw [div_pow]
+        push_cast
+        field_simp [hk']
 
 end TauCeti

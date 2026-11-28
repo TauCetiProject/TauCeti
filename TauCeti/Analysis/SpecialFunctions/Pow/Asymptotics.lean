@@ -58,8 +58,7 @@ Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real
 whenever `ρ ≠ 0`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)`
 whenever `β < Re α`. If `u n ∼ ρ ^ n * n ^ α` with `ρ ≠ 0`, then
 `‖u n‖ / (‖ρ‖ ^ n * n ^ Re α) → 1`. A sequence `v` with `v n / u n = O(θ ^ n)` for some
-`0 ≤ θ < 1` is `O(‖ρ‖ ^ n * n ^ (Re α - N))` for every `N`. For `θ < 1`, `θ k⁻ᵐ ≤ (k + 1)⁻ᵐ` for
-large `k`.
+`0 ≤ θ < 1` is `O(‖ρ‖ ^ n * n ^ (Re α - N))` for every `N`.
 
 ## Families bounded by integer powers
 
@@ -253,21 +252,6 @@ theorem isBigO_norm_pow_mul_rpow_of_isBigO_div_pow {w v : ℕ → ℂ} {ρ α : 
   calc θ ^ n * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) ≤ 1 / (n : ℝ) ^ N * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) :=
         mul_le_mul_of_nonneg_right hθn' (by positivity)
     _ = ‖ρ‖ ^ n * ((n : ℝ) ^ α.re / (n : ℝ) ^ N) := by ring
-
-/-- For `θ < 1` and every exponent `m`, `θ k⁻ᵐ ≤ (k + 1)⁻ᵐ` for large natural `k`, since
-`(k / (k + 1))ᵐ → 1`. -/
-theorem eventually_mul_inv_pow_le_inv_add_one_pow {θ : ℝ} (hθ : θ < 1) (m : ℕ) :
-    ∀ᶠ k : ℕ in atTop, θ * ((k : ℝ) ^ m)⁻¹ ≤ (((k + 1 : ℕ) : ℝ) ^ m)⁻¹ := by
-  have h := (tendsto_natCast_div_add_atTop (1 : ℝ)).pow m
-  rw [one_pow] at h
-  filter_upwards [h.eventually (lt_mem_nhds hθ), eventually_ne_atTop 0] with k hk hk0
-  have hk' : (k : ℝ) ^ m ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.2 hk0)
-  calc θ * ((k : ℝ) ^ m)⁻¹ ≤ ((k : ℝ) / (k + 1)) ^ m * ((k : ℝ) ^ m)⁻¹ := by
-        gcongr
-    _ = (((k + 1 : ℕ) : ℝ) ^ m)⁻¹ := by
-        rw [div_pow]
-        push_cast
-        field_simp [hk']
 
 /-- For `a < b` and any constant `K`, eventually `K * x ^ a ≤ x ^ b` as `x → ∞`. -/
 theorem eventually_const_mul_rpow_le_rpow {a b : ℝ} (hab : a < b) (K : ℝ) :

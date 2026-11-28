@@ -48,8 +48,6 @@ dyadic annuli and compares their contributions with a geometric series.
   `w + v n` in `ℂ`, the norms of the inverse `k`-th powers are not summable for `k < 2`.
 * `TauCeti.tsum_Ioi_le_of_le_rpow` — a nonnegative sequence bounded by `E (m + n₀) ^ (e - s)`
   with `e ≤ 0` and `1 < s` has tails `∑_{m > n}` bounded by a multiple of `(n + 1 + n₀) ^ e`.
-* `TauCeti.tsum_inv_natCast_add_pow_le` — the tails `∑ᵢ (i + k)^{-(N + 2)}` of the `p`-series with
-  natural exponent `N + 2` are at most `(∑ᵢ (i + 1)^{-2}) k^{-N}` for `k ≥ 1`.
 -/
 
 public section
@@ -223,24 +221,6 @@ theorem tsum_Ioi_le_of_le_rpow {b : ℕ → ℝ} {E e s : ℝ} {n₀ : ℕ} (hE 
         exact mul_le_mul_of_nonneg_left (hsumm₂.tsum_subtype_le _ _ fun m ↦ by positivity)
           (by positivity)
     _ = _ := by ring
-
-/-- **Tails of `∑ k^{-(N + 2)}` are `O(k^{-N})`.** For `k ≥ 1`,
-`∑ᵢ (i + k)^{-(N + 2)} ≤ (∑ᵢ (i + 1)^{-2}) k^{-N}`. -/
-theorem tsum_inv_natCast_add_pow_le (N : ℕ) {k : ℕ} (hk : 1 ≤ k) :
-    ∑' i : ℕ, (((i + k : ℕ) : ℝ) ^ (N + 2))⁻¹ ≤
-      (∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) * ((k : ℝ) ^ N)⁻¹ := by
-  have hS : Summable fun i : ℕ ↦ (((i : ℝ) + 1) ^ 2)⁻¹ := by
-    simpa using (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
-  rw [← tsum_mul_right]
-  refine Summable.tsum_le_tsum (fun i ↦ ?_) ((summable_nat_add_iff k).2
-    (Real.summable_nat_pow_inv.2 (by omega))) (hS.mul_right _)
-  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  rw [← mul_inv, Nat.cast_add]
-  refine inv_anti₀ (by positivity) ?_
-  calc ((i : ℝ) + 1) ^ 2 * (k : ℝ) ^ N ≤ ((i : ℝ) + k) ^ 2 * ((i : ℝ) + k) ^ N := by
-        gcongr
-        linarith
-    _ = ((i : ℝ) + k) ^ (N + 2) := by ring
 
 end TauCeti
 
