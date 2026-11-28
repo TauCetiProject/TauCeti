@@ -49,6 +49,8 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `Topology.IsQuotientMap.of_comp_eq_comp`: quotient maps are stable under pullback along a
   continuous injection when the pulled-back inclusion is a closed map, as for the restriction of a
   quotient map to the preimage of a closed set.
+* `TopologicalSpace.induced_eq_induced_of_tendsto_iff`: two induced topologies agree when
+  convergence of filters to points agrees.
 -/
 
 public section
@@ -392,3 +394,16 @@ theorem Topology.IsQuotientMap.of_comp_eq_comp {X X' Y Y' : Type*} [TopologicalS
   have hjs : IsClosed (j '' s) := hf.isCoinducing.isClosed_preimage.1 (himage ▸ hi _ hs)
   rw [← hji.preimage_image s]
   exact hjs.preimage hj
+
+/-- Two topologies induced by maps `σ : s → α` and `τ : s → β` coincide whenever convergence of
+filters on `s` to points under `σ` and `τ` are equivalent. -/
+theorem TopologicalSpace.induced_eq_induced_of_tendsto_iff {s α β : Type*}
+    [TopologicalSpace α] [TopologicalSpace β] (σ : s → α) (τ : s → β)
+    (hiff : ∀ {l : Filter s} {x : s},
+      Filter.Tendsto σ l (𝓝 (σ x)) ↔ Filter.Tendsto τ l (𝓝 (τ x))) :
+    TopologicalSpace.induced σ inferInstance = TopologicalSpace.induced τ inferInstance := by
+  refine TopologicalSpace.ext_nhds fun x ↦ ?_
+  rw [nhds_induced, nhds_induced]
+  exact le_antisymm
+    (Filter.tendsto_iff_comap.mp (hiff.mp Filter.tendsto_comap))
+    (Filter.tendsto_iff_comap.mp (hiff.mpr Filter.tendsto_comap))

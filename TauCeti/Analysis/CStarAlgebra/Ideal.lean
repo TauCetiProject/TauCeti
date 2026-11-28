@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.TwoSidedIdeal.Basic
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
+import TauCeti.Topology.ApproximateUnit
 
 /-!
 # Closed two-sided ideals in C⋆-algebras and full elements
@@ -41,8 +42,11 @@ Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example*, Theorem I.5.3).
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
 * `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
   `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
-  `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A`, `⋆`-isomorphism
-  `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`, and
+  `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A`, isometric `⋆`-isomorphism
+  `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`
+  (`TwoSidedIdeal.isometry_toNonUnitalStarSubalgebraEquiv`,
+  `TwoSidedIdeal.continuous_toNonUnitalStarSubalgebraEquiv`,
+  `TwoSidedIdeal.isApproximateUnit_map_toNonUnitalStarSubalgebraEquiv`), and
   functional-calculus closure `TwoSidedIdeal.cfcₙ_mem_of_isClosed` and
   `TwoSidedIdeal.cfcₙ_nnreal_mem_of_isClosed`.
 * `TwoSidedIdeal.instStarOrderedRingOfIsClosed`: the order of `A` restricted to a closed ideal `I`
@@ -265,6 +269,25 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
+
+/-- The `⋆`-algebra isomorphism `I.toNonUnitalStarSubalgebraEquiv` is an isometry. -/
+theorem isometry_toNonUnitalStarSubalgebraEquiv :
+    Isometry I.toNonUnitalStarSubalgebraEquiv :=
+  fun _ _ => rfl
+
+/-- The `⋆`-algebra isomorphism `I.toNonUnitalStarSubalgebraEquiv` is continuous. -/
+@[fun_prop]
+theorem continuous_toNonUnitalStarSubalgebraEquiv :
+    Continuous I.toNonUnitalStarSubalgebraEquiv :=
+  I.isometry_toNonUnitalStarSubalgebraEquiv.continuous
+
+/-- Transport an approximate unit on a closed two-sided ideal `I` to `I.toNonUnitalStarSubalgebra`
+along `I.toNonUnitalStarSubalgebraEquiv`. -/
+theorem isApproximateUnit_map_toNonUnitalStarSubalgebraEquiv
+    {l : Filter I} (hl : l.IsApproximateUnit) :
+    (l.map I.toNonUnitalStarSubalgebraEquiv).IsApproximateUnit :=
+  hl.map I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom
+    I.continuous_toNonUnitalStarSubalgebraEquiv I.toNonUnitalStarSubalgebraEquiv.surjective
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/

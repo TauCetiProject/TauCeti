@@ -431,6 +431,22 @@ theorem comp_add (S : AdjointableMap A F G) (T₁ T₂ : AdjointableMap A E F) :
     S.comp (T₁ + T₂) = S.comp T₁ + S.comp T₂ :=
   ext fun _ ↦ map_add S _ _
 
+theorem neg_comp (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
+    (-S).comp T = -(S.comp T) :=
+  ext fun _ ↦ rfl
+
+theorem comp_neg (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
+    S.comp (-T) = -(S.comp T) :=
+  ext fun _ ↦ map_neg S _
+
+theorem sub_comp (S₁ S₂ : AdjointableMap A F G) (T : AdjointableMap A E F) :
+    (S₁ - S₂).comp T = S₁.comp T - S₂.comp T :=
+  ext fun _ ↦ rfl
+
+theorem comp_sub (S : AdjointableMap A F G) (T₁ T₂ : AdjointableMap A E F) :
+    S.comp (T₁ - T₂) = S.comp T₁ - S.comp T₂ :=
+  ext fun _ ↦ map_sub S _ _
+
 theorem smul_comp (c : ℂ) (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
     (c • S).comp T = c • (S.comp T) := ext fun _ ↦ rfl
 theorem comp_smul (c : ℂ) (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
@@ -628,6 +644,10 @@ theorem continuous_comp :
   (isometry_toContinuousLinearMap (A := A) (E := E) (F := G)).comp_continuous_iff.mp <|
     (isometry_toContinuousLinearMap.continuous.comp continuous_fst).clm_comp
       (isometry_toContinuousLinearMap.continuous.comp continuous_snd)
+
+/-- Evaluation at a vector is continuous for the operator norm on `AdjointableMap A E F`. -/
+instance instContinuousEvalConst : ContinuousEvalConst (AdjointableMap A E F) E F :=
+  .of_continuous_forget isometry_toContinuousLinearMap.continuous
 
 noncomputable instance instNormedRing : NormedRing (AdjointableMap A E E) where
   dist_eq := instNormedAddCommGroup.dist_eq
