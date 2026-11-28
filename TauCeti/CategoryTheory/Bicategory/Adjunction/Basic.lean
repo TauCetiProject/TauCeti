@@ -8,7 +8,10 @@ module
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 
 /-!
-# Inverses and composites of adjoint equivalences in a bicategory
+# Zigzags and adjoint equivalences in a bicategory
+
+The formulas `leftZigzag_eq` and `rightZigzag_eq` express the triangle composites with an
+explicit associator between the two whiskered cells.
 
 An adjoint equivalence `a ≌ b` in a bicategory (Mathlib's `Bicategory.Equivalence`) has an
 inverse `e.symm : b ≌ a`, exchanging the two `1`-morphisms and inverting the counit and unit, and
@@ -37,6 +40,20 @@ namespace CategoryTheory.Bicategory
 universe w v u
 
 variable {B : Type u} [Bicategory.{w, v} B] {a b c : B}
+
+/-- The left zigzag is the composite of the right-whiskered unit, the associator and the
+left-whiskered counit. -/
+lemma leftZigzag_eq {f : a ⟶ b} {g : b ⟶ a}
+    (η : 𝟙 a ⟶ f ≫ g) (ε : g ≫ f ⟶ 𝟙 b) :
+    leftZigzag η ε = η ▷ f ≫ (α_ f g f).hom ≫ f ◁ ε := by
+  bicategory
+
+/-- The right zigzag is the composite of the left-whiskered unit, the inverse associator and
+right-whiskered counit. -/
+lemma rightZigzag_eq {f : a ⟶ b} {g : b ⟶ a}
+    (η : 𝟙 a ⟶ f ≫ g) (ε : g ≫ f ⟶ 𝟙 b) :
+    rightZigzag η ε = g ◁ η ≫ (α_ g f g).inv ≫ ε ▷ g := by
+  bicategory
 
 /-- Adjointifying a counit which already satisfies the left triangle identity with `η` does not
 change it. -/

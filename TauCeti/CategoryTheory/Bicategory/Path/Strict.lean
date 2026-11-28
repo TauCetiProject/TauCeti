@@ -33,6 +33,8 @@ Since `Quiver.Path.eval` sends a path `[f]` of length one to `f` by definition, 
 * `TauCeti.Bicategory.Paths B`: a copy of the objects of `B`, carrying the bicategory of paths.
 * `TauCeti.Bicategory.Paths.instBicategory`, `TauCeti.Bicategory.Paths.instStrict`: the strict
   bicategory structure.
+* `TauCeti.Bicategory.Paths.homEval`: evaluation on each hom category, preserving the
+  underlying `2`-cells and expressing whiskering through the evaluation comparisons.
 * `TauCeti.Bicategory.Paths.comp₂_def`, `TauCeti.Bicategory.Paths.whiskerLeft_def`, … : the
   `2`-categorical operations of `Paths B` expressed in `B`.
 
@@ -145,6 +147,46 @@ lemma whiskerRight_def {p p' : a ⟶ b} (θ : p ⟶ p') (q : b ⟶ c) :
 lemma eqToHom_def {p q : a ⟶ b} (h : p = q) :
     eqToHom h = eqToHom (congrArg Path.eval h) := by
   subst h; rfl
+
+/-- The left triangle's unitor composite on a singleton path evaluates to an identity. -/
+@[simp]
+lemma leftUnitor_hom_comp_rightUnitor_inv_toPath (f : a.as ⟶ b.as) :
+    (leftUnitor (B := Paths B) (a := a) (b := b) f.toPath).hom ≫
+      (rightUnitor (B := Paths B) (a := a) (b := b) f.toPath).inv = 𝟙 f :=
+  Category.id_comp (𝟙 f)
+
+/-- The right triangle's unitor composite on a singleton path evaluates to an identity. -/
+@[simp]
+lemma rightUnitor_hom_comp_leftUnitor_inv_toPath (f : a.as ⟶ b.as) :
+    (rightUnitor (B := Paths B) (a := a) (b := b) f.toPath).hom ≫
+      (leftUnitor (B := Paths B) (a := a) (b := b) f.toPath).inv = 𝟙 f :=
+  Category.id_comp (𝟙 f)
+
+/-- Evaluation on a hom category sends each path to its evaluation and preserves its
+underlying `2`-cells. -/
+-- Expose the object map so that the whiskering formulas can use `Path.eval` endpoints.
+@[expose]
+def homEval (a b : Paths B) : (a ⟶ b) ⥤ (a.as ⟶ b.as) where
+  obj p := Path.eval p
+  map θ := θ
+
+@[simp]
+lemma homEval_obj (p : a ⟶ b) : (homEval a b).obj p = Path.eval p := rfl
+
+-- Keep this as an explicit rewrite: simplifying it first would hide the functor laws.
+lemma homEval_map {p q : a ⟶ b} (θ : p ⟶ q) : (homEval a b).map θ = θ := rfl
+
+/-- Evaluation of left whiskering is whiskering conjugated by the path comparisons. -/
+lemma homEval_map_whiskerLeft (p : a ⟶ b) {q q' : b ⟶ c} (θ : q ⟶ q') :
+    (homEval a c).map (p ◁ θ) =
+      (Path.evalComp p q).hom ≫ Path.eval p ◁ (homEval b c).map θ ≫
+        (Path.evalComp p q').inv := Path.whiskerLeftEval_def p θ
+
+/-- Evaluation of right whiskering is whiskering conjugated by the path comparisons. -/
+lemma homEval_map_whiskerRight {p p' : a ⟶ b} (θ : p ⟶ p') (q : b ⟶ c) :
+    (homEval a c).map (θ ▷ q) =
+      (Path.evalComp p q).hom ≫ (homEval a b).map θ ▷ Path.eval q ≫
+        (Path.evalComp p' q).inv := Path.whiskerRightEval_def θ q
 
 /-- The `2`-morphisms of `Paths B` between paths of length one are exactly the `2`-morphisms of
 `B`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Path.Strict
-public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
+public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
 
 /-!
 # Adjunctions between singleton paths
@@ -44,50 +44,42 @@ the left and right unitors. -/
 lemma leftZigzag_toPath (η : 𝟙 a.as ⟶ f ≫ g) (ε : g ≫ f ⟶ 𝟙 b.as) :
     leftZigzag (B := Paths B) (f := f.toPath) (g := g.toPath) η ε =
       (λ_ f).inv ≫ leftZigzag η ε ≫ (ρ_ f).hom := by
-  dsimp only [leftZigzag, bicategoricalComp, BicategoricalCoherence.assoc,
-    BicategoricalCoherence.assoc', BicategoricalCoherence.refl, BicategoricalCoherence.iso]
-  simp only [Iso.trans_hom, whiskerRightIso_hom, Iso.refl_hom,
-    id_whiskerRight, Category.comp_id]
-  erw [comp₂_def (a := a) (b := b), comp₂_def (a := a) (b := b),
-    whiskerRight_def (a := a) (b := a) (c := b),
-    whiskerLeft_def (a := a) (b := b) (c := b)]
-  erw [Path.whiskerRightEval_def (p := Path.nil) (p' := f.toPath.cons g) η f.toPath,
-    Path.whiskerLeftEval_def f.toPath (q := g.toPath.cons f) (q' := Path.nil) ε]
-  erw [Strict.associator_eqToIso (B := Paths B)]
-  erw [eqToIso.hom, eqToHom_def, eqToHom_refl]
-  simp only [Path.comp_toPath_eq_cons, Path.eval_cons_nil, Path.eval_nil, Path.eval_toPath,
-    Path.eval_cons_cons, Path.evalComp_toPath, Path.evalCons_nil_hom, Path.evalCons_cons,
-    Iso.refl_inv, Category.comp_id, Path.comp_cons, Path.comp_nil, Path.evalComp_toPath_cons,
-    Path.evalComp_nil, Iso.symm_inv, Category.assoc]
-  -- Normalize the evaluated path endpoints before applying category laws in `B`.
-  change ((λ_ f).inv ≫ η ▷ f) ≫ 𝟙 ((f ≫ g) ≫ f) ≫
-    (α_ f g f).hom ≫ f ◁ ε ≫ (ρ_ f).hom = _
-  simp [Category.assoc]
+  -- Give the cells their path types before mapping them to `B` with `homEval`.
+  let η' : (𝟙 a : a ⟶ a) ⟶ f.toPath ≫ g.toPath := η
+  let ε' : g.toPath ≫ f.toPath ⟶ (𝟙 b : b ⟶ b) := ε
+  have h := congrArg (homEval a b).map
+    (leftZigzag_eq (B := Paths B) (f := f.toPath) (g := g.toPath) η' ε')
+  simp only [Functor.map_comp] at h
+  simp only [homEval_map_whiskerRight, homEval_map_whiskerLeft,
+    Strict.associator_eqToIso, eqToIso.hom, eqToHom_map, homEval_obj] at h
+  simp only [homEval_map] at h
+  simp [η', ε', id_def, comp_def, Path.evalComp_toPath, Path.evalCons_cons,
+    Path.comp_toPath_eq_cons, Path.evalComp_toPath_cons, Category.assoc] at h
+  have hB := congrArg (fun θ => (λ_ f).inv ≫ θ ≫ (ρ_ f).hom)
+    (leftZigzag_eq (B := B) η ε)
+  simp only [Category.assoc] at hB
+  exact h.trans hB.symm
 
 /-- The right triangle composite on singleton paths is the original zigzag conjugated by
 the right and left unitors. -/
 lemma rightZigzag_toPath (η : 𝟙 a.as ⟶ f ≫ g) (ε : g ≫ f ⟶ 𝟙 b.as) :
     rightZigzag (B := Paths B) (f := f.toPath) (g := g.toPath) η ε =
       (ρ_ g).inv ≫ rightZigzag η ε ≫ (λ_ g).hom := by
-  dsimp only [rightZigzag, bicategoricalComp, BicategoricalCoherence.assoc,
-    BicategoricalCoherence.assoc', BicategoricalCoherence.refl, BicategoricalCoherence.iso]
-  simp only [Iso.trans_hom, Iso.symm_hom, whiskerRightIso_hom, Iso.refl_hom,
-    id_whiskerRight, Category.id_comp]
-  erw [comp₂_def (a := b) (b := a), comp₂_def (a := b) (b := a),
-    whiskerLeft_def (a := b) (b := a) (c := a),
-    whiskerRight_def (a := b) (b := b) (c := a)]
-  erw [Path.whiskerLeftEval_def g.toPath (q := Path.nil) (q' := f.toPath.cons g) η,
-    Path.whiskerRightEval_def (p := g.toPath.cons f) (p' := Path.nil) ε g.toPath]
-  erw [Strict.associator_eqToIso (B := Paths B)]
-  erw [eqToIso.inv, eqToHom_def, eqToHom_refl]
-  simp only [Path.comp_nil, Path.eval_toPath, Path.eval_nil, Path.comp_cons,
-    Path.comp_toPath_eq_cons, Path.eval_cons_cons, Path.evalComp_nil, Iso.symm_hom,
-    Path.evalComp_toPath_cons, Path.eval_cons_nil, Path.evalComp_toPath, Path.evalCons_cons,
-    Iso.refl_hom, Path.evalCons_nil_inv, Category.id_comp, Category.assoc]
-  -- Normalize the evaluated path endpoints before applying category laws in `B`.
-  change ((ρ_ g).inv ≫ g ◁ η ≫ (α_ g f g).inv) ≫ 𝟙 ((g ≫ f) ≫ g) ≫
-    ε ▷ g ≫ (λ_ g).hom = _
-  simp [Category.assoc]
+  -- Give the cells their path types before mapping them to `B` with `homEval`.
+  let η' : (𝟙 a : a ⟶ a) ⟶ f.toPath ≫ g.toPath := η
+  let ε' : g.toPath ≫ f.toPath ⟶ (𝟙 b : b ⟶ b) := ε
+  have h := congrArg (homEval b a).map
+    (rightZigzag_eq (B := Paths B) (f := f.toPath) (g := g.toPath) η' ε')
+  simp only [Functor.map_comp] at h
+  simp only [homEval_map_whiskerRight, homEval_map_whiskerLeft,
+    Strict.associator_eqToIso, eqToIso.inv, eqToHom_map, homEval_obj] at h
+  simp only [homEval_map] at h
+  simp [η', ε', id_def, comp_def, Path.evalComp_toPath, Path.evalCons_cons,
+    Path.comp_toPath_eq_cons, Path.evalComp_toPath_cons, Category.assoc] at h
+  have hB := congrArg (fun θ => (ρ_ g).inv ≫ θ ≫ (λ_ g).hom)
+    (rightZigzag_eq (B := B) η ε)
+  simp only [Category.assoc] at hB
+  exact h.trans hB.symm
 
 /-- The left triangle identity for two singleton paths holds exactly when the original
 unit and counit satisfy the left triangle identity in `B`. -/
@@ -96,14 +88,11 @@ lemma left_triangle_toPath_iff (η : 𝟙 a.as ⟶ f ≫ g) (ε : g ≫ f ⟶ �
         (leftUnitor (B := Paths B) (a := a) (b := b) f.toPath).hom ≫
           (rightUnitor (B := Paths B) (a := a) (b := b) f.toPath).inv ↔
       leftZigzag η ε = (λ_ f).hom ≫ (ρ_ f).inv := by
-  erw [leftZigzag_toPath (a := a) (b := b),
-    Strict.leftUnitor_eqToIso (B := Paths B),
-    Strict.rightUnitor_eqToIso (B := Paths B), eqToIso_refl]
-  simp only [Iso.refl_hom, Iso.refl_inv]
-  erw [comp₂_def, id₂_def]
-  -- Express the remaining path identity as the identity 2-cell of `f` in `B`.
-  change (λ_ f).inv ≫ leftZigzag η ε ≫ (ρ_ f).hom = 𝟙 f ≫ 𝟙 f ↔ _
-  rw [Category.id_comp, Iso.inv_comp_eq, Category.comp_id, ← Iso.eq_comp_inv]
+  have h := congrArg₂ (fun θ θ' : f ⟶ f => θ = θ')
+    (leftZigzag_toPath (a := a) (b := b) η ε)
+    (leftUnitor_hom_comp_rightUnitor_inv_toPath (a := a) (b := b) f)
+  exact h.to_iff.trans (by
+    rw [Iso.inv_comp_eq, Category.comp_id, ← Iso.eq_comp_inv])
 
 /-- The right triangle identity for two singleton paths holds exactly when the original
 unit and counit satisfy the right triangle identity in `B`. -/
@@ -112,14 +101,11 @@ lemma right_triangle_toPath_iff (η : 𝟙 a.as ⟶ f ≫ g) (ε : g ≫ f ⟶ �
         (rightUnitor (B := Paths B) (a := b) (b := a) g.toPath).hom ≫
           (leftUnitor (B := Paths B) (a := b) (b := a) g.toPath).inv ↔
       rightZigzag η ε = (ρ_ g).hom ≫ (λ_ g).inv := by
-  erw [rightZigzag_toPath (a := a) (b := b),
-    Strict.rightUnitor_eqToIso (B := Paths B),
-    Strict.leftUnitor_eqToIso (B := Paths B), eqToIso_refl]
-  simp only [Iso.refl_hom, Iso.refl_inv]
-  erw [comp₂_def, id₂_def]
-  -- Express the remaining path identity as the identity 2-cell of `g` in `B`.
-  change (ρ_ g).inv ≫ rightZigzag η ε ≫ (λ_ g).hom = 𝟙 g ≫ 𝟙 g ↔ _
-  rw [Category.id_comp, Iso.inv_comp_eq, Category.comp_id, ← Iso.eq_comp_inv]
+  have h := congrArg₂ (fun θ θ' : g ⟶ g => θ = θ')
+    (rightZigzag_toPath (a := a) (b := b) η ε)
+    (rightUnitor_hom_comp_leftUnitor_inv_toPath (a := b) (b := a) g)
+  exact h.to_iff.trans (by
+    rw [Iso.inv_comp_eq, Category.comp_id, ← Iso.eq_comp_inv])
 
 end TauCeti.Bicategory.Paths
 
