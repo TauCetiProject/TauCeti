@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Moments.Covariance
-import Mathlib.Tactic.Linarith
 
 /-!
 # Grüss's inequality
