@@ -27,12 +27,13 @@ The real square root of a positive real, cast to `ℂ`, is nonzero, and that of 
 real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
 (`Complex.inv_ofReal_sqrt_mul_self`). Together with `1 + i ≠ 0` (`Complex.one_add_I_ne_zero`),
 these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`. It also follows
-that `i√x` squares to `-x` (`Complex.I_mul_ofReal_sqrt_sq`).
+that `i√x` squares to `-x` (`Complex.I_mul_ofReal_sqrt_sq`) and is the unique root with positive
+imaginary part when `x > 0`.
 -/
 
 public section
 
-open scoped Real
+open scoped ComplexConjugate Real
 
 namespace Complex
 
@@ -169,6 +170,26 @@ theorem inv_ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ)⁻¹ * 
 theorem I_mul_ofReal_sqrt_sq {x : ℝ} (hx : 0 ≤ x) : (I * √x) ^ 2 = -x := by
   rw [mul_pow, I_sq, sq_ofReal_sqrt hx]
   ring
+
+/-- A square root of a nonpositive real number is purely imaginary. -/
+theorem conj_eq_neg_of_sq_eq_neg {z : ℂ} {x : ℝ} (hx : 0 ≤ x)
+    (hz : z ^ 2 = -(x : ℂ)) : conj z = -z := by
+  rcases sq_eq_sq_iff_eq_or_eq_neg.mp (hz.trans (I_mul_ofReal_sqrt_sq hx).symm) with h | h
+  · simp [h]
+  · simp [h]
+
+/-- The square root of `-x` with positive imaginary part is `i√x`. -/
+theorem eq_I_mul_ofReal_sqrt_of_sq_eq_neg {z : ℂ} {x : ℝ}
+    (hz : z ^ 2 = -(x : ℂ)) (hi : 0 < z.im) : z = I * √x := by
+  have him := congrArg im hz
+  simp only [pow_two, mul_im, neg_im, ofReal_im, neg_zero] at him
+  have hre : z.re = 0 := by
+    have h : z.re * z.im = 0 := by linarith only [him, mul_comm z.im z.re]
+    exact (mul_eq_zero.mp h).resolve_right hi.ne'
+  have hx : x = z.im ^ 2 := by
+    simpa [pow_two, mul_re, hre] using (congrArg re hz).symm
+  rw [hx, Real.sqrt_sq hi.le]
+  exact Complex.ext (by simp [mul_re, hre]) (by simp [mul_im])
 
 /-- The complex number `1 + i` is nonzero. -/
 theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
