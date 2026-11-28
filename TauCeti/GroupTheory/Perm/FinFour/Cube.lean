@@ -62,6 +62,8 @@ axis through two opposite face centres a double transposition, a third-turn abou
   permutation of the diagonals is an isomorphism.
 * `TauCeti.cubeRotationToSpecialOrthogonalGroup_injective`: the homomorphism into `SO(3, R)` is
   injective whenever `2 ≠ 0` in `R`.
+* `TauCeti.mem_range_cubeRotationToSpecialOrthogonalGroup_iff`: characterization of the image in
+  `SO(3, R)` as the signed permutation matrices, whenever `2 ≠ 0` in `R`.
 * `TauCeti.cubeEdgeOrientation_smul`, `TauCeti.cubeEdgeOrientation_neg`: the orientation is
   invariant under the rotations and changes sign on the antipodal edge.
 * `TauCeti.cubeBodyDiagonalHom_cubeEdgeHalfTurn` and its three companions: the permutations of the
@@ -654,6 +656,66 @@ theorem cubeRotationToSpecialOrthogonalGroup_injective (R : Type*) [CommRing R] 
   have hij : ((A.val i j : ℤ) : R) = ((B.val i j : ℤ) : R) := by
     simpa [Matrix.map_apply] using congrFun (congrFun (congrArg Subtype.val hAB) i) j
   exact Int.cast_injOn_of_ringChar_ne_two hchar (hmem A i j) (hmem B i j) hij
+
+/-- **Range characterization of `TauCeti.cubeRotationToSpecialOrthogonalGroup`**: an element of
+`SO(3, R)` comes from a cube rotation exactly when it is a signed permutation matrix with entries
+in `{-1, 0, 1}` (whenever `2 ≠ 0` in `R`, so `1 ≠ -1` and the lift to `ℤ` has determinant `1`). -/
+theorem mem_range_cubeRotationToSpecialOrthogonalGroup_iff {R : Type*} [CommRing R] [NeZero (2 : R)]
+    {A : Matrix.specialOrthogonalGroup (Fin 3) R} :
+    A ∈ (cubeRotationToSpecialOrthogonalGroup R).range ↔
+      ∃ σ : Perm (Fin 3), ∃ ε : Fin 3 → R, (∀ j, ε j = 1 ∨ ε j = -1) ∧
+        ∀ i j, (A : Matrix (Fin 3) (Fin 3) R) i j = if σ j = i then ε j else 0 := by
+  constructor
+  · rintro ⟨B, rfl⟩
+    obtain ⟨σ, ε, hB⟩ := mem_cubeRotationGroup_iff.mp B.property
+    refine ⟨σ, fun j => ((ε j : ℤ) : R), fun j => ?_, fun i j => ?_⟩
+    · rcases Int.units_eq_one_or (ε j) with h | h <;> simp [h]
+    · simp only [coe_cubeRotationToSpecialOrthogonalGroup, Matrix.map_apply, hB, eq_intCast]
+      split_ifs <;> simp
+  · rintro ⟨σ, ε, hε, hA⟩
+    classical
+    have hne : (1 : R) ≠ -1 := fun h => by
+      have h2 : (2 : R) = 0 := by
+        rw [← one_add_one_eq_two]
+        nth_rw 2 [h]
+        exact add_neg_cancel 1
+      exact NeZero.ne (2 : R) h2
+    let u : Fin 3 → ℤˣ := fun j => if ε j = 1 then 1 else -1
+    have hu (j : Fin 3) : ((u j : ℤ) : R) = ε j := by
+      rcases hε j with h | h
+      · simp [u, h]
+      · simp [u, h, hne.symm]
+    let M : Matrix (Fin 3) (Fin 3) ℤ := Matrix.of fun i j => if σ j = i then (u j : ℤ) else 0
+    have hMM : Mᵀ * M = 1 := by
+      ext j k
+      rw [Matrix.mul_apply, Matrix.one_apply]
+      simp only [M, Matrix.transpose_apply, Matrix.of_apply, mul_ite, mul_zero, ite_mul, zero_mul,
+        Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, σ.injective.eq_iff]
+      split_ifs with hjk
+      · subst hjk
+        rcases Int.units_eq_one_or (u j) with hj | hj <;> simp [hj]
+      · rfl
+    have hdet_sq : M.det ^ 2 = 1 := by
+      calc M.det ^ 2 = Mᵀ.det * M.det := by rw [sq, Matrix.det_transpose]
+        _ = (Mᵀ * M).det := (Matrix.det_mul Mᵀ M).symm
+        _ = 1 := by rw [hMM, Matrix.det_one]
+    have hmap : M.map (Int.castRingHom R) = (A : Matrix (Fin 3) (Fin 3) R) := by
+      ext i j
+      rw [Matrix.map_apply, hA]
+      simp only [M, Matrix.of_apply, eq_intCast]
+      split_ifs <;> simp [hu]
+    have hdet : M.det = 1 := by
+      rcases sq_eq_one_iff.mp hdet_sq with h | h
+      · exact h
+      · exfalso
+        have h1 : (Int.castRingHom R) M.det = 1 := by
+          rw [(Int.castRingHom R).map_det M, RingHom.mapMatrix_apply, hmap]
+          exact (mem_specialOrthogonalGroup_iff.mp A.property).2
+        rw [eq_intCast, h, Int.cast_neg, Int.cast_one] at h1
+        exact hne h1.symm
+    refine ⟨⟨⟨M, hdet⟩, mem_cubeRotationGroup_iff.mpr ⟨σ, u, fun _ _ => rfl⟩⟩, Subtype.ext ?_⟩
+    rw [coe_cubeRotationToSpecialOrthogonalGroup]
+    exact hmap
 
 /-! ### The two inscribed tetrahedra -/
 

@@ -135,6 +135,12 @@ theorem torusMatrix_one : torusMatrix 1 = 1 := by
   fin_cases i <;> simp
 
 @[simp]
+theorem torusMatrix_neg_one : torusMatrix (-1) = -1 := by
+  rw [torusMatrix]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+@[simp]
 theorem torusMatrix_mul (z w : Circle) :
     torusMatrix (z * w) = torusMatrix z * torusMatrix w := by
   rw [torusMatrix, torusMatrix, torusMatrix, Matrix.diagonal_mul_diagonal]
@@ -246,11 +252,10 @@ theorem torusHom_injective : Function.Injective torusHom := fun z w h => by
 
 /-- The torus element `torusHom (-1)` is the scalar matrix `-1`. -/
 theorem coe_torusHom_neg_one : (torusHom (-1) : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
-  rw [coe_torusHom, torusMatrix]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
+  simp
 
 /-- The central involution `torusHom (-1)` is not the identity. -/
+@[simp]
 theorem torusHom_neg_one_ne_one : torusHom (-1) ≠ 1 := by
   rw [← map_one torusHom, ne_eq, torusHom_injective.eq_iff]
   intro h

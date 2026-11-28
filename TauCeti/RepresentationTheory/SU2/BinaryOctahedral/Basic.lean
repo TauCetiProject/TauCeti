@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.SU2.BinaryTetrahedral
+public import TauCeti.RepresentationTheory.SU2.SymmetricPower
 import Mathlib.GroupTheory.IndexNormal
 import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.GroupTheory.Index.Two
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -45,6 +49,10 @@ image under the double cover `SU(2) →* SO(3)` with the cube rotation group `S�
 * `TauCeti.SU2.binaryOctahedralSubgroup`: the binary octahedral subgroup of `SU(2)`.
 * `TauCeti.SU2.binaryOctahedralCoordsEquiv`: its parametrization by the coordinates of both
   families.
+* `TauCeti.SU2.binaryOctahedralRep`: the defining representation of `2O` on `ℂ²`, obtained by
+  restricting `TauCeti.stdRep ℂ 2` along `TauCeti.SU2.toGL.comp binaryOctahedralSubgroup.subtype`.
+* `TauCeti.SU2.binaryOctahedralSLSubgroup` and `TauCeti.SU2.binaryOctahedralEquivSLSubgroup`: the
+  binary octahedral subgroup viewed inside `SL₂(ℂ)` and its induced group equivalence.
 
 ## Main results
 
@@ -54,7 +62,11 @@ image under the double cover `SU(2) →* SO(3)` with the cube rotation group `S�
 * `TauCeti.SU2.mem_binaryOctahedralSubgroup_iff_exists_int` and
   `TauCeti.SU2.mem_binaryOctahedralSubgroup_iff_mem_binaryTetrahedralSubgroup_or_mul_mem`:
   coordinate and coset characterizations of the binary octahedral subgroup.
-* `TauCeti.SU2.natCard_binaryOctahedralSubgroup`: it has exactly 48 elements.
+* `TauCeti.SU2.binaryOctahedralRep_injective`, `TauCeti.SU2.isInvariantForm_binaryOctahedralRep`,
+  and `TauCeti.SU2.detRowAlternating_binaryOctahedralRep`: faithfulness of the defining
+  representation and preservation of the determinant form.
+* `TauCeti.SU2.natCard_binaryOctahedralSubgroup` and
+  `TauCeti.SU2.natCard_binaryOctahedralSLSubgroup`: both copies have exactly 48 elements.
 * `TauCeti.SU2.relIndex_binaryTetrahedralSubgroup_binaryOctahedralSubgroup`: the binary tetrahedral
   subgroup has index two in it.
 * `TauCeti.SU2.binaryDihedralSubgroup_four_le_binaryOctahedralSubgroup`: it contains the binary
@@ -382,6 +394,104 @@ theorem relIndex_binaryTetrahedralSubgroup_binaryOctahedralSubgroup :
 instance : (binaryTetrahedralSubgroup.subgroupOf binaryOctahedralSubgroup).Normal :=
   Subgroup.normal_of_index_eq_two relIndex_binaryTetrahedralSubgroup_binaryOctahedralSubgroup
 
+/-! ### Defining representation and `SL₂(ℂ)` copy -/
+
+section Representation
+
+open _root_.Matrix
+
+/-- **The defining two-dimensional complex representation of the binary octahedral subgroup**,
+obtained by restricting `TauCeti.stdRep ℂ 2` along `TauCeti.SU2.toGL` and the canonical subgroup
+inclusion `binaryOctahedralSubgroup.subtype`. -/
+noncomputable def binaryOctahedralRep :
+    Representation ℂ binaryOctahedralSubgroup (Fin 2 → ℂ) :=
+  (stdRep ℂ 2).comp (toGL.comp binaryOctahedralSubgroup.subtype)
+
+/-- Defining equation of `TauCeti.SU2.binaryOctahedralRep`. -/
+theorem binaryOctahedralRep_def :
+    binaryOctahedralRep = (stdRep ℂ 2).comp (toGL.comp binaryOctahedralSubgroup.subtype) :=
+  (rfl)
+
+/-- The defining representation acts by left multiplication by the underlying `SU(2)` matrix. -/
+@[simp]
+theorem binaryOctahedralRep_apply (g : binaryOctahedralSubgroup) :
+    binaryOctahedralRep g = Matrix.mulVecLin ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ) := by
+  rw [binaryOctahedralRep_def, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    Subgroup.coe_subtype, stdRep_apply, coe_toGL]
+
+/-- Evaluation of the defining representation is matrix-vector multiplication. -/
+theorem binaryOctahedralRep_apply_apply (g : binaryOctahedralSubgroup) (v : Fin 2 → ℂ) :
+    binaryOctahedralRep g v = ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v := by
+  rw [binaryOctahedralRep_apply, Matrix.mulVecLin_apply]
+
+/-- **The defining representation of the binary octahedral subgroup is faithful.** -/
+theorem binaryOctahedralRep_injective : Function.Injective binaryOctahedralRep :=
+  (stdRep_injective ℂ 2).comp (toGL_injective.comp binaryOctahedralSubgroup.subtype_injective)
+
+/-- **The defining representation preserves the determinant bilinear form**
+`(x, y) ↦ x 0 * y 1 - x 1 * y 0` on `ℂ²`. -/
+theorem isInvariantForm_binaryOctahedralRep :
+    Representation.IsInvariantForm binaryOctahedralRep (Matrix.toBilin' !![0, (1 : ℂ); -1, 0]) := by
+  refine Representation.isInvariantForm_iff.mpr fun g x y => ?_
+  have hdet : ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ).det = 1 :=
+    (Matrix.mem_specialUnitaryGroup_iff.mp (g : SU2).property).2
+  rw [Matrix.det_fin_two] at hdet
+  simp only [binaryOctahedralRep_apply_apply, Matrix.toBilin'_apply', Matrix.mulVec, dotProduct,
+    Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
+  linear_combination (x 0 * y 1 - x 1 * y 0) * hdet
+
+/-- **The defining representation preserves `Matrix.detRowAlternating` on `ℂ²`.** -/
+theorem detRowAlternating_binaryOctahedralRep (g : binaryOctahedralSubgroup)
+    (v : Fin 2 → Fin 2 → ℂ) :
+    Matrix.detRowAlternating (fun i => binaryOctahedralRep g (v i)) =
+      Matrix.detRowAlternating v := by
+  have hdet : ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ).det = 1 :=
+    (Matrix.mem_specialUnitaryGroup_iff.mp (g : SU2).property).2
+  simpa only [binaryOctahedralRep_apply_apply, hdet, one_mul] using
+    Matrix.detRowAlternating_mulVec (ι := Fin 2) ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ) v
+
+end Representation
+
+/-- **The binary octahedral subgroup as a subgroup of `SL₂(ℂ)`**, the image of
+`TauCeti.SU2.binaryOctahedralSubgroup` under `Matrix.specialUnitaryGroup.toSL`. -/
+noncomputable def binaryOctahedralSLSubgroup :
+    Subgroup (Matrix.SpecialLinearGroup (Fin 2) ℂ) :=
+  binaryOctahedralSubgroup.map Matrix.specialUnitaryGroup.toSL
+
+/-- Defining equation of `TauCeti.SU2.binaryOctahedralSLSubgroup`. -/
+theorem binaryOctahedralSLSubgroup_eq_map :
+    binaryOctahedralSLSubgroup = binaryOctahedralSubgroup.map Matrix.specialUnitaryGroup.toSL :=
+  (rfl)
+
+/-- Membership in `TauCeti.SU2.binaryOctahedralSLSubgroup`. -/
+theorem mem_binaryOctahedralSLSubgroup_iff {A : Matrix.SpecialLinearGroup (Fin 2) ℂ} :
+    A ∈ binaryOctahedralSLSubgroup ↔
+      ∃ g ∈ binaryOctahedralSubgroup, Matrix.specialUnitaryGroup.toSL g = A :=
+  Subgroup.mem_map
+
+/-- **The group isomorphism between `TauCeti.SU2.binaryOctahedralSubgroup` and its `SL₂(ℂ)` copy
+`TauCeti.SU2.binaryOctahedralSLSubgroup`.** -/
+noncomputable def binaryOctahedralEquivSLSubgroup :
+    binaryOctahedralSubgroup ≃* binaryOctahedralSLSubgroup :=
+  Subgroup.equivMapOfInjective binaryOctahedralSubgroup
+    Matrix.specialUnitaryGroup.toSL Matrix.specialUnitaryGroup.toSL_injective
+
+/-- Coercing `binaryOctahedralEquivSLSubgroup g` to `SL₂(ℂ)` gives `toSL g`. -/
+@[simp]
+theorem coe_binaryOctahedralEquivSLSubgroup_apply (g : binaryOctahedralSubgroup) :
+    (binaryOctahedralEquivSLSubgroup g : Matrix.SpecialLinearGroup (Fin 2) ℂ) =
+      Matrix.specialUnitaryGroup.toSL (g : SU2) :=
+  (rfl)
+
+instance : Finite binaryOctahedralSLSubgroup :=
+  Finite.of_equiv _ binaryOctahedralEquivSLSubgroup.toEquiv
+
+/-- **The `SL₂(ℂ)` copy of the binary octahedral subgroup has `48` elements.** -/
+@[simp]
+theorem natCard_binaryOctahedralSLSubgroup : Nat.card binaryOctahedralSLSubgroup = 48 := by
+  rw [← Nat.card_congr binaryOctahedralEquivSLSubgroup.toEquiv, natCard_binaryOctahedralSubgroup]
+
 /-! ### Generators, coset action, and presentation -/
 
 private theorem binaryDihedralRotation_four_exists_cosetCoords :
@@ -581,7 +691,7 @@ theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : 
   rcases hr with hr | hr | hr | hr
   · refine Or.inl (hpow 8 ?_)
     have htr0 : M.trace = 0 := by rw [htr, sq_eq_zero_iff.mp hr, Complex.ofReal_zero]
-    rw [show 8 = 2 * 4 by rfl, pow_mul,
+    rw [pow_mul M 2 4,
       Matrix.sq_eq_neg_one_of_det_eq_one_of_trace_eq_zero_fin_two hdet htr0]
     norm_num
   · refine Or.inr (hpow 6 ?_)
@@ -589,7 +699,7 @@ theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : 
     exact Matrix.pow_six_eq_one_of_det_eq_one_of_trace_sq_eq_one_fin_two hdet htr1
   · refine Or.inl (hpow 8 ?_)
     have htr2 : M.trace ^ 2 = 2 := by rw [htr]; exact_mod_cast hr
-    rw [show 8 = 4 * 2 by rfl, pow_mul,
+    rw [pow_mul M 4 2,
       Matrix.pow_four_eq_neg_one_of_det_eq_one_of_trace_sq_eq_two_fin_two hdet htr2, neg_one_sq]
   · -- Trace `±2` forces finite order only because `g ∈ SU(2)` is unitary (general `SL(2, ℂ)`
     -- elements of trace `±2` can be unipotent): `normSq q = 1` and `(2 * q.re)² = 4` force
@@ -603,7 +713,7 @@ theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : 
     have hqsq : q ^ 2 = 1 := by
       rw [Quaternion.sq_eq_normSq.mpr hqre, normSq_def', hnorm, Quaternion.coe_one]
     have hM2 : M ^ 2 = 1 := by rw [hgq, ← map_pow, hqsq, map_one]
-    rw [show 8 = 2 * 4 by rfl, pow_mul, hM2, one_pow]
+    rw [pow_mul M 2 4, hM2, one_pow]
 
 /-- **The binary octahedral subgroup is not cyclic**: it has order `48`, while every element has
 order dividing `8` or `6`. -/
