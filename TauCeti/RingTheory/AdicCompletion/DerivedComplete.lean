@@ -17,7 +17,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.OrthogonalLimits
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 public import TauCeti.Algebra.Homology.DerivedCategory.Coproduct
-public import TauCeti.Algebra.Homology.DerivedCategory.HomFromProjective
+public import TauCeti.Algebra.Homology.DerivedCategory.HomFromProjective.Basic
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.Algebra.Homology.ModuleCat.KInjective
 public import TauCeti.CategoryTheory.ObjectProperty.Orthogonal
