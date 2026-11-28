@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Analysis.PSeries
 import TauCeti.Algebra.Order.Ring.Basic
+import TauCeti.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
@@ -23,8 +23,9 @@ otherwise, so `∏_p γ_n(p)` is the Euler product of the mean value of `(m / φ
 appears as the leading constant of the second moment in Skorobogatov and Sofos, *Schinzel
 Hypothesis on average and rational points*, where it is truncated to the primes `p ≤ log x`.
 
-This file defines `γ_n` on real arguments, proves the sharp local bound
-`1 ≤ γ_n(p) ≤ 1 + (2 ^ n - 1) / (p (p - 1))` for `p ≥ 2`, and deduces that the product of
+This file defines `γ_n` on real arguments, proves the local bound
+`1 ≤ γ_n(p) ≤ 1 + (2 ^ n - 1) / (p (p - 1))` for `p ≥ 2`, with equality on the right at `p = 2`,
+and deduces that the product of
 `γ_n(k)` over any set `S` of natural numbers `k > y` is `1 + O_n(1 / y)`, with a constant that
 does not depend on `S`. In particular the product over any set of primes `p > log x` is
 `1 + O_n(1 / log x)`.
@@ -38,15 +39,19 @@ does not depend on `S`. In particular the product over any set of primes `p > lo
 * `TauCeti.totientMeanFactor_eq_zpow`: `γ_n(p) = 1 - 1/p + p ^ (n - 1) / (p - 1) ^ n`, with an
   integer exponent `n - 1`.
 * `TauCeti.one_le_totientMeanFactor`, `TauCeti.totientMeanFactor_le`: the local bounds
-  `1 ≤ γ_n(p)` for `p ≥ 1` and `γ_n(p) ≤ 1 + (2 ^ n - 1) / (p (p - 1))` for `p ≥ 2`, with equality
-  at `p = 2`.
+  `1 ≤ γ_n(p)` for `p ≥ 1` and `γ_n(p) ≤ 1 + (2 ^ n - 1) / (p (p - 1))` for `p ≥ 2`.
+* `TauCeti.totientMeanFactor_apply_two`: `γ_n(2) = (2 ^ n + 1) / 2`, the case of equality in the
+  upper bound.
 * `TauCeti.sum_totientMeanFactor_sub_one_le`: `∑_{k ∈ s} (γ_n(k) - 1) ≤ 4 (2 ^ n - 1) / (m + 1)`
   for a finite set `s` of natural numbers `k > m`.
-* `TauCeti.one_le_prod_totientMeanFactor`, `TauCeti.prod_totientMeanFactor_le_exp`: the bounds
-  `1 ≤ ∏_{k ∈ s} γ_n(k) ≤ exp (4 (2 ^ n - 1) / (m + 1))` for finite products.
-* `TauCeti.multipliable_totientMeanFactor`, `TauCeti.one_le_tprod_totientMeanFactor`,
-  `TauCeti.tprod_totientMeanFactor_le_exp`: the product over any set of natural numbers
-  converges, with the same bounds.
+* `TauCeti.prod_totientMeanFactor_le_exp`: `∏_{k ∈ s} γ_n(k) ≤ exp (4 (2 ^ n - 1) / (m + 1))` for
+  a finite set `s` of natural numbers `k > m`.
+* `TauCeti.multipliable_totientMeanFactor`, `TauCeti.one_le_tprod_totientMeanFactor`: the product
+  of `γ_n(k)` over any set of natural numbers converges and is at least `1`, with no condition on
+  the set.
+* `TauCeti.tprod_totientMeanFactor_le_exp`: the product over a set `S` of natural numbers `k > m`
+  is at most `exp (4 (2 ^ n - 1) / (m + 1))`; this upper bound needs every element of `S` to
+  exceed `m`.
 * `TauCeti.abs_tprod_totientMeanFactor_sub_one_le`: `|∏_{k ∈ S} γ_n(k) - 1| ≤ C_n / y` for every
   set `S` of natural numbers `k > y > 0`, with `C_n = 4 (2 ^ n - 1) exp (4 (2 ^ n - 1))`.
 * `TauCeti.abs_tprod_primes_totientMeanFactor_sub_one_le`: the case of the primes `p > log x` in
@@ -56,7 +61,8 @@ does not depend on `S`. In particular the product over any set of primes `p > lo
 
 * A. N. Skorobogatov and E. Sofos, *Schinzel Hypothesis on average and rational points*,
   Invent. Math. 231 (2023), 673–739: equation (2.5) for the definition, and Lemma 4.5 for the
-  truncation, whose proof is followed here with the sharper local bound above in place of
+  truncation, whose proof is followed here with the linear bound
+  `(1 + ψ) ^ n ≤ 1 + (2 ^ n - 1) ψ` on `[0, 1]`, sharp at both endpoints, in place of
   `(1 + ψ) ^ n ≤ 1 + n ψ + n 2 ^ n ψ ^ 2`.
 -/
 
@@ -98,10 +104,17 @@ theorem totientMeanFactor_apply_zero (n : ℕ) : totientMeanFactor n 0 = 1 := by
 theorem totientMeanFactor_apply_one (n : ℕ) : totientMeanFactor n 1 = 1 := by
   simp [totientMeanFactor_eq_one_add]
 
+/-- The value at `2` is `γ_n(2) = (2 ^ n + 1) / 2`. -/
+@[simp]
+theorem totientMeanFactor_apply_two (n : ℕ) : totientMeanFactor n 2 = (2 ^ n + 1) / 2 := by
+  rw [totientMeanFactor_def]
+  norm_num
+  ring
+
 /-- `γ_1(p) = 1 + 1 / (p (p - 1))`. -/
+@[simp]
 theorem totientMeanFactor_one (p : ℝ) : totientMeanFactor 1 p = 1 + (p * (p - 1))⁻¹ := by
-  rw [totientMeanFactor_eq_one_add, pow_one, add_sub_cancel_left, mul_inv, div_eq_mul_inv,
-    mul_comm]
+  simp [totientMeanFactor_eq_one_add, div_eq_mul_inv, mul_comm]
 
 /-- `γ_n(p) = 1 - 1/p + p ^ (n - 1) / (p - 1) ^ n` for `p ≠ 0, 1`, where the exponent `n - 1` is
 an integer. -/
@@ -111,8 +124,8 @@ theorem totientMeanFactor_eq_zpow {p : ℝ} (hp0 : p ≠ 0) (hp1 : p ≠ 1) (n :
   have h : 1 + (p - 1)⁻¹ = p / (p - 1) := by
     field_simp
     ring
-  rw [totientMeanFactor_def, h, div_pow, zpow_sub_one₀ hp0, zpow_natCast]
-  field_simp
+  rw [totientMeanFactor_def, h, div_pow, div_right_comm, zpow_sub_one₀ hp0, zpow_natCast,
+    div_eq_mul_inv (p ^ n) p]
 
 /-- `1 ≤ γ_n(p)` for `p ≥ 1`. -/
 theorem one_le_totientMeanFactor {p : ℝ} (hp : 1 ≤ p) (n : ℕ) : 1 ≤ totientMeanFactor n p := by
@@ -125,11 +138,11 @@ theorem one_le_totientMeanFactor {p : ℝ} (hp : 1 ≤ p) (n : ℕ) : 1 ≤ toti
 theorem totientMeanFactor_le {p : ℝ} (hp : 2 ≤ p) (n : ℕ) :
     totientMeanFactor n p ≤ 1 + (2 ^ n - 1) / (p * (p - 1)) := by
   have hp1 : 0 < p - 1 := by linarith
-  have h := one_add_pow_le_one_add_mul (inv_nonneg.2 hp1.le)
+  have h := one_add_pow_add_le_one_add_two_pow_mul (inv_nonneg.2 hp1.le)
     (inv_le_one_of_one_le₀ (by linarith : 1 ≤ p - 1)) n
   have key : ((1 + (p - 1)⁻¹) ^ n - 1) / p ≤ (2 ^ n - 1) / (p * (p - 1)) :=
     calc ((1 + (p - 1)⁻¹) ^ n - 1) / p ≤ (2 ^ n - 1) * (p - 1)⁻¹ / p := by gcongr; linarith
-      _ = (2 ^ n - 1) / (p * (p - 1)) := by field_simp
+      _ = (2 ^ n - 1) / (p * (p - 1)) := by rw [← div_eq_mul_inv, div_div, mul_comm]
   rw [totientMeanFactor_eq_one_add]
   linarith
 
@@ -161,23 +174,13 @@ theorem sum_totientMeanFactor_sub_one_le (n : ℕ) {m : ℕ} {s : Finset ℕ} (h
     ∑ k ∈ s, (totientMeanFactor n k - 1) ≤ 4 * (2 ^ n - 1) / (m + 1) := by
   have hK : (0 : ℝ) ≤ 2 * (2 ^ n - 1) :=
     mul_nonneg zero_le_two (sub_nonneg.2 (one_le_pow₀ one_le_two))
-  have hsub : s ⊆ Ioo m (s.sup id + 1) := fun k hk ↦
-    mem_Ioo.2 ⟨hs k hk, Nat.lt_succ_of_le (le_sup (f := id) hk)⟩
   calc ∑ k ∈ s, (totientMeanFactor n k - 1)
       ≤ ∑ k ∈ s, 2 * (2 ^ n - 1) * ((k : ℝ) ^ 2)⁻¹ :=
         sum_le_sum fun k _ ↦ totientMeanFactor_natCast_sub_one_le n k
-    _ ≤ ∑ k ∈ Ioo m (s.sup id + 1), 2 * (2 ^ n - 1) * ((k : ℝ) ^ 2)⁻¹ :=
-        sum_le_sum_of_subset_of_nonneg hsub fun k _ _ ↦
-          mul_nonneg hK (inv_nonneg.2 (sq_nonneg _))
-    _ = 2 * (2 ^ n - 1) * ∑ k ∈ Ioo m (s.sup id + 1), ((k : ℝ) ^ 2)⁻¹ := (mul_sum _ _ _).symm
+    _ = 2 * (2 ^ n - 1) * ∑ k ∈ s, ((k : ℝ) ^ 2)⁻¹ := (mul_sum _ _ _).symm
     _ ≤ 2 * (2 ^ n - 1) * (2 / (m + 1)) :=
-        mul_le_mul_of_nonneg_left (sum_Ioo_inv_sq_le m _) hK
+        mul_le_mul_of_nonneg_left (sum_inv_sq_le_two_div_of_forall_lt hs) hK
     _ = 4 * (2 ^ n - 1) / (m + 1) := by ring
-
-/-- A finite product of the factors `γ_n(k)` over natural numbers is at least `1`. -/
-theorem one_le_prod_totientMeanFactor (n : ℕ) (s : Finset ℕ) :
-    1 ≤ ∏ k ∈ s, totientMeanFactor n k :=
-  one_le_prod₀ fun k _ ↦ one_le_totientMeanFactor_natCast n k
 
 /-- For a finite set `s` of natural numbers `k > m`,
 `∏_{k ∈ s} γ_n(k) ≤ exp (4 (2 ^ n - 1) / (m + 1))`. -/
@@ -254,17 +257,15 @@ theorem abs_tprod_primes_totientMeanFactor_sub_one_le (n : ℕ) {x : ℝ} (hx : 
 
 /-! ### Examples -/
 
-example : totientMeanFactor 1 2 = 3 / 2 := by
-  rw [totientMeanFactor_one]
-  norm_num
+example : totientMeanFactor 1 2 = 3 / 2 := by norm_num
 
 example : totientMeanFactor 2 3 = 17 / 12 := by
   rw [totientMeanFactor_def]
   norm_num
 
+/-- At `p = 2` the upper bound `totientMeanFactor_le` is an equality. -/
 example (n : ℕ) : totientMeanFactor n 2 = 1 + (2 ^ n - 1) / (2 * (2 - 1)) := by
-  rw [totientMeanFactor_def]
-  norm_num
+  rw [totientMeanFactor_apply_two]
   ring
 
 example (S : Set ℕ) : ∏' k : S, totientMeanFactor 0 k = 1 := by simp
