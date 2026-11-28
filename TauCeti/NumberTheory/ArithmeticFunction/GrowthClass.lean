@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
+import TauCeti.NumberTheory.ArithmeticFunction.Additive
 import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 
 /-!
@@ -154,43 +155,27 @@ example : ¬SieveGrowthClass A B ε (-((ζ : ArithmeticFunction ℕ) : Arithmeti
     simp at h1
     linarith
 
-/-- The function `n ↦ 2 ^ Ω(n)`, as an arithmetic function vanishing at `0`. -/
-private noncomputable def twoPowCardFactors : ArithmeticFunction ℝ :=
-  ⟨fun n ↦ if n = 0 then 0 else 2 ^ Ω n, ite_eq_left rfl⟩
-
-private theorem twoPowCardFactors_apply {n : ℕ} (hn : n ≠ 0) : twoPowCardFactors n = 2 ^ Ω n :=
-  ite_eq_right hn
-
-private theorem isMultiplicative_twoPowCardFactors : twoPowCardFactors.IsMultiplicative := by
-  refine ⟨by rw [twoPowCardFactors_apply one_ne_zero, cardFactors_one, pow_zero],
-    fun {m n} _ ↦ ?_⟩
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  rw [twoPowCardFactors_apply (mul_ne_zero hm hn), twoPowCardFactors_apply hm,
-    twoPowCardFactors_apply hn, cardFactors_mul hm hn, pow_add]
-
 /-- `n ↦ 2 ^ Ω(n)` belongs to `M(2, 1, 1)`, and its value at `4` is `4`, not `2`: prime factors
 are counted with multiplicity. -/
-example : SieveGrowthClass 2 1 1 twoPowCardFactors ∧ twoPowCardFactors 4 = 4 := by
+example : SieveGrowthClass 2 1 1 (powOfAdditive (2 : ℝ) Ω) ∧ powOfAdditive (2 : ℝ) Ω 4 = 4 := by
   refine ⟨?_, ?_⟩
   · have h := sieveGrowthClass_of_le_pow_cardFactors one_lt_two
-      isMultiplicative_twoPowCardFactors (fun n ↦ ?_)
-      fun n hn ↦ (twoPowCardFactors_apply hn).le
+      (isAdditive_cardFactors.isMultiplicative_powOfAdditive (2 : ℝ)) (fun n ↦ ?_)
+      fun n hn ↦ (powOfAdditive_apply (2 : ℝ) Ω hn).le
     · rwa [Real.logb_self_eq_one one_lt_two] at h
     · rcases eq_or_ne n 0 with rfl | hn
-      · exact ArithmeticFunction.map_zero.ge
-      · rw [twoPowCardFactors_apply hn]
+      · exact (powOfAdditive_apply_zero (2 : ℝ) Ω).ge
+      · rw [powOfAdditive_apply (2 : ℝ) Ω hn]
         positivity
-  · rw [twoPowCardFactors_apply (by norm_num), show (4 : ℕ) = 2 ^ 2 by norm_num,
+  · have h4 : (4 : ℕ) = 2 ^ 2 := by norm_num
+    rw [powOfAdditive_apply (2 : ℝ) Ω (by norm_num), h4,
       cardFactors_apply_prime_pow Nat.prime_two]
     norm_num
 
 /-- `n ↦ 2 ^ Ω(n)` is not in `M(1, 1, 1)`: at `n = 2` its value `2` exceeds `1 ^ Ω(2) = 1`. -/
-example : ¬SieveGrowthClass 1 1 1 twoPowCardFactors := fun h ↦ by
+example : ¬SieveGrowthClass 1 1 1 (powOfAdditive (2 : ℝ) Ω) := fun h ↦ by
   have h2 := h.le_pow_cardFactors 2 two_ne_zero
-  rw [twoPowCardFactors_apply two_ne_zero, cardFactors_apply_prime Nat.prime_two] at h2
+  rw [powOfAdditive_apply (2 : ℝ) Ω two_ne_zero, cardFactors_apply_prime Nat.prime_two] at h2
   norm_num at h2
 
 end TauCeti
