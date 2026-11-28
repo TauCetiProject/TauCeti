@@ -92,10 +92,7 @@ theorem exists_eq_sum_mul_pow_and_forall_exists_isNondegenerateSolution_of_eq_ze
   -- A nondegenerate solution has nonzero coefficients and, summing to `1`, at least one term.
   have hcoef (θ : J.map f) : g (θ : Kˣ) ≠ 0 ∧ g (α θ₀) ≠ 0 := by
     simpa only [neg_div, neg_ne_zero, div_ne_zero_iff] using left_ne_zero_of_mul (hsol.ne_zero θ)
-  obtain ⟨θ⟩ : Nonempty (J.map f) := by
-    by_contra h
-    rw [not_nonempty_iff] at h
-    simpa using hsol.sum_eq_one
+  obtain ⟨θ⟩ := hsol.nonempty
   refine ⟨α θ₀, Multiset.mem_toFinset.mp θ₀.property, (hcoef θ).2, J.map f,
     fun x hx ↦ ⟨?_, ?_, (hcoef ⟨x, hx⟩).1⟩, hsol⟩
   · obtain ⟨θ, -, rfl⟩ := Finset.mem_map.mp hx

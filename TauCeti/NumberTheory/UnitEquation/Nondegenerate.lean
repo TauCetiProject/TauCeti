@@ -97,6 +97,12 @@ variable [Semiring R] {α x : ι → R}
 theorem sum_eq_one (h : IsNondegenerateSolution α x) : ∑ i, α i * x i = 1 :=
   h.1
 
+/-- A nondegenerate solution over a nontrivial semiring has at least one coordinate. -/
+theorem nonempty [Nontrivial R] (h : IsNondegenerateSolution α x) : Nonempty ι := by
+  by_contra hι
+  rw [not_nonempty_iff] at hι
+  simpa using h.sum_eq_one
+
 theorem subsum_ne_zero (h : IsNondegenerateSolution α x) {I : Finset ι} (hI : I.Nonempty) :
     ∑ i ∈ I, α i * x i ≠ 0 :=
   h.2 I hI

@@ -124,6 +124,12 @@ section Field
 
 variable {K : Type*} [Field K] (E : LinearRecurrence K)
 
+/-- The solution space has dimension equal to the degree of the characteristic polynomial. -/
+private theorem finrank_solSpace_eq_natDegree_charPoly :
+    Module.finrank K E.solSpace = E.charPoly.natDegree := by
+  rw [Module.finrank_eq_of_rank_eq E.solSpace_rank,
+    natDegree_eq_of_degree_eq_some E.charPoly_degree_eq_order]
+
 /-! ### Simple recurrences -/
 
 /-- **Closed form of a simple recurrence.** If the characteristic polynomial of `E` splits with
@@ -139,13 +145,11 @@ theorem exists_eq_sum_mul_pow [DecidableEq K] (hsplit : E.charPoly.Splits)
   -- They are independent, being distinct monoid homomorphisms `Multiplicative ℕ →* K`.
   have hli : LinearIndependent K v :=
     .of_comp E.solSpace.subtype <| (linearIndependent_monoidHom (Multiplicative ℕ) K).comp
-      (fun θ : s ↦ powersHom K θ) fun θ θ' h ↦
-        Subtype.ext (by simpa using DFunLike.congr_fun h (.ofAdd 1))
+      (fun θ : s ↦ powersHom K θ) ((powersHom K).injective.comp Subtype.val_injective)
   -- Their number is `E.order`, the dimension of the solution space, so they span it.
   have hcard : Fintype.card s = Module.finrank K E.solSpace := by
     rw [Fintype.card_coe, Multiset.toFinset_card_of_nodup hnodup, ← hsplit.natDegree_eq_card_roots,
-      natDegree_eq_of_degree_eq_some E.charPoly_degree_eq_order,
-      Module.finrank_eq_card_basis E.basis, Fintype.card_fin]
+      E.finrank_solSpace_eq_natDegree_charPoly]
   have := Module.Finite.of_basis E.basis
   obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun K).mp <|
     (hli.span_eq_top_of_card_eq_finrank' hcard).symm ▸
@@ -236,8 +240,8 @@ theorem exists_eq_sum_eval_mul_pow (hsplit : E.charPoly.Splits) (h0 : E.charPoly
   have := Module.Finite.of_basis E.basis
   have (θ : s) : Module.Finite K (degreeLT K (m θ)) := .equiv (degreeLTEquiv K (m θ)).symm
   have hdim : Module.finrank K (Π θ : s, degreeLT K (m θ)) = Module.finrank K E.solSpace := by
-    rw [Module.finrank_pi_fintype, Module.finrank_eq_card_basis E.basis, Fintype.card_fin,
-      ← natDegree_eq_of_degree_eq_some E.charPoly_degree_eq_order, hsplit.natDegree_eq_card_roots,
+    rw [Module.finrank_pi_fintype, E.finrank_solSpace_eq_natDegree_charPoly,
+      hsplit.natDegree_eq_card_roots,
       ← Multiset.toFinset_sum_count_eq, ← Finset.sum_coe_sort s]
     refine Finset.sum_congr rfl fun θ _ ↦ ?_
     rw [(degreeLTEquiv K (m θ)).finrank_eq, Module.finrank_fin_fun, count_roots]

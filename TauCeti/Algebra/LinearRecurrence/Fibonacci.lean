@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.NumberTheory.Real.GoldenRatio
-import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.LinearRecurrence.Nondegenerate
 
 /-!
@@ -27,10 +26,10 @@ open Polynomial
 
 namespace LinearRecurrence
 
-/-- The Fibonacci recurrence `u(n+2) = u(n+1) + u(n)` is nondegenerate: a root `θ` of
-`X ^ 2 - (X + 1)` satisfies `θ ^ (k + 1) = F (k + 1) * θ + F k` with `F` the Fibonacci numbers, so
-distinct roots `θ, θ'` have `θ ^ (k + 1) - θ' ^ (k + 1) = F (k + 1) * (θ - θ') ≠ 0`. -/
+/-- The Fibonacci recurrence over `ℚ` has nonzero constant term, and the quotient of its two
+distinct characteristic roots has infinite multiplicative order. -/
 example : (Real.fibRec : LinearRecurrence ℚ).IsNondegenerate := by
+  -- At a root `x`, the power `x ^ (k + 1)` equals `F (k + 1) * x + F k` for Fibonacci numbers `F`.
   have hpow {x : AlgebraicClosure ℚ}
       (hx : x ∈ (Real.fibRec : LinearRecurrence ℚ).charPoly.rootSet (AlgebraicClosure ℚ)) (k : ℕ) :
       x ^ (k + 1) = (Nat.fib (k + 1) : AlgebraicClosure ℚ) * x + Nat.fib k := by
