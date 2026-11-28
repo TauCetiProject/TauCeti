@@ -212,6 +212,53 @@ theorem norm_pi_mul_cot_pi_mul_le {u : ℂ} {t : ℝ} (ht : 0 < t) (hu : t ≤ u
           Complex.norm_I, mul_one] at h ⊢
         linarith
 
+/-- The normalized complex cotangent is uniformly bounded away from its integer poles,
+with no restriction on the real part or height. -/
+theorem exists_norm_pi_mul_cot_pi_mul_le_of_forall_le_norm_sub_intCast {δ : ℝ} (hδ : 0 < δ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ u : ℂ, (∀ n : ℤ, δ ≤ ‖u - n‖) → ‖π * cot (π * u)‖ ≤ C := by
+  let K : Set ℂ := Metric.closedBall 0 2 ∩ ⋂ n : ℤ, {u | δ ≤ ‖u - n‖}
+  have hK : IsCompact K := (isCompact_closedBall _ _).inter_right
+    (isClosed_iInter fun _ : ℤ ↦ isClosed_le continuous_const
+      (continuous_id.sub continuous_const).norm)
+  have hcont : ContinuousOn (fun u : ℂ ↦ π * cot (π * u)) K := by
+    intro u hu
+    have hsin : sin (π * u) ≠ 0 := by
+      intro h
+      obtain ⟨n, hn⟩ := sin_eq_zero_iff.mp h
+      have he : u = (n : ℂ) := (mul_right_cancel₀ (ofReal_ne_zero.mpr Real.pi_ne_zero))
+        ((mul_comm u (π : ℂ)).trans hn)
+      have hd := Set.mem_iInter.mp hu.2 n
+      simp [he, not_le.mpr hδ] at hd
+    have hmul : Continuous fun z : ℂ ↦ (π : ℂ) * z := continuous_const.mul continuous_id
+    have hc := (continuous_cos.comp hmul).continuousAt (x := u)
+    have hs := (continuous_sin.comp hmul).continuousAt (x := u)
+    simp only [cot_eq_cos_div_sin]
+    exact (continuousAt_const.mul (hc.div hs hsin)).continuousWithinAt
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hcont
+  let B := 2 * π / (1 - Real.exp (-2 * π * 1)) + π
+  refine ⟨max (max M B) 1, lt_of_lt_of_le zero_lt_one (le_max_right ..), fun u hu ↦ ?_⟩
+  have hB : B ≤ max (max M B) 1 := (le_max_right M B).trans (le_max_left ..)
+  by_cases hp : 1 ≤ u.im
+  · exact (norm_pi_mul_cot_pi_mul_le zero_lt_one hp).trans hB
+  by_cases hn : 1 ≤ -u.im
+  · simpa using (norm_pi_mul_cot_pi_mul_le zero_lt_one (u := -u) (by simpa using hn)).trans hB
+  let m : ℤ := ⌊u.re⌋
+  have hr : 0 ≤ (u - (m : ℂ)).re ∧ (u - (m : ℂ)).re < 1 := by
+    simp only [sub_re, intCast_re, m, sub_nonneg]
+    exact ⟨Int.floor_le _, by linarith [Int.lt_floor_add_one u.re]⟩
+  have hk : u - (m : ℂ) ∈ K := by
+    refine ⟨mem_closedBall_zero_iff.mpr ((norm_le_abs_re_add_abs_im _).trans ?_),
+      Set.mem_iInter.mpr fun n ↦ ?_⟩
+    · simp only [abs_of_nonneg hr.1, sub_im, intCast_im, sub_zero]
+      have hi : |u.im| ≤ 1 := abs_le.mpr ⟨by linarith, le_of_not_ge hp⟩
+      linarith [hr.2]
+    · simpa only [Set.mem_ofPred_eq, Int.cast_add, ← sub_sub] using hu (m + n)
+  have he : π * (u - (m : ℂ)) = π * u - m • (π : ℂ) := by
+    rw [mul_sub, zsmul_eq_mul, mul_comm (π : ℂ) (m : ℂ)]
+  have h := hM _ hk
+  rw [he, cot_periodic.sub_zsmul_eq] at h
+  exact h.trans ((le_max_left M B).trans (le_max_left ..))
+
 /-- The sum of `π cot (π u)` and `π cot (π v)`, for `u` in the upper and `v` in the lower
 half-plane, at imaginary distance at least `t > 0` from the real axis and `r` from it, is at most
 `2 (2π / (1 - e^(-2π t))) e^(-2π r)`: the two cotangents approach `-π i` and `π i`. -/

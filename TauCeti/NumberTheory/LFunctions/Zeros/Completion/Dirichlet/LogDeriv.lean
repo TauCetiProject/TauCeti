@@ -12,8 +12,8 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 # Logarithmic derivatives of completed Dirichlet functions
 
 Let `χ` be a primitive Dirichlet character of conductor `N`, and write
-`Λ₀ = (dirichletData χ hχ).entireCompletion`. For `χ ≠ 1`, `Λ₀ s = N ^ (s / 2) Λ(χ, s)`, so on the
-positive half-plane, away from the zeros of `L(χ, ·)`,
+`Λ₀ = (dirichletData χ hχ).entireCompletion`. For `χ ≠ 1`, `Λ₀ s = N ^ (s / 2) Λ(χ, s)`.
+Away from the zeros of `L(χ, ·)`,
 `Λ₀'/Λ₀ (s) = ½ log N + Γℝ'/Γℝ (s + a) + L'/L (s, χ)`, where `a` is `0` for even and `1` for odd
 characters; the gamma term equals `ψ((s + a)/2)/2 − ½ log π`. These are the terms of the
 partial-fraction expansion of `Λ₀'/Λ₀` other than its sum over zeros.
@@ -63,40 +63,50 @@ theorem logDeriv_dirichletData_entireCompletion_eq_completed (hne : χ ≠ 1) {s
       (by fun_prop (disch := exact Or.inl hN))
       ((DirichletCharacter.differentiable_completedLFunction hne) s), hpow]
 
-/-- **The logarithmic derivative of the completed Dirichlet function.** On the positive
-half-plane, away from the zeros of `L(χ, ·)`, it is `½ log N + Γℝ'/Γℝ (s + a) + L'/L (s, χ)`,
-where `a` is the parity of `χ`. -/
-theorem logDeriv_dirichletData_entireCompletion (hne : χ ≠ 1) {s : ℂ} (hs : 0 < s.re)
+/-- Away from the zeros of a primitive nonprincipal `L(χ, ·)`, the logarithmic derivative of
+its entire completion is `½ log N + Γℝ'/Γℝ (s + a) + L'/L (s, χ)`, for parity `a`. -/
+theorem logDeriv_dirichletData_entireCompletion (hne : χ ≠ 1) {s : ℂ}
     (hL : χ.LFunction s ≠ 0) :
     logDeriv (dirichletData χ hχ).entireCompletion s =
       (Real.log N : ℂ) / 2 + logDeriv χ.gammaFactor s + logDeriv χ.LFunction s := by
-  have hΛ : χ.completedLFunction s ≠ 0 := by
-    rw [χ.LFunction_eq_completed_div_gammaFactor s (.inl fun h ↦ by simp [h] at hs)] at hL
-    exact left_ne_zero_of_mul (by simpa [div_eq_mul_inv] using hL)
-  rw [logDeriv_dirichletData_entireCompletion_eq_completed χ hχ hne hΛ,
-    χ.logDeriv_completedLFunction hs (.inr hne) hL, add_assoc]
+  have hN : N ≠ 1 := fun h ↦ hne (χ.level_one' h)
+  have hquot : χ.LFunction = χ.completedLFunction / χ.gammaFactor :=
+    funext fun z ↦ χ.LFunction_eq_completed_div_gammaFactor z (.inr hN)
+  have hq : χ.completedLFunction s / χ.gammaFactor s ≠ 0 := by
+    simpa only [hquot, Pi.div_apply] using hL
+  obtain ⟨hΛ, hΓ⟩ := div_ne_zero_iff.mp hq
+  have hdΓ : DifferentiableAt ℂ χ.gammaFactor s := by
+    simpa only [Pi.inv_def, inv_inv] using
+      (χ.differentiable_inv_gammaFactor s).inv (inv_ne_zero hΓ)
+  have hlog : logDeriv χ.LFunction s =
+      logDeriv χ.completedLFunction s - logDeriv χ.gammaFactor s := by
+    rw [hquot, logDeriv_div s hΛ hΓ (χ.differentiable_completedLFunction hne s) hdΓ]
+  rw [logDeriv_dirichletData_entireCompletion_eq_completed χ hχ hne hΛ, hlog]
+  ring
 
-/-- On the positive half-plane, away from the zeros of `L(χ, ·)`, the real part of the
+/-- Away from the zeros of `L(χ, ·)`, the real part of the
 entire completion's logarithmic derivative is the sum of the conductor, gamma and `L'/L`
 real parts. -/
 theorem _root_.DirichletCharacter.re_logDeriv_dirichletData_entireCompletion
-    (hne : χ ≠ 1) {s : ℂ} (hs : 0 < s.re)
-    (hL : χ.LFunction s ≠ 0) :
+    (hne : χ ≠ 1) {s : ℂ} (hL : χ.LFunction s ≠ 0) :
     (logDeriv (dirichletData χ hχ).entireCompletion s).re =
       Real.log N / 2 + (logDeriv χ.gammaFactor s).re + (logDeriv χ.LFunction s).re := by
-  rw [logDeriv_dirichletData_entireCompletion χ hχ hne hs hL, add_re, add_re, div_ofNat_re,
+  rw [logDeriv_dirichletData_entireCompletion χ hχ hne hL, add_re, add_re, div_ofNat_re,
     ofReal_re]
 
 open scoped Classical in
 /-- The logarithmic derivative of the completed Dirichlet function with the explicit digamma
 form of its gamma term. -/
 theorem logDeriv_dirichletData_entireCompletion_eq_digamma (hne : χ ≠ 1) {s : ℂ}
-    (hs : 0 < s.re) (hL : χ.LFunction s ≠ 0) :
+    (hL : χ.LFunction s ≠ 0) :
     logDeriv (dirichletData χ hχ).entireCompletion s =
       (Real.log N : ℂ) / 2 + (digamma ((s + if χ.Even then 0 else 1) / 2) / 2 -
         (Real.log Real.pi : ℂ) / 2) + logDeriv χ.LFunction s := by
-  rw [logDeriv_dirichletData_entireCompletion χ hχ hne hs hL,
-    χ.logDeriv_gammaFactor_eq_digamma (χ.gammaFactor_ne_zero_of_re_pos hs)]
+  have hN : N ≠ 1 := fun h ↦ hne (χ.level_one' h)
+  have hΓ : χ.gammaFactor s ≠ 0 := by
+    intro h
+    exact hL (by rw [χ.LFunction_eq_completed_div_gammaFactor s (.inr hN), h, div_zero])
+  rw [logDeriv_dirichletData_entireCompletion χ hχ hne hL, χ.logDeriv_gammaFactor_eq_digamma hΓ]
 
 /-- Away from the zeros of a primitive nonprincipal Dirichlet L-function, the logarithmic
 derivative of its entire completion has a shifted real gamma term. The correction
@@ -107,20 +117,11 @@ theorem _root_.DirichletCharacter.logDeriv_dirichletData_entireCompletion_eq_log
       (Real.log N : ℂ) / 2 + (logDeriv Gammaℝ (s + χ.gammaPoleOffset) -
         ((χ.gammaPoleOffset : ℂ) - 1) / s) + logDeriv χ.LFunction s := by
   have hN : N ≠ 1 := fun h ↦ hne (χ.level_one' h)
-  have hquot : χ.LFunction = χ.completedLFunction / χ.gammaFactor :=
-    funext fun z ↦ χ.LFunction_eq_completed_div_gammaFactor z (.inr hN)
-  have hq : χ.completedLFunction s / χ.gammaFactor s ≠ 0 := by
-    simpa only [hquot, Pi.div_apply] using hL
-  obtain ⟨hΛ, hΓ⟩ := div_ne_zero_iff.mp hq
-  have hdΓ : DifferentiableAt ℂ χ.gammaFactor s := by
-    simpa only [Pi.inv_def, inv_inv] using
-      (χ.differentiable_inv_gammaFactor s).inv (inv_ne_zero hΓ)
-  have hlogL : logDeriv χ.LFunction s =
-      logDeriv χ.completedLFunction s - logDeriv χ.gammaFactor s := by
-    rw [hquot, logDeriv_div s hΛ hΓ (χ.differentiable_completedLFunction hne s) hdΓ]
-  rw [logDeriv_dirichletData_entireCompletion_eq_completed χ hχ hne hΛ, hlogL,
+  have hΓ : χ.gammaFactor s ≠ 0 := by
+    intro h
+    exact hL (by rw [χ.LFunction_eq_completed_div_gammaFactor s (.inr hN), h, div_zero])
+  rw [logDeriv_dirichletData_entireCompletion χ hχ hne hL,
     χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div hΓ]
-  ring
 
 /-- The functional equation reflects the logarithmic derivative of a primitive Dirichlet entire
 completion to that of the inverse character. -/
@@ -175,7 +176,7 @@ theorem exists_norm_logDeriv_dirichletData_entireCompletion_sub_le (K : Set ℂ)
           logDeriv χ.LFunction s‖ ≤ C := by
   obtain ⟨C, hC0, hC⟩ := DirichletCharacter.exists_norm_logDeriv_gammaFactor_le K hK hKre
   refine ⟨C, hC0, fun χ hχ hne s hs hL ↦ ?_⟩
-  rw [logDeriv_dirichletData_entireCompletion χ hχ hne (hKre hs) hL]
+  rw [logDeriv_dirichletData_entireCompletion χ hχ hne hL]
   convert hC χ s hs using 2
   ring
 

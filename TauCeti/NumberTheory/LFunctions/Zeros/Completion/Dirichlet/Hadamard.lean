@@ -362,7 +362,7 @@ theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction_add
   have hΛ : (dirichletData χ hχ).entireCompletion s ≠ 0 :=
     (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hs).not.mpr hL
   rw [← re_logDeriv_dirichletData_entireCompletion_eq_tsum χ hχ hΛ,
-    χ.re_logDeriv_dirichletData_entireCompletion hχ hne hs hL]
+    χ.re_logDeriv_dirichletData_entireCompletion hχ hne hL]
   ring
 
 /-- **Finite retained-zero inequality.** For any primitive nonprincipal Dirichlet character `χ` of
@@ -376,7 +376,6 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
     ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((σ : ℂ) - ρ)).re ≤
       (logDeriv χ.LFunction σ).re + Real.log N / 2 + TauCeti.gammaLogDerivBound := by
   have hσ1 : 1 ≤ (σ : ℂ).re := by simpa using hσ.1
-  have hσ0 : 0 < (σ : ℂ).re := zero_lt_one.trans_le hσ1
   have hLσ : χ.LFunction σ ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hσ1
   have hfin :=
     (dirichletData_hasFunctionalEquation χ hχ
@@ -391,7 +390,7 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
     rw [toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt χ hχ hne (hS ρ hρ)]
   have hdecomp : (logDeriv (dirichletData χ hχ).entireCompletion σ).re =
       Real.log N / 2 + (logDeriv χ.gammaFactor σ).re + (logDeriv χ.LFunction σ).re := by
-    exact χ.re_logDeriv_dirichletData_entireCompletion hχ hne hσ0 hLσ
+    exact χ.re_logDeriv_dirichletData_entireCompletion hχ hne hLσ
   have hgamma : (logDeriv χ.gammaFactor σ).re ≤ TauCeti.gammaLogDerivBound :=
     (le_abs_self _).trans ((abs_re_le_norm _).trans (χ.norm_logDeriv_gammaFactor_ofReal_le hσ))
   linarith
@@ -502,7 +501,7 @@ theorem re_logDeriv_LFunction_add_eq_tsum (hχ : χ.IsPrimitive) (hne : χ ≠ 1
       ∑' ρ : ℂ, (analyticOrderNatAt χ.completedLFunction ρ : ℝ) * (1 / (s - ρ)).re := by
   have hΛ : (dirichletData χ hχ).entireCompletion s ≠ 0 :=
     (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hs).not.mpr hL
-  have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hs hL
+  have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hL
   rw [TauCeti.LFunctions.re_logDeriv_dirichletData_entireCompletion χ hχ hΛ] at hlog
   simp_rw [← analyticOrderNatAt_dirichletData_entireCompletion χ hχ hne]
   linarith
@@ -516,14 +515,13 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_add_gammaFactor
     {s : ℂ} (hs : 1 ≤ s.re) :
     (∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / (s - ρ)).re) ≤
       (logDeriv χ.LFunction s).re + Real.log N / 2 + (logDeriv χ.gammaFactor s).re := by
-  have hspos : 0 < s.re := by linarith
   have hL : χ.LFunction s ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hs
   have hsum : (∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / (s - ρ)).re) =
       ∑ ρ ∈ S,
         (analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / (s - ρ)).re := by
     refine Finset.sum_congr rfl fun ρ hρ ↦ ?_
     rw [analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne (hS ρ hρ)]
-  have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hspos hL
+  have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hL
   have hle := sum_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub_le χ hχ
     hs S
   linarith
@@ -535,12 +533,11 @@ theorem re_one_div_sub_le_re_logDeriv_LFunction_add_gammaFactor (hχ : χ.IsPrim
     {ρ : ℂ} (hρ : 0 < ρ.re) (hz : χ.LFunction ρ = 0) {s : ℂ} (hs : 1 ≤ s.re) :
     (1 / (s - ρ)).re ≤
       (logDeriv χ.LFunction s).re + Real.log N / 2 + (logDeriv χ.gammaFactor s).re := by
-  have hspos : 0 < s.re := by linarith
   have hL : χ.LFunction s ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hs
   have hΛ0 : (dirichletData χ hχ).entireCompletion ρ = 0 :=
     (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hρ).mpr hz
   have hle := re_one_div_sub_le_re_logDeriv_dirichletData_entireCompletion χ hχ hΛ0 hs
-  have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hspos hL
+  have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hL
   linarith
 
 /-- **Single complex zero lower bound on `[1, 2]`.** For a nonprincipal primitive character `χ`

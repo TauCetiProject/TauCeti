@@ -433,7 +433,25 @@ theorem norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le {s : ℂ} {δ : �
   exact (norm_digamma_sub_log_add_inv_two_mul_le
     (Or.inl (mem_slitPlane_of_abs_arg_le hδ hs hs0))).trans (by gcongr)
 
-/-! ### Logarithmic growth on positive vertical strips -/
+/-! ### Logarithmic growth to the right of the imaginary axis -/
+
+/-- On `Re s ≥ 1`, the digamma function grows at most logarithmically in the modulus. -/
+theorem norm_digamma_le_log_norm_add_const {s : ℂ} (hs : 1 ≤ s.re) :
+    ‖digamma s‖ ≤ Real.log ‖s‖ + (5 + Real.pi / 2) := by
+  have hn : 1 ≤ ‖s‖ := hs.trans (re_le_norm s)
+  have ha := abs_arg_le_pi_div_two_iff.mpr (by linarith : 0 ≤ s.re)
+  have h := norm_digamma_sub_log_le_of_abs_arg_le (s := s) (δ := Real.pi / 2)
+    (half_pos Real.pi_pos) (by linarith [Real.pi_pos]) (by linarith)
+  simp only [Real.cos_pi_div_two] at h
+  norm_num at h
+  have herr := h.trans (div_le_self (by norm_num : (0 : ℝ) ≤ 5) hn)
+  have hl := (norm_le_abs_re_add_abs_im (Complex.log s)).trans
+    (add_le_add (by rw [Complex.log_re, abs_of_nonneg (Real.log_nonneg hn)])
+      (by simpa only [Complex.log_im] using ha))
+  calc
+    ‖digamma s‖ ≤ ‖digamma s - Complex.log s‖ + ‖Complex.log s‖ := by
+      simpa only [sub_add_cancel] using norm_add_le (digamma s - Complex.log s) (Complex.log s)
+    _ ≤ _ := by linarith
 
 /-- Digamma has logarithmic norm growth at every height on each positive vertical strip.
 
