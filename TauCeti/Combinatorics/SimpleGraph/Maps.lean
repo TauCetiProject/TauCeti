@@ -22,7 +22,8 @@ on edges.
 The window of a graph on `ℕ` spanned by the first `n` labels is the pullback along `Fin.val`; it
 is how a graph on an infinite label set is read as a finite sample. A graph is also recorded by
 its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges of `G` by
-`SimpleGraph.Iso.mapEdgeSet`.
+`SimpleGraph.Iso.mapEdgeSet`. When `G` has finitely many edges, an injective endomorphism of `G`
+reflects adjacency, so `RelIso.ofBijective` makes a bijective one an automorphism.
 
 ## Main definitions
 
@@ -40,6 +41,8 @@ its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges
   in the graph;
 * `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window;
 * `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array;
+* `SimpleGraph.Hom.map_adj_iff_of_injective` — an injective endomorphism of a graph with finitely
+  many edges reflects adjacency;
 * `SimpleGraph.Embedding.isoInduceRange_apply` — evaluating `isoInduceRange` at a vertex gives the
   corresponding range subtype vertex.
 -/
@@ -121,6 +124,23 @@ theorem adjArray_injective :
     Function.Injective (adjArray : SimpleGraph V → V × V → Bool) := fun G G' h => by
   ext i j
   simpa only [adjArray_apply, decide_eq_decide] using congrFun h (i, j)
+
+namespace Hom
+
+variable {G : SimpleGraph V}
+
+/-- An injective endomorphism of a graph with finitely many edges reflects adjacency. -/
+theorem map_adj_iff_of_injective [Finite G.edgeSet] (f : G →g G) (hf : Function.Injective f)
+    {u v : V} : G.Adj (f u) (f v) ↔ G.Adj u v := by
+  refine ⟨fun h => ?_, f.map_adj⟩
+  -- `f` maps the finite edge set injectively into itself, so every edge is an image.
+  obtain ⟨e, he⟩ := Finite.injective_iff_surjective.mp (mapEdgeSet.injective f hf)
+    ⟨s(f u, f v), h⟩
+  have hev : (e : Sym2 V) = s(u, v) :=
+    Sym2.map.injective hf (by simpa using congrArg Subtype.val he)
+  simpa [hev] using e.property
+
+end Hom
 
 namespace Embedding
 
