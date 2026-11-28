@@ -31,9 +31,10 @@ For multiplicative `f` and fixed `k`, the sum `∑ f(d)` over the divisors `d` o
 split uniquely as products of the corresponding divisors of `m` and of `n`
 (`Nat.Coprime.divisors_filter_pow_dvd_mul`).
 
-Finally, the divisor count `d(n) = ∏_{p ∣ n} (v_p(n) + 1)` gives
-`log d(n) = ∑_{p ∣ n} log (v_p(n) + 1)` (`Nat.log_card_divisors`), the form used to bound the
-maximal order of `d(n)`.
+Finally, for `n ≠ 0` the divisor count is `d(n) = ∏_{p ∈ n.primeFactors} (v_p(n) + 1)`, so
+`log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)`. This logarithmic identity also holds at
+`n = 0`, where `d(0) = 0`, the set `Nat.primeFactors 0` is empty, and both sides are zero
+(`Nat.log_card_divisors`). It is the form used to bound the maximal order of `d(n)`.
 
 ## Main results
 
@@ -47,7 +48,7 @@ maximal order of `d(n)`.
 * `ArithmeticFunction.IsMultiplicative.sum_divisors_filter_pow_dvd_mul`: for multiplicative `f`,
   `n ↦ ∑_{dᵏ ∣ n} f(d)` is multiplicative.
 * `Nat.log_card_divisors`: the logarithm of the number of divisors of `n` is
-  `∑_{p ∣ n} log (v_p(n) + 1)`.
+  `∑_{p ∈ n.primeFactors} log (v_p(n) + 1)`, for every `n`.
 -/
 
 public section
@@ -137,8 +138,9 @@ end ArithmeticFunction
 
 namespace Nat
 
-/-- The logarithm of the number of divisors of `n` is the sum of `log (v_p(n) + 1)` over the
-prime divisors `p` of `n`. At `n = 0` both sides are zero. -/
+/-- The logarithm of the number of divisors of `n` is the sum of `log (v_p(n) + 1)` over
+`p ∈ n.primeFactors`. For `n ≠ 0` this is the logarithm of `d(n) = ∏ (v_p(n) + 1)`; at `n = 0`
+the set `Nat.primeFactors 0` is empty and both sides are zero. -/
 theorem log_card_divisors (n : ℕ) :
     Real.log (#n.divisors) = ∑ p ∈ n.primeFactors, Real.log (n.factorization p + 1) := by
   rcases eq_or_ne n 0 with rfl | hn

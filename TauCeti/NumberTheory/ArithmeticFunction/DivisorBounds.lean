@@ -47,14 +47,16 @@ Wigert's theorem gives the maximal order of the divisor count on the logarithmic
 `limsup (log d(n) * log (log n) / log n) = log 2` (Hardy and Wright, Theorem 317). The upper half
 is formalized as `eventually_card_divisors_le_exp`: for every `ε > 0`, all sufficiently large `n`
 satisfy `d(n) ≤ exp ((log 2 + ε) * log n / log (log n))`. Since
-`log d(n) = ∑_{p ∣ n} log (v_p(n) + 1)` (`Nat.log_card_divisors`), one splits the prime divisors
-of `n` at a real cutoff `y > 1`. Each of the at most `y` primes `p ≤ y` contributes at most
-`log (1 + log n / log 2)`, because `2 ^ v_p(n) ≤ n`. For the primes `p > y`, the bound
-`v + 1 ≤ 2 ^ v` and `∑_{p ∣ n} v_p(n) * log p = log n` give a total of at most
+`log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)` (`Nat.log_card_divisors`), one splits the
+finite set `n.primeFactors` (empty for `n = 0`) at a real cutoff `y > 1`. Each of the at most `y`
+elements `p ≤ y` contributes at most `log (1 + log n / log 2)`, because `2 ^ v_p(n) ≤ n`. For the
+elements `p > y`, the bound `v + 1 ≤ 2 ^ v` and
+`∑_{p ∈ n.primeFactors} v_p(n) * log p = log n` (for `n ≠ 0`) give a total of at most
 `log 2 * log n / log y`. This is `Nat.log_card_divisors_le`, valid for every `n` and `y > 1`.
-Taking `y = (log n) ^ (1 - δ)` with `δ = ε / (2 * log 2 + ε)` makes the first part negligible and
-the second equal to `(log 2 + ε / 2) * log n / log (log n)`. This splitting of the prime divisors
-at a power of `log n` is the argument of Koukoulopoulos, Exercise 2.9.
+With `y = (log n) ^ (1 - δ)` and `δ = ε / (2 * log 2 + ε)`, the bound for the first part is
+negligible and the upper bound for the second part simplifies to
+`(log 2 + ε / 2) * log n / log (log n)`. This splitting of the prime divisors at a power of
+`log n` is the argument of Koukoulopoulos, Exercise 2.9.
 
 The ordered divisor functions also satisfy coefficient-one harmonic and summatory mean
 bounds, with natural cutoffs including zero and real cutoffs at least one. The pointwise
@@ -437,9 +439,10 @@ open Finset
 
 variable {y : ℝ}
 
-/-- The prime divisors `p ≤ y` of `n` contribute at most `y * log (1 + log n / log 2)` to
-`log d(n)`, for every real `y ≥ 0`. Together with the bound for the primes `p > y` this gives
-`Nat.log_card_divisors_le`. -/
+/-- The elements `p ≤ y` of `n.primeFactors` contribute at most
+`y * log (1 + log n / log 2)` to `log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)`, for every
+real `y ≥ 0`. For `n = 0` the set `n.primeFactors` is empty and the sum is zero. Together with
+the bound for the elements `p > y` this gives `Nat.log_card_divisors_le`. -/
 theorem sum_primeFactors_filter_le_log_factorization_add_one_le (n : ℕ) (hy : 0 ≤ y) :
     ∑ p ∈ n.primeFactors with ((p : ℕ) : ℝ) ≤ y, Real.log (n.factorization p + 1) ≤
       y * Real.log (1 + Real.log n / Real.log 2) := by
@@ -471,9 +474,10 @@ theorem sum_primeFactors_filter_le_log_factorization_add_one_le (n : ℕ) (hy : 
         nsmul_eq_mul _ _
     _ ≤ y * Real.log (1 + Real.log n / Real.log 2) := mul_le_mul_of_nonneg_right hcard hB
 
-/-- The prime divisors `p > y` of `n` contribute at most `log 2 * log n / log y` to `log d(n)`,
-for every real `y > 1`. Together with the bound for the primes `p ≤ y` this gives
-`Nat.log_card_divisors_le`. -/
+/-- The elements `p > y` of `n.primeFactors` contribute at most `log 2 * log n / log y` to
+`log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)`, for every real `y > 1`. For `n = 0` the set
+`n.primeFactors` is empty and the sum is zero. Together with the bound for the elements `p ≤ y`
+this gives `Nat.log_card_divisors_le`. -/
 theorem sum_primeFactors_filter_gt_log_factorization_add_one_le (n : ℕ) (hy : 1 < y) :
     ∑ p ∈ n.primeFactors with y < ((p : ℕ) : ℝ), Real.log (n.factorization p + 1) ≤
       Real.log 2 * Real.log n / Real.log y := by
