@@ -7,10 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
-public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Measure.NNReal
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -116,6 +117,12 @@ theorem integral_timeMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ
 instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
   ⟨by simp⟩
 
+/-- Every finite-horizon time measure gives singletons zero mass. -/
+instance (T : ℝ≥0) : NullSingletonClass (timeMeasure T) :=
+  have h : timeMeasure T = TauCeti.nnvolume.restrict (Ioc 0 T) := by
+    rw [timeMeasure_def, TauCeti.nnvolume_def]
+  h ▸ inferInstanceAs (NullSingletonClass (TauCeti.nnvolume.restrict (Ioc 0 T)))
+
 /-- Almost every time lies in the finite horizon, excluding the origin. -/
 theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ Ioc 0 T := by
   rw [timeMeasure_def]
@@ -142,9 +149,8 @@ theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
 
 /-- The initial time carries no mass, independently of the horizon. -/
-@[simp]
 theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
-  simp [timeMeasure_apply T (measurableSet_singleton 0)]
+  simp
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

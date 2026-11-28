@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Integral.PiSystem
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 
@@ -60,6 +61,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   majorant.
 * `TauCeti.mul_integral_le_integral_prod_of_forall` integrates a slicewise lower bound
   `c F x ≤ ∫ g (x, y) dy` over the first factor: `c ∫ F ≤ ∫ g` over the product measure.
+* `TauCeti.tendsto_integral_indicator_Ioc_prod_univ` shows integrals over shrinking slabs
+  `(min (u i) t, max (u i) t] × univ` vanish when `μ {t} = 0` and `u i → t`.
 * `MeasureTheory.StronglyMeasurable.fubini_of_countable_rectangles` gives Fubini for arbitrary
   measures when the integrand is supported on countably many finite-measure rectangles.
   The supporting sets need not be measurable. The extended norm integral condition ensures
@@ -81,7 +84,6 @@ defined to be zero when the second measure is not s-finite.
 
 * T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces*,
   Volume I, §1.2, Remark 1.2.8.
-
 -/
 
 public section
@@ -377,6 +379,37 @@ theorem integral_setIntegral_Iio_eq_setIntegral {μ ν : Measure ℝ} [SFinite �
   dsimp only
   rw [← integral_indicator measurableSet_Iio]
   exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
+
+/-- If `μ {t} = 0` and `u i → t` along a countably generated filter `l`, then the Bochner integrals
+of an integrable function on `μ.prod ν` over the shrinking slabs `(min (u i) t, max (u i) t] × univ`
+tend to zero. -/
+theorem tendsto_integral_indicator_Ioc_prod_univ [LinearOrder α] [TopologicalSpace α]
+    [OrderTopology α] [OpensMeasurableSpace α] [SFinite ν]
+    {f : α × β → E} (hf : Integrable f (μ.prod ν))
+    {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {u : ι → α} {t : α}
+    (hu : Filter.Tendsto u l (nhds t)) (hμt : μ {t} = 0) :
+    Filter.Tendsto (fun i ↦ ∫ p, (Ioc (min (u i) t) (max (u i) t) ×ˢ Set.univ).indicator f p
+      ∂μ.prod ν) l (nhds 0) := by
+  have hprod_null : (μ.prod ν) ({t} ×ˢ Set.univ) = 0 := by
+    rw [Measure.prod_prod, hμt, zero_mul]
+  have hae : ∀ᵐ p : α × β ∂μ.prod ν, p.1 ≠ t := by
+    simpa [ae_iff, Set.prod_univ, Set.preimage] using hprod_null
+  have hpt : ∀ᵐ p ∂μ.prod ν, Filter.Tendsto (fun i ↦
+      (Ioc (min (u i) t) (max (u i) t) ×ˢ Set.univ).indicator f p) l (nhds 0) := by
+    filter_upwards [hae] with p hp
+    apply tendsto_const_nhds.congr'
+    rcases lt_or_gt_of_ne hp with hlt | hgt
+    · filter_upwards [hu.eventually (eventually_gt_nhds hlt)] with i hi
+      simp [not_lt.mpr (le_min hi.le hlt.le)]
+    · filter_upwards [hu.eventually (eventually_lt_nhds hgt)] with i hi
+      simp [not_le.mpr (max_lt hi hgt)]
+  simpa only [integral_zero] using tendsto_integral_filter_of_dominated_convergence
+    (f := fun _ ↦ (0 : E)) (bound := fun p ↦ ‖f p‖)
+    (Filter.Eventually.of_forall fun _ ↦ hf.aestronglyMeasurable.indicator
+      (measurableSet_Ioc.prod MeasurableSet.univ))
+    (Filter.Eventually.of_forall fun _ ↦ Filter.Eventually.of_forall fun p ↦
+      norm_indicator_le_norm_self _ _)
+    hf.norm hpt
 
 /-- **Completeness in the first variable of a product.** Let `e k`, `k ∈ ι` countable, be a
 complete system for `μ`: an integrable function orthogonal to every `e k` vanishes almost

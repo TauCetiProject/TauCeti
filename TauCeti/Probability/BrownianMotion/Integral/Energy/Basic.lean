@@ -7,10 +7,13 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Energy
+public import Mathlib.Probability.Martingale.Basic
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.Order.Monotone.Basic
+import TauCeti.Probability.BrownianMotion.Martingale
+import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 
 /-!
 # Elementary Brownian isometry in the predictable energy measure
@@ -23,6 +26,12 @@ arbitrary observation time `t`, its `L²(P)` norm equals the `L²` norm of its h
 even when the grid extends beyond `t`. Together these identify the finite-grid isometry with the
 native predictable `L²` norm used for completion, without introducing an integral operator or
 assuming that the general stochastic integral exists.
+
+At an arbitrary observation time `t`, the `L²(P)` norm of the elementary integral equals the
+`L²` norm of its holding for Lebesgue time on `(0,t]` times `P`
+(`TauCeti.Probability.IsFilteredPreBrownianReal.eLpNorm_simpleGains`, and for two grids
+`eLpNorm_simpleGains_sub`); the grid may extend beyond `t`. This is the form used to show that
+elementary integrals of `L²`-approximating holdings are Cauchy in `L²(P)` at every time.
 
 Both isometries require a nondecreasing grid (`MonotoneOn τ (Set.Iic n)`), which may be empty or
 have repeated dates; heights need only be square integrable and measurable at their left endpoints,
@@ -110,6 +119,48 @@ theorem eLpNorm_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
       (ae_of_all _ fun _ ↦ sq_nonneg _),
     ENNReal.ofReal_mul (integral_nonneg fun _ ↦ sq_nonneg _)]
 
+/-- **The two-grid elementary Brownian isometry at an observation time.** The `L²(P)` distance
+between two elementary Brownian integrals at time `t` is the `L²` distance between their holdings
+for Lebesgue time on `(0,t]` times `P`. -/
+theorem eLpNorm_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
+    {τ₁ τ₂ : ℕ → ℝ≥0} {n₁ n₂ : ℕ} {a₁ a₂ : ℕ → Ω → ℝ}
+    (hτ₁ : MonotoneOn τ₁ (Set.Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Set.Iic n₂))
+    (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
+    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j))
+    (ha₁₂ : ∀ j < n₁, MemLp (a₁ j) 2 P) (ha₂₂ : ∀ j < n₂, MemLp (a₂ j) 2 P) (t : ℝ≥0) :
+    eLpNorm (simpleGains τ₁ n₁ a₁ W t - simpleGains τ₂ n₂ a₂ W t) 2 P =
+      eLpNorm (Function.uncurry (simpleHolding τ₁ n₁ a₁) -
+        Function.uncurry (simpleHolding τ₂ n₂ a₂)) 2
+        ((TauCeti.Probability.timeMeasure t).prod P) := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgain⟩ :=
+    exists_simpleHolding_simpleGains_eq_sub ℱ hτ₁ hτ₂ ha₁ ha₂
+  have memLp_eval {ρ' : ℕ → ℝ≥0} {N' : ℕ} {d : ℕ → Ω → ℝ}
+      (hd : ∀ j < N', MemLp (d j) 2 P) (u : ℝ≥0) :
+      MemLp (fun ω ↦ simpleHolding ρ' N' d u ω) 2 P := by
+    simp only [simpleHolding_def]
+    refine memLp_finsetSum _ fun j hj ↦ ?_
+    by_cases hu : u ∈ Ioc (ρ' j) (ρ' (j + 1))
+    · simpa only [indicator_of_mem hu] using hd j (mem_range.mp hj)
+    · simpa only [indicator_of_notMem hu] using (memLp_const (0 : ℝ) : MemLp (fun _ ↦ (0 : ℝ)) 2 P)
+  -- Each height on the common grid is a value of the difference of the two holdings.
+  have hc₂ (j : ℕ) (hj : j < N) : MemLp (c j) 2 P := by
+    have hmem : ρ (j + 1) ∈ Ioc (ρ j) (ρ (j + 1)) :=
+      ⟨hρ (mem_Iic.mpr hj.le) (mem_Iic.mpr hj) (Nat.lt_succ_self j), le_rfl⟩
+    have hceq : c j = fun ω ↦
+        simpleHolding τ₁ n₁ a₁ (ρ (j + 1)) ω - simpleHolding τ₂ n₂ a₂ (ρ (j + 1)) ω :=
+      funext fun ω ↦ by
+        rw [← simpleHolding_of_mem_Ioc (a := c) hρ.monotoneOn hj hmem ω, hhold]
+    rw [hceq]
+    exact (memLp_eval ha₁₂ _).sub (memLp_eval ha₂₂ _)
+  have hG : simpleGains τ₁ n₁ a₁ W t - simpleGains τ₂ n₂ a₂ W t = simpleGains ρ N c W t :=
+    funext fun ω ↦ (hgain W t ω).symm
+  have hK : Function.uncurry (simpleHolding τ₁ n₁ a₁) -
+      Function.uncurry (simpleHolding τ₂ n₂ a₂) = Function.uncurry (simpleHolding ρ N c) :=
+    funext fun p ↦ (hhold p.1 p.2).symm
+  rw [hG, hK]
+  exact hW.eLpNorm_simpleGains hρ.monotoneOn hc hc₂ t
+
 /-- The elementary Brownian isometry with its actual predictable lower-integral energy.
 Square-integrable left-measurable heights suffice; no boundedness assumption is imposed. -/
 theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -127,5 +178,29 @@ theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     hW.eLpNorm_simpleGains hτ ha ha₂,
     eLpNorm_two_sq_eq_lintegral (hholding.mono ℱ.predictable_le_prod).aestronglyMeasurable]
   simp only [Function.uncurry_def]
+
+/-- The gains of a left-measurable simple holding in `L²((timeMeasure T).prod P)` agree on
+`[0, T]` with an almost surely continuous martingale, realized as the gains of a clipped holding
+whose heights are all square integrable. -/
+theorem exists_martingale_simpleGains_eq_on_Iic
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
+    {T : ℝ≥0} (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hK : MemLp (Function.uncurry (simpleHolding τ n a)) 2 ((timeMeasure T).prod P)) :
+    ∃ M : ℝ≥0 → Ω → ℝ, Martingale M ℱ P ∧ (∀ᵐ ω ∂P, Continuous fun t ↦ M t ω) ∧
+      ∀ t ≤ T, ∀ ω, M t ω = simpleGains τ n a W t ω := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨a', ha', ha'₂, -, hgain⟩ :=
+    exists_memLp_simpleHolding_simpleGains_eq_on_Iic hτ ha hK
+  refine ⟨simpleGains τ n a' W, hW.martingale.simpleGains hτ ha' fun j hj t ↦ ?_,
+    hWc.mono fun _ hω ↦ continuous_simpleGains hω, hgain W⟩
+  by_cases hjt : τ j ≤ t
+  · rw [min_eq_left hjt]
+    exact (hW.memLp_mul_sub (le_min (hτ hj.le hj (Nat.le_succ j)) hjt)
+      (ha' j hj) (ha'₂ j hj)).integrable one_le_two
+  · have htj : t ≤ τ j := (not_le.1 hjt).le
+    simp only [min_eq_right htj, min_eq_right (htj.trans (hτ hj.le hj (Nat.le_succ j))),
+      sub_self, mul_zero]
+    exact integrable_zero _ _ _
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

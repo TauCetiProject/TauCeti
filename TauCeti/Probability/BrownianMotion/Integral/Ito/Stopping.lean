@@ -21,17 +21,22 @@ For any continuous Itô integral `I` of `H` against a filtered pre-Brownian moti
 filtration, stopping `I` at a stopping time `σ` gives a continuous Itô integral of
 `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess`), without path continuity of
 `W` or moment bounds. As a consequence, `stoppedProcess I σ` is indistinguishable from any Itô
-integral of `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`), and for
-stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an Itô integral of
-`H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`).
+integral of `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`), and
+stochastic-interval restrictions (`TauCeti.Probability.IsItoIntegral.ite_Ioc`, `ite_Ioc_inf`,
+`ite_le`, `ite_Ioc_mul`) and local congruence on `[0, τ]`
+(`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist_of_ae_eq`) hold without assuming path
+continuity of `W` or adaptation of `I`.
 
 ## Main results
 
 * `TauCeti.Probability.IsItoIntegral.stoppedProcess`,
   `TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`: stopping a continuous Itô integral at a
   stopping time `σ` integrates `H · 1_{[0, σ]}`.
-* `TauCeti.Probability.IsItoIntegral.ite_Ioc`: restricting an integrand to `(σ, τ]` for stopping
-  times `σ ≤ τ` integrates to `stoppedProcess I τ - stoppedProcess I σ`.
+* `TauCeti.Probability.IsItoIntegral.ite_Ioc`, `ite_Ioc_inf`: restricting an integrand to
+  `(σ, τ]` integrates to `stoppedProcess I τ - stoppedProcess I σ` (for `σ ≤ τ`) or
+  `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)` (in general).
+* `TauCeti.Probability.IsItoIntegral.ite_le`, `ite_Ioc_mul`, `stoppedProcess_indist_of_ae_eq`:
+  concatenation at a stopping time, predictable `ℱ s`-multiplier on `(s, τ]`, and local congruence.
 
 ## References
 
@@ -50,7 +55,7 @@ open scoped ENNReal NNReal Topology
 namespace TauCeti.Probability.IsItoIntegral
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  {P : Measure Ω} {W H I J : ℝ≥0 → Ω → ℝ} {σ : Ω → WithTop ℝ≥0}
+  {P : Measure Ω} {W H K I J : ℝ≥0 → Ω → ℝ} {σ τ : Ω → WithTop ℝ≥0}
 
 private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
     (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -216,5 +221,55 @@ theorem ite_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     split_ifs <;> simp_all <;> grind
   rw [heq]
   exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hσ)
+
+/-- **Restricting an Itô integral to `(σ, τ]` without `σ ≤ τ`.** Against a filtered pre-Brownian
+motion, restricting an integrand `H` to `(σ, τ]` yields
+`stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`. -/
+theorem ite_Ioc_inf (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ) :
+    IsItoIntegral ℱ P W
+      (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
+      (MeasureTheory.stoppedProcess I τ - MeasureTheory.stoppedProcess I (σ ⊓ τ)) := by
+  convert (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW (hσ.min hτ)) using 1
+  ext t ω; simp only [Pi.sub_apply, le_inf_iff, ← not_le (a := (t : WithTop ℝ≥0))]
+  split_ifs <;> simp_all
+
+/-- **Concatenating Itô integrals at a stopping time.** Against a filtered pre-Brownian motion,
+switching from integrand `H` on `[0, τ]` to `K` after a stopping time `τ` yields
+`stoppedProcess I τ + J - stoppedProcess J τ`. -/
+theorem ite_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (hτ : IsStoppingTime ℱ τ) :
+    IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else K t ω)
+      (MeasureTheory.stoppedProcess I τ + J - MeasureTheory.stoppedProcess J τ) := by
+  convert (hI.stoppedProcess hW hτ).add (hJ.sub (hJ.stoppedProcess hW hτ)) using 1
+  · ext t ω; simp only [Pi.add_apply, Pi.sub_apply]; split_ifs <;> simp
+  · ext t ω; dsimp only [Pi.add_apply, Pi.sub_apply]; ring
+
+/-- **Predictable `ℱ s`-multiplier rule on `(s, τ]`.** Against a filtered pre-Brownian motion,
+multiplying `H` on `(s, τ]` by an `ℱ s`-measurable `ξ` yields the Itô integral
+`t ↦ ξ * (stoppedProcess I τ t - stoppedProcess I τ (min s t))`. -/
+theorem ite_Ioc_mul (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (s : ℝ≥0) (hτ : IsStoppingTime ℱ τ)
+    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    IsItoIntegral ℱ P W
+      (fun t ω ↦ if s < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then ξ ω * H t ω else 0)
+      (fun t ω ↦ ξ ω * (MeasureTheory.stoppedProcess I τ t ω -
+        MeasureTheory.stoppedProcess I τ (min s t) ω)) := by
+  convert (hI.ite_lt_mul hW s hξ).stoppedProcess hW hτ using 1
+  · ext t ω; split_ifs <;> simp_all
+  · ext t ω; rw [← congr_fun₂ (MeasureTheory.stoppedProcess_const_min I τ s) t ω]
+    simp only [MeasureTheory.stoppedProcess]
+
+/-- **Local congruence of Itô integrals.** Against a filtered pre-Brownian motion and at a stopping
+time `τ`, two Itô integrals whose integrands agree `(timeMeasure T).prod P`-almost everywhere on
+`[0, τ]` for every finite horizon `T` have indistinguishable stopped processes. -/
+theorem stoppedProcess_indist_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (hτ : IsStoppingTime ℱ τ)
+    (hHK : ∀ T : ℝ≥0, ∀ᵐ p ∂(timeMeasure T).prod P,
+      (p.1 : WithTop ℝ≥0) ≤ τ p.2 → H p.1 p.2 = K p.1 p.2) :
+    MeasureTheory.stoppedProcess I τ ≡ᵐ[P] MeasureTheory.stoppedProcess J τ :=
+  (hI.stoppedProcess hW hτ).indist_of_ae_eq hW (fun T ↦ (hHK T).mono fun _ hp ↦ by
+    dsimp only [Function.uncurry]; split_ifs with h <;> [exact hp h; rfl])
+    (hJ.stoppedProcess hW hτ)
 
 end TauCeti.Probability.IsItoIntegral

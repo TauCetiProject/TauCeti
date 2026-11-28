@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Martingale.MaximalInequality.Basic
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -519,5 +520,125 @@ theorem IsFilteredPreBrownianReal.tendsto_measure_exists_abs_simpleGains_gt_of_e
   exact tendsto_measure_of_le_ofReal_div_sq_add
     (fun δ hδ ↦ tendsto_measure_lt_of_tendstoInMeasure henergy hδ) fun δ hδ k ↦
       hW.measure_exists_abs_simpleGains_gt_le hcont (hgrid k) (hheight k) hε hδ.le
+
+/-- **Finite-horizon uniform elementary energy estimate.** Large gains at any observation time
+up to `T` require large lower square energy on `(0, T]`, or a fluctuation of outer probability
+at most `δ / ε²`. Heights need only be known at the left endpoints of their intervals, and the
+grid may extend beyond `T`. -/
+theorem IsFilteredPreBrownianReal.measure_exists_le_abs_simpleGains_gt_le
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (T : ℝ≥0)
+    {ε δ : ℝ} (hε : 0 < ε) :
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ n a W t ω|} ≤
+      ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+        ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+  classical
+  wlog hδ : 0 ≤ δ generalizing δ
+  · have h0 := this (δ := 0) le_rfl
+    rw [zero_div, ENNReal.ofReal_zero, zero_add] at h0
+    rw [ENNReal.ofReal_of_nonpos (not_le.mp hδ).le]
+    exact h0.trans le_add_self
+  let τ' (i : ℕ) := min (τ i) T
+  let a' (i : ℕ) := if τ i ≤ T then a i else 0
+  have hτ' : MonotoneOn τ' (Iic n) := fun i hi j hj hij ↦ min_le_min_right T (hτ hi hj hij)
+  have ha' : ∀ i < n, StronglyMeasurable[ℱ (τ' i)] (a' i) :=
+    fun i hi ↦ Finance.stronglyMeasurable_ite_le_min ha T hi
+  have hgain (t : ℝ≥0) (ht : t ≤ T) (ω : Ω) :
+      Finance.simpleGains τ' n a' W t ω = Finance.simpleGains τ n a W t ω := by
+    simp only [Finance.simpleGains_eq_sum_ite_le hτ', Finance.simpleGains_eq_sum_ite_le hτ]
+    refine sum_congr rfl fun i hi ↦ ?_
+    have hmin (u : ℝ≥0) : min (min u T) t = min u t := by rw [min_assoc, min_eq_right ht]
+    dsimp only [τ', a']
+    rw [hmin, hmin]
+    by_cases hit : τ i ≤ t
+    · simp [hit, hit.trans ht]
+    · have hti : t ≤ τ i := (not_le.1 hit).le
+      have hin : i < n := mem_range.1 hi
+      have hti1 : t ≤ τ (i + 1) := hti.trans (hτ hin.le hin (Nat.le_succ i))
+      simp [hit, min_eq_right hti, min_eq_right hti1]
+  calc
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ n a W t ω|}
+        ≤ P {ω | ∃ t, ε < |Finance.simpleGains τ' n a' W t ω|} :=
+      measure_mono fun ω ⟨t, ht, hlt⟩ ↦ ⟨t, by simpa only [hgain t ht ω] using hlt⟩
+    _ ≤ ENNReal.ofReal (δ / ε ^ 2) + P {ω | δ < elementaryEnergy τ' a' n ω} :=
+      hW.measure_exists_abs_simpleGains_gt_le hcont hτ' ha' hε hδ
+    _ ≤ _ := add_le_add le_rfl (measure_mono fun ω hω ↦ by
+      simp only [mem_ofPred_eq] at hω ⊢
+      rw [← ofReal_elementaryEnergy_min_ite hτ T ω]
+      exact (ENNReal.ofReal_lt_ofReal_iff (hδ.trans_lt hω)).2 hω)
+
+/-- **Finite-horizon two-grid uniform elementary energy estimate.** Large differences between the
+elementary gains of two simple holdings at any observation time up to `T` require large lower square
+energy of their difference on `(0, T]`, or a fluctuation of outer probability at most `δ / ε²`.
+Heights need only be known at the left endpoints of their intervals, and the grids may extend beyond
+`T`. -/
+theorem IsFilteredPreBrownianReal.measure_exists_le_abs_simpleGains_sub_gt_le
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    {τ₁ τ₂ : ℕ → ℝ≥0} {n₁ n₂ : ℕ} {a₁ a₂ : ℕ → Ω → ℝ}
+    (hτ₁ : MonotoneOn τ₁ (Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Iic n₂))
+    (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
+    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j))
+    (T : ℝ≥0) {ε δ : ℝ} (hε : 0 < ε) :
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ₁ n₁ a₁ W t ω -
+        Finance.simpleGains τ₂ n₂ a₂ W t ω|} ≤
+      ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+        ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
+          Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+  obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgains⟩ :=
+    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ hτ₁ hτ₂ ha₁ ha₂
+  calc
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ₁ n₁ a₁ W t ω -
+          Finance.simpleGains τ₂ n₂ a₂ W t ω|}
+        = P {ω | ∃ t ≤ T, ε < |Finance.simpleGains ρ N c W t ω|} := by
+      simp only [hgains]
+    _ ≤ ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+          ∫⁻ s, ‖Finance.simpleHolding ρ N c s ω‖ₑ ^ 2 ∂timeMeasure T} :=
+      hW.measure_exists_le_abs_simpleGains_gt_le hcont hρ.monotoneOn hc T hε
+    _ = ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+          ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
+            Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+      simp_rw [hhold]
+
+/-- Two families of left-measurable simple holdings whose pathwise square-energy errors against a
+predictable integrand `H` on `(0, T]` converge to zero in probability along `l₁` and `l₂` have
+elementary gains uniformly close on `[0, T]` in outer probability along `l₁ ×ˢ l₂`. -/
+theorem IsFilteredPreBrownianReal.tendsto_measure_exists_le_norm_simpleGains_sub_prod
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
+    {ι₁ ι₂ : Type*} {l₁ : Filter ι₁} {l₂ : Filter ι₂} {T : ℝ≥0}
+    {H : ℝ≥0 → Ω → ℝ}
+    {n₁ : ι₁ → ℕ} {τ₁ : ι₁ → ℕ → ℝ≥0} {a₁ : ι₁ → ℕ → Ω → ℝ}
+    {n₂ : ι₂ → ℕ} {τ₂ : ι₂ → ℕ → ℝ≥0} {a₂ : ι₂ → ℕ → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H)
+    (hτ₁ : ∀ i, MonotoneOn (τ₁ i) (Iic (n₁ i)))
+    (ha₁ : ∀ i j, j < n₁ i → StronglyMeasurable[ℱ (τ₁ i j)] (a₁ i j))
+    (hτ₂ : ∀ i, MonotoneOn (τ₂ i) (Iic (n₂ i)))
+    (ha₂ : ∀ i j, j < n₂ i → StronglyMeasurable[ℱ (τ₂ i j)] (a₂ i j))
+    (hE₁ : ∀ δ : ℝ≥0∞, 0 < δ → Filter.Tendsto (fun i ↦ P {ω | δ ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ₁ i) (n₁ i) (a₁ i) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure T}) l₁ (nhds 0))
+    (hE₂ : ∀ δ : ℝ≥0∞, 0 < δ → Filter.Tendsto (fun i ↦ P {ω | δ ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ₂ i) (n₂ i) (a₂ i) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure T}) l₂ (nhds 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    Filter.Tendsto (fun p : ι₁ × ι₂ ↦ P {ω | ∃ t ≤ T, ε <
+      ‖Finance.simpleGains (τ₁ p.1) (n₁ p.1) (a₁ p.1) W t ω -
+        Finance.simpleGains (τ₂ p.2) (n₂ p.2) (a₂ p.2) W t ω‖})
+      (l₁ ×ˢ l₂) (nhds 0) := by
+  refine tendsto_measure_of_le_ofReal_div_sq_add (ε := ε) (fun γ hγ ↦ ?_) fun γ _ p ↦ by
+    simpa only [Real.norm_eq_abs] using
+      hW.measure_exists_le_abs_simpleGains_sub_gt_le hWc (hτ₁ p.1) (hτ₂ p.2)
+        (ha₁ p.1) (ha₂ p.2) T hε
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (tendsto_measure_lintegral_enorm_sub_sq (l := l₁ ×ˢ l₂)
+      (f := fun p ↦ Finance.simpleHolding (τ₁ p.1) (n₁ p.1) (a₁ p.1))
+      (g := fun p ↦ Finance.simpleHolding (τ₂ p.2) (n₂ p.2) (a₂ p.2)) (h := fun _ ↦ H)
+      (.of_forall fun p ↦ .of_forall fun ω ↦
+        (Finance.isStronglyPredictable_simpleHolding (ha₁ p.1)).aemeasurable_enorm_sub_pow hH ω 2)
+      (fun _ hγ ↦ (hE₁ _ hγ).comp Filter.tendsto_fst)
+      (fun _ hγ ↦ (hE₂ _ hγ).comp Filter.tendsto_snd) (ENNReal.ofReal_pos.2 hγ))
+    (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ (hω : ENNReal.ofReal γ < _) ↦ hω.le
 
 end TauCeti.Probability

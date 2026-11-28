@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
 /-!
@@ -178,6 +179,62 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
   · simp [min_eq_left ht, max_eq_right (le_min hle ht)]
   · have hTj : T ≤ τ j := (not_le.mp ht).le
     simp [min_eq_right hTj, min_eq_right (hTj.trans hle), max_eq_left hTj]
+
+/-- Along any filter where left-measurable simple holdings converge in ambient
+`(timeMeasure T).prod P`-`L²` norm to a predictable integrand `H` on `(0, T]`, their elementary
+gains at `T` converge in `L²(P)` to `hW.l2Integral T`. Neither path continuity of `W`, uniform
+height bounds, nor square integrability of heights on unused steps after `T` are needed. -/
+theorem tendsto_eLpNorm_simpleGains_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    {ι : Type*} {l : Filter ι} {T : ℝ≥0} {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H)
+    (hH₂ : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P))
+    {n : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {a : ι → ℕ → Ω → ℝ}
+    (hτ : ∀ m, MonotoneOn (τ m) (Iic (n m)))
+    (ha : ∀ m i, i < n m → StronglyMeasurable[ℱ (τ m i)] (a m i))
+    (hlim : Tendsto (fun m ↦ eLpNorm
+      (fun p ↦ Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
+        ((timeMeasure T).prod P)) l (𝓝 0)) :
+    Tendsto (fun m ↦ eLpNorm
+      (Finance.simpleGains (τ m) (n m) (a m) W T -
+        ⇑(hW.l2Integral T (((ℱ.memLp_predictableMeasure_iff P hH T 2).2 hH₂).toLp
+          (Function.uncurry H)))) 2 P) l (𝓝 0) := by
+  classical
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hev_prod : ∀ᶠ m in l,
+      MemLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) 2
+        ((timeMeasure T).prod P) :=
+    TauCeti.eventually_memLp_of_tendsto_eLpNorm_sub ENNReal.zero_ne_top hH₂ hlim
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  let hHT := (ℱ.memLp_predictableMeasure_iff P hH T 2).2 hH₂
+  have hev : ∀ᶠ m in l,
+      MemLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) 2
+        (ℱ.predictableMeasure P T) :=
+    hev_prod.mono fun m hm ↦ (ℱ.memLp_predictableMeasure_iff P
+      (Finance.isStronglyPredictable_simpleHolding (ha m)) T 2).2 hm
+  let g (m : ι) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
+    if h : MemLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) 2
+        (ℱ.predictableMeasure P T) then
+      h.toLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m)))
+    else 0
+  have hg_lim : Tendsto (fun m ↦ eLpNorm (⇑(g m) - ⇑(hHT.toLp (Function.uncurry H))) 2
+      (ℱ.predictableMeasure P T)) l (𝓝 0) := by
+    refine hlim.congr' ?_
+    filter_upwards [hev] with m hm
+    have hgm : g m = hm.toLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) := by
+      simp [g, hm]
+    rw [hgm, eLpNorm_congr_ae (hm.coeFn_toLp.sub hHT.coeFn_toLp), ℱ.predictableMeasure_def,
+      eLpNorm_trim ℱ.predictable_le_prod
+        ((Finance.isStronglyPredictable_simpleHolding (ha m)).sub hH)]
+    rfl
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' (fun m ↦ hW.l2Integral T (g m)) _).1 <|
+    ((hW.l2Integral T).continuous.tendsto _).comp <|
+      (Lp.tendsto_Lp_iff_tendsto_eLpNorm' g _).2 hg_lim).congr' ?_
+  filter_upwards [hev] with m hm
+  have hgm : g m = hm.toLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) := by
+    simp [g, hm]
+  rw [hgm]
+  exact eLpNorm_congr_ae
+    ((hW.coeFn_l2Integral_simpleHolding (hτ m) (ha m) T hm).sub EventuallyEq.rfl)
 
 /-- `Lp` form of `coeFn_l2Integral_simpleHolding`. -/
 theorem l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)

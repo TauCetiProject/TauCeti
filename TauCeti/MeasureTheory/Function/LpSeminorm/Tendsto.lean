@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
@@ -19,6 +20,10 @@ a family that eventually becomes uniformly small almost everywhere tends to `0` 
 (`TauCeti.tendsto_eLpNorm_zero_of_eventually_ae_le`). This is how uniform convergence on a set of
 finite measure, or uniform convergence of a coefficient multiplying a fixed `Lᵖ` function, is
 turned into convergence in `Lᵖ`. No lower bound on `p` is needed.
+
+If `eLpNorm (f i) p μ` (or `eLpNorm (f i - g) p μ` with `MemLp g p μ`) tends to a finite limit,
+then `MemLp (f i) p μ` holds eventually
+(`TauCeti.eventually_memLp_of_tendsto_eLpNorm`, `TauCeti.eventually_memLp_of_tendsto_eLpNorm_sub`).
 
 The case `p = ∞` needs no finiteness of the measure. A family of fields `M ν`, depending on a
 parameter `ν` in a topological space `X`, which is jointly continuous at every point of `{ν₀} × K`
@@ -63,6 +68,22 @@ theorem tendsto_eLpNorm_zero_of_eventually_ae_le [IsFiniteMeasure μ]
   filter_upwards [h δ hδ] with i hi
   filter_upwards [hi] with x hx
   simpa using hx
+
+/-- If the `Lᵖ` seminorm of `f i` converges to a finite value, then `f i` is eventually in `Lᵖ`. -/
+theorem eventually_memLp_of_tendsto_eLpNorm {E : Type*} [TopologicalSpace E] [ENorm E]
+    {f : ι → α → E} {c : ℝ≥0∞} (hc : c ≠ ∞)
+    (hlim : Tendsto (fun i => eLpNorm (f i) p μ) l (𝓝 c)) :
+    ∀ᶠ i in l, MemLp (f i) p μ :=
+  (hlim.eventually (eventually_lt_nhds hc.lt_top)).mono fun _ hi => memLp_iff.2 hi
+
+/-- If `eLpNorm (f i - g) p μ` converges to a finite value and `g` is in `Lᵖ`, then `f i` is
+eventually in `Lᵖ`. -/
+theorem eventually_memLp_of_tendsto_eLpNorm_sub {E : Type*} [SeminormedAddGroup E]
+    [ContinuousAdd E] {f : ι → α → E} {g : α → E} {c : ℝ≥0∞} (hc : c ≠ ∞) (hg : MemLp g p μ)
+    (hlim : Tendsto (fun i => eLpNorm (f i - g) p μ) l (𝓝 c)) :
+    ∀ᶠ i in l, MemLp (f i) p μ :=
+  (eventually_memLp_of_tendsto_eLpNorm hc hlim).mono fun _ hi => by
+    simpa only [sub_add_cancel] using hi.add hg
 
 /-- **`L^∞` continuity of a family modified on a compact set.** Let `M ν` be fields on a
 measurable set `S`, depending on a parameter `ν` in a topological space `X`, which are jointly

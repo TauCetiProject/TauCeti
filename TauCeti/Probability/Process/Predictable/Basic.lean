@@ -32,9 +32,12 @@ version, even when the filtration is neither complete nor right-continuous. This
 literal predictability of the original process or everywhere left continuity of the selected
 version.
 
-The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
-time dependence can be combined with predictable processes. A predictably measurable function
-remains strongly predictable when extended by zero outside a measurable set of times.
+The time projection is measurable for the predictable sigma-algebra, so deterministic strongly
+measurable time functions are strongly predictable (`StronglyMeasurable.isStronglyPredictable`). A
+predictably measurable function remains strongly predictable when extended by zero outside a
+measurable set of times, every sample path of a strongly predictable process is strongly measurable
+in time, and an `ℱ s`-strongly measurable random variable extended by zero outside `(s, t]` or
+`(s, ∞)` is strongly predictable.
 
 ## References
 
@@ -452,3 +455,21 @@ theorem Measurable.isStronglyPredictable_ite_zero {ι Ω E : Type*}
     {P : ι → Prop} [DecidablePred P] (hP : MeasurableSet {t | P t}) :
     IsStronglyPredictable ℱ (fun t ω => if P t then f (t, ω) else 0) :=
   (hf.ite (hP.preimage ℱ.measurable_fst_predictable) measurable_const).stronglyMeasurable
+
+/-- For two strongly predictable processes `H` and `K` into a normed additive group,
+`‖H · ω - K · ω‖ₑ ^ p` is almost everywhere measurable in time along every sample path `ω`. -/
+theorem MeasureTheory.IsStronglyPredictable.aemeasurable_enorm_sub_pow {ι Ω E : Type*}
+    [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderClosedTopology ι] [MeasurableSpace ι]
+    [OpensMeasurableSpace ι] {m : MeasurableSpace Ω} [SeminormedAddCommGroup E]
+    {ℱ : Filtration ι m} {H K : ι → Ω → E} (hH : IsStronglyPredictable ℱ H)
+    (hK : IsStronglyPredictable ℱ K) {μ : Measure ι} (ω : Ω) (p : ℕ) :
+    AEMeasurable (fun s ↦ ‖H s ω - K s ω‖ₑ ^ p) μ :=
+  (((hH.stronglyMeasurable_path (ω := ω)).sub (hK.stronglyMeasurable_path (ω := ω))).eNorm.pow_const
+    p).aemeasurable
+
+/-- Every deterministic strongly measurable function of time is strongly predictable. -/
+theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable {ι Ω E : Type*} [LinearOrder ι]
+    [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    [MeasurableSpace ι] [BorelSpace ι] {m : MeasurableSpace Ω} [TopologicalSpace E]
+    (ℱ : Filtration ι m) {u : ι → E} (hu : StronglyMeasurable u) :
+    IsStronglyPredictable ℱ (fun t _ ↦ u t) := hu.comp_measurable ℱ.measurable_fst_predictable

@@ -274,6 +274,12 @@ theorem simpleGains_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω �
     (ω : Ω) : simpleGains τ n (c • a) X t ω = c * simpleGains τ n a X t ω := by
   simp only [simpleGains_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_assoc]
 
+/-- Negating the strategy negates its gains. -/
+@[simp]
+theorem simpleGains_neg (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X : ι → Ω → ℝ) (t : ι)
+    (ω : Ω) : simpleGains τ n (-a) X t ω = -simpleGains τ n a X t ω := by
+  simpa only [neg_one_smul, neg_one_mul] using simpleGains_smul τ n (-1) a X t ω
+
 /-- The simple holding is additive in the strategy. -/
 @[simp]
 theorem simpleHolding_add (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → ℝ) (t : ι) (ω : Ω) :
@@ -289,6 +295,12 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   simp only [simpleHolding_def, mul_sum]
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
+
+/-- Negating the strategy negates its simple holding. -/
+@[simp]
+theorem simpleHolding_neg (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleHolding τ n (-a) t ω = -simpleHolding τ n a t ω := by
+  simpa only [neg_one_smul, neg_one_mul] using simpleHolding_smul τ n (-1) a t ω
 
 /-- Multiplying each height by a sample-dependent factor scales the elementary gains pointwise. -/
 @[simp]
@@ -403,6 +415,18 @@ theorem stronglyMeasurable_ite_le_min (ha : ∀ j < n, StronglyMeasurable[ℱ (�
   · rw [min_eq_left hjt]
     simpa only [hjt, ↓reduceIte] using ha j hj
   · simpa only [hjt, ↓reduceIte] using stronglyMeasurable_zero
+
+/-- The gains of a simple strategy at time `t` are almost everywhere strongly measurable when each
+position and each clipped price marginal `X (min (τ j) t)` are almost everywhere strongly
+measurable. -/
+theorem aestronglyMeasurable_simpleGains {Q : Measure Ω}
+    (ha : ∀ j < n, AEStronglyMeasurable (a j) Q)
+    (hX : ∀ j ≤ n, AEStronglyMeasurable (X (min (τ j) t)) Q) :
+    AEStronglyMeasurable (simpleGains τ n a X t) Q := by
+  rw [funext (simpleGains_def τ n a X t)]
+  exact Finset.aestronglyMeasurable_fun_sum _ fun j hj ↦
+    have hj' := mem_range.1 hj
+    (ha j hj').mul ((hX (j + 1) hj').sub (hX j hj'.le))
 
 /-- The gains of a simple strategy at a trading date are integrable when each of its trades has
 integrable gains. -/

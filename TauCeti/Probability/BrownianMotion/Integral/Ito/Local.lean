@@ -25,8 +25,10 @@ stopping (`TauCeti.Probability.IsItoIntegral.stoppedProcess`, `stoppedProcess_in
 `L²` theory (`TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`), this module establishes
 the local-martingale property on a raw filtration
 (`TauCeti.Probability.IsItoIntegral.locally_martingale`) for any filtered pre-Brownian motion
-`W`, and `TauCeti.LocallyBrownianIntegrable.exists_isItoIntegral` constructs a strongly
-progressive continuous local-martingale Itô integral whenever `W` has a.s. continuous paths.
+`W`, `TauCeti.LocallyBrownianIntegrable.exists_isItoIntegral` constructs a strongly
+progressive continuous local-martingale Itô integral whenever `W` has a.s. continuous paths, and
+`TauCeti.Probability.exists_isItoIntegral_iff` characterizes existence of an Itô integral as
+`LocallyBrownianIntegrable`.
 
 ## Main results
 
@@ -34,6 +36,8 @@ progressive continuous local-martingale Itô integral whenever `W` has a.s. cont
   integrals are native local martingales on the raw filtration.
 * `TauCeti.LocallyBrownianIntegrable.exists_isItoIntegral`: existence of a strongly progressive
   continuous local-martingale Itô integral for `LocallyBrownianIntegrable` integrands.
+* `TauCeti.Probability.exists_isItoIntegral_iff`: characterization of existence of an Itô integral
+  as `LocallyBrownianIntegrable`.
 
 ## References
 
@@ -195,5 +199,14 @@ theorem LocallyBrownianIntegrable.exists_isItoIntegral
     hτ_loc.tendsto_top hHs hU_ito (fun k T ↦ (hI_stop k).mono fun _ hω ↦ hω T)
     hH.ae_eventually_ite_le_energyLocalizer_eqOn
   exact ⟨I, hI_ito, hI_prog, hI_ito.locally_martingale hW hI_prog⟩
+
+/-- Against a filtered pre-Brownian motion `W` with almost surely continuous paths, `H` admits an
+Itô integral if and only if `H` is `LocallyBrownianIntegrable`. -/
+theorem Probability.exists_isItoIntegral_iff
+    (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) :
+    (∃ I, Probability.IsItoIntegral ℱ P W H I) ↔ LocallyBrownianIntegrable ℱ P H :=
+  ⟨fun ⟨_, hI⟩ ↦ hI.locallyBrownianIntegrable,
+    fun hH ↦ let ⟨I, hI, _⟩ := hH.exists_isItoIntegral hW hcont; ⟨I, hI⟩⟩
 
 end TauCeti

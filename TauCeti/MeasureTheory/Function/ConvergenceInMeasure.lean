@@ -61,6 +61,11 @@ between equivalent finite measures.
   bounded function preserves convergence in measure without measurability or finiteness.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
+* `TauCeti.tendsto_measure_ge_zero_const_mul`, `tendsto_measure_ge_zero_mul_of_ae_lt_top`,
+  `tendsto_measure_ge_zero_of_ae_le`: tail-measure convergence under scaling, a.e.-finite weights,
+  and a.e. sum bounds (including `∞`).
+* `TauCeti.tendsto_measure_lintegral_enorm_sub_sq`: slice `L²`-energy convergence in measure is
+  transitive across an intermediate family via the squared triangle inequality.
 * `MeasureTheory.tendsto_measure_ge_of_ae_eventually_le`: fixed-threshold tail convergence to
   zero of measurable `ℝ≥0∞`-valued errors transfers along a countably generated filter on a
   finite measure space to a measurable family dominated eventually in the filter for almost every
@@ -182,6 +187,87 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   filter_upwards [hmeas] with i hi
   rw [← prob_compl_eq_one_sub₀ hi, Set.compl_ofPred]
   simp_rw [not_le]
+
+/-- Scaling an `ℝ≥0∞`-valued family by a finite constant `c ≠ ∞` preserves convergence of all
+positive tail measures to zero (including at threshold `∞`). -/
+theorem tendsto_measure_ge_zero_const_mul {E : ι → α → ℝ≥0∞} {c : ℝ≥0∞} (hc : c ≠ ∞)
+    (h : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ {x | ε ≤ c * E i x}) l (𝓝 0) := by
+  rcases eq_or_ne c 0 with rfl | hc0
+  · simp only [zero_mul, not_le_of_gt hε, Set.ofPred_false, measure_empty]; exact tendsto_const_nhds
+  rcases eq_or_ne ε ∞ with rfl | _
+  · exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h 1 one_pos)
+      (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by_contra fun hnot ↦
+        (ENNReal.mul_lt_top hc.lt_top ((not_le.1 hnot).trans ENNReal.one_lt_top)).not_ge hx
+  · exact (h (ε / c) (ENNReal.div_pos hε.ne' hc)).congr fun i ↦ congrArg μ <| Set.ext fun x ↦ by
+      simp only [Set.mem_ofPred_eq, ENNReal.div_le_iff_le_mul (.inl hc0) (.inl hc), mul_comm]
+
+/-- On a finite measure space, multiplying an `ℝ≥0∞`-valued family by an a.e. measurable,
+a.e. finite weight preserves convergence of all positive tail measures to zero (including `∞`). -/
+theorem tendsto_measure_ge_zero_mul_of_ae_lt_top [IsFiniteMeasure μ]
+    {E : ι → α → ℝ≥0∞} {c : α → ℝ≥0∞} (hc : AEMeasurable c μ) (hfin : ∀ᵐ x ∂μ, c x < ∞)
+    (h : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ {x | ε ≤ c x * E i x}) l (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]; intro δ hδ
+  let A (M : ℕ) : Set α := {x | (M : ℝ≥0∞) ≤ c x}
+  have hA_null : μ (⋂ M, A M) = 0 := measure_mono_null (fun x hx ↦ by
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq, not_lt, top_le_iff] at hx ⊢
+    exact by_contra fun hne ↦ (ENNReal.exists_nat_gt hne).elim fun M hM ↦ hM.not_ge (hx M))
+    (ae_iff.1 hfin)
+  have hA_lim : Tendsto (μ ∘ A) atTop (𝓝 0) := hA_null ▸ tendsto_measure_iInter_atTop
+    (fun _ ↦ hc.nullMeasurable measurableSet_Ici)
+    (fun _ _ hMN _ (hx : (_ : ℝ≥0∞) ≤ _) ↦ (Nat.cast_le.2 hMN).trans hx) ⟨0, measure_ne_top μ _⟩
+  obtain ⟨M, hM⟩ := (hA_lim.eventually (eventually_le_nhds (ENNReal.half_pos hδ.ne'))).exists
+  filter_upwards [(tendsto_measure_ge_zero_const_mul (ENNReal.natCast_ne_top M) h hε).eventually
+    (eventually_le_nhds (ENNReal.half_pos hδ.ne'))] with i hi
+  refine (measure_mono (t := A M ∪ {x | ε ≤ (M : ℝ≥0∞) * E i x}) fun x hx ↦
+    if hxM : (M : ℝ≥0∞) ≤ c x then .inl hxM else .inr <|
+      Set.mem_ofPred.2 <| (Set.mem_ofPred.1 hx).trans (by gcongr; exact le_of_not_ge hxM)).trans
+    ((measure_union_le (A M) _).trans ((add_le_add hM hi).trans_eq (ENNReal.add_halves δ)))
+
+/-- If `E` is eventually bounded `μ`-a.e. by `E₁ + E₂` and all positive tail measures of `E₁` and
+`E₂` tend to zero along `l`, then all positive tail measures of `E` tend to zero along `l`
+(including at threshold `∞`). -/
+theorem tendsto_measure_ge_zero_of_ae_le {E E₁ E₂ : ι → α → ℝ≥0∞}
+    (h₁ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E₁ i x}) l (𝓝 0))
+    (h₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E₂ i x}) l (𝓝 0))
+    (hle : ∀ᶠ i in l, ∀ᵐ x ∂μ, E i x ≤ E₁ i x + E₂ i x) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0) := by
+  let δ := min 1 (ε / 2)
+  have hδ : 0 < δ := lt_min one_pos (ENNReal.div_pos hε.ne' (by norm_num))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa only [add_zero] using (h₁ δ hδ).add (h₂ δ hδ))
+    (Eventually.of_forall fun _ ↦ zero_le) (hle.mono fun i hi ↦
+      (measure_mono_ae (hi.mono fun x hx hge ↦ by_contra fun hnot ↦ ?_)).trans
+        (measure_union_le _ _))
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, δ, lt_min_iff] at hnot
+  rcases eq_or_ne ε ∞ with rfl | _
+  · exact (hx.trans_lt (ENNReal.add_lt_top.2 ⟨hnot.1.1.trans ENNReal.one_lt_top,
+      hnot.2.1.trans ENNReal.one_lt_top⟩)).not_ge hge
+  · exact (hx.trans_lt ((ENNReal.add_lt_add hnot.1.2 hnot.2.2).trans_eq
+      (ENNReal.add_halves ε))).not_ge hge
+
+/-- If `∫⁻ y, ‖f i y x - h i y x‖ₑ ^ 2 ∂ν` and `∫⁻ y, ‖g i y x - h i y x‖ₑ ^ 2 ∂ν` both have
+all positive `μ`-tail measures tending to zero along `l` (including `∞`), and the first slice
+integrand is eventually `μ`-a.e. `ν`-a.e. measurable, then `∫⁻ y, ‖f i y x - g i y x‖ₑ ^ 2 ∂ν`
+also has all positive `μ`-tail measures tending to zero along `l`. -/
+theorem tendsto_measure_lintegral_enorm_sub_sq {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    [SeminormedAddCommGroup E] {f g h : ι → β → α → E}
+    (hfh : ∀ᶠ i in l, ∀ᵐ x ∂μ, AEMeasurable (fun y ↦ ‖f i y x - h i y x‖ₑ ^ 2) ν)
+    (hf : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦
+      μ {x | ε ≤ ∫⁻ y, ‖f i y x - h i y x‖ₑ ^ 2 ∂ν}) l (𝓝 0))
+    (hg : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦
+      μ {x | ε ≤ ∫⁻ y, ‖g i y x - h i y x‖ₑ ^ 2 ∂ν}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ {x | ε ≤ ∫⁻ y, ‖f i y x - g i y x‖ₑ ^ 2 ∂ν}) l (𝓝 0) :=
+  tendsto_measure_ge_zero_of_ae_le
+    (fun _ hδ ↦ tendsto_measure_ge_zero_const_mul (c := 2) ENNReal.ofNat_ne_top hf hδ)
+    (fun _ hδ ↦ tendsto_measure_ge_zero_const_mul (c := 2) ENNReal.ofNat_ne_top hg hδ)
+    (hfh.mono fun i hi ↦ hi.mono fun x hx ↦ by
+      simpa only [mul_add] using
+        lintegral_enorm_sub_sq_le_two_mul (g := fun y ↦ g i y x) hx) hε
 
 /-- If, for every `δ > 0`, the measure of `A k` is at most `δ / ε²` plus a term `B δ k` tending to
 zero along `l`, then the measure of `A k` tends to zero. This is how Chebyshev-type estimates
@@ -551,31 +637,8 @@ theorem tendsto_measure_le_enorm_mul [SeminormedAddGroup E] [IsFiniteMeasure μ]
     (hg : AEStronglyMeasurable g μ) {f : ι → α → ℝ≥0∞}
     (hf : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ f i x}) l (𝓝 0))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ μ {x | ε ≤ ‖g x‖ₑ * f i x}) l (𝓝 0) := by
-  rw [ENNReal.tendsto_nhds_zero]
-  intro η hη
-  have hη2 : 0 < η / 2 := ENNReal.div_pos hη.ne' ENNReal.ofNat_ne_top
-  -- Outside a set of measure at most `η / 2`, the factor is bounded by some `R`.
-  obtain ⟨R, hR⟩ := ((ENNReal.tendsto_nhds_zero.mp (tendsto_measure_dist_ge_atTop hg 0))
-    (η / 2) hη2).exists
-  have hRε : 0 < ε / ENNReal.ofReal R := ENNReal.div_pos hε.ne' ENNReal.ofReal_ne_top
-  filter_upwards [ENNReal.tendsto_nhds_zero.mp (hf _ hRε) (η / 2) hη2] with i hi
-  have hsub : {x | ε ≤ ‖g x‖ₑ * f i x} ⊆
-      {x | R ≤ dist (g x) 0} ∪ {x | ε / ENNReal.ofReal R ≤ f i x} := by
-    intro x hx
-    rw [Set.mem_ofPred_eq] at hx
-    by_cases hgx : R ≤ dist (g x) 0
-    · exact Or.inl hgx
-    · right
-      have hle : ‖g x‖ₑ ≤ ENNReal.ofReal R := by
-        rw [← ofReal_norm, ← dist_zero_right]
-        exact ENNReal.ofReal_le_ofReal (not_le.mp hgx).le
-      exact ENNReal.div_le_of_le_mul' (hx.trans (mul_le_mul_left hle _))
-  calc μ {x | ε ≤ ‖g x‖ₑ * f i x}
-      ≤ μ {x | R ≤ dist (g x) 0} + μ {x | ε / ENNReal.ofReal R ≤ f i x} :=
-        (measure_mono hsub).trans (measure_union_le _ _)
-    _ ≤ η / 2 + η / 2 := add_le_add hR hi
-    _ = η := ENNReal.add_halves η
+    Tendsto (fun i ↦ μ {x | ε ≤ ‖g x‖ₑ * f i x}) l (𝓝 0) :=
+  TauCeti.tendsto_measure_ge_zero_mul_of_ae_lt_top hg.eNorm (.of_forall fun _ ↦ eNorm_lt_top) hf hε
 
 /-- Deterministic four-tail deviation estimate for a binary map uniformly continuous on a ball:
 outside the two cutoff tails for the limit pair `(g₁, g₂)` and the two proximity tails for

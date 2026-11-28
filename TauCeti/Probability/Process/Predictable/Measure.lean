@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.Lp.Iterated
 import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The finite-horizon predictable time-product measure
@@ -32,7 +33,9 @@ different ambient measurable spaces.
 Native `lintegral_trim`, `integral_trim`, and `eLpNorm_trim` then identify predictable
 integrands' energies and norms with their ambient time-product counterparts; the dictionary
 lemmas below retain the predictable measurability hypothesis, since trimming does not preserve
-integrals of arbitrary ambient-product-measurable functions.
+integrals of arbitrary ambient-product-measurable functions. For `ℱ s`-strongly measurable
+variables in `Lᵖ(P)`, extending by zero outside `(s, t]` lands in predictable `Lᵖ` with exact
+`Lᵖ` norm determined by the truncated interval length and the spatial `Lᵖ` integral.
 
 The horizon operators `predictableMeasureExtendLp` and `predictableMeasureRestrictLp`
 transport native predictable `Lᵖ` classes without exposing measure-equality casts. Extension
@@ -169,7 +172,7 @@ theorem predictableMeasure_singleton_zero_prod (ℱ : Filtration ℝ≥0 m) (P :
   have hzero : MeasurableSet[ℱ.predictable] ({0} ×ˢ A) := by
     simpa only [NNReal.bot_eq_zero] using measurableSet_predictable_singleton_bot_prod hA
   rw [predictableMeasure_apply _ _ _ hzero, Measure.prod_prod,
-    timeMeasure_singleton_zero, zero_mul]
+    measure_singleton, zero_mul]
 
 /-- Restricting the predictable measure to `(0,S]` clips its horizon to `min S T`. -/
 @[simp]
@@ -557,6 +560,33 @@ theorem memLp_indicator_Ioc_predictableMeasure {E : Type*} [TopologicalSpace E]
   ext q
   by_cases hq : q.1 ∈ Ioc s t <;> simp [hq]
 
+/-- For `0 < p < ∞`, the `p`-th power of the predictable `Lᵖ` norm of an `ℱ s`-strongly measurable
+`Lᵖ(P)` function extended by zero outside `(s, t]` equals `(timeMeasure T).real (Ioc s t)` times
+the spatial `Lᵖ` integral. -/
+theorem norm_toLp_indicator_Ioc_rpow (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (T s t : ℝ≥0)
+    {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) (hξp : MemLp ξ p P) :
+    ‖(ℱ.memLp_indicator_Ioc_predictableMeasure T s t hξ hξp).toLp
+      (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ q.2) q.1)‖ ^ p.toReal =
+      (timeMeasure T).real (Ioc s t) * ∫ ω, ‖ξ ω‖ ^ p.toReal ∂P := by
+  have hmem := ℱ.memLp_indicator_Ioc_predictableMeasure T s t hξ hξp
+  have h1 : ‖hmem.toLp (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ q.2) q.1)‖ ^ p.toReal =
+      ∫ q, ‖(Ioc s t).indicator (fun _ ↦ ξ q.2) q.1‖ ^ p.toReal ∂ℱ.predictableMeasure P T := by
+    let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
+    exact integral_congr_ae <| hmem.coeFn_toLp.mono fun _ h ↦ by dsimp only; rw [h]
+  have hsm : StronglyMeasurable[ℱ.predictable]
+      (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ q.2) q.1) :=
+    ℱ.stronglyMeasurable_indicator_Ioc_predictable s t hξ
+  rw [h1, ℱ.integral_predictableMeasure P
+    ((Real.continuous_rpow_const ENNReal.toReal_nonneg).comp_stronglyMeasurable hsm.norm) T]
+  have hmul : (fun q : ℝ≥0 × Ω ↦ ‖(Ioc s t).indicator (fun _ ↦ ξ q.2) q.1‖ ^ p.toReal) =
+      fun q ↦ (Ioc s t).indicator (1 : ℝ≥0 → ℝ) q.1 * ‖ξ q.2‖ ^ p.toReal := by
+    ext ⟨r, ω⟩
+    by_cases hr : r ∈ Ioc s t <;> simp [hr, Real.zero_rpow (ENNReal.toReal_pos hp0 hp).ne']
+  rw [hmul, integral_prod_mul ((Ioc s t).indicator (1 : ℝ≥0 → ℝ)) (fun ω ↦ ‖ξ ω‖ ^ p.toReal),
+    integral_indicator_one measurableSet_Ioc]
+
 end MeasureTheory.Filtration
 
 namespace MeasureTheory.IsStronglyPredictable
@@ -589,8 +619,22 @@ theorem tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
     (hl2 : Tendsto (fun k ↦ eLpNorm (fun p : ι × Ω' ↦ F k p.1 p.2 - G k p.1 p.2) 2
       (μ.prod Q)) l (𝓝 0))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun k ↦ Q {ω | ε ≤ ∫⁻ s, ‖F k s ω - G k s ω‖ₑ ^ 2 ∂μ}) l (𝓝 0) :=
-  TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-    (fun k ↦ (((hF k).sub (hG k)).mono ℱ'.predictable_le_prod).aestronglyMeasurable) hl2 hε
+    Tendsto (fun k ↦ Q {ω | ε ≤ ∫⁻ s, ‖F k s ω - G k s ω‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+  have hf (k : κ) :
+      AEStronglyMeasurable (fun p : ι × Ω' ↦ F k p.1 p.2 - G k p.1 p.2) (μ.prod Q) :=
+    (((hF k).sub (hG k)).mono ℱ'.predictable_le_prod).aestronglyMeasurable
+  set c := min ε 1
+  have hc : c ≠ 0 := (lt_min hε one_pos).ne'
+  have hc' : c ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hbound (k : κ) : Q {ω | ε ≤ ∫⁻ s, ‖F k s ω - G k s ω‖ₑ ^ 2 ∂μ} ≤
+      eLpNorm (fun p : ι × Ω' ↦ F k p.1 p.2 - G k p.1 p.2) 2 (μ.prod Q) ^ 2 / c := by
+    rw [← TauCeti.lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq (hf k)]
+    exact (measure_mono fun y hy ↦ (min_le_left ε 1).trans hy).trans
+      (meas_ge_le_lintegral_div ((hf k).eNorm.pow_const 2).lintegral_prod_left' hc hc')
+  have hlim : Tendsto (fun k ↦
+      eLpNorm (fun p : ι × Ω' ↦ F k p.1 p.2 - G k p.1 p.2) 2 (μ.prod Q) ^ 2 / c) l (𝓝 0) := by
+    simpa using ENNReal.Tendsto.div_const (((ENNReal.continuous_pow 2).tendsto 0).comp hl2)
+      (Or.inr hc)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le) hbound
 
 end MeasureTheory.IsStronglyPredictable
