@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
-public import TauCeti.RepresentationTheory.LevelForms
+public import TauCeti.RepresentationTheory.LevelForms.Basic
 import Mathlib.RepresentationTheory.Stabilizer
 import Mathlib.RepresentationTheory.Subrepresentation
 import TauCeti.RepresentationTheory.LevelForms.Dimension
