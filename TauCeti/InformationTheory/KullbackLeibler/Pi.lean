@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
-public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.Probability.ProductMeasure
 
 import TauCeti.InformationTheory.KullbackLeibler.Basic
 import TauCeti.InformationTheory.KullbackLeibler.ChainRule
+import TauCeti.Probability.ProductMeasure
 
 /-!
-# Relative entropy of finite product measures
+# Relative entropy of product measures
 
 Relative entropy tensorizes over finite products of probability measures:
 `klDiv (Measure.pi P) (Measure.pi Q) = ∑ i, klDiv (P i) (Q i)`. In particular the relative
@@ -26,9 +27,16 @@ binary product; measurable equivalences preserve relative entropy
 `TauCeti.klDiv_prod_prod`. A general finite index type is reduced to `Fin n` by
 `MeasurableEquiv.piCongrLeft`.
 
+For an infinite product `Measure.infinitePi` whose factors differ only on a finite set `S` of
+coordinates, the product splits into the finite block over `S` and the block over its complement
+(`TauCeti.measurePreserving_piEquivPiSubtypeProd_infinitePi`); the complement block is the same law
+under both products, so it contributes nothing, and the finite block tensorizes.
+
 ## Main statements
 
 * `TauCeti.klDiv_pi`: tensorization over a finite index type, for dependent products.
+* `TauCeti.klDiv_infinitePi`: tensorization over an arbitrary index type, for factors that agree
+  outside a finite set.
 * `MeasureTheory.Measure.klDiv_pi_const`: `klDiv (P^n) (Q^n) = n * klDiv P Q`.
 
 ## References
@@ -66,6 +74,26 @@ theorem klDiv_pi {ι : Type*} [Fintype ι] {X : ι → Type*} [∀ i, Measurable
   let f := (Fintype.equivFin ι).symm
   rw [← (measurePreserving_piCongrLeft P f).map_eq, ← (measurePreserving_piCongrLeft Q f).map_eq,
     Measure.klDiv_map_measurableEquiv, klDiv_pi_fin, Equiv.sum_comp f fun i ↦ klDiv (P i) (Q i)]
+
+/-- **Tensorization** of relative entropy over an infinite product of probability measures whose
+factors agree outside a finite set `S` of coordinates. -/
+theorem klDiv_infinitePi {ι : Type*} {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
+    (P Q : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (P i)]
+    [∀ i, IsProbabilityMeasure (Q i)] (S : Finset ι) (hPQ : ∀ i ∉ S, P i = Q i) :
+    klDiv (Measure.infinitePi P) (Measure.infinitePi Q) = ∑ i ∈ S, klDiv (P i) (Q i) := by
+  classical
+  let e := MeasurableEquiv.piEquivPiSubtypeProd X (· ∈ S)
+  have hmap (R : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (R i)] :=
+    (measurePreserving_piEquivPiSubtypeProd_infinitePi R (· ∈ S)).map_eq
+  have hcompl : (fun i : {i // i ∉ S} ↦ P i) = fun i : {i // i ∉ S} ↦ Q i :=
+    funext fun i ↦ hPQ i i.property
+  -- Split both products into the block over `S` and the block over its complement.
+  rw [← Measure.klDiv_map_measurableEquiv _ _ e, hmap P, hmap Q, klDiv_prod_prod]
+  -- The complement blocks are the same law, so they contribute nothing.
+  rw [hcompl, klDiv_self, add_zero]
+  -- The blocks over `S` are finite products, which tensorize.
+  simp_rw [Measure.infinitePi_eq_pi, klDiv_pi]
+  exact Finset.sum_coe_sort S fun i ↦ klDiv (P i) (Q i)
 
 end TauCeti
 

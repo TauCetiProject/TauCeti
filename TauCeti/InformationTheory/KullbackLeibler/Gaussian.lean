@@ -8,6 +8,7 @@ module
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import Mathlib.Probability.ProductMeasure
 
 import Mathlib.MeasureTheory.Measure.LogLikelihoodRatio
 import TauCeti.InformationTheory.KullbackLeibler.Basic
@@ -42,6 +43,10 @@ When one of the two laws is a point mass, the Gaussian law with zero covariance,
 has positive definite covariance, the divergence is infinite in positive dimension: the
 nondegenerate law charges no point, while the point mass is carried by one.
 
+The Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and `⊗ⱼ N(θ'ⱼ, ε²)` with `ε ≠ 0` and `θ - θ'`
+finitely supported have the same factors off the support, so their divergence is the finite sum
+of the coordinate divergences over the support (`TauCeti.klDiv_infinitePi`).
+
 ## Main statements
 
 * `Real.klDiv_gaussianReal_gaussianReal`: the relative entropy between real Gaussian laws.
@@ -52,6 +57,10 @@ nondegenerate law charges no point, while the point mass is carried by one.
 * `TauCeti.klDiv_multivariateGaussian_dirac`, `TauCeti.klDiv_dirac_multivariateGaussian`: the
   relative entropy between a nondegenerate Gaussian law and a point mass, in either order, is
   infinite.
+* `TauCeti.klDiv_infinitePi_gaussianReal_of_variance_ne_zero`,
+  `TauCeti.klDiv_infinitePi_gaussianReal`: the relative entropy between Gaussian sequence laws
+  with nonzero variance `v`, or nonzero noise level `ε`, whose means differ in finitely many
+  coordinates.
 
 ## References
 
@@ -195,5 +204,33 @@ theorem klDiv_dirac_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq 
   have ha := h <|
     Probability.multivariateGaussian_absolutelyContinuous hS b (measure_singleton a)
   simp at ha
+
+/-- For a nonzero variance `v`, the relative entropy between two Gaussian sequence laws
+`⊗ⱼ N(θⱼ, v)` and `⊗ⱼ N(θ'ⱼ, v)` whose means differ in finitely many coordinates is
+`∑ⱼ (θⱼ - θ'ⱼ) ^ 2 / (2 v)`. -/
+theorem klDiv_infinitePi_gaussianReal_of_variance_ne_zero {ι : Type*} (θ θ' : ι → ℝ) {v : ℝ≥0}
+    (hv : v ≠ 0) (hθ : (Function.support (θ - θ')).Finite) :
+    klDiv (Measure.infinitePi fun j ↦ gaussianReal (θ j) v)
+        (Measure.infinitePi fun j ↦ gaussianReal (θ' j) v) =
+      ENNReal.ofReal ((∑ j ∈ hθ.toFinset, (θ j - θ' j) ^ 2) / (2 * v)) := by
+  rw [klDiv_infinitePi _ _ hθ.toFinset fun j hj ↦ ?_]
+  · simp_rw [Real.klDiv_gaussianReal _ _ hv]
+    rw [← ENNReal.ofReal_sum_of_nonneg fun j _ ↦ by positivity, Finset.sum_div]
+  · simp only [Set.Finite.mem_toFinset, Function.mem_support, Pi.sub_apply, ne_eq,
+      not_not, sub_eq_zero] at hj
+    rw [hj]
+
+/-- For `ε ≠ 0`, the relative entropy between two Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and
+`⊗ⱼ N(θ'ⱼ, ε²)` whose means differ in finitely many coordinates is
+`∑ⱼ (θⱼ - θ'ⱼ) ^ 2 / (2 ε ^ 2)`. (For `ε = 0` and `θ ≠ θ'` the laws are distinct Dirac masses
+and the divergence is infinite.) This is
+`TauCeti.klDiv_infinitePi_gaussianReal_of_variance_ne_zero` at the variance `ε ^ 2`. -/
+theorem klDiv_infinitePi_gaussianReal {ι : Type*} (θ θ' : ι → ℝ) {ε : ℝ} (hε : ε ≠ 0)
+    (hθ : (Function.support (θ - θ')).Finite) :
+    klDiv (Measure.infinitePi fun j ↦ gaussianReal (θ j) (ε ^ 2).toNNReal)
+        (Measure.infinitePi fun j ↦ gaussianReal (θ' j) (ε ^ 2).toNNReal) =
+      ENNReal.ofReal ((∑ j ∈ hθ.toFinset, (θ j - θ' j) ^ 2) / (2 * ε ^ 2)) := by
+  rw [klDiv_infinitePi_gaussianReal_of_variance_ne_zero θ θ' (by simp [hε]) hθ,
+    Real.coe_toNNReal _ (sq_nonneg ε)]
 
 end TauCeti

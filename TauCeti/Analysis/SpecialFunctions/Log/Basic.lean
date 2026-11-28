@@ -15,6 +15,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
   `((log (1 + r)).toNNReal : ℝ) = log (1 + r)`.
 * `Real.abs_log_sub_log_le_log`: two positive reals within a factor `c` of each other have
   logarithms within `log c`.
+* `Real.mul_log_div`: `x log (x / y) = x log x - x log y` for `y ≠ 0`, including `x = 0`.
 
 ## Upper boundedness of `Real.log` on bounded and compact sets
 
@@ -35,6 +36,13 @@ namespace Real
 /-- For `0 < r < c` the logarithm `log (c / r)` is positive. -/
 theorem log_div_pos {c r : ℝ} (h0 : 0 < r) (hr : r < c) : 0 < log (c / r) :=
   log_pos ((one_lt_div h0).2 hr)
+
+/-- `x log (x / y) = x log x - x log y` for `y ≠ 0`, including `x = 0` (where both sides vanish
+by `Real.log_zero`). -/
+theorem mul_log_div (x : ℝ) {y : ℝ} (hy : y ≠ 0) : x * log (x / y) = x * log x - x * log y := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rw [log_div hx hy, mul_sub]
 
 /-- The logarithmic time `log (1 + r)` of a nonnegative `r` is nonnegative, so it survives the
 round trip through `ℝ≥0`. -/
