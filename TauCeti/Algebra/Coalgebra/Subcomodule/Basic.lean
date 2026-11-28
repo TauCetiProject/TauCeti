@@ -28,6 +28,8 @@ groups.
 
 * `TauCeti.Subcomodule`: a submodule stable under the coaction.
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
+* `TauCeti.Subcomodule.toSubmoduleEquiv`: the linear equivalence between a subcomodule and its
+  underlying submodule.
 * `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
 * `TauCeti.Subcomodule.instModuleFinite`: the same finiteness for the subtype of a subcomodule.
 * `TauCeti.Subcomodule.ext` and `TauCeti.Subcomodule.coact_mem`: subcomodules are determined by
@@ -42,8 +44,13 @@ groups.
   underlying submodule detects the extreme subcomodules.
 * `TauCeti.Subcomodule.ne_bot_iff`: a subcomodule is nonzero exactly when it contains a nonzero
   vector.
+* `TauCeti.Subcomodule.nontrivial_iff`: the subcomodule lattice is nontrivial if and only if the
+  comodule is nontrivial.
 * `TauCeti.Subcomodule.isSimpleOrder_of_transitive`: a family of maps that preserves every
   subcomodule and acts transitively on nonzero vectors makes the subcomodule lattice simple.
+* `TauCeti.Comodule.nontrivial_of_isSimpleOrder` and
+  `Module.Basis.index_nonempty_of_isSimpleOrder`: every simple comodule is nontrivial, and every
+  basis of a simple comodule has a nonempty index type.
 * `TauCeti.Subcomodule.map`: the image of a subcomodule under a comodule morphism.
 * `TauCeti.Subcomodule.mem_map`, `TauCeti.Subcomodule.map_le_iff`, `TauCeti.Subcomodule.map_mono`,
   `TauCeti.Subcomodule.map_bot`, `TauCeti.Subcomodule.map_id` and `TauCeti.Subcomodule.map_map`:
@@ -131,6 +138,26 @@ theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m ∈ N.toSubmodule �
 theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier :=
   rfl
 
+/-- The tautological linear equivalence between a subcomodule and the subtype of its underlying
+submodule. -/
+def toSubmoduleEquiv (N : Subcomodule R C M) : N ≃ₗ[R] N.toSubmodule where
+  toFun x := ⟨x, x.property⟩
+  invFun x := ⟨x, x.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_toSubmoduleEquiv_apply (N : Subcomodule R C M) (x : N) :
+    ((N.toSubmoduleEquiv x : N.toSubmodule) : M) = x := by
+  rfl
+
+@[simp]
+theorem coe_toSubmoduleEquiv_symm_apply (N : Subcomodule R C M) (x : N.toSubmodule) :
+    ((N.toSubmoduleEquiv.symm x : N) : M) = x := by
+  rfl
+
 /-- A subcomodule of a noetherian module is finitely generated as an `R`-module. -/
 theorem finite (N : Subcomodule R C M) [IsNoetherian R M] :
     Module.Finite R N.toSubmodule := by
@@ -174,7 +201,7 @@ theorem rid_lTensor_coact_mem (N : Subcomodule R C M) (f : C →ₗ[R] R) {m : M
   rw [← hx]
   clear hx hm
   induction x with
-  | tmul y c => simpa using N.carrier.smul_mem (f c) y.2
+  | tmul y c => simpa using N.carrier.smul_mem (f c) y.property
   | add a b ha hb => simpa only [map_add] using add_mem ha hb
 
 /-- Constructor from a submodule and the tensor-product stability condition. -/
@@ -271,6 +298,15 @@ theorem toSubmodule_eq_bot {N : Subcomodule R C M} : N.toSubmodule = ⊥ ↔ N =
 theorem ne_bot_iff {N : Subcomodule R C M} : N ≠ ⊥ ↔ ∃ m ∈ N, m ≠ 0 :=
   (not_congr toSubmodule_eq_bot).symm.trans (Submodule.ne_bot_iff N.toSubmodule)
 
+/-- The subcomodule lattice is nontrivial if and only if the comodule is nontrivial. -/
+@[simp]
+theorem nontrivial_iff : Nontrivial (Subcomodule R C M) ↔ Nontrivial M := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · obtain ⟨m, -, hm⟩ := ne_bot_iff.mp (top_ne_bot (α := Subcomodule R C M))
+    exact ⟨m, 0, hm⟩
+  · obtain ⟨m, hm⟩ := exists_ne (0 : M)
+    exact ⟨⊥, ⊤, fun h ↦ hm (mem_bot.mp (h.symm ▸ mem_top m))⟩
+
 /-- If a family of maps preserves every subcomodule and acts transitively on nonzero vectors,
 then the subcomodule lattice is simple. -/
 theorem isSimpleOrder_of_transitive {G : Type x} (v₀ : M) (hv₀ : v₀ ≠ 0)
@@ -294,6 +330,25 @@ theorem isSimpleOrder_of_transitive {G : Type x} (v₀ : M) (hv₀ : v₀ ≠ 0)
       · obtain ⟨g, hg⟩ := htrans hv hw
         exact hg ▸ hmem N g hwN
 
+end Subcomodule
+
+/-- Every simple right comodule is nontrivial. -/
+theorem Comodule.nontrivial_of_isSimpleOrder [IsSimpleOrder (Subcomodule R C M)] :
+    Nontrivial M := by
+  obtain ⟨m, -, hm⟩ := Subcomodule.ne_bot_iff.mp (top_ne_bot (α := Subcomodule R C M))
+  exact nontrivial_of_ne m 0 hm
+
+/-- Any basis of a simple right comodule has a nonempty index type. -/
+theorem _root_.Module.Basis.index_nonempty_of_isSimpleOrder {R M ι : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis ι R M) (C : Type*)
+    [AddCommMonoid C] [Module R C] [Coalgebra R C] [Comodule R C M]
+    [IsSimpleOrder (Subcomodule R C M)] : Nonempty ι :=
+  have := Comodule.nontrivial_of_isSimpleOrder R C M
+  b.index_nonempty
+
+namespace Subcomodule
+
+variable {R C M}
 variable {N : Type x} [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The image of a subcomodule under a comodule morphism. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.AlgebraicGeometry.Modules.Unit
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
@@ -31,8 +32,17 @@ subscheme `V(I)`. Since `ι` is affine, `ι_* 𝒪_{V(I)}` is quasi-coherent, an
 
 ## Main declarations
 
+* `Scheme.IdealSheafData.pushforwardSubscheme`: the direct image `ι_* 𝒪_{V(I)}`, with the
+  restriction `Scheme.IdealSheafData.toPushforwardSubscheme : 𝒪_X ⟶ ι_* 𝒪_{V(I)}`, given on
+  sections by restriction of functions (`Scheme.IdealSheafData.toPushforwardSubscheme_app`).
+* `Scheme.IdealSheafData.sheafι_toPushforwardSubscheme_of_le`: for `I ≤ J`, the composite
+  `I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(J)}` vanishes.
 * `Scheme.IdealSheafData.shortExact_toPushforwardSubscheme`: the sequence
   `I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)}` is short exact.
+* `Scheme.IdealSheafData.pushforwardSubschemeMap`: for `I ≤ J`, the restriction
+  `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` of functions to the smaller closed subscheme, through which
+  `𝒪_X ⟶ ι_* 𝒪_{V(J)}` factors
+  (`Scheme.IdealSheafData.toPushforwardSubscheme_pushforwardSubschemeMap`).
 * `Scheme.IdealSheafData.isQuasicoherent_sheaf`: the ideal sheaf `I` is quasi-coherent.
 
 ## References
@@ -53,35 +63,55 @@ noncomputable section
 
 variable {X : Scheme.{u}} (I : X.IdealSheafData)
 
-/-- A section of `𝒪_X` restricts to zero on `V(I)` exactly when it is a section of `I`, stated
-in the sections of `ι_* 𝒪_{V(I)}`, whose zero is not reducibly the zero of
-`Γ(V(I), ι⁻¹ U)`. -/
+/-- The direct image `ι_* 𝒪_{V(I)}` on `X` of the structure sheaf of the closed subscheme
+`V(I)`. -/
+abbrev pushforwardSubscheme : X.Modules :=
+  (Scheme.Modules.pushforward I.subschemeι).obj (SheafOfModules.unit I.subscheme.ringCatSheaf)
+
+/-- The restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}` of regular functions to the closed subscheme `V(I)`, as
+a morphism of `𝒪_X`-modules. Its target is pinned to `Scheme.Modules.pushforward`: `simp` does not
+identify sections of it with those of the defeq target `SheafOfModules.pushforward` that Mathlib
+gives `SheafOfModules.unitToPushforwardObjUnit`, and no zero morphism is synthesized there. -/
+def toPushforwardSubscheme : Scheme.Modules.unit X ⟶ I.pushforwardSubscheme :=
+  SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom
+
+/-- The restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}` is Mathlib's unit map `𝒪_X ⟶ ι_* 𝒪_{V(I)}` of the
+direct image along `ι`, through which its `SheafOfModules.unitToPushforwardObjUnit` API applies. -/
+lemma toPushforwardSubscheme_def :
+    I.toPushforwardSubscheme =
+      SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom := by
+  rfl
+
+/-- On sections over `U`, the restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}` is the restriction
+`Γ(X, U) ⟶ Γ(V(I), ι⁻¹ U)` of regular functions. It is not `@[simp]`: rewriting with it would
+preempt the simp lemma `subschemeι_app_eq_zero_iff`. -/
+lemma toPushforwardSubscheme_app {U : X.Opens} (s : Γ(X, U)) :
+    Scheme.Modules.Hom.app I.toPushforwardSubscheme U s = I.subschemeι.app U s := by
+  rfl
+
+/-- A section of `𝒪_X` restricts to zero on `V(I)` exactly when it is a section of `I`. -/
 @[simp]
 lemma subschemeι_app_eq_zero_iff {U : X.Opens} {s : Γ(X, U)} :
-    -- The target is pinned to `Scheme.Modules.pushforward`, as in `sheafι_toPushforwardSubscheme`
-    -- below. `simp` does not identify these sections with those of the defeq target
-    -- `SheafOfModules.pushforward` that Mathlib gives `unitToPushforwardObjUnit`.
-    Scheme.Modules.Hom.app
-        (N := (Scheme.Modules.pushforward I.subschemeι).obj
-          (SheafOfModules.unit I.subscheme.ringCatSheaf))
-        (SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) U s = 0 ↔
-      s ∈ I.sections U :=
+    Scheme.Modules.Hom.app I.toPushforwardSubscheme U s = 0 ↔ s ∈ I.sections U :=
   I.mem_sections_iff.symm
 
 /-- Regular functions in `I` vanish on `V(I)`. -/
 @[simp, reassoc]
-lemma sheafι_toPushforwardSubscheme :
-    -- The target is pinned to `Scheme.Modules.pushforward`: at Mathlib's
-    -- `SheafOfModules.pushforward` target no zero morphism is synthesized for `0`.
-    (I.sheafι ≫ SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom :
-      I.sheaf ⟶ (Scheme.Modules.pushforward I.subschemeι).obj
-        (SheafOfModules.unit I.subscheme.ringCatSheaf)) = 0 := by
+lemma sheafι_toPushforwardSubscheme : I.sheafι ≫ I.toPushforwardSubscheme = 0 := by
   refine Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_
   -- The components of a composite and of the zero morphism are computed sectionwise
   -- (`Scheme.Modules.Hom.comp_app` and `Scheme.Modules.Hom.zero_app` hold by `rfl`). Neither
   -- `rw` nor `simp` can apply `comp_app` here: the goal is ill-typed at `implicit` transparency,
   -- where the ring sheaf of `V(I)` is a `TopCat.Sheaf` rather than a sheaf on the site.
   exact (I.subschemeι_app_eq_zero_iff).mpr (I.sheafι_app_mem U t)
+
+variable {I} in
+/-- For `I ≤ J`, regular functions in `I` vanish on the smaller closed subscheme `V(J)`. -/
+@[simp, reassoc]
+lemma sheafι_toPushforwardSubscheme_of_le {J : X.IdealSheafData} (h : I ≤ J) :
+    (I.sheafι : I.sheaf ⟶ Scheme.Modules.unit X) ≫ J.toPushforwardSubscheme = 0 :=
+  Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦
+    (J.subschemeι_app_eq_zero_iff).mpr (sections_mono h U (I.sheafι_app_mem U t))
 
 /-- `I` is the kernel of the restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}`. -/
 def isLimitKernelForkSheafι :
@@ -98,8 +128,7 @@ def isLimitKernelForkSheafι :
 
 /-- The restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}` is an epimorphism: on an affine open it is the
 quotient map `Γ(X, U) ⟶ Γ(X, U) ⧸ I(U)`, and affine opens form a basis. -/
-instance epi_toPushforwardSubscheme :
-    Epi (SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) :=
+instance epi_toPushforwardSubscheme : Epi I.toPushforwardSubscheme :=
   Scheme.Modules.Hom.epi_of_surjective_on_affineOpens _ fun U hU ↦
     I.subschemeι_app_surjective ⟨U, hU⟩
 
@@ -111,20 +140,60 @@ theorem shortExact_toPushforwardSubscheme :
   mono_f := inferInstanceAs (Mono I.sheafι)
   epi_g := I.epi_toPushforwardSubscheme
 
+section PushforwardSubschemeMap
+
+/-! ### Restriction to a smaller closed subscheme -/
+
+variable {I} {J : X.IdealSheafData}
+
+/-- For `I ≤ J`, the restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` of functions on `V(I)` to the
+smaller closed subscheme `V(J)`. It is the morphism through which the restriction
+`𝒪_X ⟶ ι_* 𝒪_{V(J)}` factors (`toPushforwardSubscheme_pushforwardSubschemeMap`). -/
+def pushforwardSubschemeMap (h : I ≤ J) : I.pushforwardSubscheme ⟶ J.pushforwardSubscheme :=
+  (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
+    J.toPushforwardSubscheme (sheafι_toPushforwardSubscheme_of_le h)).val
+
+/-- Restricting functions from `X` to `V(I)` and then to `V(J)` is restricting them to `V(J)`. -/
+@[reassoc (attr := simp)]
+lemma toPushforwardSubscheme_pushforwardSubschemeMap (h : I ≤ J) :
+    I.toPushforwardSubscheme ≫ pushforwardSubschemeMap h = J.toPushforwardSubscheme :=
+  (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
+    J.toPushforwardSubscheme (sheafι_toPushforwardSubscheme_of_le h)).property
+
+/-- The restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` is an epimorphism. -/
+instance epi_pushforwardSubschemeMap (h : I ≤ J) : Epi (pushforwardSubschemeMap h) :=
+  have : Epi (I.toPushforwardSubscheme ≫ pushforwardSubschemeMap h) := by
+    rw [toPushforwardSubscheme_pushforwardSubschemeMap]
+    infer_instance
+  epi_of_epi I.toPushforwardSubscheme _
+
+variable (I) in
+/-- Restricting functions from `V(I)` to `V(I)` is the identity. -/
+@[simp]
+lemma pushforwardSubschemeMap_refl : pushforwardSubschemeMap (le_refl I) = 𝟙 _ := by
+  rw [← cancel_epi I.toPushforwardSubscheme, toPushforwardSubscheme_pushforwardSubschemeMap,
+    Category.comp_id]
+
+/-- Restriction from `V(I)` to `V(J)` and then to `V(K)` is restriction to `V(K)`. -/
+@[reassoc (attr := simp)]
+lemma pushforwardSubschemeMap_comp {K : X.IdealSheafData} (h : I ≤ J) (h' : J ≤ K) :
+    pushforwardSubschemeMap h ≫ pushforwardSubschemeMap h' =
+      pushforwardSubschemeMap (h.trans h') := by
+  rw [← cancel_epi I.toPushforwardSubscheme, toPushforwardSubscheme_pushforwardSubschemeMap_assoc,
+    toPushforwardSubscheme_pushforwardSubschemeMap, toPushforwardSubscheme_pushforwardSubschemeMap]
+
+end PushforwardSubschemeMap
+
 /-- An ideal sheaf is quasi-coherent: it is the kernel of the morphism `𝒪_X ⟶ ι_* 𝒪_{V(I)}`
 between quasi-coherent sheaves, the target being quasi-coherent as `ι` is affine. -/
 instance isQuasicoherent_sheaf : I.sheaf.IsQuasicoherent := by
-  -- The quasi-coherence of the target is stated at `Scheme.Modules.pushforward`, as in
-  -- `sheafι_toPushforwardSubscheme`, and supplied by hand: instance search does not see through
-  -- Mathlib's `SheafOfModules.pushforward` to it.
-  have : ((Scheme.Modules.pushforward I.subschemeι).obj
-      (SheafOfModules.unit I.subscheme.ringCatSheaf)).IsQuasicoherent :=
+  -- The quasi-coherence of the target `ι_* 𝒪_{V(I)}` is supplied by hand, as instance search
+  -- does not find `Scheme.Modules.isQuasicoherent_pushforward` for it.
+  have : I.pushforwardSubscheme.IsQuasicoherent :=
     Scheme.Modules.isQuasicoherent_pushforward _ I.subschemeι
   exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
     (IsLimit.conePointUniqueUpToIso (kernelIsKernel _) I.isLimitKernelForkSheafι)
-    (Scheme.Modules.isQuasicoherent_kernel (N := (Scheme.Modules.pushforward I.subschemeι).obj
-      (SheafOfModules.unit I.subscheme.ringCatSheaf))
-      (SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom))
+    (Scheme.Modules.isQuasicoherent_kernel (N := I.pushforwardSubscheme) I.toPushforwardSubscheme)
 
 end
 

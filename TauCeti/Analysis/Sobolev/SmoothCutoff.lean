@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
@@ -26,7 +27,10 @@ of a finite sum of norms of derivatives of `f`. At each point the approximation 
 agrees with `f` on a neighborhood, so all its derivatives eventually agree there as well.
 This is the cutoff step used after smoothing in whole-space Sobolev density arguments.
 The approximation holds for functions of finite smoothness `m ≥ k`, with approximants of the same
-smoothness; for `C¹` integrable functions with integrable derivative it gives compactly supported
+smoothness. For `Cᵐ` functions, `1 ≤ m`, with value and derivative in `Lᵖ`, the approximants
+converge together with their derivatives
+(`TauCeti.exists_contDiff_hasCompactSupport_tendsto_eLpNorm_sub_fderiv_sub`); for `C¹` integrable
+functions with integrable derivative it gives compactly supported
 `C¹` approximants converging in `L¹`, with `L¹` norms of the derivatives bounded by `‖Du‖₁`
 plus a sequence tending to zero
 (`TauCeti.exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv`). An open-set form
@@ -223,6 +227,42 @@ theorem exists_contDiff_hasCompactSupport_approximation
       (fun j _ x ↦ hB j x) (hfk i hi)
       (fun j hj ↦ hmem j (hj.trans hi))
 
+/-- A `Cᵐ` function `f`, `1 ≤ m`, such that `f` and its derivative lie in `Lᵖ` admits `Cᵐ`
+compactly supported approximations `g n` with `g n → f` and `fderiv ℝ (g n) → fderiv ℝ f` in the
+`Lᵖ` seminorm. -/
+theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_sub_fderiv_sub
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {μ : Measure E} {p : ENNReal} (hp : p ≠ ⊤)
+    {m : ℕ∞} {f : E → F} (hf : ContDiff ℝ m f) (hm : 1 ≤ m)
+    (hfp : MemLp f p μ) (hdf : MemLp (fderiv ℝ f) p μ) :
+    ∃ g : ℕ → E → F, (∀ n, ContDiff ℝ m (g n) ∧ HasCompactSupport (g n)) ∧
+      Tendsto (fun n ↦ eLpNorm (g n - f) p μ) atTop (𝓝 0) ∧
+      Tendsto (fun n ↦ eLpNorm (fderiv ℝ (g n) - fderiv ℝ f) p μ) atTop (𝓝 0) := by
+  have hf1 : ContDiff ℝ 1 f := hf.of_le (by exact_mod_cast hm)
+  have hmem : ∀ i ≤ 1, MemLp (iteratedFDeriv ℝ i f) p μ := fun i hi ↦ by
+    interval_cases i
+    · exact memLp_iteratedFDeriv_zero_iff.2 hfp
+    · exact hdf.congr_norm (hf1.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
+        (.of_forall fun x ↦ (norm_iteratedFDeriv_one f).symm)
+  obtain ⟨g, hg, -, hlim⟩ := exists_contDiff_hasCompactSupport_approximation hp hf 1
+    (by exact_mod_cast hm) hmem
+  have hg1 (n : ℕ) : ContDiff ℝ 1 (g n) := (hg n).1.of_le (by exact_mod_cast hm)
+  refine ⟨g, hg, (hlim 0 zero_le_one).congr fun n ↦ ?_, (hlim 1 le_rfl).congr fun n ↦ ?_⟩
+  · refine eLpNorm_congr_norm_ae
+      (((hg1 n).continuous_iteratedFDeriv (by simp)).sub
+        (hf1.continuous_iteratedFDeriv (by simp))).aestronglyMeasurable
+      ((hg1 n).continuous.sub hf1.continuous).aestronglyMeasurable (.of_forall fun x ↦ ?_)
+    simp only [iteratedFDeriv_zero_eq_comp, Pi.sub_apply, Function.comp_apply, ← map_sub,
+      LinearIsometryEquiv.norm_map]
+  · refine eLpNorm_congr_norm_ae
+      (((hg1 n).continuous_iteratedFDeriv le_rfl).sub
+        (hf1.continuous_iteratedFDeriv le_rfl)).aestronglyMeasurable
+      (((hg1 n).continuous_fderiv one_ne_zero).sub
+        (hf1.continuous_fderiv one_ne_zero)).aestronglyMeasurable (.of_forall fun x ↦ ?_)
+    rw [Pi.sub_apply, ← iteratedFDeriv_sub_apply (hg1 n).contDiffAt hf1.contDiffAt,
+      norm_iteratedFDeriv_one, Pi.sub_apply, fderiv_sub ((hg1 n).differentiable one_ne_zero x)
+      (hf1.differentiable one_ne_zero x)]
+
 /-- A `C¹` integrable function with integrable derivative has compactly supported `C¹`
 approximations `g n` that converge to it in `L¹`, with `L¹` norms of the derivatives at most
 `‖Du‖₁ + ε n` for a sequence `ε n → 0`. -/
@@ -234,37 +274,12 @@ theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv
       (∀ n, HasCompactSupport (g n)) ∧ Tendsto (fun n => eLpNorm (g n - u) 1 μ) atTop (𝓝 0) ∧
       Tendsto ε atTop (𝓝 0) ∧
       ∀ n, eLpNorm (fderiv ℝ (g n)) 1 μ ≤ eLpNorm (fderiv ℝ u) 1 μ + ε n := by
-  have hdu : AEStronglyMeasurable (fderiv ℝ u) μ :=
-    (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable
-  have hmem : ∀ i ≤ 1, MemLp (iteratedFDeriv ℝ i u) 1 μ := fun i hi1 => by
-    interval_cases i
-    · exact (memLp_one_iff_integrable.2 hi).congr_norm
-        (hu.continuous_iteratedFDeriv (by simp) |>.aestronglyMeasurable)
-        (.of_forall fun x => norm_iteratedFDeriv_zero.symm)
-    · have hdi : Integrable (fderiv ℝ u) μ := ⟨hdu, by
-        rwa [HasFiniteIntegral, ← eLpNorm_one_eq_lintegral_eNorm hdu, lt_top_iff_ne_top]⟩
-      exact (memLp_one_iff_integrable.2 hdi).congr_norm
-        (hu.continuous_iteratedFDeriv le_rfl |>.aestronglyMeasurable)
-        (.of_forall fun x => (norm_iteratedFDeriv_one u).symm)
-  obtain ⟨g, hg, -, hlim⟩ := exists_contDiff_hasCompactSupport_approximation (μ := μ)
-    ENNReal.one_ne_top (m := 1) hu 1 le_rfl hmem
-  have hval : Tendsto (fun n => eLpNorm (g n - u) 1 μ) atTop (𝓝 0) :=
-    (hlim 0 zero_le_one).congr fun n => eLpNorm_congr_norm_ae
-      (((hg n).1.continuous_iteratedFDeriv (by simp)).sub
-        (hu.continuous_iteratedFDeriv (by simp))).aestronglyMeasurable
-      ((hg n).1.continuous.sub hu.continuous).aestronglyMeasurable
-      (.of_forall fun x => by
-        simp only [iteratedFDeriv_zero_eq_comp, Pi.sub_apply, Function.comp_apply, ← map_sub,
-          LinearIsometryEquiv.norm_map])
-  set ε := fun n => eLpNorm (iteratedFDeriv ℝ 1 (g n) - iteratedFDeriv ℝ 1 u) 1 μ
-  have hderiv (n : ℕ) : eLpNorm (fderiv ℝ (g n)) 1 μ ≤ eLpNorm (fderiv ℝ u) 1 μ + ε n := by
-    rw [eLpNorm_congr_norm_ae ((hg n).1.continuous_fderiv one_ne_zero).aestronglyMeasurable
-        ((hg n).1.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
-        (.of_forall fun x => (norm_iteratedFDeriv_one _).symm),
-      eLpNorm_congr_norm_ae hdu (hu.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
-        (.of_forall fun x => (norm_iteratedFDeriv_one _).symm), add_comm]
-    simpa using eLpNorm_add_le (μ := μ)
-      (f := iteratedFDeriv ℝ 1 (g n) - iteratedFDeriv ℝ 1 u) (g := iteratedFDeriv ℝ 1 u) le_rfl
-  exact ⟨g, ε, fun n => (hg n).1, fun n => (hg n).2, hval, hlim 1 le_rfl, hderiv⟩
+  obtain ⟨g, hg, hval, hlim⟩ := exists_contDiff_hasCompactSupport_tendsto_eLpNorm_sub_fderiv_sub
+    (μ := μ) ENNReal.one_ne_top hu le_rfl (memLp_one_iff_integrable.2 hi)
+    (memLp_iff.2 htop.lt_top)
+  refine ⟨g, _, fun n => (hg n).1, fun n => (hg n).2, hval, hlim, fun n => ?_⟩
+  rw [add_comm]
+  simpa using eLpNorm_add_le (μ := μ)
+    (f := fderiv ℝ (g n) - fderiv ℝ u) (g := fderiv ℝ u) le_rfl
 
 end TauCeti

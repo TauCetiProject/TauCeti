@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.Weak
 public import TauCeti.Analysis.OperatorIdeal.Carrier
+public import Mathlib.Topology.Algebra.SeparationQuotient.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -49,6 +50,8 @@ norm at most `‖A‖`, `‖B‖` and `1`.
 * `ContinuousLinearMap.enorm_toLp_le_summingENorm_mul`: the defining inequality with the
   constant `πₚ(T)`, for families indexed by any finite type.
 * `ContinuousLinearMap.summingENorm_comp_comp_le`: the ideal inequality.
+* `ContinuousLinearMap.summingENorm_comp_separationQuotient`: invariance under postcomposing with
+  `SeparationQuotient.mkCLM`.
 * `ContinuousLinearMap.enorm_le_summingENorm`: `‖T‖ ≤ πₚ(T)`.
 * `ContinuousLinearMap.summingENorm_smulRight`: the rank-one value.
 * `ContinuousLinearMap.lowerSemicontinuous_summingENorm`: lower semicontinuity.
@@ -246,6 +249,13 @@ theorem summingENorm_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B :
     _ ≤ ‖A‖ₑ * (T.summingENorm p * ‖B‖ₑ) := by gcongr; exact summingENorm_comp_right_le T B
     _ = _ := (mul_assoc _ _ _).symm
 
+/-- Composing an operator with `SeparationQuotient.mkCLM` preserves its `p`-summing gauge. -/
+@[simp]
+theorem summingENorm_comp_separationQuotient (T : E →L[𝕜] F) :
+    ((SeparationQuotient.mkCLM 𝕜 F).comp T).summingENorm p = T.summingENorm p := by
+  simp only [summingENorm_def, ContinuousLinearMap.comp_apply, SeparationQuotient.mkCLM_apply,
+    ← ofReal_norm, PiLp.norm_toLp_comp_separationQuotient]
+
 /-- The rank-one operator `x ↦ f x • y` has gauge at most `‖f‖ ‖y‖`. -/
 theorem summingENorm_smulRight_le (f : StrongDual 𝕜 E) (y : F) :
     (f.smulRight y).summingENorm p ≤ ‖f‖ₑ * ‖y‖ₑ := by
@@ -253,7 +263,7 @@ theorem summingENorm_smulRight_le (f : StrongDual 𝕜 E) (y : F) :
     summingENorm_le_ofReal_iff (mul_nonneg (norm_nonneg _) (norm_nonneg _))]
   intro n x
   simp only [smulRight_apply]
-  rw [PiLp.norm_toLp_smul_const]
+  rw [PiLp.norm_toLp_smul_const (zero_lt_one.trans_le Fact.out).ne']
   calc
     _ ≤ weakLpNorm (𝕜 := 𝕜) p x * ‖f‖ * ‖y‖ := by
       gcongr

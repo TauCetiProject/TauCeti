@@ -29,6 +29,7 @@ two such that are equivalent are equal.
   where they are not `1` are equal.
 * `AbsoluteValue.IsEquiv.eq_of_isStandard`: equivalent absolute values agreeing on natural-number
   casts with standard absolute values on `ℚ` are equal.
+* `Rat.AbsoluteValue.not_isNonarchimedean_real`: the real absolute value on `ℚ` is archimedean.
 * `AbsoluteValue.isNontrivial_of_forall_natCast_eq`: agreement on natural-number casts transfers
   nontriviality from an absolute value on `ℚ` to one on a semiring.
 -/
@@ -44,10 +45,10 @@ theorem exists_forall_apply_sub_lt {F : Type*} [Field F] (S : Finset (AbsoluteVa
     (hS : ∀ v ∈ S, v.IsNontrivial) (hS' : ∀ v ∈ S, ∀ w ∈ S, v.IsEquiv w → v = w)
     (t : AbsoluteValue F ℝ → F) {ε : ℝ} (hε : 0 < ε) :
     ∃ x : F, ∀ v ∈ S, v (x - t v) < ε := by
-  obtain ⟨x, hx⟩ := (AbsoluteValue.denseRange_algebraMap_pi (v := fun v : S ↦ v.1)
-    (fun v ↦ hS v.1 v.2)
-    (fun v w hvw h ↦ hvw (Subtype.ext (hS' v.1 v.2 w.1 w.2 h)))).exists_dist_lt
-      (fun v : S ↦ WithAbs.toAbs v.1 (t v.1)) hε
+  obtain ⟨x, hx⟩ := (AbsoluteValue.denseRange_algebraMap_pi (v := fun v : S ↦ v.val)
+    (fun v ↦ hS v.val v.property)
+    (fun v w hvw h ↦ hvw (Subtype.ext (hS' v.val v.property w.val w.property h)))).exists_dist_lt
+      (fun v : S ↦ WithAbs.toAbs v.val (t v.val)) hε
   refine ⟨x, fun v hv ↦ ?_⟩
   have h := (dist_pi_lt_iff hε).mp hx ⟨v, hv⟩
   rwa [dist_comm, dist_eq_norm, WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_sub] at h
@@ -68,6 +69,12 @@ theorem _root_.AbsoluteValue.IsEquiv.eq_of_apply_eq {F : Type*} [Field F]
 def _root_.Rat.AbsoluteValue.IsStandard (a : AbsoluteValue ℚ ℝ) : Prop :=
   a = Rat.AbsoluteValue.real ∨ ∃ (q : ℕ) (_ : Fact q.Prime), a = Rat.AbsoluteValue.padic q
 
+/-- An absolute value on `ℚ` is standard if and only if it is the real or a `q`-adic one. -/
+theorem _root_.Rat.AbsoluteValue.isStandard_iff {a : AbsoluteValue ℚ ℝ} :
+    Rat.AbsoluteValue.IsStandard a ↔
+      a = Rat.AbsoluteValue.real ∨ ∃ (q : ℕ) (_ : Fact q.Prime), a = Rat.AbsoluteValue.padic q :=
+  .rfl
+
 /-- The real absolute value on `ℚ` is standard. -/
 theorem _root_.Rat.AbsoluteValue.IsStandard.real :
     Rat.AbsoluteValue.IsStandard Rat.AbsoluteValue.real :=
@@ -77,6 +84,12 @@ theorem _root_.Rat.AbsoluteValue.IsStandard.real :
 theorem _root_.Rat.AbsoluteValue.IsStandard.padic (q : ℕ) [Fact q.Prime] :
     Rat.AbsoluteValue.IsStandard (Rat.AbsoluteValue.padic q) :=
   .inr ⟨q, inferInstance, rfl⟩
+
+/-- The real absolute value on `ℚ` is archimedean: it takes the value `2` at `1 + 1`. -/
+theorem _root_.Rat.AbsoluteValue.not_isNonarchimedean_real :
+    ¬ IsNonarchimedean Rat.AbsoluteValue.real := fun h ↦ by
+  have := h 1 1
+  norm_num at this
 
 /-- A standard absolute value on `ℚ` is nontrivial. -/
 theorem _root_.Rat.AbsoluteValue.IsStandard.isNontrivial {a : AbsoluteValue ℚ ℝ}

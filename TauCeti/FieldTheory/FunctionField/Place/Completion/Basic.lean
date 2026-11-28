@@ -17,12 +17,17 @@ embedding. Its valuation ring is a complete discrete valuation ring, and a unifo
 original field is still a uniformizer after completion. Completeness can be read through the
 order filtration: a sequence whose terms agree to increasing order has a limit to which it agrees
 to the same orders. In particular the completed valuation ring is complete for the adic topology
-of its maximal ideal, hence a Henselian local ring.
+of its maximal ideal, hence a Henselian local ring. The steps of the filtration also describe the
+topology: every neighbourhood of a point contains the coset of some step around it.
 
 The inclusion identifies every finite interval of the order filtration with the corresponding
 interval in the completion. In particular, completion does not change the residue field. These
 identifications allow local calculations with finitely many coefficients to pass between the
 field and its completion. No finiteness or perfectness of the residue field is assumed.
+
+The `PlaceCompletionExtension` scope installs the single-place completion algebra structures
+`F → F̂_P`, `𝒪_P → F̂_P`, and `𝒪_P → 𝒪̂_P` together with their `algebraMap` characterizations and
+scalar towers, kept scoped to avoid global `Algebra` instance diamonds.
 
 The underlying complete field and extension of the valuation are Mathlib's
 `Valuation.Completion` and `Valued.valuedCompletion`.
@@ -87,6 +92,10 @@ noncomputable def completionPlace : Place k P.Completion where
 @[simp]
 theorem completionPlace_valuation (x : P.Completion) :
     P.completionPlace.valuation x = Valued.v x := (rfl)
+
+/-- The valuation of the completed place is the completed valuation `Valued.v`. -/
+theorem completionPlace_valuation_eq : P.completionPlace.valuation = Valued.v :=
+  Valuation.ext P.completionPlace_valuation
 
 /-- Completion preserves the order of every function, including the junk value at zero. -/
 @[simp]
@@ -159,7 +168,7 @@ instance isAdicComplete_completionIntegers :
         simpa using (P.completionPlace.filtration m).neg_mem (hf hmn)
     have hx0 : x ∈ P.completionPlace.integers := by
       have h := (P.completionPlace.filtration 0).add_mem (hx 0)
-        (P.completionPlace.mem_filtration_zero_iff.mpr (f 0).2)
+        (P.completionPlace.mem_filtration_zero_iff.mpr (f 0).property)
       simpa [P.completionPlace.mem_filtration_zero_iff] using h
     refine ⟨⟨x, hx0⟩, fun n ↦ ?_⟩
     simpa using (P.completionPlace.filtration n).neg_mem (hx n)
@@ -180,6 +189,21 @@ theorem exists_sub_completionEmbedding_mem_filtration (x : P.Completion) (b : �
   rw [mem_filtration_iff, completionPlace_valuation, Valuation.map_sub_swap]
   exact hy.le
 
+/-- Every neighbourhood of a point `x` of the completion `F̂_P` contains the coset of some step
+of the filtration around `x`. -/
+theorem exists_forall_sub_mem_completionPlace_filtration_mem {x : P.Completion}
+    {U : Set P.Completion} (hU : U ∈ 𝓝 x) :
+    ∃ b : ℤ, ∀ y, y - x ∈ P.completionPlace.filtration b → y ∈ U := by
+  obtain ⟨γ, hγ⟩ := Valued.mem_nhds.1 hU
+  obtain ⟨c, hc0, hc⟩ : ∃ c : ℤᵐ⁰, c ≠ 0 ∧ ∀ y, Valued.v (y - x) < c → y ∈ U :=
+    ⟨MonoidWithZeroHom.ValueGroup₀.embedding γ.val, by simp,
+      fun y hy ↦ hγ ((Valuation.restrict_lt_iff_lt_embedding _).2 hy)⟩
+  refine ⟨1 - WithZero.log c, fun y hy ↦ hc y ?_⟩
+  rw [mem_filtration_iff, completionPlace_valuation] at hy
+  refine hy.trans_lt ?_
+  conv_rhs => rw [← WithZero.exp_log hc0]
+  exact WithZero.exp_lt_exp.2 (by omega)
+
 /-- An element of the completed filtration has an approximation in the original filtration,
 with error in any step; for a step below the given one, `0` already approximates. -/
 theorem exists_filtration_sub_completionEmbedding_mem {a : ℤ} (b : ℤ)
@@ -188,10 +212,10 @@ theorem exists_filtration_sub_completionEmbedding_mem {a : ℤ} (b : ℤ)
       (x : P.Completion) - P.completionEmbedding y ∈ P.completionPlace.filtration b := by
   by_cases hab : a ≤ b
   swap
-  · exact ⟨0, by simpa using P.completionPlace.filtration_antitone (not_le.mp hab).le x.2⟩
+  · exact ⟨0, by simpa using P.completionPlace.filtration_antitone (not_le.mp hab).le x.property⟩
   obtain ⟨y, hy⟩ := P.exists_sub_completionEmbedding_mem_filtration x b
   have hya : P.completionEmbedding y ∈ P.completionPlace.filtration a := by
-    have h := (P.completionPlace.filtration a).sub_mem x.2
+    have h := (P.completionPlace.filtration a).sub_mem x.property
       (P.completionPlace.filtration_antitone hab hy)
     simpa using h
   exact ⟨⟨y, P.completionEmbedding_mem_filtration_iff.mp hya⟩, hy⟩
@@ -200,7 +224,8 @@ theorem exists_filtration_sub_completionEmbedding_mem {a : ℤ} (b : ℤ)
 noncomputable def completionFiltrationMap (a : ℤ) :
     P.filtration a →ₗ[k] P.completionPlace.filtration a :=
   (P.completionEmbedding.toLinearMap.domRestrict (P.filtration a)).codRestrict
-    (P.completionPlace.filtration a) (fun x ↦ P.completionEmbedding_mem_filtration_iff.mpr x.2)
+    (P.completionPlace.filtration a) (fun x ↦ P.completionEmbedding_mem_filtration_iff.mpr
+        x.property)
 
 @[simp]
 theorem completionFiltrationMap_apply (a : ℤ) (x : P.filtration a) :
@@ -249,7 +274,7 @@ theorem completionFiltrationQuotientEquiv_apply_mk (a b : ℤ) (x : P.filtration
 noncomputable def completionIntegersEmbedding : P.integers →ₐ[k] P.completionPlace.integers where
   toFun x := ⟨P.completionEmbedding x, by
     simpa only [mem_integers_iff, completionPlace_valuation, valuation_completionEmbedding]
-      using x.2⟩
+      using x.property⟩
   map_zero' := Subtype.ext (map_zero P.completionEmbedding)
   map_one' := Subtype.ext (map_one P.completionEmbedding)
   map_add' x y := Subtype.ext (map_add P.completionEmbedding (x : F) (y : F))
@@ -275,9 +300,9 @@ noncomputable def residueFieldEquivCompletion : P.ResidueField ≃ₐ[k]
   intro x
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.completionPlace.integers) x
   have hx : (x : P.Completion) ∈ P.completionPlace.filtration 0 :=
-    P.completionPlace.mem_filtration_zero_iff.mpr x.2
+    P.completionPlace.mem_filtration_zero_iff.mpr x.property
   obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem 1 ⟨x, hx⟩
-  let y' : P.integers := ⟨y, P.mem_filtration_zero_iff.mp y.2⟩
+  let y' : P.integers := ⟨y, P.mem_filtration_zero_iff.mp y.property⟩
   refine ⟨IsLocalRing.residue P.integers y', ?_⟩
   rw [IsLocalRing.ResidueField.mapAlgHom_residue]
   apply (P.completionPlace.residue_eq_iff_sub_mem_filtration_one).mpr
@@ -304,5 +329,89 @@ theorem residueFieldEquivCompletion_symm_residue_completionIntegersEmbedding (x 
 theorem degree_completionPlace : P.completionPlace.degree = P.degree := by
   simp only [degree_eq_finrank]
   exact P.residueFieldEquivCompletion.toLinearEquiv.finrank_eq.symm
+
+section ScopedInstances
+
+/-- Scalar multiplication on `WithVal P.valuation` by any `F`-algebra base `S` is uniformly
+continuous. Kept as an explicit theorem rather than a global instance so it cannot compete with
+`TauCeti.Place.instAlgebraCompletion` at `S = k`. -/
+theorem uniformContinuousConstSMul_withVal {S : Type*} [CommSemiring S]
+    [Algebra S F] :
+    UniformContinuousConstSMul S (WithVal P.valuation) := ⟨fun s ↦ by
+  simp_rw [WithVal.smul_right_def, Algebra.smul_def]
+  exact (Ring.uniformContinuousConstSMul (WithVal P.valuation)).uniformContinuous_const_smul _⟩
+
+/-- The `F`-algebra structure on `F̂_P` whose scalar multiplication matches
+`UniformSpace.Completion.instSMul`. Installed in the `PlaceCompletionExtension` scope. Marked
+`@[expose]` so downstream modules retain definitional equality between its `SMul` projection and
+`UniformSpace.Completion.instSMul` in `IsScalarTower` and tensor-product instances. -/
+@[expose, instance_reducible]
+noncomputable def completionAlgebra : Algebra F P.Completion :=
+  haveI := P.uniformContinuousConstSMul_withVal (S := F)
+  UniformSpace.Completion.algebra (WithVal P.valuation) F
+
+/-- The `𝒪_P`-algebra structure on `F̂_P` whose scalar multiplication matches
+`UniformSpace.Completion.instSMul`. Installed in the `PlaceCompletionExtension` scope. Marked
+`@[expose]` so downstream modules retain definitional equality between its `SMul` projection and
+`UniformSpace.Completion.instSMul` in `IsScalarTower` and tensor-product instances. -/
+@[expose, instance_reducible]
+noncomputable def completionIntegersFieldAlgebra : Algebra P.integers P.Completion :=
+  haveI := P.uniformContinuousConstSMul_withVal (S := P.integers)
+  UniformSpace.Completion.algebra (WithVal P.valuation) P.integers
+
+/-- The valuation ring `𝒪_P` acts on its completion `𝒪̂_P` through
+`TauCeti.Place.completionIntegersEmbedding`. Installed in the `PlaceCompletionExtension` scope. -/
+@[instance_reducible]
+noncomputable def completionIntegersAlgebra :
+    Algebra P.integers P.completionPlace.integers :=
+  P.completionIntegersEmbedding.toRingHom.toAlgebra
+
+scoped[PlaceCompletionExtension] attribute [instance]
+  TauCeti.Place.completionAlgebra
+  TauCeti.Place.completionIntegersFieldAlgebra
+  TauCeti.Place.completionIntegersAlgebra
+
+open scoped PlaceCompletionExtension
+
+/-- The scoped `F`-algebra structure on `F̂_P` acts via `TauCeti.Place.completionEmbedding`. -/
+@[simp]
+theorem algebraMap_completion (x : F) :
+    algebraMap F P.Completion x = P.completionEmbedding x := by
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    Algebra.algebraMap_self_apply, P.completionEmbedding_apply]
+
+/-- The scoped `𝒪_P`-algebra structure on `F̂_P` acts via `TauCeti.Place.completionEmbedding`. -/
+@[simp]
+theorem algebraMap_completionIntegersFieldAlgebra (r : P.integers) :
+    algebraMap P.integers P.Completion r = P.completionEmbedding r := by
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    ValuationSubring.algebraMap_apply, P.completionEmbedding_apply]
+
+/-- The scoped `𝒪_P`-algebra structure on `𝒪̂_P` acts via
+`TauCeti.Place.completionIntegersEmbedding`. -/
+@[simp]
+theorem algebraMap_completionIntegersAlgebra (x : P.integers) :
+    algebraMap P.integers P.completionPlace.integers x = P.completionIntegersEmbedding x :=
+  (rfl)
+
+/-- The scalar tower `𝒪_P → F → F̂_P`. Installed in the `PlaceCompletionExtension` scope. -/
+theorem completionIntegersFieldIsScalarTower :
+    IsScalarTower P.integers F P.Completion :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_completionIntegersFieldAlgebra, algebraMap_completion,
+      ValuationSubring.algebraMap_apply]
+
+/-- The scalar tower `𝒪_P → 𝒪̂_P → F̂_P`. Installed in the `PlaceCompletionExtension` scope. -/
+theorem completionIntegersIsScalarTower :
+    IsScalarTower P.integers P.completionPlace.integers P.Completion :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_completionIntegersFieldAlgebra, ValuationSubring.algebraMap_apply,
+      algebraMap_completionIntegersAlgebra, P.completionIntegersEmbedding_apply]
+
+scoped[PlaceCompletionExtension] attribute [instance]
+  TauCeti.Place.completionIntegersFieldIsScalarTower
+  TauCeti.Place.completionIntegersIsScalarTower
+
+end ScopedInstances
 
 end TauCeti.Place

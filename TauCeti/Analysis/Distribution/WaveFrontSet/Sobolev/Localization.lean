@@ -52,9 +52,10 @@ converges absolutely in `L²` (`TauCeti.memLp_one_add_norm_sq_rpow_smul_of_hasSu
 * `Distribution.IsMicrolocallySobolevAt.exists_nhds_cone`: at a point where `T` is microlocally
   `H^s` there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every
   cutoff supported in `U` has weighted localized Fourier transform square integrable on `Γ`.
-* `Distribution.IsMicrolocallySobolevAt.add`, `Distribution.sobolevWaveFrontSet_add_subset`,
-  `Distribution.sobolevWaveFrontSet_sub_subset`, `Distribution.sobolevWaveFrontSet_sum_subset`:
-  the `H^s` wave front set of a sum lies in the union of the `H^s` wave front sets.
+* `Distribution.IsMicrolocallySobolevAt.add`, `Distribution.IsMicrolocallySobolevAt.sum`,
+  `Distribution.sobolevWaveFrontSet_add_subset`, `Distribution.sobolevWaveFrontSet_sub_subset`,
+  `Distribution.sobolevWaveFrontSet_sum_subset`: the `H^s` wave front set of a sum lies in the
+  union of the `H^s` wave front sets.
 * `Distribution.IsMicrolocallySobolevAt.smulLeftCLM`,
   `Distribution.isMicrolocallySobolevAt_smulLeftCLM_iff`,
   `Distribution.sobolevWaveFrontSet_smulLeftCLM_subset`,
@@ -110,10 +111,8 @@ private theorem norm_one_add_norm_sq_rpow_smul_le {F : E → ℂ} {C₀ : ℝ} {
   have hw : 0 ≤ (1 + ‖η‖ ^ 2) ^ (s / 2) := by positivity
   rw [norm_smul, Real.norm_of_nonneg hw]
   -- The weight `⟨y⟩ ^ s` is at most `⟨y⟩ ^ N ≤ (1 + ‖y‖) ^ N`.
-  have hweight (y : E) : (1 + ‖y‖ ^ 2) ^ (s / 2) ≤ (1 + ‖y‖) ^ N := by
-    refine le_trans (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖y‖])
-      (by linarith [le_abs_self s] : s / 2 ≤ (N : ℝ) / 2)) ?_
-    exact one_add_norm_sq_rpow_le_one_add_norm_pow y N
+  have hweight (y : E) : (1 + ‖y‖ ^ 2) ^ (s / 2) ≤ (1 + ‖y‖) ^ N :=
+    one_add_norm_sq_rpow_le_one_add_norm_pow_of_le y ((le_abs_self s).trans hN)
   by_cases hv : ‖v‖ ≤ c * ‖η‖
   · -- Small shifts stay in `Γ`; Peetre's inequality moves the weight to `η - v`.
     have hmem : η - v ∈ Γ := by
@@ -124,10 +123,8 @@ private theorem norm_one_add_norm_sq_rpow_smul_le {F : E → ℂ} {C₀ : ℝ} {
         (0 : ℝ) ≤ (1 + ‖η - v‖ ^ 2) ^ (s / 2))]
     have hpeetre := one_add_norm_sq_rpow_le_mul_sub s η (η - v)
     rw [sub_sub_cancel] at hpeetre
-    have hvN : (1 + ‖v‖ ^ 2) ^ (|s| / 2) ≤ (1 + ‖v‖) ^ (k + N + r) := by
-      refine le_trans (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖v‖])
-        (by linarith : |s| / 2 ≤ (N : ℝ) / 2)) ?_
-      exact (one_add_norm_sq_rpow_le_one_add_norm_pow v N).trans
+    have hvN : (1 + ‖v‖ ^ 2) ^ (|s| / 2) ≤ (1 + ‖v‖) ^ (k + N + r) :=
+      (one_add_norm_sq_rpow_le_one_add_norm_pow_of_le v hN).trans
         (pow_le_pow_right₀ hv1 (by omega))
     calc (1 + ‖η‖ ^ 2) ^ (s / 2) * ‖F (η - v)‖
         ≤ 2 ^ (|s| / 2) * (1 + ‖v‖ ^ 2) ^ (|s| / 2) * (1 + ‖η - v‖ ^ 2) ^ (s / 2) *
@@ -318,9 +315,7 @@ theorem IsMicrolocallySobolevAt.exists_nhds_cone {s : ℝ} {T : 𝓓'(Ω, ℂ)} 
 theorem IsMicrolocallySobolevAt.add {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (hS : S.IsMicrolocallySobolevAt s x ξ) (hT : T.IsMicrolocallySobolevAt s x ξ) :
     (S + T).IsMicrolocallySobolevAt s x ξ := by
-  have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 hS
-    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  have hx : x ∈ Ω := hS.mem
   obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hLS⟩ := hS.exists_nhds_cone
   obtain ⟨V, hV, Γ', hΓ', hξ', hcone', hLT⟩ := hT.exists_nhds_cone
   -- A cutoff supported in `U ∩ V` serves for both distributions, on the cone `Γ ∩ Γ'`.
@@ -335,6 +330,14 @@ theorem IsMicrolocallySobolevAt.add {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
   convert h₁.add h₂ using 1
   ext η
   simp [smul_add]
+
+/-- A finite sum of distributions microlocally `H^s` at `(x, ξ)`, for `x ∈ Ω`, is microlocally
+`H^s` there. -/
+theorem IsMicrolocallySobolevAt.sum {s : ℝ} {ι : Type*} (t : Finset ι) {T : ι → 𝓓'(Ω, ℂ)}
+    {x ξ : E} (hx : x ∈ Ω) (h : ∀ i ∈ t, (T i).IsMicrolocallySobolevAt s x ξ) :
+    (∑ i ∈ t, T i).IsMicrolocallySobolevAt s x ξ :=
+  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsMicrolocallySobolevAt s x ξ) (fun _ _ ↦ .add)
+    ((isMicrolocallySmoothAt_zero hx ξ).isMicrolocallySobolevAt s) h
 
 /-- The `H^s` wave front set of a sum lies in the union of the `H^s` wave front sets. -/
 theorem sobolevWaveFrontSet_add_subset (s : ℝ) (S T : 𝓓'(Ω, ℂ)) :

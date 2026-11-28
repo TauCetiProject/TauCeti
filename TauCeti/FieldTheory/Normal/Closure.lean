@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Normal.Closure
-public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.FieldTheory.Galois.GaloisClosure
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
@@ -91,7 +91,7 @@ theorem normalClosure_le_iff_le_of_normal {K M : IntermediateField F E} [Normal 
   have hsplit : ((minpoly F y).map (algebraMap F M)).Splits := Normal.splits' y
   rw [← hsplit.image_rootSet_algebraMap (B := E)] at hroot
   obtain ⟨z, -, hz⟩ := hroot
-  exact hz ▸ z.2
+  exact hz ▸ z.property
 
 /-- The normal closure of a simple algebraic extension has finite degree. -/
 theorem finiteDimensional_normalClosure_adjoin_simple {x : E} (hx : IsIntegral F x) :
@@ -110,7 +110,7 @@ theorem normalClosure_adjoin_simple_eq_adjoin_rootSet {x : E} (hx : IsIntegral F
       Set.image_singleton, adjoin_simple_le_iff]
     refine subset_adjoin F _ ?_
     rw [← rootSetEquivAlgHomAdjoin_symm_apply F E hx f]
-    exact ((rootSetEquivAlgHomAdjoin F E hx).symm f).2
+    exact ((rootSetEquivAlgHomAdjoin F E hx).symm f).property
   · exact adjoin_le_iff.mpr fun y hy ↦
       (rootSetEquivAlgHomAdjoin F E hx ⟨y, hy⟩).fieldRange_le_normalClosure
         ⟨AdjoinSimple.gen F x, rootSetEquivAlgHomAdjoin_apply_gen F E hx ⟨y, hy⟩⟩
@@ -185,7 +185,7 @@ theorem isGalois_normalClosure_adjoin {S : Set E}
     (isSeparable_adjoin_iff_isSeparable F E).2 fun s hs ↦ (h s hs).1
   exact isGalois_normalClosure_of_splits fun x ↦ by
     rw [minpoly_eq]
-    exact splits_of_mem_adjoin F E (fun s hs ↦ ⟨hint s hs, (h s hs).2⟩) x.2
+    exact splits_of_mem_adjoin F E (fun s hs ↦ ⟨hint s hs, (h s hs).2⟩) x.property
 
 /-- When `minpoly F x` is separable and splits in `E`, the normal closure of `F⟮x⟯` in `E` is
 Galois over `F`. The ambient extension `E / F` need not be normal. -/
@@ -243,6 +243,26 @@ theorem exists_isGalois_superset_of_isAlgClosed [PerfectField F] [IsAlgClosed E]
   exists_isGalois_superset hS fun s hs ↦
     ⟨PerfectField.separable_of_irreducible (minpoly.irreducible (h s hs).isIntegral),
       IsAlgClosed.splits _⟩
+
+/-- All images of a finite-dimensional algebra in an algebraically closed field over a perfect
+base are contained in a single finite Galois subfield. -/
+theorem exists_finiteGaloisIntermediateField_forall_algHom_mem (F A Ω : Type*)
+    [Field F] [PerfectField F] [Semiring A] [Algebra F A] [Module.Finite F A]
+    [Field Ω] [Algebra F Ω] [IsAlgClosed Ω] :
+    ∃ K : FiniteGaloisIntermediateField F Ω,
+      ∀ (φ : A →ₐ[F] Ω) (x : A), φ x ∈ K.toIntermediateField := by
+  let : Ring A := Algebra.semiringToRing F
+  let b := Module.finBasis F A
+  let v (p : (A →ₐ[F] Ω) × Fin (Module.finrank F A)) := p.1 (b p.2)
+  obtain ⟨K, hfin, hgal, hK⟩ := exists_isGalois_superset_of_isAlgClosed (F := F)
+    (Set.finite_range v) (fun _ ⟨p, hp⟩ ↦
+      hp ▸ (Algebra.IsAlgebraic.isAlgebraic (b p.2)).algHom p.1)
+  refine ⟨{ toIntermediateField := K }, fun φ x ↦ ?_⟩
+  rw [← b.sum_repr x, map_sum]
+  apply K.sum_mem
+  intro i _
+  rw [map_smul]
+  exact K.toSubalgebra.toSubmodule.smul_mem _ (hK ⟨(φ, i), rfl⟩)
 
 end TauCeti
 

@@ -62,10 +62,10 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- Where `K = H_q(t) dt` on the end `q` and the Hamiltonians `H_q(t)` are `C²`, the Hamiltonian
 vector fields of the components of `K` at the point `φ'_q(ζ)` of the end are differentiable. -/
 theorem differentiableAt_hamiltonianVectorField_perturbation_positiveEndChart
-    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    {q : Puncture} (hHs : ∀ t, ContDiff ℝ 2 (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
+    (hHs : ∀ t, ContDiff ℝ 2 (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
     (y : V) :
     DifferentiableAt ℝ (ω.hamiltonianVectorField
       (fun x ↦ K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v)) y := by
@@ -73,6 +73,36 @@ theorem differentiableAt_hamiltonianVectorField_perturbation_positiveEndChart
   rw [funext (ω.hamiltonianVectorField_const_mul _ _)]
   exact ((ω.contDiff_hamiltonianVectorField (n := 1) (hHs _)).differentiable
     (by norm_num) _).const_smul _
+
+/-- On the far part `s ≥ 2` of the end `q`, where the Hamiltonians `H_q(t)` are `C²`, the
+components of the pair-of-pants perturbation at `φ'_q(ζ)` and their Hamiltonian vector fields are
+differentiable near the point `y`, as the transformation laws under `φ'_q` require, and the
+pullback of the perturbation along `φ'_q` at `ζ` is the cylindrical datum `H'_q(t) dt` of the end
+Hamiltonian. -/
+private theorem pairOfPantsPerturbation_positiveEndChart_of_two_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} (hHs : ∀ t, ContDiff ℝ 2 (H q t)) {ζ : ℝ × ℝ}
+    (hζ : 2 ≤ ζ.1) (y : V) :
+    (∀ v : ℂ, ∀ᶠ x in 𝓝 y, DifferentiableAt ℝ (fun x ↦
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v) x) ∧
+    (∀ v : ℂ, DifferentiableAt ℝ (ω.hamiltonianVectorField fun x ↦
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v) y) ∧
+    perturbationPullback (positiveEndChart q)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineReal ζ = (fun _ ↦ 0) ∧
+    perturbationPullback (positiveEndChart q)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineImag ζ = positiveEndHamiltonian H q ζ.2 := by
+  -- Beyond the height `2` the perturbation is `H_q(t) dt` on the end `q`.
+  have hKH (w : ℂ) (x : V) (hw : 2 ≤ q.endSign * (q.endCoord w).re) :
+      pairOfPantsPerturbation H w x = H q (q.endCoord w).im x • q.endAngularForm w :=
+    pairOfPantsPerturbation_eq_smul_endAngularForm hw x
+  exact ⟨fun v ↦ .of_forall (differentiableAt_perturbation_positiveEndChart hKH
+      (fun t ↦ (hHs t).differentiable (by norm_num)) hζ v),
+    fun v ↦ ω.differentiableAt_hamiltonianVectorField_perturbation_positiveEndChart hKH hHs hζ v y,
+    funext (perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH hζ),
+    funext (perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH (hH q) hζ)⟩
 
 /-- **The linearized operator of the pair of pants on its ends.** Let `u` solve the Floer
 equation for the pair-of-pants perturbation of period-one Hamiltonians `H_q` at the point
@@ -108,24 +138,14 @@ theorem floerLinearization_comp_positiveEndChart (ω : SymplecticForm V)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             u ξ (positiveEndChart q ζ)) := by
-  -- Beyond the height `2` the perturbation is `H_q(t) dt` on the end `q`.
-  have hKH (r : Puncture) (w : ℂ) (x : V) (hw : 2 ≤ r.endSign * (r.endCoord w).re) :
-      pairOfPantsPerturbation H w x = H r (r.endCoord w).im x • r.endAngularForm w :=
-    pairOfPantsPerturbation_eq_smul_endAngularForm hw x
-  have hK (v : ℂ) := Eventually.of_forall (f := 𝓝 (u (positiveEndChart q ζ)))
-    (differentiableAt_perturbation_positiveEndChart hKH
-      (fun t ↦ (hHs t).differentiable (by norm_num)) hζ v)
-  have hX (v : ℂ) :=
-    ω.differentiableAt_hamiltonianVectorField_perturbation_positiveEndChart hKH hHs hζ v
-      (u (positiveEndChart q ζ))
+  obtain ⟨hK, hX, h₀, hH'⟩ :=
+    ω.pairOfPantsPerturbation_positiveEndChart_of_two_le hH hHs hζ (u (positiveEndChart q ζ))
   -- The pullback along the positive end chart is the cylindrical datum `H'_q(t) dt` of the end
   -- Hamiltonian, and the linearized operator at `ζ` sees the datum only at `ζ`.
   refine Eq.trans ?_ (ω.floerLinearization_perturbationPullback
     ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hu hξ (hK 1) (hK Complex.I) (hX 1)
     (hX Complex.I) ((floerOperator_eq_zero_iff ω J _ _ u _).2 hfl))
-  rw [floerLinearization_def, floerLinearization_def,
-    funext (perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH hζ),
-    funext (perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH hH hζ)]
+  rw [floerLinearization_def, floerLinearization_def, h₀, hH']
 
 end TauCeti.SymplecticForm

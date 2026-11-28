@@ -42,6 +42,9 @@ an *open* embedding, which a subgroup's need not be.
   a nonarchimedean structure on the ring of definition of a rational localisation.
 * `NonarchimedeanGroup.nonarchimedean_of_isOpenMap`, and its additive form
   `NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap`.
+* `Multiplicative.instNonarchimedeanGroup`, `Additive.instNonarchimedeanAddGroup`: the type
+  synonyms `Multiplicative G` and `Additive G` keep the topology, so they are nonarchimedean
+  when `G` is; for instance `Multiplicative ℤ_[p]` is a nonarchimedean group.
 -/
 
 public section
@@ -105,7 +108,7 @@ instance Subgroup.instNonarchimedeanGroup {G : Type*} [Group G] [TopologicalSpac
   is_nonarchimedean U hU := by
     obtain ⟨W, hW, hWU⟩ := (mem_nhds_subtype _ _ _).mp hU
     obtain ⟨V, hV⟩ := NonarchimedeanGroup.is_nonarchimedean W hW
-    exact ⟨V.comap H.subtype continuous_subtype_val, fun _ hx ↦ hWU (hV hx)⟩
+    exact ⟨V.comap H.subtype continuous_subtypeVal, fun _ hx ↦ hWU (hV hx)⟩
 
 /-- An open subgroup of a nonarchimedean group is nonarchimedean in the subspace topology. -/
 @[to_additive /-- An open additive subgroup of a nonarchimedean additive group is nonarchimedean in
@@ -122,3 +125,17 @@ instance Subring.instNonarchimedeanRing {R : Type*} [Ring R] [TopologicalSpace R
   -- `AddSubgroup` on its own, so the instance is keyed here.
   is_nonarchimedean :=
     (inferInstance : NonarchimedeanAddGroup ↥S.toAddSubgroup).is_nonarchimedean
+
+/-- `Multiplicative G` of a nonarchimedean additive group `G` is a nonarchimedean group. -/
+instance Multiplicative.instNonarchimedeanGroup {G : Type*} [AddGroup G] [TopologicalSpace G]
+    [NonarchimedeanAddGroup G] : NonarchimedeanGroup (Multiplicative G) where
+  is_nonarchimedean U hU := by
+    obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.is_nonarchimedean (G := G) U hU
+    exact ⟨⟨V.toAddSubgroup.toSubgroup, V.isOpen⟩, hV⟩
+
+/-- `Additive G` of a nonarchimedean group `G` is a nonarchimedean additive group. -/
+instance Additive.instNonarchimedeanAddGroup {G : Type*} [Group G] [TopologicalSpace G]
+    [NonarchimedeanGroup G] : NonarchimedeanAddGroup (Additive G) where
+  is_nonarchimedean U hU := by
+    obtain ⟨V, hV⟩ := NonarchimedeanGroup.is_nonarchimedean (G := G) U hU
+    exact ⟨⟨V.toSubgroup.toAddSubgroup, V.isOpen⟩, hV⟩

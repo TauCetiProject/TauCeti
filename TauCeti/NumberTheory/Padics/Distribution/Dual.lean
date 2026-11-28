@@ -43,6 +43,9 @@ since locally analytic functions are dense in `C(ℤ_p, K)`.
   continuous linear functionals on the stages compatible with re-expansion.
 * `TauCeti.LocallyAnalyticDistribution.stagesEquiv`: distributions are compatible families.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm h`: the operator norm on `LA_h(K)`.
+* `TauCeti.LocallyAnalyticDistribution.dualMap T T' hT`: the transpose `μ ↦ μ ∘ T` of an
+  endomorphism `T` of `LA(ℤ_p, K)` computed on every stage `LA_h(K)` by a continuous linear map
+  `T_h` into a stage `LA_{k h}(K)`.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure`: measures as distributions.
 
 ## Main results
@@ -96,7 +99,7 @@ theorem mem_iff {μ : Module.Dual K (LocallyAnalytic p K K)} :
 /-- The restriction of a distribution to the analytic stage `LA_h(K)`. -/
 noncomputable def stage (h : ℕ) :
     LocallyAnalyticDistribution p K →ₗ[K] AnalyticStage p h K →L[K] K where
-  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ ofStage K h, μ.2 h⟩
+  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ ofStage K h, μ.property h⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -155,12 +158,13 @@ theorem comp_transitionLE_of_mem_compatibleStageFunctionals
 /-- The functional on the direct limit induced by a compatible family. -/
 private noncomputable def liftFamily (μ : compatibleStageFunctionals p K) :
     Module.Dual K (LocallyAnalytic p K K) :=
-  Module.DirectLimit.lift K ℕ _ _ (fun h ↦ (μ.1 h : AnalyticStage p h K →ₗ[K] K))
-    fun _ _ hhk ↦ DFunLike.congr_fun (comp_transitionLE_of_mem_compatibleStageFunctionals μ.2 hhk)
+  Module.DirectLimit.lift K ℕ _ _ (fun h ↦ (μ.val h : AnalyticStage p h K →ₗ[K] K))
+    fun _ _ hhk ↦ DFunLike.congr_fun (comp_transitionLE_of_mem_compatibleStageFunctionals μ.property
+        hhk)
 
 /-- The functional induced by a compatible family restricts to the members of the family. -/
 private theorem liftFamily_ofStage (μ : compatibleStageFunctionals p K) (h : ℕ)
-    (c : AnalyticStage p h K) : liftFamily μ (ofStage K h c) = μ.1 h c :=
+    (c : AnalyticStage p h K) : liftFamily μ (ofStage K h c) = μ.val h c :=
   lift_ofStage K _ _ h c
 
 /-- Distributions are the compatible families of continuous linear functionals on the analytic
@@ -171,7 +175,7 @@ noncomputable def stagesEquiv :
   toFun μ := ⟨fun h ↦ stage h μ, stage_comp_transition μ⟩
   invFun μ :=
     ⟨liftFamily μ, fun h ↦ by
-      convert (μ.1 h).continuous using 1
+      convert (μ.val h).continuous using 1
       ext c
       exact liftFamily_ofStage μ h c⟩
   left_inv μ := by
@@ -192,14 +196,14 @@ theorem stagesEquiv_apply (μ : LocallyAnalyticDistribution p K) (h : ℕ) :
 /-- The distribution of a compatible family restricts to the members of the family. -/
 @[simp]
 theorem stage_stagesEquiv_symm (μ : compatibleStageFunctionals p K) (h : ℕ) :
-    stage h (stagesEquiv.symm μ) = μ.1 h := by
+    stage h (stagesEquiv.symm μ) = μ.val h := by
   rw [← stagesEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- The distribution of a compatible family applies the members of the family on the stages. -/
 @[simp]
 theorem coe_stagesEquiv_symm_apply_ofStage (μ : compatibleStageFunctionals p K) (h : ℕ)
     (c : AnalyticStage p h K) :
-    (stagesEquiv.symm μ : Module.Dual K (LocallyAnalytic p K K)) (ofStage K h c) = μ.1 h c := by
+    (stagesEquiv.symm μ : Module.Dual K (LocallyAnalytic p K K)) (ofStage K h c) = μ.val h c := by
   rw [← stage_apply, stage_stagesEquiv_symm]
 
 /-- The stage seminorm of level `h`: the operator norm of the restriction of a distribution to
@@ -229,6 +233,49 @@ theorem eq_zero_of_forall_stageSeminorm_eq_zero {μ : LocallyAnalyticDistributio
   ext fun h ↦ by
     rw [map_zero]
     exact (ContinuousLinearMap.opNorm_zero_iff _).mp (hμ h)
+
+/-- The transpose `μ ↦ μ ∘ T` of a linear endomorphism `T` of `LA(ℤ_p, K)` that sends every stage
+continuously into a stage: for a level map `k`, `T (ofStage h c) = ofStage (k h) (T_h c)` with
+`T_h : LA_h(K) →L LA_{k h}(K)` continuous. The restriction of `μ ∘ T` to the stage of level `h` is
+`μ_{k h} ∘ T_h`, so it is again a distribution. -/
+noncomputable def dualMap (T : LocallyAnalytic p K K →ₗ[K] LocallyAnalytic p K K) {k : ℕ → ℕ}
+    (T' : ∀ h, AnalyticStage p h K →L[K] AnalyticStage p (k h) K)
+    (hT : ∀ h c, T (ofStage K h c) = ofStage K (k h) (T' h c)) :
+    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K :=
+  T.dualMap.restrict fun μ hμ ↦ mem_iff.mpr fun h ↦ by
+    convert (stage (k h) ⟨μ, hμ⟩ ∘L T' h).continuous using 1
+    ext c
+    simp [hT]
+
+section DualMap
+
+variable {T : LocallyAnalytic p K K →ₗ[K] LocallyAnalytic p K K} {k : ℕ → ℕ}
+  {T' : ∀ h, AnalyticStage p h K →L[K] AnalyticStage p (k h) K}
+  {hT : ∀ h c, T (ofStage K h c) = ofStage K (k h) (T' h c)}
+
+/-- The transpose of `T` takes the value `μ(T f)` on `f`. -/
+@[simp]
+theorem coe_dualMap_apply (μ : LocallyAnalyticDistribution p K) (f : LocallyAnalytic p K K) :
+    (dualMap T T' hT μ : Module.Dual K (LocallyAnalytic p K K)) f =
+      (μ : Module.Dual K (LocallyAnalytic p K K)) (T f) := by
+  rw [dualMap, LinearMap.coe_restrict_apply, LinearMap.dualMap_apply]
+
+/-- The restriction of the transpose of `T` to the stage of level `h` is the restriction of `μ` to
+the stage of level `k h` composed with `T_h`. -/
+@[simp]
+theorem stage_dualMap (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
+    stage h (dualMap T T' hT μ) = stage (k h) μ ∘L T' h := by
+  ext c
+  simp [hT]
+
+/-- The transpose of `T` bounds the stage seminorm of level `h` by `‖T_h‖` times the stage
+seminorm of level `k h`. -/
+theorem stageSeminorm_dualMap_le (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
+    stageSeminorm h (dualMap T T' hT μ) ≤ ‖T' h‖ * stageSeminorm (k h) μ := by
+  rw [stageSeminorm_apply, stageSeminorm_apply, stage_dualMap, mul_comm]
+  exact ContinuousLinearMap.opNorm_comp_le _ _
+
+end DualMap
 
 /-- A measure on `ℤ_p` with values in `K` defines a locally analytic distribution, integrating the
 continuous function obtained by evaluating a locally analytic coefficient vector. -/

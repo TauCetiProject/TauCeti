@@ -126,7 +126,7 @@ containing exactly one of them contains both sides of every `β`-arc or neither.
 theorem SameAlphaComponent.apply_eq {α : Sort*} {f : Region → α}
     (hf : ∀ p, f (H.betaLeft p) = f (H.betaRight p)) {r r' : Region}
     (h : H.SameAlphaComponent r r') : f r = f r' :=
-  Relation.EqvGen.eqvGen_le (r' := InvImage Eq f) (fun _ _ ⟨p, ha, hb⟩ => ha ▸ hb ▸ hf p) r r' h
+  Relation.eqvGen_le (r' := InvImage Eq f) (fun _ _ ⟨p, ha, hb⟩ => ha ▸ hb ▸ hf p) r r' h
 
 @[refl]
 theorem SameAlphaComponent.refl (r : Region) : H.SameAlphaComponent r r :=
@@ -153,7 +153,7 @@ theorem sameAlphaComponent_betaLeft_betaRight (p : Point) :
 are the two sides of the `β`-arc through the point separating them. -/
 theorem sameAlphaComponent_alphaLeft_alphaNext_symm (q : Point) :
     H.SameAlphaComponent (H.alphaLeft q) (H.alphaLeft (H.alphaNext.symm q)) := by
-  rcases H.crossingCompatible q with ⟨h₁, -, h₃, -⟩ | ⟨h₁, -, h₃, -⟩
+  rcases isCrossingCompatible_iff.1 (H.crossingCompatible q) with ⟨h₁, -, h₃, -⟩ | ⟨h₁, -, h₃, -⟩
   · rw [h₁, h₃]
     exact (H.sameAlphaComponent_betaLeft_betaRight q).symm
   · rw [h₁, h₃]
@@ -162,7 +162,7 @@ theorem sameAlphaComponent_alphaLeft_alphaNext_symm (q : Point) :
 /-- The regions to the right of consecutive `α`-arcs lie in the same component of `Σ - α`. -/
 theorem sameAlphaComponent_alphaRight_alphaNext_symm (q : Point) :
     H.SameAlphaComponent (H.alphaRight q) (H.alphaRight (H.alphaNext.symm q)) := by
-  rcases H.crossingCompatible q with ⟨-, h₂, -, h₄⟩ | ⟨-, h₂, -, h₄⟩
+  rcases isCrossingCompatible_iff.1 (H.crossingCompatible q) with ⟨-, h₂, -, h₄⟩ | ⟨-, h₂, -, h₄⟩
   · rw [h₂, h₄]
     exact (H.sameAlphaComponent_betaLeft_betaRight _).symm
   · rw [h₂, h₄]
@@ -393,19 +393,21 @@ section Balanced
 
 variable {H} [Fintype Basepoint]
 
-/-- When distinct basepoints lie in distinct components of `Σ - α`, the domains of the components
-of the basepoints, weighted by the multiplicities of a domain `E` at the basepoints, have the
-multiplicities of `E` at the basepoints. -/
-theorem sum_smul_alphaComponentDomain_basepoint_apply_basepoint
-    (hz : ∀ z z', H.SameAlphaComponent (H.basepoint z) (H.basepoint z') → z = z')
-    (E : Region → ℤ) (z' : Basepoint) :
-    (∑ z, E (H.basepoint z) • H.alphaComponentDomain (H.basepoint z)) (H.basepoint z') =
-      E (H.basepoint z') := by
+omit [Fintype Basepoint] in
+/-- When the basepoints picked out by `ι` lie in distinct components of `Σ - α`, the domains of the
+components of these basepoints, weighted by the multiplicities of a domain `E` at them, have the
+multiplicities of `E` at these basepoints. -/
+theorem sum_smul_alphaComponentDomain_basepoint_apply_basepoint {W : Type*} [Fintype W]
+    {ι : W → Basepoint}
+    (hι : ∀ i j, H.SameAlphaComponent (H.basepoint (ι i)) (H.basepoint (ι j)) → i = j)
+    (E : Region → ℤ) (j : W) :
+    (∑ i, E (H.basepoint (ι i)) • H.alphaComponentDomain (H.basepoint (ι i))) (H.basepoint (ι j)) =
+      E (H.basepoint (ι j)) := by
   simp only [Finset.sum_apply]
-  rw [sum_eq_single z' (fun z _ hzz' => by
+  rw [sum_eq_single j (fun i _ hij => by
       rw [Pi.smul_apply,
-        alphaComponentDomain_of_not_sameAlphaComponent fun h => hzz' (hz _ _ h).symm, smul_zero])
-    (fun h => absurd (mem_univ z') h), Pi.smul_apply, alphaComponentDomain_self, smul_eq_mul,
+        alphaComponentDomain_of_not_sameAlphaComponent fun h => hij (hι _ _ h).symm, smul_zero])
+    (fun h => absurd (mem_univ j) h), Pi.smul_apply, alphaComponentDomain_self, smul_eq_mul,
     mul_one]
 
 /-- **Domains from a generator to itself in a multipointed diagram.** When distinct basepoints lie

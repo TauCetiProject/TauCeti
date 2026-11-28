@@ -67,6 +67,19 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   {n : WithTop ℕ∞}
 
 
+/-- Differentiate `w ↦ B w.1 w.2 w.2` on `E × F`, where `B` varies differentiably within
+`t` at `p.1` and is evaluated twice on the second coordinate. -/
+theorem _root_.HasFDerivWithinAt.comp_fst_clm_apply_snd_self {B : E → F →L[𝕜] F →L[𝕜] G}
+    {B' : E →L[𝕜] F →L[𝕜] F →L[𝕜] G}
+    {s : Set (E × F)} {t : Set E} {p : E × F} (hB : HasFDerivWithinAt B B' t p.1)
+    (hs : Set.MapsTo Prod.fst s t) :
+    HasFDerivWithinAt (fun w : E × F ↦ B w.1 w.2 w.2)
+      ((B p.1 p.2).comp (ContinuousLinearMap.snd 𝕜 E F) +
+        ((B p.1).comp (ContinuousLinearMap.snd 𝕜 E F) +
+          (B'.comp (ContinuousLinearMap.fst 𝕜 E F)).flip p.2).flip p.2) s p :=
+  ((hB.comp p hasFDerivWithinAt_fst hs).clm_apply hasFDerivWithinAt_snd).clm_apply
+    hasFDerivWithinAt_snd
+
 /-- The map `z ↦ B z z` attached to a continuous bilinear map `B` is `C^n` for every `n`. -/
 theorem _root_.ContinuousLinearMap.contDiff_apply_self (B : E →L[𝕜] E →L[𝕜] F) : ContDiff 𝕜 n
     (fun z ↦ B z z) :=
@@ -76,6 +89,22 @@ theorem _root_.ContinuousLinearMap.contDiff_apply_self (B : E →L[𝕜] E →L[
 theorem _root_.ContinuousLinearMap.differentiable_apply_self (B : E →L[𝕜] E →L[𝕜] F) :
     Differentiable 𝕜 (fun z ↦ B z z) :=
   (ContinuousLinearMap.contDiff_apply_self (n := 1) B).differentiable one_ne_zero
+
+/-- A symmetric continuous form that is linear over `𝕜` in its first argument and linear over
+`𝕜'` in its second is `𝕜'`-bilinear, so its diagonal is differentiable over `𝕜'`.
+Adapted from `New.differentiable_of_symm` in
+`src/Lib/Shimura/ComplexTheta/AppellHumbertData.lean` in grh-lean
+(https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC). -/
+theorem _root_.ContinuousLinearMap.differentiable_apply_self_of_symm
+    {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+    [NormedSpace 𝕜' E] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+    (Q : E →L[𝕜] E →L[𝕜'] F) (hQ : ∀ u v, Q u v = Q v u) :
+    Differentiable 𝕜' fun z ↦ Q z z := by
+  have h_smul (c : 𝕜') (u : E) : Q (c • u) = c • Q u := by
+    ext v
+    rw [hQ (c • u) v, map_smul, hQ v u, _root_.smul_apply]
+  exact ({ Q with map_smul' := h_smul } : E →L[𝕜'] E →L[𝕜'] F).differentiable_apply_self
 
 /-- The map `z ↦ B z z` attached to a continuous bilinear map `B` is strictly differentiable at
 `y`, with derivative the polarization of `B` evaluated at `y`. -/

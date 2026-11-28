@@ -41,8 +41,8 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {k : ℕ}
 /-- Contraction of a conormal form annihilates both the old subspace and the
 contracting vector. -/
 theorem curryLeft_mem_conormalForms {W : Submodule R M}
-    {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1))) (n : M) :
-    α.curryLeft n ∈ (W ⊔ R ∙ n).conormalForms (Fin k) := by
+    {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1)) R) (n : M) :
+    α.curryLeft n ∈ (W ⊔ R ∙ n).conormalForms (Fin k) R := by
   rw [Submodule.mem_conormalForms] at hα ⊢
   intro v j hv
   obtain ⟨w, hw, z, hz, he⟩ := Submodule.mem_sup.mp hv
@@ -62,7 +62,7 @@ variable {R M : Type*} [Field R] [AddCommGroup M] [Module R M] {k : ℕ}
 /-- In top conormal degree, contraction vanishes exactly in tangent directions. -/
 theorem conormalForms_curryLeft_eq_zero_iff
     {W : Submodule R M} (hk : finrank R (M ⧸ W) = k + 1)
-    {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1)))
+    {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1)) R)
     (hα0 : α ≠ 0) (n : M) : α.curryLeft n = 0 ↔ n ∈ W := by
   have : FiniteDimensional R (M ⧸ W) := FiniteDimensional.of_finrank_pos (by omega)
   let β := W.conormalFormsEquiv.symm ⟨α, hα⟩
@@ -89,7 +89,7 @@ theorem conormalForms_curryLeft_eq_zero_iff
 /-- A transverse contraction of a nonzero top-degree conormal form is nonzero. -/
 theorem curryLeft_ne_zero_of_notMem
     {W : Submodule R M} (hk : finrank R (M ⧸ W) = k + 1)
-    {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1)))
+    {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1)) R)
     (hα0 : α ≠ 0) {n : M} (hn : n ∉ W) : α.curryLeft n ≠ 0 :=
   (conormalForms_curryLeft_eq_zero_iff hk hα hα0 n).not.mpr hn
 
@@ -97,8 +97,8 @@ theorem curryLeft_ne_zero_of_notMem
 theorem conormalForms_curryLeft_inj
     {W : Submodule R M} (hk : finrank R (M ⧸ W) = k + 1)
     {α β : M [⋀^Fin (k + 1)]→ₗ[R] R}
-    (hα : α ∈ W.conormalForms (Fin (k + 1)))
-    (hβ : β ∈ W.conormalForms (Fin (k + 1))) {n : M} (hn : n ∉ W) :
+    (hα : α ∈ W.conormalForms (Fin (k + 1)) R)
+    (hβ : β ∈ W.conormalForms (Fin (k + 1)) R) {n : M} (hn : n ∉ W) :
     α.curryLeft n = β.curryLeft n ↔ α = β := by
   constructor
   · intro he
@@ -143,6 +143,19 @@ theorem contract_rayOfNeZero {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ≠
   exact ((ray_eq_iff (Module.Ray.someVector_ne_zero _) hα).mp
     (Module.Ray.someVector_ray _)).map
       ((LinearMap.applyₗ n).comp AlternatingMap.curryLeftLinearMap)
+
+/-- Contracting a conormal orientation by a positive multiple of a transverse vector
+gives the same orientation. -/
+theorem contract_smul_of_pos (o : Module.Ray R (M [⋀^Fin (k + 1)]→ₗ[R] R))
+    (ho : o.IsConormal W) (hk : finrank R (M ⧸ W) = k + 1)
+    (n : M) (hn : n ∉ W) {a : R} (ha : 0 < a) (hm : a • n ∉ W) :
+    o.contract ho hk (a • n) hm =
+      o.contract ho hk n hn := by
+  induction o using Module.Ray.ind with
+  | h α hα =>
+    rw [contract_rayOfNeZero, contract_rayOfNeZero, ray_eq_iff]
+    rw [map_smul α.curryLeft]
+    exact (SameRay.sameRay_pos_smul_right _ ha).symm
 
 /-- The contracted orientation has the sign of the original orientation with the
 contracting vector placed first. -/

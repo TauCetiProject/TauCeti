@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.MeasureTheory.Measure.Prod
@@ -19,7 +20,9 @@ import TauCeti.MeasureTheory.Group.Arithmetic
 This file provides lemmas for establishing `AEStronglyMeasurable` with respect to infima of
 antitone sequences of σ-algebras, as needed for tail σ-algebras and reverse martingales.
 Precomposition lemmas cover maps with absolutely continuous pushforwards and measurable families
-of translations.
+of translations, and star-scalar-product lemmas show that replacing a scalar multiplier `f` by
+`star ∘ f` preserves a.e. strong measurability of `f • u` without any measurability hypothesis on
+`f`.
 ## Main results
 
 - `aestronglyMeasurable_of_tendsto_ae'`: an a.e. pointwise limit of `AEStronglyMeasurable[m]`
@@ -39,6 +42,17 @@ of translations.
 - `MeasureTheory.aestronglyMeasurable_uncurry_sum_indicator`: a function of two variables that is
   piecewise in the first variable on a finite measurable family, with a.e. strongly measurable
   slices, is a.e. strongly measurable for the product measure.
+- `MeasureTheory.AEStronglyMeasurable.exists_stronglyMeasurable_ae_eq_norm_le`: an a.e. strongly
+  measurable function with `‖f‖ ≤ C` almost everywhere agrees almost everywhere with a strongly
+  measurable function bounded everywhere by `max C 0`.
+- `MeasureTheory.aestronglyMeasurable_star_smul_of_aestronglyMeasurable` and
+  `MeasureTheory.aestronglyMeasurable_star_smul_iff`: over a normed field `𝕜` with a
+  norm-preserving additive star involution and a normed `𝕜`-space `E`, for an a.e. strongly
+  measurable `u : α → E`, `t ↦ star (f t) • u t` is a.e. strongly measurable if and only if
+  `t ↦ f t • u t` is, with no measurability hypothesis on `f`.
+- `TauCeti.not_aestronglyMeasurable_restrict_of_pairwise_le_dist`: under a null-singleton measure, a
+  map sending a set of nonzero measure to pairwise `ε`-separated points (`ε > 0`) is not a.e.
+  strongly measurable on that set.
 
 The antitone σ-algebra results hold for a codomain in any second-countable conditionally complete
 linear order with the order topology (`ℝ` qualifies); no σ-algebra on the codomain is needed, since
@@ -232,4 +246,151 @@ theorem aestronglyMeasurable_uncurry_sum_indicator {ι M : Type*} [Fintype ι]
     ((hL i).comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_snd (μ := μ))).indicator
       ((hP i).prod .univ)
 
+/-- An a.e. strongly measurable function with `‖f‖ ≤ C` almost everywhere agrees almost
+everywhere with a strongly measurable function bounded everywhere by `max C 0`. -/
+theorem AEStronglyMeasurable.exists_stronglyMeasurable_ae_eq_norm_le {E : Type*}
+    [SeminormedAddCommGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ) {C : ℝ}
+    (hC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
+    ∃ f₀ : α → E, StronglyMeasurable f₀ ∧ f =ᵐ[μ] f₀ ∧ ∀ x, ‖f₀ x‖ ≤ max C 0 := by
+  set g := hf.mk f
+  refine ⟨{x | ‖g x‖ ≤ C}.indicator g, hf.stronglyMeasurable_mk.indicator
+    (measurableSet_le hf.stronglyMeasurable_mk.norm.measurable measurable_const), ?_, fun x ↦ ?_⟩
+  · filter_upwards [hf.ae_eq_mk, hC] with x hx hxC
+    rw [hx]
+    exact (Set.indicator_of_mem (show x ∈ {x | ‖g x‖ ≤ C} by simpa [g, ← hx] using hxC) g).symm
+  · by_cases hx : ‖g x‖ ≤ C
+    · rw [Set.indicator_of_mem hx g]
+      exact hx.trans (le_max_left _ _)
+    · rw [Set.indicator_of_notMem hx g, norm_zero]
+      exact le_max_right _ _
+
 end MeasureTheory
+
+namespace MeasureTheory
+
+section StarSMul
+
+variable {𝕜 E : Type*} [NormedField 𝕜] [StarAddMonoid 𝕜] [NormedStarGroup 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+private def starPairMap (q : {r : E × E // ∃ c : 𝕜, r.2 = c • r.1}) : E :=
+  letI := Classical.propDecidable
+  if q.val.1 = 0 then 0 else star q.property.choose • q.val.1
+
+omit [NormedStarGroup 𝕜] in
+private theorem starPairMap_apply {x : E} {c : 𝕜}
+    (h : (x, c • x) ∈ {r : E × E | ∃ c : 𝕜, r.2 = c • r.1}) :
+    starPairMap (𝕜 := 𝕜) ⟨(x, c • x), h⟩ = star c • x := by
+  dsimp [starPairMap]
+  split_ifs with hx
+  · simp [hx]
+  · rw [smul_left_injective 𝕜 hx h.choose_spec.symm]
+
+private theorem continuous_starPairMap :
+    Continuous (starPairMap (𝕜 := 𝕜) (E := E)) := by
+  rw [Metric.continuous_iff]
+  rintro ⟨⟨x₀, y₀⟩, hp₀⟩ ε hε
+  obtain ⟨c₀, rfl⟩ : ∃ c₀ : 𝕜, y₀ = c₀ • x₀ := hp₀
+  have hC : 0 < 1 + 2 * ‖c₀‖ := by positivity
+  refine ⟨ε / (1 + 2 * ‖c₀‖), div_pos hε hC, ?_⟩
+  rintro ⟨⟨x, y⟩, hp⟩ hdist
+  obtain ⟨c, rfl⟩ : ∃ c : 𝕜, y = c • x := hp
+  rw [starPairMap_apply, starPairMap_apply, _root_.dist_eq_norm]
+  have hd : max ‖x - x₀‖ ‖c • x - c₀ • x₀‖ < ε / (1 + 2 * ‖c₀‖) := by
+    simpa [Subtype.dist_eq, Prod.dist_eq, _root_.dist_eq_norm] using hdist
+  have hx : ‖x - x₀‖ ≤ max ‖x - x₀‖ ‖c • x - c₀ • x₀‖ := le_max_left _ _
+  have hy : ‖c • x - c₀ • x₀‖ ≤ max ‖x - x₀‖ ‖c • x - c₀ • x₀‖ := le_max_right _ _
+  have hdiff : (c - c₀) • x = (c • x - c₀ • x₀) - c₀ • (x - x₀) := by
+    rw [sub_smul, smul_sub, sub_sub_sub_cancel_right]
+  have hbound : ‖star c • x - star c₀ • x₀‖ ≤
+      (1 + 2 * ‖c₀‖) * max ‖x - x₀‖ ‖c • x - c₀ • x₀‖ := by
+    calc ‖star c • x - star c₀ • x₀‖
+        = ‖(star c - star c₀) • x + star c₀ • (x - x₀)‖ := by
+          rw [sub_smul, smul_sub, sub_add_sub_cancel]
+      _ ≤ ‖(star c - star c₀) • x‖ + ‖star c₀ • (x - x₀)‖ := norm_add_le _ _
+      _ = ‖star (c - c₀)‖ * ‖x‖ + ‖star c₀‖ * ‖x - x₀‖ := by
+          rw [← star_sub, norm_smul, norm_smul]
+      _ = ‖(c - c₀) • x‖ + ‖c₀‖ * ‖x - x₀‖ := by
+          rw [norm_star, norm_star, ← norm_smul]
+      _ ≤ (‖c • x - c₀ • x₀‖ + ‖c₀ • (x - x₀)‖) + ‖c₀‖ * ‖x - x₀‖ := by
+          gcongr; rw [hdiff]; exact norm_sub_le _ _
+      _ = ‖c • x - c₀ • x₀‖ + 2 * ‖c₀‖ * ‖x - x₀‖ := by
+          rw [norm_smul]; ring
+      _ ≤ 1 * max ‖x - x₀‖ ‖c • x - c₀ • x₀‖ +
+          2 * ‖c₀‖ * max ‖x - x₀‖ ‖c • x - c₀ • x₀‖ := by
+          gcongr; linarith
+      _ = (1 + 2 * ‖c₀‖) * max ‖x - x₀‖ ‖c • x - c₀ • x₀‖ := by ring
+  exact hbound.trans_lt ((lt_div_iff₀' hC).1 hd)
+
+section Measure
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
+
+/-- Over a normed field `𝕜` with a norm-preserving additive star involution, if `u : α → E` and
+`t ↦ f t • u t` are almost-everywhere strongly measurable, then so is `t ↦ star (f t) • u t`
+(with no measurability hypothesis on `f`). -/
+theorem aestronglyMeasurable_star_smul_of_aestronglyMeasurable {f : α → 𝕜} {u : α → E}
+    (hu : AEStronglyMeasurable u μ)
+    (hfu : AEStronglyMeasurable (fun t ↦ f t • u t) μ) :
+    AEStronglyMeasurable (fun t ↦ star (f t) • u t) μ := by
+  let g : α → {r : E × E // ∃ c : 𝕜, r.2 = c • r.1} :=
+    fun t ↦ ⟨(u t, f t • u t), f t, rfl⟩
+  have hg : AEStronglyMeasurable g μ :=
+    Topology.IsEmbedding.subtypeVal.aestronglyMeasurable_comp_iff.1 (hu.prodMk hfu)
+  exact (continuous_starPairMap.comp_aestronglyMeasurable hg).congr
+    (Filter.Eventually.of_forall fun _ ↦ starPairMap_apply _)
+
+/-- Over a normed field `𝕜` with a norm-preserving additive star involution, for an
+almost-everywhere strongly measurable vector function `u : α → E`, `t ↦ star (f t) • u t` is
+almost-everywhere strongly measurable if and only if `t ↦ f t • u t` is. -/
+theorem aestronglyMeasurable_star_smul_iff {f : α → 𝕜} {u : α → E}
+    (hu : AEStronglyMeasurable u μ) :
+    AEStronglyMeasurable (fun t ↦ star (f t) • u t) μ ↔
+      AEStronglyMeasurable (fun t ↦ f t • u t) μ :=
+  ⟨fun h ↦ by
+      simpa only [Pi.star_apply, star_star] using
+        aestronglyMeasurable_star_smul_of_aestronglyMeasurable (f := star f) hu h,
+    aestronglyMeasurable_star_smul_of_aestronglyMeasurable hu⟩
+
+end Measure
+
+end StarSMul
+
+end MeasureTheory
+
+namespace TauCeti
+
+/-- Under a measure that assigns measure zero to singletons, a map sending a set `s` of nonzero
+measure to points that are pairwise at distance at least `ε > 0` cannot be almost-everywhere
+strongly measurable on `s`, since any separable subset of the codomain meets `u '' s` in a
+countable set. -/
+theorem not_aestronglyMeasurable_restrict_of_pairwise_le_dist {α β : Type*} [MeasurableSpace α]
+    [PseudoMetricSpace β] {μ : Measure α} [NullSingletonClass μ] {u : α → β} {s : Set α}
+    {ε : ℝ} (hμs : μ s ≠ 0) (hε : 0 < ε)
+    (hsep : s.Pairwise fun x y => ε ≤ dist (u x) (u y)) :
+    ¬ AEStronglyMeasurable u (μ.restrict s) := by
+  intro hmeas
+  obtain ⟨t, ht_sep, ht_ae⟩ := hmeas.isSeparable_ae_range
+  -- Open `(ε / 2)`-balls in the separable subspace `t` around `u x` (`x ∈ s ∩ u ⁻¹' t`) are
+  -- pairwise disjoint, so `s ∩ u ⁻¹' t` is countable and therefore `μ`-null.
+  have hpair : Set.PairwiseDisjoint (s ∩ u ⁻¹' t)
+      fun x : α => ((↑) : t → β) ⁻¹' Metric.ball (u x) (ε / 2) := by
+    rintro x ⟨hxs, _⟩ y ⟨hys, _⟩ hxy
+    refine Set.disjoint_left.2 fun z hzx hzy => ?_
+    have htri : dist (u x) (u y) ≤ dist (u x) (z : β) + dist (z : β) (u y) :=
+      dist_triangle _ _ _
+    have hdx : dist (u x) (z : β) < ε / 2 := by simpa [dist_comm] using Metric.mem_ball.1 hzx
+    have hdy : dist (z : β) (u y) < ε / 2 := Metric.mem_ball.1 hzy
+    linarith [hsep hxs hys hxy]
+  have hcnt : (s ∩ u ⁻¹' t).Countable := by
+    have : TopologicalSpace.SeparableSpace t := ht_sep.separableSpace
+    exact hpair.countable_of_isOpen (fun _ _ => Metric.isOpen_ball.preimage continuous_subtypeVal)
+      fun x hx => ⟨⟨u x, hx.2⟩, Set.mem_preimage.2 (Metric.mem_ball_self (half_pos hε))⟩
+  have hnull : μ s = 0 := by
+    refine measure_mono_null (fun x hx => ?_)
+      (measure_union_null (hcnt.measure_zero μ)
+        (Measure.measure_inter_eq_zero_of_restrict (mem_ae_iff.1 ht_ae)))
+    exact (em (x ∈ u ⁻¹' t)).imp (fun h => ⟨hx, h⟩) (fun h => ⟨h, hx⟩)
+  exact hμs hnull
+
+end TauCeti

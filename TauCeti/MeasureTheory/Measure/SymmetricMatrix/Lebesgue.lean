@@ -100,7 +100,8 @@ doubled off the diagonal. -/
 theorem inner_symmetricBasis (p : ℕ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (kl : upperTriangle p) :
     ⟪A, symmetricBasis p kl⟫ =
-      (if kl.1.1 = kl.1.2 then 1 else 2) * (A : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2 := by
+      (if kl.val.1 = kl.val.2 then 1 else 2) * (A : Matrix (Fin p) (Fin p) ℝ) kl.val.1 kl.val.2
+          := by
   let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
   obtain ⟨⟨k, l⟩, hkl⟩ := kl
@@ -117,10 +118,10 @@ theorem inner_symmetricBasis (p : ℕ)
 
 /-- The rescaling that turns the coordinate basis into an orthonormal one. -/
 private def symScale (p : ℕ) (ij : upperTriangle p) : ℝˣ :=
-  if ij.1.1 = ij.1.2 then 1 else Units.mk0 (Real.sqrt 2)⁻¹ (by positivity)
+  if ij.val.1 = ij.val.2 then 1 else Units.mk0 (Real.sqrt 2)⁻¹ (by positivity)
 
 private theorem symScale_coe (p : ℕ) (ij : upperTriangle p) :
-    ((symScale p ij : ℝˣ) : ℝ) = if ij.1.1 = ij.1.2 then 1 else (Real.sqrt 2)⁻¹ := by
+    ((symScale p ij : ℝˣ) : ℝ) = if ij.val.1 = ij.val.2 then 1 else (Real.sqrt 2)⁻¹ := by
   rw [symScale]
   split <;> simp
 
@@ -150,7 +151,7 @@ def symmetricOrthonormalBasis (p : ℕ) :
 `TauCeti.symmetricBasis` scaled by `1` on the diagonal and `(√2)⁻¹` above it. -/
 theorem symmetricOrthonormalBasis_apply (p : ℕ) (ij : upperTriangle p) :
     symmetricOrthonormalBasis p ij =
-      (if ij.1.1 = ij.1.2 then (1 : ℝ) else (Real.sqrt 2)⁻¹) • symmetricBasis p ij := by
+      (if ij.val.1 = ij.val.2 then (1 : ℝ) else (Real.sqrt 2)⁻¹) • symmetricBasis p ij := by
   rw [symmetricOrthonormalBasis, Basis.coe_toOrthonormalBasis, Basis.unitsSMul_apply,
     Units.smul_def, symScale_coe]
 
@@ -158,13 +159,13 @@ theorem symmetricOrthonormalBasis_apply (p : ℕ) (ij : upperTriangle p) :
 @[simp] theorem symmetricOrthonormalBasis_repr (p : ℕ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (ij : upperTriangle p) :
     (symmetricOrthonormalBasis p).repr A ij =
-      (if ij.1.1 = ij.1.2 then 1 else Real.sqrt 2) *
-        (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+      (if ij.val.1 = ij.val.2 then 1 else Real.sqrt 2) *
+        (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 := by
   have h2 : (Real.sqrt 2)⁻¹ * 2 = Real.sqrt 2 :=
     (inv_mul_eq_iff_eq_mul₀ (by positivity)).2 (Real.mul_self_sqrt (by norm_num)).symm
   rw [(symmetricOrthonormalBasis p).repr_apply_apply, symmetricOrthonormalBasis_apply,
     real_inner_smul_left, real_inner_comm, inner_symmetricBasis, ← mul_assoc]
-  by_cases hd : ij.1.1 = ij.1.2 <;> simp [hd, h2]
+  by_cases hd : ij.val.1 = ij.val.2 <;> simp [hd, h2]
 
 private theorem addHaar_symScaled (p : ℕ) :
     ((symmetricBasis p).unitsSMul (symScale p)).addHaar =
@@ -174,9 +175,9 @@ private theorem addHaar_symScaled (p : ℕ) :
 
 /-- There are `∑ i < p, i = p * (p - 1) / 2` upper-triangular positions off the diagonal. -/
 private theorem card_offDiag (p : ℕ) :
-    (Finset.univ.filter fun ij : upperTriangle p => ij.1.1 ≠ ij.1.2).card =
+    (Finset.univ.filter fun ij : upperTriangle p => ij.val.1 ≠ ij.val.2).card =
       ∑ i ∈ Finset.range p, i := by
-  have e : {a : Sym2 (Fin p) // ¬a.IsDiag} ≃ {ij : upperTriangle p // ij.1.1 ≠ ij.1.2} :=
+  have e : {a : Sym2 (Fin p) // ¬a.IsDiag} ≃ {ij : upperTriangle p // ij.val.1 ≠ ij.val.2} :=
     (Sym2.sortEquiv (α := Fin p)).subtypeEquiv <| Sym2.ind fun a b => by simp
   rw [← Fintype.card_subtype, ← Fintype.card_congr e, Sym2.card_subtype_not_diag,
     Fintype.card_fin, Nat.choose_two_right, Finset.sum_range_id]
@@ -242,7 +243,7 @@ theorem symmetricLebesgue_eq_smul_volume (p : ℕ) :
 /-- In dimension zero, the symmetric subspace is a single point and `symmetricLebesgue` is the
 Dirac measure there, so the dimension-zero Wishart laws need no special casing. -/
 theorem symmetricLebesgue_zero : symmetricLebesgue 0 = Measure.dirac 0 := by
-  have : IsEmpty (upperTriangle 0) := ⟨fun ij => ij.1.1.elim0⟩
+  have : IsEmpty (upperTriangle 0) := ⟨fun ij => ij.val.1.elim0⟩
   rw [symmetricLebesgue, volume_pi, Measure.pi_of_empty _ 0, Measure.map_dirac, map_zero]
 
 /-- In dimension one, reading the single entry of a symmetric matrix carries `symmetricLebesgue`

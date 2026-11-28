@@ -21,6 +21,9 @@ Mathlib's `Convex.locallyPathConnectedSpace` proves this for locally convex spac
 neighbourhoods of zero exist in every real topological vector space, so local convexity is not
 needed. This covers, for instance, convex subsets of the spaces `Lᵖ` with `0 < p < 1`, which are
 not locally convex.
+
+A set closed under scaling by every `t ∈ [0, 1]` is preconnected
+(`TauCeti.isPreconnected_of_forall_smul_mem`): it is empty, or it is star-convex about the origin.
 -/
 
 public section
@@ -32,10 +35,25 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTop
 
 /-- A convex subset of a real topological vector space is locally path-connected. -/
 theorem Convex.locallyPathConnectedSpace' (hs : Convex ℝ s) : LocallyPathConnectedSpace s := by
-  refine .of_bases (fun x : s ↦ nhds_subtype s x ▸ map_add_left_nhds_zero x.1 ▸
-    ((nhds_basis_balanced ℝ E).map (x.1 + ·)).comap ((↑) : s → E)) fun x W hW ↦ ?_
+  refine .of_bases (fun x : s ↦ nhds_subtype s x ▸ map_add_left_nhds_zero x.val ▸
+    ((nhds_basis_balanced ℝ E).map (x.val + ·)).comap ((↑) : s → E)) fun x W hW ↦ ?_
   rw [← Subtype.preimage_coe_self_inter]
   refine IsPathConnected.preimage_coe ?_ inter_subset_left
-  have hW' : StarConvex ℝ x.1 ((x.1 + ·) '' W) := by
-    simpa only [add_zero] using hW.2.starConvex.add_left x.1
-  exact ((hs.starConvex x.2).inter hW').isPathConnected ⟨x.2, 0, mem_of_mem_nhds hW.1, add_zero _⟩
+  have hW' : StarConvex ℝ x.val ((x.val + ·) '' W) := by
+    simpa only [add_zero] using hW.2.starConvex.add_left x.val
+  exact ((hs.starConvex x.property).inter hW').isPathConnected ⟨x.property, 0, mem_of_mem_nhds hW.1,
+      add_zero _⟩
+
+namespace TauCeti
+
+/-- A set closed under scaling by every `t ∈ [0, 1]` is preconnected: it is empty, or it contains
+the origin and is star-convex about it (`starConvex_zero_iff`). -/
+theorem isPreconnected_of_forall_smul_mem (hs : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, t • x ∈ s) :
+    IsPreconnected s := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
+  · exact isPreconnected_empty
+  have h0 : (0 : E) ∈ s := by simpa using hs x hx 0 ⟨le_rfl, zero_le_one⟩
+  exact (StarConvex.isPathConnected (starConvex_zero_iff.2 fun y hy t ht₀ ht₁ ↦
+    hs y hy t ⟨ht₀, ht₁⟩) h0).isConnected.isPreconnected
+
+end TauCeti

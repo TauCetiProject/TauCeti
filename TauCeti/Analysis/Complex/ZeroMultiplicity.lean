@@ -29,7 +29,9 @@ of `∂bar f = a f`, for instance for the section of a plane vortex, and it is t
 topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow`. The exponent of such a
 factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has at most one zero
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
-`f`.
+`f`. Likewise, a multiset of points of a set `s` whose counts are the exponents of local
+factorizations of `f` at the points of `s` is unique
+(`TauCeti.multiset_eq_of_eventually_eq_pow_mul`).
 
 Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ ^ k`
 (`TauCeti.IsZeroMultiplicity.exists_eventually_norm_le_mul_pow`).
@@ -37,7 +39,8 @@ Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ 
 This file proves how zero multiplicities transform:
 
 * under an affine change of variable `w ↦ c w + a` with `c ≠ 0`, the multiplicity is pulled back
-  (`TauCeti.IsZeroMultiplicity.comp_mul_add`);
+  (`TauCeti.IsZeroMultiplicity.comp_mul_add`), and under `w ↦ c w` the divisor `D` becomes
+  `c⁻¹ D` (`TauCeti.IsZeroMultiplicity.comp_const_mul`);
 * under products, multiplicities add (`TauCeti.IsZeroMultiplicity.mul`); the functions with
   multiplicity zero are the continuous functions without zeros
   (`TauCeti.isZeroMultiplicity_zero_iff`), so multiplying by such a function does not change the
@@ -82,6 +85,26 @@ theorem isZeroMultiplicity_iff :
     IsZeroMultiplicity f n ↔
       ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * v w :=
   Iff.rfl
+
+/-- **Uniqueness of a zero multiset on a set.** Two multisets of points of a set `s` whose counts
+are the exponents of local factorizations `f w = (w - z) ^ D.count z * v w` at every `z ∈ s`, with
+`v` continuous and nonzero at `z`, are equal: the exponent of such a factorization is unique
+(`TauCeti.eq_of_eventually_sub_pow_mul_eq`). -/
+theorem multiset_eq_of_eventually_eq_pow_mul {s : Set ℂ} {D D' : Multiset ℂ}
+    (hD : ∀ z ∈ D, z ∈ s) (hD' : ∀ z ∈ D', z ∈ s)
+    (hDf : ∀ z ∈ s, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, f w = (w - z) ^ D.count z * v w)
+    (hD'f : ∀ z ∈ s, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, f w = (w - z) ^ D'.count z * v w) :
+    D = D' := by
+  ext z
+  by_cases hz : z ∈ s
+  · obtain ⟨v, hv, hv₀, hfv⟩ := hDf z hz
+    obtain ⟨v', hv', hv₀', hfv'⟩ := hD'f z hz
+    exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hv' hv₀' <| by
+      filter_upwards [hfv, hfv'] with w hw hw'
+      rw [← hw, ← hw']
+  · rw [Multiset.count_eq_zero.2 fun h ↦ hz (hD z h), Multiset.count_eq_zero.2 fun h ↦ hz (hD' z h)]
 
 namespace IsZeroMultiplicity
 
@@ -143,6 +166,16 @@ theorem comp_mul_add (h : IsZeroMultiplicity f n) {c : ℂ} (hc : c ≠ 0) (a : 
   filter_upwards [(hφ.tendsto z).eventually hf] with w hw
   rw [hw, show c * w + a - (c * z + a) = c * (w - z) by ring, mul_pow]
   ring
+
+/-- **Linear change of variable on a divisor.** If `f` has the zero multiplicities of the
+multiset `D` and `c ≠ 0`, then `w ↦ f (c w)` has those of `c⁻¹ D`. -/
+theorem comp_const_mul {D : Multiset ℂ} (h : IsZeroMultiplicity f fun z ↦ D.count z) {c : ℂ}
+    (hc : c ≠ 0) : IsZeroMultiplicity (fun w ↦ f (c * w)) fun z ↦ (D.map (c⁻¹ * ·)).count z := by
+  convert h.comp_mul_add hc 0 using 1
+  · simp only [add_zero]
+  · funext z
+    rw [add_zero, ← Multiset.count_map_eq_count' (c⁻¹ * ·) D
+      (mul_right_injective₀ (inv_ne_zero hc)) (c * z), inv_mul_cancel_left₀ hc]
 
 /-- **Multiplicities add under products.** -/
 theorem mul (h : IsZeroMultiplicity f n) (h' : IsZeroMultiplicity g n') :

@@ -241,7 +241,7 @@ operator. It is the restriction of `ρ(hⱼ)`, which preserves `M` because `hⱼ
 form. -/
 noncomputable def kostantCartanOperator (j : κ) : Module.End ℤ M where
   toFun v := ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) (v : V),
-    hM _ (cartanVector_mem_kostantForm e h j) v v.2⟩
+    hM _ (cartanVector_mem_kostantForm e h j) v v.property⟩
   map_add' v w := Subtype.ext (map_add _ (v : V) (w : V))
   map_smul' z v := Subtype.ext (map_zsmul _ z (v : V))
 
@@ -262,7 +262,7 @@ coordinate by `wt y j`. -/
 theorem repr_kostantCartanOperator
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) (j : κ) (m : M) (y : η) :
     b.repr (kostantCartanOperator e h ρ M hM j m) y = wt y j * b.repr m y :=
-  b.repr_apply_of_apply_basis
+  b.repr_apply_eq_mul_of_apply_eq_smul b
     (fun x => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM (hwt x) j) m y
 
 /-- A weight basis separates weights: a weight vector of weight `μ` has vanishing coordinates at
@@ -311,6 +311,17 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
     ((kostantRootOperator e h ρ M hM i v : M) : V) =
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
+
+/-- Powers of the integral root operator act by powers of the ambient representation of the root
+vector. -/
+@[simp] theorem coe_pow_kostantRootOperator (k : ℕ) (v : M) :
+    (((kostantRootOperator e h ρ M hM i ^ k) v : M) : V) =
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ k) (v : V) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', pow_succ', mul_apply_eq_comp, mul_apply_eq_comp,
+      coe_kostantRootOperator_apply, ih]
 
 /-- The integral root operators compute the ambient action on a product. -/
 theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :

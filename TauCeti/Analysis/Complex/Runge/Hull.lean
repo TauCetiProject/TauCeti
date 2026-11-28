@@ -25,10 +25,11 @@ import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 In complex analysis on an arbitrary open set `Ω ⊆ ℂ`, a compact subset `K ⊆ Ω` forms a *Runge
 compact pair* `(Ω, K)` (`TauCeti.IsRungeCompactPair Ω K`, in
-`TauCeti.Analysis.Complex.Runge.Operator`) when `K` is filled in `Ω`, i.e. no connected component
+`TauCeti.Analysis.Complex.Runge.CompactPair`) when `K` is filled in `Ω`, i.e. no connected component
 of `Ω \ K` is relatively compact in `Ω`. These are precisely the compact subsets on which every
 function holomorphic in a neighbourhood of `K` can be uniformly approximated by functions
-holomorphic on all of `Ω` (Runge's approximation theorem, in
+holomorphic on all of `Ω` (forward approximation in `TauCeti.Analysis.Complex.Runge.Basic`, and
+the domain-relative equivalence `TauCeti.isRungeCompactPair_iff_approximation` in
 `TauCeti.Analysis.Complex.Runge.Approximation`).
 
 Alongside this topological condition sits the *`Ω`-holomorphic hull* `TauCeti.holomorphicHull Ω K`,
@@ -199,7 +200,7 @@ theorem holomorphicHull_eq_empty (Ω K : Set ℂ) : holomorphicHull Ω K = ∅ �
 @[simp]
 theorem holomorphicHull_nonempty_iff (Ω K : Set ℂ) :
     (holomorphicHull Ω K).Nonempty ↔ (K ∩ Ω).Nonempty := by
-  rw [nonempty_iff_ne_empty, nonempty_iff_ne_empty, ne_eq, ne_eq, holomorphicHull_eq_empty,
+  rw [← ne_empty_iff_nonempty, ← ne_empty_iff_nonempty, ne_eq, ne_eq, holomorphicHull_eq_empty,
     disjoint_iff_inter_eq_empty]
 
 /-- Points of `K` outside `Ω` do not affect `holomorphicHull Ω K`. -/
@@ -254,6 +255,19 @@ theorem exists_differentiableOn_norm_lt_one_lt_of_notMem_holomorphicHull {Ω K :
   · rw [hnorm, one_lt_div (by positivity)]
     linarith
 
+/-- A subset `K ⊆ Ω` equals its `Ω`-holomorphic hull if and only if every point of `Ω \ K` is
+strictly separated from `K` by an `Ω`-holomorphic function of modulus `< 1` on `K` and `> 1` at
+the point. -/
+theorem holomorphicHull_eq_self_iff_forall_mem_sdiff_exists_differentiableOn_norm_lt_one_lt
+    {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) :
+    holomorphicHull Ω K = K ↔
+      ∀ z ∈ Ω \ K, ∃ f : ℂ → ℂ, DifferentiableOn ℂ f Ω ∧ (∀ w ∈ K, ‖f w‖ < 1) ∧ 1 < ‖f z‖ := by
+  refine ⟨fun h z hz ↦ exists_differentiableOn_norm_lt_one_lt_of_notMem_holomorphicHull hz.1
+    (h.symm ▸ hz.2), fun h ↦ Subset.antisymm (fun z hz ↦ by_contra fun hzK ↦ ?_)
+    (subset_holomorphicHull hKΩ)⟩
+  obtain ⟨f, hf, hfK, hfz⟩ := h z ⟨holomorphicHull_subset_left Ω K hz, hzK⟩
+  exact (norm_le_of_mem_holomorphicHull hz hf fun w hw ↦ (hfK w hw).le).not_gt hfz
+
 /-- For compact `K ⊆ Ω`, membership in `holomorphicHull Ω K` is equivalent to the supremum bound
 `‖f z‖ ≤ sSup ((‖f ·‖) '' K)` for every `Ω`-holomorphic `f` (including `K = ∅`, where `sSup ∅ = 0`).
 -/
@@ -301,7 +315,7 @@ theorem infEDist_le_edist_of_mem_holomorphicHull {Ω K : Set ℂ} {z ζ : ℂ}
   -- Test against `w ↦ (w - ζ)⁻¹`, which is holomorphic on `Ω`.
   by_contra hlt
   rw [not_le] at hlt
-  have hKne : K.Nonempty := nonempty_iff_ne_empty.mpr fun h ↦ by simp [h] at hz
+  have hKne : K.Nonempty := ne_empty_iff_nonempty.mp fun h ↦ by simp [h] at hz
   have hzζ : z ≠ ζ := fun h ↦ hζ (h ▸ holomorphicHull_subset_left Ω K hz)
   have hd_pos : 0 < dist z ζ := dist_pos.mpr hzζ
   have hm_ne_top : infEDist ζ K ≠ ∞ := infEDist_ne_top hKne

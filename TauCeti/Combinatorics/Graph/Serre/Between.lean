@@ -59,6 +59,8 @@ equations of betweenness force `2 dist a m = dist a b + dist a c - dist b c`.
   `a` and `b`.
 * `TauCeti.SerreGraph.IsAcyclic.existsUnique_isBetween`: in an acyclic graph, three vertices joined
   by paths have a unique median.
+* `TauCeti.SerreGraph.IsAcyclic.isBetween_of_isConvex_preimage`: a map of vertices to an acyclic
+  graph under which preimages of convex sets are convex preserves betweenness.
 
 ## References
 
@@ -272,8 +274,8 @@ theorem exists_crosses_of_isBetween (hx : Γ.IsBetween a x b) (hxb : x ≠ b) :
   obtain ⟨p, hp⟩ := exists_length_eq_dist hx.nonempty_path_left
   obtain ⟨q, hq⟩ := exists_length_eq_dist hx.nonempty_path_right
   obtain ⟨y, f, q', -, rfl⟩ := q.eq_toPath_comp_of_length_eq_succ (n := q.length - 1) (by lia)
-  exact ⟨f.1, Path.crosses_of_length_eq_dist
-    (by rw [Quiver.Path.length_comp, hp, hq, hx.dist_add_dist]) (by simp), f.2.1⟩
+  exact ⟨f.val, Path.crosses_of_length_eq_dist
+    (by rw [Quiver.Path.length_comp, hp, hq, hx.dist_add_dist]) (by simp), f.property.1⟩
 
 /-! ### Acyclic graphs -/
 
@@ -346,7 +348,7 @@ theorem IsAcyclic.natCard_crosses (h : Γ.IsAcyclic) (a b : Γ.V) :
   classical
   rcases Nat.eq_zero_or_pos (Γ.dist a b) with h0 | hpos
   · rw [h0, Nat.card_eq_zero]
-    exact .inl ⟨fun e => e.2.dist_pos.ne' h0⟩
+    exact .inl ⟨fun e => e.property.dist_pos.ne' h0⟩
   obtain ⟨p⟩ := nonempty_path_of_dist_ne_zero hpos.ne'
   have hp := Path.isReduced_reduce Γ p
   have hlen := h.dist_eq_length hp
@@ -373,6 +375,22 @@ theorem IsAcyclic.isConvex_setOf_isBetween (h : Γ.IsAcyclic) (a b : Γ.V) :
   obtain ⟨p⟩ := hu.nonempty_path
   simp only [Set.mem_ofPred_eq, h.isBetween_iff_mem_vertices (Path.isReduced_reduce Γ p)] at hu hv ⊢
   exact isConvex_iff.mp (h.isConvex_setOf_mem_vertices _) u hu v hv
+
+/-- A map of vertices to an acyclic graph under which the preimage of every convex set is convex
+preserves betweenness, as long as the images of the two ends are joined by a path. -/
+theorem IsAcyclic.isBetween_of_isConvex_preimage {Δ : SerreGraph} (h : Γ.IsAcyclic)
+    {f : Δ.V → Γ.V} (hf : ∀ S : Set Γ.V, Γ.IsConvex S → Δ.IsConvex (f ⁻¹' S)) {a x b : Δ.V}
+    (hab : Nonempty (Γ.Path (f a) (f b))) (hx : Δ.IsBetween a x b) :
+    Γ.IsBetween (f a) (f x) (f b) := by
+  -- The vertices between `f a` and `f b` form a convex set. Its preimage is convex and contains
+  -- `a` and `b`, so it contains the vertices of a shortest path from `a` to `b` through `x`.
+  obtain ⟨p, hp, hxp⟩ := isBetween_iff_exists_length_eq_dist.mp hx
+  have hC := hf _ (h.isConvex_setOf_isBetween (f a) (f b))
+  have ha : a ∈ f ⁻¹' {y | Γ.IsBetween (f a) y (f b)} := isBetween_left hab
+  have hb : b ∈ f ⁻¹' {y | Γ.IsBetween (f a) y (f b)} := isBetween_right hab
+  rcases Path.eq_or_exists_tgt_eq_of_mem_vertices Δ p hxp with rfl | ⟨e, he, rfl⟩
+  · exact ha
+  · exact hC.tgt_mem ha hb (Path.isReduced_of_length_le_dist hp.le) he
 
 /-- In an acyclic graph, a vertex between `a` and `b` is determined by its distance from `a`. -/
 theorem IsAcyclic.eq_of_isBetween_of_dist_eq (h : Γ.IsAcyclic) {y : Γ.V}

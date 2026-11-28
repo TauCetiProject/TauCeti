@@ -67,6 +67,8 @@ far the curve bends.
   larger lower bound, a smaller error constant and a larger tube radius.
 * `TauCeti.IsGromovLawsonBendingCurve.exists_radius_eq`: a bending curve ends in a vertical line
   `r = ρ` with `0 < ρ < r₀`.
+* `TauCeti.IsGromovLawsonBendingCurve.radius_of_nonpos`: a unit speed bending curve has radius
+  `r u = r 0 - u` along its initial horizontal part.
 
 ## References
 
@@ -176,6 +178,18 @@ theorem exists_radius_eq (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ 
     (fun x hx ↦ ?_) u ⟨hu, le_rfl⟩
   have hx : θ x = π / 2 := hb x ((le_max_left b 0).trans hx.1)
   simpa [hx] using (hγ.hasDerivAt_radius x).hasDerivWithinAt
+
+/-- On the initial horizontal part `u ≤ 0` of a bending curve with unit speed, the radius is
+`r u = r 0 - u`. -/
+theorem radius_of_nonpos (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ 1) {u : ℝ}
+    (hu : u ≤ 0) : r u = r 0 - u := by
+  have hd (x : ℝ) (hx : x ≤ 0) : HasDerivAt (fun u ↦ r u + u) 0 x :=
+    ((hγ.hasDerivAt_radius x).add (hasDerivAt_id' x)).congr_deriv
+      (by simp [hγ.angle_of_nonpos hx])
+  have := constant_of_has_deriv_right_zero (f := fun u ↦ r u + u)
+    (fun x hx ↦ (hd x hx.2).continuousAt.continuousWithinAt)
+    (fun x hx ↦ (hd x hx.2.le).hasDerivWithinAt) 0 ⟨hu, le_rfl⟩
+  linarith
 
 /-- A bending curve for the constants `R₀`, `C` and `r₀` is also one for a larger lower bound
 `R₀'`, a smaller error constant `C'` and a larger tube radius `r₀'`. -/
@@ -443,7 +457,7 @@ private theorem bend_first_le {q R₀ K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 ≤ R�
     have h1 := mul_le_mul_of_nonneg_left has (by nlinarith : 0 ≤ 3 * (q - 1) * θ₀)
     have h2 := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hρ 2) hR₀
     nlinarith
-  · rw [smoothTransition.deriv_of_one_lt hu₁]
+  · rw [smoothTransition.deriv_of_one_le hu₁.le]
     simp only [mul_zero, zero_div, zero_mul]
     linarith
 
@@ -461,7 +475,7 @@ private theorem bend_second_le {q K : ℝ} (hq : 3 ≤ q) (hr₁ : 0 < r₁) (h�
       (by linarith [bendAngle_le h₀.le h₁ u, pi_pos])
   have hq₂ : 0 ≤ (q - 1) * (q - 2) := by nlinarith
   rcases lt_or_ge u 2 with hu | hu
-  · rw [smoothTransition.deriv_of_neg (by linarith)]
+  · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     simp only [mul_zero, zero_div, zero_mul]
     positivity
   have hb := smoothTransition.monotone.deriv_nonneg (x := u - 2)

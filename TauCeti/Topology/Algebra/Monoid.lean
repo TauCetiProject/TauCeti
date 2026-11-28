@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Topology.Algebra.Monoid
 public import Mathlib.Topology.CompactOpen
 
@@ -17,7 +18,9 @@ coordinate embeddings `Pi.mulSingle` of a product of pointed topological spaces,
 `continuous_mulSingle`. The continuous family of right multiplications, viewed as a map into the
 compact-open topology, also shows that the right translations carrying a compact set into an open
 set form an open set. In a topological monoid, the pointwise powers of a compact set are compact,
-next to Mathlib's `IsCompact.mul`.
+next to Mathlib's `IsCompact.mul`. The partial products `Fin.partialProd` of a tuple of continuous
+functions into a topological monoid are continuous, next to Mathlib's `continuous_list_prod`, and so
+is contracting two adjacent entries of a tuple by a continuous multiplication (`Fin.contractNth`).
 
 ## Main definitions
 
@@ -28,6 +31,10 @@ next to Mathlib's `IsCompact.mul`.
 
 ## Main results
 
+* `Continuous.finPartialProd`: the partial products of a tuple of continuous functions into a
+  topological monoid are continuous, with additive version `Continuous.finPartialSum`.
+* `Continuous.finContractNth`: multiplying two adjacent entries of a continuous tuple-valued
+  function into a topological magma (`Fin.contractNth`) gives a continuous function.
 * `IsCompact.isOpen_setOf_mapsTo_mul`: the right translations carrying a compact set into an open
   set form an open set, with additive version `IsCompact.isOpen_setOf_mapsTo_add`.
 * `IsCompact.pow`: the powers of a compact subset of a topological monoid are compact, with
@@ -58,6 +65,26 @@ theorem compSwapShearMulRight_apply_apply (Ψ : C(X, C(X, Z))) (x y : X) :
     compSwapShearMulRight Ψ x y = Ψ y (y * x) := (rfl)
 
 end ContinuousMap
+
+/-- **The partial products of continuous functions are continuous.** -/
+@[to_additive /-- **The partial sums of continuous functions are continuous.** -/]
+theorem Continuous.finPartialProd {X M : Type*} [TopologicalSpace X] [Monoid M]
+    [TopologicalSpace M] [ContinuousMul M] {n : ℕ} {f : Fin n → X → M}
+    (hf : ∀ i, Continuous (f i)) (i : Fin (n + 1)) :
+    Continuous fun x ↦ Fin.partialProd (fun j ↦ f j x) i := by
+  induction i using Fin.induction with
+  | zero => simpa only [Fin.partialProd_zero] using continuous_const
+  | succ i ih =>
+    simp only [Fin.partialProd_succ]
+    exact ih.mul (hf i)
+
+/-- **Contracting adjacent entries of a continuous tuple by multiplication is continuous.** -/
+theorem Continuous.finContractNth {X M : Type*} [TopologicalSpace X] [Mul M] [TopologicalSpace M]
+    [ContinuousMul M] {n : ℕ} {f : X → Fin (n + 1) → M} (hf : Continuous f) (j : Fin (n + 1)) :
+    Continuous fun x ↦ Fin.contractNth j (· * ·) (f x) := by
+  refine continuous_pi fun i ↦ ?_
+  simp only [Fin.contractNth]
+  split_ifs <;> fun_prop
 
 namespace IsCompact
 

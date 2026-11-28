@@ -48,6 +48,12 @@ Pushing path chains forward along a continuous map sends the `0`-chain of a path
 image (`TauCeti.cubicalChainModuleLinearMap_pathChainPoint`) and intertwines the maps `ρ` of a path
 and of its image (`TauCeti.pathChainToLoopChain_cubicalChainModuleLinearMap`).
 
+The same two maps compare the chains on the paths from `a` to `b` with the chains on the loops at
+`a`: `α ↦ α · [δ]` from `C_*(Ω_a B)` to `C_*(P_{a→b} B)` is linear for the loops at `a` acting in
+front, and it is a quasi-isomorphism
+(`TauCeti.exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq`). This is the
+computation over a zero-cell in Brown's model of the chains on the based path space of a CW complex.
+
 ## Main definitions
 
 * `TauCeti.pathChainToLoopChain`: appending the reversal of `δ`, on chains.
@@ -65,6 +71,10 @@ and of its image (`TauCeti.pathChainToLoopChain_cubicalChainModuleLinearMap`).
 * `TauCeti.pathChainToLoopChain_smul`: `ρ` is a map of left modules over `C_*(Ω_a B)`.
 * `TauCeti.pathChainToLoopChain_smul_pathChainPoint`: `ρ(c) · [δ]` is the push-forward of
   appending `δ⁻¹` and then `δ`.
+* `TauCeti.pathChainToLoopChain_pathChainPoint`: `ρ` sends the `0`-chain of a path `γ` to the
+  `0`-chain of the loop `γ ⋆ δ⁻¹`.
+* `TauCeti.exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq`: appending `δ` is a
+  quasi-isomorphism `C_*(Ω_a B) → C_*(P_{a→b} B)`, in the form of relative cycles and boundaries.
 * `TauCeti.tensorPathChainPoint_tensorPathChainAct`: the composite of `m ⊗ c ↦ m · ρ(c)` and
   the map back is homotopic to the identity.
 * `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule`: basepoint change preserves
@@ -176,6 +186,16 @@ theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
       NormalizedCubicalChain.crossProduct_point_right, ← h, NormalizedCubicalChain.map_comp,
       NormalizedCubicalChain.map_comp, LinearMap.comp_apply, LinearMap.comp_apply]
 
+/-- **Appending the reversal of `δ` to the `0`-chain of a path `γ` gives the `0`-chain of the loop
+`γ ⋆ δ⁻¹`.** -/
+theorem pathChainToLoopChain_pathChainPoint (δ γ : MoorePathBetween B a b) :
+    pathChainToLoopChain R δ (pathChainPoint R γ) =
+      cubicalChainPoint (MooreLoopSpace B a) R
+        ((MoorePathBetween.loopAppendHomotopyEquiv δ).symm γ) := by
+  rw [pathChainPoint_def, pathChainToLoopChain_lof, NormalizedCubicalChain.map_ofCube,
+    cubicalChainPoint_def]
+  exact congrArg _ (congrArg _ (ContinuousMap.ext fun _ ↦ by simp [SingularCube.point_apply]))
+
 /-- **The `0`-chain of `δ ⋆ δ⁻¹` is homologous to the unit**: `ρ([δ])` differs from the unit
 `[1]` of `C_*(Ω_a B)` by a boundary, the prism of the unit along a homotopy from appending `δ` and
 then `δ⁻¹` to the identity of `Ω_a B`. -/
@@ -194,6 +214,56 @@ theorem exists_pathChainToLoopChain_pathChainPoint_eq_one_add (δ : MoorePathBet
   simp only [NormalizedCubicalChain.map_ofCube, hpt]
   simp [pathChainPoint_def, ← cubicalChainLof_one, NormalizedCubicalChain.one_def,
     NormalizedCubicalChain.map_ofCube]
+
+/-- **Appending a path is a quasi-isomorphism of left modules**, on elements. For a Moore path `δ`
+from `a` to `b`, the map `C_*(Ω_a B) → C_*(P_{a→b} B)`, `α ↦ α · [δ]`, which is linear for the
+loops at `a` acting in front, has relative cycles that are relative boundaries: if `α` is a cycle
+and `α · [δ] = d w`, then `α = d α'` and `α' · [δ] + d w' = w` for some `α'` and `w'`. -/
+theorem exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq
+    (δ : MoorePathBetween B a b) {α : loopChainAlgebra B a R}
+    {w : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R}
+    (hα : cubicalChainDifferential (MooreLoopSpace B a) R α = 0)
+    (hαw : α • pathChainPoint R δ = cubicalChainModuleDifferential _ _ R w) :
+    ∃ (α' : loopChainAlgebra B a R)
+      (w' : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R),
+      cubicalChainDifferential (MooreLoopSpace B a) R α' = α ∧
+        α' • pathChainPoint R δ + cubicalChainModuleDifferential _ _ R w' = w := by
+  -- Appending the reversal of `δ` is a homotopy inverse: `ρ(α · [δ]) = α ρ([δ])` differs from `α`
+  -- by the product of the cycle `α` with a boundary, and `ρ(w) · [δ]` is homotopic to `w`.
+  set dM := cubicalChainModuleDifferential (MoorePathBetween B a b) (MooreLoopSpace B b) R
+  set K := pathChainAppendHomotopy R δ a
+  have hM := cubicalChainModule_isDGLeftModule (MooreLoopSpace B a) (MoorePathBetween B a b)
+    (MooreLoopSpace B b) R
+  -- Acting on the cycle `[δ]` commutes with the differentials.
+  have hc (γ : loopChainAlgebra B a R) : dM (γ • pathChainPoint R δ) =
+      cubicalChainDifferential (MooreLoopSpace B a) R γ • pathChainPoint R δ :=
+    hM.leibniz_of_map_eq_zero γ (cubicalChainModuleDifferential_pathChainPoint δ)
+  -- Appending `δ⁻¹` and then `δ` is homotopic to the identity through `K`.
+  have hρc (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+      pathChainToLoopChain R δ x • pathChainPoint R δ = x + (dM (K x) + K (dM x)) := by
+    rw [pathChainToLoopChain_smul_pathChainPoint, pathChainAppendHomotopy_spec, add_sub_cancel]
+  -- `ρ([δ]) = 1 + d h`, and the cycle `α` times the boundary `d h` is a boundary `d β`.
+  obtain ⟨h, hh⟩ := exists_pathChainToLoopChain_pathChainPoint_eq_one_add (R := R) δ
+  obtain ⟨β, hβ⟩ := (loopChain_isDGAlgebra B a R).isDGLeftModule.smul_mem_range_of_map_eq_zero hα
+    (LinearMap.mem_range_self (cubicalChainDifferential (MooreLoopSpace B a) R) h)
+  -- So `α` bounds `α₀ = ρ(w) - β`.
+  have hα₀ : cubicalChainDifferential (MooreLoopSpace B a) R (pathChainToLoopChain R δ w - β) =
+      α := by
+    rw [map_sub, ← pathChainToLoopChain_differential, ← hαw, pathChainToLoopChain_smul, hh,
+      mul_add, mul_one, hβ, smul_eq_mul, add_sub_cancel_right]
+  -- What `α₀ · [δ]` misses of `w`, corrected by `d (K w)`, is a cycle `z`.
+  set z := w - (pathChainToLoopChain R δ w - β) • pathChainPoint R δ + dM (K w)
+  have hz : dM z = 0 := by
+    rw [map_add, map_sub, hc, hα₀, ← hαw, hM.sq_zero, sub_self, zero_add]
+  have hzw : (pathChainToLoopChain R δ w - β) • pathChainPoint R δ + z = w + dM (K w) := by
+    simp only [z]
+    abel
+  clear_value z
+  -- Correct `α₀` by `ρ(z)`, which `z` is homologous to after acting on `[δ]`.
+  refine ⟨pathChainToLoopChain R δ w - β + pathChainToLoopChain R δ z, -(K w + K z), ?_, ?_⟩
+  · rw [map_add, hα₀, ← pathChainToLoopChain_differential, hz, map_zero, add_zero]
+  · rw [add_smul, hρc, hz, map_zero, add_zero, map_neg, map_add dM, ← add_assoc, hzw]
+    abel
 
 section Map
 
@@ -235,14 +305,6 @@ section BasepointChange
 
 open BalancedTensorProduct DGRightModuleCat
 
--- Instance search finds a different, but definitionally equal, decomposition of the loop chain
--- algebra than the one recorded in a DG module over it.
-local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    SetLike.GradedSMul
-      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B a) R)).opposite.piece
-      M.grading :=
-  M.gradedSMul
-
 -- Transport the graded actions to the internal gradings used by balanced tensors.
 local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
     SetLike.GradedSMul
@@ -255,6 +317,26 @@ local instance : SetLike.GradedSMul (cubicalChainGrading (MooreLoopSpace B a) R)
     (InternalGrading.ofDecomposition (pathChainBimodule B a b R).grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
+
+/-- The right action of the loop chains at `b` on `M ⊗ C_*(P_{a→b} B)`, which instance search
+does not see through the carrier of the tensor product. -/
+instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    Module (loopChainAlgebra B b R)ᵐᵒᵖ (tensorBimoduleObj M (pathChainBimodule B a b R)) :=
+  (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
+
+/-- The ground ring acts compatibly with the right action of the loop chains at `b` on
+`M ⊗ C_*(P_{a→b} B)`. -/
+instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    IsScalarTower R (loopChainAlgebra B b R)ᵐᵒᵖ
+      (tensorBimoduleObj M (pathChainBimodule B a b R)) :=
+  (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
+
+/-- The right action of the loop chains at `b` on `M ⊗ C_*(P_{a→b} B)` is graded. -/
+instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    SetLike.GradedSMul
+      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
+      (tensorBimoduleObj M (pathChainBimodule B a b R)).grading :=
+  (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
 
 variable (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
   (δ : MoorePathBetween B a b)
@@ -418,13 +500,6 @@ derived one. -/
 theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
     {M N : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)} {f : M ⟶ N}
     (hf : IsQuasiIso f) : IsQuasiIso (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))) := by
-  -- Instance search does not see the structures of a tensor product through its carrier.
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).gradedSMul
   rcases isEmpty_or_nonempty (MoorePathBetween B a b) with hB | hB
   · -- Without Moore paths from `a` to `b`, both tensor products vanish.
     exact DGRightModuleHom.isQuasiIso_of_subsingleton _
@@ -460,13 +535,6 @@ theorem isQuasiIso_of_isQuasiIso_tensorBimoduleMap_pathChainBimodule
     (hab : Nonempty (MoorePathBetween B a b))
     {M N : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)} {f : M ⟶ N}
     (hf : IsQuasiIso (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R)))) : IsQuasiIso f := by
-  -- Instance search does not see the structures of a tensor product through its carrier.
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).gradedSMul
   obtain ⟨δ⟩ := hab
   obtain ⟨KM, hKM⟩ := exists_tensorPathChainAct_tensorPathChainPoint M δ
   obtain ⟨KN, hKN⟩ := exists_tensorPathChainAct_tensorPathChainPoint N δ

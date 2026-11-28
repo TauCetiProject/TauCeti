@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.One
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.TimeReversal
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Tactic.IntervalCases
@@ -32,14 +34,26 @@ The same holds one order lower: every time slice of a bounded order-one paraboli
 `ParabolicC1HolderSpace.spatialTraceL` has norm at most one at every time of the closed slab, and
 time reversal exchanges the initial and terminal traces.
 
+At every order `k`, every time slice of a bounded parabolic Hölder map of order `k`
+(`ParabolicCkHolderSpace`) belongs to `C_b^{k,α}`: the slice is `k` times continuously
+differentiable, its spatial derivatives through order `k` are the fields `D_x^m u` on that slice,
+and the `k`-th one is `α`-Hölder since the parabolic distance restricts to the spatial distance at
+a fixed time. The trace operator `ParabolicCkHolderSpace.spatialTraceL` again has norm at most one
+at every time of the closed slab. These are the initial and terminal trace maps of the parabolic
+Cauchy problem at every derivative order.
+
 ## Main declarations
 
 * `TauCeti.ParabolicC2HolderSpace.spatialTraceL`: the trace `C_b^{2+α,1+α/2} → C_b^{2,α}` at a
   time of the slab, of norm at most one.
 * `TauCeti.ParabolicC1HolderSpace.spatialTraceL`: the trace `C_{par,b}^{1+α} → C_b^{1,α}` at a
   time of the slab, of norm at most one.
-* `TauCeti.ParabolicC2HolderSpace.spatialTrace_timeReverseLIE` and
-  `TauCeti.ParabolicC1HolderSpace.spatialTrace_timeReverseLIE`: the traces of a time reversal.
+* `TauCeti.ParabolicCkHolderSpace.spatialTraceL`: the trace `C_{par,b}^{k+α} → C_b^{k,α}` at a
+  time of the slab, of norm at most one, with the spatial derivatives of the trace given by
+  `TauCeti.ParabolicCkHolderSpace.iteratedFDeriv_spatialTrace`.
+* `TauCeti.ParabolicC2HolderSpace.spatialTrace_timeReverseLIE`,
+  `TauCeti.ParabolicC1HolderSpace.spatialTrace_timeReverseLIE` and
+  `TauCeti.ParabolicCkHolderSpace.spatialTrace_timeReverseLIE`: the traces of a time reversal.
 
 ## References
 
@@ -477,3 +491,174 @@ theorem spatialTrace_timeReverseLIE_left (hab : a ≤ b) (f : ParabolicC1HolderS
 end TimeReversal
 
 end TauCeti.ParabolicC1HolderSpace
+
+/-! ### Traces of maps of every order -/
+
+namespace TauCeti.ParabolicCkHolderSpace
+
+open Set ParabolicSpaceTime
+open scoped NNReal BoundedContinuousFunction
+
+variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
+
+/-- Every closed-slab spatial slice of a map of order `k` is `k` times continuously
+differentiable. -/
+theorem contDiff_spatialSlice (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    ContDiff ℝ k (fun x ↦ f (slabMk x t)) := by
+  simpa [ContinuousMultilinearMap.curry0_apply] using
+    (f.hasFTaylorSeriesUpTo_mixedDerivL 0 t).contDiff
+
+/-- The `k`-th spatial derivative of a slice has Hölder constant at most the parabolic Hölder
+seminorm of the top-order field `D_x^k u`. -/
+theorem holderWith_iteratedFDeriv_spatialSlice (f : ParabolicCkHolderSpace k α E F hab)
+    (t : Icc a b) :
+    HolderWith
+      (nnHolderNorm α ((mixedDerivHolderL 0 k f).toBoundedContinuousFunction : _ → _))
+      α (iteratedFDeriv ℝ k (fun x ↦ f (slabMk x t))) := by
+  have he : iteratedFDeriv ℝ k (fun x ↦ f (slabMk x t)) =
+      fun x ↦ (mixedDerivHolderL 0 k f).toBoundedContinuousFunction (slabMk x t) := by
+    funext x
+    rw [toBoundedContinuousFunction_mixedDerivHolderL f (by omega),
+      mixedDerivL_zero_slabMk f le_rfl]
+  rw [he]
+  intro x y
+  simpa [edist_slabMk] using
+    (mixedDerivHolderL 0 k f).memHolder.holderWith (slabMk x t) (slabMk y t)
+
+/-- Restrict a bounded parabolic Hölder map of order `k` to any time of the closed slab, with
+values in the spatial sum-norm space `C_b^{k,α}`. -/
+def spatialTrace (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    CkHolderSpace k α E F :=
+  CkHolderSpace.ofContDiff (fun x ↦ f (slabMk x t)) (f.contDiff_spatialSlice t)
+    (fun i hi ↦ ⟨‖mixedDerivL 0 i f‖, fun x ↦ by
+      rw [← mixedDerivL_zero_slabMk f hi]
+      exact (mixedDerivL 0 i f).norm_coe_le_norm _⟩)
+    (f.holderWith_iteratedFDeriv_spatialSlice t).memHolder
+
+/-- The underlying function of a spatial trace is restriction to its time slice. -/
+theorem coe_spatialTrace (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    ⇑(f.spatialTrace t) = fun x ↦ f (slabMk x t) :=
+  CkHolderSpace.coe_ofContDiff _ _ _ _
+
+@[simp]
+theorem spatialTrace_apply (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) (x : E) :
+    f.spatialTrace t x = f (slabMk x t) :=
+  congrFun (f.coe_spatialTrace t) x
+
+/-- The spatial derivatives of the trace, through order `k`, are the fields `D_x^m u` on the same
+slice. -/
+@[simp]
+theorem iteratedFDeriv_spatialTrace (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b)
+    {m : ℕ} (hm : m ≤ k) (x : E) :
+    iteratedFDeriv ℝ m (f.spatialTrace t) x = mixedDerivL 0 m f (slabMk x t) := by
+  rw [coe_spatialTrace, mixedDerivL_zero_slabMk f hm]
+
+/-- Spatial restriction is a contraction for the sum-norm spatial space, uniformly in time. -/
+theorem norm_spatialTrace_le (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    ‖f.spatialTrace t‖ ≤ ‖f‖ := by
+  -- The trace norm is bounded by the supremum norms of the spatial fields `D_x^m u` and the
+  -- Hölder seminorm of `D_x^k u`; these are among the terms of the norm of `f` at the pairs
+  -- `(0, m)`.
+  have hD : ∀ i : Fin (k + 1), ‖(f.spatialTrace t).iteratedFDeriv i‖ ≤ ‖mixedDerivL 0 i f‖ :=
+    fun i ↦ (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ by
+      rw [← CkHolderSpace.iteratedFDeriv_eq, iteratedFDeriv_spatialTrace f t i.is_le]
+      exact (mixedDerivL 0 i f).norm_coe_le_norm _
+  have hH : (nnHolderNorm α (iteratedFDeriv ℝ k (f.spatialTrace t)) : ℝ) ≤
+      ‖mixedDerivHolderL 0 k f‖ := by
+    rw [coe_spatialTrace]
+    exact (NNReal.coe_le_coe.mpr
+      (f.holderWith_iteratedFDeriv_spatialSlice t).nnholderNorm_le).trans
+      (HolderSpace.nnHolderNorm_le _)
+  have hpairs : ∑ m ∈ Finset.range (k + 1), (‖mixedDerivL 0 m f‖ +
+      (‖timeSliceL 0 m f‖ + ‖mixedDerivHolderL 0 m f‖)) ≤ ‖f‖ := by
+    have hsub : (Finset.range (k + 1)).image (Prod.mk 0) ⊆ parabolicDerivPairs k := fun p hp ↦ by
+      obtain ⟨m, hm, rfl⟩ := Finset.mem_image.1 hp
+      simpa [Nat.lt_succ_iff] using hm
+    have h := Finset.sum_le_sum_of_subset_of_nonneg (f := fun p : ℕ × ℕ ↦ ‖mixedDerivL p.1 p.2 f‖ +
+      (‖timeSliceL p.1 p.2 f‖ + ‖mixedDerivHolderL p.1 p.2 f‖)) hsub
+      fun _ _ _ ↦ by positivity
+    rw [Finset.sum_image fun _ _ _ _ h ↦ Prod.mk_right_injective 0 h] at h
+    exact h.trans (norm_eq f).ge
+  have htop : ‖mixedDerivHolderL 0 k f‖ ≤ ∑ m ∈ Finset.range (k + 1),
+      (‖timeSliceL 0 m f‖ + ‖mixedDerivHolderL 0 m f‖) :=
+    (le_add_of_nonneg_left (norm_nonneg _)).trans (Finset.single_le_sum
+      (f := fun m ↦ ‖timeSliceL 0 m f‖ + ‖mixedDerivHolderL 0 m f‖)
+      (fun _ _ ↦ by positivity) (Finset.self_mem_range_succ k))
+  have hsumD : ∑ i : Fin (k + 1), ‖(f.spatialTrace t).iteratedFDeriv i‖ ≤
+      ∑ m ∈ Finset.range (k + 1), ‖mixedDerivL 0 m f‖ :=
+    (Finset.sum_le_sum fun i _ ↦ hD i).trans_eq
+      (Fin.sum_univ_eq_sum_range (fun m ↦ ‖mixedDerivL 0 m f‖) (k + 1))
+  rw [Finset.sum_add_distrib] at hpairs
+  rw [CkHolderSpace.norm_eq]
+  linarith
+
+/-- Spatial restriction as a bounded linear map. Taking `t = a` or `t = b` gives the initial
+or terminal trace with the same operator bound. -/
+def spatialTraceL (t : Icc a b) :
+    ParabolicCkHolderSpace k α E F hab →L[ℝ] CkHolderSpace k α E F :=
+  LinearMap.mkContinuous
+    { toFun := fun f ↦ f.spatialTrace t
+      map_add' := fun f g ↦ by
+        ext x
+        simp [CkHolderSpace.coe_add]
+      map_smul' := fun c f ↦ by
+        ext x
+        simp [CkHolderSpace.coe_smul] }
+    1 (fun f ↦ by simpa using f.norm_spatialTrace_le t)
+
+@[simp]
+theorem spatialTraceL_apply (t : Icc a b) (f : ParabolicCkHolderSpace k α E F hab) :
+    spatialTraceL t f = f.spatialTrace t := (rfl)
+
+/-- Spatial restriction preserves addition. -/
+@[simp]
+theorem spatialTrace_add (f g : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    (f + g).spatialTrace t = f.spatialTrace t + g.spatialTrace t :=
+  (spatialTraceL t).map_add f g
+
+/-- Spatial restriction preserves scalar multiplication. -/
+@[simp]
+theorem spatialTrace_smul (c : ℝ) (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    (c • f).spatialTrace t = c • f.spatialTrace t :=
+  (spatialTraceL t).map_smul c f
+
+/-- The spatial trace of zero is zero. -/
+@[simp]
+theorem spatialTrace_zero (t : Icc a b) :
+    (0 : ParabolicCkHolderSpace k α E F hab).spatialTrace t = 0 :=
+  (spatialTraceL t).map_zero
+
+/-- All time-slice traces, including both endpoint traces, have operator norm at most one. -/
+theorem norm_spatialTraceL_le_one (t : Icc a b) :
+    ‖spatialTraceL (k := k) (α := α) (E := E) (F := F) (hab := hab) t‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-! ### Traces of a time reversal -/
+
+section TimeReversal
+
+variable {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
+
+/-- The spatial trace of the time reversal `u ∘ R` at time `t` is the spatial trace of `u` at
+time `T - t`. -/
+@[simp]
+theorem spatialTrace_timeReverseLIE (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a' b') :
+    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace (iccTimeReverse T ha hb t) := by
+  ext x
+  simp
+
+/-- The initial trace of the time reversal `u ∘ R`, at `T - b`, is the terminal trace of `u`
+at `b`. -/
+theorem spatialTrace_timeReverseLIE_left (f : ParabolicCkHolderSpace k α E F hab) :
+    (timeReverseLIE T ha hb f).spatialTrace
+        ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩ =
+      f.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
+  rw [spatialTrace_timeReverseLIE]
+  congr 1
+  ext
+  simp [ha]
+
+end TimeReversal
+
+end TauCeti.ParabolicCkHolderSpace

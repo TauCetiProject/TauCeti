@@ -39,6 +39,8 @@ decomposition follows from the regular one.
 
 * `TauCeti.RegularFormClass.anisotropic_of_rank_le_one`: a regular class of rank at most one is
   anisotropic.
+* `TauCeti.RegularFormClass.anisotropic_mk_binary_iff`: the plane `⟨a, b⟩` is anisotropic
+  exactly when `-ab` is not a square.
 * `TauCeti.exists_nsmul_hyperbolicClass_add`: **Witt decomposition** (Lam I.4.1), existence.
 * `TauCeti.eq_of_nsmul_hyperbolicClass_add_eq`: **Witt decomposition**, uniqueness of both the
   number of hyperbolic planes and the anisotropic summand.
@@ -48,8 +50,15 @@ decomposition follows from the regular one.
   `rank c = 2 * wittIndex c + rank (anisotropicPart c)`.
 * `TauCeti.RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_not_anisotropic`: an isotropic
   class of rank two is the hyperbolic class.
+* `TauCeti.RegularFormClass.eq_hyperbolicClass_iff_not_anisotropic_of_rank_eq_two`: a class of
+  rank two is the hyperbolic class exactly when it is isotropic.
+* `TauCeti.RegularFormClass.wittIndex_mk_binary_of_isSquare`,
+  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_isSquare`: the Witt index and the
+  anisotropic part of `⟨a, b⟩` when it is hyperbolic.
 * `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an
   isometry of quadratic forms.
+* `QuadraticForm.wittIndex_formClass_restrict_orthogonal_span_pair_add_one`: splitting off a
+  hyperbolic plane lowers the Witt index by one.
 * `QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`: a regular form represents
   a unit `c` exactly when adjoining `⟨-c⟩` to its class gives an isotropic class.
 
@@ -141,6 +150,15 @@ theorem RegularFormClass.anisotropic_of_rank_le_one {x : RegularFormClass K} (hx
       funext i
       rw [Subsingleton.elim i 0]
       exact hv.resolve_left (w 0).ne_zero
+
+/-- **Isotropy of a diagonal plane.** The class of `⟨a, b⟩` is anisotropic exactly when `-ab` is
+not a square. -/
+@[simp high]
+theorem RegularFormClass.anisotropic_mk_binary_iff (a b : Kˣ) :
+    RegularFormClass.Anisotropic (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) ↔
+      ¬IsSquare (-(a * b)) := by
+  rw [RegularFormClass.anisotropic_mk, presentedForm_two, ← Units.isSquare_coe_iff]
+  simpa using anisotropic_binary_iff (a : K) (b : K)
 
 section Hyperbolic
 
@@ -366,6 +384,29 @@ theorem RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_not_anisotropic
     RegularFormClass.rank_eq_zero_iff.mp (by omega)
   rw [RegularFormClass.wittDecomposition c, hw, hpart, one_nsmul, add_zero]
 
+/-- A class of rank two is the hyperbolic class exactly when it is isotropic. -/
+theorem RegularFormClass.eq_hyperbolicClass_iff_not_anisotropic_of_rank_eq_two
+    {c : RegularFormClass K} (hc : RegularFormClass.rank c = 2) :
+    c = hyperbolicClass K ↔ ¬ RegularFormClass.Anisotropic c := by
+  refine ⟨fun h ha ↦ ?_, RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_not_anisotropic hc⟩
+  rw [h, ← add_zero (hyperbolicClass K)] at ha
+  exact not_anisotropic_hyperbolicClass_add 0 ha
+
+/-- The Witt index of `⟨a, b⟩` is `1` when `-ab` is a square. -/
+@[simp]
+theorem RegularFormClass.wittIndex_mk_binary_of_isSquare {a b : Kˣ} (h : IsSquare (-(a * b))) :
+    RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 1 := by
+  rw [(RegularFormClass.mk_binary_eq_hyperbolicClass_iff a b).mpr h,
+    RegularFormClass.wittIndex_hyperbolicClass]
+
+/-- The anisotropic part of `⟨a, b⟩` is zero when `-ab` is a square. -/
+@[simp]
+theorem RegularFormClass.anisotropicPart_mk_binary_of_isSquare {a b : Kˣ}
+    (h : IsSquare (-(a * b))) :
+    RegularFormClass.anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 0 := by
+  rw [(RegularFormClass.mk_binary_eq_hyperbolicClass_iff a b).mpr h,
+    RegularFormClass.anisotropicPart_hyperbolicClass]
+
 end Decomposition
 
 /-! ### The decomposition of a form -/
@@ -426,6 +467,21 @@ theorem _root_.QuadraticForm.exists_equivalent_hyperbolicPresentation_prod (Q : 
     obtain ⟨r, hr⟩ := exists_presentedForm_equivalent Q hQ
     rw [formClass_mk Q hQ r hr, RegularFormClass.mk_eq_mk_iff] at hclass
     exact (hr.trans hclass).trans (equivalent_presentedForm_append_prod _ p)
+
+/-- Splitting off the hyperbolic plane spanned by isotropic vectors `x, y` with `polar Q x y = 1`
+lowers the Witt index of a regular space by one. -/
+theorem _root_.QuadraticForm.wittIndex_formClass_restrict_orthogonal_span_pair_add_one
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {x y : V} (hx : Q x = 0) (hy : Q y = 0)
+    (hxy : polar Q x y = 1) :
+    RegularFormClass.wittIndex (formClass (Q.restrict
+      (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y})))
+      (hQ.nondegenerate_restrict_orthogonal_span_pair hx hy hxy)) + 1 =
+      RegularFormClass.wittIndex (formClass Q hQ) := by
+  have hclass : formClass Q hQ = 1 • hyperbolicClass K + formClass _
+      (hQ.nondegenerate_restrict_orthogonal_span_pair hx hy hxy) := by
+    rw [one_nsmul, ← formClass_hyperbolicPlane, ← formClass_prod, formClass_eq_iff]
+    exact Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hx hy hxy
+  rw [hclass, RegularFormClass.wittIndex_nsmul_hyperbolicClass_add, add_comm]
 
 end Form
 

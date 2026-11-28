@@ -165,7 +165,7 @@ theorem stableFrobeniusCharacteristic_eq_sum_stablePsumPart (f : ClassFunction �
     ClassFunction.ofConjClasses fun C =>
       ClassFunction.toConjClasses f C • psumPart (Fin d) ℂ ((partitionEquivConjClasses n).symm C)
   have hg (π : Perm (Fin n)) :
-      g.1 π = (f : Perm (Fin n) → ℂ) π • psumPart (Fin d) ℂ π.partition := by
+      g.val π = (f : Perm (Fin n) → ℂ) π • psumPart (Fin d) ℂ π.partition := by
     simp only [g, ClassFunction.ofConjClasses_apply, ClassFunction.toConjClasses_mk,
       psumPart_eq_psumPart_partition ℂ ((partitionEquivConjClasses n).apply_symm_apply _).symm]
   rw [coe_stableSymmetricProj_stableFrobeniusCharacteristic_eq_sum_psumPart,

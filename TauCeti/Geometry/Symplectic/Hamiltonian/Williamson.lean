@@ -36,6 +36,13 @@ complex linear for a complex structure `J` compatible with `ω`, without any pos
 Darboux basis with `pₖ = J qₖ`, `A` rotates each plane `span(qₖ, pₖ)` with a real angular
 frequency `νₖ`, and its quadratic Hamiltonian `½ ω(A v, v)` is `∑ₖ νₖ Iₖ`
 (`TauCeti.SymplecticForm.exists_isDarbouxBasis_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic`).
+A pairwise commuting family of such elements has a common normal form, in one Darboux basis
+(`exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic` in the namespace
+`TauCeti.SymplecticForm`). For a linear such family `A : 𝔥 → sp(V, ω)`, the frequencies are linear
+forms on `𝔥`, the weights of the family
+(`exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_apply_smul_elliptic`), and the
+Hamiltonian of an element whose frequencies are all nonnegative is positive semidefinite
+(`TauCeti.SymplecticForm.apply_apply_nonneg_of_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic`).
 Every frequency contributes two squares of the same sign, so the indices of inertia of this
 Hamiltonian are even (`TauCeti.SymplecticForm.even_sigNeg_hamiltonianEndEquiv_symm`,
 `TauCeti.SymplecticForm.even_sigPos_hamiltonianEndEquiv_symm`).
@@ -99,6 +106,45 @@ section ComplexLinear
 
 variable {ω} {J : AlmostComplexStructure V}
 
+/-- **Simultaneous normal form of commuting compact elements of `sp(V, ω)`.** Let `A` be a family
+of pairwise commuting elements of `sp(V, ω)` which are complex linear for a complex structure `J`
+compatible with `ω`. Then there are a Darboux basis `(q₁, p₁, …, qₙ, pₙ)` with `pₖ = J qₖ` and real
+numbers `νᵢₖ` such that every `A i` rotates every plane `span(qₖ, pₖ)` with angular frequency
+`νᵢₖ`, `A i qₖ = -νᵢₖ pₖ` and `A i pₖ = νᵢₖ qₖ`, and its quadratic Hamiltonian `v ↦ ½ ω(A i v, v)`
+is `∑ₖ νᵢₖ Iₖ`, for the elliptic blocks `Iₖ = (xₖ² + yₖ²) / 2` of the basis. -/
+theorem exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic
+    (hJ : ω.Compatible J) {ι : Type*} (A : ι → skewAdjointLieSubalgebra ω.toBilinForm)
+    (hcomm : Pairwise fun i j ↦ Commute (A i : Module.End ℝ V) (A j))
+    (hA : ∀ i, IsComplexLinearMap J J (A i : Module.End ℝ V)) :
+    ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (ν : ι → Fin n → ℝ), ω.IsDarbouxBasis b ∧
+      (∀ k, b (k, 1) = J (b (k, 0))) ∧
+      (∀ i k, (A i : Module.End ℝ V) (b (k, 0)) = -ν i k • b (k, 1) ∧
+        (A i : Module.End ℝ V) (b (k, 1)) = ν i k • b (k, 0)) ∧
+      ∀ i, ω.hamiltonianEndEquiv.symm (A i) = ∑ k, ν i k • elliptic b k := by
+  obtain ⟨n, b, c, hb, hbJ, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint hJ
+    (fun i ↦ (A i : Module.End ℝ V)) hcomm (fun i ↦ (A i).property) hA
+  -- `A i` acts on `span(qₖ, pₖ)` by `a + b i`, and `ω(A i qₖ, pₖ) = -ω(qₖ, A i pₖ)` reads `a = -a`.
+  have hre (i : ι) (k : Fin n) : (c i k).re = 0 := by
+    have h : ω ((A i : Module.End ℝ V) (b (k, 0))) (b (k, 1)) =
+        -ω (b (k, 0)) ((A i : Module.End ℝ V) (b (k, 1))) :=
+      skewAdjointLieSubalgebra.apply_left (A i) _ _
+    rw [(hc i k).1, (hc i k).2] at h
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+      hb.apply_fst_snd, hb.apply_snd_snd, hb.apply_fst_fst] at h
+    simp at h
+    linarith
+  have hfst (i : ι) (k : Fin n) :
+      (A i : Module.End ℝ V) (b (k, 0)) = -(-(c i k).im) • b (k, 1) := by
+    rw [(hc i k).1, hre, zero_smul, zero_add, neg_neg]
+  have hsnd (i : ι) (k : Fin n) : (A i : Module.End ℝ V) (b (k, 1)) = -(c i k).im • b (k, 0) := by
+    rw [(hc i k).2, hre, zero_smul, add_zero]
+  refine ⟨n, b, fun i k ↦ -(c i k).im, hb, hbJ, fun i k ↦ ⟨hfst i k, hsnd i k⟩, fun i ↦
+    ω.hamiltonianEndEquiv.symm_apply_eq.2 (Subtype.ext (b.ext fun ⟨j, a⟩ ↦ ?_))⟩
+  rw [coe_hamiltonianEndEquiv_apply]
+  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+  · rw [hfst, hb.hamiltonianEnd_sum_smul_elliptic_apply_fst]
+  · rw [hsnd, hb.hamiltonianEnd_sum_smul_elliptic_apply_snd]
+
 /-- **Normal form of a compact element of `sp(V, ω)`.** Let `A ∈ sp(V, ω)` be complex linear for a
 complex structure `J` compatible with `ω`. Then there are a Darboux basis `(q₁, p₁, …, qₙ, pₙ)`
 with `pₖ = J qₖ` and real numbers `ν₁, …, νₙ` such that `A` rotates every plane `span(qₖ, pₖ)`
@@ -112,28 +158,55 @@ theorem exists_isDarbouxBasis_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic
       (∀ k, (A : Module.End ℝ V) (b (k, 0)) = -ν k • b (k, 1) ∧
         (A : Module.End ℝ V) (b (k, 1)) = ν k • b (k, 0)) ∧
       ω.hamiltonianEndEquiv.symm A = ∑ k, ν k • elliptic b k := by
-  obtain ⟨n, b, c, hb, hbJ, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint hJ
-    (fun _ : Unit ↦ (A : Module.End ℝ V)) (fun _ _ h ↦ absurd rfl h) (fun _ ↦ A.2) fun _ ↦ hA
-  -- `A` acts on `span(qₖ, pₖ)` by `a + b i`, and `ω(A qₖ, pₖ) = -ω(qₖ, A pₖ)` reads `a = -a`.
-  have hre (k : Fin n) : (c () k).re = 0 := by
-    have h : ω ((A : Module.End ℝ V) (b (k, 0))) (b (k, 1)) =
-        -ω (b (k, 0)) ((A : Module.End ℝ V) (b (k, 1))) :=
-      skewAdjointLieSubalgebra.apply_left A _ _
-    rw [(hc () k).1, (hc () k).2] at h
-    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-      hb.apply_fst_snd, hb.apply_snd_snd, hb.apply_fst_fst] at h
-    simp at h
-    linarith
-  have hfst (k : Fin n) : (A : Module.End ℝ V) (b (k, 0)) = -(-(c () k).im) • b (k, 1) := by
-    rw [(hc () k).1, hre, zero_smul, zero_add, neg_neg]
-  have hsnd (k : Fin n) : (A : Module.End ℝ V) (b (k, 1)) = -(c () k).im • b (k, 0) := by
-    rw [(hc () k).2, hre, zero_smul, add_zero]
-  refine ⟨n, b, fun k ↦ -(c () k).im, hb, hbJ, fun k ↦ ⟨hfst k, hsnd k⟩,
-    ω.hamiltonianEndEquiv.symm_apply_eq.2 (Subtype.ext (b.ext fun ⟨j, a⟩ ↦ ?_))⟩
-  rw [coe_hamiltonianEndEquiv_apply]
-  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
-  · rw [hfst, hb.hamiltonianEnd_sum_smul_elliptic_apply_fst]
-  · rw [hsnd, hb.hamiltonianEnd_sum_smul_elliptic_apply_snd]
+  obtain ⟨n, b, ν, hb, hbJ, hν, hQ⟩ :=
+    exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic hJ
+      (fun _ : Unit ↦ A) (fun _ _ h ↦ absurd rfl h) fun _ ↦ hA
+  exact ⟨n, b, ν (), hb, hbJ, hν (), hQ ()⟩
+
+/-- **Linear weights of a commuting family of compact elements of `sp(V, ω)`.** Let
+`A : 𝔥 → sp(V, ω)` be a linear map whose values pairwise commute and are complex linear for a
+complex structure `J` compatible with `ω`, such as the infinitesimal action of a torus. Then there
+are a Darboux basis `(q₁, p₁, …, qₙ, pₙ)` with `pₖ = J qₖ` and linear forms `αₖ ∈ 𝔥*`, the weights,
+such that every `A ξ` rotates every plane `span(qₖ, pₖ)` with angular frequency `αₖ(ξ)`,
+`A ξ qₖ = -αₖ(ξ) pₖ` and `A ξ pₖ = αₖ(ξ) qₖ`, and its quadratic Hamiltonian is `∑ₖ αₖ(ξ) Iₖ`. -/
+theorem exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_apply_smul_elliptic
+    (hJ : ω.Compatible J) {𝔥 : Type*} [AddCommGroup 𝔥] [Module ℝ 𝔥]
+    (A : 𝔥 →ₗ[ℝ] Module.End ℝ V) (hcomm : ∀ ξ η, Commute (A ξ) (A η))
+    (hskew : ∀ ξ, A ξ ∈ skewAdjointLieSubalgebra ω.toBilinForm)
+    (hAJ : ∀ ξ, IsComplexLinearMap J J (A ξ)) :
+    ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (α : Fin n → Module.Dual ℝ 𝔥),
+      ω.IsDarbouxBasis b ∧ (∀ k, b (k, 1) = J (b (k, 0))) ∧
+      (∀ ξ k, A ξ (b (k, 0)) = -α k ξ • b (k, 1) ∧ A ξ (b (k, 1)) = α k ξ • b (k, 0)) ∧
+      ∀ ξ, ω.hamiltonianEndEquiv.symm ⟨A ξ, hskew ξ⟩ = ∑ k, α k ξ • elliptic b k := by
+  obtain ⟨n, b, ν, hb, hbJ, hν, hQ⟩ :=
+    exists_isDarbouxBasis_forall_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic hJ
+      (fun ξ ↦ (⟨A ξ, hskew ξ⟩ : skewAdjointLieSubalgebra ω.toBilinForm))
+      (fun ξ η _ ↦ hcomm ξ η) hAJ
+  -- The frequency `ν ξ k = ω(A ξ pₖ, pₖ)` is linear in `ξ`.
+  let α (k : Fin n) : Module.Dual ℝ 𝔥 :=
+    { toFun ξ := ω (A ξ (b (k, 1))) (b (k, 1))
+      map_add' ξ η := by simp
+      map_smul' c ξ := by simp }
+  have hα (ξ : 𝔥) (k : Fin n) : α k ξ = ν ξ k := by
+    have h : α k ξ = ω (A ξ (b (k, 1))) (b (k, 1)) := rfl
+    rw [h, (hν ξ k).2]
+    simp [hb.apply_fst_snd]
+  exact ⟨n, b, α, hb, hbJ, fun ξ k ↦ by rw [hα]; exact hν ξ k,
+    fun ξ ↦ (hQ ξ).trans (Finset.sum_congr rfl fun k _ ↦ by rw [hα])⟩
+
+/-- **Nonnegative frequencies give a positive semidefinite Hamiltonian.** If the quadratic
+Hamiltonian `v ↦ ½ ω(A v, v)` of `A ∈ sp(V, ω)` is `∑ₖ νₖ Iₖ`, for the elliptic blocks `Iₖ` of a
+basis and nonnegative `νₖ`, then `0 ≤ ω(A v, v)` for every `v`. -/
+theorem apply_apply_nonneg_of_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic
+    {A : skewAdjointLieSubalgebra ω.toBilinForm} {n : ℕ} {b : Basis (Fin n × Fin 2) ℝ V}
+    {ν : Fin n → ℝ} (hA : ω.hamiltonianEndEquiv.symm A = ∑ k, ν k • elliptic b k)
+    (hν : ∀ k, 0 ≤ ν k) (v : V) : 0 ≤ ω ((A : Module.End ℝ V) v) v := by
+  have h := ω.hamiltonianEndEquiv_symm_apply_apply A v
+  rw [hA, linearMomentMap_apply] at h
+  have hsum : (∑ k, ν k • elliptic b k) v = ∑ k, ν k * elliptic b k v := by simp
+  have hnonneg : 0 ≤ ∑ k, ν k * elliptic b k v := Finset.sum_nonneg fun k _ ↦
+    mul_nonneg (hν k) (by rw [elliptic_apply]; positivity)
+  linarith
 
 /-- **The negative index of a compact element of `sp(V, ω)` is even.** If `A ∈ sp(V, ω)` is complex
 linear for a complex structure compatible with `ω`, the quadratic Hamiltonian `½ ω(A v, v)` has

@@ -75,6 +75,8 @@ weight vectors is a weight vector whose weight is the product of their weights.
   `TauCeti.Comodule.weightSpace_subcomodule`.
 * `TauCeti.Comodule.weightProj_mem_subcomodule`: every subcomodule is stable under the weight
   projections.
+* `Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace`: a submodule is a subcomodule
+  exactly when it is the sum of its intersections with the weight submodules.
 * `TauCeti.Comodule.range_weightProj`: the `g`-weight submodule is the range of the `g`-weight
   projection.
 * `TauCeti.Comodule.finite_setOf_weightSpace_ne_bot`: **a comodule finitely generated as a module
@@ -434,8 +436,8 @@ private theorem weightProj_coeAddMonoidHom (g : G)
     rw [DirectSum.coeAddMonoidHom_of, DirectSum.coe_of_apply]
     by_cases hh : h = g
     · subst hh
-      simp [weightProj_of_mem w.2]
-    · simp [hh, weightProj_of_mem_of_ne (Ne.symm hh) w.2]
+      simp [weightProj_of_mem w.property]
+    · simp [hh, weightProj_of_mem_of_ne (Ne.symm hh) w.property]
   | add x y hx hy => simp [hx, hy]
 
 variable (R G V)
@@ -573,7 +575,7 @@ theorem weightProj_mem_subcomodule (N : Subcomodule R (MonoidAlgebra R G) V)
       (weightProj R G N g (⟨v, hv⟩ : N) : V) = weightProj R G V g v := by
     simpa only [Subcomodule.subtype_apply] using hmap
   rw [← hmap']
-  exact (weightProj R G N g (⟨v, hv⟩ : N)).2
+  exact (weightProj R G N g (⟨v, hv⟩ : N)).property
 
 /-- The `g`-weight submodule of a subcomodule, with its inherited coaction, is the trace on it of
 the `g`-weight submodule of the ambient comodule. -/
@@ -583,6 +585,32 @@ theorem weightSpace_subcomodule (N : Subcomodule R (MonoidAlgebra R G) V) (g : G
     weightSpace R G N g = (weightSpace R G V g).comap (SMulMemClass.subtype N) := by
   rw [Hom.weightSpace_eq_comap_of_injective (Subcomodule.subtype N)
     (Subcomodule.subtype_injective N) g, Subcomodule.subtype_toLinearMap]
+
+/-- **A submodule is a subcomodule exactly when it is spanned by its weight vectors**: the
+coaction maps `N` into `N ⊗ R[G]` exactly when `N` is the sum of its intersections with the weight
+submodules. -/
+theorem _root_.Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace (N : Submodule R V) :
+    (∀ v ∈ N, coact (R := R) (C := MonoidAlgebra R G) v ∈
+        LinearMap.range (TensorProduct.map N.subtype (LinearMap.id : MonoidAlgebra R G →ₗ[R] _))) ↔
+      N = ⨆ g : G, N ⊓ weightSpace R G V g := by
+  classical
+  constructor
+  · intro hN
+    let N' : Subcomodule R (MonoidAlgebra R G) V := Subcomodule.ofSubmodule N fun _ hm ↦ hN _ hm
+    let _ : Comodule R (MonoidAlgebra R G) N' := Subcomodule.instComodule N'
+    have h := congrArg (Submodule.map (SMulMemClass.subtype N')) (iSup_weightSpace_eq_top R G N')
+    simp only [weightSpace_subcomodule, Submodule.map_iSup, Submodule.map_comap_eq,
+      Submodule.map_top, ← Subcomodule.subtype_toLinearMap, Subcomodule.range_subtype_toLinearMap,
+      Subcomodule.toSubmodule_carrier, Subcomodule.ofSubmodule_carrier, N'] at h
+    exact h.symm
+  · intro hN v hv
+    rw [hN] at hv
+    refine Submodule.iSup_induction _ (motive := fun x ↦ coact (R := R)
+      (C := MonoidAlgebra R G) x ∈ LinearMap.range (TensorProduct.map N.subtype LinearMap.id)) hv
+      (fun g w hw ↦ ?_) (by simp) fun x y hx hy ↦ by simpa using add_mem hx hy
+    refine ⟨⟨w, hw.1⟩ ⊗ₜ MonoidAlgebra.single g 1, ?_⟩
+    rw [mem_weightSpace.mp hw.2, TensorProduct.map_tmul, Submodule.subtype_apply,
+      LinearMap.id_apply]
 
 variable (R G V)
 

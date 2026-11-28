@@ -22,6 +22,15 @@ The inverse construction uses `Kernel.ofPMF` and `PMF.ofFintype`; no new probabi
 or stochastic-matrix structure is introduced. The correspondence includes the empty state
 space, where both the kernel and the matrix are unique.
 
+## Main results
+
+* `ProbabilityTheory.Kernel.toMatrix_comp`: composition of finite kernels is matrix
+  multiplication in transition order.
+* `ProbabilityTheory.Kernel.rowStochasticEquiv`: the row-stochastic matrices on a finite state
+  space are multiplicatively equivalent to the opposite of `Kernel.markovSubmonoid`, the
+  submonoid of Markov kernels. The identity and power formulas `toKernel_one` and
+  `toKernel_pow` follow from it.
+
 ## References
 
 * J. R. Norris, *Markov Chains*, Cambridge University Press, 1997, §1.1.
@@ -69,18 +78,27 @@ theorem toMatrix_inj [Countable β]
   · rintro rfl
     rfl
 
-/-- Composition of finite kernels is matrix multiplication, in transition order. -/
-@[simp]
-theorem toMatrix_comp [Fintype β] [MeasurableSingletonClass β]
-    [MeasurableSingletonClass γ] (κ : Kernel α β) (η : Kernel β γ)
-    [IsFiniteKernel κ] [IsFiniteKernel η] :
-    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix := by
-  funext a c
+/-- Propagating an initial finite measure is multiplication of its mass row vector by the
+transition matrix. The target space needs no measurable singletons. -/
+theorem comp_apply_singleton_eq_vecMul [Fintype α] [MeasurableSingletonClass α]
+    (κ : Kernel α β) [IsFiniteKernel κ]
+    (ν : Measure α) [IsFiniteMeasure ν] (b : β) :
+    ((κ ∘ₘ ν) {b}).toNNReal = ((fun a => (ν {a}).toNNReal) ᵥ* κ.toMatrix) b := by
   apply ENNReal.coe_injective
-  simp only [coe_toMatrix_apply, Matrix.mul_apply, ENNReal.ofNNReal_finsetSum,
-    ENNReal.coe_mul]
-  rw [comp_apply' _ _ _ (measurableSet_singleton _), lintegral_fintype]
-  exact Finset.sum_congr rfl fun b _ => mul_comm _ _
+  simp only [ENNReal.coe_toNNReal (measure_ne_top _ _), Matrix.vecMul, dotProduct,
+    ENNReal.ofNNReal_finsetSum, ENNReal.coe_mul, coe_toMatrix_apply]
+  simp [Measure.comp_eq_sum_of_countable]
+
+/-- Composition of finite kernels is matrix multiplication, in transition order. The final
+target space needs no measurable singletons. -/
+@[simp]
+theorem toMatrix_comp [Fintype β] [MeasurableSingletonClass β] (κ : Kernel α β)
+    (η : Kernel β γ) [IsFiniteKernel κ] [IsFiniteKernel η] :
+    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix := by
+  refine Matrix.ext fun a c => ?_
+  rw [Matrix.mul_apply, toMatrix_apply, Kernel.comp_apply,
+    comp_apply_singleton_eq_vecMul η (κ a) c]
+  simp [Matrix.vecMul, dotProduct]
 
 /-- The identity kernel has the identity transition matrix. -/
 @[simp]
@@ -108,18 +126,6 @@ theorem toMatrix_mem_rowStochastic [Fintype α] [DecidableEq α]
   apply ENNReal.coe_injective
   simp only [ENNReal.ofNNReal_finsetSum, coe_toMatrix_apply, ENNReal.coe_one]
   simp
-
-/-- Propagating an initial finite measure is multiplication of its mass row vector by the
-transition matrix. -/
-theorem comp_apply_singleton_eq_vecMul [Fintype α] [MeasurableSingletonClass α]
-    [MeasurableSingletonClass β] (κ : Kernel α β) [IsFiniteKernel κ]
-    (ν : Measure α) [IsFiniteMeasure ν] (b : β) :
-    ((κ ∘ₘ ν) {b}).toNNReal = ((fun a => (ν {a}).toNNReal) ᵥ* κ.toMatrix) b := by
-  apply ENNReal.coe_injective
-  simp only [ENNReal.coe_toNNReal (measure_ne_top _ _), Matrix.vecMul, dotProduct,
-    ENNReal.ofNNReal_finsetSum, ENNReal.coe_mul, coe_toMatrix_apply]
-  rw [Measure.bind_apply (measurableSet_singleton _) κ.aemeasurable, lintegral_fintype]
-  exact Finset.sum_congr rfl fun a _ => mul_comm _ _
 
 end ProbabilityTheory.Kernel
 
@@ -156,22 +162,6 @@ theorem toKernel_mul (M N : rowStochastic ℝ≥0 α) :
   apply (Kernel.toMatrix_inj _ _).mp
   simp only [toMatrix_toKernel, Kernel.toMatrix_comp, Submonoid.coe_mul]
 
-/-- The identity stochastic matrix gives the identity kernel. -/
-@[simp]
-theorem toKernel_one : toKernel (1 : rowStochastic ℝ≥0 α) = Kernel.id := by
-  apply (Kernel.toMatrix_inj _ _).mp
-  simp only [toMatrix_toKernel, Kernel.toMatrix_id, Submonoid.coe_one]
-
-/-- Powers of a stochastic matrix agree with powers of its Markov kernel. -/
-@[simp]
-theorem toKernel_pow (M : rowStochastic ℝ≥0 α) (n : ℕ) :
-    toKernel (M ^ n) = (toKernel M) ^ n := by
-  induction n with
-  | zero => exact toKernel_one
-  | succ n ih =>
-    rw [pow_succ, toKernel_mul, ih]
-    simpa only [pow_one, Nat.add_comm] using (Kernel.pow_add (toKernel M) 1 n).symm
-
 end Matrix.rowStochastic
 
 namespace ProbabilityTheory.Kernel
@@ -186,26 +176,50 @@ theorem toKernel_toMatrix (κ : Kernel α α) [IsMarkovKernel κ] :
   apply (toMatrix_inj _ _).mp
   simp only [Matrix.rowStochastic.toMatrix_toKernel]
 
-/-- Finite Markov kernels correspond bijectively to row-stochastic matrices. Multiplication
-corresponds to kernel composition in transition order, as in `Matrix.rowStochastic.toKernel_mul`. -/
-def rowStochasticEquiv : Matrix.rowStochastic ℝ≥0 α ≃ {κ : Kernel α α // IsMarkovKernel κ} where
-  toFun M := ⟨Matrix.rowStochastic.toKernel M, inferInstance⟩
-  invFun κ := by
-    let _ := κ.property
-    exact ⟨κ.val.toMatrix, κ.val.toMatrix_mem_rowStochastic⟩
+/-- Finite Markov kernels correspond to row-stochastic matrices, multiplicatively once kernel
+composition is reversed: matrix multiplication is kernel composition in transition order, as in
+`Matrix.rowStochastic.toKernel_mul`. -/
+def rowStochasticEquiv : Matrix.rowStochastic ℝ≥0 α ≃* (markovSubmonoid α)ᵐᵒᵖ where
+  toFun M := .op ⟨Matrix.rowStochastic.toKernel M, mem_markovSubmonoid.mpr inferInstance⟩
+  invFun κ := ⟨κ.unop.val.toMatrix, κ.unop.val.toMatrix_mem_rowStochastic⟩
   left_inv M := Subtype.ext (Matrix.rowStochastic.toMatrix_toKernel M)
-  right_inv κ := by
-    let _ := κ.property
-    exact Subtype.ext (toKernel_toMatrix κ.val)
+  right_inv κ := MulOpposite.unop_injective (Subtype.ext (toKernel_toMatrix κ.unop.val))
+  map_mul' M N := MulOpposite.unop_injective <| Subtype.ext <| by
+    simp only [MulOpposite.unop_mul, MulOpposite.unop_op, Submonoid.coe_mul, mul_def,
+      Matrix.rowStochastic.toKernel_mul]
 
 /-- The matrix-to-kernel equivalence is the canonical kernel construction. -/
 @[simp]
 theorem rowStochasticEquiv_apply (M : Matrix.rowStochastic ℝ≥0 α) :
-    (rowStochasticEquiv M).val = Matrix.rowStochastic.toKernel M := (rfl)
+    (rowStochasticEquiv M).unop.val = Matrix.rowStochastic.toKernel M := (rfl)
 
 /-- The inverse equivalence reads off the matrix of transition masses. -/
 @[simp]
-theorem rowStochasticEquiv_symm_apply (κ : {κ : Kernel α α // IsMarkovKernel κ}) :
-    (rowStochasticEquiv.symm κ).val = κ.val.toMatrix := (rfl)
+theorem rowStochasticEquiv_symm_apply (κ : (markovSubmonoid α)ᵐᵒᵖ) :
+    (rowStochasticEquiv.symm κ).val = κ.unop.val.toMatrix := (rfl)
 
 end ProbabilityTheory.Kernel
+
+namespace Matrix.rowStochastic
+
+variable {α : Type*} [Fintype α] [DecidableEq α]
+  [MeasurableSpace α] [MeasurableSingletonClass α]
+
+/-- The identity stochastic matrix gives the identity kernel. -/
+@[simp]
+theorem toKernel_one : toKernel (1 : rowStochastic ℝ≥0 α) = Kernel.id := by
+  have h := congrArg (fun κ : (Kernel.markovSubmonoid α)ᵐᵒᵖ => κ.unop.val)
+    (map_one (Kernel.rowStochasticEquiv (α := α)))
+  simpa only [Kernel.rowStochasticEquiv_apply, MulOpposite.unop_one, Submonoid.coe_one,
+    Kernel.one_def] using h
+
+/-- Powers of a stochastic matrix agree with powers of its Markov kernel. -/
+@[simp]
+theorem toKernel_pow (M : rowStochastic ℝ≥0 α) (n : ℕ) :
+    toKernel (M ^ n) = (toKernel M) ^ n := by
+  have h := congrArg (fun κ : (Kernel.markovSubmonoid α)ᵐᵒᵖ => κ.unop.val)
+    (map_pow Kernel.rowStochasticEquiv M n)
+  simpa only [Kernel.rowStochasticEquiv_apply, MulOpposite.unop_pow, SubmonoidClass.coe_pow]
+    using h
+
+end Matrix.rowStochastic

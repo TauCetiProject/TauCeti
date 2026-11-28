@@ -9,10 +9,11 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
-public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
+public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.RepresentationTheory.Compact.Haar
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
 # Invariant Riemannian metrics for finite and compact group actions
@@ -20,7 +21,7 @@ public import TauCeti.RepresentationTheory.Compact.Haar
 Average the pullbacks of a Riemannian metric over a group acting by diffeomorphisms. The result is
 a metric preserved by every element of the group, including elements acting trivially. Its
 regularity is `C^n` when the metric is `C^n` and the action is `C^(n+1)`. In particular a smooth
-action of a finite group, or of a compact Lie group on a boundaryless manifold, admits a smooth
+action of a finite group, or of a compact Lie group, admits a smooth
 invariant metric whenever the manifold admits a smooth metric.
 
 For a finite group, `TauCeti.averageRiemannianMetric` is the arithmetic mean of the pulled-back
@@ -28,7 +29,7 @@ metrics; it combines `TauCeti.meanRiemannianMetric` with
 `Bundle.ContMDiffRiemannianMetric.pullback`. Such metrics give invariant orthonormal frame
 bundles on finite quotient charts.
 
-For a compact manifold `G` acting jointly `C^(n+1)` on a boundaryless manifold `M`, and a
+For a compact manifold `G` acting jointly `C^(n+1)` on a manifold `M`, and a
 probability measure `μ` on `G`, `TauCeti.measureAverageRiemannianMetric J μ g` is the metric
 
 `⟨v, w⟩_x = ∫ g_{a • x}(d(a •)_x v, d(a •)_x w) dμ(a)`.
@@ -58,8 +59,11 @@ invariant compatible almost complex structure is obtained by polar normalization
   `TauCeti.measureAverageRiemannianMetric_eq_self_iff`: averaging fixes exactly the invariant
   metrics.
 * `TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`: a compact topological group that is a
-  manifold, acting jointly `C^(n+1)` on a boundaryless finite-dimensional manifold with a `C^n`
+  manifold, acting jointly `C^(n+1)` on a finite-dimensional manifold with a `C^n`
   metric, preserves some `C^n` metric.
+* `TauCeti.of_forall_riemannianBundle_inner_mfderiv`: to prove a statement about a smooth action
+  of such a group on a σ-compact Hausdorff manifold, it suffices to prove it for every smooth
+  Riemannian metric preserved by the action.
 
 ## References
 
@@ -258,7 +262,7 @@ private theorem averageInner_apply
   -- `ContinuousLinearMap.precomp`.
   rfl
 
-variable [I.Boundaryless] [IsManifold I n M] [IsManifold J n G]
+variable [IsManifold I n M] [IsManifold J n G]
 
 /-- The averaged forms are a `C^n` section of the bundle of bilinear forms. -/
 private theorem contMDiff_averageInner
@@ -286,7 +290,7 @@ private theorem contMDiff_averageInner
 variable [FiniteDimensional ℝ E]
 
 /-- **The average of a Riemannian metric over a compact group action.** For a group `G` acting
-jointly `C^(n+1)` on a boundaryless finite-dimensional manifold `M`, with `G` a compact manifold
+jointly `C^(n+1)` on a finite-dimensional manifold `M`, with `G` a compact manifold
 carrying a probability measure `μ`, this is the `C^n` metric
 
 `⟨v, w⟩_x = ∫ g_{a • x}(d(a •)_x v, d(a •)_x w) dμ(a)`.
@@ -377,7 +381,7 @@ theorem measureAverageRiemannianMetric_idempotent
 omit [MeasurableSpace G] [OpensMeasurableSpace G] [IsProbabilityMeasure μ] [MeasurableMul G]
   [μ.IsMulRightInvariant] in
 /-- **Invariant metrics for compact group actions.** If a compact topological group that is a
-manifold acts jointly `C^(n+1)` on a boundaryless finite-dimensional manifold that carries a
+manifold acts jointly `C^(n+1)` on a finite-dimensional manifold that carries a
 `C^n` Riemannian metric, then that manifold carries a `C^n` Riemannian metric for which every
 element of the group acts by isometries. -/
 theorem exists_contMDiffRiemannianMetric_inner_mfderiv [IsTopologicalGroup G]
@@ -390,5 +394,41 @@ theorem exists_contMDiffRiemannianMetric_inner_mfderiv [IsTopologicalGroup G]
     measureAverageRiemannianMetric_inner_mfderiv J (haarProb G) g⟩
 
 end Compact
+
+section Smooth
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SigmaCompactSpace M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] (J : ModelWithCorners ℝ E' H')
+  (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [T2Space G]
+  [ChartedSpace H' G] [IsManifold J ∞ G] [MulAction G M] [ContMDiffSMul J I ∞ G M]
+
+include J
+
+/-- **Reduction to an invariant smooth metric.** A compact group acting smoothly on a σ-compact
+Hausdorff manifold preserves a smooth Riemannian metric, the Haar average of the
+pullbacks of any smooth metric. So to prove a statement it suffices to prove it for an arbitrary
+smooth Riemannian metric preserved by the action. -/
+theorem of_forall_riemannianBundle_inner_mfderiv {P : Prop}
+    (h : ∀ [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+      [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)],
+      (∀ (a : G) (x : M) (v w : TangentSpace I x),
+        inner ℝ (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = inner ℝ v w) → P) : P := by
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
+    (E := fun x : M ↦ TangentSpace I x)
+  -- Haar averaging needs the action to be `C^(n + 1)` for a `C^n` metric; for `n = ∞` this is
+  -- smoothness.
+  have : ContMDiffSMul J I (∞ + 1) G M := by
+    rwa [ENat.coe_top_add_one]
+  obtain ⟨g', hg'⟩ := exists_contMDiffRiemannianMetric_inner_mfderiv (G := G) (n := ⊤) J g
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
+  let : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
+    Bundle.instIsContMDiffRiemannianBundle g'
+  exact h hg'
+
+end Smooth
 
 end TauCeti

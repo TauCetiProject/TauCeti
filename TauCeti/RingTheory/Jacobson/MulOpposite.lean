@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopkinsLevitzki
+public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 public import TauCeti.RingTheory.Jacobson.Basic
 
@@ -31,7 +32,10 @@ of the radical.
 * `TauCeti.Ring.op_mem_jacobson_mulOpposite_iff`: `MulOpposite.op x` lies in `Ring.jacobson Rᵐᵒᵖ`
   exactly when `x` lies in `Ring.jacobson R` -- the left-right symmetry, in membership form.
 * `TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv`: the resulting identification
-  `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ ≃+* (R ⧸ Ring.jacobson R)ᵐᵒᵖ`.
+  `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ ≃+* (R ⧸ Ring.jacobson R)ᵐᵒᵖ`, as an isomorphism of algebras
+  `TauCeti.Ring.quotientJacobsonMulOppositeAlgEquiv`. The two residue rings have the same length
+  (`TauCeti.Ring.length_quotient_jacobson_mulOpposite`) and the same dimension
+  (`TauCeti.Ring.finrank_quotient_jacobson_mulOpposite`).
 * `TauCeti.isSemiprimaryRing_mulOpposite_iff` and `TauCeti.IsSemiprimaryRing.mulOpposite`:
   semiprimarity passes to the opposite ring.
 
@@ -186,6 +190,38 @@ theorem quotientJacobsonMulOppositeRingEquiv_symm_op_mk (x : R) :
     (quotientJacobsonMulOppositeRingEquiv R).symm (op (Ideal.Quotient.mk (Ring.jacobson R) x)) =
       Ideal.Quotient.mk (Ring.jacobson Rᵐᵒᵖ) (op x) :=
   (RingEquiv.symm_apply_eq _).mpr (quotientJacobsonMulOppositeRingEquiv_mk R x).symm
+
+/-- `TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv` as an isomorphism of `k`-algebras, for an
+algebra `R` over a commutative ring `k`. -/
+noncomputable def quotientJacobsonMulOppositeAlgEquiv (k : Type*) [CommRing k] [Algebra k R] :
+    (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) ≃ₐ[k] (R ⧸ Ring.jacobson R)ᵐᵒᵖ :=
+  .ofRingEquiv (f := quotientJacobsonMulOppositeRingEquiv R) fun c ↦ by
+    rw [← Ideal.Quotient.mk_algebraMap, MulOpposite.algebraMap_apply,
+      quotientJacobsonMulOppositeRingEquiv_mk, Ideal.Quotient.mk_algebraMap,
+      MulOpposite.algebraMap_apply]
+
+/-- `TauCeti.Ring.quotientJacobsonMulOppositeAlgEquiv` is the ring isomorphism
+`TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv`. -/
+@[simp]
+theorem quotientJacobsonMulOppositeAlgEquiv_apply (k : Type*) [CommRing k] [Algebra k R]
+    (x : Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) :
+    quotientJacobsonMulOppositeAlgEquiv R k x = quotientJacobsonMulOppositeRingEquiv R x :=
+  (rfl)
+
+/-- The quotients of an algebra and its opposite by their Jacobson radicals have the same
+length over the base ring. -/
+theorem length_quotient_jacobson_mulOpposite (k : Type*) [CommRing k] [Algebra k R] :
+    Module.length k (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) = Module.length k (R ⧸ Ring.jacobson R) :=
+  ((quotientJacobsonMulOppositeAlgEquiv R k).toLinearEquiv.trans
+    (MulOpposite.opLinearEquiv k).symm).length_eq
+
+/-- **The residue ring modulo the Jacobson radical has the same dimension for the opposite
+algebra**: over a commutative ring `k`, `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ` and `R ⧸ Ring.jacobson R` have
+the same `k`-dimension, through `TauCeti.Ring.quotientJacobsonMulOppositeAlgEquiv`. -/
+theorem finrank_quotient_jacobson_mulOpposite (k : Type*) [CommRing k] [Algebra k R] :
+    Module.finrank k (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) = Module.finrank k (R ⧸ Ring.jacobson R) :=
+  (quotientJacobsonMulOppositeAlgEquiv R k).toLinearEquiv.finrank_eq.trans
+    (MulOpposite.opLinearEquiv k).symm.finrank_eq
 
 /-- Semisimplicity of the quotient by the Jacobson radical is left-right symmetric. -/
 theorem isSemisimpleRing_quotient_jacobson_mulOpposite_iff :

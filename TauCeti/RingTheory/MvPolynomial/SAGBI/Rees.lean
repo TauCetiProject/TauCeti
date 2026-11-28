@@ -10,6 +10,7 @@ public import TauCeti.Data.Finsupp.MonomialOrder.Weight
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPolynomial.ToricIdeal.WeightedHomogeneous
 
 /-!
 # The Rees presentation of a weight degeneration of a subalgebra
@@ -121,19 +122,9 @@ theorem exists_finsupp_sub_sum_mem_weightFiltrationLT
     rw [Finsupp.sum_sub, hsum]
     ring
   rw [heq]
-  refine add_mem (mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
-    (Submodule.sum_mem _ fun j _ ↦ mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent] at hx
-    have hxn : Finsupp.weight d x ≠ n := fun h ↦ hx (by simp [h])
-    have hxP : x ∈ P.support := mem_support_iff.2 fun h ↦ hx (by simp [h])
-    exact lt_of_le_of_ne (mem_weightFiltration_iff.1 hP x hxP) hxn
-  -- An exponent of `h j * Q j` is a sum `y + z` with `weight d y + e j = n` and
-  -- `weight d z < e j`.
-  · obtain ⟨y, hy, z, hz, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hx)
-    have := hdeg j y hy
-    have := mem_weightFiltrationLT_iff.1 (hQ j) z hz
-    rw [map_add]
-    omega
+  exact mem_weightFiltrationLT_iff.2 fun x hx ↦
+    weight_sub_weightedHomogeneousComponent_add_sum_lt d e (mem_weightFiltration_iff.1 hP)
+      (fun j _ ↦ hdeg j) (fun j _ ↦ mem_weightFiltrationLT_iff.1 (hQ j)) hx
 
 /-- **Standard representations.** Let each `c i` have weight at most `d i` with component `g i`
 of weight `d i`, let polynomials `r j`, weighted homogeneous of weight `e j`, generate the kernel
@@ -186,10 +177,8 @@ theorem ker_weightReesAeval_eq_span
     RingHom.ker (weightReesAeval c d) =
       Ideal.span (Set.range fun j ↦ weightHomogenization R d (e j) (r j - Q j)) := by
   classical
-  have hF (j : J) : r j - Q j ∈ weightFiltration R d (e j) := by
-    rw [← weightFiltrationLT_sup_weightedHomogeneousSubmodule]
-    exact sub_mem (Submodule.mem_sup_right ((mem_weightedHomogeneousSubmodule R d _ _).2 (hr j)))
-      (Submodule.mem_sup_left (hQ j))
+  have hF (j : J) : r j - Q j ∈ weightFiltration R d (e j) :=
+    sub_mem_weightFiltration_of_isWeightedHomogeneous (hr j) (hQ j)
   refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 ?_)
   · -- Decompose `f` by the weight `weight d x + k` of its monomials `Y^x tᵏ`: its part of weight
     -- `n` is the homogenization in degree `n` of the coefficient of `tⁿ` in `weightReesHom R d f`.
@@ -255,21 +244,11 @@ theorem ker_weightReesAeval_eq_span_of_toricIdeal_eq_span
     RingHom.ker (weightReesAeval c fun i ↦ Finsupp.weight w (a i)) =
       Ideal.span (Set.range fun j ↦ weightHomogenization R (fun i ↦ Finsupp.weight w (a i))
         (Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) (u j))
-        (monomial (u j) 1 - monomial (v j) 1 - Q j)) := by
-  refine ker_weightReesAeval_eq_span hc ha
-    (by rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ]) (fun j ↦ ?_) hQ hQc
-  -- The binomial `Y^(u j) - Y^(v j)` is weighted homogeneous, as `A (u j) = A (v j)`.
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim (monomial (u j) (1 : R) - monomial (v j) 1) 0]
-    exact isWeightedHomogeneous_zero R _ _
-  have huv : Finsupp.linearCombination ℕ a (u j) = Finsupp.linearCombination ℕ a (v j) :=
-    TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1
-      (by rw [hJ]; exact Ideal.subset_span ⟨j, rfl⟩)
-  have hw (x : ι →₀ ℕ) : Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) x =
-      Finsupp.weight w (Finsupp.linearCombination ℕ a x) :=
-    Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a x
-  exact (isWeightedHomogeneous_monomial _ _ _ rfl).sub
-    (isWeightedHomogeneous_monomial _ _ _ (by rw [hw, hw, huv]))
+        (monomial (u j) 1 - monomial (v j) 1 - Q j)) :=
+  ker_weightReesAeval_eq_span hc ha
+    (by rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ])
+    (fun j ↦ TauCeti.isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
+      (deg := Finsupp.weight w) (hJ ▸ Ideal.subset_span ⟨j, rfl⟩)) hQ hQc
 
 end TauCeti.MvPolynomial
 

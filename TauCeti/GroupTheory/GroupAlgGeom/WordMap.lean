@@ -48,7 +48,9 @@ without solutions, whose coordinate groups are trivial.
   `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_eq_iff`: every coordinate-group
   homomorphism comes from a word map, unique up to agreement on the algebraic set.
 * `TauCeti.GroupAlgGeom.CoordGroup.exists_mulEquiv_iff_exists_equiv_isWordMap`: algebraic sets
-  are isomorphic if and only if their coordinate groups are isomorphic over the coefficients.
+  are isomorphic if and only if their coordinate groups are isomorphic over the coefficients;
+  `TauCeti.GroupAlgGeom.coordGroup_iso_iff_wordMap_iso` is the same criterion with the two
+  morphisms given by tuples of words.
 
 ## References
 
@@ -84,7 +86,7 @@ theorem isWordMap_iff {f : V ι S → V ι T} :
 
 /-- The identity of an algebraic set is a morphism, given by the tuple of variables. -/
 theorem isWordMap_id : IsWordMap (id : V ι S → V ι S) :=
-  ⟨fun x => inr (FreeGroup.of x), fun v => (wordMap_id (ι := ι) v.1).symm⟩
+  ⟨fun x => inr (FreeGroup.of x), fun v => (wordMap_id (ι := ι) v.val).symm⟩
 
 /-- Morphisms of algebraic sets compose; the composite is given by substituting the first tuple
 of words into the second. -/
@@ -160,12 +162,12 @@ variable {ι S T U}
 /-- A coefficient-preserving homomorphism `φ : Γ(T) → Γ(S)` maps solutions of `S` to solutions
 of `T`: a solution of `S`, viewed as a homomorphism `Γ(S) → H`, is precomposed with `φ`. -/
 def comap (φ : GHom (coeff ι T) (coeff ι S)) (v : V ι S) : V ι T :=
-  homEquiv ι T ((evalGHom v.1 v.2).comp φ)
+  homEquiv ι T ((evalGHom v.val v.property).comp φ)
 
 /-- Evaluation at `comap φ v` is evaluation at `v` precomposed with `φ`. -/
 @[simp]
 theorem evalGHom_comap (φ : GHom (coeff ι T) (coeff ι S)) (v : V ι S) :
-    evalGHom (comap φ v : Y → H) (comap φ v).2 = (evalGHom v.1 v.2).comp φ :=
+    evalGHom (comap φ v : Y → H) (comap φ v).property = (evalGHom v.val v.property).comp φ :=
   (homEquiv ι T).symm_apply_apply _
 
 /-- The coordinates of `comap φ v` are the values at `v` of the images of the variables
@@ -173,7 +175,7 @@ under `φ`. -/
 @[simp]
 theorem comap_apply_coe (φ : GHom (coeff ι T) (coeff ι S)) (v : V ι S) (y : Y) :
     (comap φ v : Y → H) y =
-      evalGHom v.1 v.2 (φ ((inr (FreeGroup.of y) : GX G Y) : CoordGroup ι T)) := by
+      evalGHom v.val v.property (φ ((inr (FreeGroup.of y) : GX G Y) : CoordGroup ι T)) := by
   simp [comap]
 
 /-- The identity of a coordinate group induces the identity of the algebraic set. -/
@@ -223,7 +225,7 @@ theorem isWordMap_iff_exists_comap_eq {f : V ι S → V ι T} :
   refine ⟨fun ⟨w, hf⟩ => ?_, fun ⟨φ, hφ⟩ => hφ ▸ isWordMap_comap φ⟩
   have hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T) := fun v hv => by
     rw [← hf ⟨v, hv⟩]
-    exact (f ⟨v, hv⟩).2
+    exact (f ⟨v, hv⟩).property
   exact ⟨homOfMapsToWordMap ι S T w hw, funext fun v =>
     Subtype.ext ((comap_homOfMapsToWordMap w hw v).trans (hf v).symm)⟩
 
@@ -234,7 +236,7 @@ noncomputable def gHomEquivWordMap :
     GHom (coeff ι T) (coeff ι S) ≃ {f : V ι S → V ι T // IsWordMap f} :=
   Equiv.ofBijective (fun φ => ⟨comap φ, isWordMap_comap φ⟩)
     ⟨fun _ _ h => comap_injective (congrArg Subtype.val h),
-      fun f => (isWordMap_iff_exists_comap_eq.1 f.2).imp fun _ hφ => Subtype.ext hφ⟩
+      fun f => (isWordMap_iff_exists_comap_eq.1 f.property).imp fun _ hφ => Subtype.ext hφ⟩
 
 /-- The morphism corresponding to a coordinate-group homomorphism is the map it induces. -/
 @[simp]
@@ -275,4 +277,34 @@ theorem exists_mulEquiv_iff_exists_equiv_isWordMap :
       (MonoidHom.ext fun x => by simpa using DFunLike.congr_fun h₁ x), φ.map_coeff⟩
 
 end CoordGroup
+
+/-- **Isomorphism of algebraic sets is isomorphism of coordinate groups**, in terms of words: the
+coordinate groups of `S ⊆ G[X]` and `T ⊆ G[Y]` are isomorphic under `G` exactly when there are
+tuples of words `w : Y → G[X]` and `w' : X → G[Y]` whose word maps carry `V_H(S)` and `V_H(T)`
+into each other and are mutually inverse on them. This holds for an arbitrary coefficient
+homomorphism `ι`, empty algebraic sets included. It is
+`CoordGroup.exists_mulEquiv_iff_exists_equiv_isWordMap` with the two morphisms written out by
+their representing words. -/
+theorem coordGroup_iso_iff_wordMap_iso (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y)) :
+    (∃ e : CoordGroup ι T ≃* CoordGroup ι S,
+        e.toMonoidHom.comp (CoordGroup.coeff ι T) = CoordGroup.coeff ι S) ↔
+      ∃ (w : Y → GX G X) (w' : X → GX G Y),
+        Set.MapsTo (wordMap ι w) (V ι S) (V ι T) ∧ Set.MapsTo (wordMap ι w') (V ι T) (V ι S) ∧
+        Set.EqOn (wordMap ι w' ∘ wordMap ι w) id (V ι S) ∧
+        Set.EqOn (wordMap ι w ∘ wordMap ι w') id (V ι T) := by
+  simp only [MonoidHom.ext_iff, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  rw [CoordGroup.exists_mulEquiv_iff_exists_equiv_isWordMap]
+  constructor
+  · rintro ⟨e, ⟨w, hw⟩, ⟨w', hw'⟩⟩
+    have hS (v : V ι S) : wordMap ι w v = e v := (hw v).symm
+    have hT (v : V ι T) : wordMap ι w' v = e.symm v := (hw' v).symm
+    refine ⟨w, w', fun v hv ↦ hS ⟨v, hv⟩ ▸ (e ⟨v, hv⟩).property,
+      fun v hv ↦ hT ⟨v, hv⟩ ▸ (e.symm ⟨v, hv⟩).property, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
+    · simp only [Function.comp_apply, hS ⟨v, hv⟩, hT, Equiv.symm_apply_apply, id]
+    · simp only [Function.comp_apply, hT ⟨v, hv⟩, hS, Equiv.apply_symm_apply, id]
+  · rintro ⟨w, w', hw, hw', hww', hw'w⟩
+    refine ⟨⟨fun v ↦ ⟨wordMap ι w v, hw v.property⟩, fun v ↦ ⟨wordMap ι w' v, hw' v.property⟩,
+      fun v ↦ Subtype.ext (hww' v.property), fun v ↦ Subtype.ext (hw'w v.property)⟩,
+      ⟨w, fun _ ↦ rfl⟩, ⟨w', fun _ ↦ rfl⟩⟩
+
 end TauCeti.GroupAlgGeom

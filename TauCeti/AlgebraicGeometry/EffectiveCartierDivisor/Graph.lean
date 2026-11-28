@@ -111,7 +111,7 @@ def graphDivisor : yoneda.obj (Over.mk f) ⟶ (relativeEffectiveCartierSubfuncto
 @[simp]
 lemma graphDivisor_app_apply_val {T : (Over S)ᵒᵖ} (x : T.unop ⟶ Over.mk f) :
     (ConcreteCategory.hom (C := Type u) (X := T.unop ⟶ Over.mk f)
-      (Y := (relativeEffectiveCartierSubfunctor f).obj T) ((graphDivisor f).app T) x).1 =
+      (Y := (relativeEffectiveCartierSubfunctor f).obj T) ((graphDivisor f).app T) x).val =
       (graphSection x).ker :=
   (rfl)
 
@@ -121,6 +121,15 @@ lemma graphDivisor_app_comp {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') (x : T.unop 
     (graphDivisor f).app T' (φ.unop ≫ x) =
       (relativeEffectiveCartierSubfunctor f).toFunctor.map φ ((graphDivisor f).app T x) :=
   Subtype.ext (ker_graphSection_comp φ.unop x)
+
+/-- The graph of a point obtained by composition is the pullback of the original graph. -/
+lemma graphDivisor_app_eq_map_of_comp_eq {T T' : Over S} (g : T' ⟶ T)
+    (x : T ⟶ Over.mk f) {y : T' ⟶ Over.mk f} (h : g ≫ x = y) :
+    (graphDivisor f).app (Opposite.op T') y =
+      (relativeEffectiveCartierSubfunctor f).toFunctor.map g.op
+        ((graphDivisor f).app (Opposite.op T) x) := by
+  subst y
+  exact graphDivisor_app_comp g.op x
 
 /-- **Distinct points have distinct graph divisors**: for every scheme `T` over `S`, the graph
 divisor is injective on `T`-points. -/

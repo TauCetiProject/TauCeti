@@ -101,9 +101,10 @@ theorem sum_specialFiberMultiplicity_mul_intersectionNumber_eq_zero
         (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
       (toBase.specialFiberMultiplicity π η : ℤ) * LineBundleClass.intersectionNumber k ι
         (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX η.2).toInvertibleSheaf)⁻¹ = 0 := by
+          hX η.property).toInvertibleSheaf)⁻¹ = 0 := by
+  have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   have h := congrArg (LineBundleClass.intersectionNumber k ι)
-    (toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hX hη hπ hreg)
+    (toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hη hπ hreg)
   rwa [LineBundleClass.intersectionNumber_prod_of_isIntegral,
     LineBundleClass.intersectionNumber_one, Finset.sum_congr rfl fun η _ ↦
       LineBundleClass.intersectionNumber_pow_of_isIntegral k ι _ _] at h
@@ -131,13 +132,13 @@ theorem specialFiberMultiplicity_mul_intersectionNumber_self (hX : ∀ x : X, co
     (toBase.specialFiberMultiplicity π j : ℤ) * LineBundleClass.intersectionNumber k
         (vanishingIdeal ⟨closure {(j : X)}, isClosed_closure⟩).subschemeι
         (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.2).toInvertibleSheaf)⁻¹ =
+          hX j.property).toInvertibleSheaf)⁻¹ =
       -∑ η ∈ ((toBase.finite_setOf_base_eq_closedPoint
           (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset).erase j,
         (toBase.specialFiberMultiplicity π η : ℤ) * LineBundleClass.intersectionNumber k
           (vanishingIdeal ⟨closure {(j : X)}, isClosed_closure⟩).subschemeι
           (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-            hX η.2).toInvertibleSheaf)⁻¹ := by
+            hX η.property).toInvertibleSheaf)⁻¹ := by
   have h := toBase.sum_specialFiberMultiplicity_mul_intersectionNumber_eq_zero k
     (vanishingIdeal ⟨closure {(j : X)}, isClosed_closure⟩).subschemeι hX hη hπ hreg
   rw [← Finset.add_sum_erase _ _ (by simpa using hj)] at h
@@ -164,7 +165,7 @@ theorem intersectionNumber_self_nonpos_of_base_eq_closedPoint (hX : ∀ x : X, c
     LineBundleClass.intersectionNumber k
         (vanishingIdeal ⟨closure {(j : X)}, isClosed_closure⟩).subschemeι
         (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.2).toInvertibleSheaf)⁻¹ ≤ 0 := by
+          hX j.property).toInvertibleSheaf)⁻¹ ≤ 0 := by
   -- If `R` were a field, its generic point would map to the closed point.
   have hπ0 := toBase.ne_zero_of_base_ne_closedPoint hη hπ
   have hm := toBase.specialFiberMultiplicity_pos hη (hπ ▸ Ideal.mem_span_singleton_self π) hπ0 j hj

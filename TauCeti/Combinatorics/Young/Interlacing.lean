@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.Combinatorics.Young.Kostka
 import TauCeti.Combinatorics.Young.OfRowLens
+import TauCeti.Combinatorics.Young.Sublevel
 
 /-!
 # Interlacing shapes and the branching of bounded tableaux
@@ -61,6 +62,11 @@ way keeps every type non-dependent, so the resulting sum decomposition
   of the remaining letters occurs.
 * `TauCeti.BoundedSSYT.fiberEquiv`: the tableaux of shape `μ` in `n + 1` letters with a given
   sub-shape `ν` of small entries are the tableaux of shape `ν` in `n` letters.
+* `TauCeti.BoundedSSYT.sigmaEquiv`: the total form, the tableaux of shape `μ` in `n + 1` letters
+  are the pairs of an interlacing shape `ν` with at most `n` rows and a tableau of shape `ν` in
+  `n` letters.
+* `YoungDiagram.rowLenDiff_injective`: a shape interlacing `μ` is determined by the differences
+  `μ.rowLen s - ν.rowLen s` of the row lengths.
 * `TauCeti.BoundedSSYT.sum_eq_sum_interlacingShapes`: the resulting decomposition of a sum over
   the tableaux of shape `μ`, indexed by the interlacing shapes, and
   `TauCeti.BoundedSSYT.card_eq_sum_interlacingShapes`: its counting form, the branching rule for
@@ -115,6 +121,26 @@ theorem InterlacedBy.mem_of_lt (h : InterlacedBy μ ν) {i₁ i₂ j : ℕ} (hi 
     ((_root_.YoungDiagram.mem_iff_lt_rowLen.mp hc).trans_le
       ((μ.rowLen_anti (i₁ + 1) i₂ hi).trans (h.rowLen_succ_le i₁)))
 
+/-- **A horizontal strip is no longer than the first row of the larger shape**: if `ν` interlaces
+`μ`, then `μ / ν` has at most `μ₀` cells, since it has at most one cell in each column. -/
+theorem InterlacedBy.card_le_card_add_rowLen_zero (h : InterlacedBy μ ν) :
+    μ.card ≤ ν.card + μ.rowLen 0 := by
+  obtain ⟨L, hL⟩ : ∃ L, μ.colLen 0 ≤ L + 1 := ⟨μ.colLen 0, Nat.le_succ _⟩
+  have hν : ∑ i ∈ Finset.range L, ν.rowLen i ≤ ν.card := by
+    rw [sum_range_rowLen_eq_card_filter_fst]
+    exact Finset.card_filter_le _ _
+  have hle : ∑ i ∈ Finset.range L, μ.rowLen (i + 1) ≤ ∑ i ∈ Finset.range L, ν.rowLen i :=
+    Finset.sum_le_sum fun i _ => h.rowLen_succ_le i
+  rw [μ.card_eq_sum_range_rowLen hL, Finset.sum_range_succ']
+  omega
+
+/-- An interlacing shape is at most one cell shorter in every column. -/
+theorem InterlacedBy.colLen_le_colLen_add_one (h : InterlacedBy μ ν) (j : ℕ) :
+    μ.colLen j ≤ ν.colLen j + 1 := by
+  by_contra! hlt
+  have := h.mem_of_lt (Nat.lt_succ_self _) (_root_.YoungDiagram.mem_iff_lt_colLen.mpr hlt)
+  exact lt_irrefl _ (_root_.YoungDiagram.mem_iff_lt_colLen.mp this)
+
 /-- **The shapes interlacing `μ` with at most `n` rows.**  These index the summands of the
 `GLₙ₊₁ ↓ GLₙ` branching rule; the row bound is genuine, since a shape may interlace `μ` and still
 be too tall to be written in `n` letters. -/
@@ -145,8 +171,8 @@ theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n :
   · refine rowLen_injective (funext fun i => ?_)
     rcases lt_or_ge i n with hi | hi
     · exact congrFun h ⟨i, hi⟩
-    · rw [rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₁).2.trans hi),
-        rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₂).2.trans hi)]
+    · rw [rowLen_eq_zero_iff.mpr ((mem_interlacingShapes.mp hν₁).2.trans hi),
+        rowLen_eq_zero_iff.mpr ((mem_interlacingShapes.mp hν₂).2.trans hi)]
   · have hr' : ∀ j : Fin n, μ.rowLen ((j : ℕ) + 1) ≤ r j ∧ r j ≤ μ.rowLen j := fun j =>
       Finset.mem_Icc.mp (Fintype.mem_piFinset.mp hr j)
     have hanti : Antitone r := fun j k hjk => by
@@ -162,8 +188,36 @@ theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n :
       rw [h]
       exact hr' ⟨i, hi⟩
     · rw [rowLen_ofRowLensFin_eq_zero_of_le r hanti hi,
-        rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+        rowLen_eq_zero_iff.mpr (hμ.trans (by omega))]
       exact ⟨le_rfl, Nat.zero_le _⟩
+
+/-- The differences `μ.rowLen s - ν.rowLen s` of the row lengths of two Young diagrams, for the
+`n` rows `s < n`. -/
+noncomputable def rowLenDiff {n : ℕ} (μ ν : _root_.YoungDiagram) : Fin n →₀ ℕ :=
+  Finsupp.equivFunOnFinite.symm fun s => μ.rowLen s - ν.rowLen s
+
+@[simp]
+theorem rowLenDiff_apply {n : ℕ} (μ ν : _root_.YoungDiagram) (s : Fin n) :
+    rowLenDiff μ ν s = μ.rowLen s - ν.rowLen s := by
+  simp [rowLenDiff]
+
+/-- A shape interlacing `μ` is determined by the differences of the row lengths, when `μ` has at
+most `n` rows. -/
+theorem rowLenDiff_injective {N n : ℕ} (hμ : μ.colLen 0 ≤ n) :
+    Function.Injective fun ν : interlacingShapes N μ => (rowLenDiff μ ν.val : Fin n →₀ ℕ) := by
+  intro ν₁ ν₂ h_eq
+  have hle (ν : interlacingShapes N μ) := (mem_interlacingShapes.mp ν.property).1
+  refine Subtype.ext (rowLen_injective (funext fun s => ?_))
+  rcases lt_or_ge s n with hs | hs
+  · have := DFunLike.congr_fun h_eq ⟨s, hs⟩
+    simp only [rowLenDiff_apply] at this
+    have h₁ := (hle ν₁).rowLen_le s
+    have h₂ := (hle ν₂).rowLen_le s
+    omega
+  · have h_zero (ν : interlacingShapes N μ) : ν.val.rowLen s = 0 :=
+      Nat.eq_zero_of_le_zero (((hle ν).rowLen_le s).trans_eq
+        (rowLen_eq_zero_iff.mpr (hμ.trans hs)))
+    rw [h_zero, h_zero]
 
 end YoungDiagram
 
@@ -187,12 +241,12 @@ theorem forall_betaNumber_le_iff_interlacedBy {N : ℕ} {μ ν : YoungDiagram}
     · by_cases hi : i + 1 < N
       · have hlt := ((h' (i + 1) i hi (by omega)).not).mpr (by omega)
         omega
-      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+      · rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans (by omega))]
         exact Nat.zero_le _
     · by_cases hi : i < N
       · have := (h' i i hi hi).mpr le_rfl
         omega
-      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hν.trans (by omega))]
+      · rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hν.trans (by omega))]
         exact Nat.zero_le _
   · intro h i j
     rw [Fin.le_def]
@@ -213,23 +267,20 @@ variable {n : ℕ} {μ ν : _root_.YoungDiagram}
 
 /-- **The sub-shape of small entries**: the cells of `μ` whose entry is smaller than the top letter
 `n`.  It is a Young diagram because the entries increase weakly to the right and downwards. -/
-def restrictShape (T : BoundedSSYT (n + 1) μ) : _root_.YoungDiagram where
-  cells := μ.cells.filter fun c => T.1 c.1 c.2 < n
-  isLowerSet := by
-    rintro c d hdc hc
-    simp only [Finset.coe_filter, Set.mem_ofPred_eq] at hc ⊢
-    exact ⟨μ.isLowerSet hdc hc.1,
-      lt_of_le_of_lt (SemistandardYoungTableau.entry_le_of_le T.1 hdc.1 hdc.2 hc.1) hc.2⟩
+def restrictShape (T : BoundedSSYT (n + 1) μ) : _root_.YoungDiagram :=
+  μ.strictSublevel (fun c => T.val c.val.1 c.val.2)
+    (fun _ d h => SemistandardYoungTableau.entry_le_of_le T.val h.1 h.2 d.property) n
 
 @[simp]
 theorem mem_restrictShape {T : BoundedSSYT (n + 1) μ} {i j : ℕ} :
-    ((i, j) : ℕ × ℕ) ∈ restrictShape T ↔ ((i, j) : ℕ × ℕ) ∈ μ ∧ T.1 i j < n :=
-  Finset.mem_filter
+    ((i, j) : ℕ × ℕ) ∈ restrictShape T ↔ ((i, j) : ℕ × ℕ) ∈ μ ∧ T.val i j < n :=
+  (YoungDiagram.mem_strictSublevel (hf := _)).trans
+    ⟨fun ⟨hc, hlt⟩ => ⟨hc, hlt⟩, fun ⟨hc, hlt⟩ => ⟨hc, hlt⟩⟩
 
 /-- Reading the defining property of `TauCeti.BoundedSSYT.restrictShape` off an equation naming
 it. -/
 theorem mem_iff_of_restrictShape_eq {T : BoundedSSYT (n + 1) μ} (hν : restrictShape T = ν)
-    {i j : ℕ} : ((i, j) : ℕ × ℕ) ∈ ν ↔ ((i, j) : ℕ × ℕ) ∈ μ ∧ T.1 i j < n := by
+    {i j : ℕ} : ((i, j) : ℕ × ℕ) ∈ ν ↔ ((i, j) : ℕ × ℕ) ∈ μ ∧ T.val i j < n := by
   subst hν; exact mem_restrictShape
 
 /-- The sub-shape of small entries is a sub-diagram. -/
@@ -242,10 +293,10 @@ carries an entry at most `n`, so column strictness makes the entry of the cell d
 smaller than `n`, and that cell is therefore small: this is the inequality `μᵢ₊₁ ≤ νᵢ`. -/
 theorem interlacedBy_restrictShape (T : BoundedSSYT (n + 1) μ) :
     YoungDiagram.InterlacedBy μ (restrictShape T) :=
-  fun i => ⟨YoungDiagram.le_rowLen_of_forall_mem fun j hj => by
+  fun i => ⟨YoungDiagram.le_rowLen_iff_forall_mem.mpr fun j hj => by
       have hc : ((i + 1, j) : ℕ × ℕ) ∈ μ := _root_.YoungDiagram.mem_iff_lt_rowLen.mpr hj
-      have hlt : T.1 i j < T.1 (i + 1) j := T.1.col_strict (Nat.lt_succ_self i) hc
-      have hbound : T.1 (i + 1) j < n + 1 := entry_lt T hc
+      have hlt : T.val i j < T.val (i + 1) j := T.val.col_strict (Nat.lt_succ_self i) hc
+      have hbound : T.val (i + 1) j < n + 1 := entry_lt T hc
       exact mem_restrictShape.mpr ⟨μ.up_left_mem (Nat.le_succ i) le_rfl hc, by omega⟩,
     YoungDiagram.rowLen_le_of_le (restrictShape_le T) i⟩
 
@@ -257,7 +308,7 @@ theorem colLen_zero_restrictShape_le (T : BoundedSSYT (n + 1) μ) :
   have hmem : ((n, 0) : ℕ × ℕ) ∈ restrictShape T :=
     _root_.YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le h)
   obtain ⟨hμ, hlt⟩ := mem_restrictShape.mp hmem
-  exact absurd (SemistandardYoungTableau.le_entry T.1 hμ) (by omega)
+  exact absurd (SemistandardYoungTableau.le_entry T.val hμ) (by omega)
 
 /-- The sub-shape of small entries is one of the shapes the branching rule sums over. -/
 theorem restrictShape_mem_interlacingShapes (T : BoundedSSYT (n + 1) μ) :
@@ -271,21 +322,21 @@ identifying it, so that the result lives in a type that does not depend on `T`. 
 form `TauCeti.BoundedSSYT.restrict` is part of the interface. -/
 private def restrictTableau (T : BoundedSSYT (n + 1) μ) (ν : _root_.YoungDiagram)
     (hν : restrictShape T = ν) : _root_.SemistandardYoungTableau ν where
-  entry := fun i j => if ((i, j) : ℕ × ℕ) ∈ ν then T.1 i j else 0
+  entry := fun i j => if ((i, j) : ℕ × ℕ) ∈ ν then T.val i j else 0
   row_weak' := fun {i j₁ j₂} hj hc => by
     have hc₁ : ((i, j₁) : ℕ × ℕ) ∈ ν := ν.up_left_mem le_rfl hj.le hc
     rw [ite_eq_left hc₁, ite_eq_left hc]
-    exact T.1.row_weak hj ((mem_iff_of_restrictShape_eq hν).mp hc).1
+    exact T.val.row_weak hj ((mem_iff_of_restrictShape_eq hν).mp hc).1
   col_strict' := fun {i₁ i₂ j} hi hc => by
     have hc₁ : ((i₁, j) : ℕ × ℕ) ∈ ν := ν.up_left_mem hi.le le_rfl hc
     rw [ite_eq_left hc₁, ite_eq_left hc]
-    exact T.1.col_strict hi ((mem_iff_of_restrictShape_eq hν).mp hc).1
+    exact T.val.col_strict hi ((mem_iff_of_restrictShape_eq hν).mp hc).1
   zeros' := fun {_ _} hc => ite_eq_right hc
 
 /-- The entries of the filling underlying `TauCeti.BoundedSSYT.restrict`. -/
 private theorem restrictTableau_apply (T : BoundedSSYT (n + 1) μ) (ν : _root_.YoungDiagram)
     (hν : restrictShape T = ν) (i j : ℕ) :
-    restrictTableau T ν hν i j = if ((i, j) : ℕ × ℕ) ∈ ν then T.1 i j else 0 :=
+    restrictTableau T ν hν i j = if ((i, j) : ℕ × ℕ) ∈ ν then T.val i j else 0 :=
   (rfl)
 
 /-- **Erasing the top letter**: a tableau of shape `μ` in the letters `{0, …, n}` restricts to a
@@ -302,7 +353,7 @@ def restrict (T : BoundedSSYT (n + 1) μ) (ν : _root_.YoungDiagram) (hν : rest
 @[simp]
 theorem restrict_apply (T : BoundedSSYT (n + 1) μ) (ν : _root_.YoungDiagram)
     (hν : restrictShape T = ν) (i j : ℕ) :
-    (restrict T ν hν).1 i j = if ((i, j) : ℕ × ℕ) ∈ ν then T.1 i j else 0 :=
+    (restrict T ν hν).val i j = if ((i, j) : ℕ × ℕ) ∈ ν then T.val i j else 0 :=
   restrictTableau_apply T ν hν i j
 
 /-- **Erasing the top letter changes no other multiplicity**: the cells of `μ` carrying a letter
@@ -311,11 +362,11 @@ tableaux agree, so each such letter occupies as many cells of `ν` as it does of
 @[simp]
 theorem content_restrict (T : BoundedSSYT (n + 1) μ) (hν : restrictShape T = ν) {i : ℕ}
     (hi : i < n) :
-    SemistandardYoungTableau.content (restrict T ν hν).1 i
-      = SemistandardYoungTableau.content T.1 i := by
+    SemistandardYoungTableau.content (restrict T ν hν).val i
+      = SemistandardYoungTableau.content T.val i := by
   rw [SemistandardYoungTableau.content_apply, SemistandardYoungTableau.content_apply]
-  have hcells : (ν.cells.filter fun c => (restrict T ν hν).1 c.1 c.2 = i)
-      = μ.cells.filter fun c => T.1 c.1 c.2 = i := by
+  have hcells : (ν.cells.filter fun c => (restrict T ν hν).val c.1 c.2 = i)
+      = μ.cells.filter fun c => T.val c.1 c.2 = i := by
     ext c
     obtain ⟨a, b⟩ := c
     simp only [Finset.mem_filter, _root_.YoungDiagram.mem_cells, restrict_apply]
@@ -329,12 +380,12 @@ interface. -/
 private def extendTableau (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν) :
     _root_.SemistandardYoungTableau μ where
   entry := fun i j =>
-    if ((i, j) : ℕ × ℕ) ∈ ν then T.1 i j else if ((i, j) : ℕ × ℕ) ∈ μ then n else 0
+    if ((i, j) : ℕ × ℕ) ∈ ν then T.val i j else if ((i, j) : ℕ × ℕ) ∈ μ then n else 0
   row_weak' := fun {i j₁ j₂} hj hc => by
     by_cases hc₂ : ((i, j₂) : ℕ × ℕ) ∈ ν
     · have hc₁ : ((i, j₁) : ℕ × ℕ) ∈ ν := ν.up_left_mem le_rfl hj.le hc₂
       rw [ite_eq_left hc₁, ite_eq_left hc₂]
-      exact T.1.row_weak hj hc₂
+      exact T.val.row_weak hj hc₂
     · rw [ite_eq_right hc₂, ite_eq_left hc]
       by_cases hc₁ : ((i, j₁) : ℕ × ℕ) ∈ ν
       · rw [ite_eq_left hc₁]
@@ -345,7 +396,7 @@ private def extendTableau (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT
     rw [ite_eq_left hc₁]
     by_cases hc₂ : ((i₂, j) : ℕ × ℕ) ∈ ν
     · rw [ite_eq_left hc₂]
-      exact T.1.col_strict hi hc₂
+      exact T.val.col_strict hi hc₂
     · rw [ite_eq_right hc₂, ite_eq_left hc]
       exact entry_lt T hc₁
   zeros' := fun {_ _} hc => by
@@ -355,7 +406,7 @@ private def extendTableau (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT
 private theorem extendTableau_apply (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν)
     (i j : ℕ) :
     extendTableau h T i j =
-      if ((i, j) : ℕ × ℕ) ∈ ν then T.1 i j else if ((i, j) : ℕ × ℕ) ∈ μ then n else 0 :=
+      if ((i, j) : ℕ × ℕ) ∈ ν then T.val i j else if ((i, j) : ℕ × ℕ) ∈ μ then n else 0 :=
   (rfl)
 
 /-- **Restoring the top letter**: filling every cell of `μ / ν` with the letter `n` turns a tableau
@@ -372,8 +423,8 @@ def extend (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν) : Bounde
 /-- The entries of an extended tableau. -/
 @[simp]
 theorem extend_apply (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν) (i j : ℕ) :
-    (extend h T).1 i j =
-      if ((i, j) : ℕ × ℕ) ∈ ν then T.1 i j else if ((i, j) : ℕ × ℕ) ∈ μ then n else 0 :=
+    (extend h T).val i j =
+      if ((i, j) : ℕ × ℕ) ∈ ν then T.val i j else if ((i, j) : ℕ × ℕ) ∈ μ then n else 0 :=
   extendTableau_apply h T i j
 
 /-- Restoring the top letter on the cells of `μ / ν` gives back `ν` as the sub-shape of small
@@ -391,7 +442,7 @@ whose sub-shape of small entries is a given `ν` are exactly the tableaux of sha
 letters `{0, …, n - 1}`: erasing and restoring the top letter are mutually inverse. -/
 def fiberEquiv (h : YoungDiagram.InterlacedBy μ ν) :
     {T : BoundedSSYT (n + 1) μ // restrictShape T = ν} ≃ BoundedSSYT n ν where
-  toFun T := restrict T.1 ν T.2
+  toFun T := restrict T.val ν T.property
   invFun T := ⟨extend h T, restrictShape_extend h T⟩
   left_inv := by
     rintro ⟨T, hT⟩
@@ -402,12 +453,13 @@ def fiberEquiv (h : YoungDiagram.InterlacedBy μ ν) :
     · rw [ite_eq_right hν]
       by_cases hμ : ((i, j) : ℕ × ℕ) ∈ μ
       · rw [ite_eq_left hμ]
-        have hnot : ¬ T.1 i j < n := fun hlt => hν ((mem_iff_of_restrictShape_eq hT).mpr ⟨hμ, hlt⟩)
+        have hnot : ¬ T.val i j < n := fun hlt => hν ((mem_iff_of_restrictShape_eq hT).mpr ⟨hμ,
+            hlt⟩)
         have hlt := entry_lt T hμ
-        have heq : T.1 i j = n := by omega
+        have heq : T.val i j = n := by omega
         exact heq.symm
       · rw [ite_eq_right hμ]
-        exact (T.1.zeros hμ).symm
+        exact (T.val.zeros hμ).symm
   right_inv := by
     intro T
     refine Subtype.ext (_root_.SemistandardYoungTableau.ext fun i j => ?_)
@@ -415,19 +467,46 @@ def fiberEquiv (h : YoungDiagram.InterlacedBy μ ν) :
     by_cases hν : ((i, j) : ℕ × ℕ) ∈ ν
     · rw [ite_eq_left hν, ite_eq_left hν]
     · rw [ite_eq_right hν]
-      exact (T.1.zeros hν).symm
+      exact (T.val.zeros hν).symm
 
 /-- The branching bijection erases the top letter. -/
 @[simp]
 theorem fiberEquiv_apply (h : YoungDiagram.InterlacedBy μ ν)
     (T : {T : BoundedSSYT (n + 1) μ // restrictShape T = ν}) :
-    fiberEquiv h T = restrict T.1 ν T.2 :=
+    fiberEquiv h T = restrict T.val ν T.property :=
   (rfl)
 
 /-- The inverse of the branching bijection restores the top letter. -/
 @[simp]
 theorem fiberEquiv_symm_apply (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν) :
     (fiberEquiv h).symm T = ⟨extend h T, restrictShape_extend h T⟩ :=
+  (rfl)
+
+/-- **The branching bijection.**  A tableau of shape `μ` in the letters `{0, …, n}` is a shape `ν`
+interlacing `μ` with at most `n` rows together with a tableau of shape `ν` in the letters
+`{0, …, n - 1}`, the top letter filling `μ / ν`: the total space of `fiberEquiv`. -/
+def sigmaEquiv (n : ℕ) (μ : _root_.YoungDiagram) :
+    (Σ ν : YoungDiagram.interlacingShapes n μ, BoundedSSYT n ν) ≃ BoundedSSYT (n + 1) μ :=
+  (Equiv.sigmaCongrRight fun ν : YoungDiagram.interlacingShapes n μ =>
+    ((Equiv.subtypeEquivRight fun _ => Subtype.ext_iff).trans
+      (fiberEquiv (YoungDiagram.mem_interlacingShapes.mp ν.property).1)).symm).trans
+    (Equiv.sigmaFiberEquiv fun T : BoundedSSYT (n + 1) μ =>
+      (⟨restrictShape T, restrictShape_mem_interlacingShapes T⟩ :
+        YoungDiagram.interlacingShapes n μ))
+
+/-- The branching bijection restores the top letter. -/
+@[simp]
+theorem sigmaEquiv_apply (n : ℕ) (μ : _root_.YoungDiagram)
+    (i : Σ ν : YoungDiagram.interlacingShapes n μ, BoundedSSYT n ν) :
+    sigmaEquiv n μ i = extend (YoungDiagram.mem_interlacingShapes.mp i.1.property).1 i.2 := by
+  simp [sigmaEquiv]
+
+/-- The inverse of the branching bijection records the sub-shape of small entries and erases the
+top letter. -/
+@[simp]
+theorem sigmaEquiv_symm_apply (n : ℕ) (μ : _root_.YoungDiagram) (T : BoundedSSYT (n + 1) μ) :
+    (sigmaEquiv n μ).symm T =
+      ⟨⟨restrictShape T, restrictShape_mem_interlacingShapes T⟩, restrict T _ rfl⟩ :=
   (rfl)
 
 /-- **The branching decomposition of a sum over tableaux**: summing over the tableaux of shape `μ`

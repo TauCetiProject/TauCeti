@@ -98,6 +98,9 @@ such a map from `X`.
   on vanish.
 * `TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`: for `n = 2` and path-connected `X`,
   the colimit is a `K(π₁(X, x), 1)`.
+* `TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups_of_lt`: for `0 < m < n` and a
+  path-connected `X` whose homotopy groups `πₖ(X, x)` vanish for `0 < k < n`, `k ≠ m`, the space
+  `killHomotopyGroups n X x` is a `K(πₘ(X, x), m)`.
 * `TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`: for an `(n - 1)`-connected `X`, the space
   `killHomotopyGroups (n + 1) X x` is a `K(πₙ(X, x), n)`.
 * `TauCeti.isNConnected_killHomotopyGroupsIncl`: for a path-connected `X`, the inclusion is an
@@ -145,8 +148,8 @@ attachments by definition. -/
     (m : ℕ) → Σ ι : Type u, ι → (TopCat.diskBoundary m ⟶ Y)
   | 0 => ⟨PEmpty, PEmpty.elim⟩
   | k + 1 => ⟨Subtype fun _ : Ω^ (Fin k) Y y ↦ n ≤ k, fun q ↦
-      haveI : NeZero k := ⟨((NeZero.pos n).trans_le q.2).ne'⟩
-      GenLoop.diskBoundaryMap q.1⟩
+      haveI : NeZero k := ⟨((NeZero.pos n).trans_le q.property).ne'⟩
+      GenLoop.diskBoundaryMap q.val⟩
 
 /-- The stages of the tower killing the homotopy groups of `(X, x)` from dimension `n` on:
 `killingStage n X x m` is the pointed space obtained from `(X, x)` by the first `m` steps, each
@@ -264,7 +267,7 @@ lemma isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι {m : ℕ} (hm :
   rw [killHomotopyGroupsRelativeCWComplex_attachCells_ι]
   match m, hm with
   | 0, _ => exact inferInstanceAs (IsEmpty PEmpty)
-  | k + 1, hk => exact ⟨fun p ↦ absurd p.2 (by omega)⟩
+  | k + 1, hk => exact ⟨fun p ↦ absurd p.property (by omega)⟩
 
 /-- `TauCeti.killHomotopyGroups n X x` is Hausdorff when `X` is. -/
 instance instT2SpaceKillHomotopyGroups [T2Space X] : T2Space (killHomotopyGroups n X x) :=
@@ -293,7 +296,7 @@ theorem subsingleton_homotopyGroup_killHomotopyGroups [T2Space X] {k : ℕ} (hk 
   -- Step `k + 1` attaches a cell along every generalized loop of dimension `k`, killing `πₖ`.
   have hkill : Subsingleton (π_ k (killingStage n X x (k + 2)).1 (killingStage n X x (k + 2)).2) :=
     subsingleton_homotopyGroup_cellAttachment (X := (killingStage n X x (k + 1)).1)
-      (p := fun q : Subtype fun _ : Ω^ (Fin k) _ (killingStage n X x (k + 1)).2 ↦ n ≤ k ↦ q.1) (by
+      (p := fun q : Subtype fun _ : Ω^ (Fin k) _ (killingStage n X x (k + 1)).2 ↦ n ≤ k ↦ q.val) (by
         refine eq_top_iff.2 fun g _ ↦ Subgroup.subset_normalClosure ?_
         induction g using Quotient.inductionOn with
         | h q => exact ⟨⟨q, hk⟩, rfl⟩)
@@ -320,24 +323,17 @@ theorem surjective_homotopyGroupMap_killHomotopyGroupsIncl [T2Space X] {N : Type
 /-- `TauCeti.killHomotopyGroups n X x` is path-connected when `X` is Hausdorff and path-connected:
 attaching cells of positive dimension creates no new path components. -/
 instance instPathConnectedSpaceKillHomotopyGroups [T2Space X] [PathConnectedSpace X] :
-    PathConnectedSpace (killHomotopyGroups n X x) := by
-  have hsurj := (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (N := Fin 0)
-    (by simpa using NeZero.pos n)).2
-  have : Subsingleton (π_ 0 X x) := HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
-  have : Subsingleton (π_ 0 (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x)) :=
-    hsurj.subsingleton
-  have e := HomotopyGroup.pi0EquivZerothHomotopy (x := killHomotopyGroupsIncl n X x x)
-  exact pathConnectedSpace_iff_zerothHomotopy.2
-    ⟨⟨⟦killHomotopyGroupsIncl n X x x⟧⟩, e.symm.subsingleton⟩
+    PathConnectedSpace (killHomotopyGroups n X x) :=
+  (killHomotopyGroupsRelativeCWComplex n X x).pathConnectedSpace
+    (isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (Nat.zero_le n))
 
 /-- For `n ≥ 2`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` induces an
 isomorphism of fundamental groups at `x`. -/
 def killHomotopyGroupsFundamentalGroupMulEquiv [T2Space X] (hn : 1 < n) :
     FundamentalGroup X x ≃*
       FundamentalGroup (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x) :=
-  MulEquiv.ofBijective (FundamentalGroup.mapOfEq (killHomotopyGroupsIncl n X x).hom rfl)
-    ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq _ rfl).1
-      (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (N := Fin 1) (by simpa using hn)))
+  (killHomotopyGroupsRelativeCWComplex n X x).fundamentalGroupMulEquiv
+    (fun _ hm ↦ isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (by omega)) x
 
 /-- The isomorphism of fundamental groups is the map induced by the inclusion of `X`. -/
 @[simp]
@@ -345,7 +341,7 @@ lemma killHomotopyGroupsFundamentalGroupMulEquiv_apply [T2Space X] (hn : 1 < n)
     (g : FundamentalGroup X x) :
     killHomotopyGroupsFundamentalGroupMulEquiv n X x hn g =
       FundamentalGroup.mapOfEq (killHomotopyGroupsIncl n X x).hom rfl g :=
-  (rfl)
+  (killHomotopyGroupsRelativeCWComplex n X x).fundamentalGroupMulEquiv_apply _ x g
 
 
 /-- For `0 < k < n`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` induces an
@@ -363,6 +359,27 @@ lemma killHomotopyGroupsHomotopyGroupMulEquiv_apply [T2Space X] (k : ℕ) [NeZer
       HomotopyGroup.map (killHomotopyGroupsIncl n X x).hom rfl a :=
   HomotopyGroup.mapHom_apply _ _ a
 
+/-- **Killing the homotopy groups from dimension `n` on of a space with a single homotopy group
+below `n` gives an Eilenberg--Mac Lane space.** For `0 < m < n` and a Hausdorff, path-connected
+space `X` whose homotopy groups `πₖ(X, x)` vanish for `0 < k < n`, `k ≠ m`, the space
+`TauCeti.killHomotopyGroups n X x`, obtained by attaching cells of dimension at least `n + 1`, is
+an Eilenberg--Mac Lane space of type `K(πₘ(X, x), m)`, the isomorphism on `πₘ` being induced by
+the inclusion of `X` (`TauCeti.killHomotopyGroupsHomotopyGroupMulEquiv`). -/
+theorem isEilenbergMacLaneSpace_killHomotopyGroups_of_lt [T2Space X] [PathConnectedSpace X]
+    (m : ℕ) [NeZero m] (hm : m < n)
+    (hX : ∀ k, k ≠ 0 → k < n → k ≠ m → Subsingleton (π_ k X x)) :
+    IsEilenbergMacLaneSpace (π_ m X x) m (killHomotopyGroups n X x)
+      (killHomotopyGroupsIncl n X x x) := by
+  refine .mk inferInstance (fun k hk0 hk ↦ ?_)
+    ⟨(killHomotopyGroupsHomotopyGroupMulEquiv n X x m hm).symm⟩
+  rcases lt_or_ge k n with hkn | hkn
+  · -- Below dimension `n` the inclusion of `X` is an isomorphism of trivial groups.
+    have : NeZero k := ⟨hk0⟩
+    have := hX k hk0 hkn hk
+    exact (killHomotopyGroupsHomotopyGroupMulEquiv n X x k hkn).toEquiv.subsingleton_congr.mp
+      inferInstance
+  · exact subsingleton_homotopyGroup_killHomotopyGroups n X x hkn
+
 /-- **Killing the homotopy groups above dimension `n` of an `(n - 1)`-connected space gives a
 `K(πₙ, n)`.** For `n ≥ 1` and a Hausdorff, path-connected space `X` whose homotopy groups
 `πₖ(X, x)` vanish for `0 < k < n`, the space `TauCeti.killHomotopyGroups (n + 1) X x`, obtained by
@@ -372,16 +389,9 @@ attaching cells of dimension at least `n + 2`, is an Eilenberg--Mac Lane space o
 theorem isEilenbergMacLaneSpace_killHomotopyGroups [T2Space X] [PathConnectedSpace X]
     (hX : ∀ k, k ≠ 0 → k < n → Subsingleton (π_ k X x)) :
     IsEilenbergMacLaneSpace (π_ n X x) n (killHomotopyGroups (n + 1) X x)
-      (killHomotopyGroupsIncl (n + 1) X x x) := by
-  refine .mk inferInstance (fun k hk0 hk ↦ ?_)
-    ⟨(killHomotopyGroupsHomotopyGroupMulEquiv (n + 1) X x n n.lt_succ_self).symm⟩
-  rcases hk.lt_or_gt with hk | hk
-  · -- Below dimension `n` the inclusion of `X` is an isomorphism of trivial groups.
-    have : NeZero k := ⟨hk0⟩
-    have := hX k hk0 hk
-    exact (killHomotopyGroupsHomotopyGroupMulEquiv (n + 1) X x k
-      (hk.trans n.lt_succ_self)).toEquiv.subsingleton_congr.mp inferInstance
-  · exact subsingleton_homotopyGroup_killHomotopyGroups (n + 1) X x hk
+      (killHomotopyGroupsIncl (n + 1) X x x) :=
+  isEilenbergMacLaneSpace_killHomotopyGroups_of_lt (n + 1) X x n n.lt_succ_self
+    fun k hk0 hk hkn ↦ hX k hk0 (by omega)
 
 /-- **Killing the higher homotopy groups of a path-connected space gives a `K(π₁, 1)`.** For a
 Hausdorff, path-connected space `X`, the space `TauCeti.killHomotopyGroups 2 X x` obtained by
@@ -509,10 +519,10 @@ private lemma nullhomotopic_killingAttachingMaps_comp {Y : TopCat.{u}} {y : Y} {
   -- At step `0` no cell is attached, so only the successor case remains.
   match m, i with
   | k + 1, q => by
-    have : NeZero k := ⟨((NeZero.pos n).trans_le q.2).ne'⟩
+    have : NeZero k := ⟨((NeZero.pos n).trans_le q.property).ne'⟩
     -- The image of the attaching loop is trivial in `πₖ(Z, g y)`.
-    exact (HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp g rfl q.1).1
-      ((hZ k rfl q.2).elim _ _)
+    exact (HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp g rfl q.val).1
+      ((hZ k rfl q.property).elim _ _)
 
 /-- **A based map extends over one step of the tower.** If the homotopy group of `Z` vanishes in
 the dimension of the spheres attached at step `m`, every map `g` out of stage `m` extends over
@@ -520,11 +530,9 @@ stage `m + 1`. -/
 theorem _root_.TopCat.Hom.exists_killingStageIncl_comp_eq {m : ℕ}
     (g : (killingStage n X x m).1 ⟶ Z)
     (hZ : ∀ k, m = k + 1 → n ≤ k → Subsingleton (π_ k Z (g (killingStage n X x m).2))) :
-    ∃ g' : (killingStage n X x (m + 1)).1 ⟶ Z, killingStageIncl n X x m ≫ g' = g := by
-  choose F hF using fun i ↦
-    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1
-      (nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i)
-  exact ⟨cellAttachmentLift _ g F fun i ↦ (hF i).symm, cellAttachmentIncl_lift _ _ _ _⟩
+    ∃ g' : (killingStage n X x (m + 1)).1 ⟶ Z, killingStageIncl n X x m ≫ g' = g :=
+  (exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic _ g).2 fun i ↦
+    nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i
 
 /-- The extensions of a map `f : X ⟶ Z` over the successive stages of the tower, each extending
 the previous one by `TopCat.Hom.exists_killingStageIncl_comp_eq`. They all send the base point of
@@ -533,8 +541,8 @@ private def killingStageExtension (f : X ⟶ Z) (hZ : ∀ k, n ≤ k → Subsing
     (m : ℕ) → {g : (killingStage n X x m).1 ⟶ Z // g (killingStage n X x m).2 = f x}
   | 0 => ⟨f, rfl⟩
   | m + 1 =>
-    have hm := (killingStageExtension f hZ m).2
-    have h := (killingStageExtension f hZ m).1.exists_killingStageIncl_comp_eq
+    have hm := (killingStageExtension f hZ m).property
+    have h := (killingStageExtension f hZ m).val.exists_killingStageIncl_comp_eq
       (by rw [hm]; exact fun k _ ↦ hZ k)
     ⟨h.choose, by
       rw [← killingStageIncl_basepoint, ← ConcreteCategory.comp_apply, h.choose_spec, hm]⟩
@@ -542,10 +550,10 @@ private def killingStageExtension (f : X ⟶ Z) (hZ : ∀ k, n ≤ k → Subsing
 /-- Each extension in `TauCeti.killingStageExtension` extends the previous one. -/
 private lemma killingStageIncl_comp_killingStageExtension (f : X ⟶ Z)
     (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) (m : ℕ) :
-    killingStageIncl n X x m ≫ (killingStageExtension f hZ (m + 1)).1 =
-      (killingStageExtension f hZ m).1 :=
-  ((killingStageExtension f hZ m).1.exists_killingStageIncl_comp_eq
-    (by rw [(killingStageExtension f hZ m).2]; exact fun k _ ↦ hZ k)).choose_spec
+    killingStageIncl n X x m ≫ (killingStageExtension f hZ (m + 1)).val =
+      (killingStageExtension f hZ m).val :=
+  ((killingStageExtension f hZ m).val.exists_killingStageIncl_comp_eq
+    (by rw [(killingStageExtension f hZ m).property]; exact fun k _ ↦ hZ k)).choose_spec
 
 /-- **Maps into a space without homotopy from dimension `n` on extend over
 `TauCeti.killHomotopyGroups n X x`.** If the homotopy groups `πₖ(Z, f x)` vanish for every
@@ -557,7 +565,7 @@ theorem _root_.TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq (f : X ⟶ Z)
     ∃ F : killHomotopyGroups n X x ⟶ Z, killHomotopyGroupsIncl n X x ≫ F = f := by
   -- The extensions over the stages are compatible, so they form a cocone on the tower.
   let c : Cocone (killingTower n X x) :=
-    ⟨Z, NatTrans.ofSequence (fun m ↦ (killingStageExtension f hZ m).1) fun m ↦ by
+    ⟨Z, NatTrans.ofSequence (fun m ↦ (killingStageExtension f hZ m).val) fun m ↦ by
       simp only [killingTower, Functor.ofSequence_map_homOfLE_succ, Functor.const_obj_map]
       exact (killingStageIncl_comp_killingStageExtension f hZ m).trans (Category.comp_id _).symm⟩
   exact ⟨colimit.desc _ c, colimit.ι_desc c 0⟩

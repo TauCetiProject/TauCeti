@@ -5,22 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Homotopy.AcyclicCover
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
-public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
+public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
 import TauCeti.AlgebraicTopology.PathComponent
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
+import TauCeti.AlgebraicTopology.Singular.Coefficients.PrimeField
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
 # Mod-two vanishing of homotopy groups
 
-**Theorem** (Serre). Let `Y` be a simply connected space with the mod-two homology of a point,
-`Hᵢ(Y; 𝔽₂) = 0` for `i > 0`. Then every homotopy group `πᵢ(Y)` is uniquely two-divisible:
-multiplication by two is a bijection, so `πᵢ(Y)` is a module over `ℤ[1/2]` and `πᵢ(Y) ⊗ ℤ/2 = 0`
-(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`). No finite
-generation and no CW structure is assumed.
+**Theorem** (Serre). Let `(Y, y)` be a path-connected topological space with trivial fundamental
+group `π₁(Y, y)` and let `m : ℕ`. If the singular homology of `Y` with `𝔽₂ = ZMod 2` coefficients
+vanishes in the finite range of degrees `2, …, m + 3` (`H_{q+2}(Y; 𝔽₂) = 0` for `q ≤ m + 1`), then
+the homotopy group `π_{m+2}(Y, y)` is uniquely two-divisible — equivalently, multiplication by two
+is a bijection, so `π_{m+2}(Y, y)` is a module over `ℤ[1/2]`
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le`) — and in
+particular `π_{m+2}(Y, y) ⊗_ℤ ℤ/2 = 0`.
+In particular, if `Y` is simply connected and has the mod-two homology of a point
+(`Hᵢ(Y; 𝔽₂) = 0` for all `i > 0`), every higher homotopy group `πᵢ(Y)` (`i ≥ 2`) is uniquely
+two-divisible (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`).
+No CW, separation, or finite-generation hypothesis is imposed on `Y` or on its homotopy groups.
+
+The space `Y` lies in an arbitrary universe `u`. Mod-two homology is then taken with coefficients
+in a ring `k` in the universe `u` together with a ring isomorphism `k ≃+* ZMod 2`, for instance
+`ZMod 2` itself when `u` is the lowest universe, or its lift `ULift.{u} (ZMod 2)`. The hypothesis
+can also be stated with coefficients in the integer module `ℤ/2`, lifted to the universe `u`
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two`, and
+`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le` in bounded
+degrees).
 
 Since a path component has the homotopy groups of the ambient space in positive degrees, and is
 simply connected as soon as the ambient fundamental group is trivial
@@ -34,41 +51,65 @@ The class of groups `G` with `G ⊗ ℤ/2 = 0` is not a Serre class (it contains
 this is not a case of the Hurewicz theorem modulo a Serre class; it is proved directly, one
 homotopy group at a time, along the Whitehead tower.
 
-* **First homotopy group.** If `Z` is `(n - 1)`-connected, `n ≥ 2`, the Hurewicz isomorphism
-  `πₙ(Z) ≅ Hₙ(Z; ℤ)` and the coefficient sequence `ℤ → ℤ → ℤ/2` make `πₙ(Z)` uniquely
-  two-divisible as soon as `Hₙ(Z; 𝔽₂)` and `Hₙ₊₁(Z; 𝔽₂)` vanish
+* **First homotopy group.** If `(Z, z)` is `(m + 1)`-connected, the Hurewicz isomorphism
+  `π_{m+2}(Z) ≅ H_{m+2}(Z; ℤ)` and the coefficient sequence `ℤ → ℤ → ℤ/2` make `π_{m+2}(Z)`
+  uniquely two-divisible as soon as `H_{m+2}(Z; 𝔽₂)` and `H_{m+3}(Z; 𝔽₂)` vanish
   (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two`).
-* **One step up the tower.** If moreover `Z` is Hausdorff and has the mod-two homology of a point,
-  then so does its `n`-connected cover `Z⟨n⟩`
-  (`TauCeti.subsingleton_singularHomology_nConnectedCover`).
-  The projection `Z⟨n⟩ → Z` is a fibration whose fibres are `K(πₙ(Z), n - 1)` spaces
-  (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). Since `πₙ(Z)` is uniquely
-  two-divisible, such a fibration is a mod-two homology isomorphism
-  (`TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`).
-* **The induction.** The cover `Z⟨n⟩` is `n`-connected and has the homotopy groups of `Z` above
-  `n`, so the first step applies to it in degree `n + 1`. Each stage is replaced by its CW
-  approximation, which is Hausdorff and changes neither homotopy nor homology.
+* **One step up the tower.** If moreover `Z` is Hausdorff, every fibre of the projection
+  `Z⟨m + 2⟩ → Z` is a `K(π_{m+2}(Z), m + 1)` space
+  (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). Since `π_{m+2}(Z)` is uniquely
+  two-divisible, `Z⟨m + 2⟩ → Z` induces isomorphisms on mod-two homology in **every** degree `q`
+  (`TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`), so vanishing of
+  `H_q(Z; 𝔽₂)` passes to `Z⟨m + 2⟩` for any individual degree `q`
+  (`TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`).
+* **The induction.** The shared Whitehead-tower driver
+  `TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology` climbs the tower one homotopy group
+  at a time, using `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two` for the
+  first homotopy group and
+  `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible` for the
+  Eilenberg--Mac Lane fibres.
 
-The Eilenberg--Mac Lane fibre sits over the `(n - 1)`-connected stage `Z`, never over the original
-space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between successive stages is used.
+The Eilenberg--Mac Lane fibre sits over the `(m + 1)`-connected stage `Z`, never over the original
+space: only the fibration `K(π_{m+2} Z, m + 1) → Z⟨m + 2⟩ → Z` between successive stages is used.
+Over the two-sphere, for instance, a Serre fibration whose fibre is simply connected, such as a
+`K(π₃(S²), 2)`, has a total space with nontrivial `π₂`, since `π₂(S²) ≅ ℤ`
+(`TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere` with `n = 0`). So no
+fibration `K(π₃(S²), 2) → E → S²` has a `3`-connected total space, as the tower over `S²` itself
+would need.
+
+The hypothesis on mod-two homology cannot be dropped: for `n ≥ 2`, the sphere `Sⁿ` is simply
+connected, its `πₙ ≅ ℤ` is not uniquely two-divisible
+(`TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`), and indeed `Hₙ(Sⁿ; 𝔽₂) ≠ 0`
+(`TauCeti.nontrivial_singularHomology_sphere`).
 
 ## Main results
 
-* `TauCeti.subsingleton_singularHomology_nConnectedCover`: the `n`-connected cover of an
-  `(n - 1)`-connected Hausdorff space with the mod-two homology of a point has the mod-two
-  homology of a point.
+* `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le`,
+  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le`: if
+  `(Y, y)` is path-connected with trivial `π₁(Y, y)` and has vanishing mod-two homology in degrees
+  `2, …, m + 3`, then `π_{m+2}(Y, y)` is uniquely two-divisible.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`: the homotopy
   groups of a simply connected space with the mod-two homology of a point are uniquely
   two-divisible.
+* `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two`: the same,
+  with the hypothesis on singular homology with coefficients in the integer module `ℤ/2`.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`:
   if the fundamental group of `Y` at `y` is trivial and the path component of `y` has the mod-two
   homology of a point, the higher homotopy groups of `Y` at `y` are uniquely two-divisible.
+* `TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`: `π_{n+2}(S^{n+2}) ≅ ℤ` is not
+  uniquely two-divisible, so the conclusion fails for spheres, which are not mod-two acyclic.
+* `TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere`: a Serre fibration over
+  `S^{n+2}` whose fibre has trivial `π_{n+1}` has a total space with nontrivial `π_{n+2}`.
 
 ## References
 
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953),
-  258–294.
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Sections 4.1–4.3.
+  258–294, Chapter III, Theorem 1.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Cambridge University Press, 2002, Sections 4.1–4.3.
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1.
 -/
 
 public section
@@ -79,116 +120,119 @@ open CategoryTheory Limits AlgebraicTopology
 
 open scoped Topology Topology.Homotopy
 
+universe u
+
 namespace TauCeti
 
-/-- The first possible homotopy group, in the form used by the induction: the homotopy group
-`πₙ₊₂` of an `(n + 1)`-connected space with the mod-two homology of a point is uniquely
-two-divisible. -/
-private theorem isUniquelyTwoDivisible_homotopyGroup_of_connected
-    {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ)
-    (hZ : ∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k Z z))
-    (hZ₂ : ∀ i, Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of Z)).homology (i + 1))) :
-    IsUniquelyTwoDivisible (Additive (π_ (n + 2) Z z)) := by
-  refine isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two (fun k hk ↦ ?_)
-    (hZ₂ (n + 1)) (hZ₂ (n + 2))
-  rcases eq_or_ne k 0 with rfl | hk0
-  · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
-  · exact hZ k hk0 hk
+variable {k : Type u} [CommRing k]
 
-/-- **The `n`-connected cover of a mod-two acyclic space is mod-two acyclic.** Let `X` be a
-Hausdorff, path-connected space whose homotopy groups `πₖ` vanish for `1 ≤ k < n`, `n ≥ 2`, and
-which has the mod-two homology of a point. Then its `n`-connected cover `X⟨n⟩` has the mod-two
-homology of a point. -/
-theorem subsingleton_singularHomology_nConnectedCover (X : TopCat.{0}) [T2Space X]
-    [PathConnectedSpace X] (x : X) (m : ℕ)
-    (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x))
-    (hX₂ : ∀ i, Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1))) (i : ℕ) :
-    Subsingleton (((singularChains (ZMod 2)).obj (nConnectedCover (m + 2) X x)).homology
-      (i + 1)) := by
-  -- `πₘ₊₂(X)` is uniquely two-divisible, by the Hurewicz theorem.
-  have hπ := isUniquelyTwoDivisible_homotopyGroup_of_connected x m hX hX₂
-  -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it has the mod-two
-  -- homology of a point and the projection is a mod-two homology isomorphism.
-  have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber (ZMod 2) (m := 2)
-    (by decide) ((isUniquelyTwoDivisible_iff _).1 hπ)
-    (serreFibrations_nConnectedCoverProj (m + 2) X x)
-    (fun b ↦ (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX b).imp fun _ h ↦
-      h.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm) (i + 1)
-  exact (subsingleton_singularChains_homology_iff_of_isIso _
-    (nConnectedCoverProj (m + 2) X x) _).2 (hX₂ i)
+/-- **Mod-two vanishing of higher homotopy groups from bounded-degree homology** (Serre). Let
+`(Y, y)` be a path-connected topological space with trivial fundamental group `π₁(Y, y)` and let
+`m : ℕ`. If `H_{q+2}(Y; k) = 0` for every `q ≤ m + 1`, where `k ≃+* ZMod 2`, then the homotopy
+group `π_{m+2}(Y, y)` is uniquely two-divisible (a module over `ℤ[1/2]`). No CW, separation, or
+finite-generation hypothesis is assumed. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le (e : k ≃+* ZMod 2)
+    {Y : Type u} [TopologicalSpace Y] [PathConnectedSpace Y] {y : Y}
+    (hπ₁ : Subsingleton (π_ 1 Y y)) {m : ℕ}
+    (hH : ∀ q ≤ m + 1, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (q + 2))) :
+    IsUniquelyTwoDivisible (Additive (π_ (m + 2) Y y)) :=
+  have : IsSemisimpleRing k := e.symm.isSemisimpleRing
+  have hk : (2 : k) = 0 := e.injective (by rw [map_ofNat, map_zero]; decide)
+  prop_homotopyGroup_of_subsingleton_singularHomology k
+    (fun G _ ↦ IsUniquelyTwoDivisible G) (fun eqv h ↦ h.of_addEquiv eqv)
+    (fun z n hZ hZ₁ hZ₂ ↦ isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two e
+      (fun j hj ↦ by
+        rcases eq_or_ne j 0 with rfl | hj0
+        · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
+        · exact hZ j hj0 hj)
+      hZ₁ hZ₂)
+    (fun hA _ _ _ _ _ hX ↦
+      IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible k hk hA hX)
+    y hπ₁ m hH
 
-/-- The induction along the Whitehead tower: for an `(n + 1)`-connected space with the mod-two
-homology of a point, every homotopy group `π_{N + 2}` with `N ≥ n` is uniquely two-divisible. The
-degree is `N = n + d`, by induction on `d`. -/
-private theorem isUniquelyTwoDivisible_homotopyGroup_of_add (d : ℕ) :
-    ∀ (n : ℕ) {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z),
-      (∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k Z z)) →
-      (∀ i, Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of Z)).homology (i + 1))) →
-        ∀ N, N = n + d → IsUniquelyTwoDivisible (Additive (π_ (N + 2) Z z)) := by
-  induction d with
-  | zero =>
-    intro n Z _ _ z hZ hZ₂ N hN
-    rw [hN]
-    exact isUniquelyTwoDivisible_homotopyGroup_of_connected z n hZ hZ₂
-  | succ d ih =>
-    intro n Z _ _ z hZ hZ₂ N hN
-    rw [hN]
-    -- Replace `Z` by its CW approximation `X`, which is Hausdorff.
-    let X := cwApproximation (TopCat.of Z) z
-    let f := (cwApproximationMap (TopCat.of Z) z).hom
-    let x₀ := cwApproximationBasepoint (TopCat.of Z) z
-    have hf : f.IsWeakHomotopyEquivalence :=
-      isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Z) z
-    -- `f` identifies the homotopy groups of `X` at `x₀` with those of `Z` at `z`.
-    let e (k : ℕ) [NeZero k] : π_ k X x₀ ≃* π_ k Z z :=
-      MulEquiv.ofBijective
-        (HomotopyGroup.mapHom f (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z))
-        ((HomotopyGroup.bijective_map_congr rfl rfl _).1 (hf.bijective k x₀))
-    have hX : ∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k X x₀) := fun k hk0 hk ↦ by
-      have : NeZero k := ⟨hk0⟩
-      have := hZ k hk0 hk
-      exact (e k).toEquiv.subsingleton
-    -- The `(n + 2)`-connected cover `C` of `X` is `(n + 2)`-connected and mod-two acyclic.
-    let C := nConnectedCover (n + 2) X x₀
-    let c₀ := nConnectedCoverBasepoint (n + 2) X x₀
-    have hC : ∀ k, k ≠ 0 → k < n + 1 + 2 → Subsingleton (π_ k C c₀) := fun k _ hk ↦
-      subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (n + 2) X x₀ c₀
-        (by omega)
-    -- `f` is a homology isomorphism, so `X` is mod-two acyclic.
-    have hX₂ (i : ℕ) : Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1)) := by
-      have := hf.isIso_singularHomologyMap (ModuleCat.of (ZMod 2) (ZMod 2)) (i + 1)
-      exact (subsingleton_singularChains_homology_iff_of_isIso _
-        (cwApproximationMap (TopCat.of Z) z) _).2 (hZ₂ i)
-    have hC₂ := subsingleton_singularHomology_nConnectedCover X x₀ n hX hX₂
-    -- The cover has the homotopy groups of `X`, hence of `Z`, above dimension `n + 2`.
-    exact (ih (n + 1) c₀ hC hC₂ _ (by omega)).of_addEquiv
-      ((nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ _ (by omega)).trans
-        (e _)).toAdditive
+/-- Bounded-degree mod-two vanishing with integer-module coefficients `ℤ/2` (lifted to the universe
+of `Y`). -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le {Y : Type u}
+    [TopologicalSpace Y] [PathConnectedSpace Y] {y : Y} (hπ₁ : Subsingleton (π_ 1 Y y)) {m : ℕ}
+    (hH : ∀ q ≤ m + 1, IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (q + 2)).obj
+      (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj (TopCat.of Y))) :
+    IsUniquelyTwoDivisible (Additive (π_ (m + 2) Y y)) :=
+  isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le ULift.ringEquiv hπ₁
+    fun q hq ↦ ModuleCat.isZero_iff_subsingleton.1
+      (((TopCat.of Y).isZero_singularHomology_zmod_iff_of_ringEquiv 2 ULift.ringEquiv _).1
+        (hH q hq))
 
 /-- **Mod-two vanishing** (Serre). The homotopy groups `πᵢ(Y)`, `i ≥ 2`, of a simply connected
 space `Y` with the mod-two homology of a point are uniquely two-divisible: multiplication by two
-is a bijection on each of them. No finite generation or CW structure is assumed. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology {Y : Type}
+is a bijection on each of them. The homology is taken with coefficients in the field `𝔽₂`, given
+as any ring `k` isomorphic to `ZMod 2` in the universe of `Y`. No finite generation or CW
+structure is assumed. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology (e : k ≃+* ZMod 2)
+    {Y : Type u} [TopologicalSpace Y] [SimplyConnectedSpace Y]
+    (hY : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
+    (y : Y) (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
+  isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le e
+    (HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton)
+    fun q _ ↦ hY (q + 1)
+
+/-- **Mod-two vanishing with integer-module coefficients.** The homotopy groups `πᵢ(Y)`, `i ≥ 2`,
+of a simply connected space `Y` whose singular homology with coefficients in the integer module
+`ℤ/2` vanishes in positive degrees are uniquely two-divisible. This is the form in which the
+coefficients `ℤ/2` appear in the coefficient sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two {Y : Type u}
     [TopologicalSpace Y] [SimplyConnectedSpace Y]
-    (hY : ∀ i, Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of Y)).homology (i + 1)))
-    (y : Y) (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) := by
-  -- `Y` is `1`-connected: its fundamental group is trivial.
-  have h₁ (k : ℕ) (hk0 : k ≠ 0) (hk : k < 2) : Subsingleton (π_ k Y y) := by
-    obtain rfl : k = 1 := by omega
-    exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
-  exact isUniquelyTwoDivisible_homotopyGroup_of_add n 0 y h₁ hY n (Nat.zero_add n).symm
+    (hY : ∀ i, IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (i + 1)).obj
+      (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj (TopCat.of Y)))
+    (y : Y) (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
+  isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le
+    (HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton)
+    fun q _ ↦ hY (q + 1)
 
 /-- **Mod-two vanishing for a path component.** If the fundamental group of `Y` at `y` is trivial
-and the path component of `y` has the mod-two homology of a point, then every homotopy group
-`πₙ₊₂(Y, y)` is uniquely two-divisible. -/
+and the path component of `y` has the mod-two homology of a point, with coefficients in a ring `k`
+isomorphic to `ZMod 2`, then every homotopy group `πₙ₊₂(Y, y)` is uniquely two-divisible. -/
 theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
-    {Y : Type} [TopologicalSpace Y] (y : Y) [Subsingleton (FundamentalGroup Y y)]
+    (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] (y : Y)
+    [Subsingleton (FundamentalGroup Y y)]
     (hY : ∀ i, Subsingleton
-      (((singularChains (ZMod 2)).obj (TopCat.of (pathComponent y))).homology (i + 1)))
+      (((singularChains k).obj (TopCat.of (pathComponent y))).homology (i + 1)))
     (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
   have := (simplyConnectedSpace_pathComponent_iff y).2 ‹_›
-  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology hY
+  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology e hY
     (pathComponentSelf y) n).of_addEquiv
       (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).toAdditive
+
+/-! ### Spheres -/
+
+section Sphere
+
+open Metric
+
+variable {n : ℕ}
+
+/-- **The conclusion of mod-two vanishing fails for spheres.** For every `n`, the homotopy group
+`π_{n+2}(S^{n+2}, x) ≅ ℤ` of the simply connected sphere `S^{n+2}`, the unit sphere of an
+`(n + 3)`-dimensional real normed space, is not uniquely two-divisible. This is consistent with
+the theorem, whose hypothesis fails for `S^{n+2}` since `H_{n+2}(S^{n+2}; 𝔽₂) ≠ 0`
+(`TauCeti.nontrivial_singularHomology_sphere`). -/
+theorem not_isUniquelyTwoDivisible_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
+    ¬ IsUniquelyTwoDivisible (Additive (π_ (n + 2) (sphere (0 : E) 1) x)) := fun hx ↦
+  not_isUniquelyTwoDivisible_int (hx.of_addEquiv (homotopyGroupSphereAddEquivOfFinrankEq hE x))
+
+/-- **No fibre with trivial `π_{n+1}` over `S^{n+2}` has a total space with trivial
+`π_{n+2}`.** Let `p : X → S^{n+2}` be a Serre fibration whose fibre over `y` has trivial
+`π_{n+1}` at `e`, as a `K(A, n + 2)` space does. Then `π_{n+2}(X, e)` is nontrivial, since
+`π_{n+2}(S^{n+2}) ≅ ℤ` is (`TauCeti.TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations`). In
+particular, for `n = 0`, there is no fibration `K(π₃(S²), 2) → X → S²` with `X` `3`-connected. -/
+theorem nontrivial_homotopyGroup_of_mem_serreFibrations_sphere {E : Type u}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) {X : TopCat.{u}}
+    {p : X ⟶ TopCat.of (sphere (0 : E) 1)} (hp : TopCat.serreFibrations p)
+    {y : sphere (0 : E) 1} (e : p.fiber y) [Subsingleton (π_ (n + 1) (p.fiber y) e)] :
+    Nontrivial (π_ (n + 2) X e.val) :=
+  have := nontrivial_homotopyGroup_sphere hE y
+  TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations hp
+
+end Sphere
 
 end TauCeti

@@ -90,11 +90,12 @@ theorem IsOrder.wellFoundedGT_overorder [IsNoetherianRing R]
   have he : ∀ i, e i ∈ Λ := fun i => Basis.ofSpan_subset _ ⟨i, rfl⟩
   let M := span R (Set.range ((Algebra.regularTraceForm F E).dualBasis hB e))
   have : IsNoetherian R M := isNoetherian_of_fg_of_noetherian M (fg_span (Set.finite_range _))
-  have hle (Γ : {Γ : Subalgebra R E // Λ ≤ Γ ∧ IsOrder F Γ}) : Subalgebra.toSubmodule Γ.1 ≤ M :=
-    toSubmodule_le_span_dualBasis hB e (fun i => Γ.2.1 (he i)) fun _ => Γ.2.2.isIntegral
+  have hle (Γ : {Γ : Subalgebra R E // Λ ≤ Γ ∧ IsOrder F Γ}) : Subalgebra.toSubmodule Γ.val ≤ M :=
+    toSubmodule_le_span_dualBasis hB e (fun i => Γ.property.1
+        (he i)) fun _ => Γ.property.2.isIntegral
   -- so the overorders embed strictly monotonically into the submodules of `M`
   let f (Γ : {Γ : Subalgebra R E // Λ ≤ Γ ∧ IsOrder F Γ}) : Submodule R M :=
-    (Subalgebra.toSubmodule Γ.1).comap M.subtype
+    (Subalgebra.toSubmodule Γ.val).comap M.subtype
   have hf : StrictMono f := by
     refine Monotone.strictMono_of_injective
       (fun _ _ h => comap_mono (Subalgebra.toSubmodule.monotone h)) fun Γ₁ Γ₂ h => ?_

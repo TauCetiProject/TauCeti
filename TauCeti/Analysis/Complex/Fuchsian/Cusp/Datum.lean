@@ -72,9 +72,10 @@ private theorem mem_cuspPeriods {σ : PSL(2, ℝ)} {x : ℝ} :
 private theorem discreteTopology_cuspPeriods [DiscreteTopology Γ] (σ : PSL(2, ℝ)) :
     DiscreteTopology (cuspPeriods Γ σ) := by
   refine DiscreteTopology.of_continuous_injective
-    (f := fun x : cuspPeriods Γ σ ↦ (⟨σ⁻¹ * upperRightHom (x : ℝ) * σ, mem_cuspPeriods.mp x.2⟩ : Γ))
+    (f := fun x : cuspPeriods Γ σ ↦ (⟨σ⁻¹ * upperRightHom (x : ℝ) * σ,
+        mem_cuspPeriods.mp x.property⟩ : Γ))
     (continuous_induced_rng.mpr ?_) fun x y h ↦ ?_
-  · exact (continuous_const.mul (continuous_upperRightHom.comp continuous_subtype_val)).mul
+  · exact (continuous_const.mul (continuous_upperRightHom.comp continuous_subtypeVal)).mul
       continuous_const
   · exact Subtype.ext (upperRightHom_injective (by simpa using congrArg Subtype.val h))
 
@@ -116,7 +117,8 @@ private theorem mem_stabilizer_iff_of_zmultiples_eq_cuspPeriods {c : OnePoint �
     -- are `w * ℤ`, this forces `t ^ 2 = 1`, so `σ * g * σ⁻¹` commutes with translations
     have hmul : t ^ 2 * w ∈ cuspPeriods Γ σ := by
       rw [mem_cuspPeriods, ← hconj]
-      convert Γ.mul_mem (Γ.mul_mem g.2 (mem_cuspPeriods.mp hwP)) (Γ.inv_mem g.2) using 1
+      convert Γ.mul_mem (Γ.mul_mem g.property (mem_cuspPeriods.mp hwP))
+          (Γ.inv_mem g.property) using 1
       group
     have hinv : (t ^ 2)⁻¹ * w ∈ cuspPeriods Γ σ := by
       have h := hconj ((t ^ 2)⁻¹ * w)
@@ -126,7 +128,8 @@ private theorem mem_stabilizer_iff_of_zmultiples_eq_cuspPeriods {c : OnePoint �
         rw [← h]
         group
       rw [mem_cuspPeriods, h']
-      convert Γ.mul_mem (Γ.mul_mem (Γ.inv_mem g.2) (mem_cuspPeriods.mp hwP)) g.2 using 1
+      convert Γ.mul_mem (Γ.mul_mem (Γ.inv_mem g.property) (mem_cuspPeriods.mp hwP)) g.property using
+          1
       group
     rw [← hP, AddSubgroup.mem_zmultiples_iff] at hmul hinv
     obtain ⟨m, hm⟩ := hmul
@@ -204,6 +207,13 @@ theorem scaling_smul_cusp : D.scaling • D.cusp = ∞ := by
       D.generator_mem_stabilizer]
   rwa [(isParabolic_upperRightHom_iff.mpr D.width_pos.ne').smul_eq_self_iff,
     parabolicFixedPoint_upperRightHom] at hfix
+
+/-- The inverse of a lift of the scaling of a cusp datum carries `∞` to the cusp, so that
+it can be used as a scaling matrix for the cusp. -/
+theorem mapGL_inv_smul_infty {D : Γ.CuspDatum} {s : SL(2, ℝ)}
+    (hs : (s : PSL(2, ℝ)) = D.scaling) :
+    Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ • (OnePoint.infty : OnePoint ℝ) = D.cusp := by
+  rw [OnePoint.mapGL_smul, QuotientGroup.mk_inv, hs, inv_smul_eq_iff, D.scaling_smul_cusp]
 
 /-- Cusp data with the same scaling represent the same boundary point. -/
 theorem cusp_eq_of_scaling_eq {Δ : Subgroup PSL(2, ℝ)} (D : Δ.CuspDatum) (E : Γ.CuspDatum)
@@ -366,7 +376,7 @@ theorem CuspDatum.cuspOrbit_surjective [DiscreteTopology Γ] :
     Function.Surjective (CuspDatum.cuspOrbit (Γ := Γ)) := by
   intro C
   obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
-  obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.2).exists_cuspDatum_cusp_eq
+  obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.property).exists_cuspDatum_cusp_eq
   exact ⟨D, Subtype.ext (by simp [hD])⟩
 
 /-- A chosen normalized cusp datum representing a cusp orbit of a discrete group. -/

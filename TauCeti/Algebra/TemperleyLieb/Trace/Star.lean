@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
 public import TauCeti.Algebra.TemperleyLieb.Star
+public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.RingTheory.Ideal.Quotient.Star
 public import TauCeti.RingTheory.TraceFunctional.Star
 import Mathlib.Algebra.Star.LinearMap
@@ -20,8 +21,12 @@ this form by the loop parameter. This holds over any commutative star semiring, 
 or invertibility assumptions on the parameter.
 
 Together with `LinearMap.star_mem_traceRadical_iff` and `LinearMap.ker_traceSesqForm`, the adjoint
-identity shows that the trace radical is star-stable and is precisely the kernel of the Hermitian
-form. Positivity and the identification of that kernel with the zero-length vectors are separate
+identity shows that the trace radical is star-stable (`IsMarkovTrace.instIsStarTraceRadical`) and
+is precisely the kernel of the Hermitian form, so for self-adjoint `δ`,
+`IsMarkovTrace.quotientStrandIncl` preserves the adjoint (`IsMarkovTrace.quotientStrandIncl_star`)
+and bundles as the `⋆`-algebra homomorphism `IsMarkovTrace.quotientStrandStarAlgHom` at every
+level `n ≥ 0`, without positivity or invertibility assumptions on `δ`.
+Positivity and the identification of that kernel with the zero-length vectors are separate
 questions.
 
 ## References
@@ -87,9 +92,41 @@ variable {R : Type*} [CommRing R] [StarRing R] {δ : R} [Fact (IsSelfAdjoint δ)
 
 /-- At a self-adjoint loop parameter, the trace radical of a Markov trace is star-stable. -/
 theorem IsMarkovTrace.isStar_traceRadical {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
-    (htr : IsMarkovTrace R δ tr) (n : ℕ) :
-    ((tr n).traceRadical (htr.map_mul_comm n)).IsStar :=
+    (htr : IsMarkovTrace R δ tr) (n : ℕ) : (htr.traceRadical n).IsStar :=
   ⟨fun ha ↦ ((tr n).star_mem_traceRadical_iff (htr.map_mul_comm n) (htr.map_star n)).mpr ha⟩
+
+namespace IsMarkovTrace
+
+variable {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMarkovTrace R δ tr)
+
+instance instIsStarTraceRadical (n : ℕ) : (htr.traceRadical n).IsStar :=
+  htr.isStar_traceRadical n
+
+/-- The quotient strand map preserves the analytic adjoint. -/
+@[simp]
+theorem quotientStrandIncl_star (n : ℕ) (x : htr.Quotient n) :
+    htr.quotientStrandIncl n (star x) = star (htr.quotientStrandIncl n x) := by
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp only [Ideal.Quotient.star_mk, htr.quotientStrandIncl_mk, strandInclAll_star]
+
+/-- `quotientStrandIncl n` bundled as a unital `⋆`-algebra homomorphism
+`htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1)` (`n ≥ 0`), injective at every successor level `n + 1`
+and at level `0` whenever `(δ * ·)` is injective. -/
+def quotientStrandStarAlgHom (n : ℕ) :
+    htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1) :=
+  { htr.quotientStrandIncl n with map_star' := htr.quotientStrandIncl_star n }
+
+/-- Forgetting the star structure on `quotientStrandStarAlgHom` recovers `quotientStrandIncl`. -/
+@[simp]
+theorem quotientStrandStarAlgHom_toAlgHom (n : ℕ) :
+    (htr.quotientStrandStarAlgHom n).toAlgHom = htr.quotientStrandIncl n := (rfl)
+
+/-- Evaluating `quotientStrandStarAlgHom` agrees with `quotientStrandIncl`. -/
+@[simp]
+theorem quotientStrandStarAlgHom_apply (n : ℕ) (x : htr.Quotient n) :
+    htr.quotientStrandStarAlgHom n x = htr.quotientStrandIncl n x := (rfl)
+
+end IsMarkovTrace
 
 /-- The spin-model Markov trace preserves the analytic adjoint, even when its unit parameter
 is not self-adjoint: only the loop parameter must be self-adjoint. -/
@@ -97,5 +134,12 @@ is not self-adjoint: only the loop parameter must be self-adjoint. -/
 theorem markovTrace_star (q : Rˣ) (h : δ = -((q : R) + ((q⁻¹ : Rˣ) : R))) {n : ℕ}
     (x : TemperleyLieb R δ n) : markovTrace q h (star x) = star (markovTrace q h x) :=
   (isMarkovTrace_markovTrace q h).map_star n x
+
+/-- At a self-adjoint loop parameter, the trace radical of the spin-model Markov trace is
+star-stable. -/
+instance instIsStarTraceRadicalMarkovTrace (q : Rˣ) (h : δ = -((q : R) + ((q⁻¹ : Rˣ) : R)))
+    (n : ℕ) :
+    ((markovTrace (n := n) q h).traceRadical (markovTrace_mul_comm q h)).IsStar :=
+  (isMarkovTrace_markovTrace q h).isStar_traceRadical n
 
 end TauCeti.TemperleyLieb

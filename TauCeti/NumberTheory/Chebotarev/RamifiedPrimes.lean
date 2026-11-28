@@ -39,6 +39,9 @@ duplicate `Algebra.IsUnramifiedIn`.
 * `TauCeti.eventually_isUnramifiedAt_liesOver`: almost every finite place has only
   unramified places above it.
 * `NumberField.Chebotarev.mem_ramifiedPrimes_iff`: the defining condition for membership.
+* `NumberField.Chebotarev.notMem_ramifiedPrimes_iff_isUnramifiedIn`: a prime lies outside
+  `ramifiedPrimes K L` exactly when it is unramified in `𝓞 L` in the sense of
+  `Algebra.IsUnramifiedIn`.
 * `NumberField.Chebotarev.isUnramifiedAt_of_under_eq`: a prime of `L` over a prime of `K` above
   which every prime of `L` is unramified is unramified over `K`.
 * `NumberField.Chebotarev.under_notMem_ramifiedPrimes_iff_isUnramifiedAt`: in a Galois
@@ -133,6 +136,13 @@ theorem mem_ramifiedPrimes_iff (𝔭 : HeightOneSpectrum (𝓞 K)) : 𝔭 ∈ ra
     ¬ ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q :=
   Set.Finite.mem_toFinset _
 
+/-- A prime of `K` lies outside `ramifiedPrimes K L` exactly when it is unramified in `𝓞 L` in the
+sense of Mathlib's `Algebra.IsUnramifiedIn`. -/
+theorem notMem_ramifiedPrimes_iff_isUnramifiedIn (𝔭 : HeightOneSpectrum (𝓞 K)) :
+    𝔭 ∉ ramifiedPrimes K L ↔ Algebra.IsUnramifiedIn (𝓞 L) 𝔭.asIdeal := by
+  rw [mem_ramifiedPrimes_iff, not_not]
+  exact ⟨fun h P _ _ ↦ h P, fun h P _ _ ↦ h P ‹_› ‹_›⟩
+
 omit [NumberField K] [NumberField L] in
 /-- A prime of `L` over a prime `p` of `K` above which every prime of `L` is unramified is
 unramified over `K`. -/
@@ -182,13 +192,13 @@ variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 theorem eventually_isUnramifiedAt_liesOver :
     ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := by
+        Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal := by
   classical
   refine Filter.eventually_cofinite.mpr
     ((NumberField.Chebotarev.ramifiedPrimes K L).finite_toSet.subset ?_)
   intro v hv
   apply (NumberField.Chebotarev.mem_ramifiedPrimes_iff v).mpr
   intro h
-  exact hv fun w ↦ @h w.1.asIdeal w.1.isPrime w.2
+  exact hv fun w ↦ @h w.val.asIdeal w.val.isPrime w.property
 
 end TauCeti

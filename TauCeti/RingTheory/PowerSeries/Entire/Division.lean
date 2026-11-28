@@ -16,6 +16,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Div
 import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
 
@@ -580,10 +581,8 @@ theorem divByMonic_modByMonic_unique (q : R⟦X⟧) (r : Polynomial R) (hp : p.M
   set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
   have hc0 : 0 < c := by positivity
   have hrem (r' : Polynomial R) (hr' : r'.degree < p.degree) :
-      ∀ m, p.natDegree ≤ m → coeff m (r' : R⟦X⟧) = 0 := fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact Polynomial.coeff_eq_zero_of_degree_lt
-      (hr'.trans_le (Polynomial.degree_le_natDegree.trans (by exact_mod_cast hm)))
+      ∀ m, p.natDegree ≤ m → coeff m (r' : R⟦X⟧) = 0 := fun _ ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt (hr'.trans_le Polynomial.degree_le_natDegree)
   have hmul : ∀ x, ‖x * coeff p.natDegree (p : R⟦X⟧)‖ = ‖x‖ * ‖coeff p.natDegree (p : R⟦X⟧)‖ := by
     simp [hp.coeff_natDegree]
   have hdiv := hf.modByMonic_add_divByMonic hp
@@ -639,8 +638,8 @@ noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+
     rw [Subring.coe_one, ← Polynomial.coe_one, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic,
       map_one]
   map_mul' F G := by
-    have hF := IsEntire.mem_subring.mp F.2
-    have hG := IsEntire.mem_subring.mp G.2
+    have hF := IsEntire.mem_subring.mp F.property
+    have hG := IsEntire.mem_subring.mp G.property
     -- Write `F = r + p * q` and `G = r' + p * q'`; then `F * G = r * r' + p * Q` with `Q` entire.
     have hdivF := hF.modByMonic_add_divByMonic hp
     have hdivG := hG.modByMonic_add_divByMonic hp
@@ -659,8 +658,8 @@ noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+
     rw [hFG, hQ.modByMonic_coe_add_coe_mul hp, AdjoinRoot.mk_modByMonic, map_mul]
   map_zero' := by simp
   map_add' F G := by
-    rw [Subring.coe_add, (IsEntire.mem_subring.mp F.2).add_modByMonic
-      (IsEntire.mem_subring.mp G.2), map_add]
+    rw [Subring.coe_add, (IsEntire.mem_subring.mp F.property).add_modByMonic
+      (IsEntire.mem_subring.mp G.property), map_add]
 
 /-- Reduction modulo `p` sends an entire series to the class of its remainder. -/
 @[simp]
@@ -669,10 +668,11 @@ theorem IsEntire.mkAdjoinRoot_apply (hp : p.Monic) (F : IsEntire.subring R) :
   (rfl)
 
 /-- On polynomials, reduction modulo `p` is `AdjoinRoot.mk p`. -/
+@[simp high]
 theorem IsEntire.mkAdjoinRoot_coe (hp : p.Monic) (g : Polynomial R) :
-    IsEntire.mkAdjoinRoot hp ⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ =
-      AdjoinRoot.mk p g := by
-  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic]
+    IsEntire.mkAdjoinRoot hp (IsEntire.polynomialHom g) = AdjoinRoot.mk p g := by
+  rw [IsEntire.mkAdjoinRoot_apply, IsEntire.coe_polynomialHom, modByMonic_coe _ hp,
+    AdjoinRoot.mk_modByMonic]
 
 /-- Reduction of entire series modulo `p` is surjective: polynomials already reach every class. -/
 theorem IsEntire.mkAdjoinRoot_surjective (hp : p.Monic) :
@@ -687,7 +687,7 @@ theorem IsEntire.mkAdjoinRoot_eq_zero_iff (hp : p.Monic) {F : IsEntire.subring R
   rw [IsEntire.mkAdjoinRoot_apply, AdjoinRoot.mk_eq_zero,
     ← Polynomial.modByMonic_eq_zero_iff_dvd hp,
     (Polynomial.modByMonic_eq_self_iff hp).mpr (degree_modByMonic_lt _ hp.ne_zero),
-    (IsEntire.mem_subring.mp F.2).modByMonic_eq_zero_iff hp]
+    (IsEntire.mem_subring.mp F.property).modByMonic_eq_zero_iff hp]
 
 end Ultrametric
 
@@ -793,9 +793,9 @@ theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧
 /-- Over a complete ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
 with invertible leading coefficient in the subring of entire power series is equivalent to ordinary
 polynomial divisibility `Q ∣ P`. -/
+@[simp]
 theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
-    (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ ↔ Q ∣ P := by
+    IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P ↔ Q ∣ P := by
   refine ⟨?_, ?_⟩
   · set c := Ring.inverse Q.leadingCoeff
     have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
@@ -804,7 +804,8 @@ theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
     rintro ⟨⟨G, hG⟩, hPG⟩
     replace hG : G.IsEntire := IsEntire.mem_subring.mp hG
     have hPG' : (P : R⟦X⟧) = (Q₁ : R⟦X⟧) * (PowerSeries.C Q.leadingCoeff * G) := by
-      have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := congrArg Subtype.val hPG
+      have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := by
+        simpa only [Subring.coe_mul, IsEntire.coe_polynomialHom] using congrArg Subtype.val hPG
       have h2 : (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff = (Q : R⟦X⟧) := by
         calc (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff
             = PowerSeries.C (c * Q.leadingCoeff) * (Q : R⟦X⟧) := by
@@ -818,14 +819,13 @@ theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
       Polynomial.coe_inj.mp (by rw [Polynomial.coe_mul, hdiv, ← hPG'])
     exact ⟨Polynomial.C c * (P /ₘ Q₁), by simpa only [Q₁, mul_assoc, mul_left_comm] using hPK⟩
   · rintro ⟨K, rfl⟩
-    exact ⟨⟨K, IsEntire.mem_subring.mpr (isEntire_coe K)⟩, Subtype.ext (Polynomial.coe_mul Q K)⟩
+    exact ⟨IsEntire.polynomialHom K, map_mul IsEntire.polynomialHom Q K⟩
 
 /-- Over a complete ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q`
 divides `P` in the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q`
 share a left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
 theorem eq_of_coe_dvd_of_natDegree_le {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff)
-    (hdvd : (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩)
+    (hdvd : IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P)
     (hdeg : P.natDegree ≤ Q.natDegree) {k : ℕ} (hQk : IsLeftRegular (Q.coeff k))
     (hk : P.coeff k = Q.coeff k) :
     P = Q :=

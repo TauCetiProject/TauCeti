@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
-import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Equivalence
 
 /-!
 # Marked permutation triples and finite-index subgroups
@@ -20,9 +20,12 @@ and the marked isomorphism class is unique.
 is necessary: the natural-number index of an infinite-index subgroup is zero, whereas there
 are no connected triples on zero sheets. The subgroup map itself is defined for every degree.
 
-The classification combines the marked monodromy classification with the existing pointed
-cover classification by recovered subgroups. In particular, the inverse direction uses the
-quotient of the universal cover by the prescribed subgroup.
+The classification is the index-`n` slice of the classification of pointed connected covers by
+their recovered subgroups (`TauCeti.ConnectedPointedCoverClass.subgroupEquiv`), composed with the
+inverse of the bijection of pointed covers with marked triples
+(`TauCeti.ConnectedPointedCoverClass.markedClassEquiv`). What makes the two agree is
+`TauCeti.ConnectedPointedCoverClass.subgroup_markedClass`: the subgroup of loops fixing the marked
+sheet is the subgroup recovered by the pointed cover.
 
 ## References
 
@@ -47,11 +50,11 @@ noncomputable def subgroup (c : MarkedIsoClass n) :
     Subgroup (FundamentalGroup ThricePuncturedSphere basePt) :=
   lift
     (fun t i => (stabilizer (Perm (Fin n)) i).comap
-      (peripheralBasis.lift ![t.1.σ0, t.1.σ1]))
+      (peripheralBasis.lift ![t.val.σ0, t.val.σ1]))
     (by
       intro τ t i
-      have hρ : peripheralBasis.lift ![(τ • t).1.σ0, (τ • t).1.σ1] =
-          (MulAut.conj τ).toMonoidHom.comp (peripheralBasis.lift ![t.1.σ0, t.1.σ1]) := by
+      have hρ : peripheralBasis.lift ![(τ • t).val.σ0, (τ • t).val.σ1] =
+          (MulAut.conj τ).toMonoidHom.comp (peripheralBasis.lift ![t.val.σ0, t.val.σ1]) := by
         apply fundamentalGroup_hom_ext <;> simp
       ext γ
       simp only [Subgroup.mem_comap, mem_stabilizer_iff, Perm.smul_def]
@@ -62,13 +65,13 @@ noncomputable def subgroup (c : MarkedIsoClass n) :
 @[simp]
 theorem subgroup_mk (t : ConnectedTriple n) (i : Fin n) :
     (mk t i).subgroup = (stabilizer (Perm (Fin n)) i).comap
-      (peripheralBasis.lift ![t.1.σ0, t.1.σ1]) :=
+      (peripheralBasis.lift ![t.val.σ0, t.val.σ1]) :=
   lift_mk _ _ t i
 
 /-- Membership in the subgroup is the fixed-label equation in the peripheral representation. -/
 theorem mem_subgroup_mk_iff (t : ConnectedTriple n) (i : Fin n)
     (γ : FundamentalGroup ThricePuncturedSphere basePt) :
-    γ ∈ (mk t i).subgroup ↔ peripheralBasis.lift ![t.1.σ0, t.1.σ1] γ i = i := by
+    γ ∈ (mk t i).subgroup ↔ peripheralBasis.lift ![t.val.σ0, t.val.σ1] γ i = i := by
   simp [mem_stabilizer_iff, Perm.smul_def]
 
 end MarkedIsoClass
@@ -80,8 +83,9 @@ point of the cover carrying that label. -/
 theorem subgroup_mk_connectedTriple (c : ConnectedFiberNumberedCover
     (X := TopCat.of ThricePuncturedSphere) basePt n) (i : Fin n) :
     (MarkedIsoClass.mk c.connectedTriple i).subgroup =
-      (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ (c.ν.symm i).2).range := by
-  have hρ : peripheralBasis.lift ![c.connectedTriple.1.σ0, c.connectedTriple.1.σ1] =
+      (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ (c.ν.symm i).property).range
+          := by
+  have hρ : peripheralBasis.lift ![c.connectedTriple.val.σ0, c.connectedTriple.val.σ1] =
       c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm basePt) := by
     apply fundamentalGroup_hom_ext <;>
       simp [coe_connectedTriple, IsCoveringMap.monodromyTriple_σ0,
@@ -112,90 +116,49 @@ theorem index_subgroup (c : MarkedIsoClass n) : c.subgroup.index = n := by
   rw [← d.cover.isCoveringMap_proj.card_fiber_eq_index (d.ν.symm i), Nat.card_congr d.ν,
     Nat.card_fin]
 
-/-- A marked connected triple is determined up to marked relabeling by its subgroup. -/
-theorem subgroup_injective : Function.Injective (subgroup : MarkedIsoClass n → _) := by
-  intro c c' h
-  obtain ⟨d, i, rfl⟩ := c.exists_eq_mk_connectedTriple
-  obtain ⟨d', i', rfl⟩ := c'.exists_eq_mk_connectedTriple
-  rw [ConnectedFiberNumberedCover.subgroup_mk_connectedTriple,
-    ConnectedFiberNumberedCover.subgroup_mk_connectedTriple] at h
-  have hpointed : ConnectedPointedCoverClass.mk (d.markLabel i) =
-      ConnectedPointedCoverClass.mk (d'.markLabel i') :=
-    -- `markLabel` exposes its cover and point, so the recovered-subgroup equality is `h`.
-    ConnectedPointedCoverClass.mk_eq_mk_of_range_eq (d.markLabel i) (d'.markLabel i') h
-  have hmarked := congrArg ConnectedPointedCoverClass.markedClass hpointed
-  simpa only [← ConnectedFiberNumberedCoverClass.markLabel_mk,
-    ConnectedFiberNumberedCoverClass.markedClass_markLabel,
-    ConnectedFiberNumberedCoverClass.triple_mk] using hmarked
+end MarkedIsoClass
 
-/-- Every subgroup of positive finite index is the subgroup of a marked connected triple. -/
-theorem exists_subgroup_eq [NeZero n]
-    (H : Subgroup (FundamentalGroup ThricePuncturedSphere basePt)) (hH : H.index = n) :
-    ∃ c : MarkedIsoClass n, c.subgroup = H := by
-  let p := UniversalCover.subgroupCover basePt H
-  let e := UniversalCover.subgroupCoverBasepointFiber basePt H
-  have hquot : Nat.card (UniversalCover.subgroupQuotientProj basePt H ⁻¹' {basePt}) = n := by
-    calc
-      _ = (mapOfEq
-          ⟨UniversalCover.subgroupQuotientProj basePt H,
-            UniversalCover.continuous_subgroupQuotientProj basePt H⟩
-          (UniversalCover.subgroupQuotientProj_basepoint basePt H)).range.index :=
-        (UniversalCover.isCoveringMap_subgroupQuotientProj basePt H).card_fiber_eq_index
-          ⟨UniversalCover.SubgroupQuotient.basepoint basePt H,
-            UniversalCover.subgroupQuotientProj_basepoint basePt H⟩
-      _ = H.index := congrArg Subgroup.index
-        (UniversalCover.range_mapOfEq_subgroupQuotientProj basePt H)
-      _ = n := hH
-  have hcard : Nat.card (⇑p.proj ⁻¹' {basePt}) = n :=
-    (Nat.card_congr (UniversalCover.subgroupCoverFiberEquivSubgroupQuotient basePt H)).trans hquot
-  have := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne n))
-  let := Fintype.ofFinite (⇑p.proj ⁻¹' {basePt})
-  let ν : ⇑p.proj ⁻¹' {basePt} ≃ Fin n :=
-    Fintype.equivFinOfCardEq (Nat.card_eq_fintype_card.symm.trans hcard)
-  let d : ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n := ⟨p, ν⟩
-  refine ⟨mk d.connectedTriple (ν e), ?_⟩
-  rw [ConnectedFiberNumberedCover.subgroup_mk_connectedTriple, ν.symm_apply_apply]
-  apply (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq p.isCoveringMap_proj
-    (UniversalCover.isCoveringMap_subgroupQuotientProj basePt H) e.2
-    (UniversalCover.subgroupQuotientProj_basepoint basePt H)).1
-    ⟨UniversalCover.subgroupCoverTotalSpaceHomeomorph basePt H, ?_, ?_⟩ |>.trans
-      (UniversalCover.range_mapOfEq_subgroupQuotientProj basePt H)
-  · have he := congrArg Subtype.val
-      (UniversalCover.subgroupCoverFiberEquivSubgroupQuotient_apply_basepoint basePt H)
-    rw [UniversalCover.subgroupCoverFiberEquivSubgroupQuotient_apply_coe,
-      UniversalCover.SubgroupQuotient.basepointFiber_coe] at he
-    exact he
-  · exact funext (UniversalCover.subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph basePt H)
+/-- **A pointed class and its marked class recover the same subgroup**: the subgroup of loops
+fixing the marked sheet is the subgroup recovered by the corresponding pointed cover. -/
+theorem ConnectedPointedCoverClass.subgroup_markedClass
+    (C : ConnectedPointedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    C.markedClass.subgroup = (ConnectedPointedCoverClass.subgroup C).val := by
+  obtain ⟨N, i, rfl⟩ := C.exists_markLabel_eq
+  obtain ⟨d, rfl⟩ := ConnectedFiberNumberedCoverClass.mk_surjective N
+  rw [ConnectedFiberNumberedCoverClass.markedClass_markLabel,
+    ConnectedFiberNumberedCoverClass.triple_mk,
+    ConnectedFiberNumberedCover.subgroup_mk_connectedTriple,
+    ConnectedFiberNumberedCoverClass.markLabel_mk, ConnectedPointedCoverClass.subgroup_mk,
+    ConnectedPointedCover.subgroup_def]
+  -- `markLabel` exposes its cover and point, so the two recovered subgroups agree.
+  rfl
 
-/-- The subgroup map is a bijection onto the subgroups of index equal to the nonzero degree. -/
-theorem subgroup_bijective [NeZero n] :
-    Function.Bijective (fun c : MarkedIsoClass n =>
-      (⟨c.subgroup, c.index_subgroup⟩ :
-        {H : Subgroup (FundamentalGroup ThricePuncturedSphere basePt) // H.index = n})) := by
-  refine ⟨fun _ _ h => subgroup_injective (congrArg Subtype.val h), ?_⟩
-  rintro ⟨H, hH⟩
-  obtain ⟨c, hc⟩ := exists_subgroup_eq H hH
-  exact ⟨c, Subtype.ext hc⟩
+namespace MarkedIsoClass
 
-/-- Marked connected triples of nonzero degree `n` classify the index-`n` subgroups of the
-fundamental group of the thrice-punctured sphere. -/
+/-- **Marked connected triples of nonzero degree `n` classify the index-`n` subgroups of the
+fundamental group of the thrice-punctured sphere**: this is the index-`n` slice of the
+classification of pointed covers (`TauCeti.ConnectedPointedCoverClass.subgroupEquiv`), read
+through the bijection of pointed covers with marked triples
+(`TauCeti.ConnectedPointedCoverClass.markedClassEquiv`). -/
 noncomputable def subgroupEquiv [NeZero n] :
     MarkedIsoClass n ≃
       {H : Subgroup (FundamentalGroup ThricePuncturedSphere basePt) // H.index = n} :=
-  Equiv.ofBijective (fun c => ⟨c.subgroup, c.index_subgroup⟩) subgroup_bijective
+  ConnectedPointedCoverClass.markedClassEquiv.symm.trans ConnectedPointedCoverClass.subgroupEquiv
 
 /-- The classification sends a marked class to its fixed-sheet subgroup. -/
 @[simp]
 theorem coe_subgroupEquiv_apply [NeZero n] (c : MarkedIsoClass n) :
-    (subgroupEquiv c).1 = c.subgroup :=
-  (rfl)
+    (subgroupEquiv c).val = c.subgroup := by
+  rw [subgroupEquiv, Equiv.trans_apply, ConnectedPointedCoverClass.subgroupEquiv_apply,
+    ← ConnectedPointedCoverClass.subgroup_markedClass,
+    ConnectedPointedCoverClass.markedClass_markedClassEquiv_symm]
 
 /-- The marked class assigned to an index-`n` subgroup recovers that subgroup. -/
 @[simp]
 theorem subgroup_subgroupEquiv_symm [NeZero n]
     (H : {H : Subgroup (FundamentalGroup ThricePuncturedSphere basePt) // H.index = n}) :
-    (subgroupEquiv.symm H).subgroup = H.1 :=
-  congrArg Subtype.val (subgroupEquiv.apply_symm_apply H)
+    (subgroupEquiv.symm H).subgroup = H.val :=
+  (coe_subgroupEquiv_apply _).symm.trans (congrArg Subtype.val (subgroupEquiv.apply_symm_apply H))
 
 end MarkedIsoClass
 

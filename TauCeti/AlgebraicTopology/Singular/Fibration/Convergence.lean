@@ -28,7 +28,9 @@ fibration, read in the indexing of `TauCeti.preimageSkeleton`: a Serre fibration
 * **First quadrant.** The object at `(a, b)` on the first page (numbered `2`) is
   `Hₙ(E_{b+1}, E_b; R)` with `a + b = -n`, so it vanishes when `0 ≤ a + 2b`
   (`TauCeti.TopCat.isZero_serreSpectralSequence_page_two_X`). In the classical homological indexing
-  `E¹_{d,t} = H_{d+t}(E_d, E_{d-1}; R)` with `d = b + 1`, this is the vanishing for `t < 0`.
+  `E¹_{d,t} = H_{d+t}(E_d, E_{d-1}; R)` with `d = b + 1`, this is the vanishing for `t < 0`. It
+  also vanishes when `b ≤ -2`, where `E_b = E_{b+1} = p⁻¹(X⁻¹)`
+  (`TauCeti.TopCat.isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two`).
 * **Finite filtration of the abutment.** Over a CW complex `K` containing the image of `p`, with no
   finiteness or dimension bound, the induced filtration `F_b Hₙ(E; R)` of the abutment is
   everything from `b = n` on
@@ -81,10 +83,7 @@ chains of `E` by the singular chains of the preimages of the skeleta. Its spectr
 the skeleta. -/
 abbrev serreSpectralObject (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
     (R : Type u) [Ring R] :=
-  CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-    (monotone_chainFiltration
-      ((AlgebraicTopology.singularChainComplexFunctor _).obj (ModuleCat.of R R))
-      (monotone_preimageSkeleton (C := C) p)))
+  filteredSpaceSpectralObject (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p)
 
 end Defs
 
@@ -127,6 +126,21 @@ theorem isZero_serreSpectralSequence_page_two_X (pq : ℤ × ℤ) (h : 0 ≤ pq.
     exact (isZero_singularHomology_preimageSkeleton_succ hp R pq.2 n (by lia)).of_iso
       (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
         (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n (by lia))
+
+variable (C) in
+/-- **The Serre spectral sequence vanishes below the row `b = -1`.** The object at `pq = (a, b)` on
+the first page (numbered `2`) vanishes when `b ≤ -2`: the two stages `E_b` and `E_{b+1}` of the
+filtration involved are both the preimage `p⁻¹(X⁻¹)` of the bottom skeleton. -/
+theorem isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two (pq : ℤ × ℤ) (hb : pq.2 ≤ -2) :
+    IsZero (((serreSpectralSequence C p R).page 2).X pq) := by
+  rcases lt_or_ge 0 (pq.1 + pq.2) with h | h
+  · exact isZero_filteredSpaceSpectralSequence_page_two_X _ _ _ h
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, pq.1 + pq.2 = -n := ⟨(-(pq.1 + pq.2)).toNat, by lia⟩
+  refine IsZero.of_iso ?_ (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+    (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hn)
+  exact (TopPair.isZero_singularHomology_ofInclusion_congr _ _ (subset_refl _)
+    (preimageSkeleton_of_neg p (by lia)) (preimageSkeleton_of_neg p (by lia)) n).2
+    (TopPair.isZero_singularHomology_ofInclusion_self _ _ n)
 
 include hp in
 variable (C) in

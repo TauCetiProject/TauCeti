@@ -59,6 +59,9 @@ extension of scalars to a larger field is
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_isPullback`: stability under base change of
   morphisms locally of finite type.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_fiber_eq_of_pureRelativeDimension_comp`: an
+  irreducible fibre of a morphism locally of finite type that meets an open on which the morphism
+  has pure relative dimension `d` has dimension `d`.
 
 ## References
 
@@ -117,7 +120,7 @@ theorem pureRelativeDimension_comp_iff_of_injective (f : X ⟶ Y) (g : Y ⟶ Z)
   by_cases hz : z ∈ Set.range g
   · obtain ⟨y, rfl⟩ := hz
     exact hpre y ▸ h y
-  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.2⟩⟩
+  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.property⟩⟩
     exact isPureDimensional_of_isEmpty _ _
 
 namespace PureRelativeDimension
@@ -189,7 +192,7 @@ instance isZariskiLocalAtTarget (d : ℕ) :
       exact isPureDimensional_preimage y
     · -- A point of `f ⁻¹ᵁ U` maps into `U`, so nothing in it lies over `y`.
       have : IsEmpty (((f ⁻¹ᵁ U).ι ≫ f) ⁻¹' {y}) :=
-        ⟨fun x ↦ hy (by simpa [Set.preimage_comp] using x.2 ▸ x.1.2)⟩
+        ⟨fun x ↦ hy (by simpa [Set.preimage_comp] using x.property ▸ x.val.property)⟩
       exact isPureDimensional_of_isEmpty _ _
   have : RelativeDimensionLE d f :=
     IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (hf i).toRelativeDimensionLE
@@ -236,6 +239,21 @@ instance pullback_fst (f : X ⟶ Z) (g : Y ⟶ Z) [LocallyOfFiniteType g]
 
 end PureRelativeDimension
 
+/-- Let `f` be locally of finite type with irreducible fibre over `y`, and let `i` be an open
+immersion such that `i ≫ f` has pure relative dimension `d`. If the image of `i` meets the fibre
+of `f` over `y`, then that fibre has Krull dimension `d`. -/
+theorem topologicalKrullDim_fiber_eq_of_pureRelativeDimension_comp (i : Z ⟶ X) [IsOpenImmersion i]
+    (f : X ⟶ Y) [LocallyOfFiniteType f] [PureRelativeDimension d (i ≫ f)] {y : Y}
+    [IrreducibleSpace (f.fiber y)] (z : Z) (hz : f (i z) = y) :
+    topologicalKrullDim (f.fiber y) = d := by
+  have : Nonempty ↥(i ⁻¹' (f ⁻¹' {y})) := ⟨⟨z, hz⟩⟩
+  have hpure : IsPureDimensional d ↥(i ⁻¹' (f ⁻¹' {y})) := by
+    have := PureRelativeDimension.isPureDimensional_preimage (d := d) (f := i ≫ f) y
+    rwa [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp] at this
+  exact isPureDimensional_iff_topologicalKrullDim_eq.mp <|
+    hpure.of_isOpenEmbedding_of_irreducibleSpace (topologicalKrullDim_fiber_inter_eq f y)
+      (isOpenEmbedding_fiber i f y)
+
 /-- A morphism locally of finite type has pure relative dimension `d` exactly when its
 restrictions to the members of an open cover of the source do. -/
 theorem pureRelativeDimension_iff_of_openCover (f : X ⟶ Y) [LocallyOfFiniteType f]
@@ -252,8 +270,8 @@ theorem pureRelativeDimension_iff_of_openCover (f : X ⟶ Y) [LocallyOfFiniteTyp
     rw [← Set.preimage_comp, ← TopCat.coe_comp, ← Scheme.Hom.comp_base]
     exact (h i).isPureDimensional_preimage y
   · intro p
-    obtain ⟨i, z, hz⟩ := 𝒰.exists_eq (f.fiberHomeo y p).1
-    refine ⟨i, ⟨z, by simpa [hz] using (f.fiberHomeo y p).2⟩, ?_⟩
+    obtain ⟨i, z, hz⟩ := 𝒰.exists_eq (f.fiberHomeo y p).val
+    refine ⟨i, ⟨z, by simpa [hz] using (f.fiberHomeo y p).property⟩, ?_⟩
     apply (f.fiberHomeo y).injective
     ext
     simpa using hz

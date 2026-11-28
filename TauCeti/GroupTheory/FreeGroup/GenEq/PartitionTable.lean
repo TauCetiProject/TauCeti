@@ -206,10 +206,10 @@ pair of dual bases of length one, with the signs of the letters; and every posit
 carrying a letter of `A^{±1}` is a constant base with that letter. -/
 @[reducible] noncomputable def ofEntries : GenEq A :=
   ofBases (β := {p // IsVarPair E p} ⊕ {q // IsLetterPair E q}) (E.flatMap Prod.snd).length
-    (Sum.elim (fun p => ⟨entryStart E p.1.1, Nat.lt_succ_of_le (entryStart_le E _)⟩)
-      fun q => q.1.1.castSucc)
-    (Sum.elim (fun p => ⟨entryStart E ((p.1.1 : ℕ) + 1), Nat.lt_succ_of_le (entryStart_le E _)⟩)
-      fun q => q.1.1.succ)
+    (Sum.elim (fun p => ⟨entryStart E p.val.1, Nat.lt_succ_of_le (entryStart_le E _)⟩)
+      fun q => q.val.1.castSucc)
+    (Sum.elim (fun p => ⟨entryStart E ((p.val.1 : ℕ) + 1), Nat.lt_succ_of_le (entryStart_le E _)⟩)
+      fun q => q.val.1.succ)
     (by
       rintro (⟨p, hp⟩ | ⟨q, -⟩)
       · have := List.length_pos_iff.2 hp.2.2.2.1
@@ -217,8 +217,8 @@ carrying a letter of `A^{±1}` is a constant base with that letter. -/
           Fin.getElem_fin] at this ⊢
         lia
       · exact Fin.castSucc_lt_succ)
-    (Sum.elim (fun p => E[p.1.1].1.2) fun q => (E.flatMap Prod.snd)[q.1.1].2)
-    (Sum.map (fun p => ⟨p.1.swap, p.2.swap⟩) fun q => ⟨q.1.swap, q.2.swap⟩)
+    (Sum.elim (fun p => E[p.val.1].1.2) fun q => (E.flatMap Prod.snd)[q.val.1].2)
+    (Sum.map (fun p => ⟨p.val.swap, p.property.swap⟩) fun q => ⟨q.val.swap, q.property.swap⟩)
     (by rintro (_ | _) <;> rfl)
     (Finset.univ.filterMap
       (fun c : Fin (E.flatMap Prod.snd).length => ((E.flatMap Prod.snd)[c].1.getRight?).map
@@ -707,6 +707,16 @@ theorem IsPartitionTable.eq_nil_of_systemSize_eq_zero (hT : IsPartitionTable r T
   exact (hT.length_le o).trans
     (Finset.single_le_sum (f := fun o : Occurrence r => r[o.1].length - 1)
       (fun _ _ => Nat.zero_le _) (Finset.mem_univ o))
+
+/-- In a partition table, the letter `y` of a one-letter word `[y]` of the system has an
+occurrence with the empty word. -/
+theorem IsPartitionTable.exists_occurrence_with_word_eq_nil_of_singleton_mem
+    (hT : IsPartitionTable r T) {y : (X ⊕ A) × Bool} (hy : [y] ∈ r) :
+    ∃ o : Occurrence r, r[o.1][o.2] = y ∧ T o = [] := by
+  obtain ⟨i, hi, hw⟩ := List.getElem_of_mem hy
+  have h : 0 < r[i].length := by simp [hw]
+  refine ⟨⟨⟨i, hi⟩, ⟨0, h⟩⟩, by simp [hw], List.eq_nil_of_length_eq_zero ?_⟩
+  simpa [hw] using hT.length_le ⟨⟨i, hi⟩, ⟨0, h⟩⟩
 
 /-- **Kharlampovich–Myasnikov, §4.2.** At most `|S|` letters of `Z` occur in a partition table of
 a system of size `|S|`, so for `|S| > 0` they can be renamed injectively by elements of

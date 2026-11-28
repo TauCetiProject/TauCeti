@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Singularity
+public import TauCeti.CategoryTheory.Triangulated.Equivalence
 public import TauCeti.RingTheory.Flat.NonZeroDivisors
 public import TauCeti.RingTheory.KrullDimension.FiniteType
 
@@ -203,6 +204,20 @@ section FiniteGlobalDimension
 
 variable {S : Type u} [CommRing S] [IsNoetherianRing S] {w : S}
   [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+
+/-- Any equivalence `E : HMF(S, w) ≌ D_sg(mod-S/(w))` with `E.functor = quotientSingularityCokernel`
+is a triangulated equivalence. -/
+theorem isTriangulated_of_functor_eq_quotientSingularityCokernel (hw : w ∈ nonZeroDivisors S)
+    (E : HomotopyCategory (S := S) (w := w) ≌
+      SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w})))
+    (hE : E.functor = quotientSingularityCokernel.{v, u} (S := S) (w := w)) :
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    letI : E.functor.CommShift ℤ := Functor.CommShift.ofIso (eqToIso hE.symm) ℤ
+    letI := E.commShiftInverse ℤ; letI := E.commShift_of_functor ℤ
+    E.IsTriangulated := by
+  let := quotientSingularityCokernelCommShift.{v, u} hw
+  have := quotientSingularityCokernel_isTriangulated.{v, u} hw
+  exact E.isTriangulated_of_functor_eq hE
 
 /-- **Essential surjectivity of the singularity-category cokernel functor.** For a non-zero-divisor
 `w` of a Noetherian ring `S` of finite global dimension, `quotientSingularityCokernel` is

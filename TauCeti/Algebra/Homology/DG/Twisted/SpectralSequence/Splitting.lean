@@ -43,6 +43,8 @@ differential of the homogeneous component of that element one degree lower.
 
 ## Main results
 
+* `TauCeti.isIso_indexGradedPieceEval`: at the only generator of index `p`, the evaluation is an
+  isomorphism of complexes, with inverse the insertion.
 * `TauCeti.shiftedModuleComplexHomologyEquiv_homologyπ`: the identification sends the class of a
   cycle to its class in `H(ℳ)`, and `TauCeti.shiftedModuleComplexHomologyEquiv_symm_mk`: its
   inverse sends the class of a homogeneous cycle of `ℳ` to the class of the corresponding cycle.
@@ -108,7 +110,7 @@ omit [SMulCommClass R Aᵐᵒᵖ M] in
 theorem shiftedModuleComplexXEquiv_mem {p n j : ℤ} (hj : j = n + p)
     (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :
     (shiftedModuleComplexXEquiv hM p n α : M) ∈ ℳ j :=
-  hj ▸ (shiftedModuleComplexXEquiv hM p n α).2
+  hj ▸ (shiftedModuleComplexXEquiv hM p n α).property
 
 omit [SMulCommClass R Aᵐᵒᵖ M] in
 /-- Transport along an equality of degrees does not change the underlying element of `ℳ`. -/
@@ -186,8 +188,8 @@ noncomputable def indexGradedPieceEvalX (x : {x : P // ind x = p}) (n : ℤ) :
     ((LinearMap.proj x ∘ₗ
         (twistedTotalGrading ℳ (fun x : {x : P // ind x = p} ↦ ind x) n).subtype).codRestrict
         (ℳ (n + p)) fun f ↦ by
-      have hf := mem_twistedTotalGrading_iff.1 f.2 x
-      rwa [x.2] at hf) ∘ₗ
+      have hf := mem_twistedTotalGrading_iff.1 f.property x
+      rwa [x.property] at hf) ∘ₗ
     (indexGradedPieceComplexXEquiv hM ind p n).toLinearMap
 
 /-- `indexGradedPieceEvalX` evaluates the underlying family at `x`. -/
@@ -234,7 +236,7 @@ noncomputable def indexGradedPieceSingleX (x : {x : P // ind x = p}) (n : ℤ) :
         _ fun α ↦ mem_twistedTotalGrading_iff.2 fun y ↦ by
       by_cases hy : y = x
       · subst hy
-        simp [y.2]
+        simp [y.property]
       · simp [hy]) ∘ₗ
     (shiftedModuleComplexXEquiv hM p n).toLinearMap
 
@@ -310,6 +312,34 @@ theorem sum_indexGradedPieceEval_comp_single :
   rw [Finset.sum_eq_single y (fun x _ hx ↦ ite_eq_right fun h : y = x ↦ absurd h.symm hx)
     (fun h ↦ absurd (Finset.mem_univ _) h), ite_eq_left rfl]
 
+/-- When `x` is the only generator of index `p`, evaluating and inserting at `x` is the identity
+of the `p`-th graded piece. -/
+theorem indexGradedPieceEval_comp_single_of_forall_eq (x : {x : P // ind x = p})
+    (hx : ∀ y : {x : P // ind x = p}, y = x) :
+    indexGradedPieceEval hM ind x ≫ indexGradedPieceSingle hM ind x =
+      𝟙 (indexGradedPieceComplex hM ind p) := by
+  have : Subsingleton {x : P // ind x = p} := ⟨fun a b ↦ (hx a).trans (hx b).symm⟩
+  rw [← sum_indexGradedPieceEval_comp_single, Fintype.sum_subsingleton _ x]
+
+omit [DecidableEq P] in
+/-- When `x` is the only generator of index `p`, the evaluation at `x` is an isomorphism of
+complexes, with inverse the insertion at `x`. -/
+theorem isIso_indexGradedPieceEval (x : {x : P // ind x = p})
+    (hx : ∀ y : {x : P // ind x = p}, y = x) : IsIso (indexGradedPieceEval hM ind x) := by
+  classical
+  exact ⟨indexGradedPieceSingle hM ind x, indexGradedPieceEval_comp_single_of_forall_eq hM ind x hx,
+    by simp⟩
+
+omit [DecidableEq P] in
+/-- When `x` is the only generator of index `p`, the evaluation at `x` is injective on the
+cohomology of the `p`-th graded piece. -/
+theorem injective_homologyMap_indexGradedPieceEval (x : {x : P // ind x = p})
+    (hx : ∀ y : {x : P // ind x = p}, y = x) (n : ℤ) :
+    Function.Injective (HomologicalComplex.homologyMap (indexGradedPieceEval hM ind x) n).hom := by
+  have := isIso_indexGradedPieceEval hM ind x hx
+  exact (asIso (HomologicalComplex.homologyMap (indexGradedPieceEval hM ind x) n)).toLinearEquiv
+    |>.injective
+
 /-- **The cohomology of a graded piece of the index filtration**: the cohomology of
 `⊕_{ind x = p} ℳ ⊗ ⟨x⟩` in total degree `n` is the product over the generators `x` of index `p`
 of the cohomology of `shiftedModuleComplex hM p` in degree `n`, that is of `ℳ` in degree
@@ -381,7 +411,7 @@ private noncomputable def cyclesToCohomologyGrading (p n : ℤ) :
   toFun z := ⟨Submodule.Quotient.mk ⟨shiftedModuleComplexXEquiv hM p n
       ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).iCycles n z),
         hM.mem_cycles.mpr (dM_shiftedModuleComplexXEquiv_iCycles hM p n z)⟩,
-    hM.quotientMk_mem_cohomologyGrading (shiftedModuleComplexXEquiv hM p n _).2⟩
+    hM.quotientMk_mem_cohomologyGrading (shiftedModuleComplexXEquiv hM p n _).property⟩
   map_add' z w := by
     apply Subtype.ext
     rw [Submodule.coe_add, ← Submodule.Quotient.mk_add]
@@ -408,7 +438,7 @@ private theorem cyclesToCohomologyGrading_surjective (p n : ℤ) :
   set α := (shiftedModuleComplexXEquiv hM p n).symm ⟨z, hz⟩
   have hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0 := by
     rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, LinearEquiv.apply_symm_apply]
-    exact hM.mem_cycles.mp z.2
+    exact hM.mem_cycles.mp z.property
   refine ⟨(shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1) (by simp) hα,
     Subtype.ext ?_⟩
   rw [cyclesToCohomologyGrading_apply]
@@ -448,7 +478,7 @@ private theorem ker_homologyπ_shiftedModuleComplex (p n : ℤ) :
       hM.map_decompose, hx]
     have hdeg : n - 1 + p + 1 = n + p := by ring
     rw [hdeg]
-    exact DirectSum.decompose_of_mem_same ℳ (shiftedModuleComplexXEquiv hM p n _).2
+    exact DirectSum.decompose_of_mem_same ℳ (shiftedModuleComplexXEquiv hM p n _).property
 
 /-- **The cohomology of the shifted complex of a DG module is its intrinsic cohomology**: the
 cohomology of `shiftedModuleComplex hM p` in degree `n` is the piece `H^{n + p}(ℳ)` of the
@@ -500,7 +530,7 @@ theorem shiftedModuleComplexHomologyEquiv_symm_mk (p n : ℤ) (z : hM.cycles)
         ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk
           ((shiftedModuleComplexXEquiv hM p n).symm ⟨z, hz⟩) (n + 1) (by simp) (by
             rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, LinearEquiv.apply_symm_apply]
-            exact hM.mem_cycles.mp z.2)) := by
+            exact hM.mem_cycles.mp z.property)) := by
   rw [LinearEquiv.symm_apply_eq]
   apply Subtype.ext
   rw [shiftedModuleComplexHomologyEquiv_homologyπ]

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -110,8 +110,12 @@ let alone a holomorphic map.
   lies on the image of the remainder and on the frontier of the image of the whole.
 * `TauCeti.frontier_inter_closure_eq_frontier_inter_frontier` — the frontier of a set meets the
   closure of a subset exactly where it meets that subset's frontier.
+* `TauCeti.closure_subset_interior_of_subset_of_disjoint_frontier` — the closure of a subset
+  lies in the larger set's interior when the two frontiers are disjoint.
 * `TauCeti.frontier_image_subset_of_closure_subset` — for an open map whose image closure adds at
   most a set `t`, the frontier of an image lies on the image of the frontier, together with `t`.
+* `IsOpenMap.isClosed_preimage_iff_disjoint_frontier` — the preimage of an open set under a
+  continuous open map is closed exactly when the range is disjoint from its frontier.
 * `TauCeti.le_of_mem_frontier_inter_preimage_Ioi` — a function continuous on an open set and at most
   `a` on its frontier is at most `a` on the frontier of its superlevel set `{a < f}` in that set.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
@@ -141,6 +145,11 @@ theorem _root_.IsPreconnected.subset_interior_or_subset_compl_closure (hS : IsPr
   rw [interior_compl] at hsub
   exact hS.subset_or_subset isOpen_interior isClosed_closure.isOpen_compl
     (disjoint_compl_right.mono_left (interior_subset.trans subset_closure)) hsub
+
+/-- A preconnected set missing the frontier of a closed set `V` lies in `interior V` or in `Vᶜ`. -/
+theorem _root_.IsPreconnected.subset_interior_or_subset_compl_of_isClosed (hS : IsPreconnected S)
+    (hV : IsClosed V) (h : Disjoint S (frontier V)) : S ⊆ interior V ∨ S ⊆ Vᶜ := by
+  simpa only [hV.closure_eq] using hS.subset_interior_or_subset_compl_closure h
 
 /-- **A preconnected set that meets both a set and its complement meets its frontier.** If `S` is
 preconnected and contains a point of `V` and a point outside `V`, then `S` meets `frontier V`.
@@ -249,6 +258,18 @@ theorem frontier_inter_closure_eq_frontier_inter_frontier (hAV : A ⊆ V) :
     ⟨hx.1, (mem_frontier_iff_notMem_interior hx.2).mpr fun hint => ?_⟩
   exact (mem_frontier_iff_notMem_interior (hAV hx.2)).mp hx.1 (interior_mono hAV hint)
 
+/-- The closure of a subset with disjoint frontier lies in the larger set's interior. -/
+theorem closure_subset_interior_of_subset_of_disjoint_frontier {B C : Set X}
+    (hsubset : B ⊆ C) (hdisjoint : Disjoint (frontier B) (frontier C)) :
+    closure B ⊆ interior C := by
+  intro x hx
+  rw [← closure_sdiff_frontier]
+  refine ⟨closure_mono hsubset hx, fun hxC ↦ ?_⟩
+  have hxBC : x ∈ frontier C ∩ frontier B := by
+    rw [← frontier_inter_closure_eq_frontier_inter_frontier hsubset]
+    exact ⟨hxC, hx⟩
+  exact Set.disjoint_left.mp hdisjoint hxBC.2 hxBC.1
+
 end Inside
 
 section OpenImage
@@ -277,6 +298,18 @@ theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f)
   refine (Set.sdiff_subset_sdiff hcl (hf.image_interior_subset s)).trans ?_
   rw [Set.union_sdiff_distrib]
   exact Set.union_subset_union (Set.subset_image_sdiff f _ _) Set.sdiff_subset
+
+/-- The preimage of an open set under a continuous open map is closed exactly when the range
+of the map is disjoint from the frontier of the set. -/
+theorem _root_.IsOpenMap.isClosed_preimage_iff_disjoint_frontier (hf : IsOpenMap f)
+    (hfc : Continuous f) (ht : IsOpen t) :
+    IsClosed (f ⁻¹' t) ↔ Disjoint (range f) (frontier t) := by
+  have hopen : IsOpen (f ⁻¹' t) := ht.preimage hfc
+  calc
+    _ ↔ IsClopen (f ⁻¹' t) := ⟨fun h ↦ ⟨h, hopen⟩, IsClopen.isClosed⟩
+    _ ↔ f ⁻¹' frontier t = ∅ := by
+      rw [hf.preimage_frontier_eq_frontier_preimage hfc, isClopen_iff_frontier_eq_empty]
+    _ ↔ _ := Set.preimage_eq_empty_iff.trans disjoint_comm
 
 end OpenImage
 

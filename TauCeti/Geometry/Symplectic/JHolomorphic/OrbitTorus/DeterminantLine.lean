@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.NormalOperator
 public import TauCeti.Analysis.Calculus.ContDiff.Twisted
 public import TauCeti.Analysis.InnerProductSpace.SymplecticCokernel
 public import TauCeti.LinearAlgebra.Determinant.Line
+import TauCeti.Analysis.ODE.HamiltonianCokernel
 
 /-!
 # Kernel, adjoint kernel and determinant line of the orbit-torus operator
@@ -42,16 +43,18 @@ loop equation `w' = J₀ S(t) w` and `Q = Ψ(d) ^ n` for the return map of the `
   (`TauCeti.kerOrbitTorusOperatorEquiv`, `TauCeti.kerOrbitTorusAdjointEquiv`).
 * In finite dimension, `v ↦ -ε₂ J₀ v` induces a linear equivalence from `ker (ε₂ - Q)` onto the
   cokernel `V ⧸ range (ε₂ - Q)` (`TauCeti.kerEquivQuotientRangeOfInnerApplyEq`). The return
-  map preserves the symplectic form `⟪J₀ ·, ·⟫`
-  (`TauCeti.inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply`), so `J₀` carries the
-  `ε₂`-eigenspace into the orthogonal complement of the range; it meets the range only in `0`, and
-  dimensions agree.
+  map preserves the symplectic form `⟪J₀ ·, ·⟫`, for which `J₀ S(t)` is skew
+  (`TauCeti.inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew`), so `J₀` carries
+  the `ε₂`-eigenspace into the orthogonal complement of the range; it meets the range only in
+  `0`, and dimensions agree.
   Hence the kernel of `D†` is identified with the cokernel of `ε₂ - Q`
   (`TauCeti.kerOrbitTorusAdjointEquivQuotientRange`). The factor `-ε₂` is the normalization of
   variation of constants: for `v` in the eigenspace, the solution of `A w = Ψ(t) v` with
-  `w(0) = 0`, where `A = J₀ ∂t + S(t)`, has endpoint `w(n d) = -Q H J₀ v` for a positive definite
-  `H`, and `[-Q H J₀ v]` differs from `[-ε₂ J₀ v]` by an orientation-preserving automorphism of the
-  eigenspace. This comparison is a remark on the choice of sign and is not formalized here.
+  `w(0) = 0`, where `A = J₀ ∂t + S(t)`, solves `w' = J₀ S(t) w - J₀ Ψ(t) v`, so its value at
+  `n d` is the endpoint `E (-J₀ Ψ(·) v)` of variation of constants, and `v ↦ [E (-J₀ Ψ(·) v)]`
+  differs from `v ↦ [-ε₂ J₀ v]` by an automorphism of the eigenspace of positive determinant
+  (`TauCeti.det_pos_symm_comp_kerTwistedLinearOperatorToQuotientRange`, for the path `J₀ S(t)` of
+  period `n d`, after multiplying both maps by `-ε₂`).
 * Consequently the determinant line `det (ker D) ⊗ (det (ker D†))^*` of the twisted operator is
   isomorphic to the determinant line `det (ker (ε₂ - Q)) ⊗ (det (coker (ε₂ - Q)))^*` of the finite
   map `ε₂ - Q` (`TauCeti.orbitTorusDetLineEquiv`), and the two kernels have the same dimension as
@@ -101,8 +104,8 @@ def orbitTorusOperatorₗ (p q : ℝ × ℝ) (ε₁ ε₂ : ℝ) :
     doublyTwistedContDiff ℝ V 2 p q ε₁ ε₂ →ₗ[ℝ] ℝ × ℝ → V where
   toFun u := orbitTorusOperator J₀ S u
   map_add' u v := funext fun z => orbitTorusOperator_add
-    ((mem_doublyTwistedContDiff.1 u.2).1.differentiable two_ne_zero z)
-    ((mem_doublyTwistedContDiff.1 v.2).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 u.property).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 v.property).1.differentiable two_ne_zero z)
   map_smul' c _ := orbitTorusOperator_smul c
 
 variable (J₀ S) in
@@ -111,8 +114,8 @@ def orbitTorusAdjointₗ (p q : ℝ × ℝ) (ε₁ ε₂ : ℝ) :
     doublyTwistedContDiff ℝ V 2 p q ε₁ ε₂ →ₗ[ℝ] ℝ × ℝ → V where
   toFun u := orbitTorusAdjoint J₀ S u
   map_add' u v := funext fun z => orbitTorusAdjoint_add
-    ((mem_doublyTwistedContDiff.1 u.2).1.differentiable two_ne_zero z)
-    ((mem_doublyTwistedContDiff.1 v.2).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 u.property).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 v.property).1.differentiable two_ne_zero z)
   map_smul' c _ := orbitTorusAdjoint_smul c
 
 @[simp]
@@ -172,9 +175,9 @@ theorem ker_orbitTorusOperatorₗ_eq_bot (hℓ : 0 < ℓ) (hd : 0 < d)
     LinearMap.ker (orbitTorusOperatorₗ J₀ S ((k : ℝ) * ℓ, 0) ((a : ℝ) * ℓ, (n : ℝ) * d) (-1) ε₂) =
       ⊥ := by
   refine eq_bot_iff.2 fun u hu => ?_
-  obtain ⟨hs, ht⟩ := twists_of_mem u.2
+  obtain ⟨hs, ht⟩ := twists_of_mem u.property
   have h := eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont
-    (mem_doublyTwistedContDiff.1 u.2).1 (by norm_num) hε₂ hk hn hs ht
+    (mem_doublyTwistedContDiff.1 u.property).1 (by norm_num) hε₂ hk hn hs ht
     (mem_ker_orbitTorusOperatorₗ.1 hu)
   rw [Submodule.mem_bot]
   exact Subtype.ext (h.resolve_left (by norm_num))
@@ -187,17 +190,17 @@ private def kerOrbitTorusAdjointEquivReflect (hε₁ : ε₁ ^ 2 = 1) (k n : ℕ
         (orbitTorusAdjointₗ J₀ S ((k : ℝ) * ℓ, 0) ((a : ℝ) * ℓ, (n : ℝ) * d) ε₁ ε₂) ≃ₗ[ℝ]
       LinearMap.ker
         (orbitTorusOperatorₗ J₀ S ((k : ℝ) * ℓ, 0) (((-a : ℤ) : ℝ) * ℓ, (n : ℝ) * d) ε₁ ε₂) where
-  toFun u := ⟨⟨fun w => (u : ℝ × ℝ → V) (-w.1, w.2), reflect_mem hε₁ u.1.2⟩,
+  toFun u := ⟨⟨fun w => (u : ℝ × ℝ → V) (-w.1, w.2), reflect_mem hε₁ u.val.property⟩,
     mem_ker_orbitTorusOperatorₗ.2 fun z => by
       rw [orbitTorusOperator_comp_neg_fst]
-      exact mem_ker_orbitTorusAdjointₗ.1 u.2 _⟩
+      exact mem_ker_orbitTorusAdjointₗ.1 u.property _⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun u := ⟨⟨fun w => (u : ℝ × ℝ → V) (-w.1, w.2), by
-      simpa only [neg_neg] using reflect_mem hε₁ u.1.2⟩,
+      simpa only [neg_neg] using reflect_mem hε₁ u.val.property⟩,
     mem_ker_orbitTorusAdjointₗ.2 fun z => by
       rw [orbitTorusAdjoint_comp_neg_fst]
-      exact mem_ker_orbitTorusOperatorₗ.1 u.2 _⟩
+      exact mem_ker_orbitTorusOperatorₗ.1 u.property _⟩
   left_inv u := by ext; simp
   right_inv u := by ext; simp
 
@@ -214,7 +217,7 @@ theorem ker_orbitTorusAdjointₗ_eq_bot (hℓ : 0 < ℓ) (hd : 0 < d)
   set e := kerOrbitTorusAdjointEquivReflect (J₀ := J₀) (S := S) (ℓ := ℓ) (d := d) (ε₁ := -1)
     (ε₂ := ε₂) (by norm_num) k n a
   have h0 : e ⟨u, hu⟩ = 0 := Subtype.ext <| (Submodule.eq_bot_iff _).1
-    (ker_orbitTorusOperatorₗ_eq_bot hℓ hd hJ₀ hS hScont hε₂ hk hn (-a)) _ (e ⟨u, hu⟩).2
+    (ker_orbitTorusOperatorₗ_eq_bot hℓ hd hJ₀ hS hScont hε₂ hk hn (-a)) _ (e ⟨u, hu⟩).property
   simpa using congrArg Subtype.val (e.injective (h0.trans e.map_zero.symm))
 
 section Complete
@@ -275,18 +278,18 @@ def kerOrbitTorusOperatorEquiv (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, �
         (orbitTorusOperatorₗ J₀ S ((k : ℝ) * ℓ, 0) ((a : ℝ) * ℓ, (n : ℝ) * d) 1 ε₂) ≃ₗ[ℝ]
       LinearMap.ker
         (ε₂ • 1 - ((dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n : V →L[ℝ] V) : V →ₗ[ℝ] V)) where
-  toFun u := ⟨u.1.1 0, (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn
-    u.1.2 (mem_ker_orbitTorusOperatorₗ.1 u.2)).2⟩
+  toFun u := ⟨u.val.val 0, (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn
+    u.val.property (mem_ker_orbitTorusOperatorₗ.1 u.property)).2⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun v :=
-    ⟨⟨propagatorField J₀ S v, propagatorField_mem hS1 hper k a v.2⟩,
+    ⟨⟨propagatorField J₀ S v, propagatorField_mem hS1 hper k a v.property⟩,
       mem_ker_orbitTorusOperatorₗ.2
         (orbitTorusOperator_dysonSeriesLeft_apply_eq_zero hJ₀sq hS1.continuous v)⟩
   left_inv u := by
     ext1; ext1
-    exact (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn u.1.2
-      (mem_ker_orbitTorusOperatorₗ.1 u.2)).1.symm
+    exact (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn u.val.property
+      (mem_ker_orbitTorusOperatorₗ.1 u.property)).1.symm
   right_inv v := by ext; simp [propagatorField, dysonSeriesLeft_zero]
 
 /-- **The kernel of `D†` is the eigenspace of the return map.** On maps periodic along `(k ℓ, 0)`
@@ -407,8 +410,8 @@ def kerOrbitTorusAdjointEquivQuotientRange (hℓ : 0 < ℓ) (hd : 0 < d)
         have h : ⟪J₀ ((dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) x),
             (dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) y⟫ = ⟪J₀ x, y⟫ := by
           simpa [← dysonSeriesLeft_natCast_mul_of_periodic hM hMper n] using
-            inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply hJ₀ hJ₀sq hS hS1.continuous
-              (n * d) x y
+            inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew hM
+              (fun r x y => by simp [hJ₀sq, hJ₀ x, hS r]) (n * d) x y
         simp only [LinearMap.neg_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
           inner_neg_left, real_inner_smul_left, h])
       hε₂ (fun x => by simp))

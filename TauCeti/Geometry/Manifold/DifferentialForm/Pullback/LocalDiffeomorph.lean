@@ -61,6 +61,8 @@ pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω�
   `x` pulls `η` back to `ω`.
 * `IsLocalDiffeomorph.isBasic_of_mpullback_eq`: a form invariant under a family of maps over a
   local diffeomorphism that is transitive on its fibres is basic for it.
+* `IsLocalDiffeomorph.mpullback_descendedForm_of_injective`: along an injective local
+  diffeomorphism every form is the pullback of its descent.
 * `IsLocalDiffeomorph.exists_mpullback_eq_iff`,
   `IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`: a (smooth) form is the pullback of a
   (smooth) form along a local diffeomorphism exactly when it is invariant under a family of maps
@@ -172,6 +174,14 @@ theorem IsLocalDiffeomorph.exists_mpullback_eq_iff {ι : Type*} (hf : IsLocalDif
 
 end Descent
 
+/-- Along an injective `C^n` local diffeomorphism, `n ≠ 0`, such as the inclusion of a piece of a
+gluing, every form is basic, so it is the pullback of its descent. -/
+theorem IsLocalDiffeomorph.mpullback_descendedForm_of_injective (hf : IsLocalDiffeomorph I I' n f)
+    (hn : n ≠ 0) (hinj : Function.Injective f) (α : RoughForm I M F k) :
+    mpullback I I' f (RoughForm.descendedForm I I' f α) = α :=
+  (RoughForm.isBasic_of_injective hinj (fun x ↦ (hf.isInvertible_mfderiv hn x).injective)
+    α).mpullback_descendedForm fun x ↦ .of_isInvertible (hf.isInvertible_mfderiv hn x)
+
 /-- For a `C^n` local diffeomorphism `f` at `x` and `m + 1 ≤ n`, a form is a `C^m` section near
 `f x` exactly when its pullback along `f` is a `C^m` section near `x`. -/
 theorem IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff [IsManifold I 1 M]
@@ -244,7 +254,7 @@ theorem IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff [IsManifold I ∞ 
       ∀ i, SmoothForm.mpullback (σ i) (hσ i) α = α := by
   simp only [Subtype.ext_iff, SmoothForm.coe_mpullback]
   rw [← hf.exists_mpullback_eq_iff (by simp) (fun i ↦ (hσ i).mdifferentiable (by simp)) hfσ hσf]
-  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.1, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
+  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.val, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
   -- The descended rough form is smooth because its pullback `α` is.
   exact IsSmoothForm.mem_smoothBundleForms
     ((hf.isSmoothForm_mpullback_iff hsurj (by simp)).mp (hβ ▸ α.isSmoothForm))

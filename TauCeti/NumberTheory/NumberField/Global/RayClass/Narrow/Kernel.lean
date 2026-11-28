@@ -98,7 +98,7 @@ private noncomputable def narrowSignResidueEquiv :
   let _ : Subsingleton (RingOfIntegers K ⧸ (narrowModulus K).finitePart) :=
     Ideal.Quotient.subsingleton_iff.mpr narrowModulus_finitePart
   exact
-    { toFun := fun s ↦ (1, fun w ↦ Units.signEquiv ℝ (s w.1))
+    { toFun := fun s ↦ (1, fun w ↦ Units.signEquiv ℝ (s w.val))
       invFun := fun a w ↦ (Units.signEquiv ℝ).symm
         (a.2 ⟨w, mem_narrowModulus_infinitePart w⟩)
       left_inv := fun s ↦ by
@@ -113,7 +113,7 @@ private noncomputable def narrowSignResidueEquiv :
         apply Prod.ext
         · exact Subsingleton.elim _ _
         · funext w
-          exact map_mul (Units.signEquiv ℝ) (s w.1) (t w.1) }
+          exact map_mul (Units.signEquiv ℝ) (s w.val) (t w.val) }
 
 private theorem mem_primeToSubgroup_narrowModulus (x : Kˣ) :
     x ∈ primeToSubgroup (narrowModulus K) := by
@@ -138,7 +138,7 @@ private noncomputable def narrowPrimeToEquiv :
 @[simp] private theorem narrowSignResidueEquiv_snd
     (s : {w : InfinitePlace K // w.IsReal} → (ℝˣ ⧸ Units.posSubgroup ℝ))
     (w : (narrowModulus K).infinitePart) :
-    (narrowSignResidueEquiv (K := K) s).2 w = Units.signEquiv ℝ (s w.1) := rfl
+    (narrowSignResidueEquiv (K := K) s).2 w = Units.signEquiv ℝ (s w.val) := rfl
 
 @[simp] private theorem coe_narrowPrimeToEquiv_symm (x : Kˣ) :
     ((narrowPrimeToEquiv (K := K)).symm x : Kˣ) = x := rfl
@@ -155,7 +155,7 @@ private theorem narrowSignResidueEquiv_fieldUnitSignature (x : Kˣ) :
   · funext w
     rw [narrowSignResidueEquiv_snd, residueSignHom_snd, modulusSignHom_apply,
       coe_narrowPrimeToEquiv_symm]
-    exact (signHom_apply x w.1).symm
+    exact (signHom_apply x w.val).symm
 
 private theorem narrowSignResidueEquiv_unitSignature (u : (RingOfIntegers K)ˣ) :
     narrowSignResidueEquiv (K := K) (NumberField.unitSignature u) =
@@ -197,12 +197,8 @@ noncomputable def narrowSignBoundary :
     ({w : InfinitePlace K // w.IsReal} → (ℝˣ ⧸ Units.posSubgroup ℝ)) →*
       MonoidHom.ker (classMap (Modulus.one_dvd (narrowModulus K))) :=
   (narrowSignRayClass (K := K)).codRestrict _ fun s ↦ by
-    have hs : rayClassToClassGroup (narrowModulus K) (narrowSignRayClass s) = 1 := by
-      rw [← MonoidHom.mem_ker, ← range_residueSignRayClass]
-      exact ⟨narrowSignResidueEquiv s, rfl⟩
-    rw [rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap,
-      MonoidHom.comp_apply] at hs
-    exact MonoidHom.mem_ker.mpr <| oneEquivClassGroup.injective <| by simpa only [map_one]
+    rw [← ker_rayClassToClassGroup_eq_ker_classMap_one_dvd, ← range_residueSignRayClass]
+    exact ⟨narrowSignResidueEquiv s, rfl⟩
 
 private theorem coe_narrowSignBoundary
     (s : {w : InfinitePlace K // w.IsReal} → (ℝˣ ⧸ Units.posSubgroup ℝ)) :
@@ -241,11 +237,9 @@ theorem ker_narrowSignBoundary :
 theorem narrowSignBoundary_surjective :
     Function.Surjective (narrowSignBoundary (K := K)) := by
   rintro ⟨c, hc⟩
-  have hc' : c ∈ (rayClassToClassGroup (narrowModulus K)).ker := by
-    rw [MonoidHom.mem_ker, rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap,
-      MonoidHom.comp_apply, hc, map_one]
-  rw [← range_residueSignRayClass, MonoidHom.mem_range] at hc'
-  obtain ⟨a, ha⟩ := hc'
+  rw [← ker_rayClassToClassGroup_eq_ker_classMap_one_dvd, ← range_residueSignRayClass,
+    MonoidHom.mem_range] at hc
+  obtain ⟨a, ha⟩ := hc
   obtain ⟨s, rfl⟩ := (narrowSignResidueEquiv (K := K)).surjective a
   exact ⟨s, Subtype.ext ha⟩
 

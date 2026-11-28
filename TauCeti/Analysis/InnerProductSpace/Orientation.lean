@@ -9,9 +9,14 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.LinearAlgebra.Alternating.Curry
+public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
+public import TauCeti.LinearAlgebra.Alternating.Derivation
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+import TauCeti.Algebra.Lie.ExteriorPower
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Continuous oriented volume forms
@@ -23,8 +28,14 @@ It also evaluates the volume form on an arbitrary, not necessarily orthonormal, 
 its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
 dependent families, and on a basis its sign records whether the basis is positively oriented. In
 a coordinate frame of a Riemannian manifold this is the familiar formula
-`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`. A linear equivalence to another inner product space, oriented
-by transport, preserves positivity of the volume form (`Orientation.volumeForm_map_comp_pos_iff`).
+`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`. A linear endomorphism scales the volume form by its determinant
+(`Orientation.volumeForm_comp_linearMap`). Infinitesimally, the derivation action of an
+endomorphism `A`, applying `A` to one argument at a time and summing, multiplies the volume form
+by its trace, `∑ᵢ vol(v₁, …, A vᵢ, …, vₙ) = tr A · vol(v₁, …, vₙ)`
+(`Orientation.alternatingDerivation_volumeForm_eq_trace_smul`), so a skew-adjoint `A`, an
+infinitesimal rotation, annihilates it (`Orientation.alternatingDerivation_volumeForm_eq_zero`).
+A linear equivalence to another inner product space, oriented by transport, preserves positivity
+of the volume form (`Orientation.volumeForm_map_comp_pos_iff`).
 
 Two oriented inner product spaces of the same positive finite dimension are related by an
 orientation-preserving linear isometric equivalence
@@ -41,6 +52,8 @@ spheres.
 public section
 
 noncomputable section
+
+open scoped RealInnerProductSpace
 
 namespace Orientation
 
@@ -140,6 +153,38 @@ theorem volumeForm_apply_eq_neg_sqrt_det_gram (o : Orientation ℝ E (Fin n))
   have h := (-o).volumeForm_apply_eq_sqrt_det_gram b hb'
   rwa [volumeForm_neg_orientation, neg_apply, neg_eq_iff_eq_neg] at h
 
+/-- The volume form scales under a linear endomorphism `f` by its determinant:
+`vol(f v₁, …, f vₙ) = det f · vol(v₁, …, vₙ)`. -/
+theorem volumeForm_comp_linearMap (o : Orientation ℝ E (Fin n)) (f : E →ₗ[ℝ] E)
+    (v : Fin n → E) :
+    o.volumeForm (f ∘ v) = LinearMap.det f * o.volumeForm v := by
+  rcases n with - | n
+  · rw [LinearMap.det_eq_one_of_finrank_eq_zero Fact.out, one_mul]
+    refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  let b := Module.finBasisOfFinrankEq ℝ E (Fact.out : Module.finrank ℝ E = n + 1)
+  exact congr($(AlternatingMap.compLinearMap_eq_det_smul b o.volumeForm f) v)
+
+/-- **An endomorphism acts on the volume form by its trace**: the derivation
+`A.alternatingDerivation`, applying `A` to one argument at a time and summing, multiplies the
+volume form by `tr A`, that is, `∑ᵢ vol(v₁, …, A vᵢ, …, vₙ) = tr A · vol(v₁, …, vₙ)`. This is the
+infinitesimal form of `Orientation.volumeForm_comp_linearMap`. -/
+theorem alternatingDerivation_volumeForm_eq_trace_smul (o : Orientation ℝ E (Fin n))
+    (A : E →ₗ[ℝ] E) :
+    A.alternatingDerivation o.volumeForm = LinearMap.trace ℝ E A • o.volumeForm := by
+  obtain rfl : Module.finrank ℝ E = n := Fact.out
+  exact A.alternatingDerivation_eq_trace_smul o.volumeForm
+
+/-- **A skew-adjoint endomorphism annihilates the volume form**: the derivation
+`A.alternatingDerivation`, applying `A` to one argument at a time and summing, sends the volume
+form to zero, that is, `∑ᵢ vol(v₁, …, A vᵢ, …, vₙ) = 0`. This is the infinitesimal form of the
+invariance of the volume form under rotations. -/
+theorem alternatingDerivation_volumeForm_eq_zero (o : Orientation ℝ E (Fin n)) {A : E →ₗ[ℝ] E}
+    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) :
+    A.alternatingDerivation o.volumeForm = 0 := by
+  rw [o.alternatingDerivation_volumeForm_eq_trace_smul,
+    LinearMap.trace_eq_zero_of_inner_left_eq_neg hA, zero_smul]
+
 /-- A linear equivalence `f` preserves positivity of the volume form when the target carries the
 transported orientation: the volume form of `o.map f` is positive on the image of a family of
 vectors exactly when the volume form of `o` is positive on the family. -/
@@ -216,7 +261,7 @@ private theorem orthogonalSpanSingletonForm_apply_ne_zero (o : Orientation ℝ E
   rw [orthogonalSpanSingletonForm_apply]
   exact volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_orthogonal_span_singleton hp
-      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).2)
+      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).property)
 
 /-- The orientation of the orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` of an
 oriented space for which `p` is a positive normal: a basis `b` of `(ℝ ∙ p)ᗮ` is positive exactly

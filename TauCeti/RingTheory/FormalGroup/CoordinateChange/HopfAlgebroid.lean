@@ -59,8 +59,11 @@ groupoid law in the group of strict coordinates. In the tensor model, the compos
 * `TauCeti.LazardRing.tensorLift_conjugation_id_comp_coproduct`,
   `TauCeti.LazardRing.tensorLift_id_conjugation_comp_coproduct`: the antipode equations
   `μ (c ⊗ id) Δ = η_R ε` and `μ (id ⊗ c) Δ = η_L ε`.
+* `TauCeti.LazardRing.map_rightUnit_eq_map_C_iff_le`: an ideal `I` of `L` is invariant,
+  `η_R(I) Γ = η_L(I) Γ`, as soon as `η_R(I) Γ ≤ η_L(I) Γ`.
 * `TauCeti.LazardRing.map_rightUnit_heightIdeal`: the height ideals `I_n` of the Lazard ring
   (`FormalGroup.heightIdeal`) are invariant ideals: `η_R(I_n) Γ = η_L(I_n) Γ`.
+* `TauCeti.LazardRing.map_rightUnit_iSup_heightIdeal`: so is their union `I_∞`.
 * `TauCeti.LazardRing.rightUnit_sub_C_mem_map_heightIdeal`: `η_R(v_n) ≡ η_L(v_n)` modulo `I_n Γ`,
   where `v_n` is the coefficient of `X^(pⁿ)` in the `p`-series of the universal formal group law.
 
@@ -96,28 +99,28 @@ composable pairs `F → φ • F → ψ • (φ • F)` of strict isomorphisms. 
 def tensorLift :
     {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C} ≃ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) where
-  toFun p := eval₂Hom p.1.1 (p.1.2 ∘ X)
+  toFun p := eval₂Hom p.val.1 (p.val.2 ∘ X)
   invFun k := ⟨(k.comp C, k.comp (map rightUnit)), by
     rw [RingHom.comp_assoc, RingHom.comp_assoc, map_comp_C]⟩
   left_inv p := by
     refine Subtype.ext (Prod.ext (RingHom.ext (eval₂Hom_C _ _)) ?_)
     refine ringHom_ext' ?_ fun i ↦ by simp
     ext r
-    simpa using RingHom.congr_fun p.2 r
+    simpa using RingHom.congr_fun p.property r
   right_inv k := ringHom_ext' (RingHom.ext fun r ↦ by simp) fun i ↦ by simp
 
 /-- The left component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
 left factor `C`. -/
 @[simp]
 theorem tensorLift_symm_apply_fst (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).1.1 = k.comp C :=
+    (tensorLift.symm k).val.1 = k.comp C :=
   (rfl)
 
 /-- The right component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
 right factor `MvPolynomial.map η_R`. -/
 @[simp]
 theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).1.2 = k.comp (map rightUnit) :=
+    (tensorLift.symm k).val.2 = k.comp (map rightUnit) :=
   (rfl)
 
 /-- `tensorLift (f, g)` restricts to `f` on the left factor. -/
@@ -125,23 +128,23 @@ theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ Laza
 theorem tensorLift_comp_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp C = p.1.1 :=
-  congrArg (fun q ↦ q.1.1) (tensorLift.left_inv p)
+    (tensorLift p).comp C = p.val.1 :=
+  congrArg (fun q ↦ q.val.1) (tensorLift.left_inv p)
 
 /-- `tensorLift (f, g)` restricts to `g` on the right factor. -/
 @[simp]
 theorem tensorLift_comp_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp (map rightUnit) = p.1.2 :=
-  congrArg (fun q ↦ q.1.2) (tensorLift.left_inv p)
+    (tensorLift p).comp (map rightUnit) = p.val.2 :=
+  congrArg (fun q ↦ q.val.2) (tensorLift.left_inv p)
 
 /-- `tensorLift (f, g)` agrees with `f` on the left factor. -/
 @[simp]
 theorem tensorLift_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (C x) = p.1.1 x :=
+    tensorLift p (C x) = p.val.1 x :=
   RingHom.congr_fun (tensorLift_comp_C p) x
 
 /-- `tensorLift (f, g)` agrees with `g` on the right factor. -/
@@ -149,7 +152,7 @@ theorem tensorLift_C
 theorem tensorLift_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (map rightUnit x) = p.1.2 x :=
+    tensorLift p (map rightUnit x) = p.val.2 x :=
   RingHom.congr_fun (tensorLift_comp_map_rightUnit p) x
 
 /-- `tensorLift (f, g)` agrees with `g` on the generators of the right factor. -/
@@ -157,7 +160,7 @@ theorem tensorLift_map_rightUnit
 theorem tensorLift_X
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (i : ℕ+) :
-    tensorLift p (X i) = p.1.2 (X i) := by
+    tensorLift p (X i) = p.val.2 (X i) := by
   simpa using tensorLift_map_rightUnit p (X i)
 
 /-- A ring homomorphism out of `Γ ⊗_L Γ` is determined by its restrictions to both factors. -/
@@ -376,6 +379,15 @@ theorem tensorLift_id_conjugation_comp_coproduct :
 
 /-! ### Invariant ideals -/
 
+/-- **Invariance is a single inclusion.** The extensions of an ideal of the Lazard ring along the
+two units of `(L, L[b₁, b₂, …])` agree as soon as the extension along the right unit is contained
+in the extension along the left unit, since the conjugation exchanges the two units. -/
+theorem map_rightUnit_eq_map_C_iff_le {I : Ideal LazardRing} :
+    I.map rightUnit = I.map MvPolynomial.C ↔ I.map rightUnit ≤ I.map MvPolynomial.C := by
+  refine ⟨le_of_eq, fun h ↦ le_antisymm h ?_⟩
+  simpa only [Ideal.map_map, conjugation_comp_rightUnit, conjugation_comp_C] using
+    Ideal.map_mono (f := conjugation) h
+
 /-- **The height ideals of the Lazard ring are invariant.** Their extensions to the ring
 `L[b₁, b₂, …]` of strict coordinate changes along the left unit `η_L = C` and the right unit
 `η_R` agree. -/
@@ -384,6 +396,13 @@ theorem map_rightUnit_heightIdeal (p n : ℕ) :
       (formalGroup.heightIdeal p n).map MvPolynomial.C := by
   rw [FormalGroup.map_heightIdeal, FormalGroup.map_heightIdeal, map_rightUnit,
     FormalGroup.heightIdeal_smul]
+
+/-- The union `I_∞ = ⨆ n, I_n` of the height ideals of the Lazard ring is invariant: its extensions
+to `L[b₁, b₂, …]` along the two units agree. -/
+theorem map_rightUnit_iSup_heightIdeal (p : ℕ) :
+    (⨆ n, formalGroup.heightIdeal p n).map rightUnit =
+      (⨆ n, formalGroup.heightIdeal p n).map MvPolynomial.C := by
+  simp only [Ideal.map_iSup, map_rightUnit_heightIdeal]
 
 /-- **The right unit fixes `v_n` modulo `I_n`.** Let `v_n ∈ L` be the coefficient of `X^(pⁿ)` in
 the `p`-series of the universal formal group law. Then `η_R(v_n) ≡ η_L(v_n)` modulo the extension of

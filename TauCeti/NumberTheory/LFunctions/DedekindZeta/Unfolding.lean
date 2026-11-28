@@ -82,7 +82,7 @@ variable (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
 /-- A nonzero point of the lattice of `I` has nonzero norm. -/
 private theorem norm_ne_zero_of_ne_zero (z : {z : idealLattice K I // z ≠ 0}) :
     mixedEmbedding.norm (z : mixedSpace K) ≠ 0 :=
-  norm_ne_zero_of_mem_idealLattice z.1.2 fun h ↦ z.2 (Submodule.coe_eq_zero.mp h)
+  norm_ne_zero_of_mem_idealLattice z.val.property fun h ↦ z.property (Submodule.coe_eq_zero.mp h)
 
 /-- A unit multiple of a point of the fundamental cone has nonzero norm. -/
 private theorem norm_unit_smul_ne_zero {a : mixedSpace K} (ha : a ∈ fundamentalCone K)
@@ -119,7 +119,7 @@ private theorem hasSum_integral_unitCone_archGaussian_prod
       φ r (u • (a : mixedSpace K))) (torsionOrder K * (Γ r *
         (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r))) := by
     simpa [φ, Γ, mul_assoc] using hasSum_integral_unitCone_archGaussian_unit_smul hD
-      (by simpa using norm_unit_smul_ne_zero a.2.1 1) (zero_lt_one.trans hr)
+      (by simpa using norm_unit_smul_ne_zero a.property.1 1) (zero_lt_one.trans hr)
   -- the sum over the points in the cone of the sums over the units
   have hcone (r : ℂ) (hr : 1 < r.re) : HasSum (fun a : A ↦
       (torsionOrder K : ℂ) * (Γ r * (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r)))
@@ -157,11 +157,11 @@ theorem hasSum_integral_unitCone_archGaussian (hD : IsUnitFundamentalDomain K D)
   have hw : (torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (torsionOrder_ne_zero K)
   -- regroup the double sum along `(a, u) ↦ u a`, whose fibres have `w` points
   let Φ : A × (𝓞 K)ˣ → {z : idealLattice K I // z ≠ 0} := fun p ↦
-    ⟨⟨p.2 • (p.1 : mixedSpace K), (Units.unitSMul_mem_idealLattice_iff _ _ _).mpr p.1.2.2⟩,
-      fun h ↦ norm_unit_smul_ne_zero p.1.2.1 p.2
+    ⟨⟨p.2 • (p.1 : mixedSpace K), (Units.unitSMul_mem_idealLattice_iff _ _ _).mpr p.1.property.2⟩,
+      fun h ↦ norm_unit_smul_ne_zero p.1.property.1 p.2
         ((congrArg mixedEmbedding.norm (Submodule.coe_eq_zero.mpr h)).trans (map_zero _))⟩
   have hfiber (z : {z : idealLattice K I // z ≠ 0}) :
-      ∑' p : Φ ⁻¹' {z}, φ ((p : A × (𝓞 K)ˣ).2 • (p.1.1 : mixedSpace K)) =
+      ∑' p : Φ ⁻¹' {z}, φ ((p : A × (𝓞 K)ˣ).2 • (p.val.1 : mixedSpace K)) =
         torsionOrder K * φ (z : mixedSpace K) := by
     have hΦ (p : A × (𝓞 K)ˣ) :
         p ∈ Φ ⁻¹' {z} ↔ p.2 • (p.1 : mixedSpace K) = (z : mixedSpace K) := by
@@ -169,9 +169,10 @@ theorem hasSum_integral_unitCone_archGaussian (hD : IsUnitFundamentalDomain K D)
     -- a pair `(a, u)` with `u a = z` has `a = u⁻¹ z` in `σ(I)` already
     let e : {p : A × (𝓞 K)ˣ // p.2 • (p.1 : mixedSpace K) = z} ≃
         {p : fundamentalCone K × (𝓞 K)ˣ // p.2 • (p.1 : mixedSpace K) = z} :=
-      { toFun p := ⟨(⟨p.1.1, p.1.1.2.1⟩, p.1.2), p.2⟩
-        invFun p := ⟨(⟨p.1.1, p.1.1.2, (Units.unitSMul_mem_idealLattice_iff p.1.2 _ _).mp
-          (by rw [p.2]; exact z.1.2)⟩, p.1.2), p.2⟩
+      { toFun p := ⟨(⟨p.val.1, p.val.1.property.1⟩, p.val.2), p.property⟩
+        invFun p := ⟨(⟨p.val.1, p.val.1.property, (Units.unitSMul_mem_idealLattice_iff p.val.2 _
+            _).mp
+          (by rw [p.property]; exact z.val.property)⟩, p.val.2), p.property⟩
         left_inv _ := rfl
         right_inv _ := rfl }
     rw [tsum_congr fun p : Φ ⁻¹' {z} ↦ congrArg φ ((hΦ p).mp p.prop), tsum_const,
@@ -236,6 +237,35 @@ theorem integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one
         (ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ integral_nonneg fun _ ↦ norm_nonneg _)
           (summable_integral_unitCone I hD hs)).symm
     _ < ⊤ := ENNReal.ofReal_lt_top
+
+/-- For `Re s > 1`, the centered theta series at a positively dilated parameter remains
+integrable on the unit cone against `N(y)^(s/2)` and the measure `dy / y`. -/
+theorem integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_smul_sub_one
+    (hD : IsUnitFundamentalDomain K D) (hs : 1 < s.re) {c : ℝ} (hc : 0 < c) :
+    IntegrableOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) *
+      (latticeTheta (idealLattice K I) (c • y) - 1)) (unitCone D) (archHaar K) := by
+  let μ := (archHaar K).restrict (unitCone D)
+  have hpre : (c • ·) ⁻¹' unitCone D = unitCone D := by
+    ext y
+    simp [mem_unitCone, surfacePart_smul hc, Pi.smul_apply, smul_eq_mul, mul_pos_iff_of_pos_left hc]
+  have hmp : MeasurePreserving (c • ·) μ μ := by
+    refine ⟨measurable_const_smul c, ?_⟩
+    calc
+      _ = ((archHaar K).map (c • ·)).restrict (unitCone D) := by
+        rw [Measure.restrict_map (measurable_const_smul c)
+          (measurableSet_unitCone hD.measurableSet), hpre]
+      _ = μ := by rw [map_archHaar_smul hc]
+  have hint := hmp.integrable_comp_of_integrable
+    (integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one I hD hs)
+  let a : ℂ := ((c ^ Module.finrank ℚ K : ℝ) : ℂ) ^ (s / 2)
+  have ha : a ≠ 0 := Complex.cpow_ne_zero_iff.mpr
+    (Or.inl (Complex.ofReal_ne_zero.mpr (pow_pos hc _).ne'))
+  have hcomp (y : realSpace K) :
+      (archNorm (c • y) : ℂ) ^ (s / 2) =
+        a * (archNorm y : ℂ) ^ (s / 2) := by
+    rw [archNorm_smul, Complex.ofReal_mul, Complex.ofReal_mul_cpow (pow_nonneg hc.le _)]
+  simpa only [IntegrableOn, μ, Function.comp_def, hcomp, ← mul_assoc, inv_mul_cancel₀ ha,
+    one_mul] using hint.const_mul a⁻¹
 
 /-- **Hecke's unfolding of the theta integral**, Neukirch VII (5.5) before the Mellin
 substitution. For `Re s > 1` and a unit fundamental domain `D`,

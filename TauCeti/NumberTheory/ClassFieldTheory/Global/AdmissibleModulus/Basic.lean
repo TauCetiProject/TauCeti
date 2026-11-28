@@ -27,7 +27,8 @@ The norm group `N_{L/K}(C_L)` is open, so it has a conductor in the sense of
 `OpenSubgroup.ideleClassConductor`: the **conductor** `abelianConductor K L` of `L/K` is the least
 admissible modulus, and a modulus is admissible exactly when the conductor divides it
 (`isAdmissibleModulus_iff_abelianConductor_dvd`). The conductor of a subextension divides that of
-the extension (`abelianConductor_dvd_abelianConductor`). None of this uses a reciprocity law.
+the extension (`abelianConductor_dvd_abelianConductor`), and `K`-isomorphic extensions have the
+same conductor (`abelianConductor_eq_of_algEquiv`). None of this uses a reciprocity law.
 
 This file shows that the real places cannot be left out of an admissible modulus when `L` contains
 enough roots of unity. Let `w` be a real place of `K` and suppose that `L` contains a primitive
@@ -67,6 +68,8 @@ the real place of `ℚ` in that of `ℚ(i)/ℚ` (`mem_abelianConductor_infiniteP
   with component in `U(K_v, n)` are norms from `L`.
 * `TauCeti.ClassFieldTheory.abelianConductor_dvd_abelianConductor`: in a tower `K ⊆ L ⊆ M`, the
   conductor of `L/K` divides that of `M/K`.
+* `TauCeti.ClassFieldTheory.abelianConductor_eq_of_algEquiv`: `K`-isomorphic extensions have the
+  same conductor.
 * `TauCeti.ClassFieldTheory.ofCompletion_neg_one_notMem_range_ideleClassNormMap`: if `L` contains a
   primitive `pⁿ`-th root of unity with `pⁿ > 2`, the class of `-1` at a real place of `K` is not
   a norm from `L`.
@@ -260,6 +263,17 @@ theorem abelianConductor_dvd_abelianConductor : abelianConductor K L ∣ abelian
   (isAdmissibleModulus_iff_abelianConductor_dvd _).mp
     (isAdmissibleModulus_abelianConductor K M).tower_bot
 
+variable {M : Type} [Field M] [NumberField M] [Algebra K M] in
+/-- **`K`-isomorphic extensions have the same conductor**: their idele-class norm groups agree. -/
+theorem abelianConductor_eq_of_algEquiv (e : L ≃ₐ[K] M) :
+    abelianConductor K L = abelianConductor K M := by
+  refine Modulus.dvd_antisymm ((isAdmissibleModulus_iff_abelianConductor_dvd _).1 ?_)
+    ((isAdmissibleModulus_iff_abelianConductor_dvd _).1 ?_)
+  · rw [isAdmissibleModulus_iff, range_ideleClassNormMap_eq_of_algEquiv e]
+    exact isAdmissibleModulus_abelianConductor K M
+  · rw [isAdmissibleModulus_iff, ← range_ideleClassNormMap_eq_of_algEquiv e]
+    exact isAdmissibleModulus_abelianConductor K L
+
 /-- **A modulus omitting a real place is not admissible for an extension containing `μ_{pⁿ}`.**
 If `L` contains a primitive `pⁿ`-th root of unity with `pⁿ > 2` and the real place `w` of `K` is
 not in the infinite part of `𝔪`, then `𝔪` is not admissible for `L/K`. -/
@@ -286,7 +300,8 @@ theorem mem_abelianConductor_infinitePart (p : ℕ) [Fact p.Prime]
     (hpn : 2 < p ^ n) :
     w ∈ (abelianConductor K L).infinitePart := by
   by_contra hw
-  exact not_isAdmissibleModulus_of_forall_ne p w.2 (fun w' hw' heq ↦ hw (Subtype.ext heq ▸ hw'))
+  exact not_isAdmissibleModulus_of_forall_ne p w.property (fun w' hw' heq ↦ hw
+      (Subtype.ext heq ▸ hw'))
     hζ hpn (isAdmissibleModulus_abelianConductor K L)
 
 /-- **The conductor of `ℚ(i)/ℚ` contains the real place of `ℚ`.** -/

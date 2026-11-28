@@ -41,6 +41,8 @@ The resulting group homomorphism `TauCeti.UpperHalfPlane.glToIsom` descends to `
 
 ## Main results
 
+* `UpperHalfPlane.inner_mfderiv_smul`: the differential of `z ↦ g • z` preserves the Poincaré
+  metric for every `g ∈ GL(2, ℝ)`.
 * `TauCeti.UpperHalfPlane.ker_glToIsom`: the elements of `GL(2, ℝ)` acting trivially are the
   scalar matrices.
 * `TauCeti.UpperHalfPlane.pglToIsom_injective` and `TauCeti.UpperHalfPlane.pslToIsom_injective`:
@@ -65,6 +67,19 @@ namespace TauCeti.UpperHalfPlane
 
 open _root_.UpperHalfPlane
 
+/-- The differential of `z ↦ g • z` preserves the Poincaré metric: every element of `GL(2, ℝ)`
+acts on the upper half-plane by a Riemannian isometry. -/
+theorem _root_.UpperHalfPlane.inner_mfderiv_smul (g : GL (Fin 2) ℝ) (z : ℍ)
+    (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    inner ℝ (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z v) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z w) =
+      inner ℝ v w := by
+  rw [(g • z).inner_tangentSpace, z.inner_tangentSpace,
+    Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul g z v,
+    Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul g z w,
+    Matrix.GeneralLinearGroup.inner_smulFDeriv_apply]
+  have hz := z.im_pos.ne'
+  field_simp
+
 /-- The group homomorphism sending each element of `GL(2, ℝ)` to the Riemannian isometry it induces
 on the Poincaré upper half-plane `ℍ`. Positive-determinant matrices act holomorphically and
 negative-determinant matrices act antiholomorphically. -/
@@ -72,12 +87,8 @@ def glToIsom : GL (Fin 2) ℝ →* Isom 𝓘(ℝ, ℂ) ℍ where
   toFun g :=
     { toDiffeomorph := Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g
       inner_mfderiv' z v w := by
-        rw [Diffeomorph.coe_constSmul, (g • z).inner_tangentSpace, z.inner_tangentSpace,
-          Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul g z v,
-          Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul g z w,
-          Matrix.GeneralLinearGroup.inner_smulFDeriv_apply]
-        have hz := z.im_pos.ne'
-        field_simp }
+        rw [Diffeomorph.coe_constSmul]
+        exact inner_mfderiv_smul g z v w }
   map_one' := by
     ext z
     simp [← RiemannianIsometry.coe_toDiffeomorph]

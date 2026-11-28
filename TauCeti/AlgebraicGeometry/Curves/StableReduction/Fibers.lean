@@ -8,6 +8,15 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Family
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
 public import TauCeti.AlgebraicGeometry.Fibers.SchematicDensity
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
+public import TauCeti.RingTheory.Nagata
+
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
+import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
+import TauCeti.RingTheory.UniversallyJapanese
 
 /-!
 # Generic fibres of models over a discrete valuation ring
@@ -21,7 +30,18 @@ Conversely, a flat finitely presented scheme over the discrete valuation ring to
 pullback square exhibiting a prescribed scheme over the fraction field as its generic fibre is a
 model (`TauCeti.Model.ofIsPullback`).
 
-When the model is a family of curves, so is its generic fibre.
+When the model is a family of curves, so is its generic fibre. Conversely, since a model is flat
+over the discrete valuation ring, its special fibre is no larger than its generic fibre: if `C`
+has dimension at most `d` over `K`, the model has relative dimension at most `d` over `R`
+(`TauCeti.Model.relativeDimensionLE_toBase`).
+
+Over an affine open `U` of the total space, with `π` a uniformizer of `R`, the sections `Γ(U)` are
+flat over `R`, so `π` is a nonzerodivisor on them
+(`TauCeti.Model.algebraMap_mem_nonZeroDivisors_sections`), and the special fibre `Γ(U) ⧸ π Γ(U)` is
+of finite type over the residue field, hence Nagata (`TauCeti.Model.isNagata_sections_quotient`),
+of dimension at most `d` when the model has relative dimension at most `d`
+(`TauCeti.Model.krullDimLE_sections_quotient`). The generic fibre over `U` is the localization
+`Γ(U)[1/π]` (`TauCeti.Model.isLocalization_away_app_genericι`).
 -/
 
 public section
@@ -130,7 +150,10 @@ variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [Flat toBase]
 fibre of `X`. Its generic-fibre identification is the canonical comparison of `C` with the chosen
 pullback, so that its generic-fibre inclusion is `j` (`TauCeti.Model.genericι_ofIsPullback`).
 This is the converse of `TauCeti.Model.isPullback_genericι`. -/
-def ofIsPullback (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
+-- The body is exposed so that the total space of the model is `X` by definition, as
+-- constructions comparing morphisms of total spaces require.
+@[expose] def ofIsPullback
+    (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
     Model R K C toK where
   total := X
   toBase := toBase
@@ -165,6 +188,130 @@ lemma genericι_ofIsPullback :
   exact (h.isoPullback_hom_fst).trans (Category.comp_id j).symm
 
 end OfIsPullback
+
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the fibre of
+the structure morphism over the generic point of `Spec R`. -/
+theorem range_genericι_eq_preimage_genericPoint (M : Model R K C toK) :
+    Set.range M.genericι = M.toBase ⁻¹' {genericPoint (Spec (.of R))} := by
+  have : IsIso M.genericFiberIso.inv.left :=
+    inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
+  rw [M.genericι_def]
+  calc Set.range (M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase)
+      = Set.range (genericFiberι R K M.toBase ∘ M.genericFiberIso.inv.left) :=
+        congrArg Set.range (funext fun x ↦ Scheme.Hom.comp_apply _ _ x)
+    _ = Set.range (genericFiberι R K M.toBase) :=
+        M.genericFiberIso.inv.left.surjective.range_comp _
+    _ = M.toBase ⁻¹' {genericPoint (Spec (.of R))} := range_genericFiberι R K M.toBase
+
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the complement
+of the special fibre. -/
+theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
+    Set.range M.genericι = {x : M.total | M.toBase x ≠ closedPoint R} := by
+  rw [M.range_genericι_eq_preimage_genericPoint, ← range_genericFiberι R K,
+    range_genericFiberι_of_isDiscreteValuationRing]
+
+/-- **The special fibre of a model is no larger than its generic fibre.** If the generic fibre
+`C` has dimension at most `d`, then the model has relative dimension at most `d` over the discrete
+valuation ring: its special fibre also has dimension at most `d`. -/
+instance relativeDimensionLE_toBase {d : ℕ} (M : Model R K C toK)
+    [AlgebraicGeometry.RelativeDimensionLE d toK] :
+    AlgebraicGeometry.RelativeDimensionLE d M.toBase := by
+  have := M.isOpenImmersion_genericι
+  rw [AlgebraicGeometry.relativeDimensionLE_iff_topologicalKrullDim_preimage_genericPoint_le,
+    ← M.range_genericι_eq_preimage_genericPoint,
+    AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion]
+  exact (AlgebraicGeometry.relativeDimensionLE_iff_of_field toK).mp inferInstance
+
+/-- Over an open `U` of the total space of a model, the fibre of `Γ(U)` over the closed point of
+`Spec R` is the special fibre `Γ(U) ⧸ π Γ(U)`, for a uniformizer `π` of `R`. -/
+private noncomputable def fiberRingEquivSectionsQuotient (M : Model R K C toK) (U : M.total.Opens)
+    {π : R} (hπ : Irreducible π) :
+    letI := M.toBase.sectionsAlgebra U
+    (maximalIdeal R).Fiber Γ(M.total, U) ≃+*
+      Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π} :=
+  letI := M.toBase.sectionsAlgebra U
+  (Ideal.Fiber.algEquivQuotientMap (maximalIdeal R)).toRingEquiv.trans
+    (Ideal.quotEquivOfEq (by rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]))
+
+/-- Over an affine open `U` of the total space of a model of relative dimension at most `d`, the
+special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most `d`. -/
+lemma krullDimLE_sections_quotient (M : Model R K C toK) {d : ℕ}
+    [AlgebraicGeometry.RelativeDimensionLE d M.toBase] {U : M.total.Opens} (hU : IsAffineOpen U)
+    {π : R} (hπ : Irreducible π) :
+    letI := M.toBase.sectionsAlgebra U
+    Ring.KrullDimLE d (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
+  let := M.toBase.sectionsAlgebra U
+  -- `Spec Γ(U) ⟶ Spec R` is the restriction of the structure morphism to `U`.
+  have : AlgebraicGeometry.RelativeDimensionLE d
+      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))) :=
+    M.toBase.fromSpec_toSpec hU ▸ inferInstance
+  have hdim :=
+    (AlgebraicGeometry.relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mp this (maximalIdeal R)
+  rw [Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv (M.fiberRingEquivSectionsQuotient U hπ)]
+  exact_mod_cast hdim
+
+/-- Over an affine open `U` of a model, a nonzero element of `R` is a nonzerodivisor on the
+sections, which are flat over `R`. -/
+lemma algebraMap_mem_nonZeroDivisors_sections (M : Model R K C toK) {U : M.total.Opens}
+    (hU : IsAffineOpen U) {π : R} (hπ : π ≠ 0) :
+    letI := M.toBase.sectionsAlgebra U
+    algebraMap R Γ(M.total, U) π ∈ nonZeroDivisors Γ(M.total, U) := by
+  let := M.toBase.sectionsAlgebra U
+  have := M.toBase.isSMulRegular_appLE (isAffineOpen_top _) hU le_top
+    (Scheme.isSMulRegular_ΓSpecIso_inv (IsSMulRegular.of_ne_zero hπ))
+  rw [M.toBase.algebraMap_sections]
+  exact (isLeftRegular_iff_isRegular.mp this).mem_nonZeroDivisors
+
+/-- Over an affine open `U` of a model, the special fibre `Γ(U) ⧸ π Γ(U)` is of finite type over
+the residue field of `R`, hence a Nagata ring. -/
+lemma isNagata_sections_quotient (M : Model R K C toK) {U : M.total.Opens}
+    (hU : IsAffineOpen U) {π : R} (hπ : Irreducible π) :
+    letI := M.toBase.sectionsAlgebra U
+    Ring.IsNagata (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
+  let := M.toBase.sectionsAlgebra U
+  have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
+    M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
+  have : Ring.IsNagata ((maximalIdeal R).Fiber Γ(M.total, U)) :=
+    Ring.IsUniversallyJapanese.isNagata_of_finiteType (maximalIdeal R).ResidueField _
+  exact (M.fiberRingEquivSectionsQuotient U hπ).isNagata
+
+/-- The image of a model's chosen generic fibre in its total space is the basic open of the
+pullback of a nonzero element `π` of the maximal ideal, such as a uniformizer. -/
+theorem range_genericι_eq_basicOpen (M : Model R K C toK) {π : R}
+    (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) :
+    Set.range M.genericι =
+      M.total.basicOpen (M.toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)) := by
+  rw [M.range_genericι_eq_setOf_base_ne_closedPoint]
+  ext x
+  refine (not_congr (M.toBase.base_eq_closedPoint_iff_mem_zeroLocus hπ hπ0 x)).trans ?_
+  rw [Scheme.zeroLocus_singleton, Set.mem_compl_iff, not_not]
+
+/-- Over an affine open `U` of the total space of a model, the sections of the generic fibre over
+`U ∩ C` are the localization of `Γ(X, U)` away from the image of a nonzero element `π` of the
+maximal ideal of `R`, such as a uniformizer. -/
+theorem isLocalization_away_app_genericι (M : Model R K C toK) {U : M.total.Opens}
+    (hU : IsAffineOpen U) {π : R} (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) :
+    letI := (M.genericι.app U).hom.toAlgebra
+    letI := M.toBase.sectionsAlgebra U
+    IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
+  have := M.isOpenImmersion_genericι
+  let := (M.genericι.app U).hom.toAlgebra
+  let := M.toBase.sectionsAlgebra U
+  refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
+  -- The generic fibre is the basic open of the pullback of `π`.
+  have hrange : M.genericι.opensRange =
+      M.toBase ⁻¹ᵁ (Spec (.of R)).basicOpen ((Scheme.ΓSpecIso (.of R)).inv π) := by
+    ext1
+    rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
+      M.range_genericι_eq_basicOpen hπ hπ0]
+  rw [hrange, M.toBase.algebraMap_sections]
+  exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
+
+/-- If the total space of a model `M` is irreducible, then its generic fibre `C` is nonempty. -/
+theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C :=
+  (M.toBase.nonempty_genericFiber_of_base_ne_closedPoint K
+    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))).map
+    M.genericFiberIso.hom.left
 
 /-- A morphism of total spaces over the base respects the chosen identifications of generic fibres
 as soon as it carries the chosen generic fibre of `M` to that of `N`. This is the converse of

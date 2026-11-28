@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.GradedAlgebra.AlgHom
+import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
 # Functoriality of Clifford algebras
@@ -24,9 +27,12 @@ Clifford algebra is faithful.
 
 ## Main results
 
-* `CliffordAlgebra.map_involute` proves naturality of the grade involution.
+* `CliffordAlgebra.map_involute` proves naturality of the grade involution, and
+  `ExteriorAlgebra.map_involute` is its exterior-algebra case.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
+* `CliffordAlgebra.map_mem_evenOdd` proves preservation of the `ℤ/2`-grading, and
+  `CliffordAlgebra.mapEvenOdd` packages the induced map as a homomorphism of graded algebras.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`: a semilinear map of Clifford modules, whose
   twist fixes the base scalars, intertwining the generators along a quadratic isometry `f`
@@ -36,6 +42,10 @@ Clifford algebra is faithful.
   generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
   generator by an isometry `f` up to sign moves past every `a` by `map f ∘ involute`.
+* `CliffordAlgebra.equivOfIsometry_toAlgHom`: the algebra homomorphism underlying
+  `equivOfIsometry e` is `map e.toIsometry`.
+* `CliffordAlgebra.equivOfIsometry_injective`: when the generator map is injective, for instance
+  when `2` is invertible, different isometry equivalences induce different algebra equivalences.
 * `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
   `ℤ/2`-grading.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
@@ -86,21 +96,52 @@ theorem map_star (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
     map f (star x) = star (map f x) := by
   simp only [star_def, map_reverse, map_involute]
 
+/-- A quadratic isometry maps each piece `evenOdd Q₁ i` of the `ℤ/2`-grading into
+`evenOdd Q₂ i`. -/
+theorem map_evenOdd_le (f : Q₁ →qᵢ Q₂) (i : ZMod 2) :
+    (evenOdd Q₁ i).map (map f).toLinearMap ≤ evenOdd Q₂ i := by
+  rw [evenOdd, Submodule.map_iSup]
+  refine iSup_le fun j ↦ le_trans ?_ (le_iSup _ j)
+  rw [Submodule.map_pow, ι_range_map_map]
+  exact pow_le_pow_left' (LinearMap.map_le_range) _
+
+/-- A quadratic isometry preserves the `ℤ/2`-grading. -/
+theorem map_mem_evenOdd (f : Q₁ →qᵢ Q₂) {i : ZMod 2} {x : CliffordAlgebra Q₁}
+    (hx : x ∈ evenOdd Q₁ i) : map f x ∈ evenOdd Q₂ i :=
+  map_evenOdd_le f i (Submodule.mem_map_of_mem hx)
+
 /-- A quadratic isometry sends the even Clifford subalgebra into the even Clifford subalgebra. -/
 theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x ∈ even Q₁) :
     map f x ∈ even Q₂ := by
-  -- `even` is the subalgebra wrapper around degree zero of `evenOdd`; its induction principle is
-  -- stated for the underlying graded submodule.
-  change x ∈ evenOdd Q₁ 0 at hx
-  change map f x ∈ evenOdd Q₂ 0
-  induction x, hx using CliffordAlgebra.even_induction with
-  | algebraMap r =>
-      simpa using one_le_evenOdd_zero Q₂
-        (Submodule.mem_one.mpr ⟨r, (map f).commutes r |>.symm⟩)
-  | add x y _ _ hx hy => simpa only [map_add] using Submodule.add_mem _ hx hy
-  | ι_mul_ι_mul m₁ m₂ x _ hx =>
-      simpa only [map_mul, map_apply_ι, zero_add] using
-        SetLike.mul_mem_graded (ι_mul_ι_mem_evenOdd_zero Q₂ (f m₁) (f m₂)) hx
+  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule] at hx ⊢
+  exact map_mem_evenOdd f hx
+
+/-- The algebra map induced by a quadratic isometry, as a homomorphism of `ℤ/2`-graded algebras
+for the gradings `evenOdd`. -/
+noncomputable def mapEvenOdd (f : Q₁ →qᵢ Q₂) : evenOdd Q₁ →ₐᵍ[R] evenOdd Q₂ where
+  toAlgHom := map f
+  map_mem := map_mem_evenOdd f
+
+/-- As a function, `CliffordAlgebra.mapEvenOdd f` is `CliffordAlgebra.map f`. -/
+@[simp]
+theorem coe_mapEvenOdd (f : Q₁ →qᵢ Q₂) : ⇑(mapEvenOdd f) = map f :=
+  (rfl)
+
+/-- The algebra map underlying `CliffordAlgebra.mapEvenOdd f` is `CliffordAlgebra.map f`. -/
+@[simp]
+theorem mapEvenOdd_toAlgHom (f : Q₁ →qᵢ Q₂) : (mapEvenOdd f : CliffordAlgebra Q₁ →ₐ[R] _) = map f :=
+  (rfl)
+
+/-- The identity isometry induces the identity graded algebra map. -/
+@[simp]
+theorem mapEvenOdd_id : mapEvenOdd (QuadraticMap.Isometry.id Q₁) = GradedAlgHom.id R (evenOdd Q₁) :=
+  GradedAlgHom.ext fun x ↦ by simp [map_id]
+
+/-- `CliffordAlgebra.mapEvenOdd` respects composition of isometries. -/
+theorem mapEvenOdd_comp {M₃ : Type*} [AddCommGroup M₃] [Module R M₃] {Q₃ : QuadraticForm R M₃}
+    (g : Q₂ →qᵢ Q₃) (f : Q₁ →qᵢ Q₂) :
+    mapEvenOdd (g.comp f) = (mapEvenOdd g).comp (mapEvenOdd f) :=
+  GradedAlgHom.ext fun x ↦ by simp [← map_comp_map]
 
 /-- A semilinear map `U` of Clifford modules that intertwines the generators along a quadratic
 isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`, provided
@@ -192,6 +233,13 @@ theorem mul_eq_map_involute_mul_of_forall_ι (f : Q₁ →qᵢ Q₁) {u : Cliffo
   | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, map_mul, map_mul, mul_assoc]
   | add a b ha hb => rw [mul_add, ha, hb, map_add, map_add, add_mul]
 
+/-- The algebra homomorphism underlying `CliffordAlgebra.equivOfIsometry e` is
+`CliffordAlgebra.map e.toIsometry`. -/
+@[simp]
+theorem equivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
+    (equivOfIsometry e).toAlgHom = map e.toIsometry :=
+  AlgHom.ext fun x ↦ equivOfIsometry_apply e x
+
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
 theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
     (even Q₁).map (equivOfIsometry e).toAlgHom = even Q₂ := by
@@ -207,6 +255,23 @@ theorem ι_range_map_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
     (LinearMap.range (ι Q₁)).map (equivOfIsometry e).toLinearMap = LinearMap.range (ι Q₂) :=
   (ι_range_map_map e.toIsometry).trans <|
     (congrArg _ (LinearEquiv.range e.toLinearEquiv)).trans (Submodule.map_top _)
+
+/-- **Different isometries induce different Clifford algebra equivalences**, when the generator
+map `ι Q₂` is injective, for instance when `2` is invertible (`CliffordAlgebra.ι_injective`) or
+for the zero form: an isometry is recovered from the algebra equivalence it induces on
+generators. -/
+theorem equivOfIsometry_injective (hι : Function.Injective (ι Q₂)) :
+    Function.Injective (equivOfIsometry : Q₁.IsometryEquiv Q₂ → _) := fun e e' h ↦
+  DFunLike.ext _ _ fun v ↦ hι <| by
+    simpa only [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply] using
+      DFunLike.congr_fun h (ι Q₁ v)
+
+/-- Two isometries induce the same Clifford algebra equivalence only if they are equal, when the
+generator map `ι Q₂` is injective, for instance when `2` is invertible. -/
+@[simp]
+theorem equivOfIsometry_inj (hι : Function.Injective (ι Q₂)) {e e' : Q₁.IsometryEquiv Q₂} :
+    equivOfIsometry e = equivOfIsometry e' ↔ e = e' :=
+  (equivOfIsometry_injective hι).eq_iff
 
 /-- An isometry equivalence preserves the `ℤ/2`-grading: it maps `evenOdd Q₁ i` onto
 `evenOdd Q₂ i`. -/
@@ -225,6 +290,24 @@ theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : Cliff
     {i : ZMod 2} : equivOfIsometry e x ∈ evenOdd Q₂ i ↔ x ∈ evenOdd Q₁ i := by
   rw [← map_evenOdd_equivOfIsometry e i]
   exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivOfIsometry e).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
+
+/-- The equivalence induced by an isometry equivalence sends the generator `ι Q₁ v` to
+`ι Q₂ (e v)`. This is not a `simp` lemma, because `simp` rewrites `equivOfIsometry e x` to
+`map e.toIsometry x` by `equivOfIsometry_apply`. -/
+theorem equivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (v : M₁) :
+    equivOfIsometry e (ι Q₁ v) = ι Q₂ (e v) := by
+  rw [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply]
+
+/-- Mapping a unit along the equivalence induced by an isometry equivalence `e`, and back along
+the one induced by `e.symm`, gives it back. -/
+@[simp]
+theorem units_map_equivOfIsometry_symm_units_map (e : Q₁.IsometryEquiv Q₂)
+    (x : (CliffordAlgebra Q₁)ˣ) :
+    Units.map (equivOfIsometry e.symm : CliffordAlgebra Q₂ →* CliffordAlgebra Q₁)
+      (Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x) = x :=
+  Units.ext <| by
+    rw [Units.coe_map, Units.coe_map, MonoidHom.coe_ofClass, MonoidHom.coe_ofClass,
+      ← equivOfIsometry_symm, AlgEquiv.symm_apply_apply]
 
 /-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
 the even subalgebras. -/
@@ -340,12 +423,6 @@ private theorem gradedTensorIncludeLeft_injective
   rw [auxEquiv_includeLeft, auxEquiv_includeLeft] at h
   exact (decomposeTensorEquiv P₁ P₂).injective h
 
-private theorem toProd_includeLeft (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
-    (x : CliffordAlgebra P₁) :
-    toProd P₁ P₂ (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂) x) =
-      map (QuadraticMap.Isometry.inl P₁ P₂) x := by
-  simp [toProd]
-
 /-- The Clifford-algebra map induced by the inclusion of the left summand of an orthogonal product
 is injective when the left Clifford algebra is flat and scalar action on the right Clifford algebra
 is faithful. -/
@@ -355,11 +432,7 @@ theorem map_inl_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K 
   intro x y hxy
   apply gradedTensorIncludeLeft_injective P₁ P₂
   apply (prodEquiv P₁ P₂).symm.injective
-  -- Transport both elements through the product equivalence to expose `includeLeft`.
-  change toProd P₁ P₂ (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂) x) =
-    toProd P₁ P₂ (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂) y)
-  rw [toProd_includeLeft, toProd_includeLeft]
-  exact hxy
+  simpa using hxy
 
 /-- The Clifford-algebra map induced by the inclusion of the right summand of an orthogonal product
 is injective when the right Clifford algebra is flat and scalar action on the left Clifford algebra
@@ -381,3 +454,19 @@ theorem map_inr_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K 
 end OrthogonalProduct
 
 end CliffordAlgebra
+
+namespace ExteriorAlgebra
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The grade involution commutes with the algebra map of exterior algebras induced by a linear
+map. -/
+@[simp]
+theorem map_involute (f : M →ₗ[R] N) (x : ExteriorAlgebra R M) :
+    map f (CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) x) =
+      CliffordAlgebra.involute (Q := (0 : QuadraticForm R N)) (map f x) :=
+  -- `ExteriorAlgebra.map f` is by definition the Clifford-algebra map of `f`, viewed as an
+  -- isometry of the zero quadratic forms.
+  CliffordAlgebra.map_involute { f with map_app' := fun _ ↦ rfl } x
+
+end ExteriorAlgebra

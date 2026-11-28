@@ -50,8 +50,8 @@ initial forms: they inherit the filtration, and their Rees algebras sit inside t
 All declarations live in the namespace `TauCeti.MvPolynomial`, except the lemmas about the image
 of a polynomial `f : (MvPolynomial σ R)[t]`, which live in the root namespace `Polynomial` so
 that dot notation `f.coeff_coeff_weightReesHom` applies, and the homogenization
-`weightHomogenization` with its lemmas not involving the weight filtration, which act on a
-polynomial `p : MvPolynomial σ R` and so live in the root namespace `MvPolynomial`.
+`weightHomogenization` with its single-polynomial lemmas not involving the weight filtration, which
+act on `p : MvPolynomial σ R` and so live in the root namespace `MvPolynomial`.
 
 * `weightFiltration R w n`, `weightFiltrationLT R w n`: the steps of weight at most `n` and less
   than `n`.
@@ -84,8 +84,11 @@ polynomial `p : MvPolynomial σ R` and so live in the root namespace `MvPolynomi
   multiplicative on the steps of the filtration.
 * `Polynomial.sum_weightHomogenization_coeff_weightReesHom`: every `f` is the sum of the
   homogenizations in degree `n` of the coefficients of `tⁿ` in its image under `weightReesHom`.
-* `coeff_zero_weightHomogenization_sub`: for `r` weighted homogeneous of weight `n` and `Q` of
-  weight less than `n`, the homogenization of `r - Q` in degree `n` reduces to `r` at `t = 0`.
+* `sub_mem_weightFiltration_of_isWeightedHomogeneous`,
+  `weightedHomogeneousComponent_sub_of_mem_weightFiltrationLT`,
+  `coeff_zero_weightHomogenization_sub`: for `r` weighted homogeneous of weight `n` and `Q` of
+  weight less than `n`, `r - Q` has weight at most `n`, its weight-`n` component is `r`, and
+  setting `t = 0` in the homogenization of `r - Q` in degree `n` gives `r`.
 * `weightReesAeval_mem_weightReesAlgebra`, `aeval_mem_weightFiltration`: if each `c i` has weight
   at most `d i`, then `weightReesAeval c d` takes values in the Rees algebra, and substituting the
   `c i` into a polynomial of weight at most `n` for the weights `d` gives a polynomial of weight at
@@ -93,6 +96,13 @@ polynomial `p : MvPolynomial σ R` and so live in the root namespace `MvPolynomi
 * `weightedHomogeneousComponent_aeval_of_mem_weightFiltration`: if moreover `g i` is the
   component of weight `d i` of `c i`, the component of weight `n` of the substitution is the
   substitution of the `g i` into the component of weight `n`.
+* `rescale_mem_weightFiltration`, `rescale_mem_weightFiltrationLT`,
+  `MvPolynomial.map_rescale_weightHomogenization`, `weightReesAeval_comp_mapAlgHom_rescale`,
+  `range_weightReesAeval_smul_eq`, `ker_weightReesAeval_smul_eq_map`:
+  diagonal variable rescaling preserves the steps of the weight filtration, commutes coefficientwise
+  with `weightHomogenization`, composes with `weightReesAeval` by scaling the generators, and for
+  unit scalings preserves the Rees image while transporting the Rees kernel by the inverse
+  rescaling.
 
 ## References
 
@@ -264,6 +274,16 @@ theorem weightReesAeval_C {p : MvPolynomial ι R} :
 theorem weightReesAeval_X : weightReesAeval c d Polynomial.X = Polynomial.X :=
   Polynomial.aevalTower_X _ _
 
+/-- Evaluating the Rees presentation map at `t = 1` recovers substitution of the generators `c`. -/
+@[simp]
+theorem _root_.Polynomial.eval_one_weightReesAeval (f : (MvPolynomial ι R)[X]) :
+    (weightReesAeval c d f).eval 1 = aeval c (f.eval 1) := by
+  have h :
+      ((Polynomial.aeval (1 : MvPolynomial σ R)).restrictScalars R).comp (weightReesAeval c d) =
+        (aeval c).comp ((Polynomial.aeval (1 : MvPolynomial ι R)).restrictScalars R) := by
+    refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_ <;> simp
+  simpa using congr($h f)
+
 end ReesAeval
 
 section Rees
@@ -279,6 +299,16 @@ noncomputable abbrev weightReesAlgebra : Subalgebra R (MvPolynomial σ R)[X] :=
 algebra. -/
 theorem one_mem_weightFiltration_one : (1 : MvPolynomial σ R) ∈ weightFiltration R w 1 :=
   weightFiltration_mono zero_le_one SetLike.GradedOne.one_mem
+
+/-- The weight Rees algebra is an algebra over the polynomial parameter ring `R[t]`. -/
+noncomputable instance weightReesAlgebraAlgebra : Algebra R[X] (weightReesAlgebra R w) :=
+  TauCeti.coeffSubalgebra.algebra (weightFiltration R w) (one_mem_weightFiltration_one R w)
+
+/-- The parameter-ring algebra structure on `weightReesAlgebra` extends the `R`-algebra
+structure. -/
+noncomputable instance weightReesAlgebraIsScalarTower :
+    IsScalarTower R R[X] (weightReesAlgebra R w) :=
+  TauCeti.coeffSubalgebra.isScalarTower (weightFiltration R w) (one_mem_weightFiltration_one R w)
 
 /-- The endomorphism of `(MvPolynomial σ R)[t]` substituting `X i * t ^ w i` for `X i` and fixing
 `t`; it is injective with image the Rees algebra. It is the case `c = X` of `weightReesAeval`. -/
@@ -598,19 +628,33 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
+/-- If `r` is weighted homogeneous of weight `n` and `Q` has weight less than `n`, then `r - Q`
+has weight at most `n`. -/
+theorem sub_mem_weightFiltration_of_isWeightedHomogeneous {r Q : MvPolynomial σ R}
+    {n : ℕ} (hr : r.IsWeightedHomogeneous w n) (hQ : Q ∈ weightFiltrationLT R w n) :
+    r - Q ∈ weightFiltration R w n := by
+  rw [← weightFiltrationLT_sup_weightedHomogeneousSubmodule]
+  exact sub_mem (Submodule.mem_sup_right ((mem_weightedHomogeneousSubmodule R w n r).2 hr))
+    (Submodule.mem_sup_left hQ)
+
+/-- If `r` is weighted homogeneous of weight `n` and `Q` has weight less than `n`, then the
+weighted homogeneous component of weight `n` of `r - Q` is `r`. -/
+theorem weightedHomogeneousComponent_sub_of_mem_weightFiltrationLT
+    {r Q : MvPolynomial σ R} {n : ℕ} (hr : r.IsWeightedHomogeneous w n)
+    (hQ : Q ∈ weightFiltrationLT R w n) :
+    weightedHomogeneousComponent w n (r - Q) = r := by
+  rw [map_sub, weightedHomogeneousComponent_eq_self hr,
+    weightedHomogeneousComponent_eq_zero' (w := w) (n := n) (φ := Q) fun x hx ↦
+      (mem_weightFiltrationLT_iff.1 hQ x hx).ne, sub_zero]
+
 /-- **The special fibre of a homogenized lifted relation.** If `r` is weighted homogeneous of
 weight `n` and `Q` has weight less than `n`, then setting `t = 0` in the homogenization of `r - Q`
 in degree `n` gives `r`. Setting `t = 1` gives `r - Q` (`eval_one_weightHomogenization`). -/
 theorem coeff_zero_weightHomogenization_sub {r Q : MvPolynomial σ R} {n : ℕ}
     (hr : r.IsWeightedHomogeneous w n) (hQ : Q ∈ weightFiltrationLT R w n) :
     (weightHomogenization R w n (r - Q)).coeff 0 = r := by
-  have hrQ : r - Q ∈ weightFiltration R w n := by
-    rw [← weightFiltrationLT_sup_weightedHomogeneousSubmodule]
-    exact sub_mem (Submodule.mem_sup_right ((mem_weightedHomogeneousSubmodule R w n r).2 hr))
-      (Submodule.mem_sup_left hQ)
-  rw [coeff_zero_weightHomogenization hrQ, map_sub,
-    weightedHomogeneousComponent_eq_self hr, weightedHomogeneousComponent_eq_zero' (w := w)
-      (n := n) (φ := Q) fun x hx ↦ (mem_weightFiltrationLT_iff.1 hQ x hx).ne, sub_zero]
+  rw [coeff_zero_weightHomogenization (sub_mem_weightFiltration_of_isWeightedHomogeneous hr hQ),
+    weightedHomogeneousComponent_sub_of_mem_weightFiltrationLT hr hQ]
 
 end CommRing
 
@@ -640,7 +684,7 @@ algebra of the weight filtration. -/
 theorem weightReesAeval_mem_weightReesAlgebra (hc : ∀ i, c i ∈ weightFiltration R w (d i))
     (f : (MvPolynomial ι R)[X]) : weightReesAeval c d f ∈ weightReesAlgebra R w := by
   have hX : (Polynomial.X : (MvPolynomial σ R)[X]) ∈ weightReesAlgebra R w := by
-    simpa using (TauCeti.coeffSubalgebra.X _ (one_mem_weightFiltration_one R w)).2
+    simpa using (TauCeti.coeffSubalgebra.X _ (one_mem_weightFiltration_one R w)).property
   induction f using Polynomial.induction_on with
   | C p =>
     have hp : aeval (fun i ↦ Polynomial.C (c i) * Polynomial.X ^ d i) p ∈
@@ -697,5 +741,69 @@ theorem weightedHomogeneousComponent_aeval_of_mem_weightFiltration {g : ι → M
     ← Polynomial.coeff_zero_eq_aeval_zero, coeff_zero_weightHomogenization hP] using this
 
 end Substitution
+
+section Rescale
+
+variable {w : σ → ℕ}
+
+/-- Rescaling the variables can only shrink supports, so it preserves each step of the weight
+filtration. -/
+theorem rescale_mem_weightFiltration {a : σ → R} {n : ℕ} {p : MvPolynomial σ R}
+    (hp : p ∈ weightFiltration R w n) : rescale a p ∈ weightFiltration R w n :=
+  mem_weightFiltration_iff.mpr fun u hu ↦
+    mem_weightFiltration_iff.mp hp u (support_rescale_subset a p hu)
+
+/-- Rescaling the variables preserves the strict lower stages of the weight filtration. -/
+theorem rescale_mem_weightFiltrationLT {a : σ → R} {n : ℕ} {p : MvPolynomial σ R}
+    (hp : p ∈ weightFiltrationLT R w n) : rescale a p ∈ weightFiltrationLT R w n :=
+  mem_weightFiltrationLT_iff.mpr fun u hu ↦
+    mem_weightFiltrationLT_iff.mp hp u (support_rescale_subset a p hu)
+
+/-- Rescaling the variables in the coefficients of a weight homogenization is the weight
+homogenization of the rescaled polynomial. -/
+@[simp]
+theorem _root_.MvPolynomial.map_rescale_weightHomogenization (a : σ → R) (n : ℕ)
+    (p : MvPolynomial σ R) :
+    (weightHomogenization R w n p).map (rescale a) = weightHomogenization R w n (rescale a p) := by
+  induction p using MvPolynomial.induction_on' with
+  | monomial u r => simp
+  | add p q hp hq => simp [hp, hq]
+
+/-- Precomposing the Rees presentation map with a diagonal rescaling of the presentation variables
+scales the substituted generators. -/
+theorem weightReesAeval_comp_mapAlgHom_rescale {ι : Type*} (a : ι → R)
+    (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    (weightReesAeval c d).comp (Polynomial.mapAlgHom (rescale a)) =
+      weightReesAeval (fun i ↦ a i • c i) d := by
+  refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_ <;>
+    simp [Algebra.smul_def, mul_assoc]
+
+/-- Scaling the generators of a polynomial family shrinks the image of the Rees presentation map. -/
+theorem range_weightReesAeval_smul_le {ι : Type*} (a : ι → R)
+    (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    (weightReesAeval (fun i ↦ a i • c i) d).range ≤ (weightReesAeval c d).range := by
+  rw [← weightReesAeval_comp_mapAlgHom_rescale]
+  exact AlgHom.range_comp_le_range _ _
+
+/-- Scaling the generators of a polynomial family by invertible scalars leaves the image of the
+Rees presentation map unchanged. -/
+theorem range_weightReesAeval_smul_eq {ι : Type*} {a : ι → R}
+    (ha : ∀ i, IsUnit (a i)) (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    (weightReesAeval (fun i ↦ a i • c i) d).range = (weightReesAeval c d).range := by
+  refine le_antisymm (range_weightReesAeval_smul_le a c d) ?_
+  let b : ι → R := fun i ↦ ↑((ha i).unit⁻¹)
+  have hba : (fun i ↦ b i • a i • c i) = c := funext fun i ↦ by
+    rw [smul_smul, mul_comm, IsUnit.mul_val_inv (ha i), one_smul]
+  simpa only [hba] using range_weightReesAeval_smul_le b (fun i ↦ a i • c i) d
+
+/-- If `a i * b i = 1` for every `i`, the kernel of `weightReesAeval (fun i ↦ a i • c i) d` is the
+extension of `RingHom.ker (weightReesAeval c d)` along the inverse presentation rescaling `b`. -/
+theorem ker_weightReesAeval_smul_eq_map {ι : Type*} {a b : ι → R}
+    (h : ∀ i, a i * b i = 1) (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    RingHom.ker (weightReesAeval (fun i ↦ a i • c i) d) =
+      (RingHom.ker (weightReesAeval c d)).map (Polynomial.mapAlgHom (rescale b)) := by
+  rw [← weightReesAeval_comp_mapAlgHom_rescale, ← AlgHom.comap_ker, comap_mapAlgHom_rescale h]
+
+end Rescale
 
 end TauCeti.MvPolynomial

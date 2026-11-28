@@ -49,6 +49,8 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   `TopRep R G`, read off from its operators.
 * `TauCeti.ofDiscreteModuleMap`: a `G`-equivariant `R`-linear map of discrete modules as a
   morphism of `TopRep R G`.
+* `TauCeti.ofDiscreteModuleSMulMap`: multiplication by a scalar `r`, as an endomorphism of
+  `ofDiscreteModule ℤ G M`.
 * `TauCeti.ofDiscreteModuleIso`: a `G`-equivariant `R`-linear equivalence of discrete modules as an
   isomorphism of `TopRep R G`.
 * `TauCeti.ofDiscreteModulePair`: a compatible pair `(φ : H →* G, f : M →ₗ[R] N)` as the morphism
@@ -83,6 +85,8 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   underlying module.
 * `TauCeti.ofDiscreteModuleHomAddEquiv`: morphisms between objects in the image are exactly the
   `G`-equivariant `R`-linear maps.
+* `TauCeti.ofDiscreteModuleMap_toDistribMulActionHom`: `ofDiscreteModuleSMulMap` is the image of
+  Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom`.
 * `TauCeti.ofDiscreteModulePair_eq_of_hom_apply`: the compatible pair is the only morphism with its
   underlying map, which is how statements phrased with it are specialised;
   `TauCeti.ofDiscreteModulePair_heq_of_hom_apply` is its heterogeneous form, for group
@@ -552,6 +556,39 @@ acting as `f`. -/
 
 end Dictionary
 
+/-! ### Multiplication by a scalar -/
+
+section SMulMap
+
+variable {R : Type u} {G : Type v} [Monoid G]
+  {M : Type w} [AddCommGroup M] [DistribSMul R M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [SMulCommClass G R M]
+
+variable (G M) in
+/-- Multiplication by a scalar `r` on a discrete module `M`, as an endomorphism of
+`ofDiscreteModule ℤ G M`; it is equivariant because the action of `G` commutes with the scalars.
+Use `ofDiscreteModuleSMulMap_hom_apply` to evaluate it. -/
+def ofDiscreteModuleSMulMap (r : R) : ofDiscreteModule ℤ G M ⟶ ofDiscreteModule ℤ G M :=
+  ofDiscreteModuleMap (DistribSMul.toAddMonoidHom M r).toIntLinearMap
+    fun g m ↦ (smul_comm g r m).symm
+
+/-- `ofDiscreteModuleSMulMap G M r` acts on the module as `r • ·`. -/
+@[simp]
+theorem ofDiscreteModuleSMulMap_hom_apply (r : R) (m : M) :
+    (ofDiscreteModuleSMulMap G M r).hom m = r • m :=
+  (rfl)
+
+/-- `ofDiscreteModuleSMulMap G M r` is the endomorphism of `ofDiscreteModule ℤ G M` given by
+Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom G M r`. -/
+theorem ofDiscreteModuleMap_toDistribMulActionHom [SMulCommClass R G M] (r : R) :
+    ofDiscreteModuleMap (SMulCommClass.toDistribMulActionHom G M r).toAddMonoidHom.toIntLinearMap
+      (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) =
+      ofDiscreteModuleSMulMap G M r :=
+  TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ (ofDiscreteModuleMap_hom_apply _ _ m).trans
+    (ofDiscreteModuleSMulMap_hom_apply (G := G) r m).symm)
+
+end SMulMap
+
 /-! ### The dictionary on compatible pairs -/
 
 section DictionaryPair
@@ -725,6 +762,22 @@ lemma DiscreteRep.equivariant {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y) (g
     f.toLinearMap (g • x) = g • f.toLinearMap x := by
   simpa using f.isIntertwining _ _ g x
 
+/-- An equivalence between the underlying representations of two discrete `G`-modules induces an
+isomorphism in `DiscreteRep R G`, mirroring `Rep.mkIso`. -/
+def DiscreteRep.mkIso {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) : X ≅ Y where
+  hom := e.toIntertwiningMap
+  inv := e.symm.toIntertwiningMap
+  hom_inv_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.symm_apply_apply
+  inv_hom_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.apply_symm_apply
+
+/-- The forward morphism of `DiscreteRep.mkIso e` is `e.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_hom {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).hom = e.toIntertwiningMap := (rfl)
+
+/-- The inverse morphism of `DiscreteRep.mkIso e` is `e.symm.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_inv {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).inv = e.symm.toIntertwiningMap := (rfl)
+
 variable (R G)
 
 /-- The dictionary going in, as a functor: a discrete `G`-module with continuous `G`-action goes
@@ -823,7 +876,7 @@ statements that must see the restricted representation (for instance the domain 
 `TauCeti.coindTraceHom`) use this abbreviation. -/
 abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
-  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
+  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩
 
 /-- Restriction along `U → G` on smooth discrete representations: Mathlib's `TopRep.resFunctor`
 along the subgroup inclusion, lifted to the smooth discrete objects since restriction preserves
@@ -833,13 +886,13 @@ object map as `TauCeti.smoothDiscreteResTopRep` and its action on morphisms as t
 @[expose] def smoothDiscreteResFunctor :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U :=
   ObjectProperty.lift _ (smoothDiscreteι R G ⋙ TopRep.resFunctor (U.subtype : U →* G))
-    fun A ↦ A.property.res continuous_subtype_val
+    fun A ↦ A.property.res continuous_subtypeVal
 
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
 theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩ :=
   (rfl)
 
 /-- Restriction along `U → G` does not change the underlying map of a morphism. -/

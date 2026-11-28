@@ -1,23 +1,30 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
+Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Analysis.ODE.ExistUnique
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Order.IntermediateValue
-import TauCeti.Analysis.ODE.Gronwall.TwoSided
+import TauCeti.Analysis.ODE.Gronwall.Interior
 
 /-!
-# ODE uniqueness on relative neighborhoods
+# ODE uniqueness on relative neighborhoods and subsets
 
 Two solutions of a locally Lipschitz vector field with a common value agree near that time
 within an order-connected parameter set. Derivatives are taken within the parameter set,
 so the initial time may be a closed endpoint. No completeness of the phase space is needed.
 A C¹ vector field supplies the local Lipschitz hypothesis; equality then extends throughout
-any preconnected real parameter set.
+any preconnected real parameter set. On a closed interval, continuity up to the endpoints and
+an interior derivative with a state-space Lipschitz bound likewise yield uniqueness from any
+interior or boundary reference point.
+
+For an autonomous field `X` that is locally Lipschitz only on a subset `S` containing two
+trajectories (without an ambient neighborhood Lipschitz bound), compactness of `uIcc c t` yields a
+single Lipschitz constant along their joint image, so the trajectories agree on any preconnected
+time set `I` once they agree at some `c ∈ I`.
 
 ## Main results
 
@@ -26,10 +33,18 @@ any preconnected real parameter set.
 * `ContDiffAt.ode_eventuallyEq_nhdsWithin`: C¹ local uniqueness.
 * `IsPreconnected.ode_eqOn`: locally Lipschitz uniqueness on a preconnected parameter set.
 * `IsPreconnected.ode_eqOn_of_contDiffAt`: the C¹ specialization.
+* `LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt`: solutions of an autonomous locally Lipschitz
+  ODE on `[a, b]` are determined by their value at `a`.
+* `LocallyLipschitzOn.eqOn_of_isPreconnected_of_hasDerivAt_interior`: uniqueness on any
+  preconnected time set `I` for trajectories in `S` agreeing at any `c ∈ I`.
+* `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_lipschitzWith`: closed-interval
+  uniqueness from interior derivatives and a common value at any `c ∈ [a, b]`.
 
 ## References
 
 * `Mathlib.Analysis.ODE.ExistUnique` for local Lipschitz uniqueness.
+* `TauCeti.Analysis.ODE.Gronwall.Interior` for closed-interval Grönwall bounds from interior
+  derivatives.
 * J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Lemmas 6.8 and 6.10:
   closed-endpoint ODE uniqueness is an analytic input to reduced-geodesic and variation
   uniqueness there.
@@ -41,6 +56,8 @@ public section
 
 open Filter Topology
 open scoped NNReal
+
+section
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {V : ℝ × E → E} {I : Set ℝ} {f g : ℝ → E} {t0 : ℝ}
@@ -133,3 +150,98 @@ theorem IsPreconnected.ode_eqOn_of_contDiffAt (hI : IsPreconnected I)
   obtain ⟨K, s, hs, hL⟩ := (hV t ht).exists_lipschitzOnWith
   refine ⟨K, s, hs, fun r x hx y hy ↦ ?_⟩
   simpa only [Prod.edist_eq, edist_self, zero_max] using hL hx hy
+
+/-- **Uniqueness for a locally Lipschitz field.** Two solutions of the autonomous ODE `x' = v x`
+on `[a, b]`, for a locally Lipschitz field `v`, which agree at `a` agree on `[a, b]`. -/
+theorem LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt {v : E → E} (hv : LocallyLipschitz v)
+    {a b : ℝ} (hf : ContinuousOn f (Set.Icc a b))
+    (hf' : ∀ t ∈ Set.Ico a b, HasDerivWithinAt f (v (f t)) (Set.Ici t) t)
+    (hg : ContinuousOn g (Set.Icc a b))
+    (hg' : ∀ t ∈ Set.Ico a b, HasDerivWithinAt g (v (g t)) (Set.Ici t) t)
+    (ha : f a = g a) : Set.EqOn f g (Set.Icc a b) := by
+  -- Both trajectories lie in a compact set, on which `v` is Lipschitz.
+  obtain ⟨K, hK⟩ := hv.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
+    ((isCompact_Icc.image_of_continuousOn hf).union (isCompact_Icc.image_of_continuousOn hg))
+  exact ODE_solution_unique_of_mem_Icc_right (v := fun _ ↦ v) (fun _ _ ↦ hK) hf hf'
+    (fun t ht ↦ .inl ⟨t, Set.Ico_subset_Icc_self ht, rfl⟩) hg hg'
+    (fun t ht ↦ .inr ⟨t, Set.Ico_subset_Icc_self ht, rfl⟩) ha
+
+end
+
+namespace ODE
+
+open Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Two curves continuous on `[a, b]`, remaining inside `s t` and solving `γ' t = v t (γ t)` at
+interior points `t ∈ (a, b)` where `v t` is `K`-Lipschitz on `s t`, agree throughout `[a, b]`
+whenever they agree at an interior or boundary point `c ∈ [a, b]`. -/
+theorem eqOn_Icc_of_lipschitzOnWith {a b c : ℝ} {v : ℝ → E → E} {s : ℝ → Set E} {K : ℝ≥0}
+    {f g : ℝ → E} (hv : ∀ t ∈ Ioo a b, LipschitzOnWith K (v t) (s t)) (hc : c ∈ Icc a b)
+    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
+    (hfs : ∀ t ∈ Ioo a b, f t ∈ s t)
+    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
+    (hgs : ∀ t ∈ Ioo a b, g t ∈ s t) (hfc : f c = g c) :
+    EqOn f g (Icc a b) := fun t ht ↦ by
+  have hle := TauCeti.norm_le_gronwallBound_of_norm_deriv_le (f := fun u ↦ f u - g u)
+    (f' := fun u ↦ v u (f u) - v u (g u)) (δ := 0) (K := K) (ε := 0) hc (hf.sub hg)
+    (fun u hu ↦ (hf' u hu).sub (hg' u hu)) (by simp [hfc])
+    (fun u hu ↦ by
+      simpa only [add_zero, dist_eq_norm] using
+        (hv u hu).dist_le_mul (f u) (hfs u hu) (g u) (hgs u hu))
+    t ht
+  rw [gronwallBound_ε0_δ0] at hle
+  exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
+
+/-- Two curves continuous on `[a, b]` that solve `γ' t = v t (γ t)` on `(a, b)` for a
+state-Lipschitz field `v` and agree at an interior or boundary point `c ∈ [a, b]` agree throughout
+`[a, b]`. -/
+theorem eqOn_Icc_of_lipschitzWith {a b c : ℝ} {v : ℝ → E → E} {K : ℝ≥0} {f g : ℝ → E}
+    (hv : ∀ t ∈ Ioo a b, LipschitzWith K (v t)) (hc : c ∈ Icc a b)
+    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
+    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
+    (hfc : f c = g c) :
+    EqOn f g (Icc a b) :=
+  eqOn_Icc_of_lipschitzOnWith (s := fun _ ↦ univ) (fun t ht ↦ (hv t ht).lipschitzOnWith) hc
+    hf hf' (fun _ _ ↦ trivial) hg hg' (fun _ _ ↦ trivial) hfc
+
+end ODE
+
+namespace LocallyLipschitzOn
+
+open ODE Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : ℝ → E}
+
+/-- **Uniqueness on a preconnected time set.** If `X` is locally Lipschitz on `S`, any two
+continuous curves on a preconnected set `I : Set ℝ` mapping `I` into `S`, solving `γ' = X ∘ γ` on
+`interior I`, and agreeing at some `c ∈ I` agree throughout `I`. -/
+theorem eqOn_of_isPreconnected_of_hasDerivAt_interior {S : Set E} {X : E → E}
+    (hX : LocallyLipschitzOn S X) {I : Set ℝ} (hI : IsPreconnected I) {c : ℝ} (hc : c ∈ I)
+    (hf : ContinuousOn f I) (hf' : ∀ t ∈ interior I, HasDerivAt f (X (f t)) t)
+    (hf_mem : MapsTo f I S)
+    (hg : ContinuousOn g I) (hg' : ∀ t ∈ interior I, HasDerivAt g (X (g t)) t)
+    (hg_mem : MapsTo g I S) (hfc : f c = g c) :
+    EqOn f g I := by
+  intro t ht
+  have hsub : uIcc c t ⊆ I := hI.ordConnected.uIcc_subset hc ht
+  let Kset := f '' uIcc c t ∪ g '' uIcc c t
+  have hKcomp : IsCompact Kset :=
+    (isCompact_uIcc.image_of_continuousOn (hf.mono hsub)).union
+      (isCompact_uIcc.image_of_continuousOn (hg.mono hsub))
+  have hKsub : Kset ⊆ S := union_subset
+    (image_subset_iff.mpr fun s hs ↦ hf_mem (hsub hs))
+    (image_subset_iff.mpr fun s hs ↦ hg_mem (hsub hs))
+  obtain ⟨K, hKLip⟩ := (hX.mono hKsub).exists_lipschitzOnWith_of_compact hKcomp
+  have hIoo_sub : Ioo (min c t) (max c t) ⊆ interior I :=
+    isOpen_Ioo.subset_interior_iff.mpr fun _ hs ↦ hsub (Ioo_subset_Icc_self hs)
+  exact eqOn_Icc_of_lipschitzOnWith (v := fun _ ↦ X) (s := fun _ ↦ Kset)
+    (fun _ _ ↦ hKLip) ⟨min_le_left _ _, le_max_left _ _⟩
+    (hf.mono hsub) (fun s hs ↦ hf' s (hIoo_sub hs))
+    (fun _ hs ↦ Or.inl (mem_image_of_mem f (Ioo_subset_Icc_self hs)))
+    (hg.mono hsub) (fun s hs ↦ hg' s (hIoo_sub hs))
+    (fun _ hs ↦ Or.inr (mem_image_of_mem g (Ioo_subset_Icc_self hs)))
+    hfc ⟨min_le_right _ _, le_max_right _ _⟩
+
+end LocallyLipschitzOn

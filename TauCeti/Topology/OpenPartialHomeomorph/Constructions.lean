@@ -31,11 +31,17 @@ Finite products of open partial homeomorphisms commute with inverses and composi
 * `OpenPartialHomeomorph.subtypeCoord` restricts an open partial homeomorphism to a subtype and
   reads its coordinates through a retraction onto the parametrized slice.
 
+* `OpenPartialHomeomorph.slice` restricts an open partial homeomorphism of products `P × X` and
+  `P × Y` that preserves the first coordinate to the slice over one point of `P`.
+
+* `OpenPartialHomeomorph.subtypeFst` restricts an open partial homeomorphism with values in a
+  product `Y × W` to the subtype it reads as `t × W`, for a subset `t` of the first factor.
+
 ## References
 
 This construction abstracts the concrete subtype charts in the following Tau Ceti formalizations:
 
-* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/Charts.lean`.
+* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/OfHomeomorph.lean`.
 * `TauCeti.levelSetChart` in `TauCeti/Analysis/Fredholm/LevelSet/Basic.lean`.
 -/
 
@@ -94,29 +100,29 @@ noncomputable def subtypeCoord (e : OpenPartialHomeomorph X Y) (s : Set X) (hs :
     (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
     (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
     (hπc : ContinuousOn π (e.target ∩ Set.range ι)) : OpenPartialHomeomorph s Z where
-  toFun x := π (e x.1)
+  toFun x := π (e x.val)
   invFun z := if h : ι z ∈ e.target then ⟨e.symm (ι z), hι h⟩ else Classical.choice hs
   source := Subtype.val ⁻¹' e.source
   target := ι ⁻¹' e.target
   map_source' x hx := by
-    rw [mem_preimage, hslice hx x.2]
+    rw [mem_preimage, hslice hx x.property]
     exact e.map_source hx
   map_target' z hz := by
     simp only [mem_preimage] at hz ⊢
     rw [dite_eq_left hz]
     exact e.map_target hz
   left_inv' x hx := Subtype.ext <| by
-    simp [hslice hx x.2, e.map_source hx, e.left_inv hx]
+    simp [hslice hx x.property, e.map_source hx, e.left_inv hx]
   right_inv' z hz := by
     simp only [mem_preimage] at hz
     rw [dite_eq_left hz, e.right_inv hz]
     exact hπι hz
-  open_source := e.open_source.preimage continuous_subtype_val
+  open_source := e.open_source.preimage continuous_subtypeVal
   open_target := e.open_target.preimage hιc
   continuousOn_toFun :=
     hπc.comp
-      (e.continuousOn.comp continuous_subtype_val.continuousOn (mapsTo_preimage _ _))
-      (fun x hx => ⟨e.map_source hx, ⟨π (e x.1), hslice hx x.2⟩⟩)
+      (e.continuousOn.comp continuous_subtypeVal.continuousOn (mapsTo_preimage _ _))
+      (fun x hx => ⟨e.map_source hx, ⟨π (e x.val), hslice hx x.property⟩⟩)
   continuousOn_invFun := by
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
     refine ContinuousOn.congr
@@ -146,15 +152,15 @@ theorem subtypeCoord_target :
 retraction. -/
 @[simp]
 theorem subtypeCoord_apply (x : s) :
-    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.1) := (rfl)
+    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.val) := (rfl)
 
 /-- On its source, `subtypeCoord` recovers the ambient coordinate after applying the slice
 parametrization. -/
 theorem subtypeCoord_parametrization_apply {x : s}
     (hx : x ∈ (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source) :
-    ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.1 := by
+    ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.val := by
   rw [subtypeCoord_apply]
-  exact hslice (by simpa only [subtypeCoord_source, Set.mem_preimage] using hx) x.2
+  exact hslice (by simpa only [subtypeCoord_source, Set.mem_preimage] using hx) x.property
 
 /-- On its target, the inverse of `subtypeCoord` is the ambient inverse evaluated on the
 parametrized slice. -/
@@ -164,6 +170,99 @@ theorem coe_subtypeCoord_symm_apply {z : Z} (hz : ι z ∈ e.target) :
   simp [subtypeCoord, hz]
 
 end SubtypeCoord
+
+section SubtypeFst
+
+variable {W : Type*} [TopologicalSpace W] (e : OpenPartialHomeomorph X (Y × W)) {s : Set X}
+  {t : Set Y} (h : ∀ x ∈ e.source, x ∈ s ↔ (e x).1 ∈ t)
+
+include h in
+/-- On the target of `e`, the inverse of `e` sends the part of `t × W` into `s`. -/
+private theorem symm_prodMap_mem_of_mem_target {z : t × W}
+    (hz : Prod.map Subtype.val id z ∈ e.target) : e.symm (Prod.map Subtype.val id z) ∈ s :=
+  (h _ (e.map_target hz)).2 (by rw [e.right_inv hz]; exact z.1.property)
+
+variable [Nonempty t]
+
+include h in
+open Classical in
+/-- On the source of `e`, a point of `s` is read in `t × W` without moving it. -/
+private theorem prodMap_dite_eq {x : X} (hx : x ∈ e.source) (hxs : x ∈ s) :
+    Prod.map Subtype.val id
+      (if hp : (e x).1 ∈ t then (⟨(e x).1, hp⟩ : t) else Classical.arbitrary t, (e x).2) = e x := by
+  simp [(h x hx).1 hxs]
+
+variable [Nonempty s]
+
+open Classical in
+/-- An open partial homeomorphism `e` of `X` with values in `Y × W` restricts to one of a nonempty
+subset `s` of `X` with values in `t × W`, for a nonempty subset `t` of `Y`, when, on the source of
+`e`, a point lies in `s` exactly when its first coordinate lies in `t`. -/
+noncomputable def subtypeFst : OpenPartialHomeomorph s (t × W) :=
+  e.subtypeCoord s inferInstance (Prod.map Subtype.val id)
+    (fun p ↦ (if hp : p.1 ∈ t then ⟨p.1, hp⟩ else Classical.arbitrary t, p.2))
+    (e.symm_prodMap_mem_of_mem_target h) (e.prodMap_dite_eq h)
+    -- The ascription keeps this hypothesis in `LeftInvOn` form, so the `subtypeCoord` lemmas apply.
+    (show LeftInvOn _ _ _ from fun z _ ↦ by simp [z.1.property])
+    (continuous_subtypeVal.prodMap continuous_id)
+    (by
+      refine ContinuousOn.prodMk ?_ continuous_snd.continuousOn
+      rw [IsInducing.subtypeVal.continuousOn_iff]
+      refine continuous_fst.continuousOn.congr fun p hp ↦ ?_
+      obtain ⟨z, rfl⟩ := hp.2
+      simp)
+
+/-- The source of `subtypeFst` is the part of `s` in the source of `e`. -/
+@[simp]
+theorem subtypeFst_source : (e.subtypeFst h).source = Subtype.val ⁻¹' e.source :=
+  (rfl)
+
+/-- The target of `subtypeFst` is the part of `t × W` in the target of `e`. -/
+@[simp]
+theorem subtypeFst_target :
+    (e.subtypeFst h).target = Prod.map Subtype.val id ⁻¹' e.target :=
+  (rfl)
+
+/-- On the source of `e`, `subtypeFst` reads a point of `s` through `e`. -/
+theorem subtypeFst_apply {y : s} (hy : (y : X) ∈ e.source) :
+    e.subtypeFst h y = (⟨(e y).1, (h _ hy).1 y.property⟩, (e y).2) := by
+  rw [subtypeFst, subtypeCoord_apply]
+  simp [(h _ hy).1 y.property]
+
+/-- The second coordinate of `subtypeFst` is that of `e`. -/
+@[simp]
+theorem snd_subtypeFst_apply (y : s) : (e.subtypeFst h y).2 = (e y).2 :=
+  (rfl)
+
+/-- On its target, the inverse of `subtypeFst` is the inverse of `e`. -/
+@[simp]
+theorem coe_subtypeFst_symm_apply {z : t × W} (hz : Prod.map Subtype.val id z ∈ e.target) :
+    ((e.subtypeFst h).symm z : X) = e.symm (Prod.map Subtype.val id z) := by
+  rw [subtypeFst]
+  exact coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hz
+
+variable (c : OpenPartialHomeomorph t Z)
+
+/-- The source of `subtypeFst` composed with a chart `c` of the first factor is the part of `s` in
+the source of `e` whose first coordinate `c` reads. -/
+theorem mem_subtypeFst_trans_prod_refl_source {y : s} :
+    y ∈ ((e.subtypeFst h).trans (c.prod (OpenPartialHomeomorph.refl W))).source ↔
+      ∃ hy : (y : X) ∈ e.source, (⟨(e y).1, (h _ hy).1 y.property⟩ : t) ∈ c.source := by
+  simp only [trans_source, subtypeFst_source, mem_inter_iff, mem_preimage, prod_source,
+    refl_source, mem_prod, mem_univ, and_true]
+  refine ⟨fun ⟨hy, hc⟩ ↦ ⟨hy, ?_⟩, fun ⟨hy, hc⟩ ↦ ⟨hy, ?_⟩⟩
+  · rwa [subtypeFst_apply _ _ hy] at hc
+  · rwa [subtypeFst_apply _ _ hy]
+
+/-- `subtypeFst` composed with a chart `c` of the first factor reads a point through `e` and then
+`c` in the first factor. -/
+theorem subtypeFst_trans_prod_refl_apply {y : s} (hy : (y : X) ∈ e.source) :
+    (e.subtypeFst h).trans (c.prod (OpenPartialHomeomorph.refl W)) y =
+      (c ⟨(e y).1, (h _ hy).1 y.property⟩, (e y).2) := by
+  rw [trans_apply, subtypeFst_apply _ _ hy]
+  simp only [prod_apply, refl_apply, id_eq]
+
+end SubtypeFst
 
 section Pi
 
@@ -186,6 +285,69 @@ theorem pi_trans (e : ∀ i, OpenPartialHomeomorph (X i) (Y i))
   toPartialEquiv_injective (PartialEquiv.pi_trans _ _)
 
 end Pi
+
+section Slice
+
+variable {P : Type*} [TopologicalSpace P] (e : OpenPartialHomeomorph (P × X) (P × Y))
+  (he : ∀ q ∈ e.source, (e q).1 = q.1) (s : P)
+
+include he in
+/-- If an open partial homeomorphism of products preserves the first coordinate on its source,
+its inverse preserves it on the target. -/
+theorem fst_symm_of_fst_eq {q : P × Y} (hq : q ∈ e.target) : (e.symm q).1 = q.1 := by
+  rw [← he _ (e.map_target hq), e.right_inv hq]
+
+/-- The slice at `s` of an open partial homeomorphism of products that preserves the first
+coordinate on its source (hence also its inverse on the target, `fst_symm_of_fst_eq`):
+`x ↦ (e (s, x)).2`, with inverse `y ↦ (e⁻¹ (s, y)).2`, from
+`{x | (s, x) ∈ e.source}` onto `{y | (s, y) ∈ e.target}`. -/
+def slice : OpenPartialHomeomorph X Y where
+  toFun x := (e (s, x)).2
+  invFun y := (e.symm (s, y)).2
+  source := {x | (s, x) ∈ e.source}
+  target := {y | (s, y) ∈ e.target}
+  map_source' x hx := by
+    have h := e.map_source hx
+    rwa [← Prod.mk.eta (p := e (s, x)), he _ hx] at h
+  map_target' y hy := by
+    have h := e.map_target hy
+    rwa [← Prod.mk.eta (p := e.symm (s, y)), e.fst_symm_of_fst_eq he hy] at h
+  left_inv' x hx := by
+    have h := e.left_inv hx
+    rw [← Prod.mk.eta (p := e (s, x)), he _ hx] at h
+    simp [h]
+  right_inv' y hy := by
+    have h := e.right_inv hy
+    rw [← Prod.mk.eta (p := e.symm (s, y)), e.fst_symm_of_fst_eq he hy] at h
+    simp [h]
+  open_source := e.open_source.preimage (Continuous.prodMk_right s)
+  open_target := e.open_target.preimage (Continuous.prodMk_right s)
+  continuousOn_toFun := continuous_snd.comp_continuousOn
+    (e.continuousOn.comp (Continuous.prodMk_right s).continuousOn fun _ hx ↦ hx)
+  continuousOn_invFun := continuous_snd.comp_continuousOn
+    (e.continuousOn_symm.comp (Continuous.prodMk_right s).continuousOn fun _ hy ↦ hy)
+
+/-- The slice evaluates as the second component of `e` at `(s, x)`. -/
+@[simp]
+theorem slice_apply (x : X) : e.slice he s x = (e (s, x)).2 := by
+  rfl
+
+/-- The inverse of the slice evaluates as the second component of `e⁻¹` at `(s, y)`. -/
+@[simp]
+theorem slice_symm_apply (y : Y) : (e.slice he s).symm y = (e.symm (s, y)).2 := by
+  rfl
+
+/-- The source of the slice is the slice of the source. -/
+@[simp]
+theorem mem_slice_source {x : X} : x ∈ (e.slice he s).source ↔ (s, x) ∈ e.source := by
+  rfl
+
+/-- The target of the slice is the slice of the target. -/
+@[simp]
+theorem mem_slice_target {y : Y} : y ∈ (e.slice he s).target ↔ (s, y) ∈ e.target := by
+  rfl
+
+end Slice
 
 end OpenPartialHomeomorph
 

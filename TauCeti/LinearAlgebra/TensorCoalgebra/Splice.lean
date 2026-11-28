@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fin.Tuple.Duplicate
 public import TauCeti.LinearAlgebra.Graded.Insertion
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
@@ -41,13 +42,16 @@ block.
 * `TauCeti.ReducedTensorWords.splice_two_succ_eq_splice_two_pred`: deleting an interior letter by
   collapsing it with either neighbour gives the same word.
 * `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
-* `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod_insertNth`: collapsing two consecutive
+* `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod` and
+  `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod_insertNth`: collapsing two consecutive
   letters of a word.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 * `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
   splicing a block of the rest.
 * `TauCeti.ReducedTensorWords.splice_mem_filtration`: a block of `b` letters with `d` of them
   collapsed to one letter has length at most `b + 1 - d`.
+* The `subword_*_duplicateAt_*` / `splice_two_duplicateAt_*` family: subword and binary-splice
+  identities for tuples with a duplicated adjacent entry (`TauCeti.duplicateAt`).
 
 ## References
 
@@ -77,9 +81,9 @@ noncomputable def splice {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
   if h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n then
     of R M ⟨b + 1 - d, by omega⟩
       (PiTensorProduct.tprod R fun j : Fin (b + 1 - d) ↦
-        if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-        else if _ : j.1 = p then e
-        else x ⟨a + (j.1 + d - 1), by omega⟩)
+        if _ : j.val < p then x ⟨a + j.val, by omega⟩
+        else if _ : j.val = p then e
+        else x ⟨a + (j.val + d - 1), by omega⟩)
   else 0
 
 /-- On its intended range, a spliced word is the pure tensor of its letters: the letters of the
@@ -89,9 +93,9 @@ theorem splice_eq_of_tprod {n : ℕ} (x : Fin n → M) {a b p d : ℕ} (e : M) (
     splice R x a b p d e =
       of R M ⟨b + 1 - d, by omega⟩
         (PiTensorProduct.tprod R fun j : Fin (b + 1 - d) ↦
-          if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-          else if _ : j.1 = p then e
-          else x ⟨a + (j.1 + d - 1), by omega⟩) := by
+          if _ : j.val < p then x ⟨a + j.val, by omega⟩
+          else if _ : j.val = p then e
+          else x ⟨a + (j.val + d - 1), by omega⟩) := by
   rw [splice, dite_eq_left ⟨hd, hpd, hab⟩]
 
 /-- A spliced word of a natural-indexed string is the word of the string with the block
@@ -164,9 +168,9 @@ theorem splice_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b p d
     have hj := j.isLt
     simp only [Fin.val_cast]
     split_ifs with h₁ h₂
-    · exact h j.1 (by omega)
+    · exact h j.val (by omega)
     · rfl
-    · exact h (j.1 + d - 1) (by omega)
+    · exact h (j.val + d - 1) (by omega)
   · rw [splice, splice, dite_eq_right (by tauto), dite_eq_right (by tauto)]
 
 /-- Splicing in the zero letter gives the zero word. -/
@@ -183,14 +187,14 @@ private theorem exists_linearMap_splice {n : ℕ} (x : Fin n → M) (a b p d : �
     ∃ L : M →ₗ[R] ReducedTensorWords R M, ∀ e, splice R x a b p d e = L e := by
   by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
   · refine ⟨of R M ⟨b + 1 - d, by omega⟩ ∘ₗ (PiTensorProduct.tprod R).toLinearMap
-      (fun j : Fin (b + 1 - d) ↦ if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-        else if _ : j.1 = p then 0 else x ⟨a + (j.1 + d - 1), by omega⟩) ⟨p, by omega⟩,
+      (fun j : Fin (b + 1 - d) ↦ if _ : j.val < p then x ⟨a + j.val, by omega⟩
+        else if _ : j.val = p then 0 else x ⟨a + (j.val + d - 1), by omega⟩) ⟨p, by omega⟩,
       fun e ↦ ?_⟩
     rw [splice_eq_of_tprod R x e h.1 h.2.1 h.2.2, LinearMap.comp_apply,
       MultilinearMap.toLinearMap_apply]
     congr 2
     funext j
-    by_cases hj : j.1 = p
+    by_cases hj : j.val = p
     · rw [show j = ⟨p, by omega⟩ from Fin.ext hj, Function.update_self]
       simp
     · rw [Function.update_of_ne fun h ↦ hj (congrArg Fin.val h)]
@@ -212,22 +216,22 @@ theorem splice_add {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e e' : M) :
 /-- A letter outside the collapsed block survives in a spliced word: the spliced word is a pure
 tensor word one of whose letters is that letter. -/
 theorem exists_splice_eq_of_tprod {n : ℕ} (x : Fin n → M) {p d : ℕ}
-    (hpd : p + d ≤ n) (e : M) {i : Fin n} (hi : ¬(p ≤ i.1 ∧ i.1 < p + d)) :
+    (hpd : p + d ≤ n) (e : M) {i : Fin n} (hi : ¬(p ≤ i.val ∧ i.val < p + d)) :
     ∃ y : Fin (n + 1 - d) → M, (∃ j, y j = x i) ∧
       splice R x 0 n p d e = of R M ⟨n + 1 - d, by omega⟩ (PiTensorProduct.tprod R y) := by
   have hin := i.isLt
   rcases Nat.eq_zero_or_pos d with rfl | hd
-  · refine ⟨fun j : Fin (n + 1 - 0) ↦ if j.1 = 0 then 0 else x i,
-      ⟨⟨i.1 + 1, by omega⟩, by simp⟩, ?_⟩
-    have h0 : PiTensorProduct.tprod R (fun j : Fin (n + 1 - 0) ↦ if j.1 = 0 then (0 : M) else x i)
+  · refine ⟨fun j : Fin (n + 1 - 0) ↦ if j.val = 0 then 0 else x i,
+      ⟨⟨i.val + 1, by omega⟩, by simp⟩, ?_⟩
+    have h0 : PiTensorProduct.tprod R (fun j : Fin (n + 1 - 0) ↦ if j.val = 0 then (0 : M) else x i)
         = 0 :=
       (PiTensorProduct.tprod R).map_coord_zero (⟨0, by omega⟩ : Fin (n + 1 - 0)) (by simp)
     rw [splice_zero_length, h0, map_zero]
   refine ⟨_, ?_, splice_eq_of_tprod R x e hd hpd (by omega)⟩
-  by_cases hip : i.1 < p
-  · exact ⟨⟨i.1, by omega⟩, by simp [hip]⟩
-  · refine ⟨⟨i.1 + 1 - d, by omega⟩, ?_⟩
-    simp only [show ¬i.1 + 1 - d < p by omega, show i.1 + 1 - d ≠ p by omega, dite_false]
+  by_cases hip : i.val < p
+  · exact ⟨⟨i.val, by omega⟩, by simp [hip]⟩
+  · refine ⟨⟨i.val + 1 - d, by omega⟩, ?_⟩
+    simp only [show ¬i.val + 1 - d < p by omega, show i.val + 1 - d ≠ p by omega, dite_false]
     exact congrArg x (Fin.ext (by simp; omega))
 
 /-- Collapsing all letters but the first of a tuple leaves a two-letter word. -/
@@ -292,6 +296,19 @@ theorem splice_two_succ_eq_splice_two_pred {n p : ℕ} (hp₀ : 0 < p) (hpn : p 
     | omega
     | exact congrArg x rfl
     | exact congrArg x (Fin.ext (by dsimp only; omega))
+
+/-- Collapsing a fitting two-letter block at position `p` of a tuple of length `n + 1` gives the
+`n`-letter pure tensor word with `v` at slot `p` and the remaining letters shifted down by one. -/
+theorem splice_two_eq_of_tprod {n p : ℕ} (hp : p + 2 ≤ n + 1) (w : Fin (n + 1) → M) (v : M) :
+    splice R w 0 (n + 1) p 2 v =
+      of R M ⟨n, by omega⟩ (PiTensorProduct.tprod R fun k : Fin n ↦
+        if _ : k.val < p then w ⟨k.val, by omega⟩
+        else if _ : k.val = p then v
+        else w ⟨k.val + 1, by omega⟩) := by
+  rw [splice_eq_of_tprod R w v two_pos hp (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun k ↦ ?_
+  simp only [Fin.val_cast, zero_add]
+  split_ifs <;> rfl
 
 /-- Collapsing the two letters at positions `p` and `p + 1` of a word of length `n + 2` into `e`
 gives the pure tensor of the remaining `n` letters with `e` inserted at position `p`. -/
@@ -363,32 +380,32 @@ private theorem deconcatenation_splice_left {n : ℕ} (x : Fin n → M) {a b p d
     (hd : 0 < d) (hpd : p + d ≤ b) (hab : a + b ≤ n) (hc : 0 < c) (hcp : c ≤ p) :
     subword R
         (fun j : Fin (b + 1 - d) ↦
-          if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-          else if _ : j.1 = p then e
-          else x ⟨a + (j.1 + d - 1), by omega⟩) 0 c ⊗ₜ[R]
+          if _ : j.val < p then x ⟨a + j.val, by omega⟩
+          else if _ : j.val = p then e
+          else x ⟨a + (j.val + d - 1), by omega⟩) 0 c ⊗ₜ[R]
       subword R
         (fun j : Fin (b + 1 - d) ↦
-          if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-          else if _ : j.1 = p then e
-          else x ⟨a + (j.1 + d - 1), by omega⟩) c (b + 1 - d - c) =
+          if _ : j.val < p then x ⟨a + j.val, by omega⟩
+          else if _ : j.val = p then e
+          else x ⟨a + (j.val + d - 1), by omega⟩) c (b + 1 - d - c) =
       subword R x a c ⊗ₜ[R] splice R x (a + c) (b - c) (p - c) d e := by
   have hfst : subword R
       (fun j : Fin (b + 1 - d) ↦
-        if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-        else if _ : j.1 = p then e
-        else x ⟨a + (j.1 + d - 1), by omega⟩) 0 c = subword R x a c := by
+        if _ : j.val < p then x ⟨a + j.val, by omega⟩
+        else if _ : j.val = p then e
+        else x ⟨a + (j.val + d - 1), by omega⟩) 0 c = subword R x a c := by
     rw [subword_eq_of_tprod R _ hc (by omega), subword_eq_of_tprod R x hc (by omega)]
     refine of_tprod_congr R M _ rfl fun j ↦ ?_
     have hj := j.isLt
     simp only [Fin.val_cast]
-    have hjp : 0 + j.1 < p := by omega
+    have hjp : 0 + j.val < p := by omega
     rw [dite_eq_left hjp]
     exact congrArg x (by simp only [Fin.mk.injEq]; omega)
   have hsnd : subword R
       (fun j : Fin (b + 1 - d) ↦
-        if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-        else if _ : j.1 = p then e
-        else x ⟨a + (j.1 + d - 1), by omega⟩) c (b + 1 - d - c) =
+        if _ : j.val < p then x ⟨a + j.val, by omega⟩
+        else if _ : j.val = p then e
+        else x ⟨a + (j.val + d - 1), by omega⟩) c (b + 1 - d - c) =
       splice R x (a + c) (b - c) (p - c) d e := by
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       splice_eq_of_tprod R x e hd (by omega) (by omega)]
@@ -403,21 +420,21 @@ private theorem deconcatenation_splice_right {n : ℕ} (x : Fin n → M) {a b p 
     (hd : 0 < d) (hpd : p + d ≤ b) (hab : a + b ≤ n) (hpc : p < c) (hc : c < b + 1 - d) :
     subword R
         (fun j : Fin (b + 1 - d) ↦
-          if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-          else if _ : j.1 = p then e
-          else x ⟨a + (j.1 + d - 1), by omega⟩) 0 c ⊗ₜ[R]
+          if _ : j.val < p then x ⟨a + j.val, by omega⟩
+          else if _ : j.val = p then e
+          else x ⟨a + (j.val + d - 1), by omega⟩) 0 c ⊗ₜ[R]
       subword R
         (fun j : Fin (b + 1 - d) ↦
-          if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-          else if _ : j.1 = p then e
-          else x ⟨a + (j.1 + d - 1), by omega⟩) c (b + 1 - d - c) =
+          if _ : j.val < p then x ⟨a + j.val, by omega⟩
+          else if _ : j.val = p then e
+          else x ⟨a + (j.val + d - 1), by omega⟩) c (b + 1 - d - c) =
       splice R x a (c + (d - 1)) p d e ⊗ₜ[R]
         subword R x (a + (c + (d - 1))) (b - (c + (d - 1))) := by
   have hfst : subword R
       (fun j : Fin (b + 1 - d) ↦
-        if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-        else if _ : j.1 = p then e
-        else x ⟨a + (j.1 + d - 1), by omega⟩) 0 c = splice R x a (c + (d - 1)) p d e := by
+        if _ : j.val < p then x ⟨a + j.val, by omega⟩
+        else if _ : j.val = p then e
+        else x ⟨a + (j.val + d - 1), by omega⟩) 0 c = splice R x a (c + (d - 1)) p d e := by
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       splice_eq_of_tprod R x e hd (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
@@ -425,16 +442,16 @@ private theorem deconcatenation_splice_right {n : ℕ} (x : Fin n → M) {a b p 
     split_ifs <;> first | rfl | exact congrArg x (by simp only [Fin.mk.injEq]; omega) | omega
   have hsnd : subword R
       (fun j : Fin (b + 1 - d) ↦
-        if _ : j.1 < p then x ⟨a + j.1, by omega⟩
-        else if _ : j.1 = p then e
-        else x ⟨a + (j.1 + d - 1), by omega⟩) c (b + 1 - d - c) =
+        if _ : j.val < p then x ⟨a + j.val, by omega⟩
+        else if _ : j.val = p then e
+        else x ⟨a + (j.val + d - 1), by omega⟩) c (b + 1 - d - c) =
       subword R x (a + (c + (d - 1))) (b - (c + (d - 1))) := by
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       subword_eq_of_tprod R x (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
     simp only [Fin.val_cast]
-    have hjp : ¬(c + j.1) < p := by omega
-    have hjp_ne : ¬(c + j.1) = p := by omega
+    have hjp : ¬(c + j.val) < p := by omega
+    have hjp_ne : ¬(c + j.val) = p := by omega
     rw [dite_eq_right hjp, dite_eq_right hjp_ne]
     exact congrArg x (by simp only [Fin.mk.injEq]; omega)
   rw [hfst, hsnd]
@@ -596,6 +613,126 @@ theorem splice_apply_subword_mem_filtration (F : ReducedTensorWords R M →ₗ[R
   · rw [hF _ (subword_mem_filtration R M x c hdj), splice_zero]
     exact zero_mem _
   · exact filtration_monotone R M (by omega) (splice_mem_filtration R y a b p d _)
+
+/-! ### Subword and splice identities for duplicated entries -/
+
+/-- The initial `(n + 1)`-letter subword of `duplicateAt e j.castSucc w` duplicates `e` at slot `j`
+of the initial `n`-letter prefix of `w`. -/
+theorem subword_init_duplicateAt_castSucc (e : M) {n : ℕ} (j : Fin n) (w : Fin (n + 1) → M) :
+    subword R (duplicateAt e j.castSucc w) 0 (n + 1) =
+      of R M ⟨n + 1, n.succ_pos⟩
+        (PiTensorProduct.tprod R (duplicateAt e j fun r ↦ w r.castSucc)) := by
+  rw [subword_eq_of_tprod R _ n.succ_pos (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.val_cast, zero_add, duplicateAt_apply, Fin.val_castSucc]; split_ifs <;> rfl
+
+/-- When `w (Fin.last n) = e`, the initial `(n + 1)`-letter subword of
+`duplicateAt e (Fin.last n) w` is `w`. -/
+theorem subword_init_duplicateAt_last {e : M} {n : ℕ} {w : Fin (n + 1) → M}
+    (hw : w (Fin.last n) = e) : subword R (duplicateAt e (Fin.last n) w) 0 (n + 1) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [subword_eq_of_tprod R _ n.succ_pos (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  have _hk := k.isLt
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply, Fin.val_last]
+  split_ifs <;> try dsimp only at *
+  all_goals first | omega | (rw [← hw]; exact congrArg w (Fin.ext (by dsimp [Fin.last]; omega)))
+
+/-- When `j = 0` and `w 0 = e`, the tail `(n + 1)`-letter subword of `duplicateAt e j w` is `w`. -/
+theorem subword_tail_duplicateAt_zero {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : j.val = 0)
+    {w : Fin (n + 1) → M} (hw : w 0 = e) : subword R (duplicateAt e j w) 1 (n + 1) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [subword_eq_of_tprod R _ n.succ_pos (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.cast_eq_self, duplicateAt_apply, hj]
+  split_ifs
+  · omega
+  · rw [← hw]; exact congrArg w (Fin.ext (by simp only [Fin.val_zero]; omega))
+  · exact congrArg w (Fin.ext (by dsimp only; omega))
+
+/-- When `1 ≤ j`, the tail `(n + 1)`-letter subword of `duplicateAt e j w` has `e` at `j - 1`. -/
+theorem subword_tail_duplicateAt_of_pos (e : M) {n : ℕ} {j : Fin (n + 1)} (hj : 1 ≤ j.val)
+    (w : Fin (n + 1) → M) : ∃ u : Fin (n + 1) → M, u ⟨j.val - 1, by omega⟩ = e ∧
+      subword R (duplicateAt e j w) 1 (n + 1) =
+        of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R u) := by
+  refine ⟨fun k ↦ duplicateAt e j w ⟨1 + k.val, by omega⟩, ?_,
+    subword_eq_of_tprod R _ n.succ_pos (by omega)⟩
+  simp only [duplicateAt_apply]
+  split_ifs <;> first | rfl | omega
+
+/-- Collapsing a 2-letter block strictly before `j` in `duplicateAt e j w` has `e` at `j - 1`. -/
+theorem splice_two_duplicateAt_of_lt (e : M) {n : ℕ} {j : Fin (n + 1)} {p : ℕ}
+    (hp : p + 2 ≤ j.val) (w : Fin (n + 1) → M) (v : M) :
+    ∃ u : Fin (n + 1) → M, u ⟨j.val - 1, by omega⟩ = e ∧
+      splice R (duplicateAt e j w) 0 (n + 2) p 2 v =
+        of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R u) := by
+  refine ⟨_, ?_, splice_eq_of_tprod R (duplicateAt e j w) v two_pos (by omega) (by omega)⟩
+  simp only [duplicateAt_apply]
+  split_ifs <;> first | rfl | omega
+
+/-- Collapsing `[e, e]` at slot `j` to `e` in `duplicateAt e j w` recovers `w` when `w j = e`. -/
+theorem splice_two_duplicateAt_self {e : M} {n : ℕ} {j : Fin (n + 1)} {w : Fin (n + 1) → M}
+    (hw : w j = e) : splice R (duplicateAt e j w) 0 (n + 2) j.val 2 e =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]; split_ifs
+  all_goals first
+    | omega | exact congrArg w (Fin.ext rfl) | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
+
+/-- Collapsing `[w (j - 1), e]` to `w (j - 1)` in `duplicateAt e j w` yields `w` when `w j = e`. -/
+theorem splice_two_duplicateAt_pred {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : 1 ≤ j.val)
+    {w : Fin (n + 1) → M} (hw : w j = e) :
+    splice R (duplicateAt e j w) 0 (n + 2) (j.val - 1) 2 (w ⟨j.val - 1, by omega⟩) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  have h := splice_two_succ_eq_splice_two_pred R (n := n + 1) (p := j.val) hj (by omega)
+    (duplicateAt e j w)
+  have hj1 : duplicateAt e j w ⟨j.val + 1, by omega⟩ = e := duplicateAt_succ e j w
+  have hj0 : duplicateAt e j w ⟨j.val - 1, by omega⟩ = w ⟨j.val - 1, by omega⟩ :=
+    duplicateAt_castSucc_of_lt e w (i := ⟨j.val - 1, by omega⟩) (Fin.lt_def.2 (by dsimp; omega))
+  rw [hj1, hj0] at h
+  exact h.symm.trans (splice_two_duplicateAt_self R hw)
+
+/-- Collapsing `[e, w (j + 1)]` to `w (j + 1)` in `duplicateAt e j w` yields `w` when `w j = e`. -/
+theorem splice_two_duplicateAt_succ {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : j.val < n)
+    {w : Fin (n + 1) → M} (hw : w j = e) :
+    splice R (duplicateAt e j w) 0 (n + 2) (j.val + 1) 2 (w ⟨j.val + 1, by omega⟩) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  have h := splice_two_succ_eq_splice_two_pred R (n := n + 1) (p := j.val + 1)
+    (Nat.succ_pos _) (by omega) (duplicateAt e j w)
+  have hj2 : duplicateAt e j w ⟨j.val + 1 + 1, by omega⟩ = w ⟨j.val + 1, by omega⟩ :=
+    duplicateAt_succ_of_gt e w (i := ⟨j.val + 1, by omega⟩) (Fin.lt_def.2 (by dsimp; omega))
+  have hj0 : duplicateAt e j w ⟨j.val + 1 - 1, by omega⟩ = e := by
+    have hidx : (⟨j.val + 1 - 1, by omega⟩ : Fin (n + 2)) = j.castSucc := Fin.ext (by simp)
+    rw [hidx, duplicateAt_castSucc]
+  rw [hj2, hj0, Nat.add_sub_cancel] at h
+  exact h.trans (splice_two_duplicateAt_self R hw)
+
+/-- For `q ≥ j`, the two-letter subword at `q + 1` of `duplicateAt e j w` equals that at `q` of `w`
+when `w j = e`. -/
+theorem subword_two_duplicateAt_ge {e : M} {n : ℕ} {j : Fin (n + 1)} {q : ℕ} (hq₁ : j.val ≤ q)
+    (hq₂ : q + 2 ≤ n + 1) {w : Fin (n + 1) → M} (hw : w j = e) :
+    subword R (duplicateAt e j w) (q + 1) 2 = subword R w q 2 := by
+  rw [subword_eq_of_tprod R _ two_pos (by omega), subword_eq_of_tprod R _ two_pos hq₂]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.cast_eq_self, duplicateAt_apply]
+  split_ifs <;> first
+    | omega
+    | (rw [← hw]; exact congrArg w (Fin.ext (by dsimp only; omega)))
+    | exact congrArg w (Fin.ext (by dsimp only; omega))
+
+/-- Splicing a two-letter block strictly after `j` commutes with duplicating `e` at slot `j`. -/
+theorem splice_two_duplicateAt_after (e : M) {n : ℕ} (j : Fin n) {q : ℕ} (hq₁ : j.val + 1 ≤ q)
+    (hq₂ : q + 2 ≤ n + 1) (w : Fin (n + 1) → M) (v : M) :
+    splice R (duplicateAt e j.castSucc w) 0 (n + 2) (q + 1) 2 v =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R (duplicateAt e j fun r : Fin n ↦
+        if _ : r.val < q then w ⟨r.val, by omega⟩
+        else if _ : r.val = q then v else w ⟨r.val + 1, by omega⟩)) := by
+  rw [splice_eq_of_tprod R _ v two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun k ↦ ?_
+  have _hk := k.isLt
+  simp only [Fin.val_cast, zero_add, duplicateAt_apply, Fin.val_castSucc]
+  split_ifs <;> first | omega | rfl | exact congrArg w (Fin.ext (by simp; omega))
 
 end ReducedTensorWords
 

@@ -78,6 +78,12 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
   partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
   in at least `n` letters and smaller in fewer.
+* `TauCeti.linearIndependent_diagramSchurPoly`: in `N` variables, the Schur polynomials of all the
+  Young diagrams with at most `N` rows, of every degree, are linearly independent.
+* `TauCeti.span_symmetricDiagramSchurPoly_eq_top`: the Schur polynomials span the symmetric
+  polynomials over a commutative ring, since they span each homogeneous degree.
+* `TauCeti.map_mem_of_forall_symmetricDiagramSchurPoly`: a linear map out of the symmetric
+  polynomials lands in a submodule once every Schur polynomial does.
 
 ## References
 
@@ -102,13 +108,13 @@ def partitionEquivSchurIndex (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fint
 /-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
 @[simp]
 theorem partitionEquivSchurIndex_apply (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ)
-    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).1 = μ := (rfl)
+    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).val = μ := (rfl)
 
 /-- The inverse reindexing from the Schur basis returns the underlying partition. -/
 @[simp]
 theorem partitionEquivSchurIndex_symm_apply (σ : Type*) [Fintype σ] (n : ℕ)
     (h : n ≤ Fintype.card σ) (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    (partitionEquivSchurIndex σ n h).symm μ = μ.1 := (rfl)
+    (partitionEquivSchurIndex σ n h).symm μ = μ.val := (rfl)
 
 section CommSemiring
 
@@ -151,7 +157,7 @@ noncomputable def partWeightCoeff :
     symmetricHomogeneousSubmodule σ R n →ₗ[R]
       ({ν : n.Partition // ν.parts.card ≤ Fintype.card σ} →₀ R) :=
   (Finsupp.linearEquivFunOnFinite R R _).symm.toLinearMap ∘ₗ
-    LinearMap.pi fun ν => (lcoeff (R := R) (partWeight σ ν.1)).comp
+    LinearMap.pi fun ν => (lcoeff (R := R) (partWeight σ ν.val)).comp
       (symmetricHomogeneousSubmodule σ R n).subtype
 
 /-- The coordinates of `TauCeti.partWeightCoeff` are the coefficients at the sorted monomials.
@@ -159,7 +165,7 @@ The body of `TauCeti.partWeightCoeff` is not exposed, so this is what a consumer
 @[simp]
 theorem partWeightCoeff_apply (p : symmetricHomogeneousSubmodule σ R n)
     (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    partWeightCoeff σ R n p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.1) := by
+    partWeightCoeff σ R n p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.val) := by
   simp [partWeightCoeff]
 
 /-- **A symmetric homogeneous polynomial is determined by its coefficients at the sorted
@@ -172,10 +178,10 @@ theorem partWeightCoeff_injective : Function.Injective (partWeightCoeff σ R n) 
   by_cases hd : d.degree = n
   · have h := DFunLike.congr_fun hpq ⟨weightPartition d hd, card_parts_weightPartition_le d hd⟩
     rw [partWeightCoeff_apply, partWeightCoeff_apply] at h
-    rw [coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp p.2).1 hd,
-      coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp q.2).1 hd, h]
-  · rw [(mem_symmetricHomogeneousSubmodule.mp p.2).2.coeff_eq_zero hd,
-      (mem_symmetricHomogeneousSubmodule.mp q.2).2.coeff_eq_zero hd]
+    rw [coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp p.property).1 hd,
+      coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp q.property).1 hd, h]
+  · rw [(mem_symmetricHomogeneousSubmodule.mp p.property).2.coeff_eq_zero hd,
+      (mem_symmetricHomogeneousSubmodule.mp q.property).2.coeff_eq_zero hd]
 
 /-- **The coefficients at the sorted monomials may be prescribed arbitrarily**: the combination of
 the monomial symmetric polynomials with the prescribed coefficients realizes them, each `m_ν` being
@@ -183,13 +189,16 @@ the indicator of its own sorted monomial. -/
 theorem partWeightCoeff_surjective : Function.Surjective (partWeightCoeff σ R n) := by
   classical
   intro f
-  refine ⟨⟨∑ ν, f ν • msymm σ R ν.1, Submodule.sum_mem _ fun ν _ =>
-    Submodule.smul_mem _ _ (msymm_mem_symmetricHomogeneousSubmodule ν.1)⟩, Finsupp.ext fun ξ => ?_⟩
+  refine ⟨⟨∑ ν, f ν • msymm σ R ν.val, Submodule.sum_mem _ fun ν _ =>
+    Submodule.smul_mem _ _ (msymm_mem_symmetricHomogeneousSubmodule ν.val)⟩,
+        Finsupp.ext fun ξ => ?_⟩
   rw [partWeightCoeff_apply, coeff_sum]
   refine (Finset.sum_eq_single ξ (fun ν _ hne => ?_) fun hξ => absurd (mem_univ ξ) hξ).trans ?_
-  · rw [coeff_smul, coeff_msymm_partWeight R ν.1 ξ.1 ξ.2,
+  · rw [AddMonoidAlgebra.coeff_smul_apply, coeff_msymm_partWeight R ν.val ξ.val ξ.property,
       ite_eq_right fun h => hne (Subtype.ext h.symm), smul_zero]
-  · rw [coeff_smul, coeff_msymm_partWeight R ξ.1 ξ.1 ξ.2, ite_eq_left rfl, smul_eq_mul, mul_one]
+  · rw [AddMonoidAlgebra.coeff_smul_apply, coeff_msymm_partWeight R ξ.val ξ.val ξ.property,
+      ite_eq_left rfl,
+      smul_eq_mul, mul_one]
 
 /-- **A symmetric homogeneous polynomial is exactly a prescription of coefficients at the sorted
 monomials.** -/
@@ -214,7 +223,7 @@ the normal form of a monomial-basis coordinate, and the elimination rule matchin
 @[simp]
 theorem msymmBasis_repr_apply (p : symmetricHomogeneousSubmodule σ R n)
     (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    (msymmBasis σ R n).repr p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.1) := by
+    (msymmBasis σ R n).repr p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.val) := by
   -- The coordinate map of `TauCeti.msymmBasis` is the map it was built from.
   have h : (msymmBasis σ R n).repr p = partWeightCoeff σ R n p :=
     LinearEquiv.ofBijective_apply (f := partWeightCoeff σ R n)
@@ -227,12 +236,13 @@ the polynomials `m_ν` the name records. -/
 @[simp]
 theorem coe_msymmBasis [DecidableEq σ] (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     ((msymmBasis σ R n ν : symmetricHomogeneousSubmodule σ R n) : MvPolynomial σ R)
-      = msymm σ R ν.1 := by
+      = msymm σ R ν.val := by
   have h : (msymmBasis σ R n).repr (msymmBasis σ R n ν)
       = (msymmBasis σ R n).repr
-        ⟨msymm σ R ν.1, msymm_mem_symmetricHomogeneousSubmodule ν.1⟩ := by
+        ⟨msymm σ R ν.val, msymm_mem_symmetricHomogeneousSubmodule ν.val⟩ := by
     refine (Module.Basis.repr_self _ ν).trans (Finsupp.ext fun ξ => ?_).symm
-    rw [msymmBasis_repr_apply, coeff_msymm_partWeight R ν.1 ξ.1 ξ.2, Finsupp.single_apply]
+    rw [msymmBasis_repr_apply, coeff_msymm_partWeight R ν.val ξ.val ξ.property,
+        Finsupp.single_apply]
     exact if_congr (Subtype.ext_iff.symm.trans eq_comm) rfl rfl
   exact congrArg Subtype.val ((msymmBasis σ R n).repr.injective h)
 
@@ -243,9 +253,10 @@ monomial basis into its normal form as a coefficient. -/
 theorem msymmBasis_repr_schurPoly (μ : n.Partition)
     (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     (msymmBasis σ R n).repr ⟨schurPoly σ R μ, schurPoly_mem_symmetricHomogeneousSubmodule μ⟩ ν
-      = (kostkaNumber μ ν.1 : R) := by
+      = (kostkaNumber μ ν.val : R) := by
   rw [msymmBasis_repr_apply]
-  exact coeff_schurPoly_partWeight μ ν.1 (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.2)
+  exact coeff_schurPoly_partWeight μ ν.val (by rw [YoungDiagram.colLen_zero_ofPartition]; exact
+      ν.property)
 
 /-! ### The dimension -/
 
@@ -299,7 +310,7 @@ are about to be shown to be a basis of. -/
 private noncomputable def schurPolyElem
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     symmetricHomogeneousSubmodule σ R n :=
-  ⟨schurPoly σ R μ.1, schurPoly_mem_symmetricHomogeneousSubmodule μ.1⟩
+  ⟨schurPoly σ R μ.val, schurPoly_mem_symmetricHomogeneousSubmodule μ.val⟩
 
 open scoped PartitionLex in
 /-- **The Kostka matrix is triangular with `1`s on the diagonal**, hence a change of basis:
@@ -308,10 +319,10 @@ open scoped PartitionLex in
 private theorem isUnit_det_schurPolyElem :
     IsUnit ((msymmBasis σ R n).det (schurPolyElem σ R n)) := by
   have hentry : ∀ ν μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ},
-      (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν μ = (kostkaNumber μ.1 ν.1 : R) := by
+      (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν μ = (kostkaNumber μ.val ν.val : R) := by
     intro ν μ
     rw [Module.Basis.toMatrix_apply]
-    exact msymmBasis_repr_schurPoly μ.1 ν
+    exact msymmBasis_repr_schurPoly μ.val ν
   have htri : ((msymmBasis σ R n).toMatrix (schurPolyElem σ R n)).IsUpperTriangular := by
     intro ν μ hμν
     have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
@@ -344,7 +355,7 @@ basis vectors back as the polynomials `s_μ`.  It is what makes the basis usable
 @[simp]
 theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     ((schurPolyBasis σ R n μ : symmetricHomogeneousSubmodule σ R n) : MvPolynomial σ R)
-      = schurPoly σ R μ.1 := by
+      = schurPoly σ R μ.val := by
   have h : schurPolyBasis σ R n μ = schurPolyElem σ R n μ := Module.Basis.mk_apply _ _ μ
   rw [h]
   rfl
@@ -356,13 +367,13 @@ alphabet has letters contribute nothing, their Schur polynomials vanishing. -/
 theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ R n}
     {c : n.Partition → R} (hp : (p : MvPolynomial σ R) = ∑ l, c l • schurPoly σ R l)
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    (schurPolyBasis σ R n).repr p μ = c μ.1 := by
-  have h : p = ∑ ν, c ν.1 • schurPolyBasis σ R n ν := by
+    (schurPolyBasis σ R n).repr p μ = c μ.val := by
+  have h : p = ∑ ν, c ν.val • schurPolyBasis σ R n ν := by
     refine Subtype.ext ?_
     simp only [hp, Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis]
     rw [← Fintype.sum_subtype_add_sum_subtype (fun l : n.Partition => l.parts.card ≤
       Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
-      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.2), smul_zero], add_zero]
+      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.property), smul_zero], add_zero]
   rw [h, Module.Basis.repr_sum_self]
 
 /-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
@@ -375,6 +386,91 @@ theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
   simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
       (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
+
+/-- The Schur polynomials of a fixed degree `d` and at most `N` rows are linearly independent,
+being the Schur basis `TauCeti.schurPolyBasis` of the symmetric polynomials of degree `d`. -/
+private theorem linearIndependent_diagramSchurPoly_card (N d : ℕ) :
+    LinearIndependent R fun μ : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} =>
+      diagramSchurPoly N R μ.val.val := by
+  have hli := (schurPolyBasis (Fin N) R d).linearIndependent.map' _ (Submodule.ker_subtype _)
+  -- Reorder the two subtype conditions, then read the diagrams of size `d` as partitions of `d`.
+  let e : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} ≃
+      {ν : d.Partition // ν.parts.card ≤ Fintype.card (Fin N)} :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans <|
+      (Equiv.subtypeEquivRight fun _ => and_comm).trans <|
+        (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans <|
+          Equiv.subtypeEquiv YoungDiagram.equivPartition fun μ => by
+            rw [Fintype.card_fin, ← YoungDiagram.colLen_zero_ofPartition]
+            simp [YoungDiagram.equivPartition, YoungDiagram.ofPartition_toPartition]
+  convert hli.comp e e.injective with μ
+  simp [e, coe_schurPolyBasis, YoungDiagram.equivPartition]
+
+/-- **The Schur polynomials are linearly independent**: in `N` variables, the Schur polynomials of
+the Young diagrams with at most `N` rows are linearly independent over every commutative ring.
+The diagrams with more rows have Schur polynomial zero
+(`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). -/
+theorem linearIndependent_diagramSchurPoly {N : ℕ} :
+    LinearIndependent R fun μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} => diagramSchurPoly N R μ := by
+  rw [linearIndependent_iff']
+  intro s g hg μ hμ
+  -- Keep the terms of degree `|μ|`, which are independent by the Schur basis in that degree.
+  have hc (ν : {μ : YoungDiagram // μ.colLen 0 ≤ N}) :
+      homogeneousComponent μ.val.card (diagramSchurPoly N R ν) =
+        if ν.val.card = μ.val.card then diagramSchurPoly N R ν else 0 := by
+    rw [homogeneousComponent_of_mem
+      ((mem_homogeneousSubmodule _ _).mpr isHomogeneous_diagramSchurPoly)]
+    exact if_congr eq_comm rfl rfl
+  have h := congrArg (homogeneousComponent μ.val.card) hg
+  simp only [map_sum, map_smul, map_zero, hc, smul_ite, smul_zero] at h
+  rw [← sum_filter, ← sum_subtype_eq_sum_filter] at h
+  exact linearIndependent_iff'.mp (linearIndependent_diagramSchurPoly_card N μ.val.card)
+    (s.subtype fun ν => ν.val.card = μ.val.card) (fun ν => g ν.val) h ⟨μ, rfl⟩
+    (by simpa using hμ)
+
+/-- **The Schur polynomials span the symmetric polynomials**: every symmetric polynomial in `N`
+variables is an `R`-linear combination of Schur polynomials. Each homogeneous component of a
+symmetric polynomial is symmetric, so it is a combination of Schur polynomials of its degree by the
+Schur basis `TauCeti.schurPolyBasis`. -/
+theorem span_symmetricDiagramSchurPoly_eq_top {N : ℕ} :
+    Submodule.span R (Set.range (symmetricDiagramSchurPoly N R)) = ⊤ := by
+  classical
+  refine eq_top_iff.mpr fun x _ => ?_
+  -- It suffices to show that `x`, read as a polynomial, is a combination of Schur polynomials.
+  have hmap : (Submodule.span R (Set.range (symmetricDiagramSchurPoly N R))).map
+      (symmetricSubalgebra (Fin N) R).val.toLinearMap =
+        Submodule.span R (Set.range (diagramSchurPoly N R)) := by
+    rw [Submodule.map_span, ← Set.range_comp]
+    congr 2
+    ext μ
+    simp
+  suffices h : (x : MvPolynomial (Fin N) R) ∈ Submodule.span R (Set.range (diagramSchurPoly N R)) by
+    rw [← hmap] at h
+    obtain ⟨y, hy, hyx⟩ := h
+    rwa [Subtype.ext hyx] at hy
+  -- Split `x` into homogeneous components and expand each in the Schur basis of its degree.
+  rw [← sum_homogeneousComponent (x : MvPolynomial (Fin N) R)]
+  refine sum_mem fun d _ => ?_
+  have hd : homogeneousComponent d (x : MvPolynomial (Fin N) R) ∈
+      symmetricHomogeneousSubmodule (Fin N) R d :=
+    mem_symmetricHomogeneousSubmodule.mpr ⟨fun e => by
+      rw [rename_homogeneousComponent, (mem_symmetricSubalgebra _).mp x.property e],
+      homogeneousComponent_isHomogeneous d _⟩
+  have hsum := congrArg Subtype.val ((schurPolyBasis (Fin N) R d).sum_repr ⟨_, hd⟩)
+  simp only [Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis] at hsum
+  rw [← hsum]
+  refine sum_mem fun ν _ => Submodule.smul_mem _ _
+    (Submodule.subset_span ⟨YoungDiagram.ofPartition ν.val, ?_⟩)
+  simp [schurPoly_eq_rename]
+
+/-- A linear map out of the symmetric polynomials in `N` variables takes values in a submodule `T`
+once it sends every Schur polynomial into `T`, since the Schur polynomials span
+(`TauCeti.span_symmetricDiagramSchurPoly_eq_top`). -/
+theorem map_mem_of_forall_symmetricDiagramSchurPoly {N : ℕ} {M : Type*} [AddCommMonoid M]
+    [Module R M] (f : symmetricSubalgebra (Fin N) R →ₗ[R] M) {T : Submodule R M}
+    (h : ∀ μ, f (symmetricDiagramSchurPoly N R μ) ∈ T) (y : symmetricSubalgebra (Fin N) R) :
+    f y ∈ T :=
+  (Submodule.map_span_le f (Set.range (symmetricDiagramSchurPoly N R)) T).mpr
+    (by rintro _ ⟨μ, rfl⟩; exact h μ) ⟨y, by simp [span_symmetricDiagramSchurPoly_eq_top], rfl⟩
 
 end CommRing
 

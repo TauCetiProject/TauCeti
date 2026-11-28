@@ -25,7 +25,7 @@ The inverse sends the line of an invertible matrix `A` to the class of `c⁻¹ �
 `c ^ n = det A`. There is no continuous `n`-th root on all of `ℂˣ`, so near a matrix `A₀` we use
 the local branch `A ↦ c₀ * (det A / det A₀) ^ (1 / n)` of the principal power, which is continuous
 because `det A / det A₀` stays in the slit plane near `A₀`
-(`TauCeti.exists_differentiableAt_pow_eq`).
+(`TauCeti.exists_analyticAt_pow_eq`).
 Different choices of root differ by an `n`-th root of unity, which is central in `SL(n, ℂ)`, so
 they give the same element of `PSL(n, ℂ)`. This shows that the map is open.
 
@@ -60,7 +60,7 @@ topology of `SL(n, K) ⧸ Z(SL(n, K))`, whatever the topology of `K`. -/
 theorem continuous_toProjectivization : Continuous (toProjectivization n K) :=
   (QuotientGroup.isQuotientMap_mk _).continuous_iff.2 <|
     (Projectivization.continuous_mk
-      (continuous_subtype_val : Continuous fun A : SpecialLinearGroup n K ↦ (A : Matrix n n K))
+      (continuous_subtypeVal : Continuous fun A : SpecialLinearGroup n K ↦ (A : Matrix n n K))
       fun A ↦ SpecialLinearGroup.coe_ne_zero A).congr fun A ↦ (toProjectivization_mk A).symm
 
 omit [Nonempty n] in
@@ -72,9 +72,9 @@ theorem _root_.Matrix.isOpen_setOf_det_rep_ne_zero [IsTopologicalRing K] [T1Spac
       {v : {v : Matrix n n K // v ≠ 0} | (v : Matrix n n K).det ≠ 0} := by
     ext v
     rw [Set.mem_preimage, Projectivization.mk'_eq_mk]
-    exact det_rep_mk_ne_zero_iff v.2
+    exact det_rep_mk_ne_zero_iff v.property
   rw [this]
-  exact isOpen_compl_singleton.preimage (continuous_subtype_val.matrix_det)
+  exact isOpen_compl_singleton.preimage (continuous_subtypeVal.matrix_det)
 
 end Topology
 
@@ -98,7 +98,7 @@ theorem isOpenMap_toProjectivization : IsOpenMap (toProjectivization n ℂ) := b
     rw [mul_comm, ← det_smul, ← Units.smul_def, ha, A.det_coe]
   have hv0 : v.det ≠ 0 := left_ne_zero_of_mul_eq_one hdetv
   -- A local branch `f` of the `k`-th root at `det v`, inverse to the scaling `a` at `v`.
-  obtain ⟨f, hf, hfv, hfk⟩ := TauCeti.exists_differentiableAt_pow_eq hk hv0
+  obtain ⟨f, hf, hfv, hfk⟩ := TauCeti.exists_analyticAt_pow_eq hk hv0
     (by rw [inv_pow, inv_eq_of_mul_eq_one_left hdetv] : ((a : ℂ)⁻¹) ^ k = v.det)
   have hcont : Continuous fun w : Matrix n n ℂ ↦ w.det := continuous_id.matrix_det
   have hF : ContinuousAt (fun w ↦ (f w.det)⁻¹ • w) v :=
@@ -109,7 +109,7 @@ theorem isOpenMap_toProjectivization : IsOpenMap (toProjectivization n ℂ) := b
   have h₁ : ∀ᶠ w in 𝓝 v, (f w.det)⁻¹ • w ∈ O := hF.preimage_mem_nhds <| by
     rw [hfv, inv_inv, ← Units.smul_def, ha]
     exact hO.mem_nhds hAO
-  filter_upwards [(continuous_subtype_val.tendsto
+  filter_upwards [(continuous_subtypeVal.tendsto
     (⟨v, hv⟩ : {v : Matrix n n ℂ // v ≠ 0})).eventually
       (h₁.and (hcont.continuousAt.eventually_ne hv0))] with ⟨w, hw⟩ ⟨hwO, hw0⟩
   -- Near `v`, the normalized matrix has determinant one and lies in `O`.

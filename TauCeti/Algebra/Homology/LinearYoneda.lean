@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.CategoryTheory.Abelian.Ext
+public import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.CategoryTheory.Limits.Preserves.Opposites
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
+import TauCeti.Algebra.Homology.Linear
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.CategoryTheory.Linear.Yoneda
 
 /-!
@@ -56,18 +60,25 @@ singular cohomology is obtained from the one of chain complexes.
   `TauCeti.ChainComplex.mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f` does the same for a
   degreewise epimorphism `X₂ ⊞ X₃ ⟶ X₄` and the map `Hom(X₄, Y) ⟶ Hom(X₂, Y) ⊞ Hom(X₃, Y)`.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
-* `HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
-  equivalence to a cochain homotopy equivalence in the opposite direction.
+* `HomotopyEquiv.linearYonedaFunctorMap`,
+  `TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map`: `Hom(-, Y)` takes a chain
+  homotopy equivalence to a cochain homotopy equivalence in the opposite direction.
 * `ChainComplex.linearYonedaObjFunctor`: the functor `Y ↦ Hom(X, Y)` of the coefficients, with
   `ChainComplex.linearYonedaObjFunctorMap` the natural transformation induced by a chain map.
 * `ChainComplex.shortExact_map_linearYonedaObjFunctor`: for `X` with projective terms, `Hom(X, -)`
   preserves short exact sequences.
+* `TauCeti.ChainComplex.exists_d_comp_eq_of_δ_eq`: cochain representatives of the connecting
+  morphism of a coefficient sequence, for `X` with projective terms.
 * `TauCeti.ChainComplex.linearYonedaObjSingle₀Iso`: `Hom(-, Y)` sends the chain complex `X[0]`
   concentrated in degree zero to the cochain complex `Hom(X, Y)[0]`. It follows the unmerged Tau
   Ceti pull request https://github.com/TauCetiProject/TauCeti/pull/20882.
 * `ChainComplex.exactAt_linearYonedaObj_zero_iff` and
   `ChainComplex.exactAt_linearYonedaObj_succ_iff`: exactness of `Hom(K, Y)` for a chain complex
   `K` indexed by `ℕ`, in terms of morphisms out of the terms of `K`.
+* `ChainComplex.bijective_smul_homology_linearYonedaObj`: multiplication by a scalar `r` on the
+  cohomology of `Hom(X, Y)` is bijective when `r • 𝟙 Y` is an isomorphism, and
+  `ChainComplex.eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj`: so this cohomology has no
+  torsion when every positive integer acts invertibly on `Y`.
 -/
 
 public section
@@ -159,6 +170,14 @@ lemma _root_.HomotopyEquiv.linearYonedaFunctorMap_inv
     {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
     (h.linearYonedaFunctorMap k Y).inv =
       (linearYonedaFunctor k Y).map h.inv.op := (rfl)
+
+/-- `Hom(-, Y)` takes a chain homotopy equivalence `φ : X ⟶ X'` to a cochain homotopy equivalence
+`Hom(X', Y) ⟶ Hom(X, Y)`. -/
+lemma homotopyEquivalences_linearYonedaFunctor_map {X X' : ChainComplex C α} {φ : X ⟶ X'}
+    (hφ : HomologicalComplex.homotopyEquivalences _ _ φ) :
+    HomologicalComplex.homotopyEquivalences _ _ ((linearYonedaFunctor k Y).map φ.op) := by
+  obtain ⟨e, rfl⟩ := hφ
+  exact ⟨e.linearYonedaFunctorMap k Y, e.linearYonedaFunctorMap_hom k Y⟩
 
 /-- `Hom(-, Y)` takes a chain map that is an epimorphism in every degree to a monomorphism. -/
 lemma mono_linearYonedaFunctor_map_op_of_epi_f {X X' : ChainComplex C α} (φ : X ⟶ X')
@@ -316,6 +335,16 @@ lemma _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
   (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
     (X.linearYonedaObjMap_f_hom_apply k g i _)
 
+/-- The identity of a chain complex `X` induces the identity on the cohomology of `Hom(X, Y)`.
+The map is typed between `linearYonedaObj` complexes, as in the statements downstream that
+`rw` with it; the identity morphism's type is matched only up to unfolding
+`linearYonedaFunctor`. -/
+lemma _root_.ChainComplex.homologyMap_linearYonedaFunctor_map_id (X : ChainComplex C α) (i : α) :
+    HomologicalComplex.homologyMap (K := X.linearYonedaObj k Y) (L := X.linearYonedaObj k Y)
+      ((linearYonedaFunctor k Y).map (𝟙 X).op) i = 𝟙 _ := by
+  rw [op_id, CategoryTheory.Functor.map_id]
+  exact HomologicalComplex.homologyMap_id _ _
+
 section Elementwise
 
 variable {k Y} {X : ChainComplex C α}
@@ -441,6 +470,35 @@ lemma _root_.ChainComplex.shortExact_map_linearYonedaObjFunctor (X : ChainComple
 
 end CoefficientSequence
 
+section Lift
+
+variable {X : _root_.ChainComplex C α} [∀ i, Projective (X.X i)] {S : ShortComplex C}
+  (hS : S.ShortExact)
+
+/-- **Cochain representatives of the connecting morphism of a coefficient sequence.** Let
+`0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` be a short exact sequence of coefficients and `X` a chain complex with
+projective terms. If the cocycle `z` of `Hom(X, M₁)` in degree `p'` represents the image of
+`x ∈ Hᵖ(Hom(X, M₃))` under the connecting morphism, where `p + 1 = p'`, then `x` is represented by
+a cocycle `a` which lifts to a cochain `φ : X_p ⟶ M₂` whose coboundary is `z` followed by
+`M₁ ⟶ M₂`, on the nose. -/
+lemma exists_d_comp_eq_of_δ_eq (p p' : α) (hp : p + 1 = p')
+    (x : (X.linearYonedaObj k S.X₃).homology p) (z : (X.linearYonedaObj k S.X₁).cycles p')
+    (hz : (X.linearYonedaObj k S.X₁).homologyπ p' z =
+      (X.shortExact_map_linearYonedaObjFunctor k hS).δ p p' hp x) :
+    ∃ (φ : X.X p ⟶ S.X₂) (a : (X.linearYonedaObj k S.X₃).cycles p),
+      X.d p' p ≫ φ = (X.linearYonedaObj k S.X₁).iCycles p' z ≫ S.f ∧
+        φ ≫ S.g = (X.linearYonedaObj k S.X₃).iCycles p a ∧
+          (X.linearYonedaObj k S.X₃).homologyπ p a = x := by
+  obtain ⟨φ, a, hφ, ha, hx⟩ :=
+    (X.shortExact_map_linearYonedaObjFunctor k hS).moduleCat_exists_d_eq_of_δ_eq p p' hp x z
+      hz.symm
+  -- The maps of the coefficient sequence of cochain complexes are postcomposition.
+  refine ⟨φ, a, ?_, ?_, hx⟩
+  · exact hφ.trans (X.linearYonedaObjMap_f_hom_apply k S.f p' _)
+  · exact (X.linearYonedaObjMap_f_hom_apply k S.g p φ).symm.trans ha
+
+end Lift
+
 end Abelian
 
 section Single
@@ -509,5 +567,38 @@ theorem _root_.ChainComplex.exactAt_linearYonedaObj_succ_iff (n : ℕ) :
   rfl
 
 end Exactness
+
+section Scalar
+
+variable {k} [Abelian C] {S : Type*} [CommRing S] [Linear S C] {Y : C}
+
+/-- **A scalar acting invertibly on the coefficients acts invertibly on cohomology.** If `r • 𝟙 Y`
+is an isomorphism, then multiplication by `r` on the cohomology of `Hom(X, Y)` is bijective: it is
+the map induced by the coefficient map `r • 𝟙 Y`. -/
+theorem _root_.ChainComplex.bijective_smul_homology_linearYonedaObj (X : _root_.ChainComplex C α)
+    (i : α) {r : S} (hr : IsIso (r • 𝟙 Y)) :
+    Function.Bijective (fun x : (X.linearYonedaObj S Y).homology i ↦ r • x) := by
+  have h : HomologicalComplex.homologyMap (X.linearYonedaObjMap S (r • 𝟙 Y)) i = r • 𝟙 _ := by
+    rw [_root_.ChainComplex.linearYonedaObjMap_smul, _root_.ChainComplex.linearYonedaObjMap_id,
+      HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id]
+  have hiso : IsIso (HomologicalComplex.homologyMap (X.linearYonedaObjMap S (r • 𝟙 Y)) i) :=
+    Functor.map_isIso (X.linearYonedaObjFunctor S ⋙ HomologicalComplex.homologyFunctor _ _ i)
+      (r • 𝟙 Y)
+  rw [h] at hiso
+  simpa only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.coe_smul, LinearMap.id_coe,
+    Pi.smul_def, id_eq] using
+    ConcreteCategory.bijective_of_isIso (r • 𝟙 ((X.linearYonedaObj S Y).homology i))
+
+/-- **Cohomology with uniquely divisible coefficients has no torsion.** If multiplication by every
+positive integer is an automorphism of `Y`, then every class of finite additive order in the
+cohomology of `Hom(X, Y)` vanishes. -/
+theorem _root_.ChainComplex.eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj
+    (hY : ∀ m : ℕ, m ≠ 0 → IsIso ((m : S) • 𝟙 Y)) (X : _root_.ChainComplex C α) {i : α}
+    {x : (X.linearYonedaObj S Y).homology i} (hx : IsOfFinAddOrder x) : x = 0 := by
+  obtain ⟨m, hm, hmx⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.1 hx
+  refine (X.bijective_smul_homology_linearYonedaObj i (hY m hm.ne')).1 ?_
+  simp only [smul_zero, Nat.cast_smul_eq_nsmul, hmx]
+
+end Scalar
 
 end TauCeti.ChainComplex

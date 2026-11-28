@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -13,17 +14,32 @@ public import Mathlib.GroupTheory.Subgroup.Centralizer
 A homomorphism `f : G →* G'` maps the centralizer `C_G(s)` of a subset `s` into the centralizer
 `C_{G'}(f(s))`, hence into `C_{G'}(t)` for every `t ⊆ f(s)`. This file records the restriction of
 `f` as a homomorphism `C_G(s) →* C_{G'}(t)`; the case `s = {u}`, `t = {f u}` gives a homomorphism
-`C_G(u) →* C_{G'}(f u)`. An isomorphism maps `C_G(s)` onto `C_{G'}(f(s))`.
+`C_G(u) →* C_{G'}(f u)`. An injective `f` pulls `C_{G'}(f(s))` back to `C_G(s)`, and an
+isomorphism `e : G ≃* G'` maps `C_G(s)` onto `C_{G'}(e(s))`, so restricts to an isomorphism
+`C_G(s) ≃* C_{G'}(e(s))`; for an inner automorphism this identifies the centralizers of conjugate
+elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`. In pointwise form, an automorphism `e` of `G` gives
+`C_G(e • s) = e • C_G(s)`, so conjugate subsets have conjugate centralizers,
+`C_G(gsg⁻¹) = g C_G(s) g⁻¹`.
 
 ## Main definitions
 
 * `MonoidHom.centralizerMap`: the restriction `C_G(s) →* C_{G'}(t)` of `f : G →* G'`, for
   `t ⊆ f(s)`.
+* `MulEquiv.centralizerMap`: the restriction `C_G(s) ≃* C_{G'}(t)` of `e : G ≃* G'`, for
+  `t = e(s)`.
+* `Subgroup.centerEquivOfMapSubtypeEq`: an isomorphism identifying `S ≤ G` with `Subgroup.center H`
+  when `(Subgroup.center H).map H.subtype = S`.
 
 ## Main results
 
+* `Subgroup.comap_centralizer_image_of_injective`: `f⁻¹(C_{G'}(f(s))) = C_G(s)` for injective `f`.
+* `Subgroup.map_center_subtype`: the centre of a subgroup `H ≤ G` embeds into `G` as
+  `H ⊓ C_G(H)`.
 * `MulEquiv.map_centralizer`: a group isomorphism carries the centralizer of a set onto the
   centralizer of its image.
+* `MulEquiv.centralizer_image_eq_map`: a description `C_G(f(s)) = f(C_K(s))` of a centralizer is
+  carried along an isomorphism and a homomorphism intertwining `f` with another homomorphism.
+* `Subgroup.centralizer_pointwise_smul`: `C_G(e • s) = e • C_G(s)` for an automorphism `e` of `G`.
 -/
 
 public section
@@ -41,7 +57,7 @@ any subset `t` of the image `f(s)`. -/
 def centralizerMap (f : G →* G') {s : Set G} {t : Set G'} (h : t ⊆ f '' s) :
     centralizer s →* centralizer t :=
   (f.comp (centralizer s).subtype).codRestrict _ fun c =>
-    centralizer_le h (map_centralizer_le_centralizer_image s f (mem_map_of_mem f c.2))
+    centralizer_le h (map_centralizer_le_centralizer_image s f (mem_map_of_mem f c.property))
 
 @[to_additive (attr := simp)]
 theorem centralizerMap_apply_coe (f : G →* G') {s : Set G} {t : Set G'} (h : t ⊆ f '' s)
@@ -54,6 +70,71 @@ theorem centralizerMap_injective {f : G →* G'} (hf : Function.Injective f) {s 
   fun _ _ hc => Subtype.ext (hf (congrArg Subtype.val hc))
 
 end MonoidHom
+
+namespace Subgroup
+
+variable {G G' : Type*} [Group G] [Group G']
+
+/-- An injective homomorphism `f : G →* G'` pulls the centralizer `C_{G'}(f(s))` back to
+`C_G(s)`. -/
+@[to_additive /-- An injective homomorphism `f : G →+ G'` pulls the centralizer `C_{G'}(f(s))`
+back to `C_G(s)`. -/]
+theorem comap_centralizer_image_of_injective {f : G →* G'} (hf : Function.Injective f)
+    (s : Set G) : (centralizer (f '' s)).comap f = centralizer s := by
+  ext g
+  simp [mem_centralizer_iff, ← map_mul, hf.eq_iff]
+
+/-- The image of the centre of a subgroup `H ≤ G` under `H.subtype` is
+`H ⊓ Subgroup.centralizer H`. -/
+@[to_additive /-- The image of the centre of an additive subgroup `H ≤ G` under `H.subtype` is
+`H ⊓ AddSubgroup.centralizer H`. -/]
+theorem map_center_subtype (H : Subgroup G) :
+    (Subgroup.center H).map H.subtype = H ⊓ centralizer (H : Set G) := by
+  have him : H.subtype '' Set.univ = (H : Set G) := by
+    rw [Set.image_univ, ← MonoidHom.coe_range, range_subtype]
+  rw [← centralizer_univ, ← comap_centralizer_image_of_injective H.subtype_injective Set.univ, him,
+    map_comap_eq, range_subtype]
+
+/-- An isomorphism identifying a subgroup `S ≤ G` with `Subgroup.center H` when
+`(Subgroup.center H).map H.subtype = S`. -/
+@[to_additive /-- An isomorphism identifying an additive subgroup `S ≤ G` with
+`AddSubgroup.center H` when `(AddSubgroup.center H).map H.subtype = S`. -/]
+noncomputable def centerEquivOfMapSubtypeEq {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) : S ≃* Subgroup.center H :=
+  (MulEquiv.subgroupCongr h.symm).trans
+    ((Subgroup.center H).equivMapOfInjective H.subtype H.subtype_injective).symm
+
+/-- Coercing `centerEquivOfMapSubtypeEq h x` from `Subgroup.center H` via `H` to `G` recovers
+`(x : G)`. -/
+@[to_additive (attr := simp) /-- Coercing `centerEquivOfMapSubtypeEq h x` from
+`AddSubgroup.center H` via `H` to `G` recovers `(x : G)`. -/]
+theorem coe_centerEquivOfMapSubtypeEq {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) (x : S) :
+    ((centerEquivOfMapSubtypeEq h x : H) : G) = x := by
+  rw [centerEquivOfMapSubtypeEq, MulEquiv.trans_apply, ← coe_subtype,
+    ← (Subgroup.center H).coe_equivMapOfInjective_apply H.subtype H.subtype_injective,
+    MulEquiv.apply_symm_apply, MulEquiv.subgroupCongr_apply]
+
+/-- Coercing `(centerEquivOfMapSubtypeEq h).symm x` to `G` recovers `((x : H) : G)`. -/
+@[to_additive (attr := simp) /-- Coercing `(centerEquivOfMapSubtypeEq h).symm x` to `G` recovers
+`((x : H) : G)`. -/]
+theorem coe_centerEquivOfMapSubtypeEq_symm {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) (x : Subgroup.center H) :
+    ((centerEquivOfMapSubtypeEq h).symm x : G) = (x : H) := by
+  simp [centerEquivOfMapSubtypeEq]
+
+/-- Applying `(centerEquivOfMapSubtypeEq h).symm` to an explicit central element of `H` gives the
+corresponding element of `S`. -/
+@[to_additive (attr := simp) /-- Applying `(centerEquivOfMapSubtypeEq h).symm` to an explicit
+central element of `H` gives the corresponding element of `S`. -/]
+theorem centerEquivOfMapSubtypeEq_symm_mk {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) {a : G} (ha : a ∈ H)
+    (hc : (⟨a, ha⟩ : H) ∈ Subgroup.center H) :
+    (centerEquivOfMapSubtypeEq h).symm ⟨⟨a, ha⟩, hc⟩ =
+      ⟨a, h ▸ mem_map_of_mem H.subtype hc⟩ :=
+  Subtype.ext (by simp)
+
+end Subgroup
 
 namespace MulEquiv
 
@@ -69,4 +150,55 @@ theorem map_centralizer (e : G ≃* G') (s : Set G) :
     Set.forall_mem_image]
   exact forall₂_congr fun x _ ↦ by rw [← e.injective.eq_iff, map_mul, map_mul, apply_symm_apply]
 
+/-- The restriction of `e : G ≃* G'` to an isomorphism `C_G(s) ≃* C_{G'}(t)` of centralizers, for
+`t` the image `e(s)`. -/
+@[to_additive /-- The restriction of `e : G ≃+ G'` to an isomorphism of centralizers
+`C_G(s) ≃+ C_{G'}(t)`, for `t` the image `e(s)`. -/]
+def centralizerMap (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t) :
+    centralizer s ≃* centralizer t :=
+  (e.subgroupMap _).trans (.subgroupCongr (h ▸ e.map_centralizer s))
+
+@[to_additive (attr := simp)]
+theorem centralizerMap_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t)
+    (c : centralizer s) : (e.centralizerMap h c : G') = e c :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem centralizerMap_symm_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t)
+    (c : centralizer t) : ((e.centralizerMap h).symm c : G) = e.symm c :=
+  (rfl)
+
+/-- Let `f : K →* G` and `f' : K' →* G'` be intertwined by an isomorphism `e : G ≃* G'` and a
+homomorphism `e₁ : K →* K'`, that is `e ∘ f = f' ∘ e₁`. If the centralizer of the image `f(s)` of a
+set `s` is the image under `f` of the centralizer of `s`, then the centralizer of `f'(e₁(s))` is the
+image under `f'` of the centralizer of `e₁(s)`. -/
+@[to_additive /-- Let `f : K →+ G` and `f' : K' →+ G'` be intertwined by an isomorphism
+`e : G ≃+ G'` and a homomorphism `e₁ : K →+ K'`, that is `e ∘ f = f' ∘ e₁`. If the centralizer of
+the image `f(s)` of a set `s` is the image under `f` of the centralizer of `s`, then the centralizer
+of `f'(e₁(s))` is the image under `f'` of the centralizer of `e₁(s)`. -/]
+theorem centralizer_image_eq_map {K K' : Type*} [Group K] [Group K'] (e : G ≃* G')
+    (e₁ : K →* K') {f : K →* G} {f' : K' →* G'} (hf : ∀ k, e (f k) = f' (e₁ k)) {s : Set K}
+    (h : centralizer (f '' s) = (centralizer s).map f) :
+    centralizer (f' '' (e₁ '' s)) = (centralizer (e₁ '' s)).map f' := by
+  have hs : f' '' (e₁ '' s) = e '' (f '' s) := by simp only [Set.image_image, hf]
+  have hf' : (e : G →* G').comp f = f'.comp e₁ := MonoidHom.ext hf
+  refine le_antisymm ?_ (map_centralizer_le_centralizer_image _ f')
+  rw [hs, ← e.map_centralizer, h, map_map, hf', ← map_map]
+  exact map_mono (map_centralizer_le_centralizer_image s e₁)
+
 end MulEquiv
+
+namespace Subgroup
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G]
+
+/-- An automorphism `e` of `G` carries the centralizer of `s` onto the centralizer of `e • s`,
+`C_G(e • s) = e • C_G(s)`; for `e = MulAut.conj g` this is `C_G(gsg⁻¹) = g C_G(s) g⁻¹`. -/
+theorem centralizer_pointwise_smul (e : MulAut G) (s : Set G) :
+    centralizer (e • s) = e • centralizer s := by
+  rw [← Set.image_smul]
+  exact (e.map_centralizer s).symm
+
+end Subgroup

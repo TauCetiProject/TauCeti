@@ -25,6 +25,7 @@ coaction has a unique lift to `N ⊗ C`.
   ambient comodule.
 * `TauCeti.Subcomodule.subtype`: the inclusion as a comodule morphism, which is injective by
   `TauCeti.Subcomodule.subtype_injective`.
+* `TauCeti.Subcomodule.inclusion`: the comodule morphism between nested subcomodules.
 * `TauCeti.Comodule.Hom.codRestrict`: a comodule morphism corestricted to a
   subcomodule containing its image.
 
@@ -65,7 +66,7 @@ private theorem coact_mem_range (n : N) :
     ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N)) n ∈
       LinearMap.range ((SMulMemClass.subtype N).rTensor C) := by
   rw [LinearMap.comp_apply, LinearMap.rTensor_def, SMulMemClass.subtype_apply]
-  exact N.coact_mem n.2
+  exact N.coact_mem n.property
 
 /-- The coaction induced on the subtype of a subcomodule.
 
@@ -213,5 +214,40 @@ theorem subtype_comp_codRestrict (f : Hom R C M N) (P : Subcomodule R C N)
   simp
 
 end Comodule.Hom
+
+namespace Subcomodule
+
+variable {N P : Subcomodule R C M}
+
+/-- Inclusion between nested subcomodules as a morphism of right comodules. -/
+noncomputable def inclusion (h : N ≤ P) : Comodule.Hom R C N P :=
+  N.subtype.codRestrict P (fun n => by simpa using h n.property)
+
+/-- The linear map underlying a subcomodule inclusion is the submodule inclusion. -/
+@[simp]
+theorem inclusion_toLinearMap (h : N ≤ P) :
+    (inclusion h).toLinearMap = Submodule.inclusion h := by
+  rw [inclusion]
+  apply LinearMap.ext
+  intro n
+  apply Subtype.ext
+  have hval := Comodule.Hom.codRestrict_apply N.subtype P
+    (fun n => by simpa using h n.property) n
+  rw [subtype_apply] at hval
+  exact hval.trans (Submodule.coe_inclusion h n).symm
+
+/-- A subcomodule inclusion acts as the ordinary submodule inclusion. -/
+@[simp]
+theorem inclusion_apply (h : N ≤ P) (n : N) :
+    inclusion h n = Submodule.inclusion h n :=
+  DFunLike.congr_fun (inclusion_toLinearMap h) n
+
+/-- Following an inclusion of subcomodules by the ambient subtype gives the original subtype. -/
+theorem subtype_comp_inclusion (h : N ≤ P) :
+    (SMulMemClass.subtype P).comp (inclusion h).toLinearMap = SMulMemClass.subtype N := by
+  rw [inclusion_toLinearMap]
+  exact Submodule.subtype_comp_inclusion N.toSubmodule P.toSubmodule h
+
+end Subcomodule
 
 end TauCeti

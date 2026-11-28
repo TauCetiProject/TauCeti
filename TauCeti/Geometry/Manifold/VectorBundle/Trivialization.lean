@@ -8,9 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
+import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 
 /-!
 # The fibre coordinate and partial diffeomorphism of a bundle trivialization
@@ -29,11 +31,15 @@ into the total space is a continuous linear isomorphism onto the model fibre; he
 and has injective derivative, whose image is the kernel of the derivative of the projection.
 Moreover, every atlas trivialization of a `C^n` vector bundle is a `C^n` partial diffeomorphism
 between its source in `TotalSpace F E` and its target `e.baseSet ×ˢ univ` in `B × F`, and hence a
-`C^n` local diffeomorphism in both directions.
+`C^n` local diffeomorphism in both directions. A trivialization over the whole base which is
+`C^n` with `C^n` partial inverse is a `C^n` diffeomorphism of the total space onto `B × F`.
 Read back through such a trivialization, a `C^n` family of vectors of the model fibre is a `C^n`
 section.
 
 ## Main results
+
+* `Bundle.Trivialization.contMDiffOn_scalarCoordChange`: scalar transitions between two
+  maximal-atlas linear frames are `C^n` on their common base.
 
 * `Bundle.TotalSpace.contMDiffAt_trivializationAt_snd`: the fibre coordinate in the
   trivialization at `v₀.proj` is `C^n` at `v₀`.
@@ -51,13 +57,27 @@ section.
 * `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
   `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
+* `Bundle.Trivialization.toDiffeomorphOfBaseSetEqUniv`: a `C^n` trivialization over the whole
+  base, with `C^n` partial inverse, as a `C^n` diffeomorphism `TotalSpace F E ≃ B × F`.
 * `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
-  read through an atlas trivialization, is a `C^n` section over its base set.
+  read through an atlas trivialization, is a `C^n` section over its base set;
+  `Bundle.Trivialization.contMDiff_section_symmL`: extended by zero, it is a global `C^n` section
+  when the family is supported in the base set.
+* `Bundle.Trivialization.contDiffOn_coordChangeL_comp_symm`: the bundle transition operator
+  composed with an inverse extended chart is `C^n` on subsets of the chart target whose
+  inverse-chart images lie in both trivialization base sets.
 * `Bundle.Trivialization.isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet`: the
   interior of an extended chart target intersected with the inverse-chart preimage of a
   trivialization's base set is open.
 * `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
   section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
+* `TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod`: the coordinates, in the
+  trivialization at `α` and along the chart at `α`, of a section depending jointly on a parameter
+  in a normed space are `C^n` in the parameter and the chart coordinate.
+* `TauCeti.continuousAt_comp_symmL_of_contMDiffOn`: covectors `ℓ y` on the fibres along a
+  continuous map that are `C^n` in the frames are continuous in the frames.
+* `TauCeti.exists_mem_maximalAtlas_source_subset_baseSet`: a chart of the maximal atlas at a
+  point over which two fibre bundles are trivial.
 -/
 
 public noncomputable section
@@ -279,6 +299,51 @@ theorem isLocalDiffeomorphAt_symm {q : B × F} (hq : q ∈ e.target) :
 
 end Bundle.Trivialization
 
+namespace Bundle.Trivialization
+
+variable {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] {ET : Type*} [NormedAddCommGroup ET] [NormedSpace 𝕜 ET]
+  {HT : Type*} [TopologicalSpace HT] {IT : ModelWithCorners 𝕜 ET HT}
+  [ChartedSpace HT (TotalSpace F E)] {n : WithTop ℕ∞} (e : Trivialization F (π F E))
+
+/-- A trivialization over the whole base which is `C^n` with `C^n` partial inverse is a `C^n`
+diffeomorphism of the total space onto `B × F`. -/
+def toDiffeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ)
+    (h : ContMDiff IT (IB.prod 𝓘(𝕜, F)) n e)
+    (h' : ContMDiff (IB.prod 𝓘(𝕜, F)) IT n e.toOpenPartialHomeomorph.symm) :
+    TotalSpace F E ≃ₘ^n⟮IT, IB.prod 𝓘(𝕜, F)⟯ B × F where
+  toEquiv := (e.toHomeomorphOfBaseSetEqUniv he).toEquiv
+  contMDiff_toFun := by
+    rw [Homeomorph.coe_toEquiv, coe_toHomeomorphOfBaseSetEqUniv]
+    exact h
+  contMDiff_invFun := by
+    rw [Homeomorph.coe_symm_toEquiv, coe_toHomeomorphOfBaseSetEqUniv_symm]
+    exact h'
+
+/-- The diffeomorphism of a smooth trivialization over the whole base is the trivialization. -/
+@[simp]
+theorem coe_toDiffeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ)
+    (h : ContMDiff IT (IB.prod 𝓘(𝕜, F)) n e)
+    (h' : ContMDiff (IB.prod 𝓘(𝕜, F)) IT n e.toOpenPartialHomeomorph.symm) :
+    ⇑(e.toDiffeomorphOfBaseSetEqUniv he h h') = e := by
+  rw [← Diffeomorph.coe_toHomeomorph]
+  exact e.coe_toHomeomorphOfBaseSetEqUniv he
+
+/-- The inverse of the diffeomorphism of a smooth trivialization over the whole base is the
+partial inverse of the trivialization. -/
+@[simp]
+theorem coe_toDiffeomorphOfBaseSetEqUniv_symm (he : e.baseSet = Set.univ)
+    (h : ContMDiff IT (IB.prod 𝓘(𝕜, F)) n e)
+    (h' : ContMDiff (IB.prod 𝓘(𝕜, F)) IT n e.toOpenPartialHomeomorph.symm) :
+    ⇑(e.toDiffeomorphOfBaseSetEqUniv he h h').symm = e.toOpenPartialHomeomorph.symm := by
+  rw [← Diffeomorph.coe_toHomeomorph_symm]
+  exact e.coe_toHomeomorphOfBaseSetEqUniv_symm he
+
+end Bundle.Trivialization
+
 
 namespace Bundle.Trivialization
 
@@ -300,8 +365,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- The actual frame-change operator as a smooth map on any common open frame domain. -/
 def frameTransitionMap : C^n⟮I, U; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
   ⟨fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F), fun x ↦
-    (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.2) (hU' x.2)).comp x
-      contMDiff_subtype_val.contMDiffAt⟩
+    (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.property) (hU' x.property)).comp x
+      contMDiff_subtypeVal.contMDiffAt⟩
 
 /-- Evaluation of the smooth frame-change operator is the native bundle coordinate change. -/
 @[simp]
@@ -310,6 +375,17 @@ theorem frameTransitionMap_apply (x : U) :
       (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
   rfl
 
+/-- Composing the bundle transition operator `e.coordChangeL 𝕜 e'` with the inverse of an extended
+chart at `x` gives a `C^n` map on any subset `S` of `(extChartAt I x).target` whose inverse-chart
+images lie in both trivialization base sets (boundary and corner charts included). -/
+theorem contDiffOn_coordChangeL_comp_symm [IsManifold I n M] (x : M) {S : Set E}
+    (hS : S ⊆ (extChartAt I x).target)
+    (hbase : ∀ z ∈ S, (extChartAt I x).symm z ∈ e.baseSet ∩ e'.baseSet) :
+    ContDiffOn 𝕜 n (fun z ↦ (e.coordChangeL 𝕜 e' ((extChartAt I x).symm z) : F →L[𝕜] F)) S :=
+  fun z hz ↦
+    ((contMDiffAt_coordChangeL (e := e) (e' := e') (hbase z hz).1
+      (hbase z hz).2).comp_contMDiffWithinAt z
+        ((contMDiffOn_extChartAt_symm x z (hS hz)).mono hS)).contDiffWithinAt
 
 end Bundle.Trivialization
 
@@ -331,6 +407,24 @@ theorem contMDiffOn_section_symm {U : Set B} (hU : IsOpen U) (hUe : U ⊆ e.base
     (hu : ContMDiffOn IB 𝓘(𝕜, F) n u U) :
     ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (e.symm x (u x))) U :=
   (e.contMDiffOn_section_iff hU hUe).mpr (hu.congr fun x hx ↦ by simp [e.apply_mk_symm (hUe hx)])
+
+/-- **A `C^n` family of vectors of the model fibre supported in the base set of a trivialization is
+a global `C^n` section.** If the topological support of `u` lies in the base set of an atlas
+trivialization `e`, the section `x ↦ e.symmL 𝕜 x (u x)`, which vanishes off the base set, is
+`C^n` on all of `B`. -/
+theorem contMDiff_section_symmL {u : B → F} (hu : ContMDiff IB 𝓘(𝕜, F) n u)
+    (hue : tsupport u ⊆ e.baseSet) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun x ↦ TotalSpace.mk' F x (e.symmL 𝕜 x (u x)) := by
+  refine contMDiff_of_locally_contMDiffOn fun x ↦ ?_
+  by_cases hx : x ∈ e.baseSet
+  · refine ⟨e.baseSet, e.open_baseSet, hx, ?_⟩
+    refine (e.contMDiffOn_section_symm e.open_baseSet subset_rfl hu.contMDiffOn).congr
+      fun y hy ↦ ?_
+    rw [e.symmL_apply hy]
+  · -- Off the support of `u` the section is the zero section.
+    refine ⟨(tsupport u)ᶜ, (isClosed_tsupport u).isOpen_compl, fun h ↦ hx (hue h), ?_⟩
+    refine (Bundle.contMDiff_zeroSection 𝕜 E).contMDiffOn.congr fun y hy ↦ ?_
+    rw [image_eq_zero_of_notMem_tsupport hy, map_zero, zeroSection]
 
 end Bundle.Trivialization
 
@@ -372,5 +466,130 @@ theorem contDiffOn_trivialization_comp_chart_symm_of_contMDiff {s : ∀ x, V x}
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
     ContDiffOn 𝕜 n (fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2) (φ.target ∩ φ.symm ⁻¹' e.baseSet) :=
   (e.contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).contDiffOn_comp_symm_of_mem_maximalAtlas hφ
+
+end TauCeti
+
+namespace TauCeti
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) (n : WithTop ℕ∞) [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I n M]
+  (F₁ : Type*) [TopologicalSpace F₁] (E₁ : M → Type*) [TopologicalSpace (TotalSpace F₁ E₁)]
+  [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
+  (F₂ : Type*) [TopologicalSpace F₂] (E₂ : M → Type*) [TopologicalSpace (TotalSpace F₂ E₂)]
+  [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
+
+/-- **A chart over which two bundles are trivial.** At every point `x` of `M` there is a chart of
+the maximal `C^n` atlas whose source contains `x` and lies in the base sets of the preferred
+trivializations at `x` of two fibre bundles over `M`: restrict the preferred chart at `x` to the
+intersection of these base sets. -/
+theorem exists_mem_maximalAtlas_source_subset_baseSet (x : M) :
+    ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧
+      e.source ⊆ (trivializationAt F₁ E₁ x).baseSet ∧
+        e.source ⊆ (trivializationAt F₂ E₂ x).baseSet := by
+  have hopen :=
+    (trivializationAt F₁ E₁ x).open_baseSet.inter (trivializationAt F₂ E₂ x).open_baseSet
+  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
+  rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
+  exact ⟨⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x,
+    FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
+
+end TauCeti
+
+namespace TauCeti.Manifold
+
+variable {𝕜 Q F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup Q] [NormedSpace 𝕜 Q]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] {n : WithTop ℕ∞} [IsManifold I n M]
+  [ContMDiffVectorBundle n F V I]
+
+/-- **The chart coordinates of a parametrized `C^n` section are `C^n`.** The coordinates, in the
+trivialization at `α`, of a section `(q, x) ↦ σ q x` of a vector bundle `V` over `M` depending on a
+point `q` of a normed space `Q`, read along the chart at `α`, are `C^n` on
+`U × (extChartAt I α).target` when the section is jointly `C^n` at every point of `U × M` and the
+chart target lies over the base set of the trivialization. Unlike
+`TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm`, which treats a single tangent vector
+field, the section here is of any vector bundle and depends jointly on the parameter `q`. -/
+theorem contDiffOn_trivializationAt_extChartAt_symm_prod {U : Set Q} {σ : Q → (x : M) → V x}
+    {α : M}
+    (hbase : ∀ w ∈ (extChartAt I α).target,
+      (extChartAt I α).symm w ∈ (trivializationAt F V α).baseSet)
+    (hσ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(𝕜, Q).prod I) (I.prod 𝓘(𝕜, F)) n
+      (fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2)) (q, x)) :
+    ContDiffOn 𝕜 n (fun p : Q × E ↦ (trivializationAt F V α
+        ⟨(extChartAt I α).symm p.2, σ p.1 ((extChartAt I α).symm p.2)⟩).2)
+      (U ×ˢ (extChartAt I α).target) := by
+  rintro ⟨q, y⟩ ⟨hq, hy⟩
+  -- The coordinates of the section in the trivialization at `α` are `C^n` at `(q, x)`, for the
+  -- point `x` with chart coordinate `y`.
+  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := trivializationAt F V α)
+    (f := fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2))
+    ((trivializationAt F V α).mem_source.2 (hbase y hy))).1
+    (hσ q hq ((extChartAt I α).symm y))).2
+  -- The map `(q, y) ↦ (q, x)` into `Q × M` is `C^n` over the chart target.
+  have hψ : ContMDiffWithinAt 𝓘(𝕜, Q × E) (𝓘(𝕜, Q).prod I) n
+      (fun p : Q × E ↦ (p.1, (extChartAt I α).symm p.2)) (U ×ˢ (extChartAt I α).target) (q, y) :=
+    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
+      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (q, y)
+        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
+  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (q, y) hψ) :)
+
+end TauCeti.Manifold
+
+namespace Bundle.Trivialization
+
+open Set
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V]
+
+/-- The scalar transition between holomorphic or smooth rank-one coordinates has the
+regularity of the native bundle atlas. -/
+theorem contMDiffOn_scalarCoordChange {n : ℕ∞ω}
+    (e e' : Trivialization F (π F V)) [e.IsLinear 𝕜] [e'.IsLinear 𝕜]
+    (q q' : F ≃L[𝕜] 𝕜)
+    (he : e.toOpenPartialHomeomorph ∈
+      (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V))
+    (he' : e'.toOpenPartialHomeomorph ∈
+      (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V)) :
+    ContMDiffOn IB 𝓘(𝕜) n (e.scalarCoordChange e' q q') (e.baseSet ∩ e'.baseSet) := by
+  have h := q'.contDiff.contMDiff.comp_contMDiffOn
+    ((contMDiffOn_coordChangeL_of_mem_maximalAtlas he he').clm_apply
+      (contMDiffOn_const (c := q.symm 1)))
+  exact h.congr fun x _ ↦ by
+    simpa only [Function.comp_apply, ContinuousLinearEquiv.coe_coe] using
+      e.scalarCoordChange_def e' q q' x
+
+end Bundle.Trivialization
+
+namespace TauCeti
+
+/-- Covectors `ℓ y` on the fibres `V (ι y)` that are `C^n` in `y` in the frames along a continuous
+map `ι` are continuous in the frames: near `y₀` the map `y ↦ ℓ y ∘ t⁻¹` is `C^n` on the open set
+`ι⁻¹ t.baseSet`, which contains `y₀`. -/
+theorem continuousAt_comp_symmL_of_contMDiffOn {M F : Type*} [TopologicalSpace M]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle ℝ F V]
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {n : WithTop ℕ∞}
+    {ι : N → M} (hι : Continuous ι) {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ}
+    (hℓ : ∀ y₀, ContMDiffOn J 𝓘(ℝ, F →L[ℝ] ℝ) n
+      (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y))
+      (ι ⁻¹' (trivializationAt F V (ι y₀)).baseSet)) (y₀ : N) :
+    ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀ :=
+  (hℓ y₀).continuousOn.continuousAt <| ((trivializationAt F V (ι y₀)).open_baseSet.preimage hι)
+    |>.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' _)
 
 end TauCeti

@@ -8,14 +8,14 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.SpanProjection
 public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
 public import TauCeti.Analysis.InnerProductSpace.Projection.FrobeniusSine
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 
 /-!
 # The overlap operator of two finite families and their principal cosines
 
 For finite families `u : ι → E` and `v : κ → E` in an inner product space, the *overlap operator*
 `TauCeti.overlapOperator` (defined with the frame operators in
-`TauCeti.Analysis.InnerProductSpace.Frame`) is analysis by `u` after synthesis by `v`,
+`TauCeti.Analysis.InnerProductSpace.Frame.Basic`) is analysis by `u` after synthesis by `v`,
 
 `EuclideanSpace 𝕜 κ → EuclideanSpace 𝕜 ι`, `a ↦ (⟪uᵢ, ∑ⱼ aⱼ vⱼ⟫)ᵢ`,
 

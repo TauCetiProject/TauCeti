@@ -35,6 +35,7 @@ on `T`.
 * `ContinuousLinearMap.polarFactor`: the canonical polar partial isometry of a bounded operator.
 * `ContinuousLinearMap.polarFactor_comp_modulus`: the polar decomposition `U |T| = T`.
 * `ContinuousLinearMap.isPartialIsometry_polarFactor`: `U` is a partial isometry.
+* `ContinuousLinearMap.polarIsometry`: for injective `T`, `U` bundled as a linear isometry.
 * `ContinuousLinearMap.ker_polarFactor`, `ContinuousLinearMap.range_polarFactor`: `ker U = ker T`
   and the range of `U` is the closure of the range of `T`.
 * `ContinuousLinearMap.adjoint_polarFactor_comp_polarFactor`,
@@ -43,6 +44,9 @@ on `T`.
   `ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor_of_denseRange`: `U` is an isometry
   when `T` is injective, and a coisometry when `T` has dense range.
 * `ContinuousLinearMap.eq_polarFactor_iff`: uniqueness of the polar factor.
+* `ContinuousLinearMap.polarFactor_unitary_conj`,
+  `ContinuousLinearMap.commute_polarFactor_of_mem_unitary`: unitary conjugation and commutation for
+  the polar factor of an endomorphism.
 * `ContinuousLinearMap.polarFactor_smul`: the polar factor of `c T` is `(c / ‖c‖) U`.
 * `ContinuousLinearMap.modulus_adjoint`: `|T†| = T U†`.
 * `ContinuousLinearMap.polarFactor_adjoint`: the polar factor of `T†` is `U†`.
@@ -118,6 +122,22 @@ theorem norm_polarFactor_apply_of_injective (hT : Function.Injective T) (x : E) 
     rw [LinearMap.ker_eq_bot.2 (by exact hT), Submodule.bot_orthogonal_eq_top]
     exact Submodule.mem_top
 
+/-- The polar factor of an injective operator, bundled as a linear isometry. This is the
+bounded-operator counterpart of `LinearMap.polarIsometry`. -/
+def polarIsometry (hT : Function.Injective T) : E →ₗᵢ[𝕜] F where
+  toLinearMap := T.polarFactor.toLinearMap
+  norm_map' := T.norm_polarFactor_apply_of_injective hT
+
+@[simp]
+theorem polarIsometry_toLinearMap (hT : Function.Injective T) :
+    (T.polarIsometry hT).toLinearMap = T.polarFactor.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem coe_polarIsometry (hT : Function.Injective T) :
+    ⇑(T.polarIsometry hT) = T.polarFactor :=
+  (rfl)
+
 /-- The polar factor is a partial isometry. -/
 @[simp]
 theorem isPartialIsometry_polarFactor : T.polarFactor.IsPartialIsometry :=
@@ -140,6 +160,18 @@ of the range of `T`. -/
 theorem polarFactor_comp_adjoint_polarFactor :
     T.polarFactor ∘L T.polarFactor† = T.range.topologicalClosure.starProjection :=
   factorThru_comp_adjoint_factorThru (fun x ↦ (T.norm_modulus_apply x).symm)
+
+/-- The initial projection `star U * U` of the polar factor of an endomorphism is the orthogonal
+projection onto `(ker T)ᗮ`. -/
+theorem star_polarFactor_mul_polarFactor (T : E →L[𝕜] E) :
+    star T.polarFactor * T.polarFactor = T.kerᗮ.starProjection := by
+  rw [star_eq_adjoint, mul_def, adjoint_polarFactor_comp_polarFactor]
+
+/-- The final projection `U * star U` of the polar factor of an endomorphism is the orthogonal
+projection onto the closure of the range of `T`. -/
+theorem polarFactor_mul_star_polarFactor (T : E →L[𝕜] E) :
+    T.polarFactor * star T.polarFactor = T.range.topologicalClosure.starProjection := by
+  rw [star_eq_adjoint, mul_def, polarFactor_comp_adjoint_polarFactor]
 
 variable {T} in
 /-- The polar factor of an injective operator is an isometry: `U† U = 1`. -/
@@ -186,6 +218,30 @@ theorem polarFactor_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSp
   · simp only [LinearMap.mem_ker, coe_coe, comp_apply] at hx ⊢
     rw [T.polarFactor_apply_of_mem_ker (LinearMap.mem_ker.2 ((e₁ : F →L[𝕜] F').map_eq_zero_iff
       e₁.injective |>.1 hx)), map_zero]
+
+/-- Precomposing with a linear isometric equivalence precomposes the polar factor: the polar
+factor of `T e` is `U e`. -/
+@[simp]
+theorem polarFactor_comp_linearIsometryEquiv {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace 𝕜 E'] [CompleteSpace E'] (e : E' ≃ₗᵢ[𝕜] E) :
+    (T ∘L (e : E' →L[𝕜] E)).polarFactor = T.polarFactor ∘L (e : E' →L[𝕜] E) := by
+  simpa using polarFactor_conj (LinearIsometryEquiv.refl 𝕜 F) e.symm T
+
+/-- Conjugating an endomorphism by a unitary conjugates its polar factor by the same unitary. -/
+theorem polarFactor_unitary_conj {u : E →L[𝕜] E} (hu : u ∈ unitary (E →L[𝕜] E))
+    (T : E →L[𝕜] E) :
+    (u * T * star u).polarFactor = u * T.polarFactor * star u := by
+  let e : E ≃ₗᵢ[𝕜] E := Unitary.linearIsometryEquiv ⟨u, hu⟩
+  have he : (e : E →L[𝕜] E) = u := Unitary.coe_linearIsometryEquiv_apply ⟨u, hu⟩
+  have he_symm : (e.symm : E →L[𝕜] E) = star u := by
+    rw [← e.adjoint_eq_symm, he, star_eq_adjoint]
+  simpa only [he, he_symm, mul_def, comp_assoc] using polarFactor_conj e e T
+
+/-- A unitary endomorphism commuting with `T` also commutes with its polar factor. -/
+theorem commute_polarFactor_of_mem_unitary {u T : E →L[𝕜] E} (hu : u ∈ unitary (E →L[𝕜] E))
+    (h : Commute u T) : Commute u T.polarFactor := by
+  rw [commute_unitary_iff_star_right_conjugate hu, ← polarFactor_unitary_conj hu T,
+    (commute_unitary_iff_star_right_conjugate hu).1 h]
 
 /-- The polar factor of the zero operator is zero. -/
 @[simp]

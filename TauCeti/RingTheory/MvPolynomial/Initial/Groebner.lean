@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Initial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Cone
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Finite
+public import TauCeti.RingTheory.MvPolynomial.Groebner.Map
 
 /-!
 # Computing weight-initial ideals by Gröbner bases
@@ -22,6 +23,13 @@ ensure both stability of the Gröbner basis and a unique maximal-weight term in 
 element. A positive integral weight realizing these comparisons identifies the weight-initial
 ideal with the original monomial-order leading-term ideal. This only represents the finite
 data needed for this ideal, not every comparison of the monomial order.
+
+Since an injective change of coefficients carries a Gröbner basis whose nonzero members have
+unit leading coefficients to a Gröbner basis of the extended ideal, it commutes with taking
+weight-initial ideals whenever the weight-refined order admits such a basis. Over a field `k`,
+for every ring homomorphism `φ : k →+* S`, for instance a field extension, the weight-initial
+ideal of the extension of an ideal `I` is the extension of the weight-initial ideal of `I`
+(`Ideal.weightInitialIdeal_map`).
 
 ## References
 
@@ -69,7 +77,7 @@ theorem IsRemainder.weightInitialForm_mem_span
   rcases eq_or_lt_of_le hw with heq | hlt
   · rw [← heq, add_comm, smul_eq_mul, weightedHomogeneousComponent_weightedTotalDegree_add,
       ← weightInitialForm_def, ← weightInitialForm_def]
-    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨g, g.2, rfl⟩)
+    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨g, g.property, rfl⟩)
   · rw [smul_eq_mul, weightedHomogeneousComponent_eq_zero _ _
       ((weightedTotalDegree_mul_le w (q g) (g : MvPolynomial σ R)).trans_lt
         (by simpa [add_comm] using hlt))]
@@ -118,7 +126,7 @@ theorem IsGroebnerBasis.exists_pos_weight_weightInitialIdeal_eq_span_leadingTerm
       obtain ⟨hne, ha⟩ := Finset.mem_erase.1 ha
       exact lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne)
   obtain ⟨w, hw, hcomp⟩ := m.exists_pos_weight_lt
-    (a := fun p : D ↦ p.1.1) (b := fun p : D ↦ p.1.2) fun p ↦ hDm p p.2
+    (a := fun p : D ↦ p.val.1) (b := fun p : D ↦ p.val.2) fun p ↦ hDm p p.property
   have hn := (hCn (m.weightRefinement w) fun p hp ↦
     m.weightRefinement_lt_of_weight_lt w (hcomp ⟨p, Finset.mem_union_left _ hp⟩)).1
   have hi : ∀ g ∈ G, weightInitialForm w g = m.leadingTerm g := by
@@ -146,6 +154,38 @@ theorem exists_pos_weight_weightInitialIdeal_eq_span_leadingTerm {k : Type*} [Fi
     fun g _ ↦ m.isUnit_leadingCoeff.2
   exact ⟨w, hw, heq⟩
 
+/-- **Weight-initial ideals under extension of coefficients.** If `I` has a Gröbner basis for the
+weight-refined order whose nonzero members have unit leading coefficients, then the weight-initial
+ideal of the extension of `I` along an injective coefficient map `φ` is the extension of the
+weight-initial ideal of `I`. -/
+theorem IsGroebnerBasis.weightInitialIdeal_map {S : Type*} [CommRing S] {φ : R →+* S}
+    (hφ : Function.Injective φ) (h : (m.weightRefinement w).IsGroebnerBasis G I)
+    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit ((m.weightRefinement w).leadingCoeff g)) :
+    (I.map (MvPolynomial.map φ)).weightInitialIdeal w =
+      (I.weightInitialIdeal w).map (MvPolynomial.map φ) := by
+  rw [(h.map hφ hG).weightInitialIdeal_eq_span, h.weightInitialIdeal_eq_span, Ideal.map_span,
+    Set.image_image, Set.image_image]
+  simp_rw [weightInitialForm_map_of_injective w φ hφ]
+
 end CommRing
 
 end MonomialOrder
+
+namespace Ideal
+
+/-- **Weight-initial ideals under extension of a field of coefficients.** For a field `k` and a
+ring homomorphism `φ : k →+* S`, for instance a field extension, the weight-initial ideal of the
+extension of an ideal `I` of `k[σ]` is the extension of the weight-initial ideal of `I`. -/
+@[simp]
+theorem weightInitialIdeal_map {σ k S : Type*} [Field k] [CommRing S] (φ : k →+* S)
+    (I : Ideal (MvPolynomial σ k)) (w : σ → ℕ) :
+    (I.map (MvPolynomial.map φ)).weightInitialIdeal w =
+      (I.weightInitialIdeal w).map (MvPolynomial.map φ) := by
+  rcases subsingleton_or_nontrivial S with _ | _
+  · exact Subsingleton.elim _ _
+  -- Any monomial order refined by `w` computes the weight-initial ideal; use a lexicographic one.
+  obtain ⟨_, _⟩ := exists_wellFoundedGT σ
+  exact (MonomialOrder.isGroebnerBasis_self I).weightInitialIdeal_map (m := MonomialOrder.lex)
+    φ.injective fun _ _ ↦ MonomialOrder.isUnit_leadingCoeff.2
+
+end Ideal

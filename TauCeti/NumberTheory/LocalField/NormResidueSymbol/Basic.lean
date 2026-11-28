@@ -158,6 +158,21 @@ theorem _root_.AlgHom.restrictNormalHom_apply_eq_algebraMap_normResidueSymbol_mu
       coe_absoluteGaloisGroupRestrictEquiv_apply]
   rw [hcomm, normResidueSymbol_spec a b σ hσ hjy, map_mul, AlgHom.commutes]
 
+/-- **The Artin characterization of the norm-residue symbol in the separable closure.** Every
+representative `σ` of `Art_K(a)` acts on any `n`-th root `β ∈ SeparableClosure K` of `b` by
+multiplication by `(a, b)_{K, n}`. -/
+theorem normResidueSymbol_spec_separableClosure (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
+    (hσ : (σ : TopologicalAbelianization Gal(AlgebraicClosure K/K)) = artinMap K a)
+    {β : SeparableClosure K} (hβ : β ^ n = algebraMap K (SeparableClosure K) (b : K)) :
+    absoluteGaloisGroupRestrictEquiv K σ β =
+      algebraMap K (SeparableClosure K) ((normResidueSymbol K n a b : Kˣ) : K) * β := by
+  apply Subtype.ext
+  rw [coe_absoluteGaloisGroupRestrictEquiv_apply K σ β,
+    normResidueSymbol_spec a b σ hσ (by
+      rw [← IntermediateField.algebraMap_apply, ← map_pow, hβ,
+        ← IsScalarTower.algebraMap_apply]),
+    IntermediateField.coe_mul, IntermediateField.coe_algebraMap_apply]
+
 /-- The norm-residue symbol is multiplicative in the Artin argument. -/
 theorem normResidueSymbol_mul_left (a a' b : Kˣ) :
     normResidueSymbol K n (a * a') b =

@@ -7,10 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.NormShell
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Pi
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
+import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Orthogonal sums of root lattices and their glue words
@@ -23,10 +22,11 @@ glue alphabet `(t i).glueAlphabet` per component (Conway--Sloane, Chapter 4 §3 
 Chapter 16 §1).
 
 This file shows that the orthogonal sum of root lattices is even and positive definite, of rank
-`∑ i, rank (t i)`, and identifies the orthogonal sum of the glue alphabets with the actual
-discriminant quadratic module of the orthogonal sum of root lattices
-(`TauCeti.DynkinType.glueWordIsometry`).  The identification acts componentwise by the
-single-component isometries `TauCeti.DynkinType.glueAlphabetIsometry`
+`∑ i, rank (t i)`, spanned over `ℤ` by the computable finite set
+`TauCeti.DynkinType.piSimpleRootVectors` of componentwise simple-root vectors, and identifies the
+orthogonal sum of the glue alphabets with the actual discriminant quadratic module of the
+orthogonal sum of root lattices (`TauCeti.DynkinType.glueWordIsometry`).  The identification acts
+componentwise by the single-component isometries `TauCeti.DynkinType.glueAlphabetIsometry`
 (`TauCeti.DynkinType.discriminantGroupPiEquiv_glueWordIsometry`), so a glue word is a coordinate
 description of a class in the discriminant group.  The identification is natural under componentwise
 isometries of the root lattices and under permutations of the components
@@ -44,18 +44,21 @@ Isotropic and Lagrangian subgroups of glue words correspond to those of the disc
 * `TauCeti.DynkinType.isEven_pi_rootLattice`, `TauCeti.DynkinType.isPosDef_pi_rootLattice`,
   `TauCeti.DynkinType.finrank_pi_rootLattice`: the orthogonal sum of root lattices is even,
   positive definite, and of rank the sum of the ranks.
+* `TauCeti.DynkinType.piSimpleRootVector`, `TauCeti.DynkinType.piSimpleRootVectors`,
+  `TauCeti.DynkinType.span_piSimpleRootVectors`: computable componentwise simple-root vectors
+  spanning the orthogonal sum of root lattices.
 * `TauCeti.DynkinType.glueWordIsometry`: the isometry from the orthogonal sum of glue alphabets
   to the discriminant quadratic module of the orthogonal sum of root lattices.
 * `TauCeti.DynkinType.discriminantQuadraticIsometry_pi_glueWordIsometry`,
-  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`: naturality of
-  the glue-word isometry under componentwise isometries and permutations of the components.
+  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`,
+  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr_glueWordIsometry`,
+  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr'_glueWordIsometry`: naturality of
+  the glue-word isometry under componentwise isometries, permutations of the components, and their
+  composites.
 * `TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`: naturality of
-  the glue-word isometry under signed permutations of identical components.
-* `TauCeti.DynkinType.piGlueAlphabetCongr`: the glue words of a family of components equal to a
-  reindexing of `t`.
-* `TauCeti.DynkinType.piGlueAlphabetCongr_refl`, `TauCeti.DynkinType.piGlueAlphabetCongr_trans`:
-  reindexing glue words along the identity is the identity, and along a composite is reindexing
-  along each factor in turn.
+  glue words under signed permutations of identical components.
+* `TauCeti.DynkinType.piGlueAlphabetCongr`: quadratic isometry of glue words induced by
+  equalities of component types along a reindexing, with `_refl` and `_trans` lemmas.
 * `TauCeti.DynkinType.isNondegenerate_pi_glueAlphabet`,
   `TauCeti.DynkinType.natCard_pi_glueAlphabet`: the module of glue words is nondegenerate, of
   order `∏ i, |det (t i).cartanMatrix|`.
@@ -74,6 +77,8 @@ namespace TauCeti.DynkinType
 open IntegralLattice
 
 universe v
+
+section
 
 variable {ι : Type v} [Fintype ι] (t : ι → DynkinType) (ht : ∀ i, (t i).IsSimplyLaced)
 
@@ -99,6 +104,111 @@ theorem span_vectorsOfNorm_two_pi_rootLattice :
           (pi fun i ↦ (t i).rootLattice (ht i)).vectorsOfNorm 2) =
       (pi fun i ↦ (t i).rootLattice (ht i)).carrier :=
   span_image_vectorsOfNorm_pi_eq _ fun i ↦ (t i).span_vectorsOfNorm_two_rootLattice (ht i)
+
+end
+
+section SimpleRootVectors
+
+variable {ι : Type v} [DecidableEq ι] (t : ι → DynkinType)
+
+/-- The `(i, j)`-th simple-root vector of an orthogonal sum of component root lattices, supported
+in component `i` as the `j`-th Bourbaki simple root `Pi.single j 1`. -/
+def piSimpleRootVector (p : Σ i, Fin (t i).rank) : ∀ i, Fin (t i).rank → ℚ :=
+  Pi.single p.1 (Pi.single p.2 1)
+
+/-- `piSimpleRootVector` embeds the `j`-th standard basis vector into component `i`. -/
+theorem piSimpleRootVector_def (p : Σ i, Fin (t i).rank) :
+    piSimpleRootVector t p = Pi.single p.1 (Pi.single p.2 1) :=
+  (rfl)
+
+/-- Evaluating `piSimpleRootVector` at component `i` gives `Pi.single p.1 (Pi.single p.2 1) i`. -/
+@[simp]
+theorem piSimpleRootVector_apply (p : Σ i, Fin (t i).rank) (i : ι) :
+    piSimpleRootVector t p i =
+      Pi.single (M := fun i ↦ Fin (t i).rank → ℚ) p.1 (Pi.single p.2 1) i :=
+  (rfl)
+
+/-- Distinct `(component, simple-root)` indices produce distinct simple-root vectors. -/
+theorem piSimpleRootVector_injective : Function.Injective (piSimpleRootVector t) :=
+  (Pi.linearIndependent_single (fun i (j : Fin (t i).rank) ↦ Pi.single j (1 : ℚ)) fun i ↦
+    Pi.linearIndependent_single_one (Fin (t i).rank) ℚ).injective
+
+/-- Two componentwise simple-root vectors are equal if and only if their indices coincide. -/
+@[simp]
+theorem piSimpleRootVector_inj {p q : Σ i, Fin (t i).rank} :
+    piSimpleRootVector t p = piSimpleRootVector t q ↔ p = q :=
+  (piSimpleRootVector_injective t).eq_iff
+
+variable [Fintype ι]
+
+/-- Every `piSimpleRootVector` lies in the carrier of the orthogonal sum of root lattices. -/
+theorem piSimpleRootVector_mem_carrier (ht : ∀ i, (t i).IsSimplyLaced)
+    (p : Σ i, Fin (t i).rank) :
+    piSimpleRootVector t p ∈ (pi fun i ↦ (t i).rootLattice (ht i)).carrier := by
+  rw [piSimpleRootVector_def]
+  refine single_mem_pi_carrier (fun i ↦ (t i).rootLattice (ht i)) p.1 ?_
+  rw [← coe_simpleRootBasis (t p.1) (ht p.1) p.2]
+  exact ((t p.1).simpleRootBasis (ht p.1) p.2).property
+
+/-- Every `piSimpleRootVector` has squared norm `2`. -/
+theorem form_piSimpleRootVector_self (ht : ∀ i, (t i).IsSimplyLaced)
+    (p : Σ i, Fin (t i).rank) :
+    (pi fun i ↦ (t i).rootLattice (ht i)).form
+        (piSimpleRootVector t p) (piSimpleRootVector t p) = 2 := by
+  rw [piSimpleRootVector_def, pi_form, LinearMap.BilinForm.pi_apply_single_left, Pi.single_eq_same,
+    rootLattice_form_single_single, cartanMatrix_apply_same]
+  norm_num
+
+/-- **Computable finite set of simple-root vectors** of an orthogonal sum of ADE root lattices. -/
+def piSimpleRootVectors : Finset (∀ i, Fin (t i).rank → ℚ) :=
+  Finset.univ.image (piSimpleRootVector t)
+
+/-- `piSimpleRootVectors` is the image of `Finset.univ` under `piSimpleRootVector`. -/
+theorem piSimpleRootVectors_def :
+    piSimpleRootVectors t = Finset.univ.image (piSimpleRootVector t) :=
+  (rfl)
+
+/-- A vector belongs to `piSimpleRootVectors` if and only if it is `piSimpleRootVector t p` for
+some componentwise simple-root index `p`. -/
+@[simp]
+theorem mem_piSimpleRootVectors_iff {v : ∀ i, Fin (t i).rank → ℚ} :
+    v ∈ piSimpleRootVectors t ↔ ∃ p, piSimpleRootVector t p = v := by
+  simp [piSimpleRootVectors_def]
+
+/-- The number of simple-root vectors is the total rank `∑ i, (t i).rank`. -/
+@[simp]
+theorem card_piSimpleRootVectors :
+    (piSimpleRootVectors t).card = ∑ i, (t i).rank := by
+  rw [piSimpleRootVectors_def, Finset.card_image_of_injective _ (piSimpleRootVector_injective t),
+    Finset.card_univ, Fintype.card_sigma]
+  simp
+
+/-- **The `ℤ`-span of `piSimpleRootVectors` is the carrier of the orthogonal sum of root
+lattices.** -/
+@[simp]
+theorem span_piSimpleRootVectors (ht : ∀ i, (t i).IsSimplyLaced) :
+    Submodule.span ℤ (piSimpleRootVectors t : Set (∀ i, Fin (t i).rank → ℚ)) =
+      (pi fun i ↦ (t i).rootLattice (ht i)).carrier := by
+  rw [piSimpleRootVectors_def, Finset.coe_image, Finset.coe_univ, Set.image_univ,
+    Set.range_sigma_eq_iUnion_range, Submodule.span_iUnion]
+  have hrange : ∀ i, (Set.range fun j : Fin (t i).rank ↦ piSimpleRootVector t ⟨i, j⟩) =
+      LinearMap.single ℤ (fun i ↦ Fin (t i).rank → ℚ) i ''
+        Set.range fun j : Fin (t i).rank ↦ Pi.single j (1 : ℚ) := fun i ↦ by
+    rw [← Set.range_comp]
+    exact congrArg Set.range (funext fun j ↦ (LinearMap.single_apply ..).symm)
+  simp_rw [hrange, Submodule.span_image _, ← rootLattice_carrier _ (ht _),
+    Submodule.iSup_map_single, pi_carrier]
+
+/-- Every vector in `piSimpleRootVectors` belongs to the orthogonal sum of root lattices. -/
+theorem piSimpleRootVectors_subset_carrier (ht : ∀ i, (t i).IsSimplyLaced) :
+    (piSimpleRootVectors t : Set (∀ i, Fin (t i).rank → ℚ)) ⊆
+      (pi fun i ↦ (t i).rootLattice (ht i)).carrier := by
+  rw [← span_piSimpleRootVectors t ht]
+  exact Submodule.subset_span
+
+end SimpleRootVectors
+
+variable {ι : Type v} [Fintype ι] (t : ι → DynkinType) (ht : ∀ i, (t i).IsSimplyLaced)
 
 /-- **Glue words are the discriminant classes of an orthogonal sum of root lattices.**  For a
 finite family of valid simply-laced components, this is the isometry from the orthogonal sum of
@@ -169,6 +279,49 @@ theorem discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (hv : ∀ i, 
   discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry
     (fun i ↦ (t i).rootLattice (ht i)) (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i)) σ w
 
+/-- **Naturality of glue words under `Isometry.piCongr`.**  Given `σ : ι ≃ κ`, root-lattice
+isometries `f i` from `t i` to `s (σ i)`, and compatible glue-label maps `g i`,
+`Isometry.piCongr σ f` carries the discriminant class of a glue word `w` to the class of
+`Equiv.piCongrLeft _ σ (fun i ↦ g i (w i))`. -/
+theorem discriminantQuadraticIsometry_piCongr_glueWordIsometry (hv : ∀ i, (t i).Valid)
+    {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
+    (hvs : ∀ k, (s k).Valid) (σ : ι ≃ κ)
+    (f : ∀ i, IntegralLattice.Isometry ((t i).rootLattice (ht i))
+      ((s (σ i)).rootLattice (hs (σ i))))
+    (g : ∀ i, (t i).glueAlphabet (ht i) → (s (σ i)).glueAlphabet (hs (σ i)))
+    (h : ∀ i x, (s (σ i)).glueAlphabetIsometry (hvs (σ i)) (hs (σ i)) (g i x) =
+      (f i).discriminantQuadraticIsometry ((t i).isEven_rootLattice (ht i))
+        ((t i).glueAlphabetIsometry (hv i) (ht i) x))
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    (Isometry.piCongr σ f).discriminantQuadraticIsometry (isEven_pi_rootLattice t ht)
+        (glueWordIsometry t ht hv w) =
+      glueWordIsometry s hs hvs
+        (Equiv.piCongrLeft (fun k ↦ (s k).glueAlphabet (hs k)) σ fun i ↦ g i (w i)) :=
+  discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
+    (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i))
+    (fun k ↦ (s k).glueAlphabetIsometry (hvs k) (hs k)) σ f g h w
+
+/-- **Naturality of glue words under componentwise isometries indexed by the target.**  Given
+`σ : ι ≃ κ`, root-lattice isometries `f k` from `t (σ.symm k)` to `s k`, and compatible glue-label
+maps `g k`, `Isometry.piCongr' σ f` carries the discriminant class of a glue word `w` to the class
+of `fun k ↦ g k (w (σ.symm k))`. -/
+theorem discriminantQuadraticIsometry_piCongr'_glueWordIsometry (hv : ∀ i, (t i).Valid)
+    {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
+    (hvs : ∀ k, (s k).Valid) (σ : ι ≃ κ)
+    (f : ∀ k, IntegralLattice.Isometry ((t (σ.symm k)).rootLattice (ht (σ.symm k)))
+      ((s k).rootLattice (hs k)))
+    (g : ∀ k, (t (σ.symm k)).glueAlphabet (ht (σ.symm k)) → (s k).glueAlphabet (hs k))
+    (h : ∀ k x, (s k).glueAlphabetIsometry (hvs k) (hs k) (g k x) =
+      (f k).discriminantQuadraticIsometry ((t (σ.symm k)).isEven_rootLattice (ht (σ.symm k)))
+        ((t (σ.symm k)).glueAlphabetIsometry (hv (σ.symm k)) (ht (σ.symm k)) x))
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    (Isometry.piCongr' σ f).discriminantQuadraticIsometry (isEven_pi_rootLattice t ht)
+        (glueWordIsometry t ht hv w) =
+      glueWordIsometry s hs hvs fun k ↦ g k (w (σ.symm k)) :=
+  discriminantQuadraticIsometry_piCongr'_discriminantQuadraticIsometryPiOfIsometry
+    (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i))
+    (fun k ↦ (s k).glueAlphabetIsometry (hvs k) (hs k)) σ f g h w
+
 section SignedPermutation
 
 variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
@@ -185,23 +338,12 @@ theorem discriminantQuadraticIsometry_signedPerm_glueWordIsometry (u : ι → �
         (isEven_pi_rootLattice _ _) (glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) w) =
       glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT)
         fun j ↦ u (σ.symm j) • w (σ.symm j) := by
-  -- The signs act first, componentwise, and the permutation then moves the components.
-  have h1 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
-    _).symm.trans (discriminantQuadraticIsometry_pi_glueWordIsometry (fun _ ↦ T)
-      (fun _ ↦ hT) (fun _ ↦ hvT) (fun _ ↦ hvT)
-      (fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT))
-      (fun i x ↦ u i • x) (fun i x ↦ by
-        refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-          (Isometry.discriminantGroupEquiv_unitsSMul_apply (u i) _ _)).symm
-        exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
-  have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
-    _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)
-      (fun _ ↦ hT) (fun _ ↦ hvT) σ (fun i ↦ u i • w i))
-  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-  rw [Isometry.discriminantGroupEquiv_trans]
-  refine (LinearEquiv.trans_apply _).trans ?_
-  rw [h1]
-  refine h2.trans (congrArg _ (funext fun j ↦ ?_))
+  rw [← Isometry.piCongr_def (M' := fun _ ↦ T.rootLattice hT)]
+  refine (discriminantQuadraticIsometry_piCongr_glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT)
+    (fun _ ↦ hvT) (s := fun _ ↦ T) (hs := fun _ ↦ hT) (fun _ ↦ hvT) σ
+    (fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT))
+    (fun i x ↦ u i • x) (fun i x ↦ glueAlphabetIsometry_unitsSMul hvT (u i) x) w).trans
+      (congrArg _ (funext fun j ↦ ?_))
   obtain ⟨k, rfl⟩ := σ.surjective j
   rw [Equiv.piCongrLeft_apply_apply, Equiv.symm_apply_apply]
 
@@ -219,22 +361,16 @@ isometry of the modules of glue words. -/
 noncomputable def piGlueAlphabetCongr :
     FiniteQuadraticModule.Isometry (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i))
       (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k)) :=
-  (QuadraticMap.IsometryEquiv.piCongrLeft (fun i ↦ ((t i).glueAlphabet (ht i)).quadratic)
-      σ).symm.trans
-    (QuadraticMap.IsometryEquiv.pi fun k ↦
-      FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr (h k) (ht (σ k)) (hs k)))
+  QuadraticMap.IsometryEquiv.piCongr' σ.symm fun k ↦
+    FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr (h k) (ht (σ k)) (hs k))
 
 /-- The glue word of the equal family `s` reads its label in position `k` from position `σ k`. -/
 @[simp]
 theorem piGlueAlphabetCongr_apply (w : ∀ i, (t i).glueAlphabet (ht i)) (k : κ) :
     piGlueAlphabetCongr t ht σ h w k =
       FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr (h k) (ht (σ k)) (hs k))
-        (w (σ k)) := by
-  conv_rhs => rw [← (QuadraticMap.IsometryEquiv.piCongrLeft
-    (fun i ↦ ((t i).glueAlphabet (ht i)).quadratic) σ).apply_symm_apply w]
-  rw [QuadraticMap.IsometryEquiv.piCongrLeft_apply_apply]
-  -- `QuadraticMap.IsometryEquiv.pi` acts coordinatewise by definition.
-  rfl
+        (w (σ k)) :=
+  QuadraticMap.IsometryEquiv.piCongr'_apply σ.symm _ w k
 
 /-- Reindexing glue words along the identity equivalence is the identity. -/
 @[simp]

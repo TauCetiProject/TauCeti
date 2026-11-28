@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -49,12 +50,6 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 ## Main declarations
 
-* `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
-  Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
-* `TauCeti.one_add_norm_sq_rpow_neg_le_inv_norm_pow`: away from the origin,
-  `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
-* `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
-  `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
@@ -64,6 +59,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   elsewhere is `O(T ^ (d - q))`.
 * `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
+* `TauCeti.integrable_rpow_neg_one_add_norm_sq_iff`: on a nontrivial space the bracket
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable exactly when `d < r`.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
   integrable for `d < 2 r`, for every additive Haar measure.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
@@ -75,8 +72,12 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
-* `TauCeti.sub_two_mul_integral_radial`: an identity between two radial moments of the rescaled
-  bracket.
+* `TauCeti.integrableOn_pow_mul_div_sq_add_sq_pow`,
+  `TauCeti.integrableOn_pow_mul_div_one_add_sq_pow`: integrability on `(0, ∞)` of the radial
+  moments of the rescaled bracket.
+* `TauCeti.sub_two_mul_integral_radial`,
+  `TauCeti.sub_two_mul_integral_pow_mul_div_sq_add_sq_pow`: an identity between two radial
+  moments of the rescaled bracket.
 * `TauCeti.integral_pow_mul_div_add_sq_pow`: the radial integral of the truncated logarithmic
   moments.
 * `TauCeti.setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow`,
@@ -92,42 +93,6 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module ProbabilityTheory Real Set Topology
-
-/-- One power of `‖x‖` costs one order of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)` for every real `m`. -/
-theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x : E) (m : ℝ) :
-    (1 + ‖x‖ ^ 2) ^ (m / 2) * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((m + 1) / 2) := by
-  rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
-  gcongr
-  exact Real.le_sqrt_of_sq_le (by linarith)
-
-/-- Away from the origin, a negative bracket power is bounded by the corresponding power of the
-norm: `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)` for `x ≠ 0`. This turns symbol estimates of order `0` into
-Mihlin's condition `‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k`. -/
-theorem one_add_norm_sq_rpow_neg_le_inv_norm_pow {E : Type*} [NormedAddCommGroup E] {x : E}
-    (hx : x ≠ 0) (k : ℕ) : (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2) ≤ (‖x‖ ^ k)⁻¹ := by
-  have hk : ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
-    calc ‖x‖ ^ k ≤ ((1 + ‖x‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ k := by
-          gcongr
-          rw [← Real.sqrt_eq_rpow]
-          exact Real.le_sqrt_of_sq_le (by linarith)
-      _ = _ := by rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]; ring_nf
-  rw [neg_div, Real.rpow_neg (by positivity)]
-  exact inv_anti₀ (pow_pos (norm_pos_iff.2 hx) k) hk
-
-/-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
-theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c) (x : E)
-    (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
-  have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
-    have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
-    have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
-    nlinarith
-  have hsqrt : (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) = √(1 + ‖x‖ ^ 2) ^ i := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (by positivity)]
-    ring_nf
-  rw [hsqrt, ← mul_pow]
-  exact pow_le_pow_left₀ (by positivity) hle i
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
@@ -299,6 +264,18 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
       _ ≤ ∫⁻ x in Γ, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := lintegral_mono_set (iUnion_subset hS)
   exact lt_irrefl _ (hint.hasFiniteIntegral.trans_le htop)
 
+/-- **Exact integrability of the Japanese bracket.** On a nontrivial finite-dimensional real
+normed space of dimension `d`, `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable for an additive Haar
+measure exactly when `d < r`. -/
+theorem integrable_rpow_neg_one_add_norm_sq_iff (μ : Measure V) [μ.IsAddHaarMeasure]
+    [Nontrivial V] {r : ℝ} :
+    Integrable (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)) μ ↔ (finrank ℝ V : ℝ) < r := by
+  refine ⟨fun hint ↦ ?_, integrable_rpow_neg_one_add_norm_sq⟩
+  by_contra! hr
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : V)
+  exact not_integrableOn_rpow_neg_one_add_norm_sq μ hr isOpen_univ (fun _ _ _ _ ↦ mem_univ _)
+    (mem_univ ξ) hξ hint.integrableOn
+
 end Cone
 
 /-- The power `x ↦ (1 + ‖x‖) ^ (-r)` is square integrable for every additive Haar measure on a
@@ -363,7 +340,8 @@ theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measu
     (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)
         ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by
           gcongr
-          exact one_add_mul_norm_pow_le hc x i
+          simpa only [abs_norm, Real.rpow_natCast] using
+            Real.one_add_mul_abs_rpow_le ‖x‖ hc i.cast_nonneg
     _ = (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ (-(r - i) / 2) := by
           rw [mul_assoc, ← Real.rpow_add hA]
           ring_nf
@@ -373,6 +351,43 @@ theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measu
 theorem integrable_one_add_norm_rpow_neg_add_one {n : ℕ} :
     Integrable fun x : EuclideanSpace ℝ (Fin n) ↦ (1 + ‖x‖) ^ (-((n : ℝ) + 1)) :=
   integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
+
+/-- On `(0, ∞)`, the radial weight `r ^ k * (2 * t / (t² + r²)) ^ n` is integrable whenever
+`k + 1 < 2 * n`. -/
+theorem integrableOn_pow_mul_div_sq_add_sq_pow {n k : ℕ} (hk : k + 1 < 2 * n) (t : ℝ) :
+    IntegrableOn (fun r : ℝ ↦ r ^ k * (2 * t / (t ^ 2 + r ^ 2)) ^ n) (Ioi 0) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · have hn : n ≠ 0 := by omega
+    simp [hn]
+  have h1 := ((integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq (volume : Measure ℝ)
+    (p := (k : ℝ)) (r := 2 * (n : ℝ)) (Nat.cast_nonneg k)
+    (by rw [finrank_self]; exact_mod_cast (by omega : 1 + k < 2 * n))).comp_smul
+    (inv_ne_zero ht)).const_mul (|t| ^ k * (2 * t / t ^ 2) ^ n)
+  refine h1.integrableOn.congr_fun (fun r (hr : 0 < r) ↦ ?_) measurableSet_Ioi
+  have hpos : 0 < 1 + (|t|⁻¹ * r) ^ 2 := by positivity
+  have hnorm : ‖t⁻¹ • r‖ = |t|⁻¹ * r := by
+    rw [smul_eq_mul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hr]
+  have hrk : |t| ^ k * ‖t⁻¹ • r‖ ^ (k : ℝ) = r ^ k := by
+    rw [hnorm, Real.rpow_natCast, mul_pow, ← mul_assoc, ← mul_pow,
+      mul_inv_cancel₀ (abs_ne_zero.2 ht), one_pow, one_mul]
+  have hbr : (2 * t / t ^ 2) ^ n * (1 + ‖t⁻¹ • r‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2) =
+      (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
+    have hexp : -(2 * (n : ℝ)) / 2 = -(n : ℝ) := by ring
+    rw [hnorm, hexp, Real.rpow_neg hpos.le, Real.rpow_natCast, ← inv_pow, ← mul_pow]
+    congr 1
+    rw [mul_pow, inv_pow, sq_abs]
+    field_simp
+  calc |t| ^ k * (2 * t / t ^ 2) ^ n *
+        (‖t⁻¹ • r‖ ^ (k : ℝ) * (1 + ‖t⁻¹ • r‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2))
+      = (|t| ^ k * ‖t⁻¹ • r‖ ^ (k : ℝ)) *
+          ((2 * t / t ^ 2) ^ n * (1 + ‖t⁻¹ • r‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2)) := by ring
+    _ = r ^ k * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by rw [hrk, hbr]
+
+/-- On `(0, ∞)`, the unit-scale radial weight `r ^ k * (2 / (1 + r²)) ^ n` is integrable whenever
+`k + 1 < 2 * n`. -/
+theorem integrableOn_pow_mul_div_one_add_sq_pow {n k : ℕ} (hk : k + 1 < 2 * n) :
+    IntegrableOn (fun s : ℝ ↦ s ^ k * (2 / (1 + s ^ 2)) ^ n) (Ioi 0) := by
+  simpa using integrableOn_pow_mul_div_sq_add_sq_pow hk 1
 
 end Integrability
 
@@ -509,6 +524,19 @@ theorem sub_two_mul_integral_radial {n : ℕ} (hn : 2 < n) {t : ℝ}
     show F 0 = 0 by simp [F], sub_zero] at h
   push_cast at h ⊢
   linarith
+
+/-- For `n > 2` and any `t : ℝ`, the two radial moments of `ψ(r) = (2 t / (t² + r²)) ^ n`
+satisfy `(n - 2) ∫₀^∞ r ^ (n - 1) r² ψ(r) = n t² ∫₀^∞ r ^ (n - 1) ψ(r)`. -/
+theorem sub_two_mul_integral_pow_mul_div_sq_add_sq_pow {n : ℕ} (hn : 2 < n) (t : ℝ) :
+    ((n : ℝ) - 2) * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n) =
+      n * t ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
+  have h₁ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n) (Ioi 0) :=
+    integrableOn_pow_mul_div_sq_add_sq_pow (by omega) t
+  have h₂ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n))
+      (Ioi 0) :=
+    (integrableOn_pow_mul_div_sq_add_sq_pow (n := n) (k := (n - 1) + 2) (by omega) t).congr_fun
+      (fun r _ ↦ by dsimp only; rw [pow_add]; ring) measurableSet_Ioi
+  exact sub_two_mul_integral_radial hn h₁ h₂
 
 section TruncatedMoment
 

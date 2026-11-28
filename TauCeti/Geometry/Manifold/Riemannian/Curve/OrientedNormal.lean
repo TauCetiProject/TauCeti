@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.Normed.Module.Normalize
+import TauCeti.Geometry.Manifold.Riemannian.Orientation.Preserving
+import TauCeti.Geometry.Manifold.Riemannian.Orientation.Rotation
 
 /-!
 # The oriented unit normal of a curve on a surface
@@ -96,8 +98,8 @@ theorem riemannianVolumeForm_curveVelocity_orientedUnitNormal
     riemannianVolumeForm o (γ t) ![curveVelocity I γ t, orientedUnitNormal o γ t] =
       ‖curveVelocity I γ t‖ := by
   let := o.fact_finrank_tangentSpace (γ t)
-  rw [riemannianVolumeForm_apply, ← (o.orientationAt (γ t)).areaForm_to_volumeForm,
-    orientedUnitNormal_apply, (o.orientationAt (γ t)).areaForm_rightAngleRotation_right,
+  rw [o.riemannianVolumeForm_eq_areaForm, orientedUnitNormal_apply,
+    (o.orientationAt (γ t)).areaForm_rightAngleRotation_right,
     NormedSpace.normalize, real_inner_smul_right, real_inner_self_eq_norm_sq]
   by_cases h : ‖curveVelocity I γ t‖ = 0
   · simp [h]
@@ -119,5 +121,40 @@ theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : �
   let := o.fact_finrank_tangentSpace (γ (d - t))
   rw [orientedUnitNormal_apply, orientedUnitNormal_apply, curveVelocity_comp_const_sub,
     NormedSpace.normalize_neg, map_neg]
+
+/-- Curves agreeing near a parameter have the same oriented unit normal there. -/
+theorem _root_.Filter.EventuallyEq.orientedUnitNormal_eq
+    {γ η : ℝ → M} {t : ℝ} (h : γ =ᶠ[nhds t] η) (o : Orientation I M (Fin 2)) :
+    orientedUnitNormal o γ t = orientedUnitNormal o η t := by
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply]
+  exact o.rightAngleRotation_tangentSpace_congr h.self_of_nhds
+    (TauCeti.normalize_tangentSpace_congr h.self_of_nhds h.curveVelocity_eq)
+
+/-- A periodic curve has periodic oriented unit normals, compared in the model space.
+No regularity is assumed. -/
+theorem _root_.Function.Periodic.orientedUnitNormal
+    {γ : ℝ → M} {a : ℝ} (hper : Function.Periodic γ a) (o : Orientation I M (Fin 2)) :
+    Function.Periodic (fun t ↦ (orientedUnitNormal o γ t : E)) a := by
+  intro t
+  dsimp only
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply]
+  exact o.rightAngleRotation_tangentSpace_congr (hper t)
+    (TauCeti.normalize_tangentSpace_congr (hper t) hper.curveVelocity_add)
+
+/-- A reparametrization with positive derivative at `t` does not change the oriented unit normal
+at `t`. -/
+theorem orientedUnitNormal_comp_of_deriv_pos (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) (hφ₀ : 0 < deriv φ t) :
+    orientedUnitNormal o (γ ∘ φ) t = orientedUnitNormal o γ (φ t) := by
+  simpa [hφ₀] using
+    orientedUnitNormal_comp o hγ (differentiableAt_of_deriv_ne_zero hφ₀.ne')
+
+/-- A reparametrization with negative derivative at a parameter reverses the oriented unit normal
+there. -/
+theorem orientedUnitNormal_comp_of_deriv_neg (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) (hφ₀ : deriv φ t < 0) :
+    orientedUnitNormal o (γ ∘ φ) t = -orientedUnitNormal o γ (φ t) := by
+  simpa [hφ₀] using
+    orientedUnitNormal_comp o hγ (differentiableAt_of_deriv_ne_zero hφ₀.ne)
 
 end TauCeti.Manifold

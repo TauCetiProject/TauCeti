@@ -36,14 +36,24 @@ namespace TauCeti.PolarGraph
 abbrev PolarPoint := {p : ℝ × ℝ // 0 < p.1}
 
 /-- The radius of a point in the polar coordinate cover. -/
-def radius (p : PolarPoint) : ℝ := p.1.1
+def radius (p : PolarPoint) : ℝ := p.val.1
 
 /-- The angle of a point in the polar coordinate cover. -/
-def angle (p : PolarPoint) : ℝ := p.1.2
+def angle (p : PolarPoint) : ℝ := p.val.2
 
-theorem radius_def (p : PolarPoint) : radius p = p.1.1 := (rfl)
+theorem radius_def (p : PolarPoint) : radius p = p.val.1 := (rfl)
 
-theorem angle_def (p : PolarPoint) : angle p = p.1.2 := (rfl)
+theorem angle_def (p : PolarPoint) : angle p = p.val.2 := (rfl)
+
+/-- The radius is continuous on the polar cover. -/
+@[fun_prop, continuity] theorem continuous_radius : Continuous radius := by
+  rw [funext radius_def]
+  exact continuous_fst.comp continuous_subtypeVal
+
+/-- The unrestricted angle is continuous on the polar cover. -/
+@[fun_prop, continuity] theorem continuous_angle : Continuous angle := by
+  rw [funext angle_def]
+  exact continuous_snd.comp continuous_subtypeVal
 
 @[simp, grind =] theorem radius_mk (r θ : ℝ) (hr : 0 < r) :
     radius ⟨(r, θ), hr⟩ = r := (rfl)
@@ -51,7 +61,7 @@ theorem angle_def (p : PolarPoint) : angle p = p.1.2 := (rfl)
 @[simp, grind =] theorem angle_mk (r θ : ℝ) (hr : 0 < r) :
     angle ⟨(r, θ), hr⟩ = θ := (rfl)
 
-@[simp] theorem radius_pos (p : PolarPoint) : 0 < radius p := p.2
+@[simp] theorem radius_pos (p : PolarPoint) : 0 < radius p := p.property
 
 @[simp] theorem radius_ne_zero (p : PolarPoint) : radius p ≠ 0 := ne_of_gt (radius_pos p)
 
@@ -64,11 +74,22 @@ theorem PolarPoint.ext {p q : PolarPoint} (hr : radius p = radius q)
 def deckShift (k : ℤ) (p : PolarPoint) : PolarPoint :=
   ⟨(radius p, angle p + (k : ℝ) * (2 * Real.pi)), radius_pos p⟩
 
+/-- Deck translation is continuous on the polar cover. -/
+@[fun_prop] theorem continuous_deckShift (k : ℤ) : Continuous (deckShift k) := by
+  unfold deckShift
+  simp only [radius_def, angle_def]
+  fun_prop
+
 @[simp, grind =] theorem radius_deckShift (k : ℤ) (p : PolarPoint) :
     radius (deckShift k p) = radius p := (rfl)
 
 @[simp, grind =] theorem angle_deckShift (k : ℤ) (p : PolarPoint) :
     angle (deckShift k p) = angle p + (k : ℝ) * (2 * Real.pi) := (rfl)
+
+/-- A deck shift is translation by a constant vector in the coordinates of the cover. -/
+theorem val_deckShift (k : ℤ) (p : PolarPoint) :
+    (deckShift k p).val = p.val + (0, (k : ℝ) * (2 * Real.pi)) := by
+  exact Prod.ext (by simp [deckShift, radius_def]) (by simp [deckShift, angle_def])
 
 @[simp, grind =] theorem deckShift_zero (p : PolarPoint) : deckShift 0 p = p := by
   apply PolarPoint.ext <;> simp
@@ -118,6 +139,12 @@ def projection (p : PolarPoint) : ℂ :=
 theorem projection_def (p : PolarPoint) :
     projection p = (radius p : ℂ) * (Circle.exp (angle p) : ℂ) := (rfl)
 
+/-- The polar projection is continuous on the polar cover. -/
+@[fun_prop] theorem continuous_projection : Continuous projection := by
+  apply (continuous_congr projection_def).mpr
+  simp only [radius_def, angle_def]
+  fun_prop
+
 @[simp, grind =] theorem re_projection (p : PolarPoint) :
     (projection p).re = radius p * Real.cos (angle p) := by
   simp [projection_def, Circle.coe_exp]
@@ -140,6 +167,19 @@ theorem projection_def (p : PolarPoint) :
 @[simp] theorem projection_ne_zero (p : PolarPoint) : projection p ≠ 0 := by
   have h : 0 < ‖projection p‖ := by rw [norm_projection]; exact radius_pos p
   exact norm_pos_iff.mp h
+
+/-- The image of a radial domain consists of points with the prescribed radii, excluding zero. -/
+theorem image_projection_radius_preimage (s : Set ℝ) :
+    projection '' (radius ⁻¹' s) = {z : ℂ | ‖z‖ ∈ s ∧ z ≠ 0} := by
+  ext z
+  constructor
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨by simpa using hp, projection_ne_zero p⟩
+  · rintro ⟨hs, hz⟩
+    refine ⟨⟨(‖z‖, z.arg), norm_pos_iff.mpr hz⟩, ?_, ?_⟩
+    · simpa only [Set.mem_preimage, radius_mk] using hs
+    · simpa only [projection_def, radius_mk, angle_mk, Circle.coe_exp] using
+        Complex.norm_mul_exp_arg_mul_I z
 
 /-- Two polar points have the same planar projection exactly when one is an integral deck
 translate of the other. -/
@@ -226,10 +266,29 @@ theorem separation_def (u : PolarPoint → ℝ) (k : ℤ) (p : PolarPoint) :
     separation u (k + l) p = separation u k p + separation u l (deckShift k p) := by
   simp [separation_def, deckShift_add]
 
+/-- The separation after `n` positive turns is the sum of the adjacent separations. -/
+theorem separation_natCast_eq_sum (u : PolarPoint → ℝ) (n : ℕ) (p : PolarPoint) :
+    separation u n p = ∑ j ∈ Finset.range n, separation u 1 (deckShift j p) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Nat.cast_succ, separation_add, ih, Finset.sum_range_succ]
+
 /-- Reversing a deck shift from `deckShift k p` negates its height change from `p`. -/
 @[simp, grind =] theorem separation_neg_deckShift (u : PolarPoint → ℝ) (k : ℤ)
     (p : PolarPoint) : separation u (-k) (deckShift k p) = -separation u k p := by
   simp [separation_def, sub_eq_add_neg, add_comm]
+
+/-- Continuity of the height on its domain implies continuity of the separation on each
+deck overlap. -/
+theorem continuousOn_separation {Ω : Set PolarPoint} {u : PolarPoint → ℝ}
+    (hu : ContinuousOn u Ω) (k : ℤ) : ContinuousOn (separation u k) (overlap Ω k) := by
+  have hshift : Continuous (deckShift k) := by
+    unfold deckShift radius angle
+    apply Continuous.subtype_mk
+    fun_prop
+  simp only [funext (separation_def u k)]
+  exact (hu.comp hshift.continuousOn fun _ hp ↦ (mem_overlap_iff.mp hp).2).sub
+    (hu.mono (overlap_subset Ω k))
 
 /-- One-turn invariance along a point's deck orbit makes every separation at that point zero. -/
 theorem separation_eq_zero_of_deckShift_one_deckShift_eq {u : PolarPoint → ℝ} {p : PolarPoint}

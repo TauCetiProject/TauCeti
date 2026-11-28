@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -21,16 +21,18 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 Mathlib's `Analysis/SpecialFunctions/SmoothTransition.lean` proves that
 `Real.smoothTransition` is smooth and equals one on `[1, ∞)`, but states no derivative values.
-This file records that its derivative vanishes on the open rays `(-∞, 0)` and `(1, ∞)`, where the
-function is locally constant, so that the derivative is compactly supported. Being continuous, it
-is then bounded, which bounds the gradients of cutoffs built from `Real.smoothTransition`. It is
+This file records that its derivative vanishes on the closed rays `(-∞, 0]` and `[1, ∞)`,
+including the transition endpoints, so that the derivative is compactly supported. Being continuous,
+it is then bounded, which bounds the gradients of cutoffs built from `Real.smoothTransition`. It is
 also integrable with integral one, so its rescalings `t ↦ c ψ'(c (a - t))` are approximate
 identities; together with the chain rule and local Lipschitz continuity of `ψ (c (u - t))`, this
 is what is needed to smooth the indicator of a superlevel set `{u > t}`. The one-sided rescalings
 `y ↦ c ψ'(c (y - a))`, supported in `[a, a + c⁻¹]`, converge at every Lebesgue point: if the mean
 oscillation of `u` about `v` on `closedBall a r` tends to zero, then
 `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`. Pairing a function with the derivative of a smooth
-step `ψ (c (y - a))` therefore recovers its Lebesgue value at `a`.
+step `ψ (c (y - a))` therefore recovers its Lebesgue value at `a`. On a real inner product space,
+the radial cutoffs `x ↦ ψ(a + b ‖x - c‖²)` are smooth, and their derivatives vanish where the
+argument leaves `(0, 1)` and decay like `‖x - c‖⁻¹` with a constant independent of `b`.
 
 It also uses the smooth transition to cut a function off near zero. For `m > 0` and a function
 `g : ℝ → ℝ`, `TauCeti.positiveCutoff m g` is the product of `g` with a smooth transition from `0`
@@ -44,7 +46,14 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 `(a, b)`; integrating it gives such a step with slope at most `τ` whenever
 `v < τ (b - a)`, which is the best possible bound, since the mean slope of the step is
 `v / (b - a)`. Translating and reflecting the smooth transition also gives three cutoffs summing to
-one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives.
+one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives. For
+`a < b` the smooth lower truncation `TauCeti.smoothLowerTruncation a b` is at least `a` everywhere
+and equal to `s` for `s ≥ b`; it keeps denominators such as `‖∇ψ‖²` away from zero without
+changing them where they are already large.
+
+The derivative supremum bounds are adapted from Giada Franz’s formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory),
+`ForTauCeti/Geometry/Manifold/Riemannian/Surface/LogCutoff/Profile.lean`.
 
 ## Main declarations
 
@@ -53,9 +62,22 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   `x⁻² expNegInvGlue x`.
 * `expNegInvGlue.hasFDerivAt_norm_sq`: on a real inner product space, the derivative of
   `x ↦ expNegInvGlue (‖x‖²)` at `x` is `‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`.
+* `Real.smoothTransition.one_sub`: reflection exchanges the two plateaus.
+* `Real.smoothTransition.deriv_nonneg`: the derivative is nonnegative.
+* `Real.smoothTransition.bddAbove_range_deriv`, `Real.smoothTransition.deriv_le_iSup` and
+  `Real.smoothTransition.iSup_deriv_nonneg`: the derivative has a nonnegative finite supremum.
+* `Real.smoothTransition.mul_deriv_nonneg` and `Real.smoothTransition.mul_deriv_le_deriv`:
+  multiplying the derivative by its argument gives a value between zero and the derivative.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
-* `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
-* `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
+* `Real.smoothTransition.ofReal_abs_mul_le`: `ofReal (|Real.smoothTransition x| b) ≤ ofReal b`
+  for `0 ≤ b`.
+* `Real.smoothTransition.abs_one_sub_le_one`: `|1 - Real.smoothTransition x| ≤ 1`.
+* `Real.smoothTransition.deriv_of_nonpos`: `deriv Real.smoothTransition x = 0` for `x ≤ 0`.
+* `Real.smoothTransition.deriv_of_one_le`: `deriv Real.smoothTransition x = 0` for `1 ≤ x`.
+* `Real.smoothTransition.deriv_comp_sub_const_of_notMem_Ioo`: the shift
+  `s ↦ Real.smoothTransition (s - c)` has derivative zero off `(c, c + 1)`.
+* `Real.smoothTransition.abs_deriv_comp_sub_const_le`: a bound on the derivative also bounds the
+  derivative of every shift.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
 * `Real.smoothTransition.deriv_deriv_of_neg`: the second derivative vanishes on the negative
   half-line.
@@ -91,10 +113,27 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   `‖d(ψ(c (t - u)))‖ = c ψ'(c (t - u)) ‖du‖`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
   when `u` is.
+* `Real.smoothTransition.contDiff_add_mul_norm_sub_sq` and
+  `Real.smoothTransition.hasFDerivAt_add_mul_norm_sub_sq`: on a real inner product space the radial
+  cutoff `x ↦ ψ(a + b ‖x - c‖²)` is smooth, with derivative `ψ'(a + b ‖x - c‖²) b 2 ⟪x - c, ·⟫`.
+* `Real.smoothTransition.fderiv_add_mul_norm_sub_sq_eq_zero`: its derivative vanishes where its
+  argument lies outside `(0, 1)`.
+* `Real.smoothTransition.norm_sub_mul_norm_fderiv_add_mul_norm_sub_sq_le`:
+  `‖x - c‖ ‖d(ψ(a + b ‖x - c‖²))‖ ≤ 2 L (1 + |a|)` for a bound `L` of `ψ'`, uniformly in `b`.
+* `Real.smoothTransition.tsupport_add_mul_norm_sub_sq_subset`: it is supported where
+  `0 ≤ a + b ‖x - c‖²`.
 * `TauCeti.positiveCutoff`: the cutoff of `g` near zero.
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
+* `TauCeti.neckCutoff`: the cutoff `s ↦ ψ (1 + a s)`, equal to `1` where `0 ≤ a s` and to `0` where
+  `1 + a s ≤ 0`, with derivative at most `|a|` times a bound for `ψ'`. These cutoffs splice
+  right inverses along a neck of length `2 R`, with slope `O(1 / R)`.
+* `TauCeti.abs_one_sub_neckCutoff_le_one` and `TauCeti.abs_deriv_one_sub_neckCutoff`: the
+  complementary cutoff `1 - neckCutoff a` is bounded by `1`, and its derivative is that of the neck
+  cutoff up to sign.
+* `TauCeti.neckCutoff_neg_two_div_eq_one`, `TauCeti.neckCutoff_neg_two_div_eq_zero` and their
+  `two_div` counterparts: where the neck cutoffs for `a = ∓ 2 / R` equal `1` and vanish.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
@@ -103,9 +142,11 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   for every `v < τ (b - a)`.
 * `TauCeti.exists_contDiff_odd_truncation`: a smooth odd function equal to the identity on
   `[-r, r]`, to `±1` on `±[R, ∞)`, with the sign of its argument.
-* `TauCeti.exists_cutoffs_add_add_eq_one`: three `C²` cutoffs summing to one, vanishing for
+* `TauCeti.exists_cutoffs_add_add_eq_one`: three smooth cutoffs summing to one, vanishing for
   `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
   constant and supported in `[-(R + 1), R + 1]`.
+* `TauCeti.smoothLowerTruncation`: a smooth substitute for the truncation `s ↦ max s a`, equal to
+  `a` on `(-∞, a]`, to `s` on `[b, ∞)`, and below `b` on `(-∞, b)`.
 -/
 
 public section
@@ -129,6 +170,19 @@ both sides vanish. -/
 theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvGlue x) x := by
   simpa using hasDerivAt_polynomial_eval_inv_mul 1 x
 
+/-- The second derivative of the glued exponential profile, including the joining point. -/
+theorem deriv_deriv (s : ℝ) :
+    deriv (deriv expNegInvGlue) s =
+      (s⁻¹ ^ 4 - 2 * s⁻¹ ^ 3) * expNegInvGlue s := by
+  -- Function extensionality packages the existing pointwise first-derivative formula.
+  rw [show deriv expNegInvGlue = (fun x ↦ x⁻¹ ^ 2 * expNegInvGlue x) by
+    funext x; exact (hasDerivAt x).deriv]
+  have h := (expNegInvGlue.hasDerivAt_polynomial_eval_inv_mul
+    (Polynomial.X ^ 2 : Polynomial ℝ) s).deriv
+  simp only [Polynomial.eval_X_pow, Polynomial.eval_mul, Polynomial.eval_sub,
+    Polynomial.derivative_X_pow, Polynomial.eval_C] at h
+  convert h using 1; ring
+
 /-- On a real inner product space, the derivative of `x ↦ expNegInvGlue (‖x‖ ^ 2)` at `x` is
 `‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`, also at `x = 0`, where it vanishes. -/
 theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (x : E) :
@@ -138,43 +192,152 @@ theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpac
 
 end expNegInvGlue
 
+namespace TauCeti
+
+/-- The time derivative of an exponentially damped translating glued exponential profile. -/
+public theorem hasDerivAt_exp_mul_expNegInvGlue (c A b epsilon t : ℝ) :
+    HasDerivAt
+      (fun s : ℝ ↦ epsilon * Real.exp (-A * s) * expNegInvGlue (c + b * s))
+      (epsilon * Real.exp (-A * t) *
+        (-A * expNegInvGlue (c + b * t) + b * deriv expNegInvGlue (c + b * t))) t := by
+  have harg : HasDerivAt (fun s : ℝ ↦ c + b * s) b t := by
+    have hlin : HasDerivAt (fun s : ℝ ↦ b * s) b t := by
+      simpa only [id_eq, mul_one] using (hasDerivAt_id t).const_mul b
+    simpa only [Pi.add_apply, zero_add] using! (hasDerivAt_const t (c)).add hlin
+  have hψ : HasDerivAt (fun s : ℝ ↦ expNegInvGlue (c + b * s))
+      (deriv expNegInvGlue (c + b * t) * b) t := by
+    have hbase : HasDerivAt expNegInvGlue
+        (deriv expNegInvGlue (c + b * t)) (c + b * t) := by
+      exact ((contDiff_infty_iff_deriv.mp expNegInvGlue.contDiff).1
+        (c + b * t)).hasDerivAt
+    exact hbase.comp t harg
+  have he : HasDerivAt (fun s : ℝ ↦ Real.exp (-A * s))
+      (-A * Real.exp (-A * t)) t := by
+    simpa only [id_eq, mul_one, mul_comm] using ((hasDerivAt_id t).const_mul (-A)).exp
+  have hc : HasDerivAt (fun s : ℝ ↦ epsilon * Real.exp (-A * s))
+      (epsilon * (-A * Real.exp (-A * t))) t := by
+    have hfun : (fun s : ℝ ↦ epsilon * Real.exp (-A * s)) =
+        (fun _ : ℝ ↦ epsilon) * (fun s : ℝ ↦ Real.exp (-A * s)) := by
+      funext s
+      rfl
+    rw [hfun]
+    simpa only [zero_mul, zero_add] using (hasDerivAt_const t epsilon).mul he
+  have hfun : (fun s : ℝ ↦ epsilon * Real.exp (-A * s) *
+      expNegInvGlue (c + b * s)) =
+      (fun s : ℝ ↦ epsilon * Real.exp (-A * s)) *
+        (fun s : ℝ ↦ expNegInvGlue (c + b * s)) := by
+    funext s
+    rfl
+  rw [hfun]
+  convert! hc.mul hψ using 1
+  ring
+
+
+end TauCeti
+
 namespace Real.smoothTransition
+
+/-- Reflection about `1 / 2` exchanges the two plateaus of the smooth transition. -/
+theorem one_sub (x : ℝ) : smoothTransition (1 - x) = 1 - smoothTransition x := by
+  simp only [smoothTransition, sub_sub_cancel]
+  rw [add_comm (expNegInvGlue (1 - x))]
+  field_simp [(pos_denom x).ne']
+  ring
 
 /-- The smooth transition function takes values of absolute value at most one. -/
 theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
   (abs_of_nonneg (nonneg x)).trans_le (le_one x)
 
-/-- The smooth transition function has derivative zero to the left of `0`, where it is
-identically zero. -/
-theorem deriv_of_neg {x : ℝ} (hx : x < 0) : deriv smoothTransition x = 0 := by
-  have h : smoothTransition =ᶠ[𝓝 x] fun _ => 0 :=
-    eventually_of_mem (Iio_mem_nhds hx) fun _ ht => zero_of_nonpos (le_of_lt ht)
-  rw [h.deriv_eq, deriv_const]
+/-- Scaling a nonnegative bound by the smooth transition does not increase it, as an extended
+nonnegative real. -/
+theorem ofReal_abs_mul_le (x : ℝ) {b : ℝ} (hb : 0 ≤ b) :
+    ENNReal.ofReal (|smoothTransition x| * b) ≤ ENNReal.ofReal b :=
+  ENNReal.ofReal_le_ofReal (mul_le_of_le_one_left hb (abs_le_one x))
 
-/-- The smooth transition function has derivative zero to the right of `1`, where it is
-identically one. -/
-theorem deriv_of_one_lt {x : ℝ} (hx : 1 < x) : deriv smoothTransition x = 0 := by
-  have h : smoothTransition =ᶠ[𝓝 x] fun _ => 1 :=
-    eventually_of_mem (Ioi_mem_nhds hx) fun _ ht => one_of_one_le (le_of_lt ht)
-  rw [h.deriv_eq, deriv_const]
+/-- The complementary transition `1 - smoothTransition` also takes values of absolute value at
+most one. -/
+theorem abs_one_sub_le_one (x : ℝ) : |1 - smoothTransition x| ≤ 1 := by
+  rw [← one_sub]
+  exact abs_le_one _
+
+/-- The smooth transition function has derivative zero on `(-∞, 0]`. -/
+theorem deriv_of_nonpos {x : ℝ} (hx : x ≤ 0) : deriv smoothTransition x = 0 := by
+  apply IsLocalMin.deriv_eq_zero
+  filter_upwards with y
+  rw [zero_of_nonpos hx]
+  exact nonneg y
+
+/-- The smooth transition function has derivative zero on `[1, ∞)`. -/
+theorem deriv_of_one_le {x : ℝ} (hx : 1 ≤ x) : deriv smoothTransition x = 0 := by
+  apply IsLocalMax.deriv_eq_zero
+  filter_upwards with y
+  rw [one_of_one_le hx]
+  exact le_one y
+
+/-- The shifted smooth transition `s ↦ smoothTransition (s - c)` has derivative zero off
+`(c, c + 1)`. -/
+theorem deriv_comp_sub_const_of_notMem_Ioo {c s : ℝ} (hs : s ∉ Ioo c (c + 1)) :
+    deriv (fun s ↦ smoothTransition (s - c)) s = 0 := by
+  rw [deriv_comp_sub_const]
+  rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
+  rcases hs with hs | hs
+  · exact deriv_of_nonpos (by linarith)
+  · exact deriv_of_one_le (by linarith)
+
+/-- A bound `L` on the derivative of the smooth transition function also bounds the derivative of
+every shift `s ↦ smoothTransition (s - c)`. -/
+theorem abs_deriv_comp_sub_const_le {L : ℝ} (hL : ∀ x, ‖deriv smoothTransition x‖ ≤ L)
+    (c s : ℝ) : |deriv (fun s ↦ smoothTransition (s - c)) s| ≤ L := by
+  rw [deriv_comp_sub_const, ← Real.norm_eq_abs]
+  exact hL _
+
+/-- The derivative of the smooth transition function is nonnegative. -/
+theorem deriv_nonneg (t : ℝ) : 0 ≤ deriv smoothTransition t :=
+  smoothTransition.monotone.deriv_nonneg
 
 /-- The derivative of the smooth transition function is supported in `[0, 1]`. -/
 theorem hasCompactSupport_deriv : HasCompactSupport (deriv smoothTransition) :=
   HasCompactSupport.intro isCompact_Icc fun _ hx => by
     rcases not_and_or.1 hx with h | h
-    · exact deriv_of_neg (not_le.1 h)
-    · exact deriv_of_one_lt (not_le.1 h)
+    · exact deriv_of_nonpos (not_le.1 h).le
+    · exact deriv_of_one_le (not_le.1 h).le
 
 /-- The second derivative of the smooth transition function is zero to the left of `0`. -/
 theorem deriv_deriv_of_neg {x : ℝ} (hx : x < 0) : deriv (deriv smoothTransition) x = 0 := by
   have h : deriv smoothTransition =ᶠ[𝓝 x] fun _ => 0 :=
-    eventually_of_mem (Iio_mem_nhds hx) fun _ ht => deriv_of_neg ht
+    eventually_of_mem (Iio_mem_nhds hx) fun _ ht => deriv_of_nonpos ht.le
   rw [h.deriv_eq, deriv_const]
 
 /-- The derivative of the smooth transition function is bounded. -/
 theorem exists_forall_norm_deriv_le : ∃ L : ℝ, ∀ τ, ‖deriv smoothTransition τ‖ ≤ L :=
   (Real.smoothTransition.contDiff.iterate_deriv 1).continuous.bounded_above_of_compact_support
     hasCompactSupport_deriv
+
+/-- The range of the derivative of the smooth transition function is bounded above. -/
+theorem bddAbove_range_deriv : BddAbove (range (deriv smoothTransition)) := by
+  obtain ⟨B, hB⟩ := exists_forall_norm_deriv_le
+  exact ⟨B, forall_mem_range.2 fun t ↦ (le_norm_self _).trans (hB t)⟩
+
+/-- The derivative of the smooth transition function is at most its supremum. -/
+theorem deriv_le_iSup (t : ℝ) : deriv smoothTransition t ≤ ⨆ s, deriv smoothTransition s :=
+  le_ciSup bddAbove_range_deriv t
+
+/-- The supremum of the derivative of the smooth transition function is nonnegative. -/
+theorem iSup_deriv_nonneg : 0 ≤ ⨆ s, deriv smoothTransition s :=
+  (deriv_nonneg 0).trans (deriv_le_iSup 0)
+
+/-- Multiplying the derivative of the smooth transition function by its argument is nonnegative. -/
+theorem mul_deriv_nonneg (t : ℝ) : 0 ≤ t * deriv smoothTransition t := by
+  rcases le_or_gt t 0 with ht | ht
+  · rw [deriv_of_nonpos ht, mul_zero]
+  · exact mul_nonneg ht.le (deriv_nonneg t)
+
+/-- Multiplying the derivative by its argument is at most the derivative itself. -/
+theorem mul_deriv_le_deriv (t : ℝ) :
+    t * deriv smoothTransition t ≤ deriv smoothTransition t := by
+  rcases le_or_gt 1 t with ht | ht
+  · rw [deriv_of_one_le ht, mul_zero]
+  · exact mul_le_of_le_one_left (deriv_nonneg t) ht.le
 
 /-- The second derivative of the smooth transition function is bounded. -/
 theorem exists_forall_norm_deriv_deriv_le :
@@ -195,9 +358,9 @@ theorem abs_deriv_mul_mul_le {M C a t y : ℝ} (hM : ∀ t, ‖deriv smoothTrans
     |deriv smoothTransition (a * t) * (a * y)| ≤ M * C := by
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
   rcases lt_or_ge (a * t) 0 with ht | ht
-  · simpa [deriv_of_neg ht] using mul_nonneg hM0 hC
+  · simpa [deriv_of_nonpos ht.le] using mul_nonneg hM0 hC
   rcases lt_or_ge 1 (a * t) with ht' | ht'
-  · simpa [deriv_of_one_lt ht'] using mul_nonneg hM0 hC
+  · simpa [deriv_of_one_le ht'.le] using mul_nonneg hM0 hC
   rw [abs_mul, abs_mul]
   refine mul_le_mul (hM _) ?_ (by positivity) hM0
   calc |a| * |y| ≤ |a| * (C * |t|) := by gcongr
@@ -232,8 +395,8 @@ theorem setIntegral_Icc_deriv {a b : ℝ} (ha : a ≤ 0) (hb : 1 ≤ b) :
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ ?_, integral_deriv]
   rw [mem_Icc, not_and_or, not_le, not_le] at hx
   rcases hx with hx | hx
-  · exact deriv_of_neg (hx.trans_le ha)
-  · exact deriv_of_one_lt (hb.trans_lt hx)
+  · exact deriv_of_nonpos (hx.trans_le ha).le
+  · exact deriv_of_one_le (hb.trans_lt hx).le
 
 /-- Over any set, the derivative of the smooth transition function has integral at most one. -/
 theorem setIntegral_deriv_le_one (s : Set ℝ) : ∫ x in s, deriv smoothTransition x ≤ 1 :=
@@ -324,7 +487,7 @@ theorem tendsto_integral_deriv_mul_sub_mul {c : ℝ} {a : ℝ → ℝ} {a₀ : �
   · simp only [abs_zero, inv_zero, zero_mul, zero_mul, zero_sub]
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with T hT
-    simp [deriv_of_neg (neg_neg_of_pos hT)]
+    simp [deriv_of_nonpos (neg_neg_of_pos hT).le]
   have hc' : 0 < |c| := abs_pos.2 hc
   have hβ (T : ℝ) : Integrable fun y => deriv smoothTransition (c * y - T) :=
     (integrable_deriv.comp_sub_right T).comp_mul_left' hc
@@ -342,7 +505,7 @@ theorem tendsto_integral_deriv_mul_sub_mul {c : ℝ} {a : ℝ → ℝ} {a₀ : �
       deriv smoothTransition (c * y - T) * (|c| * ε / 2) := by
     rw [norm_mul, Real.norm_of_nonneg (hβ0 _)]
     by_cases hy : c * y - T < 0
-    · simp [deriv_of_neg hy]
+    · simp [deriv_of_nonpos hy.le]
     · refine mul_le_mul_of_nonneg_left ?_ (hβ0 _)
       have h := hR (c * y) (by linarith)
       rw [← mul_assoc, inv_mul_cancel₀ hc, one_mul, Real.dist_eq, ← Real.norm_eq_abs] at h
@@ -363,10 +526,10 @@ theorem deriv_mul_sub_eq_zero {a c y : ℝ} (hc : 0 < c) (hy : y ∉ Metric.clos
     deriv smoothTransition (c * (y - a)) = 0 := by
   rw [Real.closedBall_eq_Icc, mem_Icc, not_and_or, not_le, not_le] at hy
   rcases hy with hy | hy
-  · exact deriv_of_neg (mul_neg_of_pos_of_neg hc (by linarith [inv_pos.2 hc]))
-  · refine deriv_of_one_lt ?_
+  · exact deriv_of_nonpos (mul_neg_of_pos_of_neg hc (by linarith [inv_pos.2 hc])).le
+  · refine deriv_of_one_le ?_
     calc (1 : ℝ) = c * c⁻¹ := (mul_inv_cancel₀ hc.ne').symm
-      _ < c * (y - a) := mul_lt_mul_of_pos_left (by linarith) hc
+      _ ≤ c * (y - a) := mul_le_mul_of_nonneg_left (by linarith) hc.le
 
 /-- The product of the rescaled derivative `y ↦ c ψ'(c (y - a))` of the smooth transition
 function `ψ` with a function integrable on `closedBall a c⁻¹` is integrable. -/
@@ -419,20 +582,16 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
     Tendsto (fun n : ℕ => d + smoothTransition ((n + 1) * t) * e +
       deriv smoothTransition ((n + 1) * t) * ((n + 1) * k)) atTop
       (𝓝 (if t ≤ 0 then d else d + e)) := by
-  rcases lt_trichotomy t 0 with ht | ht | ht
-  · have ht' (n : ℕ) : ((n : ℝ) + 1) * t < 0 := mul_neg_of_pos_of_neg (by positivity) ht
-    simp [zero_of_nonpos (ht' _).le, deriv_of_neg (ht' _), ht.le]
-  · -- `smoothTransition` is nonnegative and vanishes at `0`, so `0` is a local minimum.
-    have hmin : IsLocalMin smoothTransition 0 :=
-      Eventually.of_forall fun x => by simpa using nonneg x
-    have hd : deriv smoothTransition 0 = 0 := hmin.deriv_eq_zero
-    simp [ht, hd]
+  rcases le_or_gt t 0 with ht | ht
+  · have ht' (n : ℕ) : ((n : ℝ) + 1) * t ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (by positivity) ht
+    simp [zero_of_nonpos (ht' _), deriv_of_nonpos (ht' _), ht]
   · have hev : ∀ᶠ n : ℕ in atTop, 1 < ((n : ℝ) + 1) * t :=
       (Tendsto.atTop_mul_const ht (tendsto_natCast_atTop_atTop.atTop_add
         tendsto_const_nhds)).eventually_gt_atTop 1
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [hev] with n hn
-    simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
+    simp [one_of_one_le hn.le, deriv_of_one_le hn.le, not_le.2 ht]
 
 /-- **Smoothing a superlevel indicator.** The functions `ψ ((n + 1) (f - t))` converge pointwise
 to the indicator of the superlevel set `{f > t}`. -/
@@ -460,6 +619,11 @@ theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition
   rcases hx.eq_or_lt with h | h
   · simp [← h]
   · exact (h.trans_le (le_add_one_sub x)).ne'
+
+/-- Every value in `[0, 1]` is attained by `smoothTransition` on `[0, 1]`. -/
+theorem surjOn_Icc : SurjOn smoothTransition (Icc 0 1) (Icc 0 1) := by
+  have h := intermediate_value_Icc zero_le_one smoothTransition.continuous.continuousOn
+  rwa [smoothTransition.zero, smoothTransition.one] at h
 
 end Real.smoothTransition
 
@@ -505,7 +669,78 @@ theorem LocallyLipschitzOn.smoothTransition_mul_sub {α : Type*} [PseudoEMetricS
     LocallyLipschitzOn s fun x => Real.smoothTransition (c * (u x - t)) :=
   ((Real.smoothTransition.contDiff (n := 1)).comp
     (contDiff_const.mul (contDiff_id.sub contDiff_const))).locallyLipschitz
-    |>.comp_locallyLipschitzOn hu
+    |>.locallyLipschitzOn.comp hu (mapsTo_univ _ _)
+
+/-! ### Radial cutoffs `ψ(a + b ‖x - c‖²)` -/
+
+namespace Real.smoothTransition
+
+/-- The radial cutoff `x ↦ ψ(a + b ‖x - c‖²)` is supported where its argument is nonnegative. -/
+theorem tsupport_add_mul_norm_sub_sq_subset {E : Type*} [SeminormedAddCommGroup E] (c : E)
+    (a b : ℝ) :
+    tsupport (fun x ↦ smoothTransition (a + b * ‖x - c‖ ^ 2)) ⊆
+      {x | 0 ≤ a + b * ‖x - c‖ ^ 2} := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_le continuous_const (by fun_prop))
+  by_contra h
+  exact hx (zero_of_nonpos (not_le.1 h).le)
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The radial cutoff `x ↦ ψ(a + b ‖x - c‖²)` is smooth. -/
+theorem contDiff_add_mul_norm_sub_sq (c : E) (a b : ℝ) {n : ℕ∞} :
+    ContDiff ℝ n fun x ↦ smoothTransition (a + b * ‖x - c‖ ^ 2) :=
+  smoothTransition.contDiff.comp (contDiff_const.add (contDiff_const.mul
+    ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const))))
+
+/-- The derivative of the radial cutoff `x ↦ ψ(a + b ‖x - c‖²)` at `x` is
+`ψ'(a + b ‖x - c‖²) b 2 ⟪x - c, ·⟫`. -/
+theorem hasFDerivAt_add_mul_norm_sub_sq (c : E) (a b : ℝ) (x : E) :
+    HasFDerivAt (fun y ↦ smoothTransition (a + b * ‖y - c‖ ^ 2))
+      (deriv smoothTransition (a + b * ‖x - c‖ ^ 2) • b • 2 • innerSL ℝ (x - c)) x := by
+  simpa using (((hasFDerivAt_id x).sub_const c).norm_sq.const_mul b |>.const_add a).smoothTransition
+
+/-- The radial cutoff `x ↦ ψ(a + b ‖x - c‖²)` has derivative zero where its argument lies outside
+`(0, 1)`, since `ψ'` vanishes there. -/
+theorem fderiv_add_mul_norm_sub_sq_eq_zero {c : E} {a b : ℝ} {x : E}
+    (h : a + b * ‖x - c‖ ^ 2 ≤ 0 ∨ 1 ≤ a + b * ‖x - c‖ ^ 2) :
+    fderiv ℝ (fun y ↦ smoothTransition (a + b * ‖y - c‖ ^ 2)) x = 0 := by
+  rw [(hasFDerivAt_add_mul_norm_sub_sq c a b x).fderiv]
+  rcases h with h | h
+  · rw [deriv_of_nonpos h, zero_smul]
+  · rw [deriv_of_one_le h, zero_smul]
+
+/-- The derivative of the radial cutoff `x ↦ ψ(a + b ‖x - c‖²)` decays like `‖x - c‖⁻¹`, with a
+constant depending only on `a` and a bound `L` for `ψ'`, uniformly in `b`. -/
+theorem norm_sub_mul_norm_fderiv_add_mul_norm_sub_sq_le {L : ℝ}
+    (hL : ∀ t, ‖deriv smoothTransition t‖ ≤ L) (c : E) (a b : ℝ) (x : E) :
+    ‖x - c‖ * ‖fderiv ℝ (fun y ↦ smoothTransition (a + b * ‖y - c‖ ^ 2)) x‖ ≤
+      2 * L * (1 + |a|) := by
+  set g := a + b * ‖x - c‖ ^ 2
+  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0)
+  by_cases hg : g ≤ 0 ∨ 1 ≤ g
+  · rw [fderiv_add_mul_norm_sub_sq_eq_zero hg, norm_zero, mul_zero]
+    positivity
+  push Not at hg
+  -- Where `ψ'` does not vanish, `0 < g < 1`, so `|b| ‖x - c‖² ≤ 1 + |a|`.
+  have hbw : |b| * ‖x - c‖ ^ 2 ≤ 1 + |a| := by
+    have : |b * ‖x - c‖ ^ 2| ≤ 1 + |a| := by
+      rw [abs_le]
+      constructor <;> cases abs_cases a <;> nlinarith [hg.1, hg.2]
+    rwa [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖x - c‖ ^ 2)] at this
+  rw [(hasFDerivAt_add_mul_norm_sub_sq c a b x).fderiv]
+  have hnorm : ‖deriv smoothTransition g • b • (2 : ℕ) • innerSL ℝ (x - c)‖ ≤
+      L * (|b| * (2 * ‖x - c‖)) := by
+    have h₂ : ‖(2 : ℕ) • innerSL ℝ (x - c)‖ ≤ 2 * ‖x - c‖ := by
+      refine norm_nsmul_le.trans ?_
+      rw [Nat.cast_ofNat, innerSL_apply_norm]
+    rw [norm_smul, norm_smul, ← Real.norm_eq_abs b]
+    exact mul_le_mul (hL _) (mul_le_mul_of_nonneg_left h₂ (norm_nonneg _)) (by positivity) hL0
+  calc ‖x - c‖ * ‖deriv smoothTransition g • b • (2 : ℕ) • innerSL ℝ (x - c)‖
+      ≤ ‖x - c‖ * (L * (|b| * (2 * ‖x - c‖))) := by gcongr
+    _ = 2 * L * (|b| * ‖x - c‖ ^ 2) := by ring
+    _ ≤ 2 * L * (1 + |a|) := by gcongr
+
+end Real.smoothTransition
 
 namespace TauCeti
 
@@ -586,6 +821,88 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   · exact (hC t ⟨ht, htm⟩).trans (le_max_left _ _)
   · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
     exact (hK t htm.le).trans (le_max_right _ _)
+
+/-- **The neck cutoff** `s ↦ ψ (1 + a s)`, for the smooth transition `ψ = Real.smoothTransition`.
+It equals `1` where `0 ≤ a s` (`TauCeti.neckCutoff_eq_one`) and `0` where `1 + a s ≤ 0`
+(`TauCeti.neckCutoff_eq_zero`), and its derivative is at most `|a|` times a bound for `ψ'`
+(`TauCeti.abs_deriv_neckCutoff_le`). For `a = -(2 / R)` it is `1` on `(-∞, 0]` and `0` on
+`[R / 2, ∞)`; for `a = 2 / R` it is `1` on `[0, ∞)` and `0` on `(-∞, -R / 2]`. These are the
+cutoffs that splice right inverses along a neck of length `2 R`, with slope `O(1 / R)`. -/
+def neckCutoff (a s : ℝ) : ℝ :=
+  Real.smoothTransition (1 + a * s)
+
+/-- The defining formula of the neck cutoff. -/
+theorem neckCutoff_def (a s : ℝ) : neckCutoff a s = Real.smoothTransition (1 + a * s) :=
+  (rfl)
+
+/-- The neck cutoff is smooth. -/
+theorem contDiff_neckCutoff (a : ℝ) {n : ℕ∞} : ContDiff ℝ n (neckCutoff a) := by
+  unfold neckCutoff
+  exact Real.smoothTransition.contDiff.comp (by fun_prop)
+
+/-- The neck cutoff is nonnegative. -/
+theorem neckCutoff_nonneg (a s : ℝ) : 0 ≤ neckCutoff a s :=
+  Real.smoothTransition.nonneg _
+
+/-- The neck cutoff is at most `1`. -/
+theorem neckCutoff_le_one (a s : ℝ) : neckCutoff a s ≤ 1 :=
+  Real.smoothTransition.le_one _
+
+/-- The neck cutoff takes values in `[-1, 1]`. -/
+theorem abs_neckCutoff_le_one (a s : ℝ) : |neckCutoff a s| ≤ 1 :=
+  Real.smoothTransition.abs_le_one _
+
+/-- The derivative of the neck cutoff, by the chain rule. -/
+theorem hasDerivAt_neckCutoff (a s : ℝ) :
+    HasDerivAt (neckCutoff a) (deriv Real.smoothTransition (1 + a * s) * a) s := by
+  unfold neckCutoff
+  simpa using (((hasDerivAt_id s).const_mul a).const_add 1).smoothTransition
+
+/-- The derivative of the neck cutoff is at most `|a| L`, for a bound `L` on the derivative of the
+smooth transition. -/
+theorem abs_deriv_neckCutoff_le {L : ℝ}
+    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L) (a s : ℝ) :
+    |deriv (neckCutoff a) s| ≤ |a| * L := by
+  rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
+  exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
+
+/-- The complementary neck cutoff `1 - neckCutoff a` takes values in `[-1, 1]`. -/
+theorem abs_one_sub_neckCutoff_le_one (a s : ℝ) : |1 - neckCutoff a s| ≤ 1 :=
+  Real.smoothTransition.abs_one_sub_le_one _
+
+/-- The derivative of the complementary neck cutoff `1 - neckCutoff a` is that of `neckCutoff a` up
+to sign. -/
+theorem abs_deriv_one_sub_neckCutoff (a s : ℝ) :
+    |deriv (fun s ↦ 1 - neckCutoff a s) s| = |deriv (neckCutoff a) s| := by
+  rw [deriv_const_sub, abs_neg]
+
+/-- The neck cutoff is `1` where `0 ≤ a s`. -/
+theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
+
+/-- The neck cutoff is `0` where `1 + a s ≤ 0`. -/
+theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
+  Real.smoothTransition.zero_of_nonpos h
+
+/-- The left neck cutoff `neckCutoff (-(2 / R))` is `1` on `(-∞, 0]`. -/
+theorem neckCutoff_neg_two_div_eq_one {R s : ℝ} (hR : 0 ≤ R) (hs : s ≤ 0) :
+    neckCutoff (-(2 / R)) s = 1 :=
+  neckCutoff_eq_one (mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.2 (by positivity)) hs)
+
+/-- The right neck cutoff `neckCutoff (2 / R)` is `1` on `[0, ∞)`. -/
+theorem neckCutoff_two_div_eq_one {R s : ℝ} (hR : 0 ≤ R) (hs : 0 ≤ s) :
+    neckCutoff (2 / R) s = 1 :=
+  neckCutoff_eq_one (mul_nonneg (by positivity) hs)
+
+/-- The left neck cutoff `neckCutoff (-(2 / R))` vanishes on `[R / 2, ∞)`. -/
+theorem neckCutoff_neg_two_div_eq_zero {R s : ℝ} (hR : 0 < R) (hs : R / 2 ≤ s) :
+    neckCutoff (-(2 / R)) s = 0 :=
+  neckCutoff_eq_zero (by field_simp; linarith)
+
+/-- The right neck cutoff `neckCutoff (2 / R)` vanishes on `(-∞, -(R / 2)]`. -/
+theorem neckCutoff_two_div_eq_zero {R s : ℝ} (hR : 0 < R) (hs : s ≤ -(R / 2)) :
+    neckCutoff (2 / R) s = 0 :=
+  neckCutoff_eq_zero (by field_simp; linarith)
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is
@@ -709,7 +1026,41 @@ theorem exists_contDiff_antitone_cutoff_abs_deriv_le {a b v τ : ℝ} (hab : a <
     exact (mul_le_of_le_one_right hc0 (hψle r)).trans hcτ
   · simp only [hderiv, hψ0 r hr, mul_zero, neg_zero]
 
-/-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are `C²` cutoffs `βp`, `βm`, `β₀`
+/-- A smooth **step** from `0` to `1`: for `a < b` there is a smooth function with values in
+`[-1, 1]`, equal to `0` on `(-∞, a]` and to `1` on `[b, ∞)`, whose derivative is at most
+`2 / (b - a)` in absolute value and vanishes outside `(a, b)`. -/
+theorem exists_contDiff_step {a b : ℝ} (hab : a < b) :
+    ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ (∀ r, |μ r| ≤ 1) ∧ (∀ r ≤ a, μ r = 0) ∧
+      (∀ r, b ≤ r → μ r = 1) ∧ (∀ r, |deriv μ r| ≤ 2 / (b - a)) ∧
+      ∀ r ∉ Ioo a b, deriv μ r = 0 := by
+  obtain ⟨ν, hν, hνa, hν₀, hνb, hν1, hντ, hν'⟩ := exists_contDiff_antitone_cutoff_abs_deriv_le hab
+    zero_le_one (τ := 2 / (b - a)) (by rw [div_mul_cancel₀ _ (sub_pos.2 hab).ne']; norm_num)
+  -- `ν ≤ 1`, as `ν` is nonincreasing and equal to `1` at `a`.
+  have hνle (r : ℝ) : ν r ≤ 1 := (hνa (min_le_left r a)).trans_eq (hν1 _ (min_le_right r a))
+  exact ⟨fun r ↦ 1 - ν r, contDiff_const.sub hν,
+    fun r ↦ abs_le.2 ⟨by linarith [hνle r], by linarith [hν₀ r]⟩, fun r hr ↦ by simp [hν1 r hr],
+    fun r hr ↦ by simp [hνb r hr], fun r ↦ by rw [deriv_const_sub, abs_neg]; exact hντ r,
+    fun r hr ↦ by rw [deriv_const_sub, hν' r hr, neg_zero]⟩
+
+/-- **Interpolating two periodic maps.** Two `C^n` maps `x₋`, `x₊ : ℝ → E` of period `p` are the
+ends of a `C^n` map `u` of `ℝ × ℝ`, of period `p` in the second variable, equal to `x₋` for
+`s ≤ -a` and to `x₊` for `s ≥ a`: `u (s, t) = x₋ t + ψ((s + a) / 2a) (x₊ t - x₋ t)` for the smooth
+transition `ψ`. -/
+theorem exists_contDiff_eq_comp_snd {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ∞} {xm xp : ℝ → E} (hxm : ContDiff ℝ n xm) (hxp : ContDiff ℝ n xp) {p : ℝ}
+    (hxmp : Function.Periodic xm p) (hxpp : Function.Periodic xp p) {a : ℝ} (ha : 0 < a) :
+    ∃ u : ℝ × ℝ → E, ContDiff ℝ n u ∧ (∀ s t, u (s, t + p) = u (s, t)) ∧
+      (∀ s ≤ -a, ∀ t, u (s, t) = xm t) ∧ ∀ s, a ≤ s → ∀ t, u (s, t) = xp t := by
+  refine ⟨fun z ↦ xm z.2 + Real.smoothTransition ((z.1 + a) / (2 * a)) • (xp z.2 - xm z.2),
+    (hxm.comp contDiff_snd).add ((Real.smoothTransition.contDiff.comp
+      ((contDiff_fst.add contDiff_const).div_const _)).smul ((hxp.sub hxm).comp contDiff_snd)),
+    fun s t ↦ by simp only [hxmp t, hxpp t], fun s hs t ↦ ?_, fun s hs t ↦ ?_⟩ <;> dsimp only
+  · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
+      (by linarith)), zero_smul, add_zero]
+  · rw [Real.smoothTransition.one_of_one_le ((one_le_div (by linarith)).2 (by linarith)),
+      one_smul, add_sub_cancel]
+
+/-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are smooth cutoffs `βp`, `βm`, `β₀`
 summing to one, with `βp` vanishing for `s ≤ R`, `βm` vanishing for `s ≥ -R` and `β₀` vanishing
 outside `(-(R + 1), R + 1)`. Each satisfies `|β| ≤ 1`, and their derivatives are bounded by a common
 constant `M` and vanish outside `[-(R + 1), R + 1]`. They are `ψ(s - R)`, `ψ(-s - R)` and
@@ -717,18 +1068,19 @@ constant `M` and vanish outside `[-(R + 1), R + 1]`. They are `ψ(s - R)`, `ψ(-
 theorem exists_cutoffs_add_add_eq_one {R : ℝ} (hR : 0 ≤ R) :
     ∃ M, ∃ βp βm β₀ : ℝ → ℝ, (∀ s, βp s + βm s + β₀ s = 1) ∧ (∀ s, s ≤ R → βp s = 0) ∧
       (∀ s, -R ≤ s → βm s = 0) ∧ (∀ s, s ∉ Ioo (-(R + 1)) (R + 1) → β₀ s = 0) ∧
-      ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ 2 β ∧ (∀ s, |β s| ≤ 1) ∧
+      ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ ∞ β ∧ (∀ s, |β s| ≤ 1) ∧
         (∀ s, |deriv β s| ≤ M) ∧ ∀ s, s < -(R + 1) ∨ R + 1 < s → deriv β s = 0 := by
   obtain ⟨M, hM⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
   set ψ := Real.smoothTransition
-  have hψc : ContDiff ℝ 2 ψ := Real.smoothTransition.contDiff
+  have hψc : ContDiff ℝ ∞ ψ := Real.smoothTransition.contDiff
   have hψd (x : ℝ) : HasDerivAt ψ (deriv ψ x) x :=
-    (hψc.differentiable two_ne_zero x).hasDerivAt
+    (hψc.differentiable (by simp) x).hasDerivAt
   have hψ0 (x : ℝ) (hx : x ≤ 0) : ψ x = 0 := Real.smoothTransition.zero_of_nonpos hx
   have hψ1 (x : ℝ) (hx : 1 ≤ x) : ψ x = 1 := Real.smoothTransition.one_of_one_le hx
   have hψ'M (x : ℝ) : |deriv ψ x| ≤ M := by simpa using hM x
   have hψ'0 (x : ℝ) (hx : x < 0 ∨ 1 < x) : deriv ψ x = 0 :=
-    hx.elim Real.smoothTransition.deriv_of_neg Real.smoothTransition.deriv_of_one_lt
+    hx.elim (fun h ↦ Real.smoothTransition.deriv_of_nonpos h.le)
+      (fun h ↦ Real.smoothTransition.deriv_of_one_le h.le)
   have hp (s : ℝ) : HasDerivAt (fun s ↦ ψ (s - R)) (deriv ψ (s - R)) s :=
     (hψd (s - R)).comp_sub_const s R
   have hm (s : ℝ) : HasDerivAt (fun s ↦ ψ (-s - R)) (-deriv ψ (-s - R)) s := by
@@ -816,5 +1168,82 @@ theorem exists_contDiff_odd_truncation {r R : ℝ} (hrR : r < R) (hR : 0 < R) :
   · rw [← neg_neg t, hodd, hone (-t) (by linarith)]
   · rw [← neg_neg t, hodd, neg_lt_zero]
     exact hpos (-t) (by linarith)
+
+end TauCeti
+
+namespace TauCeti
+
+/-- The **smooth lower truncation** `a + τ((s - a) / (b - a)) (s - a)` between the levels `a` and
+`b`, for the smooth transition `τ` from `0` to `1`: a smooth substitute for the truncation
+`s ↦ max s a`. For `a < b` it is the constant `a` on `(-∞, a]`
+(`TauCeti.smoothLowerTruncation_of_le_left`), the identity on `[b, ∞)`
+(`TauCeti.smoothLowerTruncation_of_right_le`) and below `b` on `(-∞, b)`
+(`TauCeti.smoothLowerTruncation_lt_of_lt`). It is at least `a` everywhere
+(`TauCeti.le_smoothLowerTruncation`) and at most `s` on `[a, ∞)`
+(`TauCeti.smoothLowerTruncation_le_self`). -/
+def smoothLowerTruncation (a b s : ℝ) : ℝ :=
+  a + Real.smoothTransition ((s - a) / (b - a)) * (s - a)
+
+/-- Unfolding lemma for `TauCeti.smoothLowerTruncation`. -/
+theorem smoothLowerTruncation_def (a b s : ℝ) :
+    smoothLowerTruncation a b s = a + Real.smoothTransition ((s - a) / (b - a)) * (s - a) :=
+  (rfl)
+
+/-- The smooth lower truncation is smooth. -/
+theorem contDiff_smoothLowerTruncation (a b : ℝ) {n : ℕ∞} :
+    ContDiff ℝ n (smoothLowerTruncation a b) :=
+  contDiff_const.add ((Real.smoothTransition.contDiff.comp
+    ((contDiff_id.sub contDiff_const).div_const _)).mul (contDiff_id.sub contDiff_const))
+
+/-- The smooth lower truncation is the constant `a` on `(-∞, a]`. -/
+theorem smoothLowerTruncation_of_le_left {a b s : ℝ} (hab : a ≤ b) (hs : s ≤ a) :
+    smoothLowerTruncation a b s = a := by
+  rw [smoothLowerTruncation_def, Real.smoothTransition.zero_of_nonpos
+    (div_nonpos_iff.2 (Or.inr ⟨by linarith, by linarith⟩)), zero_mul, add_zero]
+
+/-- The smooth lower truncation is the identity on `[b, ∞)`. -/
+theorem smoothLowerTruncation_of_right_le {a b s : ℝ} (hab : a < b) (hs : b ≤ s) :
+    smoothLowerTruncation a b s = s := by
+  rw [smoothLowerTruncation_def, Real.smoothTransition.one_of_one_le
+    ((one_le_div (sub_pos.2 hab)).2 (by linarith)), one_mul, add_sub_cancel]
+
+/-- The smooth lower truncation is at least `a`. -/
+theorem le_smoothLowerTruncation {a b : ℝ} (hab : a ≤ b) (s : ℝ) :
+    a ≤ smoothLowerTruncation a b s := by
+  rcases le_or_gt s a with hsa | hsa
+  · rw [smoothLowerTruncation_of_le_left hab hsa]
+  · rw [smoothLowerTruncation_def, le_add_iff_nonneg_right]
+    exact mul_nonneg (Real.smoothTransition.nonneg _) (sub_nonneg.2 hsa.le)
+
+/-- The smooth lower truncation is at most the identity on `[a, ∞)`. -/
+theorem smoothLowerTruncation_le_self {a b s : ℝ} (hs : a ≤ s) :
+    smoothLowerTruncation a b s ≤ s := by
+  have := mul_le_of_le_one_left (sub_nonneg.2 hs)
+    (Real.smoothTransition.le_one ((s - a) / (b - a)))
+  rw [smoothLowerTruncation_def]
+  linarith
+
+/-- The smooth lower truncation is below `b` on `(-∞, b)`. -/
+theorem smoothLowerTruncation_lt_of_lt {a b s : ℝ} (hab : a < b) (hs : s < b) :
+    smoothLowerTruncation a b s < b := by
+  rcases le_or_gt s a with hsa | hsa
+  · rw [smoothLowerTruncation_of_le_left hab.le hsa]
+    exact hab
+  · exact (smoothLowerTruncation_le_self hsa.le).trans_lt hs
+
+/-- Above `b`, the sublevel sets of the smooth lower truncation are those of the identity. -/
+theorem smoothLowerTruncation_lt_iff {a b c s : ℝ} (hab : a < b) (hc : b ≤ c) :
+    smoothLowerTruncation a b s < c ↔ s < c := by
+  rcases le_or_gt b s with hs | hs
+  · rw [smoothLowerTruncation_of_right_le hab hs]
+  · exact ⟨fun _ ↦ hs.trans_le hc, fun _ ↦ (smoothLowerTruncation_lt_of_lt hab hs).trans_le hc⟩
+
+/-- Above `b`, the levels of the smooth lower truncation are those of the identity. -/
+theorem smoothLowerTruncation_eq_iff {a b c s : ℝ} (hab : a < b) (hc : b ≤ c) :
+    smoothLowerTruncation a b s = c ↔ s = c := by
+  rcases le_or_gt b s with hs | hs
+  · rw [smoothLowerTruncation_of_right_le hab hs]
+  · exact ⟨fun h ↦ absurd h ((smoothLowerTruncation_lt_of_lt hab hs).trans_le hc).ne,
+      fun h ↦ absurd h (hs.trans_le hc).ne⟩
 
 end TauCeti

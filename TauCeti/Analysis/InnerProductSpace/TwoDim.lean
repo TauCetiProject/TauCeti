@@ -6,21 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.InnerProductSpace.Orientation
+import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
+import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
 
 /-!
 # Oriented Euclidean planes
 
 The quarter turn `J = o.rightAngleRotation` of an oriented Euclidean plane carries the first vector
 of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J e₀ = e₁`, and hence
-`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn.
+`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn,
+`J z = ⟪z, e₀⟫ e₁ - ⟪z, e₁⟫ e₀` (`Orientation.rightAngleRotation_eq_inner_smul_sub_inner_smul`).
+The area form `ω(x, y)` is nonzero exactly when `x` is nonzero and `y` is not a multiple of `x`
+(`Orientation.areaForm_ne_zero_iff`).
 
 For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
 the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ ∈ (-1, 1)` whenever
 `ω(a, b) ≠ 0`.
 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
-basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
+basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`, and
+every real two-form on `ℂ` is a multiple of it
+(`ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im`). So multiplying both vectors by `c`
+scales it by `|c|²` (`ContinuousAlternatingMap.apply_mul_mul`); in particular it is invariant under
+multiplication by `I` (`ContinuousAlternatingMap.apply_I_mul_I_mul`).
 
 An orthonormal basis `b` of a Euclidean plane identifies the plane with `ℂ` by
 `Complex.isometryOfOrthonormal b`, and the complex coordinate so defined carries the orientation of
@@ -30,6 +43,13 @@ the oriented angle and the rotations of an oriented plane in a complex coordinat
 (`Orientation.areaForm_map_complex`, `Orientation.rightAngleRotation_map_complex`,
 `Orientation.kahler_map_complex`, `Orientation.oangle_map_complex`,
 `Orientation.rotation_map_complex`).
+
+Congruence by an operator `T` multiplies a skew-adjoint operator `A` of a Euclidean plane by the
+determinant, `T A T⋆ = det T • A` (`ContinuousLinearMap.mul_mul_star_eq_det_smul`). In an
+orthonormal basis this is the identity `M S Mᵀ = det M • S` for `2 × 2` skew-symmetric matrices
+(`Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg_of_diag_eq_zero`). So an orthogonal
+transformation commutes with every skew-adjoint operator when it preserves the orientation and
+anticommutes with it when it reverses the orientation.
 -/
 
 public section
@@ -61,6 +81,14 @@ theorem rightAngleRotation_basis_one (hb : b.toBasis.orientation = o) :
     o.rightAngleRotation (b 1) = -b 0 := by
   rw [← o.rightAngleRotation_basis_zero hb, rightAngleRotation_rightAngleRotation]
 
+/-- In a positively oriented orthonormal basis `(e₀, e₁)`, the quarter turn of an oriented plane
+is `z ↦ ⟪z, e₀⟫ e₁ - ⟪z, e₁⟫ e₀`. -/
+theorem rightAngleRotation_eq_inner_smul_sub_inner_smul (hb : b.toBasis.orientation = o)
+    (z : E) : o.rightAngleRotation z = inner ℝ z (b 0) • b 1 - inner ℝ z (b 1) • b 0 := by
+  conv_lhs => rw [← b.sum_repr' z, Fin.sum_univ_two]
+  simp [o.rightAngleRotation_basis_zero hb, o.rightAngleRotation_basis_one hb,
+    real_inner_comm z, sub_eq_add_neg]
+
 /-- In an oriented plane, `o.areaForm a x = 0` implies the scaled identity
 `‖a‖ ^ 2 • x = ⟪a, x⟫ • a`, including when `a = 0`. -/
 theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
@@ -68,6 +96,14 @@ theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
   refine ext_inner_right ℝ fun y ↦ ?_
   rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
     h, zero_mul, add_zero]
+
+/-- The area form `ω(x, y)` is nonzero exactly when `x` is nonzero and `y` is not a multiple of
+`x`. -/
+theorem areaForm_ne_zero_iff {x y : E} :
+    o.areaForm x y ≠ 0 ↔ x ≠ 0 ∧ ∀ c : ℝ, y ≠ c • x := by
+  rw [← TauCeti.abs_real_inner_lt_norm_iff,
+    ← pow_lt_pow_iff_left₀ (abs_nonneg _) (by positivity) two_ne_zero, sq_abs, mul_pow,
+    ← o.inner_sq_add_areaForm_sq x y, lt_add_iff_pos_right, sq_pos_iff]
 
 /-- For unit vectors `a`, `b` of an oriented plane, `√(1 - ⟪a, b⟫²) = |ω(a, b)|`: the inner
 product and the area form are the cosine and the sine of the angle from `a` to `b`. -/
@@ -120,3 +156,72 @@ theorem orientation_volumeFormL_apply (v : Fin 2 → ℂ) :
   fin_cases i <;> rfl
 
 end Complex
+
+namespace ContinuousAlternatingMap
+
+open Complex
+
+/-- Every real two-form on `ℂ` is a multiple of the area form `dx ∧ dy`: on a pair of vectors
+`(v, w)` it is its value on the basis `(1, I)` times `Im (conj v * w)`. -/
+theorem apply_eq_apply_one_I_mul_im (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin 2 → ℂ) :
+    α v = α ![1, I] * (conj (v 0) * v 1).im := by
+  have h := congrArg (· v) (α.toAlternatingMap.eq_smul_basis_det basisOneI)
+  simp only [_root_.smul_apply, coe_toAlternatingMap, coe_basisOneI, smul_eq_mul,
+    Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, coe_basisOneI_repr,
+    Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  rw [h]
+  simp only [mul_im, conj_re, conj_im]
+  ring
+
+/-- Multiplying both vectors by `c` scales a real two-form on `ℂ` by `|c|²`:
+`α(c u, c v) = |c|² α(u, v)`. -/
+theorem apply_mul_mul (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (c u v : ℂ) :
+    α ![c * u, c * v] = ‖c‖ ^ 2 * α ![u, v] := by
+  rw [apply_eq_apply_one_I_mul_im, apply_eq_apply_one_I_mul_im α ![u, v], ← normSq_eq_norm_sq,
+    normSq_apply]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, mul_im, mul_re, conj_re, conj_im]
+  ring
+
+/-- Every real two-form on `ℂ` is invariant under multiplication by `I`:
+`α(I u, I v) = α(u, v)`. -/
+@[simp]
+theorem apply_I_mul_I_mul (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (u v : ℂ) :
+    α ![I * u, I * v] = α ![u, v] := by
+  rw [apply_mul_mul, norm_I, one_pow, one_mul]
+
+/-- A real two-form on `ℂ` takes the value `α(1, I) |u|²` on the pair `(u, I u)`. -/
+theorem apply_I_mul_eq_apply_one_I_mul_norm_sq (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (u : ℂ) :
+    α ![u, I * u] = α ![1, I] * ‖u‖ ^ 2 := by
+  rw [mul_comm I, mul_comm (α _), ← apply_mul_mul, mul_one]
+
+end ContinuousAlternatingMap
+
+namespace ContinuousLinearMap
+
+open Matrix
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Congruence multiplies a skew-adjoint operator of a Euclidean plane by the determinant.** For
+a skew-adjoint operator `A` of a two-dimensional real inner product space and any operator `T`,
+`T A T⋆ = det T • A`. In particular an orthogonal transformation commutes with `A` when it
+preserves the orientation and anticommutes with it when it reverses the orientation. -/
+theorem mul_mul_star_eq_det_smul (hE : Module.finrank ℝ E = 2) {A : E →L[ℝ] E}
+    (hA : A ∈ skewAdjoint (E →L[ℝ] E)) (T : E →L[ℝ] E) : T * A * star T = T.det • A := by
+  -- Read both sides as matrices in an orthonormal basis, through the star algebra equivalence
+  -- `LinearMap.toMatrixOrthonormal`, where `A` becomes a skew-symmetric `2 × 2` matrix.
+  let b : OrthonormalBasis (Fin 2) ℝ E := (stdOrthonormalBasis ℝ E).reindex (finCongr hE)
+  let φ := LinearMap.toMatrixOrthonormal b
+  have hA' : (φ (A : E →ₗ[ℝ] E))ᵀ = -φ (A : E →ₗ[ℝ] E) := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.star_eq_conjTranspose,
+      ← map_star φ, ← toLinearMap_star, skewAdjoint.mem_iff.1 hA, toLinearMap_neg, map_neg]
+  have hd := Matrix.diag_eq_zero_of_transpose_eq_neg hA' fun x hx ↦ by linarith
+  have hT : T.det = (φ T).det := by
+    simp [φ, LinearMap.toMatrixOrthonormal_apply, LinearMap.det_toMatrix]
+  apply ContinuousLinearMap.coe_injective
+  apply EquivLike.injective φ
+  simpa only [toLinearMap_mul, toLinearMap_star, toLinearMap_smul, map_mul, map_star, map_smul, hT,
+    Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] using
+    Matrix.mul_mul_transpose_eq_det_smul_of_transpose_eq_neg_of_diag_eq_zero (φ T) hA' hd
+
+end ContinuousLinearMap

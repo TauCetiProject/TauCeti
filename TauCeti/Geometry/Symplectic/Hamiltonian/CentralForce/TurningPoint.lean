@@ -27,7 +27,9 @@ isotropic oscillator in `TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Ra
   turning points, `U_ℓ'(rᵢ) ≠ 0`, with `U_ℓ < E` in between, the radicand `2 m (E - U_ℓ)` dominates
   a multiple of `(r - r₁) (r₂ - r)`, and both quadratures converge
   (`TauCeti.intervalIntegrable_div_absRadialMomentum`,
-  `TauCeti.intervalIntegrable_div_sq_mul_absRadialMomentum`).
+  `TauCeti.intervalIntegrable_div_sq_mul_absRadialMomentum`). The time integrand `m / |p_r|` is
+  positive where `U_ℓ < E` (`TauCeti.div_absRadialMomentum_pos`), so the radial period is positive
+  (`TauCeti.radialPeriod_pos`).
 * **Time and angle.** Along an integral curve `(r(t), p_r(t))` of the reduced Hamiltonian vector
   field with energy `E`, suppose the radius moves from one of `r₁`, `r₂` to the other during
   `[t₁, t₂]` and stays strictly between them meanwhile, where `U_ℓ < E`. The energy is conserved and
@@ -77,6 +79,13 @@ theorem absRadialMomentum_eq_abs (hm : m ≠ 0) {r p : ℝ} (hr : 0 < r)
   congr 1
   field_simp
   ring
+
+/-- Where the effective potential is below `E`, the integrand `m / |p_r|` of the time quadrature is
+positive. -/
+theorem div_absRadialMomentum_pos (hm : 0 < m) {r : ℝ} (hr : effectivePotential m ℓ U r < E) :
+    0 < m / absRadialMomentum m U ℓ E r := by
+  rw [absRadialMomentum_eq_sqrt hm.ne']
+  exact div_pos hm (sqrt_pos.2 (mul_pos (by positivity) (sub_pos.2 hr)))
 
 /-! ### Convergence of the quadratures at simple turning points -/
 
@@ -133,6 +142,22 @@ theorem intervalIntegrable_div_sq_mul_absRadialMomentum (hm : 0 < m) (hr₁ : 0 
   convert h using 2 with r
   rw [div_mul_div_comm, mul_assoc, mul_comm ℓ m, mul_div_mul_left _ _ hm.ne']
 
+/-- **The radial period is positive.** Under the hypotheses of
+`TauCeti.intervalIntegrable_div_absRadialMomentum`, the radial period, twice the time quadrature
+`∫_{r₁}^{r₂} m dr / |p_r|`, is positive. -/
+theorem radialPeriod_pos (hm : 0 < m) (hr₁ : 0 < r₁) (h₁₂ : r₁ < r₂)
+    (hU : ContinuousOn U (Icc r₁ r₂))
+    (hlt : ∀ r ∈ Ioo r₁ r₂, effectivePotential m ℓ U r < E)
+    (hd₁ : effectivePotential m ℓ U r₁ = E →
+      ∃ d₁ ≠ 0, HasDerivWithinAt (effectivePotential m ℓ U) d₁ (Ici r₁) r₁)
+    (hd₂ : effectivePotential m ℓ U r₂ = E →
+      ∃ d₂ ≠ 0, HasDerivWithinAt (effectivePotential m ℓ U) d₂ (Iic r₂) r₂) :
+    0 < radialPeriod m U ℓ E r₁ r₂ := by
+  rw [radialPeriod_def]
+  exact mul_pos two_pos (intervalIntegral_pos_of_pos_on
+    (intervalIntegrable_div_absRadialMomentum hm hr₁ h₁₂ hU hlt hd₁ hd₂)
+    (fun r hr ↦ div_absRadialMomentum_pos hm (hlt r hr)) h₁₂)
+
 end Convergence
 
 /-! ### Time and angle along the radial motion -/
@@ -142,7 +167,7 @@ section Motion
 variable {γ : ℝ → ℝ × ℝ} {t₁ t₂ : ℝ}
 
 /-- The hypotheses shared by the time and angle formulas along one leg of the radial motion give
-the change of variables from time to radius with `|p_r| = |p_r|(r)`, and `r₁ ≤ r₂`. -/
+the change of variables from time to radius with `|p_r| = |p_r|(r)`. -/
 private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
     (hγ : ∀ t ∈ Icc t₁ t₂, HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
       (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
@@ -151,8 +176,8 @@ private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
     (hlt : ∀ r ∈ Ioo r₁ r₂, effectivePotential m ℓ U r < E)
     (hends : (γ t₁).1 = r₁ ∧ (γ t₂).1 = r₂ ∨ (γ t₁).1 = r₂ ∧ (γ t₂).1 = r₁)
     (hmem : ∀ t ∈ Ioo t₁ t₂, (γ t).1 ∈ Ioo r₁ r₂) :
-    r₁ ≤ r₂ ∧ (∀ t ∈ Ioo t₁ t₂, absRadialMomentum m U ℓ E (γ t).1 = |(γ t).2| ∧ (γ t).2 ≠ 0) ∧
-      ∀ g : ℝ → ℝ, ∫ r in Ioo r₁ r₂, g r = ∫ t in Ioo t₁ t₂, |(γ t).2| / m * g (γ t).1 := by
+    (∀ t ∈ Ioo t₁ t₂, absRadialMomentum m U ℓ E (γ t).1 = |(γ t).2| ∧ (γ t).2 ≠ 0) ∧
+      ∀ g : ℝ → ℝ, ∫ r in r₁..r₂, g r = ∫ t in Ioo t₁ t₂, |(γ t).2| / m * g (γ t).1 := by
   have hIoo : Ioo t₁ t₂ ⊆ Icc t₁ t₂ := Ioo_subset_Icc_self
   have hEt := centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt hγ hr hU
   -- On the level `E`, `p_r² / (2m) = E - U_ℓ(r) > 0` strictly between the radii.
@@ -168,24 +193,12 @@ private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
     simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div,
       zero_add] at hEt'
     linarith
-  have hrc : ContinuousOn (fun t ↦ (γ t).1) (Icc t₁ t₂) :=
-    fun t ht ↦ (hγ t ht).continuousAt.fst.continuousWithinAt
-  have himage : (fun t ↦ (γ t).1) '' Ioo t₁ t₂ = Ioo r₁ r₂ := by
-    have hmaps : MapsTo (fun t ↦ (γ t).1) (Ioo t₁ t₂) (Ioo r₁ r₂) := hmem
-    refine hmaps.image_subset.antisymm ?_
-    rcases hends with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-    · simpa only [h₁, h₂] using intermediate_value_Ioo ht hrc
-    · simpa only [h₁, h₂] using intermediate_value_Ioo' ht hrc
-  have h₁₂ : r₁ ≤ r₂ := by
-    rcases ht.eq_or_lt with rfl | ht'
-    · rcases hends with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> linarith
-    · obtain ⟨h₁, h₂⟩ := hmem _ ⟨left_lt_add_div_two.2 ht', add_div_two_lt_right.2 ht'⟩
-      exact (h₁.trans h₂).le
-  refine ⟨h₁₂, hp, fun g ↦ ?_⟩
-  rw [← himage, integral_image_eq_integral_abs_deriv_smul_of_ne_zero (convex_Ioo t₁ t₂)
+  refine ⟨hp, fun g ↦ ?_⟩
+  rw [integral_eq_integral_Ioo_abs_deriv_smul_of_ne_zero ht
+    (fun t ht ↦ (hγ t ht).continuousAt.fst.continuousWithinAt)
     (fun t htI ↦ (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential
       (hγ t (hIoo htI)) (hr t (hIoo htI)) (hU t (hIoo htI))).hasDerivWithinAt)
-    (fun t htI ↦ div_ne_zero (hp t htI).2 hm.ne') g]
+    (fun t htI ↦ div_ne_zero (hp t htI).2 hm.ne') hends hmem g]
   simp only [smul_eq_mul, abs_div, abs_of_pos hm]
 
 /-- **The time between turning radii is the radial quadrature.** Let `(r(t), p_r(t))` be an
@@ -204,9 +217,8 @@ theorem sub_eq_integral_div_absRadialMomentum (hm : 0 < m) (ht : t₁ ≤ t₂)
     (hends : (γ t₁).1 = r₁ ∧ (γ t₂).1 = r₂ ∨ (γ t₁).1 = r₂ ∧ (γ t₂).1 = r₁)
     (hmem : ∀ t ∈ Ioo t₁ t₂, (γ t).1 ∈ Ioo r₁ r₂) :
     t₂ - t₁ = ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r := by
-  obtain ⟨h₁₂, hp, hcov⟩ := leg_data hm ht hγ hr hU hE hlt hends hmem
-  rw [integral_of_le h₁₂, integral_Ioc_eq_integral_Ioo, hcov,
-    setIntegral_congr_fun measurableSet_Ioo (g := fun _ ↦ (1 : ℝ)) fun t htI ↦ ?_,
+  obtain ⟨hp, hcov⟩ := leg_data hm ht hγ hr hU hE hlt hends hmem
+  rw [hcov, setIntegral_congr_fun measurableSet_Ioo (g := fun _ ↦ (1 : ℝ)) fun t htI ↦ ?_,
     setIntegral_const, smul_eq_mul, mul_one, Real.volume_real_Ioo_of_le ht]
   rw [(hp t htI).1]
   field_simp [abs_ne_zero.2 (hp t htI).2]
@@ -226,13 +238,13 @@ theorem sub_eq_apsidalAngle (hm : 0 < m) (ht : t₁ ≤ t₂)
     (hmem : ∀ t ∈ Ioo t₁ t₂, (γ t).1 ∈ Ioo r₁ r₂) {θ : ℝ → ℝ}
     (hθ : ∀ t ∈ Icc t₁ t₂, HasDerivAt θ (ℓ / (m * (γ t).1 ^ 2)) t) :
     θ t₂ - θ t₁ = apsidalAngle m U ℓ E r₁ r₂ := by
-  obtain ⟨h₁₂, hp, hcov⟩ := leg_data hm ht hγ hr hU hE hlt hends hmem
+  obtain ⟨hp, hcov⟩ := leg_data hm ht hγ hr hU hE hlt hends hmem
   have hcont : ContinuousOn (fun t ↦ ℓ / (m * (γ t).1 ^ 2)) (Icc t₁ t₂) := fun t ht ↦
     (continuousAt_const.div (continuousAt_const.mul ((hγ t ht).continuousAt.fst.pow 2))
       (mul_ne_zero hm.ne' (pow_ne_zero 2 (hr t ht).ne'))).continuousWithinAt
   rw [← integral_eq_sub_of_hasDerivAt (by rwa [uIcc_of_le ht])
-      (hcont.intervalIntegrable_of_Icc ht), apsidalAngle_def, integral_of_le h₁₂,
-    integral_Ioc_eq_integral_Ioo, hcov, integral_of_le ht, integral_Ioc_eq_integral_Ioo]
+      (hcont.intervalIntegrable_of_Icc ht), apsidalAngle_def, hcov, integral_of_le ht,
+    integral_Ioc_eq_integral_Ioo]
   refine setIntegral_congr_fun measurableSet_Ioo fun t htI ↦ ?_
   have hr' := hr t (Ioo_subset_Icc_self htI)
   rw [(hp t htI).1]

@@ -29,8 +29,9 @@ compares two such dimensions for two constituents of the *same* restriction, and
 a transport statement rather than a counting one: it needs no decomposition of the restriction, no
 algebraically closed field and no finiteness, so no such hypothesis is imposed, and the statements
 say only that the dimensions agree.  Whenever `ρ` is irreducible and `V` is finite-dimensional the
-restriction is semisimple (`Representation.isSemisimpleRepresentation_comp_subtype`), so
-there is a decomposition to count there; if in addition `k` splits the constituents, the common
+restriction is semisimple
+(`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`), so there is a
+decomposition to count there; if in addition `k` splits the constituents, the common
 dimension produced below is literally the classical multiplicity `e`.
 
 What makes the transport work is the one identity Clifford theory runs on, `ρ g ∘ ρ n = ρ (g n g⁻¹)
@@ -65,11 +66,15 @@ in `Clifford/Equivalence.lean`, and its character form is `TauCeti.clifford_rest
 * `Representation.conjHom`, `Representation.conjHomₗ` and `Representation.conjHomEquiv`: the
   induced transport of hom spaces, as a function, as a `k`-linear map, and as a `k`-linear
   isomorphism.
+* `Representation.conjSubrepLinearEquiv`: the transport of a `k[N]`-linear equivalence `σ ≃ τ`
+  to one between the translates.
 
 ## Main statements
 
 * `Representation.asModuleConjEquiv_smul`: translation is semilinear over
   `MonoidAlgebra.conjNormalAlgAut`.
+* `Representation.nonempty_linearEquiv_conjSubrep_iff`: translating two `N`-subrepresentations by
+  the same `g` preserves whether they are isomorphic.
 * `Representation.finrank_linearMap_conjSubrep` and `Representation.finrank_asSubmodule_conjSubrep`:
   a translate has a hom space of the same dimension, and is itself of the same dimension.
 * `Representation.finrank_linearMap_eq_of_isAtom`: **Clifford's theorem, multiplicity form** -- any
@@ -196,14 +201,14 @@ noncomputable def conjSubrepMap (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x : �
   -- is `Subrepresentation.mem_asSubmodule_iff`, but that lemma cannot be *rewritten* with here: it
   -- states the membership for an element of `V`, and these elements carry the synonym as their
   -- type, so only the definitional identification applies.
-  ⟨asModuleConjEquiv ρ g x.1, h x.1 x.2⟩
+  ⟨asModuleConjEquiv ρ g x.val, h x.val x.property⟩
 
 omit [N.Normal] in
 /-- The underlying vector of a translated vector. -/
 @[simp]
 theorem coe_conjSubrepMap (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x : σ.asSubmodule) :
     (conjSubrepMap ρ g h x : Representation.asModule (ρ.comp N.subtype))
-      = asModuleConjEquiv ρ g x.1 :=
+      = asModuleConjEquiv ρ g x.val :=
   (rfl)
 
 omit [N.Normal] in
@@ -312,6 +317,53 @@ theorem conjHomEquiv_symm_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (h' : 
     (conjHomEquiv ρ g h h').symm f = conjHom ρ g⁻¹ h' f :=
   (rfl)
 
+variable (ρ) in
+/-- **Translating a `k[N]`-linear equivalence.** An equivalence `e : σ ≃ τ` of `k[N]`-submodules
+of the restriction gives one between the translates `conjSubrep ρ g σ` and `conjSubrep ρ g τ`:
+translate back by `ρ g⁻¹`, apply `e`, and translate by `ρ g`. Each translation is only semilinear
+over conjugation, and the two twists cancel. -/
+noncomputable def conjSubrepLinearEquiv (g : G) (e : σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule) :
+    (conjSubrep ρ g σ).asSubmodule ≃ₗ[k[N]] (conjSubrep ρ g τ).asSubmodule where
+  toFun x := conjSubrepMap ρ g (fun _ hv ↦ mem_conjSubrep_iff.mpr (by rwa [ρ.inv_self_apply]))
+    (e (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) x))
+  invFun y := conjSubrepMap ρ g (fun _ hv ↦ mem_conjSubrep_iff.mpr (by rwa [ρ.inv_self_apply]))
+    (e.symm (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) y))
+  map_add' x y := by simp
+  map_smul' a x := by
+    simp only [conjSubrepMap_smul, map_smul, RingHom.id_apply, ← AlgEquiv.mul_apply, ← map_mul,
+      mul_inv_cancel, map_one, AlgEquiv.one_apply]
+  left_inv x := by simp
+  right_inv y := by simp
+
+/-- The translated equivalence sends `x` to `ρ g (e (ρ g⁻¹ x))`. -/
+@[simp]
+theorem coe_conjSubrepLinearEquiv_apply (g : G) (e : σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule)
+    (x : (conjSubrep ρ g σ).asSubmodule) :
+    (conjSubrepLinearEquiv ρ g e x : Representation.asModule (ρ.comp N.subtype)) =
+      asModuleConjEquiv ρ g (e (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) x)) :=
+  (rfl)
+
+/-- The inverse of the translated equivalence sends `y` to `ρ g (e.symm (ρ g⁻¹ y))`. -/
+@[simp]
+theorem coe_conjSubrepLinearEquiv_symm_apply (g : G) (e : σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule)
+    (y : (conjSubrep ρ g τ).asSubmodule) :
+    ((conjSubrepLinearEquiv ρ g e).symm y : Representation.asModule (ρ.comp N.subtype)) =
+      asModuleConjEquiv ρ g
+        (e.symm (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) y)) :=
+  (rfl)
+
+variable (ρ) in
+/-- Translating two `N`-subrepresentations by the same `g` does not change whether they are
+isomorphic as representations of `N`. -/
+theorem nonempty_linearEquiv_conjSubrep_iff (g : G) (σ τ : Subrepresentation (ρ.comp N.subtype)) :
+    Nonempty ((conjSubrep ρ g σ).asSubmodule ≃ₗ[k[N]] (conjSubrep ρ g τ).asSubmodule) ↔
+      Nonempty (σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule) := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨conjSubrepLinearEquiv ρ g e⟩⟩
+  exact ⟨(LinearEquiv.ofEq _ _
+      (congrArg Subrepresentation.asSubmodule (conjSubrep_inv_conjSubrep g σ))).symm.trans
+    ((conjSubrepLinearEquiv ρ g⁻¹ e).trans (LinearEquiv.ofEq _ _
+      (congrArg Subrepresentation.asSubmodule (conjSubrep_inv_conjSubrep g τ))))⟩
+
 end Hom
 
 section Conjugate
@@ -412,8 +464,8 @@ theorem finrank_linearMap_pos [FiniteDimensional k V] {σ : Subrepresentation (�
 /-- **Clifford's theorem, the common multiplicity.**  For a finite-dimensional irreducible `ρ`
 there is a positive natural number `e` such that the hom space of every irreducible
 `N`-constituent of the restriction has dimension `e`.  The restriction is semisimple
-(`Representation.isSemisimpleRepresentation_comp_subtype`), so over a splitting field this
-`e` is the `e` of the classical decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V`. -/
+(`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`), so over a splitting
+field this `e` is the `e` of the classical decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V`. -/
 theorem exists_forall_finrank_linearMap_eq [ρ.IsIrreducible] [FiniteDimensional k V] :
     ∃ e : ℕ, 0 < e ∧ ∀ σ : Subrepresentation (ρ.comp N.subtype), IsAtom σ →
       Module.finrank k

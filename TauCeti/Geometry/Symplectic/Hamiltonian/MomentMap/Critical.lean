@@ -27,17 +27,29 @@ closed, the points fixed by the closure `T_ξ` of `{exp (t ξ) | t ∈ ℝ}`
 whether the one-parameter subgroup it generates is closed (a rational direction in a torus) or
 not (an irrational direction, where `T_ξ` is a torus of higher dimension).
 
-When `T_ξ = G`, the critical set of `μ^ξ` is the fixed-point set `M^G` of the whole group. For a
-torus `G`, Kronecker's theorem makes the generators `ξ` with `T_ξ = G` dense in `𝔤`, so **a
-generic component of the moment map has critical set `M^G`**
+In any case every component `μ^ξ` is critical at the fixed points `M^G` of the whole group, where
+every fundamental vector field vanishes
+(`TauCeti.SmoothTwoForm.IsMomentMap.fixedPoints_subset_criticalPoints`); this needs no
+nondegeneracy of `σ`. When `T_ξ = G`, the critical set of `μ^ξ` is exactly the fixed-point set
+`M^G` of the whole group. For a torus `G`, Kronecker's theorem makes the generators `ξ` with
+`T_ξ = G` dense in `𝔤`, so **a generic component of the moment map has critical set `M^G`**
 (`TauCeti.SmoothTwoForm.IsMomentMap.dense_setOf_criticalPoints_eq_fixedPoints`). This is the
 starting point of the Morse–Bott theory of moment maps of torus actions: the critical manifolds
 of a generic component are the components of the fixed-point set.
 
-Neither closedness of `σ` nor equivariance of `μ` is used, and `M` need not be compact.
+Neither closedness of `σ` nor equivariance of `μ` is used for these, and `M` need not be compact.
+
+On a compact connected manifold without boundary, every component `μ^Z` attains a maximum, which
+is a critical point. For a closed `σ` the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` of `μ` is constant,
+so when `𝔤` is abelian, evaluating it at such a maximum shows that it vanishes
+(`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq_zero_of_isLieAbelian`).
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.IsMomentMap.mem_criticalPoints_of_eq_zero`: every zero of `Z_M` is a
+  critical point of `μ^Z`, with no nondegeneracy assumption.
+* `TauCeti.SmoothTwoForm.IsMomentMap.fixedPoints_subset_criticalPoints`: for a group action, every
+  component `μ^ξ` is critical at the fixed points `M^G` of the whole group.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mem_criticalPoints_iff`: at a point where `σ` is
   nondegenerate, `x` is a critical point of `μ^Z` exactly when `Z_M x = 0`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.criticalPoints_eq`: for a nondegenerate `σ`, the critical set
@@ -50,6 +62,9 @@ Neither closedness of `σ` nor equivariance of `μ` is used, and `M` need not be
   critical set of `μ^ξ` is `M^G`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.dense_setOf_criticalPoints_eq_fixedPoints`: for a torus, the
   `ξ` whose component `μ^ξ` has critical set `M^G` are dense in the Lie algebra.
+* `TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq_zero_of_isLieAbelian`: a moment map of an
+  abelian Lie algebra action on a compact connected manifold, for a closed form, is
+  infinitesimally equivariant.
 
 ## References
 
@@ -74,16 +89,20 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
   {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Module.Dual ℝ 𝔤}
 
+/-- A zero of `Z_M` is a critical point of the component `μ^Z = ⟨μ, Z⟩`, since
+`dμ^Z_x = σ(Z_M x, ·)`. No nondegeneracy of `σ` is needed. -/
+theorem mem_criticalPoints_of_eq_zero (h : σ.IsMomentMap a μ) {x : M} {Z : 𝔤} (hx : a Z x = 0) :
+    x ∈ criticalPoints I (fun y ↦ μ y Z) :=
+  mem_criticalPoints.2 <| ContinuousLinearMap.ext fun v ↦ by
+    rw [← h.eval₂_apply, hx, SmoothBundleForm.eval₂_zero_left, zero_apply]
+
 /-- **Critical points of a moment map component.** At a point `x` where `σ` is nondegenerate,
 `x` is a critical point of the component `μ^Z = ⟨μ, Z⟩` exactly when `Z_M` vanishes at `x`. -/
 theorem mem_criticalPoints_iff (h : σ.IsMomentMap a μ) {x : M}
     (hσ : (σ.bilinFormAt x).Nondegenerate) (Z : 𝔤) :
     x ∈ criticalPoints I (fun y ↦ μ y Z) ↔ a Z x = 0 := by
-  rw [mem_criticalPoints]
-  refine ⟨fun hx ↦ hσ.1 _ fun v ↦ ?_, fun hx ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
-  · rw [SmoothForm.bilinFormAt_apply, h.eval₂_apply, hx, zero_apply]
-  · rw [← h.eval₂_apply, ← SmoothForm.bilinFormAt_apply, hx, map_zero, LinearMap.zero_apply,
-      zero_apply]
+  refine ⟨fun hx ↦ hσ.1 _ fun v ↦ ?_, h.mem_criticalPoints_of_eq_zero⟩
+  rw [SmoothForm.bilinFormAt_apply, h.eval₂_apply, mem_criticalPoints.1 hx, zero_apply]
 
 /-- At a point where `σ` is nondegenerate, `x` is a critical point of `μ^Z` exactly when `Z`
 lies in the isotropy algebra `𝔤_x`. -/
@@ -99,6 +118,38 @@ theorem criticalPoints_eq (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (
   Set.ext fun _ ↦ h.mem_criticalPoints_iff (hσ.nondegenerate_bilinFormAt _) Z
 
 end Infinitesimal
+
+section FixedPoints
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M]
+  [MulAction G M] [ContMDiffSMul I I' ∞ G M]
+  {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+/-- **Fixed points are critical points of every moment map component.** At a point fixed by the
+whole group the fundamental vector field `ξ_M` vanishes, so `dμ^ξ = ι_{ξ_M} σ` vanishes there. -/
+theorem fixedPoints_subset_criticalPoints
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (ξ : GroupLieAlgebra I G) :
+    MulAction.fixedPoints G M ⊆ criticalPoints I' (fun y ↦ μ y ξ) := fun _ hx ↦
+  h.mem_criticalPoints_of_eq_zero <| by
+    rw [InfinitesimalAction.fundamental_apply]
+    exact fundamentalVectorField_eq_zero_of_forall_smul_eq hx ξ
+
+/-- A moment map component has zero derivative at every fixed point of the group. -/
+theorem hasMFDerivAt_zero_of_mem_fixedPoints
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (ξ : GroupLieAlgebra I G)
+    {x : M} (hx : x ∈ MulAction.fixedPoints G M) :
+    HasMFDerivAt I' 𝓘(ℝ) (fun y ↦ μ y ξ) x 0 := by
+  have hd := (h.mdifferentiableAt ξ x).hasMFDerivAt
+  rwa [mem_criticalPoints_iff_mfderiv_eq_zero.1 (h.fixedPoints_subset_criticalPoints ξ hx)] at hd
+
+end FixedPoints
 
 section Group
 
@@ -137,7 +188,7 @@ theorem criticalPoints_eq_fixedPoints
   ext x
   rw [h.mem_criticalPoints_iff_closedOneParameterSubgroup_le (hσ.nondegenerate_bilinFormAt x),
     MulAction.mem_fixedPoints]
-  exact ⟨fun hle g ↦ hle g.2, fun hfix g hg ↦ hfix ⟨g, hg⟩⟩
+  exact ⟨fun hle g ↦ hle g.property, fun hfix g hg ↦ hfix ⟨g, hg⟩⟩
 
 /-- **A component generating a dense one-parameter subgroup has critical set `M^G`.** If the
 one-parameter subgroup of `ξ` is dense in `G`, the critical set of `μ^ξ` is the fixed-point set of
@@ -165,5 +216,33 @@ theorem dense_setOf_criticalPoints_eq_fixedPoints [IsMulCommutative G] [CompactS
     h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ
 
 end Group
+
+section Abelian
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [BoundarylessManifold I M] [CompactSpace M] [PreconnectedSpace M]
+  {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [IsLieAbelian 𝔤]
+  {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Module.Dual ℝ 𝔤}
+
+/-- **Moment maps of abelian actions on compact manifolds are infinitesimally equivariant.** For a
+closed form on a compact connected manifold without boundary, the cocycle
+`σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` of a moment map of an abelian Lie algebra vanishes. -/
+theorem momentCocycle_eq_zero_of_isLieAbelian (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed)
+    (x : M) : σ.momentCocycle a μ x = 0 := by
+  -- The cocycle is constant, and at a maximum `p` of `μ_Z` it is
+  -- `σ_p(Z_M, Z'_M) = dμ_Z(Z'_M) = 0`.
+  have : Nonempty M := ⟨x⟩
+  refine momentCocycle_eq_zero_iff.2 fun Z Z' ↦ ?_
+  obtain ⟨p, -, hp⟩ :=
+    isCompact_univ.exists_isMaxOn Set.univ_nonempty (h.contMDiff Z).continuous.continuousOn
+  have hcrit : mvfderiv I (fun y ↦ μ y Z) p = 0 :=
+    mem_criticalPoints.1 (hp.mem_criticalPoints BoundarylessManifold.isInteriorPoint)
+  have hc := congr($(h.momentCocycle_eq hσ x p) Z Z')
+  simp only [momentCocycle_apply, EmbeddingLike.apply_eq_iff_eq, trivial_lie_zero, map_zero,
+    sub_zero] at hc
+  rw [hc, h.eval₂_apply, hcrit, trivial_lie_zero, map_zero, zero_apply]
+
+end Abelian
 
 end TauCeti.SmoothTwoForm.IsMomentMap

@@ -56,6 +56,8 @@ Mathlib's invariant measure `volume : Measure ℍ` (`dx dy / y²`,
 * `UpperHalfPlane.peterssonInner_self_eq_ofReal`, `peterssonInner_self_re_nonneg`: the
   self-pairing of any function is the real integral of `‖h τ‖² (Im τ)^k`, hence nonnegative
   over any domain.
+* `UpperHalfPlane.petersson_zero_weight`: at weight `0` the integrand of `f` and `g` is
+  `g * conj f`.
 * `UpperHalfPlane.eq_zero_on_fd_of_peterssonInner_self_eq_zero`: definiteness on the
   fundamental domain, for any continuous function with integrable self-integrand.
 
@@ -147,7 +149,7 @@ theorem petersson_psl_smul_of_mem {F F' : Type*} [FunLike F ℍ ℂ] [FunLike F'
     [SlashInvariantFormClass F' (Γ.map (mapGL ℝ)) k] (f : F) (f' : F')
     (g : Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) (τ : ℍ) :
     petersson k ⇑f ⇑f' ((g : PSL(2, ℤ)) • τ) = petersson k ⇑f ⇑f' τ := by
-  obtain ⟨γ, hγ, hg⟩ := g.2
+  obtain ⟨γ, hγ, hg⟩ := g.property
   rw [← hg]
   exact petersson_smul_of_mem k f f' hγ τ
 
@@ -236,6 +238,13 @@ theorem petersson_self_eq_ofReal (k : ℤ) (h : ℍ → ℂ) (τ : ℍ) :
   simp only [petersson, ← Complex.normSq_eq_conj_mul_self]
   push_cast
   ring
+
+/-- At weight `0` the Petersson integrand carries no power of `Im τ`: the integrand of `f` and `g`
+is `g * conj f`. -/
+theorem petersson_zero_weight (f g : ℍ → ℂ) :
+    petersson 0 f g = fun τ ↦ g τ * conj (f τ) := by
+  ext τ
+  simp [petersson, mul_comm]
 
 /-- The Petersson self-pairing of any function over any domain is the real integral of
 `‖h τ‖² (Im τ)^k`. -/

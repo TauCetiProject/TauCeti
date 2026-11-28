@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Normalization
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 
 /-!
@@ -23,17 +23,21 @@ The main application is to normal schemes. Let `T` be an integral scheme whose l
 integrally closed, and `g : T ⟶ Y` an integral morphism. Then `T` is the normalization of `Y` in
 the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a nonempty affine open
 `V` of `T`, the ring `Γ(T, V)` is an integrally closed domain with fraction field `k(T)`
-(`AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`), and it is integral over `Γ(Y, U)` when
-`V = g ⁻¹ U`, so it is the integral closure of `Γ(Y, U)` in `k(T)`.
+(`AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed_iff_forall_stalk`), and it is integral over
+`Γ(Y, U)` when `V = g ⁻¹ U`, so it is the integral closure of `Γ(Y, U)` in `k(T)`.
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.isIso_normalizationDesc_iff`: `f.normalizationDesc f₁ f₂ H` is an
   isomorphism if and only if, over every affine open of `Y`, the sections of `T` map injectively
   onto the integral closure.
+* `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_normalizationDesc_iff`: the same criterion
+  over a single affine open of `Y`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_fromNormalization_iff`: the normalization of `Y` in `X` is
   `Y` itself if and only if, over every affine open of `Y`, the sections of `Y` map injectively
   onto the integral closure.
+* `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_fromNormalization_iff`: the same criterion
+  over a single affine open of `Y`.
 * `TauCeti.AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral
   scheme with integrally closed local rings, integral over `Y`, is the normalization of `Y` in its
   function field.
@@ -106,8 +110,20 @@ theorem isIso_normalizationDesc_app_iff (H : f = f₁ ≫ f₂) {U : Y.Opens} (h
         ((congrArg Subtype.val hab).trans (hψ b))), fun t ↦ ?_⟩⟩
   · obtain ⟨b, hb⟩ := h.2 ⟨s, hs⟩
     exact ⟨b, (hψ b).symm.trans (congrArg Subtype.val hb)⟩
-  · obtain ⟨b, hb⟩ := h.2 t.1 t.2
+  · obtain ⟨b, hb⟩ := h.2 t.val t.property
     exact ⟨b, Subtype.ext ((hψ b).trans hb)⟩
+
+/-- Over an affine open `U ⊆ Y`, the morphism `f.normalizationDesc f₁ f₂ H` is an isomorphism over
+`f₂ ⁻¹ U` if and only if the restriction `Γ(T, f₂ ⁻¹ U) → Γ(X, f ⁻¹ U)` along `f₁` is injective and
+its image contains every element integral over `Γ(Y, U)`. -/
+theorem isIso_morphismRestrict_normalizationDesc_iff (H : f = f₁ ≫ f₂) {U : Y.Opens}
+    (hU : IsAffineOpen U) :
+    IsIso (f.normalizationDesc f₁ f₂ H ∣_ f₂ ⁻¹ᵁ U) ↔
+      Function.Injective (f₁.appLE (f₂ ⁻¹ᵁ U) (f ⁻¹ᵁ U) (by simp [H])) ∧
+      ∀ s, (f.app U).hom.IsIntegralElem s →
+        s ∈ (f₁.appLE (f₂ ⁻¹ᵁ U) (f ⁻¹ᵁ U) (by simp [H])).hom.range := by
+  rw [isIso_morphismRestrict_iff_isIso_app _ (hU.preimage f₂)]
+  exact f.isIso_normalizationDesc_app_iff f₁ f₂ H hU
 
 /-- **Recognizing the relative normalization.** For `f = f₁ ≫ f₂` with `f₂` integral, the morphism
 `f.normalizationDesc f₁ f₂ H : f.normalization ⟶ T` is an isomorphism if and only if, for every
@@ -119,18 +135,29 @@ theorem isIso_normalizationDesc_iff (H : f = f₁ ≫ f₂) :
       Function.Injective (f₁.appLE (f₂ ⁻¹ᵁ U) (f ⁻¹ᵁ U) (by simp [H])) ∧
       ∀ s, (f.app U).hom.IsIntegralElem s →
         s ∈ (f₁.appLE (f₂ ⁻¹ᵁ U) (f ⁻¹ᵁ U) (by simp [H])).hom.range := by
-  have hcover : ⨆ U : Y.affineOpens, f₂ ⁻¹ᵁ U.1 = ⊤ := by
+  have hcover : ⨆ U : Y.affineOpens, f₂ ⁻¹ᵁ U.val = ⊤ := by
     rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
   rw [← MorphismProperty.isomorphisms.iff,
     IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := .isomorphisms _) _ hcover]
-  refine ⟨fun h U hU ↦ ?_, fun h U ↦ ?_⟩
-  · have := h ⟨U, hU⟩
-    rw [MorphismProperty.isomorphisms.iff,
-      isIso_morphismRestrict_iff_isIso_app _ (hU.preimage f₂)] at this
-    exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H hU).1 this
-  · rw [MorphismProperty.isomorphisms.iff,
-      isIso_morphismRestrict_iff_isIso_app _ (U.2.preimage f₂)]
-    exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H U.2).2 (h U U.2)
+  exact ⟨fun h U hU ↦ (f.isIso_morphismRestrict_normalizationDesc_iff f₁ f₂ H hU).1 (h ⟨U, hU⟩),
+    fun h U ↦ (f.isIso_morphismRestrict_normalizationDesc_iff f₁ f₂ H U.property).2
+      (h U U.property)⟩
+
+/-- The relative normalization `f.normalization ⟶ Y` is an isomorphism over an affine open
+`U ⊆ Y` if and only if the map `Γ(Y, U) → Γ(X, f ⁻¹ U)` is injective and its image contains every
+element integral over `Γ(Y, U)`: that is, `Γ(Y, U)` is integrally closed in `Γ(X, f ⁻¹ U)`. -/
+theorem isIso_morphismRestrict_fromNormalization_iff {U : Y.Opens} (hU : IsAffineOpen U) :
+    IsIso (f.fromNormalization ∣_ U) ↔ Function.Injective (f.app U) ∧
+      ∀ s, (f.app U).hom.IsIntegralElem s → s ∈ (f.app U).hom.range := by
+  have H : f = f ≫ 𝟙 Y := (Category.comp_id f).symm
+  have h : f.normalizationDesc f (𝟙 Y) H = f.fromNormalization := by
+    simpa using f.normalizationDesc_comp f (𝟙 Y) H
+  rw [← h]
+  refine (f.isIso_morphismRestrict_normalizationDesc_iff f (𝟙 Y) H hU).trans ?_
+  simp only [Scheme.Hom.app_eq_appLE]
+  -- The preimage `𝟙 Y ⁻¹ᵁ U` is `U` by definition; it occurs inside the dependent `appLE`, where
+  -- rewriting with `TopologicalSpace.Opens.map_id_obj` is not possible.
+  rfl
 
 /-- The relative normalization `f.normalization ⟶ Y` is an isomorphism if and only if, for every
 affine open `U ⊆ Y`, the map `Γ(Y, U) → Γ(X, f ⁻¹ U)` is injective and its image contains every
@@ -139,14 +166,10 @@ theorem isIso_fromNormalization_iff :
     IsIso f.fromNormalization ↔ ∀ U : Y.Opens, IsAffineOpen U →
       Function.Injective (f.app U) ∧
       ∀ s, (f.app U).hom.IsIntegralElem s → s ∈ (f.app U).hom.range := by
-  have H : f = f ≫ 𝟙 Y := (Category.comp_id f).symm
-  have h : f.normalizationDesc f (𝟙 Y) H = f.fromNormalization := by
-    simpa using f.normalizationDesc_comp f (𝟙 Y) H
-  rw [← h, isIso_normalizationDesc_iff]
-  simp only [Scheme.Hom.app_eq_appLE]
-  -- The preimage `𝟙 Y ⁻¹ᵁ U` is `U` by definition; it occurs inside the dependent `appLE`, where
-  -- rewriting with `TopologicalSpace.Opens.map_id_obj` is not possible.
-  rfl
+  rw [← MorphismProperty.isomorphisms.iff,
+    IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := .isomorphisms _) _ (iSup_affineOpens_eq_top Y)]
+  exact ⟨fun h U hU ↦ (f.isIso_morphismRestrict_fromNormalization_iff hU).1 (h ⟨U, hU⟩),
+    fun h U ↦ (f.isIso_morphismRestrict_fromNormalization_iff U.property).2 (h U U.property)⟩
 
 end AlgebraicGeometry.Scheme.Hom
 
@@ -173,7 +196,7 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
     set f := T.fromSpecStalk (genericPoint T)
     let := (f.app (g ⁻¹ᵁ U)).hom.toAlgebra
     have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hV
-    have := hV.isIntegrallyClosed fun x _ ↦ hT x
+    have := hV.isIntegrallyClosed_iff_forall_stalk.mpr fun x _ ↦ hT x
     have key : f.appLE (g ⁻¹ᵁ U) ((f ≫ g) ⁻¹ᵁ U) (by simp) = f.app (g ⁻¹ᵁ U) := by
       rw [Scheme.Hom.app_eq_appLE]
       simp only [Scheme.Hom.comp_preimage]

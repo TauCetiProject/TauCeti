@@ -162,8 +162,8 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
-  have ha := ((vertexEquiv G).symm a).2
-  have hb := ((vertexEquiv G).symm b).2
+  have ha := ((vertexEquiv G).symm a).isLt
+  have hb := ((vertexEquiv G).symm b).isLt
   -- Heights increasing from the vertex `0`.
   by_cases hlow : ((vertexEquiv G).symm a : ℕ) + (vertexEquiv G).symm b < p.length
   · refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => i)
@@ -199,8 +199,8 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
         signlessArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0) (by omega)]
       simp
   · intro i j hij
-    have hi := i.2
-    have hj := j.2
+    have hi := i.isLt
+    have hj := j.isLt
     rcases (hG i j).1 hij with h | h
     · exact .inr ⟨by omega, by congr 1 <;> omega⟩
     · exact .inl ⟨by omega, by congr 1 <;> omega⟩

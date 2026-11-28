@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
+public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
+import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 
 /-!
 # The blowup of a scheme along an ideal sheaf
@@ -155,6 +158,20 @@ theorem blowupChart_blowupToBase {U : X.Opens} (hU : IsAffineOpen U) :
       ((Category.assoc _ _ _).symm.trans
         (congrArg (· ≫ hU.fromSpec) (I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU))))
 
+/-- **Pullback of an ideal sheaf to an affine blowup chart.** Over an affine open `U` of `X` and
+`a ∈ I(U)`, pulling back an arbitrary ideal sheaf `L` on `X` to the chart `Spec Γ(X, U)[I(U)/a]`
+extends `L(U)` along `Γ(X, U) → Γ(X, U)[I(U)/a]`. -/
+theorem comap_affineBlowupι_blowupChart {I L : X.IdealSheafData} {U : X.Opens}
+    (hU : IsAffineOpen U) {a : Γ(X, U)} (S : Type u) [CommRing S] [Algebra Γ(X, U) S]
+    [IsLocalization.Away a S] (ha : a ∈ I.ideal ⟨U, hU⟩) :
+    (L.comap I.blowupToBase).comap (affineBlowupι S ha ≫ I.blowupChart hU) =
+      ofIdealTop (((L.ideal ⟨U, hU⟩).map (algebraMap Γ(X, U)
+          ((I.ideal ⟨U, hU⟩).affineBlowup a S))).map
+        (Scheme.ΓSpecIso (.of ((I.ideal ⟨U, hU⟩).affineBlowup a S))).inv.hom) := by
+  rw [← comap_comp, Category.assoc, I.blowupChart_blowupToBase hU, ← Category.assoc,
+    toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero]
+  exact L.comap_SpecMap_fromSpec_eq_ofIdealTop hU _
+
 /-- The image of the affine chart of the blowup over `U` is the preimage of `U`. -/
 theorem opensRange_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
     (I.blowupChart hU).opensRange = I.blowupToBase ⁻¹ᵁ U :=
@@ -183,10 +200,14 @@ theorem isPullback_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
 `Spec Γ(X, U) ⟶ X`: the form of `isPullback_blowupChart` over the spectrum of the sections. -/
 theorem isPullback_blowupChart_fromSpec {U : X.Opens} (hU : IsAffineOpen U) :
     IsPullback (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩))) (I.blowupChart hU)
-      hU.fromSpec I.blowupToBase :=
-  (I.isPullback_blowupChart hU).of_iso (Iso.refl _) hU.isoSpec (Iso.refl _) (Iso.refl _)
-    (by simp) (by simp)
-    (by rw [← hU.isoSpec_inv_ι, Iso.hom_inv_id_assoc, Iso.refl_hom, Category.comp_id]) (by simp)
+      hU.fromSpec I.blowupToBase := by
+  refine (I.reesAlgebra.obj.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).of_iso'
+    (Proj.mapIso (I.reesAlgebraSectionsGradedHom hU) (I.reesAlgebraSectionsGradedHomInv hU)
+      (I.reesAlgebraSectionsEquiv hU).apply_symm_apply
+      (I.reesAlgebraSectionsEquiv hU).symm_apply_apply) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    ?_ (Category.comp_id _).symm (by simp) (by simp)
+  rw [Iso.refl_hom, Category.comp_id]
+  exact I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU
 
 /-- **The blowup along an ideal sheaf of finite type is proper.** If the ideal `I(U)` is finitely
 generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/
@@ -195,21 +216,14 @@ theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
   refine CommMon.isProper_relativeProjToBase (fun U hU ↦ ?_) (fun U _ ↦ ?_)
   · exact Algebra.FiniteType.equiv (reesAlgebra.finiteType_of_fg (hI ⟨U, hU⟩))
       (I.reesAlgebraSectionsEquiv hU).symm
-  · -- the unit `𝒪_X ⟶ I⁰` of the Rees algebra is an isomorphism, so `Γ(I⁰, U) ≅ Γ(X, U)`
-    refine Module.Finite.of_surjective (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
-      (Scheme.Modules.sectionsFunctor U).map I.reesAlgebra.obj.toMon.one).hom ?_
-    have : IsIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) := by
-      rw [Scheme.Modules.sectionsFunctor_ε]
-      exact IsIso.id _
-    exact (ConcreteCategory.bijective_of_isIso _).2
+  · -- the unit `𝒪_X ⟶ I⁰` of the Rees algebra is an isomorphism
+    exact I.reesAlgebra.obj.finite_sections_zero_of_isIso_one U
 
 /-- **The blowup of a locally noetherian scheme is proper.** On a locally noetherian scheme every
 ideal sheaf is of finite type, so `Bl_I X ⟶ X` is proper for every ideal sheaf `I`. -/
 instance isProper_blowupToBase_of_isLocallyNoetherian [IsLocallyNoetherian X] :
     IsProper I.blowupToBase :=
-  I.isProper_blowupToBase fun U ↦
-    have := IsLocallyNoetherian.component_noetherian U
-    IsNoetherian.noetherian _
+  I.isProper_blowupToBase I.fg_ideal
 
 end Blowup
 

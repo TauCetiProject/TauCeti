@@ -36,6 +36,8 @@ the wedge of complex-valued forms given by complex multiplication.
 
 * `TauCeti.RoughForm.mapCoeff`, `TauCeti.SmoothForm.mapCoeff`: coefficient maps of forms.
 * `TauCeti.IsSmoothForm.mapCoeff`: coefficient maps preserve regularity.
+* `TauCeti.SmoothForm.exists_mapCoeff_flip_ne_zero`: a nonzero form has a nonzero real component
+  under a nondegenerate real-valued pairing.
 * `TauCeti.mextDerivWithin_mapCoeff`, `TauCeti.mextDeriv_mapCoeff`: naturality of the exterior
   derivative in the coefficient space.
 * `TauCeti.mpullbackWithin_mapCoeff`, `TauCeti.mpullback_mapCoeff`: coefficient maps commute
@@ -198,14 +200,14 @@ variable [IsManifold I 1 M]
 
 /-- A continuous linear map of coefficient spaces, as a linear map on smooth forms. -/
 def mapCoeff (L : F →L[ℝ] G) : SmoothForm I M F k →ₗ[ℝ] SmoothForm I M G k where
-  toFun φ := ⟨RoughForm.mapCoeff L φ.1, (φ.isSmoothForm.mapCoeff L).mem_smoothBundleForms⟩
-  map_add' φ ψ := Subtype.ext (RoughForm.mapCoeff_add L φ.1 ψ.1)
-  map_smul' c φ := Subtype.ext (RoughForm.mapCoeff_smul L c φ.1)
+  toFun φ := ⟨RoughForm.mapCoeff L φ.val, (φ.isSmoothForm.mapCoeff L).mem_smoothBundleForms⟩
+  map_add' φ ψ := Subtype.ext (RoughForm.mapCoeff_add L φ.val ψ.val)
+  map_smul' c φ := Subtype.ext (RoughForm.mapCoeff_smul L c φ.val)
 
 /-- The underlying rough form of a coefficient map of a smooth form. -/
 @[simp]
 theorem coe_mapCoeff (L : F →L[ℝ] G) (φ : SmoothForm I M F k) :
-    (mapCoeff L φ).1 = RoughForm.mapCoeff L φ.1 :=
+    (mapCoeff L φ).val = RoughForm.mapCoeff L φ.val :=
   (rfl)
 
 @[simp]
@@ -223,6 +225,19 @@ theorem mapCoeff_cast {l : ℕ} (h : k = l) (L : F →L[ℝ] G) (φ : SmoothForm
       LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M G n) h (mapCoeff L φ) := by
   cases h
   rfl
+
+/-- For a nondegenerate real-valued pairing `μ`, a nonzero smooth `F`-valued form has a nonzero
+real component `μ(φ, z)` for some `z`. -/
+theorem exists_mapCoeff_flip_ne_zero {μ : F →L[ℝ] G →L[ℝ] ℝ}
+    (hμ : ∀ u, (∀ z, μ u z = 0) → u = 0) {φ : SmoothForm I M F k} (hφ : φ ≠ 0) :
+    ∃ z, mapCoeff (μ.flip z) φ ≠ 0 := by
+  obtain ⟨x, v, hxv⟩ : ∃ x v, φ.val x v ≠ 0 := by
+    by_contra! h
+    exact hφ (Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext (h x)))
+  obtain ⟨z, hz⟩ : ∃ z, μ (φ.val x v) z ≠ 0 := by
+    by_contra! h
+    exact hxv (hμ _ h)
+  exact ⟨z, fun h ↦ hz (by simpa using congrArg (fun ψ : SmoothForm I M ℝ k ↦ ψ.val x v) h)⟩
 
 /-- The exterior derivative of smooth forms is natural in the coefficient space. -/
 @[simp]
@@ -250,7 +265,7 @@ variable {S : Type*}
 /-- Scalars acting on the coefficients act on smooth forms pointwise. -/
 instance instSMul [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
     [SMulCommClass ℝ S F] : SMul S (SmoothForm I M F k) where
-  smul c φ := ⟨c • φ.1, by
+  smul c φ := ⟨c • φ.val, by
     rw [RoughForm.smul_eq_mapCoeff]
     exact (φ.isSmoothForm.mapCoeff _).mem_smoothBundleForms⟩
 
@@ -258,7 +273,7 @@ instance instSMul [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
 rough form. -/
 @[simp]
 theorem smul_toRoughForm [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
-    [SMulCommClass ℝ S F] (c : S) (φ : SmoothForm I M F k) : (c • φ).1 = c • φ.1 :=
+    [SMulCommClass ℝ S F] (c : S) (φ : SmoothForm I M F k) : (c • φ).val = c • φ.val :=
   (rfl)
 
 /-- Evaluating a scalar multiple of a degree-two smooth form scales the evaluation. -/
@@ -273,7 +288,7 @@ scalar. -/
 theorem smul_eq_mapCoeff [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
     [SMulCommClass ℝ S F] (c : S) (φ : SmoothForm I M F k) :
     c • φ = mapCoeff (c • ContinuousLinearMap.id ℝ F) φ :=
-  Subtype.ext (RoughForm.smul_eq_mapCoeff c φ.1)
+  Subtype.ext (RoughForm.smul_eq_mapCoeff c φ.val)
 
 /-- Scalars acting on the coefficients act on smooth forms, making them a module. For complex
 coefficients this is the complex vector space of complex-valued smooth forms. -/
@@ -287,11 +302,11 @@ for complex coefficients, `RCLike.real_smul_eq_coe_smul` then identifies the rea
 smooth forms with the action of real numbers viewed as complex numbers. -/
 instance [SMul ℝ S] [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
     [SMulCommClass ℝ S F] [IsScalarTower ℝ S F] : IsScalarTower ℝ S (SmoothForm I M F k) where
-  smul_assoc r c φ := Subtype.ext (smul_assoc r c φ.1)
+  smul_assoc r c φ := Subtype.ext (smul_assoc r c φ.val)
 
 instance [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F] [SMulCommClass ℝ S F] :
     SMulCommClass ℝ S (SmoothForm I M F k) where
-  smul_comm r c φ := Subtype.ext (smul_comm r c φ.1)
+  smul_comm r c φ := Subtype.ext (smul_comm r c φ.val)
 
 instance [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F] [SMulCommClass ℝ S F] :
     SMulCommClass S ℝ (SmoothForm I M F k) :=
@@ -304,7 +319,7 @@ theorem mapCoeff_smul_of_map_smul {S' : Type*} [Monoid S] [DistribMulAction S F]
     [ContinuousConstSMul S' G] [SMulCommClass ℝ S' G] (L : F →L[ℝ] G) {c : S} {d : S'}
     (hL : ∀ v, L (c • v) = d • L v) (φ : SmoothForm I M F k) :
     mapCoeff L (c • φ) = d • mapCoeff L φ :=
-  Subtype.ext (RoughForm.mapCoeff_smul_of_map_smul L hL φ.1)
+  Subtype.ext (RoughForm.mapCoeff_smul_of_map_smul L hL φ.val)
 
 /-- The exterior derivative of smooth forms is linear for scalars acting on the coefficients,
 such as complex scalars on complex-valued forms. -/
@@ -370,7 +385,7 @@ theorem mapCoeff_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (μ' : G₁
     mapCoeff L (wedgeWith μ φ ψ) = wedgeWith μ' (mapCoeff L₁ φ) (mapCoeff L₂ ψ) :=
   Subtype.ext <| by
     simpa only [coe_mapCoeff, coe_wedgeWith] using
-      RoughForm.mapCoeff_wedgeWith μ μ' L₁ L₂ L hL φ.1 ψ.1
+      RoughForm.mapCoeff_wedgeWith μ μ' L₁ L₂ L hL φ.val ψ.val
 
 section Scalars
 
@@ -388,7 +403,7 @@ theorem wedgeWith_smul_left_of_map_smul [Monoid S] [DistribMulAction S F₁]
     wedgeWith μ (c • φ) ψ = d • wedgeWith μ φ ψ :=
   Subtype.ext <| by
     simpa only [coe_wedgeWith, smul_toRoughForm] using
-      RoughForm.wedgeWith_smul_left_of_map_smul μ hcd φ.1 ψ.1
+      RoughForm.wedgeWith_smul_left_of_map_smul μ hcd φ.val ψ.val
 
 /-- If the pairing turns multiplication by `c` in its second argument into multiplication by
 `d`, then so does the paired wedge of smooth forms in its second form. For a complex-bilinear
@@ -400,7 +415,7 @@ theorem wedgeWith_smul_right_of_map_smul [Monoid S] [DistribMulAction S F₂]
     wedgeWith μ φ (c • ψ) = d • wedgeWith μ φ ψ :=
   Subtype.ext <| by
     simpa only [coe_wedgeWith, smul_toRoughForm] using
-      RoughForm.wedgeWith_smul_right_of_map_smul μ hcd φ.1 ψ.1
+      RoughForm.wedgeWith_smul_right_of_map_smul μ hcd φ.val ψ.val
 
 end Scalars
 

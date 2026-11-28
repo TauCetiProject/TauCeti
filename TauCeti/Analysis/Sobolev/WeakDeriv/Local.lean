@@ -11,6 +11,7 @@ import Mathlib.Topology.Separation.Regular
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.MeasureTheory.Function.Gluing
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 
 /-!
 # Locality of weak derivatives
@@ -41,7 +42,10 @@ uniqueness-based gluing is the only one that needs finite dimension; the cutoff 
 * `hasWeakFDerivOn_iff_forall_isCompact_closure`: detection of weak Fréchet derivatives.
 * `hasWeakLineDerivOn_iff_locally` and `hasWeakFDerivOn_iff_locally`: neighborhood locality.
 * `hasWeakLineDerivOn_iSup_iff` and `hasWeakFDerivOn_iSup_iff`: open-cover locality.
-* `exists_hasWeakFDerivOn_iSup`: gluing local derivative fields up to almost-everywhere equality.
+* `exists_hasWeakLineDerivOn_iSup` and `exists_hasWeakFDerivOn_iSup`: gluing local derivatives
+  up to almost-everywhere equality.
+* `exists_hasWeakLineDerivOn_eLpNorm_le_of_forall_ball_inter_nonempty`: weak derivatives on the
+  balls meeting a set glue to one on the set, whose `Lᵖ` norm satisfies the averaged local bounds.
 * `exists_hasWeakFDerivOn_iff_locally`: local existence is equivalent to global existence.
 * `HasWeakFDerivOn.exists_open_memLp_indicator`: a compact subset of the domain has an open
   neighborhood on which the weakly differentiable pair is integrable, with compactly supported
@@ -61,7 +65,7 @@ Mathlib's `isOpen_iUnion_countable` reduces the cover to a sequence.
 public section
 
 open MeasureTheory Set TopologicalSpace
-open scoped Distributions
+open scoped Distributions ENNReal
 
 namespace TauCeti
 
@@ -209,35 +213,97 @@ section Gluing
 
 variable [FiniteDimensional ℝ E] [BorelSpace E] [CompleteSpace F]
 
+/-- The gluing step shared by weak directional and Fréchet derivatives. Let `P Ω w` say that `w` is
+a derivative field on `Ω`, monotone in `Ω`, determined almost everywhere by `Ω`, insensitive to
+changes of `w` on null sets, and local on open covers indexed by types. Then fields satisfying `P`
+on the members of any open cover glue to one satisfying `P` on its union. -/
+private theorem exists_iSup_of_ae_eq {G : Type*} [Zero G] (P : Opens E → (E → G) → Prop)
+    (mono : ∀ {Ω Ω' : Opens E} {w : E → G}, P Ω w → Ω' ≤ Ω → P Ω' w)
+    (ae_eq : ∀ {Ω : Opens E} {w w' : E → G}, P Ω w → P Ω w' → w =ᵐ[μ.restrict Ω] w')
+    (congr : ∀ {Ω : Opens E} {w w' : E → G}, P Ω w → w =ᵐ[μ.restrict Ω] w' → P Ω w')
+    (iSup : ∀ {κ : Type} (V : κ → Opens E) (w : E → G), (∀ i, P (V i) w) → P (⨆ i, V i) w)
+    {ι : Type*} (V : ι → Opens E) (w : ι → E → G) (h : ∀ i, P (V i) (w i)) :
+    ∃ w' : E → G, P (⨆ i, V i) w' ∧ ∀ i, w' =ᵐ[μ.restrict (V i)] w i := by
+  classical
+  obtain ⟨T, hTc, hT⟩ := isOpen_iUnion_countable (fun i ↦ (V i : Set E))
+    (fun i ↦ (V i).isOpen)
+  have hex : ∃ w' : E → G, P (⨆ i, V i) w' := by
+    by_cases hne : T.Nonempty
+    · obtain ⟨f, hf⟩ := hTc.exists_eq_range hne
+      have hcover : (⨆ n, V (f n)) = ⨆ i, V i := by
+        apply SetLike.coe_injective
+        simpa only [Opens.coe_iSup, hf, biUnion_range] using hT
+      obtain ⟨w', hw'⟩ := exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter
+        (fun n ↦ (V (f n)).isOpen.measurableSet) (a := fun n ↦ w (f n))
+        (fun k m ↦ ae_eq (mono (h (f k)) (Ω' := V (f k) ⊓ V (f m)) inf_le_left)
+          (mono (h (f m)) inf_le_right))
+      exact ⟨w', hcover ▸ iSup (fun n ↦ V (f n)) w' fun n ↦ congr (h (f n)) (hw' n).symm⟩
+    · have hempty : (⨆ i, V i : Opens E) = ⨆ i : Empty, ⊥ := by
+        apply SetLike.coe_injective
+        simpa [Opens.coe_iSup, not_nonempty_iff_eq_empty.mp hne] using hT.symm
+      exact ⟨0, hempty ▸ iSup (fun _ : Empty ↦ ⊥) 0 fun i ↦ i.elim⟩
+  obtain ⟨w', hw'⟩ := hex
+  exact ⟨w', hw', fun i ↦ ae_eq (mono hw' (le_iSup V i)) (h i)⟩
+
+/-- Local weak derivatives of the same function in the same direction glue along any open cover.
+The glued derivative agrees almost everywhere with each local one; overlap compatibility follows
+from uniqueness of weak derivatives. The cover may be uncountable or empty. -/
+theorem exists_hasWeakLineDerivOn_iSup {ι : Type*} (V : ι → Opens E) (w : ι → E → F)
+    (h : ∀ i, HasWeakLineDerivOn μ (V i) u (w i) v) :
+    ∃ u' : E → F, HasWeakLineDerivOn μ (⨆ i, V i) u u' v ∧
+      ∀ i, u' =ᵐ[μ.restrict (V i)] w i :=
+  exists_iSup_of_ae_eq (fun Ω w ↦ HasWeakLineDerivOn μ Ω u w v) (fun h hΩ ↦ h.mono hΩ)
+    (fun h h' ↦ h.ae_eq h') (fun h hw ↦ h.congr_ae_deriv hw)
+    (fun V _ h ↦ (hasWeakLineDerivOn_iSup_iff V).2 h) V w h
+
 /-- Local weak Fréchet derivatives of the same function glue along any open cover. The glued
 field agrees almost everywhere with each local field; overlap compatibility follows from
 uniqueness of weak derivatives. The cover may be uncountable or empty. -/
 theorem exists_hasWeakFDerivOn_iSup {ι : Type*} (V : ι → Opens E)
     (W : ι → E → E →L[ℝ] F) (h : ∀ i, HasWeakFDerivOn μ (V i) u (W i)) :
     ∃ U : E → E →L[ℝ] F, HasWeakFDerivOn μ (⨆ i, V i) u U ∧
-      ∀ i, U =ᵐ[μ.restrict (V i)] W i := by
-  classical
-  obtain ⟨T, hTc, hT⟩ := isOpen_iUnion_countable (fun i ↦ (V i : Set E))
-    (fun i ↦ (V i).isOpen)
-  have hex : ∃ U : E → E →L[ℝ] F, HasWeakFDerivOn μ (⨆ i, V i) u U := by
-    by_cases hne : T.Nonempty
-    · obtain ⟨f, hf⟩ := hTc.exists_eq_range hne
-      have hcover : (⨆ n, V (f n)) = ⨆ i, V i := by
-        apply SetLike.coe_injective
-        simpa only [Opens.coe_iSup, hf, biUnion_range] using hT
-      obtain ⟨U, hU⟩ := exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter
-        (fun n ↦ (V (f n)).isOpen.measurableSet) (a := fun n ↦ W (f n))
-        (fun k m ↦ ((h (f k)).mono (Ω' := V (f k) ⊓ V (f m)) inf_le_left).ae_eq
-          ((h (f m)).mono inf_le_right))
-      refine ⟨U, hcover ▸ (hasWeakFDerivOn_iSup_iff (fun n ↦ V (f n))).2 (fun n ↦ ?_)⟩
-      exact (h (f n)).congr_ae_deriv (hU n).symm
-    · have hempty : (⨆ i, V i : Opens E) = ⊥ := by
-        apply SetLike.coe_injective
-        simpa [Opens.coe_iSup, not_nonempty_iff_eq_empty.mp hne] using hT.symm
-      refine ⟨0, hasWeakFDerivOn_iff_locally.2 ?_⟩
-      simp [hempty]
-  obtain ⟨U, hU⟩ := hex
-  exact ⟨U, hU, fun i ↦ (hU.mono (le_iSup V i)).ae_eq (h i)⟩
+      ∀ i, U =ᵐ[μ.restrict (V i)] W i :=
+  exists_iSup_of_ae_eq (fun Ω W ↦ HasWeakFDerivOn μ Ω u W) (fun h hΩ ↦ h.mono hΩ)
+    (fun h h' ↦ h.ae_eq h') (fun h hW ↦ h.congr_ae_deriv hW)
+    (fun V _ h ↦ (hasWeakFDerivOn_iSup_iff V).2 h) V W h
+
+/-- **Weak derivatives on the balls meeting a set, glued with averaged bounds.** Let `μ` be an
+additive Haar measure, let `1 ≤ p < ∞`, `0 < r` and `1 ≤ κ`, and let `V` be open and `T`
+measurable. Suppose that on every ball `B(z, r)` that meets `V`, `u` has a weak derivative `G_z` in
+the direction `v`, with `B(z, κ r) ⊆ T` and
+
+`‖G_z‖_{Lᵖ(B(z, r))} ≤ c₁ ‖f₁‖_{Lᵖ(B(z, κ r))} + c₂ ‖f₂‖_{Lᵖ(B(z, κ r))}`.
+
+Then `u` has a weak derivative `G` in the direction `v` on `V`, with
+`‖G‖_{Lᵖ(V)} ≤ 2 κ ^ dim E (c₁ ‖f₁‖_{Lᵖ(T)} + c₂ ‖f₂‖_{Lᵖ(T)})`. The local derivatives glue by
+`TauCeti.exists_hasWeakLineDerivOn_iSup`, and their bounds average by
+`TauCeti.eLpNorm_restrict_le_of_forall_ball_inter_nonempty`. -/
+theorem exists_hasWeakLineDerivOn_eLpNorm_le_of_forall_ball_inter_nonempty [μ.IsAddHaarMeasure]
+    {G₁ G₂ : Type*} [NormedAddCommGroup G₁] [NormedAddCommGroup G₂] {p : ℝ≥0∞} (hp1 : 1 ≤ p)
+    (hp : p ≠ ∞) {V : Opens E} {T : Set E} (hT : MeasurableSet T) {f₁ : E → G₁} {f₂ : E → G₂}
+    (hf₁ : AEStronglyMeasurable f₁ (μ.restrict T)) (hf₂ : AEStronglyMeasurable f₂ (μ.restrict T))
+    {r κ c₁ c₂ : ℝ} (hr : 0 < r) (hκ : 1 ≤ κ)
+    (h : ∀ z, (Metric.ball z r ∩ V).Nonempty → Metric.ball z (κ * r) ⊆ T ∧
+      ∃ G : E → F, HasWeakLineDerivOn μ ⟨Metric.ball z r, Metric.isOpen_ball⟩ u G v ∧
+        eLpNorm G p (μ.restrict (Metric.ball z r)) ≤
+          ENNReal.ofReal c₁ * eLpNorm f₁ p (μ.restrict (Metric.ball z (κ * r))) +
+            ENNReal.ofReal c₂ * eLpNorm f₂ p (μ.restrict (Metric.ball z (κ * r)))) :
+    ∃ G : E → F, HasWeakLineDerivOn μ V u G v ∧
+      eLpNorm G p (μ.restrict V) ≤ 2 * ENNReal.ofReal κ ^ Module.finrank ℝ E *
+        (ENNReal.ofReal c₁ * eLpNorm f₁ p (μ.restrict T) +
+          ENNReal.ofReal c₂ * eLpNorm f₂ p (μ.restrict T)) := by
+  choose hsub G hGd hGle using h
+  -- The balls meeting `V` cover it, and the local derivatives glue along them.
+  let Z := {z : E // (Metric.ball z r ∩ V).Nonempty}
+  let B : Z → Opens E := fun z ↦ ⟨Metric.ball (z : E) r, Metric.isOpen_ball⟩
+  obtain ⟨G₀, hG₀, hG₀z⟩ :=
+    exists_hasWeakLineDerivOn_iSup B (fun z ↦ G z z.property) fun z ↦ hGd z z.property
+  have hGV := hG₀.mono (Ω' := V) fun x hx ↦
+    Opens.mem_iSup.2 ⟨⟨x, x, Metric.mem_ball_self hr, hx⟩, Metric.mem_ball_self hr⟩
+  refine ⟨G₀, hGV, ?_⟩
+  exact eLpNorm_restrict_le_of_forall_ball_inter_nonempty hp1 hp V.isOpen.measurableSet hT
+    hGV.locallyIntegrableOn_deriv.aestronglyMeasurable hf₁ hf₂ hκ hr
+    fun z hz ↦ ⟨hsub z hz, (eLpNorm_congr_ae (hG₀z ⟨z, hz⟩)).trans_le (hGle z hz)⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- Existence of a weak Fréchet derivative is local. Local fields are not required to agree
@@ -251,7 +317,7 @@ theorem exists_hasWeakFDerivOn_iff_locally :
     exact ⟨Ω, hx, U, hU⟩
   · intro h
     by_cases hfd : FiniteDimensional ℝ E
-    · choose V hxV W hW using fun x : Ω ↦ h x x.2
+    · choose V hxV W hW using fun x : Ω ↦ h x x.property
       obtain ⟨U, hU, -⟩ := exists_hasWeakFDerivOn_iSup V W hW
       refine ⟨U, hU.mono fun x hx ↦ ?_⟩
       exact (le_iSup V ⟨x, hx⟩) (hxV ⟨x, hx⟩)

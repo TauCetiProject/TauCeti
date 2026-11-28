@@ -104,6 +104,15 @@ lemma isZero_filtrationAbutmentFiltration {a : ℤ} (ha : F a = ⊥) (n : ℤ) :
   Abelian.SpectralObject.isZero_abutmentFiltration _
     (isZero_spectralObject_H_bot F hF a n ((F a).isZero_homology_of_eq_bot ha n))
 
+/-- The `s`th piece of the filtration of `H^n(K)` vanishes when the stage `F_s` vanishes in
+degree `n`: a filtration bounded below in degree `n` induces a filtration of `H^n(K)` bounded
+below. -/
+lemma isZero_filtrationAbutmentFiltration_of_isZero_X {s n : ℤ}
+    (hs : IsZero ((F s : CochainComplex C ℤ).X n)) :
+    IsZero ((spectralObject (filtrationFunctor F hF)).abutmentFiltration s n) :=
+  Abelian.SpectralObject.isZero_abutmentFiltration _
+    (isZero_spectralObject_H_bot_of_isZero_X F hF hs le_rfl)
+
 /-- The `b`th piece of the filtration of `H^n(K)` is everything when `F_b = ⊤`. -/
 lemma isIso_filtrationAbutmentFiltrationι {b : ℤ} (hb : F b = ⊤) (n : ℤ) :
     IsIso ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationι b n) :=
@@ -121,5 +130,16 @@ noncomputable def filtrationSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (
         (pq.1 + pq.2)) :=
   filtrationSpectralSequencePageXIsoEInftyOfFinite F hF ha hb r hr pq hra hrb ≪≫
     (spectralObject _).EInftyIsoCokernel _ _
+
+/-- The isomorphism `filtrationSpectralSequencePageXIsoGradedOfFinite` is the composite of the
+isomorphism onto `E∞` with `EInftyIsoCokernel`. Its body is not exposed, so other modules need
+this lemma. -/
+lemma filtrationSpectralSequencePageXIsoGradedOfFinite_hom {a b : ℤ} (ha : F a = ⊥)
+    (hb : F b = ⊤) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a)
+    (hrb : b ≤ pq.2 + r - 1) :
+    (filtrationSpectralSequencePageXIsoGradedOfFinite F hF ha hb r hr pq hra hrb).hom =
+      (filtrationSpectralSequencePageXIsoEInftyOfFinite F hF ha hb r hr pq hra hrb).hom ≫
+        ((spectralObject _).EInftyIsoCokernel _ _).hom := by
+  simp only [filtrationSpectralSequencePageXIsoGradedOfFinite, Iso.trans_hom]
 
 end CochainComplex

@@ -35,10 +35,14 @@ This file develops the coordinate structure of `C₀(I, E)`:
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`), so any family supported on a finite set has norm
   equal to its maximum on that set (`ZeroAtInftyContinuousMap.norm_eq_sup_of_forall_eq_zero`);
+* `ZeroAtInftyContinuousMap.not_exists_identity`: on an infinite index, `C₀(I, β)` has no
+  multiplicative identity;
 * `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
   map;
-* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals
-  `evalCLM R i` of `C₀(I, R)` are weak-star null along the cofinite filter;
+* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite` and
+  `ZeroAtInftyContinuousMap.opNorm_evalCLM`: the coordinate functionals `evalCLM R i` of
+  `C₀(I, R)` are weak-star null along the cofinite filter, and over a nontrivially normed field and
+  nontrivial normed space have operator norm `1`;
 * `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
   `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
@@ -252,6 +256,18 @@ theorem sum_single_apply [AddCommMonoid β] [ContinuousAdd β] (b : I → β) (s
   simp [Pi.single_apply]
 
 end Algebra
+
+/-- On an infinite discrete index, `C₀(I, β)` has no unit: no element is a two-sided
+multiplicative identity. -/
+theorem not_exists_identity [Infinite I] [TopologicalSpace β] [T2Space β] [MulZeroOneClass β]
+    [Nontrivial β] [ContinuousMul β] :
+    ¬∃ e : C₀(I, β), ∀ a : C₀(I, β), e * a = a ∧ a * e = a := by
+  classical
+  rintro ⟨e, he⟩
+  have h1 (i : I) : e i = 1 := by
+    simpa using congrArg (· i) (he (single i 1)).1
+  exact one_ne_zero <|
+    tendsto_nhds_unique (tendsto_const_nhds.congr fun i ↦ (h1 i).symm) e.tendsto_cofinite
 
 section Single
 
@@ -488,6 +504,20 @@ theorem tendsto_toWeakDual_evalCLM_cofinite :
     -- `topDualPairing R _ (StrongDual.toWeakDual g) f` is `g f` by definition of the pairing.
     exact this
 
+/-- Over a nontrivially normed field and a nontrivial normed space, evaluation at a point of a
+discrete index has operator norm `1`. -/
+@[simp]
+theorem opNorm_evalCLM {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [Nontrivial E] (i : I) :
+    ‖(evalCLM 𝕜 i : C₀(I, E) →L[𝕜] E)‖ = 1 := by
+  classical
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa only [evalCLM_apply, one_mul] using f.norm_coe_le_norm i) ?_
+  obtain ⟨e, he⟩ := exists_ne (0 : E)
+  have hle := (evalCLM 𝕜 i : C₀(I, E) →L[𝕜] E).le_opNorm (single i e)
+  rw [evalCLM_apply, single_eq_same, norm_single] at hle
+  exact le_of_mul_le_mul_right (by simpa only [one_mul] using hle) (norm_pos_iff.mpr he)
+
 section Ring
 
 variable {R : Type*} [SeminormedRing R] [DecidableEq I]
@@ -518,7 +548,7 @@ theorem finite_setOf_single_one_mem [StrongRankCondition R] {Q : Submodule R C�
   obtain ⟨s, rfl⟩ := hQ
   have := (linearIndependent_single_one.comp _ Subtype.val_injective).finite_of_le_span_finite _
     (s : Set C₀(I, R)) <| Set.range_subset_iff.2
-      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.2
+      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.property
   exact Set.toFinite _
 
 /-- Continuous linear maps out of `C₀(I, R)` agreeing on the unit vectors `single i 1` are

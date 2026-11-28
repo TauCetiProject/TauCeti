@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BrauerAlgebra.Generation
-public import TauCeti.Combinatorics.Brauer.Congr
+public import TauCeti.Combinatorics.Brauer.SkewWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
--- Non-public: `Equiv.Perm.sign_sumComm` evaluates the reflection sign, `Matrix.Congruence` expands
--- `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup` supplies reindexing, entrywise, and
--- multiplication identities for `Matrix.J` in the reindexing, loop, and reconnection steps;
--- `Associativity` and `WeightedAssociativity` reassociate diagrams and match the loop counts of
--- the two bracketings in the loop rule.
+-- Non-public: `Data.Fintype.BigOperators` supplies
+-- `Fintype.sum_piFinset_eq_sum_filter_sum_sum_update` for the cap-cup multiplication sum,
+-- `Matrix.Congruence` expands `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup` supplies
+-- reindexing, entrywise, and multiplication identities for `Matrix.J` in the reindexing, loop,
+-- and reconnection steps; `Associativity` and `WeightedAssociativity` reassociate diagrams and
+-- match the loop counts of the two bracketings in the loop rule.
 import TauCeti.Combinatorics.Brauer.Associativity
 import TauCeti.Combinatorics.Brauer.WeightedAssociativity
-import TauCeti.GroupTheory.Perm.SumCongr
+import TauCeti.Data.Fintype.BigOperators
 import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -33,14 +34,17 @@ monomial basis cannot simply test constancy on arcs as in the orthogonal case
 
 Instead, every Brauer diagram `D` on `k` strands is obtained from the identity diagram
 `permToBrauer 1` by transporting its boundary along a permutation `φ : Equiv.Perm (Fin k ⊕ Fin k)`
-(`TauCeti.BrauerDiagram.exists_congr_permToBrauer_one`). Weighting `φ` by `sign φ` times the
+(`TauCeti.BrauerDiagram.framing`, `TauCeti.BrauerDiagram.isFraming_framing`). Weighting `φ` by
+`sign φ` times the
 product over the `k` strands of the antisymmetric boundary kernel
 `TauCeti.BrauerDiagram.symplecticArcMatrix` — `Matrix.J` on caps and cups, `1` on upward through
 strands, and `-1` on downward through strands — gives a scalar independent of the choice of `φ`:
 permuting the `k` strands has even sign `sign π * sign π = 1`, while reversing a strand multiplies
 both `sign φ` and its antisymmetric kernel by `-1`. This defines the matrix
 `TauCeti.BrauerDiagram.symplecticActionMatrix` of `D` over any commutative ring `R` and coordinate
-type `ι` with decidable equality.
+type `ι` with decidable equality; equivalently, its `(v, u)` entry is the signed arc product
+`D.skewArcProd (symplecticArcWeight R u v)`
+(`TauCeti.BrauerDiagram.symplecticActionMatrix_eq_skewArcProd`).
 
 When `ι` is finite, these matrices satisfy the loop rule at the negative parameter
 `δ = -(2 * |ι| : R)` (`TauCeti.BrauerDiagram.symplecticActionMatrix_mul`), because a closed middle
@@ -54,6 +58,8 @@ strands it agrees with `TauCeti.symplecticCupCapAt`.
 
 * `TauCeti.BrauerDiagram.symplecticArcMatrix`: the antisymmetric boundary-arc kernel (`Matrix.J` on
   caps and cups, `1` on upward through strands, `-1` on downward through strands).
+* `TauCeti.BrauerDiagram.symplecticArcWeight`: the skew-symmetric boundary arc-weight matrix
+  attached to input and output strand labellings `u` and `v`.
 * `TauCeti.BrauerDiagram.symplecticActionMatrix`: the matrix of a Brauer diagram acting on the
   `k`-th tensor power of `(ι ⊕ ι) → R`, indexed by the labellings `Fin k → ι ⊕ ι` of the strands.
 * `TauCeti.brauerActionSymp`: the action of the Brauer algebra `B_k(-2n)` on
@@ -62,6 +68,7 @@ strands it agrees with `TauCeti.symplecticCupCapAt`.
 ## Main results
 
 * `TauCeti.BrauerDiagram.symplecticActionMatrix_apply_of_congr`,
+  `TauCeti.BrauerDiagram.symplecticActionMatrix_eq_skewArcProd`,
   `TauCeti.BrauerDiagram.symplecticActionMatrix_permToBrauer_apply`, and
   `TauCeti.BrauerDiagram.symplecticActionMatrix_capCup_apply`: entry formulas for general,
   permutation, and cap-cup diagrams.
@@ -151,57 +158,62 @@ theorem symplecticArcMatrix_swap {R : Type u} [CommRing R] {ι : Type*} [Decidab
   · simp [Matrix.one_apply, eq_comm]
   · exact Matrix.J_apply_swap ι R a b
 
-/-- The weight assigned to a boundary permutation `φ` transporting `permToBrauer 1` to a diagram and
-a boundary labelling `ℓ : Fin k ⊕ Fin k → ι ⊕ ι`. -/
-private def sympCongrWeight {R : Type*} [CommRing R] {ι : Type*} [DecidableEq ι]
-    (φ : Equiv.Perm (Fin k ⊕ Fin k)) (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) : R :=
-  ((Equiv.Perm.sign φ : ℤ) : R) *
-    ∏ i : Fin k, symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
-      (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i)))
+/-- **The skew-symmetric boundary arc-weight matrix** attached to an input strand labelling `u` and
+an output strand labelling `v` in `ι ⊕ ι`:
+* on two bottom points `(Sum.inl i, Sum.inl j)`, the cap weight `Matrix.J ι R (u i) (u j)`;
+* on `(Sum.inl i, Sum.inr j)`, `1` when `u i = v j` and `0` otherwise;
+* on `(Sum.inr j, Sum.inl i)`, `-1` when `u i = v j` and `0` otherwise;
+* on two top points `(Sum.inr i, Sum.inr j)`, `Matrix.J ι R (v i) (v j)`. -/
+def symplecticArcWeight {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι) :
+    Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R :=
+  Matrix.of fun x y => symplecticArcMatrix R ι x y (Sum.elim u v x) (Sum.elim u v y)
 
-private theorem sympCongrWeight_mul_sumCongr {R : Type*} [CommRing R] {ι : Type*} [DecidableEq ι]
-    (φ : Equiv.Perm (Fin k ⊕ Fin k)) (π : Equiv.Perm (Fin k))
-    (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) :
-    sympCongrWeight (φ * Equiv.Perm.sumCongr π π) ℓ = (sympCongrWeight φ ℓ : R) := by
-  have hsign : Equiv.Perm.sign (φ * Equiv.Perm.sumCongr π π) = Equiv.Perm.sign φ := by
-    rw [map_mul, Equiv.Perm.sign_sumCongr]
-    rcases Int.units_eq_one_or (Equiv.Perm.sign π) with h | h <;> simp [h]
-  simp only [sympCongrWeight, hsign, Equiv.Perm.mul_apply, Equiv.Perm.sumCongr_apply, Sum.map_inl,
-    Sum.map_inr]
-  rw [Equiv.prod_comp π fun i => symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
-    (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i)))]
+@[simp]
+theorem symplecticArcWeight_inl_inl {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
+    (i j : Fin k) :
+    symplecticArcWeight R u v (Sum.inl i) (Sum.inl j) = Matrix.J ι R (u i) (u j) := (rfl)
 
-private theorem sympCongrWeight_mul_prodCongrLeft {R : Type*} [CommRing R] {ι : Type*}
-    [DecidableEq ι] (φ : Equiv.Perm (Fin k ⊕ Fin k)) (τ : Fin k → Equiv.Perm Bool)
-    (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) :
-    sympCongrWeight
-      (φ * (Equiv.boolProdEquivSum (Fin k)).permCongr (Equiv.prodCongrLeft τ)) ℓ =
-      (sympCongrWeight φ ℓ : R) := by
-  set ψ : Equiv.Perm (Fin k ⊕ Fin k) :=
-    (Equiv.boolProdEquivSum (Fin k)).permCongr (Equiv.prodCongrLeft τ)
-  have hsign : ((Equiv.Perm.sign (φ * ψ) : ℤ) : R) =
-      ((Equiv.Perm.sign φ : ℤ) : R) * ∏ i : Fin k, ((Equiv.Perm.sign (τ i) : ℤ) : R) := by
-    simp [ψ, Equiv.Perm.sign_permCongr, Equiv.Perm.sign_prodCongrLeft]
-  rw [sympCongrWeight, sympCongrWeight, hsign, mul_assoc, ← Finset.prod_mul_distrib]
-  refine congrArg (((Equiv.Perm.sign φ : ℤ) : R) * ·) (Finset.prod_congr rfl fun i _ => ?_)
-  rcases (by decide : ∀ e : Equiv.Perm Bool, e = 1 ∨ e = Equiv.swap false true) (τ i) with hτ | hτ
-  · have hinl : ψ (Sum.inl i) = Sum.inl i := by simp [ψ, hτ]
-    have hinr : ψ (Sum.inr i) = Sum.inr i := by simp [ψ, hτ]
-    simp [Equiv.Perm.mul_apply, hinl, hinr, hτ]
-  · have hinl : ψ (Sum.inl i) = Sum.inr i := by simp [ψ, hτ]
-    have hinr : ψ (Sum.inr i) = Sum.inl i := by simp [ψ, hτ]
-    rw [hτ, Equiv.Perm.sign_swap Bool.false_ne_true]
-    simp only [Equiv.Perm.mul_apply, hinl, hinr, Units.val_neg, Units.val_one, Int.cast_neg,
-      Int.cast_one]
-    rw [symplecticArcMatrix_swap (φ (Sum.inl i)) (φ (Sum.inr i)), neg_one_mul, neg_neg]
+@[simp]
+theorem symplecticArcWeight_inl_inr {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
+    (i j : Fin k) :
+    symplecticArcWeight R u v (Sum.inl i) (Sum.inr j) = if u i = v j then 1 else 0 := by
+  simp [symplecticArcWeight, Matrix.one_apply]
 
-private theorem sympCongrWeight_congr {R : Type*} [CommRing R] {ι : Type*} [DecidableEq ι]
-    {φ₁ φ₂ : Equiv.Perm (Fin k ⊕ Fin k)}
-    (h : PerfectMatching.congr φ₁ (permToBrauer 1) = PerfectMatching.congr φ₂ (permToBrauer 1))
-    (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) :
-    (sympCongrWeight φ₁ ℓ : R) = sympCongrWeight φ₂ ℓ := by
-  obtain ⟨π, τ, rfl⟩ := exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq h
-  rw [sympCongrWeight_mul_prodCongrLeft, sympCongrWeight_mul_sumCongr]
+@[simp]
+theorem symplecticArcWeight_inr_inl {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
+    (j i : Fin k) :
+    symplecticArcWeight R u v (Sum.inr j) (Sum.inl i) = -(if u i = v j then 1 else 0) := by
+  simp [symplecticArcWeight, Matrix.one_apply, eq_comm]
+
+@[simp]
+theorem symplecticArcWeight_inr_inr {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
+    (i j : Fin k) :
+    symplecticArcWeight R u v (Sum.inr i) (Sum.inr j) = Matrix.J ι R (v i) (v j) := (rfl)
+
+/-- Block-matrix form of `symplecticArcWeight`, used for entrywise maps and relabelling. -/
+private theorem symplecticArcWeight_eq_fromBlocks {ι : Type*} [DecidableEq ι]
+    (u v : Fin k → ι ⊕ ι) :
+    symplecticArcWeight R u v =
+      Matrix.fromBlocks
+        ((Matrix.J ι R).submatrix u u) ((1 : Matrix (ι ⊕ ι) (ι ⊕ ι) R).submatrix u v)
+        ((-1 : Matrix (ι ⊕ ι) (ι ⊕ ι) R).submatrix v u) ((Matrix.J ι R).submatrix v v) := by
+  ext x y
+  cases x <;> cases y <;> rfl
+
+/-- `symplecticArcWeight` is skew-symmetric, so `BrauerDiagram.skewArcProd` is independent of the
+chosen framing. -/
+theorem symplecticArcWeight_swap {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
+    (x y : Fin k ⊕ Fin k) :
+    symplecticArcWeight R u v y x = -symplecticArcWeight R u v x y :=
+  symplecticArcMatrix_swap x y (Sum.elim u v x) (Sum.elim u v y)
+
+/-- Applying a ring homomorphism entrywise commutes with `symplecticArcWeight`. -/
+@[simp]
+theorem map_symplecticArcWeight {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι) :
+    (symplecticArcWeight R u v).map f = symplecticArcWeight S u v := by
+  simp only [symplecticArcWeight_eq_fromBlocks, Matrix.fromBlocks_map, ← Matrix.submatrix_map,
+    Matrix.map_J, Matrix.map_neg _ (map_neg f), Matrix.map_one f (map_zero f) (map_one f)]
 
 /-- **The matrix of a Brauer diagram** acting on the `k`-th tensor power of `(ι ⊕ ι) → R` equipped
 with the standard alternating form `Matrix.J ι R`, in the monomial basis indexed by the strand
@@ -209,15 +221,23 @@ labellings `Fin k → ι ⊕ ι`.
 
 The row index `v` labels the top (output, `Sum.inr`) boundary and the column index `u` labels the
 bottom (input, `Sum.inl`) boundary, assembling into the boundary labelling
-`ℓ = Sum.elim u v : Fin k ⊕ Fin k → ι ⊕ ι`. For any boundary permutation
-`φ : Equiv.Perm (Fin k ⊕ Fin k)` transporting `permToBrauer 1` to `D`, the `(v, u)` entry is
+`ℓ = Sum.elim u v : Fin k ⊕ Fin k → ι ⊕ ι`. Entry `(v, u)` is the signed arc product
+`D.skewArcProd (symplecticArcWeight R u v)`
+(`TauCeti.BrauerDiagram.symplecticActionMatrix_eq_skewArcProd`), which for any boundary permutation
+`φ : Equiv.Perm (Fin k ⊕ Fin k)` transporting `permToBrauer 1` to `D` equals
 `((Equiv.Perm.sign φ : ℤ) : R) * ∏ i, symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
 (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i)))`
 (`TauCeti.BrauerDiagram.symplecticActionMatrix_apply_of_congr`). -/
 noncomputable def symplecticActionMatrix (D : BrauerDiagram k) :
     Matrix (Fin k → ι ⊕ ι) (Fin k → ι ⊕ ι) R :=
-  Matrix.of fun v u =>
-    sympCongrWeight D.exists_congr_permToBrauer_one.choose (Sum.elim u v)
+  Matrix.of fun v u => D.skewArcProd (symplecticArcWeight R u v)
+
+/-- **Entries of `symplecticActionMatrix` as a skew-symmetric arc product.** The `(v, u)` entry of
+`D.symplecticActionMatrix R ι` is `D.skewArcProd (symplecticArcWeight R u v)`. -/
+theorem symplecticActionMatrix_eq_skewArcProd {R : Type u} [CommRing R] {ι : Type*}
+    [DecidableEq ι] (D : BrauerDiagram k) (v u : Fin k → ι ⊕ ι) :
+    D.symplecticActionMatrix R ι v u = D.skewArcProd (symplecticArcWeight R u v) :=
+  (rfl)
 
 /-- **Entries of `symplecticActionMatrix` from any boundary transport.** For any permutation `φ` of
 `Fin k ⊕ Fin k` transporting `permToBrauer 1` to `D`, the `(v, u)` entry of
@@ -225,33 +245,25 @@ noncomputable def symplecticActionMatrix (D : BrauerDiagram k) :
 `TauCeti.BrauerDiagram.symplecticArcMatrix` evaluated on the boundary labelling `Sum.elim u v`. -/
 theorem symplecticActionMatrix_apply_of_congr {R : Type u} [CommRing R] {ι : Type*}
     [DecidableEq ι] {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hφ : PerfectMatching.congr φ (permToBrauer 1) = D) (v u : Fin k → ι ⊕ ι) :
+    (hφ : D.IsFraming φ) (v u : Fin k → ι ⊕ ι) :
     D.symplecticActionMatrix R ι v u =
       ((Equiv.Perm.sign φ : ℤ) : R) *
         ∏ i : Fin k, symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
-          (Sum.elim u v (φ (Sum.inl i))) (Sum.elim u v (φ (Sum.inr i))) :=
-  sympCongrWeight_congr (D.exists_congr_permToBrauer_one.choose_spec.trans hφ.symm) (Sum.elim u v)
+          (Sum.elim u v (φ (Sum.inl i))) (Sum.elim u v (φ (Sum.inr i))) := by
+  rw [symplecticActionMatrix_eq_skewArcProd,
+    skewArcProd_eq_of_isFraming D (symplecticArcWeight_swap R u v) hφ]
+  rfl
 
 /-- **Entries of the matrix of a permutation diagram**: `(permToBrauer σ).symplecticActionMatrix`
 has entry `sign σ` where `v j = u (σ.symm j)` for all `j`, and `0` elsewhere. -/
 theorem symplecticActionMatrix_permToBrauer_apply (σ : Equiv.Perm (Fin k)) (v u : Fin k → ι ⊕ ι) :
     (permToBrauer σ).symplecticActionMatrix R ι v u =
       if v = fun j => u (σ.symm j) then ((Equiv.Perm.sign σ : ℤ) : R) else 0 := by
-  have hcongr : PerfectMatching.congr (Equiv.Perm.sumCongr 1 σ) (permToBrauer 1) =
-      permToBrauer σ := by
-    rw [← relabel_def, relabel_permToBrauer, mul_one, inv_one, mul_one]
   have hcond : (∀ i : Fin k, u i = v (σ i)) ↔ v = fun j => u (σ.symm j) :=
     (funext_iff.symm.trans eq_comm).trans (σ.eq_comp_symm v u).symm
-  have hprod : (∏ i : Fin k, symplecticArcMatrix R ι ((Equiv.Perm.sumCongr 1 σ) (Sum.inl i))
-        ((Equiv.Perm.sumCongr 1 σ) (Sum.inr i))
-        (Sum.elim u v ((Equiv.Perm.sumCongr 1 σ) (Sum.inl i)))
-        (Sum.elim u v ((Equiv.Perm.sumCongr 1 σ) (Sum.inr i)))) =
-      ∏ i : Fin k, if u i = v (σ i) then (1 : R) else 0 :=
-    Finset.prod_congr rfl fun i _ => by simp [Matrix.one_apply]
-  rw [symplecticActionMatrix_apply_of_congr hcongr, Equiv.Perm.sign_sumCongr, map_one, one_mul]
-  refine (congrArg (((Equiv.Perm.sign σ : ℤ) : R) * ·) hprod).trans ?_
-  rw [Fintype.prod_boole]
-  simp only [hcond]
+  rw [symplecticActionMatrix_eq_skewArcProd,
+    skewArcProd_permToBrauer σ (symplecticArcWeight_swap R u v)]
+  simp only [symplecticArcWeight_inl_inr, Fintype.prod_boole, hcond]
   split_ifs <;> simp
 
 /-- The identity diagram has the identity matrix. -/
@@ -260,8 +272,7 @@ theorem symplecticActionMatrix_permToBrauer_one :
     (permToBrauer 1).symplecticActionMatrix R ι =
       (1 : Matrix (Fin k → ι ⊕ ι) (Fin k → ι ⊕ ι) R) := by
   ext v u
-  rw [symplecticActionMatrix_permToBrauer_apply, Matrix.one_apply]
-  simp [Equiv.Perm.one_def]
+  simp [symplecticActionMatrix_permToBrauer_apply, Matrix.one_apply, Equiv.Perm.one_def]
 
 /-- **Entries of the matrix of a cap-cup diagram** on two distinct strands `a ≠ b`: the `(v, u)`
 entry is `-(J (u a) (u b) * J (v a) (v b))` when `v` agrees with `u` off `{a, b}`, and `0`
@@ -271,42 +282,16 @@ theorem symplecticActionMatrix_capCup_apply {a b : Fin k} (hab : a ≠ b) (v u :
       if ∀ t, t ≠ a → t ≠ b → v t = u t then
         -(Matrix.J ι R (u a) (u b) * Matrix.J ι R (v a) (v b))
       else 0 := by
-  let φ : Equiv.Perm (Fin k ⊕ Fin k) := Equiv.swap (Sum.inr a) (Sum.inl b)
-  rw [symplecticActionMatrix_apply_of_congr (capCup_def a b).symm,
-    Equiv.Perm.sign_swap Sum.inr_ne_inl]
-  simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
-  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ a),
-    ← Finset.mul_prod_erase (Finset.univ.erase a) _
-      (Finset.mem_erase.mpr ⟨hab.symm, Finset.mem_univ b⟩)]
-  have hfa : symplecticArcMatrix R ι (φ (Sum.inl a)) (φ (Sum.inr a))
-      (Sum.elim u v (φ (Sum.inl a))) (Sum.elim u v (φ (Sum.inr a))) =
-      Matrix.J ι R (u a) (u b) := by
-    simp [φ, Equiv.swap_apply_of_ne_of_ne, hab]
-  have hfb : symplecticArcMatrix R ι (φ (Sum.inl b)) (φ (Sum.inr b))
-      (Sum.elim u v (φ (Sum.inl b))) (Sum.elim u v (φ (Sum.inr b))) =
-      Matrix.J ι R (v a) (v b) := by
-    simp [φ, Equiv.swap_apply_of_ne_of_ne, hab.symm]
-  have hmem : (∀ t ∈ (Finset.univ.erase a).erase b, v t = u t) ↔
+  have hmem : (∀ t ∈ (Finset.univ.erase a).erase b, u t = v t) ↔
       ∀ t, t ≠ a → t ≠ b → v t = u t := by
-    refine ⟨fun h t hta htb => h t ?_, fun h t ht => ?_⟩
+    refine ⟨fun h t hta htb => (h t ?_).symm, fun h t ht => ?_⟩
     · simp [hta, htb]
     · rw [Finset.mem_erase, Finset.mem_erase] at ht
-      exact h t ht.2.1 ht.1
-  have hrest : ∏ t ∈ (Finset.univ.erase a).erase b,
-        symplecticArcMatrix R ι (φ (Sum.inl t)) (φ (Sum.inr t))
-          (Sum.elim u v (φ (Sum.inl t))) (Sum.elim u v (φ (Sum.inr t))) =
-      if ∀ t, t ≠ a → t ≠ b → v t = u t then 1 else 0 := by
-    refine (Finset.prod_congr (g := fun t => if v t = u t then (1 : R) else 0) rfl
-      fun t ht => ?_).trans ?_
-    · rw [Finset.mem_erase, Finset.mem_erase] at ht
-      have h1 : φ (Sum.inl t) = Sum.inl t :=
-        Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (Sum.inl_injective.ne ht.1)
-      have h2 : φ (Sum.inr t) = Sum.inr t :=
-        Equiv.swap_apply_of_ne_of_ne (Sum.inr_injective.ne ht.2.1) Sum.inr_ne_inl
-      simp [h1, h2, Matrix.one_apply, eq_comm]
-    · rw [Finset.prod_boole]
-      simp only [hmem]
-  rw [hfa, hfb, hrest]
+      exact (h t ht.2.1 ht.1).symm
+  rw [symplecticActionMatrix_eq_skewArcProd,
+    skewArcProd_capCup hab (symplecticArcWeight_swap R u v)]
+  simp only [symplecticArcWeight_inl_inl, symplecticArcWeight_inr_inr,
+    symplecticArcWeight_inl_inr, Finset.prod_boole, hmem]
   split_ifs <;> ring
 
 /-- **Relabelling the boundary of a diagram** reindexes the input and output labellings and scales
@@ -316,41 +301,20 @@ theorem symplecticActionMatrix_relabel_apply (D : BrauerDiagram k) (σ τ : Equi
     (D.relabel σ τ).symplecticActionMatrix R ι v u =
       ((Equiv.Perm.sign σ : ℤ) : R) * ((Equiv.Perm.sign τ : ℤ) : R) *
         D.symplecticActionMatrix R ι (v ∘ τ) (u ∘ σ) := by
-  obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
-  have hrel : PerfectMatching.congr (Equiv.Perm.sumCongr σ τ * φ) (permToBrauer 1) =
-      D.relabel σ τ := by
-    rw [relabel_def, PerfectMatching.congr_mul, hφ]
-  have harc (x y : Fin k ⊕ Fin k) :
-      symplecticArcMatrix R ι (Sum.map σ τ x) (Sum.map σ τ y) = symplecticArcMatrix R ι x y := by
-    cases x <;> cases y <;> rfl
-  have helim (z : Fin k ⊕ Fin k) :
-      Sum.elim u v (Sum.map σ τ z) = Sum.elim (u ∘ σ) (v ∘ τ) z := by
-    cases z <;> rfl
-  rw [symplecticActionMatrix_apply_of_congr hrel, symplecticActionMatrix_apply_of_congr hφ,
-    Equiv.Perm.sign.map_mul, Equiv.Perm.sign_sumCongr]
-  simp only [Units.val_mul, Int.cast_mul, Equiv.Perm.mul_apply, Equiv.Perm.sumCongr_apply, harc,
-    helim, mul_assoc]
+  have hsub : (symplecticArcWeight R u v).submatrix (Sum.map σ τ) (Sum.map σ τ) =
+      symplecticArcWeight R (u ∘ σ) (v ∘ τ) := by
+    simp only [symplecticArcWeight_eq_fromBlocks, Matrix.fromBlocks_submatrix_sumMap,
+      Matrix.submatrix_submatrix]
+  rw [symplecticActionMatrix_eq_skewArcProd,
+    skewArcProd_relabel D σ τ (symplecticArcWeight_swap R u v), hsub,
+    ← symplecticActionMatrix_eq_skewArcProd]
 
 private theorem map_ringHom_symplecticActionMatrix {R₀ S : Type*} [CommRing R₀] [CommRing S]
     (f : R₀ →+* S) (D : BrauerDiagram k) :
     (D.symplecticActionMatrix R₀ ι).map f = D.symplecticActionMatrix S ι := by
-  obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
-  have harc (x y : Fin k ⊕ Fin k) (a b : ι ⊕ ι) :
-      f (symplecticArcMatrix R₀ ι x y a b) = symplecticArcMatrix S ι x y a b := by
-    cases x <;> cases y
-    · simpa only [symplecticArcMatrix_inl_inl, Matrix.map_apply] using
-        congrFun (congrFun (Matrix.map_J ι f) a) b
-    · simp only [symplecticArcMatrix_inl_inr, Matrix.one_apply]
-      split_ifs <;> simp
-    · simp only [symplecticArcMatrix_inr_inl, Matrix.neg_apply, Matrix.one_apply]
-      split_ifs <;> simp
-    · simpa only [symplecticArcMatrix_inr_inr, Matrix.map_apply] using
-        congrFun (congrFun (Matrix.map_J ι f) a) b
   ext v u
-  rw [Matrix.map_apply, symplecticActionMatrix_apply_of_congr hφ,
-    symplecticActionMatrix_apply_of_congr hφ, map_mul, map_intCast, map_prod]
-  exact congrArg (((Equiv.Perm.sign φ : ℤ) : S) * ·)
-    (Finset.prod_congr rfl fun _ _ => harc _ _ _ _)
+  rw [Matrix.map_apply, symplecticActionMatrix_eq_skewArcProd,
+    symplecticActionMatrix_eq_skewArcProd, map_skewArcProd, map_symplecticArcWeight]
 
 variable {R} in
 /-- **Functoriality in the coefficient ring**: applying an additive `1`-preserving map entrywise to
@@ -376,27 +340,25 @@ theorem reindex_symplecticActionMatrix {ι₁ ι₂ : Type*} [DecidableEq ι₁]
         (Equiv.piCongrRight fun _ : Fin k => Equiv.sumCongr e e)
         (D.symplecticActionMatrix R ι₁) =
       D.symplecticActionMatrix R ι₂ := by
-  obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
   let eSum : ι₁ ⊕ ι₁ ≃ ι₂ ⊕ ι₂ := Equiv.sumCongr e e
   let eFun : (Fin k → ι₁ ⊕ ι₁) ≃ (Fin k → ι₂ ⊕ ι₂) := Equiv.piCongrRight fun _ => eSum
-  have harc (x y : Fin k ⊕ Fin k) (a b : ι₂ ⊕ ι₂) :
-      symplecticArcMatrix R ι₁ x y (eSum.symm a) (eSum.symm b) =
-        symplecticArcMatrix R ι₂ x y a b := by
-    cases x <;> cases y
-    · simpa only [symplecticArcMatrix_inl_inl, Matrix.reindex_apply, Matrix.submatrix_apply] using
-        congrFun (congrFun (Matrix.reindex_sumCongr_J R e) a) b
-    · simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
-    · simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
-    · simpa only [symplecticArcMatrix_inr_inr, Matrix.reindex_apply, Matrix.submatrix_apply] using
-        congrFun (congrFun (Matrix.reindex_sumCongr_J R e) a) b
-  have helim (v u : Fin k → ι₂ ⊕ ι₂) (z : Fin k ⊕ Fin k) :
-      Sum.elim (eFun.symm u) (eFun.symm v) z = eSum.symm (Sum.elim u v z) := by
-    cases z <;> rfl
+  have hJ : (Matrix.J ι₁ R).submatrix eSum.symm eSum.symm = Matrix.J ι₂ R := by
+    simpa only [Matrix.reindex_apply] using Matrix.reindex_sumCongr_J R e
+  have h1 : (1 : Matrix (ι₁ ⊕ ι₁) (ι₁ ⊕ ι₁) R).submatrix eSum.symm eSum.symm = 1 := by
+    ext a b
+    simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
+  have hneg1 : (-1 : Matrix (ι₁ ⊕ ι₁) (ι₁ ⊕ ι₁) R).submatrix eSum.symm eSum.symm = -1 := by
+    ext a b
+    simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
+  have hcomp (f : Fin k → ι₂ ⊕ ι₂) : eFun.symm f = eSum.symm ∘ f := rfl
+  have hweight (u v : Fin k → ι₂ ⊕ ι₂) :
+      symplecticArcWeight R (eFun.symm u) (eFun.symm v) = symplecticArcWeight R u v := by
+    simp only [symplecticArcWeight_eq_fromBlocks, hcomp, ← Matrix.submatrix_submatrix, hJ,
+      h1, hneg1]
   ext v u
-  rw [Matrix.reindex_apply, Matrix.submatrix_apply, symplecticActionMatrix_apply_of_congr hφ,
-    symplecticActionMatrix_apply_of_congr hφ]
-  exact congrArg (((Equiv.Perm.sign φ : ℤ) : R) * ·)
-    (Finset.prod_congr rfl fun _ _ => by rw [helim, helim, harc])
+  rw [Matrix.reindex_apply, Matrix.submatrix_apply, symplecticActionMatrix_eq_skewArcProd,
+    symplecticActionMatrix_eq_skewArcProd]
+  exact congrArg D.skewArcProd (hweight u v)
 
 /-- **Reflecting a diagram upside down transposes its symplectic matrix**: exchanging the bottom
 (input) and top (output) boundaries of `D` exchanges the column and row labellings of
@@ -404,10 +366,11 @@ theorem reindex_symplecticActionMatrix {ι₁ ι₂ : Type*} [DecidableEq ι₁]
 @[simp]
 theorem transpose_symplecticActionMatrix (D : BrauerDiagram k) :
     (D.symplecticActionMatrix R ι)ᵀ = D.flip.symplecticActionMatrix R ι := by
-  obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
-  have hflip : PerfectMatching.congr (Equiv.sumComm (Fin k) (Fin k) * φ) (permToBrauer 1) =
-      D.flip := by
-    rw [flip_def, PerfectMatching.congr_mul, hφ]
+  let φ := D.framing
+  have hφ : D.IsFraming φ := D.isFraming_framing
+  have hflip : D.flip.IsFraming (Equiv.sumComm (Fin k) (Fin k) * φ) := by
+    rw [flip_def]
+    exact hφ.congr (Equiv.sumComm (Fin k) (Fin k))
   let sgn : Fin k ⊕ Fin k → R := Sum.elim (fun _ => -1) (fun _ => 1)
   have harc (x y : Fin k ⊕ Fin k) (a b : ι ⊕ ι) :
       symplecticArcMatrix R ι x.swap y.swap a b =
@@ -470,34 +433,38 @@ theorem symplecticActionMatrix_capCup_mul_apply {m : Type*} {a b : Fin k} (hab :
       ∑ x : ι ⊕ ι, ∑ y : ι ⊕ ι,
         -(Matrix.J ι R x y * Matrix.J ι R (v a) (v b)) *
           M (Function.update (Function.update v a x) b y) u := by
-  let ins (p : (ι ⊕ ι) × (ι ⊕ ι)) : Fin k → ι ⊕ ι :=
-    Function.update (Function.update v a p.1) b p.2
-  have hins_inj : Function.Injective ins := fun ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ h => by
-    have hx : x₁ = x₂ := by
-      simpa [ins, Function.update_of_ne hab] using congrFun h a
-    have hy : y₁ = y₂ := by
-      simpa [ins] using congrFun h b
-    exact Prod.ext hx hy
-  have himage : ({m | ∀ t, t ≠ a → t ≠ b → v t = m t} : Finset (Fin k → ι ⊕ ι)) =
-      Finset.univ.image ins := by
+  let s : Fin k → Finset (ι ⊕ ι) := fun r => if r = a ∨ r = b then Finset.univ else {v r}
+  have hfilter : Finset.univ.filter (fun m : Fin k → ι ⊕ ι => ∀ t, t ≠ a → t ≠ b → v t = m t) =
+      Fintype.piFinset s := by
     ext m
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_image, Prod.exists]
-    refine ⟨fun hm => ⟨m a, m b, funext fun t => ?_⟩, ?_⟩
-    · rcases eq_or_ne t b with rfl | htb
-      · simp [ins]
-      rcases eq_or_ne t a with rfl | hta
-      · simp [ins, hab]
-      · simp [ins, hta, htb, hm t hta htb]
-    · rintro ⟨x, y, rfl⟩ t hta htb
-      simp [ins, hta, htb]
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fintype.mem_piFinset, s]
+    refine ⟨fun hm r => ?_, fun hm t hta htb => ?_⟩
+    · split_ifs with hr
+      · exact Finset.mem_univ _
+      · obtain ⟨hra, hrb⟩ := not_or.mp hr
+        exact Finset.mem_singleton.mpr (hm r hra hrb).symm
+    · have := hm t
+      simp [hta, htb] at this
+      exact this.symm
+  have hpin : ({h ∈ Fintype.piFinset s | h a = v a ∧ h b = v b} : Finset (Fin k → ι ⊕ ι)) =
+      {v} := by
+    rw [← Finset.filter_filter,
+      ← Fintype.piFinset_update_singleton_eq_filter_piFinset_eq s a (by simp [s]),
+      ← Fintype.piFinset_update_singleton_eq_filter_piFinset_eq (Function.update s a {v a}) b
+        (by simp [s, hab.symm])]
+    have hs : Function.update (Function.update s a {v a}) b {v b} = fun r => {v r} := by
+      ext1 r
+      by_cases hrb : r = b
+      · subst hrb; simp
+      · by_cases hra : r = a
+        · subst hra; simp [hrb]
+        · simp [s, hra, hrb]
+    rw [hs, Fintype.piFinset_singleton]
   rw [Matrix.mul_apply]
   simp only [symplecticActionMatrix_capCup_apply R ι hab, ite_mul, zero_mul, ← Finset.sum_filter,
-    himage, Finset.sum_image fun _ _ _ _ h => hins_inj h]
-  refine (Fintype.sum_prod_type' fun x y =>
-    -(Matrix.J ι R (ins (x, y) a) (ins (x, y) b) * Matrix.J ι R (v a) (v b)) *
-      M (ins (x, y)) u).trans ?_
-  refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
-  simp [ins, hab]
+    hfilter, Fintype.sum_piFinset_eq_sum_filter_sum_sum_update hab s (a := v a) (b := v b)
+      (by simp [s]) (by simp [s]), hpin, Finset.sum_singleton]
+  simp [s, Function.update_of_ne hab]
 
 /-- Right-multiplying any matrix by `(capCup a b).symplecticActionMatrix` sums over the two middle
 labels `(x, y)` at `a` and `b`, fixing all other coordinates to agree with the input column `u`. -/
@@ -552,7 +519,7 @@ private theorem symplecticActionMatrix_capCup_mul_of_val_eq {a b : Fin k}
       -(2 * Fintype.card ι : R) * D.symplecticActionMatrix R ι w u := by
   have hab : a ≠ b := fun h => D.apply_ne (Sum.inr a) (hcup.trans (congrArg Sum.inr h.symm))
   rw [symplecticActionMatrix_capCup_mul_apply R ι hab]
-  obtain ⟨φ, i₀, hφ, hinl₀, hinr₀⟩ := D.exists_congr_permToBrauer_one_of_val_eq hcup
+  obtain ⟨φ, i₀, hφ, hinl₀, hinr₀⟩ := D.exists_isFraming_of_val_eq hcup
   let f₀ (i : Fin k) : R :=
     symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
       (Sum.elim u w (φ (Sum.inl i))) (Sum.elim u w (φ (Sum.inr i)))
@@ -588,11 +555,11 @@ private theorem symplecticActionMatrix_capCup_mul_of_val_eq {a b : Fin k}
   rw [hcalc (Matrix.J ι R), Matrix.sum_sum_J_mul_J, hDwu]
 
 omit [Fintype ι] in
-/-- Expansion of `D.symplecticActionMatrix` at a doubly updated top labelling along a boundary
-transport isolating the two arcs ending at `Sum.inr a` and `Sum.inr b`. -/
+/-- Expansion of `D.symplecticActionMatrix` at a doubly updated top labelling along a framing
+isolating the two arcs ending at `Sum.inr a` and `Sum.inr b`. -/
 private theorem symplecticActionMatrix_update_update_of_congr_two {a b i₁ i₂ : Fin k}
     (hab : a ≠ b) {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hφ : PerfectMatching.congr φ (permToBrauer 1) = D) {p q : Fin k ⊕ Fin k}
+    (hφ : D.IsFraming φ) {p q : Fin k ⊕ Fin k}
     (hinl₁ : φ (Sum.inl i₁) = p) (hinr₁ : φ (Sum.inr i₁) = Sum.inr a)
     (hinl₂ : φ (Sum.inl i₂) = q) (hinr₂ : φ (Sum.inr i₂) = Sum.inr b)
     (w u : Fin k → ι ⊕ ι) (x y : ι ⊕ ι) :
@@ -632,11 +599,11 @@ private theorem symplecticActionMatrix_update_update_of_congr_two {a b i₁ i₂
       sumElim_update_update_inr_of_ne x y h2a h2b]
 
 omit [Fintype ι] in
-/-- Entry of `(D.reconnect (Sum.inr a) (Sum.inr b)).symplecticActionMatrix` in terms of a boundary
-transport of `D` isolating the two arcs ending at `Sum.inr a` and `Sum.inr b`. -/
+/-- Entry of `(D.reconnect (Sum.inr a) (Sum.inr b)).symplecticActionMatrix` in terms of a framing
+of `D` isolating the two arcs ending at `Sum.inr a` and `Sum.inr b`. -/
 private theorem symplecticActionMatrix_reconnect_inr_of_congr_two {a b i₁ i₂ : Fin k}
     (hab : a ≠ b) {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hφ : PerfectMatching.congr φ (permToBrauer 1) = D)
+    (hφ : D.IsFraming φ)
     (hinl₁ : φ (Sum.inl i₁) = D.val (Sum.inr a)) (hinr₁ : φ (Sum.inr i₁) = Sum.inr a)
     (hinl₂ : φ (Sum.inl i₂) = D.val (Sum.inr b)) (hinr₂ : φ (Sum.inr i₂) = Sum.inr b)
     (w u : Fin k → ι ⊕ ι) :
@@ -657,8 +624,8 @@ private theorem symplecticActionMatrix_reconnect_inr_of_congr_two {a b i₁ i₂
   have hqb : q ≠ Sum.inr b := D.apply_ne (Sum.inr b)
   have hqp : q ≠ p := fun h => hab (Sum.inr_injective (D.val.injective h).symm)
   let φ' : Equiv.Perm (Fin k ⊕ Fin k) := Equiv.swap p (Sum.inr b) * φ
-  have hφ' : PerfectMatching.congr φ' (permToBrauer 1) = D.reconnect (Sum.inr a) (Sum.inr b) := by
-    rw [PerfectMatching.reconnect_def, PerfectMatching.congr_mul, hφ]
+  have hφ' : BrauerDiagram.IsFraming (D.reconnect (Sum.inr a) (Sum.inr b)) φ' :=
+    BrauerDiagram.IsFraming.reconnect hφ (Sum.inr a) (Sum.inr b)
   have hsign : ((Equiv.Perm.sign φ' : ℤ) : R) = -((Equiv.Perm.sign φ : ℤ) : R) := by
     simp [φ', Equiv.Perm.sign_swap hncup]
   have hrest : ∏ i ∈ (Finset.univ.erase i₁).erase i₂,
@@ -714,7 +681,7 @@ private theorem symplecticActionMatrix_capCup_mul {a b : Fin k} (hab : a ≠ b)
       fun h => hncup ((congrArg D.val h).symm.trans (D.apply_apply (Sum.inr b)))
     have hqp : q ≠ p := fun h => hab (Sum.inr_injective (D.val.injective h).symm)
     obtain ⟨φ, i₁, i₂, -, hφ, hinl₁, hinr₁, hinl₂, hinr₂⟩ :=
-      D.exists_congr_permToBrauer_one_of_val_eq_of_val_eq (D.apply_apply (Sum.inr a))
+      D.exists_isFraming_of_val_eq_of_val_eq (D.apply_apply (Sum.inr a))
         (D.apply_apply (Sum.inr b)) hqp hqa
     have hcalc (f : (ι ⊕ ι) → (ι ⊕ ι) → R) (g₁ g₂ : (ι ⊕ ι) → R) (c s r : R) :
         ∑ x : ι ⊕ ι, ∑ y : ι ⊕ ι, -(f x y * c) * (s * (g₁ x * (g₂ y * r))) =
@@ -881,7 +848,7 @@ theorem range_brauerActionSymp_eq_adjoin_union :
       Algebra.adjoin R
         (Set.range (symplecticPermTensorAction R n k) ∪
           Set.range fun p : {p : Fin k × Fin k // p.1 ≠ p.2} =>
-            symplecticCupCapAt R n k p.1.1 p.1.2) := by
+            symplecticCupCapAt R n k p.val.1 p.val.2) := by
   rw [← Algebra.map_top,
     ← BrauerAlgebra.adjoin_range_of_permToBrauer_union_range_of_capCup R (-(2 * n : R)) k,
     AlgHom.map_adjoin]

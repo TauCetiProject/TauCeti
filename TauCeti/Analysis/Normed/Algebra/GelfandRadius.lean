@@ -16,6 +16,11 @@ The Gelfand radius `gelfandRadius a` of an element of a normed ring is the limit
 `‖a ^ k‖ ^ (1 / k)`. A nonzero idempotent has Gelfand radius one, whatever its norm, since all
 of its positive powers coincide with it.
 
+In a unital complex Banach algebra, Gelfand's spectral radius formula implies that if
+`spectrum ℂ a` lies inside an open extended ball `Metric.eball z₀ r` of radius at most the
+convergence radius of a scalar formal power series `p`, then `∑ ‖p.coeff n • (a - z₀)^n‖`
+converges.
+
 A nonunital algebra has no powers `a ^ 0`, so its Gelfand radius is computed in the ℓ¹
 unitization `WithLp 1 (Unitization ℂ A)`, into which `A` embeds isometrically. Gelfand's formula
 holds there: the spectral radius of `a`, the supremum of the moduli of its quasispectrum, is the
@@ -33,6 +38,14 @@ of `∑ p.coeff k • (a - z₀ 1) ^ k` whenever `spectrum ℂ a ⊆ Metric.ebal
 * `IsIdempotentElem.gelfandRadius_eq_one`: a nonzero idempotent has Gelfand radius one.
 * `IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse`: a lower bound on the Gelfand radius
   of elements of the corner `p R p`.
+* `IsNilpotent.gelfandRadius_eq_zero`: a nilpotent element has Gelfand radius zero.
+* `IsIdempotentElem.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero`: commuting idempotents `f`
+  and `g` are orthogonal when an element commuting with both is invertible on the range of `f`
+  and quasinilpotent on the range of `g`.
+* `TauCeti.spectralRadius_eq_zero_iff_gelfandRadius_eq_zero`: in a complex Banach algebra, the
+  spectral radius vanishes exactly when the Gelfand radius does.
+* `TauCeti.summable_norm_smul_sub_pow_of_le_radius`: absolute convergence of a formal power series
+  evaluated at `a - z₀` whenever `spectrum ℂ a` lies in `Metric.eball z₀ r` with `r ≤ p.radius`.
 * `TauCeti.spectralRadius_eq_gelfandRadius_toLp_inr`: Gelfand's formula for a nonunital complex
   Banach algebra, through its ℓ¹ unitization.
 * `FormalMultilinearSeries.summable_norm_coeff_smul_pow_of_gelfandRadius_lt`: absolute convergence
@@ -78,6 +91,42 @@ theorem IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse {R : Type*} [Norm
     _ ≤ gelfandRadius y * gelfandRadius ((w⁻¹ : Rˣ) : R) := hcomm.gelfandRadius_mul_le
     _ ≤ gelfandRadius y * ‖((w⁻¹ : Rˣ) : R)‖ := by grw [gelfandRadius_le_norm ((w⁻¹ : Rˣ) : R)]
 
+/-- A nilpotent element has Gelfand radius zero: a positive power of it vanishes, and the Gelfand
+radius of `a ^ n` is the `n`-th power of that of `a`. -/
+theorem IsNilpotent.gelfandRadius_eq_zero {R : Type*} [SeminormedRing R] {a : R}
+    (ha : IsNilpotent a) : gelfandRadius a = 0 := by
+  obtain ⟨n, hn⟩ := ha
+  cases n with
+  | zero => rw [← mul_one a, ← pow_zero a, hn, mul_zero, gelfandRadius_zero]
+  | succ n =>
+    have h := gelfandRadius_pow_of_ne_zero a n.succ_ne_zero
+    rwa [hn, gelfandRadius_zero, eq_comm, pow_eq_zero_iff n.succ_ne_zero] at h
+
+/-- Let `f` and `g` be commuting idempotents commuting with `c`. If `c` is invertible on the range
+of `f`, in the sense that `c f + (1 - f)` is a unit, and quasinilpotent on the range of `g`, in the
+sense that `c g` has Gelfand radius zero, then `f g = 0`. -/
+theorem IsIdempotentElem.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero {R : Type*} [NormedRing R]
+    {c f g : R} (hf : IsIdempotentElem f) (hg : IsIdempotentElem g) (hfg : Commute f g)
+    (hcf : Commute c f) (hcg : Commute c g) (hunit : IsUnit (c * f + (1 - f)))
+    (hrad : gelfandRadius (c * g) = 0) : f * g = 0 := by
+  obtain ⟨W, hW⟩ := hunit
+  have hfW : f * W = c * f := by
+    simp [hW, mul_add, mul_sub, hf.eq, ← mul_assoc, ← hcf.eq, hf.mul_mul_self]
+  have hcgW : Commute (c * g) (W : R) := by
+    have hc : Commute (c * g) c := (Commute.refl c).mul_left hcg.symm
+    have hf' : Commute (c * g) f := hcf.mul_left hfg.symm
+    rw [hW]
+    exact (hc.mul_right hf').add_right ((Commute.one_right _).sub_right hf')
+  have hfg_eq : f * g = c * g * (f * ↑W⁻¹) := by
+    calc f * g = g * (f * W * ↑W⁻¹) := by rw [mul_assoc, W.mul_inv, mul_one, hfg.eq]
+      _ = c * g * (f * ↑W⁻¹) := by
+        rw [hfW, mul_assoc, ← mul_assoc g, ← hcg.eq, mul_assoc]
+  by_contra h0
+  have hle := ((hcf.mul_left hfg.symm).mul_right hcgW.units_inv_right).gelfandRadius_mul_le
+  rw [← hfg_eq, (IsIdempotentElem.mul_of_commute hfg hf hg).gelfandRadius_eq_one h0, hrad,
+    zero_mul] at hle
+  exact one_ne_zero (hle.antisymm zero_le_one)
+
 namespace FormalMultilinearSeries
 
 /-- If `ENNReal.ofReal (gelfandRadius a) < p.radius`, then `∑ p.coeff k • a ^ k` is absolutely
@@ -109,7 +158,7 @@ theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [Norme
   · convert summable_zero with k
     rw [Subsingleton.elim (p.coeff k • (a - algebraMap ℂ A z₀) ^ k) 0, norm_zero]
   set b := a - algebraMap ℂ A z₀
-  obtain ⟨w, hw, hsr⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
+  obtain ⟨w, hw, hsr⟩ := spectrum.exists_eNorm_eq_spectralRadius b
   have hw_mem : w + z₀ ∈ spectrum ℂ a := by
     rwa [spectrum.add_mem_iff, neg_add_eq_sub]
   have hlt : ENNReal.ofReal (gelfandRadius b) < p.radius := by
@@ -121,6 +170,45 @@ theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [Norme
 end FormalMultilinearSeries
 
 namespace TauCeti
+
+/-- If `spectrum ℂ a` lies in the open extended ball `Metric.eball z₀ r` and `r` does not exceed
+the convergence radius of a formal power series `p : FormalMultilinearSeries ℂ ℂ ℂ`, then
+`∑ ‖p.coeff n • (a - z₀)^n‖` converges. -/
+theorem summable_norm_smul_sub_pow_of_le_radius {A : Type*} [NormedRing A] [NormedAlgebra ℂ A]
+    [CompleteSpace A] (a : A) {p : FormalMultilinearSeries ℂ ℂ ℂ}
+    {z₀ : ℂ} {r : ℝ≥0∞} (ha : spectrum ℂ a ⊆ Metric.eball z₀ r) (hr : r ≤ p.radius) :
+    Summable fun n => ‖p.coeff n • (a - algebraMap ℂ A z₀) ^ n‖ := by
+  let b := a - algebraMap ℂ A z₀
+  rcases subsingleton_or_nontrivial A with hsub | hnt
+  · exact summable_zero.congr fun n => by
+      rw [Subsingleton.elim (p.coeff n • b ^ n) 0, norm_zero]
+  · obtain ⟨w, hw, hw_eq⟩ := spectrum.exists_eNorm_eq_spectralRadius b
+    have hzw : z₀ + w ∈ spectrum ℂ a :=
+      (add_comm z₀ w).symm ▸ spectrum.add_mem_iff.mpr (by simpa [b, neg_add_eq_sub] using hw)
+    have hw_lt : (‖w‖₊ : ℝ≥0∞) < r := by
+      have hmem := ha hzw
+      rwa [Metric.mem_eball, edist_nndist, nnDist_eq_nnNorm, add_sub_cancel_left] at hmem
+    have hspec : spectralRadius ℂ b < r := hw_eq ▸ hw_lt
+    obtain ⟨ρ, hρ_gt, hρ_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hspec
+    rw [spectrum.spectralRadius_eq_gelfandRadius,
+      ENNReal.ofReal_lt_coe_iff (gelfandRadius_nonneg b)] at hρ_gt
+    obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt b hρ_gt
+    have hpsum : Summable fun n => ‖p.coeff n‖ * (ρ : ℝ) ^ n := by
+      simpa only [FormalMultilinearSeries.norm_apply_eq_norm_coef] using
+        p.summable_norm_mul_pow (hρ_lt.trans_le hr)
+    refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_) (hpsum.mul_left C)
+    rw [norm_smul]
+    calc ‖p.coeff n‖ * ‖b ^ n‖
+        ≤ ‖p.coeff n‖ * (C * (ρ : ℝ) ^ n) := mul_le_mul_of_nonneg_left (hC n) (norm_nonneg _)
+      _ = C * (‖p.coeff n‖ * (ρ : ℝ) ^ n) := by ring
+
+/-- In a complex Banach algebra, an element has spectral radius zero exactly when it has Gelfand
+radius zero. -/
+theorem spectralRadius_eq_zero_iff_gelfandRadius_eq_zero {A : Type*} [NormedRing A]
+    [NormedAlgebra ℂ A] [CompleteSpace A] {a : A} :
+    spectralRadius ℂ a = 0 ↔ gelfandRadius a = 0 := by
+  rw [spectrum.spectralRadius_eq_gelfandRadius, ENNReal.ofReal_eq_zero,
+    (gelfandRadius_nonneg a).ge_iff_eq']
 
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A] [IsScalarTower ℂ A A]
   [SMulCommClass ℂ A A] [CompleteSpace A]

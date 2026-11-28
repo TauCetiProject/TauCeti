@@ -25,6 +25,10 @@ Nondegeneracy is proved by pairing against the indicator function of a conjugacy
 class function off its pairings against the class indicators is what turns the expansion of a class
 function in the basis of irreducible characters into the second orthogonality relation.
 
+Splitting the defining sum over a subgroup `N` and its complement,
+`TauCeti.ClassFunction.characterPairing_eq_add_inv_index_mul` computes the pairing with a class
+function glued from a class function of `N` on `N` and a class function of `G` off `N`.
+
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2.
@@ -48,7 +52,7 @@ variable [Semifield k]
 noncomputable def characterPairing :
     LinearMap.BilinForm k (ClassFunction k G) :=
   LinearMap.mk₂ k
-    (fun f₁ f₂ => (Nat.card G : k)⁻¹ * ∑ g : G, f₁.1 g * f₂.1 g⁻¹)
+    (fun f₁ f₂ => (Nat.card G : k)⁻¹ * ∑ g : G, f₁.val g * f₂.val g⁻¹)
     (by
       intro f₁ f₂ f₃
       simp [add_mul, Finset.sum_add_distrib, mul_add])
@@ -67,7 +71,7 @@ noncomputable def characterPairing :
 /-- The defining formula for the character pairing. -/
 theorem characterPairing_apply (f₁ f₂ : ClassFunction k G) :
     characterPairing f₁ f₂ =
-      (Nat.card G : k)⁻¹ * ∑ g : G, f₁.1 g * f₂.1 g⁻¹ :=
+      (Nat.card G : k)⁻¹ * ∑ g : G, f₁.val g * f₂.val g⁻¹ :=
   (rfl)
 
 /-- The character pairing is symmetric. -/
@@ -99,12 +103,24 @@ theorem characterPairing_invMap_invMap (f₁ f₂ : ClassFunction k G) :
   congr 1
   exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by simp
 
+/-- **The character pairing is invariant under a group isomorphism**: pulling two class functions
+back along an isomorphism `e : H ≃* G` does not change their pairing. For an automorphism of `G`,
+this says that automorphisms act on class functions by isometries of the pairing. -/
+@[simp]
+theorem characterPairing_comap_mulEquiv {H : Type*} [Group H] [Fintype H] (e : H ≃* G)
+    (f₁ f₂ : ClassFunction k G) :
+    characterPairing (comap (e : H →* G) f₁) (comap (e : H →* G) f₂) =
+      characterPairing f₁ f₂ := by
+  rw [characterPairing_apply, characterPairing_apply, Nat.card_congr e.toEquiv]
+  congr 1
+  exact Fintype.sum_equiv e.toEquiv _ _ fun h => by simp
+
 /-- **Pairing against a class indicator evaluates a class function.** Pairing `f` with the indicator
 of the class of `x⁻¹` returns the value of `f` at `x`, weighted by the size of the class of `x` and
 the normalization `|G|⁻¹`. -/
 theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
     characterPairing f (classIndicator x⁻¹) =
-      (Nat.card G : k)⁻¹ * (Nat.card (ConjClasses.mk x).carrier * f.1 x) := by
+      (Nat.card G : k)⁻¹ * (Nat.card (ConjClasses.mk x).carrier * f.val x) := by
   classical
   let : Fintype (ConjClasses.mk x).carrier := Fintype.ofFinite _
   have hcarrier : (ConjClasses.mk x).carrier = {g | IsConj g x} := by
@@ -117,11 +133,11 @@ theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
   rw [characterPairing_apply]
   congr 1
   calc
-    _ = ∑ g : G, if IsConj g x then f.1 g else 0 := by
+    _ = ∑ g : G, if IsConj g x then f.val g else 0 := by
       simp [classIndicator_apply, hconj, mul_ite]
-    _ = ∑ g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 g := by
+    _ = ∑ g ∈ Finset.univ.filter (fun g => IsConj g x), f.val g := by
       rw [Finset.sum_filter]
-    _ = ∑ _g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 x := by
+    _ = ∑ _g ∈ Finset.univ.filter (fun g => IsConj g x), f.val x := by
       apply Finset.sum_congr rfl
       intro g hg
       exact ClassFunction.eq_of_isConj f (by simpa using Finset.mem_filter.mp hg |>.2)
@@ -268,6 +284,32 @@ theorem characterPairing_ofFDRep_eq_zero
   rw [characterPairing_ofFDRep_eq_finrank V W,
     CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k fun i => h.elim i.symm,
     Nat.cast_zero]
+
+/-- **The pairing with a class function glued from a class function of a subgroup and one of `G`.**
+If `F` agrees with the class function `Y` of the subgroup `N` on `N`, and with `Θ` off `N`, then
+splitting the sum over `G` into `N` and its complement gives
+`⟨c, F⟩_G = ⟨c, Θ⟩_G + n⁻¹ (⟨c|_N, Y⟩_N - ⟨c|_N, Θ|_N⟩_N)` for the index `n` of `N`. This holds
+over any field and for any subgroup. -/
+theorem characterPairing_eq_add_inv_index_mul {N : Subgroup G} [Fintype N]
+    {Y : ClassFunction k N} {Θ F : ClassFunction k G} (hres : ∀ n : N, F.val n = Y.val n)
+    (hoff : Set.EqOn F.val Θ.val (N : Set G)ᶜ) (c : ClassFunction k G) :
+    characterPairing c F = characterPairing c Θ + (N.index : k)⁻¹ *
+      (characterPairing (comap N.subtype c) Y -
+        characterPairing (comap N.subtype c) (comap N.subtype Θ)) := by
+  classical
+  -- split a sum over `G` into the sum over `N` and the sum over the complement of `N`
+  have hsplit (u : G → k) : ∑ g, u g = ∑ n : N, u n + ∑ g with g ∉ N, u g := by
+    rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (· ∈ N) u,
+      Finset.sum_subtype (p := (· ∈ N)) _ (by simp) u]
+  have hon : ∑ n : N, c.val n * F.val (n : G)⁻¹ = ∑ n : N, c.val n * Y.val n⁻¹ :=
+    Finset.sum_congr rfl fun n _ => by rw [← hres n⁻¹, Subgroup.coe_inv]
+  have hoff' : ∑ g with g ∉ N, c.val g * F.val g⁻¹ = ∑ g with g ∉ N, c.val g * Θ.val g⁻¹ :=
+    Finset.sum_congr rfl fun g hg => by
+      rw [hoff (x := g⁻¹) (by simpa using (Finset.mem_filter.mp hg).2)]
+  simp only [characterPairing_apply, comap_apply, Subgroup.subtype_apply, Subgroup.coe_inv]
+  rw [hsplit fun g => c.val g * F.val g⁻¹, hsplit fun g => c.val g * Θ.val g⁻¹, hon, hoff',
+    ← N.index_mul_card, Nat.cast_mul, mul_inv]
+  ring
 
 end ClassFunction
 

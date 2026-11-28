@@ -45,6 +45,12 @@ compact open subgroup.
 * `NonarchimedeanGroup.nhds_hasBasis_isCompact_openSubgroup`,
   `NonarchimedeanGroup.isCoinitial_isCompact_openSubgroup`: left cosets of compact open subgroups
   form a basis at every point, and the compact open subgroups are coinitial among open subgroups.
+* `NonarchimedeanGroup.eq_one_of_forall_mem_isCompact_openSubgroup`,
+  `NonarchimedeanGroup.discreteTopology_of_forall_isCompact_openSubgroup_le`: in a T1 such group
+  the compact open subgroups meet in `{1}`, so an open subgroup inside all of them makes the
+  group discrete.
+* `Subgroup.isOpen_iff_exists_isCompact_openSubgroup_le`: in such a group a subgroup is open
+  exactly when it contains a compact open subgroup.
 * `OpenSubgroup.directedOn_isCompact`: the compact open subgroups are directed under reverse
   inclusion.
 * `OpenSubgroup.nhds_one_hasBasis_isCompact_and_le`,
@@ -144,7 +150,41 @@ theorem isCoinitial_isCompact_openSubgroup :
     IsCoinitial {V : OpenSubgroup G | IsCompact (V : Set G)} := fun W ↦
   (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.1 W.mem_nhds_one
 
+variable [T1Space G]
+
+/-- In a T1, weakly locally compact nonarchimedean group, an element lying in every compact open
+subgroup is the identity. -/
+@[to_additive /-- In a T1, weakly locally compact nonarchimedean additive group, an element lying
+in every compact open additive subgroup is zero. -/]
+theorem eq_one_of_forall_mem_isCompact_openSubgroup {g : G}
+    (h : ∀ V : OpenSubgroup G, IsCompact (V : Set G) → g ∈ V) : g = 1 := by
+  by_contra hne
+  obtain ⟨V, hVc, hVg⟩ := (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.1
+    (isOpen_compl_singleton.mem_nhds (Ne.symm hne))
+  exact hVg (h V hVc) rfl
+
+/-- A T1, weakly locally compact nonarchimedean group is discrete as soon as some open subgroup `U`
+lies in every compact open subgroup. -/
+@[to_additive /-- A T1, weakly locally compact nonarchimedean additive group is discrete as soon
+as some open additive subgroup `U` lies in every compact open additive subgroup. -/]
+theorem discreteTopology_of_forall_isCompact_openSubgroup_le {U : OpenSubgroup G}
+    (h : ∀ V : OpenSubgroup G, IsCompact (V : Set G) → U ≤ V) : DiscreteTopology G := by
+  refine discreteTopology_of_isOpen_singleton_one ?_
+  convert U.isOpen using 1
+  exact Set.ext fun g ↦ ⟨fun hg ↦ hg ▸ U.one_mem,
+    fun hg ↦ eq_one_of_forall_mem_isCompact_openSubgroup fun V hV ↦ h V hV hg⟩
+
 end NonarchimedeanGroup
+
+/-- In a weakly locally compact nonarchimedean group, a subgroup is open exactly when it contains
+a compact open subgroup. -/
+@[to_additive /-- In a weakly locally compact nonarchimedean additive group, an additive subgroup
+is open exactly when it contains a compact open additive subgroup. -/]
+theorem Subgroup.isOpen_iff_exists_isCompact_openSubgroup_le [NonarchimedeanGroup G]
+    [WeaklyLocallyCompactSpace G] (H : Subgroup G) :
+    IsOpen (H : Set G) ↔ ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ (U : Subgroup G) ≤ H :=
+  ⟨fun hH ↦ NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup.mem_iff.1
+    (hH.mem_nhds H.one_mem), fun ⟨_, _, hUH⟩ ↦ H.isOpen_of_openSubgroup hUH⟩
 
 namespace OpenSubgroup
 
@@ -181,7 +221,7 @@ theorem exists_isCompact_le_normal_of_mem_nhds_one [IsTopologicalGroup G]
   have hU₀'_open : IsOpen (U₀' : Set G) := by simpa [U₀'] using U₀.isOpen
   have : CompactSpace U₀' := isCompact_iff_compactSpace.mp hU₀'_compact
   have hs_sub : (((↑) : U₀' → G) ⁻¹' s) ∈ 𝓝 (1 : U₀') :=
-    continuous_subtype_val.continuousAt hs
+    continuous_subtypeVal.continuousAt hs
   obtain ⟨W, hWs, hW_open, h1W⟩ := mem_nhds_iff.mp hs_sub
   obtain ⟨N, hNW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (G := U₀') hW_open h1W
@@ -189,11 +229,11 @@ theorem exists_isCompact_le_normal_of_mem_nhds_one [IsTopologicalGroup G]
   let H_sub : Subgroup G := N.toSubgroup.map U₀'.subtype
   have hH_open : IsOpen (H_sub : Set G) := by
     rw [Subgroup.coe_map, Subgroup.coe_subtype]
-    exact hU₀'_open.isOpenMap_subtype_val _ N.toOpenSubgroup.isOpen
+    exact hU₀'_open.isOpenMap_subtypeVal _ N.toOpenSubgroup.isOpen
   let V : OpenSubgroup G := ⟨H_sub, hH_open⟩
   have hVU₀ : V ≤ U₀ := by
     rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   have hsub : V.toSubgroup.subgroupOf U₀' = N.toSubgroup := by
     ext x
     simp [V, H_sub, Subgroup.mem_subgroupOf]

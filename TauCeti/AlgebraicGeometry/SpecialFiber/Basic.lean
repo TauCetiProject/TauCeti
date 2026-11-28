@@ -18,7 +18,9 @@ point. This file gives their canonical equivalence and the resulting comparison 
 including its projection identities.
 
 The comparison lets statements about the special fibre be transported between its base-change
-presentation and the fibre over the closed point, while preserving both projections.
+presentation and the fibre over the closed point, while preserving both projections; in
+particular, the underlying set of the special fibre is the preimage of the closed point
+(`TauCeti.range_specialFiberι`).
 
 Every point of the spectrum of a local domain of Krull dimension at most one, such as a discrete
 valuation ring, is its generic point or its closed point, which coincide when the ring is a field
@@ -32,6 +34,11 @@ special fibre (`TauCeti.range_genericFiberι_eq_setOf_ne_closedPoint`,
 `TauCeti.range_genericFiberι_of_isDiscreteValuationRing`), showing that any point outside the
 special fibre witnesses nonemptiness of the generic fibre
 (`AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_closedPoint`).
+
+For a local homomorphism `φ : R →+* R'` of local rings, the residue field map makes the square of
+spectra `Spec κ(R') ⟶ Spec R' ⟶ Spec R = Spec κ(R') ⟶ Spec κ(R) ⟶ Spec R` commute
+(`TauCeti.specMap_residue_comp_specMap`), so the special fibre over `R'` lies over the special fibre
+over `R`.
 -/
 
 public section
@@ -173,6 +180,24 @@ lemma specialFiberIsoFiberClosedPoint_inv_fiberToSpecResidueField :
 
 end ClosedPoint
 
+/-- The special fibre of a scheme over a local ring is, as a set, the preimage of the closed
+point: the special fibre is isomorphic over `X` to Mathlib's fibre of `toBase` at the closed
+point. -/
+theorem range_specialFiberι (R : Type u) [CommRing R] [IsLocalRing R]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (specialFiberι R toBase) = toBase ⁻¹' {closedPoint R} :=
+  calc Set.range (specialFiberι R toBase)
+      = Set.range (specialFiberι R toBase ∘
+          (specialFiberIsoFiberClosedPoint (.of R) toBase).inv) :=
+        ((specialFiberIsoFiberClosedPoint (.of R) toBase).inv.surjective.range_comp _).symm
+    _ = Set.range ((specialFiberIsoFiberClosedPoint (.of R) toBase).inv ≫
+          specialFiberι R toBase) :=
+        congrArg Set.range (funext fun x ↦ (Scheme.Hom.comp_apply _ _ x).symm)
+    _ = Set.range (toBase.fiberι (closedPoint R)) :=
+        congrArg (fun g : toBase.fiber (closedPoint R) ⟶ X ↦ Set.range g)
+          (specialFiberIsoFiberClosedPoint_inv_specialFiberι (.of R) toBase)
+    _ = toBase ⁻¹' {closedPoint R} := Scheme.Hom.range_fiberι toBase (closedPoint R)
+
 section DimensionLEOne
 
 variable {R : CommRingCat.{u}} [IsLocalRing R] [IsDomain R] [Ring.DimensionLEOne R]
@@ -236,5 +261,17 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_clo
       genericPoint_eq_bot_of_affine]
     exact (IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top (toBase x)).resolve_right hx
   exact ⟨y⟩
+
+/-- For a local homomorphism `φ : R →+* R'` of local rings, `Spec κ(R') ⟶ Spec R' ⟶ Spec R` is
+`Spec κ(R') ⟶ Spec κ(R) ⟶ Spec R`: the special fibre over `R'` lies over the special fibre over
+`R`. -/
+@[reassoc]
+theorem specMap_residue_comp_specMap {R R' : Type u} [CommRing R] [CommRing R'] [IsLocalRing R]
+    [IsLocalRing R'] (φ : R →+* R') [IsLocalHom φ] :
+    Spec.map (CommRingCat.ofHom (residue R')) ≫ Spec.map (CommRingCat.ofHom φ) =
+      Spec.map (CommRingCat.ofHom (ResidueField.map φ)) ≫
+        Spec.map (CommRingCat.ofHom (residue R)) := by
+  rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp,
+    ResidueField.map_comp_residue]
 
 end TauCeti

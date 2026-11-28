@@ -129,8 +129,8 @@ theorem lengthPiece_eq_span (n : ℕ) :
   rw [Set.mem_pow]
   constructor
   · rintro ⟨x, rfl⟩
-    refine ⟨fun i => (x i).2.choose, ?_⟩
-    simp only [(x _).2.choose_spec]
+    refine ⟨fun i => (x i).property.choose, ?_⟩
+    simp only [(x _).property.choose_spec]
   · rintro ⟨x, rfl⟩
     exact ⟨fun i => ⟨generator G (x i), ⟨x i, rfl⟩⟩, rfl⟩
 
@@ -177,10 +177,10 @@ theorem decompose_lengthPiece_zero (a : SignedSym G) :
   | @homogeneous n a =>
     by_cases hn : n = 0
     · subst n
-      rw [decompose_lengthPiece_of_mem G a.2, ite_eq_left rfl,
-        algebraMap_augmentation_of_mem_lengthPiece_zero G a.2]
-    · rw [decompose_lengthPiece_of_mem G a.2, ite_eq_right (Ne.symm hn),
-        augmentation_eq_zero_of_mem_lengthPiece G hn a.2, map_zero]
+      rw [decompose_lengthPiece_of_mem G a.property, ite_eq_left rfl,
+        algebraMap_augmentation_of_mem_lengthPiece_zero G a.property]
+    · rw [decompose_lengthPiece_of_mem G a.property, ite_eq_right (Ne.symm hn),
+        augmentation_eq_zero_of_mem_lengthPiece G hn a.property, map_zero]
   | add a b ha hb =>
     simp only [DirectSum.decompose_add, DirectSum.add_apply, AddMemClass.coe_add, map_add, ha, hb]
 
@@ -235,30 +235,20 @@ theorem lengthPiece_le_signedSymPiece_of_piece_eq_bot {d : ι}
 vanish in `SignedSym G`. -/
 theorem signedSymPiece_eq_bot_of_piece_eq_bot_of_forall_mul_ne {d p : ι}
     (hG : ∀ q, q ≠ d → G.piece q = ⊥) (hp : ∀ n : ℕ, (n : ι) * d ≠ p) :
-    signedSymPiece G p = ⊥ := by
-  rw [eq_bot_iff]
-  intro a ha
-  rw [Submodule.mem_bot, ← DirectSum.decompose_of_mem_same (signedSymPiece G) ha]
-  have hsum := DirectSum.decompose_map_eq_sum (lengthPiece G) (signedSymPiece G)
-    (AddMonoidHom.id (SignedSym G)) (fun n : ℕ => (n : ι) * d)
-    (fun n _ hx => lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG n hx) a p
-  simpa only [AddMonoidHom.id_apply] using hsum.trans
-    (Finset.sum_eq_zero fun n hn => (hp n (Finset.mem_filter.mp hn).2).elim)
+    signedSymPiece G p = ⊥ :=
+  (Submodule.eq_bot_iff _).2 fun _ ha ↦
+    DirectSum.Decomposition.eq_zero_of_mem_of_forall_ne (lengthPiece G) (signedSymPiece G)
+      (fun m ↦ lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG m) hp ha
 
 /-- When `V` is concentrated in a nonzero degree `d` of a characteristic-zero right-cancellative
 degree semiring (such as `ℤ` or `ℕ`), the input-degree piece `n * d` coincides with the
 word-length piece `lengthPiece G n`. -/
 theorem signedSymPiece_eq_lengthPiece_of_piece_eq_bot [IsRightCancelMulZero ι] [CharZero ι]
     {d : ι} (hd : d ≠ 0) (hG : ∀ q, q ≠ d → G.piece q = ⊥) (n : ℕ) :
-    signedSymPiece G (n * d) = lengthPiece G n := by
-  refine le_antisymm (fun a ha => ?_) (lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG n)
-  have hshift := DirectSum.map_decompose_shift (lengthPiece G) (signedSymPiece G)
-    (AddMonoidHom.id (SignedSym G)) (fun m : ℕ => (m : ι) * d)
-    (fun m₁ m₂ hm => Nat.cast_injective (mul_right_cancel₀ hd hm))
-    (fun m _ hx => lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG m hx) n a
-  simp only [AddMonoidHom.id_apply, DirectSum.decompose_of_mem_same (signedSymPiece G) ha] at hshift
-  rw [← hshift]
-  exact (DirectSum.decompose (lengthPiece G) a n).2
+    signedSymPiece G (n * d) = lengthPiece G n :=
+  (DirectSum.Decomposition.eq_of_subset_shift (lengthPiece G) (signedSymPiece G)
+    (fun _ _ hm ↦ Nat.cast_injective (mul_right_cancel₀ hd hm))
+    (fun m ↦ lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG m) n).symm
 
 end SingleDegree
 

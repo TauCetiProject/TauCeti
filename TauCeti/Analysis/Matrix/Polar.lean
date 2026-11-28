@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.Analysis.Matrix.Rpow
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 
 /-!
@@ -17,8 +17,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 Over `𝕜 = ℝ` or `ℂ`, every invertible matrix `A : GL n 𝕜` factors uniquely as `A = P U` with `P`
 positive definite and `U` unitary (orthogonal when `𝕜 = ℝ`): `P = √(A Aᴴ)` is the square root of
 the continuous functional calculus and `U = Units.polarUnitary A`. This file specializes the
-polar decomposition of invertible elements of
-`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar.lean` to matrices, where the
+polar decomposition of invertible elements in
+`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar/Basic.lean`
+to matrices, where the
 positive factor is positive definite, and computes the determinants of both factors:
 `det P = ‖det A‖` and `det U = det A / ‖det A‖`.
 
@@ -34,13 +35,16 @@ or the symplectic group (`W = J`), contains the polar factors of its elements.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.posDef_sqrt_mul_star`: the positive factor `√(A Aᴴ)` is positive
-  definite.
+* `Matrix.GeneralLinearGroup.posDef_sqrt_mul_star`,
+  `Matrix.GeneralLinearGroup.posDef_sqrt_star_mul`: the positive factors `√(A Aᴴ)` and `√(Aᴴ A)`
+  of the left and right polar decompositions are positive definite.
 * `Matrix.GeneralLinearGroup.existsUnique_posDef_mul_unitary`: existence and uniqueness of the
   polar decomposition `A = P U` with `P` positive definite and `U` unitary.
 * `Matrix.GeneralLinearGroup.coe_mul_inv_toUnits_polarUnitary`: the positive factor is `A U⁻¹`.
+* `Matrix.det_mul_star`: the determinant of `A Aᴴ` is `‖det A‖ ^ 2`.
 * `Matrix.det_sqrt_mul_star`, `Matrix.GeneralLinearGroup.det_polarUnitary`: the determinants of
-  the two factors; the first holds for every square matrix.
+  the two factors; the first holds for every square matrix, as does its right-hand counterpart
+  `Matrix.det_sqrt_star_mul`.
 * `Matrix.GeneralLinearGroup.exists_scalar_mul_mul_toGL_eq`: every invertible matrix is a scalar
   times a unitary matrix times a matrix of determinant one.
 * `Matrix.GeneralLinearGroup.det_rpow_sqrt_mul_star_of_det_eq_one`,
@@ -66,13 +70,21 @@ namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
+/-- The determinant of `A Aᴴ` is `‖det A‖ ^ 2`. -/
+theorem det_mul_star (A : Matrix n n 𝕜) : (A * star A).det = (‖A.det‖ : 𝕜) ^ 2 := by
+  rw [det_mul, star_eq_conjTranspose, det_conjTranspose, RCLike.star_def, RCLike.mul_conj]
+
 /-- The determinant of the positive factor `√(A Aᴴ)` of the polar decomposition is `‖det A‖`;
 this holds for every square matrix `A`, invertible or not. -/
 theorem det_sqrt_mul_star (A : Matrix n n 𝕜) : (CFC.sqrt (A * star A)).det = ‖A.det‖ := by
   have hAA : (A * star A).PosSemidef := nonneg_iff_posSemidef.1 (mul_star_self_nonneg _)
-  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul, star_eq_conjTranspose, det_conjTranspose,
-    RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re, ← Real.sqrt_eq_rpow,
-    Real.sqrt_sq (norm_nonneg _)]
+  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul_star, ← RCLike.ofReal_pow, RCLike.ofReal_re,
+    ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
+
+/-- The determinant of the right positive factor `√(Aᴴ A)` is `‖det A‖`; this holds for every
+square matrix `A`, invertible or not. -/
+theorem det_sqrt_star_mul (A : Matrix n n 𝕜) : (CFC.sqrt (star A * A)).det = ‖A.det‖ := by
+  simpa [star_eq_conjTranspose, det_conjTranspose] using det_sqrt_mul_star (star A)
 
 namespace GeneralLinearGroup
 
@@ -82,6 +94,11 @@ variable (A : GL n 𝕜)
 definite. -/
 theorem posDef_sqrt_mul_star : (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜))).PosDef :=
   isStrictlyPositive_iff_posDef.1 (Units.isStrictlyPositive_sqrt_mul_star A)
+
+/-- The positive factor `√(Aᴴ A)` of the right polar decomposition of an invertible matrix is
+positive definite. -/
+theorem posDef_sqrt_star_mul : (CFC.sqrt (star (A : Matrix n n 𝕜) * (A : Matrix n n 𝕜))).PosDef :=
+  isStrictlyPositive_iff_posDef.1 (Units.isStrictlyPositive_sqrt_star_mul A)
 
 /-- **The polar decomposition of an invertible matrix.** Every `A : GL n 𝕜` is uniquely a product
 `P U` of a positive definite matrix `P` and a unitary matrix `U`; over `ℝ`, `U` is orthogonal. -/
@@ -133,7 +150,7 @@ private theorem inv_transpose_sqrt_mul_map_star_polarUnitary :
   set U := Units.polarUnitary A
   have hPU : P * U = A := Units.sqrt_mul_star_mul_polarUnitary A
   have hU : (U : Matrix n n 𝕜)⁻¹ = star (U : Matrix n n 𝕜) :=
-    inv_eq_left_inv (Unitary.star_mul_self_of_mem U.2)
+    inv_eq_left_inv (Unitary.star_mul_self_of_mem U.property)
   -- `(A⁻¹)ᵀ = ((P U)⁻¹)ᵀ = (U⋆ P⁻¹)ᵀ = (P⁻¹)ᵀ (U⋆)ᵀ`, and `(U⋆)ᵀ` is the conjugate of `U`
   rw [coe_inverseTranspose, coe_units_inv, ← hPU, mul_inv_rev, hU, transpose_mul,
     star_eq_conjTranspose, conjTranspose_transpose, UnitaryGroup.map_star_coe]
@@ -190,7 +207,7 @@ theorem exists_scalar_mul_mul_toGL_eq :
     exact_mod_cast hrd
   refine ⟨(Units.mk0 (r : 𝕜) hr)⁻¹, U, ?_, ⟨_, hdet'⟩, ?_⟩
   · rw [mem_unitarySubgroup_iff, Units.unitary_eq]
-    exact (Units.polarUnitary A).2
+    exact (Units.polarUnitary A).property
   have htoGL : SpecialLinearGroup.toGL (⟨_, hdet'⟩ : SpecialLinearGroup n 𝕜) = s * (U⁻¹ * A) :=
     Units.ext (SpecialLinearGroup.coe_GL_coe_matrix _)
   -- The scalar `s` is central.

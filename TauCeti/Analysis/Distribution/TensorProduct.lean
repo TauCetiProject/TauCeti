@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
@@ -17,9 +18,9 @@ import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 /-!
 # Tensor products of distributions
 
-Let `Ω ⊆ E` and `O ⊆ D` be open subsets of real normed spaces, with `E` finite-dimensional, and
-let `V ⊆ Ω ×ˢ O` be open. For a distribution `T` on `O` and a test function `φ` on `V`, the
-**partial pairing** of `T` with `φ` is the function
+Let `Ω ⊆ E` and `O ⊆ D` be open subsets of real normed spaces, and let `V ⊆ Ω ×ˢ O` be open. For a
+distribution `T` on `O` and a test function `φ` on `V`, the **partial pairing** of `T` with `φ` is
+the function
 
 `x ↦ T (φ (x, ·))`
 
@@ -40,12 +41,11 @@ real test functions it is the product of the pairings,
 
 `(S ⊗ T) ((x, y) ↦ φ x ψ y) = S φ * T ψ`,
 
-and when `D` is also finite-dimensional and `V = Ω ×ˢ O` it is the only distribution with this
-property, because such tensor products span a dense subspace of the test functions on `Ω ×ˢ O`
-(`TestFunction.ext_prodSMulCLM`). The tensor product is bilinear and satisfies the Leibniz rule
-`∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`; when `D` is also finite-dimensional it is
-supported in the product of the supports. The tensor product of the point masses at `a` and `b`
-is the point mass at `(a, b)`.
+and when `V = Ω ×ˢ O` it is the only distribution with this property: such tensor products span
+a dense subspace of the test functions on `Ω ×ˢ O` (`TestFunction.ext_prodSMulCLM`). The tensor
+product is bilinear, satisfies the Leibniz rule
+`∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`, and is supported in the product of the
+supports. The tensor product of the point masses at `a` and `b` is the point mass at `(a, b)`.
 
 ## Main declarations
 
@@ -64,6 +64,7 @@ is the point mass at `(a, b)`.
 * `Distribution.lineDerivOp_tensorProduct`: `∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`.
 * `Distribution.tensorProduct_delta`: `δ_a ⊗ δ_b = δ_(a, b)`.
 * `Distribution.dsupport_tensorProduct_subset`: `supp (S ⊗ T) ⊆ supp S ×ˢ supp T`.
+* `Distribution.transportCLM_prodComm_tensorProduct`: commutativity, `(T ⊗ S) ∘ swap = S ⊗ T`.
 
 ## Implementation notes
 
@@ -140,7 +141,16 @@ private theorem tsupport_sliceRight_taylor_subset (hO : MapsTo Prod.snd (V : Set
     Function.notMem_support.1 fun h' ↦ hn x (support_fderiv_subset ℝ h')]
   simp
 
-variable [FiniteDimensional ℝ E]
+/-- On an infinite-dimensional `E`, every test function on `V ⊆ E × D` is zero, and so is the
+partial pairing. -/
+private theorem pairingFun_eq_zero_of_not_finiteDimensional (T : 𝓓'(O, F))
+    (hO : MapsTo Prod.snd (V : Set (E × D)) O) (φ : 𝓓(V, ℝ)) (hE : ¬FiniteDimensional ℝ E) :
+    pairingFun T hO φ = 0 := by
+  have hED : ¬FiniteDimensional ℝ (E × D) := fun _ ↦
+    hE (Module.Finite.of_surjective (LinearMap.fst ℝ E D) LinearMap.fst_surjective)
+  ext x
+  rw [eq_zero_of_not_finiteDimensional φ hED]
+  simp [pairingFun, sliceRight_eq_zero]
 
 /-- The partial pairing is differentiable at every point, with derivative in the direction `v`
 given by the partial pairing with `∂_{(v, 0)} φ`. -/
@@ -148,6 +158,10 @@ private theorem exists_hasFDerivAt_pairingFun (T : 𝓓'(O, F))
     (hO : MapsTo Prod.snd (V : Set (E × D)) O) (φ : 𝓓(V, ℝ)) (x : E) :
     ∃ L : E →L[ℝ] F, HasFDerivAt (pairingFun T hO φ) L x ∧
       ∀ v, L v = pairingFun T hO (∂_{((v, 0) : E × D)} φ) x := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp only [pairingFun_eq_zero_of_not_finiteDimensional T hO _ hE]
+    exact ⟨0, hasFDerivAt_const 0 x, fun v ↦ by simp⟩
   let L : E →L[ℝ] F := LinearMap.toContinuousLinearMap
     { toFun := fun v ↦ pairingFun T hO (∂_{((v, 0) : E × D)} φ) x
       map_add' := fun v w ↦ by
@@ -192,6 +206,10 @@ private theorem fderiv_pairingFun_apply (T : 𝓓'(O, F))
 
 private theorem contDiff_pairingFun (T : 𝓓'(O, F)) (hO : MapsTo Prod.snd (V : Set (E × D)) O)
     (φ : 𝓓(V, ℝ)) : ContDiff ℝ ∞ (pairingFun T hO φ) := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · rw [pairingFun_eq_zero_of_not_finiteDimensional T hO φ hE]
+    exact contDiff_const
   rw [contDiff_infty]
   intro n
   induction n generalizing φ with
@@ -362,7 +380,7 @@ end PartialPairing
 
 section TensorProduct
 
-variable [FiniteDimensional ℝ E] (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ))
+variable (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ))
   (hV : (V : Set (E × D)) ⊆ (Ω : Set E) ×ˢ (O : Set D))
 
 /-- The **tensor product** `S ⊗ T` of complex-valued distributions `S` on `Ω` and `T` on `O`, as a
@@ -429,8 +447,7 @@ theorem complexPairing_tensorProduct_eq_mul (hV' : (Ω : Set E) ×ˢ (O : Set D)
 /-- **Uniqueness of the tensor product.** When `V = Ω ×ˢ O`, the tensor product `S ⊗ T` is the
 only distribution on `V` taking the value `S φ * T ψ` on every tensor product
 `(x, y) ↦ φ x ψ y` of real test functions. -/
-theorem tensorProduct_eq [FiniteDimensional ℝ D]
-    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) {U : 𝓓'(V, ℂ)}
+theorem tensorProduct_eq (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) {U : 𝓓'(V, ℂ)}
     (h : ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)), U (prodSMulCLM ψ hV.symm.subset φ) = S φ * T ψ) :
     S.tensorProduct T hV.subset = U :=
   ext_prodSMulCLM hV fun ψ φ ↦ by rw [tensorProduct_prodSMulCLM, h]
@@ -483,7 +500,7 @@ theorem tensorProduct_delta (a : E) (b : D) :
   simp [tensorProduct_apply]
 
 /-- **Support of the tensor product.** `supp (S ⊗ T) ⊆ supp S ×ˢ supp T`. -/
-theorem dsupport_tensorProduct_subset [FiniteDimensional ℝ D] :
+theorem dsupport_tensorProduct_subset :
     dsupport (S.tensorProduct T hV) ⊆ dsupport S ×ˢ dsupport T := by
   refine sInter_subset_of_mem ⟨fun φ hφ ↦ ?_, isClosed_dsupport.prod isClosed_dsupport⟩
   -- `B` is the first projection of the part of the support of `φ` lying over `supp T`. Off `B`
@@ -501,6 +518,23 @@ theorem dsupport_tensorProduct_subset [FiniteDimensional ℝ D] :
   rw [tensorProduct_apply, complexPairing_eq_of_eventuallyEq S (ψ := 0)
     (eventually_of_mem (hB.isOpen_compl.mem_nhdsSet.2 hSB) fun x hx ↦ by simp [hzero x hx]),
     map_zero]
+
+/-- **Commutativity of the tensor product.** Transporting `T ⊗ S`, on `O ×ˢ Ω ⊆ D × E`, along
+the swap `E × D ≃ D × E` gives `S ⊗ T` on `Ω ×ˢ O`: `(T ⊗ S) (φ ∘ swap) = (S ⊗ T) φ`. This is
+Fubini's theorem for distributions. -/
+theorem transportCLM_prodComm_tensorProduct {V' : Opens (D × E)}
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+    (hV' : (V' : Set (D × E)) = (O : Set D) ×ˢ (Ω : Set E))
+    (h : MapsTo (ContinuousLinearEquiv.prodComm ℝ E D) V V') :
+    transportCLM (ContinuousLinearEquiv.prodComm ℝ E D) h (T.tensorProduct S hV'.subset) =
+      S.tensorProduct T hV.subset := by
+  refine (tensorProduct_eq S T hV fun φ ψ ↦ ?_).symm
+  -- The swap of the tensor product of `φ` and `ψ` is the tensor product of `ψ` and `φ`.
+  have hswap : (ContinuousLinearEquiv.prodComm ℝ E D).transportTestFunction ℝ h
+      (prodSMulCLM ψ hV.symm.subset φ) = prodSMulCLM φ hV'.symm.subset ψ := by
+    ext p
+    simp [smul_eq_mul, mul_comm]
+  rw [transportCLM_apply, hswap, tensorProduct_prodSMulCLM, mul_comm]
 
 end TensorProduct
 

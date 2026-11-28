@@ -107,7 +107,7 @@ private theorem radialMap_smul (Ψ : AmbientIsotopy (sphere (0 : E) 1 × Z))
     radialMap Ψ (r • (u : E), z) =
       (r • ((Ψ.toContinuousMap (collarTime r, (u, z))).1 : E),
         (Ψ.toContinuousMap (collarTime r, (u, z))).2) := by
-  have hu : ‖(u : E)‖ = 1 := mem_sphere_zero_iff_norm.mp u.2
+  have hu : ‖(u : E)‖ = 1 := mem_sphere_zero_iff_norm.mp u.property
   have h : r • (u : E) ≠ 0 := by
     rw [← norm_ne_zero_iff, norm_smul, hu, mul_one, Real.norm_of_nonneg hr.le]
     exact hr.ne'
@@ -151,24 +151,24 @@ private theorem continuous_radialMap (Ψ : AmbientIsotopy (sphere (0 : E) 1 × Z
     let e : {x : E // x ≠ 0} × Z → E × Z := Prod.map Subtype.val id
     have he : IsOpenEmbedding e :=
       (isOpen_ne.isOpenEmbedding_subtypeVal).prodMap IsOpenEmbedding.id
-    have hdir : Continuous fun x : {x : E // x ≠ 0} => direction x.1 x.2 :=
+    have hdir : Continuous fun x : {x : E // x ≠ 0} => direction x.val x.property :=
       continuous_fst.comp (homeomorphUnitSphereProd E).continuous
     have hcomp : radialMap Ψ ∘ e = fun q =>
         (‖(q.1 : E)‖ • ((Ψ.toContinuousMap (collarTime ‖(q.1 : E)‖,
-          (direction q.1.1 q.1.2, q.2))).1 : E),
-        (Ψ.toContinuousMap (collarTime ‖(q.1 : E)‖, (direction q.1.1 q.1.2, q.2))).2) := by
+          (direction q.1.val q.1.property, q.2))).1 : E),
+        (Ψ.toContinuousMap (collarTime ‖(q.1 : E)‖, (direction q.1.val q.1.property, q.2))).2) := by
       funext q
-      exact radialMap_of_ne_zero Ψ q.1.2
+      exact radialMap_of_ne_zero Ψ q.1.property
     have hcont : Continuous (radialMap Ψ ∘ e) := by
       rw [hcomp]
       have ht : Continuous fun q : {x : E // x ≠ 0} × Z => collarTime ‖(q.1 : E)‖ :=
         continuous_projIcc.comp (by fun_prop)
       have hΨ : Continuous fun q : {x : E // x ≠ 0} × Z =>
-          Ψ.toContinuousMap (collarTime ‖(q.1 : E)‖, (direction q.1.1 q.1.2, q.2)) :=
+          Ψ.toContinuousMap (collarTime ‖(q.1 : E)‖, (direction q.1.val q.1.property, q.2)) :=
         Ψ.toContinuousMap.continuous.comp (ht.prodMk ((hdir.comp continuous_fst).prodMk
           continuous_snd))
       exact ((by fun_prop : Continuous fun q : {x : E // x ≠ 0} × Z => ‖(q.1 : E)‖).smul
-        (continuous_subtype_val.comp (continuous_fst.comp hΨ))).prodMk (continuous_snd.comp hΨ)
+        (continuous_subtypeVal.comp (continuous_fst.comp hΨ))).prodMk (continuous_snd.comp hΨ)
     have := he.continuousAt_iff (g := radialMap Ψ) (x := (⟨p.1, hp⟩, p.2))
     exact this.mp hcont.continuousAt
 
@@ -230,11 +230,11 @@ on `‖x‖ ≤ 1 / 2` (`closedBallProdHomeomorph_of_norm_le`) and the final hom
 boundary `S × Z` (`closedBallProdHomeomorph_inclusion`). -/
 def closedBallProdHomeomorph : closedBall (0 : E) 1 × Z ≃ₜ closedBall (0 : E) 1 × Z where
   toFun p := (⟨(Φ.radialHomeomorph ((p.1 : E), p.2)).1, by
-      simpa only [mem_closedBall_zero_iff, norm_fst_radialHomeomorph] using p.1.2⟩,
+      simpa only [mem_closedBall_zero_iff, norm_fst_radialHomeomorph] using p.1.property⟩,
     (Φ.radialHomeomorph ((p.1 : E), p.2)).2)
   invFun p := (⟨(Φ.radialHomeomorph.symm ((p.1 : E), p.2)).1, by
       simpa only [mem_closedBall_zero_iff, symm_radialHomeomorph, norm_fst_radialHomeomorph]
-        using p.1.2⟩,
+        using p.1.property⟩,
     (Φ.radialHomeomorph.symm ((p.1 : E), p.2)).2)
   left_inv p := by simp
   right_inv p := by simp

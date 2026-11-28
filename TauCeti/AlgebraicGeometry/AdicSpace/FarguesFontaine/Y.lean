@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Analytic
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 
@@ -141,7 +141,7 @@ theorem spaY_eq_spa_inter_basicOpen (ϖ : R) :
 theorem isOpen_val_preimage_spaY (ϖ : R) :
     IsOpen (Subtype.val ⁻¹' spaY p ϖ : Set (spa (⊤ : Subring (WittVector p R)))) := by
   rw [spaY_eq_spa_inter_basicOpen, Set.preimage_inter, Subtype.coe_preimage_self, Set.univ_inter]
-  exact (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  exact (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 variable {p} {ϖ : R}
 

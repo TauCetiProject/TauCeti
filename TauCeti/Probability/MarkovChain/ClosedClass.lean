@@ -10,7 +10,8 @@ public import TauCeti.Probability.MarkovChain.Reachability
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.MarkovChain.MarkovProperty
 public import TauCeti.Probability.MarkovChain.Recurrence
-public import TauCeti.Data.ENat.ENNReal
+import TauCeti.MeasureTheory.MeasurableSpace.Embedding
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Entrance into closed communicating classes and restriction of path laws
@@ -27,13 +28,14 @@ permanence in the entered class; no stopping-time or conditional-law choice is n
 
 Restricting a Markov kernel to a measurable closed set preserves the entire trajectory law
 under the inclusion of paths, not just its finite-time transition probabilities. In particular,
-entrance and positive-return times have the same laws and the same extended nonnegative means.
-Recurrence and transience are therefore unchanged by restriction.
+entrance and positive-return times have the same laws and the same extended nonnegative means
+(`Kernel.meanReturnTime_subtype`). Recurrence and transience are therefore unchanged by
+restriction, without requiring measurable singletons.
 
 These identities allow results for chains on a finite closed communicating class to be used
-in an ambient, possibly infinite state space. The initial law may be any finite measure on the
-subtype. No countability or topology on the state space is needed. The Markov instance for the
-restricted kernel is equivalent to closedness by
+in an ambient, possibly infinite state space. The initial law may be any measure on the
+subtype. No countability, measurable singletons, or topology on the state space are needed for
+subtype restriction. The Markov instance for the restricted kernel is equivalent to closedness by
 `Kernel.isMarkovKernel_subtype_iff_isClosedSet`.
 
 ## References
@@ -131,23 +133,23 @@ variable {S : Type*} [MeasurableSpace S] {s : Set S}
 
 /-- Including paths of the restricted chain into the ambient space recovers the ambient
 chain law, with the initial measure pushed forward by inclusion. -/
-theorem markovChainLaw_map_subtype (ν : Measure s) [IsFiniteMeasure ν] :
+theorem markovChainLaw_map_subtype (ν : Measure s) :
     (markovChainLaw ν (κ.subtype hs)).map (fun ω n => (ω n).val) =
       markovChainLaw (ν.map Subtype.val) κ := by
-  apply Measure.markovChainLaw_map_comp ν (κ.subtype hs) κ measurable_subtype_coe
+  apply Measure.markovChainLaw_map_comp ν (κ.subtype hs) κ measurable_subtypeVal
   intro x
   have h := congrArg (fun η : Kernel s S => η x)
     (κ.map_subtype hs ((Kernel.isMarkovKernel_subtype_iff_isClosedSet hs).mp inferInstance))
-  simpa only [Kernel.map_apply _ measurable_subtype_coe, Kernel.comap_apply] using h
+  simpa only [Kernel.map_apply _ measurable_subtypeVal, Kernel.comap_apply] using h
 
 include hs hκs in
 /-- A chain whose initial measure is carried by a closed subtype stays in that set at all
 natural times, on one event of full measure. -/
-theorem ae_forall_mem_markovChainLaw_map_subtype (ν : Measure s) [IsFiniteMeasure ν] :
+theorem ae_forall_mem_markovChainLaw_map_subtype (ν : Measure s) :
     ∀ᵐ ω ∂markovChainLaw (ν.map Subtype.val) κ, ∀ n, ω n ∈ s := by
   rw [← markovChainLaw_map_subtype κ hs ν]
   have hi : Measurable (fun ω : ℕ → s => fun n => (ω n).val) :=
-    measurable_pi_iff.2 fun n => measurable_subtype_coe.comp (measurable_pi_apply n)
+    measurable_pi_iff.2 fun n => measurable_subtypeVal.comp (measurable_pi_apply n)
   exact (ae_map_iff hi.aemeasurable
     (by simpa only [ofPred_forall, preimage] using
       MeasurableSet.iInter fun n : ℕ => hs.preimage (measurable_pi_apply n))).2
@@ -156,7 +158,7 @@ theorem ae_forall_mem_markovChainLaw_map_subtype (ν : Measure s) [IsFiniteMeasu
 /-- Entrance-time laws are preserved by restriction to a closed set. The target is pulled
 back along inclusion; the lower index `m` may be zero (entrance) or one (positive return).
 Nonentrance retains its value `⊤`. -/
-theorem map_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFiniteMeasure ν]
+theorem map_hittingAfter_markovChainLaw_subtype (ν : Measure s)
     {t : Set S} (ht : MeasurableSet t) (m : ℕ) :
     (markovChainLaw ν (κ.subtype hs)).map
         (hittingAfter (fun n ω => ω n) (Subtype.val ⁻¹' t) m) =
@@ -165,14 +167,14 @@ theorem map_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFiniteMeasur
   have hhit : Measurable (hittingAfter (fun n (ω : ℕ → S) => ω n) t m) :=
     (Filtration.adapted_piLE.isStoppingTime_hittingAfter ht).measurable'
   have hi : Measurable (fun ω : ℕ → s => fun n => (ω n).val) :=
-    measurable_pi_iff.2 fun n => measurable_subtype_coe.comp (measurable_pi_apply n)
+    measurable_pi_iff.2 fun n => measurable_subtypeVal.comp (measurable_pi_apply n)
   rw [← markovChainLaw_map_subtype κ hs ν, Measure.map_map hhit hi]
   -- Both hitting times use exactly the same set of indices, by target preimage membership.
   congr 1
 
 /-- Extended mean entrance times are preserved by restriction. In particular `m = 1` and
 `t = {x.val}` compare positive-return means at `x`; nonreturn contributes infinite mean. -/
-theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFiniteMeasure ν]
+theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s)
     {t : Set S} (ht : MeasurableSet t) (m : ℕ) :
     (∫⁻ ω, (hittingAfter (fun n ω => ω n) (Subtype.val ⁻¹' t) m ω).recTopCoe ⊤
       (fun n => (n : ℝ≥0∞)) ∂markovChainLaw ν (κ.subtype hs)) =
@@ -183,36 +185,46 @@ theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFinite
   have hhit' : Measurable (hittingAfter (fun n (ω : ℕ → s) => ω n)
       (Subtype.val ⁻¹' t) m) :=
     (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-      (ht.preimage measurable_subtype_coe)).measurable'
+      (ht.preimage measurable_subtypeVal)).measurable'
   have hmean : Measurable (fun n : WithTop ℕ =>
       (n.recTopCoe ⊤ (fun k => (k : ℝ≥0∞)) : ℝ≥0∞)) := measurable_of_countable _
   rw [← MeasureTheory.lintegral_map hmean hhit',
     map_hittingAfter_markovChainLaw_subtype κ hs ν ht, MeasureTheory.lintegral_map hmean hhit]
 
-variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S] {s : Set S}
-  (κ : Kernel S S) [IsMarkovKernel κ] (hs : MeasurableSet s)
-  [IsMarkovKernel (κ.subtype hs)]
+private theorem markovChainLaw_dirac_subtype_map (x : s) :
+    (markovChainLaw (Measure.dirac x) (κ.subtype hs)).map
+        (Pi.map fun _ : ℕ => (Subtype.val : s → S)) =
+      markovChainLaw (Measure.dirac x.val) κ := by
+  rw [← Measure.map_dirac' measurable_subtypeVal x]
+  exact markovChainLaw_map_subtype κ hs (Measure.dirac x)
 
-/-- Restricting to a closed set preserves the extended mean positive return time. -/
+/-- Restricting a Markov kernel to a closed set preserves the extended mean positive return time
+of each of its states. -/
 @[simp]
 theorem meanReturnTime_subtype (x : s) :
     (κ.subtype hs).meanReturnTime x = κ.meanReturnTime x.val := by
-  have hpre : Subtype.val ⁻¹' ({x.val} : Set S) = ({x} : Set s) := by
-    ext y
-    simp [Subtype.ext_iff]
-  simpa only [meanReturnTime_def, hpre, Measure.map_dirac,
-    WithTop.recTopCoe_top_natCast_eq_toENNReal] using
-    κ.lintegral_hittingAfter_markovChainLaw_subtype hs (Measure.dirac x)
-      (measurableSet_singleton x.val) 1
+  rw [meanReturnTime_def, meanReturnTime_def, ← markovChainLaw_dirac_subtype_map κ hs x,
+    (MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtypeVal hs).lintegral_map]
+  congr 1
+  funext ω
+  exact congrArg ENat.toENNReal
+    (congrFun (Subtype.coe_injective.hittingAfter_singleton
+      (fun n (w : ℕ → s) => w n) x 1) ω).symm
 
 /-- Restricting to a closed set preserves and reflects recurrence of each of its states. -/
 @[simp]
 theorem isRecurrent_subtype_iff (x : s) :
     (κ.subtype hs).IsRecurrent x ↔ κ.IsRecurrent x.val := by
-  have hclosed := (isMarkovKernel_subtype_iff_isClosedSet hs).mp
-    (inferInstance : IsMarkovKernel (κ.subtype hs))
-  simp only [isRecurrent_iff_tsum_eq_top,
-    subtype_pow_apply κ hs hclosed, image_singleton]
+  rw [isRecurrent_iff, isRecurrent_iff, ← markovChainLaw_dirac_subtype_map κ hs x,
+    (MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtypeVal hs).map_apply]
+  have heq : (Pi.map fun _ : ℕ => (Subtype.val : s → S)) ⁻¹'
+      {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x.val} 1 ω ≠ ⊤} =
+      {ω : ℕ → s | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} := by
+    ext ω
+    exact iff_of_eq (congrArg (· ≠ ⊤)
+      (congrFun (Subtype.coe_injective.hittingAfter_singleton
+        (fun n (w : ℕ → s) => w n) x 1) ω))
+  rw [heq]
 
 /-- Restricting to a closed set preserves and reflects transience of each of its states. -/
 @[simp]

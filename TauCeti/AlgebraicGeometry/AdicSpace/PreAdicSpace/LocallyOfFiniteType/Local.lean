@@ -43,7 +43,7 @@ theorem LocallyOfFiniteType.ofRestrict_comp {f : X ⟶ Y} (hf : LocallyOfFiniteT
   rw [locallyOfFiniteType_iff, chartLocally_iff] at hf
   refine LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le W fun x ↦ ?_
   obtain ⟨U, hx, V, _, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-    hsheaf, eU, eV, hfac⟩ := hf x.1
+    hsheaf, eU, eV, hfac⟩ := hf x.val
   let C := presentationLimitPreAdicSpace P' T.plus
     T.isRingOfIntegralElements.isPowerBounded_of_mem hP'
   let g : C ⟶ X := eU.inv ≫ X.ofRestrict U.isOpenEmbedding
@@ -51,11 +51,11 @@ theorem LocallyOfFiniteType.ofRestrict_comp {f : X ⟶ Y} (hf : LocallyOfFiniteT
   let D : Opens X := g.isOpenEmbedding.isOpenMap.functor.obj O
   -- Unfolding g, base maps of composites reduce to function composition, and the
   -- base map of the restriction inclusion reduces to the subtype projection.
-  have hg : g.base (eU.hom.base ⟨x.1, hx⟩) = x.1 :=
-    congrArg (fun k : X.restrict U.isOpenEmbedding ⟶ X ↦ k.base ⟨x.1, hx⟩)
+  have hg : g.base (eU.hom.base ⟨x.val, hx⟩) = x.val :=
+    congrArg (fun k : X.restrict U.isOpenEmbedding ⟶ X ↦ k.base ⟨x.val, hx⟩)
       (Iso.hom_inv_id_assoc eU (X.ofRestrict U.isOpenEmbedding))
-  have hy : eU.hom.base ⟨x.1, hx⟩ ∈ O :=
-    Opens.mem_map.mpr (by rw [hg]; exact x.2)
+  have hy : eU.hom.base ⟨x.val, hx⟩ ∈ O :=
+    Opens.mem_map.mpr (by rw [hg]; exact x.property)
   refine ⟨D, ⟨_, hy, hg⟩, ?_, ?_⟩
   · rintro _ ⟨y, hy, rfl⟩
     exact hy
@@ -78,9 +78,7 @@ property, without any adicness hypothesis on the spaces. -/
 theorem LocallyOfFiniteType.isOpenImmersion_comp {f : X ⟶ Y} (hf : LocallyOfFiniteType f)
     (g : Z ⟶ X) [IsOpenImmersion g] : LocallyOfFiniteType (g ≫ f) := by
   let O : Opens X := ⟨Set.range g.base, g.isOpenEmbedding.isOpen_range⟩
-  have hr : Set.range g.base = Set.range (X.ofRestrict O.isOpenEmbedding).base :=
-    (Opens.set_range_inclusion' O).symm
-  rw [← IsOpenImmersion.isoOfRangeEq_hom_comp g (X.ofRestrict O.isOpenEmbedding) hr,
+  rw [← IsOpenImmersion.isoRestrictOfRangeEq_hom_ofRestrict g (O := O) rfl,
     Category.assoc, MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}]
   exact hf.ofRestrict_comp O
 

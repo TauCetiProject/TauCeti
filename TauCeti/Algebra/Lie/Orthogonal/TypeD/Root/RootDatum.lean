@@ -51,7 +51,7 @@ root datum. Its diagonal coordinates are the corresponding classical root vector
 noncomputable def typeDRootWeight (n : ℕ) (hn : 4 ≤ n)
     (k : Fin (2 * n * (n - 1))) :
     Module.Dual K (typeDDiagonalCartan K (Fin n)) :=
-  typeDWeightEquiv (fun i => (DynkinType.typeDRootEquiv n hn k).1 i)
+  typeDWeightEquiv (fun i => (DynkinType.typeDRootEquiv n hn k).val i)
 
 /-- The diagonal-basis coordinates of the Cartan functional indexed by `k` are the corresponding
 classical type-`D` root vector. -/
@@ -59,7 +59,7 @@ classical type-`D` root vector. -/
 theorem typeDWeightEquiv_symm_typeDRootWeight (n : ℕ) (hn : 4 ≤ n)
     (k : Fin (2 * n * (n - 1))) :
     (typeDWeightEquiv (K := K)).symm (typeDRootWeight n hn k) =
-      fun i => ((DynkinType.typeDRootEquiv n hn k).1 i : K) := by
+      fun i => ((DynkinType.typeDRootEquiv n hn k).val i : K) := by
   rw [typeDRootWeight, LinearEquiv.symm_apply_apply]
 
 /-- The Cartan functional indexed by `k`, evaluated on the `j`-th numbered Cartan generator, is
@@ -78,7 +78,7 @@ theorem typeDRootWeight_apply_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
   norm_cast
 
 private theorem typeDRoot_value_mem (x : DynkinType.TypeDRoot n) (a : Fin n) :
-    x.1 a ∈ ({0, 1, -1} : Set ℤ) := by
+    x.val a ∈ ({0, 1, -1} : Set ℤ) := by
   obtain ⟨i, j, hij, hx | hx | hx⟩ :=
     DynkinType.TypeDRoot.exists_eq_single_sub_or_add_or_neg_add x
   all_goals
@@ -102,8 +102,8 @@ theorem typeDRootWeight_injective (n : ℕ) (hn : 4 ≤ n) (h2 : (2 : K) ≠ 0) 
   apply Subtype.ext
   apply_fun (typeDWeightEquiv (K := K)).symm at hkl
   have hcast :
-      (fun i => ((DynkinType.typeDRootEquiv n hn k).1 i : K)) =
-        fun i => ((DynkinType.typeDRootEquiv n hn l).1 i : K) := by
+      (fun i => ((DynkinType.typeDRootEquiv n hn k).val i : K)) =
+        fun i => ((DynkinType.typeDRootEquiv n hn l).val i : K) := by
     simpa only [typeDWeightEquiv_symm_typeDRootWeight] using hkl
   funext i
   exact Int.cast_injOn_of_ringChar_ne_two hchar
@@ -116,7 +116,7 @@ theorem typeDRootWeight_ne_zero (n : ℕ) (hn : 4 ≤ n)
     typeDRootWeight (K := K) n hn k ≠ 0 := by
   intro hk
   have hcoord := congrArg (typeDWeightEquiv (K := K)).symm hk
-  have hzero : (fun i => ((DynkinType.typeDRootEquiv n hn k).1 i : K)) = 0 := by
+  have hzero : (fun i => ((DynkinType.typeDRootEquiv n hn k).val i : K)) = 0 := by
     simpa only [typeDWeightEquiv_symm_typeDRootWeight, map_zero] using hcoord
   obtain ⟨i, j, hij, hshape | hshape | hshape⟩ :=
     DynkinType.TypeDRoot.exists_eq_single_sub_or_add_or_neg_add
@@ -130,7 +130,7 @@ theorem typeDRootWeight_ne_zero (n : ℕ) (hn : 4 ≤ n)
 
 private theorem typeDRootWeight_eq_typeDWeightSub_of_val_eq
     (n : ℕ) (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) {i j : Fin n}
-    (hk : (DynkinType.typeDRootEquiv n hn k).1 = Pi.single i 1 - Pi.single j 1) :
+    (hk : (DynkinType.typeDRootEquiv n hn k).val = Pi.single i 1 - Pi.single j 1) :
     typeDRootWeight (K := K) n hn k = typeDWeightSub i j := by
   apply (typeDWeightEquiv (K := K)).symm.injective
   simp only [typeDWeightEquiv_symm_typeDRootWeight, typeDWeightSub_def, map_sub,
@@ -140,7 +140,7 @@ private theorem typeDRootWeight_eq_typeDWeightSub_of_val_eq
 
 private theorem typeDRootWeight_eq_typeDWeightAdd_of_val_eq
     (n : ℕ) (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) {i j : Fin n}
-    (hk : (DynkinType.typeDRootEquiv n hn k).1 = Pi.single i 1 + Pi.single j 1) :
+    (hk : (DynkinType.typeDRootEquiv n hn k).val = Pi.single i 1 + Pi.single j 1) :
     typeDRootWeight (K := K) n hn k = typeDWeightAdd i j := by
   apply (typeDWeightEquiv (K := K)).symm.injective
   simp only [typeDWeightEquiv_symm_typeDRootWeight, typeDWeightAdd_def, map_add,
@@ -150,7 +150,7 @@ private theorem typeDRootWeight_eq_typeDWeightAdd_of_val_eq
 
 private theorem typeDRootWeight_eq_neg_typeDWeightAdd_of_val_eq
     (n : ℕ) (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) {i j : Fin n}
-    (hk : (DynkinType.typeDRootEquiv n hn k).1 = -(Pi.single i 1 + Pi.single j 1)) :
+    (hk : (DynkinType.typeDRootEquiv n hn k).val = -(Pi.single i 1 + Pi.single j 1)) :
     typeDRootWeight (K := K) n hn k = -typeDWeightAdd i j := by
   apply (typeDWeightEquiv (K := K)).symm.injective
   simp only [typeDWeightEquiv_symm_typeDRootWeight, map_neg, typeDWeightAdd_def,
@@ -186,22 +186,18 @@ theorem rootSpace_typeDRootWeight_ne_bot (n : ℕ) (hn : 4 ≤ n)
 private theorem exists_typeDRootWeight_eq_typeDWeightSub
     (n : ℕ) (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :
     ∃ k, typeDRootWeight (K := K) n hn k = typeDWeightSub i j := by
-  let x : DynkinType.TypeDRoot n :=
-    ⟨Pi.single i 1 - Pi.single j 1, by
-      simp [dotProduct_sub, dotProduct_single, hij]⟩
-  obtain ⟨k, hk⟩ := (DynkinType.typeDRootEquiv n hn).surjective x
+  obtain ⟨k, hk⟩ :=
+    (DynkinType.typeDRootEquiv n hn).surjective (DynkinType.typeDRootSub hij)
   refine ⟨k, typeDRootWeight_eq_typeDWeightSub_of_val_eq n hn k ?_⟩
-  exact congrArg Subtype.val hk
+  exact (congrArg Subtype.val hk).trans (DynkinType.coe_typeDRootSub hij)
 
 private theorem exists_typeDRootWeight_eq_typeDWeightAdd
     (n : ℕ) (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :
     ∃ k, typeDRootWeight (K := K) n hn k = typeDWeightAdd i j := by
-  let x : DynkinType.TypeDRoot n :=
-    ⟨Pi.single i 1 + Pi.single j 1, by
-      simp [dotProduct_add, dotProduct_single, hij]⟩
-  obtain ⟨k, hk⟩ := (DynkinType.typeDRootEquiv n hn).surjective x
+  obtain ⟨k, hk⟩ :=
+    (DynkinType.typeDRootEquiv n hn).surjective (DynkinType.typeDRootAdd hij)
   refine ⟨k, typeDRootWeight_eq_typeDWeightAdd_of_val_eq n hn k ?_⟩
-  exact congrArg Subtype.val hk
+  exact (congrArg Subtype.val hk).trans (DynkinType.coe_typeDRootAdd hij)
 
 private theorem exists_typeDRootWeight_eq_neg_typeDWeightAdd
     (n : ℕ) (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :

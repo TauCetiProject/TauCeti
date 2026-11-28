@@ -44,13 +44,13 @@ example {X : Type*} [TopologicalSpace X] [SpectralSpace X] :
   have hR : IsProConstructible {q : X × X | (⊥ : Setoid X) q.1 q.2} :=
     hfst.isProConstructible_eq hsnd
   let e : {q : X × X // (⊥ : Setoid X) q.1 q.2} ≃ₜ X :=
-    { toFun := fun q ↦ q.1.1
+    { toFun := fun q ↦ q.val.1
       invFun := fun x ↦ ⟨(x, x), rfl⟩
-      left_inv := fun q ↦ Subtype.ext (Prod.ext rfl q.2)
+      left_inv := fun q ↦ Subtype.ext (Prod.ext rfl q.property)
       right_inv := fun _ ↦ rfl
-      continuous_toFun := continuous_fst.comp continuous_subtype_val
+      continuous_toFun := continuous_fst.comp continuous_subtypeVal
       continuous_invFun := (continuous_id.prodMk continuous_id).subtype_mk fun _ ↦ rfl }
-  have hs_open : IsOpenMap (fun q : {q : X × X // (⊥ : Setoid X) q.1 q.2} ↦ q.1.1) := e.isOpenMap
+  have hs_open : IsOpenMap (fun q : {q : X × X // (⊥ : Setoid X) q.1 q.2} ↦ q.val.1) := e.isOpenMap
   exact ⟨spectralSpace_quotient_of_isOpenMap hR hs_open,
     hR.isSpectralMap_fst.isSpectralMap_quotientMk_of_isOpenMap hs_open⟩
 
@@ -62,14 +62,14 @@ example {X : Type*} [TopologicalSpace X] [SpectralSpace X] :
     have heq : {q : X × X | (⊤ : Setoid X) q.1 q.2} = univ := eq_univ_of_forall fun _ ↦ trivial
     rw [heq]
     exact isProConstructible_univ
-  have hs_open : IsOpenMap (fun q : {q : X × X // (⊤ : Setoid X) q.1 q.2} ↦ q.1.1) := by
+  have hs_open : IsOpenMap (fun q : {q : X × X // (⊤ : Setoid X) q.1 q.2} ↦ q.val.1) := by
     intro O hO
     rw [isOpen_induced_iff] at hO
     obtain ⟨U, hUo, rfl⟩ := hO
-    have heq : (fun q : {q : X × X // (⊤ : Setoid X) q.1 q.2} ↦ q.1.1) '' (Subtype.val ⁻¹' U) =
+    have heq : (fun q : {q : X × X // (⊤ : Setoid X) q.1 q.2} ↦ q.val.1) '' (Subtype.val ⁻¹' U) =
         Prod.fst '' U := by
       ext x
-      exact ⟨fun ⟨q, hq, hqx⟩ ↦ ⟨q.1, hq, hqx⟩, fun ⟨p, hp, hpx⟩ ↦ ⟨⟨p, trivial⟩, hp, hpx⟩⟩
+      exact ⟨fun ⟨q, hq, hqx⟩ ↦ ⟨q.val, hq, hqx⟩, fun ⟨p, hp, hpx⟩ ↦ ⟨⟨p, trivial⟩, hp, hpx⟩⟩
     rw [heq]
     exact isOpenMap_fst U hUo
   exact spectralSpace_quotient_of_isOpenMap hR hs_open
@@ -81,8 +81,8 @@ example :
     let r : Setoid (OnePoint ℕ) :=
       Setoid.ker fun x : OnePoint ℕ ↦ x.elim ∞ fun n : ℕ ↦ if n = 0 then ∞ else (n : OnePoint ℕ)
     IsProConstructible {q : OnePoint ℕ × OnePoint ℕ | r q.1 q.2} ∧
-      GeneralizingMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.1.1) ∧
-      IsSpectralMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.1.1) ∧
+      GeneralizingMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.val.1) ∧
+      IsSpectralMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.val.1) ∧
       ¬ IsOpen (Quotient.mk r ⁻¹' (Quotient.mk r '' {((0 : ℕ) : OnePoint ℕ)})) := by
   intro r
   have : SpectralSpace (OnePoint ℕ) :=
@@ -105,9 +105,9 @@ example :
     exact (isClosed_diagonal.union isClosed_singleton).union isClosed_singleton
   have hR : IsProConstructible {q : OnePoint ℕ × OnePoint ℕ | r q.1 q.2} :=
     hR_closed.isProConstructible
-  have hs_gen : GeneralizingMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.1.1) := by
+  have hs_gen : GeneralizingMap (fun q : {q : OnePoint ℕ × OnePoint ℕ // r q.1 q.2} ↦ q.val.1) := by
     intro q b hbq
-    have hb : b = q.1.1 := t1Space_iff_specializes_imp_eq.mp inferInstance hbq
+    have hb : b = q.val.1 := t1Space_iff_specializes_imp_eq.mp inferInstance hbq
     exact ⟨q, specializes_rfl, hb.symm⟩
   refine ⟨hR, hs_gen, hR.isSpectralMap_fst, fun hopen ↦ ?_⟩
   have hsat : Quotient.mk r ⁻¹' (Quotient.mk r '' {((0 : ℕ) : OnePoint ℕ)}) =
@@ -138,7 +138,7 @@ example :
     let r : Setoid (Bool × Prop) :=
       Setoid.ker fun x : Bool × Prop ↦ if x.1 then ¬ x.2 else x.2
     IsProConstructible {q : (Bool × Prop) × (Bool × Prop) | r q.1 q.2} ∧
-      ¬ GeneralizingMap (fun q : {q : (Bool × Prop) × (Bool × Prop) // r q.1 q.2} ↦ q.1.1) ∧
+      ¬ GeneralizingMap (fun q : {q : (Bool × Prop) × (Bool × Prop) // r q.1 q.2} ↦ q.val.1) ∧
       ¬ T0Space (Quotient r) := by
   have : SpectralSpace Prop := spectralSpace_prop
   have : SpectralSpace Bool := {}
@@ -163,20 +163,20 @@ example :
   refine ⟨hR, fun hgen ↦ ?_, fun hT0 ↦ ?_⟩
   · let q₀ : {q : (Bool × Prop) × (Bool × Prop) // r q.1 q.2} :=
       ⟨((false, False), (true, True)), by simp [r, Setoid.ker_def]⟩
-    have hspec : (false, True) ⤳ q₀.1.1 := hTF.map (.prodMk_right false)
+    have hspec : (false, True) ⤳ q₀.val.1 := hTF.map (.prodMk_right false)
     obtain ⟨q₁, hq₁q₀, hq₁fst⟩ := hgen (a := q₀) hspec
     have hOo : IsOpen {q : {q : (Bool × Prop) × (Bool × Prop) // r q.1 q.2} |
-        q.1.2 = (true, True)} := by
+        q.val.2 = (true, True)} := by
       have hp : IsOpen ({true} ×ˢ ({True} : Set Prop)) :=
         (isOpen_discrete {true}).prod isOpen_singleton_true
-      convert hp.preimage (continuous_snd.comp continuous_subtype_val) using 1
+      convert hp.preimage (continuous_snd.comp continuous_subtypeVal) using 1
       ext q
       simp [Prod.ext_iff]
-    have hq₁O : q₁.1.2 = (true, True) :=
+    have hq₁O : q₁.val.2 = (true, True) :=
       specializes_iff_forall_open.mp hq₁q₀ _ hOo rfl
-    have hq₁fst' : q₁.1.1 = (false, True) := hq₁fst
+    have hq₁fst' : q₁.val.1 = (false, True) := hq₁fst
     have hr₁ : r (false, True) (true, True) := by
-      have := q₁.2
+      have := q₁.property
       rwa [hq₁fst', hq₁O] at this
     simp [r, Setoid.ker_def] at hr₁
   · have h₁ : Quotient.mk r (false, True) ⤳ Quotient.mk r (false, False) :=
@@ -206,14 +206,14 @@ example :
     have heq : {q : ℕ × ℕ | (⊤ : Setoid ℕ) q.1 q.2} = univ := eq_univ_of_forall fun _ ↦ trivial
     rw [heq]
     exact isLocallyProConstructible_univ
-  have hs_open : IsOpenMap (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.1.1) := by
+  have hs_open : IsOpenMap (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.val.1) := by
     intro O hO
     rw [isOpen_induced_iff] at hO
     obtain ⟨U, hUo, rfl⟩ := hO
-    have heq : (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.1.1) '' (Subtype.val ⁻¹' U) =
+    have heq : (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.val.1) '' (Subtype.val ⁻¹' U) =
         Prod.fst '' U := by
       ext n
-      exact ⟨fun ⟨q, hq, hqn⟩ ↦ ⟨q.1, hq, hqn⟩, fun ⟨p, hp, hpn⟩ ↦ ⟨⟨p, trivial⟩, hp, hpn⟩⟩
+      exact ⟨fun ⟨q, hq, hqn⟩ ↦ ⟨q.val, hq, hqn⟩, fun ⟨p, hp, hpn⟩ ↦ ⟨⟨p, trivial⟩, hp, hpn⟩⟩
     rw [heq]
     exact isOpenMap_fst U hUo
   refine ⟨isLocallySpectralSpace_quotient_of_isOpenMap hN hR hs_open,

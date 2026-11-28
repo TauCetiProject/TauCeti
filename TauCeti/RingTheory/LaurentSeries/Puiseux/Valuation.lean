@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Topology.Algebra.InfiniteSum.Group
 public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 public import TauCeti.RingTheory.HahnSeries.Valuation
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
+public import TauCeti.RingTheory.LaurentSeries.Valuation.Basic
+
+import TauCeti.RingTheory.LaurentSeries.Cartier
+import TauCeti.RingTheory.Valuation.Integral.Basic
 
 /-!
 # The valuation and topology of the Puiseux field
@@ -17,13 +22,19 @@ public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
 The Puiseux field `puiseuxField K ⊆ HahnSeries ℚ K` inherits from the rational Hahn series the
 additive valuation `ord = orderTop` with values in `WithTop ℚ`, and the multiplicative valuation
 `exp (-ord)` with values in `ℚᵐ⁰`. This file restricts both to the Puiseux field and gives it the
-resulting valuation topology, through a `Valued` instance.
+resulting valuation topology, through a `Valued` instance. After the inclusion `ℚ → ℝ`, the order
+is also a real additive valuation, extending the real order valuation of `K⸨X⸩`; real values are
+what the general Newton-polygon API expects of heights.
 
 On the level-`n` copy of `K⸨X⸩`, embedded by `X ↦ t ^ (1 / n)`, the Puiseux order is the integer
 order of the Laurent series divided by `n`. Consequently each level embedding is a topological
 embedding, that is, a homeomorphism onto its image. Neighbourhoods of zero are described by
 orders: `{x | q ≤ ord x}` for `q ∈ ℚ` form a basis, and a family converges to `x` exactly when
 the order of its difference with `x` eventually exceeds every rational bound.
+
+Under the `K⟦X⟧`-algebra structure from `Puiseux/Basic.lean`, the integral closure of `K⟦X⟧` in
+`puiseuxField K` coincides with the valuation ring `{x | valuation K x ≤ 1}` (equivalently, the
+series of nonnegative rational order).
 
 Unlike each level, the Puiseux field is not complete. The partial sums of
 `∑ j, t ^ ((j + 1) + 1 / (j + 2))` form a Cauchy sequence, since the orders of the terms tend to
@@ -36,15 +47,25 @@ has them all in its support.
 * `TauCeti.puiseuxField.addVal K`: the additive valuation `ord` on the Puiseux field.
 * `TauCeti.puiseuxField.valuation K`: the multiplicative valuation `exp (-ord)`, which defines the
   `Valued` instance on `puiseuxField K`.
+* `TauCeti.puiseuxField.realAddVal K`: the order `ord` as a real additive valuation.
 
 ## Main results
 
+* `TauCeti.puiseuxField.valuation_lt_one_iff`, `TauCeti.puiseuxField.valuation_le_one_iff`:
+  equivalence between valuation bounds at `1` and sign of the rational order.
 * `TauCeti.puiseuxField.addVal_levelEmbedding`: on level `n`, the order is the integer order
   divided by `n`.
+* `TauCeti.puiseuxField.realAddVal_algebraMap`: on `K⸨X⸩`, the real order valuation of the
+  Puiseux field is `LaurentSeries.realAddVal K`.
 * `TauCeti.puiseuxField.hasBasis_nhds_zero`: the order balls form a basis of neighbourhoods of
   zero, and `TauCeti.puiseuxField.tendsto_iff_addVal_sub` is the resulting convergence criterion.
 * `TauCeti.puiseuxField.isEmbedding_levelEmbedding`: every level embedding is a topological
   embedding.
+* `TauCeti.puiseuxField.isIntegral_powerSeries_iff`,
+  `TauCeti.puiseuxField.isIntegral_powerSeries_iff_addVal_nonneg`: a Puiseux series is integral
+  over `K⟦X⟧` if and only if it lies in the valuation ring.
+* `TauCeti.puiseuxField.addVal_sub_algebraMap_coeff_zero_pos_of_addVal_nonneg`: subtracting the
+  constant term from a series of nonnegative order gives strictly positive order.
 * `TauCeti.puiseuxField.cauchySeq_sum_single`: partial sums of monomials with exponents tending to
   infinity are Cauchy.
 * `TauCeti.puiseuxField.not_tendsto_sum_single`: such partial sums have no limit when the
@@ -55,7 +76,7 @@ has them all in its support.
 public section
 
 open Filter HahnSeries LaurentSeries Topology WithZero
-open scoped LaurentSeries
+open scoped LaurentSeries PowerSeries
 
 namespace TauCeti
 
@@ -106,6 +127,16 @@ theorem valuation_le_exp_neg_iff (q : ℚ) {x : puiseuxField K} :
     valuation K x ≤ exp (-q) ↔ (q : WithTop ℚ) ≤ addVal K x := by
   rw [valuation_apply, addVal_apply, HahnSeries.valuation_le_exp_neg_iff]
 
+/-- The valuation of `x` is strictly below `1` exactly when its order is strictly positive. -/
+theorem valuation_lt_one_iff {x : puiseuxField K} :
+    valuation K x < 1 ↔ 0 < addVal K x := by
+  simpa using valuation_lt_exp_neg_iff (K := K) 0 (x := x)
+
+/-- The valuation of `x` is at most `1` exactly when its order is nonnegative. -/
+theorem valuation_le_one_iff {x : puiseuxField K} :
+    valuation K x ≤ 1 ↔ 0 ≤ addVal K x := by
+  simpa using valuation_le_exp_neg_iff (K := K) 0 (x := x)
+
 /-- The monomial `a t ^ q`, for `a ≠ 0`, has order `q`. -/
 theorem addVal_single (q : ℚ) {a : K} (ha : a ≠ 0) : addVal K (single K q a) = q := by
   rw [addVal_apply, coe_single, orderTop_single ha]
@@ -143,6 +174,62 @@ theorem div_le_addVal_levelEmbedding_iff (n : ℕ+) (f : K⸨X⸩) (k : ℤ) :
     rw [WithTop.map_coe, WithTop.coe_le_coe, WithTop.coe_le_coe,
       div_le_div_iff_of_pos_right (by positivity), Int.cast_le]
 
+/-! ### The real valuation -/
+
+variable (K) in
+/-- The order of a Puiseux series as a real additive valuation: the rational order
+`TauCeti.puiseuxField.addVal K` after the inclusion `ℚ → ℝ`. A nonzero series of order `q` has
+valuation `q`, and zero has valuation `⊤`. Real values are what the general Newton-polygon API
+expects of heights. -/
+noncomputable def realAddVal : AddValuation (puiseuxField K) (WithTop ℝ) :=
+  (addVal K).map
+    { (Rat.castHom ℝ).toAddMonoidHom.withTopMap with
+      monotone' := WithTop.monotone_map_iff.mpr fun _ _ h => Rat.cast_le.mpr h }
+    rfl
+
+/-- The real valuation of a Puiseux series is its rational order, cast to the reals. -/
+theorem realAddVal_apply (x : puiseuxField K) :
+    realAddVal K x = (addVal K x).map ((↑) : ℚ → ℝ) :=
+  -- By construction, `realAddVal K` is `addVal K` followed by `WithTop.map`.
+  (rfl)
+
+/-- Only the zero Puiseux series has infinite real valuation. -/
+theorem realAddVal_eq_top_iff {x : puiseuxField K} : realAddVal K x = ⊤ ↔ x = 0 :=
+  (realAddVal K).top_iff
+
+/-- The real valuation of `x` is the rational number `q` exactly when the order of `x` is `q`. -/
+theorem realAddVal_eq_ratCast_iff {x : puiseuxField K} {q : ℚ} :
+    realAddVal K x = ((q : ℝ) : WithTop ℝ) ↔ addVal K x = q := by
+  rw [realAddVal_apply, ← WithTop.map_coe ((↑) : ℚ → ℝ) q]
+  exact (WithTop.map_injective Rat.cast_injective).eq_iff
+
+/-- `WithTop.untop₀` of the real valuation is the real cast of `WithTop.untop₀` of the order, for
+every Puiseux series including zero. -/
+@[simp]
+theorem untop₀_realAddVal (x : puiseuxField K) :
+    (realAddVal K x).untop₀ = ((addVal K x).untop₀ : ℝ) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [realAddVal_apply, ← WithTop.coe_untop₀_of_ne_top ((addVal K).ne_top_iff.mpr hx),
+    WithTop.map_coe, WithTop.untop₀_coe, WithTop.untop₀_coe]
+
+/-- On level `n`, the real valuation of the Puiseux field is the integer order of `K⸨X⸩` divided
+by `n`. -/
+theorem realAddVal_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
+    realAddVal K (levelEmbedding K n f) = f.orderTop.map fun k : ℤ ↦ (k : ℝ) / n := by
+  rw [realAddVal_apply, addVal_levelEmbedding, WithTop.map_map]
+  congr 1
+  funext k
+  simp
+
+/-- On the Laurent-series field `K⸨X⸩`, the real valuation of the Puiseux field is the real order
+valuation `LaurentSeries.realAddVal K`. -/
+@[simp]
+theorem realAddVal_algebraMap (f : K⸨X⸩) :
+    realAddVal K (algebraMap K⸨X⸩ (puiseuxField K) f) = LaurentSeries.realAddVal K f := by
+  rw [algebraMap_laurentSeries_apply, realAddVal_levelEmbedding, LaurentSeries.realAddVal_apply]
+  simp
+
 /-! ### The valuation topology -/
 
 /-- The order balls `{x | q ≤ ord x}`, for `q ∈ ℚ`, form a basis of neighbourhoods of zero in the
@@ -152,8 +239,8 @@ theorem hasBasis_nhds_zero :
       fun q ↦ {x | (q : WithTop ℚ) ≤ addVal K x} := by
   refine ⟨fun s ↦ ⟨fun hs ↦ ?_, fun ⟨q, _, hq⟩ ↦ ?_⟩⟩
   · obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-    obtain ⟨k, hk⟩ : ∃ k : ℚ, MonoidWithZeroHom.ValueGroup₀.embedding γ.1 = exp (-k) :=
-      ⟨-log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1), by
+    obtain ⟨k, hk⟩ : ∃ k : ℚ, MonoidWithZeroHom.ValueGroup₀.embedding γ.val = exp (-k) :=
+      ⟨-log (MonoidWithZeroHom.ValueGroup₀.embedding γ.val), by
         rw [neg_neg, exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)]⟩
     refine ⟨k + 1, trivial, fun x hx ↦ hγ ?_⟩
     rw [Set.mem_ofPred_eq, Valued.v.restrict_lt_iff_lt_embedding, hk, v_eq_valuation,
@@ -186,6 +273,13 @@ theorem continuous_levelEmbedding (n : ℕ+) : Continuous (levelEmbedding K n) :
   refine le_trans ?_ ((div_le_addVal_levelEmbedding_iff n f _).mpr hf)
   exact WithTop.coe_le_coe.mpr ((le_div_iff₀ (by positivity)).mpr (Int.le_ceil _))
 
+/-- The `K⸨X⸩`-algebra map into the Puiseux field is continuous. -/
+theorem continuous_algebraMap_laurentSeries : Continuous (algebraMap K⸨X⸩ (puiseuxField K)) := by
+  have h : (algebraMap K⸨X⸩ (puiseuxField K) : K⸨X⸩ → puiseuxField K) = levelEmbedding K 1 :=
+    funext algebraMap_laurentSeries_apply
+  rw [h]
+  exact continuous_levelEmbedding 1
+
 /-- Every level embedding is a topological embedding: `K⸨X⸩` is homeomorphic to its level-`n`
 image in the Puiseux field. -/
 theorem isEmbedding_levelEmbedding (n : ℕ+) : IsEmbedding (levelEmbedding K n) := by
@@ -197,6 +291,92 @@ theorem isEmbedding_levelEmbedding (n : ℕ+) : IsEmbedding (levelEmbedding K n)
     rintro _ hy f rfl
     rw [id, sub_zero]
     exact (div_le_addVal_levelEmbedding_iff n f k).mp hy
+
+/-! ### The valuation ring and integral closure of `K⟦X⟧` -/
+
+/-- Every power series has nonnegative additive valuation in the Puiseux field. -/
+theorem addVal_algebraMap_powerSeries_nonneg (f : K⟦X⟧) :
+    0 ≤ addVal K (algebraMap K⟦X⟧ (puiseuxField K) f) := by
+  rw [algebraMap_powerSeries_apply, algebraMap_laurentSeries_apply]
+  have h0 : (0 : WithTop ℤ) ≤ (f : K⸨X⸩).orderTop := by
+    rw [PowerSeries.orderTop_coe]
+    cases f.order with
+    | top => simp
+    | coe n => exact WithTop.coe_le_coe.mpr (Nat.cast_nonneg n)
+  simpa using (div_le_addVal_levelEmbedding_iff 1 (f : K⸨X⸩) 0).mpr h0
+
+/-- Every power series maps into the valuation ring `{x | valuation K x ≤ 1}` of the Puiseux
+field. -/
+theorem valuation_algebraMap_powerSeries_le_one (f : K⟦X⟧) :
+    valuation K (algebraMap K⟦X⟧ (puiseuxField K) f) ≤ 1 :=
+  valuation_le_one_iff.mpr (addVal_algebraMap_powerSeries_nonneg f)
+
+/-- **Integral closure of `K⟦X⟧` in the Puiseux field**: a Puiseux series is integral over `K⟦X⟧`
+if and only if its multiplicative valuation is at most `1`. -/
+theorem isIntegral_powerSeries_iff {x : puiseuxField K} :
+    IsIntegral K⟦X⟧ x ↔ valuation K x ≤ 1 := by
+  refine ⟨fun hx ↦ (Subring.integralClosure_le_iff (T := (valuation K).integer)).mpr
+      valuation_algebraMap_powerSeries_le_one hx, fun hv ↦ ?_⟩
+  obtain ⟨n, hn⟩ := exists_mem_range_levelEmbedding x
+  obtain ⟨f, rfl⟩ := (AlgHom.mem_range _).mp hn
+  have hord : (0 : WithTop ℤ) ≤ f.orderTop :=
+    (div_le_addVal_levelEmbedding_iff n f 0).mp (by simpa using valuation_le_one_iff.mp hv)
+  obtain ⟨g, rfl⟩ : f ∈ Set.range (ofPowerSeries ℤ K) :=
+    TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff.mpr fun k hk ↦
+      coeff_eq_zero_of_lt_orderTop ((WithTop.coe_lt_coe.mpr hk).trans_le hord)
+  set u : puiseuxField K := levelEmbedding K n (HahnSeries.single 1 1)
+  have hu : IsIntegral K⟦X⟧ u := by
+    refine IsIntegral.of_pow n.pos ?_
+    rw [← map_pow, HahnSeries.single_pow, one_pow, nsmul_eq_mul, mul_one,
+      levelEmbedding_single_self, ← algebraMap_powerSeries_X]
+    exact isIntegral_algebraMap
+  have hdecomp : levelEmbedding K n (g : K⸨X⸩) =
+      ∑ r : Fin n, u ^ (r : ℕ) *
+        algebraMap K⟦X⟧ (puiseuxField K) (PowerSeries.cartier K n r g) := by
+    conv_lhs => rw [← sum_single_mul_expand_contract n (g : K⸨X⸩)]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
+    rw [map_mul, contract_coe, levelEmbedding_expand_self, ← algebraMap_powerSeries_apply,
+      RatFunc.single_zpow, zpow_natCast, map_pow]
+  rw [hdecomp]
+  exact IsIntegral.sum _ fun r _ ↦ (hu.pow r).mul isIntegral_algebraMap
+
+/-- Additive-valuation form of `isIntegral_powerSeries_iff`: a Puiseux series is integral over
+`K⟦X⟧` if and only if its rational order is nonnegative. -/
+theorem isIntegral_powerSeries_iff_addVal_nonneg {x : puiseuxField K} :
+    IsIntegral K⟦X⟧ x ↔ 0 ≤ addVal K x := by
+  rw [isIntegral_powerSeries_iff, valuation_le_one_iff]
+
+/-- Subtracting the constant term from a Puiseux series of nonnegative additive valuation yields a
+series of strictly positive additive valuation. -/
+theorem addVal_sub_algebraMap_coeff_zero_pos_of_addVal_nonneg {x : puiseuxField K}
+    (hx : 0 ≤ addVal K x) :
+    0 < addVal K (x - algebraMap K (puiseuxField K) ((x : HahnSeries ℚ K).coeff 0)) := by
+  set c : K := (x : HahnSeries ℚ K).coeff 0 with hc_def
+  by_cases hsub : x - algebraMap K (puiseuxField K) c = 0
+  · simp [hsub]
+  have hsub' : ((x - algebraMap K (puiseuxField K) c : puiseuxField K) : HahnSeries ℚ K) ≠ 0 :=
+    ZeroMemClass.coe_eq_zero.not.mpr hsub
+  rw [addVal_apply, ← order_eq_orderTop_of_ne_zero hsub', WithTop.coe_pos]
+  set q := ((x - algebraMap K (puiseuxField K) c : puiseuxField K) : HahnSeries ℚ K).order
+  have hq_ne : ((x - algebraMap K (puiseuxField K) c : puiseuxField K) :
+      HahnSeries ℚ K).coeff q ≠ 0 := by
+    rw [← leadingCoeff_eq]
+    exact leadingCoeff_ne_zero.mpr hsub'
+  by_contra hle
+  rcases lt_or_eq_of_le (not_lt.mp hle) with hlt | hq0
+  · have h1 : (x : HahnSeries ℚ K).coeff q = 0 :=
+      coeff_eq_zero_of_lt_orderTop ((WithTop.coe_lt_coe.mpr hlt).trans_le (addVal_apply x ▸ hx))
+    have h2 : (algebraMap K (puiseuxField K) c : HahnSeries ℚ K).coeff q = 0 := by
+      rw [algebraMap_eq_single, coe_single]
+      exact coeff_single_of_ne hlt.ne
+    exact hq_ne (by rw [AddSubgroupClass.coe_sub, HahnSeries.coeff_sub, h1, h2, sub_zero])
+  · refine hq_ne ?_
+    rw [hq0, AddSubgroupClass.coe_sub, HahnSeries.coeff_sub]
+    have h2 : (algebraMap K (puiseuxField K) c : HahnSeries ℚ K).coeff 0 = c := by
+      rw [algebraMap_eq_single, coe_single]
+      exact coeff_single_same 0 c
+    rw [h2, ← hc_def, sub_self]
 
 /-! ### Non-completeness -/
 
@@ -233,7 +413,7 @@ theorem not_tendsto_sum_single {e : ℕ → ℚ} (he : Function.Injective e)
       sub_eq_zero] at h0
     simp_rw [coe_single, coeff_single, he.eq_iff] at h0
     simp [← h0, hjN]
-  obtain ⟨n, hn⟩ := mem_puiseuxField_iff_exists_den_dvd.mp x.2
+  obtain ⟨n, hn⟩ := mem_puiseuxField_iff_exists_den_dvd.mp x.property
   obtain ⟨j, hj⟩ := hden n
   exact hj (hn (e j) (by rw [mem_support, hcoeff j]; exact hc j))
 

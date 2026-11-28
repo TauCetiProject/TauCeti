@@ -186,7 +186,7 @@ extension of the local model is read at the residue field of `P`. -/
 instance centerIntegralClosure_liesOver_maximalIdeal :
     (centerIntegralClosure k F P').asIdeal.LiesOver
       (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
-  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.2, centerIntegralClosure_def]
+  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
   exact center_liesOver k F P' _
 
 /-- **The different exponent `d(P' ∣ P)`** of a place `P'` of `F' / k'` over the place
@@ -268,16 +268,11 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
   have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ : Algebra B P'.integers := ((algebraMap B F').codRestrict P'.integers hB).toAlgebra
-  have : IsScalarTower O B P'.integers := .of_algebraMap_eq fun _ ↦ rfl
-  -- `𝒪_{P'}` is the localization of the local model at the centre of `P'`.
-  let eB : HeightOneSpectrum.valuationSubringAtPrime F' q ≃ₐ[B] P'.integers :=
-    AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring (P'.valuationSubringAtPrime_eq_integers hB)))
-      fun _ ↦ rfl
+  let _ := P'.integersAlgebra hB
+  have := P'.isScalarTower_integers hB
+  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB
+    P'.isLocalization_integers_center hB
   exact Algebra.FormallyUnramified.iff_of_equiv
     ((IsLocalization.algEquiv q.asIdeal.primeCompl (Localization.AtPrime q.asIdeal)
       P'.integers).restrictScalars O)

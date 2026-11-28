@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Semilinear functoriality of symmetric algebras
@@ -30,6 +32,8 @@ presheaf of modules into presheaves.
   for the restriction maps of a presheaf);
 * `TauCeti.SymmetricAlgebra.mapₛₗ_mem_homogeneousSubmodule` and
   `TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule`: the induced maps preserve degrees;
+* `SymmetricAlgebra.map_decompose`: the algebra map induced by a linear map commutes with
+  taking homogeneous components;
 * `TauCeti.SymmetricAlgebra.homogeneousSubmoduleMapₛₗ`: the induced semilinear map between
   homogeneous pieces of the same degree.
 -/
@@ -139,9 +143,9 @@ theorem mapₛₗ_mem_homogeneousSubmodule (f : M →ₛₗ[φ] N) {n : ℕ}
 restriction of `SymmetricAlgebra.mapₛₗ`. -/
 noncomputable def homogeneousSubmoduleMapₛₗ (f : M →ₛₗ[φ] N) (n : ℕ) :
     homogeneousSubmodule R M n →ₛₗ[φ] homogeneousSubmodule S N n where
-  toFun x := ⟨mapₛₗ f x, mapₛₗ_mem_homogeneousSubmodule f x.2⟩
-  map_add' x y := Subtype.ext (map_add (mapₛₗ f) x.1 y.1)
-  map_smul' r x := Subtype.ext (_root_.SymmetricAlgebra.mapₛₗ_smul f r x.1)
+  toFun x := ⟨mapₛₗ f x, mapₛₗ_mem_homogeneousSubmodule f x.property⟩
+  map_add' x y := Subtype.ext (map_add (mapₛₗ f) x.val y.val)
+  map_smul' r x := Subtype.ext (_root_.SymmetricAlgebra.mapₛₗ_smul f r x.val)
 
 /-- The map between homogeneous pieces induced by a semilinear map is computed in the symmetric
 algebra by `SymmetricAlgebra.mapₛₗ`. -/
@@ -160,3 +164,22 @@ theorem map_mem_homogeneousSubmodule {N' : Type*} [AddCommMonoid N'] [Module R N
     mapₛₗ_mem_homogeneousSubmodule f hx
 
 end TauCeti.SymmetricAlgebra
+
+namespace SymmetricAlgebra
+
+open TauCeti.SymmetricAlgebra (homogeneousSubmodule map_mem_homogeneousSubmodule)
+
+variable {R : Type u₁} {M : Type v₁} {N : Type v₂} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- The algebra homomorphism induced by a linear map commutes with taking homogeneous components:
+it maps the degree-`n` component of `x` to the degree-`n` component of the image of `x`. -/
+@[simp]
+theorem map_decompose (f : M →ₗ[R] N) (x : SymmetricAlgebra R M) (n : ℕ) :
+    map R f (DirectSum.decompose (homogeneousSubmodule R M) x n : SymmetricAlgebra R M) =
+      (DirectSum.decompose (homogeneousSubmodule R N) (map R f x) n : SymmetricAlgebra R N) :=
+  DirectSum.map_decompose_shift (homogeneousSubmodule R M) (homogeneousSubmodule R N)
+    (map R f).toLinearMap.toAddMonoidHom id Function.injective_id
+    (fun _ _ hx ↦ map_mem_homogeneousSubmodule f hx) n x
+
+end SymmetricAlgebra

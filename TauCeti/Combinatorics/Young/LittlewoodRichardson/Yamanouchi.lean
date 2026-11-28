@@ -45,7 +45,9 @@ Consequently the Littlewood–Richardson coefficient may be read off either side
 
 * `SemistandardYoungTableau.isYamanouchi_iff_rowCount`: Stembridge's Yamanouchi condition in terms
   of row counts.
-* `TauCeti.natCard_lrTableau_eq_natCard_isYamanouchi`: the two counts of `c^ν_{λ μ}` agree.
+* `TauCeti.natCard_lrTableau_eq_natCard_isYamanouchi`,
+  `TauCeti.card_boundedYamanouchi_eq_natCard_lrTableau`: the two counts of `c^ν_{λ μ}` agree, and
+  for `ν` with at most `n` rows the `n`-bounded `λ`-Yamanouchi count matches `Nat.card`.
 
 ## References
 
@@ -258,17 +260,17 @@ variable {lam ν μ : YoungDiagram}
 /-- The `λ`-Yamanouchi tableau of a Littlewood–Richardson tableau: row `k` lists the rows holding
 the letter `k`. -/
 private def toYamanouchi (S : LRTableau lam ν μ) : SkewSemistandardYoungTableau ⊥ μ :=
-  ofRowCount bot_le (ν.colLen 0) (fun k i => S.1.rowCount i k)
+  ofRowCount bot_le (ν.colLen 0) (fun k i => S.val.rowCount i k)
     (fun k => by
-      rw [YoungDiagram.rowLen_bot, Nat.sub_zero, S.1.sum_range_rowCount_eq_content k le_rfl]
-      exact congrFun S.2.1 k)
+      rw [YoungDiagram.rowLen_bot, Nat.sub_zero, S.val.sum_range_rowCount_eq_content k le_rfl]
+      exact congrFun S.property.1 k)
     (fun k x => by
       simpa [YoungDiagram.rowLen_bot] using
-        (S.1.isLatticeWord_readingWord_iff.mp S.2.2) k x)
+        (S.val.isLatticeWord_readingWord_iff.mp S.property.2) k x)
 
 private theorem rowCount_toYamanouchi (S : LRTableau lam ν μ) (k i : ℕ) :
-    (toYamanouchi S).rowCount k i = S.1.rowCount i k :=
-  rowCount_ofRowCount _ _ _ (fun _ _ hi => S.1.rowCount_eq_zero_of_colLen_le hi _) k i
+    (toYamanouchi S).rowCount k i = S.val.rowCount i k :=
+  rowCount_ofRowCount _ _ _ (fun _ _ hi => S.val.rowCount_eq_zero_of_colLen_le hi _) k i
 
 /-- The Littlewood–Richardson tableau of a `λ`-Yamanouchi tableau: row `i` lists the rows holding
 the letter `i`. -/
@@ -276,19 +278,20 @@ private def ofYamanouchi
     (T : {T : _root_.SemistandardYoungTableau μ //
       T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + SemistandardYoungTableau.content T i = ν.rowLen i}) :
     SkewSemistandardYoungTableau lam ν :=
-  ofRowCount (YoungDiagram.le_of_forall_rowLen_le fun i => (T.2.2 i).symm ▸ Nat.le_add_right _ _)
-    (μ.colLen 0) (fun i k => ((botEquiv μ).symm T.1).rowCount k i)
+  ofRowCount (YoungDiagram.le_of_forall_rowLen_le fun i => (T.property.2 i).symm ▸ Nat.le_add_right
+      _ _)
+    (μ.colLen 0) (fun i k => ((botEquiv μ).symm T.val).rowCount k i)
     (fun i => by
-      rw [((botEquiv μ).symm T.1).sum_range_rowCount_eq_content i le_rfl, ← content_botEquiv,
-        Equiv.apply_symm_apply, ← T.2.2 i, Nat.add_sub_cancel_left])
-    ((T.1.isYamanouchi_iff_rowCount lam).mp T.2.1)
+      rw [((botEquiv μ).symm T.val).sum_range_rowCount_eq_content i le_rfl, ← content_botEquiv,
+        Equiv.apply_symm_apply, ← T.property.2 i, Nat.add_sub_cancel_left])
+    ((T.val.isYamanouchi_iff_rowCount lam).mp T.property.1)
 
 private theorem rowCount_ofYamanouchi
     (T : {T : _root_.SemistandardYoungTableau μ //
       T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + SemistandardYoungTableau.content T i = ν.rowLen i})
-    (i k : ℕ) : (ofYamanouchi T).rowCount i k = ((botEquiv μ).symm T.1).rowCount k i :=
+    (i k : ℕ) : (ofYamanouchi T).rowCount i k = ((botEquiv μ).symm T.val).rowCount k i :=
   rowCount_ofRowCount _ _ _
-    (fun _ _ hk => ((botEquiv μ).symm T.1).rowCount_eq_zero_of_colLen_le hk _) i k
+    (fun _ _ hk => ((botEquiv μ).symm T.val).rowCount_eq_zero_of_colLen_le hk _) i k
 
 /-- **Littlewood–Richardson tableaux are Yamanouchi tableaux.** The Littlewood–Richardson tableaux
 of skew shape `ν / λ` and content `μ` correspond to Stembridge's `λ`-Yamanouchi tableaux `T` of
@@ -303,26 +306,26 @@ def lrTableauEquivYamanouchi (lam ν μ : YoungDiagram) :
     refine ⟨(SemistandardYoungTableau.isYamanouchi_iff_rowCount lam _).mpr fun i x => ?_,
       fun i => ?_⟩
     · simp only [Equiv.symm_apply_apply, rowCount_toYamanouchi]
-      exact S.1.rowLen_add_sum_range_rowCount_succ_le i x
+      exact S.val.rowLen_add_sum_range_rowCount_succ_le i x
     · rw [content_botEquiv, ← (toYamanouchi S).sum_range_rowCount_eq_content i le_rfl]
       simp only [rowCount_toYamanouchi]
       -- The letters of `S` are rows of `μ`.
-      rw [S.1.sum_range_rowCount_of_forall_lt fun j hj hj' =>
-        S.1.apply_lt_colLen_zero_of_content_le (fun k => (congrFun S.2.1 k).le) hj hj']
-      have := YoungDiagram.rowLen_le_of_le S.1.le i
+      rw [S.val.sum_range_rowCount_of_forall_lt fun j hj hj' =>
+        S.val.apply_lt_colLen_zero_of_content_le (fun k => (congrFun S.property.1 k).le) hj hj']
+      have := YoungDiagram.rowLen_le_of_le S.val.le i
       omega⟩
   invFun T := ⟨ofYamanouchi T, by
     refine ⟨funext fun k => ?_, (ofYamanouchi T).isLatticeWord_readingWord_iff.mpr fun k x => ?_⟩
     · rw [← (ofYamanouchi T).sum_range_rowCount_eq_content k le_rfl]
       simp only [rowCount_ofYamanouchi]
-      rw [((botEquiv μ).symm T.1).sum_range_rowCount_of_forall_lt fun j _ hj => by
+      rw [((botEquiv μ).symm T.val).sum_range_rowCount_of_forall_lt fun j _ hj => by
         rw [botEquiv_symm_apply]
-        exact SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq T.2.2
+        exact SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq T.property.2
           (YoungDiagram.mem_iff_lt_rowLen.mpr hj)]
       simp [YoungDiagram.rowLen_bot]
     · simp only [rowCount_ofYamanouchi]
       simpa [YoungDiagram.rowLen_bot] using
-        ((botEquiv μ).symm T.1).rowLen_add_sum_range_rowCount_succ_le k x⟩
+        ((botEquiv μ).symm T.val).rowLen_add_sum_range_rowCount_succ_le k x⟩
   left_inv S := Subtype.ext <| eq_of_rowCount_eq fun i k => by
     simp only [rowCount_ofYamanouchi, Equiv.symm_apply_apply, rowCount_toYamanouchi]
   right_inv T := Subtype.ext <| (botEquiv μ).symm.injective <| eq_of_rowCount_eq fun k i => by
@@ -332,8 +335,8 @@ def lrTableauEquivYamanouchi (lam ν μ : YoungDiagram) :
 in its row `k` as often as `S` holds the letter `k` in its row `i`. -/
 @[simp]
 theorem rowCount_lrTableauEquivYamanouchi (S : LRTableau lam ν μ) (k i : ℕ) :
-    ((botEquiv μ).symm (lrTableauEquivYamanouchi lam ν μ S).1).rowCount k i =
-      S.1.rowCount i k := by
+    ((botEquiv μ).symm (lrTableauEquivYamanouchi lam ν μ S).val).rowCount k i =
+      S.val.rowCount i k := by
   simp [lrTableauEquivYamanouchi, rowCount_toYamanouchi]
 
 /-- The Littlewood–Richardson tableau attached to a Yamanouchi tableau `T` holds the letter `k`
@@ -343,8 +346,8 @@ theorem rowCount_lrTableauEquivYamanouchi_symm
     (T : {T : _root_.SemistandardYoungTableau μ //
       T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + SemistandardYoungTableau.content T i = ν.rowLen i})
     (i k : ℕ) :
-    ((lrTableauEquivYamanouchi lam ν μ).symm T).1.rowCount i k =
-      ((botEquiv μ).symm T.1).rowCount k i :=
+    ((lrTableauEquivYamanouchi lam ν μ).symm T).val.rowCount i k =
+      ((botEquiv μ).symm T.val).rowCount k i :=
   rowCount_ofYamanouchi T i k
 
 /-- **The two counts of the Littlewood–Richardson coefficient agree**: `c^ν_{λ μ}` is the number
@@ -353,5 +356,22 @@ theorem natCard_lrTableau_eq_natCard_isYamanouchi (lam ν μ : YoungDiagram) :
     Nat.card (LRTableau lam ν μ) = Nat.card {T : _root_.SemistandardYoungTableau μ //
       T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + SemistandardYoungTableau.content T i = ν.rowLen i} :=
   Nat.card_congr (lrTableauEquivYamanouchi lam ν μ)
+
+/-- When `ν` has at most `n` rows, every `λ`-Yamanouchi tableau `T` of shape `μ` with
+`λ + c(T) = ν` has entries below `n`, so the bounded `λ`-Yamanouchi tableaux in the alphabet
+`{0, …, n - 1}` have cardinality `Nat.card (LRTableau lam ν μ)`. -/
+theorem card_boundedYamanouchi_eq_natCard_lrTableau {n : ℕ} {lam μ ν : YoungDiagram}
+    (hν : ν.colLen 0 ≤ n) [Fintype {T : BoundedSSYT n μ //
+      T.val.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.val.content i = ν.rowLen i}] :
+    Fintype.card {T : BoundedSSYT n μ //
+      T.val.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.val.content i = ν.rowLen i} =
+      Nat.card (LRTableau lam ν μ) := by
+  rw [natCard_lrTableau_eq_natCard_isYamanouchi, ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr <| Equiv.subtypeSubtypeEquivSubtype
+    (q := fun T : _root_.SemistandardYoungTableau μ =>
+      T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.content i = ν.rowLen i)
+    fun hT i c hc =>
+      (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.right hc).trans_le
+        hν
 
 end TauCeti

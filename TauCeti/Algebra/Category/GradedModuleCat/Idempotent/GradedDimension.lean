@@ -34,6 +34,8 @@ by `n` multiplies this dimension by `qⁿ`.
 
 * `TauCeti.GradedModuleCat.exact_smulPieceMap`: restriction to `e • Mₚ` preserves exactness when
   `e` is an idempotent of degree zero.
+* `TauCeti.GradedModuleCat.smulGradedDimension_regular_ne_zero`: every nonzero element has
+  nonzero graded dimension on the regular module.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shortExact`: `gdim_e` is additive on short exact
   sequences.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shiftObj`: `gdim_e(M{n}) = qⁿ gdim_e(M)`.
@@ -107,7 +109,7 @@ theorem smulPieceMap_surjective {g : N ⟶ P} (hg : Function.Surjective g.hom) (
   have hxp : g.hom (DirectSum.decompose N.grading.piece x p : N) = g.hom x := by
     rw [g.isHomogeneous.map_decompose, add_zero, DirectSum.decompose_of_mem_same _ hy]
   refine ⟨⟨e • (DirectSum.decompose N.grading.piece x p : N),
-    Submodule.smul_mem_pointwise_smul _ _ _ (DirectSum.decompose N.grading.piece x p).2⟩, ?_⟩
+    Submodule.smul_mem_pointwise_smul _ _ _ (DirectSum.decompose N.grading.piece x p).property⟩, ?_⟩
   ext
   simp [hxp]
 
@@ -142,7 +144,7 @@ theorem exact_smulPieceMap (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0) {f :
       rw [f.isHomogeneous.map_decompose, add_zero, hw,
         DirectSum.decompose_of_mem_same _ (smul_grading_piece_le he₀ N p hz)]
     refine ⟨⟨e • w', Submodule.smul_mem_pointwise_smul _ _ _
-      (DirectSum.decompose M.grading.piece w p).2⟩, ?_⟩
+      (DirectSum.decompose M.grading.piece w p).property⟩, ?_⟩
     obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hz
     ext
     rw [coe_smulPieceMap_apply, map_smul, hw', smul_smul, he.eq]
@@ -179,6 +181,35 @@ theorem coeff_smulGradedDimension [Module.Finite k M] (p : ℤ) :
     (M.smulGradedDimension e).coeff p = Module.finrank k ↥(e • M.grading.piece p) :=
   coeff_gradedDimension _ p
 
+/-- Acting by `0` has vanishing graded dimension. -/
+@[simp]
+theorem smulGradedDimension_zero [Module.Finite k M] :
+    M.smulGradedDimension (0 : A) = 0 := by
+  ext p
+  have hbot : (0 : A) • M.grading.piece p = ⊥ := eq_bot_iff.mpr fun _ hx ↦ by
+    rcases (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx with ⟨_, _, rfl⟩
+    simp
+  simp [coeff_smulGradedDimension, hbot]
+
+/-- A nonzero element acts nontrivially on a homogeneous piece of the regular module, so its
+graded dimension there is nonzero. -/
+theorem smulGradedDimension_regular_ne_zero [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜]
+    [Module.Finite k A] {f : A} (hf : f ≠ 0) :
+    (regular (𝒜 := 𝒜)).smulGradedDimension f ≠ 0 := by
+  intro h
+  have hmul (x : A) : f * x = 0 := by
+    induction x using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => exact mul_zero _
+    | add x y hx hy => rw [mul_add, hx, hy, zero_add]
+    | @homogeneous p x =>
+      have hz : f • 𝒜 p = ⊥ := by
+        simpa [regular_grading_piece, Module.finrank_zero_iff, Submodule.subsingleton_iff_eq_bot]
+          using congrArg (fun q : LaurentPolynomial ℤ ↦ q.coeff p) h
+      have hx : f * (x : A) ∈ f • 𝒜 p :=
+        (Submodule.mem_smul_pointwise_iff_exists _ _ _).2 ⟨x, x.property, rfl⟩
+      simpa only [hz, Submodule.mem_bot] using hx
+  exact hf (by simpa only [mul_one] using hmul 1)
+
 /-- If a graded module is concentrated in degree zero, the graded dimension of `e • M` is
 constant. No idempotence assumption on `e` is needed. -/
 theorem smulGradedDimension_eq_C_of_concentrated [Module.Finite k M]
@@ -190,6 +221,12 @@ theorem smulGradedDimension_eq_C_of_concentrated [Module.Finite k M]
   · subst p
     simp
   · simp [coeff_smulGradedDimension, hM p hp, hp]
+
+/-- Laurent inversion fixes the graded dimension of `e • M` for a degree-zero module. -/
+theorem invert_smulGradedDimension_of_concentrated [Module.Finite k M]
+    (hM : ∀ p, p ≠ 0 → M.grading.piece p = ⊥) :
+    invert (M.smulGradedDimension e) = M.smulGradedDimension e := by
+  rw [smulGradedDimension_eq_C_of_concentrated e M hM, invert_C]
 
 /-- A nonzero idempotent graded dimension of a degree-zero module has positive
 degree-zero dimension. No idempotence assumption on `e` is needed. -/

@@ -7,8 +7,10 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Data.Nat.Totient
+public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Data.Nat.Factorization.MulDvd
 import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # Orders of elements and cardinalities
@@ -48,9 +50,19 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 
 * `MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one`: the common-exponent characterization
   of finite order for monoid homomorphisms.
-
+* `MonoidHom.pow_natCard_eq_one`, and its additive counterpart: raising a homomorphism from a
+  group into a commutative monoid to `Nat.card G` yields the trivial homomorphism.
+* `SemiconjBy.orderOf_eq_of_isRegular`, and its additive counterpart: semiconjugacy by a regular
+  (left- and right-cancellative) element preserves multiplicative order in any monoid.
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
+* `IsConj.orderOf_eq`, and its additive counterpart: conjugate elements of a monoid have the same
+  order.
+* `Commute.eq_of_mul_eq_mul_of_coprime`: in a commuting factorisation `x = a * u` with
+  `a ^ m = 1`, `u ^ n = 1` and `m` prime to `n`, the factor `a` is determined by `x`, since it is
+  the power `x ^ k` for `k ≡ 1 [MOD m]`, `k ≡ 0 [MOD n]`.
+* `IsCoprime.orderOf_zpow`, and its additive counterpart: an integer exponent coprime to the order
+  of `x` preserves it.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
 * `Subgroup.mem_of_pow_mem_of_coprime_index`, and its additive counterpart: a normal subgroup
@@ -65,6 +77,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
   `n`.
+* `TauCeti.exists_le_forall_pow_prime_pow_eq_self_of_coprime`: in a finite group, some power
+  `p ^ N`, with `N` as large as we like, fixes every element of order prime to `p`.
 * `TauCeti.pow_pow_div_gcd_eq_one`: `(x ^ d) ^ (n / gcd(n, d)) = 1` whenever `x ^ n = 1`, and its
   additive counterpart.
 * `TauCeti.eq_one_of_pow_ordCompl_eq_one`, `TauCeti.eq_of_pow_ordCompl_eq`: an element `x` with
@@ -87,6 +101,34 @@ theorem MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
     IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, MonoidHom.pow_apply,
     MonoidHom.one_apply]
+
+/-- Raising a homomorphism from a group into a commutative monoid to `Nat.card G` yields the
+trivial homomorphism. -/
+@[to_additive
+/-- Multiplying a homomorphism from an additive group into a commutative additive monoid by
+`Nat.card G` yields the zero homomorphism. -/]
+theorem MonoidHom.pow_natCard_eq_one {G M : Type*} [Group G] [CommMonoid M] (f : G →* M) :
+    f ^ Nat.card G = 1 := by
+  ext g
+  rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, pow_card_eq_one', map_one]
+
+namespace SemiconjBy
+
+/-- **Order invariance under semiconjugacy by a regular element.** If a left- and
+right-cancellative element `a` of a monoid satisfies `a * x = y * a`, then `x` and `y` have the
+same multiplicative order. This generalizes `SemiconjBy.orderOf_eq` from groups to monoids. -/
+@[to_additive
+/-- **Additive order invariance under semiconjugacy by a regular element.** If a left- and
+right-cancellative element `a` of an additive monoid satisfies `a + x = y + a`, then `x` and `y`
+have the same additive order. This generalizes `AddSemiconjBy.addOrderOf_eq` from additive groups
+to additive monoids. -/]
+theorem orderOf_eq_of_isRegular {M : Type*} [Monoid M] {a x y : M}
+    (ha : IsRegular a) (h : SemiconjBy a x y) : orderOf x = orderOf y := by
+  refine orderOf_eq_orderOf_iff.mpr fun k => ⟨fun hx => ?_, fun hy => ?_⟩
+  · exact ha.right (by simpa [hx] using (h.pow_right k).eq.symm)
+  · exact ha.left (by simpa [hy] using (h.pow_right k).eq)
+
+end SemiconjBy
 
 namespace IsOfFinOrder
 
@@ -116,6 +158,47 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
     (Nat.dvd_of_mem_primeFactors hp).trans hf]
 
 end IsOfFinOrder
+
+/-- Conjugate elements of a monoid have the same order. -/
+@[to_additive /-- Additively conjugate elements of an additive monoid have the same additive
+order. -/]
+theorem IsConj.orderOf_eq {G : Type*} [Monoid G] {a b : G} (h : IsConj a b) :
+    orderOf a = orderOf b :=
+  orderOf_eq_orderOf_iff.2 fun n ↦ by
+    rw [← isConj_one_right, ← isConj_one_right (a := b ^ n)]
+    exact ⟨fun h' ↦ h'.trans (h.pow n), fun h' ↦ h'.trans (h.pow n).symm⟩
+
+/-- **Commuting factorisations with coprime exponents are unique.** If `a * u = b * v`, where
+`a` commutes with `u` and `b` with `v`, both `a` and `b` are killed by the `m`-th power map, both
+`u` and `v` by the `n`-th, and `m` is prime to `n`, then `a = b`. For `k ≡ 1 [MOD m]` and
+`k ≡ 0 [MOD n]`, both `a` and `b` are the `k`-th power of the common product. -/
+theorem Commute.eq_of_mul_eq_mul_of_coprime {M : Type*} [Monoid M] {a u b v : M} {m n : ℕ}
+    (hau : Commute a u) (hbv : Commute b v) (hmn : m.Coprime n) (ha : a ^ m = 1)
+    (hb : b ^ m = 1) (hu : u ^ n = 1) (hv : v ^ n = 1) (h : a * u = b * v) : a = b := by
+  obtain ⟨k, hk1, hk0⟩ := Nat.chineseRemainder hmn 1 0
+  have key {x y : M} (hxy : Commute x y) (hx : x ^ m = 1) (hy : y ^ n = 1) : (x * y) ^ k = x := by
+    rw [hxy.mul_pow, pow_eq_pow_of_modEq hk1 hx, pow_eq_pow_of_modEq hk0 hy, pow_one, pow_zero,
+      mul_one]
+  rw [← key hau ha hu, h, key hbv hb hv]
+
+/-- An integer exponent coprime to the order of `x` preserves it. This is Mathlib's
+`Nat.Coprime.orderOf_pow` for integer exponents. -/
+@[to_additive /-- An integer coefficient coprime to the additive order of `x` preserves it. This
+is Mathlib's `Nat.Coprime.addOrderOf_nsmul` for integer coefficients. -/]
+theorem IsCoprime.orderOf_zpow {G : Type*} [Group G] {x : G} {u : ℤ}
+    (h : IsCoprime u (orderOf x)) : orderOf (x ^ u) = orderOf x := by
+  rw [← orderOf_pow_natAbs]
+  exact Nat.Coprime.orderOf_pow (Nat.Coprime.symm (Int.isCoprime_iff_gcd_eq_one.mp h))
+
+/-- Raising to an integer power coprime to `N` is injective on the elements whose order divides
+`N`. -/
+@[to_additive /-- Scaling by an integer coprime to `N` is injective on the elements whose additive
+order divides `N`. -/]
+theorem IsCoprime.injOn_zpow_of_orderOf_dvd {G : Type*} [Group G] {u : ℤ} {N : ℕ}
+    (hu : IsCoprime u N) : Set.InjOn (· ^ u) {x : G | orderOf x ∣ N} := fun x hx y hy h ↦
+  hu.eq_of_zpow_eq_zpow h <| by
+    rw [zpow_natCast, zpow_natCast, orderOf_dvd_iff_pow_eq_one.mp hx,
+      orderOf_dvd_iff_pow_eq_one.mp hy]
 
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive
@@ -190,6 +273,25 @@ theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Fini
 theorem pow_pow_totient_eq_self {M : Type*} [Monoid M] {q n : ℕ} (hq : q.Coprime n) {x : M}
     (hx : x ^ n = 1) : x ^ q ^ n.totient = x := by
   rw [pow_eq_pow_mod _ hx, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hx, pow_one]
+
+/-- In a finite group, for every `n` there is `N ≥ n` such that `g ^ (p ^ N) = g` for every
+`g` of order coprime to the prime `p`. -/
+theorem exists_le_forall_pow_prime_pow_eq_self_of_coprime {G : Type*} [Group G] [Finite G]
+    {p : ℕ} (hp : p.Prime) (n : ℕ) :
+    ∃ N, n ≤ N ∧ ∀ g : G, (orderOf g).Coprime p → g ^ p ^ N = g := by
+  set m := ordCompl[p] (Nat.card G)
+  have hm0 : 0 < m := Nat.ordCompl_pos p Nat.card_pos.ne'
+  refine ⟨m.totient * n, Nat.le_mul_of_pos_left n (Nat.totient_pos.2 hm0), fun g hg ↦ ?_⟩
+  have hdvd : orderOf g ∣ m :=
+    (Nat.Coprime.dvd_of_dvd_mul_left
+      (hg.pow_right _)
+      (by rw [Nat.ordProj_mul_ordCompl_eq_self]; exact orderOf_dvd_natCard _))
+  -- Euler's theorem for the exponent `m` of the `p`-regular elements, iterated `n` times.
+  have h1 : g ^ p ^ m.totient = g := pow_pow_totient_eq_self
+    (Nat.coprime_ordCompl hp Nat.card_pos.ne') (orderOf_dvd_iff_pow_eq_one.1 hdvd)
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Nat.mul_succ, pow_add, pow_mul, ih, h1]
 
 /-- If `x ^ n = 1` in a monoid, then every power `x ^ d` is killed by the `(n / gcd(n, d))`-th
 power map: `(x ^ d) ^ (n / gcd(n, d)) = 1`. In a group of order `N` this applies with `n = N`

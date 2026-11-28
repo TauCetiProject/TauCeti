@@ -71,9 +71,9 @@ Corollary 11 (b). -/
 theorem globalDimension_eq_projectiveDimension_quotient_jacobson [IsSemiprimaryRing A] :
     globalDimension.{v} A =
       projectiveDimension (ModuleCat.of A (Shrink.{v} (A ⧸ Ring.jacobson A))) :=
-  le_antisymm ((globalDimension_le_iff A _).mpr fun M ↦
-      projectiveDimension_le_of_hasProjectiveDimensionLT fun n _ ↦
+  le_antisymm ((Abelian.globalDimension_le_iff (ModuleCat A) _).mpr fun M ↦
+      projectiveDimension_le_projectiveDimension_iff.2 fun n _ ↦
         M.hasProjectiveDimensionLT_of_isSemiprimaryRing n)
-    (ModuleCat.projectiveDimension_le_globalDimension _)
+    (Abelian.projectiveDimension_le_globalDimension _)
 
 end TauCeti

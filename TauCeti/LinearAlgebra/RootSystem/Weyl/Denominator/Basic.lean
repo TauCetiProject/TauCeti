@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.MonoidAlgebra.Defs
 public import TauCeti.LinearAlgebra.RootSystem.Positive
+import Mathlib.Algebra.Regular.Pow
+import TauCeti.Algebra.MonoidAlgebra.Eigenvector
+import TauCeti.LinearAlgebra.RootSystem.Basic
 
 /-!
 # The Weyl denominator
@@ -40,6 +43,10 @@ whose Weyl-group combinatorics is a much later dependency.
   `TauCeti.posRootCone`; and
 * `TauCeti.coeff_weylDenominator_zero`: the constant term of `Δ` is `1`, the empty set being the
   only set of positive roots summing to `0`.
+* `RootPairing.isRegular_one_sub_single_neg_root`: each factor `1 - e^{-α}` is regular, because a
+  root has infinite additive order; hence
+* `TauCeti.isRegular_weylDenominator`: `Δ` is a regular element of `ℤ[M]`. So a character identity
+  `f · Δ = g · Δ` can be cancelled to `f = g`.
 
 ## References
 
@@ -52,6 +59,19 @@ an abstract root pairing, so the Lie-algebra version is a specialization rather 
 -/
 
 public section
+
+namespace RootPairing
+
+/-- **A root factor `1 - e^{-α}` is regular** in `ℤ[M]`, in characteristic zero: `-α` has infinite
+additive order, so `e^{-α} - 1` is regular, and `1 - e^{-α}` is its negative. -/
+theorem isRegular_one_sub_single_neg_root {ι R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] [CharZero R] (P : RootPairing ι R M N) (i : ι) :
+    IsRegular (1 - AddMonoidAlgebra.single (-P.root i) 1 : AddMonoidAlgebra ℤ M) := by
+  have h := (isUnit_one.neg.isRegular).mul (TauCeti.isRegular_single_sub_one_of_not_isOfFinAddOrder
+    (R := ℤ) (isOfFinAddOrder_neg_iff.not.mpr (P.not_isOfFinAddOrder_root i)))
+  rwa [neg_one_mul, neg_sub] at h
+
+end RootPairing
 
 namespace TauCeti
 
@@ -113,7 +133,7 @@ theorem coeff_weylDenominator_zero : (weylDenominator P b).coeff 0 = 1 := by
   refine (Finset.sum_eq_single_of_mem (∅ : Finset ι) (Finset.empty_mem_powerset _) ?_).trans ?_
   · intro T hT hTne
     have hsum : ∑ i ∈ T, P.root i ≠ 0 :=
-      sum_root_ne_zero_of_mem_posRoots P b (Finset.nonempty_iff_ne_empty.mpr hTne)
+      sum_root_ne_zero_of_mem_posRoots P b (Finset.ne_empty_iff_nonempty.mp hTne)
         fun i hi => (mem_posRootsFinset P b i).mp (Finset.mem_powerset.mp hT hi)
     exact Finsupp.single_eq_of_ne (Ne.symm (neg_ne_zero.mpr hsum))
   · simp
@@ -129,5 +149,11 @@ theorem neg_mem_posRootCone_of_coeff_weylDenominator_ne_zero {x : M}
   rw [hxT, neg_neg]
   exact sum_mem fun i hi ↦
     root_mem_posRootCone_of_mem_posRoots P b ((mem_posRootsFinset P b i).mp (hT hi))
+
+/-- **The Weyl denominator is regular**: multiplication by `Δ = ∏_{α>0} (1 - e^{-α})` is
+injective on `ℤ[M]`, each factor being regular because a root has infinite additive order. -/
+theorem isRegular_weylDenominator : IsRegular (weylDenominator P b) := by
+  rw [weylDenominator_def]
+  exact IsRegular.prod fun i _ ↦ P.isRegular_one_sub_single_neg_root i
 
 end TauCeti

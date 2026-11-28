@@ -19,6 +19,9 @@ Over a complete nontrivially normed field `𝕜`, finite dimensionality of `E` m
 `E ⊗[𝕜] F` are definite norms, and `TauCeti.ProjectiveTensor.toOperator 𝕜 E F` upgrades to a
 continuous linear equivalence `TauCeti.ProjectiveTensor.toOperatorEquiv`.
 
+Bases `b` of `E` and `c` of `F` give the basis `b i ⊗ c j` of `ProjectiveTensor 𝕜 E F`
+(`TauCeti.ProjectiveTensor.basis`).
+
 ## References
 
 * R. A. Ryan, *Introduction to Tensor Products of Banach Spaces*, Springer, 2002, §§2.1, 3.1.
@@ -112,6 +115,26 @@ instance ProjectiveTensor.instModuleFinite {𝕜 E F : Type*} [NormedField 𝕜]
     Module.Finite 𝕜 (ProjectiveTensor 𝕜 E F) :=
   Module.Finite.equiv (ProjectiveTensor.linearEquiv 𝕜 E F).symm
 
+section Basis
+
+variable {𝕜 E F ι κ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The basis `(b i ⊗ c j)` of the projective tensor product of `E` and `F` built from a basis `b`
+of `E` and a basis `c` of `F`. -/
+noncomputable def ProjectiveTensor.basis (b : Module.Basis ι 𝕜 E) (c : Module.Basis κ 𝕜 F) :
+    Module.Basis (ι × κ) 𝕜 (ProjectiveTensor 𝕜 E F) :=
+  (b.tensorProduct c).map (ProjectiveTensor.linearEquiv 𝕜 E F).symm
+
+/-- The vector of `ProjectiveTensor.basis b c` at `(i, j)` is the pure tensor `b i ⊗ c j`. -/
+@[simp]
+theorem ProjectiveTensor.basis_apply (b : Module.Basis ι 𝕜 E) (c : Module.Basis κ 𝕜 F)
+    (k : ι × κ) : ProjectiveTensor.basis b c k = ProjectiveTensor.mk (b k.1 ⊗ₜ[𝕜] c k.2) := by
+  rw [ProjectiveTensor.basis, Module.Basis.map_apply, Module.Basis.tensorProduct_apply,
+    ProjectiveTensor.linearEquiv_symm_apply]
+
+end Basis
+
 section NormedFiniteDimensional
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -162,19 +185,23 @@ noncomputable def toOperatorEquiv : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F 
   letI : DecidableEq (Module.Basis.ofVectorSpaceIndex 𝕜 E) := Classical.decEq _
   let c : Module.Dual 𝕜 E ⊗[𝕜] F ≃ₗ[𝕜] StrongDual 𝕜 E ⊗[𝕜] F :=
     _root_.TensorProduct.congr LinearMap.toContinuousLinearMap (LinearEquiv.refl 𝕜 F)
-  ContinuousLinearEquiv.equivOfInverse (toOperator 𝕜 E F) (toOperatorInvOfBasis b)
-    (fun ⟨u⟩ ↦ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).injective <| by
-      obtain ⟨v, rfl⟩ := c.surjective u
-      rw [linearEquiv_apply, linearEquiv_apply, toTensorProduct_toOperatorInvOfBasis b,
-        toOperator_mk, TensorProduct.toLinearMap_toOperator_congr,
-        dualTensorHomEquivOfBasis_symm_cancel_left])
-    (fun T ↦ ContinuousLinearMap.coe_injective <| DFunLike.coe_injective <| by
+  ContinuousLinearEquiv.ofContinuousLinearMap (toOperator 𝕜 E F) (toOperatorInvOfBasis b)
+    (ContinuousLinearMap.ext <|
+      show Function.RightInverse (toOperatorInvOfBasis b) (toOperator 𝕜 E F) from
+      fun T ↦ ContinuousLinearMap.coe_injective <| DFunLike.coe_injective <| by
       rcases hv : toOperatorInvOfBasis b T with ⟨w⟩
       have h : w = c ((dualTensorHomEquivOfBasis (N := F) b).symm T.toLinearMap) := by
         simpa [hv] using toTensorProduct_toOperatorInvOfBasis b T
       have hr := congrArg DFunLike.coe
         (dualTensorHomEquivOfBasis_symm_cancel_right b T.toLinearMap)
       rwa [← TensorProduct.toLinearMap_toOperator_congr, ← h, ← toOperator_mk] at hr)
+    (ContinuousLinearMap.ext <|
+      show Function.LeftInverse (toOperatorInvOfBasis b) (toOperator 𝕜 E F) from
+      fun ⟨u⟩ ↦ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).injective <| by
+      obtain ⟨v, rfl⟩ := c.surjective u
+      rw [linearEquiv_apply, linearEquiv_apply, toTensorProduct_toOperatorInvOfBasis b,
+        toOperator_mk, TensorProduct.toLinearMap_toOperator_congr,
+        dualTensorHomEquivOfBasis_symm_cancel_left])
 
 @[simp] theorem toOperatorEquiv_toContinuousLinearMap :
     (toOperatorEquiv 𝕜 E F).toContinuousLinearMap = toOperator 𝕜 E F := (rfl)

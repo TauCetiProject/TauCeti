@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.ShortComplex.Limit
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Additivity
+public import TauCeti.Topology.Category.TopCat.Monoidal
+import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 
 /-!
@@ -21,7 +23,16 @@ cochain complex of the disjoint union with the product of the cochain complexes 
 Products of modules over a ring are always exact, so taking cohomology preserves this product:
 the singular cohomology of a disjoint union is the product of the singular cohomologies of its
 summands. Both universal properties use the maps induced by the canonical inclusions into the
-disjoint union.
+disjoint union. In particular, when `X` is a discrete `Small.{v}` space, the product decomposition
+`TopCat.sigmaConstIsoProd` implies that classes in `Hⁿ(X × Y; R, M)` are determined by their
+restrictions along the fibre inclusions `TopCat.prodFiberInclusion X Y x`
+(`TopCat.singularCohomology_prod_ext_of_discreteTopology`).
+
+The same holds for a union of pairwise disjoint open subsets `s i` of a space, whose singular
+chains are the coproduct of those of the `s i` (`TauCeti.isColimitCofanSingularChainComplexOpens`):
+its singular cochains and cohomology are the products of those of the `s i`, with the restrictions
+as projections, and a class on the union is determined by its restrictions to the `s i`
+(`TauCeti.singularCohomology_iSup_ext`).
 
 ## Main results
 
@@ -29,6 +40,10 @@ disjoint union.
   product of cochain complexes.
 * `TauCeti.isLimitFanSingularCohomology`: singular cohomology takes a disjoint union to a product
   in every degree.
+* `TauCeti.isLimitFanSingularCochainComplexOpens`, `TauCeti.isLimitFanSingularCohomologyOpens`:
+  the same for a union of pairwise disjoint open sets.
+* `TauCeti.singularCohomology_iSup_ext`: a class on such a union is determined by its
+  restrictions to the members.
 * `TauCeti.singularCohomology_prod_ext_of_discreteTopology`: for a discrete space `X`, a class on
   `X × Y` is determined by its restrictions to the slices `{x} × Y`, since `X × Y` is the disjoint
   union of these slices.
@@ -91,6 +106,53 @@ def isLimitFanSingularCohomology [Small.{v} ι] (n : ℕ) :
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
       (isLimitFanSingularCochainComplex X C R k M)
 
+section Opens
+
+open Function TopologicalSpace
+
+variable {Y : Type w} [TopologicalSpace Y] (s : ι → Opens Y)
+
+/-- **Additivity of singular cochains over disjoint open sets.** The singular cochain complex of a
+union of pairwise disjoint open sets `s i` is the product of the singular cochain complexes of the
+`s i`. The projections are the cochain maps induced by the inclusions. -/
+def isLimitFanSingularCochainComplexOpens (hs : Pairwise (Disjoint on s)) :
+    IsLimit (Fan.mk ((TopCat.of ↥(⨆ i, s i)).singularCochainComplex R k M)
+      (fun i ↦ TopCat.singularCochainComplexMap
+        (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩)) :
+      Fan fun i ↦ (TopCat.of (s i)).singularCochainComplex R k M) :=
+  isLimitFanMkObjOfIsLimit (ChainComplex.linearYonedaFunctor (α := ℕ) k M) _ _
+    (Cofan.IsColimit.op (isColimitCofanSingularChainComplexOpens s C R hs))
+
+/-- **Additivity of singular cohomology over disjoint open sets.** In every degree, the singular
+cohomology of a union of pairwise disjoint open sets `s i` is the product of the singular
+cohomologies of the `s i`. The projections are the restrictions to the `s i`. -/
+def isLimitFanSingularCohomologyOpens [Small.{v} ι] (hs : Pairwise (Disjoint on s)) (n : ℕ) :
+    IsLimit (Fan.mk ((TopCat.of ↥(⨆ i, s i)).singularCohomology R k M n)
+      (fun i ↦ TopCat.singularCohomologyMap
+        (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩) n) :
+      Fan fun i ↦ (TopCat.of (s i)).singularCohomology R k M n) :=
+  have : HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k) := ModuleCat.hasLimitsOfShape
+  isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
+    (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
+      (isLimitFanSingularCochainComplexOpens C R k M s hs)
+
+variable {s C R k M} in
+/-- **Classes on a disjoint union of open sets are determined by their restrictions.** Two classes
+of `Hⁿ(⋃ i, s i; R, M)`, for pairwise disjoint open sets `s i`, are equal when their restrictions
+to every `s i` are. -/
+theorem singularCohomology_iSup_ext [Small.{v} ι] (hs : Pairwise (Disjoint on s)) {n : ℕ}
+    {z z' : (TopCat.of ↥(⨆ i, s i)).singularCohomology R k M n}
+    (h : ∀ i, TopCat.singularCohomologyMap
+      (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩) n z =
+        TopCat.singularCohomologyMap
+          (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩) n z') :
+    z = z' :=
+  have : PreservesLimitsOfShape (Discrete ι) (forget (ModuleCat.{v} k)) :=
+    preservesLimitsOfShape_of_equiv (Discrete.equivalence (equivShrink.{v} ι)).symm _
+  Concrete.isLimit_ext _ (isLimitFanSingularCohomologyOpens C R k M s hs n) _ _ fun ⟨i⟩ ↦ h i
+
+end Opens
+
 section Discrete
 
 open MonoidalCategory
@@ -136,3 +198,34 @@ theorem singularCohomology_prod_ext_of_discreteTopology {X Y : TopCat.{w}} [Disc
 end Discrete
 
 end TauCeti
+
+namespace TopCat
+
+open MonoidalCategory CartesianMonoidalCategory
+
+/-- **Fibre-restriction extensionality for a product with a discrete space**: when `X` is a
+discrete `Small.{v}` space, classes of `Hⁿ(X × Y; R, M)` are determined by their restrictions along
+the fibre inclusions `TopCat.prodFiberInclusion X Y x`. -/
+theorem singularCohomology_prod_ext_of_discreteTopology {C : Type u} [Category.{v} C]
+    [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k] [Linear k C] {M : C}
+    (X Y : TopCat.{w}) [DiscreteTopology X] [Small.{v} X] {n : ℕ}
+    {φ ψ : (X ⊗ Y).singularCohomology R k M n}
+    (h : ∀ x : X, TopCat.singularCohomologyMap (prodFiberInclusion X Y x) n φ =
+      TopCat.singularCohomologyMap (prodFiberInclusion X Y x) n ψ) : φ = ψ := by
+  have : PreservesLimitsOfShape (Discrete (X : Type w)) (forget (ModuleCat.{v} k)) :=
+    preservesLimitsOfShape_of_equiv (Discrete.equivalence (equivShrink.{v} (X : Type w))).symm _
+  let e := sigmaConstIsoProd X Y
+  let L := TauCeti.isLimitFanSingularCohomology (fun _ : X ↦ Y) C R k M n
+  have heq : TopCat.singularCohomologyMap e.hom n φ = TopCat.singularCohomologyMap e.hom n ψ :=
+    Concrete.isLimit_ext _ L _ _ fun ⟨x⟩ ↦ by
+      dsimp only [Fan.mk_pt, Fan.mk_π_app]
+      rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+        ← TopCat.singularCohomologyMap_comp, sigmaι_comp_sigmaConstIsoProd_hom]
+      exact h x
+  have hinv (z : (X ⊗ Y).singularCohomology R k M n) :
+      TopCat.singularCohomologyMap e.inv n (TopCat.singularCohomologyMap e.hom n z) = z := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, Iso.inv_hom_id,
+      TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+  rw [← hinv φ, ← hinv ψ, heq]
+
+end TopCat

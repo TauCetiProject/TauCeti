@@ -136,7 +136,7 @@ theorem eventually_fst_eq_and_exists_flowOf_eq_snd
     (hnd : ¬(returnDerivative v g T₀ p).HasEigenvalue 1) :
     ∀ᶠ x in 𝓝 (T₀, p), x ∈ flowDomain v → flowOf v x.1 x.2 = x.2 →
       x.1 = T₀ ∧ ∃ s, (s, p) ∈ flowDomain v ∧ flowOf v s p = x.2 := by
-  have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero hv p
+  have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero (hv p)
   have hp0 : flowOf v 0 p = p := flowOf_zero v p
   have hg0 : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v 0 p) := by rwa [hp0]
   have hgv0 : mvfderiv I g (flowOf v 0 p) (v (flowOf v 0 p)) ≠ 0 := by rwa [hp0]
@@ -159,7 +159,7 @@ theorem eventually_fst_eq_and_exists_flowOf_eq_snd
   -- The point `π z` of the section returns to itself at time `t`, so `t` is its hitting time of
   -- the section and `π z` is a fixed point of the return branch, hence `π z = p`.
   have hπz : π z = flowOf v (flowHittingTime v g 0 p z) z := flowTransition_apply v g 0 p z
-  obtain ⟨-, hπper⟩ := flowOf_flowOf_of_flowOf_eq hv hτ hx hper
+  obtain ⟨-, hπper⟩ := flowOf_flowOf_of_flowOf_eq hv hx hper
   rw [← hπz] at hπper
   have hlevel : g (flowOf v t (π z)) = g (flowOf v T₀ p) := by
     rw [hπper, hπz, hτg, hp0, hp]
@@ -216,7 +216,7 @@ theorem exists_finset_forall_fst_eq_and_exists_flowOf_eq_snd :
       exact eventually_fst_eq_and_exists_flowOf_eq_snd hv (hSD hy.1) hy.2 hg hgv hndy
   refine ⟨F.map (Embedding.subtype _), fun y hy ↦ ?_, fun x hxS hx ↦ ?_⟩
   · obtain ⟨y, -, rfl⟩ := Finset.mem_map.1 hy
-    exact y.2
+    exact y.property
   · obtain ⟨y, hyF, hxy⟩ := mem_iUnion₂.1 (hF ⟨hxS, hx⟩)
     exact ⟨y, Finset.mem_map_of_mem _ hyF, hxy (hSD hxS) hx⟩
 

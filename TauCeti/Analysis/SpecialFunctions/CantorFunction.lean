@@ -46,6 +46,8 @@ Lebesgue-null Cantor set, hence mutually singular with Lebesgue measure.
 * `TauCeti.ae_hasDerivAt_cantorFunction`: the derivative of `cantorFunction` is `0` almost
   everywhere.
 * `TauCeti.eVariationOn_cantorFunction`: the total variation of `cantorFunction` is `1`.
+* `TauCeti.ae_hasDerivAt_cantorReparam` and `TauCeti.integral_deriv_cantorReparam`: the
+  derivative of `cantorReparam` is `1/2` almost everywhere, so `∫₀¹ cantorReparam' = 1/2`.
 * `TauCeti.not_absolutelyContinuousOnInterval_cantorFunction`, and likewise
   `TauCeti.not_absolutelyContinuousOnInterval_cantorReparam`: an increasing homeomorphism of
   `[0, 1]` need not be absolutely continuous.
@@ -89,7 +91,7 @@ private lemma range_ternary : range ternary = cantorSet := by
   ext x
   refine ⟨?_, fun hx ↦ ⟨cantorSetEquivNatToBool ⟨x, hx⟩, ?_⟩⟩
   · rintro ⟨s, rfl⟩
-    exact (cantorSetEquivNatToBool.symm s).2
+    exact (cantorSetEquivNatToBool.symm s).property
   · simp [ternary]
 
 private lemma bddAbove_image_dyadic (S : Set (ℕ → Bool)) : BddAbove (dyadic '' S) :=
@@ -200,9 +202,9 @@ theorem continuous_cantorFunction : Continuous cantorFunction := by
   have hsurj : Function.Surjective g := fun y ↦ by
     obtain ⟨x, hx⟩ : (y : ℝ) ∈ range cantorFunction := by
       rw [range_cantorFunction]
-      exact y.2
+      exact y.property
     exact ⟨x, Subtype.ext hx⟩
-  exact continuous_subtype_val.comp (hg.continuous_of_surjective hsurj)
+  exact continuous_subtypeVal.comp (hg.continuous_of_surjective hsurj)
 
 /-- The Cantor function is measurable. -/
 @[fun_prop]
@@ -288,6 +290,26 @@ theorem cantorReparam_zero : cantorReparam 0 = 0 := by
 @[simp]
 theorem cantorReparam_one : cantorReparam 1 = 1 := by
   simp [cantorReparam_apply]
+
+/-- Off the Cantor set, `cantorReparam` has derivative `1/2`. -/
+theorem hasDerivAt_cantorReparam_of_notMem {t : ℝ} (ht : t ∉ cantorSet) :
+    HasDerivAt cantorReparam (1 / 2) t := by
+  convert ((hasDerivAt_id t).add (hasDerivAt_cantorFunction_of_notMem ht)).div_const 2 using 1
+  · exact funext cantorReparam_apply
+  · norm_num
+
+/-- `cantorReparam` has derivative `1/2` at almost every point. -/
+theorem ae_hasDerivAt_cantorReparam : ∀ᵐ t, HasDerivAt cantorReparam (1 / 2) t :=
+  (measure_eq_zero_iff_ae_notMem.mp volume_cantorSet).mono
+    fun _ ↦ hasDerivAt_cantorReparam_of_notMem
+
+/-- `∫₀¹ cantorReparam' = 1/2`, while `cantorReparam 1 - cantorReparam 0 = 1`: the fundamental
+theorem of calculus fails, as `cantorReparam` is not absolutely continuous
+(`TauCeti.not_absolutelyContinuousOnInterval_cantorReparam`). -/
+theorem integral_deriv_cantorReparam : ∫ t in (0 : ℝ)..1, deriv cantorReparam t = 1 / 2 := by
+  rw [intervalIntegral.integral_congr_ae (g := fun _ ↦ (1 / 2 : ℝ))
+    (ae_hasDerivAt_cantorReparam.mono fun _ ht _ ↦ ht.deriv)]
+  simp
 
 /-- The increasing homeomorphism `cantorReparam` is not absolutely continuous on `[0, 1]`. -/
 theorem not_absolutelyContinuousOnInterval_cantorReparam :

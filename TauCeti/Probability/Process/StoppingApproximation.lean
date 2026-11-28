@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Order.Cadlag
+public import TauCeti.Topology.Instances.NNReal.Dyadic.Grid
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
@@ -24,6 +25,11 @@ that the restarted increment path `t ↦ X (τ + t) - X τ` of an almost-surely 
 process into a pseudo-metrizable Borel group whose shifted increment paths are a.e.-measurable is
 almost-everywhere measurable in the product σ-algebra on path space
 (`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue_add_const_sub_stoppedValue`).
+The same approximation shows that a process with measurable coordinates and pseudo-metrizable
+Borel values is almost-everywhere measurable at any stopping time when its paths are almost surely
+right-continuous at the finite stopped time
+(`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue`), without adaptation or a
+finite-measure assumption.
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit.
@@ -156,14 +162,42 @@ theorem tendsto_dyadicCeilTime (u : WithTop ℝ≥0) :
 theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0) (n : ℕ) :
     (range fun ω => dyadicCeilTime n (τ ω)).Countable := by
   refine ((Set.countable_range (fun k : ℕ =>
-    (((k : ℝ≥0) / 2 ^ n : ℝ≥0) : WithTop ℝ≥0))).insert ⊤).mono ?_
+    ((dyadicNNRat n k : ℝ≥0) : WithTop ℝ≥0))).insert ⊤).mono ?_
   rintro _ ⟨ω, rfl⟩
   dsimp only
   cases h : τ ω with
   | top => simp
   | coe t =>
     rw [dyadicCeilTime_coe]
-    exact mem_insert_of_mem _ ⟨_, rfl⟩
+    exact mem_insert_of_mem _ ⟨⌈t * 2 ^ n⌉₊, by simp only [coe_dyadicNNRat]⟩
+
+/-- If `dyadicCeilTime k v < s`, then `v` is finite and `dyadicCeilTime k v` is the dyadic
+grid point `dyadicNNRat k ⌈u * 2 ^ k⌉₊`. -/
+theorem exists_eq_coe_dyadicCeilTime_of_lt {k : ℕ} {v s : WithTop ℝ≥0}
+    (hv : dyadicCeilTime k v < s) :
+    ∃ u : ℝ≥0, v = u ∧ dyadicCeilTime k v = ((dyadicNNRat k ⌈u * 2 ^ k⌉₊ : ℝ≥0) : WithTop ℝ≥0) := by
+  cases v with
+  | top => rw [dyadicCeilTime_top] at hv; exact (not_top_lt hv).elim
+  | coe u => exact ⟨u, rfl, by rw [dyadicCeilTime_coe, coe_dyadicNNRat]⟩
+
+/-- Clipping the upward dyadic approximation of any random time at a deterministic horizon `T`
+leaves only finitely many values in `ℝ≥0`. -/
+theorem finite_range_untopA_min_dyadicCeilTime {Ω : Type*}
+    (τ : Ω → WithTop ℝ≥0) (n : ℕ) (T : ℝ≥0) :
+    (range fun ω => (min (T : WithTop ℝ≥0) (dyadicCeilTime n (τ ω))).untopA).Finite := by
+  refine ((Set.finite_Iio ⌈T * 2 ^ n⌉₊).image (fun k => (dyadicNNRat n k : ℝ≥0)) |>.insert T).subset
+    ?_
+  rintro _ ⟨ω, rfl⟩
+  dsimp only
+  rcases le_or_gt (T : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)) with hle | hgt
+  · left
+    rw [min_eq_left hle, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+  · obtain ⟨u, -, hρ⟩ := exists_eq_coe_dyadicCeilTime_of_lt hgt
+    right
+    rw [min_eq_right hgt.le, hρ, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+    have hlt : (dyadicNNRat n ⌈u * 2 ^ n⌉₊ : ℝ≥0) < T := WithTop.coe_lt_coe.mp (hρ ▸ hgt)
+    rw [coe_dyadicNNRat] at hlt
+    exact ⟨⌈u * 2 ^ n⌉₊, Nat.lt_ceil.mpr ((div_lt_iff₀ (by positivity)).mp hlt), rfl⟩
 
 /-- Rounding cannot turn a finite time into infinity. -/
 @[simp]
@@ -290,5 +324,25 @@ theorem aemeasurable_stoppedValue_add_const_sub_stoppedValue {E : Type*} [Topolo
   · exact (indicator_of_notMem (fun h : ω ∈ G ↦ h.2 hτω) _).trans
       (stoppedValue_add_const_sub_stoppedValue_of_eq_top (u := X) t hτω).symm
   · exact indicator_of_mem (⟨hωN, hτω⟩ : ω ∈ G) _
+
+/-- A process with measurable coordinates evaluated at a stopping time is almost everywhere
+measurable if its paths are almost surely right-continuous at the finite stopped time.
+No adaptation, finiteness of the stopping time, or usual conditions on the filtration are needed. -/
+theorem aemeasurable_stoppedValue {β : Type*} [MeasurableSpace β] [TopologicalSpace β]
+    [TopologicalSpace.PseudoMetrizableSpace β] [BorelSpace β] {P : Measure Ω} {U : ℝ≥0 → Ω → β}
+    (hτ : IsStoppingTime ℱ τ) (hm : ∀ s, Measurable (U s))
+    (hrc : ∀ᵐ ω ∂P, τ ω ≠ ⊤ →
+      ContinuousWithinAt (fun u => U u ω) (Ici (τ ω).untopA) (τ ω).untopA) :
+    AEMeasurable (stoppedValue U τ) P := by
+  apply aemeasurable_of_tendsto_metrizable_ae'
+    (f := fun n => stoppedValue U (fun ω => TauCeti.dyadicCeilTime n (τ ω)))
+    (fun n => ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
+      (TauCeti.countable_range_dyadicCeilTime τ n) hm).aemeasurable)
+  filter_upwards [hrc] with ω hω
+  by_cases hfin : τ ω = ⊤
+  · simpa only [stoppedValue, hfin, TauCeti.dyadicCeilTime_top] using
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ => U (⊤ : WithTop ℝ≥0).untopA ω)
+        atTop (𝓝 (U (⊤ : WithTop ℝ≥0).untopA ω)))
+  · exact TauCeti.tendsto_stoppedValue_dyadicCeilTime U τ ω hfin (hω hfin)
 
 end MeasureTheory.IsStoppingTime

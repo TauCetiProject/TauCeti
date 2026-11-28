@@ -57,9 +57,9 @@ private theorem isCompact_frameSeminormSupport
     (j : Σ i, Σ x : U i, {m : ℕ // m ≤ n} × Compacts (extChartAt I x).target) :
     IsCompact (frameSeminormSupport (I := I) (n := n) U j) := by
   unfold frameSeminormSupport
-  exact ((j.2.2.2.isCompact.image continuous_subtype_val).image_of_continuousOn
-    ((continuousOn_extChartAt_symm j.2.1).mono (by rintro _ ⟨z, -, rfl⟩; exact z.2))).image
-    continuous_subtype_val
+  exact ((j.2.2.2.isCompact.image continuous_subtypeVal).image_of_continuousOn
+    ((continuousOn_extChartAt_symm j.2.1).mono (by rintro _ ⟨z, -, rfl⟩; exact z.property))).image
+    continuous_subtypeVal
 
 /-- A frame seminorm vanishes on a section which is zero near the points it represents. -/
 private theorem frameSeminormFamily_eq_zero
@@ -91,7 +91,7 @@ theorem exists_isCompact_forall_eventually_eq_zero {G : Type*} [NormedAddCommGro
       (frameSeminormFamily_eq_zero e U hU j (hs.filter_mono (nhdsSet_mono
         (subset_biUnion_of_mem hj)))).le) (apply_nonneg _ _)
   have h := hC s
-  rw [Seminorm.comp_apply, coe_normSeminorm, smul_apply, hsup, smul_zero] at h
+  rw [Seminorm.comp_apply, coe_normSeminorm, _root_.smul_apply, hsup, smul_zero] at h
   exact norm_le_zero_iff.mp h
 
 end ContMDiffSection

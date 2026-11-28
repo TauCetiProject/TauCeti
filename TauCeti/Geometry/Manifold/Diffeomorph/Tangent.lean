@@ -108,8 +108,8 @@ theorem tangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
   apply Diffeomorph.ext
   intro z
   simpa only [coe_tangent, coe_trans, Function.comp_apply] using
-    tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.1))
-      ((h.mdifferentiable (by simp)) z.1)
+    tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.proj))
+      ((h.mdifferentiable (by simp)) z.proj)
 
 /-- The tangent map of a `C^n` diffeomorphism, `n ≥ 1`, as a homeomorphism of tangent bundles.
 Its value at `(x, v)` is `(h x, mfderiv I J h x v)`, and its inverse is the tangent map of
@@ -174,7 +174,7 @@ theorem proj_smul (g : G) (v : TangentBundle I M) : (g • v).proj = g • v.pro
 /-- The tangent-lifted action sends a tangent vector `v` at `x` to `dg_x v`. -/
 @[simp]
 theorem snd_smul (g : G) (v : TangentBundle I M) :
-    (g • v).2 = mfderiv I I (fun x : M ↦ g • x) v.proj v.2 := by
+    (g • v).snd = mfderiv I I (fun x : M ↦ g • x) v.proj v.snd := by
   rw [smul_eq_tangentMap, tangentMap]
 
 /-- The tangent lift of a smooth group action is a group action. -/

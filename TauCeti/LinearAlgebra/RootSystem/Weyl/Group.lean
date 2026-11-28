@@ -9,6 +9,7 @@ public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+import TauCeti.LinearAlgebra.RootSystem.Flip
 
 /-!
 # Permutation actions of Weyl groups
@@ -30,18 +31,26 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
   when the coroots span, in particular for simply connected integral root data.
+* `RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top` deduces that the Weyl group then
+  acts faithfully on the root indices.
+* `RootPairing.weylGroup_smul_eq_self_of_mem_corootKer` says the Weyl group fixes `P.corootKer`
+  pointwise.
 * `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
 * `RootPairing.coroot'_smul` and `RootPairing.coroot'_weylGroupToPerm_smul` say an
   automorphism, and in particular a Weyl-group element, carries the coroot functional of a root to
-  the coroot functional of its image.
+  the coroot functional of its image; `RootPairing.sum_coroot'_sq_smul` deduces that the sum of
+  squares of all coroot pairings is Weyl-invariant.
 * `RootPairing.weylGroupToPerm_ofIdx_apply` evaluates the action of a simple reflection.
-* `RootPairing.weylGroupToPerm_neg` and `RootPairing.weylGroupToPerm_reflectionPerm_self` say the
-  action commutes with root negation.
+* `RootPairing.weylGroupToPerm_neg`, `RootPairing.weylGroupToPerm_reflectionPerm_self`, and
+  `RootPairing.reflectionPerm_reflectionPerm_self_right` say the action commutes with root
+  negation.
 * `RootPairing.reflection_indexNeg_neg` says the reflection in `-β` is the reflection in `β`.
 * `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
   sums of two roots.
+* `RootPairing.weylGroup.mk_reflection_eq_ofIdx` identifies the Weyl-group subtype element
+  constructed from `Equiv.reflection P i` with `weylGroup.ofIdx P i`.
 * `RootPairing.weylGroup.ofIdx_mul_self` says a simple reflection is an involution.
 * `RootPairing.weylGroup.ofIdx_ne_one` says a simple reflection is not the identity over a
   ring with no zero divisors in which `2 ≠ 0`.
@@ -51,8 +60,11 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   on the weight space is the identity.
 * `RootPairing.weylGroup.ext` says two Weyl-group elements agreeing on the weight space are
   equal.
-* `RootPairing.weylGroupRootRep_apply` and `RootPairing.weylGroupRootRep_injective` identify the
+* `RootPairing.weylGroupRootRep_apply`, `RootPairing.weylGroupRootRep_ofIdx_apply`,
+  `RootPairing.weylGroupRootRep_injective`, and `RootPairing.ker_weylGroupRootRep` identify the
   action of `P.weylGroupRootRep` with scalar multiplication and record its faithfulness.
+* `RootPairing.weylGroupCorootRep_apply` identifies the action of `P.weylGroupCorootRep` with
+  scalar multiplication.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
   span.
@@ -62,6 +74,10 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   index sends `w x` to `w (s_β x)`.
 * `RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal` says orthogonal roots have
   commuting reflections.
+* `RootPairing.weylGroupCorootRep_equivOp_apply` evaluates the coroot representation
+  `RootPairing.weylGroupCorootRep` on `Subgroup.equivOp _ w` as `(w : P.Aut).coweightEquiv`.
+* `RootPairing.weylGroup.ofIdx_reflectionPerm_self` and `RootPairing.weylGroup.ofIdx_neg` say
+  negating a root index does not change the associated Weyl-group reflection.
 * `RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` realizes each coweight action of the
   Weyl group as a weight action of the flipped Weyl group.
 * `RootPairing.mem_corootSpan_of_mem_closure_range_coreflection` and
@@ -177,11 +193,44 @@ lemma coroot'_weylGroupToPerm_smul (w : P.weylGroup) (i : ι) (x : M) :
   rw [_root_.Equiv.symm_apply_apply] at h
   exact h
 
+variable {P} in
+/-- The Weyl group fixes `P.corootKer` pointwise. -/
+theorem weylGroup_smul_eq_self_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer)
+    (w : P.weylGroup) : w • x = x := by
+  obtain ⟨g, hg⟩ := w
+  induction hg using weylGroup.induction with
+  | mem i =>
+    rw [Subgroup.mk_smul, Equiv.reflection_smul, reflection_apply_eq_self_of_mem_corootKer hx]
+  | one => exact one_smul _ x
+  | mul g₁ g₂ _ _ h₁ h₂ =>
+    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
+    rw [mul_smul, h₂, h₁]
+
+/-- **The sum of squares of all coroot pairings at a weight is invariant under the Weyl group.** -/
+theorem sum_coroot'_sq_smul {𝕜 : Type*} [Fintype ι] [CommSemiring 𝕜] [Algebra R 𝕜]
+    (w : P.weylGroup) (lam : M) :
+    ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j (w • lam))) ^ 2 =
+      ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2 := by
+  calc ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j (w • lam))) ^ 2
+      = ∑ j : ι, (algebraMap R 𝕜 (P.coroot' (P.weylGroupToPerm w⁻¹ j) lam)) ^ 2 := by
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        have hc := P.coroot'_weylGroupToPerm_smul w⁻¹ j (w • lam)
+        rw [inv_smul_smul] at hc
+        rw [hc]
+    _ = ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2 :=
+        Equiv.sum_comp (P.weylGroupToPerm w⁻¹) fun j ↦ (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2
+
 /-- If the roots span, the action of the Weyl group on root indices is faithful. -/
 theorem weylGroupToPerm_injective_of_span_eq_top
     (hspan : Submodule.span R (range P.root) = ⊤) :
     Function.Injective P.weylGroupToPerm :=
   (Equiv.indexHom_injective_of_span_eq_top P hspan).comp Subtype.val_injective
+
+/-- If the coroots span, the action of the Weyl group on root indices is faithful. This applies to
+simply connected root data over the integers. -/
+theorem weylGroupToPerm_injective_of_corootSpan_eq_top (hspan : P.corootSpan R = ⊤) :
+    Function.Injective P.weylGroupToPerm :=
+  (Equiv.indexHom_injective_of_corootSpan_eq_top P hspan).comp Subtype.val_injective
 
 /-- The action of the Weyl group on root indices is faithful. -/
 theorem weylGroupToPerm_injective
@@ -232,6 +281,14 @@ lemma weylGroupToPerm_reflectionPerm_self (w : P.weylGroup) (j : ι) :
   let := P.indexNeg
   simpa only [← P.indexNeg_neg] using P.weylGroupToPerm_neg w j
 
+/-- Reflecting a root's negative in `i` equals negating its `i`-reflection:
+`s_i(-j) = -s_i(j)`. -/
+lemma reflectionPerm_reflectionPerm_self_right (i j : ι) :
+    P.reflectionPerm i (P.reflectionPerm j j) =
+      P.reflectionPerm (P.reflectionPerm i j) (P.reflectionPerm i j) := by
+  simpa only [weylGroupToPerm_ofIdx_apply] using
+    P.weylGroupToPerm_reflectionPerm_self (weylGroup.ofIdx P i) j
+
 variable {P} in
 /-- The reflection in the negative `-β = s_β β` of a root is the reflection in `β`. -/
 theorem reflection_indexNeg_neg (β : ι) :
@@ -258,6 +315,13 @@ lemma weylGroup.coe_ofIdx (i : ι) :
     ((weylGroup.ofIdx P i : P.weylGroup) : P.Aut) =
       Equiv.reflection P i :=
   rfl
+
+/-- The Weyl-group subtype element constructed from `Equiv.reflection P i` equals
+`weylGroup.ofIdx P i`. -/
+@[simp]
+lemma weylGroup.mk_reflection_eq_ofIdx (i : ι) {h : Equiv.reflection P i ∈ P.weylGroup} :
+    (⟨Equiv.reflection P i, h⟩ : P.weylGroup) = weylGroup.ofIdx P i :=
+  Subtype.ext (weylGroup.coe_ofIdx P i).symm
 
 /-- A simple reflection of the Weyl group is its own inverse. -/
 @[simp]
@@ -347,9 +411,26 @@ theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) :
     P.weylGroupRootRep w x = w • x :=
   (rfl)
 
+/-- The coroot-space representation `P.weylGroupCorootRep` acts by the scalar multiplication of the
+opposite Weyl group on `N`. -/
+@[simp]
+theorem weylGroupCorootRep_apply (w : P.weylGroup.op) (y : N) :
+    P.weylGroupCorootRep w y = w • y :=
+  (rfl)
+
 /-- The weight-space representation of the Weyl group is faithful over every commutative ring. -/
 theorem weylGroupRootRep_injective : Function.Injective P.weylGroupRootRep :=
   fun _ _ h ↦ weylGroup.ext fun x ↦ congr($h x)
+
+/-- On the weight space, the Weyl-group generator `weylGroup.ofIdx P i` acts as `P.reflection i`. -/
+theorem weylGroupRootRep_ofIdx_apply (i : ι) (x : M) :
+    P.weylGroupRootRep (weylGroup.ofIdx P i) x = P.reflection i x :=
+  rfl
+
+/-- The kernel of `P.weylGroupRootRep` is trivial. -/
+@[simp]
+theorem ker_weylGroupRootRep : P.weylGroupRootRep.ker = ⊥ :=
+  eq_bot_iff.mpr fun _ hw ↦ P.weylGroupRootRep_injective (by simpa using hw)
 
 /-- **Conjugating a simple reflection transports it along the permutation action**: the reflection
 in the image of a root index is the conjugate of the reflection in that root index. -/
@@ -390,28 +471,40 @@ theorem weylGroup.commute_ofIdx_of_isOrthogonal
     Equiv.reflection_weightEquiv] using
     (isOrthogonal_comm P i j h).eq
 
+/-- Reflecting a root index across itself does not change the associated Weyl-group reflection. -/
+@[simp]
+theorem weylGroup.ofIdx_reflectionPerm_self (i : ι) :
+    weylGroup.ofIdx P (P.reflectionPerm i i) = weylGroup.ofIdx P i := by
+  rw [← weylGroupToPerm_ofIdx_apply, weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+    weylGroup.ofIdx_mul_self, one_mul, weylGroup.ofIdx_inv_eq]
+
+/-- The Weyl-group reflection attached to the negative of a root index is the same reflection. -/
+theorem weylGroup.ofIdx_neg (i : ι) :
+    letI := P.indexNeg
+    weylGroup.ofIdx P (-i) = weylGroup.ofIdx P i := by
+  let := P.indexNeg
+  simp [indexNeg_neg]
+
 /-- Every coweight action of `P.weylGroup` is realized as a weight action of `P.flip.weylGroup`. -/
 theorem exists_flip_weylGroup_smul_eq_coweightEquiv (w : P.weylGroup) :
     ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = (w : P.Aut).coweightEquiv z := by
-  suffices ∀ u ∈ P.weylGroup, ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = u.coweightEquiv z from
-    this w w.2
-  intro u hu
-  induction hu using weylGroup.induction with
-  | mem i =>
-    refine ⟨weylGroup.ofIdx P.flip i, fun z ↦ ?_⟩
-    rw [weylGroup.ofIdx_smul, Equiv.reflection_coweightEquiv]
-    rfl
-  | one => exact ⟨1, fun z ↦ by simp⟩
-  | mul u v _ _ ihu ihv =>
-    obtain ⟨u', hu'⟩ := ihu
-    obtain ⟨v', hv'⟩ := ihv
-    refine ⟨v' * u', fun z ↦ ?_⟩
-    rw [mul_smul, hu', hv', Equiv.mul_eq_comp, Equiv.coweightEquiv_comp_toLin,
-      LinearEquiv.trans_apply]
+  refine ⟨⟨Equiv.autFlip P ((w⁻¹ : P.weylGroup) : P.Aut),
+    Equiv.autFlip_mem_weylGroup (w⁻¹).property⟩, fun z ↦ ?_⟩
+  rw [Subgroup.smul_def, Equiv.autFlip_smul_coweight, Subgroup.coe_inv, Equiv.coweightEquiv_inv]
+  exact DFunLike.congr_fun (LinearEquiv.symm_symm (w : P.Aut).coweightEquiv) z
 
 end
 
 section
+
+/-- Evaluating the coroot representation `P.weylGroupCorootRep` on `Subgroup.equivOp _ w` applies
+the coweight equivalence of `w`. -/
+theorem weylGroupCorootRep_equivOp_apply (w : P.weylGroup) (x : N) :
+    P.weylGroupCorootRep (Subgroup.equivOp P.weylGroup w) x =
+      (w : P.Aut).coweightEquiv x := by
+  -- Unfold `weylGroupCorootRep` (`Representation.ofDistribMulAction`), `Subgroup.equivOp`, and the
+  -- `P.Autᵐᵒᵖ` coweight action `MulOpposite.op g • x = g.coweightEquiv x` once here.
+  rfl
 
 /-- An element of the group generated by the coreflections preserves the coroot lattice. -/
 lemma mem_corootSpan_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}

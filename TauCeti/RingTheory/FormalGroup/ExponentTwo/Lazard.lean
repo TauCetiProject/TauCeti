@@ -102,7 +102,7 @@ theorem ofLazardRing_surjective : Function.Surjective ofLazardRing := by
   have hs : S.subtype.comp (lift ⟨_, inferInstance, h2⟩) = RingHom.id _ :=
     hom_ext <| by rw [← FormalGroup.map_comp, map_lift, hF, FormalGroup.map_id]
   intro x
-  obtain ⟨y, hy⟩ := (lift ⟨_, inferInstance, h2⟩ x).2
+  obtain ⟨y, hy⟩ := (lift ⟨_, inferInstance, h2⟩ x).property
   exact ⟨y, hy.trans (RingHom.congr_fun hs x)⟩
 
 /-- **`MO` is the quotient of the Lazard ring by the `2`-series**: the kernel of
@@ -157,17 +157,11 @@ theorem counit_map_ofLazardRing (x : MvPolynomial ℕ+ LazardRing) :
 its extensions to `L[b₁, b₂, …]` along the right unit `η_R` and the left unit `η_L = C` agree. -/
 theorem map_rightUnit_ker_ofLazardRing :
     (RingHom.ker ofLazardRing).map LazardRing.rightUnit = (RingHom.ker ofLazardRing).map C := by
-  have h : (RingHom.ker ofLazardRing).map LazardRing.rightUnit ≤
-      (RingHom.ker ofLazardRing).map C := by
-    rw [← ker_map, Ideal.map_le_iff_le_comap]
-    intro x hx
-    rw [Ideal.mem_comap, RingHom.mem_ker, map_ofLazardRing_rightUnit, RingHom.mem_ker.mp hx,
-      map_zero]
-  -- The conjugation exchanges the two units, so applying it to `h` gives the reverse inclusion.
-  refine le_antisymm h ?_
-  have h' := Ideal.map_mono (f := LazardRing.conjugation) h
-  rwa [Ideal.map_map, Ideal.map_map, LazardRing.conjugation_comp_rightUnit,
-    LazardRing.conjugation_comp_C] at h'
+  refine LazardRing.map_rightUnit_eq_map_C_iff_le.2 ?_
+  rw [← ker_map, Ideal.map_le_iff_le_comap]
+  intro x hx
+  rw [Ideal.mem_comap, RingHom.mem_ker, map_ofLazardRing_rightUnit, RingHom.mem_ker.mp hx,
+    map_zero]
 
 end ExponentTwoLazardRing
 

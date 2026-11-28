@@ -35,6 +35,8 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 ## Main results
 
 * `IsNilpotent.exists_pow_apply_eq_zero`: a nilpotent endomorphism is locally nilpotent.
+* `Module.End.exists_pow_smul_apply_eq_zero`: scaling a locally nilpotent endomorphism preserves
+  local nilpotence.
 * `Module.End.sum_range_smul_pow_apply_eq_of_le`: at a vector killed by `f ^ k`, a power series in
   `f` may be truncated at any length beyond `k`.
 * `Module.End.span_range_pow_apply_eq_span_range_fin`: the orbit of a vector killed by
@@ -45,7 +47,7 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
   locally nilpotent.
 * `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
   map lowering an exhaustive filtration starting at `⊥` is bijective.
-* `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
+* `LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
   that strictly lowers a well-founded weight on the basis is locally nilpotent.
@@ -64,6 +66,13 @@ theorem IsNilpotent.exists_pow_apply_eq_zero {R M : Type*} [Semiring R] [AddComm
     [Module R M] {f : Module.End R M} (hf : IsNilpotent f) (x : M) : ∃ n, (f ^ n) x = 0 := by
   obtain ⟨n, hn⟩ := hf
   exact ⟨n, by rw [hn, LinearMap.zero_apply]⟩
+
+/-- Scaling a locally nilpotent endomorphism preserves local nilpotence. -/
+theorem Module.End.exists_pow_smul_apply_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {f : Module.End R M} (hf : ∀ x, ∃ n, (f ^ n) x = 0) (t : R) (x : M) :
+    ∃ n, ((t • f) ^ n) x = 0 := by
+  obtain ⟨n, hn⟩ := hf x
+  exact ⟨n, by rw [smul_pow, LinearMap.smul_apply, hn, smul_zero]⟩
 
 /-- A power series in `f` applied to a vector killed by `f ^ k` does not change when it is
 truncated at any length beyond `k`, whatever its coefficients. -/
@@ -144,11 +153,11 @@ variable {S N : Type*} [Ring S] [AddCommGroup N] [Module S N]
 
 /-- If `f` is locally nilpotent and homogeneous of degree zero for a grading by submodules, then so
 is the inverse of `1 + f`: on a homogeneous vector it is a finite geometric series in `-f`. -/
-theorem TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMonoid ι]
+theorem LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMonoid ι]
     {𝒜 : ι → Submodule S N} {f : Module.End S N}
-    (hf : TauCeti.LinearMap.IsHomogeneous f 𝒜 𝒜 0) (hnil : ∀ x, ∃ n, (f ^ n) x = 0) :
-    TauCeti.LinearMap.IsHomogeneous (Ring.inverse (1 + f)) 𝒜 𝒜 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    (hf : LinearMap.IsHomogeneous f 𝒜 𝒜 0) (hnil : ∀ x, ∃ n, (f ^ n) x = 0) :
+    LinearMap.IsHomogeneous (Ring.inverse (1 + f)) 𝒜 𝒜 0 := by
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   obtain ⟨n, hn⟩ := hnil x
   have hpow : ∀ i : ℕ, ((-f) ^ i) x ∈ 𝒜 p := by

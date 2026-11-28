@@ -47,8 +47,13 @@ norm, and the transport along `e⁻¹` inverts it.
 * `TauCeti.Wkp.compLinearIsometryEquiv`: precomposition with `e` on `W^{k,p}`.
 * `TauCeti.Wkp.value_compLinearIsometryEquiv_ae`,
   `TauCeti.Wkp.iteratedGradient_compLinearIsometryEquiv_ae`: its value and highest derivative.
+* `TauCeti.Wkp.norm_iteratedGradient_compLinearIsometryEquiv`: it preserves the `Lᵖ` norm of the
+  highest derivative.
 * `TauCeti.Wkp.compLinearIsometryEquiv_mem_wkp0Submodule_iff`: zero boundary values are preserved
   and reflected.
+* `TauCeti.Wkp.firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule`: at order two, the
+  first-order part keeps zero boundary values under the transport, as in the Dirichlet problem in
+  `W^{2,p} ∩ W^{1,p}_0`.
 -/
 
 public section
@@ -127,9 +132,9 @@ private def compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻
     (k : ℕ) → {T : Wkp ν W p (k + 1) → Wkp μ U p (k + 1) //
       ∀ u, iteratedGradient k (T u) = pullbackLp he hUW k (iteratedGradient k u)}
   | 0 => ⟨fun u => compW1p he hUW u, gradient_compW1p he hUW⟩
-  | k + 1 => ⟨fun u => mk k ((compSpec he hUW k).1 (lowerOrder (k + 1) u))
+  | k + 1 => ⟨fun u => mk k ((compSpec he hUW k).val (lowerOrder (k + 1) u))
       (pullbackLp he hUW (k + 1) (iteratedGradient (k + 1) u)) (by
-        rw [(compSpec he hUW k).2]
+        rw [(compSpec he hUW k).property]
         have h := ((hasWeakFDerivOn_iteratedGradient k u).comp_continuousLinearEquiv
           e.toContinuousLinearEquiv he (hUW ▸ mapsTo_preimage e W)).clm_comp
           ((e.iteratedGradientCongr k).symm : IteratedGradient E' k →L[ℝ] IteratedGradient E k)
@@ -141,12 +146,12 @@ private def compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻
 
 private theorem lowerOrder_compSpec (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 2)) :
-    lowerOrder (k + 1) ((compSpec he hUW (k + 1)).1 u) =
-      (compSpec he hUW k).1 (lowerOrder (k + 1) u) :=
+    lowerOrder (k + 1) ((compSpec he hUW (k + 1)).val u) =
+      (compSpec he hUW k).val (lowerOrder (k + 1) u) :=
   lowerOrder_mk _ _ _ _
 
 private theorem value_compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W) :
-    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), value (k + 1) ((compSpec he hUW k).1 u) =
+    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), value (k + 1) ((compSpec he hUW k).val u) =
       Lp.compMeasurePreserving e (hUW ▸ he.restrict_preimage W.isOpen.measurableSet)
         (value (k + 1) u)
   | 0, u => (value_one (mu := μ) (Omega := U) (p := p) (compW1p he hUW u)).trans <| by
@@ -159,7 +164,7 @@ private theorem value_compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set 
     rw [value_succ (k + 1), lowerOrder_compSpec, value_compSpec he hUW k, value_succ (k + 1) u]
 
 private theorem norm_compSpec_le (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W) :
-    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), ‖(compSpec he hUW k).1 u‖ ≤ ‖u‖
+    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), ‖(compSpec he hUW k).val u‖ ≤ ‖u‖
   | 0, u => by
     -- `compSpec` at order one is `compW1p` by definition, and `Wkp ν W p 1` is `W1p ν W p`
     -- with the same norm; state the goal in `W1p` to apply its operator-norm bound.
@@ -173,7 +178,7 @@ private theorem norm_compSpec_le (he : MeasurePreserving e μ ν) (hUW : (U : Se
     rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero,
       norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ,
       norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u,
-      lowerOrder_compSpec, (compSpec he hUW (k + 1)).2]
+      lowerOrder_compSpec, (compSpec he hUW (k + 1)).property]
     exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) (norm_compSpec_le he hUW k _) 2)
       (pow_le_pow_left₀ (norm_nonneg _) (norm_pullbackLp_le he hUW _ _) 2)
 
@@ -182,7 +187,7 @@ private def compₗ (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻�
     (k : ℕ) → Wkp ν W p k →ₗ[ℝ] Wkp μ U p k
   | 0 => Lp.compMeasurePreservingₗ ℝ e (hUW ▸ he.restrict_preimage W.isOpen.measurableSet)
   | k + 1 =>
-    { toFun := (compSpec he hUW k).1
+    { toFun := (compSpec he hUW k).val
       map_add' u v := ext (k + 1) <| by
         rw [value_add, value_compSpec, value_compSpec, value_compSpec, value_add, map_add]
       map_smul' c u := ext (k + 1) <| by
@@ -221,7 +226,7 @@ private theorem compₗ_compₗ (he : MeasurePreserving e μ ν) (hUW : (U : Set
   rw [h1, Function.comp_apply, h2, Function.comp_apply, LinearIsometryEquiv.symm_apply_apply]
 
 private theorem compₗ_succ_apply (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W)
-    (k : ℕ) (u : Wkp ν W p (k + 1)) : compₗ he hUW (k + 1) u = (compSpec he hUW k).1 u :=
+    (k : ℕ) (u : Wkp ν W p (k + 1)) : compₗ he hUW (k + 1) u = (compSpec he hUW k).val u :=
   (rfl)
 
 /-- **Transport of `W^{k,p}` along a linear isometry.** If the linear isometry `e` carries `μ`
@@ -271,8 +276,24 @@ theorem iteratedGradient_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     iteratedGradient k (compLinearIsometryEquiv he hUW (k + 1) u) =ᵐ[μ.restrict U]
       fun x => (e.iteratedGradientCongr k).symm (iteratedGradient k u (e x)) := by
-  rw [compLinearIsometryEquiv_apply, compₗ_succ_apply, (compSpec he hUW k).2]
+  rw [compLinearIsometryEquiv_apply, compₗ_succ_apply, (compSpec he hUW k).property]
   exact pullbackLp_ae he hUW k _
+
+/-- The transport preserves the `Lᵖ` norm of the highest derivative: the pullback of iterated
+gradients along `e` is isometric pointwise, and `e` carries `μ` on `U` to `ν` on `W`. -/
+theorem norm_iteratedGradient_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
+    ‖iteratedGradient k (compLinearIsometryEquiv he hUW (k + 1) u)‖ = ‖iteratedGradient k u‖ := by
+  have heU : MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
+    hUW ▸ he.restrict_preimage W.isOpen.measurableSet
+  have hmeas : AEStronglyMeasurable (fun x => (iteratedGradient k u : E' → _) (e x))
+      (μ.restrict U) :=
+    (Lp.aestronglyMeasurable _).comp_measurePreserving heU
+  rw [Lp.norm_def, Lp.norm_def,
+    eLpNorm_congr_ae (iteratedGradient_compLinearIsometryEquiv_ae he hUW k u),
+    eLpNorm_congr_norm_ae ((e.iteratedGradientCongr k).symm.continuous.comp_aestronglyMeasurable
+      hmeas) hmeas (ae_of_all _ fun x => (e.iteratedGradientCongr k).symm.norm_map _)]
+  exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) heU)
 
 /-- The transport commutes with forgetting the highest derivative. -/
 theorem lowerOrder_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
@@ -288,7 +309,7 @@ theorem lowerOrder_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
 theorem compLinearIsometryEquiv_ofTestFunctionₗ (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (hWU : MapsTo e.symm W U) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compLinearIsometryEquiv he hUW k (ofTestFunctionₗ (mu := ν) (p := p) k φ) =
-      ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction hWU φ) := by
+      ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction ℝ hWU φ) := by
   refine ext k (Lp.ext ?_)
   rw [compLinearIsometryEquiv_apply, value_compₗ, value_ofTestFunctionₗ, value_ofTestFunctionₗ]
   filter_upwards [Lp.coeFn_compMeasurePreserving (testFunctionLp (mu := ν) p φ)
@@ -296,7 +317,7 @@ theorem compLinearIsometryEquiv_ofTestFunctionₗ (he : MeasurePreserving e μ �
     (hUW ▸ he.restrict_preimage W.isOpen.measurableSet).quasiMeasurePreserving.ae
       (testFunctionLp_apply_ae (mu := ν) p φ),
     testFunctionLp_apply_ae (mu := μ) p
-      (e.symm.toContinuousLinearEquiv.transportTestFunction hWU φ)] with x h1 h2 h3
+      (e.symm.toContinuousLinearEquiv.transportTestFunction ℝ hWU φ)] with x h1 h2 h3
   rw [h1, Function.comp_apply, h2, h3]
   exact (ContinuousLinearEquiv.transportTestFunction_apply e.symm.toContinuousLinearEquiv hWU φ
     x).symm
@@ -325,6 +346,15 @@ theorem compLinearIsometryEquiv_mem_wkp0Submodule_iff (he : MeasurePreserving e 
   have hWU : (W : Set E') = e.symm ⁻¹' U := hUW ▸ (e.toEquiv.symm_preimage_preimage W).symm
   simpa [← compLinearIsometryEquiv_symm he hUW he' hWU] using
     compLinearIsometryEquiv_mem_wkp0Submodule he' hWU k hu
+
+/-- At order two, the transport along `e` preserves zero boundary values of the first-order
+part. -/
+theorem firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) {u : Wkp ν W p 2} (hu : firstOrder 1 u ∈ w1p0Submodule ν W p) :
+    firstOrder 1 (compLinearIsometryEquiv he hUW 2 u) ∈ w1p0Submodule μ U p := by
+  have h := compLinearIsometryEquiv_mem_wkp0Submodule he hUW 1
+    (show lowerOrder 1 u ∈ wkp0Submodule ν W p 1 by rwa [wkp0Submodule_one, ← firstOrder_one])
+  rwa [wkp0Submodule_one, ← lowerOrder_compLinearIsometryEquiv, ← firstOrder_one] at h
 
 end Wkp
 

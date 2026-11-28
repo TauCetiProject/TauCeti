@@ -65,7 +65,7 @@ theorem measurable_multivariateTMeasure :
   have hmix : Measurable fun p : EuclideanSpace ℝ ι × (ι → ι → ℝ) × ℝ =>
       ((multivariateGaussian 0 (Matrix.of p.2.1)).prod (chiSquaredMeasure |p.2.2|)).map
         (fun z => p.1 + √(p.2.2 / z.2) • z.1) :=
-    measurable_subtype_coe.comp (hmap.comp (hprod.prodMk measurable_id))
+    measurable_subtypeVal.comp (hmap.comp (hprod.prodMk measurable_id))
   have hvalid : MeasurableSet {p : EuclideanSpace ℝ ι × (ι → ι → ℝ) × ℝ |
       0 < p.2.2 ∧ (Matrix.of p.2.1).PosSemidef} :=
     (measurableSet_lt measurable_const measurable_snd.snd).inter

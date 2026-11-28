@@ -46,6 +46,11 @@ singular homology; no ring or module structure is needed.
 * `TauCeti.cellularChainGroup`: the relative homology `Hₙ(Xⁿ, Xⁿ⁻¹)`.
 * `TauCeti.cellularDifferential`: the cellular differential.
 * `TauCeti.cellularChainComplex`: the resulting chain complex.
+* `TauCeti.skeletonObjIsoOfRangeEq`, `TauCeti.skeletonObjIsoOfEqUniv`: a space embedded onto a
+  skeleton, and a skeleton equal to the whole space, as skeleta; through them an embedding onto
+  the `(j - 1)`-skeleton `skeletonLT C j` of a space whose `j`-skeleton `skeletonLT C (j + 1)` is
+  everything is the inclusion of the skeletal pair `(Xʲ, Xʲ⁻¹)`
+  (`TauCeti.skeletonObjIsoOfRangeEq_hom_comp_map_comp`).
 
 ## Main results
 
@@ -98,6 +103,52 @@ lemma skeletonPair_snd (n : ℕ) : (skeletonPair C n).snd = skeletonObj C n := r
 @[simp]
 lemma skeletonPair_fst (n : ℕ) : (skeletonPair C n).fst = skeletonObj C (n + 1) := rfl
 
+/-! ### Spaces presented as consecutive skeleta -/
+
+section SkeletonPresentation
+
+variable {C} {Z : Type w} [TopologicalSpace Z]
+
+/-- An embedding `f : Z → X` onto `skeletonLT C m`, the `(m - 1)`-skeleton, identifies `Z` with
+`skeletonObj C m`. -/
+def skeletonObjIsoOfRangeEq {f : C(Z, X)} (hf : IsEmbedding f) {m : ℕ}
+    (hm : Set.range f = skeletonLT C (m : ℕ∞)) : TopCat.of Z ≅ skeletonObj C m :=
+  TopCat.isoOfHomeo (hf.toHomeomorph.trans (Homeomorph.setCongr hm))
+
+/-- The identification of `Z` with `skeletonObj C m`, the `(m - 1)`-skeleton, is `f`. Not
+`@[simp]`: its left side is not in simp normal form, since `simp` rewrites the coercion of
+`skeletonObj C m` to a type inside it (`SetLike.coe_sort_coe`). -/
+lemma coe_skeletonObjIsoOfRangeEq_hom_apply {f : C(Z, X)} (hf : IsEmbedding f) {m : ℕ}
+    (hm : Set.range f = skeletonLT C (m : ℕ∞)) (z : Z) :
+    ((skeletonObjIsoOfRangeEq hf hm).hom z : X) = f z :=
+  (rfl)
+
+/-- A skeleton `skeletonLT C m` that is the whole space is the whole space. -/
+def skeletonObjIsoOfEqUniv {m : ℕ} (hm : (skeletonLT C (m : ℕ∞) : Set X) = Set.univ) :
+    skeletonObj C m ≅ TopCat.of X :=
+  TopCat.isoOfHomeo ((Homeomorph.setCongr hm).trans (Homeomorph.Set.univ X))
+
+/-- The identification of a skeleton equal to the whole space is the inclusion. Not `@[simp]`,
+for the same reason as `TauCeti.coe_skeletonObjIsoOfRangeEq_hom_apply`. -/
+lemma skeletonObjIsoOfEqUniv_hom_apply {m : ℕ} (hm : (skeletonLT C (m : ℕ∞) : Set X) = Set.univ)
+    (x : skeletonObj C m) : (skeletonObjIsoOfEqUniv hm).hom x = (x : X) :=
+  (rfl)
+
+/-- **An embedding onto the `(j - 1)`-skeleton of a space whose `j`-skeleton is everything** is,
+up to the identifications `skeletonObjIsoOfRangeEq` and `skeletonObjIsoOfEqUniv`, the inclusion
+of the skeletal pair `(Xʲ, Xʲ⁻¹)`. Here the `(j - 1)`-skeleton is `skeletonLT C j` and the
+`j`-skeleton is `skeletonLT C (j + 1)`. -/
+lemma skeletonObjIsoOfRangeEq_hom_comp_map_comp {f : C(Z, X)} (hf : IsEmbedding f) {j : ℕ}
+    (hj : Set.range f = skeletonLT C (j : ℕ∞))
+    (hu : (skeletonLT C ((j + 1 : ℕ) : ℕ∞) : Set X) = Set.univ) :
+    (skeletonObjIsoOfRangeEq hf hj).hom ≫ (skeletonPair C j).map ≫
+      (skeletonObjIsoOfEqUniv hu).hom = TopCat.ofHom f := by
+  ext z
+  -- All three maps are inclusions of subspaces, so the composite sends `z` to `f z`.
+  exact coe_skeletonObjIsoOfRangeEq_hom_apply hf hj z
+
+end SkeletonPresentation
+
 /-- The base `X⁻¹ = skeletonLT C 0` of the skeletal filtration lies in every skeleton. -/
 lemma skeletonLT_zero_subset_skeletonLT (n : ℕ) :
     (skeletonLT C ((0 : ℕ) : ℕ∞) : Set X) ⊆ skeletonLT C (n : ℕ∞) :=
@@ -117,7 +168,7 @@ lemma skeletonBasePair_fst (n : ℕ) : (skeletonBasePair C n).fst = skeletonObj 
 
 /-- The subspace `X⁻¹` of the base pair `(Xⁿ, X⁻¹)` is the base of the relative CW complex. -/
 lemma range_skeletonBasePair_snd (n : ℕ) :
-    Set.range (fun x : (skeletonBasePair C n).snd ↦ (x.1 : X)) = D :=
+    Set.range (fun x : (skeletonBasePair C n).snd ↦ (x.val : X)) = D :=
   Subtype.range_coe.trans <| by rw [Nat.cast_zero, skeletonLT_zero_eq_base]
 
 /-- The triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.  Its inner pair is `skeletonBasePair C n`, its total pair is
@@ -174,8 +225,8 @@ lemma skeletonBasePairToSkeletonPair_snd (n : ℕ) :
 /-- On the ambient spaces, `TauCeti.skeletonBasePairToSucc` is the inclusion `Xⁿ ⊆ Xⁿ⁺¹`. -/
 @[simp]
 lemma coe_skeletonBasePairToSucc_fst_apply (n : ℕ) (x : (skeletonBasePair C n).fst) :
-    (TopPair.Hom.fst (skeletonBasePairToSucc C n) x).1 = x.1 :=
-  congrArg (fun f ↦ (f x).1) (TopTriple.innerToTotal_app_fst (T := skeletonBaseTriple C n))
+    (TopPair.Hom.fst (skeletonBasePairToSucc C n) x).val = x.val :=
+  congrArg (fun f ↦ (f x).val) (TopTriple.innerToTotal_app_fst (T := skeletonBaseTriple C n))
 
 /-- On the subspaces, `TauCeti.skeletonBasePairToSucc` is the identity of `X⁻¹`. -/
 @[simp]
@@ -188,7 +239,7 @@ lemma skeletonBasePairToSucc_snd_apply (n : ℕ) (x : (skeletonBasePair C n).snd
 lemma skeletonBasePairToSkeletonPair_zero :
     skeletonBasePairToSkeletonPair C 0 = 𝟙 (skeletonPair C 0) := by
   ext x : 2
-  · exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C 0))
+  · exact Subtype.ext (congrArg (fun g ↦ (g x).val) (skeletonBasePairToSkeletonPair_snd C 0))
   · exact congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C 0)
 
 /-- In positive degree the map `(Xⁿ⁺¹, X⁻¹) ⟶ (Xⁿ⁺¹, Xⁿ)` is the map from the total pair to the
@@ -199,7 +250,7 @@ lemma skeletonBasePairToSkeletonPair_succ (n : ℕ) :
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
   · refine Eq.trans ?_ (TopTriple.totalToOuter_app_snd (T := skeletonBaseTriple C n)).symm
     ext x
-    exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C (n + 1)))
+    exact Subtype.ext (congrArg (fun g ↦ (g x).val) (skeletonBasePairToSkeletonPair_snd C (n + 1)))
   · refine Eq.trans ?_ (TopTriple.totalToOuter_app_fst (T := skeletonBaseTriple C n)).symm
     ext x
     exact congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C (n + 1))
@@ -214,7 +265,7 @@ def skeletonBasePairInclusion {n m : ℕ} (h : n ≤ m) :
 @[simp]
 lemma coe_skeletonBasePairInclusion_fst_apply {n m : ℕ} (h : n ≤ m)
     (x : (skeletonBasePair C n).fst) :
-    (TopPair.Hom.fst (skeletonBasePairInclusion C h) x).1 = x.1 :=
+    (TopPair.Hom.fst (skeletonBasePairInclusion C h) x).val = x.val :=
   congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ _)
 
 @[simp]

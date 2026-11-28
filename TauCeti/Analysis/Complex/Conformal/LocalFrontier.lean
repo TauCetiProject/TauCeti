@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Angle
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Topology.ClusterSet
 
 import Mathlib.Analysis.Complex.Convex
@@ -37,16 +37,6 @@ open Bornology Complex Filter Metric Set Topology
 namespace TauCeti
 
 variable {U : Set ℂ}
-
-/-- The absolute value of the argument, the unoriented angle with `1`, is continuous away from
-`0`, across the negative real axis too, where the argument itself jumps. -/
-theorem continuousAt_abs_arg {w : ℂ} (hw : w ≠ 0) : ContinuousAt (fun z : ℂ => |z.arg|) w := by
-  have hangle : ContinuousAt (fun z : ℂ => InnerProductGeometry.angle z 1) w :=
-    (InnerProductGeometry.continuousAt_angle (x := (w, (1 : ℂ))) hw one_ne_zero).comp
-      (f := fun z : ℂ => (z, (1 : ℂ))) (by fun_prop)
-  refine hangle.congr ?_
-  filter_upwards [isOpen_ne.mem_nhds hw] with z hz
-  exact angle_one_right hz
 
 /-! ### The frontier near a side and near a vertex -/
 
@@ -87,9 +77,9 @@ theorem abs_arg_div_eq_of_mem_frontier {V : Set ℂ} {v b z : ℂ} {α : ℝ}
   have hfr : (⟨z, hz, hzv⟩ : O) ∈ frontier {y : O | |((y - v : ℂ) / b).arg| < α} := by
     have hpreimage : ((↑) : O → ℂ) ⁻¹' U =
         {y : O | |((y - v : ℂ) / b).arg| < α} :=
-      Set.ext fun y => hU y y.2.1 y.2.2
+      Set.ext fun y => hU y y.property.1 y.property.2
     rw [← hpreimage,
-      ← hO.isOpenMap_subtype_val.preimage_frontier_eq_frontier_preimage continuous_subtype_val]
+      ← hO.isOpenMap_subtypeVal.preimage_frontier_eq_frontier_preimage continuous_subtypeVal]
     exact hzU
   exact frontier_lt_subset_eq hφ.domRestrict continuous_const hfr
 

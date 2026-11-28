@@ -15,7 +15,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegr
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 import TauCeti.Probability.DeFinetti.Subsequence
 import TauCeti.Probability.Independence.InfinitePi
-import TauCeti.MeasureTheory.MeasurableSpace.Pi
+import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 
 /-!
 # The coding representation of an exchangeable sequence
@@ -162,7 +162,7 @@ theorem exchangeableLaw_iff_exists_coding {ρ : Measure (ℕ → α)} [IsProbabi
   · have : Nonempty α := (nonempty_of_isProbabilityMeasure ρ).map (· 0)
     obtain ⟨π, hπ⟩ := hρ.exists_eq_map_unitIntervalCoding
     exact ⟨π, unitIntervalCoding α, measurable_uncurry_unitIntervalCoding α, hπ⟩
-  · have : IsProbabilityMeasure (π : Measure (ProbabilityMeasure α)) := π.2
+  · have : IsProbabilityMeasure (π : Measure (ProbabilityMeasure α)) := π.property
     have hnoise : ExchangeableLaw (Measure.infinitePi fun _ : ℕ => (volume : Measure I)) := by
       simpa only [ProbabilityMeasure.coe_mk] using
         exchangeableLaw_infinitePi_const (⟨volume, inferInstance⟩ : ProbabilityMeasure I)

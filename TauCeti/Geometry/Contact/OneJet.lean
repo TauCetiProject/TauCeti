@@ -23,7 +23,9 @@ For the cotangent bundle `W = T*Q` with its Liouville form `λ`, the contactizat
 standard contact form of the space of one-jets `J¹Q = T*Q × ℝ`. A smooth one-form `α` and a smooth
 function `g` on `Q` give the section `q ↦ (α_q, g q)` of `J¹Q → Q`. Since `λ` is tautological,
 this section is horizontal for `ker (dz - λ)` exactly when `α = dg`
-(`TauCeti.CotangentBundle.isHorizontalMap_contactization_liouvilleForm_iff`). The **one-jet**
+(`TauCeti.CotangentBundle.isHorizontalMap_contactization_liouvilleForm_iff`). For any contact
+form on `J¹Q`, such a section is a Legendrian embedding exactly when it is horizontal
+(`TauCeti.CotangentBundle.isLegendrianEmbedding_iff_isHorizontalMap`). The **one-jet**
 `j¹g : q ↦ (dg_q, g q)` of a smooth function is therefore a Legendrian embedding of `Q`
 (`TauCeti.CotangentBundle.isLegendrianEmbedding_contactization_liouvilleForm`), the Legendrian
 lift of the exact Lagrangian graph of `dg`.
@@ -32,8 +34,13 @@ lift of the exact Lagrangian graph of `dg`.
 
 * `TauCeti.CotangentBundle.isHorizontalMap_contactization_liouvilleForm_iff`: the graph criterion
   in `J¹Q`.
+* `TauCeti.CotangentBundle.isLegendrianEmbedding_iff_isHorizontalMap`: for any contact form on
+  `J¹Q`, a section is a Legendrian embedding exactly when it is horizontal.
 * `TauCeti.CotangentBundle.isLegendrianEmbedding_contactization_liouvilleForm`: one-jets of smooth
   functions are Legendrian embeddings.
+* `TauCeti.CotangentBundle.contactization_liouvilleForm_apply_zeroSection`,
+  `TauCeti.CotangentBundle.mextDeriv_contactization_liouvilleForm_apply`: the value of `dz - λ`
+  over zero covectors, and its exterior derivative, the canonical symplectic form of `T*M`.
 
 ## References
 
@@ -69,29 +76,58 @@ theorem isHorizontalMap_contactization_liouvilleForm_iff (α : SmoothForm I M �
     (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
     IsHorizontalMap I (liouvilleForm I M).contactization.kerDistribution
         (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
-      α.1 = mextDeriv (RoughForm.ofFunction I g) := by
+      α.val = mextDeriv (RoughForm.ofFunction I g) := by
   rw [SmoothForm.isHorizontalMap_contactization_iff _ (SmoothForm.degreeOneEquiv α).contMDiff hg,
     mpullback_liouvilleForm]
 
-variable [CompleteSpace E] [FiniteDimensional ℝ E] [I.Boundaryless]
+/-- **The one-jet form along the zero section.** At a point `(0_q, s)` of `J¹M = T*M × ℝ` over a
+zero covector, the form `dz - λ` evaluates a tangent vector to its `z`-component, since the
+Liouville form vanishes at zero covectors. -/
+theorem contactization_liouvilleForm_apply_zeroSection (q : M) (s : ℝ)
+    (w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
+      (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) q, s)) :
+    (liouvilleForm I M).contactization.val
+        (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) q, s) ![w] = w.2 := by
+  rw [SmoothForm.contactization_apply, liouvilleForm_apply, Manifold.tangentSpaceProdEquiv_apply]
+  -- The Liouville form at the zero covector is the zero covector applied to `dπ w.1`.
+  simp only [NormedSpace.fromTangentSpace_apply, zeroSection_snd, zero_apply,
+    sub_zero]
 
-/-- **One-jets of functions are Legendrian.** For a smooth function `g` on `M` with differential
-`α = dg`, the one-jet `j¹g : q ↦ (dg_q, g q)` is a Legendrian embedding of `M` into the one-jet
-space `T*M × ℝ` with its contact form `dz - λ`. -/
-theorem isLegendrianEmbedding_contactization_liouvilleForm (α : SmoothForm I M ℝ 1)
-    (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hα : α.1 = mextDeriv (RoughForm.ofFunction I g)) :
-    IsLegendrianEmbedding I (liouvilleForm I M).contactization.kerDistribution
-      (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) := by
-  -- The kernel of `dz - λ` is a `C¹` contact structure, which needs a `C²` manifold structure.
+/-- **The exterior derivative of the one-jet form.** At a point `p` of `J¹M = T*M × ℝ`, read in the
+preferred chart at `p` itself, the exterior derivative of `dz - λ` is the canonical symplectic
+form `ω = -dλ` on the cotangent components: it pairs `v` and `w` to `w₁₂(v₁₁) - v₁₂(w₁₁)`, where
+`v = ((v₁₁, v₁₂), v₂)` with `v₁₁` a base coordinate and `v₁₂` a covector coordinate. -/
+theorem mextDeriv_contactization_liouvilleForm_apply (p : CotangentBundle I M × ℝ)
+    (v w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) p) :
+    mextDeriv (liouvilleForm I M).contactization.val p ![v, w] = w.1.2 v.1.1 - v.1.2 w.1.1 := by
+  rw [SmoothForm.mextDeriv_contactization_apply, ← symplecticForm_eq_neg_mextDerivₗ,
+    eval₂_symplecticForm, Manifold.tangentSpaceProdEquiv_apply,
+    Manifold.tangentSpaceProdEquiv_apply]
+  exact strongDualCotangentSymplecticForm_apply (V := E) v.1 w.1
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless]
+
+/-- **Horizontal sections of the one-jet space are Legendrian.** For a contact form `θ` on the
+one-jet space `T*M × ℝ`, a smooth one-form `α` and a smooth function `g` on `M`, the section
+`q ↦ (α_q, g q)` is a Legendrian embedding for `ker θ` exactly when it is horizontal: the base
+projection is a smooth left inverse, and the dimensions match. -/
+theorem isLegendrianEmbedding_iff_isHorizontalMap
+    {θ : SmoothForm ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (CotangentBundle I M × ℝ) ℝ 1}
+    (hθ : θ.IsContactForm) (α : SmoothForm I M ℝ 1) (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
+    IsLegendrianEmbedding I θ.kerDistribution
+        (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
+      IsHorizontalMap I θ.kerDistribution
+        (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) := by
+  refine ⟨fun h ↦ h.isHorizontalMap, fun h ↦ ?_⟩
+  -- The kernel of `θ` is a `C¹` contact structure, which needs a `C²` manifold structure.
   have : IsManifold ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (1 + 1) (CotangentBundle I M × ℝ) :=
     .of_le (n := ∞) (by norm_num)
-  -- The base projection of `T*M × ℝ` is a smooth left inverse of the one-jet.
+  -- The base projection of `T*M × ℝ` is a smooth left inverse of the section.
   have hemb := ((SmoothForm.degreeOneEquiv α).contMDiff.prodMk hg).isSmoothEmbedding_of_leftInverse
     (by simp) ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)).comp contMDiff_fst)
     (g := fun p ↦ p.1.proj) fun _ ↦ rfl
   refine (isLegendrianEmbedding_iff_of_isSmoothEmbedding hemb).2
-    ⟨isContactForm_contactization_liouvilleForm.isContactDistribution_kerDistribution,
-      hemb.isImmersion, (isHorizontalMap_contactization_liouvilleForm_iff α hg).2 hα, ?_⟩
+    ⟨hθ.isContactDistribution_kerDistribution, hemb.isImmersion, h, ?_⟩
   rw [finrank_prod, finrank_prod, finrank_self, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 /-- For a smooth function `g`, the section `q ↦ (α_q, g q)` of the one-jet space defined by a
@@ -100,9 +136,18 @@ theorem isLegendrianEmbedding_contactization_liouvilleForm_iff (α : SmoothForm 
     (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
     IsLegendrianEmbedding I (liouvilleForm I M).contactization.kerDistribution
         (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
-      α.1 = mextDeriv (RoughForm.ofFunction I g) :=
-  ⟨fun h ↦ (isHorizontalMap_contactization_liouvilleForm_iff α hg).1 h.isHorizontalMap,
-    isLegendrianEmbedding_contactization_liouvilleForm α hg⟩
+      α.val = mextDeriv (RoughForm.ofFunction I g) :=
+  (isLegendrianEmbedding_iff_isHorizontalMap isContactForm_contactization_liouvilleForm α hg).trans
+    (isHorizontalMap_contactization_liouvilleForm_iff α hg)
+
+/-- **One-jets of functions are Legendrian.** For a smooth function `g` on `M` with differential
+`α = dg`, the one-jet `j¹g : q ↦ (dg_q, g q)` is a Legendrian embedding of `M` into the one-jet
+space `T*M × ℝ` with its contact form `dz - λ`. -/
+theorem isLegendrianEmbedding_contactization_liouvilleForm (α : SmoothForm I M ℝ 1)
+    (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hα : α.val = mextDeriv (RoughForm.ofFunction I g)) :
+    IsLegendrianEmbedding I (liouvilleForm I M).contactization.kerDistribution
+      (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) :=
+  (isLegendrianEmbedding_contactization_liouvilleForm_iff α hg).2 hα
 
 end CotangentBundle
 

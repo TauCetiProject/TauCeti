@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+public import Mathlib.Algebra.Algebra.Spectrum.Quasispectrum
 public import Mathlib.Algebra.Algebra.Subalgebra.Unitization
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
+import TauCeti.Algebra.Algebra.Unitization
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -183,6 +185,16 @@ noncomputable def unitizationSndL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] A :
 theorem unitizationSndL_apply (u : WithLp 1 (Unitization 𝕜 A)) :
     unitizationSndL 𝕜 A u = (ofLp u).snd := (rfl)
 
+variable {𝕜 A} in
+/-- An element of the ℓ¹ unitization with zero scalar coordinate is recovered from its nonunital
+part. -/
+theorem unitizationInrL_unitizationSndL_of_fst_eq_zero {u : WithLp 1 (Unitization 𝕜 A)}
+    (hu : (ofLp u).fst = 0) :
+    unitizationInrL 𝕜 A (unitizationSndL 𝕜 A u) = u := by
+  apply WithLp.ofLp_injective 1
+  rw [unitizationInrL_apply, ofLp_toLp, unitizationSndL_apply]
+  exact Unitization.inr_snd_of_fst_eq_zero hu
+
 variable [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
 /-- The bounded inclusion into the ℓ¹ unitization preserves multiplication. -/
@@ -223,10 +235,8 @@ theorem mem_range_unitizationInrL_iff {u : WithLp 1 (Unitization 𝕜 A)} :
   · rintro ⟨a, rfl⟩
     simp
   · intro h
-    refine ⟨unitizationSndL 𝕜 A u, ?_⟩
-    conv_rhs => rw [unitization_eq_fst_smul_one_add_inr u]
     rw [unitizationFstA_apply] at h
-    simp [h]
+    exact ⟨unitizationSndL 𝕜 A u, unitizationInrL_unitizationSndL_of_fst_eq_zero h⟩
 
 /-- The spectrum of an element embedded into the ℓ¹ unitization is its quasispectrum. -/
 theorem spectrum_unitizationInrL (a : A) :
@@ -284,3 +294,39 @@ theorem norm_comp_unitizationSndL_le (D : A →L[𝕜] E) :
   exact D.le_opNorm _ |>.trans (by gcongr; exact le_add_of_nonneg_left (norm_nonneg _))
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+
+/-- The spectrum of `WithLp.toLp 1 (a : Unitization 𝕜 A)` in the ℓ¹ unitization equals
+`quasispectrum 𝕜 a`. -/
+@[simp]
+theorem spectrum_unitization_toLp_inr (a : A) :
+    spectrum 𝕜 (WithLp.toLp 1 (a : Unitization 𝕜 A)) = quasispectrum 𝕜 a := by
+  rw [← AlgEquiv.spectrum_eq (WithLp.unitizationAlgEquiv (𝕜 := 𝕜) (A := A) 𝕜),
+    WithLp.unitizationAlgEquiv_apply, WithLp.ofLp_toLp,
+    ← Unitization.quasispectrum_eq_spectrum_inr]
+
+/-- The spectrum of `WithLp.unitizationInrL 𝕜 A a` in the ℓ¹ unitization equals
+`quasispectrum 𝕜 a`. -/
+theorem spectrum_unitizationInrL (a : A) :
+    spectrum 𝕜 (WithLp.unitizationInrL 𝕜 A a) = quasispectrum 𝕜 a := by
+  rw [WithLp.unitizationInrL_apply, spectrum_unitization_toLp_inr]
+
+/-- Zero lies in the spectrum of `WithLp.toLp 1 (a : Unitization 𝕜 A)` for every element `a` of a
+nonunital normed algebra over a normed field `𝕜`. -/
+theorem zero_mem_spectrum_unitization_toLp_inr (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (WithLp.toLp 1 (a : Unitization 𝕜 A)) := by
+  rw [spectrum_unitization_toLp_inr]
+  exact quasispectrum.zero_mem 𝕜 a
+
+/-- Zero lies in the spectrum of `WithLp.unitizationInrL 𝕜 A a` for every element `a` of a
+nonunital normed algebra over a normed field `𝕜`. -/
+theorem zero_mem_spectrum_unitizationInrL (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (WithLp.unitizationInrL 𝕜 A a) := by
+  rw [spectrum_unitizationInrL]
+  exact quasispectrum.zero_mem 𝕜 a
+
+end TauCeti

@@ -11,13 +11,13 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
-import Mathlib.Analysis.Calculus.BumpFunction.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
@@ -73,9 +73,11 @@ by approximation, and the *order* of the two limits matters.
 * `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
   level, assuming its value is globally in `Lᵖ`.
 * `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`, and
-  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels.
+  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels, and
+  `TauCeti.W1p.value_posPartAbove_nonneg_ae`: the truncation is nonnegative.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
-  `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
+  `TauCeti.W1p.value_posPart`, its nonnegativity `TauCeti.W1p.value_posPart_nonneg_ae` and its
+  weak gradient `TauCeti.W1p.gradient_posPart_ae`.
 * `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
   function itself.
 
@@ -203,9 +205,7 @@ private theorem hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ (hF : ContDiff 
   have hv := W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hVΩ phi
   have hg : ⇑(W1p.gradient (W1p.restrictL hVΩ (W1p.ofTestFunctionₗ mu Omega p phi)))
       =ᵐ[mu.restrict (V : Set E)] fun x => ∇ (phi : E → ℝ) x :=
-    (W1p.gradient_restrictL_ae hVΩ _).trans (ae_restrict_of_ae_restrict_of_subset
-      (SetLike.coe_subset_coe.2 hVΩ) (by
-        rw [W1p.gradient_ofTestFunctionₗ]; exact gradientTestFunctionLp_apply_ae p _))
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae hVΩ phi
   refine (((hasWeakFDerivOn_comp_testFunction (mu := mu) hF phi).mono hVΩ).congr_ae
     ?_).congr_ae_deriv ?_
   · filter_upwards [hv] with x hx; rw [hx]
@@ -289,22 +289,8 @@ theorem W1p.hasWeakFDerivOn_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ : ℝ → ℝ
     (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
     HasWeakFDerivOn mu Omega (fun x => Φ (W1p.value u x))
       fun x => innerSL ℝ (deriv Φ (W1p.value u x) • W1p.gradient u x) := by
-  -- Replace `Φ` by `F = ψ Φ`, with `ψ` a bump equal to one near `[-M, M]`; `F'` is bounded.
-  set R := |M| + 1
-  let ψ : ContDiffBump (0 : ℝ) := ⟨R, R + 1, by positivity, by linarith⟩
-  have hF : ContDiff ℝ 1 fun t => ψ t * Φ t := ψ.contDiff.mul hΦ
-  obtain ⟨K, hK⟩ := (hF.continuous_deriv le_rfl).bounded_above_of_compact_support
-    (ψ.hasCompactSupport.mul_right (f' := Φ)).deriv
-  have hFΦ : ∀ t, |t| ≤ M → (fun s => ψ s * Φ s) =ᶠ[𝓝 t] Φ := fun t ht => by
-    have ht' : t ∈ Metric.ball (0 : ℝ) R := by
-      rw [Metric.mem_ball, Real.dist_eq, sub_zero]
-      linarith [le_abs_self M]
-    filter_upwards [Metric.isOpen_ball.mem_nhds ht'] with s hs
-    rw [ψ.one_of_mem_closedBall (Metric.ball_subset_closedBall hs), one_mul]
-  refine ((W1p.hasWeakFDerivOn_comp hp hF (M := K.toNNReal) (fun t => ?_) u).congr_ae
-    ?_).congr_ae_deriv ?_
-  · rw [← NNReal.coe_le_coe, coe_nnNorm]
-    exact (hK t).trans (Real.le_coe_toNNReal K)
+  obtain ⟨F, K, hF, hK, hFΦ, -⟩ := hΦ.exists_contDiff_bdd_deriv_eventuallyEq M
+  refine ((W1p.hasWeakFDerivOn_comp hp hF hK u).congr_ae ?_).congr_ae_deriv ?_
   · filter_upwards [hM] with x hx using (hFΦ _ hx).eq_of_nhds
   · filter_upwards [hM] with x hx
     rw [(hFΦ _ hx).deriv_eq]
@@ -342,6 +328,27 @@ theorem W1p.gradient_contDiffComp_ae (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
       fun x => deriv F (W1p.value u x) • W1p.gradient u x := by
   rw [W1p.contDiffComp, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
+
+/-- **Composition of an essentially bounded Sobolev function with a `C¹` function.** Let
+`1 ≤ p < ∞` and let `u ∈ W^{1,p}(Ω)` be essentially bounded on `Ω`. For every `C¹` function `Φ`
+with `Φ 0 = 0`, the composition `Φ ∘ u` lies in `W^{1,p}(Ω)`, with weak gradient `Φ'(u) ∇u`.
+
+Unlike `TauCeti.W1p.contDiffComp`, no bound on `Φ'` is assumed: only the values of `Φ` near the
+essential range of `u` matter. The weak gradient alone is
+`TauCeti.W1p.hasWeakFDerivOn_comp_of_ae_abs_le`. -/
+theorem W1p.exists_value_gradient_ae_eq_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ : ℝ → ℝ}
+    (hΦ : ContDiff ℝ 1 Φ) (hΦ0 : Φ 0 = 0) {u : W1p mu Omega p} {M : ℝ}
+    (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
+    ∃ w : W1p mu Omega p,
+      W1p.value w =ᵐ[mu.restrict Omega] (fun x => Φ (W1p.value u x)) ∧
+        W1p.gradient w =ᵐ[mu.restrict Omega]
+          fun x => deriv Φ (W1p.value u x) • W1p.gradient u x := by
+  obtain ⟨F, K, hF, hK, hFΦ, hF0⟩ := hΦ.exists_contDiff_bdd_deriv_eventuallyEq M
+  refine ⟨W1p.contDiffComp hp hF hK (hF0.trans hΦ0) u, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffComp_ae hp hF hK (hF0.trans hΦ0) u, hM] with x hx hxM
+    rw [hx, (hFΦ _ hxM).eq_of_nhds]
+  · filter_upwards [W1p.gradient_contDiffComp_ae hp hF hK (hF0.trans hΦ0) u, hM] with x hx hxM
+    rw [hx, (hFΦ _ hxM).deriv_eq]
 
 end ChainRule
 
@@ -812,6 +819,12 @@ theorem W1p.value_posPartAbove_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
       fun x => max (W1p.value u x - k) 0 := by
   exact W1p.value_posPartAboveOfMemLp_ae hp k u (W1p.memLp_posPartAbove hk u)
 
+/-- The truncation `(u - k)⁺` is nonnegative almost everywhere. -/
+theorem W1p.value_posPartAbove_nonneg_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
+    (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.posPartAbove hp hk u) x :=
+  (W1p.value_posPartAbove_ae hp hk u).mono fun _ hx ↦ hx ▸ le_max_right _ _
+
 /-- The weak gradient of `(u - k)⁺` is `1_{u > k} ∇u` almost everywhere. -/
 @[simp]
 theorem W1p.gradient_posPartAbove_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
@@ -855,6 +868,11 @@ theorem W1p.posPartAbove_zero (hp : p ≠ ∞) (u : W1p mu Omega p) :
     Lp.coeFn_posPart (W1p.value u)] with x hx hy
   rw [hx, hy, sub_zero]
 
+/-- The positive part `u⁺` is nonnegative almost everywhere. -/
+theorem W1p.value_posPart_nonneg_ae (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.posPart hp u) x :=
+  W1p.posPartAbove_zero hp u ▸ W1p.value_posPartAbove_nonneg_ae hp le_rfl u
+
 /-- Truncating `(u - k)⁺` above a further level `l ≥ 0` truncates `u` above `k + l`. -/
 @[simp]
 theorem W1p.posPartAbove_posPartAbove (hp : p ≠ ∞) {k l : ℝ} (hk : 0 ≤ k) (hl : 0 ≤ l)
@@ -880,6 +898,33 @@ theorem W1p.posPart_eq_self_of_ae_nonneg (hp : p ≠ ∞) {u : W1p mu Omega p}
   rw [W1p.value_posPart]
   filter_upwards [Lp.coeFn_posPart (W1p.value u), hu] with x hx hux
   rw [hx, max_eq_left hux]
+
+/-- The positive part of the zero Sobolev function is zero. -/
+@[simp]
+theorem W1p.posPart_zero (hp : p ≠ ∞) :
+    W1p.posPart hp (0 : W1p mu Omega p) = 0 := by
+  refine W1p.posPart_eq_self_of_ae_nonneg hp ?_
+  rw [W1p.value_zero]
+  exact (Lp.coeFn_zero ℝ p (mu.restrict Omega)).mono fun _ h => by rw [h, Pi.zero_apply]
+
+/-- Taking `W1p.posPart` is idempotent. -/
+@[simp]
+theorem W1p.posPart_posPart (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    W1p.posPart hp (W1p.posPart hp u) = W1p.posPart hp u := by
+  simp [← W1p.posPartAbove_zero]
+
+/-- For `1 ≤ p < ∞`, the sum `u⁺ + (-u)⁺` has value `|W1p.value u|` almost everywhere on `Ω`. -/
+theorem W1p.value_posPart_add_posPart_neg_ae (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    ⇑(W1p.value (W1p.posPart hp u + W1p.posPart hp (-u))) =ᵐ[mu.restrict Omega]
+      fun x => |W1p.value u x| := by
+  filter_upwards [W1p.value_add_ae (W1p.posPart hp u) (W1p.posPart hp (-u)),
+    Lp.coeFn_posPart (W1p.value u), Lp.coeFn_posPart (W1p.value (-u)),
+    W1p.value_neg_ae u] with x hadd hp1 hp2 hneg
+  simp only [W1p.value_posPart, Pi.add_apply, Pi.neg_apply] at hadd hp1 hp2 hneg ⊢
+  rw [hadd, hp1, hp2, hneg]
+  rcases le_total 0 (W1p.value u x) with h | h
+  · rw [abs_of_nonneg h, max_eq_left h, max_eq_right (neg_nonpos.2 h), add_zero]
+  · rw [abs_of_nonpos h, max_eq_right h, max_eq_left (neg_nonneg.2 h), zero_add]
 
 end PosPart
 

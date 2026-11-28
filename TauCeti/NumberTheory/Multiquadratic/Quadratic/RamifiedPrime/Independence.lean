@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.ClassGroup.ElementaryTwoQuotient
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.Algebra.Group.Subgroup.TwoTorsionClosure
+import TauCeti.Data.Nat.Squarefree
 
 /-!
 # The ramified primes of an imaginary quadratic field span exactly `2 ^ (t - 1)` classes
@@ -165,14 +166,6 @@ private theorem absNorm_prod_eq_prod (hfin : Module.finrank ℚ K = 2) {s : Fins
   have := hover p hp
   exact NumberField.absNorm_eq_of_mem_ramifiedPrimes hfin (hram p hp) (P p)
 
-/-- The product of a finite set of primes is squarefree. -/
-private theorem squarefree_prod_primes {s : Finset ℕ} (hprime : ∀ p ∈ s, p.Prime) :
-    Squarefree (∏ p ∈ s, p) := by
-  refine Finset.squarefree_prod_of_pairwise_isCoprime (f := fun p => p) ?_
-    fun p hp => (hprime p hp).squarefree
-  intro p hp q hq hne
-  exact Nat.coprime_iff_isRelPrime.mp ((Nat.coprime_primes (hprime p hp) (hprime q hq)).mpr hne)
-
 /-- **The only principal products of ramified primes are the two obvious ones.** Let `K = ℚ(√d)`
 be an imaginary quadratic field with `d < -1` squarefree, and let `s` be a finite set of ramified
 rational primes with `P p` the prime of `𝓞 K` above `p ∈ s`. If `∏_{p ∈ s} 𝔭_p` is principal, then
@@ -204,7 +197,7 @@ theorem prod_eq_one_or_prod_eq_natAbs_of_isPrincipal_prod
   have hmpos : (0 : ℤ) < ((∏ p ∈ s, p : ℕ) : ℤ) := by
     exact_mod_cast Finset.prod_pos fun p hp => (hpprime p hp).pos
   have hmsf : Squarefree ((∏ p ∈ s, p : ℕ) : ℤ) :=
-    Int.squarefree_natCast.mpr (squarefree_prod_primes hpprime)
+    Int.squarefree_natCast.mpr (Nat.squarefree_prod_of_prime hpprime)
   -- A generator of the product has absolute norm `∏_{p ∈ s} p`.
   obtain ⟨z, hz⟩ := Submodule.IsPrincipal.principal (S := ∏ p ∈ s, P p) (self := hprin)
   rw [Ideal.submodule_span_eq] at hz
@@ -257,12 +250,13 @@ theorem eq_empty_or_eq_primeFactors_of_prod_classGroupMk0_eq_one
     (h : ∏ p ∈ s, ClassGroup.mk0 (Q p) = 1) :
     s = ∅ ∨ s = d.natAbs.primeFactors := by
   have hprin : Submodule.IsPrincipal (∏ p ∈ s, (Q p : Ideal (𝓞 K))) := by
-    rwa [← map_prod, ClassGroup.mk0_eq_one_iff (∏ p ∈ s, Q p).2, Submonoid.coe_finsetProd] at h
+    rwa [← map_prod, ClassGroup.mk0_eq_one_iff (∏ p ∈ s, Q p).property,
+        Submonoid.coe_finsetProd] at h
   rcases prod_eq_one_or_prod_eq_natAbs_of_isPrincipal_prod hmin hgen hsf hd
       (fun p => (Q p : Ideal (𝓞 K))) hram hprime hover hprin with h1 | h1
   · left
     by_contra hne
-    obtain ⟨p, hp⟩ := Finset.nonempty_iff_ne_empty.mpr hne
+    obtain ⟨p, hp⟩ := Finset.ne_empty_iff_nonempty.mp hne
     have hple : p ≤ 1 := Nat.le_of_dvd one_pos (h1 ▸ Finset.dvd_prod_of_mem (fun p => p) hp)
     exact (NumberField.prime_of_mem_ramifiedPrimes (hram p hp)).one_lt.not_ge hple
   · right

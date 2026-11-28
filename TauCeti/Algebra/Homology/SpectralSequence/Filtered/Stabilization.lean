@@ -24,9 +24,12 @@ isomorphic to the limit object `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` as soon as
 
 * `CochainComplex.isZero_spectralObject_H_bot`, `CochainComplex.isZero_spectralObject_H_top`: the
   vanishing of `H^m(⊥ ≤ a)` and `H^m(b ≤ ⊤)` for the spectral object of a filtration, from the
-  vanishing of `H^m(F_a)` and `H^m(K / F_b)`.
+  vanishing of `H^m(F_a)` and `H^m(K / F_b)`;
+  `CochainComplex.isZero_spectralObject_H_bot_of_isZero_X` derives the first from the vanishing of
+  a stage in degree `m`.
 * `CochainComplex.filtrationSpectralSequencePageXIsoEInfty`: identification of the page objects
-  with `EInfty` under the two vanishing conditions.
+  with `EInfty` under the two vanishing conditions; it is the epimorphism
+  `spectralSequencePageXToEInfty` (`CochainComplex.filtrationSpectralSequencePageXIsoEInfty_hom`).
 * `CochainComplex.filtrationSpectralSequencePageXIsoEInftyOfFinite`: the case of a finite
   filtration.
 -/
@@ -52,6 +55,16 @@ lemma isZero_spectralObject_H_bot (a m : ℤ)
   exact IsZero.of_iso h' ((HomologicalComplex.homologyFunctor C _ m).mapIso
     (cokernelIsoOfEq (filtrationFunctor_map_bot F hF a) ≪≫ cokernelZeroIsoTarget))
 
+/-- `H^m(⊥ ≤ i)` vanishes for the spectral object of a filtration when the stage `F_s` of some
+`s ≥ i` vanishes in degree `m`: the filtration is then bounded below in degree `m`. -/
+lemma isZero_spectralObject_H_bot_of_isZero_X {s m : ℤ}
+    (hs : IsZero ((F s : CochainComplex C ℤ).X m)) {i : ℤ} (hi : i ≤ s) :
+    IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))) :=
+  isZero_spectralObject_H_bot F hF i m
+    (((F i : CochainComplex C ℤ).sc m).isZero_homology_of_isZero_X₂
+      (hs.of_mono ((Subobject.ofLE _ _ (hF hi)).f m)))
+
 /-- `H^m(b ≤ ⊤)` vanishes for the spectral object of a filtration when `H^m(K / F_b)` does. -/
 lemma isZero_spectralObject_H_top (b m : ℤ)
     (h : IsZero ((cokernel (F b).arrow).homology m)) :
@@ -64,7 +77,7 @@ lemma isZero_spectralObject_H_top (b m : ℤ)
       (filtrationFunctorObjIso F hF b).hom ≫ (filtrationEInt F b).arrow := by
     rw [reassoc_of% filtrationFunctor_map_comp_objIso_hom, Subobject.ofLE_arrow]
   refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor C _ m).mapIso
-    ((cokernelCompIsIso _ (filtrationFunctorArrow F hF ⊤)).symm ≪≫ cokernelIsoOfEq e ≪≫
+    ((cokernelCompIsIso (filtrationFunctorArrow F hF ⊤) _).symm ≪≫ cokernelIsoOfEq e ≪≫
       cokernelEpiComp _ _))
   rw [HomologicalComplex.homologyFunctor_obj]
   convert h using 1
@@ -82,6 +95,17 @@ noncomputable def filtrationSpectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤
   (spectralObject _).spectralSequencePageXIsoEInfty r hr pq n hn
     (isZero_spectralObject_H_bot F hF _ _ h₀) (isZero_spectralObject_H_top F hF _ _ h₃)
 
+/-- The isomorphism `filtrationSpectralSequencePageXIsoEInfty` is the epimorphism
+`spectralSequencePageXToEInfty` from the page object onto `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`. -/
+lemma filtrationSpectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (n : ℤ) (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((F (pq.2 - r + 2) : CochainComplex C ℤ).homology (n + 1)))
+    (h₃ : IsZero ((cokernel (F (pq.2 + r - 1)).arrow).homology (n - 1))) :
+    (filtrationSpectralSequencePageXIsoEInfty F hF r hr pq n hn h₀ h₃).hom =
+      (spectralObject _).spectralSequencePageXToEInfty r hr pq n hn
+        (isZero_spectralObject_H_bot F hF _ _ h₀) :=
+  (spectralObject _).spectralSequencePageXIsoEInfty_hom ..
+
 /-- **Stabilization for a finite filtration.** If `F_a = ⊥` and `F_b = ⊤`, then the object at
 `pq = (p, q)` on every page `r ≥ 2` with `q - r + 2 ≤ a` and `b ≤ q + r - 1` is
 `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)`. -/
@@ -93,5 +117,16 @@ noncomputable def filtrationSpectralSequencePageXIsoEInftyOfFinite {a b : ℤ} (
   filtrationSpectralSequencePageXIsoEInfty F hF r hr pq _ rfl
     ((F _).isZero_homology_of_eq_bot (eq_bot_iff.2 ((hF hra).trans ha.le)) _)
     ((F _).isZero_homology_cokernel_of_eq_top (eq_top_iff.2 (hb.ge.trans (hF hrb))) _)
+
+/-- The isomorphism `filtrationSpectralSequencePageXIsoEInftyOfFinite` is the epimorphism
+`spectralSequencePageXToEInfty` from the page object onto `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`. -/
+lemma filtrationSpectralSequencePageXIsoEInftyOfFinite_hom {a b : ℤ} (ha : F a = ⊥)
+    (hb : F b = ⊤) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a)
+    (hrb : b ≤ pq.2 + r - 1) :
+    (filtrationSpectralSequencePageXIsoEInftyOfFinite F hF ha hb r hr pq hra hrb).hom =
+      (spectralObject _).spectralSequencePageXToEInfty r hr pq _ rfl
+        (isZero_spectralObject_H_bot F hF _ _
+          ((F _).isZero_homology_of_eq_bot (eq_bot_iff.2 ((hF hra).trans ha.le)) _)) :=
+  filtrationSpectralSequencePageXIsoEInfty_hom ..
 
 end CochainComplex

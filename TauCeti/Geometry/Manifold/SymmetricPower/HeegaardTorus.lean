@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.Complex.Orientation
 import TauCeti.Geometry.Manifold.SymmetricPower.TotallyReal
 
 /-!
-# Heegaard tori are totally real embedded tori in the symmetric power
+# Heegaard tori are totally real embedded tori in the symmetric power, meeting transversally
 
 Let `α` be a Hausdorff complex curve, and let `γ₁, …, γₙ : S¹ → α` be embeddings of the circle
 `S¹ = AddCircle p` with pairwise disjoint images, such as the attaching circles `α₁, …, α_g` of a
@@ -46,18 +46,29 @@ The three ingredients are the following.
   (`Sym.isMaximalTotallyRealMap_ofFn_map`, from
   `TauCeti.isMaximalTotallyReal_range_fderiv_symChartAt_ofFn`).
 
+A second family of circles `δ₁, …, δₙ`, such as the `β`-curves, gives a second torus `T_β`. Its
+points shared with `T_α` are the unordered tuples `{γ₁(x₁), …, γₙ(xₙ)} = {δ₁(y₁), …, δₙ(yₙ)}`, the
+generators of the Heegaard Floer complex. At such a point the tangent spaces of `T_α` and `T_β` are
+complementary, so that the two half-dimensional tori meet transversally, exactly when every point
+`γᵢ(xᵢ) = δⱼ(yⱼ)` of the tuple is a transverse intersection of `γᵢ` and `δⱼ`
+(`Sym.isCompl_range_mfderiv_ofFn_map_iff`, from
+`TauCeti.isCompl_range_fderiv_symChartAt_ofFn_iff`). The intersections of the tori used as the
+ends of holomorphic strips are thus transverse as soon as the attaching curves are.
+
 ## Main results
 
 * `Sym.contMDiff_ofFn_map`: `Γ` is as smooth as the circles.
 * `Sym.isMaximalTotallyRealMap_ofFn_map`: the tangent spaces of `T_α` are maximal totally real.
 * `Sym.isTotallyRealEmbedding_ofFn_map`: `Γ` is a totally real embedding.
+* `Sym.isCompl_range_mfderiv_ofFn_map_iff`: two such tori meet transversally at a common point
+  exactly when the curves meet transversally at each point of the tuple.
 
 ## References
 
 * P. Ozsváth and Z. Szabó, *Holomorphic disks and topological invariants for closed
   three-manifolds*, Ann. of Math. **159** (2004),
   [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.2 (the tori `T_α` and `T_β` in
-  `Sym^g(Σ)` are totally real).
+  `Sym^g(Σ)` are totally real, and meet transversally when the attaching curves do).
 -/
 
 public section
@@ -84,14 +95,14 @@ private theorem writtenInExtChartAt_eventuallyEq [T2Space α] (x : Fin n → Add
   let := symChartedSpace (K := ℂ) (α := α) (n := n)
   filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x]
     with u hu
-  -- The inverse of each angle chart sends a point of its target to its class.
-  have hsymm : (extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x).symm u =
-      fun i => (u i : AddCircle p) := by
-    rw [extChartAt_pi] at hu ⊢
-    rw [PartialEquiv.pi_symm_apply]
-    exact funext fun i => AddCircle.extChartAt_symm_apply (x i) (hu i (mem_univ i))
-  simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
+  simp only [writtenInExtChartAt, Function.comp_apply, AddCircle.extChartAt_pi_symm_apply x hu]
   simp
+
+omit [TopologicalSpace α] [ChartedSpace ℂ α] in
+/-- The lift of the angles of `x` by the chart of the torus at `x` returns the angles of `x`. -/
+private theorem coe_extChartAt_pi_self_apply (x : Fin n → AddCircle p) (i : Fin n) :
+    ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p) = x i := by
+  simp only [extChartAt_pi_apply, AddCircle.coe_extChartAt_self]
 
 omit [TopologicalSpace α] [ChartedSpace ℂ α] in
 /-- At the lifts of the angles of `x`, curves with pairwise disjoint ranges pass through pairwise
@@ -102,7 +113,7 @@ private theorem injective_apply_coe_extChartAt_pi_self
       γ i ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p) := by
   intro i j h
   by_contra hij
-  simp only [extChartAt_pi_apply, AddCircle.coe_extChartAt_self] at h
+  simp only [coe_extChartAt_pi_self_apply] at h
   exact disjoint_left.1 (hdisj hij) (mem_range_self (x i)) ⟨x j, h.symm⟩
 
 /-- At the lifts of the angles of `x`, the curves give the tuple at `x`, which lies in the source of
@@ -111,12 +122,59 @@ private theorem ofFn_apply_coe_extChartAt_pi_self_mem_source [T2Space α] (x : F
     (Sym.ofFn fun i =>
       γ i ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p)) ∈
       (symChartAt (K := ℂ) (Sym.ofFn fun i => γ i (x i))).source := by
-  simpa only [extChartAt_pi_apply, AddCircle.coe_extChartAt_self] using
+  simpa only [coe_extChartAt_pi_self_apply] using
     mem_symChartAt_source (K := ℂ) (Sym.ofFn fun i => γ i (x i))
+
+/-- At the lift of the angle of `x i`, the `i`-th curve composed with the quotient map `ℝ → S¹` is
+continuous, and read in the chart at its point, it has velocity the derivative of the curve at
+`x i` on the unit vector. -/
+private theorem continuousAt_and_hasDerivAt_apply_coe_extChartAt_pi_self
+    {x : Fin n → AddCircle p} (hγ : ∀ i, MDifferentiableAt 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (x i))
+    (i : Fin n) :
+    ContinuousAt (fun t : ℝ => γ i t)
+        (extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i) ∧
+      HasDerivAt (fun t : ℝ => chartAt ℂ
+          (γ i (extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ)) (γ i t))
+        (mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (x i) (1 : ℝ))
+        (extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i) := by
+  have hM : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i)
+      ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p)
+      (mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (x i)) := by
+    rw [coe_extChartAt_pi_self_apply]
+    exact (hγ i).hasMFDerivAt
+  exact ⟨hM.continuousAt.comp (AddCircle.contMDiff_coe p 0).continuous.continuousAt,
+    (AddCircle.hasFDerivAt_chartAt_comp_coe hM).hasDerivAt⟩
 
 /-! ### Smoothness and total reality -/
 
 variable [T2Space α] [IsManifold 𝓘(ℂ) 1 α]
+
+/-- The derivative of `(θᵢ)ᵢ ↦ {γ₁(θ₁), …, γₙ(θₙ)}` at `x` is the derivative, at the lifts of the
+angles of `x`, of its expression in the chart of the torus and the elementary-symmetric chart at
+its image, when the curves are differentiable and pass through pairwise distinct points. -/
+private theorem hasMFDerivAt_ofFn_map {x : Fin n → AddCircle p}
+    (hγ : ∀ i, MDifferentiableAt 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (x i))
+    (hinj : Function.Injective fun i => γ i (x i)) :
+    letI := symChartedSpace (K := ℂ) (α := α) (n := n)
+    HasMFDerivAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) 𝓘(ℝ, Fin n → ℂ)
+      (fun x : Fin n → AddCircle p => Sym.ofFn fun i => γ i (x i)) x
+      (fderiv ℝ (fun t => symChartAt (K := ℂ) (Sym.ofFn fun i => γ i (x i))
+        (Sym.ofFn fun i => γ i (t i : AddCircle p)))
+        (extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x)) := by
+  let := symChartedSpace (K := ℂ) (α := α) (n := n)
+  have hinj' : Function.Injective fun i =>
+      γ i ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p) := by
+    simpa only [coe_extChartAt_pi_self_apply] using hinj
+  have hc := continuousAt_and_hasDerivAt_apply_coe_extChartAt_pi_self hγ
+  have hD := (differentiableAt_symChartAt_ofFn (γ := fun i (t : ℝ) => γ i t) hinj'
+    (fun i => (hc i).1) (fun i => (hc i).2) _
+    (ofFn_apply_coe_extChartAt_pi_self_mem_source (γ := γ) x)).hasFDerivAt
+  have hcontx : ContinuousAt (fun x : Fin n → AddCircle p => Sym.ofFn fun i => γ i (x i)) x :=
+    Sym.continuous_ofFn.continuousAt.comp (continuousAt_pi.2 fun i =>
+      ContinuousAt.comp (g := γ i) (f := fun y : Fin n → AddCircle p => y i)
+        (hγ i).continuousAt (continuous_apply i).continuousAt)
+  exact ⟨hcontx,
+    (hD.congr_of_eventuallyEq (writtenInExtChartAt_eventuallyEq x _)).hasFDerivWithinAt⟩
 
 /-- **The product of smooth circles is smooth in the symmetric power.** If the curves
 `γᵢ : S¹ → α` are `C^k`, with pairwise disjoint ranges, then `(θᵢ)ᵢ ↦ {γ₁(θ₁), …, γₙ(θₙ)}` is a
@@ -163,30 +221,12 @@ theorem _root_.Sym.isMaximalTotallyRealMap_ofFn_map
   let := isManifold_symChartedSpace (α := α) (n := n)
   rw [isMaximalTotallyRealMap_iff]
   intro x
-  have hinj := injective_apply_coe_extChartAt_pi_self hdisj x
-  have hs := ofFn_apply_coe_extChartAt_pi_self_mem_source (γ := γ) x
-  set u₀ := extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x
-  have hdiff (i : Fin n) (y : AddCircle p) := mdifferentiableAt_of_mfderiv_injective (hγ i y)
-  have hcont (i : Fin n) : ContinuousAt (fun t : ℝ => γ i t) (u₀ i) :=
-    (hdiff i _).continuousAt.comp (AddCircle.contMDiff_coe p 0).continuous.continuousAt
-  -- The velocity of each lifted curve, read in a chart, is its derivative on the unit vector.
-  have hv (i : Fin n) : HasDerivAt (fun t : ℝ => chartAt ℂ (γ i (u₀ i)) (γ i t))
-      (mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (u₀ i) (1 : ℝ)) (u₀ i) :=
-    (AddCircle.hasFDerivAt_chartAt_comp_coe (hdiff i _).hasMFDerivAt).hasDerivAt
-  have hv0 (i : Fin n) : mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (u₀ i) (1 : ℝ) ≠ 0 :=
-    ((hγ i (u₀ i)).ne (one_ne_zero' ℝ)).trans_eq (map_zero _)
-  -- The derivative of the map is the derivative of its expression in charts.
-  have hD := (differentiableAt_symChartAt_ofFn (γ := fun i (t : ℝ) => γ i t) hinj hcont hv
-    (Sym.ofFn fun i => γ i (x i)) hs).hasFDerivAt
-  have hcontx : ContinuousAt (fun x : Fin n → AddCircle p => Sym.ofFn fun i => γ i (x i)) x :=
-    Sym.continuous_ofFn.continuousAt.comp (continuousAt_pi.2 fun i =>
-      ContinuousAt.comp (g := γ i) (f := fun y : Fin n → AddCircle p => y i)
-        (hdiff i (x i)).continuousAt (continuous_apply i).continuousAt)
-  have hM : HasMFDerivAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) 𝓘(ℝ, Fin n → ℂ)
-      (fun x : Fin n → AddCircle p => Sym.ofFn fun i => γ i (x i)) x
-      (fderiv ℝ (fun t => symChartAt (K := ℂ) (Sym.ofFn fun i => γ i (x i))
-        (Sym.ofFn fun i => γ i (t i : AddCircle p))) u₀) :=
-    ⟨hcontx, (hD.congr_of_eventuallyEq (writtenInExtChartAt_eventuallyEq x _)).hasFDerivWithinAt⟩
+  have hdiff (i : Fin n) := mdifferentiableAt_of_mfderiv_injective (hγ i (x i))
+  have hinj : Function.Injective fun i => γ i (x i) := by
+    simpa only [coe_extChartAt_pi_self_apply] using injective_apply_coe_extChartAt_pi_self hdisj x
+  have hc := continuousAt_and_hasDerivAt_apply_coe_extChartAt_pi_self hdiff
+  have hv0 (i : Fin n) : mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (x i) (1 : ℝ) ≠ 0 :=
+    ((hγ i (x i)).ne (one_ne_zero' ℝ)).trans_eq (map_zero _)
   have hJ : ((SmoothAlmostComplexStructure.ofComplexManifold (Fin n → ℂ)
       (Sym α n)).almostComplexStructureAt (Sym.ofFn fun i => γ i (x i))).toLinearMap =
       (AlmostComplexStructure.ofComplexModule (Fin n → ℂ)).toLinearMap := by
@@ -195,9 +235,10 @@ theorem _root_.Sym.isMaximalTotallyRealMap_ofFn_map
       (SmoothAlmostComplexStructure.ofComplexManifold_apply (E := Fin n → ℂ) (M := Sym α n)
         (Sym.ofFn fun i => γ i (x i)) v).trans
         (AlmostComplexStructure.ofComplexModule_apply (V := Fin n → ℂ) v).symm
-  rw [hM.mfderiv, hJ]
-  exact isMaximalTotallyReal_range_fderiv_symChartAt_ofFn (γ := fun i (t : ℝ) => γ i t) hinj hcont
-    hv hv0 _ hs
+  rw [(hasMFDerivAt_ofFn_map hdiff hinj).mfderiv, hJ]
+  exact isMaximalTotallyReal_range_fderiv_symChartAt_ofFn (γ := fun i (t : ℝ) => γ i t)
+    (injective_apply_coe_extChartAt_pi_self hdisj x) (fun i => (hc i).1)
+    (fun i => (hc i).2) hv0 _ (ofFn_apply_coe_extChartAt_pi_self_mem_source (γ := γ) x)
 
 /-- **The Heegaard torus is a totally real embedding.** If `γᵢ : S¹ → α` are `C^k` embeddings of a
 circle, `k ≥ 1`, with pairwise disjoint images, such as the attaching circles of a Heegaard
@@ -225,5 +266,55 @@ theorem _root_.Sym.isTotallyRealEmbedding_ofFn_map {k : ℕ∞ω} (hk : 1 ≤ k)
     (Sym.isMaximalTotallyRealMap_ofFn_map
       (fun i y => (hγ i).isImmersion.mfderiv_injective hk0 y) hdisj)
   simp [Module.finrank_pi_fintype, mul_comm]
+
+/-! ### Transversality of two tori -/
+
+/-- **The tori `T_α` and `T_β` meet transversally exactly where the curves do.** Let
+`γᵢ, δⱼ : S¹ → α` be curves in a complex curve, differentiable at the angles `x i` and `y j`,
+such that the points `γᵢ(xᵢ)` are pairwise distinct and form the same unordered tuple as the
+points `δⱼ(yⱼ)`. Then the tangent spaces at this common point of `Sym α n` of the two tori
+`(θᵢ)ᵢ ↦ {γ₁(θ₁), …, γₙ(θₙ)}` and `(θⱼ)ⱼ ↦ {δ₁(θ₁), …, δₙ(θₙ)}` are complementary exactly when,
+whenever `γᵢ(xᵢ) = δⱼ(yⱼ)`, the velocities of `γᵢ` and `δⱼ` there are linearly independent over
+`ℝ`. For the attaching circles of a Heegaard diagram, whose `α`-curves are pairwise disjoint, a
+generator is a transverse intersection point of `T_α` and `T_β` exactly when each of its points is
+a transverse intersection of an `α`-curve and a `β`-curve. -/
+theorem _root_.Sym.isCompl_range_mfderiv_ofFn_map_iff {δ : Fin n → AddCircle p → α}
+    {x y : Fin n → AddCircle p} (hγ : ∀ i, MDifferentiableAt 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (x i))
+    (hδ : ∀ j, MDifferentiableAt 𝓘(ℝ) 𝓘(ℝ, ℂ) (δ j) (y j))
+    (hinj : Function.Injective fun i => γ i (x i))
+    (hxy : (Sym.ofFn fun i => γ i (x i)) = Sym.ofFn fun j => δ j (y j)) :
+    letI := symChartedSpace (K := ℂ) (α := α) (n := n)
+    IsCompl
+        (LinearMap.range (mfderiv (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) 𝓘(ℝ, Fin n → ℂ)
+          (fun x : Fin n → AddCircle p => Sym.ofFn fun i => γ i (x i)) x).toLinearMap)
+        (LinearMap.range (mfderiv (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) 𝓘(ℝ, Fin n → ℂ)
+          (fun y : Fin n → AddCircle p => Sym.ofFn fun j => δ j (y j)) y).toLinearMap) ↔
+      ∀ i j, γ i (x i) = δ j (y j) →
+        LinearIndependent ℝ ![mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (x i) (1 : ℝ),
+          mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (δ j) (y j) (1 : ℝ)] := by
+  let := symChartedSpace (K := ℂ) (α := α) (n := n)
+  -- the two ordered tuples differ by a permutation, so both families pass through distinct points
+  obtain ⟨τ, hτ⟩ := Sym.ofFn_eq_ofFn_iff.1 hxy
+  have hτj (j : Fin n) : γ (τ j) (x (τ j)) = δ j (y j) := congrFun hτ j
+  have hinjδ : Function.Injective fun j => δ j (y j) := by
+    rw [← hτ]
+    exact hinj.comp τ.injective
+  have hσ (i : Fin n) : δ (τ.symm i)
+      ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) y y (τ.symm i) : ℝ) : AddCircle p) =
+      γ i ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p) := by
+    rw [coe_extChartAt_pi_self_apply, coe_extChartAt_pi_self_apply, ← hτj, τ.apply_symm_apply]
+  have hcγ := continuousAt_and_hasDerivAt_apply_coe_extChartAt_pi_self hγ
+  have hcδ := continuousAt_and_hasDerivAt_apply_coe_extChartAt_pi_self hδ
+  -- in the chart at the common point, this is the transversality of the products of curves
+  rw [(hasMFDerivAt_ofFn_map hγ hinj).mfderiv, (hasMFDerivAt_ofFn_map hδ hinjδ).mfderiv, ← hxy]
+  refine (isCompl_range_fderiv_symChartAt_ofFn_iff (σ := τ.symm)
+    (by simpa only [coe_extChartAt_pi_self_apply] using hinj) hσ (fun i => (hcγ i).1)
+    (fun j => (hcδ j).1) (fun i => (hcγ i).2) (fun j => (hcδ j).2) _
+    (ofFn_apply_coe_extChartAt_pi_self_mem_source x)).trans ?_
+  -- the point `γ i (x i)` lies on `δ j` exactly for `j = τ⁻¹ i`
+  refine ⟨fun h i j hij => ?_, fun h i => h i (τ.symm i) (by rw [← hτj, τ.apply_symm_apply])⟩
+  obtain rfl : j = τ.symm i :=
+    τ.injective (by rw [τ.apply_symm_apply]; exact hinj ((hτj j).trans hij.symm))
+  exact h i
 
 end TauCeti

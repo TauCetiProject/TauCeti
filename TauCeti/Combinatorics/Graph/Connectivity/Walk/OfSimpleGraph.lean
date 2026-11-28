@@ -259,6 +259,12 @@ theorem internallyDisjoint_toGraph_iff (p q : H.Walk x y) :
     p.toGraph.InternallyDisjoint q.toGraph ↔ p.InternallyDisjoint q := by
   simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_toGraph]
 
+/-- Converting simple-graph walks to edge-labelled walks preserves and reflects
+edge-disjointness. -/
+theorem disjoint_edges_toGraph_iff {x' y' : α} (p : H.Walk x y) (q : H.Walk x' y') :
+    p.toGraph.edges.Disjoint q.toGraph.edges ↔ p.edges.Disjoint q.edges := by
+  simp only [edges_toGraph]
+
 end Walk
 
 /-- Multigraph reachability in `Graph.ofSimpleGraph H` is simple-graph reachability in `H`. -/
@@ -300,6 +306,12 @@ theorem internallyDisjoint_toSimpleGraph_iff
     p.toSimpleGraph.InternallyDisjoint q.toSimpleGraph ↔ p.InternallyDisjoint q := by
   rw [← SimpleGraph.Walk.internallyDisjoint_toGraph_iff, toGraph_toSimpleGraph,
     toGraph_toSimpleGraph]
+
+/-- Forgetting the redundant edge labels preserves and reflects edge-disjointness. -/
+theorem disjoint_edges_toSimpleGraph_iff {x' y' : α}
+    (p : (Graph.ofSimpleGraph H).Walk x y) (q : (Graph.ofSimpleGraph H).Walk x' y') :
+    p.toSimpleGraph.edges.Disjoint q.toSimpleGraph.edges ↔ p.edges.Disjoint q.edges := by
+  simp only [edges_toSimpleGraph]
 
 end Graph.Walk
 
@@ -398,7 +410,7 @@ variable {α β : Type*} {G H : Graph α β}
 /-- A subgraph inclusion `H ≤ G` induces a homomorphism of underlying simple graphs, sending each
 actual vertex of `H` to itself. -/
 def toSimpleGraphHomOfLE (hHG : H ≤ G) : H.toSimpleGraph →g G.toSimpleGraph where
-  toFun z := ⟨z, hHG.vertexSet_mono z.2⟩
+  toFun z := ⟨z, hHG.vertexSet_mono z.property⟩
   map_rel' hzw :=
     ⟨fun h ↦ hzw.1 (Subtype.ext (Subtype.mk.inj h)), hzw.2.mono hHG⟩
 
@@ -594,7 +606,7 @@ theorem toSubgraph_toSimpleGraph_mapLe_le {x y : α} (hx : x ∈ S.verts)
 bijectively to edge-labelled walks in `S.toGraph`. -/
 def walkToGraphEquiv (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α) :
     {p : H.Walk x y // p.toSubgraph ≤ S} ≃ S.toGraph.Walk x y where
-  toFun p := S.walkToGraph p.1 p.2
+  toFun p := S.walkToGraph p.val p.property
   invFun q := ⟨(q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph,
     S.toSubgraph_toSimpleGraph_mapLe_le hx q⟩
   left_inv _ := Subtype.ext (by simp)
@@ -602,7 +614,7 @@ def walkToGraphEquiv (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α) :
 
 @[simp] theorem walkToGraphEquiv_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
     (p : {p : H.Walk x y // p.toSubgraph ≤ S}) :
-    S.walkToGraphEquiv hx y p = S.walkToGraph p.1 p.2 := (rfl)
+    S.walkToGraphEquiv hx y p = S.walkToGraph p.val p.property := (rfl)
 
 @[simp] theorem coe_walkToGraphEquiv_symm_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
     (q : S.toGraph.Walk x y) :

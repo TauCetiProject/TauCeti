@@ -51,7 +51,8 @@ sequence is degreewise bounded:
 The degreewise boundedness of the spectral sequence is imposed through the vanishing of the
 graded cohomology at all indices beyond a bound, as in the exhaustive case. The successive
 approximation above is elementwise and uses no `lim¹` sequence. The weak convergence of a regular
-spectral sequence that is not degreewise bounded is not treated here.
+spectral sequence that is not degreewise bounded is in
+`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Regular`.
 
 ## References
 
@@ -115,7 +116,7 @@ theorem isZero_homology_of_isCompleteFiltration {a m : ℤ}
       obtain ⟨y, hy, hzy⟩ :=
         Subobject.exists_sub_d_mem_range_arrow_f_hom_of_isZero_homology_cokernel _
           (i := m - 1) (k := m + 1) (by simp) (by simp) (h (a - (k + 1 : ℕ)) (by lia))
-          (e ▸ Submodule.mem_comap.1 hz) z.2
+          (e ▸ Submodule.mem_comap.1 hz) z.property
       exact ⟨y, e ▸ hy, Submodule.mem_comap.2 hzy⟩)
     hx₀
   obtain ⟨y, rfl⟩ := Subobject.range_arrow_f_hom_le (hF e₀.le) (m - 1) hy₀
@@ -341,10 +342,7 @@ noncomputable def decreasingFiltrationSpectralSequencePageXIsoGradedOfFirstQuadr
       -- Below the filtration index `0` the graded pieces are `K/K = 0`.
       refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor _ _ _).mapIso
         (Subobject.cokernelOfLEIsoOfEq (hF_top (j + 1) (by lia)) (hF_top j (by lia)) _ le_rfl))
-      have : IsIso (Subobject.ofLE (⊤ : Subobject K) ⊤ le_rfl) := by
-        rw [Subobject.ofLE_refl]
-        infer_instance
-      exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) _).isZero_homology
+      exact Subobject.isZero_homology_cokernel_ofLE_of_eq rfl _
 
 end Decreasing
 

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.DiskSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The cellular chain group is a coproduct of copies of the coefficients, one per cell
@@ -60,38 +61,10 @@ section DiskPair
 
 variable (ι : Type w) (n : ℕ)
 
-/-- The disk homeomorphisms of all the summands, as an isomorphism in `TopCat` from the disjoint
-union of Euclidean disks to `(TauCeti.sigmaDiskPair ι n).fst`. -/
-private def sigmaDiskIso :
-    TopCat.of (Σ _ : ι, TopCat.disk.{w} n) ≅
-      TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :=
-  TopCat.isoOfHomeo
-    { toEquiv := Equiv.sigmaCongrRight fun _ ↦ (diskHomeomorphClosedBall n).toEquiv
-      continuous_toFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorphClosedBall n).continuous
-      continuous_invFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorphClosedBall n).symm.continuous }
-
-/-- The map of pairs `∐ᵢ (Dⁿ, Sⁿ⁻¹) ⟶ TauCeti.sigmaDiskPair ι n` from the disjoint union of
-Euclidean disk pairs, given by `TauCeti.diskHomeomorphClosedBall` on every summand. -/
-private def sigmaDiskBoundaryPairHom :
-    TopPair.sigma (fun _ : ι ↦ diskBoundaryPair.{w} n) ⟶ sigmaDiskPair ι n :=
-  TopPair.ofHom (sigmaDiskIso ι n).hom
-    (TopCat.ofHom ⟨fun p ↦ ⟨(sigmaDiskIso ι n).hom ((TopPair.sigma _).map p),
-      (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨p.2, rfl⟩⟩,
-      ((sigmaDiskIso ι n).hom.hom.continuous.comp
-        (TopPair.sigma _).map.hom.continuous).subtype_mk _⟩)
-    (by ext; rfl)
-
-private lemma surjective_snd_sigmaDiskBoundaryPairHom :
-    Function.Surjective (TopPair.Hom.snd (sigmaDiskBoundaryPairHom ι n)) := by
-  rintro ⟨⟨i, x⟩, hx : ‖(x : Fin n → ℝ)‖ = 1⟩
-  obtain ⟨y, hy⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff
-    ((diskHomeomorphClosedBall n).symm x)).1 (by rwa [Homeomorph.apply_symm_apply])
-  refine ⟨⟨i, y⟩, Subtype.ext (Sigma.ext rfl (heq_of_eq ?_))⟩
-  -- On the summand `i`, the ambient component of the map is `diskHomeomorphClosedBall n`.
-  change diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n y) = x
-  rw [hy, Homeomorph.apply_symm_apply]
+private def sigmaDiskHomeomorph :
+    (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst ≃ₜ
+      Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 :=
+  Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n
 
 /-- The disjoint union of copies, indexed by `ι`, of the Euclidean disk pair
 `TauCeti.diskBoundaryPair n` is isomorphic to `TauCeti.sigmaDiskPair ι n`, the disjoint union of
@@ -100,29 +73,47 @@ the isomorphism is the radial rescaling `ContinuousLinearEquiv.unitBallHomeomorp
 coordinate identification `EuclideanSpace.equiv`. -/
 def sigmaDiskBoundaryPairIso :
     TopPair.sigma (fun _ : ι ↦ diskBoundaryPair.{w} n) ≅ sigmaDiskPair ι n :=
-  have : IsIso (TopPair.Hom.fst (sigmaDiskBoundaryPairHom ι n)) :=
-    inferInstanceAs (IsIso (sigmaDiskIso ι n).hom)
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd _
-    (surjective_snd_sigmaDiskBoundaryPairHom ι n)
-  asIso (sigmaDiskBoundaryPairHom ι n)
+  TopPair.isoOfSubsetRange (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n) ≪≫
+    TopPair.ofSubsetIso (sigmaDiskHomeomorph ι n) fun p ↦ by
+      rw [TopPair.mem_range_sigma_map, diskBoundaryPair_map,
+        show sigmaDiskHomeomorph ι n p = ⟨p.1, diskHomeomorphClosedBall n p.2⟩ from
+          Homeomorph.sigmaCongrRight_apply _ p]
+      exact (norm_diskHomeomorphClosedBall_eq_one_iff p.2).symm
 
-/-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` preserves the summand. -/
+/-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` applies
+`TauCeti.diskHomeomorphClosedBall` on each summand. -/
 @[simp]
-lemma sigmaDiskBoundaryPairIso_hom_fst_apply_fst
+lemma sigmaDiskBoundaryPairIso_hom_fst_apply
     (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
-    (TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p).1 = p.1 :=
-  (rfl)
+    TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p =
+      ⟨p.1, diskHomeomorphClosedBall n p.2⟩ := by
+  simp only [sigmaDiskBoundaryPairIso, Iso.trans_hom, TopPair.Hom.fst_comp, TopCat.comp_app,
+    TopPair.isoOfSubsetRange_hom_fst_apply, TopPair.ofSubsetIso_hom]
+  -- `erw` is required because `TopPair.ofSubsetIso_hom` exposes `fun x ↦ (h x).1`, which
+  -- unifies with `TopPair.ofSubsetMap_fst_apply`'s `Set.MapsTo (TopCat.ofHom _)` argument
+  -- only after unfolding semireducible `ConcreteCategory.hom (TopCat.ofHom _)`.
+  erw [TopPair.ofSubsetMap_fst_apply]
+  exact Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p
 
-/-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` is the radial rescaling of the
-coordinate identification `EuclideanSpace.equiv` in every summand. -/
+/-- On the ambient spaces, `(TauCeti.sigmaDiskBoundaryPairIso ι n).inv` applies
+`(TauCeti.diskHomeomorphClosedBall n).symm` on each summand. -/
 @[simp]
-lemma coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd
-    (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
-    ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p).2 : Fin n → ℝ) =
-      (EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph
-        ((p.2 : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-          EuclideanSpace ℝ (Fin n)) :=
-  coe_diskHomeomorphClosedBall_apply p.2
+lemma sigmaDiskBoundaryPairIso_inv_fst_apply
+    (p : (sigmaDiskPair ι n).fst) :
+    TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).inv p =
+      ⟨p.1, (diskHomeomorphClosedBall n).symm p.2⟩ := by
+  simp only [sigmaDiskBoundaryPairIso, Iso.trans_inv, TopPair.Hom.fst_comp, TopCat.comp_app,
+    TopPair.ofSubsetIso_inv]
+  -- `erw` is required because `TopPair.isoOfSubsetRange_inv_fst_apply` expects `P.fst` rather
+  -- than `(TopPair.ofSubset _).fst`, and `TopPair.ofSubsetMap_fst_apply` matches after unfolding
+  -- semireducible `ConcreteCategory.hom (TopCat.ofHom _)`.
+  erw [TopPair.isoOfSubsetRange_inv_fst_apply, TopPair.ofSubsetMap_fst_apply]
+  -- `TopPair.ofSubsetMap_fst_apply` leaves `TopCat.ofHom (sigmaDiskHomeomorph ι n).symm`
+  -- applied to `p : (sigmaDiskPair ι n).fst` with semireducible `diskBoundaryPair`; align
+  -- with `Homeomorph.sigmaCongrRight` over `TopCat.disk n`.
+  change (Homeomorph.sigmaCongrRight fun _ : ι ↦ diskHomeomorphClosedBall n).symm p = _
+  rw [Homeomorph.sigmaCongrRight_symm]
+  exact Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ (diskHomeomorphClosedBall n).symm) p
 
 end DiskPair
 
@@ -175,21 +166,16 @@ lemma coe_characteristicPairMap_sigmaDiskBoundaryPairIso_diskCenter (n : ℕ) (j
       (TopPair.Hom.fst (characteristicPairMap C n))
         (TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom
           (TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
-            (diskCenter n)))).1 = map n j 0 := by
-  let c := TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
-    (diskCenter n)
-  have h₁ := sigmaDiskBoundaryPairIso_hom_fst_apply_fst (cell C n) n c
-  have h₂ :
-      ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c).2 : Fin n → ℝ) = 0 := by
-    rw [coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd,
-      ContinuousLinearEquiv.unitBallHomeomorph_apply]
-    -- The summand of `c` is `diskCenter n` only after unfolding the inclusion of the summand.
-    erw [coe_diskCenter_down, map_zero, gaugeRescale_zero]
+            (diskCenter n)))).val = map n j 0 := by
+  rw [sigmaDiskBoundaryPairIso_hom_fst_apply]
   refine (characteristicPairMap_fst_apply C n _).trans ?_
-  generalize TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c = q at h₁ h₂ ⊢
-  obtain ⟨i, y⟩ := q
-  obtain rfl : i = j := h₁
-  exact congrArg (map n i) h₂
+  -- `diskBoundaryPair` is semireducible, so `erw` unifies `diskCenter n : TopCat.disk n`
+  -- with `(diskBoundaryPair n).fst`.
+  erw [TopPair.sigmaι_fst_apply]
+  dsimp only
+  congr 1
+  rw [coe_diskHomeomorphClosedBall_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply,
+    coe_diskCenter_down, map_zero, gaugeRescale_zero]
 
 /-- With projective coefficients, the cellular chain group in degree `n` is projective whenever
 coproducts indexed by the `n`-cells are exact in `A`. -/

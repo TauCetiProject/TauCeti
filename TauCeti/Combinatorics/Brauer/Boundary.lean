@@ -47,6 +47,11 @@ loops that form there, by alternately following the caps of `D₁` (`capMatching
 * `TauCeti.BrauerDiagram.forall_isThrough_iff_bottomCap_eq_empty`,
   `TauCeti.BrauerDiagram.exists_eq_permToBrauer_iff_bottomCap_eq_empty`: a diagram is a
   permutation diagram exactly when it caps no bottom point.
+* `TauCeti.BrauerDiagram.bottomCap_capCup`, `TauCeti.BrauerDiagram.topCup_capCup`,
+  `TauCeti.BrauerDiagram.bottomThrough_capCup`, `TauCeti.BrauerDiagram.topThrough_capCup`: the
+  boundary sets of a cap-cup diagram.
+* `TauCeti.capCup_comm`, `TauCeti.capCup_eq_capCup_iff`: a cap-cup diagram depends exactly on the
+  unordered pair it caps.
 
 ## References
 
@@ -61,14 +66,6 @@ namespace TauCeti
 namespace BrauerDiagram
 
 variable {k : ℕ} (D : BrauerDiagram k)
-
-/-- A bottom point lies on a cap exactly when it does not lie on a through strand. -/
-theorem isCap_inl_iff (i : Fin k) : D.IsCap (Sum.inl i) ↔ ¬D.IsThrough (Sum.inl i) := by
-  rcases h : D.val (Sum.inl i) with j | j <;> simp [isCap_def, isThrough_def, h]
-
-/-- A top point lies on a cup exactly when it does not lie on a through strand. -/
-theorem isCup_inr_iff (j : Fin k) : D.IsCup (Sum.inr j) ↔ ¬D.IsThrough (Sum.inr j) := by
-  rcases h : D.val (Sum.inr j) with i | i <;> simp [isCup_def, isThrough_def, h]
 
 /-- The bottom endpoints of the through strands of `D`. -/
 def bottomThrough : Finset (Fin k) := Finset.univ.filter fun i => D.IsThrough (Sum.inl i)
@@ -110,8 +107,10 @@ theorem topCup_eq_compl : D.topCup = D.topThroughᶜ := by
 their top endpoints. -/
 def throughEquiv :
     {i : Fin k // D.IsThrough (Sum.inl i)} ≃ {j : Fin k // D.IsThrough (Sum.inr j)} where
-  toFun i := ⟨(D.val (Sum.inl i.1)).getRight (isRight_val_inl i.2), by simpa using i.2⟩
-  invFun j := ⟨(D.val (Sum.inr j.1)).getLeft (isLeft_val_inr j.2), by simpa using j.2⟩
+  toFun i := ⟨(D.val (Sum.inl i.val)).getRight (isRight_val_inl i.property),
+      by simpa using i.property⟩
+  invFun j := ⟨(D.val (Sum.inr j.val)).getLeft (isLeft_val_inr j.property),
+      by simpa using j.property⟩
   left_inv i := Subtype.ext <| (Sum.getLeft_eq_iff _).mpr <| by
     rw [Sum.inr_getRight]
     exact D.apply_apply _
@@ -123,13 +122,13 @@ def throughEquiv :
 that the diagram matches with it. -/
 @[simp]
 theorem inr_throughEquiv (i : {i : Fin k // D.IsThrough (Sum.inl i)}) :
-    Sum.inr (D.throughEquiv i).1 = D.val (Sum.inl i.1) := Sum.inr_getRight _ _
+    Sum.inr (D.throughEquiv i).val = D.val (Sum.inl i.val) := Sum.inr_getRight _ _
 
 /-- The bottom endpoint that `BrauerDiagram.throughEquiv` assigns to a top point is the point
 that the diagram matches with it. -/
 @[simp]
 theorem inl_throughEquiv_symm (j : {j : Fin k // D.IsThrough (Sum.inr j)}) :
-    Sum.inl (D.throughEquiv.symm j).1 = D.val (Sum.inr j.1) := Sum.inl_getLeft _ _
+    Sum.inl (D.throughEquiv.symm j).val = D.val (Sum.inr j.val) := Sum.inl_getLeft _ _
 
 /-- A diagram has as many bottom endpoints of through strands as top endpoints. -/
 theorem card_bottomThrough_eq_card_topThrough : D.bottomThrough.card = D.topThrough.card := by
@@ -166,17 +165,17 @@ theorem exists_eq_permToBrauer_iff_bottomCap_eq_empty :
 
 /-- The map sending a capped bottom point to the other end of its cap. -/
 private def capFun (i : {i : Fin k // D.IsCap (Sum.inl i)}) : {i : Fin k // D.IsCap (Sum.inl i)} :=
-  ⟨(D.val (Sum.inl i.1)).getLeft ((D.isCap_def _).mp i.2).2, by simpa using i.2⟩
+  ⟨(D.val (Sum.inl i.val)).getLeft ((D.isCap_def _).mp i.property).2, by simpa using i.property⟩
 
 private theorem inl_capFun (i : {i : Fin k // D.IsCap (Sum.inl i)}) :
-    Sum.inl (D.capFun i).1 = D.val (Sum.inl i.1) := Sum.inl_getLeft _ _
+    Sum.inl (D.capFun i).val = D.val (Sum.inl i.val) := Sum.inl_getLeft _ _
 
 private theorem capFun_involutive : Function.Involutive D.capFun := fun i =>
   Subtype.ext <| Sum.inl_injective <| by
     rw [inl_capFun D (D.capFun i), inl_capFun D i, D.apply_apply]
 
 private theorem capFun_ne (i : {i : Fin k // D.IsCap (Sum.inl i)}) : D.capFun i ≠ i := fun h =>
-  D.apply_ne (Sum.inl i.1) (by rw [← inl_capFun D i, h])
+  D.apply_ne (Sum.inl i.val) (by rw [← inl_capFun D i, h])
 
 /-- The perfect matching that a diagram induces on its capped bottom points: the caps pair those
 points off among themselves. -/
@@ -186,7 +185,7 @@ def capMatching : PerfectMatching {i : Fin k // D.IsCap (Sum.inl i)} :=
 /-- `BrauerDiagram.capMatching` matches a capped bottom point with the other end of its cap. -/
 @[simp]
 theorem inl_capMatching (i : {i : Fin k // D.IsCap (Sum.inl i)}) :
-    Sum.inl (D.capMatching.val i).1 = D.val (Sum.inl i.1) := by
+    Sum.inl (D.capMatching.val i).val = D.val (Sum.inl i.val) := by
   simpa [capMatching] using inl_capFun D i
 
 /-- **A diagram has an even number of capped bottom points**: the caps pair those points off
@@ -197,17 +196,17 @@ theorem even_card_bottomCap : Even D.bottomCap.card := by
 
 /-- The map sending a cupped top point to the other end of its cup. -/
 private def cupFun (j : {j : Fin k // D.IsCup (Sum.inr j)}) : {j : Fin k // D.IsCup (Sum.inr j)} :=
-  ⟨(D.val (Sum.inr j.1)).getRight ((D.isCup_def _).mp j.2).2, by simpa using j.2⟩
+  ⟨(D.val (Sum.inr j.val)).getRight ((D.isCup_def _).mp j.property).2, by simpa using j.property⟩
 
 private theorem inr_cupFun (j : {j : Fin k // D.IsCup (Sum.inr j)}) :
-    Sum.inr (D.cupFun j).1 = D.val (Sum.inr j.1) := Sum.inr_getRight _ _
+    Sum.inr (D.cupFun j).val = D.val (Sum.inr j.val) := Sum.inr_getRight _ _
 
 private theorem cupFun_involutive : Function.Involutive D.cupFun := fun j =>
   Subtype.ext <| Sum.inr_injective <| by
     rw [inr_cupFun D (D.cupFun j), inr_cupFun D j, D.apply_apply]
 
 private theorem cupFun_ne (j : {j : Fin k // D.IsCup (Sum.inr j)}) : D.cupFun j ≠ j := fun h =>
-  D.apply_ne (Sum.inr j.1) (by rw [← inr_cupFun D j, h])
+  D.apply_ne (Sum.inr j.val) (by rw [← inr_cupFun D j, h])
 
 /-- The perfect matching that a diagram induces on its cupped top points: the cups pair those
 points off among themselves. -/
@@ -217,9 +216,77 @@ def cupMatching : PerfectMatching {j : Fin k // D.IsCup (Sum.inr j)} :=
 /-- `BrauerDiagram.cupMatching` matches a cupped top point with the other end of its cup. -/
 @[simp]
 theorem inr_cupMatching (j : {j : Fin k // D.IsCup (Sum.inr j)}) :
-    Sum.inr (D.cupMatching.val j).1 = D.val (Sum.inr j.1) := by
+    Sum.inr (D.cupMatching.val j).val = D.val (Sum.inr j.val) := by
   simpa [cupMatching] using inr_cupFun D j
 
+section CapCup
+
+variable {a b : Fin k}
+
+/-- The capped bottom points of `capCup a b` are `a` and `b`. -/
+@[simp]
+theorem bottomCap_capCup (hab : a ≠ b) : (capCup a b).bottomCap = {a, b} := by
+  ext i
+  rw [mem_bottomCap, isCap_capCup_inl_iff hab]
+  simp
+
+/-- The cupped top points of `capCup a b` are `a` and `b`. -/
+@[simp]
+theorem topCup_capCup (hab : a ≠ b) : (capCup a b).topCup = {a, b} := by
+  ext j
+  rw [mem_topCup, isCup_capCup_inr_iff hab]
+  simp
+
+/-- The bottom endpoints of the through strands of `capCup a b` are the points off the pair, the
+complement of its cap.
+
+Not a `simp` lemma: `simp` rewrites the complement of a pair further, so the right-hand side is
+not in simp-normal form. -/
+theorem bottomThrough_capCup (hab : a ≠ b) : (capCup a b).bottomThrough = {a, b}ᶜ := by
+  rw [← compl_compl (capCup a b).bottomThrough, ← bottomCap_eq_compl, bottomCap_capCup hab]
+
+/-- The top endpoints of the through strands of `capCup a b` are the points off the pair, the
+complement of its cup.
+
+Not a `simp` lemma, for the reason given for `TauCeti.BrauerDiagram.bottomThrough_capCup`. -/
+theorem topThrough_capCup (hab : a ≠ b) : (capCup a b).topThrough = {a, b}ᶜ := by
+  rw [← compl_compl (capCup a b).topThrough, ← topCup_eq_compl, topCup_capCup hab]
+
+end CapCup
+
 end BrauerDiagram
+
+/-! ### A cap-cup diagram depends only on the unordered pair -/
+
+section CapCupPair
+
+variable {k : ℕ} {a b c d : Fin k}
+
+/-- **A cap-cup diagram depends only on the unordered pair it caps.** -/
+theorem capCup_comm (a b : Fin k) : capCup b a = capCup a b := by
+  rcases eq_or_ne a b with rfl | hab
+  · rfl
+  exact (eq_capCup_iff hab).mpr ⟨capCup_val_inl_right hab.symm, capCup_val_inr_right hab.symm,
+    fun _ hia hib => capCup_val_inl_of_ne hib hia⟩
+
+/-- **Two cap-cup diagrams agree exactly when they cap the same unordered pair**, once one of
+them is built on a pair of distinct indices. -/
+@[simp]
+theorem capCup_eq_capCup_iff (hab : a ≠ b) :
+    capCup a b = capCup c d ↔ (a = c ∧ b = d) ∨ (a = d ∧ b = c) := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rcases eq_or_ne c d with rfl | hcd
+    · rw [capCup_self] at h
+      exact absurd h (capCup_ne_permToBrauer hab 1)
+    · have hpair : ({a, b} : Finset (Fin k)) = {c, d} := by
+        rw [← BrauerDiagram.bottomCap_capCup hab, ← BrauerDiagram.bottomCap_capCup hcd, h]
+      rw [← Finset.coe_inj] at hpair
+      simp only [Finset.coe_insert, Finset.coe_singleton] at hpair
+      exact Set.pair_eq_pair_iff.mp hpair
+  · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+    · rfl
+    · exact capCup_comm _ _
+
+end CapCupPair
 
 end TauCeti

@@ -8,6 +8,10 @@ module
 public import TauCeti.Geometry.Sphere.Connected
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction
+public import Mathlib.Topology.Category.TopCat.Basic
+
+import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Topology.Covering.Quotient
 
 /-!
 # Real projective space as an antipodal quotient
@@ -22,13 +26,13 @@ This quotient cover is an input to the computation of `π₁(RPⁿ)`.  The cover
 `isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul` from Mathlib's quotient-covering
 API, due to Junyan Xu.  Finiteness of `ℤˣ` supplies proper discontinuity; the only additional
 input is that the antipodal action on the unit sphere is free.  The integer-unit sphere action is
-provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`.
+provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`, while nonemptiness and (for
+`1 ≤ n`) connectedness of the covering sphere `Sⁿ` are supplied by
+`TauCeti.instNonemptySphere` and `TauCeti.connectedSpace_euclideanSphere`.
 
 ## Main declarations
 
 * `TauCeti.RealProjectiveSpace`: real projective `n`-space as an antipodal quotient of `Sⁿ`.
-* `TauCeti.RealProjectiveSpace.instNonemptySphere`: the covering sphere `Sⁿ` is nonempty.
-  Its connectedness for `1 ≤ n` is supplied by `TauCeti.connectedSpace_euclideanSphere`.
 * `TauCeti.RealProjectiveSpace.instCompactSpace`: real projective space is compact.
 * `TauCeti.RealProjectiveSpace.inductionOn`, `TauCeti.RealProjectiveSpace.lift`, and
   `TauCeti.RealProjectiveSpace.lift_unique`: elimination principles for the antipodal quotient.
@@ -37,6 +41,9 @@ provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`.
 * `TauCeti.RealProjectiveSpace.isQuotientCoveringMap_mk`: the unit-sphere quotient is a quotient
   covering map with group `ℤˣ`.
 * `TauCeti.RealProjectiveSpace.isCoveringMap_mk`: the underlying covering-map statement.
+* `TauCeti.RealProjectiveSpace.coverHom`: the antipodal cover as a morphism of `TopCat`, with
+  `TauCeti.RealProjectiveSpace.isCoveringMap_coverHom` and
+  `TauCeti.RealProjectiveSpace.finite_preimage_coverHom`.
 * `TauCeti.RealProjectiveSpace.instUniqueZero`: `RP⁰` has exactly one point.
 * `TauCeti.RealProjectiveSpace.instPathConnectedSpace`: `RPⁿ` is path-connected for every `n`.
 * `TauCeti.RealProjectiveSpace.instT2Space`: `RPⁿ` is Hausdorff.
@@ -48,6 +55,7 @@ public section
 
 namespace TauCeti
 
+open CategoryTheory
 open Metric
 open Topology
 open scoped EuclideanSpace
@@ -63,11 +71,6 @@ def RealProjectiveSpace (n : ℕ) : Type _ :=
 namespace RealProjectiveSpace
 
 variable (n : ℕ)
-
-/-- The unit sphere of `EuclideanSpace ℝ (Fin (n + 1))` is nonempty. -/
-instance instNonemptySphere :
-    Nonempty (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-  (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
 
 /-- The quotient topology on real projective space. -/
 instance instTopologicalSpace : TopologicalSpace (RealProjectiveSpace n) :=
@@ -171,7 +174,7 @@ theorem continuous_mk : Continuous (mk n) :=
 
 /-- Real projective space is nonempty. -/
 instance instNonempty : Nonempty (RealProjectiveSpace n) :=
-  ⟨mk n (instNonemptySphere n).some⟩
+  ⟨mk n (Nonempty.some inferInstance)⟩
 
 /-- Zero-dimensional real projective space has exactly one point. -/
 instance instUniqueZero : Unique (RealProjectiveSpace 0) := by
@@ -182,36 +185,29 @@ instance instUniqueZero : Unique (RealProjectiveSpace 0) := by
     rename_i u v
     rw [RealProjectiveSpace.mk_eq_mk_iff]
     have hu_norm : ‖(u : EuclideanSpace ℝ (Fin 1))‖ = 1 := by
-      have := u.2
+      have := u.property
       rw [Metric.mem_sphere, dist_zero_right] at this
       exact this
     have hv_norm : ‖(v : EuclideanSpace ℝ (Fin 1))‖ = 1 := by
-      have := v.2
+      have := v.property
       rw [Metric.mem_sphere, dist_zero_right] at this
       exact this
-    have h_eval (w : EuclideanSpace ℝ (Fin 1)) : ‖w‖ = |w 0| := by
-      have hsq : ‖w‖^2 = (w 0)^2 := by
-        rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs]
-      have h2 : |w 0|^2 = (w 0)^2 := sq_abs (w 0)
-      have hpos1 : 0 ≤ ‖w‖ := norm_nonneg w
-      have hpos2 : 0 ≤ |w 0| := abs_nonneg (w 0)
-      nlinarith
-    rw [h_eval] at hu_norm hv_norm
-    have hu0 : u.1 0 = 1 ∨ u.1 0 = -1 := sq_eq_one_iff.mp (by
-      have := sq_abs (u.1 0)
+    rw [EuclideanSpace.norm_fin_one] at hu_norm hv_norm
+    have hu0 : u.val 0 = 1 ∨ u.val 0 = -1 := sq_eq_one_iff.mp (by
+      have := sq_abs (u.val 0)
       rw [hu_norm] at this
       linarith)
-    have hv0 : v.1 0 = 1 ∨ v.1 0 = -1 := sq_eq_one_iff.mp (by
-      have := sq_abs (v.1 0)
+    have hv0 : v.val 0 = 1 ∨ v.val 0 = -1 := sq_eq_one_iff.mp (by
+      have := sq_abs (v.val 0)
       rw [hv_norm] at this
       linarith)
     have h_ext (x y : sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)
-        (h : x.1 0 = y.1 0) : x = y := by
+        (h : x.val 0 = y.val 0) : x = y := by
       ext i
       fin_cases i
       exact h
     have h_ext_neg (x y : sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)
-        (h : x.1 0 = - y.1 0) : x = -y := by
+        (h : x.val 0 = - y.val 0) : x = -y := by
       ext i
       fin_cases i
       exact h
@@ -261,6 +257,26 @@ theorem continuousAt_lift {α : Type*} [TopologicalSpace α]
     {x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1} (hf : ContinuousAt f x) :
     ContinuousAt (RealProjectiveSpace.lift n f h) (mk n x) :=
   (isOpenQuotientMap_mk n).continuousAt_comp_iff.1 hf
+
+/-- The antipodal double cover `Sⁿ → RPⁿ`, the quotient map of the unit sphere, as a morphism of
+topological spaces. -/
+def coverHom :
+    TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ⟶
+      TopCat.of (RealProjectiveSpace n) :=
+  TopCat.ofHom ⟨mk n, continuous_mk n⟩
+
+@[simp]
+theorem coverHom_apply (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    coverHom n x = mk n x :=
+  (rfl)
+
+/-- The quotient map `Sⁿ → RPⁿ` is a covering map. -/
+theorem isCoveringMap_coverHom : IsCoveringMap (coverHom n) :=
+  isCoveringMap_mk n
+
+/-- The fibres of the antipodal cover `Sⁿ → RPⁿ`, the antipodal pairs, are finite. -/
+theorem finite_preimage_coverHom (b : RealProjectiveSpace n) : Finite (coverHom n ⁻¹' {b}) :=
+  (isQuotientCoveringMap_mk n).finite_fiber b
 
 end RealProjectiveSpace
 

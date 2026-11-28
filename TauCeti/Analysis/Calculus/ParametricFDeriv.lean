@@ -1,15 +1,18 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.TangentCone.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Mixed derivatives of a parametric map
@@ -33,6 +36,11 @@ over a general nontrivially normed field, it is analyticity.
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
+* `ContDiffOn.spatialFDeriv_of_isOpen`: the spatial derivative of a jointly `C^(n+1)` map is `C^n`.
+* `TauCeti.norm_iteratedFDeriv_spatialFDeriv`: spatial derivative jets have the norms of
+  the next jets of the fixed-parameter slice.
+* `TauCeti.norm_iteratedFDeriv_prodMk_spatialFDeriv`: pairing a slice with its spatial derivative
+  gives the maximum norm of two adjacent jets.
 * `TauCeti.hasDerivAt_parameterCurve_uncurry`, `TauCeti.hasDerivAt_timeSlice_uncurry`: the same
   for a curried function `u`, as directional derivatives of `uncurry u`.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
@@ -49,6 +57,8 @@ over a general nontrivially normed field, it is analyticity.
 * `TauCeti.hasFDerivAt_spatialFDeriv`: mixed derivatives for a normed parameter space.
 * `hasDerivAt_spatialFDeriv`: the spatial Jacobian differentiates to the spatial derivative of the
   parameter velocity.
+* `TauCeti.fderiv_fderiv_slice_piLp_apply_comm`: the same for a coordinate of a map into a finite
+  `L^p` product, differentiated before the parameter derivative is taken.
 * `TauCeti.hasDerivAt_fderivWithin_slice`: the case of a scalar parameter of mixed derivatives
   within a set.
 * `deriv_spatialFDeriv_apply`: the parameter derivative of the spatial Jacobian equals the
@@ -66,6 +76,8 @@ over a general nontrivially normed field, it is analyticity.
 
 * Sébastien Gouëzel, `Mathlib/Analysis/Calculus/FDeriv/Symmetric.lean`, theorem
   `ContDiffAt.isSymmSndFDerivAt`.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -164,6 +176,71 @@ theorem fderiv_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
+
+section SpatialRegularity
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+
+/-- A fixed-parameter slice inherits pointwise smoothness on an open joint domain. -/
+theorem _root_.ContDiffOn.contDiffAt_timeSlice {n : ℕ∞ω} {f : P × E → F'}
+    {W : Set (P × E)} (hf : ContDiffOn 𝕜 n f W) (hW : IsOpen W)
+    {t : P} {p : E} (hz : (t, p) ∈ W) :
+    ContDiffAt 𝕜 n (fun q ↦ f (t, q)) p :=
+  (hf.contDiffAt (hW.mem_nhds hz)).fun_comp p (contDiff_prodMk_right t).contDiffAt
+
+/-- Spatial differentiation loses one derivative at a point. -/
+theorem _root_.ContDiffAt.spatialFDeriv {m n : ℕ∞ω} {f : P × E → F'}
+    {z : P × E} (hf : ContDiffAt 𝕜 n f z) (hmn : m + 1 ≤ n) :
+    ContDiffAt 𝕜 m (fun w ↦ spatialFDeriv (𝕜 := 𝕜) f w.2 w.1) z := by
+  simp only [spatialFDeriv_def]
+  exact (hf.fderiv_right hmn).clm_comp contDiffAt_const
+
+/-- Spatial differentiation loses one derivative on an open joint domain. -/
+theorem _root_.ContDiffOn.spatialFDeriv_of_isOpen {m n : ℕ∞ω} {f : P × E → F'}
+    {W : Set (P × E)} (hf : ContDiffOn 𝕜 n f W) (hW : IsOpen W) (hmn : m + 1 ≤ n) :
+    ContDiffOn 𝕜 m (fun z ↦ spatialFDeriv (𝕜 := 𝕜) f z.2 z.1) W := by
+  simp only [spatialFDeriv_def]
+  exact (hf.fderiv_of_isOpen hW hmn).clm_comp contDiffOn_const
+
+/-- The spatial derivative's `k`-th jet norm is the fixed-parameter slice's next jet norm. -/
+theorem norm_iteratedFDeriv_spatialFDeriv {k : ℕ} {f : P × E → F'}
+    {t : P} {p : E} (hf : ∀ᶠ q in 𝓝 p, DifferentiableAt 𝕜 f (t, q)) :
+    ‖iteratedFDeriv 𝕜 k (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) p‖ =
+      ‖iteratedFDeriv 𝕜 (k + 1) (fun q ↦ f (t, q)) p‖ := by
+  have heq : (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) =ᶠ[𝓝 p]
+      fderiv 𝕜 (fun q ↦ f (t, q)) := hf.mono fun _ hq ↦ (fderiv_timeSlice hq).symm
+  rw [(heq.iteratedFDeriv 𝕜 k).eq_of_nhds, norm_iteratedFDeriv_fderiv]
+
+/-- Pairing a slice with its spatial derivative gives the maximum of adjacent jet norms.
+Only the slice is required to be smooth; joint differentiability is needed near the point
+solely to identify the spatial derivative. -/
+theorem norm_iteratedFDeriv_prodMk_spatialFDeriv {k : ℕ} {n : ℕ∞ω} {f : P × E → F'}
+    {t : P} {p : E} (hf : ∀ᶠ q in 𝓝 p, DifferentiableAt 𝕜 f (t, q))
+    (hslice : ContDiffAt 𝕜 n (fun q ↦ f (t, q)) p) (hkn : (k : ℕ∞ω) + 1 ≤ n) :
+    ‖iteratedFDeriv 𝕜 k (fun q ↦ (f (t, q), spatialFDeriv (𝕜 := 𝕜) f q t)) p‖ =
+      max ‖iteratedFDeriv 𝕜 k (fun q ↦ f (t, q)) p‖
+        ‖iteratedFDeriv 𝕜 (k + 1) (fun q ↦ f (t, q)) p‖ := by
+  have heq : (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) =ᶠ[𝓝 p]
+      fderiv 𝕜 (fun q ↦ f (t, q)) := hf.mono fun _ hq ↦ (fderiv_timeSlice hq).symm
+  rw [iteratedFDeriv_prodMk (hslice.of_le (le_self_add.trans hkn))
+    ((hslice.fderiv_right hkn).congr_of_eventuallyEq heq) le_rfl,
+    ContinuousMultilinearMap.opNorm_prod, norm_iteratedFDeriv_spatialFDeriv hf]
+
+/-- On an open joint domain, the paired slice has the maximum of two adjacent jet norms. -/
+theorem _root_.ContDiffOn.norm_iteratedFDeriv_prodMk_spatialFDeriv
+    {k : ℕ} {f : P × E → F'} {W : Set (P × E)}
+    (hf : ContDiffOn 𝕜 (k + 1) f W) (hW : IsOpen W) {t : P} {p : E}
+    (hz : (t, p) ∈ W) :
+    ‖iteratedFDeriv 𝕜 k (fun q ↦ (f (t, q), spatialFDeriv (𝕜 := 𝕜) f q t)) p‖ =
+      max ‖iteratedFDeriv 𝕜 k (fun q ↦ f (t, q)) p‖
+        ‖iteratedFDeriv 𝕜 (k + 1) (fun q ↦ f (t, q)) p‖ := by
+  apply TauCeti.norm_iteratedFDeriv_prodMk_spatialFDeriv
+    (hslice := hf.contDiffAt_timeSlice hW hz) (hkn := le_rfl)
+  filter_upwards [(continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
+    (hW.mem_nhds hz)] with q hq
+  exact (hf.contDiffAt (hW.mem_nhds hq)).differentiableAt (by simp)
+
+end SpatialRegularity
 
 /-- For a function `u` of a scalar parameter and a spatial variable, the derivative of the
 parameter curve `s ↦ u s x` is the derivative of `uncurry u` in the direction `(1, 0)`. This is
@@ -321,6 +398,31 @@ theorem fderiv_fderiv_slice_apply_comm {P : Type*} [NormedAddCommGroup P] [Norme
   rw [((hasFDerivAt_spatialFDeriv hF).clm_apply_const v).fderiv,
     (hasFDerivAt_parameterFDeriv_apply (hF.of_le le_minSmoothness) h).fderiv]
   simp only [ContinuousLinearMap.flip_apply]
+
+/-- **Mixed partial derivatives of a coordinate commute.** For a map `F` into a finite `L^p`
+product with the minimum smoothness needed for symmetric second derivatives, differentiating the
+coordinate `i` of `F` in the second variable in the direction `v` and then in the first variable
+in the direction `h` is the derivative in the direction `v` of the coordinate `i` of the
+derivative of `F` in the first variable in the direction `h`. -/
+theorem fderiv_fderiv_slice_piLp_apply_comm {ι : Type*} [Fintype ι] {β : ι → Type*}
+    [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace 𝕜 (β i)] {r : ENNReal} [Fact (1 ≤ r)]
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P] {F : P × E → PiLp r β} {p : P} {x : E}
+    (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (p, x)) (i : ι) (h : P) (v : E) :
+    fderiv 𝕜 (fun q ↦ fderiv 𝕜 (fun y ↦ F (q, y) i) x v) p h =
+      fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h i) x v := by
+  have hi : ContDiffAt 𝕜 (minSmoothness 𝕜 2) (fun qy ↦ F qy i) (p, x) :=
+    (PiLp.proj (𝕜 := 𝕜) r β i).contDiff.contDiffAt.comp (g := fun y : PiLp r β ↦ y i) _ hF
+  rw [fderiv_fderiv_slice_apply_comm hi h v]
+  -- Near `x`, the parameter derivative of the coordinate is the coordinate of the derivative.
+  have hev : ∀ᶠ y in 𝓝 x, ContDiffAt 𝕜 1 F (p, y) :=
+    (continuous_const.prodMk continuous_id : Continuous fun y : E ↦ (p, y)).continuousAt.eventually
+      ((hF.of_le (le_minSmoothness.trans' (by norm_num))).eventually (by simp))
+  have heq : (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y) i) p h) =ᶠ[𝓝 x]
+      fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h i := by
+    filter_upwards [hev] with y hy
+    exact ((hy.differentiableAt one_ne_zero).hasFDerivAt_slice_fst.differentiableAt :
+      DifferentiableAt 𝕜 (fun q ↦ F (q, y)) p).fderiv_piLp_apply i h
+  rw [heq.fderiv_eq]
 
 /-- **Mixed derivatives within a set, scalar parameter.** The case `P = 𝕜` of
 `hasFDerivAt_fderivWithin_slice`, with the parameter derivative written as `deriv`. -/

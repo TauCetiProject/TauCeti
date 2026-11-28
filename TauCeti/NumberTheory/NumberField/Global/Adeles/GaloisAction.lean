@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.MulIndicator
+import TauCeti.NumberTheory.NumberField.FinitePlace.Transport
+import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
 # Galois action on adeles
@@ -14,7 +18,17 @@ A field isomorphism transports finite and infinite adeles by restriction of plac
 induced maps of completions. The resulting ring equivalences are continuous in both directions
 and commute with the diagonal embeddings. Their composition laws give the Galois action on the
 finite adele ring and on the full adele ring, with the discrete topology on the finite automorphism
-group; the former is the finite component of the latter.
+group; the former is the finite component of the latter. Transport of finite adeles preserves the
+integral finite adeles (`TauCeti.GlobalNumberFields.finiteAdeleEquiv_mem_integralAdeles_iff`).
+
+Place by place, a field isomorphism `e : K ≃+* L` carries a finite place `w` of `K` to the finite
+place `e w` of `L`, the unique finite place with `|e x|_{e w} = |x|_w` for `x ∈ K`
+(`RingEquiv.eq_equivOfRingEquiv_iff`). The component at
+`e w` of the transport of a finite adele `a` is the image of `a_w` under the isomorphism
+`K_w ≃ L_{e w}` extending `e`
+(`TauCeti.GlobalNumberFields.finiteAdeleEquiv_apply_eq_adicCompletionCongr`). In particular,
+transport carries the indicator of a set `S` of finite places to the indicator of the set of the
+places `e w` for `w ∈ S` (`TauCeti.GlobalNumberFields.finiteAdeleEquiv_indicatorOne`).
 
 The construction uses `finiteAdeleExtension` and `infiniteAdeleExtension` with the algebra
 structure induced by the field isomorphism. In particular, it preserves the restricted-product
@@ -91,7 +105,7 @@ theorem infiniteAdeleEquiv_apply (e : K ≃+* L) (a : InfiniteAdeleRing K)
     (w : InfinitePlace L) :
     letI := e.toRingHom.toAlgebra
     infiniteAdeleEquiv K L e a w =
-      AbsoluteValue.Completion.map (w.comap (algebraMap K L)).1 w.1
+      AbsoluteValue.Completion.map (w.comap (algebraMap K L)).val w.val
         (a (w.comap (algebraMap K L))) := by
   let := e.toRingHom.toAlgebra
   exact infiniteAdeleExtension_apply a w
@@ -224,6 +238,78 @@ theorem finiteAdeleEquiv_trans (M : Type*) [Field M] [NumberField M]
       finiteAdeleEquiv K M (e.trans f) := by
   ext a : 1
   exact RingHom.congr_fun (finiteMap_comp K L M e f) a
+
+variable {K L} in
+/-- Transport of finite adeles along a field isomorphism carries integral finite adeles to
+integral finite adeles. -/
+theorem finiteAdeleEquiv_mem_integralAdeles (e : K ≃+* L) {x : FiniteAdeleRing (𝓞 K) K}
+    (hx : x ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K) :
+    finiteAdeleEquiv K L e x ∈ FiniteAdeleRing.integralAdeles (𝓞 L) L := by
+  -- The transport is continuous, the integral finite adeles are closed, and `𝓞_K` is dense in
+  -- them, so it suffices to treat the diagonal image of `𝓞_K`, which lands in `𝓞_L`.
+  have h_closed : IsClosed {y : FiniteAdeleRing.integralAdeles (𝓞 K) K |
+      finiteAdeleEquiv K L e y ∈ FiniteAdeleRing.integralAdeles (𝓞 L) L} :=
+    (FiniteAdeleRing.isClosed_integralAdeles (𝓞 L) L).preimage
+      ((continuous_finiteAdeleEquiv K L e).comp continuous_subtypeVal)
+  refine (FiniteAdeleRing.denseRange_algebraMap_integralAdeles (𝓞 K) K).induction_on
+    (p := fun y : FiniteAdeleRing.integralAdeles (𝓞 K) K ↦
+      finiteAdeleEquiv K L e y ∈ FiniteAdeleRing.integralAdeles (𝓞 L) L) ⟨x, hx⟩ h_closed
+      fun r ↦ ?_
+  have hr : IsIntegral ℤ (e r) := (RingOfIntegers.isIntegral_coe r).map e.toRingHom.toIntAlgHom
+  rw [Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply (𝓞 K) K,
+    finiteAdeleEquiv_algebraMap]
+  exact (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 L) (e r)).2 ⟨⟨e r, hr⟩, rfl⟩
+
+variable {K L} in
+/-- Transport of finite adeles along a field isomorphism preserves integrality. It takes priority
+over the place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp`
+lemma. -/
+@[simp high]
+theorem finiteAdeleEquiv_mem_integralAdeles_iff (e : K ≃+* L) {x : FiniteAdeleRing (𝓞 K) K} :
+    finiteAdeleEquiv K L e x ∈ FiniteAdeleRing.integralAdeles (𝓞 L) L ↔
+      x ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K := by
+  refine ⟨fun hx ↦ ?_, finiteAdeleEquiv_mem_integralAdeles e⟩
+  simpa [← finiteAdeleEquiv_symm] using finiteAdeleEquiv_mem_integralAdeles e.symm hx
+
+variable {K L} in
+/-- **Transport of finite adeles at a place.** If the field isomorphism `e : K ≃+* L` carries the
+`w`-adic valuation to the `w'`-adic valuation, `|e x|_{w'} = |x|_w` for `x ∈ K` (that is, `w'` is
+the image of `w`, `RingEquiv.eq_equivOfRingEquiv_iff`),
+then the component at `w'` of the transport of a finite adele `a` is the image of its component
+`a_w` under the isomorphism `K_w ≃ L_{w'}` extending `e`. -/
+theorem finiteAdeleEquiv_apply_eq_adicCompletionCongr (e : K ≃+* L)
+    {w : HeightOneSpectrum (𝓞 K)} {w' : HeightOneSpectrum (𝓞 L)}
+    (hw : ∀ x, w'.valuation L (e x) = w.valuation K x) (a : FiniteAdeleRing (𝓞 K) K) :
+    finiteAdeleEquiv K L e a w' = HeightOneSpectrum.adicCompletionCongr w w' e hw (a w) := by
+  -- Both sides are continuous in `a` and agree on the dense image of `K`.
+  have hl : Continuous fun a ↦ FiniteAdeleRing.proj L w' (finiteAdeleEquiv K L e a) :=
+    (FiniteAdeleRing.proj L w').continuous.comp (continuous_finiteAdeleEquiv K L e)
+  have hr : Continuous fun a ↦
+      HeightOneSpectrum.adicCompletionCongr w w' e hw (FiniteAdeleRing.proj K w a) :=
+    (HeightOneSpectrum.continuous_adicCompletionCongr hw).comp
+      (FiniteAdeleRing.proj K w).continuous
+  have h := congr_fun ((FiniteAdeleRing.denseRange_algebraMap (𝓞 K) K).equalizer hl hr
+    (funext fun x ↦ ?_)) a
+  · simpa only [FiniteAdeleRing.proj_apply] using h
+  simp only [Function.comp_apply, finiteAdeleEquiv_algebraMap, AlgHomClass.commutes,
+    HeightOneSpectrum.adicCompletionCongr_algebraMap]
+
+variable {K L} in
+/-- **Transport of the indicator of a set of places.** Transporting the indicator of a set `S` of
+finite places of `K` along `e : K ≃+* L` gives the indicator of the set of the places `e w` of `L`
+for `w ∈ S`. -/
+theorem finiteAdeleEquiv_indicatorOne (e : K ≃+* L) (S : Set (HeightOneSpectrum (𝓞 K))) :
+    finiteAdeleEquiv K L e (FiniteAdeleRing.indicatorOne S) =
+      FiniteAdeleRing.indicatorOne
+        (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' S) := by
+  classical
+  refine FiniteAdeleRing.ext L fun w' ↦ ?_
+  obtain ⟨w, rfl⟩ :=
+    (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).surjective w'
+  rw [finiteAdeleEquiv_apply_eq_adicCompletionCongr e (e.valuation_equivOfRingEquiv w),
+    FiniteAdeleRing.indicatorOne_apply, FiniteAdeleRing.indicatorOne_apply,
+    (Equiv.injective _).mem_set_image]
+  split_ifs <;> simp
 
 /-- The ring equivalence of full adele rings induced by a field isomorphism. -/
 noncomputable def adeleEquiv (e : K ≃+* L) : AdeleRing (𝓞 K) K ≃+* AdeleRing (𝓞 L) L :=

@@ -67,6 +67,19 @@ theorem rowLen_rect (d m i : ℕ) : (rect d m).rowLen i = if i < d then m else 0
 theorem colLen_rect (d m j : ℕ) : (rect d m).colLen j = if j < m then d else 0 := by
   rw [← rowLen_transpose, transpose_rect, rowLen_rect]
 
+/-- **A Young diagram fits in the `d × m` rectangle** exactly when it has at most `d` rows and its
+first row has at most `m` cells. -/
+theorem le_rect_iff {μ : YoungDiagram} {d m : ℕ} :
+    μ ≤ rect d m ↔ μ.colLen 0 ≤ d ∧ μ.rowLen 0 ≤ m := by
+  refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨hd, hm⟩ c hc => ?_⟩
+  · by_contra! hlt
+    exact (mem_rect.mp (h (mem_iff_lt_colLen.mpr hlt))).1.false
+  · by_contra! hlt
+    exact (mem_rect.mp (h (mem_iff_lt_rowLen.mpr hlt))).2.false
+  · have hrow := mem_iff_lt_rowLen.mp hc
+    exact mem_rect.mpr ⟨(lt_colLen_zero_of_mem hc).trans_le hd,
+      (hrow.trans_le (μ.rowLen_anti 0 c.1 c.1.zero_le)).trans_le hm⟩
+
 end YoungDiagram
 
 namespace TauCeti.BoundedSSYT
@@ -93,24 +106,24 @@ private def ofRectCols {n d m : ℕ} (C : Fin m →o (Fin d ↪o Fin n)) :
   ⟨ofRectColsSSYT C, fun i j hcell ↦ by
     obtain ⟨hi, hj⟩ := YoungDiagram.mem_rect.1 hcell
     rw [ofRectColsSSYT_apply, dite_eq_left ⟨hi, hj⟩]
-    exact (C ⟨j, hj⟩ ⟨i, hi⟩).2⟩
+    exact (C ⟨j, hj⟩ ⟨i, hi⟩).isLt⟩
 
 @[simp]
 private theorem ofRectCols_entry {n d m : ℕ} (C : Fin m →o (Fin d ↪o Fin n)) (i j : ℕ) :
-    (ofRectCols C).1 i j = if h : i < d ∧ j < m then (C ⟨j, h.2⟩ ⟨i, h.1⟩ : ℕ) else 0 := rfl
+    (ofRectCols C).val i j = if h : i < d ∧ j < m then (C ⟨j, h.2⟩ ⟨i, h.1⟩ : ℕ) else 0 := rfl
 
 private def toRectCols {n d m : ℕ} (T : BoundedSSYT n (YoungDiagram.rect d m)) :
     Fin m →o (Fin d ↪o Fin n) where
   toFun c := OrderEmbedding.ofStrictMono
-    (fun r : Fin d ↦ ⟨T.1 r c, T.entry_lt (YoungDiagram.mem_rect.2 ⟨r.2, c.2⟩)⟩)
-    fun _ r₂ hr ↦ Fin.lt_def.2 (T.1.col_strict hr (YoungDiagram.mem_rect.2 ⟨r₂.2, c.2⟩))
+    (fun r : Fin d ↦ ⟨T.val r c, T.entry_lt (YoungDiagram.mem_rect.2 ⟨r.isLt, c.isLt⟩)⟩)
+    fun _ r₂ hr ↦ Fin.lt_def.2 (T.val.col_strict hr (YoungDiagram.mem_rect.2 ⟨r₂.isLt, c.isLt⟩))
   monotone' _ c₂ hc r :=
-    Fin.le_def.2 (T.1.row_weak_of_le hc (YoungDiagram.mem_rect.2 ⟨r.2, c₂.2⟩))
+    Fin.le_def.2 (T.val.row_weak_of_le hc (YoungDiagram.mem_rect.2 ⟨r.isLt, c₂.isLt⟩))
 
 @[simp]
 private theorem toRectCols_apply_apply {n d m : ℕ} (T : BoundedSSYT n (YoungDiagram.rect d m))
     (c : Fin m) (r : Fin d) :
-    toRectCols T c r = ⟨T.1 r c, T.entry_lt (YoungDiagram.mem_rect.2 ⟨r.2, c.2⟩)⟩ := rfl
+    toRectCols T c r = ⟨T.val r c, T.entry_lt (YoungDiagram.mem_rect.2 ⟨r.isLt, c.isLt⟩)⟩ := rfl
 
 /-- **Column-chain equivalence for rectangular semistandard tableaux.** A bounded semistandard Young
 tableau of shape `YoungDiagram.rect d m` in the alphabet `{0, …, n - 1}` is the same data as a
@@ -119,25 +132,25 @@ def rectColsEquiv (n d m : ℕ) :
     (Fin m →o (Fin d ↪o Fin n)) ≃ BoundedSSYT n (YoungDiagram.rect d m) where
   toFun := ofRectCols
   invFun := toRectCols
-  left_inv C := by ext c r; simp [r.2, c.2]
+  left_inv C := by ext c r; simp [r.isLt, c.isLt]
   right_inv T := by
     refine Subtype.ext (SemistandardYoungTableau.ext fun i j ↦ ?_)
     simp only [ofRectCols_entry, toRectCols_apply_apply]
     by_cases h : i < d ∧ j < m
     · exact dite_eq_left h
-    · exact (dite_eq_right h).trans (T.1.zeros (YoungDiagram.mem_rect.not.2 h)).symm
+    · exact (dite_eq_right h).trans (T.val.zeros (YoungDiagram.mem_rect.not.2 h)).symm
 
 @[simp]
 theorem rectColsEquiv_apply_entry {n d m : ℕ} (C : Fin m →o (Fin d ↪o Fin n)) (r : Fin d)
-    (c : Fin m) : (rectColsEquiv n d m C).1 r c = C c r := by simp [rectColsEquiv, r.2, c.2]
+    (c : Fin m) : (rectColsEquiv n d m C).val r c = C c r := by simp [rectColsEquiv, r.isLt, c.isLt]
 
 @[simp]
 theorem rectColsEquiv_symm_apply_apply {n d m : ℕ} (T : BoundedSSYT n (YoungDiagram.rect d m))
     (c : Fin m) (r : Fin d) :
     (rectColsEquiv n d m).symm T c r =
-      ⟨T.1 r c, T.entry_lt (YoungDiagram.mem_rect.2 ⟨r.2, c.2⟩)⟩ := (rfl)
+      ⟨T.val r c, T.entry_lt (YoungDiagram.mem_rect.2 ⟨r.isLt, c.isLt⟩)⟩ := (rfl)
 
 theorem val_rectColsEquiv_symm_apply_apply {n d m : ℕ} (T : BoundedSSYT n (YoungDiagram.rect d m))
-    (c : Fin m) (r : Fin d) : ((rectColsEquiv n d m).symm T c r : ℕ) = T.1 r c := (rfl)
+    (c : Fin m) (r : Fin d) : ((rectColsEquiv n d m).symm T c r : ℕ) = T.val r c := (rfl)
 
 end TauCeti.BoundedSSYT

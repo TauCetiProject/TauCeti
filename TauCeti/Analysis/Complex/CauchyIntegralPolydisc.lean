@@ -58,6 +58,9 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   are the corresponding statements for a function differentiable everywhere.
 * `TauCeti.analyticOnNhd_iff_differentiableOn_of_finiteDimensional`: on an open subset of a
   finite-dimensional complex normed space, analyticity and complex differentiability agree.
+* `TauCeti.analyticAt_iff_eventually_differentiableAt_of_finiteDimensional`: on a
+  finite-dimensional complex normed space, analyticity at a point is equivalent to complex
+  differentiability on a neighbourhood of that point.
 * `AnalyticAt.star_star`: on a finite-dimensional complex normed space with conjugations,
   `star ∘ f ∘ star` is analytic at `star z` whenever `f` is analytic at `z`.
 * `TauCeti.hasFDerivAt_integral_smul_of_analyticAt`: an integral `q ↦ ∫ a, g a • f (q, φ a) ∂μ`,
@@ -239,7 +242,7 @@ private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : 
   -- On the torus `X = ∏ sphere (z i) R`, the Cauchy kernel is a unit of `C(X, ℂ)` at `w = z`.
   let F : C((i : Fin n) → sphere (z i) |R|, E) :=
     ⟨fun x => f fun i => x i, hc.comp_continuous (by fun_prop) fun x i _ =>
-      sphere_subset_closedBall (by simpa only [abs_of_pos hR] using (x i).2)⟩
+      sphere_subset_closedBall (by simpa only [abs_of_pos hR] using (x i).property)⟩
   let K : (Fin n → ℂ) → C((i : Fin n) → sphere (z i) |R|, ℂ) := fun w =>
     ∏ i, (⟨fun x => (x i : ℂ), by fun_prop⟩ - algebraMap ℂ _ (w i))
   have hKapply : ∀ w x, K w x = ∏ i, ((x i : ℂ) - w i) := fun w x => by
@@ -251,7 +254,7 @@ private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : 
   have hunit : IsUnit (K z) := (ContinuousMap.isUnit_iff_forall_ne_zero _).2 fun x => by
     rw [hKapply]
     exact Finset.prod_ne_zero_iff.2 fun i _ =>
-      sub_ne_zero.2 (ne_of_mem_sphere (x i).2 (abs_pos.mpr hR.ne').ne')
+      sub_ne_zero.2 (ne_of_mem_sphere (x i).property (abs_pos.mpr hR.ne').ne')
   have hinv : AnalyticAt ℂ (fun w => Ring.inverse (K w)) z := by
     have h := analyticAt_inverse (𝕜 := ℂ) hunit.unit
     rw [hunit.unit_spec] at h
@@ -384,6 +387,15 @@ only if it is complex differentiable. This is the several-variable form of
 theorem analyticOnNhd_iff_differentiableOn_of_finiteDimensional (hs : IsOpen s) :
     AnalyticOnNhd ℂ f s ↔ DifferentiableOn ℂ f s :=
   ⟨AnalyticOnNhd.differentiableOn, fun hd => hd.analyticOnNhd_of_finiteDimensional hs⟩
+
+/-- On a finite-dimensional complex normed space, a function is analytic at a point if and only if
+it is complex differentiable on a neighbourhood of that point. This is the several-variable form of
+`Complex.analyticAt_iff_eventually_differentiableAt`. -/
+theorem analyticAt_iff_eventually_differentiableAt_of_finiteDimensional :
+    AnalyticAt ℂ f z ↔ ∀ᶠ w in 𝓝 z, DifferentiableAt ℂ f w :=
+  ⟨fun h => h.eventually_analyticAt.mono fun _ hw => hw.differentiableAt,
+    fun h => DifferentiableOn.analyticAt_of_finiteDimensional
+      (s := {w | DifferentiableAt ℂ f w}) (fun _ hw => hw.differentiableWithinAt) h⟩
 
 /-- If `f` is analytic at `z`, then `star ∘ f ∘ star` is analytic at `star z`, for a function on
 a finite-dimensional complex normed space with conjugations. This is the analytic form of

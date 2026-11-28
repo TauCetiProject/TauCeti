@@ -18,6 +18,11 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 The compact derivative topology on native sections is independent of the covering smooth
 frame system. Changes of frame act by the actual smooth transition matrix, including its
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
+Pullback along a smooth map (for the pulled-back frames), restriction to an open subset and
+multiplication by a smooth scalar function are continuous
+(`ContMDiffSection.continuous_pullback_frameTopology`,
+`ContMDiffSection.continuous_restrict_frameTopology`,
+`ContMDiffSection.continuous_smul_function_frameTopology`).
 -/
 
 public noncomputable section
@@ -75,23 +80,23 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
     let _ := frameTopology (I := I) (n := n) e U hU
     Continuous (e'.frameCoordinates (I := I) (n := n) hU') := by
   let _ := frameTopology (I := I) (n := n) e U hU
-  let W (i : ι) : Opens U' := Opens.comap ⟨Subtype.val, continuous_subtype_val⟩ (U i)
+  let W (i : ι) : Opens U' := Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ (U i)
   have hW : ∀ x : U', ∃ i, x ∈ W i := fun x ↦ hcover x
   apply ContMDiffMap.continuous_of_forall_continuous_restrict W hW
   intro i
   let j : C^n⟮I, W i; I, U i⟯ :=
-    ⟨fun x ↦ ⟨((x : U') : M), x.2⟩,
+    ⟨fun x ↦ ⟨((x : U') : M), x.property⟩,
       (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp (by
         -- The target-subtype criterion leaves composition through two inclusions. Normalize
         -- their nested subtype coercions, which are bundled by different open carriers.
         change ContMDiff I I n (fun x : W i ↦ ((x : U') : M))
-        exact (contMDiff_subtype_val (U := U')).comp
-          (contMDiff_subtype_val (U := W i)))⟩
+        exact (contMDiff_subtypeVal (U := U')).comp
+          (contMDiff_subtypeVal (U := W i)))⟩
   let A : C^n⟮I, W i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
     ⟨fun x ↦ ((e i).coordChangeL 𝕜 e' ((x : U') : M) : F →L[𝕜] F), fun x ↦
       (contMDiffAt_coordChangeL (e := e i) (e' := e')
-        (hU i x.2) (hU' (x : U').2)).comp x
-          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+        (hU i x.property) (hU' (x : U').property)).comp x
+          (contMDiff_subtypeVal.comp contMDiff_subtypeVal).contMDiffAt⟩
   have hc : Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦
       ((e i).frameCoordinates (hU i) s).comp j) :=
     ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
@@ -104,9 +109,9 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
     ContMDiffMap.clmApplyLinearMap_apply, ContMDiffMap.comp_apply,
     Bundle.Trivialization.frameCoordinates_apply]
   exact (((e i).coordChangeL_apply (R := 𝕜) e'
-    ⟨hU i x.2, hU' (x : U').2⟩) ((e i) ⟨((x : U') : M), s x⟩).2).trans
+    ⟨hU i x.property, hU' (x : U').property⟩) ((e i) ⟨((x : U') : M), s x⟩).2).trans
       (congrArg (fun v ↦ (e' ⟨((x : U') : M), v⟩).2)
-        ((e i).symm_apply_apply_mk (hU i x.2) (s ((x : U') : M)))) |>.symm
+        ((e i).symm_apply_apply_mk (hU i x.property) (s ((x : U') : M)))) |>.symm
 
 /-- A covering frame system induces a finer topology than any other specified frame system. -/
 theorem frameTopology_le_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U i)
@@ -154,38 +159,30 @@ theorem frameTopology_le_of_refinement {κ : Type*}
     Bundle.Trivialization.frameCoordinates_apply]
   rfl
 
-/-- Restriction of native sections is continuous into the topology induced by the pulled-back
-frames and the restricted frame domains. No global covering hypothesis is needed. -/
-theorem continuous_restrict_frameTopology (W : Opens M) :
-    let c : C(W, M) := ⟨Subtype.val, continuous_subtype_val⟩
-    let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
-      ContMDiffVectorBundle.pullback F V I
-        (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, W; I, M⟯)
-    let eW := fun i ↦ (e i).pullback c
-    let UW := fun i ↦ Opens.comap c (U i)
-    let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
+/-- Pulling native sections back along a `C^n` map `g : N → M` is continuous into the topology
+induced by the pulled-back frames over the preimages of the frame domains. No covering hypothesis
+is needed. In each frame the coefficients of the pullback are those of the section composed
+with `g`. -/
+theorem continuous_pullback_frameTopology {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [LocallyCompactSpace E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' n N]
+    (g : C^n⟮I', N; I, M⟯) :
+    let eN := fun i ↦ (e i).pullback (g : C(N, M))
+    let UN := fun i ↦ Opens.comap (g : C(N, M)) (U i)
+    let hUN : ∀ i, (UN i : Set N) ⊆ (eN i).baseSet := fun i _ hx ↦ hU i hx
     let _ := frameTopology (I := I) (n := n) e U hU
-    let _ := frameTopology (I := I) (n := n) eW UW hUW
-    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s.restrict W) := by
-  let c : C(W, M) := ⟨Subtype.val, continuous_subtype_val⟩
-  let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
-    ContMDiffVectorBundle.pullback F V I
-      (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, W; I, M⟯)
-  let eW := fun i ↦ (e i).pullback c
-  let UW := fun i ↦ Opens.comap c (U i)
-  let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
+    let _ := frameTopology (I := I') (n := n) eN UN hUN
+    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s.pullback g) := by
+  let eN := fun i ↦ (e i).pullback (g : C(N, M))
+  let UN := fun i ↦ Opens.comap (g : C(N, M)) (U i)
+  let hUN : ∀ i, (UN i : Set N) ⊆ (eN i).baseSet := fun i _ hx ↦ hU i hx
   let _ := frameTopology (I := I) (n := n) e U hU
-  let _ := frameTopology (I := I) (n := n) eW UW hUW
-  apply (continuous_frameTopology_iff_frameCoordinates eW UW hUW).mpr
+  let _ := frameTopology (I := I') (n := n) eN UN hUN
+  apply (continuous_frameTopology_iff_frameCoordinates eN UN hUN).mpr
   intro i
-  let j : C^n⟮I, UW i; I, U i⟯ :=
-    ⟨fun x ↦ ⟨((x : W) : M), x.2⟩,
-      (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp (by
-        -- Normalize the composite of the two open inclusions after the target-subtype
-        -- criterion; rewriting cannot identify their distinct bundled membership proofs.
-        change ContMDiff I I n (fun x : UW i ↦ ((x : W) : M))
-        exact (contMDiff_subtype_val (U := W)).comp
-          (contMDiff_subtype_val (U := UW i)))⟩
+  let j : C^n⟮I', UN i; I, U i⟯ :=
+    ⟨fun x ↦ ⟨g x, x.property⟩, (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp
+      (g.contMDiff.comp contMDiff_subtypeVal)⟩
   have h := ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
     ((continuous_frameCoordinates e U hU i).prodMk (continuous_const (y := j)))
   apply h.congr
@@ -193,8 +190,37 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   ext x
   simp only [Function.comp_apply, ContMDiffMap.comp_apply,
     Bundle.Trivialization.frameCoordinates_apply]
-  erw [Bundle.Trivialization.frameCoordinates_apply,
-    Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
+  rw [Bundle.Trivialization.pullback_apply, ContMDiffSection.pullback_apply]
+  -- The fibre of `g*V` at `x` is `V (g x)`.
   rfl
+
+/-- Restriction of native sections is continuous into the topology induced by the pulled-back
+frames and the restricted frame domains. No global covering hypothesis is needed. This is the
+pullback along the inclusion (`ContMDiffSection.continuous_pullback_frameTopology`). -/
+theorem continuous_restrict_frameTopology (W : Opens M) :
+    let c : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let eW := fun i ↦ (e i).pullback c
+    let UW := fun i ↦ Opens.comap c (U i)
+    let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
+    let _ := frameTopology (I := I) (n := n) e U hU
+    let _ := frameTopology (I := I) (n := n) eW UW hUW
+    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s.restrict W) := by
+  simp only [restrict_eq_pullback]
+  exact continuous_pullback_frameTopology e U hU (⟨Subtype.val, contMDiff_subtypeVal⟩ :
+    C^n⟮I, W; I, M⟯)
+
+omit [LocallyCompactSpace E] in
+/-- Multiplication of sections by a fixed smooth scalar function is continuous for the frame
+topology. In each frame it multiplies the coefficients by the restricted function. -/
+theorem continuous_smul_function_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ f • s) := by
+  let A (i : ι) : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ f x • ContinuousLinearMap.id 𝕜 F,
+      (f.contMDiff.comp contMDiff_subtypeVal).smul contMDiff_const⟩
+  refine continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap e U hU e hU A
+    fun i s ↦ ContMDiffMap.ext fun x ↦ ?_
+  rw [ContMDiffMap.clmApplyLinearMap_apply]
+  simp [A, ← (e i).continuousLinearMapAt_apply_of_mem 𝕜 (hU i x.property)]
 
 end ContMDiffSection

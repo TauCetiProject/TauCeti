@@ -26,6 +26,8 @@ The original work is copyright Cameron Freer and licensed under Apache 2.0.
 
 * `TauCeti.Mod0MeasureIso` is the structure; `TauCeti.Mod0MeasureIso.measurePreserving` and
   `TauCeti.Mod0MeasureIso.measurePreserving_invFun` read off the two measure-preserving maps,
+  `TauCeti.Mod0MeasureIso.ofMeasurePreserving` builds an isomorphism from two measure-preserving
+  maps that are inverse almost everywhere,
   `TauCeti.Mod0MeasureIso.symm` inverts an isomorphism, and `TauCeti.Mod0MeasureIso.trans`
   composes two of them;
 * `MeasurableEmbedding.mod0MeasureIso` makes a measurable embedding of a nonempty space that
@@ -76,6 +78,25 @@ theorem Mod0MeasureIso.measurePreserving (e : Mod0MeasureIso α β μ ν) :
 theorem Mod0MeasureIso.measurePreserving_invFun (e : Mod0MeasureIso α β μ ν) :
     MeasurePreserving e.invFun ν μ :=
   ⟨e.measurable_invFun, e.map_invFun⟩
+
+/-- Measure-preserving maps `f : α → β` and `g : β → α` that are mutually inverse almost
+everywhere form a mod-zero isomorphism. -/
+def Mod0MeasureIso.ofMeasurePreserving {f : α → β} {g : β → α} (hf : MeasurePreserving f μ ν)
+    (hg : MeasurePreserving g ν μ) (hl : g ∘ f =ᵐ[μ] id) (hr : f ∘ g =ᵐ[ν] id) :
+    Mod0MeasureIso α β μ ν :=
+  ⟨f, g, hf.measurable, hg.measurable, hf.map_eq, hg.map_eq, hl, hr⟩
+
+@[simp]
+theorem Mod0MeasureIso.ofMeasurePreserving_toFun {f : α → β} {g : β → α}
+    (hf : MeasurePreserving f μ ν) (hg : MeasurePreserving g ν μ) (hl : g ∘ f =ᵐ[μ] id)
+    (hr : f ∘ g =ᵐ[ν] id) : (Mod0MeasureIso.ofMeasurePreserving hf hg hl hr).toFun = f :=
+  (rfl)
+
+@[simp]
+theorem Mod0MeasureIso.ofMeasurePreserving_invFun {f : α → β} {g : β → α}
+    (hf : MeasurePreserving f μ ν) (hg : MeasurePreserving g ν μ) (hl : g ∘ f =ᵐ[μ] id)
+    (hr : f ∘ g =ᵐ[ν] id) : (Mod0MeasureIso.ofMeasurePreserving hf hg hl hr).invFun = g :=
+  (rfl)
 
 /-- The inverse of a mod-zero isomorphism is a mod-zero isomorphism between the reversed spaces,
 with the two maps interchanged. -/
@@ -166,8 +187,8 @@ theorem Mod0MeasureIso.exists_measurePreserving_unitInterval
       (∀ᵐ x ∂μ, g (f x) = x) ∧ (∀ᵐ y ∂(volume : Measure I), f (g y) = y) :=
   -- Compose with the inverse of the coercion `I → ℝ`, itself a mod-zero isomorphism.
   let e' : Mod0MeasureIso α I μ volume := e.trans
-    (unitInterval.measurableEmbedding_coe.mod0MeasureIso
-      unitInterval.measurePreserving_coe.map_eq).symm
+    (unitInterval.measurableEmbedding_subtypeVal.mod0MeasureIso
+      unitInterval.measurePreserving_subtypeVal.map_eq).symm
   ⟨e'.toFun, e'.invFun, e'.measurePreserving, e'.measurePreserving_invFun, e'.left_inv_ae,
     e'.right_inv_ae⟩
 

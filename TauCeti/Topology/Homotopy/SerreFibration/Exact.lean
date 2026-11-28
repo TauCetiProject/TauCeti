@@ -12,6 +12,7 @@ public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.Lifting.Monodromy
 public import TauCeti.Topology.Homotopy.SerreFibration.RelativeCube
 
 /-!
@@ -42,13 +43,17 @@ Such lifts exist by relative homotopy lifting for cubes
 (`TauCeti.TopCat.exists_lift_openBox_of_mem_serreFibrations`), and the end `G(1, ·)` of a boundary
 lift is a generalized loop in the fibre (`TauCeti.TopCat.IsBoundaryLift.endLoop`). The class of
 this end loop does not depend on the lift nor on the representative of the class of `γ`: two
-boundary lifts of homotopic loops are compared by one further relative lift over the cube
-`I × I^(Option N)` (`TauCeti.TopCat.IsBoundaryLift.homotopic_endLoop`). This defines
+boundary lifts of homotopic loops are joined by a lift of the homotopy that stays at `e` at time
+`0` and over the boundary of `I^N` (`TauCeti.TopCat.exists_lift_homotopy_of_mem_serreFibrations`,
+applied with time reversed), and at time `1` this lift is a homotopy of the end loops
+(`TauCeti.TopCat.IsBoundaryLift.homotopic_endLoop`). This defines
 `TauCeti.TopCat.fibrationBoundary`, characterized by `TauCeti.TopCat.fibrationBoundary_mk` for
 every boundary lift.
 
 The boundary map is natural for maps of Serre fibrations, that is, for commutative squares
-(`TauCeti.TopCat.fibrationBoundary_map`). For `n ≥ 1` it is a group homomorphism
+(`TauCeti.TopCat.fibrationBoundary_map`), also when the image of the base point is only
+propositionally the chosen point of the target (`TauCeti.TopCat.fibrationBoundary_map_of_eq`).
+For `n ≥ 1` it is a group homomorphism
 (`TauCeti.TopCat.fibrationBoundary_mul`, bundled as `TauCeti.TopCat.fibrationBoundaryHom`):
 concatenating two boundary lifts along a direction of `I^N` gives a boundary lift of the
 concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
@@ -59,7 +64,10 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
   null-homotopy in `E` of a loop in the fibre is a boundary lift of its projection
   (`TauCeti.TopCat.mem_range_fibrationBoundary_iff`). At `π_0(F, e)` this says that a point of
   the fibre is joined to `e` in `E` exactly when its class is a boundary
-  (`TauCeti.TopCat.joined_iff_mem_range_fibrationBoundary`).
+  (`TauCeti.TopCat.joined_iff_mem_range_fibrationBoundary`). In degree one the boundary map is
+  the orbit map of the path component of `e` for the monodromy action of `π_1(B, b)` on the path
+  components of the fibre (`TauCeti.TopCat.fibrationBoundary_eq_fiberMonodromy`), whose orbits
+  and stabilisers refine this exactness, in `TauCeti.Topology.Homotopy.Lifting.Monodromy`.
 * At `π_n(E, e)`: a null-homotopy in `B` of the projection of a loop in `E` lifts, relative to the
   boundary, to a homotopy in `E` from that loop to a loop in the fibre
   (`TauCeti.TopCat.mem_range_homotopyGroupMap_fiberι_iff`).
@@ -70,8 +78,9 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
 
 In particular, if `π_n(F, e)` is trivial, then `p` induces a surjection
 `π_{n+1}(E, e) → π_{n+1}(B, b)` (`TauCeti.TopCat.surjective_homotopyGroupMap_of_subsingleton`),
-and for `n ≥ 1` an injection `π_n(E, e) → π_n(B, b)`
-(`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
+so `π_{n+1}(E, e)` is nontrivial whenever `π_{n+1}(B, b)` is
+(`TauCeti.TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations`), and for `n ≥ 1` an injection
+`π_n(E, e) → π_n(B, b)` (`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
 
 When the total space has trivial homotopy groups, as for a path fibration, exactness makes the
 boundary map surjective with trivial kernel
@@ -118,7 +127,7 @@ variable {E B : TopCat.{u}} {p : E ⟶ B} {b : B} {e : p.fiber b} {N : Type*}
 /-- A generalized loop in the fibre, pushed into `E` along the fibre inclusion, takes the values
 of the loop. -/
 theorem _root_.GenLoop.map_fiberι_apply {x : E} (hx : p.fiberι b e = x)
-    (β : Ω^ N (p.fiber b) e) (t : I^N) : GenLoop.map (p.fiberι b).hom hx β t = (β t).1 :=
+    (β : Ω^ N (p.fiber b) e) (t : I^N) : GenLoop.map (p.fiberι b).hom hx β t = (β t).val :=
   (GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)
 
 /-! ### Boundary lifts -/
@@ -132,9 +141,9 @@ structure IsBoundaryLift (γ : Ω^ (Option N) B b) (G : C(I × I^N, E)) : Prop w
   /-- The lift lies over the loop `γ`. -/
   proj_apply (y : I × I^N) : p (G y) = γ ((piOptionEquivProdHomeomorph fun _ => I).symm y)
   /-- The lift starts at `e`. -/
-  apply_zero (t : I^N) : G (0, t) = e.1
+  apply_zero (t : I^N) : G (0, t) = e.val
   /-- The lift is stationary at `e` over the boundary of `I^N`. -/
-  apply_of_mem_boundary (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : G (s, t) = e.1
+  apply_of_mem_boundary (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : G (s, t) = e.val
 
 namespace IsBoundaryLift
 
@@ -153,7 +162,7 @@ def endLoop (hG : IsBoundaryLift p e γ G) : Ω^ N (p.fiber b) e :=
 
 @[simp]
 theorem endLoop_apply_coe (hG : IsBoundaryLift p e γ G) (t : I^N) :
-    (hG.endLoop t).1 = G (1, t) :=
+    (hG.endLoop t).val = G (1, t) :=
   (rfl)
 
 /-- The end loop of a boundary lift is null-homotopic in `E`. -/
@@ -171,43 +180,17 @@ end IsBoundaryLift
 theorem exists_isBoundaryLift (hp : serreFibrations p) [Finite N] (e : p.fiber b)
     (γ : Ω^ (Option N) B b) : ∃ G, IsBoundaryLift p e γ G := by
   obtain ⟨G, hG, hGf⟩ := exists_lift_openBox_of_mem_serreFibrations hp N
-    (ContinuousMap.const _ e.1)
+    (ContinuousMap.const _ e.val)
     ((γ : C(I^(Option N), B)).comp
       ((piOptionEquivProdHomeomorph fun _ : Option N => I).symm : C(I × I^N, I^(Option N))))
     fun y => by
       rw [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass]
-      refine e.2.trans (GenLoop.apply_symm_of_mem_prodBoundary γ ?_).symm
-      rcases mem_cylinderExtensionDomain_iff.1 y.2 with h | h
+      refine e.property.trans (GenLoop.apply_symm_of_mem_prodBoundary γ ?_).symm
+      rcases mem_cylinderExtensionDomain_iff.1 y.property with h | h
       · exact Cube.mem_prodBoundary_iff.2 (Or.inl (Or.inl h))
       · exact Cube.mem_prodBoundary_iff.2 (Or.inr h)
   exact ⟨G, ⟨fun y => congrFun hG y, fun t => hGf ⟨(0, t), zero_mem_cylinderExtensionDomain t⟩,
     fun s t ht => hGf ⟨(s, t), mem_cylinderExtensionDomain_iff.2 (Or.inr ht)⟩⟩⟩
-
-/-- Two boundary lifts have homotopic end loops as soon as a lift `L` over the homotopy joins
-them: `L` stays over `b` along the end of the cube, and on that end face `L` agrees with
-`G (1, ·)` at `u = 0`, with `G' (1, ·)` at `u = 1`, and with the value of the corresponding half
-(`G` for `u ≤ 1/2`, `G'` above) over `∂I^N`. -/
-private theorem homotopic_endLoop_of_lift {γ γ' : Ω^ (Option N) B b} {G G' : C(I × I^N, E)}
-    (hG : IsBoundaryLift p e γ G) (hG' : IsBoundaryLift p e γ' G')
-    (L : C(I × I^(Option N), E))
-    (hLb : ∀ (u : I) (t : I^N),
-      p (L (1, (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (u, t))) = b)
-    (hLf : ∀ {u : I} {t : I^N}, (u = 0 ∨ u = 1) ∨ t ∈ Cube.boundary N →
-      L (1, (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (u, t)) =
-        if (u : ℝ) ≤ 2⁻¹ then G (1, t) else G' (1, t)) :
-    GenLoop.Homotopic hG.endLoop hG'.endLoop := by
-  refine GenLoop.homotopic_of_continuousMap
-    ⟨fun y => ⟨L (1, (piOptionEquivProdHomeomorph fun _ : Option N => I).symm y),
-      hLb y.1 y.2⟩, by fun_prop⟩ (fun t => ?_) (fun t => ?_)
-    fun u t ht => ?_ <;> apply Subtype.ext <;> dsimp only [ContinuousMap.coe_mk]
-  · rw [hLf (.inl (.inl rfl)), hG.endLoop_apply_coe]
-    simp
-  · rw [hLf (.inl (.inr rfl)), hG'.endLoop_apply_coe]
-    norm_num
-  · rw [hLf (.inr ht)]
-    split_ifs
-    · exact hG.apply_of_mem_boundary _ ht
-    · exact hG'.apply_of_mem_boundary _ ht
 
 /-- **Independence of the boundary lift.** Boundary lifts of homotopic generalized loops have
 homotopic end loops in the fibre. -/
@@ -217,56 +200,31 @@ theorem IsBoundaryLift.homotopic_endLoop (hp : serreFibrations p) [Finite N]
     GenLoop.Homotopic hG.endLoop hG'.endLoop := by
   obtain ⟨K⟩ := h
   let φ := piOptionEquivProdHomeomorph fun _ : Option N => I
-  -- A point `(s, y)` of `I × I^(Option N)` has lifting parameter `s`, homotopy parameter
-  -- `y none` and the point `y ∘ some` of `I^N`.
-  let q : (I × I^(Option N)) → (I × I^N) := fun x => (x.1, fun i => x.2 (some i))
-  let H : C(I × I^(Option N), B) := ⟨fun x => K (x.2 none, φ.symm (q x)), by fun_prop⟩
-  -- The prescribed lift: `G` for homotopy parameter at most `1/2` and `G'` above. On the
-  -- prescribed set both are `e` where the homotopy parameter is `1/2`.
-  let q' : C(cylinderExtensionDomain (Cube.boundary (Option N)), I × I^N) :=
-    ⟨fun x => q x.1, by fun_prop⟩
-  let f : C(cylinderExtensionDomain (Cube.boundary (Option N)), E) :=
-    ContinuousMap.glueHalves ⟨fun x => x.1.2 none, by fun_prop⟩ (G.comp q') (G'.comp q')
-      fun x hx => by
-        simp only [ContinuousMap.coe_mk] at hx
-        simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, q', q]
-        rcases mem_cylinderExtensionDomain_iff.1 x.2 with h0 | hb
-        · rw [h0, hG.apply_zero, hG'.apply_zero]
-        · rcases Cube.boundary_option_iff.1 hb with hu | ht
-          · rcases hu with hu | hu <;> norm_num [hu] at hx
-          · rw [hG.apply_of_mem_boundary _ ht, hG'.apply_of_mem_boundary _ ht]
-  have hf (x : cylinderExtensionDomain (Cube.boundary (Option N))) : p (f x) = H x := by
-    by_cases hu : (x.1.2 none : ℝ) ≤ 2⁻¹
-    · rw [ContinuousMap.glueHalves_of_le _ _ _ _ hu, ContinuousMap.comp_apply, hG.proj_apply]
-      simp only [H, q', ContinuousMap.coe_mk]
-      rcases eq_zero_or_eq_one_or_mem_boundary_of_mem_cylinderExtensionDomain x.2 with
-        (h0 | h1) | hz
-      · rw [h0, K.apply_zero, GenLoop.coe_coe]
-      · norm_num [h1] at hu
-      · exact (K.eq_fst _ hz).symm
-    · rw [ContinuousMap.glueHalves_of_not_le _ _ _ _ hu, ContinuousMap.comp_apply,
-        hG'.proj_apply]
-      simp only [H, q', ContinuousMap.coe_mk]
-      rcases eq_zero_or_eq_one_or_mem_boundary_of_mem_cylinderExtensionDomain x.2 with
-        (h0 | h1) | hz
-      · norm_num [h0] at hu
-      · rw [h1, K.apply_one, GenLoop.coe_coe]
-      · exact (K.eq_snd _ hz).symm
-  obtain ⟨L, hL, hLf⟩ := exists_lift_openBox_of_mem_serreFibrations hp (Option N) f H hf
-  -- The prescribed set contains the points over the ends of the homotopy and over `∂I^N`.
-  have hmem {u : I} {t : I^N} (h : (u = 0 ∨ u = 1) ∨ t ∈ Cube.boundary N) :
-      ((1 : I), φ.symm (u, t)) ∈ cylinderExtensionDomain (Cube.boundary (Option N)) :=
-    mem_cylinderExtensionDomain_iff.2 (.inr (Cube.boundary_option_iff.2 (by simpa [φ] using h)))
-  have hLf' {u : I} {t : I^N} (h : (u = 0 ∨ u = 1) ∨ t ∈ Cube.boundary N) :
-      L (1, φ.symm (u, t)) = if (u : ℝ) ≤ 2⁻¹ then G (1, t) else G' (1, t) := by
-    rw [hLf ⟨_, hmem h⟩]
-    split_ifs with hu <;> simp [f, q', q, φ, hu]
-  have hLb (u : I) (t : I^N) : p (L (1, φ.symm (u, t))) = b := by
-    rw [← Function.comp_apply (f := p), hL]
-    exact (K.eq_fst _ (piOptionEquivProdHomeomorph_symm_mem_boundary
-      (Cube.mem_prodBoundary_iff.2 (.inl (.inr rfl))))).trans
-        (GenLoop.apply_symm_of_mem_prodBoundary γ (Cube.mem_prodBoundary_iff.2 (.inl (.inr rfl))))
-  exact homotopic_endLoop_of_lift hG hG' L hLb hLf'
+  have hK (r : I) {y : I × I^N} (hy : y ∈ Cube.prodBoundary N) : K (r, φ.symm y) = b :=
+    (K.eq_fst r (piOptionEquivProdHomeomorph_symm_mem_boundary hy)).trans
+      (GenLoop.apply_symm_of_mem_prodBoundary γ hy)
+  -- With the time reversed, the boundary lifts are fixed at `e` on the face `{1} × I^N` and on
+  -- the sides. Lift the homotopy between them; its free face `{0} × I^N` joins the end loops.
+  let rev : C(I × I^N, I × I^N) := ⟨fun y => (σ y.1, y.2), by fun_prop⟩
+  have hGr {H : C(I × I^N, E)} {δ : Ω^ (Option N) B b} (hH : IsBoundaryLift p e δ H) (s : I)
+      (t : I^N) (h : s = 1 ∨ t ∈ Cube.boundary N) : H.comp rev (s, t) = e.val := by
+    rcases h with rfl | ht
+    · simpa [rev] using hH.apply_zero t
+    · exact hH.apply_of_mem_boundary _ ht
+  obtain ⟨L, hL, hL₀, hL₁, hLe⟩ := exists_lift_homotopy_of_mem_serreFibrations hp (hGr hG)
+    (hGr hG') ⟨fun x => K (x.1, φ.symm (σ x.2.1, x.2.2)), by fun_prop⟩
+    (fun y => (K.apply_zero _).trans (hG.proj_apply _).symm)
+    (fun y => (K.apply_one _).trans (hG'.proj_apply _).symm)
+    fun r s t h => (hK r (Cube.mem_prodBoundary_iff.2
+      (h.imp_left fun h => .inl (by rw [h, symm_one])))).trans (p.apply_coe_fiber b e).symm
+  have hmem (x : I × I^N) : p (L (x.1, 0, x.2)) = b := by
+    rw [hL]
+    exact hK _ (Cube.mem_prodBoundary_iff.2 (.inl (.inr symm_zero)))
+  refine GenLoop.homotopic_of_continuousMap ⟨fun x => ⟨L (x.1, 0, x.2), hmem x⟩, by fun_prop⟩
+    (fun t => Subtype.ext ?_) (fun t => Subtype.ext ?_) fun u t ht => Subtype.ext ?_
+  · simpa [rev, hG.endLoop_apply_coe] using hL₀ (0, t)
+  · simpa [rev, hG'.endLoop_apply_coe] using hL₁ (0, t)
+  · exact hLe u 0 t (.inr ht)
 
 /-! ### The boundary map -/
 
@@ -289,8 +247,8 @@ theorem fibrationBoundary_mk (hp : serreFibrations p) [Finite N] {γ : Ω^ (Opti
 @[simp]
 theorem fibrationBoundary_const (hp : serreFibrations p) [Finite N] :
     fibrationBoundary hp e (⟦GenLoop.const⟧ : HomotopyGroup (Option N) B b) = ⟦GenLoop.const⟧ := by
-  have hG : IsBoundaryLift p e GenLoop.const (ContinuousMap.const (I × I^N) e.1) :=
-    { proj_apply _ := e.2
+  have hG : IsBoundaryLift p e GenLoop.const (ContinuousMap.const (I × I^N) e.val) :=
+    { proj_apply _ := e.property
       apply_zero _ := rfl
       apply_of_mem_boundary _ _ _ := rfl }
   rw [fibrationBoundary_mk hp hG]
@@ -320,6 +278,21 @@ theorem fibrationBoundary_map {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E
   refine GenLoop.ext _ _ fun t => Subtype.ext ?_
   rw [hfG.endLoop_apply_coe, ContinuousMap.comp_apply, GenLoop.map_apply]
   exact (CommSq.fiberMap_apply_coe sq b (hG.endLoop t)).symm
+
+/-- **Naturality of the boundary map, at a prescribed image point.** The form of
+`TauCeti.TopCat.fibrationBoundary_map` for a base point `b'` of `B'` that is only propositionally
+the image `g b`, and for any map of fibres `φ : p⁻¹(b) → p'⁻¹(b')` given on underlying points by
+the top of the square. -/
+theorem fibrationBoundary_map_of_eq {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E'}
+    {g : B ⟶ B'} (sq : CommSq f p p' g) (hp : serreFibrations p) (hp' : serreFibrations p')
+    [Finite N] {b' : B'} (hb : g b = b') {e' : p'.fiber b'} (φ : C(p.fiber b, p'.fiber b'))
+    (hφ : ∀ x, (φ x : E') = f x.val) (he : φ e = e') (a : HomotopyGroup (Option N) B b) :
+    fibrationBoundary hp' e' (HomotopyGroup.map g.hom hb a) =
+      HomotopyGroup.map φ he (fibrationBoundary hp e a) := by
+  subst hb he
+  obtain rfl : φ = (sq.fiberMap b).hom :=
+    ContinuousMap.ext fun x ↦ Subtype.ext ((hφ x).trans (CommSq.fiberMap_apply_coe sq b x).symm)
+  exact fibrationBoundary_map sq hp hp' a
 
 /-! ### The boundary map is a homomorphism -/
 
@@ -407,7 +380,7 @@ theorem mem_range_fibrationBoundary_iff (hp : serreFibrations p) [Finite N]
     {a : HomotopyGroup N (p.fiber b) e} :
     a ∈ range (fibrationBoundary hp e) ↔
       HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e) a =
-        (⟦GenLoop.const⟧ : HomotopyGroup N E e.1) := by
+        (⟦GenLoop.const⟧ : HomotopyGroup N E e.val) := by
   constructor
   · rintro ⟨c, rfl⟩
     induction c using Quotient.inductionOn with | h γ => ?_
@@ -420,20 +393,20 @@ theorem mem_range_fibrationBoundary_iff (hp : serreFibrations p) [Finite N]
     obtain ⟨K⟩ := Quotient.exact h
     -- The null-homotopy of `β` in `E`, run backwards, is a boundary lift of its projection.
     let G : C(I × I^N, E) := ⟨fun y => K (σ y.1, y.2), by fun_prop⟩
-    have hG0 (t : I^N) : G (0, t) = e.1 := by simp [G]
-    have hG1 (t : I^N) : G (1, t) = (β t).1 := by
+    have hG0 (t : I^N) : G (0, t) = e.val := by simp [G]
+    have hG1 (t : I^N) : G (1, t) = (β t).val := by
       simp only [G, ContinuousMap.coe_mk, symm_one, K.apply_zero]
       exact GenLoop.map_fiberι_apply _ β t
-    have hGb (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : G (s, t) = e.1 := by
+    have hGb (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : G (s, t) = e.val := by
       simp only [G, ContinuousMap.coe_mk, K.eq_fst _ ht]
       exact (GenLoop.map_fiberι_apply _ β t).trans (congrArg Subtype.val (GenLoop.boundary β t ht))
     have hpG : ∀ y ∈ Cube.prodBoundary N, p.hom.comp G y = b := by
       rintro ⟨s, t⟩ hy
       rw [ContinuousMap.comp_apply]
       rcases Cube.mem_prodBoundary_iff.1 hy with (rfl | rfl) | ht
-      · rw [hG0]; exact e.2
-      · rw [hG1]; exact (β t).2
-      · rw [hGb s ht]; exact e.2
+      · rw [hG0]; exact e.property
+      · rw [hG1]; exact (β t).property
+      · rw [hGb s ht]; exact e.property
     have hG : IsBoundaryLift p e (GenLoop.ofProd _ hpG) G :=
       { proj_apply y := by simp [GenLoop.ofProd_apply]
         apply_zero := hG0
@@ -446,7 +419,7 @@ theorem mem_range_fibrationBoundary_iff (hp : serreFibrations p) [Finite N]
 /-- **Exactness at `π_0(F, e)`, in terms of points.** A point `y` of the fibre is joined to `e`
 in `E` exactly when the class of the zero-dimensional generalized loop at `y` is a boundary. -/
 theorem joined_iff_mem_range_fibrationBoundary (hp : serreFibrations p) (y : p.fiber b) :
-    Joined e.1 y.1 ↔ (⟦(genLoopHomeoOfIsEmpty (Fin 0) e).symm y⟧ :
+    Joined e.val y.val ↔ (⟦(genLoopHomeoOfIsEmpty (Fin 0) e).symm y⟧ :
       HomotopyGroup (Fin 0) (p.fiber b) e) ∈ range (fibrationBoundary hp e) := by
   -- Classes of zero-dimensional generalized loops are path components.
   refine Iff.trans ?_ (mem_range_fibrationBoundary_iff hp).symm
@@ -456,12 +429,33 @@ theorem joined_iff_mem_range_fibrationBoundary (hp : serreFibrations p) (y : p.f
     GenLoop.const_apply]
   exact ⟨Joined.symm, Joined.symm⟩
 
+/-- **The boundary map `π_1(B, b) → π_0(F, e)` is the orbit map of the path component of `e`.**
+Read through the identifications of `π_1` with the fundamental group and of `π_0` with the path
+components, the boundary map sends a loop class `a` to the monodromy of `a` applied to the path
+component of `e` (`TauCeti.HasHomotopyLiftingProperty.fiberMonodromy`). -/
+theorem fibrationBoundary_eq_fiberMonodromy (hp : serreFibrations p)
+    (a : HomotopyGroup (Option (Fin 0)) B b) :
+    HomotopyGroup.pi0EquivZerothHomotopy (fibrationBoundary hp e a) =
+      (hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations hp).fiberMonodromy
+        (homotopyGroupEquivFundamentalGroupOfUnique (Option (Fin 0)) a).asHom (.mk e) := by
+  induction a using Quotient.inductionOn with | h γ =>
+  obtain ⟨G, hG⟩ := exists_isBoundaryLift hp e γ
+  rw [fibrationBoundary_mk hp hG, HomotopyGroup.pi0EquivZerothHomotopy_mk,
+    homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom]
+  -- At the only point of the cube `I^0`, the boundary lift is a lift of the loop from `e`.
+  refine (HasHomotopyLiftingProperty.fiberMonodromy_mk _ _ (Γ := ⟨fun t ↦ G (t, 0), by fun_prop⟩)
+    (funext fun t ↦ ?_) (hG.apply_zero 0) (hG.endLoop_apply_coe 0).symm).symm
+  refine (hG.proj_apply (t, 0)).trans (congrArg γ (funext fun i ↦ ?_))
+  cases i with
+  | none => exact piOptionEquivProdHomeomorph_symm_apply_none _ _
+  | some i => exact i.elim0
+
 /-- **Exactness at `π_n(E, e)`.** A class of the total space comes from the fibre exactly when it
 becomes trivial in `π_n(B, b)`. -/
 theorem mem_range_homotopyGroupMap_fiberι_iff (hp : serreFibrations p) [Finite N]
-    {a : HomotopyGroup N E e.1} :
+    {a : HomotopyGroup N E e.val} :
     a ∈ range (HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e)) ↔
-      HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) a =
+      HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.property) a =
         (⟦GenLoop.const⟧ : HomotopyGroup N B b) := by
   constructor
   · rintro ⟨c, rfl⟩
@@ -470,20 +464,20 @@ theorem mem_range_homotopyGroupMap_fiberι_iff (hp : serreFibrations p) [Finite 
     congr 1
     refine GenLoop.ext _ _ fun t => ?_
     rw [GenLoop.map_apply, GenLoop.map_fiberι_apply, GenLoop.const_apply]
-    exact (β t).2
+    exact (β t).property
   · intro h
     induction a using Quotient.inductionOn with | h α => ?_
     rw [HomotopyGroup.map_mk] at h
     obtain ⟨K⟩ := Quotient.exact h
     -- Lift the null-homotopy of `p ∘ α`, starting at `α` and stationary over `∂I^N`.
     obtain ⟨L, hL, hLf⟩ := exists_lift_openBox_of_mem_serreFibrations hp N
-      ((α : C(I^N, E)).comp ⟨fun y => y.1.2, by fun_prop⟩) K.toContinuousMap fun y => by
+      ((α : C(I^N, E)).comp ⟨fun y => y.val.2, by fun_prop⟩) K.toContinuousMap fun y => by
         obtain ⟨⟨s, t⟩, hy⟩ := y
         rcases mem_cylinderExtensionDomain_iff.1 hy with (rfl : s = 0) | ht
         · simp
         · simp [K.eq_fst _ ht]
     have hL0 (t : I^N) : L (0, t) = α t := hLf ⟨(0, t), zero_mem_cylinderExtensionDomain t⟩
-    have hLb (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : L (s, t) = e.1 :=
+    have hLb (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : L (s, t) = e.val :=
       (hLf ⟨(s, t), mem_cylinderExtensionDomain_iff.2 (.inr ht)⟩).trans (GenLoop.boundary α t ht)
     have hL1 (t : I^N) : p (L (1, t)) = b := by
       rw [← Function.comp_apply (f := p), hL]
@@ -500,27 +494,27 @@ cube `D` in `E` (read as a map `I × I^N → E`, running `G` and then `K` at dou
 constant at `e` over the boundary of `I × I^N`. -/
 private theorem exists_loop_following_lift {γ : Ω^ (Option N) B b} {G : C(I × I^N, E)}
     (hG : IsBoundaryLift p e γ G)
-    (K : ContinuousMap.HomotopyRel hG.endLoop.1 (GenLoop.const : Ω^ N (p.fiber b) e).1
+    (K : ContinuousMap.HomotopyRel hG.endLoop.val (GenLoop.const : Ω^ N (p.fiber b) e).val
       (Cube.boundary N)) :
     ∃ D : C(I × I^N, E), (∀ y : I × I^N, D y = if (y.1 : ℝ) ≤ 1 / 2
         then G (projIcc 0 1 zero_le_one (2 * y.1), y.2)
-        else (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).1) ∧
-      ∀ y ∈ Cube.prodBoundary N, D y = e.1 := by
+        else (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).val) ∧
+      ∀ y ∈ Cube.prodBoundary N, D y = e.val := by
   -- Follow the boundary lift `G` by the null-homotopy `K` of its end loop in the fibre: this is a
   -- generalized loop in `E` whose projection is `γ` run at double speed and then stopped.
   let D : C(I × I^N, E) := ContinuousMap.glueHalves ContinuousMap.fst
     (G.comp ⟨fun y => (projIcc 0 1 zero_le_one (2 * y.1), y.2), by fun_prop⟩)
-    (⟨fun y => (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).1, by fun_prop⟩)
+    (⟨fun y => (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).val, by fun_prop⟩)
     fun y hy => by
       simp only [ContinuousMap.fst_apply] at hy
       simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
       norm_num [hy, K.apply_zero]
   have hD_apply (y : I × I^N) : D y = if (y.1 : ℝ) ≤ 1 / 2
       then G (projIcc 0 1 zero_le_one (2 * y.1), y.2)
-      else (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).1 := by
+      else (K (projIcc 0 1 zero_le_one (2 * y.1 - 1), y.2)).val := by
     rw [one_div]
     split_ifs with hy <;> simp [D, hy]
-  have hD : ∀ y ∈ Cube.prodBoundary N, D y = e.1 := by
+  have hD : ∀ y ∈ Cube.prodBoundary N, D y = e.val := by
     rintro ⟨s, t⟩ hy
     rw [hD_apply]
     rcases Cube.mem_prodBoundary_iff.1 hy with (rfl | rfl) | ht
@@ -536,14 +530,14 @@ private theorem exists_loop_following_lift {γ : Ω^ (Option N) B b} {G : C(I ×
 its boundary is trivial. -/
 theorem mem_range_homotopyGroupMap_iff_fibrationBoundary_eq (hp : serreFibrations p) [Finite N]
     {a : HomotopyGroup (Option N) B b} :
-    a ∈ range (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2)) ↔
+    a ∈ range (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.property)) ↔
       fibrationBoundary hp e a = (⟦GenLoop.const⟧ : HomotopyGroup N (p.fiber b) e) := by
   let φ := piOptionEquivProdHomeomorph fun _ : Option N => I
   constructor
   · rintro ⟨c, rfl⟩
     induction c using Quotient.inductionOn with | h δ => ?_
     -- A cube in `E` is a boundary lift of its projection, with constant end loop.
-    have hG : IsBoundaryLift p e (GenLoop.map p.hom (Set.mem_singleton_iff.1 e.2) δ)
+    have hG : IsBoundaryLift p e (GenLoop.map p.hom (Set.mem_singleton_iff.1 e.property) δ)
         ((δ : C(I^(Option N), E)).comp (φ.symm : C(I × I^N, I^(Option N)))) :=
       { proj_apply y := by simp [φ]
         apply_zero t := GenLoop.apply_symm_of_mem_prodBoundary δ (Cube.mk_zero_mem_prodBoundary t)
@@ -569,7 +563,7 @@ theorem mem_range_homotopyGroupMap_iff_fibrationBoundary_eq (hp : serreFibration
       · exact (hG.proj_apply _).symm
       · rw [projIcc_eq_one.2 (by linarith)]
         exact (GenLoop.apply_symm_of_mem_prodBoundary γ
-          (Cube.mk_mem_prodBoundary (.inl rfl))).trans (K _).2.symm
+          (Cube.mk_mem_prodBoundary (.inl rfl))).trans (K _).property.symm
     · -- At the end, the homotopy is `γ`.
       simp only [ContinuousMap.coe_mk, Icc.coe_one]
       rw [show (2 - 1) * (z none : ℝ) = z none by ring, projIcc_val,
@@ -579,7 +573,8 @@ theorem mem_range_homotopyGroupMap_iff_fibrationBoundary_eq (hp : serreFibration
       refine GenLoop.apply_symm_of_mem_prodBoundary γ (Cube.mem_prodBoundary_iff.2 ?_)
       rcases Cube.boundary_option_iff.1 hz with (h0 | h1) | ht
       · exact .inl (.inl (projIcc_eq_zero.2 (by simp [h0])))
-      · exact .inl (.inr (projIcc_eq_one.2 (by simp only [h1, Icc.coe_one]; linarith [u.2.2])))
+      · exact .inl (.inr (projIcc_eq_one.2 (by simp only [h1, Icc.coe_one]; linarith
+          [u.property.2])))
       · exact .inr ht
 
 /-! ### Fibres with a vanishing homotopy group -/
@@ -588,17 +583,31 @@ theorem mem_range_homotopyGroupMap_iff_fibrationBoundary_eq (hp : serreFibration
 theorem surjective_homotopyGroupMap_of_subsingleton (hp : serreFibrations p) [Finite N]
     [Subsingleton (HomotopyGroup N (p.fiber b) e)] :
     Function.Surjective
-      (HomotopyGroup.map (N := Option N) p.hom (Set.mem_singleton_iff.1 e.2)) := fun _ ↦
+      (HomotopyGroup.map (N := Option N) p.hom (Set.mem_singleton_iff.1 e.property)) := fun _ ↦
   (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).2 (Subsingleton.elim _ _)
+
+/-- **A fibre with trivial `π_{n+1}` keeps `π_{n+2}` of the base.** If `π_{n+1}(F, e)` is trivial
+and `π_{n+2}(B, b)` is nontrivial, then so is `π_{n+2}(E, e)`: by exactness of
+`π_{n+2}(E) → π_{n+2}(B) → π_{n+1}(F)`, the projection maps `π_{n+2}(E, e)` onto
+`π_{n+2}(B, b)`. -/
+theorem nontrivial_homotopyGroup_of_mem_serreFibrations {n : ℕ} (hp : serreFibrations p)
+    [Subsingleton (π_ (n + 1) (p.fiber b) e)] [Nontrivial (π_ (n + 2) B b)] :
+    Nontrivial (π_ (n + 2) E e.val) := by
+  -- Read `π_{n+2}` on the cube `I^(Option (Fin (n + 1)))` of the exact sequence.
+  let c : Fin (n + 2) ≃ Option (Fin (n + 1)) := finSuccEquiv (n + 1)
+  have : Nontrivial (HomotopyGroup (Option (Fin (n + 1))) B b) :=
+    (HomotopyGroup.congrEquiv c).symm.nontrivial
+  have := (surjective_homotopyGroupMap_of_subsingleton (N := Fin (n + 1)) hp (e := e)).nontrivial
+  exact (HomotopyGroup.congrEquiv c).nontrivial
 
 /-- For `n ≥ 1`, if `π_n(F, e)` is trivial, then `p` induces an injection
 `π_n(E, e) → π_n(B, b)`. -/
 theorem injective_homotopyGroupMap_of_subsingleton (hp : serreFibrations p) [Finite N]
     [Nonempty N] [Subsingleton (HomotopyGroup N (p.fiber b) e)] :
-    Function.Injective (HomotopyGroup.map (N := N) p.hom (Set.mem_singleton_iff.1 e.2)) := by
+    Function.Injective (HomotopyGroup.map (N := N) p.hom (Set.mem_singleton_iff.1 e.property)) := by
   classical
   refine (injective_iff_map_eq_one
-    (HomotopyGroup.mapHom (N := N) p.hom (Set.mem_singleton_iff.1 e.2))).2 fun a ha ↦ ?_
+    (HomotopyGroup.mapHom (N := N) p.hom (Set.mem_singleton_iff.1 e.property))).2 fun a ha ↦ ?_
   rw [HomotopyGroup.mapHom_apply, _root_.HomotopyGroup.one_def] at ha
   obtain ⟨c, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp).2 ha
   rw [Subsingleton.elim c ⟦GenLoop.const⟧, HomotopyGroup.map_mk, GenLoop.map_const]
@@ -668,7 +677,7 @@ end Group
 /-- The inverse of the identification induced by `φ`, followed by the fibre inclusion, is the map
 induced by `i`. -/
 private theorem map_fiberι_homeomorphEquivOfEq_symm {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀)
-    {i : C(F, E)} (hi : ∀ y, i y = (φ.symm y).1) (hi₀ : i f₀ = e.1)
+    {i : C(F, E)} (hi : ∀ y, i y = (φ.symm y).val) (hi₀ : i f₀ = e.val)
     (c : HomotopyGroup N F f₀) :
     HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e)
         ((HomotopyGroup.homeomorphEquivOfEq φ hφ).symm c) = HomotopyGroup.map i hi₀ c := by
@@ -680,7 +689,7 @@ private theorem map_fiberι_homeomorphEquivOfEq_symm {φ : p.fiber b ≃ₜ F} (
 exactly when its boundary in `π_n(F, f₀)` is trivial. -/
 theorem mem_range_homotopyGroupMap_iff_fibrationBoundaryOfHomeomorph_eq (hp : serreFibrations p)
     {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) [Finite N] {a : HomotopyGroup (Option N) B b} :
-    a ∈ range (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2)) ↔
+    a ∈ range (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.property)) ↔
       fibrationBoundaryOfHomeomorph N hp φ hφ a = (⟦GenLoop.const⟧ : HomotopyGroup N F f₀) :=
   (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).trans
     ((HomotopyGroup.homeomorphEquivOfEq φ hφ).injective.eq_iff'
@@ -691,9 +700,9 @@ trivial in `π_n(E, e)` under a map `i : F → E` that agrees with the fibre inc
 `φ`. -/
 theorem mem_range_fibrationBoundaryOfHomeomorph_iff (hp : serreFibrations p)
     {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) [Finite N] {i : C(F, E)}
-    (hi : ∀ y, i y = (φ.symm y).1) (hi₀ : i f₀ = e.1) {c : HomotopyGroup N F f₀} :
+    (hi : ∀ y, i y = (φ.symm y).val) (hi₀ : i f₀ = e.val) {c : HomotopyGroup N F f₀} :
     c ∈ range (fibrationBoundaryOfHomeomorph N hp φ hφ) ↔
-      HomotopyGroup.map i hi₀ c = (⟦GenLoop.const⟧ : HomotopyGroup N E e.1) := by
+      HomotopyGroup.map i hi₀ c = (⟦GenLoop.const⟧ : HomotopyGroup N E e.val) := by
   rw [fibrationBoundaryOfHomeomorph, range_comp, mem_image_equiv,
     ← map_fiberι_homeomorphEquivOfEq_symm hφ hi hi₀]
   exact mem_range_fibrationBoundary_iff hp
@@ -703,9 +712,9 @@ theorem mem_range_fibrationBoundaryOfHomeomorph_iff (hp : serreFibrations p)
 `π_n(B, b)`. -/
 theorem mem_range_homotopyGroupMap_of_homeomorph_iff (hp : serreFibrations p)
     {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) [Finite N] {i : C(F, E)}
-    (hi : ∀ y, i y = (φ.symm y).1) (hi₀ : i f₀ = e.1) {d : HomotopyGroup N E e.1} :
+    (hi : ∀ y, i y = (φ.symm y).val) (hi₀ : i f₀ = e.val) {d : HomotopyGroup N E e.val} :
     d ∈ range (HomotopyGroup.map (N := N) i hi₀) ↔
-      HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) d =
+      HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.property) d =
         (⟦GenLoop.const⟧ : HomotopyGroup N B b) := by
   have h : range (HomotopyGroup.map (N := N) i hi₀) =
       range (HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e)) := by
@@ -721,7 +730,7 @@ end Model
 /-- If the homotopy group `π_{n+1}(E, e)` of the total space of a Serre fibration is trivial, then
 a class of `π_{n+1}(B, b)` has trivial boundary only if it is trivial itself. -/
 theorem fibrationBoundary_eq_const_iff_of_subsingleton (hp : serreFibrations p) [Finite N]
-    [Subsingleton (HomotopyGroup (Option N) E e.1)] {a : HomotopyGroup (Option N) B b} :
+    [Subsingleton (HomotopyGroup (Option N) E e.val)] {a : HomotopyGroup (Option N) B b} :
     fibrationBoundary hp e a = ⟦GenLoop.const⟧ ↔ a = ⟦GenLoop.const⟧ := by
   rw [← mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp]
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ⟨⟦GenLoop.const⟧, ?_⟩⟩
@@ -731,7 +740,7 @@ theorem fibrationBoundary_eq_const_iff_of_subsingleton (hp : serreFibrations p) 
 /-- If the homotopy group `π_n(E, e)` of the total space of a Serre fibration is trivial, then the
 boundary map `π_{n+1}(B, b) → π_n(F, e)` is surjective. -/
 theorem surjective_fibrationBoundary_of_subsingleton (hp : serreFibrations p) [Finite N]
-    [Subsingleton (HomotopyGroup N E e.1)] :
+    [Subsingleton (HomotopyGroup N E e.val)] :
     Function.Surjective (fibrationBoundary hp e (N := N)) := fun _ ↦
   (mem_range_fibrationBoundary_iff hp).2 (Subsingleton.elim _ _)
 

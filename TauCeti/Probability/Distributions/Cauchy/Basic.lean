@@ -8,7 +8,7 @@ module
 import Mathlib.Analysis.Fourier.Inversion
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Probability.Distributions.Cauchy
 public import Mathlib.Probability.HasLaw
@@ -76,6 +76,8 @@ a common location and scale has exactly the parent law.
 * `TauCeti.Probability.cauchyMeasure_map_add_const` — translation changes the location parameter;
 * `TauCeti.Probability.charFun_cauchyMeasure` — the characteristic function of `cauchyMeasure x₀ γ`;
 * `TauCeti.Probability.cauchyMeasure_conv_cauchyMeasure` — convolution adds locations and scales;
+* the results in `ProbabilityTheory.HasLaw` transfer the sharp moment and exponential-integrability
+  statements, together with the zero-scale moments and transforms, to Cauchy random variables;
 * `ProbabilityTheory.IndepFun.hasLaw_add_cauchyMeasure` — the same for sums of independent
   Cauchy variables;
 * `ProbabilityTheory.iIndepFun.hasLaw_average_cauchyMeasure` — stability of the family under
@@ -185,8 +187,8 @@ theorem cdf_cauchyMeasure_of_scale_ne_zero (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ
     cdf (cauchyMeasure x₀ γ) x =
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
   rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
-  rw [measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
-    measurableSet_Iic (measurable_cauchyPDFReal x₀ γ).aemeasurable]
+  rw [MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
+    nullMeasurableSet_Iic (measurable_cauchyPDFReal x₀ γ).aemeasurable]
   exact integral_Iic_cauchyPDFReal x₀ hγ x
 
 /-- **The cumulative distribution function at zero scale.** Mathlib totalizes the Cauchy family
@@ -230,7 +232,7 @@ theorem integrable_cauchyMeasure_iff {E : Type*} [NormedAddCommGroup E] [NormedS
     (x₀ : ℝ) (hγ : γ ≠ 0) {g : ℝ → E} :
     Integrable g (cauchyMeasure x₀ γ) ↔ Integrable fun x ↦ cauchyPDFReal x₀ γ x • g x := by
   rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
-  exact Probability.integrable_withDensity_ofReal_iff (measurable_cauchyPDFReal x₀ γ).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_cauchyPDFReal x₀ γ).aemeasurable
     (ae_of_all _ fun x ↦ (cauchyPDF_pos x₀ hγ x).le)
 
 /-- **Integral transfer at nonzero scale.** An integral against a nondegenerate Cauchy law is the
@@ -239,7 +241,7 @@ theorem integral_cauchyMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpac
     (x₀ : ℝ) (hγ : γ ≠ 0) (g : ℝ → E) :
     ∫ x, g x ∂cauchyMeasure x₀ γ = ∫ x, cauchyPDFReal x₀ γ x • g x := by
   rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
-  exact Probability.integral_withDensity_ofReal (measurable_cauchyPDFReal x₀ γ).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_cauchyPDFReal x₀ γ).aemeasurable
     (ae_of_all _ fun x ↦ (cauchyPDF_pos x₀ hγ x).le) g
 
 private lemma eventually_cauchyPDFReal_ge (x₀ : ℝ) (hγ : γ ≠ 0) :
@@ -469,6 +471,59 @@ end CharFun
 
 end TauCeti.Probability
 
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+  {x₀ : ℝ} {γ : ℝ≥0}
+
+/-- A random variable with a nondegenerate Cauchy law is not integrable. -/
+theorem not_integrable_cauchyMeasure (hX : HasLaw X (cauchyMeasure x₀ γ) P)
+    (hγ : γ ≠ 0) : ¬ Integrable X P := by
+  intro hint
+  apply TauCeti.Probability.not_integrable_id_cauchyMeasure x₀ hγ
+  rw [← hX.map_eq, integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simpa only [Function.id_comp] using hint
+
+/-- The exponential integrand of a Cauchy random variable is integrable exactly when its scale or
+the exponential rate is zero. -/
+theorem integrable_exp_mul_cauchyMeasure_iff (hX : HasLaw X (cauchyMeasure x₀ γ) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P ↔ γ = 0 ∨ t = 0 := by
+  rw [← TauCeti.Probability.integrable_exp_mul_id_cauchyMeasure_iff x₀ γ t, ← hX.map_eq,
+    integrable_map_measure (by fun_prop) hX.aemeasurable]
+  rfl
+
+/-- The exact exponential-integrability domain of a Cauchy random variable. -/
+theorem integrableExpSet_cauchyMeasure (hX : HasLaw X (cauchyMeasure x₀ γ) P) :
+    integrableExpSet X P = if γ = 0 then Set.univ else {0} := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, hX.integrable_exp_mul_cauchyMeasure_iff]
+  by_cases hγ : γ = 0 <;> simp [hγ]
+
+/-- The expectation of a zero-scale Cauchy random variable is its location. -/
+theorem integral_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) :
+    ∫ ω, X ω ∂P = x₀ := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_cauchyMeasure_zero_scale]
+
+/-- The variance of a zero-scale Cauchy random variable is zero. -/
+theorem variance_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) :
+    variance X P = 0 := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_cauchyMeasure_zero_scale]
+
+/-- The moment-generating function of a zero-scale Cauchy random variable. -/
+theorem mgf_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) (t : ℝ) :
+    mgf X P t = Real.exp (t * x₀) := by
+  rw [← TauCeti.Probability.mgf_id_cauchyMeasure_zero_scale x₀ t, ← hX.map_eq,
+    mgf_map hX.aemeasurable (by fun_prop), Function.id_comp]
+
+/-- The cumulant-generating function of a zero-scale Cauchy random variable. -/
+theorem cgf_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) (t : ℝ) :
+    cgf X P t = t * x₀ := by
+  rw [cgf, hX.mgf_cauchyMeasure_zero_scale, Real.log_exp]
+
+end ProbabilityTheory.HasLaw
+
 namespace ProbabilityTheory
 
 open TauCeti.Probability
@@ -487,7 +542,7 @@ theorem iIndepFun.hasLaw_average_cauchyMeasure {Ω ι : Type*} [MeasurableSpace 
   rw [charFun_map_mul_comp hmeas,
     hindep.charFun_map_fun_sum_eq_prod (fun i ↦ (hlaw i).aemeasurable)]
   simp only [(hlaw _).map_eq, charFun_cauchyMeasure, Finset.prod_apply, Finset.prod_const,
-    Finset.card_univ, ← Complex.exp_nat_mul]
+    Finset.card_univ, ← Complex.exp_natCast_mul]
   congr 1
   have habs : |(Fintype.card ι : ℝ)⁻¹ * t| = (Fintype.card ι : ℝ)⁻¹ * |t| := by
     rw [abs_mul, abs_of_pos (by positivity)]

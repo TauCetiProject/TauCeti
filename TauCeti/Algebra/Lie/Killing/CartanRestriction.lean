@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Killing.SymmetricAlgebra
 public import TauCeti.Algebra.Lie.Weights.Borel
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.Projection
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
@@ -68,6 +69,8 @@ functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at
 * `TauCeti.lift_eval_killingSymmetricEquiv_coe`: evaluating `killingSymmetricEquiv K L r` at a
   Cartan element `z : H` agrees with evaluating `lieCartanRestriction H r` at `cartanEquivDual H z`.
 * `TauCeti.lieCartanRestriction_mem_homogeneousSubmodule`: the restriction preserves degrees.
+* `TauCeti.lieCartanRestriction_decompose`: the restriction commutes with taking homogeneous
+  components.
 * `TauCeti.lieCartanRestriction_surjective`: the restriction is onto, split by the map induced by
   the inclusion `H → L`.
 
@@ -158,7 +161,7 @@ theorem killingCartanProjection_eq_zero_of_mem_rootSpace {χ : H → K}
   refine ((eq_killingCartanProjection_iff H).mpr fun h ↦ ?_).symm
   rw [ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply, traceForm_comm]
   exact (killingForm_eq_zero_of_mem_zeroRoot_mem_posFitting K L H
-    (le_zeroRootSubalgebra K L H h.2) hmem).symm
+    (le_zeroRootSubalgebra K L H h.property) hmem).symm
 
 variable {H} in
 /-- **The projection is the root-space projection at the zero weight**: when `H` splits `L`, `π` is
@@ -186,7 +189,7 @@ theorem killingCartanProjection_eq_zero_of_mem_rootSpaceSpan {S : Set H.root} {x
   have hle : (rootSpaceSpan H S : Submodule K L) ≤ LinearMap.ker (killingCartanProjection H) := by
     rw [rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
     exact iSup_le fun α _ hy ↦ killingCartanProjection_eq_zero_of_mem_rootSpace
-      (Finset.mem_filter.mp (α : H.root).2).2 hy
+      (Finset.mem_filter.mp (α : H.root).property).2 hy
   exact hle hx
 
 variable {H} (b : (IsKilling.rootSystem H).Base)
@@ -248,6 +251,16 @@ theorem lieCartanRestriction_mem_homogeneousSubmodule {n : ℕ} {p : SymmetricAl
     (hp : p ∈ SymmetricAlgebra.homogeneousSubmodule K L n) :
     lieCartanRestriction H p ∈ SymmetricAlgebra.homogeneousSubmodule K H n :=
   SymmetricAlgebra.map_mem_homogeneousSubmodule _ hp
+
+/-- The restriction commutes with taking homogeneous components: it maps the component of degree
+`n` of `p` to the component of degree `n` of the restriction of `p`. -/
+@[simp]
+theorem lieCartanRestriction_decompose (p : SymmetricAlgebra K L) (n : ℕ) :
+    lieCartanRestriction H (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule K L) p n :
+        SymmetricAlgebra K L) =
+      (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule K H)
+        (lieCartanRestriction H p) n : SymmetricAlgebra K H) :=
+  _root_.SymmetricAlgebra.map_decompose _ p n
 
 /-- **The restriction square.** Restricting a polynomial function on `L`, an element of
 `S(L*)`, along the inclusion `H → L` commutes with the Killing identifications: transporting

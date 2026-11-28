@@ -1,0 +1,420 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.Algebra.Star.Basic
+public import TauCeti.RingTheory.TwoSidedIdeal.Essential
+
+/-!
+# Annihilators of two-sided ideals
+
+Left and right annihilators `TwoSidedIdeal.annihilator` and `TwoSidedIdeal.rightAnnihilator` of a
+two-sided ideal, their antitone Galois connection, unital identifications with `Module.annihilator`,
+and pseudocomplement / essentiality equivalences for arbitrary two-sided ideals in proper star
+rings.
+
+## Main declarations
+
+* `TwoSidedIdeal.annihilator`, `TwoSidedIdeal.rightAnnihilator`,
+  `TwoSidedIdeal.gc_annihilator_rightAnnihilator`.
+* `TwoSidedIdeal.annihilator_eq_toTwoSided_annihilator`,
+  `TwoSidedIdeal.annihilator_eq_rightAnnihilator`, `TwoSidedIdeal.disjoint_annihilator`,
+  `TwoSidedIdeal.le_annihilator_iff_disjoint`, `TwoSidedIdeal.annihilator_eq_bot_iff_isEssential`.
+
+## References
+
+* B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*, §II.5.4.7.
+* G. J. Murphy, *C*-Algebras and Operator Theory*, §3.1.
+* T. Y. Lam, *Lectures on Modules and Rings*, §3D.
+-/
+
+public section
+
+open scoped Pointwise
+
+namespace TwoSidedIdeal
+
+section NonUnitalRing
+
+variable {R : Type*} [NonUnitalRing R] {I J : TwoSidedIdeal R} {a : R}
+
+/-- The left annihilator `{a | ∀ x ∈ I, a * x = 0}` of a two-sided ideal `I`, which is a
+two-sided ideal. -/
+def annihilator (I : TwoSidedIdeal R) : TwoSidedIdeal R :=
+  .mk' {a | ∀ x ∈ I, a * x = 0} (fun _ _ ↦ zero_mul _)
+    (fun ha hb x hx ↦ by rw [add_mul, ha x hx, hb x hx, add_zero])
+    (fun ha x hx ↦ by rw [neg_mul, ha x hx, neg_zero])
+    (fun {b _} ha x hx ↦ by rw [mul_assoc, ha x hx, mul_zero])
+    (fun {_ b} ha x hx ↦ by rw [mul_assoc, ha _ (I.mul_mem_left b x hx)])
+
+/-- The *right annihilator* `{a : R | ∀ x ∈ I, x * a = 0}` of a two-sided ideal `I`, bundled as a
+two-sided ideal of `R`. -/
+def rightAnnihilator (I : TwoSidedIdeal R) : TwoSidedIdeal R :=
+  .mk' {a : R | ∀ x ∈ I, x * a = 0}
+    (fun _ _ => mul_zero _)
+    (fun ha hb x hx => by rw [mul_add, ha x hx, hb x hx, add_zero])
+    (fun ha x hx => by rw [mul_neg, ha x hx, neg_zero])
+    -- Left absorption uses that `I` is a right ideal.
+    (fun {r _} ha x hx => by rw [← mul_assoc]; exact ha (x * r) (I.mul_mem_right x r hx))
+    (fun {_ _} ha x hx => by rw [← mul_assoc, ha x hx, zero_mul])
+
+@[simp]
+theorem mem_annihilator : a ∈ I.annihilator ↔ ∀ x ∈ I, a * x = 0 := by
+  simp [annihilator]
+
+theorem coe_annihilator (I : TwoSidedIdeal R) :
+    (I.annihilator : Set R) = {a : R | ∀ x ∈ I, a * x = 0} :=
+  Set.ext fun _ => mem_annihilator
+
+@[simp]
+theorem mem_rightAnnihilator : a ∈ I.rightAnnihilator ↔ ∀ x ∈ I, x * a = 0 := by
+  simp [rightAnnihilator]
+
+theorem coe_rightAnnihilator (I : TwoSidedIdeal R) :
+    (I.rightAnnihilator : Set R) = {a : R | ∀ x ∈ I, x * a = 0} :=
+  Set.ext fun _ => mem_rightAnnihilator
+
+theorem mul_eq_zero_of_mem_annihilator {x : R} (ha : a ∈ I.annihilator) (hx : x ∈ I) :
+    a * x = 0 :=
+  mem_annihilator.1 ha x hx
+
+theorem mul_eq_zero_of_mem_rightAnnihilator {x : R} (hx : x ∈ I) (ha : a ∈ I.rightAnnihilator) :
+    x * a = 0 :=
+  mem_rightAnnihilator.mp ha x hx
+
+/-- A two-sided ideal lies in the annihilator of `I` exactly when its elements annihilate `I`
+from the left. -/
+theorem le_annihilator_iff : J ≤ I.annihilator ↔ ∀ a ∈ J, ∀ x ∈ I, a * x = 0 :=
+  forall_congr' fun _ ↦ imp_congr_right fun _ ↦ mem_annihilator
+
+/-- `I.rightAnnihilator` is the largest two-sided ideal `J` killing `I` on the right. -/
+theorem le_rightAnnihilator_iff : J ≤ I.rightAnnihilator ↔ ∀ a ∈ J, ∀ x ∈ I, x * a = 0 :=
+  forall_congr' fun _ => imp_congr_right fun _ => mem_rightAnnihilator
+
+/-- Pointwise set-product form of the universal property of `I.annihilator`. -/
+theorem le_annihilator_iff_coe_mul_eq_singleton_zero :
+    J ≤ I.annihilator ↔ (J : Set R) * (I : Set R) = {0} := by
+  rw [le_annihilator_iff]
+  refine ⟨fun h => Set.Subset.antisymm ?_ ?_, fun h a ha x hx => ?_⟩
+  · rintro _ ⟨a, ha, x, hx, rfl⟩
+    exact Set.mem_singleton_iff.mpr (h a ha x hx)
+  · rw [Set.singleton_subset_iff]
+    exact ⟨0, J.zero_mem, 0, I.zero_mem, mul_zero 0⟩
+  · have hmem : a * x ∈ (J : Set R) * (I : Set R) := ⟨a, ha, x, hx, rfl⟩
+    rwa [h, Set.mem_singleton_iff] at hmem
+
+/-- Pointwise set-product form of the universal property of `I.rightAnnihilator`. -/
+theorem le_rightAnnihilator_iff_coe_mul_eq_singleton_zero :
+    J ≤ I.rightAnnihilator ↔ (I : Set R) * (J : Set R) = {0} := by
+  rw [le_rightAnnihilator_iff]
+  refine ⟨fun h => Set.Subset.antisymm ?_ ?_, fun h a ha x hx => ?_⟩
+  · rintro _ ⟨x, hx, a, ha, rfl⟩
+    exact Set.mem_singleton_iff.mpr (h a ha x hx)
+  · rw [Set.singleton_subset_iff]
+    exact ⟨0, I.zero_mem, 0, J.zero_mem, mul_zero 0⟩
+  · have hmem : x * a ∈ (I : Set R) * (J : Set R) := ⟨x, hx, a, ha, rfl⟩
+    rwa [h, Set.mem_singleton_iff] at hmem
+
+theorem le_annihilator_iff_le_rightAnnihilator :
+    J ≤ I.annihilator ↔ I ≤ J.rightAnnihilator := by
+  rw [le_annihilator_iff, le_rightAnnihilator_iff]
+  exact ⟨fun h x hx a ha => h a ha x hx, fun h a ha x hx => h x hx a ha⟩
+
+/-- Antitone Galois connection between `annihilator` and `rightAnnihilator`. -/
+theorem gc_annihilator_rightAnnihilator :
+    GaloisConnection (OrderDual.toDual ∘ annihilator (R := R))
+      (rightAnnihilator (R := R) ∘ OrderDual.ofDual) :=
+  fun _ _ => le_annihilator_iff_le_rightAnnihilator
+
+/-- Taking annihilators reverses inclusion. -/
+theorem annihilator_antitone : Antitone (annihilator : TwoSidedIdeal R → TwoSidedIdeal R) :=
+  gc_annihilator_rightAnnihilator.monotone_l
+
+theorem annihilator_le_annihilator (h : I ≤ J) : J.annihilator ≤ I.annihilator :=
+  annihilator_antitone h
+
+theorem rightAnnihilator_anti : Antitone (rightAnnihilator (R := R)) :=
+  fun _ _ h => gc_annihilator_rightAnnihilator.monotone_u (OrderDual.toDual_le_toDual.mpr h)
+
+theorem le_rightAnnihilator_annihilator (I : TwoSidedIdeal R) :
+    I ≤ I.annihilator.rightAnnihilator :=
+  gc_annihilator_rightAnnihilator.le_u_l I
+
+theorem le_annihilator_rightAnnihilator (I : TwoSidedIdeal R) :
+    I ≤ I.rightAnnihilator.annihilator :=
+  le_annihilator_iff_le_rightAnnihilator.mpr le_rfl
+
+@[simp]
+theorem annihilator_rightAnnihilator_annihilator (I : TwoSidedIdeal R) :
+    I.annihilator.rightAnnihilator.annihilator = I.annihilator :=
+  gc_annihilator_rightAnnihilator.l_u_l_eq_l I
+
+@[simp]
+theorem rightAnnihilator_annihilator_rightAnnihilator (I : TwoSidedIdeal R) :
+    I.rightAnnihilator.annihilator.rightAnnihilator = I.rightAnnihilator :=
+  gc_annihilator_rightAnnihilator.u_l_u_eq_u I
+
+@[simp]
+theorem annihilator_bot : (⊥ : TwoSidedIdeal R).annihilator = ⊤ :=
+  gc_annihilator_rightAnnihilator.l_bot
+
+@[simp]
+theorem rightAnnihilator_bot : (⊥ : TwoSidedIdeal R).rightAnnihilator = ⊤ :=
+  gc_annihilator_rightAnnihilator.u_top
+
+@[simp]
+theorem annihilator_top [FaithfulSMul R R] :
+    (⊤ : TwoSidedIdeal R).annihilator = ⊥ :=
+  le_bot_iff.mp fun _ ha => (mem_bot _).mpr <| eq_of_smul_eq_smul fun x : R => by
+    simpa [smul_eq_mul] using mul_eq_zero_of_mem_annihilator ha (mem_top R (x := x))
+
+@[simp]
+theorem rightAnnihilator_top [FaithfulSMul Rᵐᵒᵖ R] :
+    (⊤ : TwoSidedIdeal R).rightAnnihilator = ⊥ :=
+  le_bot_iff.mp fun _ ha => (mem_bot _).mpr <| MulOpposite.op_injective <|
+    eq_of_smul_eq_smul fun x : R => by
+      simpa [MulOpposite.smul_eq_mul_unop] using
+        mul_eq_zero_of_mem_rightAnnihilator (mem_top R (x := x)) ha
+
+@[simp]
+theorem annihilator_eq_top_iff [FaithfulSMul Rᵐᵒᵖ R] {I : TwoSidedIdeal R} :
+    I.annihilator = ⊤ ↔ I = ⊥ :=
+  ⟨fun h => le_bot_iff.mp <| rightAnnihilator_top (R := R) ▸
+      le_annihilator_iff_le_rightAnnihilator.mp h.ge,
+   fun h => h ▸ annihilator_bot⟩
+
+@[simp]
+theorem rightAnnihilator_eq_top_iff [FaithfulSMul R R] {I : TwoSidedIdeal R} :
+    I.rightAnnihilator = ⊤ ↔ I = ⊥ :=
+  ⟨fun h => le_bot_iff.mp <| annihilator_top (R := R) ▸
+      le_annihilator_iff_le_rightAnnihilator.mpr h.ge,
+   fun h => h ▸ rightAnnihilator_bot⟩
+
+@[simp]
+theorem annihilator_sup : (I ⊔ J).annihilator = I.annihilator ⊓ J.annihilator :=
+  gc_annihilator_rightAnnihilator.l_sup
+
+theorem rightAnnihilator_sup (I J : TwoSidedIdeal R) :
+    (I ⊔ J).rightAnnihilator = I.rightAnnihilator ⊓ J.rightAnnihilator :=
+  gc_annihilator_rightAnnihilator.u_inf
+
+theorem annihilator_iSup {ι : Sort*} (I : ι → TwoSidedIdeal R) :
+    (⨆ i, I i).annihilator = ⨅ i, (I i).annihilator :=
+  gc_annihilator_rightAnnihilator.l_iSup
+
+theorem rightAnnihilator_iSup {ι : Sort*} (I : ι → TwoSidedIdeal R) :
+    (⨆ i, I i).rightAnnihilator = ⨅ i, (I i).rightAnnihilator :=
+  gc_annihilator_rightAnnihilator.u_iInf
+
+/-- Pulling back along a ring equivalence commutes with `annihilator`. -/
+@[simp]
+theorem annihilator_comap {B E : Type*} [NonUnitalRing B]
+    [EquivLike E R B] [NonUnitalRingHomClass E R B] (e : E) (I : TwoSidedIdeal B) :
+    (I.comap e).annihilator = I.annihilator.comap e := by
+  ext a
+  rw [mem_annihilator, mem_comap, mem_annihilator]
+  refine ⟨fun h y hy => ?_, fun h x hx => ?_⟩
+  · have hmul := h (EquivLike.inv e y) ((mem_comap e).mpr (by simpa using hy))
+    simpa [map_mul, map_zero] using congrArg e hmul
+  · exact EquivLike.injective e (by simpa [map_mul, map_zero] using h (e x) ((mem_comap e).mp hx))
+
+/-- Pulling back along a ring equivalence commutes with `rightAnnihilator`. -/
+@[simp]
+theorem rightAnnihilator_comap {B E : Type*} [NonUnitalRing B]
+    [EquivLike E R B] [NonUnitalRingHomClass E R B] (e : E) (I : TwoSidedIdeal B) :
+    (I.comap e).rightAnnihilator = I.rightAnnihilator.comap e := by
+  ext a
+  rw [mem_rightAnnihilator, mem_comap, mem_rightAnnihilator]
+  refine ⟨fun h y hy => ?_, fun h x hx => ?_⟩
+  · have hmul := h (EquivLike.inv e y) ((mem_comap e).mpr (by simpa using hy))
+    simpa [map_mul, map_zero] using congrArg e hmul
+  · exact EquivLike.injective e (by simpa [map_mul, map_zero] using h (e x) ((mem_comap e).mp hx))
+
+/-- Every two-sided ideal disjoint from `I` annihilates `I`. -/
+theorem le_annihilator_of_disjoint (h : Disjoint J I) : J ≤ I.annihilator :=
+  le_annihilator_iff.2 fun a ha x hx ↦ (mem_bot R).1 <|
+    h.le_bot ((mem_inf R).2 ⟨J.mul_mem_right a x ha, I.mul_mem_left a x hx⟩)
+
+/-- Any two-sided ideal with `I ⊓ J = ⊥` lies in `I.annihilator`. -/
+theorem le_annihilator_of_inf_eq_bot (h : I ⊓ J = ⊥) : J ≤ I.annihilator :=
+  le_annihilator_of_disjoint (disjoint_iff.mpr h).symm
+
+/-- Any two-sided ideal with `I ⊓ J = ⊥` lies in `I.rightAnnihilator`. -/
+theorem le_rightAnnihilator_of_inf_eq_bot (h : I ⊓ J = ⊥) : J ≤ I.rightAnnihilator :=
+  le_rightAnnihilator_iff.mpr fun a ha x hx =>
+    (mem_bot _).mp <| h ▸ (⟨I.mul_mem_right x a hx, J.mul_mem_left x a ha⟩ : x * a ∈ I ⊓ J)
+
+/-- An ideal with zero annihilator is essential. -/
+theorem isEssential_of_annihilator_eq_bot (h : I.annihilator = ⊥) : I.IsEssential :=
+  isEssential_iff.mpr fun _ hJ ↦ eq_bot_iff.2 <| h ▸ le_annihilator_of_disjoint hJ.symm
+
+/-- A two-sided ideal with trivial right annihilator is essential. -/
+theorem isEssential_of_rightAnnihilator_eq_bot (h : I.rightAnnihilator = ⊥) : I.IsEssential :=
+  isEssential_iff_inf_eq_bot.mpr fun _ hIJ =>
+    le_bot_iff.mp ((le_rightAnnihilator_of_inf_eq_bot hIJ).trans h.le)
+
+theorem smul_mem_annihilator {M : Type*} [SMulZeroClass M R] [IsScalarTower M R R]
+    (I : TwoSidedIdeal R) (c : M) {a : R} (ha : a ∈ I.annihilator) :
+    c • a ∈ I.annihilator :=
+  mem_annihilator.mpr fun x hx => by
+    rw [smul_mul_assoc, mul_eq_zero_of_mem_annihilator ha hx, smul_zero]
+
+theorem smul_mem_rightAnnihilator {M : Type*} [SMulZeroClass M R] [SMulCommClass M R R]
+    (I : TwoSidedIdeal R) (c : M) {a : R} (ha : a ∈ I.rightAnnihilator) :
+    c • a ∈ I.rightAnnihilator :=
+  mem_rightAnnihilator.mpr fun x hx => by
+    rw [mul_smul_comm, mul_eq_zero_of_mem_rightAnnihilator hx ha, smul_zero]
+
+end NonUnitalRing
+
+section Ring
+
+variable {R : Type*} [Ring R] (I : TwoSidedIdeal R)
+
+/-- In a unital ring, the annihilator of a two-sided ideal `I` is the module annihilator of `I`
+as a left `R`-module, made two-sided. -/
+theorem annihilator_eq_toTwoSided_annihilator :
+    I.annihilator = (Module.annihilator R I.asIdeal).toTwoSided := by
+  ext a
+  simp [Module.mem_annihilator]
+
+theorem asIdeal_annihilator : I.annihilator.asIdeal = Module.annihilator R I := by
+  ext a
+  rw [mem_asIdeal, mem_annihilator, Module.mem_annihilator]
+  exact ⟨fun h x => Subtype.ext (h x x.property), fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩)⟩
+
+/-- In a unital ring `R`, `I.rightAnnihilator.asIdealOpposite` coincides with
+`Module.annihilator Rᵐᵒᵖ I` for the right-multiplication `Rᵐᵒᵖ`-module structure on `I`. -/
+theorem asIdealOpposite_rightAnnihilator :
+    I.rightAnnihilator.asIdealOpposite = Module.annihilator Rᵐᵒᵖ I := by
+  ext r
+  rw [mem_asIdealOpposite, mem_rightAnnihilator, Module.mem_annihilator]
+  exact ⟨fun h x => Subtype.ext (h x x.property), fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩)⟩
+
+theorem le_annihilator_iff_asIdeal_mul_eq_bot {I J : TwoSidedIdeal R} :
+    J ≤ I.annihilator ↔ J.asIdeal * I.asIdeal = ⊥ := by
+  rw [← le_bot_iff, Ideal.mul_le, le_annihilator_iff]
+  simp only [mem_asIdeal, Submodule.mem_bot]
+
+theorem le_rightAnnihilator_iff_asIdeal_mul_eq_bot {I J : TwoSidedIdeal R} :
+    J ≤ I.rightAnnihilator ↔ I.asIdeal * J.asIdeal = ⊥ := by
+  rw [← le_bot_iff, Ideal.mul_le, le_rightAnnihilator_iff]
+  simp only [mem_asIdeal, Submodule.mem_bot]
+  exact ⟨fun h x hx a ha => h a ha x hx, fun h a ha x hx => h x hx a ha⟩
+
+end Ring
+
+section IsProperStar
+
+variable {R : Type*} [NonUnitalRing R] [StarRing R] [IsProperStar R] {I J : TwoSidedIdeal R}
+  {a : R}
+
+/-- The annihilator of a two-sided ideal in a proper star ring is self-adjoint. -/
+theorem star_mem_annihilator (ha : a ∈ I.annihilator) : star a ∈ I.annihilator :=
+  mem_annihilator.2 fun x hx ↦ star_mul_self_eq_zero.1 <| by
+    rw [star_mul, star_star, mul_assoc,
+      mul_eq_zero_of_mem_annihilator ha (I.mul_mem_left (star a) x hx), mul_zero]
+
+theorem star_mem_annihilator_iff : star a ∈ I.annihilator ↔ a ∈ I.annihilator :=
+  ⟨fun h ↦ star_star a ▸ star_mem_annihilator h, star_mem_annihilator⟩
+
+/-- The right annihilator of a two-sided ideal in a proper star ring is self-adjoint. -/
+theorem star_mem_rightAnnihilator (ha : a ∈ I.rightAnnihilator) : star a ∈ I.rightAnnihilator :=
+  mem_rightAnnihilator.2 fun x hx ↦ mul_star_self_eq_zero.1 <| by
+    rw [star_mul, star_star, ← mul_assoc,
+      mul_eq_zero_of_mem_rightAnnihilator (I.mul_mem_right x (star a) hx) ha, zero_mul]
+
+theorem star_mem_rightAnnihilator_iff : star a ∈ I.rightAnnihilator ↔ a ∈ I.rightAnnihilator :=
+  ⟨fun h ↦ star_star a ▸ star_mem_rightAnnihilator h, star_mem_rightAnnihilator⟩
+
+/-- In a ring with proper involution, the left and right annihilators of any two-sided ideal `I`
+coincide. -/
+theorem annihilator_eq_rightAnnihilator (I : TwoSidedIdeal R) :
+    I.annihilator = I.rightAnnihilator := by
+  ext a
+  rw [mem_annihilator, mem_rightAnnihilator]
+  refine ⟨fun ha x hx => star_mul_self_eq_zero.mp ?_, fun ha x hx => mul_star_self_eq_zero.mp ?_⟩
+  · have hsa : star a ∈ I.annihilator := star_mem_annihilator (mem_annihilator.mpr ha)
+    rw [star_mul, mul_assoc]
+    exact mul_eq_zero_of_mem_annihilator hsa
+      (I.mul_mem_left (star x) _ (I.mul_mem_right x a hx))
+  · have hsa : star a ∈ I.rightAnnihilator :=
+      star_mem_rightAnnihilator (mem_rightAnnihilator.mpr ha)
+    rw [star_mul, ← mul_assoc]
+    exact mul_eq_zero_of_mem_rightAnnihilator
+      (I.mul_mem_right _ (star x) (I.mul_mem_left a x hx)) hsa
+
+/-- In a proper star ring, an element left-annihilates a two-sided ideal `I` if and only if it
+right-annihilates `I`. -/
+theorem mem_annihilator_iff_mul_eq_zero_right :
+    a ∈ I.annihilator ↔ ∀ x ∈ I, x * a = 0 := by
+  rw [I.annihilator_eq_rightAnnihilator, mem_rightAnnihilator]
+
+/-- In a proper star ring, any two-sided ideal meets its annihilator only in `0`. -/
+theorem disjoint_annihilator (I : TwoSidedIdeal R) : Disjoint I I.annihilator := by
+  refine disjoint_iff.2 <| eq_bot_iff.2 fun a ha ↦ (mem_bot R).2 ?_
+  rw [mem_inf R] at ha
+  exact star_mul_self_eq_zero.1
+    (mul_eq_zero_of_mem_annihilator (star_mem_annihilator ha.right) ha.left)
+
+@[simp]
+theorem inf_annihilator_eq_bot (I : TwoSidedIdeal R) : I ⊓ I.annihilator = ⊥ :=
+  disjoint_iff.1 I.disjoint_annihilator
+
+@[simp]
+theorem annihilator_inf_eq_bot (I : TwoSidedIdeal R) : I.annihilator ⊓ I = ⊥ := by
+  rw [inf_comm, I.inf_annihilator_eq_bot]
+
+@[simp]
+theorem inf_rightAnnihilator_eq_bot (I : TwoSidedIdeal R) : I ⊓ I.rightAnnihilator = ⊥ := by
+  rw [← I.annihilator_eq_rightAnnihilator, I.inf_annihilator_eq_bot]
+
+@[simp]
+theorem rightAnnihilator_inf_eq_bot (I : TwoSidedIdeal R) : I.rightAnnihilator ⊓ I = ⊥ := by
+  rw [inf_comm, I.inf_rightAnnihilator_eq_bot]
+
+/-- In a proper star ring, the annihilator of any two-sided ideal `I` is the largest two-sided
+ideal disjoint from `I`. -/
+theorem le_annihilator_iff_disjoint : J ≤ I.annihilator ↔ Disjoint J I :=
+  ⟨fun h ↦ I.disjoint_annihilator.symm.mono_left h, le_annihilator_of_disjoint⟩
+
+/-- In a proper star ring, a two-sided ideal `J` annihilates `I` if and only if `I ⊓ J = ⊥`. -/
+theorem le_annihilator_iff_inf_eq_bot : J ≤ I.annihilator ↔ I ⊓ J = ⊥ := by
+  rw [le_annihilator_iff_disjoint, disjoint_comm, disjoint_iff]
+
+theorem le_annihilator_annihilator (I : TwoSidedIdeal R) : I ≤ I.annihilator.annihilator :=
+  le_annihilator_iff_disjoint.2 I.disjoint_annihilator
+
+@[simp]
+theorem annihilator_annihilator_annihilator (I : TwoSidedIdeal R) :
+    I.annihilator.annihilator.annihilator = I.annihilator :=
+  (congrArg annihilator I.annihilator.annihilator_eq_rightAnnihilator).trans
+    I.annihilator_rightAnnihilator_annihilator
+
+/-- In a proper star ring, a two-sided ideal is essential exactly when its annihilator vanishes. -/
+theorem annihilator_eq_bot_iff_isEssential : I.annihilator = ⊥ ↔ I.IsEssential :=
+  ⟨isEssential_of_annihilator_eq_bot, fun h ↦ h.eq_bot_of_disjoint I.disjoint_annihilator⟩
+
+theorem isEssential_iff_rightAnnihilator_eq_bot : I.IsEssential ↔ I.rightAnnihilator = ⊥ := by
+  rw [← annihilator_eq_bot_iff_isEssential, I.annihilator_eq_rightAnnihilator]
+
+end IsProperStar
+
+section RingIsProperStar
+
+variable {R : Type*} [Ring R] [StarRing R] [IsProperStar R]
+
+/-- For any two-sided ideal `I` of a unital proper star ring `R`, `Module.annihilator R I` is
+closed under `star`. -/
+theorem star_mem_moduleAnnihilator {I : TwoSidedIdeal R} {a : R}
+    (ha : a ∈ Module.annihilator R I) : star a ∈ Module.annihilator R I := by
+  rw [← asIdeal_annihilator, mem_asIdeal] at ha ⊢
+  exact star_mem_annihilator ha
+
+end RingIsProperStar
+
+end TwoSidedIdeal

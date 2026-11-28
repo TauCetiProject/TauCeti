@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
 public import Mathlib.Topology.Algebra.Module.Multilinear.Basic
+public import TauCeti.Topology.Algebra.Monoid
 
 /-!
 # Continuous cyclic and mixed cochain operators
@@ -45,17 +46,11 @@ theorem continuous_hochschildFace (A : Type*) [TopologicalSpace A] [Mul A]
     Continuous (hochschildFace (A := A) i) := by
   cases i using Fin.lastCases with
   | last =>
-    apply (continuous_congr (fun a ↦ hochschildFace_last_eq_contractNth a)).2
-    apply continuous_pi
-    intro j
-    simp only [Fin.contractNth, Function.comp_apply]
-    split_ifs <;> fun_prop
+    exact (continuous_congr (fun a ↦ hochschildFace_last_eq_contractNth a)).2 <|
+      (continuous_pi fun k ↦ continuous_apply ((finRotate (n + 2)).symm k)).finContractNth 0
   | cast i =>
-    apply (continuous_congr (fun a ↦ hochschildFace_castSucc i a)).2
-    apply continuous_pi
-    intro j
-    simp only [Fin.contractNth]
-    split_ifs <;> fun_prop
+    exact (continuous_congr (fun a ↦ hochschildFace_castSucc i a)).2 <|
+      continuous_id.finContractNth i.castSucc
 
 end TauCeti
 
@@ -548,7 +543,7 @@ def continuousCyclicCochainsMap (f : A →L[R] B) (n : ℕ) :
   toFun φ := ⟨(φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compContinuousLinearMap
       fun _ ↦ f, (mem_continuousCyclicCochains_iff R A M).2 <|
         compLinearMap_mem_cyclicCochains (f : A →ₗ[R] B)
-          ((mem_continuousCyclicCochains_iff R B M).1 φ.2)⟩
+          ((mem_continuousCyclicCochains_iff R B M).1 φ.property)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 

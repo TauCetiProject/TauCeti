@@ -64,6 +64,8 @@ monodromy action `IsCoveringMap.fundamentalGroupMulAction` a left action.
 * `TauCeti.fundamentalGroup_smul_eq_self`: on a simply connected space the action is trivial.
 * `TauCeti.one_mem_orbit_of_forall_mem_of_nullhomotopic`: a generalized loop staying in a set
   whose inclusion is null-homotopic is freely homotopic to the constant loop.
+* `TauCeti.subsingleton_homotopyGroup_of_compact_nullhomotopic`: a space in which every map from a
+  compact space is null-homotopic has trivial finite positive-dimensional homotopy groups at `x`.
 
 ## References
 
@@ -371,7 +373,7 @@ the constant loop: the identity class lies in the orbit of its class. Composing 
 null-homotopy of the inclusion moves the whole cube boundary along the single path traced by
 the base point. -/
 theorem one_mem_orbit_of_forall_mem_of_nullhomotopic [Nonempty N] [DecidableEq N] {s : Set X}
-    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtype_val).Nullhomotopic)
+    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtypeVal).Nullhomotopic)
     (p : Ω^ N X x) (hp : ∀ z, p z ∈ s) :
     (1 : HomotopyGroup N X x) ∈
       MulAction.orbit (α := HomotopyGroup N X x) (FundamentalGroup X x) ⟦p⟧ := by
@@ -395,5 +397,21 @@ theorem one_mem_orbit_of_forall_mem_of_nullhomotopic [Nonempty N] [DecidableEq N
   rw [_root_.HomotopyGroup.one_def]
   exact (homotopyGroup_mem_orbit_iff_exists_homotopyAlong rfl rfl).2
     ⟨γ.trans γ.symm, ⟨Hforward.trans Hback⟩⟩
+
+/-- On a space in which every continuous map from a compact space is null-homotopic, every finite
+positive-dimensional homotopy group at `x` is trivial. -/
+theorem subsingleton_homotopyGroup_of_compact_nullhomotopic.{u} {X : Type u} [TopologicalSpace X]
+    (N : Type*) [Finite N] [Nonempty N] (x : X)
+    (hnull : ∀ {K : Type u} [TopologicalSpace K] [CompactSpace K] (f : C(K, X)), f.Nullhomotopic) :
+    Subsingleton (HomotopyGroup N X x) := by
+  classical
+  let _ : Fintype N := Fintype.ofFinite N
+  have h_one : ∀ a : HomotopyGroup N X x, a = 1 := Quotient.ind fun p ↦ by
+    have : CompactSpace (Set.range p) :=
+      isCompact_iff_compactSpace.mp (isCompact_range p.val.continuous)
+    obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp <| one_mem_orbit_of_forall_mem_of_nullhomotopic
+      (hnull (ContinuousMap.subtypeVal (Set.range p))) p Set.mem_range_self
+    exact (inv_smul_smul (α := HomotopyGroup N X x) g ⟦p⟧).symm.trans (by rw [hg, smul_one])
+  exact ⟨fun a b ↦ (h_one a).trans (h_one b).symm⟩
 
 end TauCeti

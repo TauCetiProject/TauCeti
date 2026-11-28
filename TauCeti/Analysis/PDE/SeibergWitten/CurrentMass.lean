@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 import TauCeti.Analysis.InnerProductSpace.Comass
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # `r`-independent mass bounds for the curvature and cutoff currents
@@ -93,6 +94,8 @@ open scoped Distributions
 
 namespace TauCeti.SeibergWitten
 
+section Wedge
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   {A B : Type*} [NormedAddCommGroup A] [NormedAddCommGroup B] {k n : ℕ}
 
@@ -173,6 +176,8 @@ theorem _root_.Module.Basis.exists_mass_integral_wedge_le_of_le_mul_max_one_sub
   rw [one_mul] at h
   rw [Real.eNorm_eq_ofReal_abs]
   exact ENNReal.ofReal_le_ofReal h
+
+end Wedge
 
 /-! ### Solutions of the large-parameter equations in a unitary frame -/
 
@@ -315,21 +320,12 @@ theorem norm_le_mul_max_one_sub_add_of_inner_ιMulti_eq {Θ F η : ⋀[ℝ]^2 V}
   have hM : 0 ≤ M := (hχ' 0).1.trans (hχ' 0).2
   have hN : 0 ≤ N := (norm_nonneg η).trans hη
   -- The self-dual part is controlled by the curvature equation.
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [AlmostComplexStructure.norm_kahlerForm_sq
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃),
-      Fact.out (p := finrank ℝ V = 4)]
-    norm_num
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)
   have hplus := norm_smul_add_hodgeStar_le hQ hkl
     (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hρ h₂ hr hβK hφβ hF
-  have hsplit :
-      F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
-    rw [← smul_add, add_add_sub_cancel, ← two_smul ℝ F, smul_smul]
-    norm_num
-  have hFn : ‖F‖ ≤
-      ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ := by
-    nth_rewrite 1 [hsplit]
-    exact norm_add_le _ _
+  have hFn :=
+    norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub (R := ℝ) F (o.hodgeStar hkl F)
   -- The cutoff current is `(1 - χ(|φ|²)) F + 2 χ'(|φ|²) p₁ ∧ p₂`.
   have hΘ' : Θ = (1 - χ (‖φ‖ ^ 2)) • F + (2 * deriv χ (‖φ‖ ^ 2)) • Dα.gradientWedge :=
     ext_inner_ιMulti_two fun u w ↦ by
@@ -375,6 +371,8 @@ theorem norm_le_mul_max_one_sub_add_of_inner_ιMulti_eq {Θ F η : ⋀[ℝ]^2 V}
   have _ : 0 ≤ M * (C * (r * w)) := mul_nonneg hM hCrw
   have hNrw : 0 ≤ N * (r * w) := mul_nonneg hN hrw
   nlinarith
+
+section
 
 variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 
@@ -425,6 +423,8 @@ theorem integral_norm_le_of_inner_ιMulti_eq [IsFiniteMeasure μ] {F η Θ : X �
       hφβx hβKx hDαx
     exact norm_le_mul_max_one_sub_add_of_inner_ιMulti_eq h₀ h₂₃ hQ hkl he hρ h₂ hr hC hχ hχ'
       hφx hβx hFx hηx hFmx hΘx hφβx hβKx hDαx
+
+end
 
 /-- **The cutoff current of large-parameter solutions has `r`-independent mass.** Work on an
 open set `Ω` of finite volume in an oriented four-dimensional inner product space with a constant

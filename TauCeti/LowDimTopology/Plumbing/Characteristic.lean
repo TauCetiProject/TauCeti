@@ -119,7 +119,7 @@ private theorem adjacency_sum_cast_zmod_two_eq_zero (x : V → ℤ) :
     (∑ i, ∑ j, ((if P.toSimpleGraph.Adj i j then x i * x j else 0 : ℤ) : ZMod 2)) = 0 := by
   classical
   let f : {p : V × V // P.toSimpleGraph.Adj p.1 p.2} → ZMod 2 :=
-    fun p => (x p.1.1 : ZMod 2) * (x p.1.2 : ZMod 2)
+    fun p => (x p.val.1 : ZMod 2) * (x p.val.2 : ZMod 2)
   -- Reindex the iterated sum over `i` then `j` as a single sum over the pair `(i, j) : V × V`.
   have hpair :
       (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then
@@ -141,13 +141,13 @@ private theorem adjacency_sum_cast_zmod_two_eq_zero (x : V → ℤ) :
   -- Adjacency is symmetric, so `(i, j) ↦ (j, i)` is a fixed-point-free involution on adjacent
   -- pairs; it pairs `f` with itself, and `a + a = 0` in `ZMod 2`.
   exact Finset.sum_involution (s := Finset.univ) (f := f)
-    (fun p _ => ⟨(p.1.2, p.1.1), p.2.symm⟩)
+    (fun p _ => ⟨(p.val.2, p.val.1), p.property.symm⟩)
     (fun p _ => by
       dsimp [f]
       rw [mul_comm]
       exact CharTwo.add_self_eq_zero _)
     (fun p _ _ h => by
-      exact p.2.ne (Prod.ext_iff.mp (Subtype.ext_iff.mp h)).2)
+      exact p.property.ne (Prod.ext_iff.mp (Subtype.ext_iff.mp h)).2)
     (fun _ _ => Finset.mem_univ _) (fun p _ => by
       ext <;> rfl)
 
@@ -262,6 +262,57 @@ theorem IsCharacteristicVector.even_sub_canonical {k : V → ℤ}
     Even (k v - P.canonicalCharacteristic v) :=
   PlumbingGraph.IsCharacteristicVector.even_sub (P := P) hk
     P.isCharacteristicVector_canonicalCharacteristic v
+
+/-- The characteristic covector `k + 2 * x`, the shift of `k` by twice an arbitrary lattice
+point `x`. -/
+def addTwoMul (k : P.characteristicVectors) (x : V → ℤ) : P.characteristicVectors :=
+  ⟨fun v => k.val v + 2 * x v, k.property.add_two_mul⟩
+
+/-- The value of the shifted covector `k + 2 * x`. -/
+@[simp]
+theorem addTwoMul_val (k : P.characteristicVectors) (x : V → ℤ) :
+    (P.addTwoMul k x).val = fun v => k.val v + 2 * x v :=
+  (rfl)
+
+/-- Shifting by `2 * 0` does nothing. -/
+@[simp]
+theorem addTwoMul_zero (k : P.characteristicVectors) : P.addTwoMul k 0 = k := by
+  ext v
+  simp
+
+/-- Shifts compose by addition: shifting `k + 2 * x` by `2 * y` gives `k + 2 * (x + y)`. -/
+@[simp]
+theorem addTwoMul_addTwoMul (k : P.characteristicVectors) (x y : V → ℤ) :
+    P.addTwoMul (P.addTwoMul k x) y = P.addTwoMul k (x + y) := by
+  ext v
+  simp only [addTwoMul_val, Pi.add_apply]
+  ring
+
+/-- Half the difference `(l - k) / 2` of two characteristic covectors, an integral covector since
+the difference is even. -/
+def halfSub (l k : P.characteristicVectors) : V → ℤ :=
+  fun v => (l.val v - k.val v) / 2
+
+/-- The value of `halfSub`. -/
+theorem halfSub_apply (l k : P.characteristicVectors) (v : V) :
+    P.halfSub l k v = (l.val v - k.val v) / 2 :=
+  (rfl)
+
+/-- Two characteristic covectors differ by twice their half difference. -/
+@[simp]
+theorem addTwoMul_halfSub (l k : P.characteristicVectors) : P.addTwoMul k (P.halfSub l k) = l := by
+  ext v
+  have h := Int.mul_ediv_cancel' (even_iff_two_dvd.mp
+    (PlumbingGraph.IsCharacteristicVector.even_sub (P := P) l.property k.property v))
+  simp only [addTwoMul_val, halfSub_apply, h]
+  ring
+
+/-- The half difference of `k + 2 * x` and `k` is `x`. -/
+@[simp]
+theorem halfSub_addTwoMul (k : P.characteristicVectors) (x : V → ℤ) :
+    P.halfSub (P.addTwoMul k x) k = x := by
+  ext v
+  simp [halfSub_apply]
 
 end PlumbingGraph
 

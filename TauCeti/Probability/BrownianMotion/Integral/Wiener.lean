@@ -216,9 +216,7 @@ theorem integral_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
     ∫ ω, hB.wienerIntegral T f ω ∂P = 0 := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   let one : Lp ℝ 2 P := Lp.const 2 P 1
-  have hexpect (g : Lp ℝ 2 P) : ⟪one, g⟫_ℝ = ∫ ω, g ω ∂P := by
-    dsimp only [one]
-    rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_one, setIntegral_univ]
+  have hexpect (g : Lp ℝ 2 P) : ⟪one, g⟫_ℝ = ∫ ω, g ω ∂P := L2.inner_const_one g
   have hz : ∀ t : ℝ≥0, ⟪one, hB.toL2 t⟫_ℝ = 0 := by
     intro t
     rw [hexpect, integral_congr_ae (hB.coeFn_toL2 t), hB.integral_eval]
@@ -311,21 +309,21 @@ theorem isGaussianProcess_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ�
     refine ⟨hmeas, isGaussian_of_isGaussian_map (fun L ↦ ?_)⟩
     rw [AEMeasurable.map_map_of_aemeasurable (by fun_prop) hmeas]
     have hg := (hB.hasLaw_wienerIntegral T
-      (∑ f : I, L (Pi.single f 1) • f.1)).hasGaussianLaw
+      (∑ f : I, L (Pi.single f 1) • f.val)).hasGaussianLaw
     have heq : (fun ω ↦ hB.wienerIntegral T
-        (∑ f : I, L (Pi.single f 1) • f.1) ω) =ᵐ[P]
+        (∑ f : I, L (Pi.single f 1) • f.val) ω) =ᵐ[P]
         L ∘ (fun ω ↦ I.restrict (fun f ↦ hB.wienerIntegral T f ω)) := by
       simp only [map_sum, map_smul]
       filter_upwards [Lp.coeFn_finsetSum Finset.univ
-        (fun f : I ↦ L (Pi.single f 1) • hB.wienerIntegral T f.1),
+        (fun f : I ↦ L (Pi.single f 1) • hB.wienerIntegral T f.val),
         ae_all_iff.2 (fun f : I ↦ Lp.coeFn_smul (L (Pi.single f 1))
-          (hB.wienerIntegral T f.1))] with ω hsum hsmul
+          (hB.wienerIntegral T f.val))] with ω hsum hsmul
       rw [hsum]
       simp only [Finset.sum_apply, hsmul, Pi.smul_apply, smul_eq_mul]
       calc
-        _ = ∑ f : I, L (hB.wienerIntegral T f.1 ω • Pi.single f 1) := by
+        _ = ∑ f : I, L (hB.wienerIntegral T f.val ω • Pi.single f 1) := by
           simp [mul_comm]
-        _ = L (∑ f : I, hB.wienerIntegral T f.1 ω • Pi.single f 1) :=
+        _ = L (∑ f : I, hB.wienerIntegral T f.val ω • Pi.single f 1) :=
           (map_sum L _ _).symm
         _ = _ := congrArg L (by ext f; simp [Pi.single_apply])
     exact (hg.congr heq).isGaussian_map

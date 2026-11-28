@@ -60,6 +60,8 @@ The Moore path version of the construction is in
   an arc.
 * `TauCeti.isPathInterpolation_segment`: segments interpolate in a real topological vector
   space.
+* `TauCeti.straightenArcs_comp`: a map carrying interpolating paths to interpolating paths carries
+  the straightening homotopy along.
 
 ## References
 
@@ -101,7 +103,7 @@ private theorem sweep_zero (θ : I) : sweep 0 θ = (θ, 1) := by
 
 private theorem sweep_one (θ : I) : sweep 1 θ = (1, θ) := by
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;>
-    norm_num [sweep, coe_projIcc, θ.2.1, θ.2.2]
+    norm_num [sweep, coe_projIcc, θ.property.1, θ.property.2]
 
 private theorem sweep_right (t : I) : sweep t 1 = (1, 1) := by
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp [sweep]
@@ -247,8 +249,8 @@ theorem brokenPath_arcPoint_of_arcsWithin (hρ : IsPathInterpolation ρ U) (hf :
   have hr : (r : ℝ) ≠ 0 := by exact_mod_cast ((Nat.zero_le i).trans_lt hi).ne'
   have hs : (r : ℝ) * arcPoint r i a = i + a := by
     rw [coe_arcPoint hi, mul_div_cancel₀ _ hr]
-  rw [← straightenArcs_one, straightenArcs_eq_arcSquare hρ hf hi 1 (by rw [hs]; simp [a.2.1])
-    (by rw [hs]; simp [a.2.2]), hs, add_sub_cancel_left, projIcc_val, sweep_one, arcSquare,
+  rw [← straightenArcs_one, straightenArcs_eq_arcSquare hρ hf hi 1 (by rw [hs]; simp [a.property.1])
+    (by rw [hs]; simp [a.property.2]), hs, add_sub_cancel_left, projIcc_val, sweep_one, arcSquare,
     arcPoint_one]
 
 /-- **The straightening homotopy is continuous** in the time, the parameter and the path, for
@@ -268,9 +270,9 @@ theorem continuous_straightenArcs (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
         (F p.1) (arcPoint r i
           (sweep p.2.1 (projIcc 0 1 zero_le_one ((r : ℝ) * p.2.2 - i))).1)) := by
       fun_prop
-    have hρp := hρ.continuousOn.comp_continuous hpair fun p ↦ hU p.1 i i.2 _
+    have hρp := hρ.continuousOn.comp_continuous hpair fun p ↦ hU p.1 i i.isLt _
     refine (ContinuousEval.continuous_eval.comp (hρp.prodMk ?_)).continuousOn.congr
-      fun p hp ↦ straightenArcs_eq_arcSquare hρ (hU p.1) i.2 p.2.1 hp.1 hp.2
+      fun p hp ↦ straightenArcs_eq_arcSquare hρ (hU p.1) i.isLt p.2.1 hp.1 hp.2
     have hθ : Continuous fun p : Y × I × I ↦
         (p.2.1, projIcc 0 1 zero_le_one ((r : ℝ) * p.2.2 - i)) := by fun_prop
     exact continuous_snd.comp (continuous_sweep.comp hθ)
@@ -311,6 +313,17 @@ theorem straightenArcs_target (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
 theorem straightenArcs_const (hρ : IsPathInterpolation ρ U) {x : X} (hx : (x, x) ∈ U)
     (t s : I) : straightenArcs ρ r (ContinuousMap.const I x) t s = x := by
   simp [straightenArcs, arcSquare, hρ.apply_diag x hx]
+
+/-- **Naturality of the straightening homotopy.** If a continuous map `F` carries the
+interpolating path of `ρ` from each vertex `f (i/r)` to each point of its arc to the interpolating
+path of `ρ'` between their images, then it carries the straightening homotopy of `f` to that of
+`F ∘ f`. -/
+theorem straightenArcs_comp {ρ' : Y × Y → C(I, Y)} (F : C(X, Y)) (hr : 0 < r)
+    (hF : ∀ i < r, ∀ a : I, ρ' (F (f (arcPoint r i 0)), F (f (arcPoint r i a))) =
+      F.comp (ρ (f (arcPoint r i 0), f (arcPoint r i a))))
+    (t s : I) : straightenArcs ρ' r (F.comp f) t s = F (straightenArcs ρ r f t s) := by
+  simp only [straightenArcs, arcSquare, ContinuousMap.comp_apply]
+  rw [hF _ (arcIndex_lt hr s), ContinuousMap.comp_apply]
 
 end Straighten
 

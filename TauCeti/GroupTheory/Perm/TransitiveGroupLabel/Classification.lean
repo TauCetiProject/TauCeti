@@ -78,7 +78,8 @@ of the rotation group `5T1`.
 * `TauCeti.existsUnique_transitiveGroupLabel_three`,
   `TauCeti.existsUnique_transitiveGroupLabel_four`,
   `TauCeti.existsUnique_transitiveGroupLabel_five`: a transitive subgroup of the symmetric group
-  on three, four, respectively five, points carries exactly one label.
+  on three, four, respectively five, points carries exactly one label, and
+  `TauCeti.existsUnique_transitiveGroupLabel`: the same in every degree from one to five.
 * `TauCeti.exists_transitiveGroupLabel_three_iff`, `TauCeti.exists_transitiveGroupLabel_four_iff`,
   `TauCeti.exists_transitiveGroupLabel_five_iff`: a subgroup carries a label exactly when it is
   transitive.
@@ -216,7 +217,8 @@ theorem natCard_referenceSubgroup_four_one :
 theorem natCard_referenceSubgroup_four_two :
     Nat.card (referenceSubgroup 4 ⟨2, by simp⟩) = 8 := by
   simp only [referenceSubgroup_four_two, closure_finRotate_four_swap_eq_centralizer,
-    Nat.card_eq_fintype_card, Fintype.card_subtype, Subgroup.mem_centralizer_singleton_iff]
+    Nat.card_eq_fintype_card, Fintype.card_subtype, Subgroup.mem_centralizer_singleton_iff,
+    commute_iff_eq]
   decide
 
 /-- The reference subgroup of `4T4` has order `12`. -/
@@ -265,7 +267,8 @@ theorem referenceSubgroup_four_one_le_referenceSubgroup_four_two :
     closure_finRotate_four_swap_eq_centralizer, Subgroup.map_le_iff_le_comap]
   intro g hg
   rw [← SetLike.mem_coe, alternatingGroup.coe_kleinFour_of_card_eq_four (by simp)] at hg
-  simp only [Subgroup.mem_comap, Subgroup.subtype_apply, Subgroup.mem_centralizer_singleton_iff]
+  simp only [Subgroup.mem_comap, Subgroup.subtype_apply, Subgroup.mem_centralizer_singleton_iff,
+    commute_iff_eq]
   rcases hg with hg | hg
   · simp [Set.mem_singleton_iff.1 hg]
   · obtain ⟨m, hm⟩ := cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching.1 hg
@@ -839,5 +842,18 @@ theorem exists_transitiveGroupLabel_five_iff (G : Subgroup (Perm (Fin 5))) :
   ⟨fun ⟨_, hj⟩ => hj.isPretransitive, fun _ => exists_transitiveGroupLabel_five G⟩
 
 end DegreeFive
+
+/-- **The labelled classification in degrees one to five.** A transitive subgroup of the symmetric
+group on `n` points, `1 ≤ n ≤ 5`, carries exactly one label. -/
+theorem existsUnique_transitiveGroupLabel {n : ℕ} (h1 : 1 ≤ n) (h5 : n ≤ 5)
+    (G : Subgroup (Perm (Fin n))) [IsPretransitive G (Fin n)] :
+    ∃! j, TransitiveGroupLabel j G := by
+  interval_cases n
+  · exact ⟨⟨0, by simp⟩, transitiveGroupLabel_one _ G, fun k _ ↦ Fin.ext (by simpa using k.isLt)⟩
+  · exact ⟨⟨0, by simp⟩, (transitiveGroupLabel_two_iff _ G).mpr inferInstance,
+      fun k _ ↦ Fin.ext (by simpa using k.isLt)⟩
+  · exact existsUnique_transitiveGroupLabel_three G
+  · exact existsUnique_transitiveGroupLabel_four G
+  · exact existsUnique_transitiveGroupLabel_five G
 
 end TauCeti

@@ -192,7 +192,7 @@ variable [DecidableEq F]
 /-- **The generic point reduces to `P` at the place of `P`.** -/
 @[simp]
 theorem reductionOfDegreeEqOne_genericPoint (P : W.Point) :
-    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).2 (genericPoint W) =
+    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).property (genericPoint W) =
       Point.equivBaseChangeSelf W P := by
   rw [reductionOfDegreeEqOne_eq_iff]
   rcases P with _ | ⟨x, y, h⟩

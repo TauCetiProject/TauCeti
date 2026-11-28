@@ -190,7 +190,7 @@ theorem exists_isCompact_singularHomologyMap_subtypeVal_eq
         (ofHom (ContinuousMap.subtypeVal K)) y = x := by
   obtain ⟨K, y, hy⟩ :=
     Concrete.isColimit_exists_rep _ (isColimitMapCoconeSingularHomologyCompacts N k (of Y)) x
-  exact ⟨K.1, K.2, y, hy⟩
+  exact ⟨K.carrier, K.isCompact', y, hy⟩
 
 /-- **A class on a compact subset that vanishes in the space vanishes in a compact superset**
 (Hatcher, Proposition 3.33). If `K ⊆ Y` is compact and `y ∈ Hₖ(K; N)` maps to zero in `Hₖ(Y; N)`,
@@ -207,7 +207,7 @@ theorem exists_isCompact_singularHomologyMap_inclusion_eq_zero {K : Set Y} (hK :
     (isColimitMapCoconeSingularHomologyCompacts N k (of Y)) y 0 (by rw [map_zero]; exact hy)
   dsimp only [Functor.comp_map, compactsDiagram_map] at hfg
   rw [map_zero] at hfg
-  exact ⟨L.1, L.2, f.le, hfg⟩
+  exact ⟨L.carrier, L.isCompact', f.le, hfg⟩
 
 /-- **In a weakly locally compact space, every homology class comes from an open set contained in a
 compact set.** Every class of `Hₖ(Y; N)` is the image of a class of `Hₖ(U; N)` for an open subset

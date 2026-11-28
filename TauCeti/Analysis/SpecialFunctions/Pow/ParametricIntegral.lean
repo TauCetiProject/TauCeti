@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -29,6 +30,8 @@ Consequently, for any measure `μ` on `ℝ` and weight `g : ℝ → ℂ`, integr
 `t ↦ g t * ((t : ℂ) + z) ^ s` on `(0, ∞)` is independent of `z ∈ slitPlane`, is equivalent to
 almost-everywhere strong measurability of `g` with respect to `μ.restrict (Ioi 0)` together with
 integrability of `t ↦ ‖g t‖ * (1 + t) ^ s.re`, and is preserved when `s.re` decreases.
+In particular, with respect to Lebesgue measure, every measurable bounded weight `g` yields an
+integrable kernel for `s.re < -1` (`TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`).
 Differentiating under the integral sign then shows that
 
 `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ`
@@ -47,8 +50,13 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
 * `TauCeti.integrableOn_mul_ofReal_add_cpow_iff`,
   `TauCeti.integrableOn_mul_ofReal_add_cpow_of_re_le` — independence of `z ∈ slitPlane` and
   monotonicity in `s.re`.
-* `TauCeti.hasDerivAt_integral_mul_ofReal_add_cpow` — differentiation under the integral sign for
-  `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ` on `slitPlane`.
+* `TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`,
+  `TauCeti.integrableOn_div_ofReal_add_pow_of_norm_le` — Lebesgue integrability for bounded
+  measurable weights when `s.re < -1` or for natural-power denominators `k ≥ 2`.
+* `TauCeti.hasDerivAt_integral_mul_ofReal_add_cpow`,
+  `TauCeti.hasDerivAt_integral_div_ofReal_add_pow` — differentiation under the integral sign for
+  `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ` and
+  `w ↦ ∫ t in Ioi (0 : ℝ), g t / ((t : ℂ) + w) ^ k ∂μ` on `slitPlane`.
 * `TauCeti.differentiableOn_integral_mul_ofReal_add_cpow`,
   `TauCeti.analyticOnNhd_integral_mul_ofReal_add_cpow` — complex differentiability and holomorphy
   on `slitPlane`.
@@ -151,6 +159,39 @@ theorem integrableOn_mul_ofReal_add_cpow_iff {μ : Measure ℝ} {g : ℝ → ℂ
   ⟨integrableOn_mul_ofReal_add_cpow_of_re_le hz₁ hz₂ le_rfl,
     integrableOn_mul_ofReal_add_cpow_of_re_le hz₂ hz₁ le_rfl⟩
 
+/-- If `g : ℝ → ℂ` is almost-everywhere strongly measurable and bounded on `(0, ∞)` by `M`, then
+for every `z ∈ slitPlane` and `s : ℂ` with `s.re < -1`, `t ↦ g t * ((t : ℂ) + z) ^ s` is
+integrable on `(0, ∞)` with respect to Lebesgue measure. -/
+theorem integrableOn_mul_ofReal_add_cpow_of_norm_le {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g (volume.restrict (Ioi 0))) {M : ℝ}
+    (hg_bdd : ∀ᵐ t ∂(volume.restrict (Ioi 0)), ‖g t‖ ≤ M) {z : ℂ} (hz : z ∈ slitPlane)
+    {s : ℂ} (hs : s.re < -1) :
+    IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z) ^ s) (Ioi 0) := by
+  rw [integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow hz s]
+  refine ⟨hg_meas, ?_⟩
+  have hrpow : IntegrableOn (fun t : ℝ => (1 + t) ^ s.re) (Ioi 0) :=
+    (integrableOn_add_rpow_Ioi_of_lt hs (by norm_num : -(1 : ℝ) < 0)).congr_fun
+      (fun t _ => by simp only [add_comm 1 t]) measurableSet_Ioi
+  exact hrpow.bdd_mul hg_meas.norm (hg_bdd.mono fun _ ht => by simpa using ht)
+
+private theorem mul_cpow_neg_natCast (c w : ℂ) (k : ℕ) :
+    c * w ^ (-((k : ℕ) : ℂ)) = c / w ^ k := by
+  rw [Complex.cpow_neg, Complex.cpow_natCast, div_eq_mul_inv]
+
+/-- If `g : ℝ → ℂ` is almost-everywhere strongly measurable and bounded on `(0, ∞)` by `M`, then
+for every `z ∈ slitPlane` and `k ≥ 2`, `t ↦ g t / ((t : ℂ) + z) ^ k` is integrable on `(0, ∞)`
+with respect to Lebesgue measure. -/
+theorem integrableOn_div_ofReal_add_pow_of_norm_le {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g (volume.restrict (Ioi 0))) {M : ℝ}
+    (hg_bdd : ∀ᵐ t ∂(volume.restrict (Ioi 0)), ‖g t‖ ≤ M) {z : ℂ} (hz : z ∈ slitPlane)
+    {k : ℕ} (hk : 2 ≤ k) :
+    IntegrableOn (fun t : ℝ => g t / ((t : ℂ) + z) ^ k) (Ioi 0) := by
+  have hs : (-(k : ℂ)).re < -1 := by
+    simp only [Complex.neg_re, Complex.natCast_re]
+    exact_mod_cast (by omega : -(k : ℤ) < -1)
+  exact (integrableOn_mul_ofReal_add_cpow_of_norm_le hg_meas hg_bdd hz hs).congr_fun
+    (fun t _ => mul_cpow_neg_natCast _ _ _) measurableSet_Ioi
+
 /-- **Differentiation under a slit-plane power integral.** If `z ∈ slitPlane` and
 `t ↦ g t * ((t : ℂ) + z) ^ s` is integrable on `(0, ∞)`, then
 `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ` has derivative
@@ -198,6 +239,31 @@ theorem hasDerivAt_integral_mul_ofReal_add_cpow {μ : Measure ℝ} {g : ℝ → 
       ofReal_add_mem_slitPlane (hU_slit hw) (le_of_lt ht)
     have hd := (((hasDerivAt_id w).const_add (t : ℂ)).cpow_const (c := s) hw_mem).const_mul (g t)
     exact hd.congr_deriv (by simp only [id, mul_one])
+
+/-- **Differentiation under a slit-plane reciprocal-power integral.** If `z ∈ slitPlane` and
+`t ↦ g t / ((t : ℂ) + z) ^ k` is integrable on `(0, ∞)` with respect to `μ`, then
+`w ↦ ∫ t in Ioi (0 : ℝ), g t / ((t : ℂ) + w) ^ k ∂μ` has derivative
+`-(k : ℂ) * ∫ t in Ioi (0 : ℝ), g t / ((t : ℂ) + z) ^ (k + 1) ∂μ` at `z`. -/
+theorem hasDerivAt_integral_div_ofReal_add_pow {μ : Measure ℝ} {g : ℝ → ℂ} {z : ℂ}
+    (hz : z ∈ slitPlane) {k : ℕ}
+    (hg : IntegrableOn (fun t : ℝ => g t / ((t : ℂ) + z) ^ k) (Ioi 0) μ) :
+    HasDerivAt (fun w : ℂ => ∫ t in Ioi (0 : ℝ), g t / ((t : ℂ) + w) ^ k ∂μ)
+      (-(k : ℂ) * ∫ t in Ioi (0 : ℝ), g t / ((t : ℂ) + z) ^ (k + 1) ∂μ) z := by
+  have hg_cpow :
+      IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z) ^ (-((k : ℕ) : ℂ))) (Ioi 0) μ :=
+    hg.congr_fun (fun t _ => (mul_cpow_neg_natCast _ _ _).symm) measurableSet_Ioi
+  have hd := hasDerivAt_integral_mul_ofReal_add_cpow hz hg_cpow
+  have hfun :
+      (fun w : ℂ => ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ (-((k : ℕ) : ℂ)) ∂μ) =
+        fun w : ℂ => ∫ t in Ioi (0 : ℝ), g t / ((t : ℂ) + w) ^ k ∂μ := by
+    ext w
+    exact setIntegral_congr_fun measurableSet_Ioi fun t _ => mul_cpow_neg_natCast _ _ _
+  rw [hfun] at hd
+  refine hd.congr_deriv ?_
+  have hs1 : -((k : ℕ) : ℂ) - 1 = -(((k + 1 : ℕ) : ℂ)) := by push_cast; ring
+  rw [hs1]
+  congr 1
+  exact setIntegral_congr_fun measurableSet_Ioi fun t _ => mul_cpow_neg_natCast _ _ _
 
 /-- If `t ↦ g t * ((t : ℂ) + z₀) ^ s` is integrable on `(0, ∞)` at some `z₀ ∈ slitPlane`, then
 `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ` is complex differentiable on `slitPlane`. -/

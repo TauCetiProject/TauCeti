@@ -7,8 +7,10 @@ module
 
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Rescale
+public import TauCeti.RingTheory.LaurentSeries.Substitution.Coordinate
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Substitution into formal Laurent series
@@ -28,10 +30,11 @@ power series do: substituting `φ` and then `ψ` is substituting `φ (ψ)`. The 
 `X ↦ X ^ e` is the exponent embedding `n ↦ e * n` of Hahn series. Formal differentiation obeys
 the chain rule `D(f (φ)) = (Df)(φ) Dφ`, and the residue obeys the finite-map formula
 `Res(f (φ) Dφ dX) = ord φ • Res(f dX)` in all characteristics (in particular, coordinate changes of
-order `1` preserve the residue). A formal coordinate `φ = u X + ⋯`, `u ≠ 0`, gives a substitution
-automorphism of `K⸨X⸩`, inverse to that of `φ⁻¹`. Substitution is natural in the coefficient
-field: a field embedding `K → L`, applied to every coefficient, carries `f (φ)` to the
-substitution of the image of `φ` into the image of `f`.
+order `1` preserve the residue). For a formal coordinate `φ = u X + ⋯`, `u ≠ 0`, the
+substitution is the automorphism `TauCeti.LaurentSeries.substAlgEquiv φ`, which
+`TauCeti.RingTheory.LaurentSeries.Substitution.Coordinate` constructs over every commutative ring.
+Substitution is natural in the coefficient field: a field embedding `K → L`, applied to every
+coefficient, carries `f (φ)` to the substitution of the image of `φ` into the image of `f`.
 
 ## Main definitions
 
@@ -39,8 +42,6 @@ substitution of the image of `φ` into the image of `f`.
   `K⸨X⸩ →ₐ[K] K⸨X⸩`.
 * `TauCeti.LaurentSeries.mvSubstAlgHom`: the multivariate substitution `f ↦ f (q)` as a
   `K`-algebra map `K⸨X⸩ →ₐ[K] KK` into any field extension `KK` of `MvPowerSeries σ K`.
-* `TauCeti.LaurentSeries.substAlgEquiv`: the substitution automorphism `f ↦ f (φ)` of a formal
-  coordinate `φ`.
 
 ## Main results
 
@@ -57,9 +58,10 @@ substitution of the image of `φ` into the image of `f`.
   `TauCeti.LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative` when
   `φ.order = 1`.
 * `TauCeti.LaurentSeries.substAlgHom_comp_substAlgHom`: `(f (φ)) (ψ) = f (φ (ψ))`.
-* `TauCeti.LaurentSeries.substAlgEquiv_mul`: for formal coordinates, `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
-* `TauCeti.LaurentSeries.mapRingHom_substAlgHom`, `TauCeti.LaurentSeries.mapRingHom_substAlgEquiv`:
-  naturality of substitution under coefficient-field embeddings.
+* `TauCeti.LaurentSeries.coe_substAlgEquiv`: for a formal coordinate, the substitution automorphism
+  `substAlgEquiv φ` is `substAlgHom`.
+* `TauCeti.LaurentSeries.mapRingHom_substAlgHom`: naturality of substitution under
+  coefficient-field embeddings.
 * `TauCeti.LaurentSeries.substAlgHom_X_pow`: the substitution `X ↦ X ^ e` is
   `HahnSeries.embDomainRingHom` along `n ↦ e * n`, with coefficient formulas
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_mul` and
@@ -69,6 +71,8 @@ substitution of the image of `φ` into the image of `f`.
 * `TauCeti.LaurentSeries.rescale_toAlgHom`: unit rescaling agrees with substitution `X ↦ a X`.
 * `TauCeti.LaurentSeries.coeff_substAlgHom_C_mul_X`: the substitution `X ↦ a X` multiplies
   the coefficient of `Xⁿ` by `a ^ n`, for every integer `n`.
+* `TauCeti.LaurentSeries.eq_zero_of_subst_X_single_smul_X`: a two-variable power series over a
+  commutative ring `R` whose substitution at `(X, T X)` in `R⸨T⸩⟦X⟧` vanishes is zero.
 -/
 
 public section
@@ -318,12 +322,6 @@ theorem substAlgHom_X :
   rw [RingHom.coe_coe, RingHom.coe_coe, _root_.LaurentSeries.coe_algebraMap, substAlgHom_coe,
     X_subst, AlgHom.id_apply]
 
-/-- `substAlgHom_X`, for a series `φ` known to equal `X` and carrying its own hypotheses. -/
-private theorem substAlgHom_eq_id_of_eq_X (h : φ = X) :
-    substAlgHom hφ hφ₀ = AlgHom.id K K⸨X⸩ := by
-  subst h
-  exact substAlgHom_X
-
 /-- The ramified substitution `X ↦ X ^ e`, for `e ≠ 0`, multiplies all exponents by `e`: it is the
 exponent embedding `HahnSeries.embDomainRingHom` along `n ↦ e * n`. -/
 theorem substAlgHom_X_pow {e : ℕ} (he : e ≠ 0) :
@@ -423,70 +421,36 @@ end map
 
 /-! ### Substitution of formal coordinates -/
 
-/-- The substitution automorphism `f ↦ f (φ)` of `K⸨X⸩` attached to a formal coordinate `φ`, with
-inverse the substitution of the compositional inverse `φ⁻¹`. It extends the substitution
-automorphism `TauCeti.FormalCoordinate.substAlgEquiv` of `K⟦X⟧` to Laurent series. -/
-noncomputable def substAlgEquiv (φ : FormalCoordinate K) : K⸨X⸩ ≃ₐ[K] K⸨X⸩ :=
-  .ofAlgHom (substAlgHom φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero)
-    (substAlgHom φ⁻¹.constantCoeff_toPowerSeries φ⁻¹.toPowerSeries_ne_zero)
-    (by
-      rw [substAlgHom_comp_substAlgHom]
-      exact substAlgHom_eq_id_of_eq_X _ _ (FormalCoordinate.toPowerSeries_inv_mul φ))
-    (by
-      rw [substAlgHom_comp_substAlgHom]
-      exact substAlgHom_eq_id_of_eq_X _ _ (FormalCoordinate.toPowerSeries_mul_inv φ))
-
-/-- The substitution automorphism of a formal coordinate is the substitution `substAlgHom`. -/
-@[simp]
+/-- Over a field, the substitution automorphism `TauCeti.LaurentSeries.substAlgEquiv φ` of a
+formal coordinate, defined over any commutative ring, is the substitution `substAlgHom` of the
+nonzero series `φ` of zero constant coefficient. -/
 theorem coe_substAlgEquiv (φ : FormalCoordinate K) :
     ⇑(substAlgEquiv φ) = substAlgHom φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero :=
-  (rfl)
+  congr($((algHom_eq_substAlgEquiv φ _ fun f ↦ by
+    rw [substAlgHom_coe, FormalCoordinate.substAlgEquiv_apply]).symm))
 
-/-- On power series, the substitution automorphism of `K⸨X⸩` is that of `K⟦X⟧`. -/
-theorem substAlgEquiv_coe (φ : FormalCoordinate K) (f : K⟦X⟧) :
-    substAlgEquiv φ (f : K⸨X⸩) = ((φ.substAlgEquiv f : K⟦X⟧) : K⸨X⸩) := by
-  rw [coe_substAlgEquiv, substAlgHom_coe, FormalCoordinate.substAlgEquiv_apply]
-
-@[simp]
-theorem substAlgEquiv_symm (φ : FormalCoordinate K) :
-    (substAlgEquiv φ).symm = substAlgEquiv φ⁻¹ :=
-  AlgEquiv.ext fun _ ↦ rfl
-
-/-- Substitution automorphisms reverse composition: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`. -/
-@[simp]
-theorem substAlgEquiv_mul (φ ψ : FormalCoordinate K) :
-    substAlgEquiv (φ * ψ) = substAlgEquiv ψ * substAlgEquiv φ :=
-  AlgEquiv.ext fun f ↦ by
-    rw [AlgEquiv.mul_apply, coe_substAlgEquiv, coe_substAlgEquiv, coe_substAlgEquiv,
-      substAlgHom_comp_substAlgHom_apply]
-
-@[simp]
-theorem substAlgEquiv_one : substAlgEquiv (1 : FormalCoordinate K) = 1 :=
-  AlgEquiv.ext fun f ↦ by
-    rw [coe_substAlgEquiv, substAlgHom_eq_id_of_eq_X _ _ FormalCoordinate.toPowerSeries_one,
-      AlgHom.id_apply, AlgEquiv.one_apply]
-
-/-- Substitution automorphisms are natural in the coefficient field: applying a field embedding
-`σ : K →+* L` to the coefficients intertwines `σ_φ` with the substitution automorphism of the
-base-changed coordinate. -/
-theorem mapRingHom_substAlgEquiv {L : Type*} [Field L] (σ : K →+* L) (φ : FormalCoordinate K)
-    (f : K⸨X⸩) :
-    mapRingHom σ (substAlgEquiv φ f) =
-      substAlgEquiv (FormalCoordinate.map σ φ) (mapRingHom σ f) := by
-  rw [coe_substAlgEquiv, coe_substAlgEquiv]
-  exact mapRingHom_substAlgHom _ _ σ _ _ (FormalCoordinate.toPowerSeries_map σ φ).symm f
-
-/-- The ring homomorphisms underlying `σ_φ` and its inverse are inverse to each other, so that
-`σ_φ`-semilinear equivalences can be formed. -/
-instance (φ : FormalCoordinate K) :
-    RingHomInvPair ((substAlgEquiv φ).toRingEquiv : K⸨X⸩ →+* K⸨X⸩)
-      ((substAlgEquiv φ).toRingEquiv.symm : K⸨X⸩ →+* K⸨X⸩) :=
-  .of_ringEquiv _
-
-/-- The ring homomorphisms underlying the inverse of `σ_φ` and `σ_φ` are inverse to each other. -/
-instance (φ : FormalCoordinate K) :
-    RingHomInvPair ((substAlgEquiv φ).toRingEquiv.symm : K⸨X⸩ →+* K⸨X⸩)
-      ((substAlgEquiv φ).toRingEquiv : K⸨X⸩ →+* K⸨X⸩) :=
-  .of_ringEquiv_symm _
+/-- A two-variable power series `f ∈ R⟦X₀, X₁⟧` over a commutative ring `R` whose substitution
+along `(X, T X)` in `R⸨T⸩⟦X⟧` (with `T = HahnSeries.single 1 1`) vanishes is zero. -/
+theorem eq_zero_of_subst_X_single_smul_X {R : Type*} [CommRing R] {f : MvPowerSeries (Fin 2) R}
+    (h : MvPowerSeries.subst
+      ![(PowerSeries.X : R⸨X⸩⟦X⟧), (HahnSeries.single 1 (1 : R) : R⸨X⸩) • PowerSeries.X]
+      (f.map (algebraMap R R⸨X⸩)) = 0) :
+    f = 0 := by
+  ext d
+  rw [MvPowerSeries.coeff_zero]
+  have hc := congrArg (fun g : R⸨X⸩⟦X⟧ ↦ (PowerSeries.coeff (d 0 + d 1) g).coeff (d 1)) h
+  rw [MvPowerSeries.coeff_subst_X_smul_X, (PowerSeries.coeff (d 0 + d 1)).map_zero,
+    HahnSeries.coeff_zero, HahnSeries.coeff_sum] at hc
+  rw [Finset.sum_eq_single (d 1)] at hc
+  · have hd : Finsupp.single (0 : Fin 2) (d 0 + d 1 - d 1) + Finsupp.single 1 (d 1) = d := by
+      ext i
+      fin_cases i <;> simp
+    simpa only [hd, MvPowerSeries.coeff_map, HahnSeries.single_pow, nsmul_eq_mul, mul_one,
+      one_pow, coeff_algebraMap_mul, HahnSeries.coeff_single_same] using hc
+  · intro b _ hb_ne
+    rw [MvPowerSeries.coeff_map, HahnSeries.single_pow, nsmul_eq_mul, mul_one, one_pow,
+      coeff_algebraMap_mul, HahnSeries.coeff_single_of_ne (by exact_mod_cast hb_ne.symm),
+      mul_zero]
+  · exact fun hnot ↦ absurd (Finset.mem_range.mpr (by omega)) hnot
 
 end TauCeti.LaurentSeries

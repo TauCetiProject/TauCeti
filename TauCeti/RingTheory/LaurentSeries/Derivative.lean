@@ -57,9 +57,14 @@ operation is introduced.
   `f` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
+* `LaurentSeries.derivative_map_addMonoidHom`: differentiation commutes with applying an additive
+  map to the coefficients.
+* `LaurentSeries.derivative_mapRingHom`: differentiation commutes with coefficient extension along
+  a ring homomorphism.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
+* `LaurentSeries.derivative_expand`: the chain rule for Laurent expansion `X ↦ X ^ d`.
 * `LaurentSeries.ratHahnSeriesDerivation_ramifiedEmbedding`: **the chain rule on ramified
   levels**. Under the level-`n` embedding `u ↦ t ^ (1 / n)` into rational-exponent Hahn series,
   the derivative `d/dt` is `(1 / n) u ^ (1 - n) D`.
@@ -334,7 +339,44 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   rintro ⟨c, rfl⟩
   simp
 
+/-- **Coefficient maps commute with differentiation**: differentiation only multiplies
+coefficients by integers, so applying an additive map `g : V → W` to the coefficients of `f'`
+gives the derivative of the image of `f`, for any scalar rings of `V` and `W`. -/
+theorem derivative_map_addMonoidHom {R S V W F : Type*} [Semiring R] [Semiring S]
+    [AddCommGroup V] [AddCommGroup W] [Module R V] [Module S W] [FunLike F V W]
+    [AddMonoidHomClass F V W] (g : F) (f : LaurentSeries V) :
+    derivative S (f.map g) = (derivative R f).map g := by
+  ext n
+  simp only [coeff_derivative, map_coeff, map_zsmul]
+
+/-- **Coefficient extension commutes with differentiation**: for a ring homomorphism
+`φ : R →+* S`, applying `φ` to the coefficients of `f'` gives the derivative of the image of `f`. -/
+theorem derivative_mapRingHom {R S : Type*} [Ring R] [Ring S] (φ : R →+* S) (f : R⸨X⸩) :
+    derivative S (mapRingHom φ f) = mapRingHom φ (derivative R f) := by
+  simpa only [mapRingHom_apply] using derivative_map_addMonoidHom (R := R) φ f
+
 section Ramified
+
+/-- **Chain rule for Laurent expansion**: the derivative of `f (X ^ d)` is
+`(Df)(X ^ d) * d X ^ (d - 1)`. -/
+theorem derivative_expand {R : Type*} [CommRing R] (d : ℕ+) (f : R⸨X⸩) :
+    derivative R (expand R d f) =
+      expand R d (derivative R f) * derivative R (single (d : ℤ) 1) := by
+  have hd : derivative R (single (d : ℤ) (1 : R)) = single ((d : ℤ) - 1) (d : R) := by
+    rw [derivative_apply, hasseDeriv_single]
+    simp
+  ext n
+  rw [hd, coeff_derivative, coeff_mul_single]
+  by_cases h : (d : ℤ) ∣ n + 1
+  · obtain ⟨k, hk⟩ := h
+    have hk' : n - ((d : ℤ) - 1) = (d : ℤ) * (k - 1) := by linarith
+    rw [hk, coeff_expand_mul, hk', coeff_expand_mul, coeff_derivative]
+    simp only [sub_add_cancel, zsmul_eq_mul, Int.cast_mul, Int.cast_natCast]
+    ring
+  · have h' : ¬ (d : ℤ) ∣ n - ((d : ℤ) - 1) := by
+      intro ⟨k, hk⟩
+      exact h ⟨k + 1, by linarith⟩
+    rw [coeff_expand_of_not_dvd d f h, coeff_expand_of_not_dvd d _ h', smul_zero, zero_mul]
 
 variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
@@ -393,7 +435,7 @@ theorem continuous_derivative : Continuous (derivative K : K⸨X⸩ → K⸨X⸩
   rw [ContinuousAt, map_zero]
   intro s hs
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.1 = WithZero.exp k :=
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.val = WithZero.exp k :=
     ⟨_, (WithZero.exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)).symm⟩
   -- Series of valuation below `exp (k - 2)` have derivatives of valuation below `exp k`.
   have hU : {x : K⸨X⸩ | Valued.v x < Valued.v (single (2 - k) (1 : K))} ∈ 𝓝 0 :=

@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.InvariantForm
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Quotient.Prod
+
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Lie.Dual
 
 /-!
 # The Kirillov–Kostant–Souriau form on a coadjoint tangent space
@@ -60,11 +64,18 @@ covering homomorphism and quotients by central ideals. For a product `L₁ × L�
 `(η₁, η₂) ↦ ν₁ η₁ + ν₂ η₂`, the stabilizer is the product of the stabilizers and the KKS form is
 the sum of the two factor forms.
 
+An invariant form `B` on `L`, with `B ⁅ξ, μ⁆ η = -B μ ⁅ξ, η⁆`, is a map of Lie modules
+`μ ↦ B μ` from `L` to `L*` (`LinearMap.BilinForm.map_lie_of_lieInvariant`). So when `B` has
+trivial left radical the stabilizer of the covector `B μ` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}`
+of `μ` (`TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`).
+
 Finally, the positive Lie–Poisson tensor of `L*` at `ν`, `{ℓ_α, ℓ_β}(ν) = ν ⁅α, β⁆`, is the Kirillov
 form on covectors `α, β ∈ L`, with sharp map `β(π♯α) = π(α, β)`. Its sharp image
 `π♯α = -⁅α, ν⁆` is the orbit derivative of `[-α]`, and the KKS form evaluated on the preimages
 of `π♯α` and `π♯β` is `π_ν(α, β)`. This fixes the signs relating the KKS form to the Lie–Poisson
-structure.
+structure. The sharp map and the orbit derivative have the same image `L · ν`, whose rank is that
+of `L ⧸ L_ν`. For a finite-dimensional Lie algebra over a field this image is the annihilator of
+the stabilizer `L_ν`, the kernel of the alternating form `ν.kirillovForm`.
 
 ## Main definitions
 
@@ -79,6 +90,9 @@ structure.
 ## Main results
 
 * `Module.Dual.ker_kirillovForm`: the kernel of the Kirillov form is the stabilizer `L_ν`.
+* `Module.Dual.forall_kirillovForm_add_eq_zero_iff`: when `π : L → P` maps `L_ν` onto `P` and
+  `β` has trivial left radical, the left radical of the Marle–Guillemin–Sternberg tensor
+  `b(π ξ) - a(π ζ) + ν ⁅ξ, ζ⁆ + β(v, w)` on `L × P* × V` is `(L_ν ∩ ker π) × 0 × 0`.
 * `Module.Dual.coadjointTangentMap_injective`: the orbit derivative is injective.
 * `Module.Dual.isAlt_kksForm`, `Module.Dual.kksForm_nondegenerate`: `ω_ν` is alternating and
   nondegenerate.
@@ -92,6 +106,14 @@ structure.
   the orbit derivative of `[-α]`.
 * `Module.Dual.kksForm_eq_kirillovForm_of_coadjointTangentMap_eq`: the KKS form inverts the
   Lie–Poisson sharp map.
+* `Module.Dual.range_coadjointTangentMap`: the orbit derivative and the sharp map have the same
+  image.
+* `Module.Dual.range_kirillovForm`: the image of the sharp map is the annihilator of `L_ν`.
+* `Module.Dual.finrank_range_kirillovForm`: the rank of the Lie–Poisson tensor at `ν` is the
+  dimension of `L ⧸ L_ν`.
+* `TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`: for an invariant form `B` with
+  trivial left radical on a Lie module, the annihilator of `B m` is that of `m`; on `L` itself,
+  the stabilizer of `B μ` is the centralizer of `μ`.
 
 ## References
 
@@ -136,6 +158,55 @@ theorem ker_kirillovForm :
   ext ξ
   simp only [LinearMap.mem_ker, LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator,
     LinearMap.ext_iff, kirillovForm_eq_neg_lie_apply, LinearMap.zero_apply, neg_eq_zero]
+
+/-- An element `ξ` of the coadjoint stabilizer `L_ν` pairs to zero with every `η` under the Kirillov
+form: `ν ⁅ξ, η⁆ = 0`. -/
+theorem kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_left {ξ : L}
+    (hξ : ξ ∈ lieAnnihilator R L ν) (η : L) : ν.kirillovForm ξ η = 0 := by
+  rw [← LieSubalgebra.mem_toSubmodule, ← ker_kirillovForm, LinearMap.mem_ker] at hξ
+  rw [hξ, LinearMap.zero_apply]
+
+/-- Every `ξ` pairs to zero with an element `η` of the coadjoint stabilizer `L_ν` under the
+Kirillov form: `ν ⁅ξ, η⁆ = 0`. -/
+theorem kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_right (ξ : L) {η : L}
+    (hη : η ∈ lieAnnihilator R L ν) : ν.kirillovForm ξ η = 0 := by
+  rw [← ν.isAlt_kirillovForm.neg_eq, ν.kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_left hη,
+    neg_zero]
+
+section Radical
+
+variable {𝕜 L P V : Type*} [Field 𝕜] [LieRing L] [LieAlgebra 𝕜 L] [AddCommGroup P] [Module 𝕜 P]
+  [AddCommGroup V] [Module 𝕜 V] (ν : Dual 𝕜 L) {π : L →ₗ[𝕜] P} {β : LinearMap.BilinForm 𝕜 V}
+
+/-- **The radical of the Marle–Guillemin–Sternberg tensor.** Let `ν ∈ L*`, let `π : L → P` map
+the coadjoint stabilizer `L_ν` onto `P`, and let `β` be a bilinear form on `V` with trivial left
+radical. Then `(ξ, a, v) ∈ L × P* × V` pairs to zero with every `(ζ, b, w)` under
+
+`b(π ξ) - a(π ζ) + ν ⁅ξ, ζ⁆ + β(v, w)`
+
+exactly when `ξ ∈ L_ν`, `π ξ = 0`, `a = 0` and `v = 0`. -/
+theorem forall_kirillovForm_add_eq_zero_iff (hβ : β.SeparatingLeft)
+    (hπ : (lieAnnihilator 𝕜 L ν).toSubmodule.map π = ⊤) (ξ : L) (a : Dual 𝕜 P) (v : V) :
+    (∀ (ζ : L) (b : Dual 𝕜 P) (w : V),
+        b (π ξ) - a (π ζ) + ν.kirillovForm ξ ζ + β v w = 0) ↔
+      ξ ∈ lieAnnihilator 𝕜 L ν ∧ π ξ = 0 ∧ a = 0 ∧ v = 0 := by
+  constructor
+  · intro h
+    have hv : v = 0 := hβ v fun w ↦ by simpa using h 0 0 w
+    have hπξ : π ξ = 0 :=
+      (forall_dual_apply_eq_zero_iff 𝕜 (π ξ)).1 fun b ↦ by simpa using h 0 b 0
+    -- `a` vanishes on `π L_ν = P`, since `ν ⁅ξ, ζ⁆ = 0` for `ζ ∈ L_ν`.
+    have ha : a = 0 := by
+      refine LinearMap.ext fun p ↦ ?_
+      obtain ⟨ζ, hζ, rfl⟩ : p ∈ (lieAnnihilator 𝕜 L ν).toSubmodule.map π := hπ ▸ Submodule.mem_top
+      simpa [hπξ, hv, ν.kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_right ξ hζ] using h ζ 0 0
+    refine ⟨?_, hπξ, ha, hv⟩
+    rw [← LieSubalgebra.mem_toSubmodule, ← ker_kirillovForm, LinearMap.mem_ker]
+    exact LinearMap.ext fun ζ ↦ by simpa [hπξ, ha, hv] using h ζ 0 0
+  · rintro ⟨hξ, hπξ, rfl, rfl⟩ ζ b w
+    simp [hπξ, ν.kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_left hξ ζ]
+
+end Radical
 
 /-- The algebraic orbit derivative `[ξ] ↦ ⁅ξ, ν⁆`, identifying the algebraic tangent model
 `L ⧸ L_ν` with the subspace `L · ν = {⁅ξ, ν⁆}` of `L*`. When `L` integrates to a Lie group `G` whose
@@ -425,4 +496,61 @@ theorem kksForm_eq_kirillovForm_of_coadjointTangentMap_eq {α β : L}
   rw [ν.coadjointTangentMap_injective hx, ν.coadjointTangentMap_injective hy, kksForm_mk,
     kirillovForm_apply, neg_lie, lie_neg, neg_neg]
 
+/-- **The orbit derivative and the Lie–Poisson sharp map have the same image**, the subspace
+`L · ν = {⁅ξ, ν⁆}` of `L*`: the sharp image `π♯α = ν.kirillovForm α` is the orbit derivative of
+`[-α]`. -/
+theorem range_coadjointTangentMap :
+    LinearMap.range ν.coadjointTangentMap = LinearMap.range ν.kirillovForm := by
+  refine le_antisymm ?_ fun _ ⟨α, hα⟩ ↦
+    ⟨_, (kirillovForm_eq_coadjointTangentMap_mk_neg ν α).symm.trans hα⟩
+  rintro _ ⟨x, rfl⟩
+  induction x using Submodule.Quotient.induction_on with
+  | H ξ => exact ⟨-ξ, by rw [kirillovForm_eq_coadjointTangentMap_mk_neg, neg_neg]⟩
+
+/-- **The rank of the Lie–Poisson tensor at `ν` is the dimension of the algebraic tangent model**
+`L ⧸ L_ν` of the coadjoint orbit through `ν`, since the injective orbit derivative has the same
+image as the sharp map. -/
+theorem finrank_range_kirillovForm :
+    finrank R (LinearMap.range ν.kirillovForm) =
+      finrank R (L ⧸ (lieAnnihilator R L ν).toSubmodule) := by
+  rw [← range_coadjointTangentMap, LinearMap.finrank_range_of_inj ν.coadjointTangentMap_injective]
+
 end Module.Dual
+
+namespace Module.Dual
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] (ν : Dual K L)
+
+/-- **The image of the Lie–Poisson sharp map is the annihilator of the stabilizer.** For a
+finite-dimensional Lie algebra over a field, the sharp images `π♯α = ν.kirillovForm α` at `ν` are
+exactly the covectors vanishing on the coadjoint stabilizer `L_ν`, the kernel of the alternating
+form `ν.kirillovForm`. -/
+theorem range_kirillovForm [FiniteDimensional K L] :
+    LinearMap.range ν.kirillovForm = (lieAnnihilator K L ν).toSubmodule.dualAnnihilator := by
+  have h : LinearMap.flip ν.kirillovForm = -ν.kirillovForm := by
+    ext ξ η
+    exact (ν.isAlt_kirillovForm.neg_eq ξ η).symm
+  rw [← ker_kirillovForm, LinearMap.dualAnnihilator_ker_eq_range_flip, h, LinearMap.range_neg]
+
+end Module.Dual
+
+/-! ### Covectors of an invariant form -/
+
+namespace TauCeti
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+  {B : LinearMap.BilinForm R M}
+
+/-- **Annihilators of invariant-form covectors.** For a bilinear form `B` on a Lie module `M`,
+invariant under `L` and with trivial left radical, the annihilator in `L` of the linear form
+`B m = B(m, ·)` is the annihilator of `m`. For `M = L` this says that the infinitesimal coadjoint
+stabilizer of `B μ` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}` of `μ`. -/
+theorem lieAnnihilator_bilinForm_apply_eq_of_lieInvariant (hB : B.lieInvariant L)
+    (hB' : LinearMap.SeparatingLeft B) (m : M) :
+    lieAnnihilator R L (B m) = lieAnnihilator R L m := by
+  ext ξ
+  rw [mem_lieAnnihilator, mem_lieAnnihilator, ← LinearMap.BilinForm.map_lie_of_lieInvariant hB]
+  exact ⟨fun h ↦ hB' _ fun η ↦ by rw [h, LinearMap.zero_apply], fun h ↦ by rw [h, map_zero]⟩
+
+end TauCeti

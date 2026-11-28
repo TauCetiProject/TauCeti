@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
+public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Twist
 public import TauCeti.CategoryTheory.Monoidal.Action.LinearFunctor
 
@@ -329,7 +329,7 @@ lemma isStableUnderLeftAction_discreteAnnihilatedModules :
     refine ⟨discreteModules_restrictScalars (ha h) hM.1, fun m x => ?_⟩
     have hx : (x : A) ∈ I.comap (a h).symm := by
       rw [← Ideal.map_comap_of_equiv, hI h]
-      exact x.2
+      exact x.property
     exact (ModuleCat.restrictScalars.smul_def _ _ m).trans (@hM.2 m ⟨_, hx⟩)
 
 /-- The twisting action of `H` on the discrete `A`-modules annihilated by `I`: the element `h`

@@ -43,7 +43,9 @@ graded `k[X]`-modules:
   `τ` coming from crossing changes and cobordisms; a graded isomorphism preserves the invariant
   (`InternalGrading.supNonTorsionDegree_eq_of_linearEquiv`).
 
-Finally, the polynomial ring itself, graded by minus the exponent, has the invariant `0`
+A torsion module has no homogeneous non-torsion element, and its invariant is `0`
+(`InternalGrading.supNonTorsionDegree_eq_zero_of_isTorsion`). Finally, the polynomial ring itself,
+graded by minus the exponent, has the invariant `0`
 (`Polynomial.supNonTorsionDegree_negDegreeGrading`).
 
 ## Main definitions
@@ -137,7 +139,15 @@ theorem nonTorsionDegrees_nonempty_iff (G : InternalGrading k M ℤ) :
     by_contra hG
     refine hx (DirectSum.sum_support_decompose G.piece x ▸ Submodule.sum_mem _ fun p _ ↦ ?_)
     by_contra hp
-    exact hG ⟨p, _, (DirectSum.decompose G.piece x p).2, hp⟩
+    exact hG ⟨p, _, (DirectSum.decompose G.piece x p).property, hp⟩
+
+/-- The supremal non-torsion degree of a torsion graded `k[X]`-module is `0`: there is no
+homogeneous non-torsion element, and the supremum of the empty set of degrees is `0`. -/
+theorem supNonTorsionDegree_eq_zero_of_isTorsion (G : InternalGrading k M ℤ)
+    (hT : Module.IsTorsion k[X] M) : G.supNonTorsionDegree = 0 := by
+  rw [supNonTorsionDegree_def,
+    Set.not_nonempty_iff_eq_empty.mp fun hne ↦ (nonTorsionDegrees_nonempty_iff G).mp hne hT,
+    Int.csSup_empty]
 
 end Defs
 

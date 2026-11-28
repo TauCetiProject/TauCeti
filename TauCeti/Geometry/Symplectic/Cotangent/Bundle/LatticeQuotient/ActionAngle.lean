@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.Basic
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -32,12 +32,13 @@ A covector `ξ` over `x` has coordinates `c(ξ)` in the frame, `ξ = ∑ i, c_i(
 
 The lattice translations shift `c` by integer vectors, which `κ` absorbs since it is
 `p`-periodic in the angles, so `Φ` is well defined on `T*B/Λ`. Its actions are the values of the
-developing map, `Φ(z)(e_i) = a_i(π z)` (`actionAngleChart_snd_apply_single`), and:
+developing map, `Φ(z)(e_i) = a_i(π z)` (`torusActions_actionAngleChart`), and:
 
 * `Φ` is a local diffeomorphism (`isLocalDiffeomorph_actionAngleChart`);
 * `Φ` pulls the canonical form of `T*Tⁿ` back to the symplectic form of `T*B/Λ`
   (`mpullback_actionAngleChart_symplecticForm`);
-* `Φ` is injective exactly when `a` is (`actionAngleChart_injective_iff`);
+* `Φ` is injective on every fibre of `T*B/Λ → B` (`injOn_actionAngleChart`), and injective
+  exactly when `a` is (`actionAngleChart_injective_iff`);
 * its range is the set of covectors whose actions are values of `a`
   (`range_actionAngleChart`).
 
@@ -57,10 +58,11 @@ the Liouville forms are related by `Ψ^* λ = G^* λ + d (p c ⬝ a)`, where `Ψ
 
 ## Main results
 
-* `actionAngleChart_snd_apply_single`: the actions of `Φ(z)` are `a(π z)`.
+* `torusActions_actionAngleChart`: the actions of `Φ(z)` are `a(π z)`.
 * `contMDiff_actionAngleChart`, `isLocalDiffeomorph_actionAngleChart`: `Φ` is a smooth local
   diffeomorphism.
 * `mpullback_actionAngleChart_symplecticForm`: `Φ` is symplectic.
+* `injOn_actionAngleChart`: `Φ` is injective on every fibre.
 * `actionAngleChart_injective_iff`, `range_actionAngleChart`: `Φ` is injective exactly when `a`
   is, with image the covectors whose actions lie in `a(B)`.
 
@@ -150,10 +152,10 @@ theorem actionAngleChart_mk_sum_smul (x : B) (c : ι → ℝ) :
 /-- **The actions of the action–angle chart are the values of `a`**: the covector `Φ(z)` takes the
 value `a_i(π z)` on the `i`-th coordinate vector of the torus. -/
 @[simp]
-theorem actionAngleChart_snd_apply_single [DecidableEq ι] (z : LatticeQuotient α hα) (i : ι) :
-    (actionAngleChart hα p a z).2 (Pi.single i 1) = a (proj hα z) i := by
+theorem torusActions_actionAngleChart [DecidableEq ι] (z : LatticeQuotient α hα) :
+    torusActions p (actionAngleChart hα p a z) = a (proj hα z) := by
   obtain ⟨z, rfl⟩ := mk_surjective hα z
-  rw [actionAngleChart_mk, actionAngleCover_snd_apply_single, proj_mk]
+  rw [actionAngleChart_mk, torusActions_actionAngleCover, proj_mk]
 
 /-! ### The cover by frame coordinates -/
 
@@ -164,7 +166,7 @@ private def frameCover (x : (ι → ℝ) × B) : CotangentBundle I B :=
 
 /-- The covector `Ψ(c, x)` evaluates a tangent vector `w` at `x` as `∑ j, c_j α_j x w`. -/
 private theorem frameCover_snd_apply (x : (ι → ℝ) × B) (w : E) :
-    (frameCover α x).2 w = ∑ j, x.1 j * SmoothForm.degreeOneEquiv (α j) x.2 w := by
+    (frameCover α x).snd w = ∑ j, x.1 j * SmoothForm.degreeOneEquiv (α j) x.2 w := by
   -- Read `w` as a tangent vector at `x.2`, so that `sum_apply` applies to the covectors on
   -- `TangentSpace I x.2`; each summand `(c • φ) w = c * φ w` then holds by definition.
   let w' : TangentSpace I x.2 := w
@@ -278,7 +280,7 @@ omit [Fact (0 < p)] in
 `w = (u, e)`. -/
 private theorem mextDerivₗ_pairing_apply (ha : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ a) (x : (ι → ℝ) × B)
     (w : TangentSpace (𝓘(ℝ, ι → ℝ).prod I) x) :
-    (mextDerivₗ (𝓘(ℝ, ι → ℝ).prod I) 0 (SmoothForm.ofFunction (pairing p ha))).1 x ![w] =
+    (mextDerivₗ (𝓘(ℝ, ι → ℝ).prod I) 0 (SmoothForm.ofFunction (pairing p ha))).val x ![w] =
       -∑ j, (-(p * x.1 j) * mfderiv I 𝓘(ℝ, ι → ℝ) a x.2 w.2 j + a x.2 j * -(p * w.1 j)) := by
   rw [mextDerivₗ_zero_apply, SmoothForm.ofFunction_apply_zero, mvfderiv_apply_eq_mfderiv_apply]
   exact mfderiv_pairing_apply p ha x w
@@ -288,7 +290,7 @@ omit [Fact (0 < p)] in
 private theorem mpullback_frameCover_liouvilleForm_apply
     (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i)
     (x : (ι → ℝ) × B) (w : TangentSpace (𝓘(ℝ, ι → ℝ).prod I) x) :
-    (SmoothForm.mpullback (frameCover α) contMDiff_frameCover (liouvilleForm I B)).1 x ![w] =
+    (SmoothForm.mpullback (frameCover α) contMDiff_frameCover (liouvilleForm I B)).val x ![w] =
       ∑ j, x.1 j * (p * mfderiv I 𝓘(ℝ, ι → ℝ) a x.2 w.2 j) := by
   rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_comp_eq (g := Prod.snd)
       (fun _ ↦ rfl) ((contMDiff_frameCover x).mdifferentiableAt (by simp)), Matrix.cons_val_zero,
@@ -302,7 +304,7 @@ private theorem mpullback_actionAngleCover_comp_liouvilleForm_apply
     (w : TangentSpace (𝓘(ℝ, ι → ℝ).prod I) x) :
     (SmoothForm.mpullback (actionAngleCover p ∘ anglesActions p a)
         (contMDiff_actionAngleCover_comp p ha)
-        (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))).1 x ![w] =
+        (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))).val x ![w] =
       ∑ j, a x.2 j * -(p * w.1 j) := by
   rw [← SmoothForm.mpullback_mpullback _ _ (contMDiff_anglesActions p ha)
       (contMDiff_actionAngleCover p), SmoothForm.mpullback_apply_one, SmoothForm.coe_mpullback,
@@ -350,31 +352,30 @@ private theorem mpullback_frameCover_symplecticForm (ha : ContMDiff I 𝓘(ℝ, 
 /-- Every class in `T*B/Λ` is the class of `∑ j, c_j α_j x` for some `(c, x)`. -/
 private theorem surjective_mk_comp_frameCover : Surjective (mk hα ∘ frameCover α) := fun z ↦ by
   obtain ⟨z, rfl⟩ := mk_surjective hα z
-  exact ⟨(fun i ↦ hα.coeff i z.proj z.2, z.proj),
+  exact ⟨(fun i ↦ hα.coeff i z.proj z.snd, z.proj),
     congrArg (mk hα) (congrArg (TotalSpace.mk' (E →L[ℝ] ℝ) z.proj)
-      (hα.coeff_sum_eq (fun _ ↦ z.2) (mem_univ z.proj)).symm)⟩
+      (hα.coeff_sum_eq (fun _ ↦ z.snd) (mem_univ z.proj)).symm)⟩
 
 /-- After the cover, the action–angle chart is `G(c, x) = κ(-p c, a(x))`. -/
 private theorem actionAngleChart_comp_mk_comp_frameCover :
     actionAngleChart hα p a ∘ (mk hα ∘ frameCover α) = actionAngleCover p ∘ anglesActions p a :=
   funext fun x ↦ actionAngleChart_mk_sum_smul hα p a x.2 x.1
 
-/-- **The action–angle chart is injective exactly when the developing map `a` is.** -/
-theorem actionAngleChart_injective_iff : Injective (actionAngleChart hα p a) ↔ Injective a := by
-  refine ⟨fun h x y hxy ↦ ?_, fun h z z' hzz' ↦ ?_⟩
-  · -- Two base points with the same value of `a` carry zero covectors with the same image.
-    have hz := actionAngleChart_mk_sum_smul hα p a x 0
-    rw [hxy, ← actionAngleChart_mk_sum_smul hα p a y 0] at hz
-    simpa using congrArg (proj hα) (h hz)
-  -- Two classes with the same image have the same actions, hence base points with the same value
-  -- of `a`, and angles differing by `p ℤ^ι`, hence frame coordinates differing by an integer
-  -- vector.
+/-- **The action–angle chart is injective on every fibre** of `T*B/Λ → B`, whether or not `a` is
+injective: on the fibre over `b` it is `[ξ] ↦ κ(-p c(ξ), a(x))`, and the angles `-p c(ξ)` determine
+the class of `ξ` modulo the lattice. -/
+theorem injOn_actionAngleChart (b : B) :
+    InjOn (actionAngleChart hα p a) (proj hα ⁻¹' {b}) := by
+  intro z hz z' hz' hzz'
+  -- Classes in one fibre with the same image have angles differing by `p ℤ^ι`, hence frame
+  -- coordinates differing by an integer vector.
   obtain ⟨⟨c, x⟩, rfl⟩ := surjective_mk_comp_frameCover hα z
   obtain ⟨⟨c', x'⟩, rfl⟩ := surjective_mk_comp_frameCover hα z'
+  simp only [mem_preimage, mem_singleton_iff, comp_apply, frameCover, proj_mk] at hz hz'
   simp only [comp_apply, frameCover, actionAngleChart_mk_sum_smul,
     actionAngleCover_eq_actionAngleCover_iff] at hzz' ⊢
-  obtain ⟨hxx', m, hm⟩ := hzz'
-  obtain rfl := h hxx'
+  obtain ⟨-, m, hm⟩ := hzz'
+  obtain rfl : x = x' := hz.trans hz'.symm
   refine (mk_mk_eq_mk_mk_iff hα).2 ⟨m, ?_⟩
   -- The angles `-p c'` and `-p c + m p` agree, so `c = c' + m`.
   have hc : c = c' + fun i ↦ (m i : ℝ) := by
@@ -386,17 +387,31 @@ theorem actionAngleChart_injective_iff : Injective (actionAngleChart hα p a) �
     linarith
   simp [hc, add_smul, Finset.sum_add_distrib]
 
+/-- **The action–angle chart is injective exactly when the developing map `a` is.** -/
+theorem actionAngleChart_injective_iff : Injective (actionAngleChart hα p a) ↔ Injective a := by
+  classical
+  refine ⟨fun h x y hxy ↦ ?_, fun h z z' hzz' ↦ ?_⟩
+  · -- Two base points with the same value of `a` carry zero covectors with the same image.
+    have hz := actionAngleChart_mk_sum_smul hα p a x 0
+    rw [hxy, ← actionAngleChart_mk_sum_smul hα p a y 0] at hz
+    simpa using congrArg (proj hα) (h hz)
+  -- Two classes with the same image have the same actions, hence base points with the same value
+  -- of `a`, so they lie in one fibre.
+  have hzz'a := congrArg (torusActions p) hzz'
+  rw [torusActions_actionAngleChart, torusActions_actionAngleChart] at hzz'a
+  exact injOn_actionAngleChart hα (proj hα z') (h hzz'a) rfl hzz'
+
 /-- **The range of the action–angle chart** is the set of covectors of `T*Tⁿ` whose actions are
 values of the developing map `a`. -/
 theorem range_actionAngleChart [DecidableEq ι] :
-    range (actionAngleChart hα p a) = {z | (fun i ↦ z.2 (Pi.single i 1)) ∈ range a} := by
+    range (actionAngleChart hα p a) = {z | torusActions p z ∈ range a} := by
   refine Subset.antisymm ?_ fun z ⟨x, hx⟩ ↦ ?_
   · rintro _ ⟨z, rfl⟩
-    exact ⟨proj hα z, funext fun i ↦ (actionAngleChart_snd_apply_single hα p a z i).symm⟩
+    exact ⟨proj hα z, (torusActions_actionAngleChart hα p a z).symm⟩
   obtain ⟨⟨θ, J⟩, rfl⟩ := surjective_actionAngleCover p z
   have hJ : J = a x := by
     rw [hx]
-    exact funext fun i ↦ (actionAngleCover_snd_apply_single p (θ, J) i).symm
+    exact (torusActions_actionAngleCover p (θ, J)).symm
   refine ⟨mk hα (frameCover α (-(p⁻¹ • θ), x)), ?_⟩
   rw [frameCover, actionAngleChart_mk_sum_smul, hJ]
   congr 2
@@ -410,7 +425,7 @@ omit [Fact (0 < p)] [FiniteDimensional ℝ E] [T2Space B] [BoundarylessManifold 
 include hα in
 /-- The developing map has injective differential: its differentials, scaled by `p`, span every
 cotangent space. -/
-private theorem injective_mfderiv
+theorem injective_mfderiv
     (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i)
     (x : B) : Injective (mfderiv I 𝓘(ℝ, ι → ℝ) a x) := by
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_

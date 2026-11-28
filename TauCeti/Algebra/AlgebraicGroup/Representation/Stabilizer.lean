@@ -45,6 +45,8 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
   rational points carrying `W` onto itself.
 * `Submodule.stabilizerHopfIdeal_le_iff`: its universal property among Hopf ideals.
 * `Submodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `W` is a subcomodule.
+* `Submodule.stabilizerHopfIdeal_map_of_injective`: an injective morphism of representations
+  does not change stabilizers.
 * `Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the stabilizer of
   `W` under the differentiated representation.
 
@@ -174,15 +176,15 @@ private theorem map_mkₐ_comul_stabilizerGenerators (W : Submodule k M) {x : H}
         (Ideal.Quotient.mkₐ k (Ideal.span (stabilizerGenerators H W)))
         (Coalgebra.comul (R := k) x) = 0 := by
   rcases hx with ⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩
-  · exact map_mkₐ_comul_matrixCoefficient W ψ w.2
+  · exact map_mkₐ_comul_matrixCoefficient W ψ w.property
   · rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, map_mkₐ_map_antipode_comm,
-      map_mkₐ_comul_matrixCoefficient W ψ w.2, map_zero, map_zero]
+      map_mkₐ_comul_matrixCoefficient W ψ w.property, map_zero, map_zero]
 
 /-- The counit vanishes on the stabilizer generators. -/
 private theorem counit_stabilizerGenerators (W : Submodule k M) {x : H}
     (hx : x ∈ stabilizerGenerators H W) : Coalgebra.counit (R := k) x = 0 := by
   rcases hx with ⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩ <;>
-  simp [Comodule.counit_matrixCoefficient, (Submodule.Quotient.mk_eq_zero W).mpr w.2]
+  simp [Comodule.counit_matrixCoefficient, (Submodule.Quotient.mk_eq_zero W).mpr w.property]
 
 variable (H) in
 /-- The Hopf ideal of the stabilizer of a subspace `W` of a comodule `M`.
@@ -230,8 +232,8 @@ theorem stabilizerHopfIdeal_le_iff (W : Submodule k M) (J : HopfIdeal k H) :
   refine ⟨fun h ψ w hw ↦ h (matrixCoefficient_mem_stabilizerHopfIdeal W ψ hw), fun h ↦ ?_⟩
   rw [← HopfIdeal.toIdeal_le_toIdeal, stabilizerHopfIdeal_toIdeal, Ideal.span_le]
   rintro _ (⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩)
-  · exact h ψ w w.2
-  · exact J.antipode_mem (h ψ w w.2)
+  · exact h ψ w w.property
+  · exact J.antipode_mem (h ψ w w.property)
 
 /-- The stabilizer of `W` is the whole group exactly when `W` is a subcomodule: the coaction of
 every vector of `W` lies in `W ⊗ H`. -/
@@ -268,7 +270,7 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (W : Submodule k M)
   · have hzero (ψ : Module.Dual k (M ⧸ W)) (w : W) (h : ∀ w ∈ W,
         Comodule.differential (R := k) (H := H) (M := M) d w ∈ W) :
         d (Comodule.matrixCoefficient (R := k) (C := H) (ψ ∘ₗ W.mkQ) w) = 0 := by
-      rw [hcoeff, mkQ_apply, (Submodule.Quotient.mk_eq_zero W).mpr (h w w.2), map_zero]
+      rw [hcoeff, mkQ_apply, (Submodule.Quotient.mk_eq_zero W).mpr (h w w.property), map_zero]
     rintro h _ (⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩)
     · exact hzero ψ w h
     · rw [Derivation.apply_antipode, hzero ψ w h, neg_zero]
@@ -304,9 +306,9 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
       rw [← hz'']
       exact hz'
     rintro _ (⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩)
-    · exact (mapsTo_endOfPoint_baseChange_iff W g.ofConv).mp hg ψ w w.2
+    · exact (mapsTo_endOfPoint_baseChange_iff W g.ofConv).mp hg ψ w w.property
     · rw [SetLike.mem_coe, RingHom.mem_ker, ← hinv]
-      exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.2
+      exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.property
 
 /-- A rational point lies in the stabilizer of `W` exactly when its action carries `W` onto
 itself. -/
@@ -335,6 +337,26 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker,
     W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
+
+section Map
+
+variable {V W : Type*} [AddCommGroup V] [Module k V] [Comodule k H V] [AddCommGroup W]
+  [Module k W] [Comodule k H W]
+
+/-- **Stabilizers along an injective morphism.** An injective morphism `f : V → W` of
+representations does not change stabilizers: `f(L)` and `L` have the same stabilizer Hopf ideal. -/
+theorem stabilizerHopfIdeal_map_of_injective (f : Comodule.Hom k H V W)
+    (hf : Function.Injective f) (L : Submodule k V) :
+    (L.map f.toLinearMap).stabilizerHopfIdeal H = L.stabilizerHopfIdeal H := by
+  refine eq_of_forall_ge_iff fun J ↦ ?_
+  -- Test both stabilizers against the quotient point `H → H ⧸ J`, whose kernel is `J`.
+  let g := WithConv.toConv (Ideal.Quotient.mkₐ k J.toIdeal)
+  have hJ : RingHom.ker g.ofConv = J.toIdeal := Ideal.Quotient.mkₐ_ker k _
+  rw [← HopfIdeal.toIdeal_le_toIdeal, ← HopfIdeal.toIdeal_le_toIdeal, ← hJ,
+    stabilizerHopfIdeal_le_ker_iff, stabilizerHopfIdeal_le_ker_iff]
+  exact Comodule.Hom.map_endOfPoint_baseChange_eq_iff f hf L _
+
+end Map
 
 end Hopf
 

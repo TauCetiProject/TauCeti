@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.IteratedFDeriv
+public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Analysis.Calculus.Jet.Equivalence
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Symmetric
+import TauCeti.Analysis.Calculus.IteratedFDeriv.SymmetricFinite
 
 /-!
 # Realization of finite symmetric jets
@@ -22,12 +26,19 @@ polynomial realization. The polynomial and its smoothness are available without 
 zero or symmetry assumptions.
 
 `finiteJetSeries` is the factorial-normalized coefficient series, and `finiteJetPolynomial`
-is its finite Taylor sum about the chosen center. The main results are:
+is its finite Taylor sum about the chosen center. As a function of its coefficients it is the
+continuous linear map `finiteJetPolynomialCLM`, which depends smoothly on the center and the
+evaluation point (`contDiff_finiteJetPolynomialCLM`). The tuples of symmetric multilinear maps
+form the subspace `symmetricJets`. The main results are:
 
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
 * `taylorMonomial`, `iteratedFDeriv_taylorMonomial_self`: the one-term case
   `y ↦ A (y - x, …, y - x) / k!`, whose only nonzero derivative at `x` is `A` when `A` is
   symmetric;
+* `sameJetAt_finiteJetPolynomial_iteratedFDeriv`: over `ℝ` or `ℂ`, a `C^r` map has the same
+  `r`-jet as its Taylor polynomial of degree `r`;
+* `sameJetAt_finiteJetPolynomial_castLE`: for `r' ≤ r`, truncating a tuple to order `r'` does not
+  change the `r'`-jet of its Taylor polynomial;
 * `exists_contDiff_iteratedFDeriv_eq_eventually_mem`: realization with the graph in any
   neighborhood of the center-value pair `(x, A 0 0)`;
 * `exists_contDiff_hasCompactSupport_iteratedFDeriv_eq`: on a finite-dimensional real base,
@@ -54,6 +65,24 @@ namespace TauCeti
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+variable (𝕜 E F) in
+/-- The **symmetric `r`-jets**: the tuples `(A₀, …, Aᵣ)` of continuous multilinear maps
+`Aᵢ : E [×i]→L[𝕜] F` each of which is invariant under permutations of its arguments. Over `ℝ` or
+`ℂ` these are exactly the `r`-jets of smooth maps `E → F` at a point
+(`TauCeti.iteratedFDeriv_mem_symmetricJets`, `TauCeti.iteratedFDeriv_finiteJetPolynomial_self`). -/
+def symmetricJets (r : ℕ) : Submodule 𝕜 ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) where
+  carrier := {A | ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v}
+  add_mem' {A B} hA hB i v σ := by simp [hA i v σ, hB i v σ]
+  zero_mem' := by simp
+  smul_mem' c A hA i v σ := by simp [hA i v σ]
+
+/-- A tuple is a symmetric jet when each of its components is invariant under permutations of its
+arguments. -/
+theorem mem_symmetricJets {r : ℕ} {A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F} :
+    A ∈ symmetricJets 𝕜 E F r ↔
+      ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v :=
+  Iff.rfl
 
 /-- The formal multilinear series with coefficient `A i / i!` in each prescribed order
 `i ≤ r`, and zero coefficients in all higher orders. -/
@@ -132,6 +161,28 @@ theorem contDiff_finiteJetPolynomial (r : ℕ)
   intro y
   exact ((finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).cpolynomialAt_of_mem
     (by simp)).contDiffAt
+
+/-- The finite Taylor polynomial `A ↦ ∑ i ≤ r, (i!)⁻¹ A i (y - c, …, y - c)` of degree `r` with
+center `c`, evaluated at `y`, as a continuous linear map of the coefficients `A`. -/
+noncomputable def finiteJetPolynomialCLM (r : ℕ) (c y : E) :
+    ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) →L[𝕜] F :=
+  ∑ i : Fin (r + 1), (i.val.factorial : 𝕜)⁻¹ •
+    ((ContinuousLinearMap.id 𝕜 (E [×i.val]→L[𝕜] F)).flipMultilinear fun _ ↦ y - c).comp
+      (ContinuousLinearMap.proj i)
+
+@[simp]
+theorem finiteJetPolynomialCLM_apply (r : ℕ) (c y : E)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
+    finiteJetPolynomialCLM r c y A = finiteJetPolynomial r A c y := by
+  simp [finiteJetPolynomialCLM, finiteJetPolynomial_apply]
+
+/-- The finite Taylor polynomial is jointly smooth in its center and its evaluation point, as a
+continuous linear map of its coefficients. -/
+theorem contDiff_finiteJetPolynomialCLM (r : ℕ) {n : ℕ∞ω} :
+    ContDiff 𝕜 n fun p : E × E ↦ finiteJetPolynomialCLM (𝕜 := 𝕜) (F := F) r p.1 p.2 := by
+  refine ContDiff.sum fun i _ ↦ ContDiff.const_smul _ ?_
+  exact ((ContinuousMultilinearMap.contDiff _).comp
+    (contDiff_pi.2 fun _ ↦ contDiff_snd.sub contDiff_fst)).clm_comp contDiff_const
 
 /-- All derivatives above the prescribed jet order vanish everywhere, without any symmetry
 or characteristic-zero assumption on the prescribed coefficients. -/
@@ -217,6 +268,38 @@ theorem iteratedFDeriv_taylorMonomial_of_ne [CharZero 𝕜] (k : ℕ) (A : E [×
     simp only [Fin.lastCases_castSucc, Fin.val_castSucc] at h
     exact h
   · exact congrFun (iteratedFDeriv_finiteJetPolynomial_eq_zero_of_le k _ x j hj) x
+
+/-- **Taylor polynomials have the jets of their functions.** A map `s` which is `C^n` at `y` with
+`minSmoothness 𝕜 r ≤ n` (`C^r` over `ℝ` or `ℂ`, analytic otherwise) has the same `r`-jet at `y` as
+its Taylor polynomial of degree `r` centered at `y`. -/
+theorem sameJetAt_finiteJetPolynomial_iteratedFDeriv [CharZero 𝕜] {r : ℕ} {n : ℕ∞ω}
+    {s : E → F} {y : E} (hs : ContDiffAt 𝕜 n s y) (hn : minSmoothness 𝕜 r ≤ n) :
+    SameJetAt 𝕜 r y (finiteJetPolynomial r (fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val s y) y)
+      s := by
+  rw [sameJetAt_iff]
+  intro i hi
+  exact iteratedFDeriv_finiteJetPolynomial_self r _ y ⟨i, Nat.lt_succ_of_le hi⟩
+    fun v σ ↦ hs.iteratedFDeriv_comp_perm_of_le
+      ((minSmoothness_monotone (by exact_mod_cast hi)).trans hn) v σ
+
+/-- **Truncating Taylor polynomials.** For `r' ≤ r`, the Taylor polynomial of degree `r` of a
+tuple `A` has the same `r'`-jet at its center as the Taylor polynomial of degree `r'` of the
+truncated tuple: they differ by terms of order above `r'`. No symmetry or characteristic-zero
+assumption is needed. -/
+theorem sameJetAt_finiteJetPolynomial_castLE {r r' : ℕ} (hr : r' ≤ r)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) :
+    SameJetAt 𝕜 r' x (finiteJetPolynomial r A x)
+      (finiteJetPolynomial r' (fun i ↦ A (Fin.castLE (by omega) i)) x) := by
+  rw [sameJetAt_iff]
+  intro j hj
+  ext v
+  -- Both derivatives are symmetrizations of the order-`j` coefficients, which agree for `j ≤ r'`.
+  have hp := (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).toHasFPowerSeriesOnBall
+  have hp' := (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r'
+    (fun i ↦ A (Fin.castLE (by omega) i)) x).toHasFPowerSeriesOnBall
+  rw [hp.iteratedFDeriv_eq_sum (contDiff_finiteJetPolynomial r A x (n := ω)).contDiffOn.analyticOn,
+    hp'.iteratedFDeriv_eq_sum (contDiff_finiteJetPolynomial r' _ x (n := ω)).contDiffOn.analyticOn]
+  simp [finiteJetSeries, show j < r + 1 by omega, show j < r' + 1 by omega]
 
 /-- A finite symmetric jet is realized by an analytic smooth function whose graph stays
 in any prescribed neighborhood of the center-value pair `(x, A 0 0)` near the center. -/

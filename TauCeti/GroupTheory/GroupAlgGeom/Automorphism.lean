@@ -8,6 +8,8 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Group.Subgroup.Ker
+import Mathlib.Algebra.Group.Subgroup.Pointwise
+import Mathlib.Algebra.Group.Submonoid.Membership
 import Mathlib.GroupTheory.FreeGroup.Reduce
 
 /-!
@@ -27,16 +29,19 @@ variables of the theory of equations over `G` are composed:
   coefficient `g`.
 * `GX.invertVar x`: `x ↦ x⁻¹`, the other variables being fixed.
 
-They generate the group `GX.elementaryAut` of elementary automorphisms, whose elements fix the
-coefficients (`GX.apply_inl_of_mem_elementaryAut`). The file also constructs `GX.renameEquiv e`,
-the renaming of the variables along a bijection, in particular a permutation of the variables;
-the renamings are not among the generators of `GX.elementaryAut`.
+They generate the group `GX.elementaryAut` of elementary automorphisms, whose elements are
+finite products of transvections and variable inversions (`GX.mem_elementaryAut_iff_exists_list`)
+and fix the coefficients (`GX.apply_inl_of_mem_elementaryAut`). The file also constructs
+`GX.renameEquiv e`, the renaming of the variables along a bijection, in particular a permutation
+of the variables; the renamings are not among the generators of `GX.elementaryAut`.
 
 Each comes with its values on coefficients and variables, its inverse, and its effect on
 evaluation: the value of `φ w` at a point `v` is the value of `w` at the point obtained from `v`
 by the corresponding substitution. The words in which `x` does not occur form the subgroup
 `GX.avoiding x`: they are the words unchanged by the substitution `x ↦ 1`, and their values do
-not depend on the coordinate `x` of a point. Transvections of finitely many variables, by words in
+not depend on the coordinate `x` of a point. Together with `x` they generate `G[X]`, so a
+homomorphism out of `G[X]` is determined by its values on them and on `x`
+(`GX.ext_hom_of_avoiding`). Transvections of finitely many variables, by words in
 which none of these variables occurs, are carried out at once by one elementary automorphism,
 which fixes the words in which none of them occurs
 (`GX.exists_mem_elementaryAut_forall_apply_inr_of`).
@@ -150,6 +155,14 @@ theorem eval_update_of_mem_avoiding (ha : a ∈ avoiding x) (v : X → H) (c : H
     eval ι (update v x c) a = eval ι v a :=
   eval_congr_of_mem_avoiding ι ha fun y hy => by simp [hy]
 
+/-- Two homomorphisms out of `G[X]` agreeing on the words in which `x` does not occur and on `x`
+are equal. -/
+theorem ext_hom_of_avoiding {M F : Type*} [Monoid M] [FunLike F (GX G X) M]
+    [MonoidHomClass F (GX G X) M] {φ ψ : F} (h : ∀ a ∈ avoiding x, φ a = ψ a)
+    (hx : φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
+  ext_hom (fun g => h _ (inl_mem_avoiding x g)) fun y =>
+    if hy : y = x then hy ▸ hx else h _ (inr_of_mem_avoiding hy)
+
 end Avoiding
 
 /-! ### Transvections -/
@@ -194,6 +207,12 @@ theorem transvection_inr_of_self :
 theorem transvection_inr_of_of_ne (h : y ≠ x) :
     transvection x a b ha hb (inr (FreeGroup.of y)) = inr (FreeGroup.of y) := by
   simp [transvection_apply, h]
+
+/-- Evaluation of the transvection `x ↦ a x b` on any variable generator. -/
+theorem transvection_inr_of (y : X) :
+    transvection x a b ha hb (inr (FreeGroup.of y)) =
+      if y = x then a * inr (FreeGroup.of x) * b else inr (FreeGroup.of y) := by
+  split_ifs with h <;> simp [transvection_apply, h]
 
 /-- A transvection of the variable `x` fixes the words in which `x` does not occur. -/
 @[simp]
@@ -280,6 +299,12 @@ theorem invertVar_inr_of_self (x : X) :
 theorem invertVar_inr_of_of_ne (h : y ≠ x) :
     invertVar G x (inr (FreeGroup.of y)) = inr (FreeGroup.of y) := by
   simp [invertVar_apply, h]
+
+/-- Evaluation of the inversion `x ↦ x⁻¹` on any variable generator. -/
+theorem invertVar_inr_of (x y : X) :
+    invertVar G x (inr (FreeGroup.of y)) =
+      if y = x then (inr (FreeGroup.of x))⁻¹ else inr (FreeGroup.of y) := by
+  split_ifs with h <;> simp [invertVar_apply, h]
 
 /-- Inverting the variable `x` fixes the words in which `x` does not occur. -/
 @[simp]
@@ -399,6 +424,40 @@ theorem apply_inl_of_mem_elementaryAut {f : MulAut (GX G X)} (hf : f ∈ element
   | one => rfl
   | mul f f' _ _ hf hf' => simp [hf, hf']
   | inv f _ hf => simpa [MulEquiv.symm_apply_eq] using hf.symm
+
+private theorem elementaryAut_toSubmonoid_eq_closure :
+    (elementaryAut G X).toSubmonoid =
+      Submonoid.closure ({φ | ∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x)
+        (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G)) := by
+  open scoped Pointwise in
+  have hinv :
+      ({φ : MulAut (GX G X) | ∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x)
+        (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G))⁻¹ =
+      ({φ : MulAut (GX G X) | ∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x)
+        (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G)) := by
+    refine Set.inv_eq_self_iff_inv_subset.mpr fun φ hφ => ?_
+    simp only [Set.mem_inv, Set.mem_union, Set.mem_ofPred_eq, Set.mem_range] at hφ ⊢
+    rcases hφ with ⟨x, a, b, ha, hb, h⟩ | ⟨x, h⟩
+    · exact .inl ⟨x, a⁻¹, b⁻¹, inv_mem ha, inv_mem hb,
+        by rw [← transvection_inv ha hb, ← h, inv_inv]⟩
+    · exact .inr ⟨x, by rw [← invertVar_inv x, h, inv_inv]⟩
+  rw [elementaryAut_eq_closure, Subgroup.closure_toSubmonoid, hinv, Set.union_self]
+
+/-- Every elementary automorphism is a finite product of transvections and variable
+inversions. -/
+theorem mem_elementaryAut_iff_exists_list {f : MulAut (GX G X)} :
+    f ∈ elementaryAut G X ↔
+      ∃ fs : List (MulAut (GX G X)), f = fs.prod ∧
+        ∀ φ ∈ fs,
+          (∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x) (hb : b ∈ avoiding x),
+            φ = transvection x a b ha hb) ∨
+          ∃ x : X, φ = invertVar G x := by
+  rw [← Subgroup.mem_toSubmonoid, elementaryAut_toSubmonoid_eq_closure, ← SetLike.mem_coe,
+    Submonoid.closure_eq_image_prod]
+  refine ⟨fun ⟨fs, hfs, h⟩ => ⟨fs, h.symm, fun φ hφ => ?_⟩,
+    fun ⟨fs, h, hfs⟩ => ⟨fs, fun φ hφ => ?_, h.symm⟩⟩
+  · simpa [Set.mem_union, Set.mem_ofPred_eq, Set.mem_range, eq_comm] using hfs φ hφ
+  · simpa [Set.mem_union, Set.mem_ofPred_eq, Set.mem_range, eq_comm] using hfs φ hφ
 
 /-- Simultaneous transvections: for a finite set `Y` of variables and words `a y`, `b y` in which
 no variable of `Y` occurs, there is an elementary automorphism with `y ↦ a y * y * b y` for every

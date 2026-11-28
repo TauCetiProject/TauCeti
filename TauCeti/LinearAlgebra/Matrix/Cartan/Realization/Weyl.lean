@@ -33,8 +33,10 @@ satisfy the relations of the Coxeter matrix `TauCeti.coxeterMatrixOfGeneralizedC
 gives a homomorphism from the Coxeter group onto the Weyl group. Over a field of characteristic
 zero, and when the Cartan products are nonnegative as for a generalized Cartan matrix, the
 product `sᵢ sⱼ` of two simple reflections has order exactly `mᵢⱼ`, including the infinite order
-`mᵢⱼ = ∞` of affine type `A₁⁽¹⁾`. That the homomorphism is injective, so that the Weyl group is a
-Coxeter group on the simple reflections, is Kac's Proposition 3.13 and is not proved here.
+`mᵢⱼ = ∞` of affine type `A₁⁽¹⁾`. That the homomorphism is injective over a field of characteristic
+zero for a generalized Cartan matrix, so that the Weyl group is a Coxeter group on the simple
+reflections, is Kac's Proposition 3.13, proved in
+`TauCeti.LinearAlgebra.Matrix.Cartan.Realization.CoxeterSystem`.
 
 ## Main definitions
 
@@ -433,7 +435,7 @@ theorem apply_mem_weightLattice_iff_of_mem_weylGroup {w : Dual ℚ H ≃ₗ[ℚ]
 theorem simpleCoreflection_mem_lattice_iff (i : I) {h : H} :
     R.simpleCoreflection hA i h ∈ L.lattice ↔ h ∈ L.lattice := by
   have key {h : H} (hh : h ∈ L.lattice) : R.simpleCoreflection hA i h ∈ L.lattice := by
-    obtain ⟨n, hn⟩ := (L.mem_weightLattice_iff _).mp (L.root i).2 h hh
+    obtain ⟨n, hn⟩ := (L.mem_weightLattice_iff _).mp (L.root i).property h hh
     rw [simpleCoreflection_apply, ← L.coe_root, ← hn, Int.cast_smul_eq_zsmul ℚ n (R.coroot i)]
     exact sub_mem hh (zsmul_mem (L.coroot_mem i) n)
   refine ⟨fun hh ↦ ?_, key⟩

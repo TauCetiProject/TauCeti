@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.GaussPoint
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty.Basic
 public import TauCeti.RingTheory.WittVector.IntervalRing.Basic
 
 /-!
@@ -93,12 +93,10 @@ theorem comap_algebraMap_intervalRing_mem_spaY [TopologicalSpace (𝕎 O)]
   have hunit {a : B^I} (ha : IsUnit a) : a ∉ w.supp := fun h ↦
     Ideal.IsPrime.ne_top inferInstance (Ideal.eq_top_of_isUnit_mem _ h ha)
   rw [mem_spaY_iff, supp_comap, Ideal.mem_comap, Ideal.mem_comap, map_natCast]
-  refine ⟨comap_mem_spa (continuous_algebraMap_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ hI)
-    (fun a _ ↦ ?_) hw, hunit (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).isUnit,
+  exact ⟨comap_mem_spa (continuous_algebraMap_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ hI)
+    (fun a _ ↦ algebraMap_mem_powerBoundedSubring_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ a) hw,
+    hunit (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).isUnit,
     hunit (isPseudoUniformizer_teichmuller_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).isUnit⟩
-  rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one_intervalRing,
-    norm_algebraMap_intervalRing]
-  exact_mod_cast max_le (gaussValuation_le_one hv hρ₁.2 a) (gaussValuation_le_one hv hρ₂.2 a)
 
 /-- If `x = z y` in `B^I` with `z` in the unit ball, then `w(x) ≤ w(y)` at every point `w` of
 `Spa(B^I, B^{I,+})`. -/

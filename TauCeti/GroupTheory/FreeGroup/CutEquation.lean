@@ -44,6 +44,11 @@ of the source is imposed by `Finite` instances where it is needed.
 * `TauCeti.CutEquation.IsSolution`: solutions by nonempty reduced words, reduced as written.
 * `TauCeti.CutEquation.oneInterval`: the cut equation with one interval, labelled by a parameter
   `x` and by the product `m₀ ⋯ m_{n-1}` of `n` pieces.
+* `TauCeti.CutEquation.mapParam`: the cut equation whose parameter labels are substituted by
+  words in other parameters.
+* `TauCeti.CutEquation.IsBackSubst`: words in the parameters, the pieces of one cut equation and
+  the constants of `F(A)` that turn its group solutions into group solutions of another cut
+  equation, at given parameter values.
 
 ## Main results
 
@@ -61,11 +66,26 @@ of the source is imposed by `Finite` instances where it is needed.
 * `TauCeti.CutEquation.isGroupSolution_oneInterval_cancel`,
   `TauCeti.CutEquation.not_isSolution_oneInterval_two_of_letter`: the pieces `(a, a⁻¹b)` are a
   group solution of `m₀m₁ = x` at `x = b`, which has no solution with respect to that value.
+* `TauCeti.CutEquation.eval_mapParam_paramLabel`: the substituted parameter label of an interval
+  takes at a tuple `v` the value of the original label at the values of the substituted words at
+  `v`.
+* `TauCeti.CutEquation.isGroupSolution_mapParam_iff`,
+  `TauCeti.CutEquation.isSolution_mapParam_iff`: a solution of the substituted cut equation with
+  respect to parameter values `β'` is a solution of the original one with respect to the values of
+  the substituted words at `β'`, and conversely.
+* `TauCeti.CutEquation.IsBackSubst.trans`: back-substitutions compose by substituting words into
+  words.
+* `TauCeti.CutEquation.isBackSubst_mapParam_iff`: substituting words for the parameters of both cut
+  equations and into the back-substituting words gives a back-substitution exactly when the original
+  words back-substitute at the values of the substituted parameter words.
+* `TauCeti.CutEquation.isBackSubst_oneInterval_prod`: the product of the pieces of
+  `m₀ ⋯ m_{n-1} = x` back-substitutes this cut equation into `m = x`.
 
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §5.7, Definitions 21 and 22.
+  (2005), §5.7, Definitions 21 and 22, Theorem 8, and §7.4 (the cut equation `Π_φ`, Claim 4, and
+  Case 1 of the proof of Theorem 9).
 * O. Kharlampovich, A. Myasnikov, *Algebraic geometry over free groups: lifting solutions into
   generic points*, Contemp. Math. 378 (2005), §3, Definitions 3.1 and 3.2.
 -/
@@ -173,7 +193,8 @@ reduced as written. -/
 theorem isSolution_iff : P.IsSolution β α ↔ (∀ m, α m ≠ []) ∧ (∀ m, IsReduced (α m)) ∧
     (∀ σ, IsReduced (substituteVars α (P.pieceLabel σ))) ∧
       P.IsGroupSolution β fun m => FreeGroup.mk (α m) :=
-  ⟨fun h => ⟨h.1, h.2, h.3, h.4⟩, fun h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩⟩
+  ⟨fun h => ⟨h.ne_nil, h.isReduced, h.isReduced_substituteVars, h.isGroupSolution⟩, fun h => ⟨h.1,
+      h.2.1, h.2.2.1, h.2.2.2⟩⟩
 
 namespace IsSolution
 
@@ -287,6 +308,146 @@ since a one-letter word is not a product of two nonempty words. In particular th
 theorem not_isSolution_oneInterval_two_of_letter (a : A) {α : Fin 2 → List (A × Bool)} :
     ¬ (oneInterval A 2).IsSolution (fun _ => FreeGroup.of a) α := by
   classical exact not_isSolution_oneInterval_of_length_lt (by simp)
+
+/-! ### Substituting the parameters -/
+
+section MapParam
+
+variable (P) {X' : Type*}
+
+/-- The cut equation obtained from `P` by substituting the word `l x ∈ F(A)[X']` for each
+parameter `x` in the parameter labels; the intervals and their partitions are unchanged. For a
+labelling of parameters by letters this is the relabelling in the proof of Kharlampovich–Myasnikov,
+Theorem 8; for an `F(A)`-automorphism `φ` of `F(A)[X]`, with `l x = φ x`, it is the cut equation
+`Π_φ` of their §7.4. -/
+def mapParam (l : X → GX (FreeGroup A) X') : CutEquation A E X' M where
+  paramLabel σ := eval (inl : FreeGroup A →* GX (FreeGroup A) X') l (P.paramLabel σ)
+  pieceLabel := P.pieceLabel
+
+@[simp]
+theorem mapParam_paramLabel (l : X → GX (FreeGroup A) X') (σ : E) :
+    (P.mapParam l).paramLabel σ =
+      eval (inl : FreeGroup A →* GX (FreeGroup A) X') l (P.paramLabel σ) := (rfl)
+
+@[simp]
+theorem mapParam_pieceLabel (l : X → GX (FreeGroup A) X') (σ : E) :
+    (P.mapParam l).pieceLabel σ = P.pieceLabel σ := (rfl)
+
+/-- Substituting each parameter by itself leaves a cut equation unchanged. -/
+@[simp]
+theorem mapParam_inr_of : P.mapParam (fun x => inr (FreeGroup.of x)) = P :=
+  CutEquation.ext (funext fun σ => by simp) rfl
+
+/-- Substituting the words `l` and then the words `l'` is substituting the words `l` with `l'`
+substituted into them. -/
+@[simp]
+theorem mapParam_mapParam {X'' : Type*} (l : X → GX (FreeGroup A) X')
+    (l' : X' → GX (FreeGroup A) X'') :
+    (P.mapParam l).mapParam l' =
+      P.mapParam fun x => eval (inl : FreeGroup A →* GX (FreeGroup A) X'') l' (l x) := by
+  refine CutEquation.ext (funext fun σ => ?_) rfl
+  rw [mapParam_paramLabel, ← funext (wordMap_apply (ι := inl) l l')]
+  exact DFunLike.congr_fun (eval_comp_eval l l') (P.paramLabel σ)
+
+/-- The substituted parameter label of an interval takes at `v` the value of the original label
+at the values of the substituted words at `v`. -/
+theorem eval_mapParam_paramLabel {H : Type*} [Group H] (ι : FreeGroup A →* H)
+    (l : X → GX (FreeGroup A) X') (v : X' → H) (σ : E) :
+    eval ι v ((P.mapParam l).paramLabel σ) = eval ι (wordMap ι l v) (P.paramLabel σ) :=
+  DFunLike.congr_fun (eval_comp_eval l v) (P.paramLabel σ)
+
+variable {P} {l : X → GX (FreeGroup A) X'} {β' : X' → FreeGroup A}
+
+/-- Values of the pieces are a group solution of the substituted cut equation with respect to `β'`
+exactly when they are a group solution of the original one with respect to the values of the
+substituted words at `β'`. -/
+@[simp]
+theorem isGroupSolution_mapParam_iff {α : M → FreeGroup A} : (P.mapParam l).IsGroupSolution β' α ↔
+    P.IsGroupSolution (wordMap (MonoidHom.id (FreeGroup A)) l β') α := by
+  simp only [isGroupSolution_iff, eval_mapParam_paramLabel, pieceElement_def, mapParam_pieceLabel]
+
+/-- A tuple of words is a solution of the substituted cut equation with respect to `β'` exactly
+when it is a solution of the original one with respect to the values of the substituted words at
+`β'`. -/
+@[simp]
+theorem isSolution_mapParam_iff {α : M → List (A × Bool)} : (P.mapParam l).IsSolution β' α ↔
+    P.IsSolution (wordMap (MonoidHom.id (FreeGroup A)) l β') α := by
+  simp [isSolution_iff]
+
+end MapParam
+
+/-! ### Back-substitution of group solutions -/
+
+section BackSubst
+
+variable {E' M' E'' M'' : Type*}
+
+/-- Words `μ` in the parameters `X`, the pieces `M'` of a cut equation `P'` and the constants of
+`F(A)` *back-substitute* `P'` into `P` at the parameter values `β` when, for every group solution
+`α'` of `P'` with respect to `β`, the values of the words `μ` at `β` and `α'` form a group solution
+of `P` with respect to `β`. Kharlampovich–Myasnikov (§7.4, Claim 4) give, for a transformation `T`
+of a cut equation `Π`, words `M_µ` expressing the pieces of `Π` through those of `T(Π)` at the given
+solution; in the proof of their Theorem 9 (Case 1) these words are composed along a sequence of
+transformations and applied to group solutions other than the given one. Since the words may
+contain constants, such words exist at a single `β` as soon as `P` has a group solution there; the
+point is to use the same words `μ` for a family of parameter values. -/
+def IsBackSubst (P' : CutEquation A E' X M') (P : CutEquation A E X M) (β : X → FreeGroup A)
+    (μ : M → GX (FreeGroup A) (X ⊕ M')) : Prop :=
+  ∀ α' : M' → FreeGroup A, P'.IsGroupSolution β α' →
+    P.IsGroupSolution β (wordMap (MonoidHom.id (FreeGroup A)) μ (Sum.elim β α'))
+
+variable {P' : CutEquation A E' X M'} {P : CutEquation A E X M} {β : X → FreeGroup A}
+  {μ : M → GX (FreeGroup A) (X ⊕ M')}
+
+theorem isBackSubst_iff : IsBackSubst P' P β μ ↔ ∀ α' : M' → FreeGroup A, P'.IsGroupSolution β α' →
+    P.IsGroupSolution β (wordMap (MonoidHom.id (FreeGroup A)) μ (Sum.elim β α')) :=
+  Iff.rfl
+
+/-- A back-substitution turns every group solution of `P'` into a group solution of `P` with
+respect to the same parameter values. -/
+theorem IsBackSubst.isGroupSolution (h : IsBackSubst P' P β μ) {α' : M' → FreeGroup A}
+    (hα' : P'.IsGroupSolution β α') :
+    P.IsGroupSolution β (wordMap (MonoidHom.id (FreeGroup A)) μ (Sum.elim β α')) :=
+  h α' hα'
+
+variable (P β) in
+/-- Every cut equation back-substitutes into itself by its own pieces. -/
+theorem IsBackSubst.refl : IsBackSubst P P β fun m => inr (FreeGroup.of (Sum.inr m)) :=
+  fun α' hα' => by simpa only [wordMap_inr_of, Sum.elim_comp_inr] using hα'
+
+/-- Back-substitutions compose: substituting the words `μ'` for the pieces of `P'` in the words
+`μ` back-substitutes `P''` into `P`. -/
+theorem IsBackSubst.trans {P'' : CutEquation A E'' X M''} {μ' : M' → GX (FreeGroup A) (X ⊕ M'')}
+    (h' : IsBackSubst P'' P' β μ') (h : IsBackSubst P' P β μ) :
+    IsBackSubst P'' P β fun m => eval (inl : FreeGroup A →* GX (FreeGroup A) (X ⊕ M''))
+      (Sum.elim (fun x => inr (FreeGroup.of (Sum.inl x))) μ') (μ m) := fun α'' hα'' => by
+  simpa only [← wordMap_wordMap, wordMap_sumElim, wordMap_inr_of, Sum.elim_comp_inl] using
+    h.isGroupSolution (h'.isGroupSolution hα'')
+
+/-- Substituting the words `l` in the parameters `X'` for the parameters of `P'` and `P`, and into
+the words `μ` by the extension of this substitution by the identity on the pieces `M'`, gives a
+back-substitution at `β'` exactly when `μ` back-substitutes `P'` into `P` at the values of the
+words `l` at `β'`. In the proof of Kharlampovich–Myasnikov, Theorem 9 (Case 1), the composed words
+are words in `X^φ`, which are then read as words in `X`. -/
+@[simp↓]
+theorem isBackSubst_mapParam_iff {X' : Type*} {l : X → GX (FreeGroup A) X'}
+    {β' : X' → FreeGroup A} :
+    IsBackSubst (P'.mapParam l) (P.mapParam l) β' (fun m => sumExtend M' (evalGHom inl l) (μ m)) ↔
+      IsBackSubst P' P (wordMap (MonoidHom.id (FreeGroup A)) l β') μ := by
+  have h (α' : M' → FreeGroup A) : wordMap (MonoidHom.id (FreeGroup A))
+      (fun m => sumExtend M' (evalGHom inl l) (μ m)) (Sum.elim β' α') =
+      wordMap (MonoidHom.id (FreeGroup A)) μ (Sum.elim (wordMap (MonoidHom.id _) l β') α') :=
+    funext fun m => by simp
+  simp only [isBackSubst_iff, isGroupSolution_mapParam_iff, h]
+
+/-- The product `m₀ ⋯ m_{n-1}` of the pieces of `m₀ ⋯ m_{n-1} = x` back-substitutes this cut
+equation into the cut equation `m = x` of one piece, at every value of `x`. -/
+theorem isBackSubst_oneInterval_prod (n : ℕ) {β : Unit → FreeGroup A} :
+    IsBackSubst (oneInterval A n) (oneInterval A 1) β
+      fun _ => (List.ofFn fun i => inr (FreeGroup.of (Sum.inr i))).prod := fun α' hα' => by
+  simpa [isGroupSolution_oneInterval_iff, map_list_prod, List.map_ofFn, Function.comp_def] using hα'
+
+end BackSubst
 
 end CutEquation
 

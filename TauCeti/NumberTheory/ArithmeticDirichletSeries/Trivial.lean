@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
 # The trivial ideal weight and Dedekind zeta coefficients
@@ -19,6 +20,8 @@ the Dedekind zeta function.  There is one necessary exception: Mathlib's coeffic
 integral ideals and therefore has value `1` at index zero, contributed by the zero ideal, whereas
 an `ArithmeticFunction` has value zero there.  Since `LSeries` ignores its zero coefficient, the
 two coefficient systems define the same series.
+The natural-valued coefficients also show that the totalized series is real at every real
+argument (`TauCeti.dedekindZeta_ofReal_re`), whether or not it converges.
 
 Since `1 * 1 = 1` pointwise, the same identification shows that regrouping has no
 pointwise-product formula as soon as some norm is attained by two ideals
@@ -57,19 +60,43 @@ noncomputable def dedekindZetaCoeff (n : ℕ) : ℕ :=
 theorem dedekindZetaCoeff_zero : dedekindZetaCoeff K 0 = 1 := by
   simp [dedekindZetaCoeff, Ideal.absNorm_eq_zero_iff]
 
+/-- The unit ideal is the unique integral ideal of absolute norm one. -/
+@[simp]
+theorem dedekindZetaCoeff_one : dedekindZetaCoeff K 1 = 1 := by
+  simp [dedekindZetaCoeff, Ideal.absNorm_eq_one_iff]
+
 /-- The Dedekind zeta function is the `LSeries` of `dedekindZetaCoeff`. -/
 theorem dedekindZeta_eq_LSeries_dedekindZetaCoeff (s : ℂ) :
     NumberField.dedekindZeta K s = LSeries (fun n ↦ (dedekindZetaCoeff K n : ℂ)) s := by
   simp [NumberField.dedekindZeta, dedekindZetaCoeff]
 
+variable {K} in
+/-- The Dedekind zeta Dirichlet series is real at every real argument, including its
+zero value when the series does not converge. -/
+theorem dedekindZeta_ofReal_re (s : ℝ) :
+    ((NumberField.dedekindZeta K s).re : ℂ) = NumberField.dedekindZeta K s := by
+  simp only [dedekindZeta_eq_LSeries_dedekindZetaCoeff]
+  apply Complex.conj_eq_iff_re.mp
+  simpa [Pi.star_def, Complex.star_def] using
+    (LSeries.LSeries_star (fun n ↦ (dedekindZetaCoeff K n : ℂ)) (s : ℂ)).symm
+
+open scoped ComplexConjugate in
+/-- The Dedekind zeta Dirichlet series commutes with complex conjugation. -/
+@[simp] theorem _root_.NumberField.dedekindZeta_conj (s : ℂ) :
+    NumberField.dedekindZeta K (conj s) = conj (NumberField.dedekindZeta K s) := by
+  have h : star (fun n ↦ (dedekindZetaCoeff K n : ℂ)) =
+      fun n ↦ (dedekindZetaCoeff K n : ℂ) := funext fun n ↦ by simp [Pi.star_apply]
+  simpa only [dedekindZeta_eq_LSeries_dedekindZetaCoeff, Complex.star_def, h] using
+    TauCeti.LSeries.LSeries_star (fun n ↦ (dedekindZetaCoeff K n : ℂ)) s
+
 private def normFiberSubtypeEquiv {n : ℕ} (hn : n ≠ 0) :
     {I : (Ideal (𝓞 K))⁰ // Ideal.absNorm (I : Ideal (𝓞 K)) = n} ≃
       {I : Ideal (𝓞 K) // Ideal.absNorm I = n} where
-  toFun I := ⟨I.1, I.2⟩
+  toFun I := ⟨I.val, I.property⟩
   invFun I :=
-    ⟨⟨I.1, by
+    ⟨⟨I.val, by
       rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors]
-      exact fun hzero ↦ hn (I.2.symm.trans hzero)⟩, I.2⟩
+      exact fun hzero ↦ hn (I.property.symm.trans hzero)⟩, I.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -130,17 +157,17 @@ private theorem rat_normFiber_subsingleton (n : ℕ) :
   constructor
   intro I J
   apply Subtype.ext
-  have hmap : I.1.map Rat.ringOfIntegersEquiv = J.1.map Rat.ringOfIntegersEquiv := by
-    rw [← Int.ideal_span_absNorm_eq_self (I.1.map Rat.ringOfIntegersEquiv),
-      ← Int.ideal_span_absNorm_eq_self (J.1.map Rat.ringOfIntegersEquiv),
-      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv I.1,
-      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv J.1, I.2, J.2]
+  have hmap : I.val.map Rat.ringOfIntegersEquiv = J.val.map Rat.ringOfIntegersEquiv := by
+    rw [← Int.ideal_span_absNorm_eq_self (I.val.map Rat.ringOfIntegersEquiv),
+      ← Int.ideal_span_absNorm_eq_self (J.val.map Rat.ringOfIntegersEquiv),
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv I.val,
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv J.val, I.property, J.property]
   calc
-    I.1 = Ideal.comap Rat.ringOfIntegersEquiv (I.1.map Rat.ringOfIntegersEquiv) :=
+    I.val = Ideal.comap Rat.ringOfIntegersEquiv (I.val.map Rat.ringOfIntegersEquiv) :=
       (Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective).symm
-    _ = Ideal.comap Rat.ringOfIntegersEquiv (J.1.map Rat.ringOfIntegersEquiv) :=
+    _ = Ideal.comap Rat.ringOfIntegersEquiv (J.val.map Rat.ringOfIntegersEquiv) :=
       congrArg (Ideal.comap Rat.ringOfIntegersEquiv) hmap
-    _ = J.1 := Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective
+    _ = J.val := Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective
 
 private theorem rat_normFiber_nonempty (n : ℕ) :
     Nonempty {I : Ideal (𝓞 ℚ) // Ideal.absNorm I = n} := by

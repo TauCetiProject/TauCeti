@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.SpecialFunctions.GramSchmidt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 
 /-!
 # Measurable projections onto finite-dimensional ranges
@@ -50,7 +50,7 @@ theorem measurable_starProjection_span {ι : Type*} [Finite ι]
   have hc : Continuous fun w : Fin (Fintype.card ι) → E ↦ ∑ i, rankOne 𝕜 (w i) (w i) :=
     continuous_finsetSum _ fun i _ ↦ by
       simp only [rankOne_def]
-      exact ((ContinuousLinearMap.smulRightL 𝕜 E E).continuous.comp
+      exact ((StrongDual.smulRightL 𝕜 E E).continuous.comp
         ((innerSL 𝕜).continuous.comp (continuous_apply i))).clm_apply (continuous_apply i)
   exact hc.measurable.comp (measurable_pi_iff.mpr fun i ↦
     Measurable.gramSchmidtNormed (𝕜 := 𝕜) (fun j ↦ hv (e j)) i)

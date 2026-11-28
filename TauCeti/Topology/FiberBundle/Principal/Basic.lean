@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import TauCeti.Algebra.Group.Action.TotalSpace
 public import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Principal bundles
@@ -121,24 +122,15 @@ over `b` with fibre coordinate `1`. -/
 theorem symm_apply_eq_smul (hb : b ∈ e.baseSet) (g : G) :
     e.toOpenPartialHomeomorph.symm (b, g) =
       ⟨(e.toOpenPartialHomeomorph.symm (b, 1)).proj,
-        op g • (e.toOpenPartialHomeomorph.symm (b, 1)).2⟩ := by
+        op g • (e.toOpenPartialHomeomorph.symm (b, 1)).snd⟩ := by
   set s := e.toOpenPartialHomeomorph.symm (b, 1)
   have hsb : s.proj = b := e.proj_symm_apply' hb
   have hs : s.proj ∈ e.baseSet := by rwa [hsb]
   have hes : (e s).2 = 1 := congrArg Prod.snd (e.apply_symm_apply' hb)
-  have hy : (⟨s.proj, op g • s.2⟩ : TotalSpace G P) ∈ e.source := e.mem_source.2 hs
+  have hy : (⟨s.proj, op g • s.snd⟩ : TotalSpace G P) ∈ e.source := e.mem_source.2 hs
   refine ((e.toOpenPartialHomeomorph.eq_symm_apply hy ((e.mem_target (x := (b, g))).2 hb)).2
     ?_).symm
   rw [e.coe_coe, e.apply_smul hs, TotalSpace.eta, hes, one_mul, hsb]
-
-/-- An equivariant trivialization exhibits the element carrying `p` to `q` in a fibre over its base
-set: it is `(e p).2⁻¹ * (e q).2`. -/
-private theorem op_inv_mul_smul (hb : b ∈ e.baseSet) (p q : P b) :
-    op ((e ⟨b, p⟩).2⁻¹ * (e ⟨b, q⟩).2) • p = q := by
-  refine TotalSpace.mk_injective b (e.toOpenPartialHomeomorph.injOn (e.mem_source.2 hb)
-    (e.mem_source.2 hb) ?_)
-  rw [e.coe_coe, e.apply_smul hb, mul_inv_cancel_left]
-  exact e.mk_proj_snd' (x := ⟨b, q⟩) hb
 
 /-- **Transition maps of equivariant trivializations are left multiplications.** Over a point of
 both base sets, the coordinate change between two equivariant trivializations is left
@@ -158,6 +150,28 @@ theorem coordChange_one_mul_coordChange_one (e₁ e₂ e₃ : Trivialization G (
     (h₃ : b ∈ e₃.baseSet) :
     e₂.coordChange e₃ b 1 * e₁.coordChange e₂ b 1 = e₁.coordChange e₃ b 1 := by
   rw [← e₂.coordChange_eq_mul e₃ h₂ h₃, e₁.coordChange_coordChange e₂ e₃ h₁ h₂]
+
+/-- Equivariance of a trivialization `e` of `P` transferred along an equivariant equivalence
+`h : TotalSpace G P ≃ Z` to an unbundled trivialization `t` of `proj : Z → B` holds iff `t`
+intertwines the right `G`-action on `proj ⁻¹' t.baseSet` with right multiplication on `G`. -/
+theorem isEquivariant_iff_of_equiv {Z : Type*} [TopologicalSpace Z] {proj : Z → B}
+    [MulAction Gᵐᵒᵖ Z]
+    (e : Trivialization G (π G P)) (t : Trivialization G proj) (h : TotalSpace G P ≃ Z)
+    (hbase : e.baseSet = t.baseSet) (hproj : ∀ p : TotalSpace G P, proj (h p) = p.proj)
+    (happ : ∀ p : TotalSpace G P, e p = t (h p))
+    (hsmul : ∀ (g : G) (p : TotalSpace G P), h ⟨p.proj, op g • p.snd⟩ = op g • h p) :
+    e.IsEquivariant ↔
+      ∀ z : Z, proj z ∈ t.baseSet → ∀ g : G, (t (op g • z)).2 = (t z).2 * g := by
+  refine ⟨fun he z hz g ↦ ?_, fun ht ↦ ⟨fun b hb y g ↦ ?_⟩⟩
+  · have hzp : proj (h (h.symm z)) = (h.symm z).proj := hproj _
+    rw [h.apply_symm_apply] at hzp
+    have hb : (h.symm z).proj ∈ e.baseSet := hbase.symm ▸ hzp.symm ▸ hz
+    have h1 := he.snd_apply_smul (h.symm z).proj hb (h.symm z).snd g
+    rw [happ, hsmul, happ, h.apply_symm_apply] at h1
+    exact h1
+  · have h1 := ht (h ⟨b, y⟩) ((hproj ⟨b, y⟩).symm ▸ hbase ▸ hb) g
+    rw [← hsmul, ← happ, ← happ] at h1
+    exact h1
 
 end Bundle.Trivialization
 
@@ -220,7 +234,16 @@ noncomputable def division (p q : P b) : G :=
 /-- The division map of `p` and `q` carries `p` to `q`. -/
 @[simp]
 theorem smul_division (p q : P b) : op (division G p q) • p = q :=
-  (trivializationAt G P b).op_inv_mul_smul (mem_baseSet_trivializationAt G P b) p q
+  TotalSpace.mk_injective b <|
+    (trivializationAt G P b).op_inv_mul_smul (fun _ _ ↦ rfl)
+      (fun g z hz ↦ (trivializationAt G P b).snd_apply_smul hz z.snd g)
+      (p := (⟨b, p⟩ : TotalSpace G P)) (q := (⟨b, q⟩ : TotalSpace G P))
+      (mem_baseSet_trivializationAt G P b) rfl
+
+/-- On the total space, acting on `⟨b, p⟩` by `division G p q` yields `⟨b, q⟩`. -/
+theorem smul_division_mk (p q : P b) :
+    op (division G p q) • (⟨b, p⟩ : TotalSpace G P) = ⟨b, q⟩ :=
+  congrArg (TotalSpace.mk' G b) (smul_division p q)
 
 /-- The division map of `p` and `q` is the unique `g` with `p • g = q`. -/
 theorem division_eq_iff {p q : P b} {g : G} : division G p q = g ↔ op g • p = q := by
@@ -234,7 +257,9 @@ instance isPretransitive (b : B) : MulAction.IsPretransitive Gᵐᵒᵖ (P b) :=
 /-- The division map read in an equivariant trivialization `e` whose base set contains `b`. -/
 theorem division_eq_of_mem_baseSet {e : Trivialization G (π G P)} [e.IsEquivariant]
     (hb : b ∈ e.baseSet) (p q : P b) : division G p q = (e ⟨b, p⟩).2⁻¹ * (e ⟨b, q⟩).2 :=
-  division_eq_iff.2 (e.op_inv_mul_smul hb p q)
+  division_eq_iff.2 <| TotalSpace.mk_injective b <|
+    e.op_inv_mul_smul (fun _ _ ↦ rfl) (fun g z hz ↦ e.snd_apply_smul hz z.snd g)
+      (p := (⟨b, p⟩ : TotalSpace G P)) (q := (⟨b, q⟩ : TotalSpace G P)) hb rfl
 
 omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
@@ -398,7 +423,7 @@ variable [IsTopologicalGroup G] (σ : ∀ b, P b) {U : Set B} (hU : IsOpen U)
 inverse sends `(b, g)` to `σ b • g`. It is equivariant
 (`TauCeti.PrincipalBundle.isEquivariant_trivializationOfSection`). -/
 noncomputable def trivializationOfSection : Trivialization G (π G P) where
-  toFun p := (p.proj, division G (σ p.proj) p.2)
+  toFun p := (p.proj, division G (σ p.proj) p.snd)
   invFun x := ⟨x.1, op x.2 • σ x.1⟩
   source := π G P ⁻¹' U
   target := U ×ˢ univ
@@ -409,7 +434,7 @@ noncomputable def trivializationOfSection : Trivialization G (π G P) where
   open_source := hU.preimage (FiberBundle.continuous_proj G P)
   open_target := hU.prod isOpen_univ
   continuousOn_toFun := (FiberBundle.continuous_proj G P).continuousOn.prodMk <|
-    ContinuousOn.division (f := π G P) (p := fun x ↦ σ x.proj) (q := fun x ↦ x.2)
+    ContinuousOn.division (f := π G P) (p := fun x ↦ σ x.proj) (q := fun x ↦ x.snd)
       (hσ.comp (FiberBundle.continuous_proj G P).continuousOn fun _ hx ↦ hx) continuousOn_id
   continuousOn_invFun :=
     ContinuousOn.totalSpaceMk_smul (f := Prod.fst) (p := fun x ↦ σ x.1)
@@ -422,7 +447,7 @@ noncomputable def trivializationOfSection : Trivialization G (π G P) where
 
 @[simp]
 theorem trivializationOfSection_apply (p : TotalSpace G P) :
-    trivializationOfSection σ hU hσ p = (p.proj, division G (σ p.proj) p.2) :=
+    trivializationOfSection σ hU hσ p = (p.proj, division G (σ p.proj) p.snd) :=
   (rfl)
 
 @[simp]

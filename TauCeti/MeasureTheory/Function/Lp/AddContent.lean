@@ -72,6 +72,10 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   `PositiveLinearMap.ofAddContentLpTop_toAddContentLpTop`: the two constructions are inverse.
 * `PositiveLinearMap.ofAddContentLpTop_congr`: contents agreeing on measurable sets give the same
   functional.
+* `PositiveLinearMap.le_iff_addContentLpTopEquiv_le`: `addContentLpTopEquiv` matches the order of
+  functionals on the nonnegative cone with the pointwise order of contents.
+* `PositiveLinearMap.addContentLpTopCompletionEquiv_apply`: the completed content of a
+  null-measurable set is the value of the functional on its indicator class.
 * `PositiveLinearMap.forall_apply_leftTranslation_eq_iff`: invariance of a functional under left
   translation is invariance of its content.
 * `MeasureTheory.exists_invariant_positiveLinearMap_lpTop_iff_exists_invariantContent`: `L∞` of
@@ -218,9 +222,9 @@ private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ integral μ ν φ := by
   have h₁ : integral μ ν 1 = ν univ := by
     simpa using integral_linftyIndicator hν₀ hνμ MeasurableSet.univ
-  refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_)
+  refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (integral μ ν) (fun ψ => ?_)
     (Lp.norm_norm_smul_one_sub_le_of_nonneg hφ)
-  rw [ContinuousLinearMap.coe_coe, h₁, ← Real.norm_eq_abs]
+  rw [h₁, ← Real.norm_eq_abs]
   exact norm_integral_apply_le hν₀ hνμ ψ
 
 variable (ν) in
@@ -279,13 +283,13 @@ def addContentLpTopEquiv :
   toFun M := ⟨M.toLinearMap.toAddContentLpTop, M.toAddContentLpTop_nonneg,
     fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h,
     fun _ hs => M.toLinearMap.toAddContentLpTop_of_not_measurableSet hs⟩
-  invFun ν := ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1
+  invFun ν := ofAddContentLpTop ν.val (fun s _ => ν.property.1 s) ν.property.2.1
   left_inv := ofAddContentLpTop_toAddContentLpTop
   right_inv ν := by
     ext s
     by_cases hs : MeasurableSet s
     · exact toAddContentLpTop_ofAddContentLpTop_apply _ _ hs
-    · rw [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, ν.2.2.2 s hs]
+    · rw [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, ν.property.2.2 s hs]
 
 /-- The content of `M` under `addContentLpTopEquiv` is `M.toLinearMap.toAddContentLpTop`. -/
 @[simp]
@@ -300,8 +304,40 @@ theorem addContentLpTopEquiv_symm_apply
     (ν : {ν : AddContent ℝ {s : Set α | MeasurableSet s} //
       (∀ s, 0 ≤ ν s) ∧ (∀ s, MeasurableSet s → μ s = 0 → ν s = 0) ∧
         ∀ s, ¬MeasurableSet s → ν s = 0}) :
-    (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1 :=
+    (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.val
+        (fun s _ => ν.property.1 s) ν.property.2.1 :=
   (rfl)
+
+/-- `addContentLpTopEquiv` is an order isomorphism: one positive functional lies below another
+on the nonnegative cone of `L∞(μ)` exactly when its content lies below the other content on
+every set. -/
+theorem le_iff_addContentLpTopEquiv_le (M M' : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) :
+    (∀ φ : Lp ℝ ∞ μ, 0 ≤ φ → M φ ≤ M' φ) ↔
+      ∀ s, (addContentLpTopEquiv μ M).val s ≤ (addContentLpTopEquiv μ M').val s := by
+  simp only [coe_addContentLpTopEquiv_apply]
+  refine ⟨fun h s => ?_, fun h φ hφ => ?_⟩
+  · by_cases hs : MeasurableSet s
+    · simpa [LinearMap.toAddContentLpTop_apply _ hs] using h _ (linftyIndicator_nonneg hs)
+    · simp [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs]
+  · -- The difference `M' - M` is integration against its content, which is nonnegative.
+    set D := M'.toLinearMap - M.toLinearMap
+    have hD s (hs : MeasurableSet s) :
+        D.toAddContentLpTop s = M'.toLinearMap.toAddContentLpTop s -
+          M.toLinearMap.toAddContentLpTop s := by
+      simp [D, LinearMap.toAddContentLpTop_apply _ hs]
+    have hD₀ s (hs : MeasurableSet s) : 0 ≤ D.toAddContentLpTop s := by
+      rw [hD s hs, sub_nonneg]
+      exact h s
+    have hDμ s (hs : MeasurableSet s) (h0 : μ s = 0) : D.toAddContentLpTop s = 0 :=
+      D.toAddContentLpTop_of_measure_eq_zero hs h0
+    have hP : (ofAddContentLpTop D.toAddContentLpTop hD₀ hDμ).toLinearMap = D :=
+      LinearMap.ext_linftyIndicator (PositiveLinearMap.continuous_lpTop _)
+        (M'.continuous_lpTop.sub M.continuous_lpTop) fun s hs => by
+          rw [coe_toLinearMap, ofAddContentLpTop_linftyIndicator,
+            LinearMap.toAddContentLpTop_apply _ hs]
+    have := (ofAddContentLpTop D.toAddContentLpTop hD₀ hDμ).map_nonneg hφ
+    rw [← coe_toLinearMap, hP] at this
+    simpa [D, sub_nonneg] using this
 
 /-! ### Contents on the null-measurable sets
 
@@ -323,12 +359,12 @@ def addContentLpTopCompletionEquiv :
     AddContent.completion_nonneg _ (fun s _ => M.toAddContentLpTop_nonneg s),
     fun _ => AddContent.completion_of_measure_eq_zero _,
     fun _ => AddContent.completion_of_not_nullMeasurableSet _⟩
-  invFun ν := ofAddContentLpTop (ν.1.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
-    (fun s _ => by simpa using ν.2.1 s) fun s _ h => by simpa using ν.2.2.1 s h
+  invFun ν := ofAddContentLpTop (ν.val.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
+    (fun s _ => by simpa using ν.property.1 s) fun s _ h => by simpa using ν.property.2.1 s h
   left_inv M := ext_linftyIndicator fun s hs => by simp [hs]
-  right_inv ν := Subtype.ext <| AddContent.completion_eq _ ν.2.2.1 (fun u hu => by
+  right_inv ν := Subtype.ext <| AddContent.completion_eq _ ν.property.2.1 (fun u hu => by
     rw [toAddContentLpTop_ofAddContentLpTop_apply _ _ hu, AddContent.map_apply, preimage_id])
-    ν.2.2.2
+    ν.property.2.2
 
 /-- The content of `M` under `addContentLpTopCompletionEquiv` extends its content on the
 measurable sets. -/
@@ -339,6 +375,33 @@ theorem coe_addContentLpTopCompletionEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] 
         (fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h) :=
   (rfl)
 
+/-- If `φ` represents the indicator of `s` in `L∞(μ)`, the completed content of `s` is `M φ`.
+The existence of this class implies that `s` is null-measurable. -/
+theorem addContentLpTopCompletionEquiv_apply_of_ae_eq_indicator (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ)
+    {s : Set α} {φ : Lp ℝ ∞ μ} (hφ : φ =ᵐ[μ] s.indicator (1 : α → ℝ)) :
+    (addContentLpTopCompletionEquiv μ M).val s = M φ := by
+  have hs : NullMeasurableSet s μ :=
+    (aemeasurable_indicator_const_iff (1 : ℝ)).1 ((Lp.memLp φ).aemeasurable.congr hφ)
+  have ht : MeasurableSet (toMeasurable μ s) := measurableSet_toMeasurable μ s
+  have hind : (toMeasurable μ s).indicator (1 : α → ℝ) =ᵐ[μ] s.indicator (1 : α → ℝ) :=
+    (Filter.indicator_const_eventuallyEq one_ne_zero).2 hs.toMeasurable_ae_eq
+  have hclass : linftyIndicator μ (toMeasurable μ s) ht = φ :=
+    Lp.ext ((coeFn_linftyIndicator ht).trans (hind.trans hφ.symm))
+  rw [coe_addContentLpTopCompletionEquiv_apply,
+    AddContent.completion_apply_of_nullMeasurableSet _ hs, LinearMap.toAddContentLpTop_apply _ ht,
+    coe_toLinearMap, hclass]
+
+/-- On a null-measurable set, the completed content of `M` is its value on the class of the
+set's indicator function. -/
+-- Not a simp lemma: expanding to `MemLp.toLp` would obscure the simpler evaluation rules on
+-- measurable sets and on null sets.
+theorem addContentLpTopCompletionEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ)
+    {s : Set α} (hs : NullMeasurableSet s μ) :
+    (addContentLpTopCompletionEquiv μ M).val s =
+      M (((memLp_top_const (1 : ℝ)).indicator hs).toLp (s.indicator (1 : α → ℝ))) := by
+  exact M.addContentLpTopCompletionEquiv_apply_of_ae_eq_indicator
+    ((memLp_top_const (1 : ℝ)).indicator hs).coeFn_toLp
+
 /-- The functional of a content under `addContentLpTopCompletionEquiv` integrates against its
 restriction to the measurable sets. -/
 @[simp]
@@ -346,8 +409,8 @@ theorem addContentLpTopCompletionEquiv_symm_apply
     (ν : {ν : AddContent ℝ {s : Set α | NullMeasurableSet s μ} //
       (∀ s, 0 ≤ ν s) ∧ (∀ s, μ s = 0 → ν s = 0) ∧ ∀ s, ¬NullMeasurableSet s μ → ν s = 0}) :
     (addContentLpTopCompletionEquiv μ).symm ν =
-      ofAddContentLpTop (ν.1.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
-        (fun s _ => by simpa using ν.2.1 s) fun s _ h => by simpa using ν.2.2.1 s h :=
+      ofAddContentLpTop (ν.val.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
+        (fun s _ => by simpa using ν.property.1 s) fun s _ h => by simpa using ν.property.2.1 s h :=
   (rfl)
 
 section Group
@@ -379,8 +442,8 @@ theorem forall_apply_leftTranslation_eq_iff (M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ) 
 exactly when its content on the null-measurable sets is invariant under left translation. -/
 theorem forall_apply_leftTranslation_eq_iff_completion (M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ) :
     (∀ (g : G) φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ) ↔
-      ∀ (g : G) s, (addContentLpTopCompletionEquiv ν M).1 (g • s) =
-        (addContentLpTopCompletionEquiv ν M).1 s := by
+      ∀ (g : G) s, (addContentLpTopCompletionEquiv ν M).val (g • s) =
+        (addContentLpTopCompletionEquiv ν M).val s := by
   simp only [coe_addContentLpTopCompletionEquiv_apply, AddContent.forall_completion_smul_eq_iff,
     forall_apply_leftTranslation_eq_iff]
 

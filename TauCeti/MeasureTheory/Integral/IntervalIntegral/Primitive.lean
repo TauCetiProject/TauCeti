@@ -14,11 +14,12 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Order.ProjIcc
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Primitives of integrable functions on the line
@@ -37,9 +38,28 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.tendsto_integral_excise`: excising a symmetric interval around an
+  interior point `c ∈ uIoo a b` from an interval-integrable function recovers the full interval
+  integral as `ε → 0`.
+* `TauCeti.intervalIntegral.continuousOn_integral_prod`: the interval integral
+  `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
+  `uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms.
+* `TauCeti.intervalIntegral.tendsto_sum_integral_Ico_add_sub`: for `a ≤ n` and `f` interval
+  integrable on `a..n`, summing `∫ x in (j + δ₁ i)..(j + 1 - δ₂ i), f x ∂μ` over `j ∈ [a, n)`
+  converges to `∫ x in a..n, f x ∂μ` as `δ₁, δ₂ → 0` from the right.
+* `TauCeti.intervalIntegral.lipschitzWith_primitive`: the primitive of a locally integrable
+  function bounded almost everywhere by `K` is `K`-Lipschitz.
 * `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo` and
   `TauCeti.intervalIntegral.integral_norm_primitive_le`: such a primitive is integrable on
   `(a, b)`, with `L¹(a, b)` norm at most `(b - a) ‖f‖₁`.
+* `MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left`: if `f` is integrable on
+  `[a, b]`, the primitive `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
+  `[a, b]`; this is the `Icc` form of Mathlib's
+  `intervalIntegral.continuousOn_primitive_interval_left`.
+* `Continuous.contDiff_one_primitive`: the primitive of a continuous function is `C¹`.
+* `TauCeti.intervalIntegral.memLp_primitive`: on a bounded interval `(a, b)`, the primitive based
+  at a point of `[a, b]` of a function integrable on `(a, b)` lies in every `Lᵖ(a, b)`, for any
+  measure finite on compact sets.
 * `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
   `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
   the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
@@ -50,9 +70,10 @@ used to identify weak derivatives on an interval with ordinary primitives.
   primitives `c + ∫_{t₀}^· d v` in `C([a, b], E)` is continuous in `v` when `d v` is continuous in
   `v` in `L¹(a, b)`, is bounded by `‖c‖ + ∫ B` when `‖d v‖ ≤ B`, and then has relatively compact
   range (Arzelà–Ascoli).
+* `ContDiff.contDiff_add_one_integral`: the primitive of a `C^k` function on `ℝ` is `C^(k+1)`.
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
-  between a `C¹` real function `φ` and the primitive of an integrable `f`, which need not be
-  differentiable anywhere:
+  between a `C¹` scalar function `φ : ℝ → 𝕜` (`[RCLike 𝕜]`) and the primitive of an integrable `f`,
+  which need not be differentiable anywhere:
   `∫ t in a..b, φ' t • ∫ s in a..t, f s = φ b • ∫ s in a..b, f s - ∫ t in a..b, φ t • f t`.
   It is proved by exchanging the order of integration (Fubini's theorem), so no differentiation of
   the primitive is needed.
@@ -61,7 +82,7 @@ used to identify weak derivatives on an interval with ordinary primitives.
 public section
 
 open MeasureTheory Set Filter
-open scoped Interval
+open scoped Interval Topology
 
 namespace TauCeti
 
@@ -98,6 +119,107 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- Symmetric excision around an interior point `c ∈ uIoo a b` of an interval-integrable function
+recovers the full interval integral as `ε → 0`. -/
+theorem tendsto_integral_excise {μ : Measure ℝ} [NullSingletonClass μ]
+    {c : ℝ} (hc : c ∈ uIoo a b) (hf : IntervalIntegrable f μ a b) :
+    Tendsto (fun ε : ℝ ↦ (∫ t in a..(c - ε), f t ∂μ) + ∫ t in (c + ε)..b, f t ∂μ)
+      (𝓝 0) (𝓝 (∫ t in a..b, f t ∂μ)) := by
+  have hcont : ContinuousOn (fun y : ℝ ↦ ∫ t in a..y, f t ∂μ) (uIcc a b) :=
+    _root_.intervalIntegral.continuousOn_primitive_interval' hf left_mem_uIcc
+  have hprim : ContinuousAt (fun y : ℝ ↦ ∫ t in a..y, f t ∂μ) c :=
+    hcont.continuousAt (Icc_mem_nhds hc.1 hc.2)
+  have ha1 : Tendsto (fun ε : ℝ ↦ ∫ t in a..(c - ε), f t ∂μ) (𝓝 0)
+      (𝓝 (∫ t in a..c, f t ∂μ)) :=
+    hprim.tendsto.comp (by simpa using (continuous_sub_left c).tendsto 0)
+  have ha2 : Tendsto (fun ε : ℝ ↦ ∫ t in a..(c + ε), f t ∂μ) (𝓝 0)
+      (𝓝 (∫ t in a..c, f t ∂μ)) :=
+    hprim.tendsto.comp (by simpa using (continuous_const_add c).tendsto 0)
+  have hlim : Tendsto
+      (fun ε : ℝ ↦ (∫ t in a..(c - ε), f t ∂μ) +
+        ((∫ t in a..b, f t ∂μ) - ∫ t in a..(c + ε), f t ∂μ))
+      (𝓝 0) (𝓝 (∫ t in a..b, f t ∂μ)) := by
+    simpa [add_sub_cancel] using ha1.add (tendsto_const_nhds.sub ha2)
+  refine hlim.congr' ?_
+  have hmem : ∀ᶠ ε : ℝ in 𝓝 0, c + ε ∈ uIcc a b :=
+    (by simpa using (continuous_const_add c).tendsto 0 : Tendsto (c + ·) (𝓝 0) (𝓝 c)).eventually
+      (Icc_mem_nhds hc.1 hc.2)
+  filter_upwards [hmem] with ε hε
+  have hsplit := _root_.intervalIntegral.integral_add_adjacent_intervals
+    (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hε))
+    (hf.mono_set (uIcc_subset_uIcc hε right_mem_uIcc))
+  rw [← hsplit, add_sub_cancel_left]
+
+/-- The interval integral `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
+`uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms. -/
+theorem continuousOn_integral_prod {μ : Measure ℝ} [NullSingletonClass μ]
+    (hf : IntervalIntegrable f μ a b) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ ∫ x in p.1..p.2, f x ∂μ) (uIcc a b ×ˢ uIcc a b) := by
+  have hprim : ContinuousOn (fun t ↦ ∫ x in a..t, f x ∂μ) (uIcc a b) :=
+    _root_.intervalIntegral.continuousOn_primitive_interval' hf left_mem_uIcc
+  have hsub : ContinuousOn (fun p : ℝ × ℝ ↦ (∫ x in a..p.2, f x ∂μ) - ∫ x in a..p.1, f x ∂μ)
+      (uIcc a b ×ˢ uIcc a b) :=
+    (hprim.comp (continuous_snd.continuousOn (s := uIcc a b ×ˢ uIcc a b)) fun _ hp ↦ hp.2).sub
+      (hprim.comp (continuous_fst.continuousOn (s := uIcc a b ×ˢ uIcc a b)) fun _ hp ↦ hp.1)
+  refine hsub.congr fun p ⟨hp1, hp2⟩ ↦ ?_
+  exact (_root_.intervalIntegral.integral_interval_sub_left
+    (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp2))
+    (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp1))).symm
+
+/-- For integers `a ≤ n`, a function `f` interval integrable on `a..n`, and nonnegative
+endpoint perturbations `δ₁, δ₂ → 0`, the sum of integrals `∫ x in (j + δ₁ i)..(j + 1 - δ₂ i), f x`
+over `j ∈ Finset.Ico a n` converges to `∫ x in a..n, f x`. -/
+theorem tendsto_sum_integral_Ico_add_sub {μ : Measure ℝ} [NullSingletonClass μ]
+    {a n : ℤ} (han : a ≤ n) (hf : IntervalIntegrable f μ a n) {ι : Type*} {l : Filter ι}
+    {δ₁ δ₂ : ι → ℝ} (hδ₁0 : ∀ᶠ i in l, 0 ≤ δ₁ i) (hδ₂0 : ∀ᶠ i in l, 0 ≤ δ₂ i)
+    (hδ₁ : Tendsto δ₁ l (𝓝 0)) (hδ₂ : Tendsto δ₂ l (𝓝 0)) :
+    Tendsto
+      (fun i => ∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + δ₁ i)..((j : ℝ) + 1 - δ₂ i), f x ∂μ)
+      l (𝓝 (∫ x in (a : ℝ)..n, f x ∂μ)) := by
+  have hint_unit : ∀ j ∈ Finset.Ico a n, IntervalIntegrable f μ (j : ℝ) ((j : ℝ) + 1) := by
+    intro j hj
+    obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
+    have hsub : uIcc (j : ℝ) ((j : ℝ) + 1) ⊆ uIcc (a : ℝ) (n : ℝ) := by
+      rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1), uIcc_of_le (by exact_mod_cast han)]
+      exact Icc_subset_Icc (by exact_mod_cast hja) (by exact_mod_cast hjn)
+    exact hf.mono_set hsub
+  have hsplit : ∫ x in (a : ℝ)..n, f x ∂μ =
+      ∑ j ∈ Finset.Ico a n, ∫ x in (j : ℝ)..((j : ℝ) + 1), f x ∂μ := by
+    simpa [Int.cast_add, Int.cast_one] using
+      (sum_integral_adjacent_intervals_Ico_int (μ := μ) han (fun j : ℤ => (j : ℝ))
+        fun j hj => by simpa [Int.cast_add, Int.cast_one] using hint_unit j hj).symm
+  rw [hsplit]
+  refine tendsto_finsetSum _ fun j hj => ?_
+  refine (continuousOn_integral_prod (hint_unit j hj) ((j : ℝ), (j : ℝ) + 1)
+    ⟨left_mem_uIcc, right_mem_uIcc⟩).tendsto.comp
+      (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
+        (fun i => ((j : ℝ) + δ₁ i, (j : ℝ) + 1 - δ₂ i)) ?_ ?_)
+  · simpa using (tendsto_const_nhds (x := (j : ℝ)).add hδ₁).prodMk_nhds
+      (tendsto_const_nhds (x := (j : ℝ) + 1).sub hδ₂)
+  · filter_upwards [hδ₁0, hδ₂0, hδ₁.eventually (Iio_mem_nhds zero_lt_one),
+      hδ₂.eventually (Iio_mem_nhds zero_lt_one)] with i hi10 hi20 hi11 hi21
+    rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1)]
+    exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on `(a, b)`, based at a point
+`t₀` of `[a, b]`, lies in every `Lᵖ((a, b), ν)` for any measure `ν` that is finite on compact sets:
+it is continuous on the compact interval `[a, b]`. -/
+theorem memLp_primitive {μ ν : Measure ℝ} [NullSingletonClass μ] [IsFiniteMeasureOnCompacts ν]
+    {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b) μ) (ht₀ : t₀ ∈ Icc a b) :
+    MemLp (fun t ↦ ∫ s in t₀..t, f s ∂μ) p (ν.restrict (Ioo a b)) :=
+  (continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).memLp_restrict_of_subset_isCompact
+    isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s` of a locally integrable function bounded almost
+everywhere by `K` is `K`-Lipschitz. -/
+theorem lipschitzWith_primitive {K : NNReal} (hf : LocallyIntegrable f) (hK : ∀ᵐ x, ‖f x‖ ≤ K)
+    (t₀ : ℝ) : LipschitzWith K fun t ↦ ∫ s in t₀..t, f s :=
+  LipschitzWith.of_dist_le_mul fun t s ↦ by
+    rw [dist_eq_norm, _root_.intervalIntegral.integral_interval_sub_left
+      (hf.integrableOn_isCompact isCompact_uIcc).intervalIntegrable
+      (hf.integrableOn_isCompact isCompact_uIcc).intervalIntegrable, Real.dist_eq]
+    exact _root_.intervalIntegral.norm_integral_le_of_norm_le_const_ae (hK.mono fun _ hx _ ↦ hx)
 
 /-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on the open interval
 `Ioo a b`, based at a point `t₀` of `Icc a b`, is integrable on `Ioo a b` for any measure that is
@@ -182,9 +304,9 @@ theorem continuous_of_forall_eq_add_integral [TopologicalSpace X] {d : X → ℝ
   refine squeeze_zero (fun _ ↦ dist_nonneg) (fun v ↦ ?_) (by simpa using (hdc v₀).tendsto v₀)
   refine (ContinuousMap.dist_le (integral_nonneg fun _ ↦ norm_nonneg _)).2 fun t ↦ ?_
   rw [hT, hT, dist_eq_norm, add_sub_add_left_eq_sub, ← _root_.intervalIntegral.integral_sub
-    ((hdi v).intervalIntegrable_of_mem_Icc ht₀ t.2)
-    ((hdi v₀).intervalIntegrable_of_mem_Icc ht₀ t.2)]
-  exact norm_integral_le_setIntegral_norm ((hdi v).sub (hdi v₀)) ht₀ t.2
+    ((hdi v).intervalIntegrable_of_mem_Icc ht₀ t.property)
+    ((hdi v₀).intervalIntegrable_of_mem_Icc ht₀ t.property)]
+  exact norm_integral_le_setIntegral_norm ((hdi v).sub (hdi v₀)) ht₀ t.property
 
 /-- A primitive `g = c + ∫_{t₀}^· d ∂μ` on `[a, b]`, based at a point `t₀` of `[a, b]`, with
 `‖d‖ ≤ B` almost everywhere on `(a, b)`, is bounded by `‖c‖ + ∫ B`. -/
@@ -198,7 +320,7 @@ theorem norm_le_of_forall_eq_add_integral {d : ℝ → E} {B : ℝ → ℝ} {g :
     ((integral_nonneg fun _ ↦ norm_nonneg _).trans hB))).2 fun t ↦ ?_
   rw [hg]
   exact (norm_add_le _ _).trans
-    (add_le_add le_rfl ((norm_integral_le_setIntegral_norm hdi ht₀ t.2).trans hB))
+    (add_le_add le_rfl ((norm_integral_le_setIntegral_norm hdi ht₀ t.property).trans hB))
 
 /-- **Arzelà–Ascoli for primitives.** A family of primitives `T v = c + ∫_{t₀}^· d v ∂μ` on
 `[a, b]`, based at a point `t₀` of `[a, b]`, whose integrands are dominated almost everywhere on
@@ -214,9 +336,9 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
     fun v y z ↦ by
       rw [hT, hT, dist_eq_norm, add_sub_add_left_eq_sub, norm_sub_rev,
         _root_.intervalIntegral.integral_interval_sub_left
-          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ z.2)
-          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ y.2)]
-      exact norm_integral_le_abs_of_ae_norm_le hBi (hdB v) y.2 z.2
+          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ z.property)
+          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ y.property)]
+      exact norm_integral_le_abs_of_ae_norm_le hBi (hdB v) y.property z.property
   set R := ‖c‖ + ∫ t in Ioo a b, B t ∂μ
   refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous (fun y ↦ ?_)
     fun _ ↦ ⟨Metric.closedBall 0 R, isCompact_closedBall 0 R, fun v ↦ ?_⟩
@@ -224,13 +346,25 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
       (fun z : Icc a b ↦ |∫ s in y..z, B s ∂μ|) ?_ _
       (Eventually.of_forall fun z v ↦ hTinc v y z)
     have hBc : Continuous fun z : Icc a b ↦ ∫ s in y..z, B s ∂μ :=
-      (continuousOn_primitive_interval_of_integrableOn_Ioo hBi y.2).comp_continuous
-        continuous_subtype_val Subtype.prop
+      (continuousOn_primitive_interval_of_integrableOn_Ioo hBi y.property).comp_continuous
+        continuous_subtypeVal Subtype.prop
     simpa using hBc.abs.tendsto y
   · exact mem_closedBall_zero_iff.2 (((T v).norm_coe_le_norm _).trans
       (norm_le_of_forall_eq_add_integral ht₀ (hdi v) hBi (hdB v) (hT v)))
 
 end Family
+
+/-- The primitive `x ↦ ∫ t in a..x, f t` of a `C^k` function `f` on `ℝ` is `C^(k+1)`. When `E` is
+complete its derivative is `f` (`Continuous.deriv_integral`); otherwise the primitive is the
+constant `0`. -/
+theorem _root_.ContDiff.contDiff_add_one_integral {k : ℕ∞} (hf : ContDiff ℝ k f) (a : ℝ) :
+    ContDiff ℝ (k + 1) (fun x ↦ ∫ t in a..x, f t) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simpa [intervalIntegral, integral_of_not_completeSpace hE] using contDiff_const
+  exact contDiff_succ_iff_deriv.2 ⟨fun x ↦
+    (hf.continuous.integral_hasStrictDerivAt a x).hasDerivAt.differentiableAt, by simp,
+    by rwa [funext (hf.continuous.deriv_integral f a)]⟩
 
 variable [CompleteSpace E]
 
@@ -259,9 +393,10 @@ theorem exists_continuous_primitive_Icc (hf : ContinuousOn f (Icc a b)) :
 
 omit [CompleteSpace E] in
 /-- **Integration by parts against a primitive.** For `a ≤ b`, `f` integrable on `[a, b]` and a
-`C¹` function `φ : ℝ → ℝ`,
+`C¹` scalar function `φ : ℝ → 𝕜` (`[RCLike 𝕜]`),
 `∫ t in a..b, φ' t • ∫ s in a..t, f s = φ b • ∫ s in a..b, f s - ∫ t in a..b, φ t • f t`. -/
-theorem integral_deriv_smul_primitive_eq_sub_of_le {φ : ℝ → ℝ} (hab : a ≤ b)
+theorem integral_deriv_smul_primitive_eq_sub_of_le {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 E]
+    [IsScalarTower ℝ 𝕜 E] {φ : ℝ → 𝕜} (hab : a ≤ b)
     (hφ : ContDiff ℝ 1 φ) (hf : IntervalIntegrable f volume a b) :
     ∫ t in a..b, deriv φ t • ∫ s in a..t, f s =
       φ b • (∫ s in a..b, f s) - ∫ t in a..b, φ t • f t := by
@@ -335,3 +470,23 @@ theorem integral_deriv_smul_primitive_eq_sub_of_le {φ : ℝ → ℝ} (hab : a �
 end intervalIntegral
 
 end TauCeti
+
+/-- An interval integral `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
+`[a, b]` when `f` is integrable on `[a, b]`. This is the `Icc` form of Mathlib's
+`intervalIntegral.continuousOn_primitive_interval_left`. -/
+theorem MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {a b : ℝ} (hf : IntegrableOn f (Icc a b)) :
+    ContinuousOn (fun s ↦ ∫ r in s..b, f r) (Icc a b) := by
+  rcases le_or_gt a b with hab | hab
+  · rw [← uIcc_of_le hab] at hf ⊢
+    exact intervalIntegral.continuousOn_primitive_interval_left hf
+  · simp [Icc_eq_empty_of_lt hab]
+
+/-- The primitive `z ↦ ∫ s in a..z, f s` of a continuous function is `C¹`, with derivative `f`. -/
+theorem Continuous.contDiff_one_primitive {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {f : ℝ → E} (hf : Continuous f) (a : ℝ) :
+    ContDiff ℝ 1 fun z ↦ ∫ s in a..z, f s :=
+  contDiff_one_iff_deriv.2
+    ⟨fun y ↦ (hf.integral_hasStrictDerivAt a y).hasDerivAt.differentiableAt,
+      by rw [funext (hf.deriv_integral _ a)]; exact hf⟩

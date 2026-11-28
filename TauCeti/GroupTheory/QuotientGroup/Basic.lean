@@ -51,6 +51,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   the same elements number `|C_G(g)| * #(H ∩ [g])`.
 * `Subgroup.natCard_fixedBy_mul_natCard`: the fixed-coset identity
   `#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`.
+* `QuotientGroup.smul_eq_mk_mul`: for `N` normal, `G` acts on `G ⧸ N` by left multiplication
+  through `G → G ⧸ N`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
@@ -64,12 +66,19 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
+* `QuotientGroup.op_out_inv_smul_injective`: distinct left cosets `t` of `H` give distinct right
+  cosets `H t.out⁻¹`.
 * `QuotientGroup.mk_list_prod`: the class of a list product is the product of the classes.
 * `QuotientGroup.inv_mul_mul_list_prod_map_mul_mem`: central corrections can be absorbed into the
   two tail products of a word, modulo a normal subgroup.
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
 * `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
+* `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
+  `K * Γ = G`.
+* `QuotientAddGroup.image_mk_eq_univ_iff`: the additive form, `K + Γ = G`.
+* `QuotientGroup.mk'_bot_injective` and `QuotientAddGroup.mk'_bot_injective`: the quotient map by
+  the trivial subgroup is injective.
 -/
 
 public section
@@ -84,6 +93,12 @@ attribute [simp] Subgroup.quotientEquivOfEq_mk
 namespace TauCeti
 
 variable {G : Type*} [Group G]
+
+/-- For `N` normal, the action of `G` on `G ⧸ N` is left multiplication through `G → G ⧸ N`. -/
+theorem _root_.QuotientGroup.smul_eq_mk_mul {N : Subgroup G} [N.Normal] (g : G) (q : G ⧸ N) :
+    g • q = (g : G ⧸ N) * q := by
+  induction q using QuotientGroup.induction_on
+  rw [MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.mk_mul]
 
 /-- An element of a normal subgroup `N` fixes every coset of `N`. -/
 @[simp]
@@ -250,6 +265,15 @@ theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
   rw [← div_eq_mul_inv, ← QuotientGroup.eq_iff_div_mem, QuotientGroup.mk_mul,
     QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
 
+/-- Distinct left cosets `t` of `H` give distinct right cosets `H t.out⁻¹`. -/
+theorem _root_.QuotientGroup.op_out_inv_smul_injective (H : Subgroup G) :
+    Function.Injective fun t : G ⧸ H ↦ MulOpposite.op ((t.out)⁻¹ : G) • (H : Set G) := by
+  intro t s hts
+  have h := (rightCoset_eq_iff H).1 hts
+  rw [inv_inv] at h
+  rw [← QuotientGroup.out_eq' t, ← QuotientGroup.out_eq' s]
+  exact (QuotientGroup.eq.2 h).symm
+
 /-- The class modulo a normal subgroup of a list product is the product of the classes. -/
 @[simp]
 theorem _root_.QuotientGroup.mk_list_prod (K : Subgroup G) [K.Normal] (l : List G) :
@@ -308,7 +332,7 @@ representative of a left coset of `H` and an element of `H`. -/
 theorem _root_.Subgroup.sum_eq_sum_leftCosets (f : G → M) :
     ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
   have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
-    rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
+    rw [QuotientGroup.mk_mul_of_mem _ h.property, QuotientGroup.out_eq']
   have hbij : Function.Bijective fun p : (G ⧸ H) × H => (p.1.out : G) * (p.2 : G) := by
     refine Function.bijective_iff_has_inverse.2 ⟨fun g => ((g : G ⧸ H),
       ⟨(Quotient.out (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (QuotientGroup.out_eq' _)⟩),
@@ -344,3 +368,25 @@ theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
 attribute [to_additive existing] QuotientGroup.congr_mk
 
 end TauCeti
+
+namespace QuotientGroup
+
+open Set
+
+variable {G : Type*} [Group G] {Γ : Subgroup G}
+
+/-- A set `K` meets every left coset of `Γ` exactly when `K * Γ = G`. -/
+@[to_additive /-- A set `K` meets every coset of `Γ` exactly when `K + Γ = G`. -/]
+theorem image_mk_eq_univ_iff {K : Set G} :
+    ((↑) '' K : Set (G ⧸ Γ)) = univ ↔ K * (Γ : Set G) = univ := by
+  rw [← preimage_image_mk_eq_mul]
+  refine ⟨fun h ↦ by rw [h, preimage_univ], fun h ↦ eq_univ_of_forall fun x ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := mk_surjective x
+  exact (h ▸ mem_univ g : g ∈ _)
+
+/-- The quotient map of a group by its trivial subgroup is injective. -/
+@[to_additive /-- The quotient map of an additive group by its trivial subgroup is injective. -/]
+theorem mk'_bot_injective : Function.Injective (mk' (⊥ : Subgroup G)) :=
+  (mk' ⊥).ker_eq_bot_iff.mp (ker_mk' ⊥)
+
+end QuotientGroup

@@ -6,15 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.Topology.EMetricSpace.Lipschitz
+import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Norm
+import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Analysis.RCLike.OperatorNorm
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 
 /-!
 # Integrability of the applied derivative and of derivative energy densities
@@ -30,8 +40,16 @@ compact support. A weighted squared defect `c z * ‖fderiv w z e₁ + A z (fder
 integrable when it vanishes off a compact set on which `c` and `A` are continuous, so they need
 not be continuous elsewhere.
 
+Integrability of the squared norm of the derivative implies integrability of the squared norm of
+the derivative applied to any fixed vector. Conversely, for a map out of an `RCLike` field that
+satisfies a Cauchy--Riemann equation `∂ₜu = A (∂ₛu)` with `‖A‖` bounded, integrability of the
+squared norm of the real-direction derivative `∂ₛu` implies integrability of `‖du‖²`.
 Precomposing with a measure-preserving continuous linear equivalence does not change whether
 the squared norm of the derivative is integrable.
+
+For a map which is `C¹` up to the boundary of a closed ball in a finite-dimensional real space,
+every continuous function of its derivative is integrable on the open ball, for any measure finite
+on compact sets, since the derivative extends continuously to the closed ball.
 
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
@@ -46,6 +64,18 @@ integrable on the product of a half-line with `V`.
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
   in two directions.
+* `TauCeti.integrable_norm_fderiv_apply_sq`: integrability of `‖fderiv 𝕜 u z v‖ ^ 2` from
+  integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
+* `LipschitzWith.memLp_norm_fderiv`,
+  `LipschitzWith.integrable_norm_fderiv_sq`: `Lᵖ` and squared-energy integrability of
+  `‖fderiv 𝕜 u‖` for a compactly supported Lipschitz map.
+* `TauCeti.mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq`: the weighted
+  one-dimensional Dirichlet energy of a compactly supported Lipschitz radial function along a unit
+  ray is bounded above by the full-space Dirichlet energy `∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ`.
+* `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
+  integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
+* `TauCeti.integrableOn_ball_comp_fderiv_of_contDiffOn`: for a map that is `C¹` on a closed ball,
+  continuous functions of its derivative are integrable on the open ball.
 * `ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff`: integrability of
   `‖fderiv (u ∘ e)‖ ^ 2` for a measure-preserving continuous linear equivalence `e` is that of
   `‖fderiv u‖ ^ 2`.
@@ -56,6 +86,7 @@ integrable on the product of a half-line with `V`.
 public section
 
 open MeasureTheory Set
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -138,7 +169,139 @@ theorem integrable_mul_norm_defect_sq (e₁ e₂ : E) {w : E → F} {c : E → �
     (hc.mul (((hdw.clm_apply continuousOn_const).add
       (hA.clm_apply (hdw.clm_apply continuousOn_const))).norm.pow 2)).integrableOn_compact hS
 
+/-- If the squared norm of the derivative of a map into a complete space is integrable, then so is
+the squared norm of the derivative applied to any fixed vector `v`: it is bounded by
+`‖v‖ ^ 2 * ‖fderiv 𝕜 u z‖ ^ 2`. -/
+theorem integrable_norm_fderiv_apply_sq [CompleteSpace F] {ν : Measure E} {u : E → F}
+    (h : Integrable (fun z ↦ ‖fderiv 𝕜 u z‖ ^ 2) ν) (v : E) :
+    Integrable (fun z ↦ ‖fderiv 𝕜 u z v‖ ^ 2) ν := by
+  borelize F
+  refine (h.const_mul (‖v‖ ^ 2)).mono'
+    ((measurable_fderiv_apply_const 𝕜 u v).norm.pow_const 2).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  rw [norm_pow, norm_norm, ← mul_pow, mul_comm]
+  gcongr
+  exact (fderiv 𝕜 u z).le_opNorm v
+
+/-- The operator norm of the Fréchet derivative of a compactly supported `K`-Lipschitz map into
+a complete space belongs to `Lᵖ` for every `p ∈ [0, ∞]`. -/
+theorem _root_.LipschitzWith.memLp_norm_fderiv [CompleteSpace F] {p : ℝ≥0∞} {K : ℝ≥0} {u : E → F}
+    (hu : LipschitzWith K u) (hsupp : HasCompactSupport u) :
+    MemLp (fun x ↦ ‖fderiv 𝕜 u x‖) p μ := by
+  borelize (E →L[𝕜] F)
+  refine (hsupp.fderiv 𝕜).norm.memLp_of_bound
+    (measurable_fderiv 𝕜 u).norm.aestronglyMeasurable K
+    (.of_forall fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (norm_nonneg _)]
+  exact norm_fderiv_le_of_lipschitz 𝕜 hu
+
+/-- The squared operator norm of the Fréchet derivative of a compactly supported `K`-Lipschitz
+map into a complete space is integrable. -/
+theorem _root_.LipschitzWith.integrable_norm_fderiv_sq [CompleteSpace F] {K : ℝ≥0} {u : E → F}
+    (hu : LipschitzWith K u) (hsupp : HasCompactSupport u) :
+    Integrable (fun x ↦ ‖fderiv 𝕜 u x‖ ^ 2) μ := by
+  borelize (E →L[𝕜] F)
+  have hmem : MemLp (fun x ↦ ‖fderiv 𝕜 u x‖) 2 μ :=
+    hu.memLp_norm_fderiv (𝕜 := 𝕜) hsupp
+  simpa only [Real.norm_of_nonneg (norm_nonneg _)] using
+    (memLp_two_iff_integrable_sq_norm (measurable_fderiv 𝕜 u).norm.aestronglyMeasurable).1 hmem
+
 end Energy
+
+section Radial
+
+/-- For a compactly supported `K`-Lipschitz radial real function `v : E → ℝ` on a finite-dimensional
+real inner product space with an additive Haar measure `μ`, the weighted one-dimensional Dirichlet
+energy along a unit ray `r ↦ v (r • e₀)` on `(0, ∞)` is bounded above by the full-space
+Dirichlet energy `∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ`. -/
+theorem mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {K : ℝ≥0} {v : E → ℝ} (hv_lip : LipschitzWith K v) (hv_supp : HasCompactSupport v)
+    (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y) {e₀ : E} (he₀ : ‖e₀‖ = 1) :
+    (Module.finrank ℝ E : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
+        ∫ r in Ioi (0 : ℝ), r ^ (Module.finrank ℝ E - 1) *
+          (deriv (fun r : ℝ ↦ v (r • e₀)) r) ^ 2) ≤
+      ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
+  set n := Module.finrank ℝ E with hn_def
+  have hv_grad_int := hv_lip.integrable_norm_fderiv_sq (𝕜 := ℝ) (μ := μ) hv_supp
+  have hgrad_rad : ∀ x y : E, ‖x‖ = ‖y‖ → ‖fderiv ℝ v x‖ ^ 2 = ‖fderiv ℝ v y‖ ^ 2 :=
+    fun x y hxy ↦ by rw [norm_fderiv_eq_of_norm_eq hv_rad hxy]
+  have hφ_int : IntegrableOn (fun r ↦ r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) (Ioi 0) := by
+    simpa only [smul_eq_mul, ← hn_def] using
+      (integrable_iff_integrableOn_Ioi_of_radial μ hgrad_rad he₀).mp hv_grad_int
+  have hpt : ∀ r ∈ Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤
+      r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 := fun r (hr : 0 < r) ↦
+    mul_le_mul_of_nonneg_left (by
+      simpa only [Real.norm_eq_abs, sq_abs] using
+        pow_le_pow_left₀ (norm_nonneg _) (norm_deriv_comp_smul_le hv_rad he₀ hr) 2)
+      (pow_nonneg hr.le _)
+  have hderiv_int :
+      IntegrableOn (fun r ↦ r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2) (Ioi 0) :=
+    hφ_int.mono' (((continuous_pow (n - 1)).measurable.mul
+      ((measurable_deriv fun s : ℝ ↦ v (s • e₀)).pow_const 2)).aestronglyMeasurable.restrict)
+      (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr ↦ by
+        rw [Real.norm_of_nonneg (mul_nonneg (pow_nonneg (mem_Ioi.1 hr).le _) (sq_nonneg _))]
+        exact hpt r hr)
+  have hrad_le : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤
+      ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
+    setIntegral_mono_on hderiv_int hφ_int measurableSet_Ioi hpt
+  calc (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
+        ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2)
+      ≤ (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
+          ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hrad_le measureReal_nonneg)
+          (Nat.cast_nonneg n)
+    _ = ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ :=
+        (integral_eq_mul_integral_Ioi_of_radial μ hgrad_rad he₀).symm
+
+end Radial
+
+section CauchyRiemann
+
+variable {K : Type*} [RCLike K] [MeasurableSpace K] [OpensMeasurableSpace K] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- **Energy from the real-direction energy.** If `u : K → G` out of an `RCLike` field satisfies the
+Cauchy--Riemann equation `∂ₜu = A z (∂ₛu)` on a measurable set `s`, with `‖A z‖ ≤ M` there, and
+`‖∂ₛu‖²` is integrable on `s`, then so is `‖du‖²`: it is bounded by `(1 + M)² ‖∂ₛu‖²`. -/
+theorem integrableOn_norm_fderiv_sq_of_apply_I_eq {ν : Measure K} {u : K → G}
+    {A : K → G →L[ℝ] G} {M : ℝ} {s : Set K} (hs : MeasurableSet s)
+    (hCR : ∀ z ∈ s, fderiv ℝ u z RCLike.I = A z (fderiv ℝ u z 1)) (hA : ∀ z ∈ s, ‖A z‖ ≤ M)
+    (h : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) s ν) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) s ν := by
+  borelize (K →L[ℝ] G)
+  refine (h.const_mul ((1 + M) ^ 2)).mono'
+    ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+    ((ae_restrict_iff' hs).2 (.of_forall fun z hz ↦ ?_))
+  rw [norm_pow, norm_norm, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _)
+    ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hA z hz) le_rfl) 2
+
+end CauchyRiemann
+section ClosedBall
+
+variable {H V W : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+  [MeasurableSpace H] [OpensMeasurableSpace H] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup W]
+
+/-- If `u` is `C¹` on the closed ball `‖z - z₀‖ ≤ b` of a finite-dimensional real space, then for
+every continuous `F` the function `z ↦ F (Du z)` is integrable on the open ball for any measure
+finite on compact sets: the differential of `u` extends continuously to the closed ball. -/
+theorem integrableOn_ball_comp_fderiv_of_contDiffOn {μ : Measure H} [IsFiniteMeasureOnCompacts μ]
+    {F : (H →L[ℝ] V) → W} (hF : Continuous F) {u : H → V} {z₀ : H} {b : ℝ}
+    (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    IntegrableOn (fun z ↦ F (fderiv ℝ u z)) (Metric.ball z₀ b) μ := by
+  rcases le_or_gt b 0 with hb | hb
+  · simp [Metric.ball_eq_empty.mpr hb]
+  have hDu := hu.continuousOn_fderivWithin (uniqueDiffOn_closedBall z₀ hb) le_rfl
+  refine (((hF.comp_continuousOn hDu).integrableOn_compact
+    (ProperSpace.isCompact_closedBall z₀ b)).mono_set Metric.ball_subset_closedBall).congr_fun
+    (fun z hz ↦ ?_) Metric.isOpen_ball.measurableSet
+  -- On the open ball the derivative within the closed ball is the derivative.
+  rw [Function.comp_apply, fderivWithin_of_mem_nhds (Metric.closedBall_mem_nhds_of_mem hz)]
+
+end ClosedBall
 
 section CompContinuousLinearEquiv
 

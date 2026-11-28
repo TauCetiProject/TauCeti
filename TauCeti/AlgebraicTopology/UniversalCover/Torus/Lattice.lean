@@ -85,7 +85,7 @@ noncomputable def orbitRelQuotientDeckMulEquiv [PreconnectedSpace E] :
 /-- The deck transformation attached to `l` is translation by `l`. -/
 @[simp]
 theorem orbitRelQuotientDeckMulEquiv_apply [PreconnectedSpace E] (l : Multiplicative L) (v : E) :
-    (L.orbitRelQuotientDeckMulEquiv l).1 v = (l.toAdd : E) + v :=
+    (L.orbitRelQuotientDeckMulEquiv l).val v = (l.toAdd : E) + v :=
   (L.isAddQuotientCoveringMap_quotientMk.toMultiplicative _).deckMulEquiv_apply l v
 
 end AddGroup
@@ -127,24 +127,11 @@ theorem orbitRelQuotientFundamentalGroupEquiv_fundamentalGroupMulEquivOfPath
         (FundamentalGroup.fundamentalGroupMulEquivOfPath p γ) =
       L.orbitRelQuotientFundamentalGroupEquiv x γ := by
   have hq := L.isAddQuotientCoveringMap_quotientMk
-  set l := L.orbitRelQuotientFundamentalGroupEquiv x γ
   let e : _root_.Quotient.mk (AddAction.orbitRel L E) ⁻¹' {x} := ⟨x.out, x.out_eq⟩
-  have hl := (L.orbitRelQuotientFundamentalGroupEquiv_apply_eq_iff e γ l).1 rfl
-  refine (L.orbitRelQuotientFundamentalGroupEquiv_apply_eq_iff
-    (hq.isCoveringMap.monodromy (.mk p) e) _ l).2 ?_
-  -- The fibre action of `l` is translation by `l`, and monodromy commutes with it.
-  have hperm (y) (f : _root_.Quotient.mk (AddAction.orbitRel L E) ⁻¹' {y}) :
-      (hq.toMultiplicative.toPermFiber y l f : E) = (l.toAdd : E) + f := by
-    rw [IsQuotientCoveringMap.toPermFiber_apply_apply_coe, ← toAdd_vadd, AddSubgroup.vadd_def,
-      vadd_eq_add]
-  have he : hq.isCoveringMap.monodromy γ.toPath e = hq.toMultiplicative.toPermFiber x l e :=
-    Subtype.ext (hl.trans (hperm x e).symm)
-  -- Monodromy along the conjugate `p⁻¹ ⬝ γ ⬝ p`, applied to the endpoint of the lift of `p`, is
-  -- monodromy along `γ` followed by monodromy along `p`.
-  have h := hq.isCoveringMap.monodromy_fundamentalGroupMulEquivOfPath_symm_apply p
-    (FundamentalGroup.fundamentalGroupMulEquivOfPath p γ) e
-  rw [MulEquiv.symm_apply_apply, Equiv.eq_symm_apply, TauCeti.coveringFiberEquiv_apply] at h
-  rw [← h, he, hq.toMultiplicative.monodromy_toPermFiber, hperm]
+  -- The chosen lift does not matter since `L` is commutative; use the transport of `e` along `p`.
+  simp only [orbitRelQuotientFundamentalGroupEquiv, MulEquiv.trans_apply]
+  rw [hq.fundamentalGroupEquiv_eq _ (hq.isCoveringMap.monodromy (.mk p) e),
+    hq.fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath]
 
 /-- **Period displacement.** The class of a loop `γ` in `E / L` corresponds to `Γ 1 - Γ 0`, for
 any continuous lift `Γ : I → E` of `γ`. -/

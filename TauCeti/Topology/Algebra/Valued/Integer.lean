@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import Mathlib.Topology.Algebra.LinearTopology
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Integer rings of valued rings and nonarchimedean normed fields
@@ -54,6 +55,8 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   `K`-space is continuous.
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
   products of `K` preserve and reflect bounded sets.
+* `TauCeti.isOpen_maximalIdeal_integer`: for any valued field `K`, the maximal ideal `𝓂[K]` of
+  `𝒪[K]` is open.
 * `TauCeti.not_fg_maximalIdeal_integer`: for a densely normed field the maximal ideal of `𝒪[K]`
   is not finitely generated.
 -/
@@ -61,7 +64,7 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
 public section
 
 open IsLocalRing Bornology
-open scoped NormedField
+open scoped NormedField Valued
 
 namespace Valued
 
@@ -89,16 +92,17 @@ instance instCompleteSpaceInteger [CompleteSpace K] :
 
 end Valued
 
-section Integer
+section NormedField
 
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-- An element of the valuation ring of a nonarchimedean field lies in its maximal ideal exactly
 when its norm is less than `1`. -/
 theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
-  rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
-    (Valued.integer.norm_le_one x).lt_iff_ne]
+  rw [mem_maximalIdeal, mem_nonunits_iff, Valuation.Integer.not_isUnit_iff_valuation_lt_one,
+    TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply,
+    ← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one, AddSubgroupClass.coe_norm]
 
 /-- An element of the valuation ring of a nonarchimedean field has residue zero exactly when its
 norm is less than `1`. -/
@@ -113,6 +117,12 @@ theorem Valued.integer.residue_eq_residue_iff_norm_sub_lt_one {x y : Valued.inte
     residue (Valued.integer K) x = residue (Valued.integer K) y ↔ ‖(x : K) - y‖ < 1 := by
   rw [← sub_eq_zero, ← map_sub, Valued.integer.residue_eq_zero_iff_norm_lt_one,
     AddSubgroupClass.coe_sub]
+
+end NormedField
+
+section Integer
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 
 /-- The maximal ideal of the valuation ring of a nontrivially normed nonarchimedean field
 contains a nonzero element. -/
@@ -212,6 +222,14 @@ noncomputable def RingHom.integerRestrict : Valued.integer K →+* Valued.intege
 theorem RingHom.coe_integerRestrict_apply (x : Valued.integer K) :
     (φ.integerRestrict hφ x : L) = φ x := (rfl)
 
+/-- Restricting the identity homomorphism of a nonarchimedean field to its valuation ring gives
+the identity homomorphism. -/
+@[simp]
+theorem RingHom.integerRestrict_id :
+    (RingHom.id K).integerRestrict (fun _ ↦ le_rfl) = RingHom.id (Valued.integer K) := by
+  ext x
+  simp
+
 /-- The restriction of a norm-nonincreasing homomorphism of nonarchimedean fields to their
 valuation rings is a local homomorphism: an element of `𝒪[K]` whose image has norm one has norm
 one. It therefore induces the homomorphism of residue fields
@@ -258,6 +276,15 @@ theorem Valued.integer.exists_seq_mem_maximalIdeal :
 end DenselyNormed
 
 namespace TauCeti
+
+/-- The maximal ideal `𝓂[K]` of the valuation ring `𝒪[K]` of a valued field is open, being the
+open unit ball around `0`. -/
+theorem isOpen_maximalIdeal_integer {K : Type*} [Field K] {Γ₀ : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀] [Valued K Γ₀] : IsOpen (𝓂[K] : Set 𝒪[K]) := by
+  convert (Valued.isOpen_ball K 1).preimage (continuous_subtypeVal : Continuous ((↑) : 𝒪[K] → K))
+  ext x
+  simp [Valued.maximalIdeal, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
+    Valuation.Integer.not_isUnit_iff_valuation_lt_one]
 
 variable {K : Type*} [DenselyNormedField K] [IsUltrametricDist K]
 

@@ -295,7 +295,7 @@ private theorem coe_crossingMatching_apply (hs : poly.IsSimple ℝ)
   let e : poly.crossingTimes p₀ d ≃ poly.doublePoints ℝ (projAlong ℝ p₀ d) :=
     crossingTimesEquivDoublePoints hs
   apply hs.injOn_boundaryParam
-    (crossingTimes_subset_Ico (e.symm ((hπ.perfectMatchingDoublePoints).val (e t))).2)
+    (crossingTimes_subset_Ico (e.symm ((hπ.perfectMatchingDoublePoints).val (e t))).property)
     (partnerTime_mem_Ico t)
   rw [boundaryParam_partnerTime]
   rw [← crossingTimesEquivDoublePoints_apply hs (e.symm _), Equiv.apply_symm_apply,
@@ -306,13 +306,13 @@ private theorem crossingOver_crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :
     crossingOver poly p₀ d ((crossingMatching hs hπ).val t) = !crossingOver poly p₀ d t := by
   rw [coe_crossingMatching_apply]
-  exact crossingOver_partnerTime hs hπ t.2
+  exact crossingOver_partnerTime hs hπ t.property
 
 private theorem crossingSign_crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :
     crossingSign poly p₀ d b ((crossingMatching hs hπ).val t) = crossingSign poly p₀ d b t := by
   rw [coe_crossingMatching_apply]
-  exact crossingSign_partnerTime b hs hπ t.2
+  exact crossingSign_partnerTime b hs hπ t.property
 
 private theorem card_crossingTimes [Fintype (poly.crossingTimes p₀ d)] (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) :

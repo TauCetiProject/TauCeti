@@ -34,6 +34,11 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
 * `TauCeti.sum_Ioc_floor_eq_eulerMaclaurin_one`: the first-order formula for nonnegative real
   endpoints and a real Banach-valued function with pointwise derivative and integrable derivative.
   The finite sum is over the natural indices between the endpoint floors.
+* `TauCeti.abs_bernoulliFun_one_fract_le`, `TauCeti.norm_bernoulliFun_one_fract_le` and
+  `TauCeti.isBigO_bernoulliFun_one_fract`: the sawtooth `B₁({x}) = {x} - 1/2` is bounded by `1/2`,
+  also viewed in `ℂ`, hence `O(1)` along every filter.
+* `TauCeti.exists_norm_bernoulliFun_fract_le`: every periodic Bernoulli function `Bₖ({x})` is
+  bounded.
 * `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
   `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
@@ -71,6 +76,14 @@ open scoped Nat
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
+/-- The periodic Bernoulli function `Bₖ({x})`, where `{x} = x - ⌊x⌋`, is bounded: `Bₖ` is
+continuous on the compact interval `[0, 1]`, which contains every fractional part. -/
+theorem TauCeti.exists_norm_bernoulliFun_fract_le (k : ℕ) :
+    ∃ M, ∀ x : ℝ, ‖bernoulliFun k (Int.fract x)‖ ≤ M := by
+  obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    (continuous_bernoulliFun k).continuousOn
+  exact ⟨M, fun x => hM _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩⟩
+
 omit [CompleteSpace E] in
 /-- The product of an interval integrable function with the periodic Bernoulli function
 `Bₖ({x})`, where `{x} = x - ⌊x⌋`, is interval integrable, so the remainder integrals of the
@@ -78,15 +91,30 @@ Euler–Maclaurin formula exist. -/
 theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
     (hu : IntervalIntegrable u volume a b) (k : ℕ) :
     IntervalIntegrable (fun x => bernoulliFun k (Int.fract x) • u x) volume a b := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (continuous_bernoulliFun k).continuousOn
+  obtain ⟨C, hC⟩ := TauCeti.exists_norm_bernoulliFun_fract_le k
   rw [intervalIntegrable_iff] at hu ⊢
   exact hu.bdd_smul C
     ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x =>
-      hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
+    (Filter.Eventually.of_forall hC)
 
 namespace TauCeti
+
+/-- The sawtooth `B₁({x}) = {x} - 1/2`, the periodic Bernoulli function of order one, has absolute
+value at most `1/2`. -/
+theorem abs_bernoulliFun_one_fract_le (x : ℝ) : |bernoulliFun 1 (Int.fract x)| ≤ 1 / 2 := by
+  rw [bernoulliFun_one, abs_le]
+  constructor <;> linarith [Int.fract_nonneg x, Int.fract_lt_one x]
+
+/-- The sawtooth `B₁({x})`, viewed in `ℂ`, has norm at most `1/2`. -/
+theorem norm_bernoulliFun_one_fract_le (x : ℝ) : ‖(bernoulliFun 1 (Int.fract x) : ℂ)‖ ≤ 1 / 2 := by
+  rw [Complex.norm_real, Real.norm_eq_abs]
+  exact abs_bernoulliFun_one_fract_le x
+
+/-- The sawtooth `B₁({x}) = {x} - 1/2` is bounded, so it is `O(1)` along every filter. -/
+theorem isBigO_bernoulliFun_one_fract (l : Filter ℝ) :
+    (fun x ↦ bernoulliFun 1 (Int.fract x)) =O[l] fun _ ↦ (1 : ℝ) :=
+  Asymptotics.IsBigO.of_bound (1 / 2) (Filter.Eventually.of_forall fun x ↦ by
+    simpa only [Real.norm_eq_abs, norm_one, mul_one] using abs_bernoulliFun_one_fract_le x)
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)
@@ -209,6 +237,36 @@ theorem sum_Icc_eq_eulerMaclaurin_of_hasDerivAt {g : ℕ → ℝ → E} {a n : �
     rw [hlast, hΔ]
     linear_combination (norm := module) hunit
 
+/-- Reindex an Euler–Maclaurin Bernoulli sum over `s ∈ Icc 2 (2 * m)` to even indices
+`j ∈ Icc 1 m`, discarding the odd-index terms via `bernoulli_eq_zero_of_odd`. -/
+theorem sum_Icc_two_mul_bernoulli_smul {M : Type*} [AddCommMonoid M] [Module ℝ M]
+    (m : ℕ) (v : ℕ → M) :
+    ∑ s ∈ Icc 2 (2 * m), (bernoulli s / (s ! : ℝ) : ℝ) • v s =
+      ∑ j ∈ Icc 1 m, (bernoulli (2 * j) / ((2 * j)! : ℝ) : ℝ) • v (2 * j) := by
+  have hfilt :
+      ∑ s ∈ Icc 2 (2 * m), (bernoulli s / (s ! : ℝ) : ℝ) • v s =
+        ∑ s ∈ (Icc 2 (2 * m)).filter Even, (bernoulli s / (s ! : ℝ) : ℝ) • v s := by
+    refine (Finset.sum_filter_of_ne fun s hs hne ↦ ?_).symm
+    by_contra hodd
+    rw [Nat.not_even_iff_odd] at hodd
+    have hs2 : 2 ≤ s := (Finset.mem_Icc.mp hs).1
+    apply hne
+    rw [bernoulli_eq_zero_of_odd hodd (by omega), Rat.cast_zero, zero_div, zero_smul]
+  rw [hfilt]
+  symm
+  refine Finset.sum_bij (fun j _ ↦ 2 * j) ?_ ?_ ?_ ?_
+  · intro j hj
+    simp only [Finset.mem_filter, Finset.mem_Icc] at hj ⊢
+    exact ⟨⟨by omega, by omega⟩, ⟨j, by ring⟩⟩
+  · intro j₁ _ j₂ _ h
+    omega
+  · intro s hs
+    simp only [Finset.mem_filter, Finset.mem_Icc] at hs
+    rcases hs.2 with ⟨j, rfl⟩
+    exact ⟨j, Finset.mem_Icc.mpr ⟨by omega, by omega⟩, by ring⟩
+  · intro j _
+    rfl
+
 /-- **Euler–Maclaurin formula** (DLMF 2.10.1). For integers `a ≤ n`, `m ≥ 1` and `f` of class
 `C^{2m}` on `[a, n]`, with derivatives `f^{(i)}` taken within `[a, n]`,
 `∑_{j=a}^n f(j) = ∫_a^n f + f(a)/2 + f(n)/2
@@ -244,25 +302,14 @@ theorem sum_Icc_eq_eulerMaclaurin {f : ℝ → E} {a n : ℤ} (han : a ≤ n) {m
     (hcont i hi).intervalIntegrable_of_Icc han'
   have hEM := sum_Icc_eq_eulerMaclaurin_of_hasDerivAt (g := g) han.le (k := 2 * m) (by omega)
     (fun i hi => hcont i hi.le) hderiv (hint _ le_rfl)
-  -- The odd-index terms `s = 2r + 3` vanish, since `B_{2r+3} = 0`.
-  have heven : ∀ m' ≥ 1, ∑ s ∈ Icc 2 (2 * m'), (bernoulli s / s ! : ℝ) • (g (s - 1) n - g (s - 1) a)
-      = ∑ s ∈ Icc 1 m', (bernoulli (2 * s) / (2 * s)! : ℝ) •
-        (g (2 * s - 1) n - g (2 * s - 1) a) := by
-    intro m' hm'
-    induction m', hm' using Nat.le_induction with
-    | base => simp
-    | succ m' hm' ih =>
-      have h3 : bernoulli (2 * m' + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m', rfl⟩ (by omega)
-      rw [show 2 * (m' + 1) = 2 * m' + 1 + 1 by ring, sum_Icc_succ_top (by omega),
-        sum_Icc_succ_top (by omega), sum_Icc_succ_top (by omega), ih, h3]
-      simp [mul_add]
   -- The `s = m` term is absorbed into the remainder by
   -- `∫_a^n f^{(2m)} = f^{(2m-1)}(n) - f^{(2m-1)}(a)`.
   have hFTC : ∫ x in a..n, g (2 * m) x = g (2 * m - 1) n - g (2 * m - 1) a := by
     have h := integral_eq_sub_of_hasDerivAt_of_le han' (hcont (2 * m - 1) (by omega))
       (fun x hx => hderiv (2 * m - 1) (by omega) x hx) (hint (2 * m - 1 + 1) (by omega))
     rwa [Nat.sub_add_cancel (by omega)] at h
-  rw [heven m hm, ← Finset.Ico_add_one_right_eq_Icc 1 m, sum_Ico_succ_top hm] at hEM
+  rw [sum_Icc_two_mul_bernoulli_smul m (fun s ↦ g (s - 1) n - g (s - 1) a),
+    ← Finset.Ico_add_one_right_eq_Icc 1 m, sum_Ico_succ_top hm] at hEM
   have hR : ∫ x in a..n, ((bernoulli (2 * m) - bernoulliFun (2 * m) (Int.fract x)) / (2 * m)!) •
         g (2 * m) x =
       (bernoulli (2 * m) / (2 * m)! : ℝ) • (∫ x in a..n, g (2 * m) x) -

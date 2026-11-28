@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
@@ -26,7 +26,7 @@ convergence theorem.
 
 ## References
 
-* J. H. Silverman, *The Arithmetic of Elliptic Curves*, IV.4.
+* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.1 and IV.7.
 -/
 
 public section

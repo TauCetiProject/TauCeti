@@ -44,6 +44,8 @@ values are exactly `isotypicComponents R R`.
   submodules of `M`, as the quotient type `TauCeti.SimpleSubmoduleClasses R M`, correspond to the
   isotypic components of `M`, the class of `N` going to the `N`-isotypic component. This needs no
   hypothesis on the ring; for `M = R` it is the bijection with the Artin-Wedderburn blocks.
+* `TauCeti.isotypicComponent_eq_isotypicComponent_iff`: two simple submodules have the same
+  isotypic component exactly when they are isomorphic.
 * `TauCeti.simpleModuleClass`: over a semisimple ring, the class in `SimpleSubmoduleClasses R R`
   of the simple left ideals realizing an abstract simple module. Its fibres are the isomorphism
   classes (`TauCeti.simpleModuleClass_eq_iff`) and it hits every class
@@ -109,7 +111,7 @@ detail: build a class with `TauCeti.SimpleSubmoduleClasses.mk`, compare classes 
 stated as ordinary theorems, so nothing downstream depends on the quotient by definitional
 unfolding. -/
 def SimpleSubmoduleClasses : Type _ :=
-  Quot fun N N' : {N : Submodule R M // IsSimpleModule R N} ↦ Nonempty (N.1 ≃ₗ[R] N'.1)
+  Quot fun N N' : {N : Submodule R M // IsSimpleModule R N} ↦ Nonempty (N.val ≃ₗ[R] N'.val)
 
 namespace SimpleSubmoduleClasses
 
@@ -127,7 +129,7 @@ theorem mk_eq_mk_iff {N N' : Submodule R M} [IsSimpleModule R N] [IsSimpleModule
 theorem ind {motive : SimpleSubmoduleClasses R M → Prop}
     (mk : ∀ (N : Submodule R M) (_ : IsSimpleModule R N), motive (.mk N))
     (c : SimpleSubmoduleClasses R M) : motive c :=
-  Quot.ind (fun N ↦ mk N.1 N.2) c
+  Quot.ind (fun N ↦ mk N.val N.property) c
 
 /-- **The eliminator into `Sort`.** To define data on the isomorphism classes of simple submodules
 of `M` it suffices to give a value on each simple submodule and to check that isomorphic simple
@@ -137,7 +139,7 @@ def lift {α : Sort*} (f : ∀ (N : Submodule R M) [IsSimpleModule R N], α)
     (hf : ∀ (N N' : Submodule R M) [IsSimpleModule R N] [IsSimpleModule R N'],
       Nonempty (N ≃ₗ[R] N') → f N = f N')
     (c : SimpleSubmoduleClasses R M) : α :=
-  Quot.lift (fun N ↦ @f N.1 N.2) (fun N N' h ↦ @hf N.1 N'.1 N.2 N'.2 h) c
+  Quot.lift (fun N ↦ @f N.val N.property) (fun N N' h ↦ @hf N.val N'.val N.property N'.property h) c
 
 /-- The defining equation of `TauCeti.SimpleSubmoduleClasses.lift`. -/
 @[simp]
@@ -165,6 +167,13 @@ noncomputable def simpleSubmoduleClassesEquiv :
 @[simp]
 theorem coe_simpleSubmoduleClassesEquiv_mk (N : Submodule R M) [IsSimpleModule R N] :
     (simpleSubmoduleClassesEquiv R M (.mk N) : Submodule R M) = isotypicComponent R M N := (rfl)
+
+/-- Two simple submodules have the same isotypic component exactly when they are isomorphic. -/
+theorem isotypicComponent_eq_isotypicComponent_iff {N N' : Submodule R M} [IsSimpleModule R N]
+    [IsSimpleModule R N'] :
+    isotypicComponent R M N = isotypicComponent R M N' ↔ Nonempty (N ≃ₗ[R] N') := by
+  rw [← SimpleSubmoduleClasses.mk_eq_mk_iff, ← (simpleSubmoduleClassesEquiv R M).injective.eq_iff,
+    Subtype.ext_iff, coe_simpleSubmoduleClassesEquiv_mk, coe_simpleSubmoduleClassesEquiv_mk]
 
 /-- A Noetherian module has only finitely many isomorphism classes of simple submodules. -/
 instance [IsNoetherian R M] : Finite (SimpleSubmoduleClasses R M) :=

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.RCLike.ContinuousMap
+import Mathlib.Topology.ContinuousMap.Units
 
 /-!
 # Self-adjoint continuous maps into `ℝ` or `ℂ`
@@ -27,6 +28,8 @@ When `X` is compact, `ContinuousMap.isometry_realToRCLike` upgrades this identif
 * `ContinuousMap.selfAdjointEquiv`: the `ℝ`-linear equivalence `selfAdjoint C(X, 𝕜) ≃ₗ[ℝ] C(X, ℝ)`.
 * `ContinuousMap.selfAdjointLinearIsometryEquiv`: the `ℝ`-linear isometric equivalence
   `selfAdjoint C(X, 𝕜) ≃ₗᵢ[ℝ] C(X, ℝ)` for compact `X`.
+* `ContinuousMap.spectrum_realToRCLike_restrict_id`: for `K : Set ℝ`, the coordinate `x ↦ x` in
+  `C(K, 𝕜)` has spectrum `K`.
 -/
 
 public section
@@ -42,11 +45,11 @@ variable (X 𝕜 : Type*) [TopologicalSpace X] [RCLike 𝕜]
 /-- Pointwise real part (`ContinuousMap.rclikeToReal`) and scalar inclusion
 (`ContinuousMap.realToRCLike`) identify `selfAdjoint C(X, 𝕜)` `ℝ`-linearly with `C(X, ℝ)`. -/
 def selfAdjointEquiv : selfAdjoint C(X, 𝕜) ≃ₗ[ℝ] C(X, ℝ) where
-  toFun f := f.1.rclikeToReal
+  toFun f := f.val.rclikeToReal
   invFun f := ⟨f.realToRCLike 𝕜, isSelfAdjoint_realToRCLike 𝕜⟩
-  left_inv f := Subtype.ext (IsSelfAdjoint.realToRCLike_rclikeToReal f.2)
+  left_inv f := Subtype.ext (IsSelfAdjoint.realToRCLike_rclikeToReal f.property)
   right_inv := rclikeToReal_realToRCLike 𝕜
-  map_add' f g := ContinuousMap.ext fun x ↦ map_add RCLike.re (f.1 x) (g.1 x)
+  map_add' f g := ContinuousMap.ext fun x ↦ map_add RCLike.re (f.val x) (g.val x)
   map_smul' r f := ContinuousMap.ext fun x ↦ by
     simp only [RingHom.id_apply, selfAdjoint.val_smul, ContinuousMap.smul_apply,
       rclikeToReal_apply, RCLike.smul_re, smul_eq_mul]
@@ -55,13 +58,13 @@ variable {X 𝕜}
 
 /-- `selfAdjointEquiv` sends a self-adjoint map `f` to `f.1.rclikeToReal`. -/
 theorem selfAdjointEquiv_eq_rclikeToReal (f : selfAdjoint C(X, 𝕜)) :
-    selfAdjointEquiv X 𝕜 f = f.1.rclikeToReal :=
+    selfAdjointEquiv X 𝕜 f = f.val.rclikeToReal :=
   (rfl)
 
 /-- Evaluating `selfAdjointEquiv` takes the real part pointwise. -/
 @[simp]
 theorem selfAdjointEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
-    selfAdjointEquiv X 𝕜 f x = RCLike.re (f.1 x) :=
+    selfAdjointEquiv X 𝕜 f x = RCLike.re (f.val x) :=
   (rfl)
 
 /-- The inverse of `selfAdjointEquiv` embeds `C(X, ℝ)` via `ContinuousMap.realToRCLike`. -/
@@ -73,15 +76,15 @@ theorem coe_selfAdjointEquiv_symm_apply (f : C(X, ℝ)) :
 /-- Embedding `selfAdjointEquiv X 𝕜 f` via `ContinuousMap.realToRCLike` recovers `f.1`. -/
 @[simp]
 theorem realToRCLike_selfAdjointEquiv (f : selfAdjoint C(X, 𝕜)) :
-    (selfAdjointEquiv X 𝕜 f).realToRCLike 𝕜 = f.1 := by
+    (selfAdjointEquiv X 𝕜 f).realToRCLike 𝕜 = f.val := by
   rw [selfAdjointEquiv_eq_rclikeToReal]
-  exact IsSelfAdjoint.realToRCLike_rclikeToReal f.2
+  exact IsSelfAdjoint.realToRCLike_rclikeToReal f.property
 
 /-- Casting `selfAdjointEquiv X 𝕜 f x` back to `𝕜` recovers `f.1 x`. -/
 theorem ofReal_selfAdjointEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
-    (selfAdjointEquiv X 𝕜 f x : 𝕜) = f.1 x := by
+    (selfAdjointEquiv X 𝕜 f x : 𝕜) = f.val x := by
   simpa only [realToRCLike_apply, rclikeToReal_apply, selfAdjointEquiv_apply] using
-    congr($(IsSelfAdjoint.realToRCLike_rclikeToReal f.2) x)
+    congr($(IsSelfAdjoint.realToRCLike_rclikeToReal f.property) x)
 
 /-- `selfAdjointEquiv` preserves the multiplicative identity. -/
 @[simp]
@@ -141,13 +144,13 @@ theorem toLinearEquiv_selfAdjointLinearIsometryEquiv :
 
 /-- `selfAdjointLinearIsometryEquiv` sends a self-adjoint map `f` to `f.1.rclikeToReal`. -/
 theorem selfAdjointLinearIsometryEquiv_eq_rclikeToReal (f : selfAdjoint C(X, 𝕜)) :
-    selfAdjointLinearIsometryEquiv X 𝕜 f = f.1.rclikeToReal :=
+    selfAdjointLinearIsometryEquiv X 𝕜 f = f.val.rclikeToReal :=
   (rfl)
 
 /-- Evaluating `selfAdjointLinearIsometryEquiv` takes the real part pointwise. -/
 @[simp]
 theorem selfAdjointLinearIsometryEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
-    selfAdjointLinearIsometryEquiv X 𝕜 f x = RCLike.re (f.1 x) :=
+    selfAdjointLinearIsometryEquiv X 𝕜 f x = RCLike.re (f.val x) :=
   (rfl)
 
 /-- The inverse of `selfAdjointLinearIsometryEquiv` embeds `C(X, ℝ)` via
@@ -161,12 +164,12 @@ theorem coe_selfAdjointLinearIsometryEquiv_symm_apply (f : C(X, ℝ)) :
 `f.1`. -/
 @[simp]
 theorem realToRCLike_selfAdjointLinearIsometryEquiv (f : selfAdjoint C(X, 𝕜)) :
-    (selfAdjointLinearIsometryEquiv X 𝕜 f).realToRCLike 𝕜 = f.1 :=
+    (selfAdjointLinearIsometryEquiv X 𝕜 f).realToRCLike 𝕜 = f.val :=
   realToRCLike_selfAdjointEquiv f
 
 /-- Casting `selfAdjointLinearIsometryEquiv X 𝕜 f x` back to `𝕜` recovers `f.1 x`. -/
 theorem ofReal_selfAdjointLinearIsometryEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
-    (selfAdjointLinearIsometryEquiv X 𝕜 f x : 𝕜) = f.1 x :=
+    (selfAdjointLinearIsometryEquiv X 𝕜 f x : 𝕜) = f.val x :=
   ofReal_selfAdjointEquiv_apply f x
 
 /-- `selfAdjointLinearIsometryEquiv` preserves the multiplicative identity. -/
@@ -196,5 +199,11 @@ theorem selfAdjointLinearIsometryEquiv_symm_mul (f g : C(X, ℝ)) :
   selfAdjointEquiv_symm_mul f g
 
 end CompactSpace
+
+/-- The spectrum of the coordinate function `x ↦ x` in `C(K, 𝕜)` is `K`. -/
+theorem spectrum_realToRCLike_restrict_id (𝕜 : Type*) [RCLike 𝕜] (K : Set ℝ) :
+    spectrum ℝ ((ContinuousMap.restrict K (ContinuousMap.id ℝ)).realToRCLike 𝕜) = K := by
+  ext x
+  simp [ContinuousMap.spectrum_eq_preimage_range]
 
 end ContinuousMap

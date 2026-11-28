@@ -12,9 +12,11 @@ public import TauCeti.Combinatorics.Network.SetFlow
 # Maximum flows under network isomorphisms
 
 A bounded-network isomorphism identifies the feasible assignments of two networks and preserves
-their values. This file deduces that it preserves and reflects maximum and minimum bounded
-`s`–`t` assignments, maximum ordinary flows, and maximum flows between terminal sets, the last
-through a transport equivalence of terminal-set flows.
+their values. This file deduces that it preserves and reflects minimum bounded `s`–`t`
+assignments and maximum flows between terminal sets, the last through a transport equivalence of
+terminal-set flows. Maximum bounded `s`–`t` assignments and maximum ordinary flows are handled in
+`TauCeti.Combinatorics.Network.Isomorphism.Basic` by
+`TauCeti.Network.Iso.isMaximum_mapBoundedFlow_iff` and `TauCeti.Network.Iso.isMaximum_mapFlow_iff`.
 
 Minimum cuts are covered by the general relabelling results for terminal cuts:
 `TauCeti.TerminalCut.isMinimum_map_iff`, `TauCeti.TerminalCut.minimumValue_map` and
@@ -28,10 +30,8 @@ Minimum cuts are covered by the general relabelling results for terminal cuts:
 
 ## Main results
 
-* `TauCeti.Network.Iso.isMaximum_boundedFlowEquiv_iff` and
-  `TauCeti.Network.Iso.isMinimum_boundedFlowEquiv_iff`: maximum and minimum bounded `s`–`t`
-  assignments correspond.
-* `TauCeti.Network.Iso.isMaximum_flowEquiv_iff`: maximum ordinary flows correspond.
+* `TauCeti.Network.Iso.isMinimum_mapBoundedFlow_iff`: minimum bounded `s`–`t` assignments
+  correspond.
 * `TauCeti.Network.Iso.isMaximum_setFlowEquiv_iff`: maximum `A`–`B` flows correspond.
 -/
 
@@ -51,29 +51,13 @@ variable {N : Network K V} {N' : Network K W}
 variable [Fintype V] [Fintype W]
 variable [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (N'.Hom x y)]
 
-/-- Transport preserves and reflects maximality of a bounded `s`–`t` assignment. -/
-@[simp]
-theorem isMaximum_boundedFlowEquiv_iff (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V}
-    (f : TauCeti.BoundedFlow lo hi s t) :
-    (e.boundedFlowEquiv lo hi s t f).IsMaximum ↔ f.IsMaximum := by
-  rw [BoundedFlow.isMaximum_iff, BoundedFlow.isMaximum_iff,
-    ← (e.boundedFlowEquiv lo hi s t).forall_congr_right]
-  simp
-
 /-- Transport preserves and reflects minimality of a bounded `s`–`t` assignment. -/
 @[simp]
-theorem isMinimum_boundedFlowEquiv_iff (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V}
+theorem isMinimum_mapBoundedFlow_iff (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V}
     (f : TauCeti.BoundedFlow lo hi s t) :
-    (e.boundedFlowEquiv lo hi s t f).IsMinimum ↔ f.IsMinimum := by
+    (e.mapBoundedFlow f).IsMinimum ↔ f.IsMinimum := by
   rw [BoundedFlow.isMinimum_iff, BoundedFlow.isMinimum_iff,
     ← (e.boundedFlowEquiv lo hi s t).forall_congr_right]
-  simp
-
-/-- Transport preserves and reflects maximality of an ordinary flow. -/
-@[simp]
-theorem isMaximum_flowEquiv_iff (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
-    (f : TauCeti.Flow cap s t) : (e.flowEquiv cap s t f).IsMaximum ↔ f.IsMaximum := by
-  rw [Flow.isMaximum_iff, Flow.isMaximum_iff, ← (e.flowEquiv cap s t).forall_congr_right]
   simp
 
 /-- Transport identifies the `A`–`B` flows for `cap` with the flows for the transported

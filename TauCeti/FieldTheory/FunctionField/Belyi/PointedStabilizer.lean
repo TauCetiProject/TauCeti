@@ -7,7 +7,6 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
 import TauCeti.Algebra.Algebra.Equiv
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Decomposition
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
 
@@ -30,8 +29,8 @@ fixing `P`. It is contained in the stabilizer `U(X)` of the class of `X`, whose 
 field of moduli `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli`.
 
 Two facts make `U(X, P)` usable for descent, in Köck's proof that a Belyi pair over `ℂ` is
-defined over a finite extension of its field of moduli. If `P` lies over `t = q` for a rational
-number `q`, every semilinear automorphism permutes the finitely many places over `t = q`, so
+defined over a finite extension of its field of moduli. If `P` lies over a finite point `t = q`
+with `q : ℚ`, every semilinear automorphism permutes the finitely many places over `t = q`, so
 `U(X, P)` has finite index, at most the degree, in `U(X)`
 (`TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_ne_zero`). If `P` is unramified over
 `k(t)`, as it is over every point other than `t = 0`, `t = 1`, `t = ∞`, and has relative degree
@@ -60,8 +59,13 @@ coefficients of its minimal polynomial over `k(t)` are fixed by `U(X, P)`.
   semilinear automorphisms of `X` form the stabilizer of the class of `X`.
 * `TauCeti.AlgebraicBelyiPair.pointedStabilizer_le_stabilizer`: `U(X, P) ≤ U(X)`.
 * `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_le_finrank` and
-  `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_ne_zero`: over a rational point the
-  index of `U(X, P)` in `U(X)` is finite, at most the degree of `X`.
+  `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_ne_zero`: over a finite point `t = q` with
+  `q : ℚ`, the index of `U(X, P)` in `U(X)` is finite, at most the degree of `X`.
+* `TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq`
+  and `pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_adicOfIrreducible` (in
+  `TauCeti.AlgebraicBelyiPair`): for a Galois pair and a place whose fibre over `k(t)` is preserved
+  by semilinear automorphisms (in particular any place over a finite point `t = q` with `q : ℚ`),
+  `U(X, P) = U(X)`.
 * `TauCeti.AlgebraicBelyiPair.eq_of_smul_eq_self_of_snd_eq`: a semilinear automorphism fixing an
   unramified place of relative degree one is determined by its action on `k`.
 
@@ -126,13 +130,13 @@ theorem apply_algebraMap_X_of_mem_semilinearAut {p : RingAut X × (k ≃ₐ[ℚ]
 /-- **Semilinear automorphisms act on places**: `(φ, g)` carries a place `P` of `F` to the place
 with valuation `v_P ∘ φ⁻¹`. -/
 noncomputable instance : SMul (semilinearAut X) (Place k X) where
-  smul p := Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.1.1
-    (apply_algebraMap_of_mem_semilinearAut p.2)
+  smul p := Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.val.1
+    (apply_algebraMap_of_mem_semilinearAut p.property)
 
 /-- The action of a semilinear automorphism `(φ, g)` on places is transport along `φ`. -/
 theorem smul_def (p : semilinearAut X) (P : Place k X) :
-    p • P = Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.1.1
-      (apply_algebraMap_of_mem_semilinearAut p.2) P :=
+    p • P = Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.val.1
+      (apply_algebraMap_of_mem_semilinearAut p.property) P :=
   (rfl)
 
 /-- The valuation of the transported place `(φ, g) • P` is `v_P ∘ φ⁻¹`. -/
@@ -194,7 +198,7 @@ theorem restrict_smul (p : semilinearAut X) (P : Place k X) :
         (RatFunc.mapRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k))
         (RatFunc.mapRingEquiv_algebraMap_const _) (P.restrict k (RatFunc k)) := by
   rw [smul_def]
-  exact Place.restrict_equivOfRingEquiv _ _ _ _ (mem_semilinearAut_iff.mp p.2) _ P
+  exact Place.restrict_equivOfRingEquiv _ _ _ _ (mem_semilinearAut_iff.mp p.property) _ P
 
 variable (X) in
 /-- **The automorphisms of `k` underlying semilinear automorphisms of `X` form the stabilizer of
@@ -251,7 +255,7 @@ theorem mem_pointedStabilizer_iff {P : Place k X} {g : k ≃ₐ[ℚ] k} :
   rw [pointedStabilizer_def, Subgroup.mem_map]
   constructor
   · rintro ⟨p, hp, rfl⟩
-    exact ⟨(p : RingAut X × (k ≃ₐ[ℚ] k)).1, mem_semilinearAut_iff.mp p.2,
+    exact ⟨(p : RingAut X × (k ≃ₐ[ℚ] k)).1, mem_semilinearAut_iff.mp p.property,
       smul_eq_self_iff_valuation_apply_eq.mp hp⟩
   · rintro ⟨φ, hφ, hφP⟩
     exact ⟨⟨(φ, g), mem_semilinearAut_iff.mpr hφ⟩, smul_eq_self_iff_valuation_apply_eq.mpr hφP, rfl⟩
@@ -277,8 +281,17 @@ private theorem relIndex_pointedStabilizer_dvd_index (P : Place k X) :
     Subgroup.relIndex_top_right]
   exact Subgroup.index_dvd_of_le le_sup_left
 
-/-- Over a rational point, the orbit of `P` under the semilinear automorphisms lies in the finite
-fibre over that point, so the stabilizer of `P` has nonzero index at most the degree. -/
+/-- Every semilinear automorphism preserves the fibre over a finite point `t = q` with `q : ℚ`. -/
+theorem restrict_smul_eq_of_restrict_eq_adicOfIrreducible {P : Place k X} {q : ℚ}
+    (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
+    (p : semilinearAut X) :
+    (p • P).restrict k (RatFunc k) = P.restrict k (RatFunc k) := by
+  rw [restrict_smul, hP, Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C,
+    map_ratCast]
+
+/-- Over a finite point `t = q` with `q : ℚ`, the orbit of `P` under the semilinear automorphisms
+lies in the finite fibre over that point, so the stabilizer of `P` has nonzero index at most the
+degree. -/
 private theorem index_stabilizer_pos_and_le_finrank {P : Place k X} {q : ℚ}
     (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     0 < (MulAction.stabilizer (semilinearAut X) P).index ∧
@@ -288,15 +301,15 @@ private theorem index_stabilizer_pos_and_le_finrank {P : Place k X} {q : ℚ}
   have horbit : MulAction.orbit (semilinearAut X) P ⊆
       {P' : Place k X | P'.restrict k (RatFunc k) = P.restrict k (RatFunc k)} := by
     rintro _ ⟨p, rfl⟩
-    rw [Set.mem_ofPred_eq, restrict_smul, hP,
-      Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C, map_ratCast]
+    exact restrict_smul_eq_of_restrict_eq_adicOfIrreducible hP p
   rw [MulAction.index_stabilizer]
   exact ⟨(Set.ncard_pos (hfin.subset horbit)).mpr ⟨P, MulAction.mem_orbit_self P⟩,
     (Set.ncard_le_ncard horbit hfin).trans (Place.ncard_setOf_restrict_eq_le_finrank k _ _)⟩
 
-/-- **The pointed stabilizer of a point over `t = q`, for rational `q`, has index at most the
-degree in the stabilizer of the class.** Semilinear automorphisms fix the rational place `t = q`
-of `k(t)`, so they permute the places of `F` over it, of which there are at most `[F : k(t)]`. -/
+/-- **The pointed stabilizer of a point over a finite point `t = q` with `q : ℚ` has index at most
+the degree in the stabilizer of the class.** Semilinear automorphisms fix the rational place
+`t = q` of `k(t)`, so they permute the places of `F` over it, of which there are at most
+`[F : k(t)]`. -/
 theorem relIndex_pointedStabilizer_le_finrank {P : Place k X} {q : ℚ}
     (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     (pointedStabilizer X P).relIndex (MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X)) ≤
@@ -304,8 +317,9 @@ theorem relIndex_pointedStabilizer_le_finrank {P : Place k X} {q : ℚ}
   have h := index_stabilizer_pos_and_le_finrank hP
   (Nat.le_of_dvd h.1 (relIndex_pointedStabilizer_dvd_index P)).trans h.2
 
-/-- **The pointed stabilizer of a point over `t = q`, for rational `q`, has finite index in the
-stabilizer of the class.** So its fixed field is a finite extension of the field of moduli. -/
+/-- **The pointed stabilizer of a point over a finite point `t = q` with `q : ℚ` has finite index
+in the stabilizer of the class.** So its fixed field is a finite extension of the field of
+moduli. -/
 theorem relIndex_pointedStabilizer_ne_zero {P : Place k X} {q : ℚ}
     (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     (pointedStabilizer X P).relIndex (MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X)) ≠ 0 :=
@@ -327,7 +341,8 @@ private theorem eq_one_of_smul_eq_self_of_snd_eq_one {p : semilinearAut X} (hp :
     (h1 : (p : RingAut X × (k ≃ₐ[ℚ] k)).2 = 1) : p = 1 := by
   have hφ (r : RatFunc k) : (p : RingAut X × (k ≃ₐ[ℚ] k)).1 (algebraMap (RatFunc k) X r) =
       algebraMap (RatFunc k) X r := by
-    rw [mem_semilinearAut_iff.mp p.2 r, h1, AlgEquiv.toRingEquiv_one, RatFunc.mapRingEquiv_refl,
+    rw [mem_semilinearAut_iff.mp p.property r, h1, AlgEquiv.toRingEquiv_one,
+        RatFunc.mapRingEquiv_refl,
       RingEquiv.refl_apply]
   let σ : X ≃ₐ[RatFunc k] X := AlgEquiv.ofRingEquiv hφ
   have hσφ (x : X) : σ x = (p : RingAut X × (k ≃ₐ[ℚ] k)).1 x := AlgEquiv.ofRingEquiv_apply hφ x
@@ -360,7 +375,7 @@ noncomputable def pointedStabilizerEquiv :
     (((MonoidHom.snd _ _).comp (semilinearAut X).subtype).subgroupMap
       (MulAction.stabilizer (semilinearAut X) P))
     ⟨fun p p' h ↦ Subtype.ext
-        (eq_of_smul_eq_self_of_snd_eq he hf p.2 p'.2 (congrArg Subtype.val h)),
+        (eq_of_smul_eq_self_of_snd_eq he hf p.property p'.property (congrArg Subtype.val h)),
       MonoidHom.subgroupMap_surjective _ _⟩
 
 /-- The pointed stabilizer equivalence remembers the action on `k`. -/
@@ -378,6 +393,69 @@ theorem snd_pointedStabilizerEquiv_symm_apply (g : pointedStabilizer X P) :
   rw [← coe_pointedStabilizerEquiv_apply he hf, MulEquiv.apply_symm_apply]
 
 end Unramified
+
+/-! ### Galois Belyi pairs -/
+
+section Galois
+
+variable (X)
+
+/-- Lift an ordinary `k(t)`-automorphism of `X` to a semilinear automorphism acting trivially on
+`k`. -/
+noncomputable def semilinearAutOfAlgEquiv : (X ≃ₐ[RatFunc k] X) →* semilinearAut X where
+  toFun σ := ⟨(σ.toRingEquiv, 1), mem_semilinearAut_iff.mpr fun r ↦ by
+    rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, AlgEquiv.toRingEquiv_one,
+      RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]⟩
+  map_one' := Subtype.ext <| Prod.ext AlgEquiv.toRingEquiv_one rfl
+  map_mul' _ _ := Subtype.ext <| Prod.ext (RingEquiv.ext fun _ ↦ rfl) rfl
+
+/-- The first projection of `semilinearAutOfAlgEquiv X σ` is `σ` as a ring automorphism. -/
+@[simp]
+theorem semilinearAutOfAlgEquiv_fst (σ : X ≃ₐ[RatFunc k] X) :
+    ((semilinearAutOfAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).1 =
+      σ.toRingEquiv :=
+  (rfl)
+
+/-- The second projection of `semilinearAutOfAlgEquiv X σ` is trivial on `k`. -/
+@[simp]
+theorem semilinearAutOfAlgEquiv_snd (σ : X ≃ₐ[RatFunc k] X) :
+    ((semilinearAutOfAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).2 = 1 :=
+  (rfl)
+
+/-- Lifting a `k(t)`-automorphism to `semilinearAut X` preserves the action on places. -/
+@[simp]
+theorem semilinearAutOfAlgEquiv_smul (σ : X ≃ₐ[RatFunc k] X) (Q : Place k X) :
+    semilinearAutOfAlgEquiv X σ • Q = σ • Q :=
+  Place.ext <| Valuation.ext fun z ↦ by
+    rw [valuation_smul, Place.valuation_smul, semilinearAutOfAlgEquiv_fst,
+      ← AlgEquiv.symm_toRingEquiv, AlgEquiv.coe_toRingEquiv]
+
+variable [IsGalois (RatFunc k) X]
+
+/-- **For a Galois Belyi pair, the pointed stabilizer at any place whose fibre over `k(t)` is
+preserved by semilinear automorphisms equals the full stabilizer of the isomorphism class.** -/
+theorem pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq {P : Place k X}
+    (hfib : ∀ p : X.semilinearAut, (p • P).restrict k (RatFunc k) = P.restrict k (RatFunc k)) :
+    X.pointedStabilizer P = MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X) := by
+  refine le_antisymm (X.pointedStabilizer_le_stabilizer P) fun g hg ↦ ?_
+  rw [← X.map_snd_semilinearAut, Subgroup.mem_map] at hg
+  obtain ⟨p, hp, hpg⟩ := hg
+  obtain ⟨σ, hσ⟩ := Place.exists_smul_eq_of_restrict_eq (hfib ⟨p, hp⟩)
+  rw [pointedStabilizer_def, Subgroup.mem_map]
+  refine ⟨semilinearAutOfAlgEquiv X σ * ⟨p, hp⟩, ?_, ?_⟩
+  · rw [MulAction.mem_stabilizer_iff, mul_smul, semilinearAutOfAlgEquiv_smul, hσ]
+  · simpa using hpg
+
+/-- **For a Galois Belyi pair, the pointed stabilizer at any place over a finite point `t = q`
+with `q : ℚ` equals the full stabilizer of the isomorphism class.** -/
+theorem pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_adicOfIrreducible
+    {P : Place k X} {q : ℚ}
+    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
+    X.pointedStabilizer P = MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X) :=
+  X.pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq
+    (restrict_smul_eq_of_restrict_eq_adicOfIrreducible hPa)
+
+end Galois
 
 end AlgebraicBelyiPair
 

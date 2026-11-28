@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
+import Mathlib.Data.Nat.Factorial.BigOperators
 
 /-!
 # The weight string of a primitive vector for an `sl₂` triple
@@ -62,6 +63,9 @@ Mathlib's `IsSl2Triple.HasPrimitiveVectorWith.lie_e_pow_succ_toEnd_f`.
 * `TauCeti.hasPrimitiveVectorWith_symm_of_ne_zero_of_lie_h_eq_smul_of_lie_f_eq_zero`: a nonzero
   weight vector killed by the lowering element is primitive for the symmetric triple, at the
   negated scalar weight.
+* `IsSl2Triple.exists_hasPrimitiveVectorWith_pow_toEnd_e`: raising a nonzero `h`-eigenvector in a
+  torsion-free Noetherian module over a characteristic-zero domain produces a primitive vector
+  (adapting Mathlib's `IsSl2Triple.exists_hasPrimitiveVectorWith`).
 * `TauCeti.pow_toEnd_f_toNat_add_one_eq_zero_of_hasPrimitiveVectorWith`: the endpoint of an
   integral-weight string in a torsion-free Noetherian module, with
   `TauCeti.ad_pow_lie_eq_zero_of_isSl2Triple_of_lie_h_eq_smul_of_lie_f_eq_zero` as the
@@ -251,6 +255,27 @@ theorem pow_toEnd_e_pow_toEnd_f_self (P : t.HasPrimitiveVectorWith m μ) (j : �
     congr 1
     ring
 
+/-- **Raising the bottom of an integral-weight string back to the top.** Applying the raising
+operator `N` times to `fᴺ • m`, where `m` is primitive of natural weight `N`, returns
+`(N! * N!) • m` over any commutative ring. -/
+theorem pow_toEnd_e_pow_toEnd_f_self_nat {N : ℕ} (P : t.HasPrimitiveVectorWith m (N : K)) :
+    (toEnd K L M e ^ N) ((toEnd K L M f ^ N) m) = (N.factorial * N.factorial) • m := by
+  rw [pow_toEnd_e_pow_toEnd_f_self P N, Finset.prod_mul_distrib]
+  have h1 : (∏ i ∈ Finset.range N, ((i : K) + 1)) = (N.factorial : K) := by
+    rw [← Finset.prod_range_add_one_eq_factorial N, Nat.cast_prod]
+    simp
+  have h2 : (∏ i ∈ Finset.range N, ((N : K) - i)) = (N.factorial : K) := by
+    have hnat : (∏ i ∈ Finset.range N, (N - i)) = N.factorial := by
+      rw [← Nat.descFactorial_eq_prod_range, Nat.descFactorial_self]
+    calc
+      (∏ i ∈ Finset.range N, ((N : K) - i))
+          = ∏ i ∈ Finset.range N, ((N - i : ℕ) : K) := by
+        refine Finset.prod_congr rfl fun i hi ↦ ?_
+        rw [Nat.cast_sub (Finset.mem_range.mp hi).le]
+      _ = ((∏ i ∈ Finset.range N, (N - i) : ℕ) : K) := by rw [Nat.cast_prod]
+      _ = (N.factorial : K) := by rw [hnat]
+  rw [h1, h2, ← Nat.cast_mul, Nat.cast_smul_eq_nsmul]
+
 /-- **Raising past the top of the string gives zero.** Applying the raising operator more times
 than the string vector has been lowered lands above the primitive vector, which the raising
 operator kills. -/
@@ -283,6 +308,27 @@ theorem pow_toEnd_f_toNat_add_one_eq_zero_of_hasPrimitiveVectorWith
   have htn : n.toNat = k := by omega
   rw [htn]
   exact P.pow_toEnd_f_eq_zero_of_eq_nat hk
+
+/-- **Raising an eigenvector to a primitive vector.** In a torsion-free Noetherian module over a
+characteristic-zero domain, if `m ≠ 0` is an `h`-eigenvector of weight `μ`, then some power `eᵏ • m`
+is a primitive vector of weight `μ + 2k` (adapting Mathlib's
+`IsSl2Triple.exists_hasPrimitiveVectorWith` to a caller-supplied eigenvector). -/
+theorem _root_.IsSl2Triple.exists_hasPrimitiveVectorWith_pow_toEnd_e {μ : K}
+    (t : IsSl2Triple h e f) (hm : ⁅h, m⁆ = μ • m) (hm0 : m ≠ 0) :
+    ∃ k : ℕ, t.HasPrimitiveVectorWith ((toEnd K L M e ^ k) m) (μ + 2 * k) := by
+  have hlie (n : ℕ) : ⁅h, (toEnd K L M e ^ n) m⁆ = (μ + 2 * (n : K)) • (toEnd K L M e ^ n) m :=
+    t.lie_h_pow_toEnd_e hm n
+  have hzero : ∃ k : ℕ, (toEnd K L M e ^ k) m = 0 := by
+    by_contra! hne
+    have hinj : Function.Injective fun n : ℕ ↦ μ + 2 * (n : K) := fun a b hab ↦ by
+      simpa [add_right_inj, mul_eq_mul_left_iff, Nat.cast_inj] using hab
+    have haux (n : ℕ) :
+        (toEnd K L M h).HasEigenvector (μ + 2 * (n : K)) ((toEnd K L M e ^ n) m) :=
+      ⟨Module.End.mem_eigenspace_iff.2 (by simpa using hlie n), hne n⟩
+    have := ((toEnd K L M h).eigenvectors_linearIndependent' _ hinj _ haux).finite
+    exact not_finite ℕ
+  obtain ⟨k, hk_ne, hk_zero⟩ := Nat.exists_not_and_succ_of_not_zero_of_exists hm0 hzero
+  exact ⟨k, ⟨hk_ne, hlie k, by rw [IsSl2Triple.lie_e_pow_toEnd_e k]; exact hk_zero⟩⟩
 
 end FiniteString
 
@@ -529,7 +575,7 @@ noncomputable def lieModuleEquivOfHasPrimitiveVectorWith
             map_zero]
         · rw [P.lie_e_pow_succ_toEnd_f, P'.lie_e_pow_succ_toEnd_f, map_smul, hψ]
       intro x y
-      obtain ⟨c₁, c₂, c₃, hx⟩ := IsSl2Triple.mem_toLieSubalgebra_iff.1 x.2
+      obtain ⟨c₁, c₂, c₃, hx⟩ := IsSl2Triple.mem_toLieSubalgebra_iff.1 x.property
       -- The action of the subalgebra is the ambient action of the underlying element of `L`,
       -- which is a linear combination of `e`, `f` and `h`.
       -- The `map_lie'` goal is phrased with the anonymous constructor's `toFun`, which is the

@@ -15,9 +15,9 @@ import Mathlib.Data.Finset.Max
 Two nonnegative finitely supported functions on linear orders with equal total mass admit
 nonnegative joint weights supported on a chain in the coordinatewise product order. This is
 the barycentric existence argument for the staircase triangulation of a product of simplices.
-The index orders are arbitrary, and the coefficients may lie in an ordered additive group
-or a monoid with truncated subtraction, such as `ℕ` or `ℝ≥0`. Normalization to mass one is
-unnecessary.
+The index orders are arbitrary, and the coefficients may lie in any linearly ordered
+cancellative additive monoid in which `x ≤ y` gives some `z` with `y = x + z`, such as an
+ordered additive group, `ℕ` or `ℝ≥0`. Normalization to mass one is unnecessary.
 
 ## References
 
@@ -32,11 +32,10 @@ namespace Finsupp
 open Finset
 
 variable {α β R : Type*} [LinearOrder α] [LinearOrder β]
-  [AddCommMonoid R] [LinearOrder R] [IsOrderedCancelAddMonoid R]
-  [Sub R] [OrderedSub R] [ExistsAddOfLE R]
+  [AddCommMonoid R] [LinearOrder R] [IsOrderedCancelAddMonoid R] [ExistsAddOfLE R]
 
-omit [LinearOrder α] [LinearOrder β] [LinearOrder R] [IsOrderedCancelAddMonoid R] [Sub R]
-  [OrderedSub R] [ExistsAddOfLE R] in
+omit [LinearOrder α] [LinearOrder β] [LinearOrder R] [IsOrderedCancelAddMonoid R]
+  [ExistsAddOfLE R] in
 /-- Adding the least pair `(a, b)` with weight `c` to a staircase coupling of the residual
 marginals gives a staircase coupling of the original marginals. -/
 theorem exists_nonneg_isChain_mapDomain_of_residual [Preorder α] [Preorder β] [PartialOrder R]
@@ -83,11 +82,11 @@ theorem exists_nonneg_isChain_mapDomain (f : α →₀ R) (g : β →₀ R)
   | ind n ih =>
     -- Zero mass forces both nonnegative marginals to vanish.
     by_cases hf0 : f = 0
-    · have hg0 : g = 0 := eq_zero_of_sum_eq_zero_of_nonneg hg (by simp [← hmass, hf0])
+    · have hg0 : g = 0 := (sum_eq_zero_iff_of_nonneg hg).1 (by simp [← hmass, hf0])
       subst f; subst g
       exact ⟨0, le_rfl, by simp, by simp, by simp⟩
     have hg0 : g ≠ 0 := fun hg0 =>
-      hf0 (eq_zero_of_sum_eq_zero_of_nonneg hf (by simp [hmass, hg0]))
+      hf0 ((sum_eq_zero_iff_of_nonneg hf).1 (by simp [hmass, hg0]))
     obtain ⟨c, f', g', hc, hf', hg', hfs, hgs, hcard, hmass', hfr, hgr⟩ :=
       exists_residual_marginals f g hf hg hmass
         (min'_mem _ (support_nonempty_iff.mpr hf0)) (min'_mem _ (support_nonempty_iff.mpr hg0))

@@ -17,16 +17,30 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
 An invariant normal subgroup of the first factor is normal in the full semidirect product
 (`Subgroup.normal_map_inl`). When `D` is a complement of the normal subgroup `N`, the inverse
 of Mathlib's isomorphism `SemidirectProduct.mulEquivSubgroup : N ⋊ D ≃* G` is the unique
-decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
+decomposition `g = n * d` of `Subgroup.IsComplement.equiv`. More generally, when `K` normalizes
+`H` and the two meet trivially, multiplication is an isomorphism `H ⋊ K ≃* H ⊔ K`, with no
+normality of `H` in the ambient group (`SemidirectProduct.mulEquivSup`).
 
 ## Main results
 
+* `SemidirectProduct.mul_inl_mul_inv`: conjugating the normal factor by an element `g` applies
+  the action of `g.right` and conjugation by `g.left`.
+* `SemidirectProduct.inr_mul_inl`: moving the acting group past the normal factor applies the
+  action.
+* `SemidirectProduct.mul_inl_mul_inv_of_comm`: when the normal factor is commutative, conjugating
+  a translation applies the action of the acting component.
+* `SemidirectProduct.instFinite`, `SemidirectProduct.instFintype`: a semidirect product of finite
+  groups is finite.
 * `SemidirectProduct.lift_apply`: the external lift evaluates a pair by multiplying the
   images of its components.
 * `SemidirectProduct.range_monoidHomSubgroup`: the range of the semidirect-product
   multiplication homomorphism is `H ⊔ K`.
 * `SemidirectProduct.ker_rightHom_sup_range_inr`: the kernel of the projection to the acting group
   and the acting group generate the semidirect product.
+* `SemidirectProduct.index_ker_rightHom`: the kernel of the projection to the acting group has
+  index the order of the acting group.
+* `SemidirectProduct.mulEquivKerRightHom`: `SemidirectProduct.inl` is an isomorphism from the
+  normal factor onto the kernel of the projection to the acting group.
 * `SemidirectProduct.infinite_range_inl`: the image of the normal factor is infinite whenever the
   normal factor is infinite.
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff`: its kernel consists of antidiagonal pairs.
@@ -36,13 +50,16 @@ decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
   `SemidirectProduct.surjective_monoidHomSubgroup_iff`, and
   `SemidirectProduct.bijective_monoidHomSubgroup_iff`: injectivity, surjectivity, and bijectivity
   criteria for `SemidirectProduct.monoidHomSubgroup`.
+* `SemidirectProduct.mulEquivSup`: when moreover `H ⊓ K = ⊥`, multiplication is an isomorphism
+  `H ⋊ K ≃* H ⊔ K`.
 * `SemidirectProduct.mulEquivSubgroup_symm_trans_equivProd`,
   `SemidirectProduct.toEquiv_mulEquivSubgroup`, and
   `SemidirectProduct.toEquiv_mulEquivSubgroup_symm`: for a complement `D` of a normal subgroup `N`,
   `SemidirectProduct.mulEquivSubgroup` and `Subgroup.IsComplement.equiv` are mutually inverse
   modulo `SemidirectProduct.equivProd`.
 * `SemidirectProduct.mulEquivSubgroup_symm_apply_left`,
-  `SemidirectProduct.mulEquivSubgroup_symm_apply_right`, and
+  `SemidirectProduct.mulEquivSubgroup_symm_apply_right`,
+  `SemidirectProduct.mulEquivSubgroup_symm_eq_inl_mul_inr`, and
   `SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm`: projections and quotient description
   of `(SemidirectProduct.mulEquivSubgroup h).symm`.
 -/
@@ -50,6 +67,16 @@ decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
 public section
 
 variable {G : Type*} [Group G] {H K : Subgroup G}
+
+namespace SemidirectProduct
+
+/-- **Conjugation of the normal factor**: `g * inl n * g⁻¹ = inl (g.left * φ g.right n * g.left⁻¹)`
+for every element `g` of the semidirect product. -/
+theorem mul_inl_mul_inv {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} (g : N ⋊[φ] Q)
+    (n : N) : g * inl n * g⁻¹ = inl (g.left * φ g.right n * g.left⁻¹) := by
+  ext <;> simp [mul_assoc]
+
+end SemidirectProduct
 
 namespace Subgroup
 
@@ -62,13 +89,36 @@ theorem normal_map_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
     (S.map (inl : N →* N ⋊[φ] Q)).Normal := by
   constructor
   rintro _ ⟨n, hn, rfl⟩ x
-  refine ⟨x.left * φ x.right n * x.left⁻¹,
-    ‹S.Normal›.conj_mem _ (hS _ _ hn) _, ?_⟩
-  ext <;> simp [mul_assoc]
+  rw [mul_inl_mul_inv]
+  exact mem_map_of_mem _ (‹S.Normal›.conj_mem _ (hS _ _ hn) _)
 
 end Subgroup
 
 namespace SemidirectProduct
+
+/-- Moving an element of the acting group past an element of the normal factor applies the action
+to the latter: `inr g * inl n = inl (φ g n) * inr g`. This is Mathlib's `SemidirectProduct.inl_aut`
+with `inr g` moved to the right. -/
+theorem inr_mul_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} (g : Q) (n : N) :
+    (inr g * inl n : N ⋊[φ] Q) = inl (φ g n) * inr g := by
+  rw [inl_aut, map_inv, inv_mul_cancel_right]
+
+/-- When the normal factor is commutative, conjugating `inl n` by `x` applies the action of the
+acting component of `x` to `n`: `x * inl n * x⁻¹ = inl (φ x.right n)`. -/
+theorem mul_inl_mul_inv_of_comm {N Q : Type*} [CommGroup N] [Group Q] {φ : Q →* MulAut N}
+    (x : N ⋊[φ] Q) (n : N) : x * inl n * x⁻¹ = inl (φ x.right n) := by
+  rw [mul_inl_mul_inv, mul_inv_cancel_comm]
+
+/-- A semidirect product of finite groups is finite. -/
+instance instFinite {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} [Finite N]
+    [Finite Q] : Finite (N ⋊[φ] Q) :=
+  Finite.of_equiv _ equivProd.symm
+
+/-- A semidirect product of finite types is a finite type, enumerated through the underlying
+product of sets `SemidirectProduct.equivProd`. -/
+instance instFintype {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} [Fintype N]
+    [Fintype Q] : Fintype (N ⋊[φ] Q) :=
+  Fintype.ofEquiv _ equivProd.symm
 
 /-- The lift of compatible homomorphisms evaluates a pair by multiplying the images of its
 components. -/
@@ -105,7 +155,7 @@ theorem range_monoidHomSubgroup (hLE : K ≤ Subgroup.normalizer (H : Set G)) :
     fun t ht => ⟨inr ⟨t, ht⟩, by simp⟩)
   rintro _ ⟨x, rfl⟩
   rw [monoidHomSubgroup_apply]
-  exact Subgroup.mul_mem_sup x.left.2 x.right.2
+  exact Subgroup.mul_mem_sup x.left.property x.right.property
 
 /-- The kernel of the projection of a semidirect product to the acting group, together with the
 image of the acting group, generates the semidirect product. -/
@@ -115,6 +165,36 @@ theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →
   refine top_unique fun x _ ↦ ?_
   rw [← inl_left_mul_inr_right x]
   exact Subgroup.mul_mem_sup (by rw [← range_inl_eq_ker_rightHom]; exact ⟨_, rfl⟩) ⟨_, rfl⟩
+
+/-- The kernel of the projection of a semidirect product to the acting group, which is the image of
+the normal factor, has index the order of the acting group. -/
+@[simp]
+theorem index_ker_rightHom {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} :
+    (rightHom : N ⋊[φ] Q →* Q).ker.index = Nat.card Q := by
+  rw [Subgroup.index_ker, MonoidHom.range_eq_top.mpr rightHom_surjective, Subgroup.card_top]
+
+/-- **The normal factor is the kernel of the projection.** `SemidirectProduct.inl` is an
+isomorphism from `N` onto the kernel of `SemidirectProduct.rightHom : N ⋊[φ] Q →* Q`. -/
+noncomputable def mulEquivKerRightHom {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} :
+    N ≃* (rightHom : N ⋊[φ] Q →* Q).ker :=
+  (MonoidHom.ofInjective inl_injective).trans (MulEquiv.subgroupCongr range_inl_eq_ker_rightHom)
+
+/-- `SemidirectProduct.mulEquivKerRightHom` sends `n` to `inl n`. -/
+@[simp]
+theorem coe_mulEquivKerRightHom_apply {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
+    (n : N) : (mulEquivKerRightHom (φ := φ) n : N ⋊[φ] Q) = inl n := by
+  simp [mulEquivKerRightHom, MonoidHom.ofInjective_apply]
+
+/-- The inverse of `SemidirectProduct.mulEquivKerRightHom` sends an element of the kernel of
+`SemidirectProduct.rightHom` to its normal component. -/
+@[simp]
+theorem mulEquivKerRightHom_symm_apply {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
+    (x : (rightHom : N ⋊[φ] Q →* Q).ker) :
+    (mulEquivKerRightHom (φ := φ)).symm x = (x : N ⋊[φ] Q).left := by
+  rw [MulEquiv.symm_apply_eq]
+  ext
+  · simp
+  · simpa using MonoidHom.mem_ker.mp x.property
 
 section mulEquivSubgroup
 
@@ -167,6 +247,13 @@ theorem toEquiv_mulEquivSubgroup :
 theorem toEquiv_mulEquivSubgroup_symm :
     (mulEquivSubgroup h).symm.toEquiv = h.equiv.trans equivProd.symm :=
   congrArg Equiv.symm (toEquiv_mulEquivSubgroup h)
+
+/-- `(SemidirectProduct.mulEquivSubgroup h).symm` decomposes an element into the product of its
+left and right subgroup components inside the semidirect product. -/
+theorem mulEquivSubgroup_symm_eq_inl_mul_inr (g : G) :
+    (mulEquivSubgroup h).symm g = inl (h.equiv g).1 * inr (h.equiv g).2 := by
+  rw [← inl_left_mul_inr_right ((mulEquivSubgroup h).symm g), mulEquivSubgroup_symm_apply_left,
+    mulEquivSubgroup_symm_apply_right]
 
 /-- On the normal factor, `(SemidirectProduct.mulEquivSubgroup h).symm` agrees with
 `SemidirectProduct.inl`. -/
@@ -265,6 +352,24 @@ theorem surjective_monoidHomSubgroup_iff :
 theorem bijective_monoidHomSubgroup_iff :
     Function.Bijective (monoidHomSubgroup hLE) ↔ H.IsComplement' K :=
   equivProd.bijective_comp fun x : H × K => (x.1 : G) * x.2
+
+/-- **A semidirect product of two subgroups meeting trivially is their join.** If `K` normalizes
+`H` and `H ⊓ K = ⊥`, multiplication is an isomorphism `H ⋊ K ≃* H ⊔ K`. -/
+noncomputable def mulEquivSup (h : H ⊓ K = ⊥) :
+    H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K ≃* ↥(H ⊔ K) :=
+  (MonoidHom.ofInjective ((injective_monoidHomSubgroup_iff hLE).mpr (disjoint_iff.mpr h))).trans
+    (MulEquiv.subgroupCongr (range_monoidHomSubgroup hLE))
+
+@[simp]
+theorem coe_mulEquivSup_apply (h : H ⊓ K = ⊥)
+    (x : H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K) :
+    (mulEquivSup hLE h x : G) = x.left * x.right :=
+  monoidHomSubgroup_apply hLE x
+
+/-- The two components of the inverse of `mulEquivSup` multiply back to the given element. -/
+theorem left_mul_right_mulEquivSup_symm_apply (h : H ⊓ K = ⊥) (g : ↥(H ⊔ K)) :
+    (((mulEquivSup hLE h).symm g).left : G) * ((mulEquivSup hLE h).symm g).right = g := by
+  rw [← coe_mulEquivSup_apply hLE h, MulEquiv.apply_symm_apply]
 
 variable {D : Type*} [Group D]
 variable (f : H →* D) (g : K →* D)

@@ -98,9 +98,9 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_ne [H
       obtain ⟨ε, hε, hεδ, hiso⟩ := hf.exists_singularHomology_sublevelPair_iso_sigma hδ hcompact
       -- No critical point of the level has index `n`, so the coproduct is empty.
       have : IsEmpty {q : ↥(criticalPoints I f ∩ f ⁻¹' {f p}) // manifoldMorseIndex I f q = n} :=
-        ⟨fun q ↦ hn q.1 ⟨q.1.2.1, by
-          have : f q.1 = f p := q.1.2.2
-          constructor <;> linarith⟩ q.2⟩
+        ⟨fun q ↦ hn q.val ⟨q.val.property.1, by
+          have : f q.val = f p := q.val.property.2
+          constructor <;> linarith⟩ q.property⟩
       exact ⟨ε, hε, hεδ,
         ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso (hiso R n).some⟩)
     -- The long exact sequence of the triple `(M_t, M_m, M_s)` joins the pieces.
@@ -144,7 +144,7 @@ theorem exists_isEmpty_sublevelPair_of_isCompact_sublevel (hf : Continuous f)
     ∃ (a : ℝ) (hab : a ≤ b), IsEmpty (sublevelPair f hab).snd ∧
       IsCompact (f ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) f a := by
   obtain ⟨a, hab, ha⟩ := exists_le_forall_lt_of_isCompact_sublevel hcompact hf.continuousOn
-  exact ⟨a, hab, ⟨fun x ↦ (ha x.1).not_ge x.2⟩,
+  exact ⟨a, hab, ⟨fun x ↦ (ha x.val).not_ge x.property⟩,
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf) fun x hx ↦ hx.2,
     isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp⟩
 

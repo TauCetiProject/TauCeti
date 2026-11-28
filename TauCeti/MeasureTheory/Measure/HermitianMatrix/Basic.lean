@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
@@ -22,7 +22,7 @@ coordinate map `TauCeti.hermitianCoordinates` (`(A i i).re` at `(i, i)`, `(A i j
 ## Main declarations
 
 * `selfAdjoint.im_coe_apply_self`, `selfAdjoint.inner_eq_re_trace_mul`,
-  `selfAdjoint.norm_sq_eq_re_trace_sq`.
+  `selfAdjoint.norm_sq_eq_re_trace_sq`, `selfAdjoint.im_trace_mul`.
 * `TauCeti.hermitianCoordinates`, `TauCeti.hermitianCoordinatesMeasurableEquiv`,
   `TauCeti.finrank_hermitianMatrix`, `TauCeti.hermitianBasis`, `TauCeti.hermitianFinOneEquiv`.
 * `Matrix.UnitaryGroup.hermitianConj` — unitary conjugation `A ↦ U * A * Uᴴ`.
@@ -82,10 +82,17 @@ theorem norm_sq_eq_re_trace_sq {p : ℕ}
     ‖A‖ ^ 2 = ((A : Matrix (Fin p) (Fin p) ℂ) ^ 2).trace.re :=
   norm_sq_eq_rclike_re_trace_sq A
 
+/-- The trace of a product of two Hermitian matrices is real. -/
+theorem im_trace_mul {p : ℕ} (S T : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
+    ((S : Matrix (Fin p) (Fin p) ℂ) * T).trace.im = 0 := by
+  refine Complex.conj_eq_iff_im.1 ?_
+  rw [← Complex.star_def, ← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul,
+    conjTranspose_coe, conjTranspose_coe, Matrix.trace_mul_comm]
+
 /-- Reading off an entry of a Hermitian matrix is continuous. -/
 theorem continuous_coe_apply_complex {p : ℕ} (i j : Fin p) :
     Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) ↦
-      (A : Matrix (Fin p) (Fin p) ℂ) i j := continuous_subtype_val.matrix_elem i j
+      (A : Matrix (Fin p) (Fin p) ℂ) i j := continuous_subtypeVal.matrix_elem i j
 
 /-- Reading off an entry of a Hermitian matrix is measurable. -/
 @[fun_prop] theorem measurable_coe_apply_complex {p : ℕ} (i j : Fin p) :

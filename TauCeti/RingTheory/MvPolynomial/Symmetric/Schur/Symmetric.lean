@@ -48,6 +48,8 @@ polynomials they generalize already live.
   are symmetric**.
 * `TauCeti.schurPoly_mem_symmetricSubalgebra`: the same, read in
   `MvPolynomial.symmetricSubalgebra`.
+* `TauCeti.symmetricDiagramSchurPoly`: the Schur polynomial of a diagram as an element of
+  `MvPolynomial.symmetricSubalgebra`.
 
 ## References
 
@@ -73,16 +75,16 @@ variable {N : ℕ} {μ : YoungDiagram}
 than the ones already present and the two it exchanges. -/
 def benderKnuth (T : BoundedSSYT N μ) {a b : Fin N} (hab : (b : ℕ) = (a : ℕ) + 1) :
     BoundedSSYT N μ :=
-  ⟨T.1.benderKnuth (a : ℕ), fun i j hij => by
-    rcases SemistandardYoungTableau.benderKnuth_apply_eq_or T.1 (a : ℕ) i j with h | h | h
-    · rw [h]; exact T.2 i j hij
+  ⟨T.val.benderKnuth (a : ℕ), fun i j hij => by
+    rcases SemistandardYoungTableau.benderKnuth_apply_eq_or T.val (a : ℕ) i j with h | h | h
+    · rw [h]; exact T.property i j hij
     · rw [h]; exact a.isLt
     · rw [h, ← hab]; exact b.isLt⟩
 
 @[simp]
 theorem benderKnuth_benderKnuth (T : BoundedSSYT N μ) {a b : Fin N}
     (hab : (b : ℕ) = (a : ℕ) + 1) : (T.benderKnuth hab).benderKnuth hab = T :=
-  Subtype.ext (SemistandardYoungTableau.benderKnuth_benderKnuth T.1 (a : ℕ))
+  Subtype.ext (SemistandardYoungTableau.benderKnuth_benderKnuth T.val (a : ℕ))
 
 theorem benderKnuth_involutive (N : ℕ) (μ : YoungDiagram) {a b : Fin N}
     (hab : (b : ℕ) = (a : ℕ) + 1) :
@@ -104,7 +106,7 @@ tableau. -/
 theorem weight_benderKnuth (T : BoundedSSYT N μ) {a b : Fin N} (hab : (b : ℕ) = (a : ℕ) + 1)
     (i : Fin N) : weight (T.benderKnuth hab) i = weight T (Equiv.swap a b i) := by
   rw [weight_apply, weight_apply, val_swap, hab]
-  exact SemistandardYoungTableau.content_benderKnuth T.1 (a : ℕ) (i : ℕ)
+  exact SemistandardYoungTableau.content_benderKnuth T.val (a : ℕ) (i : ℕ)
 
 /-- The weight of the Bender-Knuth image of a tableau, as the transported weight. -/
 theorem mapDomain_weight_swap (T : BoundedSSYT N μ) {a b : Fin N}
@@ -156,6 +158,35 @@ theorem isSymmetric_diagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R] (μ 
     | mul x y _ _ hx hy =>
       rw [Equiv.Perm.coe_mul, ← rename_rename, hy, hx]
 
+/-- **Schur polynomials are symmetric**, read as membership in
+`MvPolynomial.symmetricSubalgebra`. -/
+theorem diagramSchurPoly_mem_symmetricSubalgebra (N : ℕ) (R : Type*) [CommSemiring R]
+    (μ : YoungDiagram) : diagramSchurPoly N R μ ∈ symmetricSubalgebra (Fin N) R :=
+  (mem_symmetricSubalgebra _).mpr (isSymmetric_diagramSchurPoly N R μ)
+
+/-- The Schur polynomial `TauCeti.diagramSchurPoly N R μ`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+noncomputable def symmetricDiagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R]
+    (μ : YoungDiagram) : symmetricSubalgebra (Fin N) R :=
+  ⟨diagramSchurPoly N R μ, diagramSchurPoly_mem_symmetricSubalgebra N R μ⟩
+
+@[simp, norm_cast]
+theorem coe_symmetricDiagramSchurPoly (N : ℕ) (μ : YoungDiagram) :
+    (symmetricDiagramSchurPoly N R μ : MvPolynomial (Fin N) R) = diagramSchurPoly N R μ :=
+  (rfl)
+
+/-- The Schur polynomial of the empty diagram is `1` in the symmetric subalgebra. -/
+@[simp]
+theorem symmetricDiagramSchurPoly_bot (N : ℕ) :
+    symmetricDiagramSchurPoly N R ⊥ = 1 :=
+  Subtype.ext (by simp [diagramSchurPoly_bot])
+
+/-- The Schur polynomial of a diagram with more than `N` rows vanishes in the symmetric
+subalgebra of `N` variables. -/
+theorem symmetricDiagramSchurPoly_eq_zero_of_lt_colLen {N : ℕ} {μ : YoungDiagram}
+    (h : N < μ.colLen 0) : symmetricDiagramSchurPoly N R μ = 0 :=
+  Subtype.ext (by simp [diagramSchurPoly_eq_zero_of_lt_colLen h])
+
 /-- Renaming a diagram Schur polynomial along a bijection of finite alphabets preserves it. -/
 @[simp]
 theorem rename_diagramSchurPoly {M N : ℕ} (μ : YoungDiagram) (e : Fin M ≃ Fin N) :
@@ -170,6 +201,16 @@ diagram-indexed Schur polynomial. -/
 theorem schurPoly_fin_shapePartition (N : ℕ) (μ : YoungDiagram) :
     schurPoly (Fin N) R (shapePartition μ) = diagramSchurPoly N R μ := by
   rw [schurPoly_eq_rename, ofPartition_shapePartition, rename_diagramSchurPoly]
+
+/-- The partition-indexed Schur polynomial in `Fin N` of the partition read off a Young diagram is
+its diagram-indexed Schur polynomial; this is `TauCeti.schurPoly_fin_shapePartition` for a
+diagram whose size is recorded as an arbitrary `d`. Both lemmas are needed: `simp` rewrites
+`μ.toPartition rfl` to the opaque `TauCeti.shapePartition μ`
+(`TauCeti.toPartition_eq_shapePartition`), which this lemma no longer matches. -/
+@[simp]
+theorem schurPoly_fin_toPartition (N : ℕ) {μ : YoungDiagram} {d : ℕ} (h : μ.card = d) :
+    schurPoly (Fin N) R (μ.toPartition h) = diagramSchurPoly N R μ := by
+  rw [schurPoly_eq_rename, YoungDiagram.ofPartition_toPartition, rename_diagramSchurPoly]
 
 /-- Renaming a symmetric polynomial along a bijection of alphabets keeps it symmetric. -/
 private theorem isSymmetric_rename {σ τ : Type*} {p : MvPolynomial τ R} (hp : p.IsSymmetric)

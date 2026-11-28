@@ -39,7 +39,10 @@ the localization functor, for which sheafification is a braided monoidal functor
 * `SheafOfModules.tensorUnderlyingIso`: the identification of `M ⊗ N` with the sheafification of
   the sectionwise tensor product of the underlying presheaves of modules, natural in `M` and `N`
   (`SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
-  the unitors.
+  the unitors; through it, transport of an isomorphism through one argument of
+  `SheafOfModules.tensorProduct` is whiskering
+  (`tensorProductCongrLeft_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv` and
+  `tensorProductCongrRight_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv`).
 * `SheafOfModules.sheafificationForgetAdjunction`, `SheafOfModules.forgetLaxMonoidal`, and
   `SheafOfModules.forgetLaxBraided`:
   sheafification is left adjoint to the inclusion of sheaves of modules into presheaves of
@@ -218,6 +221,34 @@ theorem _root_.SheafOfModules.braiding_hom_tensorUnderlyingIso_hom
     Functor.Monoidal.μIso_hom, BraidedCategory.braiding_naturality_assoc,
     Functor.Braided.braided, assoc]
 
+/-- Read through `tensorProductIso` and `tensorUnderlyingIso`, transport through the first
+argument of `SheafOfModules.tensorProduct` is whiskering in the monoidal structure. -/
+@[reassoc]
+theorem tensorProductCongrLeft_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
+    {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') :
+    (tensorProductCongrLeft R (N := N) e).hom ≫ (tensorProductIso R M' N).hom ≫
+        (M'.tensorUnderlyingIso N).inv =
+      (tensorProductIso R M N).hom ≫ (M.tensorUnderlyingIso N).inv ≫ e.hom ▷ N := by
+  rw [tensorProductCongrLeft_hom, assoc, assoc, Iso.inv_hom_id_assoc]
+  congr 1
+  rw [Iso.comp_inv_eq, assoc, ← tensorHom_id e.hom N,
+    _root_.SheafOfModules.tensorUnderlyingIso_naturality, Iso.inv_hom_id_assoc,
+    _root_.SheafOfModules.id_val, tensorHom_id]
+
+/-- Read through `tensorProductIso` and `tensorUnderlyingIso`, transport through the second
+argument of `SheafOfModules.tensorProduct` is whiskering in the monoidal structure. -/
+@[reassoc]
+theorem tensorProductCongrRight_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
+    {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : N ≅ N') :
+    (tensorProductCongrRight R (M := M) e).hom ≫ (tensorProductIso R M N').hom ≫
+        (M.tensorUnderlyingIso N').inv =
+      (tensorProductIso R M N).hom ≫ (M.tensorUnderlyingIso N).inv ≫ M ◁ e.hom := by
+  rw [tensorProductCongrRight_hom, assoc, assoc, Iso.inv_hom_id_assoc]
+  congr 1
+  rw [Iso.comp_inv_eq, assoc, ← id_tensorHom M e.hom,
+    _root_.SheafOfModules.tensorUnderlyingIso_naturality, Iso.inv_hom_id_assoc,
+    _root_.SheafOfModules.id_val, id_tensorHom]
+
 /-- The left unitor of sheaves of modules is the sheafification of the left unitor of the
 sectionwise tensor product, read through the unit comparison `sheafificationUnitIso`. -/
 theorem _root_.SheafOfModules.leftUnitor_hom_eq (M : SheafOfModules.{u} (ringCatSheaf R)) :
@@ -260,6 +291,13 @@ def sheafificationForgetAdjunction :
     PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj) ⊣
       _root_.SheafOfModules.forget (ringCatSheaf R) :=
   PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
+
+/-- The unit of `sheafificationForgetAdjunction` is the original sheafification unit. -/
+lemma sheafificationForgetAdjunction_unit_app
+    (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+    (sheafificationForgetAdjunction R).unit.app P =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app P :=
+  (rfl)
 
 /-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
 identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
@@ -338,6 +376,15 @@ lemma forget_μ_comp_map {M N P : _root_.SheafOfModules.{u} (ringCatSheaf R)} (p
   -- The two sides differ only in how the source of the unit is written: as `M.val ⊗ N.val`, or
   -- as the tensor product of the images of `M` and `N` under `forget`.
   rfl
+
+/-- Under `tensorUnderlyingIso`, the tensor map of the forgetful functor is the
+sheafification unit on the sectionwise tensor product. -/
+lemma forget_μ_comp_tensorUnderlyingIso_hom (R : Sheaf J CommRingCat.{u})
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).hom =
+      (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) := by
+  rw [forget_μ_comp_map, Iso.inv_hom_id, Adjunction.homEquiv_id]
 
 /-- Two morphisms out of a tensor product `M ⊗ N` of sheaves of modules agree as soon as they
 agree on the sectionwise tensor product `M.val ⊗ N.val` of the underlying presheaves of modules,

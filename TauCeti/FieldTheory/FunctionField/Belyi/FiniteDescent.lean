@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Belyi.Model
+public import TauCeti.FieldTheory.FunctionField.Belyi.Model.Basic
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
+import TauCeti.FieldTheory.Galois.ClosedSubgroup
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -31,10 +32,11 @@ polynomial or coefficient bookkeeping is needed.
 
 For a field `k` algebraic over `ℚ`, a class of pairs defined over a number field `K` is fixed by
 the open subgroup `Aut(k/K)` of `Aut(k/ℚ)`, and its translates depend only on the finitely many
-embeddings of `K` into `k`. Consequently the stabilizer of every class is open and every Galois
-orbit of isomorphism classes of Belyi pairs is finite; when `k` is Galois over `ℚ`, such as
-`AlgebraicClosure ℚ`, the field of moduli is moreover a number field whose degree over `ℚ` is the
-true orbit size. The finiteness of orbits needs no count of Belyi pairs of bounded degree.
+embeddings of `K` into `k`. Consequently the stabilizer of every class is open and closed in
+`Aut(k/ℚ)` and every Galois orbit of isomorphism classes of Belyi pairs is finite; when `k` is
+Galois over `ℚ`, such as `AlgebraicClosure ℚ`, the field of moduli is moreover a number field
+whose degree over `ℚ` is the true orbit size. The finiteness of orbits needs no count of Belyi
+pairs of bounded degree.
 
 ## Main results
 
@@ -42,8 +44,10 @@ true orbit size. The finiteness of orbits needs no count of Belyi pairs of bound
   `k` has a model over a finite extension of `K₀` inside `k`.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finiteDimensional_isDefinedOver`: every
   isomorphism class is defined over such a field.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.isOpen_stabilizer`: for `k` algebraic over `ℚ`, the
-  stabilizer of a class in `Gal(k/ℚ)` is open.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.isOpen_stabilizer` and
+  `TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli`: for `k`
+  algebraic over `ℚ`, the stabilizer of a class in `Aut(k/ℚ)` is open and equals the fixing
+  subgroup of its field of moduli.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.finiteDimensional_fieldOfModuli`: for `k` Galois over `ℚ`,
   the field of moduli of a class is a number field.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.finrank_fieldOfModuli_eq_trueOrbitSize`: its degree over
@@ -109,7 +113,7 @@ private theorem mem_constants {c : k} : c ∈ constants X E ↔ algebraMap k X c
 /-- The constants of `k` lying in `E` act on `E`. -/
 private noncomputable instance : Algebra (constants X E) E :=
   ((algebraMap (constants X E) X).codRestrict E fun c ↦
-    (IsScalarTower.algebraMap_apply (constants X E) k X c).symm ▸ c.2).toAlgebra
+    (IsScalarTower.algebraMap_apply (constants X E) k X c).symm ▸ c.property).toAlgebra
 
 private theorem algebraMap_constants_coe (c : constants X E) :
     (algebraMap (constants X E) E c : X) = algebraMap k X c :=
@@ -133,7 +137,7 @@ private theorem isIntegrallyClosedIn_constants : IsIntegrallyClosedIn (constants
       (algebraMap (constants X E) k).injective
   obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp
     X.isAlgebraicBelyiPair.isIntegrallyClosedIn _ hxk
-  exact ⟨⟨c, (mem_constants X E).mpr (hc ▸ x.2)⟩,
+  exact ⟨⟨c, (mem_constants X E).mpr (hc ▸ x.property)⟩,
     Subtype.ext ((algebraMap_constants_coe X E _).trans hc)⟩
 
 /-- If `E` is a function field over `K₀`, the constants of `k` lying in `E` are finite over
@@ -165,7 +169,8 @@ private noncomputable def model [Algebra.IsAlgebraic K₀ k] (hE : IsFunctionFie
   { pair :=
       { carrier := E
         isAlgebraicBelyiPair := (isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top
-          (isIntegrallyClosedIn_constants X E) (constantCompositum_eq_top_of_adjoin_eq_top E k X
+          (isIntegrallyClosedIn_constants X E)
+          ((constantCompositum_eq_top_iff_adjoin_range_eq_top E k X).mpr
             ((congrArg (adjoin k) Subtype.range_coe).trans hgen)) hX).mp
           X.isAlgebraicBelyiPair }
     embedding := algebraMap E X
@@ -218,13 +223,24 @@ theorem isOpen_stabilizer [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
   have : Algebra.IsAlgebraic K k := .tower_top (K := ℚ) K
   exact Subgroup.isOpen_mono hc.fixingSubgroup_le_stabilizer K.fixingSubgroup_isOpen
 
+/-- **Stabilizers equal the fixing subgroup of the field of moduli**: for a field `k` algebraic
+over `ℚ`, the automorphisms of `k` fixing the field of moduli of `c` pointwise are precisely the
+stabilizer of `c` in `Aut(k/ℚ)`. -/
+@[simp]
+theorem fixingSubgroup_fieldOfModuli [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
+    c.fieldOfModuli.fixingSubgroup = MulAction.stabilizer (k ≃ₐ[ℚ] k) c := by
+  obtain ⟨K, hK, hc⟩ := c.exists_finiteDimensional_isDefinedOver ℚ
+  have : Algebra.IsAlgebraic K k := .tower_top (K := ℚ) K
+  rw [fieldOfModuli_def]
+  exact fixingSubgroup_fixedField_of_fixingSubgroup_le_of_finiteDimensional K
+    hc.fixingSubgroup_le_stabilizer
+
 /-- **The field of moduli is a number field**: over a Galois extension `k` of `ℚ`, such as
 `AlgebraicClosure ℚ`, the field of moduli of an isomorphism class of algebraic Belyi pairs is
 finite over `ℚ`, being contained in a number field of definition. -/
 theorem finiteDimensional_fieldOfModuli [IsGalois ℚ k] (c : IsoClass k) :
     FiniteDimensional ℚ c.fieldOfModuli := by
   obtain ⟨K, hK, hc⟩ := c.exists_finiteDimensional_isDefinedOver ℚ
-  have := IsGalois.tower_top_of_isGalois ℚ K k
   have hle : c.fieldOfModuli ≤ K := hc.fieldOfModuli_le
   exact FiniteDimensional.of_injective (inclusion hle).toLinearMap (inclusion_injective hle)
 
@@ -232,8 +248,7 @@ theorem finiteDimensional_fieldOfModuli [IsGalois ℚ k] (c : IsoClass k) :
 moduli of a class over `ℚ` is its true orbit size. -/
 theorem finrank_fieldOfModuli_eq_trueOrbitSize [IsGalois ℚ k] (c : IsoClass k) :
     Module.finrank ℚ c.fieldOfModuli = c.trueOrbitSize := by
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index, fieldOfModuli_def,
-    InfiniteGalois.fixingSubgroup_fixedField ⟨_, Subgroup.isClosed_of_isOpen _ c.isOpen_stabilizer⟩,
+  rw [fieldOfModuli_def, IntermediateField.finrank_fixedField_of_isOpen c.isOpen_stabilizer,
     trueOrbitSize_eq_index]
 
 /-- **Galois orbits are finite**: over a field `k` algebraic over `ℚ`, such as
@@ -249,7 +264,7 @@ theorem finite_orbit [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
     rw [← inv_smul_eq_iff, ← mul_smul]
     exact hc.smul_eq fun a ↦ by
       simpa [res] using congrArg (τ.symm ·) (DFunLike.congr_fun h a)
-  refine (Set.finite_range fun φ : Set.range res ↦ φ.2.choose • c).subset ?_
+  refine (Set.finite_range fun φ : Set.range res ↦ φ.property.choose • c).subset ?_
   rintro _ ⟨σ, rfl⟩
   exact ⟨⟨res σ, σ, rfl⟩, hres (Exists.choose_spec (⟨σ, rfl⟩ : ∃ τ, res τ = res σ))⟩
 

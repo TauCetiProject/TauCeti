@@ -24,8 +24,9 @@ continuous linear equivalence it is an isomorphism, with inverse given by `e⁻�
 
 * `TauCeti.ParabolicC2HolderSpace.compSpatialL`: the change of spatial variables
   `u ↦ u ∘ (e × id)`, with its four fields and operator-norm bound.
-* `TauCeti.ParabolicC2HolderSpace.compSpatialCLE`: the change of variables by a continuous linear
-  equivalence, as an isomorphism.
+* `TauCeti.ParabolicC2HolderSpace.compSpatialCLE`, `TauCeti.ParabolicC2HolderSpace.compSpatialLIE`:
+  the change of variables by a continuous linear equivalence or a linear isometric equivalence, as
+  an isomorphism or a linear isometric equivalence.
 
 ## References
 
@@ -227,6 +228,23 @@ theorem norm_compSpatialL_le_of_norm_le {e : E →L[ℝ] E'} {K : ℝ} (hK : 1 �
       (Real.rpow_le_rpow (by positivity) (max_le he hK) (by positivity))
       (by positivity) (by positivity))
 
+variable (α F hab) in
+/-- If `‖e‖ ≤ 1`, the change of spatial variables by `e` has operator norm at most `1`. -/
+theorem norm_compSpatialL_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1) :
+    ‖compSpatialL α F hab e‖ ≤ 1 :=
+  (norm_compSpatialL_le_of_norm_le α F hab le_rfl he).trans (by norm_num)
+
+/-- If `‖e‖ ≤ 1`, the change of spatial variables by `e` does not increase the parabolic Hölder
+norm. -/
+theorem norm_compSpatialL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
+    (u : ParabolicC2HolderSpace α E' F hab) :
+    ‖compSpatialL α F hab e u‖ ≤ ‖u‖ := by
+  -- `le_of_opNorm_le` uses `SeminormedAddCommGroup.toNorm`, while the goal uses
+  -- `NormedAddCommGroup.toNorm`; `ParabolicC2HolderSpace`'s instance body is private across
+  -- `module`, so `convert ... using 1` bridges the two norm projections.
+  convert ((compSpatialL α F hab e).le_of_opNorm_le
+    (norm_compSpatialL_le_one α F hab he) u).trans_eq (one_mul _) using 1
+
 /-- The change of spatial variables by the identity does nothing. -/
 @[simp]
 theorem compSpatialL_id (u : ParabolicC2HolderSpace α E F hab) :
@@ -247,10 +265,10 @@ variable (α F hab) in
 change of variables by `e⁻¹`. -/
 def compSpatialCLE (e : E ≃L[ℝ] E') :
     ParabolicC2HolderSpace α E' F hab ≃L[ℝ] ParabolicC2HolderSpace α E F hab :=
-  ContinuousLinearEquiv.equivOfInverse (compSpatialL α F hab (e : E →L[ℝ] E'))
+  ContinuousLinearEquiv.ofContinuousLinearMap (compSpatialL α F hab (e : E →L[ℝ] E'))
     (compSpatialL α F hab (e.symm : E' →L[ℝ] E))
-    (fun u ↦ by ext p; simp)
-    (fun v ↦ by ext p; simp)
+    (ContinuousLinearMap.ext fun v ↦ by ext p; simp)
+    (ContinuousLinearMap.ext fun u ↦ by ext p; simp)
 
 @[simp]
 theorem compSpatialCLE_apply (e : E ≃L[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab) :
@@ -261,6 +279,66 @@ theorem compSpatialCLE_apply (e : E ≃L[ℝ] E') (u : ParabolicC2HolderSpace α
 theorem compSpatialCLE_symm_apply (e : E ≃L[ℝ] E') (v : ParabolicC2HolderSpace α E F hab) :
     (compSpatialCLE α F hab e).symm v = compSpatialL α F hab (e.symm : E' →L[ℝ] E) v :=
   (rfl)
+
+private theorem compSpatialCLE_toLinearEquiv_apply (e : E ≃ₗᵢ[ℝ] E')
+    (u : ParabolicC2HolderSpace α E' F hab) :
+    (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv u =
+      compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap u := by
+  rw [ContinuousLinearEquiv.coe_toLinearEquiv, compSpatialCLE_apply,
+    e.toContinuousLinearMap_toLinearIsometry]
+
+private theorem compSpatialCLE_toLinearEquiv_symm_apply (e : E ≃ₗᵢ[ℝ] E')
+    (v : ParabolicC2HolderSpace α E F hab) :
+    (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv.symm v =
+      compSpatialL α F hab e.symm.toLinearIsometry.toContinuousLinearMap v := by
+  rw [ContinuousLinearEquiv.coe_symm_toLinearEquiv, compSpatialCLE_symm_apply,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+    e.symm.toContinuousLinearMap_toLinearIsometry]
+
+variable (α F hab) in
+/-- The change of spatial variables `u ↦ u ∘ (e × id)` by a linear isometric equivalence
+`e : E ≃ₗᵢ[ℝ] E'`, as a linear isometric equivalence between order-two parabolic Hölder spaces.
+Its inverse is the change of variables by `e⁻¹`. -/
+def compSpatialLIE (e : E ≃ₗᵢ[ℝ] E') :
+    ParabolicC2HolderSpace α E' F hab ≃ₗᵢ[ℝ] ParabolicC2HolderSpace α E F hab :=
+  LinearIsometryEquiv.ofBounds
+    (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv
+    (fun u ↦ by
+      rw [compSpatialCLE_toLinearEquiv_apply]
+      simpa only [norm_eq] using norm_compSpatialL_apply_le_of_norm_le_one
+        e.toLinearIsometry.norm_toContinuousLinearMap_le u)
+    (fun v ↦ by
+      rw [compSpatialCLE_toLinearEquiv_symm_apply]
+      simpa only [norm_eq] using norm_compSpatialL_apply_le_of_norm_le_one
+        e.symm.toLinearIsometry.norm_toContinuousLinearMap_le v)
+
+/-- Applying `compSpatialLIE` agrees with `compSpatialL` on the underlying continuous linear
+map. -/
+@[simp]
+theorem compSpatialLIE_apply (e : E ≃ₗᵢ[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab) :
+    compSpatialLIE α F hab e u = compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap u :=
+  compSpatialCLE_toLinearEquiv_apply e u
+
+/-- Applying the inverse of `compSpatialLIE` agrees with `compSpatialL` on the underlying
+continuous linear map of `e.symm`. -/
+theorem compSpatialLIE_symm_apply (e : E ≃ₗᵢ[ℝ] E') (v : ParabolicC2HolderSpace α E F hab) :
+    (compSpatialLIE α F hab e).symm v =
+      compSpatialL α F hab e.symm.toLinearIsometry.toContinuousLinearMap v :=
+  compSpatialCLE_toLinearEquiv_symm_apply e v
+
+/-- Pointwise evaluation of `compSpatialLIE` precomposes with `slabSpaceIsometryEquiv`. -/
+theorem compSpatialLIE_apply_apply (e : E ≃ₗᵢ[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab)
+    (p : slab (E := E) a b) :
+    compSpatialLIE α F hab e u p = u (slabSpaceIsometryEquiv e.toIsometryEquiv p) := by
+  rw [compSpatialLIE_apply, compSpatialL_apply, slabSpaceIsometryEquiv_apply,
+    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
+    LinearIsometryEquiv.coe_toIsometryEquiv]
+
+/-- The inverse of `compSpatialLIE α F hab e` is `compSpatialLIE α F hab e.symm`. -/
+@[simp]
+theorem compSpatialLIE_symm (e : E ≃ₗᵢ[ℝ] E') :
+    (compSpatialLIE α F hab e).symm = compSpatialLIE α F hab e.symm :=
+  LinearIsometryEquiv.ext fun v ↦ by rw [compSpatialLIE_symm_apply, compSpatialLIE_apply]
 
 end ParabolicC2HolderSpace
 

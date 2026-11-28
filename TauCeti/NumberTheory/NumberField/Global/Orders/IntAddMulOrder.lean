@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
 public import Mathlib.Data.ZMod.QuotientRing
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
@@ -89,7 +90,7 @@ def intAddMulOrder : NumberFieldOrder K where
     have h : intAddMulSubalgebra K f ≤ integralClosure ℤ K := by
       rintro _ ⟨a, y, rfl⟩
       exact add_mem (Subalgebra.algebraMap_mem _ a)
-        (mul_mem (Subalgebra.natCast_mem _ f) y.2)
+        (mul_mem (Subalgebra.natCast_mem _ f) y.property)
     have : Module.Finite ℤ (integralClosure ℤ K) := inferInstanceAs (Module.Finite ℤ (𝓞 K))
     exact Module.Finite.of_injective (Subalgebra.inclusion h).toLinearMap
       (Subalgebra.inclusion_injective h)
@@ -160,10 +161,8 @@ theorem index_intAddMulOrder :
     rw [index_eq_addSubgroup_index, hS,
       AddSubgroup.index_comap_of_surjective _ Ideal.Quotient.mk_surjective]
   -- `𝓞 K / f` has `f ^ n` elements, and its subgroup `ℤ · 1` has `f`.
-  have hcard : Nat.card (𝓞 K ⧸ I) = f ^ Module.finrank ℚ K := by
-    have : Infinite (𝓞 K) := Infinite.of_injective _ Nat.cast_injective
-    rw [← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, Ideal.absNorm_span_natCast,
-      RingOfIntegers.rank]
+  have hcard : Nat.card (𝓞 K ⧸ I) = f ^ Module.finrank ℚ K :=
+    RingOfIntegers.natCard_quotient_span_natCast f
   have hone : Nat.card (AddSubgroup.zmultiples (1 : 𝓞 K ⧸ I)) = f := by
     rw [Nat.card_zmultiples, CharP.eq _ (CharP.addOrderOf_one _)
       (RingOfIntegers.charP_quotient_span_natCast K f)]
@@ -278,7 +277,7 @@ def quotientIntAddMulOrderEquiv :
   have hsurj : Function.Surjective ψ := by
     intro q
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-    obtain ⟨a, y, hxy⟩ := mem_toRingOfIntegers_intAddMulOrder.mp x.2
+    obtain ⟨a, y, hxy⟩ := mem_toRingOfIntegers_intAddMulOrder.mp x.property
     exact ⟨a, by rw [eq_intCast, mk_eq_intCast hxy]⟩
   have hker : RingHom.ker ψ = Ideal.span {(f : ℤ)} := by
     ext a

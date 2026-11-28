@@ -37,6 +37,12 @@ rings and to finitely generated ideals with Noetherian quotient.
   separately continuous addition and `I` finitely generated and open is Noetherian as soon as it
   receives a ring map with dense range from a Noetherian semiring. This is the form used for
   topological completions.
+* `Ideal.isNoetherianRing_of_iInf_sup_pow_eq`: a ring is Noetherian as soon as its finitely
+  generated ideals are closed for the `I`-adic topology of a finitely generated ideal `I` with
+  `R ⧸ I` Noetherian, since each ideal is then the contraction of its extension to the completion
+  (`Ideal.comap_map_algebraMap_adicCompletion_le`). This is the form used for rings, such as the
+  analytic local rings of affinoid spaces, that are not known to be complete but whose finitely
+  generated ideals can be shown closed directly.
 
 ## References
 
@@ -62,12 +68,12 @@ private theorem le_span_of_forall_exists_sub_mem_pow [IsAdicComplete I R] {ι : 
       x - ∑ i, c i * g i ∈ J ⊓ I ^ (n + 1)) :
     J ≤ Ideal.span (Set.range g) := by
   intro x hx
-  choose c hc hrem using fun n (y : ↥(J ⊓ I ^ n)) ↦ h n y.1 y.2
+  choose c hc hrem using fun n (y : ↥(J ⊓ I ^ n)) ↦ h n y.val y.property
   -- The remainders after `n` correction steps, and the accumulated coefficients.
   let y : ∀ n, ↥(J ⊓ I ^ n) := fun n ↦
-    Nat.rec ⟨x, hx, by simp⟩ (fun n yn ↦ ⟨yn.1 - ∑ i, c n yn i * g i, hrem n yn⟩) n
+    Nat.rec ⟨x, hx, by simp⟩ (fun n yn ↦ ⟨yn.val - ∑ i, c n yn i * g i, hrem n yn⟩) n
   let s : ℕ → ι → R := fun k i ↦ ∑ n ∈ Finset.range k, c n (y n) i
-  have hs (k : ℕ) : x - ∑ i, s k i * g i = (y k).1 := by
+  have hs (k : ℕ) : x - ∑ i, s k i * g i = (y k).val := by
     induction k with
     | zero => simp [s, y]
     | succ k ih =>
@@ -90,11 +96,11 @@ private theorem le_span_of_forall_exists_sub_mem_pow [IsAdicComplete I R] {ι : 
     rw [SModEq.sub_mem, sub_zero, smul_eq_mul, Ideal.mul_top]
     have hLk (i : ι) : s (k + D) i - L i ∈ I ^ k := by
       simpa [SModEq.sub_mem] using hL i k
-    have : x - ∑ i, L i * g i = (y (k + D)).1 + ∑ i, (s (k + D) i - L i) * g i := by
+    have : x - ∑ i, L i * g i = (y (k + D)).val + ∑ i, (s (k + D) i - L i) * g i := by
       rw [← hs (k + D)]
       simp [sub_mul, Finset.sum_sub_distrib]
     rw [this]
-    exact add_mem (Ideal.pow_le_pow_right (Nat.le_add_right k D) (y (k + D)).2.2)
+    exact add_mem (Ideal.pow_le_pow_right (Nat.le_add_right k D) (y (k + D)).property.2)
       (Ideal.sum_mem _ fun i _ ↦ Ideal.mul_mem_right _ _ (hLk i))
   rw [sub_eq_zero] at hx
   rw [hx, Ideal.mem_span_range_iff_exists_fun]
@@ -186,7 +192,7 @@ theorem isNoetherianRing_of_isAdicComplete (I : Ideal R) (hI : I.FG) [IsAdicComp
   -- Each generator `t` has a degree `d t` and a value congruent to some `g t ∈ J`.
   have hT (t : T) : ∃ d, (t : MvPolynomial (Fin r) R).IsHomogeneous d ∧
       ∃ g ∈ J, aeval f (t : MvPolynomial (Fin r) R) - g ∈ Ideal.span (Set.range f) ^ (d + 1) := by
-    obtain ⟨d, hd, hmem⟩ := hTS t.2
+    obtain ⟨d, hd, hmem⟩ := hTS t.property
     obtain ⟨g, hg, e, he, hge⟩ := Submodule.mem_sup.mp hmem
     exact ⟨d, hd, g, hg, by rwa [← hge, add_sub_cancel_left]⟩
   choose d hd g hgJ hge using hT
@@ -235,6 +241,48 @@ theorem isNoetherianRing_of_isAdicComplete_of_denseRange [TopologicalSpace R]
     exact ⟨a, Ideal.Quotient.eq.mpr ha⟩
   have := isNoetherianRing_of_surjective A (R ⧸ I) _ hsurj
   exact isNoetherianRing_of_isAdicComplete I hI
+
+variable {I} in
+/-- The contraction of the extension of an ideal `J` to the `I`-adic completion lies in the
+`I`-adic closure `⨅ n, J ⊔ I ^ n` of `J`. -/
+theorem comap_map_algebraMap_adicCompletion_le (J : Ideal R) :
+    (J.map (algebraMap R (AdicCompletion I R))).comap (algebraMap R (AdicCompletion I R)) ≤
+      ⨅ n : ℕ, J ⊔ I ^ n := by
+  refine le_iInf fun n a ha ↦ ?_
+  -- Project to `R ⧸ I ^ n`, where the extension of `J` becomes the image of `J`.
+  have hle : J.map (algebraMap R (AdicCompletion I R)) ≤
+      (J.map (Quotient.mk (I ^ n))).comap (AdicCompletion.evalₐ I n) :=
+    map_le_iff_le_comap.mpr fun j hj ↦ by
+      simpa [AdicCompletion.algebraMap_apply] using mem_map_of_mem (Quotient.mk (I ^ n)) hj
+  rw [← mk_ker (I := I ^ n), ← comap_map_of_surjective' _ Quotient.mk_surjective, mem_comap]
+  simpa only [mem_comap, AdicCompletion.algebraMap_apply, AdicCompletion.evalₐ_of,
+    Algebra.algebraMap_self, RingHom.id_apply] using hle ha
+
+variable {I} in
+/-- **Noetherianity from closed ideals.** If `I` is finitely generated, `R ⧸ I` is noetherian and
+every finitely generated ideal of `R` is closed for the `I`-adic topology, then `R` is noetherian:
+every ideal is recovered from its extension to the noetherian completion `AdicCompletion I R`. -/
+theorem isNoetherianRing_of_iInf_sup_pow_eq (hI : I.FG) [IsNoetherianRing (R ⧸ I)]
+    (h : ∀ J : Ideal R, J.FG → ⨅ n : ℕ, J ⊔ I ^ n = J) : IsNoetherianRing R := by
+  classical
+  have := isNoetherianRing_adicCompletion_of_fg I hI
+  rw [isNoetherianRing_iff_ideal_fg]
+  intro J
+  -- The extension of `J` is generated by the images of finitely many elements `t` of `J`.
+  have hJ : J.map (algebraMap R (AdicCompletion I R)) = span (algebraMap R _ '' J) := by
+    rw [← map_span, span_eq]
+  have hFG := IsNoetherian.noetherian (J.map (algebraMap R (AdicCompletion I R)))
+  rw [hJ] at hFG
+  obtain ⟨s, hsJ, hs⟩ := (Submodule.fg_span_iff_fg_span_finset_subset _).mp hFG
+  obtain ⟨t, htJ, rfl⟩ := Finset.subset_set_image_iff.mp hsJ
+  have hmap : J.map (algebraMap R (AdicCompletion I R)) =
+      (span (t : Set R)).map (algebraMap R (AdicCompletion I R)) := by
+    rw [hJ, map_span, ← Finset.coe_image]
+    exact hs
+  refine ⟨t, le_antisymm (span_le.mpr htJ) ?_⟩
+  calc J ≤ (J.map (algebraMap R (AdicCompletion I R))).comap _ := le_comap_map
+    _ ≤ ⨅ n : ℕ, span (t : Set R) ⊔ I ^ n := hmap ▸ comap_map_algebraMap_adicCompletion_le _
+    _ = span (t : Set R) := h _ ⟨t, rfl⟩
 
 end Ideal
 

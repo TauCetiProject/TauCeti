@@ -262,7 +262,7 @@ theorem subtypeChart_target
 @[simp]
 theorem subtypeChart_apply
     (h : IsSliceChart e ((univ : Set Y) ×ˢ ({0} : Set Y')) s) [Nonempty s] (x : s) :
-    h.subtypeChart x = (e x.1).1 := by
+    h.subtypeChart x = (e x.val).1 := by
   unfold subtypeChart
   apply OpenPartialHomeomorph.subtypeCoord_apply
 
@@ -271,8 +271,8 @@ transverse coordinate. -/
 theorem subtypeChart_mk_zero_eq
     (h : IsSliceChart e ((univ : Set Y) ×ˢ ({0} : Set Y')) s) [Nonempty s]
     {x : s} (hx : x ∈ h.subtypeChart.source) :
-    (h.subtypeChart x, (0 : Y')) = e x := by
-  exact OpenPartialHomeomorph.subtypeCoord_parametrization_apply _ _ _ _ _ _ _ _ _ _ hx
+    (h.subtypeChart x, (0 : Y')) = e x :=
+  OpenPartialHomeomorph.subtypeCoord_parametrization_apply _ _ _ _ _ _ _ _ _ _ hx
 
 /-- On its target, the inverse of a zero-slice subtype chart is the ambient inverse evaluated on
 the zero slice. -/
@@ -297,19 +297,14 @@ theorem exists_target_eq (h : IsSliceChart φ S A) {T : Set F} (hT : IsOpen T)
     (hTφ : T ⊆ φ.target) :
     ∃ ψ : OpenPartialHomeomorph M F, ⇑ψ = ⇑φ ∧ ψ.source = φ.source ∩ φ ⁻¹' T ∧ ψ.target = T ∧
       IsSliceChart ψ S A := by
-  refine ⟨φ.restrOpen (φ.source ∩ φ ⁻¹' T) (φ.isOpen_inter_preimage hT), rfl, ?_, ?_, ?_⟩
-  · rw [OpenPartialHomeomorph.restrOpen_source, inter_eq_right.2 inter_subset_left]
-  · ext z
-    simp only [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
-      mem_inter_iff, mem_preimage, OpenPartialHomeomorph.coe_toPartialEquiv_symm]
-    refine ⟨fun hz => ?_, fun hz => ⟨hTφ hz, φ.map_target (hTφ hz), ?_⟩⟩
-    · have := hz.2.2
-      rwa [φ.right_inv hz.1] at this
-    · rw [φ.right_inv (hTφ hz)]
-      exact hz
-  · refine isSliceChart_iff.2 fun y hy => ?_
-    rw [OpenPartialHomeomorph.restrOpen_source] at hy
-    exact h.mem_iff hy.1
+  have hsrc : (φ.symm.restrOpen T hT).symm.source = φ.source ∩ φ ⁻¹' T := by
+    rw [OpenPartialHomeomorph.symm_source]
+    simp [OpenPartialHomeomorph.restrOpen_toPartialEquiv]
+  refine ⟨(φ.symm.restrOpen T hT).symm, ?_, hsrc, ?_,
+    isSliceChart_iff.mpr fun _ hy => h.mem_iff (hsrc.subset hy).1⟩
+  · rw [OpenPartialHomeomorph.coe_restrOpen_symm, OpenPartialHomeomorph.symm_symm]
+  · rw [OpenPartialHomeomorph.symm_target, OpenPartialHomeomorph.restrOpen_source,
+      OpenPartialHomeomorph.symm_source, inter_eq_right.mpr hTφ]
 
 /-- Restricting a slice chart to an open set restricts the flattened set to the same open set. -/
 theorem restrOpen (h : IsSliceChart φ S A) {V : Set M} (hV : IsOpen V) :
@@ -365,12 +360,12 @@ theorem eventually_symm_add_mem {φ : OpenPartialHomeomorph M F} {A : Set M} {x 
     (hφ : IsSliceChart φ (L : Set F) A) (hxφ : x ∈ φ.source) (hxA : x ∈ A) :
     ∀ᶠ z : L in 𝓝 0, φ.symm (φ x + (z : F)) ∈ A := by
   have hxL : φ x ∈ L := (isSliceChart_iff.1 hφ x hxφ).1 hxA
-  have hcont : Continuous fun z : L ↦ φ x + (z : F) := continuous_const.add continuous_subtype_val
+  have hcont : Continuous fun z : L ↦ φ x + (z : F) := continuous_const.add continuous_subtypeVal
   have hxt : φ.target ∈ 𝓝 (φ x + ((0 : L) : F)) := by
     simpa using φ.open_target.mem_nhds (φ.map_source hxφ)
   filter_upwards [hcont.continuousAt.preimage_mem_nhds hxt] with z hz
   exact (isSliceChart_iff.1 hφ _ (φ.map_target hz)).2
-    (by rw [φ.right_inv hz]; exact L.add_mem hxL z.2)
+    (by rw [φ.right_inv hz]; exact L.add_mem hxL z.property)
 
 /-- The parametrization `z ↦ φ.symm (φ x + z)` of a set `A` flattened by the chart `φ` onto a
 linear subspace `L` reaches every point of `A` near `x` from arbitrarily small parameters. -/
@@ -513,9 +508,11 @@ variable {f : N → M}
 
 namespace IsSliceEmbedding
 
+/-- A slice embedding is continuous. -/
 theorem continuous (h : IsSliceEmbedding S f) : Continuous f :=
   h.isEmbedding.continuous
 
+/-- A slice embedding is injective. -/
 theorem injective (h : IsSliceEmbedding S f) : Function.Injective f :=
   h.isEmbedding.injective
 
@@ -528,7 +525,7 @@ theorem restrict (h : IsSliceEmbedding S f) {U : Set N} (hU : IsOpen U) :
   refine ⟨h.isEmbedding.comp IsEmbedding.subtypeVal, fun x => ?_⟩
   obtain ⟨φ, hφx, hφ⟩ := h.exists_isSliceChart x
   refine ⟨φ.restrOpen V hV, ?_, ?_⟩
-  · exact ⟨hφx, x.2⟩
+  · exact ⟨hφx, x.property⟩
   · rw [hrange]
     exact hφ.restrOpen hV
 
@@ -652,9 +649,9 @@ model slice. -/
 theorem isLocallyClosed_range (h : IsSliceEmbedding S f) (hS : IsLocallyClosed S) :
     IsLocallyClosed (range f) := by
   obtain ⟨U, Z, hU, hZ, rfl⟩ := hS
-  refine ((isLocallyClosed_tfae (range f)).out 2 1).1 ?_
+  refine isLocallyClosed_iff_isLocallyClosedAt.mpr ?_
   rintro _ ⟨x, rfl⟩
-  refine ((isLocallyClosedAt_tfae (range f) (f x)).out 2 1).1 ?_
+  refine isLocallyClosedAt_iff_exists_isClosed_preimage_val.mpr ?_
   obtain ⟨φ, hφx, hφ⟩ := h.exists_isSliceChart x
   -- Shrink the chart to the part of its source where the open half of the slice already holds;
   -- there the image is cut out by the closed half alone.
@@ -664,7 +661,7 @@ theorem isLocallyClosed_range (h : IsSliceEmbedding S f) (hS : IsLocallyClosed S
   refine ⟨W, hW.mem_nhds hxW, ?_⟩
   -- `U ↓∩ s` is notation for `Subtype.val ⁻¹' s`, so the goal is literally about that preimage.
   have hpre : ((Subtype.val : W → M) ⁻¹' range f) = (fun y : W => φ ↑y) ⁻¹' Z :=
-    Set.ext fun y => (hφ.mem_iff y.2.1).trans (and_iff_right y.2.2)
+    Set.ext fun y => (hφ.mem_iff y.property.1).trans (and_iff_right y.property.2)
   rw [hpre]
   exact hZ.preimage (φ.continuousOn.mono inter_subset_left).domRestrict
 
@@ -690,6 +687,7 @@ variable [Zero F']
 
 namespace IsLocallyFlat
 
+/-- A locally flat embedding is in particular a topological embedding. -/
 theorem isEmbedding (h : IsLocallyFlat F F' f) : IsEmbedding f :=
   IsSliceEmbedding.isEmbedding h
 
@@ -701,9 +699,11 @@ theorem exists_isSliceChart (h : IsLocallyFlat F F' f) (x : N) :
       IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) (range f) :=
   IsSliceEmbedding.exists_isSliceChart h x
 
+/-- A locally flat embedding is continuous. -/
 theorem continuous (h : IsLocallyFlat F F' f) : Continuous f :=
   h.isEmbedding.continuous
 
+/-- A locally flat embedding is injective. -/
 theorem injective (h : IsLocallyFlat F F' f) : Function.Injective f :=
   h.isEmbedding.injective
 
@@ -784,10 +784,11 @@ theorem transIsOpenEmbedding {G : Type*} [TopologicalSpace G] (h : IsLocallyFlat
 /-- The flattening step of `TauCeti.IsLocallyFlat.comp`. Assume that `g ∘ f` is an embedding, that
 `g` is injective, and that around each point `x` of the domain there is a compatible pair of charts:
 a chart `ψ` of `P` at `g (f x)` and a flattening chart `φ` of `M` for `f` such that `ψ` reads the
-intermediate coordinates off `φ` along `g`, in the sense `ψ (g y) = (φ y, 0)` on the source of `φ`,
-such that `ψ` sees no more of `range g` than `φ` charts, and such that on its source `ψ` detects
-`range g` from the vanishing of the outer coordinate. Then that same `ψ` flattens `g ∘ f`, whose
-complementary model is the product of the two complementary models. Only the stated half of the
+intermediate coordinates off `φ` along `g`, in the sense `ψ (g y) = (φ y, 0)` for `y` in the source
+of `φ` with `g y` in the source of `ψ`, such that `ψ` sees no more of `range g` than `φ` charts, and
+such that on its source `ψ` detects `range g` from the vanishing of the outer coordinate. Then
+that same `ψ` flattens `g ∘ f`, whose complementary model is the product of the two complementary
+models. Only the stated half of the
 flattening of `range g` by `ψ` is assumed: the other half follows from the agreement
 `ψ (g y) = (φ y, 0)` and the inclusion `ψ.source ∩ range g ⊆ g '' φ.source`. Likewise
 `f x ∈ φ.source` is not assumed, since that inclusion and injectivity of `g` already give it. -/
@@ -797,7 +798,8 @@ private theorem of_compatible_isSliceChart {G' : Type*} [TopologicalSpace G'] [Z
       ∃ φ : OpenPartialHomeomorph M (F × F'), g (f x) ∈ ψ.source ∧
         (∀ p ∈ ψ.source, (ψ p).2 = 0 → p ∈ range g) ∧
         IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) (range f) ∧
-        ψ.source ∩ range g ⊆ g '' φ.source ∧ ∀ y ∈ φ.source, ψ (g y) = (φ y, 0)) :
+        ψ.source ∩ range g ⊆ g '' φ.source ∧
+        ∀ y ∈ φ.source, g y ∈ ψ.source → ψ (g y) = (φ y, 0)) :
     IsLocallyFlat F (F' × G') (g ∘ f) := by
   -- In the model `(F × F') × G'` of `P` the composite is flattened onto the iterated slice; the
   -- standard slice of `F × (F' × G')` is that one after reassociating the coordinates.
@@ -810,11 +812,11 @@ private theorem of_compatible_isSliceChart {G' : Type*} [TopologicalSpace G'] [Z
       obtain ⟨y, hy, rfl⟩ := hsub ⟨hp, range_comp_subset_range f g hpf⟩
       obtain ⟨x', hx'⟩ := hpf
       rw [Function.comp_apply] at hx'
-      rw [hagree y hy]
+      rw [hagree y hy hp]
       exact ⟨(hφ.mem_iff hy).1 ⟨x', hg hx'⟩, rfl⟩
     · intro hps
       obtain ⟨y, hy, rfl⟩ := hsub ⟨hp, hψ p hp hps.2⟩
-      rw [hagree y hy] at hps
+      rw [hagree y hy hp] at hps
       obtain ⟨x', hx'⟩ := (hφ.mem_iff hy).2 hps.1
       exact ⟨x', by rw [Function.comp_apply, hx']⟩
   have himage : Homeomorph.prodAssoc F F' G' ''
@@ -856,7 +858,7 @@ theorem comp {G' : Type*} [TopologicalSpace G'] [Zero G'] {g : M → P}
   · rintro p ⟨hp, y, rfl⟩
     have hy : y ∈ θ.source := (hθs y).2 (hΨs _ hp)
     exact ⟨y, ⟨(hΨ y hy).1 hp, hy⟩, rfl⟩
-  · rintro y ⟨-, hy⟩
+  · rintro y ⟨-, hy⟩ -
     simp [Ψ, ← hθ y hy, θ.left_inv hy]
 
 /-- A product of locally flat embeddings is locally flat, the models multiplying: the product of
@@ -954,12 +956,13 @@ end StandardSlice
 
 section Graph
 
-/-- The graph of a continuous map from a topological space to a topological additive group is
-locally flat, with complementary model `F`. -/
+/-- The graph of a continuous map from a space `E` charted on `H` to a topological additive group
+is locally flat, with tangential model `H` and complementary model `F`. With `H = E` this is the
+graph of a map out of a topological space with the space itself as tangential model. -/
 theorem isLocallyFlat_graph
-    {E F : Type*} [TopologicalSpace E] [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
-    (f : E → F) (hf : Continuous f) :
-    IsLocallyFlat E F (fun x : E => (x, f x)) := by
+    {E F H : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace H] [AddGroup F]
+    [IsTopologicalAddGroup F] [ChartedSpace H E] (f : E → F) (hf : Continuous f) :
+    IsLocallyFlat H F (fun x : E => (x, f x)) := by
   let shear : E × F ≃ₜ E × F :=
     { toFun := fun p => (p.1, p.2 + f p.1)
       invFun := fun p => (p.1, p.2 - f p.1)
@@ -971,7 +974,7 @@ theorem isLocallyFlat_graph
         simp
       continuous_toFun := continuous_fst.prodMk (continuous_snd.add (hf.comp continuous_fst))
       continuous_invFun := continuous_fst.prodMk (continuous_snd.sub (hf.comp continuous_fst)) }
-  have h := (isLocallyFlat_prodMkLeft (N := E) (F := E) (F' := F)).homeomorph_comp shear
+  have h := (isLocallyFlat_prodMkLeft (N := E) (F := H) (F' := F)).homeomorph_comp shear
   convert h using 1
   ext x
   · rfl
@@ -985,7 +988,7 @@ theorem _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen
     {E F : Type*} [TopologicalSpace E]
     [AddGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
     {f : E → F} {s : Set E} (hf : ContinuousOn f s) (hs : IsOpen s) :
-    IsLocallyFlat s F (fun x : s => ((x.1, f x.1) : E × F)) := by
+    IsLocallyFlat s F (fun x : s => ((x.val, f x.val) : E × F)) := by
   have hcont : Continuous (s.domRestrict f) :=
     continuousOn_iff_continuous_domRestrict.mp hf
   have hgraph : IsLocallyFlat s F (fun x : s => (x, s.domRestrict f x)) := by
@@ -997,18 +1000,19 @@ theorem _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen
 
 /-- A continuous map is locally flat when an ambient homeomorphism presents its image as a graph.
 The section equation `(Φ (f x)).1 = x` identifies `f` with the graph of the second coordinate of
-`Φ ∘ f`, and the conclusion gives local flatness with complementary model `F`. -/
+`Φ ∘ f`, and the conclusion gives local flatness with complementary model `F` and tangential
+model any `H` in which `E` is charted. -/
 theorem _root_.Continuous.isLocallyFlat_of_homeomorph_graph
-    {E M F : Type*} [TopologicalSpace E] [TopologicalSpace M]
-    [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
+    {E M F H : Type*} [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace F]
+    [TopologicalSpace H] [AddGroup F] [IsTopologicalAddGroup F] [ChartedSpace H E]
     {f : E → M} (hf : Continuous f) (Φ : M ≃ₜ E × F)
     (hΦ : ∀ x, (Φ (f x)).1 = x) :
-    IsLocallyFlat E F f := by
+    IsLocallyFlat H F f := by
   let g : E → F := fun x => (Φ (f x)).2
   have hg : Continuous g := by
     apply continuous_snd.comp
     exact Φ.continuous.comp hf
-  have hgraph : IsLocallyFlat E F (fun x => (x, g x)) :=
+  have hgraph : IsLocallyFlat H F (fun x => (x, g x)) :=
     TauCeti.isLocallyFlat_graph g hg
   have htransport := hgraph.homeomorph_comp Φ.symm
   convert htransport using 1
@@ -1076,7 +1080,7 @@ private theorem range_symm_zero_eq_inter {ψ : OpenPartialHomeomorph M (F × G)}
   constructor
   · rintro ⟨v, rfl⟩
     have hmem : ((v : F), (0 : G)) ∈ ψ.target := by
-      rw [hψt]; exact ⟨v.2, mem_ball_self hr⟩
+      rw [hψt]; exact ⟨v.property, mem_ball_self hr⟩
     exact ⟨ψ.map_target hmem, hψ.symm_mk_zero_mem hmem⟩
   · rintro ⟨hms, hmr⟩
     have h1 : (ψ m).1 ∈ u := by

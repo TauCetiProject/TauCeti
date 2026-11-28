@@ -187,12 +187,10 @@ vector `v`, since the projection then has the section `b ↦ (b, v)`. -/
 theorem injective_singularCohomologyMap_prodThomPairPuncturedProj {v : F} (hv : v ≠ 0) (m : ℕ) :
     Function.Injective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
       (M := M) (prodThomPairPuncturedProj B F) m) := by
-  let s : TopCat.of B ⟶ (prodThomPair B F).snd :=
-    TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
-  have hs : s ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
-    TopCat.ext fun b ↦ prodThomPairPuncturedProj_apply F (s b)
-  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap s m) fun b ↦ ?_
-  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
+  refine Function.LeftInverse.injective
+    (g := TopCat.singularCohomologyMap (prodThomPairPuncturedSection B v hv) m) fun b ↦ ?_
+  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
+    prodThomPairPuncturedSection_comp_prodThomPairPuncturedProj,
     TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
 
 /-- **The connecting morphism of the Thom pair of a product bundle on a complement of the

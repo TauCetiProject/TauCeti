@@ -48,6 +48,9 @@ uniquely `X + i Y` with `X` and `Y` in `𝔰𝔭(n)`.
   **the Lie algebra of the compact symplectic group is the skew-Hermitian matrices in `sp`.**
 * `TauCeti.Lie.isEmbeddedLieSubgroup_GLSymplectic_inf_unitarySubgroup`: the compact symplectic
   group is an embedded Lie subgroup of the general linear group, hence a Lie group.
+* `TauCeti.Lie.compactSymplecticEmbeddedData`, `TauCeti.Lie.compactSymplecticChartedSpace`,
+  `TauCeti.Lie.compactSymplecticLieGroup`: its closed-subgroup data, charts and Lie group
+  structure.
 * `TauCeti.Lie.isBaseChange_complex_GLSymplectic_inf_unitarySubgroup`: the matrix coordinates
   exhibit `𝔰𝔭(2n, ℂ)` as the complexification of the Lie algebra of `Sp(n)`.
 * `TauCeti.Lie.compactSymplecticComplexificationLieEquiv`: **the complex Lie algebra isomorphism
@@ -67,7 +70,7 @@ uniquely `X + i Y` with `X` and `Y` in `𝔰𝔭(n)`.
 public section
 
 open Manifold TensorProduct
-open scoped Manifold Matrix Matrix.Norms.Operator
+open scoped ContDiff Manifold Matrix Matrix.Norms.Operator
 
 noncomputable section
 
@@ -121,6 +124,34 @@ theorem isEmbeddedLieSubgroup_GLSymplectic_inf_unitarySubgroup :
   isEmbeddedLieSubgroup_of_isClosed ((isClosed_GLSymplectic l 𝕜).inter
     (isClosed_unitarySubgroup_units (Matrix (l ⊕ l) (l ⊕ l) 𝕜)))
 
+variable (l 𝕜)
+
+/-- The model of the compact symplectic group: its Lie algebra as a closed subgroup of the general
+linear group. -/
+abbrev CompactSymplecticModel :=
+  (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜))
+    (GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜) :
+      Subgroup (Matrix (l ⊕ l) (l ⊕ l) 𝕜)ˣ)).toSubmodule
+
+/-- The closed-subgroup data of the compact symplectic group inside the general linear group. -/
+def compactSymplecticEmbeddedData :
+    EmbeddedLieSubgroupData 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜)
+      (GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜)) (CompactSymplecticModel l 𝕜) :=
+  EmbeddedLieSubgroupData.ofIsClosed ((isClosed_GLSymplectic l 𝕜).inter
+    (isClosed_unitarySubgroup_units (Matrix (l ⊕ l) (l ⊕ l) 𝕜)))
+
+/-- The closed-subgroup charts of the compact symplectic group. -/
+instance compactSymplecticChartedSpace :
+    ChartedSpace (CompactSymplecticModel l 𝕜)
+      ↥(GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜)) :=
+  (compactSymplecticEmbeddedData l 𝕜).chartedSpace
+
+/-- The real Lie group structure of the compact symplectic group in its closed-subgroup charts. -/
+instance compactSymplecticLieGroup :
+    LieGroup 𝓘(ℝ, CompactSymplecticModel l 𝕜) ∞
+      ↥(GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜)) :=
+  (compactSymplecticEmbeddedData l 𝕜).lieGroup
+
 end RCLike
 
 /-! ### The complexification -/
@@ -144,13 +175,13 @@ theorem isBaseChange_complex_GLSymplectic_inf_unitarySubgroup :
           (GLSymplectic l ℂ ⊓ unitarySubgroup (GL (l ⊕ l) ℂ) :
             Subgroup (Matrix (l ⊕ l) (l ⊕ l) ℂ)ˣ) →ₗ[ℝ] Matrix (l ⊕ l) (l ⊕ l) ℂ)
       fun X ↦ unitsLieAlgebraLieEquiv_mem_sp_of_mem_lieSubalgebraOfSubgroup
-        (lieSubalgebraOfSubgroup_mono inf_le_left X.2)) := by
+        (lieSubalgebraOfSubgroup_mono inf_le_left X.property)) := by
   let e := unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) ℂ)
   refine LinearMap.isBaseChange_complex_codRestrict_of_star_eq_neg _
     (fun A hA ↦ Matrix.star_eq_conjTranspose A ▸ LieAlgebra.Symplectic.conjTranspose_mem_sp hA) _
     (fun X Y h ↦ Subtype.ext (e.injective h)) (fun X ↦ ?_) fun A hA hskew ↦ ?_
-  · have hX := X.2
-    rw [← e.symm_apply_apply X.1,
+  · have hX := X.property
+    rw [← e.symm_apply_apply X.val,
       unitsLieAlgebraLieEquiv_symm_mem_GLSymplectic_inf_unitarySubgroup_lieSubalgebra_iff] at hX
     rw [Matrix.star_eq_conjTranspose]
     exact hX.2
@@ -188,7 +219,7 @@ theorem compactSymplecticComplexificationLieEquiv_symm_apply
     (compactSymplecticComplexificationLieEquiv l).symm
         ⟨unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) ℂ) (X : LeftInvariantDerivation _ _),
           unitsLieAlgebraLieEquiv_mem_sp_of_mem_lieSubalgebraOfSubgroup
-            (lieSubalgebraOfSubgroup_mono inf_le_left X.2)⟩ =
+            (lieSubalgebraOfSubgroup_mono inf_le_left X.property)⟩ =
       1 ⊗ₜ[ℝ] X :=
   (isBaseChange_complex_GLSymplectic_inf_unitarySubgroup l).lieEquivOfCodRestrict_symm_apply X
 

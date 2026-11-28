@@ -38,6 +38,8 @@ element. Its recurrence follows from Pascal's identity, and the initial value is
 
 Weighting a binomial antidiagonal sum by its first index lowers its order by one. This identity
 applies to sums in any additive commutative monoid, including coefficient sums for formal fields.
+The top term of a binomially weighted sum `∑_{i ≤ n} (n choose i) fᵢ`, such as a Leibniz sum, has
+coefficient one, so it splits off as `fₙ`.
 
 ## Main results
 
@@ -48,6 +50,10 @@ applies to sums in any additive commutative monoid, including coefficient sums f
   `∑_{k ≤ N - K} (k + r)⁽ᵐ⁾ * C(k + r - 1, k) * C(N - r - k, K - r) = r⁽ᵐ⁾ * C(N + m, K + m)`.
 * `Nat.sum_range_choose_mul_choose_add_sum_range_choose_mul_choose`: the complementary partial
   sums, distinguished by whether the `r`th element lies among the first `k + r` positions.
+* `Finset.sum_range_succ_choose_nsmul`: splitting the top term off a binomially weighted sum,
+  `∑_{i ≤ n} (n choose i) fᵢ = ∑_{i < n} (n choose i) fᵢ + fₙ`.
+* `Nat.one_add_mul_sum_range_add_choose_le`: the hockey-stick majorant bound
+  `1 + m * ∑ k ∈ range (n + 1), (k + m).choose m ≤ (n + 1) * (n + 1 + m).choose m`.
 
 ## References
 
@@ -70,6 +76,12 @@ theorem sum_antidiagonal_choose_succ_nsmul_nsmul {M : Type*} [AddCommMonoid M]
   simp only [zero_smul, smul_zero, zero_add]
   simp_rw [← mul_smul, ← Nat.add_one_mul_choose_eq, mul_smul]
   rw [smul_sum]
+
+/-- The top term of a binomially weighted sum has coefficient `n choose n = 1`:
+`∑_{i ≤ n} (n choose i) fᵢ = ∑_{i < n} (n choose i) fᵢ + fₙ`. -/
+theorem sum_range_succ_choose_nsmul {M : Type*} [AddCommMonoid M] (n : ℕ) (f : ℕ → M) :
+    ∑ i ∈ range (n + 1), n.choose i • f i = ∑ i ∈ range n, n.choose i • f i + f n := by
+  rw [sum_range_succ, Nat.choose_self, one_smul]
 
 end Finset
 
@@ -222,5 +234,23 @@ theorem sum_antidiagonal_snd_add_choose (N k m : ℕ) :
       omega
     _ = (N + (m + 1)).choose (k + (m + 1)) := by
       simpa only [add_assoc] using sum_Icc_choose (N + m) (k + m)
+
+/-- Majorant bound from the hockey-stick identity `Nat.sum_range_add_choose` and absorption
+`Nat.choose_succ_right_eq`:
+`1 + m * ∑ k ∈ range (n + 1), (k + m).choose m ≤ (n + 1) * (n + 1 + m).choose m`. -/
+theorem one_add_mul_sum_range_add_choose_le (n m : ℕ) :
+    1 + m * ∑ k ∈ range (n + 1), (k + m).choose m ≤
+      (n + 1) * (n + 1 + m).choose m := by
+  rw [sum_range_add_choose n m]
+  have h1 : 1 ≤ (n + m + 1).choose (m + 1) := choose_pos (by omega)
+  have h2 : (n + m + 1).choose (m + 1) * (m + 1) = (n + 1) * (n + 1 + m).choose m := by
+    rw [choose_succ_right_eq (n + m + 1) m, Nat.add_right_comm n m 1,
+      Nat.add_sub_cancel, Nat.mul_comm]
+  calc
+    1 + m * (n + m + 1).choose (m + 1)
+        ≤ (n + m + 1).choose (m + 1) + m * (n + m + 1).choose (m + 1) :=
+          Nat.add_le_add_right h1 _
+    _ = (n + m + 1).choose (m + 1) * (m + 1) := by ring
+    _ = (n + 1) * (n + 1 + m).choose m := h2
 
 end Nat

@@ -8,10 +8,10 @@ module
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
-# Perfect pairings from Gram matrices
+# Perfect pairings and bases
 
 Let `B : M →ₗ[R] N →ₗ[R] R` be a bilinear pairing, `b` a basis of `M` and `c` a finite basis of
 `N`. If `e` is a bijection between the index sets and `B (b i) (c j)` is `1` when `j = e i` and `0`
@@ -24,6 +24,13 @@ indexed by the same type has unit determinant is a perfect pairing: in the bases
 basis of `c`, the map `M → Dual R N` given by `B` has matrix `Gᵀ`, which is invertible. Conversely,
 the Gram matrix of a perfect pairing in any such pair of bases has unit determinant.
 
+Conversely, a perfect pairing `p : M × N → R` turns a finite basis `e` of `N` into its *left dual
+basis* `e^i` of `M`, characterised by `p (e^i) (e_j) = δ_ij`, and every `x ∈ M` is
+`∑_j p(x, e_j) e^j`. The dual basis sits in the left slot of `p`: when `p` is not symmetric the
+right dual basis, with `p (e_j) (e^i) = δ_ij`, is a different basis. Mathlib's
+`LinearMap.BilinForm.dualBasis` is the case of a nondegenerate bilinear form on a
+finite-dimensional vector space; here the scalars form any commutative semiring.
+
 ## Main results
 
 * `Module.Basis.isPerfPair_of_apply_eq_ite`: a pairing whose Gram matrix in finite bases is the
@@ -35,6 +42,14 @@ the Gram matrix of a perfect pairing in any such pair of bases has unit determin
   determinant is a perfect pairing.
 * `Module.Basis.isUnit_det_of_isPerfPair`: the Gram matrix of a perfect pairing in finite bases has
   unit determinant.
+* `LinearMap.leftDualBasis`: the left dual basis of a finite basis for a perfect pairing, with
+  `LinearMap.apply_leftDualBasis`, `LinearMap.eq_leftDualBasis_iff`, the left dual of a pairing
+  given by a bijection of the index sets `LinearMap.coe_leftDualBasis_eq_comp_symm` and its
+  anti-diagonal case `LinearMap.coe_leftDualBasis_eq_comp_rev`, the biduality
+  `LinearMap.leftDualBasis_flip_leftDualBasis`, the coordinates
+  `LinearMap.apply_leftDualBasis_eq_repr` of `N` in `e`, the reconstruction
+  `LinearMap.sum_apply_smul_leftDualBasis`, and over a commutative ring the left dual basis through
+  the inverse Gram matrix, `LinearMap.leftDualBasis_apply_eq_sum_inv_toMatrix₂_smul`.
 -/
 
 public section
@@ -90,20 +105,116 @@ theorem isPerfPair_of_isUnit_det (b : Basis ι R M) (c : Basis ι R N) (B : M �
     (h : IsUnit (LinearMap.toMatrix₂ b c B).det) : B.IsPerfPair := by
   have : Module.Finite R N := .of_basis c
   have : Module.Free R N := .of_basis c
-  refine .of_bijective B ?_
-  rw [← LinearEquiv.coe_ofIsUnitDet (v := b) (v' := c.dualBasis) (f := B)
-    (by rwa [toMatrix_dualBasis_eq_transpose_toMatrix₂, det_transpose]), LinearEquiv.coe_coe]
-  exact LinearEquiv.bijective _
+  refine .of_bijective B ((LinearMap.isUnit_det_toMatrix_iff_bijective b c.dualBasis B).1 ?_)
+  rwa [toMatrix_dualBasis_eq_transpose_toMatrix₂, det_transpose]
 
 /-- **The Gram matrix of a perfect pairing in finite bases has unit determinant.** -/
 theorem isUnit_det_of_isPerfPair (b : Basis ι R M) (c : Basis ι R N) (B : M →ₗ[R] N →ₗ[R] R)
     (h : B.IsPerfPair) : IsUnit (LinearMap.toMatrix₂ b c B).det := by
-  -- `B`, read as a linear map into the dual of `N`, is the linear equivalence it induces.
-  have he : (LinearEquiv.ofBijective B h.bijective_left : M →ₗ[R] Module.Dual R N) = B :=
-    LinearMap.ext (LinearEquiv.ofBijective_apply B)
-  rw [← det_transpose, ← toMatrix_dualBasis_eq_transpose_toMatrix₂, ← he]
-  exact (LinearEquiv.ofBijective B h.bijective_left).isUnit_det b c.dualBasis
+  rw [← det_transpose, ← toMatrix_dualBasis_eq_transpose_toMatrix₂]
+  exact (LinearMap.isUnit_det_toMatrix_iff_bijective b c.dualBasis B).2 h.bijective_left
 
 end CommRing
 
 end Module.Basis
+
+namespace LinearMap
+
+open Module
+
+variable {ι R M N : Type*} [DecidableEq ι] [Finite ι] [CommSemiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+  (p : M →ₗ[R] N →ₗ[R] R) [p.IsPerfPair]
+
+/-- The **left dual basis** of a finite basis `e` of `N` for a perfect pairing `p : M × N → R`:
+the basis `e^i` of `M` with `p (e^i) (e_j) = δ_ij` (`LinearMap.apply_leftDualBasis`). It is the
+image of the dual basis of `e` under the identification of `Dual R N` with `M` given by `p`. -/
+noncomputable def leftDualBasis (e : Basis ι R N) : Basis ι R M :=
+  e.dualBasis.map p.toPerfPair.symm
+
+/-- The defining property of the left dual basis: `p (e^i) (e_j) = δ_ij`. -/
+@[simp]
+theorem apply_leftDualBasis (e : Basis ι R N) (i j : ι) :
+    p (p.leftDualBasis e i) (e j) = if j = i then 1 else 0 := by
+  simp [leftDualBasis, Finsupp.single_apply]
+
+/-- The left dual basis is the only family `f` of `M` with `p (f i) (e j) = δ_ij`. -/
+theorem eq_leftDualBasis_iff (e : Basis ι R N) {f : ι → M} :
+    f = p.leftDualBasis e ↔ ∀ i j, p (f i) (e j) = if j = i then 1 else 0 := by
+  refine ⟨fun h ↦ h ▸ p.apply_leftDualBasis e, fun h ↦ funext fun i ↦ ?_⟩
+  exact (IsPerfPair.bijective_left p).injective (e.ext fun j ↦ by rw [h, apply_leftDualBasis])
+
+/-- If `p (f k) (e j)` is `1` when `j = σ k` and `0` otherwise, for a bijection `σ` of the index
+sets, then the left dual basis of `e` is the family `f` reindexed along `σ`: `e^i = f (σ⁻¹ i)`. -/
+theorem coe_leftDualBasis_eq_comp_symm {κ : Type*} (e : Basis ι R N) {f : κ → M} (σ : κ ≃ ι)
+    (h : ∀ k j, p (f k) (e j) = if j = σ k then 1 else 0) :
+    ⇑(p.leftDualBasis e) = f ∘ σ.symm :=
+  ((p.eq_leftDualBasis_iff e).2 fun i j ↦ by
+    rw [Function.comp_apply, h, Equiv.apply_symm_apply]).symm
+
+/-- For the anti-diagonal pairing, with `p (f i) (e j)` equal to `1` when `i + j = n` and `0`
+otherwise, the left dual basis of `e` is the family `f` reversed: `e^j = f (n - j)`. -/
+theorem coe_leftDualBasis_eq_comp_rev {n : ℕ} (e : Basis (Fin (n + 1)) R N)
+    {f : Fin (n + 1) → M}
+    (h : ∀ i j : Fin (n + 1), p (f i) (e j) = if (i : ℕ) + j = n then 1 else 0) :
+    ⇑(p.leftDualBasis e) = f ∘ Fin.rev := by
+  rw [p.coe_leftDualBasis_eq_comp_symm e Fin.revPerm fun i j ↦ ?_, Fin.revPerm_symm]
+  · funext i
+    rw [Function.comp_apply, Function.comp_apply, Fin.revPerm_apply]
+  rw [h]
+  refine if_congr ?_ rfl rfl
+  rw [Fin.revPerm_apply, Fin.ext_iff, Fin.val_rev]
+  omega
+
+/-- **Biduality of the left dual basis.** The left dual basis of `e^i` for the flipped pairing is
+`e` again. -/
+@[simp]
+theorem leftDualBasis_flip_leftDualBasis (e : Basis ι R N) :
+    p.flip.leftDualBasis (p.leftDualBasis e) = e :=
+  Basis.eq_of_apply_eq fun i ↦ (congr_fun ((p.flip.eq_leftDualBasis_iff _).2 fun i j ↦ by
+    rw [flip_apply, apply_leftDualBasis]
+    exact if_congr eq_comm rfl rfl) i).symm
+
+/-- Pairing against the left dual basis vector `e^i` reads off the `i`-th coordinate in `e`. -/
+theorem apply_leftDualBasis_eq_repr (e : Basis ι R N) (i : ι) (y : N) :
+    p (p.leftDualBasis e i) y = e.repr y i := by
+  have h : p (p.leftDualBasis e i) = Finsupp.lapply i ∘ₗ e.repr.toLinearMap :=
+    e.ext fun j ↦ by simp [Finsupp.single_apply]
+  exact LinearMap.congr_fun h y
+
+/-- The coordinates of `x ∈ M` in the left dual basis of `e` are the pairings `p x (e_i)`. -/
+@[simp]
+theorem leftDualBasis_repr_apply (e : Basis ι R N) (x : M) (i : ι) :
+    (p.leftDualBasis e).repr x i = p x (e i) := by
+  simp [leftDualBasis]
+
+/-- **The left-dual reconstruction.** Every `x ∈ M` is `∑_j p(x, e_j) e^j`, for the left dual
+basis `e^j` of a finite basis `e` of `N`. -/
+theorem sum_apply_smul_leftDualBasis [Fintype ι] (e : Basis ι R N) (x : M) :
+    ∑ j, p x (e j) • p.leftDualBasis e j = x := by
+  simpa using (p.leftDualBasis e).sum_repr x
+
+end LinearMap
+
+namespace LinearMap
+
+open Module
+
+variable {ι R M N : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (p : M →ₗ[R] N →ₗ[R] R)
+  [p.IsPerfPair]
+
+/-- **The left dual basis through the inverse Gram matrix.** For finite bases `b` of `M` and `e` of
+`N` indexed by the same type, with Gram matrix `G_ij = p (bᵢ) (eⱼ)`, the left dual basis of `e` is
+`eⁱ = ∑ⱼ (G⁻¹)ᵢⱼ bⱼ`. -/
+theorem leftDualBasis_apply_eq_sum_inv_toMatrix₂_smul (b : Basis ι R M)
+    (e : Basis ι R N) (i : ι) :
+    p.leftDualBasis e i = ∑ j, (toMatrix₂ b e p)⁻¹ i j • b j := by
+  have hG := (toMatrix₂ b e p).nonsing_inv_mul (Basis.isUnit_det_of_isPerfPair b e p ‹_›)
+  refine congr_fun ((p.eq_leftDualBasis_iff e (f := fun i ↦ ∑ j, (toMatrix₂ b e p)⁻¹ i j • b j)).2
+    fun i k ↦ ?_).symm i
+  have := congr_fun (congr_fun hG i) k
+  simp only [Matrix.mul_apply, toMatrix₂_apply, Matrix.one_apply] at this
+  simp [this, eq_comm]
+
+end LinearMap

@@ -153,24 +153,9 @@ theorem exists_isBlock_superset (hconn : (G.induce B).Connected)
           · obtain ⟨v, hv⟩ := (hc hD).1.nonempty
             exact ⟨v, hDC hv, hv⟩
       · exact fun hC ↦ (hc hC).1
-    · apply not_isCutVertex_induce_of_exists_walk
-      intro x hx a ha b hb hax hbx
-      let F : Set V := {x, a, b}
-      have hF : F.Finite := by simp [F]
-      have hFU : F ⊆ ⋃₀ c := by
-        intro y hy
-        simp only [F, Set.mem_insert_iff, Set.mem_singleton_iff] at hy
-        rcases hy with rfl | rfl | rfl
-        · exact hx
-        · exact ha
-        · exact hb
-      obtain ⟨C, hC, hFC⟩ := hchain.directedOn.exists_mem_subset_of_finite_of_subset_sUnion
-        hne hF hFU
-      have haC : a ∈ C := hFC (by simp [F])
-      have hbC : b ∈ C := hFC (by simp [F])
-      obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne
-        (hc hC).1 (hc hC).2 haC hbC hax hbx
-      exact ⟨p, fun y hy ↦ ⟨Set.mem_sUnion_of_mem ((hp y hy).1) hC, (hp y hy).2⟩⟩
+    · intro x
+      exact not_isCutVertex_induce_sUnion_of_directedOn hchain.directedOn
+        (fun C hC hx ↦ (hc hC).2 ⟨x, hx⟩)
   obtain ⟨C, hBC, hC⟩ := zorn_subset_nonempty P hchain B hBP
   exact ⟨C, by simpa only [IsBlock, P, Set.mem_ofPred_eq] using hC, hBC⟩
 
@@ -285,8 +270,8 @@ private theorem IsBlock.not_isCutVertex_induce_union (hB : G.IsBlock B)
     (x : ↑(B ∪ C)) : ¬(G.induce (B ∪ C)).IsCutVertex x := by
   classical
   -- One of the two common vertices survives deletion of `x` and serves as a hub.
-  obtain ⟨z, hzB, hzC, hzx⟩ : ∃ z, z ∈ B ∧ z ∈ C ∧ z ≠ x.1 := by
-    by_cases hxu : x.1 = u
+  obtain ⟨z, hzB, hzC, hzx⟩ : ∃ z, z ∈ B ∧ z ∈ C ∧ z ≠ x.val := by
+    by_cases hxu : x.val = u
     · exact ⟨v, hvB, hvC, fun hvx ↦ huv (hxu.symm.trans hvx.symm)⟩
     · exact ⟨u, huB, huC, Ne.symm hxu⟩
   let zU : ↑(B ∪ C) := ⟨z, Or.inl hzB⟩
@@ -294,8 +279,8 @@ private theorem IsBlock.not_isCutVertex_induce_union (hB : G.IsBlock B)
   have connect (a : ↑(B ∪ C)) (hax : a ≠ x) :
       ∃ p : (G.induce (B ∪ C)).Walk a zU,
         ∀ y ∈ p.support, y ≠ x := by
-    have hax' : a.1 ≠ x.1 := fun h ↦ hax (Subtype.ext h)
-    obtain ⟨p, hp⟩ : ∃ p : G.Walk a.1 z, ∀ y ∈ p.support, y ∈ B ∪ C ∧ y ≠ x.1 := by
+    have hax' : a.val ≠ x.val := fun h ↦ hax (Subtype.ext h)
+    obtain ⟨p, hp⟩ : ∃ p : G.Walk a.val z, ∀ y ∈ p.support, y ∈ B ∪ C ∧ y ≠ x.val := by
       rcases a.property with haB | haC
       · obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne hB.connected
           hB.not_isCutVertex haB hzB hax' hzx

@@ -465,9 +465,10 @@ theorem eventually_biUnion_subset_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
   have hclose : ∀ᶠ k in l, ∀ i ∈ t, |F k i.1 - u i.1| < (i.2 : ℝ) / 2 ∧
       ∀ x ∈ K, |F k x - u x| < (i.2 : ℝ) / 2 := by
     refine (Filter.eventually_all_finset t).2 fun i _ => ?_
-    have hi : 0 < (i.2 : ℝ) / 2 := half_pos i.2.2
+    have hi : 0 < (i.2 : ℝ) / 2 := half_pos i.2.property
     filter_upwards [hFu.eventually_forall_dist_lt isCompact_singleton
-      (singleton_subset_iff.2 i.1.2) hi, hFu.eventually_forall_dist_lt hK hKΩ hi] with k h₁ h₂
+      (singleton_subset_iff.2 i.1.property) hi, hFu.eventually_forall_dist_lt hK hKΩ hi] with k h₁
+          h₂
     simp only [Real.dist_eq] at h₁ h₂
     exact ⟨h₁ _ rfl, h₂⟩
   filter_upwards [hbd, hclose] with k hk hk' y hy
@@ -477,7 +478,7 @@ theorem eventually_biUnion_subset_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
     ⟨hx, mem_closedBall_zero_iff.2 (hk x hx y hxy), hyV⟩
   refine disjoint_left.1 ht hmem (mem_iInter₂.2 fun i hi => ⟨subset_closure hx, ?_⟩)
   obtain ⟨h₁, h₂⟩ := hk' i hi
-  have h₃ := hxy i.1 i.1.2
+  have h₃ := hxy i.1 i.1.property
   dsimp only
   linarith [(abs_lt.1 h₁).2, (abs_lt.1 (h₂ x hx)).1]
 

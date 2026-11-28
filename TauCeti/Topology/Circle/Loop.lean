@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Topology.Path
 public import TauCeti.Topology.Circle.AddCircle
 import TauCeti.Algebra.Group.Pow
@@ -30,6 +31,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 * `Path.toCircle`: a loop, read as a map from the unit circle.
 * `ContinuousMap.toBasedLoop`: the loop `t ↦ f(e^{2πit})` at `f 1` of a circle map `f`, a right
   inverse of `Path.toCircle` (`ContinuousMap.toBasedLoop_toCircle`).
+* `TauCeti.circleRotationGenLoop`: the loop of rotations `t ↦ (z ↦ z * exp (2πit))` of the circle,
+  based at the identity.
 * `TauCeti.torusCurve p q`: the `(p, q)` curve on `S¹ × S¹`, a loop at `(1, 1)`.
 * `TauCeti.torusGluing`: a torus homeomorphism given by a determinant-one integer matrix.
 
@@ -37,6 +40,10 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `TauCeti.unitToCircle_surjective`, `TauCeti.unitToCircle_eq_one_iff`,
   `TauCeti.eq_or_of_unitToCircle_eq`: quotient properties of `unitToCircle`.
+* `TauCeti.unitToCircle_mul_unitToCircle`: `unitToCircle` turns addition modulo one into
+  multiplication.
+* `TauCeti.homeomorphCircle_symm_unitToCircle`: `unitToCircle t` corresponds to the class of `t`
+  in `UnitAddCircle`.
 * `ContinuousMap.ext_unitToCircle`: maps out of the circle agreeing on the image of
   `unitToCircle` are equal.
 * `Path.toCircle_unitToCircle`, `Path.toCircle_exp`: `unitToCircle t = exp (2πit)` goes to `γ t`.
@@ -48,6 +55,7 @@ public section
 noncomputable section
 
 open unitInterval
+open scoped Topology.Homotopy
 
 namespace TauCeti
 
@@ -55,10 +63,17 @@ namespace TauCeti
 `1 ∈ Circle` and mapping `(0, 1)` bijectively onto `Circle \ {1}`. -/
 def unitToCircle : C(I, Circle) where
   toFun t := Circle.exp (2 * Real.pi * t)
-  continuous_toFun := Circle.exp.continuous.comp (continuous_const.mul continuous_subtype_val)
+  continuous_toFun := Circle.exp.continuous.comp (continuous_const.mul continuous_subtypeVal)
 
 theorem unitToCircle_apply (t : I) : unitToCircle t = Circle.exp (2 * Real.pi * t) :=
   (rfl)
+
+/-- The point `unitToCircle t` of `Circle` is the class of `t` in `UnitAddCircle`, under
+`AddCircle.homeomorphCircle`. -/
+@[simp]
+theorem homeomorphCircle_symm_unitToCircle (t : I) :
+    (AddCircle.homeomorphCircle one_ne_zero).symm (unitToCircle t) = ((t : ℝ) : UnitAddCircle) := by
+  rw [unitToCircle_apply, AddCircle.homeomorphCircle_one_symm_exp]
 
 @[simp]
 theorem unitToCircle_zero : unitToCircle 0 = 1 := by
@@ -87,8 +102,8 @@ theorem unitToCircle_eq_one_iff (t : I) : unitToCircle t = 1 ↔ t = 0 ∨ t = 1
     obtain ⟨n, hn⟩ := h
     have hp : (2 * Real.pi) ≠ 0 := by positivity
     have htn : (t : ℝ) = n := mul_left_cancel₀ hp (by linarith)
-    have h0 : 0 ≤ n := by exact_mod_cast (htn ▸ t.2.1 : (0 : ℝ) ≤ n)
-    have h1 : n ≤ 1 := by exact_mod_cast (htn ▸ t.2.2 : (n : ℝ) ≤ 1)
+    have h0 : 0 ≤ n := by exact_mod_cast (htn ▸ t.property.1 : (0 : ℝ) ≤ n)
+    have h1 : n ≤ 1 := by exact_mod_cast (htn ▸ t.property.2 : (n : ℝ) ≤ 1)
     have hn01 : n = 0 ∨ n = 1 := by omega
     rcases hn01 with rfl | rfl
     · exact Or.inl (Subtype.ext (by simpa using htn))
@@ -102,23 +117,43 @@ theorem eq_or_of_unitToCircle_eq {s t : I} (h : unitToCircle s = unitToCircle t)
   obtain ⟨m, hm⟩ := h
   have hp : (2 * Real.pi) ≠ 0 := by positivity
   have hst : (s : ℝ) = t + m := mul_left_cancel₀ hp (by linarith)
-  have hm1 : (-1 : ℝ) ≤ m := by linarith [s.2.1, t.2.2]
-  have hm2 : (m : ℝ) ≤ 1 := by linarith [s.2.2, t.2.1]
+  have hm1 : (-1 : ℝ) ≤ m := by linarith [s.property.1, t.property.2]
+  have hm2 : (m : ℝ) ≤ 1 := by linarith [s.property.2, t.property.1]
   have hm1' : -1 ≤ m := by exact_mod_cast hm1
   have hm2' : m ≤ 1 := by exact_mod_cast hm2
   have hcases : m = -1 ∨ m = 0 ∨ m = 1 := by omega
   rcases hcases with rfl | rfl | rfl
   · right; left
     push_cast at hst
-    exact ⟨Subtype.ext (by simpa using (by linarith [s.2.1, t.2.2] : (s : ℝ) = 0)),
-      Subtype.ext (by simpa using (by linarith [s.2.1, t.2.2] : (t : ℝ) = 1))⟩
+    exact ⟨Subtype.ext (by simpa using (by linarith [s.property.1, t.property.2] : (s : ℝ) = 0)),
+      Subtype.ext (by simpa using (by linarith [s.property.1, t.property.2] : (t : ℝ) = 1))⟩
   · left
     push_cast at hst
     exact Subtype.ext (by linarith)
   · right; right
     push_cast at hst
-    exact ⟨Subtype.ext (by simpa using (by linarith [s.2.2, t.2.1] : (s : ℝ) = 1)),
-      Subtype.ext (by simpa using (by linarith [s.2.2, t.2.1] : (t : ℝ) = 0))⟩
+    exact ⟨Subtype.ext (by simpa using (by linarith [s.property.2, t.property.1] : (s : ℝ) = 1)),
+      Subtype.ext (by simpa using (by linarith [s.property.2, t.property.1] : (t : ℝ) = 0))⟩
+
+/-- `unitToCircle` turns addition modulo one into multiplication: if `s + t = v + n` for an integer
+`n`, then `exp (2πis) * exp (2πit) = exp (2πiv)`. -/
+theorem unitToCircle_mul_unitToCircle {s t v : I} (n : ℤ) (h : (s : ℝ) + t = v + n) :
+    unitToCircle s * unitToCircle t = unitToCircle v := by
+  rw [unitToCircle_apply, unitToCircle_apply, unitToCircle_apply, ← Circle.exp_add, ← mul_add, h,
+    mul_add, Circle.exp_add, Circle.exp_two_pi_mul_int, mul_one]
+
+/-- The loop of rotations of the circle, `t ↦ (z ↦ z * exp (2πit))`, based at the identity. -/
+def circleRotationGenLoop : Ω^ (Fin 1) C(Circle, Circle) (ContinuousMap.id Circle) :=
+  ⟨ContinuousMap.curry ⟨fun p : (Fin 1 → I) × Circle ↦ p.2 * unitToCircle (p.1 0), by fun_prop⟩,
+    fun t ⟨i, hi⟩ ↦ by
+      obtain rfl := Subsingleton.elim i 0
+      ext z
+      rcases hi with hi | hi <;> simp [hi]⟩
+
+@[simp]
+theorem circleRotationGenLoop_apply (t : Fin 1 → I) (z : Circle) :
+    circleRotationGenLoop t z = z * unitToCircle (t 0) :=
+  (rfl)
 
 end TauCeti
 
@@ -145,16 +180,13 @@ def toCircle (γ : Path x x) : C(Circle, X) :=
 @[simp]
 theorem toCircle_unitToCircle (γ : Path x x) (t : I) :
     γ.toCircle (TauCeti.unitToCircle t) = γ t := by
-  have h : (AddCircle.homeomorphCircle one_ne_zero).symm (TauCeti.unitToCircle t) =
-      ((t : ℝ) : AddCircle (1 : ℝ)) := by
-    rw [TauCeti.unitToCircle_apply, Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply,
-      AddCircle.toCircle_apply_mk, div_one]
-  rw [toCircle, ContinuousMap.coe_mk, Function.comp_apply, h]
-  rcases eq_or_lt_of_le t.2.2 with ht | ht
+  rw [toCircle, ContinuousMap.coe_mk, Function.comp_apply,
+    TauCeti.homeomorphCircle_symm_unitToCircle]
+  rcases eq_or_lt_of_le t.property.2 with ht | ht
   · have ht' : t = 1 := Subtype.ext ht
     rw [ht, AddCircle.coe_period, ← AddCircle.coe_zero (p := (1 : ℝ)),
       AddCircle.liftIco_zero_coe_apply ⟨le_rfl, zero_lt_one⟩, γ.extend_zero, ht', γ.target]
-  · rw [AddCircle.liftIco_zero_coe_apply ⟨t.2.1, ht⟩, γ.extend_extends']
+  · rw [AddCircle.liftIco_zero_coe_apply ⟨t.property.1, ht⟩, γ.extend_extends']
 
 /-- The point `exp (2πit)` of the circle goes to `γ t`. -/
 theorem toCircle_exp (γ : Path x x) (t : I) :
@@ -165,6 +197,13 @@ theorem toCircle_exp (γ : Path x x) (t : I) :
 @[simp]
 theorem toCircle_one (γ : Path x x) : γ.toCircle 1 = x := by
   simpa using γ.toCircle_unitToCircle 0
+
+/-- The constant loop at `x` is the constant map from the circle. -/
+@[simp]
+theorem toCircle_refl (x : X) : (Path.refl x).toCircle = ContinuousMap.const Circle x := by
+  ext z
+  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective z
+  simp
 
 end Path
 

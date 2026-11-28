@@ -40,6 +40,8 @@ change.
 * `Homeomorph.isHurewiczFibration`, `TauCeti.isHurewiczFibration_fst`,
   `TauCeti.isHurewiczFibration_of_subsingleton`: homeomorphisms, product projections and maps to a
   subsingleton are Hurewicz fibrations.
+* `TauCeti.not_isHurewiczFibration_const_unit`: the inclusion of a point is not a Hurewicz
+  fibration when a path leaves the point.
 
 ## References
 
@@ -111,7 +113,7 @@ theorem prodMap {E' : Type u'} {B' : Type v'} [TopologicalSpace E'] [Topological
 /-- The base change of a Hurewicz fibration along any continuous map is a Hurewicz fibration. -/
 theorem pullback {B' : Type v'} [TopologicalSpace B'] (hp : IsHurewiczFibration.{w} p)
     (g : C(B', B)) :
-    IsHurewiczFibration.{w} (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.1.1) :=
+    IsHurewiczFibration.{w} (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.val.1) :=
   ⟨by fun_prop, fun A _ ↦ (hp.2 A).pullback g⟩
 
 /-- Precomposing a Hurewicz fibration with a homeomorphism gives a Hurewicz fibration. -/
@@ -124,7 +126,7 @@ joining by paths, for instance a union of path components, is a Hurewicz fibrati
 theorem comp_subtypeVal (hp : IsHurewiczFibration.{w} p) {S : Set E}
     (hS : ∀ ⦃e e' : E⦄, e ∈ S → Joined e e' → e' ∈ S) :
     IsHurewiczFibration.{w} (p ∘ Subtype.val : S → B) :=
-  ⟨hp.1.comp continuous_subtype_val,
+  ⟨hp.1.comp continuous_subtypeVal,
     fun A _ ↦ HasHomotopyLiftingProperty.comp_subtypeVal (hp.2 A) hS⟩
 
 end IsHurewiczFibration
@@ -138,5 +140,12 @@ theorem isHurewiczFibration_of_subsingleton [Subsingleton B] : IsHurewiczFibrati
 theorem isHurewiczFibration_fst (F : Type u') [TopologicalSpace F] :
     IsHurewiczFibration.{w} (Prod.fst : B × F → B) :=
   ⟨continuous_fst, fun A _ ↦ hasHomotopyLiftingProperty_fst F A⟩
+
+/-- **The inclusion of a point `x` is not a Hurewicz fibration** as soon as a path leaves `x`: a
+path from `x` to `y ≠ x` does not lift to the point. -/
+theorem not_isHurewiczFibration_const_unit {x y : B} (hxy : Joined x y) (hy : y ≠ x) :
+    ¬ IsHurewiczFibration.{w} (fun _ : Unit ↦ x) := fun h ↦ by
+  obtain ⟨⟨u, hu⟩, -⟩ := (h.hasHomotopyLiftingProperty PUnit).exists_joined_of_joined (y := ()) hxy
+  exact hy hu.symm
 
 end TauCeti

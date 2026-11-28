@@ -14,6 +14,9 @@ public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
+import TauCeti.Analysis.InnerProductSpace.Spectrum
+
+import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # Singular values, the two Gram spectra, and the singular system
@@ -55,14 +58,19 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.sq_singularValues_antitone`: the squared singular values are nonincreasing.
 * `LinearMap.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis`: any sorted orthonormal
   Gram eigenbasis recovers the squared singular values, with a zero tail.
+* `LinearMap.IsPositive.eigenvalues_eq_singularValues`: the sorted eigenvalues of a positive
+  endomorphism are its singular values.
 * `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
   for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
+* `LinearMap.operatorAbs_rightSingularBasis`: `|A| vᵢ = σᵢ vᵢ`.
 * `LinearMap.singularValues_eq_single_of_finrank_eq_one`: on a one-dimensional source the only
   singular value is `‖A x‖` for a unit vector `x`.
 * `LinearMap.singularValues_mul_norm_le_norm_apply`,
   `LinearMap.norm_apply_le_singularValues_mul_norm`: `σₙ ‖x‖ ≤ ‖A x‖` on the span of the `vᵢ`
   with `i ≤ n`, and `‖A x‖ ≤ σₙ ‖x‖` on the span of the `vᵢ` with `n ≤ i`.
+* `LinearMap.exists_unit_vector_norm_apply_le_singularValues`: every subspace of dimension at
+  least `k + 1` contains a unit vector `x` with `‖A x‖ ≤ σₖ`.
 * `LinearMap.apply_rightSingularBasis`: `A vᵢ = σᵢ uᵢ`.
 * `LinearMap.adjoint_leftSingularVector`: `A† uᵢ = σᵢ vᵢ`.
 * `LinearMap.self_comp_adjoint_leftSingularVector`: `A A† uᵢ = σᵢ² uᵢ`.
@@ -74,6 +82,8 @@ of `A` run over the whole basis without splitting off the kernel.
   decomposition in rank-one form.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
+* `LinearMap.trace_adjoint_comp_eq_sum_singularValues_mul_inner`:
+  `tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`.
 
 ## Comparison of singular values
 
@@ -84,6 +94,8 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_comp_le_right`: if `‖C x‖ ≤ c ‖x‖` for every `x`, with `c ≥ 0`, then
+  `σᵢ(A C) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_le_of_norm_apply_le`: if `‖A x‖ ≤ c ‖x‖` for every `x`, with
   `c ≥ 0`, then `σᵢ(A) ≤ c` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
@@ -99,6 +111,8 @@ Courant–Fischer min–max principle for their source Gram operators.
 * `ContinuousLinearMap.singularValues_comp_starProjection_range`: an operator into any finite-
   dimensional inner product space has the same singular values after a range projection as
   after the corresponding isometric trial map.
+* `LinearMap.singularValues_rpow_sum_le_mul`, `LinearMap.singularValues_rpow_sum_eq_mul`:
+  lifting pointwise singular-value comparison and scaling to rooted `Lᵖ` sums for `0 < p`.
 
 ## Diagonal models
 
@@ -324,6 +338,15 @@ theorem apply_rightSingularBasis_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
     A (A.rightSingularBasis i) = 0 ↔ A.singularValues i = 0 := by
   rw [← norm_eq_zero, norm_apply_rightSingularBasis]
 
+/-- Applying the operator modulus `|A| = √(A† A)` to a right singular vector `vᵢ` scales it by
+the singular value `σᵢ`. -/
+theorem operatorAbs_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
+    A.operatorAbs (A.rightSingularBasis i) =
+      ((A.singularValues i : ℝ) : 𝕜) • A.rightSingularBasis i := by
+  rw [(isPositive_adjoint_comp_self A).sqrt_unique A.isPositive_operatorAbs A.operatorAbs_sq,
+    (isPositive_adjoint_comp_self A).sqrt_apply_of_apply_eq_smul
+      (A.adjoint_comp_self_rightSingularBasis i), Real.sqrt_sq (A.singularValues_nonneg i)]
+
 /-- On the span of the right singular vectors `vᵢ` with `i ≤ n`, `A` stretches every vector by at
 least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
 theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
@@ -355,7 +378,21 @@ theorem sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (A : E →ₗ[𝕜]
   have hm : finrank 𝕜 E = m := by
     rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
   rw [A.sq_singularValues_fin hm k,
-    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e hμ he]
+    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e.toBasis hμ
+      (by simpa using he)]
+
+/-- The sorted eigenvalues of a positive endomorphism are its singular values. -/
+theorem IsPositive.eigenvalues_eq_singularValues {P : E →ₗ[𝕜] E} (hP : P.IsPositive) {n : ℕ}
+    (hn : finrank 𝕜 E = n) (j : Fin n) :
+    hP.isSymmetric.eigenvalues hn j = P.singularValues j := by
+  -- The eigenbasis of `P` is a Gram eigenbasis with the sorted eigenvalues `λᵢ²`.
+  have hsq := P.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis
+    (hP.isSymmetric.eigenvectorBasis hn) (μ := fun i ↦ hP.isSymmetric.eigenvalues hn i ^ 2)
+    (fun _ k hik ↦ pow_le_pow_left₀ (hP.nonneg_eigenvalues hn k)
+      (hP.isSymmetric.eigenvalues_antitone hn hik) 2)
+    (fun i ↦ by
+      simp [hP.isSymmetric.adjoint_eq, hP.isSymmetric.apply_eigenvectorBasis, smul_smul, sq]) j
+  exact (sq_eq_sq₀ (hP.nonneg_eigenvalues hn j) (P.singularValues_nonneg j)).mp hsq.symm
 
 /-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
 most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
@@ -365,6 +402,19 @@ theorem norm_apply_le_singularValues_mul_norm {n : ℕ} {x : E}
   exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
     A.rightSingularBasis A.adjoint_comp_self_rightSingularBasis (A.singularValues_nonneg n)
     (fun i hi ↦ A.sq_singularValues_antitone hi) hx
+
+/-- **Courant–Fischer for singular values, upper direction.** Every subspace `V` of dimension at
+least `k + 1` contains a unit vector `x` with `‖A x‖ ≤ σₖ(A)`. -/
+theorem exists_unit_vector_norm_apply_le_singularValues {k : ℕ} (V : Submodule 𝕜 E)
+    (hV : k + 1 ≤ finrank 𝕜 V) : ∃ x ∈ V, ‖x‖ = 1 ∧ ‖A x‖ ≤ A.singularValues k := by
+  have hk : k < finrank 𝕜 E := hV.trans (Submodule.finrank_le V)
+  obtain ⟨x, hxV, hx1, hx⟩ :=
+    A.isSymmetric_adjoint_comp_self.exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank rfl
+      ⟨k, hk⟩ V hV
+  refine ⟨x, hxV, hx1, ?_⟩
+  rw [← A.sq_singularValues_of_lt rfl hk, comp_apply, adjoint_inner_left,
+    inner_self_eq_norm_sq] at hx
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (A.singularValues_nonneg k) two_ne_zero).mp hx
 
 /-- A right singular vector with singular value zero lies in the kernel, so `A vᵢ` is fixed by
 the scalar `σᵢ⁻² σᵢ²` (with total field inversion) even when `σᵢ = 0`. -/
@@ -395,6 +445,28 @@ theorem apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
   · rw [(A.apply_rightSingularBasis_eq_zero_iff).mpr hc, smul_zero]
   · rw [mul_inv_cancel₀ (by simpa using hc), one_smul]
 
+/-- A map factors `A` through its modulus exactly when it sends each right singular
+vector of nonzero singular value to its corresponding left singular vector. -/
+theorem comp_operatorAbs_eq_iff_apply_rightSingularBasis (D : E →ₗ[𝕜] F) :
+    D ∘ₗ A.operatorAbs = A ↔
+      ∀ i : Fin (finrank 𝕜 E), A.singularValues i ≠ 0 →
+        D (A.rightSingularBasis i) = A.leftSingularVector i := by
+  constructor
+  · intro h i hi
+    have hσ : ((A.singularValues i : ℝ) : 𝕜) ≠ 0 := by simpa using hi
+    have hv := LinearMap.congr_fun h (A.rightSingularBasis i)
+    rw [comp_apply, A.operatorAbs_rightSingularBasis, map_smul, A.apply_rightSingularBasis i] at hv
+    exact smul_right_injective F hσ hv
+  · intro h
+    apply A.rightSingularBasis.toBasis.ext
+    intro i
+    simp only [OrthonormalBasis.coe_toBasis, comp_apply, A.operatorAbs_rightSingularBasis,
+      map_smul]
+    rw [A.apply_rightSingularBasis i]
+    by_cases hi : A.singularValues i = 0
+    · simp [hi]
+    · rw [h i hi]
+
 /-- The left singular vectors are orthonormal up to the zero vectors at the vanishing singular
 values: `⟪uᵢ, uⱼ⟫` is `1` if `i = j` and `σᵢ ≠ 0`, and `0` otherwise. -/
 theorem inner_leftSingularVector (i j : Fin (finrank 𝕜 E)) :
@@ -416,7 +488,7 @@ theorem orthonormal_leftSingularVector :
       A.leftSingularVector i := by
   classical
   refine orthonormal_iff_ite.mpr fun i j ↦ ?_
-  simp [inner_leftSingularVector, i.2, Subtype.ext_iff]
+  simp [inner_leftSingularVector, i.property, Subtype.ext_iff]
 
 /-- A left singular vector vanishes exactly when its singular value does. -/
 @[simp]
@@ -494,9 +566,9 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
     if h : (j : ℕ) < finrank 𝕜 E then A.leftSingularVector ⟨j, h⟩ else 0
   let s : Set (Fin (finrank 𝕜 F)) := {j | A.singularValues j ≠ 0}
   have hu : s.domRestrict u = (fun i : {i : Fin (finrank 𝕜 E) // A.singularValues i ≠ 0} ↦
-      A.leftSingularVector i) ∘ fun j ↦ ⟨⟨j.1, hlt j.2⟩, j.2⟩ := by
+      A.leftSingularVector i) ∘ fun j ↦ ⟨⟨j.val, hlt j.property⟩, j.property⟩ := by
     ext j
-    simp [u, hlt j.2]
+    simp [u, hlt j.property]
   have hs : Orthonormal 𝕜 (s.domRestrict u) := by
     rw [hu]
     exact A.orthonormal_leftSingularVector.comp _ fun j k h ↦ by
@@ -506,6 +578,16 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
   have hj : j ∈ s := by simpa [s, ← hij] using hi
   rw [hw j hj]
   simp [u, ← hij]
+
+/-- The Hilbert–Schmidt trace pairing `tr (A† B)` expanded in the singular system of `B`:
+`tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`. -/
+theorem trace_adjoint_comp_eq_sum_singularValues_mul_inner (B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (adjoint A ∘ₗ B) =
+      ∑ i : Fin (finrank 𝕜 E), ((B.singularValues i : ℝ) : 𝕜) *
+        ⟪A (B.rightSingularBasis i), B.leftSingularVector i⟫ := by
+  rw [trace_eq_sum_inner _ B.rightSingularBasis]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [comp_apply, adjoint_inner_right, B.apply_rightSingularBasis i, inner_smul_right]
 
 end SingularSystem
 
@@ -528,20 +610,18 @@ theorem singularValues_le_mul_of_norm_apply_le {A : E →ₗ[𝕜] F} {B : E →
   swap
   · simp [B.singularValues_of_finrank_le hi, A.singularValues_of_finrank_le hi]
   -- Courant–Fischer: on an `(i + 1)`-dimensional subspace where the Rayleigh quotient of `B† B` is
-  -- at least `σᵢ(B)²`, find a unit vector where that of `A† A` is at most `σᵢ(A)²`.
+  -- at least `σᵢ(B)²`, find a unit vector `x` with `‖A x‖ ≤ σᵢ(A)`.
   obtain ⟨V, hV, hBV⟩ :=
     B.isSymmetric_adjoint_comp_self.exists_submodule_forall_unit_eigenvalue_le_re_inner rfl ⟨i, hi⟩
-  obtain ⟨x, hxV, hx, hAx⟩ :=
-    A.isSymmetric_adjoint_comp_self.exists_unit_vector_re_inner_le_eigenvalue rfl ⟨i, hi⟩ V hV
+  obtain ⟨x, hxV, hx, hAx⟩ := A.exists_unit_vector_norm_apply_le_singularValues V hV.ge
   have hBx := hBV x hxV hx
-  simp only [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq] at hAx hBx
-  have hsq : B.singularValues i ^ 2 ≤ (c * A.singularValues i) ^ 2 := by
-    rw [mul_pow, B.sq_singularValues_of_lt rfl hi, A.sq_singularValues_of_lt rfl hi]
-    calc _ ≤ ‖B x‖ ^ 2 := hBx
-      _ ≤ (c * ‖A x‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h x) 2
-      _ ≤ _ := by rw [mul_pow]; exact mul_le_mul_of_nonneg_left hAx (sq_nonneg c)
-  exact (pow_le_pow_iff_left₀ (B.singularValues_nonneg i)
-    (mul_nonneg hc (A.singularValues_nonneg i)) two_ne_zero).mp hsq
+  rw [← B.sq_singularValues_of_lt rfl hi, comp_apply, adjoint_inner_left,
+    inner_self_eq_norm_sq] at hBx
+  calc B.singularValues i
+      ≤ ‖B x‖ := (pow_le_pow_iff_left₀ (B.singularValues_nonneg i) (norm_nonneg _)
+        two_ne_zero).mp hBx
+    _ ≤ c * ‖A x‖ := h x
+    _ ≤ c * A.singularValues i := mul_le_mul_of_nonneg_left hAx hc
 
 /-- **Bounded-factor domination.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
 operator norm at most `c`), then `σᵢ(C A) ≤ c σᵢ(A)` for every `i`. -/
@@ -549,6 +629,14 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
     (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) (i : ℕ) :
     (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
+
+/-- **Bounded-factor domination on the right.** If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`,
+then `σᵢ(A C) ≤ c σᵢ(A)` for every `i`. -/
+theorem singularValues_comp_le_right (A : F →ₗ[𝕜] G) (C : E →ₗ[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+    (hC : ∀ x, ‖C x‖ ≤ c * ‖x‖) (i : ℕ) :
+    (A ∘ₗ C).singularValues i ≤ c * A.singularValues i := by
+  rw [← singularValues_adjoint, adjoint_comp, ← A.singularValues_adjoint]
+  exact singularValues_comp_le _ _ (norm_adjoint_apply_le hc hC) i
 
 /-- If `‖A x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `A` has operator norm at most `c`), then
 every singular value of `A` is at most `c`. -/
@@ -614,6 +702,40 @@ theorem singularValues_smul (c : 𝕜) (A : E →ₗ[𝕜] F) :
   have h := singularValues_le_mul_of_norm_apply_le (A := c • A) (B := A) (c := ‖c‖⁻¹)
     (fun x ↦ by simp [norm_smul, inv_mul_cancel_left₀ hc'.ne']) i
   rwa [le_inv_mul_iff₀ hc'] at h
+
+/-- Lifting a pointwise singular-value bound `σᵢ(A) ≤ c * σᵢ(B)` (with `0 ≤ c`) to the rooted
+singular-value `Lᵖ` sums for any `0 < p` (including `0 < p < 1`). -/
+theorem singularValues_rpow_sum_le_mul {p : ℝ} (hp : 0 < p) (A : E →ₗ[𝕜] F) (B : E →ₗ[𝕜] G)
+    {c : ℝ} (hc : 0 ≤ c) (hσ : ∀ i : ℕ, A.singularValues i ≤ c * B.singularValues i) :
+    (A.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) ≤
+      c * (B.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) := by
+  have hsum : A.singularValues.sum (fun _ s ↦ s ^ p) ≤
+      c ^ p * B.singularValues.sum (fun _ s ↦ s ^ p) := by
+    rw [← A.sum_fin_singularValues (· ^ p) (Real.zero_rpow hp.ne'),
+      ← B.sum_fin_singularValues (· ^ p) (Real.zero_rpow hp.ne'), Finset.mul_sum]
+    refine Finset.sum_le_sum fun i _ ↦ ?_
+    rw [← Real.mul_rpow hc (B.singularValues_nonneg i)]
+    exact Real.rpow_le_rpow (A.singularValues_nonneg i) (hσ i) hp.le
+  have hA : 0 ≤ A.singularValues.sum (fun _ s ↦ s ^ p) :=
+    Finsupp.sum_nonneg fun i _ ↦ Real.rpow_nonneg (A.singularValues_nonneg i) _
+  have hB : 0 ≤ B.singularValues.sum (fun _ s ↦ s ^ p) :=
+    Finsupp.sum_nonneg fun i _ ↦ Real.rpow_nonneg (B.singularValues_nonneg i) _
+  refine (Real.rpow_le_rpow hA hsum (by positivity)).trans_eq ?_
+  rw [Real.mul_rpow (Real.rpow_nonneg hc _) hB, one_div, Real.rpow_rpow_inv hc hp.ne']
+
+/-- Lifting a pointwise singular-value scaling `σᵢ(A) = c * σᵢ(B)` (with `0 ≤ c`) to the rooted
+singular-value `Lᵖ` sums for any `0 < p` (including `0 < p < 1`). -/
+theorem singularValues_rpow_sum_eq_mul {p : ℝ} (hp : 0 < p) (A : E →ₗ[𝕜] F) (B : E →ₗ[𝕜] G)
+    {c : ℝ} (hc : 0 ≤ c) (hσ : ∀ i : ℕ, A.singularValues i = c * B.singularValues i) :
+    (A.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) =
+      c * (B.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) := by
+  rcases hc.eq_or_lt with rfl | hc_pos
+  · have hA : A.singularValues = 0 := Finsupp.ext fun i ↦ by simpa using hσ i
+    simp [hA, Real.zero_rpow (inv_ne_zero hp.ne')]
+  · refine le_antisymm (singularValues_rpow_sum_le_mul hp A B hc_pos.le fun i ↦ (hσ i).le) ?_
+    have hinv : ∀ i, B.singularValues i ≤ c⁻¹ * A.singularValues i := fun i ↦ by
+      rw [hσ i, inv_mul_cancel_left₀ hc_pos.ne']
+    exact (le_inv_mul_iff₀ hc_pos).mp (singularValues_rpow_sum_le_mul hp B A (by positivity) hinv)
 
 end Comparison
 
@@ -769,11 +891,11 @@ theorem exists_orthonormal_eq_sum_singularValues_smul_rankOne (A : E →ₗ[𝕜
   rw [Matrix.toLin_of_ite_val_eq_apply (d := fun i ↦ (A.singularValues i : 𝕜))]
   have hiE (i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F))) : iE i = k ↔ (i : ℕ) = k := Fin.ext_iff
   split_ifs with hk
-  · rw [Finset.sum_eq_single ⟨k, lt_min k.2 hk⟩
+  · rw [Finset.sum_eq_single ⟨k, lt_min k.isLt hk⟩
       (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
     simp [hiE, iF, f]
   · rw [Finset.sum_eq_zero fun i _ ↦ by
-      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.2.trans_le (min_le_right _ _))]]
+      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.isLt.trans_le (min_le_right _ _))]]
     simp
 
 end Diagonal
@@ -797,7 +919,7 @@ theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
       (T : E →ₗ[𝕜] F).singularValues n := by
   let A : E →ₗ[𝕜] F := T
   refine opNorm_le_bound _ (A.singularValues_nonneg n) fun x ↦ ?_
-  have hx := e.mem_spanIndices_le_of_mem_orthogonal x.2
+  have hx := e.mem_spanIndices_le_of_mem_orthogonal x.property
   by_cases hn : n < m
   · exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis e he
       (A.singularValues_nonneg n) (fun i hi ↦ by
@@ -806,7 +928,7 @@ theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
   · have htail : {i : Fin m | n ≤ (i : ℕ)} = ∅ := by
       ext i
       simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
-      exact not_le.mpr (i.2.trans_le (le_of_not_gt hn))
+      exact not_le.mpr (i.isLt.trans_le (le_of_not_gt hn))
     have hx0 : (x : E) = 0 := by
       simpa only [htail, e.spanIndices_eq_span, Set.image_empty, Submodule.span_empty,
         Submodule.mem_bot] using hx

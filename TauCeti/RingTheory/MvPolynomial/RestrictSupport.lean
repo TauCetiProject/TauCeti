@@ -23,6 +23,8 @@ with the native degree spaces.
 
 * `MvPolynomial.eq_of_mem_restrictSupport_of_coeff_eq`: two polynomials supported on `s` with
   the same coefficients on `s` are equal.
+* `MvPolynomial.mem_submodule_of_support`: a submodule containing every unit monomial in the
+  support of a polynomial contains the polynomial.
 * `MvPolynomial.finrank_restrictSupport`, `MvPolynomial.finrank_restrictSupport_finset`: the
   rank of `restrictSupport R T` over a ring with the strong rank condition is the number of
   exponents in `T`.
@@ -66,6 +68,12 @@ theorem basisRestrictSupport_apply_coe (c : s) :
   refine (basisRestrictSupport R s).repr.injective (Finsupp.ext fun d ↦ ?_)
   simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
 
+/-- The basis vector of `basisRestrictSupport` at `c` is the monomial `X ^ c` with coefficient `1`,
+as an element of `restrictSupport R s`. -/
+theorem basisRestrictSupport_apply (c : s) :
+    basisRestrictSupport R s c = ⟨monomial (c : σ →₀ ℕ) 1, by simp⟩ :=
+  Subtype.ext (basisRestrictSupport_apply_coe c)
+
 /-- Two polynomials supported on `s` whose coefficients agree on `s` are equal. -/
 theorem eq_of_mem_restrictSupport_of_coeff_eq {p q : MvPolynomial σ R}
     (hp : p ∈ restrictSupport R s) (hq : q ∈ restrictSupport R s)
@@ -81,7 +89,14 @@ theorem eq_of_mem_restrictSupport_of_coeff_eq {p q : MvPolynomial σ R}
 /-- Elements of `restrictSupport R s` are determined by their coefficients on `s`. -/
 theorem restrictSupport_ext {p q : restrictSupport R s}
     (h : ∀ μ ∈ s, (p : MvPolynomial σ R).coeff μ = (q : MvPolynomial σ R).coeff μ) : p = q :=
-  Subtype.ext <| eq_of_mem_restrictSupport_of_coeff_eq p.2 q.2 h
+  Subtype.ext <| eq_of_mem_restrictSupport_of_coeff_eq p.property q.property h
+
+/-- A submodule containing the unit monomials indexed by a polynomial's support contains it. -/
+theorem mem_submodule_of_support {p : MvPolynomial σ R} {N : Submodule R (MvPolynomial σ R)}
+    (h : ∀ α ∈ p.support, monomial α 1 ∈ N) : p ∈ N := by
+  have hp : p ∈ restrictSupport R (p.support : Set (σ →₀ ℕ)) := (mem_restrictSupport_iff R).2 le_rfl
+  rw [restrictSupport_eq_span] at hp
+  exact Submodule.span_le.2 (Set.image_subset_iff.2 h) hp
 
 variable (R s) in
 /-- The rank of `restrictSupport R s` is the number of exponents in `s` (`0` if `s` is infinite).
@@ -107,7 +122,7 @@ variable (s) in
 `f : R →+* S`, as an `f`-semilinear map. -/
 noncomputable def mapRestrictSupport {S : Type*} [CommSemiring S] (f : R →+* S) :
     restrictSupport R s →ₛₗ[f] restrictSupport S s where
-  toFun p := ⟨map f p, map_mem_restrictSupport f p.2⟩
+  toFun p := ⟨map f p, map_mem_restrictSupport f p.property⟩
   map_add' p q := Subtype.ext (map_add (map f) (p : MvPolynomial σ R) q)
   map_smul' a p := Subtype.ext <| by simp [smul_eq_C_mul]
 

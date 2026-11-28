@@ -463,11 +463,11 @@ theorem extend_midEntry_top {i : ℕ} (hi : i < r + 1) :
 
 @[simp]
 theorem topRow_extend : (Q.extend l b hb hQ).topRow = l :=
-  funext fun i => extend_entry_top Q l b hb hQ i.2
+  funext fun i => extend_entry_top Q l b hb hQ i.isLt
 
 @[simp]
 theorem topMidRow_extend : (Q.extend l b hb hQ).topMidRow = b :=
-  funext fun i => extend_midEntry_top Q l b hb hQ i.2
+  funext fun i => extend_midEntry_top Q l b hb hQ i.isLt
 
 @[simp]
 theorem truncate_extend : (Q.extend l b hb hQ).truncate = Q := by
@@ -522,11 +522,11 @@ def truncateEquiv (l : Fin (r + 1) → ℤ) :
     {P : SymplecticGTPattern (r + 1) // P.topRow = l} ≃
       Σ b : interlacingFinset (Fin.snoc l 0),
         {Q : SymplecticGTPattern r // Interlaces (b : Fin (r + 1) → ℤ) Q.topRow} where
-  toFun P := ⟨⟨P.1.topMidRow, mem_interlacingFinset.mpr (by
-      have h := P.1.interlaces_snoc_topRow_topMidRow
-      rwa [P.2] at h)⟩,
-    ⟨P.1.truncate, P.1.interlaces_topMidRow_topRow_truncate⟩⟩
-  invFun x := ⟨x.2.1.extend l x.1 (mem_interlacingFinset.mp x.1.2) x.2.2, by simp⟩
+  toFun P := ⟨⟨P.val.topMidRow, mem_interlacingFinset.mpr (by
+      have h := P.val.interlaces_snoc_topRow_topMidRow
+      rwa [P.property] at h)⟩,
+    ⟨P.val.truncate, P.val.interlaces_topMidRow_topRow_truncate⟩⟩
+  invFun x := ⟨x.2.val.extend l x.1 (mem_interlacingFinset.mp x.1.property) x.2.property, by simp⟩
   left_inv := by
     rintro ⟨P, rfl⟩
     exact Subtype.ext (extend_truncate P)
@@ -535,20 +535,21 @@ def truncateEquiv (l : Fin (r + 1) → ℤ) :
 @[simp]
 theorem truncateEquiv_apply_fst_coe (l : Fin (r + 1) → ℤ)
     (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
-    ((truncateEquiv l P).1 : Fin (r + 1) → ℤ) = P.1.topMidRow :=
+    ((truncateEquiv l P).1 : Fin (r + 1) → ℤ) = P.val.topMidRow :=
   (rfl)
 
 @[simp]
 theorem truncateEquiv_apply_snd_coe (l : Fin (r + 1) → ℤ)
     (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
-    (truncateEquiv l P).2.1 = P.1.truncate :=
+    (truncateEquiv l P).2.val = P.val.truncate :=
   (rfl)
 
 @[simp]
 theorem truncateEquiv_symm_apply_coe (l : Fin (r + 1) → ℤ)
     (x : Σ b : interlacingFinset (Fin.snoc l 0),
       {Q : SymplecticGTPattern r // Interlaces (b : Fin (r + 1) → ℤ) Q.topRow}) :
-    ((truncateEquiv l).symm x).1 = x.2.1.extend l x.1 (mem_interlacingFinset.mp x.1.2) x.2.2 :=
+    ((truncateEquiv l).symm x).val = x.2.val.extend l x.1 (mem_interlacingFinset.mp x.1.property)
+        x.2.property :=
   (rfl)
 
 /-- **The patterns over `l`, sorted by their top intermediate row and their second unprimed row.**
@@ -565,27 +566,28 @@ def truncateSigmaEquiv (l : Fin (r + 1) → ℤ) :
 @[simp]
 theorem truncateSigmaEquiv_apply_fst_coe (l : Fin (r + 1) → ℤ)
     (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
-    ((truncateSigmaEquiv l P).1 : Fin (r + 1) → ℤ) = P.1.topMidRow :=
+    ((truncateSigmaEquiv l P).1 : Fin (r + 1) → ℤ) = P.val.topMidRow :=
   (rfl)
 
 @[simp]
 theorem truncateSigmaEquiv_apply_snd_fst_coe (l : Fin (r + 1) → ℤ)
     (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
-    ((truncateSigmaEquiv l P).2.1 : Fin r → ℤ) = P.1.truncate.topRow :=
+    ((truncateSigmaEquiv l P).2.1 : Fin r → ℤ) = P.val.truncate.topRow :=
   (rfl)
 
 @[simp]
 theorem truncateSigmaEquiv_apply_snd_snd_coe (l : Fin (r + 1) → ℤ)
     (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
-    (truncateSigmaEquiv l P).2.2.1 = P.1.truncate :=
+    (truncateSigmaEquiv l P).2.2.val = P.val.truncate :=
   (rfl)
 
 @[simp]
 theorem truncateSigmaEquiv_symm_apply_coe (l : Fin (r + 1) → ℤ)
     (x : Σ b : interlacingFinset (Fin.snoc l 0), Σ m : interlacingFinset (b : Fin (r + 1) → ℤ),
       {Q : SymplecticGTPattern r // Q.topRow = (m : Fin r → ℤ)}) :
-    ((truncateSigmaEquiv l).symm x).1 = x.2.2.1.extend l x.1 (mem_interlacingFinset.mp x.1.2)
-      (by rw [x.2.2.2]; exact mem_interlacingFinset.mp x.2.1.2) :=
+    ((truncateSigmaEquiv l).symm x).val = x.2.2.val.extend l x.1
+        (mem_interlacingFinset.mp x.1.property)
+      (by rw [x.2.2.property]; exact mem_interlacingFinset.mp x.2.1.property) :=
   (rfl)
 
 /-- **The multiplicity data of the branching.**  The patterns of rank `r + 1` with top row `l` and
@@ -596,13 +598,13 @@ the first factor as the multiplicity of `V_m` in the restriction of `V_l` along
 def truncateFiberEquiv (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ) :
     {P : SymplecticGTPattern (r + 1) // P.topRow = l ∧ P.truncate.topRow = m} ≃
       midInterlacingFinset l m × {Q : SymplecticGTPattern r // Q.topRow = m} where
-  toFun P := (⟨P.1.topMidRow, mem_midInterlacingFinset.mpr
-      ⟨by have h := P.1.interlaces_snoc_topRow_topMidRow; rwa [P.2.1] at h,
-        by have h := P.1.interlaces_topMidRow_topRow_truncate; rwa [P.2.2] at h⟩⟩,
-    ⟨P.1.truncate, P.2.2⟩)
-  invFun x := ⟨x.2.1.extend l x.1 (mem_midInterlacingFinset.mp x.1.2).1
-      (by rw [x.2.2]; exact (mem_midInterlacingFinset.mp x.1.2).2),
-    by simp, by simpa using x.2.2⟩
+  toFun P := (⟨P.val.topMidRow, mem_midInterlacingFinset.mpr
+      ⟨by have h := P.val.interlaces_snoc_topRow_topMidRow; rwa [P.property.1] at h,
+        by have h := P.val.interlaces_topMidRow_topRow_truncate; rwa [P.property.2] at h⟩⟩,
+    ⟨P.val.truncate, P.property.2⟩)
+  invFun x := ⟨x.2.val.extend l x.1 (mem_midInterlacingFinset.mp x.1.property).1
+      (by rw [x.2.property]; exact (mem_midInterlacingFinset.mp x.1.property).2),
+    by simp, by simpa using x.2.property⟩
   left_inv := by
     rintro ⟨P, rfl, rfl⟩
     exact Subtype.ext (extend_truncate P)
@@ -611,20 +613,21 @@ def truncateFiberEquiv (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ) :
 @[simp]
 theorem truncateFiberEquiv_apply_fst_coe (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ)
     (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l ∧ P.truncate.topRow = m}) :
-    ((truncateFiberEquiv l m P).1 : Fin (r + 1) → ℤ) = P.1.topMidRow :=
+    ((truncateFiberEquiv l m P).1 : Fin (r + 1) → ℤ) = P.val.topMidRow :=
   (rfl)
 
 @[simp]
 theorem truncateFiberEquiv_apply_snd_coe (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ)
     (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l ∧ P.truncate.topRow = m}) :
-    (truncateFiberEquiv l m P).2.1 = P.1.truncate :=
+    (truncateFiberEquiv l m P).2.val = P.val.truncate :=
   (rfl)
 
 @[simp]
 theorem truncateFiberEquiv_symm_apply_coe (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ)
     (x : midInterlacingFinset l m × {Q : SymplecticGTPattern r // Q.topRow = m}) :
-    ((truncateFiberEquiv l m).symm x).1 = x.2.1.extend l x.1 (mem_midInterlacingFinset.mp x.1.2).1
-      (by rw [x.2.2]; exact (mem_midInterlacingFinset.mp x.1.2).2) :=
+    ((truncateFiberEquiv l m).symm x).val = x.2.val.extend l x.1
+        (mem_midInterlacingFinset.mp x.1.property).1
+      (by rw [x.2.property]; exact (mem_midInterlacingFinset.mp x.1.property).2) :=
   (rfl)
 
 /-! ### Finitely many patterns share a top row -/

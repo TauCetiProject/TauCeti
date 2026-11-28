@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 
 /-!
 # Homotopy of generalized loops
@@ -37,6 +38,8 @@ homomorphisms in positive dimensions.
   homotopy groups.
 * `FundamentalGroup.mapOfEq_eq_of_homotopicRel`: pointed-homotopic maps induce the same
   homomorphism of fundamental groups.
+* `FundamentalGroup.mapOfEq_apply_eq_self_of_homotopicRel`: a self-map pointed-homotopic to the
+  identity induces the identity of the fundamental group.
 -/
 
 public section
@@ -72,14 +75,14 @@ theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) {S : Set X}
     (hx : x ∈ S) (H : f.HomotopicRel g S) (p : Ω^ N X x) :
     _root_.GenLoop.Homotopic (map f hf p) (map g ((H.fst_eq_snd hx).symm.trans hf) p) := by
   obtain ⟨H⟩ := H
-  refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.1 tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
+  refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.val tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
   · fun_prop
   · intro t
-    exact (H.apply_zero (p.1 t)).trans (map_apply f hf p t).symm
+    exact (H.apply_zero (p.val t)).trans (map_apply f hf p t).symm
   · intro t
-    exact (H.apply_one (p.1 t)).trans (map_apply g _ p t).symm
+    exact (H.apply_one (p.val t)).trans (map_apply g _ p t).symm
   · intro t u hu
-    have hpu : p.1 u ∈ S := by rw [p.2 u hu]; exact hx
+    have hpu : p.val u ∈ S := by rw [p.property u hu]; exact hx
     refine (H.eq_fst t hpu).trans ?_
     exact (map_apply f hf p u).symm
 
@@ -122,5 +125,13 @@ theorem mapOfEq_eq_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x = y)
   obtain ⟨b, rfl⟩ := HomotopyGroup.pi1EquivFundamentalGroup.surjective a
   rw [← HomotopyGroup.pi1EquivFundamentalGroup_map, ← HomotopyGroup.pi1EquivFundamentalGroup_map,
     HomotopyGroup.map_eq_of_homotopicRel hf hx H]
+
+/-- A self-map homotopic to the identity relative to a set containing the basepoint induces the
+identity of the fundamental group. -/
+theorem mapOfEq_apply_eq_self_of_homotopicRel {f : C(X, X)} (hf : f x = x) {S : Set X}
+    (hx : x ∈ S) (H : f.HomotopicRel (ContinuousMap.id X) S) (a : FundamentalGroup X x) :
+    mapOfEq f hf a = a := by
+  rw [mapOfEq_eq_of_homotopicRel hf rfl hx H]
+  exact mapOfEq_id rfl a
 
 end FundamentalGroup

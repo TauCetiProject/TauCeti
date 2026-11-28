@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact
@@ -13,7 +15,6 @@ import TauCeti.AlgebraicTopology.NotSimplyConnected
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
-import TauCeti.Analysis.Complex.Circle
 import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
@@ -53,6 +54,8 @@ are based at a unit vector `v` and at its class `[v]`; in the circle the base po
   `π_k(S²ⁿ⁺¹, v) ≃* π_k(CPⁿ, [v])` induced by the projection.
 * `TauCeti.ComplexProjectiveSpace.hopfBoundaryMulEquiv`: for `1 ≤ k < 2n`, the boundary map as an
   isomorphism `π_{k+1}(CPⁿ, [v]) ≃* π_k(S¹, 1)`.
+* `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`: for `n ≥ 1`, the isomorphism
+  `π₂(CPⁿ, [v]) ≃* ℤ` through the boundary map and the degree of loops in the circle.
 
 ## Main results
 
@@ -68,6 +71,9 @@ are based at a unit vector `v` and at its class `[v]`; in the circle the base po
 * `TauCeti.ComplexProjectiveSpace.instSimplyConnectedSpace`: `CPⁿ` is simply connected.
 * `TauCeti.ComplexProjectiveSpace.bijective_hopfBoundary`: for `1 ≤ k < 2n`, the boundary map is
   bijective.
+* `TauCeti.ComplexProjectiveSpace.hopfBoundary_homotopyGroupMap_of_smul_comm`: naturality of the
+  boundary map for a map of `CPᵐ` to `CPⁿ` covered by a map of spheres commuting with unit complex
+  scalars.
 
 ## References
 
@@ -305,10 +311,72 @@ theorem hopfBoundaryMulEquiv_apply [DecidableEq N] [Nonempty N] (hN : Nat.card N
     hopfBoundaryMulEquiv v hN a = hopfBoundary v N a :=
   (rfl)
 
+/-- For `n ≥ 1`, `π₂(CPⁿ) ≅ ℤ`: the boundary map of the Hopf fibration gives `π₂(CPⁿ) ≅ π₁(S¹)`, and
+`π₁(S¹) ≅ ℤ` by the degree (`Circle.fundamentalGroupMulEquiv`). -/
+def pi2MulEquivInt (hn : n ≠ 0) :
+    HomotopyGroup (Fin 2) (ComplexProjectiveSpace n) (mk n v) ≃* Multiplicative ℤ :=
+  (HomotopyGroup.congrMulEquiv (finSuccEquiv 1)).trans <|
+    (hopfBoundaryMulEquiv v (N := Fin 1) (by simp; omega)).trans <|
+    (HomotopyGroup.homeomorphMulEquivOfEq Circle.homeomorphSphere.symm (by ext; simp)).trans <|
+    HomotopyGroup.pi1MulEquivFundamentalGroup.trans (Circle.fundamentalGroupMulEquiv 1)
+
+/-- The isomorphism `π₂(CPⁿ) ≃* ℤ` evaluated on a class `a`: apply the boundary map of the Hopf
+fibration to land in `π₁(S¹)`, and take the degree of the resulting loop of the circle. -/
+theorem pi2MulEquivInt_apply (hn : n ≠ 0)
+    (a : HomotopyGroup (Fin 2) (ComplexProjectiveSpace n) (mk n v)) :
+    pi2MulEquivInt v hn a =
+      Circle.fundamentalGroupMulEquiv 1 (HomotopyGroup.pi1MulEquivFundamentalGroup
+        (HomotopyGroup.map ⟨Circle.homeomorphSphere.symm, Homeomorph.continuous _⟩
+          (by ext; simp)
+          (hopfBoundary v (Fin 1) (HomotopyGroup.congrEquiv (finSuccEquiv 1) a)))) := by
+  simp [pi2MulEquivInt]
+
 /-- **`π_k(CPⁿ)` vanishes for `3 ≤ k ≤ 2n`**: the boundary identifies it with `π_{k-1}(S¹)`, which
 is trivial. -/
 theorem subsingleton_homotopyGroup [Nontrivial N] (hN : Nat.card N < 2 * n) :
     Subsingleton (HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v)) :=
   (bijective_hopfBoundary v hN).1.subsingleton
+
+/-! ### Naturality of the boundary map -/
+
+/-- **Naturality of the boundary map of the Hopf fibration.** Let `F : S²ᵐ⁺¹ → S²ⁿ⁺¹` commute
+with unit complex scalars and cover `g : CPᵐ → CPⁿ`, that is `g [x] = [F x]`. Then `g` carries the
+boundary map `π_{k+1}(CPᵐ, [v]) → π_k(S¹, 1)` to the boundary map at `[F v]`: on the fibres, `F`
+sends `u • v` to `u • F v`, so it is the identity of the circle in the coordinates
+`TauCeti.ComplexProjectiveSpace.hopfFiberHomeomorph`. -/
+theorem hopfBoundary_homotopyGroupMap_of_smul_comm {m : ℕ}
+    {F : C(sphere (0 : EuclideanSpace ℂ (Fin (m + 1))) 1,
+      sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)}
+    (hF : ∀ (u : sphere (0 : ℂ) 1) x, F (u • x) = u • F x)
+    {g : C(ComplexProjectiveSpace m, ComplexProjectiveSpace n)}
+    (hg : ∀ x, g (mk m x) = mk n (F x)) (v : sphere (0 : EuclideanSpace ℂ (Fin (m + 1))) 1)
+    {w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1} (hw : F v = w) (h : g (mk m v) = mk n w)
+    (a : HomotopyGroup (Option N) (ComplexProjectiveSpace m) (mk m v)) :
+    hopfBoundary w N (HomotopyGroup.map g h a) = hopfBoundary v N a := by
+  subst hw
+  have sq : CommSq (TopCat.ofHom F) (hopfHom m) (hopfHom n) (TopCat.ofHom g) :=
+    ⟨by ext x; exact (hg x).symm⟩
+  -- The map of fibres over `[v]` and `[F v]` given by `F`.
+  let φ : C((hopfHom m).fiber (mk m v), (hopfHom n).fiber (mk n (F v))) :=
+    ⟨fun x ↦ ⟨F x.val, by
+      have hx : mk m x.val = mk m v := x.property
+      -- Membership in the fibre of `hopfHom n` over `[F v]` is the equation `[F x] = [F v]`;
+      -- `change` unfolds the preimage and the morphism `hopfHom n`.
+      change mk n (F x.val) = mk n (F v)
+      rw [← hg, hx, hg]⟩, by fun_prop⟩
+  -- `TopCat.ofHom g` has underlying map `g` by definition, so `key` is the naturality of the
+  -- boundary map for this square, read without `TopCat.ofHom`.
+  have key := TopCat.fibrationBoundary_map_of_eq (N := N) sq (mk_mem_serreFibrations m)
+    (mk_mem_serreFibrations n) h (e := ⟨v, rfl⟩) (e' := ⟨F v, rfl⟩) φ (fun _ ↦ rfl) rfl a
+  rw [hopfBoundary_apply, hopfBoundary_apply]
+  refine (congrArg _ key).trans ?_
+  rw [HomotopyGroup.homeomorphEquivOfEq_apply, HomotopyGroup.homeomorphEquivOfEq_apply,
+    HomotopyGroup.map_comp_apply]
+  refine HomotopyGroup.map_congr (ContinuousMap.ext fun x ↦ ?_) _ _ _
+  -- On the fibre over `[v]`, the point `u • v` goes to `u • F v`, so both sides are `u`.
+  obtain ⟨u, rfl⟩ := (hopfFiberHomeomorph v).surjective x
+  refine ((hopfFiberHomeomorph (F v)).symm_apply_eq.2 (Subtype.ext ?_)).trans
+    ((hopfFiberHomeomorph v).symm_apply_apply u).symm
+  simp [φ, coe_hopfFiberHomeomorph_apply, hF]
 
 end TauCeti.ComplexProjectiveSpace

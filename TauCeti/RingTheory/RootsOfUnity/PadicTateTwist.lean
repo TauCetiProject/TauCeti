@@ -13,6 +13,9 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.ZMod.Pow
 import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.RingTheory.RootsOfUnity.PPower
+import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.Topology.Algebra.Module.AutomaticContinuity
 
 /-!
 # The `p`-adic Tate twist
@@ -58,6 +61,8 @@ When all the `ℓ`-power roots of unity exist, each factor is noncanonically `�
 
 * `TauCeti.PadicTateTwist.levelAddEquivRootsOfUnity`: the `n`-th level is `μ_{p^n}`.
 * `TauCeti.PadicTateTwist.instCompactSpace`: for nonzero `p`, `ℤ_p(1)` is compact over a domain.
+* `TauCeti.PadicTateTwist.subsingleton_of_expChar`: over a reduced ring of exponential
+  characteristic `p`, `ℤ_p(1) = 0`.
 * `TauCeti.PadicTateTwist.nonempty_linearEquiv`: when `K` has enough `p`-power roots of unity,
   `ℤ_p(1)` is noncanonically linearly equivalent to `ℤ_p`.
 * `TauCeti.PadicTateTwist.nonempty_continuousAddEquiv`: in that case `ℤ_p(1)` is also
@@ -99,7 +104,7 @@ written additively. -/
 def levelAddEquivRootsOfUnity (n : ℕ) :
     TateModuleLevel p (Additive Kˣ) n ≃+ Additive (rootsOfUnity (p ^ n) K) where
   toFun x := Additive.ofMul
-    ⟨x.1.toMul, by
+    ⟨x.val.toMul, by
       rw [mem_rootsOfUnity]
       have hx : p ^ n • (x : Additive Kˣ) = 0 :=
         congrArg Subtype.val (AddSubgroup.torsionBy.nsmul x)
@@ -108,7 +113,7 @@ def levelAddEquivRootsOfUnity (n : ℕ) :
     ⟨Additive.ofMul ζ.toMul, AddSubgroup.torsionBy.nsmul_iff.mpr <|
       Additive.toMul.injective <| by
         simpa [toMul_nsmul] using
-          (mem_rootsOfUnity (p ^ n) (ζ.toMul : Kˣ)).mp ζ.toMul.2⟩
+          (mem_rootsOfUnity (p ^ n) (ζ.toMul : Kˣ)).mp ζ.toMul.property⟩
   left_inv x := rfl
   right_inv ζ := rfl
   map_add' x y := rfl
@@ -175,21 +180,12 @@ some `N`, then the `p`-adic Tate twist over `K` is trivial. -/
 theorem subsingleton_of_not_exists_isPrimitiveRoot {N : ℕ}
     (h : ¬ ∃ ζ : K, IsPrimitiveRoot ζ (p ^ N)) : Subsingleton (PadicTateTwist p K) := by
   -- every `p`-power torsion unit is killed by `p ^ N`
-  have hkill : ∀ (m : ℕ) (ζ : Kˣ), ζ ^ p ^ m = 1 → ζ ^ p ^ N = 1 := by
-    intro m ζ hζ
-    obtain ⟨e, -, hord⟩ := (Nat.dvd_prime_pow Fact.out).mp (orderOf_dvd_of_pow_eq_one hζ)
-    by_contra hne
-    have hNe : N < e := by
-      by_contra hle
-      exact hne (orderOf_dvd_iff_pow_eq_one.mp (hord ▸ pow_dvd_pow p (not_lt.mp hle)))
-    have hprim : IsPrimitiveRoot ζ (p ^ e) := hord ▸ IsPrimitiveRoot.orderOf ζ
-    have hdvd : p ^ (e - N) ∣ p ^ e := pow_dvd_pow p (Nat.sub_le e N)
-    have h2 := hprim.pow_of_dvd (pow_ne_zero _ (Fact.out : p.Prime).ne_zero) hdvd
-    have : p ^ e / p ^ (e - N) = p ^ N := by
-      rw [Nat.div_eq_iff_eq_mul_left (pow_pos (Fact.out : p.Prime).pos _) hdvd, ← pow_add]
-      congr 1; omega
-    rw [this] at h2
-    exact h ⟨(ζ ^ p ^ (e - N) : Kˣ), IsPrimitiveRoot.coe_units_iff.mpr h2⟩
+  have hkill (m : ℕ) (ζ : Kˣ) (hζ : ζ ^ p ^ m = 1) : ζ ^ p ^ N = 1 := by
+    rcases N with _ | k
+    · exact (h ⟨1, by simp⟩).elim
+    have hk := pow_prime_pow_eq_one_of_forall_not_isPrimitiveRoot (M := Kˣ) Fact.out
+      (fun ζ hζ ↦ h ⟨ζ, IsPrimitiveRoot.coe_units_iff.mpr hζ⟩) hζ
+    simp [pow_succ, pow_mul, hk]
   have hzero : ∀ z : PadicTateTwist p K, z = 0 := fun z ↦
     TateModule.eq_zero_of_pow_nsmul_eq_zero (k := N) <| TateModule.ext fun n ↦ Subtype.ext <| by
       apply Additive.toMul.injective
@@ -199,6 +195,13 @@ theorem subsingleton_of_not_exists_isPrimitiveRoot {N : ℕ}
   exact ⟨fun x y ↦ (hzero x).trans (hzero y).symm⟩
 
 end Subsingleton
+
+/-- **In exponential characteristic `p`, `PadicTateTwist p K = 0`** for a reduced ring `K`: such a
+ring has no nontrivial `p ^ n`-th root of unity (`TauCeti.subsingleton_rootsOfUnity_prime_pow`). -/
+theorem subsingleton_of_expChar (p : ℕ) (K : Type*) [CommRing K] [IsReduced K] [ExpChar K p] :
+    Subsingleton (PadicTateTwist p K) :=
+  ⟨fun _ _ ↦ ext fun n ↦ Additive.toMul.injective <|
+    (subsingleton_rootsOfUnity_prime_pow (R := K) p n).elim _ _⟩
 
 section RankOne
 
@@ -241,15 +244,9 @@ variable (p K) in
 `ℤ_p` as a topological group. -/
 theorem nonempty_continuousAddEquiv : Nonempty (PadicTateTwist p K ≃ₜ+ ℤ_[p]) := by
   obtain ⟨e⟩ := nonempty_linearEquiv p K
-  -- The inverse of a `ℤ_p`-linear equivalence is `a ↦ a • e.symm 1`, which is continuous; it is a
-  -- continuous bijection from the compact `ℤ_p` to the Hausdorff `ℤ_p(1)`, hence a homeomorphism.
-  have hc : Continuous e.symm := by
-    have h : ⇑e.symm = fun a : ℤ_[p] ↦ a • e.symm 1 :=
-      funext fun a ↦ by rw [← map_smul, smul_eq_mul, mul_one]
-    rw [h]
-    exact continuous_id.smul continuous_const
-  exact ⟨(ContinuousAddEquiv.mk' (hc.homeoOfEquivCompactToT2 (f := e.symm.toEquiv))
-    fun x y ↦ map_add e.symm x y).symm⟩
+  exact ⟨{ e.toAddEquiv with
+    continuous_toFun := e.toLinearMap.continuous_of_finite_of_compactSpace
+    continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }⟩
 
 end RankOne
 
@@ -422,7 +419,7 @@ variable (y : ∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicati
 private theorem piRoot_pow (ℓ n : ℕ) : piRoot y ℓ n ^ ℓ ^ n = 1 := by
   unfold piRoot
   split_ifs with h
-  · exact (mem_rootsOfUnity _ _).1 (PadicTateTwist.proj n (y ⟨ℓ, h⟩).toAdd).toMul.2
+  · exact (mem_rootsOfUnity _ _).1 (PadicTateTwist.proj n (y ⟨ℓ, h⟩).toAdd).toMul.property
   · exact one_pow _
 
 private theorem piRoot_pow_sub {ℓ n k : ℕ} (h : n ≤ k) :
@@ -499,7 +496,7 @@ private theorem isLocallyConstant_piLevel (m : ℕ) :
 /-- The point of `ℤ̂^{(p')}(1)` with components `piLevel y m`, the inverse of the decomposition. -/
 private noncomputable def ofPi : PrimeToPTateModule p E :=
   mk (fun m ↦ ⟨piLevel y m, (mem_rootsOfUnity _ _).2 (piLevel_pow_self y m)⟩) <|
-    mem_primeToPTateModuleSubgroup_iff.2 fun m _ h ↦ piLevel_pow_div y m.2.1 h
+    mem_primeToPTateModuleSubgroup_iff.2 fun m _ h ↦ piLevel_pow_div y m.property.1 h
 
 private theorem coe_proj_ofPi (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
     (proj m (ofPi y) : Eˣ) = piLevel y m := by
@@ -527,15 +524,15 @@ private theorem eq_of_forall_proj_pow_eq {x x' : PrimeToPTateModule p E}
     (h : ∀ (ℓ : ℕ) (hℓ : ℓ.Prime) (hℓp : ℓ.Coprime p) (n : ℕ),
       proj ⟨ℓ ^ n, pow_ne_zero n hℓ.ne_zero, hℓp.pow_left n⟩ x =
         proj ⟨ℓ ^ n, pow_ne_zero n hℓ.ne_zero, hℓp.pow_left n⟩ x') : x = x' := by
-  refine ext fun m ↦ Subtype.ext <| eq_of_pow_ordCompl_eq m.2.1
-    ((mem_rootsOfUnity _ _).1 (proj m x).2) ((mem_rootsOfUnity _ _).1 (proj m x').2)
+  refine ext fun m ↦ Subtype.ext <| eq_of_pow_ordCompl_eq m.property.1
+    ((mem_rootsOfUnity _ _).1 (proj m x).property) ((mem_rootsOfUnity _ _).1 (proj m x').property)
     fun ℓ hℓ hℓm ↦ ?_
   have hdvd : ordProj[ℓ] (m : ℕ) ∣ m := Nat.ordProj_dvd _ _
   rw [proj_pow_div x (n := ⟨_, (Nat.ordProj_pos _ _).ne',
-      Nat.Coprime.coprime_dvd_left hdvd m.2.2⟩) hdvd,
+      Nat.Coprime.coprime_dvd_left hdvd m.property.2⟩) hdvd,
     proj_pow_div x' (n := ⟨_, (Nat.ordProj_pos _ _).ne',
-      Nat.Coprime.coprime_dvd_left hdvd m.2.2⟩) hdvd]
-  exact congrArg Subtype.val (h ℓ hℓ (Nat.Coprime.coprime_dvd_left hℓm m.2.2) _)
+      Nat.Coprime.coprime_dvd_left hdvd m.property.2⟩) hdvd]
+  exact congrArg Subtype.val (h ℓ hℓ (Nat.Coprime.coprime_dvd_left hℓm m.property.2) _)
 
 variable (p E) in
 /-- **The prime-to-`p` Tate module is the product of its `ℓ`-adic components**: the
@@ -545,20 +542,21 @@ by the Chinese remainder theorem at each level `μ_m(E)`. -/
 noncomputable def continuousMulEquivPiPadicTateTwist :
     PrimeToPTateModule p E ≃ₜ*
       ∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicative (PadicTateTwist ℓ E) where
-  toFun x ℓ := haveI : NeZero (ℓ : ℕ) := ⟨ℓ.2.1.ne_zero⟩; toPadicTateTwist ℓ ℓ.2.2 x
+  toFun x ℓ := haveI : NeZero (ℓ : ℕ) := ⟨ℓ.property.1.ne_zero⟩; toPadicTateTwist ℓ ℓ.property.2 x
   invFun := ofPi
   left_inv x := eq_of_forall_proj_pow_eq fun ℓ hℓ hℓp n ↦ by
     have : NeZero ℓ := ⟨hℓ.ne_zero⟩
     have h := congrArg (fun z ↦ PadicTateTwist.proj n z.toAdd) (toPadicTateTwist_ofPi
       (fun ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p} ↦
-        haveI : NeZero (ℓ : ℕ) := ⟨ℓ.2.1.ne_zero⟩; toPadicTateTwist ℓ ℓ.2.2 x) hℓ hℓp)
+        haveI : NeZero (ℓ : ℕ) := ⟨ℓ.property.1.ne_zero⟩; toPadicTateTwist ℓ ℓ.property.2 x) hℓ hℓp)
     simp only [proj_toPadicTateTwist] at h
     exact Additive.ofMul.injective h
   right_inv y := funext fun ℓ ↦
-    haveI : NeZero (ℓ : ℕ) := ⟨ℓ.2.1.ne_zero⟩; toPadicTateTwist_ofPi y ℓ.2.1 ℓ.2.2
+    haveI : NeZero (ℓ : ℕ) := ⟨ℓ.property.1.ne_zero⟩; toPadicTateTwist_ofPi y ℓ.property.1
+        ℓ.property.2
   map_mul' x x' := funext fun ℓ ↦ map_mul _ x x'
   continuous_toFun := continuous_pi fun ℓ ↦
-    haveI : NeZero (ℓ : ℕ) := ⟨ℓ.2.1.ne_zero⟩; (toPadicTateTwist ℓ ℓ.2.2).continuous
+    haveI : NeZero (ℓ : ℕ) := ⟨ℓ.property.1.ne_zero⟩; (toPadicTateTwist ℓ ℓ.property.2).continuous
   continuous_invFun := continuous_iff.2 fun m ↦ by
     refine IsLocallyConstant.desc _ Subtype.val ?_ Subtype.val_injective
     simpa only [Function.comp_def, coe_proj_ofPi] using isLocallyConstant_piLevel m
@@ -578,7 +576,7 @@ component of `x`. -/
 theorem proj_continuousMulEquivPiPadicTateTwist_apply (x : PrimeToPTateModule p E)
     (ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}) (n : ℕ) :
     PadicTateTwist.proj n (continuousMulEquivPiPadicTateTwist p E x ℓ).toAdd =
-      .ofMul (proj ⟨ℓ ^ n, pow_ne_zero n ℓ.2.1.ne_zero, ℓ.2.2.pow_left n⟩ x) := by
+      .ofMul (proj ⟨ℓ ^ n, pow_ne_zero n ℓ.property.1.ne_zero, ℓ.property.2.pow_left n⟩ x) := by
   obtain ⟨ℓ, hℓ⟩ := ℓ
   have : NeZero ℓ := ⟨hℓ.1.ne_zero⟩
   rw [continuousMulEquivPiPadicTateTwist_apply hℓ, proj_toPadicTateTwist]
@@ -589,7 +587,7 @@ component of `y ℓ`. -/
 theorem proj_continuousMulEquivPiPadicTateTwist_symm_apply
     (y : ∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicative (PadicTateTwist ℓ E))
     (ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}) (n : ℕ) :
-    proj ⟨ℓ ^ n, pow_ne_zero n ℓ.2.1.ne_zero, ℓ.2.2.pow_left n⟩
+    proj ⟨ℓ ^ n, pow_ne_zero n ℓ.property.1.ne_zero, ℓ.property.2.pow_left n⟩
         ((continuousMulEquivPiPadicTateTwist p E).symm y) =
       (PadicTateTwist.proj n (y ℓ).toAdd).toMul := by
   apply Additive.ofMul.injective
@@ -602,8 +600,8 @@ the index of `continuousMulEquivPiPadicTateTwist`, to the primes different from 
 def piPadicTateTwistReindex (hp : p.Prime) :
     (∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicative (PadicTateTwist ℓ E)) ≃ₜ*
       ∀ ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ p}, Multiplicative (PadicTateTwist ℓ E) where
-  toFun y ℓ := y ⟨ℓ, ℓ.1.2, (Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2⟩
-  invFun z ℓ := z ⟨⟨ℓ, ℓ.2.1⟩, (Nat.coprime_primes ℓ.2.1 hp).1 ℓ.2.2⟩
+  toFun y ℓ := y ⟨ℓ, ℓ.val.property, (Nat.coprime_primes ℓ.val.property hp).2 ℓ.property⟩
+  invFun z ℓ := z ⟨⟨ℓ, ℓ.property.1⟩, (Nat.coprime_primes ℓ.property.1 hp).1 ℓ.property.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -615,7 +613,8 @@ def piPadicTateTwistReindex (hp : p.Prime) :
 theorem piPadicTateTwistReindex_apply (hp : p.Prime)
     (y : ∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicative (PadicTateTwist ℓ E))
     (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ p}) :
-    piPadicTateTwistReindex E hp y ℓ = y ⟨ℓ, ℓ.1.2, (Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2⟩ := by
+    piPadicTateTwistReindex E hp y ℓ = y ⟨ℓ, ℓ.val.property, (Nat.coprime_primes ℓ.val.property
+        hp).2 ℓ.property⟩ := by
   unfold piPadicTateTwistReindex
   rfl
 

@@ -31,6 +31,14 @@ primitive `λ` of a symplectic form `ω = -dλ` into the moment map identity
 * `TauCeti.globalFlow_fundamentalVectorField`: the flow of `ξ_M` is `(t, x) ↦ exp(t ξ) • x`.
 * `TauCeti.mlieDerivForm_fundamentalVectorField_eq_zero`: invariant forms have vanishing Lie
   derivative along fundamental vector fields.
+* `TauCeti.mextDerivₗ_apply_fundamentalVectorField_eq_zero`: the exterior derivative of an
+  invariant one-form pairing fundamental vector fields with constants vanishes on them.
+* `TauCeti.SmoothForm.apply_smul_eq_apply_mfderiv_of_mpullback_inv_smul_eq`: pointwise form of the
+  invariance of a one-form under a group element.
+* `TauCeti.RoughForm.apply_smul_eq_zero_of_mpullback_inv_smul_eq`: a form invariant under the
+  inverse of `g` vanishes at `g • x` whenever it vanishes at `x`.
+* `TauCeti.SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq`: pointwise form of the invariance
+  of a two-form under the action.
 
 ## References
 
@@ -47,6 +55,38 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
+section Pointwise
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M] {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **Pointwise invariance of a one-form.** If a one-form `α` is invariant under `g⁻¹`, its value
+at `g • x` on a tangent vector `w` is its value at `x` on the image of `w` under the differential
+of `y ↦ g⁻¹ • y`: `α_{g x}(w) = α_x(d(g⁻¹)_{g x} w)`. -/
+theorem SmoothForm.apply_smul_eq_apply_mfderiv_of_mpullback_inv_smul_eq {g : G}
+    {α : SmoothForm I M F 1}
+    (hα : SmoothForm.mpullback (fun y : M ↦ g⁻¹ • y) (contMDiff_const_smul g⁻¹) α = α) (x : M)
+    (w : TangentSpace I (g • x)) :
+    α.val (g • x) ![w] = α.val x ![mfderiv I I (fun y : M ↦ g⁻¹ • y) (g • x) w] := by
+  -- The differential lands in the tangent space at `g⁻¹ • g • x`, which is only definitionally
+  -- that at `x`, so the base points are identified on the form itself rather than by `rw`.
+  rw [← congrArg (fun φ : SmoothForm I M F 1 ↦ φ.val (g • x) ![w]) hα,
+    SmoothForm.mpullback_apply_one]
+  exact congrArg (fun A : E [⋀^Fin 1]→L[ℝ] F ↦ A _)
+    (show α.val (g⁻¹ • g • x) = α.val x by rw [inv_smul_smul])
+
+omit [IsManifold I 1 M] [ContMDiffConstSMul I ∞ G M] in
+/-- A form invariant under the inverse of a group element `g` vanishes at `g • x` whenever it
+vanishes at `x`. -/
+theorem RoughForm.apply_smul_eq_zero_of_mpullback_inv_smul_eq {k : ℕ} {γ : RoughForm I M F k}
+    {g : G} (hγ : mpullback I I (g⁻¹ • ·) γ = γ) {x : M} (hx : γ x = 0) : γ (g • x) = 0 := by
+  rw [← hγ]
+  exact mpullback_apply_eq_zero (by rwa [inv_smul_smul])
+
+end Pointwise
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
@@ -55,6 +95,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [T2Space M] [IsManifold I' ∞ M]
   [MulAction G M] [ContMDiffSMul I I' ∞ G M]
+
+omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
+  [FiniteDimensional ℝ E'] [I'.Boundaryless] [T2Space M] in
+/-- **Pointwise invariance of a two-form.** If `(g • ·)^* σ = σ` for every `g`, then `σ` is
+preserved by the differentials of the action:
+`σ_{a • x}(d(a • ·) u, d(a • ·) v) = σ_x(u, v)`. -/
+theorem SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {σ : SmoothForm I' M F 2}
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (a : G) (x : M) (u v : TangentSpace I' x) :
+    σ.eval₂ (a • x) (mfderiv I' I' (a • ·) x u) (mfderiv I' I' (a • ·) x v) = σ.eval₂ x u v := by
+  rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
 
 omit [CompleteSpace E] [T2Space G] [BoundarylessManifold I G] [FiniteDimensional ℝ E']
   [I'.Boundaryless] [T2Space M] in
@@ -92,20 +145,40 @@ theorem mlieDerivForm_fundamentalVectorField_eq_zero {F : Type*} [NormedAddCommG
     (hα : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') g) α = α)
     (ξ : GroupLieAlgebra I G) :
-    mlieDerivForm (fundamentalVectorField I' ξ) α.1 = 0 := by
+    mlieDerivForm (fundamentalVectorField I' ξ) α.val = 0 := by
   funext x
   have hZ := contMDiff_two_fundamentalVectorField (I' := I') (M := M) ξ
   have hc := isCompleteVectorField_fundamentalVectorField (I' := I') (M := M) ξ
   -- Along the flow `ψ_t = exp(t ξ) • ·` the pulled-back form is constant, equal to `α`.
-  have hconst : (fun s ↦ mpullback I' I' (globalFlow _ (hZ.of_le one_le_two) hc s) α.1 x) =
-      fun _ ↦ α.1 x := by
+  have hconst : (fun s ↦ mpullback I' I' (globalFlow _ (hZ.of_le one_le_two) hc s) α.val x) =
+      fun _ ↦ α.val x := by
     funext s
     have hψ : globalFlow _ (hZ.of_le one_le_two) hc s = fun y : M ↦ mulInvariantExp (s • ξ) • y :=
       funext (globalFlow_fundamentalVectorField ξ _ hc s)
     rw [hψ, ← SmoothForm.coe_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') _),
       hα]
-  have h := hasDerivAt_mpullback_globalFlow_zero hc hZ x (α.mdifferentiable x)
+  have h := hasDerivAt_mpullback_globalFlow_zero hc (hZ.of_le one_le_two) x (α.mdifferentiable x)
   rw [hconst] at h
   exact h.unique (hasDerivAt_const 0 _)
+
+/-- **Horizontality of the exterior derivative.** If a one-form `α` is invariant under the action
+of every element of `G` and pairs every fundamental vector field with a constant `c(ξ)`, its
+exterior derivative vanishes on every fundamental vector field: `dα(ξ_M, v) = 0`. -/
+theorem mextDerivₗ_apply_fundamentalVectorField_eq_zero {α : SmoothForm I' M ℝ 1}
+    {c : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hinv : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') g) α = α)
+    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I' ξ x] = c ξ) (ξ : GroupLieAlgebra I G) (x : M)
+    (v : TangentSpace I' x) :
+    (mextDerivₗ I' 1 α).val x ![fundamentalVectorField I' ξ x, v] = 0 := by
+  have hX : MDifferentiableAt I' I'.tangent
+      (fun y ↦ (⟨y, fundamentalVectorField I' ξ y⟩ : TangentBundle I' M)) x :=
+    ((contMDiff_two_fundamentalVectorField ξ).mdifferentiable two_ne_zero) x
+  -- Cartan's formula: `0 = L_{ξ_M} α = ι_{ξ_M} dα + d(α(ξ_M))`, with `α(ξ_M) = c(ξ)` constant.
+  have h := mlieDerivForm_apply_eq_mextDeriv_add (f := fun _ ↦ c ξ) (fun y ↦ hα y ξ)
+    (α.mdifferentiableAt x) hX v
+  rw [mlieDerivForm_fundamentalVectorField_eq_zero hinv ξ, mvfderiv_const] at h
+  rw [mextDerivₗ_apply]
+  simpa [eq_comm] using h
 
 end TauCeti

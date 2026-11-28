@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
-public import TauCeti.Analysis.Matrix.Resolvent.Basic
+public import TauCeti.Analysis.Matrix.Resolvent.NormalizedTrace
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
@@ -63,6 +63,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   polynomial have the same spectral measure;
 * `Matrix.spectralMeasure_units_conj`, `Matrix.eigenvalueMeasure_units_conj` — both measures are
   invariant under conjugation by an invertible matrix;
+* `Matrix.IsHermitian.spectralMeasure_pos_iff` — the spectral measure charges a set if and only if
+  some eigenvalue lies in it;
 * `Matrix.eigenvalueMeasure_apply` — the eigenvalue measure of a set is the proportion of
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
@@ -77,8 +79,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
-* `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
-  normalized trace of `A ^ k`;
+* `Matrix.integral_pow_spectralMeasure`, `Matrix.ofReal_integral_pow_spectralMeasure` — the `k`-th
+  moment of the spectral measure is the normalized trace of `A ^ k`;
 * `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
   the normalized trace of the resolvent `(A - z • 1)⁻¹`;
 * `Matrix.spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul`,
@@ -126,6 +128,14 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
 
+/-- The empirical spectral measure of a Hermitian matrix charges a set if and only if some
+eigenvalue lies in it. The set need not be measurable. -/
+theorem IsHermitian.spectralMeasure_pos_iff {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    {s : Set ℝ} :
+    0 < (A.spectralMeasure hA : Measure ℝ) s ↔ ∃ k, hA.eigenvalues₀ k ∈ s := by
+  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    empiricalMeasureOfFintype_pos_iff]
+
 /-- Applying a real star-algebra homomorphism entrywise preserves the spectral measure of a
 Hermitian matrix. In particular, real symmetric matrices have the same spectral measure when
 viewed as complex Hermitian matrices. -/
@@ -168,7 +178,8 @@ theorem spectralMeasure_map_ofReal (A : Matrix n n ℝ)
 topology on probability measures. -/
 @[fun_prop]
 theorem continuous_spectralMeasure :
-    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact continuous_empiricalMeasureOfFintype.comp continuous_eigenvalues
 
@@ -176,7 +187,8 @@ theorem continuous_spectralMeasure :
 matrices and the evaluation σ-algebra on probability measures. -/
 @[fun_prop]
 theorem measurable_spectralMeasure [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
-    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact measurable_empiricalMeasureOfFintype.comp measurable_eigenvalues
 
@@ -255,6 +267,16 @@ theorem integral_spectralMeasure_eq_sum_eigenvalues₀ {E : Type*} [NormedAddCom
     ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     toFiniteMeasure_empiricalMeasureOfFintype,
     integral_empiricalFiniteMeasure_of_measurableSingletonClass, Fintype.card_fin]
+
+/-- Integrating a continuous function against a Hermitian spectral measure depends
+continuously on the matrix. The test function need not be bounded. -/
+@[fun_prop] theorem continuous_integral_spectralMeasure {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} (hf : Continuous f) :
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} ↦
+      ∫ x, f x ∂(A.val.spectralMeasure A.property : Measure ℝ)) := by
+  simp_rw [integral_spectralMeasure_eq_sum_eigenvalues₀]
+  exact (continuous_finsetSum _ fun i _ ↦
+    hf.comp ((continuous_apply i).comp continuous_eigenvalues₀)).const_smul _
 
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/
@@ -401,6 +423,13 @@ theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) 
   rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
   simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
 
+/-- Cast into `𝕜`, the `k`-th moment of the spectral measure of a Hermitian matrix is the
+normalized trace of `A ^ k` without taking a real part, since `A ^ k` is Hermitian. -/
+theorem ofReal_integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    ((∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ) : ℝ) : 𝕜) =
+      ((Fintype.card n : ℕ) : 𝕜)⁻¹ * (A ^ k).trace := by
+  simp [integral_spectralMeasure, hA.trace_pow_eq_sum_eigenvalues_pow]
+
 /-- The positive moments of the two Gram-matrix spectral measures agree after weighting by the
 dimensions of their respective matrices, over any `RCLike` field and finite nonempty index types. -/
 theorem gram_spectralMeasure_moments_mul_card_eq {p q : Type*} [Fintype p] [DecidableEq p]
@@ -424,9 +453,9 @@ theorem gram_spectralMeasure_moments_mul_card_eq {p q : Type*} [Fintype p] [Deci
 of a complex Hermitian matrix is the normalized trace of its resolvent `(A - z • 1)⁻¹`. -/
 theorem resolventTransform_spectralMeasure (A : Matrix n n ℂ) (hA : A.IsHermitian) {z : ℂ}
     (hz : z ∉ spectrum ℂ A) :
-    resolventTransform (A.spectralMeasure hA : Measure ℝ) z =
-      ((Fintype.card n : ℕ) : ℂ)⁻¹ * (A - z • 1)⁻¹.trace := by
-  rw [resolventTransform_apply, integral_spectralMeasure, hA.trace_inv_sub_smul_one hz,
+    resolventTransform (A.spectralMeasure hA : Measure ℝ) z = A.normalizedResolventTrace z := by
+  rw [normalizedResolventTrace_def, resolventTransform_apply, integral_spectralMeasure,
+    hA.trace_inv_sub_smul_one hz,
     Complex.real_smul]
   simp [resolvent, Ring.inverse_eq_inv']
 

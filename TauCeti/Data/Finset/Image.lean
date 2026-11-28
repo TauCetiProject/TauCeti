@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Image
+public import Mathlib.Data.Fintype.Defs
+import Mathlib.Data.Finset.BooleanAlgebra
 
 /-!
 # Images of filtered finsets
@@ -16,6 +18,10 @@ public import Mathlib.Data.Finset.Image
   `u`, then `s` and `t` are disjoint.
 * `Finset.image_filter_mem_union_eq`: the elements of `s` that `f` maps into `u`, together with a
   set `t` mapping onto `u ∩ v`, map onto `u` when `u ⊆ f(s) ∪ v`.
+* `Finset.mem_map_subtype`: an element lies in the image of a finset of a subtype under the
+  subtype embedding exactly when it satisfies the predicate and lies in the finset.
+* `Finset.image_univ_eq_univ_iff`: `Finset.univ.image f = Finset.univ` if and only if `f` is
+  surjective.
 -/
 
 public section
@@ -45,5 +51,22 @@ theorem image_filter_mem_union_eq [DecidableEq α] {f : α → β} {s t : Finset
   · obtain ⟨a, ha, rfl⟩ := mem_image.1 hbs
     exact mem_union_left _ (mem_image_of_mem f (mem_filter.2 ⟨ha, hb⟩))
   · exact mem_union_right _ (ht ▸ mem_inter.2 ⟨hb, hbv⟩)
+
+/-- An element lies in the image of a finset of a subtype under the subtype embedding exactly when
+it satisfies the predicate and, as an element of the subtype, lies in the finset. -/
+theorem mem_map_subtype {p : α → Prop} {s : Finset {a // p a}} {a : α} :
+    a ∈ s.map (Function.Embedding.subtype p) ↔ ∃ h : p a, ⟨a, h⟩ ∈ s := by
+  constructor
+  · rintro h
+    obtain ⟨⟨b, hb⟩, hs, rfl⟩ := mem_map.1 h
+    exact ⟨hb, hs⟩
+  · rintro ⟨h, hs⟩
+    exact mem_map_of_mem _ hs
+
+/-- The image of `Finset.univ` under `f` is `Finset.univ` exactly when `f` is surjective. -/
+@[simp]
+theorem image_univ_eq_univ_iff [Fintype α] [Fintype β] {f : α → β} :
+    univ.image f = univ ↔ Function.Surjective f :=
+  ⟨fun h y ↦ by simpa using (Finset.ext_iff.1 h y).2 (mem_univ y), image_univ_of_surjective⟩
 
 end Finset

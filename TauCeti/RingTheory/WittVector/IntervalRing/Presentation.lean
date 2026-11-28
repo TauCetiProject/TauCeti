@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.WittVector.IntervalRing.Radius
-public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Surjective
 import Mathlib.Analysis.Normed.Group.ControlledClosure
@@ -237,7 +237,7 @@ private theorem exists_restrictedSeries_toIntervalRing_eq_coe (hρ : ρ₁ ≤ �
   -- Write `d = y / s` with `s = (p [ϖ])ᵐ` and split `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b`.
   obtain ⟨⟨y, s⟩, rfl⟩ :=
     IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) d
-  obtain ⟨m, hm⟩ := s.2
+  obtain ⟨m, hm⟩ := s.property
   obtain ⟨b, hb⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul y m
   set ι := algebraMap (𝕎 O) A
   set u := (isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ₂ hϖ).unit

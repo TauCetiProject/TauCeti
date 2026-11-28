@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
-public import TauCeti.Probability.RandomMatrix.Wigner
+public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 public import TauCeti.Analysis.Complex.NormSq
 
 /-!
@@ -31,7 +31,8 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
   `TauCeti.Probability.gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one`: imaginary-part and
   `β ≠ 1` entry properties.
 * `TauCeti.Probability.gaussianEnsemble_add` and `TauCeti.Probability.gaussianEnsemble_smul`: the
-  matrix is real-linear in the array.
+  matrix is real-linear in the array, so `TauCeti.Probability.gaussianEnsemble_eq_sum_smul_single`
+  expands it in the ensembles of the unit arrays.
 * `TauCeti.Probability.continuous_gaussianEnsemble`: it depends continuously on the array.
 * `TauCeti.Probability.hasLaw_gaussianEnsemble`: with independent `N(0, v)` coordinates the
   ensemble has the law of `√v` times the ensemble of standard Gaussian coordinates.
@@ -69,13 +70,13 @@ private def extendArray {Ω : Type*} (n : ℕ) (g : Fin n × Fin n → Ω → �
 
 private theorem extendArray_apply {Ω : Type*} {n : ℕ} (g : Fin n × Fin n → Ω → ℝ) (i j : Fin n)
     (ω : Ω) : extendArray n g (i.val, j.val) ω = g (i, j) ω := by
-  simp [extendArray, i.2, j.2]
+  simp [extendArray, i.isLt, j.isLt]
 
 /-- The above-diagonal entries of the Wigner matrix equal to `gaussianEnsemble β n`. -/
 private def ensembleUpper {Ω : Type*} (β n : ℕ) (g : Fin n × Fin n → Ω → ℝ) :
     StrictUpper → Ω → ℂ := fun ij ω ↦
-  if β = 1 then (extendArray n g ij.1 ω : ℂ)
-  else ((extendArray n g ij.1 ω : ℂ) + Complex.I * extendArray n g (ij.1.2, ij.1.1) ω) /
+  if β = 1 then (extendArray n g ij.val ω : ℂ)
+  else ((extendArray n g ij.val ω : ℂ) + Complex.I * extendArray n g (ij.val.2, ij.val.1) ω) /
     (Real.sqrt 2 : ℝ)
 
 /-- The diagonal entries of the Wigner matrix equal to `gaussianEnsemble β n`. -/
@@ -201,6 +202,21 @@ theorem gaussianEnsemble_sub (g h : Fin n × Fin n → ℝ) :
   simp only [gaussianEnsemble_apply, Pi.sub_apply, Matrix.sub_apply]
   split_ifs <;> push_cast <;> ring
 
+/-- The Gaussian ensemble of an array `g` is the combination, with coefficients `g ab`, of the
+ensembles of the unit arrays `Pi.single ab 1`. -/
+theorem gaussianEnsemble_eq_sum_smul_single (β n : ℕ) (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n g = ∑ ab, g ab • gaussianEnsemble β n (Pi.single ab 1) := by
+  let L : (Fin n × Fin n → ℝ) →ₗ[ℝ] Matrix (Fin n) (Fin n) ℂ :=
+    { toFun := gaussianEnsemble β n
+      map_add' := gaussianEnsemble_add
+      map_smul' := gaussianEnsemble_smul }
+  refine (L.pi_apply_eq_sum_univ g).trans (Finset.sum_congr rfl fun ab _ ↦ ?_)
+  -- The basis vectors of `pi_apply_eq_sum_univ` are the unit arrays `Pi.single ab 1`.
+  have hab : (fun j ↦ if ab = j then (1 : ℝ) else 0) = Pi.single ab 1 := by
+    ext j
+    simp [Pi.single_apply, eq_comm]
+  simp only [hab, L, LinearMap.coe_mk, AddHom.coe_mk]
+
 /-- The Gaussian ensemble depends continuously on the array. -/
 @[fun_prop]
 theorem continuous_gaussianEnsemble : Continuous (gaussianEnsemble β n) := by
@@ -227,7 +243,7 @@ theorem hasLaw_gaussianEnsemble {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Mea
   have hv : gaussianReal 0 v = (gaussianReal 0 1).map (Real.sqrt v * ·) := by
     rw [gaussianReal_map_const_mul, mul_zero, mul_one]
     congr
-    exact NNReal.eq (Real.sq_sqrt v.2).symm
+    exact NNReal.eq (Real.sq_sqrt v.property).symm
   have hpi : Measure.pi (fun _ : Fin n × Fin n ↦ gaussianReal 0 v) =
       (Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map (Real.sqrt v • ·) := by
     rw [hv, ← Measure.pi_map_pi fun _ ↦ by fun_prop]
@@ -351,14 +367,14 @@ theorem integral_re_trace_gaussianEnsemble_one_sq_div {Ω : Type*} {mΩ : Measur
     (fun p hp ↦ hint p.1 p.2 hp) (fun p hp ↦ hvar p.1 p.2 hp)
     (hint ⟨0, hn⟩ ⟨0, hn⟩ le_rfl) (hvar ⟨0, hn⟩ ⟨0, hn⟩ le_rfl)
   have hξ (ij : StrictUpper) :
-      ∀ ω, ‖ensembleUpper 1 n g ij ω‖ ^ 2 = extendArray n g ij.1 ω ^ 2 := by
+      ∀ ω, ‖ensembleUpper 1 n g ij ω‖ ^ 2 = extendArray n g ij.val ω ^ 2 := by
     intro ω
     simp [ensembleUpper]
   have hη (i : ℕ) : ∀ ω, ensembleDiag 1 n g i ω ^ 2 = 2 * extendArray n g (i, i) ω ^ 2 := by
     intro ω
     simp [ensembleDiag, mul_pow]
   have hd (i : ℕ) := hm (i, i) fun _ ↦ le_rfl
-  have hu (ij : StrictUpper) := hm ij.1 fun h ↦ (Fin.mk_le_mk.2 ij.2.le)
+  have hu (ij : StrictUpper) := hm ij.val fun h ↦ (Fin.mk_le_mk.2 ij.property.le)
   rw [integral_re_trace_gaussianEnsemble_sq_div_of_wigner (σ2 := 2) (s := 1) 1 n g
     (fun ij ↦ by simp only [hξ]; exact (hu ij).1)
     (fun ij ↦ by simp only [hξ]; exact (hu ij).2)
@@ -377,15 +393,15 @@ theorem integral_re_trace_gaussianEnsemble_two_sq_div {Ω : Type*} {mΩ : Measur
   have hm := extendArray_sq_moments hn g (fun _ ↦ True) (fun p _ ↦ hint p)
     (fun p _ ↦ hvar p) (hint (⟨0, hn⟩, ⟨0, hn⟩)) (hvar (⟨0, hn⟩, ⟨0, hn⟩))
   have hξ (ij : StrictUpper) : ∀ ω, ‖ensembleUpper 2 n g ij ω‖ ^ 2 =
-      (extendArray n g ij.1 ω ^ 2 + extendArray n g (ij.1.2, ij.1.1) ω ^ 2) / 2 := by
+      (extendArray n g ij.val ω ^ 2 + extendArray n g (ij.val.2, ij.val.1) ω ^ 2) / 2 := by
     intro ω
     simpa [ensembleUpper] using Complex.norm_sq_add_I_mul_div_sqrt_two _ _
   have hη (i : ℕ) : ∀ ω, ensembleDiag 2 n g i ω ^ 2 = extendArray n g (i, i) ω ^ 2 := by
     intro ω
     simp [ensembleDiag]
   have hd (i : ℕ) := hm (i, i) fun _ ↦ trivial
-  have hu (ij : StrictUpper) := hm ij.1 fun _ ↦ trivial
-  have hu' (ij : StrictUpper) := hm (ij.1.2, ij.1.1) fun _ ↦ trivial
+  have hu (ij : StrictUpper) := hm ij.val fun _ ↦ trivial
+  have hu' (ij : StrictUpper) := hm (ij.val.2, ij.val.1) fun _ ↦ trivial
   rw [integral_re_trace_gaussianEnsemble_sq_div_of_wigner (σ2 := 1) (s := 1) 2 n g
     (fun ij ↦ by simp only [hξ]; exact ((hu ij).1.add (hu' ij).1).div_const 2)
     (fun ij ↦ by

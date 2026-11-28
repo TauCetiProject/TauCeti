@@ -76,6 +76,9 @@ particular `𝔭` splits completely in `L` exactly when its ray-class Artin symb
   decomposition law of a prime ideal prime to `𝔪`.
 * `TauCeti.ClassFieldTheory.ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one`:
   a prime ideal prime to `𝔪` splits completely exactly when its ray-class Artin symbol is trivial.
+* `TauCeti.ClassFieldTheory.algHom_restrictNormalHom_rayClassArtinMap`,
+  `TauCeti.ClassFieldTheory.restrictNormalHom_rayClassArtinMap`: tower compatibility of
+  `rayClassArtinMap` with `classMap`.
 
 ## References
 
@@ -201,11 +204,11 @@ theorem isArithFrobAt_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo �
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     IsArithFrobAt (𝓞 K) (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) Q := by
   have hI : (I : Ideal (𝓞 K)) ≠ ⊥ := (Modulus.isCoprimeTo_iff.mp
-    (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1
+    (Modulus.mem_integralIdealsPrimeTo.mp I.property)).1
   have : (I : Ideal (𝓞 K)).IsPrime := Ideal.isPrime_of_liesOver Q _
   let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hI⟩
   have hv : v ∉ 𝔪.support := fun hv ↦
-    (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).2 v hv dvd_rfl
+    (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)).2 v hv dvd_rfl
   have : Q.LiesOver v.asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
   rw [idealClass_apply, rayClassArtinMap_rayClassMk,
     NumberFieldArithmetic.artinHomAway_apply_eq_artinElementAway _ _ _ _ v
@@ -261,5 +264,28 @@ theorem ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one
   rw [← artinSymbol_eq_one_iff_ncard_primesOver_eq_finrank _ hur,
     ← rayClassArtinMap_idealClass h I hur, ConjClasses.one_eq_mk_one,
     ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left]
+
+/-! ### Compatibility in towers -/
+
+/-- **Tower compatibility of ray-class Artin maps**: for `h : 𝔪 ∣ 𝔫` and admissible extensions
+`f : M →ₐ[K] L`, restriction along `f` intertwines `rayClassArtinMap` with `classMap h`. -/
+theorem algHom_restrictNormalHom_rayClassArtinMap
+    {M : Type} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
+    {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (hM : IsAdmissibleModulus K M 𝔪)
+    (hL : IsAdmissibleModulus K L 𝔫) (f : M →ₐ[K] L) (x : RayClassGroup 𝔫) :
+    f.restrictNormalHom (rayClassArtinMap 𝔫 hL x) = rayClassArtinMap 𝔪 hM (classMap h x) := by
+  obtain ⟨c, rfl⟩ := rayClassQuotient_surjective 𝔫 x
+  rw [rayClassArtinMap_rayClassQuotient, classMap_rayClassQuotient,
+    rayClassArtinMap_rayClassQuotient, restrictNormalHom_ideleClassArtinMap]
+
+/-- Scalar-tower form of `algHom_restrictNormalHom_rayClassArtinMap`. -/
+theorem restrictNormalHom_rayClassArtinMap
+    (M : Type) [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
+    [Algebra M L] [IsScalarTower K M L] {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (hM : IsAdmissibleModulus K M 𝔪) (hL : IsAdmissibleModulus K L 𝔫) (x : RayClassGroup 𝔫) :
+    AlgEquiv.restrictNormalHom M (rayClassArtinMap 𝔫 hL x) =
+      rayClassArtinMap 𝔪 hM (classMap h x) := by
+  rw [← AlgHom.restrictNormalHom_toAlgHom (F := K),
+    algHom_restrictNormalHom_rayClassArtinMap h hM hL]
 
 end TauCeti.ClassFieldTheory

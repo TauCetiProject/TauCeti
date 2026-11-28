@@ -16,6 +16,10 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 A basis determines a real top-degree coefficient and normalized Haar measure. Their integral
 changes by the orientation sign of the basis change. Relative orientation signs make it
 independent of an arbitrary basis, including negative orientations in dimension zero.
+
+The absolute value of the coefficient needs no sign: the Haar measure of a basis `b` with density
+`|ω(b)|` does not depend on `b` (`Module.Basis.addHaar_withDensity_ofReal_abs_apply_eq`). This is
+the density `|ω|` of a top-degree form, which may be computed in any basis.
 -/
 
 public section
@@ -67,5 +71,18 @@ theorem integrable_apply_basis_iff (b b' : Basis ι ℝ E)
     (ENNReal.ofReal_ne_zero_iff.mpr (abs_pos.mpr (inv_ne_zero hd))) ENNReal.ofReal_ne_top]
   simp_rw [ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b')]
   exact integrable_const_mul_iff (b.isUnit_det b') _
+
+omit [DecidableEq ι] in
+/-- **The density of a top-degree form is independent of the basis.** The Haar measure of a basis
+`b` with density `|ω(b)|` is the same for every basis: changing the basis multiplies the
+coefficient by the determinant of the change and the Haar measure by its inverse absolute value. -/
+theorem addHaar_withDensity_ofReal_abs_apply_eq (b b' : Basis ι ℝ E)
+    (ω : E → E [⋀^ι]→L[ℝ] ℝ) :
+    b'.addHaar.withDensity (fun x ↦ ENNReal.ofReal |ω x b'|) =
+      b.addHaar.withDensity (fun x ↦ ENNReal.ofReal |ω x b|) := by
+  classical
+  refine addHaar_withDensity_eq_of_eq_abs_det_mul b b' fun x ↦ ?_
+  rw [ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b'), abs_mul,
+    ENNReal.ofReal_mul (abs_nonneg _)]
 
 end Module.Basis

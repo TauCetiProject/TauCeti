@@ -42,9 +42,10 @@ targets and interiors are relative to them. The coefficient space is an arbitrar
   seminorm is bounded by a multiple of the finite-atlas seminorm.
 * `ContMDiffMap.exists_finiteAtlasSeminorm_le`: the seminorm of any finite atlas is bounded by
   a multiple of that of a covering atlas; so any two covering atlases give equivalent norms.
-* `ContMDiffMap.exists_norm_iteratedFDeriv_extChartAt_symm_le`: on a boundaryless manifold
-  modelled on a locally compact space, near each point of a chart target, the finite-atlas
-  seminorm bounds the coordinate derivatives of order at most `k`.
+* `ContMDiffMap.exists_norm_iteratedFDeriv_extChartAt_symm_le_chartCkSeminorm` and
+  `ContMDiffMap.exists_norm_iteratedFDeriv_extChartAt_symm_le`: on a boundaryless manifold
+  modelled on a locally compact space, near each point of a chart target, a compact chart seminorm
+  and hence the finite-atlas seminorm bound the coordinate derivatives of order at most `k`.
 * `ContMDiffMap.norm_apply_le_finiteAtlasSeminorm`: the finite-atlas seminorm bounds every value.
 * `ContMDiffMap.finiteAtlasSeminorm_eq_zero_iff`: the finite-atlas seminorm is a norm.
 * `ContMDiffMap.withSeminorms_finiteAtlasSeminorm`: it generates the weak Whitney topology on
@@ -123,6 +124,30 @@ theorem tendsto_chartIteratedFDeriv_of_tendsto_finiteAtlasSeminorm {k : ℕ} {hk
     z hz
   rwa [chartIteratedFDeriv_sub, ContinuousMap.sub_apply] at hb
 
+/-- **Coordinate derivatives are locally bounded by a compact chart seminorm.** On a
+boundaryless manifold modelled on a locally compact space, each point of a chart target has a
+neighbourhood on which the coordinate derivatives of order at most `k` of vector-valued maps are
+bounded by one compact chart `C^k` seminorm of the same chart. -/
+theorem exists_norm_iteratedFDeriv_extChartAt_symm_le_chartCkSeminorm [I.Boundaryless]
+    [LocallyCompactSpace E] (x : M) {w₀ : E} (hw₀ : w₀ ∈ (extChartAt I x).target) (k : ℕ)
+    (hk : k ≤ n) {m : ℕ} (hm : m ≤ k) :
+    ∃ L : TopologicalSpace.Compacts (extChartAt I x).target, ∀ᶠ z in 𝓝 w₀,
+      ∀ f : C^n⟮I, M; 𝓘(𝕜, F), F⟯,
+        ‖iteratedFDeriv 𝕜 m (fun w ↦ f ((extChartAt I x).symm w)) z‖ ≤
+          chartCkSeminorm x L k hk f := by
+  have ht : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
+  -- A compact neighbourhood of `w₀` in the chart target gives a compact chart seminorm.
+  obtain ⟨L, hL, hw₀L, hLt⟩ := exists_compact_subset ht hw₀
+  let L' : TopologicalSpace.Compacts (extChartAt I x).target := ⟨Subtype.val ⁻¹' L,
+    Topology.IsEmbedding.subtypeVal.isCompact_iff.2 (by
+      rwa [Subtype.image_preimage_coe, inter_eq_right.2 hLt])⟩
+  refine ⟨L', ?_⟩
+  filter_upwards [mem_interior_iff_mem_nhds.1 hw₀L] with z hz f
+  have hz' := (chartCkSeminorm_le_iff x L' k hk f (apply_nonneg _ _)).mp le_rfl m hm
+    ⟨z, hLt hz⟩ hz
+  rwa [chartIteratedFDeriv_self_target_apply, iteratedFDerivWithin_of_isOpen m ht (hLt hz)]
+    at hz'
+
 section Cover
 
 variable (hK : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
@@ -160,7 +185,8 @@ theorem exists_chartCkSeminorm_le_finiteAtlasSeminorm (x : M)
   have hsum : 0 ≤ ∑ i, C i := Finset.sum_nonneg fun i _ ↦ (hC i).le
   refine ⟨1 + ∑ i, C i, add_pos_of_pos_of_nonneg zero_lt_one hsum, fun f ↦ ?_⟩
   refine chartCkSeminorm_le_of_subset_biUnion x L Finset.univ (fun i ↦ ⟨P i, hP i⟩) hLP.subset
-    k hk _ (fun i _ ↦ (hC i).le) f fun i _ ↦ (hbound i f).trans ?_
+    k hk (fun i _ ↦ (hC i).le) f (apply_nonneg (finiteAtlasSeminorm c K k hk) f)
+    fun i _ ↦ (hbound i f).trans ?_
   exact mul_le_mul_of_nonneg_left (chartCkSeminorm_le_finiteAtlasSeminorm c K k hk i f) (hC i).le
 
 include hK in
@@ -196,20 +222,10 @@ theorem exists_norm_iteratedFDeriv_extChartAt_symm_le [I.Boundaryless] [LocallyC
     ∃ C, ∀ᶠ z in 𝓝 w₀, ∀ f : C^n⟮I, M; 𝓘(𝕜, F), F⟯,
       ‖iteratedFDeriv 𝕜 m (fun w ↦ f ((extChartAt I x).symm w)) z‖ ≤
         C * finiteAtlasSeminorm c K k hk f := by
-  have ht : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
-  -- A compact neighbourhood of `w₀` in the chart target gives a compact chart seminorm.
-  obtain ⟨L, hL, hw₀L, hLt⟩ := exists_compact_subset ht hw₀
-  let L' : TopologicalSpace.Compacts (extChartAt I x).target := ⟨Subtype.val ⁻¹' L,
-    Topology.IsEmbedding.subtypeVal.isCompact_iff.2 (by
-      rwa [Subtype.image_preimage_coe, inter_eq_right.2 hLt])⟩
-  obtain ⟨C, -, hC⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (F := F) hK x L' k hk
-  refine ⟨C, ?_⟩
-  filter_upwards [mem_interior_iff_mem_nhds.1 hw₀L] with z hz f
-  have hz' := (chartCkSeminorm_le_iff x L' k hk f (apply_nonneg _ _)).mp le_rfl m hm
-    ⟨z, hLt hz⟩ hz
-  rw [chartIteratedFDeriv_self_target_apply, iteratedFDerivWithin_of_isOpen m ht (hLt hz)]
-    at hz'
-  exact hz'.trans (hC f)
+  obtain ⟨L, hL⟩ := exists_norm_iteratedFDeriv_extChartAt_symm_le_chartCkSeminorm (F := F) x hw₀
+    k hk hm
+  obtain ⟨C, -, hC⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (F := F) hK x L k hk
+  exact ⟨C, hL.mono fun z hz f ↦ (hz f).trans (hC f)⟩
 
 end Cover
 
@@ -269,13 +285,8 @@ theorem withSeminorms_finiteAtlasSeminorm
     obtain ⟨C, -, hbound⟩ :=
       exists_chartCkSeminorm_le_finiteAtlasSeminorm (F := F) hK x L k le_rfl
     refine ⟨{()}, C, fun f ↦ ?_⟩
-    have hderiv : chartDerivativeSeminorm (F := F) x L m hm f ≤
-        chartCkSeminorm x L k le_rfl f :=
-      (chartDerivativeSeminorm_le_iff x L m hm f (apply_nonneg _ _)).mpr
-        fun z hz ↦ (chartCkSeminorm_le_iff x L k le_rfl f (apply_nonneg _ _)).mp
-          le_rfl m hmk z hz
     simpa only [LinearMap.id_apply, chartSeminormFamily_apply, Finset.sup_singleton] using
-      hderiv.trans (hbound f)
+      (chartDerivativeSeminorm_le_chartCkSeminorm x L hm le_rfl hmk f).trans (hbound f)
 
 /-- **Normability of `C^k` maps on a compact manifold.** On a compact manifold modelled on a
 locally compact space, the weak Whitney topology on vector-valued `C^k` maps is generated by

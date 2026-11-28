@@ -13,22 +13,31 @@ public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 /-!
 # Scalar extension of images and powers of submodules
 
+For submodules of modules over a commutative algebra, `Submodule.tensorProductMap` compares
+their tensor product over the base ring with the ambient tensor product over the algebra.
+Its range is the bilinear image, using Mathlib's `TensorProduct.mapOfCompatibleSMul`,
+`TensorProduct.mapIncl`, and `TensorProduct.map₂_eq_range_lift_comp_mapIncl`.
+
 Extension of scalars commutes with taking images of submodules under linear maps, and preserves
 powers of submodules of an algebra. The latter applies, in particular, to the homogeneous pieces of
 tensor and exterior algebras, defined as powers of their generators.
 
 For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of images of elements of
 `p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
-(`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
-`M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
-(`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
+(`Submodule.exists_eq_rTensor_inclusion_add`). Equivalences of the factors that preserve the
+underlying vectors do not change the inclusion of `p ⊗[R] q` (`TensorProduct.mapIncl_congr`). For
+an ideal `I` and a submodule `J`, the image of `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in
+`I • (M ⊗[R] J)` (`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
 (`LinearMap.range_rTensor_inclusion_smul_le`).
 
 Multiplication of tensor products of submodules is compatible with multiplication in each
 factor (`Submodule.map₂_tmul_mul_le`). If a scalar extension is finitely generated, some finitely
 generated submodule of the original module already spans that scalar extension
 (`Submodule.exists_fg_baseChange_eq_top`). A linear map of scalar factors carries one scalar
-extension of a submodule into another (`Submodule.map_mem_baseChange`).
+extension of a submodule into another (`Submodule.map_mem_baseChange`), and for an algebra map
+`f : A →ₐ[R] B` the `B`-span of the image of `span A s` under `f ⊗ id` equals the `B`-span of the
+image of `s` (`Submodule.span_rTensor_image_span`). In particular, if a family `X` spans `M` over
+`R`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A` (`TauCeti.span_one_tmul_eq_top`).
 -/
 
 public section
@@ -36,6 +45,39 @@ public section
 open scoped TensorProduct Pointwise
 
 namespace Submodule
+
+section TensorProductMap
+
+variable {R K V W : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
+  [AddCommMonoid V] [Module K V] [Module R V] [IsScalarTower R K V]
+  [AddCommMonoid W] [Module K W] [Module R W] [IsScalarTower R K W]
+
+/-- The canonical `R`-linear map from the tensor product of two submodules to the tensor
+product of their ambient modules over a commutative `R`-algebra `K`, with scalars restricted
+to `R` in the codomain. -/
+def tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    L ⊗[R] M →ₗ[R] V ⊗[K] W :=
+  (TensorProduct.mapOfCompatibleSMul K R R V W).comp (TensorProduct.mapIncl L M)
+
+/-- The tensor map sends a pure submodule tensor to the corresponding ambient tensor. -/
+@[simp]
+theorem tensorProductMap_tmul (L : Submodule R V) (M : Submodule R W) (x : L) (y : M) :
+    L.tensorProductMap M (x ⊗ₜ[R] y) = (x : V) ⊗ₜ[K] (y : W) := by
+  simp [tensorProductMap, TensorProduct.mapIncl]
+
+/-- The tensor map has as image the bilinear image of the two submodules. -/
+@[simp]
+theorem range_tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    LinearMap.range (L.tensorProductMap (K := K) M) =
+      map₂ ((TensorProduct.mk K V W).restrictScalars₁₂ R R) L M := by
+  have h : TensorProduct.mapOfCompatibleSMul K R R V W =
+      TensorProduct.lift ((TensorProduct.mk K V W).restrictScalars₁₂ R R) := by
+    ext x y
+    simp
+  rw [tensorProductMap, h]
+  exact (TensorProduct.map₂_eq_range_lift_comp_mapIncl _ L M).symm
+
+end TensorProductMap
 
 section Congruence
 
@@ -58,7 +100,7 @@ theorem rTensor_add_lTensor_rTensor_congr
   | tmul u v =>
       simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, coe_subtype,
         LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
-      rw [hP _ u.2, hQ _ v.2]
+      rw [hP _ u.property, hQ _ v.property]
   | add u v hu hv =>
       simp only [map_add]
       rw [add_add_add_comm, hu, hv, ← add_add_add_comm]
@@ -102,6 +144,21 @@ theorem map_mem_baseChange (p : Submodule R M) (f : A →ₗ[R] B) {x : A ⊗[R]
   | tmul a m => simp
   | add y z hy hz => simp only [map_add, hy, hz]
 
+/-- For an `R`-algebra map `f : A →ₐ[R] B`, the `B`-span of the image of `span A s` under `f ⊗ id`
+equals the `B`-span of the image of `s`. -/
+theorem span_rTensor_image_span (f : A →ₐ[R] B) (s : Set (A ⊗[R] M)) :
+    span B (f.toLinearMap.rTensor M '' (span A s : Set (A ⊗[R] M))) =
+      span B (f.toLinearMap.rTensor M '' s) := by
+  let φ : A ⊗[R] M →ₛₗ[f.toRingHom] B ⊗[R] M :=
+    { toFun := f.toLinearMap.rTensor M
+      map_add' := map_add _
+      map_smul' a x := by
+        induction x using TensorProduct.inductionOn with
+        | tmul a' m => simp [TensorProduct.smul_tmul', map_mul]
+        | add x y hx hy => rw [smul_add, map_add, hx, hy, map_add, smul_add] }
+  exact le_antisymm (span_le.mpr (image_span_subset_span φ s))
+    (span_mono (Set.image_mono subset_span))
+
 end ScalarMap
 
 section Finiteness
@@ -138,7 +195,7 @@ theorem exists_eq_rTensor_inclusion_add (p q : Submodule R N) (t : ↥(p ⊔ q) 
     ∃ a b, t = (inclusion le_sup_left).rTensor M a + (inclusion le_sup_right).rTensor M b := by
   induction t with
   | tmul x m =>
-    obtain ⟨y, hy, z, hz, hyz⟩ := mem_sup.mp x.2
+    obtain ⟨y, hy, z, hz, hyz⟩ := mem_sup.mp x.property
     refine ⟨⟨y, hy⟩ ⊗ₜ m, ⟨z, hz⟩ ⊗ₜ m, ?_⟩
     rw [LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, ← TensorProduct.add_tmul]
     exact congrArg (· ⊗ₜ m) (Subtype.ext hyz.symm)
@@ -158,7 +215,7 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
     -- In `J`, the element `y` of `I • J` lies in `I • ⊤`, since `I • J` is the image of `I • ⊤`.
     have hy : (y : N) ∈ (I • ⊤ : Submodule R J).map J.subtype := by
       rw [map_smul'', map_top, range_subtype]
-      exact y.2
+      exact y.property
     obtain ⟨z, hz, hzy⟩ := hy
     have hz' : inclusion smul_le_right y = z := Subtype.ext hzy.symm
     rw [LinearMap.lTensor_tmul, hz']
@@ -175,6 +232,17 @@ theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Subm
   rw [← (TensorProduct.comm R M _).apply_symm_apply u, LinearMap.rTensor_comm]
   exact smul_top_le_comap_smul_top I (TensorProduct.comm R M J).toLinearMap
     (LinearMap.range_lTensor_inclusion_smul_le I J ⟨_, rfl⟩)
+
+/-- Linear equivalences `p ≃ p'` and `q ≃ q'` of submodules that preserve the underlying vectors,
+such as the transports `LinearEquiv.ofEq` along equalities of submodules, do not change the
+inclusion of `p ⊗ q` into `M ⊗ N`. -/
+theorem _root_.TensorProduct.mapIncl_congr {p p' : Submodule R M} {q q' : Submodule R N}
+    (e₁ : p ≃ₗ[R] p') (e₂ : q ≃ₗ[R] q') (h₁ : ∀ v, (e₁ v : M) = v) (h₂ : ∀ w, (e₂ w : N) = w)
+    (x : p ⊗[R] q) :
+    TensorProduct.mapIncl p' q' (TensorProduct.congr e₁ e₂ x) = TensorProduct.mapIncl p q x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => simp [h₁, h₂]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Inclusion
 
@@ -197,7 +265,7 @@ theorem map₂_tmul_mul_le (P S : Submodule R A) (Q T : Submodule R B) :
     induction b with
     | tmul s t =>
       simpa using apply_mem_map₂ (TensorProduct.mk R A B)
-        (mul_mem_mul p.2 s.2) (mul_mem_mul q.2 t.2)
+        (mul_mem_mul p.property s.property) (mul_mem_mul q.property t.property)
     | add b c hb hc => simpa [mul_add] using Submodule.add_mem _ hb hc
   | add a c ha hc => simpa [add_mul] using Submodule.add_mem _ ha hc
 
@@ -216,3 +284,15 @@ theorem baseChange_pow (p : Submodule R B) (n : ℕ) :
     (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) (p : Set B) n)
 
 end Submodule
+
+namespace TauCeti
+
+/-- **A spanning family stays spanning after extension of scalars**: if `X` spans the
+`R`-module `M`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A`. -/
+theorem span_one_tmul_eq_top {R A M ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] {X : ι → M} (hX : Submodule.span R (Set.range X) = ⊤) :
+    Submodule.span A (Set.range fun i ↦ (1 : A) ⊗ₜ[R] X i) = ⊤ := by
+  have h := congrArg (Submodule.baseChange A) hX
+  rwa [Submodule.baseChange_span, Submodule.baseChange_top, ← Set.range_comp] at h
+
+end TauCeti

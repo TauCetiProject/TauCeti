@@ -18,6 +18,8 @@ trivialization over their union, with the same forward and inverse maps on each 
 The coordinate change between two trivializations is jointly continuous in the base point and the
 fibre coordinate over the overlap of their base sets, which makes the transition functions of a
 fibre bundle continuous.
+A homeomorphism of the total space with a product, lying over the base, is a trivialization over
+the whole base.
 A map is continuous as soon as every point of the base lies in the base set of a trivialization,
 and the trivializations at the points of the base of a fibre bundle make its projection such a
 locally trivial map.
@@ -33,10 +35,28 @@ fibre is a bijection onto the base.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
+* `Homeomorph.toTrivialization`: a homeomorphism `Z ≃ₜ B × F` over `B` is a trivialization of the
+  projection `Z → B` over all of `B`.
+* `FiberBundle.continuous_of_forall_trivialization`: chart formulas continuous at each point give
+  continuity of a map of total spaces over the identity.
 * `FiberBundle.exists_trivialization_mem_baseSet`: the projection of a fibre bundle is locally
   trivial.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
+* `Bundle.Trivialization.isOpen_preimage`: the preimage under `proj` of an open subset of
+  `e.baseSet` is open.
+* `Bundle.Trivialization.eq_of_apply_eq`: a trivialization is injective over its base set.
+* `Bundle.Trivialization.coe_restrOpen`, `Bundle.Trivialization.coe_restrOpen_symm`,
+  `Bundle.Trivialization.restrOpen_baseSet`: the restriction of a trivialization to an open set of
+  the base keeps its forward and inverse maps and intersects its base set with that set.
+* `Bundle.Trivialization.transFiberHomeomorph_baseSet`,
+  `Bundle.Trivialization.transFiberHomeomorph_symm_apply`: changing the fibre of a trivialization
+  along a homeomorphism `h` keeps its base set, and its inverse applies `h.symm` to the fibre
+  coordinate first.
+* `Bundle.Trivialization.op_smul_symm`, `Bundle.Trivialization.op_smul_symm_one`,
+  `Bundle.Trivialization.op_snd_smul_symm_one`, and `Bundle.Trivialization.op_inv_mul_smul`: for a
+  right-equivariant trivialization, the inverse turns right multiplication into the right action,
+  recovers points over `e.baseSet` from the unit section, and transports points in the same fibre.
 * `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
   from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
 * `Bundle.Trivialization.equivAt`: a trivialization as an equivalence between the fibre over a
@@ -46,6 +66,8 @@ fibre is a bijection onto the base.
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
   a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
   carries the sheets of `p` over a preconnected set onto sheets of `q`.
+* `Bundle.Trivialization.compHomeomorphOfEq`: pre-composing a trivialization with a homeomorphism
+  intertwining two projections.
 * `TauCeti.subsingleton_fiber_of_subsingleton`, `TauCeti.bijective_proj_of_subsingleton`: a fibre
   bundle whose model fibre is a point has point fibres, and with a chosen point in each fibre its
   projection is a bijection.
@@ -93,6 +115,166 @@ theorem continuousOn_coordChange (e₁ e₂ : Trivialization F proj) :
     fun p hp ↦ ?_
   simp only [Function.comp_apply, e₂.coe_coe, ← e₁.mk_coordChange e₂ hp.1.1 hp.1.2 p.2]
 
+/-- Pre-compose a trivialization `t : Trivialization F proj` with a homeomorphism `h : Z' ≃ₜ Z`
+intertwining `proj` with another projection `proj' : Z' → B`. -/
+def compHomeomorphOfEq {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    Trivialization F proj' where
+  toOpenPartialHomeomorph := (t.compHomeomorph h).toOpenPartialHomeomorph
+  baseSet := t.baseSet
+  open_baseSet := t.open_baseSet
+  source_eq := by
+    ext p
+    -- `(t.compHomeomorph h).baseSet` is definitionally `t.baseSet`.
+    exact (t.compHomeomorph h).mem_source.trans
+      (by simp only [Function.comp_apply, hproj p, mem_preimage]; rfl)
+  target_eq := (t.compHomeomorph h).target_eq
+  proj_toFun p hp := ((t.compHomeomorph h).proj_toFun p hp).trans (hproj p)
+
+/-- Evaluating `t.compHomeomorphOfEq h hproj` at `p` applies `t` to `h p`. -/
+@[simp]
+theorem compHomeomorphOfEq_apply {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) (p : Z') :
+    t.compHomeomorphOfEq h hproj p = t (h p) := (rfl)
+
+/-- Base set of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_baseSet {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t.compHomeomorphOfEq h hproj).baseSet = t.baseSet := (rfl)
+
+/-- Source of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_source {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t.compHomeomorphOfEq h hproj).source = h ⁻¹' t.source := by
+  ext p
+  rw [mem_source, compHomeomorphOfEq_baseSet, ← hproj p, ← t.mem_source, mem_preimage]
+
+/-- Partial-homeomorphism inverse of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply {Z' : Type*} [TopologicalSpace Z']
+    {proj' : Z' → B} (t : Trivialization F proj) (h : Z' ≃ₜ Z)
+    (hproj : ∀ p, proj (h p) = proj' p) (q : B × F) :
+    (t.compHomeomorphOfEq h hproj).toOpenPartialHomeomorph.symm q =
+      h.symm (t.toOpenPartialHomeomorph.symm q) := (rfl)
+
+/-- Coordinate changes between trivializations transported along the same homeomorphism equal the
+original coordinate changes. -/
+@[simp]
+theorem compHomeomorphOfEq_coordChange {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t₁ t₂ : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t₁.compHomeomorphOfEq h hproj).coordChange (t₂.compHomeomorphOfEq h hproj) =
+      t₁.coordChange t₂ := by
+  ext b v
+  simp [Trivialization.coordChange]
+
+/-- The restriction of a trivialization to an open set has the original forward map. -/
+@[simp]
+theorem coe_restrOpen (e : Trivialization F proj) (s : Set B) (hs : IsOpen s) :
+    ⇑(e.restrOpen s hs) = e :=
+  (rfl)
+
+/-- The restriction of a trivialization to an open set has the original inverse map. -/
+@[simp]
+theorem coe_restrOpen_symm (e : Trivialization F proj) (s : Set B) (hs : IsOpen s) :
+    ⇑(e.restrOpen s hs).toOpenPartialHomeomorph.symm = e.toOpenPartialHomeomorph.symm :=
+  (rfl)
+
+/-- The base set of the restriction of a trivialization to an open set `s` is the intersection
+of its base set with `s`. -/
+@[simp]
+theorem restrOpen_baseSet (e : Trivialization F proj) (s : Set B) (hs : IsOpen s) :
+    (e.restrOpen s hs).baseSet = e.baseSet ∩ s :=
+  (rfl)
+
+/-- Changing the fibre of a trivialization along a homeomorphism keeps its base set. -/
+@[simp]
+theorem transFiberHomeomorph_baseSet {F' : Type*} [TopologicalSpace F']
+    (e : Trivialization F proj) (h : F ≃ₜ F') : (e.transFiberHomeomorph h).baseSet = e.baseSet :=
+  (rfl)
+
+/-- The inverse of a trivialization whose fibre is changed along a homeomorphism `h` applies
+`h.symm` to the fibre coordinate before the original inverse. -/
+@[simp]
+theorem transFiberHomeomorph_symm_apply {F' : Type*} [TopologicalSpace F']
+    (e : Trivialization F proj) (h : F ≃ₜ F') (x : B × F') :
+    (e.transFiberHomeomorph h).toOpenPartialHomeomorph.symm x =
+      e.toOpenPartialHomeomorph.symm (x.1, h.symm x.2) :=
+  (rfl)
+
+/-- For a trivialization `e` of `proj`, the preimage of an open subset of `e.baseSet` is open. -/
+theorem isOpen_preimage (e : Trivialization F proj) {s : Set B} (hs : IsOpen s)
+    (hsub : s ⊆ e.baseSet) : IsOpen (proj ⁻¹' s) := by
+  rw [← inter_eq_right.2 (e.preimage_subset_source hsub)]
+  exact e.continuousOn_proj.isOpen_inter_preimage e.open_source hs
+
+/-- A trivialization is injective over its base set: two points over `e.baseSet` with the same
+image under `e` are equal. -/
+theorem eq_of_apply_eq (e : Trivialization F proj) {a b : Z} (ha : proj a ∈ e.baseSet)
+    (hb : proj b ∈ e.baseSet) (h : e a = e b) : a = b :=
+  e.toOpenPartialHomeomorph.injOn (e.mem_source.2 ha) (e.mem_source.2 hb) h
+
+section Equivariant
+
+open MulOpposite
+
+/-- For a trivialization `e` of `proj : Z → B` into a type `G` with multiplication, equivariance
+with respect to a right scalar multiplication (`SMul Gᵐᵒᵖ Z`) preserving `proj` passes to
+`e.toOpenPartialHomeomorph.symm`: acting on `e.toOpenPartialHomeomorph.symm (b, h)` by `op g` gives
+`e.toOpenPartialHomeomorph.symm (b, h * g)`. -/
+theorem op_smul_symm {G : Type*} [TopologicalSpace G] [Mul G] [SMul Gᵐᵒᵖ Z]
+    (e : Trivialization G proj)
+    (hproj : ∀ (g : G) (p : Z), proj (op g • p) = proj p)
+    (he : ∀ (g : G) (p : Z), proj p ∈ e.baseSet → (e (op g • p)).2 = (e p).2 * g)
+    {b : B} (hb : b ∈ e.baseSet) (h g : G) :
+    op g • e.toOpenPartialHomeomorph.symm (b, h) = e.toOpenPartialHomeomorph.symm (b, h * g) := by
+  set σ := e.toOpenPartialHomeomorph.symm (b, h)
+  have hσ : proj σ = b := e.proj_symm_apply' hb
+  have hσ_mem : proj σ ∈ e.baseSet := hσ.symm ▸ hb
+  have hsrc : op g • σ ∈ e.source := e.mem_source.2 (by rw [hproj]; exact hσ_mem)
+  refine (e.toOpenPartialHomeomorph.eq_symm_apply hsrc (e.mem_target.2 hb)).2 (Prod.ext ?_ ?_)
+  · rw [e.coe_coe, e.coe_fst hsrc, hproj, hσ]
+  · rw [e.coe_coe, he g σ hσ_mem, congrArg Prod.snd (e.apply_symm_apply' hb)]
+
+/-- Acting on the unit section `e.toOpenPartialHomeomorph.symm (b, 1)` of a right-equivariant
+trivialization by `op g` gives `e.toOpenPartialHomeomorph.symm (b, g)`. -/
+theorem op_smul_symm_one {G : Type*} [TopologicalSpace G] [MulOneClass G] [SMul Gᵐᵒᵖ Z]
+    (e : Trivialization G proj)
+    (hproj : ∀ (g : G) (p : Z), proj (op g • p) = proj p)
+    (he : ∀ (g : G) (p : Z), proj p ∈ e.baseSet → (e (op g • p)).2 = (e p).2 * g)
+    {b : B} (hb : b ∈ e.baseSet) (g : G) :
+    op g • e.toOpenPartialHomeomorph.symm (b, 1) = e.toOpenPartialHomeomorph.symm (b, g) := by
+  simpa only [one_mul] using e.op_smul_symm hproj he hb 1 g
+
+/-- Over the base set of a right-equivariant trivialization `e`, every point `p` is recovered by
+acting on the unit section `e.toOpenPartialHomeomorph.symm (proj p, 1)` by its fibre coordinate
+`(e p).2`. -/
+theorem op_snd_smul_symm_one {G : Type*} [TopologicalSpace G] [MulOneClass G] [SMul Gᵐᵒᵖ Z]
+    (e : Trivialization G proj)
+    (hproj : ∀ (g : G) (p : Z), proj (op g • p) = proj p)
+    (he : ∀ (g : G) (p : Z), proj p ∈ e.baseSet → (e (op g • p)).2 = (e p).2 * g)
+    {p : Z} (hp : proj p ∈ e.baseSet) :
+    op (e p).2 • e.toOpenPartialHomeomorph.symm (proj p, 1) = p :=
+  (e.op_smul_symm_one hproj he hp (e p).2).trans (e.symm_apply_mk_proj (e.mem_source.2 hp))
+
+/-- Over the base set of a right-equivariant trivialization `e`, acting on `p` by
+`(e p).2⁻¹ * (e q).2` sends `p` to `q` whenever `proj p = proj q`. -/
+theorem op_inv_mul_smul {G : Type*} [TopologicalSpace G] [Group G] [SMul Gᵐᵒᵖ Z]
+    (e : Trivialization G proj)
+    (hproj : ∀ (g : G) (p : Z), proj (op g • p) = proj p)
+    (he : ∀ (g : G) (p : Z), proj p ∈ e.baseSet → (e (op g • p)).2 = (e p).2 * g)
+    {p q : Z} (hp : proj p ∈ e.baseSet) (hpq : proj p = proj q) :
+    op ((e p).2⁻¹ * (e q).2) • p = q := by
+  have hq : proj q ∈ e.baseSet := hpq ▸ hp
+  have hsrc : op ((e p).2⁻¹ * (e q).2) • p ∈ e.source :=
+    e.mem_source.2 (by rw [hproj]; exact hp)
+  refine e.toOpenPartialHomeomorph.injOn hsrc (e.mem_source.2 hq) (Prod.ext ?_ ?_)
+  · rw [e.coe_coe, e.coe_fst hsrc, e.coe_fst (e.mem_source.2 hq), hproj, hpq]
+  · rw [e.coe_coe, he _ p hp, mul_inv_cancel_left]
+
+end Equivariant
+
 end Bundle.Trivialization
 
 namespace TauCeti
@@ -108,6 +290,40 @@ theorem continuous_of_forall_exists_trivialization {B F Z : Type*} [TopologicalS
 
 end TauCeti
 
+namespace Homeomorph
+
+variable {B F Z : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalSpace Z]
+  {proj : Z → B} (h : Z ≃ₜ B × F) (hproj : ∀ z, (h z).1 = proj z)
+
+/-- A homeomorphism `h : Z ≃ₜ B × F` lying over `B` is a trivialization of `proj : Z → B` over all
+of `B`. -/
+def toTrivialization : Trivialization F proj where
+  toOpenPartialHomeomorph := h.toOpenPartialHomeomorph
+  baseSet := univ
+  open_baseSet := isOpen_univ
+  source_eq := by simp
+  target_eq := by simp
+  proj_toFun z _ := hproj z
+
+/-- The trivialization of a homeomorphism over the base has the whole base as its base set. -/
+@[simp]
+theorem toTrivialization_baseSet : (h.toTrivialization hproj).baseSet = univ :=
+  (rfl)
+
+/-- The trivialization of a homeomorphism over the base is the homeomorphism. -/
+@[simp]
+theorem coe_toTrivialization : ⇑(h.toTrivialization hproj) = h :=
+  (rfl)
+
+/-- The inverse of the trivialization of a homeomorphism over the base is the inverse
+homeomorphism. -/
+@[simp]
+theorem coe_toTrivialization_symm :
+    ⇑(h.toTrivialization hproj).toOpenPartialHomeomorph.symm = h.symm :=
+  (rfl)
+
+end Homeomorph
+
 namespace FiberBundle
 
 variable {B F : Type*} [TopologicalSpace B] [TopologicalSpace F] {E : B → Type*}
@@ -119,6 +335,31 @@ of the base. -/
 theorem exists_trivialization_mem_baseSet (b : B) :
     ∃ e : Trivialization F (π F E), b ∈ e.baseSet :=
   ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
+
+/-- A map of total spaces over the identity is continuous if, near each point, source and target
+trivializations express it by a coordinate formula continuous at that point. Neither total space
+needs a pre-existing fibre-bundle instance or topological structures on its individual fibres. -/
+theorem continuous_of_forall_trivialization {F₁ F₂ : Type*} [TopologicalSpace F₁]
+    [TopologicalSpace F₂] {E₁ E₂ : B → Type*} [TopologicalSpace (TotalSpace F₁ E₁)]
+    [TopologicalSpace (TotalSpace F₂ E₂)]
+    (Φ : TotalSpace F₁ E₁ → TotalSpace F₂ E₂) (hΦ : ∀ p, (Φ p).proj = p.proj)
+    (h : ∀ p : TotalSpace F₁ E₁, ∃ (e₁ : Trivialization F₁ (π F₁ E₁))
+      (e₂ : Trivialization F₂ (π F₂ E₂)) (ψ : B → F₁ → F₂),
+      p.proj ∈ e₁.baseSet ∧ p.proj ∈ e₂.baseSet ∧
+      ContinuousAt (fun q ↦ ψ q.proj (e₁ q).2) p ∧
+      ∀ q, q.proj ∈ e₁.baseSet → q.proj ∈ e₂.baseSet →
+        (e₂ (Φ q)).2 = ψ q.proj (e₁ q).2) :
+    Continuous Φ := by
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  obtain ⟨e₁, e₂, ψ, hp₁, hp₂, hψ, heq⟩ := h p
+  have hπ : ContinuousAt (π F₁ E₁) p := e₁.continuousAt_proj (e₁.mem_source.2 hp₁)
+  have hev : (fun q ↦ (e₂ (Φ q)).2) =ᶠ[𝓝 p] fun q ↦ ψ q.proj (e₁ q).2 := by
+    filter_upwards [e₁.open_source.mem_nhds (e₁.mem_source.2 hp₁),
+      hπ.preimage_mem_nhds (e₂.open_baseSet.mem_nhds hp₂)] with q hq hq'
+    exact heq q (e₁.mem_source.1 hq) hq'
+  refine (e₂.tendsto_nhds_iff (e₂.mem_source.2 (by rw [hΦ]; exact hp₂))).2
+    ⟨?_, (hψ.congr_of_eventuallyEq hev).tendsto⟩
+  simpa only [Function.comp_def, hΦ] using hπ.tendsto
 
 end FiberBundle
 

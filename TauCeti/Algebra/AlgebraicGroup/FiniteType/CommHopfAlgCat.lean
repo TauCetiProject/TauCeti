@@ -30,6 +30,8 @@ separately.
   finitely generated commutative `R`-algebras.
 * `TauCeti.FiniteTypeCommHopfAlgCat.pointsFunctor`: the inherited contravariant functor
   of points.
+* `TauCeti.FiniteTypeCommHopfAlgCat.autToAlgEquiv`: the group homomorphism
+  `Aut H →* (H.obj ≃ₐ[R] H.obj)`.
 
 ## References
 
@@ -131,6 +133,21 @@ lemma toBialgHom_comp {H K L : FiniteTypeCommHopfAlgCat.{u, v} R}
     toBialgHom (φ ≫ ψ) = (toBialgHom ψ).comp (toBialgHom φ) :=
   rfl
 
+/-- The inverse of an isomorphism of finite-type commutative Hopf algebras undoes it on
+elements. This is Mathlib's `Iso.hom_inv_id_apply`, restated with `toBialgHom` so that it
+rewrites terms written with `toBialgHom`, which the `ConcreteCategory.hom` form does not match
+syntactically. -/
+@[simp]
+lemma toBialgHom_inv_hom_apply {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K)
+    (x : H.obj) : toBialgHom e.inv (toBialgHom e.hom x) = x :=
+  e.hom_inv_id_apply x
+
+/-- An isomorphism of finite-type commutative Hopf algebras undoes its inverse on elements. -/
+@[simp]
+lemma toBialgHom_hom_inv_apply {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K)
+    (x : K.obj) : toBialgHom e.hom (toBialgHom e.inv x) = x :=
+  e.inv_hom_id_apply x
+
 @[simp]
 lemma ofHom_toBialgHom {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     ofHom (toBialgHom φ) = φ :=
@@ -141,6 +158,13 @@ lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
     [_root_.HopfAlgebra R H] [_root_.HopfAlgebra R K]
     [Algebra.FiniteType R H] [Algebra.FiniteType R K] (φ : H →ₐc[R] K) :
     toBialgHom (ofHom (R := R) φ) = φ :=
+  rfl
+
+/-- The bialgebra equivalence `CommHopfAlgCat.ofIso` of an isomorphism `e` of finite-type
+commutative Hopf algebras has underlying bialgebra morphism `toBialgHom e.hom`. -/
+lemma toBialgHom_ofIso_ι_mapIso {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K) :
+    (_root_.CommHopfAlgCat.ofIso ((ObjectProperty.ι _).mapIso e)).toBialgHom =
+      toBialgHom e.hom :=
   rfl
 
 @[simp]
@@ -210,6 +234,20 @@ lemma pointsFunctor_map_app_apply_apply {H K : (FiniteTypeCommHopfAlgCat.{u, v} 
       f.ofConv (toBialgHom φ.unop (h : K.unop.obj)) := by
   rw [pointsFunctor_map]
   exact CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (R := R) φ.unop.hom A f h
+
+/-- Viewing an automorphism `e : Aut H` in `FiniteTypeCommHopfAlgCat R` as an `R`-algebra
+equivalence `H.obj ≃ₐ[R] H.obj` is a group homomorphism. -/
+noncomputable def autToAlgEquiv (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
+    Aut H →* (H.obj ≃ₐ[R] H.obj) :=
+  (_root_.CommHopfAlgCat.autToAlgEquiv H.obj).comp
+    ((forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).mapAut H)
+
+/-- `autToAlgEquiv H e` acts on elements by `toBialgHom e.asIso.hom`. -/
+@[simp]
+theorem autToAlgEquiv_apply (H : FiniteTypeCommHopfAlgCat.{u, v} R) (e : Aut H) (x : H.obj) :
+    autToAlgEquiv H e x = toBialgHom e.asIso.hom x := by
+  rw [autToAlgEquiv, MonoidHom.comp_apply, _root_.CommHopfAlgCat.autToAlgEquiv_apply,
+    Functor.mapAut_apply_asIso, Functor.mapIso_hom, forget₂_commHopfAlgCat_map, toBialgHom]
 
 end FiniteTypeCommHopfAlgCat
 

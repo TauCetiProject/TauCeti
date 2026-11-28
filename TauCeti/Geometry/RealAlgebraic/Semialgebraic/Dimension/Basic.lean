@@ -44,6 +44,7 @@ their dimensions (`TauCeti.IsSemialgebraic.semialgebraicDim_union`).
   dimension is monotone along embeddings, and invariant under embeddings of the ambient space.
 * `TauCeti.semialgebraicDim_eq_of_isOpenEmbedding`, `IsOpen.semialgebraicDim_eq`: a nonempty open
   subset of `ℝ ^ d` has dimension `d`.
+* `IsDiscrete.semialgebraicDim_le_zero`: a discrete set has dimension at most `0`.
 * `TauCeti.semialgebraicDim_iUnion_of_isLocallyClosed`: dimension of finite unions of locally
   closed sets.
 * `TauCeti.IsCAD.exists_semialgebraicDim_eq`: each cell of a CAD has a natural dimension `d` and
@@ -56,6 +57,8 @@ their dimensions (`TauCeti.IsSemialgebraic.semialgebraicDim_union`).
   set and any set.
 * `TauCeti.exists_isOpenEmbedding_semialgebraicDim_eq`: a nonempty set contains a locally closed
   Euclidean cell of the same dimension.
+* `TauCeti.exists_forall_mem_nhds_semialgebraicDim_inter_eq`: the dimension of a nonempty set is
+  attained by its trace on every neighborhood of some point.
 
 ## References
 
@@ -122,11 +125,11 @@ theorem semialgebraicDim_image_of_isEmbedding {m : ℕ} {f : (Fin n → ℝ) →
     semialgebraicDim (f '' s) = semialgebraicDim s := by
   refine le_antisymm ?_ <| semialgebraicDim_le_of_isEmbedding (hf.comp .subtypeVal) <| by
     rintro _ ⟨x, rfl⟩
-    exact mem_image_of_mem f x.2
+    exact mem_image_of_mem f x.property
   -- `f '' s` embeds back into `s` through the inverse of `f` on its range.
   let e := hf.toHomeomorph
   refine semialgebraicDim_le_of_isEmbedding
-    (g := fun y : f '' s ↦ e.symm ⟨y, image_subset_range f s y.2⟩)
+    (g := fun y : f '' s ↦ e.symm ⟨y, image_subset_range f s y.property⟩)
     (e.symm.isEmbedding.comp (IsEmbedding.inclusion (image_subset_range f s))) ?_
   rintro _ ⟨⟨_, x, hx, rfl⟩, rfl⟩
   simpa [e] using hx
@@ -145,7 +148,7 @@ theorem semialgebraicDim_eq_bot_iff : semialgebraicDim s = ⊥ ↔ s = ∅ := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- A point of `s` is homeomorphic to `ℝ ^ 0`.
     by_contra hs
-    obtain ⟨x, hx⟩ := nonempty_iff_ne_empty.2 hs
+    obtain ⟨x, hx⟩ := ne_empty_iff_nonempty.1 hs
     have h0 := le_semialgebraicDim (X := ({x} : Set (Fin n → ℝ))) .subtypeVal
       (by simpa using hx) (Homeomorph.homeomorphOfUnique _ (Fin 0 → ℝ)).isOpenEmbedding
     simp [h] at h0
@@ -171,6 +174,19 @@ theorem semialgebraicDim_eq_of_isOpenEmbedding (hs : s.Nonempty) {d : ℕ}
   simp only [finrank_fin_fun] at h
   exact_mod_cast h
 
+/-- A discrete set has dimension at most `0`: no nonempty open subset of `ℝ ^ d` with `0 < d` is
+discrete. -/
+theorem _root_.IsDiscrete.semialgebraicDim_le_zero (hs : IsDiscrete s) :
+    semialgebraicDim s ≤ 0 :=
+  semialgebraicDim_le_iff.2 fun t ht ⟨y, hy⟩ d f hf ↦ by
+    have := (hs.mono ht).to_subtype
+    -- The image of a point of `t` is an open point of `ℝ ^ d`.
+    have hopen : IsOpen {f ⟨y, hy⟩} := by
+      simpa using hf.isOpenMap {⟨y, hy⟩} (isOpen_discrete _)
+    rcases d with _ | d
+    · simp
+    · exact absurd hopen (not_isOpen_singleton _)
+
 /-- A nonempty open subset of `ℝ ^ n` has dimension `n`. -/
 theorem _root_.IsOpen.semialgebraicDim_eq (hs : IsOpen s) (hne : s.Nonempty) :
     semialgebraicDim s = n :=
@@ -190,7 +206,7 @@ private theorem le_semialgebraicDim_of_isOpen {u m : Set (Fin n → ℝ)} {d : �
   refine le_semialgebraicDim (X := V) (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) ?_
     (hf.comp hV.isOpenEmbedding_subtypeVal)
   rintro _ ⟨y, rfl⟩
-  exact hVu ⟨y, y.2, rfl⟩
+  exact hVu ⟨y, y.property, rfl⟩
 
 /-- **Dimension of finite unions.** The dimension of a finite union of locally closed subsets of
 `ℝ ^ n` is the largest of their dimensions. -/
@@ -203,8 +219,8 @@ theorem semialgebraicDim_iUnion_of_isLocallyClosed {ι : Type*} [Finite ι]
   -- interior point `x` in `t`. Near `x`, the set `t` lies in that `u i`.
   have := hne.to_subtype
   obtain ⟨i, x, hx⟩ := nonempty_interior_of_iUnion_of_isLocallyClosed
-    (fun i ↦ (hu i).preimage continuous_subtype_val)
-    (eq_univ_of_forall fun x ↦ by simpa using ht x.2)
+    (fun i ↦ (hu i).preimage continuous_subtypeVal)
+    (eq_univ_of_forall fun x ↦ by simpa using ht x.property)
   exact le_iSup_of_le i <| le_semialgebraicDim_of_isOpen hf isOpen_interior ⟨x, hx⟩
     (image_subset_iff.2 interior_subset)
 
@@ -215,7 +231,7 @@ theorem semialgebraicDim_sUnion_of_isLocallyClosed {𝒮 : Set (Set (Fin n → �
     semialgebraicDim (⋃₀ 𝒮) = ⨆ u ∈ 𝒮, semialgebraicDim u := by
   have := h𝒮.to_subtype
   rw [sUnion_eq_iUnion, semialgebraicDim_iUnion_of_isLocallyClosed
-    (u := fun u : 𝒮 ↦ (u : Set (Fin n → ℝ))) fun u ↦ hl u.1 u.2, iSup_subtype']
+    (u := fun u : 𝒮 ↦ (u : Set (Fin n → ℝ))) fun u ↦ hl u.val u.property, iSup_subtype']
 
 /-! ### Cells of cylindrical algebraic decompositions -/
 
@@ -268,7 +284,7 @@ theorem _root_.IsLocallyClosed.semialgebraicDim_union (hs : IsLocallyClosed s)
       (image_subset_iff.2 interior_subset)
   · -- Otherwise `s` is nowhere dense in `m`, so an open part of `m` lies in `t`.
     have hK : IsNowhereDense ((Subtype.val : m → Fin n → ℝ) ⁻¹' s) :=
-      (hs.preimage continuous_subtype_val).isNowhereDense_iff.2 (not_nonempty_iff_eq_empty.1 hint)
+      (hs.preimage continuous_subtypeVal).isNowhereDense_iff.2 (not_nonempty_iff_eq_empty.1 hint)
     let Y : Set m := (closure ((Subtype.val : m → Fin n → ℝ) ⁻¹' s))ᶜ
     have hY : Y.Nonempty := by
       by_contra h
@@ -278,7 +294,7 @@ theorem _root_.IsLocallyClosed.semialgebraicDim_union (hs : IsLocallyClosed s)
     exact le_max_of_le_right <| le_semialgebraicDim_of_isOpen hf isClosed_closure.isOpen_compl hY
       (by
         rintro _ ⟨y, hy, rfl⟩
-        exact (hm y.2).resolve_left fun h ↦ hy (subset_closure h))
+        exact (hm y.property).resolve_left fun h ↦ hy (subset_closure h))
 
 /-- **Dimension of unions.** The dimension of the union of a semialgebraic set and any other set is
 the larger of their dimensions. -/
@@ -319,5 +335,18 @@ theorem exists_isOpenEmbedding_semialgebraicDim_eq (hne : s.Nonempty) :
   -- `u` is locally compact, being open in a Euclidean space, hence locally closed.
   have := hf.locallyCompactSpace
   exact isLocallyClosed_of_locallyCompactSpace
+
+/-- **Dimension is attained locally.** A nonempty set has a point near which its dimension is
+attained: its trace on every neighborhood of that point has the same dimension. -/
+theorem exists_forall_mem_nhds_semialgebraicDim_inter_eq (hne : s.Nonempty) :
+    ∃ x ∈ s, ∀ W ∈ 𝓝 x, semialgebraicDim (s ∩ W) = semialgebraicDim s := by
+  obtain ⟨u, hu, -, ⟨x, hx⟩, d, hd, f, hf⟩ := exists_isOpenEmbedding_semialgebraicDim_eq hne
+  refine ⟨x, hu hx, fun W hW ↦ le_antisymm (semialgebraicDim_mono inter_subset_left) ?_⟩
+  -- The trace of `u` on the interior of `W` is a nonempty open subset of `u` inside `s ∩ W`.
+  rw [hd]
+  refine le_semialgebraicDim_of_isOpen hf (isOpen_interior.preimage continuous_subtypeVal)
+    ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 hW⟩ ?_
+  rintro _ ⟨y, hy, rfl⟩
+  exact ⟨hu y.property, interior_subset hy⟩
 
 end TauCeti

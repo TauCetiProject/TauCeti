@@ -7,16 +7,25 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+import Mathlib.CategoryTheory.Limits.Preserves.Ulift
 
 /-!
-# Horn filling in universe lifts of simplicial sets
+# Universe lifts of simplicial sets
 
 The universe lift `SSet.uliftFunctor.{v}.obj X` of a simplicial set `X : SSet.{u}` has the
-simplices of `X`, wrapped in `ULift`. Horn-filling conditions only involve finitely many
-simplices and their faces, so they do not see the universe: the lift of a map `p` has the
-right lifting property with respect to a horn inclusion exactly when `p` has it
-(`SSet.hasLiftingProperty_horn_ι_uliftFunctor_map_iff`). Consequently the universe lift
-preserves and reflects Kan fibrations, inner fibrations, Kan complexes and quasicategories.
+simplices of `X`, wrapped in `ULift`. It is a fully faithful functor
+(`SSet.fullyFaithfulUliftFunctor`), and iterating universe lifts collapses to a single lift
+(`SSet.uliftFunctorCompIso`) and commutes up to natural isomorphism
+(`SSet.uliftFunctorCompCommIso`); lifting to a universe the simplicial set already lives in is
+trivial (`SSet.uliftFunctorTrivial`). It also commutes with taking opposites
+(`SSet.opFunctorCompUliftFunctorIso`).
+
+Horn-filling conditions only involve finitely many simplices and their faces, so they do not see
+the universe: the lift of a map `p` has the right lifting property with respect to a horn inclusion
+exactly when `p` has it (`SSet.hasLiftingProperty_horn_ι_uliftFunctor_map_iff`). Consequently the
+universe lift preserves and reflects Kan fibrations, inner fibrations, Kan complexes and
+quasicategories.
 
 This is the universe control needed whenever a construction forces a simplicial set into a
 larger universe than its simplices require. For instance, the differential graded nerve of a dg
@@ -28,11 +37,19 @@ models.
 The comparison goes through compatible families of faces: by
 `SSet.hasLiftingProperty_horn_ι_iff`, lifting against a horn inclusion is a statement about
 simplices and their faces, and maps from a standard simplex into the universe lift of `X` are
-the simplices of `X` (`SSet.uliftFunctorHomEquiv`), compatibly with faces and with maps of
-simplicial sets.
+the simplices of `X` (`SSet.uliftFunctorObjEquiv`, `SSet.uliftFunctorHomEquiv`), compatibly with
+faces and with maps of simplicial sets.
 
 ## Main results
 
+* `SSet.uliftFunctorObjEquiv`: equivalence `X.obj m ≃ (uliftFunctor.obj X).obj m` on simplices.
+* `SSet.fullyFaithfulUliftFunctor`: `SSet.uliftFunctor` is fully faithful, providing
+  `Full` and `Faithful` instances and preimage computation on simplices.
+* `SSet.uliftFunctorCompIso`, `SSet.uliftFunctorCompCommIso`: iterated universe lifts collapse
+  to a single lift and commute up to natural isomorphism.
+* `SSet.uliftFunctorTrivial`: lifting to a universe the simplicial set already lives in is
+  naturally isomorphic to the identity.
+* `SSet.opFunctorCompUliftFunctorIso`: the universe lift commutes with taking opposites.
 * `SSet.hasLiftingProperty_horn_ι_uliftFunctor_map_iff`: the universe lift of a map has the right
   lifting property with respect to a horn inclusion exactly when the map has it.
 * `SSet.fibration_uliftFunctor_map_iff`, `SSet.innerFibration_uliftFunctor_map_iff`: the
@@ -46,11 +63,199 @@ public section
 open CategoryTheory Limits Simplicial HomotopicalAlgebra
 open SSet.modelCategoryQuillen
 
-universe u v
-
 namespace SSet
 
+section ObjEquiv
+
+universe w u'
+
+/-- Equivalence `X.obj m ≃ (uliftFunctor.{w, u'}.obj X).obj m` on simplices of `X : SSet.{u'}`,
+mirroring `TopCat.uliftFunctorObjHomeo` under `implicit` transparency. -/
+def uliftFunctorObjEquiv (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ) :
+    X.obj m ≃ (uliftFunctor.{w, u'}.obj X).obj m := Equiv.ulift.symm
+
+@[simp]
+theorem uliftFunctorObjEquiv_down (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ) (x : X.obj m) :
+    (X.uliftFunctorObjEquiv.{w} m x).down = x := (rfl)
+
+theorem uliftFunctorObjEquiv_symm_eq_down (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{w, u'}.obj X).obj m) : (X.uliftFunctorObjEquiv.{w} m).symm x = x.down :=
+  (rfl)
+
+@[simp]
+theorem uliftFunctor_obj_map_uliftFunctorObjEquiv (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ}
+    (f : m₁ ⟶ m₂) (x : X.obj m₁) :
+    (uliftFunctor.{w, u'}.obj X).map f (X.uliftFunctorObjEquiv m₁ x) =
+      X.uliftFunctorObjEquiv m₂ (X.map f x) := (rfl)
+
+@[simp]
+theorem uliftFunctorObjEquiv_symm_map (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ} (f : m₁ ⟶ m₂)
+    (x : (uliftFunctor.{w, u'}.obj X).obj m₁) :
+    (X.uliftFunctorObjEquiv m₂).symm ((uliftFunctor.{w, u'}.obj X).map f x) =
+      X.map f ((X.uliftFunctorObjEquiv m₁).symm x) := (rfl)
+
+@[simp]
+theorem uliftFunctor_map_uliftFunctorObjEquiv {X Y : SSet.{u'}} (f : X ⟶ Y)
+    (m : SimplexCategoryᵒᵖ) (x : X.obj m) :
+    (uliftFunctor.{w, u'}.map f).app m (X.uliftFunctorObjEquiv m x) =
+      Y.uliftFunctorObjEquiv m (f.app m x) := (rfl)
+
+@[simp]
+theorem uliftFunctorObjEquiv_symm_uliftFunctor_map {X Y : SSet.{u'}} (f : X ⟶ Y)
+    (m : SimplexCategoryᵒᵖ) (x : (uliftFunctor.{w, u'}.obj X).obj m) :
+    (Y.uliftFunctorObjEquiv m).symm ((uliftFunctor.{w, u'}.map f).app m x) =
+      f.app m ((X.uliftFunctorObjEquiv m).symm x) := (rfl)
+
+end ObjEquiv
+
+universe u v w
+
 variable {X Y : SSet.{u}}
+
+/-- The universe-lift functor `SSet.uliftFunctor` is fully faithful. -/
+def fullyFaithfulUliftFunctor : (uliftFunctor.{v, u}).FullyFaithful :=
+  CategoryTheory.fullyFaithfulULiftFunctor.whiskeringRight SimplexCategoryᵒᵖ
+
+instance : (uliftFunctor.{v, u}).Full :=
+  fullyFaithfulUliftFunctor.full
+
+instance : (uliftFunctor.{v, u}).Faithful :=
+  fullyFaithfulUliftFunctor.faithful
+
+/-- The universe lift `SSet.uliftFunctor` preserves small colimits. -/
+noncomputable instance preservesColimitsOfSize_uliftFunctor :
+    PreservesColimitsOfSize.{0, u} uliftFunctor.{v, u} :=
+  inferInstanceAs (PreservesColimitsOfSize.{0, u}
+    ((Functor.whiskeringRight SimplexCategoryᵒᵖ (Type u) (Type max u v)).obj
+      CategoryTheory.uliftFunctor.{v, u}))
+
+/-- On simplices, the preimage under `SSet.fullyFaithfulUliftFunctor` strips the outer `ULift`. -/
+@[simp]
+lemma fullyFaithfulUliftFunctor_preimage_app_apply
+    (f : uliftFunctor.{v}.obj X ⟶ uliftFunctor.{v}.obj Y) (n : SimplexCategoryᵒᵖ) (x : X.obj n) :
+    (fullyFaithfulUliftFunctor.preimage f).app n x = (f.app n (ULift.up x)).down :=
+  (rfl)
+
+/-- On simplices, `SSet.uliftFunctor.preimage` strips the outer `ULift`. -/
+@[simp]
+lemma uliftFunctor_preimage_app_apply
+    (f : uliftFunctor.{v}.obj X ⟶ uliftFunctor.{v}.obj Y) (n : SimplexCategoryᵒᵖ) (x : X.obj n) :
+    (uliftFunctor.{v}.preimage f).app n x = (f.app n (ULift.up x)).down :=
+  congrArg ULift.down congr($(uliftFunctor.{v}.map_preimage f).app n (ULift.up x))
+
+/-- On simplices, `SSet.uliftFunctor.map` lowers to the action of the underlying map. -/
+@[simp]
+lemma uliftFunctor_map_app_down (f : X ⟶ Y) {m : SimplexCategoryᵒᵖ}
+    (s : (uliftFunctor.{v, u}.obj X).obj m) :
+    ((uliftFunctor.{v, u}.map f).app m s).down = f.app m s.down :=
+  rfl
+
+/-- The universe lift of a simplicial set is nonempty exactly when the simplicial set is. -/
+@[simp]
+lemma nonempty_uliftFunctor_obj_iff (X : SSet.{u}) :
+    (uliftFunctor.{v}.obj X).Nonempty ↔ X.Nonempty :=
+  ⟨fun ⟨x⟩ ↦ ⟨x.down⟩, fun ⟨x⟩ ↦ ⟨ULift.up x⟩⟩
+
+/-- The universe lift commutes with the involution `SSet.opFunctor`: both composites send a
+simplicial set to the same simplices, wrapped in `ULift`, with the reversed simplicial operators. -/
+def opFunctorCompUliftFunctorIso :
+    opFunctor.{u} ⋙ uliftFunctor.{v} ≅ uliftFunctor.{v} ⋙ opFunctor :=
+  Iso.refl _
+
+/-- On simplices, `SSet.opFunctorCompUliftFunctorIso.hom` moves the `ULift` wrapper inside the
+opposite, keeping the underlying simplex. -/
+@[simp]
+lemma opFunctorCompUliftFunctorIso_hom_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v}.obj X.op).obj m) :
+    dsimp% ((opFunctorCompUliftFunctorIso.{u, v}.hom.app X).app m) x =
+      opObjEquiv.symm (ULift.up (opObjEquiv x.down)) :=
+  (rfl)
+
+/-- On simplices, `SSet.opFunctorCompUliftFunctorIso.inv` moves the `ULift` wrapper outside the
+opposite, keeping the underlying simplex. -/
+@[simp]
+lemma opFunctorCompUliftFunctorIso_inv_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v}.obj X).op.obj m) :
+    dsimp% ((opFunctorCompUliftFunctorIso.{u, v}.inv.app X).app m) x =
+      ULift.up (opObjEquiv.symm (opObjEquiv x).down) :=
+  (rfl)
+
+/-- Iterating `SSet.uliftFunctor` is naturally isomorphic to a single universe lift. -/
+def uliftFunctorCompIso :
+    uliftFunctor.{v, u} ⋙ uliftFunctor.{w, max u v} ≅ uliftFunctor.{max v w, u} :=
+  NatIso.ofComponents
+    (fun _ ↦
+      { hom :=
+          { app _ := ↾fun x ↦ ULift.up x.down.down
+            naturality _ _ _ := rfl }
+        inv :=
+          { app _ := ↾fun x ↦ ULift.up (ULift.up x.down)
+            naturality _ _ _ := rfl } })
+    fun _ ↦ rfl
+
+/-- On simplices, `SSet.uliftFunctorCompIso.hom` collapses the two `ULift` wrappers into one. -/
+@[simp]
+lemma uliftFunctorCompIso_hom_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{w, max u v}.obj (uliftFunctor.{v, u}.obj X)).obj m) :
+    dsimp% ((uliftFunctorCompIso.{u, v, w}.hom.app X).app m) x = ULift.up x.down.down :=
+  (rfl)
+
+/-- On simplices, `SSet.uliftFunctorCompIso.inv` splits a single `ULift` wrapper into two. -/
+@[simp]
+lemma uliftFunctorCompIso_inv_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{max v w, u}.obj X).obj m) :
+    dsimp% ((uliftFunctorCompIso.{u, v, w}.inv.app X).app m) x = ULift.up (ULift.up x.down) :=
+  (rfl)
+
+/-- Lifting a simplicial set along two universes in either order yields naturally isomorphic
+simplicial sets. -/
+def uliftFunctorCompCommIso :
+    uliftFunctor.{v, u} ⋙ uliftFunctor.{w, max u v} ≅
+      uliftFunctor.{w, u} ⋙ uliftFunctor.{v, max u w} :=
+  uliftFunctorCompIso.{u, v, w} ≪≫ uliftFunctorCompIso.{u, w, v}.symm
+
+/-- On simplices, `SSet.uliftFunctorCompCommIso.hom` swaps the two `ULift` wrappers. -/
+@[simp]
+lemma uliftFunctorCompCommIso_hom_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{w, max u v}.obj (uliftFunctor.{v, u}.obj X)).obj m) :
+    dsimp% ((uliftFunctorCompCommIso.{u, v, w}.hom.app X).app m) x =
+      ULift.up (ULift.up x.down.down) :=
+  (rfl)
+
+/-- On simplices, `SSet.uliftFunctorCompCommIso.inv` swaps the two `ULift` wrappers. -/
+@[simp]
+lemma uliftFunctorCompCommIso_inv_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v, max u w}.obj (uliftFunctor.{w, u}.obj X)).obj m) :
+    dsimp% ((uliftFunctorCompCommIso.{u, v, w}.inv.app X).app m) x =
+      ULift.up (ULift.up x.down.down) :=
+  (rfl)
+
+/-- Lifting a simplicial set to a universe it already lives in is naturally isomorphic to the
+identity. -/
+def uliftFunctorTrivial : uliftFunctor.{v, max u v} ≅ 𝟭 SSet.{max u v} :=
+  NatIso.ofComponents
+    (fun _ ↦
+      { hom :=
+          { app _ := ↾fun x ↦ x.down
+            naturality _ _ _ := rfl }
+        inv :=
+          { app _ := ↾fun x ↦ ULift.up x
+            naturality _ _ _ := rfl } })
+    fun _ ↦ rfl
+
+/-- On simplices, `SSet.uliftFunctorTrivial.hom` removes the `ULift` wrapper. -/
+@[simp]
+lemma uliftFunctorTrivial_hom_app_app_apply (X : SSet.{max u v}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v, max u v}.obj X).obj m) :
+    dsimp% ((uliftFunctorTrivial.{u, v}.hom.app X).app m) x = x.down :=
+  (rfl)
+
+/-- On simplices, `SSet.uliftFunctorTrivial.inv` adds a `ULift` wrapper. -/
+@[simp]
+lemma uliftFunctorTrivial_inv_app_app_apply (X : SSet.{max u v}) (m : SimplexCategoryᵒᵖ)
+    (x : X.obj m) :
+    dsimp% ((uliftFunctorTrivial.{u, v}.inv.app X).app m) x = ULift.up x :=
+  (rfl)
 
 /-- Maps from a standard simplex into the universe lift of `X` are maps from the standard
 simplex into `X`: both are the simplices of `X`. -/
@@ -65,8 +270,44 @@ theorem yonedaEquiv_uliftFunctorHomEquiv {n : SimplexCategory}
   yonedaEquiv.apply_symm_apply _
 
 theorem uliftFunctorHomEquiv_symm_apply {n : SimplexCategory} (f : stdSimplex.{u}.obj n ⟶ X) :
-    (uliftFunctorHomEquiv.{u, v} X n).symm f = yonedaEquiv.symm (ULift.up (yonedaEquiv f)) :=
+    (uliftFunctorHomEquiv.{u, v} X n).symm f =
+      yonedaEquiv.symm (X.uliftFunctorObjEquiv.{v} (Opposite.op n) (yonedaEquiv f)) :=
   (rfl)
+
+/-- Universe-lifting natural isomorphism
+`stdSimplex.{u} ⋙ uliftFunctor.{v, u} ≅ stdSimplex.{max u v}`. -/
+def stdSimplexUliftIso :
+    stdSimplex.{u} ⋙ uliftFunctor.{v, u} ≅ stdSimplex.{max u v} :=
+  NatIso.ofComponents
+    (fun _ ↦ NatIso.ofComponents fun _ ↦
+      Equiv.toIso (Equiv.ulift.trans (Equiv.ulift.trans Equiv.ulift.symm)))
+    fun _ ↦ rfl
+
+/-- On simplices, `SSet.stdSimplexUliftIso.hom` lowers one `ULift` layer between universe lifts of
+standard simplices. -/
+@[simp]
+lemma stdSimplexUliftIso_hom_app_app_apply (m : SimplexCategory) (k : SimplexCategoryᵒᵖ)
+    (x : ((stdSimplex.{u} ⋙ uliftFunctor.{v, u}).obj m).obj k) :
+    dsimp% ((stdSimplexUliftIso.{u, v}.hom.app m).app k) x = ULift.up x.down.down :=
+  (rfl)
+
+/-- On simplices, `SSet.stdSimplexUliftIso.inv` inserts one `ULift` layer between universe lifts of
+standard simplices. -/
+@[simp]
+lemma stdSimplexUliftIso_inv_app_app_apply (m : SimplexCategory) (k : SimplexCategoryᵒᵖ)
+    (x : (stdSimplex.{max u v}.obj m).obj k) :
+    dsimp% ((stdSimplexUliftIso.{u, v}.inv.app m).app k) x = ULift.up (ULift.up x.down) :=
+  (rfl)
+
+/-- The inverse component `stdSimplexUliftIso.inv.app m` corresponds under `uliftFunctorHomEquiv`
+to the identity on `stdSimplex.{u}.obj m`. -/
+lemma stdSimplexUliftIso_inv_app (m : SimplexCategory) :
+    stdSimplexUliftIso.{u, v}.inv.app m =
+      (uliftFunctorHomEquiv.{u, v} (stdSimplex.{u}.obj m) m).symm (𝟙 _) := by
+  refine (Equiv.eq_symm_apply _).2 ?_
+  apply yonedaEquiv.injective
+  rw [yonedaEquiv_uliftFunctorHomEquiv]
+  rfl -- Both sides equal `stdSimplex.objEquiv.symm (𝟙 m)` after unwrapping `ULift.down`.
 
 /-- Lowering a constant map gives the constant map at the lowered vertex. -/
 @[simp]

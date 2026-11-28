@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.FiberBundle.Associated.Principal
 public import TauCeti.Topology.FiberBundle.Associated.Pullback
+public import TauCeti.Topology.FiberBundle.Principal.Equiv
 
 /-!
 # Extension of the structure group of a principal bundle
@@ -20,10 +21,13 @@ is the transition cocycle of `P`. It is built from an unexposed core `extendCore
 
 We establish the canonical `ρ`-equivariant map `inl : P → Extend P ρ hρ`, the universal property
 and comparison with any principal `H`-bundle receiving a `ρ`-equivariant map from `P`
-(`equivOfEquivariant`, `equivOfEquivariant_unique`, `homeomorphOfEquivariant`), congruence along
-equal homomorphisms (`congrHomeomorph`), functoriality under identity and composition
-(`idHomeomorph`, `compHomeomorph`), compatibility with pullback (`pullbackHomeomorph`), and
-identification of associated bundles `(P ×_ρ H) ×_H F ≃ₜ P ×_G F` (`associatedHomeomorph`).
+(`equivOfEquivariant`, `equivOfEquivariant_unique`, `homeomorphOfEquivariant`, and as an
+equivalence of principal bundles `principalEquivOfEquivariant`), congruence along equal
+homomorphisms (`congrHomeomorph`, `congrPrincipalEquiv`), functoriality under identity and
+composition (`idHomeomorph`, `compHomeomorph`, `compPrincipalEquiv`) and under equivalences of
+principal bundles (`TauCeti.PrincipalBundle.Equiv.extend`), compatibility with pullback
+(`pullbackHomeomorph`), and identification of associated bundles `(P ×_ρ H) ×_H F ≃ₜ P ×_G F`
+(`associatedHomeomorph`).
 
 ## References
 
@@ -238,21 +242,21 @@ variable {G H B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
 /-- The quotient projection `TotalSpace G P × H → TotalSpace H (Extend P ρ hρ)` is continuous. -/
 theorem continuous_totalSpaceMk_mk :
     Continuous fun x : TotalSpace G P × H ↦
-      (⟨x.1.proj, mk ρ hρ x.1.2 x.2⟩ : TotalSpace H (Extend P ρ hρ)) :=
+      (⟨x.1.proj, mk ρ hρ x.1.snd x.2⟩ : TotalSpace H (Extend P ρ hρ)) :=
   Continuous.totalSpaceMk_extendMk hρ (f := fun x : TotalSpace G P × H ↦ x.1.proj)
     continuous_fst continuous_snd
 
 /-- The canonical `ρ`-equivariant map `inl : TotalSpace G P → TotalSpace H (Extend P ρ hρ)` is
 continuous. -/
 theorem continuous_inl :
-    Continuous fun x : TotalSpace G P ↦ (⟨x.proj, inl ρ hρ x.2⟩ : TotalSpace H (Extend P ρ hρ)) :=
+    Continuous fun x : TotalSpace G P ↦ (⟨x.proj, inl ρ hρ x.snd⟩ : TotalSpace H (Extend P ρ hρ)) :=
   Continuous.totalSpaceMk_extendMk hρ (f := TotalSpace.proj) continuous_id continuous_const
 
 /-- The quotient projection `TotalSpace G P × H → TotalSpace H (Extend P ρ hρ)` is an open
 quotient map. -/
 theorem isOpenQuotientMap_totalSpaceMk_mk :
     IsOpenQuotientMap fun x : TotalSpace G P × H ↦
-      (⟨x.1.proj, mk ρ hρ x.1.2 x.2⟩ : TotalSpace H (Extend P ρ hρ)) :=
+      (⟨x.1.proj, mk ρ hρ x.1.snd x.2⟩ : TotalSpace H (Extend P ρ hρ)) :=
   letI := compHom H ρ; haveI : ContinuousSMul G H := continuousSMul_compHom hρ
   AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk G P H
 end
@@ -329,20 +333,20 @@ variable {Q : B → Type*} [TopologicalSpace (TotalSpace H Q)] [∀ b, Topologic
   [FiberBundle H Q] [∀ b, MulAction Hᵐᵒᵖ (Q b)] [PrincipalBundle H Q] [IsTopologicalGroup H]
   (ρ : G →* H) (hρ : Continuous ρ) (φ : ∀ b, P b → Q b)
   (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
-  (hφc : Continuous fun x : TotalSpace G P ↦ TotalSpace.mk' H x.proj (φ x.proj x.2))
+  (hφc : Continuous fun x : TotalSpace G P ↦ TotalSpace.mk' H x.proj (φ x.proj x.snd))
 
 /-- **Universal comparison homeomorphism.** If `φ : ∀ b, P b → Q b` is a continuous
 `ρ`-equivariant map into a principal `H`-bundle `Q` and `H` is a topological group, then
 `[p, h] ↦ φ b p • h` is an `H`-equivariant homeomorphism `Extend P ρ hρ ≃ₜ Q` over `B`. -/
 noncomputable def homeomorphOfEquivariant : TotalSpace H (Extend P ρ hρ) ≃ₜ TotalSpace H Q where
-  toFun z := ⟨z.proj, equivOfEquivariant ρ hρ φ hφ z.proj z.2⟩
-  invFun q := ⟨q.proj, (equivOfEquivariant ρ hρ φ hφ q.proj).symm q.2⟩
+  toFun z := ⟨z.proj, equivOfEquivariant ρ hρ φ hφ z.proj z.snd⟩
+  invFun q := ⟨q.proj, (equivOfEquivariant ρ hρ φ hφ q.proj).symm q.snd⟩
   left_inv z := by simp
   right_inv q := by simp
   continuous_toFun := by
     rw [(isOpenQuotientMap_totalSpaceMk_mk P ρ hρ).isQuotientMap.continuous_iff]
     refine (Continuous.totalSpaceMk_smul (G := H) (P := Q)
-      (f := fun x : TotalSpace G P × H ↦ x.1.proj) (p := fun x ↦ φ x.1.proj x.1.2)
+      (f := fun x : TotalSpace G P × H ↦ x.1.proj) (p := fun x ↦ φ x.1.proj x.1.snd)
       (hφc.comp continuous_fst) continuous_snd).congr fun ⟨⟨b, p⟩, h⟩ ↦
         congrArg (TotalSpace.mk b) (equivOfEquivariant_mk ρ hρ φ hφ p h).symm
   continuous_invFun := by
@@ -353,17 +357,17 @@ noncomputable def homeomorphOfEquivariant : TotalSpace H (Extend P ρ hρ) ≃�
         q₀ := (eP.continuousAt_totalSpaceMk_symm (mem_baseSet_trivializationAt G P b₀) 1).comp
       (FiberBundle.continuous_proj H Q).continuousAt
     refine (hσq.totalSpaceMk_extendMk hρ
-      ((hφc.continuousAt.comp hσq).division (f := TotalSpace.proj) (q := fun q ↦ q.2)
+      ((hφc.continuousAt.comp hσq).division (f := TotalSpace.proj) (q := fun q ↦ q.snd)
         continuousAt_id)).congr_of_eventuallyEq
       (Eventually.of_forall fun ⟨b, y⟩ ↦
         congrArg (TotalSpace.mk b) (equivOfEquivariant_symm_apply ρ hρ φ hφ (eP.symm b 1) y))
 
 theorem homeomorphOfEquivariant_apply (z : TotalSpace H (Extend P ρ hρ)) :
     homeomorphOfEquivariant ρ hρ φ hφ hφc z =
-      ⟨z.proj, equivOfEquivariant ρ hρ φ hφ z.proj z.2⟩ := (rfl)
+      ⟨z.proj, equivOfEquivariant ρ hρ φ hφ z.proj z.snd⟩ := (rfl)
 theorem homeomorphOfEquivariant_symm_apply (q : TotalSpace H Q) :
     (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm q =
-      ⟨q.proj, (equivOfEquivariant ρ hρ φ hφ q.proj).symm q.2⟩ := (rfl)
+      ⟨q.proj, (equivOfEquivariant ρ hρ φ hφ q.proj).symm q.snd⟩ := (rfl)
 @[simp] theorem homeomorphOfEquivariant_proj (z : TotalSpace H (Extend P ρ hρ)) :
     (homeomorphOfEquivariant ρ hρ φ hφ hφc z).proj = z.proj := (rfl)
 @[simp] theorem homeomorphOfEquivariant_symm_proj (q : TotalSpace H Q) :
@@ -380,23 +384,39 @@ theorem homeomorphOfEquivariant_symm_apply (q : TotalSpace H Q) :
 @[simp] theorem homeomorphOfEquivariant_smul (h' : H) (z : TotalSpace H (Extend P ρ hρ)) :
     homeomorphOfEquivariant ρ hρ φ hφ hφc (op h' • z) =
       op h' • homeomorphOfEquivariant ρ hρ φ hφ hφc z :=
-  congrArg (TotalSpace.mk z.proj) (equivOfEquivariant_smul ρ hρ φ hφ z.proj h' z.2)
+  congrArg (TotalSpace.mk z.proj) (equivOfEquivariant_smul ρ hρ φ hφ z.proj h' z.snd)
 @[simp] theorem homeomorphOfEquivariant_symm_smul (h' : H) (q : TotalSpace H Q) :
     (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm (op h' • q) =
       op h' • (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm q :=
-  congrArg (TotalSpace.mk q.proj) (equivOfEquivariant_symm_smul ρ hρ φ hφ q.proj h' q.2)
+  congrArg (TotalSpace.mk q.proj) (equivOfEquivariant_symm_smul ρ hρ φ hφ q.proj h' q.snd)
+
+/-- **Universal property of structure-group extension, as an equivalence of principal bundles.**
+If `φ : ∀ b, P b → Q b` is a continuous `ρ`-equivariant map into a principal `H`-bundle `Q` and `H`
+is a topological group, then `[p, h] ↦ φ b p • h` is an equivalence of principal `H`-bundles
+`Extend P ρ hρ ≃ Q`. -/
+noncomputable def principalEquivOfEquivariant :
+    PrincipalBundle.Equiv H (Extend P ρ hρ) Q where
+  toEquiv := equivOfEquivariant ρ hρ φ hφ
+  continuous_toFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).continuous.congr
+    (homeomorphOfEquivariant_apply ρ hρ φ hφ hφc)
+  continuous_invFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm.continuous.congr
+    (homeomorphOfEquivariant_symm_apply ρ hρ φ hφ hφc)
+  map_smul b z h := equivOfEquivariant_smul ρ hρ φ hφ b h z
+
+@[simp] theorem principalEquivOfEquivariant_toEquiv :
+    (principalEquivOfEquivariant ρ hρ φ hφ hφc).toEquiv = equivOfEquivariant ρ hρ φ hφ := (rfl)
 end ReductionHomeomorph
 
 section Congr
 variable [ContinuousMul H] {ρ₁ ρ₂ : G →* H}
 /-- Equal homomorphisms produce canonically equivalent extended fibres. -/
 noncomputable def congrEquiv (h : ρ₁ = ρ₂) (hρ₁ : Continuous ρ₁) (hρ₂ : Continuous ρ₂) (b : B) :
-    Extend P ρ₁ hρ₁ b ≃ Extend P ρ₂ hρ₂ b := h ▸ Equiv.refl _
+    Extend P ρ₁ hρ₁ b ≃ Extend P ρ₂ hρ₂ b := h ▸ _root_.Equiv.refl _
 /-- Equal homomorphisms produce canonically homeomorphic extended total spaces. -/
 noncomputable def congrHomeomorph (h : ρ₁ = ρ₂) (hρ₁ : Continuous ρ₁) (hρ₂ : Continuous ρ₂) :
     TotalSpace H (Extend P ρ₁ hρ₁) ≃ₜ TotalSpace H (Extend P ρ₂ hρ₂) := h ▸ Homeomorph.refl _
 @[simp] theorem congrEquiv_refl (ρ : G →* H) (hρ : Continuous ρ) (b : B) :
-    congrEquiv (P := P) rfl hρ hρ b = Equiv.refl _ := by unfold congrEquiv; rfl
+    congrEquiv (P := P) rfl hρ hρ b = _root_.Equiv.refl _ := by unfold congrEquiv; rfl
 @[simp] theorem congrHomeomorph_refl (ρ : G →* H) (hρ : Continuous ρ) :
     congrHomeomorph (P := P) rfl hρ hρ = Homeomorph.refl _ := by unfold congrHomeomorph; rfl
 section
@@ -420,12 +440,22 @@ theorem trivializationAt_congrEquiv_snd (b' b : B) (z : Extend P ρ₁ hρ₁ b)
     (trivializationAt H (Extend P ρ₁ hρ₁) b' ⟨b, z⟩).2 =
       (trivializationAt H (Extend P ρ₂ hρ₂) b' ⟨b, congrEquiv h hρ₁ hρ₂ b z⟩).2 := by subst h; rfl
 theorem congrHomeomorph_apply (z : TotalSpace H (Extend P ρ₁ hρ₁)) :
-    congrHomeomorph h hρ₁ hρ₂ z = ⟨z.proj, congrEquiv h hρ₁ hρ₂ z.proj z.2⟩ := by subst h; rfl
+    congrHomeomorph h hρ₁ hρ₂ z = ⟨z.proj, congrEquiv h hρ₁ hρ₂ z.proj z.snd⟩ := by subst h; rfl
 theorem congrHomeomorph_symm_apply (z : TotalSpace H (Extend P ρ₂ hρ₂)) :
-    (congrHomeomorph h hρ₁ hρ₂).symm z = ⟨z.proj, (congrEquiv h hρ₁ hρ₂ z.proj).symm z.2⟩ := by
+    (congrHomeomorph h hρ₁ hρ₂).symm z = ⟨z.proj, (congrEquiv h hρ₁ hρ₂ z.proj).symm z.snd⟩ := by
   subst h; rfl
 theorem congrHomeomorph_symm :
     (congrHomeomorph (P := P) h hρ₁ hρ₂).symm = congrHomeomorph h.symm hρ₂ hρ₁ := by subst h; rfl
+/-- Equal homomorphisms produce equivalent principal bundles: `congrEquiv` as an equivalence of
+principal `H`-bundles. -/
+noncomputable def congrPrincipalEquiv :
+    PrincipalBundle.Equiv H (Extend P ρ₁ hρ₁) (Extend P ρ₂ hρ₂) where
+  toEquiv := congrEquiv h hρ₁ hρ₂
+  continuous_toFun := by subst h; exact continuous_id
+  continuous_invFun := by subst h; exact continuous_id
+  map_smul b z x := congrEquiv_smul h hρ₁ hρ₂ b x z
+@[simp] theorem congrPrincipalEquiv_toEquiv :
+    (congrPrincipalEquiv (P := P) h hρ₁ hρ₂).toEquiv = congrEquiv h hρ₁ hρ₂ := (rfl)
 @[simp] theorem congrHomeomorph_proj (z : TotalSpace H (Extend P ρ₁ hρ₁)) :
     (congrHomeomorph h hρ₁ hρ₂ z).proj = z.proj := by subst h; rfl
 @[simp] theorem congrHomeomorph_symm_proj (z : TotalSpace H (Extend P ρ₂ hρ₂)) :
@@ -477,14 +507,15 @@ theorem trivializationAt_idEquiv_snd {b' b : B} (hb : b ∈ (trivializationAt G 
 canonically homeomorphic to `P` over `B`. -/
 noncomputable def idHomeomorph :
     TotalSpace G (Extend P (MonoidHom.id G) continuous_id) ≃ₜ TotalSpace G P where
-  toFun z := ⟨z.proj, idEquiv z.proj z.2⟩
-  invFun z := ⟨z.proj, (idEquiv z.proj).symm z.2⟩
+  toFun z := ⟨z.proj, idEquiv z.proj z.snd⟩
+  invFun z := ⟨z.proj, (idEquiv z.proj).symm z.snd⟩
   left_inv z := by simp
   right_inv z := by simp
   continuous_toFun := by
     refine continuous_iff_continuousAt.2 fun z₀ ↦
       (FiberBundle.continuousAt_totalSpace G (fun z : TotalSpace G
-        (Extend P (MonoidHom.id G) continuous_id) ↦ TotalSpace.mk' G z.proj (idEquiv z.proj z.2))).2
+        (Extend P (MonoidHom.id G) continuous_id) ↦ TotalSpace.mk' G z.proj
+            (idEquiv z.proj z.snd))).2
         ⟨(FiberBundle.continuous_proj G _).continuousAt, ?_⟩
     have hb₀ := mem_baseSet_trivializationAt G P z₀.proj
     refine (((trivializationAt G (Extend P (MonoidHom.id G) continuous_id) z₀.proj).continuousAt
@@ -492,14 +523,14 @@ noncomputable def idHomeomorph :
         (MonoidHom.id G) continuous_id z₀.proj).symm ▸ hb₀))).snd).congr_of_eventuallyEq ?_
     filter_upwards [(FiberBundle.continuous_proj G _).continuousAt.preimage_mem_nhds
       ((trivializationAt G P z₀.proj).open_baseSet.mem_nhds hb₀)] with z hz
-    exact (trivializationAt_idEquiv_snd hz z.2).symm
+    exact (trivializationAt_idEquiv_snd hz z.snd).symm
   continuous_invFun := (continuous_inl P (MonoidHom.id G) continuous_id).congr fun ⟨b, p⟩ ↦
     congrArg (TotalSpace.mk b) (idEquiv_symm_apply (G := G) p).symm
 theorem idHomeomorph_apply (z : TotalSpace G (Extend P (MonoidHom.id G) continuous_id)) :
-    idHomeomorph z = ⟨z.proj, idEquiv z.proj z.2⟩ := (rfl)
+    idHomeomorph z = ⟨z.proj, idEquiv z.proj z.snd⟩ := (rfl)
 theorem idHomeomorph_symm_apply (z : TotalSpace G P) :
-    (idHomeomorph (G := G) (P := P)).symm z = ⟨z.proj, inl (MonoidHom.id G) continuous_id z.2⟩ :=
-  congrArg (TotalSpace.mk z.proj) (idEquiv_symm_apply (G := G) z.2)
+    (idHomeomorph (G := G) (P := P)).symm z = ⟨z.proj, inl (MonoidHom.id G) continuous_id z.snd⟩ :=
+  congrArg (TotalSpace.mk z.proj) (idEquiv_symm_apply (G := G) z.snd)
 @[simp] theorem idHomeomorph_proj (z : TotalSpace G (Extend P (MonoidHom.id G) continuous_id)) :
     (idHomeomorph z).proj = z.proj := (rfl)
 @[simp] theorem idHomeomorph_symm_proj (z : TotalSpace G P) :
@@ -513,16 +544,20 @@ theorem idHomeomorph_symm_apply (z : TotalSpace G P) :
 @[simp] theorem idHomeomorph_smul (g : G)
     (z : TotalSpace G (Extend P (MonoidHom.id G) continuous_id)) :
     idHomeomorph (op g • z) = op g • idHomeomorph z :=
-  congrArg (TotalSpace.mk z.proj) (idEquiv_smul z.proj g z.2)
+  congrArg (TotalSpace.mk z.proj) (idEquiv_smul z.proj g z.snd)
 @[simp] theorem idHomeomorph_symm_smul (g : G) (z : TotalSpace G P) :
     (idHomeomorph (G := G) (P := P)).symm (op g • z) =
       op g • (idHomeomorph (G := G) (P := P)).symm z :=
-  congrArg (TotalSpace.mk z.proj) (idEquiv_symm_smul z.proj g z.2)
+  congrArg (TotalSpace.mk z.proj) (idEquiv_symm_smul z.proj g z.snd)
 end Id
 
 section Comp
 variable [ContinuousMul H] [ContinuousMul K]
   (ρ : G →* H) (hρ : Continuous ρ) (σ : H →* K) (hσ : Continuous σ)
+/-- In an iterated extension, `[[p, h], k] = [[p, 1], σ h * k]`. -/
+theorem mk_mk {b : B} (p : P b) (h : H) (k : K) :
+    mk σ hσ (mk ρ hρ p h) k = mk σ hσ (inl ρ hρ p) (σ h * k) := by
+  rw [← smul_inl ρ hρ p h, mk_smul]
 /-- Extending along `ρ : G →* H` and then along `σ : H →* K` is fibrewise equivalent to extending
 along `σ.comp ρ`, sending `[[p, h], k]` to `[p, σ h * k]`. -/
 noncomputable def compEquiv (b : B) :
@@ -577,7 +612,7 @@ noncomputable def compHomeomorph :
   haveI : IsScalarTower G H K := SMul.comp.isScalarTower (⇑ρ)
   AssociatedBundle.assocHomeomorph (G := G) (P := P) (H := H) (F := K)
 theorem compHomeomorph_apply (z : TotalSpace K (Extend (Extend P ρ hρ) σ hσ)) :
-    compHomeomorph ρ hρ σ hσ z = ⟨z.proj, compEquiv ρ hρ σ hσ z.proj z.2⟩ :=
+    compHomeomorph ρ hρ σ hσ z = ⟨z.proj, compEquiv ρ hρ σ hσ z.proj z.snd⟩ :=
   letI := compHom H ρ; haveI : ContinuousSMul G H := continuousSMul_compHom hρ
   letI := compHom K σ; haveI : ContinuousSMul H K := continuousSMul_compHom hσ
   letI := compHom K (σ.comp ρ); haveI : ContinuousSMul G K := continuousSMul_compHom (hσ.comp hρ)
@@ -586,7 +621,7 @@ theorem compHomeomorph_apply (z : TotalSpace K (Extend (Extend P ρ hρ) σ hσ)
   AssociatedBundle.assocHomeomorph_apply z
 theorem compHomeomorph_symm_apply (z : TotalSpace K (Extend P (σ.comp ρ) (hσ.comp hρ))) :
     (compHomeomorph (P := P) ρ hρ σ hσ).symm z =
-      ⟨z.proj, (compEquiv ρ hρ σ hσ z.proj).symm z.2⟩ :=
+      ⟨z.proj, (compEquiv ρ hρ σ hσ z.proj).symm z.snd⟩ :=
   (compHomeomorph ρ hρ σ hσ).symm_apply_eq.2 <| by rw [compHomeomorph_apply, Equiv.apply_symm_apply]
 @[simp] theorem compHomeomorph_proj (z : TotalSpace K (Extend (Extend P ρ hρ) σ hσ)) :
     (compHomeomorph ρ hρ σ hσ z).proj = z.proj := by rw [compHomeomorph_apply]
@@ -607,13 +642,24 @@ theorem compHomeomorph_symm_apply (z : TotalSpace K (Extend P (σ.comp ρ) (hσ.
 @[simp] theorem compHomeomorph_smul (k' : K) (z : TotalSpace K (Extend (Extend P ρ hρ) σ hσ)) :
     compHomeomorph ρ hρ σ hσ (op k' • z) = op k' • compHomeomorph ρ hρ σ hσ z := by
   rw [compHomeomorph_apply, compHomeomorph_apply]
-  exact congrArg (TotalSpace.mk z.proj) (compEquiv_smul ρ hρ σ hσ z.proj k' z.2)
+  exact congrArg (TotalSpace.mk z.proj) (compEquiv_smul ρ hρ σ hσ z.proj k' z.snd)
+/-- **Functoriality of structure-group extension under composition**, as an equivalence of
+principal `K`-bundles `(P ×_ρ H) ×_σ K ≃ P ×_{σ ∘ ρ} K`, sending `[[p, h], k]` to `[p, σ h * k]`. -/
+noncomputable def compPrincipalEquiv :
+    PrincipalBundle.Equiv K (Extend (Extend P ρ hρ) σ hσ) (Extend P (σ.comp ρ) (hσ.comp hρ)) where
+  toEquiv := compEquiv ρ hρ σ hσ
+  continuous_toFun := (compHomeomorph ρ hρ σ hσ).continuous.congr (compHomeomorph_apply ρ hρ σ hσ)
+  continuous_invFun :=
+    (compHomeomorph ρ hρ σ hσ).symm.continuous.congr (compHomeomorph_symm_apply ρ hρ σ hσ)
+  map_smul b z k := compEquiv_smul ρ hρ σ hσ b k z
+@[simp] theorem compPrincipalEquiv_toEquiv :
+    (compPrincipalEquiv (P := P) ρ hρ σ hσ).toEquiv = compEquiv ρ hρ σ hσ := (rfl)
 @[simp] theorem compHomeomorph_symm_smul (k' : K)
     (z : TotalSpace K (Extend P (σ.comp ρ) (hσ.comp hρ))) :
     (compHomeomorph (P := P) ρ hρ σ hσ).symm (op k' • z) =
       op k' • (compHomeomorph (P := P) ρ hρ σ hσ).symm z := by
   rw [compHomeomorph_symm_apply, compHomeomorph_symm_apply]
-  exact congrArg (TotalSpace.mk z.proj) (compEquiv_symm_smul ρ hρ σ hσ z.proj k' z.2)
+  exact congrArg (TotalSpace.mk z.proj) (compEquiv_symm_smul ρ hρ σ hσ z.proj k' z.snd)
 end Comp
 
 section Pullback
@@ -661,12 +707,12 @@ noncomputable def pullbackHomeomorph :
   letI := compHom H ρ; haveI : ContinuousSMul G H := continuousSMul_compHom hρ
   AssociatedBundle.pullbackHomeomorph (G := G) (P := P) (F := H) f
 theorem pullbackHomeomorph_apply (z : TotalSpace H (Extend ((f : B' → B) *ᵖ P) ρ hρ)) :
-    pullbackHomeomorph f ρ hρ z = ⟨z.proj, pullbackEquiv f ρ hρ z.proj z.2⟩ :=
+    pullbackHomeomorph f ρ hρ z = ⟨z.proj, pullbackEquiv f ρ hρ z.proj z.snd⟩ :=
   letI := compHom H ρ; haveI : ContinuousSMul G H := continuousSMul_compHom hρ
   AssociatedBundle.pullbackHomeomorph_apply f z
 theorem pullbackHomeomorph_symm_apply (z : TotalSpace H ((f : B' → B) *ᵖ (Extend P ρ hρ))) :
     (pullbackHomeomorph (P := P) f ρ hρ).symm z =
-      ⟨z.proj, (pullbackEquiv f ρ hρ z.proj).symm z.2⟩ :=
+      ⟨z.proj, (pullbackEquiv f ρ hρ z.proj).symm z.snd⟩ :=
   (pullbackHomeomorph f ρ hρ).symm_apply_eq.2 <| by
     rw [pullbackHomeomorph_apply, Equiv.apply_symm_apply]
 @[simp] theorem pullbackHomeomorph_proj (z : TotalSpace H (Extend ((f : B' → B) *ᵖ P) ρ hρ)) :
@@ -692,13 +738,13 @@ theorem pullbackHomeomorph_symm_apply (z : TotalSpace H ((f : B' → B) *ᵖ (Ex
     (z : TotalSpace H (Extend ((f : B' → B) *ᵖ P) ρ hρ)) :
     pullbackHomeomorph f ρ hρ (op h' • z) = op h' • pullbackHomeomorph f ρ hρ z := by
   rw [pullbackHomeomorph_apply, pullbackHomeomorph_apply]
-  exact congrArg (TotalSpace.mk z.proj) (pullbackEquiv_smul f ρ hρ z.proj h' z.2)
+  exact congrArg (TotalSpace.mk z.proj) (pullbackEquiv_smul f ρ hρ z.proj h' z.snd)
 @[simp] theorem pullbackHomeomorph_symm_smul (h' : H)
     (z : TotalSpace H ((f : B' → B) *ᵖ (Extend P ρ hρ))) :
     (pullbackHomeomorph (P := P) f ρ hρ).symm (op h' • z) =
       op h' • (pullbackHomeomorph (P := P) f ρ hρ).symm z := by
   rw [pullbackHomeomorph_symm_apply, pullbackHomeomorph_symm_apply]
-  exact congrArg (TotalSpace.mk z.proj) (pullbackEquiv_symm_smul f ρ hρ z.proj h' z.2)
+  exact congrArg (TotalSpace.mk z.proj) (pullbackEquiv_symm_smul f ρ hρ z.proj h' z.snd)
 end Pullback
 
 section Associated
@@ -744,14 +790,14 @@ theorem trivializationAt_associatedEquiv_snd {b' b : B} (hb : b ∈ (trivializat
   haveI : IsScalarTower G H F := ⟨fun g h₀ v₀ ↦ (mul_smul (ρ g) h₀ v₀).trans (hF g (h₀ • v₀)).symm⟩
   AssociatedBundle.trivializationAt_assocEquiv_snd hb z
 theorem associatedHomeomorph_apply (z : TotalSpace F (AssociatedBundle H (Extend P ρ hρ) F)) :
-    associatedHomeomorph ρ hρ hF z = ⟨z.proj, associatedEquiv ρ hρ hF z.proj z.2⟩ :=
+    associatedHomeomorph ρ hρ hF z = ⟨z.proj, associatedEquiv ρ hρ hF z.proj z.snd⟩ :=
   letI := compHom H ρ; haveI : ContinuousSMul G H := continuousSMul_compHom hρ
   haveI : SMulCommClass G Hᵐᵒᵖ H := SMul.comp.smulCommClass (⇑ρ)
   haveI : IsScalarTower G H F := ⟨fun g h₀ v₀ ↦ (mul_smul (ρ g) h₀ v₀).trans (hF g (h₀ • v₀)).symm⟩
   AssociatedBundle.assocHomeomorph_apply z
 theorem associatedHomeomorph_symm_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     (associatedHomeomorph (P := P) ρ hρ hF).symm z =
-      ⟨z.proj, (associatedEquiv ρ hρ hF z.proj).symm z.2⟩ :=
+      ⟨z.proj, (associatedEquiv ρ hρ hF z.proj).symm z.snd⟩ :=
   (associatedHomeomorph ρ hρ hF).symm_apply_eq.2 <| by
     rw [associatedHomeomorph_apply, Equiv.apply_symm_apply]
 @[simp] theorem associatedHomeomorph_proj
@@ -774,3 +820,65 @@ end
 end Associated
 
 end TauCeti.PrincipalBundle.Extend
+
+namespace TauCeti.PrincipalBundle.Equiv
+
+variable {G H B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {P P' : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
+  [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
+  [TopologicalSpace (TotalSpace G P')] [∀ b, TopologicalSpace (P' b)]
+  [FiberBundle G P'] [∀ b, MulAction Gᵐᵒᵖ (P' b)] [PrincipalBundle G P']
+
+/-- **Functoriality of structure-group extension under equivalences.** An equivalence
+`ψ : P ≃ P'` of principal `G`-bundles induces the equivalence of principal `H`-bundles
+`P ×_ρ H ≃ P' ×_ρ H` sending `[p, h]` to `[ψ p, h]`. -/
+noncomputable def extend (ψ : PrincipalBundle.Equiv G P P') (ρ : G →* H)
+    (hρ : Continuous ρ) :
+    PrincipalBundle.Equiv H (Extend P ρ hρ) (Extend P' ρ hρ) :=
+  Extend.principalEquivOfEquivariant ρ hρ (fun b p ↦ Extend.inl ρ hρ (ψ.toEquiv b p))
+    (fun b p g ↦ by rw [ψ.map_smul, Extend.inl_smul])
+    ((Extend.continuous_inl P' ρ hρ).comp ψ.continuous_toFun)
+
+variable (ψ : PrincipalBundle.Equiv G P P') (ρ : G →* H) (hρ : Continuous ρ)
+
+/-- The equivalence `ψ.extend ρ hρ` sends `[p, h]` to `[ψ p, h]`. -/
+@[simp]
+theorem extend_toEquiv_mk {b : B} (p : P b) (h : H) :
+    (ψ.extend ρ hρ).toEquiv b (Extend.mk ρ hρ p h) = Extend.mk ρ hρ (ψ.toEquiv b p) h := by
+  rw [extend, Extend.principalEquivOfEquivariant_toEquiv, Extend.equivOfEquivariant_mk,
+    Extend.smul_inl]
+
+/-- The equivalence `ψ.extend ρ hρ` sends `[p, 1]` to `[ψ p, 1]`. -/
+@[simp]
+theorem extend_toEquiv_inl {b : B} (p : P b) :
+    (ψ.extend ρ hρ).toEquiv b (Extend.inl ρ hρ p) = Extend.inl ρ hρ (ψ.toEquiv b p) := by
+  rw [Extend.inl_def, extend_toEquiv_mk, Extend.inl_def]
+
+/-- Extending the identity equivalence gives the identity equivalence. -/
+@[simp]
+theorem extend_refl : (refl G P).extend ρ hρ = refl H (Extend P ρ hρ) := by
+  ext b z
+  obtain ⟨p, h, rfl⟩ := Extend.exists_mk z
+  rw [extend_toEquiv_mk]
+  rfl
+
+/-- Extension is compatible with composition of equivalences. -/
+@[simp]
+theorem extend_trans {P'' : B → Type*} [TopologicalSpace (TotalSpace G P'')]
+    [∀ b, TopologicalSpace (P'' b)] [FiberBundle G P''] [∀ b, MulAction Gᵐᵒᵖ (P'' b)]
+    [PrincipalBundle G P''] (ψ' : PrincipalBundle.Equiv G P' P'') :
+    (ψ.trans ψ').extend ρ hρ = (ψ.extend ρ hρ).trans (ψ'.extend ρ hρ) := by
+  ext b z
+  obtain ⟨p, h, rfl⟩ := Extend.exists_mk z
+  simp only [trans_toEquiv, _root_.Equiv.trans_apply, extend_toEquiv_mk]
+
+/-- Extension is compatible with inverses of equivalences. -/
+@[simp]
+theorem extend_symm : ψ.symm.extend ρ hρ = (ψ.extend ρ hρ).symm := by
+  ext b z
+  obtain ⟨p, h, rfl⟩ := Extend.exists_mk z
+  rw [symm_toEquiv, _root_.Equiv.eq_symm_apply, extend_toEquiv_mk, extend_toEquiv_mk, symm_toEquiv,
+    _root_.Equiv.apply_symm_apply]
+
+end TauCeti.PrincipalBundle.Equiv

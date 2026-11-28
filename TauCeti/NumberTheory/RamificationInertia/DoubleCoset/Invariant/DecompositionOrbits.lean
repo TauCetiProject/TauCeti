@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
+public import TauCeti.NumberTheory.RamificationInertia.HilbertTheory.IntermediateRing
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.Data.Multiset.Fintype
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -24,6 +27,13 @@ and a flat `C`-algebra, and `G` and `H` are Galois groups of the domain `B` over
 and the residue degree of the attached prime over `p`. Altogether, the multiset of the sizes of
 the `D`-orbits on `G ⧸ H` is the multiset of the local degrees `e · f` over the primes of `C`
 above `p`. No hypothesis on the residue fields is needed.
+
+When the residue extension `(B ⧸ Q) / (A ⧸ Q.under A)` is separable, passing from the cosets
+`G ⧸ H` to their orbits under the inertia subgroup `I ◁ D` separates `e` and `f`: the `I`-orbit
+of `τ H` has `e` elements (`Ideal.card_orbit_inertia_coset`), the `(D / I)`-orbit of that
+`I`-orbit has `f` elements (`Ideal.card_orbit_quotientInertia_coset`), and the multiset of
+`(D / I)`-orbit sizes on `I \ (G / H)` is the multiset of residue degrees of the primes of `C`
+above `p` (`Ideal.map_card_orbit_quotientInertia_eq_map_inertiaDeg`).
 
 This is the form of the double coset law that Dedekind's theorem uses: when `M / K` is a finite
 Galois extension and `C` is the integral closure of the base in `M ^ H = K(α)`, for a root `α` of
@@ -48,6 +58,12 @@ hypothesis below is found by instance search.
   `e · f` elements, for the prime attached to the coset.
 * `Ideal.map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg`: the multiset of orbit
   sizes is the multiset of local degrees over the primes of `C` above `p`.
+* `Ideal.card_orbit_inertia_coset`: the orbit of a coset under the inertia subgroup has `e`
+  elements.
+* `Ideal.card_orbit_quotientInertia_coset`: the orbit of an inertia-orbit of cosets under `D / I`
+  has `f` elements.
+* `Ideal.map_card_orbit_quotientInertia_eq_map_inertiaDeg`: the multiset of `(D / I)`-orbit sizes
+  on `I \ (G / H)` is the multiset of residue degrees over the primes of `C` above `p`.
 
 ## References
 
@@ -109,7 +125,7 @@ theorem primesOverOfCoset_eq_iff [Finite H] [Algebra.IsInvariant C B H] (x y : G
     · rw [mem_stabilizer_iff, mul_assoc, mul_smul, hh, smul_smul, mul_inv_cancel, one_smul]
     · rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, QuotientGroup.eq, smul_eq_mul,
         Subgroup.coe_mk]
-      convert H.inv_mem h.2 using 1
+      convert H.inv_mem h.property using 1
       group
   · rintro ⟨d, hd⟩
     rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, QuotientGroup.eq] at hd
@@ -117,7 +133,8 @@ theorem primesOverOfCoset_eq_iff [Finite H] [Algebra.IsInvariant C B H] (x y : G
       have := H.inv_mem hd
       simpa [mul_inv_rev, mul_assoc] using this
     refine ⟨⟨τ⁻¹ * d * τ', hmem⟩, ?_⟩
-    rw [Subgroup.smul_def, smul_smul, mul_inv_cancel_right, mul_smul, mem_stabilizer_iff.mp d.2]
+    rw [Subgroup.smul_def, smul_smul, mul_inv_cancel_right, mul_smul,
+        mem_stabilizer_iff.mp d.property]
 
 /-- **Every prime of `C` above `p` is attached to a coset.** -/
 theorem primesOverOfCoset_surjective [Finite G] [Algebra.IsInvariant A B G] [FaithfulSMul C B] :
@@ -165,12 +182,42 @@ has as many elements as the ramification index times the residue degree of the p
 attached to the coset. No hypothesis on the residue fields is needed. -/
 theorem card_orbit_stabilizer_coset (x : G ⧸ H) :
     Nat.card (orbit (stabilizer G Q) x) =
-      (primesOverOfCoset p Q H C x).1.ramificationIdx A *
-        (primesOverOfCoset p Q H C x).1.inertiaDeg A := by
+      (primesOverOfCoset p Q H C x).val.ramificationIdx A *
+        (primesOverOfCoset p Q H C x).val.inertiaDeg A := by
   induction x using QuotientGroup.induction_on with | H τ => ?_
   rw [coe_primesOverOfCoset_mk,
     ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex (Q := Q) H C τ⁻¹,
     Subgroup.card_orbit_quotientGroup_mk]
+
+omit [Finite G] in
+/-- **Inertia-group orbit sizes are ramification indices.** When the residue extension at `Q` is
+separable, the orbit of a coset `τ H` under the inertia subgroup `I(Q) ≤ D(Q)` has size equal to
+the ramification index of the attached prime `τ⁻¹ Q ∩ C` over `A`. -/
+theorem card_orbit_inertia_coset [Algebra.IsSeparable (A ⧸ Q.under A) (B ⧸ Q)] (x : G ⧸ H) :
+    Nat.card (orbit (Q.inertia (stabilizer G Q)) x) =
+      (primesOverOfCoset p Q H C x).val.ramificationIdx A := by
+  rw [Q.orbit_inertia_stabilizer]
+  induction x using QuotientGroup.induction_on with | H τ =>
+  rw [coe_primesOverOfCoset_mk, Q.ramificationIdx_under_smul_eq_relIndex_inertia H C τ⁻¹,
+    Subgroup.card_orbit_quotientGroup_mk]
+
+omit [Finite G] in
+/-- **Quotient-decomposition orbit sizes are residue degrees.** When the residue extension at `Q`
+is separable, the orbit of the `I(Q)`-orbit of a coset `τ H` under `D(Q) / I(Q)` has size equal to
+the residue degree of the attached prime `τ⁻¹ Q ∩ C` over `A`. -/
+theorem card_orbit_quotientInertia_coset [Algebra.IsSeparable (A ⧸ Q.under A) (B ⧸ Q)]
+    (x : G ⧸ H) :
+    Nat.card (orbit (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
+        (Quotient.mk'' x : orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H))) =
+      (primesOverOfCoset p Q H C x).val.inertiaDeg A := by
+  have : Finite G := IsGaloisGroup.finite G A B
+  have : Nonempty (orbit (Q.inertia (stabilizer G Q)) x) := ⟨⟨x, mem_orbit_self x⟩⟩
+  have hpos : 0 < Nat.card (orbit (Q.inertia (stabilizer G Q)) x) := Nat.card_pos
+  have hmul := Subgroup.card_orbit_quotientGroup_mul_card_orbit_normal
+    (G := stabilizer G Q) (Q.inertia (stabilizer G Q)) x
+  rw [card_orbit_inertia_coset p Q H C x] at hpos hmul
+  rw [card_orbit_stabilizer_coset p Q H C x, mul_comm] at hmul
+  exact Nat.eq_of_mul_eq_mul_left hpos hmul
 
 variable [FaithfulSMul C B]
 
@@ -182,24 +229,35 @@ theorem map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg
     (Finset.univ : Finset (orbitRel.Quotient (stabilizer G Q) (G ⧸ H))).val.map
         (fun ω => Nat.card ω.orbit) =
       (Finset.univ : Finset (p.primesOver C)).val.map
-        (fun 𝔮 : p.primesOver C => 𝔮.1.ramificationIdx A * 𝔮.1.inertiaDeg A) := by
-  -- The orbit sizes, read through the bijection with the primes above `p`.
-  have hcard : ∀ ω : orbitRel.Quotient (stabilizer G Q) (G ⧸ H),
-      Nat.card ω.orbit = (orbitQuotientEquivPrimesOver p Q H C ω).1.ramificationIdx A *
-        (orbitQuotientEquivPrimesOver p Q H C ω).1.inertiaDeg A := by
-    intro ω
-    refine _root_.Quotient.inductionOn' ω fun x => ?_
-    rw [orbitRel.Quotient.orbit_mk, orbitQuotientEquivPrimesOver_mk p Q H C,
-      card_orbit_stabilizer_coset p Q H C]
-  calc (Finset.univ : Finset (orbitRel.Quotient (stabilizer G Q) (G ⧸ H))).val.map
-          (fun ω => Nat.card ω.orbit)
-      = Finset.univ.val.map (fun ω => (orbitQuotientEquivPrimesOver p Q H C ω).1.ramificationIdx
-          A * (orbitQuotientEquivPrimesOver p Q H C ω).1.inertiaDeg A) :=
-        Multiset.map_congr rfl fun ω _ => hcard ω
-    _ = (Finset.univ.val.map (orbitQuotientEquivPrimesOver p Q H C)).map
-          (fun 𝔮 : p.primesOver C => 𝔮.1.ramificationIdx A * 𝔮.1.inertiaDeg A) := by
-        rw [Multiset.map_map, Function.comp_def]
-    _ = _ := by rw [Multiset.map_univ_val_equiv]
+        (fun 𝔮 : p.primesOver C => 𝔮.val.ramificationIdx A * 𝔮.val.inertiaDeg A) := by
+  refine Multiset.map_univ_val_eq_of_equiv (orbitQuotientEquivPrimesOver p Q H C) fun ω => ?_
+  refine _root_.Quotient.inductionOn' ω fun x => ?_
+  rw [orbitRel.Quotient.orbit_mk, orbitQuotientEquivPrimesOver_mk p Q H C,
+    card_orbit_stabilizer_coset p Q H C]
+
+/-- **The multiset of `(D / I)`-orbit sizes is the multiset of residue degrees.** When the residue
+extension at `Q` is separable, the sizes of the orbits of `D(Q) / I(Q)` on `I(Q) \ (G / H)` are,
+as a multiset, the residue degrees of the primes of `C` above `p`. -/
+theorem map_card_orbit_quotientInertia_eq_map_inertiaDeg
+    [Algebra.IsSeparable (A ⧸ Q.under A) (B ⧸ Q)]
+    [Fintype (orbitRel.Quotient (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
+      (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)))]
+    [Fintype (p.primesOver C)] :
+    (Finset.univ : Finset (orbitRel.Quotient (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
+        (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)))).val.map
+        (fun ω => Nat.card ω.orbit) =
+      (Finset.univ : Finset (p.primesOver C)).val.map
+        (fun 𝔮 : p.primesOver C => 𝔮.val.inertiaDeg A) := by
+  let e : orbitRel.Quotient (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
+        (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)) ≃ p.primesOver C :=
+    (Subgroup.orbitRelQuotientEquiv (Q.inertia (stabilizer G Q))).trans
+      (orbitQuotientEquivPrimesOver p Q H C)
+  refine Multiset.map_univ_val_eq_of_equiv e fun ω => ?_
+  refine _root_.Quotient.inductionOn' ω fun ω' => _root_.Quotient.inductionOn' ω' fun x => ?_
+  rw [orbitRel.Quotient.orbit_mk]
+  dsimp only [e]
+  rw [Equiv.trans_apply, Subgroup.orbitRelQuotientEquiv_mk, orbitQuotientEquivPrimesOver_mk]
+  exact card_orbit_quotientInertia_coset p Q H C x
 
 end LocalDegree
 

@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
-import Mathlib.LinearAlgebra.Countable
+import TauCeti.NumberTheory.NumberField.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular
@@ -47,6 +47,8 @@ groups, as for the infinite-adele comparison in
   the semilocal map after evaluation at `v`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_injective`,
   `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_surjective`: the map is bijective.
+* `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_proj`: projecting
+  `finiteAdeleBaseChangeEquiv` to a place `w ∣ v` recovers `TauCeti.semilocalContinuousEquiv`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_tower`: in a tower `K ⊆ L ⊆ M`, base
   change from `K` to `M` factors through base change from `K` to `L`.
 
@@ -101,7 +103,7 @@ scalar extension of evaluation at `v`. -/
 theorem finiteAdeleBaseChangeHom_apply (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
     (v : HeightOneSpectrum (𝓞 K))
     (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    finiteAdeleBaseChangeHom K L s w.1 =
+    finiteAdeleBaseChangeHom K L s w.val =
       v.adicCompletionSemilocalHom K (𝓞 L) L
         (TensorProduct.map
           (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K).toLinearMap
@@ -162,13 +164,13 @@ theorem finiteAdeleBaseChangeHom_injective :
 component is integral, the coefficients can be chosen in `𝒪_v`. -/
 private theorem exists_semilocalHom_sum_tmul_eq (v : HeightOneSpectrum (𝓞 K))
     (z : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-      w.1.adicCompletion L) :
+      w.val.adicCompletion L) :
     ∃ c : Module.Free.ChooseBasisIndex ℤ (𝓞 L) → v.adicCompletion K,
       v.adicCompletionSemilocalHom K (𝓞 L) L (∑ i, c i ⊗ₜ[K] (RingOfIntegers.basis L i : L)) = z ∧
-      ((∀ w, z w ∈ w.1.adicCompletionIntegers L) → ∀ i, c i ∈ v.adicCompletionIntegers K) := by
+      ((∀ w, z w ∈ w.val.adicCompletionIntegers L) → ∀ i, c i ∈ v.adicCompletionIntegers K) := by
   classical
   let b := RingOfIntegers.basis L
-  by_cases hz : ∀ w, z w ∈ w.1.adicCompletionIntegers L
+  by_cases hz : ∀ w, z w ∈ w.val.adicCompletionIntegers L
   · -- Integral components come from the integral tensor product, which `1 ⊗ b i` spans.
     obtain ⟨ζ, hζ⟩ :=
       (v.adicCompletionIntegersSemilocalEquiv K (𝓞 L) L).surjective fun w ↦ ⟨z w, hz w⟩
@@ -180,7 +182,7 @@ private theorem exists_semilocalHom_sum_tmul_eq (v : HeightOneSpectrum (𝓞 K))
       exact h.symm
     obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
       (hspan ▸ Submodule.mem_top : ζ ∈ Submodule.span _ _)
-    refine ⟨fun i ↦ c i, ?_, fun _ i ↦ (c i).2⟩
+    refine ⟨fun i ↦ c i, ?_, fun _ i ↦ (c i).property⟩
     have h :=
       v.adicCompletionIntegersSemilocalEquiv_fieldCompatibility (K := K) (B := 𝓞 L) (L := L) ζ
     rw [hζ, ← hc, map_sum] at h
@@ -214,13 +216,13 @@ theorem finiteAdeleBaseChangeHom_surjective :
   classical
   intro y
   choose c hc hci using fun v : HeightOneSpectrum (𝓞 K) ↦
-    exists_semilocalHom_sum_tmul_eq K L v fun w ↦ y w.1
+    exists_semilocalHom_sum_tmul_eq K L v fun w ↦ y w.val
   -- The components of `y` above `v` are integral for all but finitely many `v`.
   have hy : ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        y w.1 ∈ w.1.adicCompletionIntegers L := by
+        y w.val ∈ w.val.adicCompletionIntegers L := by
     have hfin : {w : HeightOneSpectrum (𝓞 L) | y w ∉ w.adicCompletionIntegers L}.Finite :=
-      Filter.eventually_cofinite.1 y.2
+      Filter.eventually_cofinite.1 y.property
     refine Filter.eventually_cofinite.2 ((hfin.image (HeightOneSpectrum.under (𝓞 K))).subset ?_)
     intro v hv
     simp only [Set.mem_ofPred_eq, not_forall] at hv
@@ -254,13 +256,28 @@ theorem finiteAdeleBaseChangeAlgEquiv_toAlgHom :
     (finiteAdeleBaseChangeAlgEquiv K L).toAlgHom = finiteAdeleBaseChangeHom K L :=
   (rfl)
 
+/-- The algebraic comparison sends a pure tensor to the extended adele times the diagonal
+field element. -/
+@[simp]
+theorem finiteAdeleBaseChangeAlgEquiv_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L) :
+    finiteAdeleBaseChangeAlgEquiv K L (a ⊗ₜ x) =
+      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a *
+        algebraMap L (FiniteAdeleRing (𝓞 L) L) x :=
+  finiteAdeleBaseChangeHom_tmul K L a x
+
 /-- The algebraic inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
 theorem finiteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
     (finiteAdeleBaseChangeAlgEquiv K L).symm
       (algebraMap L (FiniteAdeleRing (𝓞 L) L) x) = 1 ⊗ₜ[K] x := by
   apply (finiteAdeleBaseChangeAlgEquiv K L).injective
-  simp [finiteAdeleBaseChangeAlgEquiv]
+  simp
+
+/-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem finiteAdeleBaseChangeAlgEquiv_one_tmul (x : L) :
+    finiteAdeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) =
+      algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
+  simp
 
 variable [TopologicalSpace (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
   [IsModuleTopology (FiniteAdeleRing (𝓞 K) K) (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
@@ -286,7 +303,6 @@ def finiteAdeleBaseChangeEquiv :
   -- additive open mapping theorem then gives the inverse.
   letI := IsModuleTopology.isTopologicalAddGroup (FiniteAdeleRing (𝓞 K) K)
     (FiniteAdeleRing (𝓞 K) K ⊗[K] L)
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   letI := TauCeti.ModuleTopology.sigmaCompactSpace
     ((Module.finBasis K L).baseChange (FiniteAdeleRing (𝓞 K) K))
   have ho : IsOpenMap e := e.toAddMonoidHom.isOpenMap_of_sigmaCompact e.surjective hc
@@ -306,9 +322,13 @@ field element. -/
 @[simp]
 theorem finiteAdeleBaseChangeEquiv_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L) :
     finiteAdeleBaseChangeEquiv K L (a ⊗ₜ x) =
-      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
-  have h : (finiteAdeleBaseChangeEquiv K L).toAlgHom = finiteAdeleBaseChangeHom K L := by simp
-  exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans (finiteAdeleBaseChangeHom_tmul K L a x)
+      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (FiniteAdeleRing (𝓞 L) L) x :=
+  finiteAdeleBaseChangeAlgEquiv_tmul K L a x
+
+/-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem finiteAdeleBaseChangeEquiv_one_tmul (x : L) :
+    finiteAdeleBaseChangeEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
+  simp
 
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
@@ -329,5 +349,37 @@ theorem finiteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [
       finiteAdeleBaseChangeEquiv L M (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
   simp only [finiteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
   rw [← finiteAdeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M, RingHom.comp_apply]
+
+/-- Projecting `finiteAdeleBaseChangeEquiv K L s` to a place `w ∣ v` of `L` agrees with
+applying the semilocal comparison at `v` to the `v`-component tensor of `s`. -/
+theorem finiteAdeleBaseChangeEquiv_proj (v : HeightOneSpectrum (𝓞 K))
+    [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
+    [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]
+    (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
+    (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    FiniteAdeleRing.proj L w.val (finiteAdeleBaseChangeEquiv K L s) =
+      TauCeti.semilocalContinuousEquiv L v
+        (Algebra.TensorProduct.rTensor L
+          (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K) s) w := by
+  induction s using TensorProduct.inductionOn with
+  | tmul a x =>
+    obtain ⟨w, hw⟩ := w
+    obtain rfl : v = w.under (𝓞 K) := HeightOneSpectrum.asIdeal_injective hw.over
+    simp [FiniteAdeleRing.proj_apply, finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply,
+      HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra,
+      HeightOneSpectrum.algebraMap_adicCompletion]
+  | add s₁ s₂ hs₁ hs₂ =>
+    simp only [map_add, Pi.add_apply, hs₁, hs₂]
+
+/-- Pure-tensor form of `finiteAdeleBaseChangeEquiv_proj`. -/
+theorem finiteAdeleBaseChangeEquiv_proj_tmul (v : HeightOneSpectrum (𝓞 K))
+    [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
+    [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]
+    (a : FiniteAdeleRing (𝓞 K) K) (x : L)
+    (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    FiniteAdeleRing.proj L w.val (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ[K] x)) =
+      TauCeti.semilocalContinuousEquiv L v (FiniteAdeleRing.proj K v a ⊗ₜ[K] x) w := by
+  simpa only [Algebra.TensorProduct.rTensor, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+    ContinuousAlgHom.coe_coe] using finiteAdeleBaseChangeEquiv_proj K L v (a ⊗ₜ[K] x) w
 
 end TauCeti.GlobalNumberFields

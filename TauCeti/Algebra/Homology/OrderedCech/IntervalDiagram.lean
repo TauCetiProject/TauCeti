@@ -10,6 +10,7 @@ public import Mathlib.Order.Interval.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.Algebra.Homology.OrderedCech.Cone
+public import TauCeti.Algebra.Homology.TotalComplex.Additive
 public import TauCeti.Algebra.Homology.TotalComplex.Basic
 public import TauCeti.Order.Extension.Linear
 
@@ -72,9 +73,13 @@ The two results are Pardon's Lemmas A.7.4 and A.7.3.
 * `TauCeti.IntervalDiagram.IsFlag`, `TauCeti.IntervalDiagram.flagInterval`: flags and the
   intervals they span.
 * `TauCeti.IntervalDiagram.flagComplex`, `TauCeti.IntervalDiagram.flagComplexι`: the flag complex
-  and its summand inclusions.
+  and its summand inclusions, which exhibit each of its terms as a coproduct
+  (`TauCeti.IntervalDiagram.isColimitFlagComplexCofan`); the flag complex as a functor
+  (`TauCeti.IntervalDiagram.flagComplexFunctor`).
 * `TauCeti.IntervalDiagram.total`, `TauCeti.IntervalDiagram.totalMap`: the total and the maps
-  induced on it by maps of interval diagrams.
+  induced on it by maps of interval diagrams, together the functor
+  `TauCeti.IntervalDiagram.totalFunctor`, isomorphic to the total complex of the flipped flag
+  complex (`TauCeti.IntervalDiagram.totalFunctorIsoFlip`).
 * `TauCeti.IntervalDiagram.topι`: the inclusion of `A[⊤, ⊤]` in the total.
 
 ## Main results
@@ -316,15 +321,15 @@ number of vertices of `s` below the deleted one. -/
 lemma flagComplexι_d (A : IntervalDiagram S C) {p : ℕ} {s : Finset (LinearExtension S)}
     (hs : IsFlag s) (hp : #s = p + 1 + 1) :
     A.flagComplexι hs hp ≫ A.flagComplex.d (p + 1) p =
-      ∑ i : s, ((-1 : ℤ) ^ #{j ∈ s | j < i.1}) •
-        A.map (homOfLE (flagInterval_mono hs (hs.erase (by omega) i.1) (erase_subset _ _))).op ≫
-          A.flagComplexι (hs.erase (by omega) i.1)
-            (by rw [card_erase_of_mem i.2, hp, Nat.add_sub_cancel]) := by
+      ∑ i : s, ((-1 : ℤ) ^ #{j ∈ s | j < i.val}) •
+        A.map (homOfLE (flagInterval_mono hs (hs.erase (by omega) i.val) (erase_subset _ _))).op ≫
+          A.flagComplexι (hs.erase (by omega) i.val)
+            (by rw [card_erase_of_mem i.property, hp, Nat.add_sub_cancel]) := by
   simp only [flagComplexι, Category.assoc]
   rw [Functor.ι_orderedCechComplex_d, Preadditive.comp_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Preadditive.comp_zsmul, flagObjι_flagObjDesc_assoc,
-    flagRestrict_of_isFlag A hs _ (hs.erase (by omega) i.1), Category.assoc]
+    flagRestrict_of_isFlag A hs _ (hs.erase (by omega) i.val), Category.assoc]
 
 end Complex
 
@@ -337,7 +342,7 @@ flag with `p + 1` vertices. -/
 def flagComplexDesc (A : IntervalDiagram S C) {p : ℕ} {Y : C}
     (f : ∀ (s : Finset (LinearExtension S)) (hs : IsFlag s), #s = p + 1 →
       (A.obj (op (flagInterval hs)) ⟶ Y)) : A.flagComplex.X p ⟶ Y :=
-  A.flagFunctor.orderedCechComplexDesc fun s ↦ A.flagObjDesc fun hs ↦ f s.1 hs s.2
+  A.flagFunctor.orderedCechComplexDesc fun s ↦ A.flagObjDesc fun hs ↦ f s.val hs s.property
 
 @[reassoc (attr := simp)]
 lemma flagComplexι_flagComplexDesc (A : IntervalDiagram S C) {p : ℕ} {Y : C}
@@ -347,6 +352,18 @@ lemma flagComplexι_flagComplexDesc (A : IntervalDiagram S C) {p : ℕ} {Y : C}
     A.flagComplexι hs hp ≫ A.flagComplexDesc f = f s hs hp := by
   simp only [flagComplexι, flagComplexDesc, Category.assoc, Functor.ι_orderedCechComplexDesc]
   exact A.flagObjι_flagObjDesc _ hs
+
+/-- The summand inclusions `IntervalDiagram.flagComplexι` exhibit the degree `p` term of the flag
+complex as the coproduct of the `A[s₀, sₚ]` over the flags `s₀ < ⋯ < sₚ` with `p + 1` vertices. -/
+def isColimitFlagComplexCofan (A : IntervalDiagram S C) (p : ℕ) :
+    IsColimit (Cofan.mk (A.flagComplex.X p)
+      fun s : {s : Finset (LinearExtension S) // IsFlag s ∧ #s = p + 1} ↦
+        A.flagComplexι s.property.1 s.property.2) :=
+  Cofan.IsColimit.mk _ (fun c ↦ A.flagComplexDesc fun s hs hp ↦ c.inj ⟨s, hs, hp⟩)
+    (fun c s ↦ A.flagComplexι_flagComplexDesc _ s.property.1 s.property.2)
+    fun c m hm ↦ A.flagComplex_hom_ext fun s hs hp ↦ by
+      rw [A.flagComplexι_flagComplexDesc]
+      exact hm ⟨s, hs, hp⟩
 
 end Desc
 
@@ -413,6 +430,22 @@ lemma flagComplexMap_comp (α : A ⟶ B) (β : B ⟶ E) :
   ext
   simp
 
+@[simp]
+lemma flagComplexMap_zero : flagComplexMap (0 : A ⟶ B) = 0 := by
+  ext
+  simp
+
+variable (S C) in
+/-- **The flag complex, as a functor**: an interval diagram goes to its flag complex
+(`IntervalDiagram.flagComplex`), and a map of interval diagrams to the induced chain map
+(`IntervalDiagram.flagComplexMap`). -/
+-- The body is exposed so that its values and maps are definitionally the flag complexes and the
+-- maps of flag complexes (`flagComplexFunctor_obj`, `flagComplexFunctor_map`).
+@[expose, simps]
+def flagComplexFunctor : IntervalDiagram S C ⥤ ChainComplex C ℕ where
+  obj := flagComplex
+  map := flagComplexMap
+
 end ComplexMap
 
 section Total
@@ -451,6 +484,57 @@ lemma totalMap_id (A : IntervalDiagram S (ChainComplex D ℕ)) : totalMap (𝟙 
 lemma totalMap_comp (α : A ⟶ B) (β : B ⟶ E) :
     totalMap (α ≫ β) = totalMap α ≫ totalMap β := by
   simp [totalMap, HomologicalComplex₂.total.map_comp]
+
+@[simp]
+lemma totalMap_zero : totalMap (0 : A ⟶ B) = 0 := by
+  rw [totalMap, flagComplexMap_zero, HomologicalComplex₂.total.map_zero]
+
+variable (S D) in
+/-- **The total of interval diagrams of chain complexes, as a functor**: an interval diagram goes
+to its total (`IntervalDiagram.total`), and a map of interval diagrams to the induced chain map of
+totals (`IntervalDiagram.totalMap`). Applied to a diagram of presheaves of chain complexes, after
+`CategoryTheory.Functor.flip`, it forms the totals pointwise. -/
+-- The body is exposed so that its values and maps are definitionally the totals and the maps of
+-- totals (`totalFunctor_obj`, `totalFunctor_map`).
+@[expose, simps]
+def totalFunctor : IntervalDiagram S (ChainComplex D ℕ) ⥤ ChainComplex D ℕ where
+  obj := total
+  map := totalMap
+
+instance : (totalFunctor S D).PreservesZeroMorphisms where
+  map_zero _ _ := totalMap_zero
+
+/-- The total of an interval diagram whose values are all zero is zero. -/
+lemma isZero_total (h : ∀ I, IsZero (A.obj I)) : IsZero A.total :=
+  (totalFunctor S D).map_isZero (Functor.isZero A h)
+
+variable (S D) in
+/-- **The flag total is the total complex of the flipped flag complex.** The flag total of an
+interval diagram is naturally isomorphic, through the signed isomorphism
+`HomologicalComplex₂.totalFlipIso`, to the total complex of the flip of its flag complex, whose
+rows are the columns of the flag complex. -/
+def totalFunctorIsoFlip :
+    totalFunctor S D ≅ flagComplexFunctor S (ChainComplex D ℕ) ⋙
+      HomologicalComplex₂.flipFunctor D (ComplexShape.down ℕ) (ComplexShape.down ℕ) ⋙
+        HomologicalComplex₂.totalFunctor D (ComplexShape.down ℕ) (ComplexShape.down ℕ)
+          (ComplexShape.down ℕ) :=
+  (NatIso.ofComponents
+    (fun A ↦ HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ))
+    fun α ↦ HomologicalComplex₂.total_map_flip_totalFlipIso_hom (flagComplexMap α) _).symm
+
+@[simp]
+lemma totalFunctorIsoFlip_hom_app (A : IntervalDiagram S (ChainComplex D ℕ)) :
+    (totalFunctorIsoFlip S D).hom.app A =
+      (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).inv := by
+  rw [totalFunctorIsoFlip]
+  rfl
+
+@[simp]
+lemma totalFunctorIsoFlip_inv_app (A : IntervalDiagram S (ChainComplex D ℕ)) :
+    (totalFunctorIsoFlip S D).inv.app A =
+      (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom := by
+  rw [totalFunctorIsoFlip]
+  rfl
 
 end Total
 
@@ -613,6 +697,18 @@ lemma topι_f (A : IntervalDiagram S (ChainComplex D ℕ)) (q : ℕ) :
         HomologicalComplex₂.ιTotal A.flagComplex (ComplexShape.down ℕ) 0 q q (zero_add q) :=
   (rfl)
 
+/-- The inclusion of the top value in the total is natural in the interval diagram. -/
+@[reassoc (attr := simp)]
+lemma topι_totalMap {A B : IntervalDiagram S (ChainComplex D ℕ)} (α : A ⟶ B) :
+    A.topι ≫ totalMap α = α.app (op (NonemptyInterval.pure ⊤)) ≫ B.topι := by
+  -- `topι` is `topFlagι` followed by the inclusion of column `0` in the total.
+  have h : topFlagι A ≫ (flagComplexMap α).f 0 =
+      α.app (op (NonemptyInterval.pure ⊤)) ≫ topFlagι B := by
+    simp [topFlagι]
+  ext q : 1
+  simp only [HomologicalComplex.comp_f, topι, Category.assoc, ιTotal_totalMap]
+  rw [← HomologicalComplex.comp_f_assoc, h, HomologicalComplex.comp_f_assoc]
+
 end Top
 
 section Abelian
@@ -633,7 +729,7 @@ lemma quasiIso_flagComplexMap_f (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] (p :
   exact HomologicalComplex.quasiIso_of_isColimit_cofan
     (A.flagFunctor.isColimitOrderedCechComplexCofan p)
     (B.flagFunctor.isColimitOrderedCechComplexCofan p)
-    (fun s : {s : Finset (LinearExtension S) // #s = p + 1} ↦ (flagFunctorMap α).app (op s.1)) _
+    (fun s : {s : Finset (LinearExtension S) // #s = p + 1} ↦ (flagFunctorMap α).app (op s.val)) _
     fun s ↦ NatTrans.ι_orderedCechComplexMap_f (flagFunctorMap α) s
 
 /-- **A map of interval diagrams which is a quasi-isomorphism on every interval induces a
@@ -649,19 +745,8 @@ theorem quasiIso_totalMap (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] : QuasiIso
   have hcomm :
       (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom ≫ totalMap α =
         HomologicalComplex₂.total.map ψ (ComplexShape.down ℕ) ≫
-          (HomologicalComplex₂.totalFlipIso B.flagComplex (ComplexShape.down ℕ)).hom := by
-    ext n q p h
-    rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-      HomologicalComplex₂.ιTotal_totalFlipIso_f_hom_assoc, HomologicalComplex₂.ιTotal_map_assoc,
-      HomologicalComplex₂.ιTotal_totalFlipIso_f_hom]
-    -- `HomologicalComplex₂.ιTotal_totalFlipIso_f_hom` states the sign with types that agree with
-    -- the goal only up to unfolding the total complex, so the sign is moved with `erw`.
-    erw [Linear.units_smul_comp, ιTotal_totalMap, Linear.comp_units_smul]
-    rw [HomologicalComplex₂.flipFunctor_map_f_f]
-    -- The two sides now differ only in the types of the morphisms, where one side still writes
-    -- the objects of the flag complexes through `HomologicalComplex₂.flip`; they agree by
-    -- definition.
-    rfl
+          (HomologicalComplex₂.totalFlipIso B.flagComplex (ComplexShape.down ℕ)).hom :=
+    (HomologicalComplex₂.total_map_flip_totalFlipIso_hom (flagComplexMap α) _).symm
   rw [← quasiIso_iff_comp_left
       (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom, hcomm]
   infer_instance

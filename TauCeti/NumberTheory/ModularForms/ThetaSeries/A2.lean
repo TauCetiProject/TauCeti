@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Nebentypus
 public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Normalized
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
@@ -21,7 +22,7 @@ The root lattice `A₂ = typeARootLattice 2` has rank `2`, level `3`, and signed
 Through the general-level Hecke–Schoeneberg theorem, the theta series of its real model bundles as
 a weight-one modular form `thetaFormRealModelTypeARootLatticeTwo` on `Γ₁(3)` lying in the
 character space `M₁(Γ₀(3), χ₋₃)` for the primitive Kronecker character `χ₋₃ = (-3 / ·)`, with
-level, signed discriminant, and nebentypus computed directly from the lattice.
+level, signed discriminant, and unique nebentypus computed directly from the lattice.
 
 Both this theta form and six times the normalized weight-one Eisenstein series for `χ₋₃` are
 weight-one modular forms on `Γ₁(3)`. The index of `Γ₁(3)` in `SL(2, ℤ)` is eight, so the Sturm
@@ -39,8 +40,13 @@ The norm-two count and kissing number for all ranks are provided by
 
 ## Main statements
 
-* `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace`:
-  `Θ_{A₂}` lies in `M₁(Γ₀(3), χ₋₃)` (`TauCeti.modFormCharSpace` for `χ₋₃` at modulus `3`).
+* `TauCeti.IntegralLattice.nebentypus_realModel_typeARootLattice_two_intCast`,
+  `TauCeti.IntegralLattice.isPrimitive_nebentypus_realModel_typeARootLattice_two`: the nebentypus
+  of the real model of `A₂` is the primitive Kronecker character `(-3 / ·)` modulo `3`.
+* `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace`,
+  `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace_iff`:
+  `Θ_{A₂}` lies in `M₁(Γ₀(3), χ₋₃)` (`TauCeti.modFormCharSpace` for `χ₋₃` at modulus `3`), and
+  `χ₋₃` is its unique nebentypus.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0`:
   `Θ_{A₂} ∣[1] A = (-3 / A 1 1) • Θ_{A₂}` for every `A ∈ Γ₀(3)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_eq_smul_normalizedCharE1MF`,
@@ -77,6 +83,31 @@ private theorem a2_character_parity :
 private theorem a2_character_primitive : χ₋₃.IsPrimitive :=
   conductor_kroneckerChar_eq_natAbs_of_prime _ _ (by decide)
 
+/-- The nebentypus of the real model of `A₂` is the Kronecker character `(-3 / ·)` modulo `3`: its
+value at every integer `a` is `(-3 / a)`. -/
+@[simp]
+theorem nebentypus_realModel_typeARootLattice_two_intCast (R : Type*) [CommRing R] [NeZero (2 : R)]
+    (a : ℤ) :
+    ((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr
+      (isEven_typeARootLattice 2)).nebentypus R (by simp [finrank_carrier]) a =
+      kroneckerSym (-3) a := by
+  by_cases ha : IsCoprime a (ZLattice.level
+    ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)))
+  · rw [ZLattice.IsEven.nebentypus_intCast _ _ ha, signedDiscr_realModel_typeARootLattice_two]
+  · rw [MulChar.map_nonunit _ (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]),
+      kroneckerSym_eq_zero_iff.mpr, Int.cast_zero]
+    rw [level_realModel_typeARootLattice_two, Nat.cast_ofNat] at ha
+    rwa [Ne, ← Int.isCoprime_iff_gcd_eq_one, IsCoprime.neg_left_iff, isCoprime_comm]
+
+/-- The nebentypus of the real model of `A₂` is primitive: its conductor `3` is the level. -/
+theorem isPrimitive_nebentypus_realModel_typeARootLattice_two (R : Type*) [CommRing R]
+    [NeZero (2 : R)] :
+    (((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr
+      (isEven_typeARootLattice 2)).nebentypus R (by simp [finrank_carrier])).IsPrimitive := by
+  rw [DirichletCharacter.isPrimitive_def, ZLattice.IsEven.conductor_nebentypus,
+    conductor_kroneckerChar_signedDiscr_realModel_typeARootLattice_two,
+    level_realModel_typeARootLattice_two]
+
 /-- The theta series of the real model of the root lattice `A₂`, bundled as a weight-one modular
 form on `Γ₁(3)` via `ZLattice.thetaFormOfLevel` and `level_realModel_typeARootLattice_two`. -/
 def thetaFormRealModelTypeARootLatticeTwo :
@@ -94,6 +125,12 @@ theorem coe_thetaFormRealModelTypeARootLatticeTwo :
   dsimp only [thetaFormRealModelTypeARootLatticeTwo, ModularForm.coe_mcast]
   exact ZLattice.coe_thetaFormOfLevel _ _
 
+/-- The bundled `A₂` theta form is nonzero. -/
+@[simp]
+theorem thetaFormRealModelTypeARootLatticeTwo_ne_zero :
+    thetaFormRealModelTypeARootLatticeTwo ≠ 0 :=
+  ZLattice.ne_zero_of_coe_eq_thetaSeries _ coe_thetaFormRealModelTypeARootLatticeTwo
+
 /-- **Modularity of `Θ_{A₂}` with character `χ₋₃`**: the bundled `A₂` theta form lies in
 `M₁(Γ₀(3), χ₋₃)`, proved directly from the lattice invariants `level A₂ = 3` and
 `signedDiscr A₂ = -3`. -/
@@ -106,6 +143,17 @@ theorem thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace :
       rw [DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _ ha, kroneckerChar_intCast,
         signedDiscr_realModel_typeARootLattice_two]
 
+/-- `χ₋₃` (at modulus `3`) is the unique character in `TauCeti.modFormCharSpace` for the bundled
+`A₂` theta form. -/
+theorem thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace_iff
+    (χ : (ZMod 3)ˣ →* ℂˣ) :
+    thetaFormRealModelTypeARootLatticeTwo ∈ TauCeti.modFormCharSpace 1 χ ↔
+      χ = MulChar.equivToUnitHom (χ₋₃.changeLevel (by decide)) :=
+  ⟨fun h ↦ TauCeti.eq_of_mem_modFormCharSpace_of_ne_zero h
+    thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace
+    thetaFormRealModelTypeARootLatticeTwo_ne_zero,
+    fun h ↦ h ▸ thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace⟩
+
 /-- Under every matrix `A ∈ Γ₀(3)`, the theta series of the real model of `A₂` transforms in
 weight one by the Kronecker symbol `(-3 / d)` of its lower-right entry `d = A 1 1`. -/
 theorem thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0 {A : SL(2, ℤ)}
@@ -114,17 +162,14 @@ theorem thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0 {A : SL(2
         ∣[(1 : ℤ)] A =
       (kroneckerSym (-3) (A 1 1) : ℂ) •
         ZLattice.thetaSeries ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)) := by
-  have hmem := (TauCeti.mem_modFormCharSpace_iff_nebentypus _ _ _).mp
-    thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace ⟨A, hA⟩
-  have hunit : IsUnit ((A 1 1 : ℤ) : ZMod 3) := by
-    simpa [CongruenceSubgroup.Gamma0Map_apply] using
-      ((CongruenceSubgroup.Gamma0Map 3).toHomUnits ⟨A, hA⟩).isUnit
-  have ha : IsCoprime (A 1 1) 3 :=
-    isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hunit)
-  simpa only [coe_thetaFormRealModelTypeARootLatticeTwo, ModularForm.SL_slash,
-    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MulChar.coe_equivToUnitHom,
-    MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply,
-    DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _ ha, kroneckerChar_intCast] using hmem
+  have hL : ZLattice.IsEven ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)) :=
+    (isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr (isEven_typeARootLattice 2)
+  have hA' : A ∈ CongruenceSubgroup.Gamma0
+      (ZLattice.level ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2))) := by
+    rwa [level_realModel_typeARootLattice_two]
+  simpa only [Nat.cast_one, signedDiscr_realModel_typeARootLattice_two] using
+    hL.thetaSeries_slash_eq_kroneckerSym_smul_of_mem_Gamma0
+      (k := 1) (by simp [RealModelSpace.finrank_eq, finrank_carrier]) hA'
 
 private theorem a2_eisenstein_constant :
     (qExpansion 1 (EisensteinSeries.normalizedCharE1MF

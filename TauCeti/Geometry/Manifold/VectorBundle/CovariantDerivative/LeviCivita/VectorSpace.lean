@@ -7,8 +7,13 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -45,6 +50,17 @@ Christoffel map, which is the input of the coordinate curvature formula of
   `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic`.
 * `TauCeti.Manifold.leviCivitaConnection_eq_fderiv_model_space`: for the standard metric, the
   Levi-Civita connection is the ordinary Fréchet derivative.
+* `TauCeti.Manifold.christoffelMap_leviCivita_model_space`: the Christoffel map of the standard
+  Riemannian metric vanishes.
+* `TauCeti.Manifold.alongCurveWithin_leviCivitaConnection_model_space` and
+  `TauCeti.Manifold.alongCurve_leviCivitaConnection_model_space`: the covariant derivative of a
+  field along a curve is its ordinary derivative, within a parameter set or unrestricted.
+* `TauCeti.Manifold.alongCurveWithin_add_smul_model_space` and
+  `TauCeti.Manifold.alongCurve_add_smul_model_space`: the covariant derivative of an affine field.
+* `TauCeti.Manifold.sectionCoord_model_space`: a field along a map into `F` is its own coordinate
+  reading in every tangent trivialization of `F`.
+* `TauCeti.Manifold.alongMap_leviCivitaConnection_model_space`: the covariant derivative of a
+  field along a map into `F` is its ordinary derivative.
 
 ## References
 
@@ -56,7 +72,7 @@ Christoffel map, which is the input of the coordinate curvature formula of
 
 public section
 
-open Bundle CovariantDerivative Module VectorField
+open Bundle CovariantDerivative Manifold Module Set VectorField
 open scoped Manifold ContDiff
 
 noncomputable section
@@ -214,5 +230,149 @@ theorem leviCivitaConnection_eq_fderiv_model_space
   simpa only [add_zero] using h
 
 end Christoffel
+
+/-! ### Fields along a map into the model space -/
+
+section SectionCoord
+
+/-- For a map into the model space `F`, the coordinate reading of a field along the map in any
+tangent trivialization of `F` is the field itself, as an `F`-valued map. -/
+@[simp]
+theorem sectionCoord_model_space {M : Type*} (f : M → F)
+    (V : Π y, TangentSpace 𝓘(ℝ, F) (f y)) (a : F) :
+    sectionCoord ℝ (F := F) f V a = fun y ↦ (V y : F) := by
+  funext t
+  rw [sectionCoord_apply, TangentBundle.continuousLinearMapAt_model_space]
+  exact one_apply_eq_self (F := F →L[ℝ] F) (V t : F)
+
+end SectionCoord
+
+/-! ### The standard inner-product metric -/
+
+section InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
+    leviCivitaConnection 𝓘(ℝ, F) F (fun _ : F ↦ v) x u = 0 := by
+  let C (a : F) : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ a
+  -- Writing the constant sections dependently keeps all Koszul-formula terms well typed.
+  change leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x) = 0
+  have hconst (a : F) :
+      MDiffAt (fun y : F ↦ (TotalSpace.mk' F y (C a y) : TangentBundle 𝓘(ℝ, F) F)) x := by
+    simpa only [C] using
+      ((contMDiffAt_vectorSpace_iff_contDiffAt (n := (1 : ℕ∞ω))
+        (V := fun _ : F ↦ a)).2 contDiffAt_const).mdifferentiableAt one_ne_zero
+  -- The inner product of two constant fields is constant, so its differential vanishes.
+  have hinner (a b : F) : d% (fun y : F ↦ inner ℝ (C a y) (C b y)) x = 0 :=
+    mvfderiv_const (I := 𝓘(ℝ, F)) (c := inner ℝ a b)
+  -- Constant fields commute, so every bracket term of the Koszul formula vanishes.
+  have hbracket (a b c : F) :
+      inner ℝ (C a x) (VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x) = 0 := by
+    have h : VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x = 0 := by
+      simpa only [C] using VectorField.mlieBracket_const_model_space b c x
+    rw [h]
+    exact inner_zero_right (𝕜 := ℝ) (C a x)
+  let w : F := leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)
+  -- `w` abbreviates a tangent vector represented in the model vector space.
+  change w = 0
+  rw [← inner_self_eq_zero (𝕜 := ℝ)]
+  -- Re-expose the dependent constant section so the Koszul formula applies directly.
+  change inner ℝ (leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)) (C w x) = 0
+  rw [leviCivitaConnection_apply_inner 𝓘(ℝ, F)
+    (X := C u) (Y := C v) (Z := C w) (hconst u) (hconst v) (hconst w)]
+  simp [hinner, hbracket]
+
+/-- The Levi-Civita connection of the standard Riemannian metric differentiates a constant vector
+field to zero. -/
+@[simp]
+theorem leviCivitaConnection_const_model_space (v : F) (x : F) :
+    leviCivitaConnection 𝓘(ℝ, F) F (fun _ : F ↦ v) x = 0 := by
+  ext u
+  simpa using leviCivitaConnection_const_apply (F := F) u v x
+
+/-- The Christoffel map of the standard Riemannian metric on an inner-product space vanishes in
+its canonical coordinates. -/
+@[simp]
+theorem christoffelMap_leviCivita_model_space (x : F) :
+    christoffelMap (Module.finBasis ℝ F)
+      ((leviCivitaConnection 𝓘(ℝ, F) F).isCovariantDerivativeOn
+        (s := (trivializationAt F (TangentSpace 𝓘(ℝ, F)) x).baseSet)) x = 0 := by
+  ext v u
+  rw [christoffelMap_model_space, leviCivitaConnection_const_model_space]
+  -- The zero map on tangent vectors, evaluated at `u`.
+  rfl
+
+/-- In an inner-product space the Levi-Civita covariant derivative along a curve is the
+derivative within the parameter set. -/
+@[simp]
+theorem alongCurveWithin_leviCivitaConnection_model_space (γ V : ℝ → F) (s : Set ℝ) (t : ℝ) :
+    alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) s t = derivWithin V s t := by
+  let W : ∀ r, TangentSpace 𝓘(ℝ, F) (γ r) := fun r ↦ V r
+  -- Naming the field lets `rw` see it as a section of the tangent bundle along `γ`.
+  change alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ W s t = _
+  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply]
+  simp only [christoffelMap_leviCivita_model_space, zero_apply, add_zero]
+  rw [sectionCoord_model_space, TangentBundle.symmL_model_space]
+  rfl
+
+/-- In an inner-product space the Levi-Civita covariant derivative along a curve is the
+ordinary derivative. -/
+@[simp]
+theorem alongCurve_leviCivitaConnection_model_space (γ V : ℝ → F) (t : ℝ) :
+    alongCurve (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) t = deriv V t := by
+  exact (alongCurveWithin_univ _ γ
+    (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) t).symm.trans
+      ((alongCurveWithin_leviCivitaConnection_model_space γ V univ t).trans
+        (congrFun derivWithin_univ t))
+
+/-- The covariant derivative of the affine field `t ↦ u + t • w` along any curve is `w`
+within a parameter set with a unique derivative. -/
+theorem alongCurveWithin_add_smul_model_space (γ : ℝ → F) {s : Set ℝ} {t : ℝ}
+    (hs : UniqueDiffWithinAt ℝ s t) (u w : F) :
+    alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) s t = w := by
+  rw [alongCurveWithin_leviCivitaConnection_model_space]
+  have h := (((hasDerivAt_id t).smul_const w).const_add u).hasDerivWithinAt.derivWithin hs
+  rw [one_smul] at h
+  exact h
+
+/-- The covariant derivative of the affine field `t ↦ u + t • w` along any curve is `w`. -/
+theorem alongCurve_add_smul_model_space (γ : ℝ → F) (u w : F) (t : ℝ) :
+    alongCurve (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) t = w := by
+  exact (alongCurveWithin_univ _ γ
+    (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) t).symm.trans
+      (alongCurveWithin_add_smul_model_space γ uniqueDiffWithinAt_univ u w)
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- **Covariant differentiation along a map into a Euclidean space is differentiation.** For the
+flat Levi-Civita connection of a finite-dimensional inner product space `F`, the covariant
+derivative of a field `V` along a map `f : M → F` is the derivative of `V`, read as an `F`-valued
+map. -/
+theorem alongMap_leviCivitaConnection_model_space {f : M → F}
+    {V : Π y, TangentSpace 𝓘(ℝ, F) (f y)} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, F) f x)
+    (hV : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ (V y : F)) x) (v : TangentSpace I x) :
+    (leviCivitaConnection 𝓘(ℝ, F) F).alongMap I f V x v =
+      mfderiv I 𝓘(ℝ, F) (fun y ↦ (V y : F)) x v := by
+  have hT : MDifferentiableAt I 𝓘(ℝ, F).tangent
+      (fun y ↦ TotalSpace.mk' F (E := TangentSpace 𝓘(ℝ, F)) (f y) (V y)) x := by
+    rw [mdifferentiableAt_totalSpace]
+    exact ⟨hf, by simpa [trivializationAt_model_space_apply] using hV⟩
+  rw [alongMap_apply_of_mem_baseSet _ hT (FiberBundle.mem_baseSet_trivializationAt' (f x))]
+  simp only [christoffelMap_leviCivita_model_space, TangentBundle.symmL_model_space,
+    sectionCoord_model_space]
+  refine Eq.trans ?_ (mvfderiv_apply_eq_mfderiv_apply (I := I) (fun y ↦ (V y : F)) x v)
+  -- The goal is well typed only after unfolding `TangentSpace 𝓘(ℝ, F) (f x)` to `F`, so the
+  -- zero Christoffel term must be rewritten up to that unfolding.
+  erw [zero_apply, add_zero]
+  exact one_apply_eq_self (F := F →L[ℝ] F) _
+
+end InnerProductSpace
 
 end TauCeti.Manifold

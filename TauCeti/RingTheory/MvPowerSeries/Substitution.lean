@@ -58,6 +58,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   every other to `0`, for an index type of any size.
 * `MvPowerSeries.ne_of_subst_eq_X_of_subst_eq_zero` : a substitution sending one series to `X` and
   another to `0` separates them.
+* `MvPowerSeries.substAlgHom_apply_eq_subst_map` : substitution over a coefficient algebra
+  equals substitution after mapping the coefficients.
 * `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
   series with a multivariate one is substituting into the inner series.
 * `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
@@ -71,6 +73,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 * `MvPowerSeries.finTwo_X_eq_X` : the pair `![X 0, X 1]` is the family of variables `X`.
 * `MvPowerSeries.coeff_subst_X_zero`, `MvPowerSeries.coeff_subst_zero_X` : the coefficients of
   `f(X, 0)` and `f(0, Y)` are the coefficients of the pure powers of `X` and of `Y` in `f(X, Y)`.
+* `MvPowerSeries.coeff_subst_X_smul_X` : the `n`-th coefficient of `f(X, t X)` is
+  `∑ b ∈ range (n + 1), coeff (n - b, b) f * t ^ b`.
 * `MvPowerSeries.coeff_subst_X_one_X_zero` : the coefficients of `f(Y, X)`.
 * `MvPowerSeries.coeff_subst_X_add_X_X`, `MvPowerSeries.coeff_subst_X_X_add_X`,
   `MvPowerSeries.coeff_subst_X_zero_X_one`, `MvPowerSeries.coeff_subst_X_one_X_two` : the
@@ -285,11 +289,19 @@ theorem ne_of_subst_eq_X_of_subst_eq_zero {O : Type*} [CommRing O] [Nontrivial O
     (ha : subst g a = PowerSeries.X) (hb : subst g b = 0) : a ≠ b := fun hab ↦
   PowerSeries.X_ne_zero (by rw [← ha, hab]; exact hb)
 
+/-- Substitution over a coefficient algebra equals substitution after mapping the coefficients. -/
+theorem substAlgHom_apply_eq_subst_map {R S σ τ : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (f : MvPowerSeries σ R) :
+    substAlgHom ha f = subst a (f.map (algebraMap R S)) := by
+  rw [map_algebraMap_eq_subst_X, subst_comp_subst_apply HasSubst.X ha]
+  simp only [subst_X ha, substAlgHom_apply]
+
 /-- Substituting `b` into the composite `f ∘ g` of a one-variable series `f` with a multivariate
-series `g` is substituting `g ∘ b` into `f`. -/
-theorem subst_powerSeriesSubst {O : Type*} [CommRing O] {σ' τ' : Type*}
-    {b : σ' → MvPowerSeries τ' O} (hb : HasSubst b) {g : MvPowerSeries σ' O}
-    (hg : PowerSeries.HasSubst g) (f : PowerSeries O) :
+series `g` is substituting `g ∘ b` into `f`, over a tower of coefficient rings. -/
+theorem subst_powerSeriesSubst {R S O : Type*} [CommRing R] [CommRing S] [CommRing O]
+    [Algebra R S] [Algebra S O] [Algebra R O] [IsScalarTower R S O] {σ' τ' : Type*}
+    {b : σ' → MvPowerSeries τ' O} (hb : HasSubst b) {g : MvPowerSeries σ' S}
+    (hg : PowerSeries.HasSubst g) (f : PowerSeries R) :
     subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
   rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
 
@@ -369,6 +381,53 @@ theorem coeff_subst_zero_X (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
     · have : n ≠ d 1 := fun h ↦ hd (by ext i; fin_cases i <;> simp_all)
       simp [Finsupp.prod_fintype, hd₀, PowerSeries.coeff_X_pow, this]
     · simp [Finsupp.prod_fintype, hd₀]
+
+private theorem coeff_prod_X_smul_X (t : O) (n : ℕ) (e : Fin 2 →₀ ℕ) :
+    coeff (Finsupp.single () n)
+        (e.prod fun i k ↦ (![(PowerSeries.X : PowerSeries O), t • PowerSeries.X] i) ^ k) =
+      if n = e 0 + e 1 then t ^ e 1 else 0 := by
+  have hfp : (e.prod fun i k ↦ (![(PowerSeries.X : PowerSeries O), t • PowerSeries.X] i) ^ k) =
+      t ^ e 1 • (PowerSeries.X : PowerSeries O) ^ (e 0 + e 1) := by
+    rw [Finsupp.prod_of_support_subset e (Finset.subset_univ _) _ (fun _ _ ↦ pow_zero _),
+      Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+      Algebra.smul_def, mul_pow, ← map_pow, mul_left_comm, ← pow_add, ← Algebra.smul_def]
+  rw [← PowerSeries.coeff_def Finsupp.single_eq_same, hfp, PowerSeries.coeff_smul,
+    PowerSeries.coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero]
+
+/-- Substituting `(X, t X)` into a two-variable series `f(X₀, X₁)` collects each homogeneous
+diagonal of total degree `n` as a polynomial in `t`: the `n`-th coefficient of `f(X, t X)` is
+`∑ b ∈ Finset.range (n + 1), coeff (n - b, b) f * t ^ b`. -/
+theorem coeff_subst_X_smul_X (t : O) (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
+    PowerSeries.coeff n (subst ![PowerSeries.X, t • PowerSeries.X] f) =
+      ∑ b ∈ Finset.range (n + 1),
+        coeff (Finsupp.single 0 (n - b) + Finsupp.single 1 b) f * t ^ b := by
+  set s : Fin 2 → PowerSeries O := ![PowerSeries.X, t • PowerSeries.X]
+  have hc : constantCoeff (PowerSeries.X : PowerSeries O) = 0 := PowerSeries.constantCoeff_X
+  have hs : HasSubst s := hasSubst_of_constantCoeff_zero fun i ↦ by
+    fin_cases i <;> simp [s, hc]
+  rw [PowerSeries.coeff_def Finsupp.single_eq_same, coeff_subst hs]
+  let emb : ℕ ↪ (Fin 2 →₀ ℕ) :=
+    ⟨fun b ↦ Finsupp.single 0 (n - b) + Finsupp.single 1 b, fun b₁ b₂ hb ↦ by
+      simpa using DFunLike.congr_fun hb 1⟩
+  have hsupp : (Function.support fun e : Fin 2 →₀ ℕ ↦
+      coeff e f • coeff (Finsupp.single () n) (e.prod fun i k ↦ s i ^ k)) ⊆
+      (Finset.range (n + 1)).map emb := by
+    intro e he
+    rw [Function.mem_support, coeff_prod_X_smul_X] at he
+    split_ifs at he with hsum
+    · simp only [Finset.coe_map, Set.mem_image, Finset.mem_coe, Finset.mem_range]
+      have he₀ : n - e 1 = e 0 := by omega
+      refine ⟨e 1, by omega, ?_⟩
+      ext i
+      fin_cases i <;> simp [emb, he₀]
+    · exact absurd (smul_zero _) he
+  rw [finsum_eq_sum_of_support_subset _ hsupp, Finset.sum_map]
+  refine Finset.sum_congr rfl fun b hb ↦ ?_
+  rw [Finset.mem_range] at hb
+  have h0 : emb b 0 = n - b := by simp [emb]
+  have h1 : emb b 1 = b := by simp [emb]
+  have hemb : emb b = Finsupp.single 0 (n - b) + Finsupp.single 1 b := by simp [emb]
+  rw [coeff_prod_X_smul_X, h0, h1, ite_eq_left (by omega), smul_eq_mul, hemb]
 
 /-- Swapping the variables of a two-variable series `f(X, Y)`: the coefficient of `XⁱYʲ` in
 `f(Y, X)` is the coefficient of `XʲYⁱ` in `f`. -/

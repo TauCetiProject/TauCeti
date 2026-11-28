@@ -76,6 +76,10 @@ structure AdmissibleSegment (x y : WallComplement W) : Prop where
 instance : Quiver (WallComplement W) where
   Hom x y := PLift (AdmissibleSegment x y)
 
+/-- There is at most one admissible segment between two allowed vertices. -/
+instance (x y : WallComplement W) : Subsingleton (x ⟶ y) :=
+  ⟨fun _ _ => PLift.ext (Subsingleton.elim _ _)⟩
+
 /-- The wall indices and affine crossing parameters of one segment. -/
 def crossings (x y : WallComplement W) : Set (ι × ℝ) :=
   {p | p.2 ∈ Icc (0 : ℝ) 1 ∧ AffineMap.lineMap x.val y.val p.2 ∈ W p.1}
@@ -246,7 +250,7 @@ theorem apply_eq_of_crossings_eq_empty {Y : Type*} {F : V → Y}
     (hF : ∀ θ, (∀ i, θ ∉ W i) → ∀ᶠ φ in nhds θ, F φ = F θ) {x y : WallComplement W}
     (he : crossings x y = ∅) : F x.val = F y.val := by
   have hc : Continuous fun r : I => AffineMap.lineMap x.val y.val (r : ℝ) :=
-    AffineMap.lineMap_continuous.comp continuous_subtype_val
+    AffineMap.lineMap_continuous.comp continuous_subtypeVal
   have hf : IsLocallyConstant fun r : I => F (AffineMap.lineMap x.val y.val (r : ℝ)) := by
     refine (IsLocallyConstant.iff_eventually_eq _).mpr fun r =>
       (hc.tendsto r).eventually (p := fun φ => F φ = F _) (hF _ fun i hi => ?_)
@@ -269,6 +273,14 @@ abbrev restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι) :
 theorem restrictPrefunctor_obj_val {κ : Type*} (W : ι → Set V) (f : κ → ι)
     (x : WallComplement W) : ((restrictPrefunctor W f).obj x).val = x.val := (rfl)
 
+/-- Forgetting walls retains exactly the crossings of the selected walls, at the same affine
+parameters. -/
+theorem mem_crossings_restrictPrefunctor {κ : Type*} (f : κ → ι) (x y : WallComplement W)
+    (k : κ) (t : ℝ) :
+    (k, t) ∈ crossings ((restrictPrefunctor W f).obj x) ((restrictPrefunctor W f).obj y) ↔
+      (f k, t) ∈ crossings x y :=
+  Iff.rfl
+
 /-- Forgetting walls preserves the entire ambient vertex list. -/
 theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι)
     {x y : WallComplement W} (p : Quiver.Path x y) :
@@ -279,7 +291,7 @@ theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → 
 /-- Reversal of segments makes the allowed-vertex quiver symmetric. -/
 instance : Quiver.HasInvolutiveReverse (WallComplement W) where
   reverse' e := ⟨e.down.symm⟩
-  inv' _ := PLift.ext (Subsingleton.elim _ _)
+  inv' _ := Subsingleton.elim _ _
 
 end WallComplement
 

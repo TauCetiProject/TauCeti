@@ -69,6 +69,26 @@ theorem eq_of_formallyUnramified [Algebra.FormallyUnramified S T] {δ₁ δ₂ :
   -- `δ x` is `δ₁ x - δ₂ x` by construction of `δ`.
   exact sub_eq_zero.mp (hδ x)
 
+/-- **Algebra homomorphisms intertwine derivations of formally unramified extensions.** If `M` is
+formally unramified over `S`, any `S`-algebra homomorphism `φ : M →ₐ[S] L` intertwines
+`R`-derivations `δ₁ : M → M` and `δ₂ : L → L` that agree through `φ` on the image of `S`. -/
+theorem algHom_apply_of_formallyUnramified
+    {R S M L : Type*} [CommRing R] [CommRing S] [CommRing M] [CommRing L]
+    [Algebra R S] [Algebra R M] [Algebra S M] [IsScalarTower R S M]
+    [Algebra R L] [Algebra S L] [IsScalarTower R S L] [Algebra.FormallyUnramified S M]
+    (δ₁ : Derivation R M M) {δ₂ : Derivation R L L} (φ : M →ₐ[S] L)
+    (h : ∀ s : S, φ (δ₁ (algebraMap S M s)) = δ₂ (algebraMap S L s)) (x : M) :
+    φ (δ₁ x) = δ₂ (φ x) := by
+  let : Algebra M L := φ.toRingHom.toAlgebra
+  have : IsScalarTower S M L := .of_algebraMap_eq' φ.comp_algebraMap.symm
+  have : IsScalarTower R M L := .of_algebraMap_eq fun r ↦ by
+    rw [IsScalarTower.algebraMap_apply R S M, IsScalarTower.algebraMap_apply R S L,
+      ← IsScalarTower.algebraMap_apply S M L]
+  have hδ : (Algebra.linearMap M L).compDer δ₁ = δ₂.compAlgebraMap M :=
+    eq_of_formallyUnramified (S := S) fun s ↦ by
+      simp [RingHom.algebraMap_toAlgebra, h, φ.commutes]
+  exact congr($hδ x)
+
 end Unramified
 
 section ApplyAlgHom
@@ -112,8 +132,7 @@ variable (T) in
 `Ω[S⁄R] → N` classifying `D` along `T ⊗[S] Ω[S⁄R] ≃ Ω[T⁄R]`. By
 `Derivation.eq_of_formallyUnramified` it is the only derivation of `T` agreeing with `D` on `S`. -/
 noncomputable def extendOfFormallyEtale (D : Derivation R S N) : Derivation R T N :=
-  haveI : IsScalarTower R T N := .of_algebraMap_smul fun r n ↦ by
-    rw [IsScalarTower.algebraMap_apply R S T, algebraMap_smul, algebraMap_smul]
+  haveI := IsScalarTower.to₁₃₄ R S T N
   (D.liftKaehlerDifferential.liftBaseChange T ∘ₗ
     (KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale R S T).symm.toLinearMap).compDer
     (KaehlerDifferential.D R T)

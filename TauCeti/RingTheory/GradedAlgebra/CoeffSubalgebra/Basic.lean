@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Polynomial.AlgHom
 
 /-!
 # The graded subalgebra of `B[X]` cut out by a graded family of coefficients
@@ -39,6 +40,8 @@ projective models of a curve are built as `Proj`.
 * `TauCeti.coeffSubalgebra.algebra M h1`: the parameter-ring algebra structure.
 * `TauCeti.coeffSubalgebra.eval M r`: evaluation at a scalar parameter.
 * `TauCeti.coeffSubalgebra.evalOne M`: evaluation at `X = 1`, `∑ bₙ Xⁿ ↦ ∑ bₙ`.
+* `TauCeti.coeffSubalgebra.map`, `TauCeti.coeffSubalgebra.mapPolynomialAlgHom`: functoriality in
+  filtered `R`-algebra homomorphisms, over `R` and (when `X` belongs to both algebras) over `R[X]`.
 
 ## Main results
 
@@ -196,7 +199,7 @@ end parameter
 `coeffSubalgebra M`. -/
 theorem monomial_coeff_mem (f : coeffSubalgebra M) (n : ℕ) :
     Polynomial.monomial n ((f : B[X]).coeff n) ∈ coeffSubalgebra M :=
-  monomial_mem_coeffSubalgebra_iff.mpr (f.2 n)
+  monomial_mem_coeffSubalgebra_iff.mpr (f.property n)
 
 variable (M) in
 /-- The degree `n` piece of `coeffSubalgebra M`: the monomials `b Xⁿ` with `b ∈ M n`. -/
@@ -213,7 +216,7 @@ theorem mem_grade_iff {n : ℕ} {f : coeffSubalgebra M} :
 formed by its `n`-th coefficient. -/
 theorem mem_grade_iff_monomial_coeff {n : ℕ} {f : coeffSubalgebra M} :
     f ∈ grade M n ↔ Polynomial.monomial n ((f : B[X]).coeff n) = f := by
-  refine ⟨fun hf ↦ ?_, fun h ↦ mem_grade_iff.mpr ⟨_, f.2 n, h⟩⟩
+  refine ⟨fun hf ↦ ?_, fun h ↦ mem_grade_iff.mpr ⟨_, f.property n, h⟩⟩
   obtain ⟨b, -, hb⟩ := mem_grade_iff.mp hf
   rw [← hb, coeff_monomial_same]
 
@@ -255,7 +258,7 @@ instance gradedMonoid : SetLike.GradedMonoid (grade M) where
 formed by its `n`-th coefficient. -/
 private noncomputable def component (n : ℕ) (f : coeffSubalgebra M) : grade M n :=
   ⟨⟨Polynomial.monomial n ((f : B[X]).coeff n), monomial_coeff_mem f n⟩,
-    monomial_mem_grade n _ (f.2 n)⟩
+    monomial_mem_grade n _ (f.property n)⟩
 
 private theorem component_add (n : ℕ) (f g : coeffSubalgebra M) :
     component n (f + g) = component n f + component n g := by
@@ -300,7 +303,7 @@ private theorem decomposeAux_coe (x : ⨁ n, grade M n) :
   induction x using DirectSum.induction_on with
   | zero => ext1; ext1; simp [component]
   | of m y =>
-    rw [coeAddMonoidHom_of, component_of_mem y.2, of_apply]
+    rw [coeAddMonoidHom_of, component_of_mem y.property, of_apply]
   | add x y hx hy => rw [map_add, component_add, hx, hy, DirectSum.add_apply]
 
 variable (M) in
@@ -329,12 +332,12 @@ variable (M) in
 /-- The `R`-linear isomorphism `b ↦ b Xⁿ` from `M n` onto the degree `n` piece of
 `coeffSubalgebra M`. -/
 noncomputable def gradeEquiv (n : ℕ) : M n ≃ₗ[R] grade M n where
-  toFun b := ⟨monomial M n b.1 b.2, monomial_mem_grade n b.1 b.2⟩
-  invFun f := ⟨((f : coeffSubalgebra M) : B[X]).coeff n, (f : coeffSubalgebra M).2 n⟩
+  toFun b := ⟨monomial M n b.val b.property, monomial_mem_grade n b.val b.property⟩
+  invFun f := ⟨((f : coeffSubalgebra M) : B[X]).coeff n, (f : coeffSubalgebra M).property n⟩
   map_add' b c := by ext1; ext1; simp
   map_smul' r b := by ext1; ext1; simp
   left_inv b := by ext1; simp
-  right_inv f := by ext1; ext1; exact mem_grade_iff_monomial_coeff.mp f.2
+  right_inv f := by ext1; ext1; exact mem_grade_iff_monomial_coeff.mp f.property
 
 @[simp]
 theorem coe_gradeEquiv_apply (n : ℕ) (b : M n) :
@@ -425,7 +428,7 @@ theorem adjoin_grade_one_eq_top_iff :
     Algebra.adjoin R (grade M 1 : Set (coeffSubalgebra M)) = ⊤ ↔ ∀ n, M n ≤ M 1 ^ n := by
   rw [← coeffSubalgebra_le_coeffSubalgebra_iff, ← map_val_adjoin_grade_one, eq_top_iff]
   refine ⟨fun h f hf ↦ ⟨⟨f, hf⟩, h Algebra.mem_top, rfl⟩, fun h f _ ↦ ?_⟩
-  obtain ⟨g, hg, hgf⟩ := h f.2
+  obtain ⟨g, hg, hgf⟩ := h f.property
   have hgf : (g : B[X]) = f := by simpa using hgf
   rwa [Subtype.ext hgf] at hg
 
@@ -433,7 +436,7 @@ theorem adjoin_grade_one_eq_top_iff :
 `N = span R s` is generated as an `R`-algebra by the monomials `b X` with `b ∈ s`. -/
 theorem adjoin_monomial_one_eq_top (s : Set B) :
     Algebra.adjoin R (Set.range fun b : s ↦ monomial (fun n ↦ Submodule.span R s ^ n) 1 b
-      (by rw [pow_one]; exact Submodule.subset_span b.2)) = ⊤ := by
+      (by rw [pow_one]; exact Submodule.subset_span b.property)) = ⊤ := by
   refine Subalgebra.map_injective (f := (coeffSubalgebra fun n ↦ Submodule.span R s ^ n).val)
     Subtype.val_injective ?_
   rw [AlgHom.map_adjoin, Algebra.map_top]
@@ -451,7 +454,7 @@ theorem adjoin_monomial_one_eq_top (s : Set B) :
 theorem algebraMap_grade_pow_zero_surjective (N : Submodule R B) :
     Function.Surjective (algebraMap R (grade (fun n ↦ N ^ n) 0)) := by
   intro x
-  obtain ⟨b, hb, hx⟩ := mem_grade_iff.mp x.2
+  obtain ⟨b, hb, hx⟩ := mem_grade_iff.mp x.property
   rw [pow_zero, Submodule.mem_one] at hb
   obtain ⟨r, rfl⟩ := hb
   refine ⟨r, Subtype.ext (Subtype.ext ?_)⟩
@@ -517,6 +520,173 @@ theorem evalOne_surjective (hM : (⨆ n, M n) = ⊤) :
     exact ⟨monomial M n b hb, by simp⟩
   rw [hM, top_le_iff] at hrange
   exact LinearMap.range_eq_top.mp hrange
+
+/-! ### Functoriality -/
+
+section map
+
+variable {C : Type*} [Semiring C] [Algebra R C]
+variable (N : ℕ → Submodule R C) [SetLike.GradedMonoid N]
+
+/-- Functoriality of `coeffSubalgebra`: an `R`-algebra map `φ : B →ₐ[R] C` sending each graded
+piece `M n` into `N n` induces an `R`-algebra map `coeffSubalgebra M →ₐ[R] coeffSubalgebra N`
+acting coefficientwise. -/
+noncomputable def map (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) :
+    coeffSubalgebra M →ₐ[R] coeffSubalgebra N :=
+  ((Polynomial.mapAlgHom φ).comp (coeffSubalgebra M).val).codRestrict (coeffSubalgebra N) fun g ↦
+    mem_coeffSubalgebra_iff.mpr fun n ↦ by
+      simpa using hφ n _ (mem_coeffSubalgebra_iff.mp g.property n)
+
+variable {M} {N}
+
+@[simp]
+theorem coe_map (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) (g : coeffSubalgebra M) :
+    (map M N φ hφ g : C[X]) = (g : B[X]).map φ := by
+  simp [map]
+
+theorem map_injective {φ : B →ₐ[R] C} (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    (hinj : Function.Injective φ) : Function.Injective (map M N φ hφ) := by
+  intro f g h
+  apply Subtype.ext
+  apply Polynomial.map_injective φ.toRingHom hinj
+  simpa only [coe_map, ← AlgHom.toRingHom_eq_coe] using congrArg Subtype.val h
+
+@[simp]
+theorem map_monomial (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    {n : ℕ} {b : B} (hb : b ∈ M n) :
+    map M N φ hφ (monomial M n b hb) = monomial N n (φ b) (hφ n b hb) :=
+  Subtype.ext (by simp)
+
+@[simp]
+theorem map_X (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) (h1M : (1 : B) ∈ M 1) :
+    map M N φ hφ (X M h1M) = X N (by simpa only [map_one] using hφ 1 1 h1M) :=
+  Subtype.ext (by simp)
+
+@[simp]
+theorem map_id (M : ℕ → Submodule R B) [SetLike.GradedMonoid M]
+    (h : ∀ n, ∀ b ∈ M n, AlgHom.id R B b ∈ M n) :
+    map M M (AlgHom.id R B) h = AlgHom.id R (coeffSubalgebra M) := by
+  ext g n
+  simp
+
+@[simp]
+theorem map_map {D : Type*} [Semiring D] [Algebra R D]
+    {P : ℕ → Submodule R D} [SetLike.GradedMonoid P]
+    {φ : B →ₐ[R] C} {ψ : C →ₐ[R] D}
+    (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) (hψ : ∀ n, ∀ c ∈ N n, ψ c ∈ P n)
+    (g : coeffSubalgebra M) :
+    map N P ψ hψ (map M N φ hφ g) =
+      map M P (ψ.comp φ) (fun n b hb ↦ by rw [AlgHom.comp_apply]; exact hψ n _ (hφ n b hb)) g := by
+  apply Subtype.ext
+  ext n
+  simp
+
+theorem map_comp {D : Type*} [Semiring D] [Algebra R D]
+    {P : ℕ → Submodule R D} [SetLike.GradedMonoid P]
+    {φ : B →ₐ[R] C} {ψ : C →ₐ[R] D}
+    (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) (hψ : ∀ n, ∀ c ∈ N n, ψ c ∈ P n) :
+    (map N P ψ hψ).comp (map M N φ hφ) =
+      map M P (ψ.comp φ) (fun n b hb ↦ by rw [AlgHom.comp_apply]; exact hψ n _ (hφ n b hb)) :=
+  AlgHom.ext (map_map hφ hψ)
+
+@[simp]
+theorem eval_map (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    (r : R) (g : coeffSubalgebra M) :
+    eval N r (map M N φ hφ g) = φ (eval M r g) := by
+  rw [eval_apply, eval_apply, coe_map]
+  simpa using Polynomial.eval_map_apply (p := (g : B[X])) φ.toRingHom (algebraMap R B r)
+
+@[simp]
+theorem evalOne_map (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    (g : coeffSubalgebra M) :
+    evalOne N (map M N φ hφ g) = φ (evalOne M g) := by
+  rw [evalOne_eq_eval, evalOne_eq_eval, eval_map]
+
+variable (M) (N) in
+/-- Functoriality of `coeffSubalgebra` over the parameter ring `R[X]`, when both coefficient
+subalgebras contain `X`. -/
+noncomputable def mapPolynomialAlgHom (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    (h1M : (1 : B) ∈ M 1) (h1N : (1 : C) ∈ N 1) :
+    letI := algebra M h1M
+    letI := algebra N h1N
+    coeffSubalgebra M →ₐ[R[X]] coeffSubalgebra N :=
+  letI := algebra M h1M
+  letI := algebra N h1N
+  letI := isScalarTower M h1M
+  letI := isScalarTower N h1N
+  (map M N φ hφ).toPolynomialAlgHom (by simp)
+
+@[simp]
+theorem mapPolynomialAlgHom_apply (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    (h1M : (1 : B) ∈ M 1) (h1N : (1 : C) ∈ N 1) (g : coeffSubalgebra M) :
+    letI := algebra M h1M
+    letI := algebra N h1N
+    mapPolynomialAlgHom M N φ hφ h1M h1N g = map M N φ hφ g := by
+  let := algebra M h1M
+  let := algebra N h1N
+  simp [mapPolynomialAlgHom]
+
+@[simp]
+theorem restrictScalars_mapPolynomialAlgHom (φ : B →ₐ[R] C) (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    (h1M : (1 : B) ∈ M 1) (h1N : (1 : C) ∈ N 1) :
+    letI := algebra M h1M
+    letI := algebra N h1N
+    letI := isScalarTower M h1M
+    letI := isScalarTower N h1N
+    (mapPolynomialAlgHom M N φ hφ h1M h1N).restrictScalars R = map M N φ hφ := by
+  let := algebra M h1M
+  let := algebra N h1N
+  let := isScalarTower M h1M
+  let := isScalarTower N h1N
+  exact AlgHom.ext (mapPolynomialAlgHom_apply φ hφ h1M h1N)
+
+theorem mapPolynomialAlgHom_injective {φ : B →ₐ[R] C} (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n)
+    (h1M : (1 : B) ∈ M 1) (h1N : (1 : C) ∈ N 1) (hinj : Function.Injective φ) :
+    letI := algebra M h1M
+    letI := algebra N h1N
+    Function.Injective (mapPolynomialAlgHom M N φ hφ h1M h1N) := by
+  let := algebra M h1M
+  let := algebra N h1N
+  intro f g h
+  exact map_injective hφ hinj (by simpa only [mapPolynomialAlgHom_apply] using h)
+
+@[simp]
+theorem mapPolynomialAlgHom_id (M : ℕ → Submodule R B) [SetLike.GradedMonoid M]
+    (h : ∀ n, ∀ b ∈ M n, AlgHom.id R B b ∈ M n) (h1 : (1 : B) ∈ M 1) :
+    letI := algebra M h1
+    mapPolynomialAlgHom M M (AlgHom.id R B) h h1 h1 =
+      AlgHom.id R[X] (coeffSubalgebra M) := by
+  let := algebra M h1
+  exact AlgHom.ext fun g ↦ by simp
+
+theorem mapPolynomialAlgHom_comp {D : Type*} [Semiring D] [Algebra R D]
+    {P : ℕ → Submodule R D} [SetLike.GradedMonoid P]
+    {φ : B →ₐ[R] C} {ψ : C →ₐ[R] D}
+    (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) (hψ : ∀ n, ∀ c ∈ N n, ψ c ∈ P n)
+    (h1M : (1 : B) ∈ M 1) (h1N : (1 : C) ∈ N 1) (h1P : (1 : D) ∈ P 1) :
+    letI := algebra M h1M
+    letI := algebra N h1N
+    letI := algebra P h1P
+    (mapPolynomialAlgHom N P ψ hψ h1N h1P).comp (mapPolynomialAlgHom M N φ hφ h1M h1N) =
+      mapPolynomialAlgHom M P (ψ.comp φ)
+        (fun n b hb ↦ by rw [AlgHom.comp_apply]; exact hψ n _ (hφ n b hb)) h1M h1P := by
+  let := algebra M h1M
+  let := algebra N h1N
+  let := algebra P h1P
+  exact AlgHom.ext fun g ↦ by simp
+
+/-- Equal filtered `R`-algebra homomorphisms induce the same map on `R[t]`-coefficient
+subalgebras. -/
+theorem mapPolynomialAlgHom_congr {φ ψ : B →ₐ[R] C} (h : φ = ψ)
+    (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) (hψ : ∀ n, ∀ b ∈ M n, ψ b ∈ N n)
+    (h1M : (1 : B) ∈ M 1) (h1N : (1 : C) ∈ N 1) :
+    letI := algebra M h1M
+    letI := algebra N h1N
+    mapPolynomialAlgHom M N φ hφ h1M h1N = mapPolynomialAlgHom M N ψ hψ h1M h1N := by
+  subst h
+  rfl
+
+end map
 
 end coeffSubalgebra
 

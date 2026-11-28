@@ -155,7 +155,7 @@ variable [EssentiallySmall.{t}
 private noncomputable def quiverRepDimensionVectorInvariant :
     ExactK0.AdditiveInvariant
       (IsFinDim.exactStructure k Q) (Q → ℤ) where
-  obj M := fun i ↦ (dimVector M.1 i : ℤ)
+  obj M := fun i ↦ (dimVector M.obj i : ℤ)
   map_conflation {S} hS := by
     have hs :=
       (IsFinDim.exactStructure_conflation_iff k Q S).mp hS
@@ -185,14 +185,14 @@ noncomputable def quiverRepDimensionVectorK0 :
 @[simp]
 theorem quiverRepDimensionVectorK0_of
     (M : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
-    quiverRepDimensionVectorK0 k Q (ExactK0.of M) = fun i ↦ (dimVector M.1 i : ℤ) :=
+    quiverRepDimensionVectorK0 k Q (ExactK0.of M) = fun i ↦ (dimVector M.obj i : ℤ) :=
   ExactK0.lift_of (quiverRepDimensionVectorInvariant k Q) M
 
 /-- The dimension-vector map is determined by its values on representation classes. -/
 theorem quiverRepDimensionVectorK0_unique
     (f : ExactK0 (IsFinDim.exactStructure k Q) →+ (Q → ℤ))
     (hf : ∀ M : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q),
-      f (ExactK0.of M) = fun i ↦ (dimVector M.1 i : ℤ)) :
+      f (ExactK0.of M) = fun i ↦ (dimVector M.obj i : ℤ)) :
     f = quiverRepDimensionVectorK0 k Q :=
   ExactK0.lift_unique (quiverRepDimensionVectorInvariant k Q) f hf
 
@@ -214,8 +214,8 @@ vectors. -/
 theorem quiverRepEulerPairingK0_of_of
     (M N : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
     quiverRepEulerPairingK0 k Q (ExactK0.of M) (ExactK0.of N) =
-      eulerForm Q (fun i ↦ (dimVector M.1 i : ℤ))
-        (fun i ↦ (dimVector N.1 i : ℤ)) := by
+      eulerForm Q (fun i ↦ (dimVector M.obj i : ℤ))
+        (fun i ↦ (dimVector N.obj i : ℤ)) := by
   simp [quiverRepEulerPairingK0, LinearMap.BilinForm.comp_apply, quiverRepDimensionVectorK0_of]
 
 /-- The transported pairing is determined by its values on pairs of representation classes. -/
@@ -224,8 +224,8 @@ theorem quiverRepEulerPairingK0_unique
       (ExactK0 (IsFinDim.exactStructure k Q)))
     (hb : ∀ M N : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q),
       b (ExactK0.of M) (ExactK0.of N) =
-        eulerForm Q (fun i ↦ (dimVector M.1 i : ℤ))
-          (fun i ↦ (dimVector N.1 i : ℤ))) :
+        eulerForm Q (fun i ↦ (dimVector M.obj i : ℤ))
+          (fun i ↦ (dimVector N.obj i : ℤ))) :
     b = quiverRepEulerPairingK0 k Q := by
   apply LinearMap.toAddMonoidHom_injective
   apply ExactK0.hom_ext

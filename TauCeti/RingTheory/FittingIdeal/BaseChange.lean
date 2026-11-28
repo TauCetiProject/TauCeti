@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Kaehler.TensorProduct
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.RingTheory.FittingIdeal.Generators
 import Mathlib.RingTheory.Etale.Kaehler
@@ -54,6 +55,8 @@ They are also carried to each other by an isomorphism of `R`-algebras.
   `k < dim_{κ(p)} κ(p) ⊗[R] M`.
 * `TauCeti.fittingIdeal_zero_eq_top_iff`: `Fitt₀(M) = R` exactly when `M = 0`, and
   `TauCeti.fittingIdeal_zero_map_eq_top_iff`: `Fitt₀(M) S = S` exactly when `S ⊗[R] M = 0`.
+* `TauCeti.fittingIdeal_zero_ne_bot_iff_isTorsion`: over a domain, `Fitt₀(M) ≠ 0` exactly when
+  `M` is torsion.
 * `TauCeti.fittingIdeal_kaehlerDifferential_eq_map`: `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B` for
   `B = S ⊗[R] A`.
 * `TauCeti.fittingIdeal_kaehlerDifferential_eq_map_algEquiv`: `Fitt_k(Ω[B⁄R]) = e (Fitt_k(Ω[A⁄R]))`
@@ -140,7 +143,7 @@ theorem minorsIdeal_span_image [Projective R F] (hj : IsBaseChange S j)
     classical
     obtain ⟨σ, hσ⟩ := Module.projective_def'.1 ‹Projective R F›
     let J : Finset F := Finset.univ.biUnion fun i ↦ (σ (v i)).support
-    let A : F →ₗ[R] (J → R) := LinearMap.pi fun a ↦ Finsupp.lapply a.1 ∘ₗ σ
+    let A : F →ₗ[R] (J → R) := LinearMap.pi fun a ↦ Finsupp.lapply a.val ∘ₗ σ
     let B : (J → R) →ₗ[R] F := Fintype.linearCombination R fun a : J ↦ (a : F)
     have hBA (i : Fin p) : B (A (v i)) = v i := by
       have h := congr($hσ (v i))
@@ -264,7 +267,7 @@ theorem fittingIdeal_zero_eq_top_iff : fittingIdeal R M 0 = ⊤ ↔ Subsingleton
       (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) finrank_zero_of_subsingleton.le⟩
   -- at a prime `p` of the support the fibre `κ(p) ⊗[R] M` is nonzero, so `Fitt₀(M) ≤ p`
   rw [mem_support_iff_nontrivial_residueField_tensorProduct] at hp
-  exact p.2.ne_top <| top_le_iff.mp <|
+  exact p.isPrime.ne_top <| top_le_iff.mp <|
     h ▸ (fittingIdeal_le_iff_lt_finrank p.asIdeal 0).mpr finrank_pos
 
 /-- The base change `S ⊗[R] M` of a finite module `M` vanishes exactly when `Fitt₀(M)` extends to
@@ -272,6 +275,21 @@ the unit ideal of `S`. -/
 theorem fittingIdeal_zero_map_eq_top_iff (S : Type*) [CommRing S] [Algebra R S] :
     (fittingIdeal R M 0).map (algebraMap R S) = ⊤ ↔ Subsingleton (S ⊗[R] M) := by
   rw [← fittingIdeal_baseChange, fittingIdeal_zero_eq_top_iff]
+
+/-- Over a domain, the zeroth Fitting ideal of a finite module `M` is nonzero exactly when `M` is
+torsion: both say that the generic fibre `Frac(R) ⊗[R] M` vanishes. -/
+theorem fittingIdeal_zero_ne_bot_iff_isTorsion [IsDomain R] :
+    fittingIdeal R M 0 ≠ ⊥ ↔ Module.IsTorsion R M := by
+  have hb := (LocalizedModule.isBaseChange (nonZeroDivisors R) M).fittingIdeal_eq_map 0
+  -- An ideal of the field `Frac(R)` is nonzero exactly when it is the unit ideal.
+  have key : fittingIdeal R M 0 ≠ ⊥ ↔
+      (fittingIdeal R M 0).map (algebraMap R (FractionRing R)) = ⊤ := by
+    rw [Ne, ← Ideal.map_eq_bot_iff_of_injective (IsFractionRing.injective R (FractionRing R))]
+    exact ⟨(Ideal.eq_bot_or_top _).resolve_left, fun h ↦ h ▸ top_ne_bot⟩
+  rw [key, ← hb, fittingIdeal_zero_eq_top_iff,
+    IsLocalizedModule.subsingleton_iff (nonZeroDivisors R) (LocalizedModule.mkLinearMap _ M)]
+  exact ⟨fun h m ↦ let ⟨r, hr, h⟩ := h m; ⟨⟨r, hr⟩, h⟩,
+    fun h m ↦ let ⟨r, h⟩ := h (x := m); ⟨r, r.property, h⟩⟩
 
 section Kaehler
 

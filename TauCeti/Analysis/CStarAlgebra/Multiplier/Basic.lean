@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import TauCeti.Algebra.Star.Basic
 public import TauCeti.Analysis.CStarAlgebra.Hom
-public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
+public import TauCeti.Analysis.Normed.Algebra.Multiplier.DoubleCentralizer
 
 /-!
 # Functoriality of multiplier algebras of C⋆-algebras
@@ -19,7 +19,8 @@ public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 Mathlib's multiplier algebra `𝓜(𝕜, A)` consists of double centralizers `(L, R)`. The basic
 API for algebras with zero left and right annihilators (the module laws `DoubleCentralizer.fst_mul`
 and `DoubleCentralizer.snd_mul`, injectivity of `A → 𝓜(𝕜, A)`, and `DoubleCentralizer.ext_fst`)
-is in `TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`. It applies to every C⋆-ring, since a
+is in `TauCeti.Analysis.Normed.Algebra.Multiplier.Basic` (and `Multiplier.DoubleCentralizer` for
+complete algebras and approximate units). It applies to every C⋆-ring, since a
 proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposite_of_isProperStar`
 and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
 (`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric,
@@ -126,6 +127,31 @@ theorem tendsto_coe_iff {ι : Type*} {l : Filter ι} {f : ι → A} {a : A} :
   (isometry_coe (𝕜 := 𝕜)).isUniformInducing.isInducing.tendsto_nhds_iff.symm
 
 end RegularNormedAlgebra
+
+section UnitalRegularNormedAlgebra
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+  [RegularNormedAlgebra 𝕜 A]
+
+variable (𝕜 A) in
+/-- For a unital regular normed algebra `A` (including every unital C⋆-algebra), the canonical
+inclusion `A → 𝓜(𝕜, A)` is a linear isometric equivalence with inverse `m ↦ m.fst 1`. -/
+def ofUnitalLinearIsometryEquiv : A ≃ₗᵢ[𝕜] 𝓜(𝕜, A) where
+  toFun a := a
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+  map_add' := coe_add
+  map_smul' := coe_smul
+  norm_map' := norm_coe
+
+@[simp] theorem ofUnitalLinearIsometryEquiv_apply (a : A) :
+    ofUnitalLinearIsometryEquiv 𝕜 A a = a := (rfl)
+
+@[simp] theorem ofUnitalLinearIsometryEquiv_symm_apply (m : 𝓜(𝕜, A)) :
+    (ofUnitalLinearIsometryEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
+
+end UnitalRegularNormedAlgebra
 
 section CStarAlgebra
 

@@ -58,6 +58,8 @@ while its regularity and involutivity are predicates on that family.
   pairwise Lie brackets at `x` in a subspace `D` of the tangent space there, then so does the Lie
   bracket of any two of their combinations with coefficients differentiable at `x`. This is the
   computation behind the frame criterion for involutivity.
+* `TauCeti.isContMDiffDistribution_span_singleton`: a nowhere vanishing `C^n` vector field spans a
+  `C^n` distribution of rank one.
 * `TauCeti.isContMDiffDistribution_const` and `TauCeti.isInvolutiveDistribution_const`: a fixed
   finite-dimensional (respectively closed) subspace `S` of a normed space `E`, taken at every
   point, is a `C^n` (respectively involutive) distribution on `E`.
@@ -176,13 +178,13 @@ theorem contMDiffOn_trivOperator [Fintype ι] [IsManifold I (n + 1) M]
     TangentBundle.contMDiffVectorBundle
   let e := trivializationAt E (TangentSpace I) x
   have heq : IsSubbundleFrameOn.trivOperator 𝕜 E X x = fun y ↦
-      ∑ i, ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+      ∑ i, ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (ι → 𝕜) E
         (ContinuousLinearMap.proj i) (e ⟨y, X i y⟩).2 :=
     funext fun y ↦ IsSubbundleFrameOn.trivOperator_eq_sum (𝕜 := 𝕜) (F := E) (X := X) x y
   rw [heq]
   apply contMDiffOn_finsetSum
   intro i _
-  exact (ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+  exact (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (ι → 𝕜) E
     (ContinuousLinearMap.proj i)).contMDiff.comp_contMDiffOn
       (contMDiff_snd.comp_contMDiffOn
         (e.contMDiffOn.comp ((hX.contMDiffOn i).mono inter_subset_left)
@@ -340,6 +342,16 @@ theorem isContMDiffDistribution_const (S : Submodule 𝕜 E) [FiniteDimensional 
       rw [hrange, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
     -- The tangent spaces of the model space `E` are `E` itself, by definition.
     exact hspan
+
+/-- **A nowhere vanishing vector field spans a line field.** The lines `𝕜 ∙ X x` spanned by a
+`C^n` vector field `X` with no zeros form a `C^n` distribution of rank one, with global frame
+`X`. -/
+theorem isContMDiffDistribution_span_singleton {X : Π x : M, TangentSpace I x}
+    (hX : CMDiff n (T% X)) (hX₀ : ∀ x, X x ≠ 0) :
+    IsContMDiffDistribution I n 1 fun x ↦ 𝕜 ∙ X x :=
+  IsDistributionFrameOn.isContMDiffDistribution (X := fun _ ↦ X)
+    ⟨fun _ ↦ hX.contMDiffOn, fun _ ↦ linearIndependent_unique_iff.mpr (hX₀ _),
+      fun _ ↦ by rw [range_const]⟩
 
 end ContMDiff
 

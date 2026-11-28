@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
-public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Subscheme
-import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
 
 /-!
 # Weights and genera of the components of the special fibre
@@ -21,7 +19,7 @@ scheme proper over `k`, so its global functions form a field
 `κ_C = H⁰(C, 𝒪_C)`, the **constant field** of `C`
 (`AlgebraicGeometry.Scheme.isField_globalSections_of_isReduced_of_connectedSpace`). The numerical
 type of a regular model ([Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) and
-[Section 55.9](https://stacks.math.columbia.edu/tag/0C9U)) attaches to the component `C` its
+[Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y)) attaches to the component `C` its
 **weight** and its **genus**,
 
 `w_C = [κ_C : k] = dim_k H⁰(C, 𝒪_C)` and `g_C = dim_{κ_C} H¹(C, 𝒪_C)`,
@@ -34,7 +32,7 @@ it is positive when `H⁰(C, 𝒪_C)` is finite-dimensional over `k`, and that t
 field, `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul`.
 That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the intersection matrix is
 `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_dvd_specialFiberIntersectionMatrix`, in
-`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight`.
+`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Matrix`.
 
 ## Main declarations
 
@@ -43,13 +41,18 @@ That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the int
 * `AlgebraicGeometry.Scheme.Hom.isField_globalSections_subscheme_closure_singleton`: the global
   functions on `C` form a field.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_pos`: the weight is positive.
+* `AlgebraicGeometry.Scheme.Hom.finiteDimensional_cohomology_zero_subscheme_closure_singleton`:
+  `H⁰` of the structure sheaf of a reduced point closure is finite-dimensional under universal
+  closedness and local finite type.
+* `AlgebraicGeometry.Scheme.Hom.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne`:
+  the components of the special fibre have finite-dimensional `H¹` of their structure sheaves.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_mul_finrank_cohomology_one`:
   `w_C · dim_{κ_C} H¹(C, 𝒪_C) = dim_k H¹(C, 𝒪_C)`.
 
 ## References
 
-* [The Stacks Project, Section 55.8](https://stacks.math.columbia.edu/tag/0C6Y) and
-  [Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), for the weights and genera of the
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y) and
+  [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), for the weights and genera of the
   components of the numerical type of a regular model.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
@@ -58,7 +61,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicGeometry IsLocalRing Order
+open CategoryTheory Limits AlgebraicGeometry IsLocalRing Order
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal)
 
@@ -107,6 +110,40 @@ theorem specialFiberWeight_pos {x : X} (hx : toBase x = closedPoint R)
     Module.nontrivial_of_finrank_eq_succ
       Scheme.Modules.finrank_globalSections_cohomology_zero_trivial_eq_one
   exact Module.finrank_pos
+
+/-- For every codimension-one point `η` of `X` in the special fibre, the closure `C` of `η`,
+with its reduced structure, has `H¹(C, 𝒪_C)` finite-dimensional over the residue field of `R`.
+Together with properness, which supplies finiteness of `H⁰(C, 𝒪_C)`, this gives the cohomological
+finiteness hypotheses for the intersection matrix of the special fibre. -/
+structure HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne : Prop where
+  /-- `H¹` of the structure sheaf of every component is finite-dimensional. -/
+  finiteDimensional_one : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
+    letI := subschemeOverResidueField
+      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
+    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)
+
+/-- The zeroth cohomology of the structure sheaf of the reduced closure of a point of the
+special fibre of a universally closed, locally finite type scheme is finite-dimensional over
+the residue field. -/
+theorem finiteDimensional_cohomology_zero_subscheme_closure_singleton
+    [UniversallyClosed toBase] [LocallyOfFiniteType toBase] {x : X}
+    (hx : toBase x = closedPoint R) :
+    letI := subschemeOverResidueField
+      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hx)
+    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme).obj 0) := by
+  let hI := toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hx
+  let := subschemeOverResidueField hI
+  have := isClosedImmersion_subschemeToSpecialFiber hI
+  have : UniversallyClosed ((vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme ↘
+      Spec (.of (ResidueField R))) :=
+    inferInstanceAs (UniversallyClosed (subschemeToSpecialFiber hI ≫ pullback.snd toBase _))
+  have : LocallyOfFiniteType ((vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme ↘
+      Spec (.of (ResidueField R))) :=
+    inferInstanceAs (LocallyOfFiniteType (subschemeToSpecialFiber hI ≫ pullback.snd toBase _))
+  exact Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed
+    (ResidueField R) _
 
 variable [IsProper toBase]
 

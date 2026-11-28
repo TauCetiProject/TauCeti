@@ -34,6 +34,8 @@ manifold, rather than to a function on one global coordinate space.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint`: a nondegenerate critical point of a
   real-valued function on a smooth manifold.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.contMDiffAt`: such a function is `C²` at the point.
+* `Filter.EventuallyEq.isManifoldNondegenerateCriticalPoint_iff`: nondegeneracy at a point depends
+  only on the germ of the function there.
 * `TauCeti.IsMorseOn`: a smooth function whose critical points in a set are nondegenerate.
 * `TauCeti.IsMorse`: a Morse function on the whole manifold.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_modelSpace_iff` and
@@ -100,6 +102,13 @@ theorem IsManifoldNondegenerateCriticalPoint.congr_of_eventuallyEq {I : ModelWit
   have ht := (continuousAt_extChartAt_symm (I := I) x).tendsto
   rw [extChartAt_to_inv] at ht
   exact h.congr_of_eventuallyEq (hfg.comp_tendsto ht)
+
+/-- Whether `x` is a nondegenerate critical point depends only on the germ of the function at `x`.
+-/
+theorem _root_.Filter.EventuallyEq.isManifoldNondegenerateCriticalPoint_iff
+    {I : ModelWithCorners ℝ E H} (hfg : f =ᶠ[𝓝 x] g) :
+    IsManifoldNondegenerateCriticalPoint I f x ↔ IsManifoldNondegenerateCriticalPoint I g x :=
+  ⟨fun h ↦ h.congr_of_eventuallyEq hfg, fun h ↦ h.congr_of_eventuallyEq hfg.symm⟩
 
 /-- On a normed vector space with its self-model manifold structure, a manifold nondegenerate
 critical point is exactly a nondegenerate critical point in the existing calculus sense. -/
@@ -229,6 +238,11 @@ theorem isMorseOn_univ {I : ModelWithCorners ℝ E H} : IsMorseOn I f univ ↔ I
 theorem isMorseOn_empty {I : ModelWithCorners ℝ E H} : IsMorseOn I f ∅ :=
   ⟨contMDiffOn_empty, fun _ hx ↦ hx.elim⟩
 
+/-- Every function on an empty manifold is Morse. -/
+theorem isMorse_of_isEmpty [IsEmpty M] {I : ModelWithCorners ℝ E H} : IsMorse I f := by
+  rw [← isMorseOn_univ, univ_eq_empty_iff.2 ‹_›]
+  exact isMorseOn_empty
+
 /-- A function is Morse exactly when it is smooth and all of its critical points are
 nondegenerate. -/
 theorem isMorse_iff {I : ModelWithCorners ℝ E H} :
@@ -289,6 +303,20 @@ theorem isMorse_modelSpace_iff {V : Type*} [NormedAddCommGroup V] [NormedSpace �
     IsMorse (modelWithCornersSelf ℝ V) h ↔
       ContDiff ℝ ∞ h ∧ HasNondegenerateCriticalPointsOn h univ := by
   rw [IsMorse, isMorseOn_modelSpace_iff, contDiffOn_univ]
+
+/-- On a manifold modelled on a zero-dimensional space every function is a Morse function: the
+manifold is discrete, so every function is smooth, and in a chart the function is a function on
+the zero space, whose Hessian is invertible. -/
+theorem isMorse_of_subsingleton [Subsingleton E] {I : ModelWithCorners ℝ E H} : IsMorse I f := by
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  refine isMorse_iff.2 ⟨contMDiff_of_discreteTopology, fun x _ ↦ ?_⟩
+  -- In the chart at `x`, `f` reads as a function on the zero space `E`, hence a constant.
+  have hc : f ∘ (extChartAt I x).symm = fun _ ↦ f x := funext fun y ↦ by
+    rw [Subsingleton.elim y (extChartAt I x x), Function.comp_apply, extChartAt_to_inv]
+  rw [isManifoldNondegenerateCriticalPoint_iff, hc]
+  refine ⟨contDiffAt_const, fderiv_const_apply _, ?_⟩
+  exact .of_inverse (g := 0) (Subsingleton.elim _ _) (Subsingleton.elim _ _)
 
 end TauCeti
 

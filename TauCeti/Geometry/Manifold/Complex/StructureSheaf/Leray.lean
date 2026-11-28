@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Dolbeault
 public import TauCeti.Topology.Sheaves.Cech.DegreeOne
 public import TauCeti.Topology.Sheaves.Cech.Functoriality
+public import TauCeti.Topology.Sheaves.Leray.Colimit
 
 /-!
 # Coordinate discs are acyclic for the holomorphic structure sheaf
@@ -21,8 +22,8 @@ so on a compact Riemann surface every open cover is refined by a finite cover by
 `H¹(X, 𝒪)`, and the refinement maps between two such covers are isomorphisms in degree one
 (`TauCeti.Topology.isIso_homologyMap_cechComplexMap_one`).
 
-The vanishing on plane discs,
-`TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules_eball`, is proved from the
+The vanishing on open subsets of the plane,
+`TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules`, is proved from the
 Dolbeault lemma for the cover-colimit Čech cohomology with complex vector space
 coefficients. It is carried to a coordinate disc by the general fact that the vanishing of
 Čech `H¹(Y, 𝒪)` is invariant under biholomorphisms (precomposition with a biholomorphism `W ≃ₜ Y`
@@ -41,6 +42,10 @@ sheaf cohomology by `CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCoho
   a neighbourhood basis of every point.
 * `TauCeti.exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules`: on a compact
   Riemann surface, every open cover is refined by a finite cover by such opens.
+* `TauCeti.isIso_toCechCohomology_one_holomorphicStructureSheafModules`: on a compact Riemann
+  surface, every finite open cover whose members have vanishing `H¹` computes the degree one Čech
+  cohomology of the structure sheaf, so `dim H¹(X, 𝒪)` may be computed on any such cover
+  (`finrank_cechCohomology_one_holomorphicStructureSheafModules_eq_finrank_homology_cechComplex`).
 
 ## References
 
@@ -76,18 +81,18 @@ private abbrev preimageOpens (V : Opens Y) : Opens (TopCat.of X) :=
 
 private lemma preimageOpens_le (V : Opens Y) : preimageOpens φ V ≤ W := by
   rintro _ ⟨a, -, rfl⟩
-  exact a.2
+  exact a.property
 
 /-- A point of `preimageOpens φ V` is sent by `φ` into `V`. -/
 private def toOpens {V : Opens Y} (x : preimageOpens φ V) : V :=
   ⟨φ (Opens.inclusion (preimageOpens_le φ V) x), by
-    obtain ⟨a, ha, h⟩ := x.2
+    obtain ⟨a, ha, h⟩ := x.property
     have hx : Opens.inclusion (preimageOpens_le φ V) x = a := Subtype.ext h.symm
     rwa [hx]⟩
 
 /-- A point of `V` is sent by `φ.symm` into `preimageOpens φ V`. -/
 private def ofOpens {V : Opens Y} (y : V) : preimageOpens φ V :=
-  ⟨(φ.symm y).1, φ.symm y, ((φ.apply_symm_apply y).symm ▸ y.2 : φ (φ.symm y) ∈ V), rfl⟩
+  ⟨(φ.symm y).val, φ.symm y, ((φ.apply_symm_apply y).symm ▸ y.property : φ (φ.symm y) ∈ V), rfl⟩
 
 private lemma toOpens_ofOpens {V : Opens Y} (y : V) : toOpens φ (ofOpens φ y) = y :=
   Subtype.ext (by simp [toOpens, ofOpens, Opens.inclusion])
@@ -106,7 +111,7 @@ private lemma contMDiff_toOpens (hφ : ContMDiff I J ω φ) (V : Opens Y) :
 private lemma contMDiff_ofOpens (hφ' : ContMDiff J I ω φ.symm) (V : Opens Y) :
     ContMDiff J I ω (ofOpens φ (V := V)) := by
   rw [← ContMDiff.subtypeVal_comp_iff]
-  exact (contMDiff_subtype_val.comp (hφ'.comp contMDiff_subtype_val) :
+  exact (contMDiff_subtypeVal.comp (hφ'.comp contMDiff_subtypeVal) :
     ContMDiff J I ω fun y : V ↦ (φ.symm y : X))
 
 variable (hφ : ContMDiff I J ω φ) (hφ' : ContMDiff J I ω φ.symm)
@@ -190,11 +195,11 @@ theorem subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
     ((contMDiffOn_symm_of_mem_maximalAtlas he).mdifferentiableOn one_ne_zero).contMDiffOn
       e.open_target
   refine φ.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph (Y := D) ?_ ?_
-    (isZero_cechCohomology_one_holomorphicStructureSheafModules_eball c R)
+    (isZero_cechCohomology_one_holomorphicStructureSheafModules D)
   · rw [← ContMDiff.subtypeVal_comp_iff]
-    exact he₁.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2.1
+    exact he₁.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property.1
   · rw [← ContMDiff.subtypeVal_comp_iff]
-    exact he₂.comp_contMDiff contMDiff_subtype_val fun y ↦ hR y.2
+    exact he₂.comp_contMDiff contMDiff_subtypeVal fun y ↦ hR y.property
 
 /-- **Acyclic neighbourhoods.** Every neighbourhood of a point `x` of a Riemann surface contains an
 open neighbourhood `W` of `x` with `H¹(W, 𝒪) = 0`, namely a coordinate disc centred at `x`. -/
@@ -205,18 +210,17 @@ theorem exists_mem_subset_subsingleton_H'_one_holomorphicStructureSheafModules (
         (holomorphicStructureSheafModules 𝓘(ℂ) X)) 1 W) := by
   let e := chartAt ℂ x
   have hx : x ∈ e.source := mem_chart_source ℂ x
-  have hT : e '' (e.source ∩ N) ∈ 𝓝 (e x) :=
-    e.image_mem_nhds hx (Filter.inter_mem (e.open_source.mem_nhds hx) hN)
+  have hT : e.target ∩ e.symm ⁻¹' N ∈ 𝓝 (e x) :=
+    Filter.inter_mem (e.open_target.mem_nhds (e.map_source hx))
+      ((e.eventually_nhds' (· ∈ N) hx).2 hN)
   obtain ⟨R, hR, hRT⟩ := EMetric.mem_nhds_iff.1 hT
-  have hRe : Metric.eball (e x) R ⊆ e.target :=
-    hRT.trans ((Set.image_mono Set.inter_subset_left).trans e.image_source_eq_target.subset)
+  have hRe : Metric.eball (e x) R ⊆ e.target := hRT.trans Set.inter_subset_left
   refine ⟨⟨e.source ∩ e ⁻¹' Metric.eball (e x) R, e.isOpen_inter_preimage Metric.isOpen_eball⟩,
     ⟨hx, Metric.mem_eball_self hR⟩, ?_,
     subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
       (IsManifold.chart_mem_maximalAtlas x) hRe⟩
   rintro y ⟨hy, hyR⟩
-  obtain ⟨z, ⟨hz, hzN⟩, hzy⟩ := hRT hyR
-  rwa [← e.injOn hz hy hzy]
+  simpa only [Set.mem_preimage, e.left_inv hy] using (hRT hyR).2
 
 /-- **Finite acyclic covers.** On a compact Riemann surface, every open cover `V` is refined by a
 finite open cover `U` whose members have `H¹(U i, 𝒪) = 0`. Such a cover computes `H¹(X, 𝒪)` by the
@@ -233,9 +237,60 @@ theorem exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules
       ((V (k x)).isOpen.mem_nhds (hk x))
   have hWc : IsOpenCover W := .mk <| eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2 ⟨x, hxW x⟩
   obtain ⟨s, hs⟩ := hWc.exists_finite_of_compactSpace
-  exact ⟨s, inferInstance, fun i ↦ W i.1, hs.iSup_eq_top, fun i ↦ ⟨k i.1, hWV i.1⟩,
-    fun i ↦ hW i.1⟩
+  exact ⟨s, inferInstance, fun i ↦ W i.val, hs.iSup_eq_top, fun i ↦ ⟨k i.val, hWV i.val⟩,
+    fun i ↦ hW i.val⟩
 
 end Chart
+
+section Compact
+
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X]
+  {ι : Type} [Finite ι] (U : ι → Opens (TopCat.of X)) (hU : ⨆ i, U i = ⊤)
+
+include hU in
+/-- **Finite acyclic covers compute `H¹(X, 𝒪)`.** On a compact Riemann surface, a finite open cover
+whose members have vanishing `H¹` for the structure sheaf computes its degree one Čech
+cohomology. -/
+theorem isIso_toCechCohomology_one_holomorphicStructureSheafModules
+    (hFU : ∀ i, Subsingleton (Sheaf.H'
+      ((sheafCompose _ (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X)) 1 (U i))) :
+    IsIso ((Topology.toCechCohomology (ModuleCat.{0} ℂ) 1 U (IsOpenCover.mk hU)).app
+      (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) :=
+  Sheaf.isIso_toCechCohomology_one_of_subsingleton_H' _
+    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
+    U hU hFU
+
+include hU in
+/-- On a compact Riemann surface, `H¹(X, 𝒪)` is finite-dimensional exactly when the Čech `H¹` of a
+finite open cover whose members have vanishing `H¹` for the structure sheaf is. -/
+theorem finite_cechCohomology_one_holomorphicStructureSheafModules_iff_finite_homology_cechComplex
+    (hFU : ∀ i, Subsingleton (Sheaf.H'
+      ((sheafCompose _ (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X)) 1 (U i))) :
+    Module.Finite ℂ ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) ↔
+      Module.Finite ℂ (((CategoryTheory.cechComplexFunctor U).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj).homology 1) :=
+  Sheaf.finite_cechCohomology_one_iff_finite_homology_cechComplex _
+    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
+    U hU hFU
+
+include hU in
+/-- On a compact Riemann surface, `dim H¹(X, 𝒪)` is the dimension of the Čech `H¹` of any finite
+open cover whose members have vanishing `H¹` for the structure sheaf. -/
+theorem finrank_cechCohomology_one_holomorphicStructureSheafModules_eq_finrank_homology_cechComplex
+    (hFU : ∀ i, Subsingleton (Sheaf.H'
+      ((sheafCompose _ (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X)) 1 (U i))) :
+    Module.finrank ℂ ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) =
+      Module.finrank ℂ (((CategoryTheory.cechComplexFunctor U).obj
+        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj).homology 1) :=
+  Sheaf.finrank_cechCohomology_one_eq_finrank_homology_cechComplex _
+    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
+    U hU hFU
+
+end Compact
 
 end TauCeti

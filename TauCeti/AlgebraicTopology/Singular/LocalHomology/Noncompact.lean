@@ -9,12 +9,16 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.AlgebraicTopology.Singular.CompactSupport
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
 import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 import Mathlib.Algebra.Ring.ULift
+import Mathlib.Geometry.Manifold.HasGroupoid
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicTopology.Singular.Additivity
 import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.Compact
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.MayerVietoris
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 import TauCeti.Topology.Compactness.Compact
@@ -40,10 +44,15 @@ Contrapositively, if `M` is preconnected and `Hₖ(M; N)` is nonzero (or nontriv
 `TauCeti.compactSpace_of_nontrivial_singularHomology`). In
 `TauCeti.Geometry.Manifold.PoincareConjecture`, this forces compactness of any Hausdorff
 `n`-manifold without boundary homotopy equivalent to `Sⁿ`, since for `n ≥ 1` such a manifold is
-connected with nontrivial top integral homology `Hₙ(M; ℤ) ≅ ℤ`.
+connected with nontrivial top integral homology `Hₙ(M; ℤ) ≅ ℤ`. Likewise every proper open
+subset of a preconnected `n`-manifold has vanishing homology in degrees `k ≥ n`
+(`TauCeti.isZero_singularHomology_of_isOpen_ne_univ`).
 
 ## Main results
 
+* `TauCeti.eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero`: in a weakly locally compact
+  Hausdorff space whose compact subsets have vanishing local homology in degree `k + 1`, a class in
+  `Hₖ(M; N)` vanishing in `Hₖ(M, M ∖ L; N)` for all compact `L` is zero.
 * `TauCeti.isZero_singularHomology_of_lt`: `Hₖ(M; N) = 0` for `k > n` on every Hausdorff
   `n`-manifold without boundary.
 * `TauCeti.isZero_singularHomology_of_forall_not_isCompact_connectedComponent`: `Hₖ(M; N) = 0` for
@@ -53,6 +62,8 @@ connected with nontrivial top integral homology `Hₙ(M; ℤ) ≅ ℤ`.
 * `TauCeti.compactSpace_of_not_isZero_singularHomology` and
   `TauCeti.compactSpace_of_nontrivial_singularHomology`: nonvanishing or nontriviality of
   `Hₖ(M; N)` for some `k ≥ n` on a preconnected Hausdorff `n`-manifold forces `CompactSpace M`.
+* `TauCeti.isZero_singularHomology_of_isOpen_ne_univ`: for preconnected `M` and proper open
+  `U ⊂ M`, `Hₖ(U; N) = 0` for `k ≥ n`.
 * `ModuleCat.finrank_singularHomology_eq_zero_of_lt`,
   `ModuleCat.finrank_singularHomology_eq_zero_of_forall_not_isCompact_connectedComponent`, and
   `ModuleCat.finrank_singularHomology_eq_zero_of_noncompactSpace`: the corresponding rank-vanishing
@@ -100,6 +111,41 @@ Finally, `ChartedSpace.ofFinrankEq` replaces an arbitrary finite-dimensional mod
 `ULift.{w} ℤ →+* Λ` (`CategoryTheory.Functor.isZero_singularHomologyFunctor_iff`) unties the
 coefficient ring universe from `w`.
 -/
+
+section TopologicalSpace
+
+variable {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ) {M : Type w} [TopologicalSpace M]
+
+/-- **Compact-exhaustion vanishing criterion.** In a weakly locally compact Hausdorff space `M`
+where `Hₖ₊₁(M, M ∖ D; N) = 0` for every compact `D ⊆ M`, a class `α ∈ Hₖ(M; N)` whose image in
+`Hₖ(M, M ∖ L; N)` vanishes for every compact `L ⊆ M` is zero. -/
+theorem eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero
+    [T2Space M] [WeaklyLocallyCompactSpace M] {k : ℕ}
+    (hhigh : ∀ D : Set M, IsCompact D → IsZero (localHomology N D (k + 1)))
+    (α : ((toSSet.obj (of M)).homology N k : ModuleCat.{w} Λ))
+    (hπ : ∀ L : Set M, IsCompact L →
+      (TopPair.ofSubset (Lᶜ : Set (of M))).singularHomologyπ (C := ModuleCat.{w} Λ) N k α = 0) :
+    α = 0 := by
+  obtain ⟨K, hK, αK, hαK⟩ := exists_isCompact_singularHomologyMap_subtypeVal_eq (Y := M) N k α
+  -- `((singularHomologyFunctor _ k).obj N).obj X` and `.map f` are definitionally
+  -- `(toSSet.obj X).homology N k` and `SSet.homologyMap (toSSet.map f) N k`.
+  change ((toSSet.obj (of K)).homology N k : ModuleCat.{w} Λ) at αK
+  change SSet.homologyMap (toSSet.map (ofHom (ContinuousMap.subtypeVal K))) N k αK = α at hαK
+  obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
+  have hDc : IsCompact (L \ interior L) := hL.inter_right isOpen_interior.isClosed_compl
+  have hUVD : interior L ∪ Lᶜ = (L \ interior L)ᶜ := by
+    rw [Set.sdiff_eq, compl_inter, compl_compl, union_comm]
+  obtain ⟨β, hβ⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    ((TopPair.ofSubset (Lᶜ : Set (of M))).singularHomology_exact_space N k) α (hπ L hL)
+  refine eq_zero_of_disjoint_isOpen_of_isZero_localHomology N isOpen_interior
+    hL.isClosed.isOpen_compl
+    (disjoint_left.2 fun _ hxU hxLc ↦ hxLc (interior_subset hxU)) hUVD (hhigh _ hDc)
+    ⟨SSet.homologyMap (toSSet.map (ofHom (ContinuousMap.inclusion hKL))) N k αK, ?_⟩
+    ⟨β, hβ⟩
+  rw [← hαK, ← ConcreteCategory.comp_apply, ← SSet.homologyMap_comp, ← toSSet.map_comp,
+    TopCat.ofHom_inclusion_comp_ofHom_subtypeVal]
+
+end TopologicalSpace
 
 section SameUniverse
 
@@ -289,6 +335,28 @@ theorem compactSpace_of_nontrivial_singularHomology [PreconnectedSpace M] (hn : 
     CompactSpace M :=
   compactSpace_of_not_isZero_singularHomology N hn hk fun hz ↦
     @false_of_nontrivial_of_subsingleton _ h (ModuleCat.subsingleton_of_isZero hz)
+
+/-- **Homology of a proper open subset of a preconnected manifold vanishes from the dimension on.**
+Let `M` be a preconnected Hausdorff space modelled on a real normed space of dimension `n`, and let
+`U ⊆ M` be a proper open subset (`U ≠ univ`). Then `Hₖ(U; N) = 0` for every `k ≥ n`, even if `U` is
+disconnected. -/
+theorem isZero_singularHomology_of_isOpen_ne_univ [PreconnectedSpace M] (hn : finrank ℝ E = n)
+    {U : Set M} (hUo : IsOpen U) (hU : U ≠ univ) {k : ℕ} (hk : n ≤ k) :
+    IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of U)) := by
+  rcases isEmpty_or_nonempty U with _ | _
+  · exact isZero_singularHomology_of_isEmpty N (of U) k
+  · let _ : ChartedSpace E U := TopologicalSpace.Opens.instChartedSpace ⟨U, hUo⟩
+    have := ChartedSpace.locallyPathConnectedSpace E U
+    refine isZero_singularHomology_of_forall_not_isCompact_connectedComponent (E := E) N hn
+      (fun x hc ↦ hU ?_) hk
+    have hOpenM : IsOpen (Subtype.val '' connectedComponent x) :=
+      hUo.isOpenEmbedding_subtypeVal.isOpenMap _ isOpen_connectedComponent
+    have hClosedM : IsClosed (Subtype.val '' connectedComponent x) :=
+      (hc.image continuous_subtypeVal).isClosed
+    have hClopen : IsClopen (Subtype.val '' connectedComponent x) := ⟨hClosedM, hOpenM⟩
+    have hUniv : Subtype.val '' connectedComponent x = univ :=
+      hClopen.eq_univ ⟨x.val, x, mem_connectedComponent, rfl⟩
+    exact univ_subset_iff.1 (hUniv ▸ image_subset_iff.2 fun y _ ↦ y.property)
 
 end General
 

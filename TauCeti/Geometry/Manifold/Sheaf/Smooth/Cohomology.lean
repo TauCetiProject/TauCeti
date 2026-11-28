@@ -82,12 +82,12 @@ private theorem sup_complSupport_eq_top {ρ : SmoothPartitionOfUnity ι I M}
 private theorem exists_local_finset (ρ : SmoothPartitionOfUnity ι I M) (x : M) :
     ∃ (N : Opens (TopCat.of M)) (_ : x ∈ N) (s : Finset ι),
       (∀ i, i ∉ s → N ≤ complSupport ρ i) ∧
-      ∀ ⦃W : Opens (TopCat.of M)⦄, W ≤ N → ∀ y : W, ∑ i ∈ s, ρ i y.1 = 1 := by
+      ∀ ⦃W : Opens (TopCat.of M)⦄, W ≤ N → ∀ y : W, ∑ i ∈ s, ρ i y.val = 1 := by
   obtain ⟨O, hO_sub, hO_open, hxO⟩ := mem_nhds_iff.1 (ρ.eventually_fintsupport_subset x)
   refine ⟨⟨O, hO_open⟩, hxO, ρ.fintsupport x,
     fun i hi y hy hmem ↦ hi (hO_sub hy ((ρ.mem_fintsupport_iff y i).2 hmem)), fun W hW y ↦ ?_⟩
-  exact ρ.sum_finsupport' y.1 (Set.mem_univ y.1)
-    ((ρ.finsupport_subset_fintsupport y.1).trans (hO_sub (hW y.2)))
+  exact ρ.sum_finsupport' y.val (Set.mem_univ y.val)
+    ((ρ.finsupport_subset_fintsupport y.val).trans (hO_sub (hW y.property)))
 
 /-- A smooth partition of unity `ρ` subordinate to an open family `U` induces a sheaf partition of
 unity on `smoothSheafAddCommGroup I 𝓘(ℝ, V) M V` by pointwise multiplication. -/

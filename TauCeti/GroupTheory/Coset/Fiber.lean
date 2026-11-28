@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Expect
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -12,6 +13,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Module.End
 -- Proof-only: `Set.Finite.preimage'`, for the kernel of a composite.
 import Mathlib.Data.Set.Finite.Lattice
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # A nonempty fiber of a group homomorphism is a copy of the kernel
@@ -54,8 +56,12 @@ therefore take a point in the fiber as an argument, while the finiteness result 
 * `AddMonoidHom.natCard_preimage_of_surjective` (and `MonoidHom.natCard_preimage_of_surjective`):
   the preimage of a set under a surjective homomorphism has as many elements as the set times the
   kernel.
+* `MonoidHom.card_filter_ker_mul_mem` and `MonoidHom.sum_ite_mul_mem_over_ker`: count and sum
+  the contributions from a finite subset of a fiber along a left translate of the kernel.
 * `TauCeti.card_zsmul_fiber_eq_card_zsmul_eq_zero`: the same for `n • ·` on an additive commutative
   group, with the kernel written as the `n`-torsion.
+* `AddMonoidHom.expect_comp_of_surjective`: the mean of `φ ∘ f` along a surjective homomorphism
+  of finite groups is the mean of `φ`.
 
 ## Provenance
 
@@ -68,6 +74,10 @@ homomorphism of groups, the commutative hypothesis appearing only where an unord
 taken. Like the source, the equivalence is built directly: Mathlib's `fiberEquivKer` requires a
 group codomain, while this version only needs `MulOneClass` (additively, `AddZeroClass`). On the
 overlap the two equivalences use the same translations.
+
+`AddMonoidHom.expect_comp_of_surjective` is the `Finset.expect` form of
+`New.finMean_comp_surjective` of `src/Lib/General/Groups/CharacterTheory.lean` in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC).
 -/
 
 public section
@@ -84,8 +94,8 @@ fiber over `b` is `a` plus the kernel. Mathlib's `AddMonoidHom.fiberEquivKer` is
 def MonoidHom.subtypeFiberEquivKer {G H : Type*} [Group G] [MulOneClass H] (f : G →* H) {b : H}
     {a : G} (ha : f a = b) : {x : G // f x = b} ≃ f.ker where
   toFun x := ⟨a⁻¹ * x, by
-    rw [MonoidHom.mem_ker, map_mul, x.2, ← ha, ← map_mul, inv_mul_cancel, map_one]⟩
-  invFun t := ⟨a * t, by rw [map_mul, MonoidHom.mem_ker.mp t.2, mul_one, ha]⟩
+    rw [MonoidHom.mem_ker, map_mul, x.property, ← ha, ← map_mul, inv_mul_cancel, map_one]⟩
+  invFun t := ⟨a * t, by rw [map_mul, MonoidHom.mem_ker.mp t.property, mul_one, ha]⟩
   left_inv _ := Subtype.ext (mul_inv_cancel_left a _)
   right_inv _ := Subtype.ext (inv_mul_cancel_left a _)
 
@@ -164,7 +174,7 @@ theorem MonoidHom.prod_comp_of_surjective {G H M : Type*} [Group G] [MulOneClass
   obtain ⟨a, ha⟩ := hf y
   rw [← f.card_fiber_eq_card_ker ha, Nat.card_eq_fintype_card, ← Finset.card_univ,
     ← Finset.prod_const]
-  exact Finset.prod_congr rfl fun x _ ↦ by rw [x.2]
+  exact Finset.prod_congr rfl fun x _ ↦ by rw [x.property]
 
 /-- **The preimage of a set under a surjective homomorphism** is as large as the set times the
 kernel: over each point of `t` the fiber is a copy of the kernel. As an identity of `Nat.card`s
@@ -181,6 +191,60 @@ theorem MonoidHom.natCard_preimage_of_surjective {G H : Type*} [Group G] [MulOne
   exact Nat.card_congr <| (Equiv.sigmaSubtypeFiberEquivSubtype f fun _ ↦ Iff.rfl).symm.trans <|
     (Equiv.sigmaCongrRight fun y : t ↦ f.subtypeFiberEquivKer (hs y)).trans
       (Equiv.sigmaEquivProd _ _)
+
+namespace MonoidHom
+
+open Finset
+
+variable {G H : Type*} [Group G] [MulOneClass H] [Fintype G] [DecidableEq G] [DecidableEq H]
+
+/-- If `B` is contained in the fiber of `π` over `c`, then left multiplication by `g` maps
+exactly `B.card` kernel elements into `B` when `π g = c`, and none otherwise. -/
+theorem card_filter_ker_mul_mem (π : G →* H) (B : Finset G) {c : H}
+    (hB : ∀ b ∈ B, π b = c) (g : G) :
+    ((univ.filter fun t ↦ π t = 1).filter fun t ↦ g * t ∈ B).card =
+      if π g = c then B.card else 0 := by
+  split_ifs with he
+  · apply card_bij (fun t _ ↦ g * t)
+    · exact fun _ ht ↦ (mem_filter.mp ht).2
+    · exact fun _ _ _ _ h ↦ mul_left_cancel h
+    · intro b hb
+      let t := π.subtypeFiberEquivKer he ⟨b, hB b hb⟩
+      have ht : g * (t : G) = b := by simp [t]
+      exact ⟨t, by simp [π.mem_ker.mp t.property, ht, hb], ht⟩
+  · apply card_eq_zero.mpr
+    apply eq_empty_iff_forall_notMem.mpr
+    intro t ht
+    obtain ⟨htA, htB⟩ := mem_filter.mp ht
+    have ht1 := (mem_filter.mp htA).2
+    exact he (by simpa [ht1] using hB _ htB)
+
+/-- Sum a two-valued function over a left translate of the kernel. Each element contributes
+`v` by default, with an extra `u - v` when its translate lies in `B`. If `B` lies in the fiber
+over `c`, the correction occurs `B.card` times when `π g = c` and never otherwise. -/
+theorem sum_ite_mul_mem_over_ker {M : Type*} [AddCommGroup M] (π : G →* H) (B : Finset G)
+    {c : H} (hB : ∀ b ∈ B, π b = c) (g : G) (u v : M) :
+    let A := univ.filter fun t ↦ π t = 1
+    ∑ t ∈ A, (if g * t ∈ B then u else v) =
+      A.card • v + (if π g = c then B.card else 0) • (u - v) := by
+  dsimp only
+  rw [sum_ite_eq_card_nsmul_add, π.card_filter_ker_mul_mem B hB]
+
+end MonoidHom
+
+open scoped BigOperators in
+/-- **A mean along a surjective homomorphism.** Every fiber of a surjective `f : G →+ H` of finite
+groups is a copy of its kernel, so the mean of `φ ∘ f` over `G` is the mean of `φ` over `H`. -/
+theorem AddMonoidHom.expect_comp_of_surjective {G H M : Type*} [AddGroup G] [AddZeroClass H]
+    [Fintype G] [Fintype H] [AddCommMonoid M] [Module ℚ≥0 M] (f : G →+ H)
+    (hf : Function.Surjective f) (φ : H → M) : 𝔼 x, φ (f x) = 𝔼 y, φ y := by
+  -- Counting `G` along `f` gives `#G = #ker f * #H`; `#ker f` cancels from the sum form.
+  have h_card : Fintype.card G = Nat.card f.ker * Fintype.card H := by
+    simpa using f.sum_comp_of_surjective hf fun _ ↦ (1 : ℕ)
+  have h_ker : (Nat.card f.ker : ℚ≥0) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
+  rw [Finset.expect, Finset.expect, f.sum_comp_of_surjective hf, Finset.card_univ,
+    Finset.card_univ, h_card, Nat.cast_mul, mul_inv_rev, mul_smul,
+    ← Nat.cast_smul_eq_nsmul ℚ≥0, inv_smul_smul₀ h_ker]
 
 namespace TauCeti
 

@@ -12,7 +12,7 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 /-!
 # The unit sphere of an `L²` product as a union of two solid pieces
 
-Let `F` and `G` be real normed spaces. A point `x` of the unit sphere of the `L²` product
+Let `F` and `G` be real seminormed spaces. A point `x` of the unit sphere of the `L²` product
 `WithLp 2 (F × G)` satisfies `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`, so the sphere is the union of the two
 closed pieces `‖x.fst‖ ≤ ‖x.snd‖` and `‖x.snd‖ ≤ ‖x.fst‖`, which meet in the common frontier
 `‖x.fst‖ = ‖x.snd‖`. The first piece is homeomorphic to the product of the closed unit ball of
@@ -33,6 +33,9 @@ glued along the torus `‖x.fst‖ = ‖x.snd‖`, the genus-one Heegaard splitt
 
 ## Main results
 
+* `TauCeti.sq_norm_fst_add_sq_norm_snd_eq_one`: a unit vector `x` of `WithLp 2 (F × G)` has
+  `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`; in particular `‖x.snd‖ ^ 2` lies in the unit interval
+  (`TauCeti.sq_norm_snd_mem_unitInterval`).
 * `TauCeti.frontier_setOf_norm_fst_le_norm_snd` and `TauCeti.frontier_setOf_norm_snd_le_norm_fst`:
   the frontier of each piece in the unit sphere is the set where `‖x.fst‖ = ‖x.snd‖`.
 * `TauCeti.norm_sphereProdFstLeHomeomorph_fst_eq_one_iff` and
@@ -55,20 +58,25 @@ namespace TauCeti
 
 variable {F G : Type*} [SeminormedAddCommGroup F] [SeminormedAddCommGroup G]
 
-/-- A point of the unit sphere of `WithLp 2 (F × G)` has `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`. -/
-private theorem norm_fst_sq_add_norm_snd_sq_of_mem_sphere {x : WithLp 2 (F × G)}
-    (hx : x ∈ sphere 0 1) :
-    ‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1 := by
-  rw [← WithLp.prod_norm_sq_eq_of_L2, mem_sphere_zero_iff_norm.1 hx, one_pow]
+/-- The squared norms of the two components of a unit vector of the `L²` product add up to `1`. -/
+theorem sq_norm_fst_add_sq_norm_snd_eq_one (p : sphere (0 : WithLp 2 (F × G)) 1) :
+    ‖(p : WithLp 2 (F × G)).fst‖ ^ 2 + ‖(p : WithLp 2 (F × G)).snd‖ ^ 2 = 1 := by
+  rw [← WithLp.prod_norm_sq_eq_of_L2, norm_eq_of_mem_sphere, one_pow]
+
+/-- The squared norm of the second component of a unit vector of the `L²` product lies in the unit
+interval. -/
+theorem sq_norm_snd_mem_unitInterval (p : sphere (0 : WithLp 2 (F × G)) 1) :
+    ‖(p : WithLp 2 (F × G)).snd‖ ^ 2 ∈ unitInterval := by
+  have hn := sq_norm_fst_add_sq_norm_snd_eq_one p
+  exact ⟨by positivity, by nlinarith [sq_nonneg ‖(p : WithLp 2 (F × G)).fst‖]⟩
 
 /-- On the piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit sphere, the second component is nonzero. -/
 private theorem norm_snd_pos {x : WithLp 2 (F × G)} (hx : x ∈ sphere 0 1)
     (hle : ‖x.fst‖ ≤ ‖x.snd‖) : 0 < ‖x.snd‖ := by
-  have h := norm_fst_sq_add_norm_snd_sq_of_mem_sphere hx
-  by_contra! h0
-  have h0 : ‖x.snd‖ = 0 := le_antisymm h0 (norm_nonneg _)
-  have h1 : ‖x.fst‖ = 0 := le_antisymm (h0 ▸ hle) (norm_nonneg _)
-  simp [h0, h1] at h
+  have h := sq_norm_fst_add_sq_norm_snd_eq_one ⟨_, hx⟩
+  refine (norm_nonneg _).lt_of_ne' fun h0 ↦ ?_
+  -- If `‖x.snd‖ = 0`, then also `‖x.fst‖ = 0`, contradicting `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`.
+  simp [h0, (norm_nonneg _).antisymm' (h0 ▸ hle)] at h
 
 /-- The positive scalar `1 / √(1 + r ^ 2)`; it normalizes `(u, v)` when `‖u‖ = r` and `v` is a
 unit vector. -/
@@ -76,9 +84,6 @@ private def normalizer (r : ℝ) : ℝ := (√(1 + r ^ 2))⁻¹
 
 private theorem normalizer_pos (r : ℝ) : 0 < normalizer r :=
   inv_pos.2 (Real.sqrt_pos.2 (by positivity))
-
-private theorem continuous_normalizer : Continuous normalizer :=
-  .inv₀ (by fun_prop) fun r ↦ (Real.sqrt_pos.2 (by positivity)).ne'
 
 private theorem normalizer_sq (r : ℝ) : normalizer r ^ 2 * (1 + r ^ 2) = 1 := by
   rw [normalizer, inv_pow, Real.sq_sqrt (by positivity), inv_mul_cancel₀ (by positivity)]
@@ -126,7 +131,7 @@ private theorem norm_fst_le_norm_snd_sphereProdFstLeInv
     (p : closedBall (0 : F) 1 × sphere (0 : G) 1) :
     ‖(sphereProdFstLeInv p).fst‖ ≤ ‖(sphereProdFstLeInv p).snd‖ := by
   rw [norm_fst_sphereProdFstLeInv, norm_snd_sphereProdFstLeInv]
-  exact mul_le_of_le_one_right (normalizer_pos _).le (mem_closedBall_zero_iff.1 p.1.2)
+  exact mul_le_of_le_one_right (normalizer_pos _).le (mem_closedBall_zero_iff.1 p.1.property)
 
 variable (F G) in
 /-- The piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit sphere of `WithLp 2 (F × G)` is homeomorphic to the
@@ -138,18 +143,18 @@ def sphereProdFstLeHomeomorph :
       closedBall (0 : F) 1 × sphere (0 : G) 1 where
   toFun x :=
     (⟨‖(x : WithLp 2 (F × G)).snd‖⁻¹ • (x : WithLp 2 (F × G)).fst, by
-        have h := norm_snd_pos x.1.2 x.2
+        have h := norm_snd_pos x.val.property x.property
         rw [mem_closedBall_zero_iff, norm_smul, norm_inv, norm_norm, inv_mul_le_one₀ h]
-        exact x.2⟩,
+        exact x.property⟩,
       ⟨‖(x : WithLp 2 (F × G)).snd‖⁻¹ • (x : WithLp 2 (F × G)).snd, by
-        have h := norm_snd_pos x.1.2 x.2
+        have h := norm_snd_pos x.val.property x.property
         rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ h.ne']⟩)
   invFun p := ⟨⟨sphereProdFstLeInv p, sphereProdFstLeInv_mem_sphere p⟩,
     norm_fst_le_norm_snd_sphereProdFstLeInv p⟩
   left_inv x := by
     obtain ⟨⟨x, hx⟩, hle⟩ := x
     have h := norm_snd_pos hx hle
-    have hsum := norm_fst_sq_add_norm_snd_sq_of_mem_sphere hx
+    have hsum := sq_norm_fst_add_sq_norm_snd_eq_one ⟨_, hx⟩
     -- The normalizer of `x.fst / ‖x.snd‖` is `‖x.snd‖`, since `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`.
     have hn : normalizer ‖‖x.snd‖⁻¹ • x.fst‖ = ‖x.snd‖ := by
       have hsq : 1 + ‖‖x.snd‖⁻¹ • x.fst‖ ^ 2 = (‖x.snd‖⁻¹) ^ 2 := by
@@ -166,22 +171,11 @@ def sphereProdFstLeHomeomorph :
     ext <;> simp only [norm_snd_sphereProdFstLeInv] <;>
       simp [sphereProdFstLeInv, smul_smul, inv_mul_cancel₀ hn.ne']
   continuous_toFun := by
-    have hpos (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).fst‖ ≤
-        ‖(x : WithLp 2 (F × G)).snd‖}) : ‖(x : WithLp 2 (F × G)).snd‖ ≠ 0 :=
-      (norm_snd_pos x.1.2 x.2).ne'
-    have hc : Continuous fun x : {x : sphere (0 : WithLp 2 (F × G)) 1 |
-        ‖(x : WithLp 2 (F × G)).fst‖ ≤ ‖(x : WithLp 2 (F × G)).snd‖} ↦
-          ‖(x : WithLp 2 (F × G)).snd‖⁻¹ :=
-      .inv₀ (by fun_prop) hpos
-    exact .prodMk (.subtype_mk (hc.smul (by fun_prop)) _) (.subtype_mk (hc.smul (by fun_prop)) _)
+    fun_prop (disch := exact fun x ↦ (norm_snd_pos x.val.property x.property).ne')
   continuous_invFun := by
-    have hc : Continuous fun p : closedBall (0 : F) 1 × sphere (0 : G) 1 ↦
-        normalizer ‖(p.1 : F)‖ :=
-      continuous_normalizer.comp (by fun_prop)
-    refine .subtype_mk (.subtype_mk ?_ _) _
-    exact (WithLp.prod_continuous_toLp 2 F G).comp
-      (.prodMk (hc.smul (continuous_subtype_val.comp continuous_fst))
-        (hc.smul (continuous_subtype_val.comp continuous_snd)))
+    unfold sphereProdFstLeInv normalizer
+    -- The discharger proves `√(1 + ‖u‖ ^ 2) ≠ 0`.
+    fun_prop (disch := intro; positivity)
 
 @[simp]
 theorem coe_sphereProdFstLeHomeomorph_apply_fst
@@ -215,7 +209,7 @@ theorem norm_sphereProdFstLeHomeomorph_fst_eq_one_iff
     ‖((sphereProdFstLeHomeomorph F G x).1 : F)‖ = 1 ↔
       ‖(x : WithLp 2 (F × G)).fst‖ = ‖(x : WithLp 2 (F × G)).snd‖ := by
   rw [coe_sphereProdFstLeHomeomorph_apply_fst, norm_smul, norm_inv, norm_norm,
-    inv_mul_eq_one₀ (norm_snd_pos x.1.2 x.2).ne', eq_comm]
+    inv_mul_eq_one₀ (norm_snd_pos x.val.property x.property).ne', eq_comm]
 
 /-- The frontier of the piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit sphere of `WithLp 2 (F × G)` is the
 set where `‖x.fst‖ = ‖x.snd‖`. -/
@@ -253,7 +247,7 @@ theorem frontier_setOf_norm_fst_le_norm_snd :
 variable (F G) in
 /-- The piece `‖x.snd‖ ≤ ‖x.fst‖` of the unit sphere of `WithLp 2 (F × G)` is homeomorphic to the
 product of the unit sphere of `F` with the closed unit ball of `G`, through
-`x ↦ (x.fst / ‖x.fst‖, x.snd / ‖x.fst‖)`. -/
+`x ↦ (x.fst / ‖x.fst‖, x.snd / ‖x.fst‖)`, with inverse `(u, v) ↦ (u, v) / √(1 + ‖v‖ ^ 2)`. -/
 def sphereProdSndLeHomeomorph :
     {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).snd‖ ≤
         ‖(x : WithLp 2 (F × G)).fst‖} ≃ₜ
@@ -270,9 +264,9 @@ private theorem sphereProdSndLeHomeomorph_apply
     (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).snd‖ ≤
         ‖(x : WithLp 2 (F × G)).fst‖}) :
     sphereProdSndLeHomeomorph F G x =
-      (sphereProdFstLeHomeomorph G F ⟨sphereProdComm x.1, by
+      (sphereProdFstLeHomeomorph G F ⟨sphereProdComm x.val, by
         simp only [mem_ofPred_eq, coe_sphereProdComm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
-        exact x.2⟩).swap :=
+        exact x.property⟩).swap :=
   rfl
 
 /-- The inverse of `TauCeti.sphereProdSndLeHomeomorph` through the coordinate swap, for the same

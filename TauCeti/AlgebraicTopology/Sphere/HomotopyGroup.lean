@@ -18,6 +18,8 @@ public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
+import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
+import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # Homotopy groups of spheres up to their dimension
@@ -50,7 +52,9 @@ The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12.
 `(n - 1)`-skeleton is a single point. The inclusion of that skeleton is surjective on `πₖ` for
 `k ≤ n - 1` (`TauCeti.surjective_homotopyGroupMap_skeletonLT`), so `πₖ(Sⁿ)` is trivial at the
 `0`-cell, and hence at every base point since `Sⁿ` is path connected. Spheres of normed spaces are
-reduced to Euclidean ones through `TauCeti.sphereHomeomorphOfFinrankEq`.
+reduced to Euclidean ones through `TauCeti.sphereHomeomorphOfFinrankEq`. A punctured space
+`E ∖ {y}` is homotopy equivalent to the unit sphere, so it is `(n - 1)`-connected as well
+(`TauCeti.subsingleton_homotopyGroup_compl_singleton_of_lt`).
 
 In particular the unit sphere `S^{4k-1}` of the quaternionic coordinate space `ℍᵏ` is
 `(4k - 2)`-connected (`TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`), and the unit
@@ -64,6 +68,8 @@ basis, so its sign depends on the orientation of that basis.
 ## Main declarations
 
 * `TauCeti.subsingleton_homotopyGroup_sphere_of_lt`: `πₖ(Sⁿ, x)` is trivial for `k < n`.
+* `TauCeti.subsingleton_homotopyGroup_compl_singleton_of_lt`: `πₖ(E ∖ {y}, x)` is trivial for
+  `k < n`, for an `(n + 1)`-dimensional real normed space `E`.
 * `TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`: `πₖ(ΩSⁿ)` is trivial for
   `k + 1 < n`.
 * `TauCeti.pathConnectedSpace_loopSpace_sphere`: `ΩSⁿ` is path connected for `n ≥ 2`.
@@ -71,6 +77,9 @@ basis, so its sign depends on the orientation of that basis.
   `k < 4m - 1`, for the unit sphere of `ℍᵐ`.
 * `TauCeti.subsingleton_homotopyGroup_sphere_quaternion`: `πₖ(S³, x)` is trivial for `k < 3`.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
+* `TauCeti.homotopyGroupSphereQuaternionMulEquiv`: `π₃(S³, x) ≅ ℤ` for the unit quaternions.
+* `TauCeti.homotopyGroupSphereAddEquivOfFinrankEq`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, for the unit
+  sphere of any `(n + 1)`-dimensional real normed space.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
 * `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H~₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`,
@@ -131,6 +140,23 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
     finrank ℝ E = finrank ℝ F)
   exact (HomotopyGroup.homeomorphEquiv (N := N) h x).subsingleton_congr.mpr
     (subsingleton_homotopyGroup_of_pathConnectedSpace hpole)
+
+/-- **Punctured spaces are `(n - 1)`-connected.** For an `(n + 1)`-dimensional real normed space
+`E` and any point `y : E`, the homotopy set `πₖ(E ∖ {y}, x)` is trivial for every
+`k = Nat.card N < n`, since `E ∖ {y}` is homotopy equivalent to the unit sphere `Sⁿ`
+(`TauCeti.complSingletonHomotopyEquivSphere`). -/
+theorem subsingleton_homotopyGroup_compl_singleton_of_lt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (y : E)
+    {N : Type*} (hN : Nat.card N < n) (x : ({y}ᶜ : Set E)) :
+    Subsingleton (HomotopyGroup N ({y}ᶜ : Set E) x) := by
+  by_cases hfin : Finite N
+  swap
+  · -- for an infinite index set every homotopy set is trivial
+    have := not_finite_iff_infinite.1 hfin
+    infer_instance
+  let e := complSingletonHomotopyEquivSphere y
+  have := subsingleton_homotopyGroup_sphere_of_lt hE hN (e.toFun x)
+  exact (HomotopyGroup.equivOfHomotopyEquiv e x).subsingleton
 
 /-- **The loop space of `Sⁿ` is `(n - 2)`-connected.** For the unit sphere `Sⁿ` of an
 `(n + 1)`-dimensional real normed space, `πₖ(ΩSⁿ)` is trivial for every `k + 1 < n`. -/
@@ -232,17 +258,40 @@ theorem MooreLoopSpace.doubleHomologySphereAddEquiv_apply
       homotopyGroupSphereAddEquiv (n := n + 2) b x ((doubleHomologyAddEquiv x n hX).symm a) :=
   (rfl)
 
+/-- **`πₙ(Sⁿ) ≅ ℤ` over any normed space** for `n ≥ 2`: for the unit sphere `Sⁿ⁺²` of an
+`(n + 3)`-dimensional real normed space, `πₙ₊₂(Sⁿ⁺², x) ≅ ℤ`. This transports
+`TauCeti.homotopyGroupSphereAddEquiv` for the standard basis of `EuclideanSpace ℝ (Fin (n + 3))`
+along a homeomorphism of unit spheres. -/
+def homotopyGroupSphereAddEquivOfFinrankEq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hE : finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
+    Additive (π_ (n + 2) (sphere (0 : E) 1) x) ≃+ ℤ :=
+  have := Module.finite_of_finrank_eq_succ hE
+  let h := sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm :
+    finrank ℝ E = finrank ℝ (EuclideanSpace ℝ (Fin (n + 3))))
+  (HomotopyGroup.homeomorphMulEquiv h x).toAdditive.trans
+    (homotopyGroupSphereAddEquiv (EuclideanSpace.basisFun (Fin (n + 3)) ℝ) (h x))
+
+/-- `TauCeti.homotopyGroupSphereAddEquivOfFinrankEq` is the map induced by the homeomorphism
+`TauCeti.sphereHomeomorphOfFinrankEq` with the unit sphere of `EuclideanSpace ℝ (Fin (n + 3))`,
+followed by `TauCeti.homotopyGroupSphereAddEquiv` for its standard basis. -/
+theorem homotopyGroupSphereAddEquivOfFinrankEq_apply {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hE : finrank ℝ E = n + 3) (x : sphere (0 : E) 1)
+    (a : Additive (π_ (n + 2) (sphere (0 : E) 1) x)) :
+    homotopyGroupSphereAddEquivOfFinrankEq hE x a =
+      haveI := Module.finite_of_finrank_eq_succ hE
+      homotopyGroupSphereAddEquiv (EuclideanSpace.basisFun (Fin (n + 3)) ℝ)
+        (sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm) x)
+        ((HomotopyGroup.homeomorphMulEquiv
+          (sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm))
+          x).toAdditive a) :=
+  (rfl)
+
 /-- **`πₙ(Sⁿ)` is nontrivial** for `n ≥ 2`: for the unit sphere `Sⁿ⁺²` of an
 `(n + 3)`-dimensional real normed space, `πₙ₊₂(Sⁿ⁺², x)` is nontrivial. -/
 theorem nontrivial_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (hE : finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
-    Nontrivial (π_ (n + 2) (sphere (0 : E) 1) x) := by
-  have := Module.finite_of_finrank_eq_succ hE
-  let h := sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm :
-    finrank ℝ E = finrank ℝ (EuclideanSpace ℝ (Fin (n + 3))))
-  have := (Additive.ofMul.trans (homotopyGroupSphereAddEquiv
-    (EuclideanSpace.basisFun (Fin (n + 3)) ℝ) (h x)).toEquiv).nontrivial
-  exact (HomotopyGroup.homeomorphEquiv h x).nontrivial
+    Nontrivial (π_ (n + 2) (sphere (0 : E) 1) x) :=
+  (Additive.ofMul.trans (homotopyGroupSphereAddEquivOfFinrankEq hE x).toEquiv).nontrivial
 
 /-- The path components of the double Moore loop space of `S²` are the integers, through
 `π₂(S²) ≅ ℤ`. -/
@@ -255,7 +304,8 @@ private def MooreLoopSpace.zerothHomotopyDoubleSphereEquiv (b : OrthonormalBasis
 private theorem MooreLoopSpace.zerothHomotopyDoubleSphereEquiv_mk_one
     (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1) :
     zerothHomotopyDoubleSphereEquiv b x (.mk 1) = 0 := by
-  simp [zerothHomotopyDoubleSphereEquiv]
+  rw [zerothHomotopyDoubleSphereEquiv, Equiv.trans_apply, zerothHomotopyDoubleEquiv_mk_one]
+  simp
 
 /-- **Reduced zeroth homology of the double loop space of `S²`.** For the unit sphere `S²` of a
 real inner product space with an orthonormal basis `b` indexed by `Fin 3`, the reduced zeroth
@@ -327,6 +377,23 @@ theorem subsingleton_homotopyGroup_sphere_piLp_quaternion {p : ℝ≥0∞} [Fact
 theorem subsingleton_homotopyGroup_sphere_quaternion {N : Type*} (hN : Nat.card N < 3)
     (x : sphere (0 : ℍ) 1) : Subsingleton (HomotopyGroup N (sphere (0 : ℍ) 1) x) :=
   subsingleton_homotopyGroup_sphere_of_lt Quaternion.finrank_eq_four hN x
+
+/-- **`π₃(S³) ≅ ℤ` for the unit quaternions**, at every base point: the isomorphism
+`TauCeti.homotopyGroupSphereAddEquiv` for the standard orthonormal basis of `ℍ`, written
+multiplicatively. -/
+def homotopyGroupSphereQuaternionMulEquiv (x : sphere (0 : ℍ) 1) :
+    π_ 3 (sphere (0 : ℍ) 1) x ≃* Multiplicative ℤ :=
+  AddEquiv.toMultiplicativeRight (homotopyGroupSphereAddEquiv (n := 1)
+    ((stdOrthonormalBasis ℝ ℍ).reindex (finCongr Quaternion.finrank_eq_four)) x)
+
+/-- The isomorphism `π₃(S³) ≅ ℤ` for the unit quaternions is
+`TauCeti.homotopyGroupSphereAddEquiv` for the standard orthonormal basis of `ℍ`. -/
+theorem homotopyGroupSphereQuaternionMulEquiv_apply (x : sphere (0 : ℍ) 1)
+    (a : π_ 3 (sphere (0 : ℍ) 1) x) :
+    homotopyGroupSphereQuaternionMulEquiv x a =
+      Multiplicative.ofAdd (homotopyGroupSphereAddEquiv (n := 1)
+        ((stdOrthonormalBasis ℝ ℍ).reindex (finCongr Quaternion.finrank_eq_four)) x a) :=
+  (rfl)
 
 end Quaternion
 

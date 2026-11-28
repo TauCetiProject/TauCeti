@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 
 /-!
 # The reduced induced closed subscheme
@@ -31,9 +33,20 @@ discrete valuation ring.
   is integral.
 * `Scheme.IdealSheafData.subschemeι_genericPoint_vanishingIdeal_closure_singleton`: the generic
   point of the reduced closure of `η` maps to `η`.
+* `Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_compl_iff`: the reduced closed
+  complement of an open `V` consists of the points outside `V`.
+* `Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff`: the reduced
+  closed complement of the range of an open immersion consists of the points outside that range.
+* `Scheme.Hom.sdiffι`: for a morphism `f : Z ⟶ X` and an open `W` of `X`, the reduced closed
+  subscheme of `Z` on the complement of `f ⁻¹ᵁ W`, mapped to `X` by `f`; its image is
+  `Set.range f \ W` (`Scheme.Hom.range_sdiffι`), and it is an immersion when `f` is.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
+* `Scheme.IdealSheafData.existsUnique_comp_subschemeι_vanishingIdeal_iff`: universal property of
+  the reduced induced closed subscheme on `Z` for morphisms from reduced schemes.
+* `Scheme.Hom.isIso_lift_subschemeι_vanishingIdeal`: a reduced closed subscheme
+  with image `Z` is isomorphic to the reduced induced closed subscheme on `Z`.
 * `Scheme.IdealSheafData.comap_vanishingIdeal_of_isOpenImmersion`,
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range`, and
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_apply`: pullback of vanishing
@@ -47,13 +60,13 @@ discrete valuation ring.
 
 public section
 
-open TopologicalSpace
+open CategoryTheory TopologicalSpace
 
 universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {X : Scheme.{u}}
+variable {U X : Scheme.{u}}
 
 /-- The reduced induced closed subscheme structure on a closed subset is reduced. -/
 instance isReduced_subscheme_vanishingIdeal (Z : Closeds X) :
@@ -97,6 +110,20 @@ theorem subschemeι_genericPoint_vanishingIdeal_closure_singleton (η : X) :
     closure_closure] at h
   exact h.eq isGenericPoint_closure
 
+/-- A point of `X` lies in the reduced closed complement of an open `V` if and only if it lies
+outside `V`. -/
+theorem mem_range_subschemeι_vanishingIdeal_compl_iff (V : X.Opens) (x : X) :
+    x ∈ Set.range (vanishingIdeal V.compl).subschemeι ↔ x ∉ V := by
+  rw [range_subschemeι, coe_support_vanishingIdeal]
+  simp
+
+/-- A point of `X` lies in the reduced closed complement of the range of an open immersion `j` if
+and only if it lies outside the range of `j`. -/
+theorem mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff {Y : Scheme.{u}} (j : Y ⟶ X)
+    [IsOpenImmersion j] (x : X) :
+    x ∈ Set.range (vanishingIdeal j.opensRange.compl).subschemeι ↔ x ∉ Set.range j := by
+  rw [mem_range_subschemeι_vanishingIdeal_compl_iff, Scheme.Hom.mem_opensRange, Set.mem_range]
+
 /-- A morphism `f` from a reduced scheme whose image lies in a closed subset `Z` kills the
 vanishing ideal of `Z`, so it factors through the reduced induced closed subscheme on `Z`
 (`IsClosedImmersion.lift` along `subschemeι`): a section vanishing on `Z` pulls back to a section
@@ -106,17 +133,107 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
   refine le_ofIdeals_iff.mpr fun U s hs ↦ RingHom.mem_ker.mpr (eq_zero_of_basicOpen_eq_bot _ ?_)
   rw [← Scheme.preimage_basicOpen, eq_bot_iff]
   rintro y hy
-  have hZ : f y ∈ X.zeroLocus (U := U.1) ((vanishingIdeal Z).ideal U) :=
+  have hZ : f y ∈ X.zeroLocus (U := U.val) ((vanishingIdeal Z).ideal U) :=
     (mem_support_iff_of_mem (X.basicOpen_le s hy)).mp <| by
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
   exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
 
+/-- A morphism `f : Y ⟶ X` from a reduced scheme factors uniquely through the reduced induced
+closed subscheme `(vanishingIdeal Z).subschemeι` on a closed subset `Z` if and only if its
+set-theoretic image lies in `Z`. -/
+theorem existsUnique_comp_subschemeι_vanishingIdeal_iff {Y : Scheme.{u}} [IsReduced Y]
+    (f : Y ⟶ X) (Z : Closeds X) :
+    (∃! g : Y ⟶ (vanishingIdeal Z).subscheme, g ≫ (vanishingIdeal Z).subschemeι = f) ↔
+      Set.range f ⊆ Z := by
+  refine ⟨?_, fun hf ↦ ?_⟩
+  · rintro ⟨g, hg, -⟩ _ ⟨y, rfl⟩
+    have hmem : (vanishingIdeal Z).subschemeι (g y) ∈ Set.range (vanishingIdeal Z).subschemeι :=
+      ⟨g y, rfl⟩
+    rw [← hg, Scheme.Hom.comp_apply]
+    rwa [range_subschemeι, coe_support_vanishingIdeal] at hmem
+  · refine ⟨IsClosedImmersion.lift (vanishingIdeal Z).subschemeι f
+      (by simpa using vanishingIdeal_le_ker_of_range_subset f hf),
+      IsClosedImmersion.lift_fac _ _ _, fun g hg ↦ ?_⟩
+    rw [← cancel_mono (vanishingIdeal Z).subschemeι, hg, IsClosedImmersion.lift_fac]
+
+/-- A closed immersion from a reduced scheme with image `Z` identifies its source with the
+reduced induced closed subscheme on `Z`. The canonical lift commutes with the inclusions by
+`IsClosedImmersion.lift_fac`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_lift_subschemeι_vanishingIdeal
+    {Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X)
+    [IsClosedImmersion f] {Z : Closeds X} (h : Set.range f = Z) :
+    IsIso (IsClosedImmersion.lift (vanishingIdeal Z).subschemeι f
+      (by simpa using vanishingIdeal_le_ker_of_range_subset f h.le)) := by
+  let e := IsClosedImmersion.lift (vanishingIdeal Z).subschemeι f
+    (by simpa using vanishingIdeal_le_ker_of_range_subset f h.le)
+  have he : e ≫ (vanishingIdeal Z).subschemeι = f := IsClosedImmersion.lift_fac _ _ _
+  have : IsClosedImmersion (e ≫ (vanishingIdeal Z).subschemeι) := by
+    rw [he]
+    infer_instance
+  have := IsClosedImmersion.of_comp_isClosedImmersion e (vanishingIdeal Z).subschemeι
+  have : Surjective e := by
+    constructor
+    intro y
+    obtain ⟨z, hz⟩ := h.ge y.property
+    refine ⟨z, (vanishingIdeal Z).subschemeι.isClosedEmbedding.injective ?_⟩
+    rw [← Scheme.Hom.comp_apply, he, subschemeι_apply, hz]
+  exact isIso_of_isClosedImmersion_of_surjective e
+
+/-- The reduction `X.nilradical.subscheme` of a scheme is reduced. -/
+instance _root_.AlgebraicGeometry.Scheme.isReduced_subscheme_nilradical (X : Scheme.{u}) :
+    IsReduced X.nilradical.subscheme := by
+  rw [← vanishingIdeal_top]
+  infer_instance
+
+/-- A morphism from a reduced scheme kills the nilradical of its target, so it factors
+through the reduction `X.nilradical.subscheme` (`IsClosedImmersion.lift` along `subschemeι`). -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nilradical_le_ker {Y : Scheme.{u}} [IsReduced Y]
+    (f : Y ⟶ X) : X.nilradical ≤ f.ker := by
+  rw [← vanishingIdeal_top]
+  exact vanishingIdeal_le_ker_of_range_subset f (by simp)
+
+/-- Over an affine open `i : Spec A ⟶ X`, a lift `j` of `Spec (A ⧸ nilradical A) ⟶ Spec A ⟶ X`
+to the reduction `X.nilradical.subscheme` is an open immersion: it identifies
+`Spec (A ⧸ nilradical A)` with the pullback of `i` along `X.nilradical.subschemeι`. -/
+theorem _root_.AlgebraicGeometry.Scheme.isOpenImmersion_of_comp_nilradical_subschemeι
+    {A : CommRingCat.{u}} (i : Spec A ⟶ X) [IsOpenImmersion i]
+    (j : Spec (.of (A ⧸ _root_.nilradical A)) ⟶ X.nilradical.subscheme)
+    (hj : j ≫ X.nilradical.subschemeι =
+      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (_root_.nilradical A))) ≫ i) :
+    IsOpenImmersion j := by
+  let q := Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (_root_.nilradical A)))
+  -- `j` is the composite of the comparison map `l` into the pullback with its second projection.
+  let l := Limits.pullback.lift q j hj.symm
+  have hl : l ≫ Limits.pullback.fst i X.nilradical.subschemeι = q :=
+    Limits.pullback.lift_fst _ _ _
+  have : IsClosedImmersion (l ≫ Limits.pullback.fst i X.nilradical.subschemeι) := by
+    rw [hl]
+    exact IsClosedImmersion.spec_of_surjective _ Ideal.Quotient.mk_surjective
+  have := IsClosedImmersion.of_comp_isClosedImmersion l
+    (Limits.pullback.fst i X.nilradical.subschemeι)
+  have : Surjective l := by
+    -- Every prime of `A` contains the nilradical, so `q` is surjective.
+    have hq : Function.Surjective q := by
+      rw [funext (Spec.map_apply _)]
+      exact (PrimeSpectrum.comap_quotientMk_bijective_of_le_nilradical le_rfl).2
+    refine ⟨fun p ↦ ?_⟩
+    obtain ⟨y, hy⟩ := hq (Limits.pullback.fst i X.nilradical.subschemeι p)
+    refine ⟨y, (Limits.pullback.fst i X.nilradical.subschemeι).isClosedEmbedding.injective ?_⟩
+    rw [← Scheme.Hom.comp_apply, hl, hy]
+  -- The pullback is reduced, being open in the reduction, so the surjective closed immersion `l`
+  -- is an isomorphism.
+  have : IsReduced (Limits.pullback i X.nilradical.subschemeι) :=
+    isReduced_of_isOpenImmersion (Limits.pullback.snd i X.nilradical.subschemeι)
+  have := isIso_of_isClosedImmersion_of_surjective l
+  rw [← Limits.pullback.lift_snd q j hj.symm]
+  infer_instance
+
 /-- Along an open immersion `j : U ⟶ X`, `(vanishingIdeal Z).comap j` is
 `vanishingIdeal (j ⁻¹' Z)`. -/
 theorem comap_vanishingIdeal_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
     (Z : Closeds X) :
-    (vanishingIdeal Z).comap j = vanishingIdeal ⟨j ⁻¹' Z, Z.2.preimage j.continuous⟩ := by
+    (vanishingIdeal Z).comap j = vanishingIdeal ⟨j ⁻¹' Z, Z.isClosed'.preimage j.continuous⟩ := by
   have hrad : ((vanishingIdeal Z).comap j).radical = (vanishingIdeal Z).comap j :=
     IdealSheafData.ext (funext fun W ↦ by
       rw [radical_ideal, ideal_comap_of_isOpenImmersion]
@@ -147,4 +264,48 @@ theorem comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range {U : Schem
   rw [j.isOpenEmbedding.isInducing.closure_eq_preimage_closure_image, Set.image_singleton,
     Set.mem_preimage]
 
+/-- Along an open immersion `j : U ⟶ X`, the vanishing ideal sheaf of `closure {j u}` pulls back to
+the vanishing ideal sheaf of `closure {u}`. -/
+theorem comap_vanishingIdeal_closure_singleton_of_isOpenImmersion (j : U ⟶ X) [IsOpenImmersion j]
+    (u : U) :
+    (vanishingIdeal ⟨closure {j u}, isClosed_closure⟩).comap j =
+      vanishingIdeal ⟨closure {u}, isClosed_closure⟩ := by
+  rw [comap_vanishingIdeal_of_isOpenImmersion]
+  congr 1
+  ext1
+  simp only [Closeds.coe_mk]
+  rw [j.isOpenEmbedding.isOpenMap.preimage_closure_eq_closure_preimage j.continuous]
+  congr 1
+  ext w
+  simp [j.isOpenEmbedding.injective.eq_iff]
+
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-! ### Reduced closed complements of opens -/
+
+variable {X Z : Scheme.{u}} (f : Z ⟶ X) (W : X.Opens)
+
+/-- For a morphism `f : Z ⟶ X` and an open `W` of `X`, the reduced closed subscheme of `Z` on the
+complement of `f ⁻¹ᵁ W`, mapped to `X` by `f`. Its image is `Set.range f \ W` (`range_sdiffι`),
+and it is an immersion when `f` is. -/
+noncomputable def sdiffι : (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subscheme ⟶ X :=
+  (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subschemeι ≫ f
+
+/-- `f.sdiffι W` is the inclusion of the reduced closed subscheme on the complement of `f ⁻¹ᵁ W`
+followed by `f`. -/
+@[reassoc]
+lemma subschemeι_comp_eq_sdiffι :
+    (IdealSheafData.vanishingIdeal (f ⁻¹ᵁ W).compl).subschemeι ≫ f = f.sdiffι W :=
+  (rfl)
+
+instance isImmersion_sdiffι [IsImmersion f] : IsImmersion (f.sdiffι W) := by
+  rw [← subschemeι_comp_eq_sdiffι]
+  infer_instance
+
+@[simp]
+lemma range_sdiffι : Set.range (f.sdiffι W) = Set.range f \ W := by
+  simp [← subschemeι_comp_eq_sdiffι, Set.range_comp, Set.image_compl_preimage]
+
+end AlgebraicGeometry.Scheme.Hom

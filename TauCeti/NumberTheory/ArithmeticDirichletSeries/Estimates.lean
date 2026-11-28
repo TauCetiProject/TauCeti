@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.NumberField.Ideal.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+public import TauCeti.LinearAlgebra.Submodule.Zeta
 
 /-!
 # Linear ideal counts and the exact abscissa of the trivial ideal weight
@@ -51,6 +52,12 @@ of a convergent series of nonnegative terms must become arbitrarily small.
   through the `n ≠ 0` congruence `LSeries.abscissaOfAbsConv_congr`.
 * `TauCeti.analyticOnNhd_dedekindZeta`: Mathlib's `NumberField.dedekindZeta` is holomorphic on
   `Re s > 1`.
+* `TauCeti.hasSum_absNorm_rpow_neg_dedekindZeta_re`: for real `s > 1`, the sum of `N(𝔟) ^ (-s)`
+  over the nonzero integral ideals is `ζ_K(s)`.
+* `TauCeti.sum_absNorm_rpow_neg_le_dedekindZeta_re`: for real `s > 1`, a finite sum of
+  `N(𝔟) ^ (-s)` over integral ideals is at most `ζ_K(s)`.
+* `TauCeti.submoduleZeta_eq_ofReal_dedekindZeta_re`: for natural `s ≥ 2`, the ideal zeta sum
+  `∑_𝔟 [𝓞 K : 𝔟] ^ (-s)` over the ideals of finite index (`Module.submoduleZeta`) is `ζ_K(s)`.
 * `TauCeti.summable_idealTerm_of_bounded_of_one_lt_re`: a uniformly bounded weight has an
   absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
@@ -107,7 +114,7 @@ theorem card_absNorm_real_le_mono {x y : ℝ} (h : x ≤ y) :
       Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ y} := by
   have : Finite {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ y} :=
     (finite_setOf_absNorm_real_le K y).to_subtype
-  refine Nat.card_le_card_of_injective (fun I ↦ ⟨I.1, I.2.trans h⟩) fun a b hab ↦ ?_
+  refine Nat.card_le_card_of_injective (fun I ↦ ⟨I.val, I.property.trans h⟩) fun a b hab ↦ ?_
   injection hab with hab'
   exact Subtype.ext hab'
 
@@ -562,5 +569,65 @@ theorem analyticOnNhd_dedekindZeta :
   rw [funext (dedekindZeta_eq_LSeries_dedekindZetaCoeff K)]
   exact (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦ by
     simpa [abscissaOfAbsConv_dedekindZetaCoeff] using EReal.coe_lt_coe_iff.mpr hs
+
+/-- **The Dedekind zeta series at real `s > 1`.** The sum of `N(𝔟) ^ (-s)` over the nonzero
+integral ideals `𝔟` of `𝓞 K` is `ζ_K(s)`. -/
+theorem hasSum_absNorm_rpow_neg_dedekindZeta_re {K : Type*} [Field K] [NumberField K] {s : ℝ}
+    (hs : 1 < s) :
+    HasSum (fun I : (Ideal (𝓞 K))⁰ ↦ (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s))
+      (NumberField.dedekindZeta K s).re := by
+  have hsum : Summable (idealTerm K (1 : IdealArithmeticFunction K) (s : ℂ)) :=
+    summable_idealTerm_one_iff.2 (by simpa using hs)
+  -- The terms of the ideal-indexed series are the real numbers `N(𝔟) ^ (-s)`.
+  have h_re (I : (Ideal (𝓞 K))⁰) :
+      (idealTerm K 1 (s : ℂ) I).re = (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) := by
+    rw [idealTerm_def, Pi.one_apply, ← Complex.ofReal_natCast,
+      ← Complex.ofReal_cpow (Nat.cast_nonneg _)]
+    simp [Real.rpow_neg]
+  rw [dedekindZeta_eq_LSeries_normCoeff_one, LSeries_normCoeff K hsum]
+  exact (Complex.hasSum_re hsum.hasSum).congr_fun fun I ↦ (h_re I).symm
+
+/-- **A finite partial sum of the Dedekind zeta series is at most `ζ_K(s)`.** For real `s > 1`
+and every finite set `S` of integral ideals, `∑_{𝔟 ∈ S} N(𝔟) ^ (-s) ≤ ζ_K(s)`. The zero ideal, of
+norm `0`, contributes `0 ^ (-s) = 0`. -/
+theorem sum_absNorm_rpow_neg_le_dedekindZeta_re {K : Type*} [Field K] [NumberField K] {s : ℝ}
+    (hs : 1 < s) (S : Finset (Ideal (𝓞 K))) :
+    ∑ 𝔟 ∈ S, (Ideal.absNorm 𝔟 : ℝ) ^ (-s) ≤ (NumberField.dedekindZeta K s).re := by
+  classical
+  have h_zeta := hasSum_absNorm_rpow_neg_dedekindZeta_re (K := K) hs
+  -- Discard the zero ideal and compare with the full sum over the nonzero ideals.
+  calc ∑ 𝔟 ∈ S, (Ideal.absNorm 𝔟 : ℝ) ^ (-s)
+      = ∑ I ∈ S.subtype (· ∈ (Ideal (𝓞 K))⁰), (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) := by
+        rw [Finset.sum_subtype_eq_sum_filter (f := fun 𝔟 ↦ (Ideal.absNorm 𝔟 : ℝ) ^ (-s)),
+          Finset.sum_filter_of_ne]
+        intro 𝔟 _ h𝔟
+        refine mem_nonZeroDivisors_of_ne_zero fun h ↦ h𝔟 ?_
+        simp [h, Real.zero_rpow (by linarith : -s ≠ 0)]
+    _ ≤ ∑' I : (Ideal (𝓞 K))⁰, (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) :=
+        h_zeta.summable.sum_le_tsum _ fun _ _ ↦ by positivity
+    _ = (NumberField.dedekindZeta K s).re := h_zeta.tsum_eq
+
+open scoped ENNReal in
+/-- **The ideal zeta sum of `𝓞 K` is the Dedekind zeta function.** For `s ≥ 2`,
+`∑_𝔟 [𝓞 K : 𝔟]^(-s) = ζ_K(s)`, the sum running over the ideals of finite index, that is the nonzero
+ideals, of `𝓞 K`. -/
+theorem submoduleZeta_eq_ofReal_dedekindZeta_re {K : Type*} [Field K] [NumberField K] {s : ℕ}
+    (hs : 2 ≤ s) :
+    Module.submoduleZeta (𝓞 K) (𝓞 K) s = ENNReal.ofReal (NumberField.dedekindZeta K s).re := by
+  have h_zeta := hasSum_absNorm_rpow_neg_dedekindZeta_re (K := K) (s := s) (by exact_mod_cast hs)
+  rw [Complex.ofReal_natCast] at h_zeta
+  -- The ideals of finite index of `𝓞 K` are its nonzero ideals.
+  let e : (Ideal (𝓞 K))⁰ ≃ {I : Ideal (𝓞 K) // I.cardQuot ≠ 0} :=
+    Equiv.subtypeEquivRight fun I ↦ by
+      rw [← Ideal.absNorm_apply]
+      exact Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors.symm
+  rw [← h_zeta.tsum_eq, ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) h_zeta.summable,
+    Module.submoduleZeta_def, ← e.tsum_eq]
+  refine tsum_congr fun I ↦ ?_
+  have hI : (I : Ideal (𝓞 K)).cardQuot ≠ 0 := (e I).property
+  rw [Equiv.subtypeEquivRight_apply_coe, Ideal.absNorm_apply,
+    Real.rpow_neg (Nat.cast_nonneg _), Real.rpow_natCast, ← inv_pow,
+    ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_inv_of_pos (Nat.cast_pos.2
+      (Nat.pos_of_ne_zero hI)), ENNReal.ofReal_natCast]
 
 end TauCeti

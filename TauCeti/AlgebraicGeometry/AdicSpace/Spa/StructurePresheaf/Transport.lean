@@ -266,11 +266,8 @@ include hψφ hφψ in
 continuous ring homomorphisms `φ : A → B` and `ψ : B → A` carrying `A⁺` into `B⁺` and `B⁺` into
 `A⁺`, the maps `Spa(B, B⁺) → Spa(A, A⁺)` and `Spa(A, A⁺) → Spa(B, B⁺)` they induce are mutually
 inverse, as an isomorphism of `TopCat`. -/
-noncomputable def spaComapTopIso : TopCat.of ↥(spa Bplus) ≅ TopCat.of ↥(spa Aplus) where
-  hom := spaComapTopHom φ hφ hplus
-  inv := spaComapTopHom ψ hψ hplus'
-  hom_inv_id := TopCat.ext (spaComap_spaComap ψ hψ hplus' φ hφ hφψ hplus)
-  inv_hom_id := TopCat.ext (spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus')
+noncomputable def spaComapTopIso : TopCat.of ↥(spa Bplus) ≅ TopCat.of ↥(spa Aplus) :=
+  TopCat.isoOfHomeo (spaComapHomeomorph φ hφ hplus ψ hψ hψφ hφψ hplus')
 
 omit [IsTopologicalRing A] [IsTopologicalRing B] in
 /-- The forward map of `spaComapTopIso` is the map of adic spectra induced by `φ`. -/
@@ -542,7 +539,7 @@ private theorem presentationLimitCompletionLeg_comp_restrictionHom
   -- with the completion map, which is how the compatibility lemmas below are stated
   let ι : TopCommRingCat.of A ⟶ TopCommRingCat.of (Completion A) :=
     ⟨Completion.coeRingHom, Completion.continuous_coeRingHom⟩
-  change (ι ≫ _).1 = (ι ≫ _).1
+  change (ι ≫ _).val = (ι ≫ _).val
   refine congrArg Subtype.val ?_
   simp only [ι, Presentation.coeRingHom_comp_completionExtendTopHom_assoc,
     Presentation.toCompletionLocTopHom_comp_restrictionHom]
@@ -659,7 +656,7 @@ private theorem presentationLimitCompletionHom_comp_presentationLimitDescendHom
   -- with the completion map, which is how the compatibility lemmas below are stated
   let ι : TopCommRingCat.of A ⟶ TopCommRingCat.of (Completion A) :=
     ⟨Completion.coeRingHom, Completion.continuous_coeRingHom⟩
-  change (ι ≫ _).1 = (ι ≫ _).1
+  change (ι ≫ _).val = (ι ≫ _).val
   refine congrArg Subtype.val ?_
   simp only [ι, Presentation.coeRingHom_comp_completionExtendTopHom_assoc,
     Presentation.toCompletionLocTopHom_comp_mapHom_assoc,

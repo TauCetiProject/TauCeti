@@ -18,6 +18,10 @@ The simplicial identities are precisely naturality and the comonad axioms.
 This construction supplies the simplicial object underlying the standard
 polynomial resolution when applied to the free-polynomial comonad.
 
+`Comonad.resolutionStageSuccObjIso` identifies `G^n (G X)` with `G^(n+1) X`, moving the
+innermost layer to the outside. Through it, the last face is the counit at the innermost position,
+and the remaining faces and degeneracies are those of the resolution of `G X`.
+
 ## References
 
 * The Stacks Project, Definition 92.3.1 (Tag 08PM), for the polynomial example.
@@ -75,6 +79,21 @@ def resolutionDegeneracy : ∀ n, Fin (n + 1) →
 @[simp] lemma resolutionDegeneracy_succ_app (n : ℕ) (i : Fin (n + 1)) (X : C) :
     (G.resolutionDegeneracy (n + 1) i.succ).app X =
       G.map ((G.resolutionDegeneracy n i).app X) := (rfl)
+
+variable (C) in
+/-- Every face of the resolution of the identity comonad is an identity morphism. -/
+@[simp] lemma id_resolutionFace_app (n : ℕ) (i : Fin (n + 1)) (X : C) :
+    ((Comonad.id C).resolutionFace n i).app X = 𝟙 _ := by
+  -- All iterates of the identity comonad have object `X` by definition, so the identities
+  -- produced below agree up to unfolding `resolutionStage`.
+  induction n with
+  | zero =>
+    rw [Fin.eq_zero i]
+    exact (resolutionFace_zero_app _ 0 X).trans (rfl)
+  | succ n ih =>
+    induction i using Fin.cases with
+    | zero => exact (resolutionFace_zero_app _ (n + 1) X).trans (rfl)
+    | succ i => exact (resolutionFace_succ_app _ n i X).trans ((congrArg _ (ih i)).trans (rfl))
 
 -- Normalize components through the operator API, then reduce our recursive stage types
 -- (including implicit endpoints of morphisms). The separate dsimp step is necessary because
@@ -274,6 +293,83 @@ lemma resolutionDegeneracy_comp_resolutionFace_succ_app
     (G.resolutionDegeneracy n j).app X ≫ (G.resolutionDegeneracy (n + 1) i.castSucc).app X =
       (G.resolutionDegeneracy n i).app X ≫ (G.resolutionDegeneracy (n + 1) j.succ).app X :=
   congr_app (G.resolutionDegeneracy_comp_resolutionDegeneracy n i j h) X
+
+/-- Moving the innermost layer of an iterated comonad to the outside: `G^n (G X) ≅ G^(n+1) X`.
+For each fixed `n` it is the identity of `G^(n+1) X`; it records this identification of the two
+iterates, which holds only up to computation for variable `n`. -/
+def resolutionStageSuccObjIso : ∀ (n : ℕ) (X : C),
+    (G.resolutionStage n).obj (G.obj X) ≅ (G.resolutionStage (n + 1)).obj X
+  | 0, X => Iso.refl (G.obj X)
+  | n + 1, X => G.mapIso (resolutionStageSuccObjIso n X)
+
+-- Keep these computation equations named rather than `simp`: their two sides have different,
+-- definitionally equal, iterate carriers.
+
+lemma resolutionStageSuccObjIso_zero_hom (X : C) :
+    (G.resolutionStageSuccObjIso 0 X).hom = 𝟙 (G.obj X) := (rfl)
+
+lemma resolutionStageSuccObjIso_succ_hom (n : ℕ) (X : C) :
+    (G.resolutionStageSuccObjIso (n + 1) X).hom =
+      G.map (G.resolutionStageSuccObjIso n X).hom := (rfl)
+
+/-- The last face of the resolution is the counit at the innermost position. -/
+@[reassoc] lemma resolutionStageSuccObjIso_hom_comp_resolutionFace_last (n : ℕ) (X : C) :
+    (G.resolutionStageSuccObjIso n X).hom ≫ (G.resolutionFace n (Fin.last n)).app X =
+      (G.resolutionStage n).map (G.ε.app X) := by
+  induction n with
+  | zero =>
+    rw [resolutionStageSuccObjIso_zero_hom, Fin.last_zero, resolutionFace_zero_app]
+    -- In degree zero, `G^0` is the identity functor.
+    exact Category.id_comp _
+  | succ n ih =>
+    rw [← Fin.succ_last, resolutionFace_succ_app, resolutionStageSuccObjIso_succ_hom]
+    exact (G.map_comp _ _).symm.trans (congrArg G.map ih)
+
+/-- Every face but the last is a face of the resolution of `G X`. -/
+@[reassoc] lemma resolutionStageSuccObjIso_hom_comp_resolutionFace_castSucc (n : ℕ)
+    (j : Fin (n + 1)) (X : C) :
+    (G.resolutionStageSuccObjIso (n + 1) X).hom ≫ (G.resolutionFace (n + 1) j.castSucc).app X =
+      (G.resolutionFace n j).app (G.obj X) ≫ (G.resolutionStageSuccObjIso n X).hom := by
+  induction n with
+  | zero =>
+    obtain rfl : j = 0 := Fin.eq_zero j
+    rw [Fin.castSucc_zero, resolutionFace_zero_app, resolutionFace_zero_app,
+      resolutionStageSuccObjIso_succ_hom]
+    exact G.ε.naturality _
+  | succ n ih =>
+    induction j using Fin.cases with
+    | zero =>
+      rw [Fin.castSucc_zero, resolutionFace_zero_app, resolutionFace_zero_app,
+        resolutionStageSuccObjIso_succ_hom]
+      exact G.ε.naturality _
+    | succ j =>
+      rw [← Fin.succ_castSucc, resolutionFace_succ_app, resolutionFace_succ_app,
+        resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
+      exact (G.map_comp _ _).symm.trans ((congrArg G.map (ih j)).trans (G.map_comp _ _))
+
+/-- Every degeneracy but the last is a degeneracy of the resolution of `G X`. -/
+@[reassoc] lemma resolutionStageSuccObjIso_hom_comp_resolutionDegeneracy_castSucc (n : ℕ)
+    (j : Fin (n + 1)) (X : C) :
+    (G.resolutionStageSuccObjIso (n + 1) X).hom ≫
+        (G.resolutionDegeneracy (n + 1) j.castSucc).app X =
+      (G.resolutionDegeneracy n j).app (G.obj X) ≫
+        (G.resolutionStageSuccObjIso (n + 2) X).hom := by
+  induction n with
+  | zero =>
+    obtain rfl : j = 0 := Fin.eq_zero j
+    rw [Fin.castSucc_zero, resolutionDegeneracy_zero_app, resolutionDegeneracy_zero_app,
+      resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
+    exact G.δ.naturality _
+  | succ n ih =>
+    induction j using Fin.cases with
+    | zero =>
+      rw [Fin.castSucc_zero, resolutionDegeneracy_zero_app, resolutionDegeneracy_zero_app,
+        resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
+      exact G.δ.naturality _
+    | succ j =>
+      rw [← Fin.succ_castSucc, resolutionDegeneracy_succ_app, resolutionDegeneracy_succ_app,
+        resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
+      exact (G.map_comp _ _).symm.trans ((congrArg G.map (ih j)).trans (G.map_comp _ _))
 
 /-- The iterated comonad on the generating faces and degeneracies of the simplex category.
 The body is exposed so the dependent term types of the simplicial resolution compute. -/

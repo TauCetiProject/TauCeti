@@ -10,8 +10,10 @@ public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
+import TauCeti.RingTheory.DedekindDomain.SInteger.Quotient
 
 /-!
 # Moduli of a number field and multiplicative congruence
@@ -25,7 +27,8 @@ divisors, and `x` is positive at each real place selected by the infinite part.
 This file builds that vocabulary:
 
 * the carrier `Modulus K`, its divisibility relation, its finite support and exponent function, the
-  trivial modulus and the modulus with unit finite part and every real place;
+  trivial modulus, purely finite moduli `Modulus.ofIdeal` and `Modulus.spanNat`, and the modulus
+  with unit finite part and every real place;
 * the predicate `IsCongrOne` and the subgroup `congruenceSubgroup` of `Kˣ` it cuts out, together
   with the larger subgroup `primeToSubgroup` of elements that are units at the primes dividing the
   finite part, and the subgroup `unitsCongruenceSubgroup` of `(𝓞 K)ˣ` obtained by restriction;
@@ -40,7 +43,8 @@ away from a finite set of primes.
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.Modulus`: the carrier, with `Modulus.support`, `Modulus.exponent`,
-  `Modulus.one` and `TauCeti.GlobalNumberFields.narrowModulus`.
+  `Modulus.one`, `Modulus.ofIdeal`, `Modulus.spanNat`, and
+  `TauCeti.GlobalNumberFields.narrowModulus`.
 * `TauCeti.GlobalNumberFields.IsCongrOne`: multiplicative congruence to one modulo a modulus.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup`, `TauCeti.GlobalNumberFields.primeToSubgroup`,
   `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup`: the subgroups of `Kˣ` and `(𝓞 K)ˣ` these
@@ -61,8 +65,9 @@ away from a finite set of primes.
   `TauCeti.GlobalNumberFields.Modulus.mem_finitePart_of_forall_mem_pow_exponent`: the prime power
   prescribed by the exponent divides the finite part, and membership in the finite part is
   detected by those prime powers.
-* `TauCeti.GlobalNumberFields.Modulus.exponent_eq_multiplicity`: the exponent is the multiplicity
-  of the prime in the finite part.
+* `TauCeti.GlobalNumberFields.Modulus.exponent_eq_multiplicity` and
+  `TauCeti.GlobalNumberFields.Modulus.count_normalizedFactors_finitePart`: the exponent is the
+  multiplicity of the prime in the finite part, and its number of occurrences in the factorization.
 * `TauCeti.GlobalNumberFields.Modulus.exists_exponent_eq_and_forall_ne`: the exponent of a modulus
   at one finite place can be changed to any value without changing the rest of the modulus.
 * `TauCeti.GlobalNumberFields.Modulus.valued_eq_one_of_valued_sub_one_le`: an element of the
@@ -70,6 +75,8 @@ away from a finite set of primes.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
+* `TauCeti.GlobalNumberFields.exists_primeToSubgroup_eq_mul`: every fraction prime to `𝔪` is a
+  quotient of two algebraic integers prime to `𝔪`.
 * `TauCeti.GlobalNumberFields.IsCongrOne.mono` and
   `TauCeti.GlobalNumberFields.congruenceSubgroup_antitone`: congruence to one is antitone in the
   modulus, which is what makes the transition maps between ray class groups run from a larger
@@ -124,6 +131,15 @@ theorem ext {m n : Modulus K} (hfinite : m.finitePart = n.finitePart)
 
 theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h ↦
   𝔪.finitePart_ne_bot (by rwa [Ideal.zero_eq_bot] at h)
+
+/-- The residue ring of `𝓞 K` modulo the finite part of a modulus is finite, the finite part being
+a nonzero ideal. -/
+instance finite_quotient_finitePart (𝔪 : Modulus K) : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
+  Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+
+/-- The finite part of a modulus has nonzero absolute norm. -/
+instance neZero_absNorm_finitePart (𝔪 : Modulus K) : NeZero (Ideal.absNorm 𝔪.finitePart) :=
+  ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
 
 /-- **Divisibility of moduli**: `𝔪 ∣ 𝔫` when the finite part of `𝔪` divides that of `𝔫` and the
 infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence conditions imposed by
@@ -254,6 +270,12 @@ theorem exponent_eq_multiplicity (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞
   rw [exponent_def, Ideal.count_associates_factors_eq 𝔪.finitePart_ne_zero v.isPrime v.ne_bot,
     v.count_normalizedFactors_eq_multiplicity 𝔪.finitePart_ne_bot]
 
+/-- **The exponent counts the prime in the factorization of the finite part**: it is the number of
+times `v` occurs in Mathlib's `normalizedFactors` of the finite part. -/
+theorem count_normalizedFactors_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
+    (UniqueFactorizationMonoid.normalizedFactors 𝔪.finitePart).count v.asIdeal = 𝔪.exponent v := by
+  rw [exponent_eq_multiplicity, v.count_normalizedFactors_eq_multiplicity 𝔪.finitePart_ne_bot]
+
 /-- **Changing the exponent at one place.** For a modulus `𝔪`, a finite place `v` and `n : ℕ`,
 there is a modulus with the infinite part of `𝔪`, with exponent `n` at `v`, and with the exponents
 of `𝔪` at every other finite place. -/
@@ -332,6 +354,70 @@ theorem one_dvd (𝔪 : Modulus K) : one K ∣ 𝔪 :=
 theorem eq_one_of_dvd_one {𝔪 : Modulus K} (h : 𝔪 ∣ one K) : 𝔪 = one K :=
   dvd_antisymm h (one_dvd 𝔪)
 
+/-- Over a totally complex number field, every modulus has empty infinite part because there are no
+real places. -/
+@[simp]
+theorem infinitePart_eq_empty [IsTotallyComplex K] (𝔪 : Modulus K) :
+    𝔪.infinitePart = ∅ := by
+  ext w
+  exact (not_isReal_of_isTotallyComplex w.val w.property).elim
+
+/-- The modulus of `K` with prescribed nonzero finite part `I` and empty infinite part.
+Exposed so `(ofIdeal I hI).finitePart` reduces in dependent carriers `(𝓞 K ⧸ 𝔪.finitePart)ˣ`. -/
+@[expose] def ofIdeal (I : Ideal (𝓞 K)) (hI : I ≠ ⊥) : Modulus K where
+  finitePart := I
+  finitePart_ne_bot := hI
+  infinitePart := ∅
+
+/-- The finite part of `ofIdeal I hI` is `I`. -/
+@[simp]
+theorem ofIdeal_finitePart (I : Ideal (𝓞 K)) (hI : I ≠ ⊥) : (ofIdeal I hI).finitePart = I := (rfl)
+
+/-- The infinite part of `ofIdeal I hI` is empty. -/
+@[simp]
+theorem ofIdeal_infinitePart (I : Ideal (𝓞 K)) (hI : I ≠ ⊥) :
+    (ofIdeal I hI).infinitePart = ∅ := (rfl)
+
+/-- The purely finite modulus attached to the unit ideal `⊤` is `Modulus.one K`. -/
+@[simp]
+theorem ofIdeal_top : ofIdeal (⊤ : Ideal (𝓞 K)) top_ne_bot = one K := by ext <;> simp
+
+/-- Divisibility between purely finite moduli is divisibility of their underlying ideals. -/
+theorem ofIdeal_dvd_ofIdeal_iff {I J : Ideal (𝓞 K)} (hI : I ≠ ⊥) (hJ : J ≠ ⊥) :
+    ofIdeal I hI ∣ ofIdeal J hJ ↔ I ∣ J := by simp [dvd_iff]
+
+variable (K) in
+/-- The modulus `(n)` of `K` generated by a nonzero natural number `n`, with empty infinite part.
+Exposed so `(spanNat K n).finitePart` reduces to `Ideal.span {(n : 𝓞 K)}` in dependent types. -/
+@[expose] def spanNat (n : ℕ) [NeZero n] : Modulus K :=
+  ofIdeal (Ideal.span {(n : 𝓞 K)}) <| by
+    rw [Ne, Ideal.span_singleton_eq_bot, Nat.cast_eq_zero]; exact NeZero.ne n
+
+/-- Unfolding lemma for `Modulus.spanNat`. -/
+theorem spanNat_def (n : ℕ) [NeZero n] :
+    spanNat K n = ofIdeal (Ideal.span {(n : 𝓞 K)}) (by
+      rw [Ne, Ideal.span_singleton_eq_bot, Nat.cast_eq_zero]; exact NeZero.ne n) := (rfl)
+
+/-- The finite part of `spanNat K n` is the principal ideal `(n)`. -/
+@[simp]
+theorem spanNat_finitePart (n : ℕ) [NeZero n] :
+    (spanNat K n).finitePart = Ideal.span {(n : 𝓞 K)} := (rfl)
+
+/-- The infinite part of `spanNat K n` is empty. -/
+@[simp]
+theorem spanNat_infinitePart (n : ℕ) [NeZero n] : (spanNat K n).infinitePart = ∅ := (rfl)
+
+/-- At `n = 1`, `spanNat K 1` is the trivial modulus `Modulus.one K`. -/
+@[simp]
+theorem spanNat_one : spanNat K 1 = one K := by ext <;> simp
+
+/-- Divisibility of natural-number moduli `(m)` and `(n)` in `K` is `m ∣ n`. -/
+theorem spanNat_dvd_spanNat_iff {m n : ℕ} [NeZero m] [NeZero n] :
+    spanNat K m ∣ spanNat K n ↔ m ∣ n := by
+  rw [dvd_iff, spanNat_finitePart, spanNat_finitePart, spanNat_infinitePart, Ideal.dvd_iff_le,
+    Ideal.span_singleton_le_span_singleton, NumberField.RingOfIntegers.natCast_dvd_natCast]
+  simp
+
 end Modulus
 
 /-- The modulus with unit finite part and **every** real place.  Its ray class group is the narrow
@@ -367,13 +453,13 @@ conditions imposed by the trivial modulus.  The condition is also not unqualifie
 def IsCongrOne (𝔪 : Modulus K) (x : Kˣ) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
       v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
-    ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)
+    ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K)
 
 theorem isCongrOne_iff {𝔪 : Modulus K} {x : Kˣ} :
     IsCongrOne 𝔪 x ↔
       (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
           v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
-        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
+        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K) :=
   Iff.rfl
 
 /-- Multiplicative congruence is the finite ideal congruence together with the selected
@@ -381,7 +467,7 @@ real-place positivity conditions. -/
 theorem isCongrOne_iff_mem_congruenceSubgroup_and_pos {𝔪 : Modulus K} {x : Kˣ} :
     IsCongrOne 𝔪 x ↔
       x ∈ Ideal.congruenceSubgroup 𝔪.finitePart K 𝔪.finitePart_ne_bot ∧
-        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K) := by
   simp only [isCongrOne_iff, Ideal.mem_congruenceSubgroup_iff, Modulus.exponent_def]
 
 namespace IsCongrOne
@@ -393,7 +479,8 @@ theorem valuation_sub_one_le (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum (�
     v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := hx.1 v hv
 
 theorem pos (hx : IsCongrOne 𝔪 x) {w : {w : InfinitePlace K // w.IsReal}}
-    (hw : w ∈ 𝔪.infinitePart) : 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := hx.2 w hw
+    (hw : w ∈ 𝔪.infinitePart) : 0 < InfinitePlace.embedding_of_isReal w.property (x : K)
+        := hx.2 w hw
 
 /-- An element congruent to one modulo `𝔪` has `v`-adic valuation strictly less than one at
 `x - 1`, for every prime `v` dividing the finite part: the exponent there is positive. -/
@@ -508,6 +595,22 @@ noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
       Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
   rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
 
+/-- Every element of `primeToSubgroup 𝔪` is a quotient of two algebraic integers in
+`primeToSubgroup 𝔪`. -/
+theorem exists_primeToSubgroup_eq_mul {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
+    ∃ (a b : 𝓞 K) (xa xb : primeToSubgroup 𝔪),
+      algebraMap (𝓞 K) K a = ((xa : Kˣ) : K) ∧ algebraMap (𝓞 K) K b = ((xb : Kˣ) : K) ∧
+        xa = xb * x := by
+  have hx : (x : Kˣ) ∈ ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K :=
+    fun v hv ↦ mem_primeToSubgroup.mp x.property v (by simpa using hv)
+  obtain ⟨a, b, xa, xb, ha, hb, hxeq⟩ := 𝔪.finitePart.exists_unit_eq_mul (K := K) ⟨(x : Kˣ), hx⟩
+  have hmem (y : ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K) :
+      (y : Kˣ) ∈ primeToSubgroup 𝔪 :=
+    mem_primeToSubgroup.mpr fun v hv ↦ y.property v (by simpa using hv)
+  exact ⟨a, b, ⟨xa, hmem xa⟩, ⟨xb, hmem xb⟩, ha, hb,
+    Subtype.ext (congrArg (Subtype.val :
+      ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K → Kˣ) hxeq)⟩
+
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/
 @[simp] theorem isCongrOne_one (x : Kˣ) : IsCongrOne (Modulus.one K) x :=
@@ -529,7 +632,7 @@ every real place. -/
 @[simp] theorem isCongrOne_narrowModulus_iff {x : Kˣ} :
     IsCongrOne (narrowModulus K) x ↔ IsTotallyPositive (x : K) := by
   refine ⟨fun hx ↦ isTotallyPositive_iff.mpr fun w hw ↦ hx.pos (w := ⟨w, hw⟩) (by simp),
-    fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.2⟩⟩
+    fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.property⟩⟩
   exact absurd ((Modulus.mem_support_iff _ v).mpr hv) (by simp)
 
 /-- **The integer units congruent to one modulo the narrow modulus are exactly the totally
@@ -608,7 +711,7 @@ theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)
 /-- A generator of an integral ideal prime to a modulus is nonzero, since such an ideal is. -/
 theorem ne_zero_of_coe_eq_span_singleton {𝔪 : Modulus K} {J : integralIdealsPrimeTo 𝔪} {β : 𝓞 K}
     (hJ : (J : Ideal (𝓞 K)) = Ideal.span {β}) : β ≠ 0 := fun h ↦
-  (Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp J.2)).1
+  (Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp J.property)).1
     (by rw [hJ, h, Ideal.span_singleton_eq_bot])
 
 /-- **The integral prime-to monoid is antitone in the modulus**: the support of a divisor `𝔪` of
@@ -631,5 +734,25 @@ noncomputable def integralIdealsPrimeToInclusion {𝔪 𝔫 : Modulus K} (h : �
     (I : integralIdealsPrimeTo 𝔫) :
     ((integralIdealsPrimeToInclusion h I : integralIdealsPrimeTo 𝔪) : Ideal (𝓞 K)) =
       (I : Ideal (𝓞 K)) := (rfl)
+
+/-- If `(a)` is prime to `𝔪.support`, `b ≠ 0`, and `b - a ∈ 𝔪.finitePart`, then `(b)` is also
+prime to `𝔪.support`. -/
+theorem isPrimeTo_span_of_sub_mem {𝔪 : Modulus K} {a b : 𝓞 K} (hb0 : b ≠ 0)
+    (hsub : b - a ∈ 𝔪.finitePart) (ha : (Ideal.span {a}).IsPrimeTo 𝔪.support) :
+    (Ideal.span {b}).IsPrimeTo 𝔪.support := by
+  refine Ideal.isPrimeTo_iff.mpr ⟨mt Ideal.span_singleton_eq_bot.mp hb0, fun 𝔭 h𝔭 hdvd ↦ ?_⟩
+  have h𝔭m : 𝔪.finitePart ≤ 𝔭.asIdeal := Ideal.dvd_iff_le.mp ((𝔪.mem_support_iff 𝔭).mp h𝔭)
+  have hb_mem : b ∈ 𝔭.asIdeal := Ideal.dvd_iff_le.mp hdvd (Ideal.mem_span_singleton_self b)
+  have ha_mem : a ∈ 𝔭.asIdeal := by
+    simpa only [sub_sub_cancel] using 𝔭.asIdeal.sub_mem hb_mem (h𝔭m hsub)
+  exact (Ideal.isPrimeTo_iff.mp ha).2 𝔭 h𝔭 (Ideal.dvd_span_singleton.mpr ha_mem)
+
+/-- For nonzero `a b : 𝓞 K` congruent modulo `𝔪.finitePart`, `(b)` is prime to `𝔪.support` if and
+only if `(a)` is. -/
+theorem isPrimeTo_span_iff_of_sub_mem {𝔪 : Modulus K} {a b : 𝓞 K} (ha0 : a ≠ 0) (hb0 : b ≠ 0)
+    (hsub : b - a ∈ 𝔪.finitePart) :
+    (Ideal.span {b}).IsPrimeTo 𝔪.support ↔ (Ideal.span {a}).IsPrimeTo 𝔪.support :=
+  ⟨isPrimeTo_span_of_sub_mem ha0 (by simpa only [neg_sub] using 𝔪.finitePart.neg_mem hsub),
+    isPrimeTo_span_of_sub_mem hb0 hsub⟩
 
 end TauCeti.GlobalNumberFields

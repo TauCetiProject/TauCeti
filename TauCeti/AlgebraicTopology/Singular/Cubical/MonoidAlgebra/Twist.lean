@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Hom
 public import TauCeti.Topology.Homotopy.Cube.Basic
 
@@ -24,7 +25,13 @@ to the normalized chains, and it is a morphism of DG algebras of `C^□_*(G; R)`
   cube being path connected.
 
 Twisting is multiplicative in the character (`TauCeti.cubicalChainTwist_mul`), so a
-character with values in the units `Rˣ` gives an automorphism.  For the Moore loop space this is
+character with values in the units `Rˣ` gives an automorphism. Twisting is natural: pushing
+chains forward along a map `f` turns the twist by `w ∘ f` into the twist by `w`
+(`TauCeti.NormalizedCubicalChain.map_comp_twist`), and for a continuous monoid homomorphism this
+holds for the induced morphism of DG algebras
+(`TauCeti.cubicalChainDGAlgHom_comp_cubicalChainTwist`).  Twisting also commutes with change of
+coefficients: along a ring homomorphism `φ : R →+* S`, the twist by `w` becomes the twist by
+`φ ∘ w` (`TauCeti.NormalizedCubicalChain.mapRingHom_twist`).  For the Moore loop space this is
 the map `Φ^L` of the source's §2.3, attached to a rank-one local system `L`.
 
 ## Main definitions
@@ -90,6 +97,15 @@ theorem twist_mem_degenerate {n : ℕ} {g : CubicalChain G R n}
     rw [map_smul]
     exact Submodule.smul_mem _ r hf
 
+/-- Change of coefficients along `φ : R →+* S` turns the twist by a weight `w` into the twist by
+`φ ∘ w`. -/
+theorem mapRingHom_twist {S : Type*} [CommRing S] (φ : R →+* S) {n : ℕ} (g : CubicalChain G R n) :
+    mapRingHom G φ n (twist w n g) = twist (φ ∘ w) n (mapRingHom G φ n g) := by
+  induction g using Finsupp.induction_linear with
+  | zero => simp only [map_zero]
+  | add f g hf hg => rw [map_add, map_add, hf, hg, map_add, map_add]
+  | single c a => simp only [twist_single, mapRingHom_single, Function.comp_apply, map_mul]
+
 end CubicalChain
 
 namespace NormalizedCubicalChain
@@ -121,6 +137,19 @@ theorem twist_comp (w w' : G → R) (n : ℕ) :
 /-- The twist by the constant weight `1` is the identity. -/
 @[simp]
 theorem twist_one (n : ℕ) : twist (1 : G → R) n = LinearMap.id :=
+  linearMap_ext fun c ↦ by simp
+
+/-- Change of coefficients along `φ : R →+* S` turns the twist by a weight `w` into the twist by
+`φ ∘ w`. -/
+theorem mapRingHom_twist {S : Type*} [CommRing S] (φ : R →+* S) {n : ℕ}
+    (g : NormalizedCubicalChain G R n) :
+    mapRingHom G φ n (twist w n g) = twist (φ ∘ w) n (mapRingHom G φ n g) := by
+  induction g using Submodule.Quotient.induction_on with
+  | H g => rw [twist_mk, mapRingHom_mk, mapRingHom_mk, twist_mk, CubicalChain.mapRingHom_twist]
+
+/-- Pushing chains forward along `f` turns the twist by the weight `w ∘ f` into the twist by `w`. -/
+theorem map_comp_twist {G' : Type*} [TopologicalSpace G'] (f : C(G, G')) (w : G' → R) (n : ℕ) :
+    map R f n ∘ₗ twist (w ∘ f) n = twist w n ∘ₗ map R f n :=
   linearMap_ext fun c ↦ by simp
 
 variable {w}
@@ -252,6 +281,19 @@ theorem cubicalChainTwist_one :
   cubicalChain_dgAlgHom_ext fun n y ↦ by
     rw [cubicalChainTwist_lof, DGAlgHom.id_apply]
     exact congrArg _ (LinearMap.congr_fun (twist_one n) y)
+
+/-- **Twisting is natural in the monoid**: the morphism induced by a continuous monoid
+homomorphism `φ` turns the twist by `χ ∘ φ` into the twist by `χ`. -/
+theorem cubicalChainDGAlgHom_comp_cubicalChainTwist {G' : Type*} [TopologicalSpace G'] [Monoid G']
+    [ContinuousMul G'] (φ : G →ₜ* G') {χ : G' →* R}
+    (hχ : ∀ ⦃x y : G'⦄, Joined x y → χ x = χ y) :
+    (cubicalChainDGAlgHom R φ).comp
+        (cubicalChainTwist R (χ.comp φ.toMonoidHom) fun _ _ h ↦ hχ (h.map φ.continuous)) =
+      (cubicalChainTwist R χ hχ).comp (cubicalChainDGAlgHom R φ) :=
+  cubicalChain_dgAlgHom_ext fun n y ↦ by
+    rw [DGAlgHom.comp_apply, DGAlgHom.comp_apply, cubicalChainTwist_lof, cubicalChainDGAlgHom_lof,
+      cubicalChainDGAlgHom_lof, cubicalChainTwist_lof]
+    exact congrArg _ (LinearMap.congr_fun (map_comp_twist _ _ n) y)
 
 end Monoid
 

@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Finiteness
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Rank
 import TauCeti.Algebra.Module.Submodule.Finite
+import TauCeti.Algebra.Module.Torsion.ZMod
 
 /-!
 # Prime torsion for a numerical type
@@ -110,80 +111,49 @@ theorem finrank_torsion_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1
   have := T.isTorsionFree_pic_of_card_eq_one h
   have := HasUniqueDiv.of_isTorsionFree ℤ T.Pic
   have : Subsingleton (T.torsion ℓ) := ⟨fun x y ↦ Subtype.ext <| by
-    rw [(nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp x.2),
-      (nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp y.2)]⟩
+    rw [(nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp x.property),
+      (nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp y.property)]⟩
   exact Module.finrank_zero_of_subsingleton
 
 namespace Equiv
 
 variable {T} {T' : NumericalType.{v}} {T'' : NumericalType}
 
-private def torsionAddEquiv (f : T.Equiv T') (ℓ : ℕ) : T.torsion ℓ ≃+ T'.torsion ℓ where
-  toFun x := ⟨f.picCongr x, by
-    rw [AddSubgroup.torsionBy.nsmul_iff]
-    have hx : ℓ • (x : T.Pic) = 0 := AddSubgroup.torsionBy.nsmul_iff.mp x.property
-    simpa only [map_nsmul, map_zero] using congrArg f.picCongr hx⟩
-  invFun x := ⟨f.picCongr.symm x, by
-    rw [AddSubgroup.torsionBy.nsmul_iff]
-    have hx : ℓ • (x : T'.Pic) = 0 := AddSubgroup.torsionBy.nsmul_iff.mp x.property
-    simpa only [map_nsmul, map_zero] using congrArg f.picCongr.symm hx⟩
-  left_inv x := by
-    apply Subtype.ext
-    exact f.picCongr.symm_apply_apply x
-  right_inv x := by
-    apply Subtype.ext
-    exact f.picCongr.apply_symm_apply x
-  map_add' x y := by
-    apply Subtype.ext
-    exact map_add f.picCongr (x : T.Pic) y
-
 /-- An equivalence of numerical types induces a `ZMod ℓ`-linear equivalence on their
 `ℓ`-torsion Picard subgroups. -/
 noncomputable def torsionCongr (f : T.Equiv T') (ℓ : ℕ) :
     T.torsion ℓ ≃ₗ[ZMod ℓ] T'.torsion ℓ :=
-  { f.torsionAddEquiv ℓ with
-    map_smul' := ZMod.map_smul (f.torsionAddEquiv ℓ) }
+  f.picCongr.toAddEquiv.torsionByZModLinearEquiv ℓ
 
 /-- The underlying Picard class of a transported torsion class is transported by `picCongr`. -/
 @[simp]
 lemma coe_torsionCongr (f : T.Equiv T') (ℓ : ℕ) (x : T.torsion ℓ) :
-    (f.torsionCongr ℓ x : T'.Pic) = f.picCongr x := by
-  rfl
+    (f.torsionCongr ℓ x : T'.Pic) = f.picCongr x :=
+  f.picCongr.toAddEquiv.coe_torsionByZModLinearEquiv_apply ℓ x
 
 /-- The identity equivalence induces the identity on torsion Picard classes. -/
 @[simp]
 lemma torsionCongr_refl (ℓ : ℕ) :
     (Equiv.refl : T.Equiv T).torsionCongr ℓ = LinearEquiv.refl (ZMod ℓ) (T.torsion ℓ) := by
-  apply LinearEquiv.ext
-  intro x
-  apply Subtype.ext
-  simp
+  ext x
+  rw [coe_torsionCongr, picCongr_refl]
+  rfl
 
 /-- Torsion transport respects composition of equivalences of numerical types. -/
 @[simp]
 lemma torsionCongr_trans (f : T.Equiv T') (g : T'.Equiv T'') (ℓ : ℕ) :
     (f.trans g).torsionCongr ℓ = (f.torsionCongr ℓ).trans (g.torsionCongr ℓ) := by
-  apply LinearEquiv.ext
-  intro x
-  apply Subtype.ext
-  simp
+  ext x
+  rw [coe_torsionCongr, LinearEquiv.trans_apply, coe_torsionCongr, coe_torsionCongr,
+    picCongr_trans, LinearEquiv.trans_apply]
 
 /-- Torsion transport along an inverse equivalence is the inverse linear equivalence. -/
 @[simp]
 lemma torsionCongr_symm (f : T.Equiv T') (ℓ : ℕ) :
     (f.torsionCongr ℓ).symm = f.symm.torsionCongr ℓ := by
-  apply LinearEquiv.ext
-  intro x
-  apply Subtype.ext
-  apply f.picCongr.injective
-  calc
-    f.picCongr ((f.torsionCongr ℓ).symm x : T.Pic) =
-        (f.torsionCongr ℓ ((f.torsionCongr ℓ).symm x) : T'.Pic) :=
-      (f.coe_torsionCongr ℓ ((f.torsionCongr ℓ).symm x)).symm
-    _ = x := congrArg Subtype.val ((f.torsionCongr ℓ).apply_symm_apply x)
-    _ = f.picCongr (f.symm.picCongr (x : T'.Pic)) := by
-      rw [← f.picCongr_symm]
-      exact (f.picCongr.apply_symm_apply x).symm
+  refine LinearEquiv.ext fun x ↦ (f.torsionCongr ℓ).injective <| Subtype.ext ?_
+  rw [LinearEquiv.apply_symm_apply, coe_torsionCongr, coe_torsionCongr, ← picCongr_symm,
+    LinearEquiv.apply_symm_apply]
 
 /-- Torsion dimension is invariant under equivalence of numerical types. -/
 theorem finrank_torsion_eq (f : T.Equiv T') (ℓ : ℕ) :

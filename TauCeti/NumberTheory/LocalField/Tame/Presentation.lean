@@ -311,7 +311,7 @@ private theorem toZMod_eq_zero_of_zpowHat_eq_one {τ : inertiaSubgroup K}
   have : NeZero (n : ℕ) := ⟨n.ne_zero⟩
   have : NeZero ((n : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
     (IsLocalRing.isUnit_natCast_iff_not_dvd.2
-      ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 m.2.2.symm))⟩
+      ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 m.property.2.symm))⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (n : ℕ)
   obtain ⟨σ, hσ⟩ := proj_inertiaTameCharacter_surjective K m hζ.toRootsOfUnity
   -- The level-`n` projection is a continuous homomorphism to the finite discrete group `μ_n`.
@@ -321,8 +321,7 @@ private theorem toZMod_eq_zero_of_zpowHat_eq_one {τ : inertiaSubgroup K}
       rootsOfUnity (n : ℕ) (AlgebraicClosure K) :=
     ⟨PrimeToPTateModule.proj m, (PrimeToPTateModule.isLocallyConstant_proj m).continuous⟩
   have hP : P (inertiaTameCharacter K σ) = hζ.toRootsOfUnity := hσ
-  have hpow : hζ.toRootsOfUnity ^ (n : ℕ) = 1 :=
-    Subtype.ext (Units.ext (by simp [hζ.pow_eq_one]))
+  have hpow : hζ.toRootsOfUnity ^ (n : ℕ) = 1 := rootsOfUnity.pow_eq_one _
   have h := congrArg P (hall (inertiaTameCharacter K σ))
   rw [map_zpowHat, hP, map_one, zpowHat_eq_pow_val_toZMod hpow] at h
   have hζa : ζ ^ (zHat.toZMod n a).val = 1 := by
@@ -341,7 +340,7 @@ private def iwasawaGroupToTameQuotient (hσ : IsArithFrobeniusLift K σ) (τ : i
   presentedProfiniteGroup.lift (freeProfiniteGroup.lift fun i : ULift.{u} (Fin 2) ↦
     ![toTameQuotient K σ, toTameQuotient K τ] i.down) fun r hr ↦ by
       rw [Set.mem_singleton_iff.1 hr]
-      simp [iwasawaRelator, hσ.toTameQuotient_mul_toTameQuotient_mul_inv τ.2]
+      simp [iwasawaRelator, hσ.toTameQuotient_mul_toTameQuotient_mul_inv τ.property]
 
 private theorem iwasawaGroupToTameQuotient_iwasawaSigma (hσ : IsArithFrobeniusLift K σ) :
     iwasawaGroupToTameQuotient hσ τ (iwasawaSigma K) = toTameQuotient K σ := by

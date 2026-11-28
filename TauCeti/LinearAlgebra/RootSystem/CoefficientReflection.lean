@@ -117,6 +117,16 @@ theorem rootCoefficients_apply_of_root_eq_sum {i : ι} {f : ι → ℤ}
       rw [h, ← Finset.sum_coe_sort b.support fun j ↦ f j • P.root j]
   exact congrFun hc k
 
+/-- Pairing a root with a coroot is the sum of its simple-root coefficients times the
+corresponding simple-root pairings. The coroot need not be simple. -/
+theorem pairingIn_eq_sum_rootCoefficients [P.IsCrystallographic] (i j : ι) :
+    P.pairingIn ℤ i j = ∑ k : b.support, b.rootCoefficients i k * P.pairingIn ℤ k j := by
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
+  rw [RootPairing.pairingIn_eq_sum_of_root_eq_sum hf,
+    ← Finset.sum_coe_sort b.support]
+  exact Finset.sum_congr rfl fun k _ ↦ by
+    rw [b.rootCoefficients_apply_of_root_eq_sum hf]
+
 /-- The entries of the column of a root, from an expansion in coordinates indexed by a finite type
 `κ` whose map `e` to the root indices is an injection into the simple roots. -/
 theorem rootCoefficients_apply_of_injective {κ : Type*} [Fintype κ] {e : κ → ι} (he : Injective e)
@@ -172,7 +182,7 @@ theorem height_eq_sum_rootCoefficients_of_bijOn {κ : Type*} [Fintype κ] {e : �
   refine (Fintype.sum_bijective (fun k ↦ (⟨e k, he.mapsTo trivial⟩ : b.support))
     ⟨fun k l hkl ↦ he.injOn trivial trivial (congrArg Subtype.val hkl), fun j ↦ ?_⟩ _ _
     fun k ↦ rfl).symm
-  obtain ⟨k, -, hk⟩ := he.surjOn j.2
+  obtain ⟨k, -, hk⟩ := he.surjOn j.property
   exact ⟨k, Subtype.ext hk⟩
 
 /-- A root is positive exactly when its column is nonnegative. -/
@@ -206,7 +216,7 @@ theorem root_sub_root_mem_posRootCone_iff {i j : ι} :
     refine AddSubmonoid.sum_mem _ fun k _ ↦ ?_
     rw [← sub_smul, ← Int.toNat_of_nonneg (sub_nonneg.mpr (h k)), natCast_zsmul]
     exact (TauCeti.posRootCone P b).nsmul_mem (TauCeti.root_mem_posRootCone_of_mem_posRoots P b
-      ((TauCeti.mem_posRoots P b _).mpr (isPos_of_mem_support k.2))) _
+      ((TauCeti.mem_posRoots P b _).mpr (isPos_of_mem_support k.property))) _
 
 /-- Two columns compare entrywise along any map `e` from a type `κ` onto the simple roots. -/
 theorem rootCoefficients_le_iff_of_surjOn {κ : Type*} {e : κ → ι} (hmem : ∀ k, e k ∈ b.support)
@@ -214,7 +224,7 @@ theorem rootCoefficients_le_iff_of_surjOn {κ : Type*} {e : κ → ι} (hmem : �
     b.rootCoefficients j ≤ b.rootCoefficients i ↔
       ∀ k, b.rootCoefficients j ⟨e k, hmem k⟩ ≤ b.rootCoefficients i ⟨e k, hmem k⟩ := by
   refine ⟨fun h k ↦ h _, fun h l ↦ ?_⟩
-  obtain ⟨k, -, hk⟩ := he l.2
+  obtain ⟨k, -, hk⟩ := he l.property
   obtain rfl : l = ⟨e k, hmem k⟩ := Subtype.ext hk.symm
   exact h k
 

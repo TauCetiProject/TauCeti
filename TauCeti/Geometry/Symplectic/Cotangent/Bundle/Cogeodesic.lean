@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Related
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb.Basic
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!
@@ -45,6 +45,11 @@ Since `ι_Z ω = -λ`, this gives `λ(X_K) = ω(X_K, Z) = dK(Z) = ‖p‖²`
 
 ## Main results
 
+* `TauCeti.CotangentBundle.kineticEnergy_eq_half_iff_mem_cosphereBundle`: `S*M` is the level
+  `K = 1/2`.
+* `TauCeti.CotangentBundle.isRegularValue_kineticEnergy`: nonzero values of `K` are regular.
+* `TauCeti.CotangentBundle.kineticEnergy_flowOf_vectorBundleEulerField`: the radial flow
+  `z ↦ e^t z` multiplies `K` by `e^(2t)`.
 * `TauCeti.CotangentBundle.liouvilleForm_hamiltonianVectorField_kineticEnergy`: `λ(X_K) = ‖p‖²`.
 * `TauCeti.CotangentBundle.mfderiv_coe_reebVectorField_cosphereBundle`: the Reeb field of
   `λ|S*M` is the cogeodesic field.
@@ -82,11 +87,17 @@ variable (I M) in
 by the Riemannian metric. Its Hamiltonian flow for the canonical symplectic form is the cogeodesic
 flow. -/
 def kineticEnergy (z : CotangentBundle I M) : ℝ :=
-  ‖z.2‖ ^ 2 / 2
+  ‖z.snd‖ ^ 2 / 2
 
 @[simp]
-theorem kineticEnergy_apply (z : CotangentBundle I M) : kineticEnergy I M z = ‖z.2‖ ^ 2 / 2 :=
+theorem kineticEnergy_apply (z : CotangentBundle I M) : kineticEnergy I M z = ‖z.snd‖ ^ 2 / 2 :=
   (rfl)
+
+/-- **The unit cosphere bundle is the level `K = 1/2` of the kinetic energy.** -/
+theorem kineticEnergy_eq_half_iff_mem_cosphereBundle {z : CotangentBundle I M} :
+    kineticEnergy I M z = 1 / 2 ↔ z ∈ cosphereBundle I M := by
+  rw [kineticEnergy_apply, mem_cosphereBundle, div_left_inj₀ two_ne_zero]
+  exact pow_eq_one_iff_of_nonneg (ContinuousLinearMap.opNorm_nonneg _) two_ne_zero
 
 variable [FiniteDimensional ℝ E]
 
@@ -101,19 +112,19 @@ section Differential
 variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The differential of the kinetic energy.** Off the zero section, `dK = ‖p‖ d‖p‖`. -/
-theorem mvfderiv_kineticEnergy {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
+theorem mvfderiv_kineticEnergy {z : CotangentBundle I M} (hz : z.snd ≠ 0) :
     mvfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (kineticEnergy I M) z =
-      ‖z.2‖ • mvfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun z : CotangentBundle I M ↦ ‖z.2‖) z := by
+      ‖z.snd‖ • mvfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun z : CotangentBundle I M ↦ ‖z.snd‖) z := by
   have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   have hN : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ)
-      (fun z : CotangentBundle I M ↦ ‖z.2‖) z :=
+      (fun z : CotangentBundle I M ↦ ‖z.snd‖) z :=
     (contMDiffAt_norm_snd (n := 1) hz).mdifferentiableAt one_ne_zero
-  have hK : kineticEnergy I M = fun z ↦ (2 : ℝ)⁻¹ * (‖z.2‖ * ‖z.2‖) := by
+  have hK : kineticEnergy I M = fun z ↦ (2 : ℝ)⁻¹ * (‖z.snd‖ * ‖z.snd‖) := by
     funext z
     rw [kineticEnergy_apply]
     ring
   rw [hK, mvfderiv_fun_mul (f := fun _ ↦ (2 : ℝ)⁻¹)
-    (g := fun z : CotangentBundle I M ↦ ‖z.2‖ * ‖z.2‖) mdifferentiableAt_const (hN.mul hN),
+    (g := fun z : CotangentBundle I M ↦ ‖z.snd‖ * ‖z.snd‖) mdifferentiableAt_const (hN.mul hN),
     mvfderiv_fun_mul hN hN, mvfderiv_const]
   ext v
   simp only [add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, zero_apply]
@@ -123,7 +134,7 @@ theorem mvfderiv_kineticEnergy {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
 in the fibres, so the Euler vector field `Z = p ∂_p` satisfies `dK(Z) = 2K = ‖p‖²`. -/
 theorem mvfderiv_kineticEnergy_vectorBundleEulerField (z : CotangentBundle I M) :
     mvfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (kineticEnergy I M) z (vectorBundleEulerField I z) =
-      ‖z.2‖ ^ 2 := by
+      ‖z.snd‖ ^ 2 := by
   obtain ⟨q, p⟩ := z
   rcases eq_or_ne p 0 with rfl | hp
   · have h0 : ‖(0 : TangentSpace I q →L[ℝ] ℝ)‖ = 0 := (ContinuousLinearMap.opNorm_zero_iff _).2 rfl
@@ -131,7 +142,30 @@ theorem mvfderiv_kineticEnergy_vectorBundleEulerField (z : CotangentBundle I M) 
   rw [mvfderiv_kineticEnergy hp, smul_apply,
     mvfderiv_apply_eq_mfderiv_apply, mfderiv_norm_snd_vectorBundleEulerField hp, smul_eq_mul, sq]
 
+/-- **Nonzero values of the kinetic energy are regular.** The radial field differentiates `K`
+to `2K`, which vanishes nowhere on a level `K = c` with `c ≠ 0`. -/
+theorem isRegularValue_kineticEnergy {c : ℝ} (hc : c ≠ 0) :
+    IsRegularValue (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (kineticEnergy I M) c := by
+  rw [isRegularValue_iff]
+  rintro z rfl
+  rw [isRegularPoint_iff_mvfderiv_ne_zero]
+  intro h0
+  have h := mvfderiv_kineticEnergy_vectorBundleEulerField (I := I) z
+  rw [h0, zero_apply] at h
+  exact hc (by rw [kineticEnergy_apply, ← h, zero_div])
+
 end Differential
+
+omit [FiniteDimensional ℝ E] in
+/-- **The radial flow rescales the kinetic energy.** The flow `z ↦ e^t z` of the radial field
+`p ∂_p` multiplies the kinetic energy by `e^(2t)`. -/
+theorem kineticEnergy_flowOf_vectorBundleEulerField [IsManifold I ∞ M] [I.Boundaryless]
+    [T2Space M] (t : ℝ) (z : CotangentBundle I M) :
+    kineticEnergy I M (flowOf (vectorBundleEulerField I) t z) =
+      Real.exp (2 * t) * kineticEnergy I M z := by
+  rw [flowOf_vectorBundleEulerField, kineticEnergy_apply, kineticEnergy_apply, norm_smul_snd,
+    Real.norm_of_nonneg (Real.exp_pos _).le, two_mul, Real.exp_add]
+  ring
 
 section Liouville
 
@@ -141,15 +175,15 @@ variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ 
 `λ(X_K) = ‖p‖² = 2K` on the Hamiltonian vector field of the kinetic energy: in coordinates,
 `p(dq/dt) = p(p♯) = ‖p‖²`. -/
 theorem liouvilleForm_hamiltonianVectorField_kineticEnergy (z : CotangentBundle I M) :
-    (liouvilleForm I M).1 z ![(symplecticForm I M).hamiltonianVectorField (kineticEnergy I M) z] =
-      ‖z.2‖ ^ 2 := by
-  set X := (symplecticForm I M).hamiltonianVectorField (kineticEnergy I M) z
-  -- Contract `ι_Z ω = -λ` with `X_K`, and use `ω(X_K, Z) = dK(Z)`.
-  have h := congrArg (fun α ↦ α z ![X]) symplecticForm_interior_vectorBundleEulerField
-  simp only [RoughForm.interior_apply, Pi.neg_apply, ContinuousAlternatingMap.neg_apply] at h
-  rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
-    isSymplectic_symplecticForm.isNondegenerate.eval₂_hamiltonianVectorField, neg_inj] at h
-  rw [← h, mvfderiv_kineticEnergy_vectorBundleEulerField]
+    (liouvilleForm I M).val z ![(symplecticForm I M).hamiltonianVectorField (kineticEnergy I M) z] =
+      ‖z.snd‖ ^ 2 := by
+  -- Since `ι_Z ω = -λ`, `(-λ)(X_K) = -dK(Z)`.
+  have h := isSymplectic_symplecticForm.isNondegenerate.apply_hamiltonianVectorField_of_interior_eq
+    (α := -liouvilleForm I M) (z := vectorBundleEulerField I z)
+    (fun v ↦ by rw [Submodule.coe_neg, ← symplecticForm_interior_vectorBundleEulerField,
+      RoughForm.interior_apply]) (kineticEnergy I M)
+  rwa [Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_inj,
+    mvfderiv_kineticEnergy_vectorBundleEulerField] at h
 
 end Liouville
 
@@ -168,15 +202,15 @@ theorem mfderiv_coe_reebVectorField_cosphereBundle (z : cosphereBundle I M) :
           (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
           (liouvilleForm I M)).reebVectorField z) =
       (symplecticForm I M).hamiltonianVectorField (kineticEnergy I M) z := by
-  have hz : ‖z.1.2‖ = 1 := mem_cosphereBundle.1 z.2
-  have hlam := liouvilleForm_hamiltonianVectorField_kineticEnergy (I := I) z.1
+  have hz : ‖z.val.snd‖ = 1 := mem_cosphereBundle.1 z.property
+  have hlam := liouvilleForm_hamiltonianVectorField_kineticEnergy (I := I) z.val
   rw [hz, one_pow] at hlam
   rw [isSymplectic_symplecticForm.isNondegenerate.mfderiv_reebVectorField_mpullback _
     isContactForm_mpullback_liouvilleForm_cosphereBundle ?_ ?_,
     hlam, inv_one, one_smul]
   · rw [symplecticForm_eq_neg_mextDeriv, Pi.neg_apply, neg_neg]
   · rw [range_mfderiv_coe_cosphereBundle, mvfderiv_kineticEnergy (snd_ne_zero_of_mem_cosphereBundle
-      z.2), hz, one_smul]
+      z.property), hz, one_smul]
     ext v
     simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply]
     -- The tangent spaces of `ℝ` are `ℝ` itself.
@@ -205,8 +239,8 @@ theorem coe_flowOf_reebVectorField_cosphereBundle [T2Space M] {t : ℝ} {z : cos
       (liouvilleForm I M)).reebVectorField)) :
     (flowOf ((SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
         (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
-        (liouvilleForm I M)).reebVectorField) t z).1 =
-      flowOf ((symplecticForm I M).hamiltonianVectorField (kineticEnergy I M)) t z.1 := by
+        (liouvilleForm I M)).reebVectorField) t z).val =
+      flowOf ((symplecticForm I M).hamiltonianVectorField (kineticEnergy I M)) t z.val := by
   have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   exact isSmoothEmbedding_coe_cosphereBundle.contMDiff.mdifferentiable (by simp)
     |>.apply_flowOf

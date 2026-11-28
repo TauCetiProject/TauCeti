@@ -11,6 +11,7 @@ public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.Order.Interval.Set.Prod
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Basic
 
 /-!
 # Elementary predictable sets and predictability of adapted processes
@@ -46,6 +47,26 @@ public section
 open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
+/-- A height strongly measurable for the filtration at the left endpoint `s`, extended by zero
+outside `(s, t]`, is strongly predictable. -/
+theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s t : ι) {a : Ω → E}
+    (ha : StronglyMeasurable[ℱ s] a) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) :=
+  ha.indicator_prod (fun _ hA ↦ measurableSet_predictable_Ioc_prod s t hA)
+
+/-- A height strongly measurable for the filtration at `s`, extended by zero outside `(s, ∞)`, is
+strongly predictable. -/
+theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioi_predictable
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s : ι) {a : Ω → E}
+    (ha : StronglyMeasurable[ℱ s] a) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioi s).indicator (fun _ ↦ a p.2) p.1) :=
+  ha.indicator_prod (fun _ hA ↦ measurableSet_predictable_Ioi_prod hA)
+
 section Arithmetic
 
 variable {ι Ω E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι]
@@ -66,6 +87,19 @@ theorem MeasureTheory.IsStronglyPredictable.mul [Mul E] [ContinuousMul E]
   -- Uncurrying respects pointwise multiplication; predictability is strong measurability.
   unfold IsStronglyPredictable at *
   exact hH.mul hK
+
+/-- Multiplying a strongly predictable process after `u` by an `ℱ u`-strongly measurable random
+variable and extending by zero up to `u` yields a strongly predictable process. -/
+theorem MeasureTheory.IsStronglyPredictable.indicator_Ioi_mul
+    {ι : Type*} [LinearOrder ι] [OrderBot ι] {ℱ : Filtration ι m} {H : ι → Ω → E}
+    [MulZeroClass E] [ContinuousMul E] (hH : IsStronglyPredictable ℱ H)
+    {u : ι} {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ u] ξ) :
+    IsStronglyPredictable ℱ (fun t ω ↦ (Ioi u).indicator (fun s ↦ ξ ω * H s ω) t) := by
+  have hξ_pred : IsStronglyPredictable ℱ (fun t ω ↦ (Ioi u).indicator (fun _ ↦ ξ ω) t) :=
+    ℱ.stronglyMeasurable_indicator_Ioi_predictable u hξ
+  convert hξ_pred.mul hH using 1
+  ext t ω
+  by_cases ht : u < t <;> simp [ht]
 
 /-- Inversion, with zero sent to zero, preserves strong predictability. -/
 theorem MeasureTheory.IsStronglyPredictable.inv₀ [GroupWithZero E] [ContinuousInv₀ E]
@@ -336,6 +370,26 @@ theorem MeasureTheory.Filtration.predictable_le_prod {ι Ω : Type*} {m : Measur
   measurableSpace_le_predictable_of_measurableSet
     (fun _ hA => (measurableSet_singleton _).prod (ℱ.le _ _ hA))
     (fun _ _ hA => measurableSet_Ioi.prod (ℱ.le _ _ hA))
+
+/-- Each time-section (path) `t ↦ H t ω` of a strongly predictable process is strongly measurable
+in time. -/
+theorem MeasureTheory.IsStronglyPredictable.stronglyMeasurable_path {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    [TopologicalSpace E] {ℱ : Filtration ι m} {H : ι → Ω → E}
+    (hH : IsStronglyPredictable ℱ H) {ω : Ω} :
+    StronglyMeasurable (fun t ↦ H t ω) :=
+  (hH.mono ℱ.predictable_le_prod).of_uncurry_right
+
+/-- Each time-section (path) of a strongly predictable process has measurable squared extended
+norm `t ↦ ‖H t ω‖ₑ ^ 2`. -/
+theorem MeasureTheory.IsStronglyPredictable.measurable_enorm_sq_path {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    [TopologicalSpace E] [ContinuousENorm E] {ℱ : Filtration ι m} {H : ι → Ω → E}
+    (hH : IsStronglyPredictable ℱ H) {ω : Ω} :
+    Measurable (fun t ↦ ‖H t ω‖ₑ ^ 2) :=
+  hH.stronglyMeasurable_path.eNorm.pow_const 2
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- An adapted process with almost-surely left-continuous paths has a predictable

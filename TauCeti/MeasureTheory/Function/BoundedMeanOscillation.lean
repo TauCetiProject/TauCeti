@@ -63,11 +63,16 @@ easy half of Sarason's characterization.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
   dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
   modulus.
+* `ContinuousLinearMap.bmoSeminorm_eq_top`, `ContinuousLinearMap.not_memBMO`: by dilation
+  invariance, a nonzero continuous linear map, such as the identity of `ℝ`, has infinite BMO
+  seminorm.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
 * `LipschitzWith.bmoSeminorm_comp_le`, `LipschitzWith.vmoModulus_comp_le`: Lipschitz
   postcomposition bounds for the BMO seminorm and VMO modulus, and
   `TauCeti.MemBMO.comp_lipschitz`, `TauCeti.MemVMO.comp_lipschitz`: preservation of BMO and VMO.
+* `LinearIsometry.bmoSeminorm_comp`, `LinearIsometry.vmoModulus_comp`: postcomposition with a
+  real linear isometry preserves the BMO seminorm and the VMO modulus.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
@@ -397,7 +402,7 @@ theorem _root_.LipschitzWith.vmoModulus_comp_le
     _ = K * ⨍⁻ x in ball c s, ⨍⁻ y in ball c s, ‖f x - f y‖ₑ ∂μ ∂μ := by
       simp_rw [laverage_const_mul ENNReal.coe_ne_top]
     _ ≤ K * (2 * ⨍⁻ x in ball c s, ‖f x - ⨍ y in ball c s, f y ∂μ‖ₑ ∂μ) :=
-      mul_le_mul_right setLAverage_setLAverage_enorm_sub_le _
+      mul_le_mul_right (setLAverage_setLAverage_enorm_sub_le _) _
     _ ≤ 2 * K * vmoModulus f μ r := by
       rw [mul_left_comm, ← mul_assoc]
       exact mul_le_mul_right (setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hs) _
@@ -411,6 +416,22 @@ theorem _root_.LipschitzWith.bmoSeminorm_comp_le
   rw [← iSup_vmoModulus, ← iSup_vmoModulus, ENNReal.mul_iSup]
   exact iSup_le fun r => (hφ.vmoModulus_comp_le hf r).trans
     (le_iSup (fun s => 2 * (K : ℝ≥0∞) * vmoModulus f μ s) r)
+
+/-- Postcomposition with a real linear isometry does not change the VMO modulus: it commutes
+with averages and preserves the distance of each value to the average. -/
+@[simp]
+theorem _root_.LinearIsometry.vmoModulus_comp [CompleteSpace F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (L : F →ₗᵢ[ℝ] G) (r : ℝ) : vmoModulus (L ∘ f) μ r = vmoModulus f μ r := by
+  have h (s : Set X) : ⨍ z in s, L (f z) ∂μ = L (⨍ z in s, f z ∂μ) := L.integral_comp_comm _
+  simp only [vmoModulus, Function.comp_apply, h, ← map_sub, L.eNorm_map]
+
+/-- Postcomposition with a real linear isometry does not change the BMO seminorm. -/
+@[simp]
+theorem _root_.LinearIsometry.bmoSeminorm_comp [CompleteSpace F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (L : F →ₗᵢ[ℝ] G) : bmoSeminorm (L ∘ f) μ = bmoSeminorm f μ := by
+  simp only [← iSup_vmoModulus, L.vmoModulus_comp]
 
 /-- A Lipschitz function of a BMO function is again BMO. -/
 theorem MemBMO.comp_lipschitz [SecondCountableTopology X] [IsLocallyFiniteMeasure μ]
@@ -644,6 +665,43 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       exact (preimage_smul_ball_smul_norm c (norm_pos_iff.2 ht) r).symm⟩)
     (fun c' r' => ⟨t⁻¹ • c', ‖t⁻¹‖ * r', ?_⟩) f
   rw [MeasurableEquiv.coe_smul₀, Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht)]
+
+/-- **Nonzero linear maps have unbounded mean oscillation.** On a finite-dimensional real normed
+space with an additive Haar measure, a nonzero continuous linear map `ℓ` into a Banach space has
+infinite BMO seminorm. For instance the identity of `ℝ` does not have bounded mean
+oscillation. -/
+theorem _root_.ContinuousLinearMap.bmoSeminorm_eq_top {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] [CompleteSpace F] {ℓ : E →L[ℝ] F} (hℓ : ℓ ≠ 0) :
+    bmoSeminorm ℓ μ = ∞ := by
+  -- Dilation by `2` leaves the seminorm unchanged and multiplies `ℓ` by `2`, so the seminorm is
+  -- `0` or `∞`, and it is not `0` since `ℓ` is not a.e. constant.
+  have h2 : bmoSeminorm ℓ μ = 2 * bmoSeminorm ℓ μ := by
+    have hfun : (fun x => ℓ ((2 : ℝ) • x)) = (2 : ℝ) • (ℓ : E → F) :=
+      funext fun x => ℓ.map_smul 2 x
+    calc bmoSeminorm ℓ μ = bmoSeminorm (fun x => ℓ ((2 : ℝ) • x)) μ :=
+          (bmoSeminorm_comp_smul ℓ two_ne_zero).symm
+      _ = 2 * bmoSeminorm ℓ μ := by
+        rw [hfun, bmoSeminorm_const_smul]
+        norm_num [Real.eNorm_eq_ofReal_abs]
+  have h0 : bmoSeminorm ℓ μ ≠ 0 := by
+    rw [Ne, bmoSeminorm_eq_zero_iff (ℓ.continuous.locallyIntegrable)]
+    rintro ⟨b, hb⟩
+    have hb' : (ℓ : E → F) = fun _ => b :=
+      (ℓ.continuous.ae_eq_iff_eq μ continuous_const).1 hb
+    refine hℓ (ContinuousLinearMap.ext fun x => ?_)
+    rw [zero_apply, congrFun hb' x, ← congrFun hb' 0, map_zero]
+  by_contra htop
+  have h12 : (1 : ℝ≥0∞) * bmoSeminorm ℓ μ = 2 * bmoSeminorm ℓ μ := by rw [one_mul]; exact h2
+  have := (ENNReal.mul_left_inj h0 htop).1 h12
+  norm_num at this
+
+/-- A nonzero continuous linear map on a finite-dimensional real normed space with an additive
+Haar measure does not have bounded mean oscillation. -/
+theorem _root_.ContinuousLinearMap.not_memBMO {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] [CompleteSpace F] {ℓ : E →L[ℝ] F} (hℓ : ℓ ≠ 0) :
+    ¬ MemBMO ℓ μ := fun h => h.bmoSeminorm_ne_top (ℓ.bmoSeminorm_eq_top hℓ)
 
 end Invariance
 

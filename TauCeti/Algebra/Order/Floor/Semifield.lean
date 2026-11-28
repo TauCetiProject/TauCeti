@@ -12,6 +12,9 @@ public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Rat.Floor
+import Mathlib.Data.Nat.Choose.Cast
+import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Ceilings and floors of quotients by a step
@@ -30,9 +33,19 @@ For closed intervals `[0, W]` subdivided into `n > 0` equal cells of step `W / n
 floor index `⌊x / (W / n)⌋₊` at `n - 1` keeps the right endpoint `W` inside the last cell while
 preserving `[k * (W / n), (k + 1) * (W / n)]` for all `x ∈ [0, W]`. Similarly, `max 1 ⌈t⌉₊` gives
 a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 1` whenever `t > 0`.
+In an ordered ring, the integers `a ≤ k ≤ ⌊y⌋₊` number at most `(y + 1 − a)⁺`, which bounds a sum
+of terms at most `M ≥ 0` over them by `(y + 1 − a)⁺ M`. For `0 ≤ z ≤ y`, the natural numbers
+strictly between `⌊z⌋₊` and `⌈y⌉₊` number at most `y - z + 1`.
+In an ordered field, grouping `i < n` into blocks of length `H > 0` gives
+`∑ i < n, ⌊i / H⌋ = H (q choose 2) + ρ q` for `n = H q + ρ`, so a bound
+`c ∑ i < n, ⌊i / H⌋ ≤ n x` with `c > 0` forces `n < H (⌊2 x / c⌋₊ + 2)`. This counts the slopes
+lying under a line above a block lower polygon.
 
 ## Main results
 
+* `TauCeti.natFloor_natCast_add_inv_two`: `⌊N + 1/2⌋₊ = N`.
+* `TauCeti.le_ceil_div_mul`: `t ≤ ⌈t / τ⌉₊ * τ` for `τ > 0`.
+* `TauCeti.ceil_div_mul_lt_add`: `⌈t / τ⌉₊ * τ < t + τ` for `t ≥ 0` and `τ > 0`.
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
 * `TauCeti.mem_Ico_ceil_div_iff`: `n ∈ [⌈s / τ⌉₊, ⌈t / τ⌉₊)` if and only if `n τ ∈ [s, t)`.
 * `TauCeti.exists_pos_nat_mul_bounds`: a positive multiple `N a` lies in `(t, t + a]`.
@@ -47,6 +60,15 @@ a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 
   the closed cell of step `W / n` indexed by `min (n - 1) ⌊x / (W / n)⌋₊`.
 * `TauCeti.natCast_max_one_ceil_lt_add_one` and `TauCeti.natCast_max_one_ceil_le_add_one`:
   `max 1 ⌈t⌉₊ < t + 1` for `0 < t`, and `max 1 ⌈t⌉₊ ≤ t + 1` for `0 ≤ t`.
+* `TauCeti.sum_Icc_floor_le_max_mul`: a sum of terms at most `M ≥ 0` over the integers
+  `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for `y ≥ 0`.
+* `TauCeti.card_Ioo_floor_ceil_le`: the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊`
+  number at most `y - z + 1`, for `z ≤ y` with `0 ≤ y`.
+* `TauCeti.lt_mul_floor_add_two_of_mul_sum_range_div_le`: if `c > 0` and
+  `c ∑ i < n, ⌊i / H⌋ ≤ n x`, then `n < H (⌊2 x / c⌋₊ + 2)`.
+* `TauCeti.natFloor_one_div_pos`: `0 < ⌊1 / δ⌋₊` for `0 < δ ≤ 1`.
+* `TauCeti.natFloor_one_div_add_div_le`: `⌊1 / δ⌋₊ + (c / δ ^ 2) / ⌊1 / δ⌋₊ ≤ 2 / δ` for
+  `0 < δ ≤ 1 / 2` and `c ≤ 8 / 9`.
 -/
 
 public section
@@ -55,6 +77,22 @@ namespace TauCeti
 
 variable {K : Type*} [DivisionSemiring K] [LinearOrder K] [IsStrictOrderedRing K] [FloorSemiring K]
   {τ s t B : K}
+
+/-- The natural floor of a half-integer: `⌊N + 1/2⌋₊ = N`. -/
+@[simp]
+theorem natFloor_natCast_add_inv_two (N : ℕ) : ⌊(N : K) + 2⁻¹⌋₊ = N := by
+  rw [add_comm, Nat.floor_add_natCast (by positivity),
+    Nat.floor_eq_zero.mpr (inv_lt_one_of_one_lt₀ one_lt_two), zero_add]
+
+/-- For a positive step `τ`, `t ≤ ⌈t / τ⌉₊ * τ`. -/
+theorem le_ceil_div_mul (hτ : 0 < τ) : t ≤ (⌈t / τ⌉₊ : K) * τ :=
+  (div_le_iff₀ hτ).1 (Nat.le_ceil _)
+
+/-- For `0 ≤ t` and a positive step `τ`, `⌈t / τ⌉₊ * τ < t + τ`. -/
+theorem ceil_div_mul_lt_add (ht : 0 ≤ t) (hτ : 0 < τ) :
+    (⌈t / τ⌉₊ : K) * τ < t + τ := by
+  simpa [add_mul, div_mul_cancel₀ t hτ.ne'] using
+    mul_lt_mul_of_pos_right (Nat.ceil_lt_add_one (div_nonneg ht hτ.le)) hτ
 
 /-- For a nonnegative step `τ` and `s ≤ t`, the indices in `[⌈s / τ⌉₊, ⌈t / τ⌉₊)` number
 strictly less than `(t - s) / τ + 1`. This holds for both ordinary and truncated subtraction. -/
@@ -142,6 +180,10 @@ theorem exists_pos_nat_mul_bounds {t a : K} (ht : 0 ≤ t) (ha : 0 < a) :
     rw [add_mul, one_mul]
     exact add_le_add_left ((le_div_iff₀ ha).mp (Nat.floor_le htdiv)) a
 
+/-- For `0 < δ ≤ 1`, the integer floor `⌊1 / δ⌋₊` is positive. -/
+theorem natFloor_one_div_pos {δ : K} (hδ : 0 < δ) (hδ' : δ ≤ 1) : 0 < ⌊1 / δ⌋₊ :=
+  Nat.floor_pos.mpr ((le_div_iff₀ hδ).mpr (by simpa using hδ'))
+
 /-- For `n = 3` and `B = 1 / 2`, `⌊B⌋₊ = 0` and `⌊n / B⌋₊ = 6`, giving `1 * 7 > 3`; for `n = 2`
 and `B = 3`, `⌊B⌋₊ = 3` and `⌊n / B⌋₊ = 0`, giving `7 * 1 > 2`. -/
 example : ⌊(1 / 2 : ℚ)⌋₊ = 0 ∧ ⌊(3 : ℚ) / (1 / 2)⌋₊ = 6 ∧
@@ -191,5 +233,109 @@ theorem natCast_max_one_ceil_le_add_one {t : R} (ht : 0 ≤ t) :
   · exact (natCast_max_one_ceil_lt_add_one ht).le
 
 end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R] [FloorSemiring R]
+
+/-- A sum of terms at most `M ≥ 0` over the integers `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for
+`y ≥ 0`: there are at most `(y + 1 − a)⁺` such `k`. -/
+theorem sum_Icc_floor_le_max_mul {y M : R} (hy : 0 ≤ y) (hM : 0 ≤ M) (a : ℕ)
+    {f : ℕ → R} (hf : ∀ k ∈ Finset.Icc a ⌊y⌋₊, f k ≤ M) :
+    ∑ k ∈ Finset.Icc a ⌊y⌋₊, f k ≤ max (y + 1 - a) 0 * M := by
+  refine (Finset.sum_le_card_nsmul _ _ _ hf).trans ?_
+  rw [nsmul_eq_mul, Nat.card_Icc]
+  gcongr
+  rcases le_total (⌊y⌋₊ + 1) a with h | h
+  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
+    exact le_max_right _ _
+  · rw [Nat.cast_sub h, Nat.cast_add, Nat.cast_one]
+    exact le_max_of_le_left (by gcongr; exact Nat.floor_le hy)
+
+/-- For `z ≤ y` with `0 ≤ y`, the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊` number at
+most `y - z + 1`. -/
+theorem card_Ioo_floor_ceil_le {y z : R} (hy : 0 ≤ y) (hzy : z ≤ y) :
+    ((Finset.Ioo ⌊z⌋₊ ⌈y⌉₊).card : R) ≤ y - z + 1 := by
+  rw [Nat.card_Ioo, Nat.sub_sub]
+  rcases le_or_gt ⌈y⌉₊ (⌊z⌋₊ + 1) with h | h
+  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
+    exact add_nonneg (sub_nonneg.2 hzy) zero_le_one
+  · rw [Nat.cast_sub h.le, sub_add_eq_add_sub]
+    push_cast
+    exact (sub_lt_sub (Nat.ceil_lt_add_one hy) (Nat.lt_floor_add_one z)).le
+
+end Ring
+
+section Field
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorSemiring K]
+
+open Finset in
+/-- **Counting bound for the block lower polygon.** Let `H > 0` and `c > 0`. If
+`c ∑ i < n, ⌊i / H⌋ ≤ n x`, then `n < H (⌊2 x / c⌋₊ + 2)`. Writing `n = H q + ρ` with `ρ < H`,
+the sum is `H q (q - 1) / 2 + ρ q`, and the inequality forces `q - 1 ≤ 2 x / c`. -/
+theorem lt_mul_floor_add_two_of_mul_sum_range_div_le {H n : ℕ} (hH : 0 < H) {c x : K}
+    (hc : 0 < c) (h : c * (∑ i ∈ range n, i / H : ℕ) ≤ n * x) :
+    n < H * (⌊2 * x / c⌋₊ + 2) := by
+  have hn := Nat.div_add_mod n H
+  have hρ := Nat.mod_lt n hH
+  rw [sum_range_div] at h
+  set q := n / H
+  set ρ := n % H
+  rcases q.eq_zero_or_pos with hq | hq
+  · rw [hq, Nat.mul_zero, Nat.zero_add] at hn
+    rw [← hn]
+    nlinarith
+  -- The number of complete blocks is at most `⌊2 x / c⌋₊ + 1`.
+  have key : ((q - 1 : ℕ) : K) ≤ 2 * x / c := by
+    rw [le_div_iff₀ hc]
+    by_contra hlt
+    rw [not_le] at hlt
+    have hnR : (n : K) = H * q + ρ := by exact_mod_cast hn.symm
+    push_cast [Nat.cast_sub hq, Nat.cast_choose_two] at h hlt
+    have hnpos : (0 : K) < n := by
+      rw [hnR]
+      have : (1 : K) ≤ H := by exact_mod_cast hH
+      positivity
+    -- `2 n x < n c (q - 1) ≤ 2 c (H q (q - 1) / 2 + ρ q) ≤ 2 n x`.
+    have h₁ := mul_lt_mul_of_pos_left hlt hnpos
+    have h₂ : 0 ≤ c * ρ * (q + 1) := by positivity
+    have h₃ : (n : K) * ((q - 1) * c) = c * H * q * (q - 1) + c * ρ * (q - 1) := by
+      rw [hnR]
+      ring
+    linarith
+  have hfl := Nat.le_floor key
+  calc n = H * q + ρ := hn.symm
+    _ < H * (q + 1) := by nlinarith
+    _ ≤ H * (⌊2 * x / c⌋₊ + 2) := Nat.mul_le_mul_left _ (by omega)
+
+/-- For `0 < δ ≤ 1 / 2` and `c ≤ 8 / 9`, setting `L = ⌊1 / δ⌋₊` gives
+`L + (c / δ ^ 2) / L ≤ 2 / δ`. -/
+theorem natFloor_one_div_add_div_le {δ c : K} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2) (hc : c ≤ 8 / 9) :
+    (⌊1 / δ⌋₊ : K) + (c / δ ^ 2) / (⌊1 / δ⌋₊ : K) ≤ 2 / δ := by
+  let L : ℕ := ⌊1 / δ⌋₊
+  have hL_ge_two : 2 ≤ L := Nat.le_floor (by rw [Nat.cast_ofNat, le_div_iff₀ hδ]; linarith)
+  have hL_pos : (0 : K) < (L : K) := Nat.cast_pos.mpr (by omega)
+  have hr_le : (L : K) * δ ≤ 1 := (le_div_iff₀ hδ).mp (Nat.floor_le (by positivity))
+  have hr_ge : 2 / 3 ≤ (L : K) * δ := by
+    have h1 : (1 : K) < ((L : K) + 1) * δ := (div_lt_iff₀ hδ).mp (Nat.lt_floor_add_one (1 / δ))
+    have h2 : (2 : K) ≤ (L : K) := by exact_mod_cast hL_ge_two
+    nlinarith [mul_nonneg (sub_nonneg.mpr h2) hδ.le]
+  have hsq : (1 - (L : K) * δ) ^ 2 ≤ (1 / 3 : K) ^ 2 := by
+    nlinarith [hr_le, hr_ge]
+  have hquad : ((L : K) * δ) ^ 2 + c ≤ 2 * ((L : K) * δ) := by
+    linarith [hsq, hc]
+  have hmul :
+      ((L : K) + (c / δ ^ 2) / (L : K)) * ((L : K) * δ ^ 2) ≤ (2 / δ) * ((L : K) * δ ^ 2) := by
+    have hLHS :
+        ((L : K) + (c / δ ^ 2) / (L : K)) * ((L : K) * δ ^ 2) = ((L : K) * δ) ^ 2 + c := by
+      field_simp [hL_pos.ne', hδ.ne']
+    have hRHS : (2 / δ) * ((L : K) * δ ^ 2) = 2 * ((L : K) * δ) := by
+      field_simp [hδ.ne']
+    rw [hLHS, hRHS]
+    exact hquad
+  exact le_of_mul_le_mul_right hmul (by positivity)
+
+end Field
 
 end TauCeti

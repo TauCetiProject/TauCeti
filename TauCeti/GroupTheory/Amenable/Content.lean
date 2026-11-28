@@ -54,7 +54,7 @@ namespace Mean
 
 /-- The finitely additive probability on all subsets associated to a discrete mean. -/
 def toContent (m : Mean G) : AddContent ℝ≥0∞ (univ : Set (Set G)) :=
-  ((boundedContinuousFunctionEquiv G m).1.toLinearMap.toAddContent).ofReal
+  ((boundedContinuousFunctionEquiv G m).val.toLinearMap.toAddContent).ofReal
     (fun s _ => PositiveLinearMap.toAddContent_nonneg _ s)
 
 /-- A content value is the mean of the characteristic function, converted to `ℝ≥0∞`. -/
@@ -86,12 +86,12 @@ theorem toReal_toContent (m : Mean G) (s : Set G) :
   rw [toContent_apply, ENNReal.toReal_ofReal]
   simpa only [LinearMap.toAddContent_apply, PositiveLinearMap.coe_toLinearMap,
     boundedContinuousFunctionEquiv_apply] using
-    PositiveLinearMap.toAddContent_nonneg (boundedContinuousFunctionEquiv G m).1 s
+    PositiveLinearMap.toAddContent_nonneg (boundedContinuousFunctionEquiv G m).val s
 
 /-- The original real content is recovered by taking real values of `toContent`. -/
 theorem toContent_toReal (m : Mean G) :
     m.toContent.toReal (fun s _ => m.toContent_ne_top s) =
-      (boundedContinuousFunctionEquiv G m).1.toLinearMap.toAddContent := by
+      (boundedContinuousFunctionEquiv G m).val.toLinearMap.toAddContent := by
   simp only [toContent, AddContent.toReal_ofReal]
 
 /-- A mean evaluates finite linear combinations of characteristic functions by its content.
@@ -119,19 +119,23 @@ theorem toContent_map (m : Mean G) (φ : G →ₜ* H) :
     (m.map φ).toContent = m.toContent.map φ (fun _ _ => mem_univ _) := by
   rw [← mapOfDiscrete_coe, toContent_mapOfDiscrete]
 
+/-- A mean on a discrete group is left invariant exactly when its content is invariant under
+left translation of sets. -/
+theorem isLeftInvariant_iff_toContent_smul (m : Mean G) :
+    m.IsLeftInvariant ↔ ∀ (g : G) (s : Set G), m.toContent (g • s) = m.toContent s := by
+  -- Left multiplication by `g⁻¹` is the left regular action of `g⁻¹`.
+  have hg (g : G) : ContinuousMap.mulLeft g⁻¹ = ⟨(g⁻¹ • ·), continuous_of_discreteTopology⟩ :=
+    ContinuousMap.ext fun x => (smul_eq_mul g⁻¹ x).symm
+  simp only [isLeftInvariant_iff_boundedContinuousFunction, hg,
+    PositiveLinearMap.forall_apply_compContinuous_smul_iff_toAddContent_smul, toContent,
+    AddContent.ofReal_apply]
+  exact forall₂_congr fun g s => (ENNReal.ofReal_eq_ofReal_iff
+    (PositiveLinearMap.toAddContent_nonneg _ _) (PositiveLinearMap.toAddContent_nonneg _ _)).symm
+
 /-- A left-invariant mean assigns equal content to a set and each of its left translates. -/
 theorem IsLeftInvariant.toContent_smul {m : Mean G} (hm : m.IsLeftInvariant)
-    (g : G) (s : Set G) : m.toContent (g • s) = m.toContent s := by
-  have h : (UCB.discreteAlgEquiv G).symm
-      (BoundedContinuousFunction.indicator (g • s) (isClopen_discrete _)) =
-      UCB.leftTranslation g ((UCB.discreteAlgEquiv G).symm
-        (BoundedContinuousFunction.indicator s (isClopen_discrete _))) := by
-    apply UCB.ext
-    intro x
-    simp only [UCB.leftTranslation_apply, UCB.coe_discreteAlgEquiv_symm,
-      BoundedContinuousFunction.indicator_apply]
-    by_cases hx : x ∈ g • s <;> simp_all [mem_smul_set_iff_inv_smul_mem]
-  simp only [toContent_apply, h, hm.apply_leftTranslation]
+    (g : G) (s : Set G) : m.toContent (g • s) = m.toContent s :=
+  (isLeftInvariant_iff_toContent_smul m).1 hm g s
 
 /-- The content of evaluation at `x` is the Dirac probability at `x`. -/
 @[simp]
@@ -153,9 +157,10 @@ def contentEquiv : Mean G ≃ {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) /
   toFun m := ⟨m.toContent, m.toContent_univ⟩
   invFun ν := (boundedContinuousFunctionEquiv G).symm
     ⟨(PositiveLinearMap.addContentEquiv G).symm
-      ⟨ν.1.toReal fun s _ => addContent_ne_top_of_univ_ne_top (ν.2.trans_ne ENNReal.one_ne_top) s,
+      ⟨ν.val.toReal fun s _ => addContent_ne_top_of_univ_ne_top
+          (ν.property.trans_ne ENNReal.one_ne_top) s,
         AddContent.toReal_nonneg _ _⟩,
-      by simp [AddContent.toReal_apply, ν.2]⟩
+      by simp [AddContent.toReal_apply, ν.property]⟩
   left_inv m := by
     refine (boundedContinuousFunctionEquiv G).symm_apply_eq.2 (Subtype.ext ?_)
     refine (PositiveLinearMap.addContentEquiv G).symm_apply_eq.2 (Subtype.ext ?_)
@@ -166,7 +171,8 @@ def contentEquiv : Mean G ≃ {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) /
     rw [toContent_apply, boundedContinuousFunctionEquiv_symm_apply,
       UCB.coe_discreteAlgEquiv_symm, PositiveLinearMap.addContentEquiv_symm_apply_indicator,
       AddContent.toReal_apply,
-      ENNReal.ofReal_toReal (addContent_ne_top_of_univ_ne_top (ν.2.trans_ne ENNReal.one_ne_top) s)]
+      ENNReal.ofReal_toReal (addContent_ne_top_of_univ_ne_top
+          (ν.property.trans_ne ENNReal.one_ne_top) s)]
 
 @[simp]
 theorem coe_contentEquiv_apply (m : Mean G) :
@@ -178,27 +184,12 @@ content. -/
 @[simp]
 theorem toContent_contentEquiv_symm
     (ν : {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) // ν univ = 1}) :
-    ((contentEquiv G).symm ν).toContent = ν.1 :=
+    ((contentEquiv G).symm ν).toContent = ν.val :=
   congrArg Subtype.val ((contentEquiv G).apply_symm_apply ν)
 
 /-- A mean on a discrete group is determined by its content. -/
 theorem toContent_injective : Function.Injective (toContent : Mean G → _) :=
   fun _ _ h => (contentEquiv G).injective (Subtype.ext h)
-
-/-- A mean on a discrete group is left invariant exactly when its content is invariant under
-left translation of sets. -/
-theorem isLeftInvariant_iff_toContent_smul (m : Mean G) :
-    m.IsLeftInvariant ↔ ∀ (g : G) (s : Set G), m.toContent (g • s) = m.toContent s := by
-  refine ⟨fun hm => hm.toContent_smul, fun h => isLeftInvariant_iff.2 fun g f => ?_⟩
-  -- Pushing `m` forward along `x ↦ g⁻¹ * x` translates its content by `g`, so fixes it.
-  have hmap : m.mapOfDiscrete (g⁻¹ * ·) = m := by
-    refine toContent_injective (AddContent.ext fun s => ?_)
-    -- The left regular action `g⁻¹ • x` is multiplication `g⁻¹ * x`.
-    have hs : (g⁻¹ * ·) ⁻¹' s = g • s := preimage_smul_inv g s
-    rw [toContent_mapOfDiscrete, AddContent.map_apply, hs, h]
-  have hf : UCB.compRightAlgHomOfDiscrete (g⁻¹ * ·) f = UCB.leftTranslation g f :=
-    UCB.ext fun x => by simp [UCB.compRightAlgHomOfDiscrete_apply, UCB.leftTranslation_apply]
-  rw [← hf, ← mapOfDiscrete_apply, hmap]
 
 end Mean
 

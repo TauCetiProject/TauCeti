@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Geometry.Manifold.Riemannian.DegreeOne
 
 /-!
 # Smooth forms on almost-Hermitian Riemannian manifolds
@@ -95,6 +96,30 @@ theorem rieszDual_covectorComplexStructure {J : SmoothAlmostComplexStructure I M
     AlmostComplexStructure.inner_apply_left hJ'
       (Riemannian.Tensor.rieszDual (I := I) x (SmoothForm.degreeOneEquiv a x)) w
 
+/-- When `J` is fibrewise orthogonal, `J.covectorComplexStructure` preserves the pointwise inner
+product of one-forms: `⟨(J₁ a)_x, (J₁ b)_x⟩ = ⟨a_x, b_x⟩`. -/
+theorem alternatingFormInner_covectorComplexStructure {J : SmoothAlmostComplexStructure I M}
+    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫)
+    (a b : SmoothForm I M ℝ 1) (x : M) :
+    alternatingFormInner (TangentSpace I x) 1 ((J.covectorComplexStructure a).val x)
+        ((J.covectorComplexStructure b).val x) =
+      alternatingFormInner (TangentSpace I x) 1 (a.val x) (b.val x) := by
+  rw [SmoothForm.alternatingFormInner_eq_inner_rieszDual,
+    SmoothForm.alternatingFormInner_eq_inner_rieszDual, rieszDual_covectorComplexStructure hJ,
+    rieszDual_covectorComplexStructure hJ, hJ]
+
+/-- When `J` is fibrewise orthogonal, `J.covectorComplexStructure` is skew for the pointwise inner
+product of one-forms: `⟨(J₁ a)_x, b_x⟩ = -⟨a_x, (J₁ b)_x⟩`. -/
+theorem alternatingFormInner_covectorComplexStructure_left {J : SmoothAlmostComplexStructure I M}
+    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫)
+    (a b : SmoothForm I M ℝ 1) (x : M) :
+    alternatingFormInner (TangentSpace I x) 1 ((J.covectorComplexStructure a).val x) (b.val x) =
+      -alternatingFormInner (TangentSpace I x) 1 (a.val x)
+        ((J.covectorComplexStructure b).val x) := by
+  rw [← alternatingFormInner_covectorComplexStructure hJ a (J.covectorComplexStructure b),
+    AlmostComplexStructure.apply_apply, Submodule.coe_neg, Pi.neg_apply, LinearMap.map_neg]
+  rw [_root_.neg_neg]
+
 /-- Under `(alternatingFormEquiv _ 2).symm`, `-J.toEndomorphism.realAlternatingDerivation` of an
 orthogonal `J` acts on smooth two-forms as `exteriorPower.lieMap 2 J_x`. -/
 theorem alternatingFormEquiv_symm_neg_realAlternatingDerivation_two
@@ -104,11 +129,11 @@ theorem alternatingFormEquiv_symm_neg_realAlternatingDerivation_two
     (letI : FiniteDimensional ℝ (TangentSpace I x) :=
       VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
      (alternatingFormEquiv (TangentSpace I x) 2).symm
-       ((-J.toEndomorphism.realAlternatingDerivation η).1 x)) =
+       ((-J.toEndomorphism.realAlternatingDerivation η).val x)) =
       (letI : FiniteDimensional ℝ (TangentSpace I x) :=
         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
        exteriorPower.lieMap 2 (J.almostComplexStructureAt x).toLinearMap
-         ((alternatingFormEquiv (TangentSpace I x) 2).symm (η.1 x))) := by
+         ((alternatingFormEquiv (TangentSpace I x) 2).symm (η.val x))) := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
   have hJ' : ∀ u w : TangentSpace I x,
@@ -201,7 +226,7 @@ def kahlerTwoForm (J : SmoothAlmostComplexStructure I M)
 
 theorem kahlerTwoForm_apply (J : SmoothAlmostComplexStructure I M)
     (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M) :
-    (J.kahlerTwoForm hJ).1 x =
+    (J.kahlerTwoForm hJ).val x =
       (letI : FiniteDimensional ℝ (TangentSpace I x) :=
         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
        alternatingFormEquiv (TangentSpace I x) 2 (J.almostComplexStructureAt x).kahlerForm) :=
@@ -212,7 +237,7 @@ theorem alternatingFormEquiv_symm_kahlerTwoForm (J : SmoothAlmostComplexStructur
     (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M) :
     (letI : FiniteDimensional ℝ (TangentSpace I x) :=
       VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-     (alternatingFormEquiv (TangentSpace I x) 2).symm ((J.kahlerTwoForm hJ).1 x)) =
+     (alternatingFormEquiv (TangentSpace I x) 2).symm ((J.kahlerTwoForm hJ).val x)) =
       (letI : FiniteDimensional ℝ (TangentSpace I x) :=
         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
        (J.almostComplexStructureAt x).kahlerForm) := by
@@ -224,7 +249,7 @@ theorem alternatingFormEquiv_symm_kahlerTwoForm (J : SmoothAlmostComplexStructur
 theorem kahlerTwoForm_apply_two (J : SmoothAlmostComplexStructure I M)
     (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M)
     (u w : TangentSpace I x) :
-    (J.kahlerTwoForm hJ).1 x ![u, w] = ⟪J x u, w⟫ := by
+    (J.kahlerTwoForm hJ).val x ![u, w] = ⟪J x u, w⟫ := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
   have hJ' : ∀ u' w' : TangentSpace I x,

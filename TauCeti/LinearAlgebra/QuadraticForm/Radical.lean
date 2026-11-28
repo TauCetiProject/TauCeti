@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -14,6 +15,7 @@ import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 
 /-!
@@ -38,7 +40,11 @@ regular case.
 * `QuadraticMap.nondegenerate_neg`: negating a quadratic map does not change its nondegeneracy.
 * `QuadraticMap.radical_smul`, `QuadraticMap.nondegenerate_smul_iff`: scaling a quadratic map by a
   unit does not change its radical or its nondegeneracy.
+* `QuadraticMap.radical_prod_radical_le_radical_prod`: the product of two radicals lies in the
+  radical of the orthogonal product, in every characteristic.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.nondegenerate_prod_iff`: an orthogonal product is nondegenerate exactly when both
+  factors are.
 * `QuadraticMap.orthogonal_polarBilin_eq_radical_of_isCompl`: the polar orthogonal complement of
   a radical complement is the radical.
 * `QuadraticMap.nondegenerate_restrict_of_isCompl_radical`: a radical complement is regular.
@@ -51,7 +57,6 @@ regular case.
   trivial kernel is nondegenerate.
 * `QuadraticMap.nondegenerate_of_isCompl`: a quadratic map vanishing on a submodule complementary
   to another, which its polar form pairs perfectly, is nondegenerate.
-* `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a finite-dimensional subspace on which the
   form restricts nondegenerately is complementary to its polar orthogonal complement.
@@ -101,6 +106,10 @@ regular case.
   `QuadraticMap.nonempty_linearEquiv_radical_of_equivalent_zero_prod`: in any splitting
   `Q ≅ 0 ⊥ Q'` with `Q'` of trivial radical, `Q'` is the regular part and the zero summand lives
   on a copy of the radical.
+* `QuadraticMap.ker_polarBilin_le_radical_iff`, `QuadraticMap.radical_eq_ker_polarBilin_iff`,
+  `QuadraticMap.ker_polarBilin_lift`, `QuadraticMap.nondegenerate_polarBilin_lift_ker_polarBilin`,
+  `QuadraticMap.nondegenerate_of_nondegenerate_polarBilin`: characteristic-free descent of `Q` to
+  `M ⧸ Q.polarBilin.ker` with nondegenerate polar map when `Q` vanishes on `Q.polarBilin.ker`.
 -/
 
 public section
@@ -110,10 +119,10 @@ namespace QuadraticMap
 variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
   [Module R M] [Module R P]
 
-/-- The polar bilinear form of a scalar-valued quadratic map is symmetric. -/
-theorem isSymm_polarBilin (Q : QuadraticForm R M) :
-    LinearMap.BilinForm.IsSymm Q.polarBilin :=
-  ⟨fun x y => polar_comm Q x y⟩
+/-- A vector belongs to the radical precisely when the quadratic map vanishes on it and
+its polar pairing with every vector vanishes. -/
+theorem mem_radical_iff {Q : QuadraticMap R M P} {x : M} :
+    x ∈ Q.radical ↔ Q x = 0 ∧ Q.polarBilin x = 0 := (Iff.rfl)
 
 /-- Polarization commutes with restricting a quadratic map to a submodule. -/
 @[simp]
@@ -167,6 +176,16 @@ theorem nondegenerate_smul_iff {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) 
 
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
 
+/-- The product of the radicals of two quadratic maps lies in the radical of their orthogonal
+product. The inclusion can be strict when two is not invertible: in characteristic two, `(1, 1)`
+lies in the radical of `x² + y²` although `1` does not lie in the radical of `x²`. -/
+theorem radical_prod_radical_le_radical_prod (Q : QuadraticMap R M P)
+    (Q' : QuadraticMap R M' P) : Q.radical.prod Q'.radical ≤ (Q.prod Q').radical := by
+  rintro ⟨x, y⟩ ⟨hx, hy⟩
+  rw [SetLike.mem_coe, mem_radical_iff'] at hx hy
+  rw [mem_radical_iff']
+  exact ⟨by simp [hx.1, hy.1], fun n ↦ by simp [hx.2, hy.2]⟩
+
 /-- The radical of an orthogonal product is the product of the two radicals when two is
 invertible. -/
 @[simp]
@@ -181,6 +200,14 @@ theorem radical_prod [Invertible (2 : R)] (Q : QuadraticMap R M P) (Q' : Quadrat
     exact ⟨fun x ↦ by simpa using hp (x, 0), fun x ↦ by simpa using hp (0, x)⟩
   · rintro ⟨hp, hp'⟩ x
     simpa using congrArg₂ (· + ·) (hp x.1) (hp' x.2)
+
+/-- An orthogonal product is nondegenerate exactly when both factors are, when two is
+invertible. -/
+@[simp]
+theorem nondegenerate_prod_iff [Invertible (2 : R)] {Q : QuadraticMap R M P}
+    {Q' : QuadraticMap R M' P} :
+    (Q.prod Q').Nondegenerate ↔ Q.Nondegenerate ∧ Q'.Nondegenerate := by
+  simp only [nondegenerate_iff_radical_eq_bot, radical_prod, Submodule.prod_eq_bot_iff]
 
 /-- A quadratic map whose polar form has trivial kernel is nondegenerate. -/
 theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
@@ -260,6 +287,65 @@ possibly degenerate form. -/
 theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticMap R M P) :
     (Q.lift Q.radical le_rfl).Nondegenerate := by
   rw [nondegenerate_iff_radical_eq_bot, radical_lift_radical]
+
+/-- The polar kernel of `Q` lies in `Q.radical` if and only if `Q` vanishes on
+`Q.polarBilin.ker`. -/
+theorem ker_polarBilin_le_radical_iff {Q : QuadraticMap R M P} :
+    Q.polarBilin.ker ≤ Q.radical ↔ Q.IsTotallyIsotropic Q.polarBilin.ker := by
+  rw [isTotallyIsotropic_iff]
+  exact ⟨fun h _ hx ↦ (h hx).1, fun h _ hx ↦ ⟨h _ hx, hx⟩⟩
+
+/-- The radical of `Q` equals `Q.polarBilin.ker` if and only if `Q` vanishes on
+`Q.polarBilin.ker`. -/
+theorem radical_eq_ker_polarBilin_iff {Q : QuadraticMap R M P} :
+    Q.radical = Q.polarBilin.ker ↔ Q.IsTotallyIsotropic Q.polarBilin.ker :=
+  ⟨fun h ↦ ker_polarBilin_le_radical_iff.mp h.symm.le,
+    fun h ↦ le_antisymm Q.radical_le_ker_polarBilin (ker_polarBilin_le_radical_iff.mpr h)⟩
+
+/-- Polarization of `Q.lift N hN` on quotient classes agrees with polarization of `Q`. -/
+@[simp]
+theorem polar_lift_mk (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical)
+    (x y : M) :
+    polar (Q.lift N hN) (Submodule.Quotient.mk x) (Submodule.Quotient.mk y) = polar Q x y := by
+  rw [polar, ← Submodule.Quotient.mk_add, lift_mk, lift_mk, lift_mk, polar]
+
+/-- For any `N ≤ Q.radical`, the polar kernel of `Q.lift N hN` is the image of `Q.polarBilin.ker`
+under the quotient projection `N.mkQ`. -/
+theorem ker_polarBilin_lift (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical) :
+    (Q.lift N hN).polarBilin.ker = Q.polarBilin.ker.map N.mkQ := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H m =>
+    simp only [LinearMap.mem_ker, Submodule.mem_map, Submodule.mkQ_apply]
+    refine ⟨fun hx ↦ ⟨m, ?_, rfl⟩, fun ⟨m', hm', hmm'⟩ ↦ ?_⟩
+    · ext y
+      simpa [polarBilin_apply_apply] using LinearMap.congr_fun hx (Submodule.Quotient.mk y)
+    · rw [← hmm']
+      ext y
+      simpa [polarBilin_apply_apply] using LinearMap.congr_fun hm' y
+
+/-- When `Q.polarBilin.ker ≤ Q.radical`, the quadratic map descended to `M ⧸ Q.polarBilin.ker` has
+trivial polar kernel. -/
+@[simp]
+theorem ker_polarBilin_lift_ker_polarBilin (Q : QuadraticMap R M P)
+    (h : Q.polarBilin.ker ≤ Q.radical) :
+    (Q.lift Q.polarBilin.ker h).polarBilin.ker = ⊥ := by
+  rw [ker_polarBilin_lift, Submodule.mkQ_map_self]
+
+/-- When `Q` vanishes on `Q.polarBilin.ker`, the quadratic map descended to `M ⧸ Q.polarBilin.ker`
+has nondegenerate polar bilinear map. -/
+theorem nondegenerate_polarBilin_lift_ker_polarBilin {Q : QuadraticMap R M P}
+    (h : Q.polarBilin.ker ≤ Q.radical) :
+    (Q.lift Q.polarBilin.ker h).polarBilin.Nondegenerate := by
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (Q.lift Q.polarBilin.ker h).isRefl_polarBilin,
+    LinearMap.separatingLeft_iff_ker_eq_bot, ker_polarBilin_lift_ker_polarBilin]
+
+/-- A quadratic map whose polar bilinear map is nondegenerate is itself nondegenerate. The
+converse fails in characteristic two on odd-dimensional spaces. -/
+theorem nondegenerate_of_nondegenerate_polarBilin {Q : QuadraticMap R M P}
+    (hQ : Q.polarBilin.Nondegenerate) : Q.Nondegenerate :=
+  nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.separatingLeft_iff_ker_eq_bot.mp hQ.1)
 
 /-- **An isometry out of a quadratic map with trivial radical is injective.** Its kernel lies in the
 radical: an element `x` killed by `f` has `Q₁ x = Q₂ 0 = 0` and `Q₁ (x + n) = Q₂ (f n) = Q₁ n`. -/
@@ -380,7 +466,7 @@ noncomputable def IsometryEquiv.restrictProdRadicalOfIsCompl (Q : QuadraticMap R
     change Q (W.prodEquivOfIsCompl Q.radical hW.symm x) = _
     rw [Submodule.coe_prodEquivOfIsCompl', QuadraticMap.prod_apply,
       QuadraticMap.restrict_apply, add_comm,
-      (QuadraticMap.mem_radical_iff'.mp x.2.2).2]
+      (QuadraticMap.mem_radical_iff'.mp x.2.property).2]
     simp
 
 /-- The direct-sum isometry adds the complement and radical components. -/
@@ -530,9 +616,8 @@ theorem polarBilin_ne_zero [Invertible (2 : R)] {Q : QuadraticMap R M P} {u : M}
 /-- The orthogonal product of two nondegenerate quadratic maps is nondegenerate, when `2` is
 invertible in the coefficient ring. -/
 theorem prod [Invertible (2 : R)] {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
-    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate) : (Q.prod Q').Nondegenerate := by
-  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_prod,
-    hQ.radical_eq_bot, hQ'.radical_eq_bot, Submodule.prod_bot]
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate) : (Q.prod Q').Nondegenerate :=
+  QuadraticMap.nondegenerate_prod_iff.2 ⟨hQ, hQ'⟩
 
 /-- A nondegenerate quadratic map on a nontrivial module is nonzero. -/
 theorem ne_zero [Nontrivial M] {Q : QuadraticMap R M P} (hQ : Q.Nondegenerate) : Q ≠ 0 := by
@@ -616,7 +701,7 @@ theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
   refine ⟨z, ?_, ?_⟩
   · apply QuadraticMap.isOrtho_polarBilin.mp
     simpa only [B, W, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using
-      z.2 y (Submodule.mem_span_singleton_self y)
+      z.property y (Submodule.mem_span_singleton_self y)
   · have hz' : B (z : V) (z : V) ≠ 0 := by
       simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using hz
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
@@ -837,6 +922,39 @@ end RegularPart
 end QuadraticMap
 
 namespace QuadraticForm
+
+section PerfectField
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- Over a perfect field the quadratic radical detects nondegeneracy, even in
+characteristic two and in odd dimension. -/
+theorem nondegenerate_iff_radical_eq_bot_of_perfectField [PerfectField K]
+    (Q : QuadraticForm K V) : Q.Nondegenerate ↔ Q.radical = ⊥ := by
+  by_cases h₂ : (2 : K) ≠ 0
+  · let := invertibleOfNonzero h₂
+    exact QuadraticMap.nondegenerate_iff_radical_eq_bot
+  let : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero (not_ne_iff.mp h₂)
+  refine ⟨fun h ↦ h.radical_eq_bot, fun h ↦ ⟨h, ?_⟩⟩
+  have hzero {v : V} (hv : v ∈ Q.polarBilin.ker) (hq : Q v = 0) : v = 0 :=
+    (Submodule.eq_bot_iff _).mp h v (QuadraticMap.mem_radical_iff.mpr ⟨hq, LinearMap.mem_ker.mp hv⟩)
+  by_cases hker : Q.polarBilin.ker = ⊥
+  · rw [hker, rank_bot]
+    exact zero_le_one
+  obtain ⟨v, hv, hv₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hker
+  have hqv : Q v ≠ 0 := fun h ↦ hv₀ (hzero hv h)
+  refine (rank_submodule_le_one_iff _).mpr ⟨v, hv, fun w hw ↦ ?_⟩
+  obtain ⟨c, hc⟩ := surjective_frobenius K 2 (-Q w / Q v)
+  have hc' : c * c * Q v = -Q w :=
+    (eq_div_iff hqv).mp (by simpa [frobenius_def, pow_two] using hc)
+  have hp : QuadraticMap.polar Q w (c • v) = 0 :=
+    DFunLike.congr_fun (LinearMap.mem_ker.mp hw) _
+  have hwc := hzero (Q.polarBilin.ker.add_mem hw (Q.polarBilin.ker.smul_mem c hv))
+  have heq : w + c • v = 0 := hwc (by
+    simp [QuadraticMap.map_add, QuadraticMap.map_smul, hp, hc'])
+  exact Submodule.mem_span_singleton.mpr ⟨-c, by simpa using (eq_neg_of_add_eq_zero_left heq).symm⟩
+
+end PerfectField
 
 universe u
 

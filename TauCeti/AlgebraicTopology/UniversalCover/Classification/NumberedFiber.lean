@@ -14,7 +14,7 @@ import TauCeti.Topology.Covering.Clopen
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Monodromy
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`
@@ -198,7 +198,7 @@ private def fiberEquiv {p q : ConnectedCoveringSpace X} (f : p ≅ q) :
   (Deck.fiberMap (coverHomeomorph f) (proj_coverHomeomorph f) x).toEquiv
 
 private theorem coe_fiberEquiv_apply {p q : ConnectedCoveringSpace X} (f : p ≅ q)
-    (e : ⇑p.proj ⁻¹' {x}) : (fiberEquiv f e : (q : TopCat)) = f.hom.hom.left e.1 :=
+    (e : ⇑p.proj ⁻¹' {x}) : (fiberEquiv f e : (q : TopCat)) = f.hom.hom.left e.val :=
   rfl
 
 /-- The identity isomorphism of covers acts on total-space points as the identity. -/
@@ -223,23 +223,23 @@ private theorem coverMap_inv_apply {p q : ConnectedCoveringSpace X}
 /-- Two fibre-numbered covers are isomorphic when some isomorphism of the underlying covers carries
 the point labelled `i` to the point labelled `i`, for every label `i`. -/
 def ConnectedFiberNumberedCoverIso (c c' : ConnectedFiberNumberedCover x n) : Prop :=
-  ∃ f : c.cover ≅ c'.cover, ∀ i, f.hom.hom.left (c.ν.symm i).1 = (c'.ν.symm i).1
+  ∃ f : c.cover ≅ c'.cover, ∀ i, f.hom.hom.left (c.ν.symm i).val = (c'.ν.symm i).val
 
 /-- Two pointed covers are isomorphic when some isomorphism of the underlying covers carries the
 chosen point to the chosen point. -/
 def ConnectedPointedCoverIso (c c' : ConnectedPointedCover x n) : Prop :=
-  ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1
+  ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.val = c'.e.val
 
 /-- A numbered isomorphism consists of a cover isomorphism preserving every fibre label. -/
 theorem connectedFiberNumberedCoverIso_def {c c' : ConnectedFiberNumberedCover x n} :
     ConnectedFiberNumberedCoverIso c c' ↔
-      ∃ f : c.cover ≅ c'.cover, ∀ i, f.hom.hom.left (c.ν.symm i).1 = (c'.ν.symm i).1 :=
+      ∃ f : c.cover ≅ c'.cover, ∀ i, f.hom.hom.left (c.ν.symm i).val = (c'.ν.symm i).val :=
   Iff.rfl
 
 /-- A pointed isomorphism consists of a cover isomorphism preserving the chosen point. -/
 theorem connectedPointedCoverIso_def {c c' : ConnectedPointedCover x n} :
     ConnectedPointedCoverIso c c' ↔
-      ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1 :=
+      ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.val = c'.e.val :=
   Iff.rfl
 
 namespace ConnectedFiberNumberedCoverIso
@@ -358,12 +358,12 @@ their recovered fundamental-group subgroups agree. -/
 theorem ConnectedPointedCoverClass.mk_eq_mk_of_range_eq [LocallyPathConnectedSpace X]
     (c c' : ConnectedPointedCover x n)
     (h : (FundamentalGroup.mapOfEq
-        ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ c.e.2).range =
+        ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ c.e.property).range =
       (FundamentalGroup.mapOfEq
-        ⟨c'.cover.proj, c'.cover.isCoveringMap_proj.continuous⟩ c'.e.2).range) :
+        ⟨c'.cover.proj, c'.cover.isCoveringMap_proj.continuous⟩ c'.e.property).range) :
     mk c = mk c' := by
   obtain ⟨e, he, hp⟩ := (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
-    c.cover.isCoveringMap_proj c'.cover.isCoveringMap_proj c.e.2 c'.e.2).2 h
+    c.cover.isCoveringMap_proj c'.cover.isCoveringMap_proj c.e.property c'.e.property).2 h
   apply mk_eq_mk_iff.2
   apply connectedPointedCoverIso_def.2
   let f : c.cover ≅ c'.cover := CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo e)
@@ -412,6 +412,28 @@ theorem ConnectedFiberNumberedCoverClass.ind
 theorem ConnectedPointedCoverClass.mk_surjective :
     Function.Surjective (mk : ConnectedPointedCover x n → _) :=
   Quotient.mk_surjective
+
+/-- A function on pointed covers that is constant on pointed isomorphism classes, as a function
+on the classes. -/
+def ConnectedPointedCoverClass.lift {α : Sort*} (f : ConnectedPointedCover x n → α)
+    (hf : ∀ c c', ConnectedPointedCoverIso c c' → f c = f c') :
+    ConnectedPointedCoverClass x n → α :=
+  Quotient.lift f hf
+
+/-- The lift of `f` takes the class of `c` to `f c`. -/
+@[simp]
+theorem ConnectedPointedCoverClass.lift_mk {α : Sort*} (f : ConnectedPointedCover x n → α)
+    (hf : ∀ c c', ConnectedPointedCoverIso c c' → f c = f c') (c : ConnectedPointedCover x n) :
+    ConnectedPointedCoverClass.lift f hf (ConnectedPointedCoverClass.mk c) = f c :=
+  (rfl)
+
+/-- A property of the classes of pointed covers holds for every class once it holds for the class
+of every pointed cover. -/
+@[elab_as_elim]
+theorem ConnectedPointedCoverClass.ind {motive : ConnectedPointedCoverClass x n → Prop}
+    (h : ∀ c, motive (ConnectedPointedCoverClass.mk c)) (C : ConnectedPointedCoverClass x n) :
+    motive C :=
+  Quotient.ind h C
 
 /-- Every class of covers is the class of a cover. -/
 theorem ConnectedCoverClass.mk_surjective :

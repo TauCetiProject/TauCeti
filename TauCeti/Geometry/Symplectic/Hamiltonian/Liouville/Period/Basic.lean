@@ -303,7 +303,7 @@ theorem exists_hamiltonianFlowStabilizer_section_eq_closure
   have hbc : ⇑bc = fun i ↦ p i c := coe_basisOfPiSpaceOfLinearIndependent hlic
   have hfl : (ZSpan.floor bc v : ι → ℝ) ∈ AddSubgroup.closure (range fun i ↦ p i c) := by
     rw [← hbc, ← Submodule.span_int_eq_addSubgroupClosure]
-    exact (ZSpan.floor bc v).2
+    exact (ZSpan.floor bc v).property
   have hfr : ZSpan.fract bc v = ∑ i, Int.fract (bc.repr v i) • p i c := by
     conv_lhs => rw [← bc.sum_repr (ZSpan.fract bc v)]
     simp [ZSpan.repr_fract_apply, hbc]

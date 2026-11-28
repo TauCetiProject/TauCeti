@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
+public import TauCeti.Topology.Instances.AddCircle.Flow
+
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Densities on the additive circle
@@ -29,6 +32,14 @@ This is how wrapped laws on the circle obtain their densities.
 Reading the circle in the symmetric chart `(-T/2, T/2]`, on which the distance to `0` is `|x|`,
 also bounds the integral of a radial function `h ↦ g ‖h‖` by twice the integral of `g` over the
 half line (`AddCircle.lintegral_comp_norm_le`).
+
+Mathlib's translation action of `ℝ` on `AddCircle T`, `t +ᵥ x = t + x` (`AddCircle.vadd_eq_add`),
+is jointly measurable and preserves every additively left-invariant measure, such as circle
+volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`). Likewise every
+time-`t` map of the translation flow `x ↦ x + [t]` preserves every additively right-invariant
+measure (`AddCircle.measurePreserving_translationFlow`). For the
+normalized Haar measure, the Fourier mode `fourier n` has integral `1` for `n = 0` and `0`
+otherwise (`AddCircle.integral_fourier_haarAddCircle`).
 -/
 
 public section
@@ -40,7 +51,39 @@ open scoped ENNReal
 
 namespace AddCircle
 
+/-- Mathlib's translation action of `ℝ` on `AddCircle T` adds the image of `t` in the circle. -/
+@[simp]
+protected theorem vadd_eq_add {T : ℝ} (t : ℝ) (x : AddCircle T) :
+    t +ᵥ x = (t : AddCircle T) + x :=
+  QuotientAddGroup.induction_on x fun y ↦ by
+    rw [AddAction.Quotient.vadd_coe, vadd_eq_add, QuotientAddGroup.mk_add]
+
+/-- The translation action of `ℝ` on `AddCircle T` is jointly measurable. -/
+instance instMeasurableVAdd₂Real {T : ℝ} : MeasurableVAdd₂ ℝ (AddCircle T) :=
+  ⟨continuous_vadd.measurable⟩
+
+/-- The translation action of `ℝ` on `AddCircle T` preserves every additively left-invariant
+measure. -/
+instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
+    [μ.IsAddLeftInvariant] : VAddInvariantMeasure ℝ (AddCircle T) μ :=
+  ⟨fun t s _ ↦ by
+    simpa only [AddCircle.vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
+
+/-- Every time-`t` map of the translation flow of `AddCircle T` preserves every additively
+right-invariant measure, such as circle volume and the normalized Haar measure. -/
+theorem measurePreserving_translationFlow {T : ℝ} (μ : Measure (AddCircle T))
+    [μ.IsAddRightInvariant] (t : ℝ) : MeasurePreserving (translationFlow T t) μ μ := by
+  rw [translationFlow_eq_add_right]
+  exact measurePreserving_add_right μ _
+
 variable {T : ℝ} [hT : Fact (0 < T)]
+
+/-- The integral of the Fourier mode `fourier n` for the normalized Haar measure is `1` for
+`n = 0` and `0` otherwise. -/
+theorem integral_fourier_haarAddCircle (n : ℤ) :
+    ∫ x, fourier n x ∂(haarAddCircle (T := T)) = if n = 0 then 1 else 0 := by
+  simpa [fourierCoeff, fourier_zero, Pi.single_apply, eq_comm] using
+    congrFun (fourierCoeff_fourier (T := T) n) 0
 
 /-- Reading a circle point in `[a, a + T)` sends circle volume to Lebesgue measure
 restricted to that interval. -/
@@ -48,7 +91,7 @@ theorem map_coe_equivIco_volume (a : ℝ) :
     (volume : Measure (AddCircle T)).map (fun θ ↦ (equivIco T a θ : ℝ)) =
       volume.restrict (Ico a (a + T)) := by
   have hm : Measurable fun θ ↦ (equivIco T a θ : ℝ) :=
-    measurable_subtype_coe.comp (measurableEquivIco T a).measurable
+    measurable_subtypeVal.comp (measurableEquivIco T a).measurable
   have hproj : (volume.restrict (Ico a (a + T))).map ((↑) : ℝ → AddCircle T) = volume := by
     rw [Measure.restrict_congr_set Ico_ae_eq_Ioc]
     exact (AddCircle.measurePreserving_mk T a).map_eq
@@ -67,7 +110,7 @@ theorem volume_preimage_coe_eq_zero_iff {s : Set (AddCircle T)} :
     have hemb : MeasurableEmbedding (equivIoc T 0) := (measurableEquivIoc T 0).measurableEmbedding
     have h1 := (measurePreserving_equivIoc (T := T) (a := 0)).measure_preimage_emb hemb
       ((equivIoc T 0).symm ⁻¹' s)
-    rw [(MeasurableEmbedding.subtype_coe measurableSet_Ioc).comap_apply,
+    rw [(MeasurableEmbedding.subtypeVal measurableSet_Ioc).comap_apply,
       Equiv.preimage_symm_preimage] at h1
     refine nonpos_iff_eq_zero.1 (h1.trans_le (h ▸ measure_mono ?_))
     -- the inverse of `equivIoc` is the quotient map, so the lift of `y` is `y` itself
@@ -91,7 +134,7 @@ theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ) {f : AddCircle T �
       (volume.restrict (Ico a (a + T))).withDensity
         (fun x : ℝ ↦ (ENNReal.ofReal T)⁻¹ * f x) := by
   have hemb : MeasurableEmbedding fun θ : AddCircle T ↦ (equivIco T a θ : ℝ) :=
-    (MeasurableEmbedding.subtype_coe measurableSet_Ico).comp
+    (MeasurableEmbedding.subtypeVal measurableSet_Ico).comp
       (measurableEquivIco T a).measurableEmbedding
   have hvol : (haarAddCircle : Measure (AddCircle T)) =
       (ENNReal.ofReal T)⁻¹ • volume := by
@@ -115,11 +158,9 @@ variable {M : Type*} [TopologicalSpace M] [AddCommMonoid M]
 function over the translates of that point by multiples of the period. -/
 theorem automorphize_coe (f : ℝ → M) (x : ℝ) :
     QuotientAddGroup.automorphize f (x : AddCircle T) = ∑' k : ℤ, f (x + k • T) := by
-  let e : ℤ ≃ (AddSubgroup.zmultiples T).op :=
-    (AddSubgroup.zmultiplesEquivInt hT.out.ne').symm.toEquiv.trans (AddSubgroup.equivOp _)
-  rw [QuotientAddGroup.automorphize_mk, ← e.tsum_eq]
-  refine tsum_congr fun k ↦ congrArg f ?_
-  simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
+  rw [QuotientAddGroup.automorphize_mk, ← (TauCeti.intEquivOpZMultiples
+    (not_isOfFinAddOrder_of_isAddTorsionFree hT.out.ne')).tsum_eq]
+  simp
 
 /-- Reducing a real law with density `f` modulo `T` gives the circle law whose density
 relative to circle volume is the periodization of `f`.
@@ -143,7 +184,7 @@ theorem map_coe_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
   rw [← lintegral_tsum hmeas]
   refine setLIntegral_congr_fun measurableSet_Ioc fun x _ ↦ ?_
   have hx (γ : (AddSubgroup.zmultiples T).op) : ((γ +ᵥ x : ℝ) : AddCircle T) = x :=
-    QuotientAddGroup.mk_add_of_mem x γ.2
+    QuotientAddGroup.mk_add_of_mem x γ.property
   by_cases h : (x : AddCircle T) ∈ A
   · simp [indicator, hx, h, QuotientAddGroup.automorphize_mk]
   · simp [indicator, hx, h]

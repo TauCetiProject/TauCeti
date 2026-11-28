@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Spf
+public import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The formal completion of a scheme along a closed subscheme
@@ -66,6 +67,8 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   `J.comap f = I`.
 * `AlgebraicGeometry.Scheme.formalCompletion.isPullback_map_app`: when `J.comap f = I`, the level
   `V(I ^ (n + 1))` is the inverse image of `V(J ^ (n + 1))` under `f`.
+* `AlgebraicGeometry.Scheme.formalCompletion.map_app_isoPullback_hom`: naturality of
+  `(isPullback_map_app _ _ n).isoPullback` on `Over` morphisms.
 * `AlgebraicGeometry.Scheme.formalCompletion.isOpenImmersion_map_app`,
   `AlgebraicGeometry.Scheme.formalCompletion.opensRange_map_app`: for an open immersion `f`, the
   levels of `formalCompletion.map f` are open immersions onto the inverse images of the image
@@ -91,8 +94,8 @@ variable (X : Scheme.{u}) (I : X.IdealSheafData)
 /-- The level maps of the tower `n ↦ V(I ^ (n + 1))` are the inclusions `V(I) ⟶ V(I ^ (n + 1))`. -/
 private lemma levelMap_inclusion_eq (n : ℕ) :
     TauCeti.AlgebraicGeometry.levelMap (fun k ↦ (I ^ (k + 1)).subscheme)
-        (fun k ↦ inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (k + 1) 1))) n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_left 1 n)) := by
+        (fun k ↦ inclusion (I.pow_le_pow_right (Nat.le_add_right (k + 1) 1))) n =
+      inclusion (I.pow_le_pow_right (Nat.le_add_left 1 n)) := by
   induction n with
   | zero => rw [TauCeti.AlgebraicGeometry.levelMap_zero, inclusion_id]
   | succ n ih => rw [TauCeti.AlgebraicGeometry.levelMap_succ, ih, inclusion_comp]
@@ -108,10 +111,10 @@ Stacks, Lemma 87.14.2 (0AIZ) and Definition 87.14.3 (0AMC). -/
 @[stacks 0AMC, expose, simps X]
 noncomputable def formalCompletion : AdicThickeningSystem.{u} where
   X n := (I ^ (n + 1)).subscheme
-  ι n := inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1))
+  ι n := inclusion (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1))
   isThickening n := by
     have := IsFirstOrderThickening.inclusion_pow_succ
-      (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1) :
+      (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1) :
         I ^ (n + 2) ≤ I ^ (n + 1))
     infer_instance
   adic n := by
@@ -121,7 +124,7 @@ noncomputable def formalCompletion : AdicThickeningSystem.{u} where
 closed subschemes. -/
 theorem formalCompletion_ι (n : ℕ) :
     (X.formalCompletion I).ι n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1)) :=
+      inclusion (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1)) :=
   (rfl)
 
 /-- The `n`-th reduction of the formal completion is the infinitesimal neighbourhood
@@ -134,7 +137,7 @@ theorem formalCompletion_reduction (n : ℕ) :
 `V(I ^ (m + 1)) ⟶ V(I ^ (n + 1))`. -/
 theorem formalCompletion_transition {m n : ℕ} (h : m ≤ n) :
     (X.formalCompletion I).transition h =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.add_le_add_right h 1)) := by
+      inclusion (I.pow_le_pow_right (Nat.add_le_add_right h 1)) := by
   induction n with
   | zero =>
     obtain rfl : m = 0 := by omega
@@ -150,7 +153,7 @@ theorem formalCompletion_transition {m n : ℕ} (h : m ≤ n) :
 subschemes. -/
 theorem formalCompletion_levelMap (n : ℕ) :
     (X.formalCompletion I).levelMap n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_left 1 n)) := by
+      inclusion (I.pow_le_pow_right (Nat.le_add_left 1 n)) := by
   rw [AdicThickeningSystem.levelMap_eq_transition, formalCompletion_transition]
 
 namespace formalCompletion
@@ -308,6 +311,35 @@ theorem map_comp (f : X ⟶ Y) (g : Y ⟶ Z) (hf : J.comap f ≤ I) (hg : K.coma
   rw [← cancel_mono (toScheme Z K n), map_app_toScheme, AdicThickeningSystem.comp_app,
     Category.assoc, map_app_toScheme, map_app_toScheme_assoc]
 
+/-- Composition of `formalCompletion.map` along a commuting triangle `f ≫ g = h`. -/
+@[reassoc]
+theorem map_comp_eq {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : f ≫ g = h)
+    (hf : J.comap f ≤ I) (hg : K.comap g ≤ J) (hh : K.comap h ≤ I) :
+    map f hf ≫ map g hg = map h hh := by
+  subst hfg
+  exact map_comp f g hf hg
+
+/-- An isomorphism of schemes `u : X ≅ Y` identifying ideal sheaves induces an isomorphism of
+formal completions. -/
+noncomputable def mapIso (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    X.formalCompletion I ≅ Y.formalCompletion J where
+  hom := map u.hom hu.le
+  inv := map u.inv (by rw [← hu, ← comap_comp, Iso.inv_hom_id, comap_id])
+  hom_inv_id := (map_comp_eq u.hom_inv_id _ _ (by rw [comap_id])).trans (map_id _)
+  inv_hom_id := (map_comp_eq u.inv_hom_id _ _ (by rw [comap_id])).trans (map_id _)
+
+/-- The forward morphism of `mapIso u hu` is `map u.hom hu.le`. -/
+@[simp]
+theorem mapIso_hom (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    (mapIso u hu).hom = map u.hom hu.le :=
+  (rfl)
+
+/-- The inverse morphism of `mapIso u hu` is `map u.inv _`. -/
+@[simp]
+theorem mapIso_inv (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    (mapIso u hu).inv = map u.inv (by rw [← hu, ← comap_comp, Iso.inv_hom_id, comap_id]) :=
+  (rfl)
+
 /-- If `V(I)` is the scheme-theoretic inverse image of `V(J)` under `f`, i.e. `J.comap f = I`, then
 the induced morphism of formal completions is adic: each `V(I ^ (n + 1))` is the inverse image of
 `V(J ^ (n + 1))`. -/
@@ -342,6 +374,32 @@ theorem opensRange_map_app (f : X ⟶ Y) [IsOpenImmersion f] (n : ℕ) :
           congr 1
           exact H.isoPullback_hom_snd.symm
     _ = _ := (Scheme.Hom.opensRange_comp_of_isIso _ _).trans (Scheme.Hom.opensRange_pullbackSnd _ _)
+
+/-- Naturality of `(isPullback_map_app _ _ n).isoPullback` with respect to morphisms
+`g : Over.mk p ⟶ Over.mk q` over `Z`. -/
+@[reassoc]
+theorem map_app_isoPullback_hom {p : X ⟶ Z} {q : Y ⟶ Z} (hp : K.comap p = I)
+    (hq : K.comap q = J) (g : Over.mk p ⟶ Over.mk q) (n : ℕ) :
+    (map (I := I) (J := J) g.left
+        (by rw [← hp, ← hq, ← comap_comp, show g.left ≫ q = p from Over.w g])).app n ≫
+      (isPullback_map_app q hq n).isoPullback.hom =
+      (isPullback_map_app p hp n).isoPullback.hom ≫
+        ((Over.pullback (toScheme Z K n)).map g).left := by
+  have hpb : IsPullback (Limits.pullback.fst q (toScheme Z K n))
+      ((Over.pullback (toScheme Z K n)).obj (Over.mk q)).hom q (toScheme Z K n) := by
+    simpa only [Over.pullback_obj_hom, Over.mk_hom] using
+      IsPullback.of_hasPullback q (toScheme Z K n)
+  refine hpb.hom_ext ?_ ?_
+  · have hfst :
+        ((Over.pullback (toScheme Z K n)).map g).left ≫ Limits.pullback.fst q (toScheme Z K n) =
+          Limits.pullback.fst p (toScheme Z K n) ≫ g.left := by
+      simpa only [Over.mk_hom] using (Over.isPullback_pullback_map_left (toScheme Z K n) g).w
+    rw [Category.assoc, Category.assoc, IsPullback.isoPullback_hom_fst, map_app_toScheme,
+      hfst, IsPullback.isoPullback_hom_fst_assoc]
+  · rw [Category.assoc, Category.assoc, Over.w]
+    simp only [Over.pullback_obj_hom, Over.mk_hom, IsPullback.isoPullback_hom_snd]
+    exact congrArg (·.app n) (map_comp_eq (I := I) (J := J) (K := K)
+      (by simpa only [Over.mk_hom] using Over.w g) _ hq.le hp.le)
 
 end formalCompletion
 

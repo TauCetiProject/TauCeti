@@ -28,15 +28,17 @@ The coordinates are the inverse of the map
 `Φ (a, w) = u a + Θ_a w`,  `Θ_a w = ½ (W w - J(u a) W (i w))`
 
 (`TauCeti.holomorphicNormalExtension`), where `W : N →L[ℝ] V` is a real-linear frame of normal
-directions which is complex-linear at the base point, `J(u a₀) W = W i`, and spans a complement
-of the tangent line of `u` there. The frame `Θ_a` (`TauCeti.holomorphicNormalFrame`) is the
-complex-linear part of `W` for the structures `i` on `N` and `J(u a)` on `V`: wherever
-`J(u a)² = -1` it satisfies `J(u a) Θ_a = Θ_a i`, and it equals `W` at `a₀`; the same
-projection, applied to automorphisms of `V` rather than to normal frames, is
-`TauCeti.standardFrame`. So `Φ` is affine in the normal variable, and its
-derivative along the zero section, `(α, ω) ↦ du_a α + Θ_a ω`, intertwines `i` with `J(u a)`
-as soon as `u` is `J`-holomorphic at `a`. Only `u` and `J ∘ u` enter `Φ`, not the derivative of
-`u`, so for `u` and `J` of class `C^ℓ` the coordinates are of class `C^ℓ`.
+directions which is complex-linear at the base point, `J(u a₀) W = W i`, and spans a complement of
+the tangent line of `u` there. When `V` is finite-dimensional and `u` is immersed at `a₀`, such a
+frame exists with `N = ℂⁿ`: in a complex frame of `J(u a₀)` it is the orthogonal complement of the
+complex tangent line (`TauCeti.exists_euclideanSpace_bijective_coprod`). The frame `Θ_a`
+(`TauCeti.holomorphicNormalFrame`) is the complex-linear part of `W` for the structures `i` on `N`
+and `J(u a)` on `V`: wherever `J(u a)² = -1` it satisfies `J(u a) Θ_a = Θ_a i`, and it equals `W` at
+`a₀`; the same projection, applied to automorphisms of `V` rather than to normal frames, is
+`TauCeti.standardFrame`. So `Φ` is affine in the normal variable, and its derivative along the zero
+section, `(α, ω) ↦ du_a α + Θ_a ω`, intertwines `i` with `J(u a)` as soon as `u` is `J`-holomorphic
+at `a`. Only `u` and `J ∘ u` enter `Φ`, not the derivative of `u`, so for `u` and `J` of class `C^ℓ`
+the coordinates are of class `C^ℓ`.
 
 * **Existence.** By the inverse function theorem `Φ` restricts to a `C^ℓ` partial homeomorphism
   around `(a₀, 0)` with `C^ℓ` inverse (`TauCeti.exists_holomorphicAdaptedChart`). Flattening and
@@ -76,8 +78,9 @@ In the integrable model, `V = ℂ × N` with the structure `i`, the disc `a ↦ 
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`: in the chart, the
   structure is standard along the disc.
 * `TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`: the normal Lipschitz control.
-* `TauCeti.norm_snd_add_I_smul_snd_le`: the resulting Cauchy–Riemann inequality for the normal
-  component.
+* `TauCeti.norm_snd_add_I_smul_snd_le`, `TauCeti.norm_fderiv_snd_add_I_smul_le`,
+  `TauCeti.norm_fderiv_snd_add_I_smul_le_of_contDiffOn`: the resulting Cauchy–Riemann inequality
+  for the normal component.
 
 ## References
 
@@ -350,6 +353,44 @@ theorem norm_snd_add_I_smul_snd_le {A : ℂ × N →L[ℝ] ℂ × N} {ε : ℝ}
     _ ≤ ‖A - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ * ‖D I‖ :=
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ ε * ‖D I‖ := mul_le_mul_of_nonneg_right hA (norm_nonneg _)
+
+/-- **The normal Cauchy–Riemann inequality along a disc.** In coordinates `ℂ × N`, let `v` be
+differentiable at `w` and solve `∂ₛv + A ∂ₜv = 0` there, for an endomorphism `A` within
+`C ‖(v w).2‖` of multiplication by `i`. Then its normal component `b = (v ·).2` satisfies
+`‖∂ₛb + i ∂ₜb‖ ≤ C ‖∂ₜv‖ ‖b‖` at `w`. With `A` the structure read in the adapted chart of
+`TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`, this is the inequality to which
+the similarity principle applies. -/
+theorem norm_fderiv_snd_add_I_smul_le {v : ℂ → ℂ × N} {w : ℂ} {A : ℂ × N →L[ℝ] ℂ × N} {C : ℝ}
+    (hv : DifferentiableAt ℝ v w) (hCR : fderiv ℝ v w 1 + A (fderiv ℝ v w I) = 0)
+    (hA : ‖A - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ C * ‖(v w).2‖) :
+    ‖fderiv ℝ (fun w ↦ (v w).2) w 1 + I • fderiv ℝ (fun w ↦ (v w).2) w I‖ ≤
+      C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by
+  rw [hv.hasFDerivAt.snd.fderiv]
+  calc ‖(fderiv ℝ v w 1).2 + I • (fderiv ℝ v w I).2‖
+      ≤ C * ‖(v w).2‖ * ‖fderiv ℝ v w I‖ := norm_snd_add_I_smul_snd_le hA hCR
+    _ = C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by ring
+
+/-- **The normal Cauchy–Riemann inequality on an open set.** In coordinates `ℂ × N`, let `v` be a
+`C¹` solution of `∂ₛv + A ∂ₜv = 0` on an open set `Ω`, for endomorphisms `A w` within
+`C ‖(v w).2‖` of multiplication by `i`. Then the coefficient `M = C ‖∂ₜv‖` is bounded above near
+every point of `Ω`, and the normal component `b = (v ·).2` satisfies `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖` on
+`Ω` (`TauCeti.norm_fderiv_snd_add_I_smul_le`): the hypotheses of the similarity principle
+`TauCeti.exists_similarity_of_norm_le`. -/
+theorem norm_fderiv_snd_add_I_smul_le_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {v : ℂ → ℂ × N}
+    {A : ℂ → ℂ × N →L[ℝ] ℂ × N} {C : ℝ} (hv : ContDiffOn ℝ 1 v Ω)
+    (hCR : ∀ w ∈ Ω, fderiv ℝ v w 1 + A w (fderiv ℝ v w I) = 0)
+    (hA : ∀ w ∈ Ω, ‖A w - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ C * ‖(v w).2‖) :
+    (∀ z ∈ Ω, ∃ K, ∀ᶠ w in 𝓝 z, C * ‖fderiv ℝ v w I‖ ≤ K) ∧
+      ∀ w ∈ Ω, ‖fderiv ℝ (fun w ↦ (v w).2) w 1 + I • fderiv ℝ (fun w ↦ (v w).2) w I‖ ≤
+        C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by
+  refine ⟨fun z hz ↦ ?_, fun w hw ↦ norm_fderiv_snd_add_I_smul_le
+    ((hv.differentiableOn one_ne_zero w hw).differentiableAt (hΩ.mem_nhds hw)) (hCR w hw)
+    (hA w hw)⟩
+  -- `C ‖∂ₜv‖` is continuous, hence bounded above near `z`
+  have hcont : ContinuousAt (fun w ↦ C * ‖fderiv ℝ v w I‖) z :=
+    continuousAt_const.mul ((((hv.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
+      continuousOn_const).continuousAt (hΩ.mem_nhds hz)).norm)
+  exact ⟨_, hcont.eventually_mem (Iic_mem_nhds (lt_add_one _))⟩
 
 /-! ### Check: the integrable model -/
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
@@ -51,6 +51,10 @@ def wedgePow (φ : SmoothForm I M ℝ k) : (m : ℕ) → SmoothForm I M ℝ (k *
       (isSmoothForm_ofFunction_iff.mpr contMDiff_const).mem_smoothBundleForms⟩
   | m + 1 => wedge (wedgePow φ m) φ
 
+/-- The empty wedge power is the constant function `1`. -/
+theorem wedgePow_zero (φ : SmoothForm I M ℝ k) :
+    (φ.wedgePow 0).val = RoughForm.ofFunction I fun _ ↦ (1 : ℝ) := (rfl)
+
 /-- The successor wedge power is the previous power wedged with the form. -/
 theorem wedgePow_succ (φ : SmoothForm I M ℝ k) (m : ℕ) :
     φ.wedgePow (m + 1) = wedge (φ.wedgePow m) φ := (rfl)
@@ -58,12 +62,12 @@ theorem wedgePow_succ (φ : SmoothForm I M ℝ k) (m : ℕ) :
 /-- A wedge power of a smooth form is, at every point, the wedge power of its value. -/
 @[simp]
 theorem wedgePow_apply (φ : SmoothForm I M ℝ k) (m : ℕ) (x : M) :
-    (φ.wedgePow m).1 x = (φ.1 x).wedgePow m := by
+    (φ.wedgePow m).val x = (φ.val x).wedgePow m := by
   induction m with
   | zero =>
     ext v
     exact (RoughForm.ofFunction_apply _ x v).trans
-      (ContinuousAlternatingMap.wedgePow_zero_apply (φ.1 x) v).symm
+      (ContinuousAlternatingMap.wedgePow_zero_apply (φ.val x) v).symm
   | succ m ih =>
     rw [wedgePow_succ, coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply', ih,
       ContinuousAlternatingMap.wedgePow_succ]

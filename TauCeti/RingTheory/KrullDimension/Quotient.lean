@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.KrullDimension.Local
 public import TauCeti.Topology.PureDimension
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import TauCeti.RingTheory.Catenary
 import TauCeti.Topology.KrullDimension.ClosedCover
 
@@ -49,6 +50,10 @@ many irreducible components `V(q)` not through `p`. That neighbourhood is covere
 sets `V(q)` with `q ≤ p`, so the local Krull dimension of `Spec R` at `p` is at most the largest
 `dim (R ⧸ q)` over the minimal primes `q ≤ p`.
 
+If `R ⧸ q` is a domain of dimension at most one, the primes containing both `q` and some `f ∉ q`
+are those of the zero-dimensional noetherian ring `R ⧸ (q + (f))`, so there are only finitely
+many.
+
 ## Main results
 
 * `Ideal.topologicalKrullDim_zeroLocus`: the closed subset `V(I)` of `Spec R` has the Krull
@@ -74,10 +79,14 @@ sets `V(q)` with `q ≤ p`, so the local Krull dimension of `Spec R` at `p` is a
   height of its image modulo some minimal prime `q ≤ p`.
 * `PrimeSpectrum.coheight_eq_ringKrullDim_quotient`: the coheight of a point `p` of `Spec R` is the
   Krull dimension of `R ⧸ p`.
+* `PrimeSpectrum.exists_le_and_le_ringKrullDim_quotient`: if `dim (R ⧸ I) ≥ n`, then
+  `dim (R ⧸ p) ≥ n` for some prime `p ⊇ I`.
 * `PrimeSpectrum.topologicalKrullDimAt_le_iSup_ringKrullDim_quotient`: in a noetherian ring, the
   local Krull dimension of `Spec R` at `p` is at most the supremum of `dim (R ⧸ q)` over the
   minimal primes `q ≤ p`.
 * `Ideal.height_add_ringKrullDim_quotient_le`: `ht p + dim (R ⧸ p) ≤ dim R` for an ideal `p`.
+* `Ideal.finite_setOf_le_and_mem`: in a noetherian ring, if `R ⧸ q` is a domain of
+  dimension at most one, only finitely many primes contain `q` and a given `f ∉ q`.
 -/
 
 public section
@@ -112,7 +121,7 @@ theorem ringKrullDim_localization_away_quotient_le (I : Ideal R) (g : R)
   -- A prime of `(R ⧸ I)[1/g']` contains `I` and misses the unit `g'`.
   have hsub (y : PrimeSpectrum (Localization.Away g')) : i (j y) ∈ S :=
     hS ⟨fun a ha ↦ by simp [i, j, Quotient.eq_zero_iff_mem.mpr ha], fun h ↦
-      y.2.ne_top (eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g'))⟩
+      y.isPrime.ne_top (eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g'))⟩
   rw [← topologicalKrullDim_eq_ringKrullDim]
   exact (((isClosedEmbedding_comap_of_surjective _ _ Quotient.mk_surjective).isEmbedding.comp
     (localization_away_isOpenEmbedding _ g').isEmbedding).isInducing.codRestrict
@@ -364,6 +373,18 @@ theorem coheight_eq_ringKrullDim_quotient (p : PrimeSpectrum R) :
     rw [Set.mem_Ici, mem_zeroLocus, SetLike.coe_subset_coe, asIdeal_le_asIdeal]
   rw [Order.coheight_eq_krullDim_Ici, ringKrullDim_quotient, this]
 
+/-- If `R ⧸ I` has Krull dimension at least `n`, then so does `R ⧸ p` for some prime `p` of `R`
+containing `I`. -/
+theorem exists_le_and_le_ringKrullDim_quotient {I : Ideal R} {n : ℕ}
+    (h : (n : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ I)) :
+    ∃ p : PrimeSpectrum R, I ≤ p.asIdeal ∧ (n : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p.asIdeal) := by
+  rw [ringKrullDim_quotient, Order.le_krullDim_iff] at h
+  obtain ⟨l, rfl⟩ := h
+  refine ⟨l.head.val, (mem_zeroLocus _ _).1 l.head.property, ?_⟩
+  rw [← coheight_eq_ringKrullDim_quotient]
+  exact WithBot.coe_le_coe.2 (Order.length_le_coheight_head.trans
+    (Order.coheight_le_coheight_apply_of_strictMono _ (Subtype.strictMono_coe _) _))
+
 open Topology TauCeti in
 /-- In a noetherian ring `R`, the local Krull dimension of `Spec R` at a point `p` is at most the
 largest Krull dimension `dim (R ⧸ q)` of an irreducible component `V(q)` of `Spec R` through `p`. -/
@@ -385,19 +406,19 @@ theorem topologicalKrullDimAt_le_iSup_ringKrullDim_quotient [IsNoetherianRing R]
     ((minimalPrimes.finite_of_isNoetherianRing R).subset (Set.sep_subset _ _)).to_subtype
   refine (topologicalKrullDimAt_le_of_isOpen hU hpU).trans ?_
   rw [topologicalKrullDim_eq_iSup_of_isClosed
-    (fun q : T ↦ (Subtype.val ⁻¹' zeroLocus (q.1 : Set R) : Set U))
-    (fun q ↦ (isClosed_zeroLocus _).preimage continuous_subtype_val) ?_]
+    (fun q : T ↦ (Subtype.val ⁻¹' zeroLocus (q.val : Set R) : Set U))
+    (fun q ↦ (isClosed_zeroLocus _).preimage continuous_subtypeVal) ?_]
   · refine iSup_le fun q ↦ ?_
     rw [IsEmbedding.subtypeVal.topologicalKrullDim_preimage, Subtype.range_coe]
     refine (IsEmbedding.inclusion Set.inter_subset_left).isInducing.topologicalKrullDim_le.trans
       ?_
     rw [Ideal.topologicalKrullDim_zeroLocus]
-    exact le_iSup₂_of_le q.1 q.2.1 (le_iSup_of_le q.2.2 le_rfl)
+    exact le_iSup₂_of_le q.val q.property.1 (le_iSup_of_le q.property.2 le_rfl)
   · intro x
-    obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ x.1.asIdeal)
+    obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ x.val.asIdeal)
     refine ⟨⟨q, hq, ?_⟩, (mem_zeroLocus _ _).2 hqx⟩
     by_contra h
-    exact x.2 (Set.mem_biUnion (x := q) ⟨hq, h⟩ ((mem_zeroLocus _ _).2 hqx))
+    exact x.property (Set.mem_biUnion (x := q) ⟨hq, h⟩ ((mem_zeroLocus _ _).2 hqx))
 
 end PrimeSpectrum
 
@@ -429,5 +450,27 @@ theorem height_add_ringKrullDim_quotient_le (p : Ideal R) :
         have : Nonempty (PrimeSpectrum R) := ⟨P⟩
         rw [ringKrullDim, Order.krullDim_eq_iSup_height_add_coheight_of_nonempty]
         exact_mod_cast le_iSup (fun a : PrimeSpectrum R ↦ Order.height a + Order.coheight a) P
+
+/-- In a noetherian ring `R`, if `R ⧸ q` is a domain of dimension at most one, only finitely many
+primes contain both `q` and a given element `f ∉ q`: the quotient `R ⧸ (q + (f))` of `R ⧸ q` by a
+nonzerodivisor has dimension zero, so it is artinian. -/
+theorem finite_setOf_le_and_mem [IsNoetherianRing R] (q : Ideal R) [q.IsPrime]
+    [Ring.KrullDimLE 1 (R ⧸ q)] {f : R} (hf : f ∉ q) :
+    {p : PrimeSpectrum R | q ≤ p.asIdeal ∧ f ∈ p.asIdeal}.Finite := by
+  have hf' : Quotient.mk q f ∈ nonZeroDivisors (R ⧸ q) :=
+    mem_nonZeroDivisors_of_ne_zero (Quotient.eq_zero_iff_mem.not.mpr hf)
+  have h := (ringKrullDim_quotient_succ_le_of_nonZeroDivisor hf').trans
+    (Ring.krullDimLE_iff.mp ‹Ring.KrullDimLE 1 (R ⧸ q)›)
+  rw [← Set.image_singleton, ← map_span, ← ringKrullDim_eq_of_ringEquiv
+    (DoubleQuot.quotQuotEquivQuotSup q (span {f})).symm] at h
+  have : Ring.KrullDimLE 0 (R ⧸ q ⊔ span {f}) := Ring.krullDimLE_iff.mpr <|
+    ENat.WithBot.add_le_add_one_right_iff.mp (by simpa using h)
+  have := IsNoetherianRing.isArtinianRing_of_krullDimLE_zero (R := R ⧸ q ⊔ span {f})
+  -- The primes in question are those containing `q + (f)`, which come from `R ⧸ (q + (f))`.
+  refine (Set.finite_range (PrimeSpectrum.comap (Quotient.mk (q ⊔ span {f})))).subset
+    fun p hp ↦ ?_
+  rw [range_comap_of_surjective _ _ Quotient.mk_surjective, mk_ker,
+    PrimeSpectrum.mem_zeroLocus, SetLike.coe_subset_coe]
+  exact sup_le hp.1 ((span_singleton_le_iff_mem _).mpr hp.2)
 
 end Ideal

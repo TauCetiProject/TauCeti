@@ -52,6 +52,10 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_rpow_criticalExponent`,
   `TauCeti.Yamabe.bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq`: the critical
   power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
+* `TauCeti.Yamabe.bubbleRadialWeight`, `TauCeti.Yamabe.continuous_bubbleRadialWeight`,
+  `TauCeti.Yamabe.bubbleRadialWeight_pos`, `TauCeti.Yamabe.bubbleRadialWeight_norm_eq`: the
+  radial critical-mass density of the unit bubble, its regularity, positivity, and identification
+  with the polar Jacobian times the unit bubble's critical power.
 * `TauCeti.Yamabe.bubble_sq`: the square of a bubble as a power of its profile.
 * `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
   `U_{t,b} ^ (4 / (n - 2))` of a bubble.
@@ -92,6 +96,14 @@ theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := 
   have h : (2 : ℝ) < n := by exact_mod_cast hn
   rw [criticalExponent_def]
   exact div_pos (by linarith) (by linarith)
+
+/-- The critical exponent is positive exactly in the dimensions `n > 2`; it is `0` for `n = 0` and
+`n = 2`, and `-2` for `n = 1`. -/
+theorem criticalExponent_pos_iff {n : ℕ} : 0 < criticalExponent n ↔ 2 < n := by
+  refine ⟨fun h ↦ ?_, criticalExponent_pos⟩
+  by_contra hn
+  obtain rfl | rfl | rfl : n = 0 ∨ n = 1 ∨ n = 2 := by omega
+  all_goals norm_num [criticalExponent_def] at h
 
 /-- The critical exponent exceeds `2` in every dimension `n > 2`. -/
 theorem two_lt_criticalExponent {n : ℕ} (hn : 2 < n) : 2 < criticalExponent n := by
@@ -147,6 +159,27 @@ theorem conformalCoefficient_nonneg (n : ℕ) : 0 ≤ conformalCoefficient n := 
   rcases lt_or_ge 2 n with hn | hn
   · exact (conformalCoefficient_pos hn).le
   · interval_cases n <;> norm_num [conformalCoefficient_def]
+
+/-- Radial critical-mass density `s ^ (n - 1) * (2 / (1 + s²)) ^ n` of the unit bubble `U_{1,0}`. -/
+def bubbleRadialWeight (n : ℕ) (s : ℝ) : ℝ := s ^ (n - 1) * (2 / (1 + s ^ 2)) ^ n
+
+/-- Unfolding lemma for `TauCeti.Yamabe.bubbleRadialWeight`. -/
+theorem bubbleRadialWeight_def (n : ℕ) (s : ℝ) :
+    bubbleRadialWeight n s = s ^ (n - 1) * (2 / (1 + s ^ 2)) ^ n := (rfl)
+
+/-- The radial bubble weight `bubbleRadialWeight n` is continuous on `ℝ`. -/
+@[fun_prop]
+theorem continuous_bubbleRadialWeight (n : ℕ) : Continuous (bubbleRadialWeight n) :=
+  (continuous_pow (n - 1)).mul ((continuous_const.div
+    (continuous_const.add (continuous_pow 2)) fun _ ↦ by dsimp; positivity).pow n)
+
+/-- The radial bubble weight `bubbleRadialWeight n s` is positive for `s > 0`. -/
+theorem bubbleRadialWeight_pos {n : ℕ} {s : ℝ} (hs : 0 < s) : 0 < bubbleRadialWeight n s := by
+  rw [bubbleRadialWeight_def]; positivity
+
+/-- The radial bubble weight `bubbleRadialWeight n s` is nonnegative for `s ≥ 0`. -/
+theorem bubbleRadialWeight_nonneg {n : ℕ} {s : ℝ} (hs : 0 ≤ s) : 0 ≤ bubbleRadialWeight n s := by
+  rw [bubbleRadialWeight_def]; positivity
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -226,6 +259,14 @@ theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 
     ← Real.rpow_natCast _ (finrank ℝ E)]
   congr 1
   field_simp
+
+/-- In dimension `n ≠ 2`, `bubbleRadialWeight n ‖x‖` equals the polar Jacobian `‖x‖ ^ (n - 1)`
+times the critical power `bubble 1 0 x ^ pₙ` of the standard unit bubble. -/
+theorem bubbleRadialWeight_norm_eq (hn : finrank ℝ E ≠ 2) (x : E) :
+    bubbleRadialWeight (finrank ℝ E) ‖x‖ =
+      ‖x‖ ^ (finrank ℝ E - 1) * bubble 1 0 x ^ criticalExponent (finrank ℝ E) := by
+  rw [bubbleRadialWeight_def, bubble_rpow_criticalExponent hn one_pos 0 x]
+  simp
 
 /-- In dimension `n ≥ 2`, the square of a bubble is a power of its profile:
 `U_{t,b} ^ 2 = (2 t / (t² + ‖x - b‖²)) ^ (n - 2)`. -/
@@ -396,7 +437,7 @@ theorem laplacian_div_add_norm_sub_sq_rpow (t k : ℝ) (b x : E) :
     have h := congrFun (laplacian_comp_add_right (fun z : E ↦ t ^ 2 + ‖z‖ ^ 2) (-b)) x
     simp only [← sub_eq_add_neg] at h
     rw [h, (contDiff_const.add contDiff_id :
-      ContDiff ℝ 2 fun s : ℝ ↦ t ^ 2 + s).laplacian_comp_norm_sq]
+      ContDiff ℝ 2 fun s : ℝ ↦ t ^ 2 + s).contDiffAt.laplacian_comp_norm_sq]
     simp
   rw [hUF, ContDiffAt.laplacian_comp (q := fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2) hFc hqc, hFd, hFdd,
     hgrad, hlap]

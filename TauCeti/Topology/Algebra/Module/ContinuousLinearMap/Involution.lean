@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Dimension.Prod
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
+import TauCeti.LinearAlgebra.Prod
+
 /-!
 # Involutions and the doubling of kernels, cokernels and indices
 
@@ -33,10 +35,12 @@ with the boundary condition.
 ## Main declarations
 
 * `ContinuousLinearMap.restrictEigenspace`: the restriction of an intertwining operator to
-  eigenspaces with the same eigenvalue.
+  eigenspaces with the same eigenvalue, bijective when the operator is
+  (`ContinuousLinearMap.restrictEigenspace_bijective`).
 * `ContinuousLinearMap.equivEigenspaceProd`: the splitting `X ≃L ker (σ - 1) × ker (σ + 1)` of a
   space by a continuous linear involution, and `ContinuousLinearMap.equivEigenspaceProd_comp`,
-  which conjugates an intertwining operator to the product of its restrictions.
+  which conjugates an intertwining operator to the product of its restrictions, with its
+  linear-map form `ContinuousLinearMap.prodMap_comp_equivEigenspaceProd`.
 * `ContinuousLinearMap.eigenspaceNegEquiv`: a map `J` with `J² = -1` anticommuting with `σ`
   identifies the `μ`- and `-μ`-eigenspaces of `σ`, and
   `ContinuousLinearMap.restrictEigenspace_comp_eigenspaceNegEquiv` intertwines the restrictions.
@@ -72,6 +76,17 @@ lemma coe_restrictEigenspace_apply (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {
     (T.restrictEigenspace hT μ x : Y) = T x := by
   rfl
 
+/-- The restriction to `μ`-eigenspaces of a bijective operator intertwining `σX` and `σY` is
+bijective: the preimage `x` of a `μ`-eigenvector `y` satisfies `T (σX x) = σY y = T (μ • x)`. -/
+theorem restrictEigenspace_bijective {T : X →L[𝕜] Y} (hb : Function.Bijective T)
+    {σX : X →L[𝕜] X} {σY : Y →L[𝕜] Y} (hT : T.comp σX = σY.comp T) (μ : 𝕜) :
+    Function.Bijective (T.restrictEigenspace hT μ) := by
+  refine ⟨fun x y h ↦ Subtype.ext (hb.1 (congrArg Subtype.val h)), fun y ↦ ?_⟩
+  obtain ⟨x, hx⟩ := hb.2 y
+  have hy : σY (T x) = μ • T x := by simpa [hx] using mem_eigenspace_iff.1 y.property
+  refine ⟨⟨x, mem_eigenspace_iff.2 (hb.1 ?_)⟩, Subtype.ext hx⟩
+  simpa [hy] using congr($hT x)
+
 end Restrict
 
 section Involution
@@ -84,7 +99,7 @@ variable [ContinuousConstSMul 𝕜 X]
 `-1`-eigenspaces, through `x ↦ (2⁻¹ • (x + σ x), 2⁻¹ • (x - σ x))`. -/
 noncomputable def equivEigenspaceProd (σ : X →L[𝕜] X) (hσ : Function.Involutive σ) :
     X ≃L[𝕜] eigenspace (σ : End 𝕜 X) 1 × eigenspace (σ : End 𝕜 X) (-1) :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((((2 : 𝕜)⁻¹ • (ContinuousLinearMap.id 𝕜 X + σ)).codRestrict _ fun x ↦ by
         rw [mem_eigenspace_iff]
         simp [hσ x, add_comm]).prod
@@ -93,16 +108,17 @@ noncomputable def equivEigenspaceProd (σ : X →L[𝕜] X) (hσ : Function.Invo
         simp [hσ x, smul_sub]
         abel))
     ((Submodule.subtypeL _).coprod (Submodule.subtypeL _))
-    (fun x ↦ by
-      have h2 : x + σ x + (x - σ x) = (2 : 𝕜) • x := by module
-      simp only [coprod_apply, prod_apply, Submodule.subtypeL_apply, coe_codRestrict_apply,
-        smul_apply, add_apply, sub_apply, id_apply]
-      rw [← smul_add, h2, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul])
-    (fun ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ ↦ by
+    (ContinuousLinearMap.ext fun ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ ↦ by
       rw [mem_eigenspace_iff] at ha hb
       simp only [coe_coe, one_smul, neg_smul] at ha hb
       ext <;>
       simp [ha, hb, ← add_smul, ← two_mul, mul_inv_cancel₀ (two_ne_zero (α := 𝕜))])
+    (ContinuousLinearMap.ext fun x ↦ by
+      have h2 : x + σ x + (x - σ x) = (2 : 𝕜) • x := by module
+      simp only [comp_apply, coprod_apply, prod_apply,
+        Submodule.subtypeL_apply, coe_codRestrict_apply, smul_apply, add_apply, sub_apply,
+        id_apply]
+      rw [← smul_add, h2, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul])
 
 @[simp]
 lemma coe_equivEigenspaceProd_fst (σ : X →L[𝕜] X) (hσ : Function.Involutive σ) (x : X) :
@@ -135,6 +151,18 @@ lemma equivEigenspaceProd_comp (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {σY 
   · simp [hTx]
   · simp [hTx]
 
+/-- `ContinuousLinearMap.equivEigenspaceProd_comp` as a commuting square of linear maps: the form
+along which linear-algebraic constructions such as determinant lines are transported. -/
+theorem prodMap_comp_equivEigenspaceProd (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {σY : Y →L[𝕜] Y}
+    (hσX : Function.Involutive σX) (hσY : Function.Involutive σY) (hT : T.comp σX = σY.comp T) :
+    (T.restrictEigenspace hT 1 : eigenspace (σX : End 𝕜 X) 1 →ₗ[𝕜]
+          eigenspace (σY : End 𝕜 Y) 1).prodMap
+        (T.restrictEigenspace hT (-1) : eigenspace (σX : End 𝕜 X) (-1) →ₗ[𝕜]
+          eigenspace (σY : End 𝕜 Y) (-1)) ∘ₗ
+        (equivEigenspaceProd σX hσX).toLinearEquiv.toLinearMap =
+      (equivEigenspaceProd σY hσY).toLinearEquiv.toLinearMap ∘ₗ (T : X →ₗ[𝕜] Y) :=
+  congr(toLinearMap $(equivEigenspaceProd_comp T hσX hσY hT)).symm
+
 end Involution
 
 section Anticommute
@@ -148,7 +176,7 @@ def eigenspaceNegEquiv {σ J : X →L[𝕜] X} (hJ : J.comp J = -ContinuousLinea
     (hJσ : σ.comp J = -J.comp σ) (μ : 𝕜) :
     eigenspace (σ : End 𝕜 X) μ ≃L[𝕜] eigenspace (σ : End 𝕜 X) (-μ) :=
   have hJσx (x : X) : σ (J x) = -J (σ x) := congr($hJσ x)
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (J.restrict fun x hx ↦ by
       rw [mem_eigenspace_iff] at hx ⊢
       simp only [coe_coe] at hx ⊢
@@ -157,8 +185,8 @@ def eigenspaceNegEquiv {σ J : X →L[𝕜] X} (hJ : J.comp J = -ContinuousLinea
       rw [mem_eigenspace_iff] at hx ⊢
       simp only [coe_coe, neg_apply, map_neg] at hx ⊢
       rw [hJσx, hx, map_smul, neg_smul, neg_neg, smul_neg])
-    (fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
-    (fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
 
 @[simp]
 lemma coe_eigenspaceNegEquiv_apply {σ J : X →L[𝕜] X}
@@ -213,8 +241,8 @@ theorem finrank_ker_eq_two_mul_finrank_ker_restrictEigenspace (T : X →L[𝕜] 
     congr(toLinearMap $(restrictEigenspace_comp_eigenspaceNegEquiv T hJX hJσX hJY hJσY hT hTJ 1))
   simp only [toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
     at hconj hswap
-  rw [(LinearMap.kerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap, LinearMap.ker_prodMap,
-    (Submodule.prodEquiv _ _).finrank_eq,
+  rw [(LinearMap.kerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap,
+    (LinearMap.kerProdMapEquiv _ _).finrank_eq,
     ((LinearEquiv.refl 𝕜 _).prodCongr (LinearMap.kerEquivOfComp _ _ hswap.symm).symm).finrank_eq,
     finrank_prod_self]
 
@@ -233,8 +261,8 @@ theorem finrank_coker_eq_two_mul_finrank_coker_restrictEigenspace (T : X →L[�
     congr(toLinearMap $(restrictEigenspace_comp_eigenspaceNegEquiv T hJX hJσX hJY hJσY hT hTJ 1))
   simp only [toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
     at hconj hswap
-  rw [(LinearMap.cokerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap, LinearMap.range_prodMap,
-    (Submodule.quotientProdEquiv _ _).finrank_eq,
+  rw [(LinearMap.cokerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap,
+    (LinearMap.cokerProdMapEquiv _ _).finrank_eq,
     ((LinearEquiv.refl 𝕜 _).prodCongr
       (LinearMap.cokerEquivOfComp _ _ hswap.symm).symm).finrank_eq,
     finrank_prod_self]

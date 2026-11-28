@@ -25,6 +25,7 @@ at a zero of the map, this differential vanishes.
 ## Main results
 
 * `TauCeti.mvfderiv_inner_apply`: the product rule for the inner product.
+* `TauCeti.mvfderiv_inner_const_apply`: the derivative of `⟪g, e⟫` for a constant vector `e`.
 * `TauCeti.mvfderiv_norm_sq_comp`: the chain rule for the squared norm.
 * `TauCeti.mvfderiv_norm_sq_comp_eq_zero_of_eq_zero`: the squared norm of a differentiable
   vector-valued map has vanishing differential at a zero.
@@ -69,6 +70,14 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     hpair']
   simp only [fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
 
+/-- The derivative of the inner product of a vector-valued function with a constant vector `e`:
+`d⟪g, e⟫ = ⟪dg, e⟫`. -/
+theorem mvfderiv_inner_const_apply {g : M → F} {x : M} (hg : MDiffAt g x) (e : F)
+    (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ inner 𝕜 (g y) e) x v = inner 𝕜 (mvfderiv I g x v) e := by
+  rw [mvfderiv_inner_apply hg mdifferentiableAt_const v, mvfderiv_const]
+  simp
+
 section Real
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] {p : M}
@@ -96,7 +105,7 @@ from `a` has a critical point exactly at `a`. -/
 theorem mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff (U : Opens G) (a : G) (x : U) :
     mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x = 0 ↔ (x : G) = a := by
   have hval : MDifferentiableAt 𝓘(ℝ, G) 𝓘(ℝ, G) (Subtype.val : U → G) x :=
-    (contMDiff_subtype_val (U := U) x).mdifferentiableAt one_ne_zero
+    (contMDiff_subtypeVal (U := U) x).mdifferentiableAt one_ne_zero
   have hd := mvfderiv_norm_sq_comp (hval.sub (mdifferentiableAt_const (c := a)))
   rw [mvfderiv_sub hval mdifferentiableAt_const, mvfderiv_const, sub_zero] at hd
   have hd_apply (v : TangentSpace 𝓘(ℝ, G) x) :

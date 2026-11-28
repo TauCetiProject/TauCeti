@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.NumberTheory.Padics.BilinearForm.GaussSum
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.GaussSum
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Submodule.Compl
@@ -48,9 +48,7 @@ Conway–Sloane `2`-adic symbol: the quantity
 
 is an isometry invariant
 (`LinearMap.BilinForm.IsJordanSplitting.prod_χ₈_pow_mul_stdAddChar_sum_eq_of_equivalent`).
-So the oddities of the constituents up to `j` are invariant in total modulo `8`, up to `4` times
-the number of signs `ε i = -1` with `j - i` even, while the individual signs and oddities are not:
-sign walking `⟨1⟩ ⊥ 2 !![0, 1; 1, 0] ≅ ⟨5⟩ ⊥ 2 !![2, 1; 1, 2]`
+Sign walking `⟨1⟩ ⊥ 2 !![0, 1; 1, 0] ≅ ⟨5⟩ ⊥ 2 !![2, 1; 1, 2]`
 (`TauCeti.equivalent_toBilin'_unary_two_hyperbolic`) changes the sign and the oddity of the
 constituent of index `0` together, from `(1, 1)` to `(-1, 5)`, and leaves `ε 0 · e(t 0 / 8)`
 unchanged.
@@ -94,7 +92,8 @@ private theorem IsJordanSplitting.sum_stdAddChar_dotProduct_two_pow_smul_toMatri
           stdAddChar (PadicInt.toZModPow 3 (C w w)) := by
   have h2 : (2 : ℤ_[2]) ^ i ∈ nonZeroDivisors ℤ_[2] :=
     mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero)
-  have hCs : C.IsSymm := IsSymm.of_smul h2 (hC ▸ hB.restrict (N i))
+  have hCs : C.IsSymm := (IsSMulRegular.of_ne_zero (pow_ne_zero i two_ne_zero)).isSymm_smul_iff.mp
+    (hC ▸ hB.restrict (N i))
   have hdet : IsUnit (C.toMatrix d).det :=
     d.isUnit_det_of_isPerfPair d C ((h.isModular i).isPerfPair_of_smul_eq h2 hC)
   obtain ⟨m, rfl⟩ : ∃ m, k = i + m := ⟨k - i, by omega⟩
@@ -140,7 +139,7 @@ theorem IsJordanSplitting.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_prod
   have hP := DirectSum.isInternal_biSup_submodule_of_iSupIndep (Set.Iic j)
     (h.isInternal.submodule_iSupIndep.comp Subtype.val_injective)
   let d' (i : Set.Iic j) : Basis (α i) ℤ_[2] ((N i).comap (⨆ i ∈ Set.Iic j, N i).subtype) :=
-    (d i).map (Submodule.comapSubtypeEquivOfLe (le_biSup N i.2)).symm
+    (d i).map (Submodule.comapSubtypeEquivOfLe (le_biSup N i.property)).symm
   -- In the basis collected from the `d i`, the Gram matrix is block diagonal.
   have hgram : (B.restrict (⨆ i ∈ Set.Iic j, N i)).toMatrix (hP.collectedBasis d') =
       Matrix.blockDiagonal' fun i : Set.Iic j ↦ (2 : ℤ_[2]) ^ (i : ℕ) • (C i).toMatrix (d i) := by
@@ -149,14 +148,14 @@ theorem IsJordanSplitting.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_prod
     congr 1
     funext i
     refine Matrix.ext fun a a' ↦ ?_
-    simpa [toMatrix_apply, d'] using (LinearMap.congr_fun₂ (hC i i.2) (d i a) (d i a')).symm
+    simpa [toMatrix_apply, d'] using (LinearMap.congr_fun₂ (hC i i.property) (d i a) (d i a')).symm
   rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq _ (hP.collectedBasis d') b, hgram,
     Matrix.blockDiagonal'_map _ _ (map_zero _), Matrix.sum_addChar_dotProduct_blockDiagonal'_mulVec,
     Finset.prod_subtype (Finset.Iic j) (p := (· ∈ Set.Iic j)) (by simp)]
   exact Fintype.prod_congr _ _ fun i ↦
     h.sum_stdAddChar_dotProduct_two_pow_smul_toMatrix_map_mulVec_eq hB
-      (by have := Set.mem_Iic.mp i.2; omega)
-      (hC i i.2) (d i) (hw i i.2)
+      (by have := Set.mem_Iic.mp i.property; omega)
+      (hC i i.property) (d i) (hw i i.property)
 
 /-- **The signs and oddities of the lower constituents of a dyadic Jordan splitting.** Let `B` and
 `B'` be isometric symmetric forms on finite free `ℤ_[2]`-modules, with Jordan splittings `N` and

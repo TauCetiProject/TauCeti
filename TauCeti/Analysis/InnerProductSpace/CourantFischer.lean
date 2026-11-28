@@ -6,8 +6,8 @@ Authors: Jon Crall, Claude Fable 5, Claude Opus 4.8
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -35,6 +35,8 @@ form domination and Weyl's perturbation bound.
   the Courant–Fischer equality.
 * `LinearMap.IsSymmetric.eigenvalue_mono`:
   monotonicity of sorted eigenvalues under quadratic-form order.
+* `LinearMap.IsSymmetric.exists_unitary_le_conj_of_eigenvalues_le`: **comparison by a
+  unitary**; if `λⱼ(X) ≤ λⱼ(Y)` for every `j`, then `X ≤ U Y U⁻¹` for some unitary `U`.
 * `LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le` and
   `LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le_norm`:
   Weyl's perturbation inequality.
@@ -218,7 +220,7 @@ theorem exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank
   obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_finrank hV
   have hv' := hv.map' V.subtype (Submodule.ker_subtype _)
   have hsub : Submodule.span 𝕜 (Set.range (V.subtype ∘ v)) ≤ V :=
-    Submodule.span_le.mpr (by rintro _ ⟨j, rfl⟩; exact (v j).2)
+    Submodule.span_le.mpr (by rintro _ ⟨j, rfl⟩; exact (v j).property)
   obtain ⟨x, hxW, hx1, hxle⟩ := hT.exists_unit_vector_re_inner_le_eigenvalue hn k
     (Submodule.span 𝕜 (Set.range (V.subtype ∘ v)))
     (by rw [finrank_span_eq_card hv']; simp)
@@ -282,20 +284,20 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
     -- states the goal with the definition unfolded, in the shape the next step needs;
     -- there is no `_apply` lemma to rewrite with here.
     change (i : ℕ) ≤ n - 1
-    have := i.2
+    have := i.isLt
     omega
   have hbddB : ∀ V : {V : Submodule 𝕜 E // finrank 𝕜 V = (k : ℕ) + 1},
       BddBelow (Set.range fun x : {x : E // x ∈ (V : Submodule 𝕜 E) ∧ ‖x‖ = 1} =>
         RCLike.re ⟪T (x : E), (x : E)⟫_𝕜) := by
     intro V
-    exact ⟨hT.eigenvalues hn m, by rintro _ ⟨x, rfl⟩; exact hray _ x.2.2⟩
+    exact ⟨hT.eigenvalues hn m, by rintro _ ⟨x, rfl⟩; exact hray _ x.property.2⟩
   -- Every inner infimum is at most `λₖ` (upper direction).
   have hupper : ∀ V : {V : Submodule 𝕜 E // finrank 𝕜 V = (k : ℕ) + 1},
       (⨅ x : {x : E // x ∈ (V : Submodule 𝕜 E) ∧ ‖x‖ = 1},
         RCLike.re ⟪T (x : E), (x : E)⟫_𝕜) ≤ hT.eigenvalues hn k := by
     intro V
     obtain ⟨x, hxV, hx1, hxle⟩ :=
-      hT.exists_unit_vector_re_inner_le_eigenvalue hn k V.1 V.2
+      hT.exists_unit_vector_re_inner_le_eigenvalue hn k V.val V.property
     exact (ciInf_le (hbddB V) ⟨x, hxV, hx1⟩).trans hxle
   -- The lower-direction witness subspace attains `λₖ` from below.
   obtain ⟨V₀, hV₀dim, hV₀low⟩ :=
@@ -311,7 +313,7 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
             Submodule 𝕜 E) ∧ ‖x‖ = 1},
         RCLike.re ⟪T (x : E), (x : E)⟫_𝕜 := by
     have : Nonempty {x : E // x ∈ V₀ ∧ ‖x‖ = 1} := ⟨⟨x₀, hx₀V, hx₀1⟩⟩
-    exact le_ciInf fun x => hV₀low _ x.2.1 x.2.2
+    exact le_ciInf fun x => hV₀low _ x.property.1 x.property.2
   have hbddA : BddAbove (Set.range
       fun V : {V : Submodule 𝕜 E // finrank 𝕜 V = (k : ℕ) + 1} =>
         ⨅ x : {x : E // x ∈ (V : Submodule 𝕜 E) ∧ ‖x‖ = 1},
@@ -319,52 +321,10 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
     ⟨hT.eigenvalues hn k, by rintro _ ⟨V, rfl⟩; exact hupper V⟩
   exact hlow.trans (le_ciSup hbddA ⟨V₀, hV₀dim⟩)
 
-/-! ### Sorted-eigenvalue uniqueness and Loewner monotonicity
+/-! ### Loewner monotonicity
 
-Courant–Fischer consequences needed by the Ky Fan / unitarily-invariant-norm
-development: an antitone list diagonalizing a symmetric operator in *some*
-orthonormal basis is *the* sorted eigenvalue list, and the sorted eigenvalues
-are monotone in the quadratic form (Loewner order). -/
-
-/-- **Sorted-eigenvalue uniqueness.**  If an orthonormal basis `w`
-diagonalizes the symmetric operator `S` with an *antitone* value list `μ`,
-then `μ` is the sorted eigenvalue list: `hS.eigenvalues hn = μ`.
-(Courant–Fischer: both lists satisfy the same minimax characterization.) -/
-theorem eigenvalues_eq_of_eigenbasis
-    (hS : S.IsSymmetric) (hn : finrank 𝕜 E = n) (w : OrthonormalBasis (Fin n) 𝕜 E)
-    {μ : Fin n → ℝ} (hμ : Antitone μ) (hw : ∀ i, S (w i) = (μ i : 𝕜) • w i) :
-    hS.eigenvalues hn = μ := by
-  funext k
-  refine le_antisymm ?_ ?_
-  · -- `λₖ ≤ μₖ`: intersect the CF-lower witness with the `w`-tail span.
-    obtain ⟨V, hVdim, hVlow⟩ :=
-      hS.exists_submodule_forall_unit_eigenvalue_le_re_inner hn k
-    set W := w.spanIndices ↑(Finset.Ici k) with hW
-    have hWdim : finrank 𝕜 W = n - (k : ℕ) := by
-      rw [hW, w.finrank_spanIndices, Fin.card_Ici]
-    have hinf : V ⊓ W ≠ ⊥ :=
-      Submodule.inf_ne_bot_of_finrank_lt (by have _ : (k : ℕ) < n := k.2; omega)
-    obtain ⟨z, hz, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hinf
-    obtain ⟨hzV, hzW⟩ := Submodule.mem_inf.mp hz
-    have hz0' : ‖z‖ ≠ 0 := norm_ne_zero_iff.mpr hz0
-    set x := ((‖z‖⁻¹ : ℝ) : 𝕜) • z with hx
-    have hnx : ‖x‖ = 1 := by
-      rw [hx, norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm, inv_mul_cancel₀ hz0']
-    have hxW : x ∈ W := W.smul_mem _ hzW
-    calc hS.eigenvalues hn k ≤ RCLike.re ⟪S x, x⟫_𝕜 := hVlow x (V.smul_mem _ hzV) hnx
-      _ ≤ μ k * ‖x‖ ^ 2 :=
-          re_inner_le_of_eigenbasis S w hw (fun _ hik => hμ (by simpa using hik)) hxW
-      _ = μ k := by rw [hnx]; ring
-  · -- `μₖ ≤ λₖ`: test the CF-upper bound on the `w`-head span.
-    set V := w.spanIndices ↑(Finset.Iic k) with hV
-    have hVdim : finrank 𝕜 V = (k : ℕ) + 1 := by
-      rw [hV, w.finrank_spanIndices, Fin.card_Iic]
-    obtain ⟨x, hxV, hnx, hup⟩ :=
-      hS.exists_unit_vector_re_inner_le_eigenvalue hn k V hVdim
-    calc μ k = μ k * ‖x‖ ^ 2 := by rw [hnx]; ring
-      _ ≤ RCLike.re ⟪S x, x⟫_𝕜 :=
-          le_re_inner_of_eigenbasis S w hw (fun _ hik => hμ (by simpa using hik)) hxV
-      _ ≤ hS.eigenvalues hn k := hup
+A fact needed by the Ky Fan / unitarily-invariant-norm development: the sorted
+eigenvalues are monotone in the quadratic form (Loewner order). -/
 
 /-- **Loewner monotonicity of the sorted eigenvalues.**  If the quadratic form
 of `T` is dominated by that of `S`, then so is every sorted eigenvalue. -/
@@ -379,6 +339,23 @@ theorem eigenvalue_mono
   calc hT.eigenvalues hn k ≤ RCLike.re ⟪T x, x⟫_𝕜 := hVlow x hxV hnx
     _ ≤ RCLike.re ⟪S x, x⟫_𝕜 := h x
     _ ≤ hS.eigenvalues hn k := hup
+
+/-- **Comparison by a unitary.** If the sorted eigenvalues of the symmetric operators `X` and
+`Y` satisfy `λⱼ(X) ≤ λⱼ(Y)` for every `j`, then `X ≤ U Y U⁻¹` for some unitary `U`. -/
+theorem exists_unitary_le_conj_of_eigenvalues_le {X Y : E →ₗ[𝕜] E} (hX : X.IsSymmetric)
+    (hY : Y.IsSymmetric) {n : ℕ} (hn : finrank 𝕜 E = n)
+    (h : ∀ j, hX.eigenvalues hn j ≤ hY.eigenvalues hn j) :
+    ∃ U : E ≃ₗᵢ[𝕜] E,
+      ((U : E →ₗ[𝕜] E) ∘ₗ Y ∘ₗ (U.symm : E →ₗ[𝕜] E) - X).IsPositive := by
+  -- `U` maps the eigenbasis of `Y` to that of `X`, so `U Y U⁻¹ - X` is diagonal in the latter.
+  set bX := hX.eigenvectorBasis hn
+  set U := (hY.eigenvectorBasis hn).equiv bX (Equiv.refl _)
+  refine ⟨U, ((isSymmetric_linearIsometryEquiv_conj_iff Y U).mpr hY).sub hX, fun x ↦ ?_⟩
+  have hD : ∀ i, ((U : E →ₗ[𝕜] E) ∘ₗ Y ∘ₗ (U.symm : E →ₗ[𝕜] E) - X) (bX i) =
+      ((hY.eigenvalues hn i - hX.eigenvalues hn i : ℝ) : 𝕜) • bX i := fun i ↦ by
+    simp [U, bX, hY.apply_eigenvectorBasis, hX.apply_eigenvectorBasis, sub_smul]
+  rw [re_inner_apply_self_eq_sum_of_eigenbasis _ bX hD]
+  exact Finset.sum_nonneg fun i _ ↦ mul_nonneg (sub_nonneg.mpr (h i)) (sq_nonneg _)
 
 /-- The span of a selected subfamily of the eigenbasis of a symmetric operator
 is invariant under the operator. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
@@ -34,14 +35,17 @@ components of a reducible root system acts on the orthogonal sum of their root l
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.piForm`: the summed ambient form on `Π i, V i`.
-* `TauCeti.IntegralLattice.pi`: the orthogonal sum of a finite family of integral lattices.
+* `TauCeti.IntegralLattice.pi`: the orthogonal sum of a finite family of integral lattices, whose
+  form is the orthogonal sum `LinearMap.BilinForm.pi` of the summand forms.
 * `TauCeti.IntegralLattice.isEven_pi_iff`, `TauCeti.IntegralLattice.isPosDef_pi_iff`: evenness
   and positive-definiteness are detected summandwise.
 * `TauCeti.IntegralLattice.finrank_pi`: the rank of the orthogonal sum is the sum of the ranks.
 * `TauCeti.IntegralLattice.Isometry.pi`: the orthogonal sum of a family of isometries.
 * `TauCeti.IntegralLattice.Isometry.piCongrLeft`: the isometry `⊥ k, L (σ k) ≅ ⊥ i, L i` induced
   by an equivalence `σ : κ ≃ ι` of index types.
+* `TauCeti.IntegralLattice.Isometry.piCongr`, `TauCeti.IntegralLattice.Isometry.piCongr'`: the
+  isometry `⊥ i, L i ≅ ⊥ k, M k` combining an equivalence `σ : ι ≃ κ` of index types with
+  summandwise isometries indexed by the source or target.
 
 ## References
 
@@ -61,31 +65,6 @@ variable {ι : Type v} [Fintype ι] {V : ι → Type u} [∀ i, AddCommGroup (V 
   [∀ i, Module ℚ (V i)]
 variable (L : ∀ i, IntegralLattice (V i))
 
-/-! ## The summed form -/
-
-/-- The ambient form of an orthogonal sum: the sum of the pairings of corresponding
-coordinates. -/
-def piForm : LinearMap.BilinForm ℚ (∀ i, V i) :=
-  ∑ i, (L i).form.compl₁₂ (LinearMap.proj i) (LinearMap.proj i)
-
-/-- Evaluation of the orthogonal-sum form is the sum of the coordinate pairings. -/
-@[simp]
-theorem piForm_apply (x y : ∀ i, V i) : piForm L x y = ∑ i, (L i).form (x i) (y i) := by
-  simp [piForm, LinearMap.sum_apply]
-
-/-- Pairing with a family supported at one index extracts that coordinate pairing. -/
-theorem piForm_single_right [DecidableEq ι] (x : ∀ i, V i) (i : ι) (v : V i) :
-    piForm L x (Pi.single i v) = (L i).form (x i) v := by
-  rw [piForm_apply, Finset.sum_eq_single i (fun j _ hji ↦ by
-    rw [Pi.single_eq_of_ne hji, map_zero]) (by simp), Pi.single_eq_same]
-
-/-- Pairing a family supported at one index with an arbitrary family extracts that coordinate
-pairing. -/
-theorem piForm_single_left [DecidableEq ι] (i : ι) (v : V i) (y : ∀ i, V i) :
-    piForm L (Pi.single i v) y = (L i).form v (y i) := by
-  rw [piForm_apply, Finset.sum_eq_single i (fun j _ hji ↦ by
-    rw [Pi.single_eq_of_ne hji, map_zero, LinearMap.zero_apply]) (by simp), Pi.single_eq_same]
-
 /-! ## The orthogonal sum -/
 
 /-- **The orthogonal sum of a finite family of integral lattices**: the integral lattice in
@@ -93,16 +72,14 @@ theorem piForm_single_left [DecidableEq ι] (i : ι) (v : V i) (y : ∀ i, V i) 
 form `∑ i, L_i(x i, y i)`. -/
 def pi : IntegralLattice (∀ i, V i) where
   carrier := Submodule.pi Set.univ fun i ↦ (L i).carrier
-  form := piForm L
-  isLattice := inferInstance
-  isSymm := ⟨fun x y ↦ by
-    simp only [piForm_apply]
-    exact Finset.sum_congr rfl fun i _ ↦ (L i).isSymm.eq (x i) (y i)⟩
+  form := LinearMap.BilinForm.pi fun i ↦ (L i).form
+  isFullLattice := inferInstance
+  isSymm := LinearMap.BilinForm.isSymm_pi_iff.mpr fun i ↦ (L i).isSymm
   le_dual := by
     intro x hx
     rw [LinearMap.BilinForm.mem_dualSubmodule]
     intro y hy
-    rw [piForm_apply]
+    rw [LinearMap.BilinForm.pi_apply]
     exact Submodule.sum_mem _ fun i _ ↦
       (L i).le_dual (hx i (Set.mem_univ i)) (y i) (hy i (Set.mem_univ i))
 
@@ -113,7 +90,7 @@ theorem pi_carrier : (pi L).carrier = Submodule.pi Set.univ fun i ↦ (L i).carr
 
 /-- The form of an orthogonal sum is the summed coordinate form. -/
 @[simp]
-theorem pi_form : (pi L).form = piForm L :=
+theorem pi_form : (pi L).form = LinearMap.BilinForm.pi fun i ↦ (L i).form :=
   (rfl)
 
 /-- A family lies in the orthogonal sum exactly when each of its values lies in its summand. -/
@@ -134,31 +111,14 @@ theorem norm_pi_apply (x : ∀ i, V i) : (pi L).norm x = ∑ i, (L i).norm (x i)
 -- Use explicitly: the simplifier first expands norms by `norm_pi_apply`.
 theorem norm_pi_single [DecidableEq ι] (i : ι) (x : V i) :
     (pi L).norm (Pi.single i x) = (L i).norm x := by
-  simp only [norm_apply, pi_form, piForm_single_left, Pi.single_eq_same]
+  simp only [norm_apply, pi_form, LinearMap.BilinForm.pi_apply_single_left, Pi.single_eq_same]
 
 /-! ## Nondegeneracy -/
-
-/-- A vector which pairs trivially with every family is zero, provided every summand form is
-nondegenerate. -/
-private theorem eq_zero_of_forall_piForm (hL : ∀ i, (L i).form.Nondegenerate)
-    {x : ∀ i, V i} (hx : ∀ y, piForm L x y = 0) : x = 0 := by
-  classical
-  funext i
-  exact (hL i).1 (x i) fun v ↦ by rw [← piForm_single_right]; exact hx _
 
 /-- The orthogonal-sum form is nondegenerate exactly when every summand form is. -/
 theorem nondegenerate_pi_iff :
     (pi L).form.Nondegenerate ↔ ∀ i, (L i).form.Nondegenerate := by
-  classical
-  constructor
-  · intro h i
-    refine (L i).isSymm.isRefl.nondegenerate_iff_separatingLeft.mpr fun v hv ↦ ?_
-    have hzero : (Pi.single i v : ∀ i, V i) = 0 :=
-      h.1 _ fun y ↦ by rw [pi_form, piForm_single_left]; exact hv (y i)
-    simpa using congrFun hzero i
-  · intro hL
-    exact (pi L).isSymm.isRefl.nondegenerate_iff_separatingLeft.mpr fun _ hx ↦
-      eq_zero_of_forall_piForm L hL hx
+  rw [pi_form, LinearMap.BilinForm.nondegenerate_pi_iff]
 
 /-- An orthogonal sum of nondegenerate integral lattices is nondegenerate. -/
 instance instIsNondegeneratePi [∀ i, (L i).IsNondegenerate] : (pi L).IsNondegenerate :=
@@ -173,13 +133,13 @@ theorem isEven_pi_iff : (pi L).IsEven ↔ ∀ i, (L i).IsEven := by
   simp only [isEven_iff_forall_norm]
   constructor
   · intro h i v
-    obtain ⟨z, hz⟩ := h ⟨_, single_mem_pi_carrier L i v.2⟩
+    obtain ⟨z, hz⟩ := h ⟨_, single_mem_pi_carrier L i v.property⟩
     refine ⟨z, ?_⟩
     rw [← hz, norm_pi_apply, Finset.sum_eq_single i (fun j _ hji ↦ by
       simp [Pi.single_eq_of_ne hji]) (by simp)]
     simp
   · intro h x
-    choose z hz using fun i ↦ h i ⟨(x : ∀ i, V i) i, (mem_pi_carrier_iff L _).mp x.2 i⟩
+    choose z hz using fun i ↦ h i ⟨(x : ∀ i, V i) i, (mem_pi_carrier_iff L _).mp x.property i⟩
     refine ⟨∑ i, z i, ?_⟩
     rw [norm_pi_apply]
     push_cast
@@ -193,10 +153,7 @@ theorem isEven_pi {L : ∀ i, IntegralLattice (V i)} (hL : ∀ i, (L i).IsEven) 
 /-- An orthogonal sum is positive definite exactly when every summand is. -/
 @[simp]
 theorem isPosDef_pi_iff : (pi L).IsPosDef ↔ ∀ i, (L i).IsPosDef := by
-  have h : (pi L).form.toQuadraticMap = QuadraticMap.pi fun i ↦ (L i).form.toQuadraticMap := by
-    ext x
-    simp
-  rw [IsPosDef, h, QuadraticMap.posDef_pi_iff]
+  rw [IsPosDef, pi_form, LinearMap.BilinForm.toQuadraticMap_pi, QuadraticMap.posDef_pi_iff]
 
 /-! ## Rank -/
 
@@ -224,7 +181,7 @@ def pi (f : ∀ i, Isometry (L i) (M i)) :
   toIsometryEquiv :=
     { toLinearEquiv := LinearEquiv.piCongrRight fun i ↦ (f i : V i ≃ₗ[ℚ] W i)
       map_app' x y := by
-        simp only [pi_form, piForm_apply]
+        simp only [pi_form, LinearMap.BilinForm.pi_apply]
         exact Finset.sum_congr rfl fun i _ ↦ (f i).map_app (x i) (y i) }
   map_carrier := by
     ext y
@@ -274,7 +231,7 @@ def piCongrLeft (σ : κ ≃ ι) :
   toIsometryEquiv :=
     { toLinearEquiv := LinearEquiv.piCongrLeft ℚ V σ
       map_app' x y := by
-        simp only [pi_form, piForm_apply]
+        simp only [pi_form, LinearMap.BilinForm.pi_apply]
         rw [← σ.sum_comp]
         -- `LinearEquiv.piCongrLeft` is `Equiv.piCongrLeft` with its linear structure, and Mathlib
         -- states its evaluation only for the underlying equivalence.
@@ -316,6 +273,144 @@ theorem piCongrLeft_trans_pi (σ : κ ≃ ι) (f : ∀ i, Isometry (L i) (M i)) 
   obtain ⟨k, rfl⟩ := σ.surjective i
   simp only [trans_apply, pi_apply, piCongrLeft_apply_apply]
 
+section PiCongr
+
+variable {L}
+variable {W' : κ → Type w} [∀ k, AddCommGroup (W' k)] [∀ k, Module ℚ (W' k)]
+  {M' : ∀ k, IntegralLattice (W' k)}
+
+/-- **Transporting an orthogonal sum along an equivalence of indices and summandwise isometries.**
+Given `σ : ι ≃ κ` and isometries `f i : L i ≅ M' (σ i)`, this is the isometry
+`⊥ i, L i ≅ ⊥ k, M' k` moving the summand in position `i` to `σ i` through `f i`, the lattice
+counterpart of `Equiv.piCongr`. -/
+def piCongr (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i))) :
+    Isometry (IntegralLattice.pi L) (IntegralLattice.pi M') :=
+  (pi f).trans (piCongrLeft M' σ)
+
+/-- `Isometry.piCongr` is the orthogonal sum of `f` followed by `Isometry.piCongrLeft`. -/
+theorem piCongr_def (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i))) :
+    piCongr σ f = (pi f).trans (piCongrLeft M' σ) :=
+  (rfl)
+
+/-- `Isometry.piCongr` places `f i (x i)` in position `σ i`. -/
+@[simp]
+theorem piCongr_apply_apply (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i)))
+    (x : ∀ i, V i) (i : ι) :
+    piCongr σ f x (σ i) = f i (x i) := by
+  rw [piCongr, trans_apply, piCongrLeft_apply_apply, pi_apply]
+
+/-- The inverse of `Isometry.piCongr` reads position `σ i` through `(f i).symm`. -/
+@[simp]
+theorem piCongr_symm_apply (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i)))
+    (y : ∀ k, W' k) (i : ι) :
+    (piCongr σ f).symm y i = (f i).symm (y (σ i)) := by
+  rw [piCongr, symm_trans, trans_apply, pi_symm, pi_apply, piCongrLeft_symm_apply]
+
+/-- `Isometry.piCongr` along the identity equivalence and identity summand isometries is the
+identity. -/
+@[simp]
+theorem piCongr_refl :
+    piCongr (Equiv.refl ι) (fun i ↦ Isometry.refl (L i)) =
+      Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  exact (piCongr_apply_apply (Equiv.refl ι) _ x i).trans
+    ((refl_apply (L i) (x i)).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
+
+/-- `Isometry.pi` is the specialization of `Isometry.piCongr` to the identity index
+equivalence. -/
+theorem pi_eq_piCongr (f : ∀ i, Isometry (L i) (M i)) :
+    pi f = piCongr (Equiv.refl ι) f := by
+  ext x i
+  exact (pi_apply f x i).trans (piCongr_apply_apply (Equiv.refl ι) f x i).symm
+
+/-- `Isometry.piCongrLeft` is the specialization of `Isometry.piCongr` to identity summand
+isometries. -/
+theorem piCongrLeft_eq_piCongr (σ : κ ≃ ι) :
+    piCongrLeft L σ = piCongr σ fun k ↦ Isometry.refl (L (σ k)) := by
+  rw [piCongr_def, pi_refl, refl_trans]
+
+/-- Composing two `Isometry.piCongr` maps composes the index equivalences and summand
+isometries. -/
+@[simp]
+theorem piCongr_trans {μ : Type*} [Fintype μ] {X : μ → Type*} [∀ m, AddCommGroup (X m)]
+    [∀ m, Module ℚ (X m)] {N : ∀ m, IntegralLattice (X m)} (σ : ι ≃ κ)
+    (f : ∀ i, Isometry (L i) (M' (σ i))) (τ : κ ≃ μ)
+    (g : ∀ k, Isometry (M' k) (N (τ k))) :
+    (piCongr σ f).trans (piCongr τ g) =
+      piCongr (σ.trans τ) fun i ↦ (f i).trans (g (σ i)) := by
+  ext x m
+  obtain ⟨k, rfl⟩ := τ.surjective m
+  obtain ⟨i, rfl⟩ := σ.surjective k
+  rw [trans_apply, piCongr_apply_apply, piCongr_apply_apply]
+  exact (trans_apply (f i) (g (σ i)) (x i)).symm.trans
+    (piCongr_apply_apply (σ.trans τ) (fun j ↦ (f j).trans (g (σ j))) x i).symm
+
+/-- **Transporting an orthogonal sum with summandwise isometries indexed by the target.**  Given
+`σ : ι ≃ κ` and isometries `f k : L (σ.symm k) ≅ M' k`, this is the isometry
+`⊥ i, L i ≅ ⊥ k, M' k` whose `k`-th coordinate is `f k (x (σ.symm k))`, the lattice counterpart of
+`Equiv.piCongr'`. -/
+def piCongr' (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) :
+    Isometry (IntegralLattice.pi L) (IntegralLattice.pi M') :=
+  (piCongr σ.symm fun k ↦ (f k).symm).symm
+
+/-- `Isometry.piCongr'` evaluates at coordinate `k` by applying `f k` to coordinate `σ.symm k`. -/
+@[simp]
+theorem piCongr'_apply (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k))
+    (x : ∀ i, V i) (k : κ) :
+    piCongr' σ f x k = f k (x (σ.symm k)) := by
+  rw [piCongr', piCongr_symm_apply, symm_symm]
+
+/-- The inverse of `Isometry.piCongr'` evaluates at `σ.symm k` by applying `(f k).symm` to
+coordinate `k`. -/
+@[simp]
+theorem piCongr'_symm_apply_symm_apply (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k))
+    (y : ∀ k, W' k) (k : κ) :
+    (piCongr' σ f).symm y (σ.symm k) = (f k).symm (y k) := by
+  rw [piCongr', symm_symm, piCongr_apply_apply]
+
+/-- The inverse of `Isometry.piCongr` is `Isometry.piCongr'` along `σ.symm` with inverted summand
+isometries. -/
+theorem piCongr_symm (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i))) :
+    (piCongr σ f).symm = piCongr' σ.symm fun i ↦ (f i).symm := by
+  ext y i
+  exact (piCongr_symm_apply σ f y i).trans
+    (piCongr'_apply σ.symm (fun j ↦ (f j).symm) y i).symm
+
+/-- The inverse of `Isometry.piCongr'` is `Isometry.piCongr` along `σ.symm` with inverted summand
+isometries. -/
+theorem piCongr'_symm (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) :
+    (piCongr' σ f).symm = piCongr σ.symm fun k ↦ (f k).symm :=
+  symm_symm _
+
+/-- `Isometry.piCongr'` along the identity equivalence and identity summand isometries is the
+identity. -/
+@[simp]
+theorem piCongr'_refl :
+    piCongr' (Equiv.refl ι) (fun i ↦ Isometry.refl (L i)) =
+      Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  exact (piCongr'_apply (Equiv.refl ι) _ x i).trans
+    ((refl_apply (L i) (x i)).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
+
+/-- Composing two `Isometry.piCongr'` maps composes the index equivalences and the pulled-back
+summand isometries. -/
+@[simp]
+theorem piCongr'_trans {μ : Type*} [Fintype μ] {X : μ → Type*} [∀ m, AddCommGroup (X m)]
+    [∀ m, Module ℚ (X m)] {N : ∀ m, IntegralLattice (X m)} (σ : ι ≃ κ)
+    (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) (τ : κ ≃ μ)
+    (g : ∀ m, Isometry (M' (τ.symm m)) (N m)) :
+    (piCongr' σ f).trans (piCongr' τ g) =
+      piCongr' (σ.trans τ) fun m ↦ (f (τ.symm m)).trans (g m) := by
+  unfold piCongr'
+  rw [← symm_trans, piCongr_trans]
+  have hfn :
+      (fun m ↦ (g m).symm.trans (f (τ.symm m)).symm) =
+        (fun m ↦ ((f (τ.symm m)).trans (g m)).symm) :=
+    funext fun m ↦ (symm_trans _ _).symm
+  exact congrArg Isometry.symm (congrArg (piCongr (σ.trans τ).symm) hfn)
+
+end PiCongr
+
 section Unique
 
 variable [Unique ι]
@@ -324,7 +419,7 @@ variable [Unique ι]
 def piUnique : Isometry (IntegralLattice.pi L) (L default) where
   toIsometryEquiv :=
     { toLinearEquiv := LinearEquiv.piUnique ℚ V
-      map_app' x y := by simp [pi_form, piForm_apply] }
+      map_app' x y := by simp [pi_form, LinearMap.BilinForm.pi_apply] }
   map_carrier := by
     ext y
     rw [Submodule.mem_map_equiv, mem_pi_carrier_iff]

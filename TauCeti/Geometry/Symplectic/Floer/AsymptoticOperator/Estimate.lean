@@ -7,25 +7,31 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
+import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.ODE.BoundaryValue
 import TauCeti.Analysis.ODE.Periodic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
-# The `L²` estimate of the stationary cylinder operator at a nondegenerate orbit
+# The `L²` estimates of the stationary cylinder and strip operators
 
 Let `(V, ω)` be a finite-dimensional symplectic vector space, `J_t` a continuous family of
 `ω`-compatible complex structures with associated inner products `g_t = ω(·, J_t ·)`, and
 `S_t` a continuous family of infinitesimally symplectic maps, the linearized Hamiltonian vector
-field along an orbit. The linearized Floer operator at the stationary cylinder over the orbit is
+field along an orbit or a chord. The linearized Floer operator at the stationary cylinder over an
+orbit, or at the stationary strip over a chord, is
 
 `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ) = ∂s ξ + A ξ`
 
 (`TauCeti.Floer.stationaryCylinderOperator`), with the asymptotic operator
 `A ζ = J_t (ζ' - S_t ζ)` (`TauCeti.Floer.asymptoticOperator`). This file proves that `D` is
 bounded below in `L²` when the orbit is nondegenerate, that is, when the return map `Ψ(1)` of
-`ζ' = S_t ζ` does not have `1` as an eigenvalue. This is the basic estimate behind the Fredholm
-property of the linearized operator on the cylindrical ends of Floer's moduli spaces.
+`ζ' = S_t ζ` does not have `1` as an eigenvalue, and on the strip with boundary values in
+isotropic subspaces `F₀` and `F₁` when the chord is nondegenerate, that is, when
+`Ψ(1) F₀ ∩ F₁ = 0`. These are the basic estimates behind the Fredholm property of the linearized
+operator on the cylindrical ends of Floer's moduli spaces of cylinders and on the strip-like ends
+of the moduli spaces of Floer strips between two Lagrangians.
 
 * **The loop estimate.** If `det (1 - Ψ(1)) ≠ 0`, there is a constant `C` such that every loop
   `ζ` with `ζ 1 = ζ 0` satisfies `∫₀¹ g(ζ, ζ) ≤ C ∫₀¹ g(ζ' - S ζ, ζ' - S ζ)`
@@ -48,6 +54,17 @@ property of the linearized operator on the cylindrical ends of Floer's moduli sp
   (`Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`). For an actual
   nondegenerate one-periodic orbit of a Hamiltonian, the hypothesis on the return map holds
   (`SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`).
+* **The strip estimate.** For a path with `ζ 0 ∈ F₀` and `ζ 1 ∈ F₁`, the `L²` estimate
+  `TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq_of_disjoint` for boundary values
+  in two subspaces gives `∫₀¹ g(ζ, ζ) ≤ C ∫₀¹ g(ζ' - S ζ, ζ' - S ζ)` when `Ψ(1) F₀ ∩ F₁ = 0`
+  (`Floer.exists_forall_integral_associatedBilinForm_le_mul_integral_of_disjoint`, and
+  `Floer.exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_disjoint`
+  for the asymptotic operator). When `F₀` and `F₁` are isotropic, for instance the tangent spaces
+  of two Lagrangians at the ends of a chord, the energy identity holds on the strip
+  (`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_of_isIsotropic`), and the
+  same slice argument as on the cylinder gives the strip estimate for maps with
+  `ξ (s, 0) ∈ F₀` and `ξ (s, 1) ∈ F₁`
+  (`Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_of_disjoint`).
 * **The weighted estimate.** The weighted operator `D - δ` is the stationary cylinder operator of
   `S_t - δ J_t`, whose return map stays nondegenerate for small `δ`, so the cylinder estimate
   holds for `D - δ` for every weight `δ` close to `0`
@@ -63,6 +80,10 @@ property of the linearized operator on the cylindrical ends of Floer's moduli sp
   the form in which the estimate passes to the linearized operator of a Floer solution on a far
   part of a cylindrical end, which is such a perturbation of `D`
   (`TauCeti.Geometry.Symplectic.Floer.EndLinearization`).
+* **The norm of `V`.** Since the `g_t` are uniformly equivalent to the norm of `V` for `t ∈ [0, 1]`
+  and `‖∂t ξ‖² ≤ 2 ‖∂t ξ - S ξ‖² + 2 ‖S‖² ‖ξ‖²`, an estimate of the energy of `ξ` in the `g_t` by
+  `∫ g(η, η)` gives one of `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²)` by `∫ ‖η‖²`
+  (`SymplecticForm.exists_forall_setIntegral_le_mul_mul_setIntegral_norm_sq_of_le`).
 
 In contrast, `Floer.eq_zero_of_stationaryCylinderOperator_eq_zero` shows that `D` is injective on
 decaying maps with no nondegeneracy assumption, but without an estimate; at a degenerate orbit
@@ -77,6 +98,8 @@ themselves are not treated here.
   Math. Ser. 7 (1999), Lecture 2.
 * J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc. 27
   (1995), 1–33.
+* A. Floer, *Morse theory for Lagrangian intersections*, J. Differential Geom. 28 (1988),
+  513–547 (the linearized operator on strips with Lagrangian boundary conditions).
 -/
 
 public section
@@ -91,28 +114,22 @@ namespace Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
 
-/-- **The `L²` loop estimate at a nondegenerate orbit.** Let each `J_t` be `ω`-tame and depend
-continuously on `t`, let `S` be continuous, and suppose that `det (1 - Ψ(1)) ≠ 0` for the return
-map `Ψ(1) = dysonSeriesLeft S 1` of `ζ' = S_t ζ`. Then there is a constant `C ≥ 0` such that
-every solution of `ζ' = S_t ζ + f` with `f` continuous and `ζ 1 = ζ 0` satisfies
-`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(f, f)` for `g_t = ω(·, J_t ·)`. -/
-theorem exists_forall_integral_associatedBilinForm_le_mul_integral (hJ : ∀ t, ω.Tames (J t))
-    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S)
-    (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ζ f : ℝ → V⦄, Continuous f → (∀ t, HasDerivAt ζ (S t (ζ t) + f t) t) →
-      ζ 1 = ζ 0 → ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+/-- Passage from the norm to the forms `g_t = ω(·, J_t ·)` for uniformly tame `J_t`: an
+estimate `∫₀¹ ‖ζ‖² ≤ C₀ ∫₀¹ ‖f‖²` gives `∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(f, f)` with `C` depending only
+on `C₀`, `ω` and `J`, because the forms are uniformly equivalent to the norm on `[0, 1]`. -/
+private theorem exists_forall_integral_associatedBilinForm_le_of_integral_norm_sq_le
+    (hJ : ∀ t, ω.Tames (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) {C₀ : ℝ}
+    (hC₀ : 0 ≤ C₀) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ζ f : ℝ → V⦄, Continuous ζ → Continuous f →
+      ∫ t in 0..1, ‖ζ t‖ ^ 2 ≤ C₀ * ∫ t in 0..1, ‖f t‖ ^ 2 →
+      ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
         C * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t) := by
   have he : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
     continuous_clm_apply.2 fun v ↦ by
       simpa [Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
   obtain ⟨a, ha, b, hb, hab⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
     isCompact_Icc he.continuousOn fun t _ ↦ hJ t
-  have hP : IsUnit ((1 : ℝ) • 1 - dysonSeriesLeft S 1) := by
-    rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_isUnit_det]
-    simpa using hdet
-  obtain ⟨C, hC, hle⟩ := exists_forall_integral_norm_sq_le_mul_integral_norm_sq hSc zero_le_one hP
-  refine ⟨b * C / a, by positivity, fun ζ f hf hζ hζ1 ↦ ?_⟩
-  have hζc : Continuous ζ := continuous_iff_continuousAt.2 fun t ↦ (hζ t).continuousAt
+  refine ⟨b * C₀ / a, by positivity, fun ζ f hζc hf h₃ ↦ ?_⟩
   have h₁ : ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤ ∫ t in 0..1, b * ‖ζ t‖ ^ 2 :=
     intervalIntegral.integral_mono_on zero_le_one
       ((ω.continuous_apply_comp hζc (hJc.comp (continuous_id.prodMk hζc))).intervalIntegrable _ _)
@@ -124,11 +141,52 @@ theorem exists_forall_integral_associatedBilinForm_le_mul_integral (hJ : ∀ t, 
       ((ω.continuous_apply_comp hf (hJc.comp (continuous_id.prodMk hf))).intervalIntegrable _ _)
       fun t ht ↦ (hab t ht _).1
   rw [intervalIntegral.integral_const_mul] at h₁ h₂
-  have h₃ := hle hf hζ (by rw [hζ1, one_smul])
   calc _ ≤ b * ∫ t in 0..1, ‖ζ t‖ ^ 2 := h₁
-    _ ≤ b * (C * ∫ t in 0..1, ‖f t‖ ^ 2) := by gcongr
-    _ = b * C / a * (a * ∫ t in 0..1, ‖f t‖ ^ 2) := by field_simp
-    _ ≤ b * C / a * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t) := by gcongr
+    _ ≤ b * (C₀ * ∫ t in 0..1, ‖f t‖ ^ 2) := by gcongr
+    _ = b * C₀ / a * (a * ∫ t in 0..1, ‖f t‖ ^ 2) := by field_simp
+    _ ≤ b * C₀ / a * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t) := by gcongr
+
+/-- **The `L²` loop estimate at a nondegenerate orbit.** Let each `J_t` be `ω`-tame and depend
+continuously on `t`, let `S` be continuous, and suppose that `det (1 - Ψ(1)) ≠ 0` for the return
+map `Ψ(1) = dysonSeriesLeft S 1` of `ζ' = S_t ζ`. Then there is a constant `C ≥ 0` such that
+every solution of `ζ' = S_t ζ + f` with `f` continuous and `ζ 1 = ζ 0` satisfies
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(f, f)` for `g_t = ω(·, J_t ·)`. -/
+theorem exists_forall_integral_associatedBilinForm_le_mul_integral (hJ : ∀ t, ω.Tames (J t))
+    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S)
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ζ f : ℝ → V⦄, Continuous f → (∀ t, HasDerivAt ζ (S t (ζ t) + f t) t) →
+      ζ 1 = ζ 0 → ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+        C * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t) := by
+  have hP : IsUnit ((1 : ℝ) • 1 - dysonSeriesLeft S 1) := by
+    rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_isUnit_det]
+    simpa using hdet
+  obtain ⟨C₀, hC₀, hle⟩ := exists_forall_integral_norm_sq_le_mul_integral_norm_sq hSc zero_le_one hP
+  obtain ⟨C, hC, hg⟩ :=
+    exists_forall_integral_associatedBilinForm_le_of_integral_norm_sq_le hJ hJc hC₀
+  exact ⟨C, hC, fun ζ f hf hζ hζ1 ↦ hg (continuous_iff_continuousAt.2 fun t ↦ (hζ t).continuousAt)
+    hf (hle hf hζ (by rw [hζ1, one_smul]))⟩
+
+omit [FiniteDimensional ℝ V] in
+/-- The asymptotic-operator form of a path estimate. Let `P` be a boundary condition on paths
+`[0, 1] → V` for which every solution of `ζ' = S_t ζ + f` satisfying `P` has
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(f, f)`. Then every `C¹` path `ζ` satisfying `P` has
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(A ζ, A ζ)` for the asymptotic operator `A ζ = J_t (ζ' - S_t ζ)`,
+taking `f = ζ' - S_t ζ`. -/
+private theorem integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_path
+    (hSc : Continuous S) {P : (ℝ → V) → Prop} {C : ℝ}
+    (hpath : ∀ ⦃ζ f : ℝ → V⦄, Continuous f → (∀ t, HasDerivAt ζ (S t (ζ t) + f t) t) → P ζ →
+      ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+        C * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t))
+    {ζ : ℝ → V} (hζ : ContDiff ℝ 1 ζ) (hP : P ζ) :
+    ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+      C * ∫ t in 0..1, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t)
+        (asymptoticOperator J S ζ t) := by
+  have hd (t : ℝ) : HasDerivAt ζ (S t (ζ t) + (deriv ζ t - S t (ζ t))) t := by
+    rw [add_sub_cancel]
+    exact (hζ.differentiable one_ne_zero t).hasDerivAt
+  simpa only [asymptoticOperator_def, SymplecticForm.associatedBilinForm_apply_apply_self_eq]
+    using hpath (f := fun t ↦ deriv ζ t - S t (ζ t))
+      ((hζ.continuous_deriv le_rfl).sub (hSc.clm_apply hζ.continuous)) hd hP
 
 /-- **The `L²` lower bound of the asymptotic operator at a nondegenerate orbit.** Under the
 hypotheses of `exists_forall_integral_associatedBilinForm_le_mul_integral`, there is a constant
@@ -142,13 +200,76 @@ theorem exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOpe
         C * ∫ t in 0..1, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t)
           (asymptoticOperator J S ζ t) := by
   obtain ⟨C, hC, h⟩ := exists_forall_integral_associatedBilinForm_le_mul_integral hJ hJc hSc hdet
-  refine ⟨C, hC, fun ζ hζ hζ1 ↦ ?_⟩
-  have hd (t : ℝ) : HasDerivAt ζ (S t (ζ t) + (deriv ζ t - S t (ζ t))) t := by
-    rw [add_sub_cancel]
-    exact (hζ.differentiable one_ne_zero t).hasDerivAt
-  simpa only [asymptoticOperator_def, SymplecticForm.associatedBilinForm_apply_apply_self_eq]
-    using h (f := fun t ↦ deriv ζ t - S t (ζ t))
-      ((hζ.continuous_deriv le_rfl).sub (hSc.clm_apply hζ.continuous)) hd hζ1
+  exact ⟨C, hC, fun ζ hζ hζ1 ↦
+    integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_path hSc
+      (P := fun ζ ↦ ζ 1 = ζ 0) h hζ hζ1⟩
+
+/-- The cylinder and strip estimates from a slice estimate. Let `P` be a boundary condition on
+paths `[0, 1] → V` for which every solution of `ζ' = S_t ζ + f` satisfying `P` has
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(f, f)`. If `ξ` satisfies `P` on every slice `s = const`, vanishes on the
+slices `s = a` and `s = b`, and satisfies the energy identity over `[a, b] × [0, 1]`, then the
+`W^{1,2}` energy of `ξ` there is at most `1 + C` times `∫ g(D ξ, D ξ)`. -/
+private theorem setIntegral_le_mul_setIntegral_stationaryCylinderOperator_of_slice
+    (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hSc : Continuous S) {P : (ℝ → V) → Prop} {C : ℝ} (hC : 0 ≤ C)
+    (hpath : ∀ ⦃ζ f : ℝ → V⦄, Continuous f → (∀ t, HasDerivAt ζ (S t (ζ t) + f t) t) → P ζ →
+      ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+        C * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t))
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (hP : ∀ s, P fun t ↦ ξ (s, t)) {a b : ℝ}
+    (ha : ∀ t, ξ (a, t) = 0) (hb : ∀ t, ξ (b, t) = 0)
+    (hid : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) =
+      (∫ z in Icc a b ×ˢ Icc 0 1,
+        (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+            (fderiv ℝ ξ z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)))) +
+        ((∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (b, t) stdComplexLineImag - S t (ξ (b, t))) (ξ (b, t))) -
+          ∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (a, t) stdComplexLineImag - S t (ξ (a, t))) (ξ (a, t)))) :
+    ∫ z in Icc a b ×ˢ Icc 0 1,
+        ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+            (fderiv ℝ ξ z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+          ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
+      (1 + C) * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) := by
+  set w : ℝ × ℝ → V := fun z ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)
+  have hw : Continuous w := ((hξ.continuous_fderiv (by norm_num)).clm_apply continuous_const).sub
+    ((hSc.comp continuous_snd).clm_apply hξ.continuous)
+  -- The boundary slices of the energy identity vanish.
+  simp only [ha, hb, map_zero, intervalIntegral.integral_zero, sub_zero, add_zero] at hid
+  -- On each slice, the path estimate bounds `∫ g(ξ, ξ)` by `C ∫ g(w, w)`.
+  have hslice (s : ℝ) : ∫ t in Icc (0 : ℝ) 1, ω.associatedBilinForm (J t) (ξ (s, t)) (ξ (s, t)) ≤
+      C * ∫ t in Icc (0 : ℝ) 1, ω.associatedBilinForm (J t) (w (s, t)) (w (s, t)) := by
+    have hd (t : ℝ) : HasDerivAt (fun t ↦ ξ (s, t)) (S t (ξ (s, t)) + w (s, t)) t := by
+      have h := (hξ.differentiable (by norm_num) (s, t)).hasFDerivAt.comp_hasDerivAt t
+        (hasDerivAt_prodMk_right s t)
+      simpa only [w, stdComplexLineImag_eq, add_sub_cancel, Function.comp_def] using h
+    have h := hpath (hw.comp (Continuous.prodMk_right s)) hd (hP s)
+    simpa only [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
+      Function.comp_def] using h
+  have hrect := isCompact_Icc (a := a) (b := b) |>.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))
+  have hQ := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous).continuousOn
+    |>.integrableOn_compact (μ := volume) hrect
+  have hW := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hw).continuousOn
+    |>.integrableOn_compact (μ := volume) hrect
+  have hE := (continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc
+    (hξ.of_le one_le_two)).continuousOn |>.integrableOn_compact (μ := volume) hrect
+  have hfub : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (ξ z) (ξ z) ≤
+      C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (w z) (w z) :=
+    setIntegral_rect_le_mul_of_forall_setIntegral_le hQ hW fun s _ ↦ hslice s
+  -- Hence `∫ (g(∂s ξ) + g(w)) + ∫ g(ξ) ≤ (1 + C) ∫ (g(∂s ξ) + g(w)) = (1 + C) ∫ g(D ξ)`.
+  have hW' : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (w z) (w z) ≤
+      ∫ z in Icc a b ×ˢ Icc 0 1, (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+        (fderiv ℝ ξ z stdComplexLineReal) + ω.associatedBilinForm (J z.2) (w z) (w z)) :=
+    setIntegral_mono hW hE fun z ↦ le_add_of_nonneg_left ((hJ _).associatedBilinForm_self_nonneg _)
+  have hsplit := integral_add hE hQ
+  simp only [w] at hsplit hfub hW'
+  rw [hsplit, hid]
+  linarith [mul_le_mul_of_nonneg_left hW' hC]
 
 /-- **The cylinder estimate at a nondegenerate orbit.** Let each `J_t` be `ω`-compatible and
 depend continuously on `t`, let each `S_t` be infinitesimally symplectic and `S` continuous, and
@@ -177,42 +298,86 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
   obtain ⟨C, hC, hloop⟩ :=
     exists_forall_integral_associatedBilinForm_le_mul_integral (fun t ↦ (hJ t).tames) hJc hSc hdet
   refine ⟨1 + C, by positivity, fun ξ hξ hper a b hab ha hb ↦ ?_⟩
-  set w : ℝ × ℝ → V := fun z ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)
-  have hw : Continuous w := ((hξ.continuous_fderiv (by norm_num)).clm_apply continuous_const).sub
-    ((hSc.comp continuous_snd).clm_apply hξ.continuous)
-  -- The energy identity, whose boundary slices vanish.
-  have hid := setIntegral_associatedBilinForm_stationaryCylinderOperator
-    (fun t ↦ (hJ t).invariant) hJc hS hSc hξ hper hab
-  simp only [ha, hb, map_zero, intervalIntegral.integral_zero, sub_zero, add_zero] at hid
-  -- On each slice, the loop estimate bounds `∫ g(ξ, ξ)` by `C ∫ g(w, w)`.
-  have hslice (s : ℝ) : ∫ t in Icc (0 : ℝ) 1, ω.associatedBilinForm (J t) (ξ (s, t)) (ξ (s, t)) ≤
-      C * ∫ t in Icc (0 : ℝ) 1, ω.associatedBilinForm (J t) (w (s, t)) (w (s, t)) := by
-    have hd (t : ℝ) : HasDerivAt (fun t ↦ ξ (s, t)) (S t (ξ (s, t)) + w (s, t)) t := by
-      have h := (hξ.differentiable (by norm_num) (s, t)).hasFDerivAt.comp_hasDerivAt t
-        (hasDerivAt_prodMk_right s t)
-      simpa only [w, stdComplexLineImag_eq, add_sub_cancel, Function.comp_def] using h
-    have h := hloop (hw.comp (Continuous.prodMk_right s)) hd (by simpa using hper s 0)
-    simpa only [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
-      Function.comp_def] using h
-  have hrect := isCompact_Icc (a := a) (b := b) |>.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))
-  have hQ := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous).continuousOn
-    |>.integrableOn_compact (μ := volume) hrect
-  have hW := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hw).continuousOn
-    |>.integrableOn_compact (μ := volume) hrect
-  have hE := (continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc
-    (hξ.of_le one_le_two)).continuousOn |>.integrableOn_compact (μ := volume) hrect
-  have hfub : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (ξ z) (ξ z) ≤
-      C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (w z) (w z) :=
-    setIntegral_rect_le_mul_of_forall_setIntegral_le hQ hW fun s _ ↦ hslice s
-  -- Hence `∫ (g(∂s ξ) + g(w)) + ∫ g(ξ) ≤ (1 + C) ∫ (g(∂s ξ) + g(w)) = (1 + C) ∫ g(D ξ)`.
-  have hW' : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (w z) (w z) ≤
-      ∫ z in Icc a b ×ˢ Icc 0 1, (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
-        (fderiv ℝ ξ z stdComplexLineReal) + ω.associatedBilinForm (J z.2) (w z) (w z)) :=
-    setIntegral_mono hW hE fun z ↦ le_add_of_nonneg_left ((hJ _).associatedBilinForm_self_nonneg _)
-  have hsplit := integral_add hE hQ
-  simp only [w] at hsplit hfub hW'
-  rw [hsplit, hid]
-  linarith [mul_le_mul_of_nonneg_left hW' hC]
+  exact setIntegral_le_mul_setIntegral_stationaryCylinderOperator_of_slice hJ hJc hSc hC hloop hξ
+    (fun s ↦ by simpa using hper s 0) ha hb
+    (setIntegral_associatedBilinForm_stationaryCylinderOperator (fun t ↦ (hJ t).invariant) hJc hS
+      hSc hξ hper hab)
+
+section Strip
+
+variable {F₀ F₁ : Submodule ℝ V}
+
+/-- **The `L²` path estimate at a nondegenerate chord.** Let each `J_t` be `ω`-tame and depend
+continuously on `t`, let `S` be continuous, and suppose that `Ψ(1) F₀ ∩ F₁ = 0` for the
+propagator `Ψ = dysonSeriesLeft S` of `ζ' = S_t ζ`. Then there is a constant `C ≥ 0` such that
+every solution of `ζ' = S_t ζ + f` with `f` continuous, `ζ 0 ∈ F₀` and `ζ 1 ∈ F₁` satisfies
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(f, f)` for `g_t = ω(·, J_t ·)`. -/
+theorem exists_forall_integral_associatedBilinForm_le_mul_integral_of_disjoint
+    (hJ : ∀ t, ω.Tames (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S)
+    (hP : Disjoint (F₀.map (↑(dysonSeriesLeft S 1) : V →ₗ[ℝ] V)) F₁) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ζ f : ℝ → V⦄, Continuous f → (∀ t, HasDerivAt ζ (S t (ζ t) + f t) t) →
+      ζ 0 ∈ F₀ → ζ 1 ∈ F₁ → ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+        C * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t) := by
+  obtain ⟨C₀, hC₀, hle⟩ :=
+    exists_forall_integral_norm_sq_le_mul_integral_norm_sq_of_disjoint hSc zero_le_one hP
+  obtain ⟨C, hC, hg⟩ :=
+    exists_forall_integral_associatedBilinForm_le_of_integral_norm_sq_le hJ hJc hC₀
+  exact ⟨C, hC, fun ζ f hf hζ h₀ h₁ ↦ hg (continuous_iff_continuousAt.2 fun t ↦ (hζ t).continuousAt)
+    hf (hle hf hζ h₀ h₁)⟩
+
+/-- **The `L²` lower bound of the asymptotic operator at a nondegenerate chord.** Under the
+hypotheses of `exists_forall_integral_associatedBilinForm_le_mul_integral_of_disjoint`, there is a
+constant `C ≥ 0` such that every `C¹` path `ζ` with `ζ 0 ∈ F₀` and `ζ 1 ∈ F₁` satisfies
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(A ζ, A ζ)` for the asymptotic operator `A ζ = J_t (ζ' - S_t ζ)`. -/
+theorem exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_disjoint
+    (hJ : ∀ t, ω.Tames (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S)
+    (hP : Disjoint (F₀.map (↑(dysonSeriesLeft S 1) : V →ₗ[ℝ] V)) F₁) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ζ : ℝ → V⦄, ContDiff ℝ 1 ζ → ζ 0 ∈ F₀ → ζ 1 ∈ F₁ →
+      ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+        C * ∫ t in 0..1, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t)
+          (asymptoticOperator J S ζ t) := by
+  obtain ⟨C, hC, h⟩ :=
+    exists_forall_integral_associatedBilinForm_le_mul_integral_of_disjoint hJ hJc hSc hP
+  exact ⟨C, hC, fun ζ hζ h₀ h₁ ↦
+    integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_path hSc
+      (P := fun ζ ↦ ζ 0 ∈ F₀ ∧ ζ 1 ∈ F₁) (fun ζ f hf hζ h' ↦ h hf hζ h'.1 h'.2) hζ ⟨h₀, h₁⟩⟩
+
+/-- **The strip estimate at a nondegenerate chord.** Let each `J_t` be `ω`-compatible and depend
+continuously on `t`, let each `S_t` be infinitesimally symplectic and `S` continuous, let `F₀` and
+`F₁` be isotropic, for instance Lagrangian, and suppose that `Ψ(1) F₀ ∩ F₁ = 0` for the propagator
+`Ψ = dysonSeriesLeft S`. Then there is a constant `C ≥ 0` such that for every `C²` map `ξ` with
+boundary values `ξ (s, 0) ∈ F₀` and `ξ (s, 1) ∈ F₁` and every `a ≤ b` with `ξ` vanishing on the
+slices `s = a` and `s = b`,
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C ∫ g(D ξ, D ξ)`
+
+over `[a, b] × [0, 1]`, for `g_t = ω(·, J_t ·)` and the stationary strip operator
+`D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)`. The constant does not depend on `a`, `b` or `ξ`. -/
+theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_of_disjoint
+    (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S)
+    (hF₀ : ω.IsIsotropic F₀) (hF₁ : ω.IsIsotropic F₁)
+    (hP : Disjoint (F₀.map (↑(dysonSeriesLeft S 1) : V →ₗ[ℝ] V)) F₁) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s, ξ (s, 0) ∈ F₀) →
+      (∀ s, ξ (s, 1) ∈ F₁) → ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc 0 1,
+            ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+                (fderiv ℝ ξ z stdComplexLineReal) +
+              ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+                (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+              ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+            (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) := by
+  obtain ⟨C, hC, hpath⟩ := exists_forall_integral_associatedBilinForm_le_mul_integral_of_disjoint
+    (fun t ↦ (hJ t).tames) hJc hSc hP
+  refine ⟨1 + C, by positivity, fun ξ hξ h₀ h₁ a b hab ha hb ↦ ?_⟩
+  exact setIntegral_le_mul_setIntegral_stationaryCylinderOperator_of_slice hJ hJc hSc hC
+    (P := fun ζ ↦ ζ 0 ∈ F₀ ∧ ζ 1 ∈ F₁) (fun ζ f hf hζ h ↦ hpath hf hζ h.1 h.2) hξ
+    (fun s ↦ ⟨h₀ s, h₁ s⟩) ha hb
+    (setIntegral_associatedBilinForm_stationaryCylinderOperator_of_isIsotropic
+      (fun t ↦ (hJ t).invariant) hJc hS hSc hξ hF₀ hF₁ h₀ h₁ hab)
+
+end Strip
 
 /-- The pointwise comparison behind
 `exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le`, for
@@ -569,6 +734,78 @@ theorem eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylind
     (ω.continuous_fderiv_hamiltonianVectorField_comp hH
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
     (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
+
+/-- **From the norms `ω(·, J₀(t) ·)` to the norm of `V`.** Let `J₀(t)` be `ω`-tame complex
+structures and `S(t)` linear maps, both continuous in `t`. Then there is a constant `k ≥ 0` with
+the following property. If a `C¹` map `ξ` and a map `η` continuous on `[a, b] × [0, 1]` satisfy
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C ∫ g(η, η)`
+
+over `[a, b] × [0, 1]`, for `g_t = ω(·, J₀(t) ·)` and a constant `C ≥ 0`, then
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ k C ∫ ‖η‖²` over the same rectangle. This turns the estimates of
+stationary cylinder operators and their perturbations, stated in the norms `g_t`, into estimates
+in the norm of `V`. -/
+theorem exists_forall_setIntegral_le_mul_mul_setIntegral_norm_sq_of_le (ω : SymplecticForm V)
+    {J₀ : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V} (hJ₀ : ∀ t, ω.Tames (J₀ t))
+    (hJ₀c : Continuous fun t ↦ (J₀ t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
+    ∃ k, 0 ≤ k ∧ ∀ ⦃ξ η : ℝ × ℝ → V⦄ ⦃a b C : ℝ⦄, ContDiff ℝ 1 ξ →
+      ContinuousOn η (Icc a b ×ˢ Icc 0 1) → 0 ≤ C →
+      ∫ z in Icc a b ×ˢ Icc 0 1,
+          ((ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineReal)
+              (fderiv ℝ ξ z stdComplexLineReal) +
+            ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+              (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+            ω.associatedBilinForm (J₀ z.2) (ξ z) (ξ z)) ≤
+        C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J₀ z.2) (η z) (η z) →
+      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+        k * C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2 := by
+  -- The inner products `g_t` are uniformly equivalent to the norm, and `‖S_t‖ ≤ m`, for
+  -- `t ∈ [0, 1]`.
+  obtain ⟨a₀, ha₀, b₀, hb₀, hg⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) hJ₀c.continuousOn fun t _ ↦ hJ₀ t
+  obtain ⟨m, hm⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    hSc.continuousOn
+  set k₁ := (2 + 2 * m ^ 2) / a₀
+  refine ⟨k₁ * b₀, by positivity, fun ξ η a b C hξ hη hC hest ↦ ?_⟩
+  have hrect := isCompact_Icc (a := a) (b := b) |>.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))
+  have hmeas : MeasurableSet (Icc a b ×ˢ Icc (0 : ℝ) 1) :=
+    measurableSet_Icc.prod measurableSet_Icc
+  have hJzc : ContinuousOn (fun z : ℝ × ℝ ↦ (J₀ z.2).toLinearMap.toContinuousLinearMap)
+      (Icc a b ×ˢ Icc (0 : ℝ) 1) := (hJ₀c.comp continuous_snd).continuousOn
+  have hdξ := hξ.continuous_fderiv one_ne_zero
+  have hξc := hξ.continuous
+  -- The energy density of `ξ` in the inner products `g_t`.
+  set G : ℝ × ℝ → ℝ := fun z ↦
+    (ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineReal)
+        (fderiv ℝ ξ z stdComplexLineReal) +
+      ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+        (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+      ω.associatedBilinForm (J₀ z.2) (ξ z) (ξ z)
+  have hG : ContinuousOn G (Icc a b ×ˢ Icc (0 : ℝ) 1) := by
+    have hSz : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) := by
+      have : Continuous fun z : ℝ × ℝ ↦ S z.2 := hSc.comp continuous_snd
+      fun_prop
+    exact ((ω.continuousOn_associatedBilinForm_apply_self hJzc
+      (hdξ.clm_apply continuous_const).continuousOn).add
+      (ω.continuousOn_associatedBilinForm_apply_self hJzc hSz.continuousOn)).add
+      (ω.continuousOn_associatedBilinForm_apply_self hJzc hξc.continuousOn)
+  calc _ ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, k₁ * G z :=
+        setIntegral_mono_on (ContinuousOn.integrableOn_compact hrect (by fun_prop))
+          ((hG.integrableOn_compact hrect).const_mul k₁) hmeas fun z hz ↦
+            norm_sq_add_norm_sq_add_norm_sq_le ha₀ (fun w ↦ (hg z.2 hz.2 w).1) (hm z.2 hz.2) _ _ _
+    _ = k₁ * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, G z := integral_const_mul _ _
+    _ ≤ k₁ * (C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, b₀ * ‖η z‖ ^ 2) := by
+        refine mul_le_mul_of_nonneg_left (hest.trans (mul_le_mul_of_nonneg_left ?_ hC))
+          (by positivity)
+        exact setIntegral_mono_on
+          ((ω.continuousOn_associatedBilinForm_apply_self hJzc hη).integrableOn_compact
+            (μ := volume) hrect)
+          ((hη.norm.pow 2).integrableOn_compact (μ := volume) hrect |>.const_mul b₀) hmeas
+          fun z hz ↦ (hg z.2 hz.2 _).2
+    _ = _ := by
+        rw [integral_const_mul]
+        ring
 
 end SymplecticForm
 

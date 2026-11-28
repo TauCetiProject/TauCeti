@@ -21,7 +21,10 @@ diffeologically smooth maps `M → N` coincide with ordinary smooth manifold map
 
 * `ContMDiffMap.toDSmoothMap` embeds `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` into `DSmoothMap M N` for any
   compatible charted spaces, and `TauCeti.Diffeology.DSmoothMap.equivContMDiffMap` upgrades this to
-  a diffeological isomorphism when `M` is a finite-dimensional smooth manifold.
+  a diffeological isomorphism when `M` is a finite-dimensional smooth manifold. Likewise
+  `Diffeomorph.toDSmoothEquiv` views `C^∞` diffeomorphisms as diffeological diffeomorphisms, and
+  `TauCeti.Diffeology.DSmoothEquiv.equivDiffeomorph` identifies the two notions between
+  finite-dimensional smooth manifolds.
 * `TauCeti.Diffeology.instDiffeologicalSpaceContMDiffMap` equips `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` with
   the functional diffeology induced along `ContMDiffMap.toDSmoothMap`. Smooth maps from any
   diffeological space `Z` into `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` correspond to smooth uncurried maps
@@ -44,6 +47,9 @@ diffeologically smooth maps `M → N` coincide with ordinary smooth manifold map
 * `ContMDiffMap.toDSmoothMap`, `TauCeti.Diffeology.DSmoothMap.toContMDiffMap`, and
   `TauCeti.Diffeology.DSmoothMap.equivContMDiffMap`: mapping-space bridge between `ContMDiffMap`
   and `DSmoothMap`.
+* `Diffeomorph.toDSmoothEquiv`, `TauCeti.Diffeology.DSmoothEquiv.toDiffeomorph`, and
+  `TauCeti.Diffeology.DSmoothEquiv.equivDiffeomorph`: bridge between `Diffeomorph` and
+  `DSmoothEquiv`.
 * `TauCeti.Diffeology.instDiffeologicalSpaceContMDiffMap` and
   `TauCeti.Diffeology.contMDiffMapFunctionalDiffeology`: functional diffeology on
   `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯`.
@@ -136,6 +142,78 @@ theorem toDSmoothMap_const (y : N) :
   simp
 
 end ContMDiffMap
+
+/-! ### Diffeomorphisms as diffeological diffeomorphisms -/
+
+namespace Diffeomorph
+
+variable {E F G : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {M N P : Type*}
+  [TopologicalSpace M] [ChartedSpace E M] [DiffeologicalSpace M] [IsContMDiffCompatible E M]
+  [TopologicalSpace N] [ChartedSpace F N] [DiffeologicalSpace N] [IsContMDiffCompatible F N]
+  [TopologicalSpace P] [ChartedSpace G P] [DiffeologicalSpace P] [IsContMDiffCompatible G P]
+
+/-- View a `C^∞` manifold diffeomorphism between compatible charted spaces as a diffeological
+diffeomorphism. -/
+def toDSmoothEquiv (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) : DSmoothEquiv M N :=
+  .mk e.toEquiv e.contMDiff.dSmooth e.symm.contMDiff.dSmooth
+
+/-- Coercing `e.toDSmoothEquiv` gives `e`. -/
+@[simp]
+theorem coe_toDSmoothEquiv (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) : ⇑e.toDSmoothEquiv = ⇑e :=
+  (rfl)
+
+/-- Evaluating `e.toDSmoothEquiv` at `x` returns `e x`. -/
+@[simp]
+theorem toDSmoothEquiv_apply (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) (x : M) :
+    e.toDSmoothEquiv x = e x :=
+  (rfl)
+
+/-- `Diffeomorph.toDSmoothEquiv` is injective. -/
+theorem toDSmoothEquiv_injective :
+    Injective (toDSmoothEquiv : (M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) → DSmoothEquiv M N) :=
+  fun _ _ h ↦ ext fun x ↦ congr($(h) x)
+
+/-- The bundled smooth map underlying `e.toDSmoothEquiv` is the one underlying `e`. -/
+@[simp]
+theorem toDSmoothMap_toDSmoothEquiv (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) :
+    e.toDSmoothEquiv.toDSmoothMap = (e : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯).toDSmoothMap :=
+  DSmoothMap.ext fun _ ↦ by simp
+
+/-- `Diffeomorph.toDSmoothEquiv` sends the identity diffeomorphism to `DSmoothEquiv.refl`. -/
+@[simp]
+theorem toDSmoothEquiv_refl : (Diffeomorph.refl 𝓘(ℝ, E) M ∞).toDSmoothEquiv = .refl M :=
+  DSmoothEquiv.ext fun _ ↦ by simp
+
+/-- `Diffeomorph.toDSmoothEquiv` commutes with inverses. -/
+@[simp]
+theorem toDSmoothEquiv_symm (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) :
+    e.symm.toDSmoothEquiv = e.toDSmoothEquiv.symm :=
+  DSmoothEquiv.ext fun _ ↦ e.toDSmoothEquiv.eq_symm_apply.mpr (by simp)
+
+/-- Coercing `e.toDSmoothEquiv.symm` gives `e.symm`. -/
+@[simp]
+theorem coe_toDSmoothEquiv_symm (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) :
+    ⇑e.toDSmoothEquiv.symm = ⇑e.symm := by
+  rw [← toDSmoothEquiv_symm, coe_toDSmoothEquiv]
+
+/-- Evaluating `e.toDSmoothEquiv.symm` at `y` returns `e.symm y`. -/
+@[simp]
+theorem toDSmoothEquiv_symm_apply (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) (y : N) :
+    e.toDSmoothEquiv.symm y = e.symm y :=
+  congrFun e.coe_toDSmoothEquiv_symm y
+
+/-- `Diffeomorph.toDSmoothEquiv` commutes with composition. -/
+@[simp]
+theorem toDSmoothEquiv_trans (e₁ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N)
+    (e₂ : N ≃ₘ^∞⟮𝓘(ℝ, F), 𝓘(ℝ, G)⟯ P) :
+    (e₁.trans e₂).toDSmoothEquiv = e₁.toDSmoothEquiv.trans e₂.toDSmoothEquiv :=
+  DSmoothEquiv.ext fun _ ↦ by simp
+
+end Diffeomorph
 
 /-! ### Functional diffeology and mapping-space bridge on `ContMDiffMap` -/
 
@@ -359,6 +437,108 @@ theorem isInduction_toContMDiffMap :
 end ManifoldDomain
 
 end DSmoothMap
+
+namespace DSmoothEquiv
+
+section ManifoldDomain
+
+variable {E F G : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {M N P : Type*}
+  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [DiffeologicalSpace M] [IsContMDiffCompatible E M]
+  [TopologicalSpace N] [ChartedSpace F N] [IsManifold 𝓘(ℝ, F) ∞ N]
+  [DiffeologicalSpace N] [IsContMDiffCompatible F N]
+  [TopologicalSpace P] [ChartedSpace G P] [DiffeologicalSpace P] [IsContMDiffCompatible G P]
+
+/-- Convert a diffeological diffeomorphism between finite-dimensional smooth manifolds with
+compatible diffeologies into a `C^∞` manifold diffeomorphism. -/
+def toDiffeomorph (e : DSmoothEquiv M N) : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N :=
+  ⟨e.toEquiv, e.dSmooth_toFun.contMDiff, e.dSmooth_invFun.contMDiff⟩
+
+/-- Coercing `e.toDiffeomorph` gives `e`. -/
+@[simp]
+theorem coe_toDiffeomorph (e : DSmoothEquiv M N) : ⇑e.toDiffeomorph = ⇑e :=
+  (rfl)
+
+/-- Evaluating `e.toDiffeomorph` at `x` returns `e x`. -/
+@[simp]
+theorem toDiffeomorph_apply (e : DSmoothEquiv M N) (x : M) : e.toDiffeomorph x = e x :=
+  (rfl)
+
+/-- `DSmoothEquiv.toDiffeomorph` is injective. -/
+theorem toDiffeomorph_injective :
+    Injective (toDiffeomorph : DSmoothEquiv M N → (M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N)) :=
+  fun _ _ h ↦ ext fun x ↦ congr($(h) x)
+
+/-- The bundled `C^∞` map underlying `e.toDiffeomorph` is `e.toDSmoothMap.toContMDiffMap`. -/
+@[simp]
+theorem toContMDiffMap_toDiffeomorph (e : DSmoothEquiv M N) :
+    (e.toDiffeomorph : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) = e.toDSmoothMap.toContMDiffMap :=
+  ContMDiffMap.ext fun _ ↦ by simp
+
+/-- `DSmoothEquiv.toDiffeomorph` sends `DSmoothEquiv.refl` to the identity diffeomorphism. -/
+@[simp]
+theorem toDiffeomorph_refl : (DSmoothEquiv.refl M).toDiffeomorph = Diffeomorph.refl 𝓘(ℝ, E) M ∞ :=
+  Diffeomorph.ext fun _ ↦ by simp
+
+/-- `DSmoothEquiv.toDiffeomorph` commutes with inverses. -/
+@[simp]
+theorem toDiffeomorph_symm (e : DSmoothEquiv M N) :
+    e.symm.toDiffeomorph = e.toDiffeomorph.symm :=
+  Diffeomorph.ext fun _ ↦ EquivLike.injective e.toDiffeomorph (by simp)
+
+/-- Coercing `e.toDiffeomorph.symm` gives `e.symm`. -/
+@[simp]
+theorem coe_toDiffeomorph_symm (e : DSmoothEquiv M N) : ⇑e.toDiffeomorph.symm = ⇑e.symm := by
+  rw [← toDiffeomorph_symm, coe_toDiffeomorph]
+
+/-- Evaluating `e.toDiffeomorph.symm` at `y` returns `e.symm y`. -/
+@[simp]
+theorem toDiffeomorph_symm_apply (e : DSmoothEquiv M N) (y : N) :
+    e.toDiffeomorph.symm y = e.symm y :=
+  congrFun e.coe_toDiffeomorph_symm y
+
+/-- `DSmoothEquiv.toDiffeomorph` commutes with composition. -/
+theorem toDiffeomorph_trans [FiniteDimensional ℝ G] [IsManifold 𝓘(ℝ, G) ∞ P]
+    (e₁ : DSmoothEquiv M N) (e₂ : DSmoothEquiv N P) :
+    (e₁.trans e₂).toDiffeomorph = e₁.toDiffeomorph.trans e₂.toDiffeomorph :=
+  Diffeomorph.ext fun _ ↦ by simp
+
+/-- Converting `e` to a manifold diffeomorphism and back recovers `e`. -/
+@[simp]
+theorem toDSmoothEquiv_toDiffeomorph (e : DSmoothEquiv M N) : e.toDiffeomorph.toDSmoothEquiv = e :=
+  ext fun _ ↦ rfl
+
+/-- Converting a manifold diffeomorphism `e` to a diffeological diffeomorphism and back recovers
+`e`. -/
+@[simp]
+theorem toDiffeomorph_toDSmoothEquiv (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) :
+    e.toDSmoothEquiv.toDiffeomorph = e :=
+  Diffeomorph.ext fun _ ↦ rfl
+
+/-- Equivalence identifying diffeological diffeomorphisms `DSmoothEquiv M N` with `C^∞` manifold
+diffeomorphisms between finite-dimensional smooth manifolds with compatible diffeologies. -/
+def equivDiffeomorph : DSmoothEquiv M N ≃ (M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) :=
+  ⟨toDiffeomorph, Diffeomorph.toDSmoothEquiv, toDSmoothEquiv_toDiffeomorph,
+    toDiffeomorph_toDSmoothEquiv⟩
+
+/-- Applying `DSmoothEquiv.equivDiffeomorph` applies `DSmoothEquiv.toDiffeomorph`. -/
+@[simp]
+theorem equivDiffeomorph_apply (e : DSmoothEquiv M N) : equivDiffeomorph e = e.toDiffeomorph :=
+  (rfl)
+
+/-- Applying `DSmoothEquiv.equivDiffeomorph.symm` applies `Diffeomorph.toDSmoothEquiv`. -/
+@[simp]
+theorem equivDiffeomorph_symm_apply (e : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) :
+    equivDiffeomorph.symm e = e.toDSmoothEquiv :=
+  (rfl)
+
+end ManifoldDomain
+
+end DSmoothEquiv
 
 /-! ### Plot characterization and topology comparisons -/
 

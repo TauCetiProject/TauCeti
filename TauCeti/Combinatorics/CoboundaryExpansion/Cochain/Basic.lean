@@ -120,7 +120,7 @@ whenever `G` is finite, without any finiteness assumption on `V`. -/
 instance [Finite G] : Finite (Cochain X G) := by
   classical
   let S : Finset V := X.edges.biUnion id
-  refine Finite.of_injective (fun (α : Cochain X G) (u v : S) => α u.1 v.1) fun α α' h => ?_
+  refine Finite.of_injective (fun (α : Cochain X G) (u v : S) => α u.val v.val) fun α α' h => ?_
   ext u v huv
   obtain ⟨e, he, hu, hv⟩ := huv.exists_mem_edges
   exact congrFun (congrFun h ⟨u, mem_biUnion.mpr ⟨e, he, hu⟩⟩) ⟨v, mem_biUnion.mpr ⟨e, he, hv⟩⟩
@@ -235,6 +235,15 @@ def holonomy (α : Cochain X G) (u v w : V) : G := α u v * α v w * α w u
 
 theorem holonomy_def (α : Cochain X G) (u v w : V) :
     α.holonomy u v w = α u v * α v w * α w u := (rfl)
+
+/-- The holonomy of `Cochain.ofLt` around an increasing triple `u < v < w`. -/
+theorem holonomy_ofLt_complete [Fintype V] [LinearOrder V] (f : V → V → G) {u v w : V}
+    (huv : u < v) (hvw : v < w) :
+    (ofLt (complete V) f).holonomy u v w = f u v * f v w * (f u w)⁻¹ := by
+  have huw := huv.trans hvw
+  rw [holonomy_def, ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv,
+    ofLt_apply_of_lt _ ((adj_complete v w).mpr hvw.ne) hvw,
+    ofLt_apply_of_gt _ ((adj_complete w u).mpr huw.ne') huw]
 
 @[simp, grind =] theorem holonomy_one (u v w : V) : (1 : Cochain X G).holonomy u v w = 1 := by
   simp [holonomy_def]
@@ -394,6 +403,23 @@ theorem cost_complete (ℓ : GroupNorm G) (α : Cochain (complete V) G) (β : V 
     and_iff_left_iff_imp]
   exact LT.lt.ne
 
+/-- On a complete complex, the defect of an edge labelling uses just its increasing triples. -/
+theorem defect_ofLt_complete (ℓ : GroupNorm G) (f : V → V → G) :
+    (ofLt (complete V) f).defect ℓ =
+      ∑ p ∈ univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+        ℓ (f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹) := by
+  rw [defect_complete]
+  exact sum_congr rfl fun p hp => by
+    rw [holonomy_ofLt_complete _ (mem_filter.mp hp).2.1 (mem_filter.mp hp).2.2]
+
+/-- On a complete complex, the cost of an edge labelling uses just its increasing pairs. -/
+theorem cost_ofLt_complete (ℓ : GroupNorm G) (f : V → V → G) (β : V → G) :
+    (ofLt (complete V) f).cost ℓ β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2), ℓ ((β p.1)⁻¹ * f p.1 p.2 * β p.2) := by
+  rw [cost_complete]
+  exact sum_congr rfl fun p hp => by
+    rw [ofLt_apply_of_lt _ ((adj_complete _ _).mpr (mem_filter.mp hp).2.ne) (mem_filter.mp hp).2]
+
 /-- The gauge distance from `α` to the coboundaries: the infimum of `cost` over all gauges. -/
 noncomputable def gaugeDist (ℓ : GroupNorm G) (α : Cochain X G) : ℝ := ⨅ β : V → G, α.cost ℓ β
 
@@ -527,9 +553,9 @@ theorem cost_mul_const {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInv
 `v₀` does not change the infimum defining `gaugeDist`. -/
 theorem iInf_cost_apply_eq_one {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
     (α : Cochain X G) (v₀ : V) :
-    (⨅ β : {β : V → G // β v₀ = 1}, α.cost ℓ β.1) = α.gaugeDist ℓ := by
+    (⨅ β : {β : V → G // β v₀ = 1}, α.cost ℓ β.val) = α.gaugeDist ℓ := by
   have : Nonempty {β : V → G // β v₀ = 1} := ⟨⟨1, rfl⟩⟩
-  refine le_antisymm ?_ (le_ciInf fun β => α.gaugeDist_le_cost ℓ β.1)
+  refine le_antisymm ?_ (le_ciInf fun β => α.gaugeDist_le_cost ℓ β.val)
   refine le_ciInf fun β => ?_
   let β' : {γ : V → G // γ v₀ = 1} := ⟨fun u => β u * (β v₀)⁻¹, mul_inv_cancel (β v₀)⟩
   exact (ciInf_le ((α.bddBelow_range_cost ℓ).range_comp_right Subtype.val) β').trans_eq
@@ -575,7 +601,7 @@ theorem exists_apply_eq_one_and_cost_eq_gaugeDist [Finite G] {ℓ : GroupNorm G}
     ∃ β : V → G, β v₀ = 1 ∧ α.cost ℓ β = α.gaugeDist ℓ := by
   have : Nonempty {β : V → G // β v₀ = 1} := ⟨⟨1, rfl⟩⟩
   obtain ⟨⟨β, hβ₀⟩, hβ⟩ :=
-    exists_eq_ciInf_of_finite (f := fun γ : {γ : V → G // γ v₀ = 1} => α.cost ℓ γ.1)
+    exists_eq_ciInf_of_finite (f := fun γ : {γ : V → G // γ v₀ = 1} => α.cost ℓ γ.val)
   exact ⟨β, hβ₀, hβ.trans (α.iInf_cost_apply_eq_one hℓ v₀)⟩
 
 end MetricQuantities

@@ -5,17 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.Invertible
 public import Mathlib.Data.Fintype.Fin
 public import Mathlib.Data.Multiset.Range
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
-# Multisets of values indexed by `Fin n`
+# Multisets of values indexed by `Fin n`, and the cardinality of `Fin n` as a unit
 
 The multiset of values of a family `i ↦ g i` indexed by `Fin n`, through the coercion to `ℕ`, is
 the image of `Multiset.range n` under `g` (`Fin.univ_val_map_eq_map_range`). This is the multiset
 analogue of `Fin.prod_univ_eq_prod_range`, and lets a statement about a family indexed by `Fin n`
 be compared with one about an initial segment of `ℕ` without passing through lists.
+
+It also records that the cardinality of a nonempty `Fin n`, cast into a group with zero, is a unit
+as soon as `n` is invertible whenever it is nonzero (`TauCeti.isUnit_card_fin`).
+The nonzero cast condition for the cardinality follows from that for `n`
+(`TauCeti.neZero_card_fin`). This also gives invertibility in a group with zero
+(`TauCeti.invertibleCardFin`).
 -/
 
 public section
@@ -30,3 +37,26 @@ theorem univ_val_map_eq_map_range {α : Type*} (g : ℕ → α) (n : ℕ) :
   simp only [Function.comp_def, Fin.valEmbedding_apply]
 
 end Fin
+
+namespace TauCeti
+
+/-- If the rank is invertible whenever it is nonzero, then the cardinality of a nonempty `Fin n`
+is a unit. -/
+theorem isUnit_card_fin {K : Type*} [GroupWithZero K] [NatCast K] {n : ℕ}
+    (hn : n ≠ 0 → (n : K) ≠ 0) : Nonempty (Fin n) → IsUnit (Fintype.card (Fin n) : K) :=
+  fun h => by
+  rw [Fintype.card_fin, isUnit_iff_ne_zero]
+  exact hn (Fin.pos_iff_nonempty.mpr h).ne'
+
+/-- A nonzero cast of `n` gives a nonzero cast of the cardinality of `Fin n`. -/
+instance neZero_card_fin (K : Type*) [NatCast K] [Zero K] (n : ℕ) [NeZero (n : K)] :
+    NeZero (Fintype.card (Fin n) : K) := by
+  rw [Fintype.card_fin]
+  infer_instance
+
+/-- The cast of the cardinality of `Fin n` is invertible when the cast of `n` is nonzero. -/
+instance invertibleCardFin (K : Type*) [GroupWithZero K] [NatCast K] (n : ℕ) [NeZero (n : K)] :
+    Invertible (Fintype.card (Fin n) : K) :=
+  invertibleOfNonzero (by simpa only [Fintype.card_fin] using NeZero.ne (n : K))
+
+end TauCeti

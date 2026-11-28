@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
+public import TauCeti.Topology.PathSpace.Moore.Between.Basic
+public import Mathlib.Topology.Connected.PathConnected
 
 /-!
 # Comparing path spaces with constrained endpoints
@@ -23,6 +25,11 @@ Constant unit-interval paths become Moore paths of duration one, whereas the Moo
 section has duration zero. The explicit `constantBetweenHomotopy` compares these sections by
 shrinking the duration while keeping the path constant. This supplies compatibility with
 constant sections when transporting constructions between the two path models.
+
+A Moore path from `a` to `b` reparametrizes to a path on the unit interval from `a` to `b`
+(`TauCeti.MoorePathBetween.toPath`), compatibly with reversal
+(`TauCeti.MoorePathBetween.toPath_symm`). So two points are joined by a Moore path exactly when
+they are joined by a path on the unit interval (`TauCeti.nonempty_moorePathBetween_iff`).
 
 ## References
 
@@ -56,7 +63,7 @@ def toUnitPathBetween : C(pathsBetween A B, unitPathsBetween A B) where
   toFun γ := ⟨γ.val.toUnitPath, (mem_unitPathsBetween A B).mpr
     ⟨(toUnitPath_zero γ.val).symm ▸ (mem_pathsBetween.mp γ.property).1,
       (toUnitPath_one γ.val).symm ▸ (mem_pathsBetween.mp γ.property).2⟩⟩
-  continuous_toFun := (continuous_toUnitPath.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (continuous_toUnitPath.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_toUnitPathBetween (γ : pathsBetween A B) :
@@ -68,7 +75,7 @@ def ofUnitPathBetween : C(unitPathsBetween A B, pathsBetween A B) where
   toFun p := ⟨ofUnitPath p.val, mem_pathsBetween.mpr
     ⟨(source_ofUnitPath p.val).symm ▸ ((mem_unitPathsBetween A B).mp p.property).1,
       (target_ofUnitPath p.val).symm ▸ ((mem_unitPathsBetween A B).mp p.property).2⟩⟩
-  continuous_toFun := (continuous_ofUnitPath.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (continuous_ofUnitPath.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_ofUnitPathBetween (p : unitPathsBetween A B) :
@@ -80,8 +87,8 @@ def unitEndpointsBetween : C(unitPathsBetween A B, A × B) where
   toFun p := (⟨p.val 0, ((mem_unitPathsBetween A B).mp p.property).1⟩,
     ⟨p.val 1, ((mem_unitPathsBetween A B).mp p.property).2⟩)
   continuous_toFun :=
-    (((continuous_eval_const 0).comp continuous_subtype_val).subtype_mk _).prodMk
-      (((continuous_eval_const 1).comp continuous_subtype_val).subtype_mk _)
+    (((continuous_eval_const 0).comp continuous_subtypeVal).subtype_mk _).prodMk
+      (((continuous_eval_const 1).comp continuous_subtypeVal).subtype_mk _)
 
 -- Unfolding this with `simp` would preempt the endpoint-preserving comparison lemmas below.
 theorem unitEndpointsBetween_apply (p : unitPathsBetween A B) :
@@ -119,7 +126,7 @@ def unitHomotopyBetween :
     ⟨(unitHomotopy_source p.1 p.2.val).symm ▸ (mem_pathsBetween.mp p.2.property).1,
       (unitHomotopy_target p.1 p.2.val).symm ▸ (mem_pathsBetween.mp p.2.property).2⟩⟩
   continuous_toFun := ((unitHomotopy (X := X)).continuous.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
   map_zero_left γ := Subtype.ext (unitHomotopy_apply_zero γ.val)
   map_one_left γ := Subtype.ext (unitHomotopy_apply_one γ.val)
   prop' s γ := by
@@ -173,7 +180,7 @@ theorem fiberHomotopyEquivPathsBetween_invFun :
 /-- The constant unit-interval paths, parametrized by `A ∩ B`. -/
 def unitConstantBetween : C(↥(A ∩ B), unitPathsBetween A B) where
   toFun x := ⟨ContinuousMap.const I x.val, (mem_unitPathsBetween A B).mpr x.property⟩
-  continuous_toFun := (ContinuousMap.continuous_const'.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (ContinuousMap.continuous_const'.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_unitConstantBetween (x : ↥(A ∩ B)) :
@@ -197,7 +204,7 @@ def constantBetweenHomotopy :
   toFun p := ⟨constOfLength p.2.val (1 - toNNReal p.1), mem_pathsBetween.mpr
     ⟨(source_constOfLength p.2.val (1 - toNNReal p.1)).symm ▸ p.2.property.1,
       (target_constOfLength p.2.val (1 - toNNReal p.1)).symm ▸ p.2.property.2⟩⟩
-  continuous_toFun := ((continuous_subtype_val.comp continuous_snd).moorePath_constOfLength
+  continuous_toFun := ((continuous_subtypeVal.comp continuous_snd).moorePath_constOfLength
     (continuous_const.sub (toNNReal_continuous.comp continuous_fst))).subtype_mk _
   map_zero_left x := Subtype.ext (by simp)
   map_one_left x := Subtype.ext (by simp)
@@ -212,5 +219,50 @@ theorem coe_constantBetweenHomotopy (s : I) (x : ↥(A ∩ B)) :
   (rfl)
 
 end MoorePath
+
+/-! ### Moore paths between two points -/
+
+namespace MoorePathBetween
+
+variable {a b : X}
+
+/-- A Moore path from `a` to `b`, reparametrized to a path on the unit interval from `a` to `b`. -/
+def toPath (γ : MoorePathBetween X a b) : Path a b :=
+  γ.toMoorePath.toPath.cast γ.source.symm γ.target.symm
+
+/-- The value of `toPath γ` at `s` is `γ (γ.length * s)`. -/
+@[simp]
+theorem toPath_apply (γ : MoorePathBetween X a b) (s : I) :
+    γ.toPath s = γ.toMoorePath (γ.toMoorePath.length * toNNReal s) := by
+  simp [toPath]
+
+/-- `MoorePathBetween.toPath` is continuous. -/
+@[fun_prop]
+theorem continuous_toPath : Continuous (toPath : MoorePathBetween X a b → Path a b) :=
+  continuous_induced_rng.2 <| (MoorePath.continuous_toUnitPath.comp continuous_toMoorePath).congr
+    fun γ ↦ ContinuousMap.ext fun s ↦ by simp [MoorePath.toUnitPath_apply]
+
+/-- A Moore loop read as a Moore path from its basepoint to itself has the same reparametrization
+as the loop. -/
+@[simp]
+theorem toPath_loopHomeomorph (ω : MooreLoopSpace X a) :
+    (loopHomeomorph a ω).toPath = ω.toPath := by
+  ext s
+  simp
+
+/-- Reparametrization commutes with reversal. -/
+@[simp]
+theorem toPath_symm (γ : MoorePathBetween X a b) : γ.symm.toPath = γ.toPath.symm := by
+  ext s
+  simp [unitInterval.toNNReal_symm, mul_tsub]
+
+end MoorePathBetween
+
+/-- Two points are joined by a Moore path exactly when they are joined by a path on the unit
+interval. -/
+theorem nonempty_moorePathBetween_iff {a b : X} : Nonempty (MoorePathBetween X a b) ↔ Joined a b :=
+  ⟨fun ⟨γ⟩ ↦ ⟨γ.toPath⟩,
+    fun h ↦ ⟨⟨h.somePath.toMoorePath, h.somePath.source_toMoorePath,
+      h.somePath.target_toMoorePath⟩⟩⟩
 
 end TauCeti

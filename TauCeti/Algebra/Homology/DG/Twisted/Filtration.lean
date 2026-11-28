@@ -157,14 +157,14 @@ theorem indexExtend_apply_of_eq (f : {x : P // ind x = p} → M) {x : P} (hx : i
 @[simp]
 theorem indexExtend_apply_of_ne (f : {x : P // ind x = p} → M) {x : P} (hx : ind x ≠ p) :
     indexExtend R M ind p f x = 0 :=
-  Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.2)
+  Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.property)
 
 /-- Restricting a family extended by zero recovers the family. -/
 @[simp]
 theorem funLeft_indexExtend (f : {x : P // ind x = p} → M) :
     LinearMap.funLeft R M (Subtype.val : {x : P // ind x = p} → P) (indexExtend R M ind p f) =
       f :=
-  funext fun x ↦ indexExtend_apply_of_eq (R := R) f x.2
+  funext fun x ↦ indexExtend_apply_of_eq (R := R) f x.property
 
 /-- A family extended by zero from the generators of index `p` lies in the `p`-th piece of the
 index filtration. -/
@@ -238,7 +238,7 @@ theorem twistedDifferential_funLeft_val {p : ℤ} {f : P → M}
       LinearMap.funLeft R M Subtype.val (twistedDifferential m ℳ dM f) := by
   funext y
   rw [LinearMap.funLeft_apply, twistedDifferential_apply_of_mem_twistedIndexFiltration m hm dM
-    ((mem_twistedIndexFiltration_iff ind).mpr hf) y.2]
+    ((mem_twistedIndexFiltration_iff ind).mpr hf) y.property]
   simp
 
 end Differential
@@ -564,6 +564,11 @@ theorem TwistingCocycle.twistedIndexSubobject_eq_top {p : ℤ} (hp : ∀ x, ind 
   have := HomologicalComplex.Hom.isIso_of_components (m.twistedIndexCochainComplexι hM p)
   exact Subobject.mk_eq_top_of_isIso _
 
+/-- Above all generator indices the stage inclusion is an isomorphism onto the twisted complex. -/
+theorem TwistingCocycle.isIso_twistedIndexCochainComplexι {p : ℤ} (hp : ∀ x, ind x ≤ p) :
+    IsIso (m.twistedIndexCochainComplexι hM p) :=
+  (Subobject.isIso_iff_mk_eq_top _).2 (m.twistedIndexSubobject_eq_top hM hp)
+
 /-- Below all generator indices the subobject filtration vanishes. -/
 theorem TwistingCocycle.twistedIndexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) :
     m.twistedIndexSubobject hM p = ⊥ := by
@@ -617,7 +622,7 @@ noncomputable def twistedIndexCochainComplexProj (p : ℤ) :
       twistedCochainComplexXEquiv_d, twistedIndexCochainComplexXEquiv_d, LinearEquiv.coe_coe,
       LinearEquiv.apply_symm_apply, LinearMap.restrict_apply]
     exact twistedDifferential_funLeft_val m.m m.one_sided dM
-      (mem_twistedIndexGrading_iff.mp (m.twistedIndexCochainComplexXEquiv hM p i f).2).1
+      (mem_twistedIndexGrading_iff.mp (m.twistedIndexCochainComplexXEquiv hM p i f).property).1
 
 @[simp]
 theorem twistedIndexCochainComplexProj_f_apply (p n : ℤ)
@@ -636,7 +641,7 @@ theorem twistedIndexMap_comp_proj (p : ℤ) :
       hM n).injective (Subtype.ext ?_))
   funext x
   simpa using (mem_twistedIndexGrading_iff.mp
-    (m.twistedIndexCochainComplexXEquiv hM p n f).2).1 x (x.2.symm ▸ lt_add_one p)
+    (m.twistedIndexCochainComplexXEquiv hM p n f).property).1 x (x.property.symm ▸ lt_add_one p)
 
 /-- The short complex `F_p ⟶ F_{p+1} ⟶ ℳ ⊗ ⟨P_{p+1}⟩` of the index filtration, whose second map
 restricts to the generators of index `p + 1`. -/
@@ -662,6 +667,15 @@ theorem twistedIndexShortComplex_X₃ (p : ℤ) :
       (0 : TwistingCocycle 𝒜 d {x // ind x = p + 1} fun x ↦ ind x).twistedCochainComplex dM hM := by
   rw [twistedIndexShortComplex]
 
+/-- `twistedIndexShortComplex` is the short complex of the inclusion `F_p ⟶ F_{p+1}` and the
+restriction to the generators of index `p + 1`. Its body is not exposed, so other modules need
+this lemma. -/
+theorem twistedIndexShortComplex_def (p : ℤ) :
+    m.twistedIndexShortComplex dM hM p =
+      ShortComplex.mk (m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl))
+        (m.twistedIndexCochainComplexProj dM hM (p + 1)) (m.twistedIndexMap_comp_proj dM hM p) :=
+  (rfl)
+
 /-- The first map in `twistedIndexShortComplex` is the inclusion `F_p ⟶ F_{p+1}`. -/
 @[simp]
 theorem twistedIndexShortComplex_f (p : ℤ) :
@@ -686,7 +700,7 @@ theorem surjective_twistedIndexCochainComplexProj_f (p n : ℤ) :
     Function.Surjective ((m.twistedIndexCochainComplexProj dM hM p).f n) := by
   intro g
   have hg := mem_twistedTotalGrading_iff.mp (twistedCochainComplexXEquiv
-    (TwistingCocycle.mem_graded 0) (TwistingCocycle.twisting 0) hM n g).2
+    (TwistingCocycle.mem_graded 0) (TwistingCocycle.twisting 0) hM n g).property
   have hf : (fun x ↦ if hx : ind x = p then
       (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded 0) (TwistingCocycle.twisting 0) hM
         n g : {x // ind x = p} → M) ⟨x, hx⟩ else 0) ∈ twistedIndexGrading ℳ ind p n := by
@@ -700,7 +714,7 @@ theorem surjective_twistedIndexCochainComplexProj_f (p n : ℤ) :
     (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded 0) (TwistingCocycle.twisting 0) hM
       n).injective (Subtype.ext ?_)⟩
   funext y
-  simp [y.2]
+  simp [y.property]
 
 /-- An element of `F_{p+1}` whose restriction to the generators of index `p + 1` vanishes comes
 from `F_p`. -/
@@ -712,7 +726,7 @@ theorem exists_twistedIndexCochainComplexMap_f_eq (p n : ℤ)
     (TwistingCocycle.twisting 0) hM n x : {x // ind x = p + 1} → M)) hg
   simp only [twistedIndexCochainComplexProj_f_apply, map_zero, ZeroMemClass.coe_zero] at hg'
   have hmem :=
-    mem_twistedIndexGrading_iff.mp (m.twistedIndexCochainComplexXEquiv hM (p + 1) n g).2
+    mem_twistedIndexGrading_iff.mp (m.twistedIndexCochainComplexXEquiv hM (p + 1) n g).property
   have hp : (m.twistedIndexCochainComplexXEquiv hM (p + 1) n g : P → M) ∈
       twistedIndexGrading ℳ ind p n := by
     let g' : twistedIndexFiltration (R := R) (M := M) ind (p + 1) :=

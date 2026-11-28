@@ -88,7 +88,7 @@ theorem continuousAt_of_eventually_eq_mk {X : Type*} [TopologicalSpace X] {f : X
     simp only [Q, dite_eq_left hx.choose]
   have hc : ContinuousAt Q x₀ :=
     tendsto_subtype_rng.mpr (hP.congr_of_eventuallyEq hQ)
-  have hm := continuous_mk (W := W) continuous_subtype_val
+  have hm := continuous_mk (W := W) continuous_subtypeVal
     (fun v : {v : Fin 3 → F // W.Nonsingular v} ↦ v.property)
   apply (hm.continuousAt.comp hc).congr
   filter_upwards [hf] with x hx
@@ -99,8 +99,8 @@ sending a representative to its point is an open quotient map. Continuity of a m
 points, or out of a product of copies of them, can therefore be checked on representatives. -/
 theorem isOpenQuotientMap_mk [IsTopologicalRing F] :
     IsOpenQuotientMap fun P : {P : Fin 3 → F // W.Nonsingular P} ↦
-      (Point.mk ((nonsingularLift_iff P.1).mpr P.2) : W.Point) := by
-  refine ⟨fun Q ↦ ?_, continuous_mk continuous_subtype_val Subtype.prop, fun U hU ↦ ?_⟩
+      (Point.mk ((nonsingularLift_iff P.val).mpr P.property) : W.Point) := by
+  refine ⟨fun Q ↦ ?_, continuous_mk continuous_subtypeVal Subtype.prop, fun U hU ↦ ?_⟩
   · refine ⟨⟨Q.point.out, (nonsingularLift_iff _).mp ?_⟩, Point.ext (Quotient.out_eq _)⟩
     simpa only [Quotient.out_eq] using Q.nonsingular
   -- An open set of representatives is cut out by an open set `V` of coordinate vectors. Its
@@ -108,7 +108,7 @@ theorem isOpenQuotientMap_mk [IsTopologicalRing F] :
   obtain ⟨V, hV, rfl⟩ := isOpen_induced_iff.mp hU
   refine isEmbedding_toProjectivization.isOpen_iff.mpr
     ⟨Projectivization.mk' F '' (Subtype.val ⁻¹' V),
-      Projectivization.isOpenMap_mk' _ (hV.preimage continuous_subtype_val), ?_⟩
+      Projectivization.isOpenMap_mk' _ (hV.preimage continuous_subtypeVal), ?_⟩
   ext Q
   constructor
   · rintro ⟨⟨P, hP₀⟩, hPV, hPQ⟩

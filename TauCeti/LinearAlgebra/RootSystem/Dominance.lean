@@ -51,6 +51,14 @@ theorem rootLE_iff_exists_nat {x y : M} :
     P.rootLE b x y ↔ ∃ n : ι → ℕ, y - x = ∑ i ∈ b.support, n i • P.root i :=
   mem_posRootCone P b
 
+/-- Comparable weights in the integral root order differ by an element of the root span. -/
+theorem sub_mem_rootSpan_of_rootLE {x y : M} (h : P.rootLE b x y) :
+    y - x ∈ P.rootSpan R := by
+  obtain ⟨n, hn⟩ := (P.rootLE_iff_exists_nat b).mp h
+  rw [hn]
+  exact sum_mem fun i _ ↦
+    nsmul_mem (Submodule.subset_span (Set.mem_range_self i)) (n i)
+
 /-- Every weight is below itself in integral root dominance. -/
 @[simp]
 theorem rootLE_refl (x : M) : P.rootLE b x x := by
@@ -128,7 +136,7 @@ theorem rootLE_sum_int_iff (a c : b.support → ℤ) :
   classical
   rw [rootLE_iff_sub_mem_posRootCone,
     mem_posRootCone_iff_exists_nat_of_bijOn P b
-      (by simpa using (Set.injOn_subtype_val (s := Set.univ (α := b.support))).bijOn_image)]
+      (by simpa using (Set.injOn_subtypeVal (s := Set.univ (α := b.support))).bijOn_image)]
   constructor
   · rintro ⟨n, hn⟩
     have heq : ∑ i : b.support, (c i - a i) • P.root i =
@@ -170,7 +178,7 @@ theorem Equiv.rootLE_weightMap_iff (e : P.Equiv Q) (c : Q.Base)
   rw [rootLE_iff_sub_mem_posRootCone, rootLE_iff_sub_mem_posRootCone,
     mem_posRootCone_iff_exists_nat_of_bijOn Q c hbij,
     mem_posRootCone_iff_exists_nat_of_bijOn P b
-      (by simpa using (Set.injOn_subtype_val (s := Set.univ (α := b.support))).bijOn_image)]
+      (by simpa using (Set.injOn_subtypeVal (s := Set.univ (α := b.support))).bijOn_image)]
   apply exists_congr
   intro n
   have hsum : e.weightMap (∑ i : b.support, n i • P.root i) =

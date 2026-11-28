@@ -204,10 +204,10 @@ private theorem withinCluster_sum_nonneg [LT ι] [DecidableLT ι] (s : Finset V)
     (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → ∀ a b,
       0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
     (β : V → ↥t → A) :
-    0 ≤ ∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.1 < j.1,
+    0 ≤ ∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.val < j.val,
       W (toLex (v, i)) (toLex (v, j)) (β v i) (β v j) :=
   sum_nonneg fun v hv ↦ sum_nonneg fun i _ ↦ sum_nonneg fun j hj ↦
-    hz_nonneg v hv i.1 i.2 j.1 j.2 (mem_filter.mp hj).2 _ _
+    hz_nonneg v hv i.val i.property j.val j.property (mem_filter.mp hj).2 _ _
 
 variable [Preorder V] [Preorder ι] [DecidableLT V] [DecidableLT (V ×ₗ ι)]
 
@@ -218,7 +218,7 @@ private theorem sum_product_filter_lt_map_toLex_eq_add [AddCommMonoid M] [Decida
       f (toLex (u, i)) (toLex (v, j)) = w u v (φ (toLex (u, i))) (φ (toLex (v, j)))) :
     (∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
         with p.1 < p.2, f p.1 p.2) =
-      (∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.1 < j.1, f (toLex (v, i)) (toLex (v, j))) +
+      (∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.val < j.val, f (toLex (v, i)) (toLex (v, j))) +
         ∑ e ∈ {e ∈ s ×ˢ s | e.1 < e.2}, ∑ i : ↥t, ∑ j : ↥t,
           w e.1 e.2 (φ (toLex (e.1, i))) (φ (toLex (e.2, j))) := by
   rw [sum_product_filter_lt_map_toLex s t f]
@@ -248,7 +248,7 @@ private theorem ciInf_sum_product_filter_lt_map_toLex_eq [DecidableLT ι]
         ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
           with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2)) =
       ⨅ β : V → ↥t → A,
-        ((∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.1 < j.1,
+        ((∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.val < j.val,
             W (toLex (v, i)) (toLex (v, j)) (β v i) (β v j)) +
           ∑ e ∈ {e ∈ s ×ˢ s | e.1 < e.2}, ∑ i : ↥t, ∑ j : ↥t,
             w e.1 e.2 (β e.1 i) (β e.2 j)) := by
@@ -291,7 +291,7 @@ theorem card_sq_mul_le_sum_product_filter_lt_map_toLex_of_forall_le_sum
     (fun _ he ↦ (mem_filter.mp he).2.ne) (fun e ↦ w e.1 e.2) ?_ hd
     (fun v (i : ↥t) ↦ φ (toLex (v, i)))
   exact sum_nonneg fun v hv ↦ sum_nonneg fun i _ ↦ sum_nonneg fun j hj ↦
-    hz_nonneg v hv i.1 i.2 j.1 j.2 (mem_filter.mp hj).2
+    hz_nonneg v hv i.val i.property j.val j.property (mem_filter.mp hj).2
 
 /-- Infimum form of `Finset.card_sq_mul_le_sum_product_filter_lt_map_toLex_of_forall_le_sum`:
 nonnegative within-cluster costs preserve a uniform lower bound multiplied by `(#t : ℝ) ^ 2`, even
@@ -388,7 +388,7 @@ theorem ciInf_sum_product_filter_lt_map_toLex_eq_card_sq_mul_ciInf_sum (s : Fins
       (fun _ he ↦ (mem_filter.mp he).2.ne) (fun e ↦ w e.1 e.2) _
       (withinCluster_sum_nonneg s t W hz_nonneg) fun β ↦ ?_
     exact sum_eq_zero fun v hv ↦ sum_eq_zero fun i _ ↦ sum_eq_zero fun j hj ↦
-      hz_diag v hv i.1 i.2 j.1 j.2 (mem_filter.mp hj).2 (β v)
+      hz_diag v hv i.val i.property j.val j.property (mem_filter.mp hj).2 (β v)
 
 end ProdLex
 

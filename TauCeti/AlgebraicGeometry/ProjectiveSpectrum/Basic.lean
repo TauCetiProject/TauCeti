@@ -50,8 +50,13 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.map_congr`: `Proj.map f` depends only on `f`.
 * `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_eq`: the point of `Proj A` defined by `φ` on the
   chart `D₊(f)` agrees with the one defined on the chart `D₊(g)`.
+* `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_comp_map`: `Proj.map f` sends the point defined
+  by `φ` on the chart `D₊(f s)` to the point defined by `φ ∘ f` on the chart `D₊(s)`.
+* `AlgebraicGeometry.Proj.pullback_fst_awayι_comp_eq_snd_comp`: morphisms out of two standard
+  charts agree on their overlap if they agree on the chart of the product.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
   of `f`.
+* `AlgebraicGeometry.Proj.le_basicOpen_pow`: `D₊(f) ≤ D₊(fⁿ)` for every `n : ℕ`.
 * `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
   is invertible exactly on `D₊(fg)`; its values in the localizations are given by
   `AlgebraicGeometry.Proj.val_awayToSection_mk_apply`.
@@ -60,6 +65,10 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.toSpecZero_appLE_basicOpen`: on `D₊(f)`, the functions pulled back
   along `Proj A ⟶ Spec A₀` are the fractions `a / 1`; globally, their values in the localizations
   are given by `AlgebraicGeometry.Proj.val_toSpecZero_appTop_apply`.
+* `AlgebraicGeometry.Proj.toSpecCoeff`: the structural morphism `Proj A ⟶ Spec R` to the
+  coefficient ring, with `AlgebraicGeometry.Proj.val_toSpecCoeff_appTop_apply`,
+  `AlgebraicGeometry.Proj.val_appLE_apply`, `AlgebraicGeometry.Proj.awayι_toSpecCoeff`, and
+  `AlgebraicGeometry.Proj.map_toSpecCoeff`.
 * `AlgebraicGeometry.Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top`: if `A` is generated in degree
   one over `A₀`, the standard opens of degree-one elements cover `Proj A`.
 * `ProjectiveSpectrum.exists_le_mem_notMem`: a projective point misses homogeneous elements of
@@ -107,6 +116,19 @@ theorem SpecMap_awayLift_awayι_eq {R : Type u} [CommRing R] (φ : A →+* R) {f
   congr 2
   exact add_comm m m'
 
+/-- The `R`-point of `Proj ℬ` with homogeneous coordinates `φ : B →+* R`, read on the standard
+chart `D₊(t)` for `t = f s`, followed by `Proj.map f`, is the point of `Proj 𝒜` with homogeneous
+coordinates `φ ∘ f`, read on the standard chart `D₊(s)`. -/
+theorem SpecMap_awayLift_awayι_comp_map {R : Type u} [CommRing R] (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) {s : A} {d : ℕ}
+    (hs : s ∈ 𝒜 d) (hd : 0 < d) {t : B} (ht : t ∈ ℬ d) (hst : f s = t) (φ : B →+* R)
+    (hφt : IsUnit (φ t)) (hφs : IsUnit ((φ.comp f.toRingHom) s)) :
+    Spec.map (CommRingCat.ofHom (Away.lift ℬ φ hφt)) ≫ awayι ℬ t ht hd ≫ map f hf =
+      Spec.map (CommRingCat.ofHom (Away.lift 𝒜 (φ.comp f.toRingHom) hφs)) ≫ awayι 𝒜 s hs hd := by
+  subst hst
+  rw [awayι_comp_map _ _ hd _ hs, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
+    Away.lift_comp_map]
+
 /-- `Proj.map f` lies over `Spec` of the ring homomorphism `𝒜 0 →+* ℬ 0` induced by `f` on the
 degree-zero parts. -/
 @[reassoc (attr := simp)]
@@ -116,9 +138,9 @@ theorem map_toSpecZero (f : 𝒜 →+*ᵍ ℬ) (hf : HomogeneousIdeal.irrelevant
       toSpecZero ℬ ≫ Spec.map (CommRingCat.ofHom f.gradedZeroRingHom) := by
   refine (mapAffineOpenCover f hf).openCover.hom_ext _ _ fun ⟨i, x, hx⟩ ↦ ?_
   -- the chart of `mapAffineOpenCover` at `⟨i, x⟩` is `awayι ℬ (f x)`, by definition
-  have hpos : 0 < (i : ℕ) := i.2
-  have key : awayι ℬ (f x) (f.2 hx) hpos ≫ map f hf ≫ toSpecZero 𝒜 =
-      awayι ℬ (f x) (f.2 hx) hpos ≫ toSpecZero ℬ ≫
+  have hpos : 0 < (i : ℕ) := i.property
+  have key : awayι ℬ (f x) (f.map_mem hx) hpos ≫ map f hf ≫ toSpecZero 𝒜 =
+      awayι ℬ (f x) (f.map_mem hx) hpos ≫ toSpecZero ℬ ≫
         Spec.map (CommRingCat.ofHom f.gradedZeroRingHom) := by
     rw [awayι_comp_map_assoc f hf hpos x hx, awayι_toSpecZero, awayι_toSpecZero_assoc,
       ← Spec.map_comp, ← Spec.map_comp]
@@ -194,7 +216,7 @@ theorem toSpecZero_preimage_basicOpen (r : 𝒜 0) :
     -- the sides differ only in typing `D(r / 1)` as an open of `Spec` or of the prime spectrum
     rfl
   -- On `D₊(f)`, the standard open `D₊(r) = D₊(r f)` is cut out by `(r f)ⁱ / fⁱ = (r / 1)ⁱ`.
-  have hrf : (r : A) * f ∈ 𝒜 i := by simpa using SetLike.mul_mem_graded r.2 f_deg
+  have hrf : (r : A) * f ∈ 𝒜 i := by simpa using SetLike.mul_mem_graded r.property f_deg
   have helem : Away.isLocalizationElem f_deg hrf = fromZeroRingHom 𝒜 _ r ^ i := by
     apply val_injective
     -- `fromZeroRingHom` sends `r` to the fraction `r / 1`
@@ -245,16 +267,17 @@ theorem toSpecZero_appLE_basicOpen {f : A} {m : ℕ} (f_deg : f ∈ 𝒜 m) (hm 
 degree-zero element `a` of `A₀` along `Proj A ⟶ Spec A₀` takes the value `a / 1` in the
 localization at every point. -/
 theorem val_toSpecZero_appTop_apply (a : 𝒜 0) (x : (⊤ : (Proj 𝒜).Opens)) :
-    (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).1 x).val = Localization.mk (a : A) 1 := by
+    (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).val x).val = Localization.mk (a : A) 1
+        := by
   -- `x` lies in a standard chart `D₊(f)`, on which the function is `a / 1`
-  obtain ⟨m, hm, f, f_deg, hfx⟩ : ∃ m > 0, ∃ f ∈ 𝒜 m, f ∉ x.1.asHomogeneousIdeal := by
+  obtain ⟨m, hm, f, f_deg, hfx⟩ : ∃ m > 0, ∃ f ∈ 𝒜 m, f ∉ x.val.asHomogeneousIdeal := by
     by_contra! h
-    exact x.1.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le 𝒜).mpr h)
+    exact x.val.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le 𝒜).mpr h)
   have h := ConcreteCategory.congr_hom (toSpecZero_appLE_basicOpen 𝒜 f_deg hm)
     ((Scheme.ΓSpecIso _).inv a)
   -- restriction to `D₊(f)` keeps the value at `x`
-  have e : (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).1 x).val = _ :=
-    congrArg (fun s : Γ(Proj 𝒜, basicOpen 𝒜 f) ↦ (s.1 ⟨x.1, hfx⟩).val) h
+  have e : (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).val x).val = _ :=
+    congrArg (fun s : Γ(Proj 𝒜, basicOpen 𝒜 f) ↦ (s.val ⟨x.val, hfx⟩).val) h
   refine e.trans ?_
   rw [CommRingCat.comp_apply, CommRingCat.comp_apply, Iso.inv_hom_id_apply]
   -- `awayToSection` sends `a / 1` to the function whose value at each point is the fraction
@@ -266,19 +289,40 @@ variable (𝒜) in
 opens `D₊(f)` of the elements `f ∈ A₁` cover `Proj A`. -/
 theorem iSup_basicOpen_eq_top_of_adjoin_eq_top (h : Algebra.adjoin (𝒜 0) (𝒜 1 : Set A) = ⊤) :
     ⨆ f : 𝒜 1, basicOpen 𝒜 (f : A) = ⊤ :=
-  iSup_basicOpen_eq_top' 𝒜 _ (fun f ↦ ⟨1, f.2⟩) (by rwa [Subtype.range_coe_subtype])
+  iSup_basicOpen_eq_top' 𝒜 _ (fun f ↦ ⟨1, f.property⟩) (by rwa [Subtype.range_coe_subtype])
 
 section
 
 variable {A : Type u} {σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
   {𝒜 : ℕ → σ} [GradedRing 𝒜]
 
+variable (𝒜) in
+/-- The standard open `D₊(f)` is contained in `D₊(fⁿ)` for every `n : ℕ` (including `n = 0`,
+where `D₊(1) = ⊤`). -/
+theorem le_basicOpen_pow (f : A) (n : ℕ) :
+    basicOpen 𝒜 f ≤ basicOpen 𝒜 (f ^ n) :=
+  fun x hx hpow ↦ hx (x.isPrime.mem_of_pow_mem n hpow)
+
+/-- Two morphisms out of the standard charts `D₊(f)` and `D₊(g)` of `Proj A` agree on the overlap
+`D₊(f) ×_{Proj A} D₊(g)` as soon as they agree on the chart `D₊(fg)`, embedded in both through the
+localization maps `A_{(f)} → A_{(fg)}` and `A_{(g)} → A_{(fg)}`. This is the compatibility
+condition for gluing morphisms along standard charts. -/
+theorem pullback_fst_awayι_comp_eq_snd_comp {Y : Scheme.{u}} {f g : A} {m m' : ℕ}
+    (f_deg : f ∈ 𝒜 m) (hm : 0 < m) (g_deg : g ∈ 𝒜 m') (hm' : 0 < m')
+    {u : Spec (.of (Away 𝒜 f)) ⟶ Y} {v : Spec (.of (Away 𝒜 g)) ⟶ Y}
+    (h : Spec.map (CommRingCat.ofHom (awayMap 𝒜 g_deg rfl)) ≫ u =
+      Spec.map (CommRingCat.ofHom (awayMap 𝒜 f_deg (mul_comm f g))) ≫ v) :
+    Limits.pullback.fst (awayι 𝒜 f f_deg hm) (awayι 𝒜 g g_deg hm') ≫ u =
+      Limits.pullback.snd _ _ ≫ v := by
+  rwa [← cancel_epi (pullbackAwayιIso 𝒜 f_deg hm g_deg hm' rfl).inv,
+    pullbackAwayιIso_inv_fst_assoc, pullbackAwayιIso_inv_snd_assoc]
+
 /-- On the standard chart `D₊(f)`, the function `g / fⁿ` takes the value `g / fⁿ` in the
 localization at each point. -/
 theorem val_awayToSection_mk_apply {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : ℕ) (g : A)
     (hg : g ∈ 𝒜 (n • d)) (x : basicOpen 𝒜 f) :
-    ((awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)).1 x).val =
-      Localization.mk g ⟨f ^ n, fun h ↦ x.2 (x.1.isPrime.mem_of_pow_mem n h)⟩ :=
+    ((awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)).val x).val =
+      Localization.mk g ⟨f ^ n, fun h ↦ x.property (x.val.isPrime.mem_of_pow_mem n h)⟩ :=
   (rfl)
 
 /-- On the standard chart `D₊(f)`, the function `g / fⁿ` is invertible exactly on `D₊(fg)`. -/
@@ -305,6 +349,68 @@ theorem basicOpen_awayToSection_mk {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : �
     exact fun h ↦ hp ((Proj 𝒜).basicOpen_le _ h)
 
 end
+
+section Coeff
+
+variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
+  (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
+
+/-- The structural morphism to the spectrum of the coefficient ring of a graded algebra. -/
+noncomputable def toSpecCoeff : Proj 𝒜 ⟶ Spec (.of R) :=
+  toSpecZero 𝒜 ≫ Spec.map (CommRingCat.ofHom (algebraMap R (𝒜 0)))
+
+/-- The coefficient structure map factors through the degree-zero spectrum. -/
+theorem toSpecCoeff_def :
+    toSpecCoeff 𝒜 = toSpecZero 𝒜 ≫
+      Spec.map (CommRingCat.ofHom (algebraMap R (𝒜 0))) := (rfl)
+
+/-- **Coefficients are the fractions `r / 1`.** The global function on `Proj A` pulled back from
+`r ∈ R` along `Proj A ⟶ Spec R` takes the value `r / 1` in the localization at every point. -/
+theorem val_toSpecCoeff_appTop_apply (r : R) (x : (⊤ : (Proj 𝒜).Opens)) :
+    (((toSpecCoeff 𝒜).appTop ((Scheme.ΓSpecIso (.of R)).inv r)).val x).val =
+      Localization.mk (algebraMap R A r) 1 := by
+  rw [toSpecCoeff_def, Scheme.Hom.comp_appTop, ← ConcreteCategory.comp_apply, ← Category.assoc,
+    ← Scheme.ΓSpecIso_inv_naturality]
+  exact (val_toSpecZero_appTop_apply (algebraMap R (𝒜 0) r) x).trans
+    (congrArg (Localization.mk · 1) (SetLike.GradeZero.coe_algebraMap 𝒜 r))
+
+/-- A function `r` on an affine open `U` of a scheme `X`, pulled back along a morphism
+`g = Proj ℬ ⟶ Spec Γ(X, U) ⟶ X` to an open `V ≤ g⁻¹ U`, takes the value `r / 1` at every
+point. -/
+theorem val_appLE_apply {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U) {B : Type u}
+    [CommRing B] [Algebra Γ(X, U) B] (ℬ : ℕ → Submodule Γ(X, U) B) [GradedAlgebra ℬ]
+    (g : Proj ℬ ⟶ X) (hg : g = toSpecCoeff ℬ ≫ hU.fromSpec) {V : (Proj ℬ).Opens}
+    (e : V ≤ g ⁻¹ᵁ U) (r : Γ(X, U)) (x : V) :
+    ((g.appLE U V e r).val x).val = Localization.mk (algebraMap Γ(X, U) B r) 1 := by
+  subst hg
+  rw [Scheme.Hom.comp_appLE, hU.fromSpec_app_self, Category.assoc]
+  -- `toSpecCoeff ℬ` lands in `Spec (.of Γ(X, U))`, which is `Spec Γ(X, U)` only up to
+  -- unfolding `CommRingCat.of`, so the rewrite must see through it
+  erw [Scheme.Hom.map_appLE]
+  rw [Scheme.Hom.appLE, ← Category.assoc, ConcreteCategory.comp_apply]
+  -- restriction of functions on `Proj ℬ` keeps their values
+  exact val_toSpecCoeff_appTop_apply ℬ r ⟨x.val, trivial⟩
+
+/-- The coefficient morphism on a standard affine chart is the chart's coefficient map. -/
+@[reassoc (attr := simp)]
+theorem awayι_toSpecCoeff {f : A} {n : ℕ} (hf : f ∈ 𝒜 n) (hn : 0 < n) :
+    awayι 𝒜 f hf hn ≫ toSpecCoeff 𝒜 =
+      Spec.map (CommRingCat.ofHom (algebraMap R (Away 𝒜 f))) := by
+  rw [toSpecCoeff, awayι_toSpecZero_assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp, ← algebraMap_eq_comp]
+
+/-- `Proj.map f` lies over the coefficient ring when `f` preserves the scalars in degree zero. -/
+@[reassoc]
+theorem map_toSpecCoeff {B : Type u} [CommRing B] [Algebra R B] {ℬ : ℕ → Submodule R B}
+    [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f)
+    (hR : ∀ r : R, f.gradedZeroRingHom (algebraMap R (𝒜 0) r) = algebraMap R (ℬ 0) r) :
+    map f hf ≫ toSpecCoeff 𝒜 = toSpecCoeff ℬ := by
+  rw [toSpecCoeff, map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp, toSpecCoeff]
+  congr 3
+  exact RingHom.ext hR
+
+end Coeff
 
 end AlgebraicGeometry.Proj
 

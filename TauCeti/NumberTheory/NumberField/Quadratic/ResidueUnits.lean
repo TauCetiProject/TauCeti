@@ -40,6 +40,11 @@ for the order `ℤ + f 𝓞 K` of conductor `f`.
   `#(𝓞 K ⧸ p 𝓞 K)ˣ = (p - 1) (p - χ_D(p))`.
 * `TauCeti.NumberField.card_units_quotient_span_natCast_mul_prod`:
   `#(𝓞 K ⧸ f 𝓞 K)ˣ · ∏_{p ∣ f} p² = f² ∏_{p ∣ f} (p - 1) (p - χ_D(p))`.
+* `TauCeti.NumberField.card_units_quotient_span_two`,
+  `TauCeti.NumberField.card_units_quotient_span_three`,
+  `TauCeti.NumberField.card_units_quotient_span_six`,
+  `TauCeti.NumberField.card_units_quotient_span_eight`:
+  explicit counts at levels `2`, `3`, `6`, and `8` in terms of `χ_D(2)` and `χ_D(3)`.
 
 ## References
 
@@ -61,7 +66,7 @@ variable {K : Type*} [Field K] [NumberField K]
 then `#(𝓞 K ⧸ p 𝓞 K)ˣ · p ^ (k g) = p² (p ^ k - 1) ^ g`. -/
 private theorem card_units_quotient_span_mul_pow_eq (hK : finrank ℚ K = 2) {p : ℕ}
     [hp : Fact p.Prime] {k g : ℕ}
-    (hN : ∀ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), absNorm 𝔭.1 = p ^ k)
+    (hN : ∀ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), absNorm 𝔭.val = p ^ k)
     (hg : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = g) :
     (Nat.card (𝓞 K ⧸ span {(p : 𝓞 K)})ˣ : ℤ) * (p : ℤ) ^ (k * g) =
       p ^ 2 * ((p : ℤ) ^ k - 1) ^ g := by
@@ -87,7 +92,7 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
   · -- `p` ramifies: one prime above `p`, of norm `p`.
     have hmem := (Multiquadratic.fundamentalDiscriminantChar_discr_eq_zero_iff hK p).mp h
     have key := card_units_quotient_span_mul_pow_eq (K := K) hK (k := 1)
-      (fun 𝔭 ↦ by rw [pow_one]; exact NumberField.absNorm_eq_of_mem_ramifiedPrimes hK hmem 𝔭.1)
+      (fun 𝔭 ↦ by rw [pow_one]; exact NumberField.absNorm_eq_of_mem_ramifiedPrimes hK hmem 𝔭.val)
       (NumberField.ncard_primesOver_eq_one_of_mem_ramifiedPrimes hK hmem)
     rw [h]
     refine mul_right_cancel₀ (pow_ne_zero (1 * 1) hp0) ?_
@@ -100,8 +105,8 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
       refine mul_right_cancel₀ (pow_ne_zero (1 * 2) hp0) ?_
       push_cast
       linear_combination key
-    rw [← Ideal.pow_inertiaDeg p 𝔭.1,
-      (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank _ 𝔭.1
+    rw [← Ideal.pow_inertiaDeg p 𝔭.val,
+      (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank _ 𝔭.val
         (by rw [hg, NumberField.RingOfIntegers.rank, hK])).2]
   · -- `p` is inert: one unramified prime above `p`, of residue degree `2`, hence of norm `p²`.
     obtain ⟨hram, hg⟩ := (Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h
@@ -113,9 +118,9 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
       refine mul_right_cancel₀ (pow_ne_zero (2 * 1) hp0) ?_
       push_cast
       linear_combination key
-    rw [← Ideal.pow_inertiaDeg p 𝔭.1,
-      RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one _ 𝔭.1 hg
-        (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp hunr 𝔭.1 inferInstance),
+    rw [← Ideal.pow_inertiaDeg p 𝔭.val,
+      RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one _ 𝔭.val hg
+        (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp hunr 𝔭.val inferInstance),
       NumberField.RingOfIntegers.rank, hK]
 
 /-- **Residue units modulo `f` in a quadratic field.** For a quadratic field `K` with
@@ -136,5 +141,46 @@ theorem card_units_quotient_span_natCast_mul_prod (hK : finrank ℚ K = 2) {f : 
   refine Finset.prod_congr rfl fun p hp ↦ ?_
   have := Fact.mk (Nat.prime_of_mem_primeFactors hp)
   exact card_units_quotient_span_natCast_of_prime hK p
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (2))ˣ = 2 - χ_D(2)` in a quadratic field. -/
+theorem card_units_quotient_span_two (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(2 : 𝓞 K)})ˣ : ℤ) =
+      2 - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) 2 := by
+  simpa using card_units_quotient_span_natCast_of_prime hK 2
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (3))ˣ = 2 * (3 - χ_D(3))` in a quadratic field. -/
+theorem card_units_quotient_span_three (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(3 : 𝓞 K)})ˣ : ℤ) =
+      2 * (3 - fundamentalDiscriminantChar (NumberField.discr K)
+        (isFundamentalDiscr_discr hK) 3) := by
+  simpa using card_units_quotient_span_natCast_of_prime hK 3
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (6))ˣ = 2 * (2 - χ_D(2)) * (3 - χ_D(3))` in a quadratic
+field. -/
+theorem card_units_quotient_span_six (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(6 : 𝓞 K)})ˣ : ℤ) =
+      2 * (2 - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) 2) *
+        (3 - fundamentalDiscriminantChar (NumberField.discr K)
+          (isFundamentalDiscr_discr hK) 3) := by
+  have h := card_units_quotient_span_natCast_mul_prod hK (f := 6) (by decide)
+  have hpf : (6 : ℕ).primeFactors = {2, 3} := by
+    rw [show (6 : ℕ) = 2 * 3 from rfl, Nat.primeFactors_mul (by decide) (by decide),
+      Nat.Prime.primeFactors Nat.prime_two, Nat.Prime.primeFactors Nat.prime_three]
+    rfl
+  rw [hpf, Finset.prod_pair (by decide), Finset.prod_pair (by decide)] at h
+  push_cast at h
+  linarith
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (8))ˣ = 16 * (2 - χ_D(2))` in a quadratic field. -/
+theorem card_units_quotient_span_eight (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(8 : 𝓞 K)})ˣ : ℤ) =
+      16 * (2 - fundamentalDiscriminantChar (NumberField.discr K)
+        (isFundamentalDiscr_discr hK) 2) := by
+  have h := card_units_quotient_span_natCast_mul_prod hK (f := 8) (by decide)
+  have hpf : (8 : ℕ).primeFactors = {2} :=
+    Nat.primeFactors_prime_pow (k := 3) (by decide) Nat.prime_two
+  rw [hpf, Finset.prod_singleton, Finset.prod_singleton] at h
+  push_cast at h
+  linarith
 
 end TauCeti.NumberField

@@ -54,6 +54,8 @@ projections `Spin → SO → O`.
 
 * `OrthogonalCompactOpens.mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff`: the image of
   adelic `SO` in adelic `O` is cut out by the determinant at every prime.
+* `OrthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal_mem_integralSubgroup_iff`: an
+  element of adelic `SO` is everywhere integral exactly when its image in adelic `O` is.
 * `OrthogonalCompactOpens.mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff`: the kernel of adelic
   `Spin → SO` is the componentwise `±1`.
 * `OrthogonalCompactOpens.restrictedProductCongrRight_finiteAdelicSpinToSpecialOrthogonal` and
@@ -183,6 +185,16 @@ theorem finiteAdelicSpecialOrthogonalToOrthogonal_injective :
   rw [← finiteAdelicSpecialOrthogonalToOrthogonal_apply,
     ← finiteAdelicSpecialOrthogonalToOrthogonal_apply, h]
 
+/-- An element of `SO(V)(𝔸_f)` is everywhere integral exactly when its image in `O(V)(𝔸_f)` is,
+since the special orthogonal reference subgroups are the preimages of the orthogonal ones. Not a
+`simp` lemma: `simp` proves it componentwise from `mem_integralSubgroup`. -/
+theorem finiteAdelicSpecialOrthogonalToOrthogonal_mem_integralSubgroup_iff
+    (x : U.finiteAdelicSpecialOrthogonal) :
+    U.finiteAdelicSpecialOrthogonalToOrthogonal x ∈ integralSubgroup U.orthogonal ↔
+      x ∈ integralSubgroup U.specialOrthogonal := by
+  simp only [mem_integralSubgroup, finiteAdelicSpecialOrthogonalToOrthogonal_apply,
+    mem_specialOrthogonal_iff]
+
 /-- A finite adelic isometry comes from the finite adelic special orthogonal group exactly when
 each of its components has determinant one. The derived reference subgroups make this exact:
 a proper local isometry in `U.orthogonal p` lies in `U.specialOrthogonal p`. -/
@@ -198,7 +210,7 @@ theorem mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff (x : U.finiteAde
     simp_rw [← range_specialOrthogonalToOrthogonal, MonoidHom.mem_range] at hx
     choose y hy using hx
     refine ⟨⟨y, ?_⟩, ?_⟩
-    · filter_upwards [x.2] with p hp
+    · filter_upwards [x.property] with p hp
       rw [SetLike.mem_coe, mem_specialOrthogonal_iff, hy p]
       exact hp
     · ext p : 1

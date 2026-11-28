@@ -35,7 +35,9 @@ this identification as a linear equivalence over a commutative semiring.
   comodules.
 * `TauCeti.FGComoduleCat.isoOfLinearEquiv`: build an isomorphism from a coaction-compatible
   linear equivalence.
-* `HasZeroObject (FGComoduleCat R C)`.
+* `TauCeti.ComoduleCat.isFG_containsZero`: the zero comodule is finitely generated, so the
+  property `isFG` contains zero; Mathlib's `ObjectProperty.ContainsZero` API then gives
+  `HasZeroObject (FGComoduleCat R C)`.
 
 ## References
 
@@ -270,6 +272,14 @@ theorem add_apply {M N : FGComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (m : M) :
 theorem smul_apply {M N : FGComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (m : M) :
     (r • f) m = r • f m :=
   rfl
+
+/-- A finite sum of morphisms acts by the pointwise sum. -/
+@[simp]
+theorem sum_apply {ι : Type*} {M N : FGComoduleCat.{u, v, w} R C} (s : Finset ι)
+    (f : ι → (M ⟶ N)) (m : M) : (∑ i ∈ s, f i) m = ∑ i ∈ s, f i m :=
+  -- Evaluation at `m` is additive in the morphism, by `zero_apply` and `add_apply`.
+  map_sum ({ toFun g := g m, map_zero' := zero_apply m, map_add' g g' := add_apply g g' m } :
+    (M ⟶ N) →+ N) f s
 
 /-- Build an isomorphism of finitely generated comodules from a linear equivalence of the
 underlying modules whose *forward* map respects the coactions.

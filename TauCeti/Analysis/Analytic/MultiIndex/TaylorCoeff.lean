@@ -9,10 +9,9 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IteratedFDeriv
-import TauCeti.Algebra.MvPolynomial.Funext
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.Perm.FiberSubgroup
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Multi-index Taylor coefficients of analytic functions
@@ -48,6 +47,8 @@ not.
 * `AnalyticAt.exists_hasSum_mvTaylorCoeff` and `TauCeti.mvTaylorCoeff_eq_of_hasSum`: local
   normally convergent multi-index expansion on a polydisc and characterization of Taylor
   coefficients by such an expansion.
+* `AnalyticAt.mvTaylorCoeff_comp_update`: fixing a coordinate at any value retains exactly the
+  coefficients with exponent zero in that coordinate, based at the updated center.
 * `TauCeti.mvTaylorCoeff_prod_pow_smul`, `TauCeti.mvTaylorCoeff_prod_pow`,
   `TauCeti.mvTaylorCoeff_prod_sub_pow_smul`, `TauCeti.mvTaylorCoeff_prod_sub_pow`, and
   `TauCeti.mvTaylorCoeff_apply`: Taylor coefficients of monomials and coordinate projections.
@@ -57,6 +58,8 @@ not.
   `AnalyticAt.norm_prod_factorial_smul_mvTaylorCoeff_le`, and
   `AnalyticAt.factorial_smul_mvTaylorCoeff_of_unique`: agreement and norm bound with
   `iteratedFDeriv` and, in one variable, `iteratedDeriv`.
+* `AnalyticOnNhd.mvTaylorCoeff`: in characteristic zero, each Taylor coefficient is analytic in
+  the centre on the analytic locus of `f`.
 * `ContinuousLinearMap.mvTaylorCoeff_comp_left`,
   `ContinuousLinearEquiv.mvTaylorCoeff_comp_left`, and
   `ContinuousLinearMap.mvTaylorCoeff_comp_eq_zero`: postcomposition with continuous linear maps and
@@ -236,34 +239,8 @@ theorem prod_factorial_smul_mvTaylorCoeff [DecidableEq ι] [CompleteSpace F]
     (∏ i, (α i).factorial) • mvTaylorCoeff f x α =
       iteratedFDeriv 𝕜 (∑ i, α i) f x (fun j ↦ Pi.single (v j) 1) := by
   obtain ⟨p, r, hp⟩ := hf
-  let S := univ.filter fun a : Fin (∑ i, α i) → ι ↦ ∀ i, Fintype.card {j // a j = i} = α i
-  rw [hp.mvTaylorCoeff_eq, p.mvCoeff_eq_sum rfl, hp.iteratedFDeriv_eq_sum_of_completeSpace]
-  -- Group permutations `σ` by the rearranged coordinate tuple `v ∘ σ ∈ S`.
-  have hmaps (σ : Equiv.Perm (Fin (∑ i, α i))) : v ∘ σ ∈ S := by
-    rw [mem_filter]
-    exact ⟨mem_univ _, fun i ↦ by
-      simp only [Fintype.card_subtype, Function.comp_apply, TauCeti.card_filter_comp_perm, hv]⟩
-  rw [← sum_fiberwise_of_maps_to (fun σ _ ↦ hmaps σ), smul_sum]
-  refine sum_congr rfl fun a ha ↦ ?_
-  have hconst : ∀ σ ∈ univ.filter (fun σ : Equiv.Perm (Fin (∑ i, α i)) ↦ v ∘ σ = a),
-      p (∑ i, α i) (fun j ↦ Pi.single (v (σ j)) 1) =
-        p (∑ i, α i) (fun j ↦ Pi.single (a j) 1) :=
-    fun σ hσ ↦ congrArg (p (∑ i, α i)) (funext fun j ↦ by simp [← congrFun (mem_filter.1 hσ).2 j])
-  rw [sum_congr rfl hconst, sum_const]
-  congr 1
-  -- Every fiber `v ∘ σ = a` is a coset of `TauCeti.fiberSubgroup v`, of size `∏ i, (α i)!`.
-  obtain ⟨σ₀, hσ₀⟩ : ∃ σ₀ : Equiv.Perm (Fin (∑ i, α i)), v ∘ σ₀ = a :=
-    Function.exists_perm_of_occCount_eq fun i ↦ by
-      rw [Function.occCount_eq_card_filter, ← Fintype.card_subtype, (mem_filter.1 ha).2 i,
-        Function.occCount_eq_card_filter, hv i]
-  have hcoset : {σ : Equiv.Perm (Fin (∑ i, α i)) // v ∘ σ = a} ≃ TauCeti.fiberSubgroup v :=
-    (Equiv.mulRight σ₀⁻¹).subtypeEquiv fun σ ↦ by
-      rw [← hσ₀, funext_iff, TauCeti.mem_fiberSubgroup]
-      exact ⟨fun h j ↦ by simpa [Equiv.Perm.mul_apply] using h (σ₀⁻¹ j),
-        fun h j ↦ by simpa [Equiv.Perm.mul_apply] using h (σ₀ j)⟩
-  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, Nat.card_congr hcoset,
-    TauCeti.natCard_fiberSubgroup]
-  exact prod_congr rfl fun i _ ↦ by rw [hv i]
+  rw [hp.mvTaylorCoeff_eq, hp.iteratedFDeriv_eq_sum_of_completeSpace]
+  exact p.prod_factorial_smul_mvCoeff v fun i ↦ by rw [Fintype.card_subtype, hv i]
 
 /-- **Norm bound in terms of `iteratedFDeriv`**: for `f` analytic at `x`,
 `‖(∏ i, (α i)!) • mvTaylorCoeff f x α‖` is at most the operator norm of the `(∑ i, α i)`-th
@@ -308,6 +285,25 @@ theorem factorial_smul_mvTaylorCoeff_of_unique [Unique ι] [CompleteSpace F]
     Fintype.sum_unique]
 
 end AnalyticAt
+
+/-- **Taylor coefficients are analytic in the centre.** If `f` is analytic on a neighborhood of
+every point of `s`, then so is `x ↦ mvTaylorCoeff f x α`, for every multi-index `α`: near each
+point it is a fixed evaluation of an iterated derivative of `f`, divided by `∏ i, (α i)!`. -/
+theorem AnalyticOnNhd.mvTaylorCoeff [CharZero 𝕜] [CompleteSpace F] {f : (ι → 𝕜) → F}
+    {s : Set (ι → 𝕜)} (hf : AnalyticOnNhd 𝕜 f s) (α : ι → ℕ) :
+    AnalyticOnNhd 𝕜 (fun x ↦ TauCeti.mvTaylorCoeff f x α) s := by
+  classical
+  obtain ⟨v, hv⟩ :=
+    TauCeti.exists_forall_card_filter_eq (α := Fin (∑ i, α i)) (Fintype.card_fin _).symm
+  have hD : AnalyticOnNhd 𝕜 (fun x ↦ ((∏ i, (α i).factorial : ℕ) : 𝕜)⁻¹ •
+      iteratedFDeriv 𝕜 (∑ i, α i) f x (fun j ↦ Pi.single (v j) 1)) s := fun x hx ↦
+    ((ContinuousMultilinearMap.apply 𝕜 (fun _ : Fin (∑ i, α i) ↦ ι → 𝕜) F
+      (fun j ↦ Pi.single (v j) 1)).analyticAt _).comp (hf.iteratedFDeriv _ x hx) |>.const_smul
+  refine fun x hx ↦ (hD x hx).congr ?_
+  filter_upwards [(hf x hx).eventually_analyticAt] with y hy
+  rw [← hy.prod_factorial_smul_mvTaylorCoeff α v hv, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.2 (Finset.prod_ne_zero_iff.2 fun i _ ↦
+      Nat.factorial_ne_zero _)), one_smul]
 
 namespace TauCeti
 
@@ -405,6 +401,34 @@ theorem mvTaylorCoeff_eq_of_hasSum {f : (ι → 𝕜) → F} {x : ι → 𝕜}
   obtain ⟨p, hp, hpc⟩ := exists_hasFPowerSeriesOnBall_of_hasSum hρ hsum h
   rw [hp.mvTaylorCoeff_eq, hpc]
 
+/-- Fixing a coordinate at `ζ` keeps precisely the Taylor coefficients at the updated center
+whose exponent in that coordinate is zero. Analyticity is needed only at the updated center. -/
+@[simp]
+theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update [DecidableEq ι]
+    {f : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι} {ζ : 𝕜}
+    (hf : AnalyticAt 𝕜 f (Function.update x i ζ)) (α : ι → ℕ) :
+    TauCeti.mvTaylorCoeff (fun z ↦ f (Function.update z i ζ)) x α =
+      if α i = 0 then TauCeti.mvTaylorCoeff f (Function.update x i ζ) α else 0 := by
+  obtain ⟨r, hr, hc, hsum⟩ := hf.exists_hasSum_mvTaylorCoeff
+  apply TauCeti.mvTaylorCoeff_eq_of_hasSum hr (ρ := r) ?_ ?_ α
+  · refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun β ↦ ?_) hc
+    split_ifs <;> simp [mul_nonneg (norm_nonneg _) (pow_nonneg r.coe_nonneg _)]
+  · intro y hy
+    have hnorm : ‖Function.update y i 0‖ ≤ ‖y‖ := by
+      apply (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2
+      simp_rw [Function.apply_update (fun _ (v : 𝕜) ↦ ‖v‖), norm_zero]
+      exact (Function.forall_update_iff (fun j ↦ ‖y j‖) (fun _ n ↦ n ≤ ‖y‖)).2
+        ⟨norm_nonneg y, fun j _ ↦ norm_le_pi_norm y j⟩
+    have hupdate : Function.update x i ζ + Function.update y i 0 =
+        Function.update (x + y) i ζ := by
+      simpa only [add_zero] using (Function.update_add x y i ζ 0).symm
+    rw [← hupdate]
+    refine (hsum _ (hnorm.trans_lt hy)).congr_fun fun β ↦ ?_
+    simp_rw [Function.apply_update (fun j (v : 𝕜) ↦ v ^ β j)]
+    rw [Finset.prod_update_of_mem (mem_univ i),
+      Finset.prod_eq_mul_prod_sdiff_singleton_of_mem (mem_univ i) (fun j ↦ y j ^ β j)]
+    by_cases hβ : β i = 0 <;> simp [hβ]
+
 /-- **Monomial with a vector coefficient**: at the origin, `z ↦ (∏ i, z i ^ τ i) • v` has Taylor
 coefficient `v` at `τ` and `0` at every other multi-index. -/
 @[simp]
@@ -490,9 +514,9 @@ theorem mvTaylorCoeff_smul [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 
   have hρ₁_le : (ρ : ℝ) ≤ ρ₁ := NNReal.coe_le_coe.2 (min_le_left ρ₁ ρ₂)
   have hρ₂_le : (ρ : ℝ) ≤ ρ₂ := NNReal.coe_le_coe.2 (min_le_right ρ₁ ρ₂)
   have hfρ : Summable fun β : ι → ℕ ↦ ‖mvTaylorCoeff f x β‖ * (ρ : ℝ) ^ (∑ i, β i) :=
-    Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun _ ↦ by gcongr) hsum₁
+    summable_mul_pow_of_le (fun _ ↦ norm_nonneg _) (min_le_left ρ₁ ρ₂) hsum₁
   have hgρ : Summable fun γ : ι → ℕ ↦ ‖mvTaylorCoeff g x γ‖ * (ρ : ℝ) ^ (∑ i, γ i) :=
-    Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun _ ↦ by gcongr) hsum₂
+    summable_mul_pow_of_le (fun _ ↦ norm_nonneg _) (min_le_right ρ₁ ρ₂) hsum₂
   have hconv := summable_norm_sum_Iic_smul_mul_pow ρ.coe_nonneg hfρ hgρ
   refine mvTaylorCoeff_eq_of_hasSum (lt_min hρ₁ hρ₂) hconv (fun y hy ↦ ?_) α
   have hu := hexp₁ y (hy.trans_le hρ₁_le)
@@ -547,19 +571,8 @@ theorem ContinuousLinearMap.mvTaylorCoeff_comp_eq_zero {κ : Type*} [Fintype κ]
     (A : (κ → 𝕜) →L[𝕜] (ι → 𝕜)) {x : κ → 𝕜} (hG : AnalyticAt 𝕜 G (A x)) {k : ℕ}
     (h : ∀ α : ι → ℕ, ∑ i, α i = k → TauCeti.mvTaylorCoeff G (A x) α = 0) :
     ∀ β : κ → ℕ, ∑ j, β j = k → TauCeti.mvTaylorCoeff (G ∘ A) x β = 0 := by
-  classical
   obtain ⟨p, hp⟩ := hG
-  have hpA : HasFPowerSeriesAt (G ∘ A) (p.compContinuousLinearMap A) x :=
-    hp.compContinuousLinearMap
   intro β hβ
-  rw [hpA.mvTaylorCoeff_eq]
-  refine TauCeti.eq_zero_of_forall_sum_prod_pow_smul_eq_zero (fun w : κ → 𝕜 ↦ ?_)
-    (mem_piAntidiag.2 ⟨hβ, by simp⟩)
-  rw [← (p.compContinuousLinearMap A).apply_eq_sum_mvCoeff,
-    FormalMultilinearSeries.compContinuousLinearMap_apply, Function.comp_def,
-    p.apply_eq_sum_mvCoeff]
-  refine sum_eq_zero fun α hα ↦ ?_
-  have h0 : p.mvCoeff α = 0 := by
-    rw [← hp.mvTaylorCoeff_eq]
-    exact h α (mem_piAntidiag.1 hα).1
-  simp [h0]
+  rw [hp.compContinuousLinearMap.mvTaylorCoeff_eq]
+  exact p.mvCoeff_compContinuousLinearMap_eq_zero A
+    (fun α hα ↦ by rw [← hp.mvTaylorCoeff_eq]; exact h α hα) β hβ

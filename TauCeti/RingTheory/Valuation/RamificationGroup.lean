@@ -38,6 +38,8 @@ maximal ideal.
   inertia group exactly when it fixes the residue of every element of `A`.
 * `ValuationSubring.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal`: equivalently, when it moves
   every element of `A` by an element of the maximal ideal.
+* `ValuationSubring.residue_smul_eq_pow_iff`: an element of the decomposition group acts on the
+  residue of `x` as the `q`-th power exactly when `g x - x ^ q` is a nonunit of `A`.
 * `ValuationSubring.map_restrictScalarsHom_inertiaSubgroup`: the inertia group of `A` over an
   intermediate field `E`, read as automorphisms over `K`, is the part of the inertia group over `K`
   that fixes `E` pointwise.
@@ -69,7 +71,7 @@ ambient field into `A` exactly when that element lies in `A`. -/
 theorem decompositionSubgroup_apply_mem_iff (A : ValuationSubring L)
     (g : A.decompositionSubgroup K) {x : L} : (g : L ≃ₐ[K] L) x ∈ A ↔ x ∈ A := by
   rw [← AlgEquiv.smul_def, ← smul_mem_pointwise_smul_iff (g := (g : L ≃ₐ[K] L)) (x := x),
-    MulAction.mem_stabilizer_iff.mp g.2]
+    MulAction.mem_stabilizer_iff.mp g.property]
 
 /-- **The decomposition group, elementwise**: an automorphism of `L` lies in the decomposition
 group of a valuation subring `A` exactly when it maps an element of `L` into `A` precisely when
@@ -123,6 +125,16 @@ theorem mem_inertiaSubgroup_iff_sub_mem_maximalIdeal (A : ValuationSubring L)
   refine (mem_inertiaSubgroup_iff A g).trans <| forall_congr' fun x ↦ ?_
   rw [← IsLocalRing.residue_eq_zero_iff, map_sub, sub_eq_zero]
 
+/-- An element `g` of the decomposition group of `A` moves the residue of `x ∈ A` to its `q`-th
+power exactly when `g x - x ^ q` is a nonunit of `A`. -/
+theorem residue_smul_eq_pow_iff (A : ValuationSubring L) (g : A.decompositionSubgroup K) (x : A)
+    (q : ℕ) :
+    IsLocalRing.residue A (g • x) = IsLocalRing.residue A x ^ q ↔
+      (g : L ≃ₐ[K] L) • (x : L) - (x : L) ^ q ∈ A.nonunits := by
+  rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff,
+    ← coe_mem_nonunits_iff]
+  simp [AlgEquiv.smul_def]
+
 /-- **The inertia group over an intermediate field**: the inertia group of `A` over an intermediate
 field `E` of `L / K`, read as automorphisms over `K`, is the part of the inertia group of `A` over
 `K` that fixes `E` pointwise. -/
@@ -145,7 +157,7 @@ theorem map_restrictScalarsHom_inertiaSubgroup (A : ValuationSubring L)
   constructor
   · rintro ⟨_, ⟨g, hg, rfl⟩, rfl⟩
     have hZ : f g ∈ A.decompositionSubgroup K :=
-      (restrictScalars_mem_decompositionSubgroup_iff A (g : L ≃ₐ[E] L)).mpr g.2
+      (restrictScalars_mem_decompositionSubgroup_iff A (g : L ≃ₐ[E] L)).mpr g.property
     exact ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
       fun x hx ↦ (g : L ≃ₐ[E] L).commutes ⟨x, hx⟩, ⟨f g, hZ⟩, (hiff fun _ ↦ rfl).mp hg, rfl⟩
   · rintro ⟨hE, g, hg, rfl⟩
@@ -154,7 +166,7 @@ theorem map_restrictScalarsHom_inertiaSubgroup (A : ValuationSubring L)
       congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨g, hE⟩) x
     have hτg : τ.restrictScalars K = g := AlgEquiv.ext hτ
     have hZ : τ ∈ A.decompositionSubgroup E :=
-      (restrictScalars_mem_decompositionSubgroup_iff A τ).mp (hτg ▸ g.2)
+      (restrictScalars_mem_decompositionSubgroup_iff A τ).mp (hτg ▸ g.property)
     exact ⟨τ, ⟨⟨τ, hZ⟩, (hiff hτ).mpr hg, rfl⟩, AlgEquiv.ext hτ⟩
 
 end ValuationSubring

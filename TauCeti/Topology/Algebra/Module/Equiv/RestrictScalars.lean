@@ -16,7 +16,8 @@ Mathlib's `ContinuousLinearEquiv.restrictScalars` restricts scalars for an autom
 Here `ContinuousLinearEquiv.restrictScalars'` allows distinct source and target modules,
 using `LinearEquiv.restrictScalars` and preserving the original continuous maps. Consequently an
 invertible continuous linear map stays invertible after restricting scalars
-(`ContinuousLinearMap.IsInvertible.restrictScalars`).
+(`ContinuousLinearMap.IsInvertible.restrictScalars`), and so does a unit of continuous linear
+endomorphisms (`ContinuousLinearMap.isUnit_restrictScalars`).
 -/
 
 public section
@@ -49,6 +50,12 @@ theorem coe_restrictScalars'_symm (e : M ≃L[S] N) :
     ⇑(e.restrictScalars' R).symm = e.symm :=
   (rfl)
 
+/-- As a continuous linear map, `e.restrictScalars' R` is `e` with scalars restricted. -/
+@[simp]
+theorem toContinuousLinearMap_restrictScalars' (e : M ≃L[S] N) :
+    (e.restrictScalars' R : M →L[R] N) = (e : M →L[S] N).restrictScalars R :=
+  (rfl)
+
 @[simp]
 theorem restrictScalars'_symm [LinearMap.CompatibleSMul N M R S] (e : M ≃L[S] N) :
     (e.restrictScalars' R).symm = e.symm.restrictScalars' R :=
@@ -68,5 +75,12 @@ theorem IsInvertible.restrictScalars {f : M →L[S] N} (hf : f.IsInvertible) :
     (f.restrictScalars R).IsInvertible := by
   obtain ⟨e, rfl⟩ := hf
   exact ⟨e.restrictScalars' R, rfl⟩
+
+/-- A unit of continuous linear endomorphisms stays a unit after restricting scalars. -/
+theorem isUnit_restrictScalars [LinearMap.CompatibleSMul M M R S] {f : M →L[S] M}
+    (hf : IsUnit f) : IsUnit (f.restrictScalars R) := by
+  obtain ⟨u, rfl⟩ := hf
+  refine isUnit_iff_exists.2 ⟨(↑u⁻¹ : M →L[S] M).restrictScalars R, ?_, ?_⟩ <;> ext x <;>
+    simp [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def]
 
 end ContinuousLinearMap

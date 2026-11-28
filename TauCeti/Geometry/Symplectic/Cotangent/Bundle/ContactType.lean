@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorField.Transverse
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Codisc
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.EulerField
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
+import TauCeti.Geometry.Contact.Pullback
 
 /-!
 # The unit cosphere bundle is of restricted contact type
@@ -85,7 +86,7 @@ contact type with primitive `-λ`: its Liouville field is the radial field `p �
 transverse to `S*M`. -/
 theorem isRestrictedContactType_cosphereBundle :
     IsRestrictedContactType 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ)
-      (symplecticForm I M).1 (-(liouvilleForm I M).1)
+      (symplecticForm I M).val (-(liouvilleForm I M).val)
       (Subtype.val : cosphereBundle I M → CotangentBundle I M) :=
   isRestrictedContactType_iff.2
     ⟨by rw [mextDeriv_neg, ← symplecticForm_eq_neg_mextDeriv], vectorBundleEulerField I,
@@ -103,7 +104,7 @@ theorem isContactForm_mpullback_neg_liouvilleForm_cosphereBundle :
   · exact SmoothForm.isContactForm_def.2 fun s ↦ isEmptyElim s
   obtain ⟨z⟩ := hS
   -- A unit covector exists, so the dimension of `T*M` is positive.
-  have : Nontrivial (E →L[ℝ] ℝ) := ⟨⟨z.1.2, 0, snd_ne_zero_of_mem_cosphereBundle z.2⟩⟩
+  have : Nontrivial (E →L[ℝ] ℝ) := ⟨⟨z.val.snd, 0, snd_ne_zero_of_mem_cosphereBundle z.property⟩⟩
   exact isRestrictedContactType_cosphereBundle.isContactType.isContactForm_mpullback
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate _
     (isSmoothEmbedding_coe_cosphereBundle.isImmersion.mfderiv_injective (by simp))
@@ -115,9 +116,9 @@ form. -/
 theorem isContactForm_mpullback_liouvilleForm_cosphereBundle :
     (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
       (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
-      (liouvilleForm I M)).IsContactForm := by
-  rw [← SmoothForm.isContactForm_neg_iff, ← map_neg]
-  exact isContactForm_mpullback_neg_liouvilleForm_cosphereBundle
+      (liouvilleForm I M)).IsContactForm :=
+  (SmoothForm.isContactForm_mpullback_neg_iff _ (liouvilleForm I M)).1
+    isContactForm_mpullback_neg_liouvilleForm_cosphereBundle
 
 end CotangentBundle
 

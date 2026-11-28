@@ -27,7 +27,9 @@ periodic functions on half-strips.
 * For a function periodic under `z ↦ z + I`, translating the band `t` vertically by an integer
   does not change the integral (`Function.Periodic.setLIntegral_reProdIm_preimage_add_intCast`),
   so its integral over a band of `k` periods is `k` times its integral over one period
-  (`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`). A disc of radius at most
+  (`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`). The same holds on
+  `ℝ × ℝ` for a function periodic under `z ↦ z + (0, 1)`
+  (`Function.Periodic.setLIntegral_prod_Ico_intCast_add_natCast`). A disc of radius at most
   `1/2` lies in two periods, so the integral over it is at most twice the integral over one period
   of the vertical strip of the same width
   (`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo`), and the same holds
@@ -39,6 +41,9 @@ periodic functions on half-strips.
   `TauCeti.tendsto_setLIntegral_of_eventually_subset` transported along `ℂ ≃ ℝ × ℝ`. For the
   energy density of a map on a cylindrical end, it says that a finite-energy end carries less and
   less energy far out.
+* **Tonelli on a band.** If `∫_s f(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `f`
+  over `s ×ℂ t` is at most `volume t * C` (`TauCeti.setLIntegral_reProdIm_le`). No measurability
+  is assumed.
 -/
 
 public section
@@ -88,6 +93,22 @@ theorem setLIntegral_reProdIm_Ico_intCast_add_natCast (hf : Periodic f I) {s : S
     rw [hunion, lintegral_union (hs.reProdIm measurableSet_Ico) hdisj, ih, hshift]
     push_cast
     ring
+
+/-- For a function on `ℝ × ℝ` periodic under `z ↦ z + (0, 1)`, its integral over `k` consecutive
+periods `s × [n, n + k)` is `k` times its integral over the period `s × [0, 1)`. This is
+`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast` read through `ℂ ≃ ℝ × ℝ`. -/
+theorem setLIntegral_prod_Ico_intCast_add_natCast {g : ℝ × ℝ → ℝ≥0∞}
+    (hg : Periodic g ((0 : ℝ), (1 : ℝ))) {s : Set ℝ} (hs : MeasurableSet s) (n : ℤ) (k : ℕ) :
+    ∫⁻ z in s ×ˢ Ico (n : ℝ) (n + k), g z = k * ∫⁻ z in s ×ˢ Ico 0 1, g z := by
+  have he := volume_preserving_equiv_real_prod.symm
+  have h (t : Set ℝ) : ∫⁻ z in s ×ˢ t, g z = ∫⁻ w in s ×ℂ t, g (measurableEquivRealProd w) := by
+    rw [← he.setLIntegral_comp_preimage_emb measurableEquivRealProd.symm.measurableEmbedding]
+    simp only [MeasurableEquiv.apply_symm_apply]
+    rfl
+  have hgI : Periodic (fun w ↦ g (measurableEquivRealProd w)) I := fun w ↦ by
+    simpa [measurableEquivRealProd, equivRealProd_apply, Prod.ext_iff] using
+      hg (measurableEquivRealProd w)
+  rw [h, h, hgI.setLIntegral_reProdIm_Ico_intCast_add_natCast hs]
 
 /-- For a function periodic under `z ↦ z + I`, its integral over a disc of radius `r ≤ 1/2` about
 `z₀` is at most twice its integral over one period `(z₀.re - r, z₀.re + r) ×ℂ [0, 1]` of the
@@ -163,5 +184,22 @@ theorem tendsto_setLIntegral_reProdIm_Ioi_atTop {t : Set ℝ} {a : ℝ}
   have h₁ : max a R < p.1 := hR'.trans_lt hp.1
   exact ⟨⟨(le_max_left _ _).trans_lt h₁, hp.2⟩,
     ((le_max_right _ _).trans h₁.le).trans (le_abs_self _)⟩
+
+/-- **Tonelli on a band.** If `∫_s f(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `f`
+over the band `s ×ℂ t` is at most `volume t * C`. No measurability of `f`, `s` or `t` is
+assumed. -/
+theorem setLIntegral_reProdIm_le {s t : Set ℝ} {C : ℝ≥0∞}
+    (hC : ∀ y ∈ t, ∫⁻ x in s, f (x + y * I) ≤ C) :
+    ∫⁻ z in s ×ℂ t, f z ≤ volume t * C := by
+  -- Transport to `ℝ × ℝ`, integrate over `y` last, and bound each horizontal slice.
+  have h : ∫⁻ z in s ×ℂ t, f z = ∫⁻ p in s ×ˢ t, f (measurableEquivRealProd.symm p) :=
+    (volume_preserving_equiv_real_prod.symm.setLIntegral_comp_preimage_emb
+      measurableEquivRealProd.symm.measurableEmbedding f (s ×ℂ t)).symm
+  rw [h, Measure.volume_eq_prod, ← Measure.prod_restrict, ← lintegral_prod_swap]
+  refine (lintegral_prod_le _).trans ?_
+  simp only [Prod.swap_prod_mk, measurableEquivRealProd_symm_apply, mk_eq_add_mul_I]
+  calc ∫⁻ y in t, ∫⁻ x in s, f (x + y * I) ≤ ∫⁻ _ in t, C :=
+        setLIntegral_mono_ae aemeasurable_const (.of_forall hC)
+    _ = volume t * C := by rw [setLIntegral_const, mul_comm]
 
 end TauCeti

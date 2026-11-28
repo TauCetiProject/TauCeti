@@ -26,7 +26,10 @@ For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps ev
 and the darts in `S`. More generally, a set `A` of vertices together with a reversal-closed set
 `D` of darts starting in `A` forms the subgraph `Γ.subgraph A D hsrc hrev`. For a set `C` of
 vertices, `Γ.inducedDarts C` is the set of darts with both endpoints in `C`: the darts of the
-subgraph induced on `C`.
+subgraph `Γ.induce C` induced on `C`.
+
+A map of vertices that joins the two ends of every dart by a path joins the two ends of every path
+(`SerreGraph.nonempty_path_of_path`).
 
 In a graph all of whose darts are loops, such as the graph `noEdge V` with the vertices `V` and no
 edges, a path never leaves its starting vertex. Such a graph is preconnected exactly when it has
@@ -249,7 +252,7 @@ theorem IsOrientation.bijective_toGeomEdge {O : Set Γ.E} (hO : Γ.IsOrientation
   refine ⟨fun e f h => Subtype.ext ?_, fun g => ?_⟩
   · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.mp h with hf | hf
     · exact hf.symm
-    · exact absurd (hf ▸ f.2) (hO.rev_notMem_of_mem Γ e e.2)
+    · exact absurd (hf ▸ f.property) (hO.rev_notMem_of_mem Γ e e.property)
   · obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective g
     by_cases he : e ∈ O
     · exact ⟨⟨e, he⟩, rfl⟩
@@ -278,24 +281,24 @@ attribute [instance] toQuiver
   letI : Quiver Γ.V := Γ.toQuiver
   exact {
     reverse' := fun {a b} e =>
-      ⟨Γ.rev e.1, ⟨(Γ.src_rev e.1).trans e.2.2,
-        by simpa only [tgt_rev] using e.2.1⟩⟩
+      ⟨Γ.rev e.val, ⟨(Γ.src_rev e.val).trans e.property.2,
+        by simpa only [tgt_rev] using e.property.1⟩⟩
     inv' := by
       intro a b e
       apply Subtype.ext
-      exact Γ.rev_rev e.1 }
+      exact Γ.rev_rev e.val }
 
 attribute [instance] toQuiverHasInvolutiveReverse
 
 @[simp] theorem reverse_val {a b : Γ.V}
     (f : Quiver.Hom a b) :
-    (Quiver.reverse f).1 = Γ.rev f.1 := (rfl)
+    (Quiver.reverse f).val = Γ.rev f.val := (rfl)
 
 /-- A dart as an arrow of the associated quiver. -/
 def dart (e : Γ.E) : Quiver.Hom (Γ.src e) (Γ.tgt e) :=
   ⟨e, rfl, rfl⟩
 
-@[simp] theorem dart_val (e : Γ.E) : (Γ.dart e).1 = e := by
+@[simp] theorem dart_val (e : Γ.E) : (Γ.dart e).val = e := by
   simp only [dart]
 
 theorem dart_def (e : Γ.E) : Γ.dart e = ⟨e, rfl, rfl⟩ :=
@@ -304,19 +307,19 @@ theorem dart_def (e : Γ.E) : Γ.dart e = ⟨e, rfl, rfl⟩ :=
 /-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` starts where
 `f` ends. -/
 theorem src_eq_tgt_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
-    (h : e.1 = Γ.rev f.1) : a = d := by
-  rw [← e.2.1, h, src_rev, f.2.2]
+    (h : e.val = Γ.rev f.val) : a = d := by
+  rw [← e.property.1, h, src_rev, f.property.2]
 
 /-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` ends where
 `f` starts. -/
 theorem tgt_eq_src_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
-    (h : e.1 = Γ.rev f.1) : b = c := by
-  rw [← e.2.2, h, tgt_rev, f.2.1]
+    (h : e.val = Γ.rev f.val) : b = c := by
+  rw [← e.property.2, h, tgt_rev, f.property.1]
 
 /-- An arrow `e : b ⟶ a` whose dart is the reverse of the dart of `f : a ⟶ b` is the reverse
 of `f`. -/
 theorem eq_reverse_of_val_eq_rev {a b : Γ.V} {e : Quiver.Hom b a} {f : Quiver.Hom a b}
-    (h : e.1 = Γ.rev f.1) : e = Quiver.reverse f :=
+    (h : e.val = Γ.rev f.val) : e = Quiver.reverse f :=
   Subtype.ext (h.trans (Γ.reverse_val f).symm)
 
 /-- An indexed path in a Serre graph is a path of its associated quiver. -/
@@ -340,7 +343,19 @@ theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : 
     (p : Γ.Path a b) : a = b := by
   induction p with
   | nil => rfl
-  | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
+  | cons _ e ih => exact ih.trans (e.property.1.symm.trans ((h e.val).trans e.property.2))
+
+variable {Γ} in
+/-- A map of vertices that joins the two ends of every dart by a path joins the two ends of every
+path by a path. -/
+theorem nonempty_path_of_path {Δ : SerreGraph.{w, x}} (f : Γ.V → Δ.V)
+    (hf : ∀ e : Γ.E, Nonempty (Δ.Path (f (Γ.src e)) (f (Γ.tgt e)))) {a b : Γ.V}
+    (p : Γ.Path a b) : Nonempty (Δ.Path (f a) (f b)) := by
+  induction p with
+  | nil => exact ⟨.nil⟩
+  | cons _ e ih =>
+    obtain ⟨e, rfl, rfl⟩ := e
+    exact ih.elim fun P => (hf e).elim fun Q => ⟨P.comp Q⟩
 
 /-- A preconnected Serre graph without darts has at most one vertex. -/
 theorem Preconnected.subsingleton_of_isEmpty {Γ : SerreGraph.{u, v}} [IsEmpty Γ.E]
@@ -448,16 +463,16 @@ theorem Hom.mapE_mem_iff {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : 
 @[expose] def Hom.toPrefunctor {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) : Γ.V ⥤q Δ.V where
   obj := f.mapV
-  map := fun e => ⟨f.mapE e.1,
-    by simpa only [f.map_src] using congrArg f.mapV e.2.1,
-    by simpa only [f.map_tgt] using congrArg f.mapV e.2.2⟩
+  map := fun e => ⟨f.mapE e.val,
+    by simpa only [f.map_src] using congrArg f.mapV e.property.1,
+    by simpa only [f.map_tgt] using congrArg f.mapV e.property.2⟩
 
 @[simp] theorem Hom.toPrefunctor_obj {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) (a : Γ.V) : f.toPrefunctor.obj a = f.mapV a := rfl
 
 @[simp] theorem Hom.toPrefunctor_map_val {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) {a b : Γ.V} (e : Quiver.Hom a b) :
-    (f.toPrefunctor.map e).1 = f.mapE e.1 := rfl
+    (f.toPrefunctor.map e).val = f.mapE e.val := rfl
 
 /-- A vertex-surjective graph morphism carries preconnectedness to its target. -/
 theorem Hom.preconnected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
@@ -489,8 +504,8 @@ theorem Hom.mapV_surjective_of_preconnected {Γ : SerreGraph.{u, v}} {Δ : Serre
   induction p with
   | nil => exact ⟨a₀, rfl⟩
   | cons _ d ih =>
-    obtain ⟨e, he⟩ := hf d.1 (by rwa [d.2.1])
-    exact ⟨Γ.tgt e, by rw [← f.map_tgt, he, d.2.2]⟩
+    obtain ⟨e, he⟩ := hf d.val (by rwa [d.property.1])
+    exact ⟨Γ.tgt e, by rw [← f.map_tgt, he, d.property.2]⟩
 
 /-- A morphism from a nonempty graph to a preconnected graph is surjective on darts when every
 dart issuing from a vertex of its image is the image of a dart. -/
@@ -513,7 +528,7 @@ def Hom.id : Γ.Hom Γ where
   simp only [Hom.id]
 
 /-- Compose Serre-graph morphisms. -/
-def Hom.comp {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+@[expose] def Hom.comp {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     (g : Δ.Hom Θ) (f : Γ.Hom Δ) : Γ.Hom Θ where
   mapV := g.mapV ∘ f.mapV
   mapE := g.mapE ∘ f.mapE
@@ -574,19 +589,19 @@ vertex type reduces to that of `Γ`, so vertices of `Γ` are vertices of the sub
 abbrev restrict : SerreGraph.{u, v} where
   V := Γ.V
   E := S
-  src e := Γ.src e.1
-  rev e := ⟨Γ.rev e.1, hS e.1 e.2⟩
-  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
-  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+  src e := Γ.src e.val
+  rev e := ⟨Γ.rev e.val, hS e.val e.property⟩
+  rev_rev e := Subtype.ext (Γ.rev_rev e.val)
+  rev_ne e he := Γ.rev_ne e.val (congrArg Subtype.val he)
 
 @[simp] theorem restrict_src (e : (Γ.restrict S hS).E) :
-    (Γ.restrict S hS).src e = Γ.src e.1 := (rfl)
+    (Γ.restrict S hS).src e = Γ.src e.val := (rfl)
 
 @[simp] theorem restrict_rev_val (e : (Γ.restrict S hS).E) :
-    ((Γ.restrict S hS).rev e).1 = Γ.rev e.1 := (rfl)
+    ((Γ.restrict S hS).rev e).val = Γ.rev e.val := (rfl)
 
 @[simp] theorem restrict_tgt (e : (Γ.restrict S hS).E) :
-    (Γ.restrict S hS).tgt e = Γ.tgt e.1 := (rfl)
+    (Γ.restrict S hS).tgt e = Γ.tgt e.val := (rfl)
 
 /-- The inclusion of a restriction into the ambient graph. -/
 @[expose] def restrictInclusion : (Γ.restrict S hS).Hom Γ where
@@ -599,7 +614,7 @@ abbrev restrict : SerreGraph.{u, v} where
     (Γ.restrictInclusion S hS).mapV a = a := (rfl)
 
 @[simp] theorem restrictInclusion_mapE (e : (Γ.restrict S hS).E) :
-    (Γ.restrictInclusion S hS).mapE e = e.1 := (rfl)
+    (Γ.restrictInclusion S hS).mapE e = e.val := (rfl)
 
 end Restrict
 
@@ -613,19 +628,19 @@ in `A`. Its carriers compute to these subtypes so that paths can be lifted throu
 @[expose] def subgraph : SerreGraph.{u, v} where
   V := A
   E := D
-  src e := ⟨Γ.src e.1, hsrc e.1 e.2⟩
-  rev e := ⟨Γ.rev e.1, hrev e.1 e.2⟩
-  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
-  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+  src e := ⟨Γ.src e.val, hsrc e.val e.property⟩
+  rev e := ⟨Γ.rev e.val, hrev e.val e.property⟩
+  rev_rev e := Subtype.ext (Γ.rev_rev e.val)
+  rev_ne e he := Γ.rev_ne e.val (congrArg Subtype.val he)
 
 @[simp] theorem subgraph_src_val (e : (Γ.subgraph A D hsrc hrev).E) :
-    ((Γ.subgraph A D hsrc hrev).src e).1 = Γ.src e.1 := (rfl)
+    ((Γ.subgraph A D hsrc hrev).src e).val = Γ.src e.val := (rfl)
 
 @[simp] theorem subgraph_rev_val (e : (Γ.subgraph A D hsrc hrev).E) :
-    ((Γ.subgraph A D hsrc hrev).rev e).1 = Γ.rev e.1 := (rfl)
+    ((Γ.subgraph A D hsrc hrev).rev e).val = Γ.rev e.val := (rfl)
 
 @[simp] theorem subgraph_tgt_val (e : (Γ.subgraph A D hsrc hrev).E) :
-    ((Γ.subgraph A D hsrc hrev).tgt e).1 = Γ.tgt e.1 := (rfl)
+    ((Γ.subgraph A D hsrc hrev).tgt e).val = Γ.tgt e.val := (rfl)
 
 instance [Finite A] : Finite (Γ.subgraph A D hsrc hrev).V := inferInstanceAs (Finite A)
 instance [Finite D] : Finite (Γ.subgraph A D hsrc hrev).E := inferInstanceAs (Finite D)
@@ -640,10 +655,10 @@ with paths of `Γ`. -/
   map_rev _ := rfl
 
 @[simp] theorem subgraphInclusion_mapV (a : (Γ.subgraph A D hsrc hrev).V) :
-    (Γ.subgraphInclusion A D hsrc hrev).mapV a = a.1 := (rfl)
+    (Γ.subgraphInclusion A D hsrc hrev).mapV a = a.val := (rfl)
 
 @[simp] theorem subgraphInclusion_mapE (e : (Γ.subgraph A D hsrc hrev).E) :
-    (Γ.subgraphInclusion A D hsrc hrev).mapE e = e.1 := (rfl)
+    (Γ.subgraphInclusion A D hsrc hrev).mapE e = e.val := (rfl)
 
 /-- The inclusion of a subgraph is injective on vertices. -/
 theorem subgraphInclusion_mapV_injective :
@@ -683,6 +698,20 @@ theorem inducedDarts_mono {C D : Set Γ.V} (h : C ⊆ D) : Γ.inducedDarts C ⊆
   Set.eq_univ_of_forall fun _ => ⟨trivial, trivial⟩
 
 end InducedDarts
+
+section Induce
+
+/-- The subgraph induced on a set of vertices: its vertices are those of the set and its darts
+are the darts of `Γ` with both endpoints in the set. -/
+abbrev induce (C : Set Γ.V) : SerreGraph.{u, v} :=
+  Γ.subgraph C (Γ.inducedDarts C) (fun _ he => (mem_inducedDarts_iff.1 he).1)
+    fun _ => rev_mem_inducedDarts_iff.2
+
+/-- The inclusion of an induced subgraph. -/
+abbrev induceInclusion (C : Set Γ.V) : (Γ.induce C).Hom Γ :=
+  Γ.subgraphInclusion _ _ _ _
+
+end Induce
 
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where
@@ -858,6 +887,24 @@ instance : Unique segment.GeomEdge where
     cases b
     · exact .inr rfl
     · exact .inl rfl
+
+/-- Every vertex of the segment has a unique outgoing dart: the dart with the same Boolean label. -/
+instance (v : segment.V) : Unique {e : segment.E // segment.src e = v} where
+  default := ⟨v, segment_src v⟩
+  uniq e := Subtype.ext ((segment_src e.val).symm.trans e.property)
+
+/-- The dart of the segment leaving the vertex `b`, the dart with the same Boolean label, as an
+arrow from `b` to the other vertex. Its source is `b` itself, rather than `segment.src b` as for
+`SerreGraph.dart`, so that it extends paths ending at `b` without a cast. -/
+def segmentArrow (b : segment.V) : b ⟶ segment.tgt b :=
+  ⟨b, rfl, rfl⟩
+
+theorem segmentArrow_val (b : segment.V) : (segmentArrow b).val = b :=
+  (rfl)
+
+/-- A vertex of the segment other than `b` is the target of the dart leaving `b`. -/
+theorem segment_tgt_eq_of_ne {b v : segment.V} (h : b ≠ v) : segment.tgt b = v := by
+  cases b <;> cases v <;> first | rfl | exact absurd rfl h
 
 end SerreGraph
 

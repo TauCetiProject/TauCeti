@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Analysis.Matrix.Spectrum
 
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Resolvents of Hermitian matrices
@@ -44,6 +46,10 @@ entries back into diagonal entries. The resolvent identities specialize Mathlib'
   at `z` is the resolvent at `conj z`;
 * `Matrix.IsHermitian.notMem_spectrum_of_im_ne_zero` — a non-real scalar lies outside the spectrum
   of a Hermitian matrix;
+* `Continuous.matrix_inv_sub_smul_one` — at a fixed non-real parameter, the resolvent
+  of a continuous Hermitian matrix family is continuous;
+* `Matrix.IsHermitian.notMem_spectrum_of_forall_eigenvalues_lt` — a real number above every
+  eigenvalue lies outside the real spectrum of a Hermitian matrix;
 * `Matrix.IsHermitian.l2_opNorm_inv_sub_smul_one_le` — the resolvent bound
   `‖(A - z • 1)⁻¹‖ ≤ |Im z|⁻¹`;
 * `Matrix.IsHermitian.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le` — the Cayley
@@ -52,6 +58,8 @@ entries back into diagonal entries. The resolvent identities specialize Mathlib'
   at the same parameter has norm at most `|Im z|⁻¹`;
 * `Matrix.IsHermitian.im_inv_sub_smul_one_apply_self` and
   `Matrix.IsHermitian.sum_norm_inv_sub_smul_one_apply_sq` — the Ward identity;
+* `Matrix.IsHermitian.im_mul_dotProduct_inv_sub_smul_one_mulVec` — the quadratic-form identity
+  `Im (z uᴴ R_A(z) u) = Im z · Re (wᴴ A w)` for `w = R_A(z) u`;
 * `Matrix.IsHermitian.im_inv_sub_smul_one_apply_self_pos` — `0 < Im (R_A(z) i i)` when
   `0 < Im z`.
 
@@ -69,7 +77,7 @@ public section
 noncomputable section
 
 open Unitary
-open scoped ComplexConjugate
+open scoped ComplexConjugate ComplexOrder
 
 namespace Matrix
 
@@ -94,6 +102,46 @@ theorem inv_sub_smul_one_sub_inv_sub_smul_one_eq
       (z - w) • ((A - z • 1)⁻¹ * (A - w • 1)⁻¹) := by
   simpa [Matrix.mul_smul, Matrix.smul_mul] using
     (inv_sub_smul_one_sub_inv_sub_smul_one (A := A) (B := A) (z := z) (w := w) h)
+
+/-- Matrices with equal characteristic polynomials have equal shifted inverse traces.
+At a singular shift, both nonsingular inverses are zero. -/
+theorem trace_inv_sub_smul_one_eq_of_charpoly_eq (h : A.charpoly = B.charpoly) (z : α) :
+    (A - z • 1)⁻¹.trace = (B - z • 1)⁻¹.trace := by
+  have hshift : (A - z • 1).charpoly = (B - z • 1).charpoly := by
+    rw [smul_one_eq_diagonal, ← scalar_apply, charpoly_sub_scalar, charpoly_sub_scalar, h]
+  have hdet : (A - z • 1).det = (B - z • 1).det := by
+    simp only [det_eq_sign_charpoly_coeff, hshift]
+  by_cases hA : IsUnit (A - z • 1).det
+  · have hB : IsUnit (B - z • 1).det := hdet ▸ hA
+    simp only [trace_eq_neg_charpoly_nextCoeff, charpoly_inv _ ((isUnit_iff_isUnit_det _).mpr hA),
+      charpoly_inv _ ((isUnit_iff_isUnit_det _).mpr hB), ← reverse_charpoly, hdet, hshift]
+  · have hB : ¬IsUnit (B - z • 1).det := hdet ▸ hA
+    rw [nonsing_inv_apply_not_isUnit _ hA, nonsing_inv_apply_not_isUnit _ hB]
+
+/-- The error of the quadratic resolvent expansion factors through the resolvent difference.
+The two shifted matrices must be simultaneously invertible or simultaneously singular. -/
+theorem inv_add_sub_smul_one_sub_quadratic {K : Type*} [CommRing K] (A B : Matrix n n K)
+    (z : K) (h : IsUnit (A - z • 1) ↔ IsUnit (A + B - z • 1)) :
+    let R := (A - z • 1)⁻¹
+    let S := (A + B - z • 1)⁻¹
+    S - (R - R * B * R + R * B * R * B * R) = R * B * R * B * (S - R) := by
+  intro R S
+  have hd : S - R = -(R * B * S) := by
+    have hfirst := inv_sub_smul_one_sub_inv_sub_smul_one (z := z) (w := z) h
+    rw [sub_self, zero_smul, add_zero, add_sub_cancel_left] at hfirst
+    simpa only [neg_sub] using congrArg Neg.neg hfirst
+  have hlinear : S - R + R * B * R = -(R * B * (S - R)) := by
+    calc
+      _ = -(R * B * S) + R * B * R := congrArg (· + R * B * R) hd
+      _ = _ := by noncomm_ring
+  calc
+    _ = (S - R + R * B * R) - R * B * R * B * R := by noncomm_ring
+    _ = -(R * B * (S - R)) - R * B * R * B * R := by rw [hlinear]
+    _ = R * B * R * B * S - R * B * R * B * R := by
+      congr 1
+      rw [hd]
+      noncomm_ring
+    _ = R * B * R * B * (S - R) := (mul_sub _ _ _).symm
 
 end Matrix
 
@@ -132,7 +180,7 @@ theorem inv_sub_smul_one_eq_conjStarAlgAut_diagonal {z : 𝕜} (hz : z ∉ spect
 theorem trace_inv_sub_smul_one {z : 𝕜} (hz : z ∉ spectrum 𝕜 A) :
     (A - z • 1)⁻¹.trace = ∑ j, ((hA.eigenvalues j : 𝕜) - z)⁻¹ := by
   rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, conjStarAlgAut_apply, trace_mul_cycle,
-    star_mul_self_of_mem hA.eigenvectorUnitary.2, one_mul, trace_diagonal]
+    star_mul_self_of_mem hA.eigenvectorUnitary.property, one_mul, trace_diagonal]
 
 open scoped Matrix.Norms.L2Operator in
 /-- Off the spectrum, the Euclidean operator norm of the resolvent of a Hermitian matrix is the
@@ -165,6 +213,13 @@ theorem notMem_spectrum_of_im_ne_zero {z : 𝕜} (hz : RCLike.im z ≠ 0) : z �
   rw [hA.spectrum_eq_image_range]
   rintro ⟨_, ⟨j, rfl⟩, rfl⟩
   exact hz (by simp)
+
+/-- A real number above every eigenvalue of a Hermitian matrix lies outside its real spectrum. -/
+theorem notMem_spectrum_of_forall_eigenvalues_lt {μ : ℝ} (hμA : ∀ j, hA.eigenvalues j < μ) :
+    μ ∉ spectrum ℝ A := by
+  rw [hA.spectrum_real_eq_range_eigenvalues]
+  rintro ⟨j, rfl⟩
+  exact lt_irrefl _ (hμA j)
 
 /-- A shifted Hermitian matrix `A - z • 1` is invertible when `z` is not real. -/
 theorem isUnit_sub_smul_one_of_im_ne_zero {z : 𝕜} (hz : RCLike.im z ≠ 0) :
@@ -276,6 +331,30 @@ theorem im_inv_sub_smul_one_apply_self (z : 𝕜) (i : n) :
     RCLike.conj_im] at key
   linarith
 
+/-- The imaginary part of `z uᴴ R u`, for the resolvent `R = (A - z • 1)⁻¹`, is `Im z` times the
+real quadratic form `wᴴ A w` of the vector `w = R u`. If `A - z • 1` is singular, then `R = 0` by
+the convention for `⁻¹` and both sides vanish. -/
+theorem im_mul_dotProduct_inv_sub_smul_one_mulVec (u : n → 𝕜) (z : 𝕜) :
+    RCLike.im (z * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u))) =
+      RCLike.im z *
+        RCLike.re (star ((A - z • 1)⁻¹ *ᵥ u) ⬝ᵥ (A *ᵥ ((A - z • 1)⁻¹ *ᵥ u))) := by
+  by_cases hdet : IsUnit (A - z • 1).det
+  swap
+  · simp [nonsing_inv_apply_not_isUnit _ hdet]
+  set w := (A - z • 1)⁻¹ *ᵥ u
+  have hu : u = (A - z • 1) *ᵥ w := by
+    rw [mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
+  -- Writing `u = (A - z • 1) w` turns `uᴴ w` into `wᴴ A w - conj z * wᴴ w`.
+  have hq : star u ⬝ᵥ w = star w ⬝ᵥ (A *ᵥ w) - star z * (star w ⬝ᵥ w) := by
+    conv_lhs => rw [hu]
+    rw [star_mulVec, ← dotProduct_mulVec, conjTranspose_sub, hA.eq, conjTranspose_smul,
+      conjTranspose_one, sub_mulVec, smul_mulVec, one_mulVec, dotProduct_sub, dotProduct_smul,
+      smul_eq_mul]
+  have ha := hA.im_star_dotProduct_mulVec_self w
+  have hw := (RCLike.nonneg_iff.mp (dotProduct_star_self_nonneg w)).2
+  rw [hq, mul_sub, ← mul_assoc, RCLike.star_def, RCLike.mul_conj]
+  simp [RCLike.mul_im, ha, hw]
+
 /-- **Ward identity.** For a Hermitian matrix and a non-real `z`, the squared moduli of the entries
 in a row of the resolvent `R = (A - z • 1)⁻¹` sum to `Im (R i i) / Im z`. -/
 theorem sum_norm_inv_sub_smul_one_apply_sq {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
@@ -297,3 +376,29 @@ theorem im_inv_sub_smul_one_apply_self_pos {z : 𝕜} (hz : 0 < RCLike.im z) (i 
   simp [Matrix.mul_apply, hrow] at h1
 
 end Matrix.IsHermitian
+
+/-- The square of a nonreal scalar lies outside the spectrum of a positive semidefinite
+matrix. -/
+theorem Matrix.PosSemidef.sq_notMem_spectrum_of_im_ne_zero {n 𝕜 : Type*} [Fintype n]
+    [DecidableEq n] [RCLike 𝕜] {A : Matrix n n 𝕜} (hA : A.PosSemidef) {z : 𝕜}
+    (hz : RCLike.im z ≠ 0) : z ^ 2 ∉ spectrum 𝕜 A := by
+  rw [hA.isHermitian.spectrum_eq_image_range]
+  rintro ⟨_, ⟨i, rfl⟩, hi⟩
+  let f := TauCeti.toComplexStarAlgHom 𝕜
+  have hf (r : ℝ) : f (r : 𝕜) = (r : ℂ) := f.commutes r
+  have heq : (hA.isHermitian.eigenvalues i : ℂ) = f z ^ 2 := by
+    simpa only [map_pow, hf] using congrArg f hi
+  have hnonneg := Complex.zero_le_real.mpr (hA.eigenvalues_nonneg i)
+  rw [heq] at hnonneg
+  exact hz (by simpa [f] using Complex.sq_nonneg_iff.mp hnonneg)
+
+/-- The resolvent of a continuous Hermitian matrix family is continuous at a
+fixed nonreal spectral parameter. -/
+theorem Continuous.matrix_inv_sub_smul_one {X n 𝕜 : Type*} [TopologicalSpace X]
+    [Fintype n] [DecidableEq n] [RCLike 𝕜] {A : X → Matrix n n 𝕜}
+    (hc : Continuous A) (hA : ∀ x, (A x).IsHermitian)
+    {z : 𝕜} (hz : RCLike.im z ≠ 0) :
+    Continuous (fun x ↦ (A x - z • 1)⁻¹) :=
+  (hc.sub continuous_const).matrix_inv fun x ↦
+    isUnit_iff_ne_zero.mp ((Matrix.isUnit_iff_isUnit_det _).mp
+      ((hA x).isUnit_sub_smul_one_of_im_ne_zero hz))

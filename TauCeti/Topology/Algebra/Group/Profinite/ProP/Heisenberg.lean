@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.MahlerBasis
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
-public import TauCeti.Topology.Algebra.Group.Heisenberg
+public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
@@ -71,12 +71,9 @@ namespace HeisenbergGroup
 
 open Multiplicative
 
-variable {p : ℕ} {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
-  [CompactSpace R] [T2Space R]
-
-omit [IsTopologicalRing R] [CompactSpace R] [T2Space R] in
 /-- The Heisenberg group over a ring whose additive group is pro-`p` is pro-`p`. -/
-theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R) := by
+theorem isProP {p : ℕ} {R : Type*} [Ring R] [TopologicalSpace R]
+    (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R) := by
   classical
   -- The quotient map `(x, y, z) ↦ (x, y)` onto `R × R`, whose kernel is the `z`-axis.
   let f : HeisenbergGroup R →* Multiplicative (R × R) :=

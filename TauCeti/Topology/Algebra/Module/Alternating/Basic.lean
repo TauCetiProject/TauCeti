@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
+import Mathlib.LinearAlgebra.StdBasis
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Alternating pullbacks and postcompositions
@@ -16,6 +18,8 @@ without unfolding their implementations.
 
 Postcomposing a continuous alternating map with the identity continuous linear map
 leaves it unchanged.
+
+The two-form `pr₁^* ω₁ + pr₂^* ω₂` on `V × W` pairs `p` with `q` to `ω₁(p.1, q.1) + ω₂(p.2, q.2)`.
 
 Pullback along a continuous linear map is linear, and postcomposition with a continuous linear
 map that is semilinear for an additional scalar action is semilinear, over any scalars acting on
@@ -32,11 +36,24 @@ form a complex vector space, and these operations are complex-linear or conjugat
   vanishes exactly when it vanishes on every vector.
 * `ContinuousAlternatingMap.apply_vecCons_swap`: an alternating map of two vectors changes sign
   when they are exchanged.
+* `ContinuousAlternatingMap.apply_vecCons_add_right`,
+  `ContinuousAlternatingMap.apply_vecCons_smul_right` and
+  `ContinuousAlternatingMap.apply_vecCons_neg_right`: an alternating map of two vectors is linear in
+  the second vector.
+* `ContinuousAlternatingMap.apply_vecCons_add_smul_add_smul`: an alternating map of two vectors
+  displaced by multiples of a third vector.
 * `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
   `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
   a basis, and its six-term form on a four-dimensional space.
+* `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_right`,
+  `ContinuousAlternatingMap.apply_vecCons_eq_sum_single_right`: a two-form in the coordinates of
+  its second argument, in a basis and in the standard basis of `ι → R`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
+* `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_snd_apply`: the two-form
+  `pr₁^* ω₁ + pr₂^* ω₂` on a product evaluated on two vectors.
+* `ContinuousAlternatingMap.map_linearDependent`: an alternating map vanishes on linearly
+  dependent families.
 -/
 
 public section
@@ -92,29 +109,81 @@ theorem apply_vecCons_swap {R M N : Type*} [Semiring R]
     (f : M [⋀^Fin 2]→L[R] N) (v w : M) : f ![w, v] = -f ![v, w] := by
   simpa using f.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
 
+/-- A continuous alternating map of two vectors is additive in the second vector. -/
+theorem apply_vecCons_add_right {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (u v v' : M) : f ![u, v + v'] = f ![u, v] + f ![u, v'] := by
+  simpa using f.toContinuousMultilinearMap.toMultilinearMap.snoc_add ![u] v v'
+
+/-- A continuous alternating map of two vectors is homogeneous in the second vector. -/
+theorem apply_vecCons_smul_right {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (r : R) (u v : M) : f ![u, r • v] = r • f ![u, v] := by
+  simpa using f.toContinuousMultilinearMap.toMultilinearMap.snoc_smul ![u] r v
+
+/-- A continuous alternating map of two vectors is odd in the second vector. -/
+theorem apply_vecCons_neg_right {R M N : Type*} [Semiring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (u v : M) : f ![u, -v] = -f ![u, v] := by
+  have h := f.apply_vecCons_add_right u (-v) v
+  have h0 : f ![u, 0] = 0 := by simpa using f.apply_vecCons_smul_right (0 : R) u v
+  rw [neg_add_cancel, h0] at h
+  exact eq_neg_of_add_eq_zero_left h.symm
+
+/-- A continuous alternating map of two vectors displaced along `v` is
+`f(u + a v, u' + b v) = f(u, u') + b f(u, v) + a f(v, u')`, since `f(v, v) = 0`. -/
+theorem apply_vecCons_add_smul_add_smul {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (v u u' : M) (a b : R) :
+    f ![u + a • v, u' + b • v] = f ![u, u'] + b • f ![u, v] + a • f ![v, u'] := by
+  have hvv : f ![v, v] = 0 := f.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one
+  simp only [vecCons_add, vecCons_smul, f.apply_vecCons_add_right, f.apply_vecCons_smul_right, hvv,
+    smul_zero, add_zero]
+  abel
+
 section Coordinates
 
 variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
   [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+
+/-- **A two-form in the coordinates of its second argument.** In the coordinates of a basis `b`, a
+two-form `ω` is `ω(u, v) = ∑ⱼ vⱼ ω(u, bⱼ)`. -/
+theorem apply_vecCons_eq_sum_repr_right {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
+    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
+    ω ![u, v] = ∑ j, b.repr v j • ω ![u, b j] := by
+  -- `ω(u, ·)` is linear (`MultilinearMap.toLinearMap`), so expand `v` in `b`.
+  have h (x : M) : Function.update ![u, v] 1 x = ![u, x] := by
+    ext k; fin_cases k <;> simp
+  simpa [b.sum_repr, h] using
+    _root_.map_sum (ω.toMultilinearMap.toLinearMap ![u, v] 1) (fun j ↦ b.repr v j • b j)
+      Finset.univ
+
+/-- **A two-form on `ι → R` in the coordinates of its second argument.** In the standard basis
+`eⱼ = Pi.single j 1`, a two-form `ω` is `ω(u, v) = ∑ⱼ vⱼ ω(u, eⱼ)`. -/
+theorem apply_vecCons_eq_sum_single_right {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [TopologicalSpace R] (ω : (ι → R) [⋀^Fin 2]→L[R] N) (u v : ι → R) :
+    ω ![u, v] = ∑ j, v j • ω ![u, Pi.single j 1] := by
+  simpa using apply_vecCons_eq_sum_repr_right (Pi.basisFun R ι) ω u v
 
 /-- **A two-form in coordinates.** In the coordinates of a basis `b`, a two-form `ω` is
 `ω(u, v) = ∑ᵢ ∑ⱼ uᵢ vⱼ ω(bᵢ, bⱼ)`. -/
 theorem apply_vecCons_eq_sum_repr {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
     (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
     ω ![u, v] = ∑ i, ∑ j, (b.repr u i * b.repr v j) • ω ![b i, b j] := by
-  -- `ω` is linear in each argument (`MultilinearMap.toLinearMap`), so expand both in `b`.
-  have h (m : Fin 2 → M) (k : Fin 2) (x : M) :
-      ω (Function.update m k x) = ∑ i, b.repr x i • ω (Function.update m k (b i)) := by
-    simpa [b.sum_repr] using
-      _root_.map_sum (ω.toMultilinearMap.toLinearMap m k) (fun i ↦ b.repr x i • b i) Finset.univ
-  have h₀ (x y z : M) : Function.update ![x, y] 0 z = ![z, y] := by
-    ext k; fin_cases k <;> simp
-  have h₁ (x y z : M) : Function.update ![x, y] 1 z = ![x, z] := by
-    ext k; fin_cases k <;> simp
-  have hu := h ![u, v] 0 u
-  have hv (x : M) := h ![x, v] 1 v
-  simp only [h₀, h₁] at hu hv
-  simp only [hu, hv, Finset.smul_sum, smul_smul]
+  -- `ω(·, v)` is linear (`MultilinearMap.toLinearMap`), so expand `u` in `b`; then expand the
+  -- second argument with `apply_vecCons_eq_sum_repr_right`.
+  have hu : ω ![u, v] = ∑ i, b.repr u i • ω ![b i, v] := by
+    have h (x : M) : Function.update ![u, v] 0 x = ![x, v] := by
+      ext k; fin_cases k <;> simp
+    simpa [b.sum_repr, h] using
+      _root_.map_sum (ω.toMultilinearMap.toLinearMap ![u, v] 0) (fun i ↦ b.repr u i • b i)
+        Finset.univ
+  rw [hu]
+  simp only [apply_vecCons_eq_sum_repr_right b ω _ v, Finset.smul_sum, smul_smul]
 
 end Coordinates
 
@@ -162,6 +231,32 @@ theorem compContinuousLinearMap_compContinuousLinearMap (a : M'' [⋀^ι]→L[R]
   rfl
 
 end CompComp
+
+section Prod
+
+variable {R V W N : Type*} [Semiring R]
+  [AddCommMonoid V] [Module R V] [TopologicalSpace V]
+  [AddCommMonoid W] [Module R W] [TopologicalSpace W]
+  [AddCommMonoid N] [Module R N] [TopologicalSpace N] [ContinuousAdd N]
+
+/-- The two-form `pr₁^* ω₁ + pr₂^* ω₂` on `V × W` pairs `p` with `q` to
+`ω₁(p.1, q.1) + ω₂(p.2, q.2)`. -/
+theorem compContinuousLinearMap_fst_add_snd_apply (ω₁ : V [⋀^Fin 2]→L[R] N)
+    (ω₂ : W [⋀^Fin 2]→L[R] N) (p q : V × W) :
+    (ω₁.compContinuousLinearMap (ContinuousLinearMap.fst R V W) +
+        ω₂.compContinuousLinearMap (ContinuousLinearMap.snd R V W)) ![p, q] =
+      ω₁ ![p.1, q.1] + ω₂ ![p.2, q.2] := by
+  simp [Matrix.comp_vec2]
+
+end Prod
+
+/-- A continuous alternating map vanishes on a linearly dependent family. -/
+theorem map_linearDependent {R M N ι : Type*} [Ring R] [IsDomain R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    [Module.IsTorsionFree R N] (f : M [⋀^ι]→L[R] N) (v : ι → M) (h : ¬LinearIndependent R v) :
+    f v = 0 := by
+  rw [← coe_toAlternatingMap]
+  exact f.toAlternatingMap.map_linearDependent v h
 
 end ContinuousAlternatingMap
 

@@ -1,0 +1,120 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Normed.Lp.Basic
+public import TauCeti.Analysis.Normed.Module.Seminorm.Basic
+
+/-!
+# Hahn–Banach extension along linear isometries and seminorm norming functionals
+
+A continuous functional extends along a linear isometric embedding without changing its norm.
+This form of Hahn–Banach allows the embedded space to be given by a map rather than a submodule,
+for example when comparing injective tensor norms in different ambient spaces.
+
+The construction applies Mathlib's `exists_extension_norm_eq` to the range of the embedding.
+Applying the scalar extension theorem coordinatewise also extends operators into scalar-valued
+`ℓ∞` without increasing their norm. For any `RCLike` seminorm `p`, equipping the space with the
+induced seminormed structure yields a linear functional attaining `p a` and dominated by `p`
+(`Seminorm.exists_dual_apply_eq_and_norm_le`).
+-/
+
+public section
+
+open scoped ENNReal NNReal
+
+namespace Submodule
+
+variable {𝕜 X ι : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+
+/-- An operator into scalar-valued `ℓ∞` extends from any subspace with the same norm. -/
+theorem exists_extension_lpInfty (M : Submodule 𝕜 X)
+    (f : M →L[𝕜] lp (fun _ : ι ↦ 𝕜) ∞) :
+    ∃ g : X →L[𝕜] lp (fun _ : ι ↦ 𝕜) ∞,
+      g ∘L M.subtypeL = f ∧ ‖g‖₊ = ‖f‖₊ := by
+  have h (i : ι) : ∃ g : StrongDual 𝕜 X,
+      (∀ x : M, g x = f x i) ∧ ‖g‖₊ ≤ ‖f‖₊ := by
+    obtain ⟨g, hg, hnorm⟩ := _root_.exists_extension_norm_eq M
+      ((lp.evalCLM 𝕜 (fun _ : ι ↦ 𝕜) ∞ i) ∘L f)
+    refine ⟨g, hg, ?_⟩
+    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, hnorm]
+    exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun x ↦
+      (lp.norm_apply_le_norm (by simp) (f x) i).trans (f.le_opNorm x)
+  choose g hg hnorm using h
+  let G := ContinuousLinearMap.piLpInfty g ‖f‖₊ hnorm
+  have hG : G ∘L M.subtypeL = f := by
+    ext x i
+    simpa [G] using hg i x
+  refine ⟨G, hG, (ContinuousLinearMap.nnnorm_piLpInfty_le g ‖f‖₊ hnorm).antisymm ?_⟩
+  calc
+    ‖f‖₊ = ‖G ∘L M.subtypeL‖₊ := congrArg (‖·‖₊) hG.symm
+    _ ≤ ‖G‖₊ := ContinuousLinearMap.opNNNorm_le_bound _ _ fun x ↦ G.le_opNNNorm x
+
+end Submodule
+
+namespace LinearIsometry
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A continuous linear functional extends along a linear isometric embedding with the same
+operator norm. No completeness or closed-range hypothesis is required. -/
+theorem exists_extension_norm_eq (i : E →ₗᵢ[𝕜] F) (f : StrongDual 𝕜 E) :
+    ∃ g : StrongDual 𝕜 F, g.comp i.toContinuousLinearMap = f ∧ ‖g‖ = ‖f‖ := by
+  let e := i.equivRange
+  let f' : StrongDual 𝕜 i.toLinearMap.range :=
+    f.comp e.symm.toLinearIsometry.toContinuousLinearMap
+  -- The range is only seminormed, so Mathlib's normed-domain composition lemma does not apply.
+  have hnorm' : ‖f'‖ = ‖f‖ := by
+    apply le_antisymm
+    · apply f'.opNorm_le_bound (norm_nonneg f)
+      intro x
+      calc
+        ‖f' x‖ = ‖f (e.symm x)‖ := rfl
+        _ ≤ ‖f‖ * ‖e.symm x‖ := f.le_opNorm _
+        _ = ‖f‖ * ‖x‖ := by rw [e.symm.norm_map]
+    · apply f.opNorm_le_bound (norm_nonneg f')
+      intro x
+      calc
+        ‖f x‖ = ‖f' (e x)‖ := by
+          -- Expose the composed functional to cancel the range equivalence without unfolding it.
+          change ‖f x‖ = ‖f (e.symm (e x))‖
+          rw [e.symm_apply_apply]
+        _ ≤ ‖f'‖ * ‖e x‖ := f'.le_opNorm _
+        _ = ‖f'‖ * ‖x‖ := by rw [e.norm_map]
+  obtain ⟨g, hg, hnorm⟩ := _root_.exists_extension_norm_eq i.toLinearMap.range f'
+  refine ⟨g, ?_, hnorm.trans hnorm'⟩
+  ext x
+  -- Expose composition and the range subtype at this point, without unfolding the equivalence.
+  change g (i x) = f x
+  have hx := hg (e x)
+  change g (i x) = f (e.symm (e x)) at hx
+  simpa only [e.symm_apply_apply] using hx
+
+end LinearIsometry
+
+namespace Seminorm
+
+/-- **Hahn–Banach norming functional for a seminorm.** For any `RCLike` seminorm `p` on a vector
+space `E` and any `a : E`, there exists a linear functional `g : Module.Dual 𝕜 E` such that
+`g a = p a` and `‖g y‖ ≤ p y` for all `y : E`. -/
+theorem exists_dual_apply_eq_and_norm_le {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    (p : Seminorm 𝕜 E) (a : E) :
+    ∃ g : Module.Dual 𝕜 E, g a = (p a : 𝕜) ∧ ∀ y, ‖g y‖ ≤ p y := by
+  let : SeminormedAddCommGroup E := p.toAddGroupSeminorm.toSeminormedAddCommGroup
+  let : NormedSpace 𝕜 E := ⟨fun c x => by
+    rw [p.norm_toSeminormedAddCommGroup, p.norm_toSeminormedAddCommGroup]
+    exact (map_smul_eq_mul p c x).le⟩
+  obtain ⟨g, hg_norm, hg_a⟩ := exists_dual_vector'' 𝕜 a
+  refine ⟨g.toLinearMap, ?_, fun y => ?_⟩
+  · exact hg_a.trans (congrArg _ (p.norm_toSeminormedAddCommGroup a))
+  · rw [← p.norm_toSeminormedAddCommGroup y]
+    exact (g.le_opNorm y).trans (mul_le_of_le_one_left (norm_nonneg y) hg_norm)
+
+end Seminorm

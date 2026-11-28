@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Field.Fin.Tuple
+public import TauCeti.Algebra.GroupWithZero.Fin.Tuple
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.Nullstellensatz
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+import Mathlib.RingTheory.MvPolynomial.Tower
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Dehomogenization and the affine gradient criterion
@@ -33,7 +35,9 @@ Combined with the weak Nullstellensatz, the pointwise criterion gives an identit
 if every point of a projective hypersurface over an algebraically closed extension `K` of `k`
 lying in a standard affine chart is nonsingular, then in that chart the equation and its partial
 derivatives generate the unit ideal of the polynomial ring over `k`
-(`TauCeti.span_insert_range_pderiv_dehomogenize_eq_top`).
+(`TauCeti.span_insert_range_pderiv_dehomogenize_eq_top`). Conversely, the unit ideal on every
+chart gives a nonzero gradient at every nonzero geometric zero of the homogeneous polynomial
+(`MvPolynomial.IsHomogeneous.forall_exists_aeval_pderiv_ne_zero_iff`).
 
 ## References
 
@@ -104,12 +108,12 @@ theorem eval_dehomogenize (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R)
 /-- Dehomogenization does not increase the total degree. -/
 theorem totalDegree_dehomogenize_le (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R) :
     (dehomogenize i p).totalDegree ≤ p.totalDegree := by
-  conv_lhs => rw [p.as_sum]
-  rw [map_sum]
-  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
-  rw [dehomogenize_monomial]
-  refine (totalDegree_monomial_le _ _).trans (le_trans ?_ (le_totalDegree hs))
-  simp [Finsupp.sum_fintype, Fin.sum_univ_succAbove _ i]
+  rw [dehomogenize]
+  refine (totalDegree_aeval_le p fun j _ ↦ ?_).trans_eq (mul_one _)
+  refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j
+  · simp
+  · rw [Fin.insertNth_apply_succAbove]
+    exact totalDegree_X_le l
 
 /-- For a homogeneous `p` of degree `d` and an exponent `s` of total degree `d`, the coefficient
 of `p` at `s` is the coefficient of the affine equation at the restriction of `s` to the retained
@@ -340,16 +344,44 @@ theorem span_insert_range_pderiv_dehomogenize_eq_top {p : MvPolynomial (Fin (n +
   by_cases ha : aeval a (dehomogenize i p) = 0
   · obtain ⟨l, hl⟩ := hsm a (by rwa [← aeval_dehomogenize])
     -- Transport the affine gradient criterion to the coefficients `K`.
-    have hK : ∀ q : MvPolynomial (Fin (n + 1)) k, ∀ b : Fin (n + 1) → K,
-        eval b (map (algebraMap k K) q) = aeval b q := fun q b ↦ by
-      rw [eval_map, aeval_def]
-    have hK' : ∀ q : MvPolynomial (Fin n) k, eval a (map (algebraMap k K) q) = aeval a q :=
-      fun q ↦ by rw [eval_map, aeval_def]
     obtain ⟨j, hj⟩ := (exists_eval_pderiv_ne_zero_iff_dehomogenize i (hp.map (algebraMap k K)) a
-      (by rwa [← map_dehomogenize, hK'])).mp ⟨l, by rwa [pderiv_map, hK]⟩
+      (by rwa [← map_dehomogenize, ← aeval_eq_eval, aeval_map_algebraMap K])).mp
+      ⟨l, by rwa [pderiv_map, ← aeval_eq_eval, aeval_map_algebraMap K]⟩
     refine ⟨_, Set.mem_insert_of_mem _ ⟨j, rfl⟩, ?_⟩
-    rwa [← map_dehomogenize, pderiv_map, hK'] at hj
+    rwa [← map_dehomogenize, pderiv_map, ← aeval_eq_eval, aeval_map_algebraMap K] at hj
   · exact ⟨_, Set.mem_insert _ _, ha⟩
+
+/-- The gradient is nonzero at every nonzero geometric zero of a homogeneous polynomial
+if and only if each dehomogenization generates the unit ideal together with its partials. -/
+theorem _root_.MvPolynomial.IsHomogeneous.forall_exists_aeval_pderiv_ne_zero_iff
+    {P : MvPolynomial (Fin (n + 1)) k} {d : ℕ} (hP : P.IsHomogeneous d) :
+    (∀ x : Fin (n + 1) → K, x ≠ 0 → MvPolynomial.aeval x P = 0 →
+      ∃ j, MvPolynomial.aeval x (MvPolynomial.pderiv j P) ≠ 0) ↔
+      ∀ i, Ideal.span (insert (dehomogenize i P)
+        (Set.range fun j ↦ MvPolynomial.pderiv j (dehomogenize i P))) = ⊤ := by
+  constructor
+  · intro h i
+    apply TauCeti.span_insert_range_pderiv_dehomogenize_eq_top (K := K) hP
+    exact fun a ↦ h _ (fun he ↦ (one_ne_zero : (1 : K) ≠ 0) (by simpa using congrFun he i))
+  · intro h x hx hxQ
+    obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
+    let a := fun j ↦ x (i.succAbove j) / x i
+    let f := algebraMap k K
+    have hm := hP.map f
+    have hzero : eval x (map f P) = 0 := by
+      rwa [← aeval_eq_eval, aeval_map_algebraMap K]
+    have ha : MvPolynomial.aeval a (dehomogenize i P) = 0 := by
+      rw [← aeval_map_algebraMap K, aeval_eq_eval, map_dehomogenize,
+        eval_dehomogenize_div i hm x hi, hzero, mul_zero]
+    obtain ⟨g, hg, hg₀⟩ := (span_eq_top_iff_forall_exists_aeval_ne_zero (K := K)).mp (h i) a
+    rcases hg with rfl | ⟨j, rfl⟩
+    · exact (hg₀ ha).elim
+    · have hj : MvPolynomial.eval a
+          (MvPolynomial.pderiv j (dehomogenize i (MvPolynomial.map f P))) ≠ 0 := by
+        rwa [← map_dehomogenize, pderiv_map, ← aeval_eq_eval, aeval_map_algebraMap K]
+      obtain ⟨l, hl⟩ :=
+        (exists_eval_pderiv_ne_zero_iff_dehomogenize_div i hm x hi hzero).mpr ⟨j, hj⟩
+      exact ⟨l, by rwa [pderiv_map, ← aeval_eq_eval, aeval_map_algebraMap K] at hl⟩
 
 end Field
 

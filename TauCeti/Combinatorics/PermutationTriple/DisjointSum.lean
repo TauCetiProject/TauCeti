@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
+public import TauCeti.Combinatorics.PermutationTriple.Monodromy
 public import TauCeti.GroupTheory.Perm.SumCongr
 import TauCeti.GroupTheory.Perm.SigmaCongr
 
@@ -25,11 +26,9 @@ on the first `m` labels and by the second on the last `n`.
 * `TauCeti.PermutationTriple.cycleData_disjointSum`,
   `TauCeti.PermutationTriple.cycleCounts_disjointSum`: the cycle data of a disjoint sum is the
   concatenation of the cycle data of its summands, and the cycle counts add.
-* `TauCeti.PermutationTriple.monodromyGroup_disjointSum_le`: the monodromy group of a disjoint
-  sum consists of relabelings acting separately on the two blocks, and each of the two components
-  lies in the monodromy group of the corresponding summand. The inclusion is strict in general —
-  the monodromy group of the disjoint sum of a triple with itself is the diagonal, not the whole
-  product.
+* `TauCeti.PermutationTriple.monodromyGroup_disjointSum`: the monodromy on both blocks is the image
+  of the common free-group representation. Both projections are surjective onto the monodromy
+  groups of the summands. For two copies of the same triple the image is the diagonal.
 * `TauCeti.PermutationTriple.not_isConnected_disjointSum`: a disjoint sum of two triples of
   nonzero degree is disconnected.
 * `TauCeti.PermutationTriple.indexedDisjointSum`: the disjoint sum of an indexed family of triples
@@ -109,24 +108,55 @@ theorem cycleCounts_disjointSum :
 
 /-! ### Monodromy and connectedness -/
 
+/-- A word acts on a disjoint sum by evaluating it on each block. -/
+theorem equivFreeGroupHom_disjointSum :
+    equivFreeGroupHom (m + n) (s.disjointSum t) =
+      (finSumPermHom m n).comp ((equivFreeGroupHom m s).prod (equivFreeGroupHom n t)) := by
+  apply FreeGroup.ext_hom
+  intro i
+  fin_cases i <;> simp
+
+/-- The monodromy of a disjoint sum is the image of the common free-group representation,
+embedded as block permutations. -/
+theorem monodromyGroup_disjointSum :
+    (s.disjointSum t).monodromyGroup =
+      ((equivFreeGroupHom m s).prod (equivFreeGroupHom n t)).range.map (finSumPermHom m n) := by
+  rw [← range_equivFreeGroupHom, equivFreeGroupHom_disjointSum, MonoidHom.range_comp]
+
+/-- Restricting the monodromy of the disjoint sum to its first block gives the entire
+monodromy group of the first summand. -/
+@[simp] theorem map_fst_comap_monodromyGroup_disjointSum :
+    ((s.disjointSum t).monodromyGroup.comap (finSumPermHom m n)).map (MonoidHom.fst _ _) =
+      s.monodromyGroup := by
+  rw [monodromyGroup_disjointSum, Subgroup.comap_map_eq_self_of_injective
+    (finSumPermHom_injective m n)]
+  simp [MonoidHom.map_range]
+
+/-- Restricting the monodromy of the disjoint sum to its second block gives the entire
+monodromy group of the second summand. -/
+@[simp] theorem map_snd_comap_monodromyGroup_disjointSum :
+    ((s.disjointSum t).monodromyGroup.comap (finSumPermHom m n)).map (MonoidHom.snd _ _) =
+      t.monodromyGroup := by
+  rw [monodromyGroup_disjointSum, Subgroup.comap_map_eq_self_of_injective
+    (finSumPermHom_injective m n)]
+  simp [MonoidHom.map_range]
+
 /-- The monodromy group of a disjoint sum acts separately on the two blocks of labels, through
-the monodromy groups of the two summands. The inclusion is not an equality in general: the
-disjoint sum of a triple with itself has diagonal monodromy. -/
+the monodromy groups of the two summands. -/
 theorem monodromyGroup_disjointSum_le :
     (s.disjointSum t).monodromyGroup ≤
       (s.monodromyGroup.prod t.monodromyGroup).map (finSumPermHom m n) := by
-  rw [← closure_triple_eq_monodromyGroup (s.disjointSum t)]
-  refine (Subgroup.closure_le _).mpr ?_
-  rintro g (rfl | rfl | rfl)
-  · exact Subgroup.mem_map.mpr
-      ⟨(s.σ0, t.σ0), Subgroup.mem_prod.mpr ⟨s.σ0_mem_monodromyGroup, t.σ0_mem_monodromyGroup⟩,
-        by simp⟩
-  · exact Subgroup.mem_map.mpr
-      ⟨(s.σ1, t.σ1), Subgroup.mem_prod.mpr ⟨s.σ1_mem_monodromyGroup, t.σ1_mem_monodromyGroup⟩,
-        by simp⟩
-  · exact Subgroup.mem_map.mpr
-      ⟨(s.σinf, t.σinf),
-        Subgroup.mem_prod.mpr ⟨s.σinf_mem_monodromyGroup, t.σinf_mem_monodromyGroup⟩, by simp⟩
+  rw [monodromyGroup_disjointSum]
+  exact Subgroup.map_mono (Subgroup.le_prod_iff.mpr (by simp [MonoidHom.map_range]))
+
+/-- For two copies of one triple, the block permutations in the monodromy group are exactly
+the diagonal pairs from the original monodromy group. -/
+@[simp] theorem finSumPerm_mem_monodromyGroup_disjointSum_self_iff (σ τ : Perm (Fin n)) :
+    finSumPerm σ τ ∈ (t.disjointSum t).monodromyGroup ↔ σ ∈ t.monodromyGroup ∧ σ = τ := by
+  rw [monodromyGroup_disjointSum, ← finSumPermHom_apply (σ, τ),
+    Subgroup.mem_map_iff_mem (finSumPermHom_injective n n), ← range_equivFreeGroupHom]
+  simp only [MonoidHom.mem_range, MonoidHom.prod_apply, Prod.mk.injEq]
+  grind
 
 /-- Every element of the monodromy group of a disjoint sum preserves the first block of labels,
 which is the reason the sum is disconnected. -/
@@ -146,7 +176,7 @@ theorem not_isConnected_disjointSum (hm : m ≠ 0) (hn : n ≠ 0) :
   obtain ⟨j⟩ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   obtain ⟨g, hg⟩ := htrans.exists_smul_eq (Fin.castAdd n i) (Fin.natAdd m j)
   obtain ⟨i', hi'⟩ :=
-    apply_castAdd_mem_range_castAdd_of_mem_monodromyGroup s t g.2 i
+    apply_castAdd_mem_range_castAdd_of_mem_monodromyGroup s t g.property i
   have hval : (Fin.castAdd n i' : Fin (m + n)).val = (Fin.natAdd m j : Fin (m + n)).val := by
     rw [hi']
     exact congrArg Fin.val (hg : (g : Perm (Fin (m + n))) (Fin.castAdd n i) = Fin.natAdd m j)

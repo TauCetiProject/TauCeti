@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -56,6 +57,8 @@ transported by contactomorphisms (`TauCeti.isLegendrianImmersion_diffeomorph_com
 * `TauCeti.isLegendrianImmersion_comp_diffeomorph_iff`,
   `TauCeti.isLegendrianImmersion_diffeomorph_comp_iff`: invariance under reparametrization and
   transport by contactomorphisms, with their embedding counterparts.
+* `TauCeti.IsLegendrianImmersion.codRestrict`: a Legendrian immersion with image in an open subset
+  is Legendrian for the restricted contact structure.
 
 ## References
 
@@ -94,9 +97,8 @@ theorem IsHorizontalMap.le_orthogonalBilin [IsManifold I (n + 1) M]
     (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype ≤
       ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
         (distributionLeviForm D (f y)) := by
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
+  have : Nonempty M := ⟨f y⟩
+  have hk := hD.finrank_sub_one_add_one
   rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
   exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy w v
 
@@ -153,6 +155,13 @@ structure IsLegendrianEmbedding (D : Π x : M, Submodule ℝ (TangentSpace I x))
   /-- A Legendrian embedding is a homeomorphism onto its image. -/
   isEmbedding : Topology.IsEmbedding f
 
+/-- A one-form whose kernel admits a Legendrian immersion is a contact form: the kernel is a
+contact structure. -/
+theorem IsLegendrianImmersion.isContactForm {α : SmoothForm I M ℝ 1}
+    (h : IsLegendrianImmersion J α.kerDistribution f) : α.IsContactForm :=
+  have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
+  SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 h.isContactDistribution
+
 /-- A Legendrian embedding is a smooth embedding. -/
 theorem IsLegendrianEmbedding.isSmoothEmbedding (h : IsLegendrianEmbedding J D f) :
     Manifold.IsSmoothEmbedding J I ∞ f :=
@@ -172,12 +181,10 @@ theorem isLegendrianImmersion_iff_finrank_le [IsManifold J 2 N] [Nonempty N] {n 
     (hf : Manifold.IsImmersion J I ∞ f) (hfD : IsHorizontalMap J D f) :
     IsLegendrianImmersion J D f ↔ finrank ℝ E ≤ 2 * finrank ℝ E' + 1 := by
   refine ⟨fun h ↦ h.two_mul_finrank_add_one.ge, fun h ↦
-    ⟨⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩, hf, hfD,
-      le_antisymm ?_ h⟩⟩
+    ⟨hD.of_le hn, hf, hfD, le_antisymm ?_ h⟩⟩
   obtain ⟨y⟩ := ‹Nonempty N›
   have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
-  exact hfD.two_mul_finrank_add_one_le
-    ⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩ le_rfl
+  exact hfD.two_mul_finrank_add_one_le (hD.of_le hn) le_rfl
     ((hf.contMDiff y).of_le (by simp)) (hf.mfderiv_injective (by simp) y)
 
 
@@ -187,13 +194,12 @@ the contact counterpart of the fact that Lagrangian subspaces are maximal isotro
 theorem IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero
     [IsManifold J 2 N] (h : IsLegendrianImmersion J D f) {y : N} {a : D (f y)}
     (ha : ∀ u, distributionLeviForm D (f y) a ⟨_, h.isHorizontalMap.mfderiv_mem y u⟩ = 0) :
-    a.1 ∈ LinearMap.range (mfderiv J I f y).toLinearMap := by
+    a.val ∈ LinearMap.range (mfderiv J I f y).toLinearMap := by
   have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
   have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
   have hD := h.isContactDistribution
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
+  have : Nonempty M := ⟨f y⟩
+  have hk := hD.finrank_sub_one_add_one
   -- The tangent image, as a subspace of the contact hyperplane.
   set W := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
   have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 := by
@@ -281,5 +287,16 @@ theorem isLegendrianEmbedding_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂
       ((isLegendrianImmersion_diffeomorph_comp_iff ψ hD hD₂ hψ).2 h.toIsLegendrianImmersion)⟩
 
 end Transport
+
+/-- **Restriction to an open subset.** A Legendrian immersion with image in an open subset `U` is
+a Legendrian immersion into `U`, for the restriction of the contact structure to `U`. -/
+theorem IsLegendrianImmersion.codRestrict [IsManifold I ∞ M] (hf : IsLegendrianImmersion J D f)
+    (U : TopologicalSpace.Opens M) (h : ∀ y, f y ∈ U) :
+    IsLegendrianImmersion (I := I) (M := U) J (fun x ↦ D x) (fun y ↦ ⟨f y, h y⟩) := by
+  refine ⟨hf.isContactDistribution.comp_subtypeVal le_rfl U, hf.isImmersion.codRestrict U h,
+    isHorizontalMap_iff.2 fun y v ↦ ?_, hf.two_mul_finrank_add_one⟩
+  -- Following the restriction by the inclusion of `U` gives back `f`.
+  rw [← Manifold.mfderiv_subtype_val_comp_apply]
+  exact hf.isHorizontalMap.mfderiv_mem y v
 
 end TauCeti

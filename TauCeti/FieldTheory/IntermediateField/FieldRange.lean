@@ -28,9 +28,10 @@ different embeddings `f` induce different structures, so none can be registered 
 ## Main results
 
 * `AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
-* `AlgHom.finiteDimensional_of_fieldRange` and `AlgHom.isSeparable_of_fieldRange`:
-  finiteness and separability over the range transfer to the source — the same identification
-  read for a property rather than for a number.
+* `AlgHom.apply_equivFieldRange_symm_apply`: `f` inverts `f.equivFieldRange.symm`.
+* `AlgHom.finiteDimensional_of_fieldRange`, `AlgHom.isSeparable_of_fieldRange`, and
+  `AlgHom.linearIndependent_fieldRange`: finiteness and separability over the range transfer to
+  the source, and linear independence over the source transfers to the range.
 * `AlgHom.finSepDegree_fieldRange` and `AlgHom.finInsepDegree_fieldRange`: the
   same for the separable and inseparable degrees. These are the `f.fieldRange` cases of the
   general transports in `TauCeti.FieldTheory.SeparableDegree`, which is where a caller holding
@@ -42,6 +43,12 @@ public section
 namespace AlgHom
 
 variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
+
+/-- `f` undoes the inverse of its range restriction `f.equivFieldRange`. -/
+@[simp]
+theorem apply_equivFieldRange_symm_apply (f : K →ₐ[F] L) (z : f.fieldRange) :
+    f (f.equivFieldRange.symm z) = z := by
+  rw [← equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply]
 
 /-- **The degree above the range of a field embedding equals the degree above its source.**
 Stated for an arbitrary `K`-algebra structure on `L` whose structure map is `f`, rather than for
@@ -70,7 +77,7 @@ theorem finiteDimensional_of_fieldRange (f : K →ₐ[F] L) [Algebra K L]
     FiniteDimensional K L :=
   Module.Finite.of_equiv_equiv f.equivFieldRange.toRingEquiv.symm (RingEquiv.refl L) <| by
     ext z
-    simpa [h] using (AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
+    simp [h]
 
 /-- **The separable degree above the range of a field embedding equals the one above its
 source.** The `f.fieldRange` case of `Field.finSepDegree_eq_of_surjective`. -/
@@ -110,6 +117,17 @@ theorem isSeparable_of_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, 
     [Algebra.IsSeparable f.fieldRange L] : Algebra.IsSeparable K L :=
   Algebra.IsSeparable.of_equiv_equiv f.equivFieldRange.toRingEquiv.symm (RingEquiv.refl L) <| by
     ext z
-    simpa [h] using (AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
+    simp [h]
+
+/-- **Linear independence over the source of a field embedding transfers to its range.** -/
+theorem linearIndependent_fieldRange (f : K →ₐ[F] L) [Algebra K L]
+    (h : ∀ z, algebraMap K L z = f z) {ι : Type*} {v : ι → L} (hv : LinearIndependent K v) :
+    LinearIndependent f.fieldRange v := by
+  refine hv.map_of_injective_injective f.equivFieldRange.symm (AddMonoidHom.id L)
+    (by simp) (by simp) fun c z ↦ ?_
+  have hc : (f.equivFieldRange (f.equivFieldRange.symm c) : L) = (c : L) :=
+    congrArg Subtype.val (f.equivFieldRange.apply_symm_apply c)
+  rw [AlgHom.equivFieldRange_apply_coe, ← h] at hc
+  simp [Algebra.smul_def, hc]
 
 end AlgHom

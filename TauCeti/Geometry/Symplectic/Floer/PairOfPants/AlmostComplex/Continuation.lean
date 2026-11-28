@@ -145,7 +145,7 @@ theorem compatible_pairOfPantsContinuationAlmostComplex (h₀ : ω.Compatible J�
     (hJ₁c : ∀ q t x, ω.Compatible (J₁ q t x)) (hJ₂c : ∀ q t x, ω.Compatible (J₂ q t x)) (w : ℂ)
     (x : M) : ω.Compatible (pairOfPantsContinuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ L w x) :=
   compatible_pairOfPantsAlmostComplex h₀
-    (fun q _ _ => compatible_continuationAlmostComplex h₀ (hJ₁c q) (hJ₂c q) _ _) w _
+    (fun q _ _ => compatible_continuationAlmostComplex h₀ (hJ₁c q _ _) (hJ₂c q _ _)) w _
 
 /-- **The structure is the pair-of-pants structure of `J₁` on the pants side of the necks.** At a
 point where the signed longitudinal coordinate `σ_q` of every end is at most the neck position
@@ -290,7 +290,7 @@ theorem contMDiffAt_pairOfPantsContinuationAlmostComplex (h₀ : ω.Compatible J
   simp only [cayley_pairOfPantsContinuationAlmostComplex, map_sum, map_smul,
     toContinuousLinearMap_cayley_continuationAlmostComplex]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hf : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
       (fun p : (Puncture → ℝ) × ℂ × M => p.2.1) (L, (w : ℂ), x) :=
     contMDiffAt_fst.comp (L, (w : ℂ), x) contMDiffAt_snd

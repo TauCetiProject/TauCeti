@@ -63,6 +63,28 @@ theorem tamagawaNumber_def : E.tamagawaNumber v =
     ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index := by
   rfl
 
+/-- Equivalent valuations have the same valuation ring and hence define the same Tamagawa number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hmin : E.minimal v.valuationSubring = E.minimal v'.valuationSubring := by
+    suffices ∀ (A B : ValuationSubring F) [IsDiscreteValuationRing A] [IsDiscreteValuationRing B],
+        A = B → E.minimal A = E.minimal B from
+      this _ _ ((Valuation.isEquiv_iff_valuationSubring v v').1 h)
+    rintro A B instA instB rfl
+    cases Subsingleton.elim instA instB
+    rfl
+  have : IsIntegral v'.valuationSubring (E.minimal v.valuationSubring) := hmin ▸ inferInstance
+  have hidx (W₁ W₂ : WeierstrassCurve F) [IsIntegral v'.valuationSubring W₁]
+      [IsIntegral v'.valuationSubring W₂] (hW : W₁ = W₂) :
+      (W₁.toAffine.nonsingularReduction v').index =
+        (W₂.toAffine.nonsingularReduction v').index := by
+    subst hW
+    rfl
+  rw [tamagawaNumber_def, tamagawaNumber_def, Affine.nonsingularReduction_congr _ h]
+  exact hidx _ _ hmin
+
 variable [E.IsElliptic]
 
 /-- Every isomorphic minimal equation computes the same Tamagawa number.
@@ -98,21 +120,6 @@ theorem tamagawaNumber_smul (C : VariableChange F) :
   obtain ⟨D, hD⟩ := exists_smul_eq_minimal v.valuationSubring (C • E)
   exact (tamagawaNumber_def (C • E) v).trans
     (tamagawaNumber_eq_index_of_isMinimal_smul E v (D * C) (by rw [mul_smul, hD])).symm
-
-/-- Equivalent valuations define the same Tamagawa number. -/
-theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
-    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
-    E.tamagawaNumber v = E.tamagawaNumber v' := by
-  classical
-  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal v.valuationSubring
-  have hmin : ∀ (T : ValuationSubring F) [IsDiscreteValuationRing T],
-      v.valuationSubring = T → IsMinimal T (E.minimal v.valuationSubring) := by
-    rintro T _ rfl
-    infer_instance
-  have : IsMinimal v'.valuationSubring (E.minimal v.valuationSubring) :=
-    hmin v'.valuationSubring ((Valuation.isEquiv_iff_valuationSubring v v').1 h)
-  rw [tamagawaNumber_def, tamagawaNumber_eq_index_of_isMinimal_smul E v' C hC,
-    Affine.nonsingularReduction_congr _ h]
 
 omit [E.IsElliptic] in
 /-- Good reduction contributes a factor of one. -/

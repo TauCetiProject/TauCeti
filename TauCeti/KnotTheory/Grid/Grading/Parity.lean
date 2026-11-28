@@ -41,6 +41,8 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
   number of components.
 * `TauCeti.OddComponentGridDiagram.relabelRows`, `TauCeti.OddComponentGridDiagram.relabelColumns`:
   relabeling keeps the number of link components odd.
+* `TauCeti.OddComponentGridDiagram.swapMarkings`: exchanging the `O`- and `X`-markings keeps the
+  number of link components odd.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ`: the integer Alexander grading.
 * `TauCeti.OddComponentGridDiagram.bidegree`: the (`O`-Maslov, Alexander) degree of a grid state.
 * `TauCeti.OddComponentGridDiagram.alexanderSupport`: the Alexander degrees occupied by grid
@@ -62,6 +64,8 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
 * `TauCeti.GridDiagram.alexander_exists_int_iff`: the direct integrality characterization.
 * `TauCeti.GridDiagram.alexander_exists_int_of_isKnot`: the Alexander grading of a knot grid is
   an integer.
+* `TauCeti.OddComponentGridDiagram.bidegree_swapMarkings`: exchanging the markings moves the
+  bidegree `(m, a)` of a grid state to `(m - 2a - (n - 1), -a - (n - 1))`.
 
 ## References
 
@@ -328,6 +332,11 @@ variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
 abbrev toOddComponentGridDiagram : OddComponentGridDiagram n :=
   ⟨G, by rw [G.isKnot_def.mp hG]; exact odd_one⟩
 
+/-- The underlying grid diagram of `hG.toOddComponentGridDiagram` is `G`. -/
+@[simp]
+theorem val_toOddComponentGridDiagram : hG.toOddComponentGridDiagram.val = G :=
+  (rfl)
+
 end GridDiagram.IsKnot
 
 namespace OddComponentGridDiagram
@@ -336,59 +345,73 @@ variable {n : ℕ} (G : OddComponentGridDiagram n)
 
 /-- Relabeling the rows of a grid diagram with an odd number of components. -/
 def relabelRows (ρ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
-  ⟨G.1.relabelRows ρ, by rw [GridDiagram.componentCount_relabelRows]; exact G.2⟩
+  ⟨G.val.relabelRows ρ, by rw [GridDiagram.componentCount_relabelRows]; exact G.property⟩
 
 /-- The underlying grid diagram of `G.relabelRows ρ` is the row-relabeled diagram. -/
 @[simp]
-theorem val_relabelRows (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).1 = G.1.relabelRows ρ :=
+theorem val_relabelRows (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).val = G.val.relabelRows ρ :=
   (rfl)
 
 /-- Relabeling the columns of a grid diagram with an odd number of components. -/
 def relabelColumns (κ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
-  ⟨G.1.relabelColumns κ, by rw [GridDiagram.componentCount_relabelColumns]; exact G.2⟩
+  ⟨G.val.relabelColumns κ, by rw [GridDiagram.componentCount_relabelColumns]; exact G.property⟩
 
 /-- The underlying grid diagram of `G.relabelColumns κ` is the column-relabeled diagram. -/
 @[simp]
 theorem val_relabelColumns (κ : Equiv.Perm (Fin n)) :
-    (G.relabelColumns κ).1 = G.1.relabelColumns κ :=
+    (G.relabelColumns κ).val = G.val.relabelColumns κ :=
   (rfl)
 
 /-- The half-turn of the marking squares of a diagram with an odd number of components. -/
 abbrev rotate : OddComponentGridDiagram n :=
-  ⟨G.1.rotate, by rw [GridDiagram.componentCount_rotate]; exact G.2⟩
+  ⟨G.val.rotate, by rw [GridDiagram.componentCount_rotate]; exact G.property⟩
 
 /-- The underlying diagram of the half-turn is the half-turned underlying diagram. -/
 @[simp]
-theorem val_rotate : G.rotate.1 = G.1.rotate :=
+theorem val_rotate : G.rotate.val = G.val.rotate :=
   (rfl)
 
 /-- The half-turn is an involution on diagrams with an odd number of components. -/
 @[simp]
 theorem rotate_rotate : G.rotate.rotate = G :=
-  Subtype.ext G.1.rotate_rotate
+  Subtype.ext G.val.rotate_rotate
 
 /-- The diagonal reflection of a diagram with an odd number of components. -/
 abbrev transpose : OddComponentGridDiagram n :=
-  ⟨G.1.transpose, by rw [GridDiagram.componentCount_transpose]; exact G.2⟩
+  ⟨G.val.transpose, by rw [GridDiagram.componentCount_transpose]; exact G.property⟩
 
 /-- The underlying diagram of the diagonal reflection is the reflected underlying diagram. -/
 @[simp]
-theorem val_transpose : G.transpose.1 = G.1.transpose :=
+theorem val_transpose : G.transpose.val = G.val.transpose :=
   (rfl)
 
 /-- The diagonal reflection is an involution on diagrams with an odd number of components. -/
 @[simp]
 theorem transpose_transpose : G.transpose.transpose = G :=
-  Subtype.ext G.1.transpose_transpose
+  Subtype.ext G.val.transpose_transpose
+
+/-- The `O`/`X` marking swap of a diagram with an odd number of components. -/
+abbrev swapMarkings : OddComponentGridDiagram n :=
+  ⟨G.val.swapMarkings, by rw [GridDiagram.componentCount_swapMarkings]; exact G.property⟩
+
+/-- The underlying diagram of the marking swap is the marking-swapped underlying diagram. -/
+@[simp]
+theorem val_swapMarkings : G.swapMarkings.val = G.val.swapMarkings :=
+  (rfl)
+
+/-- The marking swap is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem swapMarkings_swapMarkings : G.swapMarkings.swapMarkings = G :=
+  Subtype.ext G.val.swapMarkings_swapMarkings
 
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=
-  G.1.alexanderTwoℤ x / 2
+  G.val.alexanderTwoℤ x / 2
 
 /-- The integer Alexander grading is half of its numerator. -/
 theorem two_mul_alexanderℤ (x : GridState n) :
-    2 * G.alexanderℤ x = G.1.alexanderTwoℤ x := by
-  obtain ⟨a, ha⟩ := (G.1.even_alexanderTwoℤ_iff x).mpr G.2
+    2 * G.alexanderℤ x = G.val.alexanderTwoℤ x := by
+  obtain ⟨a, ha⟩ := (G.val.even_alexanderTwoℤ_iff x).mpr G.property
   rw [alexanderℤ, ha]
   omega
 
@@ -401,25 +424,57 @@ theorem alexanderℤ_transpose (x : GridState n) :
 
 /-- The integer Alexander grading agrees with the original rational-valued Alexander grading. -/
 theorem alexander_eq_intCast (x : GridState n) :
-    G.1.alexander x = (G.alexanderℤ x : ℚ) := by
-  have htwo := G.1.two_mul_alexander_eq_intCast x
+    G.val.alexander x = (G.alexanderℤ x : ℚ) := by
+  have htwo := G.val.two_mul_alexander_eq_intCast x
   rw [← G.two_mul_alexanderℤ x] at htwo
   push_cast at htwo
   linarith
 
 /-- The (`O`-Maslov, Alexander) bidegree of a grid state. -/
 def bidegree (x : GridState n) : ℤ × ℤ :=
-  (G.1.maslovOℤ x, G.alexanderℤ x)
+  (G.val.maslovOℤ x, G.alexanderℤ x)
 
 /-- The first component of the grid bidegree is the integer `O`-Maslov grading. -/
 @[simp]
-theorem bidegree_fst (x : GridState n) : (G.bidegree x).1 = G.1.maslovOℤ x :=
+theorem bidegree_fst (x : GridState n) : (G.bidegree x).1 = G.val.maslovOℤ x :=
   by rw [bidegree]
 
 /-- The second component of the grid bidegree is the integer Alexander grading. -/
 @[simp]
 theorem bidegree_snd (x : GridState n) : (G.bidegree x).2 = G.alexanderℤ x :=
   by rw [bidegree]
+
+/-- Diagonal reflection preserves the `(O-Maslov, Alexander)` bidegree of a grid state. -/
+@[simp]
+theorem bidegree_transpose (x : GridState n) :
+    G.transpose.bidegree x.transpose = G.bidegree x := by
+  refine Prod.ext ?_ ?_
+  · rw [bidegree_fst, bidegree_fst, val_transpose, GridDiagram.maslovOℤ_transpose]
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_transpose]
+
+/-- The marking swap negates the integer Alexander grading, up to the normalization shift:
+`A_swap(x) = -A(x) - (n - 1)`. -/
+@[simp]
+theorem alexanderℤ_swapMarkings (x : GridState n) :
+    G.swapMarkings.alexanderℤ x = -G.alexanderℤ x - ((n : ℤ) - 1) := by
+  have h := G.swapMarkings.two_mul_alexanderℤ x
+  rw [val_swapMarkings, GridDiagram.alexanderTwoℤ_swapMarkings, ← G.two_mul_alexanderℤ x] at h
+  omega
+
+/-- The marking swap sends the `(O-Maslov, Alexander)` bidegree `(m, a)` of a grid state to
+`(m - 2a - (n - 1), -a - (n - 1))`: its `O`-Maslov grading is the `X`-Maslov grading of the
+original diagram. -/
+theorem bidegree_swapMarkings (x : GridState n) :
+    G.swapMarkings.bidegree x =
+      ((G.bidegree x).1 - 2 * (G.bidegree x).2 - ((n : ℤ) - 1),
+        -(G.bidegree x).2 - ((n : ℤ) - 1)) := by
+  refine Prod.ext ?_ ?_
+  · have h := G.two_mul_alexanderℤ x
+    rw [GridDiagram.alexanderTwoℤ_def] at h
+    rw [bidegree_fst, bidegree_fst, bidegree_snd, val_swapMarkings,
+      GridDiagram.maslovOℤ_swapMarkings]
+    omega
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_swapMarkings]
 
 /-- The finite set of bidegrees occupied by grid states. -/
 noncomputable def bidegreeSupport : Finset (ℤ × ℤ) :=
@@ -463,5 +518,30 @@ theorem mem_maslovSupport_iff (a m : ℤ) :
     exact ⟨(m, a), ⟨⟨x, hx⟩, rfl⟩, rfl⟩
 
 end OddComponentGridDiagram
+
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
+
+/-- Half-turning the odd-component diagram of a knot grid equals that of `G.rotate`. -/
+theorem rotate_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.rotate =
+      (G.isKnot_rotate.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_rotate, val_toOddComponentGridDiagram])
+
+/-- Reflecting the odd-component diagram of a knot grid equals that of `G.transpose`. -/
+theorem transpose_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.transpose =
+      (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_transpose, val_toOddComponentGridDiagram])
+
+/-- Swapping the markings of the odd-component diagram of a knot grid gives that of
+`G.swapMarkings`. -/
+theorem swapMarkings_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.swapMarkings =
+      (G.isKnot_swapMarkings.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_swapMarkings, val_toOddComponentGridDiagram])
+
+end GridDiagram.IsKnot
 
 end TauCeti

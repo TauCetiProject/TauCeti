@@ -23,6 +23,10 @@ counts, along a partition, the changes of the ranks of the spectral projections 
 
 ## Main results
 
+* `IsSelfAdjoint.exists_pos_cfc_indicator_Icc_eq_starProjection_ker_of_isFredholm`: a self-adjoint
+  Fredholm operator has arbitrarily small cuts `[-a, a]` whose spectral projection is the
+  projection onto its kernel,
+  and nearby self-adjoint operators have spectral projections for `[-a, a]` of the same rank.
 * `IsSelfAdjoint.exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm`: near a
   self-adjoint Fredholm operator the spectral projections for a fixed interval `[-a, a]` have rank
   equal to the dimension of its kernel.
@@ -47,21 +51,29 @@ namespace IsSelfAdjoint
 
 variable {T : H →L[𝕜] H}
 
-/-- **Finite spectral projections near a self-adjoint Fredholm operator.** For a self-adjoint
-Fredholm operator `T` there is `a > 0` such that every self-adjoint `S` near `T` has neither `-a`
-nor `a` in its spectrum, and its spectral projection for `[-a, a]` has finite rank equal to the
-dimension of the kernel of `T`. -/
-theorem exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
-    (hT : IsSelfAdjoint T) (hF : T.IsFredholm) :
-    ∃ a > 0, ∀ᶠ S in 𝓝[{S | IsSelfAdjoint S}] T,
-      -a ∉ spectrum ℝ S ∧ a ∉ spectrum ℝ S ∧
-        FiniteDimensional 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range ∧
-        Module.finrank 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range =
-          Module.finrank 𝕜 T.ker := by
-  obtain ⟨c, hc, hgap⟩ :=
+/-- **The kernel cut of a self-adjoint Fredholm operator.** For a self-adjoint Fredholm operator
+`T` and every `ε > 0` there is `a ∈ (0, ε)` such that neither `-a` nor `a` is in the spectrum of
+`T`, the spectral projection of `T` for `[-a, a]` is the orthogonal projection onto the kernel of
+`T`, and every self-adjoint `S` near `T` has neither `-a` nor `a` in its spectrum and a spectral
+projection for `[-a, a]` of finite rank equal to the dimension of the kernel of `T`. -/
+theorem exists_pos_cfc_indicator_Icc_eq_starProjection_ker_of_isFredholm
+    (hT : IsSelfAdjoint T) (hF : T.IsFredholm) {ε : ℝ} (hε : 0 < ε) :
+    ∃ a > 0, a < ε ∧ Disjoint (frontier (Icc (-a) a)) (spectrum ℝ T) ∧
+      cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) T = T.ker.starProjection ∧
+      ∀ᶠ S in 𝓝[{S | IsSelfAdjoint S}] T,
+        -a ∉ spectrum ℝ S ∧ a ∉ spectrum ℝ S ∧
+          FiniteDimensional 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range ∧
+          Module.finrank 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range =
+            Module.finrank 𝕜 T.ker := by
+  obtain ⟨c₀, hc₀, hgap₀⟩ :=
     hT.exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range hF.isClosed_range
-  rw [spectrum.preimage_algebraMap] at hgap
-  refine ⟨c / 2, by positivity, ?_⟩
+  rw [spectrum.preimage_algebraMap] at hgap₀
+  -- Shrinking the gap below `ε` keeps it a gap.
+  set c := min c₀ ε
+  have hc : 0 < c := lt_min hc₀ hε
+  have hgap : spectrum ℝ T ∩ Ioo (-c) c ⊆ {0} := fun r hr ↦
+    hgap₀ ⟨hr.1, by linarith [hr.2.1, min_le_left c₀ ε], by linarith [hr.2.2, min_le_left c₀ ε]⟩
+  refine ⟨c / 2, by positivity, by linarith [min_le_right c₀ ε], ?_⟩
   have hfr : frontier (Icc (-(c / 2)) (c / 2)) = {-(c / 2), c / 2} := frontier_Icc (by linarith)
   have hsub : spectrum ℝ T ∩ Icc (-(c / 2)) (c / 2) ⊆ {0} := fun r hr ↦
     hgap ⟨hr.1, by linarith [hr.2.1], by linarith [hr.2.2]⟩
@@ -74,6 +86,7 @@ theorem exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
     rcases hr with rfl | rfl <;> constructor <;> linarith
   have hker := hT.cfc_indicator_eq_starProjection_ker
     (by rw [mem_Icc]; constructor <;> linarith) hsub hdisj
+  refine ⟨hdisj, hker, ?_⟩
   have : FiniteDimensional 𝕜 T.ker := hF.finite_ker
   filter_upwards [hT.eventually_rank_range_cfc_indicator_eq hdisj,
     nhdsWithin_le_nhds (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hdisj)]
@@ -83,5 +96,21 @@ theorem exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
   refine ⟨hS.notMem_of_mem_left (by simp), hS.notMem_of_mem_left (by simp), ?_,
     congr_arg Cardinal.toNat hrank⟩
   exact Module.rank_lt_aleph0_iff.1 (hrank ▸ Module.rank_lt_aleph0 𝕜 T.ker)
+
+/-- **Finite spectral projections near a self-adjoint Fredholm operator.** For a self-adjoint
+Fredholm operator `T` and every `ε > 0` there is `a ∈ (0, ε)` such that every self-adjoint `S` near
+`T` has neither `-a`
+nor `a` in its spectrum, and its spectral projection for `[-a, a]` has finite rank equal to the
+dimension of the kernel of `T`. -/
+theorem exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
+    (hT : IsSelfAdjoint T) (hF : T.IsFredholm) {ε : ℝ} (hε : 0 < ε) :
+    ∃ a > 0, a < ε ∧ ∀ᶠ S in 𝓝[{S | IsSelfAdjoint S}] T,
+      -a ∉ spectrum ℝ S ∧ a ∉ spectrum ℝ S ∧
+        FiniteDimensional 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range ∧
+        Module.finrank 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range =
+          Module.finrank 𝕜 T.ker := by
+  obtain ⟨a, ha, haε, -, -, h⟩ :=
+    hT.exists_pos_cfc_indicator_Icc_eq_starProjection_ker_of_isFredholm hF hε
+  exact ⟨a, ha, haε, h⟩
 
 end IsSelfAdjoint

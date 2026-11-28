@@ -44,6 +44,9 @@ Viewing `ℍ` as a real manifold, every `g ∈ GL(2, ℝ)` acts, antiholomorphic
   inclusion `ℍ → ℂ`.
 * `Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq`: the derivative
   of a function invariant under a Möbius transformation.
+* `UpperHalfPlane.comp_ofComplex_comp_coe_smul_ofComplex`: composing `f ∘ ofComplex` with the
+  Möbius transformation `w ↦ g • ofComplex w` of `ℂ` gives `τ ↦ f (g • τ)` read through
+  `ofComplex`.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`: the chain rule
   `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and
   `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
@@ -230,7 +233,7 @@ theorem deriv_smul_mul_smulDeriv_of_eventuallyEq {W : ℂ → ℂ} (q : PSL(2, �
           W ((q • ofComplex y : ℍ) : ℂ) = W y := by
         rwa [ofComplex_apply, inv_smul_smul]
       filter_upwards [hg.continuousAt.eventually hW',
-        isOpen_upperHalfPlaneSet.mem_nhds (q • z).2] with u hu hu'
+        isOpen_upperHalfPlaneSet.mem_nhds (q • z).coe_im_pos] with u hu hu'
       simp only [Function.comp_apply]
       rw [ofComplex_apply, smul_inv_smul, ofComplex_apply_of_im_pos hu'] at hu
       rw [ofComplex_apply_of_im_pos hu']
@@ -241,11 +244,11 @@ theorem deriv_smul_mul_smulDeriv_of_eventuallyEq {W : ℂ → ℂ} (q : PSL(2, �
 /-- The derivative of the dilation `z ↦ exp s * z` is `exp s`. -/
 theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z = Real.exp s := by
   rw [smulDeriv_coe]
-  simp only [denom, mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+  simp only [denom, mapGL_coe_matrix, map_apply_coe, Matrix.map_apply,
     Algebra.algebraMap_self_apply, coe_dilation, Matrix.of_apply, Matrix.cons_val',
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Complex.ofReal_zero,
     zero_mul, zero_add]
-  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_nat_mul,
+  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_natCast_mul,
     ← Real.exp_neg]
   congr 1
   push_cast
@@ -298,3 +301,15 @@ theorem inner_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v w : ℂ) :
   ring
 
 end Matrix.GeneralLinearGroup
+
+namespace UpperHalfPlane
+
+/-- Composing `f ∘ ofComplex` with the Möbius transformation `w ↦ g • ofComplex w`, read through
+`ofComplex`, gives `τ ↦ f (g • τ)` read through `ofComplex`. -/
+theorem comp_ofComplex_comp_coe_smul_ofComplex {g : GL (Fin 2) ℝ} (f : ℍ → ℂ) :
+    (f ∘ ofComplex) ∘ (fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) =
+      (fun τ ↦ f (g • τ)) ∘ ofComplex := by
+  funext w
+  simp [ofComplex_apply]
+
+end UpperHalfPlane

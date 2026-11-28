@@ -136,6 +136,32 @@ theorem range_polarFactor (A : E →ₗ[𝕜] F) : A.polarFactor.range = A.range
   · rintro _ ⟨x, rfl⟩
     exact ⟨A.operatorAbs x, A.polarFactor_operatorAbs_apply x⟩
 
+/-- Factoring a map through its modulus is equivalent to agreeing with its polar factor
+on the orthogonal complement of its kernel. -/
+theorem comp_operatorAbs_eq_iff_eqOn_polarFactor (A : E →ₗ[𝕜] F) (D : E →ₗ[𝕜] F) :
+    D ∘ₗ A.operatorAbs = A ↔ Set.EqOn D A.polarFactor A.kerᗮ := by
+  rw [← A.range_operatorAbs]
+  constructor
+  · rintro h _ ⟨x, rfl⟩
+    rw [A.polarFactor_operatorAbs_apply, ← comp_apply, h]
+  · intro h
+    ext x
+    exact (h (mem_range_self _ x)).trans (A.polarFactor_operatorAbs_apply x)
+
+/-- Extending a map from the kernel into the orthogonal complement of the range by zero
+gives a map fixed by the normal-part projection of the polar factor. -/
+theorem normalPart_polarFactor_subtype_comp (A : E →ₗ[𝕜] F)
+    (T : A.ker →ₗ[𝕜] (LinearMap.range A)ᗮ) :
+    let B : E →ₗ[𝕜] F := (LinearMap.range A)ᗮ.subtype ∘ₗ T ∘ₗ
+      A.ker.orthogonalProjectionOnto.toLinearMap
+    A.polarFactor.normalPart B = B := by
+  simp only [LinearMap.normalPart_def, A.range_polarFactor, A.ker_polarFactor]
+  ext x
+  simp only [comp_apply, ContinuousLinearMap.coe_coe, Submodule.subtype_apply]
+  rw [← A.ker.coe_orthogonalProjectionOnto_apply x,
+    A.ker.orthogonalProjectionOnto_mem_subspace_eq_self]
+  exact (LinearMap.range A)ᗮ.starProjection_mem_subspace_eq_self _
+
 /-- The factorization through the modulus and vanishing on `ker A` characterize the canonical
 polar factor, without assuming that the competing factor is a partial isometry. -/
 theorem eq_polarFactor (A : E →ₗ[𝕜] F) {V : E →ₗ[𝕜] F}
@@ -372,7 +398,7 @@ theorem exists_linearIsometryEquiv_eqOn_polarFactor (A : E →ₗ[𝕜] F)
   let e : F ≃ₗᵢ[𝕜] E := (stdOrthonormalBasis 𝕜 F).equiv (stdOrthonormalBasis 𝕜 E) (finCongr h.symm)
   let L : A.kerᗮ →ₗᵢ[𝕜] E :=
     { toLinearMap := e.toLinearMap ∘ₗ A.polarFactor ∘ₗ A.kerᗮ.subtype
-      norm_map' := fun x ↦ by simp [A.norm_polarFactor_apply x.2] }
+      norm_map' := fun x ↦ by simp [A.norm_polarFactor_apply x.property] }
   refine ⟨(L.extend.toLinearIsometryEquiv rfl).trans e.symm, fun x hx ↦ ?_⟩
   have hL : L.extend x = e (A.polarFactor x) := L.extend_apply ⟨x, hx⟩
   simp [hL]

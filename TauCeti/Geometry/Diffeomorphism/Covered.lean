@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Geometry.Diffeomorphism.LieGroup
+public import TauCeti.Topology.MappingSpace.Evaluation
 
 /-!
 # Manifolds covered by diffeomorphisms
@@ -55,10 +57,11 @@ within a path component, since evaluations at two points joined by a path are ho
 * `isCoveredByDiffeomorphisms_of_smul`: the condition from a smooth group action.
 * `isCoveredByDiffeomorphisms_of_lieGroup`: compact Lie groups are covered by diffeomorphisms.
 * `IsCoveredByDiffeomorphisms.mul_left`: multiples of `ℓ`.
-* `isCoveredByDiffeomorphisms_neg`, `isCoveredByDiffeomorphisms_iff_of_preconnectedSpace`:
-  independence of the orientation.
+* `isCoveredByDiffeomorphisms_neg`: independence of the orientation.
 * `isCoveredByDiffeomorphisms_iff_of_joined`,
-  `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`: independence of the base point.
+  `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`,
+  `isCoveredByDiffeomorphisms_iff_of_preconnectedSpace`: independence of the base point and
+  homological orientation.
 
 ## References
 
@@ -161,7 +164,8 @@ theorem isCoveredByDiffeomorphisms_of_section {x₀ : M} (σ : C(M, M ≃ₘ^n�
 /-- **Covering through a smooth group action.** Let a group `G`, a `C^n` manifold, act on `M` by a
 jointly `C^n` action. If the orbit map `f : G → M`, `g ↦ g • x₀`, sends a class
 `a ∈ H_d(G; ℤ)` to `ℓ • [M]`, then `M` is `ℓ`-covered by diffeomorphisms at `x₀`: the action is a
-continuous map `G → Diff(M)` whose composite with evaluation at `x₀` is the orbit map. -/
+continuous map `G → Diff(M)` (`Diffeomorph.smulContinuousMonoidHom`) whose composite with
+evaluation at `x₀` is the orbit map. -/
 theorem isCoveredByDiffeomorphisms_of_smul {F H : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [TopologicalSpace H] {I : ModelWithCorners ℝ F H} {G : Type} [TopologicalSpace G]
     [ChartedSpace H G] [IsManifold I n G] [Group G] [MulAction G M]
@@ -171,10 +175,7 @@ theorem isCoveredByDiffeomorphisms_of_smul {F H : Type} [NormedAddCommGroup F] [
     (h : (((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
       (TopCat.ofHom f)).hom a = ℓ • o.mapFundamentalClass hd (ContinuousMap.id M)) :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
-  refine .of_homologyMap (Diffeomorph.ofSmoothFamily (fun g ↦ Diffeomorph.smul I 𝓘(ℝ, E) n g)
-    (by
-      simp only [Diffeomorph.smul_apply]
-      exact ContMDiffSMul.contMDiff_smul (I := I) (I' := 𝓘(ℝ, E)))) a ?_
+  refine .of_homologyMap (Diffeomorph.smulContinuousMonoidHom I 𝓘(ℝ, E) n G M) a ?_
   convert h
   ext g
   simp [hf]
@@ -201,28 +202,20 @@ theorem isCoveredByDiffeomorphisms_neg {x₀ : M} {ℓ : ℤ} :
   · rw [map_neg, hA, mapFundamentalClass_neg, zsmul_neg, neg_neg]
   · rw [map_neg, hA, mapFundamentalClass_neg, zsmul_neg]
 
-/-- On a preconnected manifold, covering by diffeomorphisms does not depend on the orientation: any
-two orientations agree up to reversal. -/
-theorem isCoveredByDiffeomorphisms_iff_of_preconnectedSpace [PreconnectedSpace M]
-    (o o' : HomologicalOrientation M E d) {x₀ : M} {ℓ : ℤ} :
-    o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o'.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
-  have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
-  rcases eq_or_eq_neg hd o o' with rfl | rfl
-  · rfl
-  · exact isCoveredByDiffeomorphisms_neg.symm
-
 /-- **Independence of the base point along a path.** At two points joined by a path, `M` is
 `ℓ`-covered by diffeomorphisms at one exactly when it is at the other: the two evaluations are
 homotopic, so they induce the same map on homology. -/
 theorem isCoveredByDiffeomorphisms_iff_of_joined {x₀ x₁ : M} (hx : Joined x₀ x₁) {ℓ : ℤ} :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o.IsCoveredByDiffeomorphisms hd n x₁ ℓ := by
+  have H : (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀).Homotopy
+      (Diffeomorph.evalAt x₁) :=
+    hx.somePath.evalHomotopy (Diffeomorph.evalAt_apply x₀) (Diffeomorph.evalAt_apply x₁)
   have heq : ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).map
       (TopCat.ofHom (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀)) =
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
         (TopCat.ofHom (Diffeomorph.evalAt x₁)) :=
-    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-      (Diffeomorph.evalAtHomotopy (n := n) (J := 𝓘(ℝ, E)) hx.somePath) _ d
+    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ) H _ d
   simp only [IsCoveredByDiffeomorphisms, heq]
 
 /-- On a path-connected manifold, covering by diffeomorphisms does not depend on the base
@@ -231,6 +224,19 @@ theorem isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace [PathConnectedSpace
     {ℓ : ℤ} :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o.IsCoveredByDiffeomorphisms hd n x₁ ℓ :=
   isCoveredByDiffeomorphisms_iff_of_joined (PathConnectedSpace.joined x₀ x₁)
+
+/-- On a preconnected manifold, covering by diffeomorphisms does not depend on the homological
+orientation or the base point. -/
+theorem isCoveredByDiffeomorphisms_iff_of_preconnectedSpace [PreconnectedSpace M]
+    (o o' : HomologicalOrientation M E d) (x₀ x₁ : M) {ℓ : ℤ} :
+    o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o'.IsCoveredByDiffeomorphisms hd n x₁ ℓ := by
+  have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
+  have := ChartedSpace.locallyPathConnectedSpace E M
+  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
+  rcases eq_or_eq_neg hd o o' with rfl | rfl
+  · exact isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x₁
+  · exact (isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x₁).trans
+      isCoveredByDiffeomorphisms_neg.symm
 
 end Covered
 
@@ -243,14 +249,12 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensiona
 
 /-- **Compact Lie groups are covered by diffeomorphisms** (Example 6.30 of
 Barraud–Damian–Humilière–Oancea). For a compact `C^n` Lie group `M`, the left translations by
-`g * x₀⁻¹` form a continuous section of evaluation at `x₀`. -/
+`g * x₀⁻¹` form a continuous section of evaluation at `x₀` (`TauCeti.Lie.leftTranslationSection`).
+-/
 theorem isCoveredByDiffeomorphisms_of_lieGroup (x₀ : M) :
-    o.IsCoveredByDiffeomorphisms hd n x₀ 1 := by
-  refine o.isCoveredByDiffeomorphisms_of_section hd n
-    (Diffeomorph.ofSmoothFamily (fun g ↦ Diffeomorph.smul 𝓘(ℝ, E) 𝓘(ℝ, E) n (g * x₀⁻¹)) (by
-      simp only [Diffeomorph.smul_apply, smul_eq_mul]
-      exact (contMDiff_fst.mul contMDiff_const).mul contMDiff_snd)) fun g ↦ ?_
-  simp
+    o.IsCoveredByDiffeomorphisms hd n x₀ 1 :=
+  o.isCoveredByDiffeomorphisms_of_section hd n (Lie.leftTranslationSection 𝓘(ℝ, E) n x₀)
+    (Lie.leftTranslationSection_apply_self x₀)
 
 end LieGroup
 

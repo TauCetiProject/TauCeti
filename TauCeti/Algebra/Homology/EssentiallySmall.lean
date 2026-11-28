@@ -56,9 +56,9 @@ instance essentiallySmall [EssentiallySmall.{w} C] [Small.{w} ι] :
       (∀ i j, ¬ c.Rel i j → d i j = 0) ∧ ∀ i j k, d i j ≫ d j k = 0}
   let F : I → HomologicalComplex C c := fun x ↦
     { X i := E.inverse.obj (x.1 i)
-      d := x.2.1
-      shape := x.2.2.1
-      d_comp_d' i j k _ _ := x.2.2.2 i j k }
+      d := x.2.val
+      shape := x.2.property.1
+      d_comp_d' i j k _ _ := x.2.property.2 i j k }
   refine ⟨ObjectProperty.ofObj F, inferInstance, fun K _ ↦ ?_⟩
   let e (i : ι) : K.X i ≅ E.inverse.obj (E.functor.obj (K.X i)) := E.unitIso.app (K.X i)
   let x : I := ⟨fun i ↦ E.functor.obj (K.X i), fun i j ↦ (e i).inv ≫ K.d i j ≫ (e j).hom,

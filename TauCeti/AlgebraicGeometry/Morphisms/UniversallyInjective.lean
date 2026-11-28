@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
-# Universal injectivity of affine morphisms
+# Universal injectivity
+
+Universal injectivity descends along surjections: if `f ≫ g` is universally injective and `f` is
+surjective, then `g` is universally injective. An injective morphism inducing isomorphisms of
+residue fields is universally injective.
 
 For a ring map `φ : R ⟶ S`, the morphism `Spec S ⟶ Spec R` is universally injective iff any two
 ring maps from `S` into a field that agree on `R` are equal. This is Mathlib's field-valued
@@ -17,6 +22,10 @@ criterion for universal injectivity (Stacks, Lemma 29.10.2 (01S4)) with arrows r
 
 ## Main results
 
+* `AlgebraicGeometry.UniversallyInjective.of_comp_surjective`: universal injectivity descends
+  along a surjection; the instance of `MorphismProperty.HasOfPrecompProperty` records this.
+* `AlgebraicGeometry.UniversallyInjective.of_injective_of_isIso_residueFieldMap`: an injective
+  morphism with trivial residue field extensions is universally injective.
 * `AlgebraicGeometry.UniversallyInjective.SpecMap_iff`: the field-valued criterion for
   `Spec.map φ`.
 
@@ -28,11 +37,44 @@ criterion for universal injectivity (Stacks, Lemma 29.10.2 (01S4)) with arrows r
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 universe u
 
 namespace AlgebraicGeometry
+
+/-- If `f ≫ g` is universally injective and `f` is surjective, then `g` is universally
+injective. -/
+theorem UniversallyInjective.of_comp_surjective {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [UniversallyInjective (f ≫ g)] [Surjective f] : UniversallyInjective g := by
+  constructor
+  intro X' Y' i₁ i₂ g' H
+  have := UniversallyInjective.universally_injective _ _ _
+    ((IsPullback.of_hasPullback i₁ f).paste_horiz H)
+  have hs : Surjective (pullback.fst i₁ f) :=
+    MorphismProperty.of_isPullback (IsPullback.of_hasPullback i₁ f).flip ‹_›
+  exact Function.Injective.of_comp_right (f := g'.base) this hs.surj
+
+/-- Universal injectivity descends along surjections (`UniversallyInjective.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @UniversallyInjective @Surjective.{u} where
+  of_precomp f g _ (_ : UniversallyInjective (f ≫ g)) := .of_comp_surjective f g
+
+/-- An injective morphism inducing isomorphisms of residue fields is universally injective. -/
+theorem UniversallyInjective.of_injective_of_isIso_residueFieldMap {X Y : Scheme.{u}} (f : X ⟶ Y)
+    (hf : Function.Injective f.base) (hres : ∀ x, IsIso (f.residueFieldMap x)) :
+    UniversallyInjective f := by
+  -- The diagonal is surjective: a point of `X ×_Y X` lies over a pair `(x, x)`, and it is the
+  -- unique point over that pair because `f` preserves the residue field at `x`.
+  rw [UniversallyInjective.iff_diagonal]
+  refine ⟨fun t ↦ ⟨pullback.fst f f t, ?_⟩⟩
+  have h : pullback.fst f f t = pullback.snd f f t := hf <| by
+    rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, pullback.condition]
+  have := hres (pullback.snd f f t)
+  apply Scheme.Pullback.eq_of_fst_eq_snd_eq_of_isIso
+  · rw [← Scheme.Hom.comp_apply, pullback.diagonal_fst]
+    simp
+  · rw [← Scheme.Hom.comp_apply, pullback.diagonal_snd]
+    exact h
 
 /-- **Field-valued criterion for universal injectivity of affine morphisms.** The morphism
 `Spec S ⟶ Spec R` induced by `φ : R ⟶ S` is universally injective iff any two ring maps from `S`

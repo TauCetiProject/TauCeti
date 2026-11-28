@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Analysis.Normed.Module.Conjugate
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # The conjugate of a complex vector bundle
@@ -27,7 +29,11 @@ covering the identity of the base, conjugate-linear on each fibre
 (`TauCeti.ConjugateBundle.toConjHomeomorph`). Conjugating twice gives back `E`, by a homeomorphism
 that is complex-linear on each fibre (`TauCeti.ConjugateBundle.doubleConjugateHomeomorph`), and
 the conjugate of a direct sum is the direct sum of the conjugates
-(`TauCeti.ConjugateBundle.prodHomeomorph`).
+(`TauCeti.ConjugateBundle.prodHomeomorph`). Pullback commutes with conjugation through
+`TauCeti.ConjugateBundle.pullbackHomeomorph`, which preserves every base point and fibre entry.
+A continuous fibrewise conjugate-linear equivalence of complex vector bundles with
+finite-dimensional model source has a continuous inverse on total spaces
+(`TauCeti.continuous_bundle_symm_of_conjLinear`).
 
 The conjugate bundle is the second piece of the doubled bundle of a bundle pair over a bordered
 Riemann surface: `E` over the surface is glued to its conjugate over the reflected copy, along the
@@ -66,8 +72,8 @@ instance instTopologicalSpaceTotalSpace :
 identity of the base. -/
 def toConjHomeomorph :
     TotalSpace F E ≃ₜ TotalSpace (Conjugate F) (ConjugateBundle E) where
-  toFun p := ⟨p.proj, toConj p.2⟩
-  invFun p := ⟨p.proj, ofConj p.2⟩
+  toFun p := ⟨p.proj, toConj p.snd⟩
+  invFun p := ⟨p.proj, ofConj p.snd⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_id
@@ -76,10 +82,10 @@ def toConjHomeomorph :
 variable {F E}
 
 @[simp] theorem toConjHomeomorph_apply (p : TotalSpace F E) :
-    toConjHomeomorph F E p = ⟨p.proj, toConj p.2⟩ := (rfl)
+    toConjHomeomorph F E p = ⟨p.proj, toConj p.snd⟩ := (rfl)
 
 @[simp] theorem toConjHomeomorph_symm_apply (p : TotalSpace (Conjugate F) (ConjugateBundle E)) :
-    (toConjHomeomorph F E).symm p = ⟨p.proj, ofConj p.2⟩ := (rfl)
+    (toConjHomeomorph F E).symm p = ⟨p.proj, ofConj p.snd⟩ := (rfl)
 
 theorem proj_toConjHomeomorph (p : TotalSpace F E) :
     (toConjHomeomorph F E p).proj = p.proj := (rfl)
@@ -90,6 +96,33 @@ theorem toConjHomeomorph_mk [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)
     [∀ x, TopologicalSpace (E x)] (x : B) (v : E x) :
     toConjHomeomorph F E ⟨x, v⟩ = ⟨x, toConjL v⟩ := by
   rw [toConjHomeomorph_apply, coe_toConjL]
+
+section Pullback
+
+variable {X : Type*} [TopologicalSpace X]
+
+variable (F E) in
+/-- Pullback commutes with conjugation on actual total-space carriers. The map preserves the
+base and fibre entries; the two induced pullback topologies agree. -/
+def pullbackHomeomorph (f : X → B) :
+    TotalSpace (Conjugate F) (f *ᵖ (ConjugateBundle E)) ≃ₜ
+      TotalSpace (Conjugate F) (ConjugateBundle (f *ᵖ E)) where
+  toFun p := ⟨p.proj, p.snd⟩
+  invFun p := ⟨p.proj, p.snd⟩
+  left_inv p := by cases p; rfl
+  right_inv p := by cases p; rfl
+  continuous_toFun := continuous_id
+  continuous_invFun := continuous_id
+
+@[simp] theorem pullbackHomeomorph_apply (f : X → B)
+    (p : TotalSpace (Conjugate F) (f *ᵖ (ConjugateBundle E))) :
+    pullbackHomeomorph F E f p = ⟨p.proj, p.snd⟩ := by rfl
+
+@[simp] theorem pullbackHomeomorph_symm_apply (f : X → B)
+    (p : TotalSpace (Conjugate F) (ConjugateBundle (f *ᵖ E))) :
+    (pullbackHomeomorph F E f).symm p = ⟨p.proj, p.snd⟩ := by rfl
+
+end Pullback
 
 end ConjugateBundle
 
@@ -194,6 +227,16 @@ theorem _root_.Bundle.Trivialization.coordChangeL_conjugate (e e' : Trivializati
     Trivialization.coordChangeL_apply _ _ hb]
   rfl
 
+/-- The fibre linear coordinates of a conjugated chart are the conjugate linear coordinates. -/
+theorem _root_.Bundle.Trivialization.linearEquivAt_conjugate
+    (e : Trivialization F (π F E)) [e.IsLinear ℂ] {x : B} (hx : x ∈ e.baseSet) :
+    (e.conjugate.linearEquivAt ℂ x (e.baseSet_conjugate.symm ▸ hx)).toLinearMap =
+      (e.linearEquivAt ℂ x hx).toLinearMap.conjugateMap := by
+  ext v
+  simp only [LinearMap.conjugateMap_apply, LinearEquiv.coe_toLinearMap,
+    Trivialization.linearEquivAt_apply, Trivialization.conjugate_apply,
+    toConjHomeomorph_symm_apply]
+
 end TopologicalModule
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [TopologicalSpace (TotalSpace F E)]
@@ -238,8 +281,8 @@ variable (F : Type*) (E : B → Type*) [TopologicalSpace (TotalSpace F E)]
 def doubleConjugateHomeomorph :
     TotalSpace (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E)) ≃ₜ
       TotalSpace F E where
-  toFun p := ⟨p.proj, ofConj (ofConj p.2)⟩
-  invFun p := ⟨p.proj, toConj (toConj p.2)⟩
+  toFun p := ⟨p.proj, ofConj (ofConj p.snd)⟩
+  invFun p := ⟨p.proj, toConj (toConj p.snd)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_id
@@ -249,10 +292,10 @@ variable {F E}
 
 @[simp] theorem doubleConjugateHomeomorph_apply
     (p : TotalSpace (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E))) :
-    doubleConjugateHomeomorph F E p = ⟨p.proj, ofConj (ofConj p.2)⟩ := (rfl)
+    doubleConjugateHomeomorph F E p = ⟨p.proj, ofConj (ofConj p.snd)⟩ := (rfl)
 
 @[simp] theorem doubleConjugateHomeomorph_symm_apply (p : TotalSpace F E) :
-    (doubleConjugateHomeomorph F E).symm p = ⟨p.proj, toConj (toConj p.2)⟩ := (rfl)
+    (doubleConjugateHomeomorph F E).symm p = ⟨p.proj, toConj (toConj p.snd)⟩ := (rfl)
 
 /-- On each fibre, the identification of the double conjugate with `E` is the complex-linear
 equivalence `TauCeti.Conjugate.doubleConjugateL`. -/
@@ -272,8 +315,8 @@ variable (F₁ : Type*) (E₁ : B → Type*) [TopologicalSpace (TotalSpace F₁ 
 def prodHomeomorph :
     TotalSpace (Conjugate (F₁ × F₂)) (ConjugateBundle (E₁ ×ᵇ E₂)) ≃ₜ
       TotalSpace (Conjugate F₁ × Conjugate F₂) (ConjugateBundle E₁ ×ᵇ ConjugateBundle E₂) where
-  toFun p := ⟨p.proj, (toConj (ofConj p.2).1, toConj (ofConj p.2).2)⟩
-  invFun p := ⟨p.proj, toConj (ofConj p.2.1, ofConj p.2.2)⟩
+  toFun p := ⟨p.proj, (toConj (ofConj p.snd).1, toConj (ofConj p.snd).2)⟩
+  invFun p := ⟨p.proj, toConj (ofConj p.snd.1, ofConj p.snd.2)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_id
@@ -283,12 +326,12 @@ variable {F₁ E₁ F₂ E₂}
 
 @[simp] theorem prodHomeomorph_apply
     (p : TotalSpace (Conjugate (F₁ × F₂)) (ConjugateBundle (E₁ ×ᵇ E₂))) :
-    prodHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, (toConj (ofConj p.2).1, toConj (ofConj p.2).2)⟩ :=
+    prodHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, (toConj (ofConj p.snd).1, toConj (ofConj p.snd).2)⟩ :=
   (rfl)
 
 @[simp] theorem prodHomeomorph_symm_apply
     (p : TotalSpace (Conjugate F₁ × Conjugate F₂) (ConjugateBundle E₁ ×ᵇ ConjugateBundle E₂)) :
-    (prodHomeomorph F₁ E₁ F₂ E₂).symm p = ⟨p.proj, toConj (ofConj p.2.1, ofConj p.2.2)⟩ := (rfl)
+    (prodHomeomorph F₁ E₁ F₂ E₂).symm p = ⟨p.proj, toConj (ofConj p.snd.1, ofConj p.snd.2)⟩ := (rfl)
 
 /-- On each fibre, the identification of the conjugate of a direct sum is the complex-linear
 equivalence `TauCeti.Conjugate.prodL`. -/
@@ -301,5 +344,33 @@ theorem prodHomeomorph_mk [∀ x, AddCommGroup (E₁ x)] [∀ x, Module ℂ (E�
 end Prod
 
 end ConjugateBundle
+
+section ConjLinear
+
+variable [TopologicalSpace B]
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℂ F₁] [FiniteDimensional ℂ F₁]
+  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module ℂ (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle ℂ F₁ E₁]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℂ F₂]
+  {E₂ : B → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module ℂ (E₂ x)]
+  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₂ E₂] [VectorBundle ℂ F₂ E₂]
+
+/-- A continuous fibrewise conjugate-linear equivalence of complex vector bundles with
+finite-dimensional model source has a continuous inverse on total spaces: the conjugate-linear
+version of `TauCeti.continuous_bundle_symm`. -/
+theorem continuous_bundle_symm_of_conjLinear (e : ∀ x, E₁ x ≃L⋆[ℂ] E₂ x)
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd))) :
+    Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.snd)) := by
+  -- Read in the conjugate bundle of `E₂`, the equivalence is complex-linear.
+  have h := continuous_bundle_symm (F₂ := Conjugate F₂) (E₂ := ConjugateBundle E₂)
+    (fun x ↦ (e x).trans toConjL)
+    (((ConjugateBundle.toConjHomeomorph F₂ E₂).continuous.comp he).congr fun _ ↦ by simp)
+  refine (h.comp (ConjugateBundle.toConjHomeomorph F₂ E₂).continuous).congr fun p ↦ ?_
+  rw [Function.comp_apply, ConjugateBundle.toConjHomeomorph_apply]
+  simp
+
+end ConjLinear
 
 end TauCeti

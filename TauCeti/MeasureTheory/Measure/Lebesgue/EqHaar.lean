@@ -7,7 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # Haar measure under dilations and affine maps
@@ -20,8 +22,8 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part
 (`MeasureTheory.Measure.addHaar_image_affineMap`, and
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation `y ↦ x + r • y`,
-`r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation
+`y ↦ x + r • y`, `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
 (`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales measures by the
 inverse dimension power of `|r|` (`MeasureTheory.Measure.addHaar_preimage_add_smul`,
 `MeasureTheory.Measure.ofReal_abs_pow_mul_addHaar_preimage_add_smul`), in particular the measure
@@ -33,6 +35,9 @@ equivalences for rescaling lower volume bounds
 (`MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_iff`,
 `MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_inter_ball_iff`).
 
+`MeasureTheory.Measure.addHaar_preimage_comp_sub_right_ball` gives the corresponding
+translation-and-scaling formula for preimages of balls under linear maps.
+
 A linear map into a finite-dimensional real normed space that is not surjective has almost every
 fibre empty for every additive Haar measure on the codomain
 (`LinearMap.ae_preimage_singleton_eq_empty`), since its range is a strict subspace.
@@ -43,22 +48,39 @@ For an invertible real square matrix `A` and nonnegative bounds `a i`, the regio
 (`Matrix.volume_setOf_forall_abs_mulVec_le`). It is the preimage of a coordinate box under `A`;
 this is the volume computation behind Minkowski's linear forms theorem.
 
+An invertible complex matrix `u` rescales additive Haar measure on `ι → ℂ` by `‖u.det‖⁻²`
+under pushforward (`TauCeti.map_mulVec_addHaar_eq_smul`). The corresponding change of
+variables for nonnegative integrals is `TauCeti.lintegral_eq_norm_det_sq_mul_lintegral_mulVec`.
+These formulas adapt the change of variables in grh-lean,
+`src/Lib/General/Analysis/GaussianIntegral.lean`.
+
 We also bound the additive Haar measure of the closure of a set in a finite-dimensional real
 normed space by the measure of the unit ball times the dimension power of its diameter. This is
 the elementary estimate converting coverings by sets of small diameter into measure bounds.
 Combined with the diameter bound for Lipschitz images, it bounds the measure of the closure of
 the image of a set under a Lipschitz map.
 
+In a nontrivial finite-dimensional real normed space, the additive Haar measure of the ball of
+radius `r` about any point tends to `∞` as `r → ∞`
+(`MeasureTheory.Measure.tendsto_addHaar_ball_atTop`).
+
 An element of finite order acting linearly on a finite-dimensional real space preserves every
 additive Haar measure, because its determinant has finite order and so absolute value one
 (`MeasureTheory.Measure.addHaar_preimage_smul_of_isOfFinOrder`). Hence a finite group acting
 linearly preserves every additive Haar measure
 (`MeasureTheory.Measure.smulInvariantMeasure_addHaar`).
+
+For a continuous linear form `ψ` and `t ≥ 0`, the vectors `v` with `|ψ v| ≤ t ‖v‖` form a closed
+cone about the kernel of `ψ`. Its part in the closed ball of radius `R > 0` has measure
+`R ^ dim E` times that of its part in the closed unit ball
+(`MeasureTheory.Measure.addHaar_closedBall_inter_setOf_abs_le_mul_norm`). For `ψ ≠ 0` the kernel
+is a proper subspace, hence null, and the latter measure tends to zero as `t → 0⁺`
+(`MeasureTheory.Measure.tendsto_addHaar_closedBall_inter_setOf_abs_le_mul_norm`).
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Metric Set
 open scoped ENNReal Pointwise
 
 namespace TauCeti
@@ -75,6 +97,39 @@ theorem volume_smul_rpow {A : Set E} (hn : Module.finrank ℝ E ≠ 0) (c : ℝ)
     abs_pow, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity),
     Real.pow_rpow_inv_natCast (abs_nonneg c) hn]
 
+section ComplexMatrix
+
+open Matrix
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The pushforward of an additive Haar measure `μ` on `ι → ℂ` under an invertible complex matrix
+`u` is `‖u.det‖⁻² • μ`. -/
+theorem map_mulVec_addHaar_eq_smul [DecidableEq ι] {μ : Measure (ι → ℂ)} [μ.IsAddHaarMeasure]
+    {u : Matrix ι ι ℂ} (hu : u.det ≠ 0) :
+    μ.map (fun x : ι → ℂ ↦ u *ᵥ x) = (ENNReal.ofReal (‖u.det‖ ^ 2))⁻¹ • μ := by
+  let f : (ι → ℂ) →ₗ[ℝ] (ι → ℂ) := u.toLin'.restrictScalars ℝ
+  have h_det : LinearMap.det f = ‖u.det‖ ^ 2 := by
+    rw [LinearMap.det_restrictScalars_eq_normSq, LinearMap.det_toLin', Complex.normSq_eq_norm_sq]
+  have h_mulVec : (fun x : ι → ℂ ↦ u *ᵥ x) = (f : (ι → ℂ) → (ι → ℂ)) := by
+    funext x
+    rw [LinearMap.restrictScalars_apply, Matrix.toLin'_apply]
+  rw [h_mulVec]
+  simp [μ.map_linearMap_addHaar_eq_smul_addHaar, h_det, hu]
+
+/-- Change of variables on `ι → ℂ` for any additive Haar measure `μ`: for an invertible complex
+matrix `u` and any `g : (ι → ℂ) → ENNReal`,
+`∫⁻ y, g y ∂μ = ‖u.det‖² * ∫⁻ y, g (u *ᵥ y) ∂μ`. -/
+theorem lintegral_eq_norm_det_sq_mul_lintegral_mulVec [DecidableEq ι] {μ : Measure (ι → ℂ)}
+    [μ.IsAddHaarMeasure] {u : Matrix ι ι ℂ} (hu : u.det ≠ 0) (g : (ι → ℂ) → ENNReal) :
+    ∫⁻ y : ι → ℂ, g y ∂μ = ENNReal.ofReal (‖u.det‖ ^ 2) * ∫⁻ y : ι → ℂ, g (u *ᵥ y) ∂μ := by
+  have h_emb : MeasurableEmbedding (fun y : ι → ℂ ↦ u *ᵥ y) :=
+    Continuous.measurableEmbedding (by fun_prop) (mulVec_injective_of_det_ne_zero hu)
+  rw [← h_emb.lintegral_map, map_mulVec_addHaar_eq_smul hu]
+  simp [ENNReal.mul_inv_cancel_left, hu]
+
+end ComplexMatrix
+
 end TauCeti
 
 namespace MeasureTheory.Measure
@@ -83,6 +138,20 @@ section Affine
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] (μ : Measure F) [μ.IsAddHaarMeasure]
+
+/-- For `s > 0`, the preimage `z₀ + A⁻¹(B_s)` of a ball under a linear map has
+Haar measure `sⁿ μ(A⁻¹(B_1))`, where `n` is the dimension of the domain. -/
+theorem addHaar_preimage_comp_sub_right_ball {G : Type*} [SeminormedAddCommGroup G]
+    [NormedSpace ℝ G] (A : F →ₗ[ℝ] G) (z₀ : F) {s : ℝ} (hs : 0 < s) :
+    μ ((fun z ↦ A (z - z₀)) ⁻¹' Metric.ball 0 s) =
+      ENNReal.ofReal (s ^ Module.finrank ℝ F) * μ (A ⁻¹' Metric.ball 0 1) := by
+  have hset : (fun z ↦ A (z - z₀)) ⁻¹' Metric.ball (0 : G) s =
+      (fun z ↦ z + -z₀) ⁻¹' (s • (A ⁻¹' Metric.ball (0 : G) 1)) := by
+    ext z
+    simp only [mem_preimage, mem_ball_zero_iff, mem_smul_set_iff_inv_smul_mem₀ hs.ne',
+      map_smul, norm_smul, sub_eq_add_neg, Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
+    rw [inv_mul_lt_iff₀ hs, mul_one]
+  rw [hset, measure_preimage_add_right, Measure.addHaar_smul, abs_of_nonneg (by positivity)]
 
 /-- The image of a set under an affine map has Haar measure equal to the absolute value of the
 determinant of the linear part times the measure of the set. -/
@@ -209,6 +278,26 @@ theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] 
 
 end Diameter
 
+section BallAtTop
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+
+open Filter Topology in
+/-- In a nontrivial finite-dimensional real normed space, the additive Haar measure `μ (ball x r)`
+of a ball tends to `∞` as its radius `r` tends to `∞`. -/
+theorem tendsto_addHaar_ball_atTop (μ : Measure E) [μ.IsAddHaarMeasure] (x : E) :
+    Tendsto (fun r : ℝ ↦ μ (ball x r)) atTop (𝓝 ∞) := by
+  have h₁ : Tendsto (fun r : ℝ ↦ ENNReal.ofReal (r ^ Module.finrank ℝ E)) atTop (𝓝 ∞) :=
+    ENNReal.tendsto_ofReal_atTop.comp (tendsto_pow_atTop Module.finrank_pos.ne')
+  have h₂ := ENNReal.Tendsto.mul_const h₁ (b := μ (ball 0 1)) (Or.inl ENNReal.top_ne_zero)
+  rw [ENNReal.top_mul (measure_ball_pos μ 0 one_pos).ne'] at h₂
+  refine h₂.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with r hr
+  rw [addHaar_ball_of_pos _ _ hr]
+
+end BallAtTop
+
 section FiniteOrder
 
 variable {G E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -236,6 +325,69 @@ theorem smulInvariantMeasure_addHaar [Group G] [Finite G] [DistribMulAction G E]
   ⟨fun g s _ => addHaar_preimage_smul_of_isOfFinOrder μ (isOfFinOrder_of_finite g) s⟩
 
 end FiniteOrder
+
+section ThinCone
+
+open Filter Metric
+open scoped Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- The part of the cone `{v | |ψ v| ≤ t ‖v‖}` in the closed ball of radius `R > 0` is the
+dilation by `R` of its part in the closed unit ball, so its measure is `R ^ dim E` times that
+of the latter. -/
+theorem addHaar_closedBall_inter_setOf_abs_le_mul_norm (ψ : E →L[ℝ] ℝ) (t : ℝ) {R : ℝ}
+    (hR : 0 < R) :
+    μ (closedBall (0 : E) R ∩ {v | |ψ v| ≤ t * ‖v‖}) =
+      ENNReal.ofReal (R ^ Module.finrank ℝ E) *
+        μ (closedBall (0 : E) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}) := by
+  have hset : closedBall (0 : E) R ∩ {v | |ψ v| ≤ t * ‖v‖} =
+      R • (closedBall (0 : E) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}) := by
+    ext v
+    rw [mem_smul_set_iff_inv_smul_mem₀ hR.ne']
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_closedBall_zero_iff, map_smul, smul_eq_mul,
+      norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hR]
+    constructor
+    · rintro ⟨h1, h2⟩
+      refine ⟨by rw [inv_mul_le_iff₀ hR]; linarith, ?_⟩
+      rw [mul_left_comm]
+      exact mul_le_mul_of_nonneg_left h2 (inv_nonneg.mpr hR.le)
+    · rintro ⟨h1, h2⟩
+      refine ⟨by rw [inv_mul_le_iff₀ hR] at h1; linarith, ?_⟩
+      rw [mul_left_comm] at h2
+      exact le_of_mul_le_mul_left h2 (inv_pos.mpr hR)
+  rw [hset, Measure.addHaar_smul, abs_of_pos (pow_pos hR _)]
+
+/-- For a nonzero linear form `ψ`, the part of the cone `{v | |ψ v| ≤ t ‖v‖}` in the closed unit
+ball has measure tending to zero as `t → 0⁺`: the cones shrink to the kernel of `ψ`, a proper
+subspace and hence a null set. -/
+theorem tendsto_addHaar_closedBall_inter_setOf_abs_le_mul_norm {ψ : E →L[ℝ] ℝ} (hψ : ψ ≠ 0) :
+    Tendsto (fun t : ℝ ↦ μ (closedBall (0 : E) 1 ∩ {v | |ψ v| ≤ t * ‖v‖})) (𝓝[>] 0) (𝓝 0) := by
+  set C : ℝ → Set E := fun t ↦ closedBall (0 : E) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}
+  have hlim : Tendsto (μ ∘ C) (𝓝[>] 0) (𝓝 (μ (⋂ t > 0, C t))) :=
+    tendsto_measure_biInter_gt
+      (fun t _ ↦ (isClosed_closedBall.inter (isClosed_le (by fun_prop) (by fun_prop)))
+        |>.measurableSet.nullMeasurableSet)
+      (fun s t _ hst v hv ↦ ⟨hv.1, hv.2.trans (mul_le_mul_of_nonneg_right hst (norm_nonneg v))⟩)
+      ⟨1, one_pos, (measure_mono inter_subset_left).trans_lt measure_closedBall_lt_top |>.ne⟩
+  set W := LinearMap.ker (ψ : E →ₗ[ℝ] ℝ)
+  have hker : ⋂ t > 0, C t ⊆ (W : Set E) := by
+    intro v hv
+    simp only [mem_iInter] at hv
+    simp only [SetLike.mem_coe, W, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+    refine abs_eq_zero.mp (le_antisymm (le_of_forall_pos_le_add fun δ hδ ↦ ?_) (abs_nonneg _))
+    calc |ψ v| ≤ δ * ‖v‖ := (hv δ hδ).2
+      _ ≤ δ * 1 := by gcongr; exact mem_closedBall_zero_iff.mp (hv δ hδ).1
+      _ = 0 + δ := by ring
+  have hker0 : μ (W : Set E) = 0 := by
+    refine Measure.addHaar_submodule _ _ fun htop ↦ hψ ?_
+    ext v
+    have hv : v ∈ W := htop ▸ Submodule.mem_top
+    simpa [W] using hv
+  rwa [measure_mono_null hker hker0] at hlim
+
+end ThinCone
 
 end MeasureTheory.Measure
 

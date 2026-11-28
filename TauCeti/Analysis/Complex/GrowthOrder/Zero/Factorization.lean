@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.GrowthOrder
+public import TauCeti.Analysis.Complex.GrowthOrder.Exponential
 public import TauCeti.Analysis.Analytic.ExtractZeros
 
 /-!
@@ -20,6 +21,11 @@ This is the origin-zero removal step preceding Hadamard factorization. Analytic 
 uses the finite-zero factorization API; away from a sufficiently large disk the cofactor
 is bounded in norm by the original function. The origin factor also occurs in Matteo Cipollina's
 PNT+ Hadamard denominator.
+
+Removing finitely many zeros in turn gives the finite-zero case of Hadamard factorization: an
+entire function of order at most `ρ` with only finitely many zeros is `P(z) exp(Q(z))` for
+polynomials `P` and `Q` with `Q` of natural degree at most `⌊ρ⌋₊`
+(`TauCeti.OrderLE.exists_eq_polynomial_eval_mul_cexp_of_finite_zeros`).
 
 ## References
 
@@ -73,5 +79,32 @@ theorem OrderLE.exists_eq_sub_pow_mul {f : ℂ → ℂ} {ρ : ℝ}
     nlinarith [norm_nonneg (g z)]
   exact ⟨g, differentiableOn_univ.mp hg.differentiableOn, hg0,
     (IsBigO.of_bound' hdom).orderLE h, hfg'⟩
+
+/-- An entire function of order at most `ρ` with finitely many zeros is a polynomial times the
+exponential of a polynomial of natural degree at most `⌊ρ⌋₊`. -/
+theorem OrderLE.exists_eq_polynomial_eval_mul_cexp_of_finite_zeros {f : ℂ → ℂ} {ρ : ℝ}
+    (h : OrderLE f ρ) (hf : Differentiable ℂ f) (hfin : {z | f z = 0}.Finite) :
+    ∃ P Q : Polynomial ℂ, Q.natDegree ≤ ⌊ρ⌋₊ ∧ ∀ z, f z = P.eval z * exp (Q.eval z) := by
+  have hnot : ∃ z, f z ≠ 0 := by
+    by_contra! H
+    exact Set.infinite_univ (hfin.subset fun z _ ↦ H z)
+  -- Remove the zeros at the centers of `s` one at a time, keeping the order bound.
+  have hrem (s : Finset ℂ) : ∃ (P : Polynomial ℂ) (g : ℂ → ℂ), Differentiable ℂ g ∧
+      OrderLE g ρ ∧ (∀ c ∈ s, g c ≠ 0) ∧ ∀ z, f z = P.eval z * g z := by
+    induction s using Finset.induction_on with
+    | empty => exact ⟨1, f, hf, h, by simp, by simp⟩
+    | insert c s _ ih =>
+      obtain ⟨P, g, hg, hgρ, hgs, hfg⟩ := ih
+      obtain ⟨k, hk, hkc, hkρ, hgk⟩ := hgρ.exists_eq_sub_pow_mul hg
+        (hnot.imp fun z hz h0 ↦ hz (by rw [hfg z, h0, mul_zero])) c
+      refine ⟨P * (Polynomial.X - Polynomial.C c) ^ analyticOrderNatAt g c, k, hk, hkρ,
+        fun c' hc' ↦ ?_, fun z ↦ by simp [hfg z, hgk z, mul_assoc]⟩
+      rcases Finset.mem_insert.mp hc' with rfl | hc'
+      · exact hkc
+      · exact fun h0 ↦ hgs c' hc' (by rw [hgk c', h0, mul_zero])
+  obtain ⟨P, g, hg, hgρ, hgs, hfg⟩ := hrem hfin.toFinset
+  obtain ⟨Q, hQ, hgQ⟩ := hgρ.exists_eq_cexp_polynomial_eval_of_forall_ne_zero hg
+    fun z hz ↦ hgs z (hfin.mem_toFinset.mpr (by simp [hfg z, hz])) hz
+  exact ⟨P, Q, hQ, fun z ↦ by rw [hfg z, hgQ z]⟩
 
 end TauCeti

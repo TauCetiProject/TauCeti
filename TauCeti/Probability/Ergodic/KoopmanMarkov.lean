@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 public import TauCeti.Probability.Ergodic.FixedSpace
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # The Koopman Markov operator on measurable germs and `L∞`
@@ -24,7 +24,7 @@ isometry preserves these operations. Its positivity, monotonicity, and fixed-poi
 characterization hold on general `Lᵖ`. For ordered values, positivity and monotonicity are
 `MeasureTheory.Lp.compMeasurePreserving_nonneg` and
 `MeasureTheory.Lp.compMeasurePreserving_monotone` in
-`TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv`. The fixed-point
+`TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv`. The fixed-point
 characterization is supplied by `TauCeti.Probability.Ergodic.FixedSpace`.
 
 Mathlib provides the underlying composition maps as `AEEqFun.compMeasurePreserving` and

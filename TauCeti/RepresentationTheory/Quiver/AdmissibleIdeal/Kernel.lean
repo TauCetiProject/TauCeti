@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Truncation
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Admissibility of presentation kernels
@@ -45,17 +46,9 @@ variable [CommSemiring k] [Semiring A] [Algebra k A]
 theorem arrowIdeal_pow_le_comap (f : pathAlgebra k Q →ₐ[k] A) (J : Ideal A)
     (harrows : ∀ (i j : Q) (a : i ⟶ j), f (ofArrow a) ∈ J) (n : ℕ) :
     arrowIdeal k Q ^ n ≤ (J ^ n).comap f := by
-  have h₁ : arrowIdeal k Q ≤ J.comap f := by
-    rw [arrowIdeal_eq_span_arrows]
-    exact Ideal.span_le.mpr (by rintro _ ⟨⟨i, j, a⟩, rfl⟩; exact harrows i j a)
-  induction n with
-  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
-  | succ n ih =>
-    rw [Submodule.pow_succ, Submodule.pow_succ]
-    apply Ideal.mul_le.mpr
-    intro x hx y hy
-    simpa only [Ideal.mem_comap, map_mul] using
-      Ideal.mul_mem_mul (Ideal.mem_comap.mp (ih hx)) (Ideal.mem_comap.mp (h₁ hy))
+  refine Ideal.pow_le_comap_pow_of_le_comap f ?_ n
+  rw [arrowIdeal_eq_span_arrows]
+  exact Ideal.span_le.mpr (by rintro _ ⟨⟨i, j, a⟩, rfl⟩; exact harrows i j a)
 
 end Semiring
 
@@ -68,7 +61,7 @@ theorem comap_sq_eq_arrowIdeal_sq (f : pathAlgebra k Q →ₐ[k] A) (J : Ideal A
     [J.IsTwoSided]
     (harrows : ∀ (i j : Q) (a : i ⟶ j), f (ofArrow a) ∈ J)
     (hind : LinearIndependent k fun p : ShortPath Q 2 =>
-      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.1))) :
+      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.val))) :
     (J ^ 2).comap f = arrowIdeal k Q ^ 2 := by
   have hle := f.arrowIdeal_pow_le_comap J harrows 2
   let g := Ideal.quotientMapₐ (J ^ 2) f hle
@@ -91,7 +84,7 @@ theorem isAdmissibleIdeal_ker (f : pathAlgebra k Q →ₐ[k] A) (J : Ideal A)
     [J.IsTwoSided] (hnil : IsNilpotent J)
     (harrows : ∀ (i j : Q) (a : i ⟶ j), f (ofArrow a) ∈ J)
     (hind : LinearIndependent k fun p : ShortPath Q 2 =>
-      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.1))) :
+      Ideal.Quotient.mk (J ^ 2) (f (ofPath p.val))) :
     IsAdmissibleIdeal (RingHom.ker f.toRingHom) where
   exists_arrowIdeal_pow_le := by
     obtain ⟨n, hn⟩ := hnil

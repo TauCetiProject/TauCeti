@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Lie.Module
 public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
 import TauCeti.Algebra.BigOperators.Ring.List
 
@@ -27,9 +27,6 @@ by `⁅x, y⁆`. Hence the symmetrization of a homogeneous Lie invariant `p ∈ 
 `U(L)`, and for free `L` the converse holds as well. These are the central elements whose leading
 symbols are the given invariants, in the proof of the Harish-Chandra isomorphism by Chevalley's
 restriction theorem.
-
-The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetric power
-`Sym[R]^n L`. The Lie algebra module has an independent universe.
 
 ## Main results
 
@@ -61,9 +58,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -395,7 +392,7 @@ theorem pbwHomogeneousSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.fa
   refine ⟨fun h ↦ mem_lieInvariants.mpr fun x ↦ ?_,
     pbwHomogeneousSymmetrization_mem_center R L n hn⟩
   let q : homogeneousSubmodule R L n :=
-    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.2⟩
+    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.property⟩
   have hq : pbwHomogeneousSymmetrization R L n hn q = pbwHomogeneousSymmetrization R L n hn 0 := by
     rw [← lie_ι_pbwHomogeneousSymmetrization R L n hn x rfl, ← lie_skew,
       (mem_center_iff_forall_lie_ι R L).mp h x, neg_zero, map_zero]

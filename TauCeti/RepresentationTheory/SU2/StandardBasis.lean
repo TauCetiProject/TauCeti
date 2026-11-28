@@ -23,8 +23,9 @@ where `σₐ` are the Pauli matrices, that is, the isomorphism
 `TauCeti.suTwoEquiv : ℝ³ ≃ 𝔰𝔲(2)`, `x ↦ -(i/2) (x₀ σ₁ + x₁ σ₂ + x₂ σ₃)`. In this basis:
 
 * the bracket is the cross product, `⁅suTwoEquiv x, suTwoEquiv y⁆ = suTwoEquiv (x ⨯₃ y)`
-  (`TauCeti.lie_suTwoEquiv`), so `𝔰𝔲(2)` is isomorphic to `so(3)` with `-iσₐ/2` corresponding
-  to the infinitesimal rotation about the `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
+  (`TauCeti.lie_suTwoEquiv`), so `𝔰𝔲(2)` is not abelian (`TauCeti.SU2.not_isLieAbelian_lieAlgebra`)
+  and is isomorphic to `so(3)` with `-iσₐ/2` corresponding to the infinitesimal rotation about the
+  `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
 * the basis is orthonormal for the invariant form `B(X, Y) = -2 tr(XY)`
   (`TauCeti.trace_toMatrix_suTwoEquiv_mul`); the dot product therefore identifies `ℝ³` with the
   dual `𝔰𝔲(2)*` (`TauCeti.suTwoDualEquiv`), compatibly with the identification of `so(3)*`
@@ -76,7 +77,7 @@ Lie group `GL(2, ℂ)`. -/
 abbrev lieAlgebra :
     LieSubalgebra ℝ (LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ)
       (Matrix (Fin 2) (Fin 2) ℂ)ˣ) :=
-  Lie.lieSubalgebraOfSubgroup (GLSpecialUnitary (Fin 2) ℂ : Subgroup (Matrix (Fin 2) (Fin 2) ℂ)ˣ)
+  GLSpecialUnitary.lieAlgebra (Fin 2) ℂ
 
 /-- The matrix coordinates of `𝔰𝔲(2)`, as an injective homomorphism of real Lie algebras into the
 `2 × 2` complex matrices with their commutator bracket. Its range is the trace-free
@@ -106,7 +107,7 @@ theorem exists_toMatrix_eq_iff (A : Matrix (Fin 2) (Fin 2) ℂ) :
   refine ⟨?_, fun hA ↦ ⟨⟨_, hA⟩, ?_⟩⟩
   · rintro ⟨X, rfl⟩
     rw [toMatrix_apply, LinearEquiv.symm_apply_apply]
-    exact X.2
+    exact X.property
   · rw [toMatrix_apply, LinearEquiv.apply_symm_apply]
 
 /-- The matrix coordinates of an element of `𝔰𝔲(2)` are skew-Hermitian. -/
@@ -213,6 +214,11 @@ def suTwoLieEquivSoThree : SU2.lieAlgebra ≃ₗ⁅ℝ⁆ LieAlgebra.Orthogonal.
 theorem suTwoLieEquivSoThree_suTwoEquiv (x : Fin 3 → ℝ) :
     suTwoLieEquivSoThree (suTwoEquiv x) = soThreeEquiv ℝ x :=
   congrArg (soThreeEquiv ℝ) (suTwoEquiv.symm_apply_apply x)
+
+/-- **`𝔰𝔲(2)` is not abelian**, since `so(3)` is not (`TauCeti.not_isLieAbelian_so_three`): in the
+basis `-iσₐ/2`, `⁅-iσ₂/2, -iσ₃/2⁆ = -iσ₁/2`. -/
+theorem SU2.not_isLieAbelian_lieAlgebra : ¬IsLieAbelian SU2.lieAlgebra := fun h ↦
+  not_isLieAbelian_so_three (suTwoLieEquivSoThree.symm.injective.isLieAbelian h)
 
 /-! ### The dual of `𝔰𝔲(2)` and the coadjoint action -/
 

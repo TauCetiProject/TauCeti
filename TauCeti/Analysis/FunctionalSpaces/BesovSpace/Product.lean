@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Resonant
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
-# The product of Besov elements of negative and positive regularity
+# The Bony product on Besov spaces
 
 Let `α < 0 < β` with `α + β > 0`. A tempered distribution `u ∈ B^α_{p₁,q₁}` of negative
 regularity cannot be multiplied by an arbitrary function, but it can be multiplied by an element
@@ -22,18 +25,32 @@ coefficients in singular stochastic equations.
 The proof is Bony's decomposition (`TauCeti.BesovSpace.lowPass_smul_lowPass`): with a gap `N` such
 that `φ.rOut < 2^N φ.rIn`, `S_M u · S_M v` is the sum of the truncations of the paraproducts
 `T_u v = ∑ⱼ S_{j-N} u · Δⱼ v` and `T_v u = ∑ⱼ Δⱼ u · S_{j-N} v` and of the resonant part
-`R(u, v) = ∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v`, up to the resonant pairs `(j, k)` with
-`j < M ≤ k`, whose sum is `O(2^{-(α+β) M} ‖u‖ ‖v‖)` in `Lʳ`. The three series converge:
+`R(u, v) = ∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v`, up to the resonant tail pairs `(j, k)` with
+`j < M ≤ k`, handled by `TauCeti.BesovSpace.tendsto_sum_block_smul_sum_resonantCLM`. The three
+series converge via the bundled operators:
 
-* `T_u v` lies in `B^{α+β}_{r,q₂}` since `α < 0`
-  (`TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_neg`);
+* `T_u v` lies in `B^{α+β}_{r,q₁}` since `α < 0`
+  (`TauCeti.BesovSpace.paraproductNegCLM` with `inclusion` of `v` into `B^β_{p₂,∞}`);
 * `T_v u` lies in `B^α_{r,q₁}` since `v` is an `L^{p₂}` function for `β > 0`
-  (`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_pos` and
-  `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq`);
-* `R(u, v)` lies in `B^{α+β}_{r,q₂}` since `α + β > 0`
-  (`TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`);
+  (`TauCeti.BesovSpace.toLpCLM` and `TauCeti.BesovSpace.paraproductRightLpCLM`);
+* `R(u, v)` lies in `B^{α+β}_{r,q₁}` since `α + β > 0`
+  (`TauCeti.BesovSpace.resonantCLM` with `inclusion` of `v` into `B^β_{p₂,∞}`);
 
-and `B^{α+β}_{r,q₂} ⊆ B^α_{r,q₁}` since `β > 0`.
+and `B^{α+β}_{r,q₁} ⊆ B^α_{r,q₁}` since `β > 0`.
+
+For two factors of the same positive regularity `s > 0` that are also Lebesgue functions, the same
+decomposition gives the **tame product estimate**
+`‖u v‖_{B^s_{r,q}} ≤ C (‖u‖_{p₃} ‖v‖_{B^s_{p₂,q}} + ‖u‖_{B^s_{p₁,q}} ‖v‖_{p₄})` for
+`1/r = 1/p₁ + 1/p₄ = 1/p₃ + 1/p₂` (`TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`); the
+classical case is `p₃ = p₄ = ∞`. Now `T_u v` and `T_v u` are bounded by the paraproduct estimates
+with the Lebesgue factor at low frequency (`TauCeti.BesovSpace.paraproductLpCLM`,
+`TauCeti.BesovSpace.paraproductRightLpCLM`), and `R(u, v)` by the resonant estimate with
+`v ∈ L^{p₄} ⊆ B^0_{p₄,∞}` (`TauCeti.BesovSpace.ofLpCLM`). The products `S_M u · S_M v` converge to
+the pointwise product `u v` in `Lʳ`, since `S_M v` is bounded in `L^{p₄}` and `S_M u → u` in
+`L^{p₁}`, `S_M v → v` in `L^{p₂}`.
+
+The time-weighted product estimate lives in
+`TauCeti.Analysis.FunctionalSpaces.BesovSpace.TimeWeighted`.
 
 ## Main declarations
 
@@ -43,6 +60,13 @@ and `B^{α+β}_{r,q₂} ⊆ B^α_{r,q₁}` since `β > 0`.
   product is the limit of `S_M u · S_M v` in the tempered distributions, and is characterized by it.
 * `TauCeti.BesovSpace.exists_norm_smulL_apply_le`: the bound `‖u v‖ ≤ C ‖u‖ ‖v‖` with a constant
   depending only on the bump function and the regularities, not on the integrability exponents.
+* `TauCeti.BesovSpace.smulL_eq_paraproductNegCLM_add`: identifies `smulL` with
+  `T_u^N v + T_v^N u + R_N(u, v)` for any admissible gap `N`.
+* Single-block (`toDistr_smulL_of_block_eq_zero`) and constant-`1` (`smulL_one_left`,
+  `smulL_one_right`) identities.
+* `TauCeti.BesovSpace.exists_toDistr_eq_smul_and_norm_le`: for `s > 0`, the product of
+  `u ∈ B^s_{p₁,q} ∩ L^{p₃}` and `v ∈ B^s_{p₂,q} ∩ L^{p₄}` lies in `B^s_{r,q}`, with the tame
+  estimate above, uniformly in the exponents.
 
 ## References
 
@@ -50,7 +74,8 @@ and `B^{α+β}_{r,q₂} ⊆ B^α_{r,q₁}` since `β > 0`.
   partielles non linéaires*, Ann. Sci. École Norm. Sup. (4) 14 (1981), 209–246.
 * H. Bahouri, J.-Y. Chemin and R. Danchin, *Fourier Analysis and Nonlinear Partial Differential
   Equations*, Grundlehren der mathematischen Wissenschaften 343, Springer, 2011, §2.8
-  (Bony's decomposition and Theorems 2.82 and 2.85, from which the product estimate follows).
+  (Bony's decomposition and Theorems 2.82 and 2.85, from which the product estimate follows, and
+  Corollary 2.86, the tame estimate).
 -/
 
 public section
@@ -68,90 +93,46 @@ namespace TauCeti.BesovSpace
 variable {φ : ContDiffBump (0 : E)} {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ≥0∞} [Fact (1 ≤ p₁)]
   [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] [p₁.HolderTriple p₂ r]
 
-/-- The resonant pairs `(j, k)` with `j < M ≤ k` and `k ≤ j + N`, which the truncated resonant
-part of `S_M u · S_M v` misses. -/
-private def resonantTail (N M : ℕ) (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    Lp F r (volume : Measure E) :=
-  ∑ j ∈ Finset.range M,
-    (u.block j • ∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (M ≤ ·), v.block k :
-      Lp F r (volume : Measure E))
+/-- Combines the `HasSum` limits of the two paraproduct series and the truncated-resonant
+convergence into `S_M u • S_M v → w₁ + w₂ + w₃` in `𝓢'(E, F)`. -/
+private theorem tendsto_lowPass_smul_lowPass_of_hasSum {N : ℕ} {q₁' q₂' : ℝ≥0∞}
+    {s₁ s₂ : ℝ} (u : BesovSpace ℂ φ s₁ p₁ q₁')
+    (v : BesovSpace F φ s₂ p₂ q₂') {w₁ w₂ w₃ : 𝓢'(E, F)}
+    (h₁ : HasSum (fun j ↦ ((u.lowPass (j - N) • v.block j :
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) w₁)
+    (h₂ : HasSum (fun j ↦ ((u.block j • v.lowPass (j - N) :
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) w₂)
+    (h₃ : Tendsto (fun M ↦ ((∑ j ∈ Finset.range M, (u.block j •
+        ∑ k ∈ (Finset.range M).filter (fun k ↦ k ≤ j + N ∧ j ≤ k + N), v.block k :
+          Lp F r (volume : Measure E)) : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop (𝓝 w₃)) :
+    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop (𝓝 (w₁ + w₂ + w₃)) := by
+  refine ((h₁.tendsto_sum_nat.add h₂.tendsto_sum_nat).add h₃).congr'
+    (Eventually.of_forall fun M ↦ ?_)
+  simp_rw [← Lp.toTemperedDistributionCLM_apply]
+  rw [← map_sum, ← map_sum, ← map_add, ← map_add, lowPass_smul_lowPass N M u v]
 
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-/-- **Bony's decomposition with the full resonant terms.** The truncated resonant part of
-`S_M u · S_M v` is the partial sum of the resonant series minus `resonantTail`. -/
-private theorem lowPass_smul_lowPass_eq (N M : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) :
-    (u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) =
-      ∑ j ∈ Finset.range M, (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) +
-        ∑ j ∈ Finset.range M, (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) +
-        (∑ j ∈ Finset.range M, (u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k :
-          Lp F r (volume : Measure E)) - resonantTail N M u v) := by
-  rw [lowPass_smul_lowPass N M u v, resonantTail, ← Finset.sum_sub_distrib]
-  congr 1
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  -- Split the window `|k - j| ≤ N` into the indices below `M` and the others.
-  have hsplit : ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k =
-      ∑ k ∈ (Finset.range M).filter (fun k ↦ k ≤ j + N ∧ j ≤ k + N), v.block k +
-        ∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (M ≤ ·), v.block k := by
-    rw [← Finset.sum_filter_add_sum_filter_not (Finset.Icc (j - N) (j + N)) (· < M)]
-    congr 2 <;> ext k <;> simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Icc] <;> omega
-  rw [eq_sub_iff_add_eq, ← Lp.add_smul, hsplit]
-
-/-- **The missing resonant pairs are negligible.** For `α < 0 < α + β`,
-`‖resonantTail N M u v‖_r ≤ N ‖u‖ ‖v‖ (2^{-(α+β)})^M / (2^{-α} - 1)`: the terms have `j < M ≤ k`,
-so `‖Δⱼ u‖ ≤ 2^{-α j} ‖u‖` sums to `O(2^{-α M})`, and each of the at most `N` blocks
-`‖Δₖ v‖ ≤ 2^{-β k} ‖v‖` is `O(2^{-β M})`. -/
-private theorem norm_resonantTail_le (hα : α < 0) (hαβ : 0 < α + β) (N M : ℕ)
+/-- For every admissible gap `N`, `S_M u · S_M v` converges in `𝓢'(E, F)` to
+`T_u^N v + T_v^N u + R_N(u, v)`. -/
+private theorem tendsto_lowPass_smul_lowPass_paraproductNegCLM_add {N : ℕ}
+    (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : α < 0) (hαβ : 0 < α + β)
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    ‖(resonantTail N M u v : Lp F r (volume : Measure E))‖ ≤
-      N * ‖u‖ * ‖v‖ / (2 ^ (-α) - 1) * (2 ^ (-(α + β))) ^ M := by
-  set b : ℝ := 2 ^ (-β)
-  have hb : b ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith)
-  -- The blocks of `v` of index at least `M` are at most `b^M ‖v‖`, and at most `N` of them
-  -- meet the window of an index `j < M`.
-  have hv (j : ℕ) (hj : j < M) :
-      ‖∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (M ≤ ·), v.block k‖ ≤ N * (b ^ M * ‖v‖) := by
-    have hsub : (Finset.Icc (j - N) (j + N)).filter (M ≤ ·) ⊆ Finset.Ico M (M + N) := fun k hk ↦ by
-      simp only [Finset.mem_filter, Finset.mem_Icc, Finset.mem_Ico] at hk ⊢
-      omega
-    calc ‖∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (M ≤ ·), v.block k‖
-        ≤ ∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (M ≤ ·), ‖v.block k‖ := norm_sum_le _ _
-      _ ≤ ∑ k ∈ Finset.Ico M (M + N), ‖v.block k‖ :=
-          Finset.sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ ↦ norm_nonneg _
-      _ ≤ ∑ _k ∈ Finset.Ico M (M + N), b ^ M * ‖v‖ := Finset.sum_le_sum fun k hk ↦
-          (v.norm_block_le k).trans <| mul_le_mul_of_nonneg_right
-            (pow_le_pow_of_le_one (by positivity) hb (Finset.mem_Ico.1 hk).1) (norm_nonneg _)
-      _ = N * (b ^ M * ‖v‖) := by simp
-  have hab : (2 : ℝ) ^ (-α * M) * b ^ M = (2 ^ (-(α + β))) ^ M := by
-    rw [Real.rpow_mul zero_le_two, Real.rpow_natCast, ← mul_pow, ← Real.rpow_add two_pos,
-      neg_add]
-  calc ‖(resonantTail N M u v : Lp F r (volume : Measure E))‖
-      ≤ ∑ j ∈ Finset.range M, ‖(u.block j •
-          ∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (M ≤ ·), v.block k :
-            Lp F r (volume : Measure E))‖ := norm_sum_le _ _
-    _ ≤ ∑ j ∈ Finset.range M, ‖u.block j‖ * (N * (b ^ M * ‖v‖)) :=
-        Finset.sum_le_sum fun j hj ↦ (Lp.norm_smul_le _ _).trans <|
-          mul_le_mul_of_nonneg_left (hv j (Finset.mem_range.1 hj)) (norm_nonneg _)
-    _ = (∑ j ∈ Finset.range M, ‖u.block j‖) * (N * (b ^ M * ‖v‖)) := (Finset.sum_mul ..).symm
-    _ ≤ 2 ^ (-α * M) / (2 ^ (-α) - 1) * ‖u‖ * (N * (b ^ M * ‖v‖)) := by
-        gcongr
-        exact sum_norm_block_le_of_neg hα u M
-    _ = N * ‖u‖ * ‖v‖ / (2 ^ (-α) - 1) * (2 ^ (-α * M) * b ^ M) := by ring
-    _ = _ := by rw [hab]
-
-/-- The missing resonant pairs tend to `0` in the tempered distributions. -/
-private theorem tendsto_resonantTail (hα : α < 0) (hαβ : 0 < α + β) (N : ℕ)
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    Tendsto (fun M ↦ ((resonantTail N M u v : Lp F r (volume : Measure E)) : 𝓢'(E, F))) atTop
-      (𝓝 0) := by
-  have hx : (2 : ℝ) ^ (-(α + β)) < 1 :=
-    Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hαβ)
-  have hL : Tendsto (fun M ↦ (resonantTail N M u v : Lp F r (volume : Measure E))) atTop (𝓝 0) :=
-    squeeze_zero_norm (fun M ↦ norm_resonantTail_le hα hαβ N M u v) <| by
-      simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) hx).const_mul
-        (N * ‖u‖ * ‖v‖ / (2 ^ (-α) - 1))
-  have h := ((Lp.toTemperedDistributionCLM F volume r).continuous.tendsto 0).comp hL
-  rwa [map_zero] at h
+    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop
+      (𝓝 (inclusion F φ r (by linarith) le_rfl
+            (paraproductNegCLM r q₁ hN hα u (inclusion F φ p₂ le_rfl le_top v)) +
+          paraproductRightLpCLM r hN u (toLpCLM F φ p₂ q₂ (by linarith) v) +
+          inclusion F φ r (by linarith) le_rfl
+            (resonantCLM r q₁ N hαβ u (inclusion F φ p₂ le_rfl le_top v))).toDistr) := by
+  simp only [toDistr_add, toDistr_inclusion]
+  set v' : BesovSpace F φ β p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
+  have h₁ := hasSum_paraproductNegCLM (r := r) (q := q₁) hN hα u v'
+  have h₂ := hasSum_paraproductRightLpCLM_of_toDistr_eq (r := r) hN u
+    (coe_toLpCLM (by linarith : 0 < β) v).symm
+  have h₃ := tendsto_sum_block_smul_sum_resonantCLM (r := r) (q := q₁) N hαβ u v'
+  simp only [v', block_inclusion] at h₁ h₃
+  exact tendsto_lowPass_smul_lowPass_of_hasSum u v h₁ h₂ h₃
 
 variable (φ) in
 /-- **The product estimate**, with a constant independent of the integrability exponents. -/
@@ -162,41 +143,32 @@ private theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le (hα : α < 0) (
         Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) :
           𝓢'(E, F))) atTop (𝓝 w.toDistr) ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   have hβ : 0 < β := by linarith
-  have hlt : α < α + β := by linarith
-  -- A gap `N` for which the terms of the paraproducts have spectra in dyadic annuli.
-  obtain ⟨N, hN⟩ : ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
-    obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-    exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
-  obtain ⟨C₁, hC₁, h₁⟩ := exists_hasSum_lowPass_smul_block_and_norm_le_of_neg (F := F) φ hα β hN
-  obtain ⟨C₂, hC₂, h₂⟩ := exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN
-  obtain ⟨C₃, hC₃, h₃⟩ := exists_hasSum_block_smul_sum_block_and_norm_le (F := F) φ hαβ N
+  set N := φ.exists_rOut_lt_two_pow_mul_rIn.choose
+  set hN := φ.exists_rOut_lt_two_pow_mul_rIn.choose_spec
+  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_paraproductNegCLM_le (F := F) hN hα β
+  obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_paraproductRightLpCLM_le (F := F) hN α
+  obtain ⟨C₃, hC₃, h₃⟩ := exists_norm_resonantCLM_le (F := F) (φ := φ) N α β hαβ
   set K : ℝ := (1 - 2 ^ (-β))⁻¹
   have hK : 0 ≤ K := inv_nonneg.2 <| sub_nonneg.2 <|
     Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith)
-  have hK' : (1 - 2 ^ (α - (α + β)))⁻¹ = K := by rw [sub_add_cancel_left]
-  refine ⟨K * C₁ + C₂ * K + K * C₃, by positivity, fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ u v ↦ ?_⟩
-  obtain ⟨w₁, hw₁, hw₁n⟩ := h₁ (r := r) u v
-  obtain ⟨g, hg, hgn⟩ := exists_toDistr_eq_and_norm_le_of_pos hβ v
-  obtain ⟨w₂, hw₂, hw₂n⟩ := h₂ (r := r) u v hg
-  obtain ⟨w₃, hw₃, hw₃n⟩ := h₃ (r := r) u v
-  set ι := inclusionOfLT F φ r q₂ q₁ hlt
-  refine ⟨ι w₁ + w₂ + ι w₃, ?_, ?_⟩
-  · have h := ((hw₁.tendsto_sum_nat.add hw₂.tendsto_sum_nat).add
-      hw₃.tendsto_sum_nat).sub (tendsto_resonantTail (r := r) hα hαβ N u v)
-    simp only [sub_zero] at h
-    rw [toDistr_add, toDistr_add, toDistr_inclusionOfLT, toDistr_inclusionOfLT]
-    refine h.congr fun M ↦ ?_
-    rw [lowPass_smul_lowPass_eq (r := r) N M u v]
-    simp only [← Lp.toTemperedDistributionCLM_apply, map_add, map_sub, map_sum, add_sub_assoc]
-  · calc ‖ι w₁ + w₂ + ι w₃‖ ≤ ‖ι w₁‖ + ‖w₂‖ + ‖ι w₃‖ := norm_add₃_le
-      _ ≤ K * (C₁ * ‖u‖ * ‖v‖) + C₂ * ‖u‖ * (K * ‖v‖) + K * (C₃ * ‖u‖ * ‖v‖) := by
-          gcongr
-          · exact (norm_inclusionOfLT_le hlt w₁).trans_eq (by rw [hK'])  |>.trans
-              (mul_le_mul_of_nonneg_left hw₁n hK)
-          · exact hw₂n.trans (by gcongr)
-          · exact (norm_inclusionOfLT_le hlt w₃).trans_eq (by rw [hK'])  |>.trans
-              (mul_le_mul_of_nonneg_left hw₃n hK)
-      _ = (K * C₁ + C₂ * K + K * C₃) * ‖u‖ * ‖v‖ := by ring
+  refine ⟨C₁ + C₂ * K + C₃, by positivity, fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ u v ↦ ?_⟩
+  set v' : BesovSpace F φ β p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
+  have hv' : ‖v'‖ ≤ ‖v‖ := norm_inclusion_le _ _ v
+  set w₁ := inclusion F φ r (by linarith : α ≤ α + β) le_rfl (paraproductNegCLM r q₁ hN hα u v')
+  set w₂ := paraproductRightLpCLM r hN u (toLpCLM F φ p₂ q₂ hβ v)
+  set w₃ := inclusion F φ r (by linarith : α ≤ α + β) le_rfl (resonantCLM r q₁ N hαβ u v')
+  refine ⟨w₁ + w₂ + w₃, tendsto_lowPass_smul_lowPass_paraproductNegCLM_add hN hα hαβ u v, ?_⟩
+  have hn₁ : ‖w₁‖ ≤ C₁ * ‖u‖ * ‖v‖ := (norm_inclusion_le _ _ _).trans <|
+    ((paraproductNegCLM r q₁ hN hα).le_opNorm₂ u v').trans (by gcongr; exact h₁)
+  have hn₂ : ‖w₂‖ ≤ C₂ * K * ‖u‖ * ‖v‖ := by
+    refine ((paraproductRightLpCLM r hN).le_opNorm₂ u (toLpCLM F φ p₂ q₂ hβ v)).trans ?_
+    calc _ ≤ C₂ * ‖u‖ * (K * ‖v‖) := by gcongr; exacts [h₂, norm_toLpCLM_apply_le hβ v]
+      _ = C₂ * K * ‖u‖ * ‖v‖ := by ring
+  have hn₃ : ‖w₃‖ ≤ C₃ * ‖u‖ * ‖v‖ := (norm_inclusion_le _ _ _).trans <|
+    ((resonantCLM r q₁ N hαβ).le_opNorm₂ u v').trans (by gcongr; exact h₃)
+  calc ‖w₁ + w₂ + w₃‖ ≤ ‖w₁‖ + ‖w₂‖ + ‖w₃‖ := norm_add₃_le
+    _ ≤ C₁ * ‖u‖ * ‖v‖ + C₂ * K * ‖u‖ * ‖v‖ + C₃ * ‖u‖ * ‖v‖ := add_le_add_three hn₁ hn₂ hn₃
+    _ = (C₁ + C₂ * K + C₃) * ‖u‖ * ‖v‖ := by ring
 
 variable (F φ) in
 /-- The constant of the product estimate. -/
@@ -298,5 +270,192 @@ theorem exists_norm_smulL_apply_le (hα : α < 0) (hαβ : 0 < α + β) :
     fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ u v ↦ by
       rw [smulL_apply]
       exact norm_smulAux_le hα hαβ u v⟩
+
+section BonyDecomposition
+
+/-- **Bony decomposition of `TauCeti.BesovSpace.smulL`.** For every gap `N` satisfying
+`φ.rOut < 2 ^ N * φ.rIn`, `smulL r hα hαβ u v` equals `T_u^N v + T_v^N u + R_N(u, v)`. -/
+theorem smulL_eq_paraproductNegCLM_add {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn)
+    (hα : α < 0) (hαβ : 0 < α + β)
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
+    smulL r hα hαβ u v =
+      inclusion F φ r (by linarith) le_rfl
+          (paraproductNegCLM r q₁ hN hα u (inclusion F φ p₂ le_rfl le_top v)) +
+        paraproductRightLpCLM r hN u (toLpCLM F φ p₂ q₂ (by linarith) v) +
+        inclusion F φ r (by linarith) le_rfl
+          (resonantCLM r q₁ N hαβ u (inclusion F φ p₂ le_rfl le_top v)) :=
+  (smulL_eq_iff hα hαβ).2 (tendsto_lowPass_smul_lowPass_paraproductNegCLM_add hN hα hαβ u v)
+
+end BonyDecomposition
+
+section Tame
+
+/-! ### Positive regularity: the tame product estimate -/
+
+variable {s : ℝ} {p₃ p₄ q : ℝ≥0∞}
+
+omit [p₁.HolderTriple p₂ r] in
+open scoped FourierTransform in
+/-- For `s > 0`, let `u ∈ B^s_{p₁,q}` be represented by `f ∈ L^{p₃}` and `v ∈ B^s_{p₂,q}` by
+`g ∈ L^{p₄}`, with `1/r = 1/p₁ + 1/p₄ = 1/p₃ + 1/p₂`. Then `S_M u · S_M g → u g` in `Lʳ`: the
+factor `S_M g` is bounded in `L^{p₄}`, and `S_M g - g = S_M v - v` almost everywhere tends to `0`
+in `L^{p₂}`, against the factor `f ∈ L^{p₃}`. -/
+private theorem tendsto_lowPass_smul_lowPass_ofLpCLM [Fact (1 ≤ p₃)] [Fact (1 ≤ p₄)]
+    [Fact (1 ≤ q)] [p₁.HolderTriple p₄ r] [p₃.HolderTriple p₂ r] (hs : 0 < s)
+    (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q) {f : Lp ℂ p₃ (volume : Measure E)}
+    {g : Lp F p₄ (volume : Measure E)} (hf : u.toDistr = f) (hg : v.toDistr = g) :
+    Tendsto (fun M ↦ (u.lowPass M • (ofLpCLM F φ p₄ g).lowPass M : Lp F r (volume : Measure E)))
+      atTop (𝓝 (toLpCLM ℂ φ p₁ q hs u • g)) := by
+  set U := toLpCLM ℂ φ p₁ q hs u
+  set V := toLpCLM F φ p₂ q hs v
+  set g' := ofLpCLM F φ p₄ g
+  set A := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
+  have hUf : U =ᵐ[volume] f := Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
+    rw [coe_toLpCLM, hf]
+  have hgV : g =ᵐ[volume] V := Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
+    rw [coe_toLpCLM, hg]
+  have hgv : ∀ M, g'.lowPass M =ᵐ[volume] v.lowPass M := fun M ↦
+    Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
+      rw [coe_lowPass, coe_lowPass, toDistr_ofLpCLM, hg]
+  -- Split `S_M u · S_M g - U g = (S_M u - U) · S_M g + f · (S_M v - V)`.
+  have key : ∀ M, (u.lowPass M • g'.lowPass M - U • g : Lp F r (volume : Measure E)) =
+      (u.lowPass M - U) • g'.lowPass M + f • (v.lowPass M - V) := fun M ↦ by
+    have h : (U • (g'.lowPass M - g) : Lp F r (volume : Measure E)) = f • (v.lowPass M - V) :=
+      Lp.smul_eq_smul_of_ae_eq hUf <| by
+        filter_upwards [Lp.coeFn_sub (g'.lowPass M) g, Lp.coeFn_sub (v.lowPass M) V, hgv M, hgV]
+          with x h₁ h₂ h₃ h₄
+        rw [h₁, h₂, Pi.sub_apply, Pi.sub_apply, h₃, h₄]
+    rw [← h, sub_eq_add_neg (u.lowPass M), Lp.smul_add, sub_eq_add_neg (g'.lowPass M),
+      Lp.add_smul, Lp.neg_smul, Lp.smul_neg]
+    abel
+  have hu := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_lowPass hs u)
+  have hv := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_lowPass hs v)
+  refine tendsto_iff_norm_sub_tendsto_zero.2 <| squeeze_zero (fun _ ↦ norm_nonneg _)
+    (fun M ↦ ?_) (by simpa using (hu.mul_const (A * ‖g‖)).add (hv.const_mul ‖f‖))
+  rw [key]
+  refine (norm_add_le _ _).trans (add_le_add ((Lp.norm_smul_le _ _).trans ?_)
+    (Lp.norm_smul_le _ _))
+  exact mul_le_mul_of_nonneg_left (norm_lowPass_le_of_toDistr_eq g' (toDistr_ofLpCLM g) M)
+    (norm_nonneg _)
+
+variable (F φ) in
+/-- **The tame product estimate on Besov spaces** (Bahouri–Chemin–Danchin, Corollary 2.86). Let
+`s > 0`. There is `C ≥ 0`, depending only on `E`, `F`, `φ` and `s`, with the following property
+for all exponents `1 ≤ p₁, p₂, p₃, p₄, r, q ≤ ∞` with `1/r = 1/p₁ + 1/p₄ = 1/p₃ + 1/p₂`. If
+`u ∈ B^s_{p₁,q}` is represented by `f ∈ L^{p₃}` and `v ∈ B^s_{p₂,q}` by `g ∈ L^{p₄}`, then their
+product lies in `B^s_{r,q}` with
+
+`‖u v‖_{B^s_{r,q}} ≤ C (‖f‖_{p₃} ‖v‖_{B^s_{p₂,q}} + ‖u‖_{B^s_{p₁,q}} ‖g‖_{p₄})`.
+
+Here the product is the pointwise product of the `L^{p₁}` function `toLpCLM ℂ φ p₁ q hs u` of `u`
+with `g`. Each factor enters the estimate with its full Besov norm only once, against the Lebesgue
+norm of the other. The classical case is `p₁ = p₂ = r = p` and `p₃ = p₄ = ∞`: bounded elements of
+`B^s_{p,q}` multiply in `B^s_{p,q}`. -/
+theorem exists_toDistr_eq_smul_and_norm_le (hs : 0 < s) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ p₃ p₄ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)]
+      [Fact (1 ≤ p₃)] [Fact (1 ≤ p₄)] [Fact (1 ≤ r)] [Fact (1 ≤ q)] [p₁.HolderTriple p₄ r]
+      [p₃.HolderTriple p₂ r] (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q)
+      {f : Lp ℂ p₃ (volume : Measure E)} {g : Lp F p₄ (volume : Measure E)},
+      u.toDistr = f → v.toDistr = g →
+      ∃ w : BesovSpace F φ s r q,
+        w.toDistr = ((toLpCLM ℂ φ p₁ q hs u • g : Lp F r (volume : Measure E)) : 𝓢'(E, F)) ∧
+        ‖w‖ ≤ C * (‖f‖ * ‖v‖ + ‖u‖ * ‖g‖) := by
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  have hs₀ : 0 < s + 0 := by simpa using hs
+  have hle : s ≤ s + 0 := by simp
+  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_paraproductLpCLM_le (F := F) hN s
+  obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_paraproductRightLpCLM_le (F := F) hN s
+  obtain ⟨C₃, hC₃, h₃⟩ := exists_norm_resonantCLM_le (F := F) (φ := φ) N s 0 hs₀
+  obtain ⟨C₀, hC₀, h₀⟩ := exists_norm_ofLpCLM_le F φ
+  refine ⟨C₁ + C₂ + C₃ * C₀, by positivity,
+    fun {p₁ p₂ p₃ p₄ r q} _ _ _ _ _ _ _ _ u v f g hf hg ↦ ?_⟩
+  -- Bony's decomposition `u g = T_f v + T_g u + R(u, g)`, all three terms in `B^s_{r,q}`.
+  set g' := ofLpCLM F φ p₄ g
+  set w₁ := paraproductLpCLM (F := F) (β := s) (p₁ := p₃) (p₂ := p₂) (q := q) r hN f v
+  set w₂ := paraproductRightLpCLM (F := F) (α := s) (p₁ := p₁) (p₂ := p₄) (q := q) r hN u g
+  set w₃ := resonantCLM r q N hs₀ u g'
+  refine ⟨w₁ + w₂ + inclusion F φ r hle le_rfl w₃, ?_, ?_⟩
+  · have hT₁ : HasSum (fun j ↦ ((u.lowPass (j - N) • g'.block j : Lp F r (volume : Measure E)) :
+        𝓢'(E, F))) w₁.toDistr :=
+      (hasSum_paraproductLpCLM (r := r) hN f v).congr_fun fun j ↦ congrArg _ <|
+        Lp.smul_eq_smul_of_ae_eq
+          (Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
+            rw [coe_lowPass, coe_lowPass, toDistr_ofLpCLM, hf])
+          (Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1 <| by
+            rw [coe_block, coe_block, toDistr_ofLpCLM, hg])
+    have hlim := tendsto_lowPass_smul_lowPass_of_hasSum (r := r) u g' hT₁
+      (hasSum_paraproductRightLpCLM (r := r) hN u g)
+      (tendsto_sum_block_smul_sum_resonantCLM (r := r) (q := q) N hs₀ u g')
+    rw [toDistr_add, toDistr_add, toDistr_inclusion]
+    exact tendsto_nhds_unique hlim <| ((Lp.toTemperedDistributionCLM F volume r).continuous.tendsto
+      _).comp (tendsto_lowPass_smul_lowPass_ofLpCLM hs u v hf hg)
+  · have hn₁ : ‖w₁‖ ≤ C₁ * ‖f‖ * ‖v‖ :=
+      ((paraproductLpCLM r hN).le_opNorm₂ f v).trans (by gcongr; exact h₁)
+    have hn₂ : ‖w₂‖ ≤ C₂ * ‖u‖ * ‖g‖ :=
+      ((paraproductRightLpCLM r hN).le_opNorm₂ u g).trans (by gcongr; exact h₂)
+    have hn₃ : ‖inclusion F φ r hle le_rfl w₃‖ ≤ C₃ * ‖u‖ * (C₀ * ‖g‖) :=
+      (norm_inclusion_le _ _ _).trans <| ((resonantCLM r q N hs₀).le_opNorm₂ u g').trans
+        (by gcongr; exacts [h₃, h₀ g])
+    have ha : 0 ≤ ‖f‖ * ‖v‖ := by positivity
+    have hb : 0 ≤ ‖u‖ * ‖g‖ := by positivity
+    calc _ ≤ ‖w₁‖ + ‖w₂‖ + ‖inclusion F φ r hle le_rfl w₃‖ := norm_add₃_le
+      _ ≤ C₁ * ‖f‖ * ‖v‖ + C₂ * ‖u‖ * ‖g‖ + C₃ * ‖u‖ * (C₀ * ‖g‖) :=
+          add_le_add_three hn₁ hn₂ hn₃
+      _ ≤ (C₁ + C₂ + C₃ * C₀) * (‖f‖ * ‖v‖ + ‖u‖ * ‖g‖) := by
+          nlinarith [mul_nonneg (add_nonneg hC₂ (mul_nonneg hC₃ hC₀)) ha, mul_nonneg hC₁ hb]
+
+end Tame
+
+section Checks
+
+/-- **Same-frequency Bony product (`α < 0`, `0 < α + β`).** Both paraproducts vanish and the
+resonant term carries `Δ_{j₀} u · Δ_{j₀} v`. -/
+theorem toDistr_smulL_of_block_eq_zero (hα : α < 0) (hαβ : 0 < α + β)
+    {j₀ : ℕ} {u : BesovSpace ℂ φ α p₁ q₁} {v : BesovSpace F φ β p₂ q₂}
+    (hu : ∀ k ≠ j₀, u.block k = 0) (hv : ∀ k ≠ j₀, v.block k = 0) :
+    (smulL r hα hαβ u v).toDistr =
+      ((u.block j₀ • v.block j₀ : Lp F r (volume : Measure E)) : 𝓢'(E, F)) := by
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  have hv' : ∀ k ≠ j₀, (inclusion F φ p₂ le_rfl (le_top : q₂ ≤ ∞) v).block k = 0 := by
+    simpa [block_inclusion] using hv
+  have hg : ∀ k ≠ j₀,
+      littlewoodPaleyBlock F φ k (toLpCLM F φ p₂ q₂ (by linarith) v : 𝓢'(E, F)) = 0 :=
+    fun k hk ↦ by rw [coe_toLpCLM, ← coe_block, hv k hk, Lp.toTemperedDistribution_zero]
+  rw [smulL_eq_paraproductNegCLM_add hN hα hαβ u v,
+    paraproductNegCLM_eq_zero_of_block_eq_zero hN hα hu hv',
+    paraproductRightLpCLM_eq_zero_of_block_eq_zero hN hu hg]
+  simp [toDistr_resonantCLM_of_block_eq_zero N hαβ hu hv', block_inclusion]
+
+section One
+
+/-- **Unitality of `smulL` on the left (`α < 0`, `0 < α + β`):**
+`T_1^N v = v - S_{N + 1} v`, `T_v^N 1 = 0`, and `R_N(1, v) = S_{N + 1} v` sum to `v` in
+`B^α_{p₂,q₁}`. -/
+@[simp]
+theorem smulL_one_left (hα : α < 0) (hαβ : 0 < α + β)
+    (v : BesovSpace F φ β p₂ q₂) :
+    smulL p₂ hα hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v =
+      inclusionOfLT F φ p₂ q₂ q₁ (by linarith) v := by
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  apply ext
+  rw [smulL_eq_paraproductNegCLM_add hN hα hαβ 1 v, paraproductRightLpCLM_one_left]
+  simp [toDistr_paraproductNegCLM_one_left hN hα]
+
+/-- **Unitality of `smulL` on the right (`α < 0`, `0 < α + β`):** `T_u^N 1 = 0`,
+`T_1^N u = u - S_{N + 1} u`, and `R_N(u, 1) = S_{N + 1} u` sum to `u`. -/
+@[simp]
+theorem smulL_one_right (hα : α < 0) (hαβ : 0 < α + β)
+    (u : BesovSpace ℂ φ α p₁ q₁) :
+    smulL p₁ hα hαβ u (1 : BesovSpace ℂ φ β ∞ q₂) = u := by
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  apply ext
+  rw [smulL_eq_paraproductNegCLM_add hN hα hαβ u 1, inclusion_one,
+    paraproductNegCLM_one_right hN hα u, toLpCLM_one,
+    paraproductRightLpCLM_eq_paraproductLpCLM hN u 1]
+  simp [toDistr_paraproductLpCLM_one_left hN u]
+
+end One
+
+end Checks
 
 end TauCeti.BesovSpace

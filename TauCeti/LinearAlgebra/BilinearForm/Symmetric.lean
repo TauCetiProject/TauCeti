@@ -15,7 +15,9 @@ import Mathlib.Tactic.Ring
 # The submodule of symmetric bilinear forms and its rank
 
 On any module `M` over a commutative semiring `R`, symmetric bilinear forms form an `R`-submodule
-`LinearMap.BilinForm.symmSubmodule R M`. When `R` is a commutative ring with `Invertible (2 : R)`,
+`LinearMap.BilinForm.symmSubmodule R M`, and alternating ones an `R`-submodule
+`LinearMap.BilinForm.altSubmodule R M`; over a commutative ring, so do skew-symmetric ones,
+`LinearMap.BilinForm.skewSubmodule R M`. When `R` is a commutative ring with `Invertible (2 : R)`,
 splitting a bilinear form into symmetric and alternating parts identifies
 `symmSubmodule R M × Module.Dual R (⋀[R]^2 M)` with `BilinForm R M` without choosing a basis. On a
 finite free module `M` over a commutative semiring `R`, `Module.finrank R (symmSubmodule R M) =
@@ -24,6 +26,8 @@ Module.finrank R M * (Module.finrank R M + 1) / 2` in arbitrary characteristic.
 ## Main definitions
 
 * `LinearMap.BilinForm.symmSubmodule`: the submodule of symmetric bilinear forms.
+* `LinearMap.BilinForm.altSubmodule`: the submodule of alternating bilinear forms.
+* `LinearMap.BilinForm.skewSubmodule`: the submodule of skew-symmetric bilinear forms.
 * `LinearMap.BilinForm.symmProdExteriorDualEquiv`: the canonical linear equivalence
   `(symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) ≃ₗ[R] BilinForm R M` when `2` is invertible.
 
@@ -31,6 +35,8 @@ Module.finrank R M * (Module.finrank R M + 1) / 2` in arbitrary characteristic.
 
 * `LinearMap.BilinForm.isSymm_add_flip` and `LinearMap.BilinForm.isAlt_sub_flip`: adding or
   subtracting the flip of a bilinear form yields a symmetric or alternating bilinear form.
+* `LinearMap.BilinForm.disjoint_symmSubmodule_altSubmodule`: when `2` is invertible, only the zero
+  form is both symmetric and alternating.
 * `LinearMap.BilinForm.finrank_symmSubmodule`: `Module.finrank R (symmSubmodule R M) =
   Module.finrank R M * (Module.finrank R M + 1) / 2` on a finite free module.
 -/
@@ -52,10 +58,20 @@ def symmSubmodule : Submodule R (BilinForm R M) where
   add_mem' h₁ h₂ := h₁.add h₂
   smul_mem' c _ h := h.smul c
 
+/-- The submodule of alternating bilinear forms on `M`. -/
+def altSubmodule : Submodule R (BilinForm R M) where
+  carrier := {B | B.IsAlt}
+  zero_mem' := isAlt_zero
+  add_mem' h₁ h₂ := h₁.add h₂
+  smul_mem' c _ h := h.smul c
+
 variable {R M}
 
 /-- Membership in `symmSubmodule R M` is `LinearMap.BilinForm.IsSymm`. -/
 @[simp] theorem mem_symmSubmodule {B : BilinForm R M} : B ∈ symmSubmodule R M ↔ B.IsSymm := Iff.rfl
+
+/-- Membership in `altSubmodule R M` is `LinearMap.BilinForm.IsAlt`. -/
+@[simp] theorem mem_altSubmodule {B : BilinForm R M} : B ∈ altSubmodule R M ↔ B.IsAlt := Iff.rfl
 
 /-- Adding a bilinear form to its flip produces a symmetric bilinear form. -/
 theorem isSymm_add_flip (B : BilinForm R M) : (B + B.flip).IsSymm :=
@@ -65,7 +81,23 @@ end CommSemiring
 
 section CommRing
 
-variable {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+variable (R M : Type*) [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- The submodule of skew-symmetric bilinear forms on `M`, `B y x = -B x y`. These are the fixed
+points of the involution `B ↦ -B.flip`. -/
+def skewSubmodule : Submodule R (BilinForm R M) where
+  carrier := {B | ∀ x y, B y x = -B x y}
+  add_mem' {B₁ B₂} h₁ h₂ x y := by simp [h₁ x y, h₂ x y, add_comm]
+  zero_mem' := by simp
+  smul_mem' c B h x y := by simp [h x y]
+
+variable {R M}
+
+/-- Membership in `skewSubmodule R M` is `B y x = -B x y` for all `x` and `y`. -/
+@[simp]
+theorem mem_skewSubmodule {B : BilinForm R M} :
+    B ∈ skewSubmodule R M ↔ ∀ x y, B y x = -B x y :=
+  Iff.rfl
 
 /-- Subtracting the flip of a bilinear form produces an alternating bilinear form. -/
 theorem isAlt_sub_flip (B : BilinForm R M) : (B - B.flip).IsAlt := fun _ ↦ by
@@ -105,7 +137,7 @@ private theorem alt_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
 parts identifies `symmSubmodule R M × Module.Dual R (⋀[R]^2 M)` with `BilinForm R M`. -/
 noncomputable def symmProdExteriorDualEquiv :
     (symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) ≃ₗ[R] BilinForm R M where
-  toFun p := p.1.1 + TauCeti.BilinForm.ofExteriorSquareDual p.2
+  toFun p := p.1.val + TauCeti.BilinForm.ofExteriorSquareDual p.2
   invFun B := (⟨⅟(2 : R) • (B + B.flip), (isSymm_add_flip B).smul _⟩,
     exteriorPower.alternatingMapLinearEquiv
       (LinearMap.IsAlt.toAlternatingMap ((isAlt_sub_flip B).smul _)))
@@ -114,8 +146,8 @@ noncomputable def symmProdExteriorDualEquiv :
   map_smul' _ _ := LinearMap.ext₂ fun _ _ ↦ by
     simp only [Prod.smul_fst, SetLike.val_smul, Prod.smul_snd, map_smul, RingHom.id_apply,
       LinearMap.add_apply, LinearMap.smul_apply, smul_add]
-  left_inv p := Prod.ext (Subtype.ext (symm_part_add_exterior_eq R M p.1.2 p.2))
-    (alt_part_add_exterior_eq R M p.1.2 p.2)
+  left_inv p := Prod.ext (Subtype.ext (symm_part_add_exterior_eq R M p.1.property p.2))
+    (alt_part_add_exterior_eq R M p.1.property p.2)
   right_inv B := LinearMap.ext₂ fun x y ↦ by
     simp only [LinearMap.add_apply, TauCeti.BilinForm.ofExteriorSquareDual_apply,
       exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
@@ -129,11 +161,11 @@ variable {R M}
 /-- Evaluation of `symmProdExteriorDualEquiv` as the sum of symmetric and alternating parts. -/
 @[simp] theorem symmProdExteriorDualEquiv_apply
     (p : symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) :
-    symmProdExteriorDualEquiv R M p = p.1.1 + TauCeti.BilinForm.ofExteriorSquareDual p.2 := (rfl)
+    symmProdExteriorDualEquiv R M p = p.1.val + TauCeti.BilinForm.ofExteriorSquareDual p.2 := (rfl)
 
 /-- The symmetric component of `symmProdExteriorDualEquiv.symm B` is `⅟2 • (B + B.flip)`. -/
 @[simp] theorem symmProdExteriorDualEquiv_symm_fst (B : BilinForm R M) :
-    ((symmProdExteriorDualEquiv R M).symm B).1.1 = ⅟(2 : R) • (B + B.flip) := (rfl)
+    ((symmProdExteriorDualEquiv R M).symm B).1.val = ⅟(2 : R) • (B + B.flip) := (rfl)
 
 /-- Exterior-square component of `symmProdExteriorDualEquiv.symm B` evaluated on `x ∧ y`. -/
 @[simp] theorem symmProdExteriorDualEquiv_symm_snd_apply_ιMulti (B : BilinForm R M) (x y : M) :
@@ -144,6 +176,17 @@ variable {R M}
   rw [LinearMap.IsAlt.toAlternatingMap_apply ((isAlt_sub_flip B).smul (⅟(2 : R))) ![x, y]]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.smul_apply, LinearMap.sub_apply,
     flip_apply, smul_eq_mul]
+
+/-- When `2` is invertible, a bilinear form that is both symmetric and alternating is zero. -/
+theorem disjoint_symmSubmodule_altSubmodule :
+    Disjoint (symmSubmodule R M) (altSubmodule R M) := by
+  refine Submodule.disjoint_def.2 fun B hs ha ↦ LinearMap.ext₂ fun x y ↦ ?_
+  have h₁ := (mem_symmSubmodule.1 hs).eq x y
+  have h₂ := (mem_altSubmodule.1 ha).neg_eq x y
+  have h : (2 : R) * B x y = 0 := by
+    rw [two_mul, ← sub_neg_eq_add, h₂, ← h₁, sub_self]
+  rw [LinearMap.zero_apply, LinearMap.zero_apply]
+  simpa using congrArg (⅟(2 : R) * ·) h
 
 end InvertibleTwo
 
@@ -164,8 +207,8 @@ theorem finrank_symmSubmodule {R M : Type*} [CommSemiring R] [AddCommMonoid M] [
   let b : Module.Basis (Fin n) R M := (Module.Free.chooseBasis R M).reindex
     (Fintype.equivFinOfCardEq (Module.finrank_eq_card_chooseBasisIndex R M).symm)
   let e : symmSubmodule R M ≃ₗ[R] (Sym2 (Fin n) → R) :=
-    { toFun := fun B ↦ Sym2.lift ⟨fun i j ↦ toMatrix b B.1 i j,
-        fun i j ↦ ((B.1.isSymm_toMatrix_iff_isSymm b).mpr B.2).apply j i⟩
+    { toFun := fun B ↦ Sym2.lift ⟨fun i j ↦ toMatrix b B.val i j,
+        fun i j ↦ ((B.val.isSymm_toMatrix_iff_isSymm b).mpr B.property).apply j i⟩
       invFun := fun f ↦ ⟨(toMatrix b).symm (Matrix.of fun i j ↦ f s(i, j)), by
         rw [mem_symmSubmodule, ← isSymm_toMatrix_iff_isSymm b, LinearEquiv.apply_symm_apply]
         exact Matrix.IsSymm.ext fun i j ↦ by simp [Sym2.eq_swap]⟩

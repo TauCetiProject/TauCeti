@@ -37,6 +37,9 @@ single circle and `cap ≫ cup` is the generator `e₁ : 2 → 2`, and the ident
 * `TauCeti.TLDiagram.comp_id`, `TauCeti.TLDiagram.id_comp`: the identity diagrams are units for
   composition, and `TauCeti.TLDiagram.comp_cast_id`, `TauCeti.TLDiagram.cast_id_comp`: composing
   with a transported identity diagram transports.
+* `TauCeti.TLDiagram.comp_cast`, `TauCeti.TLDiagram.cast_comp`,
+  `TauCeti.TLDiagram.cast_comp_cast`: composition commutes with transporting the diagrams along
+  equalities of boundary sizes.
 * `TauCeti.TLDiagram.cup_comp_cap`, `TauCeti.TLDiagram.cap_comp_cup_matching_val`: a cup followed
   by a cap is one circle, and a cap followed by a cup has the matching of `e₁`.
 
@@ -98,12 +101,33 @@ theorem id_comp (f : TLDiagram n m) : (id n).comp f = f := by
   · rw [circles_comp, matching_id, PlanarMatching.glueMiddleCircles_nested_append, circles_id,
       zero_add, add_zero]
 
-/-- Composing with a transported identity diagram on the right transports the diagram. -/
+/-- Composing with a diagram whose top boundary is transported transports the composite. -/
 @[simp]
-theorem comp_cast_id {m' : ℕ} (f : TLDiagram n m) (h : m = m') :
-    f.comp (cast rfl h (id m)) = cast rfl h f := by
+theorem comp_cast {p' : ℕ} (f : TLDiagram n m) (g : TLDiagram m p) (h : p = p') :
+    f.comp (cast rfl h g) = cast rfl h (f.comp g) := by
   subst h
   simp
+
+/-- Composing a diagram whose bottom boundary is transported transports the composite. -/
+@[simp]
+theorem cast_comp {n' : ℕ} (h : n = n') (f : TLDiagram n m) (g : TLDiagram m p) :
+    (cast h rfl f).comp g = cast h rfl (f.comp g) := by
+  subst h
+  simp
+
+/-- Composing two transported diagrams, transported compatibly along the glued boundary,
+transports the composite. -/
+@[simp]
+theorem cast_comp_cast {n' m' p' : ℕ} (hn : n = n') (hm : m = m') (hp : p = p')
+    (f : TLDiagram n m) (g : TLDiagram m p) :
+    (cast hn hm f).comp (cast hm hp g) = cast hn hp (f.comp g) := by
+  subst hn hm hp
+  simp
+
+/-- Composing with a transported identity diagram on the right transports the diagram. -/
+theorem comp_cast_id {m' : ℕ} (f : TLDiagram n m) (h : m = m') :
+    f.comp (cast rfl h (id m)) = cast rfl h f := by
+  rw [comp_cast, comp_id]
 
 /-- Composing with a transported identity diagram on the left transports the diagram. -/
 @[simp]
@@ -113,8 +137,24 @@ theorem cast_id_comp {n' : ℕ} (h : n = n') (f : TLDiagram n' m) :
   simp
 
 private theorem val_mk_eq_mk_iff {K : ℕ} (x : PlanarMatching K) {q r : ℕ} (hq : q < K)
-    (hr : r < K) : x.1.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ PlanarMatching.pv x q = r := by
+    (hr : r < K) : x.val.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ PlanarMatching.pv x q = r := by
   rw [PlanarMatching.pv_of_lt x hq, Fin.ext_iff]
+
+/-- **Vertical reflection is contravariant on composition**: turning a stacked composite `f ≫ g`
+upside down places `f` turned upside down on top of `g` turned upside down. -/
+@[simp]
+theorem verticalReflect_comp (f : TLDiagram n m) (g : TLDiagram m p) :
+    verticalReflect n p (f.comp g) = (verticalReflect m p g).comp (verticalReflect n m f) := by
+  have happ : (verticalReflect m p g).matching.append (verticalReflect n m f).matching =
+      PlanarMatching.cast (by omega)
+        (PlanarMatching.reflect (n + m + (m + p)) (f.matching.append g.matching)) := by
+    simp [PlanarMatching.append_cast, PlanarMatching.reflect_append]
+  ext : 1
+  · rw [matching_comp, happ, PlanarMatching.glueMiddle_reflect, matching_verticalReflect,
+      matching_comp]
+  · rw [circles_verticalReflect, circles_comp, circles_comp, circles_verticalReflect,
+      circles_verticalReflect, happ, PlanarMatching.glueMiddleCircles_reflect]
+    omega
 
 private theorem pv_cup_matching {q : ℕ} (hq : q < 2) :
     PlanarMatching.pv cup.matching q = 1 - q := by
@@ -139,14 +179,14 @@ theorem cup_comp_cap : cup.comp cap = ⟨(id 0).matching, 1⟩ := by
   · exact PlanarMatching.ext fun a => a.elim0
   rw [circles_comp, circles_cup, circles_cap, PlanarMatching.glueMiddleCircles_succ,
     PlanarMatching.glueMiddleCircles_succ, PlanarMatching.glueMiddleCircles_zero]
-  simp only [val_mk_eq_mk_iff, PlanarMatching.pv_cast]
+  simp only [PlanarMatching.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
   simp [PlanarMatching.pv_contract, PlanarMatching.skipN, PlanarMatching.joinN,
     PlanarMatching.unskipN, PlanarMatching.pv_append_left, PlanarMatching.pv_append_right,
     pv_cup_matching, pv_cap_matching]
 
 /-- **A cap followed by a cup** has the matching of the diagram `e₁ : 2 → 2`, joining the two
 bottom points and the two top points. -/
-theorem cap_comp_cup_matching_val : (cap.comp cup).matching.1.val = swap 0 1 * swap 2 3 := by
+theorem cap_comp_cup_matching_val : (cap.comp cup).matching.val.val = swap 0 1 * swap 2 3 := by
   refine Equiv.ext fun i => Fin.ext ?_
   rw [← PlanarMatching.pv_coe, matching_comp, PlanarMatching.glueMiddle_zero,
     PlanarMatching.pv_cast]
@@ -173,7 +213,7 @@ example : (TLDiagram.cap.comp TLDiagram.cup).comp (TLDiagram.cap.comp TLDiagram.
       TLDiagram.circles_cup, PlanarMatching.glueMiddleCircles_zero,
       PlanarMatching.glueMiddleCircles_succ, PlanarMatching.glueMiddleCircles_succ,
       PlanarMatching.glueMiddleCircles_zero]
-    simp only [TLDiagram.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
+    simp only [PlanarMatching.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
     simp [PlanarMatching.pv_contract, PlanarMatching.skipN, PlanarMatching.joinN,
       PlanarMatching.unskipN, PlanarMatching.pv_append_left, PlanarMatching.pv_append_right,
       TLDiagram.pv_cup_matching, TLDiagram.pv_cap_matching]

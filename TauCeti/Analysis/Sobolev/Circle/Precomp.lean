@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Rotation
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
+import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.Monomial
 
 /-!
@@ -84,14 +85,16 @@ def precomp (hφ : Measurable φ) (hC : C ≠ ∞)
     (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle) :
     CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ :=
   (toLpₗᵢ T).symm.toLinearIsometry.toContinuousLinearMap.comp
-    ((Lp.compOfMapLeSmul ℂ hφ hC hmap).comp (toLpₗᵢ T).toLinearIsometry.toContinuousLinearMap)
+    ((Lp.compOfMapLeSmul ℂ hφ.aemeasurable hC hmap).comp
+      (toLpₗᵢ T).toLinearIsometry.toContinuousLinearMap)
 
 variable {T}
 
 theorem precomp_apply (hφ : Measurable φ) (hC : C ≠ ∞)
     (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle)
     (a : CircleSobolev 0 ℂ) :
-    precomp T hφ hC hmap a = (toLpₗᵢ T).symm (Lp.compOfMapLeSmul ℂ hφ hC hmap (toLpₗᵢ T a)) :=
+    precomp T hφ hC hmap a =
+      (toLpₗᵢ T).symm (Lp.compOfMapLeSmul ℂ hφ.aemeasurable hC hmap (toLpₗᵢ T a)) :=
   (rfl)
 
 /-- `precomp` conjugates the precomposition operator of `L²` by the identification of `H⁰` with
@@ -99,7 +102,8 @@ theorem precomp_apply (hφ : Measurable φ) (hC : C ≠ ∞)
 theorem toLpₗᵢ_precomp_apply (hφ : Measurable φ) (hC : C ≠ ∞)
     (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle)
     (a : CircleSobolev 0 ℂ) :
-    toLpₗᵢ T (precomp T hφ hC hmap a) = Lp.compOfMapLeSmul ℂ hφ hC hmap (toLpₗᵢ T a) := by
+    toLpₗᵢ T (precomp T hφ hC hmap a) =
+      Lp.compOfMapLeSmul ℂ hφ.aemeasurable hC hmap (toLpₗᵢ T a) := by
   rw [precomp_apply, LinearIsometryEquiv.apply_symm_apply]
 
 /-- The `L²` function of `precomp T hφ hC hmap a` is the `L²` function of `a` composed with `φ`. -/
@@ -108,7 +112,7 @@ theorem toLpₗᵢ_precomp (hφ : Measurable φ) (hC : C ≠ ∞)
     (a : CircleSobolev 0 ℂ) :
     toLpₗᵢ T (precomp T hφ hC hmap a) =ᵐ[haarAddCircle] toLpₗᵢ T a ∘ φ := by
   rw [toLpₗᵢ_precomp_apply]
-  exact Lp.coeFn_compOfMapLeSmul hφ hC hmap (toLpₗᵢ T a)
+  exact Lp.coeFn_compOfMapLeSmul hφ.aemeasurable hC hmap (toLpₗᵢ T a)
 
 /-- The coefficients of `precomp T hφ hC hmap a` are the Fourier coefficients of the `L²` function
 of `a` composed with `φ`. -/
@@ -125,7 +129,7 @@ theorem norm_precomp_le (hφ : Measurable φ) (hC : C ≠ ∞)
     (hmap : (haarAddCircle : Measure (AddCircle T)).map φ ≤ C • haarAddCircle)
     (a : CircleSobolev 0 ℂ) :
     ‖precomp T hφ hC hmap a‖ ≤ √C.toReal * ‖a‖ := by
-  have h := Lp.norm_compOfMapLeSmul_le (𝕜 := ℂ) hφ hC hmap (toLpₗᵢ T a)
+  have h := Lp.norm_compOfMapLeSmul_le (𝕜 := ℂ) hφ.aemeasurable hC hmap (toLpₗᵢ T a)
   have hexp : (1 / (2 : ℝ≥0∞)).toReal = 1 / 2 := by norm_num
   rw [LinearIsometryEquiv.norm_map, ← toLpₗᵢ_precomp_apply, LinearIsometryEquiv.norm_map,
     ← ENNReal.toReal_rpow, hexp, ← Real.sqrt_eq_rpow] at h
@@ -141,7 +145,7 @@ theorem toLpₗᵢ_precomp_inclusion {s : ℝ} (hs : 1 / 2 < s) (hφc : Continuo
       ContinuousMap.toLp 2 haarAddCircle ℂ ((toContinuousMap T hs a).comp ⟨φ, hφc⟩) := by
   refine Lp.ext ((toLpₗᵢ_precomp _ hC hmap _).trans ?_)
   rw [toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T hs]
-  have h₁ := (QuasiMeasurePreserving.of_map_le_smul hφc.measurable hmap).ae_eq_comp
+  have h₁ := (QuasiMeasurePreserving.of_map_le_smul hφc.aemeasurable hmap).ae_eq_comp
     (ContinuousMap.coeFn_toLp (p := 2) (μ := haarAddCircle) (𝕜 := ℂ) (toContinuousMap T hs a))
   have h₂ := ContinuousMap.coeFn_toLp (p := 2) (μ := haarAddCircle) (𝕜 := ℂ)
     ((toContinuousMap T hs a).comp ⟨φ, hφc⟩)
@@ -158,7 +162,8 @@ theorem precomp_comp (hφ : Measurable φ) (hC : C ≠ ∞)
     precomp T (hψ.comp hφ) hB hmapψφ = (precomp T hφ hC hmap).comp (precomp T hψ hD hmapψ) := by
   ext1 a
   rw [ContinuousLinearMap.comp_apply, precomp_apply, precomp_apply, precomp_apply,
-    LinearIsometryEquiv.apply_symm_apply, Lp.compOfMapLeSmul_comp hφ hC hmap hψ hD hmapψ hB hmapψφ,
+    LinearIsometryEquiv.apply_symm_apply,
+    Lp.compOfMapLeSmul_comp hφ.aemeasurable hC hmap hψ.aemeasurable hD hmapψ hB hmapψφ,
     ContinuousLinearMap.comp_apply]
 
 /-- Precomposition with the identity is the identity. -/
@@ -177,14 +182,8 @@ theorem precomp_add_const (θ : AddCircle T) (hC : C ≠ ∞)
     (a : CircleSobolev 0 ℂ) :
     precomp T (measurable_add_const θ) hC hmap a = rotate θ a := by
   ext n
-  rw [coeff_precomp, coeff_rotate, ← fourierCoeff_toLpₗᵢ T a, fourierCoeff, fourierCoeff,
-    ← integral_smul, ← integral_add_right_eq_self (μ := haarAddCircle)
-      (fun y ↦ fourier n θ • fourier (-n) y • toLpₗᵢ T a y) θ]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  have h : fourier n θ * fourier (-n) θ = 1 := by
-    rw [← fourier_add, add_neg_cancel, fourier_zero]
-  simp only [Function.comp_apply, smul_eq_mul, fourier_apply_add]
-  linear_combination (-(fourier (-n) x * toLpₗᵢ T a (x + θ))) * h
+  rw [coeff_precomp, coeff_rotate, ← fourierCoeff_toLpₗᵢ T a]
+  exact fourierCoeff_comp_add_right (toLpₗᵢ T a) θ n
 
 /-- The `L²` function of the rotation `rotate θ a` of `a ∈ H⁰` is the `L²` function of `a`
 translated by `θ`. -/
@@ -221,10 +220,11 @@ whose inverse is precomposition with the inverse map of the circle. -/
 def precompEquivOfLift : CircleSobolev 0 ℂ ≃L[ℂ] CircleSobolev 0 ℂ :=
   ((toLpₗᵢ T).toContinuousLinearEquiv.trans
     (Lp.compEquivOfMapLeSmul ℂ
-      (continuous_of_lift (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hφ).measurable
+      (continuous_of_lift (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt)
+        hφ).aemeasurable
       (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne')
       (map_haarAddCircle_le_of_lift hF hper hφ hc hcF)
-      (symmOfLift hF hper hφ hc hcF).continuous.measurable ENNReal.ofReal_ne_top
+      (symmOfLift hF hper hφ hc hcF).continuous.aemeasurable ENNReal.ofReal_ne_top
       (map_haarAddCircle_le_of_lift_of_leftInverse hF hper hφ (fun x ↦ hc.trans_le (hcF x)) hMF
         (symmOfLift_apply_apply hF hper hφ hc hcF))
       (symmOfLift_apply_apply hF hper hφ hc hcF) (apply_symmOfLift_apply hF hper hφ hc hcF))).trans

@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import TauCeti.LinearAlgebra.Finsupp.SignReversal
+public import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Tensor products with spaces of finitely supported functions
@@ -22,9 +25,31 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
 * `finsuppTensorFinsupp'_mapDomain`: the identification of the tensor product of two spaces of
   finitely supported functions with functions on the product of the index types is natural in the
   index types.
-* `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor`: an endomorphism of
-  `ι →₀ R`, for `ι ≃ α × β`, whose matrix coefficients split as those of `dA ⊗ 1 + 1 ⊗ dB`
-  corresponds to `dA ⊗ 1 + 1 ⊗ dB` on `(α →₀ R) ⊗ (β →₀ R)`.
+* `finsuppTensorFinsupp'_comm_apply`: exchanging the factors exchanges the coordinates.
+* `finsuppTensorFinsupp'_rTensor_apply`, `finsuppTensorFinsupp'_lTensor_apply`: the coefficients
+  of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
+* `finsuppTensorFinsupp'_lid_rTensor_apply`, `finsuppTensorFinsupp'_rid_lTensor_apply`: the
+  coefficients of `(g ⊗ 1) t` and `(1 ⊗ g) t` for a linear form `g`, read in `β →₀ R` and in
+  `α →₀ R`.
+* `finsuppTensorFinsupp'_map_signReversal_apply`: the coefficients of the tensor product of two
+  sign reversals.
+* `finsuppTensorFinsupp'_map_signEquiv_apply`: the coefficients of `(ε ⊗ ψ) t` for a sign change
+  `ε` are those of `(1 ⊗ ψ) t` multiplied by the signs.
+* `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
+  forms evaluated on `(α →₀ R) ⊗ (β →₀ R)` reads the coefficients, weighted by the values of the
+  forms on the basis.
+* `LinearMap.cupProduct_apply_eq_sum`: the value in coordinates of the cup product
+  `a ∪ b = (a ⊗ b) ∘ Δ` of linear forms along a map `Δ` into `(α →₀ R) ⊗ (β →₀ R)`.
+* `LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp`: the cup products along a map
+  `Δ` into `(α →₀ R) ⊗ (β →₀ R)` satisfy the Leibniz rule for `d₀`, `d₁` and `d₂`, twisted by `ε`
+  on the first factor, exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + ε ⊗ d₂) ∘ Δ`;
+  `LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp` is the untwisted case
+  `ε = 1`.
+* `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map` and
+  `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor`: an endomorphism of
+  `ι →₀ R`, for `ι ≃ α × β`, whose matrix coefficients split as those of `dA ⊗ 1 + εA ⊗ dB`
+  corresponds to `dA ⊗ 1 + εA ⊗ dB` on `(α →₀ R) ⊗ (β →₀ R)`; with `εA = 1`, to
+  `dA ⊗ 1 + 1 ⊗ dB`.
 -/
 
 public section
@@ -52,6 +77,8 @@ end TensorProduct
 
 section FinsuppTensorFinsupp
 
+open scoped TensorProduct
+
 variable {R : Type*} [CommSemiring R] {α β α' β' : Type*}
 
 /-- The identification `(α →₀ R) ⊗ (β →₀ R) ≃ (α × β →₀ R)` is natural in the index types: the
@@ -65,6 +92,203 @@ theorem finsuppTensorFinsupp'_mapDomain (g₁ : α → α') (g₂ : β → β') 
       Finsupp.lmapDomain R R (Prod.map g₁ g₂) ∘ₗ (finsuppTensorFinsupp' R α β).toLinearMap := by
     ext; simp [Finsupp.mapDomain_single]
   exact congr($h (c ⊗ₜ d))
+
+/-- **The coefficients of `TensorProduct.comm t`.** Under the identifications of
+`(α →₀ R) ⊗ (β →₀ R)` with `α × β →₀ R` and of `(β →₀ R) ⊗ (α →₀ R)` with `β × α →₀ R`, the
+coefficient of `(b, a)` in the image of `t` under the exchange of the factors is the coefficient of
+`(a, b)` in `t`. -/
+@[simp]
+theorem finsuppTensorFinsupp'_comm_apply (t : (α →₀ R) ⊗[R] (β →₀ R)) (b : β) (a : α) :
+    finsuppTensorFinsupp' R β α (TensorProduct.comm R _ _ t) (b, a) =
+      finsuppTensorFinsupp' R α β t (a, b) := by
+  induction t with
+  | tmul x y => simp [finsuppTensorFinsupp'_apply_apply, mul_comm]
+  | add x y hx hy => simp [hx, hy]
+
+/-- **The coefficients of `(φ ⊗ 1) t`.** Under the identification of
+`(α →₀ R) ⊗ (β →₀ R)` with `α × β →₀ R`, the coefficient of `(a', b)` in `(φ ⊗ 1) t` is the sum
+over `a` of the coefficient of `(a, b)` in `t` times the coefficient of `a'` in `φ a`. -/
+theorem finsuppTensorFinsupp'_rTensor_apply [Fintype α] (φ : (α →₀ R) →ₗ[R] α' →₀ R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (a' : α') (b : β) :
+    finsuppTensorFinsupp' R α' β (φ.rTensor (β →₀ R) t) (a', b) =
+      ∑ a, finsuppTensorFinsupp' R α β t (a, b) * φ (Finsupp.single a 1) a' := by
+  induction t with
+  | tmul x y =>
+    -- Expand `x` in the standard basis.
+    conv_lhs => rw [LinearMap.rTensor_tmul, finsuppTensorFinsupp'_apply_apply,
+      ← Finsupp.univ_sum_single x]
+    simp_rw [← Finsupp.smul_single_one _ (x _), map_sum, map_smul, Finsupp.coe_finsetSum,
+      Finset.sum_apply, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply, Finsupp.smul_apply, smul_eq_mul]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The coefficients of `(1 ⊗ ψ) t`.** Under the identification of
+`(α →₀ R) ⊗ (β →₀ R)` with `α × β →₀ R`, the coefficient of `(a, b')` in `(1 ⊗ ψ) t` is the sum
+over `b` of the coefficient of `(a, b)` in `t` times the coefficient of `b'` in `ψ b`. -/
+theorem finsuppTensorFinsupp'_lTensor_apply [Fintype β] (ψ : (β →₀ R) →ₗ[R] β' →₀ R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (a : α) (b' : β') :
+    finsuppTensorFinsupp' R α β' (ψ.lTensor (α →₀ R) t) (a, b') =
+      ∑ b, finsuppTensorFinsupp' R α β t (a, b) * ψ (Finsupp.single b 1) b' := by
+  induction t with
+  | tmul x y =>
+    -- Expand `y` in the standard basis.
+    conv_lhs => rw [LinearMap.lTensor_tmul, finsuppTensorFinsupp'_apply_apply,
+      ← Finsupp.univ_sum_single y]
+    simp_rw [← Finsupp.smul_single_one _ (y _), map_sum, map_smul, Finsupp.coe_finsetSum,
+      Finset.sum_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun b _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply, Finsupp.smul_apply, smul_eq_mul]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The coefficients of `(g ⊗ 1) t` for a linear form `g`.** Under the identification of
+`R ⊗ (β →₀ R)` with `β →₀ R`, the coefficient of `b` in the image of `t` under `g ⊗ 1` is the sum
+over `a` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `a`. -/
+theorem finsuppTensorFinsupp'_lid_rTensor_apply [Fintype α] (g : (α →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (b : β) :
+    TensorProduct.lid R (β →₀ R) (g.rTensor (β →₀ R) t) b =
+      ∑ a, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single a 1) := by
+  induction t with
+  | tmul x y =>
+    -- Expand `x` in the standard basis.
+    rw [LinearMap.rTensor_tmul, TensorProduct.lid_tmul, Finsupp.smul_apply, smul_eq_mul]
+    conv_lhs => rw [← Finsupp.univ_sum_single x]
+    simp_rw [← Finsupp.smul_single_one _ (x _), map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The coefficients of `(1 ⊗ g) t` for a linear form `g`.** Under the identification of
+`(α →₀ R) ⊗ R` with `α →₀ R`, the coefficient of `a` in the image of `t` under `1 ⊗ g` is the sum
+over `b` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `b`. -/
+theorem finsuppTensorFinsupp'_rid_lTensor_apply [Fintype β] (g : (β →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (a : α) :
+    TensorProduct.rid R (α →₀ R) (g.lTensor (α →₀ R) t) a =
+      ∑ b, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single b 1) := by
+  induction t with
+  | tmul x y =>
+    -- Expand `y` in the standard basis.
+    rw [LinearMap.lTensor_tmul, TensorProduct.rid_tmul, Finsupp.smul_apply, smul_eq_mul]
+    conv_lhs => rw [← Finsupp.univ_sum_single y]
+    simp_rw [← Finsupp.smul_single_one _ (y _), map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun b _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+namespace LinearMap
+
+/-- **Coordinates of `(α →₀ R) ⊗ (β →₀ R)`.** Evaluating the coordinate forms at `a` and at `b` on
+the two factors and multiplying reads the coefficient of `(a, b)`. -/
+theorem mul'_map_lapply_lapply (t : (α →₀ R) ⊗[R] (β →₀ R)) (a : α) (b : β) :
+    LinearMap.mul' R R (TensorProduct.map (Finsupp.lapply a) (Finsupp.lapply b) t) =
+      finsuppTensorFinsupp' R α β t (a, b) := by
+  induction t with
+  | tmul x y => simp [finsuppTensorFinsupp'_apply_apply]
+  | add x y hx hy => simp [hx, hy]
+
+/-- **A product of linear forms on `(α →₀ R) ⊗ (β →₀ R)`.** For finite `α` and `β`, the product
+of two linear forms `f` and `g`, evaluated on `t`, is the sum over `(a, b)` of the coefficient of
+`(a, b)` in `t` times `f a * g b`. -/
+theorem mul'_map_apply_eq_sum [Fintype α] [Fintype β] (f : (α →₀ R) →ₗ[R] R)
+    (g : (β →₀ R) →ₗ[R] R) (t : (α →₀ R) ⊗[R] (β →₀ R)) :
+    LinearMap.mul' R R (TensorProduct.map f g t) =
+      ∑ x : α × β, finsuppTensorFinsupp' R α β t x *
+        (f (Finsupp.single x.1 1) * g (Finsupp.single x.2 1)) := by
+  induction t with
+  | tmul x y =>
+    -- Expand `x` and `y` in the standard bases.
+    conv_lhs => rw [TensorProduct.map_tmul, LinearMap.mul'_apply, ← Finsupp.univ_sum_single x,
+      ← Finsupp.univ_sum_single y]
+    simp_rw [← Finsupp.smul_single_one _ (x _), ← Finsupp.smul_single_one _ (y _), map_sum,
+      map_smul, Finset.sum_mul_sum, ← Finset.univ_product_univ, Finset.sum_product]
+    refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply, smul_eq_mul, smul_eq_mul]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The cup product along `Δ` in coordinates.** For finite `α` and `β` and
+`Δ : M → (α →₀ R) ⊗ (β →₀ R)`, the value of `a ∪ b` at `m` is the sum over `(p, q)` of the
+coefficient of `(p, q)` in `Δ m` times `a p * b q`. -/
+theorem cupProduct_apply_eq_sum [Fintype α] [Fintype β] {M : Type*} [AddCommMonoid M]
+    [Module R M] (Δ : M →ₗ[R] (α →₀ R) ⊗[R] (β →₀ R)) (a : (α →₀ R) →ₗ[R] R)
+    (b : (β →₀ R) →ₗ[R] R) (m : M) :
+    Δ.cupProduct a b m =
+      ∑ x : α × β, finsuppTensorFinsupp' R α β (Δ m) x *
+        (a (Finsupp.single x.1 1) * b (Finsupp.single x.2 1)) := by
+  rw [cupProduct_apply, comp_apply, comp_apply, mul'_map_apply_eq_sum]
+
+/-- **The twisted Leibniz rule of the cup product along `Δ`.** Let
+`Δ : M → (α →₀ R) ⊗ (β →₀ R)`, let `d₀`, `d₁` and `d₂` be endomorphisms of `M`, `α →₀ R` and
+`β →₀ R`, and let `ε` be an endomorphism of `α →₀ R`. The cup products `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ`
+of linear forms satisfy `(a ∪ b) ∘ d₀ = (a ∘ d₁) ∪ b + (a ∘ ε) ∪ (b ∘ d₂)` for all `a` and `b`
+exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + ε ⊗ d₂) ∘ Δ`. With `ε` the Koszul sign `(-1) ^ |a|` on a graded
+basis, this is the graded Leibniz rule of a cup product dual to a diagonal. -/
+theorem cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp {M : Type*}
+    [AddCommMonoid M] [Module R M] (Δ : M →ₗ[R] (α →₀ R) ⊗[R] (β →₀ R)) (d₀ : M →ₗ[R] M)
+    (d₁ ε : (α →₀ R) →ₗ[R] α →₀ R) (d₂ : (β →₀ R) →ₗ[R] β →₀ R) :
+    (∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
+        Δ.cupProduct a b ∘ₗ d₀ = Δ.cupProduct (a ∘ₗ d₁) b + Δ.cupProduct (a ∘ₗ ε) (b ∘ₗ d₂)) ↔
+      Δ ∘ₗ d₀ = (d₁.rTensor _ + TensorProduct.map ε d₂) ∘ₗ Δ := by
+  -- The right side of the Leibniz rule is `μ ∘ (a ⊗ b) ∘ (d₁ ⊗ 1 + ε ⊗ d₂) ∘ Δ`.
+  have hR : ∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
+      Δ.cupProduct (a ∘ₗ d₁) b + Δ.cupProduct (a ∘ₗ ε) (b ∘ₗ d₂) =
+        mul' R R ∘ₗ TensorProduct.map a b ∘ₗ (d₁.rTensor _ + TensorProduct.map ε d₂) ∘ₗ Δ := by
+    intro a b
+    refine LinearMap.ext fun c ↦ ?_
+    simp only [cupProduct_apply, LinearMap.add_apply, LinearMap.comp_apply, _root_.map_add,
+      LinearMap.map_rTensor, TensorProduct.map_map]
+  simp_rw [hR, cupProduct_apply, comp_assoc]
+  refine ⟨fun h ↦ ?_, fun h a b ↦ by rw [h]⟩
+  -- Test the Leibniz rule against the coordinate forms: they read the coefficients of the two
+  -- sides of the identity.
+  refine LinearMap.ext fun m ↦ (finsuppTensorFinsupp' R α β).injective (Finsupp.ext fun x ↦ ?_)
+  have := congr($(h (Finsupp.lapply x.1) (Finsupp.lapply x.2)) m)
+  simpa only [comp_apply, mul'_map_lapply_lapply, Prod.mk.eta] using this
+
+/-- **The Leibniz rule of the cup product along `Δ`.** Let `Δ : M → (α →₀ R) ⊗ (β →₀ R)` and let
+`d₀`, `d₁` and `d₂` be endomorphisms of `M`, `α →₀ R` and `β →₀ R`. The cup products
+`a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` of linear forms satisfy `(a ∪ b) ∘ d₀ = (a ∘ d₁) ∪ b + a ∪ (b ∘ d₂)` for
+all `a` and `b` exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`. This is the untwisted case `ε = 1`
+of `LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp`. -/
+theorem cupProduct_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp {M : Type*}
+    [AddCommMonoid M] [Module R M] (Δ : M →ₗ[R] (α →₀ R) ⊗[R] (β →₀ R)) (d₀ : M →ₗ[R] M)
+    (d₁ : (α →₀ R) →ₗ[R] α →₀ R) (d₂ : (β →₀ R) →ₗ[R] β →₀ R) :
+    (∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
+        Δ.cupProduct a b ∘ₗ d₀ = Δ.cupProduct (a ∘ₗ d₁) b + Δ.cupProduct a (b ∘ₗ d₂)) ↔
+      Δ ∘ₗ d₀ = (d₁.rTensor _ + d₂.lTensor _) ∘ₗ Δ := by
+  simpa only [comp_id, lTensor_def] using
+    cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp Δ d₀ d₁ id d₂
+
+end LinearMap
+
+/-- **An endomorphism with split coefficients is `dA ⊗ 1 + εA ⊗ dB`.** Let `e : ι ≃ α × β`. If the
+coefficient of `(p', q')` in the image under `d` of the basis vector `(p, q)` is the coefficient of
+`p'` in `εA p` times the coefficient of `q'` in `dB q`, plus the coefficient of `p'` in `dA p` when
+`q = q'`, then under the identification of `ι →₀ R` with `(α →₀ R) ⊗ (β →₀ R)` along `e`, the map
+`d` is `dA ⊗ 1 + εA ⊗ dB`. This is the form of the boundary of a product chain complex on bases,
+with `εA` the Koszul sign `(-1) ^ |p|` of the first factor. -/
+theorem domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map {ι : Type*}
+    [DecidableEq β] (e : ι ≃ α × β) (d : (ι →₀ R) →ₗ[R] ι →₀ R)
+    (dA εA : (α →₀ R) →ₗ[R] α →₀ R) (dB : (β →₀ R) →ₗ[R] β →₀ R)
+    (hd : ∀ p p' q q', d (Finsupp.single (e.symm (p, q)) 1) (e.symm (p', q')) =
+      εA (Finsupp.single p 1) p' * dB (Finsupp.single q 1) q' +
+        if q = q' then dA (Finsupp.single p 1) p' else 0) :
+    ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap ∘ₗ d =
+      (dA.rTensor (β →₀ R) + TensorProduct.map εA dB) ∘ₗ
+        ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap := by
+  classical
+  set Φ := (Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm
+  -- Compare both sides on basis vectors, coefficient by coefficient after applying `Φ.symm`.
+  refine Finsupp.lhom_ext' fun i ↦ LinearMap.ext_ring ?_
+  obtain ⟨⟨p, q⟩, rfl⟩ := e.symm.surjective i
+  refine Φ.symm.injective (Finsupp.ext fun j ↦ ?_)
+  obtain ⟨⟨p', q'⟩, rfl⟩ := e.symm.surjective j
+  simp [Φ, hd, finsuppTensorFinsupp'_symm_single_eq_tmul_single_one, Finsupp.single_apply,
+    finsuppTensorFinsupp'_apply_apply, Finsupp.domLCongr_apply, add_comm]
 
 /-- **An endomorphism with split coefficients is `dA ⊗ 1 + 1 ⊗ dB`.** Let `e : ι ≃ α × β`. If the
 coefficient of `(p', q')` in the image under `d` of the basis vector `(p, q)` is the coefficient of
@@ -81,13 +305,51 @@ theorem domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor {
     ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap ∘ₗ d =
       (dA.rTensor (β →₀ R) + dB.lTensor (α →₀ R)) ∘ₗ
         ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap := by
-  set Φ := (Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm
-  -- Compare both sides on basis vectors, coefficient by coefficient after applying `Φ.symm`.
-  refine Finsupp.lhom_ext' fun i ↦ LinearMap.ext_ring ?_
-  obtain ⟨⟨p, q⟩, rfl⟩ := e.symm.surjective i
-  refine Φ.symm.injective (Finsupp.ext fun j ↦ ?_)
-  obtain ⟨⟨p', q'⟩, rfl⟩ := e.symm.surjective j
-  simp [Φ, hd, finsuppTensorFinsupp'_symm_single_eq_tmul_single_one, Finsupp.single_apply,
-    finsuppTensorFinsupp'_apply_apply, Finsupp.domLCongr_apply, add_comm]
+  rw [LinearMap.lTensor_def]
+  refine domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map e d dA LinearMap.id dB
+    fun p p' q q' ↦ ?_
+  rw [hd]
+  by_cases h : p = p' <;> simp [h]
 
 end FinsuppTensorFinsupp
+
+section SignReversal
+
+open scoped TensorProduct
+
+variable {R : Type*} [CommRing R] {α β : Type*}
+
+/-- **The coefficients of a tensor product of sign reversals.** The coefficient of `(q, r)` in the
+image of `t` under the tensor product of the sign reversals `Finsupp.signReversal` on `S₁` and on
+`S₂` is that of `t`, multiplied by `-1` for `q ∈ S₁` and by `-1` for `r ∈ S₂`. -/
+theorem finsuppTensorFinsupp'_map_signReversal_apply (S₁ : Set α) [DecidablePred (· ∈ S₁)]
+    (S₂ : Set β) [DecidablePred (· ∈ S₂)] (t : (α →₀ R) ⊗[R] (β →₀ R)) (q : α) (r : β) :
+    finsuppTensorFinsupp' R α β
+        (TensorProduct.map (Finsupp.signReversal R S₁).toLinearMap
+          (Finsupp.signReversal R S₂).toLinearMap t) (q, r) =
+      ((if q ∈ S₁ then -1 else 1) * (if r ∈ S₂ then -1 else 1) : R) *
+        finsuppTensorFinsupp' R α β t (q, r) := by
+  induction t with
+  | tmul x y =>
+    rw [TensorProduct.map_tmul, finsuppTensorFinsupp'_apply_apply,
+      finsuppTensorFinsupp'_apply_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      Finsupp.signReversal_apply, Finsupp.signReversal_apply]
+    by_cases hq : q ∈ S₁ <;> by_cases hr : r ∈ S₂ <;> simp [hq, hr]
+  | add t t' ht ht' => simp only [map_add, Finsupp.add_apply, ht, ht', mul_add]
+
+/-- **The coefficients of `(ε ⊗ ψ) t` for a sign change `ε`.** The coefficient of `(q, r)` in the
+image of `t` under the tensor product of the sign change `Finsupp.signEquiv` by `ε` and of `ψ` is
+that of `(1 ⊗ ψ) t`, multiplied by the sign `ε q`. -/
+theorem finsuppTensorFinsupp'_map_signEquiv_apply {β' : Type*} (ε : α → ℤˣ)
+    (ψ : (β →₀ R) →ₗ[R] β' →₀ R) (t : (α →₀ R) ⊗[R] (β →₀ R)) (q : α) (r : β') :
+    finsuppTensorFinsupp' R α β'
+        (TensorProduct.map (Finsupp.signEquiv (A := R) R ε).toLinearMap ψ t) (q, r) =
+      ((ε q : ℤ) : R) * finsuppTensorFinsupp' R α β' (ψ.lTensor _ t) (q, r) := by
+  induction t with
+  | tmul x y =>
+    rw [TensorProduct.map_tmul, LinearMap.lTensor_tmul, finsuppTensorFinsupp'_apply_apply,
+      finsuppTensorFinsupp'_apply_apply, LinearEquiv.coe_coe, Finsupp.signEquiv_apply,
+      zsmul_eq_mul, mul_assoc]
+  | add t t' ht ht' => simp only [map_add, Finsupp.add_apply, ht, ht', mul_add]
+
+end SignReversal
