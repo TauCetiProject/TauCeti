@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.DirichletEulerProduct
 import Mathlib.Topology.Algebra.InfiniteSum.ConditionalInt
 import TauCeti.Data.ZMod.Count
+import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # Cotangent expression for odd Dirichlet L-values

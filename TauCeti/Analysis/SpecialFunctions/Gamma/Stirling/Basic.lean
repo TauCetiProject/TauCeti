@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
 public import TauCeti.Analysis.SpecialFunctions.Gamma.SectorialDigamma
 public import Mathlib.Analysis.SpecialFunctions.Stirling
-import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicStieltjes
+import TauCeti.Analysis.SpecialFunctions.Integrals.Periodic.Stieltjes
 
 /-!
 # Stirling's formula on sectors
@@ -27,16 +27,14 @@ it to the derivative of the Stieltjes integral via
 `0` by letting `z = n + 1 → ∞` using Stirling's formula for `n!`
 (`Stirling.tendsto_log_factorial_sub_stirling`).
 
-Combining the Stieltjes representation with
-`TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le` yields Nemes's explicit bounds
-`‖stirlingRemainder z‖ ≤ 1 / (8 * cos (arg z / 2) ^ 2 * ‖z‖)` on `slitPlane` and
-`‖stirlingRemainder z‖ ≤ 1 / (8 * sin (δ / 2) ^ 2 * ‖z‖)` on every closed sector `|arg z| ≤ π - δ`
-(`0 < δ`, `z ≠ 0`); at `δ = π / 2` the latter reads `‖stirlingRemainder z‖ ≤ 1 / (4 * ‖z‖)` on the
-nonzero points of the closed right half-plane. Taking real parts gives the corresponding
-bound for `log ‖Γ s‖`, whose
-consequence on vertical strips is in
-`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`. Higher derivatives and positive-
-axis sign alternation are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Remainder.lean`.
+Sharp `1 / 12` slit-plane and closed-sector bounds (and the resulting bound for `log ‖Γ s‖`
+as well as the `1 / 6` bound on the closed right half-plane) are proved via the periodic
+Bernoulli expansion in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`, whose
+consequences on vertical strips are in
+`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`. Higher derivatives of
+`stirlingRemainder` are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Series.lean`, and
+their positive-axis sign alternation and asymptotic bounds are in
+`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Remainder.lean`.
 
 ## Main declarations
 
@@ -45,13 +43,10 @@ axis sign alternation are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/R
 * `TauCeti.stirlingRemainder`: the remainder `logGamma s - ((s - 1/2) log s - s + log (2π) / 2)`
   in Stirling's formula on the slit plane, together with its real-part and positive-real
   evaluations (`TauCeti.stirlingRemainder_re`, `TauCeti.stirlingRemainder_ofReal`), derivative,
-  conjugation symmetry, shift identity, and vanishing limit at positive integers.
+  conjugation symmetry, shift identity, exponential form (`TauCeti.Gamma_eq_sqrt_two_pi_mul_exp`),
+  and vanishing limit at positive integers.
 * `TauCeti.stirlingRemainder_eq_integral`: Stieltjes integral representation of
   `stirlingRemainder` on `slitPlane`.
-* `TauCeti.norm_stirlingRemainder_le`, `TauCeti.norm_stirlingRemainder_le_of_abs_arg_le`,
-  `TauCeti.norm_stirlingRemainder_le_of_re_nonneg`: Nemes's explicit slit-plane, closed-sector and
-  nonzero points of the closed right half-plane bounds for `stirlingRemainder`.
-* `TauCeti.abs_log_norm_Gamma_sub_stirling_le`: the real-part form for `log ‖Γ s‖`.
 
 ## References
 
@@ -115,6 +110,22 @@ theorem logGamma_eq_add_stirlingRemainder (s : ℂ) :
       stirlingRemainder s := by
   rw [stirlingRemainder_def]
   ring
+
+/-- Exponential Stirling representation of `Complex.Gamma` on the slit plane:
+`Γ(z) = √(2π) * exp ((z - 1/2) * log z - z + stirlingRemainder z)`. -/
+theorem Gamma_eq_sqrt_two_pi_mul_exp {z : ℂ} (hz : z ∈ slitPlane) :
+    Complex.Gamma z =
+      (Real.sqrt (2 * π) : ℂ) *
+        Complex.exp ((z - 1 / 2) * Complex.log z - z + stirlingRemainder z) := by
+  have hlog : logGamma z =
+      ((Real.log (2 * π) / 2 : ℝ) : ℂ) +
+        ((z - 1 / 2) * Complex.log z - z + stirlingRemainder z) := by
+    rw [logGamma_eq_add_stirlingRemainder]
+    ring
+  have hexp_half : Real.exp (Real.log (2 * π) / 2) = Real.sqrt (2 * π) := by
+    rw [← Real.sqrt_sq (Real.exp_pos _).le, sq, ← Real.exp_add, add_halves,
+      Real.exp_log (by positivity)]
+  rw [← exp_logGamma hz, hlog, Complex.exp_add, ← Complex.ofReal_exp, hexp_half]
 
 /-- At `1`, `stirlingRemainder 1 = 1 - log (2π) / 2`. -/
 @[simp]
@@ -239,45 +250,5 @@ theorem stirlingRemainder_eq_integral {z : ℂ} (hz : z ∈ slitPlane) :
     simpa [d] using tendsto_stirlingRemainder_natCast_add_one.sub hk_lim
   have hd0 : d z = 0 := tendsto_const_nhds_iff.mp (hd_lim.congr fun n ↦ (hconst n).symm)
   exact sub_eq_zero.mp hd0
-
-/-- Nemes's explicit slit-plane bound for the Stirling remainder:
-`‖stirlingRemainder z‖ ≤ 1 / (8 * cos (arg z / 2) ^ 2 * ‖z‖)` for `z ∈ slitPlane`. -/
-theorem norm_stirlingRemainder_le {z : ℂ} (hz : z ∈ slitPlane) :
-    ‖stirlingRemainder z‖ ≤ 1 / (8 * Real.cos (z.arg / 2) ^ 2 * ‖z‖) := by
-  rw [stirlingRemainder_eq_integral hz]
-  simpa using norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le 0 z
-
-/-- Nemes's explicit closed-sector bound for the Stirling remainder: for `0 < δ` and nonzero `z`
-with `|arg z| ≤ π - δ`,
-`‖stirlingRemainder z‖ ≤ 1 / (8 * sin (δ / 2) ^ 2 * ‖z‖)`. -/
-theorem norm_stirlingRemainder_le_of_abs_arg_le {z : ℂ} {δ : ℝ}
-    (hδ : 0 < δ) (hz : |z.arg| ≤ π - δ) (hz0 : z ≠ 0) :
-    ‖stirlingRemainder z‖ ≤ 1 / (8 * Real.sin (δ / 2) ^ 2 * ‖z‖) := by
-  rw [stirlingRemainder_eq_integral (mem_slitPlane_of_abs_arg_le hδ hz hz0)]
-  simpa using norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le_of_abs_arg_le 0 hδ hz
-
-/-- Nemes's bound on the closed right half-plane: `‖R(z)‖ ≤ 1 / (4 ‖z‖)` for nonzero `z` with
-`0 ≤ re z`. This is the sector bound at `δ = π / 2`. -/
-theorem norm_stirlingRemainder_le_of_re_nonneg {z : ℂ} (hz : 0 ≤ z.re) (hz0 : z ≠ 0) :
-    ‖stirlingRemainder z‖ ≤ 1 / (4 * ‖z‖) := by
-  have hdiv : π / 2 / 2 = π / 4 := by ring
-  have hsin : Real.sin (π / 2 / 2) ^ 2 = 1 / 2 := by
-    rw [hdiv, Real.sin_pi_div_four, div_pow, Real.sq_sqrt zero_le_two]
-    norm_num
-  have h := norm_stirlingRemainder_le_of_abs_arg_le (δ := π / 2) (by positivity)
-    (by rw [sub_half]; exact abs_arg_le_pi_div_two_iff.mpr hz) hz0
-  rw [hsin] at h
-  exact h.trans_eq (by ring)
-
-/-- Stirling's formula for `log ‖Γ s‖` on a sector: for `0 < δ` and nonzero `s` with
-`|arg s| ≤ π - δ`,
-`|log ‖Γ s‖ - ((re s - 1/2) log ‖s‖ - im s · arg s - re s + log (2π) / 2)| ≤
-1 / (8 * sin (δ / 2) ^ 2 * ‖s‖)`. -/
-theorem abs_log_norm_Gamma_sub_stirling_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ)
-    (hs : |s.arg| ≤ π - δ) (hs0 : s ≠ 0) :
-    |Real.log ‖Complex.Gamma s‖ - ((s.re - 1 / 2) * Real.log ‖s‖ - s.im * s.arg - s.re +
-      Real.log (2 * π) / 2)| ≤ 1 / (8 * Real.sin (δ / 2) ^ 2 * ‖s‖) := by
-  rw [← stirlingRemainder_re (mem_slitPlane_of_abs_arg_le hδ hs hs0)]
-  exact (abs_re_le_norm _).trans (norm_stirlingRemainder_le_of_abs_arg_le hδ hs hs0)
 
 end TauCeti

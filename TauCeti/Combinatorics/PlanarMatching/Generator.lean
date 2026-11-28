@@ -119,6 +119,16 @@ theorem diagram_e (n : ℕ) (i : Fin (n - 1)) :
   rw [e_eq_pad, diagram_pad]
   rfl
 
+/-- Adding a straight strand on the right preserves every existing generator diagram. -/
+theorem diagram_e_tensor_id (n : ℕ) (i : Fin (n - 1)) :
+    (e n i).diagram.tensor (TLDiagram.id 1) =
+      (e (n + 1) (Fin.castLE (by omega) i)).diagram := by
+  have h : n - 2 - (i : ℕ) + 1 = n + 1 - 2 - (i : ℕ) := by omega
+  simp only [diagram_e, TLDiagram.cast_tensor, TLDiagram.tensor_assoc,
+    TLDiagram.id_tensor_id, TLDiagram.tensor_cast, TLDiagram.cast_cast, Fin.val_castLE]
+  -- The remaining casts and identity diagrams differ only in their strand counts.
+  congr! 4 <;> omega
+
 /-- On two points the only generator is `cap ≫ cup`. -/
 theorem e_two (i : Fin (2 - 1)) : e 2 i = cap ≫ cup := by
   obtain rfl : i = 0 := Fin.ext (by omega)

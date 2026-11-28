@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import TauCeti.CategoryTheory.Bicategory.Functor.SingleObj
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
+public import TauCeti.CategoryTheory.Sites.Descent.LocallyEssSurj
 public import TauCeti.CategoryTheory.Sites.Descent.TwoFiberProduct
 public import TauCeti.CategoryTheory.Sites.Descent.Yoneda
 
@@ -38,6 +39,11 @@ of `G` is locally essentially surjective but no relative gerbe
 Every transformation whose components are equivalences, in particular every identity, is a
 relative gerbe.
 
+Conversely, if `F` is a stack, `G` a prestack and the components of `η` are fully faithful, then
+local essential surjectivity descends: `η` is locally essentially surjective exactly when its
+components are essentially surjective, and then they are equivalences of categories
+(`StrongTrans.isLocallyEssSurj_iff_essSurj`, `StrongTrans.isEquivalence_of_isLocallyEssSurj`).
+
 Stacks states the equivalent form that the projection of the iso-comma stack of `η` to `G` is a
 gerbe over `G`, for the topology induced from `C`. Here this is tested on each object `y` of `G`
 over `U`: the *relative fibre* `StrongTrans.relativeFiber η y` is the 2-fibre product
@@ -57,18 +63,19 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
 
 ## Main declarations
 
-* `CategoryTheory.Pseudofunctor.StrongTrans.IsLocallyEssSurj`,
-  `CategoryTheory.Pseudofunctor.StrongTrans.IsRelativeGerbe`: locally essentially surjective
-  transformations and relative gerbes, with the two local lifting statements `exists_covering_lift`
-  and `exists_covering_liftIso`.
-* `CategoryTheory.Pseudofunctor.StrongTrans.localImageSieve`: the sieve of arrows along which an
-  object of `G` lifts along `η` up to isomorphism; `η` is locally essentially surjective exactly
-  when these sieves are covering (`isLocallyEssSurj_iff_localImageSieve_mem`).
+* `CategoryTheory.Pseudofunctor.StrongTrans.IsRelativeGerbe`: relative gerbes, extending
+  `StrongTrans.IsLocallyEssSurj` from `Descent/LocallyEssSurj.lean` with the local lifting statement
+  `exists_covering_liftIso`.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_of_isGerbe`: every transformation
   between gerbes is locally essentially surjective.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_id`: transformations whose components
   are equivalences, and identities, are relative gerbes.
+* `CategoryTheory.Pseudofunctor.StrongTrans.essSurj_of_isLocallyEssSurj`,
+  `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_iff_essSurj`,
+  `CategoryTheory.Pseudofunctor.StrongTrans.isEquivalence_of_isLocallyEssSurj`: for a
+  transformation with fully faithful components from a stack to a prestack, local essential
+  surjectivity is essential surjectivity of the components.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_bot_iff`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_bot_iff`: the two notions for the
   trivial topology.
@@ -102,16 +109,6 @@ namespace CategoryTheory.Pseudofunctor.StrongTrans
 
 variable {C : Type u} [Category.{v} C] {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
 
-/-- A strong transformation `η : F ⟶ G` is *locally essentially surjective* for a Grothendieck
-topology `J` if every object of `G` over `U` lifts along `η` up to isomorphism after pullback
-along every arrow of some `J`-covering sieve of `U`. -/
-class IsLocallyEssSurj (η : StrongTrans F G) (J : GrothendieckTopology C) : Prop where
-  /-- Every object `y` of `G` over `U` lifts along `η`, up to isomorphism, after pullback along
-  every arrow of some covering sieve of `U`. -/
-  exists_covering_lift {U : C} (y : G.obj (.mk (op U))) :
-    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f → ∃ x : F.obj (.mk (op V)),
-      Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj y)
-
 /-- A strong transformation `η : F ⟶ G` is a *relative gerbe* for a Grothendieck topology `J`
 (Stacks, Lemma 8.11.3 (2) and Definition 8.11.4 (06NY)) if it is locally essentially surjective
 and, for objects `x`, `x'` of `F` over `U`, every isomorphism `η x ≅ η x'` lifts to an isomorphism
@@ -130,65 +127,6 @@ class IsRelativeGerbe (η : StrongTrans F G) (J : GrothendieckTopology C) : Prop
             (G.map f.op.toLoc).toFunctor.map b.hom ≫ (η.naturality f.op.toLoc).inv.toNatTrans.app x'
 
 variable {J : GrothendieckTopology C} (η : StrongTrans F G)
-
-/-- An isomorphism `e : G(g)(η_V x) ≅ G(g)(G(f) z)` between the restrictions along `g : W ⟶ V`
-of `η_V x` and `G(f) z` gives an isomorphism `η_W (F(g) x) ≅ G(g ≫ f) z`, through `c_g(x)` and
-the composition isomorphism of `G`. -/
-noncomputable def restrictImageIso {U V W : C} {z : G.obj (.mk (op U))} {f : V ⟶ U}
-    {x : F.obj (.mk (op V))} (g : W ⟶ V)
-    (e : (G.map g.op.toLoc).toFunctor.obj ((η.app (.mk (op V))).toFunctor.obj x) ≅
-      (G.map g.op.toLoc).toFunctor.obj ((G.map f.op.toLoc).toFunctor.obj z)) :
-    (η.app (.mk (op W))).toFunctor.obj ((F.map g.op.toLoc).toFunctor.obj x) ≅
-      (G.map (g ≫ f).op.toLoc).toFunctor.obj z :=
-  η.naturalityObjIso g.op.toLoc x ≪≫ e ≪≫
-    ((Cat.Hom.toNatIso (G.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc)).app z).symm
-
-/-- The forward arrow of `restrictImageIso`, as the composite of its three factors. -/
-theorem restrictImageIso_hom {U V W : C} {z : G.obj (.mk (op U))} {f : V ⟶ U}
-    {x : F.obj (.mk (op V))} (g : W ⟶ V)
-    (e : (G.map g.op.toLoc).toFunctor.obj ((η.app (.mk (op V))).toFunctor.obj x) ≅
-      (G.map g.op.toLoc).toFunctor.obj ((G.map f.op.toLoc).toFunctor.obj z)) :
-    (η.restrictImageIso g e).hom =
-      (η.naturalityObjIso g.op.toLoc x).hom ≫ e.hom ≫
-        (G.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc).inv.toNatTrans.app z := by
-  simp [restrictImageIso]
-
-/-- The **local-image sieve** of `z` over `U`: the arrows `f : V ⟶ U` such that `G(f) z` is
-isomorphic to the image `η_V x` of some object `x` over `V`. -/
-def localImageSieve {U : C} (z : G.obj (.mk (op U))) : Sieve U where
-  arrows V f := ∃ x : F.obj (.mk (op V)),
-    Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj z)
-  downward_closed := fun ⟨_, ⟨e⟩⟩ g ↦
-    ⟨_, ⟨η.restrictImageIso g ((G.map g.op.toLoc).toFunctor.mapIso e)⟩⟩
-
-theorem mem_localImageSieve_iff {U V : C} (z : G.obj (.mk (op U))) (f : V ⟶ U) :
-    η.localImageSieve z f ↔ ∃ x : F.obj (.mk (op V)),
-      Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj z) :=
-  Iff.rfl
-
-/-- The identity of `U` lies in the local-image sieve of `z` exactly when `z` is isomorphic to
-`η_U y` for some `y` over `U`. -/
-theorem id_mem_localImageSieve_iff {U : C} (z : G.obj (.mk (op U))) :
-    η.localImageSieve z (𝟙 U) ↔
-      ∃ y : F.obj (.mk (op U)), Nonempty ((η.app (.mk (op U))).toFunctor.obj y ≅ z) := by
-  let d := (Cat.Hom.toNatIso (G.mapId' (𝟙 U).op.toLoc (by simp))).app z
-  exact ⟨fun ⟨y, ⟨e⟩⟩ ↦ ⟨y, ⟨e ≪≫ d⟩⟩, fun ⟨y, ⟨e⟩⟩ ↦ ⟨y, ⟨e ≪≫ d.symm⟩⟩⟩
-
-/-- A strong transformation is locally essentially surjective exactly when the local-image sieve
-of every object of `G` is covering. -/
-theorem isLocallyEssSurj_iff_localImageSieve_mem :
-    η.IsLocallyEssSurj J ↔ ∀ {U : C} (z : G.obj (.mk (op U))), η.localImageSieve z ∈ J U :=
-  ⟨fun _ _ z ↦
-    have ⟨_, hR, h⟩ := IsLocallyEssSurj.exists_covering_lift (η := η) (J := J) z
-    J.superset_covering (fun _ f hf ↦ h f hf) hR,
-    fun h ↦ ⟨fun z ↦ ⟨_, h z, fun _ _ hf ↦ hf⟩⟩⟩
-
-variable (J) in
-/-- **The local-image sieve is covering** when `η` is locally essentially surjective, in
-particular when `F` and `G` are gerbes (`StrongTrans.isLocallyEssSurj_of_isGerbe`). -/
-theorem localImageSieve_mem [η.IsLocallyEssSurj J] {U : C} (z : G.obj (.mk (op U))) :
-    η.localImageSieve z ∈ J U :=
-  (η.isLocallyEssSurj_iff_localImageSieve_mem.1 inferInstance) z
 
 /-- A strong transformation whose components are essentially surjective is locally essentially
 surjective, for every topology. -/
@@ -262,6 +200,43 @@ theorem isRelativeGerbe_bot_iff :
               fun V f _ ↦ h₂ V _ _ ((Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x ≪≫
                 (G.map f.op.toLoc).toFunctor.mapIso b ≪≫
                   ((Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x').symm)⟩ }
+
+/-! ### Fully faithful transformations of stacks -/
+
+section FullyFaithful
+
+variable [F.IsStack J] [G.IsPrestack J]
+  (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
+include hη
+
+/-- **Local essential surjectivity descends.** If `F` is a stack, `G` a prestack and the
+components of `η : F ⟶ G` are fully faithful, then a locally essentially surjective `η` has
+essentially surjective components: an object of `G` over `U` whose pullbacks along a covering
+sieve are images under `η` is an image under `η` up to isomorphism. -/
+theorem essSurj_of_isLocallyEssSurj [η.IsLocallyEssSurj J] (U : C) :
+    (η.app (.mk (op U))).toFunctor.EssSurj where
+  mem_essImage z := by
+    obtain ⟨R, hR, h⟩ := IsLocallyEssSurj.exists_covering_lift (η := η) (J := J) z
+    have := (F.isStackFor' R hR).essSurj
+    exact η.mem_essImage_of_toDescentData _ hη (G.isPrestackFor' R hR).fullyFaithful z
+      fun i ↦ h _ i.property
+
+/-- If `F` is a stack, `G` a prestack and the components of `η : F ⟶ G` are fully faithful, then
+`η` is locally essentially surjective if and only if its components are essentially surjective. -/
+theorem isLocallyEssSurj_iff_essSurj :
+    η.IsLocallyEssSurj J ↔ ∀ U : C, (η.app (.mk (op U))).toFunctor.EssSurj :=
+  ⟨fun _ ↦ essSurj_of_isLocallyEssSurj (J := J) η hη, isLocallyEssSurj_of_essSurj η⟩
+
+/-- If `F` is a stack, `G` a prestack and the components of `η : F ⟶ G` are fully faithful, then
+the components of a locally essentially surjective `η` are equivalences of categories. -/
+theorem isEquivalence_of_isLocallyEssSurj [η.IsLocallyEssSurj J] (U : C) :
+    (η.app (.mk (op U))).toFunctor.IsEquivalence :=
+  have := (hη U).full
+  have := (hη U).faithful
+  have := essSurj_of_isLocallyEssSurj (J := J) η hη U
+  { }
+
+end FullyFaithful
 
 /-! ### The relative fibre -/
 
