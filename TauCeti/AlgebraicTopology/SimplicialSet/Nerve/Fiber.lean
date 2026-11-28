@@ -103,6 +103,12 @@ lemma fiberIso_hom_app_coe (n : SimplexCategoryᵒᵖ) (s : (nerve (F.Fiber b)).
       s ⋙ Functor.Fiber.fiberInclusion :=
   (rfl)
 
+/-- The inverse nerve comparison is the inverse of the equivalence on strings. -/
+lemma fiberIso_inv_app (n : SimplexCategoryᵒᵖ)
+    (s : (fiber (nerveMap F) (nerveEquiv.symm b) : SSet).obj n) :
+    (fiberIso F b).inv.app n s = (fiberSimplexEquiv F b n).symm s :=
+  (rfl)
+
 /-- The inverse comparison lifts a string and then forgets to the same string. -/
 @[simp]
 lemma fiberIso_inv_app_comp (n : SimplexCategoryᵒᵖ)

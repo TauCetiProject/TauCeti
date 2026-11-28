@@ -99,6 +99,15 @@ lemma nerveFiberIso_inv_app_comp (b : FinPointed.{max u v}) (n : SimplexCategory
     (congrArg Subtype.val (ConcreteCategory.congr_hom
       (Iso.inv_hom_id_app (nerveFiberIso C b) n) s))
 
+/-- Reconstructing a family string is lifting to the ordinary fiber followed by the
+strict inverse of the inclusion of families. -/
+lemma nerveFiberIso_inv_app (b : FinPointed.{max u v}) (n : SimplexCategoryᵒᵖ)
+    (s : (fiber (nerveMap (toFinPointed C)) (nerveEquiv.symm b) : SSet).obj n) :
+    (nerveFiberIso C b).inv.app n s =
+      (nerve.fiberIso (toFinPointed C) b).inv.app n s ⋙ (toFiber C b).strictInv := by
+  rw [nerve.fiberIso_inv_app]
+  rfl
+
 /-- Coordinate evaluation on the strict fiber of the operator nerve. -/
 noncomputable def nerveFiberEval (b : FinPointed.{max u v}) (i : Fin b.len) :
     (fiber (nerveMap (toFinPointed C)) (nerveEquiv.symm b) : SSet) ⟶ nerve C :=
