@@ -51,6 +51,8 @@ this controls the binomial expansion of the powers of `x`.
 * `LinearMap.tensorComponent_lTensor_comul`: successive contractions on the right tensor factor.
 * `IsGroupLikeElem.ofConv_convMul_apply`: at a group-like element, a convolution product is the
   product of the values.
+* `Coalgebra.Repr.algHom_convMul_apply`: evaluation of an algebra-hom convolution product
+  as a sum over a representation of the comultiplication.
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
   convolution product of the two tensor inclusions.
 * `TauCeti.Bialgebra.comulPoint_eq_include_mul`: the corresponding identity for the
@@ -114,6 +116,16 @@ theorem IsGroupLikeElem.ofConv_convMul_apply {R C A : Type*} [CommSemiring R] [A
     (f g : WithConv (C →ₗ[R] A)) : (f * g).ofConv c = f.ofConv c * g.ofConv c := by
   rw [LinearMap.convMul_apply, hc.comul_eq_tmul_self, TensorProduct.map_tmul,
     LinearMap.mul'_apply]
+
+/-- Evaluate the convolution of two algebra homomorphisms using a finite representation of
+the comultiplication. -/
+theorem Coalgebra.Repr.algHom_convMul_apply {R H A ι : Type*} [CommSemiring R] [Semiring H]
+    [Bialgebra R H] [CommSemiring A] [Algebra R A] {a : H} (r : Coalgebra.Repr R a ι)
+    (f g : WithConv (H →ₐ[R] A)) :
+    (f * g).ofConv a = ∑ i ∈ r.index, f.ofConv (r.left i) * g.ofConv (r.right i) := by
+  have h := r.convMul_apply (toConv f.ofConv.toLinearMap) (toConv g.ofConv.toLinearMap)
+  rw [← AlgHom.toLinearMap_convMul] at h
+  simpa only [ofConv_toConv, AlgHom.toLinearMap_apply] using h
 
 namespace TauCeti
 

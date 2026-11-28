@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ConstMulAction
+public import TauCeti.Geometry.Manifold.Algebra.TranslatedChart
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 
 /-!
@@ -17,7 +17,7 @@ translation by a subgroup point preserves the subgroup slice.
 
 ## Main result
 
-* `Subgroup.isSliceChart_smul_symm_transOpenPartialHomeomorph` shows that translation preserves
+* `Subgroup.isSliceChart_translatedChart` shows that translation preserves
   the subgroup slice.
 
 The result is purely topological.  It does not install a manifold structure on the subgroup or
@@ -39,11 +39,10 @@ variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
   [TopologicalSpace P]
 
 /-- Translating a slice chart for a subgroup by a subgroup point preserves the subgroup slice. -/
-theorem isSliceChart_smul_symm_transOpenPartialHomeomorph (K : Subgroup G)
+theorem isSliceChart_translatedChart (K : Subgroup G)
     (φ : OpenPartialHomeomorph G P) {S : Set P}
     (hφ : TauCeti.IsSliceChart φ S (K : Set G)) (g : K) :
-    TauCeti.IsSliceChart
-      ((Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph φ) S (K : Set G) := by
+    TauCeti.IsSliceChart (φ.translatedChart (g : G)) S (K : Set G) := by
   let e : OpenPartialHomeomorph G G :=
     (Homeomorph.smul (g : G)).symm.toOpenPartialHomeomorph
   have hset : e.source ∩ e ⁻¹' (K : Set G) = (K : Set G) := by
@@ -56,7 +55,7 @@ theorem isSliceChart_smul_symm_transOpenPartialHomeomorph (K : Subgroup G)
     simp [e]
   have hchart := hφ.comp e
   rw [hset] at hchart
-  simpa [e,
+  simpa only [e, OpenPartialHomeomorph.translatedChart_def,
     Homeomorph.transOpenPartialHomeomorph_eq_trans] using hchart
 
 end Subgroup

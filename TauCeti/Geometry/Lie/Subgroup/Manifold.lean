@@ -96,9 +96,8 @@ theorem contDiffOn_preferredSliceChart_transition
   have hzsource : (h : G)⁻¹ * ((g : G) * e.symm (y, 0)) ∈ e.source := by
     have hdsource : (h : G)⁻¹ *
         ((↑((preferredSliceChart K e he g).symm y) : G)) ∈ e.source := by
-      simpa only [preferredSliceChart_source,
-        Homeomorph.transOpenPartialHomeomorph_source, Set.mem_preimage,
-        Homeomorph.smul_symm_apply, smul_eq_mul] using hy.2
+      simpa only [preferredSliceChart_source, Set.mem_preimage,
+        OpenPartialHomeomorph.mem_translatedChart_source_iff] using hy.2
     rw [coe_preferredSliceChart_symm_apply K e he g hytarget] at hdsource
     exact hdsource
   have hzero : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ, F × F') n

@@ -6,43 +6,47 @@ Authors: Codex
 module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
-public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
 # Charts translated in a topological group
 
 Left translating an open partial homeomorphism whose source contains the identity gives a
-charted space on a group with separately continuous multiplication.
+charted space on a group with continuous left translations.
 -/
 
 public section
 
 namespace OpenPartialHomeomorph
 
-variable {G V : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+variable {G V : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
   [TopologicalSpace V] (e : OpenPartialHomeomorph G V)
 
 /-- The chart obtained by left translating the source of `e` by `p`. -/
 def translatedChart (p : G) : OpenPartialHomeomorph G V :=
-  (Homeomorph.mulLeft p⁻¹).transOpenPartialHomeomorph e
+  (Homeomorph.smul p).symm.transOpenPartialHomeomorph e
+
+/-- Translating a chart by `p` precomposes it with the inverse of left multiplication by `p`. -/
+theorem translatedChart_def (p : G) :
+    e.translatedChart p = (Homeomorph.smul p).symm.transOpenPartialHomeomorph e := (rfl)
 
 /-- The forward map of a translated chart first translates the point by `p⁻¹`. -/
 @[simp]
 theorem translatedChart_apply (p q : G) :
     e.translatedChart p q = e (p⁻¹ * q) := by
-  simp [translatedChart, Homeomorph.coe_mulLeft]
+  simp [translatedChart, Homeomorph.smul_symm_apply, smul_eq_mul]
 
 /-- The inverse map of a translated chart left translates the original inverse by `p`. -/
 @[simp]
 theorem translatedChart_symm_apply (p : G) (z : V) :
     (e.translatedChart p).symm z = p * e.symm z := by
-  simp [translatedChart, Homeomorph.mulLeft_symm, Homeomorph.coe_mulLeft]
+  simp [translatedChart, smul_eq_mul]
 
 /-- A point is in the translated source exactly when its translate back lies in the source. -/
 @[simp]
 theorem mem_translatedChart_source_iff (p q : G) :
     q ∈ (e.translatedChart p).source ↔ p⁻¹ * q ∈ e.source := by
-  simp [translatedChart, Homeomorph.coe_mulLeft]
+  simp [translatedChart, Homeomorph.smul_symm_apply, smul_eq_mul]
 
 /-- If the original chart contains the identity, each translate contains its translating point. -/
 theorem mem_translatedChart_source_self (h₁ : (1 : G) ∈ e.source) (p : G) :

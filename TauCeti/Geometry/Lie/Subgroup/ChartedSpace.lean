@@ -50,8 +50,7 @@ noncomputable def preferredSliceChart (K : Subgroup G)
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (g : K) : OpenPartialHomeomorph K F :=
   TauCeti.linearSliceChart
-    (fun g : K ↦ (Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph e)
-    (K.isSliceChart_smul_symm_transOpenPartialHomeomorph e he) g
+    (fun g : K ↦ e.translatedChart (g : G)) (K.isSliceChart_translatedChart e he) g
 
 /-- The preferred subgroup chart at `g` sees exactly the subgroup points in the source of its
 translated ambient chart. -/
@@ -61,8 +60,7 @@ theorem preferredSliceChart_source (K : Subgroup G)
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (g : K) :
     (preferredSliceChart K e he g).source =
-      Subtype.val ⁻¹'
-        ((Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph e).source :=
+      Subtype.val ⁻¹' (e.translatedChart (g : G)).source :=
   TauCeti.linearSliceChart_source _ _ g
 
 /-- The target of a preferred subgroup chart is the zero-slice part of the original ambient
@@ -75,7 +73,7 @@ theorem preferredSliceChart_target (K : Subgroup G)
     (preferredSliceChart K e he g).target =
       (fun y : F => (y, (0 : F'))) ⁻¹' e.target := by
   rw [preferredSliceChart, TauCeti.linearSliceChart_target,
-    Homeomorph.transOpenPartialHomeomorph_target]
+    OpenPartialHomeomorph.translatedChart_target]
 
 /-- A preferred subgroup chart first translates its argument back to the identity and then reads
 the tangential coordinate of the original ambient chart. -/
@@ -86,8 +84,7 @@ theorem preferredSliceChart_apply (K : Subgroup G)
     (g x : K) :
     preferredSliceChart K e he g x = (e ((g : G)⁻¹ * (x : G))).1 := by
   rw [preferredSliceChart, TauCeti.linearSliceChart_apply,
-    Homeomorph.transOpenPartialHomeomorph_apply]
-  rfl
+    OpenPartialHomeomorph.translatedChart_apply]
 
 /-- On its source, a preferred subgroup chart recovers the translated ambient coordinates by
 reinserting the zero transverse coordinate. -/
@@ -97,8 +94,7 @@ theorem preferredSliceChart_mk_zero_eq (K : Subgroup G)
     (g : K) {x : K} (hx : x ∈ (preferredSliceChart K e he g).source) :
     (preferredSliceChart K e he g x, (0 : F')) = e ((g : G)⁻¹ * (x : G)) := by
   have h := TauCeti.linearSliceChart_mk_zero_eq _ _ g hx
-  rwa [Homeomorph.transOpenPartialHomeomorph_apply, Function.comp_apply,
-    Homeomorph.smul_symm_apply, smul_eq_mul] at h
+  rwa [OpenPartialHomeomorph.translatedChart_apply] at h
 
 /-- On its target, the inverse of a preferred subgroup chart applies the original ambient inverse
 on the zero slice and then translates by the chart's base point. -/
@@ -109,8 +105,7 @@ theorem coe_preferredSliceChart_symm_apply (K : Subgroup G)
     (g : K) {y : F} (hy : (y, (0 : F')) ∈ e.target) :
     ((preferredSliceChart K e he g).symm y : G) = (g : G) * e.symm (y, 0) := by
   rw [preferredSliceChart, TauCeti.coe_linearSliceChart_symm_apply _ _ g (by simpa using hy),
-    Homeomorph.transOpenPartialHomeomorph_symm_apply]
-  rfl
+    OpenPartialHomeomorph.translatedChart_symm_apply]
 
 /-- One zero-slice chart around the identity equips a subgroup with a charted-space structure:
 the linear-slice charted space of the family of translates of the chart.
@@ -123,10 +118,8 @@ noncomputable def chartedSpaceOfIsSliceChart (K : Subgroup G)
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (h1 : (1 : G) ∈ e.source) : ChartedSpace F K :=
   TauCeti.linearSliceChartedSpace
-    (fun g : K ↦ (Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph e)
-    (K.isSliceChart_smul_symm_transOpenPartialHomeomorph e he) fun g ↦ by
-      rw [Homeomorph.transOpenPartialHomeomorph_source]
-      simpa [Homeomorph.smul_symm_apply, smul_eq_mul] using h1
+    (fun g : K ↦ e.translatedChart (g : G)) (K.isSliceChart_translatedChart e he)
+    fun g ↦ e.mem_translatedChart_source_self h1 (g : G)
 
 /-- The atlas of `chartedSpaceOfIsSliceChart` is exactly the range of its preferred translated
 slice charts. -/

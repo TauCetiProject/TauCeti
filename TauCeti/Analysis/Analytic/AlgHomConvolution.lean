@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.RingTheory.Bialgebra.Convolution
+import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
 # Analytic evaluation of convolution products
@@ -17,7 +18,7 @@ evaluation is preserved by pointwise convolution.
 
 public section
 
-open Coalgebra WithConv
+open Coalgebra
 
 namespace TauCeti
 
@@ -28,14 +29,7 @@ theorem analyticAt_eval_convMul {K E A H : Type*} [NontriviallyNormedField K]
     (hf : ∀ a : H, AnalyticAt K (fun z ↦ (f z).ofConv a) x)
     (hg : ∀ a : H, AnalyticAt K (fun z ↦ (g z).ofConv a) x) (a : H) :
     AnalyticAt K (fun z ↦ (f z * g z).ofConv a) x := by
-  have heq (z : E) : (f z * g z).ofConv a =
-      ∑ i ∈ (ℛ K a).index,
-        (f z).ofConv ((ℛ K a).left i) * (g z).ofConv ((ℛ K a).right i) := by
-    have h := (ℛ K a).convMul_apply
-      (toConv (f z).ofConv.toLinearMap) (toConv (g z).ofConv.toLinearMap)
-    rw [← AlgHom.toLinearMap_convMul] at h
-    simpa only [ofConv_toConv, AlgHom.toLinearMap_apply] using h
-  simp_rw [heq]
+  simp_rw [(ℛ K a).algHom_convMul_apply]
   exact Finset.analyticAt_fun_sum _ fun i _ ↦ (hf _).mul (hg _)
 
 end TauCeti
