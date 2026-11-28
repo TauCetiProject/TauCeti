@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.HomogeneousUnits
 public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Basic
 import Mathlib.Algebra.MvPolynomial.Division
+import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Prime
 
 /-!
 # Homogeneous units away from the generic depressed discriminant

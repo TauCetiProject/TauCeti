@@ -46,8 +46,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
   specializing the other variables to a point `s` and then evaluating the polynomial variable at
   `y` is evaluating at the point obtained by inserting `y` into `s` at position `p`.
-* `MvPolynomial.coeff_coeff_optionSubtypeNeEquiv`: coefficient extraction under
-  `optionSubtypeNeEquiv`.
+* `MvPolynomial.coeff_coeff_optionSubtypeNeEquiv`, `MvPolynomial.natDegree_optionSubtypeNeEquiv`:
+  coefficient extraction and variable-degree compatibility under `optionSubtypeNeEquiv`.
 
 The last two results are the compatibility of this equivalence with coefficient maps and with
 evaluation. They let a polynomial in `n + 1` variables be treated as a family of univariate
@@ -405,6 +405,12 @@ theorem coeff_coeff_optionSubtypeNeEquiv (i : σ) (p : MvPolynomial σ R) (n : �
     rw [← Finsupp.mapDomain_comp, Equiv.symm_comp_self, Finsupp.mapDomain_id]
   have hren := coeff_rename_mapDomain e.symm e.symm.injective p u
   rwa [hu, ← renameEquiv_apply (R := R)] at hren
+
+/-- The univariate degree of `optionSubtypeNeEquiv R i p` equals the degree of `p` in `X i`. -/
+@[simp]
+theorem natDegree_optionSubtypeNeEquiv (i : σ) (p : MvPolynomial σ R) :
+    (optionSubtypeNeEquiv R i p).natDegree = p.degreeOf i := by
+  rw [optionSubtypeNeEquiv, AlgEquiv.trans_apply, renameEquiv_apply, degreeOf_eq_natDegree]
 
 end OptionSubtypeNe
 
