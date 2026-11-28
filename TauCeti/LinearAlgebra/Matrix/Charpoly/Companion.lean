@@ -65,6 +65,8 @@ monodromies `h_∞` and `h_0⁻¹` of a hypergeometric differential equation are
 * `Polynomial.mem_spectrum_companion_iff`, `Polynomial.hasEigenvalue_toLin'_companion_iff`: its
   spectrum consists of the `μ` at which `p` takes a non-unit value; over a domain its eigenvalues
   are the roots of `p` in the coefficient ring.
+* `LinearMap.toMatrix_eq_companion_of_basis_shift`: an endomorphism that shifts each basis vector
+  to the next has the companion matrix of its characteristic polynomial in that basis.
 
 ## References
 
@@ -99,6 +101,14 @@ theorem companion_apply (p : R[X]) (i j : Fin p.natDegree) :
     p.companion i j =
       if (i : ℕ) = j + 1 then 1 else if (j : ℕ) + 1 = p.natDegree then -p.coeff i else 0 :=
   (rfl)
+
+/-- Equal polynomials have equal companion matrices after reindexing to a common size. -/
+theorem reindex_companion_eq {p q : R[X]} {d : ℕ}
+    (hp : p.natDegree = d) (hq : q.natDegree = d) (h : p = q) :
+    Matrix.reindex (finCongr hp) (finCongr hp) p.companion =
+      Matrix.reindex (finCongr hq) (finCongr hq) q.companion := by
+  subst q
+  rfl
 
 end Ring
 
@@ -161,3 +171,46 @@ theorem hasEigenvalue_toLin'_companion_iff [IsDomain R] (hp : p.Monic) {μ : R} 
 end CommRing
 
 end Polynomial
+
+namespace LinearMap
+
+open Module Polynomial
+
+variable {R V : Type*} [CommRing R]
+  [AddCommGroup V] [Module R V] [Module.Free R V] [Module.Finite R V]
+
+/-- If an endomorphism sends each vector of an ordered basis to its successor, up to the
+last vector, its matrix in that basis is the companion matrix of its characteristic
+polynomial. -/
+theorem toMatrix_eq_companion_of_basis_shift (A : Module.End R V) {d : ℕ}
+    (b : Basis (Fin d) R V) (hd : A.charpoly.natDegree = d)
+    (hshift : ∀ j : Fin d, ∀ hj : (j : ℕ) + 1 < d, A (b j) = b ⟨(j : ℕ) + 1, hj⟩) :
+    toMatrix b b A =
+      Matrix.reindex (finCongr hd) (finCongr hd) A.charpoly.companion := by
+  ext i j
+  simp only [toMatrix_apply, Matrix.reindex_apply, Matrix.submatrix_apply, companion_apply]
+  simp only [finCongr_symm, finCongr_apply, Fin.val_cast]
+  by_cases hj : (j : ℕ) + 1 < d
+  · rw [hshift j hj, Basis.repr_self, Finsupp.single_apply]
+    have hj_ne : d ≠ (j : ℕ) + 1 := by omega
+    simp [Fin.ext_iff, eq_comm, hd, hj_ne]
+  -- Cayley–Hamilton determines the last column from the preceding shifts.
+  have hlast : (j : ℕ) + 1 = d := by omega
+  let v := b ⟨0, by omega⟩
+  have horbit (k : ℕ) (hk : k < d) : (A ^ k) v = b ⟨k, hk⟩ := by
+    induction k with
+    | zero => simp [v]
+    | succ k ih =>
+      rw [pow_succ', mul_apply_eq_comp, ih (by omega), hshift]
+  have hc := DFunLike.congr_fun (A.aeval_self_charpoly) v
+  rw [aeval_eq_sum_range, hd, Finset.sum_range_succ] at hc
+  have hlead : A.charpoly.coeff d = 1 := hd ▸ A.charpoly_monic.coeff_natDegree
+  simp only [LinearMap.add_apply, LinearMap.sum_apply, LinearMap.smul_apply, hlead, one_smul,
+    LinearMap.zero_apply, ← Fin.sum_univ_eq_sum_range] at hc
+  have horbit_fin (k : Fin d) : (A ^ (k : ℕ)) v = b k := horbit k k.isLt
+  have hcol : A (b j) = -∑ k : Fin d, A.charpoly.coeff k • b k := by
+    rw [← horbit j j.isLt, ← mul_apply_eq_comp, ← pow_succ', hlast]
+    simpa only [horbit_fin] using eq_neg_of_add_eq_zero_right hc
+  simp [hcol, hlast, hd, i.isLt.ne, Finsupp.single_apply]
+
+end LinearMap
