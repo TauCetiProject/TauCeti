@@ -5,33 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
-public import TauCeti.Probability.BrownianMotion.Integral.Ito.Localization
-import all TauCeti.Probability.BrownianMotion.Integral.Ito.Localization
-import TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral
-import TauCeti.Probability.Process.Indistinguishable
+public import Mathlib.Probability.Process.Stopping
+public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Probability.BrownianMotion.Integral.Stopping
+import TauCeti.Probability.Finance.SimpleStrategy.Stopping
+import TauCeti.Probability.Process.StoppedValue
+import TauCeti.Probability.Process.Stopping
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
-# Optional stopping and localization for the Brownian Itô integral
+# Optional stopping and stochastic-interval restriction for the Brownian Itô integral
 
-For a filtration-relative Brownian motion `W` with almost surely continuous paths, stopping a
-Brownian Itô integral `I` at any raw stopping time `σ` yields an Itô integral of `H` cut off to
-the closed stochastic interval `⟦0, σ⟧` (`isItoIntegral_stoppedProcess`). Consequently:
+For any continuous Itô integral `I` of `H` against a filtered pre-Brownian motion `W` on a raw
+filtration, stopping `I` at a stopping time `σ` gives a continuous Itô integral of
+`H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess`), without path continuity of
+`W` or moment bounds. As a consequence, `stoppedProcess I σ` is indistinguishable from any Itô
+integral of `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`), and for
+stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an Itô integral of
+`H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`).
 
-* Restricting an integrand to `(σ, τ]` yields `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`
-  (`isItoIntegral_ite_Ioc`, `indist_stoppedProcess_sub_of_isItoIntegral_ite_Ioc`), simplifying to
-  `stoppedProcess I τ - stoppedProcess I σ` when `σ ≤ τ`
-  (`isItoIntegral_ite_Ioc_of_le`, `indist_stoppedProcess_sub_of_isItoIntegral_ite_Ioc_of_le`).
-* Integrands agreeing product-almost-everywhere on `⟦0, σ⟧` over every finite horizon have
-  indistinguishable stopped Itô integrals (`stoppedProcess_indist_of_isItoIntegral`).
-* Stopping an Itô integral at `TauCeti.nnvolume.energyLocalizer H C` recovers the completed `L²`
-  integral of the stopped finite-energy cutoff at every time `t`
-  (`stoppedProcess_energyLocalizer_ae_eq_l2Integral`).
+## Main results
+
+* `TauCeti.Probability.IsItoIntegral.stoppedProcess`,
+  `TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`: stopping a continuous Itô integral at a
+  stopping time `σ` integrates `H · 1_{[0, σ]}`.
+* `TauCeti.Probability.IsItoIntegral.ite_Ioc`: restricting an integrand to `(σ, τ]` for stopping
+  times `σ ≤ τ` integrates to `stoppedProcess I τ - stoppedProcess I σ`.
 
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  Springer, 1991, §3.2.D, §3.3.
+  Springer, 1991, §3.2.D.
 -/
 
 public section
@@ -39,166 +44,211 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Set
+open Finset hiding Iic mem_Iic
 open scoped ENNReal NNReal Topology
 
-namespace TauCeti.Probability.IsFilteredPreBrownianReal
+namespace TauCeti.Probability.IsItoIntegral
 
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {ℱ : Filtration ℝ≥0 mΩ} {W H K I J : ℝ≥0 → Ω → ℝ}
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+  {P : Measure Ω} {W H I J : ℝ≥0 → Ω → ℝ} {σ : Ω → WithTop ℝ≥0}
 
-/-- **Optional stopping of the Brownian Itô integral.** Stopping an Itô integral at any raw
-stopping time `σ` yields an Itô integral of `H` cut off to `⟦0, σ⟧`. -/
-theorem isItoIntegral_stoppedProcess
+private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
     (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I)
-    {σ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) :
-    IsItoIntegral ℱ P W
-      (fun t : ℝ≥0 ↦ fun ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0)
-      (stoppedProcess I σ) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hH : LocallyBrownianIntegrable ℱ P H := hI.locallyBrownianIntegrable
-  obtain ⟨X, U, _, hX_cont, _, hX_ito, hUp, hUcont, hUae, hX_stop⟩ :=
-    hW.exists_patched_energyLocalizer_process hcont hH
-  let τ (k : ℕ) := TauCeti.nnvolume.energyLocalizer H ((k : ℝ≥0) + 1)
-  let hHstage (k : ℕ) :=
-    (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P)
-      ((k : ℝ≥0) + 1)).ite_le hσ
-  have hUσ_ae (k : ℕ) (t : ℝ≥0) :
-      stoppedProcess (U k) σ t =ᵐ[P] hW.l2Integral t ((hHstage k).toPredictableLp t) :=
-    hW.stoppedProcess_ae_eq_l2Integral _ (hUp k).stronglyAdapted
-      ((hUcont k).mono fun _ hc _ ↦ hc.continuousWithinAt) (hUae k) hσ t
-  have hXσ_stop (k : ℕ) :
-      stoppedProcess (stoppedProcess X σ) (τ k) ≡ᵐ[P] stoppedProcess (U k) σ := by
-    rw [stoppedProcess_stoppedProcess, inf_comm, ← stoppedProcess_stoppedProcess]
-    exact (hX_stop k).stoppedProcess σ
-  have hXσ_ito : IsItoIntegral ℱ P W
-      (fun t : ℝ≥0 ↦ fun ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0)
-      (stoppedProcess X σ) := by
-    refine hW.isItoIntegral_of_localized_stages (hH.isStronglyPredictable.ite_le hσ)
-      (hX_cont.mono fun _ hc ↦ hc.stoppedProcess)
-      hH.isLocalizingSequence_energyLocalizer
-      hHstage hUσ_ae hXσ_stop fun t ↦ ?_
-    filter_upwards [hH.ae_accumulatedEnergy_lt_top] with ω hfin k hlt s hs
-    have hle : (s : WithTop ℝ≥0) ≤ τ k ω := (WithTop.coe_le_coe.mpr (mem_Iic.mp hs)).trans hlt.le
-    have hcut : TauCeti.nnvolume.finiteEnergyCutoff H s ω = H s ω :=
-      TauCeti.nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs
-    dsimp only [τ] at hle ⊢
-    rw [ite_eq_left hle, hcut]
-  exact hXσ_ito.congr ((isItoIntegral_unique hW hX_ito hI).stoppedProcess σ)
+    (hI : IsItoIntegral ℱ P W H I) {T : ℝ≥0} (k : ℕ)
+    {n : ℕ → ℕ} {τ₀ : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ}
+    (hτ₀ : ∀ m, MonotoneOn (τ₀ m) (Iic (n m)))
+    (ha : ∀ m i, i < n m → StronglyMeasurable[ℱ (τ₀ m i)] (a m i))
+    (henergy : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun m ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ₀ m) (n m) (a m) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure T}) atTop (𝓝 0)) :
+    TendstoInMeasure P
+      (fun m ↦ MeasureTheory.stoppedProcess (Finance.simpleGains (τ₀ m) (n m) (a m) W)
+        (fun ω ↦ dyadicCeilTime k (σ ω)) T)
+      atTop (MeasureTheory.stoppedProcess I (fun ω ↦ dyadicCeilTime k (σ ω)) T) := by
+  let hfin := finite_range_untopA_min_dyadicCeilTime σ k T
+  let S : Finset ℝ≥0 := hfin.toFinset
+  have hsT {s : ℝ≥0} (hs : s ∈ S) : s ≤ T := by
+    obtain ⟨ω, rfl⟩ := hfin.mem_toFinset.mp hs
+    exact WithTop.untopA_le (min_le_left _ _)
+  have hrange (ω : Ω) : (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA ∈ S :=
+    hfin.mem_toFinset.mpr ⟨ω, rfl⟩
+  have hgains_s {s : ℝ≥0} (hs : s ∈ S) :
+      TendstoInMeasure P (fun m ↦ Finance.simpleGains (τ₀ m) (n m) (a m) W s) atTop (I s) :=
+    hI.tendstoInMeasure_simpleGains hW hτ₀ ha fun ε hε ↦
+      MeasureTheory.tendsto_measure_lintegral_mono (timeMeasure_mono (hsT hs)) henergy hε
+  exact fun ε hε ↦ tendsto_measure_of_subset_biUnion_finset S (fun s hs ↦ hgains_s hs ε hε)
+    fun m ω hω ↦ by
+      let s := (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA
+      have hs : s ∈ S := hrange ω
+      dsimp only at hω
+      rw [Set.mem_ofPred_eq, MeasureTheory.stoppedProcess_apply,
+        MeasureTheory.stoppedProcess_apply] at hω
+      exact mem_biUnion hs hω
 
-/-- **Difference law on `(σ, τ]` for the Brownian Itô integral.** Restricting an integrand
-to the half-open stochastic interval `(σ, τ]` corresponds to
-`stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`, without requiring `σ ≤ τ`. -/
-theorem isItoIntegral_ite_Ioc
+private theorem tendstoInMeasure_stoppedProcess_diag
     (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I)
-    {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ) :
-    IsItoIntegral ℱ P W
-      (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
-      (fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I (σ ⊓ τ) t ω) := by
-  convert (hW.isItoIntegral_stoppedProcess hcont hI hτ).sub
-    (hW.isItoIntegral_stoppedProcess hcont hI (hσ.min hτ)) using 1
-  ext t ω
-  by_cases h1 : (t : WithTop ℝ≥0) ≤ σ ω <;> by_cases h2 : (t : WithTop ℝ≥0) ≤ τ ω
-  · have hlt : ¬ (σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω) := fun h ↦ not_le_of_gt h.1 h1
-    have hm : (t : WithTop ℝ≥0) ≤ min (σ ω) (τ ω) := le_min h1 h2
-    rw [ite_eq_right hlt, ite_eq_left h2, ite_eq_left hm, sub_self]
-  · have hlt : ¬ (σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω) := fun h ↦ h2 h.2
-    have hm : ¬ (t : WithTop ℝ≥0) ≤ min (σ ω) (τ ω) := fun h ↦ h2 (h.trans (min_le_right _ _))
-    rw [ite_eq_right hlt, ite_eq_right h2, ite_eq_right hm, sub_zero]
-  · have hlt : σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω := ⟨not_le.mp h1, h2⟩
-    have hm : ¬ (t : WithTop ℝ≥0) ≤ min (σ ω) (τ ω) := fun h ↦ h1 (h.trans (min_le_left _ _))
-    rw [ite_eq_left hlt, ite_eq_left h2, ite_eq_right hm, sub_zero]
-  · have hlt : ¬ (σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω) := fun h ↦ h2 h.2
-    have hm : ¬ (t : WithTop ℝ≥0) ≤ min (σ ω) (τ ω) := fun h ↦ h2 (h.trans (min_le_right _ _))
-    rw [ite_eq_right hlt, ite_eq_right h2, ite_eq_right hm, sub_zero]
+    (hσ : IsStoppingTime ℱ σ) (hI : IsItoIntegral ℱ P W H I) {T : ℝ≥0}
+    {N : ℕ → ℕ} {γ : ℕ → ℕ → ℝ≥0} {c : ℕ → ℕ → Ω → ℝ}
+    {n : ℕ → ℕ} {τ : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ} {m : ℕ → ℕ}
+    (hstep : ∀ k, TendstoInMeasure P
+      (fun j ↦ MeasureTheory.stoppedProcess (Finance.simpleGains (τ j) (n j) (a j) W)
+        (fun ω ↦ dyadicCeilTime k (σ ω)) T)
+      atTop (MeasureTheory.stoppedProcess I (fun ω ↦ dyadicCeilTime k (σ ω)) T))
+    (hτ : ∀ j, MonotoneOn (τ j) (Iic (n j)))
+    (ha : ∀ j i, i < n j → StronglyMeasurable[ℱ (τ j i)] (a j i))
+    (hgains_eq : ∀ k ω, Finance.simpleGains (γ k) (N k) (c k) W T ω =
+      MeasureTheory.stoppedProcess (Finance.simpleGains (τ (m k)) (n (m k)) (a (m k)) W)
+        (fun ω ↦ dyadicCeilTime k (σ ω)) T ω)
+    (hm_gain : ∀ k : ℕ, P {ω | ((k : ℝ≥0∞) + 1)⁻¹ ≤ edist
+      (MeasureTheory.stoppedProcess (Finance.simpleGains (τ (m k)) (n (m k)) (a (m k)) W)
+        (fun ω ↦ dyadicCeilTime k (σ ω)) T ω)
+      (MeasureTheory.stoppedProcess I (fun ω ↦ dyadicCeilTime k (σ ω)) T ω)} <
+        ((k : ℝ≥0∞) + 1)⁻¹) :
+    TendstoInMeasure P (fun k ↦ Finance.simpleGains (γ k) (N k) (c k) W T) atTop
+      (MeasureTheory.stoppedProcess I σ T) := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hI_lim : TendstoInMeasure P
+      (fun k ↦ MeasureTheory.stoppedProcess I (fun ω ↦ dyadicCeilTime k (σ ω)) T)
+      atTop (MeasureTheory.stoppedProcess I σ T) :=
+    tendstoInMeasure_of_tendsto_ae (fun k ↦ (hstep k).aestronglyMeasurable fun j ↦
+      (((Finance.stronglyAdapted_simpleGains (hτ j) (ha j) hW.adapted.stronglyAdapted)
+        |>.stoppedProcess_of_countable_range (hσ.dyadicCeilTime k)
+          (countable_range_dyadicCeilTime σ k) T).mono (ℱ.le T)).aestronglyMeasurable)
+      (hI.ae_continuous.mono fun ω hω ↦
+        tendsto_stoppedProcess_dyadicCeilTime I σ T ω hω.continuousAt.continuousWithinAt)
+  have hdiff : TendstoInMeasure P
+      (fun k ω ↦ Finance.simpleGains (γ k) (N k) (c k) W T ω -
+        MeasureTheory.stoppedProcess I (fun ω ↦ dyadicCeilTime k (σ ω)) T ω) atTop 0 :=
+    tendstoInMeasure_of_tendsto_measure_rate_lt_edist
+      (ENNReal.tendsto_inv_natCast_add_nhds_zero 1) <|
+      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+        (ENNReal.tendsto_inv_natCast_add_nhds_zero 1)
+        (fun _ ↦ zero_le) fun k ↦ (measure_mono fun ω hω ↦ by
+          simp only [Set.mem_ofPred_eq, Pi.zero_apply, hgains_eq k ω, eDist_eq_eNorm_sub,
+            sub_zero] at hω ⊢
+          exact hω.le).trans (hm_gain k).le
+  exact (hdiff.add hI_lim).congr (fun _ ↦ .of_forall fun _ ↦ sub_add_cancel _ _)
+    (.of_forall fun _ ↦ zero_add _)
 
-/-- **Ordered difference law on `(σ, τ]` for the Brownian Itô integral.** When `σ ≤ τ`,
-restricting an integrand to `(σ, τ]` corresponds to `stoppedProcess I τ - stoppedProcess I σ`. -/
-theorem isItoIntegral_ite_Ioc_of_le
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I)
+private theorem tendsto_measure_lintegral_stoppedProcess_diag [IsFiniteMeasure P]
+    (hH : LocallyBrownianIntegrable ℱ P H) (hσ : IsStoppingTime ℱ σ) {T : ℝ≥0}
+    {N : ℕ → ℕ} {γ : ℕ → ℕ → ℝ≥0} {c : ℕ → ℕ → Ω → ℝ}
+    {n : ℕ → ℕ} {τ₀ : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ} {m : ℕ → ℕ}
+    (hcm : ∀ k j, j < N k → StronglyMeasurable[ℱ (γ k j)] (c k j))
+    (hhold : ∀ k, ∀ s ∈ Ioc 0 T, ∀ ω, Finance.simpleHolding (γ k) (N k) (c k) s ω =
+      if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then
+        Finance.simpleHolding (τ₀ (m k)) (n (m k)) (a (m k)) s ω else 0)
+    (hm_hold : ∀ k : ℕ, P {ω | ((k : ℝ≥0∞) + 1)⁻¹ ≤ ∫⁻ s,
+      ‖Finance.simpleHolding (τ₀ (m k)) (n (m k)) (a (m k)) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure T} < ((k : ℝ≥0∞) + 1)⁻¹)
+    (ε : ℝ≥0∞) (hε : 0 < ε) :
+    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s,
+      ‖Finance.simpleHolding (γ k) (N k) (c k) s ω -
+        if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2
+      ∂timeMeasure T}) atTop (𝓝 0) := by
+  have he₁ (δ : ℝ≥0∞) (hδ : 0 < δ) : Tendsto (fun k ↦ P {ω | δ ≤ ∫⁻ s,
+      ‖Finance.simpleHolding (γ k) (N k) (c k) s ω -
+        if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0‖ₑ ^ 2
+      ∂timeMeasure T}) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      (ENNReal.tendsto_inv_natCast_add_nhds_zero 1) (.of_forall fun _ ↦ zero_le)
+      (((ENNReal.tendsto_inv_natCast_add_nhds_zero 1).eventually_lt_const hδ).mono fun k hk ↦
+        (measure_mono fun ω hω ↦ (hk.le.trans hω).trans <| lintegral_mono_ae
+          ((ae_mem_Ioc_timeMeasure T).mono fun s hs ↦ by
+            rw [hhold k s hs ω]; split_ifs <;> simp)).trans (hm_hold k).le)
+  simpa only [Function.comp_apply, id_eq, Pi.sub_apply, Function.uncurry_apply_pair,
+      sub_add_sub_cancel] using MeasureTheory.tendsto_measure_lintegral_enorm_add_sq
+    (.of_forall fun k ω ↦
+      (IsStronglyPredictable.measurable_enorm_sq_path
+        (H := fun s ω ↦ Finance.simpleHolding (γ k) (N k) (c k) s ω -
+          if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0)
+        ((Finance.isStronglyPredictable_simpleHolding (hcm k)).sub
+          (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable)).aemeasurable)
+    he₁ (hH.tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq hσ T) hε
+
+/-- **Optional stopping for the continuous Brownian Itô integral**: stopping `I` at a stopping time
+`σ` yields an Itô integral of `H · 1_{[0, σ]}`, without path continuity of `W` or moment bounds. -/
+theorem stoppedProcess (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hσ : IsStoppingTime ℱ σ) (hI : IsItoIntegral ℱ P W H I) :
+    IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0)
+      (MeasureTheory.stoppedProcess I σ) where
+  isStronglyPredictable := (hI.locallyBrownianIntegrable.ite_le hσ).isStronglyPredictable
+  ae_continuous := hI.ae_continuous.mono fun _ hω ↦ hω.stoppedProcess
+  exists_approx T := by
+    let := (hW.hasLaw_eval 0).isProbabilityMeasure
+    obtain ⟨n, τ₀, a, hτ₀, ha, henergy, -⟩ := hI.exists_approx T
+    have hstep (k : ℕ) :=
+      tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime (σ := σ) hW hI k hτ₀ ha henergy
+    have hr (k : ℕ) : (0 : ℝ≥0∞) < ((k : ℝ≥0∞) + 1)⁻¹ :=
+      ENNReal.inv_pos.mpr (by simp [ENNReal.natCast_ne_top])
+    choose m hm_hold hm_gain using fun k ↦
+      (((henergy _ (hr k)).eventually (gt_mem_nhds (hr k))).and
+        ((hstep k _ (hr k)).eventually (gt_mem_nhds (hr k)))).exists
+    choose N γ c _ hγ hcm _ hhold hgains using fun k ↦
+      Finance.exists_simpleHolding_simpleGains_dyadicCeilTime hσ k T (hτ₀ (m k)) (ha (m k))
+    exact ⟨N, γ, c, fun k ↦ (hγ k).monotoneOn, hcm,
+      tendsto_measure_lintegral_stoppedProcess_diag hI.locallyBrownianIntegrable hσ hcm hhold
+        hm_hold,
+      tendstoInMeasure_stoppedProcess_diag hW hσ hI hstep hτ₀ ha
+        (fun k ω ↦ hgains k W le_rfl ω) hm_gain⟩
+
+/-- Stopping an Itô integral `I` at `σ` is indistinguishable from any Itô integral `J` of
+`H · 1_{[0, σ]}`, without assuming path continuity of `W`. -/
+theorem stoppedProcess_indist (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hσ : IsStoppingTime ℱ σ) (hI : IsItoIntegral ℱ P W H I)
+    (hJ : IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0) J) :
+    MeasureTheory.stoppedProcess I σ ≡ᵐ[P] J :=
+  isItoIntegral_unique hW (hI.stoppedProcess hW hσ) hJ
+
+/-- **Stochastic-interval restriction for the continuous Brownian Itô integral**: for stopping
+times `σ ≤ τ`, restricting `H` to `(σ, τ]` yields an Itô integral equal to
+`stoppedProcess I τ - stoppedProcess I σ`, without path continuity of `W` or moment bounds. -/
+theorem ite_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
-    (hστ : σ ≤ τ) :
-    IsItoIntegral ℱ P W
-      (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
-      (fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I σ t ω) := by
-  simpa only [inf_of_le_left hστ] using hW.isItoIntegral_ite_Ioc hcont hI hσ hτ
+    (hστ : σ ≤ τ) (hI : IsItoIntegral ℱ P W H I) :
+    IsItoIntegral ℱ P W (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
+      (MeasureTheory.stoppedProcess I τ - MeasureTheory.stoppedProcess I σ) := by
+  have heq : (fun (t : ℝ≥0) ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
+      fun (t : ℝ≥0) ω ↦ (if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
+        if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0 := by
+    ext t ω
+    have hle := hστ ω
+    split_ifs <;> simp_all <;> grind
+  rw [heq]
+  exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hσ)
 
-/-- Indistinguishability form of `isItoIntegral_ite_Ioc`. -/
-theorem indist_stoppedProcess_sub_of_isItoIntegral_ite_Ioc
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I)
+/-- **Unordered stochastic-interval restriction for the continuous Brownian Itô integral**: for
+arbitrary stopping times `σ` and `τ`, restricting `H` to `(σ, τ]` yields an Itô integral equal to
+`stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`, without requiring `σ ≤ τ` or path continuity of
+`W`. -/
+theorem ite_Ioc_inf (hW : IsFilteredPreBrownianReal ℱ W P)
     {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
-    (hJ : IsItoIntegral ℱ P W
-      (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J) :
-    J ≡ᵐ[P] fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I (σ ⊓ τ) t ω :=
-  isItoIntegral_unique hW hJ (hW.isItoIntegral_ite_Ioc hcont hI hσ hτ)
+    (hI : IsItoIntegral ℱ P W H I) :
+    IsItoIntegral ℱ P W (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
+      (MeasureTheory.stoppedProcess I τ - MeasureTheory.stoppedProcess I (σ ⊓ τ)) := by
+  have heq : (fun (t : ℝ≥0) ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
+      fun (t : ℝ≥0) ω ↦ (if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
+        if (t : WithTop ℝ≥0) ≤ (σ ⊓ τ) ω then H t ω else 0 := by
+    ext t ω
+    split_ifs <;> simp_all <;> grind
+  rw [heq]
+  exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW (hσ.min hτ))
 
-/-- Indistinguishability form of `isItoIntegral_ite_Ioc_of_le`. -/
-theorem indist_stoppedProcess_sub_of_isItoIntegral_ite_Ioc_of_le
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I)
-    {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
-    (hστ : σ ≤ τ)
-    (hJ : IsItoIntegral ℱ P W
-      (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J) :
-    J ≡ᵐ[P] fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I σ t ω :=
-  isItoIntegral_unique hW hJ (hW.isItoIntegral_ite_Ioc_of_le hcont hI hσ hτ hστ)
-
-/-- **Local congruence of the Brownian Itô integral.** If two integrands agree
-product-almost-everywhere on `⟦0, σ⟧` over every finite horizon for a raw stopping time `σ`,
-their Itô integrals agree up to indistinguishability when stopped at `σ`. -/
-theorem stoppedProcess_indist_of_isItoIntegral
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J)
-    {σ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ)
+/-- **Local congruence of the Brownian Itô integral**: if two integrands agree
+`(timeMeasure t).prod P`-almost everywhere on `⟦0, σ⟧` for every finite horizon `t`, their Itô
+integrals are indistinguishable when stopped at `σ`, without assuming path continuity of `W`. -/
+theorem stoppedProcess_indist_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hσ : IsStoppingTime ℱ σ) (hI : IsItoIntegral ℱ P W H I)
+    {K J : ℝ≥0 → Ω → ℝ} (hJ : IsItoIntegral ℱ P W K J)
     (hHK : ∀ t : ℝ≥0,
       Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0) =ᵐ[
         (timeMeasure t).prod P]
       Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then K s ω else 0)) :
-    stoppedProcess I σ ≡ᵐ[P] stoppedProcess J σ := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hIσ := (hW.isItoIntegral_stoppedProcess hcont hI hσ).congr_integrand
-    (hJ.isStronglyPredictable.ite_le hσ) hHK
-  exact isItoIntegral_unique hW hIσ (hW.isItoIntegral_stoppedProcess hcont hJ hσ)
+    MeasureTheory.stoppedProcess I σ ≡ᵐ[P] MeasureTheory.stoppedProcess J σ := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  exact isItoIntegral_unique hW
+    ((hI.stoppedProcess hW hσ).congr_integrand
+      (hJ.locallyBrownianIntegrable.ite_le hσ).isStronglyPredictable hHK)
+    (hJ.stoppedProcess hW hσ)
 
-/-- **Closed-level energy-stage identification for any Brownian Itô integral.** Stopping an Itô
-integral at `TauCeti.nnvolume.energyLocalizer H C` identifies at each time `t` almost everywhere
-with the completed `L²` integral of its stopped finite-energy cutoff. -/
-theorem stoppedProcess_energyLocalizer_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I) (C t : ℝ≥0) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    stoppedProcess I (TauCeti.nnvolume.energyLocalizer H C) t =ᵐ[P]
-      hW.l2Integral t ((hI.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer
-        (P := P) C).toPredictableLp t) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hH : LocallyBrownianIntegrable ℱ P H := hI.locallyBrownianIntegrable
-  let τ := TauCeti.nnvolume.energyLocalizer H C
-  have hτ : IsStoppingTime ℱ τ :=
-    hI.isStronglyPredictable.isStoppingTime_energyLocalizer TauCeti.nnvolume C
-  let hHcut := hI.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P) C
-  have hstop : IsItoIntegral ℱ P W
-      (fun s ω ↦ if (s : WithTop ℝ≥0) ≤ τ ω then TauCeti.nnvolume.finiteEnergyCutoff H s ω else 0)
-      (stoppedProcess I τ) := by
-    refine (hW.isItoIntegral_stoppedProcess hcont hI hτ).congr_integrand
-      hHcut.isStronglyPredictable fun u ↦ ?_
-    filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure u) (ν := P)).ae
-        (ae_mem_Ioc_timeMeasure u),
-      (Measure.quasiMeasurePreserving_snd (μ := timeMeasure u) (ν := P)).ae
-        hH.ae_accumulatedEnergy_lt_top] with ⟨s, ω⟩ hs hfin
-    by_cases hle : (s : WithTop ℝ≥0) ≤ τ ω
-    · simp only [Function.uncurry_apply_pair, ite_eq_left hle]
-      exact (TauCeti.nnvolume.finiteEnergyCutoff_eqOn (hfin u) hs.2).symm
-    · simp only [Function.uncurry_apply_pair, ite_eq_right hle]
-  exact hW.ae_eq_l2Integral_of_isItoIntegral hHcut hstop t
-
-end TauCeti.Probability.IsFilteredPreBrownianReal
+end TauCeti.Probability.IsItoIntegral

@@ -344,11 +344,9 @@ the Liouville graph, is regular. -/
 theorem isRegularValue_smoothLogLiouvilleGraphFunction (hab : a < b) (hc : b < c) :
     IsRegularValue I 𝓘(ℝ) (smoothLogLiouvilleGraphFunction Z W ι f a b) c := by
   have hZ1 : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
-  have hcomp := h.isCompleteVectorField hZ
   have hG := h.contMDiff_smoothLogLiouvilleGraphFunction hZ hι hιs hinj hιW hdim hf ha hab.le
-  refine isRegularValue_of_apply_globalFlow_eq_add hZ1 hcomp (a := b) (b := c + 1)
+  refine isRegularValue_of_apply_flowOf_eq_add hZ1 (a := b) (b := c + 1)
     (fun x _ ↦ (hG x).mdifferentiableAt (by simp)) (fun x t hx hxt ↦ ?_) ⟨hc, by linarith⟩
-  rw [← flowOf_eq_globalFlow hZ1 hcomp]
   exact h.smoothLogLiouvilleGraphFunction_flowOf hZ ha hinj hιW hab hx.1 hxt.1
 
 /-- **Almost existence gives existence on a Liouville graph**, for contractibility in the
@@ -361,7 +359,7 @@ theorem hasContractibleClosedCharacteristic_univ_smoothLogLiouvilleGraphFunction
     ω.HasContractibleClosedCharacteristic univ (smoothLogLiouvilleGraphFunction Z W ι f a b) 0 := by
   have hG := h.contMDiff_smoothLogLiouvilleGraphFunction hZ hι hιs hinj hιW hdim hf ha hab.le
   exact (h.isLiouvilleVectorField hZ).hasContractibleClosedCharacteristic_univ h.isNondegenerate
-    (h.isCompleteVectorField hZ) (h.contMDiff_of_interior_eq hZ) (neg_pos.2 hb)
+    (h.isCompleteVectorField hZ) ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) (neg_pos.2 hb)
     (fun x _ ↦ (hG x).mdifferentiableAt (by simp))
     (fun x t hx hxt ↦ h.smoothLogLiouvilleGraphFunction_flowOf hZ ha hinj hιW hab
       (by linarith [hx.1]) (by linarith [hxt.1])) hae

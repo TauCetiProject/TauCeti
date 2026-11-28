@@ -18,6 +18,10 @@ them, identifies the allowed radial interval, and applies the integral formula
 `kepler_radialAction` on this energy domain. At the minimum the two radii coincide
 at the circular radius `ℓ² / (m κ)` and the radial action is zero.
 
+The file also computes the first two derivatives of the Kepler effective potential away from
+`r = 0`; for `κ ≠ 0` its only critical point is the circular radius, where the second
+derivative is `m³ κ⁴ / ℓ⁶`.
+
 The radii are `(κ ∓ √(κ² + 2 E ℓ² / m)) / (-2 E)`. Statements about turning
 points always retain positivity of the radius: the collision point is not in the
 configuration space. These are statements about the reduced energy curve and its
@@ -75,6 +79,49 @@ theorem effectivePotential_kepler_min_le (hm : 0 < m) (hℓ : ℓ ≠ 0) (hr : r
   have : 0 ≤ (ℓ ^ 2 - m * κ * r) ^ 2 / (2 * m * ℓ ^ 2 * r ^ 2) := by positivity
   rw [neg_div]
   linarith
+
+/-! ### Derivatives of the Kepler effective potential -/
+
+/-- Away from `r = 0`, the derivative of the Kepler effective potential
+`V_ℓ(r) = ℓ² / (2 m r²) - κ / r` is `V_ℓ'(r) = κ / r² - ℓ² / (m r³)`. -/
+theorem hasDerivAt_effectivePotential_kepler (hr : r ≠ 0) :
+    HasDerivAt (effectivePotential m ℓ fun r ↦ -κ / r) (κ / r ^ 2 - ℓ ^ 2 / (m * r ^ 3)) r :=
+  hasDerivAt_effectivePotential (hasDerivAt_kepler_potential κ hr) hr
+
+/-- **The critical point of the Kepler effective potential.** For `κ ≠ 0`, a radius `r ≠ 0` is a
+critical point of the effective potential exactly when it is the circular radius `ℓ² / (m κ)`.
+For `m = 0` both sides are false: the effective potential is `-κ / r`, and `ℓ² / (m κ) = 0`. -/
+theorem deriv_effectivePotential_kepler_eq_zero_iff (hκ : κ ≠ 0) (hr : r ≠ 0) :
+    deriv (effectivePotential m ℓ fun r ↦ -κ / r) r = 0 ↔ r = ℓ ^ 2 / (m * κ) := by
+  rw [(hasDerivAt_effectivePotential_kepler hr).deriv, sub_eq_zero]
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp [hκ, hr]
+  rw [eq_div_iff (mul_ne_zero hm hκ)]
+  constructor <;> intro h
+  · field_simp at h
+    linear_combination h
+  · field_simp
+    linear_combination h
+
+/-- Away from `r = 0`, the second derivative of the Kepler effective potential is
+`V_ℓ''(r) = 3 ℓ² / (m r⁴) - 2 κ / r³`. -/
+theorem hasDerivAt_deriv_effectivePotential_kepler (hr : r ≠ 0) :
+    HasDerivAt (deriv (effectivePotential m ℓ fun r ↦ -κ / r))
+      (3 * ℓ ^ 2 / (m * r ^ 4) - 2 * κ / r ^ 3) r :=
+  (hasDerivAt_deriv_effectivePotential (eventually_differentiableAt_kepler_potential κ hr)
+    (hasDerivAt_deriv_kepler_potential κ hr) hr).congr_deriv (by ring)
+
+/-- **The second derivative at the circular Kepler radius.** For `m, κ, ℓ ≠ 0`, the second
+derivative of the Kepler effective potential at the circular radius `r₀ = ℓ² / (m κ)` is
+`V_ℓ''(r₀) = m³ κ⁴ / ℓ⁶`. It is positive when `m > 0`, and then `r₀` is a nondegenerate
+minimum. -/
+theorem hasDerivAt_deriv_effectivePotential_kepler_circular (hm : m ≠ 0) (hκ : κ ≠ 0)
+    (hℓ : ℓ ≠ 0) :
+    HasDerivAt (deriv (effectivePotential m ℓ fun r ↦ -κ / r)) (m ^ 3 * κ ^ 4 / ℓ ^ 6)
+      (ℓ ^ 2 / (m * κ)) := by
+  refine (hasDerivAt_deriv_effectivePotential_kepler (by positivity)).congr_deriv ?_
+  field_simp
+  ring
 
 /-- The square root in the turning-radius formulas is real on the bound-energy domain
 and is strictly smaller than `κ`, excluding collision at either turning radius. -/

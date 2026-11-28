@@ -35,6 +35,10 @@ with itself (`TauCeti.SignedHermitianSpace.IsometryEquiv.ofMemIsometryGroup`).
   left-separating exactly when `W` meets its orthogonal only in `0`.
 * `TauCeti.SignedHermitianSpace.Equivalent.prod`: orthogonal sums of equivalent spaces are
   equivalent.
+* `TauCeti.signedHermitianHomAdjoint_isometryEquiv`: over a field, the adjoint of an isometric
+  equivalence is its inverse.
+* `TauCeti.SignedHermitianSpace.mem_isometryGroup_iff_signedHermitianAdjoint_eq_symm`: an
+  automorphism `g` of a finite-dimensional space lies in `U(V)` exactly when `g* = g⁻¹`.
 
 ## Attribution
 
@@ -160,6 +164,12 @@ def ofMemIsometryGroup {e : V ≃ₗ[K] V} (he : e ∈ H.form.isometryGroup) : I
 @[simp]
 theorem ofMemIsometryGroup_apply {e : V ≃ₗ[K] V} (he : e ∈ H.form.isometryGroup) (x : V) :
     ofMemIsometryGroup he x = e x :=
+  (rfl)
+
+/-- The linear equivalence underlying `ofMemIsometryGroup he` is `e`. -/
+@[simp]
+theorem toLinearEquiv_ofMemIsometryGroup {e : V ≃ₗ[K] V} (he : e ∈ H.form.isometryGroup) :
+    (ofMemIsometryGroup he).toLinearEquiv = e :=
   (rfl)
 
 /-- The linear equivalence underlying an isometric equivalence of a space with itself lies in the
@@ -315,5 +325,35 @@ theorem restrict_form_apply (W : Submodule K V) (hW : (H.form.domRestrict₁₂ 
   (rfl)
 
 end SignedHermitianSpace
+
+/-! ### Adjoints of isometries -/
+
+section Adjoint
+
+variable {K V V₁ V₂ : Type*} [Field K] {σ : K →+* K} {ε : ℤˣ} [AddCommGroup V] [Module K V]
+  [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂] [Module K V₂]
+
+/-- The adjoint of an isometric equivalence is its inverse. -/
+@[simp]
+theorem signedHermitianHomAdjoint_isometryEquiv {H₁ : SignedHermitianSpace K V₁ σ ε}
+    {H₂ : SignedHermitianSpace K V₂ σ ε} [FiniteDimensional K V₁]
+    (f : SignedHermitianSpace.IsometryEquiv H₁ H₂) :
+    signedHermitianHomAdjoint H₁ H₂ f.toLinearEquiv = f.symm.toLinearEquiv :=
+  signedHermitianHomAdjoint_unique H₁ H₂ fun v w ↦ by
+    simpa using f.map_app v (f.symm w)
+
+/-- An automorphism `g` of a finite-dimensional signed hermitian space lies in its unitary group
+`U(V)`, the isometry group of the form, exactly when its adjoint is its inverse: `g* = g⁻¹`. -/
+theorem SignedHermitianSpace.mem_isometryGroup_iff_signedHermitianAdjoint_eq_symm
+    (H : SignedHermitianSpace K V σ ε) [FiniteDimensional K V] {g : V ≃ₗ[K] V} :
+    g ∈ H.form.isometryGroup ↔
+      signedHermitianAdjoint H (g : Module.End K V) = (g.symm : Module.End K V) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ LinearMap.mem_isometryGroup_iff.2 fun x y ↦ ?_⟩
+  · simpa using signedHermitianHomAdjoint_isometryEquiv (IsometryEquiv.ofMemIsometryGroup hg)
+  · have h := signedHermitianAdjoint_form_right H (g : Module.End K V) x (g y)
+    rw [hg] at h
+    simpa using h.symm
+
+end Adjoint
 
 end TauCeti

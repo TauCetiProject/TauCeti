@@ -38,6 +38,10 @@ theorem lintegral_enorm_sub_sq_le_two_mul {f g h : α → E}
     ∫⁻ x, ‖f x - g x‖ₑ ^ 2 ∂μ ≤
       2 * ((∫⁻ x, ‖f x - h x‖ₑ ^ 2 ∂μ) + ∫⁻ x, ‖g x - h x‖ₑ ^ 2 ∂μ) := by
   rw [← lintegral_add_left' hfh, ← lintegral_const_mul' _ _ (by norm_num)]
-  exact lintegral_mono fun x ↦ TauCeti.eNorm_sub_sq_le_two_mul (f x) (g x) (h x)
+  refine lintegral_mono fun x ↦ ?_
+  have hx := ENNReal.ofReal_le_ofReal (norm_sub_sq_le_two_mul (f x) (g x) (h x))
+  simpa only [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2),
+    ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _), ENNReal.ofReal_pow (norm_nonneg _),
+    ofReal_norm, ENNReal.ofReal_ofNat] using hx
 
 end TauCeti

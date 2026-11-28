@@ -135,4 +135,58 @@ theorem IsItoIntegral.mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
     simp [Finance.simpleGains_def]
   simpa [Finance.simpleHolding_def, hgain] using h
 
+/-- **Unbounded post-`s` multiplier rule.** Multiplying an integrand after a deterministic time
+`s` by an arbitrary `ℱ s`-measurable random variable `ξ` yields `t ↦ ξ * (I t - I (min s t))`.
+Neither boundedness nor moment conditions on `ξ`, nor path continuity of `W`, are needed. -/
+theorem IsItoIntegral.indicator_Ioi_mul (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (s : ℝ≥0) {ξ : Ω → ℝ}
+    (hξ : StronglyMeasurable[ℱ s] ξ) :
+    IsItoIntegral ℱ P W (fun t ω ↦ (Ioi s).indicator (fun _ ↦ ξ ω) t * H t ω)
+      (fun t ω ↦ ξ ω * (I t ω - I (min s t) ω)) := by
+  have hpred : IsStronglyPredictable ℱ (fun t ω ↦ (Ioi s).indicator (fun _ ↦ ξ ω) t * H t ω) := by
+    convert hI.isStronglyPredictable.indicator_Ioi_mul hξ using 2 with r ω
+    by_cases hr : s < r <;> simp [hr]
+  refine ⟨hpred, hI.ae_continuous.mono fun _ hω ↦ by fun_prop, fun t ↦ ?_⟩
+  by_cases hst : s ≤ t
+  · obtain ⟨n, τ, b, hτ, hb, he, hg⟩ := (hI.mul_sub_min hW hst hξ).exists_approx t
+    refine ⟨n, τ, b, hτ, hb, fun ε hε ↦ (he ε hε).congr fun k ↦ ?_, by
+      simpa only [min_self] using hg⟩
+    refine congrArg (P ·) (Set.ext fun ω ↦ by
+      simp only [Set.mem_ofPred_eq]
+      rw [show (∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
+          (Ioc s t).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t) =
+          ∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
+            (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t from
+        lintegral_congr_ae ((ae_mem_Ioc_timeMeasure t).mono fun r hr ↦ by
+          by_cases hrs : s < r <;> simp [hrs, hr.2])])
+  · have hts : t ≤ s := (not_le.mp hst).le
+    refine ⟨fun _ ↦ 0, fun _ _ ↦ 0, fun _ _ _ ↦ 0, fun _ _ _ _ _ _ ↦ le_rfl,
+      fun _ _ hj ↦ (Nat.not_lt_zero _ hj).elim, fun ε hε ↦ ?_, ?_⟩
+    · refine (tendsto_const_nhds (x := 0)).congr fun k ↦ ?_
+      have hzero (ω : Ω) : ∫⁻ r, ‖Finance.simpleHolding (fun _ ↦ 0) 0 (fun _ _ ↦ 0) r ω -
+          (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t = 0 := by
+        refine (lintegral_eq_zero_iff' ?_).mpr ?_
+        · have hm : Measurable fun r ↦ ‖Finance.simpleHolding (fun _ ↦ 0) 0 (fun _ _ ↦ 0) r ω -
+              (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 :=
+            ((((Finance.isStronglyPredictable_simpleHolding (ℱ := ℱ)
+              (τ := fun _ ↦ 0) (n := 0) (a := fun _ _ ↦ 0)
+              (fun _ hj ↦ (Nat.not_lt_zero _ hj).elim)).sub hpred).mono
+                ℱ.predictable_le_prod).measurable.comp
+                (measurable_id.prodMk measurable_const)).eNorm.pow_const 2
+          exact hm.aemeasurable
+        · filter_upwards [ae_mem_Ioc_timeMeasure t] with r hr
+          have hnot : ¬ s < r := (hr.2.trans hts).not_gt
+          simp [Finance.simpleHolding_def, hnot]
+      simp [hzero, hε.ne']
+    · intro ε hε
+      simp [min_eq_right hts, Finance.simpleGains_def, hε.ne']
+
+/-- Indistinguishability form of `IsItoIntegral.indicator_Ioi_mul`. -/
+theorem IsItoIntegral.indist_mul_sub_of_indicator_Ioi_mul
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hI : IsItoIntegral ℱ P W H I)
+    (s : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) {J : ℝ≥0 → Ω → ℝ}
+    (hJ : IsItoIntegral ℱ P W (fun t ω ↦ (Ioi s).indicator (fun _ ↦ ξ ω) t * H t ω) J) :
+    J ≡ᵐ[P] fun t ω ↦ ξ ω * (I t ω - I (min s t) ω) :=
+  isItoIntegral_unique hW hJ (hI.indicator_Ioi_mul hW s hξ)
+
 end TauCeti.Probability

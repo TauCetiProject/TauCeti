@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 public import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
-import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Iterated `Lᵖ` seminorms on a product measure
@@ -30,8 +29,8 @@ Only the second measure needs to be s-finite.
   seminorm of its section seminorms.
 * `TauCeti.lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq` — the squared `L²(μ ⊗ ν)` seminorm
   is the iterated integral of the squared extended norm, integrating over `μ` first.
-* `MeasureTheory.tendsto_measure_le_lintegral_enorm_pow_of_tendsto_eLpNorm` — convergence to zero
-  in `Lⁿ(μ.prod ν)` (`n ≠ 0`) makes the slice energies over `μ` converge to zero in `ν`-measure.
+* `TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm` — convergence to zero in
+  `L²(μ ⊗ ν)` makes the section square energies over `μ` converge to zero in `ν`-measure.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 * `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
@@ -189,40 +188,28 @@ theorem lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq [SFinite μ] [SFinite ν
     ∫⁻ y, ∫⁻ x, ‖f (x, y)‖ₑ ^ 2 ∂μ ∂ν = eLpNorm f 2 (μ.prod ν) ^ 2 := by
   rw [eLpNorm_two_sq_eq_lintegral hf, lintegral_prod_symm _ (hf.eNorm.pow_const 2)]
 
-/-- If `eLpNorm (g k) n (μ.prod ν) → 0` for `n ≠ 0` along a filter `l`, then the slice energies
-`∫⁻ x, ‖g k (x, y)‖ₑ ^ n ∂μ` converge to `0` in `ν`-measure. -/
-theorem _root_.MeasureTheory.tendsto_measure_le_lintegral_enorm_pow_of_tendsto_eLpNorm
-    {α β ι E : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {μ : Measure α} {ν : Measure β} [SFinite μ] [SFinite ν]
-    [TopologicalSpace E] [ContinuousENorm E]
-    {l : Filter ι} {n : ℕ} (hn : n ≠ 0) {g : ι → α × β → E}
-    (hg : ∀ k, AEStronglyMeasurable (g k) (μ.prod ν))
-    (hlim : Tendsto (fun k ↦ eLpNorm (g k) n (μ.prod ν)) l (𝓝 0))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun k ↦ ν {y | ε ≤ ∫⁻ x, ‖g k (x, y)‖ₑ ^ n ∂μ}) l (𝓝 0) := by
-  have hm (k : ι) : AEMeasurable (fun p : α × β ↦ ‖g k p‖ₑ ^ n) (μ.prod ν) :=
-    (hg k).eNorm.pow_const n
-  have hint (k : ι) : ∫⁻ y, ∫⁻ x, ‖g k (x, y)‖ₑ ^ n ∂μ ∂ν = eLpNorm (g k) n (μ.prod ν) ^ n := by
-    rw [← lintegral_prod_symm _ (hm k), lintegral_enorm_pow_eq_eLpNorm_pow hn (hg k)]
-  have hpow : Tendsto (fun k ↦ eLpNorm (g k) n (μ.prod ν) ^ n) l (𝓝 0) := by
-    simpa only [Function.comp_def, zero_pow hn] using
-      (ENNReal.continuous_pow n).continuousAt.tendsto.comp hlim
-  by_cases htop : ε = ∞
-  · subst htop
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [hpow.eventually (gt_mem_nhds zero_lt_one)] with k hk
-    have hae := ae_lt_top' (hm k).lintegral_prod_left'
-      ((hint k).trans_lt (hk.trans ENNReal.one_lt_top)).ne
-    simpa only [not_lt, top_le_iff] using (ae_iff.mp hae).symm
-  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa only [mul_zero] using
-        ENNReal.Tendsto.const_mul hpow (Or.inr (ENNReal.inv_ne_top.mpr hε.ne')))
-      (fun _ ↦ bot_le) fun k ↦ ?_
-    calc ν {y | ε ≤ ∫⁻ x, ‖g k (x, y)‖ₑ ^ n ∂μ}
-      _ = ε⁻¹ * (ε * ν {y | ε ≤ ∫⁻ x, ‖g k (x, y)‖ₑ ^ n ∂μ}) := by
-          rw [← mul_assoc, ENNReal.inv_mul_cancel hε.ne' htop, one_mul]
-      _ ≤ ε⁻¹ * eLpNorm (g k) n (μ.prod ν) ^ n := mul_le_mul_right
-          ((mul_meas_ge_le_lintegral₀ (hm k).lintegral_prod_left' ε).trans_eq (hint k)) _
+/-- **Markov's inequality for section energies.** If `f k → 0` in `L²(μ ⊗ ν)`, then the section
+square energies `y ↦ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ` converge to zero in `ν`-measure: for each
+`δ > 0`, the `ν`-measure of the set where the energy is at least `δ` tends to zero. -/
+theorem tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm [SFinite μ] [SFinite ν]
+    {ι : Type*} {l : Filter ι} {f : ι → α × β → ε}
+    (hf : ∀ k, AEStronglyMeasurable (f k) (μ.prod ν))
+    (h : Tendsto (fun k ↦ eLpNorm (f k) 2 (μ.prod ν)) l (𝓝 0)) {δ : ℝ≥0∞} (hδ : 0 < δ) :
+    Tendsto (fun k ↦ ν {y | δ ≤ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+  -- Markov's inequality at the finite level `min δ 1`.
+  set c := min δ 1
+  have hc : c ≠ 0 := (lt_min hδ one_pos).ne'
+  have hc' : c ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hbound (k : ι) : ν {y | δ ≤ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ} ≤
+      eLpNorm (f k) 2 (μ.prod ν) ^ 2 / c := by
+    rw [← lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq (hf k)]
+    exact (measure_mono fun y hy ↦ (min_le_left δ 1).trans hy).trans
+      (meas_ge_le_lintegral_div ((hf k).eNorm.pow_const 2).lintegral_prod_left' hc hc')
+  have hlim : Tendsto (fun k ↦ eLpNorm (f k) 2 (μ.prod ν) ^ 2 / c) l (𝓝 0) := by
+    simpa using ENNReal.Tendsto.div_const (((ENNReal.continuous_pow 2).tendsto 0).comp h)
+      (Or.inr hc)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le)
+    hbound
 
 /-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
 is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every

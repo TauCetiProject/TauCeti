@@ -5,29 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Integral.L2
+public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
+import TauCeti.Probability.BrownianMotion.Martingale
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Independence.Integration
-import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
-import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
-import TauCeti.Probability.BrownianMotion.Integral.Simple
-import TauCeti.Probability.BrownianMotion.Martingale
-import TauCeti.Probability.Finance.SimpleStrategy.Approximation
-import TauCeti.Probability.Martingale.LpLimit
-import TauCeti.Probability.Process.TimeIntegral
 
 /-!
-# Square compensation for Brownian integrals
+# Square compensation for elementary Brownian integrals
 
 The square of an elementary Brownian integral, minus its elapsed pathwise square
 energy, is a martingale. The heights are square integrable and known at the left
 endpoints; they need not be bounded or independent of one another. This is the
-elementary square decomposition used to identify the bracket of the completed integral,
-and passing to the `L²` limit yields the square-compensation martingale property
-`martingale_sq_sub_integral_of_ae_eq_l2Integral` for any strongly adapted modification of the
-completed `L²` integral of a `BrownianIntegrable` integrand.
+elementary square decomposition used to identify the bracket of the completed integral.
 
+The one-interval results also allow an integrable height for the first-order integral.
 Only filtration-relative pre-Brownian laws are needed, not path continuity or usual
 conditions on the filtration. Empty grids and repeated dates are allowed.
 
@@ -39,13 +32,33 @@ conditions on the filtration. Empty grids and repeated dates are allowed.
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Finset Set
-open scoped NNReal ENNReal Topology
+open MeasureTheory ProbabilityTheory Finset Set
+open scoped NNReal ENNReal
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {ξ : Ω → ℝ} {s v : ℝ≥0}
+
+/-- A position known at `s` and integrable, held until `v`, gives a true Brownian
+martingale. Independence supplies product integrability without boundedness or an
+`L²` assumption on the position. -/
+theorem martingale_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P) (hsv : s ≤ v)
+    (hξ : StronglyMeasurable[ℱ s] ξ) (hξi : Integrable ξ P) :
+    Martingale (fun t ω ↦ ξ ω * (W (min v t) ω - W (min s t) ω)) ℱ P := by
+  have := hW.isGaussianProcess.isProbabilityMeasure
+  refine ((hW.martingale.const_min v).sub (hW.martingale.const_min s)).mul_left_of_eq_zero
+    (r := s) (fun t ht ↦ ?_) hξ (fun t ↦ ?_)
+  · ext ω
+    simp [min_eq_right ht, min_eq_right (ht.trans hsv)]
+  · by_cases hst : s ≤ t
+    · simpa only [min_eq_left hst, Pi.mul_def, Pi.sub_def] using
+        (hW.indepFun_sub (le_min hsv hst) hξ.measurable).integrable_mul hξi
+          ((hW.integrable_eval _).sub (hW.integrable_eval _))
+    · have hts : t ≤ s := (not_le.mp hst).le
+      convert integrable_zero Ω ℝ P using 1
+      ext ω
+      simp [min_eq_right hts, min_eq_right (hts.trans hsv)]
 
 /-- The square of a Brownian position held on `(s,v]`, compensated by its elapsed
 square energy, is a true martingale. Only the second moment of the position is needed. -/
@@ -140,68 +153,5 @@ theorem martingale_sq_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     · have htn : t ≤ τ n := (not_le.mp hnt).le
       simp only [min_eq_right htn, min_eq_right (htn.trans hsv), sub_self, mul_zero]
       ring
-
-/-- **Brownian square-compensation martingale.** For any `BrownianIntegrable` integrand `H` and
-strongly adapted modification `I` of `l2Integral`, `I_t² - ∫_{(0, t]} H_s² ds` is a true
-martingale on the original raw filtration. -/
-theorem martingale_sq_sub_integral_of_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hI_adapt : StronglyAdapted ℱ I)
-    (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) :
-    Martingale (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  obtain ⟨n, τ, a, _, _, hτ, ha, _, ha₂, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  let M (m : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
-    Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 -
-      ∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t
-  have hM (m : ℕ) : Martingale (M m) ℱ P := by
-    convert hW.martingale_sq_simpleGains_sub (hτ m).monotoneOn (ha m) (ha₂ m) using 1
-    ext t ω; dsimp only [M]
-    rw [Finance.integral_sq_simpleHolding_timeMeasure (hτ m).monotoneOn t ω]
-  have hcomp_adapt : StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂timeMeasure t) := by
-    simpa only [sq] using (hH.isStronglyPredictable.mul
-      hH.isStronglyPredictable).isStronglyProgressive.integral_timeMeasure.stronglyAdapted
-  refine martingale_of_tendsto_eLpNorm_one hM (fun t ↦ ((hI_adapt t).pow 2).sub (hcomp_adapt t))
-    fun t ↦ ?_
-  have hG_lim : Tendsto (fun m ↦ eLpNorm
-      (fun ω ↦ Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 - I t ω ^ 2) 1 P) atTop (𝓝 0) :=
-    TauCeti.tendsto_eLpNorm_one_sq_sub_sq (hW.memLp_of_ae_eq_l2Integral hH (hI t)).eLpNorm_ne_top
-      (hW.tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
-        (fun _ ↦ hH) (fun _ ↦ hI t) (fun m ↦ (hτ m).monotoneOn) ha ha₂ (herr t))
-  have hA_lim : Tendsto (fun m ↦ eLpNorm
-      (fun ω ↦ (∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t) -
-        ∫ s, H s ω ^ 2 ∂timeMeasure t) 1 P) atTop (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (TauCeti.tendsto_eLpNorm_one_sq_sub_sq (hH.memLp_timeMeasure t).eLpNorm_ne_top (herr t))
-      (fun _ ↦ bot_le) fun m ↦ ?_
-    have hS := TauCeti.brownianIntegrable_simpleHolding (ha m) (ha₂ m)
-    have hdiff_sm : StronglyMeasurable (fun p : ℝ≥0 × Ω ↦
-        Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 ^ 2 - Function.uncurry H p ^ 2) :=
-      ((hS.isStronglyPredictable.pow 2).sub (hH.isStronglyPredictable.pow 2)).mono
-        ℱ.predictable_le_prod
-    have hS_adapt : StronglyAdapted ℱ
-        (fun t ω ↦ ∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t) := by
-      simpa only [sq] using (hS.isStronglyPredictable.mul
-        hS.isStronglyPredictable).isStronglyProgressive.integral_timeMeasure.stronglyAdapted
-    have hlhs_m : AEStronglyMeasurable
-        (fun ω ↦ (∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t) -
-          ∫ s, H s ω ^ 2 ∂timeMeasure t) P :=
-      (((hS_adapt t).sub (hcomp_adapt t)).mono (ℱ.le t)).aestronglyMeasurable
-    rw [eLpNorm_one_eq_lintegral_eNorm hlhs_m,
-      eLpNorm_one_eq_lintegral_eNorm hdiff_sm.aestronglyMeasurable,
-      lintegral_prod_symm _ hdiff_sm.eNorm.aemeasurable]
-    refine lintegral_mono_ae ?_
-    filter_upwards [hS.locallyBrownianIntegrable.ae_memLp,
-      hH.locallyBrownianIntegrable.ae_memLp] with ω hSω hHω
-    rw [← integral_sub
-      (by simpa [NNReal.comap_volume_restrict_Ioc, timeMeasure_def] using (hSω t).integrable_sq)
-      (by simpa [NNReal.comap_volume_restrict_Ioc, timeMeasure_def] using (hHω t).integrable_sq)]
-    exact eNorm_integral_le_lintegral_eNorm _
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [zero_add] using hG_lim.add hA_lim) (fun _ ↦ bot_le) fun m ↦ ?_
-  have htri : (M m t - fun ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) =
-      (fun ω ↦ Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 - I t ω ^ 2) -
-        fun ω ↦ (∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t) -
-          ∫ s, H s ω ^ 2 ∂timeMeasure t := by ext ω; simp [M]; ring
-  rw [htri]; exact eLpNorm_sub_le le_rfl
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

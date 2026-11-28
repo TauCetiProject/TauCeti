@@ -10,11 +10,13 @@ public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Weyl
 -- Proof-only: root-plane decompositions over a maximal torus, and density of the regular
 -- elements of `t` by the Baire property of locally compact spaces.
 import Mathlib.Topology.Baire.LocallyCompactRegular
-import TauCeti.Geometry.Lie.Subgroup.Torus.RootPlane
+import TauCeti.Geometry.Lie.Subgroup.Torus.Root.Plane
 import TauCeti.Topology.Algebra.Module.Baire
+-- Proof-only: convexity of planar projections of moment images.
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RankTwo
 
 /-!
-# Projected coadjoint orbits lie in the convex hull of a projected Weyl orbit
+# Projected coadjoint orbits and the convex hull of a projected Weyl orbit
 
 Let `T` be a maximal torus of a compact Lie group `G`, with Lie algebra `𝔱` and Weyl group
 `W = N(T) / T` acting on `𝔱` by `Subgroup.weylAdjointRepresentation`. Let `B` be an `Ad`-invariant
@@ -31,9 +33,29 @@ restrictions of the covectors `B (e (w μ))`, `w ∈ W`
 two sets have the same convex hull
 (`TauCeti.Lie.convexHull_range_domRestrict_coadjointRepresentation`). Kostant's convexity theorem
 says moreover that for connected `G` the projection `pr (G · ν)` is itself convex, hence equal to
-`conv (pr (W · ν))`; that reverse inclusion is not proved here.
+`conv (pr (W · ν))`. This file proves that reverse inclusion for the projections to planes: for
+compact connected `G` and every subspace `s ⊆ t` of dimension at most two,
 
-The argument is the one for torus moment maps
+`pr_s (G · ν) = conv (pr_s (W · ν))`
+
+(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two`).
+In particular Kostant's theorem `pr (G · ν) = conv (pr (W · ν))` holds when the maximal torus has
+dimension at most two
+(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_finrank_le_two`), for
+instance for `SU(2)`, `SU(3)`, `Sp(2)` and `G₂`. For a maximal torus of higher dimension the
+convexity of the full projection `pr (G · ν)` is not proved here.
+
+Convexity of a planar projection comes from Atiyah's argument
+(`TauCeti.SmoothTwoForm.IsMomentMap.convex_range_domRestrict_of_finrank_le_two`). The orbit map
+`[g] ↦ Ad*_g ν` is a moment map of the Kirillov–Kostant–Souriau form on the orbit `G ⧸ G_ν`
+(`Module.Dual.isEquivariantMomentMap_coadjointOrbitForm`), which is compact and connected when `G`
+is. The levels of each height `f_X` on it are connected, and in a plane `s*` every line is a level
+set of one of these heights, so `pr_s (G · ν)` meets every line in an interval and is convex
+(`Module.Dual.convex_range_domRestrict_coadjointRepresentation`); this holds for every plane
+`s ⊆ 𝔤`. For `s ⊆ t` the projection `pr_s (G · ν)` then contains the points of `pr_s (W · ν)`, and
+restricting the inclusion above from `t` to `s` bounds it by their convex hull.
+
+The inclusion `pr (G · ν) ⊆ conv (pr (W · ν))` is proved as for torus moment maps
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_subset_convexHull_image_fixedPoints`), on the coadjoint
 orbit `O = G ⧸ G_ν`. The Lie algebra `t` is a maximal abelian subspace of `𝔤`, so it carries a
 root-plane decomposition `𝔤 = t + Σ F_i` with roots `α_i ∈ t*`, and an element of `t` at which no
@@ -49,9 +71,9 @@ directions into membership in the convex hull. In turn, every height `f_X` with 
 or not, attains its maximum at a Weyl group point
 (`TauCeti.Lie.exists_forall_coadjointRepresentation_apply_le`).
 
-No connectedness of `G` is used. For `G = O(2)` and its rotation torus, the orbit of a nonzero `ν`
-is `{ν, -ν} = W · ν`, whose projection is not convex: the inclusion above holds, while the convexity
-theorem needs connectedness.
+No connectedness of `G` is used for the inclusion. For `G = O(2)` and its rotation torus, the
+orbit of a nonzero `ν` is `{ν, -ν} = W · ν`, whose projection is not convex: the inclusion above
+holds, while the convexity theorem needs connectedness.
 
 ## Main results
 
@@ -64,6 +86,13 @@ theorem needs connectedness.
   projected Weyl orbit have the same convex hull.
 * `TauCeti.Lie.exists_forall_coadjointRepresentation_apply_le`: every height `f_X`, `X ∈ t`,
   attains its maximum over the orbit at a Weyl group point.
+* `Module.Dual.convex_range_domRestrict_coadjointRepresentation`: for compact connected `G`, the
+  projection of a coadjoint orbit to a plane `s*` is convex.
+* `TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two`:
+  Kostant's convexity theorem for the projections to planes `s ⊆ t`,
+  `pr_s (G · ν) = conv (pr_s (W · ν))`.
+* `TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_finrank_le_two`:
+  Kostant's convexity theorem when the maximal torus has dimension at most two.
 
 ## References
 
@@ -129,6 +158,30 @@ theorem exists_forall_orbitMap_coadjointRepresentation_apply_le [CompactSpace G]
   exact hy₀ (mem_univ y)
 
 end TauCeti.IsRootPlaneDecomposition
+
+/-! ### Planar projections of coadjoint orbits are convex -/
+
+namespace Module.Dual
+
+/-- **Planar projections of a coadjoint orbit are convex.** For a compact connected Lie group `G`,
+`ν ∈ 𝔤*` and a subspace `s ⊆ 𝔤` of dimension at most two, the restrictions to `s` of the
+covectors `Ad*_g ν`, `g ∈ G`, form a convex subset of `s*`. -/
+theorem convex_range_domRestrict_coadjointRepresentation [CompactSpace G] [ConnectedSpace G]
+    (ν : Dual ℝ (GroupLieAlgebra I G)) {s : Submodule ℝ (GroupLieAlgebra I G)}
+    (hs : finrank ℝ s ≤ 2) :
+    Convex ℝ (range fun g : G ↦ (coadjointRepresentation ℝ I G g ν).domRestrict s) := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have : ConnectedSpace (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :=
+    QuotientGroup.mk_surjective.connectedSpace continuous_quot_mk
+  -- The orbit map is a moment map of the KKS form on the compact connected orbit `G ⧸ G_ν`.
+  have h := ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap
+    |>.convex_range_domRestrict_of_finrank_le_two ν.isSymplectic_coadjointOrbitForm.isNondegenerate
+      (fun g ↦ (ν.isSymplecticMap_smul_coadjointOrbitForm g).apply) hs
+  -- It sends the coset of `g` to `Ad*_g ν`, so both maps have the same range.
+  rw [← QuotientGroup.mk_surjective.range_comp] at h
+  simpa only [comp_def, Representation.orbitMap_mk] using h
+
+end Module.Dual
 
 /-! ### The projected orbit lies in the convex hull of the projected Weyl orbit -/
 
@@ -256,5 +309,67 @@ theorem exists_forall_coadjointRepresentation_apply_le [CompactSpace G]
     ((Module.Dual.eval ℝ t X).convexOn convex_univ).exists_ge_of_mem_convexHull (subset_univ _)
       (domRestrict_coadjointRepresentation_mem_convexHull hT hB hBs hpos ht μ g)
   exact hle.trans (hw₀ w)
+
+/-- **Kostant's convexity theorem on planes of `t*`.** Let `T` be a maximal torus of a compact
+connected Lie group `G`, `B` an `Ad`-invariant inner product on `𝔤`, and `t` the image of the Lie
+algebra `𝔱` of `T`. For `μ ∈ 𝔱`, `ν = B (e μ)` and every subspace `s ⊆ t` of dimension at most two,
+the restrictions to `s` of the covectors of the coadjoint orbit of `ν` form exactly the convex hull
+of the restrictions to `s` of the covectors `B (e (w μ))`, `w` in the Weyl group:
+`pr_s (G · ν) = conv (pr_s (W · ν))`. -/
+theorem range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two
+    [CompactSpace G] [ConnectedSpace G] (hT : IsMaximalTorus T)
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (hBs : B.IsSymm) (hpos : ∀ a, a ≠ 0 → 0 < B a a)
+    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap)
+    (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) {s : Submodule ℝ (GroupLieAlgebra I G)}
+    (hst : s ≤ t) (hs : finrank ℝ s ≤ 2) :
+    range (fun g : G ↦ (coadjointRepresentation ℝ I G g
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint μ))).domRestrict s) =
+      convexHull ℝ (range fun w : T.normalizerQuotient ↦
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint
+            (T.weylAdjointRepresentation (I := I) w μ))).domRestrict s) := by
+  refine subset_antisymm ?_ (convexHull_min ?_
+    (Module.Dual.convex_range_domRestrict_coadjointRepresentation _ hs))
+  · -- Restriction from `t` to `s` is linear, so it carries the inclusion
+    -- `pr_t (G · ν) ⊆ conv (pr_t (W · ν))` to the corresponding inclusion for `s`.
+    rintro _ ⟨g, rfl⟩
+    have hR (φ : Dual ℝ (GroupLieAlgebra I G)) :
+        (Submodule.inclusion hst).dualMap (φ.domRestrict t) = φ.domRestrict s := by
+      ext
+      simp
+    have hmem := mem_image_of_mem (Submodule.inclusion hst).dualMap
+      (domRestrict_coadjointRepresentation_mem_convexHull hT hB hBs hpos ht μ g)
+    rw [LinearMap.image_convexHull, ← range_comp] at hmem
+    simpa only [comp_def, hR] using hmem
+  · rintro _ ⟨w, rfl⟩
+    obtain ⟨g, hg⟩ := exists_coadjointRepresentation_eq_bilinForm_weylAdjointRepresentation hB μ w
+    exact ⟨g, congrArg (LinearMap.domRestrict · s) hg⟩
+
+/-- **Kostant's convexity theorem in rank at most two.** Let `T` be a maximal torus of dimension at
+most two of a compact connected Lie group `G`, `B` an `Ad`-invariant inner product on `𝔤`, and `t`
+the image of the Lie algebra `𝔱` of `T`. For `μ ∈ 𝔱` and `ν = B (e μ)`, the projection of the
+coadjoint orbit of `ν` to `t*` is the convex hull of the projected Weyl orbit:
+`pr_t (G · ν) = conv (pr_t (W · ν))`. -/
+theorem range_domRestrict_coadjointRepresentation_eq_convexHull_of_finrank_le_two
+    [CompactSpace G] [ConnectedSpace G] (hT : IsMaximalTorus T)
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (hBs : B.IsSymm) (hpos : ∀ a, a ≠ 0 → 0 < B a a)
+    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap)
+    (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (htwo : finrank ℝ t ≤ 2) :
+    range (fun g : G ↦ (coadjointRepresentation ℝ I G g
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint μ))).domRestrict t) =
+      convexHull ℝ (range fun w : T.normalizerQuotient ↦
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint
+            (T.weylAdjointRepresentation (I := I) w μ))).domRestrict t) :=
+  range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two hT hB hBs hpos ht
+    μ le_rfl htwo
 
 end TauCeti.Lie

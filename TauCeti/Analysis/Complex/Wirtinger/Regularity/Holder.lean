@@ -14,6 +14,7 @@ import TauCeti.Analysis.Complex.Pompeiu.Holder.Higher
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Localization
 import TauCeti.MeasureTheory.Function.Gluing
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Interior Hölder regularity for the distributional `\bar∂` equation
@@ -201,17 +202,11 @@ theorem HasWeakConjWirtingerDerivOn.contDiffOn_one_of_holderOnWith (hα : 0 < α
     (hgH : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α g K) :
     ContDiffOn ℝ 1 u Ω ∧ (∀ z ∈ Ω, conjWirtingerDeriv u z 1 = g z) ∧
       ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α (fderiv ℝ u) K := by
-  -- Hölder bounds on the closed balls in `Ω` make `g` continuous on `Ω`.
-  have hg : ContinuousOn g Ω := fun z hz ↦ by
-    obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z hz
-    obtain ⟨C, hC⟩ := hgH (closedBall z (ε / 2))
-      ((closedBall_subset_ball (half_lt_self hε)).trans hεΩ) (isCompact_closedBall z _)
-    exact ((hC.continuousOn hα).continuousAt
-      (closedBall_mem_nhds z (half_pos hε))).continuousWithinAt
+  have hg : ContinuousOn g Ω := continuousOn_of_forall_isCompact_holderOnWith Ω.isOpen hα hgH
   obtain ⟨h1, h2, h3⟩ := h.contDiffOn_of_holderOnWith (k := 0) hα hα1 hu
     (contDiffOn_zero.2 hg) fun K hKΩ hK ↦
       (hgH K hKΩ hK).imp fun _ hC ↦ holderOnWith_iteratedFDeriv_zero_iff.2 hC
   refine ⟨by simpa using h1, h2, fun K hKΩ hK ↦ (h3 K hKΩ hK).imp fun _ hC ↦ ?_⟩
-  exact holderOnWith_iteratedFDeriv_zero_iff.1 (holderOnWith_iteratedFDeriv_succ_iff.1 hC)
+  exact holderOnWith_iteratedFDeriv_one_iff.1 hC
 
 end TauCeti

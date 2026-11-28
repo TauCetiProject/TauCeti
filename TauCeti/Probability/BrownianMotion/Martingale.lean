@@ -10,7 +10,6 @@ public import Mathlib.Probability.Martingale.Basic
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.MeasureTheory.Function.LpSpace.Basic
-import Mathlib.Probability.Independence.Integration
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Martingale.Basic
 
@@ -122,26 +121,5 @@ theorem martingale_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P) :
   filter_upwards [hlin, hB.condExp_sq hst] with ω h₁ h₂
   rw [h₁, condExp_const (ℱ.le s), h₂]
   ring
-
-/-- A position known at `s` and integrable, held until `v`, gives a true Brownian martingale.
-Independence supplies product integrability without boundedness or an `L²` assumption on the
-position. -/
-theorem martingale_mul_sub_min {W : ℝ≥0 → Ω → ℝ} {ξ : Ω → ℝ} {v : ℝ≥0}
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hsv : s ≤ v)
-    (hξ : StronglyMeasurable[ℱ s] ξ) (hξi : Integrable ξ P) :
-    Martingale (fun t ω ↦ ξ ω * (W (min v t) ω - W (min s t) ω)) ℱ P := by
-  have := hW.isGaussianProcess.isProbabilityMeasure
-  refine ((hW.martingale.const_min v).sub (hW.martingale.const_min s)).mul_left_of_eq_zero
-    (r := s) (fun t ht ↦ ?_) hξ (fun t ↦ ?_)
-  · ext ω
-    simp [min_eq_right ht, min_eq_right (ht.trans hsv)]
-  · by_cases hst : s ≤ t
-    · simpa only [min_eq_left hst, Pi.mul_def, Pi.sub_def] using
-        (hW.indepFun_sub (le_min hsv hst) hξ.measurable).integrable_mul hξi
-          ((hW.integrable_eval _).sub (hW.integrable_eval _))
-    · have hts : t ≤ s := (not_le.mp hst).le
-      convert integrable_zero Ω ℝ P using 1
-      ext ω
-      simp [min_eq_right hts, min_eq_right (hts.trans hsv)]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

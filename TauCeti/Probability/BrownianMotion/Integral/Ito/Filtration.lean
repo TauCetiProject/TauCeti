@@ -74,8 +74,8 @@ theorem IsItoIntegral.rightCont_nullAugment (hI : IsItoIntegral ℱ P W H I) :
       (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω)
       (fun t (ω : NullMeasurableSpace Ω P) ↦ H t ω)
       (fun t (ω : NullMeasurableSpace Ω P) ↦ I t ω) :=
-  @IsItoIntegral.mono (NullMeasurableSpace Ω P) inferInstance (ℱ.nullAugment P) P.completion _ _ _
-    (ℱ.nullAugment P).rightCont hI.nullAugment ((ℱ.nullAugment P).le_rightCont)
+  @IsItoIntegral.mono_filtration (NullMeasurableSpace Ω P) inferInstance (ℱ.nullAugment P)
+    P.completion _ _ _ (ℱ.nullAugment P).rightCont hI.nullAugment ((ℱ.nullAugment P).le_rightCont)
 
 /-- Against a filtered pre-Brownian motion with paths almost surely right-continuous at each
 fixed time, any raw Itô integral is indistinguishable from any Itô integral constructed on the

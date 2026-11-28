@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Covariance
-public import TauCeti.Probability.BrownianMotion.Integral.Integrable
+public import TauCeti.Probability.Process.Predictable.Measure
 public import Mathlib.Probability.Martingale.Basic
 import TauCeti.Probability.Process.ElementaryDensity
 import Mathlib.Analysis.Normed.Operator.Extend
@@ -23,12 +23,7 @@ as a real linear isometry from predictable time-product L² into sample-space L�
 On a predictable rectangle `(s,t] × A` its value is `1_A (W_t − W_s)`, with clipping at
 the declared horizon. The map is uniquely determined by these elementary values.
 Linearity and the isometry are supplied by the bundled map, not separate operations on
-chosen representatives, and for `BrownianIntegrable` processes the terminal distances and Itô
-isometries (`eLpNorm_l2Integral_sub_l2Integral`, `integral_mul_l2Integral_toPredictableLp`,
-`integral_sq_l2Integral_toPredictableLp`, together with their fixed-time transport lemmas
-`ae_eval_zero_of_ae_eq_l2Integral`, `memLp_of_ae_eq_l2Integral`, `integral_mul_of_ae_eq_l2Integral`,
-`integral_sq_of_ae_eq_l2Integral`) express sample-space `L²` inner products and norms in
-terms of the ambient time-product space. The result is a terminal-time map on L² classes, not a
+chosen representatives. The result is a terminal-time map on L² classes, not a
 time-indexed integral process by itself. With Brownian paths almost-surely continuous on
 `Iic T`, `exists_continuous_martingale_l2Integral` realizes every terminal integral as the
 final value of a predictable, square-integrable martingale. Path continuity, starting at
@@ -271,104 +266,6 @@ theorem integral_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥
   have h := congrArg (fun J : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ] ℝ ↦ J f) hz
   simpa only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     innerSL_apply_apply, one, L2.inner_indicatorConstLp_one, setIntegral_univ, zero_apply] using h
-
-/-- For two `BrownianIntegrable` integrands, the sample-space `L²` distance between their
-finite-horizon `l2Integral` values equals the ambient time-product `L²` distance between the
-integrands. -/
-theorem eLpNorm_l2Integral_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H K : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (T : ℝ≥0) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    eLpNorm (fun ω ↦ hW.l2Integral T (hH.toPredictableLp T) ω -
-        hW.l2Integral T (hK.toPredictableLp T) ω) 2 P =
-      eLpNorm (fun p ↦ H p.1 p.2 - K p.1 p.2) 2 ((timeMeasure T).prod P) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hsm : StronglyMeasurable[ℱ.predictable] (Function.uncurry H - Function.uncurry K) :=
-    hH.isStronglyPredictable.sub hK.isStronglyPredictable
-  calc
-    eLpNorm (fun ω ↦ hW.l2Integral T (hH.toPredictableLp T) ω -
-        hW.l2Integral T (hK.toPredictableLp T) ω) 2 P
-      = edist (hW.l2Integral T (hH.toPredictableLp T))
-          (hW.l2Integral T (hK.toPredictableLp T)) := (Lp.edist_def _ _).symm
-    _ = edist (hH.toPredictableLp T) (hK.toPredictableLp T) := (hW.l2Integral T).edist_map _ _
-    _ = eLpNorm (Function.uncurry H - Function.uncurry K) 2 (ℱ.predictableMeasure P T) := by
-        rw [Lp.edist_def]
-        exact eLpNorm_congr_ae ((hH.coeFn_toPredictableLp T).sub (hK.coeFn_toPredictableLp T))
-    _ = eLpNorm (fun p ↦ H p.1 p.2 - K p.1 p.2) 2 ((timeMeasure T).prod P) := by
-        rw [ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hsm]
-        simp only [Pi.sub_def, Function.uncurry_def]
-
-/-- Cross-isometry of the finite-horizon predictable `L²` Brownian integral on
-`BrownianIntegrable` processes. -/
-theorem integral_mul_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H K : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (T : ℝ≥0) :
-    ∫ ω, hW.l2Integral T (hH.toPredictableLp T) ω *
-        hW.l2Integral T (hK.toPredictableLp T) ω ∂P =
-      ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hiso := (hW.l2Integral T).inner_map_map (hH.toPredictableLp T) (hK.toPredictableLp T)
-  have hlhs : ⟪hW.l2Integral T (hH.toPredictableLp T),
-      hW.l2Integral T (hK.toPredictableLp T)⟫_ℝ =
-      ∫ ω, hW.l2Integral T (hH.toPredictableLp T) ω *
-        hW.l2Integral T (hK.toPredictableLp T) ω ∂P := by
-    rw [real_inner_comm, L2.inner_def]; simp only [RCLike.inner_apply, conj_trivial]
-  have hrhs : ⟪hH.toPredictableLp T, hK.toPredictableLp T⟫_ℝ =
-      ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P := by
-    let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    rw [real_inner_comm, L2.inner_def]
-    have hc := integral_congr_ae ((hH.coeFn_toPredictableLp T).mul (hK.coeFn_toPredictableLp T))
-    simp only [RCLike.inner_apply, conj_trivial, Pi.mul_apply] at hc ⊢
-    exact hc.trans (ℱ.integral_predictableMeasure P
-      (hH.isStronglyPredictable.mul hK.isStronglyPredictable) T)
-  exact hlhs.symm.trans (hiso.trans hrhs)
-
-/-- Itô isometry of the finite-horizon predictable `L²` Brownian integral on a
-`BrownianIntegrable` process. -/
-theorem integral_sq_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    ∫ ω, hW.l2Integral T (hH.toPredictableLp T) ω ^ 2 ∂P =
-      ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure T).prod P := by
-  simpa only [sq] using hW.integral_mul_l2Integral_toPredictableLp hH hH T
-
-/-- Any process agreeing almost surely at `0` with the predictable `L²` integral vanishes almost
-surely at `0`. -/
-theorem ae_eval_zero_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    (hI : I 0 =ᵐ[P] hW.l2Integral 0 (hH.toPredictableLp 0)) :
-    I 0 =ᵐ[P] 0 := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  exact hI.trans ((hW.l2Integral_zero _) ▸ Lp.coeFn_zero ℝ 2 P)
-
-/-- Any process agreeing almost surely at time `t` with the predictable `L²` integral is in
-`L²(P)` at `t`. -/
-theorem memLp_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    {t : ℝ≥0} (hI : I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) :
-    MemLp (I t) 2 P := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  exact (Lp.memLp (hW.l2Integral t (hH.toPredictableLp t))).ae_eq hI.symm
-
-/-- Cross-isometry for processes agreeing almost surely at the horizon `T` with the predictable
-`L²` integral processes. -/
-theorem integral_mul_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) {H K I J : ℝ≥0 → Ω → ℝ}
-    (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    {T : ℝ≥0}
-    (hI : I T =ᵐ[P] hW.l2Integral T (hH.toPredictableLp T))
-    (hJ : J T =ᵐ[P] hW.l2Integral T (hK.toPredictableLp T)) :
-    ∫ ω, I T ω * J T ω ∂P = ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P :=
-  (integral_congr_ae (hI.mul hJ)).trans
-    (hW.integral_mul_l2Integral_toPredictableLp hH hK T)
-
-/-- Itô isometry for any process agreeing almost surely at the horizon `T` with the predictable
-`L²` integral process. -/
-theorem integral_sq_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    {T : ℝ≥0} (hI : I T =ᵐ[P] hW.l2Integral T (hH.toPredictableLp T)) :
-    ∫ ω, I T ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure T).prod P := by
-  simpa only [sq] using hW.integral_mul_of_ae_eq_l2Integral hH hH hI hI
 
 /-! ## Continuous martingale realization -/
 

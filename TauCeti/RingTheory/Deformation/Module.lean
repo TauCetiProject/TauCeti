@@ -834,29 +834,32 @@ theorem Equiv.baseChange_toModuleDeformationEquiv {D D' : FramedModuleDeformatio
 
 end BaseChange
 
-section Residue
-
 /-- The isomorphism `V ≅ V'` of the underlying modules of two framed module deformations sending
 one framing to the other. -/
-private noncomputable def basisEquiv (D D' : FramedModuleDeformation ρbar A) :
+noncomputable def basisEquiv (D D' : FramedModuleDeformation ρbar A) :
     D ≃ₗ[A.obj.left] D' :=
   D.basis.equiv D'.basis (_root_.Equiv.refl n)
 
-private theorem basisEquiv_basis (D D' : FramedModuleDeformation ρbar A) (i : n) :
+/-- The isomorphism `basisEquiv D D'` sends the framing of `D` to the framing of `D'`. -/
+@[simp]
+theorem basisEquiv_basis (D D' : FramedModuleDeformation ρbar A) (i : n) :
     basisEquiv D D' (D.basis i) = D'.basis i := by
   simp [basisEquiv]
 
-private theorem reduction_basisEquiv (D D' : FramedModuleDeformation ρbar A) (v : D) :
+/-- The isomorphism `basisEquiv D D'` is compatible with the reductions of `D` and `D'`. -/
+@[simp]
+theorem reduction_basisEquiv (D D' : FramedModuleDeformation ρbar A) (v : D) :
     D'.reduction (basisEquiv D D' v) = D.reduction v :=
   LinearMap.congr_fun (D.basis.ext (f₁ := D'.reduction ∘ₛₗ (basisEquiv D D').toLinearMap)
-    (f₂ := D.reduction) fun i ↦ by simp [basisEquiv_basis]) v
+    (f₂ := D.reduction) fun i ↦ by simp) v
+
+section Residue
 
 /-- Over the residue field `k`, any two framed module deformations are isomorphic. -/
 noncomputable def equivOfResidue (D D' : FramedModuleDeformation ρbar (residue Λ k)) :
     D.Equiv D' where
   toRepresentationEquiv := .mk (basisEquiv D D') fun g ↦ D.basis.ext fun i ↦
-    D'.reduction_injective_residue (by
-      simp [reduction_basisEquiv, basisEquiv_basis, ModuleDeformation.reduction_action])
+    D'.reduction_injective_residue (by simp [ModuleDeformation.reduction_action])
   reduction_apply' := reduction_basisEquiv D D'
   map_basis' := basisEquiv_basis D D'
 

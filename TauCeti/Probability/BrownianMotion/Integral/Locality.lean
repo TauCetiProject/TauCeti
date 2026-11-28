@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
-import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.Process.ElementaryDensity
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 
@@ -18,10 +16,7 @@ An event known at time `s` can be pulled out of an integral over `(s,t]`, at any
 ambient horizon `T`. Consequently, if two integrands agree on that event after `s`,
 their future integrals agree there too. These identities provide the eventwise gluing
 used to compare stopped integrals. Representative-based forms also apply directly to
-L² classes, without requiring a particular `MemLp.toLp` cutoff expression; for a
-`BrownianIntegrable` integrand within the horizon `T`, restricting to `(u, v] × E`
-gives the `E`-gated increment `hW.l2Integral v - hW.l2Integral u`
-(`coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub`).
+L² classes, without requiring a particular `MemLp.toLp` cutoff expression.
 
 The statements concern the constructed terminal L² integral on the original filtration.
 They require neither continuous Brownian paths nor usual filtration conditions, and make
@@ -37,8 +32,8 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory ProbabilityTheory Set
-open scoped ENNReal NNReal Topology
+open MeasureTheory ProbabilityTheory Set
+open scoped ENNReal NNReal
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
@@ -155,7 +150,10 @@ theorem coeFn_l2Integral_ae_eq_indicator_of_ae_eq
     hW.l2Integral T g =ᵐ[P] A.indicator (hW.l2Integral T f) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have htime := ℱ.ae_mem_Ioc_prod_predictableMeasure P T
+  have htime : ∀ᵐ p ∂ℱ.predictableMeasure P T, p ∈ Ioc 0 T ×ˢ (univ : Set Ω) := by
+    have h := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
+      (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
+    simpa only [ℱ.predictableMeasure_restrict P T T, min_self] using h
   have hD : ((Lp.memLp f).indicator
       (measurableSet_predictable_Ioc_prod s T (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).toLp
         ((Ioc s T ×ˢ univ).indicator f) = f := by
@@ -232,193 +230,5 @@ theorem ae_l2Integral_eq_of_mem_of_measurableSet_zero (hW : IsFilteredPreBrownia
   filter_upwards [hfg, hzero] with p hp hzero h
   exact hp (h.resolve_left (by simpa only [mem_prod, mem_singleton_iff, mem_univ,
     and_true, not_le, pos_iff_ne_zero, ne_eq] using hzero))
-
-/-- Restricting a `BrownianIntegrable` integrand to a predictable rectangle `(u, v] × E` within
-the horizon `T` evaluates to the `E`-gated increment of `l2Integral` from `u` to `v`. -/
-theorem coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    {u v T : ℝ≥0} (huv : u ≤ v) (hvT : v ≤ T) {E : Set Ω} (hE : MeasurableSet[ℱ u] E) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    hW.l2Integral T ((hH.indicator_Ioc_prod u v hE).toPredictableLp T) =ᵐ[P]
-      E.indicator (fun ω ↦ hW.l2Integral v (hH.toPredictableLp v) ω -
-        hW.l2Integral u (hH.toPredictableLp u) ω) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T u v hE (hH.toPredictableLp T)
-  rw [← hH.toPredictableLp_indicator_Ioc_prod u v hE T,
-    ← hH.toPredictableLp_indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u)) T] at hloc
-  have hR : hW.l2Integral T
-      ((hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).toPredictableLp T) =
-      hW.l2Integral v (hH.toPredictableLp v) - hW.l2Integral u (hH.toPredictableLp u) := by
-    rw [← hW.l2Integral_indicator_Ioc_prod_univ_eq_sub hH huv]
-    refine hW.l2Integral_eq_of_ae_eq_of_ae_eq_zero hvT _ _ ?_ ?_
-    · exact ((hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).coeFn_toPredictableLp T
-        |>.filter_mono (ae_mono (ℱ.predictableMeasure_mono P hvT))).trans
-        ((hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).coeFn_toPredictableLp v).symm
-    · filter_upwards
-        [(hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).coeFn_toPredictableLp T]
-        with ⟨t, ω⟩ ht hvt
-      rw [ht]
-      simp [Set.mem_Ioc, not_le_of_gt hvt]
-  rw [hR] at hloc
-  filter_upwards [hloc, Lp.coeFn_sub (hW.l2Integral v (hH.toPredictableLp v))
-    (hW.l2Integral u (hH.toPredictableLp u))] with ω hω hsub
-  rw [hω]
-  by_cases hωE : ω ∈ E
-  · simpa only [Set.indicator_of_mem hωE, Pi.sub_apply] using hsub
-  · simp only [Set.indicator_of_notMem hωE]
-
-private theorem coeFn_l2Integral_ite_lt_simpleFunc_mul_eq_mul_sub
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    {s T : ℝ≥0} (hst : s ≤ T) (g : @SimpleFunc Ω (ℱ s) ℝ) (hg_bd : MemLp g ∞ P) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    hW.l2Integral T ((hH.ite_lt_mul s g.stronglyMeasurable hg_bd).toPredictableLp T) =ᵐ[P]
-      fun ω ↦ g ω * (hW.l2Integral T (hH.toPredictableLp T) ω -
-        hW.l2Integral s (hH.toPredictableLp s) ω) := by
-  classical
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  let : MeasurableSpace Ω := ℱ s
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  let R (c : ℝ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-    (hH.indicator_Ioc_prod s T (g.measurableSet_fiber c)).toPredictableLp T
-  have hmem_T : ∀ᵐ p ∂ℱ.predictableMeasure P T, p.1 ∈ Ioc 0 T :=
-    (ℱ.ae_mem_Ioc_prod_predictableMeasure P T).mono fun _ hp ↦ hp.1
-  have hin : (hH.ite_lt_mul s g.stronglyMeasurable hg_bd).toPredictableLp T =
-      ∑ c ∈ g.range, c • R c := by
-    apply Lp.ext
-    filter_upwards [(hH.ite_lt_mul s g.stronglyMeasurable hg_bd).coeFn_toPredictableLp T,
-      Lp.coeFn_finsetSum g.range (fun c ↦ c • R c),
-      (ae_ball_iff g.range.countable_toSet).2 fun c _ ↦ Lp.coeFn_smul c (R c),
-      (ae_ball_iff g.range.countable_toSet).2 fun c _ ↦
-        (hH.indicator_Ioc_prod s T (g.measurableSet_fiber c)).coeFn_toPredictableLp T,
-      hmem_T] with ⟨t, ω⟩ hp hsum hsmul hR ht
-    rw [hp, hsum, Finset.sum_apply]
-    rw [Finset.sum_congr rfl fun c hc ↦ by
-      rw [hsmul c hc, Pi.smul_apply, smul_eq_mul, hR c hc, Function.uncurry_apply_pair]]
-    by_cases hps : s < t
-    · have ht_mem : t ∈ Ioc s T := ⟨hps, ht.2⟩
-      simp only [Function.uncurry_apply_pair, hps, ↓reduceIte]
-      simp_rw [Set.indicator_of_mem ht_mem, Set.indicator_apply, Set.mem_preimage,
-        Set.mem_singleton_iff, mul_ite, mul_zero, eq_comm (a := g ω)]
-      rw [Finset.sum_ite_eq']
-      simp [g.mem_range_self]
-    · have ht_nmem : t ∉ Ioc s T := fun h ↦ hps h.1
-      simp [hps, ht_nmem]
-  rw [hin, map_sum]
-  filter_upwards [Lp.coeFn_finsetSum g.range (fun c ↦ hW.l2Integral T (c • R c)),
-    (ae_ball_iff g.range.countable_toSet).2 fun c _ ↦
-      Lp.coeFn_smul c (hW.l2Integral T (R c)),
-    (ae_ball_iff g.range.countable_toSet).2 fun c _ ↦
-      hW.coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub hH hst le_rfl
-        (g.measurableSet_fiber c)] with ω hsum hsmul hR
-  rw [hsum, Finset.sum_apply]
-  simp only [map_smul]
-  rw [Finset.sum_congr rfl fun c hc ↦ by
-    rw [hsmul c hc, Pi.smul_apply, smul_eq_mul, hR c hc]]
-  simp only [Set.indicator_apply, Set.mem_preimage, Set.mem_singleton_iff, mul_ite, mul_zero]
-  simp_rw [eq_comm (a := g ω)]
-  rw [Finset.sum_ite_eq']
-  simp [g.mem_range_self]
-
-private theorem tendstoInMeasure_l2Integral_ite_lt_mul
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    (s T : ℝ≥0) {g : ℕ → Ω → ℝ} {ξ : Ω → ℝ}
-    (hg_sm : ∀ n, StronglyMeasurable[ℱ s] (g n)) (hg_bd : ∀ n, MemLp (g n) ∞ P)
-    (hξ : StronglyMeasurable[ℱ s] ξ) (hξ_bd : MemLp ξ ∞ P)
-    (hlim : ∀ ω, Tendsto (fun n ↦ g n ω) atTop (𝓝 (ξ ω)))
-    (hgn_le : ∀ ω n, ‖g n ω - ξ ω‖₊ ≤ ‖ξ ω‖₊) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    TendstoInMeasure P
-      (fun n ↦ hW.l2Integral T ((hH.ite_lt_mul s (hg_sm n) (hg_bd n)).toPredictableLp T))
-      atTop (hW.l2Integral T ((hH.ite_lt_mul s hξ hξ_bd).toPredictableLp T)) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  let F (a : Ω → ℝ) (t : ℝ≥0) (ω : Ω) : ℝ := if s < t then a ω * H t ω else 0
-  let hF (n : ℕ) := hH.ite_lt_mul s (hg_sm n) (hg_bd n)
-  let hFξ := hH.ite_lt_mul s hξ hξ_bd
-  have henergy : Tendsto (fun n ↦ eLpNorm
-      (fun p ↦ F (g n) p.1 p.2 - F ξ p.1 p.2) 2 ((timeMeasure T).prod P)) atTop (𝓝 0) := by
-    refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
-      (Eventually.of_forall fun n ↦ ((hF n).memLp_timeMeasure T).aestronglyMeasurable)
-      (hFξ.memLp_timeMeasure T)
-      (Eventually.of_forall fun n ↦ Eventually.of_forall fun ⟨t, ω⟩ ↦ ?_)
-      (Eventually.of_forall fun ⟨t, ω⟩ ↦ ?_)
-    · by_cases hps : s < t
-      · simp only [F, hps, ↓reduceIte, ← sub_mul, ENNReal.coe_one, one_mul,
-          Function.uncurry_apply_pair, eNorm_mul]
-        refine mul_le_mul_of_nonneg_right ?_ bot_le
-        simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using hgn_le ω n
-      · simp [F, hps]
-    · by_cases hps : s < t
-      · simpa [F, hps] using (hlim ω).mul_const (H t ω)
-      · simp [F, hps]
-  have hLp : Tendsto (fun n ↦ eLpNorm
-      (fun ω ↦ hW.l2Integral T ((hF n).toPredictableLp T) ω -
-        hW.l2Integral T (hFξ.toPredictableLp T) ω) 2 P) atTop (𝓝 0) :=
-    henergy.congr fun n ↦ (hW.eLpNorm_l2Integral_sub_l2Integral (hF n) hFξ T).symm
-  exact tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) hLp
-
-/-- Multiplying a `BrownianIntegrable` integrand after a deterministic time `s` by an
-essentially bounded `ℱ s`-measurable random variable scales the increment of `l2Integral` from
-`min s T` to `T` by that multiplier. -/
-theorem coeFn_l2Integral_ite_lt_mul_eq_mul_sub
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    (s T : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) (hξ_bd : MemLp ξ ∞ P) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    hW.l2Integral T ((hH.ite_lt_mul s hξ hξ_bd).toPredictableLp T) =ᵐ[P]
-      fun ω ↦ ξ ω * (hW.l2Integral T (hH.toPredictableLp T) ω -
-        hW.l2Integral (min s T) (hH.toPredictableLp (min s T)) ω) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  by_cases hst : s ≤ T
-  · -- 1. For `s ≤ T`, approximate `ξ` by `ℱ s`-simple functions and pass to the limit in measure.
-    rw [min_eq_left hst]
-    let g (n : ℕ) : @SimpleFunc Ω (ℱ s) ℝ := by
-      let : MeasurableSpace Ω := ℱ s
-      exact SimpleFunc.approxOn ξ hξ.measurable univ 0 (mem_univ _) n
-    have hg_sm (n : ℕ) : StronglyMeasurable[ℱ s] (g n) :=
-      @SimpleFunc.stronglyMeasurable Ω ℝ (ℱ s) _ (g n)
-    have hg_bd (n : ℕ) : MemLp (g n) ∞ P := by
-      refine memLp_top_of_bound ((hg_sm n).mono (ℱ.le s)).aestronglyMeasurable
-        (∑ c ∈ @SimpleFunc.range Ω ℝ (ℱ s) (g n), ‖c‖) (Eventually.of_forall fun ω ↦ ?_)
-      exact Finset.single_le_sum (f := fun c : ℝ ↦ ‖c‖) (fun _ _ ↦ norm_nonneg _)
-        (@SimpleFunc.mem_range_self Ω ℝ (ℱ s) (g n) ω)
-    have hlim : ∀ ω, Tendsto (fun n ↦ g n ω) atTop (𝓝 (ξ ω)) := fun ω ↦ by
-      let : MeasurableSpace Ω := ℱ s
-      exact SimpleFunc.tendsto_approxOn hξ.measurable (mem_univ _) (by simp)
-    have hgn_le (ω : Ω) (n : ℕ) : ‖g n ω - ξ ω‖₊ ≤ ‖ξ ω‖₊ := by
-      let : MeasurableSpace Ω := ℱ s
-      simpa only [sub_zero] using
-        SimpleFunc.nnNorm_approxOn_le (s := univ) (y₀ := (0 : ℝ)) hξ.measurable (mem_univ _) ω n
-    have hout := tendstoInMeasure_l2Integral_ite_lt_mul hW hH s T hg_sm hg_bd hξ hξ_bd hlim hgn_le
-    have hs (n : ℕ) :
-        hW.l2Integral T ((hH.ite_lt_mul s (hg_sm n) (hg_bd n)).toPredictableLp T) =ᵐ[P]
-          fun ω ↦ g n ω * (hW.l2Integral T (hH.toPredictableLp T) ω -
-            hW.l2Integral s (hH.toPredictableLp s) ω) :=
-      hW.coeFn_l2Integral_ite_lt_simpleFunc_mul_eq_mul_sub hH hst (g n) (hg_bd n)
-    exact tendstoInMeasure_ae_unique (hout.congr_left hs)
-      (tendstoInMeasure_of_tendsto_ae
-        (fun n ↦ (Lp.memLp (hW.l2Integral T
-          ((hH.ite_lt_mul s (hg_sm n) (hg_bd n)).toPredictableLp T))).aestronglyMeasurable.congr
-          (hs n))
-        (Eventually.of_forall fun ω ↦ (hlim ω).mul_const _))
-  · -- 2. For `T < s`, the truncated integrand vanishes on `(0, T]`, so both sides are zero.
-    have hTs : T ≤ s := (not_le.mp hst).le
-    rw [min_eq_right hTs]
-    have hzero : (hH.ite_lt_mul s hξ hξ_bd).toPredictableLp T =
-        (BrownianIntegrable.zero : BrownianIntegrable ℱ P 0).toPredictableLp T := by
-      let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-      apply Lp.ext
-      filter_upwards [(hH.ite_lt_mul s hξ hξ_bd).coeFn_toPredictableLp T,
-        (BrownianIntegrable.zero : BrownianIntegrable ℱ P 0).coeFn_toPredictableLp T,
-        ℱ.ae_mem_Ioc_prod_predictableMeasure P T]
-        with ⟨t, ω⟩ h1 h2 ht
-      have hnot : ¬ s < t := not_lt.mpr (ht.1.2.trans hTs)
-      rw [h1, h2]
-      simp [hnot]
-    rw [hzero, BrownianIntegrable.toPredictableLp_zero, map_zero]
-    filter_upwards [Lp.coeFn_zero ℝ 2 P] with ω hω
-    simpa only [Pi.zero_apply, sub_self, mul_zero] using hω
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

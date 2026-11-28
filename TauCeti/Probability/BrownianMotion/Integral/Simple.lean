@@ -9,8 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.Probability.BrownianMotion.Martingale
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
 /-!
 # Elementary values of the completed Brownian integral
@@ -21,13 +20,7 @@ values or be bounded. Both results only require square integrability of the actu
 predictable time-product integrand, so they also cover empty intervals and intervals beyond
 the horizon without moment assumptions on their unused heights.
 
-These identities connect completion in predictable L² with elementary stochastic integrals
-(using `TauCeti.brownianIntegrable_simpleHolding`), establish that elementary Brownian gains
-with integrable left-endpoint heights are true martingales (`martingale_simpleGains_of_integrable`),
-and translate ambient time-product `L²` errors against simple holdings into sample-space `L²`
-errors against `l2Integral` or any almost-everywhere representative
-(`eLpNorm_simpleGains_sub_l2Integral`, `eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`,
-`tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`).
+These identities connect completion in predictable L² with elementary stochastic integrals.
 They concern terminal L² values and almost-everywhere equality at each fixed observation time,
 not simultaneous equality of arbitrarily chosen representatives.
 
@@ -44,35 +37,10 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set Filter
 open scoped NNReal ENNReal Topology
 
-/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
-`TauCeti.BrownianIntegrable`. -/
-theorem TauCeti.brownianIntegrable_simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω} [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ}
-    {a : ℕ → Ω → ℝ} (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
-    TauCeti.BrownianIntegrable ℱ P (TauCeti.Finance.simpleHolding τ n a) :=
-  ⟨TauCeti.Finance.isStronglyPredictable_simpleHolding ha, fun T ↦ by
-    simpa only [NNReal.comap_volume_restrict_Ioc, TauCeti.Probability.timeMeasure_def] using
-      (ℱ.memLp_predictableMeasure_iff P
-        (TauCeti.Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
-        (TauCeti.Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
-
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
-
-/-- Elementary Brownian gains with integrable positions chosen at left endpoints form a true
-martingale. Brownian independence gives product integrability without boundedness or an `L²`
-assumption on the positions. -/
-theorem martingale_simpleGains_of_integrable (hW : IsFilteredPreBrownianReal ℱ W P)
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hai : ∀ j < n, Integrable (a j) P) :
-    Martingale (Finance.simpleGains τ n a W) ℱ P := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  exact hW.martingale.simpleGains hτ ha fun j hj t ↦
-    (hW.martingale_mul_sub_min (hτ hj.le hj (Nat.le_succ j)) (ha j hj) (hai j hj)).integrable t
 
 private theorem coeFn_l2Integral_simpleFunc_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     (T s t : ℝ≥0) (g : @SimpleFunc Ω (ℱ s) ℝ)
@@ -211,56 +179,16 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
   · have hTj : T ≤ τ j := (not_le.mp ht).le
     simp [min_eq_right hTj, min_eq_right (hTj.trans hle), max_eq_left hTj]
 
-/-- For a `BrownianIntegrable` process and any square-integrable elementary holding on a
-nondecreasing grid, the sample-space `L²` distance between `Finance.simpleGains` and `l2Integral`
-equals the ambient time-product `L²` distance between `Finance.simpleHolding` and `H`. -/
-theorem eLpNorm_simpleGains_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P)
-    (T : ℝ≥0) :
-    eLpNorm (fun ω ↦ Finance.simpleGains τ n a W T ω -
-        hW.l2Integral T (hH.toPredictableLp T) ω) 2 P =
-      eLpNorm (fun p ↦ Finance.simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure T).prod P) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hS := hW.eLpNorm_l2Integral_sub_l2Integral
-    (TauCeti.brownianIntegrable_simpleHolding ha ha₂) hH T
-  rw [(TauCeti.brownianIntegrable_simpleHolding ha ha₂).toPredictableLp_def T] at hS
-  exact (eLpNorm_congr_ae
-    ((hW.coeFn_l2Integral_simpleHolding hτ ha T
-      ((TauCeti.brownianIntegrable_simpleHolding ha ha₂).memLp_predictableMeasure T)).symm.sub
-      .rfl)).trans hS
-
-/-- For any almost-everywhere representative `X` of `hW.l2Integral T (hH.toPredictableLp T)` and any
-square-integrable elementary holding on a nondecreasing grid, the sample-space `L²` distance
-between `Finance.simpleGains` and `X` equals the ambient time-product `L²` distance between
-`Finance.simpleHolding` and `H`. -/
-theorem eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    {X : Ω → ℝ} {T : ℝ≥0} (hX : X =ᵐ[P] hW.l2Integral T (hH.toPredictableLp T))
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
-    eLpNorm (Finance.simpleGains τ n a W T - X) 2 P =
-      eLpNorm (fun p ↦ Finance.simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure T).prod P) :=
-  (eLpNorm_congr_ae (EventuallyEq.rfl.sub hX)).trans
-    (hW.eLpNorm_simpleGains_sub_l2Integral hH hτ ha ha₂ T)
-
-/-- If elementary holdings converge in ambient time-product `L²` to a family of `BrownianIntegrable`
-integrands `H k`, then their Brownian simple gains converge in sample-space `L²` to any
-representatives `X k` of `hW.l2Integral T ((hH k).toPredictableLp T)`. -/
-theorem tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
-    {ι : Type*} {l : Filter ι} (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ι → ℝ≥0 → Ω → ℝ} (hH : ∀ k, BrownianIntegrable ℱ P (H k))
-    {X : ι → Ω → ℝ} {T : ℝ≥0} (hX : ∀ k, X k =ᵐ[P] hW.l2Integral T ((hH k).toPredictableLp T))
-    {τ : ι → ℕ → ℝ≥0} {n : ι → ℕ} {a : ι → ℕ → Ω → ℝ} (hτ : ∀ k, MonotoneOn (τ k) (Iic (n k)))
-    (ha : ∀ k, ∀ i < n k, StronglyMeasurable[ℱ (τ k i)] (a k i))
-    (ha₂ : ∀ k, ∀ i < n k, MemLp (a k i) 2 P) {L : ℝ≥0∞}
-    (hlim : Tendsto (fun k ↦ eLpNorm (fun p ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 -
-      H k p.1 p.2) 2 ((timeMeasure T).prod P)) l (𝓝 L)) :
-    Tendsto (fun k ↦ eLpNorm (Finance.simpleGains (τ k) (n k) (a k) W T - X k) 2 P) l (𝓝 L) :=
-  hlim.congr fun k ↦
-    (hW.eLpNorm_simpleGains_sub_of_ae_eq_l2Integral (hH k) (hX k) (hτ k) (ha k) (ha₂ k)).symm
+/-- `Lp` form of `coeFn_l2Integral_simpleHolding`. -/
+theorem l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
+    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (T : ℝ≥0)
+    (hH : MemLp (Function.uncurry (Finance.simpleHolding τ n a)) 2 (ℱ.predictableMeasure P T))
+    (hg : MemLp (Finance.simpleGains τ n a W T) 2 P) :
+    hW.l2Integral T (hH.toLp (Function.uncurry (Finance.simpleHolding τ n a))) =
+      hg.toLp (Finance.simpleGains τ n a W T) :=
+  Lp.ext ((hW.coeFn_l2Integral_simpleHolding hτ ha T hH).trans hg.coeFn_toLp.symm)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

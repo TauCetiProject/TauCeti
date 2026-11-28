@@ -8,7 +8,10 @@ module
 public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
 # Expected and pathwise square-energy domains
@@ -24,16 +27,13 @@ restriction to predictable sets. The expected-energy domain is also closed under
 by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
-variable, held constant in time, belongs to the pathwise domain without any moment assumption.
+variable, held constant in time, belongs to the pathwise domain without any moment assumption,
+while on any finite deterministic grid, left-measurable `L²` heights belong to `BrownianIntegrable`
+for s-finite `P` (`TauCeti.BrownianIntegrable.simpleHolding`), and bounded left-measurable heights
+belong to `BrownianIntegrable` for finite `P` (`TauCeti.BrownianIntegrable.simpleHolding_of_bdd`).
 The pathwise domain transfers to an absolutely continuous measure and is unchanged under
 an equivalent measure on the same filtration. This does not assert preservation of expected
 square energy or that the original driver remains Brownian.
-
-Each `BrownianIntegrable` process embeds into `Lp ℝ 2 (ℱ.predictableMeasure P T)` via
-`TauCeti.BrownianIntegrable.toPredictableLp`, compatible with zero, zero horizon
-(`toPredictableLp_apply_zero`), addition, negation, subtraction, scaling, predictable-set and
-rectangle restriction (`toPredictableLp_indicator`, `toPredictableLp_indicator_Ioc_prod`), horizon
-restriction, and product-a.e. equality.
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
@@ -53,7 +53,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -130,15 +130,11 @@ theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
   exact ((h.memLp n).comp_measurePreserving
     (Measure.measurePreserving_swap (μ := P) (ν := _))).ae_memLp_prod_right
 
-/-- The zero process belongs to the expected-square-energy integrand domain. -/
-@[simp]
-theorem BrownianIntegrable.zero : BrownianIntegrable ℱ P (0 : ℝ≥0 → Ω → ℝ) :=
-  ⟨stronglyMeasurable_const, fun _ ↦ .zero⟩
-
-/-- The zero process belongs to the pathwise square-energy integrand domain. -/
-@[simp]
-theorem LocallyBrownianIntegrable.zero : LocallyBrownianIntegrable ℱ P (0 : ℝ≥0 → Ω → ℝ) :=
-  ⟨stronglyMeasurable_const, .of_forall fun _ _ ↦ .zero⟩
+/-- `BrownianIntegrable` expressed as `L²` membership for the trimmed predictable measure
+`ℱ.predictableMeasure P T`. -/
+theorem BrownianIntegrable.memLp_predictableMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+  (ℱ.memLp_predictableMeasure_iff P h.isStronglyPredictable T 2).mpr (h.memLp_timeMeasure T)
 
 /-- The expected-energy domain is closed under addition. -/
 theorem BrownianIntegrable.add (hH : BrownianIntegrable ℱ P H)
@@ -159,17 +155,6 @@ theorem LocallyBrownianIntegrable.add (hH : LocallyBrownianIntegrable ℱ P H)
 theorem BrownianIntegrable.const_mul (h : BrownianIntegrable ℱ P H) (c : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ c * H t ω) :=
   ⟨h.isStronglyPredictable.const_mul c, fun T ↦ (h.memLp T).const_mul c⟩
-
-/-- Negation preserves finite expected square energy. -/
-theorem BrownianIntegrable.neg (h : BrownianIntegrable ℱ P H) :
-    BrownianIntegrable ℱ P (fun t ω ↦ -H t ω) := by
-  simpa only [neg_one_mul] using h.const_mul (-1)
-
-/-- Subtraction preserves finite expected square energy. -/
-theorem BrownianIntegrable.sub (hH : BrownianIntegrable ℱ P H)
-    (hK : BrownianIntegrable ℱ P K) :
-    BrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
-  simpa only [sub_eq_add_neg] using hH.add hK.neg
 
 /-- Multiplication by a predictable process that is essentially bounded on every finite
 horizon preserves finite expected square energy. -/
@@ -195,17 +180,6 @@ theorem LocallyBrownianIntegrable.const_mul (h : LocallyBrownianIntegrable ℱ P
   ⟨h.isStronglyPredictable.const_mul c,
     h.ae_memLp.mono fun _ hω T ↦ (hω T).const_mul c⟩
 
-/-- Negation preserves finite pathwise square energy. -/
-theorem LocallyBrownianIntegrable.neg (h : LocallyBrownianIntegrable ℱ P H) :
-    LocallyBrownianIntegrable ℱ P (fun t ω ↦ -H t ω) := by
-  simpa only [neg_one_mul] using h.const_mul (-1)
-
-/-- Subtraction preserves finite pathwise square energy. -/
-theorem LocallyBrownianIntegrable.sub (hH : LocallyBrownianIntegrable ℱ P H)
-    (hK : LocallyBrownianIntegrable ℱ P K) :
-    LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
-  simpa only [sub_eq_add_neg] using hH.add hK.neg
-
 /-- Restriction to a predictable set preserves finite expected square energy. -/
 theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
     {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
@@ -213,14 +187,15 @@ theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
   refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
   exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
 
-/-- Restricting an expected-square-integrable predictable integrand to a predictable rectangle
-`(u, v] × E` preserves `BrownianIntegrable`. -/
-theorem BrownianIntegrable.indicator_Ioc_prod (hH : BrownianIntegrable ℱ P H) (u v : ℝ≥0)
-    {E : Set Ω} (hE : MeasurableSet[ℱ u] E) :
-    BrownianIntegrable ℱ P (fun t ω ↦ (Ioc u v).indicator (fun _ ↦ E.indicator (H t) ω) t) := by
-  convert hH.indicator (measurableSet_predictable_Ioc_prod u v hE) using 1
-  ext t ω
-  by_cases ht : t ∈ Ioc u v <;> by_cases hω : ω ∈ E <;> simp [ht, hω]
+/-- Restricting an integrand to `(s, ∞)` preserves finite expected square energy. -/
+theorem BrownianIntegrable.indicator_Ioi (hH : BrownianIntegrable ℱ P H) (s : ℝ≥0) :
+    BrownianIntegrable ℱ P (fun u ω ↦ (Ioi s).indicator (H · ω) u) := by
+  have heq : (fun u ω ↦ (Ioi s).indicator (H · ω) u) =
+      fun u ω ↦ ((Ioi s ×ˢ (univ : Set Ω)).indicator (Function.uncurry H)) (u, ω) := by
+    ext u ω
+    by_cases hu : s < u <;> simp [hu]
+  rw [heq]
+  exact hH.indicator (measurableSet_predictable_Ioi_prod (i := s) MeasurableSet.univ)
 
 /-- Restriction to a predictable set preserves finite pathwise square energy. -/
 theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ P H)
@@ -231,37 +206,6 @@ theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ 
   intro T
   exact (hω T).indicator ((ℱ.predictable_le_prod A hA).preimage
     (measurable_id.prodMk measurable_const)).nullMeasurableSet
-
-/-- Multiplying an expected-square-integrable integrand after a deterministic time `s` by an
-essentially bounded `ℱ s`-measurable random variable preserves `BrownianIntegrable`. -/
-theorem BrownianIntegrable.ite_lt_mul [SFinite P] (hH : BrownianIntegrable ℱ P H)
-    (s : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) (hξ_bd : MemLp ξ ∞ P) :
-    BrownianIntegrable ℱ P (fun t ω ↦ if s < t then ξ ω * H t ω else 0) := by
-  have hm := hH.mul (ℱ.isStronglyPredictable_ite_lt s hξ) fun T ↦ by
-    have hi := (hξ_bd.comp_snd
-      ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ))).indicator
-      ((measurableSet_Ioi (a := s)).prod MeasurableSet.univ).nullMeasurableSet
-    convert hi using 1
-    ext ⟨t, ω⟩
-    by_cases ht : s < t <;> simp [ht]
-  convert hm using 1
-  ext t ω
-  by_cases ht : s < t <;> simp [ht, mul_comm]
-
-/-- Multiplying a pathwise-square-integrable integrand after a deterministic time `s` by an
-`ℱ s`-measurable random variable preserves `LocallyBrownianIntegrable`. No boundedness or moment
-assumption on the multiplier is needed. -/
-theorem LocallyBrownianIntegrable.ite_lt_mul (hH : LocallyBrownianIntegrable ℱ P H)
-    (s : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
-    LocallyBrownianIntegrable ℱ P (fun t ω ↦ if s < t then ξ ω * H t ω else 0) := by
-  refine ⟨?_, ?_⟩
-  · convert (ℱ.isStronglyPredictable_ite_lt s hξ).mul hH.isStronglyPredictable using 1
-    ext t ω; by_cases ht : s < t <;> simp [ht]
-  · filter_upwards [hH.ae_memLp] with ω hω T
-    have hi := ((hω T).const_mul (ξ ω)).indicator (measurableSet_Ioi (a := s)).nullMeasurableSet
-    convert hi using 1
-    ext t
-    by_cases ht : s < t <;> simp [ht]
 
 /-- Product-a.e. replacement preserves the expected-energy domain, provided the new
 representative is predictable. -/
@@ -339,123 +283,28 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
 
-namespace BrownianIntegrable
+/-- Left-measurable `L²` heights on any finite deterministic grid produce an integrand in the
+expected-square-energy domain `BrownianIntegrable ℱ P`, for any `SFinite` measure `P` and with no
+monotonicity assumption on the grid. -/
+theorem BrownianIntegrable.simpleHolding [SFinite P] {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (ha₂ : ∀ j < n, MemLp (a j) 2 P) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) where
+  isStronglyPredictable := Finance.isStronglyPredictable_simpleHolding ha
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    exact (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
+      (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)
 
-/-- Finite-horizon membership in the trimmed predictable `L²` space. -/
-theorem memLp_predictableMeasure (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
-  (ℱ.memLp_predictableMeasure_iff P hH.isStronglyPredictable T 2).mpr (hH.memLp_timeMeasure T)
-
-/-- The finite-horizon predictable `L²` class of a `BrownianIntegrable` process. -/
-def toPredictableLp (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-  (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
-
-/-- Definitional unfolding of `toPredictableLp` as `MemLp.toLp`. -/
-theorem toPredictableLp_def (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    hH.toPredictableLp T = (hH.memLp_predictableMeasure T).toLp (Function.uncurry H) := (rfl)
-
-/-- Almost-everywhere representative of `toPredictableLp` under the predictable measure. -/
-theorem coeFn_toPredictableLp (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    hH.toPredictableLp T =ᵐ[ℱ.predictableMeasure P T] Function.uncurry H :=
-  (hH.memLp_predictableMeasure T).coeFn_toLp
-
-/-- Almost-everywhere representative of `toPredictableLp` under the ambient product measure. -/
-theorem coeFn_toPredictableLp_prod (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    (hH.toPredictableLp T : ℝ≥0 × Ω → ℝ) =ᵐ[(Probability.timeMeasure T).prod P]
-      Function.uncurry H := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  exact (ℱ.ae_eq_predictableMeasure_iff P (Lp.stronglyMeasurable _).measurable
-    hH.isStronglyPredictable.measurable T).mp (hH.coeFn_toPredictableLp T)
-
-/-- Embedding any `BrownianIntegrable` integrand at horizon zero yields `0`. -/
-@[simp] theorem toPredictableLp_apply_zero (hH : BrownianIntegrable ℱ P H) :
-    hH.toPredictableLp 0 = 0 :=
-  Lp.ext <| by simp [EventuallyEq, ℱ.predictableMeasure_zero P]
-
-/-- Embedding the zero integrand into `Lp ℝ 2 (ℱ.predictableMeasure P T)` yields `0`. -/
-@[simp] theorem toPredictableLp_zero (T : ℝ≥0) :
-    (zero : BrownianIntegrable ℱ P 0).toPredictableLp T = 0 := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_zero _
-
-/-- `BrownianIntegrable.toPredictableLp` commutes with pointwise addition of integrands. -/
-@[simp] theorem toPredictableLp_add (hH : BrownianIntegrable ℱ P H)
-    (hK : BrownianIntegrable ℱ P K) (T : ℝ≥0) :
-    (hH.add hK).toPredictableLp T = hH.toPredictableLp T + hK.toPredictableLp T := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_add _ _
-
-/-- `BrownianIntegrable.toPredictableLp` commutes with multiplication by a real constant. -/
-@[simp] theorem toPredictableLp_const_mul (hH : BrownianIntegrable ℱ P H) (c : ℝ) (T : ℝ≥0) :
-    (hH.const_mul c).toPredictableLp T = c • hH.toPredictableLp T := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_const_smul c _
-
-/-- `BrownianIntegrable.toPredictableLp` commutes with pointwise negation of integrands. -/
-@[simp] theorem toPredictableLp_neg (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    hH.neg.toPredictableLp T = -hH.toPredictableLp T := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_neg _
-
-/-- `BrownianIntegrable.toPredictableLp` commutes with pointwise subtraction of integrands. -/
-@[simp] theorem toPredictableLp_sub (hH : BrownianIntegrable ℱ P H)
-    (hK : BrownianIntegrable ℱ P K) (T : ℝ≥0) :
-    (hH.sub hK).toPredictableLp T = hH.toPredictableLp T - hK.toPredictableLp T := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_sub _ _
-
-/-- Two `BrownianIntegrable` integrands have equal predictable `L²` embeddings on `[0, T]` if
-and only if they agree almost everywhere under `(timeMeasure T).prod P`. -/
-theorem toPredictableLp_eq_iff (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    {T : ℝ≥0} :
-    hH.toPredictableLp T = hK.toPredictableLp T ↔
-      Function.uncurry H =ᵐ[(Probability.timeMeasure T).prod P] Function.uncurry K := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  refine ⟨fun h ↦ (hH.coeFn_toPredictableLp_prod T).symm.trans
-    (h ▸ hK.coeFn_toPredictableLp_prod T), fun hHK ↦ MemLp.toLp_congr _ _ ?_⟩
-  exact (ℱ.ae_eq_predictableMeasure_iff P
-    hH.isStronglyPredictable.measurable hK.isStronglyPredictable.measurable T).mpr hHK
-
-/-- Restricting a `BrownianIntegrable` integrand to a predictable set cuts off its predictable
-`L²` class by the indicator of that set. -/
-theorem toPredictableLp_indicator (hH : BrownianIntegrable ℱ P H)
-    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) (T : ℝ≥0) :
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    (hH.indicator hA).toPredictableLp T =
-      ((Lp.memLp (hH.toPredictableLp T)).indicator hA.nullMeasurableSet).toLp
-        (A.indicator (hH.toPredictableLp T)) := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  apply Lp.ext
-  filter_upwards [(hH.indicator hA).coeFn_toPredictableLp T,
-    ((Lp.memLp (hH.toPredictableLp T)).indicator hA.nullMeasurableSet).coeFn_toLp,
-    hH.coeFn_toPredictableLp T] with ⟨t, ω⟩ h1 h2 h3
-  rw [h1, h2]
-  by_cases hp : (t, ω) ∈ A <;> simp [hp, h3]
-
-/-- Restricting a `BrownianIntegrable` integrand to a predictable rectangle `(u, v] × E` cuts off
-its predictable `L²` class by the indicator of `(u, v] × E`. -/
-theorem toPredictableLp_indicator_Ioc_prod (hH : BrownianIntegrable ℱ P H)
-    (u v : ℝ≥0) {E : Set Ω} (hE : MeasurableSet[ℱ u] E) (T : ℝ≥0) :
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    (hH.indicator_Ioc_prod u v hE).toPredictableLp T =
-      ((Lp.memLp (hH.toPredictableLp T)).indicator
-        (measurableSet_predictable_Ioc_prod u v hE).nullMeasurableSet).toLp
-          ((Ioc u v ×ˢ E).indicator (hH.toPredictableLp T)) := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have heq : (hH.indicator_Ioc_prod u v hE).toPredictableLp T =
-      (hH.indicator (measurableSet_predictable_Ioc_prod u v hE)).toPredictableLp T := by
-    refine (toPredictableLp_eq_iff _ _).mpr (.of_forall fun ⟨t, ω⟩ ↦ ?_)
-    by_cases ht : t ∈ Ioc u v <;> by_cases hω : ω ∈ E <;> simp [ht, hω]
-  exact heq.trans (hH.toPredictableLp_indicator (measurableSet_predictable_Ioc_prod u v hE) T)
-
-/-- Restricting a `BrownianIntegrable` integrand's predictable `L²` class to a shorter horizon
-recovers the `toPredictableLp` class at that horizon. -/
-@[simp]
-theorem predictableMeasureRestrictLp_toPredictableLp [SFinite P]
-    (hH : BrownianIntegrable ℱ P H) {S T : ℝ≥0} (hST : S ≤ T) :
-    ℱ.predictableMeasureRestrictLp P ℝ hST (hH.toPredictableLp T) = hH.toPredictableLp S := by
-  apply Lp.ext
-  exact (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := ℝ) hST (hH.toPredictableLp T)).trans
-    (((hH.coeFn_toPredictableLp T).filter_mono
-      (ae_mono (ℱ.predictableMeasure_mono P hST))).trans
-      (hH.coeFn_toPredictableLp S).symm)
-
-end BrownianIntegrable
+/-- Bounded left-measurable heights on any finite deterministic grid produce an integrand in
+`BrownianIntegrable ℱ P` on a finite measure space `P`. -/
+theorem BrownianIntegrable.simpleHolding_of_bdd [IsFiniteMeasure P]
+    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C, ∀ ω, ‖a j ω‖ ≤ C) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
+  BrownianIntegrable.simpleHolding ha fun j hj ↦
+    let ⟨C, hC⟩ := hb j hj
+    MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall hC)
 
 end TauCeti

@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.ComplexSmulI
+import TauCeti.Topology.OpenPartialHomeomorph.Composition
 
 /-!
 # The almost complex structure of a complex manifold
@@ -47,6 +48,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   on a Riemann surface with its canonical orientation, every frame `(e, i e)` is positive.
 * `TauCeti.SmoothAlmostComplexStructure.inTangentCoordinates_ofComplexManifold`: it is
   multiplication by `i` in the tangent coordinates of any chart.
+* `TauCeti.SmoothAlmostComplexStructure.continuousLinearMapAt_trivializationAt_ofComplexManifold`:
+  the tangent trivialization at a chart centre reads the almost complex structure as `i`.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
   space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth`: on a
@@ -54,9 +57,17 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   `AlmostComplexStructure.ofComplexModule`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
+* `TauCeti.IsPseudoholomorphicOn.differentiableOn_comp`: a composition of pseudoholomorphic maps
+  between complex normed spaces through an almost complex manifold is complex differentiable.
+* `MDifferentiableOn.differentiableOn_symm_trans_of_isPseudoholomorphicAt`: pseudoholomorphic
+  charts with real differentiable inverses have holomorphic transitions. This generalizes
+  `IsIsothermalChart.differentiableOn_symm_trans` from `Complex/Isothermal.lean`, using
+  `OpenPartialHomeomorph.MDifferentiable.isPseudoholomorphicAt_symm` and the composition lemma.
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
   `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
   pseudoholomorphic.
+* `TauCeti.isPseudoholomorphic_equivRealProdCLM`: the identification of `ℂ` with the standard
+  complex line `ℝ × ℝ` is pseudoholomorphic.
 * `TauCeti.mfderiv_symm_apply_I_of_mem_maximalAtlas`: for a holomorphic chart of a complex curve,
   the coordinate vector `∂ₜ` is `j ∂ₛ`.
 * `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
@@ -171,6 +182,23 @@ theorem inTangentCoordinates_ofComplexManifold {x₀ x : M} (hx : x ∈ (chartAt
         (fun x ↦ (ofComplexManifold E M).toEndomorphism x) x₀ x =
       Complex.I • ContinuousLinearMap.id ℝ E :=
   inTangentCoordinates_ofTangentCoordChangeISMul tangentCoordChange_I_smul hx
+
+/-- On the source of the chart at `c`, the tangent trivialization at `c` turns the almost complex
+structure of a complex manifold into multiplication by `i`. -/
+theorem continuousLinearMapAt_trivializationAt_ofComplexManifold {c x : M}
+    (hx : x ∈ (chartAt E c).source) (w : TangentSpace 𝓘(ℝ, E) x) :
+    (trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c).continuousLinearMapAt ℝ x
+        (ofComplexManifold E M x w) =
+      Complex.I • (trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c).continuousLinearMapAt
+        ℝ x w := by
+  set T := trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c
+  have hb : x ∈ T.baseSet := by rwa [TangentBundle.trivializationAt_baseSet]
+  have h := DFunLike.congr_fun (inTangentCoordinates_ofComplexManifold (M := M) hx)
+    (T.continuousLinearMapAt ℝ x w)
+  rw [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id, id,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    T.symmL_continuousLinearMapAt hb] at h
+  simpa using h
 
 /-- On a complex normed space `E` viewed as a manifold over itself, `ofComplexManifold E E` is the
 constant smooth almost complex structure given by multiplication by `i`. -/
@@ -301,6 +329,71 @@ theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
   (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
 
 end Pseudoholomorphic
+
+section ComplexModelSpace
+
+variable {F G H' X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [TopologicalSpace H'] {I : ModelWithCorners ℝ F H'}
+  [TopologicalSpace X] [ChartedSpace H' X] [IsManifold I ∞ X]
+  [NormedAddCommGroup G] [NormedSpace ℂ G] {J : SmoothAlmostComplexStructure I X}
+
+/-- A composition of pseudoholomorphic maps through an almost complex manifold is complex
+differentiable on the source set if the outer spaces are complex normed spaces with their
+canonical structures and the inner map takes its source set into the outer map's source set. -/
+theorem IsPseudoholomorphicOn.differentiableOn_comp {f : X → G} {r : Set X}
+    (hf : IsPseudoholomorphicOn J (ofComplexManifold G G) f r)
+    {g : E → X} {s : Set E}
+    (hg : IsPseudoholomorphicOn (ofComplexManifold E E) J g s)
+    (hgs : Set.MapsTo g s r) : DifferentiableOn ℂ (f ∘ g) s :=
+  mdifferentiableOn_iff_differentiableOn.mp
+    (isPseudoholomorphicOn_ofComplexManifold_iff.mp (hf.comp hg hgs))
+
+/-- The transition from `e`, a chart with real differentiable inverse, to `e'` is holomorphic on
+the overlap if both charts carry the same almost complex structure `J` to multiplication by `i`
+on their sources. The two charts can take values in different complex normed spaces. -/
+theorem _root_.MDifferentiableOn.differentiableOn_symm_trans_of_isPseudoholomorphicAt
+    {e : OpenPartialHomeomorph X E} {e' : OpenPartialHomeomorph X G}
+    (he : MDifferentiableOn 𝓘(ℝ, E) I e.symm e.target)
+    (h : ∀ x ∈ e.source, IsPseudoholomorphicAt J (ofComplexManifold E E) e x)
+    (h' : ∀ x ∈ e'.source, IsPseudoholomorphicAt J (ofComplexManifold G G) e' x) :
+    DifferentiableOn ℂ (e.symm.trans e') (e.symm.trans e').source := by
+  have hed : e.MDifferentiable I 𝓘(ℝ, E) :=
+    ⟨fun x hx ↦ (h x hx).mdifferentiableAt.mdifferentiableWithinAt, he⟩
+  have hinv : IsPseudoholomorphicOn (ofComplexManifold E E) J e.symm
+      (e.symm.trans e').source := by
+    apply isPseudoholomorphicOn_iff.mpr
+    intro z hz
+    have hze := (OpenPartialHomeomorph.mem_target_and_mem_source_of_mem_symm_trans_source hz).1
+    exact (hed.isPseudoholomorphicAt_symm hze (h _ (e.map_target hze))).isPseudoholomorphicWithinAt
+  have hout : IsPseudoholomorphicOn J (ofComplexManifold G G) e' e'.source :=
+    isPseudoholomorphicOn_iff.mpr fun x hx ↦ (h' x hx).isPseudoholomorphicWithinAt
+  rw [OpenPartialHomeomorph.coe_trans]
+  exact hout.differentiableOn_comp hinv fun _ hz ↦
+    (OpenPartialHomeomorph.mem_target_and_mem_source_of_mem_symm_trans_source hz).2
+
+end ComplexModelSpace
+
+/-- The identification `Complex.equivRealProdCLM` of `ℂ` with `ℝ × ℝ` is pseudoholomorphic from
+the complex structure of `ℂ` to the standard structure `(a, b) ↦ (-b, a)` of `ℝ × ℝ`
+(`SmoothAlmostComplexStructure.product ℝ`). -/
+theorem isPseudoholomorphic_equivRealProdCLM :
+    IsPseudoholomorphic (ofComplexManifold ℂ ℂ) (SmoothAlmostComplexStructure.product ℝ)
+      Complex.equivRealProdCLM := isPseudoholomorphic_iff.2 fun z ↦
+  isPseudoholomorphicAt_of_hasMFDerivAt
+    (Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ).hasMFDerivAt fun v ↦ by
+      -- The tangent spaces are the model spaces `ℂ` and `ℝ × ℝ`, on which the structures are
+      -- multiplication by `i` and `(a, b) ↦ (-b, a)`. `simp` does not see through `TangentSpace`,
+      -- so the coordinate identity `h₃` is stated on `ℂ` and applied to `v`.
+      have h₁ := SmoothAlmostComplexStructure.ofComplexManifold_apply (E := ℂ) (M := ℂ) z v
+      have h₂ := SmoothAlmostComplexStructure.product_apply (V := ℝ) (Complex.equivRealProdCLM z)
+        (Complex.equivRealProdCLM v)
+      beta_reduce at h₁ h₂ ⊢
+      rw [h₁]
+      refine Eq.trans ?_ h₂.symm
+      have h₃ (w : ℂ) : Complex.equivRealProdCLM (Complex.I • w) =
+          (-(Complex.equivRealProdCLM w).2, (Complex.equivRealProdCLM w).1) := by
+        ext <;> simp
+      exact h₃ v
 
 /-- **Coordinate vectors of a holomorphic chart.** For a holomorphic chart `φ` of a complex curve
 `X` and a point `z` of its target, the coordinate vector `∂ₜ = dφ⁻¹ i` is `j ∂ₛ`, where
