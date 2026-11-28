@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.DoubleCoset
-public import TauCeti.GroupTheory.TwistedConjugation
+public import TauCeti.GroupTheory.DoubleCoset.TwistedRelativePosition
 
 /-!
 # Affine Deligne–Lusztig point loci
@@ -27,27 +26,6 @@ public section
 namespace Subgroup
 
 variable {G : Type*} [Group G]
-
-/-- The `σ`-twisted relative position of `gI` is its relative position with `bσ(g)I`, given by
-the double coset of `g⁻¹ * b * σ g`. The condition `I.map σ ≤ I` makes it independent of the
-representative. -/
-def twistedRelativePosition (I : Subgroup G) (σ : G →* G) (hσ : I.map σ ≤ I) (b : G) :
-    G ⧸ I → DoubleCoset.Quotient (I : Set G) (I : Set G) :=
-  Quotient.map' (fun g ↦ σ.twistedConj g b) fun x y hxy ↦ by
-    have hi : x⁻¹ * y ∈ I := QuotientGroup.leftRel_apply.mp hxy
-    refine DoubleCoset.rel_iff.mpr ⟨(x⁻¹ * y)⁻¹, I.inv_mem hi, σ (x⁻¹ * y),
-      hσ (Subgroup.mem_map_of_mem σ hi), ?_⟩
-    calc
-      σ.twistedConj y b = σ.twistedConj (x * (x⁻¹ * y)) b := by rw [mul_inv_cancel_left]
-      _ = (x⁻¹ * y)⁻¹ * σ.twistedConj x b * σ (x⁻¹ * y) := by
-        rw [σ.twistedConj_mul, MonoidHom.twistedConj_def σ (x⁻¹ * y)]
-
-/-- The twisted relative position on the coset represented by `g`. -/
-@[simp]
-theorem twistedRelativePosition_mk (I : Subgroup G) (σ : G →* G) (hσ : I.map σ ≤ I)
-    (b g : G) :
-    I.twistedRelativePosition σ hσ b (g : G ⧸ I) = DoubleCoset.mk I I (σ.twistedConj g b) :=
-  (rfl)
 
 /-- The point locus `X_I(w,b)` in the left-coset space `G ⧸ I`, the fibre of the twisted relative
 position over `IwI`. -/
