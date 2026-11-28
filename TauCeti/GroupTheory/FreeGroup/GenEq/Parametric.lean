@@ -55,6 +55,9 @@ without active sections, can be brought to a standard form.
 * `TauCeti.GenEq.SectionPartition.withKind`: a section partition with a set of closed sections
   redeclared of a given kind.
 * `TauCeti.GenEq.SectionPartition.IsStandardForm`: the standard form of Definition 12, decidable.
+* `TauCeti.ParamGenEq`: a generalised equation bundled with a section partition, so that a family
+  of parametric generalised equations carries the partitions along with the equations;
+  `TauCeti.ParamGenEq.IsParamItem`: its parametric items.
 
 ## Main results
 
@@ -522,5 +525,31 @@ example (P : twoLetterExample.SectionPartition) : ¬ P.IsStandardForm := fun h �
   exact absurd (h.injOn_label h₆ h₇ rfl) (by decide)
 
 end GenEq
+
+/-! ### Parametric generalised equations -/
+
+/-- A parametric generalised equation (Kharlampovich–Myasnikov, Definition 11): a generalised
+equation together with a partition of its closed sections into active, non-active, parametric and
+constant sections. -/
+structure ParamGenEq (A : Type*) extends GenEq A where
+  /-- The partition of the closed sections into the four kinds. -/
+  partition : toGenEq.SectionPartition
+
+namespace ParamGenEq
+
+variable {A : Type*} (Ω : ParamGenEq A)
+
+/-- An item is parametric when it lies in a parametric section. -/
+def IsParamItem (k : Fin Ω.numItems) : Prop :=
+  Ω.partition.itemKind k = .parametric
+
+theorem isParamItem_iff {k : Fin Ω.numItems} :
+    Ω.IsParamItem k ↔ Ω.partition.itemKind k = .parametric :=
+  Iff.rfl
+
+instance (k : Fin Ω.numItems) : Decidable (Ω.IsParamItem k) :=
+  decidable_of_iff _ Ω.isParamItem_iff.symm
+
+end ParamGenEq
 
 end TauCeti
