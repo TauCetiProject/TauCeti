@@ -7,8 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.BoundedConjugates
-import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+import TauCeti.NumberTheory.NumberField.Global.Adeles.CompactCount
 import TauCeti.Topology.Order.Compact
 
 /-!
@@ -21,21 +20,18 @@ compact set `B ⊆ 𝔸_K ^ n` there is a constant `C` such that for every `x �
 has `f` infinite places then `d ≤ 2 f`, with equality when `K` is totally complex, so the count is
 also at most `C * 4 ^ (f * ∑ i, max (x i) 0)`.
 
-The proof goes through the one-coordinate count of
-`TauCeti.GlobalNumberFields.exists_encard_le_floor_mul_add_one_pow`: a compact set `s` of finite
-adeles has a common denominator `b ∈ 𝓞 K`, so every `ξ ∈ K` with finite part in `s` and absolute
-values at most `r` at the infinite places is `a / b` for an algebraic integer `a` with absolute
-values at most `r * max_w |b|_w`, and such integers are counted by
-`NumberField.RingOfIntegers.ncard_le_floor_add_one_pow`. For the dyadic dilates, the infinite part
-of `B` is bounded, so the `i`-th coordinate of a point has absolute values at most `R * 2 ^ x i`.
+The proof goes through the one-coordinate count
+`TauCeti.GlobalNumberFields.exists_encard_le_floor_mul_add_one_pow` of
+`TauCeti.NumberTheory.NumberField.Global.Adeles.CompactCount`, which bounds the elements of `K`
+with finite part in a compact set and absolute values at most `r` at the infinite places. For the
+dyadic dilates, the infinite part of `B` is bounded, so the `i`-th coordinate of a point has
+absolute values at most `R * 2 ^ x i`.
 
 Counts of this shape bound the number of rational vectors in the translates of a fixed compact set
 of adelic vectors by diagonal dyadic matrices, an input to the reduction theory of adelic groups.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.exists_encard_le_floor_mul_add_one_pow`: elements of `K` with finite
-  part in a compact set and absolute values at most `r` number at most `(⌊c r⌋ + 1) ^ d`.
 * `TauCeti.GlobalNumberFields.exists_encard_setOf_twoInf_zpow_mul_mem_le`: the dyadic count
   `C * 2 ^ (d * ∑ i, max (x i) 0)`.
 * `TauCeti.GlobalNumberFields.exists_encard_setOf_twoInf_zpow_mul_mem_le_four_pow`: the bound
@@ -48,7 +44,7 @@ of adelic vectors by diagonal dyadic matrices, an input to the reduction theory 
   folder `grh` of https://github.com/lsernau/grh-lean (Apache 2.0, Copyright 2026 Anthropic, PBC),
   `src/Lib/Adelic/Reduction/MinkowskiTheorems.lean` (`New.Core.encard_le_of_dyadic_box`); the
   proof here is written independently, through common denominators and the count of algebraic
-  integers with bounded conjugates.
+  integers with bounded conjugates (`NumberField.RingOfIntegers.ncard_le_floor_add_one_pow`).
 -/
 
 public section
@@ -59,58 +55,6 @@ open scoped NumberField.AdeleRing
 namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- **Elements of a number field with bounded conjugates and finite part in a compact set.** For a
-compact set `s` of finite adeles of `K` there is `c > 0` such that for every `r`, the elements of
-`K` whose finite part lies in `s` and whose absolute value is at most `r` at every infinite place
-number at most `(⌊c r⌋₊ + 1) ^ [K : ℚ]`. -/
-theorem exists_encard_le_floor_mul_add_one_pow {s : Set 𝔸ᶠ[K]} (hs : IsCompact s) :
-    ∃ c : ℝ, 0 < c ∧ ∀ r : ℝ,
-      {x : K | (∀ w : InfinitePlace K, w x ≤ r) ∧ algebraMap K 𝔸ᶠ[K] x ∈ s}.encard ≤
-        ((⌊c * r⌋₊ + 1) ^ finrank ℚ K : ℕ) := by
-  obtain ⟨b, hb0, hb⟩ :=
-    FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles_of_isCompact (R := 𝓞 K) hs
-  have hbK : (b : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr (nonZeroDivisors.ne_zero hb0)
-  -- `M` bounds the absolute values of the common denominator `b` at every infinite place
-  set M : ℝ := 1 + ∑ w : InfinitePlace K, w (b : K)
-  have hM (w : InfinitePlace K) : w (b : K) ≤ M := by
-    have := Finset.single_le_sum (fun w _ ↦ apply_nonneg w (b : K)) (Finset.mem_univ w)
-    linarith
-  have hM0 : 0 < M := by
-    have := Finset.sum_nonneg fun (w : InfinitePlace K) (_ : w ∈ Finset.univ) ↦
-      apply_nonneg w (b : K)
-    linarith
-  refine ⟨2 * M, mul_pos two_pos hM0, fun r ↦ ?_⟩
-  rcases lt_or_ge r 0 with hr | hr
-  · -- no element of `K` has a negative absolute value
-    have hempty : {x : K | (∀ w : InfinitePlace K, w x ≤ r) ∧ algebraMap K 𝔸ᶠ[K] x ∈ s} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun x hx ↦
-        (hr.trans_le (apply_nonneg (Classical.arbitrary (InfinitePlace K)) x)).not_ge (hx.1 _)
-    simp [hempty]
-  -- every such element is `a / b` with `a ∈ 𝓞 K` of absolute values at most `M * r`
-  set T : Set (Unit → 𝓞 K) := {v | ∀ i (w : InfinitePlace K), w (v i : K) ≤ M * r}
-  have hsub : {x : K | (∀ w : InfinitePlace K, w x ≤ r) ∧ algebraMap K 𝔸ᶠ[K] x ∈ s} ⊆
-      (fun v : Unit → 𝓞 K ↦ (v () : K) / b) '' T := by
-    rintro x ⟨hxw, hxs⟩
-    have hint : algebraMap K 𝔸ᶠ[K] (x * algebraMap (𝓞 K) K b) ∈
-        FiniteAdeleRing.integralAdeles (𝓞 K) K := by
-      rw [map_mul, ← IsScalarTower.algebraMap_apply]
-      exact hb _ hxs
-    obtain ⟨a, ha⟩ := (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff _).mp hint
-    refine ⟨fun _ ↦ a, fun _ w ↦ ?_, ?_⟩
-    · calc w (a : K) = w x * w (b : K) := by rw [← map_mul, ← ha]
-        _ ≤ r * M := mul_le_mul (hxw w) (hM w) (apply_nonneg _ _) hr
-        _ = M * r := mul_comm _ _
-    · dsimp only
-      rw [div_eq_iff hbK, ← ha]
-  have hT : T.Finite := RingOfIntegers.finite_of_forall_infinitePlace_le fun _ hv ↦ hv
-  calc _ ≤ ((fun v : Unit → 𝓞 K ↦ (v () : K) / b) '' T).encard := Set.encard_le_encard hsub
-    _ ≤ T.encard := Set.encard_image_le _ _
-    _ = T.ncard := hT.cast_ncard_eq.symm
-    _ ≤ ((⌊2 * M * r⌋₊ + 1) ^ finrank ℚ K : ℕ) := by
-      have := RingOfIntegers.ncard_le_floor_add_one_pow (S := T) fun _ hv ↦ hv
-      rw [Nat.card_unique, one_mul, ← mul_assoc] at this
-      exact_mod_cast this
 
 /-- **Rational points in dyadic dilates of a compact set of adeles.** Let `K` be a number field
 and `B` a compact set of vectors of adeles of `K`. There is a constant `C` such that for every

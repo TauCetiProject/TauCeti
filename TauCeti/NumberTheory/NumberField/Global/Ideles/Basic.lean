@@ -391,6 +391,18 @@ theorem coe_inv_twoInf_zpow (k : ℤ) :
     (((twoInf K ^ k)⁻¹ : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k)⁻¹, 1) := by
   rw [← zpow_neg, coe_twoInf_zpow, zpow_neg]
 
+/-- The inverse of `2_∞` is `2⁻¹` at the infinite places and `1` at the finite places. -/
+@[simp]
+theorem coe_inv_twoInf :
+    (((twoInf K)⁻¹ : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) 2⁻¹, 1) := by
+  rw [← zpow_neg_one, coe_twoInf_zpow, zpow_neg_one]
+
+/-- The natural powers of `2_∞` are `2 ^ n` at the infinite places and `1` at the finite places.
+It is not a `simp` lemma: `simp` first rewrites the left side with `Units.val_pow_eq_pow_val` and
+`coe_twoInf` to `(2, 1) ^ n`. -/
+theorem coe_twoInf_pow (n : ℕ) : ((twoInf K ^ n : 𝔸[K]ˣ) : 𝔸[K]) = (2 ^ n, 1) := by
+  rw [Units.val_pow_eq_pow_val, coe_twoInf, Prod.pow_mk, one_pow]
+
 /-- Multiplying an adele by a power of `2_∞` does not change its finite part. -/
 theorem snd_twoInf_zpow_mul (k : ℤ) (a : 𝔸[K]) :
     (((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * a).2 = a.2 := by
@@ -399,22 +411,18 @@ theorem snd_twoInf_zpow_mul (k : ℤ) (a : 𝔸[K]) :
 /-- Multiplying an adele by `2_∞ ^ k` multiplies its norm at every infinite place by `2 ^ k`. -/
 theorem norm_fst_twoInf_zpow_mul_apply (k : ℤ) (a : 𝔸[K]) (w : InfinitePlace K) :
     ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * a).1 w‖ = 2 ^ k * ‖a.1 w‖ := by
-  have hnorm (z : K) : ‖algebraMap K (InfiniteAdeleRing K) z w‖ = w z := by
-    simp [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.norm_coe,
-      InfinitePlace.coe_apply]
   have h2 : w 2 = 2 := by exact_mod_cast w.map_natCast 2
   rw [coe_twoInf_zpow]
   -- Normalize the product projection before rewriting at the dependent coordinate `w`.
   change ‖algebraMap K (InfiniteAdeleRing K) (2 ^ k) w * a.1 w‖ = _
-  rw [norm_mul, hnorm, map_zpow₀, h2]
+  rw [norm_mul, InfiniteAdeleRing.norm_algebraMap_apply, map_zpow₀, h2]
 
 /-- Multiplying a diagonal adele by `2_∞ ^ k` multiplies its absolute value at every infinite
 place by `2 ^ k`. -/
 theorem norm_fst_twoInf_zpow_mul_algebraMap_apply (k : ℤ) (x : K) (w : InfinitePlace K) :
     ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * algebraMap K 𝔸[K] x).1 w‖ = 2 ^ k * w x := by
-  rw [norm_fst_twoInf_zpow_mul_apply, AdeleRing.algebraMap_fst_def]
-  simp only [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.norm_coe,
-    InfinitePlace.coe_apply]
+  rw [norm_fst_twoInf_zpow_mul_apply, AdeleRing.algebraMap_fst_def,
+    InfiniteAdeleRing.norm_algebraMap_apply]
 
 /-- The finite component of `2_∞` is trivial. Powers simplify using `map_zpow`. -/
 @[simp]

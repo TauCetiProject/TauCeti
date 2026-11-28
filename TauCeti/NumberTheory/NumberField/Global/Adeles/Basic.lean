@@ -93,6 +93,15 @@ theorem InfiniteAdeleRing.add_apply (x y : InfiniteAdeleRing K) (w : InfinitePla
     (x + y) w = x w + y w :=
   rfl
 
+variable {K} in
+/-- The norm at an infinite place `w` of the diagonal image of `x : K` in the infinite adeles is
+`w x`. It is not a `simp` lemma: `simp` first rewrites the coordinate with
+`InfiniteAdeleRing.algebraMap_apply`. -/
+theorem InfiniteAdeleRing.norm_algebraMap_apply (x : K) (w : InfinitePlace K) :
+    ‖algebraMap K (InfiniteAdeleRing K) x w‖ = w x := by
+  simp only [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.norm_coe,
+    InfinitePlace.coe_apply]
+
 @[simp]
 theorem InfiniteAdeleRing.homeomorphMixedSpace_apply
     (x : InfiniteAdeleRing K) :
