@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.VectorMeasure.WithDensityVec
 public import TauCeti.MeasureTheory.VectorMeasure.ScalarIntegral
 
@@ -48,8 +47,6 @@ that of `⟪ξ, ψ⟫`.
 
 ## Main declarations
 
-* `MeasureTheory.Measure.withDensityᵥ_rnDeriv_smul`: a density with respect to an absolutely
-  continuous measure `μ ≪ ν`, multiplied by `dμ/dν`, is a density with respect to `ν`.
 * `MeasureTheory.VectorMeasure.integral_withDensityᵥ`: integration against `ν.withDensityᵥ g`
   through a bilinear pairing is the Bochner integral of the pairing against `ν`.
 * `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ`: the scalar form
@@ -106,17 +103,6 @@ theorem Measure.variation_withDensityᵥ_absolutelyContinuous (ν : Measure X) (
     (ν.withDensityᵥ g).variation ≪ ν :=
   (Measure.absolutelyContinuous_of_le (Measure.variation_withDensityᵥ_le ν g)).trans
     (withDensity_absolutelyContinuous _ _)
-
-/-- A density `g` with respect to a measure `μ ≪ ν` gives the density `(dμ/dν) • g` with respect
-to `ν`: the two vector measures with density agree. -/
-theorem Measure.withDensityᵥ_rnDeriv_smul {μ : Measure X} [μ.HaveLebesgueDecomposition ν]
-    [SigmaFinite μ] (hμν : μ ≪ ν) (g : X → F) :
-    ν.withDensityᵥ (fun x => (μ.rnDeriv ν x).toReal • g x) = μ.withDensityᵥ g := by
-  by_cases hg : Integrable g μ
-  · ext s hs
-    rw [withDensityᵥ_apply ((integrable_rnDeriv_smul_iff hμν).2 hg) hs, withDensityᵥ_apply hg hs,
-      setIntegral_rnDeriv_smul hμν hs]
-  · simp only [Measure.withDensityᵥ, hg, (integrable_rnDeriv_smul_iff hμν).not.2 hg, dite_false]
 
 namespace VectorMeasure
 

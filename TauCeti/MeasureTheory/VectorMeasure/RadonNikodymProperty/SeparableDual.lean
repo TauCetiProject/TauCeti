@@ -229,7 +229,7 @@ theorem hasRNPWith_strongDual_of_separable [SeparableSpace (StrongDual ℝ X)] (
   obtain ⟨φ, hφ, -, hm⟩ := exists_density_strongDual_of_norm_le (ν := m.variation) (C := 1)
     fun A _ ↦ by simpa using VectorMeasure.norm_measure_le_variation (μ := m) (E := A)
   exact ⟨_, (integrable_rnDeriv_smul_iff hac).2 hφ,
-    ((Measure.withDensityᵥ_rnDeriv_smul hac φ).trans hm.symm).symm⟩
+    ((withDensityᵥ_rnDeriv_smul hac hφ).trans hm.symm).symm⟩
 
 /-- **Separable dual spaces have the Radon–Nikodým property.** -/
 theorem hasRNP_strongDual_of_separable [SeparableSpace (StrongDual ℝ X)] :
