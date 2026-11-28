@@ -21,7 +21,7 @@ The comparison composes the generic word-filtration symbol map with the inverse 
 native PBW equivalence `pbwAssociatedGradedEquiv`. Its coefficientwise kernel description
 records precisely the loss of one filtration step needed to divide a commutator by the
 parameter and then take its symbol. We also record naturality of `reesSpecializationZero`
-and `reesZeroFiberEquiv` along Lie algebra homomorphisms via `reesMap` and `reesQuotientMap`.
+and `reesZeroFiberEquiv` along Lie algebra homomorphisms via `reesMap` and `Ideal.quotientMapₐ`.
 -/
 
 public section
@@ -168,17 +168,30 @@ theorem reesSpecializationZero_reesMap (f : L →ₗ⁅R⁆ M) (p : reesAlgebra 
       SymmetricAlgebra.map R f.toLinearMap (reesSpecializationZero R L p) :=
   AlgHom.congr_fun (reesSpecializationZero_comp_reesMap R f) p
 
-/-- **Naturality of `reesZeroFiberEquiv` via `reesQuotientMap` at `a = 0`.** -/
+/-- **Naturality of `reesZeroFiberEquiv` under `Ideal.quotientMapₐ` induced by `reesMap R f`.** -/
+theorem reesZeroFiberEquiv_comp_quotientMapₐ (f : L →ₗ⁅R⁆ M)
+    (h : Ideal.span {reesParameter R L} ≤
+      (Ideal.span {reesParameter R M}).comap ((reesMap R f).restrictScalars R)) :
+    (reesZeroFiberEquiv R M).toAlgHom.comp
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M})
+          ((reesMap R f).restrictScalars R) h) =
+      (SymmetricAlgebra.map R f.toLinearMap).comp (reesZeroFiberEquiv R L).toAlgHom := by
+  refine Ideal.Quotient.algHom_ext R ?_
+  ext p
+  simp
+
+/-- **Naturality of `reesZeroFiberEquiv` on quotient classes under `Ideal.quotientMapₐ` induced by
+`reesMap R f`.** -/
 @[simp]
 theorem reesZeroFiberEquiv_map (f : L →ₗ⁅R⁆ M)
-    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L - algebraMap R _ (0 : R)}) :
+    (h : Ideal.span {reesParameter R L} ≤
+      (Ideal.span {reesParameter R M}).comap ((reesMap R f).restrictScalars R))
+    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) :
     reesZeroFiberEquiv R M
-        (Ideal.quotientEquivAlgOfEq R (by rw [map_zero, sub_zero]) (reesQuotientMap R 0 f q)) =
-      SymmetricAlgebra.map R f.toLinearMap
-        (reesZeroFiberEquiv R L
-          (Ideal.quotientEquivAlgOfEq R (by rw [map_zero, sub_zero]) q)) := by
-  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M})
+          ((reesMap R f).restrictScalars R) h q) =
+      SymmetricAlgebra.map R f.toLinearMap (reesZeroFiberEquiv R L q) :=
+  AlgHom.congr_fun (reesZeroFiberEquiv_comp_quotientMapₐ R f h) q
 
 end Functoriality
 

@@ -19,7 +19,7 @@ its inverse sends `ι(x)` to the specialized Rees generator.
 
 These comparisons require neither freeness of the Lie algebra nor a characteristic hypothesis.
 They use the exhaustive PBW filtration. They are natural with respect to Lie algebra
-homomorphisms via `reesQuotientMap` and `reesMap`.
+homomorphisms via `reesMap` and `Ideal.quotientMapₐ`.
 
 ## References
 
@@ -91,17 +91,31 @@ section Functoriality
 
 variable {L} {M : Type w} [LieRing M] [LieAlgebra R M]
 
-/-- Naturality of `quotientReesParameterSubOneEquiv` via `reesQuotientMap` at `a = 1`. -/
+/-- Naturality of `quotientReesParameterSubOneEquiv` under `Ideal.quotientMapₐ` induced by
+`reesMap R f`. -/
+theorem quotientReesParameterSubOneEquiv_comp_quotientMapₐ (f : L →ₗ⁅R⁆ M)
+    (h : Ideal.span {reesParameter R L - 1} ≤
+      (Ideal.span {reesParameter R M - 1}).comap ((reesMap R f).restrictScalars R)) :
+    (quotientReesParameterSubOneEquiv R M).toAlgHom.comp
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M - 1})
+          ((reesMap R f).restrictScalars R) h) =
+      (map R f).comp (quotientReesParameterSubOneEquiv R L).toAlgHom := by
+  refine Ideal.Quotient.algHom_ext R ?_
+  ext p
+  simp [coeffSubalgebra.evalOne_eq_eval]
+
+/-- Naturality of `quotientReesParameterSubOneEquiv` on quotient classes under
+`Ideal.quotientMapₐ` induced by `reesMap R f`. -/
 @[simp]
 theorem quotientReesParameterSubOneEquiv_map (f : L →ₗ⁅R⁆ M)
-    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L - algebraMap R _ (1 : R)}) :
+    (h : Ideal.span {reesParameter R L - 1} ≤
+      (Ideal.span {reesParameter R M - 1}).comap ((reesMap R f).restrictScalars R))
+    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) :
     quotientReesParameterSubOneEquiv R M
-        (Ideal.quotientEquivAlgOfEq R (by rw [map_one]) (reesQuotientMap R 1 f q)) =
-      map R f
-        (quotientReesParameterSubOneEquiv R L
-          (Ideal.quotientEquivAlgOfEq R (by rw [map_one]) q)) := by
-  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp [coeffSubalgebra.evalOne_eq_eval]
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M - 1})
+          ((reesMap R f).restrictScalars R) h q) =
+      map R f (quotientReesParameterSubOneEquiv R L q) :=
+  AlgHom.congr_fun (quotientReesParameterSubOneEquiv_comp_quotientMapₐ R f h) q
 
 /-- Naturality of the tensor-product `t = 1` fibre `reesOneFiberEquiv`. -/
 @[simp]

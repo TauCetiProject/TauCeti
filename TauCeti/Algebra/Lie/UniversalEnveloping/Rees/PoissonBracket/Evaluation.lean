@@ -11,9 +11,9 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Gradient
 /-!
 # Linear Poisson evaluation of the PBW Rees zero-fibre bracket
 
-For a free Lie algebra `L` over a commutative ring `R`, evaluating the zero-fibre Poisson bracket
-`reesZeroFiberBracket R L p q` at `ξ : Module.Dual R L` gives the linear Kirillov–Kostant–Souriau
-Poisson formula `ξ ⁅p.gradient ξ, q.gradient ξ⁆`.
+For a Lie algebra `L` that is free as a module over a commutative ring `R`, evaluating the
+zero-fibre Poisson bracket `reesZeroFiberBracket R L p q` at `ξ : Module.Dual R L` gives the
+linear Kirillov–Kostant–Souriau Poisson formula `ξ ⁅p.gradient ξ, q.gradient ξ⁆`.
 
 ## Main results
 
