@@ -39,11 +39,11 @@ of `K`.
   `TauCeti.puiseuxField.exists_numberField_of_isAlgebraic`: all coefficients of an algebraic
   Puiseux series lie in a single finite-dimensional intermediate field (and hence in an intermediate
   `NumberField` over `ℚ`).
-* `TauCeti.puiseuxField.exists_pos_int_sub_C_mem_scaledIntegralSeries`,
-  `TauCeti.puiseuxField.exists_pos_int_smul_mem_scaledIntegralSeries`,
-  `TauCeti.puiseuxField.exists_pos_int_mem_scaledIntegralSeries_of_isIntegral`,
-  `TauCeti.puiseuxField.exists_pos_int_mul_isIntegral_coeff`, and
-  `TauCeti.puiseuxField.exists_pos_int_smul_mem_scaledIntegralSeries_rat`: Eisenstein denominator
+* `TauCeti.puiseuxField.exists_pos_nat_sub_C_mem_scaledIntegralSeries`,
+  `TauCeti.puiseuxField.exists_pos_nat_smul_mem_scaledIntegralSeries`,
+  `TauCeti.puiseuxField.exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral`,
+  `TauCeti.puiseuxField.exists_pos_nat_mul_isIntegral_coeff`, and
+  `TauCeti.puiseuxField.exists_pos_nat_smul_mem_scaledIntegralSeries_rat`: Eisenstein denominator
   bounds for algebraic Puiseux series of nonnegative order.
 
 ## References
@@ -68,17 +68,15 @@ algebraic over `K(X)`. -/
 theorem isAlgebraic_of_levelEmbedding {N : ℕ+} {f : K⸨X⸩}
     (hf : IsAlgebraic K⟮X⟯ (levelEmbedding K N f)) : IsAlgebraic K⟮X⟯ f := by
   obtain ⟨P, hP_ne, hP_eval⟩ := hf
-  refine ⟨P.map (TauCeti.expandRatFunc K N), Polynomial.map_ne_zero hP_ne, ?_⟩
+  refine ⟨P.map (RatFunc.expand K N), Polynomial.map_ne_zero hP_ne, ?_⟩
   apply (levelEmbedding K N).toRingHom.injective
   rw [map_zero, Polynomial.aeval_def, Polynomial.eval₂_map, Polynomial.hom_eval₂]
   have hcomp :
       (levelEmbedding K N).toRingHom.comp
-          ((algebraMap K⟮X⟯ K⸨X⸩).comp (TauCeti.expandRatFunc K N)) =
-        algebraMap K⟮X⟯ (puiseuxField K) := by
-    rw [← LaurentSeries.expand_comp_algebraMap_ratFunc N]
-    refine RingHom.ext fun r ↦ ?_
-    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      levelEmbedding_expand_self, algebraMap_ratFunc_apply]
+          ((algebraMap K⟮X⟯ K⸨X⸩).comp (RatFunc.expand K N)) =
+        algebraMap K⟮X⟯ (puiseuxField K) :=
+    RingHom.ext fun r ↦ by
+      simp [← LaurentSeries.expand_algebraMap_ratFunc, algebraMap_ratFunc_apply]
   rw [hcomp]
   simpa [Polynomial.aeval_def] using hP_eval
 
@@ -95,25 +93,6 @@ end Pullback
 
 section Eisenstein
 
-/-- Multiplying a Laurent series `g` by `X ^ (-g.order)` produces a power series
-(`g.powerSeriesPart`) that preserves algebraicity over `K(X)` and has the same coefficients. -/
-private theorem exists_powerSeries_same_coeffs_isAlgebraic {K : Type*} [Field K] {g : K⸨X⸩}
-    (halg : IsAlgebraic K⟮X⟯ g) :
-    ∃ (k : ℤ) (f : K⟦X⟧),
-      (f : K⸨X⸩) = HahnSeries.single k 1 * g ∧ IsAlgebraic K⟮X⟯ (f : K⸨X⸩) := by
-  let k : ℤ := -g.order
-  have hsingle : (HahnSeries.single k (1 : K) : K⸨X⸩) =
-      algebraMap K⟮X⟯ K⸨X⸩ (RatFunc.X ^ k) := by
-    rw [RatFunc.single_zpow, map_zpow₀, ← RatFunc.algebraMap_X,
-      ← RatFunc.coePolynomial_eq_algebraMap, ← RatFunc.coe_coe, Polynomial.coe_X,
-      PowerSeries.coe_X]
-  have halg_X : IsAlgebraic K⟮X⟯ (HahnSeries.single k 1 : K⸨X⸩) := by
-    rw [hsingle]
-    exact isAlgebraic_algebraMap _
-  have hf : ((g.powerSeriesPart : K⟦X⟧) : K⸨X⸩) = HahnSeries.single k 1 * g :=
-    LaurentSeries.ofPowerSeries_powerSeriesPart g
-  exact ⟨k, g.powerSeriesPart, hf, hf ▸ halg_X.mul halg⟩
-
 /-- If `K / F` is an algebraic extension in characteristic zero and `x ∈ puiseuxField K` is
 algebraic over `K(X)`, then all coefficients of `x` lie in a single finite-dimensional intermediate
 field of `K / F`. -/
@@ -124,20 +103,22 @@ theorem exists_finiteDimensional_intermediateField_of_isAlgebraic {F K : Type*} 
       ∀ q : ℚ, (x : HahnSeries ℚ K).coeff q ∈ E := by
   obtain ⟨N, hn⟩ := exists_mem_range_levelEmbedding x
   obtain ⟨g, rfl⟩ := (AlgHom.mem_range _).mp hn
-  obtain ⟨k, f, hfg, hfa⟩ :=
-    exists_powerSeries_same_coeffs_isAlgebraic (isAlgebraic_of_levelEmbedding halg)
+  have hfa : IsAlgebraic K⟮X⟯ (g.powerSeriesPart : K⸨X⸩) :=
+    LaurentSeries.isAlgebraic_powerSeriesPart (isAlgebraic_of_levelEmbedding halg)
   obtain ⟨E, hfd, hmem⟩ :=
-    PowerSeries.exists_finiteDimensional_intermediateField_of_isAlgebraic (F := F) f hfa
+    PowerSeries.exists_finiteDimensional_intermediateField_of_isAlgebraic
+      (F := F) g.powerSeriesPart hfa
   refine ⟨E, hfd, fun q ↦ ?_⟩
   by_cases hq : q.den ∣ N
   · obtain ⟨m, rfl⟩ := (Rat.den_dvd_iff_exists_eq_intCast_div N.ne_zero).mp hq
     rw [coe_levelEmbedding, coeff_ramifiedEmbedding_intCast_div]
-    have hcm : g.coeff m = ((f : K⸨X⸩)).coeff (k + m) := by
-      rw [hfg, coeff_single_mul, one_mul, add_sub_cancel_left]
+    have hcm : g.coeff m = (g.powerSeriesPart : K⸨X⸩).coeff (-g.order + m) := by
+      rw [LaurentSeries.ofPowerSeries_powerSeriesPart g, coeff_single_mul, one_mul,
+        add_sub_cancel_left]
     rw [hcm, PowerSeries.coeff_coe]
     split_ifs with hlt
     · exact E.zero_mem
-    · simpa using hmem (k + m).natAbs
+    · simpa using hmem (-g.order + m).natAbs
   · rw [coe_levelEmbedding, coeff_ramifiedEmbedding_of_not_den_dvd N g hq]
     exact E.zero_mem
 
@@ -158,25 +139,25 @@ variable {K : Type*} [Field K] [CharZero K] [Algebra.IsAlgebraic ℚ K]
 algebraic extension and `x ∈ puiseuxField K` of nonnegative rational order is algebraic over
 `K(X)`, then `x = levelEmbedding K N (f : K⸨X⸩)` for some `N : ℕ+` and `f ∈ K⟦X⟧` with
 `f - C (constantCoeff f) ∈ scaledIntegralSeries (integralClosure ℤ K) M` for some `M > 0`. -/
-theorem exists_pos_int_sub_C_mem_scaledIntegralSeries {x : puiseuxField K}
+theorem exists_pos_nat_sub_C_mem_scaledIntegralSeries {x : puiseuxField K}
     (hx : 0 ≤ addVal K x) (halg : IsAlgebraic K⟮X⟯ x) :
     ∃ (N : ℕ+) (M : ℕ) (f : K⟦X⟧), 0 < M ∧ x = levelEmbedding K N (f : K⸨X⸩) ∧
       f - PowerSeries.C (PowerSeries.constantCoeff f) ∈
         TauCeti.scaledIntegralSeries (integralClosure ℤ K) (M : K) := by
   obtain ⟨N, f, rfl, hf⟩ := exists_levelEmbedding_powerSeries_isAlgebraic hx halg
-  obtain ⟨M, hM, hmem⟩ := TauCeti.exists_pos_int_sub_C_mem_scaledIntegralSeries hf
+  obtain ⟨M, hM, hmem⟩ := TauCeti.exists_pos_nat_sub_C_mem_scaledIntegralSeries hf
   exact ⟨N, M, f, hM, rfl, hmem⟩
 
 /-- **Eisenstein's theorem for nonnegative Puiseux series.** If `K / ℚ` is an algebraic
 extension and `x ∈ puiseuxField K` of nonnegative rational order is algebraic over `K(X)`, then
 `x = levelEmbedding K N (f : K⸨X⸩)` for some `N : ℕ+` and `f ∈ K⟦X⟧` with
 `(c : K) • f ∈ scaledIntegralSeries (integralClosure ℤ K) M` for some positive integers `c, M`. -/
-theorem exists_pos_int_smul_mem_scaledIntegralSeries {x : puiseuxField K}
+theorem exists_pos_nat_smul_mem_scaledIntegralSeries {x : puiseuxField K}
     (hx : 0 ≤ addVal K x) (halg : IsAlgebraic K⟮X⟯ x) :
     ∃ (N : ℕ+) (c M : ℕ) (f : K⟦X⟧), 0 < c ∧ 0 < M ∧ x = levelEmbedding K N (f : K⸨X⸩) ∧
       (c : K) • f ∈ TauCeti.scaledIntegralSeries (integralClosure ℤ K) (M : K) := by
   obtain ⟨N, f, rfl, hf⟩ := exists_levelEmbedding_powerSeries_isAlgebraic hx halg
-  obtain ⟨c, M, hc, hM, hmem⟩ := TauCeti.exists_pos_int_smul_mem_scaledIntegralSeries hf
+  obtain ⟨c, M, hc, hM, hmem⟩ := TauCeti.exists_pos_nat_smul_mem_scaledIntegralSeries hf
   exact ⟨N, c, M, f, hc, hM, rfl, hmem⟩
 
 /-- **Eisenstein's theorem for nonnegative Puiseux series (integral constant term).** If `K / ℚ` is
@@ -184,7 +165,7 @@ algebraic, `x ∈ puiseuxField K` has `0 ≤ addVal K x`, `x` is algebraic over 
 constant coefficient `(x : HahnSeries ℚ K).coeff 0` is integral over `ℤ`, then
 `x = levelEmbedding K N (f : K⸨X⸩)` for some `N : ℕ+` and `f ∈ scaledIntegralSeries
 (integralClosure ℤ K) M` with `M > 0`. -/
-theorem exists_pos_int_mem_scaledIntegralSeries_of_isIntegral {x : puiseuxField K}
+theorem exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral {x : puiseuxField K}
     (hx : 0 ≤ addVal K x) (halg : IsAlgebraic K⟮X⟯ x)
     (hx₀ : IsIntegral ℤ ((x : HahnSeries ℚ K).coeff 0)) :
     ∃ (N : ℕ+) (M : ℕ) (f : K⟦X⟧), 0 < M ∧ x = levelEmbedding K N (f : K⸨X⸩) ∧
@@ -193,23 +174,21 @@ theorem exists_pos_int_mem_scaledIntegralSeries_of_isIntegral {x : puiseuxField 
   have hf₀ : IsIntegral ℤ (PowerSeries.constantCoeff f) := by
     have hc0 : ((levelEmbedding K N (f : K⸨X⸩) : puiseuxField K) : HahnSeries ℚ K).coeff 0 =
         PowerSeries.constantCoeff f := by
-      rw [coe_levelEmbedding, ← zero_div (N : ℚ), ← Int.cast_zero (R := ℚ),
-        coeff_ramifiedEmbedding_intCast_div, PowerSeries.coeff_coe,
-        ite_eq_right (not_lt.mpr le_rfl)]
-      simp
+      rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
+      simpa using coeff_levelEmbedding_coe_natCast_div N f 0
     exact hc0 ▸ hx₀
-  obtain ⟨M, hM, hmem⟩ := TauCeti.exists_pos_int_mem_scaledIntegralSeries_of_isIntegral hf hf₀
+  obtain ⟨M, hM, hmem⟩ := TauCeti.exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral hf hf₀
   exact ⟨N, M, f, hM, rfl, hmem⟩
 
 /-- **Coefficientwise Eisenstein bound for nonnegative Puiseux series.** Every exponent in the
 support of `x` is of the form `n / N` (`n : ℕ`), and `(c : K) * (M : K)ⁿ * x_{n / N}` is integral
 over `ℤ` for all `n : ℕ`. -/
-theorem exists_pos_int_mul_isIntegral_coeff {x : puiseuxField K} (hx : 0 ≤ addVal K x)
+theorem exists_pos_nat_mul_isIntegral_coeff {x : puiseuxField K} (hx : 0 ≤ addVal K x)
     (halg : IsAlgebraic K⟮X⟯ x) :
     ∃ (N : ℕ+) (c M : ℕ), 0 < c ∧ 0 < M ∧
       (∀ q ∈ (x : HahnSeries ℚ K).support, ∃ n : ℕ, q = (n : ℚ) / N) ∧
       ∀ n : ℕ, IsIntegral ℤ ((c : K) * (M : K) ^ n * (x : HahnSeries ℚ K).coeff ((n : ℚ) / N)) := by
-  obtain ⟨N, c, M, f, hc, hM, rfl, hmem⟩ := exists_pos_int_smul_mem_scaledIntegralSeries hx halg
+  obtain ⟨N, c, M, f, hc, hM, rfl, hmem⟩ := exists_pos_nat_smul_mem_scaledIntegralSeries hx halg
   refine ⟨N, c, M, hc, hM, fun q hq ↦ ?_, fun n ↦ ?_⟩
   · rw [coe_levelEmbedding, support_ramifiedEmbedding] at hq
     obtain ⟨k, hk_supp, rfl⟩ := hq
@@ -220,20 +199,18 @@ theorem exists_pos_int_mul_isIntegral_coeff {x : puiseuxField K} (hx : 0 ≤ add
     exact ⟨n, by simp⟩
   · have hint := TauCeti.mem_scaledIntegralSeries_integralClosure_iff.mp hmem n
     rw [PowerSeries.coeff_smul, smul_eq_mul, ← mul_assoc, mul_comm ((M : K) ^ n) (c : K)] at hint
-    rwa [coe_levelEmbedding, ← Int.cast_natCast (R := ℚ),
-      coeff_ramifiedEmbedding_intCast_div, PowerSeries.coeff_coe,
-      ite_eq_right (not_lt.mpr (Nat.cast_nonneg n)), Int.natAbs_natCast]
+    rwa [coeff_levelEmbedding_coe_natCast_div]
 
-/-- Specialization of `TauCeti.puiseuxField.exists_pos_int_smul_mem_scaledIntegralSeries` to
+/-- Specialization of `TauCeti.puiseuxField.exists_pos_nat_smul_mem_scaledIntegralSeries` to
 rational Puiseux series: if `x ∈ puiseuxField ℚ` has `0 ≤ addVal ℚ x` and is algebraic over `ℚ(X)`,
 then `x = levelEmbedding ℚ N (f : ℚ⸨X⸩)` for some `N : ℕ+` and `(c : ℚ) • f ∈ scaledIntegralSeries
 ℤ M` with `c, M > 0`. -/
-theorem exists_pos_int_smul_mem_scaledIntegralSeries_rat {x : puiseuxField ℚ}
+theorem exists_pos_nat_smul_mem_scaledIntegralSeries_rat {x : puiseuxField ℚ}
     (hx : 0 ≤ addVal ℚ x) (halg : IsAlgebraic ℚ⟮X⟯ x) :
     ∃ (N : ℕ+) (c M : ℕ) (f : ℚ⟦X⟧), 0 < c ∧ 0 < M ∧ x = levelEmbedding ℚ N (f : ℚ⸨X⸩) ∧
       (c : ℚ) • f ∈ TauCeti.scaledIntegralSeries ℤ (M : ℚ) := by
   obtain ⟨N, f, rfl, hf⟩ := exists_levelEmbedding_powerSeries_isAlgebraic hx halg
-  obtain ⟨c, M, hc, hM, hmem⟩ := TauCeti.exists_pos_int_smul_mem_scaledIntegralSeries_rat hf
+  obtain ⟨c, M, hc, hM, hmem⟩ := TauCeti.exists_pos_nat_smul_mem_scaledIntegralSeries_rat hf
   exact ⟨N, c, M, f, hc, hM, rfl, hmem⟩
 
 end Eisenstein
@@ -286,12 +263,12 @@ example {K : Type*} [Field K] [CharZero K] :
   have hnot1 : y ∉ (levelEmbedding K 1).range := by
     rintro ⟨g, hg⟩
     have hc := congrArg (fun z : puiseuxField K ↦ (z : HahnSeries ℚ K).coeff (1 / 2 : ℚ)) hg
-    have hdiv := coeff_ramifiedEmbedding_intCast_div (R := K) 2 (f : K⸨X⸩) 1
-    norm_num at hdiv
+    have hdiv := coeff_levelEmbedding_coe_natCast_div 2 f 1
+    rw [show ((1 : ℕ) : ℚ) / ((2 : ℕ+) : ℚ) = 1 / 2 by norm_num] at hdiv
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coe_levelEmbedding] at hc
     rw [coeff_ramifiedEmbedding_of_not_den_dvd 1 g (by norm_num)] at hc
     dsimp [y] at hc
-    rw [coe_levelEmbedding, hdiv, PowerSeries.coeff_coe] at hc
+    rw [hdiv] at hc
     simp [f] at hc
   refine ⟨h0, halg, hnot1, TauCeti.mem_scaledIntegralSeries_integralClosure_iff.mpr fun n ↦ ?_⟩
   simp [f, isIntegral_intCast]

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import TauCeti.RingTheory.LaurentSeries.Ramified
+import TauCeti.RingTheory.LaurentSeries.RatFunc
 
 /-!
 # The Puiseux series field
@@ -57,6 +58,8 @@ exponents have unbounded denominators, shows that the Puiseux field is a proper 
   the image of a polynomial over `K⸨X⸩` under a single level embedding.
 * `TauCeti.puiseuxField.levelEmbedding_expand_self`: the level-`n` embedding restricted along
   `X ↦ X ^ n` is the `K⸨X⸩`-algebra map.
+* `TauCeti.puiseuxField.coeff_levelEmbedding_coe_natCast_div`: the `(m / n)`-th coefficient of
+  `levelEmbedding K n (f : K⸨X⸩)` is `PowerSeries.coeff m f`.
 * `TauCeti.puiseuxField.algebraMap_laurentSeries_single_one`,
   `TauCeti.puiseuxField.algebraMap_powerSeries_X`: the `K⸨X⸩`- and `K⟦X⟧`-algebra maps send `X` to
   the Puiseux parameter `single K 1 1`.
@@ -207,6 +210,14 @@ noncomputable def levelEmbedding (n : ℕ+) : K⸨X⸩ →ₐ[K] puiseuxField K 
 theorem coe_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
     (levelEmbedding K n f : HahnSeries ℚ K) = ramifiedEmbedding K n f :=
   (rfl)
+
+/-- The `m / n`-th coefficient of the level-`n` embedding of a power series `f` is `coeff m f`. -/
+theorem coeff_levelEmbedding_coe_natCast_div (n : ℕ+) (f : K⟦X⟧) (m : ℕ) :
+    ((levelEmbedding K n (f : K⸨X⸩) : puiseuxField K) : HahnSeries ℚ K).coeff ((m : ℚ) / n) =
+      PowerSeries.coeff m f := by
+  rw [coe_levelEmbedding, ← Int.cast_natCast (R := ℚ), coeff_ramifiedEmbedding_intCast_div,
+    PowerSeries.coeff_coe]
+  simp [show ¬ ((m : ℤ) < 0) by omega]
 
 /-- The parameter `t` is the level-`n` image of `u ^ n`. -/
 theorem levelEmbedding_single_self (n : ℕ+) :
@@ -375,16 +386,14 @@ instance isScalarTower_ratFunc_laurentSeries :
 instance isScalarTower_ratFunc : IsScalarTower K K⟮X⟯ (puiseuxField K) :=
   IsScalarTower.of_algebraMap_eq fun c ↦ by
     rw [algebraMap_ratFunc_apply, IsScalarTower.algebraMap_apply K K[X] K⟮X⟯,
-      Polynomial.algebraMap_eq, ← RatFunc.coePolynomial_eq_algebraMap, ← RatFunc.coe_coe,
-      Polynomial.coe_C, PowerSeries.coe_C, ← _root_.LaurentSeries.algebraMap_apply,
-      ← IsScalarTower.algebraMap_apply K K⸨X⸩]
+      Polynomial.algebraMap_eq, RatFunc.algebraMap_C, RatFunc.coe_C,
+      ← _root_.LaurentSeries.algebraMap_apply, ← IsScalarTower.algebraMap_apply K K⸨X⸩]
 
 /-- The `K⟮X⟯`-algebra map sends `RatFunc.X` to the Puiseux parameter `t = single K 1 1`. -/
 @[simp]
 theorem algebraMap_ratFunc_X :
     algebraMap K⟮X⟯ (puiseuxField K) RatFunc.X = single K 1 1 := by
-  rw [algebraMap_ratFunc_apply, ← RatFunc.algebraMap_X, ← RatFunc.coePolynomial_eq_algebraMap,
-    ← RatFunc.coe_coe, Polynomial.coe_X, PowerSeries.coe_X, algebraMap_laurentSeries_single_one]
+  rw [algebraMap_ratFunc_apply, RatFunc.coe_X, algebraMap_laurentSeries_single_one]
 
 /-! ### A series with exponents of unbounded denominator -/
 

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import TauCeti.RingTheory.MvPowerSeries.Evaluation
 import Mathlib.Algebra.Polynomial.Div
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Evaluation of power series and division by `X - C c`
@@ -145,7 +146,7 @@ theorem constantCoeff_polynomial_aeval (f : A⟦X⟧) (p : Polynomial A) :
 
 /-- Evaluating `P(b + X ^ N * g)` at `g` via the shifted Taylor polynomial
 `T = (P.taylor b)(X ^ N * Y)`. -/
-theorem aeval_taylor_comp_X_pow_mul {R : Type*} [CommRing R] (P : Polynomial (Polynomial R))
+theorem aeval_taylor_comp_X_pow_mul {R : Type*} [CommSemiring R] (P : Polynomial (Polynomial R))
     (b : Polynomial R) (N : ℕ) (g : R⟦X⟧) :
     Polynomial.aeval g ((P.taylor b).comp (Polynomial.C (Polynomial.X ^ N) * Polynomial.X)) =
       Polynomial.aeval ((b : R⟦X⟧) + X ^ N * g) P := by
@@ -154,10 +155,10 @@ theorem aeval_taylor_comp_X_pow_mul {R : Type*} [CommRing R] (P : Polynomial (Po
       Polynomial.aeval (Polynomial.aeval g (Polynomial.C (Polynomial.X ^ N) * Polynomial.X))
         (P.taylor b) :=
     Polynomial.aeval_comp g
-  rw [map_mul, Polynomial.aeval_C, Polynomial.aeval_X, algebraMap_apply', Algebra.algebraMap_self,
-    map_id, id_eq, Polynomial.coe_pow, Polynomial.coe_X] at hcomp
+  rw [map_mul, Polynomial.aeval_C, Polynomial.aeval_X, algebraMap_polynomial_powerSeries,
+    Polynomial.coe_pow, Polynomial.coe_X] at hcomp
   rw [hcomp, Polynomial.taylor_apply, Polynomial.aeval_comp, map_add, Polynomial.aeval_X,
-    Polynomial.aeval_C, algebraMap_apply', Algebra.algebraMap_self, map_id, id_eq, add_comm]
+    Polynomial.aeval_C, algebraMap_polynomial_powerSeries, add_comm]
 
 /-- From `aeval g T = 0` and divisibility of `T.coeff k` for `k ≥ 1` by `X ^ m`, deduce that
 `X ^ m` divides `T.coeff 0`. -/
@@ -173,15 +174,14 @@ theorem X_pow_dvd_coeff_zero_of_aeval_eq_zero {R : Type*} [CommSemiring R]
       coeff i (algebraMap (Polynomial R) R⟦X⟧ (T.coeff k) * g ^ k) = 0 := by
     intro k _ hk0
     obtain ⟨q, hq⟩ := hdvd k (Nat.pos_of_ne_zero hk0)
-    rw [algebraMap_apply', Algebra.algebraMap_self, map_id, id_eq, hq, Polynomial.coe_mul,
-      Polynomial.coe_pow, Polynomial.coe_X, mul_assoc, coeff_X_pow_mul',
-      ite_eq_right (not_le.mpr hi)]
+    rw [algebraMap_polynomial_powerSeries, hq, Polynomial.coe_mul, Polynomial.coe_pow,
+      Polynomial.coe_X, mul_assoc, coeff_X_pow_mul', ite_eq_right (not_le.mpr hi)]
   rw [← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos T.natDegree)),
     Finset.sum_eq_zero (fun k hk ↦ by
       simp only [Algebra.smul_def]
       exact hrest k (Finset.mem_erase.mp hk).2 (Finset.mem_erase.mp hk).1),
-    add_zero, Algebra.smul_def, pow_zero, mul_one, algebraMap_apply', Algebra.algebraMap_self,
-    map_id, id_eq, Polynomial.coeff_coe] at hev
+    add_zero, Algebra.smul_def, pow_zero, mul_one, algebraMap_polynomial_powerSeries,
+    Polynomial.coeff_coe] at hev
   exact hev
 
 end AlgHom

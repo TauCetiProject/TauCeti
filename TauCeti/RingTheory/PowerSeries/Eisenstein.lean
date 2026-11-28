@@ -48,19 +48,21 @@ positive integer `M` clearing the coefficients of `R`, the nonconstant coefficie
 
 ## Main results
 
+* `PowerSeries.exists_aeval_eq_zero_aeval_derivative_ne_zero_of_isAlgebraic`: clearing
+  denominators of the minimal polynomial yields `P ∈ K[X][Y]` with `P(f) = 0` and `P_Y(f) ≠ 0`.
 * `PowerSeries.exists_finiteDimensional_intermediateField_of_isAlgebraic`: all coefficients of an
   algebraic series over `K(X)` lie in a common finite-dimensional intermediate field of `K / F` when
   `K / F` is algebraic in characteristic zero.
 * `PowerSeries.exists_numberField_of_isAlgebraic`: when `K / ℚ` is algebraic in characteristic zero,
   all coefficients of `f` lie in a common intermediate `NumberField`.
-* `TauCeti.exists_pos_int_sub_C_mem_scaledIntegralSeries`: `f - C (constantCoeff f)` lies in
+* `TauCeti.exists_pos_nat_sub_C_mem_scaledIntegralSeries`: `f - C (constantCoeff f)` lies in
   `scaledIntegralSeries (integralClosure ℤ K) M` for some positive integer `M`.
-* `TauCeti.exists_pos_int_smul_mem_scaledIntegralSeries`: `(c : K) • f` lies in
+* `TauCeti.exists_pos_nat_smul_mem_scaledIntegralSeries`: `(c : K) • f` lies in
   `scaledIntegralSeries (integralClosure ℤ K) M` for some positive integers `c, M`.
-* `TauCeti.exists_pos_int_mem_scaledIntegralSeries_of_isIntegral`: if `constantCoeff f` is
+* `TauCeti.exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral`: if `constantCoeff f` is
   integral over `ℤ`, then `f ∈ scaledIntegralSeries (integralClosure ℤ K) M` for some `M > 0`.
-* `TauCeti.exists_pos_int_smul_mem_scaledIntegralSeries_rat` and
-  `TauCeti.exists_pos_int_mem_scaledIntegralSeries_rat`: the specializations to `ℚ⟦X⟧` and
+* `TauCeti.exists_pos_nat_smul_mem_scaledIntegralSeries_rat` and
+  `TauCeti.exists_pos_nat_mem_scaledIntegralSeries_rat`: the specializations to `ℚ⟦X⟧` and
   `scaledIntegralSeries ℤ M`.
 
 ## References
@@ -74,13 +76,13 @@ public section
 open PowerSeries
 open scoped LaurentSeries Polynomial RatFunc
 
-section Helpers
+namespace PowerSeries
 
 /-- Clearing the rational-function denominators of the minimal polynomial of an algebraic series
 `f ∈ K⟦X⟧` over `K(X)` produces a bivariate polynomial `P ∈ K[X][Y]` annihilating `f` whose
 `Y`-derivative is nonzero at `f`. -/
-private theorem clearDenom_minpoly {K : Type*} [Field K] [CharZero K] {f : K⟦X⟧}
-    (hf : IsAlgebraic K⟮X⟯ (f : K⸨X⸩)) :
+theorem exists_aeval_eq_zero_aeval_derivative_ne_zero_of_isAlgebraic {K : Type*} [Field K]
+    [CharZero K] {f : K⟦X⟧} (hf : IsAlgebraic K⟮X⟯ (f : K⸨X⸩)) :
     ∃ P : K[X][X], Polynomial.aeval f P = 0 ∧ Polynomial.aeval f P.derivative ≠ 0 := by
   set Q := minpoly K⟮X⟯ (f : K⸨X⸩)
   have hQd_ne : Polynomial.aeval (f : K⸨X⸩) Q.derivative ≠ 0 :=
@@ -91,19 +93,28 @@ private theorem clearDenom_minpoly {K : Type*} [Field K] [CharZero K] {f : K⟦X
   have hD_ne : D ≠ 0 := nonZeroDivisors.ne_zero hD_mem
   have hmap' : P.map (algebraMap K[X] K⟮X⟯) = Polynomial.C (algebraMap K[X] K⟮X⟯ D) * Q := by
     rw [hmap, Algebra.smul_def, Polynomial.algebraMap_apply]
-  refine ⟨P, HahnSeries.ofPowerSeries_injective (by
-    rw [coe_aeval_polynomial_powerSeries, map_zero, Polynomial.aeval_def,
-      IsScalarTower.algebraMap_eq K[X] K⟮X⟯ K⸨X⸩, ← Polynomial.eval₂_map, hmap',
-      Polynomial.eval₂_mul, Polynomial.eval₂_C, ← Polynomial.aeval_def, minpoly.aeval,
-      mul_zero]), fun h ↦ hQd_ne ?_⟩
-  have h' := congrArg (HahnSeries.ofPowerSeries ℤ K) h
-  rw [coe_aeval_polynomial_powerSeries, map_zero, Polynomial.aeval_def,
-    IsScalarTower.algebraMap_eq K[X] K⟮X⟯ K⸨X⸩, ← Polynomial.eval₂_map,
-    ← Polynomial.derivative_map, hmap', Polynomial.derivative_C_mul, Polynomial.eval₂_mul,
-    Polynomial.eval₂_C, ← Polynomial.aeval_def, mul_eq_zero] at h'
-  refine h'.resolve_left fun hD0 ↦ hD_ne ?_
-  exact (injective_iff_map_eq_zero _).mp (FaithfulSMul.algebraMap_injective K[X] K⸨X⸩) D
-    (by simpa [IsScalarTower.algebraMap_apply K[X] K⟮X⟯ K⸨X⸩] using hD0)
+  have haeval (A : K[X][X]) (B : K⟮X⟯[X])
+      (hAB : A.map (algebraMap K[X] K⟮X⟯) = Polynomial.C (algebraMap K[X] K⟮X⟯ D) * B) :
+      ((Polynomial.aeval f A : K⟦X⟧) : K⸨X⸩) =
+        algebraMap K[X] K⸨X⸩ D * Polynomial.aeval (f : K⸨X⸩) B := by
+    rw [coe_aeval_polynomial_powerSeries, Polynomial.aeval_def,
+      IsScalarTower.algebraMap_eq K[X] K⟮X⟯ K⸨X⸩, ← Polynomial.eval₂_map, hAB,
+      Polynomial.eval₂_mul, Polynomial.eval₂_C, RingHom.comp_apply,
+      ← IsScalarTower.algebraMap_apply, ← Polynomial.aeval_def]
+  refine ⟨P, ?_, fun h ↦ hQd_ne ?_⟩
+  · apply HahnSeries.ofPowerSeries_injective (Γ := ℤ)
+    rw [haeval P Q hmap', minpoly.aeval, mul_zero, map_zero]
+  · have h' := congrArg (HahnSeries.ofPowerSeries ℤ K) h
+    have hmap_deriv : P.derivative.map (algebraMap K[X] K⟮X⟯) =
+        Polynomial.C (algebraMap K[X] K⟮X⟯ D) * Q.derivative := by
+      rw [← Polynomial.derivative_map, hmap', Polynomial.derivative_C_mul]
+    rw [haeval P.derivative Q.derivative hmap_deriv, map_zero, mul_eq_zero] at h'
+    exact h'.resolve_left fun hD0 ↦ hD_ne <|
+      (injective_iff_map_eq_zero _).mp (FaithfulSMul.algebraMap_injective K[X] K⸨X⸩) D hD0
+
+end PowerSeries
+
+section Helpers
 
 /-- Coefficient divisibility for the shifted Taylor polynomial `T = (P.taylor b)(X ^ N * Y)`:
 setting `N = s + 1` where `s = order (P'(f))` makes `X ^ (N + s)` divide `T.coeff 1` and
@@ -127,7 +138,7 @@ private theorem taylor_comp_X_pow_dvd {K : Type*} [Field K] {f : K⟦X⟧} {P : 
   have hT1_dvd : Polynomial.X ^ (N + s) ∣ T.coeff 1 := by
     rw [hT_coeff 1, mul_one, Polynomial.taylor_coeff_one, pow_add, mul_comm (Polynomial.X ^ N)]
     refine mul_dvd_mul_right (Polynomial.X_pow_dvd_iff.mpr fun i hi ↦ ?_) _
-    rw [eval_trunc_coeff P.derivative f (hi.trans (Nat.lt_succ_self s))]
+    rw [coeff_eval_trunc P.derivative f (hi.trans (Nat.lt_succ_self s))]
     exact coeff_of_lt_order i (by
       rw [← ENat.natCast_toNat_eq_self.mpr (order_eq_top.not.mpr hfd)]
       exact Nat.cast_lt.mpr hi)
@@ -178,7 +189,7 @@ private theorem exists_div_X_pow_eq_zero_of_aeval_eq_zero {K : Type*} [Field K] 
     dsimp [T] at h1
     rw [Polynomial.comp_C_mul_X_coeff, pow_one, Polynomial.taylor_coeff_one, mul_comm,
       Polynomial.coeff_X_pow_mul', ite_eq_left (Nat.le_add_right N s), add_comm N s,
-      Nat.add_sub_cancel, eval_trunc_coeff P.derivative f (Nat.lt_succ_self s)] at h1
+      Nat.add_sub_cancel, coeff_eval_trunc P.derivative f (Nat.lt_succ_self s)] at h1
     exact h1 ▸ coeff_order hfd
   · intro k hk
     obtain ⟨q, hq⟩ := hT_ge_dvd hk
@@ -206,7 +217,7 @@ private theorem map_eval_zero_normalize_taylor {K : Type*} [Field K] {g : K⟦X�
   have hQ_const : (Q.coeff 0).coeff 0 + (Q.coeff 1).coeff 0 * g₀ = 0 := by
     have hcomp : (constantCoeff : K⟦X⟧ →+* K).comp (algebraMap K[X] K⟦X⟧) = ev0 :=
       RingHom.ext fun p ↦ by
-        simp [ev0, algebraMap_polynomial_powerSeries, Polynomial.coeff_zero_eq_eval_zero]
+        simp [algebraMap_polynomial_powerSeries, ev0, Polynomial.coeff_zero_eq_eval_zero]
     have hc := congrArg constantCoeff hQ_eval
     rw [map_zero, Polynomial.aeval_def, Polynomial.hom_eval₂, hcomp, ← Polynomial.eval_map,
       hQ0_map] at hc
@@ -271,7 +282,7 @@ then splitting `f = b + X ^ N * (C g₀ + u)` at `N = order (P_Y(f)) + 1` satisf
 private theorem exists_tail_eq_X_mul_aeval_of_aeval_eq_zero {K : Type*} [Field K] {f : K⟦X⟧}
     {P : K[X][X]} (hf : Polynomial.aeval f P = 0) (hfd : Polynomial.aeval f P.derivative ≠ 0) :
     ∃ (N : ℕ) (g₀ : K) (u : K⟦X⟧) (R : K[X][X]),
-      1 ≤ N ∧ f = (trunc N f : K⟦X⟧) + X ^ N * (C g₀ + u) ∧ constantCoeff u = 0 ∧
+      1 ≤ N ∧ f = (trunc N f : K⟦X⟧) + X ^ N * (C g₀ + u) ∧ coeff 0 u = 0 ∧
         u = X * Polynomial.aeval u R := by
   obtain ⟨N, Q, hN, hfg, hQ_eval, hQ1, hQ_ge⟩ :=
     exists_div_X_pow_eq_zero_of_aeval_eq_zero hf hfd
@@ -280,39 +291,32 @@ private theorem exists_tail_eq_X_mul_aeval_of_aeval_eq_zero {K : Type*} [Field K
   refine ⟨N, constantCoeff g, g - C (constantCoeff g), R, hN, ?_, by simp, huR⟩
   simpa [sub_add_cancel] using hfg
 
-/-- Rescaling the Bilu–Borichev recurrence `u = X * R(X, u)` by a positive integer `M` clearing the
-coefficients of `R` makes `Mⁿ * coeff n u` integral over `ℤ` for all `n`. -/
-private theorem isIntegral_pow_mul_coeff_of_eq_X_mul_aeval {K : Type*} [CommRing K] {u : K⟦X⟧}
-    {R : K[X][X]} (hu : u = X * Polynomial.aeval u R) (M : ℕ)
-    (hRM : ∀ j i, IsIntegral ℤ ((M : K) * (R.coeff j).coeff i)) (n : ℕ) :
-    IsIntegral ℤ ((M : K) ^ n * coeff n u) := by
-  let R' : K[X][X] := Polynomial.C (Polynomial.C (M : K)) *
-    R.map (Polynomial.compRingHom (Polynomial.C (M : K) * Polynomial.X))
-  have hrescale_coe (p : K[X]) :
-      rescale (M : K) (p : K⟦X⟧) =
-        ((p.comp (Polynomial.C (M : K) * Polynomial.X) : K[X]) : K⟦X⟧) := by
-    ext k
-    rw [coeff_rescale, Polynomial.coeff_coe, Polynomial.coeff_coe,
-      Polynomial.comp_C_mul_X_coeff, mul_comm]
-  have huM : rescale (M : K) u = X * Polynomial.aeval (rescale (M : K) u) R' := by
-    have h := congrArg (rescale (M : K)) hu
-    rw [map_mul, rescale_X, mul_assoc, mul_left_comm (C (M : K)) X] at h
-    have heq : (rescale (M : K)).comp (algebraMap K[X] K⟦X⟧) =
-        (algebraMap K[X] K⟦X⟧).comp
-          (Polynomial.compRingHom (Polynomial.C (M : K) * Polynomial.X)) :=
-      RingHom.ext fun p ↦ by simpa [algebraMap_polynomial_powerSeries] using hrescale_coe p
-    conv_lhs => rw [h]
-    rw [map_mul, Polynomial.aeval_C, algebraMap_polynomial_powerSeries, Polynomial.coe_C,
-      Polynomial.aeval_def, Polynomial.aeval_def, Polynomial.eval₂_map, ← heq,
-      ← Polynomial.hom_eval₂]
-  have hR' : ∀ j i, (R'.coeff j).coeff i ∈ (integralClosure ℤ K).toSubring := by
-    intro j i
-    rw [Subalgebra.mem_toSubring, mem_integralClosure_iff, Polynomial.coeff_C_mul,
-      Polynomial.coeff_map, Polynomial.coe_compRingHom_apply, Polynomial.coeff_C_mul,
-      Polynomial.comp_C_mul_X_coeff, mul_comm ((R.coeff j).coeff i), mul_left_comm]
-    exact ((isIntegral_natCast M).pow i).mul (hRM j i)
-  have hmem := coeff_mem_subring_of_eq_X_mul_aeval (R := (integralClosure ℤ K).toSubring) huM hR' n
-  rwa [Subalgebra.mem_toSubring, mem_integralClosure_iff, coeff_rescale] at hmem
+/-- Every coefficient `(R.coeff j).coeff i` of a bivariate polynomial `R ∈ K[X][Y]` is either `0`
+or belongs to the finite set `R.support.biUnion fun j ↦ (R.coeff j).coeffs`. -/
+private lemma coeff_eq_zero_or_mem_biUnion_coeffs {K : Type*} [Semiring K] [DecidableEq K]
+    (R : K[X][X]) (j i : ℕ) : (R.coeff j).coeff i = 0 ∨
+      (R.coeff j).coeff i ∈ R.support.biUnion fun j ↦ (R.coeff j).coeffs := by
+  by_cases hj : j ∈ R.support
+  · by_cases hi : (R.coeff j).coeff i = 0
+    · exact Or.inl hi
+    · exact Or.inr (Finset.mem_biUnion.mpr ⟨j, hj, Polynomial.coeff_mem_coeffs hi⟩)
+  · simp [Polynomial.notMem_support_iff.mp hj]
+
+/-- Coefficient formula for `f = (trunc N f : K⟦X⟧) + X ^ N * (C g₀ + u)` with `coeff 0 u = 0`. -/
+private lemma coeff_eq_of_eq_trunc_add_X_pow_mul {K : Type*} [CommRing K] {f u : K⟦X⟧}
+    {N : ℕ} {g₀ : K} (hfg : f = (trunc N f : K⟦X⟧) + X ^ N * (C g₀ + u))
+    (hu₀ : coeff 0 u = 0) (n : ℕ) :
+    coeff n f = if n < N then (trunc N f).coeff n else if n = N then g₀ else coeff (n - N) u := by
+  conv_lhs => rw [hfg]
+  rw [map_add, Polynomial.coeff_coe, coeff_X_pow_mul']
+  by_cases hlt : n < N
+  · rw [ite_eq_left hlt, ite_eq_right (not_le.mpr hlt), add_zero]
+  · have hle : N ≤ n := not_lt.mp hlt
+    rw [ite_eq_right hlt, coeff_trunc, ite_eq_right hlt, zero_add, ite_eq_left hle,
+      map_add, coeff_C]
+    rcases eq_or_ne n N with rfl | hne
+    · simp [hu₀]
+    · rw [ite_eq_right hne, ite_eq_right (by omega), zero_add]
 
 end Helpers
 
@@ -326,13 +330,11 @@ theorem exists_finiteDimensional_intermediateField_of_isAlgebraic {F K : Type*} 
     (hf : IsAlgebraic K⟮X⟯ (f : K⸨X⸩)) :
     ∃ E : IntermediateField F K, FiniteDimensional F E ∧ ∀ n, coeff n f ∈ E := by
   classical
-  obtain ⟨P, hP, hPd⟩ := clearDenom_minpoly hf
-  obtain ⟨N, g₀, u, R, -, hfg, -, huR⟩ :=
+  obtain ⟨P, hP, hPd⟩ := exists_aeval_eq_zero_aeval_derivative_ne_zero_of_isAlgebraic hf
+  obtain ⟨N, g₀, u, R, -, hfg, hu₀, huR⟩ :=
     exists_tail_eq_X_mul_aeval_of_aeval_eq_zero hP hPd
   let b : K[X] := trunc N f
-  let T : Finset K :=
-    {g₀} ∪ (b.support.image b.coeff) ∪
-      (R.support.biUnion fun j ↦ (R.coeff j).support.image (R.coeff j).coeff)
+  let T : Finset K := {g₀} ∪ b.coeffs ∪ (R.support.biUnion fun j ↦ (R.coeff j).coeffs)
   have hTint : ∀ x ∈ (T : Set K), IsIntegral F x := fun x _ ↦
     (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
   let E : IntermediateField F K := IntermediateField.adjoin F (T : Set K)
@@ -340,30 +342,20 @@ theorem exists_finiteDimensional_intermediateField_of_isAlgebraic {F K : Type*} 
   have hmemT {x : K} (hx : x ∈ T) : x ∈ E := IntermediateField.subset_adjoin F (T : Set K) hx
   have hg₀E : g₀ ∈ E := hmemT (by simp [T])
   have hbE (k : ℕ) : b.coeff k ∈ E := by
-    by_cases hk : k ∈ b.support
-    · exact hmemT
-        (Finset.mem_union_left _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hk)))
-    · rw [Polynomial.notMem_support_iff.mp hk]; exact E.zero_mem
+    by_cases hk : b.coeff k = 0
+    · exact hk ▸ E.zero_mem
+    · exact hmemT (Finset.mem_union_left _ (Finset.mem_union_right _
+        (Polynomial.coeff_mem_coeffs hk)))
   have hRE (j i : ℕ) : (R.coeff j).coeff i ∈ E := by
-    by_cases hj : j ∈ R.support
-    · by_cases hi : i ∈ (R.coeff j).support
-      · exact hmemT (Finset.mem_union_right _
-          (Finset.mem_biUnion.mpr ⟨j, hj, Finset.mem_image_of_mem _ hi⟩))
-      · rw [Polynomial.notMem_support_iff.mp hi]; exact E.zero_mem
-    · rw [Polynomial.notMem_support_iff.mp hj, Polynomial.coeff_zero]; exact E.zero_mem
+    rcases coeff_eq_zero_or_mem_biUnion_coeffs R j i with h0 | hmem
+    · exact h0 ▸ E.zero_mem
+    · exact hmemT (Finset.mem_union_right _ hmem)
   have huE (n : ℕ) : coeff n u ∈ E :=
     coeff_mem_subring_of_eq_X_mul_aeval (R := E.toSubring) huR hRE n
   refine ⟨E, hfd, fun n ↦ ?_⟩
-  rw [hfg, map_add, Polynomial.coeff_coe, coeff_X_pow_mul']
-  split_ifs with hle
-  · refine E.add_mem (hbE n) ?_
-    rw [map_add]
-    rcases eq_or_ne (n - N) 0 with h0 | hne
-    · rw [h0, coeff_C, ite_eq_left rfl]
-      exact E.add_mem hg₀E (huE 0)
-    · rw [coeff_C, ite_eq_right hne, zero_add]
-      exact huE (n - N)
-  · simpa using hbE n
+  rw [coeff_eq_of_eq_trunc_add_X_pow_mul hfg hu₀ n]
+  split_ifs
+  exacts [hbE n, hg₀E, huE (n - N)]
 
 /-- If `K / ℚ` is an algebraic extension and `f ∈ K⟦X⟧` is algebraic over `K(X)`, then all
 coefficients of `f` lie in a single intermediate number field of `K`. -/
@@ -381,60 +373,52 @@ namespace TauCeti
 /-- **Eisenstein's theorem (nonconstant part).** If `K / ℚ` is an algebraic extension and
 `f ∈ K⟦X⟧` is algebraic over `K(X)`, then `f - C (constantCoeff f)` lies in the integral lattice at
 some positive integer scale `M`: `(M : K)ⁿ * coeff n f` is integral over `ℤ` for every `n ≥ 1`. -/
-theorem exists_pos_int_sub_C_mem_scaledIntegralSeries {K : Type*} [Field K] [CharZero K]
+theorem exists_pos_nat_sub_C_mem_scaledIntegralSeries {K : Type*} [Field K] [CharZero K]
     [Algebra.IsAlgebraic ℚ K] {f : K⟦X⟧} (hf : IsAlgebraic K⟮X⟯ (f : K⸨X⸩)) :
     ∃ M : ℕ, 0 < M ∧
       f - C (constantCoeff f) ∈ scaledIntegralSeries (integralClosure ℤ K) (M : K) := by
   classical
-  obtain ⟨P, hP, hPd⟩ := clearDenom_minpoly hf
-  obtain ⟨N, g₀, u, R, hN, hfg, -, huR⟩ :=
+  obtain ⟨P, hP, hPd⟩ := exists_aeval_eq_zero_aeval_derivative_ne_zero_of_isAlgebraic hf
+  obtain ⟨N, g₀, u, R, hN, hfg, hu₀, huR⟩ :=
     exists_tail_eq_X_mul_aeval_of_aeval_eq_zero hP hPd
   let T : Finset K :=
-    {g₀} ∪ ((Finset.Ico 1 N).image (trunc N f).coeff) ∪
-      (R.support.biUnion fun j ↦ (R.coeff j).support.image (R.coeff j).coeff)
+    {g₀} ∪ (trunc N f).coeffs ∪ (R.support.biUnion fun j ↦ (R.coeff j).coeffs)
   obtain ⟨M, hMpos, hM_int⟩ :=
     Algebra.exists_pos_nat_mul_isIntegral T (fun x _ ↦ Algebra.IsAlgebraic.isAlgebraic x)
   have hRM (j i : ℕ) : IsIntegral ℤ ((M : K) * (R.coeff j).coeff i) := by
-    by_cases hj : j ∈ R.support <;> by_cases hi : i ∈ (R.coeff j).support
-    · exact hM_int _ (Finset.mem_union_right _
-        (Finset.mem_biUnion.mpr ⟨j, hj, Finset.mem_image_of_mem _ hi⟩))
-    all_goals simp [Polynomial.notMem_support_iff.mp ‹_›, isIntegral_zero]
+    rcases coeff_eq_zero_or_mem_biUnion_coeffs R j i with h0 | hmem
+    · simp [h0, isIntegral_zero]
+    · exact hM_int _ (Finset.mem_union_right _ hmem)
   have huM_int := isIntegral_pow_mul_coeff_of_eq_X_mul_aeval huR M hRM
-  have hfg₀ : coeff 0 u = 0 := by
-    rw [huR, coeff_zero_eq_constantCoeff_apply, map_mul, constantCoeff_X, zero_mul]
   refine ⟨M, hMpos, mem_scaledIntegralSeries_integralClosure_iff.mpr fun n ↦ ?_⟩
   rcases eq_or_ne n 0 with rfl | hn0
   · simp [isIntegral_zero]
-  rw [map_sub, coeff_C, ite_eq_right hn0, sub_zero, hfg, map_add, Polynomial.coeff_coe,
-    coeff_X_pow_mul']
-  split_ifs with hle
-  · rw [coeff_trunc, ite_eq_right (not_lt.mpr hle), zero_add, map_add, coeff_C]
-    rcases eq_or_ne (n - N) 0 with hsub | hsub
-    · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : N ≠ 0)
-      have hnN : n = N := by omega
-      rw [hsub, ite_eq_left rfl, hfg₀, add_zero, hnN, hk, pow_succ, mul_assoc]
-      exact ((isIntegral_natCast M).pow k).mul
-        (hM_int g₀ (by simp [T]))
-    · have hpow : (M : K) ^ n = (M : K) ^ N * (M : K) ^ (n - N) := by
-        rw [← pow_add, Nat.add_sub_of_le hle]
-      rw [ite_eq_right hsub, zero_add, hpow, mul_assoc]
-      exact ((isIntegral_natCast M).pow N).mul (huM_int (n - N))
+  rw [map_sub, coeff_C, ite_eq_right hn0, sub_zero, coeff_eq_of_eq_trunc_add_X_pow_mul hfg hu₀ n]
+  split_ifs with hlt hEq
   · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hn0
-    have hlt : k.succ < N := hk ▸ not_le.mp hle
-    rw [add_zero, hk, pow_succ, mul_assoc]
-    exact ((isIntegral_natCast M).pow k).mul
-      (hM_int _ (Finset.mem_union_left _ (Finset.mem_union_right _
-        (Finset.mem_image_of_mem _ (Finset.mem_Ico.mpr ⟨by omega, hlt⟩)))))
+    rw [hk, pow_succ, mul_assoc]
+    by_cases h0 : (trunc N f).coeff k.succ = 0
+    · simp [h0, isIntegral_zero]
+    · exact ((isIntegral_natCast M).pow k).mul
+        (hM_int _ (Finset.mem_union_left _ (Finset.mem_union_right _
+          (Polynomial.coeff_mem_coeffs h0))))
+  · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : N ≠ 0)
+    rw [hEq, hk, pow_succ, mul_assoc]
+    exact ((isIntegral_natCast M).pow k).mul (hM_int g₀ (by simp [T]))
+  · have hpow : (M : K) ^ n = (M : K) ^ N * (M : K) ^ (n - N) := by
+      rw [← pow_add, Nat.add_sub_of_le (le_of_not_gt hlt)]
+    rw [hpow, mul_assoc]
+    exact ((isIntegral_natCast M).pow N).mul (huM_int (n - N))
 
 /-- **Eisenstein's theorem.** If `K / ℚ` is an algebraic extension and `f ∈ K⟦X⟧` is algebraic
 over `K(X)`, then there exist positive rational integers `c` and `M` such that
 `(c : K) • f ∈ scaledIntegralSeries (integralClosure ℤ K) M`, i.e., `(c : K) * (M : K)ⁿ * coeff n f`
 is integral over `ℤ` for every `n ≥ 0`. -/
-theorem exists_pos_int_smul_mem_scaledIntegralSeries {K : Type*} [Field K] [CharZero K]
+theorem exists_pos_nat_smul_mem_scaledIntegralSeries {K : Type*} [Field K] [CharZero K]
     [Algebra.IsAlgebraic ℚ K] {f : K⟦X⟧} (hf : IsAlgebraic K⟮X⟯ (f : K⸨X⸩)) :
     ∃ c M : ℕ, 0 < c ∧ 0 < M ∧
       (c : K) • f ∈ scaledIntegralSeries (integralClosure ℤ K) (M : K) := by
-  obtain ⟨M, hM, hfsub⟩ := exists_pos_int_sub_C_mem_scaledIntegralSeries hf
+  obtain ⟨M, hM, hfsub⟩ := exists_pos_nat_sub_C_mem_scaledIntegralSeries hf
   obtain ⟨c, hcpos, hc_int⟩ := Algebra.exists_pos_nat_mul_isIntegral {constantCoeff f}
     (fun x _ ↦ Algebra.IsAlgebraic.isAlgebraic x)
   have hc_int' : IsIntegral ℤ ((c : K) * constantCoeff f) :=
@@ -453,42 +437,46 @@ theorem exists_pos_int_smul_mem_scaledIntegralSeries {K : Type*} [Field K] [Char
 /-- **Eisenstein's theorem (integral constant term).** If `K / ℚ` is an algebraic extension,
 `f ∈ K⟦X⟧` is algebraic over `K(X)`, and `constantCoeff f` is integral over `ℤ`, then
 `f ∈ scaledIntegralSeries (integralClosure ℤ K) M` for some positive integer `M`. -/
-theorem exists_pos_int_mem_scaledIntegralSeries_of_isIntegral {K : Type*} [Field K] [CharZero K]
+theorem exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral {K : Type*} [Field K] [CharZero K]
     [Algebra.IsAlgebraic ℚ K] {f : K⟦X⟧} (hf : IsAlgebraic K⟮X⟯ (f : K⸨X⸩))
     (hf₀ : IsIntegral ℤ (constantCoeff f)) :
     ∃ M : ℕ, 0 < M ∧ f ∈ scaledIntegralSeries (integralClosure ℤ K) (M : K) := by
-  obtain ⟨M, hM, hfsub⟩ := exists_pos_int_sub_C_mem_scaledIntegralSeries hf
+  obtain ⟨M, hM, hfsub⟩ := exists_pos_nat_sub_C_mem_scaledIntegralSeries hf
   refine ⟨M, hM, ?_⟩
   rw [← sub_add_cancel f (C (constantCoeff f))]
   refine Subring.add_mem _ hfsub ?_
   rw [C_mem_scaledIntegralSeries_iff]
   exact ⟨⟨constantCoeff f, (mem_integralClosure_iff ℤ K).mpr hf₀⟩, rfl⟩
 
-/-- Specialization of `TauCeti.exists_pos_int_smul_mem_scaledIntegralSeries` to rational power
+/-- For rational power series, membership in `scaledIntegralSeries (integralClosure ℤ ℚ) M` implies
+membership in `scaledIntegralSeries ℤ M`, since `ℤ` is integrally closed in `ℚ`. -/
+private lemma mem_scaledIntegralSeries_int_of_integralClosure {f : ℚ⟦X⟧} {M : ℚ}
+    (hmem : f ∈ scaledIntegralSeries (integralClosure ℤ ℚ) M) :
+    f ∈ scaledIntegralSeries ℤ M :=
+  mem_scaledIntegralSeries_int_iff.mpr fun n ↦ by
+    obtain ⟨a, ha⟩ := (IsIntegrallyClosed.isIntegral_iff (R := ℤ) (K := ℚ)).mp
+      (mem_scaledIntegralSeries_integralClosure_iff.mp hmem n)
+    exact ⟨a, by simpa using ha⟩
+
+/-- Specialization of `TauCeti.exists_pos_nat_smul_mem_scaledIntegralSeries` to rational power
 series: if `f ∈ ℚ⟦X⟧` is algebraic over `ℚ(X)`, then `(c : ℚ) • f ∈ scaledIntegralSeries ℤ M`
 for some positive integers `c, M`. -/
-theorem exists_pos_int_smul_mem_scaledIntegralSeries_rat {f : ℚ⟦X⟧}
+theorem exists_pos_nat_smul_mem_scaledIntegralSeries_rat {f : ℚ⟦X⟧}
     (hf : IsAlgebraic ℚ⟮X⟯ (f : ℚ⸨X⸩)) :
     ∃ c M : ℕ, 0 < c ∧ 0 < M ∧ (c : ℚ) • f ∈ scaledIntegralSeries ℤ (M : ℚ) := by
-  obtain ⟨c, M, hc, hM, hmem⟩ := exists_pos_int_smul_mem_scaledIntegralSeries hf
-  refine ⟨c, M, hc, hM, mem_scaledIntegralSeries_int_iff.mpr fun n ↦ ?_⟩
-  have hint := mem_scaledIntegralSeries_integralClosure_iff.mp hmem n
-  obtain ⟨a, ha⟩ := (IsIntegrallyClosed.isIntegral_iff (R := ℤ) (K := ℚ)).mp hint
-  exact ⟨a, by simpa using ha⟩
+  obtain ⟨c, M, hc, hM, hmem⟩ := exists_pos_nat_smul_mem_scaledIntegralSeries hf
+  exact ⟨c, M, hc, hM, mem_scaledIntegralSeries_int_of_integralClosure hmem⟩
 
-/-- Specialization of `TauCeti.exists_pos_int_mem_scaledIntegralSeries_of_isIntegral` to rational
+/-- Specialization of `TauCeti.exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral` to rational
 power series: if `f ∈ ℚ⟦X⟧` is algebraic over `ℚ(X)` and its constant coefficient is an integer,
 then `f ∈ scaledIntegralSeries ℤ M` for some positive integer `M`. -/
-theorem exists_pos_int_mem_scaledIntegralSeries_rat {f : ℚ⟦X⟧}
+theorem exists_pos_nat_mem_scaledIntegralSeries_rat {f : ℚ⟦X⟧}
     (hf : IsAlgebraic ℚ⟮X⟯ (f : ℚ⸨X⸩)) (hf₀ : ∃ a : ℤ, (a : ℚ) = constantCoeff f) :
     ∃ M : ℕ, 0 < M ∧ f ∈ scaledIntegralSeries ℤ (M : ℚ) := by
   obtain ⟨a, ha⟩ := hf₀
-  obtain ⟨M, hM, hmem⟩ := exists_pos_int_mem_scaledIntegralSeries_of_isIntegral hf
+  obtain ⟨M, hM, hmem⟩ := exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral hf
     (ha ▸ isIntegral_intCast a)
-  refine ⟨M, hM, mem_scaledIntegralSeries_int_iff.mpr fun n ↦ ?_⟩
-  have hint := mem_scaledIntegralSeries_integralClosure_iff.mp hmem n
-  obtain ⟨b, hb⟩ := (IsIntegrallyClosed.isIntegral_iff (R := ℤ) (K := ℚ)).mp hint
-  exact ⟨b, by simpa using hb⟩
+  exact ⟨M, hM, mem_scaledIntegralSeries_int_of_integralClosure hmem⟩
 
 /-! ### Examples -/
 

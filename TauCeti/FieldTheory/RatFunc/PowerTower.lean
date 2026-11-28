@@ -20,7 +20,7 @@ extension of `K`.
 
 ## Main definitions
 
-* `TauCeti.expandRatFunc`: the ring endomorphism `K(X) →+* K(X)` substituting `X ↦ X ^ N`.
+* `RatFunc.expand`: the `K`-algebra endomorphism `K(X) →ₐ[K] K(X)` substituting `X ↦ X ^ N`.
 
 ## Main results
 
@@ -28,7 +28,8 @@ extension of `K`.
 * `TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`: `K(X) / K(X ^ q)` is purely inseparable
   for `q` the exponential characteristic of `K`.
 * `Transcendental.relfinrank_adjoin_pow_adjoin`: `[K(x) : K(x ^ n)] = n` for `x` transcendental.
-* `TauCeti.expandRatFunc_algebraMap`: action of `TauCeti.expandRatFunc` on polynomial elements.
+* `RatFunc.expand_algebraMap`, `RatFunc.expand_X`, `RatFunc.expand_C`: action of `RatFunc.expand`
+  on polynomials, `X`, and constants.
 
 ## Mathematical context
 
@@ -74,36 +75,39 @@ instance isPurelyInseparable_adjoin_X_pow (K : Type*) [Field K] (q : ℕ) [ExpCh
 
 end TauCeti.RatFunc
 
-namespace TauCeti
+namespace RatFunc
 
 open scoped nonZeroDivisors
 
-/-- Composition with `X ^ N` preserves non-zero-divisors in `K[X]`. -/
-private lemma expandRatFunc_mem_nonZeroDivisors (K : Type*) [CommRing K] [IsDomain K] (N : ℕ+) :
-    K[X]⁰ ≤ K[X]⁰.comap (Polynomial.compRingHom (Polynomial.X ^ (N : ℕ))) :=
-  fun _ hp ↦ mem_nonZeroDivisors_of_ne_zero fun hcomp ↦ nonZeroDivisors.ne_zero hp <| by
-    rcases Polynomial.comp_eq_zero_iff.mp hcomp with rfl | hdeg
-    · rfl
-    · exfalso
-      have h := congrArg Polynomial.natDegree hdeg.2
-      simp [ite_eq_right N.ne_zero.symm] at h
+/-- Substitution `X ↦ X ^ N` as a `K`-algebra endomorphism of `K(X)`. -/
+noncomputable def expand (K : Type*) [CommRing K] [IsDomain K] (N : ℕ+) :
+    RatFunc K →ₐ[K] RatFunc K :=
+  RatFunc.mapAlgHom (Polynomial.expand K N)
+    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _ (Polynomial.expand_injective N.pos))
 
-/-- Substitution `X ↦ X ^ N` as a ring endomorphism of `K(X)`. -/
-noncomputable def expandRatFunc (K : Type*) [CommRing K] [IsDomain K] (N : ℕ+) :
-    _root_.RatFunc K →+* _root_.RatFunc K :=
-  _root_.RatFunc.mapRingHom (Polynomial.compRingHom (Polynomial.X ^ (N : ℕ)))
-    (expandRatFunc_mem_nonZeroDivisors K N)
+/-- Action of `RatFunc.expand` on polynomial elements of `K(X)`. -/
+@[simp]
+theorem expand_algebraMap {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (p : K[X]) :
+    expand K N (algebraMap K[X] (RatFunc K) p) =
+      algebraMap K[X] (RatFunc K) (p.comp (Polynomial.X ^ (N : ℕ))) := by
+  change RatFunc.mapRingHom (Polynomial.expand K N) _ (algebraMap K[X] (RatFunc K) p) = _
+  rw [RatFunc.coe_mapRingHom_eq_coe_map, ← div_one (algebraMap K[X] (RatFunc K) p),
+    ← (algebraMap K[X] (RatFunc K)).map_one, RatFunc.map_apply_div, map_one, map_one, div_one,
+    Polynomial.expand_eq_comp_X_pow]
 
-/-- Action of `TauCeti.expandRatFunc` on polynomial elements of `K(X)`. -/
-theorem expandRatFunc_algebraMap {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (p : K[X]) :
-    expandRatFunc K N (algebraMap K[X] (_root_.RatFunc K) p) =
-      algebraMap K[X] (_root_.RatFunc K) (p.comp (Polynomial.X ^ (N : ℕ))) := by
-  rw [expandRatFunc, _root_.RatFunc.coe_mapRingHom_eq_coe_map,
-    ← div_one (algebraMap K[X] (_root_.RatFunc K) p),
-    ← (algebraMap K[X] (_root_.RatFunc K)).map_one, _root_.RatFunc.map_apply_div, map_one,
-    map_one, div_one, Polynomial.coe_compRingHom_apply]
+/-- `RatFunc.expand` sends `RatFunc.X` to `RatFunc.X ^ (N : ℕ)`. -/
+@[simp]
+theorem expand_X {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) :
+    expand K N (RatFunc.X : RatFunc K) = RatFunc.X ^ (N : ℕ) := by
+  rw [← RatFunc.algebraMap_X, expand_algebraMap, Polynomial.X_comp, map_pow, RatFunc.algebraMap_X]
 
-end TauCeti
+/-- `RatFunc.expand` fixes constant rational functions `RatFunc.C c`. -/
+@[simp]
+theorem expand_C {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (c : K) :
+    expand K N (RatFunc.C c) = RatFunc.C c := by
+  rw [← RatFunc.algebraMap_C, expand_algebraMap, Polynomial.C_comp, RatFunc.algebraMap_C]
+
+end RatFunc
 
 open scoped IntermediateField
 

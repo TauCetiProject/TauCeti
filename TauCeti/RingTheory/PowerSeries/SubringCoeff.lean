@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Expand
+import TauCeti.RingTheory.PowerSeries.Basic
+import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
 # Power series with coefficients in a subring: division and expansion
@@ -38,6 +41,8 @@ unchanged when it is read in a power of `q`, for instance at a multiple of the c
   `φ` does.
 * `PowerSeries.coeff_mem_subring_of_eq_X_mul_aeval`: if `u = X * P(X, u)` with `P` having
   coefficients in a subring `R`, then all coefficients of `u` lie in `R`.
+* `PowerSeries.isIntegral_pow_mul_coeff_of_eq_X_mul_aeval`: rescaling `u = X * R(X, u)` by `M`
+  clearing the coefficients of `R` makes `Mⁿ * coeff n u` integral over `ℤ`.
 -/
 
 public section
@@ -119,11 +124,44 @@ theorem coeff_mem_subring_of_eq_X_mul_aeval {S : Type*} [CommRing S] {R : Subrin
       rw [coeff_succ_X_mul, Polynomial.aeval_eq_sum_range, map_sum] at hcoeff
       rw [hcoeff]
       refine R.sum_mem fun j _ ↦ ?_
-      rw [Algebra.smul_def, PowerSeries.algebraMap_apply', Algebra.algebraMap_self, map_id, id_eq,
-        coeff_mul]
+      rw [Algebra.smul_def, algebraMap_polynomial_powerSeries, coeff_mul]
       refine R.sum_mem fun p hp ↦ ?_
       rw [Polynomial.coeff_coe]
       exact R.mul_mem (hP j p.1)
         (hpow m (fun k hk ↦ ih k (by omega)) j p.2 (Finset.HasAntidiagonal.antidiagonal.snd_le hp))
+
+/-- Rescaling the recurrence `u = X * R(X, u)` by a natural number `M` clearing the coefficients
+of `R` makes `Mⁿ * coeff n u` integral over `ℤ` for all `n`. -/
+theorem isIntegral_pow_mul_coeff_of_eq_X_mul_aeval {K : Type*} [CommRing K] {u : K⟦X⟧}
+    {R : Polynomial (Polynomial K)} (hu : u = X * Polynomial.aeval u R) (M : ℕ)
+    (hRM : ∀ j i, IsIntegral ℤ ((M : K) * (R.coeff j).coeff i)) (n : ℕ) :
+    IsIntegral ℤ ((M : K) ^ n * coeff n u) := by
+  let R' : Polynomial (Polynomial K) := Polynomial.C (Polynomial.C (M : K)) *
+    R.map (Polynomial.compRingHom (Polynomial.C (M : K) * Polynomial.X))
+  have hrescale_coe (p : Polynomial K) :
+      rescale (M : K) (p : K⟦X⟧) =
+        ((p.comp (Polynomial.C (M : K) * Polynomial.X) : Polynomial K) : K⟦X⟧) := by
+    ext k
+    rw [coeff_rescale, Polynomial.coeff_coe, Polynomial.coeff_coe,
+      Polynomial.comp_C_mul_X_coeff, mul_comm]
+  have huM : rescale (M : K) u = X * Polynomial.aeval (rescale (M : K) u) R' := by
+    have h := congrArg (rescale (M : K)) hu
+    rw [map_mul, rescale_X, mul_assoc, mul_left_comm (C (M : K)) X] at h
+    have heq : (rescale (M : K)).comp (algebraMap (Polynomial K) K⟦X⟧) =
+        (algebraMap (Polynomial K) K⟦X⟧).comp
+          (Polynomial.compRingHom (Polynomial.C (M : K) * Polynomial.X)) :=
+      RingHom.ext fun p ↦ by simpa [algebraMap_polynomial_powerSeries] using hrescale_coe p
+    conv_lhs => rw [h]
+    rw [map_mul, Polynomial.aeval_C, algebraMap_polynomial_powerSeries, Polynomial.coe_C,
+      Polynomial.aeval_def, Polynomial.aeval_def, Polynomial.eval₂_map, ← heq,
+      ← Polynomial.hom_eval₂]
+  have hR' : ∀ j i, (R'.coeff j).coeff i ∈ (integralClosure ℤ K).toSubring := by
+    intro j i
+    rw [Subalgebra.mem_toSubring, mem_integralClosure_iff, Polynomial.coeff_C_mul,
+      Polynomial.coeff_map, Polynomial.coe_compRingHom_apply, Polynomial.coeff_C_mul,
+      Polynomial.comp_C_mul_X_coeff, mul_comm ((R.coeff j).coeff i), mul_left_comm]
+    exact ((isIntegral_natCast M).pow i).mul (hRM j i)
+  have hmem := coeff_mem_subring_of_eq_X_mul_aeval (R := (integralClosure ℤ K).toSubring) huM hR' n
+  rwa [Subalgebra.mem_toSubring, mem_integralClosure_iff, coeff_rescale] at hmem
 
 end PowerSeries

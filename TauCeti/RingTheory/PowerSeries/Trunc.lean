@@ -64,7 +64,7 @@ This file collects facts used to compare power series to a finite order `m`:
   one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
   the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
-* `PowerSeries.eval_trunc_coeff`: low coefficients of `Q.eval (trunc N f)` agree with those of
+* `PowerSeries.coeff_eval_trunc`: low coefficients of `Q.eval (trunc N f)` agree with those of
   `Polynomial.aeval f Q`.
 * `PowerSeries.exists_mul_toPowerSeries_shift`: shifting the starting index of a generating series
   preserves polynomiality after right multiplication by a fixed polynomial.
@@ -371,7 +371,7 @@ theorem mk_span_X_pow_eq_sum (n : ℕ) (p : R⟦X⟧) :
 
 /-- Low coefficients of `Q.eval (trunc N f)` agree with those of `Polynomial.aeval f Q` for
 `i < N`. -/
-theorem eval_trunc_coeff (Q : Polynomial (Polynomial R)) (f : R⟦X⟧) {N i : ℕ} (hi : i < N) :
+theorem coeff_eval_trunc (Q : Polynomial (Polynomial R)) (f : R⟦X⟧) {N i : ℕ} (hi : i < N) :
     (Q.eval (trunc N f)).coeff i = coeff i (Polynomial.aeval f Q) := by
   let b : Polynomial R := trunc N f
   let g : R⟦X⟧ := mk fun n ↦ coeff (n + N) f
@@ -381,15 +381,15 @@ theorem eval_trunc_coeff (Q : Polynomial (Polynomial R)) (f : R⟦X⟧) {N i : �
     Polynomial.sub_dvd_eval_sub f (b : R⟦X⟧) (Q.map (algebraMap (Polynomial R) R⟦X⟧))
   obtain ⟨v, hv⟩ := hfb.trans ⟨w, by
     simpa only [Polynomial.aeval_def, Polynomial.eval_map] using hw⟩
-  have hQb_eval : Polynomial.aeval (b : R⟦X⟧) Q = ((Q.eval b : Polynomial R) : R⟦X⟧) := by
-    rw [Polynomial.aeval_def]
-    symm
-    rw [← Polynomial.coeToPowerSeries.ringHom_apply, ← Polynomial.eval₂_id,
-      Polynomial.hom_eval₂, RingHom.comp_id, Polynomial.coeToPowerSeries.ringHom_apply]
-    congr 1
+  have hQb_eval : ((Q.eval b : Polynomial R) : R⟦X⟧) = Polynomial.aeval (b : R⟦X⟧) Q := by
+    have hring : Polynomial.coeToPowerSeries.ringHom.comp (RingHom.id (Polynomial R)) =
+        algebraMap (Polynomial R) R⟦X⟧ :=
+      RingHom.ext fun p ↦ by simp [PowerSeries.algebraMap_apply']
+    rw [Polynomial.eval, ← Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.hom_eval₂,
+      hring, Polynomial.coeToPowerSeries.ringHom_apply, ← Polynomial.aeval_def]
   have hci := congrArg (coeff i) hv
   rw [map_sub, coeff_X_pow_mul', ite_eq_right (not_le.mpr hi), sub_eq_zero,
-    ← Polynomial.aeval_def, ← Polynomial.aeval_def, hQb_eval, Polynomial.coeff_coe] at hci
+    ← Polynomial.aeval_def, ← Polynomial.aeval_def, ← hQb_eval, Polynomial.coeff_coe] at hci
   exact hci.symm
 
 end CommRing

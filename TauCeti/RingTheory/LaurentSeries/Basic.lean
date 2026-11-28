@@ -142,6 +142,7 @@ theorem order_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
       ((order_eq_orderTop_of_ne_zero hf').trans (orderTop_coe_of_ne_zero hf))
 
 /-- Lifting bivariate evaluation `R[X][Y] → R⟦X⟧` into `R⸨X⸩`. -/
+@[simp]
 theorem coe_aeval_polynomial_powerSeries {R : Type*} [CommSemiring R] (f : R⟦X⟧)
     (P : Polynomial (Polynomial R)) :
     ((Polynomial.aeval f P : R⟦X⟧) : R⸨X⸩) = Polynomial.aeval (f : R⸨X⸩) P := by
