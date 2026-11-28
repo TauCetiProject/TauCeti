@@ -83,6 +83,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 * `Submodule.starProjection_eq_iff_mem_orthogonal_inf`: nested projections of a vector agree
   exactly when the vector is orthogonal to the complement of the smaller subspace in the larger.
+* `LinearMap.map_starProjection_eq_of_le_comap`: a semilinear map preserving the subspace and
+  its orthogonal complement commutes with the projections by Mathlib's projection uniqueness.
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
@@ -950,6 +952,21 @@ theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E)
 end LinearIsometry
 
 namespace LinearMap
+
+open scoped InnerProductSpace
+
+/-- A semilinear map taking `V` into `W` and `Vᗮ` into `Wᗮ` commutes with their orthogonal
+projections. -/
+theorem map_starProjection_eq_of_le_comap {𝕜 𝕝 E F : Type*} [RCLike 𝕜] [RCLike 𝕝]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕝 F]
+    {σ : 𝕜 →+* 𝕝} (f : E →ₛₗ[σ] F) {V : Submodule 𝕜 E} {W : Submodule 𝕝 F}
+    [V.HasOrthogonalProjection] [W.HasOrthogonalProjection]
+    (hV : V ≤ W.comap f) (hV' : Vᗮ ≤ Wᗮ.comap f) (x : E) :
+    f (V.starProjection x) = W.starProjection (f x) := by
+  symm
+  refine W.eq_starProjection_of_mem_orthogonal (hV (V.starProjection_apply_mem x)) ?_
+  rw [← map_sub]
+  exact hV' (V.sub_starProjection_mem_orthogonal x)
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [AddCommMonoid F] [Module 𝕜 F]
