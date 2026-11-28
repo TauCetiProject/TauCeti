@@ -13,10 +13,11 @@ import TauCeti.Analysis.Normed.Operator.Basic
 /-!
 # Norming sets for continuous linear maps
 
-Finite-dimensional subspaces of continuous linear maps admit finite norming sets in the
-domain unit ball, with any prescribed loss greater than one. Every map has a sequence in
-that ball along which its values approach its norm
-(`ContinuousLinearMap.exists_seq_norm_apply_tendsto_opNorm`), and norm-separable sets
+A single continuous linear map attains any fraction `θ < 1` of its norm on the domain unit ball
+(`ContinuousLinearMap.exists_norm_le_one_mul_opNorm_le`). Finite-dimensional subspaces of
+continuous linear maps admit finite norming sets in the domain unit ball, with any prescribed
+loss greater than one. Every map has a sequence in that ball along which its values approach its
+norm (`ContinuousLinearMap.exists_seq_norm_apply_tendsto_opNorm`), and norm-separable sets
 of maps admit countable sets in that ball which recover their norms exactly.
 For a separable domain, a single sequence in its unit ball norms all continuous linear maps,
 even when their family is not norm-separable.
@@ -98,6 +99,23 @@ theorem Submodule.exists_finset_norming (M : Submodule 𝕜 (E →L[𝕜] F))
     nlinarith [inv_mul_cancel₀ hApos.ne']
 
 end Finite
+
+section NearNorming
+
+variable {𝕜 𝕜₂ E F : Type*} [DenselyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+  {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+
+/-- A continuous semilinear map attains `θ` times its operator norm on the closed unit ball, for
+every `θ < 1`. -/
+theorem ContinuousLinearMap.exists_norm_le_one_mul_opNorm_le (f : E →SL[σ] F) {θ : ℝ}
+    (hθ : θ < 1) : ∃ x : E, ‖x‖ ≤ 1 ∧ θ * ‖f‖ ≤ ‖f x‖ := by
+  rcases (norm_nonneg f).eq_or_lt with hf | hf
+  · exact ⟨0, by simp [← hf]⟩
+  obtain ⟨x, hx, hlt⟩ := f.exists_lt_apply_of_lt_opNorm (mul_lt_of_lt_one_left hf hθ)
+  exact ⟨x, hx.le, hlt.le⟩
+
+end NearNorming
 
 section Countable
 
