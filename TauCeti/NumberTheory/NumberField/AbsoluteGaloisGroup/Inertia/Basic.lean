@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
 /-!
@@ -21,7 +22,9 @@ of `σ` on `O`.
 For a finite normal subextension `E`, the inertia group `I_Q ≤ G_F` at a prime `Q` of `O` therefore
 restricts into the inertia group of `Q ∩ 𝓞 E` in `Gal(E/F)`. When the place `v` of `F` below `Q` is
 unramified in `E` this inertia group is trivial (Tau Ceti's `isUnramifiedAt_iff_inertia_eq_bot`),
-so `I_Q` fixes `E` pointwise.
+so `I_Q` fixes `E` pointwise. Consequently an arithmetic Frobenius lift at `Q` restricts to an
+arithmetic Frobenius at `Q ∩ 𝓞 E`, and above such a place all Frobenius lifts at `Q` have the same
+restriction to `E`.
 
 ## Main definitions
 
@@ -34,6 +37,11 @@ so `I_Q` fixes `E` pointwise.
   `G_F` on `𝓞 E` (through restriction to `E`) and on `O`.
 * `TauCeti.GaloisRep.inertiaGroup_le_fixingSubgroup`: `I_Q` fixes every finite normal
   subextension in which the place below `Q` is unramified.
+* `TauCeti.GaloisRep.IsArithFrobAtIntegralPrime.restrictNormalHom`: the restriction of a Frobenius
+  lift at `Q` to a normal subextension `E` is an arithmetic Frobenius at `Q ∩ 𝓞 E`.
+* `TauCeti.GaloisRep.restrictNormalHom_eq_of_isArithFrobAtIntegralPrime`: above a place
+  unramified in a finite normal subextension `E`, all Frobenius lifts at a prime restrict to the
+  same element of `Gal(E/F)`.
 -/
 
 public section
@@ -83,6 +91,21 @@ theorem ringOfIntegersToIntegralClosure_smul (E : IntermediateField F (Algebraic
     -- `G_F` is defined as `Gal(F^alg/F)`, so `σ` is an argument of `restrictNormalHom_apply`
     exact AlgEquiv.restrictNormalHom_apply E σ _
 
+/-- **Restriction of a Frobenius lift.** If `σ ∈ G_F` is an arithmetic Frobenius at an ideal `Q`
+of `O`, its restriction to a normal subextension `E` of `F^alg / F` is an arithmetic Frobenius
+at `Q ∩ 𝓞 E`. -/
+theorem IsArithFrobAtIntegralPrime.restrictNormalHom (E : IntermediateField F (AlgebraicClosure F))
+    [Normal F E] {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))}
+    (hσ : IsArithFrobAtIntegralPrime σ Q) :
+    IsArithFrobAt (𝓞 F) (AlgEquiv.restrictNormalHom E σ)
+      (Q.comap (ringOfIntegersToIntegralClosure E)) := by
+  have : Q.LiesOver (Q.under (𝓞 F)) := ⟨rfl⟩
+  intro y
+  rw [← Ideal.over_def (Q.comap (ringOfIntegersToIntegralClosure E)) (Q.under (𝓞 F)),
+    Ideal.mem_comap, MulSemiringAction.toAlgHom_apply, map_sub, map_pow,
+    ringOfIntegersToIntegralClosure_smul]
+  exact hσ _
+
 variable [NumberField F]
 
 /-- **Inertia fixes unramified subextensions.** Let `E` be a finite normal subextension of
@@ -118,5 +141,30 @@ theorem inertiaGroup_le_fixingSubgroup (E : IntermediateField F (AlgebraicClosur
   rw [hur, Subgroup.mem_bot] at hτP
   refine (IntermediateField.mem_fixingSubgroup_iff E σ).2 fun x hx ↦ ?_
   rw [← AlgEquiv.restrictNormalHom_apply E σ ⟨x, hx⟩, ← hτ, hτP, AlgEquiv.one_apply]
+
+
+/-- **Frobenius lifts above an unramified place restrict uniformly.** Let `E` be a finite normal
+subextension of `F^alg / F` and `Q` an ideal of `O` above a place `v` unramified in `E`. Two
+arithmetic Frobenius lifts at `Q` differ by an element of the inertia group `I_Q`, which lies in
+the inertia group of a maximal ideal containing `Q` and therefore fixes `E`; so they have the same
+restriction to `E`. -/
+theorem restrictNormalHom_eq_of_isArithFrobAtIntegralPrime
+    (E : IntermediateField F (AlgebraicClosure F)) [NumberField E] [Normal F E]
+    {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))}
+    {v : HeightOneSpectrum (𝓞 F)} (hQv : Q.under (𝓞 F) = v.asIdeal)
+    (hv : v ∉ Chebotarev.ramifiedPrimes F E) {σ σ' : Field.absoluteGaloisGroup F}
+    (hσ : IsArithFrobAtIntegralPrime σ Q) (hσ' : IsArithFrobAtIntegralPrime σ' Q) :
+    AlgEquiv.restrictNormalHom E σ = AlgEquiv.restrictNormalHom E σ' := by
+  -- a maximal ideal `M ⊇ Q` still lies over `v`, and `I_Q ≤ I_M`
+  obtain ⟨M, hM, hQM⟩ := Ideal.exists_le_maximal Q fun h ↦
+    v.isPrime.ne_top (by rw [← hQv, h, Ideal.under, Ideal.comap_top])
+  have hMv : M.under (𝓞 F) = v.asIdeal :=
+    (v.isMaximal.eq_of_le (Ideal.comap_ne_top _ hM.ne_top) (hQv ▸ Ideal.comap_mono hQM)).symm
+  have := hM.isPrime
+  have h : σ * σ'⁻¹ ∈ (AlgEquiv.restrictNormalHom E).ker := E.restrictNormalHom_ker ▸
+    inertiaGroup_le_fixingSubgroup E hMv hv
+      (AddSubgroup.inertia_mono (G := Field.absoluteGaloisGroup F) (fun _ hx ↦ hQM hx)
+        (hσ.mul_inv_mem_inertia hσ'))
+  exact (MonoidHom.eq_iff _).2 ((MonoidHom.normal_ker _).mem_comm h)
 
 end TauCeti.GaloisRep
