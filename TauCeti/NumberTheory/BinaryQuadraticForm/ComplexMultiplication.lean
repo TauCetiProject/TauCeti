@@ -10,8 +10,10 @@ public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Lattice
 public import TauCeti.NumberTheory.BinaryQuadraticForm.HilbertClassPolynomial
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.RingClassField
 public import TauCeti.NumberTheory.QuadraticOrder.ComplexEmbedding
+public import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Quotient
 import Mathlib.Algebra.Polynomial.RingDivision
 import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ComplexLattice
+import TauCeti.NumberTheory.Modular.Stabilizer
 
 /-!
 # Complex scalar multiplication of period lattices and singular moduli
@@ -43,6 +45,12 @@ with algebraic elliptic-curve endomorphisms is asserted here):
    `cmPointOfIndex D hD0 f` spans the index-`f` suborder `complexOrder (f² D) = ℤ + ℤ · f ω_D` (of
    conductor `f` when `D` is fundamental) with left order `complexOrder (f² D)`
    (`leftOrder_lattice_periodPair_cmPointOfIndex`).
+4. **Stabilizers of `τ_D`**: the stabilizer of `τ_D` in `SL(2, ℤ)` consists of the multiplication
+   matrices of the units of `ℤ[τ_D] ≅ QuadraticAlgebra ℤ (-C) (-B)`
+   (`UpperHalfPlane.stabilizer_eq_range_periodUnitSLMatrix`); it has order `4` for `D = -4`,
+   `6` for `D = -3` and `2` otherwise (`natCard_stabilizer_cmPoint`), and so does that unit group
+   (`natCard_units_neg_cmNormCoeff_neg_cmTraceCoeff`) and, for `N ≥ 3`, its reduction modulo `N`
+   (`natCard_unitPeriodMatrixSubgroup_neg_cmNormCoeff_neg_cmTraceCoeff`).
 
 ## Main definitions
 
@@ -69,6 +77,11 @@ with algebraic elliptic-curve endomorphisms is asserted here):
   `TauCeti.BinaryQuadraticForm.im_j_cmPointOfIndex`,
   `TauCeti.BinaryQuadraticForm.leftOrder_lattice_periodPair_cmPointOfIndex`: properties of
   `τ_D` and `f · τ_D`.
+* `TauCeti.BinaryQuadraticForm.natCard_stabilizer_cmPoint`,
+  `TauCeti.BinaryQuadraticForm.natCard_units_neg_cmNormCoeff_neg_cmTraceCoeff`,
+  `TauCeti.BinaryQuadraticForm.natCard_unitPeriodMatrixSubgroup_neg_cmNormCoeff_neg_cmTraceCoeff`:
+  the orders `4`, `6` and `2` of the stabilizer of `τ_D`, of the units of `ℤ[τ_D]`, and of their
+  reductions modulo `N ≥ 3`.
 
 ## References
 
@@ -676,5 +689,68 @@ theorem coe_cmPointOfIndex_neg_four (f : ℕ) [NeZero f] :
   rw [coe_cmPointOfIndex, coe_cmPoint_neg_four]
 
 end Examples
+
+/-! ### Stabilizers of the CM points -/
+
+section Stabilizer
+
+/-- The model `QuadraticAlgebra ℤ (-cmNormCoeff D) (-cmTraceCoeff D)` of `ℤ[τ_D]`, in which
+`ω² = -C - Bω` for the monic relation `τ_D² + Bτ_D + C = 0`, has discriminant `D`. -/
+theorem discr_neg_cmNormCoeff_neg_cmTraceCoeff {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    discr (-cmNormCoeff D) (-cmTraceCoeff D) = D := by
+  rw [discr_def]
+  linear_combination -(four_mul_cmNormCoeff hD)
+
+/-- At discriminant `-4`, `cmPoint (-4)` is the point `i` of the upper half-plane. -/
+theorem cmPoint_neg_four : cmPoint (-4) (by decide) = UpperHalfPlane.I :=
+  UpperHalfPlane.ext coe_cmPoint_neg_four
+
+/-- At discriminant `-3`, `cmPoint (-3) = ρ + 2` is the translate `T² • ρ` of
+`ρ = (-1 + i √3) / 2`. -/
+theorem cmPoint_neg_three : cmPoint (-3) (by decide) = ModularGroup.T ^ (2 : ℤ) • ρ := by
+  ext1
+  rw [coe_cmPoint_neg_three, ModularGroup.coe_T_zpow_smul_eq]
+  apply Complex.ext <;> norm_num [UpperHalfPlane.ρ]
+
+/-- **Stabilizer orders of the CM points**: for `D < 0` with `D ≡ 0, 1 mod 4`, the stabilizer of
+`τ_D` in `SL(2, ℤ)` has order `4` for `D = -4`, `6` for `D = -3`, and `2` (the center `±1`)
+otherwise. -/
+theorem natCard_stabilizer_cmPoint {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    Nat.card (stabilizer SL(2, ℤ) (cmPoint D hD0)) =
+      if D = -4 then 4 else if D = -3 then 6 else 2 := by
+  split_ifs with h4 h3
+  · subst h4
+    rw [cmPoint_neg_four]
+    exact TauCeti.ModularGroup.card_stabilizer_I
+  · subst h3
+    rw [cmPoint_neg_three, TauCeti.card_stabilizer_smul]
+    exact TauCeti.ModularGroup.card_stabilizer_ρ
+  · rw [(cmPoint D hD0).natCard_stabilizer_eq_natCard_units (cmPoint_quadratic hD0 hD)]
+    refine natCard_units_eq_two_of_discr_lt_neg_four ?_
+    rw [discr_neg_cmNormCoeff_neg_cmTraceCoeff hD]
+    omega
+
+/-- **Units of `ℤ[τ_D]`**: for `D < 0` with `D ≡ 0, 1 mod 4`, the integral quadratic algebra
+`QuadraticAlgebra ℤ (-cmNormCoeff D) (-cmTraceCoeff D)` of discriminant `D` has `4` units for
+`D = -4`, `6` for `D = -3`, and `2` otherwise. -/
+theorem natCard_units_neg_cmNormCoeff_neg_cmTraceCoeff {D : ℤ} (hD0 : D < 0)
+    (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    Nat.card (QuadraticAlgebra ℤ (-cmNormCoeff D) (-cmTraceCoeff D))ˣ =
+      if D = -4 then 4 else if D = -3 then 6 else 2 := by
+  rw [← (cmPoint D hD0).natCard_stabilizer_eq_natCard_units (cmPoint_quadratic hD0 hD),
+    natCard_stabilizer_cmPoint hD0 hD]
+
+/-- **Reduced units of `ℤ[τ_D]` at level `N ≥ 3`**: the subgroup of the level-`N`
+multiplication-matrix group formed by the reductions of the units of `ℤ[τ_D]` has order `4` for
+`D = -4`, `6` for `D = -3`, and `2` (the signs `±1`) otherwise. -/
+theorem natCard_unitPeriodMatrixSubgroup_neg_cmNormCoeff_neg_cmTraceCoeff {D : ℤ} (hD0 : D < 0)
+    (hD : D % 4 = 0 ∨ D % 4 = 1) {N : ℕ} (hN : 3 ≤ N) :
+    Nat.card (unitPeriodMatrixSubgroup (-cmNormCoeff D) (-cmTraceCoeff D) N) =
+      if D = -4 then 4 else if D = -3 then 6 else 2 := by
+  rw [natCard_unitPeriodMatrixSubgroup_of_three_le
+      (by rw [discr_neg_cmNormCoeff_neg_cmTraceCoeff hD]; exact hD0) hN,
+    natCard_units_neg_cmNormCoeff_neg_cmTraceCoeff hD0 hD]
+
+end Stabilizer
 
 end TauCeti.BinaryQuadraticForm

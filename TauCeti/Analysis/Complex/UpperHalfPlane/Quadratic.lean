@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-public import TauCeti.Algebra.QuadraticAlgebra.PeriodMatrix
+public import TauCeti.Algebra.QuadraticAlgebra.UnitMatrix
+import TauCeti.NumberTheory.BinaryQuadraticForm.Root
 
 /-!
 # Multipliers of a principal quadratic period lattice
@@ -18,6 +19,10 @@ More generally, for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is strictl
 and only if `τ` satisfies an integral quadratic equation `a τ² + b τ + c = 0` with `a > 0`
 (`UpperHalfPlane.leftOrder_lattice_periodPair_ne_bot_iff`); when `(a, b, c)` generate the unit
 ideal of `ℤ`, the left order is `ℤ + ℤ(a τ) = ℤ[a τ]`.
+The Möbius transformations of `SL(2, ℤ)` fixing such a monic quadratic point are exactly the
+multiplication matrices of the units of `QuadraticAlgebra ℤ (-C) (-B)`
+(`UpperHalfPlane.stabilizer_eq_range_periodUnitSLMatrix`), so the stabilizer of `τ` is isomorphic
+to that unit group (`UpperHalfPlane.unitsMulEquivStabilizer`).
 These are scalar endomorphisms of the lattice; no algebraic elliptic-curve comparison is asserted.
 
 The multiplication matrix uses row coordinates in the ordered periods `(τ, 1)`, as for division
@@ -40,6 +45,7 @@ public section
 noncomputable section
 
 open Complex Matrix
+open scoped MatrixGroups
 
 namespace UpperHalfPlane
 
@@ -123,6 +129,89 @@ theorem quadraticOrderEquiv_mul_divisionPoint
   congr 1
   simp [Matrix.vecMul, dotProduct, Fin.sum_univ_two]
   linear_combination (z.im : ℂ) * r 0 * hτ
+
+section Stabilizer
+
+/-- A monic integral quadratic point of `ℍ` has negative discriminant `B² - 4C`, the
+discriminant of `QuadraticAlgebra ℤ (-C) (-B)`; this is the monic case of
+`TauCeti.BinaryQuadraticForm.discrim_neg_of_quadratic_upperHalfPlane`. -/
+theorem discr_lt_zero_of_quadratic (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0) :
+    QuadraticAlgebra.discr (-C) (-B) < 0 := by
+  have h := TauCeti.BinaryQuadraticForm.discrim_neg_of_quadratic_upperHalfPlane one_ne_zero
+    (by simpa using hτ)
+  rw [QuadraticAlgebra.discr_def]
+  simp only [TauCeti.BinaryQuadraticForm.discrim, discrim] at h
+  linarith
+
+/-- The multiplication matrix of a unit of `ℤ[τ]` fixes `τ`. -/
+theorem periodUnitSLMatrix_smul (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0)
+    (u : (QuadraticAlgebra ℤ (-C) (-B))ˣ) :
+    QuadraticAlgebra.periodUnitSLMatrix (τ.discr_lt_zero_of_quadratic hτ).le u • τ = τ := by
+  ext1
+  rw [coe_specialLinearGroup_apply]
+  have hden := denom_ne_zero (QuadraticAlgebra.periodUnitSLMatrix
+    (τ.discr_lt_zero_of_quadratic hτ).le u) τ
+  rw [div_eq_iff (by simpa [denom] using hden)]
+  simp [QuadraticAlgebra.periodMulMatrix_eq]
+  linear_combination -((u : QuadraticAlgebra ℤ (-C) (-B)).im : ℂ) * hτ
+
+/-- **The stabilizer of a monic quadratic point**: `γ ∈ SL(2, ℤ)` fixes `τ` if and only if it is
+the multiplication matrix of a unit of `ℤ[τ] ≅ QuadraticAlgebra ℤ (-C) (-B)`. -/
+theorem mem_stabilizer_iff_exists_periodUnitSLMatrix_eq (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0)
+    {γ : SL(2, ℤ)} :
+    γ ∈ MulAction.stabilizer SL(2, ℤ) τ ↔
+      ∃ u, QuadraticAlgebra.periodUnitSLMatrix (τ.discr_lt_zero_of_quadratic hτ).le u = γ := by
+  refine ⟨fun hγ ↦ ?_, ?_⟩
+  · have h := congrArg (fun z : ℍ ↦ (z : ℂ)) (MulAction.mem_stabilizer_iff.mp hγ)
+    simp only [coe_specialLinearGroup_apply] at h
+    rw [div_eq_iff (by simpa [denom] using denom_ne_zero γ τ)] at h
+    -- `γ = !![p, q; r, s]` fixes `τ` iff `rτ² + (s - p)τ - q = 0`; reducing with the monic
+    -- relation of `τ` and comparing coefficients of `τ` and `1` gives `p = s - Br`, `q = -Cr`.
+    have hlin : ((γ 1 1 - γ 0 0 - B * γ 1 0 : ℤ) : ℂ) * τ + ((-γ 0 1 - C * γ 1 0 : ℤ) : ℂ) = 0 := by
+      push_cast
+      linear_combination -h - (γ 1 0 : ℂ) * hτ
+    obtain ⟨h₁, h₂⟩ := intCast_mul_add_intCast_eq_zero_iff.mp hlin
+    let z : QuadraticAlgebra ℤ (-C) (-B) := ⟨γ 1 1, γ 1 0⟩
+    have hz : z.periodMulMatrix = (γ : Matrix (Fin 2) (Fin 2) ℤ) := by
+      rw [QuadraticAlgebra.periodMulMatrix_eq]
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [z] <;> linarith
+    have hu : IsUnit z := (QuadraticAlgebra.isUnit_periodMulMatrix_iff z).mp
+      (Matrix.isUnit_iff_isUnit_det _ |>.mpr (by rw [hz, γ.det_coe]; exact isUnit_one))
+    exact ⟨hu.unit,
+      Subtype.ext (by rw [QuadraticAlgebra.coe_periodUnitSLMatrix, IsUnit.unit_spec, hz])⟩
+  · rintro ⟨u, rfl⟩
+    exact τ.periodUnitSLMatrix_smul hτ u
+
+/-- The stabilizer of a monic quadratic point in `SL(2, ℤ)` is the image of the units of
+`QuadraticAlgebra ℤ (-C) (-B)` under their multiplication matrices. -/
+theorem stabilizer_eq_range_periodUnitSLMatrix (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0) :
+    MulAction.stabilizer SL(2, ℤ) τ =
+      (QuadraticAlgebra.periodUnitSLMatrix (τ.discr_lt_zero_of_quadratic hτ).le).range :=
+  Subgroup.ext fun _ ↦ τ.mem_stabilizer_iff_exists_periodUnitSLMatrix_eq hτ
+
+/-- The units of `QuadraticAlgebra ℤ (-C) (-B)` are isomorphic to the stabilizer of `τ` in
+`SL(2, ℤ)`, a unit going to its multiplication matrix. -/
+def unitsMulEquivStabilizer (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0) :
+    (QuadraticAlgebra ℤ (-C) (-B))ˣ ≃* MulAction.stabilizer SL(2, ℤ) τ :=
+  (MonoidHom.ofInjective (QuadraticAlgebra.periodUnitSLMatrix_injective _)).trans
+    (MulEquiv.subgroupCongr (τ.stabilizer_eq_range_periodUnitSLMatrix hτ).symm)
+
+/-- `unitsMulEquivStabilizer` sends a unit to its multiplication matrix. -/
+@[simp]
+theorem coe_unitsMulEquivStabilizer (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0)
+    (u : (QuadraticAlgebra ℤ (-C) (-B))ˣ) :
+    (τ.unitsMulEquivStabilizer hτ u : SL(2, ℤ)) =
+      QuadraticAlgebra.periodUnitSLMatrix (τ.discr_lt_zero_of_quadratic hτ).le u :=
+  (rfl)
+
+/-- The stabilizer of a monic quadratic point in `SL(2, ℤ)` has as many elements as the unit
+group of `QuadraticAlgebra ℤ (-C) (-B)`. -/
+theorem natCard_stabilizer_eq_natCard_units (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0) :
+    Nat.card (MulAction.stabilizer SL(2, ℤ) τ) = Nat.card (QuadraticAlgebra ℤ (-C) (-B))ˣ :=
+  (Nat.card_congr (τ.unitsMulEquivStabilizer hτ).toEquiv).symm
+
+end Stabilizer
 
 section LeftOrder
 

@@ -17,7 +17,8 @@ a nonpositive discriminant makes the norm nonnegative
 nonpositive discriminant forces every unit to have norm `1`
 (`QuadraticAlgebra.norm_eq_one_of_discr_nonpos`), a negative discriminant forces every unit to be
 `±1` or have `im = ±1` (`QuadraticAlgebra.units_re_or_im_of_discr_lt_zero`), and `discr a b < -4`
-leaves only `±1` (`QuadraticAlgebra.units_eq_one_or_neg_one_of_discr_lt_neg_four`).
+leaves only `±1` (`QuadraticAlgebra.units_eq_one_or_neg_one_of_discr_lt_neg_four`), so there are
+exactly two units (`QuadraticAlgebra.natCard_units_eq_two_of_discr_lt_neg_four`).
 -/
 
 public section
@@ -90,5 +91,15 @@ theorem units_eq_one_or_neg_one_of_discr_lt_neg_four {a b : ℤ} (hd : discr a b
       rcases him with h1 | h1 <;> simp [h1]
     rw [him_sq, mul_one] at h4
     nlinarith [sq_nonneg (trace (u : QuadraticAlgebra ℤ a b))]
+
+/-- **Two units for `discr a b < -4`**: an integral quadratic algebra of discriminant strictly less
+than `-4` has exactly the two units `1` and `-1`. -/
+theorem natCard_units_eq_two_of_discr_lt_neg_four {a b : ℤ} (hd : discr a b < -4) :
+    Nat.card (QuadraticAlgebra ℤ a b)ˣ = 2 := by
+  refine Nat.card_eq_two_iff.mpr ⟨1, -1, fun h ↦ ?_, ?_⟩
+  · have := congrArg (fun u : (QuadraticAlgebra ℤ a b)ˣ ↦ (u : QuadraticAlgebra ℤ a b).re) h
+    simp at this
+  · ext u
+    simpa using units_eq_one_or_neg_one_of_discr_lt_neg_four hd u
 
 end QuadraticAlgebra
