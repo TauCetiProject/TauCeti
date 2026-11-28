@@ -62,6 +62,8 @@ so `S ⊗_R P_U ≅ S ⧸ (1 - f e_U)` is the module of that preimage, and hence
   `P_U = R ⧸ (1 - e_U)` of a clopen subset `U` of the prime spectrum.
 * `TauCeti.FiniteProjectiveModules.rankSection`: the ring homomorphism
   `LocallyConstant (PrimeSpectrum R) ℤ →+* K₀(R)` sending `χ_U` to `[P_U]`.
+* `TauCeti.FiniteProjectiveModules.balancedExtensionClopenProjectiveEquiv`: the `S`-linear
+  equivalence between `S ⊗_R P_U` and `P_{(Spec f)⁻¹ U}`.
 
 ## Main results
 
@@ -306,6 +308,36 @@ theorem rank_map (f : R →+* S) (x : SplitK0.{u} (finiteProjectiveModules R).Fu
   rw [Module.rankAtStalk_eq_of_equiv e, Module.rankAtStalk_baseChange,
     RingHom.algebraMap_toAlgebra]
 
+/-- **Base change of a clopen projective module.** Along a ring homomorphism `f : R →+* S`,
+extending scalars of the finitely generated projective module `P_U` of a clopen subset
+`U ⊆ Spec R` gives an `S`-linear equivalence with the projective module of the preimage
+`Clopens.comap ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩ U`. -/
+noncomputable def balancedExtensionClopenProjectiveEquiv (f : R →+* S)
+    (U : Clopens (PrimeSpectrum R)) :
+    BalancedExtension f (clopenProjective R U).obj ≃ₗ[S]
+      (clopenProjective S
+        (Clopens.comap ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩ U)).obj :=
+  let := f.toAlgebra
+  let e := isIdempotentElemEquivClopens.symm U
+  have hU :
+      Clopens.comap ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩ U =
+        ⟨PrimeSpectrum.comap f ⁻¹' U, U.isClopen.preimage (PrimeSpectrum.continuous_comap f)⟩ :=
+    Clopens.ext (Clopens.coe_comap _ _)
+  -- The extended ideal of `(1 - e_U)` is `(1 - f e_U)`, the ideal of the preimage.
+  have hspan : (Ideal.span {1 - e.val}).map (algebraMap R S) =
+      Ideal.span {1 - (isIdempotentElemEquivClopens.symm
+        (Clopens.comap ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩ U)).val} := by
+    rw [hU, isIdempotentElemEquivClopens_symm_preimage, Ideal.map_span, Set.image_singleton,
+      map_sub, map_one, RingHom.algebraMap_toAlgebra]
+  -- The balanced extension of `P_U` is Mathlib's base change `S ⊗[R] (R ⧸ (1 - e_U))`, which is
+  -- `S ⧸ (1 - f e_U)` by `Ideal.quotMapEquivTensorQuot`.
+  ((BalancedExtension.extendScalarsIso f).app _ ≪≫
+      ModuleCat.extendScalarsAlgebraMapIso _).toLinearEquiv ≪≫ₗ
+    TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl S S)
+      (eqToIso (clopenProjective_obj R U)).toLinearEquiv ≪≫ₗ
+    (Ideal.quotMapEquivTensorQuot S).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ hspan ≪≫ₗ
+    (eqToIso (clopenProjective_obj S _)).toLinearEquiv.symm
+
 /-- **Extension of scalars pulls back the clopen projective modules.** Along a ring homomorphism
 `f : R →+* S`, the extension `S ⊗_R P_U` of the module of a clopen subset `U` of `Spec R` is the
 module of its preimage under `Spec f : Spec S → Spec R`: both are `S ⧸ (1 - f e_U)`, since the
@@ -316,24 +348,10 @@ theorem map_of_clopenProjective (f : R →+* S) (U : Clopens (PrimeSpectrum R)) 
         (SplitK0.of.{u} (clopenProjective R U)) =
       SplitK0.of.{u} (clopenProjective S
         ⟨PrimeSpectrum.comap f ⁻¹' U, U.isClopen.preimage (PrimeSpectrum.continuous_comap f)⟩) := by
-  let := f.toAlgebra
-  set e := isIdempotentElemEquivClopens.symm U
-  -- The extended ideal of `(1 - e_U)` is `(1 - f e_U)`, the ideal of the preimage.
-  have hspan : (Ideal.span {1 - e.val}).map (algebraMap R S) =
-      Ideal.span {1 - (isIdempotentElemEquivClopens.symm
-        ⟨PrimeSpectrum.comap f ⁻¹' U, U.isClopen.preimage (PrimeSpectrum.continuous_comap f)⟩).val}
-      := by
-    rw [isIdempotentElemEquivClopens_symm_preimage, Ideal.map_span, Set.image_singleton, map_sub,
-      map_one, RingHom.algebraMap_toAlgebra]
-  -- The balanced extension of `P_U` is Mathlib's base change `S ⊗[R] (R ⧸ (1 - e_U))`, which is
-  -- `S ⧸ (1 - f e_U)` by `Ideal.quotMapEquivTensorQuot`.
-  exact (SplitK0.map_of _ _).trans (SplitK0.of_extendScalars_obj
-    (((BalancedExtension.extendScalarsIso f).app _ ≪≫
-        ModuleCat.extendScalarsAlgebraMapIso _).toLinearEquiv ≪≫ₗ
-      TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl S S)
-        (eqToIso (clopenProjective_obj R U)).toLinearEquiv ≪≫ₗ
-      (Ideal.quotMapEquivTensorQuot S).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ hspan ≪≫ₗ
-      (eqToIso (clopenProjective_obj S _)).toLinearEquiv.symm))
+  refine (SplitK0.map_of _ _).trans
+    ((SplitK0.of_extendScalars_obj (balancedExtensionClopenProjectiveEquiv f U)).trans ?_)
+  congr 2
+  exact Clopens.ext (Clopens.coe_comap _ _)
 
 /-- **The rank section is natural under extension of scalars.** Along a ring homomorphism
 `f : R →+* S`, extending the class `rankSection g` of a locally constant function `g` on `Spec R`
