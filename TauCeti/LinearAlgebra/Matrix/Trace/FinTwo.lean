@@ -51,7 +51,9 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 
 ## Main results
 
-* `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`: the Cayley–Hamilton identity in size two.
+* `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`,
+  `Matrix.pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two`: the
+  Cayley–Hamilton square and cube identities in size two.
 * `Matrix.pow_add_two_fin_two`, `Matrix.trace_pow_add_two_fin_two`: the Cayley–Hamilton recurrence
   for the powers of a `2 × 2` matrix and for their traces.
 * `Matrix.mul_add_mul_eq_fin_two`: the polarized Cayley–Hamilton identity, expressing the
@@ -87,6 +89,10 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   than `-2`, the sign of `det (1 - A ^ n)` is `(-1) ^ (n + 1)` for `n ≠ 0`.
 * `Matrix.trace_pow_eq_two_of_trace_eq_two`: the powers of a determinant-one matrix of trace `2`
   have trace `2`.
+* `Matrix.sq_eq_neg_one_of_det_eq_one_of_trace_eq_zero_fin_two`,
+  `Matrix.pow_six_eq_one_of_det_eq_one_of_trace_sq_eq_one_fin_two`,
+  `Matrix.pow_four_eq_neg_one_of_det_eq_one_of_trace_sq_eq_two_fin_two`: finite-power identities
+  for a determinant-one `2 × 2` matrix with trace `0`, `trace² = 1`, or `trace² = 2`.
 * `Matrix.sign_det_one_sub_pow_succ_of_det_eq_one`: for a determinant-one matrix, the signs of
   `det (1 - A ^ n)` over the nondegenerate powers follow a geometric sequence.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
@@ -136,6 +142,50 @@ theorem pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
 theorem trace_pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
     (A ^ (n + 2)).trace = A.trace * (A ^ (n + 1)).trace - A.det * (A ^ n).trace := by
   rw [pow_add_two_fin_two, trace_sub, trace_smul, trace_smul, smul_eq_mul, smul_eq_mul]
+
+/-- **Cayley–Hamilton cube identity in size two**: a `2 × 2` matrix `A` satisfies
+`A ^ 3 = (trace A ^ 2 - det A) • A - (trace A * det A) • 1`. -/
+theorem pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two
+    (A : Matrix (Fin 2) (Fin 2) R) :
+    A ^ 3 = (A.trace ^ 2 - A.det) • A - (A.trace * A.det) • 1 := by
+  calc A ^ 3 = A.trace • A ^ 2 - A.det • A := by
+        rw [pow_add_two_fin_two, pow_one]
+    _ = A.trace • (A.trace • A - A.det • 1) - A.det • A := by
+        rw [sq_eq_trace_smul_sub_det_smul_one_fin_two]
+    _ = (A.trace ^ 2 - A.det) • A - (A.trace * A.det) • 1 := by
+        rw [smul_sub, smul_smul, smul_smul, ← sq, sub_smul]
+        abel
+
+/-- A `2 × 2` matrix of determinant one and trace `0` satisfies `A ^ 2 = -1`. -/
+theorem sq_eq_neg_one_of_det_eq_one_of_trace_eq_zero_fin_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace = 0) : A ^ 2 = -1 := by
+  rw [sq_eq_trace_smul_sub_det_smul_one_fin_two, htr, hdet, zero_smul, one_smul, zero_sub]
+
+/-- A `2 × 2` matrix of determinant one and `trace A ^ 2 = 1` satisfies `A ^ 6 = 1`.
+By Cayley–Hamilton, `A ^ 3 = (trace A ^ 2 - 1) • A - trace A • 1 = -(trace A • 1)`, whose
+square is `trace A ^ 2 • 1 = 1`. -/
+theorem pow_six_eq_one_of_det_eq_one_of_trace_sq_eq_one_fin_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace ^ 2 = 1) : A ^ 6 = 1 := by
+  have h3 : A ^ 3 = -(A.trace • (1 : Matrix (Fin 2) (Fin 2) R)) := by
+    rw [pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two, hdet, htr, sub_self,
+      zero_smul, mul_one, zero_sub]
+  calc A ^ 6 = (A ^ 3) ^ 2 := by rw [← pow_mul]
+    _ = (-(A.trace • (1 : Matrix (Fin 2) (Fin 2) R))) ^ 2 := by rw [h3]
+    _ = A.trace ^ 2 • (1 : Matrix (Fin 2) (Fin 2) R) := by
+        rw [neg_sq, sq, smul_mul_smul_comm, mul_one, ← sq]
+    _ = 1 := by rw [htr, one_smul]
+
+/-- A `2 × 2` matrix of determinant one and `trace A ^ 2 = 2` satisfies `A ^ 4 = -1`.
+By Cayley–Hamilton, `A ^ 3 = A - trace A • 1` and `A ^ 4 = A * (A - trace A • 1) = -1`. -/
+theorem pow_four_eq_neg_one_of_det_eq_one_of_trace_sq_eq_two_fin_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace ^ 2 = 2) : A ^ 4 = -1 := by
+  have h3 : A ^ 3 = A - A.trace • 1 := by
+    rw [pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two, hdet, htr]
+    norm_num
+  calc A ^ 4 = A * A ^ 3 := by rw [pow_succ']
+    _ = A * (A - A.trace • 1) := by rw [h3]
+    _ = A ^ 2 - A.trace • A := by rw [mul_sub, Matrix.mul_smul, mul_one, sq]
+    _ = -1 := by rw [sq_eq_trace_smul_sub_det_smul_one_fin_two, hdet, one_smul, sub_sub_cancel_left]
 
 /-- If a `2 × 2` matrix of determinant one has trace `2`, then so does every power of it: the
 recurrence `tr A ^ (n + 2) = 2 tr A ^ (n + 1) - tr A ^ n` starts at `tr 1 = tr A = 2`. -/

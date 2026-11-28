@@ -21,6 +21,7 @@ public import TauCeti.Algebra.Quaternion.NormForm
 -- `TauCeti.LinearAlgebra.UnitaryGroup` supplies `Matrix.specialUnitaryGroup.star_eq_adjugate`,
 -- which turns the unitarity of a special unitary matrix into four entry identities.
 public import TauCeti.LinearAlgebra.UnitaryGroup
+import TauCeti.Algebra.Quaternion.Basic
 
 /-!
 # The real quaternions as two-by-two complex matrices, and `SU(2)`
@@ -79,9 +80,12 @@ equivalence is in `TauCeti/Analysis/Matrix/UnitaryGroup/Quaternion.lean`.
 * `Quaternion.toComplexMatrix_injective`: the embedding is injective.
 * `Quaternion.mem_range_toComplexMatrix_iff`: the image is the set of matrices whose lower row is
   determined by the upper one by `M 1 1 = star (M 0 0)` and `M 1 0 = -star (M 0 1)`.
-* `Quaternion.mem_specialUnitaryGroup_toComplexMatrix` and
-  `Quaternion.exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup`: the two inclusions behind the
-  equivalence, packaged as `Quaternion.mem_specialUnitaryGroup_iff_exists_toComplexMatrix`.
+* `Quaternion.toComplexMatrix_mem_specialUnitaryGroup_iff` and
+  `Quaternion.exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup`: the characterization of unit
+  quaternions in `SU(2)` and surjectivity onto `SU(2)`, packaged as
+  `Quaternion.mem_specialUnitaryGroup_iff_exists_toComplexMatrix`.
+* `Quaternion.toComplexMatrix_mem_specialUnitaryGroup_iff_sum_sq_eq`: the special unitary
+  criterion for a quaternion with scaled integer coordinates.
 
 ## Implementation notes
 
@@ -218,11 +222,29 @@ theorem mem_range_toComplexMatrix_iff {M : Matrix (Fin 2) (Fin 2) ℂ} :
 
 /-! ### The unit quaternions are `SU(2)` -/
 
-/-- A unit quaternion has special unitary matrix. -/
-theorem mem_specialUnitaryGroup_toComplexMatrix {q : ℍ[ℝ]} (hq : q ∈ unitary ℍ[ℝ]) :
-    toComplexMatrix q ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-  refine Matrix.mem_specialUnitaryGroup_iff.mpr ⟨Unitary.map_mem toComplexMatrix hq, ?_⟩
-  rw [det_toComplexMatrix, (mem_unitary_iff_normSq_eq_one q).mp hq, Complex.ofReal_one]
+/-- A quaternion has special unitary matrix under `Quaternion.toComplexMatrix` exactly when it is
+a unit quaternion. -/
+@[simp]
+theorem toComplexMatrix_mem_specialUnitaryGroup_iff {q : ℍ[ℝ]} :
+    toComplexMatrix q ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ ↔ q ∈ unitary ℍ[ℝ] := by
+  refine ⟨fun hq => ?_, fun hq => ?_⟩
+  · rw [mem_unitary_iff_normSq_eq_one, ← Complex.ofReal_inj, Complex.ofReal_one,
+      ← det_toComplexMatrix]
+    exact (Matrix.mem_specialUnitaryGroup_iff.mp hq).2
+  · refine Matrix.mem_specialUnitaryGroup_iff.mpr ⟨Unitary.map_mem toComplexMatrix hq, ?_⟩
+    rw [det_toComplexMatrix, (mem_unitary_iff_normSq_eq_one q).mp hq, Complex.ofReal_one]
+
+/-- A quaternion with `ℤ`-coordinates scaled by a nonzero denominator `d` gives an element of
+`SU(2)` exactly when the integer sum of squares equals `d ^ 2`. -/
+theorem toComplexMatrix_mem_specialUnitaryGroup_iff_sum_sq_eq {v : Fin 4 → ℤ} {d : ℝ}
+    (hd : d ≠ 0) :
+    toComplexMatrix ⟨v 0 / d, v 1 / d, v 2 / d, v 3 / d⟩ ∈
+        Matrix.specialUnitaryGroup (Fin 2) ℂ ↔
+      ((∑ i, v i ^ 2 : ℤ) : ℝ) = d ^ 2 := by
+  rw [toComplexMatrix_mem_specialUnitaryGroup_iff, mem_unitary_iff_normSq_eq_one,
+    normSq_mk_div, div_eq_one_iff_eq (pow_ne_zero 2 hd), Fin.sum_univ_four]
+  push_cast
+  rfl
 
 /-- **Every special unitary matrix of degree two is the matrix of a unit quaternion.** -/
 theorem exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup
@@ -235,10 +257,7 @@ theorem exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup
   have h₂ : M 1 0 = -star (M 0 1) :=
     neg_eq_iff_eq_neg.mp (by simpa using (congrFun (congrFun hstar 1) 0).symm)
   obtain ⟨q, hq⟩ := mem_range_toComplexMatrix_iff.mpr ⟨h₁, h₂⟩
-  refine ⟨q, ?_, hq⟩
-  rw [mem_unitary_iff_normSq_eq_one, ← Complex.ofReal_inj, Complex.ofReal_one,
-    ← det_toComplexMatrix, hq]
-  exact (Matrix.mem_specialUnitaryGroup_iff.mp hM).2
+  exact ⟨q, toComplexMatrix_mem_specialUnitaryGroup_iff.mp (hq ▸ hM), hq⟩
 
 /-- **A complex matrix of degree two is special unitary exactly when it is the matrix of a unit
 quaternion.** -/
@@ -247,11 +266,12 @@ theorem mem_specialUnitaryGroup_iff_exists_toComplexMatrix
     M ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ ↔ ∃ q ∈ unitary ℍ[ℝ], toComplexMatrix q = M := by
   refine ⟨exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup, ?_⟩
   rintro ⟨q, hq, rfl⟩
-  exact mem_specialUnitaryGroup_toComplexMatrix hq
+  exact toComplexMatrix_mem_specialUnitaryGroup_iff.mpr hq
 
 private noncomputable def unitaryToSpecialUnitaryGroup :
     unitary ℍ[ℝ] →* Matrix.specialUnitaryGroup (Fin 2) ℂ where
-  toFun q := ⟨toComplexMatrix (q : ℍ[ℝ]), mem_specialUnitaryGroup_toComplexMatrix q.property⟩
+  toFun q :=
+    ⟨toComplexMatrix (q : ℍ[ℝ]), toComplexMatrix_mem_specialUnitaryGroup_iff.mpr q.property⟩
   map_one' := Subtype.ext (by simp)
   map_mul' _ _ := Subtype.ext (by simp)
 
@@ -278,6 +298,14 @@ theorem coe_unitaryEquivSpecialUnitaryGroup_symm_apply
     toComplexMatrix ((unitaryEquivSpecialUnitaryGroup.symm M : unitary ℍ[ℝ]) : ℍ[ℝ]) =
       (M : Matrix (Fin 2) (Fin 2) ℂ) :=
   congrArg Subtype.val (unitaryEquivSpecialUnitaryGroup.apply_symm_apply M)
+
+/-- If a special unitary matrix `g` is the matrix of a quaternion `q`, then its inverse `g⁻¹` is
+the matrix of `star q`. -/
+theorem coe_inv_eq_toComplexMatrix_star {g : Matrix.specialUnitaryGroup (Fin 2) ℂ} {q : ℍ[ℝ]}
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix q) :
+    ((g⁻¹ : Matrix.specialUnitaryGroup (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
+      toComplexMatrix (star q) := by
+  rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, hg, ← map_star]
 
 /-! ### First columns -/
 

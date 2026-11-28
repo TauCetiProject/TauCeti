@@ -318,6 +318,22 @@ theorem toSO3_eq_one_iff (g : SU2) :
     · exact ⟨1, by rw [h, one_smul]⟩
     · exact ⟨-1, by rw [h, neg_one_smul]⟩
 
+/-- The kernel of the double cover `SU(2) → SO(3)` as the two-element set `{1, torusHom (-1)}`. -/
+theorem ker_toSO3_eq_pair : (toSO3.ker : Set SU2) = {1, torusHom (-1)} := by
+  ext g
+  rw [SetLike.mem_coe, MonoidHom.mem_ker, toSO3_eq_one_iff]
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, ← Subtype.coe_inj, OneMemClass.coe_one,
+    coe_torusHom_neg_one]
+
+instance : Finite toSO3.ker := by
+  rw [← SetLike.coe_sort_coe, ker_toSO3_eq_pair]
+  exact (Set.toFinite _).to_subtype
+
+/-- The kernel of the double cover `SU(2) → SO(3)` has cardinality `2`. -/
+theorem natCard_ker_toSO3 : Nat.card toSO3.ker = 2 := by
+  rw [← SetLike.coe_sort_coe, ker_toSO3_eq_pair, Nat.card_coe_set_eq,
+    Set.ncard_pair torusHom_neg_one_ne_one.symm]
+
 /-- `i σ(x)` lies in `SU(2)` for a unit vector `x`. -/
 private theorem smul_pauli_mem_specialUnitaryGroup {x : Fin 3 → ℝ} (hx : x ⬝ᵥ x = 1) :
     I • pauli x ∈ specialUnitaryGroup (Fin 2) ℂ := by
@@ -516,15 +532,10 @@ theorem quotientKerToSO3_mk (g : SU2) : quotientKerToSO3 (g : SU2 ⧸ toSO3.ker)
 
 /-- The Pauli-map homomorphism from `SU(2)` onto `SO(3)` is a covering map. -/
 theorem isCoveringMap_toSO3 : IsCoveringMap toSO3 := by
-  have hfinite : (toSO3.ker : Set SU2).Finite := by
-    have h := (Set.toFinite ({1, -1} : Set (Matrix (Fin 2) (Fin 2) ℂ))).preimage
-      (f := fun g : SU2 ↦ (g : Matrix (Fin 2) (Fin 2) ℂ)) Subtype.val_injective.injOn
-    refine h.subset fun g hg ↦ ?_
-    simpa only [Set.mem_preimage, Set.mem_insert_iff, Set.mem_singleton_iff] using
-      (toSO3_eq_one_iff g).mp (MonoidHom.mem_ker.mp hg)
   have hquot : Topology.IsQuotientMap toSO3 :=
     Topology.IsQuotientMap.of_surjective_continuous toSO3_surjective continuous_toSO3
-  exact (hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom hfinite.isDiscrete).isCoveringMap
+  exact (hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom
+    (Set.finite_coe_iff.mp (inferInstance : Finite toSO3.ker)).isDiscrete).isCoveringMap
 
 end SU2
 

@@ -196,6 +196,33 @@ theorem coe_binaryDihedralRotation_eq_toComplexMatrix :
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hexp, hexp']
 
+/-- In quaternion coordinates the inverse of the rotation generator is `cos (π/n) - sin (π/n) i`. -/
+theorem coe_binaryDihedralRotation_inv_eq_toComplexMatrix :
+    (((binaryDihedralRotation n)⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix ⟨Real.cos (π / n), -Real.sin (π / n), 0, 0⟩ := by
+  rw [Quaternion.coe_inv_eq_toComplexMatrix_star (coe_binaryDihedralRotation_eq_toComplexMatrix n)]
+  congr 1
+  ext <;> simp
+
+/-- The rotation generator `r = diag (exp (πi/4), exp (-πi/4))` of the binary dihedral group of
+order sixteen is the quaternion `(1 + i) / √2`. -/
+theorem coe_binaryDihedralRotation_four_eq_toComplexMatrix :
+    (binaryDihedralRotation 4 : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix ⟨1 / √2, 1 / √2, 0, 0⟩ := by
+  rw [coe_binaryDihedralRotation_eq_toComplexMatrix, Nat.cast_ofNat, Real.cos_pi_div_four,
+    Real.sin_pi_div_four, Real.sqrt_div_self']
+
+/-- Squaring the rotation generator at level `2n` gives the rotation generator at level `n`. -/
+theorem binaryDihedralRotation_two_mul_sq :
+    binaryDihedralRotation (2 * n) ^ 2 = binaryDihedralRotation n := by
+  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  refine Subtype.ext ?_
+  rw [SubmonoidClass.coe_pow, coe_binaryDihedralRotation, coe_binaryDihedralRotation, sq,
+    Matrix.diagonal_mul_diagonal]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [← Complex.exp_add] <;> congr 1 <;> field_simp <;> ring
+
 /-- The rotations of the binary dihedral group are the powers of the rotation generator. -/
 theorem binaryDihedralHom_a_eq_pow (i : ZMod (2 * n)) :
     binaryDihedralHom n (a i) = binaryDihedralRotation n ^ i.val := by
@@ -220,10 +247,15 @@ theorem weylElement_inv_sq_eq_binaryDihedralRotation_pow :
     weylElement⁻¹ ^ 2 = binaryDihedralRotation n ^ n := by
   rw [weylElement_inv_sq_eq_torusHom n, binaryDihedralRotation_pow, binaryDihedralHom_a]
 
+/-- The rotation generator satisfies `r ^ n = -1` in `SU(2)`. -/
+theorem binaryDihedralRotation_pow_self_eq_torusHom_neg_one :
+    binaryDihedralRotation n ^ n = torusHom (-1) := by
+  rw [← weylElement_inv_sq_eq_binaryDihedralRotation_pow, weylElement_inv_sq_eq_torusHom_neg_one]
+
 /-- The rotation generator satisfies `r ^ n = -1`. -/
 theorem coe_binaryDihedralRotation_pow_self :
     ((binaryDihedralRotation n ^ n : SU2) : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
-  rw [← weylElement_inv_sq_eq_binaryDihedralRotation_pow, coe_weylElement_inv_sq]
+  rw [binaryDihedralRotation_pow_self_eq_torusHom_neg_one, coe_torusHom_neg_one]
 
 /-- Conjugation by `s` inverts the rotation generator: `s r s⁻¹ = r⁻¹`. -/
 theorem weylElement_inv_conj_binaryDihedralRotation :

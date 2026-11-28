@@ -25,6 +25,14 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   `(a² + b² + c² + d²) / e²`.
 * `Quaternion.normSq_mk_div_two`: the norm of `(a + b i + c j + d k) / 2` is
   `(a² + b² + c² + d²) / 4`, as used for quaternions with half-integer coordinates.
+* `Quaternion.mk_div_mul_mk_div` and `Quaternion.exists_mk_div_mul_mk_div`: multiplying
+  quaternions with coordinates scaled by `r` and `s` gives the product with coordinates scaled by
+  `r * s`.
+* `Quaternion.exists_mk_div_two_mul_eq`: an integer quaternion with even coordinates divided by
+  `2 * r` has integer coordinates divided by `r`.
+* `Quaternion.exists_mk_div_mul_mk_div_of_even_coords`: multiplying quaternions with
+  `ℤ`-coordinates scaled by `r` and `s` with `r * s = 2 * e` gives `ℤ`-coordinates scaled by `e`
+  when the integer product has even coordinates.
 -/
 
 public section
@@ -66,5 +74,54 @@ theorem normSq_mk_div_two {K : Type*} [Field K] (a b c d : K) :
     normSq (⟨a / 2, b / 2, c / 2, d / 2⟩ : ℍ[K]) = (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) / 4 := by
   rw [normSq_mk_div]
   norm_num
+
+/-- Multiplying two quaternions with coordinates scaled by `r` and `s` gives their product with
+coordinates scaled by `r * s`. -/
+theorem mk_div_mul_mk_div {K : Type*} [Field K] (p q : ℍ[K]) (r s : K) :
+    (⟨p.re / r, p.imI / r, p.imJ / r, p.imK / r⟩ : ℍ[K]) *
+        ⟨q.re / s, q.imI / s, q.imJ / s, q.imK / s⟩ =
+      ⟨(p * q).re / (r * s), (p * q).imI / (r * s),
+        (p * q).imJ / (r * s), (p * q).imK / (r * s)⟩ := by
+  ext <;> simp only [re_mul, imI_mul, imJ_mul, imK_mul, div_mul_div_comm] <;> ring
+
+/-- The product of two quaternions with `ℤ`-coordinates scaled by `r` and `s` has `ℤ`-coordinates
+scaled by `e` whenever `r * s = e`. -/
+theorem exists_mk_div_mul_mk_div {K : Type*} [Field K] {r s e : K} (hrs : r * s = e)
+    (v w : Fin 4 → ℤ) :
+    ∃ u : Fin 4 → ℤ, (⟨v 0 / r, v 1 / r, v 2 / r, v 3 / r⟩ : ℍ[K]) *
+        ⟨w 0 / s, w 1 / s, w 2 / s, w 3 / s⟩ =
+      ⟨u 0 / e, u 1 / e, u 2 / e, u 3 / e⟩ := by
+  set x : ℍ[ℤ] := ⟨v 0, v 1, v 2, v 3⟩ * ⟨w 0, w 1, w 2, w 3⟩
+  refine ⟨![x.re, x.imI, x.imJ, x.imK], ?_⟩
+  rw [mk_div_mul_mk_div (⟨v 0, v 1, v 2, v 3⟩ : ℍ[K]) (⟨w 0, w 1, w 2, w 3⟩ : ℍ[K]) r s, hrs]
+  ext <;> simp [x]
+
+/-- An integer quaternion `x` with even coordinates gives a quaternion `x / (2 * r)` with
+coordinates in `ℤ / r`. -/
+theorem exists_mk_div_two_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] (r : K) {x : ℍ[ℤ]}
+    (hx : Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) :
+    ∃ u : Fin 4 → ℤ, (⟨x.re / (2 * r), x.imI / (2 * r), x.imJ / (2 * r), x.imK / (2 * r)⟩ :
+      ℍ[K]) = ⟨u 0 / r, u 1 / r, u 2 / r, u 3 / r⟩ := by
+  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨d, hd⟩⟩ := hx
+  refine ⟨![a, b, c, d], ?_⟩
+  ext <;>
+    simp only [ha, hb, hc, hd, Matrix.cons_val, ← two_mul, Int.cast_mul, Int.cast_ofNat] <;>
+    exact mul_div_mul_left _ _ (NeZero.ne (2 : K))
+
+/-- If the integer quaternion product of `v` and `w` has even coordinates, then the product of the
+corresponding quaternions scaled by `r` and `s` has `ℤ`-coordinates scaled by `e` whenever
+`r * s = 2 * e`. -/
+theorem exists_mk_div_mul_mk_div_of_even_coords {K : Type*} [Field K] [NeZero (2 : K)]
+    {r s e : K} (hrs : r * s = 2 * e) {v w : Fin 4 → ℤ}
+    (hx : let x : ℍ[ℤ] := ⟨v 0, v 1, v 2, v 3⟩ * ⟨w 0, w 1, w 2, w 3⟩
+      Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) :
+    ∃ u : Fin 4 → ℤ, (⟨v 0 / r, v 1 / r, v 2 / r, v 3 / r⟩ : ℍ[K]) *
+        ⟨w 0 / s, w 1 / s, w 2 / s, w 3 / s⟩ =
+      ⟨u 0 / e, u 1 / e, u 2 / e, u 3 / e⟩ := by
+  obtain ⟨u, hu⟩ := exists_mk_div_two_mul_eq e hx
+  refine ⟨u, ?_⟩
+  rw [mk_div_mul_mk_div (⟨v 0, v 1, v 2, v 3⟩ : ℍ[K]) (⟨w 0, w 1, w 2, w 3⟩ : ℍ[K]) r s, hrs,
+    ← hu]
+  ext <;> simp
 
 end Quaternion

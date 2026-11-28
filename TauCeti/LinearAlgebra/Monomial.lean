@@ -20,11 +20,11 @@ linear automorphisms. Coordinate permutations form a subgroup, equal to the mono
 when the coefficient semiring has only one unit. The construction allows infinite coordinate
 sets; only the dot-product and matrix statements require finite coordinates.
 
-The application, composition, inverse, support and matrix formulas provide the coordinate
-description used to compare monomial linear automorphisms with monomial matrices. The subgroups
-are defined directly rather than as a normalizer, so they are the intended groups also over small
-fields, where the normalizer of the rational points of a diagonal torus need not be the monomial
-subgroup.
+The application, composition, inverse, support, orthogonality and matrix formulas provide the
+coordinate description used to compare monomial linear automorphisms with monomial matrices. The
+subgroups are defined directly rather than as a normalizer, so they are the intended groups also
+over small fields, where the normalizer of the rational points of a diagonal torus need not be the
+monomial subgroup.
 
 The code-specific invariants and automorphism groups are developed in
 `TauCeti.InformationTheory.Coding.Equivalence`.
@@ -134,6 +134,20 @@ theorem toMatrix'_monomialEquiv [Fintype ι] [DecidableEq ι] [DecidableEq κ] (
   · simp [h, Equiv.symm_apply_eq, Ne.symm h]
 
 end Monomial
+
+/-- A matrix whose columns are scalar multiples of distinct standard basis vectors, with scalars
+squaring to one, satisfies `Mᵀ * M = 1`. -/
+theorem transpose_mul_self_of_eq_ite {ι κ R : Type*} [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    [Semiring R] {M : Matrix κ ι R} {f : ι → κ} (hf : Function.Injective f) {u : ι → R}
+    (hu : ∀ j, u j ^ 2 = 1) (hM : ∀ i j, M i j = if f j = i then u j else 0) :
+    Mᵀ * M = 1 := by
+  ext i j
+  simp only [Matrix.mul_apply, Matrix.transpose_apply, hM, Matrix.one_apply, ite_mul, zero_mul,
+    mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true, hf.eq_iff]
+  split_ifs with hij
+  · subst hij
+    simpa [sq] using hu i
+  · rfl
 
 section Group
 

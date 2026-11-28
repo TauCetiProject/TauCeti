@@ -1,0 +1,187 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.GroupTheory.Perm.FinFour.Cube
+public import TauCeti.RepresentationTheory.SU2.Adjoint
+public import TauCeti.RepresentationTheory.SU2.BinaryOctahedral.Basic
+
+/-!
+# The SO(3) image of the binary octahedral subgroup
+
+Under the double cover `TauCeti.SU2.toSO3 : SU(2) →* SO(3)`, the binary octahedral subgroup
+`TauCeti.SU2.binaryOctahedralSubgroup` maps onto the real cube rotation group
+`(TauCeti.cubeRotationToSpecialOrthogonalGroup ℝ).range` of order 24, and is its full preimage
+under `toSO3`. Combining this identification with `TauCeti.cubeRotationEquiv` yields the
+isomorphism
+`TauCeti.SU2.binaryOctahedralMapToSO3EquivPerm : binaryOctahedralSubgroup.map toSO3 ≃* S₄`.
+
+## Main definitions
+
+* `TauCeti.SU2.binaryOctahedralMapToSO3EquivPerm`: the isomorphism of the `SO(3)` image of `2O`
+  with `S₄`.
+
+## Main results
+
+* `TauCeti.SU2.ker_toSO3_le_binaryOctahedralSubgroup` and
+  `TauCeti.SU2.comap_map_toSO3_binaryOctahedralSubgroup`: `2O` contains the kernel `{1, -1}` of
+  `toSO3`, hence equals the preimage of its `SO(3)` image.
+* `TauCeti.SU2.natCard_map_toSO3_binaryOctahedralSubgroup`: the `SO(3)` image has `24` elements.
+* `TauCeti.SU2.toSO3_binaryDihedralRotation_four` and
+  `TauCeti.SU2.toSO3_binaryTetrahedralOmega`: the `SO(3)` images of the presentation generators as
+  explicit cube rotations.
+* `TauCeti.SU2.map_toSO3_binaryOctahedralSubgroup` and
+  `TauCeti.SU2.comap_toSO3_range_cubeRotationToSpecialOrthogonalGroup`: the `SO(3)` image is the
+  cube rotation group and `2O` is its full preimage under `toSO3`.
+-/
+
+public section
+
+namespace TauCeti.SU2
+
+open Quaternion
+
+/-- The kernel `{1, -1}` of the double cover `SU(2) →* SO(3)` lies in the binary octahedral
+subgroup. -/
+theorem ker_toSO3_le_binaryOctahedralSubgroup : toSO3.ker ≤ binaryOctahedralSubgroup := by
+  intro g hg
+  simp only [← SetLike.mem_coe, ker_toSO3_eq_pair, Set.mem_insert_iff, Set.mem_singleton_iff] at hg
+  rcases hg with rfl | rfl
+  · exact binaryOctahedralSubgroup.one_mem
+  · exact torusHom_neg_one_mem_binaryOctahedralSubgroup
+
+/-- The binary octahedral subgroup is the full preimage of its `SO(3)` image under the double
+cover `toSO3`. -/
+theorem comap_map_toSO3_binaryOctahedralSubgroup :
+    (binaryOctahedralSubgroup.map toSO3).comap toSO3 = binaryOctahedralSubgroup :=
+  Subgroup.comap_map_eq_self ker_toSO3_le_binaryOctahedralSubgroup
+
+/-- An element of `SU(2)` maps into `binaryOctahedralSubgroup.map toSO3` under `toSO3` exactly when
+it lies in `TauCeti.SU2.binaryOctahedralSubgroup`. -/
+theorem toSO3_mem_map_toSO3_binaryOctahedralSubgroup_iff {g : SU2} :
+    toSO3 g ∈ binaryOctahedralSubgroup.map toSO3 ↔ g ∈ binaryOctahedralSubgroup := by
+  rw [← Subgroup.mem_comap, comap_map_toSO3_binaryOctahedralSubgroup]
+
+/-- **The `SO(3)` image of the binary octahedral subgroup has `24` elements.** -/
+theorem natCard_map_toSO3_binaryOctahedralSubgroup :
+    Nat.card (binaryOctahedralSubgroup.map toSO3) = 24 := by
+  have h := toSO3.ker.relIndex_mul_card binaryOctahedralSubgroup
+  rw [Subgroup.relIndex_ker, inf_of_le_left ker_toSO3_le_binaryOctahedralSubgroup,
+    natCard_ker_toSO3, natCard_binaryOctahedralSubgroup] at h
+  omega
+
+/-- The image of the eighth-turn `τ = (1 + i) / √2` under `toSO3` is the cube rotation
+`cubeEdgeHalfTurn * cubeFaceQuarterTurn * cubeEdgeHalfTurn`. -/
+theorem toSO3_binaryDihedralRotation_four :
+    toSO3 (binaryDihedralRotation 4) =
+      cubeRotationToSpecialOrthogonalGroup ℝ
+        (cubeEdgeHalfTurn * cubeFaceQuarterTurn * cubeEdgeHalfTurn) := by
+  have hA : ((cubeEdgeHalfTurn * cubeFaceQuarterTurn * cubeEdgeHalfTurn : cubeRotationGroup).val :
+      Matrix (Fin 3) (Fin 3) ℤ) = !![0, 1, 0; -1, 0, 0; 0, 0, 1] := by
+    simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_cubeEdgeHalfTurn,
+      coe_cubeFaceQuarterTurn]
+    decide
+  refine Subtype.ext ?_
+  rw [coe_cubeRotationToSpecialOrthogonalGroup, hA, binaryDihedralRotation_def, coe_toSO3_torusHom]
+  have hz : ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2) = Complex.I := by
+    calc
+      ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2)
+        = Complex.exp (Real.pi / 2 * Complex.I) := by
+          rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one,
+            ZMod.toCircle_natCast]
+          congr 1
+          push_cast
+          ring
+      _ = Complex.I := Complex.exp_pi_div_two_mul_I
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [hz]
+
+/-- The image of `ω = (-1 + i + j + k) / 2` under `toSO3` is the cube rotation
+`cubeFaceQuarterTurn * cubeDiagonalThirdTurn * cubeFaceQuarterTurn⁻¹`. -/
+theorem toSO3_binaryTetrahedralOmega :
+    toSO3 binaryTetrahedralOmega =
+      cubeRotationToSpecialOrthogonalGroup ℝ
+        (cubeFaceQuarterTurn * cubeDiagonalThirdTurn * cubeFaceQuarterTurn⁻¹) := by
+  have hA : ((cubeFaceQuarterTurn * cubeDiagonalThirdTurn * cubeFaceQuarterTurn⁻¹ :
+      cubeRotationGroup).val : Matrix (Fin 3) (Fin 3) ℤ) = !![0, 0, 1; 1, 0, 0; 0, 1, 0] := by
+    simp only [Subgroup.coe_mul, Subgroup.coe_inv, Matrix.SpecialLinearGroup.coe_mul,
+      Matrix.SpecialLinearGroup.coe_inv, coe_cubeFaceQuarterTurn, coe_cubeDiagonalThirdTurn,
+      Matrix.adjugate_fin_three]
+    decide
+  refine Subtype.ext ?_
+  rw [coe_cubeRotationToSpecialOrthogonalGroup, hA]
+  refine Matrix.ext_iff_mulVec.mpr fun x => ?_
+  rw [coe_toSO3, pauliRotation_mulVec, Submonoid.coe_inclusion, coe_binaryTetrahedralOmega,
+    ← map_star]
+  ext i
+  fin_cases i <;>
+    simp [pauliCoord_apply, pauli_apply, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_three, toComplexMatrix_apply] <;> ring
+
+/-- **The `SO(3)` image of the binary octahedral subgroup is the cube rotation group** embedded
+into `SO(3, ℝ)` by `TauCeti.cubeRotationToSpecialOrthogonalGroup ℝ`. -/
+theorem map_toSO3_binaryOctahedralSubgroup :
+    binaryOctahedralSubgroup.map toSO3 = (cubeRotationToSpecialOrthogonalGroup ℝ).range := by
+  have hle : binaryOctahedralSubgroup.map toSO3 ≤
+      (cubeRotationToSpecialOrthogonalGroup ℝ).range := by
+    rw [binaryOctahedralSubgroup_eq_closure_pair, MonoidHom.map_closure, Subgroup.closure_le]
+    rintro _ ⟨g, hg, rfl⟩
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hg
+    rcases hg with rfl | rfl
+    · exact ⟨_, toSO3_binaryDihedralRotation_four.symm⟩
+    · exact ⟨_, toSO3_binaryTetrahedralOmega.symm⟩
+  exact Subgroup.eq_of_le_of_card_ge hle
+    (by rw [natCard_range_cubeRotationToSpecialOrthogonalGroup,
+      natCard_map_toSO3_binaryOctahedralSubgroup])
+
+/-- **The binary octahedral subgroup is the full preimage of the real cube rotation group under
+`toSO3`.** -/
+theorem comap_toSO3_range_cubeRotationToSpecialOrthogonalGroup :
+    (cubeRotationToSpecialOrthogonalGroup ℝ).range.comap toSO3 = binaryOctahedralSubgroup := by
+  rw [← map_toSO3_binaryOctahedralSubgroup, comap_map_toSO3_binaryOctahedralSubgroup]
+
+/-- An element of `SU(2)` maps into the real cube rotation group under `toSO3` exactly when it
+lies in `TauCeti.SU2.binaryOctahedralSubgroup`. -/
+theorem toSO3_mem_range_cubeRotationToSpecialOrthogonalGroup_iff {g : SU2} :
+    toSO3 g ∈ (cubeRotationToSpecialOrthogonalGroup ℝ).range ↔
+      g ∈ binaryOctahedralSubgroup := by
+  rw [← Subgroup.mem_comap, comap_toSO3_range_cubeRotationToSpecialOrthogonalGroup]
+
+/-- **The `SO(3)` image of the binary octahedral subgroup is isomorphic to `S₄`**, via the
+identification with the cube rotation group (`TauCeti.cubeRotationEquiv`). -/
+noncomputable def binaryOctahedralMapToSO3EquivPerm :
+    binaryOctahedralSubgroup.map toSO3 ≃* Equiv.Perm (Fin 4) :=
+  ((MulEquiv.subgroupCongr map_toSO3_binaryOctahedralSubgroup).trans
+    (MonoidHom.ofInjective (cubeRotationToSpecialOrthogonalGroup_injective ℝ)).symm).trans
+    cubeRotationEquiv
+
+/-- The inverse of `binaryOctahedralMapToSO3EquivPerm` sends a permutation of the four body
+diagonals to the corresponding cube rotation matrix in `SO(3)`. -/
+@[simp]
+theorem coe_binaryOctahedralMapToSO3EquivPerm_symm_apply (σ : Equiv.Perm (Fin 4)) :
+    (binaryOctahedralMapToSO3EquivPerm.symm σ : Matrix.specialOrthogonalGroup (Fin 3) ℝ) =
+      cubeRotationToSpecialOrthogonalGroup ℝ (cubeRotationEquiv.symm σ) := by
+  simp only [binaryOctahedralMapToSO3EquivPerm, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
+    MulEquiv.subgroupCongr_symm_apply]
+  exact MonoidHom.ofInjective_apply (cubeRotationToSpecialOrthogonalGroup_injective ℝ)
+
+/-- Applying `binaryOctahedralMapToSO3EquivPerm` to the `SO(3)` image of a cube rotation `A`
+returns `cubeRotationEquiv A`. -/
+@[simp]
+theorem binaryOctahedralMapToSO3EquivPerm_apply_cubeRotationToSpecialOrthogonalGroup
+    (A : cubeRotationGroup)
+    (hA : cubeRotationToSpecialOrthogonalGroup ℝ A ∈ binaryOctahedralSubgroup.map toSO3 :=
+      map_toSO3_binaryOctahedralSubgroup.symm ▸ ⟨A, rfl⟩) :
+    binaryOctahedralMapToSO3EquivPerm ⟨cubeRotationToSpecialOrthogonalGroup ℝ A, hA⟩ =
+      cubeRotationEquiv A :=
+  binaryOctahedralMapToSO3EquivPerm.eq_symm_apply.mp <| Subtype.ext <|
+    ((coe_binaryOctahedralMapToSO3EquivPerm_symm_apply (cubeRotationEquiv A)).trans
+      (by rw [MulEquiv.symm_apply_apply])).symm
+
+instance : Finite (binaryOctahedralSubgroup.map toSO3) :=
+  Finite.of_equiv _ binaryOctahedralMapToSO3EquivPerm.symm.toEquiv
+
+end TauCeti.SU2

@@ -87,7 +87,7 @@ open scoped goldenRatio QuadraticAlgebra
 private theorem toComplexMatrix_mem_specialUnitaryGroup_of_sq_add_sq {a b : ℝ}
     (h : a ^ 2 + b ^ 2 = φ ^ 2 + φ⁻¹ ^ 2) :
     toComplexMatrix ⟨a / 2, b / 2, 1 / 2, 0⟩ ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ :=
-  mem_specialUnitaryGroup_toComplexMatrix ((mem_unitary_iff_normSq_eq_one _).mpr (by
+  toComplexMatrix_mem_specialUnitaryGroup_iff.mpr ((mem_unitary_iff_normSq_eq_one _).mpr (by
     rw [inv_goldenRatio_eq_goldenRatio_sub_one] at h
     rw [normSq_def']
     linear_combination h / 4 + goldenRatio_sq / 2))

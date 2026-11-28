@@ -124,13 +124,8 @@ theorem coe_weylElement_inv_sq :
   fin_cases i <;> fin_cases j <;> simp [sq, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- The square of the inverse quarter turn is the torus element `torusHom (-1) = -1`. -/
-theorem weylElement_inv_sq_eq_torusHom_neg_one : weylElement⁻¹ ^ 2 = torusHom (-1) := by
-  refine Subtype.ext ?_
-  rw [coe_weylElement_inv_sq, coe_torusHom]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [torusMatrix_apply_zero_zero, torusMatrix_apply_one_one, torusMatrix_apply_zero_one,
-      torusMatrix_apply_one_zero]
+theorem weylElement_inv_sq_eq_torusHom_neg_one : weylElement⁻¹ ^ 2 = torusHom (-1) :=
+  Subtype.ext (coe_weylElement_inv_sq.trans coe_torusHom_neg_one.symm)
 
 /-- The quarter turn is not diagonal, so it does not lie in the maximal torus. -/
 theorem weylElement_notMem_torus : weylElement ∉ torus := by
