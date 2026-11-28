@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Data.Nat.Sqrt
 import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
@@ -69,6 +70,8 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
   `0 ≤ ε ≤ 1 / 2`.
 * `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
+* `TauCeti.natSqrt_pred_add_one_lt_div_log`: `Nat.sqrt (n - 1) + 1 < n / (log (n + 1) + 1)` for
+  `21 ≤ n`.
 -/
 
 public section
@@ -252,5 +255,122 @@ theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
   simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
   norm_num at hb
   linarith
+
+private lemma poly7_le_exp {a : ℝ} (ha : 0 ≤ a) :
+    1 + a + a ^ 2 / 2 + a ^ 3 / 6 + a ^ 4 / 24 + a ^ 5 / 120 + a ^ 6 / 720 + a ^ 7 / 5040 ≤
+      exp a := by
+  have h := sum_le_exp_of_nonneg ha 8
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at h
+  linarith
+
+private lemma add_one_lt_exp_of_taylor {n m : ℕ} {a y : ℝ} (hn : (n : ℝ) + 1 ≤ (m : ℝ))
+    (ha : 0 ≤ a) (hay : a ≤ y)
+    (hpoly : (m : ℝ) < 1 + a + a ^ 2 / 2 + a ^ 3 / 6 + a ^ 4 / 24 + a ^ 5 / 120 +
+      a ^ 6 / 720 + a ^ 7 / 5040) :
+    (n : ℝ) + 1 < exp y := by
+  have h1 := poly7_le_exp ha
+  have h2 := exp_le_exp.mpr hay
+  linarith
+
+private lemma nat_add_one_lt_exp_of_natSqrt_ge_eight {n : ℕ}
+    (hr₀ : 8 ≤ Nat.sqrt (n - 1) + 1) :
+    (n : ℝ) + 1 < exp ((n : ℝ) / ((Nat.sqrt (n - 1) + 1 : ℕ) : ℝ) - 1) := by
+  set r₀ : ℕ := Nat.sqrt (n - 1) + 1
+  set y : ℝ := (n : ℝ) / (r₀ : ℝ) - 1
+  have hr₀_pos : (0 : ℝ) < (r₀ : ℝ) := by positivity
+  have hsq_le : (Nat.sqrt (n - 1)) ^ 2 ≤ n - 1 := by
+    simpa [Nat.pow_two] using Nat.sqrt_le (n - 1)
+  have hsq_ge49 : 49 ≤ n - 1 := by
+    have h7 : 7 ≤ Nat.sqrt (n - 1) := by omega
+    nlinarith
+  have hsq1 : (r₀ - 1) ^ 2 + 1 ≤ n := by
+    have hr1 : r₀ - 1 = Nat.sqrt (n - 1) := by simp [r₀]
+    rw [hr1]; omega
+  have hsq2 : n ≤ r₀ ^ 2 := by
+    have h := Nat.lt_succ_sqrt (n - 1)
+    dsimp [r₀]; rw [Nat.pow_two]; rw [Nat.succ_eq_add_one] at h; omega
+  have hy_lower : (r₀ : ℝ) - 3 ≤ y := by
+    have hsq : ((r₀ : ℝ) - 1) ^ 2 + 1 ≤ (n : ℝ) := by
+      have hsq' : ((r₀ - 1 : ℕ) : ℝ) ^ 2 + 1 ≤ (n : ℝ) := by exact_mod_cast hsq1
+      rwa [Nat.cast_sub (by omega : 1 ≤ r₀), Nat.cast_one] at hsq'
+    dsimp [y]
+    rw [le_sub_iff_add_le, le_div_iff₀ hr₀_pos]
+    nlinarith
+  have hy5 : (5 : ℝ) ≤ y := by
+    have : (8 : ℝ) ≤ (r₀ : ℝ) := by exact_mod_cast hr₀
+    linarith
+  have htay := sum_le_exp_of_nonneg (by linarith : (0 : ℝ) ≤ y) 5
+  have hn_upper : (n : ℝ) + 1 ≤ (y + 3) ^ 2 + 1 := by
+    have h1 : (n : ℝ) + 1 ≤ (r₀ : ℝ) ^ 2 + 1 := by exact_mod_cast (by omega : n + 1 ≤ r₀ ^ 2 + 1)
+    nlinarith
+  set t : ℝ := y - 5
+  have hy_eq : y = t + 5 := by dsimp [t]; ring
+  have hstrict : (y + 3) ^ 2 + 1 < ∑ k ∈ Finset.range 5, y ^ k / (k.factorial : ℝ) := by
+    simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+    rw [hy_eq]
+    norm_num
+    nlinarith [sq_nonneg t, sq_nonneg (t ^ 2)]
+  linarith
+
+private lemma nat_add_one_lt_exp_of_natSqrt_lt_eight {n : ℕ} (hn : 21 ≤ n)
+    (hr₀ : Nat.sqrt (n - 1) + 1 < 8) :
+    (n : ℝ) + 1 < exp ((n : ℝ) / ((Nat.sqrt (n - 1) + 1 : ℕ) : ℝ) - 1) := by
+  set r₀ : ℕ := Nat.sqrt (n - 1) + 1
+  set y : ℝ := (n : ℝ) / (r₀ : ℝ) - 1
+  have hsq1 : (r₀ - 1) ^ 2 ≤ n - 1 := by
+    have hr1 : r₀ - 1 = Nat.sqrt (n - 1) := by simp [r₀]
+    rw [hr1, Nat.pow_two]; exact Nat.sqrt_le (n - 1)
+  have hsq2 : n ≤ r₀ ^ 2 := by
+    have h := Nat.lt_succ_sqrt (n - 1)
+    dsimp [r₀]; rw [Nat.pow_two]; rw [Nat.succ_eq_add_one] at h; omega
+  have hr₀_ge : 5 ≤ r₀ := by
+    have : 4 ≤ Nat.sqrt (n - 1) := Nat.le_sqrt.mpr (by omega)
+    omega
+  rcases (by omega : r₀ = 5 ∨ r₀ = 6 ∨ r₀ = 7) with h5 | h6 | h7
+  · rw [h5] at hsq1 hsq2; norm_num at hsq1 hsq2
+    rcases eq_or_lt_of_le hn with rfl | hn22
+    · exact add_one_lt_exp_of_taylor (m := 22) (a := 16 / 5) (by norm_num) (by norm_num)
+        (by dsimp [y]; rw [h5]; norm_num) (by norm_num)
+    · exact add_one_lt_exp_of_taylor (m := 26) (a := 17 / 5)
+        (by exact_mod_cast (by omega : n + 1 ≤ 26)) (by norm_num)
+        (by have : (22 : ℝ) ≤ n := by exact_mod_cast hn22
+            dsimp [y]; rw [h5]; norm_num; linarith) (by norm_num)
+  · rw [h6] at hsq1 hsq2; norm_num at hsq1 hsq2
+    rcases eq_or_lt_of_le (by omega : 26 ≤ n) with rfl | hn27
+    · exact add_one_lt_exp_of_taylor (m := 27) (a := 10 / 3) (by norm_num) (by norm_num)
+        (by dsimp [y]; rw [h6]; norm_num) (by norm_num)
+    · rcases lt_or_ge n 30 with hn30 | hn30
+      · exact add_one_lt_exp_of_taylor (m := 30) (a := 7 / 2)
+          (by exact_mod_cast (by omega : n + 1 ≤ 30)) (by norm_num)
+          (by have : (27 : ℝ) ≤ n := by exact_mod_cast hn27
+              dsimp [y]; rw [h6]; norm_num; linarith) (by norm_num)
+      · exact add_one_lt_exp_of_taylor (m := 37) (a := 4)
+          (by exact_mod_cast (by omega : n + 1 ≤ 37)) (by norm_num)
+          (by have : (30 : ℝ) ≤ n := by exact_mod_cast hn30
+              dsimp [y]; rw [h6]; norm_num; linarith) (by norm_num)
+  · rw [h7] at hsq1 hsq2; norm_num at hsq1 hsq2
+    exact add_one_lt_exp_of_taylor (m := 50) (a := 30 / 7)
+      (by exact_mod_cast (by omega : n + 1 ≤ 50)) (by norm_num)
+      (by have : (37 : ℝ) ≤ n := by exact_mod_cast (by omega : 37 ≤ n)
+          dsimp [y]; rw [h7]; norm_num; linarith) (by norm_num)
+
+/-- For `21 ≤ n`, `Nat.sqrt (n - 1) + 1 < n / (log (n + 1) + 1)`. -/
+theorem natSqrt_pred_add_one_lt_div_log {n : ℕ} (hn : 21 ≤ n) :
+    ((Nat.sqrt (n - 1) + 1 : ℕ) : ℝ) < (n : ℝ) / (log ((n : ℝ) + 1) + 1) := by
+  set r₀ : ℕ := Nat.sqrt (n - 1) + 1
+  have hexp : (n : ℝ) + 1 < exp ((n : ℝ) / (r₀ : ℝ) - 1) := by
+    rcases lt_or_ge r₀ 8 with hr₀_lt | hr₀_ge8
+    · exact nat_add_one_lt_exp_of_natSqrt_lt_eight hn hr₀_lt
+    · exact nat_add_one_lt_exp_of_natSqrt_ge_eight hr₀_ge8
+  have hlog_lt : log ((n : ℝ) + 1) < (n : ℝ) / (r₀ : ℝ) - 1 :=
+    (log_lt_iff_lt_exp (by positivity)).mpr hexp
+  have hlogpos : 0 < log ((n : ℝ) + 1) + 1 := by
+    have : (1 : ℝ) < (n : ℝ) + 1 := by exact_mod_cast (by omega : 1 < n + 1)
+    linarith [log_pos this]
+  have hr₀_pos : (0 : ℝ) < (r₀ : ℝ) := by positivity
+  rw [lt_div_iff₀ hlogpos]
+  have hmul : (r₀ : ℝ) * (log ((n : ℝ) + 1) + 1) < (r₀ : ℝ) * ((n : ℝ) / (r₀ : ℝ)) :=
+    mul_lt_mul_of_pos_left (by linarith) hr₀_pos
+  rwa [mul_div_cancel₀ _ hr₀_pos.ne'] at hmul
 
 end TauCeti

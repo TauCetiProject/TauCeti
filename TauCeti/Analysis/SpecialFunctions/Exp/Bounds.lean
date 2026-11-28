@@ -52,6 +52,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
+* `TauCeti.five_eighths_lt_one_sub_exp_neg_one`: the numerical bound `5 / 8 < 1 - exp (-1)`.
 * `TauCeti.two_mul_exp_two_pi_mul_add_one_le`: `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for
   `s ≥ -1`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
@@ -278,6 +279,16 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
 /-- `2 exp (2π)` is at least `14`. -/
 theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * exp (2 * π) := by
   nlinarith [quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), two_le_pi]
+
+/-- Numerical lower bound `5 / 8 < 1 - exp (-1)`. -/
+theorem five_eighths_lt_one_sub_exp_neg_one : (5 : ℝ) / 8 < 1 - exp (-1) := by
+  have htay := Real.sum_le_exp_of_nonneg (by norm_num : (0 : ℝ) ≤ 1) 5
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at htay
+  have hexp : (8 : ℝ) / 3 < exp 1 := by norm_num at htay; linarith
+  have hinv : exp (-1) < 3 / 8 := by
+    rw [exp_neg]
+    exact (inv_lt_comm₀ (exp_pos 1) (by norm_num)).mpr (by norm_num at hexp ⊢; exact hexp)
+  linarith
 
 /-- `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for `s ≥ -1`. -/
 theorem two_mul_exp_two_pi_mul_add_one_le (s : ℝ) (hs : -1 ≤ s) :

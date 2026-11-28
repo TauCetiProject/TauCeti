@@ -12,9 +12,11 @@ public import Mathlib.Data.Nat.Choose.Basic
 public import TauCeti.RingTheory.Polynomial.Eulerian
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Order.Preorder.Finite
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -80,22 +82,41 @@ def ascentCount {n : ℕ} (σ : Equiv.Perm (Fin n)) : ℕ :=
   (Finset.univ.filter fun i : Fin n =>
     if h : i.val + 1 < n then σ i < σ ⟨i.val + 1, h⟩ else False).card
 
+/-- Defining filtered-cardinality formula for `Equiv.Perm.descentCount`. -/
+theorem descentCount_def {n : ℕ} (σ : Equiv.Perm (Fin n)) :
+    σ.descentCount =
+      (Finset.univ.filter fun i : Fin n =>
+        if h : i.val + 1 < n then σ ⟨i.val + 1, h⟩ < σ i else False).card := by
+  rw [descentCount]
+
+/-- Defining filtered-cardinality formula for `Equiv.Perm.ascentCount`. -/
+theorem ascentCount_def {n : ℕ} (σ : Equiv.Perm (Fin n)) :
+    σ.ascentCount =
+      (Finset.univ.filter fun i : Fin n =>
+        if h : i.val + 1 < n then σ i < σ ⟨i.val + 1, h⟩ else False).card := by
+  rw [ascentCount]
+
+/-- Any permutation of `Fin 0` has zero descents. -/
 @[simp]
 theorem descentCount_zero (σ : Equiv.Perm (Fin 0)) : σ.descentCount = 0 := by
   simp [descentCount]
 
+/-- Any permutation of `Fin 0` has zero ascents. -/
 @[simp]
 theorem ascentCount_zero (σ : Equiv.Perm (Fin 0)) : σ.ascentCount = 0 := by
   simp [ascentCount]
 
+/-- Any permutation of `Fin 1` has zero descents. -/
 @[simp]
 theorem descentCount_one (σ : Equiv.Perm (Fin 1)) : σ.descentCount = 0 := by
   simp [descentCount]
 
+/-- Any permutation of `Fin 1` has zero ascents. -/
 @[simp]
 theorem ascentCount_one (σ : Equiv.Perm (Fin 1)) : σ.ascentCount = 0 := by
   simp [ascentCount]
 
+/-- The identity permutation of `Fin n` has zero descents. -/
 @[simp]
 theorem descentCount_one_perm (n : ℕ) : (1 : Equiv.Perm (Fin n)).descentCount = 0 := by
   rw [descentCount, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
@@ -104,6 +125,8 @@ theorem descentCount_one_perm (n : ℕ) : (1 : Equiv.Perm (Fin n)).descentCount 
   · simp [Fin.lt_def]
   · simp
 
+/-- Adjacent-position formula for the descent count of a permutation of `Fin (n + 1)`:
+`σ.descentCount` is the number of `i : Fin n` with `σ i.succ < σ i.castSucc`. -/
 theorem descentCount_succ {n : ℕ} (σ : Equiv.Perm (Fin (n + 1))) :
     σ.descentCount = (Finset.univ.filter fun i : Fin n => σ i.succ < σ i.castSucc).card := by
   rw [descentCount]
@@ -127,6 +150,8 @@ theorem descentCount_succ {n : ℕ} (σ : Equiv.Perm (Fin (n + 1))) :
     have hmem : σ ⟨j.val + 1, hlt⟩ < σ j.castSucc := (Finset.mem_filter.mp hj).2
     exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, by simp [hlt, hmem]⟩
 
+/-- Adjacent-position formula for the ascent count of a permutation of `Fin (n + 1)`:
+`σ.ascentCount` is the number of `i : Fin n` with `σ i.castSucc < σ i.succ`. -/
 theorem ascentCount_succ {n : ℕ} (σ : Equiv.Perm (Fin (n + 1))) :
     σ.ascentCount = (Finset.univ.filter fun i : Fin n => σ i.castSucc < σ i.succ).card := by
   rw [ascentCount]
@@ -150,34 +175,41 @@ theorem ascentCount_succ {n : ℕ} (σ : Equiv.Perm (Fin (n + 1))) :
     have hmem : σ j.castSucc < σ ⟨j.val + 1, hlt⟩ := (Finset.mem_filter.mp hj).2
     exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, by simp [hlt, hmem]⟩
 
-theorem descentCount_add_ascentCount {n : ℕ} (hn : 0 < n) (σ : Equiv.Perm (Fin n)) :
+/-- Every adjacent pair `(i, i + 1)` in `Fin n` is either a descent or an ascent of `σ`, so
+`σ.descentCount + σ.ascentCount = n - 1` (including `0 + 0 = 0 - 1` when `n = 0`). -/
+theorem descentCount_add_ascentCount {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     σ.descentCount + σ.ascentCount = n - 1 := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  rw [descentCount_succ, ascentCount_succ, Nat.succ_sub_one]
-  have hdisj : Disjoint
-      (Finset.univ.filter fun i : Fin m => σ i.succ < σ i.castSucc)
-      (Finset.univ.filter fun i : Fin m => σ i.castSucc < σ i.succ) := by
-    rw [Finset.disjoint_filter]
-    intro i _ h1 h2
-    exact lt_asymm h1 h2
-  have hunion :
-      (Finset.univ.filter fun i : Fin m => σ i.succ < σ i.castSucc) ∪
-        (Finset.univ.filter fun i : Fin m => σ i.castSucc < σ i.succ) = Finset.univ := by
-    ext i
-    simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and, iff_true]
-    exact lt_or_gt_of_ne (σ.injective.ne i.castSucc_lt_succ.ne')
-  rw [← Finset.card_union_of_disjoint hdisj, hunion, Finset.card_fin]
+  rcases n with _ | m
+  · simp
+  · rw [descentCount_succ, ascentCount_succ, Nat.succ_sub_one]
+    have hdisj : Disjoint
+        (Finset.univ.filter fun i : Fin m => σ i.succ < σ i.castSucc)
+        (Finset.univ.filter fun i : Fin m => σ i.castSucc < σ i.succ) := by
+      rw [Finset.disjoint_filter]
+      intro i _ h1 h2
+      exact lt_asymm h1 h2
+    have hunion :
+        (Finset.univ.filter fun i : Fin m => σ i.succ < σ i.castSucc) ∪
+          (Finset.univ.filter fun i : Fin m => σ i.castSucc < σ i.succ) = Finset.univ := by
+      ext i
+      simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and, iff_true]
+      exact lt_or_gt_of_ne (σ.injective.ne i.castSucc_lt_succ.ne')
+    rw [← Finset.card_union_of_disjoint hdisj, hunion, Finset.card_fin]
 
+/-- A permutation of a nonempty `Fin n` has strictly fewer than `n` descents. -/
 theorem descentCount_lt_of_pos {n : ℕ} (hn : 0 < n) (σ : Equiv.Perm (Fin n)) :
     σ.descentCount < n := by
-  have h := descentCount_add_ascentCount hn σ
+  have h := descentCount_add_ascentCount σ
   omega
 
+/-- Every permutation of `Fin n` has at most `n - 1` descents (including `0 ≤ 0 - 1` when `n = 0`).
+-/
 theorem descentCount_le {n : ℕ} (σ : Equiv.Perm (Fin n)) : σ.descentCount ≤ n - 1 := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
   · exact Nat.le_pred_of_lt (descentCount_lt_of_pos hn σ)
 
+/-- The identity permutation is the unique permutation of `Fin n` with zero descents. -/
 theorem descentCount_eq_zero_iff {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     σ.descentCount = 0 ↔ σ = 1 := by
   refine ⟨fun h => ?_, fun h => h ▸ descentCount_one_perm n⟩
@@ -186,46 +218,12 @@ theorem descentCount_eq_zero_iff {n : ℕ} (σ : Equiv.Perm (Fin n)) :
   · rw [descentCount_succ, Finset.card_eq_zero, Finset.filter_eq_empty_iff] at h
     have hmono : Monotone σ := by
       refine Fin.monotone_iff_le_succ.mpr fun i => ?_
-      have hi := h (Finset.mem_univ i)
-      exact not_lt.mp hi
+      exact not_lt.mp (h (Finset.mem_univ i))
     ext x
-    have horder : ∀ a b : Fin (m + 1), a < b → σ a < σ b := fun a b hab =>
-      (hmono hab.le).lt_of_ne (σ.injective.ne hab.ne)
-    have hid : ∀ k : ℕ, (hk : k < m + 1) → σ ⟨k, hk⟩ = ⟨k, hk⟩ := by
-      intro k
-      induction k using Nat.strong_induction_on with
-      | _ k ih =>
-        intro hk
-        have hlt_prev : ∀ j : Fin (m + 1), (j : ℕ) < k → (σ j : ℕ) = j := by
-          intro j hj
-          have hj' := ih j hj (hj.trans hk)
-          exact congrArg Fin.val hj'
-        have hge : k ≤ (σ ⟨k, hk⟩ : ℕ) := by
-          by_contra hlt
-          have hlt' : (σ ⟨k, hk⟩ : ℕ) < k := Nat.lt_of_not_ge hlt
-          have hpre := hlt_prev (σ ⟨k, hk⟩) hlt'
-          have hinj : σ ⟨(σ ⟨k, hk⟩ : ℕ), hlt'.trans hk⟩ = σ ⟨k, hk⟩ := Fin.ext hpre
-          have hcontra := congrArg Fin.val (σ.injective hinj)
-          simp only at hcontra
-          omega
-        have hle : (σ ⟨k, hk⟩ : ℕ) ≤ k := by
-          by_contra hgt
-          have hgt' : k < (σ ⟨k, hk⟩ : ℕ) := Nat.lt_of_not_ge hgt
-          rcases lt_trichotomy (σ.symm ⟨k, hk⟩) ⟨k, hk⟩ with hs | hs | hs
-          · have heq := hlt_prev (σ.symm ⟨k, hk⟩) hs
-            simp only [Equiv.apply_symm_apply] at heq
-            exact hs.ne (Fin.ext heq.symm)
-          · have := congrArg σ hs
-            simp only [Equiv.apply_symm_apply] at this
-            exact hgt'.ne (congrArg Fin.val this)
-          · have hord := horder ⟨k, hk⟩ (σ.symm ⟨k, hk⟩) hs
-            simp only [Equiv.apply_symm_apply] at hord
-            exact hgt'.asymm hord
-        exact Fin.ext (le_antisymm hle hge)
-    change (σ x).val = x.val
-    have hx := congrArg Fin.val (hid x.val x.isLt)
-    simpa using hx
+    exact congrArg Fin.val ((hmono.strictMono_of_injective σ.injective).apply_eq (x := x))
 
+/-- Position reversal (`σ * Fin.revPerm`, reversing the one-line order of entries `i ↦ σ i.rev`)
+turns descents of `σ` into ascents, so `(σ * Fin.revPerm).descentCount = σ.ascentCount`. -/
 @[simp]
 theorem descentCount_mul_revPerm {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     (σ * Fin.revPerm).descentCount = σ.ascentCount := by
@@ -244,6 +242,8 @@ theorem descentCount_mul_revPerm {n : ℕ} (σ : Equiv.Perm (Fin n)) :
         Fin.revPerm_apply, Fin.rev_succ, Fin.rev_castSucc, Fin.rev_rev]
       exact (Finset.mem_filter.mp hj).2
 
+/-- Value complementation (`Fin.revPerm * σ`, replacing each value `σ i` by `n - 1 - σ i`) turns
+descents of `σ` into ascents, so `(Fin.revPerm * σ).descentCount = σ.ascentCount`. -/
 @[simp]
 theorem descentCount_revPerm_mul {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     (Fin.revPerm * σ).descentCount = σ.ascentCount := by
@@ -256,66 +256,40 @@ theorem descentCount_revPerm_mul {n : ℕ} (σ : Equiv.Perm (Fin n)) :
 
 /-! ### Inserting `Fin.last n` into a permutation of `Fin n` -/
 
-private noncomputable def insertLastFun {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n)) :
-    Fin (n + 1) → Fin (n + 1) :=
-  fun x =>
-    if hx : x = p then Fin.last n
-    else if hlt : x < p then (σ ⟨x.val, lt_of_lt_of_le hlt (Nat.le_of_lt_succ p.isLt)⟩).castSucc
-    else (σ ⟨x.val - 1, by
-      have hgt : p.val < x.val := lt_of_le_of_ne (not_lt.mp hlt) (Ne.symm (Fin.val_ne_of_ne hx))
-      omega⟩).castSucc
-
-private lemma insertLastFun_self {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n)) :
-    insertLastFun p σ p = Fin.last n := by
-  simp [insertLastFun]
-
-private lemma insertLastFun_succAbove {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n))
-    (i : Fin n) : insertLastFun p σ (p.succAbove i) = (σ i).castSucc := by
-  rcases lt_or_ge i.castSucc p with hlt | hle
-  · rw [Fin.succAbove_of_castSucc_lt p i hlt]
-    have hne : i.castSucc ≠ p := hlt.ne
-    simp only [insertLastFun, hne, ↓reduceDIte, hlt]
-    rfl
-  · rw [Fin.succAbove_of_le_castSucc p i hle]
-    have hgt : p < i.succ := Nat.lt_succ_of_le hle
-    have hne : i.succ ≠ p := hgt.ne'
-    have hnot : ¬ i.succ < p := not_lt_of_gt hgt
-    simp only [insertLastFun, hne, ↓reduceDIte, hnot]
-    rfl
-
 private lemma insertLastFun_bijective {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n)) :
-    Function.Bijective (insertLastFun p σ) := by
+    Function.Bijective
+      (p.insertNth (α := fun _ => Fin (n + 1)) (Fin.last n) fun i => (σ i).castSucc) := by
   rw [Fintype.bijective_iff_injective_and_card]
   refine ⟨fun x y hxy => ?_, rfl⟩
   by_cases hx : x = p <;> by_cases hy : y = p
   · exact hx.trans hy.symm
   · subst hx
     obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq hy
-    rw [insertLastFun_self, insertLastFun_succAbove] at hxy
+    simp only [Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove] at hxy
     exact absurd hxy (Fin.castSucc_lt_last _).ne'
   · subst hy
     obtain ⟨i, rfl⟩ := Fin.exists_succAbove_eq hx
-    rw [insertLastFun_succAbove, insertLastFun_self] at hxy
+    simp only [Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove] at hxy
     exact absurd hxy (Fin.castSucc_lt_last _).ne
   · obtain ⟨i, rfl⟩ := Fin.exists_succAbove_eq hx
     obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq hy
-    rw [insertLastFun_succAbove, insertLastFun_succAbove] at hxy
-    have hij : σ i = σ j := Fin.castSucc_inj.mp hxy
-    rw [σ.injective hij]
+    simp only [Fin.insertNth_apply_succAbove] at hxy
+    rw [σ.injective (Fin.castSucc_inj.mp hxy)]
 
 private noncomputable def insertLast {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n)) :
     Equiv.Perm (Fin (n + 1)) :=
-  Equiv.ofBijective (insertLastFun p σ) (insertLastFun_bijective p σ)
+  Equiv.ofBijective _ (insertLastFun_bijective p σ)
 
 @[simp]
 private lemma insertLast_apply_self {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n)) :
     insertLast p σ p = Fin.last n :=
-  insertLastFun_self p σ
+  Fin.insertNth_apply_same (α := fun _ => Fin (n + 1)) p (Fin.last n) fun i => (σ i).castSucc
 
 @[simp]
 private lemma insertLast_apply_succAbove {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n))
     (i : Fin n) : insertLast p σ (p.succAbove i) = (σ i).castSucc :=
-  insertLastFun_succAbove p σ i
+  Fin.insertNth_apply_succAbove (α := fun _ => Fin (n + 1)) p (Fin.last n)
+    (fun i => (σ i).castSucc) i
 
 private lemma insertLast_uncurry_bijective (n : ℕ) :
     Function.Bijective (fun q : Fin (n + 1) × Equiv.Perm (Fin n) => insertLast q.1 q.2) := by
@@ -400,108 +374,106 @@ private lemma descentCount_insertLast_last {m : ℕ} (σ : Equiv.Perm (Fin (m + 
         Fin.castSucc_lt_castSucc_iff]
   rw [hsplit, Finset.card_map]
 
+private def insertShift {m : ℕ} (k j : Fin m) : Fin (m + 1) :=
+  if j < k then j.castSucc else if j = k then k.succ else j.succ
+
+private lemma insertShift_injective {m : ℕ} (k : Fin m) : Function.Injective (insertShift k) := by
+  intro a b hab
+  dsimp [insertShift] at hab
+  split_ifs at hab with ha1 ha2 hb1 hb2 <;>
+    simp only [Fin.ext_iff, Fin.val_castSucc, Fin.val_succ] at hab <;> omega
+
+private lemma descent_insertLast_succ_castSucc_insertShift_iff {m : ℕ} (k : Fin m)
+    (σ : Equiv.Perm (Fin (m + 1))) (j : Fin m) :
+    (insertLast k.succ.castSucc σ (insertShift k j).succ <
+      insertLast k.succ.castSucc σ (insertShift k j).castSucc) ↔
+      if j = k then True else σ j.succ < σ j.castSucc := by
+  set p : Fin (m + 2) := k.succ.castSucc
+  dsimp [insertShift]
+  rcases lt_trichotomy j k with hjk | heq | hjk
+  · have h1 : (j.castSucc : Fin (m + 1)).castSucc = p.succAbove j.castSucc := by
+      rw [Fin.succAbove_of_castSucc_lt]
+      exact Fin.lt_def.mpr (Nat.lt_succ_of_lt (Fin.lt_def.mp hjk))
+    have h2 : (j.castSucc : Fin (m + 1)).succ = p.succAbove j.succ := by
+      rw [Fin.succAbove_of_castSucc_lt]
+      · exact Fin.ext rfl
+      · exact Fin.lt_def.mpr (Nat.succ_lt_succ (Fin.lt_def.mp hjk))
+    simp only [hjk, ↓reduceIte, hjk.ne]
+    rw [h1, h2, insertLast_apply_succAbove, insertLast_apply_succAbove,
+      Fin.castSucc_lt_castSucc_iff]
+  · subst heq
+    simp only [lt_irrefl, ↓reduceIte]
+    have hk1 : (j.succ : Fin (m + 1)).castSucc = p := Fin.ext rfl
+    have hk2 : (j.succ : Fin (m + 1)).succ = p.succAbove j.succ := by
+      rw [Fin.succAbove_of_le_castSucc]
+      exact le_rfl
+    rw [hk1, hk2, insertLast_apply_self, insertLast_apply_succAbove]
+    simp [Fin.castSucc_lt_last]
+  · have h1 : (j.succ : Fin (m + 1)).castSucc = p.succAbove j.castSucc := by
+      rw [Fin.succAbove_of_le_castSucc]
+      · exact Fin.ext rfl
+      · exact Fin.le_def.mpr (Nat.succ_le_of_lt (Fin.lt_def.mp hjk))
+    have h2 : (j.succ : Fin (m + 1)).succ = p.succAbove j.succ := by
+      rw [Fin.succAbove_of_le_castSucc]
+      exact Fin.le_def.mpr (Nat.le_succ_of_le (Nat.succ_le_of_lt (Fin.lt_def.mp hjk)))
+    simp only [not_lt_of_gt hjk, ↓reduceIte, hjk.ne']
+    rw [h1, h2, insertLast_apply_succAbove, insertLast_apply_succAbove,
+      Fin.castSucc_lt_castSucc_iff]
+
+private lemma not_descent_insertLast_succ_castSucc_castSucc {m : ℕ} (k : Fin m)
+    (σ : Equiv.Perm (Fin (m + 1))) :
+    ¬ (insertLast k.succ.castSucc σ (k.castSucc : Fin (m + 1)).succ <
+        insertLast k.succ.castSucc σ (k.castSucc : Fin (m + 1)).castSucc) := by
+  set p : Fin (m + 2) := k.succ.castSucc
+  have hk1 : (k.castSucc : Fin (m + 1)).succ = p := Fin.ext rfl
+  have hk2 : (k.castSucc : Fin (m + 1)).castSucc = p.succAbove k.castSucc := by
+    rw [Fin.succAbove_of_castSucc_lt]
+    exact Fin.lt_def.mpr (by simp [p])
+  rw [hk1, hk2, insertLast_apply_self, insertLast_apply_succAbove]
+  exact not_lt_of_ge (Fin.le_last _)
+
+private lemma filter_descent_insertLast_succ_castSucc {m : ℕ} (k : Fin m)
+    (σ : Equiv.Perm (Fin (m + 1))) :
+    (Finset.univ.filter fun i : Fin (m + 1) =>
+      insertLast k.succ.castSucc σ i.succ < insertLast k.succ.castSucc σ i.castSucc) =
+      (Finset.univ.filter fun j : Fin m =>
+        if j = k then True else σ j.succ < σ j.castSucc).map
+        ⟨insertShift k, insertShift_injective k⟩ := by
+  ext i
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
+    Function.Embedding.coeFn_mk]
+  constructor
+  · intro hi
+    rcases lt_trichotomy i k.castSucc with hlt | heq | hgt
+    · let j : Fin m := ⟨i.val, (Fin.lt_def.mp hlt).trans k.isLt⟩
+      have hf_eq : insertShift k j = i := by
+        dsimp [insertShift]; simp only [show j < k from hlt, ↓reduceIte]; exact Fin.ext rfl
+      refine ⟨j, ?_, hf_eq⟩
+      rw [← descent_insertLast_succ_castSucc_insertShift_iff k σ j, hf_eq]
+      exact hi
+    · exact absurd (heq ▸ hi) (not_descent_insertLast_succ_castSucc_castSucc k σ)
+    · rcases eq_or_lt_of_le (Nat.succ_le_of_lt (Fin.lt_def.mp hgt)) with heq' | hgt'
+      · refine ⟨k, by simp, ?_⟩
+        dsimp [insertShift]; simp only [lt_irrefl, ↓reduceIte]; exact Fin.ext heq'
+      · have hgt'' : k.val + 1 < i.val := by simpa using hgt'
+        let j : Fin m := ⟨i.val - 1, by have := i.isLt; omega⟩
+        have hjk : k < j := Fin.lt_def.mpr (by dsimp [j]; omega)
+        have hf_eq : insertShift k j = i := by
+          dsimp [insertShift]
+          simp only [not_lt_of_gt hjk, ↓reduceIte, hjk.ne']
+          ext; simp [j]; omega
+        refine ⟨j, ?_, hf_eq⟩
+        rw [← descent_insertLast_succ_castSucc_insertShift_iff k σ j, hf_eq]
+        exact hi
+  · rintro ⟨j, hj, rfl⟩
+    exact (descent_insertLast_succ_castSucc_insertShift_iff k σ j).mpr hj
+
 private lemma descentCount_insertLast_succ_castSucc {m : ℕ} (k : Fin m)
     (σ : Equiv.Perm (Fin (m + 1))) :
     (insertLast k.succ.castSucc σ).descentCount =
       if σ k.succ < σ k.castSucc then σ.descentCount else σ.descentCount + 1 := by
-  set p : Fin (m + 2) := k.succ.castSucc
-  rw [descentCount_succ, descentCount_succ]
-  let f : Fin m → Fin (m + 1) := fun j =>
-    if j < k then j.castSucc else if j = k then k.succ else j.succ
-  have hf_inj : Function.Injective f := by
-    intro a b hab
-    dsimp [f] at hab
-    split_ifs at hab with ha1 ha2 hb1 hb2 <;>
-      simp only [Fin.ext_iff, Fin.val_castSucc, Fin.val_succ] at hab <;> omega
-  have hf_mem : ∀ j : Fin m,
-      (insertLast p σ (f j).succ < insertLast p σ (f j).castSucc) ↔
-        (if j = k then True else σ j.succ < σ j.castSucc) := by
-    intro j
-    dsimp [f]
-    rcases lt_trichotomy j k with hjk | heq | hjk
-    · have h1 : (j.castSucc : Fin (m + 1)).castSucc = p.succAbove j.castSucc := by
-        rw [Fin.succAbove_of_castSucc_lt]
-        exact Fin.lt_def.mpr (by change j.val < k.val + 1; have : j.val < k.val := hjk; omega)
-      have h2 : (j.castSucc : Fin (m + 1)).succ = p.succAbove j.succ := by
-        rw [Fin.succAbove_of_castSucc_lt]
-        · exact Fin.ext rfl
-        · exact Fin.lt_def.mpr (by change j.val + 1 < k.val + 1; have : j.val < k.val := hjk; omega)
-      simp only [hjk, ↓reduceIte, hjk.ne]
-      rw [h1, h2, insertLast_apply_succAbove, insertLast_apply_succAbove,
-        Fin.castSucc_lt_castSucc_iff]
-    · subst heq
-      simp only [lt_irrefl, ↓reduceIte]
-      have hk1 : (j.succ : Fin (m + 1)).castSucc = p := Fin.ext rfl
-      have hk2 : (j.succ : Fin (m + 1)).succ = p.succAbove j.succ := by
-        rw [Fin.succAbove_of_le_castSucc]
-        exact le_rfl
-      rw [hk1, hk2, insertLast_apply_self, insertLast_apply_succAbove]
-      simp [Fin.castSucc_lt_last]
-    · have hnot1 : ¬ j < k := not_lt_of_gt hjk
-      have hnot2 : j ≠ k := hjk.ne'
-      have h1 : (j.succ : Fin (m + 1)).castSucc = p.succAbove j.castSucc := by
-        rw [Fin.succAbove_of_le_castSucc]
-        · exact Fin.ext rfl
-        · exact Fin.le_def.mpr (by change k.val + 1 ≤ j.val; have : k.val < j.val := hjk; omega)
-      have h2 : (j.succ : Fin (m + 1)).succ = p.succAbove j.succ := by
-        rw [Fin.succAbove_of_le_castSucc]
-        exact Fin.le_def.mpr (by change k.val + 1 ≤ j.val + 1; have : k.val < j.val := hjk; omega)
-      simp only [hnot1, ↓reduceIte, hnot2]
-      rw [h1, h2, insertLast_apply_succAbove, insertLast_apply_succAbove,
-        Fin.castSucc_lt_castSucc_iff]
-  have hnot_kcast : ¬ (insertLast p σ (k.castSucc : Fin (m + 1)).succ <
-      insertLast p σ (k.castSucc : Fin (m + 1)).castSucc) := by
-    have hk1 : (k.castSucc : Fin (m + 1)).succ = p := Fin.ext rfl
-    have hk2 : (k.castSucc : Fin (m + 1)).castSucc = p.succAbove k.castSucc := by
-      rw [Fin.succAbove_of_castSucc_lt]
-      exact Fin.lt_def.mpr (by simp [p])
-    rw [hk1, hk2, insertLast_apply_self, insertLast_apply_succAbove]
-    exact not_lt_of_ge (Fin.le_last _)
-  have hmap : (Finset.univ.filter fun i : Fin (m + 1) =>
-      insertLast p σ i.succ < insertLast p σ i.castSucc) =
-      (Finset.univ.filter fun j : Fin m =>
-        if j = k then True else σ j.succ < σ j.castSucc).map ⟨f, hf_inj⟩ := by
-    ext i
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
-      Function.Embedding.coeFn_mk]
-    constructor
-    · intro hi
-      rcases lt_trichotomy i k.castSucc with hlt | heq | hgt
-      · have hilt : i.val < k.val := hlt
-        let j : Fin m := ⟨i.val, hilt.trans k.isLt⟩
-        have hjk : j < k := hilt
-        refine ⟨j, ?_, ?_⟩
-        · rw [← hf_mem]
-          have hf_eq : f j = i := by
-            dsimp [f]
-            simp only [hjk, ↓reduceIte]
-            exact Fin.ext rfl
-          rwa [hf_eq]
-        · dsimp [f]
-          simp only [hjk, ↓reduceIte]
-          exact Fin.ext rfl
-      · exact absurd (heq ▸ hi) hnot_kcast
-      · have hgt_val : k.val < i.val := hgt
-        rcases eq_or_lt_of_le (Nat.succ_le_of_lt hgt_val) with heq' | hgt'
-        · refine ⟨k, by simp, ?_⟩
-          dsimp [f]
-          simp only [lt_irrefl, ↓reduceIte]
-          exact Fin.ext heq'
-        · let j : Fin m := ⟨i.val - 1, by omega⟩
-          have hjk : k < j := by change k.val < i.val - 1; omega
-          refine ⟨j, ?_, ?_⟩
-          · rw [← hf_mem]
-            have hf_eq : f j = i := by
-              dsimp [f]
-              simp only [not_lt_of_gt hjk, ↓reduceIte, hjk.ne']
-              ext; simp [j]; omega
-            rwa [hf_eq]
-          · dsimp [f]
-            simp only [not_lt_of_gt hjk, ↓reduceIte, hjk.ne']
-            ext; simp [j]; omega
-    · rintro ⟨j, hj, rfl⟩
-      exact (hf_mem j).mpr hj
-  rw [hmap, Finset.card_map]
+  rw [descentCount_succ, descentCount_succ,
+    filter_descent_insertLast_succ_castSucc, Finset.card_map]
   split_ifs with hkd
   · congr 1
     ext j
@@ -528,6 +500,12 @@ namespace TauCeti
 `eulerianNumber 0 (q + 1) = 0`. -/
 def eulerianNumber (n q : ℕ) : ℕ :=
   (Finset.univ.filter fun σ : Equiv.Perm (Fin n) => σ.descentCount = q).card
+
+/-- Defining filtered-cardinality formula for `TauCeti.eulerianNumber`. -/
+theorem eulerianNumber_def (n q : ℕ) :
+    eulerianNumber n q =
+      (Finset.univ.filter fun σ : Equiv.Perm (Fin n) => σ.descentCount = q).card := by
+  rw [eulerianNumber]
 
 /-- `eulerianNumber n q` also counts permutations of `Fin n` with `q` ascents. -/
 theorem eulerianNumber_eq_card_ascentCount (n q : ℕ) :
@@ -617,8 +595,94 @@ theorem eulerianNumber_symm {n q : ℕ} (hq : q < n) :
   rw [eulerianNumber_eq_card_ascentCount, eulerianNumber]
   congr 1; ext σ
   simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-  have hsum := Equiv.Perm.descentCount_add_ascentCount (Nat.zero_lt_of_lt hq) σ
+  have hsum := Equiv.Perm.descentCount_add_ascentCount σ
   omega
+
+private lemma eulerianNumber_succ_eq_sum_insertLast_fiber (m q : ℕ) :
+    eulerianNumber (m + 2) (q + 1) =
+      ∑ σ : Equiv.Perm (Fin (m + 1)),
+        (Finset.univ.filter fun p : Fin (m + 2) =>
+          (Equiv.Perm.insertLastEquiv (m + 1) (p, σ)).descentCount = q + 1).card := by
+  have hfilt :
+      (Finset.univ.filter fun τ : Equiv.Perm (Fin (m + 2)) => τ.descentCount = q + 1) =
+      (Finset.univ.filter fun τ : Equiv.Perm (Fin (m + 2)) =>
+        τ.descentCount = q + 1).filter
+        (fun τ => ((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).2 ∈ Finset.univ) := by
+    simp
+  rw [eulerianNumber, hfilt, ← Finset.sum_card_fiberwise_eq_card_filter
+    (Finset.univ.filter fun τ : Equiv.Perm (Fin (m + 2)) => τ.descentCount = q + 1)
+    Finset.univ (fun τ => ((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).2)]
+  simp_rw [Finset.filter_filter]
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  refine Finset.card_bij (fun τ _ => ((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).1) ?_ ?_ ?_
+  · intro τ hτ
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hτ ⊢
+    have hpair : (Equiv.Perm.insertLastEquiv (m + 1)
+        (((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).1, σ)) = τ := by
+      rw [← hτ.2, Equiv.apply_symm_apply]
+    simpa [hpair] using hτ.1
+  · intro τ₁ hτ₁ τ₂ hτ₂ hfst
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hτ₁ hτ₂
+    apply (Equiv.Perm.insertLastEquiv (m + 1)).symm.injective
+    ext <;> simp [hfst, hτ₁.2, hτ₂.2]
+  · intro p hp
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hp
+    exact ⟨Equiv.Perm.insertLastEquiv (m + 1) (p, σ), by simp [hp], by simp⟩
+
+private lemma sum_insertLast_mid_descentCount {m : ℕ} (q : ℕ) (σ : Equiv.Perm (Fin (m + 1))) :
+    ∑ k : Fin m, (if (if σ k.succ < σ k.castSucc then σ.descentCount
+        else σ.descentCount + 1) = q + 1 then 1 else 0) =
+      (if σ.descentCount = q + 1 then σ.descentCount else 0) +
+        (if σ.descentCount = q then σ.ascentCount else 0) := by
+  have hsplit_k : ∀ k : Fin m,
+      (if (if σ k.succ < σ k.castSucc then σ.descentCount
+        else σ.descentCount + 1) = q + 1 then (1 : ℕ) else 0) =
+      (if σ k.succ < σ k.castSucc then (if σ.descentCount = q + 1 then 1 else 0) else 0) +
+      (if σ k.castSucc < σ k.succ then (if σ.descentCount = q then 1 else 0) else 0) := by
+    intro k
+    rcases lt_or_gt_of_ne (σ.injective.ne k.castSucc_lt_succ.ne') with hlt | hgt
+    · have hn : ¬ σ k.castSucc < σ k.succ := lt_asymm hlt
+      simp only [hlt, ↓reduceIte, hn, add_zero]
+    · have hn : ¬ σ k.succ < σ k.castSucc := lt_asymm hgt
+      simp only [hn, ↓reduceIte, hgt, zero_add]
+      split_ifs with h1 h2 <;> simp_all
+  simp_rw [hsplit_k, Finset.sum_add_distrib]
+  have hd_sum : ∑ k : Fin m,
+      (if σ k.succ < σ k.castSucc then (if σ.descentCount = q + 1 then 1 else 0) else 0) =
+      if σ.descentCount = q + 1 then σ.descentCount else 0 := by
+    rw [Equiv.Perm.descentCount_succ, ← Finset.sum_filter]; split_ifs <;> simp
+  have ha_sum : ∑ k : Fin m,
+      (if σ k.castSucc < σ k.succ then (if σ.descentCount = q then 1 else 0) else 0) =
+      if σ.descentCount = q then σ.ascentCount else 0 := by
+    rw [Equiv.Perm.ascentCount_succ, ← Finset.sum_filter]; split_ifs <;> simp
+  rw [hd_sum, ha_sum]
+
+private lemma card_insertLast_fiber_descentCount (m q : ℕ) (σ : Equiv.Perm (Fin (m + 1))) :
+    (Finset.univ.filter fun p : Fin (m + 2) =>
+      (Equiv.Perm.insertLastEquiv (m + 1) (p, σ)).descentCount = q + 1).card =
+      (if σ.descentCount = q + 1 then q + 2 else 0) +
+        (if σ.descentCount = q then m + 1 - q else 0) := by
+  have hcard_p : (Finset.univ.filter fun p : Fin (m + 2) =>
+      (Equiv.Perm.insertLastEquiv (m + 1) (p, σ)).descentCount = q + 1).card =
+      (if σ.descentCount + 1 = q + 1 then 1 else 0) +
+      (if σ.descentCount = q + 1 then 1 else 0) +
+      ∑ k : Fin m, if (if σ k.succ < σ k.castSucc then σ.descentCount
+          else σ.descentCount + 1) = q + 1 then 1 else 0 := by
+    rw [Finset.card_filter, Fin.sum_univ_succ, Fin.sum_univ_castSucc]
+    have h0' : (Equiv.Perm.insertLastEquiv (m + 1) (0, σ)).descentCount = σ.descentCount + 1 :=
+      Equiv.Perm.descentCount_insertLast_zero σ
+    have hlast' : (Equiv.Perm.insertLastEquiv (m + 1) ((Fin.last m).succ, σ)).descentCount =
+        σ.descentCount := by
+      rw [Fin.succ_last]; exact Equiv.Perm.descentCount_insertLast_last σ
+    have hmid' : ∀ k : Fin m,
+        (Equiv.Perm.insertLastEquiv (m + 1) (k.castSucc.succ, σ)).descentCount =
+          if σ k.succ < σ k.castSucc then σ.descentCount else σ.descentCount + 1 := fun k =>
+      Equiv.Perm.descentCount_insertLast_succ_castSucc k σ
+    simp_rw [h0', hlast', hmid']; ring
+  rw [hcard_p, sum_insertLast_mid_descentCount]
+  have htot := Equiv.Perm.descentCount_add_ascentCount σ
+  rw [Nat.succ_sub_one] at htot
+  split_ifs <;> omega
 
 /-- The Pascal-style recurrence for Eulerian numbers:
 `A(n + 1, q + 1) = (q + 2) * A(n, q + 1) + (n - q) * A(n, q)`. -/
@@ -627,92 +691,8 @@ theorem eulerianNumber_succ_succ (n q : ℕ) :
       (q + 2) * eulerianNumber n (q + 1) + (n - q) * eulerianNumber n q := by
   rcases n with _ | m
   · simp [eulerianNumber_eq_zero_of_le (by omega : 1 ≤ 1) (by omega : 1 ≤ q + 1)]
-  · have hcount : eulerianNumber (m + 2) (q + 1) =
-        ∑ σ : Equiv.Perm (Fin (m + 1)),
-          (Finset.univ.filter fun p : Fin (m + 2) =>
-            (Equiv.Perm.insertLastEquiv (m + 1) (p, σ)).descentCount = q + 1).card := by
-      have hfilt :
-          (Finset.univ.filter fun τ : Equiv.Perm (Fin (m + 2)) => τ.descentCount = q + 1) =
-          (Finset.univ.filter fun τ : Equiv.Perm (Fin (m + 2)) =>
-            τ.descentCount = q + 1).filter
-            (fun τ => ((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).2 ∈ Finset.univ) := by
-        simp
-      rw [eulerianNumber, hfilt, ← Finset.sum_card_fiberwise_eq_card_filter
-        (Finset.univ.filter fun τ : Equiv.Perm (Fin (m + 2)) => τ.descentCount = q + 1)
-        Finset.univ
-        (fun τ => ((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).2)]
-      simp_rw [Finset.filter_filter]
-      refine Finset.sum_congr rfl fun σ _ => ?_
-      refine Finset.card_bij (fun τ _ => ((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).1) ?_ ?_ ?_
-      · intro τ hτ
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hτ ⊢
-        have hpair : (Equiv.Perm.insertLastEquiv (m + 1)
-            (((Equiv.Perm.insertLastEquiv (m + 1)).symm τ).1, σ)) = τ := by
-          rw [← hτ.2, Equiv.apply_symm_apply]
-        simpa [hpair] using hτ.1
-      · intro τ₁ hτ₁ τ₂ hτ₂ hfst
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hτ₁ hτ₂
-        apply (Equiv.Perm.insertLastEquiv (m + 1)).symm.injective
-        ext <;> simp [hfst, hτ₁.2, hτ₂.2]
-      · intro p hp
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hp
-        exact ⟨Equiv.Perm.insertLastEquiv (m + 1) (p, σ), by simp [hp], by simp⟩
-    have hfiber : ∀ σ : Equiv.Perm (Fin (m + 1)),
-        (Finset.univ.filter fun p : Fin (m + 2) =>
-          (Equiv.Perm.insertLastEquiv (m + 1) (p, σ)).descentCount = q + 1).card =
-          (if σ.descentCount = q + 1 then q + 2 else 0) +
-            (if σ.descentCount = q then m + 1 - q else 0) := by
-      intro σ
-      have hcard_p : (Finset.univ.filter fun p : Fin (m + 2) =>
-          (Equiv.Perm.insertLastEquiv (m + 1) (p, σ)).descentCount = q + 1).card =
-          (if σ.descentCount + 1 = q + 1 then 1 else 0) +
-          (if σ.descentCount = q + 1 then 1 else 0) +
-          ∑ k : Fin m, if (if σ k.succ < σ k.castSucc then σ.descentCount
-              else σ.descentCount + 1) = q + 1 then 1 else 0 := by
-        rw [Finset.card_filter, Fin.sum_univ_succ, Fin.sum_univ_castSucc]
-        have h0' : (Equiv.Perm.insertLastEquiv (m + 1) (0, σ)).descentCount =
-            σ.descentCount + 1 := Equiv.Perm.descentCount_insertLast_zero σ
-        have hlast' : (Equiv.Perm.insertLastEquiv (m + 1)
-            ((Fin.last m).succ, σ)).descentCount = σ.descentCount := by
-          rw [Fin.succ_last]; exact Equiv.Perm.descentCount_insertLast_last σ
-        have hmid' : ∀ k : Fin m,
-            (Equiv.Perm.insertLastEquiv (m + 1) (k.castSucc.succ, σ)).descentCount =
-              if σ k.succ < σ k.castSucc then σ.descentCount else σ.descentCount + 1 := fun k =>
-          Equiv.Perm.descentCount_insertLast_succ_castSucc k σ
-        simp_rw [h0', hlast', hmid']; ring
-      rw [hcard_p]
-      have hsum_k : ∑ k : Fin m, (if (if σ k.succ < σ k.castSucc then σ.descentCount
-            else σ.descentCount + 1) = q + 1 then 1 else 0) =
-          (if σ.descentCount = q + 1 then σ.descentCount else 0) +
-            (if σ.descentCount = q then σ.ascentCount else 0) := by
-        have hsplit_k : ∀ k : Fin m,
-            (if (if σ k.succ < σ k.castSucc then σ.descentCount
-              else σ.descentCount + 1) = q + 1 then (1 : ℕ) else 0) =
-            (if σ k.succ < σ k.castSucc then (if σ.descentCount = q + 1 then 1 else 0) else 0) +
-            (if σ k.castSucc < σ k.succ then (if σ.descentCount = q then 1 else 0) else 0) := by
-          intro k
-          rcases lt_or_gt_of_ne (σ.injective.ne k.castSucc_lt_succ.ne') with hlt | hgt
-          · have hn : ¬ σ k.castSucc < σ k.succ := lt_asymm hlt
-            simp only [hlt, ↓reduceIte, hn, add_zero]
-          · have hn : ¬ σ k.succ < σ k.castSucc := lt_asymm hgt
-            simp only [hn, ↓reduceIte, hgt, zero_add]
-            split_ifs with h1 h2 <;> simp_all
-        simp_rw [hsplit_k, Finset.sum_add_distrib]
-        have hd_sum : ∑ k : Fin m,
-            (if σ k.succ < σ k.castSucc then (if σ.descentCount = q + 1 then 1 else 0) else 0) =
-            if σ.descentCount = q + 1 then σ.descentCount else 0 := by
-          rw [Equiv.Perm.descentCount_succ, ← Finset.sum_filter]; split_ifs <;> simp
-        have ha_sum : ∑ k : Fin m,
-            (if σ k.castSucc < σ k.succ then (if σ.descentCount = q then 1 else 0) else 0) =
-            if σ.descentCount = q then σ.ascentCount else 0 := by
-          rw [Equiv.Perm.ascentCount_succ, ← Finset.sum_filter]; split_ifs <;> simp
-        rw [hd_sum, ha_sum]
-      rw [hsum_k]
-      have htot := Equiv.Perm.descentCount_add_ascentCount (Nat.succ_pos m) σ
-      rw [Nat.succ_sub_one] at htot
-      split_ifs <;> omega
-    rw [hcount]
-    simp_rw [hfiber, Finset.sum_add_distrib]
+  · rw [eulerianNumber_succ_eq_sum_insertLast_fiber]
+    simp_rw [card_insertLast_fiber_descentCount, Finset.sum_add_distrib]
     have h1 : ∑ σ : Equiv.Perm (Fin (m + 1)), (if σ.descentCount = q + 1 then q + 2 else 0) =
         (q + 2) * eulerianNumber (m + 1) (q + 1) := by
       rw [eulerianNumber, Finset.card_filter, Finset.mul_sum]
@@ -771,6 +751,31 @@ theorem eulerianNumber_eq_eulerianRec (n q : ℕ) : eulerianNumber n q = euleria
 @[simp] theorem eulerianNumber_five_two : eulerianNumber 5 2 = 66 := by
   rw [eulerianNumber_eq_eulerianRec]; decide
 
+private lemma worpitzky_step (n q j : ℕ) (hjq : j ≤ q) :
+    (q + 1) * ((n + 1) * (eulerianNumber n j * (n + q - j).choose n)) =
+      (n + 1) * ((j + 1) * eulerianNumber n j * (n + 1 + q - j).choose (n + 1) +
+        (n - j) * eulerianNumber n j * (n + q - j).choose (n + 1)) := by
+  rcases le_or_gt j n with hjn | hnj
+  · have h1 : (n + 1) * (n + 1 + q - j).choose (n + 1) =
+        (n + 1 + q - j) * (n + q - j).choose n := by
+      rw [show n + 1 + q - j = (n + q - j) + 1 by omega,
+        Nat.add_one_mul_choose_eq, mul_comm (n + 1)]
+    have h2 : (n + 1) * (n + q - j).choose (n + 1) = (q - j) * (n + q - j).choose n := by
+      have hch := Nat.choose_succ_right_eq (n + q - j) n
+      rw [show n + q - j - n = q - j by omega] at hch
+      linarith
+    calc
+      (q + 1) * ((n + 1) * (eulerianNumber n j * (n + q - j).choose n))
+          = eulerianNumber n j * ((n + 1) * (q + 1) * (n + q - j).choose n) := by ring
+      _ = eulerianNumber n j *
+            (((j + 1) * (n + 1 + q - j) + (n - j) * (q - j)) * (n + q - j).choose n) := by
+          congr 2; zify [hjq, hjn, show j ≤ n + 1 + q by omega]; ring
+      _ = (j + 1) * eulerianNumber n j * ((n + 1) * (n + 1 + q - j).choose (n + 1)) +
+            (n - j) * eulerianNumber n j * ((n + 1) * (n + q - j).choose (n + 1)) := by
+          rw [h1, h2]; ring
+      _ = _ := by ring
+  · simp [eulerianNumber_eq_zero_of_lt hnj]
+
 /-- **Worpitzky's identity**:
 `(q + 1) ^ n = ∑ j ∈ Finset.range (q + 1), A(n, j) * C(n + q - j, n)`. -/
 theorem pow_eq_sum_eulerianNumber_mul_choose (n q : ℕ) :
@@ -790,14 +795,13 @@ theorem pow_eq_sum_eulerianNumber_mul_choose (n q : ℕ) :
       rw [Finset.sum_range_succ', eulerianNumber_zero_right, one_mul, Nat.sub_zero, add_comm]
       refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun k _ => ?_)
       rw [eulerianNumber_succ_succ, show n + 1 + q - (k + 1) = n + q - k by omega]
-    rw [hsplit, Finset.mul_sum]
-    have hreidx : ∑ k ∈ Finset.range q,
+    have hsum_split : ∑ k ∈ Finset.range q,
         ((k + 2) * eulerianNumber n (k + 1) + (n - k) * eulerianNumber n k) *
           (n + q - k).choose (n + 1) =
         ∑ k ∈ Finset.range q, (k + 2) * eulerianNumber n (k + 1) * (n + q - k).choose (n + 1) +
         ∑ k ∈ Finset.range q, (n - k) * eulerianNumber n k * (n + q - k).choose (n + 1) := by
       simp_rw [add_mul, Finset.sum_add_distrib]
-    rw [hreidx]
+    rw [hsplit, hsum_split, Finset.mul_sum]
     have htail : ∑ k ∈ Finset.range q,
         (n - k) * eulerianNumber n k * (n + q - k).choose (n + 1) =
         ∑ j ∈ Finset.range (q + 1),
@@ -814,32 +818,8 @@ theorem pow_eq_sum_eulerianNumber_mul_choose (n q : ℕ) :
       refine congrArg₂ (· + ·) (Finset.sum_congr rfl fun k _ => ?_) rfl
       rw [show n + 1 + q - (k + 1) = n + q - k by omega, show k + 1 + 1 = k + 2 by ring]
     rw [htail, ← add_assoc, hhead, ← Finset.sum_add_distrib, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j hj => ?_
-    have hjq : j ≤ q := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-    rcases le_or_gt j n with hjn | hnj
-    · have h1 : (n + 1) * (n + 1 + q - j).choose (n + 1) =
-          (n + 1 + q - j) * (n + q - j).choose n := by
-        rw [show n + 1 + q - j = (n + q - j) + 1 by omega,
-          Nat.add_one_mul_choose_eq, mul_comm (n + 1)]
-      have h2 : (n + 1) * (n + q - j).choose (n + 1) = (q - j) * (n + q - j).choose n := by
-        have hch := Nat.choose_succ_right_eq (n + q - j) n
-        rw [show n + q - j - n = q - j by omega] at hch
-        linarith
-      calc
-        (q + 1) * ((n + 1) * (eulerianNumber n j * (n + q - j).choose n))
-            = eulerianNumber n j * ((n + 1) * (q + 1) * (n + q - j).choose n) := by ring
-        _ = eulerianNumber n j *
-              (((j + 1) * (n + 1 + q - j) + (n - j) * (q - j)) * (n + q - j).choose n) := by
-            congr 2
-            zify [hjq, hjn, show j ≤ n + 1 + q by omega]
-            ring
-        _ = (j + 1) * eulerianNumber n j * ((n + 1) * (n + 1 + q - j).choose (n + 1)) +
-              (n - j) * eulerianNumber n j * ((n + 1) * (n + q - j).choose (n + 1)) := by
-            rw [h1, h2]; ring
-        _ = (n + 1) * ((j + 1) * eulerianNumber n j * (n + 1 + q - j).choose (n + 1) +
-              (n - j) * eulerianNumber n j * (n + q - j).choose (n + 1)) := by ring
-    · have hzero : eulerianNumber n j = 0 := eulerianNumber_eq_zero_of_lt hnj
-      simp [hzero]
+    exact Finset.sum_congr rfl fun j hj =>
+      worpitzky_step n q j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))
 
 /-- Closed form for `eulerianNumber n 1`: `A(n, 1) = 2 ^ n - n - 1`. -/
 theorem eulerianNumber_one_right (n : ℕ) : eulerianNumber n 1 = 2 ^ n - n - 1 := by
