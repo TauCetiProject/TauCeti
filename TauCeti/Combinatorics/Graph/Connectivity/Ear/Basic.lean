@@ -1339,19 +1339,6 @@ theorem pairwise_disjoint_edgeSet_earAt (d : G.EarDecomposition H) :
   · exact absurd rfl hij
   · exact (hlt h).symm
 
-/-- In a vertex-started ear decomposition, every actual edge of the final graph is traversed by a
-unique displayed ear. -/
-theorem existsUnique_mem_edges_walkAt_of_isVertexStart {d : G.EarDecomposition H}
-    (h : d.IsVertexStart) {e : β} (he : e ∈ E(H)) :
-    ∃! i : Fin d.length, e ∈ (d.walkAt i).2.2.edges := by
-  rw [d.edgeSet_eq_iUnion_of_isVertexStart h, mem_iUnion] at he
-  obtain ⟨i, hi⟩ := he
-  have hmem : ∀ j : Fin d.length, e ∈ (d.walkAt j).2.2.edges ↔ e ∈ E((d.earAt j).2.toGraph) :=
-    fun j ↦ by rw [Ear.edgeSet_toGraph, mem_ofPred_eq, d.walkAt_eq j]
-  refine ⟨i, (hmem i).mpr hi, fun j hj ↦ ?_⟩
-  by_contra hji
-  exact Set.disjoint_left.mp (d.pairwise_disjoint_edgeSet_earAt hji) ((hmem j).mp hj) hi
-
 end EarDecomposition
 
 end Graph
