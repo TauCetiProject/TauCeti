@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Jacobi.Basic
-public import Mathlib.Algebra.Polynomial.Derivative
+public import TauCeti.RingTheory.Polynomial.Jacobi.Derivative
 
 import Mathlib.Algebra.Module.Rat
 import Mathlib.Tactic.LinearCombination
@@ -15,7 +14,7 @@ import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Data.Nat.Factorial.Field
 
 /-!
-# Derivative and recurrences of the Jacobi polynomials
+# Contiguous relations and the three-term recurrence of the Jacobi polynomials
 
 For the Jacobi polynomials `Pₙ^{(α,β)} = Polynomial.jacobi α β n` over a commutative `ℚ`-algebra,
 with arbitrary parameters `α β`, this file proves the identities that relate neighbouring indices
@@ -25,9 +24,11 @@ coefficients on the polynomial side, so that no division occurs. It is an identi
 displayed weighted polynomials; it isolates an unweighted polynomial only when the coefficient in
 front of that polynomial can be cancelled.
 
-* `Polynomial.derivative_jacobi`: the derivative of the polynomial of index `n + 1` is a scalar
-  multiple of the polynomial of index `n` with both parameters raised by one. It is a `simp`
-  lemma: derivatives of Jacobi polynomials of positive index are rewritten to Jacobi polynomials.
+The two contiguous relations in `β` are proved by induction on `n`, comparing derivatives and the
+values at `1` (`Polynomial.eq_of_derivative_eq_of_eval_eq`). The derivatives are computed by
+`Polynomial.derivative_jacobi`, which is proved in
+`TauCeti/RingTheory/Polynomial/Jacobi/Derivative.lean`.
+
 * `Polynomial.jacobi_succ_contiguous_right` and `Polynomial.jacobi_succ_contiguous_left` equate
   `(2n + α + β + 3) Pₙ₊₁^{(α,β)}` with a combination of the polynomials of indices `n + 1` and `n`
   in which `β`, respectively `α`, is raised by one.
@@ -49,8 +50,6 @@ recurrence is still a valid identity but no longer determines `Pₙ₊₂^{(α,�
 
 ## Main results
 
-* `Polynomial.derivative_jacobi`: `(Pₙ₊₁^{(α,β)})' = ((n + α + β + 2) / 2) Pₙ^{(α+1,β+1)}`
-  (DLMF 18.9.15).
 * `Polynomial.jacobi_succ_contiguous_right`, `Polynomial.jacobi_succ_contiguous_left`: the
   contiguous relations equating `(2n + α + β + 3) Pₙ₊₁^{(α,β)}` with a combination of the
   polynomials with `β`, respectively `α`, raised by one (DLMF 18.9.5 and its reflection).
@@ -62,7 +61,7 @@ recurrence is still a valid identity but no longer determines `Pₙ₊₂^{(α,�
 ## References
 
 * DLMF, *NIST Digital Library of Mathematical Functions*, <https://dlmf.nist.gov/18>: 18.9.1,
-  18.9.2, 18.9.5, 18.9.6, 18.9.15.
+  18.9.2, 18.9.5, 18.9.6.
 * G. Szegő, *Orthogonal Polynomials*, AMS Colloquium Publications 23, Chapter IV.
 -/
 
@@ -73,42 +72,6 @@ open Finset
 namespace Polynomial
 
 variable {R : Type*} [CommRing R] [Algebra ℚ R]
-
-/-! ### The derivative -/
-
-/-- The coefficient identity behind `Polynomial.derivative_jacobi`: the sum of
-`Polynomial.jacobiCoeff_mul_right` and `Polynomial.jacobiCoeff_mul_left` at the indices `(m, k)`. -/
-private lemma derivative_jacobi_coeff (α β : R) (m k : ℕ) :
-    ((m : R) + 1) * jacobiCoeff α β (m + 1) k + ((k : R) + 1) * jacobiCoeff α β m (k + 1) =
-      ((m + k : ℕ) + α + β + 2) * jacobiCoeff (α + 1) (β + 1) m k := by
-  push_cast
-  linear_combination -jacobiCoeff_mul_right α β m k - jacobiCoeff_mul_left α β m k
-
-/-- The derivative of the Jacobi polynomial of index `n + 1` is a scalar multiple of the Jacobi
-polynomial of index `n` with both parameters raised by one:
-`(Pₙ₊₁^{(α,β)})' = ((n + α + β + 2) / 2) Pₙ^{(α+1,β+1)}` (DLMF 18.9.15). The scalar vanishes for
-`α + β = -(n + 2)`, where `Pₙ₊₁^{(α,β)}` is constant. -/
-@[simp]
-theorem derivative_jacobi (α β : R) (n : ℕ) :
-    derivative (jacobi α β (n + 1)) =
-      ((1 : ℚ) / 2) • (C (n + α + β + 2) * jacobi (α + 1) (β + 1) n) := by
-  -- The shifted-power rule at the shifts `-1` and `1`, whose products are those of `jacobi_def`.
-  have hd := fun f : ℕ → R => derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow (-1) 1 f n
-  simp only [C_1, C_neg, ← sub_eq_add_neg] at hd
-  -- One factor `1 / 2` of the normalization `1 / 2 ^ (n + 1)` stays in front.
-  have h2 : (1 : ℚ) / 2 ^ (n + 1) = 1 / 2 * (1 / 2 ^ n) := by ring
-  -- Expand the derivative in the shifted powers of index `n`.
-  rw [jacobi_eq_smul_sum_jacobiCoeff, jacobi_eq_smul_sum_jacobiCoeff, derivative_smul, hd]
-  -- Collect the scalars; what remains is a termwise comparison of coefficients.
-  rw [mul_smul_comm, smul_smul, ← smul_eq_C_mul, h2]
-  congr 1
-  rw [smul_sum]
-  refine sum_congr rfl fun k hk => ?_
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (Nat.lt_succ_iff.1 (mem_range.1 hk))
-  -- With `n = m + k`, the exponent `n + 1 - k` of `X - 1` at index `n + 1` is `m + 1`.
-  have hexp : m + k + 1 - k = m + 1 := by omega
-  simp only [hexp, Nat.add_sub_add_right, Nat.add_sub_cancel, smul_smul]
-  rw [← derivative_jacobi_coeff]
 
 /-! ### Contiguous relations -/
 

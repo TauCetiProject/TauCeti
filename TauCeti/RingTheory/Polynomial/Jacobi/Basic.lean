@@ -41,7 +41,8 @@ orthogonality theory consumes.
 
 * `Polynomial.jacobi α β n`: the Jacobi polynomial `Pₙ^{(α,β)}`.
 * `Polynomial.jacobiCoeff α β i k`: the coefficient of `(X - 1)^i (X + 1)^k` in `2ⁿ Pₙ^{(α,β)}`,
-  `i + k = n`, with the expansion `Polynomial.jacobi_eq_smul_sum_jacobiCoeff`.
+  `i + k = n`, with the formula `Polynomial.jacobiCoeff_def`, the value
+  `Polynomial.jacobiCoeff_zero_zero` and the expansion `Polynomial.jacobi_eq_smul_sum_jacobiCoeff`.
   `Polynomial.jacobiCoeff_mul_left` and `Polynomial.jacobiCoeff_mul_right` relate the coefficients
   at the parameters `(α + 1, β + 1)` to those at `(α, β)` with `k`, respectively `i`, raised by
   one; identities between Jacobi polynomials of neighbouring indices and parameters reduce to them.
@@ -94,6 +95,18 @@ theorem jacobi_def (α β : R) (n : ℕ) :
 noncomputable def jacobiCoeff (α β : R) (i k : ℕ) : R :=
   algebraMap ℚ R (1 / (i.factorial * k.factorial)) *
     ((ascPochhammer R i).eval (β + k + 1) * (ascPochhammer R k).eval (α + i + 1))
+
+/-- The defining formula of `Polynomial.jacobiCoeff`: a product of two rising factorials divided
+by two factorials. -/
+theorem jacobiCoeff_def (α β : R) (i k : ℕ) :
+    jacobiCoeff α β i k = algebraMap ℚ R (1 / (i.factorial * k.factorial)) *
+      ((ascPochhammer R i).eval (β + k + 1) * (ascPochhammer R k).eval (α + i + 1)) := by
+  rw [jacobiCoeff]
+
+/-- The coefficient of the constant polynomial `P₀^{(α,β)} = 1`. -/
+@[simp]
+theorem jacobiCoeff_zero_zero (α β : R) : jacobiCoeff α β 0 0 = 1 := by
+  simp [jacobiCoeff_def]
 
 /-- The defining sum of the Jacobi polynomial `Pₙ^{(α,β)}`, with its coefficients written as
 `Polynomial.jacobiCoeff`. -/
