@@ -181,12 +181,12 @@ theorem preadditiveYonedaHomEquiv_yoneda_map {X Y : C} (g : X ⟶ Y) :
   yonedaEquiv_yoneda_map g
 
 /-- Forgetting the additive structure turns the additive Yoneda equivalence into the ordinary
-one: evaluation at the identity commutes with the forgetful functor. -/
-@[simp]
-theorem yonedaEquiv_whiskeringRight_forget_map {X : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+one: evaluation at the identity commutes with the forgetful functor. This is not a `simp`
+lemma: `simp` rewrites the type of its left-hand side, so the `simpNF` linter rejects it. -/
+theorem yonedaEquiv_whiskerRight_forget {X : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     [F.Additive] (α : preadditiveYoneda.obj X ⟶ F) :
     yonedaEquiv (X := X) (F := F ⋙ forget AddCommGrpCat)
-        (((Functor.whiskeringRight Cᵒᵖ _ _).obj (forget AddCommGrpCat)).map α) =
+        (Functor.whiskerRight α (forget AddCommGrpCat)) =
       preadditiveYonedaHomEquiv α :=
   (rfl)
 
