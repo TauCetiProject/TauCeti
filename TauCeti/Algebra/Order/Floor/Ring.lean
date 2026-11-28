@@ -13,6 +13,7 @@ public import Mathlib.Order.Interval.Finset.Nat
 
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Set.Finite.Range
+import Mathlib.Order.Interval.Finset.Floor
 
 /-!
 # Floors and decompositions into intervals
@@ -47,8 +48,8 @@ only finitely many rounded families have entries in `[-R, R]`.
 * `TauCeti.fst_add_neg_floor_mem`: translating `p` by `-⌊p.1⌋` in the first coordinate moves
   that coordinate into `[0, 1]`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
-* `TauCeti.mem_Ico_ceil_iff`, `TauCeti.mem_Ico_ceil_neg_iff`: membership of `n` in
-  `Finset.Ico ⌈a⌉₊ ⌈b⌉₊` and `Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊` as `(n : R) ∈ [a, b)` and `-(n : R) ∈ (a, b]`.
+* `TauCeti.mem_Ico_ceil_neg_iff`: membership of `n` in `Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊` as
+  `-(n : R) ∈ (a, b]`.
 * `TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo`,
   `TauCeti.exists_pos_forall_mem_Ico_ceil_neg_iff_mem_Ioo`: widening `(a, b]` by `ε > 0`
   preserves membership of `-(n : R)` when `ε ≤ |a + n|` and `ε ≤ |b + n|`, and uniformly for
@@ -164,19 +165,12 @@ theorem _root_.Nat.cast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder
     (n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1 := by
   rw [← Nat.lt_ceil, le_sub_iff_add_le, ← Nat.cast_add_one, Nat.cast_le, Nat.add_one_le_iff]
 
-/-- In a linearly ordered semiring with a natural ceiling, `n ∈ [⌈a⌉₊, ⌈b⌉₊)` if and only if
-`(n : R) ∈ [a, b)`. -/
-theorem mem_Ico_ceil_iff {R : Type*} [Semiring R] [LinearOrder R] [FloorSemiring R]
-    {a b : R} {n : ℕ} :
-    n ∈ Finset.Ico ⌈a⌉₊ ⌈b⌉₊ ↔ (n : R) ∈ Set.Ico a b := by
-  rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, Set.mem_Ico]
-
 /-- In a linearly ordered ring with a natural ceiling, `n ∈ [⌈-b⌉₊, ⌈-a⌉₊)` if and only if
 `-(n : R) ∈ (a, b]`. -/
 theorem mem_Ico_ceil_neg_iff {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
     [FloorSemiring R] {a b : R} {n : ℕ} :
     n ∈ Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊ ↔ -(n : R) ∈ Set.Ioc a b := by
-  rw [mem_Ico_ceil_iff, Set.mem_Ico, Set.mem_Ioc, neg_le, lt_neg, and_comm]
+  rw [← Nat.cast_mem_Ico_iff, Set.mem_Ico, Set.mem_Ioc, neg_le, lt_neg, and_comm]
 
 /-- In a linearly ordered ring with a natural ceiling, widening `(a, b]` by `ε > 0` preserves the
 negative-natural lattice points `-(n : R)` whenever `ε ≤ |a + n|` and `ε ≤ |b + n|`:
