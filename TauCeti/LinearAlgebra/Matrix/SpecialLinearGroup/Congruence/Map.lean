@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Change of scalars for principal congruence subgroups
@@ -25,11 +26,16 @@ variable {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
 @[simp] theorem map_ker_map_quotientMk (e : R ≃+* S) (I : Ideal R) :
     ((map (n := n) (Ideal.Quotient.mk I)).ker).map (map (e : R →+* S)) =
       (map (Ideal.Quotient.mk (I.map e))).ker := by
-  rw [← toMonoidHom_mapEquiv (n := n) (e := e), ← MulEquiv.toMonoidHom_eq_coe]
-  ext A
-  rw [Subgroup.mem_map_equiv, mem_ker_map_quotientMk_iff, mem_ker_map_quotientMk_iff]
-  simp_rw [symm_mapEquiv, coe_mapEquiv_apply, ← Ideal.symm_apply_mem_of_equiv_iff (f := e)]
-  apply forall_congr' fun i ↦ forall_congr' fun j ↦ ?_
-  by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
+  let q := Ideal.quotientEquiv I (I.map e) e rfl
+  have hq : (q.symm : _ →+* _).comp (Ideal.Quotient.mk (I.map e)) =
+      (Ideal.Quotient.mk I).comp (e.symm : S →+* R) := RingHom.ext fun x ↦ by
+    simpa only [RingHom.comp_apply, RingEquiv.coe_toRingHom, q] using
+      Ideal.quotientEquiv_symm_mk I (I.map e) e rfl x
+  have hcomm :
+      (map (n := n) (Ideal.Quotient.mk I)).comp (mapEquiv n e).symm =
+        ((mapEquiv n q).symm : _ →* _).comp (map (n := n) (Ideal.Quotient.mk (I.map e))) := by
+    simp only [symm_mapEquiv, toMonoidHom_mapEquiv, map_comp_map, hq]
+  simpa only [MonoidHom.ker_comp_mulEquiv, MulEquiv.symm_symm, toMonoidHom_mapEquiv,
+    MonoidHom.ker_mulEquiv_comp] using congrArg MonoidHom.ker hcomm
 
 end Matrix.SpecialLinearGroup

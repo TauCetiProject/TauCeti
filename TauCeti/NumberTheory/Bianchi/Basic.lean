@@ -9,6 +9,8 @@ public import Mathlib.Basic.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.Algebra.Group.Subgroup.Ker
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Map
 
 /-!
@@ -46,8 +48,8 @@ noncomputable def bianchiMap : SL(2, 𝓞 F) →* PSL(2, ℂ) :=
 /-- The complex projective class of an integral special linear matrix is computed entrywise. -/
 theorem bianchiMap_apply (A : SL(2, 𝓞 F)) :
     bianchiMap F ι A =
-      (Matrix.SpecialLinearGroup.map (ι.comp (algebraMap (𝓞 F) F)) A : PSL(2, ℂ)) :=
-  (rfl)
+      (Matrix.SpecialLinearGroup.map (ι.comp (algebraMap (𝓞 F) F)) A : PSL(2, ℂ)) := by
+  rw [bianchiMap, MonoidHom.comp_apply, QuotientGroup.mk'_apply]
 
 /-- The Bianchi group for the embedding `ι`: the image of `SL(2, 𝓞 F)` in `PSL(2, ℂ)`. -/
 noncomputable def bianchi : Subgroup PSL(2, ℂ) :=
@@ -58,7 +60,8 @@ theorem bianchi_def : bianchi F ι = (bianchiMap F ι).range := (rfl)
 
 /-- Membership in a Bianchi group is witnessed by an integral special linear matrix. -/
 @[simp] theorem mem_bianchi_iff {g : PSL(2, ℂ)} :
-    g ∈ bianchi F ι ↔ ∃ A : SL(2, 𝓞 F), bianchiMap F ι A = g := Iff.rfl
+    g ∈ bianchi F ι ↔ ∃ A : SL(2, 𝓞 F), bianchiMap F ι A = g := by
+  rw [bianchi_def, MonoidHom.mem_range]
 
 /-- The principal congruence subgroup of a Bianchi group, obtained from the kernel of reduction
 in `SL(2, 𝓞 F)`. This definition also includes the zero and unit levels. -/
@@ -75,8 +78,8 @@ theorem bianchiGamma_def (I : Ideal (𝓞 F)) :
 reducing to the identity. -/
 @[simp] theorem mem_bianchiGamma_iff {I : Ideal (𝓞 F)} {g : PSL(2, ℂ)} :
     g ∈ bianchiGamma F ι I ↔ ∃ A : SL(2, 𝓞 F),
-      Matrix.SpecialLinearGroup.map (Ideal.Quotient.mk I) A = 1 ∧ bianchiMap F ι A = g :=
-  Iff.rfl
+      Matrix.SpecialLinearGroup.map (Ideal.Quotient.mk I) A = 1 ∧ bianchiMap F ι A = g := by
+  simp only [bianchiGamma_def, Subgroup.mem_map, MonoidHom.mem_ker]
 
 /-- The congruence condition can be tested entrywise on a lift of the projective class. -/
 theorem mem_bianchiGamma_iff_exists_entries {I : Ideal (𝓞 F)} {g : PSL(2, ℂ)} :
@@ -87,12 +90,15 @@ theorem mem_bianchiGamma_iff_exists_entries {I : Ideal (𝓞 F)} {g : PSL(2, ℂ
     Matrix.SpecialLinearGroup.mem_ker_map_quotientMk_iff]
 
 /-- Every principal congruence subgroup lies in its Bianchi group. -/
-theorem bianchiGamma_le (I : Ideal (𝓞 F)) : bianchiGamma F ι I ≤ bianchi F ι :=
-  Subgroup.map_le_range _ _
+theorem bianchiGamma_le (I : Ideal (𝓞 F)) : bianchiGamma F ι I ≤ bianchi F ι := by
+  rw [bianchiGamma_def, bianchi_def]
+  exact Subgroup.map_le_range _ _
 
 /-- Enlarging the level ideal enlarges the principal congruence subgroup. -/
-theorem bianchiGamma_mono : Monotone (bianchiGamma F ι) := fun _ _ h ↦
-  Subgroup.map_mono (Matrix.SpecialLinearGroup.ker_map_quotientMk_mono h)
+theorem bianchiGamma_mono : Monotone (bianchiGamma F ι) := by
+  intro I J h
+  rw [bianchiGamma_def, bianchiGamma_def]
+  exact Subgroup.map_mono (Matrix.SpecialLinearGroup.ker_map_quotientMk_mono h)
 
 /-- The principal congruence subgroup at the zero ideal is trivial. -/
 @[simp] theorem bianchiGamma_bot : bianchiGamma F ι ⊥ = ⊥ := by
@@ -121,18 +127,22 @@ theorem bianchiMap_comp_ringEquiv (e : K ≃+* F) :
     bianchiMap K (ι.comp e.toRingHom) = (bianchiMap F ι).comp
       (Matrix.SpecialLinearGroup.mapEquiv (Fin 2)
         (RingOfIntegers.mapRingEquiv e)).toMonoidHom := by
-  ext A
-  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, bianchiMap_apply, bianchiMap_apply]
-  apply congrArg (fun B : SL(2, ℂ) ↦ (B : PSL(2, ℂ)))
-  ext i j
-  simp [Matrix.SpecialLinearGroup.coe_mapEquiv_apply, ← RingOfIntegers.coe_eq_algebraMap]
+  have h : (ι.comp e.toRingHom).comp (algebraMap (𝓞 K) K) =
+      (ι.comp (algebraMap (𝓞 F) F)).comp (RingOfIntegers.mapRingEquiv e) := by
+    apply RingHom.ext
+    intro x
+    simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+      ← RingOfIntegers.coe_eq_algebraMap, RingOfIntegers.mapRingEquiv_apply]
+  simp only [bianchiMap, MonoidHom.comp_assoc, MulEquiv.toMonoidHom_eq_coe,
+    Matrix.SpecialLinearGroup.toMonoidHom_mapEquiv, Matrix.SpecialLinearGroup.map_comp_map, h]
 
 /-- The Bianchi group is unchanged on replacing the field by an isomorphic field and composing
 the embedding with that isomorphism. In particular it is invariant under field automorphisms. -/
 theorem bianchi_comp_ringEquiv (e : K ≃+* F) :
     bianchi K (ι.comp e.toRingHom) = bianchi F ι := by
-  simp only [bianchi_def, bianchiMap_comp_ringEquiv, MonoidHom.range_comp,
-    MulEquiv.toMonoidHom_eq_coe, MulEquiv.range_eq_top, Subgroup.map_top]
+  rw [bianchi_def, bianchi_def, bianchiMap_comp_ringEquiv]
+  exact MonoidHom.range_comp_of_surjective _ _
+    (Matrix.SpecialLinearGroup.mapEquiv (Fin 2) (RingOfIntegers.mapRingEquiv e)).surjective
 
 /-- Changing the field by an isomorphism transports the ideal defining a Bianchi congruence
 subgroup. For an automorphism this is the change-of-embedding formula. -/
