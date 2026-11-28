@@ -51,6 +51,9 @@ the degree when `i` and `j` have the same parity.
 * `TauCeti.commute_oscRaise`, `TauCeti.commute_oscLower`, `TauCeti.oscLower_mul_oscRaise`: the
   canonical commutation relations.
 * `TauCeti.oscillatorHom_single`: the image of a matrix unit.
+* `TauCeti.oscillatorHom_mul_oscRaise`, `TauCeti.oscillatorHom_mul_oscLower`: the commutators of
+  the image of a matrix with `R j` and `L j`.
+* `TauCeti.eval_zero_oscillatorHom_one`: the constant term of the image of the vacuum `1`.
 * `TauCeti.oscRaise_mul_oscLower_monomial`: monomials are weight vectors.
 * `TauCeti.rename_oscRaise`, `TauCeti.rename_oscLower`: renaming the variables.
 * `TauCeti.oscRaise_mul_oscLower_mem_homogeneousSubmodule`: for two variables of the same parity,
@@ -64,7 +67,10 @@ the degree when `i` and `j` have the same parity.
   `src/Lib/Weil/Fock/Basic.lean`, and the commutation relations from `New.Fock.raiseOp_comm`,
   `New.Fock.lowerOp_comm`, `New.Fock.lowerOp_raiseOp` and `New.Fock.glOp_commutator` in
   `src/Lib/DiscreteSeries/Theta/FockDualPair.lean`, of grh-lean
-  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
+  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). The
+  commutators `TauCeti.oscillatorHom_mul_oscRaise` and `TauCeti.oscillatorHom_mul_oscLower` are the
+  steps `comm_raise` and `comm_lower` of `New.Fock.hasDerivAt_realWeil` in
+  `src/Lib/Weil/Fock/PolynomialVectors.lean` there.
 * R. Howe, *Transcending classical invariant theory*, J. Amer. Math. Soc. 2 (1989), 535--552.
 * M. Kashiwara and M. Vergne, *On the Segal–Shale–Weil representations and harmonic
   polynomials*, Invent. Math. 44 (1978), 1--47.
@@ -318,5 +324,46 @@ theorem oscillatorHom_apply (A : Matrix ι ι K) :
 theorem oscillatorHom_single (i j : ι) (c : K) :
     oscillatorHom K p (Matrix.single i j c) = c • (oscRaise K p i * oscLower K p j) :=
   oscillatorLinearMap_single i j c
+
+/-- The commutator of `A` with `R j` in the oscillator representation:
+`A · R j = R j · A + ∑ i, A i j • R i`. -/
+theorem oscillatorHom_mul_oscRaise (A : Matrix ι ι K) (j : ι) :
+    oscillatorHom K p A * oscRaise K p j =
+      oscRaise K p j * oscillatorHom K p A + ∑ i, A i j • oscRaise K p i := by
+  -- `R a L b R j = R j R a L b + δ b j R a`, by the canonical commutation relations.
+  have h (a b : ι) : oscRaise K p a * oscLower K p b * oscRaise K p j =
+      oscRaise K p j * (oscRaise K p a * oscLower K p b) + if b = j then oscRaise K p a else 0 := by
+    rw [mul_assoc, oscLower_mul_oscRaise, mul_add, mul_ite, mul_one, mul_zero, ← mul_assoc,
+      (commute_oscRaise a j).eq, mul_assoc]
+  simp only [oscillatorHom_apply, sum_mul, mul_sum, smul_mul_assoc, mul_smul_comm, h, smul_add,
+    sum_add_distrib, smul_ite, smul_zero, sum_ite_eq', mem_univ, ite_true]
+
+/-- The commutator of `A` with `L j` in the oscillator representation:
+`A · L j = L j · A - ∑ i, A j i • L i`. -/
+theorem oscillatorHom_mul_oscLower (A : Matrix ι ι K) (j : ι) :
+    oscillatorHom K p A * oscLower K p j =
+      oscLower K p j * oscillatorHom K p A - ∑ i, A j i • oscLower K p i := by
+  -- `R a L b L j = L j R a L b - δ j a L b`, by the canonical commutation relations.
+  have h (a b : ι) : oscRaise K p a * oscLower K p b * oscLower K p j =
+      oscLower K p j * (oscRaise K p a * oscLower K p b) - if j = a then oscLower K p b else 0 := by
+    rw [mul_assoc, (commute_oscLower b j).eq, ← mul_assoc,
+      eq_sub_of_add_eq (oscLower_mul_oscRaise j a).symm, sub_mul, ite_mul, one_mul, zero_mul,
+      mul_assoc]
+  simp only [oscillatorHom_apply, sum_mul, mul_sum, smul_mul_assoc, mul_smul_comm, h, smul_sub,
+    sum_sub_distrib, smul_ite, smul_zero, sum_ite_irrel, sum_const_zero, sum_ite_eq, mem_univ,
+    ite_true]
+
+/-- The constant term of `A · 1` in the oscillator representation is minus the sum of the
+diagonal entries of `A` at the odd variables. -/
+theorem eval_zero_oscillatorHom_one (A : Matrix ι ι K) :
+    eval 0 (oscillatorHom K p A 1) = -∑ i with ¬p i, A i i := by
+  -- `R a L b 1` has constant term `-1` if `a = b` is odd, and `0` otherwise.
+  have h_term (a b : ι) :
+      eval 0 ((oscRaise K p a * oscLower K p b) 1) = if a = b ∧ ¬p a then -1 else 0 := by
+    by_cases ha : p a <;> by_cases hb : p b <;> by_cases hab : a = b <;> simp_all [pderiv_X]
+  simp only [oscillatorHom_apply, LinearMap.sum_apply, LinearMap.smul_apply,
+    map_sum, smul_eval, h_term, mul_ite, mul_neg, mul_one, mul_zero, ite_and, sum_ite_eq,
+    mem_univ, ite_true]
+  rw [sum_ite, sum_const_zero, add_zero, sum_neg_distrib]
 
 end TauCeti
