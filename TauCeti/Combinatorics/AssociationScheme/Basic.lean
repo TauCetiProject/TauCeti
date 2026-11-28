@@ -74,6 +74,8 @@ structure IsAssocScheme [Fintype X] (rel : X → X → Fin (d + 1)) : Prop where
   card_eq : ∀ i j x y x' y', rel x y = rel x' y' →
     #{z | rel x z = i ∧ rel z y = j} = #{z | rel x' z = i ∧ rel z y' = j}
 
+attribute [simp] IsAssocScheme.rel_eq_zero_iff
+
 /-- The adjacency matrix `A_i` of class `i`: the real `0/1` matrix of the relation
 `rel x y = i`. -/
 def adjMat (rel : X → X → Fin (d + 1)) (i : Fin (d + 1)) : Matrix X X ℝ :=
@@ -122,6 +124,22 @@ theorem mem_bmAlgebra_iff (rel : X → X → Fin (d + 1)) {M : Matrix X X ℝ} :
     M ∈ bmAlgebra rel ↔ ∃ c : Fin (d + 1) → ℝ, ∑ i, c i • adjMat rel i = M :=
   Submodule.mem_span_range_iff_exists_fun ℝ
 
+/-- An element lies in the Bose–Mesner algebra if and only if it is constant on each relation
+class. -/
+theorem mem_bmAlgebra_iff_eq_of_rel_eq (rel : X → X → Fin (d + 1)) {M : Matrix X X ℝ} :
+    M ∈ bmAlgebra rel ↔ ∀ x y x' y', rel x y = rel x' y' → M x y = M x' y' := by
+  classical
+  refine ⟨fun hM x y x' y' hxy => ?_, fun hconst => (mem_bmAlgebra_iff rel).mpr ?_⟩
+  · obtain ⟨c, rfl⟩ := (mem_bmAlgebra_iff rel).mp hM
+    simp [hxy]
+  · refine ⟨fun i => if h : ∃ p : X × X, rel p.1 p.2 = i then M h.choose.1 h.choose.2 else 0,
+      ?_⟩
+    ext x y
+    have hex : ∃ p : X × X, rel p.1 p.2 = rel x y := ⟨(x, y), rfl⟩
+    simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul, adjMat_apply, mul_ite, mul_one,
+      mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, hex, ↓reduceDIte]
+    exact hconst _ _ x y hex.choose_spec
+
 /-- A real submodule of matrices contains the Bose–Mesner algebra if and only if it contains every
 adjacency matrix. -/
 theorem bmAlgebra_le_iff (rel : X → X → Fin (d + 1)) {S : Submodule ℝ (Matrix X X ℝ)} :
@@ -169,6 +187,7 @@ theorem adjMat_hadamard_self (rel : X → X → Fin (d + 1)) (i : Fin (d + 1)) :
     adjMat rel i ⊙ adjMat rel i = adjMat rel i := by
   simp [adjMat_hadamard]
 
+@[simp]
 theorem adjMat_hadamard_of_ne (rel : X → X → Fin (d + 1)) {i j : Fin (d + 1)} (hij : i ≠ j) :
     adjMat rel i ⊙ adjMat rel j = 0 := by
   simp [adjMat_hadamard, hij]
@@ -245,6 +264,7 @@ theorem rel_self (h : IsAssocScheme rel) (x : X) : rel x x = 0 :=
   (h.rel_eq_zero_iff x x).mpr rfl
 
 /-- The adjacency matrix of class `0` is the identity matrix. -/
+@[simp]
 theorem adjMat_zero [DecidableEq X] (h : IsAssocScheme rel) : adjMat rel 0 = 1 := by
   ext x y
   simp [Matrix.one_apply, h.rel_eq_zero_iff]
@@ -256,6 +276,7 @@ theorem one_mem_bmAlgebra [DecidableEq X] (h : IsAssocScheme rel) :
   exact adjMat_mem_bmAlgebra rel 0
 
 /-- Every adjacency matrix of a symmetric association scheme is symmetric. -/
+@[simp]
 theorem adjMat_transpose (h : IsAssocScheme rel) (i : Fin (d + 1)) :
     (adjMat rel i)ᵀ = adjMat rel i := by
   ext x y
@@ -302,6 +323,17 @@ noncomputable def adjMatBasis (h : IsAssocScheme rel) :
 theorem coe_adjMatBasis (h : IsAssocScheme rel) (i : Fin (d + 1)) :
     (h.adjMatBasis i : Matrix X X ℝ) = adjMat rel i :=
   congrArg Subtype.val (Module.Basis.span_apply h.linearIndependent_adjMat i)
+
+/-- The `adjMatBasis`-coordinate of `M ∈ bmAlgebra rel` at class `rel x y` equals the `(x, y)`
+entry of `M`. -/
+@[simp]
+theorem adjMatBasis_repr_rel (h : IsAssocScheme rel) (M : bmAlgebra rel) (x y : X) :
+    h.adjMatBasis.repr M (rel x y) = (M : Matrix X X ℝ) x y := by
+  have hsum := congrArg (fun N : bmAlgebra rel => (N : Matrix X X ℝ) x y)
+    (h.adjMatBasis.sum_repr M)
+  simpa only [Submodule.coe_sum, SetLike.val_smul, coe_adjMatBasis,
+    Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul, adjMat_apply, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] using hsum
 
 /-- The Bose–Mesner algebra of a `d`-class scheme has dimension `d + 1`. -/
 theorem finrank_bmAlgebra (h : IsAssocScheme rel) :

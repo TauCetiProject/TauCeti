@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.Matrix.LDL
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
@@ -117,7 +118,10 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   `A` with distinct eigenvalues;
 * `Matrix.IsHermitian.exists_spectral_projection` — for any real scalar `μ`, the subalgebra
   `Algebra.adjoin ℝ {A}` contains an idempotent acting as the identity on the `μ`-eigenspace
-  and zero on the remaining eigenvectors of `hA.eigenvectorBasis`.
+  and zero on the remaining eigenvectors of `hA.eigenvectorBasis`;
+* `Subalgebra.exists_split_idempotent_of_isHermitian` — in a real subalgebra of Hermitian
+  matrices, an idempotent `p` that is not scaled by an element `A` of the subalgebra splits into
+  two nonzero orthogonal idempotents in the subalgebra.
 
 ## References
 
@@ -709,6 +713,59 @@ theorem exists_spectral_projection (hA : A.IsHermitian) (μ : ℝ) :
   split_ifs <;> simp
 
 end Matrix.IsHermitian
+
+namespace Subalgebra
+
+/-- **Spectral splitting in a Hermitian matrix subalgebra.** Let `S` be a real subalgebra of
+square matrices over `𝕜` (`RCLike 𝕜`), all of whose elements are Hermitian (so `S` is
+automatically commutative, since `(M * N)ᴴ = Nᴴ * Mᴴ`). If `p ∈ S` is idempotent and `A ∈ S`
+does not act on `p` by a real scalar (`A * p ≠ c • p` for all `c : ℝ`), then `p` splits as a sum
+`p₁ + p₂` of two nonzero orthogonal idempotents in `S`. -/
+theorem exists_split_idempotent_of_isHermitian {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (S : Subalgebra ℝ (Matrix ι ι 𝕜)) (hS : ∀ M ∈ S, M.IsHermitian)
+    {p A : Matrix ι ι 𝕜} (hp_mem : p ∈ S) (hp_idem : IsIdempotentElem p)
+    (hA_mem : A ∈ S) (hnot : ∀ c : ℝ, A * p ≠ c • p) :
+    ∃ p₁ p₂ : Matrix ι ι 𝕜, p₁ ∈ S ∧ p₂ ∈ S ∧
+      IsIdempotentElem p₁ ∧ IsIdempotentElem p₂ ∧ p₁ * p₂ = 0 ∧ p₂ * p₁ = 0 ∧
+      p₁ ≠ 0 ∧ p₂ ≠ 0 ∧ p₁ + p₂ = p := by
+  have hcomm : ∀ {X Y : Matrix ι ι 𝕜}, X ∈ S → Y ∈ S → X * Y = Y * X := by
+    intro X Y hX hY
+    calc X * Y = (X * Y).conjTranspose := (hS _ (mul_mem hX hY)).symm
+      _ = Y.conjTranspose * X.conjTranspose := Matrix.conjTranspose_mul X Y
+      _ = Y * X := by rw [(hS Y hY).eq, (hS X hX).eq]
+  set M : Matrix ι ι 𝕜 := A * p
+  have hM_mem : M ∈ S := mul_mem hA_mem hp_mem
+  have hM_herm : M.IsHermitian := hS M hM_mem
+  have hpM : p * M = M := by
+    rw [hcomm hp_mem hM_mem]
+    simp [M, Matrix.mul_assoc, hp_idem.eq]
+  obtain ⟨x₀, y₀, hx₀, hy₀, hne⟩ :=
+    hM_herm.exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq hpM hnot
+  obtain ⟨Q, hQ_adjoin, hQ_idem, hQ_mulVec⟩ :=
+    hM_herm.exists_spectral_projection (hM_herm.eigenvalues x₀)
+  have hQ_mem : Q ∈ S := Algebra.adjoin_le (Set.singleton_subset_iff.mpr hM_mem) hQ_adjoin
+  have hQp : Commute Q p := hcomm hQ_mem hp_mem
+  refine ⟨Q * p, (1 - Q) * p, mul_mem hQ_mem hp_mem,
+    mul_mem (sub_mem (one_mem S) hQ_mem) hp_mem,
+    hQ_idem.mul_of_commute hQp.eq hp_idem,
+    hQ_idem.one_sub.mul_of_commute
+      (by rw [Commute, SemiconjBy, sub_mul, one_mul, mul_sub, mul_one, hQp.eq]) hp_idem,
+    hQ_idem.mul_mul_one_sub_mul_eq_zero hQp p,
+    hQ_idem.one_sub_mul_mul_mul_eq_zero hQp p, ?_, ?_, ?_⟩
+  · intro h0
+    have hmul := congrArg (fun B : Matrix ι ι 𝕜 => B.mulVec (hM_herm.eigenvectorBasis x₀)) h0
+    rw [Matrix.zero_mulVec, hQp.eq, ← Matrix.mulVec_mulVec] at hmul
+    simp only [hQ_mulVec x₀, ↓reduceIte] at hmul
+    exact hx₀ hmul
+  · intro h0
+    have hmul := congrArg (fun B : Matrix ι ι 𝕜 => B.mulVec (hM_herm.eigenvectorBasis y₀)) h0
+    rw [Matrix.zero_mulVec, sub_mul, one_mul, Matrix.sub_mulVec, hQp.eq,
+      ← Matrix.mulVec_mulVec] at hmul
+    simp only [hQ_mulVec y₀, hne, ↓reduceIte, Matrix.mulVec_zero, sub_zero] at hmul
+    exact hy₀ hmul
+  · rw [← add_mul, add_sub_cancel, one_mul]
+
+end Subalgebra
 
 namespace Matrix.PosDef
 

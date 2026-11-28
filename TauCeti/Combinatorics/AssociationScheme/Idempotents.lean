@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Combinatorics.AssociationScheme.Basic
 
 import Mathlib.Algebra.Order.Star.Real
-import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.Matrix.Spectrum
@@ -116,73 +115,6 @@ private theorem exists_mul_allOnes_inv_eq_smul (h : IsAssocScheme rel) {M : Matr
 
 end Helpers
 
-section Splitting
-
-variable {X : Type*} [Fintype X] {d : ℕ} {rel : X → X → Fin (d + 1)}
-
-private theorem split_alg_of_comm [DecidableEq X] (h : IsAssocScheme rel)
-    {p Q : Matrix X X ℝ} (hp_mem : p ∈ bmAlgebra rel) (hQ_mem : Q ∈ bmAlgebra rel)
-    (hp_idem : IsIdempotentElem p) (hQ_idem : IsIdempotentElem Q) (hcomm : Q * p = p * Q) :
-    (Q * p) ∈ bmAlgebra rel ∧ ((1 - Q) * p) ∈ bmAlgebra rel ∧
-      IsIdempotentElem (Q * p) ∧ IsIdempotentElem ((1 - Q) * p) ∧
-      (Q * p) * ((1 - Q) * p) = 0 ∧ ((1 - Q) * p) * (Q * p) = 0 ∧
-      Q * p + (1 - Q) * p = p := by
-  have h1Q : (1 - Q) * p = p * (1 - Q) := by
-    rw [sub_mul, one_mul, mul_sub, mul_one, hcomm]
-  refine ⟨h.mul_mem_bmAlgebra hQ_mem hp_mem, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simpa [sub_mul] using Submodule.sub_mem _ hp_mem (h.mul_mem_bmAlgebra hQ_mem hp_mem)
-  · exact hQ_idem.mul_of_commute hcomm hp_idem
-  · exact hQ_idem.one_sub.mul_of_commute h1Q hp_idem
-  · calc (Q * p) * ((1 - Q) * p)
-        = Q * (p * (1 - Q)) * p := by simp only [Matrix.mul_assoc]
-      _ = (Q * (1 - Q)) * (p * p) := by rw [← h1Q]; simp only [Matrix.mul_assoc]
-      _ = 0 := by rw [hQ_idem.mul_one_sub_self, Matrix.zero_mul]
-  · calc ((1 - Q) * p) * (Q * p)
-        = (1 - Q) * (p * Q) * p := by simp only [Matrix.mul_assoc]
-      _ = ((1 - Q) * Q) * (p * p) := by rw [← hcomm]; simp only [Matrix.mul_assoc]
-      _ = 0 := by rw [hQ_idem.one_sub_mul_self, Matrix.zero_mul]
-  · rw [← add_mul, add_sub_cancel, one_mul]
-
-private theorem exists_split_of_not_mul_eq_smul (h : IsAssocScheme rel) {p A : Matrix X X ℝ}
-    (hp_mem : p ∈ bmAlgebra rel) (hp_idem : IsIdempotentElem p)
-    (hA_mem : A ∈ bmAlgebra rel) (hnot : ∀ c : ℝ, A * p ≠ c • p) :
-    ∃ p₁ p₂ : Matrix X X ℝ, p₁ ∈ bmAlgebra rel ∧ p₂ ∈ bmAlgebra rel ∧
-      IsIdempotentElem p₁ ∧ IsIdempotentElem p₂ ∧ p₁ * p₂ = 0 ∧ p₂ * p₁ = 0 ∧
-      p₁ ≠ 0 ∧ p₂ ≠ 0 ∧ p₁ + p₂ = p := by
-  classical
-  set M : Matrix X X ℝ := A * p
-  have hM_mem : M ∈ bmAlgebra rel := h.mul_mem_bmAlgebra hA_mem hp_mem
-  have hM_herm : M.IsHermitian :=
-    Matrix.isHermitian_iff_isSymm.mpr (h.transpose_eq_of_mem_bmAlgebra hM_mem)
-  have hpM : p * M = M := by
-    rw [h.mul_comm_of_mem_bmAlgebra hp_mem hM_mem]
-    simp [M, Matrix.mul_assoc, hp_idem.eq]
-  obtain ⟨x₀, y₀, hx₀, hy₀, hne⟩ :=
-    hM_herm.exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq hpM hnot
-  obtain ⟨Q, hQ_adjoin, hQ_idem, hQ_mulVec⟩ :=
-    hM_herm.exists_spectral_projection (hM_herm.eigenvalues x₀)
-  have hQ_mem : Q ∈ bmAlgebra rel := h.mem_bmSubalgebra_iff.mp
-    (Algebra.adjoin_le (Set.singleton_subset_iff.mpr (h.mem_bmSubalgebra_iff.mpr hM_mem)) hQ_adjoin)
-  have hQx₀ : Q *ᵥ ⇑(hM_herm.eigenvectorBasis x₀) = ⇑(hM_herm.eigenvectorBasis x₀) := by
-    simp [hQ_mulVec x₀]
-  have hQy₀ : Q *ᵥ ⇑(hM_herm.eigenvectorBasis y₀) = 0 := by
-    simp [hQ_mulVec y₀, hne]
-  have hcomm : Q * p = p * Q := h.mul_comm_of_mem_bmAlgebra hQ_mem hp_mem
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ :=
-    split_alg_of_comm h hp_mem hQ_mem hp_idem hQ_idem hcomm
-  refine ⟨Q * p, (1 - Q) * p, h1, h2, h3, h4, h5, h6, ?_, ?_, h7⟩
-  · intro h0
-    have hmul := congrArg (fun B : Matrix X X ℝ => B *ᵥ ⇑(hM_herm.eigenvectorBasis x₀)) h0
-    rw [Matrix.zero_mulVec, hcomm, ← Matrix.mulVec_mulVec, hQx₀] at hmul
-    exact hx₀ hmul
-  · intro h0
-    have hmul := congrArg (fun B : Matrix X X ℝ => B *ᵥ ⇑(hM_herm.eigenvectorBasis y₀)) h0
-    rw [Matrix.zero_mulVec, sub_mul, one_mul, Matrix.sub_mulVec, hcomm,
-      ← Matrix.mulVec_mulVec, hQy₀, Matrix.mulVec_zero, sub_zero] at hmul
-    exact hy₀ hmul
-
-end Splitting
-
 section Existence
 
 variable {X : Type*} [Fintype X] [DecidableEq X] {d : ℕ} {rel : X → X → Fin (d + 1)}
@@ -253,25 +185,6 @@ private theorem isOrthoFamily_card_le (h : IsAssocScheme rel) {P : Finset (Matri
   have hcard := hli_sub.fintype_card_le_finrank
   rwa [Fintype.card_coe, h.finrank_bmAlgebra] at hcard
 
-private theorem ortho_split_of_mem {P : Finset (Matrix X X ℝ)} (hP : IsOrthoFamily rel P)
-    {p p₁ p₂ s : Matrix X X ℝ} (hp : p ∈ P) (hs : s ∈ P.erase p)
-    (hp₁_idem : IsIdempotentElem p₁) (hp₂_idem : IsIdempotentElem p₂)
-    (hp₁₂ : p₁ * p₂ = 0) (hp₂₁ : p₂ * p₁ = 0) (hadd : p₁ + p₂ = p) :
-    s * p₁ = 0 ∧ p₁ * s = 0 ∧ s * p₂ = 0 ∧ p₂ * s = 0 := by
-  have hsp : s * p = 0 := hP.ortho s (Finset.mem_of_mem_erase hs) p hp
-    (Finset.ne_of_mem_erase hs)
-  have hps : p * s = 0 := hP.ortho p hp s (Finset.mem_of_mem_erase hs)
-    (Finset.ne_of_mem_erase hs).symm
-  have hp_p₁ : p * p₁ = p₁ := by rw [← hadd, add_mul, hp₁_idem.eq, hp₂₁, add_zero]
-  have hp₁_p : p₁ * p = p₁ := by rw [← hadd, mul_add, hp₁_idem.eq, hp₁₂, add_zero]
-  have hp_p₂ : p * p₂ = p₂ := by rw [← hadd, add_mul, hp₁₂, hp₂_idem.eq, zero_add]
-  have hp₂_p : p₂ * p = p₂ := by rw [← hadd, mul_add, hp₂₁, hp₂_idem.eq, zero_add]
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [← hp_p₁, ← Matrix.mul_assoc, hsp, Matrix.zero_mul]
-  · rw [← hp₁_p, Matrix.mul_assoc, hps, Matrix.mul_zero]
-  · rw [← hp_p₂, ← Matrix.mul_assoc, hsp, Matrix.zero_mul]
-  · rw [← hp₂_p, Matrix.mul_assoc, hps, Matrix.mul_zero]
-
 private theorem isOrthoFamily_replace_split
     {P : Finset (Matrix X X ℝ)} (hP : IsOrthoFamily rel P) {p p₁ p₂ : Matrix X X ℝ}
     (hp : p ∈ P)
@@ -281,18 +194,16 @@ private theorem isOrthoFamily_replace_split
     (hp₁₂ : p₁ * p₂ = 0) (hp₂₁ : p₂ * p₁ = 0)
     (hp₁_ne : p₁ ≠ 0) (hp₂_ne : p₂ ≠ 0) (hadd : p₁ + p₂ = p) :
     ∃ Q : Finset (Matrix X X ℝ), IsOrthoFamily rel Q ∧ Q.card = P.card + 1 := by
-  have hp₁_notMem : p₁ ∉ P.erase p := fun hmem =>
-    hp₁_ne (by
-      have hmul := hP.ortho p hp p₁ (Finset.mem_of_mem_erase hmem)
-        (Finset.ne_of_mem_erase hmem).symm
-      rwa [← hadd, add_mul, hp₁_idem.eq, hp₂₁, add_zero] at hmul)
+  have hp₁_notMem : p₁ ∉ P.erase p := fun hmem => hp₁_ne <| by
+    have hmul := hP.ortho p hp p₁ (Finset.mem_of_mem_erase hmem) (Finset.ne_of_mem_erase hmem).symm
+    rwa [← hadd, hp₁_idem.add_mul_self_of_mul_eq_zero hp₂₁] at hmul
   have hp₂_notMem : p₂ ∉ insert p₁ (P.erase p) := by
     intro hmem
     rcases Finset.mem_insert.mp hmem with rfl | hmem'
     · rw [hp₁_idem.eq] at hp₁₂; exact hp₂_ne hp₁₂
     · have hmul := hP.ortho p hp p₂ (Finset.mem_of_mem_erase hmem')
         (Finset.ne_of_mem_erase hmem').symm
-      rw [← hadd, add_mul, hp₁₂, hp₂_idem.eq, zero_add] at hmul
+      rw [← hadd, add_comm p₁ p₂, hp₂_idem.add_mul_self_of_mul_eq_zero hp₁₂] at hmul
       exact hp₂_ne hmul
   have hQ_prop : ∀ q ∈ insert p₂ (insert p₁ (P.erase p)),
       q ∈ bmAlgebra rel ∧ IsIdempotentElem q ∧ q ≠ 0 := by
@@ -306,19 +217,22 @@ private theorem isOrthoFamily_replace_split
   refine ⟨insert p₂ (insert p₁ (P.erase p)),
     ⟨fun q hq => (hQ_prop q hq).1, fun q hq => (hQ_prop q hq).2.1,
       fun q hq => (hQ_prop q hq).2.2, fun q hq r hr hne => ?_, ?_, ?_⟩, ?_⟩
-  · have hs : ∀ s ∈ P.erase p,
-        s * p₁ = 0 ∧ p₁ * s = 0 ∧ s * p₂ = 0 ∧ p₂ * s = 0 :=
-      fun _ hs' => ortho_split_of_mem hP hp hs' hp₁_idem hp₂_idem hp₁₂ hp₂₁ hadd
+  · have hsp : ∀ s ∈ P.erase p, s * (p₁ + p₂) = 0 := fun s hs' =>
+      hadd ▸ hP.ortho s (Finset.mem_of_mem_erase hs') p hp (Finset.ne_of_mem_erase hs')
+    have hsp₂ : ∀ s ∈ P.erase p, s * (p₂ + p₁) = 0 := fun s hs' => add_comm p₁ p₂ ▸ hsp s hs'
+    have hps : ∀ s ∈ P.erase p, (p₁ + p₂) * s = 0 := fun s hs' =>
+      hadd ▸ hP.ortho p hp s (Finset.mem_of_mem_erase hs') (Finset.ne_of_mem_erase hs').symm
+    have hps₂ : ∀ s ∈ P.erase p, (p₂ + p₁) * s = 0 := fun s hs' => add_comm p₁ p₂ ▸ hps s hs'
     simp only [Finset.mem_insert] at hq hr
     rcases hq with rfl | rfl | hq'' <;> rcases hr with rfl | rfl | hr''
     · exact absurd rfl hne
     · exact hp₂₁
-    · exact (hs r hr'').2.2.2
+    · exact hp₂_idem.mul_right_eq_zero_of_add_mul_eq_zero hp₂₁ (hps₂ r hr'')
     · exact hp₁₂
     · exact absurd rfl hne
-    · exact (hs r hr'').2.1
-    · exact (hs q hq'').2.2.1
-    · exact (hs q hq'').1
+    · exact hp₁_idem.mul_right_eq_zero_of_add_mul_eq_zero hp₁₂ (hps r hr'')
+    · exact hp₂_idem.mul_left_eq_zero_of_mul_add_eq_zero hp₁₂ (hsp₂ q hq'')
+    · exact hp₁_idem.mul_left_eq_zero_of_mul_add_eq_zero hp₂₁ (hsp q hq'')
     · exact hP.ortho q (Finset.mem_of_mem_erase hq'') r
         (Finset.mem_of_mem_erase hr'') hne
   · rw [Finset.sum_insert hp₂_notMem, Finset.sum_insert hp₁_notMem, ← add_assoc,
@@ -336,14 +250,19 @@ private theorem isOrthoFamily_maximal_minimal (h : IsAssocScheme rel)
   by_contra! hnot
   obtain ⟨p₁, p₂, hp₁_mem, hp₂_mem, hp₁_idem, hp₂_idem,
       hp₁₂, hp₂₁, hp₁_ne, hp₂_ne, hadd⟩ :=
-    exists_split_of_not_mul_eq_smul h (hP.mem_bmAlgebra p hp) (hP.idem p hp) hA hnot
+    h.bmSubalgebra.exists_split_idempotent_of_isHermitian
+      (fun M hM => Matrix.isHermitian_iff_isSymm.mpr
+        (h.transpose_eq_of_mem_bmAlgebra (h.mem_bmSubalgebra_iff.mp hM)))
+      (h.mem_bmSubalgebra_iff.mpr (hP.mem_bmAlgebra p hp)) (hP.idem p hp)
+      (h.mem_bmSubalgebra_iff.mpr hA) hnot
   have hp_ne_e₀ : p ≠ (Fintype.card X : ℝ)⁻¹ • Matrix.of fun _ _ : X => (1 : ℝ) := by
     intro hpe₀
     subst hpe₀
     obtain ⟨c, hc⟩ := exists_mul_allOnes_inv_eq_smul h hA
     exact hnot c hc
   obtain ⟨Q, hQ_ortho, hQ_card⟩ := isOrthoFamily_replace_split hP hp hp_ne_e₀
-    hp₁_mem hp₂_mem hp₁_idem hp₂_idem hp₁₂ hp₂₁ hp₁_ne hp₂_ne hadd
+    (h.mem_bmSubalgebra_iff.mp hp₁_mem) (h.mem_bmSubalgebra_iff.mp hp₂_mem)
+    hp₁_idem hp₂_idem hp₁₂ hp₂₁ hp₁_ne hp₂_ne hadd
   have hcard_le := hmax Q hQ_ortho
   omega
 
@@ -540,6 +459,13 @@ theorem mul_eq_smul (hE : IsPrimitiveIdempotents rel E)
     (eq_div_iff (hE.trace_ne_zero i)).mpr htr.symm
   conv_lhs => rw [hmul, hc]
 
+/-- Every primitive idempotent is minimal among nonzero idempotents in the Bose–Mesner algebra:
+if `p ∈ bmAlgebra rel` is a nonzero idempotent with `p * E i = p`, then `p = E i`. -/
+theorem eq_of_isIdempotentElem_of_mul_eq (hE : IsPrimitiveIdempotents rel E)
+    {p : Matrix X X ℝ} (hp_mem : p ∈ bmAlgebra rel) (hp_idem : IsIdempotentElem p)
+    (hp_ne : p ≠ 0) {i : Fin (d + 1)} (hpE : p * E i = p) : p = E i :=
+  hpE.symm.trans (hp_idem.mul_eq_right_of_mul_eq_smul (hE.mul_eq_smul hp_mem i) (hpE.symm ▸ hp_ne))
+
 /-- Expansion of any element of `bmAlgebra rel` in the basis `E`. -/
 theorem eq_sum_smul (hE : IsPrimitiveIdempotents rel E)
     {M : Matrix X X ℝ} (hM : M ∈ bmAlgebra rel) :
@@ -565,6 +491,27 @@ theorem mulVec_eq_smul_of_mem_range (hE : IsPrimitiveIdempotents rel E)
   rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec]
   conv_lhs => rw [hE.mul_eq_smul hM i]
   rw [Matrix.smul_mulVec]
+
+/-- The column space of `E i` is precisely the simultaneous eigenspace of the adjacency
+matrices with eigenvalues `tr (A_j * E i) / tr (E i)`. -/
+theorem mem_range_iff_forall_adjMat_mulVec (hE : IsPrimitiveIdempotents rel E)
+    (i : Fin (d + 1)) {v : X → ℝ} :
+    v ∈ LinearMap.range (E i).mulVecLin ↔
+      ∀ j, adjMat rel j *ᵥ v = ((adjMat rel j * E i).trace / (E i).trace) • v := by
+  refine ⟨fun hv j => hE.mulVec_eq_smul_of_mem_range (adjMat_mem_bmAlgebra rel j) i hv,
+    fun hv => ?_⟩
+  obtain ⟨c, hc⟩ := (mem_bmAlgebra_iff rel).mp (hE.mem_bmAlgebra i)
+  have hEi : E i *ᵥ v = ((E i * E i).trace / (E i).trace) • v := by
+    calc E i *ᵥ v
+        = (∑ j, c j • adjMat rel j) *ᵥ v := by rw [← hc]
+      _ = (∑ j, c j * ((adjMat rel j * E i).trace / (E i).trace)) • v := by
+          simp_rw [Matrix.sum_mulVec, Matrix.smul_mulVec, hv, smul_smul, ← Finset.sum_smul]
+      _ = (((∑ j, c j • adjMat rel j) * E i).trace / (E i).trace) • v := by
+          simp only [Matrix.sum_mul, Matrix.smul_mul, Matrix.trace_sum, Matrix.trace_smul,
+            smul_eq_mul, Finset.sum_div, mul_div_assoc]
+      _ = ((E i * E i).trace / (E i).trace) • v := by rw [hc]
+  rw [(hE.complete.idem i).eq, div_self (hE.trace_ne_zero i), one_smul] at hEi
+  exact ⟨v, hEi⟩
 
 /-- Vectors in the column spaces of distinct primitive idempotents are orthogonal. -/
 theorem dotProduct_eq_zero_of_mem_range (h : IsAssocScheme rel) (hE : IsPrimitiveIdempotents rel E)
