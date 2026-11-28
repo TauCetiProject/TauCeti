@@ -10,8 +10,8 @@ public import Mathlib.NumberTheory.Cyclotomic.Basic
 public import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
+import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.FundamentalDiscriminant
-import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
@@ -58,17 +58,10 @@ def baseRoot : P.baseField := ⟨_, mem_adjoin_simple_self ℚ _⟩
 
 /-- The imaginary quadratic base has degree two over `ℚ`. -/
 theorem finrank_baseField : Module.finrank ℚ P.baseField = 2 := by
-  let r : ℚ := -(P.d : ℚ)
-  let x := QuadraticAlgebra.sqrtRadicand r
-  let f : Polynomial ℚ := Polynomial.X ^ 2 - Polynomial.C r
-  have hmonic : f.Monic := Polynomial.monic_X_pow_sub_C _ two_ne_zero
-  have hroot : Polynomial.aeval x f = 0 := by simp [f, x, sq]
-  have hr : r < 0 := neg_neg_of_pos (by exact_mod_cast P.prime_d.pos)
-  have hirr : Irreducible f := irreducible_X_pow_sub_C_of_prime Nat.prime_two
-    fun b hb ↦ hr.not_ge (hb ▸ sq_nonneg b)
-  have hmin := minpoly.eq_of_irreducible_of_monic hirr hroot hmonic
-  have hint : IsIntegral ℚ x := ⟨f, hmonic, hroot⟩
-  rw [baseField_eq_adjoin, adjoin.finrank hint, ← hmin, Polynomial.natDegree_X_pow_sub_C]
+  rw [baseField_eq_adjoin]
+  exact TauCeti.IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare
+    (a := -(P.d : ℚ)) (by simp [sq])
+    (not_isSquare_of_neg (neg_neg_of_pos (by exact_mod_cast P.prime_d.pos)))
 
 /-- The base is a number field. -/
 instance instNumberFieldBaseField : NumberField P.baseField where
@@ -149,11 +142,8 @@ theorem hostField_le_cyclotomic (s : ℕ) {ξ : ℂ} (hξ : IsPrimitiveRoot ξ (
     exact hk ▸ pow_mem hmem k
 
 /-- The host is a number field. -/
-instance instNumberFieldHostField (s : ℕ) : NumberField (P.hostField s) where
-  to_finiteDimensional := by
-    let : FiniteDimensional P.baseField (P.hostField s) :=
-      IsCyclotomicExtension.finiteDimensional {P.q₁ s} P.baseField (P.hostField s)
-    exact Module.Finite.trans P.baseField (P.hostField s)
+instance instNumberFieldHostField (s : ℕ) : NumberField (P.hostField s) :=
+  IsCyclotomicExtension.numberField {P.q₁ s} P.baseField (P.hostField s)
 
 /-- The host is abelian Galois over the rationals. -/
 instance instIsAbelianGaloisHostFieldRat (s : ℕ) : IsAbelianGalois ℚ (P.hostField s) := by
