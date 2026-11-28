@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
-public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily.Basic
 
 /-!
 # Zero-free half-planes and cyclic families of Dirichlet characters
@@ -39,7 +39,7 @@ theorem zeroFreeRightOf_LFunction_changeLevel_iff {M N : ℕ} [NeZero M] [NeZero
     ZeroFreeRightOf σ (changeLevel hMN χ).LFunction ↔ ZeroFreeRightOf σ χ.LFunction := by
   simp only [zeroFreeRightOf_iff]
   exact forall₂_congr fun _ hs ↦ by
-    rw [χ.meromorphicOrderAt_LFunction_changeLevel hMN (hσ.trans_lt hs)]
+    rw [χ.meromorphicOrderAt_LFunction_changeLevel hMN (hσ.trans_lt hs).ne']
 
 end DirichletCharacter
 

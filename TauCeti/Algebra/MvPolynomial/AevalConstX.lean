@@ -12,8 +12,9 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 # Sending every variable to the same single variable
 
 The `R`-algebra map `R[Xᵢ : i ∈ σ] → R[X]` sending every variable `Xᵢ` to `X` is
-`MvPolynomial.aeval fun _ => Polynomial.X`. It is surjective as soon as `σ` is nonempty, and
-following it by `X ↦ X_c` is the renaming that sends every variable to `X_c`. It preserves
+`MvPolynomial.aeval fun _ => Polynomial.X`. It is surjective as soon as `σ` is nonempty, as is any
+substitution sending some variable to `X`, and following it by `X ↦ X_c` is the renaming that
+sends every variable to `X_c`. It preserves
 constant coefficients: more generally, after any substitution `Xᵢ ↦ fᵢ` of polynomials in one
 variable, the constant coefficient is the value at the constant coefficients of the `fᵢ`. Scaling
 the variables, `Tᵢ ↦ aᵢ X`, the coefficient of `X` in the image of `p * Tᵢ` is
@@ -23,6 +24,8 @@ the variables, `Tᵢ ↦ aᵢ X`, the coefficient of `X` in the image of `p * T�
 
 * `MvPolynomial.rename_const_eq_aeval_aeval_X`: renaming every variable to `X_c` factors
   through `R[X]`.
+* `MvPolynomial.aeval_surjective_of_eq_X`: a substitution of polynomials in one variable sending
+  some variable to `X` is surjective onto `R[X]`.
 * `MvPolynomial.aeval_const_X_surjective`: sending every variable to `X` is surjective
   onto `R[X]` when there is at least one variable.
 * `MvPolynomial.eval_aeval_const_X`: evaluating `aeval (Function.const σ Polynomial.X) p` at `w`
@@ -49,14 +52,19 @@ theorem rename_const_eq_aeval_aeval_X (c : σ) (p : MvPolynomial σ R) :
   rw [comp_aeval_apply, rename_eq_aeval]
   simp [Function.comp_def]
 
+/-- A substitution `Xᵢ ↦ fᵢ` of polynomials in one variable is surjective onto `R[X]` as soon as
+some variable `Xᵢ` is sent to `X`: the polynomial `q(X)` is the image of `q(Xᵢ)`. -/
+theorem aeval_surjective_of_eq_X {f : σ → Polynomial R} {i : σ} (hi : f i = Polynomial.X) :
+    Function.Surjective (aeval (R := R) f) := fun q =>
+  ⟨Polynomial.aeval (X i) q, by
+    rw [← Polynomial.aeval_algHom_apply, aeval_X, hi, Polynomial.aeval_X_left_apply]⟩
+
 variable (σ R) in
 /-- Sending every variable to `X` is surjective onto `R[X]` when there is at least one
 variable. -/
 theorem aeval_const_X_surjective [Nonempty σ] :
-    Function.Surjective (aeval (R := R) fun _ : σ => (Polynomial.X : Polynomial R)) := fun q =>
-  let c : σ := Classical.arbitrary σ
-  ⟨Polynomial.aeval (X c) q, by
-    rw [← Polynomial.aeval_algHom_apply, aeval_X, Polynomial.aeval_X_left_apply]⟩
+    Function.Surjective (aeval (R := R) fun _ : σ => (Polynomial.X : Polynomial R)) :=
+  aeval_surjective_of_eq_X (i := Classical.arbitrary σ) rfl
 
 /-- Evaluating the diagonal specialization `aeval (Function.const σ Polynomial.X) p` at `w` equals
 evaluating `p` at the constant tuple `Function.const σ w`. -/

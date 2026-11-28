@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+import TauCeti.CategoryTheory.Linear.Int
 
 /-!
 # The Kronecker map of singular cohomology
@@ -37,10 +38,15 @@ the case where its `Ext¹`-term vanishes.
   `TopCat.singularKronecker_naturality` its naturality in the space and
   `TopCat.singularKronecker_singularCohomologyChainCoefficientMap` its naturality in the chain
   coefficients.
+* `TopCat.singularKronecker_instLinear`: with values in `ℤ`, the Kronecker map does not depend on
+  which of the two `ℤ`-linear structures of `ModuleCat ℤ` is used.
 * `TopCat.singularKronecker_bijective`, `TopCat.singularKroneckerEquiv`: for an injective
   coefficient object `M`, the Kronecker map is bijective, a `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
   every coefficient object.
+* `TopCat.isIso_singularCohomologyMap_zero_of_isIso_singularHomologyFunctor_map`,
+  `TopCat.isIso_singularCohomologyMap_zero_of_pathConnectedSpace`: so a map inducing an
+  isomorphism on `H₀`, for instance a map between path-connected spaces, induces one on `H⁰`.
 * `TopCat.singularKronecker_constSingularCocycle`: the class of the constant `0`-cocycle with
   value `e : R ⟶ M` evaluates on zeroth homology as the augmentation followed by `e`.
 * `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
@@ -133,6 +139,26 @@ lemma singularKronecker_eqToHom {k : Type*} [Ring k] (L₁ L₂ : Linear k C) (h
   subst h
   simp
 
+/-- The Kronecker map of singular cohomology with values in `ℤ`, for chain coefficients in a
+`ℤ`-module `R`, is the same for the `ℤ`-linear structure `ModuleCat.instLinear` of a category of
+modules and the structure `Linear.preadditiveIntLinear` of a preadditive category. -/
+lemma singularKronecker_instLinear (R : ModuleCat.{0} ℤ) (X : TopCat.{0}) (n : ℕ)
+    (a : @TopCat.singularCohomology _ _ _ _ R ℤ _ ModuleCat.instLinear (ModuleCat.of ℤ ℤ) X n) :
+    @TopCat.singularKronecker _ _ _ _ R (ModuleCat.of ℤ ℤ) X ℤ _ ModuleCat.instLinear n a =
+      @TopCat.singularKronecker _ _ _ _ R (ModuleCat.of ℤ ℤ) X ℤ _ Linear.preadditiveIntLinear n
+        a := by
+  have h := singularKronecker_eqToHom R (ModuleCat.of ℤ ℤ) Linear.preadditiveIntLinear
+    ModuleCat.instLinear (Subsingleton.elim _ _) X n a
+  -- with values in `ℤ`, the two `ℤ`-module structures on the cochain groups `Hom(Cₙ, ℤ)` both
+  -- unfold to integer multiplication, so the two cohomology modules agree up to definitional
+  -- equality and the comparison `eqToHom` is the identity
+  have h₁ : eqToHom (congrArg (fun L : Linear ℤ (ModuleCat.{0} ℤ) ↦
+      @TopCat.singularCohomology _ _ _ _ R ℤ _ L (ModuleCat.of ℤ ℤ) X n)
+        (Subsingleton.elim Linear.preadditiveIntLinear ModuleCat.instLinear)) = 𝟙 _ :=
+    eqToHom_refl _ _
+  rw [h₁] at h
+  exact h
+
 /-- **The universal coefficient theorem for injective coefficients**: for an injective object
 `M`, the Kronecker map `Hⁿ(X; R, M) →ₗ[k] (Hₙ(X; R) ⟶ M)` of singular cohomology is bijective. -/
 theorem singularKronecker_bijective (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
@@ -180,6 +206,39 @@ lemma singularKronecker_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring 
       iCycles_constSingularCocycle, SSet.ιChainComplex_constCochain]
     exact ((Category.assoc _ _ _).trans
       (SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε_assoc (X := toSSet.obj X) R x e)).symm
+
+/-- **A map inducing an isomorphism on `H₀` induces one on `H⁰`**, for every coefficient object
+`M`: in degree zero the Kronecker maps are bijective (`TopCat.singularKronecker_bijective_zero`)
+and they intertwine `f^*` with precomposition by `f_*` (`TopCat.singularKronecker_naturality`). -/
+theorem isIso_singularCohomologyMap_zero_of_isIso_singularHomologyFunctor_map {X Y : TopCat.{w}}
+    (f : X ⟶ Y) (k : Type*) [Ring k] [Linear k C]
+    [IsIso (((singularHomologyFunctor C 0).obj R).map f)] :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) f 0) := by
+  rw [ConcreteCategory.isIso_iff_bijective]
+  obtain ⟨hX, -⟩ := X.singularKronecker_bijective_zero (R := R) (M := M) k
+  obtain ⟨hY, hY'⟩ := Y.singularKronecker_bijective_zero (R := R) (M := M) k
+  refine ⟨fun α β h ↦ ?_, fun β ↦ ?_⟩
+  · -- `f_*` is an epimorphism, so precomposing with it is injective.
+    have := congrArg (X.singularKronecker k 0) h
+    simp only [singularKronecker_naturality, cancel_epi] at this
+    exact hY this
+  · -- Pull the value of `β` back along the inverse of `f_*` and lift it through the Kronecker map.
+    obtain ⟨α, hα⟩ := hY' (inv (((singularHomologyFunctor C 0).obj R).map f) ≫
+      X.singularKronecker k 0 β)
+    refine ⟨α, hX ?_⟩
+    rw [singularKronecker_naturality, hα, IsIso.hom_inv_id_assoc]
+
+/-- **`H⁰` does not see the difference between path-connected spaces**: a map between
+path-connected spaces induces an isomorphism on `H⁰` with every coefficient object, since it
+induces one on `H₀`, where both augmentations are isomorphisms. -/
+theorem isIso_singularCohomologyMap_zero_of_pathConnectedSpace {X Y : TopCat.{w}}
+    [PathConnectedSpace X] [PathConnectedSpace Y] (f : X ⟶ Y) (k : Type*) [Ring k] [Linear k C] :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) f 0) :=
+  have e : ((singularHomologyFunctor C 0).obj R).map f ≫ Y.singularHomology₀ε R =
+      X.singularHomology₀ε R :=
+    SSet.homologyMap_homology₀ε R (toSSet.map f)
+  have : IsIso (((singularHomologyFunctor C 0).obj R).map f) := IsIso.of_isIso_fac_right e
+  isIso_singularCohomologyMap_zero_of_isIso_singularHomologyFunctor_map f k
 
 end TopCat
 

@@ -78,6 +78,11 @@ theorem mem_framedGaugeGroup (u : ℂ → Circle) :
     u ∈ framedGaugeGroup ↔
       ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) := Iff.rfl
 
+/-- A gauge of the smooth framed group is differentiable. -/
+theorem differentiable_of_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) :
+    Differentiable ℝ fun z ↦ (u z : ℂ) :=
+  ((mem_framedGaugeGroup u).1 hu).1.differentiable (by simp)
+
 /-- A gauge of the smooth framed group composed with a translation is again in the smooth
 framed group. -/
 theorem comp_add_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) (a : ℂ) :
@@ -297,6 +302,14 @@ theorem gaugeForm_const (c : Circle) (z : ℂ) : gaugeForm (fun _ ↦ c) z = 0 :
   ext v
   simp
 
+/-- **A constant gauge is a change of the line frame**: it acts on a field by the gauge frame at
+every point. -/
+@[simp]
+theorem gaugeTransform_const_apply (c : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeTransform (fun _ ↦ c) x z = gaugeFrame c (x z) := by
+  rw [gaugeTransform_apply, gaugeForm_const, gaugeFrame_apply]
+  simp
+
 /-- The logarithmic derivative of the inverse gauge is the negative of the logarithmic
 derivative. -/
 theorem gaugeForm_inv {u : ℂ → Circle} {z : ℂ}
@@ -346,9 +359,8 @@ theorem hasDerivAt_gaugeTransform_add_smul (u : ℂ → Circle)
 instance : MulAction framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) where
   smul u x := gaugeTransform u.val x
   one_smul := gaugeTransform_one
-  mul_smul u v x := gaugeTransform_mul
-    (((mem_framedGaugeGroup _).mp u.property).1.differentiable (by simp))
-    (((mem_framedGaugeGroup _).mp v.property).1.differentiable (by simp)) x
+  mul_smul u v x := gaugeTransform_mul (differentiable_of_mem_framedGaugeGroup u.property)
+    (differentiable_of_mem_framedGaugeGroup v.property) x
 
 /-- The bundled action is the charge-one coordinate transformation. -/
 @[simp]
@@ -498,8 +510,9 @@ nonvanishing, regularity or equation hypothesis on the field is required. -/
 instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) := by
   apply isCancelSMul_iff_eq_one_of_smul_eq.mpr
   intro u x hu
-  have hup := (mem_framedGaugeGroup _).mp u.property
-  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
+  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self
+    (differentiable_of_mem_framedGaugeGroup u.property)
+    ((mem_framedGaugeGroup _).mp u.property).2 hu)
 
 /-- The logarithmic derivatives of gauges depending on a parameter, `C^(n+1)` jointly in the
 parameter and the point at `p₀`, are `C^n` jointly in the parameter and the point at `p₀`. -/
@@ -787,6 +800,29 @@ theorem gaugeTransform_eq_iff {u : ℂ → Circle} {x y : ℂ → EuclideanSpace
     refine apply_eq_of_sectionValue_eq ?_ ?_ (by rw [sectionValue_gaugeTransform, hα])
     · simp [gaugeTransform_apply, hω]
     · simp [gaugeTransform_apply, hω]
+
+/-- The connection difference `(b₁ - b₁') ds + (b₂ - b₂') dt` of a pair of field values, as a
+continuous linear map. -/
+def connectionDifferenceCLM :
+    (EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) →L[ℝ] (ℂ →L[ℝ] ℝ) :=
+  ((EuclideanSpace.proj (0 : Fin 4)).comp (ContinuousLinearMap.fst ℝ _ _) -
+      (EuclideanSpace.proj (0 : Fin 4)).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight reCLM +
+    ((EuclideanSpace.proj (1 : Fin 4)).comp (ContinuousLinearMap.fst ℝ _ _) -
+      (EuclideanSpace.proj (1 : Fin 4)).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight imCLM
+
+/-- Pointwise formula for `connectionDifferenceCLM`. -/
+@[simp]
+theorem connectionDifferenceCLM_apply
+    (p : EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :
+    connectionDifferenceCLM p = (p.1 0 - p.2 0) • reCLM + (p.1 1 - p.2 1) • imCLM := (rfl)
+
+/-- If a gauge `u` carries `x` to `y`, its logarithmic derivative `gaugeForm u` is the connection
+difference of `(x, y)`. -/
+theorem gaugeForm_eq_connectionDifferenceCLM {u : ℂ → Circle}
+    {x y : ℂ → EuclideanSpace ℝ (Fin 4)} (h : gaugeTransform u x = y) (z : ℂ) :
+    gaugeForm u z = connectionDifferenceCLM (x z, y z) := by
+  rw [connectionDifferenceCLM_apply]
+  exact (gaugeTransform_eq_iff.1 h z).1
 
 /-- Covariant derivatives transform by multiplication by the circle-valued gauge. -/
 theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}

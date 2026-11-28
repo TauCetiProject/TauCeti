@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TopologicalMonoid
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 

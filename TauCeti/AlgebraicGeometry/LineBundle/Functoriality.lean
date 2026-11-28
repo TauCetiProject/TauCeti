@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.CategoryTheory.Monoidal.EqToHom
 public import TauCeti.CategoryTheory.Monoidal.Subcategory
 
@@ -30,10 +29,9 @@ the pullback of `InvertibleSheaf.tensorProductObjIso L K`; on the target, the tr
 `InvertibleSheaf.pullback_obj_obj` on both factors and the inverse of `tensorProductObjIso`. The
 comparison `δ` is the field `Functor.OplaxMonoidal.δ` of Mathlib's oplax monoidal functors, for
 Tau Ceti's oplax monoidal structure `Scheme.Modules.pullbackOplaxMonoidal` on module pullback; it
-is invertible because line bundles are quasicoherent
-(`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
-groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`, and an
-isomorphism of schemes induces an equivalence of categories of line bundles
+is invertible for arbitrary module sheaves (`Scheme.Modules.isIso_pullback_δ`). So pullback is a
+homomorphism of Picard groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor
+`T ↦ Pic(X_T)`, and an isomorphism of schemes induces an equivalence of categories of line bundles
 (`InvertibleSheaf.pullbackEquiv`) and a group isomorphism of Picard groups
 (`LineBundleClass.pullbackEquiv`).
 
@@ -160,9 +158,10 @@ theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleShea
 
 /-- **Pullback commutes with tensor products of line bundles**: `f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`. On
 underlying sheaves it is the oplax tensor comparison `δ` of module pullback, which is invertible
-because line bundles are quasicoherent, preceded by the transport along `pullback_obj_obj` and the
-pullback of `tensorProductObjIso L K`, and followed by the transports along `pullback_obj_obj` on
-both factors and the inverse of `tensorProductObjIso` of the pulled-back line bundles. -/
+for arbitrary module sheaves (`Scheme.Modules.isIso_pullback_δ`), preceded by the transport along
+`pullback_obj_obj` and the pullback of `tensorProductObjIso L K`, and followed by the transports
+along `pullback_obj_obj` on both factors and the inverse of `tensorProductObjIso` of the
+pulled-back line bundles. -/
 def pullbackTensorProductIso (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
     (pullback f).obj (tensorProduct L K) ≅
       tensorProduct ((pullback f).obj L) ((pullback f).obj K) :=
@@ -438,12 +437,7 @@ instance isMonoidal_pullbackId_hom (X : Scheme.{u}) : NatTrans.IsMonoidal (pullb
     rfl
   tensor L K := by
     apply ObjectProperty.hom_ext
-    have h : inv (δ (Scheme.Modules.pullback (𝟙 X)) L.obj K.obj) ≫
-        (Scheme.Modules.pullbackId X).hom.app (L.obj ⊗ K.obj) =
-          (Scheme.Modules.pullbackId X).hom.app L.obj ⊗ₘ
-            (Scheme.Modules.pullbackId X).hom.app K.obj := by
-      rw [IsIso.inv_comp_eq, Scheme.Modules.pullback_id_δ]
-    simp [pullbackId_hom_app_hom, h, ← tensorHom_comp_tensorHom, eqToHom_tensorHom_eqToHom]
+    simp [pullbackId_hom_app_hom, ← tensorHom_comp_tensorHom, eqToHom_tensorHom_eqToHom]
 
 /-- The composition comparison `pullbackComp f g` commutes with the inverse tensor comparisons:
 this is `pullbackTensorProductIso_comp` for the monoidal tensor product. -/

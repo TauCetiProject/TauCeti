@@ -39,7 +39,9 @@ A loop of constant loops sweeps out a degenerate torus, so the torus sign is tri
 constant loops: its pullback along the inclusion `Q → 𝓛Q` of the constant loops is trivial
 (`TauCeti.RankOneLocalSystem.pullback_constMap_torusSign`). For `c = ⟨w₂(TQ), -⟩`, together with
 `TauCeti.RankOneLocalSystem.pullback_constMap_viterboOrientationTwist`, this identifies the
-pullback `i_Q^* η₀` of the Viterbo twist along the constant loops with `o_Q`.
+pullback `i_Q^* η₀` of the Viterbo twist along the constant loops with `o_Q`. Rotating a loop once
+around itself sweeps out a torus that factors through the circle, so the torus sign is also trivial
+along the rotation of every loop (`TauCeti.RankOneLocalSystem.torusSign_ρ_rotationLoop`).
 
 The torus class, and so the torus sign, is defined for spaces `Q` in the lowest universe, as the
 singular torus class `TauCeti.freeLoopTorusClassHom` is.
@@ -62,6 +64,8 @@ singular torus class `TauCeti.freeLoopTorusClassHom` is.
   loop in terms of the Hurewicz classes of `π₂`.
 * `TauCeti.RankOneLocalSystem.pullback_constMap_torusSign`: it is trivial along the constant
   loops.
+* `TauCeti.RankOneLocalSystem.torusSign_ρ_rotationLoop`: it is trivial along the rotation of every
+  loop.
 
 ## References
 
@@ -194,6 +198,22 @@ theorem pullback_constMap_torusSign (x : Q) :
     pullback (constMap Q) (constMap_apply x) (torusSign R c (const x)) = 1 :=
   RankOneLocalSystem.ext <| MonoidHom.ext fun δ ↦ by
     simp [torusSign_ρ_apply, MooreLoopSpace.fundamentalGroupHom_map]
+
+/-- **The torus sign is trivial along the rotation of every loop**: rotating a free loop once
+around itself sweeps out a torus that factors through the circle, so its class vanishes
+(`TauCeti.MooreFreeLoopSpace.torusClassHom_fundamentalGroupHom_rotationLoop`). -/
+@[simp]
+theorem torusSign_ρ_rotationLoop (γ : MooreFreeLoopSpace Q) :
+    (torusSign R c γ).ρ γ.rotationLoop = 1 := by
+  rw [torusSign_ρ_apply, torusClassHom_fundamentalGroupHom_rotationLoop, map_zero, hilbertSign_zero,
+    map_one]
+
+/-- **The torus sign is defined over `ℤ`**: extending its coefficients along a ring homomorphism
+`φ : R →+* R'` gives the torus sign with coefficients in `R'`. -/
+@[simp]
+theorem mapRingHom_torusSign {R' : Type*} [CommRing R'] (φ : R →+* R')
+    (γ : MooreFreeLoopSpace Q) : mapRingHom φ (torusSign R c γ) = torusSign R' c γ :=
+  mapRingHom_ofMonodromy_unitsMap_comp φ _
 
 end RankOneLocalSystem
 
