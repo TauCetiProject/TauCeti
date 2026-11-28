@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
+public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 public import TauCeti.CategoryTheory.Preadditive.AdditiveFunctor
+
+import Mathlib.Algebra.Category.ModuleCat.Abelian
+import Mathlib.Algebra.Category.ModuleCat.Colimits
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 
 /-!
 # Module-valued lifts of additive functors
@@ -31,7 +36,7 @@ public section
 
 universe w
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace CategoryTheory.AdditiveFunctor
 
@@ -172,6 +177,54 @@ theorem liftToModuleCatFunctor_obj :
 theorem liftToModuleCatFunctor_map_app_apply {F G : D ⥤+ AddCommGrpCat.{w}} (α : F ⟶ G)
     (X : D) (x : (F.liftToModuleCat R).obj X) :
     (((liftToModuleCatFunctor (D := D) R).map α).app X).hom x = α.hom.app X x := (rfl)
+
+variable (D) in
+/-- Forgetting the scalars of the module-valued lift recovers the inclusion of additive
+functors into the functor category. -/
+def liftToModuleCatFunctorForgetIso :
+    liftToModuleCatFunctor.{w} D R ⋙
+      (Functor.whiskeringRight D _ _).obj (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}) ≅
+      (additiveFunctor D AddCommGrpCat.{w}).ι :=
+  NatIso.ofComponents (fun F ↦ F.liftToModuleCatForgetIso R) (by
+    intro F G α
+    ext X x
+    -- Forgetting the lift of a morphism leaves the same component on underlying groups.
+    rfl)
+
+/-- The functorial comparison at each additive functor is its pointwise forgetful comparison. -/
+@[simp]
+theorem liftToModuleCatFunctorForgetIso_app (F : D ⥤+ AddCommGrpCat.{w}) :
+    (liftToModuleCatFunctorForgetIso D R).app F = F.liftToModuleCatForgetIso R := (rfl)
+
+instance : (liftToModuleCatFunctor.{w} D R).Additive := by
+  let W := (Functor.whiskeringRight D _ _).obj
+    (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
+  have : (liftToModuleCatFunctor.{w} D R ⋙ W).Additive :=
+    Functor.additive_of_iso (liftToModuleCatFunctorForgetIso D R).symm
+  exact Functor.additive_of_comp_faithful _ W
+
+instance : (liftToModuleCatFunctor.{w} D R).Faithful :=
+  Functor.Faithful.of_comp_iso (liftToModuleCatFunctorForgetIso D R)
+
+instance : PreservesFiniteLimits (liftToModuleCatFunctor.{w} D R) := by
+  constructor
+  intro J _ _
+  have : HasLimitsOfSize.{0, 0} (ModuleCat.{w} R) := ModuleCat.hasLimitsOfSize.{0, 0, w}
+  let W := (Functor.whiskeringRight D _ _).obj
+    (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
+  have : PreservesLimitsOfShape J (liftToModuleCatFunctor.{w} D R ⋙ W) :=
+    preservesLimitsOfShape_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
+  exact preservesLimitsOfShape_of_reflects_of_preserves _ W
+
+instance : PreservesFiniteColimits (liftToModuleCatFunctor.{w} D R) := by
+  constructor
+  intro J _ _
+  let W := (Functor.whiskeringRight D _ _).obj
+    (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
+  have : PreservesColimitsOfShape J (liftToModuleCatFunctor.{w} D R ⋙ W) :=
+    preservesColimitsOfShape_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
+  have : ReflectsColimitsOfShape J W := reflectsColimitsOfShape_of_reflectsIsomorphisms
+  exact preservesColimitsOfShape_of_reflects_of_preserves _ W
 
 end CategoryTheory.AdditiveFunctor
 
