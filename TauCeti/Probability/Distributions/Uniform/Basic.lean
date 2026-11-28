@@ -28,8 +28,9 @@ as `μ.map X = ProbabilityTheory.cond μ s`. Defining the measure by the same `c
 enters the library and nothing has to be reconciled later.
 
 **Boundary.** For `b ≤ a` the interval is empty and `uniformMeasure a b` is the zero measure
-(`uniformMeasure_eq_zero_of_le`), not a probability measure. Every quantitative statement below
-therefore takes `a < b` as a hypothesis rather than assuming it silently.
+(`uniformMeasure_eq_zero_of_le`), not a probability measure. The random-variable variance, MGF,
+and CGF corollaries use `a ≤ b` because their displayed formulas remain valid at `a = b`;
+probability-normalized statements use `a < b`.
 
 ## Main definitions
 
@@ -486,10 +487,13 @@ theorem integral_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a 
   rw [hX.integral_eq, TauCeti.Probability.integral_id_uniformMeasure hab]
 
 /-- The variance of an interval-uniform random variable is one twelfth of the squared interval
-length. -/
-theorem variance_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b) :
+length, including for equal endpoints. -/
+theorem variance_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a ≤ b) :
     variance X P = (b - a) ^ 2 / 12 := by
-  rw [hX.variance_eq, TauCeti.Probability.variance_id_uniformMeasure hab]
+  rw [hX.variance_eq]
+  rcases hab.eq_or_lt with rfl | hab
+  · simp
+  · rw [TauCeti.Probability.variance_id_uniformMeasure hab]
 
 /-- The exact exponential-integrability domain of an interval-uniform random variable is all of
 the real line. -/
@@ -500,23 +504,29 @@ theorem integrableExpSet_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) :
     hX.integrable_comp
       (TauCeti.Probability.integrable_exp_mul_id_uniformMeasure (a := a) (b := b) (t := t))
 
-/-- The moment-generating function of an interval-uniform random variable away from zero. -/
-theorem mgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b)
+/-- The moment-generating function of an interval-uniform random variable away from zero,
+including for equal endpoints. -/
+theorem mgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a ≤ b)
     {t : ℝ} (ht : t ≠ 0) :
     mgf X P t = (Real.exp (t * b) - Real.exp (t * a)) / ((b - a) * t) := by
-  rw [← mgf_id_map hX.aemeasurable, hX.map_eq,
-    TauCeti.Probability.mgf_id_uniformMeasure hab ht]
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq]
+  rcases hab.eq_or_lt with rfl | hab
+  · simp [mgf]
+  · rw [TauCeti.Probability.mgf_id_uniformMeasure hab ht]
 
-/-- The cumulant-generating function of an interval-uniform random variable. -/
-theorem cgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b)
+/-- The cumulant-generating function of an interval-uniform random variable, including for equal
+endpoints. -/
+theorem cgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a ≤ b)
     (t : ℝ) :
     cgf X P t =
       Real.log ((Real.exp (t * b) - Real.exp (t * a)) / ((b - a) * t)) := by
-  rcases eq_or_ne t 0 with rfl | ht
-  · have := hX.isProbabilityMeasure_iff.2
-      (TauCeti.Probability.isProbabilityMeasure_uniformMeasure hab)
-    simp
-  · rw [cgf, hX.mgf_uniformMeasure hab ht]
+  rw [cgf, ← mgf_id_map hX.aemeasurable, hX.map_eq]
+  rcases hab.eq_or_lt with rfl | hab
+  · simp [mgf]
+  · rcases eq_or_ne t 0 with rfl | ht
+    · rw [TauCeti.Probability.mgf_id_uniformMeasure_zero hab]
+      simp
+    · rw [TauCeti.Probability.mgf_id_uniformMeasure hab ht]
 
 end ProbabilityTheory.HasLaw
 
