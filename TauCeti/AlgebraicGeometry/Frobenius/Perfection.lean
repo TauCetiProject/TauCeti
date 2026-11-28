@@ -115,6 +115,11 @@ homeomorphism.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_perfection_of_etale`: the perfection square of an étale
   morphism is cartesian; hence the perfection of an étale morphism or of an open immersion is again
   étale or an open immersion (Bhatt–Scholze 2017, Lemma 3.4 (ix), (xi)).
+* `AlgebraicGeometry.Scheme.Hom.isPullback_perfection_app`: over an affine open with affine
+  preimage, the perfection of a morphism is the spectrum of the induced map on colimit perfections.
+  By `RingHom.IterateColimit.map_surjective_iff` and Mathlib's criterion for closed immersions,
+  `AlgebraicGeometry.Scheme.Hom.isClosedImmersion_perfection` makes the perfection of a closed
+  immersion a closed immersion (Bhatt–Scholze 2017, Lemma 3.4 (viii)).
 
 ## References
 
@@ -789,6 +794,73 @@ instance [Etale f] : Etale (f.perfection p hX hY) := by
 instance [IsOpenImmersion f] : IsOpenImmersion (f.perfection p hX hY) := by
   rw [← perfectionToPullback_snd]
   infer_instance
+
+/-- Over an affine open of the target with affine preimage, the perfection of a morphism is
+the spectrum of the map of colimit perfections on sections. -/
+theorem isPullback_perfection_app (U : Y.AffineZariskiSite)
+    (hU : IsAffineOpen (f ⁻¹ᵁ U.val)) :
+    IsPullback
+      (Spec.map (CommRingCat.ofHom (ColimitPerfection.map (natCast_app_eq_zero hY U.val)
+        (natCast_app_eq_zero (natCast_eq_zero_of_hom f hY) (f ⁻¹ᵁ U.val)) (f.app U.val).hom)))
+      ((X.perfectionCover p (natCast_eq_zero_of_hom f hY)).f ⟨f ⁻¹ᵁ U.val, hU⟩)
+      ((Y.perfectionCover p hY).f U) (f.perfection p (natCast_eq_zero_of_hom f hY) hY) := by
+  have hX := natCast_eq_zero_of_hom f hY
+  let V : X.AffineZariskiSite := ⟨f ⁻¹ᵁ U.val, hU⟩
+  let φ := CommRingCat.ofHom (ColimitPerfection.map
+    (natCast_app_eq_zero hY U.val) (natCast_app_eq_zero hX V.val) (f.app U.val).hom)
+  refine @IsOpenImmersion.isPullback _ _ (X.perfection p hX) (Y.perfection p hY)
+    (Spec.map φ) ((X.perfectionCover p hX).f V) ((Y.perfectionCover p hY).f U)
+    (f.perfection p hX hY)
+    (X.isOpenImmersion_perfectionCover_f p hX V) (Y.isOpenImmersion_perfectionCover_f p hY U) ?_ ?_
+  · refine @Scheme.perfection_hom_ext Y p _ hY _
+      (isPerfect_Spec_colimitPerfection (natCast_app_eq_zero hX V.val)) _ _ ?_
+    have happ : Spec.map (f.app U.val) ≫ U.property.fromSpec = hU.fromSpec ≫ f := by
+      simpa only [Scheme.Hom.appLE_eq_app] using
+        IsAffineOpen.SpecMap_appLE_fromSpec f U.property hU le_rfl
+    have hmap : (Y.toPerfectionPresheaf p hY).app (op U.val) ≫ φ =
+        f.app U.val ≫ (X.toPerfectionPresheaf p hX).app (op V.val) := by
+      apply CommRingCat.hom_ext
+      simp only [toPerfectionPresheaf_app]
+      exact ColimitPerfection.map_comp_of _ (f.app U.val).hom
+    have hspec : Spec.map ((X.toPerfectionPresheaf p hX).app (op V.val)) ≫ hU.fromSpec ≫ f =
+        Spec.map φ ≫ Spec.map ((Y.toPerfectionPresheaf p hY).app (op U.val)) ≫
+          U.property.fromSpec := by
+      rw [← happ, ← Spec.map_comp_assoc]
+      exact (congrArg (fun ψ ↦ Spec.map ψ ≫ U.property.fromSpec) hmap.symm).trans
+        (Spec.map_comp_assoc _ _ _)
+    -- Apply the chart equations directly, since rewriting can abstract the cover's index type.
+    have hleft := (Category.assoc _ _ _).trans
+      (congrArg ((X.perfectionCover p hX).f V ≫ ·) (f.perfection_fromPerfection p hX hY))
+    have hright := (Category.assoc _ _ _).trans
+      (congrArg (Spec.map φ ≫ ·) (Y.perfectionCover_f_fromPerfection p hY U))
+    exact hleft.trans ((X.perfectionCover_f_fromPerfection_assoc p hX V f).trans
+      (hspec.trans hright.symm))
+  · calc
+      _ = f.perfection p hX hY ⁻¹ᵁ (Y.fromPerfection p hY ⁻¹ᵁ U.val) :=
+        congrArg (f.perfection p hX hY ⁻¹ᵁ ·) (Y.fromPerfection_preimage p hY U).symm
+      _ = (X.fromPerfection p hX ≫ f) ⁻¹ᵁ U.val := by
+        simp only [← Scheme.Hom.comp_preimage, perfection_fromPerfection]
+      _ = X.fromPerfection p hX ⁻¹ᵁ V.val := Scheme.Hom.comp_preimage _ _ _
+      _ = _ := X.fromPerfection_preimage p hX V
+
+/-- The perfection of a closed immersion is a closed immersion
+(Bhatt–Scholze 2017, Lemma 3.4 (viii)). -/
+instance isClosedImmersion_perfection [IsClosedImmersion f] :
+    IsClosedImmersion (f.perfection p (natCast_eq_zero_of_hom f hY) hY) := by
+  refine IsZariskiLocalAtTarget.of_openCover (P := @IsClosedImmersion)
+    (Y.perfectionCover p hY) fun U ↦ ?_
+  have hs := f.isPullback_perfection_app p hY U (U.property.preimage f)
+  have hsurj : Function.Surjective (ColimitPerfection.map (natCast_app_eq_zero hY U.val)
+      (natCast_app_eq_zero (natCast_eq_zero_of_hom f hY) (f ⁻¹ᵁ U.val)) (f.app U.val).hom) := by
+    rw [ColimitPerfection.map_eq_iterateColimit_map]
+    refine (RingHom.IterateColimit.map_surjective_iff _ _).2 ?_
+    intro y
+    obtain ⟨x, hx⟩ := f.app_surjective U.val U.property y
+    exact ⟨0, x, hx.symm⟩
+  have hc := IsClosedImmersion.spec_of_surjective (CommRingCat.ofHom _) hsurj
+  rw [← hs.flip.isoPullback_hom_snd] at hc
+  exact (MorphismProperty.cancel_left_of_respectsIso (@IsClosedImmersion : MorphismProperty Scheme)
+    hs.flip.isoPullback.hom _).mp hc
 
 /-! ### Properties reflected by the perfection -/
 
