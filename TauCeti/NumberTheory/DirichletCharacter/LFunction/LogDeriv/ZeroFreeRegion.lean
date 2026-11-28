@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.GrowthNearOne
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -38,6 +39,8 @@ large `l` because `f_χ(1) ≠ 0`.
   bound for the logarithmic derivative, uniformly in `N ≤ e^l` under the lower bound near `1`.
 * `DirichletCharacter.eventually_entireLFunction_ne_zero_and_norm_logDeriv_le`: the same for one
   character and all large `l`.
+* `DirichletCharacter.exists_entireLFunction_ne_zero_and_norm_logDeriv_le_log_pow`: reformulation
+  on a region whose width depends only on `|Im s|`, including the whole region to its right.
 
 The exponent `25` and the threshold `10¹⁰` are what the numerical steps give; any fixed exponent
 would do for the applications. The classical region `Re s ≥ 1 - c / log (N (|Im s| + 3))` is
@@ -240,5 +243,63 @@ theorem eventually_entireLFunction_ne_zero_and_norm_logDeriv_le :
     inv_tendsto.eventually χ.eventually_le_norm_regularizedLFunction] with l hl hN h_near s
   exact χ.entireLFunction_ne_zero_and_norm_logDeriv_le hl (by linarith [add_one_le_exp l])
     fun _ ↦ h_near
+
+open scoped ArithmeticFunction.vonMangoldt in
+private theorem norm_logDeriv_entireLFunction_le_of_two_le_re (hs : 2 ≤ s.re) :
+    ‖logDeriv χ.entireLFunction s‖ ≤ 1 - (logDeriv riemannZeta 2).re := by
+  classical
+  have hs' : 1 < s.re := by linarith
+  have hpole : ‖(if χ = 1 then (1 : ℂ) else 0) / (s - 1)‖ ≤ 1 := by
+    have hdist : 1 ≤ ‖s - 1‖ := by linarith [re_le_norm (s - 1), sub_re s 1, one_re]
+    rw [norm_div, div_le_iff₀ (by linarith : 0 < ‖s - 1‖), one_mul]
+    exact (by split <;> simp : ‖(if χ = 1 then (1 : ℂ) else 0)‖ ≤ 1).trans hdist
+  have hL := χ.norm_logDeriv_LFunction_le_of_le_re (σ := 2) (by norm_num) hs
+  have hseries := (χ.LSeriesHasSum_twist_vonMangoldt hs').LSeries_eq
+  simp only [ofReal_ofNat, χ.logDeriv_LFunction_eq_neg_LSeries hs', norm_neg, Pi.mul_def] at hL
+  have hE : logDeriv χ.entireLFunction s =
+      (if χ = 1 then 1 else 0) / (s - 1) - LSeries (fun n : ℕ ↦ χ n * Λ n) s := by
+    rw [hseries]; ring
+  rw [hE]
+  exact (norm_sub_le _ _).trans (by linarith)
+
+/-- For a fixed character, `E_χ` is zero-free on a log-power region determined by height
+alone and its logarithmic derivative there grows at most as the reciprocal of the width. -/
+theorem exists_entireLFunction_ne_zero_and_norm_logDeriv_le_log_pow :
+    ∃ a > (0 : ℝ), ∃ C : ℝ, ∀ s : ℂ,
+      1 - a / Real.log (|s.im| + 3) ^ 25 ≤ s.re →
+      χ.entireLFunction s ≠ 0 ∧
+        ‖logDeriv χ.entireLFunction s‖ ≤ C * Real.log (|s.im| + 3) ^ 25 := by
+  obtain ⟨L, hL⟩ := eventually_atTop.1 χ.eventually_entireLFunction_ne_zero_and_norm_logDeriv_le
+  let K : ℝ := max L 2
+  have hK : 2 ≤ K := le_max_right _ _
+  refine ⟨(K ^ 25)⁻¹, by positivity, max (2 * K ^ 25) (1 - (logDeriv riemannZeta 2).re),
+    fun s hs ↦ ?_⟩
+  let t : ℝ := |s.im| + 3
+  have ht : 3 ≤ t := by dsimp [t]; linarith [abs_nonneg s.im]
+  have hlog : 1 ≤ Real.log t := (Real.le_log_iff_exp_le (by positivity : 0 < t)).2
+    (by linarith [Real.exp_one_lt_d9])
+  have hp : 1 ≤ Real.log t ^ 25 := one_le_pow₀ hlog
+  rcases le_or_gt 2 s.re with hright | hleft
+  · refine ⟨χ.entireLFunction_ne_zero_of_one_le_re (by linarith),
+      (norm_logDeriv_entireLFunction_le_of_two_le_re χ hright).trans ?_⟩
+    exact (le_max_right _ _).trans (le_mul_of_one_le_right
+      ((by positivity : 0 ≤ 2 * K ^ 25).trans (le_max_left _ _)) hp)
+  set l : ℝ := K * Real.log t with hl_def
+  have hKl : K ≤ l := le_mul_of_one_le_right (by positivity) hlog
+  have hl : L ≤ l := (le_max_left _ _).trans hKl
+  have hwidth : 1 / l ^ 25 = (K ^ 25)⁻¹ / Real.log t ^ 25 := by
+    rw [hl_def, mul_pow, one_div, mul_inv, div_eq_mul_inv]
+  have hσ : 1 - 1 / l ^ 25 ≤ s.re := by rwa [hwidth]
+  have hσ₀ : 0 ≤ s.re := by
+    have h : 1 ≤ l ^ 25 := one_le_pow₀ (by linarith)
+    linarith [one_div_le_one_div_of_le zero_lt_one h]
+  have hnorm : ‖s‖ ≤ Real.exp l := calc
+    _ ≤ |s.re| + |s.im| := norm_le_abs_re_add_abs_im s
+    _ ≤ t := by dsimp [t]; rw [abs_of_nonneg hσ₀]; linarith
+    _ = Real.exp (Real.log t) := (Real.exp_log (by positivity)).symm
+    _ ≤ _ := Real.exp_le_exp.2 (le_mul_of_one_le_left (by linarith) (by linarith))
+  refine (hL l hl s hσ hnorm).imp_right fun hb ↦ hb.trans ?_
+  rw [hl_def, mul_pow, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
 
 end DirichletCharacter
