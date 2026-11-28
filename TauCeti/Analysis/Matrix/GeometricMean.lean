@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.GeometricMean
 
+import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.Matrix.Sqrt
 
 /-!
@@ -42,6 +43,14 @@ reversed equation.
   trace of the square root of the covariance sandwich.
 * `Matrix.PosDef.trace_one_sub_geometricMean_ringInverse_mul_mul_conjTranspose`: the trace of
   the covariance left by subtracting the standard positive map.
+* `Matrix.PosDef.isGreatest_geometricMean`: for complex matrices with `A` positive definite and `B`
+  positive semidefinite, `geometricMean A B` is the greatest positive semidefinite `X` making the
+  block matrix `[[A, X], [X, B]]` positive semidefinite.
+
+## References
+
+* B. Simon, *Loewner's theorem on monotone matrix functions*, Springer, 2019, Thm. 36.1 and
+  Thm. 36.9 (b).
 -/
 
 public section
@@ -199,3 +208,32 @@ theorem PosDef.inv_geometricMean_ringInverse (hS : S.PosDef) (hT : T.PosDef) :
 end Symmetry
 
 end Matrix
+
+/-! ### Block maximality -/
+
+namespace Matrix.PosDef
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Block maximality of the geometric mean.** For a positive definite complex matrix `A` and a
+positive semidefinite `B`, `geometricMean A B` is the greatest positive semidefinite matrix `X`
+for which the block matrix `[[A, X], [X, B]]` is positive semidefinite. -/
+theorem isGreatest_geometricMean {A B : Matrix n n ℂ} (hA : A.PosDef) (hB : B.PosSemidef) :
+    IsGreatest {X | X.PosSemidef ∧ (fromBlocks A X X B).PosSemidef} (geometricMean A B) := by
+  let _ : Invertible A := hA.isUnit.invertible
+  -- By the Schur complement, the block condition on a Hermitian `X` is `X * A⁻¹ * X ≤ B`.
+  have hset : {X : Matrix n n ℂ | X.PosSemidef ∧ (fromBlocks A X X B).PosSemidef} =
+      {X | 0 ≤ X ∧ X * A⁻¹ʳ * X ≤ B} := by
+    ext X
+    simp only [Set.mem_ofPred_eq, nonneg_iff_posSemidef]
+    refine and_congr_right fun hX => ?_
+    have h := PosDef.fromBlocks₁₁ X B hA
+    rw [hX.isHermitian.eq] at h
+    rw [h, le_iff, nonsing_inv_eq_ringInverse]
+  rw [hset]
+  -- Mathlib proves the operator monotonicity of the square root in C⋆-algebras; the `ℓ²`
+  -- operator norm makes complex square matrices one.
+  open scoped Matrix.Norms.L2Operator in
+  exact hA.isStrictlyPositive.isGreatest_geometricMean_setOf_mul_ringInverse_mul_le hB.nonneg
+
+end Matrix.PosDef

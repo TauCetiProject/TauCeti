@@ -116,6 +116,6 @@ theorem ModuleCat.SingularityCategory.isZero_of_globalDimension_le (A : Type u) 
   -- Every finitely generated module has finite projective dimension in `FGModuleCat A`.
   SingularityCategory.isZero_of_forall_hasProjectiveDimensionLT (fun X ↦ ⟨n + 1,
     FGModuleCat.hasProjectiveDimensionLE_of_forget₂ n X
-      ((globalDimension_le_iff_hasProjectiveDimensionLE A n).1 h _)⟩) Y
+      ((Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat A) n).1 h _)⟩) Y
 
 end TauCeti
