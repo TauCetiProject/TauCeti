@@ -102,6 +102,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   `TauCeti.ExteriorAlgebra.wedgeLeftₗ` is exterior multiplication as a bilinear map.
 * `ExteriorAlgebra.basis_mem_exteriorPower`: every wedge-basis element `b.ExteriorAlgebra S`
   lies in `⋀[R]^S.card M`.
+* `TauCeti.ExteriorAlgebra.linearMap_ext_exteriorPower` and
+  `TauCeti.ExteriorAlgebra.linearMap_ext₂_exteriorPower`: semilinear and sesquilinear maps out of
+  `ExteriorAlgebra R M` are determined on homogeneous exterior powers.
 * `exteriorPower.not_finite_of_not_finite`: a positive exterior power of an infinite-dimensional
   vector space is infinite-dimensional.
 * `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
@@ -716,6 +719,26 @@ theorem _root_.ExteriorAlgebra.basis_mem_exteriorPower {I : Type*} [LinearOrder 
     b.ExteriorAlgebra S ∈ ⋀[R]^S.card M := by
   rw [_root_.ExteriorAlgebra.basis_eq_coe_basis b ⟨S, rfl⟩]
   exact (b.exteriorPower S.card ⟨S, rfl⟩).property
+
+/-- Two semilinear maps out of `ExteriorAlgebra R M` that agree on all homogeneous exterior powers
+`⋀[R]^p M` are equal. -/
+theorem linearMap_ext_exteriorPower {S P : Type*} [Semiring S] [AddCommMonoid P] [Module S P]
+    {σ : R →+* S} {f g : _root_.ExteriorAlgebra R M →ₛₗ[σ] P}
+    (h : ∀ {p : ℕ} (x : ⋀[R]^p M), f x = g x) : f = g := by
+  refine LinearMap.ext fun s ↦ ?_
+  induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[R]^p M with
+  | zero => simp
+  | add s₁ s₂ hs₁ hs₂ => simp [hs₁, hs₂]
+  | @homogeneous p s => exact h s
+
+/-- Two bilinear or sesquilinear maps `ExteriorAlgebra R M →ₛₗ[σ₁] ExteriorAlgebra R M →ₛₗ[σ₂] P`
+that agree on all homogeneous pairs `⋀[R]^p M × ⋀[R]^q M` are equal. -/
+theorem linearMap_ext₂_exteriorPower {S₁ S₂ P : Type*} [Semiring S₁] [Semiring S₂]
+    [AddCommMonoid P] [Module S₁ P] [Module S₂ P] [SMulCommClass S₂ S₁ P]
+    {σ₁ : R →+* S₁} {σ₂ : R →+* S₂}
+    {F G : _root_.ExteriorAlgebra R M →ₛₗ[σ₁] _root_.ExteriorAlgebra R M →ₛₗ[σ₂] P}
+    (h : ∀ {p q : ℕ} (x : ⋀[R]^p M) (y : ⋀[R]^q M), F x y = G x y) : F = G :=
+  linearMap_ext_exteriorPower fun x ↦ linearMap_ext_exteriorPower fun y ↦ h x y
 
 /-- Exterior multiplication `v ↦ m ∧ v` by a vector `m`, from the `n`-th exterior power to the
 `(n + 1)`-th. Mathlib's `exteriorPower.wedge R M 1 n` is the same product with values in degree

@@ -129,21 +129,6 @@ theorem sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (B : M →ₛₗ[
   rw [sesqExteriorAlgebra_coe_right B s ⟨t, ht⟩,
     TauCeti.exteriorPower.proj_eq_zero_of_mem_of_ne hpq hs, map_zero, LinearMap.zero_apply]
 
-/-- Two `σ`-sesquilinear forms on `ExteriorAlgebra R M` that agree on all homogeneous pairs
-`⋀[R]^p M × ⋀[R]^q M` are equal. -/
-private theorem sesqForm_ext_exteriorPower
-    {F G : _root_.ExteriorAlgebra R M →ₛₗ[σ] _root_.ExteriorAlgebra R M →ₗ[R] R}
-    (h : ∀ {p q : ℕ} (x : ⋀[R]^p M) (y : ⋀[R]^q M), F x y = G x y) : F = G := by
-  refine LinearMap.ext fun s ↦ LinearMap.ext fun t ↦ ?_
-  induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[R]^p M with
-  | zero => simp
-  | add s₁ s₂ hs₁ hs₂ => simp [hs₁, hs₂]
-  | @homogeneous p s =>
-    induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
-    | zero => simp
-    | add t₁ t₂ ht₁ ht₂ => simp [ht₁, ht₂]
-    | @homogeneous q t => exact h s t
-
 /-- A `σ`-sesquilinear form on `ExteriorAlgebra R M` equals `B.sesqExteriorAlgebra` if and only if
 it restricts to `B.sesqExteriorPower n` on each homogeneous exterior power `⋀[R]^n M` and makes
 distinct exterior powers orthogonal. -/
@@ -155,7 +140,7 @@ theorem eq_sesqExteriorAlgebra_iff {B : M →ₛₗ[σ] M →ₗ[R] R}
   refine ⟨by rintro rfl; exact ⟨fun _ _ _ ↦ sesqExteriorAlgebra_coe_coe B _ _,
       fun hpq x y ↦ B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq x.property
         y.property⟩,
-    fun ⟨hsame, hne⟩ ↦ sesqForm_ext_exteriorPower fun {p q} s t ↦ ?_⟩
+    fun ⟨hsame, hne⟩ ↦ linearMap_ext₂_exteriorPower fun {p q} s t ↦ ?_⟩
   rcases eq_or_ne p q with rfl | hpq
   · rw [hsame, sesqExteriorAlgebra_coe_coe]
   · rw [hne hpq, B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.property t.property]
@@ -316,7 +301,7 @@ theorem sesqExteriorAlgebra_degreeScaling_left (B : M →ₛₗ[σ] M →ₗ[R] 
       B.sesqExteriorAlgebra s (degreeScaling (Units.map σ.toMonoidHom r) t) := by
   have h : B.sesqExteriorAlgebra.comp (degreeScaling r).toLinearMap =
       B.sesqExteriorAlgebra.compl₂ (degreeScaling (Units.map σ.toMonoidHom r)).toLinearMap := by
-    refine sesqForm_ext_exteriorPower fun {p q} x y ↦ ?_
+    refine linearMap_ext₂_exteriorPower fun {p q} x y ↦ ?_
     simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, AlgEquiv.toLinearMap_apply,
       degreeScaling_of_mem_exteriorPower _ x.property,
       degreeScaling_of_mem_exteriorPower _ y.property]
