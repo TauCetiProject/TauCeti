@@ -20,7 +20,8 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 
 This file provides the continuous map from `Lᵖ` to `L¹` obtained by restricting to a
 finite-measure set, together with the corresponding set-integral map.  These constructions are
-useful whenever an `Lᵖ` identity is tested against integrals on finite-measure sets. It also
+useful whenever an `Lᵖ` identity is tested against integrals on finite-measure sets. On `L¹`
+the set-integral map exists for every set, without finiteness of its measure. It also
 collects facts about restricting `Lᵖ` classes and their representatives to measurable or
 finite-measure sets.
 
@@ -37,6 +38,8 @@ finite-measure sets.
 * `Set.setIntegralLp`: integration on a finite-measure set as a continuous linear map on
   `Lᵖ`.
 * `Set.setIntegralLp_apply`: the pointwise formula for this map.
+* `MeasureTheory.L1.setIntegralCLM`: integration on an arbitrary set as a continuous linear map on
+  `L¹`, with the pointwise formula `MeasureTheory.L1.setIntegralCLM_apply`.
 * `MeasureTheory.Lp.integralPositiveLinearMap`: integration against a finite measure as a
   positive linear functional on real `Lᵖ`.
 * `TauCeti.totallyBounded_restrict_of_forall_eqOn`: restricting a totally bounded family of `Lᵖ`
@@ -118,6 +121,27 @@ theorem setIntegralLp_apply (s : Set E) (hμs : μ s < ∞)
   exact integral_congr_ae (LpToL1RestrictCLM_coeFn s hμs f)
 
 end Set
+
+namespace MeasureTheory.L1
+
+variable {α E : Type*} (𝕜 : Type*) [MeasurableSpace α] {μ : Measure α}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+
+/-- Integration over a set `s` as a continuous linear map on `L¹(μ)`. Unlike
+`Set.setIntegralLp`, it needs no finiteness of `μ s`. -/
+def setIntegralCLM (s : Set α) : Lp E 1 μ →L[𝕜] E :=
+  (integralCLM' 𝕜).comp (LpToLpRestrictCLM α E 𝕜 μ 1 s)
+
+variable {𝕜} in
+/-- The set integral of an `L¹` class over `s` is the set integral of its representative. -/
+@[simp]
+theorem setIntegralCLM_apply (s : Set α) (f : Lp E 1 μ) :
+    setIntegralCLM 𝕜 s f = ∫ x in s, f x ∂μ := by
+  rw [setIntegralCLM, ContinuousLinearMap.comp_apply, ← integral_eq', integral_eq_integral]
+  exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 s f)
+
+end MeasureTheory.L1
 
 namespace MeasureTheory.Lp
 
