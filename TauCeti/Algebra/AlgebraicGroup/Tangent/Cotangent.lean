@@ -38,7 +38,11 @@ to turn the coefficient-natural adjoint action into an action on one fixed finit
   `φ : A →ₐc[R] A'` maps cotangent spaces covariantly, hence their duals contravariantly; the
   dual map is the differential of `Spec A' → Spec A` and agrees with precomposition of
   derivations (`Derivation.cotangentLinearEquiv_comp_cotangentSpaceMap`,
-  `Derivation.cotangentLinearEquiv_dualCotangentMap`).
+  `Derivation.cotangentLinearEquiv_dualCotangentMap`, `Derivation.apply_mapCotangent_toCotangent`,
+  `Derivation.apply_cotangentSpaceMap_toCotangent`).
+* `AlgHom.augmentationIdeal_le_comap_of_counitAlgHom_comp` and
+  `AlgHom.quotient_mk_augmentationIdeal_comp_of_counitAlgHom_comp`: counit-preserving algebra
+  morphisms preserve the augmentation ideal and induce the identity modulo it.
 * `Derivation.dualCotangentEquiv`: the differential of a bialgebra equivalence.
 
 ## References
@@ -152,6 +156,32 @@ theorem _root_.BialgHom.comap_augmentationIdeal {k H K : Type*} [CommRing k] [Co
   simp only [Ideal.mem_comap, TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker]
   exact ⟨fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx,
     fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx⟩
+
+/-- An algebra homomorphism intertwining the counits maps the source augmentation ideal into the
+target augmentation ideal. -/
+theorem _root_.AlgHom.augmentationIdeal_le_comap_of_counitAlgHom_comp
+    {k H K : Type*} [CommRing k] [CommRing H] [CommRing K] [Bialgebra k H] [Bialgebra k K]
+    (f : H →ₐ[k] K)
+    (hf : (_root_.Bialgebra.counitAlgHom k K).comp f = _root_.Bialgebra.counitAlgHom k H) :
+    TauCeti.Bialgebra.AugmentationIdeal k H ≤
+      (TauCeti.Bialgebra.AugmentationIdeal k K).comap f := by
+  intro x hx
+  simp only [Ideal.mem_comap, TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker,
+    AlgHom.coe_toRingHom] at hx ⊢
+  rw [← AlgHom.comp_apply, hf]
+  exact hx
+
+/-- An algebra endomorphism preserving the counit induces the identity on the quotient by the
+augmentation ideal. -/
+theorem _root_.AlgHom.quotient_mk_augmentationIdeal_comp_of_counitAlgHom_comp
+    {k H : Type*} [CommRing k] [CommRing H] [Bialgebra k H] (f : H →ₐ[k] H)
+    (hf : (_root_.Bialgebra.counitAlgHom k H).comp f = _root_.Bialgebra.counitAlgHom k H) :
+    Ideal.Quotient.mk (TauCeti.Bialgebra.AugmentationIdeal k H) ∘ f =
+      Ideal.Quotient.mk (TauCeti.Bialgebra.AugmentationIdeal k H) := by
+  ext x
+  simp only [Function.comp_apply, Ideal.Quotient.eq, TauCeti.Bialgebra.AugmentationIdeal,
+    RingHom.mem_ker, AlgHom.coe_toRingHom, map_sub]
+  rw [← AlgHom.comp_apply, hf, sub_self]
 
 section Map
 
@@ -348,6 +378,33 @@ lemma cotangentLinearEquiv_comp_cotangentSpaceMap [Ring B] [Algebra R B] (φ : A
     LinearMap.comp_apply, Bialgebra.cotangentSpaceMap_cotangentMap]
   -- Both sides are the same value of `B`, read in the two counit coefficient synonyms.
   rfl
+
+/-- Evaluating a cotangent-space functional on `Ideal.mapCotangent` of an augmentation class
+gives the corresponding derivation evaluated on the underlying image. -/
+lemma apply_mapCotangent_toCotangent [Ring B] [Algebra R B]
+    (g : A →ₐ[R] A')
+    (hgI : Bialgebra.AugmentationIdeal R A ≤ (Bialgebra.AugmentationIdeal R A').comap g)
+    (f : Bialgebra.CotangentSpace R A' →ₗ[R] B)
+    (x : Bialgebra.AugmentationIdeal R A) :
+    f (Ideal.mapCotangent (Bialgebra.AugmentationIdeal R A)
+        (Bialgebra.AugmentationIdeal R A') g hgI
+        ((Bialgebra.AugmentationIdeal R A).toCotangent x)) =
+      Bialgebra.CounitAlgebra.algEquivSelf R A' B
+        (cotangentLinearEquiv (R := R) (A := A') (B := B) f (g x.val)) := by
+  rw [Ideal.mapCotangent_toCotangent, ← Bialgebra.cotangentMap_augmentation R A',
+    algEquivSelf_cotangentLinearEquiv_apply]
+
+/-- Evaluating a cotangent-space functional on `Bialgebra.cotangentSpaceMap` of an augmentation
+class gives the corresponding derivation evaluated on the underlying image. -/
+lemma apply_cotangentSpaceMap_toCotangent [Ring B] [Algebra R B]
+    (ψ : A →ₐc[R] A')
+    (f : Bialgebra.CotangentSpace R A' →ₗ[R] B)
+    (x : Bialgebra.AugmentationIdeal R A) :
+    f (Bialgebra.cotangentSpaceMap ψ ((Bialgebra.AugmentationIdeal R A).toCotangent x)) =
+      Bialgebra.CounitAlgebra.algEquivSelf R A' B
+        (cotangentLinearEquiv (R := R) (A := A') (B := B) f ((ψ : A →ₐ[R] A') x.val)) := by
+  rw [← Bialgebra.cotangentMap_augmentation R A x, Bialgebra.cotangentSpaceMap_cotangentMap,
+    algEquivSelf_cotangentLinearEquiv_apply, BialgHom.coe_toAlgHom]
 
 /-- The differential on cotangent duals is precomposition of derivations along `φ`. -/
 @[simp]

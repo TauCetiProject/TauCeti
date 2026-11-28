@@ -76,6 +76,8 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 * `Derivation.leibniz_ringInverse_factorial_mul_pow_succ`: the derivative of the divided power
   `x ^ (j + 1) / (j + 1)!` when `D x = 1`.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
+* `Derivation.map_pow_eq_zero_of_natCast_eq_zero`: a derivation over a base ring where `n = 0`
+  annihilates all `n`-th powers.
 * `Derivation.ofMapAlgebraMap`: a derivation killing the image of `R` as an `R`-derivation.
 * `Derivation.conjAlgEquiv`: a derivation transported along an algebra isomorphism.
 -/
@@ -95,6 +97,10 @@ theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 
 /-- In characteristic `p`, any derivation annihilates `p`-th powers. -/
 theorem map_pow_eq_zero_of_charP {p : ℕ} [CharP A p] (x : A) : D (x ^ p) = 0 := by
   rw [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul A, CharP.cast_eq_zero, zero_smul]
+
+/-- A derivation over a base ring where `n = 0` annihilates all `n`-th powers. -/
+theorem map_pow_eq_zero_of_natCast_eq_zero {n : ℕ} (hn : (n : R) = 0) (a : A) : D (a ^ n) = 0 := by
+  rw [D.leibniz_pow, ← Nat.cast_smul_eq_nsmul R, hn, zero_smul]
 
 /-- **Leibniz rule for finite products**: `D (∏ i ∈ s, f i)` is the sum over `j ∈ s` of
 `D (f j)` times the product of the other factors. -/

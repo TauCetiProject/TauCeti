@@ -25,8 +25,8 @@ of a `TauCeti.HopfIdeal`, use `Bialgebra.Quotient.liftBialgHom I.toIdeal` direct
 
 * `Bialgebra.Quotient.liftBialgHom`: the bialgebra morphism `H ⧸ J →ₐc[R] K` induced from a
   bialgebra morphism `f : H →ₐc[R] K` which kills the two-sided coideal `J`, together with its
-  computation lemmas (`liftBialgHom_mk`, `liftBialgHom_comp_mkBialgHom`) and its uniqueness
-  characterization (`liftBialgHom_unique`).
+  computation lemmas (`liftBialgHom_mk`, `liftBialgHom_comp_mkBialgHom`), its extensionality
+  principle (`bialgHom_ext`), and its uniqueness characterization (`liftBialgHom_unique`).
 
 ## References
 
@@ -60,6 +60,15 @@ theorem mkBialgHom_surjective : Function.Surjective (mkBialgHom (R := R) J) := b
 instance instRingHomSurjectiveMkBialgHom :
     RingHomSurjective (mkBialgHom (R := R) J : H →+* H ⧸ J) :=
   ⟨mkBialgHom_surjective (R := R) J⟩
+
+/-- Two bialgebra morphisms out of a bialgebra quotient are equal if they agree after
+precomposition with `mkBialgHom`. -/
+theorem bialgHom_ext {J : Ideal H} [J.IsTwoSided] [(J.restrictScalars R).IsCoideal]
+    ⦃f g : H ⧸ J →ₐc[R] K⦄
+    (h : f.comp (mkBialgHom (R := R) J) = g.comp (mkBialgHom (R := R) J)) : f = g := by
+  ext q
+  obtain ⟨x, rfl⟩ := mkBialgHom_surjective (R := R) J q
+  simpa only [← BialgHom.comp_apply] using BialgHom.congr_fun h x
 
 /-- A bialgebra morphism out of `H` which kills a two-sided coideal `J` factors through the
 quotient bialgebra `H ⧸ J`. -/

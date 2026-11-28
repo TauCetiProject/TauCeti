@@ -25,6 +25,8 @@ rewritable.
 ## Main definitions
 
 * `TauCeti.QuotientGroup.mapOfLE hVU`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for `V ≤ U`.
+* `MonoidHom.quotientMap hf`: the map on left coset spaces `G ⧸ I → H ⧸ J` induced by
+  `f : G →* H` with `I ≤ J.comap f`, without requiring `I` or `J` to be normal.
 
 ## Main statements
 
@@ -41,6 +43,9 @@ rewritable.
 * `TauCeti.QuotientGroup.closure_range_quotient_mk_eq_top_of_le`: a family generating `G ⧸ N'`
   also generates `G ⧸ N` when `N' ≤ N`.
 * `TauCeti.QuotientGroup.ker_mapOfLE`: its kernel is the image of `U` in `G ⧸ V`.
+* `MonoidHom.quotientMap_mk`: evaluates `MonoidHom.quotientMap` on `QuotientGroup.mk g`.
+* `MonoidHom.quotientMap_id`, `MonoidHom.quotientMap_comp`, and
+  `MonoidHom.quotientMap_comp_apply`: identity and composition laws for `MonoidHom.quotientMap`.
 
 ## Usage
 
@@ -138,3 +143,48 @@ theorem ker_mapOfLE [U.Normal] [V.Normal] (hVU : V ≤ U) :
 end QuotientGroup
 
 end TauCeti
+
+namespace MonoidHom
+
+/-- The map on left coset spaces `G ⧸ I → H ⧸ J` induced by a group homomorphism `f : G →* H`
+with `I ≤ J.comap f`, without requiring `I` or `J` to be normal. -/
+def quotientMap {G H : Type*} [Group G] [Group H] (f : G →* H) {I : Subgroup G}
+    {J : Subgroup H} (hf : I ≤ J.comap f) : G ⧸ I → H ⧸ J :=
+  Quotient.map' f fun _ _ hab => by
+    rw [QuotientGroup.leftRel_apply] at hab ⊢
+    rw [← map_inv, ← map_mul]
+    exact hf hab
+
+/-- Evaluation of `MonoidHom.quotientMap` on a left coset `QuotientGroup.mk g`. -/
+@[simp]
+theorem quotientMap_mk {G H : Type*} [Group G] [Group H] (f : G →* H) {I : Subgroup G}
+    {J : Subgroup H} (hf : I ≤ J.comap f) (g : G) :
+    f.quotientMap hf (QuotientGroup.mk g) = QuotientGroup.mk (f g) := by
+  rfl
+
+/-- The map on `G ⧸ I` induced by `MonoidHom.id G` is the identity. -/
+@[simp]
+theorem quotientMap_id {G : Type*} [Group G] {I : Subgroup G}
+    (hI : I ≤ I.comap (MonoidHom.id G)) :
+    (MonoidHom.id G).quotientMap hI = _root_.id :=
+  funext <| Quotient.ind fun _ => rfl
+
+/-- Composition of `MonoidHom.quotientMap` along composable group homomorphisms. -/
+@[simp]
+theorem quotientMap_comp {G H K : Type*} [Group G] [Group H] [Group K]
+    (g : H →* K) (f : G →* H) {I : Subgroup G} {J : Subgroup H} {L : Subgroup K}
+    (hg : J ≤ L.comap g) (hf : I ≤ J.comap f) :
+    g.quotientMap hg ∘ f.quotientMap hf =
+      (g.comp f).quotientMap (hf.trans (Subgroup.comap_mono hg)) :=
+  funext <| Quotient.ind fun _ => rfl
+
+/-- Applied form of `MonoidHom.quotientMap_comp`. -/
+@[simp]
+theorem quotientMap_comp_apply {G H K : Type*} [Group G] [Group H] [Group K]
+    (g : H →* K) (f : G →* H) {I : Subgroup G} {J : Subgroup H} {L : Subgroup K}
+    (hg : J ≤ L.comap g) (hf : I ≤ J.comap f) (x : G ⧸ I) :
+    g.quotientMap hg (f.quotientMap hf x) =
+      (g.comp f).quotientMap (hf.trans (Subgroup.comap_mono hg)) x :=
+  Quotient.inductionOn x fun _ => rfl
+
+end MonoidHom

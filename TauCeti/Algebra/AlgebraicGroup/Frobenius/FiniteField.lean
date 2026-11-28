@@ -58,16 +58,25 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
 
 * `TauCeti.FiniteField.frobeniusPoints_apply_apply`: the Frobenius raises every value of a point
   to the `q ^ n`-th power.
+* `TauCeti.FiniteField.frobeniusPoints_one`, `TauCeti.FiniteField.toConv_comp_eq_frobeniusPoints`,
+  `TauCeti.FiniteField.iterate_frobeniusPoints_one`,
+  `TauCeti.FiniteField.mapValue_frobeniusAlgEquivOfAlgebraic_pow`: identifying post-composition
+  with a `q ^ n`-power endomorphism or Galois Frobenius power and iterating `frobeniusPoints`.
 * `TauCeti.FiniteField.mapDomain_frobeniusBialgHom`: for commutative `H`, the `q`-Frobenius on
   points is pre-composition with the Frobenius endomorphism `TauCeti.frobeniusBialgHom K H`.
 * `TauCeti.FiniteField.mapDomain_comp_frobeniusPoints`: the Frobenius on points commutes with
   every morphism of group schemes over `K`.
 * `TauCeti.FiniteField.coe_rationalPointsMulEquiv_mapDomain`: the identification of the fixed
   points with the `K`-points is natural in the group scheme.
+* `TauCeti.FiniteField.range_mapValue_eq_fixedSubgroup_frobeniusPoints`: for a finite field
+  extension `L / K` and `ι : L →ₐ[K] A` into a domain, the points coming from `L`-points are those
+  fixed by the `q ^ [L : K]`-Frobenius.
 * `TauCeti.FiniteField.finite_fixedSubgroup_frobeniusPoints`: for `H` of finite type and `A` a
   domain, the points fixed by a positive iterate of the Frobenius form a finite group.
-* `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`:
-  base change identifies the geometric Frobenius with the `q`-Frobenius on points.
+* `baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`,
+  `baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom_pow` (in
+  `TauCeti.FiniteField`): base change identifies the geometric Frobenius and its powers with
+  `frobeniusPoints` on points.
 * `BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective`: the fixed points of a closed
   subgroup scheme are its points that are fixed in the ambient group.
 * `BialgHom.tensorProductMap_comp_geometricFrobeniusBialgHom`: the geometric Frobenius commutes
@@ -128,6 +137,23 @@ theorem frobeniusPoints_zero : frobeniusPoints K 0 (H := H) (A := A) = MonoidHom
   MonoidHom.ext fun f => ofConv_injective (AlgHom.ext fun h => by simp)
 
 variable (K) in
+/-- The first iterate of the Frobenius on points is post-composition with the `q`-Frobenius
+algebra endomorphism. -/
+theorem frobeniusPoints_one :
+    frobeniusPoints K 1 (H := H) (A := A) =
+      AlgHom.mapValue (_root_.FiniteField.frobeniusAlgHom K A) := by
+  rw [frobeniusPoints, pow_one]
+
+/-- Post-composing a point with any `K`-algebra endomorphism `σ` of `A` acting as `z ↦ z ^ q ^ n`
+coincides with `frobeniusPoints K n`. -/
+theorem toConv_comp_eq_frobeniusPoints {n : ℕ} (σ : A →ₐ[K] A)
+    (hσ : ∀ z, σ z = z ^ Fintype.card K ^ n) (g : WithConv (H →ₐ[K] A)) :
+    toConv (σ.comp g.ofConv) = frobeniusPoints K n g := by
+  apply ofConv_injective
+  ext h
+  rw [ofConv_toConv, AlgHom.comp_apply, hσ, frobeniusPoints_apply_apply, Nat.card_eq_fintype_card]
+
+variable (K) in
 /-- Iterates of the Frobenius on points compose by adding exponents. -/
 theorem frobeniusPoints_add (m n : ℕ) :
     frobeniusPoints K (m + n) (H := H) (A := A) =
@@ -135,6 +161,32 @@ theorem frobeniusPoints_add (m n : ℕ) :
   MonoidHom.ext fun f => ofConv_injective (AlgHom.ext fun h => by
     simp only [frobeniusPoints_apply_apply, MonoidHom.comp_apply, ← pow_mul, ← pow_add,
       add_comm m n])
+
+variable (K) in
+/-- Iterating the `q`-Frobenius on points `n` times is the `q ^ n`-Frobenius on points. -/
+theorem iterate_frobeniusPoints_one (n : ℕ) :
+    (⇑(frobeniusPoints K 1 (H := H) (A := A)))^[n] = frobeniusPoints K n := by
+  induction n with
+  | zero =>
+    ext g
+    simp [frobeniusPoints_zero]
+  | succ n ih =>
+    ext g
+    rw [Function.iterate_succ_apply', ih, ← MonoidHom.comp_apply, ← frobeniusPoints_add,
+      add_comm 1 n]
+
+/-- Post-composing a point valued in an algebraic field extension `L / K` with the `n`-th power
+of the Galois Frobenius `_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L` coincides with
+`frobeniusPoints K n`. -/
+theorem mapValue_frobeniusAlgEquivOfAlgebraic_pow
+    {L : Type*} [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] (n : ℕ)
+    (g : WithConv (H →ₐ[K] L)) :
+    AlgHom.mapValue (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ n).toAlgHom g =
+      frobeniusPoints K n g := by
+  rw [AlgHom.mapValue_apply]
+  exact toConv_comp_eq_frobeniusPoints _ (fun z => by
+    have hit := congrFun (_root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate K L n) z
+    simpa [AlgEquiv.coe_pow] using hit) g
 
 /-- The Frobenius on points is natural in the coordinate bialgebra: it commutes with the map on
 points induced by any bialgebra morphism, that is, with every morphism of group schemes over
@@ -283,6 +335,26 @@ theorem coe_rationalPointsMulEquiv_mapDomain {H₁ : Type*} [Semiring H₁] [_ro
 
 end Domain
 
+/-- Over a domain `A`, for a finite field extension `L / K` and a `K`-algebra homomorphism
+`ι : L →ₐ[K] A`, the points coming from `L`-points along `ι` are exactly the points fixed by the
+`|K| ^ [L : K]`-Frobenius. -/
+theorem range_mapValue_eq_fixedSubgroup_frobeniusPoints [IsDomain A] {L : Type*} [Field L]
+    [Finite L] [Algebra K L] (ι : L →ₐ[K] A) :
+    (AlgHom.mapValue (H := H) ι).range =
+      fixedSubgroup (frobeniusPoints K (Module.finrank K L)) := by
+  let _ : Algebra L A := ι.toRingHom.toAlgebra
+  have : Fintype L := Fintype.ofFinite L
+  have hcard : Nat.card L = Nat.card K ^ Module.finrank K L := by
+    rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+    exact Module.card_eq_pow_finrank (K := K) (V := L)
+  ext f
+  rw [MonoidHom.mem_range, ← MonoidHom.mem_mrange,
+    AlgHom.mem_mrange_mapValue_iff ι.toRingHom.injective, mem_fixedSubgroup,
+    frobeniusPoints_eq_self_iff]
+  refine forall_congr' fun h => ?_
+  rw [← hcard, pow_natCard_eq_self_iff_mem_range_algebraMap]
+  simp [RingHom.algebraMap_toAlgebra]
+
 /-- **A morphism of group schemes over `K` carries Frobenius-fixed points to Frobenius-fixed
 points.** -/
 theorem map_fixedSubgroup_frobeniusPoints_le {H₁ : Type*} [Semiring H₁] [_root_.HopfAlgebra K H₁]
@@ -350,6 +422,31 @@ theorem baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom 
   ext f : 1
   exact (BialgHom.baseChangePointsMulEquiv_symm_mapDomain (frobeniusBialgHom K H) f).trans
     (DFunLike.congr_fun mapDomain_frobeniusBialgHom _)
+
+/-- **Base change identifies powers of the geometric Frobenius with `frobeniusPoints`.** Under
+`G(R) ≃ Hom_K(H, R)`, the map on points induced by `(geometricFrobeniusBialgHom K k H) ^ n` is
+`frobeniusPoints K n`. -/
+theorem baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom_pow (n : ℕ) :
+    ((AlgHom.baseChangePointsMulEquiv (k := K) (K := k) (A := H) (R := R)).symm :
+        WithConv (k ⊗[K] H →ₐ[k] R) →* WithConv (H →ₐ[K] R)).comp
+      (BialgHom.mapDomain (A := R) ((geometricFrobeniusBialgHom K k H) ^ n)) =
+    (frobeniusPoints K n).comp
+      ((AlgHom.baseChangePointsMulEquiv (k := K) (K := k) (A := H) (R := R)).symm :
+        WithConv (k ⊗[K] H →ₐ[k] R) →* WithConv (H →ₐ[K] R)) := by
+  induction n with
+  | zero =>
+    ext f : 1
+    simp [BialgHom.End_toOne_one]
+  | succ n ih =>
+    ext f : 1
+    simp only [MonoidHom.comp_apply, pow_succ', BialgHom.End_toMul_mul, BialgHom.mapDomain_comp]
+    have hn := DFunLike.congr_fun ih
+      (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H) f)
+    have h1 := DFunLike.congr_fun
+      (baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom
+        (K := K) (k := k) (H := H) (R := R)) f
+    simp only [MonoidHom.comp_apply] at hn h1
+    rw [hn, h1, ← MonoidHom.comp_apply, ← frobeniusPoints_add]
 
 end Geometric
 
