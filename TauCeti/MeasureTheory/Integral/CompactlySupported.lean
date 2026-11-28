@@ -38,7 +38,9 @@ to them directly.
 
 On a locally compact `R1Space` with measurable open sets, a compact set `K` inside an open set
 `U` has a compactly supported Urysohn cutoff whose integral against every measure is at most the
-mass of `U`, and at least the mass of `K` for measures finite on compact sets.
+mass of `U`, and at least the mass of `K` for measures finite on compact sets. Conversely, on a
+locally compact `R1Space`, a measure against which every nonnegative compactly supported
+continuous function has finite lower integral is finite on compact sets.
 
 ## Main declarations
 
@@ -46,6 +48,9 @@ mass of `U`, and at least the mass of `K` for measures finite on compact sets.
   approximation in integral norm.
 * `IsCompact.exists_compactlySupported_measure_le_integral_le`: a compactly supported cutoff
   whose integral lies between the masses of a compact set and of an open neighbourhood of it.
+* `TauCeti.isFiniteMeasureOnCompacts_of_lintegral_lt_top`: a measure against which every
+  nonnegative compactly supported continuous function has finite lower integral is finite on
+  compact sets.
 * `CompactlySupportedContinuousMap.integral_extendZero`: integrals of extensions by zero along
   open embeddings are integrals against pullback measures.
 * `MeasureTheory.Measure.ext_of_integral_eq_on_compactlySupported_of_isOpen`: measures carried by
@@ -175,3 +180,30 @@ theorem IsCompact.exists_compactlySupported_measure_le_integral_le {K U : Set X}
       (image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfU h)).le
 
 end Cutoff
+
+namespace TauCeti
+
+open scoped NNReal
+
+/-- A measure on a locally compact `R1Space` whose lower integrals of nonnegative compactly
+supported continuous functions are all finite is finite on compact sets: by Urysohn's lemma, the
+indicator of a compact set lies below such a function. -/
+theorem isFiniteMeasureOnCompacts_of_lintegral_lt_top {X : Type*} [TopologicalSpace X]
+    [R1Space X] [LocallyCompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    (h : ∀ f : C_c(X, ℝ≥0), ∫⁻ x, f x ∂μ < ∞) : IsFiniteMeasureOnCompacts μ := by
+  refine ⟨fun K hK ↦ ?_⟩
+  obtain ⟨f, hfK, hfc, -, -⟩ :=
+    exists_continuousMap_one_of_isCompact_subset_isOpen hK isOpen_univ (Set.subset_univ K)
+  have hf : HasCompactSupport f :=
+    .intro' hfc (isClosed_tsupport f) fun _ hx ↦ image_eq_zero_of_notMem_tsupport hx
+  let g : C_c(X, ℝ≥0) :=
+    ⟨⟨fun x ↦ (f x).toNNReal, continuous_real_toNNReal.comp f.continuous⟩,
+      hf.comp_left Real.toNNReal_zero⟩
+  calc μ K = ∫⁻ _ in K, 1 ∂μ := (setLIntegral_one K).symm
+    _ ≤ ∫⁻ x in K, g x ∂μ :=
+        setLIntegral_mono g.continuous.measurable.coe_nnreal_ennreal
+          fun x hx ↦ by simp [g, hfK hx]
+    _ ≤ ∫⁻ x, g x ∂μ := setLIntegral_le_lintegral K _
+    _ < ∞ := h g
+
+end TauCeti

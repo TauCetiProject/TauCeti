@@ -62,6 +62,8 @@ and column integrals are only required almost everywhere.
 * `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
 * `TauCeti.lintegral_lintegral_mul_mul_le`: Schur's test for the bilinear form
   `∫∫ f(x) k(x, y) g(y)`, bounded by `‖f‖_p ‖g‖_q` for Hölder conjugate `p` and `q`.
+* `TauCeti.lintegral_lintegral_mul_sub_mul_le`: the bilinear form of a symmetric convolution
+  kernel on `L²` of a group with a right-invariant measure.
 * `TauCeti.tsum_tsum_mul_mul_le`: the bilinear form of a convolution kernel on a countable group.
 * `TauCeti.lintegral_lintegral_mul_indicator_ball_mul_le`: the bilinear form for the kernel
   `1_{|x - y| < R}` on the real line, whose rows and columns have length `2R`.
@@ -322,6 +324,35 @@ theorem lintegral_lintegral_mul_mul_le [SFinite μ] [SFinite ν] {k : α → β 
         exact eLpNorm_lintegral_mul_le hk hg (ENNReal.HolderConjugate.one_le (p := q) (q := p))
           hA hB
     _ = _ := by ring
+
+/-- **Schur's test for a symmetric translation-invariant kernel** on `L²`: on an additive group
+with an s-finite right-invariant measure, a measurable kernel `k` with `k (-z) = k z` satisfies
+`∫∫ g(x) k(x - y) g(y) ≤ (∫ k) * ∫ g²`, since all rows and columns of `(x, y) ↦ k (x - y)` have
+integral `∫ k`. -/
+theorem lintegral_lintegral_mul_sub_mul_le {G : Type*} [AddGroup G] [MeasurableSpace G]
+    [MeasurableAdd G] [MeasurableSub₂ G] {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+    {k : G → ℝ≥0∞} (hk : Measurable k) (hk_neg : ∀ z, k (-z) = k z) {g : G → ℝ≥0∞}
+    (hg : AEMeasurable g μ) :
+    ∫⁻ x, ∫⁻ y, g x * (k (x - y) * g y) ∂μ ∂μ ≤ (∫⁻ z, k z ∂μ) * ∫⁻ x, g x ^ 2 ∂μ := by
+  have hrow (x : G) : ∫⁻ y, k (x - y) ∂μ = ∫⁻ z, k z ∂μ := by
+    simp_rw [← hk_neg (x - _), neg_sub]
+    exact lintegral_sub_right_eq_self k x
+  have hcol (y : G) : ∫⁻ x, k (x - y) ∂μ = ∫⁻ z, k z ∂μ := lintegral_sub_right_eq_self k y
+  have hg2 : eLpNorm g 2 μ ^ 2 = ∫⁻ x, g x ^ 2 ∂μ := by
+    simpa using eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hg.aestronglyMeasurable
+  calc ∫⁻ x, ∫⁻ y, g x * (k (x - y) * g y) ∂μ ∂μ
+      ≤ (∫⁻ z, k z ∂μ) ^ (1 - (2 : ℝ≥0∞).toReal⁻¹) * (∫⁻ z, k z ∂μ) ^ (2 : ℝ≥0∞).toReal⁻¹ *
+          eLpNorm g 2 μ * eLpNorm g 2 μ :=
+        lintegral_lintegral_mul_mul_le (k := fun x y ↦ k (x - y))
+          (hk.comp measurable_sub).aemeasurable hg hg
+          (Filter.Eventually.of_forall fun x ↦ (hrow x).le)
+          (Filter.Eventually.of_forall fun y ↦ (hcol y).le)
+    _ = (∫⁻ z, k z ∂μ) * ∫⁻ x, g x ^ 2 ∂μ := by
+        have h2 : (2 : ℝ≥0∞).toReal⁻¹ = 2⁻¹ := by norm_num
+        have h2' : (1 : ℝ) - 2⁻¹ = 2⁻¹ := by norm_num
+        rw [mul_assoc _ (eLpNorm g 2 μ), ← sq, hg2, h2, h2',
+          ← ENNReal.rpow_add_of_nonneg 2⁻¹ 2⁻¹ (by norm_num) (by norm_num)]
+        norm_num
 
 /-- The kernel `1_{dist x y < R}` is measurable. -/
 theorem measurable_uncurry_indicator_ball {γ : Type*} [PseudoMetricSpace γ] [MeasurableSpace γ]

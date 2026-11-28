@@ -43,6 +43,7 @@ products of the frame with its image under `γ`.
 ## Main results
 
 * `TauCeti.isHermitian_splitGram`: the split form of a hermitian `T` is hermitian.
+* `TauCeti.star_dotProduct_splitGram_mulVec`: the value `h(v, v)` of the split form for `ϱ = 1`.
 * `TauCeti.isHermitian_middleGram`: `middleGram N` is hermitian when `star N = N`.
 * `Matrix.frameGram_one`: the frame Gram matrix of `1` has the single entry `T z z`.
 * `TauCeti.det_eq_one_of_mem_besselU`: elements of the unipotent Bessel group have determinant `1`.
@@ -113,6 +114,16 @@ theorem isHermitian_splitGram {R : Type*} [Semiring R] [StarRing R] {ϱ : ℕ} {
     {T : Matrix μ μ R} (hT : T.IsHermitian) : (splitGram ϱ T).IsHermitian := by
   ext (a | i | a) (b | j | b) <;>
     simp [hT.apply, (isHermitian_one (n := Fin ϱ) (α := R)).apply]
+
+/-- The value of the split form for `ϱ = 1`, that is of a hyperbolic plane `(e, e')` plus `T`:
+for `v = xe + w + te'`, `h(v, v) = star x * t + star t * x + w*Tw`. -/
+theorem star_dotProduct_splitGram_mulVec {R : Type*} [Semiring R] [StarRing R] {μ : Type*}
+    [Fintype μ] (T : Matrix μ μ R) (v : SplitIndex 1 μ → R) :
+    star v ⬝ᵥ splitGram 1 T *ᵥ v =
+      star (v (.inl 0)) * v (.inr (.inr 0)) + star (v (.inr (.inr 0))) * v (.inl 0) +
+        star (fun i ↦ v (.inr (.inl i))) ⬝ᵥ T *ᵥ fun i ↦ v (.inr (.inl i)) := by
+  simp [dotProduct, mulVec, Fintype.sum_sum_type, Finset.mul_sum]
+  abel
 
 section MiddleGram
 
