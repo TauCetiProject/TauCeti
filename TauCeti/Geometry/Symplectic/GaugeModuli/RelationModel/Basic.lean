@@ -52,7 +52,8 @@ coprime rank and degree*, §3).
   `TauCeti.GaugeModuli.psu_smul_relationSet_eq_self_iff`,
   `TauCeti.GaugeModuli.stabilizer_psu_relationSet_eq_bot`, and
   `TauCeti.GaugeModuli.isCancelSMul_psu_relationSet`: when `ζ` is a primitive `r`-th root of
-  unity, every `SU(r)`-stabilizer equals the center `μ_r`
+  unity, every `SU(r)`-stabilizer equals the center `Z(SU(r))` (which is isomorphic to `μ_r` for
+  `r ≥ 1`, and trivial at `r = 0`)
   (`conjAct_smul_relationSet_eq_self_iff`, via `TauCeti.relationSet_stabilizer_central`), and the
   induced `PSU(r)` action on `relationSet r ζ g` is free (`psu_smul_relationSet_eq_self_iff`,
   `stabilizer_psu_relationSet_eq_bot`, `isCancelSMul_psu_relationSet`, hence faithful whenever
@@ -62,8 +63,8 @@ coprime rank and degree*, §3).
 * `TauCeti.GaugeModuli.nonempty_relationModuli_rank_one` and
   `TauCeti.GaugeModuli.simplyConnectedSpace_relationModuli_rank_one`: for `r = 1` and `ζ = 1`, the
   moduli is a point (hence simply connected) in every genus.
-* Continuous central-twist action of `(Z(SU(r)) × Z(SU(r)))^g` (representing `H¹(X; μ_r)`) on both
-  `relationSet r ζ g` and `relationModuli r ζ g`.
+* Continuous central-twist action of `(Z(SU(r)) × Z(SU(r)))^g` (representing `H¹(X; μ_r)` for
+  `r ≥ 1`, and trivial at `r = 0`) on both `relationSet r ζ g` and `relationModuli r ζ g`.
 
 ## References
 
@@ -381,8 +382,9 @@ end BoundaryCases
 
 section CentralTwistAction
 
-/-- The central-twist action of `(Z(SU(r)) × Z(SU(r)))^g` (representing `H¹(X; μ_r)`) on
-`relationSet r ζ g`, multiplying each entry `(A_j, B_j)` by `(z_{1,j}, z_{2,j})`. -/
+/-- The central-twist action of `(Z(SU(r)) × Z(SU(r)))^g` (representing `H¹(X; μ_r)` for
+`r ≥ 1`, and trivial at `r = 0`) on `relationSet r ζ g`, multiplying each entry `(A_j, B_j)` by
+`(z_{1,j}, z_{2,j})`. -/
 instance instMulActionCenterTwistRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     MulAction
       (Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
