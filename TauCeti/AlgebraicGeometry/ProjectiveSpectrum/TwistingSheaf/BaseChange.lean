@@ -122,14 +122,9 @@ private theorem coeff_smul (r : R) (s : S) :
       Submodule.coe_smul_of_tower, hφ, map_one, Algebra.algebraMap_eq_smul_one]
   rw [halg, ← CommRingCat.comp_apply, awayToSection_comp_appLE _ _ ha, CommRingCat.comp_apply,
     CommRingCat.ofHom_apply, Away.map_mk, RingHom.comp_apply, RingHom.comp_apply, ← map_mul]
-  refine congrArg _ (HomogeneousLocalization.val_injective _ ?_)
-  rw [HomogeneousLocalization.val_mul, Away.val_mk, hfR]
-  simp only [HomogeneousLocalization.val_algebraMap,
-    IsScalarTower.algebraMap_apply S B (Localization _), ← Localization.mk_one_eq_algebraMap,
-    Localization.mk_mul]
-  refine Localization.mk_eq_mk_iff.2 (Localization.r_iff_exists.2 ⟨1, ?_⟩)
-  simp only [pow_zero, Submonoid.coe_one, mul_one, one_mul, Algebra.smul_def, map_mul,
-    ← IsScalarTower.algebraMap_apply]
+  -- The numerator `f r = (r : S)` makes the scalar the exponent-zero fraction of `(r : S)`.
+  simp only [hfR, IsScalarTower.algebraMap_apply R S B, Away.mk_zero_eq_algebraMap, ← map_mul,
+    Algebra.smul_def]
 
 include halg hφ in
 /-- Scalars of `R` move across the tensor product of the fractions `s ⊗ r / aᵏ`. -/
@@ -286,13 +281,7 @@ private theorem liftBaseChange_theta (k j : ℕ) (h : (j : ℤ) = (k * d : ℕ) 
       (by simpa [mul_comm] using SetLike.pow_mem_graded k ha)
       fun y (hy : y ∈ basicOpen 𝒜 a) hak ↦ hy (y.isPrime.mem_of_pow_mem k hak))).trans ?_
     -- The coefficient `s` is the function `s / (f a)⁰` on `D₊(f a)`.
-    have hs : algebraMap S B s ∈ ℬ (0 * d) := by simpa using SetLike.algebraMap_mem_graded ℬ s
-    have e : algebraMap S (Away ℬ (f a)) s = Away.mk ℬ (Graded.map_mem f ha) 0 _ hs :=
-      HomogeneousLocalization.val_injective _ (by
-        rw [HomogeneousLocalization.val_algebraMap, Away.val_mk,
-          IsScalarTower.algebraMap_apply S B, ← Localization.mk_one_eq_algebraMap]
-        exact congrArg _ (Subtype.ext (pow_zero _).symm))
-    rw [RingHom.comp_apply, e]
+    rw [RingHom.comp_apply, ← Away.mk_zero_eq_algebraMap (Graded.map_mem f ha)]
     refine (congrArg (_ • ·) (const_ext (by rw [map_pow]) : _ = fracPow (Graded.map_mem f ha) k j h
       (f x) (Graded.map_mem f x.property))).trans <|
         (awayToSection_mk_smul_fracPow _ 0 k j h (by simpa using h) ..).trans ?_
