@@ -30,6 +30,11 @@ turned into dense subsets of the spectrum. In particular the basic open set `D(a
 nonzerodivisor `a` is dense, since minimal primes consist of zero divisors. A basic open set
 `D(f)` is the whole spectrum exactly when `f` is a unit.
 
+An idempotent has empty basic open set exactly when it is zero
+(`PrimeSpectrum.basicOpen_eq_bot_iff_of_isIdempotentElem`), since an idempotent lying in every
+prime ideal is nilpotent. This is the prime-spectrum counterpart of
+`MaximalSpectrum.basicOpen_eq_bot_iff_of_isIdempotentElem`.
+
 When there are finitely many minimal primes, every dense open contains them all and remains
 nonempty after any nontrivial localization.
 
@@ -41,6 +46,9 @@ contained in the Jacobson radical is the whole spectrum: every prime ideal is co
 maximal ideal, which is a point of that zero locus, and an open set contains every point that
 specializes to one of its points. For the maximal ideal of a local ring, whose zero locus is the
 closed point, this is Mathlib's `IsLocalRing.closedPoint_mem_iff`.
+
+For a localization away from `r`, `PrimeSpectrum` is preconnected precisely when the basic open
+set `D(r)` is preconnected.
 -/
 
 public section
@@ -191,6 +199,12 @@ theorem dense_basicOpen_of_mem_nonZeroDivisors {a : R} (ha : a ∈ nonZeroDiviso
   dense_of_forall_mem_minimalPrimes fun _ hp ↦
     Set.disjoint_right.mp (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp) ha
 
+/-- An idempotent has empty basic open set exactly when it is zero: an idempotent lying in every
+prime ideal is nilpotent, hence zero. -/
+theorem basicOpen_eq_bot_iff_of_isIdempotentElem {e : R} (he : IsIdempotentElem e) :
+    basicOpen e = ⊥ ↔ e = 0 :=
+  (basicOpen_eq_bot_iff e).trans ⟨he.eq_zero_of_isNilpotent, fun h ↦ h ▸ .zero⟩
+
 /-- A basic open set `D(f)` is the whole spectrum if and only if `f` is a unit. -/
 @[simp]
 theorem basicOpen_eq_top_iff (f : R) : basicOpen f = ⊤ ↔ IsUnit f := by
@@ -214,5 +228,14 @@ theorem zeroLocus_subset_iff_eq_top_of_le_jacobson_bot {S : Type*} [CommRing S] 
     exact hI.trans (Ideal.jacobson_bot.trans_le (Ring.jacobson_le_of_isMaximal m))
   · rw [hU, TopologicalSpace.Opens.coe_top]
     exact Set.subset_univ _
+
+/-- For any localization `S` away from `r`, `PrimeSpectrum S` is preconnected if and only if the
+basic open set `D(r)` in `PrimeSpectrum R` is preconnected. -/
+theorem preconnectedSpace_iff_isPreconnected_basicOpen (S : Type*) [CommSemiring S]
+    [Algebra R S] (r : R) [IsLocalization.Away r S] :
+    PreconnectedSpace (PrimeSpectrum S) ↔ IsPreconnected (basicOpen r : Set (PrimeSpectrum R)) := by
+  have hind := (localization_away_isOpenEmbedding S r).isInducing
+  rw [preconnectedSpace_iff_univ, ← hind.isPreconnected_image, Set.image_univ,
+    localization_away_comap_range S r]
 
 end PrimeSpectrum

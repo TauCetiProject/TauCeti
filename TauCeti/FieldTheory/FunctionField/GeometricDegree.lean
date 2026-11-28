@@ -50,7 +50,7 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
 
 ## Main results
 
-* `IntermediateField.constantCompositum_toSubfield`: adjoining constants to an intermediate
+* `TauCeti.constantCompositum_toSubfield_eq_adjoin_toSubfield`: adjoining constants to a
   field gives the same subfield as adjoining its image to the constants.
 * `TauCeti.constantCompositum_adjoin_simple_toSubfield`: extending the constants of `k(t)`
   gives `K(t)` as a subfield of the ambient field.
@@ -62,8 +62,10 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   intermediate field `E` of `F' / F`.
 * `TauCeti.constantCompositum_tower_eq_top`: if `F' = F · k'` and `F'' = F' · k''` in a compatible
   square of extensions, then `F'' = F · k''`.
-* `TauCeti.constantCompositum_eq_top_of_adjoin_eq_top`: `F'` is the compositum `F · k'` as soon
-  as the image of `F` generates `F'` over a field `k'`.
+* `TauCeti.constantCompositum_eq_top_iff_adjoin_range_eq_top`: `F'` is the compositum `F · k'`
+  exactly when the image of `F` generates `F'` over `k'`.
+* `TauCeti.constantCompositum_eq_top_of_span_eq_top`: `F'` is the compositum `F · k'` when the
+  image of `F` spans `F'` linearly over `k'`.
 * `TauCeti.finrank_constantCompositum_mul_geometricDegree`: the tower law
   `[F·k' : F] · n(F'/F) = [F' : F]`.
 * `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`:
@@ -219,6 +221,25 @@ theorem constantCompositum_tower_eq_top {k'' F'' : Type*} [CommSemiring k''] [Fi
   rw [h₂] at hle₂
   exact eq_top_iff.mpr fun z _ ↦ hle₂ IntermediateField.mem_top
 
+/-- **The compositum is everything when the image of `F` spans `F'` over `k'`**: if the `k'`-linear
+span of the image of `F` is all of `F'`, then `F' = F · k'`, because `F · k'` is closed under
+addition and multiplication and contains the images of both `F` and `k'`. -/
+theorem constantCompositum_eq_top_of_span_eq_top
+    (h : Submodule.span k' (Set.range (algebraMap F F')) = ⊤) :
+    constantCompositum F k' F' = ⊤ := by
+  rw [eq_top_iff]
+  rintro y -
+  have hy : y ∈ Submodule.span k' (Set.range (algebraMap F F')) := h ▸ Submodule.mem_top
+  induction hy using Submodule.span_induction with
+  | mem _ hx =>
+    obtain ⟨x, rfl⟩ := hx
+    exact (constantCompositum F k' F').algebraMap_mem x
+  | zero => exact zero_mem _
+  | add _ _ _ _ hx hy => exact add_mem hx hy
+  | smul a _ _ hx =>
+    rw [Algebra.smul_def]
+    exact mul_mem (algebraMap_mem_constantCompositum F k' F' a) hx
+
 /-- The `k'`-algebra structure on the compositum `F · k'` formed inside `F'`, through which `k'`
 maps into `F · k'`. It is not an instance: `F · k'` may carry another `k'`-algebra structure, for
 instance one through `F` when `k'` is the original constant field. -/
@@ -310,6 +331,25 @@ end ConstantsInBase
 
 end Compositum
 
+/-- The compositum `F · k'` is the same subfield of `F'` whether it is formed by adjoining `k'` to
+`F` or by adjoining the image of `F` to `k'`. -/
+theorem constantCompositum_toSubfield_eq_adjoin_toSubfield (F k' F' : Type*) [Field F] [Field k']
+    [Field F'] [Algebra F F'] [Algebra k' F'] :
+    (constantCompositum F k' F').toSubfield =
+      (IntermediateField.adjoin k' (Set.range (algebraMap F F'))).toSubfield := by
+  rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
+    IntermediateField.adjoin_toSubfield, Set.union_comm]
+
+/-- The compositum `F · k'` is all of `F'` if and only if the image of `F` generates `F'` over
+`k'`. -/
+theorem constantCompositum_eq_top_iff_adjoin_range_eq_top (F k' F' : Type*) [Field F] [Field k']
+    [Field F'] [Algebra F F'] [Algebra k' F'] :
+    constantCompositum F k' F' = ⊤ ↔
+      IntermediateField.adjoin k' (Set.range (algebraMap F F')) = ⊤ := by
+  rw [← IntermediateField.toSubfield_inj, ← IntermediateField.toSubfield_inj,
+    IntermediateField.top_toSubfield, IntermediateField.top_toSubfield,
+    constantCompositum_toSubfield_eq_adjoin_toSubfield]
+
 /-! ### The compositum of an intermediate field with the constants -/
 
 section IntermediateFieldCompositum
@@ -320,20 +360,11 @@ variable {K : Type*} [Field k] [Field K]
   [Algebra k K] [Algebra k F] [Algebra k F'] [Algebra K F'] [Algebra F F']
   [IsScalarTower k K F'] [IsScalarTower k F F']
 
-omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
-/-- The compositum `C · K` is the same subfield of the ambient field whether it is formed
-by adjoining `K` to `C` or by adjoining the image of `C` to `K`. -/
-theorem _root_.IntermediateField.constantCompositum_toSubfield (C : IntermediateField k F) :
-    (constantCompositum C K F').toSubfield =
-      (IntermediateField.adjoin K (Set.range (algebraMap C F'))).toSubfield := by
-  rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
-    IntermediateField.adjoin_toSubfield, Set.union_comm]
-
 /-- For a simple parameter field `k(t)`, extending constants gives exactly `K(t)`
 as a subfield of the ambient field. -/
 theorem constantCompositum_adjoin_simple_toSubfield (x : F) :
     (constantCompositum k⟮x⟯ K F').toSubfield = K⟮algebraMap F F' x⟯.toSubfield := by
-  rw [_root_.IntermediateField.constantCompositum_toSubfield,
+  rw [constantCompositum_toSubfield_eq_adjoin_toSubfield,
     IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
 
 end IntermediateFieldCompositum
@@ -357,26 +388,6 @@ theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
   rw [constantCompositum_def, hrange, IntermediateField.adjoin_adjoin_right]
 
 end GeneratedCompositum
-
-/-! ### A compositum generated by the lower field -/
-
-section CompositumOfFields
-
-variable [Field k'] [Algebra k' F'] [Algebra F F'] (F k' F')
-
-/-- **The compositum is everything when `F` generates `F'` over `k'`**: if the image of `F`
-generates `F'` as a field over `k'`, then `F' = F · k'`, because `F · k'` is a subfield containing
-the images of both `F` and `k'`. -/
-theorem constantCompositum_eq_top_of_adjoin_eq_top
-    (h : IntermediateField.adjoin k' (Set.range (algebraMap F F')) = ⊤) :
-    constantCompositum F k' F' = ⊤ := by
-  let L : IntermediateField k' F' := (constantCompositum F k' F').toSubfield.toIntermediateField
-    (algebraMap_mem_constantCompositum F k' F')
-  have hL : L = ⊤ := eq_top_iff.mpr <| h.symm.le.trans <| IntermediateField.adjoin_le_iff.mpr <|
-    Set.range_subset_iff.mpr (constantCompositum F k' F').algebraMap_mem
-  exact eq_top_iff.mpr fun x _ ↦ (hL ▸ IntermediateField.mem_top : x ∈ L)
-
-end CompositumOfFields
 
 /-! ### The constants of the compositum over the original constants -/
 

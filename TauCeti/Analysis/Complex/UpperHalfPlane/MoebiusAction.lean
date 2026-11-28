@@ -35,8 +35,9 @@ unfolded by hand.
   `g • z` cleared.
 * `UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero`: an upper triangular element
   `!![a, b; 0, a⁻¹]` of `SL(2, ℝ)` acts on `ℍ` by `τ ↦ a ^ 2 * τ + a * b`.
-* `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
-  negates the real part and preserves the imaginary part.
+* `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`, `UpperHalfPlane.J_smul_J_smul`: the
+  involution `J : z ↦ -conj z` negates the real part, preserves the imaginary part, and is an
+  involution of `ℍ`.
 * `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
   conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
@@ -46,6 +47,8 @@ unfolded by hand.
 * `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
   `SL(2, ℝ)`- and `SL(2, R)`-actions on `ℍ` agree with the `GL(2, ℝ)`-action of the underlying
   matrix, generalizing Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.map_intCastRingHom_smul`: an integral matrix acts on `ℍ` as its
+  image in `SL(2, ℝ)`.
 * `UpperHalfPlane.num_mul`, `UpperHalfPlane.moebius_mul`: off the real line, the numerator of a
   raw Möbius transformation is a cocycle like `UpperHalfPlane.denom_cocycle`, so raw Möbius
   transformations compose like their matrices; `UpperHalfPlane.moebius_im_ne_zero`: they keep
@@ -54,9 +57,12 @@ unfolded by hand.
   `UpperHalfPlane.σ g` is the identity or complex conjugation according to the sign of `det g`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
   `SL(2, R)`-action.
+* `ModularGroup.denom_mapGL`: the automorphy factor of `(a b; c d) ∈ SL(2, ℤ)` is `c z + d`.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
   `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
   subgroup, so that the law need only be checked on generators.
+* `TauCeti.sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet`: a point of the upper half-plane differs
+  from every real number.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
 * `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
@@ -117,6 +123,12 @@ theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul {R : Type*} [CommRing R] [Al
     Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
   (MulAction.compHom_smul_def _ _ _).symm
 
+/-- An integral matrix acts on `ℍ` as its image in `SL(2, ℝ)`. -/
+theorem _root_.Matrix.SpecialLinearGroup.map_intCastRingHom_smul (g : SL(2, ℤ)) (τ : ℍ) :
+    Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) g • τ = g • τ := by
+  ext1
+  simp [coe_specialLinearGroup_apply]
+
 /-- The automorphy factor is a cocycle for the `SL(2, R)`-action on `ℍ`:
 `denom (a * b) τ = denom a (b • τ) * denom b τ`. -/
 theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_mul {R : Type*} [CommRing R] [Algebra R ℝ]
@@ -128,6 +140,16 @@ theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_mul {R : Type*} [CommRing R
     σ_eq_refl_of_det_pos (by rw [← Matrix.GeneralLinearGroup.val_det_apply]; simp),
     ContinuousAlgEquiv.refl_apply, Matrix.SpecialLinearGroup.mapGL_smul]
 
+/-- At a fixed point `τ` of `g`, the automorphy factor of `g ^ n` is the `n`-th power of that of
+`g`, by the cocycle relation `Matrix.SpecialLinearGroup.denom_mapGL_mul`. -/
+theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_pow_of_smul_eq_self {R : Type*} [CommRing R]
+    [Algebra R ℝ] {g : SL(2, R)} {τ : ℍ} (hgτ : g • τ = τ) (n : ℕ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ (g ^ n)) τ =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, Matrix.SpecialLinearGroup.denom_mapGL_mul, hgτ, ih, pow_succ]
+
 /-- The orientation-reversing involution `J : z ↦ -conj z` negates the real part. -/
 @[simp]
 theorem J_smul_re (τ : ℍ) : (J • τ).re = -τ.re := by
@@ -137,6 +159,11 @@ theorem J_smul_re (τ : ℍ) : (J • τ).re = -τ.re := by
 @[simp]
 theorem J_smul_im (τ : ℍ) : (J • τ).im = τ.im := by
   rw [← coe_im, coe_J_smul, Complex.neg_im, Complex.conj_im, neg_neg, coe_im]
+
+/-- The map `J : z ↦ -conj z` is an involution of `ℍ`, as `J ^ 2 = 1`. -/
+@[simp]
+theorem J_smul_J_smul (τ : ℍ) : J • J • τ = τ := by
+  rw [← mul_smul, ← sq, J_sq, one_smul]
 
 /-- Conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`. -/
 theorem _root_.Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J {R : Type*} [CommRing R]
@@ -306,6 +333,15 @@ the two actions are definitionally equal. -/
 @[simp]
 theorem sl_smul_set (γ : SL(2, ℤ)) (S : Set ℍ) : γ • S = (γ : GL (Fin 2) ℝ) • S := (rfl)
 
+/-- The automorphy factor of the image of `γ = (a b; c d) ∈ SL(2, ℤ)` in `GL(2, ℝ)` under
+`Matrix.SpecialLinearGroup.mapGL` is `c z + d`, the `mapGL` counterpart of Mathlib's
+`ModularGroup.denom_apply`. -/
+theorem denom_mapGL (γ : SL(2, ℤ)) (z : ℂ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ γ) z = (γ 1 0 : ℂ) * z + γ 1 1 := by
+  simp only [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix, algebraMap_int_eq,
+    Matrix.SpecialLinearGroup.map_apply_coe, Int.coe_castRingHom, Matrix.map_apply,
+    Complex.ofReal_intCast]
+
 /-- Elements of `SL(2, ℤ)` that agree up to sign act alike on `ℍ`, since `-1` acts trivially
 (`ModularGroup.SL_neg_smul`). This absorbs the sign ambiguity `g = k ∨ g = -k` in the cases of
 Mathlib's classification `ModularGroup.cases_of_mem_fd_smul_mem_fd`. -/
@@ -406,6 +442,12 @@ end ModularGroup
 namespace TauCeti
 
 open Complex Function Set
+
+/-- A point of the upper half-plane differs from every real number: the `upperHalfPlaneSet` form
+of Mathlib's `UpperHalfPlane.ne_ofReal`. -/
+theorem sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet {w : ℂ} (hw : w ∈ upperHalfPlaneSet)
+    (p : ℝ) : w - p ≠ 0 :=
+  sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨w, hw⟩ p)
 
 /-- For `p < q`, the real fractional-linear transformation sending `p` to infinity
 and `q` to zero preserves the upper half-plane bijectively. -/

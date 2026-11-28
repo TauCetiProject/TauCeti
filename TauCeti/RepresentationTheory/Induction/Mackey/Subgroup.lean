@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 public import TauCeti.Algebra.Group.Action.End
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.GroupTheory.DoubleCoset.Basic
 public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.DoubleCoset.Orbits
 public import TauCeti.GroupTheory.QuotientGroup.Basic
@@ -76,6 +77,12 @@ along which the restriction and induction in each summand of the Mackey decompos
 * `TauCeti.mackeySubgroup_conj`: changing the double-coset representative conjugates the Mackey
   subgroup.
 * `TauCeti.relIndex_mackeySubgroup_conj`: that index depends only on the double coset.
+* `TauCeti.invMulMulMemEquivMackeySubgroup`, `TauCeti.nonempty_equiv_mackeySubgroup_of_mk_eq`,
+  `TauCeti.natCard_inv_mul_mul_mem`, `TauCeti.finite_inv_mul_mul_mem`: the `k ∈ K` with
+  `s⁻¹ k s ∈ H` are the Mackey subgroup, and for `y` in the double coset `KsH` the `k ∈ K` with
+  `s⁻¹ k y ∈ H` are in bijection with it.
+* `TauCeti.nonempty_mulEquiv_mackeySubgroup_of_mk_eq`: two representatives of one double coset
+  have isomorphic Mackey subgroups.
 * `TauCeti.stabilizer_smul_eq_mackeySubgroup_subgroupOf`: the same stabilizer description for an
   arbitrary `G`-set, at a translate `s • p`.
 * `TauCeti.mackeySubgroup_eq_bot_or_conj_smul_le_of_prime_card`: for `H` of prime order the Mackey
@@ -289,6 +296,66 @@ theorem coe_mackeySubgroupOfCongr_symm_apply {k h : G} (hk : k ∈ K) (hh : h �
   rw [← hy]
   simp [mul_assoc]
 
+/-- The `k ∈ K` with `s⁻¹ k s ∈ H` are the elements of the Mackey subgroup `K ⊓ sHs⁻¹`. -/
+def invMulMulMemEquivMackeySubgroup (s : G) (H K : Subgroup G) :
+    {k : K // s⁻¹ * k * s ∈ H} ≃ mackeySubgroup s H K :=
+  (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ K) fun g ↦ s⁻¹ * g * s ∈ H).trans
+    (Equiv.subtypeEquivRight fun _ ↦ mem_mackeySubgroup_iff.symm)
+
+/-- `TauCeti.invMulMulMemEquivMackeySubgroup` does not change the underlying element of `G`. -/
+@[simp]
+theorem coe_invMulMulMemEquivMackeySubgroup_apply (s : G) (H K : Subgroup G)
+    (k : {k : K // s⁻¹ * k * s ∈ H}) : (invMulMulMemEquivMackeySubgroup s H K k : G) = k := by
+  simp [invMulMulMemEquivMackeySubgroup]
+
+/-- Read in `K` along `TauCeti.mackeyToK`, `TauCeti.invMulMulMemEquivMackeySubgroup` does not
+change the element of `K`. -/
+@[simp]
+theorem mackeyToK_invMulMulMemEquivMackeySubgroup_apply (s : G) (H K : Subgroup G)
+    (k : {k : K // s⁻¹ * k * s ∈ H}) :
+    mackeyToK s H K (invMulMulMemEquivMackeySubgroup s H K k) = k.val :=
+  Subtype.ext (by simp)
+
+/-- The inverse of `TauCeti.invMulMulMemEquivMackeySubgroup` is `TauCeti.mackeyToK` on the
+underlying element of `K`. -/
+@[simp]
+theorem coe_invMulMulMemEquivMackeySubgroup_symm_apply (s : G) (H K : Subgroup G)
+    (m : mackeySubgroup s H K) :
+    ((invMulMulMemEquivMackeySubgroup s H K).symm m : K) = mackeyToK s H K m :=
+  Subtype.ext (by simp [invMulMulMemEquivMackeySubgroup])
+
+/-- On the double coset `KsH`, the `k ∈ K` with `s⁻¹ k y ∈ H` are in bijection with the Mackey
+subgroup `K ⊓ sHs⁻¹`, by `k ↦ k k₀` for `y = k₀ s h₀`. -/
+theorem nonempty_equiv_mackeySubgroup_of_mk_eq {y : G}
+    (h : DoubleCoset.mk K H s = DoubleCoset.mk K H y) :
+    Nonempty ({k : K // s⁻¹ * k * y ∈ H} ≃ mackeySubgroup s H K) := by
+  obtain ⟨k₀, hk₀, h₀, hh₀, rfl⟩ := DoubleCoset.eq.1 h
+  exact ⟨(DoubleCoset.invMulMulMemEquivOfEq s ⟨k₀, hk₀⟩ ⟨h₀, hh₀⟩ rfl).trans
+    (invMulMulMemEquivMackeySubgroup s H K)⟩
+
+/-- The Mackey subgroups of two representatives `s`, `t` of one double coset `KsH = KtH` are
+isomorphic (by `TauCeti.mackeySubgroupCongr`). -/
+theorem nonempty_mulEquiv_mackeySubgroup_of_mk_eq {t : G}
+    (h : DoubleCoset.mk K H s = DoubleCoset.mk K H t) :
+    Nonempty (mackeySubgroup s H K ≃* mackeySubgroup t H K) := by
+  obtain ⟨k₀, hk₀, h₀, hh₀, rfl⟩ := DoubleCoset.eq.1 h
+  exact ⟨mackeySubgroupCongr hk₀ hh₀ s⟩
+
+/-- On the double coset `KsH`, the `k ∈ K` with `s⁻¹ k y ∈ H` have the same `Nat.card` as the
+Mackey subgroup `K ⊓ sHs⁻¹`; both are `0` when they are infinite. -/
+theorem natCard_inv_mul_mul_mem {y : G} (h : DoubleCoset.mk K H s = DoubleCoset.mk K H y) :
+    Nat.card {k : K // s⁻¹ * k * y ∈ H} = Nat.card (mackeySubgroup s H K) :=
+  Nat.card_congr (nonempty_equiv_mackeySubgroup_of_mk_eq h).some
+
+/-- If the Mackey subgroup `K ⊓ sHs⁻¹` is finite, there are finitely many `k ∈ K` with
+`s⁻¹ k y ∈ H`, for every `y`. -/
+theorem finite_inv_mul_mul_mem [Finite (mackeySubgroup s H K)] (y : G) :
+    Finite {k : K // s⁻¹ * k * y ∈ H} := by
+  by_cases h : DoubleCoset.mk K H s = DoubleCoset.mk K H y
+  · exact Finite.of_equiv _ (nonempty_equiv_mackeySubgroup_of_mk_eq h).some.symm
+  · have := DoubleCoset.isEmpty_inv_mul_mul_mem_of_mk_ne (Ne.symm h)
+    infer_instance
+
 end Representative
 
 section Orbit
@@ -305,6 +372,20 @@ theorem stabilizer_eq_mackeySubgroup_subgroupOf (s : G) (H K : Subgroup G) :
     Subgroup.smul_def, ← mem_stabilizer_iff,
     stabilizer_quotientGroup_mk, mem_conj_smul]
   exact ⟨fun hg => ⟨g.property, hg⟩, fun hg => hg.2⟩
+
+/-- Conjugation by `g` identifies the stabiliser `J ∩ g⁻¹ Γ g` of the coset `g⁻¹ Γ` with
+`Γ ∩ g J g⁻¹`, the stabiliser of the coset `g J` in `Γ`. -/
+theorem natCard_mackeySubgroup_inv_subgroupOf (Γ J : Subgroup G) (g : G) :
+    Nat.card ((mackeySubgroup g⁻¹ Γ J).subgroupOf J) = Nat.card (mackeySubgroup g J Γ) := by
+  rw [Nat.card_congr (Subgroup.subgroupOfEquivOfLe mackeySubgroup_le_right).toEquiv]
+  refine Nat.card_congr ((MulAut.conj g).toEquiv.subtypeEquiv fun x ↦ ?_)
+  simp only [mem_mackeySubgroup_iff, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
+    MulAut.conj_apply, inv_inv]
+  constructor
+  · rintro ⟨hx, hΓ⟩
+    exact ⟨by simpa [mul_assoc] using hΓ, by simpa [mul_assoc] using hx⟩
+  · rintro ⟨hΓ, hx⟩
+    exact ⟨by simpa [mul_assoc] using hx, by simpa [mul_assoc] using hΓ⟩
 
 /-- If `H` has finite index in `G` then the Mackey subgroup has finite index in `K`, so the Mackey
 summand attached to `s` is induced along a finite-index inclusion. -/

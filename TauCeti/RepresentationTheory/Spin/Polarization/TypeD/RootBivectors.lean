@@ -40,9 +40,8 @@ module. Over `ℚ` it is moreover a product of integral creation or annihilation
 spin action preserves the coordinate integral lattice.
 
 Both branches of the definition only need the last two coordinates to be distinct, so the
-representatives and every algebraic identity about them are stated under `2 ≤ n`. The classification
-bound `4 ≤ n` enters only where `TauCeti.DynkinType.typeDSimpleRoot` does, that is in the two weight
-theorems that name the Bourbaki simple roots.
+representatives and every algebraic identity about them, including the two weight theorems that
+name the Bourbaki simple roots `TauCeti.DynkinType.typeDSimpleRoot`, are stated under `2 ≤ n`.
 
 Nothing here needs the polarization to be even: the representatives, their weights and their
 Chevalley bracket are the same whatever the orthogonal remainder `P.line` is. The results below
@@ -398,14 +397,11 @@ private theorem lie_diagonalBivector_bivector {k : Fin n} {x y : V} {cx cy : K}
   module
 
 /-- The diagonal Cartan bivectors act on a positive simple-root representative with the
-corresponding coordinate of the Bourbaki simple root. The classification bound `4 ≤ n` is not
-determined by the left-hand side, so `simp` discharges it as a side condition: use `simp [hn]`,
-or any simp set from which `4 ≤ n` follows. -/
+corresponding coordinate of the Bourbaki simple root. -/
 @[simp]
-theorem lie_diagonalBivector_typeDSimpleRootBivector (hn : 4 ≤ n) (i k : Fin n) :
-    ⁅P.diagonalBivector b k, P.typeDSimpleRootBivector b (by omega) i⁆ =
-      algebraMap ℤ K (DynkinType.typeDSimpleRoot n hn i k) •
-        P.typeDSimpleRootBivector b (by omega) i := by
+theorem lie_diagonalBivector_typeDSimpleRootBivector (hn : 2 ≤ n) (i k : Fin n) :
+    ⁅P.diagonalBivector b k, P.typeDSimpleRootBivector b hn i⁆ =
+      algebraMap ℤ K (DynkinType.typeDSimpleRoot n hn i k) • P.typeDSimpleRootBivector b hn i := by
   by_cases h : (i : ℕ) + 1 < n
   · rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn h,
       P.typeDSimpleRootBivector_of_add_one_lt b _ h,
@@ -423,13 +419,12 @@ theorem lie_diagonalBivector_typeDSimpleRootBivector (hn : 4 ≤ n) (i k : Fin n
     split_ifs <;> norm_num
 
 /-- The diagonal Cartan bivectors act on a negative simple-root representative with the negative
-of the corresponding Bourbaki simple-root coordinate. As above, `simp` discharges `4 ≤ n` as a
-side condition. -/
+of the corresponding Bourbaki simple-root coordinate. -/
 @[simp]
-theorem lie_diagonalBivector_typeDSimpleNegativeRootBivector (hn : 4 ≤ n) (i k : Fin n) :
-    ⁅P.diagonalBivector b k, P.typeDSimpleNegativeRootBivector b (by omega) i⁆ =
+theorem lie_diagonalBivector_typeDSimpleNegativeRootBivector (hn : 2 ≤ n) (i k : Fin n) :
+    ⁅P.diagonalBivector b k, P.typeDSimpleNegativeRootBivector b hn i⁆ =
       -algebraMap ℤ K (DynkinType.typeDSimpleRoot n hn i k) •
-        P.typeDSimpleNegativeRootBivector b (by omega) i := by
+        P.typeDSimpleNegativeRootBivector b hn i := by
   by_cases h : (i : ℕ) + 1 < n
   · rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn h,
       P.typeDSimpleNegativeRootBivector_of_add_one_lt b _ h,

@@ -17,11 +17,16 @@ import TauCeti.Analysis.Normed.Module.Ball
 # Bump functions with support in a ball
 
 On a real normed space with smooth bump functions, every open ball contains the topological
-support of a smooth bump function centred at its centre. Multiplying the identity by such a bump
-gives a smooth map into the ball that is the identity near its centre; composing with it turns a
-map defined only on a ball into a globally defined map with the same germ at the centre.
-Conversely, the rescaled bump `φ (R⁻¹ ·)` of a bump `φ` centred at `0` vanishes off the ball of
-radius `R φ.rOut`.
+support of a smooth bump function centred at its centre. This file defines the explicit concentric
+bump parameters `TauCeti.ballBump` (`rIn = ρ / 4`, `rOut = ρ / 2`) together with the existential
+witness `TauCeti.exists_contDiffBump_tsupport_subset_ball`. Multiplying the identity by such a bump
+gives a smooth map into the ball that is the identity near its centre; composing with it turns a map
+defined only on a ball into a globally defined map with the same germ at the centre. Conversely, the
+rescaled bump `φ (R⁻¹ ·)` of a bump `φ` centred at `0` vanishes off the ball of radius `R φ.rOut`.
+
+## Main definitions
+
+* `TauCeti.ballBump`: smooth bump parameters centered at `x₀` with `rIn = ρ / 4` and `rOut = ρ / 2`.
 
 A bump function centred at `0` can be dilated by any factor `c > 0`: scaling both radii by `c`
 gives the bump function `ξ ↦ φ (c⁻¹ • ξ)`.
@@ -36,6 +41,7 @@ gives the bump function `ξ ↦ φ (c⁻¹ • ξ)`.
   with a `C¹` function of bounded derivative.
 * `ContDiffBump.apply_inv_smul_eq_zero_of_le_norm`, `ContDiffBump.ofReal_apply_inv_smul_eq_zero`:
   the rescaled bump `φ (R⁻¹ ·)`, `R > 0`, vanishes off the ball of radius `R φ.rOut`.
+* `ContDiffBump.apply_center`: a bump function is `1` at its centre.
 * `ContDiffBump.dilate`: the dilation of a bump function centred at `0` by a factor `c > 0`, with
   `ContDiffBump.dilate_apply`: its value at `ξ` is `φ (c⁻¹ • ξ)`.
 -/
@@ -47,14 +53,28 @@ open scoped ContDiff NNReal Topology
 
 namespace TauCeti
 
+/-- Smooth bump parameters centered at `x₀` with inner radius `ρ / 4` and outer radius `ρ / 2`, so
+`Metric.closedBall x₀ (ρ / 2)` sits strictly inside `Metric.ball x₀ ρ`. -/
+noncomputable def ballBump {E : Type*} (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) : ContDiffBump x₀ :=
+  ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
+
+@[simp]
+theorem ballBump_rIn {E : Type*} (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) :
+    (ballBump x₀ hρ).rIn = ρ / 4 :=
+  (rfl)
+
+@[simp]
+theorem ballBump_rOut {E : Type*} (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) :
+    (ballBump x₀ hρ).rOut = ρ / 2 :=
+  (rfl)
+
 /-- A smooth bump function centred at `c` whose topological support lies in the ball of radius
 `r > 0` around `c`. -/
 theorem exists_contDiffBump_tsupport_subset_ball {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [HasContDiffBump E] (c : E) {r : ℝ} (hr : 0 < r) :
     ∃ b : ContDiffBump c, tsupport b ⊆ ball c r :=
-  -- the bump of radii `r / 4` and `r / 2`
-  ⟨⟨r / 4, r / 2, by positivity, by linarith⟩, by
-    rw [ContDiffBump.tsupport_eq]
+  ⟨ballBump c hr, by
+    rw [ContDiffBump.tsupport_eq, ballBump_rOut]
     exact closedBall_subset_ball (half_lt_self hr)⟩
 
 /-- A smooth self-map of a real normed space with smooth bump functions which is the identity near
@@ -101,6 +121,11 @@ end TauCeti
 namespace ContDiffBump
 
 variable {E : Type*} [NormedAddCommGroup E]
+
+/-- A bump function is `1` at its centre. -/
+theorem apply_center [NormedSpace ℝ E] [HasContDiffBump E] {c : E} (φ : ContDiffBump c) :
+    φ c = 1 :=
+  φ.one_of_mem_closedBall (mem_closedBall_self φ.rIn_pos.le)
 
 /-- The **dilation** of a bump function centred at `0` by a factor `c > 0`: the bump function with
 radii `c * φ.rIn` and `c * φ.rOut`, whose value at `ξ` is `φ (c⁻¹ • ξ)`

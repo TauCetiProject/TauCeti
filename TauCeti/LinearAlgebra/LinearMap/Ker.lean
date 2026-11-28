@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Ker
 
 /-!
@@ -16,7 +17,10 @@ semilinear horizontal maps, `f` sends the kernel of `d` into the kernel of `e`; 
 this is how a chain map acts on cycles. If moreover `e ∘ e' = 0` and `f'` is injective, then
 `e' c = f a` forces `d a = 0`. In a commuting square `g ∘ e₁ = e₂ ∘ f` whose source side `e₁`
 is surjective and whose target side `e₂` is injective, `e₁` carries the kernel of `f` onto the
-kernel of `g`. The restriction of an injective linear map to submodules is injective.
+kernel of `g`. The restriction of an injective linear map to submodules is injective. If a linear
+form `φ` takes the value `1` at `w`, the projection `z ↦ φ z • w` has the same kernel as `φ`.
+The kernels of finitely many nonzero semilinear maps are finitely many proper submodules covering
+every point at which one of the maps vanishes.
 -/
 
 public section
@@ -68,4 +72,30 @@ theorem injective_restrict {f : M →ₗ[R] N} {p : Submodule R M} {q : Submodul
     (hf : Function.Injective f) (h : ∀ x ∈ p, f x ∈ q) : Function.Injective (f.restrict h) :=
   fun _ _ hxy ↦ Subtype.ext (hf (congrArg Subtype.val hxy))
 
+/-- If a linear form `φ` takes the value `1` at `w`, the map `z ↦ φ z • w` has the same kernel
+as `φ`. -/
+theorem ker_smulRight_of_apply_eq_one {φ : M →ₗ[R] R} {w : M} (hw : φ w = 1) :
+    ker (φ.smulRight w) = ker φ := by
+  ext z
+  simp only [mem_ker, smulRight_apply]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, zero_smul]⟩
+  simpa [hw] using congrArg φ h
+
 end LinearMap
+
+namespace Finset
+
+/-- The kernels of finitely many nonzero semilinear maps are finitely many proper submodules
+covering every point at which one of the maps vanishes. -/
+theorem exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+    {R S M N P : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module S N] {σ : R →+* S} (s : Finset P)
+    (f : P → M →ₛₗ[σ] N) (hf : ∀ p ∈ s, f p ≠ 0) :
+    ∃ U : Finset (Submodule R M), (∀ W ∈ U, W ≠ ⊤) ∧
+      ∀ x : M, ∀ p ∈ s, f p x = 0 → ∃ W ∈ U, x ∈ W := by
+  classical
+  exact ⟨s.image fun p ↦ LinearMap.ker (f p),
+    Finset.forall_mem_image.mpr fun p hp ↦ LinearMap.ker_eq_top.not.mpr (hf p hp),
+    fun x p hp hx ↦ ⟨_, Finset.mem_image_of_mem _ hp, LinearMap.mem_ker.mpr hx⟩⟩
+
+end Finset

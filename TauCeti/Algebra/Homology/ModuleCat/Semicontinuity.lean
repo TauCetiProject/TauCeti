@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
 
@@ -36,8 +37,11 @@ base changes `κ(p) ⊗_R K.X i` of the terms, whose homology is computed by ker
 
 ## Main results
 
-* `HomologicalComplex.nonempty_linearEquiv_homology_extendScalars`: the homology of `S ⊗_R K` as
-  the image of the kernel of `S ⊗_R d` in the cokernel of the previous `S ⊗_R d`.
+* `HomologicalComplex.nonempty_linearEquiv_homology` and
+  `HomologicalComplex.nonempty_linearEquiv_homology_extendScalars`: the homology of `K` and of
+  `S ⊗_R K` as the image of the kernel of `d` in the cokernel of the previous `d`.
+* `HomologicalComplex.finrank_homology_extendScalars_eq`: the dimension of the fibre homology in
+  this kernel modulo image form.
 * `HomologicalComplex.upperSemicontinuous_finrank_homology_extendScalars`: upper semicontinuity
   of the dimension of the fibre homology.
 
@@ -59,6 +63,15 @@ namespace HomologicalComplex
 
 variable {R : Type u} [CommRing R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat.{u} R) c)
+
+/-- The homology in degree `j` of a complex `K` of `R`-modules is the image of the kernel of
+`d : K.X j → K.X k` in the cokernel of `d : K.X i → K.X j`, where `i` and `k` are the degrees
+before and after `j`. -/
+theorem nonempty_linearEquiv_homology {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k) :
+    Nonempty (K.homology j ≃ₗ[R]
+      (LinearMap.ker (K.d j k).hom).map (LinearMap.range (K.d i j).hom).mkQ) :=
+  ⟨((K.homologyIsoSc' i j k hi hk) ≪≫ (K.sc' i j k).moduleCatHomologyIso).toLinearEquiv ≪≫ₗ
+    LinearMap.mapMkQKerEquiv _ _ _⟩
 
 /-- Over an `R`-algebra `S`, the homology in degree `j` of the complex `S ⊗_R K` obtained by
 extension of scalars is the image of the kernel of `S ⊗_R d : S ⊗_R K.X j → S ⊗_R K.X k` in the
@@ -89,6 +102,19 @@ theorem nonempty_linearEquiv_homology_extendScalars (S : Type u) [CommRing S] [A
     ShortComplex.homologyMapIso E ≪≫ T.moduleCatHomologyIso).toLinearEquiv ≪≫ₗ
       LinearMap.mapMkQKerEquiv _ _ _⟩
 
+/-- The fibre homology dimension of `K` in degree `j` agrees with that of the kernel modulo
+image form. -/
+lemma finrank_homology_extendScalars_eq {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k)
+    (p : PrimeSpectrum R) :
+    finrank p.asIdeal.ResidueField
+        ((((ModuleCat.extendScalars (algebraMap R p.asIdeal.ResidueField)).mapHomologicalComplex
+          c).obj K).homology j) =
+      finrank p.asIdeal.ResidueField
+        ((LinearMap.ker ((K.d j k).hom.baseChange p.asIdeal.ResidueField)).map
+          (LinearMap.range ((K.d i j).hom.baseChange p.asIdeal.ResidueField)).mkQ) := by
+  obtain ⟨e⟩ := K.nonempty_linearEquiv_homology_extendScalars p.asIdeal.ResidueField hi hk
+  exact e.finrank_eq
+
 /-- **Semicontinuity of fibre homology.** Let `K` be a complex of modules over a commutative ring
 `R` whose term in degree `j` is finite and whose term in the next degree is projective. Then the
 dimension of the homology in degree `j` of the fibre `κ(p) ⊗_R K` is an upper semicontinuous
@@ -99,8 +125,7 @@ theorem upperSemicontinuous_finrank_homology_extendScalars {j k : ι} (hk : c.ne
       ((((ModuleCat.extendScalars (algebraMap R p.asIdeal.ResidueField)).mapHomologicalComplex
         c).obj K).homology j) := by
   convert LinearMap.upperSemicontinuous_finrank_fiber_homology (K.d (c.prev j) j).hom
-    (K.d j k).hom (by rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]) using 2 with p
-  obtain ⟨e⟩ := K.nonempty_linearEquiv_homology_extendScalars p.asIdeal.ResidueField rfl hk
-  exact e.finrank_eq
+    (K.d j k).hom K.hom_d_comp_hom_d using 2 with p
+  exact K.finrank_homology_extendScalars_eq rfl hk p
 
 end HomologicalComplex

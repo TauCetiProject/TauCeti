@@ -102,8 +102,9 @@ theorem sum_specialFiberMultiplicity_mul_intersectionNumber_eq_zero
       (toBase.specialFiberMultiplicity π η : ℤ) * LineBundleClass.intersectionNumber k ι
         (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX η.property).toInvertibleSheaf)⁻¹ = 0 := by
+  have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   have h := congrArg (LineBundleClass.intersectionNumber k ι)
-    (toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hX hη hπ hreg)
+    (toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hη hπ hreg)
   rwa [LineBundleClass.intersectionNumber_prod_of_isIntegral,
     LineBundleClass.intersectionNumber_one, Finset.sum_congr rfl fun η _ ↦
       LineBundleClass.intersectionNumber_pow_of_isIntegral k ι _ _] at h

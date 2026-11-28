@@ -7,16 +7,17 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import TauCeti.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Data.Fintype.Sort
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.Algebra.BigOperators.Finset.Fiber
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
@@ -42,13 +43,25 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
+* `EuclideanSpace.ext_continuousLinearMap_single`: continuous linear maps on Euclidean space are
+  determined by their values on the standard basis vectors.
+* `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
+  coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
+  (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
+* `EuclideanSpace.toLp_insertNth_eq_add_sub_smul_single`: inserting `t` as the `i`-th coordinate
+  is moving the point with `i`-th coordinate `s` along the `i`-th axis.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.isBigO_apply_div_norm`: a real Euclidean coordinate divided by the norm,
+  `x j / ‖x‖`, is `O(1)` along any filter.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
+* `EuclideanSpace.toDual_symm_proj`: the Riesz representative of the coordinate projection
+  `x ↦ xᵢ` is the basis vector `eᵢ`.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
+* `EuclideanSpace.norm_sq_fin_two`: the squared norm on `ℝ²` is `x₀² + x₁²`.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
   of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -79,12 +92,20 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `OrthonormalBasis.singleton_repr_symm`: the inverse coordinate equivalence of
+  `OrthonormalBasis.singleton` evaluates at `default`.
+* `EuclideanSpace.finrank_subtype_val_lt` and `EuclideanSpace.finrank_subtype_not_val_lt`: the two
+  factors of the splitting of `𝕜ⁿ` along `j < m` have dimensions `m` and `n - m`.
 * `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
   linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
   norm, as a linear isometric automorphism of `EuclideanSpace 𝕜 ι`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
+* `EuclideanSpace.basisFun_toBasis_constrL_apply`:
+  `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` expands as `∑ i, g i • y i`.
+* `EuclideanSpace.truncVec` and `EuclideanSpace.tailVec`: coordinatewise truncation to `[-t, t]`
+  and its complementary tail on `EuclideanSpace ℝ ι`.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
   `LinearIsometryEquiv.map_starProjection_apply`, and
   `LinearIsometryEquiv.mem_orthogonal_iff_forall_mem_orthogonal`: coordinatewise orthogonal
@@ -96,6 +117,16 @@ public section
 noncomputable section
 
 open scoped BigOperators
+
+/-- The inverse coordinate equivalence of `OrthonormalBasis.singleton` reads the unique coordinate
+of `EuclideanSpace 𝕜 ι`. -/
+@[simp]
+theorem OrthonormalBasis.singleton_repr_symm {ι 𝕜 : Type*} [Unique ι] [RCLike 𝕜]
+    (v : EuclideanSpace 𝕜 ι) :
+    (OrthonormalBasis.singleton ι 𝕜).repr.symm v = v default := by
+  have h := OrthonormalBasis.singleton_repr (ι := ι) (𝕜 := 𝕜)
+    ((OrthonormalBasis.singleton ι 𝕜).repr.symm v) default
+  rwa [(OrthonormalBasis.singleton ι 𝕜).repr.apply_symm_apply, eq_comm] at h
 
 namespace EuclideanSpace
 
@@ -127,11 +158,61 @@ theorem posDef_iff_of_forall_eq_sum_mul_sq {ι : Type*} [Fintype ι]
   refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp _ (WithLp.linearEquiv 2 ℝ (ι → ℝ)).injective⟩
   simpa using h (WithLp.toLp 2 x) (by simpa using hx)
 
+/-- Two continuous linear maps on `EuclideanSpace 𝕜 ι` agreeing on the standard basis vectors
+`EuclideanSpace.single i 1` are equal. -/
+theorem ext_continuousLinearMap_single {𝕜 ι E : Type*} [RCLike 𝕜] [Finite ι] [DecidableEq ι]
+    [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] {L L' : EuclideanSpace 𝕜 ι →L[𝕜] E}
+    (h : ∀ i, L (EuclideanSpace.single i 1) = L' (EuclideanSpace.single i 1)) : L = L' := by
+  have := Fintype.ofFinite ι
+  exact ContinuousLinearMap.coe_injective <| (EuclideanSpace.basisFun ι 𝕜).toBasis.ext fun i ↦ by
+    simpa using h i
+
+/-- The coordinates of the point `x + (t - xᵢ) eᵢ`: the `i`-th one is `t`, the others are
+those of `x`. -/
+theorem add_sub_smul_single_apply {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i j : ι) (t : 𝕜) :
+    (x + (t - x i) • EuclideanSpace.single i (1 : 𝕜)) j = if j = i then t else x j := by
+  by_cases h : j = i
+  · subst h; simp
+  · simp [h]
+
+/-- The map `t ↦ x + (t - xᵢ) eᵢ`, replacing the `i`-th coordinate of `x` with `t`, is an
+isometry, so `1`-Lipschitz. -/
+theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i : ι) :
+    LipschitzWith 1 fun t : 𝕜 ↦ x + (t - x i) • EuclideanSpace.single i (1 : 𝕜) :=
+  LipschitzWith.of_dist_le_mul fun s t ↦ by
+    simp [dist_eq_norm, ← sub_smul, norm_smul]
+
+/-- The point with `i`-th coordinate `t` and other coordinates `y` is obtained from the point with
+`i`-th coordinate `s` and the same other coordinates by moving along the `i`-th axis. -/
+theorem toLp_insertNth_eq_add_sub_smul_single {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} (i : Fin (n + 1))
+    (s t : 𝕜) (y : Fin n → 𝕜) :
+    (WithLp.toLp 2 (i.insertNth t y) : EuclideanSpace 𝕜 (Fin (n + 1))) =
+      WithLp.toLp 2 (i.insertNth s y) +
+        (t - (WithLp.toLp 2 (i.insertNth s y) : EuclideanSpace 𝕜 (Fin (n + 1))) i) •
+          EuclideanSpace.single i 1 := by
+  ext j
+  rw [add_sub_smul_single_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+/-- **A Euclidean coordinate divided by the norm is bounded:** `x j / ‖x‖ = O(1)` on
+`EuclideanSpace ℝ ι`, along any filter. -/
+theorem isBigO_apply_div_norm (l : Filter (EuclideanSpace ℝ ι)) (j : ι) :
+    (fun x : EuclideanSpace ℝ ι ↦ x j / ‖x‖) =O[l] fun _ ↦ (1 : ℝ) :=
+  ((Asymptotics.isBigO_inv_norm_smul_apply _ (fun _ ↦ EuclideanSpace.proj j) id).trans
+    (Asymptotics.isBigO_const_const _ one_ne_zero _)).congr_left fun x ↦ by
+      simp [div_eq_inv_mul]
 
 /-- A real vector lies on the unit sphere of Euclidean space exactly when the dot product of its
 coordinates with themselves is `1`. -/
@@ -143,6 +224,10 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
 /-- The Euclidean norm on `ℝ¹` is the absolute value of the coordinate. -/
 theorem norm_fin_one (x : EuclideanSpace ℝ (Fin 1)) : ‖x‖ = |x 0| := by
   rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, Real.sqrt_sq_eq_abs, abs_abs]
+
+/-- The squared Euclidean norm on `ℝ²` is the sum of the squared coordinates. -/
+theorem norm_sq_fin_two (x : EuclideanSpace ℝ (Fin 2)) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
 
 /-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
 theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
@@ -268,6 +353,23 @@ theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (�
   classical
   exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
 
+/-- The coordinates of the standard basis of Euclidean space are the identity: the inverse of its
+coordinate map fixes every vector. -/
+@[simp]
+theorem basisFun_repr_symm_apply (x : EuclideanSpace 𝕜 ι) : (basisFun ι 𝕜).repr.symm x = x := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  exact (basisFun_repr ι 𝕜 x i).symm
+
+/-- The Riesz representative of the coordinate projection `x ↦ xᵢ` is the basis vector `eᵢ`. -/
+@[simp]
+theorem toDual_symm_proj [DecidableEq ι] (i : ι) :
+    (InnerProductSpace.toDual 𝕜 (EuclideanSpace 𝕜 ι)).symm (EuclideanSpace.proj i) =
+      EuclideanSpace.single i 1 := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext y
+  simp [EuclideanSpace.inner_single_left]
+
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
 equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
@@ -306,6 +408,62 @@ theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
 theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
     ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
   simp [consEquivL_symm_apply, Fin.tail]
+
+@[simp]
+theorem consEquivL_symm_single_zero {n : ℕ} (a : 𝕜) :
+    (consEquivL 𝕜 n).symm (EuclideanSpace.single 0 a) = (a, 0) := by
+  ext i
+  · simp
+  · simp
+
+@[simp]
+theorem consEquivL_symm_single_succ {n : ℕ} (j : Fin n) (a : 𝕜) :
+    (consEquivL 𝕜 n).symm (EuclideanSpace.single j.succ a) = (0, EuclideanSpace.single j a) := by
+  ext i
+  · simp
+  · simp [Fin.succ_inj]
+
+/-- The inner product of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the sum of the inner products of the factors. -/
+theorem inner_consEquivL {n : ℕ} (z w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    inner 𝕜 (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) = inner 𝕜 z.1 w.1 + inner 𝕜 z.2 w.2 := by
+  simp [PiLp.inner_apply, Fin.sum_univ_succ]
+
+/-- The squared norm of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the sum of the squared norms of the factors. -/
+theorem norm_consEquivL_sq {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    ‖consEquivL 𝕜 n z‖ ^ 2 = ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 := by
+  simp [EuclideanSpace.norm_sq_eq, Fin.sum_univ_succ]
+
+/-- The distance of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` is the `ℓ²` combination of the distances of the factors. -/
+theorem dist_consEquivL_sq {n : ℕ} (z w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    dist (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) ^ 2 = dist z.1 w.1 ^ 2 + dist z.2 w.2 ^ 2 := by
+  rw [dist_eq_norm, dist_eq_norm, dist_eq_norm, ← map_sub, norm_consEquivL_sq, Prod.fst_sub,
+    Prod.snd_sub]
+
+/-- A ball of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ` lies in the product of the balls of the same radius. -/
+theorem preimage_consEquivL_ball_subset {n : ℕ} (w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) (s : ℝ) :
+    consEquivL 𝕜 n ⁻¹' Metric.ball (consEquivL 𝕜 n w) s ⊆
+      Metric.ball w.1 s ×ˢ Metric.ball w.2 s := by
+  intro z hz
+  rw [Set.mem_preimage, Metric.mem_ball] at hz
+  have h := dist_consEquivL_sq z w
+  have hs : 0 ≤ s := dist_nonneg.trans hz.le
+  have hs2 : dist (consEquivL 𝕜 n z) (consEquivL 𝕜 n w) ^ 2 < s ^ 2 :=
+    pow_lt_pow_left₀ hz dist_nonneg two_ne_zero
+  exact ⟨lt_of_pow_lt_pow_left₀ 2 hs (by nlinarith [sq_nonneg (dist z.2 w.2)]),
+    lt_of_pow_lt_pow_left₀ 2 hs (by nlinarith [sq_nonneg (dist z.1 w.1)])⟩
+
+/-- The product of the balls of half the radius lies in a ball of `𝕜ⁿ⁺¹ = 𝕜 × 𝕜ⁿ`. -/
+theorem ball_prod_ball_subset_preimage_consEquivL_ball {n : ℕ}
+    (w : 𝕜 × EuclideanSpace 𝕜 (Fin n)) {s : ℝ} (hs : 0 < s) :
+    Metric.ball w.1 (s / 2) ×ˢ Metric.ball w.2 (s / 2) ⊆
+      consEquivL 𝕜 n ⁻¹' Metric.ball (consEquivL 𝕜 n w) s := by
+  rintro z ⟨h1, h2⟩
+  rw [Metric.mem_ball] at h1 h2
+  rw [Set.mem_preimage, Metric.mem_ball]
+  have h := dist_consEquivL_sq z w
+  have h3 := pow_lt_pow_left₀ h1 dist_nonneg two_ne_zero
+  have h4 := pow_lt_pow_left₀ h2 dist_nonneg two_ne_zero
+  exact lt_of_pow_lt_pow_left₀ 2 hs.le (by nlinarith)
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × (Fin n → 𝕜)`: the continuous
@@ -592,6 +750,20 @@ theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSp
     LinearIsometryEquiv.symm_symm, inner_fst_sumComplEquivProd,
     sumComplEquivProd_symm_finCastLEEquiv]
 
+variable (𝕜) in
+/-- The first factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension `m`. -/
+theorem finrank_subtype_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // j.val < m}) = m :=
+  (finCastLEEquiv 𝕜 hm).toLinearEquiv.finrank_eq.symm.trans finrank_euclideanSpace_fin
+
+variable (𝕜) in
+/-- The second factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension
+`n - m`. -/
+theorem finrank_subtype_not_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // ¬ j.val < m}) = n - m := by
+  rw [finrank_euclideanSpace, Fintype.card_subtype_compl, Fintype.card_fin,
+    ← finrank_euclideanSpace (𝕜 := 𝕜), finrank_subtype_val_lt 𝕜 hm]
+
 end finCastLE
 
 section finsetCompl
@@ -671,6 +843,13 @@ theorem forall_finsetComplEquivProd_symm_mk_zero_iff (P : 𝕜 → Prop)
   rw [← forall_fst_finsetComplEquivProd_iff (hZ := hZ), ContinuousLinearEquiv.apply_symm_apply]
 
 end finsetCompl
+
+/-- Expanding `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` as a coordinate linear
+combination. -/
+theorem basisFun_toBasis_constrL_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (y : ι → Y) (g : EuclideanSpace 𝕜 ι) :
+    (EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g = ∑ i, g i • y i := by
+  simp [Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
 
 end EuclideanSpace
 
@@ -800,6 +979,61 @@ variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜] {F : ι �
   rw [← inner_conj_symm, inner_single_left, inner_conj_symm]
 
 end PiLp
+
+namespace EuclideanSpace
+
+section Truncation
+
+variable {ι : Type*}
+
+/-- Coordinatewise truncation of a real Euclidean vector to `[-t, t]`. -/
+def truncVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | |r| ≤ t} g
+
+/-- Defining formula for `EuclideanSpace.truncVec`. -/
+theorem truncVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g = PiLp.coordIndicator {r : ℝ | |r| ≤ t} g :=
+  (rfl)
+
+/-- Coordinatewise tail of a real Euclidean vector outside `[-t, t]`. -/
+def tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | t < |r|} g
+
+/-- Defining formula for `EuclideanSpace.tailVec`. -/
+theorem tailVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    tailVec t g = PiLp.coordIndicator {r : ℝ | t < |r|} g :=
+  (rfl)
+
+@[simp]
+theorem truncVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    truncVec t g i = if |g i| ≤ t then g i else 0 := by
+  simp [truncVec, Set.indicator_apply]
+
+@[simp]
+theorem tailVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    tailVec t g i = if t < |g i| then g i else 0 := by
+  simp [tailVec, Set.indicator_apply]
+
+/-- Splitting a real Euclidean vector into its coordinatewise truncation and tail. -/
+theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g + tailVec t g = g := by
+  have hcompl : {r : ℝ | |r| ≤ t}ᶜ = {r : ℝ | t < |r|} := by
+    ext r
+    simp [not_le]
+  simpa only [truncVec, tailVec, hcompl] using
+    PiLp.coordIndicator_add_compl {r : ℝ | |r| ≤ t} g
+
+/-- Each coordinate of `EuclideanSpace.truncVec t g` has absolute value at most `t` when `0 ≤ t`. -/
+theorem abs_truncVec_apply_le {t : ℝ} (ht : 0 ≤ t) (g : EuclideanSpace ℝ ι) (i : ι) :
+    |truncVec t g i| ≤ t := by
+  simp only [truncVec_apply]
+  split_ifs with h
+  · exact h
+  · simpa using ht
+
+end Truncation
+
+end EuclideanSpace
 
 namespace LinearIsometryEquiv
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.Order.Filter.Cofinite
 
@@ -28,7 +29,8 @@ ray `{i} × ℕ` to its starting values. Shifting the index of an alternating pr
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
 On pairwise disjoint sets, a product of indicators glues different functions on the pieces.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
-function, is a finite sum over the support of the weights.
+function, is a finite sum over the support of the weights, and it cancels against its shift by
+`r` when the weights change sign under that shift.
 A product over a finset is compared with the `finprod` of a finitely supported family whose
 factors off the finset are all at least `1`, or all at most `1`. A `finsum` whose terms are fixed by
 multiplication by an element is fixed by it. Over a ring with no zero divisors, a product of two
@@ -44,6 +46,8 @@ by a left-regular element commutes with `finsum` even when the support is infini
 * `TauCeti.hasFiniteMulSupport_sum_type`: a family on `α ⊕ β` has finite multiplicative support as
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
+* `TauCeti.finprod_eq_prod_mul_finprod_compl`: a finitely supported product splits at a finset as
+  the product over the finset times the product over its complement.
 * `TauCeti.exists_ne_one_of_finprod_ne_one`, `TauCeti.exists_ne_zero_of_finsum_ne_zero`: a
   product that is not `1` has a factor that is not `1`, and likewise for sums.
 * `TauCeti.finprod_comp_eq_of_injective` and `TauCeti.finsum_comp_eq_of_injective`: reindex
@@ -59,6 +63,9 @@ by a left-regular element commutes with `finsum` even when the support is infini
   family has finite multiplicative support jointly in both variables.
 * `TauCeti.finprod_mem_eq_prod_filter_of_mulSupport_subset`: a product over `s` of a family
   supported in a finset `t` is the product over the elements of `t` that lie in `s`.
+* `TauCeti.hasFiniteMulSupport_of_forall_eq_one` and
+  `TauCeti.hasFiniteSupport_of_forall_eq_zero`: a sequence on `ℕ` whose values from `K` onwards
+  are `1` (or `0`) has finite multiplicative (or additive) support.
 * `TauCeti.finprod_eq_prod_range_of_forall_eq_one` and
   `TauCeti.finsum_eq_sum_range_of_forall_eq_zero`: a product over `ℕ` whose factors from `K`
   onwards are `1` equals the finite product over `Finset.range K`, and likewise for sums.
@@ -77,6 +84,12 @@ by a left-regular element commutes with `finsum` even when the support is infini
   finite sum over the support of the weights.
 * `TauCeti.finsum_smul_inv_smul`: translating the point of a sum weighted by the translates of a
   function translates the summation variable.
+* `TauCeti.finsum_const`: the sum of a constant over any type is its `Nat.card` times the
+  constant.
+* `TauCeti.inv_natCard_smul_finsum_const`: over a finite nonempty type, the sum of a constant
+  weighted by the inverse cardinality is the constant.
+* `TauCeti.finsum_smul_add_finsum_comp_add_right_smul_eq_zero`: a finitely supported weighted
+  sum cancels against its shift by `r` when the weights change sign under that shift.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
@@ -85,6 +98,8 @@ by a left-regular element commutes with `finsum` even when the support is infini
 * `TauCeti.finsum_mul_finsum`: `(∑ᶠ i, f i) * ∑ᶠ j, g j = ∑ᶠ p : ι × κ, f p.1 * g p.2` over a
   ring with no zero divisors, whatever the supports.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
+  `finsum`, whatever the support.
+* `IsUnit.smul_finsum`: a unit acting through a distributive monoid action commutes with
   `finsum`, whatever the support.
 * `Multiset.finsum_count_nsmul_eq_sum_map`: summing against the multiplicities of a multiset is
   summing over the multiset.
@@ -95,6 +110,8 @@ by a left-regular element commutes with `finsum` even when the support is infini
 * `Set.exists_finprod_mem_comp_eq_multiset_prod_map` and
   `Set.exists_finsum_mem_comp_eq_multiset_sum_map`: for any set `s`, `∏ᶠ x ∈ s, g (f x)` (or
   `∑ᶠ x ∈ s, g (f x)`) equals `(m.map g).prod` (or `(m.map g).sum`) for some multiset `m`.
+* `Set.finprod_mem_const` and `Set.finsum_mem_const`: the product of a constant `c` over any set
+  `s` is `c ^ s.ncard`, and the sum is `s.ncard • c`.
 -/
 
 public section
@@ -153,6 +170,19 @@ theorem finprod_sum_type (f : α ⊕ β → M) (hl : HasFiniteMulSupport (f ∘ 
   rw [← finprod_mem_univ, ← range_inl_union_range_inr,
     finprod_mem_union' isCompl_range_inl_range_inr.disjoint hfl hfr,
     finprod_mem_range Sum.inl_injective, finprod_mem_range Sum.inr_injective]
+
+/-- A finitely supported product splits at a finset `T` as the product over `T` times the
+product over the complement of `T`. -/
+@[to_additive /-- A finitely supported sum splits at a finset `T` as the sum over `T` plus the
+sum over the complement of `T`. -/]
+theorem finprod_eq_prod_mul_finprod_compl {ι : Type*} {f : ι → M} (hf : HasFiniteMulSupport f)
+    (T : Finset ι) :
+    ∏ᶠ i, f i = (∏ i : T, f i.val) * ∏ᶠ i : {i // i ∉ T}, f i.val := by
+  classical
+  rw [← finprod_comp_equiv (Equiv.sumCompl fun i ↦ i ∈ T),
+    finprod_sum_type (fun j ↦ f (Equiv.sumCompl (fun i ↦ i ∈ T) j)) (Set.toFinite _)
+      (hf.preimage Subtype.val_injective.injOn), finprod_eq_prod_of_fintype]
+  simp
 
 /-- If a product is not `1`, then one of its factors is not `1`. This is the case `s = univ` of
 `exists_ne_one_of_finprod_mem_ne_one`. -/
@@ -265,6 +295,13 @@ theorem finprod_mem_eq_prod_filter_of_mulSupport_subset (f : α → M) (s : Set 
     simp only [mem_inter_iff, Finset.coe_filter, mem_ofPred_eq]
     exact ⟨fun h ↦ ⟨⟨ht h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
 
+/-- A sequence on `ℕ` whose values from `K` onwards are `1` has finite multiplicative support. -/
+@[to_additive /-- A sequence on `ℕ` whose values from `K` onwards are `0` has finite support. -/]
+theorem hasFiniteMulSupport_of_forall_eq_one {M : Type*} [One M] {f : ℕ → M} (K : ℕ)
+    (hf : ∀ i : ℕ, K ≤ i → f i = 1) : HasFiniteMulSupport f :=
+  (Finset.finite_toSet (Finset.range K)).subset fun i hi ↦ by
+    simpa only [Finset.mem_coe, Finset.mem_range] using lt_of_not_ge fun hle ↦ hi (hf i hle)
+
 /-- A product over `ℕ` whose factors from `K` onwards are `1` equals the finite product over
 `Finset.range K`. -/
 @[to_additive /-- A sum over `ℕ` whose terms from `K`
@@ -363,6 +400,43 @@ theorem finsum_smul_inv_smul {G X R V : Type*} [Group G] [MulAction G X] [AddCom
   rw [← finsum_comp_equiv (Equiv.mulRight a)]
   simp [mul_smul]
 
+/-- A sum weighted by a finitely supported family of scalars `b` cancels against its shift by `r`
+when the weights `w` change sign under that shift: `∑ᶠ p, b p • w p + ∑ᶠ p, b (p + r) • w p = 0`.
+-/
+theorem finsum_smul_add_finsum_comp_add_right_smul_eq_zero {ι R A : Type*} [AddGroup ι]
+    [Semiring R] [AddCommGroup A] [Module R A] {b : ι → R} (hb : HasFiniteSupport b) {r : ι}
+    {w : ι → A} (hw : ∀ p, w (p + r) = -w p) :
+    ∑ᶠ p, b p • w p + ∑ᶠ p, b (p + r) • w p = 0 := by
+  have hfin : ∀ u : ι → A, HasFiniteSupport fun p ↦ b p • u p := fun u ↦
+    hb.subset fun p hp h0 ↦ hp (by simp [h0])
+  rw [← finsum_comp_equiv (Equiv.subRight r) (f := fun p ↦ b (p + r) • w p)]
+  simp only [Equiv.subRight_apply, sub_add_cancel]
+  rw [← finsum_add_distrib (hfin _) (hfin _)]
+  refine finsum_eq_zero_of_forall_eq_zero fun q ↦ ?_
+  have hq := hw (q - r)
+  rw [sub_add_cancel] at hq
+  rw [← smul_add, hq, neg_add_cancel, smul_zero]
+
+/-- The sum of a constant `c` over any type `α` is `Nat.card α • c`. No finiteness is needed:
+for infinite `α` both sides are `0`. -/
+theorem finsum_const {α V : Type*} [AddCommMonoid V] (c : V) :
+    ∑ᶠ _ : α, c = Nat.card α • c := by
+  rcases finite_or_infinite α with hα | hα
+  · have := Fintype.ofFinite α
+    simp [finsum_eq_sum_of_fintype, Nat.card_eq_fintype_card]
+  · rw [Nat.card_eq_zero_of_infinite, zero_smul]
+    by_cases hc : c = 0
+    · simp [hc]
+    · exact finsum_of_infinite_support (by rwa [support_const hc, infinite_univ_iff])
+
+/-- Averaging a constant: over a finite nonempty type `α`, the sum of the constant `c`, weighted
+by `(Nat.card α)⁻¹` in a division semiring of characteristic zero, is `c`. -/
+theorem inv_natCard_smul_finsum_const {α R V : Type*} [Finite α] [Nonempty α] [DivisionSemiring R]
+    [CharZero R] [AddCommMonoid V] [Module R V] (c : V) :
+    (Nat.card α : R)⁻¹ • ∑ᶠ _ : α, c = c := by
+  rw [finsum_const, ← Nat.cast_smul_eq_nsmul R]
+  exact inv_smul_smul₀ (Nat.cast_ne_zero.2 Nat.card_pos.ne') c
+
 end WeightedSum
 
 section FixedByMul
@@ -453,6 +527,15 @@ theorem IsLeftRegular.mul_finsum {ι R : Type*} [NonUnitalNonAssocSemiring R] {r
     (hr : IsLeftRegular r) (f : ι → R) : r * ∑ᶠ i, f i = ∑ᶠ i, r * f i :=
   (AddMonoidHom.mulLeft r).map_finsum_of_injective hr f
 
+/-- A unit acting through a distributive monoid action commutes with `finsum`, without any
+finiteness assumption on the support: the action of a unit is an additive automorphism. Compare
+`smul_finsum'`, which assumes a finite support. -/
+theorem IsUnit.smul_finsum {ι N A : Type*} [Monoid N] [AddCommMonoid A] [DistribMulAction N A]
+    {a : N} (ha : IsUnit a) (f : ι → A) : a • ∑ᶠ i, f i = ∑ᶠ i, a • f i := by
+  obtain ⟨u, rfl⟩ := ha
+  simpa only [DistribMulAction.toAddEquiv_apply, Units.smul_def] using
+    (DistribMulAction.toAddEquiv A u).map_finsum f
+
 /-- Summing `f` against the multiplicities of the elements of a multiset, with `finsum` over the
 whole type, gives the sum of `f` over the multiset. This is the `finsum` form of
 `Finset.sum_multiset_map_count`. -/
@@ -499,5 +582,18 @@ theorem exists_finprod_mem_comp_eq_multiset_prod_map {α β M : Type*} [CommMono
   · exact ⟨ht.toFinset.val.map f, by
       rw [← finprod_mem_inter_mulSupport, ht.finprod_mem_comp_eq_multiset_prod_map]⟩
   · exact ⟨0, by rw [finprod_mem_eq_one_of_infinite ht, Multiset.map_zero, Multiset.prod_zero]⟩
+
+/-- The product of a constant `c` over a set `s` is `c ^ s.ncard`. For infinite `s` both sides are
+`1`, since `s.ncard = 0`. -/
+@[to_additive (attr := simp) /-- The sum of a constant `c` over a set `s` is `s.ncard • c`. For
+infinite `s` both sides are `0`, since `s.ncard = 0`. -/]
+theorem finprod_mem_const {α M : Type*} [CommMonoid M] (s : Set α) (c : M) :
+    ∏ᶠ _ ∈ s, c = c ^ s.ncard := by
+  by_cases hs : s.Finite
+  · rw [finprod_mem_eq_finite_toFinset_prod _ hs, Finset.prod_const, ncard_eq_toFinset_card _ hs]
+  rw [Infinite.ncard hs, pow_zero]
+  by_cases hc : c = 1
+  · simp [hc]
+  exact finprod_mem_eq_one_of_infinite <| by simpa [Function.mulSupport_const hc] using hs
 
 end Set

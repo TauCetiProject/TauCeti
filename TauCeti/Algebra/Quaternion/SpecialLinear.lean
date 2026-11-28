@@ -32,6 +32,8 @@ applies in particular over a separably closed field.
 
 * `QuaternionAlgebra.map_star_eq_adjugate_of_algEquiv_matrix` shows that any splitting algebra
   equivalence carries quaternion conjugation to matrix adjugation.
+* `QuaternionAlgebra.det_apply_eq_normForm_of_algEquiv_matrix`: such an equivalence carries the
+  reduced norm to the determinant.
 * `QuaternionAlgebra.unitaryEquivSpecialLinearOfAlgEquiv` restricts a splitting equivalence to an
   equivalence from the quaternion unitary group to `SL₂`.
 * `QuaternionAlgebra.nonempty_unitaryEquivSpecialLinear_of_isSquare` supplies such an equivalence
@@ -83,6 +85,16 @@ theorem map_star_eq_adjugate_of_algEquiv_matrix {c₁ c₂ c₃ : R}
           e.commutes (2 * (e.symm A).re + c₂ * (e.symm A).imI)
   simpa only [f, e.symm_apply_apply] using
     Matrix.eq_adjugate_of_antimultiplicative_of_exists_add_eq_smul_one f hmul hscalar (e q)
+
+/-- Any algebra equivalence from a quaternion algebra to two-by-two matrices carries the reduced
+norm to the determinant. -/
+theorem det_apply_eq_normForm_of_algEquiv_matrix {c₁ c₂ c₃ : R}
+    (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) (q : ℍ[R,c₁,c₂,c₃]) :
+    (e q).det = normForm c₁ c₂ c₃ q := by
+  have h : (e q).det • (1 : Matrix (Fin 2) (Fin 2) R) = normForm c₁ c₂ c₃ q • 1 := by
+    rw [← Matrix.mul_adjugate, ← map_star_eq_adjugate_of_algEquiv_matrix, ← map_mul, self_mul_star]
+    simp [← coe_algebraMap, Algebra.algebraMap_eq_smul_one]
+  simpa using congrFun₂ h 0 0
 
 /-- A splitting algebra equivalence restricts to an equivalence from the quaternion norm-one group
 to the two-dimensional special linear group. -/

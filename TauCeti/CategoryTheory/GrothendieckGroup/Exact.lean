@@ -763,6 +763,27 @@ noncomputable def fromSplit : SplitK0 C →+ ExactK0 E :=
 lemma fromSplit_of (X : C) : fromSplit E (SplitK0.of X) = (of X : ExactK0 E) :=
   SplitK0.lift_of _ X
 
+/-- The class of a finite biproduct in exact `K₀` is the sum of the classes of its summands. -/
+@[simp]
+theorem of_biproduct {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f] :
+    (of (⨁ f) : ExactK0 E) = ∑ j, of (f j) := by
+  rw [← fromSplit_of (E := E), SplitK0.of_biproduct, map_sum]
+  simp_rw [fromSplit_of]
+
+omit [EssentiallySmall.{w} C] in
+/-- The class of an explicitly presented ambient finite biproduct in the exact `K₀` of an induced
+full subcategory is the sum of the classes of its summands. -/
+theorem of_biproduct_fullSubcategory {P : ObjectProperty C}
+    [EssentiallySmall.{w} P.FullSubcategory] [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
+    (hP : E.IsExtensionClosed P) {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f]
+    (hf : ∀ j, P (f j)) (hPf : P (⨁ f)) :
+    (of ⟨⨁ f, hPf⟩ : ExactK0 (E.fullSubcategory P hP)) = ∑ j, of ⟨f j, hf j⟩ := by
+  have := hasFiniteBiproducts_of_hasBinaryBiproducts (C := P.FullSubcategory)
+  let g : J → P.FullSubcategory := fun j => ⟨f j, hf j⟩
+  have e : (⟨⨁ f, hPf⟩ : P.FullSubcategory) ≅ ⨁ g :=
+    P.fullyFaithfulι.preimageIso (P.ι.mapBiproduct g).symm
+  rw [of_congr e, of_biproduct]
+
 /-- The canonical comparison out of split `K₀` is the unique homomorphism preserving the classes
 of objects. -/
 theorem fromSplit_unique (f : SplitK0 C →+ ExactK0 E)

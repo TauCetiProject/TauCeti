@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Relrank
+public import TauCeti.AlgebraicGeometry.Birational.Composition
 public import TauCeti.AlgebraicGeometry.Birational.FunctionField.Basic
 
 /-!
@@ -29,6 +30,8 @@ with the junk value.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_id` and
   `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_comp`: `e(id) = 1` and
   `e(g ∘ f) = e(f)·e(g)`.
+* `AlgebraicGeometry.Scheme.Hom.topologicalDegree_comp`: the topological degree is
+  multiplicative for dominant morphisms.
 
 ## References
 
@@ -59,6 +62,13 @@ noncomputable def RationalMap.topologicalDegree (f : X ⤏ Y) [f.IsDominant] : �
 theorem RationalMap.topologicalDegree_def (f : X ⤏ Y) [f.IsDominant] :
     f.topologicalDegree = Module.finrank f.functionFieldMap.hom.fieldRange X.functionField := by
   rw [topologicalDegree]
+
+/-- Equal dominant rational maps have equal topological degrees, whatever the `IsDominant`
+instances: rewriting along `f = g` is blocked by the instance argument. -/
+theorem RationalMap.topologicalDegree_congr {f g : X ⤏ Y} [f.IsDominant] [g.IsDominant]
+    (h : f = g) : f.topologicalDegree = g.topologicalDegree := by
+  subst h
+  rfl
 
 /-- The topological degree of the rational map of a dominant morphism `g` is the dimension of
 `K(X)` over the image of the pullback of rational functions along `g`. -/
@@ -92,5 +102,13 @@ theorem RationalMap.topologicalDegree_comp (f : X ⤏ Y) [f.IsDominant] (g : Y �
       Subfield.relfinrank_map_map, Subfield.relfinrank_top_right, topologicalDegree_def]
   rw [topologicalDegree_def, functionFieldMap_comp, CommRingCat.hom_comp,
     ← Subfield.relfinrank_mul_finrank_top hle, htransport, ← topologicalDegree_def, mul_comm]
+
+/-- **Multiplicativity of the topological degree for morphisms**: `e(a ≫ b) = e(a)·e(b)` for
+dominant morphisms `a : X ⟶ Y` and `b : Y ⟶ Z` of integral schemes. -/
+theorem Hom.topologicalDegree_comp (a : X ⟶ Y) [IsDominant a] (b : Y ⟶ Z) [IsDominant b] :
+    (a ≫ b).toRationalMap.topologicalDegree =
+      a.toRationalMap.topologicalDegree * b.toRationalMap.topologicalDegree := by
+  rw [RationalMap.topologicalDegree_congr (Hom.toRationalMap_comp a b),
+    RationalMap.topologicalDegree_comp]
 
 end AlgebraicGeometry.Scheme

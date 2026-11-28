@@ -16,12 +16,15 @@ subtraction in which one operand is a *real* number: both `a - (r : EReal)` and 
 are defined for every extended real `a`, are never of the form `∞ - ∞`, and behave like real
 subtraction in the ways recorded here. The file also records that adding a finite extended
 nonnegative real to a real number is real addition, that the positive part `EReal.toENNReal` is
-left adjoint to the coercion from `ℝ≥0∞`, so that this coercion commutes with infima, how
+left adjoint to the coercion from `ℝ≥0∞`, so that this coercion commutes with infima, that a
+nonnegative real bound on the image of `x : ℝ≥0∞` is the bound `x ≤ ENNReal.ofReal r`, how
 combinations `s a + t b - r` with real weights and subtrahend behave, and that negation
 distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
 installing a coercion; it is additive. Finally, the adjunction `a + b ≤ c ↔ b ≤ c - a` is
-recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`.
+recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`, a
+positive finite multiple of a supremum is bounded termwise, and `x ≤ y` follows from `x ≤ y + δ`
+for every positive real `δ`.
 
 ## Main results
 
@@ -49,11 +52,15 @@ recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c 
 * `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima;
 * `TauCeti.EReal.neg_coe_ennreal_biInf_le_iff` — a bound `-(⨅ x ∈ s, f x) ≤ b` holds exactly
   when `-(f x) ≤ b` for every `x ∈ s`, the form of a large deviation lower bound over an open set;
+* `TauCeti.EReal.coe_ennreal_le_coe_iff_le_ofReal` — a nonnegative real bound `(x : EReal) ≤ r` on
+  `x : ℝ≥0∞` is the bound `x ≤ ENNReal.ofReal r`;
 * `TauCeti.EReal.le_neg_coe_ennreal_of_forall_ofReal_le` — a bound `a ≤ -d` by an extended
   nonnegative real `d` follows from the bounds `a ≤ -s` at the real thresholds `s` with
   `ofReal s ≤ d`;
 * `EReal.coe_mul_add_coe_mul_eq_top` — a combination `s a + t b` with positive real weights is `⊤`
   when neither `a` nor `b` is `⊥` and one of them is `⊤`;
+* `EReal.coe_mul_add_coe_mul_eq_top_of_ne_or_ne` — the same conclusion when one of `a` and `b`
+  is `⊤` and the indeterminate sum `⊤ + ⊥` is excluded;
 * `EReal.coe_mul_add_coe_mul_sub_coe_ne_top` — a combination `s a + t b - r` with nonnegative
   real weights and a real subtrahend is `≠ ⊤` when `a` and `b` are;
 * `EReal.coe_mul_add_coe_mul_sub_le_of_le` — such weighted combinations are monotone in their
@@ -70,8 +77,12 @@ recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c 
   in `ℝ≥0∞` and an equation of real differences, provided `px`, `nx`, `py`, `ny` are finite;
   `A` and `B` may be infinite;
 * `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`;
+* `EReal.coe_mul_le_iff_le_coe_inv_mul` — a positive real factor moves across `≤` as its inverse;
 * `EReal.add_le_iff_le_ite` — `a + b ≤ c` is equivalent to `b ≤ c - a` with no finiteness
   hypothesis, once `c - a` is replaced by `⊤` when `c = ⊤` or `a = ⊥`;
+* `EReal.mul_iSup_le` — a positive finite multiple of a supremum is bounded termwise;
+* `EReal.le_of_forall_pos_le_add` — a bound `x ≤ y + δ` for every positive real `δ` gives
+  `x ≤ y`;
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -242,6 +253,17 @@ theorem coe_mul_add_coe_mul_eq_top {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {a b : 
   · rw [coe_mul_top_of_pos ht]
     exact add_top_of_ne_bot (by simp [mul_ne_bot, ha, hs.le])
 
+/-- A combination `s a + t b` with positive real weights `s`, `t` is `⊤` when one of `a` and `b`
+is `⊤` and the indeterminate sum `⊤ + ⊥` is excluded. -/
+theorem coe_mul_add_coe_mul_eq_top_of_ne_or_ne {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {a b : EReal}
+    (h : a ≠ ⊤ ∨ b ≠ ⊥) (h' : a ≠ ⊥ ∨ b ≠ ⊤) (hT : a = ⊤ ∨ b = ⊤) :
+    (s : EReal) * a + (t : EReal) * b = ⊤ := by
+  rcases hT with rfl | rfl
+  · exact coe_mul_add_coe_mul_eq_top hs ht top_ne_bot (h.resolve_left (not_not_intro rfl))
+      (.inl rfl)
+  · exact coe_mul_add_coe_mul_eq_top hs ht (h'.resolve_right (not_not_intro rfl)) top_ne_bot
+      (.inr rfl)
+
 /-- A combination `s a + t b - r` with nonnegative real weights `s`, `t` and a real subtrahend
 `r` is `≠ ⊤` when `a` and `b` are. -/
 theorem coe_mul_add_coe_mul_sub_coe_ne_top {a b : EReal} (ha : a ≠ ⊤) (hb : b ≠ ⊤)
@@ -333,6 +355,12 @@ theorem coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal) :
   rw [← div_le_iff_le_mul hc' (coe_ne_top c), ← mul_div,
     mul_div_cancel (coe_ne_bot c) (coe_ne_top c) hc'.ne']
 
+/-- A positive real factor `c` moves across `≤` as its inverse: `c * a ≤ b ↔ a ≤ c⁻¹ * b`. -/
+theorem coe_mul_le_iff_le_coe_inv_mul {c : ℝ} (hc : 0 < c) {a b : EReal} :
+    (c : EReal) * a ≤ b ↔ a ≤ (c⁻¹ : ℝ) * b := by
+  rw [← coe_mul_le_coe_mul_iff (inv_pos.2 hc), ← mul_assoc, ← coe_mul, inv_mul_cancel₀ hc.ne',
+    coe_one, one_mul]
+
 /-- Unconditional form of `EReal.le_sub_iff_add_le`: `a + b ≤ c` bounds `b` by `c - a`, except
 that there is no bound when `c = ⊤` or `a = ⊥`. For each `a` this is a Galois connection between
 `(a + ·)` and the right-hand side. -/
@@ -341,6 +369,23 @@ theorem add_le_iff_le_ite {a b c : EReal} :
   by_cases h : c = ⊤ ∨ a = ⊥
   · rcases h with rfl | rfl <;> simp
   · rw [ite_eq_right h, le_sub_iff_add_le (.inl (not_or.mp h).2) (.inr (not_or.mp h).1), add_comm]
+
+/-- A positive finite multiple of a supremum is at most `c` when the same multiple of every term
+is. -/
+theorem mul_iSup_le {a : EReal} (ha : 0 < a) (ha' : a ≠ ⊤) {ι : Sort*} {f : ι → EReal}
+    {c : EReal} (h : ∀ i, a * f i ≤ c) : a * ⨆ i, f i ≤ c := by
+  rw [mul_comm, ← le_div_iff_mul_le ha ha']
+  exact iSup_le fun i ↦ (le_div_iff_mul_le ha ha').2 (mul_comm a (f i) ▸ h i)
+
+/-- An extended real `x` that is at most `y + δ` for every positive real `δ` is at most `y`. The
+general `_root_.le_of_forall_pos_le_add` does not apply, since `EReal` has no `ExistsAddOfLE`
+(`⊥ + c = ⊥`). -/
+theorem le_of_forall_pos_le_add {x y : EReal} (h : ∀ δ : ℝ, 0 < δ → x ≤ y + δ) : x ≤ y := by
+  refine le_of_forall_lt_iff_le.1 fun z hz ↦ ?_
+  obtain ⟨w, hw, hwz⟩ := lt_iff_exists_real_btwn.1 hz
+  refine (h (z - w) (_root_.sub_pos.2 (EReal.coe_lt_coe_iff.1 hwz))).trans ?_
+  calc y + ((z - w : ℝ) : EReal) ≤ (w : EReal) + ((z - w : ℝ) : EReal) := add_le_add hw.le le_rfl
+    _ = z := by rw [← coe_add, add_sub_cancel]
 
 end EReal
 
@@ -351,6 +396,12 @@ exactly when the negated value at every point of the set is. -/
 theorem neg_coe_ennreal_biInf_le_iff {α : Type*} {s : Set α} {f : α → ℝ≥0∞} {b : EReal} :
     -((⨅ x ∈ s, f x : ℝ≥0∞) : EReal) ≤ b ↔ ∀ x ∈ s, -(f x : EReal) ≤ b := by
   simp_rw [EReal.neg_le (b := b), EReal.coe_ennreal_iInf, le_iInf_iff]
+
+/-- A nonnegative real bound on the `EReal` image of `x : ℝ≥0∞` is the bound `ENNReal.ofReal r`
+in `ℝ≥0∞`. -/
+theorem coe_ennreal_le_coe_iff_le_ofReal {x : ℝ≥0∞} {r : ℝ} (hr : 0 ≤ r) :
+    (x : EReal) ≤ r ↔ x ≤ ENNReal.ofReal r := by
+  rw [← EReal.coe_ennreal_le_coe_ennreal_iff, EReal.coe_ennreal_ofReal, max_eq_left hr]
 
 /-- An extended real that is at most `-s` for every real `s` with `ENNReal.ofReal s ≤ d` is at
 most `-d`. For `d = ∞` the hypothesis covers every real `s`, and the conclusion is `a = ⊥`. -/

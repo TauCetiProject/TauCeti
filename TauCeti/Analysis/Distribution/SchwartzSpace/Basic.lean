@@ -29,6 +29,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 
 * `SchwartzMap.one_add_norm_smul_sq_rpow_mul_norm_le`: `⟨c x⟩ ^ m ‖f x‖` is bounded by a finite
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
+* `SchwartzMap.norm_le_add_seminorm_mul_inv_one_add_norm_pow`: `‖f x‖` is bounded by the sum of its
+  `(0, 0)` and `(k, 0)` seminorms times `(1 + ‖x‖ ^ k)⁻¹`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_mul`: `f x * g x` is integrable for Schwartz functions with values in a
@@ -50,11 +52,16 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.seminorm_eq_seminorm`: the Schwartz seminorms do not depend on the scalar field.
+* `SchwartzMap.seminorm_postcompCLM_linearIsometry`: postcomposition with a linear isometry
+  preserves the Schwartz seminorms.
 * `SchwartzMap.norm_toLp_sq`: the squared `L²` norm of `f` is `∫ ‖f x‖²`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
   `A x = ∑ i ∈ s, c i x • L i` is `∑ i ∈ s, L i (c i f)`.
+* `SchwartzMap.smulLeftCLM_pow_apply`: the `k`-th power of multiplication by `g` multiplies by
+  `g ^ k`.
 * `SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM`: the expansion of `x ↦ B (u x) (g x)` in a basis
   of `G` as a finite sum of scalar multiplications.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
@@ -86,6 +93,13 @@ section Weight
 
 variable {𝕜 E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+/-- Pointwise decay of a Schwartz function against `1 + ‖x‖ ^ k`, bounded by the sum of its
+`(0, 0)` and `(k, 0)` seminorms. -/
+theorem norm_le_add_seminorm_mul_inv_one_add_norm_pow (k : ℕ) (f : 𝓢(E, F)) (x : E) :
+    ‖f x‖ ≤ (SchwartzMap.seminorm 𝕜 0 0 f + SchwartzMap.seminorm 𝕜 k 0 f) * (1 + ‖x‖ ^ k)⁻¹ := by
+  rw [le_mul_inv_iff₀ (by positivity), mul_add, mul_one, mul_comm ‖f x‖]
+  exact add_le_add (f.norm_le_seminorm 𝕜 x) (f.norm_pow_mul_le_seminorm 𝕜 k x)
 
 /-- A Schwartz function absorbs the polynomial weight `⟨c x⟩ ^ m = (1 + ‖c x‖²) ^ (m / 2)` and
 still decays like `(1 + ‖x‖) ^ (-k)`, with a constant given by a finite supremum of Schwartz
@@ -130,6 +144,22 @@ theorem one_add_norm_smul_sq_rpow_mul_norm_le (c m : ℝ) (k : ℕ) (f : 𝓢(E,
     _ = _ := by ring
 
 end Weight
+
+section SmulLeftPow
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- The `k`-th power of multiplication by a function `g` of temperate growth is multiplication
+by `g ^ k`. -/
+theorem smulLeftCLM_pow_apply {g : E → 𝕜} (hg : g.HasTemperateGrowth) (k : ℕ) (f : 𝓢(E, F))
+    (x : E) : (smulLeftCLM F g ^ k) f x = g x ^ k • f x := by
+  induction k generalizing f with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', mul_apply_eq_comp, smulLeftCLM_apply_apply hg, ih, smul_smul, ← pow_succ']
+
+end SmulLeftPow
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -314,12 +344,39 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G]
 
+/-- The Schwartz seminorms do not depend on the scalar field: over any field, `p_{k,n}(f)` is the
+best constant `c` with `‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖ ≤ c`. -/
+theorem seminorm_eq_seminorm (𝕜₁ 𝕜₂ : Type*) [NormedField 𝕜₁] [NormedSpace 𝕜₁ F]
+    [SMulCommClass ℝ 𝕜₁ F] [NormedField 𝕜₂] [NormedSpace 𝕜₂ F] [SMulCommClass ℝ 𝕜₂ F]
+    (k n : ℕ) (f : 𝓢(E, F)) :
+    SchwartzMap.seminorm 𝕜₁ k n f = SchwartzMap.seminorm 𝕜₂ k n f := by
+  rw [seminorm_apply, seminorm_apply]
+
 /-- As a function, the postcomposition of a Schwartz function `f` with a continuous linear map
 `L` is the composite `L ∘ f`. -/
 @[simp]
 theorem coe_postcompCLM (f : 𝓢(E, F)) (L : F →L[𝕜] G) : ⇑(f.postcompCLM L) = L ∘ f := by
   ext x
   rw [postcompCLM_apply, Function.comp_apply]
+
+/-- **Postcomposition with a linear isometry preserves the Schwartz seminorms.** The iterated
+derivatives of `L ∘ f` are those of `f` followed by `L`, with the same norms. -/
+theorem seminorm_postcompCLM_linearIsometry (L : F →ₗᵢ[𝕜] G) (f : 𝓢(E, F)) (k n : ℕ) :
+    SchwartzMap.seminorm 𝕜 k n (f.postcompCLM L.toContinuousLinearMap) =
+      SchwartzMap.seminorm 𝕜 k n f := by
+  -- The derivatives are real derivatives, so view `L` as a real-linear isometry.
+  let Lℝ : F →ₗᵢ[ℝ] G := ⟨L.toLinearMap.restrictScalars ℝ, fun x ↦ by
+    rw [LinearMap.coe_restrictScalars, LinearIsometry.coe_toLinearMap, L.norm_map]⟩
+  -- `Lℝ` and `L` have the same underlying function.
+  have hcoe : ⇑(f.postcompCLM L.toContinuousLinearMap) = Lℝ ∘ f := by
+    ext x
+    simp [Lℝ]
+  have h (x : E) :
+      ‖iteratedFDeriv ℝ n (f.postcompCLM L.toContinuousLinearMap) x‖ =
+        ‖iteratedFDeriv ℝ n f x‖ := by
+    rw [hcoe]
+    exact Lℝ.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top)
+  simp only [seminorm_apply, h]
 
 end Postcomp
 

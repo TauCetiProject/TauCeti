@@ -30,6 +30,9 @@ material, as `AdjoinRoot.eq_mulRight_of_root_mul` in `TauCeti.RingTheory.AdjoinR
 
 ## Main results
 
+* `AdjoinRoot.root_X`: the root in the quotient by `X` is zero.
+* `AdjoinRoot.mk_X_pow_eq_mk_iff`: two polynomials have the same class in `R[X]/(Xⁿ)` if and only
+  if their coefficients agree in all degrees strictly below `n`.
 * `TauCeti.isNilpotent_root_X_pow`: the class of `X` is nilpotent in `R[X]/(Xⁿ)`.
 * `TauCeti.isLocalRing_adjoinRoot_X_sub_C_pow`: over a local ring `R`, the thickening
   `R[X]/((X-c)ⁿ)` is local for `n ≠ 0`.
@@ -61,6 +64,23 @@ Locality genuinely needs the hypothesis `n ≠ 0`: `R[X]/(X⁰)` is the zero rin
 public section
 
 open Polynomial
+
+namespace AdjoinRoot
+
+/-- The root in the quotient by `X` is zero. -/
+@[simp]
+theorem root_X {R : Type*} [CommRing R] : root (X : R[X]) = 0 := by
+  rw [← mk_X]
+  exact mk_self
+
+/-- Two polynomials have the same class in `R[X]/(Xⁿ)` if and only if their coefficients agree in
+all degrees strictly below `n`. -/
+theorem mk_X_pow_eq_mk_iff {R : Type*} [CommRing R] {n : ℕ} {p q : R[X]} :
+    mk (X ^ n) p = mk (X ^ n) q ↔ ∀ d < n, p.coeff d = q.coeff d := by
+  rw [mk_eq_mk, X_pow_dvd_iff]
+  simp [sub_eq_zero]
+
+end AdjoinRoot
 
 namespace TauCeti
 

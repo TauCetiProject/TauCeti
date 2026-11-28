@@ -45,7 +45,10 @@ in `c` and `L`
 For a solution of the Floer equation with tamed almost complex structures the energy is
 nonnegative, which bounds the area plus the Hamiltonian terms below by
 `-(B_0 + (B_0 + B_1 + B_∞))` (`SmoothTwoForm`'s
-`IsNondegenerate.neg_add_sum_le_integral_add_sub_of_isComplexLinearMap_cappedExchangePerturbation`).
+`IsNondegenerate.neg_add_sum_le_integral_add_sub_of_isComplexLinearMap_cappedExchangePerturbation`),
+and a bound `A` on the area plus the Hamiltonian terms bounds the energy over every part of the
+domain by `A + (B_0 + (B_0 + B_1 + B_∞))`
+(`SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_cappedExchangePerturbation_le`).
 
 The proof reduces to the start `c = 0` of the family, the capping datum at `0`. Pulling back along
 the diffeomorphism `Φ_c` of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Recentring`
@@ -402,6 +405,60 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_cappedExchangePerturbati
     ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
   exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le hH hHs hL hB hc₀ hc₁ u))
+
+/-- **A solution of bounded topological energy has bounded energy over every part of the capped
+domain, along the input-exchange family capped at `0`, for a manifold target.** Let `u` solve the
+Floer equation on `S` for the member `c ∈ [0, 1]` of the family, for almost complex structures
+tamed by the two-form, under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cappedExchangePerturbation`, with
+symplectic area plus the Hamiltonian terms at the asymptotic orbits at most `A`. Then over every
+set `Ω`, which may contain the capped puncture `0`, the energy is at most
+`A + (B_0 + (B_0 + B_1 + B_∞))`, uniformly in `c` and in the neck length `L`: the complement of `S`
+is a null set. This is the energy bound that compactness of the family consumes. -/
+theorem IsNondegenerate.setIntegral_floerEnergyDensity_cappedExchangePerturbation_le
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
+    (hB : ∀ q t x, |H q t x| ≤ B q) (hL : 4 < L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x₁ xinf : ℝ → M}
+    (hx₁ : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x₁ t)))
+    (hxinf : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (xinf t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u) thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x
+            Complex.I) u z).toLinearMap)
+    {A : ℝ}
+    (htop : (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in (0 : ℝ)..1, H one t (x₁ t)) - (∫ t in (0 : ℝ)..1, H inf t (xinf t)) ≤ A)
+    (Ω : Set (ℝ × ℝ)) :
+    ∫ z in Ω, ω.floerEnergyDensity
+        (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x
+          Complex.I) u z ≤
+      A + (B zero + ∑ q, B q) := by
+  have habs := hω.abs_integral_floerEnergyDensity_cappedExchangePerturbation_sub_le hH hHs hB hL
+    hc₀ hc₁ hu hx₁ hxinf hE hA
+  -- `Ω` lies in `S` up to a null set, and the energy density is nonnegative on `S`.
+  have hΩS : Ω ≤ᵐ[volume] thricePuncturedSphereReal := by
+    filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz _ using hz
+  refine (setIntegral_mono_set hE (ae_restrict_of_forall_mem
+    isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
+      floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)) hΩS).trans ?_
+  linarith [(abs_sub_le_iff.1 habs).1]
 
 /-- **The topological energy along the input-exchange family capped at `0` is bounded below, for
 a manifold target.** Let `u` solve the Floer equation `(du - X_{K_c})^{0,1} = 0` on `S` for the

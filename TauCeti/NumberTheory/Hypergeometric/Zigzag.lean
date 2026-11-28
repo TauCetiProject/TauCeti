@@ -1,0 +1,430 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Data.Multiset.Sort
+public import TauCeti.NumberTheory.Hypergeometric.Parameters
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import TauCeti.Data.List.TakeDrop
+
+/-!
+# The zigzag walk of a hypergeometric parameter pair
+
+The weight and the Hodge numbers of a hypergeometric family are read off a closed walk. List the
+`2d` representatives in `(0, 1]` of the classes of `α` and `β`, with multiplicity, in increasing
+order; start at height `0`, step up at each class of `α` and down at each class of `β`. The copies
+of one class of `α` sit side by side in the list, and they are recorded at the heights from which
+their up-steps leave; the Hodge vector counts the records at each height.
+
+This file sets up the walk and the counting function
+`Z(x) = #{a ∈ α : rep a ≤ x} - #{b ∈ β : rep b ≤ x}` (copies counted with multiplicity), and
+proves that the walk is `Z` read at the ends of its blocks of equal entries:
+
+* the walk starts and ends at `0` and moves by a unit step `2d` times;
+* after the entries at most `x` it is at height `Z(x)`; in particular, after the last entry of a
+  block of equal entries it is at `Z` of that entry;
+* the block form: if a class `a ∈ α` has multiplicity `c`, its block starts at height
+  `Z(rep a) - c`, and its copies are recorded at the `c` consecutive heights
+  `Z(rep a) - c, …, Z(rep a) - 1`, not all at `Z(rep a) - 1`. For `α = (1/2, 1/2)`,
+  `β = (1, 1)` the walk is `0, 1, 2, 1, 0` and the two copies of `1/2` are recorded at `0` and `1`.
+
+The swap reflects the walk and negates `Z`, and a shift by `μ` translates `Z` at the shifted
+representatives by `-Z(1 - rep μ)`.
+
+## Main declarations
+
+* `TauCeti.Hypergeometric.Parameters.sortedReps`: the increasing list of representatives,
+  characterized by `sortedReps_eq_iff`.
+* `TauCeti.Hypergeometric.Parameters.height`: the height of the walk after `i` steps, with
+  `height_zero`, `height_succ`, `height_two_mul_degree`,
+  `height_succ_eq_add_one_or_sub_one` and the discrete intermediate-value property
+  `exists_height_eq_of_le_of_lt`.
+* `TauCeti.Hypergeometric.Parameters.countingFunction`: the counting function `Z`, with
+  `height_card_filter_rep_le`, `height_succ_eq_countingFunction` and its behaviour
+  `countingFunction_vadd_rep_add` under shifts.
+* `TauCeti.Hypergeometric.Parameters.blockStart`: the position of the block of a class, with
+  `take_count_drop_blockStart`, `height_blockStart`, the block form
+  `height_blockStart_add_of_mem_α`, and `blockStart_le`, `lt_blockStart_add_count` (every entry
+  lies in the block of its class).
+
+## References
+
+* D. P. Roberts and F. Rodriguez-Villegas, *Hypergeometric motives*, Notices Amer. Math. Soc. 69
+  (2022) (the zigzag procedure for the Hodge numbers).
+* The LMFDB knowl `hgm.zigzagplot`, which fixes the representatives in `(0, 1]` read by the walk.
+-/
+
+public section
+
+namespace TauCeti.Hypergeometric.Parameters
+
+variable (P : Parameters) {a : AddCircle (1 : ℚ)} {i j : ℕ} {x : ℚ}
+
+/-! ### The sorted list of representatives -/
+
+/-- The representatives in `(0, 1]` of the `2d` classes of `α + β`, with multiplicity, in
+increasing order. An entry belongs to `α` or to `β` according to its class, since no class is in
+both. -/
+noncomputable def sortedReps : List ℚ := ((P.α + P.β).map rep).sort
+
+@[simp]
+theorem coe_sortedReps : (P.sortedReps : Multiset ℚ) = (P.α + P.β).map rep :=
+  Multiset.sort_eq _ _
+
+theorem sortedLE_sortedReps : P.sortedReps.SortedLE :=
+  List.sortedLE_iff_pairwise.2 (Multiset.pairwise_sort _ _)
+
+/-- The sorted list of representatives is the unique weakly increasing list of the
+representatives of `α + β`. -/
+theorem sortedReps_eq_iff {l : List ℚ} :
+    P.sortedReps = l ↔ l.SortedLE ∧ (l : Multiset ℚ) = (P.α + P.β).map rep := by
+  refine ⟨fun h ↦ h ▸ ⟨P.sortedLE_sortedReps, P.coe_sortedReps⟩, fun ⟨hl, hlrep⟩ ↦ ?_⟩
+  exact List.Perm.eq_of_sortedLE P.sortedLE_sortedReps hl
+    (Multiset.coe_eq_coe.1 (P.coe_sortedReps.trans hlrep.symm))
+
+@[simp]
+theorem length_sortedReps : P.sortedReps.length = 2 * P.degree := by
+  rw [← Multiset.coe_card, coe_sortedReps]
+  simp [two_mul]
+
+theorem mem_sortedReps : x ∈ P.sortedReps ↔ ∃ a ∈ P.α + P.β, rep a = x := by
+  rw [← Multiset.mem_coe, coe_sortedReps, Multiset.mem_map]
+
+/-! ### The walk and the counting function -/
+
+/-- The step of the walk at a rational number: `1` if its class is in `α`, and `-1` otherwise,
+so `-1` at every representative of a class of `β`. -/
+noncomputable def step (q : ℚ) : ℤ := if (q : AddCircle (1 : ℚ)) ∈ P.α then 1 else -1
+
+theorem step_of_mem {q : ℚ} (hq : (q : AddCircle (1 : ℚ)) ∈ P.α) : P.step q = 1 :=
+  ite_eq_left hq
+
+theorem step_of_notMem {q : ℚ} (hq : (q : AddCircle (1 : ℚ)) ∉ P.α) : P.step q = -1 :=
+  ite_eq_right hq
+
+theorem step_eq_one_or_eq_neg_one (q : ℚ) : P.step q = 1 ∨ P.step q = -1 := by
+  by_cases hq : (q : AddCircle (1 : ℚ)) ∈ P.α
+  exacts [.inl (P.step_of_mem hq), .inr (P.step_of_notMem hq)]
+
+theorem step_rep_of_mem_α (ha : a ∈ P.α) : P.step (rep a) = 1 :=
+  P.step_of_mem (by rwa [coe_rep])
+
+theorem step_rep_of_mem_β (ha : a ∈ P.β) : P.step (rep a) = -1 :=
+  P.step_of_notMem (by rw [coe_rep]; exact Multiset.disjoint_right.1 P.disjoint ha)
+
+/-- The height of the zigzag walk after its first `i` steps: the walk starts at `0` and steps
+up at each entry of `sortedReps` from `α` and down at each entry from `β`. It is `0` from step
+`2d` on (`height_of_two_mul_degree_le`). -/
+noncomputable def height (i : ℕ) : ℤ := ((P.sortedReps.take i).map P.step).sum
+
+theorem height_def (i : ℕ) : P.height i = ((P.sortedReps.take i).map P.step).sum := (rfl)
+
+/-- The counting function `Z(x) = #{a ∈ α : rep a ≤ x} - #{b ∈ β : rep b ≤ x}`, copies counted
+with multiplicity. -/
+noncomputable def countingFunction (x : ℚ) : ℤ :=
+  (P.α.filter fun a ↦ rep a ≤ x).card - (P.β.filter fun b ↦ rep b ≤ x).card
+
+theorem countingFunction_def (x : ℚ) :
+    P.countingFunction x =
+      (P.α.filter fun a ↦ rep a ≤ x).card - (P.β.filter fun b ↦ rep b ≤ x).card := (rfl)
+
+@[simp]
+theorem height_zero : P.height 0 = 0 := by
+  simp [height]
+
+theorem height_succ (hi : i < P.sortedReps.length) :
+    P.height (i + 1) = P.height i + P.step P.sortedReps[i] := by
+  simp [height, List.sum_take_succ _ _ (by simpa using hi : i < (P.sortedReps.map P.step).length)]
+
+/-- The walk moves by a unit step at each of its `2d` steps. -/
+theorem height_succ_eq_add_one_or_sub_one (hi : i < 2 * P.degree) :
+    P.height (i + 1) = P.height i + 1 ∨ P.height (i + 1) = P.height i - 1 := by
+  rw [P.height_succ (by simpa using hi), sub_eq_add_neg]
+  exact (P.step_eq_one_or_eq_neg_one _).imp (congrArg _) (congrArg _)
+
+/-- A discrete intermediate-value property: a walk with unit steps that passes from at most `h`
+to above `h` takes an up-step from height `h` in between. -/
+theorem exists_height_eq_of_le_of_lt {h : ℤ} {b c : ℕ} (hbc : b ≤ c) (hc : c ≤ 2 * P.degree)
+    (hb : P.height b ≤ h) (hc' : h < P.height c) :
+    ∃ k, b ≤ k ∧ k < c ∧ P.height k = h ∧ P.height (k + 1) = h + 1 := by
+  induction c, hbc using Nat.le_induction with
+  | base => omega
+  | succ c hbc ih =>
+    by_cases hlt : h < P.height c
+    · obtain ⟨k, h₁, h₂, h₃⟩ := ih (by omega) hlt
+      exact ⟨k, h₁, by omega, h₃⟩
+    · rcases P.height_succ_eq_add_one_or_sub_one (i := c) (by omega) with h' | h'
+      · exact ⟨c, hbc, by omega, by omega, by omega⟩
+      · omega
+
+theorem countingFunction_of_nonpos (hx : x ≤ 0) : P.countingFunction x = 0 := by
+  have h (s : Multiset (AddCircle (1 : ℚ))) : s.filter (fun a ↦ rep a ≤ x) = 0 :=
+    Multiset.filter_eq_nil.2 fun a _ ↦ (hx.trans_lt (rep_pos a)).not_ge
+  simp [countingFunction, h]
+
+theorem countingFunction_of_one_le (hx : 1 ≤ x) : P.countingFunction x = 0 := by
+  have h (s : Multiset (AddCircle (1 : ℚ))) : s.filter (fun a ↦ rep a ≤ x) = s :=
+    Multiset.filter_eq_self.2 fun a _ ↦ (rep_le_one a).trans hx
+  simp [countingFunction, h]
+
+theorem countingFunction_of_degree_eq_zero (hd : P.degree = 0) (x : ℚ) :
+    P.countingFunction x = 0 := by
+  simp [countingFunction, (P.degree_eq_zero_iff.1 hd).1, (P.degree_eq_zero_iff.1 hd).2]
+
+/-! ### The walk reads the counting function -/
+
+/-- Counting classes by a property of their representatives is counting entries of the sorted
+list. -/
+private theorem card_filter_eq_countP (p : ℚ → Prop) [DecidablePred p] :
+    ((P.α + P.β).filter fun a ↦ p (rep a)).card = P.sortedReps.countP (p ·) := by
+  simp [← Multiset.coe_countP, Multiset.countP_eq_card_filter, Multiset.filter_map]
+
+/-- Summing the steps over the classes of `α + β` satisfying `q` gives the number of those in
+`α` minus the number of those in `β`. -/
+private theorem sum_map_step_rep_filter (q : AddCircle (1 : ℚ) → Prop) [DecidablePred q] :
+    (((P.α + P.β).filter q).map fun a ↦ P.step (rep a)).sum =
+      (P.α.filter q).card - (P.β.filter q).card := by
+  rw [Multiset.filter_add, Multiset.map_add, Multiset.sum_add,
+    Multiset.map_congr rfl fun a ha ↦ P.step_rep_of_mem_α (Multiset.mem_filter.1 ha).1,
+    Multiset.map_congr rfl fun b hb ↦ P.step_rep_of_mem_β (Multiset.mem_filter.1 hb).1]
+  simp [sub_eq_add_neg]
+
+/-- For a predicate `p` closed downwards, the walk after the entries satisfying `p` is at the
+number of classes of `α` whose representatives satisfy `p` minus the number of those of `β`. -/
+private theorem height_card_filter (p : ℚ → Prop) [DecidablePred p]
+    (hp : ∀ x y, x ≤ y → p y → p x) :
+    P.height ((P.α + P.β).filter fun a ↦ p (rep a)).card =
+      (P.α.filter fun a ↦ p (rep a)).card - (P.β.filter fun b ↦ p (rep b)).card := by
+  have hpw : P.sortedReps.Pairwise fun x y ↦ decide (p y) → decide (p x) :=
+    (List.sortedLE_iff_pairwise.1 P.sortedLE_sortedReps).imp fun hxy ↦ by simpa using hp _ _ hxy
+  rw [card_filter_eq_countP, height, List.take_countP_eq_filter hpw, ← P.sum_map_step_rep_filter]
+  simpa only [Multiset.filter_coe, Multiset.map_coe, Multiset.sum_coe, Multiset.filter_map,
+    Multiset.map_map, Function.comp_def] using
+    congrArg (fun s : Multiset ℚ ↦ ((s.filter (p ·)).map P.step).sum) P.coe_sortedReps
+
+/-- After the entries at most `x`, the walk is at height `Z(x)`. -/
+theorem height_card_filter_rep_le (x : ℚ) :
+    P.height ((P.α + P.β).filter fun a ↦ rep a ≤ x).card = P.countingFunction x :=
+  P.height_card_filter (· ≤ x) fun _ _ hxy hy ↦ hxy.trans hy
+
+/-- The walk returns to `0` after its `2d` steps, and stays there. -/
+theorem height_of_two_mul_degree_le (hi : 2 * P.degree ≤ i) : P.height i = 0 := by
+  have h : ((P.α + P.β).filter fun a ↦ rep a ≤ 1) = P.α + P.β :=
+    Multiset.filter_eq_self.2 fun a _ ↦ rep_le_one a
+  have hL : P.sortedReps.take i = P.sortedReps.take (2 * P.degree) := by
+    rw [List.take_of_length_le (by simpa using hi), List.take_of_length_le (by simp)]
+  rw [height, hL, ← height, ← P.countingFunction_of_one_le le_rfl,
+    ← P.height_card_filter_rep_le, h]
+  simp [two_mul]
+
+theorem height_two_mul_degree : P.height (2 * P.degree) = 0 :=
+  P.height_of_two_mul_degree_le le_rfl
+
+/-- At the last entry of a block of equal entries the walk is at the counting function: if the
+`i`-th entry is followed by no entry or by a larger one, the height after it is `Z` of it. -/
+theorem height_succ_eq_countingFunction (hi : i < P.sortedReps.length)
+    (hlast : ∀ h : i + 1 < P.sortedReps.length, P.sortedReps[i] < P.sortedReps[i + 1]) :
+    P.height (i + 1) = P.countingFunction P.sortedReps[i] := by
+  -- The entries up to position `i` are at most the `i`-th one, and the later ones exceed it.
+  obtain ⟨x, hx⟩ : ∃ x, P.sortedReps[i] = x := ⟨_, rfl⟩
+  rw [hx, ← P.height_card_filter_rep_le, P.card_filter_eq_countP (· ≤ x)]
+  congr 1
+  rw [← List.take_append_drop (i + 1) P.sortedReps, List.countP_append,
+    List.countP_eq_length.2, List.countP_eq_zero.2, List.length_take_of_le hi, add_zero]
+  · intro q hq
+    obtain ⟨m, hm, rfl⟩ := List.mem_drop_iff_getElem.1 hq
+    have h1 : i + 1 < P.sortedReps.length := by omega
+    have := P.sortedLE_sortedReps.getElem_le_getElem_of_le (Nat.le_add_right (i + 1) m)
+      (hi := h1) (hj := by omega)
+    simpa [← hx] using (hlast h1).trans_le this
+  · intro q hq
+    obtain ⟨m, hm, rfl⟩ := List.mem_take_iff_getElem.1 hq
+    simpa [← hx] using P.sortedLE_sortedReps.getElem_le_getElem_of_le (by omega : m ≤ i)
+
+/-! ### Blocks of equal entries -/
+
+/-- The position in `sortedReps` at which the block of copies of the representative of `a`
+starts: the number of classes of `α + β` with smaller representative. -/
+noncomputable def blockStart (a : AddCircle (1 : ℚ)) : ℕ :=
+  ((P.α + P.β).filter fun c ↦ rep c < rep a).card
+
+theorem blockStart_def (a : AddCircle (1 : ℚ)) :
+    P.blockStart a = ((P.α + P.β).filter fun c ↦ rep c < rep a).card := (rfl)
+
+/-- The number of classes with representative at most that of `a` is the number with smaller
+representative plus the multiplicity of `a`. -/
+private theorem card_filter_rep_le (s : Multiset (AddCircle (1 : ℚ))) (a : AddCircle (1 : ℚ)) :
+    (s.filter fun c ↦ rep c ≤ rep a).card = (s.filter fun c ↦ rep c < rep a).card + s.count a := by
+  have h (c : AddCircle (1 : ℚ)) : ¬(rep c < rep a ∧ a = c) := fun ⟨h, hc⟩ ↦ (hc ▸ h).false
+  rw [Multiset.count_eq_card_filter_eq, ← Multiset.card_add, Multiset.filter_add_filter]
+  simp [le_iff_lt_or_eq, rep_inj, eq_comm, h]
+
+/-- The block of a class `a`: the `c` entries of `sortedReps` from position `blockStart a` on,
+with `c` the multiplicity of `a` in `α + β`, all equal `rep a`. -/
+theorem take_count_drop_blockStart (a : AddCircle (1 : ℚ)) :
+    (P.sortedReps.drop (P.blockStart a)).take ((P.α + P.β).count a) =
+      List.replicate ((P.α + P.β).count a) (rep a) := by
+  have hpw := List.sortedLE_iff_pairwise.1 P.sortedLE_sortedReps
+  -- The block ends where the entries at most `rep a` end, and starts where those below end.
+  have hle : P.sortedReps.take (P.blockStart a + (P.α + P.β).count a) =
+      P.sortedReps.filter (· ≤ rep a) := by
+    rw [blockStart, ← card_filter_rep_le, P.card_filter_eq_countP (· ≤ rep a),
+      List.take_countP_eq_filter (hpw.imp fun hxy ↦ by simpa using fun h ↦ hxy.trans h)]
+  have hlt : P.sortedReps.drop (P.blockStart a) = P.sortedReps.filter (rep a ≤ ·) := by
+    rw [blockStart, P.card_filter_eq_countP (· < rep a),
+      List.drop_countP_eq_filter (hpw.imp fun hxy ↦ by simpa using fun h ↦ hxy.trans_lt h)]
+    exact List.filter_congr fun x _ ↦ by simp only [← decide_not, not_lt]
+  have hlen : P.blockStart a + (P.α + P.β).count a ≤ P.sortedReps.length := by
+    rw [blockStart, ← card_filter_rep_le, ← Multiset.coe_card, coe_sortedReps, Multiset.card_map]
+    exact Multiset.card_le_card (Multiset.filter_le _ _)
+  rw [List.eq_replicate_iff]
+  refine ⟨by rw [List.length_take, List.length_drop]; omega, fun q hq ↦ le_antisymm ?_ ?_⟩
+  · rw [List.take_drop, hle] at hq
+    exact of_decide_eq_true (List.mem_filter.1 (List.mem_of_mem_drop hq)).2
+  · have hq' := List.mem_of_mem_take hq
+    rw [hlt] at hq'
+    exact of_decide_eq_true (List.mem_filter.1 hq').2
+
+/-- Inside the block of a class `a`, the walk takes steps of the colour of `a`. -/
+theorem height_blockStart_add (a : AddCircle (1 : ℚ)) (hj : j ≤ (P.α + P.β).count a) :
+    P.height (P.blockStart a + j) = P.height (P.blockStart a) + j * P.step (rep a) := by
+  have hblock : (P.sortedReps.drop (P.blockStart a)).take j = List.replicate j (rep a) := by
+    rw [← min_eq_left hj, ← List.take_take, P.take_count_drop_blockStart, List.take_replicate]
+  rw [height, height, List.take_add, hblock]
+  simp
+
+/-- The block of a class `a` starts at height `Z(rep a) - α.count a + β.count a`. -/
+theorem height_blockStart (a : AddCircle (1 : ℚ)) :
+    P.height (P.blockStart a) = P.countingFunction (rep a) - P.α.count a + P.β.count a := by
+  rw [blockStart, P.height_card_filter (· < rep a) fun _ _ hxy hy ↦ hxy.trans_lt hy,
+    countingFunction, card_filter_rep_le, card_filter_rep_le]
+  push_cast
+  ring
+
+/-- The block of a class `a ∈ α` of multiplicity `c` starts at height `Z(rep a) - c`. -/
+theorem height_blockStart_of_mem_α (ha : a ∈ P.α) :
+    P.height (P.blockStart a) = P.countingFunction (rep a) - P.α.count a := by
+  simp [P.height_blockStart, Multiset.count_eq_zero.2 (Multiset.disjoint_left.1 P.disjoint ha)]
+
+/-- The block of a class `a ∈ β` of multiplicity `c` starts at height `Z(rep a) + c`. -/
+theorem height_blockStart_of_mem_β (ha : a ∈ P.β) :
+    P.height (P.blockStart a) = P.countingFunction (rep a) + P.β.count a := by
+  simp [P.height_blockStart, Multiset.count_eq_zero.2 (Multiset.disjoint_right.1 P.disjoint ha)]
+
+/-- The block form of the walk at a class `a ∈ α` of multiplicity `c`: after `j ≤ c` steps into
+its block the walk is at `Z(rep a) - c + j`. So the `c` copies of `a` are recorded at the
+consecutive heights `Z(rep a) - c, …, Z(rep a) - 1`. -/
+theorem height_blockStart_add_of_mem_α (ha : a ∈ P.α) (hj : j ≤ P.α.count a) :
+    P.height (P.blockStart a + j) = P.countingFunction (rep a) - P.α.count a + j := by
+  rw [P.height_blockStart_add a (by rwa [P.count_add_of_mem_α ha]), P.height_blockStart_of_mem_α ha,
+    P.step_rep_of_mem_α ha, mul_one]
+
+/-- The block form of the walk at a class `a ∈ β` of multiplicity `c`: after `j ≤ c` steps into
+its block the walk is at `Z(rep a) + c - j`. -/
+theorem height_blockStart_add_of_mem_β (ha : a ∈ P.β) (hj : j ≤ P.β.count a) :
+    P.height (P.blockStart a + j) = P.countingFunction (rep a) + P.β.count a - j := by
+  rw [P.height_blockStart_add a (by rwa [P.count_add_of_mem_β ha]), P.height_blockStart_of_mem_β ha,
+    P.step_rep_of_mem_β ha]
+  ring
+
+/-- Every entry of the sorted list is the representative of its class. -/
+theorem rep_coe_of_mem_sortedReps (hx : x ∈ P.sortedReps) : rep (x : AddCircle (1 : ℚ)) = x := by
+  obtain ⟨a, -, rfl⟩ := P.mem_sortedReps.1 hx
+  rw [coe_rep]
+
+/-- The `i`-th entry of the sorted list lies in the block of its class: that block starts at or
+before position `i`. -/
+theorem blockStart_le (hi : i < P.sortedReps.length) :
+    P.blockStart (P.sortedReps[i] : AddCircle (1 : ℚ)) ≤ i := by
+  -- No entry from position `i` on is below the `i`-th one.
+  obtain ⟨x, hx⟩ : ∃ x, P.sortedReps[i] = x := ⟨_, rfl⟩
+  rw [hx, blockStart, P.rep_coe_of_mem_sortedReps (hx ▸ List.getElem_mem hi),
+    P.card_filter_eq_countP (· < x), ← List.take_append_drop i P.sortedReps, List.countP_append,
+    (List.countP_eq_zero (l := P.sortedReps.drop i)).2, add_zero]
+  · exact List.countP_le_length.trans (List.length_take_le _ _)
+  · intro y hy
+    obtain ⟨m, hm, rfl⟩ := List.mem_drop_iff_getElem.1 hy
+    simpa [← hx] using P.sortedLE_sortedReps.getElem_le_getElem_of_le (Nat.le_add_right i m)
+      (hi := hi) (hj := by omega)
+
+/-- The `i`-th entry of the sorted list lies in the block of its class: that block ends after
+position `i`. -/
+theorem lt_blockStart_add_count (hi : i < P.sortedReps.length) :
+    i < P.blockStart (P.sortedReps[i] : AddCircle (1 : ℚ)) +
+      (P.α + P.β).count (P.sortedReps[i] : AddCircle (1 : ℚ)) := by
+  -- Every entry up to position `i` is at most the `i`-th one.
+  obtain ⟨x, hx⟩ : ∃ x, P.sortedReps[i] = x := ⟨_, rfl⟩
+  rw [hx, blockStart, ← card_filter_rep_le, P.rep_coe_of_mem_sortedReps (hx ▸ List.getElem_mem hi),
+    P.card_filter_eq_countP (· ≤ x), ← List.take_append_drop (i + 1) P.sortedReps,
+    List.countP_append, List.countP_eq_length.2, List.length_take_of_le hi]
+  · omega
+  · intro y hy
+    obtain ⟨m, hm, rfl⟩ := List.mem_take_iff_getElem.1 hy
+    simpa [← hx] using P.sortedLE_sortedReps.getElem_le_getElem_of_le (by omega : m ≤ i)
+
+/-! ### The swap -/
+
+@[simp]
+theorem sortedReps_swap : P.swap.sortedReps = P.sortedReps := by
+  simp [sortedReps, add_comm]
+
+@[simp]
+theorem blockStart_swap (a : AddCircle (1 : ℚ)) : P.swap.blockStart a = P.blockStart a := by
+  simp [blockStart, add_comm]
+
+/-- On the entries of the sorted list, the swap reverses every step. -/
+theorem step_swap (hx : x ∈ P.sortedReps) : P.swap.step x = -P.step x := by
+  obtain ⟨a, ha, rfl⟩ := P.mem_sortedReps.1 hx
+  rcases Multiset.mem_add.1 ha with ha | ha
+  · rw [P.step_rep_of_mem_α ha, P.swap.step_rep_of_mem_β (by rwa [swap_β])]
+  · rw [P.step_rep_of_mem_β ha, P.swap.step_rep_of_mem_α (by rwa [swap_α]), neg_neg]
+
+/-- The swap reflects the walk. -/
+@[simp]
+theorem height_swap (i : ℕ) : P.swap.height i = -P.height i := by
+  simp only [height, sortedReps_swap,
+    List.map_congr_left fun _ hq ↦ P.step_swap (List.mem_of_mem_take hq)]
+  simp [List.sum_neg, Function.comp_def]
+
+@[simp]
+theorem countingFunction_swap (x : ℚ) : P.swap.countingFunction x = -P.countingFunction x := by
+  simp [countingFunction]
+
+/-! ### Shifts -/
+
+/-- How the representatives order after a shift by `μ`: the classes with representative
+above `1 - rep μ` come first, in their old order, followed by the others. Counted over a
+multiset, this is the counting identity behind `countingFunction_vadd_rep_add`. -/
+private theorem card_filter_rep_add_le (s : Multiset (AddCircle (1 : ℚ)))
+    (μ a : AddCircle (1 : ℚ)) :
+    ((s.filter fun c ↦ rep (μ + c) ≤ rep (μ + a)).card : ℤ) +
+        (s.filter fun c ↦ rep c ≤ 1 - rep μ).card =
+      (s.filter fun c ↦ rep c ≤ rep a).card + if rep a ≤ 1 - rep μ then s.card else 0 := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons x s ih =>
+    have hx := rep_mem_Ioc x
+    have ha := rep_mem_Ioc a
+    have hμ := rep_mem_Ioc μ
+    simp only [Multiset.filter_cons, Multiset.card_add, Multiset.card_cons, rep_add μ x,
+      rep_add μ a] at ih ⊢
+    split_ifs at ih ⊢ <;> simp only [Multiset.card_singleton, Multiset.card_zero] <;> push_cast <;>
+      first | omega | (exfalso; linarith [hx.1, hx.2, ha.1, ha.2, hμ.1, hμ.2])
+
+/-- After a shift by `μ`, the counting function at the shifted representatives is the old one
+minus its value at `1 - rep μ`. -/
+theorem countingFunction_vadd_rep_add (μ a : AddCircle (1 : ℚ)) :
+    (μ +ᵥ P).countingFunction (rep (μ + a)) =
+      P.countingFunction (rep a) - P.countingFunction (1 - rep μ) := by
+  have hα := card_filter_rep_add_le P.α μ a
+  have hβ := card_filter_rep_add_le P.β μ a
+  simp only [countingFunction_def, vadd_α, vadd_β, Multiset.filter_map, Multiset.card_map,
+    Function.comp_def]
+  rw [P.card_eq] at hα
+  linarith
+
+end TauCeti.Hypergeometric.Parameters

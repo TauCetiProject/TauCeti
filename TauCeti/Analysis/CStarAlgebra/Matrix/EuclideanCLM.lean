@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Analysis.CStarAlgebra.Hom
 import TauCeti.Analysis.Matrix.EuclideanLin
 
@@ -17,9 +18,11 @@ import TauCeti.Analysis.Matrix.EuclideanLin
 
 `CStarMatrix.toEuclideanCLM` is the star algebra isomorphism between `CStarMatrix n n ℂ` and the
 operators on `EuclideanSpace ℂ n`, through Mathlib's `Matrix.toEuclideanCLM`. It preserves norms
-(`CStarMatrix.norm_toEuclideanCLM`), traces (`CStarMatrix.trace_toEuclideanCLM`) and the order
+(`CStarMatrix.norm_toEuclideanCLM`), traces (`CStarMatrix.trace_toEuclideanCLM`), operator-range
+dimensions (`CStarMatrix.finrank_range_toEuclideanCLM`), and the order
 (`CStarMatrix.toEuclideanCLM_le_toEuclideanCLM_iff`), and sends the matrix product `x⋆y` to the
-composition `x† ∘L y` of operators (`CStarMatrix.toEuclideanCLM_symm_adjoint_comp`).
+composition `x† ∘L y` of operators (`CStarMatrix.toEuclideanCLM_symm_adjoint_comp`), together with
+the rank-one Gram identity `CStarMatrix.star_toEuclideanCLM_symm_rankOne_mul_self`.
 -/
 
 public section
@@ -48,9 +51,22 @@ theorem toEuclideanCLM_symm_apply (Z : EuclideanSpace ℂ n →L[ℂ] EuclideanS
     toEuclideanCLM.symm Z = ofMatrix ((Matrix.toEuclideanCLM (n := n) (𝕜 := ℂ)).symm Z) :=
   (rfl)
 
-/-- The diagonal entries of a matrix are the diagonal matrix coefficients of its operator. -/
-theorem inner_single_toEuclideanCLM_single (x : CStarMatrix n n ℂ) (i : n) :
-    ⟪EuclideanSpace.single i 1, toEuclideanCLM x (EuclideanSpace.single i 1)⟫_ℂ = x i i := by
+/-- The linear map underlying `CStarMatrix.toEuclideanCLM x` is
+`Matrix.toEuclideanLin (ofMatrix.symm x)`. -/
+theorem coe_toEuclideanCLM_eq_toEuclideanLin (x : CStarMatrix n n ℂ) :
+    (toEuclideanCLM x).toLinearMap = Matrix.toEuclideanLin (ofMatrix.symm x) := by
+  rw [toEuclideanCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin]
+
+/-- The dimension of the range of `CStarMatrix.toEuclideanCLM x` equals
+`Matrix.rank (ofMatrix.symm x)`. -/
+theorem finrank_range_toEuclideanCLM (x : CStarMatrix n n ℂ) :
+    Module.finrank ℂ (LinearMap.range (toEuclideanCLM x).toLinearMap) =
+      Matrix.rank (ofMatrix.symm x) := by
+  rw [coe_toEuclideanCLM_eq_toEuclideanLin, ← Matrix.rank_eq_finrank_range_toEuclideanLin]
+
+/-- The entries of a matrix are the matrix coefficients of its operator in the standard basis. -/
+theorem inner_single_toEuclideanCLM_single (x : CStarMatrix n n ℂ) (i j : n) :
+    ⟪EuclideanSpace.single i 1, toEuclideanCLM x (EuclideanSpace.single j 1)⟫_ℂ = x i j := by
   simp [toEuclideanCLM_apply, EuclideanSpace.inner_single_left]
 
 /-- The trace of the operator of a matrix is the trace of the matrix. -/
@@ -77,5 +93,16 @@ theorem toEuclideanCLM_symm_adjoint_comp (U W : EuclideanSpace ℂ n →L[ℂ] E
   rw [StarAlgEquiv.symm_apply_eq, map_mul, map_star, StarAlgEquiv.apply_symm_apply,
     StarAlgEquiv.apply_symm_apply, ContinuousLinearMap.star_eq_adjoint,
     ContinuousLinearMap.mul_def]
+
+/-- **Rank-one Gram identity** in `CStarMatrix`:
+`star (rankOne ℂ η ξ) * rankOne ℂ η ξ = (‖η‖ ^ 2) • rankOne ℂ ξ ξ` under `toEuclideanCLM`. -/
+theorem star_toEuclideanCLM_symm_rankOne_mul_self (η ξ : EuclideanSpace ℂ n) :
+    star (toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ)) *
+      toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ) =
+      (‖η‖ ^ 2) • toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ ξ ξ) := by
+  refine EquivLike.injective toEuclideanCLM ?_
+  rw [map_mul, map_star, ← algebraMap_smul ℂ (‖η‖ ^ 2), map_smul]
+  simp [ContinuousLinearMap.star_eq_adjoint, InnerProductSpace.adjoint_rankOne,
+    ContinuousLinearMap.mul_def, InnerProductSpace.rankOne_comp_rankOne]
 
 end CStarMatrix

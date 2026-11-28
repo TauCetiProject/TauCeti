@@ -50,7 +50,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   residue exactly when `p` or `p ^ n` divides their difference;
   `PadicInt.toZMod_eq_intCast_of_dvd` and `PadicInt.isCoprime_of_dvd_unit_sub`: integer
   representatives modulo `p` and coprimality for `p`-adic units;
-  `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is the case `p ^ n = 8`.
+  `PadicInt.toZModPow_succ_mul_eq_of_toZModPow_eq` lifts a congruence modulo `p ^ n` to
+  `p`-multiples modulo `p ^ (n + 1)`; `PadicInt.four_dvd_sub_iff_toZModPow_two_eq` and
+  `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` are its cases `p ^ n = 4` and `p ^ n = 8`.
 * `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
   `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
@@ -96,6 +98,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
 * `PadicInt.index_range_nsmul`: `n ℤ_p` has index `p ^ v_p(n)` in `ℤ_p` for `n ≠ 0`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
+* `PadicInt.addVal_eq_valuation`: on nonzero elements, the additive valuation of the discrete
+  valuation ring `ℤ_[p]` is `PadicInt.valuation`.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)` (`PadicInt.continuous_quotientSpanToZMod`,
@@ -221,6 +225,16 @@ theorem toZModPow_eq_iff_dvd_sub (n : ℕ) {x y : ℤ_[p]} :
     toZModPow n x = toZModPow n y ↔ (p : ℤ_[p]) ^ n ∣ y - x := by
   rw [eq_comm, ← sub_eq_zero, ← map_sub, toZModPow_eq_zero_iff_dvd]
 
+/-- Elements of `ℤ_[p]` congruent modulo `p ^ n` have congruent `p`-multiples modulo
+`p ^ (n + 1)`. -/
+theorem toZModPow_succ_mul_eq_of_toZModPow_eq {n : ℕ} {v w : ℤ_[p]}
+    (h : toZModPow n v = toZModPow n w) :
+    toZModPow (n + 1) ((p : ℤ_[p]) * v) = toZModPow (n + 1) ((p : ℤ_[p]) * w) := by
+  obtain ⟨r, hr⟩ := (toZModPow_eq_iff_dvd_sub n).mp h
+  refine (toZModPow_eq_iff_dvd_sub (n + 1)).mpr ⟨r, ?_⟩
+  rw [pow_succ', ← mul_sub, hr]
+  ring
+
 /-- The clopen residue class `a` modulo `p ^ n` in `ℤ_p`. -/
 noncomputable def residueClopen (n : ℕ) (a : ZMod (p ^ n)) : TopologicalSpace.Clopens ℤ_[p] :=
   ⟨toZModPow n ⁻¹' {a}, (isClopen_discrete {a}).preimage (continuous_toZModPow n)⟩
@@ -234,6 +248,12 @@ theorem mem_residueClopen_iff_dvd (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
     x ∈ residueClopen n a ↔ (p : ℤ_[p]) ^ n ∣ x - (a.val : ℤ_[p]) := by
   rw [mem_residueClopen, ← toZModPow_eq_iff_dvd_sub]
   simp [eq_comm]
+
+/-- Divisibility by `4` in `ℤ_[2]` is equality of residues modulo `4`. -/
+theorem four_dvd_sub_iff_toZModPow_two_eq {a c : ℤ_[2]} :
+    (4 : ℤ_[2]) ∣ c - a ↔ toZModPow 2 a = toZModPow 2 c := by
+  rw [toZModPow_eq_iff_dvd_sub]
+  norm_num
 
 /-- Divisibility by `8` in `ℤ_[2]` is equality of residues modulo `8`. -/
 theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
@@ -550,6 +570,12 @@ theorem one_le_valuation_of_dvd {x : ℤ_[p]} (hx : x ≠ 0) (h : (p : ℤ_[p]) 
 theorem dvd_pow_valuation {x : ℤ_[p]} (hx : x ≠ 0) : x ∣ (p : ℤ_[p]) ^ x.valuation := by
   nth_rewrite 1 [unitCoeff_spec hx]
   exact Units.mul_left_dvd.mpr dvd_rfl
+
+/-- On nonzero elements, the additive valuation of the discrete valuation ring `ℤ_[p]` is the
+natural-number valuation `PadicInt.valuation`. (At `0` the former is `⊤` and the latter `0`.) -/
+theorem addVal_eq_valuation {x : ℤ_[p]} (hx : x ≠ 0) :
+    IsDiscreteValuationRing.addVal ℤ_[p] x = x.valuation :=
+  IsDiscreteValuationRing.addVal_def x (unitCoeff hx) irreducible_p _ (unitCoeff_spec hx)
 
 /-- **Reduction modulo `p` of `ℤ_[p] ⧸ (q)`**, for `p ∣ q`: the ring homomorphism induced by
 `toZMod`, whose kernel `(p)` contains `(q)`. -/

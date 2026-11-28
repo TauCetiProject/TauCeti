@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.Topology.Sets.Opens
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Uniform-integrability criteria and pseudometric Vitali convergence
@@ -68,7 +70,9 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
   for maps into a pseudometric space**: for `1 ≤ p < ∞`, `Lᵖ` convergence of `dist (T n ·) (T₀ ·)`
   to `0` is convergence in measure together with uniform integrability of `dist (T n ·) y₀`;
 * `TauCeti.tendsto_eLpNorm_dist_iff_tendstoInMeasure_and_uniformIntegrable` — the same with
-  `MeasureTheory.UniformIntegrable`, which also records the uniform `Lᵖ` bound.
+  `MeasureTheory.UniformIntegrable`, which also records the uniform `Lᵖ` bound;
+* `TauCeti.uniformIntegrable_restrict_coe_opens_top` — restricting the measure to `(⊤ : Opens α)`
+  leaves `UniformIntegrable` unchanged without rewriting inside the family.
 
 ## References
 
@@ -418,5 +422,13 @@ theorem tendsto_eLpNorm_dist_iff_tendstoInMeasure_and_uniformIntegrable (hp : 1 
   exact ⟨hTm, hui'.dist_of_memLp_dist hp hp' hT aestronglyMeasurable_const hT₀p⟩
 
 end Vitali
+
+/-- Restricting a measure to `(⊤ : TopologicalSpace.Opens α)` leaves `UniformIntegrable` unchanged,
+without rewriting inside the family `f`. -/
+theorem uniformIntegrable_restrict_coe_opens_top {α β ι : Type*} {_ : MeasurableSpace α}
+    [TopologicalSpace α] [NormedAddCommGroup β] {f : ι → α → β} {p : ℝ≥0∞} {μ : Measure α} :
+    UniformIntegrable f p (μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α)) ↔
+      UniformIntegrable f p μ := by
+  rw [μ.restrict_coe_opens_top]
 
 end TauCeti

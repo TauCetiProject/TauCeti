@@ -10,13 +10,13 @@ public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
--- Private: the Fock model, its metric, the complex structure on `V`, anisotropy, the parity of the
--- dimension of `V` and the inner automorphisms of endomorphism algebras are used only inside the
--- proof.
+-- Private: the Fock model, its metric, the complex structure on `V`, nondegeneracy of `-‖·‖²`,
+-- the parity of the dimension of `V` and the inner automorphisms of endomorphism algebras are used
+-- only inside the proof.
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
+import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Metric
 
 /-!
@@ -84,8 +84,7 @@ theorem exists_sesqForm_map_eq_map_conjStar (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   -- The Fock model of an orthogonal complex structure, with an orthonormal basis of `W`.
   obtain ⟨J, hJ⟩ := TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq (V := V) ⟨ℓ, hℓ⟩
   have hQJ (v : V) : Q (J v) = Q v := by rw [hQ, hQ, hJ]
-  have hQnd : Q.Nondegenerate := QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by
-    simpa [hQ] using hv
+  have hQnd : Q.Nondegenerate := QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ
   obtain ⟨b, hb⟩ := J.exists_basis_polar_tmulConj hQJ hQnd hQ ℓ (by omega)
   let ρF := AlgEquiv.ofBijective (J.fockAction hQJ hQnd) (J.fockAction_bijective hQJ hQnd)
   -- An intertwiner `T` from the Fock module to `S`.

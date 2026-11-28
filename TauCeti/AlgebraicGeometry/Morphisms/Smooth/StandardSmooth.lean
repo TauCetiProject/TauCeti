@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Standard smooth charts over an affine target
@@ -18,19 +19,32 @@ only provide this over some affine open of `Y`; shrinking them to basic opens an
 standard smoothness is stable under localization away from an element brings the source of the
 ring map up to all of `Y`.
 
-A smooth morphism has, around every point, standard smooth charts of some relative dimension.
+A smooth morphism has, around every point, standard smooth charts of some relative dimension,
+so it is smooth of some relative dimension on an open neighbourhood of every point. Smoothness of
+fixed relative dimension is local on the source and on the target.
 It also records that smoothness on an open subscheme `U ⊆ X` yields standard smooth charts of
-`f` itself around the points of `U`, as for the smooth locus of a family of curves.
+`f` itself around the points of `U`, as for the smooth locus of a family of curves, and that the
+spectrum of a standard smooth `ℤ`-algebra of relative dimension `n` (or its `ULift`) is smooth of
+relative dimension `n` over the terminal scheme.
 
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.exists_isStandardSmoothOfRelativeDimension_of_smooth`: a smooth
   morphism has standard smooth charts of some relative dimension around every point.
+* `AlgebraicGeometry.Scheme.Hom.exists_smoothOfRelativeDimension_ι_comp_of_smooth`: a smooth
+  morphism is, near every point of its source, smooth of some relative dimension.
+* `AlgebraicGeometry.Scheme.Hom.locally_isStandardSmoothOfRelativeDimension_sections`: for
+  `f : X ⟶ Spec R` smooth of relative dimension `n`, the sections over every affine open of `X`
+  form a locally standard smooth `R`-algebra of relative dimension `n`.
 * `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top`, in Mathlib's
   `AlgebraicGeometry` namespace: standard smooth charts whose ring map starts at the global
   sections of the affine target.
 * `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_of_comp_ι`: standard
   smooth charts of `f` inside an open `U ⊆ X` on which `f` is smooth.
+* `SmoothOfRelativeDimension.terminal_from_Spec` and
+  `SmoothOfRelativeDimension.terminal_from_Spec_ulift`: if `R` is standard smooth of relative
+  dimension `n` over `ℤ`, then `Spec R` (and `Spec (ULift R)`) is smooth of relative dimension `n`
+  over the terminal scheme.
 
 ## References
 
@@ -44,7 +58,7 @@ than from a chart of a second smooth morphism.
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace RingHom
+open CategoryTheory Limits AlgebraicGeometry Opposite TopologicalSpace RingHom
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -61,11 +75,58 @@ theorem exists_isStandardSmoothOfRelativeDimension_of_smooth {X Y : Scheme.{u}} 
   obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
   exact ⟨P.dimension, U, hU, V, hV, hx, e, _, _, _, ‹_›, P, rfl⟩
 
+/-- **Smooth morphisms have a local relative dimension.** Every point of the source of a smooth
+morphism `f` has an open neighbourhood `V` on which `f` is smooth of some relative dimension `k`:
+the relative dimension of a standard smooth chart of `f` around the point. -/
+theorem exists_smoothOfRelativeDimension_ι_comp_of_smooth {Y S : Scheme.{u}} (f : Y ⟶ S)
+    [Smooth f] (y : Y) :
+    ∃ (V : Y.Opens) (k : ℕ), y ∈ V ∧ SmoothOfRelativeDimension k (V.ι ≫ f) := by
+  -- the standard smooth chart `Γ(S, U) → Γ(Y, V)` has some relative dimension `k`
+  obtain ⟨k, U, hU, V, hV, hy, e, hk⟩ := f.exists_isStandardSmoothOfRelativeDimension_of_smooth y
+  have : SmoothOfRelativeDimension k (Spec.map (f.appLE U V e)) := by
+    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension k)]
+    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hk
+  have : SmoothOfRelativeDimension k (hV.fromSpec ≫ f) := by
+    rw [← IsAffineOpen.SpecMap_appLE_fromSpec f hU hV e]
+    exact inferInstanceAs (SmoothOfRelativeDimension (k + 0) _)
+  refine ⟨V, k, hy, ?_⟩
+  have h := (inferInstance :
+    SmoothOfRelativeDimension (0 + k) (hV.isoSpec.hom ≫ hV.fromSpec ≫ f))
+  rwa [Nat.zero_add, ← Category.assoc, hV.isoSpec_hom_fromSpec] at h
+
+/-- If `f : X ⟶ Spec R` is smooth of relative dimension `n`, then over every affine open `V` of `X`
+the `R`-algebra of sections `Γ(X, V)` induced by `f` is locally standard smooth of relative
+dimension `n`. -/
+theorem locally_isStandardSmoothOfRelativeDimension_sections {R : Type u} [CommRing R]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of R)) (n : ℕ) [SmoothOfRelativeDimension n f]
+    {V : X.Opens} (hV : IsAffineOpen V) :
+    letI := f.sectionsAlgebra V
+    RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension n) (algebraMap R Γ(X, V)) :=
+  f.algebraMap_sections V ▸
+  (RingHom.locally_respectsIso RingHom.isStandardSmoothOfRelativeDimension_respectsIso).right _
+    (Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv.symm
+    (HasRingHomProperty.appLE (@SmoothOfRelativeDimension n) f inferInstance
+      ⟨⊤, isAffineOpen_top _⟩ ⟨V, hV⟩ _)
+
 end AlgebraicGeometry.Scheme.Hom
 
 namespace AlgebraicGeometry.SmoothOfRelativeDimension
 
-universe u
+universe u v
+
+/-- Smoothness of fixed relative dimension is local on the source. -/
+instance {n : ℕ} : IsZariskiLocalAtSource (@SmoothOfRelativeDimension.{u} n) :=
+  HasRingHomProperty.instIsZariskiLocalAtSource (P := @SmoothOfRelativeDimension n)
+    (Q := RingHom.Locally (@IsStandardSmoothOfRelativeDimension n))
+
+/-- Smoothness of fixed relative dimension respects isomorphisms. -/
+instance {n : ℕ} : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} n) :=
+  MorphismProperty.IsStableUnderBaseChange.respectsIso
+
+/-- Smoothness of fixed relative dimension is local on the target. -/
+instance {n : ℕ} : IsZariskiLocalAtTarget (@SmoothOfRelativeDimension.{u} n) :=
+  HasRingHomProperty.instIsZariskiLocalAtTarget (@SmoothOfRelativeDimension n)
+    (Q := RingHom.Locally (@IsStandardSmoothOfRelativeDimension n))
 
 /-- If `f : X ⟶ Y` is smooth of relative dimension `n` and `Y` is affine, then around every point
 of `X` there is an affine open `W` such that `Γ(Y, ⊤) → Γ(X, W)` is standard smooth of relative
@@ -116,6 +177,34 @@ theorem exists_isStandardSmoothOfRelativeDimension_of_comp_ι {X Y : Scheme.{u}}
     rw [Scheme.Hom.appIso_hom', Scheme.Hom.appLE_comp_appLE]
   rw [heq] at h
   exact (isStandardSmoothOfRelativeDimension_respectsIso (n := n)).cancel_right_isIso _ _ |>.mp h
+
+/-- If a commutative ring `R` is standard smooth of relative dimension `n` over `ℤ`, then `Spec R`
+is smooth of relative dimension `n` over the terminal scheme. -/
+theorem terminal_from_Spec (R : CommRingCat.{u}) (n : ℕ) [Algebra ℤ R]
+    [Algebra.IsStandardSmoothOfRelativeDimension n ℤ R] :
+    SmoothOfRelativeDimension n (terminal.from (Spec R)) := by
+  let g : CommRingCat.of (ULift.{u} ℤ) ⟶ R :=
+    CommRingCat.ofHom ((algebraMap ℤ R).comp ULift.ringEquiv.toRingHom)
+  have hg : g.hom.IsStandardSmoothOfRelativeDimension n := by
+    rw [CommRingCat.hom_ofHom]
+    exact ((isStandardSmoothOfRelativeDimension_algebraMap n).mpr inferInstance).comp
+      (.equiv (ULift.ringEquiv : ULift.{u} ℤ ≃+* ℤ))
+  have : SmoothOfRelativeDimension n (Spec.map g) :=
+    (HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension n)).mpr
+      (locally_of isStandardSmoothOfRelativeDimension_respectsIso _ hg)
+  have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
+  rw [← terminal.comp_from (Spec.map g)]
+  exact (MorphismProperty.cancel_right_of_respectsIso
+    (P := @SmoothOfRelativeDimension.{u} n) (Spec.map g) _).mpr inferInstance
+
+/-- If a commutative ring `R` is standard smooth of relative dimension `n` over `ℤ`, then
+`Spec (ULift R)` is smooth of relative dimension `n` over the terminal scheme. -/
+theorem terminal_from_Spec_ulift {R : Type v} [CommRing R] [Algebra ℤ R] (n : ℕ)
+    [Algebra.IsStandardSmoothOfRelativeDimension n ℤ R] :
+    SmoothOfRelativeDimension n (terminal.from (Spec (.of (ULift.{u} R)))) := by
+  have : Algebra.IsStandardSmoothOfRelativeDimension n ℤ (ULift.{u} R) :=
+    .of_algEquiv n ULift.algEquiv.symm
+  exact terminal_from_Spec (.of (ULift.{u} R)) n
 
 end AlgebraicGeometry.SmoothOfRelativeDimension
 

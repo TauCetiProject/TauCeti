@@ -498,11 +498,11 @@ end
 
 section
 
-variable {k G} {n : ℕ} [NeZero n]
+variable {G} {n : ℕ} [NeZero n]
 
 /-- A single coefficient on a closed walk is supported on closed walks, so it defines a loop
 deformation. -/
-theorem fst_eq_snd_of_mem_support_single {w : Fin n → G.Dart}
+theorem fst_eq_snd_of_mem_support_single {k : Type w} [Zero k] {w : Fin n → G.Dart}
     (hw : ∀ i, (w i).fst = (w (i + 1)).snd) (r : k) :
     ∀ w' ∈ (Finsupp.single w r).support, ∀ i, (w' i).fst = (w' (i + 1)).snd := by
   intro w' hw'

@@ -8,18 +8,28 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Holomorphic functions and their values on the real line
 
-Two entire functions with values in a complex normed space that agree frequently in a punctured
-real neighborhood of a real point—in particular on an open real ray `(a, ∞)` or on the whole real
-line—are equal (`Differentiable.eq_of_frequently_ofReal_eq`, `Differentiable.eq_of_ofReal_gt_eq`,
-`Differentiable.eq_of_ofReal_eq`). This is the identity principle
-`AnalyticOnNhd.eq_of_frequently_eq`, applied at an accumulation point on the real axis. It is the
-uniqueness statement behind analytic continuation of real one-parameter orbits to complex time.
-On the complex slit plane, agreement on the positive real axis likewise determines a
-holomorphic function uniquely.
+Two holomorphic functions on a preconnected open set `Ω` meeting the real axis—in particular two
+entire functions—with values in a complex normed space that agree frequently in a punctured real
+neighborhood of a real point `t₀ ∈ Ω`—in particular on an open real ray `(a, ∞)` or on the whole
+real line—are equal (`DifferentiableOn.eqOn_of_frequently_ofReal_eq`,
+`Differentiable.eq_of_frequently_ofReal_eq`, `Differentiable.eq_of_ofReal_gt_eq`,
+`Differentiable.eq_of_ofReal_eq`). Likewise, a holomorphic function on `Ω` vanishing on `Ω ∩ ℝ`
+vanishes identically on `Ω` (`DifferentiableOn.eqOn_zero_of_zero_on_real_axis`). This is the
+identity principle `AnalyticOnNhd.eq_of_frequently_eq`, applied at an accumulation point on the real
+axis. It is the uniqueness statement behind analytic continuation of real one-parameter orbits to
+complex time. On the complex slit plane, agreement on the positive real axis likewise determines a
+holomorphic function uniquely (`AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq`), on the reflected
+slit plane `{z : ℂ | -z ∈ Complex.slitPlane}`, agreement on the cut unit ball
+`{z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane}` determines a holomorphic function uniquely
+(`AnalyticOnNhd.eqOn_neg_slitPlane_of_eqOn_cut_ball`), and on the complement of the nonpositive
+integers `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}`, agreement on the open right half-plane `0 < w.re`
+determines a holomorphic function uniquely (`AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos`).
 
 At a real point, the order of vanishing of a holomorphic function equals the order of vanishing
 of its restriction to the real line (`AnalyticAt.analyticOrderAt_comp_ofReal`). This lets the
@@ -32,21 +42,45 @@ open Filter Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- Two entire functions agreeing frequently in a punctured real neighborhood of a real point `t₀`
-are equal. -/
-theorem Differentiable.eq_of_frequently_ofReal_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
-    (hg : Differentiable ℂ g) {t₀ : ℝ} (h : ∃ᶠ t : ℝ in 𝓝[≠] t₀, f t = g t) : f = g := by
-  -- `Differentiable.analyticAt` needs a complete codomain, so work in the completion of `E`
+/-- Two holomorphic functions on a preconnected open set `Ω` meeting the real axis at `t₀` that
+agree frequently in a punctured real neighborhood of `t₀` agree throughout `Ω`. -/
+theorem DifferentiableOn.eqOn_of_frequently_ofReal_eq {f g : ℂ → E} {Ω : Set ℂ}
+    (hf : DifferentiableOn ℂ f Ω) (hg : DifferentiableOn ℂ g Ω)
+    (hΩopen : IsOpen Ω) (hΩconn : IsPreconnected Ω) {t₀ : ℝ} (ht₀ : (t₀ : ℂ) ∈ Ω)
+    (h : ∃ᶠ t : ℝ in 𝓝[≠] t₀, f t = g t) : Set.EqOn f g Ω := by
+  -- `DifferentiableOn.analyticOnNhd` needs a complete codomain, so work in the completion of `E`
   let ι : E →ₗᵢ[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplₗᵢ
   -- real points other than `t₀` accumulate at `t₀` in `ℂ`
   have hreal : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] t₀) (𝓝[≠] (t₀ : ℂ)) :=
     Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ ht =>
       Complex.ofReal_inj.not.mpr ht
-  have hιfg : ι ∘ f = ι ∘ g := AnalyticOnNhd.eq_of_frequently_eq
-    (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hf).analyticAt z)
-    (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hg).analyticAt z)
-    (hreal.frequently (h.mono fun _ ht => congrArg ι ht))
-  exact ι.injective.comp_left hιfg
+  have hιfg : Set.EqOn (ι ∘ f) (ι ∘ g) Ω :=
+    ((ι.toContinuousLinearMap.differentiable.comp_differentiableOn hf).analyticOnNhd
+      hΩopen).eqOn_of_preconnected_of_frequently_eq
+      ((ι.toContinuousLinearMap.differentiable.comp_differentiableOn hg).analyticOnNhd hΩopen)
+      hΩconn ht₀ (hreal.frequently (h.mono fun _ ht => congrArg ι ht))
+  exact fun z hz => ι.injective (hιfg hz)
+
+/-- A holomorphic function on a preconnected open set `Ω` meeting the real axis at `t₀` that
+vanishes on `Ω ∩ ℝ` vanishes identically on `Ω`. -/
+theorem DifferentiableOn.eqOn_zero_of_zero_on_real_axis {f : ℂ → E} {Ω : Set ℂ}
+    (hf : DifferentiableOn ℂ f Ω) (hΩopen : IsOpen Ω) (hΩconn : IsPreconnected Ω)
+    {t₀ : ℝ} (ht₀ : (t₀ : ℂ) ∈ Ω) (hzero : ∀ z ∈ Ω, z.im = 0 → f z = 0) :
+    Set.EqOn f 0 Ω := by
+  refine hf.eqOn_of_frequently_ofReal_eq (differentiableOn_const 0) hΩopen hΩconn ht₀ ?_
+  have hev : ∀ᶠ t : ℝ in 𝓝[≠] t₀, f t = 0 := by
+    filter_upwards [nhdsWithin_le_nhds <| Complex.continuous_ofReal.continuousAt.preimage_mem_nhds
+      (hΩopen.mem_nhds ht₀)] with t ht
+    exact hzero _ ht (Complex.ofReal_im t)
+  exact hev.frequently
+
+/-- Two entire functions agreeing frequently in a punctured real neighborhood of a real point `t₀`
+are equal. -/
+theorem Differentiable.eq_of_frequently_ofReal_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) {t₀ : ℝ} (h : ∃ᶠ t : ℝ in 𝓝[≠] t₀, f t = g t) : f = g :=
+  funext fun z =>
+    hf.differentiableOn.eqOn_of_frequently_ofReal_eq hg.differentiableOn isOpen_univ
+      isPreconnected_univ (Set.mem_univ _) h (Set.mem_univ z)
 
 /-- Two entire functions agreeing on an open real ray `(a, ∞)` are equal. -/
 theorem Differentiable.eq_of_ofReal_gt_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
@@ -73,6 +107,53 @@ theorem AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq {f g : ℂ → E}
       fun _ _ ↦ by simp_all
   exact hreal.frequently (eventually_nhdsWithin_of_eventually_nhds
     ((lt_mem_nhds one_pos).mono h)).frequently
+
+/-- Two holomorphic functions on the reflected slit plane `{z : ℂ | -z ∈ Complex.slitPlane}`
+that agree on the cut unit ball `{z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane}` agree throughout
+`{z : ℂ | -z ∈ Complex.slitPlane}`. -/
+theorem AnalyticOnNhd.eqOn_neg_slitPlane_of_eqOn_cut_ball {f g : ℂ → E}
+    (hf : AnalyticOnNhd ℂ f {z : ℂ | -z ∈ Complex.slitPlane})
+    (hg : AnalyticOnNhd ℂ g {z : ℂ | -z ∈ Complex.slitPlane})
+    (hEq : Set.EqOn f g {z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane}) :
+    Set.EqOn f g {z : ℂ | -z ∈ Complex.slitPlane} := by
+  have hpre_slit : IsPreconnected Complex.slitPlane :=
+    (Complex.starConvex_one_slitPlane.isPathConnected
+      Complex.one_mem_slitPlane).isConnected.isPreconnected
+  have himg : Neg.neg '' Complex.slitPlane = {z : ℂ | -z ∈ Complex.slitPlane} := by
+    ext z; simp
+  have hpre : IsPreconnected {z : ℂ | -z ∈ Complex.slitPlane} :=
+    himg ▸ hpre_slit.image _ continuous_neg.continuousOn
+  have hopen : IsOpen {z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane} :=
+    (isOpen_lt continuous_norm continuous_const).inter
+      (Complex.isOpen_slitPlane.preimage continuous_neg)
+  have hz₀ : (-1 / 2 : ℂ) ∈ {z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane} := by
+    refine ⟨by norm_num, ?_⟩
+    rw [neg_div, neg_neg]
+    simpa using Complex.ofReal_mem_slitPlane.2 (by norm_num : (0 : ℝ) < 1 / 2)
+  exact hf.eqOn_of_preconnected_of_eventuallyEq hg hpre hz₀.2
+    (Filter.eventually_of_mem (hopen.mem_nhds hz₀) hEq)
+
+/-- Two holomorphic functions on `ℂ \ (-ℕ)` (`{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}`) that agree on
+the open right half-plane `{w : ℂ | 0 < w.re}` agree throughout `ℂ \ (-ℕ)`. -/
+theorem AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos {f g : ℂ → E}
+    (hf : AnalyticOnNhd ℂ f {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)})
+    (hg : AnalyticOnNhd ℂ g {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)})
+    (h : ∀ {w : ℂ}, 0 < w.re → f w = g w) :
+    Set.EqOn f g {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
+  have hconn : IsConnected {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
+    have heq : {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} = (Set.range fun n : ℕ => -(n : ℂ))ᶜ := by
+      ext w; simp [eq_comm]
+    rw [heq]
+    exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
+      (Complex.rank_real_complex ▸ Nat.one_lt_ofNat)
+  have hev : f =ᶠ[𝓝 (1 : ℂ)] g := by
+    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds
+      (by simp : (0 : ℝ) < (1 : ℂ).re)] with u hu
+    exact h hu
+  refine hf.eqOn_of_preconnected_of_eventuallyEq hg hconn.isPreconnected (fun n hn => ?_) hev
+  have hre := congrArg Complex.re hn
+  simp only [Complex.one_re, Complex.neg_re, Complex.natCast_re] at hre
+  linarith [n.cast_nonneg (α := ℝ)]
 
 /-- At a real point `t`, a holomorphic function `f` and its restriction `s ↦ f s` to the real line
 vanish to the same order. -/

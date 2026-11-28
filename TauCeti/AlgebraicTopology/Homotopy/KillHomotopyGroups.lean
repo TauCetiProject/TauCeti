@@ -98,6 +98,9 @@ such a map from `X`.
   on vanish.
 * `TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`: for `n = 2` and path-connected `X`,
   the colimit is a `K(π₁(X, x), 1)`.
+* `TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups_of_lt`: for `0 < m < n` and a
+  path-connected `X` whose homotopy groups `πₖ(X, x)` vanish for `0 < k < n`, `k ≠ m`, the space
+  `killHomotopyGroups n X x` is a `K(πₘ(X, x), m)`.
 * `TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`: for an `(n - 1)`-connected `X`, the space
   `killHomotopyGroups (n + 1) X x` is a `K(πₙ(X, x), n)`.
 * `TauCeti.isNConnected_killHomotopyGroupsIncl`: for a path-connected `X`, the inclusion is an
@@ -320,24 +323,17 @@ theorem surjective_homotopyGroupMap_killHomotopyGroupsIncl [T2Space X] {N : Type
 /-- `TauCeti.killHomotopyGroups n X x` is path-connected when `X` is Hausdorff and path-connected:
 attaching cells of positive dimension creates no new path components. -/
 instance instPathConnectedSpaceKillHomotopyGroups [T2Space X] [PathConnectedSpace X] :
-    PathConnectedSpace (killHomotopyGroups n X x) := by
-  have hsurj := (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (N := Fin 0)
-    (by simpa using NeZero.pos n)).2
-  have : Subsingleton (π_ 0 X x) := HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
-  have : Subsingleton (π_ 0 (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x)) :=
-    hsurj.subsingleton
-  have e := HomotopyGroup.pi0EquivZerothHomotopy (x := killHomotopyGroupsIncl n X x x)
-  exact pathConnectedSpace_iff_zerothHomotopy.2
-    ⟨⟨⟦killHomotopyGroupsIncl n X x x⟧⟩, e.symm.subsingleton⟩
+    PathConnectedSpace (killHomotopyGroups n X x) :=
+  (killHomotopyGroupsRelativeCWComplex n X x).pathConnectedSpace
+    (isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (Nat.zero_le n))
 
 /-- For `n ≥ 2`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` induces an
 isomorphism of fundamental groups at `x`. -/
 def killHomotopyGroupsFundamentalGroupMulEquiv [T2Space X] (hn : 1 < n) :
     FundamentalGroup X x ≃*
       FundamentalGroup (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x) :=
-  MulEquiv.ofBijective (FundamentalGroup.mapOfEq (killHomotopyGroupsIncl n X x).hom rfl)
-    ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq _ rfl).1
-      (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (N := Fin 1) (by simpa using hn)))
+  (killHomotopyGroupsRelativeCWComplex n X x).fundamentalGroupMulEquiv
+    (fun _ hm ↦ isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (by omega)) x
 
 /-- The isomorphism of fundamental groups is the map induced by the inclusion of `X`. -/
 @[simp]
@@ -345,7 +341,7 @@ lemma killHomotopyGroupsFundamentalGroupMulEquiv_apply [T2Space X] (hn : 1 < n)
     (g : FundamentalGroup X x) :
     killHomotopyGroupsFundamentalGroupMulEquiv n X x hn g =
       FundamentalGroup.mapOfEq (killHomotopyGroupsIncl n X x).hom rfl g :=
-  (rfl)
+  (killHomotopyGroupsRelativeCWComplex n X x).fundamentalGroupMulEquiv_apply _ x g
 
 
 /-- For `0 < k < n`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` induces an
@@ -363,6 +359,27 @@ lemma killHomotopyGroupsHomotopyGroupMulEquiv_apply [T2Space X] (k : ℕ) [NeZer
       HomotopyGroup.map (killHomotopyGroupsIncl n X x).hom rfl a :=
   HomotopyGroup.mapHom_apply _ _ a
 
+/-- **Killing the homotopy groups from dimension `n` on of a space with a single homotopy group
+below `n` gives an Eilenberg--Mac Lane space.** For `0 < m < n` and a Hausdorff, path-connected
+space `X` whose homotopy groups `πₖ(X, x)` vanish for `0 < k < n`, `k ≠ m`, the space
+`TauCeti.killHomotopyGroups n X x`, obtained by attaching cells of dimension at least `n + 1`, is
+an Eilenberg--Mac Lane space of type `K(πₘ(X, x), m)`, the isomorphism on `πₘ` being induced by
+the inclusion of `X` (`TauCeti.killHomotopyGroupsHomotopyGroupMulEquiv`). -/
+theorem isEilenbergMacLaneSpace_killHomotopyGroups_of_lt [T2Space X] [PathConnectedSpace X]
+    (m : ℕ) [NeZero m] (hm : m < n)
+    (hX : ∀ k, k ≠ 0 → k < n → k ≠ m → Subsingleton (π_ k X x)) :
+    IsEilenbergMacLaneSpace (π_ m X x) m (killHomotopyGroups n X x)
+      (killHomotopyGroupsIncl n X x x) := by
+  refine .mk inferInstance (fun k hk0 hk ↦ ?_)
+    ⟨(killHomotopyGroupsHomotopyGroupMulEquiv n X x m hm).symm⟩
+  rcases lt_or_ge k n with hkn | hkn
+  · -- Below dimension `n` the inclusion of `X` is an isomorphism of trivial groups.
+    have : NeZero k := ⟨hk0⟩
+    have := hX k hk0 hkn hk
+    exact (killHomotopyGroupsHomotopyGroupMulEquiv n X x k hkn).toEquiv.subsingleton_congr.mp
+      inferInstance
+  · exact subsingleton_homotopyGroup_killHomotopyGroups n X x hkn
+
 /-- **Killing the homotopy groups above dimension `n` of an `(n - 1)`-connected space gives a
 `K(πₙ, n)`.** For `n ≥ 1` and a Hausdorff, path-connected space `X` whose homotopy groups
 `πₖ(X, x)` vanish for `0 < k < n`, the space `TauCeti.killHomotopyGroups (n + 1) X x`, obtained by
@@ -372,16 +389,9 @@ attaching cells of dimension at least `n + 2`, is an Eilenberg--Mac Lane space o
 theorem isEilenbergMacLaneSpace_killHomotopyGroups [T2Space X] [PathConnectedSpace X]
     (hX : ∀ k, k ≠ 0 → k < n → Subsingleton (π_ k X x)) :
     IsEilenbergMacLaneSpace (π_ n X x) n (killHomotopyGroups (n + 1) X x)
-      (killHomotopyGroupsIncl (n + 1) X x x) := by
-  refine .mk inferInstance (fun k hk0 hk ↦ ?_)
-    ⟨(killHomotopyGroupsHomotopyGroupMulEquiv (n + 1) X x n n.lt_succ_self).symm⟩
-  rcases hk.lt_or_gt with hk | hk
-  · -- Below dimension `n` the inclusion of `X` is an isomorphism of trivial groups.
-    have : NeZero k := ⟨hk0⟩
-    have := hX k hk0 hk
-    exact (killHomotopyGroupsHomotopyGroupMulEquiv (n + 1) X x k
-      (hk.trans n.lt_succ_self)).toEquiv.subsingleton_congr.mp inferInstance
-  · exact subsingleton_homotopyGroup_killHomotopyGroups (n + 1) X x hk
+      (killHomotopyGroupsIncl (n + 1) X x x) :=
+  isEilenbergMacLaneSpace_killHomotopyGroups_of_lt (n + 1) X x n n.lt_succ_self
+    fun k hk0 hk hkn ↦ hX k hk0 (by omega)
 
 /-- **Killing the higher homotopy groups of a path-connected space gives a `K(π₁, 1)`.** For a
 Hausdorff, path-connected space `X`, the space `TauCeti.killHomotopyGroups 2 X x` obtained by

@@ -44,6 +44,8 @@ Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomor
   `Spec f`.
 * `WeierstrassCurve.isPullback_projModelBaseChange`: the square formed by the base change
   morphism, the structure morphisms and `Spec f` is a pullback square.
+* `WeierstrassCurve.comp_projModelBaseChange_eq_iff`: cancelling `projModelBaseChange` on morphisms
+  that agree over `Spec R'`.
 * `WeierstrassCurve.projModelZero_projModelBaseChange`: the base change morphism carries the zero
   section to the zero section.
 * `WeierstrassCurve.isPullback_projModelZero_projModelBaseChange`: the zero section of
@@ -251,6 +253,13 @@ theorem projModelBaseChange_projModelOver :
       (W.map f).projModelOver ≫ Spec.map (CommRingCat.ofHom f) :=
   (W.isPullback_projModelBaseChange f).w
 
+/-- Two morphisms into `projModel (W.map f)` that agree over `Spec R'` are equal if and only if
+their compositions with `W.projModelBaseChange f` are equal. -/
+theorem comp_projModelBaseChange_eq_iff {X : Scheme.{u}} {x y : X ⟶ (W.map f).projModel}
+    (h : x ≫ (W.map f).projModelOver = y ≫ (W.map f).projModelOver) :
+    x ≫ W.projModelBaseChange f = y ≫ W.projModelBaseChange f ↔ x = y :=
+  ⟨fun h' ↦ (W.isPullback_projModelBaseChange f).hom_ext h' h, fun h' ↦ by rw [h']⟩
+
 /-- The projective model of `W.map f` over `Spec R'` is the base change of the projective model of
 `W` along `Spec f : Spec R' ⟶ Spec R`: the isomorphism in `Over (Spec R')` between
 `Over.mk (W.map f).projModelOver` and the image of `Over.mk W.projModelOver` under the pullback
@@ -328,6 +337,16 @@ theorem projModelAffinePoint_projModelBaseChange {x y : R} (h : W.toAffine.Equat
     SpecMap_projModelPoint, projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
   exact ⟨(RingHom.id_comp f).trans (RingHom.comp_id f).symm,
     funext fun k ↦ by fin_cases k <;> simp⟩
+
+/-- Pulling back an affine section along `Spec f` gives the point along `f` with coordinates
+`[f x : f y : 1]`. -/
+theorem SpecMap_projModelAffinePoint {x y : R} (h : W.toAffine.Equation x y) :
+    Spec.map (CommRingCat.ofHom f) ≫ W.projModelAffinePoint h =
+      W.projModelPoint f (P := ![f x, f y, 1])
+        ((Projective.equation_some _ _).mpr (h.map f)) (i := 2) (by simp) := by
+  rw [← projModelAffinePoint_projModelBaseChange, projModelAffinePoint_def,
+    projModelPoint_projModelBaseChange]
+  exact (projModelPoint_eq_projModelPoint_iff_of_apply_eq rfl).mpr ⟨RingHom.id_comp f, rfl⟩
 
 /-! ### Identity and composition -/
 

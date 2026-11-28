@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.VerticalStrip.Growth
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.Analysis.SpecialFunctions.Gamma.Reciprocal.Order
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 import TauCeti.NumberTheory.LFunctions.GammaFactor.Vertical
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
@@ -40,9 +41,13 @@ the convexity exponent.
 
 * `TauCeti.LFunctions.LFunctionTrivChar₁_one_eq_zetaEntireCompletion_mul_inv_Gammaℝ` and
   `TauCeti.orderLE_LFunctionTrivChar₁_one`: the factorization and order at most one.
+* `TauCeti.LFunctions.logDeriv_zetaEntireCompletion_eq_add_logDeriv_Gammaℝ`: the factorization
+  in logarithmic-derivative form.
 * `TauCeti.hasVerticalStripGrowth_LFunctionTrivChar₁_one`: vertical-strip growth at large height.
 * `TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow`: polynomial growth on vertical strips at
   every height.
+* `TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le`: the same polynomial growth
+  on closed discs of a fixed radius centred on a vertical line.
 
 ## References
 
@@ -77,11 +82,34 @@ theorem LFunctionTrivChar₁_one_eq_zetaEntireCompletion_mul_inv_Gammaℝ (s : �
   have hz0 : z ≠ 0 := by intro h; subst z; norm_num at hz
   have hz1 : z ≠ 1 := by intro h; subst z; norm_num at hz
   have hΓ : Gammaℝ z ≠ 0 := Gammaℝ_ne_zero_of_re_pos (lt_trans zero_lt_one hz)
-  rw [LFunctionTrivChar₁, Function.update_of_ne hz1,
-    LFunctionTrivChar_eq_mul_riemannZeta hz1]
-  simp only [Nat.primeFactors_one, Finset.prod_empty, one_mul]
-  rw [zetaEntireCompletion_eq_mul hz0 hz1, riemannZeta_def_of_ne_zero hz0, Gammaℝ_add_two hz0]
+  rw [LFunctionTrivChar₁_one_apply_of_ne_one hz1, zetaEntireCompletion_eq_mul hz0 hz1,
+    riemannZeta_def_of_ne_zero hz0, Gammaℝ_add_two hz0]
   field_simp [hz0, hΓ, ofReal_ne_zero.mpr pi_ne_zero]
+
+/-- The shifted real gamma factor gives the difference between the logarithmic derivatives of
+zeta's entire completion and its pole-removed continuation. This applies at `0` and `1` too. -/
+theorem logDeriv_zetaEntireCompletion_eq_add_logDeriv_Gammaℝ {s : ℂ}
+    (hξ : zetaEntireCompletion s ≠ 0) (hΓ : Gammaℝ (s + 2) ≠ 0) :
+    logDeriv zetaEntireCompletion s = logDeriv (LFunctionTrivChar₁ 1) s +
+      logDeriv Gammaℝ (s + 2) := by
+  have hc : (2 * Real.pi : ℂ) ≠ 0 := mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero)
+  have hfactor := funext LFunctionTrivChar₁_one_eq_zetaEntireCompletion_mul_inv_Gammaℝ
+  have hinv : DifferentiableAt ℂ (Gammaℝ⁻¹) (s + 2) := differentiable_Gammaℝ_inv _
+  have hg : DifferentiableAt ℂ Gammaℝ (s + 2) := by
+    simpa only [inv_inv] using hinv.inv (inv_ne_zero hΓ)
+  have hshift : DifferentiableAt ℂ (fun z : ℂ ↦ z + 2) s := by fun_prop
+  have hfun := hg.comp s hshift
+  have hl : logDeriv (fun z : ℂ ↦ (Gammaℝ (z + 2))⁻¹) s = -logDeriv Gammaℝ (s + 2) := by
+    have hz := logDeriv_fun_zpow hfun (-1 : ℤ)
+    rw [logDeriv_comp (x := s) (g := fun z : ℂ ↦ z + 2) hg hshift] at hz
+    simpa [Function.comp_def, deriv_add_const] using hz
+  have hlog : logDeriv (LFunctionTrivChar₁ 1) s =
+      logDeriv zetaEntireCompletion s + -logDeriv Gammaℝ (s + 2) := by
+    rw [hfactor]
+    simp only [div_eq_mul_inv, logDeriv_mul_const _ _ (inv_ne_zero hc)]
+    rw [logDeriv_fun_mul (g := fun z : ℂ ↦ (Gammaℝ (z + 2))⁻¹) s hξ (inv_ne_zero hΓ)
+      (differentiable_zetaEntireCompletion s) (hfun.inv hΓ), hl]
+  linear_combination -hlog
 
 end TauCeti.LFunctions
 
@@ -143,7 +171,7 @@ theorem hasVerticalStripGrowth_LFunctionTrivChar₁_one :
     zero_le_one.trans (le_max_right _ _), fun s ⟨ha, hb⟩ ht ↦ ?_⟩
   have ht1 : 1 ≤ |s.im| := (le_max_right _ _).trans ht
   have hs1 : s ≠ 1 := fun h ↦ by norm_num [h] at ht1
-  rw [LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq]
+  rw [LFunctionTrivChar₁_one_apply_of_ne_one hs1]
   have hx : 1 ≤ 1 + |s.im| := by linarith [abs_nonneg s.im]
   have hX : (‖s‖ + 3) ^ 2 ≤ K ^ 2 * (1 + |s.im|) ^ (2 : ℝ) := by
     have hn := norm_le_abs_re_add_abs_im s
@@ -189,5 +217,25 @@ theorem exists_norm_LFunctionTrivChar₁_one_le_rpow (a b : ℝ) :
       (differentiable_LFunctionTrivChar₁ 1).continuous.continuousOn (a := a) (b := b)
   exact ⟨C, B, fun s ha hb ↦ (h s ⟨ha, hb⟩).trans (mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow (by positivity) (by linarith) hB) hC.le)⟩
+
+/-- On the closed discs of a fixed radius `R` centred on a vertical line `Re s₀ = σ₀`,
+`‖(s - 1) ζ(s)‖ ≤ K (|Im s₀| + 2) ^ B` with `K > 0` and `B` independent of `s₀`. -/
+theorem exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le (σ₀ R : ℝ) :
+    ∃ K B : ℝ, 0 < K ∧ ∀ s₀ w : ℂ, s₀.re = σ₀ → ‖w - s₀‖ ≤ R →
+      ‖LFunctionTrivChar₁ 1 w‖ ≤ K * (|s₀.im| + 2) ^ B := by
+  obtain ⟨C, B, hC⟩ := exists_norm_LFunctionTrivChar₁_one_le_rpow (σ₀ - R) (σ₀ + R)
+  refine ⟨max C 1 * (|R| + 1) ^ max B 0, max B 0,
+    mul_pos (lt_max_of_lt_right one_pos) (Real.rpow_pos_of_pos (by positivity) _),
+    fun s₀ w hs₀ hw ↦ ?_⟩
+  have hstrip (s : ℂ) (ha : σ₀ - R ≤ s.re) (hb : s.re ≤ σ₀ + R) :
+      ‖LFunctionTrivChar₁ 1 s‖ ≤ max C 1 * (1 * (|s.im| + 2)) ^ max B 0 := by
+    rw [one_mul]
+    refine (hC s ha hb).trans ?_
+    gcongr
+    · exact le_max_left _ _
+    · linarith [abs_nonneg s.im]
+    · exact le_max_left _ _
+  simpa only [one_mul] using le_mul_rpow_mul_rpow_of_norm_sub_le
+    (zero_le_one.trans (le_max_right _ _)) zero_le_one (le_max_right _ _) hstrip hs₀ hw
 
 end TauCeti

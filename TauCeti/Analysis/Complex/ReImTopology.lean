@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.ReImTopology
 public import Mathlib.Topology.Sets.Opens
+public import Mathlib.Analysis.Normed.Group.Basic
+import Mathlib.Analysis.Complex.Basic
+import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # Upper halves of open planar sets
@@ -20,9 +24,24 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 (`TauCeti.interior_inter_setOf_im_nonneg`), which as an open set is the upper half of `Ω`
 (`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
 `Ω ∩ {0 ≤ im}` is a limit of interior points
-(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
+(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`), also after removing any one point
+(`TauCeti.subset_closure_inter_setOf_im_nonneg_diff_singleton`). The set `Ω ∩ {0 ≤ im}` is also the
+closed upper part of a conjugation-invariant open set
+(`TauCeti.exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq`), and a compact subset of a
+conjugation-invariant open set lies in a conjugation-invariant open set with compact closure inside
+it (`TauCeti.exists_mapsTo_conj_between_and_isCompact_closure`). If the closure of `U` lies in `Ω`,
+the closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}`
+(`TauCeti.closure_inter_setOf_im_nonneg_subset`). A local property holds on
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
-axis (`TauCeti.inter_setOf_im_nonneg_induction`).
+axis (`TauCeti.inter_setOf_im_nonneg_induction`). A function continuous on `Ω ∩ {0 ≤ im}` and
+zero on `Ω ∩ ℝ` is uniformly small near the axis on compact sets
+(`TauCeti.exists_forall_norm_lt_of_im_lt`).
+
+Vertical approaches `t ↦ x ± t * I` along `𝓝[>] 0` map into the open upper and lower half-plane
+neighbourhood filters at `x : ℝ` (`Real.tendsto_ofReal_add_mul_I_nhdsWithin_im_pos`,
+`Real.tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg`), and complex conjugation maps the open upper
+half-plane neighbourhood filter at `z : ℂ` into the open lower half-plane neighbourhood filter at
+`conj z` (`Complex.tendsto_conj_nhdsWithin_im_pos`).
 -/
 
 public noncomputable section
@@ -86,6 +105,52 @@ theorem subset_closure_interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOp
   rw [interior_inter_setOf_im_nonneg hΩ]
   exact hΩ.inter_closure ⟨hx.1, by rw [Complex.closure_setOfPred_lt_im]; exact hx.2⟩
 
+/-- For `Ω` open, removing a point `x` from `Ω ∩ {0 ≤ im}` does not change its closure: every
+point of `Ω ∩ {0 ≤ im}`, `x` included, is a limit of points of `(Ω ∩ {0 ≤ im}) \ {x}`. -/
+theorem subset_closure_inter_setOf_im_nonneg_diff_singleton {Ω : Set ℂ} (hΩ : IsOpen Ω) (x : ℂ) :
+    Ω ∩ {z : ℂ | 0 ≤ z.im} ⊆ closure ((Ω ∩ {z : ℂ | 0 ≤ z.im}) \ {x}) := by
+  refine (subset_closure_interior_inter_setOf_im_nonneg hΩ).trans
+    (closure_minimal ?_ isClosed_closure)
+  -- The interior is open, and the complement of a point is dense in it.
+  exact ((dense_compl_singleton x).open_subset_closure_inter isOpen_interior).trans
+    (closure_mono fun z hz ↦ ⟨interior_subset hz.1, hz.2⟩)
+
+/-- **A conjugation-invariant open set with the same closed upper part.** For `Ω` open, the open
+set `Ω' = {z | re z + i |im z| ∈ Ω}` is invariant under conjugation and has the same closed upper
+part `Ω ∩ {0 ≤ im}` as `Ω`. -/
+theorem exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq {Ω : Set ℂ} (hΩ : IsOpen Ω) :
+    ∃ Ω' : Set ℂ, IsOpen Ω' ∧ Set.MapsTo (starRingEnd ℂ) Ω' Ω' ∧
+      Ω' ∩ {z : ℂ | 0 ≤ z.im} = Ω ∩ {z : ℂ | 0 ≤ z.im} := by
+  refine ⟨(fun z : ℂ ↦ (z.re : ℂ) + |z.im| * Complex.I) ⁻¹' Ω, hΩ.preimage (by fun_prop),
+    fun z hz ↦ by simpa using hz, ?_⟩
+  ext z
+  exact and_congr_left fun h ↦ by
+    rw [Set.mem_preimage, abs_of_nonneg (show 0 ≤ z.im from h), Complex.re_add_im]
+
+/-- **A conjugation-invariant open set between a compact set and an open set.** If `Ω ⊆ ℂ` is open
+and invariant under conjugation and `K ⊆ Ω` is compact, there is an open set `W`, invariant under
+conjugation, with `K ⊆ W` and compact closure contained in `Ω`. -/
+theorem exists_mapsTo_conj_between_and_isCompact_closure {K : Set ℂ} (hK : IsCompact K)
+    {Ω : Opens ℂ} (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) (hKΩ : K ⊆ Ω) :
+    ∃ W : Opens ℂ, Set.MapsTo (starRingEnd ℂ) W W ∧ K ⊆ W ∧ closure (W : Set ℂ) ⊆ Ω ∧
+      IsCompact (closure (W : Set ℂ)) := by
+  -- Take an open set between `K ∪ conj K` and `Ω`, and intersect it with its conjugate.
+  obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure
+    (hK.union (hK.image Complex.continuous_conj)) Ω.isOpen
+    (Set.union_subset hKΩ (Set.image_subset_iff.2 fun z hz => hΩ (hKΩ hz)))
+  have hW : closure (V ∩ starRingEnd ℂ ⁻¹' V) ⊆ closure V := closure_mono Set.inter_subset_left
+  refine ⟨⟨V ∩ starRingEnd ℂ ⁻¹' V, hVo.inter (hVo.preimage Complex.continuous_conj)⟩,
+    fun z hz => ⟨hz.2, by simpa using hz.1⟩,
+    fun z hz => ⟨hKV (Or.inl hz), hKV (Or.inr ⟨z, hz, rfl⟩)⟩, hW.trans hVΩ,
+    hVc.of_isClosed_subset isClosed_closure hW⟩
+
+/-- The closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}` when the closure of `U` lies in `Ω`,
+since it lies in `closure U ∩ {0 ≤ im}`. -/
+theorem closure_inter_setOf_im_nonneg_subset {Ω U : Set ℂ} (hUΩ : closure U ⊆ Ω) :
+    closure (U ∩ {z | 0 ≤ z.im}) ⊆ Ω ∩ {z | 0 ≤ z.im} :=
+  (closure_minimal (Set.inter_subset_inter_left _ subset_closure)
+    (isClosed_closure.inter (Complex.isClosed_setOfPred_le_im 0))).trans
+    (Set.inter_subset_inter_left _ hUΩ)
 /-- **Induction on half-discs.** A property `P` of subsets of `ℂ` holds on `Ω ∩ {0 ≤ im}` if it
 can be checked on relative neighbourhoods of each point, and holds on the upper half
 `Ω ∩ {0 < im}` and on the half-discs `ball x r ∩ {0 ≤ im}` centred on the real axis inside `Ω`. -/
@@ -109,7 +174,73 @@ theorem inter_setOf_im_nonneg_induction {Ω : Opens ℂ} (P : Set ℂ → Prop)
 
 end TauCeti
 
+namespace Real
+
+/-- Approaching a real point `x` vertically from above along `t ↦ x + t * I` (`t → 0+`) maps into
+the open upper half-plane neighbourhood filter at `x`. -/
+theorem tendsto_ofReal_add_mul_I_nhdsWithin_im_pos (x : ℝ) :
+    Filter.Tendsto (fun t : ℝ ↦ (x : ℂ) + t * Complex.I) (𝓝[>] 0) (𝓝[{z : ℂ | 0 < z.im}] x) := by
+  have hcont : Continuous fun t : ℝ ↦ (x : ℂ) + t * Complex.I :=
+    continuous_const.add (Complex.continuous_ofReal.mul continuous_const)
+  simpa using (hcont.continuousWithinAt (s := Set.Ioi 0) (x := 0)).tendsto_nhdsWithin
+    fun t ht ↦ by simpa using ht
+
+end Real
+
+namespace Complex
+
+open scoped ComplexConjugate in
+/-- Complex conjugation maps the open upper half-plane neighbourhood filter at `z` into the open
+lower half-plane neighbourhood filter at `conj z`. -/
+theorem tendsto_conj_nhdsWithin_im_pos (z : ℂ) :
+    Filter.Tendsto (conj : ℂ → ℂ) (𝓝[{w : ℂ | 0 < w.im}] z)
+      (𝓝[{w : ℂ | w.im < 0}] (conj z)) :=
+  Complex.continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun w hw ↦ by simpa using hw
+
+end Complex
+
+namespace Real
+
+/-- Approaching a real point `x` vertically from below along `t ↦ x - t * I` (`t → 0+`) maps into
+the open lower half-plane neighbourhood filter at `x`. -/
+theorem tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg (x : ℝ) :
+    Filter.Tendsto (fun t : ℝ ↦ (x : ℂ) - t * Complex.I) (𝓝[>] 0) (𝓝[{z : ℂ | z.im < 0}] x) := by
+  simpa [Function.comp_def, sub_eq_add_neg] using
+    (Complex.tendsto_conj_nhdsWithin_im_pos (x : ℂ)).comp
+      (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
+
+end Real
+
 /-- The interior of the half-disc `Ω ∩ {0 ≤ im}`, as an open set, is the upper half of `Ω`. -/
 theorem TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :
     Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) = Ω.upperHalf :=
   Opens.ext ((TauCeti.interior_inter_setOf_im_nonneg Ω.isOpen).trans (Opens.coe_upperHalf Ω).symm)
+
+namespace TauCeti
+
+open Metric Set
+
+/-- A function continuous on `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` is uniformly small near the axis
+on every compact subset of `Ω ∩ {0 ≤ im}`. -/
+theorem exists_forall_norm_lt_of_im_lt {E : Type*} [NormedAddCommGroup E] {Ω : Opens ℂ}
+    {g : ℂ → E}
+    (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → g x = 0)
+    {T : Set ℂ} (hT : IsCompact T) (hTΩ : T ⊆ Ω) (hT0 : T ⊆ {z | 0 ≤ z.im}) {ε : ℝ}
+    (hε : 0 < ε) : ∃ δ > 0, ∀ z ∈ T, z.im < δ → ‖g z‖ < ε := by
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
+  obtain ⟨r, hr, hrΩ⟩ := hT.exists_cthickening_subset_open Ω.isOpen hTΩ
+  have hC : IsCompact (cthickening r T ∩ {z : ℂ | 0 ≤ z.im}) := hT.cthickening.inter_right hclosed
+  obtain ⟨δ, hδ, hgδ⟩ := Metric.uniformContinuousOn_iff.1 (hC.uniformContinuousOn_of_continuous
+    (hgc.mono fun z hz => ⟨hrΩ hz.1, hz.2⟩)) ε hε
+  refine ⟨min δ r, lt_min hδ hr, fun z hzT hzδ => ?_⟩
+  have hz0 : 0 ≤ z.im := hT0 hzT
+  have hdist : dist (z.re : ℂ) z = z.im := by
+    rw [Complex.dist_eq_re_im]
+    simp [Real.sqrt_sq hz0]
+  have hz' : (z.re : ℂ) ∈ cthickening r T ∩ {z : ℂ | 0 ≤ z.im} :=
+    ⟨mem_cthickening_of_dist_le _ z r T hzT (by linarith [min_le_right δ r]), by simp⟩
+  have h := hgδ z ⟨self_subset_cthickening T hzT, hz0⟩ _ hz'
+    (by rw [dist_comm, hdist]; linarith [min_le_left δ r])
+  rwa [hg0 _ (hrΩ hz'.1), dist_zero_right] at h
+
+end TauCeti
