@@ -43,6 +43,15 @@ theorem quasiIso_opEquivalence_map_iff [CategoryWithHomology C]
   simp only [quasiIso_iff, quasiIsoAt_opEquivalence_map_iff]
   exact (Equiv.neg ℤ).forall_congr (fun _ ↦ Iff.rfl)
 
+variable (C) in
+/-- The inverse image of the quasi-isomorphism property under the opposite equivalence is the
+opposite of the quasi-isomorphism property on the original cochain complexes. -/
+theorem op_quasiIso_eq_inverseImage [CategoryWithHomology C] :
+    (quasiIso C (ComplexShape.up ℤ)).op =
+      (quasiIso Cᵒᵖ (ComplexShape.up ℤ)).inverseImage (opEquivalence C).functor := by
+  ext K L f
+  exact (quasiIso_opEquivalence_map_iff f.unop).symm
+
 /-- Under the opposite equivalence, a single complex in degree `n` becomes a single complex
 on the opposite object in degree `-n`. -/
 noncomputable def opEquivalenceSingleIso [HasZeroObject C] (n : ℤ) (X : C) :

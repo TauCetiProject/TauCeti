@@ -30,15 +30,9 @@ universe u v w₁ w₂
 
 variable (C : Type u) [Category.{v} C] [Abelian C]
 
-private theorem op_quasiIso_eq_inverseImage :
-    (quasiIso C (ComplexShape.up ℤ)).op =
-      (quasiIso Cᵒᵖ (ComplexShape.up ℤ)).inverseImage (CochainComplex.opEquivalence C).functor := by
-  ext K L f
-  exact (CochainComplex.quasiIso_opEquivalence_map_iff f.unop).symm
-
 private noncomputable def opLocalizerMorphism :
     LocalizerMorphism (quasiIso C (ComplexShape.up ℤ)).op (quasiIso Cᵒᵖ (ComplexShape.up ℤ)) :=
-  LocalizerMorphism.ofEq (op_quasiIso_eq_inverseImage C)
+  LocalizerMorphism.ofEq (CochainComplex.op_quasiIso_eq_inverseImage C)
 
 private instance : (opLocalizerMorphism C).functor.IsEquivalence :=
   inferInstanceAs (CochainComplex.opEquivalence C).functor.IsEquivalence
@@ -46,7 +40,7 @@ private instance : (opLocalizerMorphism C).functor.IsEquivalence :=
 private instance : (opLocalizerMorphism C).IsLocalizedEquivalence := by
   apply LocalizerMorphism.IsLocalizedEquivalence.of_equivalence
   simp only [opLocalizerMorphism, LocalizerMorphism.ofEq_functor]
-  rw [op_quasiIso_eq_inverseImage C]
+  rw [CochainComplex.op_quasiIso_eq_inverseImage C]
   exact (MorphismProperty.map_inverseImage_eq_of_isEquivalence _ _).ge
 
 variable [HasDerivedCategory.{w₁} C] [HasDerivedCategory.{w₂} Cᵒᵖ]
