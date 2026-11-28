@@ -16,7 +16,7 @@ import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 
 At a place distinct from its conjugate, any residue unit lifts to an integral norm-one finite
 idele that is `1` away from the pair. The lift uses `FiniteAdeleRing.unitsOfAdicCompletion`
-and `HeightOneSpectrum.unitsProj_star_eq_one_iff`. Choosing a generator of the residue unit group
+and `FiniteAdeleRing.unitsProj_star_eq_one_iff`. Choosing a generator of the residue unit group
 then gives a scaling whose residue has order `Nm(w) - 1`. By `orderOf_dvd_iff_pow_eq_one`,
 its `i`-th power reduces to `1` exactly when `Nm(w) - 1` divides `i`.
 
