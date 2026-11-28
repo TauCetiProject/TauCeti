@@ -21,7 +21,7 @@ import all TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 Let `f : X ⟶ Y` be a morphism of schemes and `E` a finite locally free sheaf of constant rank `r`
 on `Y`. The canonical exterior-power comparison
 `f^* (⋀ʳ E) ⟶ ⋀ʳ (f^* E)` is an isomorphism
-(`AlgebraicGeometry.Scheme.Modules.isIso_pullbackExteriorPowerComparison_app`). It gives an
+(`AlgebraicGeometry.Scheme.Modules.isIso_pullbackExteriorPowerComparison`). It gives an
 isomorphism of invertible sheaves `f^* (det E) ≅ det (f^* E)`, natural in `E`.
 
 These comparisons are coherent: along the identity the comparison is induced by the identity
@@ -32,7 +32,7 @@ fixed-rank sheaves.
 Without a constant rank, the determinant `det E = ⋀^{rank E} E` is the exterior power in the
 locally constant degree `rank E`. Its pullback is compared with `det (f^* E)` through the
 exterior-power comparison `f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`, again an isomorphism
-(`TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison_app`), and the
+(`TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison`), and the
 identification `rank (f^* E) = rank E ∘ f` (`FiniteLocallyFreeSheaf.rank_pullback`).
 
 ## Main declarations

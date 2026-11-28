@@ -57,11 +57,7 @@ theorem exteriorPowerStalkEquiv_symm_ιMulti_germ (U : Opens X) (hx : x ∈ U)
         (exteriorPower.ιMulti ↑(stalk R.obj x) n
           (fun i ↦ germ M.val.presheaf U x hx (m i))) =
       germ ((exteriorPower R n).obj M).val.presheaf U x hx
-        ((exteriorPowerIso n M).inv.val.app (op U)
-          (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-            ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app (op U)
-              (ModuleCat.exteriorPower.mk
-                (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val (op U)) m)))) := by
+        (M.exteriorPowerMk (R := R) (op U) m)) := by
   let P := (PresheafOfModulesOfCommRing.exteriorPower n).obj M.val
   let e := (forget (ringCatSheaf R)).mapIso (exteriorPowerIso n M)
   let eStalk := PresheafOfModules.stalkLinearEquivCommRing (S := R.obj) x e
@@ -84,11 +80,7 @@ theorem exteriorPowerStalkEquiv_germ_mk (U : Opens X) (hx : x ∈ U)
       CommRingCat.forgetToRingCat_obj, sheafCompose_obj_obj, Functor.id_obj]
     (M.exteriorPowerStalkEquiv x n
         (germ ((exteriorPower R n).obj M).val.presheaf U x hx
-          ((exteriorPowerIso n M).inv.val.app (op U)
-            (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-              ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app (op U)
-                (ModuleCat.exteriorPower.mk
-                  (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val (op U)) m)))) =
+          (M.exteriorPowerMk (R := R) (op U) m)) =
       exteriorPower.ιMulti (↑(stalk R.obj x)) n (fun i ↦ germ M.val.presheaf U x hx (m i))) :=
   ((M.exteriorPowerStalkEquiv x n).symm_apply_eq.mp
     (M.exteriorPowerStalkEquiv_symm_ιMulti_germ x n U hx m)).symm
@@ -100,35 +92,39 @@ theorem exteriorPowerStalkEquiv_naturality
         PresheafOfModules.stalkMapCommRing (S := R.obj) x ((exteriorPower R n).map g).val =
       exteriorPower.map n (PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val) ∘ₗ
         (M.exteriorPowerStalkEquiv x n).toLinearMap := by
-  let e := M.exteriorPowerStalkEquiv x n
-  apply (LinearMap.cancel_right e.symm.surjective).mp
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro v
-  obtain ⟨U, _, hx, m, hm⟩ :=
-    TopCat.Presheaf.exists_le_germ_eq_family M.val.presheaf v (V := ⊤) (by trivial)
-  rw [← funext hm]
-  let w := exteriorPower.ιMulti ↑(stalk R.obj x) n (fun i ↦ germ M.val.presheaf U x hx (m i))
-  -- Evaluation removes the composite linear maps, whose stalk module instances are presented
-  -- through both the sheaf and its underlying presheaf.
-  change N.exteriorPowerStalkEquiv x n
-      (PresheafOfModules.stalkMapCommRing (S := R.obj) x ((exteriorPower R n).map g).val
-        ((M.exteriorPowerStalkEquiv x n).symm w)) =
+  let E := PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n
+  let eM := (forget (ringCatSheaf R)).mapIso (exteriorPowerIso n M)
+  let eN := (forget (ringCatSheaf R)).mapIso (exteriorPowerIso n N)
+  let pM := (E.obj M.val).sheafificationStalkEquiv R x
+  let pN := (E.obj N.val).sheafificationStalkEquiv R x
+  let d := PresheafOfModules.stalkMapCommRing (S := R.obj) x
+    ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (E.map g.val)).val
+  -- The stalk equivalence uses the sheaf module structure, whereas the stalk map
+  -- uses the definitionally equal module structure from the underlying presheaf.
+  erw [exteriorPower_map (R := R), comp_val, comp_val,
+    PresheafOfModules.stalkMapCommRing_comp, PresheafOfModules.stalkMapCommRing_comp]
+  apply LinearMap.ext
+  intro t
+  let s := pM.symm (PresheafOfModules.stalkLinearEquivCommRing (S := R.obj) x eM t)
+  have hu := LinearMap.congr_fun
+    ((E.obj M.val).sheafificationStalkEquiv_naturality R x (E.map g.val)) s
+  have hp := LinearMap.congr_fun (M.val.exteriorPowerStalkEquiv_naturality x n g.val) s
+  -- Evaluate the composites through the stalk maps of the defining isomorphisms.
+  unfold exteriorPowerStalkEquiv
+  change N.val.exteriorPowerStalkEquiv x n
+      (pN.symm (PresheafOfModules.stalkLinearEquivCommRing (S := R.obj) x eN
+        (PresheafOfModules.stalkMapCommRing (S := R.obj) x eN.inv
+          (d (PresheafOfModules.stalkMapCommRing (S := R.obj) x eM.hom t))))) =
     exteriorPower.map n (PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val)
-      (M.exteriorPowerStalkEquiv x n ((M.exteriorPowerStalkEquiv x n).symm w))
-  rw [LinearEquiv.apply_symm_apply]
-  dsimp only [w]
-  -- The wedge rewrite matches the sheaf's stalk module with the underlying presheaf's
-  -- stalk module. The germ rewrites match additive-presheaf sections with module sections.
-  erw [exteriorPower.map_apply_ιMulti, exteriorPowerStalkEquiv_symm_ιMulti_germ,
-    PresheafOfModules.stalkMapCommRing_germ]
-  let germToWedge (z : ((exteriorPower R n).obj N).val.obj (op U)) :=
-    N.exteriorPowerStalkEquiv x n (germ ((exteriorPower R n).obj N).val.presheaf U x hx z)
-  refine (congrArg germToWedge (exteriorPower_map_val_app_mk n g (op U) m)).trans ?_
-  refine (N.exteriorPowerStalkEquiv_germ_mk x n U hx
-    (fun i ↦ g.val.app (op U) (m i))).trans ?_
-  congr 1
-  funext i
-  exact (PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x g.val U hx (m i)).symm
+      (M.val.exteriorPowerStalkEquiv x n s)
+  -- The inverse formula presents the stalk through the forgetful functor.
+  erw [← PresheafOfModules.stalkLinearEquivCommRing_symm_apply x eN,
+    LinearEquiv.apply_symm_apply]
+  -- Evaluate the naturality equation on the chosen preimage under sheafification.
+  change pN (PresheafOfModules.stalkMapCommRing (S := R.obj) x (E.map g.val) s) = d (pM s) at hu
+  have hM : pM s = PresheafOfModules.stalkMapCommRing (S := R.obj) x eM.hom t :=
+    (pM.apply_symm_apply _).trans (PresheafOfModules.stalkLinearEquivCommRing_apply x eM t)
+  rw [← hM, ← hu, LinearEquiv.symm_apply_apply]
+  exact hp
 
 end SheafOfModules

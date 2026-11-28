@@ -33,8 +33,8 @@ of the locally constant comparison for every module sheaf.
   comparison `f^* (⋀^r M) ⟶ ⋀^{r ∘ f} (f^* M)`;
 * `restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_comp`: over
   `f⁻¹ (r⁻¹{n})` it is the `n`-th exterior power comparison;
-* `TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison_app`: the
-  comparison is an isomorphism at every module sheaf.
+* `TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison`: the
+  comparison is a natural isomorphism.
 
 ## References
 
@@ -201,7 +201,7 @@ theorem restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_c
 
 /-- The comparison `f^* (⋀^r M) ⟶ ⋀^{r ∘ f} (f^* M)` is an isomorphism for every module
 sheaf `M` and every locally constant degree `r`. -/
-instance isIso_pullbackLocallyConstantExteriorPowerComparison_app (M : Y.Modules) :
+private theorem isIso_pullbackLocallyConstantExteriorPowerComparison_app (M : Y.Modules) :
     IsIso ((pullbackLocallyConstantExteriorPowerComparison f r).app M) := by
   -- Being an isomorphism is checked over the open cover of `X` by the fibers of `r ∘ f`, where
   -- the comparison is the `n`-th exterior power comparison.
@@ -216,6 +216,13 @@ instance isIso_pullbackLocallyConstantExteriorPowerComparison_app (M : Y.Modules
     (restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_comp f r n M) ▸
       isIso_comparisonFiber_app f r n M
   exact IsIso.of_isIso_comp_right _ (e.hom.app ((Scheme.Modules.pullback f).obj M))
+
+/-- The locally constant exterior-power pullback comparison is a natural isomorphism. -/
+instance isIso_pullbackLocallyConstantExteriorPowerComparison :
+    IsIso (pullbackLocallyConstantExteriorPowerComparison f r) := by
+  have (M : Y.Modules) : IsIso ((pullbackLocallyConstantExteriorPowerComparison f r).app M) :=
+    isIso_pullbackLocallyConstantExteriorPowerComparison_app f r M
+  exact NatIso.isIso_of_isIso_app _
 
 end
 

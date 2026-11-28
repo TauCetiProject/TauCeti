@@ -249,19 +249,31 @@ theorem exteriorPowerStalk_hom_ext {T : Type*} [AddCommGroup T] [Module (R.stalk
       erw [(E M n).germ_smul (R := R) x U hx, map_smul, map_smul]
       exact congrArg (fun t ↦ R.germ U x hx r • t) ha
 
+/-- Linear maps out of the exterior power of a stalk agree if they agree on wedges of
+germs represented over a common open. -/
+theorem exteriorPower_germ_hom_ext {T : Type*} [AddCommGroup T] [Module (R.stalk x) T]
+    {f g : ⋀[R.stalk x]^n ↑(stalk M.presheaf x) →ₗ[R.stalk x] T}
+    (h : ∀ (U : Opens X) (hx : x ∈ U) (s : Fin n → M.obj (op U)),
+      f (exteriorPower.ιMulti (R.stalk x) n (fun i ↦ germ M.presheaf U x hx (s i))) =
+      g (exteriorPower.ιMulti (R.stalk x) n (fun i ↦ germ M.presheaf U x hx (s i)))) : f = g := by
+  apply exteriorPower.linearMap_ext
+  apply AlternatingMap.ext
+  intro v
+  obtain ⟨U, _, hx, s, hs⟩ :=
+    TopCat.Presheaf.exists_le_germ_eq_family M.presheaf v (V := ⊤) (by trivial)
+  rw [← funext hs]
+  exact h U hx s
+
 /-- Exterior powers commute with stalks, without a finite generation or sheaf hypothesis. -/
 def exteriorPowerStalkEquiv :
     ↑(stalk ((PresheafOfModulesOfCommRing.exteriorPower n).obj M).presheaf x) ≃ₗ[R.stalk x]
       ⋀[R.stalk x]^n ↑(stalk M.presheaf x) :=
   LinearEquiv.ofLinearMap (exteriorPowerStalkComparison M x n) (inverse M x n)
     (by
-      apply exteriorPower.linearMap_ext
-      apply AlternatingMap.ext
-      intro v
-      obtain ⟨U, _, hx, s, hs⟩ :=
-        TopCat.Presheaf.exists_le_germ_eq_family M.presheaf v (V := ⊤) (by trivial)
-      rw [← funext hs]
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearMap.id_apply]
+      apply exteriorPower_germ_hom_ext M x n
+      intro U hx s
+      simp only [LinearMap.comp_apply, LinearMap.id_apply]
+      -- The germ lemmas use module sections, while the stalk is taken in additive groups.
       erw [inverse_mk_germ, exteriorPowerStalkComparison_germ_mk]
       rfl)
     (by

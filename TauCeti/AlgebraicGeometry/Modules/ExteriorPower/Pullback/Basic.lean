@@ -138,12 +138,18 @@ theorem pullbackExteriorPowerComparison_eq (n : ℕ) :
       SheafOfModules.pullbackExteriorPowerComparison (pullbackPushforwardAdjunction f) n :=
   (rfl)
 
-/-- The canonical exterior-power pullback comparison is an isomorphism at every module
-sheaf on a scheme. -/
-instance isIso_pullbackExteriorPowerComparison_app (n : ℕ) (M : Y.Modules) :
-    IsIso ((pullbackExteriorPowerComparison f n).app M) := by
+/-- The canonical exterior-power pullback comparison for modules on schemes is a natural
+isomorphism in every degree. -/
+instance isIso_pullbackExteriorPowerComparison (n : ℕ) :
+    IsIso (pullbackExteriorPowerComparison f n) := by
   rw [pullbackExteriorPowerComparison_eq]
-  exact SheafOfModules.isIso_pullbackExteriorPowerComparison_app f.toRingCatSheafHom M n
+  exact SheafOfModules.isIso_pullbackExteriorPowerComparison f.toRingCatSheafHom n
+
+/-- The component of the canonical exterior-power comparison at any scheme module is
+an isomorphism. -/
+instance isIso_pullbackExteriorPowerComparison_app (n : ℕ) (M : Y.Modules) :
+    IsIso ((pullbackExteriorPowerComparison f n).app M) :=
+  NatIso.isIso_app_of_isIso (pullbackExteriorPowerComparison f n) M
 
 /-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
 pushforward comparison along `f.toRingCatSheafHom`. -/
@@ -175,11 +181,6 @@ theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso (M : Y.Modu
   SheafOfModules.pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso
     (pullbackPushforwardAdjunction f) M
 
-/-- The pullback comparison for modules on schemes is an isomorphism in degree one. -/
-instance isIso_pullbackExteriorPowerComparison_one :
-    IsIso (pullbackExteriorPowerComparison f 1) :=
-  SheafOfModules.isIso_pullbackExteriorPowerComparison_one (pullbackPushforwardAdjunction f)
-
 /-- In degree zero, the pullback comparison for modules on schemes is the identification
 `f^* 𝒪_Y ⟶ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`, read through the identifications
 `⋀⁰ M ≅ 𝒪`. -/
@@ -191,14 +192,6 @@ theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerZeroIso (M : Y.Mod
         SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom :=
   SheafOfModules.pullbackExteriorPowerComparison_app_comp_exteriorPowerZeroIso
     (pullbackPushforwardAdjunction f) M
-
-/-- The pullback comparison for modules on schemes is an isomorphism in degree zero, at every
-module and not only at quasi-coherent ones. -/
-instance isIso_pullbackExteriorPowerComparison_zero :
-    IsIso (pullbackExteriorPowerComparison f 0) :=
-  -- Instance search does not find Mathlib's `IsIso` instance for `pullbackObjUnitToUnit`.
-  SheafOfModules.isIso_pullbackExteriorPowerComparison_zero (pullbackPushforwardAdjunction f)
-    (SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _)
 
 end
 
