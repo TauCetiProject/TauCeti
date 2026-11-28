@@ -227,11 +227,9 @@ theorem coe_binaryDihedralRotation_pow_self :
 
 /-- The rotation generator satisfies `r ^ n ≠ 1` (since `r ^ n = -1`). -/
 theorem binaryDihedralRotation_pow_self_ne_one :
-    binaryDihedralRotation n ^ n ≠ 1 := by
-  intro h
-  have hmat := congr_fun₂ (congrArg Subtype.val h) 0 0
-  rw [coe_binaryDihedralRotation_pow_self] at hmat
-  norm_num at hmat
+    binaryDihedralRotation n ^ n ≠ 1 :=
+  pow_ne_one_of_lt_orderOf (NeZero.ne n)
+    (by rw [orderOf_binaryDihedralRotation]; exact lt_two_mul_self (NeZero.pos n))
 
 /-- Conjugation by `s` inverts the rotation generator: `s r s⁻¹ = r⁻¹`. -/
 theorem weylElement_inv_conj_binaryDihedralRotation :

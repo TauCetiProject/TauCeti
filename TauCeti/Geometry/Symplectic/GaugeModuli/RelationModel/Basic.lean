@@ -119,16 +119,9 @@ if they are simultaneously conjugate by some `u ∈ SU(r)`. -/
 theorem quotient_mk_relationModuli_eq_iff {r : ℕ} {ζ : ℂ} {g : ℕ} (x y : relationSet r ζ g) :
     (Quotient.mk _ x : relationModuli r ζ g) = Quotient.mk _ y ↔
       ∃ u : Matrix.specialUnitaryGroup (Fin r) ℂ, ConjAct.toConjAct u • x.val = y.val := by
-  rw [Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨u, hu⟩
-    refine ⟨(ConjAct.ofConjAct u)⁻¹, ?_⟩
-    have hinv : u⁻¹ • x.val = y.val := by
-      rw [← congrArg Subtype.val hu, coe_conjAct_smul_relationSet, inv_smul_smul]
-    simpa [map_inv] using hinv
-  · rintro ⟨u, hu⟩
-    refine ⟨ConjAct.toConjAct u⁻¹, Subtype.ext ?_⟩
-    simp [← hu, map_inv]
+  rw [MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq]
+  exact ⟨fun ⟨u, hu⟩ => ⟨ConjAct.ofConjAct u, congrArg Subtype.val hu⟩,
+    fun ⟨u, hu⟩ => ⟨ConjAct.toConjAct u, Subtype.ext hu⟩⟩
 
 /-- The twisted relation set is closed in `(SU(r) × SU(r))^g`. -/
 theorem isClosed_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) : IsClosed (relationSet r ζ g) := by

@@ -31,13 +31,13 @@ As immediate consequences we also deduce nonemptiness of `relationSet r ζ g` an
 `H¹(T²; μ_r)` action at genus one
 (`TauCeti.GaugeModuli.centerTwist_smul_eq_self_relationModuli_genus_one`),
 and hence non-freeness of the central-twist action for every `r ≥ 2` and primitive `ζ`
-(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). In contrast to the
-coprime case `r = 2, ζ = -1` (whose relation set is nonempty by
-`TauCeti.GaugeModuli.nonempty_relationSet_genus_one` applied to
-`IsPrimitiveRoot.neg_one 0 two_ne_zero.symm`, and whose moduli is a point), at the non-coprime
-parameter `r = 2`, `ζ = 1`, the moduli `relationModuli 2 1 1` is not a subsingleton
-(`TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`) and the `SU(2)` action admits
-non-central stabilizers
+(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). At the concrete
+coprime parameter `r = 2, ζ = -1`, we verify explicitly that
+`(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)` lies in `relationSet 2 (-1) 1`
+(`TauCeti.GaugeModuli.binaryDihedralRotation_two_weylElement_inv_mem_relationSet`); in contrast,
+at the non-coprime parameter `r = 2`, `ζ = 1`, the moduli `relationModuli 2 1 1` is not a
+subsingleton (`TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`) and the `SU(2)`
+action admits non-central stabilizers
 (`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one`).
 
 ## Main definitions
@@ -60,9 +60,10 @@ non-central stabilizers
 * `TauCeti.GaugeModuli.centerTwist_smul_eq_self_relationModuli_genus_one` and
   `TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`: the central-twist action
   is trivial at genus one, hence not free for any `r ≥ 2` and primitive `ζ`.
-* `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one` and
+* `TauCeti.GaugeModuli.binaryDihedralRotation_two_weylElement_inv_mem_relationSet`,
+  `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one`, and
   `TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`: explicit rank-two checks
-  for the non-coprime contrast `ζ = 1`.
+  at `ζ = -1` and for the non-coprime contrast `ζ = 1`.
 
 ## References
 
@@ -230,6 +231,27 @@ theorem exists_ne_one_centerTwist_smul_eq_self_genus_one {r : ℕ} (hr : 2 ≤ r
 end GenusOneTheorems
 
 section RankTwoChecks
+
+/-- At the coprime rank-two parameter `r = 2`, `ζ = -1`, `g = 1`, the concrete quaternion-group
+generators `(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)` solve
+`⁅A, B⁆ = (-1 : ℂ) • 1` and hence lie in `relationSet 2 (-1) 1`. -/
+theorem binaryDihedralRotation_two_weylElement_inv_mem_relationSet :
+    (fun _ : Fin 1 =>
+        (TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)) ∈
+      relationSet 2 (-1) 1 := by
+  rw [mem_relationSet_one_iff]
+  have hconj :
+      TauCeti.SU2.weylElement⁻¹ * ((TauCeti.SU2.binaryDihedralRotation 2)⁻¹ *
+          TauCeti.SU2.weylElement) =
+        TauCeti.SU2.binaryDihedralRotation 2 := by
+    simpa [mul_assoc] using
+      congrArg Inv.inv (TauCeti.SU2.weylElement_inv_conj_binaryDihedralRotation 2)
+  have hcomm :
+      ⁅TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹⁆ =
+        TauCeti.SU2.binaryDihedralRotation 2 ^ 2 := by
+    simp [commutatorElement_def, mul_assoc, hconj, sq]
+  rw [hcomm, TauCeti.SU2.coe_binaryDihedralRotation_pow_self]
+  simp
 
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, the simultaneous `SU(2)`-conjugation action on
 `relationSet 2 1 g` admits non-central stabilizers (for example
