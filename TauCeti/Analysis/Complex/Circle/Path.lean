@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.UnitInterval
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # Semicircle paths on the unit circle
@@ -150,11 +149,13 @@ theorem circleParam_lowerSemicirclePath (t : unitInterval) :
   semicircleCoord.injective (Subtype.ext (by simp [lowerSemicirclePath_apply]))
 
 /-- Complex conjugation leaves `TauCeti.circleParam` invariant. -/
+@[simp]
 theorem circleParam_conj (u : sphere (0 : ℂ) 1) :
     circleParam ⟨starRingEnd ℂ (u : ℂ), by simp⟩ = circleParam u := by
   apply Subtype.ext
   simp [coe_circleParam]
 
+@[simp]
 theorem upperSemicirclePath_circleParam {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) :
     upperSemicirclePath (circleParam u) = u := by
   have hnorm : (u : ℂ).re ^ 2 + (u : ℂ).im ^ 2 = 1 := by
@@ -167,6 +168,7 @@ theorem upperSemicirclePath_circleParam {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u 
       coe_semicircleCoord_circleParam]
     rw [himsq, Real.sqrt_sq hu]
 
+@[simp]
 theorem lowerSemicirclePath_circleParam {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) :
     lowerSemicirclePath (circleParam u) = u := by
   let u' : sphere (0 : ℂ) 1 := ⟨starRingEnd ℂ (u : ℂ), by simp⟩

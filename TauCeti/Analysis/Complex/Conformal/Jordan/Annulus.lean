@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.FilledHull
 public import TauCeti.Topology.JordanCurve.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Circle.Path
 import TauCeti.Analysis.Complex.Conformal.Jordan.Quadrilateral
 import TauCeti.Analysis.Complex.Conformal.Jordan.Schoenflies
