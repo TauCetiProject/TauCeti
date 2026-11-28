@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterModule.Basic
-public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.Algebra.Module.CharacterModule.Trace.Dual
 
 /-!
@@ -21,7 +20,8 @@ The comparison is the existing `CharacterModule.IsMatlisGenerator.dualEquiv`, bu
 equivalence of representations. The underlying linear equivalence retains the existing
 naturality and unit-scaling API, so the choice of trace and coefficient maps can be compared
 without additional representation-specific formulas.
-Apply `Representation.Equiv.charTwist` to obtain the comparison with any common character twist.
+Import `TauCeti.RepresentationTheory.Character.Twist` and apply `Representation.Equiv.charTwist`
+to obtain the comparison with any common character twist.
 
 This file concerns the coefficient representations. Identifying the twisted additive characters
 with homomorphisms into roots of unity, and transporting arithmetic cup products, require the

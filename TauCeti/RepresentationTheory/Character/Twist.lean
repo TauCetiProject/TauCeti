@@ -325,6 +325,12 @@ theorem charTwist_apply (e : ρ.Equiv σ) (χ : G →* kˣ) (v : V) :
     e.charTwist χ v = e v :=
   (rfl)
 
+/-- A common character twist preserves inverse evaluation of an equivariant equivalence. -/
+@[simp]
+theorem charTwist_symm_apply (e : ρ.Equiv σ) (χ : G →* kˣ) (w : W) :
+    (e.charTwist χ).symm w = e.symm w :=
+  (rfl)
+
 end Equiv
 
 end CommSemiring
