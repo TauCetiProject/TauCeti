@@ -6,10 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.NumberTheory.Padics.Complex
+public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+
+import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.RepresentationTheory.Continuous.Unitary.Reducing
 
 /-!
 # Central actions and denominators on a line
@@ -29,8 +34,7 @@ orthogonality to false lifts belong to the applications that establish those hyp
 
 ## Main results
 
-* `TauCeti.ThetaLift.centralAverage_isSymmetric` and
-  `TauCeti.ThetaLift.centralAverage_isIdempotentElem`.
+* `TauCeti.ThetaLift.averageMap_inner_left` and `TauCeti.ThetaLift.starProjection_averageMap`.
 * `TauCeti.ThetaLift.inner_starProjection_line` and
   `TauCeti.ThetaLift.det_smul_id_of_span_singleton`.
 * `TauCeti.ThetaLift.norm_inner_starProjection_span_singleton_le_exp`, the direct denominator
@@ -69,84 +73,24 @@ theorem inner_apply_eq_inner_inv_apply (T : G →* E →ₗᵢ[ℂ] E) (z : G) (
     ⟪x, T z y⟫_ℂ = ⟪T z (T z⁻¹ x), T z y⟫_ℂ := by rw [hzx]
     _ = ⟪T z⁻¹ x, y⟫_ℂ := (T z).inner_map_map _ _
 
-/-- The finite sum of a family of vectors. -/
-def kernelSum {G E : Type*} [Fintype G] [AddCommMonoid E] (K : G → E) : E := ∑ g, K g
-
 /-- The sum of an equivariant kernel family is fixed by every action operator. -/
 theorem apply_kernelSum [Fintype G] (T : G →* E →ₗᵢ[ℂ] E) (K : G → E)
     (hK : ∀ z g, T z⁻¹ (K g) = K (g * z)) (z : G) :
-    T z (kernelSum K) = kernelSum K := by
+    T z (∑ g, K g) = ∑ g, K g := by
   classical
   have hK' (g : G) : T z (K g) = K (g * z⁻¹) := by simpa using hK z⁻¹ g
   calc
-    T z (kernelSum K) = ∑ g, T z (K g) := by simp [kernelSum]
+    T z (∑ g, K g) = ∑ g, T z (K g) := by simp
     _ = ∑ g, K (g * z⁻¹) := by simp [hK']
     _ = ∑ g, K g := Equiv.sum_comp (Equiv.mulRight z⁻¹) K
 
-section FiniteGroup
-
-variable [Fintype G]
-
-/-- The normalized sum of the operators in a finite unitary representation. -/
-def centralAverage (T : G →* E →ₗᵢ[ℂ] E) : Module.End ℂ E :=
-  (Fintype.card G : ℂ)⁻¹ • ∑ g, (T g).toLinearMap
-
-@[simp]
-theorem centralAverage_apply (T : G →* E →ₗᵢ[ℂ] E) (x : E) :
-    centralAverage T x = (Fintype.card G : ℂ)⁻¹ • ∑ g, T g x := by
-  simp [centralAverage, LinearMap.sum_apply]
-
-/-- The central average is self-adjoint in the algebraic inner-product sense. -/
-theorem centralAverage_isSymmetric (T : G →* E →ₗᵢ[ℂ] E) :
-    (centralAverage T).IsSymmetric := by
-  unfold centralAverage
-  apply LinearMap.IsSymmetric.smul (by simp)
-  intro x y
-  simp only [LinearMap.sum_apply, LinearIsometry.coe_toLinearMap, sum_inner, inner_sum]
-  calc
-    ∑ g : G, ⟪T g x, y⟫_ℂ = ∑ g : G, ⟪x, T g⁻¹ y⟫_ℂ := by
-      refine Finset.sum_congr rfl fun g _ ↦ ?_
-      rw [← inner_conj_symm, inner_apply_eq_inner_inv_apply, inner_conj_symm]
-    _ = ∑ g : G, ⟪x, T g y⟫_ℂ :=
-      Equiv.sum_comp (Equiv.inv G) (fun g ↦ ⟪x, T g y⟫_ℂ)
-
-/-- Every representation operator fixes every vector in the range of the central average. -/
-theorem unitary_centralAverage (T : G →* E →ₗᵢ[ℂ] E) (z : G) (x : E) :
-    T z (centralAverage T x) = centralAverage T x := by
-  simp only [centralAverage_apply, map_smul, map_sum]
-  congr 1
-  calc
-    ∑ g : G, T z (T g x) = ∑ g : G, T (z * g) x := by
-      refine Finset.sum_congr rfl fun g _ ↦ ?_
-      exact (congrArg (fun U : E →ₗᵢ[ℂ] E ↦ U x) (T.map_mul z g)).symm
-    _ = ∑ g : G, T g x := Equiv.sum_comp (Equiv.mulLeft z) (fun g ↦ T g x)
-
-/-- The central average fixes every vector fixed by the whole representation. -/
-theorem centralAverage_apply_of_invariant (T : G →* E →ₗᵢ[ℂ] E) {x : E}
-    (hx : ∀ z, T z x = x) : centralAverage T x = x := by
-  have hc : (Fintype.card G : ℂ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
-  rw [centralAverage_apply]
-  simp only [hx, Finset.sum_const, Finset.card_univ]
-  rw [← Nat.cast_smul_eq_nsmul ℂ]
-  exact inv_smul_smul₀ hc x
-
-/-- The central average is the orthogonal idempotent projection onto the invariant vectors. -/
-theorem centralAverage_isIdempotentElem (T : G →* E →ₗᵢ[ℂ] E) :
-    IsIdempotentElem (centralAverage T) := by
-  unfold IsIdempotentElem
-  ext x
-  exact centralAverage_apply_of_invariant T (fun z ↦ unitary_centralAverage T z x)
-
 /-- Averaging preserves the pairing with an invariant vector. -/
-theorem centralAverage_inner_left (T : G →* E →ₗᵢ[ℂ] E) {φ : E}
-    (hφ : ∀ z, T z φ = φ) (x : E) :
-    ⟪centralAverage T x, φ⟫_ℂ = ⟪x, φ⟫_ℂ := by
-  calc
-    ⟪centralAverage T x, φ⟫_ℂ = ⟪x, centralAverage T φ⟫_ℂ :=
-      centralAverage_isSymmetric T x φ
-    _ = ⟪x, φ⟫_ℂ := by rw [centralAverage_apply_of_invariant T hφ]
-
-end FiniteGroup
+theorem averageMap_inner_left [Fintype G] [Invertible (Fintype.card G : ℂ)]
+    {π : ContRepresentation ℂ G E} (hπ : π.IsUnitary) {φ : E} (hφ : φ ∈ π.invariants)
+    (x : E) : ⟪π.toRepresentation.averageMap x, φ⟫_ℂ = ⟪x, φ⟫_ℂ := by
+  have := hπ.hasOrthogonalProjection_invariants
+  rw [← hπ.starProjection_invariants_apply, π.invariants.inner_starProjection_left_eq_right,
+    Submodule.starProjection_eq_self_iff.mpr hφ]
 
 /-- The common kernel of an indexed family of endomorphisms. -/
 def falseLiftCommonKernel {𝕜 F ι : Type*} [Semiring 𝕜] [AddCommMonoid F] [Module 𝕜 F]
@@ -219,11 +163,8 @@ theorem det_smul_id_of_span_singleton {𝕜 F : Type*} [Field 𝕜] [AddCommGrou
     have hz : (⟨0, hx⟩ : 𝕜 ∙ (0 : F)) = 0 := by ext; rfl
     rw [hz]
     simp
-  obtain ⟨c, hc, _⟩ :=
-    LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one (finrank_span_singleton hφ) Λ
-  have hdet : LinearMap.det Λ = c := by
-    rw [hc, LinearMap.det_smul, finrank_span_singleton hφ, pow_one, LinearMap.det_id, mul_one]
-  simpa only [hdet] using hc
+  exact LinearMap.ext (LinearMap.apply_eq_det_smul_of_finrank_eq_one
+    (finrank_span_singleton hφ) Λ)
 
 /-- A determinant lower bound and a unit product estimate give an exponential upper bound. -/
 theorem norm_le_exp_of_exp_neg_le_norm {k : Type*} [NormedField k]
@@ -270,12 +211,13 @@ theorem norm_inner_starProjection_span_singleton_le_exp {k : Type*} [NormedField
     ((ℂ ∙ φ).orthogonalProjectionOnto y)
   exact congrArg Subtype.val h
 
-/-- Projection to an invariant line commutes with central averaging. -/
-theorem starProjection_centralAverage [Fintype G] (T : G →* E →ₗᵢ[ℂ] E)
-    {φ : E} (hφ : ∀ z, T z φ = φ) (y : E) :
-    (ℂ ∙ φ).starProjection (centralAverage T y) = (ℂ ∙ φ).starProjection y := by
-  have hinner : ⟪φ, centralAverage T y⟫_ℂ = ⟪φ, y⟫_ℂ := by
-    rw [← centralAverage_isSymmetric T φ y, centralAverage_apply_of_invariant T hφ]
+/-- Projecting to a line spanned by an invariant vector absorbs the average. -/
+theorem starProjection_averageMap [Fintype G] [Invertible (Fintype.card G : ℂ)]
+    {π : ContRepresentation ℂ G E} (hπ : π.IsUnitary) {φ : E} (hφ : φ ∈ π.invariants)
+    (y : E) :
+    (ℂ ∙ φ).starProjection (π.toRepresentation.averageMap y) = (ℂ ∙ φ).starProjection y := by
+  have hinner : ⟪φ, π.toRepresentation.averageMap y⟫_ℂ = ⟪φ, y⟫_ℂ := by
+    rw [← inner_conj_symm, averageMap_inner_left hπ hφ, inner_conj_symm]
   rw [Submodule.starProjection_singleton, Submodule.starProjection_singleton, hinner]
 
 /-- Pairing the unnormalized `G`-orbit sum of `x` with an element of an invariant line scales the
@@ -285,10 +227,19 @@ theorem inner_sum_orbit_starProjection [Fintype G] (T : G →* E →ₗᵢ[ℂ] 
     ⟪∑ g : G, T g x, (ℂ ∙ φ).starProjection y⟫_ℂ =
       (Fintype.card G : ℂ) * ⟪(ℂ ∙ φ).starProjection x, (ℂ ∙ φ).starProjection y⟫_ℂ := by
   have hcard : (Fintype.card G : ℂ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
-  have horbit : ∑ g : G, T g x = (Fintype.card G : ℂ) • centralAverage T x := by
-    rw [centralAverage_apply, smul_inv_smul₀ hcard]
+  have : Invertible (Fintype.card G : ℂ) := invertibleOfNonzero hcard
+  let π : ContRepresentation ℂ G E := .ofMonoidHom
+    { toFun := fun g ↦ (T g).toContinuousLinearMap
+      map_one' := by rw [T.map_one]; rfl
+      map_mul' := fun g h ↦ by rw [T.map_mul]; rfl }
+  have hπ : π.IsUnitary :=
+    (ContRepresentation.isUnitary_iff_isometry π).2 fun g ↦ (T g).isometry
+  have hφ' : φ ∈ π.invariants := fun g ↦ hφ g
+  have horbit : ∑ g : G, T g x = (Fintype.card G : ℂ) • π.toRepresentation.averageMap x := by
+    rw [Representation.averageMap_apply, invOf_eq_inv, smul_inv_smul₀ hcard]
+    rfl
   rw [horbit, inner_smul_left, map_natCast,
-    ← (ℂ ∙ φ).inner_starProjection_left_eq_right, starProjection_centralAverage T hφ x,
+    ← (ℂ ∙ φ).inner_starProjection_left_eq_right, starProjection_averageMap hπ hφ' x,
     (ℂ ∙ φ).inner_starProjection_left_eq_right, (ℂ ∙ φ).inner_starProjection_left_eq_right,
     (ℂ ∙ φ).starProjection_eq_self_iff.mpr ((ℂ ∙ φ).starProjection_apply_mem y)]
 
@@ -327,8 +278,7 @@ theorem norm_padicComplex_natCast {p n : ℕ} [Fact p.Prime] (hn : n ≠ 0) :
     ‖(n : ℂ_[p])‖ = (p : ℝ) ^ (-(padicValNat p n : ℤ)) := by
   have hnorm := PadicComplex.norm_extends' p (n : ℚ_[p])
   simp only [map_natCast, PadicComplex.coe_natCast] at hnorm
-  rw [hnorm, Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr hn),
-    Padic.valuation_natCast, Nat.padicValNat_def]
+  rw [hnorm, Padic.norm_natCast_eq_zpow hn]
 
 /-- The reciprocal norm of a nonzero natural number in a complex p-adic field. -/
 theorem norm_padicComplex_natCast_inv {p n : ℕ} [Fact p.Prime] (hn : n ≠ 0) :
