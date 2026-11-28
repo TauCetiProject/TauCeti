@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Pullback.Comp
+public import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Opens
 
 /-!
 # Pullback on the cohomology of opens along a composite
@@ -17,6 +18,9 @@ file proves that pullback on the cohomology of opens
 (`AlgebraicGeometry.Scheme.Hom.cohomologyOnPullback`) is functorial: pulling back `Hⁿ(U, M)`
 along `a ≫ b` is pulling back along `b` and then along `a`, followed by the isomorphism
 `a^* b^* M ≅ (a ≫ b)^* M` of `Scheme.Modules.pullbackComp`.
+
+It also transports a scalar relation on `U` along the restricted morphism
+`g.resLE U U' hle`.
 
 At the level of underlying abelian sheaves this is the compatibility of the comparison
 `g⁻¹ M ⟶ g^* M` with composition (`AlgebraicGeometry.Scheme.Hom.toSheafPullbackComparison_comp`),
@@ -32,7 +36,9 @@ and the functoriality of pullback of cohomology over objects of a site
   along `TauCeti.AlgebraicGeometry.preimage_preimage_eq_of_comp_eq`;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyOnPullback_cohomologyOnRes_cohomologyOnPullback_ι`:
   the case of the square `g.resLE U U' hle ≫ U.ι = U'.ι ≫ g` of open subschemes, comparing
-  pullback along `g` with pullback along its restriction `U' ⟶ U`.
+  pullback along `g` with pullback along its restriction `U' ⟶ U`;
+* `AlgebraicGeometry.Scheme.Hom.cohomologyOnPullbackι_cohomologyOnPullback_smul`:
+  scalar compatibility through the restricted morphism `U' ⟶ U`.
 -/
 
 public section
@@ -171,5 +177,35 @@ theorem cohomologyOnPullback_cohomologyOnRes_cohomologyOnPullback_ι {X' : Schem
     ← cohomologyOnPullback_comp_cohomologyOnPullback_of_comp_eq_assoc (g.resLE_comp_ι hle)]
   rw [cohomologyOnRes_comp_cohomologyOnMap_assoc]
   simp only [cohomologyOnRes_comp, Functor.comp_obj]
+
+/-- Pullback on the cohomology of opens respects a scalar relation computed in the open
+subschemes. The scalar on `U` is transported along the restricted morphism `U' ⟶ U`; no global
+extension of this function is required. -/
+lemma cohomologyOnPullbackι_cohomologyOnPullback_smul {X' : Scheme.{u}}
+    (g : X' ⟶ X) (M : X.Modules) (n : ℕ) (U : X.Opens) (U' : X'.Opens)
+    (hle : U' ≤ g ⁻¹ᵁ U) (r : Γ(U.toScheme, ⊤)) (x y : cohomologyOn M n U)
+    (hxy : U.cohomologyOnPullbackι M n x = r • U.cohomologyOnPullbackι M n y) :
+    U'.cohomologyOnPullbackι ((Scheme.Modules.pullback g).obj M) n
+        (cohomologyOnRes _ n hle (g.cohomologyOnPullback M n U x)) =
+      (g.resLE U U' hle).appTop r •
+        U'.cohomologyOnPullbackι ((Scheme.Modules.pullback g).obj M) n
+          (cohomologyOnRes _ n hle (g.cohomologyOnPullback M n U y)) := by
+  let ψ := (Scheme.Modules.pullbackComp (g.resLE U U' hle) U.ι).hom.app M ≫
+    (Scheme.Modules.pullbackCongr (g.resLE_comp_ι hle)).hom.app M ≫
+      (Scheme.Modules.pullbackComp U'.ι g).inv.app M
+  have hd (z : cohomologyOn M n U) :
+      U'.cohomologyOnPullbackι ((Scheme.Modules.pullback g).obj M) n
+          (cohomologyOnRes _ n hle (g.cohomologyOnPullback M n U z)) =
+        cohomologyOnRes _ n (g.resLE U U' hle).preimage_top.ge
+          (cohomologyOnMap ψ n ((g.resLE U U' hle) ⁻¹ᵁ ⊤)
+            ((g.resLE U U' hle).cohomologyOnPullback ((Scheme.Modules.pullback U.ι).obj M)
+              n ⊤ (U.cohomologyOnPullbackι M n z))) := by
+    rw [Scheme.Opens.cohomologyOnPullbackι_def,
+      Scheme.Opens.cohomologyOnPullbackι_def]
+    exact ConcreteCategory.congr_hom
+      (g.cohomologyOnPullback_cohomologyOnRes_cohomologyOnPullback_ι M n U U' hle) z
+  rw [hd, hd, hxy, cohomologyOnPullback_smul, ← cohomologyOnMapLinear_apply,
+    LinearMap.map_smul, cohomologyOnMapLinear_apply, ← cohomologyOnResLinear_apply,
+    LinearMap.map_smul, cohomologyOnResLinear_apply]
 
 end AlgebraicGeometry.Scheme.Hom
