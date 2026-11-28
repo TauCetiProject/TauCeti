@@ -23,7 +23,8 @@ the subgroup.
 Because the order of a subgroup divides the order of the group -- with the index as cofactor --
 invertibility of the order of a finite group in a semiring passes to every subgroup.
 
-If `Γ` normalises `N`, then `Γ` has the same relative index in `Γ ⊔ N` as in `N`.
+If `Γ` normalises `N`, then `Γ` has the same relative index in `Γ ⊔ N` as in `N`. If `H`
+normalises `N`, the orders of `N ⊔ H` and `N ∩ H` multiply to those of `N` and `H`.
 Adjoining a two-element subgroup `N ⊄ Γ` normalised by `Γ` is also quantified: `Γ` then has
 relative index exactly `2` in `Γ ⊔ N`, so `Γ.index = 2 * (Γ ⊔ N).index`. Taking `N` to be the
 centre gives the `Γ.withCenter` readings.
@@ -52,6 +53,8 @@ elements has no proper subgroup of index less than `p`.
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
+* `Subgroup.index_sup_mul_card_mul_card`: if `H` normalises `N`, then
+  `[G : N ⊔ H] · #N · #H = #G · #(N ∩ H)`.
 * `Subgroup.le_of_coprime_index`: if `H` normalises `N` and `[G : H]` is coprime to `Nat.card N`,
   then `N ≤ H`.
 * `Subgroup.finiteIndex_of_index_coprime`: an index prime to some `p ≠ 1` is finite.
@@ -451,6 +454,25 @@ theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer 
       Quotient.sound' ?_⟩
     rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
     simpa [mul_assoc] using hh
+
+/-- **Product formula for a join with a normalised subgroup.** If `H` normalises `N`, for
+instance if `N` is normal, then `[G : N ⊔ H] · #N · #H = #G · #(N ∩ H)`, that is
+`#(N ⊔ H) · #(N ∩ H) = #N · #H` with the order of `N ⊔ H` written through its index. -/
+@[to_additive
+  /-- If an additive subgroup `H` normalises `N`, then
+  `[G : N ⊔ H] · #N · #H = #G · #(N ∩ H)`. -/]
+theorem index_sup_mul_card_mul_card {N H : Subgroup G} (hH : H ≤ normalizer N) :
+    (N ⊔ H).index * Nat.card N * Nat.card H = Nat.card G * Nat.card (N.subgroupOf H) := by
+  -- `[N ⊔ H : N] = [H : N ∩ H]`, by the second isomorphism theorem.
+  have h₀ : N.relIndex (N ⊔ H) = N.relIndex H := by
+    have := normal_subgroupOf_of_le_normalizer hH
+    have := normal_subgroupOf_sup_of_le_normalizer hH
+    rw [sup_comm]
+    exact Nat.card_congr (QuotientGroup.quotientInfEquivProdNormalizerQuotient H N hH).toEquiv.symm
+  have h₁ := relIndex_mul_index (le_sup_left : N ≤ N ⊔ H)
+  rw [h₀] at h₁
+  rw [← N.card_mul_index, ← h₁, ← (N.subgroupOf H).card_mul_index, relIndex]
+  ring
 
 /-- If `H` normalizes `N` and `[G : H]` is coprime to `Nat.card N`, then `N ≤ H`. Neither
 `H.index` nor `N` need be finite (`H.index = 0` forces `Nat.card N = 1`, while `Nat.card N = 0`

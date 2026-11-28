@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Inertia
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
 public import TauCeti.RingTheory.LocalRing.Herbrand.Jump
 import TauCeti.Algebra.Group.Subgroup.Finite
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.RingTheory.LocalRing.FixedPoints.ResidueField
 
 /-!
@@ -205,21 +206,10 @@ theorem herbrandFun_tower (u : ℝ) :
         ramificationGroupReal_eq_of_sub_one_lt_of_le G B (ht₁.trans_le ht₂) h₂]
     simp only [F]
     linarith
-  -- Hence `F` vanishes at every integer, since it vanishes at `0`.
-  have hint (i : ℤ) : F i = 0 := by
-    induction i using Int.induction_on with
-    | zero => simp [F]
-    | succ i ih =>
-      have h := hstep (i := i + 1) (x := ((i + 1 : ℤ) : ℝ)) (by linarith) le_rfl
-      push_cast at h ih ⊢
-      rw [h, add_sub_cancel_right, ih]
-    | pred i ih =>
-      have h := hstep (i := -i) (x := ((-i : ℤ) : ℝ)) (by linarith) le_rfl
-      push_cast at h ih ⊢
-      rw [← h, ih]
-  have h := hstep (by linarith [Int.ceil_lt_add_one u]) (Int.le_ceil u)
-  rw [← Int.cast_one, ← Int.cast_sub, hint] at h
-  simp only [F] at h
+  -- Hence `F` is constant, and it vanishes at `0`.
+  have h := apply_eq_apply_zero_of_forall_mem_Icc_intCast_sub_one
+    (fun i x hx ↦ hstep (i := i) (x := x) hx.1 hx.2) u
+  simp only [F, herbrandFun_zero, sub_self] at h
   linarith
 
 variable (A) in
