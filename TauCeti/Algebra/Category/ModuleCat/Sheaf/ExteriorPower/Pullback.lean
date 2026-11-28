@@ -117,17 +117,11 @@ theorem pushforwardExteriorPowerComparison_app_val_app_mk (n : ℕ)
     dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, sheafCompose_obj_obj,
       CommRingCat.forgetToRingCat_obj, Functor.id_obj]
     (((pushforwardExteriorPowerComparison φ n).app M).val.app U
-      ((exteriorPowerIso n ((pushforward φ).obj M)).inv.val.app U
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
-          ((PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) n).obj
-            ((pushforward φ).obj M).val)).app U
-          (ModuleCat.exteriorPower.mk (M := PresheafOfModulesOfCommRing.obj (R := S.obj)
-            ((pushforward φ).obj M).val U) m))) =
-    (exteriorPowerIso n M).inv.val.app (F.op.obj U)
-      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-          ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val)).app (F.op.obj U)
-        (ModuleCat.exteriorPower.mk
-          (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val (F.op.obj U)) m))) := by
+      (((pushforward φ).obj M).exteriorPowerMk (R := S) U m) =
+      M.exteriorPowerMk (R := R) (F.op.obj U) m) := by
+  refine (congrArg (((pushforwardExteriorPowerComparison φ n).app M).val.app U)
+    (exteriorPowerMk_def (R := S) ((pushforward φ).obj M) U m)).trans ?_
+  refine Eq.trans ?_ (exteriorPowerMk_def (R := R) M (F.op.obj U) m).symm
   have h := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.app U)
     (unit_comp_forget_map_pushforwardExteriorPowerComparison_app φ n M))
     (ModuleCat.exteriorPower.mk (M := PresheafOfModulesOfCommRing.obj (R := S.obj)
@@ -235,25 +229,12 @@ theorem pullbackExteriorPowerComparison_app_val_app_unit_mk (n : ℕ)
       sheafCompose_obj_obj, CommRingCat.forgetToRingCat_obj]
     (((pullbackExteriorPowerComparison adj n).app M).val.app (F.op.obj U)
       ((adj.unit.app ((exteriorPower S n).obj M)).val.app U
-        ((exteriorPowerIso n M).inv.val.app U
-          (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
-            ((PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) n).obj M.val)).app U
-            (ModuleCat.exteriorPower.mk
-              (M := PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U) m)))) =
-    (exteriorPowerIso n (G.obj M)).inv.val.app (F.op.obj U)
-      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-          ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj (G.obj M).val)).app
-            (F.op.obj U)
-        (ModuleCat.exteriorPower.mk
-          (M := PresheafOfModulesOfCommRing.obj (R := R.obj) (G.obj M).val (F.op.obj U))
-          (fun i ↦ (adj.unit.app M).val.app U (m i))))) := by
+        (M.exteriorPowerMk (R := S) U m)) =
+      (G.obj M).exteriorPowerMk (R := R) (F.op.obj U)
+        (fun i ↦ (adj.unit.app M).val.app U (m i))) := by
   have h := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.val.app U)
     (unit_comp_pushforward_pullbackExteriorPowerComparison adj n M))
-    ((exteriorPowerIso n M).inv.val.app U
-      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower (R := S.obj) n).obj M.val)).app U
-        (ModuleCat.exteriorPower.mk
-          (M := PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U) m)))
+    (M.exteriorPowerMk (R := S) U m)
   -- As in `pushforwardExteriorPowerComparison_app_val_app_mk`, composites evaluate on sections by
   -- definition; it remains to compute `⋀ⁿ` of the unit and the pushforward comparison on wedges.
   refine h.trans ?_

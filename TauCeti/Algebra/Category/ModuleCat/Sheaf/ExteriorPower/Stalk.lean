@@ -68,6 +68,11 @@ theorem exteriorPowerStalkEquiv_symm_ιMulti_germ (U : Opens X) (hx : x ∈ U)
   have h₁ := M.val.exteriorPowerStalkEquiv_symm_ιMulti_germ x n U hx m
   have h₂ := P.sheafificationStalkEquiv_germ R x U hx w
   have h₃ := PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x e.inv U hx s
+  unfold exteriorPowerStalkEquiv
+  -- The sheaf and presheaf stalk actions agree after unfolding the sheaf instance.
+  erw [LinearEquiv.symm_trans_apply, LinearEquiv.symm_trans_apply]
+  refine Eq.trans ?_ (congrArg (germ ((exteriorPower R n).obj M).val.presheaf U x hx)
+    (M.exteriorPowerMk_def (R := R) (op U) m)).symm
   exact (congrArg (fun t ↦ eStalk.symm (P.sheafificationStalkEquiv R x t)) h₁).trans
     ((congrArg eStalk.symm h₂).trans
       ((PresheafOfModules.stalkLinearEquivCommRing_symm_apply x e _).trans h₃))
@@ -109,7 +114,9 @@ theorem exteriorPowerStalkEquiv_naturality
   have hu := LinearMap.congr_fun
     ((E.obj M.val).sheafificationStalkEquiv_naturality R x (E.map g.val)) s
   have hp := LinearMap.congr_fun (M.val.exteriorPowerStalkEquiv_naturality x n g.val) s
-  -- Evaluate the composites through the stalk maps of the defining isomorphisms.
+  -- `simp only [LinearMap.comp_apply, LinearEquiv.trans_apply]` cannot match here:
+  -- the composite carries the sheaf stalkModule instance while the factors carry the
+  -- underlying presheaf instance. Identify those actions before using the stalk-map API.
   unfold exteriorPowerStalkEquiv
   change N.val.exteriorPowerStalkEquiv x n
       (pN.symm (PresheafOfModules.stalkLinearEquivCommRing (S := R.obj) x eN
@@ -120,7 +127,7 @@ theorem exteriorPowerStalkEquiv_naturality
   -- The inverse formula presents the stalk through the forgetful functor.
   erw [← PresheafOfModules.stalkLinearEquivCommRing_symm_apply x eN,
     LinearEquiv.apply_symm_apply]
-  -- Evaluate the naturality equation on the chosen preimage under sheafification.
+  -- As above, evaluation must identify the unit target with its identity scalar restriction.
   change pN (PresheafOfModules.stalkMapCommRing (S := R.obj) x (E.map g.val) s) = d (pM s) at hu
   have hM : pM s = PresheafOfModules.stalkMapCommRing (S := R.obj) x eM.hom t :=
     (pM.apply_symm_apply _).trans (PresheafOfModules.stalkLinearEquivCommRing_apply x eM t)

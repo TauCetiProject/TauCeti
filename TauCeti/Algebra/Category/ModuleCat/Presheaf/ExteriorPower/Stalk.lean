@@ -251,11 +251,12 @@ theorem exteriorPowerStalk_hom_ext {T : Type*} [AddCommGroup T] [Module (R.stalk
 
 /-- Linear maps out of the exterior power of a stalk agree if they agree on wedges of
 germs represented over a common open. -/
-theorem exteriorPower_germ_hom_ext {T : Type*} [AddCommGroup T] [Module (R.stalk x) T]
+theorem exteriorPower_germ_hom_ext {T : Type*} [AddCommMonoid T] [Module (R.stalk x) T]
     {f g : ⋀[R.stalk x]^n ↑(stalk M.presheaf x) →ₗ[R.stalk x] T}
     (h : ∀ (U : Opens X) (hx : x ∈ U) (s : Fin n → M.obj (op U)),
       f (exteriorPower.ιMulti (R.stalk x) n (fun i ↦ germ M.presheaf U x hx (s i))) =
       g (exteriorPower.ιMulti (R.stalk x) n (fun i ↦ germ M.presheaf U x hx (s i)))) : f = g := by
+  let : AddCommGroup T := Module.addCommMonoidToAddCommGroup (R.stalk x)
   apply exteriorPower.linearMap_ext
   apply AlternatingMap.ext
   intro v

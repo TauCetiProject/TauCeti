@@ -109,8 +109,10 @@ theorem pullbackExteriorPowerComparison_stalk (y : Y) :
   let e := M.exteriorPowerStalkEquiv (f y) n
   let d := PresheafOfModules.stalkMapCommRing (S := S.obj) y
     ((pullbackExteriorPowerComparison (pullbackPushforwardAdjunction φ) n).app M).val
-  -- Evaluate the composite maps on the generating tensor before applying the comparison
-  -- formulas. Rewriting inside the composites would have to match different stalk instances.
+  -- Evaluate the inverse scalar-extension correspondence using its characteristic lemma.
+  erw [LinearMap.liftBaseChangeEquiv_symm_apply, LinearMap.liftBaseChangeEquiv_symm_apply]
+  -- Composite evaluation still needs to identify the sheaf and presheaf stalk actions:
+  -- LinearMap.comp_apply cannot match across these different module instances.
   change ((pullback φ).obj M).exteriorPowerStalkEquiv y n
       (d (pullbackStalkEquiv φ ((exteriorPower R n).obj M) y
         (e.symm.baseChange A B _ _ (1 ⊗ₜ w)))) =
@@ -130,7 +132,7 @@ theorem pullbackExteriorPowerComparison_stalk (y : Y) :
 private theorem isIso_pullbackExteriorPowerComparison_app :
     IsIso ((pullbackExteriorPowerComparison (pullbackPushforwardAdjunction φ) n).app M) := by
   let c := (pullbackExteriorPowerComparison (pullbackPushforwardAdjunction φ) n).app M
-  apply (isIso_iff_forall_bijective_stalkMapCommRing (R := S) c).mpr
+  apply (isIso_iff_forall_bijective_stalkMap (R := ringCatSheaf S) c).mpr
   intro y
   let := stalkAlgebra φ y
   let e := (M.exteriorPowerStalkEquiv (f y) n).symm.baseChange _ _ ≪≫ₗ
@@ -138,10 +140,15 @@ private theorem isIso_pullbackExteriorPowerComparison_app :
   let e' := ((pullback φ).obj M).exteriorPowerStalkEquiv y n
   let b := (TauCeti.exteriorPower.equivBaseChange ↑(stalk S.obj y) n).symm ≪≫ₗ
     (pullbackStalkEquiv φ M y).exteriorPower n
-  have h : ⇑e' ∘ ⇑(PresheafOfModules.stalkMapCommRing (S := S.obj) y c.val) ∘ ⇑e = ⇑b :=
-    funext (LinearMap.congr_fun (pullbackExteriorPowerComparison_stalk φ M n y))
-  exact (EquivLike.comp_bijective _ e').mp
-    ((EquivLike.bijective_comp e _).mp (h.symm ▸ b.bijective))
+  have h : ⇑e' ∘ ⇑(PresheafOfModules.stalkMapCommRing (S := S.obj) y c.val) ∘ ⇑e = ⇑b := by
+    have hf := congrArg DFunLike.coe (pullbackExteriorPowerComparison_stalk φ M n y)
+    dsimp only [LinearMap.coe_comp, LinearEquiv.coe_coe] at hf
+    exact hf
+  have hb : Function.Bijective (PresheafOfModules.stalkMapCommRing (S := S.obj) y c.val) :=
+    (EquivLike.comp_bijective _ e').mp
+      ((EquivLike.bijective_comp e _).mp (h.symm ▸ b.bijective))
+  rw [PresheafOfModules.coe_stalkMapCommRing] at hb
+  exact hb
 
 /-- The canonical exterior-power pullback comparison on a ringed space is a natural
 isomorphism in every degree. -/

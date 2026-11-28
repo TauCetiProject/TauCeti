@@ -203,7 +203,7 @@ theorem _root_.SheafOfModules.pullback_δ_stalk (y : Y) :
 morphism of ringed spaces is an isomorphism. -/
 instance _root_.SheafOfModules.isIso_pullback_δ :
     IsIso (Functor.OplaxMonoidal.δ (_root_.SheafOfModules.pullback φ) M N) := by
-  apply (_root_.SheafOfModules.isIso_iff_forall_bijective_stalkMapCommRing (R := 𝒪Y) _).mpr
+  apply (_root_.SheafOfModules.isIso_iff_forall_bijective_stalkMap (R := ringCatSheaf 𝒪Y) _).mpr
   intro y
   let e := pullbackTensorStalkSource φ M N y
   have h : PresheafOfModules.stalkMapCommRing (S := 𝒪Y.obj) y
@@ -212,8 +212,12 @@ instance _root_.SheafOfModules.isIso_pullback_δ :
     apply (LinearMap.cancel_right e.surjective).mp
     exact (_root_.SheafOfModules.pullback_δ_stalk φ M N y).trans
       (e.symm_comp_cancel_right (pullbackTensorStalkTarget φ M N y).toLinearMap).symm
-  rw [h]
-  exact (pullbackTensorStalkEquiv φ M N y).bijective
+  have hb : Function.Bijective (PresheafOfModules.stalkMapCommRing (S := 𝒪Y.obj) y
+      (Functor.OplaxMonoidal.δ (_root_.SheafOfModules.pullback φ) M N).val) := by
+    rw [h]
+    exact (pullbackTensorStalkEquiv φ M N y).bijective
+  rw [PresheafOfModules.coe_stalkMapCommRing] at hb
+  exact hb
 
 /-- Pullback along a morphism of ringed spaces is strong symmetric monoidal, with its tensor
 and unit maps inverse to the canonical oplax comparisons. -/

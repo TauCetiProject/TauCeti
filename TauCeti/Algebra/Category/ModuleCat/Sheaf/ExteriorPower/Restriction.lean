@@ -80,13 +80,6 @@ theorem pushforwardPushforwardAdj_unit_app_exteriorPower (n : ℕ)
   apply exteriorPower_hom_ext n M
   intro V m
   let η := (_root_.SheafOfModules.pushforwardPushforwardAdj adj φ ψ H₁ H₂).unit
-  let ε := (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-      ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val) ≫
-    (_root_.SheafOfModules.forget _).map (_root_.SheafOfModules.exteriorPowerIso n M).inv
-  -- On sections over `V`, the unit of `⋀ⁿ M` is restriction along the counit `F (G V) ⟶ V`,
-  -- which commutes with sheafifying the wedge of `m`.
-  refine Eq.trans ?_ (PresheafOfModules.naturality_apply ε (adj.counit.app V.unop).op
-    (ModuleCat.exteriorPower.mk (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val V) m))
   -- Evaluate `⋀ⁿ` of the unit of `M` and the two pushforward comparisons on the wedge.
   refine (congrArg (((_root_.SheafOfModules.pushforward ψ).map
     ((pushforwardExteriorPowerComparison φ n).app M)).val.app V)
@@ -95,10 +88,8 @@ theorem pushforwardPushforwardAdj_unit_app_exteriorPower (n : ℕ)
           (_root_.SheafOfModules.exteriorPower_map_val_app_mk n (η.app M) V m)).trans
         (pushforwardExteriorPowerComparison_app_val_app_mk ψ n _ V _))).trans ?_
   refine (pushforwardExteriorPowerComparison_app_val_app_mk φ n M (G.op.obj V) _).trans ?_
-  -- Both sides now sheafify a wedge over `F (G V)` whose factors are the restrictions of `m`.
-  exact congrArg (fun y ↦ ε.app (F.op.obj (G.op.obj V)) y)
-    (PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n M.val
-      (adj.counit.app V.unop).op m).symm
+  -- The adjunction unit restricts along the counit of the underlying site adjunction.
+  exact (M.exteriorPower_obj_map_mk (R := R) (adj.counit.app V.unop).op m).symm
 
 end
 
