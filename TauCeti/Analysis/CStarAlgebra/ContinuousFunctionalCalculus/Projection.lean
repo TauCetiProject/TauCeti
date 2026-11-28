@@ -31,10 +31,10 @@ wherever the spectrum of `a` avoids the frontier of `Ω`.
 
 ## Main results
 
-* `TauCeti.isStarProjection_cfc` — `cfc f a` is a star projection when the values of `f` on the
-  spectrum of `a` are star projections;
-* `TauCeti.isStarProjection_cfc_indicator` — the spectral projector `cfc (Ω.indicator 1) a` is a
-  star projection;
+* `TauCeti.isStarProjection_cfc`, `TauCeti.isStarProjection_cfcₙ` — `cfc f a` and `cfcₙ f a` are
+  star projections when the values of `f` on the (quasi)spectrum of `a` are star projections;
+* `TauCeti.isStarProjection_cfc_indicator`, `TauCeti.isStarProjection_cfcₙ_indicator` — the
+  spectral projectors `cfc (Ω.indicator 1) a` and `cfcₙ (Ω.indicator 1) a` are star projections;
 * `TauCeti.cfc_indicator_mul_cfc_indicator` — the product of the spectral projectors for two
   sets is the spectral projector for their intersection;
 * `IsUnit.continuousOn_indicator_spectrum` — at an invertible element, the indicator of a set
@@ -48,7 +48,32 @@ wherever the spectrum of `a` avoids the frontier of `Ω`.
 
 public section
 
+open scoped NonUnitalContinuousFunctionalCalculus
+
 namespace TauCeti
+
+section NonUnital
+variable {R A : Type*} {p : A → Prop} [CommSemiring R] [Nontrivial R] [StarRing R] [MetricSpace R]
+  [IsTopologicalSemiring R] [ContinuousStar R] [NonUnitalRing A] [StarRing A] [TopologicalSpace A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [NonUnitalContinuousFunctionalCalculus R A p]
+/-- If `f t` is a star projection at every point `t` of the quasispectrum of `a`, then `cfcₙ f a`
+is a star projection. Over `ℝ` the hypothesis says that `f t` is idempotent, that is, `0` or `1`. -/
+theorem isStarProjection_cfcₙ {f : R → R} {a : A}
+    (hf : ∀ t ∈ quasispectrum R a, IsStarProjection (f t)) : IsStarProjection (cfcₙ f a) := by
+  by_cases h : p a ∧ ContinuousOn f (quasispectrum R a) ∧ f 0 = 0
+  · refine ⟨?_, (cfcₙ_star f a).symm.trans (cfcₙ_congr fun t ht ↦ (hf t ht).isSelfAdjoint)⟩
+    rw [IsIdempotentElem, ← cfcₙ_mul f f a h.2.1 h.2.2 h.2.1 h.2.2]
+    exact cfcₙ_congr fun t ht ↦ (hf t ht).isIdempotentElem
+  · rw [cfcₙ_apply_of_not_and_and a h]; exact .zero A
+/-- The non-unital spectral projector `cfcₙ (Ω.indicator 1) a` is a star projection for every set
+`Ω` of scalars. (When `a` does not satisfy `p`, `0 ∈ Ω`, or the indicator is not continuous on the
+quasispectrum, `cfcₙ` returns the junk value `0`.) -/
+theorem isStarProjection_cfcₙ_indicator (a : A) (Ω : Set R) :
+    IsStarProjection (cfcₙ (Ω.indicator (1 : R → R)) a) :=
+  isStarProjection_cfcₙ fun t _ ↦ by
+    by_cases ht : t ∈ Ω <;> simp [ht, IsStarProjection.zero, IsStarProjection.one]
+end NonUnital
 
 section Semiring
 

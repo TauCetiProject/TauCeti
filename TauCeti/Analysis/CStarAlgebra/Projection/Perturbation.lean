@@ -9,13 +9,10 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import Mathlib.Topology.Connected.Clopen
 import TauCeti.Algebra.Algebra.Unitization
-import TauCeti.Algebra.Star.Projection.Pair
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.InvSqrtOneSub
+import TauCeti.Analysis.CStarAlgebra.Projection.Conjugacy
 import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 import TauCeti.Analysis.CStarAlgebra.Unitary.Connected
 
@@ -41,11 +38,6 @@ stabilization, from `p ⊕ 0` to `0 ⊕ q`.
 
 ## Main statements
 
-* `IsStarProjection.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one`: projections `p` and
-  `q` of a unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a unitary `u` with
-  `‖u - 1‖ ≤ √2 * ‖p - q‖`.
-* `IsStarProjection.exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one`: the conjugating
-  unitary can be chosen in the path component of `1`.
 * `IsStarProjection.exists_star_mul_self_eq_of_norm_sub_lt_one`: in a C⋆-algebra, possibly
   without unit, projections with `‖p - q‖ < 1` are Murray–von Neumann equivalent.
 * `Continuous.exists_joined_one_mul_mul_star_eq`: the values of a continuous family of projections
@@ -68,116 +60,7 @@ stabilization, from `p ⊕ 0` to `0 ⊕ q`.
 
 public section
 
-/-- For `|t| ≤ s < 1`, the defect `2 - 2 * √(1 - t)` is at most `2 * s` in absolute value. -/
-private theorem abs_two_sub_two_mul_sqrt_one_sub_le {t s : ℝ} (hts : |t| ≤ s) (hs : s < 1) :
-    |2 - 2 * √(1 - t)| ≤ 2 * s := by
-  have ht : 0 ≤ 1 - t := by linarith [le_abs_self t]
-  have hsq := Real.sq_sqrt ht
-  have hnn := Real.sqrt_nonneg (1 - t)
-  rw [abs_le] at hts ⊢
-  constructor <;> nlinarith
-
 namespace IsStarProjection
-
-section Unital
-
-variable {A : Type*} [CStarAlgebra A] {p q : A}
-
-section Defect
-
-/-! In this section `h` is a self-adjoint element with `‖h‖ < 1`, so that `1 - h` has the
-inverse square root `cfc (fun t ↦ (√(1 - t))⁻¹) h`. -/
-
-variable {h : A} (hh : IsSelfAdjoint h) (h₁ : ‖h‖ < 1)
-include hh h₁
-
-/-- `‖2 - 2 * (1 - h) ^ (1 / 2)‖ ≤ 2 * ‖h‖`. -/
-private theorem norm_two_sub_two_mul_cfc_sqrt_one_sub_le :
-    ‖2 - 2 * cfc (fun t : ℝ ↦ √(1 - t)) h‖ ≤ 2 * ‖h‖ := by
-  rw [show 2 - 2 * cfc (fun t : ℝ ↦ √(1 - t)) h = cfc (fun t : ℝ ↦ 2 - 2 * √(1 - t)) h by
-    rw [cfc_sub (fun _ : ℝ ↦ (2 : ℝ)) (fun t : ℝ ↦ 2 * √(1 - t)) h, cfc_const_mul 2 _ h,
-      cfc_const (2 : ℝ) h, map_ofNat, two_smul, two_mul]]
-  refine norm_cfc_le (by positivity) fun t ht ↦ ?_
-  rw [Real.norm_eq_abs]
-  exact abs_two_sub_two_mul_sqrt_one_sub_le (spectrum.norm_le_norm_of_mem ht) h₁
-
-end Defect
-
-/-- **Nearby projections are unitarily equivalent.** Star projections `p` and `q` of a unital
-C⋆-algebra with `‖p - q‖ < 1` are conjugate, `u * p * star u = q`, by a unitary `u` with
-`‖u - 1‖ ≤ √2 * ‖p - q‖`. -/
-theorem exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
-    ∃ u ∈ unitary A, u * p * star u = q ∧ ‖u - 1‖ ≤ √2 * ‖p - q‖ := by
-  -- `h = (p - q) ^ 2` commutes with `p` and `q`, and `z` intertwines `p` with `q`.
-  set h := (p - q) ^ 2
-  set z := TauCeti.intertwiner p q with hz
-  have hp' := hp.isIdempotentElem
-  have hq' := hq.isIdempotentElem
-  have hh : IsSelfAdjoint h := (hp.isSelfAdjoint.sub hq.isSelfAdjoint).pow 2
-  have hnorm : ‖h‖ ≤ ‖p - q‖ ^ 2 := norm_pow_le' _ two_pos
-  have h₁ : ‖h‖ < 1 := hnorm.trans_lt (by nlinarith [norm_nonneg (p - q)])
-  have hzz : star z * z = 1 - h := hp.star_intertwiner_mul_intertwiner hq
-  have hzz' : z * star z = 1 - h := hp.intertwiner_mul_star_intertwiner hq
-  have hzp : z * p = q * z := hp'.intertwiner_mul hq'
-  -- `c = (1 - h) ^ (-1 / 2)` commutes with `p`, `q`, `h`, `z` and `star z`.
-  set c := cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h
-  have hc : star c = c := IsSelfAdjoint.cfc.star_eq
-  have hcc : c * c * (1 - h) = 1 := TauCeti.cfc_inv_sqrt_one_sub_mul_self_mul_one_sub hh h₁
-  have hcp : Commute c p := Commute.cfc_real (hp'.commute_sub_sq_left hq').symm _
-  have hcq : Commute c q := Commute.cfc_real (hp'.commute_sub_sq_right hq').symm _
-  have hc₁ : Commute c (1 - h) := (Commute.one_right c).sub_right (Commute.cfc_real (.refl h) _)
-  have hcz : Commute c z := by
-    rw [hz, TauCeti.intertwiner_def]
-    exact (hcq.mul_right hcp).add_right
-      (((Commute.one_right c).sub_right hcq).mul_right ((Commute.one_right c).sub_right hcp))
-  have hcz' : Commute c (star z) := hc ▸ hcz.star_star
-  -- The unitary `u = z * c`, the unitary part of the polar decomposition of `z`.
-  have hu₁ : star (z * c) * (z * c) = 1 := by
-    calc star (z * c) * (z * c) = c * (star z * z) * c := by simp only [star_mul, hc, mul_assoc]
-      _ = c * c * (1 - h) := by rw [hzz, mul_assoc, ← hc₁.eq, ← mul_assoc]
-      _ = 1 := hcc
-  have hu₂ : z * c * star (z * c) = 1 := by
-    calc z * c * star (z * c) = z * ((c * c) * star z) := by simp only [star_mul, hc, mul_assoc]
-      _ = (1 - h) * (c * c) := by rw [(hcz'.mul_left hcz').eq, ← mul_assoc, hzz']
-      _ = 1 := by rw [← (hc₁.mul_left hc₁).eq, hcc]
-  have hconj : z * c * p * star (z * c) = q := by
-    calc z * c * p * star (z * c) = z * p * (c * star (z * c)) := by
-          rw [mul_assoc z c p, hcp.eq, ← mul_assoc z p c, mul_assoc]
-      _ = q * (z * c * star (z * c)) := by rw [hzp, mul_assoc, mul_assoc, ← mul_assoc z c]
-      _ = q := by rw [hu₂, mul_one]
-  -- Its real part is `(1 - h) ^ (1 / 2)`, which gives the norm estimate.
-  have hdefect : star (z * c - 1) * (z * c - 1) = 2 - 2 * cfc (fun t : ℝ ↦ √(1 - t)) h := by
-    have hzs : z + star z = 2 * (1 - h) := hp.intertwiner_add_star_intertwiner hq
-    have hre : z * c + star (z * c) = 2 * cfc (fun t : ℝ ↦ √(1 - t)) h := by
-      rw [star_mul, hc, ← hcz.eq, ← mul_add, hzs, two_mul, mul_add, ← two_mul,
-        TauCeti.cfc_inv_sqrt_one_sub_mul_one_sub hh h₁]
-    rw [← hre, star_sub, star_one, sub_mul, mul_sub, mul_sub, hu₁, mul_one, one_mul, one_mul,
-      ← one_add_one_eq_two]
-    abel
-  have hbound : ‖z * c - 1‖ ^ 2 ≤ 2 * ‖p - q‖ ^ 2 := by
-    rw [sq, ← CStarRing.norm_star_mul_self, hdefect]
-    exact (norm_two_sub_two_mul_cfc_sqrt_one_sub_le hh h₁).trans (by gcongr)
-  refine ⟨z * c, ⟨hu₁, hu₂⟩, hconj, ?_⟩
-  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
-  rwa [mul_pow, Real.sq_sqrt zero_le_two]
-
-/-- **Nearby projections are homotopic through unitaries.** Star projections `p` and `q` of a
-unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a unitary in the path component of `1`. -/
-theorem exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
-    ∃ u : unitary A, Joined 1 u ∧ (u : A) * p * star (u : A) = q := by
-  obtain ⟨u, hu, hupq, hnorm⟩ := hp.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one hq hpq
-  refine ⟨⟨u, hu⟩, Unitary.joined 1 ⟨u, hu⟩ ?_, hupq⟩
-  have hsqrt : √2 < 2 := by
-    rw [Real.sqrt_lt' two_pos]
-    norm_num
-  calc ‖u - ((1 : unitary A) : A)‖ = ‖u - 1‖ := by rw [OneMemClass.coe_one]
-    _ ≤ √2 * ‖p - q‖ := hnorm
-    _ ≤ √2 * 1 := by gcongr
-    _ < 2 := by rwa [mul_one]
-
-end Unital
 
 section NonUnital
 
@@ -191,9 +74,9 @@ theorem exists_star_mul_self_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
   have hp' := hp.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
   have hq' := hq.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
   rw [Unitization.inrNonUnitalStarAlgHom_apply] at hp' hq'
-  obtain ⟨u, hu, hupq, -⟩ := hp'.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one hq'
+  obtain ⟨u, -, hupq, -⟩ := hp'.exists_unitary_conjugate_of_norm_sub_lt_one hq'
     (by rwa [← Unitization.inr_sub, Unitization.norm_inr])
-  exact hp.exists_star_mul_self_eq_of_mem_unitary_unitization hu hupq
+  exact hp.exists_star_mul_self_eq_of_mem_unitary_unitization u.property hupq
 
 end NonUnital
 
@@ -218,9 +101,10 @@ theorem Continuous.exists_joined_one_mul_mul_star_eq {A : Type*} [CStarAlgebra A
     (fun x ↦ ?_) ⟨fun a b c ⟨u, hu, hab⟩ ⟨v, hv, hbc⟩ ↦ ⟨v * u, ?_, ?_⟩⟩ x y
   · filter_upwards [hf.continuousAt.eventually (Metric.ball_mem_nhds (f x) one_pos)] with y hy
     rw [dist_eq_norm] at hy
-    exact ⟨(hfp x).exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one (hfp y)
-      (by rwa [norm_sub_rev]), (hfp y).exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one
-      (hfp x) hy⟩
+    obtain ⟨u, hu, heq, -⟩ :=
+      (hfp x).exists_unitary_conjugate_of_norm_sub_lt_one (hfp y) (by rwa [norm_sub_rev])
+    obtain ⟨v, hv, heq', -⟩ := (hfp y).exists_unitary_conjugate_of_norm_sub_lt_one (hfp x) hy
+    exact ⟨⟨u, hu, heq⟩, ⟨v, hv, heq'⟩⟩
   · simpa using hv.mul hu
   · rw [Submonoid.coe_mul, star_mul, ← hbc, ← hab]
     simp only [mul_assoc]

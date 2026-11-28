@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Idempotent
+public import Mathlib.Algebra.Ring.Subring.Defs
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -40,6 +41,17 @@ def intertwiner {R : Type*} [Ring R] (p q : R) : R :=
 theorem intertwiner_def {R : Type*} [Ring R] (p q : R) :
     intertwiner p q = q * p + (1 - q) * (1 - p) :=
   (rfl)
+
+/-- `TauCeti.intertwiner p q` lies in any unital subring containing `p` and `q`. -/
+theorem intertwiner_mem {R T : Type*} [Ring R] [SetLike T R] [SubringClass T R] {s : T} {p q : R}
+    (hp : p ∈ s) (hq : q ∈ s) : intertwiner p q ∈ s :=
+  add_mem (mul_mem hq hp) (mul_mem (sub_mem (one_mem s) hq) (sub_mem (one_mem s) hp))
+
+/-- Any unital ring homomorphism preserves `TauCeti.intertwiner`. -/
+@[simp]
+theorem map_intertwiner {R S F : Type*} [Ring R] [Ring S] [FunLike F R S] [RingHomClass F R S]
+    (φ : F) (p q : R) : φ (intertwiner p q) = intertwiner (φ p) (φ q) := by
+  simp [intertwiner_def]
 
 end TauCeti
 
@@ -93,5 +105,23 @@ theorem intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
     intertwiner p q * p = q * intertwiner p q := by
   rw [intertwiner_def, add_mul, mul_add, mul_assoc, hp.eq, mul_assoc, hp.one_sub_mul_self,
     ← mul_assoc, hq.eq, ← mul_assoc, hq.mul_one_sub_self, mul_zero, zero_mul]
+
+/-- `intertwiner q p * intertwiner p q = 1 - (p - q) ^ 2`. -/
+theorem intertwiner_swap_mul_self (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
+    intertwiner q p * intertwiner p q = 1 - (p - q) ^ 2 := by
+  unfold intertwiner
+  noncomm_ring [hp.eq, hq.eq, hp.mul_self_mul, hq.mul_self_mul]
+
+/-- `intertwiner p q * intertwiner q p = 1 - (p - q) ^ 2`. -/
+theorem intertwiner_mul_swap (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
+    intertwiner p q * intertwiner q p = 1 - (p - q) ^ 2 := by
+  rw [hq.intertwiner_swap_mul_self hp]
+  noncomm_ring
+
+/-- For idempotents `p, q`, `intertwiner p q` commutes with `1 - (p - q) ^ 2`. -/
+theorem commute_intertwiner_one_sub_sub_sq (hp : IsIdempotentElem p)
+    (hq : IsIdempotentElem q) : Commute (intertwiner p q) (1 - (p - q) ^ 2) := by
+  rw [Commute, SemiconjBy, intertwiner_def]
+  noncomm_ring [hp.eq, hq.eq, hp.mul_self_mul, hq.mul_self_mul]
 
 end IsIdempotentElem

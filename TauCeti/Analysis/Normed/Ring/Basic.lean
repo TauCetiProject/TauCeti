@@ -27,8 +27,9 @@ The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the dista
 `w₀ - w₁ * u` from `w₀` using a bound on the norm of `u`.
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
-(`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
-(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
+(`TauCeti.norm_mul_sub_le_left`), `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
+(`TauCeti.norm_mul_sub_le_right`), and the two-sided compression estimate
+`TauCeti.norm_mul_mul_sub_le`, which compare products through intermediate elements,
 the nonvanishing `1 - x ≠ 0` for `‖x‖ < 1` (`TauCeti.one_sub_ne_zero_of_norm_lt_one`),
 the vanishing of `w₁` when `w₁ = w₁ * w₂` with `‖w₂‖ < 1`
 (`TauCeti.eq_zero_of_eq_mul_of_norm_lt_one`),
@@ -91,6 +92,61 @@ theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c :
     ‖a * e - c‖ ≤ ‖a - b‖ * ‖e‖ + ‖b * e - c‖ := by
   rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
   exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
+/-- Norm bound for the difference of two products:
+`‖a * b - c * d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖`. -/
+theorem norm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b c d : R) :
+    ‖a * b - c * d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖ := by
+  refine (norm_mul_sub_le_right b a c (c * d)).trans (add_le_add le_rfl ?_)
+  rw [← mul_sub]
+  exact norm_mul_le _ _
+
+/-- Two-sided compression estimate:
+`‖p₁ * x * p₂ - x‖ ≤ (‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖) * ‖p₂‖ + ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖`. -/
+theorem norm_mul_mul_sub_le {R : Type*} [NonUnitalSeminormedRing R] (p₁ a₁ x a₂ p₂ : R) :
+    ‖p₁ * x * p₂ - x‖ ≤
+      (‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖) * ‖p₂‖ + ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ := by
+  have h1 : ‖p₁ * x * p₂ - x‖ ≤ ‖p₁ * x - x‖ * ‖p₂‖ + ‖x * p₂ - x‖ :=
+    norm_mul_sub_le_right p₂ (p₁ * x) x x
+  have h2 : ‖p₁ * x - x‖ ≤ ‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖ :=
+    norm_mul_sub_le_right x p₁ a₁ x
+  have h3 : ‖x * p₂ - x‖ ≤ ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ :=
+    norm_mul_sub_le_left x p₂ a₂ x
+  nlinarith [norm_nonneg p₂]
+
+/-- Displacement bound for `(1 - p) x (1 - p)` (orthogonal compression when `p` is a star
+projection) for any contraction `‖p‖ ≤ 1`:
+`‖(x - p * x - x * p + p * x * p) - x‖ ≤ 2 * ‖p * x‖ + ‖x * p‖`. -/
+theorem norm_sub_sub_add_sub_le_of_norm_le_one {R : Type*} [NonUnitalSeminormedRing R] {p : R}
+    (hp : ‖p‖ ≤ 1) (x : R) :
+    ‖(x - p * x - x * p + p * x * p) - x‖ ≤ 2 * ‖p * x‖ + ‖x * p‖ := by
+  have h : (x - p * x - x * p + p * x * p) - x = -(p * x) + -(x * p) + p * x * p := by abel
+  rw [h]
+  refine norm_add₃_le.trans ?_
+  rw [norm_neg, norm_neg]
+  linarith [norm_mul_le_of_le (le_refl ‖p * x‖) hp]
+
+/-- Idempotency defect bound for a perturbation `y` of `x`:
+`‖y * y - y‖ ≤ ‖x * x - x‖ + (‖y‖ + ‖x‖ + 1) * ‖y - x‖`. -/
+theorem norm_mul_self_sub_le_of_norm_sub {R : Type*} [NonUnitalSeminormedRing R] (x y : R) :
+    ‖y * y - y‖ ≤ ‖x * x - x‖ + (‖y‖ + ‖x‖ + 1) * ‖y - x‖ := by
+  have hsq : ‖y * y - x * x‖ ≤ (‖y‖ + ‖x‖) * ‖y - x‖ := by
+    refine (norm_mul_sub_mul_le y y x x).trans_eq ?_
+    rw [mul_comm ‖y - x‖ ‖y‖, add_mul]
+  rw [← sub_add_sub_cancel (y * y) (x * x) y, ← sub_add_sub_cancel (x * x) x y]
+  refine (norm_add_le _ _).trans
+    ((add_le_add hsq (norm_add_le (x * x - x) (x - y))).trans_eq ?_)
+  rw [norm_sub_rev x y]; ring
+
+/-- Idempotency defect bound with norm bounds `‖x‖ ≤ M` and `‖y - x‖ ≤ μ`:
+`‖y * y - y‖ ≤ ‖x * x - x‖ + (2 * M + μ + 1) * μ`. -/
+theorem norm_mul_self_sub_le_of_le {R : Type*} [NonUnitalSeminormedRing R] {x y : R} {M μ : ℝ}
+    (hx : ‖x‖ ≤ M) (hyx : ‖y - x‖ ≤ μ) :
+    ‖y * y - y‖ ≤ ‖x * x - x‖ + (2 * M + μ + 1) * μ := by
+  have hy : ‖y‖ ≤ M + μ := (norm_le_norm_add_norm_sub' y x).trans (add_le_add hx hyx)
+  refine (norm_mul_self_sub_le_of_norm_sub x y).trans (add_le_add le_rfl ?_)
+  exact mul_le_mul (by linarith) hyx (norm_nonneg _)
+    (by linarith [norm_nonneg x, norm_nonneg (y - x)])
 
 /-- Replacing the factors `b` and `d` of `b * d` by `a` and `c` changes the product by at most the
 sum of the two changes, `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ`, when `‖b‖ ≤ 1` and `‖c‖ ≤ 1`.
@@ -412,6 +468,16 @@ theorem eq_one_of_norm_sub_one_lt_one {R : Type*} [NormedRing R] {e : R}
     (he : IsIdempotentElem e) (h : ‖e - 1‖ < 1) : e = 1 :=
   sub_eq_zero.mp <| neg_eq_zero.mp <| by
     simpa only [neg_sub] using he.one_sub.eq_zero_of_norm_lt_one (by rwa [norm_sub_rev])
+
+/-- Quadratic idempotency-defect bound for an element `h` absorbing an idempotent `p` on both
+sides (`p * h = h` and `h * p = h`): `‖h * h - h‖ ≤ ‖h - p‖ ^ 2 + ‖h - p‖`. -/
+theorem norm_mul_self_sub_le_of_mul_eq {R : Type*} [NonUnitalSeminormedRing R] {p h : R}
+    (hp : IsIdempotentElem p) (hph : p * h = h) (hhp : h * p = h) :
+    ‖h * h - h‖ ≤ ‖h - p‖ ^ 2 + ‖h - p‖ := by
+  have heq : h * h - h = (h - p) * (h - p) + (h - p) := by
+    rw [sub_mul, mul_sub, mul_sub, hph, hhp, hp.eq, sub_add_cancel]
+  rw [heq, sq]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
 
 end IsIdempotentElem
 

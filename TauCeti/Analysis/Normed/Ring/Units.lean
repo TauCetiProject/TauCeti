@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.Topology.Algebra.IsOpenUnits
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import TauCeti.Algebra.Ring.Idempotent.Pair
 public import TauCeti.Topology.Algebra.Group.Connected
 public import TauCeti.Topology.Algebra.IsOpenUnits
 import Mathlib.Analysis.Normed.Module.Convex
@@ -32,6 +33,8 @@ The Neumann series also gives explicit bounds: `‖(1 - x)⁻¹‖ ≤ ‖1‖ -
 Mathlib records these inverses only through asymptotic `O`-bounds such as
 `NormedRing.inverse_add_norm`; the explicit constants are needed for inductive constructions
 that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
+For nearby idempotents (`‖p - q‖ < 1`), `IsIdempotentElem.isUnit_intertwiner` shows
+Kato's intertwiner is a unit.
 
 The Jacobson radical is closed, as an intersection of maximal left ideals, using
 Mathlib's `Ring.jacobson_eq_sInf_isMaximal` and `Ideal.IsMaximal.isClosed`.
@@ -154,6 +157,18 @@ theorem isClosed_jacobson (A : Type*) [NormedRing A] [HasSummableGeomSeries A] :
     exact Ideal.IsMaximal.isClosed
 
 end TauCeti.Ring
+
+/-- In a normed ring with summable geometric series, `TauCeti.intertwiner p q` is
+invertible for idempotents `p, q` with `‖p - q‖ < 1`. -/
+theorem IsIdempotentElem.isUnit_intertwiner {R : Type*} [NormedRing R]
+    [HasSummableGeomSeries R] {p q : R} (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
+    (h : ‖p - q‖ < 1) : IsUnit (TauCeti.intertwiner p q) := by
+  have hcomm : Commute (TauCeti.intertwiner p q) (TauCeti.intertwiner q p) :=
+    (hp.intertwiner_mul_swap hq).trans (hp.intertwiner_swap_mul_self hq).symm
+  have hsq : ‖(p - q) ^ 2‖ < 1 := by
+    rw [sq]; exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p - q)])
+  exact (hcomm.isUnit_mul_iff.mp <| hp.intertwiner_mul_swap hq ▸
+    isUnit_one_sub_of_norm_lt_one hsq).1
 
 namespace TauCeti
 
