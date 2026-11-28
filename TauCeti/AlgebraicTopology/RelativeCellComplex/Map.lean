@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicTopology.RelativeCellComplex.Basic
 public import TauCeti.AlgebraicTopology.RelativeCellComplex.AttachCells
-public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Preorder
 
 /-!
 # Functoriality and reindexing of relative cell complexes
@@ -48,6 +47,10 @@ namespace HomotopicalAlgebra
 
 namespace RelativeCellComplex
 
+private lemma eq_eqToHom_comp {C : Type*} [Category* C] {X Y : C} (f : X ⟶ Y) (h : X = X) :
+    f = eqToHom h ≫ f := by
+  simp
+
 variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
   {J : Type w'} [LinearOrder J] [OrderBot J] [SuccOrder J] [WellFoundedLT J]
   {α : J → Type t} {A B : (j : J) → α j → C}
@@ -74,15 +77,18 @@ noncomputable def map :
 lemma map_F : (c.map F).F = c.F ⋙ F := by
   simp [map]
 
+private lemma map_incl_app_direct (j : J) :
+    (c.map F).incl.app j = F.map (c.incl.app j) :=
+  Category.comp_id _
+
 /-- The `j`-th stage inclusion of `c.map F` into `F.obj Y` is `F.map (c.incl.app j)`, aligned
 along `c.map_F F`. -/
 @[simp, reassoc]
 lemma map_incl_app (j : J) :
     (c.map F).incl.app j =
       eqToHom (congrArg (fun G ↦ G.obj j) (c.map_F F)) ≫ F.map (c.incl.app j) :=
-  have h : (c.map F).incl.app j = F.map (c.incl.app j) := Category.comp_id _
-  h.trans ((Category.id_comp _).symm.trans
-    (congrArg (· ≫ F.map (c.incl.app j)) (eqToHom_refl (F.obj (c.F.obj j)) rfl).symm))
+  -- `(c.map F).F` reduces definitionally to `c.F ⋙ F` via `@[expose]` on `map`.
+  (c.map_incl_app_direct F j).trans (eq_eqToHom_comp _ _)
 
 /-- The initial stage isomorphism of `c.map F` is `F.mapIso c.isoBot`, aligned along
 `c.map_F F`. -/
@@ -90,8 +96,8 @@ lemma map_incl_app (j : J) :
 lemma map_isoBot :
     (c.map F).isoBot =
       eqToIso (congrArg (fun G ↦ G.obj ⊥) (c.map_F F)) ≪≫ F.mapIso c.isoBot :=
-  Iso.ext <| (Category.id_comp _).symm.trans
-    (congrArg (· ≫ F.map c.isoBot.hom) (eqToHom_refl (F.obj (c.F.obj ⊥)) rfl).symm)
+  -- `(c.map F).isoBot.hom` and `(c.map F).F.obj ⊥` reduce definitionally via `@[expose]` on `map`.
+  Iso.ext (eq_eqToHom_comp _ rfl)
 
 /-- The attachment indices at step `j` of `c.map F` identify with those of `c`. -/
 def mapAttachCellsEquiv (j : J) (hj : ¬IsMax j) :
@@ -134,10 +140,6 @@ lemma mapCellsEquiv_mk (j : J) (hj : ¬IsMax j) (k : ((c.map F).attachCells j hj
 lemma mapCellsEquiv_symm_mk (j : J) (hj : ¬IsMax j) (k : (c.attachCells j hj).ι) :
     (c.mapCellsEquiv F).symm ⟨j, hj, k⟩ = ⟨j, hj, (c.mapAttachCellsEquiv F j hj).symm k⟩ := by
   rfl
-
-private lemma map_incl_app_direct (j : J) :
-    (c.map F).incl.app j = F.map (c.incl.app j) :=
-  Category.comp_id _
 
 private lemma map_attachCells_cell (j : J) (hj : ¬IsMax j)
     (k : ((c.map F).attachCells j hj).ι) :
@@ -189,8 +191,8 @@ lemma ofArrowIso_F : (c.ofArrowIso e).F = c.F := by
 lemma ofArrowIso_incl_app (j : J) :
     (c.ofArrowIso e).incl.app j =
       eqToHom (congrArg (fun G ↦ G.obj j) (c.ofArrowIso_F e)) ≫ c.incl.app j ≫ e.hom.right :=
-  (Category.id_comp _).symm.trans
-    (congrArg (· ≫ c.incl.app j ≫ e.hom.right) (eqToHom_refl (c.F.obj j) rfl).symm)
+  -- `(c.ofArrowIso e).F` and `.incl` reduce definitionally via `@[expose]` on `ofArrowIso`.
+  eq_eqToHom_comp _ _
 
 /-- The initial stage isomorphism of `c.ofArrowIso e` is `c.isoBot ≪≫ Arrow.leftFunc.mapIso e`,
 aligned along `c.ofArrowIso_F e`. -/
@@ -199,9 +201,8 @@ lemma ofArrowIso_isoBot :
     (c.ofArrowIso e).isoBot =
       eqToIso (congrArg (fun G ↦ G.obj ⊥) (c.ofArrowIso_F e)) ≪≫
         c.isoBot ≪≫ Arrow.leftFunc.mapIso e :=
-  Iso.ext <| (Category.id_comp _).symm.trans
-    (congrArg (· ≫ c.isoBot.hom ≫ (Arrow.leftFunc.mapIso e).hom)
-      (eqToHom_refl (c.F.obj ⊥) rfl).symm)
+  -- `(c.ofArrowIso e).isoBot.hom` and `.F.obj ⊥` reduce definitionally via `ofArrowIso`.
+  Iso.ext (eq_eqToHom_comp _ rfl)
 
 /-- The attachment indices at step `j` of `c.ofArrowIso e` identify with those of `c`. -/
 def ofArrowIsoAttachCellsEquiv (j : J) (hj : ¬IsMax j) :
@@ -262,14 +263,13 @@ lemma ofArrowIso_cells_ι (γ : (c.ofArrowIso e).Cells) :
         (c.ofArrowIsoCellsEquiv e γ).ι ≫ e.hom.right := by
   cases γ with
   | mk j hj k =>
+    -- Unfolding `ofArrowIso` reduces `(⟨j, hj, k⟩ : (c.ofArrowIso e).Cells).ι` to
+    -- `(c.attachCells j hj).cell k ≫ c.incl.app (Order.succ j) ≫ e.hom.right`, and
+    -- `ofArrowIsoCellsEquiv` is definitionally `Equiv.refl` on `k`.
     have h : (⟨j, hj, k⟩ : (c.ofArrowIso e).Cells).ι =
         (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).ι ≫ e.hom.right :=
       (Category.assoc ((c.attachCells j hj).cell k) (c.incl.app (Order.succ j)) e.hom.right).symm
-    exact h.trans
-      ((Category.id_comp ((c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).ι ≫ e.hom.right)).symm.trans
-        (congrArg (· ≫ (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).ι ≫ e.hom.right)
-          (eqToHom_refl (B (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).j
-            (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).i) rfl).symm))
+    exact h.trans (eq_eqToHom_comp _ _)
 
 end OfArrowIso
 
@@ -299,8 +299,8 @@ lemma reindexCellTypes_incl_app (j : J) :
     (c.reindexCellTypes basicCell' a ha).incl.app j =
       eqToHom (congrArg (fun G ↦ G.obj j) (c.reindexCellTypes_F basicCell' a ha)) ≫
         c.incl.app j :=
-  (Category.id_comp _).symm.trans
-    (congrArg (· ≫ c.incl.app j) (eqToHom_refl (c.F.obj j) rfl).symm)
+  -- `(c.reindexCellTypes basicCell' a ha).F` and `.incl` reduce definitionally to `c.F` & `c.incl`.
+  eq_eqToHom_comp _ _
 
 /-- The initial stage isomorphism of `c.reindexCellTypes basicCell' a ha` is `c.isoBot`, aligned
 along `c.reindexCellTypes_F`. -/
@@ -309,8 +309,8 @@ lemma reindexCellTypes_isoBot :
     (c.reindexCellTypes basicCell' a ha).isoBot =
       eqToIso (congrArg (fun G ↦ G.obj ⊥) (c.reindexCellTypes_F basicCell' a ha)) ≪≫
         c.isoBot :=
-  Iso.ext <| (Category.id_comp _).symm.trans
-    (congrArg (· ≫ c.isoBot.hom) (eqToHom_refl (c.F.obj ⊥) rfl).symm)
+  -- `(c.reindexCellTypes basicCell' a ha).isoBot` and `.F.obj ⊥` reduce definitionally.
+  Iso.ext (eq_eqToHom_comp _ rfl)
 
 /-- The attachment indices at step `j` of `c.reindexCellTypes basicCell' a ha` identify with those
 of `c`. -/
@@ -393,6 +393,8 @@ lemma reindexCellTypes_cells_ι (γ : (c.reindexCellTypes basicCell' a ha).Cells
           (c.reindexCellTypesCellsEquiv basicCell' a ha γ).ι := by
   cases γ with
   | mk j hj k =>
+    -- Unfolding `reindexCellTypes` identifies the stage inclusion `c.incl.app (Order.succ j)`
+    -- and the target objects `B'` with those of `c.reindexCellTypesCellsEquiv`.
     have h : (⟨j, hj, k⟩ : (c.reindexCellTypes basicCell' a ha).Cells).ι =
         Arrow.rightFunc.map
           (ha j ((c.attachCells j hj).π
@@ -401,15 +403,7 @@ lemma reindexCellTypes_cells_ι (γ : (c.reindexCellTypes basicCell' a ha).Cells
       (congrArg (· ≫ c.incl.app (Order.succ j))
         (c.reindexCellTypes_attachCells_cell basicCell' a ha j hj k)).trans
         (Category.assoc _ _ _)
-    exact h.trans ((Category.id_comp _).symm.trans
-      (congrArg (· ≫ Arrow.rightFunc.map
-          (ha (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).j
-            (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).i).inv ≫
-          (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).ι)
-        (eqToHom_refl
-          (B' (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).j
-            (a (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).j
-              (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).i)) rfl).symm))
+    exact h.trans (eq_eqToHom_comp _ _)
 
 end ReindexCellTypes
 

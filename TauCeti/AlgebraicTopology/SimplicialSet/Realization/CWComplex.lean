@@ -13,6 +13,7 @@ public import TauCeti.Topology.CWComplex.Abstract.Classical
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Map
 import Mathlib.Data.Set.PowersetCard
+import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Preorder
 import TauCeti.Topology.CWComplex.Classical.Subcomplex
 
 /-!
@@ -131,7 +132,11 @@ lemma toTopRelativeCWComplexStageIso_hom_comp {X Y : SSet.{u}} (i : X ⟶ Y) [Mo
   dsimp only [toTopRelativeCWComplex]
   rw [RelativeCellComplex.reindexCellTypes_incl_app, RelativeCellComplex.map_incl_app,
     eqToHom_trans_assoc, relativeCellComplexOfMono_incl_app]
-  congr 1
+  dsimp only [toTopRelativeCWComplexStageIso]
+  -- `(relativeCellComplexOfMono i).F` is definitionally `(skeletonOfMono i).functor ⋙`
+  -- `Subcomplex.toSSetFunctor`, `(eqToIso _).hom` is definitionally `eqToHom _`, and
+  -- `(skeletonOfMono i).functor.obj n` is definitionally `skeletonOfMono i n`.
+  rfl
 
 /-- The stage isomorphism `SSet.toTopRelativeCWComplexStageIso` intertwines the realization of
 `(SSet.skeletonOfMono i n).ι` with the stage inclusion of `SSet.toTopRelativeCWComplex i`. -/
@@ -269,6 +274,16 @@ def toTopCWComplexCellEquiv (X : SSet.{u}) (n : ℕ) :
       (toTopBotArrowIso X) n (not_isMax n)).trans
     (toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n)
 
+@[simp]
+private lemma toTopCWComplexCellEquiv_apply (X : SSet.{u}) (n : ℕ)
+    (c : ((toTopCWComplex X).attachCells n (not_isMax n)).ι) :
+    toTopCWComplexCellEquiv X n c =
+      toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n
+        (RelativeCellComplex.ofArrowIsoAttachCellsEquiv
+          (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
+          (toTopBotArrowIso X) n (not_isMax n) c) :=
+  rfl
+
 /-- The inclusion of an `n`-cell of `toTopCWComplex X` is the classifying map of its
 nondegenerate simplex, precomposed with `(toTopStdSimplexIsoDisk n).inv`. -/
 lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
@@ -276,6 +291,7 @@ lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
     (⟨n, not_isMax n, c⟩ : (toTopCWComplex X).Cells).ι =
       (toTopStdSimplexIsoDisk.{u} n).inv ≫
         toTop.map (yonedaEquiv.symm (toTopCWComplexCellEquiv X n c).simplex) := by
+  rw [toTopCWComplexCellEquiv_apply]
   dsimp only [toTopCWComplex] at c ⊢
   rw [RelativeCellComplex.ofArrowIso_cells_ι]
   have hstep :
@@ -287,10 +303,12 @@ lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
         (hp : TopCat.disk.{u} n = TopCat.disk.{u} γ.j),
         eqToHom hp ≫ γ.ι ≫ (toTopBotArrowIso X).hom.right =
           (toTopStdSimplexIsoDisk.{u} n).inv ≫
-            toTop.map (yonedaEquiv.symm (toTopCWComplexCellEquiv X n c).simplex) := by
+            toTop.map (yonedaEquiv.symm (toTopRelativeCWComplexCellEquiv (Subcomplex.ι ⊥) n
+              (RelativeCellComplex.ofArrowIsoAttachCellsEquiv
+                (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
+                (toTopBotArrowIso X) n (not_isMax n) c)).simplex) := by
     rintro _ rfl _
     simp [toTopRelativeCWComplex_cells_ι]
-    rfl
   exact hstep _ (RelativeCellComplex.ofArrowIsoCellsEquiv_mk _ _ _ _ _) _
 
 /-- The classical CW complex structure on the geometric realization `|X|` of a simplicial set `X`

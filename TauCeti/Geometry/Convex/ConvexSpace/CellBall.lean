@@ -77,9 +77,21 @@ namespace Convexity.StdSimplex
 def barycenterOffset {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) (i : Fin (n + 1)) : ℝ :=
   y.weights i - 1 / (n + 1 : ℝ)
 
+/-- Evaluation of `Convexity.StdSimplex.barycenterOffset` at coordinate `i`. -/
+@[simp]
+lemma barycenterOffset_apply {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) (i : Fin (n + 1)) :
+    y.barycenterOffset i = y.weights i - 1 / (n + 1 : ℝ) :=
+  (rfl)
+
 /-- The last `n` components of the offset of a simplex point from the barycenter. -/
 def barycenterOffsetTail {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) (j : Fin n) : ℝ :=
   y.barycenterOffset j.succ
+
+/-- Evaluation of `Convexity.StdSimplex.barycenterOffsetTail` at coordinate `j`. -/
+@[simp]
+lemma barycenterOffsetTail_apply {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) (j : Fin n) :
+    y.barycenterOffsetTail j = y.barycenterOffset j.succ :=
+  (rfl)
 
 end Convexity.StdSimplex
 
@@ -102,11 +114,15 @@ lemma tangentVec_succ_coord {n : ℕ} (z : Fin n → ℝ) (j : Fin n) :
     tangentVec z j.succ = z j :=
   (rfl)
 
-private lemma sum_tangentVec {n : ℕ} (z : Fin n → ℝ) :
+/-- The coordinates of `tangentVec z` sum to zero. -/
+@[simp]
+lemma sum_tangentVec {n : ℕ} (z : Fin n → ℝ) :
     ∑ i, tangentVec z i = 0 := by
   simp [tangentVec, Fin.sum_univ_succ]
 
-private lemma tangentVec_eq_zero_iff {n : ℕ} (z : Fin n → ℝ) :
+/-- `tangentVec z` vanishes if and only if `z = 0`. -/
+@[simp]
+lemma tangentVec_eq_zero_iff {n : ℕ} (z : Fin n → ℝ) :
     tangentVec z = 0 ↔ z = 0 := by
   constructor
   · intro h
@@ -120,7 +136,8 @@ private lemma tangentVec_eq_zero_iff {n : ℕ} (z : Fin n → ℝ) :
 lemma tangentVec_zero {n : ℕ} : tangentVec (0 : Fin n → ℝ) = 0 :=
   (tangentVec_eq_zero_iff 0).2 rfl
 
-private lemma tangentVec_smul {n : ℕ} (t : ℝ) (z : Fin n → ℝ) :
+/-- `tangentVec` commutes with scalar multiplication. -/
+lemma tangentVec_smul {n : ℕ} (t : ℝ) (z : Fin n → ℝ) :
     tangentVec (t • z) = t • tangentVec z := by
   ext i
   refine Fin.cases ?_ ?_ i
@@ -133,7 +150,13 @@ and strictly positive precisely when `v ≠ 0`. -/
 def maxOfNeg {n : ℕ} (v : Fin (n + 1) → ℝ) : ℝ :=
   Finset.univ.sup' Finset.univ_nonempty fun i ↦ -v i
 
-private lemma maxOfNeg_nonneg_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ} (hv : ∑ i, v i = 0) :
+/-- Unfolding formula for `maxOfNeg`. -/
+lemma maxOfNeg_def {n : ℕ} (v : Fin (n + 1) → ℝ) :
+    maxOfNeg v = Finset.univ.sup' Finset.univ_nonempty fun i ↦ -v i :=
+  (rfl)
+
+/-- For a zero-sum vector `v`, `maxOfNeg v` is nonnegative. -/
+lemma maxOfNeg_nonneg_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ} (hv : ∑ i, v i = 0) :
     0 ≤ maxOfNeg v := by
   by_contra h
   push Not at h
@@ -143,7 +166,8 @@ private lemma maxOfNeg_nonneg_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ}
   have hsum : 0 < ∑ i : Fin (n + 1), v i := Finset.sum_pos hpos Finset.univ_nonempty
   linarith
 
-private lemma maxOfNeg_pos_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ}
+/-- For a nonzero zero-sum vector `v`, `maxOfNeg v` is strictly positive. -/
+lemma maxOfNeg_pos_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ}
     (hv : ∑ i, v i = 0) (hne : v ≠ 0) : 0 < maxOfNeg v := by
   refine lt_of_le_of_ne (maxOfNeg_nonneg_of_sum_eq_zero hv) (fun h0 ↦ hne ?_)
   have hnonneg : ∀ i ∈ Finset.univ, 0 ≤ v i := fun i hi ↦ by
@@ -237,7 +261,9 @@ private lemma gauge_targetSet (n : ℕ) (z : Fin n → ℝ) :
         rwa [inv_mul_le_iff₀ hr, mul_one_div]
     rw [hset, csInf_Ici]
 
-private lemma tangentVec_barycenterOffsetTail {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) :
+/-- Applying `tangentVec` to `y.barycenterOffsetTail` recovers `y.barycenterOffset`. -/
+@[simp]
+lemma tangentVec_barycenterOffsetTail {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) :
     tangentVec y.barycenterOffsetTail = y.barycenterOffset := by
   ext i
   refine Fin.cases ?_ ?_ i

@@ -106,6 +106,10 @@ lemma map_π (F : C ⥤ D)
     (c.map F).π i = c.π (c.mapEquiv F i) :=
   (rfl)
 
+private lemma eq_eqToHom_comp {C : Type*} [Category* C] {X Y : C} (f : X ⟶ Y) (h : X = X) :
+    f = eqToHom h ≫ f := by
+  simp
+
 private lemma map_cofan₂_inj (F : C ⥤ D)
     [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
     [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
@@ -113,9 +117,9 @@ private lemma map_cofan₂_inj (F : C ⥤ D)
     (c.map F).cofan₂.inj i =
       eqToHom (congrArg (fun a ↦ F.obj (B a)) (c.map_π F i)) ≫
         F.map (c.cofan₂.inj (c.mapEquiv F i)) :=
-  (Category.id_comp _).symm.trans
-    (congrArg (· ≫ F.map (c.cofan₂.inj (c.mapEquiv F i)))
-      (eqToHom_refl (F.obj (B (c.π (c.mapEquiv F i)))) rfl).symm)
+  -- Unfolding `map` and `mapEquiv` identifies `(c.map F).cofan₂.inj i` with
+  -- `F.map (c.cofan₂.inj (c.mapEquiv F i))` and makes `eqToHom`'s endpoints definitionally equal.
+  eq_eqToHom_comp _ _
 
 private lemma map_g₂ (F : C ⥤ D)
     [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
