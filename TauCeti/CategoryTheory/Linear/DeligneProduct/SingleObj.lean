@@ -45,6 +45,12 @@ private theorem singleObj_homEquiv_comp {X Y Z : LinearTensor R (SingleObj A) (S
     | add g g' h h' => simp only [Preadditive.comp_add, map_add, add_mul, h, h']
   | add f f' h h' => simp only [Preadditive.add_comp, map_add, mul_add, h, h']
 
+private theorem singleObj_homEquiv_id (X : LinearTensor R (SingleObj A) (SingleObj B)) :
+    homEquiv X X (𝟙 X) = (1 : A ⊗[R] B) := by
+  rcases X with ⟨X₁, X₂⟩
+  rw [← tmul_id_id (k := R) X₁ X₂, homEquiv_tmul, SingleObj.id_as_one A X₁,
+    SingleObj.id_as_one B X₂, Algebra.TensorProduct.one_def]
+
 variable (R A B) in
 /-- The `R`-linear equivalence between the tensor of the one-object categories of `A` and
 `B` and the one-object category of their tensor product algebra. -/
@@ -54,24 +60,27 @@ noncomputable def singleObjEquiv :
     { obj _ := SingleObj.star _
       map {X Y} f := homEquiv X Y f
       map_id X := by
-        rcases X with ⟨X₁, X₂⟩
-        rw [← tmul_id_id (k := R) X₁ X₂, homEquiv_tmul, SingleObj.id_as_one A X₁,
-          SingleObj.id_as_one B X₂, SingleObj.id_as_one (A ⊗[R] B),
-          Algebra.TensorProduct.one_def]
+        rw [singleObj_homEquiv_id, SingleObj.id_as_one]
       map_comp f g := singleObj_homEquiv_comp f g }
   inverse :=
     { obj _ := ⟨SingleObj.star A, SingleObj.star B⟩
       map f := (homEquiv _ _).symm f
       map_id X := by
-        rw [SingleObj.id_as_one (A ⊗[R] B) X, Algebra.TensorProduct.one_def,
-          ← SingleObj.id_as_one A (SingleObj.star A), ← SingleObj.id_as_one B (SingleObj.star B),
-          homEquiv_symm_tmul, tmul_id_id]
+        apply (homEquiv _ _).injective
+        rw [LinearEquiv.apply_symm_apply, singleObj_homEquiv_id, SingleObj.id_as_one]
       map_comp f g := by
         apply (homEquiv _ _).injective
         rw [singleObj_homEquiv_comp]
         simp only [LinearEquiv.apply_symm_apply, SingleObj.comp_as_mul] }
-  unitIso := Iso.refl _
-  counitIso := Iso.refl _
+  unitIso := NatIso.ofComponents (fun X ↦ Iso.refl X) fun {X Y} f ↦ by
+    -- Align the object indices so the inverse law sees the same `homEquiv X Y` in both maps.
+    change f ≫ 𝟙 Y = 𝟙 X ≫ (homEquiv X Y).symm (homEquiv X Y f)
+    simp only [Category.comp_id, Category.id_comp, LinearEquiv.symm_apply_apply]
+  counitIso := NatIso.ofComponents (fun X ↦ Iso.refl X) fun {X Y} f ↦ by
+    let P : LinearTensor R (SingleObj A) (SingleObj B) := ⟨SingleObj.star A, SingleObj.star B⟩
+    -- Reduce the composite map so the inverse law sees both applications at `P`.
+    change homEquiv P P ((homEquiv P P).symm f) ≫ 𝟙 Y = 𝟙 X ≫ f
+    simp only [Category.comp_id, Category.id_comp, LinearEquiv.apply_symm_apply]
 
 /-- The forward comparison sends every object to the unique object of the tensor product algebra. -/
 @[simp]
@@ -95,14 +104,16 @@ theorem singleObjEquiv_inverse_map {X Y : SingleObj (A ⊗[R] B)} (f : X ⟶ Y) 
 @[simp]
 theorem singleObjEquiv_functor_map_tmul {X X' : SingleObj A} {Y Y' : SingleObj B}
     (a : X ⟶ X') (b : Y ⟶ Y') :
-    (singleObjEquiv R A B).functor.map (tmul a b) = a ⊗ₜ[R] b := (rfl)
+    (singleObjEquiv R A B).functor.map (tmul a b) = a ⊗ₜ[R] b := by
+  rw [singleObjEquiv_functor_map, homEquiv_tmul]
 
 /-- The inverse comparison sends a pure tensor in the algebra to the pure tensor of morphisms. -/
 @[simp]
 theorem singleObjEquiv_inverse_map_tmul {X Y : SingleObj (A ⊗[R] B)} (a : A) (b : B) :
     (singleObjEquiv R A B).inverse.map (X := X) (Y := Y) (a ⊗ₜ[R] b) =
       tmul (X := SingleObj.star A) (X' := SingleObj.star A)
-        (Y := SingleObj.star B) (Y' := SingleObj.star B) a b := (rfl)
+        (Y := SingleObj.star B) (Y' := SingleObj.star B) a b := by
+  rw [singleObjEquiv_inverse_map, homEquiv_symm_tmul]
 
 /-- The forward comparison is additive on morphisms. -/
 instance singleObjEquiv_additive : (singleObjEquiv R A B).functor.Additive where
