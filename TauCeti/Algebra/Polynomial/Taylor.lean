@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
+import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Polynomial.LinearFactor
 
 /-!
@@ -69,6 +70,8 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   nonzero coefficient.
 * `Polynomial.eval_hasseDeriv_rootMultiplicity_ne_zero`: for `p ≠ 0`, the Hasse derivative of
   order `p.rootMultiplicity r` does not vanish at `r`.
+* `Polynomial.eval_iterate_derivative_eq_factorial_mul`: `(derivative^[k] f).eval a` is `k!`
+  times `(hasseDeriv k f).eval a`.
 * `Polynomial.X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero`,
   `Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero`: `(X - r) ^ n` divides `p`
   (and for `p ≠ 0`, `n ≤ p.rootMultiplicity r`) if and only if the Hasse derivatives of `p` of
@@ -78,6 +81,11 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   and those of order less than `m` vanish on multiples of `g ^ m` when `g(ζ) = 0`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`, over any
   ring.
+* `Polynomial.X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero`: ordinary-derivative
+  form of the divisibility criterion over a commutative ring when the relevant factorials are left
+  regular.
+* `Polynomial.exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow`: Taylor expansion of `X ^ p - C b` at
+  `a` modulo `p` when `p ∣ a ^ p - b`.
 * `Polynomial.taylor_comp_C_mul_X`, `Polynomial.eval_hasseDeriv_comp_C_mul_X`: the Taylor
   expansion and the Hasse derivatives of a rescaled polynomial `p(a X)`.
 * `Polynomial.nextCoeff_taylor`: the subleading coefficient of the Taylor expansion of `p` at `r`
@@ -94,6 +102,11 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
 public section
 
 namespace Polynomial
+
+/-- Evaluating `derivative^[k] f` at `a` gives `k!` times `(hasseDeriv k f).eval a`. -/
+theorem eval_iterate_derivative_eq_factorial_mul {R : Type*} [Semiring R] (k : ℕ) (f : R[X])
+    (a : R) : (derivative^[k] f).eval a = (k.factorial : R) * (hasseDeriv k f).eval a := by
+  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul]
 
 /-- The coefficients of the Taylor expansion `p(X + r)` as finite sums: the coefficient of `X ^ m`
 is `∑ₖ (k + m).choose m • (p.coeff (k + m) * r ^ k)`, summed over any range of indices `k`
@@ -260,11 +273,36 @@ theorem X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero {p : R[X]} {r : R} {n
     (X - C r) ^ n ∣ p ↔ ∀ i < n, (hasseDeriv i p).eval r = 0 := by
   rw [← Ideal.mem_span_singleton, mem_span_X_sub_C_pow_iff_forall_eval_hasseDeriv_eq_zero]
 
+/-- Over a commutative ring, if every factorial `(i ! : R)` for `i < n` is left regular, then
+`(X - C r) ^ n` divides `p` if and only if every ordinary derivative of `p` of order less than `n`
+vanishes at `r`. -/
+theorem X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero {p : R[X]} {r : R} {n : ℕ}
+    (hreg : ∀ i < n, IsLeftRegular (i.factorial : R)) :
+    (X - C r) ^ n ∣ p ↔ ∀ i < n, (derivative^[i] p).eval r = 0 := by
+  rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
+  exact forall₂_congr fun i hi ↦ by
+    rw [eval_iterate_derivative_eq_factorial_mul, (hreg i hi).mul_left_eq_zero_iff]
+
 /-- For `p ≠ 0`, `r` has multiplicity at least `n` as a root of `p` if and only if every Hasse
 derivative of `p` of order less than `n` vanishes at `r`. -/
 theorem le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero {p : R[X]} (hp : p ≠ 0) {r : R}
     {n : ℕ} : n ≤ p.rootMultiplicity r ↔ ∀ i < n, (hasseDeriv i p).eval r = 0 := by
   rw [le_rootMultiplicity_iff hp, X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
+
+/-- For a prime `p` and elements `a, b : R` of a commutative ring with `(p : R) ∣ a ^ p - b`,
+the Taylor expansion `(X + C a) ^ p - C b` agrees with `X ^ p` modulo `C (p : R)`. -/
+theorem exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow {p : ℕ} (hp : p.Prime) {a b : R}
+    (hab : (p : R) ∣ a ^ p - b) :
+    ∃ A : R[X], taylor a (X ^ p - C b) = C (p : R) * A + X ^ p := by
+  obtain ⟨γ, hγ⟩ := hab
+  obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp X (C a)
+  refine ⟨X * C a * r + C γ, ?_⟩
+  have hcb : C (a ^ p) - C b = C (p : R) * C γ := by
+    rw [← C_sub, hγ, C_mul, C_eq_natCast]
+  rw [map_sub, taylor_X_pow, taylor_C, hr, ← C_pow]
+  calc X ^ p + C (a ^ p) + (p : R[X]) * X * C a * r - C b
+      = X ^ p + (p : R[X]) * X * C a * r + (C (a ^ p) - C b) := by ring
+    _ = C (p : R) * (X * C a * r + C γ) + X ^ p := by rw [hcb, C_eq_natCast]; ring
 
 end Polynomial
 

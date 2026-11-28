@@ -27,6 +27,8 @@ This file also provides coefficient and natural-degree formulas for `Bivariate.s
   `equivMvPolynomial R F` from outer and coefficient natural-degree bounds.
 * `Polynomial.coeff_coeff_aeval_C_X_add_Y`: the coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is
   `(a + b).choose b * f_{a+b}`.
+* `Polynomial.eval_iterate_derivative_map_monomial_monomial`: the `j`-th outer derivative of
+  `a * z' ^ s * z ^ r` evaluated at `(z, z')`.
 * `Polynomial.coeff_coeff_swap`: coefficients of `Bivariate.swap P` swap indices.
 * `Polynomial.natDegree_swap_le_iff`: natural degree of `Bivariate.swap P` bounds the coefficient
   natural degrees.
@@ -122,6 +124,19 @@ theorem coeff_coeff_aeval_C_X_add_Y {R : Type*} [CommSemiring R] (f : R[X]) (a b
     rw [taylor_apply, comp, eval₂_map, aeval_def, add_comm,
       IsScalarTower.algebraMap_eq R R[X] R[X][X], algebraMap_eq, algebraMap_eq]
   rw [h, taylor_coeff, hasseDeriv_map, eval_map, eval₂_C_X, hasseDeriv_coeff]
+
+/-- Evaluation of the `j`-th outer derivative of the bivariate monomial `a * z' ^ s * z ^ r` over
+any commutative semiring. -/
+theorem eval_iterate_derivative_map_monomial_monomial {A : Type*} [CommSemiring A]
+    (a : A) (r s j : ℕ) (z z' : A) :
+    (Polynomial.derivative^[j]
+      ((Polynomial.monomial r (Polynomial.monomial s a)).map
+        (Polynomial.evalRingHom z'))).eval z =
+      a * z' ^ s * (r.descFactorial j : A) * z ^ (r - j) := by
+  simp only [← C_mul_X_pow_eq_monomial, Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow,
+    Polynomial.map_X, coe_evalRingHom, iterate_derivative_C_mul, iterate_derivative_X_pow_eq_C_mul,
+    eval_mul, eval_C, eval_pow, eval_X, C_eq_natCast, eval_natCast]
+  ring
 
 /-- Swapping the two variables of a bivariate polynomial transposes its coefficient indices. -/
 @[simp]

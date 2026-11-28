@@ -120,6 +120,7 @@ dividing by a natural number `k`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / 
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
+* `Real.one_le_sqrt_natAbs`: `1 ≤ √d.natAbs` for any nonzero integer `d`.
 * `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
   its square root does.
 * `Nat.floor_sqrt_div_natCast`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)` for real `x` and natural `k`.
@@ -150,6 +151,10 @@ adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), fi
 public section
 
 namespace Real
+
+/-- For any nonzero integer `d`, `1 ≤ √d.natAbs`. -/
+theorem one_le_sqrt_natAbs {d : ℤ} (hd : d ≠ 0) : (1 : ℝ) ≤ √d.natAbs :=
+  one_le_sqrt.mpr (by exact_mod_cast Int.natAbs_pos.mpr hd)
 
 /-- For nonnegative `x`, `y`, the difference of squares of `√x` and `√y` in absolute value:
 `|√x - √y| (√x + √y) = |x - y|`. -/

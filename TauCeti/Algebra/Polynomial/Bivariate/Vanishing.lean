@@ -263,11 +263,9 @@ theorem X_sub_C_pow_dvd_map_evalRingHom_iff_forall_evalEval_iterate_derivative_e
     {P : K[X][X]} {x y : K} {k : ℕ} :
     (X - C x) ^ k ∣ P.map (evalRingHom y) ↔
       ∀ i < k, (derivative^[i] P).evalEval y x = 0 := by
-  rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
-  refine forall₂_congr fun i _ ↦ ?_
-  have hi : (Nat.factorial i : K) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i)
-  rw [← mul_eq_zero_iff_left hi, ← eval_iterate_derivative_eq_factorial_mul,
-    iterate_derivative_map, map_evalRingHom_eval]
+  rw [X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero
+    fun i _ ↦ (IsRegular.of_ne_zero' (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i))).left]
+  simp_rw [iterate_derivative_map, map_evalRingHom_eval]
 
 /-- **Bivariate vanishing criterion on a sheared grid.** Let `P : K[X][X]` over a GCD domain of
 characteristic zero be evaluated at `(x, y)` via `P.evalEval y x = (P.map (evalRingHom y)).eval x`,

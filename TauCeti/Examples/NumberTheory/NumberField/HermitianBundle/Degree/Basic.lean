@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 import Mathlib.Tactic.NormNum.RealSqrt
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # Checks for the Arakelov degree of hermitian lines
@@ -75,7 +76,7 @@ private theorem sqrtEmbedding_ringOfIntegersEquiv_symm_one_one :
         ((QuadraticAlgebra.ringOfIntegersEquiv (d := 2) Int.prime_two.squarefree (by norm_num)).symm
           ⟨1, 1⟩ : L) = ((1 + √2 : ℝ) : ℂ) := by
   rw [QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe, QuadraticAlgebra.sqrtEmbedding_apply,
-    QuadraticAlgebra.sqrtRadicand_of_nonneg (by norm_num)]
+    Complex.sqrt_ratCast_of_nonneg (by norm_num)]
   norm_num
 
 /-! ### Degrees of hermitian lines -/

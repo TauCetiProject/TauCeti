@@ -1,0 +1,400 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.Chebyshev
+public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
+import TauCeti.Algebra.Order.BigOperators.Sum.Min
+import TauCeti.Algebra.Squarefree
+import TauCeti.Analysis.Real.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
+import TauCeti.NumberTheory.Chebyshev.FinitePrimeSums
+import TauCeti.NumberTheory.Chebyshev.PrimeTail
+import TauCeti.NumberTheory.DirichletCharacter.Quadratic.InertPrimeSum.Determinant
+
+/-!
+# The Mertens sum over inert primes of a primitive quadratic character
+
+For a nonprincipal primitive quadratic Dirichlet character `χ` mod `q ≥ 3` and a sufficiently large
+exponent `C` divisible by `3`, the logarithmic reciprocal sum over primes `p ≤ q ^ C` with
+`χ p = -1` carries at most three quarters of the Mertens mass `log (q ^ C)`, up to an additive
+constant depending only on `C`.
+
+Following Green (*On Landau–Siegel zeros*, 2026), let `d ≠ 1` be the squarefree radicand with
+`|d| ≤ q` and `χ p = jacobiSym d p` for odd primes `p`, and set `X = q ^ C`, `R = X`, `S = X / C`,
+and `N = q ^ (2 * (C / 3)) = X ^ (2 / 3)`. Green's Gram determinant construction in
+`TauCeti.NumberTheory.DirichletCharacter.Quadratic.InertPrimeSum.Determinant`
+(`TauCeti.exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one`) supplies a positive natural
+number `D` satisfying both the Hadamard upper bound
+`log D ≤ (1 + 1 / C) * (2 / 3 + 1 / (2 * C)) * R ^ 2 * S * log X + O(R ^ 2 * S)` and the
+simultaneous `p`-adic divisibilities `p ^ (2 * ∑_{r, s} min (r / p) (S - 1 - s)) ∣ D` at every
+prime `p` with `jacobiSym d p = -1`. Comparing `∑_p 2 * (∑_{r, s} h) * log p ≤ log D` and dividing
+by `R ^ 2 * S` yields the explicit bound for all `C ≥ 6` divisible by `3`, and specializes at
+`C ≥ 15` (`56 / 75 < 3 / 4`) to `TauCeti.inert_prime_sum_le`.
+
+## Main results
+
+* `TauCeti.sum_primesLE_jacobiSym_eq_neg_one_le`: explicit upper bound on
+  `∑_{2C < p ≤ q^C, (d / p) = -1} log p / p` for any nonsquare `d` with `|d| ≤ q` (`q ≥ 3`) and
+  any `C ≥ 6` divisible by `3`.
+* `DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le`: explicit upper bound on
+  `∑_{p ≤ q^C, χ p = -1} log p / p` for a primitive nonprincipal quadratic character `χ` mod `q ≠ 0`
+  over any commutative ring, for all `C ≥ 6` divisible by `3`.
+* `TauCeti.inert_prime_sum_le`: for all sufficiently large `C` divisible by `3`, inert primes up to
+  `q ^ C` carry at most `3 / 4 * log (q ^ C) + O_C(1)` of the Mertens mass.
+
+## References
+
+* B. Green, *On Landau–Siegel zeros*, Hexagon **2610.00311** (2026), Theorem 1.1 and §§2–6.
+-/
+
+public section
+
+open Finset
+
+namespace TauCeti
+
+namespace InertPrimeSum
+
+/-! ### Parameter arithmetic and assembling the Mertens bound -/
+
+/-- Power identities for `X = q ^ C`, `N = q ^ (2 * (C / 3))`, and `u = q ^ (C / 3)` when
+`3 ∣ C`. -/
+private theorem grid_pow_identities (q : ℕ) {C : ℕ} (hC3 : 3 ∣ C) :
+    q ^ C = (q ^ (C / 3)) ^ 3 ∧
+      q ^ (2 * (C / 3)) = (q ^ (C / 3)) ^ 2 ∧
+      (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 := by
+  have hexp : 2 * (C / 3) * 3 = C * 2 := by have := Nat.div_mul_cancel hC3; omega
+  exact ⟨by rw [← pow_mul, Nat.div_mul_cancel hC3], by rw [mul_comm 2 (C / 3), pow_mul],
+    by rw [← pow_mul, ← pow_mul, hexp]⟩
+
+/-- Parameter arithmetic for `X = q ^ C`, `S = X / C`, `N = q ^ (2 * (C / 3))` when `6 ≤ C` and
+`3 ∣ C`. -/
+private theorem grid_deg_lt_cube {q C : ℕ} (hq3 : 3 ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
+    0 < q ^ C ∧ 0 < q ^ C / C ∧ 0 < q ^ (2 * (C / 3)) ∧
+      q ^ (2 * (C / 3)) * ((q ^ C - 1) + (q ^ C / C - 1)) +
+        2 * (q ^ C - 1) * (q ^ C / C - 1) < (q ^ (2 * (C / 3))) ^ 3 := by
+  set X := q ^ C
+  set S := X / C
+  set N := q ^ (2 * (C / 3))
+  have hm : 2 ≤ C / 3 := by omega
+  set u := q ^ (C / 3)
+  have hu9 : 9 ≤ u :=
+    (by norm_num : 9 ≤ 3 ^ 2).trans ((Nat.pow_le_pow_right (by omega) hm).trans
+      (Nat.pow_le_pow_left hq3 (C / 3)))
+  have hX_eq : X = u ^ 3 := (grid_pow_identities q hC3).1
+  have hN_eq : N = u ^ 2 := (grid_pow_identities q hC3).2.1
+  have hN3_eq : N ^ 3 = X ^ 2 := (grid_pow_identities q hC3).2.2
+  have h9N : 9 * N ≤ X := by
+    rw [hN_eq, hX_eq]
+    exact (Nat.mul_le_mul_right _ hu9).trans_eq (by ring)
+  have hX_pos : 0 < X := by positivity
+  have hX_gt_C : C < X :=
+    (Nat.lt_two_pow_self (n := C)).trans_le (Nat.pow_le_pow_left (by omega) C)
+  have hS_pos : 0 < S := Nat.div_pos hX_gt_C.le (by omega)
+  have h6S : 6 * S ≤ X := by have := Nat.div_le_div_left (a := X) hC6 (by omega); omega
+  refine ⟨hX_pos, hS_pos, by positivity, ?_⟩
+  have hSX : S ≤ X := by omega
+  have hX2 : 0 < X ^ 2 := pow_pos hX_pos 2
+  have h9deg : 9 * (N * ((X - 1) + (S - 1)) + 2 * (X - 1) * (S - 1)) < 9 * N ^ 3 := by
+    calc 9 * (N * ((X - 1) + (S - 1)) + 2 * (X - 1) * (S - 1))
+        ≤ 9 * (N * (X + S) + 2 * X * S) := by gcongr <;> omega
+      _ = (9 * N) * (X + S) + 3 * X * (6 * S) := by ring
+      _ ≤ X * (X + X) + 3 * X * X := by gcongr
+      _ = 5 * X ^ 2 := by ring
+      _ < 9 * X ^ 2 := by omega
+      _ = 9 * N ^ 3 := by rw [hN3_eq]
+  omega
+
+private theorem log_grid_error_le {q C : ℕ} (hq3 : 3 ≤ q) (hC3 : 3 ∣ C) :
+    Real.log (2 * ((q ^ (2 * (C / 3)) : ℕ) : ℝ) ^ 3) +
+        2 * (q ^ (2 * (C / 3)) : ℕ) * Real.log ((q ^ C : ℕ) : ℝ) ≤
+      13 * ((q ^ C : ℕ) : ℝ) := by
+  obtain ⟨hX_eq, hN_eq, -⟩ := grid_pow_identities q hC3
+  set u := q ^ (C / 3)
+  have hu1 : (1 : ℝ) ≤ u := by exact_mod_cast Nat.one_le_pow (C / 3) q (by omega)
+  have hX_u : ((q ^ C : ℕ) : ℝ) = (u : ℝ) ^ 3 := by exact_mod_cast hX_eq
+  have hN_u : ((q ^ (2 * (C / 3)) : ℕ) : ℝ) = (u : ℝ) ^ 2 := by exact_mod_cast hN_eq
+  have hlogu : Real.log u ≤ u :=
+    (Real.log_le_sub_one_of_pos (by positivity)).trans (by linarith)
+  have hlog2 : Real.log 2 ≤ 1 := Real.log_two_le_one
+  rw [hN_u, hX_u, Real.log_mul (by positivity) (by positivity),
+    Real.log_pow, Real.log_pow, Real.log_pow]
+  push_cast
+  have h1_u3 : (1 : ℝ) ≤ (u : ℝ) ^ 3 := one_le_pow₀ hu1
+  have hu_u3 : (u : ℝ) ≤ (u : ℝ) ^ 3 := le_self_pow₀ hu1 (by norm_num)
+  have hu2_log : (u : ℝ) ^ 2 * Real.log u ≤ (u : ℝ) ^ 3 :=
+    (mul_le_mul_of_nonneg_left hlogu (sq_nonneg _)).trans_eq (by ring)
+  linarith
+
+private theorem log_two_mul_grid_mul_sqrt_eq {q C : ℕ} (hq : 0 < q) (hC : 0 < C)
+    (hC3 : 3 ∣ C) :
+    Real.log (2 * ((q ^ (2 * (C / 3)) : ℕ) : ℝ) * Real.sqrt q) =
+      Real.log 2 + (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) := by
+  set N := q ^ (2 * (C / 3))
+  obtain ⟨-, -, hN3_eq⟩ := grid_pow_identities q hC3
+  have hq_pos : (0 : ℝ) < q := by positivity
+  have hC_ne : (C : ℝ) ≠ 0 := by positivity
+  have hN3_X2 : (N : ℝ) ^ 3 = ((q ^ C : ℕ) : ℝ) ^ 2 := by exact_mod_cast hN3_eq
+  have hlogN : Real.log (N : ℝ) = 2 / 3 * Real.log ((q : ℝ) ^ C) := by
+    have hpow := congrArg Real.log hN3_X2
+    rw [Real.log_pow, Real.log_pow] at hpow
+    push_cast at hpow; linarith
+  have hlogsq : Real.log (Real.sqrt q) = 1 / (2 * (C : ℝ)) * Real.log ((q : ℝ) ^ C) := by
+    rw [Real.log_sqrt hq_pos.le, Real.log_pow]; field_simp
+  rw [Real.log_mul (by positivity) (by positivity),
+    Real.log_mul (by positivity) (by positivity), hlogN, hlogsq]; ring
+
+private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq3 : 3 ≤ q)
+    (hdq : d.natAbs ≤ q) (hC : 0 < C) (hC3 : 3 ∣ C) :
+    ((q ^ C : ℕ) : ℝ) * ((q ^ C / C : ℕ) : ℝ) * (Real.log (2 * ((q ^ (2 * (C / 3)) : ℕ) : ℝ) ^ 3)
+        + 2 * (q ^ (2 * (C / 3)) : ℕ) * Real.log ((q ^ C : ℕ) : ℝ)) +
+      ((q ^ C : ℕ) : ℝ) * ((q ^ C / C : ℕ) : ℝ) * (((q ^ C : ℕ) : ℝ) + ((q ^ C / C : ℕ) : ℝ)) *
+        Real.log (2 * (q ^ (2 * (C / 3)) : ℕ) * Real.sqrt d.natAbs) ≤
+      ((q ^ C : ℕ) : ℝ) ^ 2 * ((q ^ C / C : ℕ) : ℝ) *
+        ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) + 15) := by
+  set X := q ^ C
+  set S := X / C
+  set N := q ^ (2 * (C / 3))
+  have hN_pos : 0 < N := pow_pos (by omega) _
+  have hlog2 : Real.log 2 ≤ 1 := Real.log_two_le_one
+  have herr1 := log_grid_error_le hq3 hC3
+  have h2Nq_log := log_two_mul_grid_mul_sqrt_eq (by omega : 0 < q) (by omega : 0 < C) hC3
+  have hlog_dq : Real.log (2 * N * Real.sqrt d.natAbs) ≤ Real.log (2 * N * Real.sqrt q) :=
+    Real.log_le_log
+      (mul_pos (by positivity) (Real.sqrt_pos.mpr (by exact_mod_cast Int.natAbs_pos.mpr hd0)))
+      (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by exact_mod_cast hdq)) (by positivity))
+  have hSC : (S : ℝ) ≤ (X : ℝ) / C :=
+    (le_div_iff₀ (by positivity)).mpr (by exact_mod_cast Nat.div_mul_le_self X C)
+  have hXS_sum : (X : ℝ) + S ≤ (1 + 1 / (C : ℝ)) * X := by
+    have hdiv : (X : ℝ) / C = 1 / (C : ℝ) * X := by ring
+    linarith
+  have hlog2Nd_nn : 0 ≤ Real.log (2 * N * Real.sqrt d.natAbs) :=
+    Real.log_nonneg (one_le_mul_of_one_le_of_one_le
+      (by exact_mod_cast (by omega : 1 ≤ 2 * N)) (Real.one_le_sqrt_natAbs hd0))
+  calc (X : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X) +
+          (X : ℝ) * S * (X + S) * Real.log (2 * N * Real.sqrt d.natAbs)
+      ≤ (X : ℝ) * S * (13 * X) +
+          (X : ℝ) * S * ((1 + 1 / (C : ℝ)) * X) * Real.log (2 * N * Real.sqrt q) :=
+        add_le_add (mul_le_mul_of_nonneg_left herr1 (by positivity))
+          (mul_le_mul (mul_le_mul_of_nonneg_left hXS_sum (by positivity)) hlog_dq
+            hlog2Nd_nn (by positivity))
+    _ = (X : ℝ) ^ 2 * S * (13 + (1 + 1 / (C : ℝ)) * Real.log 2 +
+          (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C)) := by
+        rw [h2Nq_log]; ring
+    _ ≤ (X : ℝ) ^ 2 * S * ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) *
+          Real.log ((q : ℝ) ^ C) + 15) := by
+        refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+        have h1C : 1 / (C : ℝ) ≤ 1 :=
+          div_le_one_of_le₀ (by exact_mod_cast (by omega : 1 ≤ C)) (by positivity)
+        have hprod : (1 + 1 / (C : ℝ)) * Real.log 2 ≤ 2 :=
+          (mul_le_mul (by linarith) hlog2 (Real.log_nonneg one_le_two) (by positivity)).trans_eq
+            (mul_one 2)
+        linarith
+
+private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
+    (hP : ∀ p ∈ P, p ∈ Nat.primesLE X ∧ 2 * C < p) (hS_pos : 0 < S) (hC_pos : 0 < C)
+    (hS_eq : S = X / C) :
+    2 * (X : ℝ) ^ 2 * (∑ p ∈ P, Real.log p / p) +
+        2 * (X : ℝ) * S * (∑ p ∈ P, Real.log p) +
+        (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2) ≤
+      (X : ℝ) ^ 2 * S * (4 * (C : ℝ) * Real.log 4 + 4 * Real.log 4) := by
+  have hsub : P ⊆ Nat.primesLE X := fun p hp ↦ (hP p hp).1
+  have htheta_P : ∑ p ∈ P, Real.log p ≤ Real.log 4 * X :=
+    Chebyshev.sum_log_le_of_subset_primesLE hsub
+  have hsum_p_le : ∑ p ∈ P, Real.log p / p ≤ Real.log 4 * X :=
+    Chebyshev.sum_log_div_le_of_subset_primesLE hsub
+  have htail_sq : ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2 ≤ Real.log 4 / C := by
+    calc ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2
+        ≤ 2 * Real.log 4 / (2 * (C : ℝ)) :=
+          sum_log_div_sq_le_of_prime (by positivity)
+            (fun p hp ↦ (Nat.mem_primesLE.mp (hP p hp).1).2)
+            (fun p hp ↦ by exact_mod_cast (hP p hp).2.le)
+      _ = Real.log 4 / C := by field_simp
+  have hX_le_2SC : (X : ℝ) ≤ 2 * S * C := by
+    have hdiv : X < (S + 1) * C := by
+      have hmod := Nat.div_add_mod X C
+      have hlt := Nat.mod_lt X hC_pos
+      have hmul : (S + 1) * C = C * (X / C) + C := by rw [hS_eq]; ring
+      omega
+    have hS1 : S + 1 ≤ 2 * S := by omega
+    exact_mod_cast hdiv.le.trans (Nat.mul_le_mul_right C hS1)
+  have hlog4_nn : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
+  have he1 : 2 * (X : ℝ) ^ 2 * (∑ p ∈ P, Real.log p / p) ≤
+      (X : ℝ) ^ 2 * S * (4 * (C : ℝ) * Real.log 4) :=
+    ((mul_le_mul_of_nonneg_left hsum_p_le (by positivity)).trans
+      (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hX_le_2SC hlog4_nn)
+        (by positivity))).trans_eq (by ring)
+  have he2 : 2 * (X : ℝ) * S * (∑ p ∈ P, Real.log p) ≤ (X : ℝ) ^ 2 * S * (2 * Real.log 4) :=
+    (mul_le_mul_of_nonneg_left htheta_P (by positivity)).trans_eq (by ring)
+  have he3 : (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2) ≤
+      (X : ℝ) ^ 2 * S * (2 * Real.log 4) := by
+    calc (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2)
+        ≤ (X : ℝ) ^ 3 * (Real.log 4 / C) := mul_le_mul_of_nonneg_left htail_sq (by positivity)
+      _ ≤ (X : ℝ) ^ 2 * (2 * S * C) * (Real.log 4 / C) := by rw [pow_succ]; gcongr
+      _ = (X : ℝ) ^ 2 * S * (2 * Real.log 4) := by
+          have : (C : ℝ) ≠ 0 := by positivity
+          field_simp
+  linarith
+
+private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime) (hSX : S ≤ X) :
+    (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
+        2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) ≤
+      (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
+        Real.log p := by
+  have hXS_div : (X : ℝ) * S / p ≤ (X : ℝ) ^ 2 / p := by rw [sq]; gcongr
+  have h2div : 2 * (X : ℝ) ^ 2 / p = (X : ℝ) ^ 2 / p + (X : ℝ) ^ 2 / p := by ring
+  have hexp :
+      (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
+        2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) := by
+    linarith [Fintype.le_two_mul_sum_fin_prod_min_div (K := ℝ) p X S, hXS_div, h2div]
+  have hLHS :
+      (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
+          2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) =
+        ((X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2) *
+          Real.log p := by ring
+  exact hLHS.trans_le
+    (mul_le_mul_of_nonneg_right hexp (Real.log_nonneg (by exact_mod_cast hp.one_le)))
+
+end InertPrimeSum
+
+/-- **Explicit Mertens bound for primes inert in `ℚ(√d)`.** For any nonsquare integer `d`, any
+integer `q ≥ 3` with `|d| ≤ q`, and any exponent `C ≥ 6` divisible by `3`, the sum of
+`log p / p` over primes `2 * C < p ≤ q ^ C` with `jacobiSym d p = -1` is bounded by
+`(1 + 1 / C) * (2 / 3 + 1 / (2 * C)) * log (q ^ C) + (4 * C * log 4 + 4 * log 4 + 15)`. -/
+theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : ¬ IsSquare d)
+    {q C : ℕ} (hq3 : 3 ≤ q) (hdq : d.natAbs ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
+    ∑ p ∈ (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1),
+        Real.log p / (p : ℝ) ≤
+      (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) +
+        (4 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15) := by
+  open InertPrimeSum in
+  have hd0 : d ≠ 0 := fun h ↦ hd ⟨0, by simp [h]⟩
+  set X := q ^ C
+  set S := X / C
+  obtain ⟨_, hS_pos, -, hdeg⟩ := grid_deg_lt_cube hq3 hC6 hC3
+  obtain ⟨D, hD_pos, hD_log, hD_dvd⟩ :=
+    exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one hd hdeg
+  set P := (Nat.primesLE X).filter fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1
+  have hsum_log_le :
+      ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
+          Real.log p ≤
+        Real.log (D : ℝ) := by
+    have h := Nat.sum_mul_log_le_log_of_prime (P := P)
+      (fun p ↦ 2 * ∑ i : Fin X × Fin S, min (i.1.val / p) (S - 1 - i.2.val)) hD_pos
+      (fun p hp ↦ (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2)
+      (fun p hp ↦ by
+        obtain ⟨hpX, _, hjac⟩ := Finset.mem_filter.mp hp
+        exact hD_dvd p (Nat.mem_primesLE.mp hpX).2 hjac)
+    simp only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum] at h
+    exact h
+  have hSX : S ≤ X := Nat.div_le_self X C
+  have hlhs_ge :
+      (X : ℝ) ^ 2 * S * (∑ p ∈ P, Real.log p / p) -
+          2 * (X : ℝ) ^ 2 * (∑ p ∈ P, Real.log p / p) -
+          2 * (X : ℝ) * S * (∑ p ∈ P, Real.log p) -
+          (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2) ≤
+        ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
+          Real.log p := by
+    simpa only [Finset.mul_sum, Finset.sum_sub_distrib] using
+      Finset.sum_le_sum fun p hp ↦
+        le_two_mul_sum_fin_prod_min_mul_log (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2 hSX
+  have hrhs_le : Real.log (D : ℝ) ≤
+      (X : ℝ) ^ 2 * S * ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) *
+        Real.log ((q : ℝ) ^ C) + 15) :=
+    hD_log.trans (log_det_bound_explicit hd0 hq3 hdq (by omega) hC3)
+  have herr_sum := prime_error_sums_le
+    (P := P) (fun _ hp ↦ ⟨(Finset.mem_filter.mp hp).1, (Finset.mem_filter.mp hp).2.1⟩)
+    hS_pos (by omega : 0 < C) rfl
+  have hcomb : (X : ℝ) ^ 2 * S * (∑ p ∈ P, Real.log p / p) ≤
+      (X : ℝ) ^ 2 * S *
+        ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) +
+          (4 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15)) := by
+    linarith [hlhs_ge.trans (hsum_log_le.trans hrhs_le), herr_sum]
+  exact le_of_mul_le_mul_left hcomb (by positivity : (0 : ℝ) < (X : ℝ) ^ 2 * S)
+
+end TauCeti
+
+/-- **Explicit Mertens bound for inert primes of a primitive quadratic character.** Over any
+commutative ring `R`, for any primitive nonprincipal quadratic Dirichlet character `χ` mod `q ≠ 0`
+and any exponent `C ≥ 6` divisible by `3`, the sum of `log p / p` over primes `p ≤ q ^ C` with
+`χ p = -1` is bounded by
+`(1 + 1 / C) * (2 / 3 + 1 / (2 * C)) * log (q ^ C) + (6 * C * log 4 + 4 * log 4 + 15)`. -/
+theorem DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le {R : Type*}
+    [CommRing R] [DecidableEq R] {q : ℕ} [NeZero q] {χ : DirichletCharacter R q}
+    (hprim : χ.IsPrimitive) (hquad : χ.IsQuadratic) (h1 : χ ≠ 1)
+    {C : ℕ} (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
+    ∑ p ∈ (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ χ (p : ZMod q) = -1),
+        Real.log p / (p : ℝ) ≤
+      (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) +
+        (6 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15) := by
+  have hq3 : 3 ≤ q := DirichletCharacter.three_le_level_of_ne_one h1
+  have : NeZero (2 : R) := ⟨fun h2 ↦ h1 (hquad.eq_one_of_two_eq_zero h2)⟩
+  have : Nontrivial R := ⟨⟨2, 0, NeZero.ne (2 : R)⟩⟩
+  obtain ⟨d, hd, hd1, hdq, hval⟩ := hprim.exists_squarefree_apply_natCast_eq_jacobiSym hquad h1
+  set S_all := (Nat.primesLE (q ^ C)).filter fun p : ℕ ↦ χ (p : ZMod q) = -1
+  have hsplit := (Finset.sum_filter_add_sum_filter_not S_all (fun p : ℕ ↦ p ≤ 2 * C)
+    (fun p : ℕ ↦ Real.log p / (p : ℝ))).symm
+  have hsmall : ∑ p ∈ S_all.filter (· ≤ 2 * C), Real.log p / (p : ℝ) ≤
+      2 * (C : ℝ) * Real.log 4 := by
+    have hsub : S_all.filter (· ≤ 2 * C) ⊆ Nat.primesLE (2 * C) := by
+      intro p hp
+      obtain ⟨hpS, hp2C⟩ := Finset.mem_filter.mp hp
+      exact Nat.mem_primesLE.mpr ⟨hp2C, (Nat.mem_primesLE.mp (Finset.mem_filter.mp hpS).1).2⟩
+    exact (Chebyshev.sum_log_div_le_of_subset_primesLE hsub).trans_eq
+      (by push_cast; ring)
+  have hlarge_sub : S_all.filter (¬ · ≤ 2 * C) ⊆
+      (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1) := by
+    intro p hp
+    obtain ⟨hpS, hp2C⟩ := Finset.mem_filter.mp hp
+    obtain ⟨hpX, hχp⟩ := Finset.mem_filter.mp hpS
+    have hp_pr := (Nat.mem_primesLE.mp hpX).2
+    have hgt : 2 * C < p := Nat.lt_of_not_ge hp2C
+    have hR : ringChar R ≠ 2 := fun h ↦
+      NeZero.ne (2 : R) (Nat.cast_two (R := R) ▸ (ringChar.spec R 2).mpr h.dvd)
+    have hjac_cast : (jacobiSym d p : R) = ((-1 : ℤ) : R) := by
+      rw [← hval p (hp_pr.odd_of_ne_two (by omega)), hχp, Int.cast_neg, Int.cast_one]
+    exact Finset.mem_filter.mpr ⟨hpX, hgt,
+      Int.cast_injOn_of_ringChar_ne_two hR (jacobiSym.trichotomy d p) (Or.inr (Or.inr rfl))
+        hjac_cast⟩
+  have hlarge := (Finset.sum_le_sum_of_subset_of_nonneg hlarge_sub fun _ _ _ ↦ by positivity).trans
+    (TauCeti.sum_primesLE_jacobiSym_eq_neg_one_le
+      (Int.not_isSquare_of_squarefree_of_ne_one hd hd1) hq3 hdq hC6 hC3)
+  linarith
+
+namespace TauCeti
+
+open scoped Classical in
+/-- **Inert primes carry at most three quarters of the Mertens mass** (Green, Theorem 1.1).
+For every sufficiently large exponent `C` divisible by `3`, there is a constant `K` such that for
+every modulus `q ≥ 3` and every primitive nonprincipal quadratic Dirichlet character `χ` mod `q`,
+`∑_{p ≤ q ^ C, χ p = -1} log p / p ≤ 3 / 4 * log (q ^ C) + K`. -/
+theorem inert_prime_sum_le :
+    ∃ C₀ : ℕ, ∀ C : ℕ, C₀ ≤ C → 3 ∣ C → ∃ K : ℝ,
+      ∀ (q : ℕ) (χ : DirichletCharacter ℂ q),
+        3 ≤ q → χ.IsPrimitive → χ.IsQuadratic → χ ≠ 1 →
+        ∑ p ∈ (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ χ (p : ZMod q) = -1),
+            Real.log p / (p : ℝ) ≤
+          3 / 4 * Real.log ((q : ℝ) ^ C) + K := by
+  refine ⟨15, fun C hC15 hC3 ↦ ⟨6 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15,
+    fun q χ hq3 hprim hquad h1 ↦ ?_⟩⟩
+  have : NeZero q := ⟨by omega⟩
+  have hbound := hprim.sum_primesLE_filter_eq_neg_one_le hquad h1 (by omega) hC3
+  have hinv : 1 / (C : ℝ) ≤ 1 / 15 :=
+    one_div_le_one_div_of_le (by norm_num) (by exact_mod_cast hC15)
+  have hinv2 : 1 / (2 * (C : ℝ)) ≤ 1 / 30 :=
+    one_div_le_one_div_of_le (by norm_num) (by exact_mod_cast (by omega : 30 ≤ 2 * C))
+  have hcoeff : (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) ≤ 3 / 4 :=
+    (mul_le_mul (b := 1 + (1 : ℝ) / 15) (d := 2 / 3 + 1 / 30) (by linarith) (by linarith)
+      (by positivity) (by positivity)).trans (by norm_num)
+  have hmul : (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) ≤
+      3 / 4 * Real.log ((q : ℝ) ^ C) :=
+    mul_le_mul_of_nonneg_right hcoeff
+      (Real.log_nonneg (one_le_pow₀ (by exact_mod_cast (by omega : 1 ≤ q))))
+  linarith
+
+end TauCeti

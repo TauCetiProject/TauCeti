@@ -29,6 +29,8 @@ termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`;
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`;
 `Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
 number of triples of `n` elements with the number of injective ones;
+`Nat.pow_dvd_factorial_of_mul_le`, the elementary divisibility `p ^ m ∣ j!` whenever `p * m ≤ j`
+and `0 < p`;
 `Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
 products of factorials in double hypergeometric series;
 `Nat.ascFactorial_two_mul_le_pow_add`, `n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, the inequality
@@ -143,6 +145,14 @@ theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
   simp only [descFactorial_succ, descFactorial_zero]
   grind
+
+/-- Elementary factorial divisibility: `p ^ m` divides `j!` whenever `p * m ≤ j` and `0 < p`. -/
+theorem pow_dvd_factorial_of_mul_le {p m j : ℕ} (hp : 0 < p) (h : p * m ≤ j) :
+    p ^ m ∣ j.factorial := by
+  have h1 : p ^ m ∣ p ! ^ m := pow_dvd_pow_of_dvd (Nat.dvd_factorial hp le_rfl) m
+  have h2 : p ! ^ m ∣ (m * p)! := by
+    simpa using Nat.prod_factorial_dvd_factorial_sum (Finset.range m) (fun _ ↦ p)
+  exact h1.trans (h2.trans (Nat.factorial_dvd_factorial (by rwa [Nat.mul_comm] at h)))
 
 /-- Factorial divisibility under Euclidean division: `(i / d)! * (j / d)! ∣ ((i + j) / d)!`. -/
 theorem factorial_div_mul_factorial_div_dvd (d i j : ℕ) :

@@ -55,6 +55,7 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 
 ## Main results
 
+* `Real.log_two_le_one`: `log 2 ≤ 1`.
 * `Real.one_lt_log_of_three_le`: `1 < log x` for `3 ≤ x`.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
@@ -78,6 +79,10 @@ public section
 
 namespace Real
 
+/-- The natural logarithm of `2` is at most `1`. -/
+theorem log_two_le_one : log 2 ≤ 1 :=
+  (log_le_sub_one_of_pos zero_lt_two).trans (by norm_num)
+
 /-- For `x ≥ 3`, `1 < log x`. -/
 theorem one_lt_log_of_three_le {x : ℝ} (hx : 3 ≤ x) : 1 < log x :=
   (lt_log_iff_exp_lt (by linarith)).mpr (exp_one_lt_three.trans_le hx)
@@ -87,7 +92,7 @@ theorem log_four_le_two : log 4 ≤ 2 := by
   have h4 : (4 : ℝ) = 2 ^ 2 := by norm_num
   rw [h4, log_pow]
   norm_num
-  linarith [log_le_sub_one_of_pos zero_lt_two]
+  linarith [log_two_le_one]
 
 /-- `2 / 5 < log (3 / 2)`, from `e² < (3 / 2) ^ 5` and `e < 2.7182818286`. -/
 theorem two_fifths_lt_log_three_halves : (2 / 5 : ℝ) < log (3 / 2) := by

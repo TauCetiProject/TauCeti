@@ -35,8 +35,8 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   squarefree iff its factors are pairwise relatively prime and individually squarefree,
   generalizing Mathlib's `Finset.squarefree_prod_of_pairwise_isCoprime` (in both directions)
   without zero or cancellation.
-* `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
-  rational square.
+* `Int.not_isSquare_of_squarefree_of_ne_one` and `not_isSquare_intCast_of_squarefree_of_ne_one`: a
+  squarefree integer other than `1` is neither an integer square nor a rational square.
 * `isSquare_mul_sq_iff`: in a commutative group with zero, multiplying by a nonzero square does
   not change squareness — the statement that squareness depends only on the square class.
 * `Squarefree.associated_of_sq_mul_eq_sq_mul`: in a unique factorization monoid the factors of a
@@ -186,13 +186,17 @@ theorem Finset.squarefree_prod_iff {ι M : Type*} [CommMonoid M] [DecompositionM
       fun ⟨⟨hp, hrel⟩, ha', hs⟩ ↦
         ⟨fun i hi ↦ (hrel i hi fun h ↦ ha (h ▸ hi)).1, ha', hp, hs⟩⟩
 
-/-- A squarefree integer other than `1` is not a rational square. -/
-theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
-    (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare ((n : ℤ) : ℚ) := by
-  rw [Rat.isSquare_intCast_iff]
+/-- A squarefree integer other than `1` is not an integer square. -/
+theorem Int.not_isSquare_of_squarefree_of_ne_one {n : ℤ}
+    (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare n := by
   rintro ⟨a, ha⟩
   have hu : IsUnit a := hsf a (ha ▸ dvd_rfl)
   rcases Int.isUnit_iff.mp hu with rfl | rfl <;> simp_all
+
+/-- A squarefree integer other than `1` is not a rational square. -/
+theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
+    (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare ((n : ℤ) : ℚ) :=
+  Rat.isSquare_intCast_iff.not.mpr (Int.not_isSquare_of_squarefree_of_ne_one hsf hne)
 
 /-- **Squareness depends only on the square class.** Multiplying by the square of a nonzero
 element does not change whether an element is a square. -/

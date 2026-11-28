@@ -51,6 +51,10 @@ polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
 
 * `Polynomial.sylvester_apply_of_lt`, `Polynomial.sylvester_apply_of_le`: the entries of the
   Sylvester matrix in its first `n` and its last `m` columns.
+* `Polynomial.sylvester_of_coeff`: lift coefficient predicates holding at `0` to the two column
+  blocks of a Sylvester matrix.
+* `Polynomial.dvd_sylvester_of_dvd_coeff`: entrywise divisibility in the top `k` rows of a
+  Sylvester matrix from coefficient divisibility.
 * `Polynomial.resultant_C_sub_X_right`
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
@@ -59,6 +63,9 @@ polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
   arguments, at the actual degrees.
 * `Polynomial.resultant_reflect`: reversing both arguments at their degree bounds multiplies the
   resultant by `(-1) ^ (m * n)`.
+* `Polynomial.resultant_taylor_of_natDegree_le`, `Polynomial.resultant_taylor_deriv`: translating
+  the indeterminate preserves resultants at arbitrary valid degree bounds and in particular the
+  formal derivative resultant `Res_{d, d - 1}(f, f')`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`, `Polynomial.Monic.resultant_mul_right`,
@@ -120,6 +127,35 @@ theorem sylvester_apply_of_le (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
   congr 1
   · exact propext (by omega)
   · congr 1; omega
+
+/-- Lift predicates `P` and `Q` on coefficients of `f` and `g` (each holding at `0`) to the
+`(i, j)` entry of `sylvester f g m n`, using `Q` on the first `m` columns and `P` on the last `n`
+columns. Every coefficient accessed has index at most `(i : ℕ)`. -/
+theorem sylvester_of_coeff {P Q : S → Prop} {f g : S[X]} {m n : ℕ}
+    (hP0 : P 0) (hQ0 : Q 0) {i j : Fin (m + n)}
+    (hf : ∀ r ≤ (i : ℕ), P (f.coeff r)) (hg : ∀ r ≤ (i : ℕ), Q (g.coeff r)) :
+    (if (j : ℕ) < m then Q else P) (sylvester f g m n i j) := by
+  by_cases hj : (j : ℕ) < m
+  · rw [sylvester_apply_of_lt _ _ _ j hj]
+    simp only [hj, ↓reduceIte]
+    split_ifs
+    · exact hg _ (Nat.sub_le _ _)
+    · exact hQ0
+  · rw [sylvester_apply_of_le _ _ _ j (Nat.le_of_not_lt hj)]
+    simp only [hj, ↓reduceIte]
+    split_ifs
+    · exact hf _ (by omega)
+    · exact hP0
+
+/-- If `a : S` divides the first `k` coefficients of `f` and `g`, then `a` divides every entry
+in the first `k` rows of `sylvester f g m n`. -/
+theorem dvd_sylvester_of_dvd_coeff {f g : S[X]} {a : S} {m n k : ℕ}
+    (hf : ∀ r < k, a ∣ f.coeff r) (hg : ∀ r < k, a ∣ g.coeff r)
+    {i j : Fin (m + n)} (hi : (i : ℕ) < k) :
+    a ∣ sylvester f g m n i j := by
+  have h := sylvester_of_coeff (m := m) (n := n) (i := i) (j := j) (dvd_zero a) (dvd_zero a)
+    (fun r hr ↦ hf r (hr.trans_lt hi)) (fun r hr ↦ hg r (hr.trans_lt hi))
+  simpa only [ite_self] using h
 
 /-- The permutation of `Fin (m + n)` reversing each of the blocks `Fin m` and `Fin n`. -/
 private def blockRevPerm (m n : ℕ) : Equiv.Perm (Fin (m + n)) :=
@@ -272,6 +308,50 @@ theorem resultant_reflect (f g : R[X]) (m n : ℕ) :
       resultant_C_left, resultant_C_right] at h
     simpa using h.symm
   rw [resultant_reflect_eq_sign_mul, hsign, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+/-- Translating both polynomials preserves the resultant at any valid degree bounds `m` and `n`,
+extending `Polynomial.resultant_taylor` from the actual degrees. -/
+theorem resultant_taylor_of_natDegree_le (f g : R[X]) (r : R) {m n : ℕ}
+    (hf : f.natDegree ≤ m) (hg : g.natDegree ≤ n) :
+    resultant (taylor r f) (taylor r g) m n = resultant f g m n := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hf
+  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hg
+  have hpad (p q : R[X]) (hp : p.natDegree = f.natDegree) (hq : q.natDegree = g.natDegree) :
+      resultant p q (f.natDegree + k) (g.natDegree + l) =
+        (-1) ^ ((g.natDegree + l) * k) * (if l = 0 then q.leadingCoeff else 0) ^ k *
+          p.leadingCoeff ^ l * resultant p q f.natDegree g.natDegree := by
+    have hcoeff_q : q.coeff (q.natDegree + l) = if l = 0 then q.leadingCoeff else 0 := by
+      rcases Nat.eq_zero_or_pos l with rfl | hl
+      · simp [coeff_natDegree]
+      · simp [hl.ne', coeff_eq_zero_of_natDegree_lt (by omega : q.natDegree < q.natDegree + l)]
+    have hpad0 : resultant p q (p.natDegree + k) (q.natDegree + l) =
+        (-1) ^ ((q.natDegree + l) * k) * (if l = 0 then q.leadingCoeff else 0) ^ k *
+          p.leadingCoeff ^ l * resultant p q p.natDegree q.natDegree := by
+      rw [resultant_add_left_deg p q p.natDegree (q.natDegree + l) k le_rfl,
+        resultant_add_right_deg p q p.natDegree q.natDegree l le_rfl,
+        coeff_natDegree, hcoeff_q]
+      ring
+    simpa only [hp, hq] using hpad0
+  calc resultant (taylor r f) (taylor r g) (f.natDegree + k) (g.natDegree + l)
+      = (-1) ^ ((g.natDegree + l) * k) * (if l = 0 then (taylor r g).leadingCoeff else 0) ^ k *
+          (taylor r f).leadingCoeff ^ l *
+          resultant (taylor r f) (taylor r g) f.natDegree g.natDegree :=
+        hpad (taylor r f) (taylor r g) (natDegree_taylor f r) (natDegree_taylor g r)
+    _ = (-1) ^ ((g.natDegree + l) * k) * (if l = 0 then g.leadingCoeff else 0) ^ k *
+          f.leadingCoeff ^ l * resultant f g f.natDegree g.natDegree := by
+        have hres : resultant (taylor r f) (taylor r g) f.natDegree g.natDegree =
+            resultant f g f.natDegree g.natDegree := by
+          simpa only [natDegree_taylor] using resultant_taylor f g r
+        simp only [leadingCoeff_taylor, hres]
+    _ = resultant f g (f.natDegree + k) (g.natDegree + l) := (hpad f g rfl rfl).symm
+
+/-- Translating the indeterminate preserves the formal derivative resultant
+`Res_{d, d - 1}(f, f')` over any commutative ring. -/
+theorem resultant_taylor_deriv (f : R[X]) (r : R) :
+    resultant (taylor r f) (taylor r f).derivative f.natDegree (f.natDegree - 1) =
+      resultant f f.derivative f.natDegree (f.natDegree - 1) := by
+  rw [← taylor_derivative r f]
+  exact resultant_taylor_of_natDegree_le f f.derivative r le_rfl (natDegree_derivative_le f)
 
 end Polynomial
 

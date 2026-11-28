@@ -18,10 +18,13 @@ involving sums of principal roots. The file also records the values `√i = e^{�
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the splitting `√(r z) = √r √z`
 for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
 half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
-squares back to it, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`. On the open upper half-plane the principal square root lies in the open
-first quadrant (`Complex.sqrt_re_pos_iff`, `Complex.sqrt_im_pos`). A complex unit of absolute
-value one has a square root of absolute value one, `Complex.exists_sq_eq_and_star_mul_self_eq_one`.
+squares back to it, gives the sign-branch formulas `Complex.sqrt_ofReal_of_nonneg` and
+`Complex.sqrt_ofReal_of_nonpos` (and their rational specializations `Complex.sqrt_ratCast_of_nonneg`
+and `Complex.sqrt_ratCast_of_nonpos`), and packages the principal square root of a
+nonzero complex number as a unit, `Complex.sqrtUnit`. On the open upper half-plane the principal
+square root lies in the open first quadrant (`Complex.sqrt_re_pos_iff`, `Complex.sqrt_im_pos`). A
+complex unit of absolute value one has a square root of absolute value one,
+`Complex.exists_sq_eq_and_star_mul_self_eq_one`.
 
 The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
 real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
@@ -141,6 +144,41 @@ theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
 /-- The unit principal square root of `z` squares to `z`. -/
 theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
   rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
+
+/-- The norm of the principal square root is the real square root of the norm. -/
+@[simp]
+theorem norm_sqrt (z : ℂ) : ‖sqrt z‖ = Real.sqrt ‖z‖ := by
+  rw [← Real.sqrt_sq (norm_nonneg _), ← norm_pow, sq_sqrt]
+
+/-- The norm of the principal square root of an integer `d` is `Real.sqrt d.natAbs`. -/
+theorem norm_sqrt_intCast (d : ℤ) : ‖sqrt (d : ℂ)‖ = Real.sqrt d.natAbs := by
+  rw [norm_sqrt, Complex.norm_intCast, Nat.cast_natAbs, Int.cast_abs]
+
+/-- The principal square root of a nonnegative real cast `(x : ℂ)` is `(√x : ℂ)`. -/
+theorem sqrt_ofReal_of_nonneg {x : ℝ} (hx : 0 ≤ x) :
+    sqrt (x : ℂ) = √x := by
+  open scoped ComplexOrder in
+  rw [sqrt_of_nonneg (zero_le_real.mpr hx), ofReal_re]
+
+/-- The principal square root of a nonpositive real cast `(x : ℂ)` is `(√(-x) : ℂ) * I`. -/
+theorem sqrt_ofReal_of_nonpos {x : ℝ} (hx : x ≤ 0) :
+    sqrt (x : ℂ) = √(-x) * I := by
+  open scoped ComplexOrder in
+  have hc : (0 : ℂ) ≤ -(x : ℂ) := by
+    rw [← ofReal_neg]
+    exact zero_le_real.mpr (neg_nonneg.mpr hx)
+  rw [← neg_neg (x : ℂ), sqrt_neg_of_nonneg hc, sqrt_of_nonneg hc, neg_re, ofReal_re, mul_comm]
+
+/-- The principal square root of a nonnegative rational cast `(r : ℂ)` is `(√(r : ℝ) : ℂ)`. -/
+theorem sqrt_ratCast_of_nonneg {r : ℚ} (hr : 0 ≤ r) :
+    sqrt (r : ℂ) = (√(r : ℝ) : ℂ) := by
+  rw [← ofReal_ratCast, sqrt_ofReal_of_nonneg (by exact_mod_cast hr)]
+
+/-- The principal square root of a nonpositive rational cast `(r : ℂ)` is
+`(√(-(r : ℝ)) : ℂ) * I`. -/
+theorem sqrt_ratCast_of_nonpos {r : ℚ} (hr : r ≤ 0) :
+    sqrt (r : ℂ) = (√(-(r : ℝ)) : ℂ) * I := by
+  rw [← ofReal_ratCast, sqrt_ofReal_of_nonpos (by exact_mod_cast hr)]
 
 /-- A complex unit of absolute value one is `s ^ 2` for a unit `s` of absolute value one, that is,
 with `conj s * s = 1`. -/

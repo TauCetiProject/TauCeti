@@ -13,6 +13,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Tactic.Ring
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # Norms, embeddings and prime-power divisibility
@@ -225,19 +226,19 @@ example :
       ‖QuadraticAlgebra.negSqrtEmbedding ((2 : ℤ) : ℚ) (e.symm ⟨3, 3⟩)‖ =
         3 * (Real.sqrt 2 - 1) := by
   dsimp only
+  have hsqrt2 : Complex.sqrt (2 : ℂ) = √2 := by
+    simpa using Complex.sqrt_ofReal_of_nonneg (x := 2) (by norm_num)
   constructor
   · rw [← Complex.abs_re_eq_norm.mpr (QuadraticAlgebra.im_sqrtEmbedding
       (by norm_num : (0 : ℚ) ≤ ((2 : ℤ) : ℚ)) _)]
     norm_num [QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe,
-      QuadraticAlgebra.sqrtEmbedding_apply,
-      QuadraticAlgebra.sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 2)]
+      QuadraticAlgebra.sqrtEmbedding_apply, hsqrt2]
     rw [abs_of_nonneg (by linarith [Real.sqrt_nonneg (2 : ℝ)])]
     ring
   · rw [← Complex.abs_re_eq_norm.mpr (QuadraticAlgebra.im_negSqrtEmbedding
       (by norm_num : (0 : ℚ) ≤ ((2 : ℤ) : ℚ)) _)]
     norm_num [QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe,
-      QuadraticAlgebra.negSqrtEmbedding_apply,
-      QuadraticAlgebra.sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 2)]
+      QuadraticAlgebra.negSqrtEmbedding_apply, hsqrt2]
     rw [abs_of_nonpos (by linarith [Real.one_lt_sqrt_two])]
     ring
 
