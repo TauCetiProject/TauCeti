@@ -5,556 +5,493 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Duality
-public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.MeasureTheory.Measure.FiniteMeasure.Equicontinuous
-import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
+public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+import TauCeti.Basic.ENNReal.Real
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
+import TauCeti.MeasureTheory.OptimalTransport.Entropic.ZeroTemperature
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BoundedLipschitz
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.KantorovichRubinstein
+import TauCeti.Topology.ContinuousMap.Compact
 import TauCeti.Topology.Instances.ENNReal
-import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
-# Potential regularity and weak continuity of entropic optimal transport
+# Quantitative stability and weak continuity of entropic optimal transport
 
-At positive temperature and for a bounded cost `c ≤ B`, the `c`-softmin operator
-`(S_ν ψ)(x) = -ε * log ∫ exp ((ψ(y) - c(x, y)) / ε) dν(y)` turns any bounded measurable dual
-maximiser `(φ₀, ψ₀)` into a normalised pair `(φ, ψ)` of Schrödinger potentials attaining
-`(entropicTransportCost c ε μ ν).toReal`, satisfying
-`∫ exp ((φ(x) + ψ(y) - c(x, y)) / ε) dμ(x) = 1` at every `y : Y`, bounded by `B` and `2 * B` with
-`φ(x) + ψ(y) ≤ 2 * B`, and inheriting every uniform coordinate oscillation bound of `(c ·).toReal`.
+On Polish spaces, the entropically regularised transport cost
+`TauCeti.entropicTransportCost c ε μ ν` of a lower semicontinuous cost is jointly weakly lower
+semicontinuous in its marginals (`TauCeti.lowerSemicontinuous_entropicTransportCost`). Weak
+convergence of the marginals does not give the matching upper bound by primal compactness alone,
+because the reference measure `μ ⊗ ν` of the relative entropy moves with the marginals.
 
-Evaluating weak duality for `(μ', ν')` at `(φ, ψ)` isolates the perturbation into marginal
-differences of potentials and Gibbs slices. On compact spaces with measurable opens on `X × Y` (and
-on `X` and `Y` for weak continuity), for a continuous finite cost, these families are uniformly
-bounded and equicontinuous; Ranga Rao's theorem
-(`MeasureTheory.ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous`) then gives joint
-weak continuity of `entropicTransportCost c ε` on `ProbabilityMeasure X × ProbabilityMeasure Y`.
+At positive temperature `ε ≠ 0` and for a bounded cost `c ≤ B`, canonical Schrödinger potentials
+(`TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials`) supply continuous potentials on
+compact spaces, quantitative `W₁`-Lipschitz stability, and joint weak continuity, following
+Feydy–Séjourné–Vialard–Amari–Trouvé–Peyré, Propositions 1 and 2:
+
+1. **Continuous canonical potentials on compact spaces
+   (`TauCeti.exists_continuous_entropicDualValue_eq`).**
+   On compact spaces `X` and `Y` with measurable opens on each factor, a continuous cost bounded by
+   `B` is automatically product-measurable
+   (`Continuous.measurable_prod_of_sigmaCompact_of_compact`),
+   and the tube-lemma equicontinuity criterion (`Metric.equicontinuous_of_forall_dist_le`) upgrades
+   the canonical measurable potentials of `TauCeti.exists_measurable_entropicDualValue_eq` to
+   continuous potentials satisfying `0 ≤ φ ≤ B`, `|ψ| ≤ B`, and both marginal equations everywhere.
+2. **Temperature-independent `W₁` stability
+   (`TauCeti.ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one`).**
+   Evaluating weak duality for `(μ, ν')` at the canonical potentials `(φ', ψ')` of `(μ', ν')` and
+   transferring slicewise Lipschitz regularity via
+   `TauCeti.lipschitzWith_of_forall_integral_entropicGibbsFactor_eq_one`, the exponential penalty
+   vanishes identically because `φ'` solves the `ν'`-marginal equation at every point of `X`, even
+   off the support of `μ'`. Thus `OT_ε(μ', ν') - OT_ε(μ, ν') ≤ ∫ φ' d(μ' - μ) ≤ K₁ W₁(μ', μ)`,
+   with no factor depending on `ε` or `B`. Combining with the symmetric target estimate yields
+   `|OT_ε(μ', ν') - OT_ε(μ, ν)| ≤ K₁ W₁(μ', μ) + K₂ W₁(ν', ν)`.
+3. **Joint weak continuity (`TauCeti.continuous_entropicTransportCost_of_lipschitzWith`,
+   `TauCeti.continuous_entropicTransportCost`).**
+   Because `0 ≤ φ' ≤ B`, centering `φ'` by `B / 2` also bounds the difference by truncated optimal
+   transport
+   (`TauCeti.abs_integral_sub_integral_le_add_one_mul_toReal_transportCost_truncated_dist`),
+   which metrises weak convergence on separable pseudometric spaces without moment assumptions
+   (`TauCeti.tendsto_probabilityMeasure_iff_transportCost_truncated_dist`). Because the truncated
+   transport bound is independent of `ε`, passing `ε → 0⁺` via
+   `TauCeti.tendsto_entropicTransportCost_transportCost_of_continuous` extends weak continuity on
+   compact pseudometric spaces to `ε = 0`. On arbitrary compact spaces `X` and `Y` with measurable
+   opens on each factor, factoring a continuous finite cost through compact pseudometric ranges
+   (`ContinuousMap.exists_factor_lipschitzWith_one`,
+   `TauCeti.entropicTransportCost_comp_prodMap_of_continuous`) yields joint weak continuity at every
+   temperature `ε : ℝ≥0` with neither metrisability nor `[OpensMeasurableSpace (X × Y)]`.
 
 ## Main statements
 
-* `TauCeti.exists_measurable_entropicDualValue_eq` and
-  `TauCeti.exists_continuous_entropicDualValue_eq`: dual attainment by normalised `c`-softmin
-  potentials bounded by `B` and `2 * B`, with `φ x + ψ y ≤ 2 * B`, coordinate oscillation
-  inheritance, and the pointwise marginal identity (measurable in general; continuous on compact
-  spaces with measurable opens on `X × Y`).
+* `TauCeti.exists_continuous_entropicDualValue_eq`: existence of continuous canonical Schrödinger
+  potentials on compact spaces satisfying `0 ≤ φ ≤ B`, `|ψ| ≤ B`, coordinate oscillation bounds, and
+  both pointwise marginal equations.
+* `TauCeti.ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one` and
+  `TauCeti.abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one`: `W₁`-Lipschitz stability
+  of entropic optimal transport on extended pseudometric spaces.
+* `TauCeti.continuous_toReal_entropicTransportCost_of_lipschitzWith` and
+  `TauCeti.continuous_entropicTransportCost_of_lipschitzWith`: joint weak continuity on separable
+  pseudometric spaces for bounded slicewise-Lipschitz costs.
 * `TauCeti.continuous_toReal_entropicTransportCost` and
-  `TauCeti.continuous_entropicTransportCost`: joint weak continuity on compact spaces with
-  measurable opens on `X`, `Y`, and `X × Y`.
+  `TauCeti.continuous_entropicTransportCost`: joint weak continuity on compact spaces for arbitrary
+  continuous finite costs at every temperature `ε : ℝ≥0`.
 
 ## References
 
 * J. Feydy, T. Séjourné, F.-X. Vialard, S. Amari, A. Trouvé and G. Peyré,
-  *Interpolating between optimal transport and MMD using Sinkhorn divergences*, AISTATS 2019,
-  Proposition 2, for potential regularity and weak continuity of entropic transport.
+  *Interpolating between optimal transport and MMD using Sinkhorn divergences*,
+  AISTATS 2019, Propositions 1 and 2.
+* M. Nutz, *Introduction to Entropic Optimal Transport*, lecture notes, Columbia University, 2021,
+  §2.
 -/
 
 public section
 
 noncomputable section
 
-open Filter MeasureTheory Set Topology
-open scoped ENNReal NNReal
+open Filter InformationTheory MeasureTheory Set
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
-/-! ### Regularised Schrödinger potentials via the `c`-softmin operator -/
+section ContinuousPotentials
 
-section Softmin
-
-variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {c : X × Y → ℝ≥0∞} {ε B : ℝ≥0}
-  {μ μ' : Measure X} {ν ν' : Measure Y}
-
-/-- The `c`-softmin transform `-ε * log ∫ exp (-(c (x, y)).toReal / ε + ψ y / ε) dν(y)` of a
-potential `ψ`, defined through the Sinkhorn half-step `TauCeti.logIntegralExp`. -/
-private def entropicSoftmin (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) (ν : Measure Y) (ψ : Y → ℝ) (x : X) :
-    ℝ :=
-  -(ε : ℝ) * logIntegralExp (fun z ↦ -(c z).toReal / ε) ν (fun y ↦ ψ y / ε) x
-
-private theorem measurable_entropicSoftmin [SFinite ν] (hc : Measurable c) {ψ : Y → ℝ}
-    (hψ : Measurable ψ) : Measurable (entropicSoftmin c ε ν ψ) :=
-  measurable_const.mul
-    (measurable_logIntegralExp (hc.ennreal_toReal.neg.div_const _) (hψ.div_const _))
-
-private theorem integrable_exp_neg_toReal_add [IsFiniteMeasure ν] (hc : Measurable c)
-    {ψ : Y → ℝ} {C : ℝ} (hψ : Measurable ψ) (hψC : ∀ y, |ψ y| ≤ C) (x : X) :
-    Integrable (fun y ↦ Real.exp (-(c (x, y)).toReal / ε + ψ y / ε)) ν :=
-  integrable_exp_add_of_le (h := fun z ↦ -(c z).toReal / ε) (ψ := fun y ↦ ψ y / ε)
-    (a := x) (M := 0) (C := C / ε) ((hc.comp measurable_prodMk_left).ennreal_toReal.neg.div_const _)
-    (fun _ ↦ div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 ENNReal.toReal_nonneg) ε.coe_nonneg)
-    (hψ.div_const _)
-    (fun y ↦ div_le_div_of_nonneg_right (le_of_abs_le (hψC y)) ε.coe_nonneg)
-
-private theorem abs_entropicSoftmin_le [IsProbabilityMeasure ν] (hc : Measurable c)
-    (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {ψ : Y → ℝ} {C : ℝ} (hψ : Measurable ψ)
-    (hψC : ∀ y, |ψ y| ≤ C) (x : X) :
-    |entropicSoftmin c ε ν ψ x| ≤ C + B := by
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hlog := abs_logIntegralExp_le (ν := ν) (h := fun z ↦ -(c z).toReal / ε)
-    (ψ := fun y ↦ ψ y / ε) (IsProbabilityMeasure.ne_zero ν) (a := x)
-    ((hc.comp measurable_prodMk_left).ennreal_toReal.neg.div_const _) (M := (B : ℝ) / ε)
-    (fun y ↦ by
-      rw [abs_div, abs_neg, abs_of_nonneg ENNReal.toReal_nonneg, abs_of_pos hεpos]
-      exact div_le_div_of_nonneg_right (ENNReal.toReal_le_coe_of_le_coe (hcB (x, y))) hεpos.le)
-    (hψ.div_const _) (C := C / ε) fun y ↦ by
-      rw [abs_div, abs_of_pos hεpos]
-      exact div_le_div_of_nonneg_right (hψC y) hεpos.le
-  rw [probReal_univ, Real.log_one, abs_zero, add_zero] at hlog
-  rw [entropicSoftmin, abs_mul, abs_neg, abs_of_pos hεpos]
-  exact (mul_le_mul_of_nonneg_left hlog hεpos.le).trans_eq
-    (by rw [← add_div, mul_div_cancel₀ _ hεpos.ne', add_comm])
-
-/-- The `c`-softmin inherits every uniform oscillation bound of `(c ·).toReal` in its first
-variable, independently of the measure `ν`, the temperature `ε`, and the potential `ψ`. -/
-private theorem abs_entropicSoftmin_sub_le [IsProbabilityMeasure ν] (hc : Measurable c)
-    (hε : ε ≠ 0) {ψ : Y → ℝ} {C : ℝ} (hψ : Measurable ψ)
-    (hψC : ∀ y, |ψ y| ≤ C) {x₁ x₂ : X} {δ : ℝ}
-    (hosc : ∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) :
-    |entropicSoftmin c ε ν ψ x₁ - entropicSoftmin c ε ν ψ x₂| ≤ δ := by
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hlog := abs_logIntegralExp_sub_le (ν := ν) (h := fun z ↦ -(c z).toReal / ε)
-    (ψ := fun y ↦ ψ y / ε) (IsProbabilityMeasure.ne_zero ν)
-    (integrable_exp_neg_toReal_add hc hψ hψC x₁) (integrable_exp_neg_toReal_add hc hψ hψC x₂)
-    (δ := δ / ε) fun y ↦ by
-      rw [← sub_div, neg_sub_neg, abs_div, abs_sub_comm, abs_of_pos hεpos]
-      exact div_le_div_of_nonneg_right (hosc y) hεpos.le
-  simp only [entropicSoftmin]
-  rw [← mul_sub, abs_mul, abs_neg, abs_of_pos hεpos]
-  exact (mul_le_mul_of_nonneg_left hlog hεpos.le).trans_eq (mul_div_cancel₀ _ hεpos.ne')
-
-/-- When `c ≤ B` and `ψ` has oscillation at most `B`, the sum `entropicSoftmin c ε ν ψ x + ψ y` is
-at most `2 * B` at every `(x, y)`. -/
-private theorem entropicSoftmin_add_le [IsProbabilityMeasure ν] (hc : Measurable c)
-    (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {ψ : Y → ℝ} {C : ℝ} (hψ : Measurable ψ)
-    (hψC : ∀ y, |ψ y| ≤ C) (hosc : ∀ y₁ y₂, |ψ y₁ - ψ y₂| ≤ B) (x : X) (y : Y) :
-    entropicSoftmin c ε ν ψ x + ψ y ≤ 2 * B := by
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hlower : Real.exp ((ψ y - 2 * B) / ε) ≤
-      ∫ y', Real.exp (-(c (x, y')).toReal / ε + ψ y' / ε) ∂ν := by
-    calc Real.exp ((ψ y - 2 * B) / ε) = ∫ _, Real.exp ((ψ y - 2 * B) / ε) ∂ν := by simp
-      _ ≤ _ := integral_mono (integrable_const _) (integrable_exp_neg_toReal_add hc hψ hψC x)
-          fun y' ↦ Real.exp_le_exp.2 <| by
-            rw [← add_div, neg_add_eq_sub]
-            exact div_le_div_of_nonneg_right
-              (by linarith [(le_abs_self _).trans (hosc y y'),
-                ENNReal.toReal_le_coe_of_le_coe (hcB (x, y'))]) hεpos.le
-  have hmul := mul_le_mul_of_nonneg_left
-    ((Real.log_exp _).symm.trans_le (Real.log_le_log (Real.exp_pos _) hlower)) hεpos.le
-  rw [mul_div_cancel₀ _ hεpos.ne'] at hmul
-  simp only [entropicSoftmin, logIntegralExp_def]
-  linarith
-
-omit [MeasurableSpace X] [MeasurableSpace Y] in
-/-- When `c (x, y) ≠ ∞`, the Gibbs factor splits into its `x`-potential factor and its tilted cost
-kernel. -/
-private theorem entropicGibbsFactor_eq_exp_mul_exp {φ : X → ℝ} {ψ : Y → ℝ} {x : X} {y : Y}
-    (hfin : c (x, y) ≠ ∞) :
-    entropicGibbsFactor c ε φ ψ (x, y) =
-      Real.exp (φ x / ε) * Real.exp (-(c (x, y)).toReal / ε + ψ y / ε) := by
-  rw [entropicGibbsFactor_of_ne_top hfin, ← Real.exp_add]; congr 1; ring
-
-/-- Each `x`-slice of `entropicGibbsFactor c ε φ ψ` integrates against `ν` to
-`exp ((φ x - entropicSoftmin c ε ν ψ x) / ε)`. -/
-private theorem integral_entropicGibbsFactor_eq_exp_sub_entropicSoftmin [IsProbabilityMeasure ν]
-    (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {φ : X → ℝ} {ψ : Y → ℝ} {C : ℝ}
-    (hψ : Measurable ψ) (hψC : ∀ y, |ψ y| ≤ C) (x : X) :
-    ∫ y, entropicGibbsFactor c ε φ ψ (x, y) ∂ν =
-      Real.exp ((φ x - entropicSoftmin c ε ν ψ x) / ε) := by
-  have hZpos := integral_exp_pos (integrable_exp_neg_toReal_add (ν := ν) (ε := ε) hc hψ hψC x)
-  simp_rw [entropicGibbsFactor_eq_exp_mul_exp
-    (ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB (x, _)))]
-  rw [integral_const_mul, ← Real.exp_log hZpos, ← Real.exp_add]
-  congr 1
-  simp only [entropicSoftmin, logIntegralExp_def]
-  field_simp [NNReal.coe_ne_zero.2 hε]
-  ring
-
-/-- At `φ = entropicSoftmin c ε ν ψ`, the Gibbs slice integrates to `1` against `ν` at *every*
-point `x : X`. -/
-private theorem integral_entropicGibbsFactor_entropicSoftmin [IsProbabilityMeasure ν]
-    (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {ψ : Y → ℝ} {C : ℝ}
-    (hψ : Measurable ψ) (hψC : ∀ y, |ψ y| ≤ C) (x : X) :
-    ∫ y, entropicGibbsFactor c ε (entropicSoftmin c ε ν ψ) ψ (x, y) ∂ν = 1 := by
-  rw [integral_entropicGibbsFactor_eq_exp_sub_entropicSoftmin hc hcB hε hψ hψC, sub_self,
-    zero_div, Real.exp_zero]
-
-/-- Replacing `φ` by `entropicSoftmin c ε ν ψ` does not decrease `entropicDualValue`. -/
-private theorem entropicDualValue_le_entropicSoftmin_left [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0)
-    {φ : X → ℝ} {ψ : Y → ℝ} {Cφ Cψ : ℝ} (hφ : Measurable φ) (hψ : Measurable ψ)
-    (hφC : ∀ x, |φ x| ≤ Cφ) (hψC : ∀ y, |ψ y| ≤ Cψ) :
-    entropicDualValue c ε μ ν φ ψ ≤
-      entropicDualValue c ε μ ν (entropicSoftmin c ε ν ψ) ψ := by
-  set φ₁ := entropicSoftmin c ε ν ψ
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hψC' : ∀ y, |ψ y| ≤ max Cψ 0 := fun y ↦ (hψC y).trans (le_max_left _ _)
-  have hφ₁m : Measurable φ₁ := measurable_entropicSoftmin hc hψ
-  have hφ₁C : ∀ x, |φ₁ x| ≤ max Cψ 0 + B := abs_entropicSoftmin_le hc hcB hε hψ hψC'
-  have hφi : Integrable φ μ := .of_bound hφ.aestronglyMeasurable Cφ (ae_of_all _ hφC)
-  have hφ₁i : Integrable φ₁ μ := .of_bound hφ₁m.aestronglyMeasurable _ (ae_of_all _ hφ₁C)
-  have hexp_diff : Integrable (fun x ↦ Real.exp ((φ x - φ₁ x) / ε)) μ :=
-    .of_bound ((hφ.sub hφ₁m).div_const _).exp.aestronglyMeasurable
-      (Real.exp ((Cφ + (max Cψ 0 + B)) / ε)) (ae_of_all _ fun x ↦ by
-        rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
-        exact div_le_div_of_nonneg_right
-          (by linarith [le_of_abs_le (hφC x), (abs_le.1 (hφ₁C x)).1]) hεpos.le)
-  have hexp_sub1 : Integrable (fun x ↦ Real.exp ((φ x - φ₁ x) / ε) - 1) μ :=
-    hexp_diff.sub (integrable_const (1 : ℝ))
-  have hexp := integrable_entropicGibbsFactor_of_le (μ := μ) (ν := ν) (ε := ε) hc hφ hψ
-    (fun x ↦ le_of_abs_le (hφC x)) (fun y ↦ le_of_abs_le (hψC y))
-  have hexp₁ := integrable_entropicGibbsFactor_of_le (μ := μ) (ν := ν) (ε := ε) hc hφ₁m hψ
-    (fun x ↦ le_of_abs_le (hφ₁C x)) (fun y ↦ le_of_abs_le (hψC' y))
-  have hint₁ : ∫ z, (entropicGibbsFactor c ε φ₁ ψ z - 1) ∂μ.prod ν = 0 := by
-    rw [integral_sub hexp₁ (integrable_const _), integral_prod _ hexp₁]
-    simp [φ₁, integral_entropicGibbsFactor_entropicSoftmin hc hcB hε hψ hψC']
-  have hpen : ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν =
-      ∫ x, (Real.exp ((φ x - φ₁ x) / ε) - 1) ∂μ := by
-    rw [integral_sub hexp (integrable_const _), integral_prod _ hexp,
-      integral_sub hexp_diff (integrable_const _)]
-    simp_rw [integral_entropicGibbsFactor_eq_exp_sub_entropicSoftmin hc hcB hε hψ hψC]; simp [φ₁]
-  have hpt : ∫ x, φ x ∂μ - ε * ∫ x, (Real.exp ((φ x - φ₁ x) / ε) - 1) ∂μ ≤ ∫ x, φ₁ x ∂μ := by
-    rw [← integral_const_mul, ← integral_sub hφi (hexp_sub1.const_mul _)]
-    refine integral_mono (hφi.sub (hexp_sub1.const_mul _)) hφ₁i fun x ↦ ?_
-    have hexp_le := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((φ x - φ₁ x) / ε)) hεpos.le
-    rw [mul_add, mul_div_cancel₀ _ hεpos.ne', mul_one] at hexp_le
-    linarith
-  rw [entropicDualValue_def, entropicDualValue_def, kantorovichDualValue_def,
-    kantorovichDualValue_def, hint₁, hpen]
-  linarith
-
-/-- Replacing `φ` by `entropicSoftmin c ε ν ψ` preserves dual optimality. -/
-private theorem entropicDualValue_entropicSoftmin_left_eq [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0)
-    {φ : X → ℝ} {ψ : Y → ℝ} {Cφ Cψ : ℝ} (hφ : Measurable φ) (hψ : Measurable ψ)
-    (hφC : ∀ x, |φ x| ≤ Cφ) (hψC : ∀ y, |ψ y| ≤ Cψ)
-    (hval : entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal) :
-    entropicDualValue c ε μ ν (entropicSoftmin c ε ν ψ) ψ =
-      (entropicTransportCost c ε μ ν).toReal := by
-  have hψC' : ∀ y, |ψ y| ≤ max Cψ 0 := fun y ↦ (hψC y).trans (le_max_left _ _)
-  have hφ₁m : Measurable (entropicSoftmin c ε ν ψ) := measurable_entropicSoftmin hc hψ
-  have hφ₁C := abs_entropicSoftmin_le (ν := ν) hc hcB hε hψ hψC'
-  refine le_antisymm ?_ (hval ▸ entropicDualValue_le_entropicSoftmin_left hc hcB hε hφ hψ hφC hψC)
-  exact entropicDualValue_le_toReal_entropicTransportCost
-    (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hc.aemeasurable hε
-    (.of_bound hφ₁m.aestronglyMeasurable _ (ae_of_all _ hφ₁C))
-    (.of_bound hψ.aestronglyMeasurable Cψ (ae_of_all _ hψC))
-    (integrable_entropicGibbsFactor_of_le hc hφ₁m hψ
-      (fun x ↦ le_of_abs_le (hφ₁C x)) (fun y ↦ le_of_abs_le (hψC y)))
-
-/-- Bundled regularity, normalisation, and optimality properties of a `c`-softmin Schrödinger
-potential pair `(φ, ψ)` for a cost bounded by `B`. -/
-private structure IsRegularizedPotentialPair (c : X × Y → ℝ≥0∞) (ε B : ℝ≥0)
-    (μ : Measure X) (ν : Measure Y) (φ : X → ℝ) (ψ : Y → ℝ) : Prop where
-  measurable_left : Measurable φ
-  measurable_right : Measurable ψ
-  abs_left_le : ∀ x, |φ x| ≤ B
-  abs_right_le : ∀ y, |ψ y| ≤ 2 * B
-  add_le : ∀ x y, φ x + ψ y ≤ 2 * B
-  abs_sub_left_le : ∀ x₁ x₂ δ,
-    (∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) → |φ x₁ - φ x₂| ≤ δ
-  abs_sub_right_le : ∀ y₁ y₂ δ,
-    (∀ x, |(c (x, y₁)).toReal - (c (x, y₂)).toReal| ≤ δ) → |ψ y₁ - ψ y₂| ≤ δ
-  integral_gibbs_eq_one : ∀ y, ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1
-  dualValue_eq : entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal
-
-private theorem IsRegularizedPotentialPair.integrable_gibbs [IsFiniteMeasure μ']
-    [IsFiniteMeasure ν'] {φ : X → ℝ} {ψ : Y → ℝ}
-    (h : IsRegularizedPotentialPair c ε B μ ν φ ψ) (hc : Measurable c) :
-    Integrable (entropicGibbsFactor c ε φ ψ) (μ'.prod ν') :=
-  integrable_entropicGibbsFactor_of_le hc h.measurable_left h.measurable_right
-    (fun x ↦ le_of_abs_le (h.abs_left_le x)) (fun y ↦ le_of_abs_le (h.abs_right_le y))
-
-private theorem exists_isRegularizedPotentialPair [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) :
-    ∃ (φ : X → ℝ) (ψ : Y → ℝ), IsRegularizedPotentialPair c ε B μ ν φ ψ := by
-  obtain ⟨φ₀, ψ₀, C₀, hφ₀, hψ₀, hφ₀C, hψ₀C, hval₀⟩ :=
-    exists_entropicDualValue_eq_toReal_entropicTransportCost (μ := μ) (ν := ν) hc hcB hε
-  have hψ₀C' : ∀ y, |ψ₀ y| ≤ max C₀ 0 := fun y ↦ (hψ₀C y).trans (le_max_left _ _)
-  set φ₁ := entropicSoftmin c ε ν ψ₀
-  have x₀ : X := μ.nonempty_of_neZero.some
-  set φ : X → ℝ := fun x ↦ φ₁ x - φ₁ x₀
-  set ψ : Y → ℝ := entropicSoftmin (c ∘ Prod.swap) ε μ φ
-  have hcs : Measurable (c ∘ Prod.swap) := hc.comp measurable_swap
-  have hcsB : ∀ z, (c ∘ Prod.swap) z ≤ B := fun z ↦ hcB z.swap
-  have hφ₁m : Measurable φ₁ := measurable_entropicSoftmin hc hψ₀
-  have hφm : Measurable φ := hφ₁m.sub_const _
-  have hosc_B (x₁ x₂ : X) (y : Y) : |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ B := abs_le.2
-    ⟨by linarith [(c (x₁, y)).toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hcB (x₂, y))],
-      by linarith [(c (x₂, y)).toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hcB (x₁, y))]⟩
-  have hφ_osc : ∀ x₁ x₂ δ, (∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) →
-      |φ x₁ - φ x₂| ≤ δ := fun _ _ _ h ↦ by
-    simpa only [φ, sub_sub_sub_cancel_right] using
-      abs_entropicSoftmin_sub_le (ν := ν) hc hε hψ₀ hψ₀C' h
-  have hφB (x : X) : |φ x| ≤ B := by
-    simpa only [φ, sub_self, sub_zero] using hφ_osc x x₀ B (hosc_B x x₀)
-  have hψB (y : Y) : |ψ y| ≤ 2 * B := by
-    simpa only [two_mul] using abs_entropicSoftmin_le (ν := μ) hcs hcsB hε hφm hφB y
-  have hφ₁C := abs_entropicSoftmin_le (ν := ν) hc hcB hε hψ₀ hψ₀C'
-  have hval₁ := entropicDualValue_entropicSoftmin_left_eq hc hcB hε hφ₀ hψ₀ hφ₀C hψ₀C hval₀
-  have hval₂ : entropicDualValue c ε μ ν φ (fun y ↦ ψ₀ y + φ₁ x₀) =
-      (entropicTransportCost c ε μ ν).toReal := by
-    rw [← hval₁]
-    simpa only [φ, sub_eq_add_neg, neg_neg] using
-      entropicDualValue_add_const_sub_const (c := c) (ε := ε) (μ := μ) (ν := ν)
-        (.of_bound hφ₁m.aestronglyMeasurable _ (ae_of_all _ hφ₁C))
-        (.of_bound hψ₀.aestronglyMeasurable C₀ (ae_of_all _ hψ₀C)) (by simp) (-φ₁ x₀)
-  have hval : entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
-    rw [← entropicDualValue_comp_swap (c := c), ← entropicTransportCost_comp_swap c ε ν]
-    exact entropicDualValue_entropicSoftmin_left_eq hcs hcsB hε (hψ₀.add_const _) hφm
-      (fun y ↦ (abs_add_le _ _).trans (add_le_add (hψ₀C' y) (hφ₁C x₀))) hφB
-      (by rwa [entropicDualValue_comp_swap, entropicTransportCost_comp_swap])
-  exact ⟨φ, ψ, ⟨hφm, measurable_entropicSoftmin hcs hφm, hφB, hψB,
-    fun x y ↦ add_comm (φ x) (ψ y) ▸ entropicSoftmin_add_le (ν := μ) hcs hcsB hε hφm hφB
-      (fun x₁ x₂ ↦ hφ_osc x₁ x₂ B (hosc_B x₁ x₂)) y x,
-    hφ_osc, fun _ _ _ h ↦ abs_entropicSoftmin_sub_le (ν := μ) hcs hε hφm hφB h,
-    fun y ↦ by
-      simpa only [entropicGibbsFactor_comp_swap, Function.comp_apply, Prod.swap_prod_mk] using
-        integral_entropicGibbsFactor_entropicSoftmin (ν := μ) hcs hcsB hε hφm hφB y, hval⟩⟩
-
-/-- **Existence of normalised `c`-softmin optimal potentials.** For probability measures, a bounded
-measurable cost `c ≤ B` and a positive temperature `ε`, there exist measurable potentials `(φ, ψ)`
-bounded by `B` and `2 * B` that attain `(entropicTransportCost c ε μ ν).toReal`, satisfy
-`φ(x) + ψ(y) ≤ 2 * B` and `∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1` at *every* `y : Y`, and
-inherit every uniform coordinate oscillation bound of `(c ·).toReal`. -/
-theorem exists_measurable_entropicDualValue_eq [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) :
-    ∃ (φ : X → ℝ) (ψ : Y → ℝ), Measurable φ ∧ Measurable ψ ∧
-      (∀ x, |φ x| ≤ B) ∧ (∀ y, |ψ y| ≤ 2 * B) ∧ (∀ x y, φ x + ψ y ≤ 2 * B) ∧
-      (∀ x₁ x₂ δ, (∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) →
-        |φ x₁ - φ x₂| ≤ δ) ∧
-      (∀ y₁ y₂ δ, (∀ x, |(c (x, y₁)).toReal - (c (x, y₂)).toReal| ≤ δ) →
-        |ψ y₁ - ψ y₂| ≤ δ) ∧
-      (∀ y, ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1) ∧
-      entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
-  obtain ⟨φ, ψ, h⟩ := exists_isRegularizedPotentialPair (μ := μ) (ν := ν) hc hcB hε
-  exact ⟨φ, ψ, h.measurable_left, h.measurable_right, h.abs_left_le, h.abs_right_le, h.add_le,
-    h.abs_sub_left_le, h.abs_sub_right_le, h.integral_gibbs_eq_one, h.dualValue_eq⟩
-
-/-- **One-sided dual perturbation bound.** When `(φ, ψ)` attains
-`(entropicTransportCost c ε μ ν).toReal` and satisfies `∫ x, G(x, y) ∂μ = 1` for every `y`,
-subtracting weak duality at `(μ', ν')` bounds the drop in optimal value through marginal
-differences of `φ`, `ψ`, and the `x`-slices of `G`. -/
-private theorem IsRegularizedPotentialPair.toReal_entropicTransportCost_sub_le
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] [IsProbabilityMeasure μ']
-    [IsProbabilityMeasure ν'] {φ : X → ℝ} {ψ : Y → ℝ}
-    (h : IsRegularizedPotentialPair c ε B μ ν φ ψ) (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
-    (hε : ε ≠ 0) :
-    (entropicTransportCost c ε μ ν).toReal - (entropicTransportCost c ε μ' ν').toReal ≤
-      (∫ x, φ x ∂μ - ∫ x, φ x ∂μ') + (∫ y, ψ y ∂ν - ∫ y, ψ y ∂ν') +
-        ε * ∫ y, (∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ' -
-          ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ) ∂ν' := by
-  have hexp := h.integrable_gibbs (μ' := μ) (ν' := ν) hc
-  have hexp' := h.integrable_gibbs (μ' := μ') (ν' := ν') hc
-  have hval_eq : (entropicTransportCost c ε μ ν).toReal = ∫ x, φ x ∂μ + ∫ y, ψ y ∂ν := by
-    rw [← h.dualValue_eq, entropicDualValue_def, kantorovichDualValue_def,
-      integral_sub hexp (integrable_const _), integral_prod_symm _ hexp]
-    simp [h.integral_gibbs_eq_one]
-  have hdual' := entropicDualValue_le_toReal_entropicTransportCost
-    (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hc.aemeasurable hε
-    (.of_bound h.measurable_left.aestronglyMeasurable B (ae_of_all _ h.abs_left_le))
-    (.of_bound h.measurable_right.aestronglyMeasurable (2 * B) (ae_of_all _ h.abs_right_le)) hexp'
-  rw [entropicDualValue_def, kantorovichDualValue_def, integral_sub hexp' (integrable_const _),
-    integral_prod_symm _ hexp'] at hdual'
-  simp only [integral_const, probReal_univ, smul_eq_mul, mul_one] at hdual'
-  have hpen : ∫ y, ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ' ∂ν' - 1 =
-      ∫ y, (∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ' -
-        ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ) ∂ν' := by
-    simp_rw [h.integral_gibbs_eq_one]
-    rw [integral_sub hexp'.integral_prod_right (integrable_const _)]; simp
-  rw [hval_eq, ← hpen]; linarith
-
-/-- Quantitative form of `toReal_entropicTransportCost_sub_le` when each of the three marginal
-differences is within `η / 3`. -/
-private theorem IsRegularizedPotentialPair.toReal_entropicTransportCost_sub_lt
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] [IsProbabilityMeasure μ']
-    [IsProbabilityMeasure ν'] {φ : X → ℝ} {ψ : Y → ℝ}
-    (h : IsRegularizedPotentialPair c ε B μ ν φ ψ) (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
-    (hε : ε ≠ 0) {η : ℝ} (hφ : ∫ x, φ x ∂μ - ∫ x, φ x ∂μ' < η / 3)
-    (hψ : ∫ y, ψ y ∂ν - ∫ y, ψ y ∂ν' < η / 3)
-    (hG : ∀ y, ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ' -
-      ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ ≤ η / (3 * ε)) :
-    (entropicTransportCost c ε μ ν).toReal - (entropicTransportCost c ε μ' ν').toReal < η := by
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hpen : ∫ y, (∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ' -
-        ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ) ∂ν' ≤ η / (3 * ε) :=
-    (integral_mono ((h.integrable_gibbs (μ' := μ') (ν' := ν') hc).integral_prod_right.sub
-      (h.integrable_gibbs (μ' := μ) (ν' := ν') hc).integral_prod_right)
-      (integrable_const _) hG).trans_eq (by simp)
-  have hmul : (ε : ℝ) * ∫ y, (∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ' -
-        ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ) ∂ν' ≤ η / 3 :=
-    (mul_le_mul_of_nonneg_left hpen hεpos.le).trans_eq (by field_simp)
-  linarith [h.toReal_entropicTransportCost_sub_le (μ' := μ') (ν' := ν') hc hcB hε]
-
-end Softmin
-
-/-! ### Joint weak continuity on compact spaces -/
-
-section Compact
-
-variable {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
-  [OpensMeasurableSpace X] [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
-  [OpensMeasurableSpace Y] [OpensMeasurableSpace (X × Y)] {c : X × Y → ℝ≥0∞} {ε B : ℝ≥0}
-
-omit [CompactSpace X] [OpensMeasurableSpace X] [OpensMeasurableSpace Y]
-  [OpensMeasurableSpace (X × Y)] in
-/-- Equicontinuity of the left potentials `q ↦ φ q` for any family of regularised potential
-pairs. -/
-private theorem equicontinuous_left_of_isRegularizedPotentialPair {ι : Type*}
-    {μ : ι → Measure X} {ν : ι → Measure Y} {φ : ι → X → ℝ} {ψ : ι → Y → ℝ}
-    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞)
-    (hpair : ∀ q, IsRegularizedPotentialPair c ε B (μ q) (ν q) (φ q) (ψ q)) :
-    Equicontinuous φ :=
-  Metric.equicontinuous_of_forall_dist_le (L := 1) (hc.ennreal_toReal hfin)
-    fun x₁ x₂ δ _ h q ↦ by
-      simpa only [Real.dist_eq, one_mul] using
-        (hpair q).abs_sub_left_le x₁ x₂ δ (by simpa only [Real.dist_eq] using h)
-
-omit [CompactSpace Y] [OpensMeasurableSpace X] [OpensMeasurableSpace Y]
-  [OpensMeasurableSpace (X × Y)] in
-/-- Equicontinuity of the right potentials `q ↦ ψ q` for any family of regularised potential
-pairs. -/
-private theorem equicontinuous_right_of_isRegularizedPotentialPair {ι : Type*}
-    {μ : ι → Measure X} {ν : ι → Measure Y} {φ : ι → X → ℝ} {ψ : ι → Y → ℝ}
-    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞)
-    (hpair : ∀ q, IsRegularizedPotentialPair c ε B (μ q) (ν q) (φ q) (ψ q)) :
-    Equicontinuous ψ :=
-  Metric.equicontinuous_of_forall_dist_le (L := 1)
-    ((hc.ennreal_toReal hfin).comp continuous_swap) fun y₁ y₂ δ _ h q ↦ by
-      simpa only [Real.dist_eq, one_mul] using (hpair q).abs_sub_right_le y₁ y₂ δ
-        (by simpa only [Real.dist_eq, Function.comp_apply, Prod.swap_prod_mk] using h)
-
-omit [CompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] [MeasurableSpace Y]
-  [OpensMeasurableSpace Y] [OpensMeasurableSpace (X × Y)] in
-/-- Equicontinuity in `x` of the Gibbs slices `(q, y) ↦ entropicGibbsFactor c ε (φ q) (ψ q) (·, y)`
-for any family of regularised potential pairs. -/
-private theorem equicontinuous_entropicGibbsFactor {ι : Type*} [MeasurableSpace X]
-    [MeasurableSpace Y] {μ : ι → Measure X} {ν : ι → Measure Y} {φ : ι → X → ℝ} {ψ : ι → Y → ℝ}
-    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
-    (hpair : ∀ q, IsRegularizedPotentialPair c ε B (μ q) (ν q) (φ q) (ψ q)) :
-    Equicontinuous
-      fun qy : ι × Y ↦ fun x ↦ entropicGibbsFactor c ε (φ qy.1) (ψ qy.1) (x, qy.2) := by
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  refine Metric.equicontinuous_of_forall_dist_le (hc.ennreal_toReal hfin)
-    (L := Real.exp (2 * B / ε) * (2 / ε)) fun x₁ x₂ δ _ h qy ↦ ?_
-  have h' : ∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ := by
-    simpa only [Real.dist_eq] using h
-  simp only [Real.dist_eq, entropicGibbsFactor_of_ne_top (hfin (x₁, qy.2)),
-    entropicGibbsFactor_of_ne_top (hfin (x₂, qy.2))]
-  have hle (x : X) : (φ qy.1 x + ψ qy.1 qy.2 - (c (x, qy.2)).toReal) / ε ≤ 2 * B / ε :=
-    div_le_div_of_nonneg_right
-      (by linarith [(hpair qy.1).add_le x qy.2, (c (x, qy.2)).toReal_nonneg]) hεpos.le
-  refine (Real.abs_exp_sub_exp_le (hle x₁) (hle x₂)).trans ?_
-  rw [mul_assoc]
-  refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
-  have hdiff : (φ qy.1 x₁ + ψ qy.1 qy.2 - (c (x₁, qy.2)).toReal) / ε -
-      (φ qy.1 x₂ + ψ qy.1 qy.2 - (c (x₂, qy.2)).toReal) / ε =
-      ((φ qy.1 x₁ - φ qy.1 x₂) - ((c (x₁, qy.2)).toReal - (c (x₂, qy.2)).toReal)) / ε := by
-    ring
-  rw [hdiff, abs_div, abs_of_pos hεpos, div_mul_eq_mul_div, div_le_div_iff_of_pos_right hεpos]
-  linarith [abs_sub (φ qy.1 x₁ - φ qy.1 x₂) ((c (x₁, qy.2)).toReal - (c (x₂, qy.2)).toReal),
-    (hpair qy.1).abs_sub_left_le x₁ x₂ δ h', h' qy.2]
-
-omit [TopologicalSpace X] [TopologicalSpace Y] [CompactSpace X] [CompactSpace Y]
-  [OpensMeasurableSpace X] [OpensMeasurableSpace Y] in
-private theorem totallyBounded_range_entropicGibbsFactor (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
-    {ι : Type*} {μs : ι → Measure X} {νs : ι → Measure Y} {φ : ι → X → ℝ} {ψ : ι → Y → ℝ}
-    (hpair : ∀ q, IsRegularizedPotentialPair c ε B (μs q) (νs q) (φ q) (ψ q)) (x : X) :
-    TotallyBounded
-      (range fun qy : ι × Y ↦ entropicGibbsFactor c ε (φ qy.1) (ψ qy.1) (x, qy.2)) :=
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  Metric.totallyBounded_range_of_dist_le (c := 0) (M := Real.exp (2 * B / ε)) fun qy ↦ by
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (entropicGibbsFactor_nonneg _),
-      entropicGibbsFactor_of_ne_top (hfin (x, qy.2)), Real.exp_le_exp]
-    exact div_le_div_of_nonneg_right
-      (by linarith [(hpair qy.1).add_le x qy.2, (c (x, qy.2)).toReal_nonneg]) hεpos.le
-
-omit [OpensMeasurableSpace X] [OpensMeasurableSpace Y] in
-/-- **Existence of continuous optimal Schrödinger potentials on compact spaces.** For probability
-measures on compact spaces with measurable opens on `X × Y`, a continuous cost bounded by `B` and a
-positive temperature `ε`, the entropic dual problem is attained by continuous `c`-softmin
-potentials `(φ, ψ)` bounded by `B` and `2 * B`, with `φ x + ψ y ≤ 2 * B`, inheriting every uniform
-coordinate oscillation bound of `(c ·).toReal`, and satisfying
-`∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1` for every `y : Y`. -/
-theorem exists_continuous_entropicDualValue_eq {μ : Measure X} {ν : Measure Y}
+/-- **Existence of continuous canonical Schrödinger potentials on compact spaces.** For probability
+measures on compact spaces `X` and `Y` with measurable opens on each factor, a continuous cost
+bounded by `B`, and a positive temperature `ε`, the entropic dual problem is attained by continuous
+potentials `(φ, ψ)` satisfying `0 ≤ φ ≤ B` and `|ψ| ≤ B`, inheriting every uniform coordinate
+oscillation bound of `(c ·).toReal`, solving both Schrödinger marginal equations pointwise
+everywhere on `X` and `Y`, and attaining `(entropicTransportCost c ε μ ν).toReal` in both the
+Kantorovich and entropic dual objectives. -/
+theorem exists_continuous_entropicDualValue_eq
+    {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+    {c : X × Y → ℝ≥0∞} {ε B : ℝ≥0} {μ : Measure X} {ν : Measure Y}
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hc : Continuous c) (hcB : ∀ z, c z ≤ B)
     (hε : ε ≠ 0) :
     ∃ (φ : X → ℝ) (ψ : Y → ℝ), Continuous φ ∧ Continuous ψ ∧
-      (∀ x, |φ x| ≤ B) ∧ (∀ y, |ψ y| ≤ 2 * B) ∧ (∀ x y, φ x + ψ y ≤ 2 * B) ∧
+      (∀ x, 0 ≤ φ x ∧ φ x ≤ B) ∧ (∀ y, |ψ y| ≤ B) ∧
       (∀ x₁ x₂ δ, (∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) →
         |φ x₁ - φ x₂| ≤ δ) ∧
       (∀ y₁ y₂ δ, (∀ x, |(c (x, y₁)).toReal - (c (x, y₂)).toReal| ≤ δ) →
         |ψ y₁ - ψ y₂| ≤ δ) ∧
+      (∀ x, ∫ y, entropicGibbsFactor c ε φ ψ (x, y) ∂ν = 1) ∧
       (∀ y, ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1) ∧
+      kantorovichDualValue μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal ∧
       entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
   have hfin : ∀ z, c z ≠ ∞ := fun z ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
-  obtain ⟨φ, ψ, hp⟩ := exists_isRegularizedPotentialPair (μ := μ) (ν := ν) hc.measurable hcB hε
-  exact ⟨φ, ψ,
-    (equicontinuous_left_of_isRegularizedPotentialPair hc hfin fun _ : Unit ↦ hp).continuous (),
-    (equicontinuous_right_of_isRegularizedPotentialPair hc hfin fun _ : Unit ↦ hp).continuous (),
-    hp.abs_left_le, hp.abs_right_le, hp.add_le, hp.abs_sub_left_le, hp.abs_sub_right_le,
-    hp.integral_gibbs_eq_one, hp.dualValue_eq⟩
+  have hc_real : Continuous fun z ↦ (c z).toReal := hc.ennreal_toReal hfin
+  obtain ⟨φ, ψ, -, -, hφB, hψB, hφ_osc, hψ_osc, hrow, hcol, hkant, hent⟩ :=
+    exists_measurable_entropicDualValue_eq (μ := μ) (ν := ν)
+      hc.measurable_prod_of_sigmaCompact_of_compact hcB hε
+  have hφc : Continuous φ :=
+    (Metric.equicontinuous_of_forall_dist_le (F := fun _ : Unit ↦ φ) (L := 1) hc_real
+      fun x₁ x₂ δ _ h _ ↦ by
+        simpa only [Real.dist_eq, one_mul] using
+          hφ_osc x₁ x₂ δ (by simpa only [Real.dist_eq] using h)).continuous ()
+  have hψc : Continuous ψ :=
+    (Metric.equicontinuous_of_forall_dist_le (F := fun _ : Unit ↦ ψ) (L := 1)
+      (hc_real.comp continuous_swap) fun y₁ y₂ δ _ h _ ↦ by
+        simpa only [Real.dist_eq, one_mul] using hψ_osc y₁ y₂ δ
+          (by simpa only [Real.dist_eq, Function.comp_apply, Prod.swap_prod_mk] using h)).continuous
+      ()
+  exact ⟨φ, ψ, hφc, hψc, hφB, hψB, hφ_osc, hψ_osc, hrow, hcol, hkant, hent⟩
 
-/-- **Joint weak continuity of real-valued entropic optimal transport on compact spaces.** For a
-continuous finite-valued cost on compact spaces with measurable opens on `X`, `Y`, and `X × Y`, and
-a positive temperature `ε`, `(μ, ν) ↦ (entropicTransportCost c ε μ ν).toReal` is jointly continuous
-on `ProbabilityMeasure X × ProbabilityMeasure Y`. -/
-theorem continuous_toReal_entropicTransportCost (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞)
-    (hε : ε ≠ 0) :
-    Continuous fun p : ProbabilityMeasure X × ProbabilityMeasure Y ↦
-      (entropicTransportCost c ε (p.1 : Measure X) (p.2 : Measure Y)).toReal := by
-  set I := ProbabilityMeasure X × ProbabilityMeasure Y
-  obtain ⟨B, hcB⟩ := hc.exists_forall_le_coe_of_ne_top hfin
-  have : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hex (q : I) := exists_isRegularizedPotentialPair
-    (μ := (q.1 : Measure X)) (ν := (q.2 : Measure Y)) hc.measurable hcB hε
-  let φ : I → X → ℝ := fun q ↦ (hex q).choose
-  let ψ : I → Y → ℝ := fun q ↦ (hex q).choose_spec.choose
-  have hspec (q : I) : IsRegularizedPotentialPair c ε B (q.1 : Measure X) (q.2 : Measure Y)
-      (φ q) (ψ q) := (hex q).choose_spec.choose_spec
-  rw [continuous_iff_continuousAt]
-  intro p₀
-  rw [ContinuousAt, Metric.tendsto_nhds]
-  intro η hη
-  have hunif_φ := ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous
-    (continuous_fst.tendsto p₀) (equicontinuous_left_of_isRegularizedPotentialPair hc hfin hspec)
-    fun x ↦ Metric.totallyBounded_range_of_dist_le (c := 0) fun q ↦ by
-      simpa only [Real.dist_eq, sub_zero] using (hspec q).abs_left_le x
-  have hunif_ψ := ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous
-    (continuous_snd.tendsto p₀) (equicontinuous_right_of_isRegularizedPotentialPair hc hfin hspec)
-    fun y ↦ Metric.totallyBounded_range_of_dist_le (c := 0) fun q ↦ by
-      simpa only [Real.dist_eq, sub_zero] using (hspec q).abs_right_le y
-  have hunif_G := ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous
-    (continuous_fst.tendsto p₀) (equicontinuous_entropicGibbsFactor hc hfin hε hspec)
-    (totallyBounded_range_entropicGibbsFactor hfin hε hspec)
-  filter_upwards [Metric.tendstoUniformly_iff.1 hunif_φ (η / 3) (by positivity),
-    Metric.tendstoUniformly_iff.1 hunif_ψ (η / 3) (by positivity),
-    Metric.tendstoUniformly_iff.1 hunif_G (η / (3 * ε)) (by positivity)] with p hpφ hpψ hpG
-  rw [Real.dist_eq, abs_sub_lt_iff]
-  exact ⟨(hspec p).toReal_entropicTransportCost_sub_lt hc.measurable hcB hε
-      (by linarith [(abs_lt.1 (Real.dist_eq _ _ ▸ hpφ p)).1])
-      (by linarith [(abs_lt.1 (Real.dist_eq _ _ ▸ hpψ p)).1])
-      fun y ↦ by linarith [(abs_le.1 (Real.dist_eq _ _ ▸ (hpG (p, y)).le)).2],
-    (hspec p₀).toReal_entropicTransportCost_sub_lt hc.measurable hcB hε
-      (by linarith [(abs_lt.1 (Real.dist_eq _ _ ▸ hpφ p₀)).2])
-      (by linarith [(abs_lt.1 (Real.dist_eq _ _ ▸ hpψ p₀)).2])
-      fun y ↦ by linarith [(abs_le.1 (Real.dist_eq _ _ ▸ (hpG (p₀, y)).le)).1]⟩
+end ContinuousPotentials
 
-/-- **Joint weak continuity of `ℝ≥0∞`-valued entropic optimal transport on compact spaces** with
-measurable opens on `X`, `Y`, and `X × Y`. -/
-theorem continuous_entropicTransportCost (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞)
-    (hε : ε ≠ 0) :
-    Continuous fun p : ProbabilityMeasure X × ProbabilityMeasure Y ↦
-      entropicTransportCost c ε (p.1 : Measure X) (p.2 : Measure Y) := by
-  obtain ⟨B, hcB⟩ := hc.exists_forall_le_coe_of_ne_top hfin
-  have heq : (fun p : ProbabilityMeasure X × ProbabilityMeasure Y ↦
-        entropicTransportCost c ε (p.1 : Measure X) (p.2 : Measure Y)) =
-      fun p ↦ ENNReal.ofReal
-        (entropicTransportCost c ε (p.1 : Measure X) (p.2 : Measure Y)).toReal :=
+section MarginalStability
+
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+  {c : X × Y → ℝ≥0∞} {ε B K₁ K₂ : ℝ≥0} {μ μ' : Measure X} {ν ν' : Measure Y}
+
+/-- Varying only the source marginal from `μ'` to `μ` increases the regularised cost by at most
+the difference of expectations of the `K₁`-Lipschitz canonical source potential of `(μ', ν)`. -/
+private theorem exists_lipschitzWith_source_potential_diff_bound [PseudoEMetricSpace X]
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure μ'] [IsProbabilityMeasure ν] (hc : Measurable c)
+    (hcB : ∀ z, c z ≤ B) (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    ∃ φ' : X → ℝ, Measurable φ' ∧ LipschitzWith K₁ φ' ∧ (∀ x, 0 ≤ φ' x ∧ φ' x ≤ B) ∧
+      (∀ ρ : Measure X, [IsFiniteMeasure ρ] → Integrable φ' ρ) ∧
+      (entropicTransportCost c ε μ' ν).toReal - (entropicTransportCost c ε μ ν).toReal ≤
+        ∫ x, φ' x ∂μ' - ∫ x, φ' x ∂μ := by
+  have hfin (z : X × Y) : c z ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
+  obtain ⟨φ', ψ', hφ', hψ', hφ'B, hψ'B, -, -, hrow, -, hkant, -⟩ :=
+    exists_measurable_entropicDualValue_eq (μ := μ') (ν := ν) hc hcB hε
+  have hφ'L : LipschitzWith K₁ φ' :=
+    lipschitzWith_of_forall_integral_entropicGibbsFactor_eq_one hc hfin hε hL₁ hψ'
+      (fun y ↦ le_of_abs_le (hψ'B y)) hrow
+  have hφ'abs : ∀ x, |φ' x| ≤ B := fun x ↦
+    abs_le.2 ⟨by linarith [(hφ'B x).1, B.coe_nonneg], (hφ'B x).2⟩
+  have hφ'i (ρ : Measure X) [IsFiniteMeasure ρ] : Integrable φ' ρ :=
+    .of_bound hφ'.aestronglyMeasurable B (ae_of_all _ hφ'abs)
+  have hψ'ν : Integrable ψ' ν := .of_bound hψ'.aestronglyMeasurable B (ae_of_all _ hψ'B)
+  have hexp := integrable_entropicGibbsFactor_of_le (μ := μ) (ν := ν) (ε := ε) hc hφ' hψ'
+    (fun x ↦ (hφ'B x).2) (fun y ↦ le_of_abs_le (hψ'B y))
+  have hint_one : ∫ z, entropicGibbsFactor c ε φ' ψ' z ∂μ.prod ν = 1 := by
+    rw [integral_prod _ hexp]
+    simp [hrow]
+  have hdual := entropicDualValue_le_toReal_entropicTransportCost
+    (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hc.aemeasurable hε
+    (hφ'i μ) hψ'ν hexp
+  rw [entropicDualValue_def, integral_sub hexp (integrable_const _), hint_one] at hdual
+  simp only [integral_const, probReal_univ, one_smul, sub_self, mul_zero, sub_zero] at hdual
+  rw [kantorovichDualValue_def] at hkant hdual
+  exact ⟨φ', hφ', hφ'L, hφ'B, hφ'i, by linarith⟩
+
+/-- Source-marginal `W₁` stability of entropic optimal transport, in `ℝ≥0∞`. -/
+private theorem ofReal_abs_toReal_entropicTransportCost_sub_left_le_wassersteinEDist_one
+    [PseudoEMetricSpace X] [IsProbabilityMeasure μ] [IsProbabilityMeasure μ']
+    [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    ENNReal.ofReal |(entropicTransportCost c ε μ' ν).toReal -
+        (entropicTransportCost c ε μ ν).toReal| ≤
+      K₁ * wassersteinEDist 1 μ' μ := by
+  obtain ⟨φ₁, _, hφ₁L, _, hφ₁i, hle₁⟩ :=
+    exists_lipschitzWith_source_potential_diff_bound (μ := μ) (μ' := μ') (ν := ν) hc hcB hL₁ hε
+  obtain ⟨φ₂, _, hφ₂L, _, hφ₂i, hle₂⟩ :=
+    exists_lipschitzWith_source_potential_diff_bound (μ := μ') (μ' := μ) (ν := ν) hc hcB hL₁ hε
+  rcases le_total (entropicTransportCost c ε μ ν).toReal
+      (entropicTransportCost c ε μ' ν).toReal with h | h
+  · rw [abs_of_nonneg (sub_nonneg.2 h)]
+    exact (ENNReal.ofReal_le_ofReal (hle₁.trans (le_abs_self _))).trans
+      (ofReal_abs_integral_sub_integral_le_mul_wassersteinEDist_one (by simp) hφ₁L
+        (hφ₁i μ') (hφ₁i μ))
+  · rw [abs_of_nonpos (sub_nonpos.2 h), neg_sub]
+    exact (ENNReal.ofReal_le_ofReal
+        (hle₂.trans ((le_abs_self _).trans_eq (abs_sub_comm _ _)))).trans
+      (ofReal_abs_integral_sub_integral_le_mul_wassersteinEDist_one (by simp) hφ₂L
+        (hφ₂i μ') (hφ₂i μ))
+
+/-- **`W₁`-Lipschitz stability of entropic optimal transport, in `ℝ≥0∞`
+(Feydy et al., Proposition 2).** On extended pseudometric spaces, for probability marginals, a
+measurable cost bounded by `B` with `K₁`- and `K₂`-Lipschitz slices, and a positive temperature
+`ε`, the regularised transport cost is `(K₁, K₂)`-Lipschitz with respect to the `1`-Wasserstein
+distance, with constants independent of `ε` and `B`. No measurability of the ground distances and
+no finiteness of `W₁` is required. -/
+theorem ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Y] [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure μ'] [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
+    (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K₂ fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    ENNReal.ofReal |(entropicTransportCost c ε μ' ν').toReal -
+        (entropicTransportCost c ε μ ν).toReal| ≤
+      K₁ * wassersteinEDist 1 μ' μ + K₂ * wassersteinEDist 1 ν' ν := by
+  have htri : |(entropicTransportCost c ε μ' ν').toReal -
+      (entropicTransportCost c ε μ ν).toReal| ≤
+      |(entropicTransportCost c ε μ' ν').toReal - (entropicTransportCost c ε μ ν').toReal| +
+        |(entropicTransportCost c ε μ ν').toReal - (entropicTransportCost c ε μ ν).toReal| :=
+    abs_sub_le _ _ _
+  refine (ENNReal.ofReal_le_ofReal htri).trans (ENNReal.ofReal_add_le.trans ?_)
+  gcongr
+  · exact ofReal_abs_toReal_entropicTransportCost_sub_left_le_wassersteinEDist_one hc hcB hL₁ hε
+  · rw [← entropicTransportCost_comp_swap c ε ν', ← entropicTransportCost_comp_swap c ε ν]
+    exact ofReal_abs_toReal_entropicTransportCost_sub_left_le_wassersteinEDist_one
+      (hc.comp measurable_swap) (fun w ↦ hcB w.swap) hL₂ hε
+
+/-- **`W₁`-Lipschitz stability of entropic optimal transport, in real form
+(Feydy et al., Proposition 2).** When the two `1`-Wasserstein distances are finite, the difference
+of regularised transport costs is bounded by `K₁ * W₁(μ', μ) + K₂ * W₁(ν', ν)`. -/
+theorem abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Y] [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure μ'] [IsProbabilityMeasure ν] [IsProbabilityMeasure ν']
+    (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K₂ fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0)
+    (hw₁ : wassersteinEDist 1 μ' μ ≠ ∞) (hw₂ : wassersteinEDist 1 ν' ν ≠ ∞) :
+    |(entropicTransportCost c ε μ' ν').toReal - (entropicTransportCost c ε μ ν).toReal| ≤
+      K₁ * (wassersteinEDist 1 μ' μ).toReal + K₂ * (wassersteinEDist 1 ν' ν).toReal :=
+  le_coe_mul_add_coe_mul_of_ofReal_le
+    (ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one hc hcB hL₁ hL₂ hε) hw₁ hw₂
+
+/-- Source-marginal stability of entropic optimal transport in terms of truncated optimal
+transport, with no moment assumption. -/
+private theorem abs_toReal_entropicTransportCost_sub_left_le_transportCost_truncated_dist
+    [PseudoMetricSpace X] [OpensMeasurableSpace X] [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure μ'] [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    |(entropicTransportCost c ε μ' ν).toReal - (entropicTransportCost c ε μ ν).toReal| ≤
+      (K₁ + 1 : ℝ) * (transportCost (fun z : X × X ↦
+        ENNReal.ofReal (min (dist z.1 z.2) (((B : ℝ) + 1) / (K₁ + 1)))) μ' μ).toReal := by
+  obtain ⟨φ₁, _, hφ₁L, hφ₁B, -, hle₁⟩ :=
+    exists_lipschitzWith_source_potential_diff_bound (μ := μ) (μ' := μ') (ν := ν) hc hcB hL₁ hε
+  obtain ⟨φ₂, _, hφ₂L, hφ₂B, -, hle₂⟩ :=
+    exists_lipschitzWith_source_potential_diff_bound (μ := μ') (μ' := μ) (ν := ν) hc hcB hL₁ hε
+  have hcent {φ : X → ℝ} (hb : ∀ x, 0 ≤ φ x ∧ φ x ≤ B) (x : X) :
+      ‖φ x - (B : ℝ) / 2‖ ≤ ((B : ℝ) + 1) / 2 := by
+    rw [Real.norm_eq_abs]
+    exact abs_le.2 ⟨by linarith [(hb x).1], by linarith [(hb x).2]⟩
+  have hcap : 2 * (((B : ℝ) + 1) / 2) / (K₁ + 1 : ℝ) = ((B : ℝ) + 1) / (K₁ + 1 : ℝ) := by ring
+  have hb₁ : (entropicTransportCost c ε μ' ν).toReal - (entropicTransportCost c ε μ ν).toReal ≤
+      (K₁ + 1 : ℝ) * (transportCost (fun z : X × X ↦
+        ENNReal.ofReal (min (dist z.1 z.2) (((B : ℝ) + 1) / (K₁ + 1)))) μ' μ).toReal := by
+    refine (hle₁.trans (le_abs_self _)).trans ?_
+    simpa only [hcap] using
+      abs_integral_sub_integral_le_add_one_mul_toReal_transportCost_truncated_dist
+        (μ := μ') (ν := μ) hφ₁L (hcent hφ₁B)
+  have hb₂ : (entropicTransportCost c ε μ ν).toReal - (entropicTransportCost c ε μ' ν).toReal ≤
+      (K₁ + 1 : ℝ) * (transportCost (fun z : X × X ↦
+        ENNReal.ofReal (min (dist z.1 z.2) (((B : ℝ) + 1) / (K₁ + 1)))) μ' μ).toReal := by
+    refine (hle₂.trans (le_abs_self _)).trans ((abs_sub_comm _ _).trans_le ?_)
+    simpa only [hcap] using
+      abs_integral_sub_integral_le_add_one_mul_toReal_transportCost_truncated_dist
+        (μ := μ') (ν := μ) hφ₂L (hcent hφ₂B)
+  exact abs_sub_le_iff.2 ⟨hb₁, hb₂⟩
+
+end MarginalStability
+
+section WeakContinuity
+
+private theorem continuous_of_abs_sub_le_transportCost_truncated_dist
+    {X Y : Type*} [PseudoMetricSpace X] [TopologicalSpace.SeparableSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [PseudoMetricSpace Y] [TopologicalSpace.SeparableSpace Y]
+    [MeasurableSpace Y] [OpensMeasurableSpace Y] {c : X × Y → ℝ≥0∞} {ε B K₁ K₂ : ℝ≥0}
+    (hleft : ∀ (μ μ' : Measure X) (ν : Measure Y) [IsProbabilityMeasure μ]
+      [IsProbabilityMeasure μ'] [IsProbabilityMeasure ν],
+      |(entropicTransportCost c ε μ' ν).toReal - (entropicTransportCost c ε μ ν).toReal| ≤
+        (K₁ + 1 : ℝ) * (transportCost (fun z : X × X ↦
+          ENNReal.ofReal (min (dist z.1 z.2) (((B : ℝ) + 1) / (K₁ + 1)))) μ' μ).toReal)
+    (hright : ∀ (ν ν' : Measure Y) (μ : Measure X) [IsProbabilityMeasure ν]
+      [IsProbabilityMeasure ν'] [IsProbabilityMeasure μ],
+      |(entropicTransportCost c ε μ ν').toReal - (entropicTransportCost c ε μ ν).toReal| ≤
+        (K₂ + 1 : ℝ) * (transportCost (fun z : Y × Y ↦
+          ENNReal.ofReal (min (dist z.1 z.2) (((B : ℝ) + 1) / (K₂ + 1)))) ν' ν).toReal) :
+    Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal := by
+  refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
+  set R₁ : ℝ := ((B : ℝ) + 1) / (2 * (K₁ + 1 : ℝ))
+  set R₂ : ℝ := ((B : ℝ) + 1) / (2 * (K₂ + 1 : ℝ))
+  have hR₁ : 0 < R₁ := by positivity
+  have hR₂ : 0 < R₂ := by positivity
+  have h2R₁ : 2 * R₁ = ((B : ℝ) + 1) / (K₁ + 1 : ℝ) := by dsimp [R₁]; field_simp
+  have h2R₂ : 2 * R₂ = ((B : ℝ) + 1) / (K₂ + 1 : ℝ) := by dsimp [R₂]; field_simp
+  -- Truncated transport costs metrise weak convergence on both factors.
+  have ht₁ : Tendsto (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      (transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R₁)))
+        q.1.toMeasure q₀.1.toMeasure).toReal) (𝓝 q₀) (𝓝 0) := by
+    have h := (tendsto_probabilityMeasure_iff_transportCost_truncated_dist (R := R₁) hR₁).1
+      (continuous_fst.tendsto q₀)
+    have h0 := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h
+    rwa [ENNReal.toReal_zero] at h0
+  have ht₂ : Tendsto (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      (transportCost (fun z : Y × Y ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R₂)))
+        q.2.toMeasure q₀.2.toMeasure).toReal) (𝓝 q₀) (𝓝 0) := by
+    have h := (tendsto_probabilityMeasure_iff_transportCost_truncated_dist (R := R₂) hR₂).1
+      (continuous_snd.tendsto q₀)
+    have h0 := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h
+    rwa [ENNReal.toReal_zero] at h0
+  have hub : Tendsto (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      (K₁ + 1 : ℝ) * (transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R₁)))
+        q.1.toMeasure q₀.1.toMeasure).toReal +
+      (K₂ + 1 : ℝ) * (transportCost (fun z : Y × Y ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R₂)))
+        q.2.toMeasure q₀.2.toMeasure).toReal) (𝓝 q₀) (𝓝 0) := by
+    simpa using (ht₁.const_mul (K₁ + 1 : ℝ)).add (ht₂.const_mul (K₂ + 1 : ℝ))
+  -- Combine the separate left and right bounds by the triangle inequality.
+  refine Metric.tendsto_nhds.2 fun δ hδ ↦ ?_
+  filter_upwards [hub.eventually (gt_mem_nhds hδ)] with q hq
+  rw [Real.dist_eq]
+  have hb₁ := hleft q₀.1.toMeasure q.1.toMeasure q.2.toMeasure
+  have hb₂ := hright q₀.2.toMeasure q.2.toMeasure q₀.1.toMeasure
+  rw [← h2R₁] at hb₁
+  rw [← h2R₂] at hb₂
+  exact ((abs_sub_le _ (entropicTransportCost c ε q₀.1.toMeasure q.2.toMeasure).toReal _).trans
+    (add_le_add hb₁ hb₂)).trans_lt hq
+
+/-- **Joint weak continuity of entropic optimal transport for bounded slicewise-Lipschitz costs.**
+On separable pseudometric spaces whose open sets are measurable (for instance Polish spaces with
+their Borel σ-algebras), for a measurable cost bounded by `B` with `K₁`- and `K₂`-Lipschitz slices
+and a positive temperature `ε`, the real-valued regularised transport cost is jointly continuous on
+`ProbabilityMeasure X × ProbabilityMeasure Y`. No compactness or moment assumption is needed. -/
+theorem continuous_toReal_entropicTransportCost_of_lipschitzWith
+    {X Y : Type*} [PseudoMetricSpace X] [TopologicalSpace.SeparableSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [PseudoMetricSpace Y] [TopologicalSpace.SeparableSpace Y]
+    [MeasurableSpace Y] [OpensMeasurableSpace Y] {c : X × Y → ℝ≥0∞} {ε B K₁ K₂ : ℝ≥0}
+    (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K₂ fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal :=
+  continuous_of_abs_sub_le_transportCost_truncated_dist
+    (fun μ μ' ν _ _ _ ↦
+      abs_toReal_entropicTransportCost_sub_left_le_transportCost_truncated_dist
+        (μ := μ) (μ' := μ') (ν := ν) hc hcB hL₁ hε)
+    (fun ν ν' μ _ _ _ ↦ by
+      have hb := abs_toReal_entropicTransportCost_sub_left_le_transportCost_truncated_dist
+        (c := c ∘ Prod.swap) (μ := ν) (μ' := ν') (ν := μ)
+        (hc.comp measurable_swap) (fun w ↦ hcB w.swap) hL₂ hε
+      rwa [entropicTransportCost_comp_swap c ε ν', entropicTransportCost_comp_swap c ε ν] at hb)
+
+/-- **Joint weak continuity of entropic optimal transport in `ℝ≥0∞`, for bounded
+slicewise-Lipschitz costs.** -/
+theorem continuous_entropicTransportCost_of_lipschitzWith
+    {X Y : Type*} [PseudoMetricSpace X] [TopologicalSpace.SeparableSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [PseudoMetricSpace Y] [TopologicalSpace.SeparableSpace Y]
+    [MeasurableSpace Y] [OpensMeasurableSpace Y] {c : X × Y → ℝ≥0∞} {ε B K₁ K₂ : ℝ≥0}
+    (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K₂ fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      entropicTransportCost c ε q.1.toMeasure q.2.toMeasure := by
+  have heq : (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      entropicTransportCost c ε q.1.toMeasure q.2.toMeasure) =
+      fun q ↦ ENNReal.ofReal (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal :=
     funext fun _ ↦ (ENNReal.ofReal_toReal
       (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε)).symm
   rw [heq]
-  exact ENNReal.continuous_ofReal.comp (continuous_toReal_entropicTransportCost hc hfin hε)
+  exact ENNReal.continuous_ofReal.comp
+    (continuous_toReal_entropicTransportCost_of_lipschitzWith hc hcB hL₁ hL₂ hε)
 
-end Compact
+private theorem abs_toReal_entropicTransportCost_sub_left_le_of_compact
+    {X Y : Type*} [PseudoMetricSpace X] [CompactSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [PseudoMetricSpace Y] [CompactSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] {b : X × Y → ℝ≥0} {ε B K₁ : ℝ≥0} (hb : Continuous b)
+    (hbB : ∀ z, b z ≤ B) (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (b (x, y) : ℝ))
+    (μ μ' : Measure X) (ν : Measure Y) [IsProbabilityMeasure μ] [IsProbabilityMeasure μ']
+    [IsProbabilityMeasure ν] :
+    |(entropicTransportCost (fun z ↦ (b z : ℝ≥0∞)) ε μ' ν).toReal -
+        (entropicTransportCost (fun z ↦ (b z : ℝ≥0∞)) ε μ ν).toReal| ≤
+      (K₁ + 1 : ℝ) * (transportCost (fun z : X × X ↦
+        ENNReal.ofReal (min (dist z.1 z.2) (((B : ℝ) + 1) / (K₁ + 1)))) μ' μ).toReal := by
+  set c : X × Y → ℝ≥0∞ := fun z ↦ (b z : ℝ≥0∞) with c_def
+  have hc : Measurable c := (ENNReal.continuous_coe.comp hb).measurable
+  have hcB : ∀ z, c z ≤ B := fun z ↦ ENNReal.coe_le_coe.2 (hbB z)
+  have hcL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal := by
+    simpa only [c_def, ENNReal.coe_toReal] using hL₁
+  rcases eq_or_ne ε 0 with rfl | hε
+  · have htend (ρ : Measure X) [IsProbabilityMeasure ρ] :
+        Tendsto (fun ε' : ℝ≥0 ↦ (entropicTransportCost c ε' ρ ν).toReal) (𝓝[>] 0)
+          (𝓝 (entropicTransportCost c 0 ρ ν).toReal) := by
+      have h0 : transportCost c ρ ν = entropicTransportCost c 0 ρ ν :=
+        entropicTransportCost_zero.symm
+      have hfin : transportCost c ρ ν ≠ ∞ :=
+        h0 ▸ entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) 0
+      simpa only [Function.comp_def, ← c_def, h0] using (ENNReal.tendsto_toReal hfin).comp
+        (tendsto_entropicTransportCost_transportCost_of_continuous hb ρ ν)
+    exact le_of_tendsto ((htend μ').sub (htend μ)).abs
+      (eventually_nhdsWithin_of_forall fun ε' hε' ↦
+        abs_toReal_entropicTransportCost_sub_left_le_transportCost_truncated_dist
+          (μ := μ) (μ' := μ') (ν := ν) hc hcB hcL₁ (mem_Ioi.1 hε').ne')
+  · exact abs_toReal_entropicTransportCost_sub_left_le_transportCost_truncated_dist
+      (μ := μ) (μ' := μ') (ν := ν) hc hcB hcL₁ hε
+
+/-- **Joint weak continuity of entropic optimal transport on compact spaces.** For arbitrary
+compact topological spaces `X` and `Y` whose open sets are measurable (with neither metrisability
+nor `[OpensMeasurableSpace (X × Y)]`), a continuous finite-valued cost `c`, and any temperature
+`ε : ℝ≥0` (including the unregularised Kantorovich transport cost at `ε = 0`), the real-valued
+regularised transport cost is jointly continuous on
+`ProbabilityMeasure X × ProbabilityMeasure Y`. -/
+theorem continuous_toReal_entropicTransportCost
+    {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} (hc : Continuous c)
+    (hfin : ∀ z, c z ≠ ∞) :
+    Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal := by
+  obtain ⟨B, hB⟩ := hc.exists_forall_le_coe_of_ne_top hfin
+  -- Factor `c.toReal` through continuous surjections `Φ : X → K`, `Ψ : Y → L` onto compact
+  -- pseudometric spaces with a continuous reduced cost `g : K × L → ℝ` whose slices are
+  -- `1`-Lipschitz in both variables.
+  let f : C(X × Y, ℝ) := ⟨fun z ↦ (c z).toReal, hc.ennreal_toReal hfin⟩
+  obtain ⟨K, L, _, _, _, _, Φ, Ψ, g, hΦc, hΦs, hΨc, hΨs, hgc, hgL₁, hgL₂, hfg⟩ :=
+    f.exists_factor_lipschitzWith_one
+  borelize K L
+  have hg_surj : ∀ w : K × L, ∃ x y, g w = (c (x, y)).toReal := fun ⟨k, l⟩ ↦ by
+    obtain ⟨x, rfl⟩ := hΦs k
+    obtain ⟨y, rfl⟩ := hΨs l
+    exact ⟨x, y, hfg x y⟩
+  have hg0 (w : K × L) : 0 ≤ g w := by
+    obtain ⟨x, y, hxy⟩ := hg_surj w
+    exact hxy ▸ ENNReal.toReal_nonneg
+  let b : K × L → ℝ≥0 := fun w ↦ ⟨g w, hg0 w⟩
+  have hbc : Continuous b := Continuous.subtype_mk hgc hg0
+  have hbB (w : K × L) : b w ≤ B := by
+    obtain ⟨x, y, hxy⟩ := hg_surj w
+    exact Subtype.mk_le_mk.2 (hxy ▸ ENNReal.toReal_le_coe_of_le_coe (hB (x, y)))
+  -- On `K × L`, `b` has `1`-Lipschitz slices, so weak continuity holds at every `ε : ℝ≥0`.
+  have hcontKL : Continuous fun q' : ProbabilityMeasure K × ProbabilityMeasure L ↦
+      (entropicTransportCost (fun w ↦ (b w : ℝ≥0∞)) ε q'.1.toMeasure q'.2.toMeasure).toReal :=
+    continuous_of_abs_sub_le_transportCost_truncated_dist (B := B) (K₁ := 1) (K₂ := 1)
+      (abs_toReal_entropicTransportCost_sub_left_le_of_compact hbc hbB hgL₁)
+      (fun ν ν' μ _ _ _ ↦ by
+        have hb := abs_toReal_entropicTransportCost_sub_left_le_of_compact
+          (ε := ε) (B := B) (K₁ := 1) (b := b ∘ Prod.swap) (hbc.comp continuous_swap)
+          (fun w ↦ hbB w.swap) hgL₂ ν ν' μ
+        have hswap : (fun w : L × K ↦ ((b ∘ Prod.swap) w : ℝ≥0∞)) =
+            (fun w : K × L ↦ (b w : ℝ≥0∞)) ∘ Prod.swap := rfl
+        rwa [hswap, entropicTransportCost_comp_swap _ ε ν',
+          entropicTransportCost_comp_swap _ ε ν] at hb)
+  -- Pull continuity back along the pushforward map `(q.1, q.2) ↦ (q.1.map Φ, q.2.map Ψ)`.
+  have hcost_eq : c = fun z ↦ (b (Prod.map Φ Ψ z) : ℝ≥0∞) := funext fun z ↦ by
+    rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
+    exact congrArg ENNReal.ofReal (hfg z.1 z.2).symm
+  have hpush (q : ProbabilityMeasure X × ProbabilityMeasure Y) :
+      entropicTransportCost c ε q.1.toMeasure q.2.toMeasure =
+        entropicTransportCost (fun w ↦ (b w : ℝ≥0∞)) ε
+          (q.1.map Φ).toMeasure (q.2.map Ψ).toMeasure := by
+    rw [hcost_eq, ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.toMeasure_map]
+    exact entropicTransportCost_comp_prodMap_of_continuous hΦc.measurable hΨc.measurable hbc ε
+  exact (hcontKL.comp ((ProbabilityMeasure.continuous_map hΦc).prodMap
+    (ProbabilityMeasure.continuous_map hΨc))).congr fun q ↦
+      congrArg ENNReal.toReal (hpush q).symm
+
+/-- **Joint weak continuity of entropic optimal transport in `ℝ≥0∞` on compact spaces** at every
+temperature `ε : ℝ≥0`. -/
+theorem continuous_entropicTransportCost
+    {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} (hc : Continuous c)
+    (hfin : ∀ z, c z ≠ ∞) :
+    Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      entropicTransportCost c ε q.1.toMeasure q.2.toMeasure := by
+  obtain ⟨B, hB⟩ := hc.exists_forall_le_coe_of_ne_top hfin
+  have heq : (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      entropicTransportCost c ε q.1.toMeasure q.2.toMeasure) =
+      fun q ↦ ENNReal.ofReal (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal :=
+    funext fun _ ↦ (ENNReal.ofReal_toReal
+      (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hB) ε)).symm
+  rw [heq]
+  exact ENNReal.continuous_ofReal.comp (continuous_toReal_entropicTransportCost hc hfin)
+
+end WeakContinuity
 
 end TauCeti

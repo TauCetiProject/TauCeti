@@ -50,9 +50,13 @@ is replaced by `M` on every resulting product cell outside `K ×ˢ L`.
 
 ## Main statements
 
-* `TauCeti.IsCoupling.isCoupling_fitLaw_prodMap`: the projection of `μ ⊗ ν` onto the measures with
-  the cell masses of a coupling `π`, along product maps `p` and `q`, is again a coupling of `μ` and
-  `ν`.
+* `TauCeti.IsCoupling.fitLaw_prodMap` and `TauCeti.IsCoupling.isCoupling_fitLaw_prodMap`: the
+  relative-entropy projection of `μ ⊗ ν` onto any pushforward coupling along product maps `p` and
+  `q` is a coupling of `μ` and `ν`; in particular, the block approximation of a coupling is a
+  coupling, and positive-temperature entropic transport commutes with pushing forward along
+  product maps (`TauCeti.entropicTransportCost_comp_prodMap_of_ne_zero`, extended to `ε = 0` for
+  discretisable and compact-continuous costs in `TauCeti.entropicTransportCost_comp_prodMap` and
+  `TauCeti.entropicTransportCost_comp_prodMap_of_continuous`).
 * `TauCeti.IsCoupling.exists_isCoupling_klDiv_ne_top_map_prodMap_eq`: for measurable maps to
   finite types, every coupling has the cell masses of a coupling of finite relative entropy.
 * `TauCeti.IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_le`: if the cost varies by at most
@@ -108,35 +112,27 @@ section BlockApproximation
 
 variable {ι κ : Type*} [MeasurableSpace ι] [MeasurableSpace κ] {p : X → ι} {q : Y → κ}
 
-/-- **The block approximation is a coupling.** Let `π` couple measures `μ` and `ν`, and let `p`
-and `q` be measurable maps to the cell labels along which `μ` and `ν` push forward to σ-finite
-measures (for instance, `μ` and `ν` finite). If the cell masses of `π` are absolutely
-continuous with respect to those of `μ ⊗ ν`, the relative-entropy projection of `μ ⊗ ν` onto the
-measures with the cell masses of `π` is again a coupling of `μ` and `ν`. On each cell it is
-`μ ⊗ ν` rescaled to the mass that `π` gives the cell. -/
-theorem IsCoupling.isCoupling_fitLaw_prodMap [SigmaFinite (μ.map p)] [SigmaFinite (ν.map q)]
-    (hπ : IsCoupling π μ ν) (hp : Measurable p) (hq : Measurable q)
-    (hac : π.map (Prod.map p q) ≪ (μ.prod ν).map (Prod.map p q)) :
-    IsCoupling ((μ.prod ν).fitLaw (Prod.map p q) (π.map (Prod.map p q))) μ ν := by
+/-- **Lifting a pushforward coupling via relative-entropy projection.** Let `p` and `q` be
+measurable maps along which `μ` and `ν` push forward to σ-finite measures, and let `π'` couple
+`μ.map p` and `ν.map q`. If `π' ≪ (μ ⊗ ν).map (Prod.map p q)`, then the relative-entropy projection
+`(μ.prod ν).fitLaw (Prod.map p q) π'` couples `μ` and `ν`. -/
+theorem IsCoupling.fitLaw_prodMap [SigmaFinite (μ.map p)] [SigmaFinite (ν.map q)]
+    {π' : Measure (ι × κ)} (hπ' : IsCoupling π' (μ.map p) (ν.map q))
+    (hp : Measurable p) (hq : Measurable q)
+    (hac : π' ≪ (μ.prod ν).map (Prod.map p q)) :
+    IsCoupling ((μ.prod ν).fitLaw (Prod.map p q) π') μ ν := by
   have : SigmaFinite μ := .of_map μ hp.aemeasurable inferInstance
   have : SigmaFinite ν := .of_map ν hq.aemeasurable inferInstance
   have hQ : Measurable (Prod.map p q) := hp.prodMap hq
   have hn : (μ.prod ν).map (Prod.map p q) = (μ.map p).prod (ν.map q) :=
     (Measure.map_prod_map μ ν hp hq).symm
   rw [hn] at hac
-  -- The cell masses of `π` have the cell masses of `μ` and `ν` as marginals.
-  have hfst : (π.map (Prod.map p q)).fst = μ.map p := Measure.ext fun T hT ↦ by
-    rw [Measure.fst_apply hT, ← prod_univ, Measure.map_apply hQ (hT.prod MeasurableSet.univ),
-      preimage_prod_map_prod, preimage_univ, hπ.measure_prod_univ (hp hT),
-      Measure.map_apply hp hT]
-  have hsnd : (π.map (Prod.map p q)).snd = ν.map q := Measure.ext fun T hT ↦ by
-    rw [Measure.snd_apply hT, ← univ_prod, Measure.map_apply hQ (MeasurableSet.univ.prod hT),
-      preimage_prod_map_prod, preimage_univ, hπ.measure_univ_prod (hq hT),
-      Measure.map_apply hq hT]
-  have hA := ae_of_ae_map hp.aemeasurable (Measure.ae_lintegral_rnDeriv_prod_right_eq_one hfst hac)
-  have hB := ae_of_ae_map hq.aemeasurable (Measure.ae_lintegral_rnDeriv_prod_left_eq_one hsnd hac)
+  have hA := ae_of_ae_map hp.aemeasurable
+    (Measure.ae_lintegral_rnDeriv_prod_right_eq_one hπ'.fst_eq hac)
+  have hB := ae_of_ae_map hq.aemeasurable
+    (Measure.ae_lintegral_rnDeriv_prod_left_eq_one hπ'.snd_eq hac)
   have hd : Measurable fun z : X × Y ↦
-      (π.map (Prod.map p q)).rnDeriv ((μ.map p).prod (ν.map q)) (Prod.map p q z) :=
+      π'.rnDeriv ((μ.map p).prod (ν.map q)) (Prod.map p q z) :=
     (Measure.measurable_rnDeriv _ _).comp hQ
   refine isCoupling_of_measure_prod_univ_of_measure_univ_prod (fun S hS ↦ ?_) (fun S hS ↦ ?_)
   · rw [Measure.fitLaw_def, hn, withDensity_apply _ (hS.prod MeasurableSet.univ),
@@ -153,6 +149,56 @@ theorem IsCoupling.isCoupling_fitLaw_prodMap [SigmaFinite (μ.map p)] [SigmaFini
     rw [← hy, lintegral_map ?_ hp]
     · simp only [Prod.map_apply]
     · exact (Measure.measurable_rnDeriv _ _).comp measurable_prodMk_right
+
+/-- **The block approximation is a coupling.** Let `π` couple measures `μ` and `ν`, and let `p`
+and `q` be measurable maps to the cell labels along which `μ` and `ν` push forward to σ-finite
+measures (for instance, `μ` and `ν` finite). If the cell masses of `π` are absolutely
+continuous with respect to those of `μ ⊗ ν`, the relative-entropy projection of `μ ⊗ ν` onto the
+measures with the cell masses of `π` is again a coupling of `μ` and `ν`. On each cell it is
+`μ ⊗ ν` rescaled to the mass that `π` gives the cell. -/
+theorem IsCoupling.isCoupling_fitLaw_prodMap [SigmaFinite (μ.map p)] [SigmaFinite (ν.map q)]
+    (hπ : IsCoupling π μ ν) (hp : Measurable p) (hq : Measurable q)
+    (hac : π.map (Prod.map p q) ≪ (μ.prod ν).map (Prod.map p q)) :
+    IsCoupling ((μ.prod ν).fitLaw (Prod.map p q) (π.map (Prod.map p q))) μ ν :=
+  (hπ.map hp hq).fitLaw_prodMap hp hq hac
+
+/-- **Pushforward invariance of positive-temperature entropic transport along product maps.**
+At positive temperature `ε ≠ 0`, pulling a measurable cost back along `Prod.map p q` gives the same
+regularised transport cost as pushing the marginals forward along `p` and `q`. -/
+theorem entropicTransportCost_comp_prodMap_of_ne_zero [IsFiniteMeasure μ]
+    (hp : Measurable p) (hq : Measurable q) {c' : ι × κ → ℝ≥0∞} (hc' : Measurable c')
+    {ε : ℝ≥0} (hε : ε ≠ 0) :
+    entropicTransportCost (c' ∘ Prod.map p q) ε μ ν =
+      entropicTransportCost c' ε (μ.map p) (ν.map q) := by
+  have hQ : Measurable (Prod.map p q) := hp.prodMap hq
+  have : IsFiniteMeasure (μ.map p) := Measure.isFiniteMeasure_map μ p
+  refine le_antisymm (le_entropicTransportCost fun π' hπ' ↦ ?_)
+    (le_entropicTransportCost fun π hπ ↦ ?_)
+  · -- Lift `π'` along `Prod.map p q` via `Measure.fitLaw` with the same relative entropy.
+    rcases eq_or_ne (klDiv π' ((μ.map p).prod (ν.map q))) ∞ with hkl | hkl
+    · simp [hkl, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hε)]
+    have := hπ'.isFiniteMeasure
+    have : IsFiniteMeasure (ν.map q) := hπ'.snd_eq ▸ inferInstance
+    have : IsFiniteMeasure ν :=
+      ⟨by rw [← preimage_univ, ← Measure.map_apply hq .univ]; exact measure_lt_top _ _⟩
+    have hn : (μ.prod ν).map (Prod.map p q) = (μ.map p).prod (ν.map q) :=
+      (Measure.map_prod_map μ ν hp hq).symm
+    have hac : π' ≪ (μ.prod ν).map (Prod.map p q) := hn.symm ▸ (klDiv_ne_top_iff.1 hkl).1
+    have hσ : IsCoupling ((μ.prod ν).fitLaw (Prod.map p q) π') μ ν :=
+      hπ'.fitLaw_prodMap hp hq hac
+    have hmap : ((μ.prod ν).fitLaw (Prod.map p q) π').map (Prod.map p q) = π' :=
+      Measure.map_fitLaw_of_absolutelyContinuous hQ hac
+    refine (entropicTransportCost_le hσ (c' ∘ Prod.map p q) ε).trans_eq ?_
+    rw [Function.comp_def, ← lintegral_map hc' hQ, hmap, klDiv_fitLaw hQ hac, hn]
+  · have := hπ.isFiniteMeasure
+    have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
+    have : IsFiniteMeasure (ν.map q) := Measure.isFiniteMeasure_map ν q
+    have hn : (μ.map p).prod (ν.map q) = (μ.prod ν).map (Prod.map p q) :=
+      Measure.map_prod_map μ ν hp hq
+    refine (entropicTransportCost_le (hπ.map hp hq) c' ε).trans ?_
+    rw [Function.comp_def, ← lintegral_map hc' hQ, hn]
+    gcongr
+    exact klDiv_map_le π (μ.prod ν) hQ
 
 variable [Finite ι] [Finite κ] [MeasurableSingletonClass ι] [MeasurableSingletonClass κ]
 
@@ -280,6 +326,38 @@ theorem tendsto_entropicTransportCost_transportCost [IsFiniteMeasure μ]
   obtain ⟨σ, hσ, hkl, hle⟩ := hπ.exists_isCoupling_klDiv_ne_top_lintegral_le hp hq hpq
   exact ⟨σ, hσ, hkl, hle.trans (add_le_add le_rfl hηδ.le)⟩
 
+/-- **Pushforward invariance of entropic transport at every temperature for discretisable costs.**
+When a measurable cost `c'` can be discretised by finite measurable partitions of its factors,
+pulling `c'` back along `Prod.map p q` equals pushing the marginals forward along `p` and `q` at
+every temperature `ε : ℝ≥0`, including `ε = 0`. -/
+theorem entropicTransportCost_comp_prodMap {ι κ : Type*} [MeasurableSpace ι] [MeasurableSpace κ]
+    [IsFiniteMeasure μ] {p : X → ι} {q : Y → κ} (hp : Measurable p) (hq : Measurable q)
+    {c' : ι × κ → ℝ≥0∞} (hc' : Measurable c')
+    (hdisc : ∀ η : ℝ≥0, 0 < η → ∃ (n m : ℕ) (r : ι → Fin n) (s : κ → Fin m),
+      Measurable r ∧ Measurable s ∧
+        ∀ i i' j j', r i = r i' → s j = s j' → c' (i, j) ≤ c' (i', j') + η)
+    (ε : ℝ≥0) :
+    entropicTransportCost (c' ∘ Prod.map p q) ε μ ν =
+      entropicTransportCost c' ε (μ.map p) (ν.map q) := by
+  rcases eq_or_ne ε 0 with rfl | hε
+  · have : IsFiniteMeasure (μ.map p) := Measure.isFiniteMeasure_map μ p
+    have hlhs : Tendsto (fun ε' ↦ entropicTransportCost (c' ∘ Prod.map p q) ε' μ ν) (𝓝[>] 0)
+        (𝓝 (transportCost (c' ∘ Prod.map p q) μ ν)) :=
+      tendsto_entropicTransportCost_transportCost fun η hη ↦ by
+        obtain ⟨n, m, r, s, hr, hs, hrs⟩ := hdisc η hη
+        exact ⟨n, m, r ∘ p, s ∘ q, hr.comp hp, hs.comp hq,
+          fun x x' y y' hx hy ↦ hrs _ _ _ _ hx hy⟩
+    have hrhs : Tendsto (fun ε' ↦ entropicTransportCost c' ε' (μ.map p) (ν.map q)) (𝓝[>] 0)
+        (𝓝 (transportCost c' (μ.map p) (ν.map q))) :=
+      tendsto_entropicTransportCost_transportCost hdisc
+    have heq : (fun ε' : ℝ≥0 ↦ entropicTransportCost (c' ∘ Prod.map p q) ε' μ ν) =ᶠ[𝓝[>] 0]
+        fun ε' ↦ entropicTransportCost c' ε' (μ.map p) (ν.map q) :=
+      eventually_nhdsWithin_of_forall fun ε' hε' ↦
+        entropicTransportCost_comp_prodMap_of_ne_zero hp hq hc' (mem_Ioi.1 hε').ne'
+    simp only [entropicTransportCost_zero]
+    exact tendsto_nhds_unique (hlhs.congr' heq) hrhs
+  · exact entropicTransportCost_comp_prodMap_of_ne_zero hp hq hc' hε
+
 section Metric
 
 variable {X Y : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
@@ -292,28 +370,9 @@ theorem tendsto_entropicTransportCost_transportCost_of_uniformContinuous
     (hX : TotallyBounded (univ : Set X)) (hY : TotallyBounded (univ : Set Y)) {c : X × Y → ℝ≥0}
     (hc : UniformContinuous c) (μ : Measure X) [IsFiniteMeasure μ] (ν : Measure Y) :
     Tendsto (fun ε ↦ entropicTransportCost (fun z ↦ c z) ε μ ν) (𝓝[>] 0)
-      (𝓝 (transportCost (fun z ↦ c z) μ ν)) := by
-  refine tendsto_entropicTransportCost_transportCost fun η hη ↦ ?_
-  obtain ⟨δ, hδ, hcδ⟩ := Metric.uniformContinuous_iff.1 hc η (NNReal.coe_pos.2 hη)
-  obtain ⟨n, v, p, hp, hpv⟩ := exists_measurable_dist_lt X hX (half_pos hδ)
-  obtain ⟨m, w, q, hq, hqw⟩ := exists_measurable_dist_lt Y hY (half_pos hδ)
-  refine ⟨n, m, p, q, hp, hq, fun x x' y y' hpx hqy ↦ ?_⟩
-  -- two points with the same label are `δ`-close, so their costs are `η`-close
-  have hx : dist x x' < δ := calc
-    dist x x' ≤ dist x (v (p x)) + dist x' (v (p x')) := hpx ▸ dist_triangle_right _ _ _
-    _ < δ / 2 + δ / 2 := add_lt_add (hpv x) (hpv x')
-    _ = δ := add_halves δ
-  have hy : dist y y' < δ := calc
-    dist y y' ≤ dist y (w (q y)) + dist y' (w (q y')) := hqy ▸ dist_triangle_right _ _ _
-    _ < δ / 2 + δ / 2 := add_lt_add (hqw y) (hqw y')
-    _ = δ := add_halves δ
-  have hxy : dist (x, y) (x', y') < δ := by rw [Prod.dist_eq]; exact max_lt hx hy
-  have hd := hcδ hxy
-  rw [NNReal.dist_eq] at hd
-  have hle : c (x, y) ≤ c (x', y') + η := by
-    rw [← NNReal.coe_le_coe, NNReal.coe_add]
-    linarith [(abs_lt.1 hd).2]
-  exact_mod_cast hle
+      (𝓝 (transportCost (fun z ↦ c z) μ ν)) :=
+  tendsto_entropicTransportCost_transportCost
+    (exists_measurable_fin_le_add_of_uniformContinuous hX hY hc)
 
 /-- **Convergence to the transport cost on compact spaces.** For a continuous real cost on compact
 pseudometric spaces, the regularised transport cost of finite measures converges to the transport
@@ -325,6 +384,21 @@ theorem tendsto_entropicTransportCost_transportCost_of_continuous [CompactSpace 
       (𝓝 (transportCost (fun z ↦ c z) μ ν)) :=
   tendsto_entropicTransportCost_transportCost_of_uniformContinuous isCompact_univ.totallyBounded
     isCompact_univ.totallyBounded (CompactSpace.uniformContinuous_of_continuous hc) μ ν
+
+/-- **Pushforward invariance of entropic transport onto compact pseudometric spaces.** For any
+measurable maps `p : Ω₁ → X` and `q : Ω₂ → Y` into compact pseudometric spaces and any continuous
+cost `c : X × Y → ℝ≥0`, pulling `c` back along `Prod.map p q` equals pushing the marginals forward
+along `p` and `q` at every temperature `ε : ℝ≥0` (including `ε = 0`). -/
+theorem entropicTransportCost_comp_prodMap_of_continuous {Ω₁ Ω₂ : Type*}
+    [MeasurableSpace Ω₁] [MeasurableSpace Ω₂] [CompactSpace X] [CompactSpace Y]
+    {μ : Measure Ω₁} [IsFiniteMeasure μ] {ν : Measure Ω₂} {p : Ω₁ → X} {q : Ω₂ → Y}
+    (hp : Measurable p) (hq : Measurable q) {c : X × Y → ℝ≥0} (hc : Continuous c) (ε : ℝ≥0) :
+    entropicTransportCost (fun z ↦ (c (Prod.map p q z) : ℝ≥0∞)) ε μ ν =
+      entropicTransportCost (fun w ↦ (c w : ℝ≥0∞)) ε (μ.map p) (ν.map q) :=
+  entropicTransportCost_comp_prodMap hp hq (c' := fun w ↦ (c w : ℝ≥0∞))
+    (ENNReal.continuous_coe.comp hc).measurable
+    (exists_measurable_fin_le_add_of_uniformContinuous isCompact_univ.totallyBounded
+      isCompact_univ.totallyBounded (CompactSpace.uniformContinuous_of_continuous hc)) ε
 
 /-- The block approximation for a continuous cost truncated at a finite level `M`, with the
 partition taken fine only on a compact rectangle `K ×ˢ L`: the mass of the coupling off the

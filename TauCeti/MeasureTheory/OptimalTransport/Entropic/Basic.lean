@@ -64,6 +64,9 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
   potentials are unique up to one additive constant.
 * `TauCeti.entropicTransportCost_zero` and `TauCeti.transportCost_le_entropicTransportCost`: at
   zero temperature the regularised value is the transport cost, which it always dominates.
+* `TauCeti.entropicTransportCost_le_add_of_forall_le` and
+  `TauCeti.abs_toReal_entropicTransportCost_sub_le`: uniform cost-perturbation bounds at every
+  temperature.
 * `TauCeti.entropicTransportCost_le_lintegral_prod`,
   `TauCeti.entropicTransportCost_ne_top_of_lintegral_ne_top` and
   `TauCeti.entropicTransportCost_ne_top_of_ae_le`: for probability measures the regularised
@@ -477,6 +480,83 @@ theorem entropicTransportCost_lt_iff :
 theorem entropicTransportCost_mono (hc : c ≤ c') (hε : ε ≤ ε') :
     entropicTransportCost c ε μ ν ≤ entropicTransportCost c' ε' μ ν :=
   iInf₂_mono fun _ _ ↦ add_le_add (lintegral_mono hc) (by gcongr)
+
+/-- Increasing a transport cost by at most `a` pointwise increases the regularised transport cost
+from `μ` to `ν` by at most `a * μ univ`, at every temperature and with no measurability hypothesis
+on the costs. -/
+theorem entropicTransportCost_le_add_of_forall_le {c₁ c₂ : X × Y → ℝ≥0∞} {a : ℝ≥0∞}
+    (h : ∀ z, c₁ z ≤ c₂ z + a) (ε : ℝ≥0) :
+    entropicTransportCost c₁ ε μ ν ≤ entropicTransportCost c₂ ε μ ν + a * μ Set.univ := by
+  simp only [entropicTransportCost_def, ENNReal.iInf_add]
+  refine iInf₂_mono fun π hπ ↦ ?_
+  calc ∫⁻ z, c₁ z ∂π + ε * klDiv π (μ.prod ν)
+      ≤ ∫⁻ z, (c₂ z + a) ∂π + ε * klDiv π (μ.prod ν) := by
+        gcongr
+        exact h _
+    _ = ∫⁻ z, c₂ z ∂π + ε * klDiv π (μ.prod ν) + a * μ Set.univ := by
+        rw [lintegral_add_right _ measurable_const, lintegral_const, hπ.measure_univ_left]
+        ring
+
+/-- One-directional real cost-perturbation bound: if `c₁ ≤ c₂ + δ` pointwise (for finite costs and
+`0 ≤ δ`) and the regularised cost under `c₂` is finite, then the regularised cost under `c₁` is
+also finite and exceeds that under `c₂` by at most `δ * μ.real Set.univ`. -/
+private theorem entropicTransportCost_ne_top_and_toReal_le_add [IsFiniteMeasure μ]
+    {c₁ c₂ : X × Y → ℝ≥0∞} {δ : ℝ} {ε : ℝ≥0} (hδ0 : 0 ≤ δ) (hc₁ : ∀ z, c₁ z ≠ ∞)
+    (hc₂ : ∀ z, c₂ z ≠ ∞) (hfin : entropicTransportCost c₂ ε μ ν ≠ ∞)
+    (h : ∀ z, (c₁ z).toReal ≤ (c₂ z).toReal + δ) :
+    entropicTransportCost c₁ ε μ ν ≠ ∞ ∧
+      (entropicTransportCost c₁ ε μ ν).toReal ≤
+        (entropicTransportCost c₂ ε μ ν).toReal + δ * μ.real Set.univ := by
+  have hle_cost : ∀ z, c₁ z ≤ c₂ z + ENNReal.ofReal δ := fun z ↦ by
+    rw [← ENNReal.ofReal_toReal (hc₁ z), ← ENNReal.ofReal_toReal (hc₂ z),
+      ← ENNReal.ofReal_add ENNReal.toReal_nonneg hδ0]
+    exact ENNReal.ofReal_le_ofReal (h z)
+  have hle := entropicTransportCost_le_add_of_forall_le (μ := μ) (ν := ν) hle_cost ε
+  have hδμ : ENNReal.ofReal δ * μ Set.univ ≠ ∞ :=
+    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (measure_ne_top μ _)
+  have hrhs_fin : entropicTransportCost c₂ ε μ ν + ENNReal.ofReal δ * μ Set.univ ≠ ∞ :=
+    ENNReal.add_ne_top.2 ⟨hfin, hδμ⟩
+  refine ⟨ne_top_of_le_ne_top hrhs_fin hle, ?_⟩
+  calc (entropicTransportCost c₁ ε μ ν).toReal
+      ≤ (entropicTransportCost c₂ ε μ ν + ENNReal.ofReal δ * μ Set.univ).toReal :=
+        ENNReal.toReal_mono hrhs_fin hle
+    _ ≤ (entropicTransportCost c₂ ε μ ν).toReal + (ENNReal.ofReal δ * μ Set.univ).toReal :=
+        ENNReal.toReal_add_le
+    _ = (entropicTransportCost c₂ ε μ ν).toReal + δ * μ.real Set.univ := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hδ0, measureReal_def]
+
+/-- **Uniform cost-perturbation stability of entropic optimal transport.** If two finite-valued
+costs differ pointwise by at most `δ`, then for any finite source measure `μ` and target `ν` with
+finite regularised cost under `c₂`, the regularised transport costs differ by at most
+`δ * μ.real univ`, at every temperature. -/
+theorem abs_toReal_entropicTransportCost_sub_le [IsFiniteMeasure μ]
+    {c₁ c₂ : X × Y → ℝ≥0∞} {δ : ℝ} {ε : ℝ≥0} (hc₁ : ∀ z, c₁ z ≠ ∞) (hc₂ : ∀ z, c₂ z ≠ ∞)
+    (hfin : entropicTransportCost c₂ ε μ ν ≠ ∞)
+    (hδ : ∀ z, |(c₁ z).toReal - (c₂ z).toReal| ≤ δ) :
+    |(entropicTransportCost c₁ ε μ ν).toReal - (entropicTransportCost c₂ ε μ ν).toReal| ≤
+      δ * μ.real Set.univ := by
+  obtain ⟨π₀, hπ₀, -⟩ := entropicTransportCost_lt_iff.1 hfin.lt_top
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · obtain rfl : ν = 0 := Measure.measure_univ_eq_zero.1
+      (by simpa using hπ₀.measure_univ_right.trans hπ₀.measure_univ_left.symm)
+    have hzero (c : X × Y → ℝ≥0∞) : entropicTransportCost c ε 0 0 = 0 :=
+      nonpos_iff_eq_zero.1 <| (entropicTransportCost_le isCoupling_zero c ε).trans_eq
+        (by simp [klDiv_self])
+    simp [hzero]
+  have hν : ν ≠ 0 := by
+    intro hν0
+    exact hμ <| Measure.measure_univ_eq_zero.1
+      (by simpa [hν0] using hπ₀.measure_univ_left.trans hπ₀.measure_univ_right.symm)
+  have : NeZero μ := ⟨hμ⟩
+  have : NeZero ν := ⟨hν⟩
+  obtain ⟨x₀⟩ := μ.nonempty_of_neZero
+  obtain ⟨y₀⟩ := ν.nonempty_of_neZero
+  have hδ0 : 0 ≤ δ := (abs_nonneg _).trans (hδ (x₀, y₀))
+  obtain ⟨hfin₁, hr₁⟩ := entropicTransportCost_ne_top_and_toReal_le_add hδ0 hc₁ hc₂ hfin
+    fun z ↦ by linarith [(abs_le.1 (hδ z)).2]
+  obtain ⟨-, hr₂⟩ := entropicTransportCost_ne_top_and_toReal_le_add hδ0 hc₂ hc₁ hfin₁
+    fun z ↦ by linarith [(abs_le.1 (hδ z)).1]
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 /-- At zero temperature the regularised transport cost is the transport cost. -/
 @[simp]

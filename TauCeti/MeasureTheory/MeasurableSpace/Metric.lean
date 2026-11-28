@@ -33,6 +33,11 @@ constant in the first variable.
 * `TotallyBounded.exists_measurable_dist_lt` — a measurable totally bounded set is the union of
   finitely many measurable cells of small diameter, labelled by a measurable map that gives its
   complement a label of its own.
+* `TauCeti.exists_measurable_fin_dist_lt_of_uniformContinuous` — a uniformly continuous map on a
+  product of totally bounded pseudometric spaces varies by less than `η` on the product cells of
+  finite measurable partitions.
+* `TauCeti.exists_measurable_fin_le_add_of_uniformContinuous` — the `ℝ≥0`-valued corollary yielding
+  `c (x, y) ≤ c (x', y') + η` in `ℝ≥0∞` on product cells.
 * `TotallyBounded.exists_measurable_partition_ball` — a measurable totally bounded set is the
   disjoint union of finitely many measurable pieces, each inside a small ball centred in the set.
 * `IsCompact.exists_enorm_sub_sum_indicator_le` — a function continuous on a product of compact
@@ -130,6 +135,60 @@ theorem _root_.TotallyBounded.exists_measurable_dist_lt {X : Type u} [PseudoMetr
     rw [hxy] at hx'
     rw [Subtype.dist_eq] at hx' hy'
     linarith [dist_triangle_right x y (v (r ⟨y, hy⟩) : X)]
+
+/-- **Measurable finite discretization of a uniformly continuous map on a product.** Given a
+uniformly continuous map `f : X × Y → Z` from a product of totally bounded pseudometric spaces into
+a pseudometric space, for every `η > 0` there exist measurable maps `p : X → Fin n` and
+`q : Y → Fin m` such that `dist (f (x, y)) (f (x', y')) < η` whenever `p x = p x'` and
+`q y = q y'`. -/
+theorem exists_measurable_fin_dist_lt_of_uniformContinuous {X Y Z : Type*}
+    [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [PseudoMetricSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+    [PseudoMetricSpace Z] (hX : TotallyBounded (univ : Set X))
+    (hY : TotallyBounded (univ : Set Y)) {f : X × Y → Z} (hf : UniformContinuous f)
+    {η : ℝ} (hη : 0 < η) :
+    ∃ (n m : ℕ) (p : X → Fin n) (q : Y → Fin m), Measurable p ∧ Measurable q ∧
+      ∀ x x' y y', p x = p x' → q y = q y' → dist (f (x, y)) (f (x', y')) < η := by
+  obtain ⟨δ, hδ, hfδ⟩ := Metric.uniformContinuous_iff.1 hf η hη
+  obtain ⟨n, v, p, hp, hpv⟩ := exists_measurable_dist_lt X hX (half_pos hδ)
+  obtain ⟨m, w, q, hq, hqw⟩ := exists_measurable_dist_lt Y hY (half_pos hδ)
+  refine ⟨n, m, p, q, hp, hq, fun x x' y y' hpx hqy ↦ ?_⟩
+  -- two points with the same label lie within `δ / 2` of the same centre, hence within `δ`
+  have hx : dist x x' < δ := calc
+    dist x x' ≤ dist x (v (p x)) + dist x' (v (p x')) := hpx ▸ dist_triangle_right _ _ _
+    _ < δ / 2 + δ / 2 := add_lt_add (hpv x) (hpv x')
+    _ = δ := add_halves δ
+  have hy : dist y y' < δ := calc
+    dist y y' ≤ dist y (w (q y)) + dist y' (w (q y')) := hqy ▸ dist_triangle_right _ _ _
+    _ < δ / 2 + δ / 2 := add_lt_add (hqw y) (hqw y')
+    _ = δ := add_halves δ
+  exact hfδ (by rw [Prod.dist_eq]; exact max_lt hx hy)
+
+/-- **Measurable finite discretization of a uniformly continuous `ℝ≥0`-valued cost.** Given a
+uniformly continuous function `c : X × Y → ℝ≥0` on a product of totally bounded pseudometric spaces,
+for every `η > 0` there exist measurable maps `p : X → Fin n` and `q : Y → Fin m` such that
+`c (x, y) ≤ c (x', y') + η` in `ℝ≥0∞` whenever `p x = p x'` and `q y = q y'`.
+
+The statement matches the `hdisc` hypothesis of
+`TauCeti.tendsto_entropicTransportCost_transportCost` and
+`TauCeti.entropicTransportCost_comp_prodMap`. -/
+theorem exists_measurable_fin_le_add_of_uniformContinuous {X Y : Type*}
+    [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [PseudoMetricSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+    (hX : TotallyBounded (univ : Set X)) (hY : TotallyBounded (univ : Set Y)) {c : X × Y → ℝ≥0}
+    (hc : UniformContinuous c) (η : ℝ≥0) (hη : 0 < η) :
+    ∃ (n m : ℕ) (p : X → Fin n) (q : Y → Fin m), Measurable p ∧ Measurable q ∧
+      ∀ x x' y y', p x = p x' → q y = q y' →
+        (c (x, y) : ℝ≥0∞) ≤ (c (x', y') : ℝ≥0∞) + η := by
+  obtain ⟨n, m, p, q, hp, hq, hdist⟩ :=
+    exists_measurable_fin_dist_lt_of_uniformContinuous hX hY hc (NNReal.coe_pos.2 hη)
+  refine ⟨n, m, p, q, hp, hq, fun x x' y y' hpx hqy ↦ ?_⟩
+  have hd := hdist x x' y y' hpx hqy
+  rw [NNReal.dist_eq] at hd
+  have hle : c (x, y) ≤ c (x', y') + η := by
+    rw [← NNReal.coe_le_coe, NNReal.coe_add]
+    linarith [(abs_lt.1 hd).2]
+  exact_mod_cast hle
 
 /-- **A measurable partition of a totally bounded set into pieces of small balls.** In a
 pseudometric space whose open sets are measurable, a measurable totally bounded set `s` is, for

@@ -7,12 +7,16 @@ module
 
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Topology.MetricSpace.Lipschitz
+import Mathlib.Analysis.Normed.MulAction
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import TauCeti.Algebra.Field.LinearFractional
 
 /-!
 # The reciprocal of a Lipschitz function and local Möbius bounds
+
+Dividing a `K`-Lipschitz map into a normed division ring by a constant scalar `c` gives a
+`(K / ‖c‖₊)`-Lipschitz map (`LipschitzWith.div_const`).
 
 If `f` takes values in a normed division ring, is `K`-Lipschitz on a set `s` and stays at norm at
 least `m > 0` there, then `x ↦ (f x)⁻¹` is `K / m²`-Lipschitz on `s`, because
@@ -29,6 +33,8 @@ on `{t | ‖c‖ * ‖t - w‖ ≤ ‖c * w + d‖ / 2}` (`TauCeti.div_two_le_no
 
 ## Main results
 
+* `LipschitzWith.div_const`: dividing a `K`-Lipschitz map into a normed division ring by a scalar
+  `c` is `(K / ‖c‖₊)`-Lipschitz.
 * `LipschitzOnWith.inv_of_le_norm`: the reciprocal of a function Lipschitz on `s` and bounded away
   from zero there is Lipschitz on `s`.
 * `TauCeti.norm_sq_div_sub_sq_div_le`: `y ↦ c ^ 2 / y` is `1`-Lipschitz on `{y | ‖c‖ ≤ ‖y‖}`.
@@ -41,6 +47,19 @@ on `{t | ‖c‖ * ‖t - w‖ ≤ ‖c * w + d‖ / 2}` (`TauCeti.div_two_le_no
 public section
 
 open scoped NNReal
+
+namespace LipschitzWith
+
+/-- Dividing a `K`-Lipschitz map into a normed division ring by a constant `c` gives a
+`(K / ‖c‖₊)`-Lipschitz map. -/
+theorem div_const {α 𝕜 : Type*} [PseudoEMetricSpace α] [NormedDivisionRing 𝕜]
+    {K : ℝ≥0} {f : α → 𝕜} (hf : LipschitzWith K f) (c : 𝕜) :
+    LipschitzWith (K / ‖c‖₊) (fun x ↦ f x / c) := by
+  simpa only [Function.comp_def, MulOpposite.nnNorm_op, nnNorm_inv, MulOpposite.smul_eq_mul_unop,
+    MulOpposite.unop_op, ← div_eq_mul_inv, inv_mul_eq_div] using
+    (lipschitzWith_smul (MulOpposite.op c⁻¹)).comp hf
+
+end LipschitzWith
 
 namespace LipschitzOnWith
 

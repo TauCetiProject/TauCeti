@@ -10,6 +10,8 @@ public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Continuity
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Symmetric
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.Basic.ENNReal.Real
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 
 /-!
 # Sinkhorn divergences
@@ -38,11 +40,15 @@ Theorem 1 and Proposition 2:
    potential and completing the square in the Kolmogorov space. Combining this with separate
    convexity of `OT_ε` makes `S_ε` separately convex, and strictly so when `k` is universal on a
    Borel space with `HasOuterApproxClosed`.
-3. **Weak continuity and metrization of weak convergence.** On a compact space with measurable opens
-   on `X` and `X × X`, `H_ε` and `S_ε` inherit weak continuity from `OT_ε`
-   (`TauCeti.continuous_toReal_entropicTransportCost`) for a continuous finite-valued cost and
-   `ε > 0`. On a compact Hausdorff Borel space with `HasOuterApproxClosed` and measurable opens on
-   `X × X`, when `k` is positive definite and universal, `S_ε(μs i, μ) → 0` is equivalent to weak
+3. **`W₁`-Lipschitz stability, weak continuity, and metrization of weak convergence.** On extended
+   pseudometric spaces, `H_ε` is `K`-Lipschitz and `S_ε` is `(2 * K, 2 * K)`-Lipschitz with respect
+   to `wassersteinEDist 1` for bounded `K`-slicewise-Lipschitz costs at `ε > 0`, uniformly in `ε`.
+   On separable pseudometric spaces with measurable opens, bounded slicewise-Lipschitz costs give
+   weak continuity of `H_ε` and `S_ε` without compactness or moment assumptions. On arbitrary
+   compact spaces with measurable opens on `X`, `H_ε` and `S_ε` inherit weak continuity from `OT_ε`
+   (`TauCeti.continuous_toReal_entropicTransportCost`) for every continuous finite-valued cost at
+   every temperature `ε : ℝ≥0`. On a compact Hausdorff Borel space with `HasOuterApproxClosed`, when
+   `k` is positive definite and universal at `ε > 0`, `S_ε(μs i, μ) → 0` is equivalent to weak
    convergence `μs i → μ` (`TauCeti.tendsto_sinkhornDivergence_zero_iff_tendsto`).
 
 Both `sinkhornDivergence` and `sinkhornNegentropy` read costs through `ENNReal.toReal`, giving the
@@ -56,10 +62,12 @@ measures).
 
 ## Main statements
 
-* `TauCeti.sinkhornDivergence_self`, `TauCeti.sinkhornDivergence_const`,
+* `TauCeti.sinkhornDivergence_self`, `TauCeti.sinkhornNegentropy_nonpos`,
+  `TauCeti.sinkhornDivergence_const`, `TauCeti.sinkhornNegentropy_comp_swap`,
   `TauCeti.sinkhornDivergence_comp_swap`, `TauCeti.sinkhornDivergence_comm`,
   `TauCeti.sinkhornDivergence_comm_of_posSemidef`, and `TauCeti.sinkhornDivergence_dirac_dirac`:
-  diagonal vanishing, constant costs, marginal symmetry, and Dirac evaluations.
+  diagonal vanishing, nonpositivity of negentropy, constant costs, marginal symmetry, and Dirac
+  evaluations.
 * `TauCeti.sinkhornDivergence_nonneg` and `TauCeti.sinkhornDivergence_eq_zero_iff`: nonnegativity
   and definiteness under a positive-definite (and universal) Gibbs kernel.
 * `TauCeti.sinkhornNegentropy_smul_add_smul_le` and
@@ -70,9 +78,17 @@ measures).
   `TauCeti.sinkhornDivergence_smul_add_smul_left_lt`, and
   `TauCeti.sinkhornDivergence_smul_add_smul_right_lt`: separate convexity and strict separate
   convexity of `sinkhornDivergence` in each marginal.
+* `TauCeti.ofReal_abs_sinkhornNegentropy_sub_le_wassersteinEDist_one`,
+  `TauCeti.abs_sinkhornNegentropy_sub_le_wassersteinEDist_one`,
+  `TauCeti.ofReal_abs_sinkhornDivergence_sub_le_wassersteinEDist_one`, and
+  `TauCeti.abs_sinkhornDivergence_sub_le_wassersteinEDist_one`: temperature-independent `W₁`
+  stability of Sinkhorn negentropy and Sinkhorn divergence.
+* `TauCeti.continuous_sinkhornNegentropy_of_lipschitzWith` and
+  `TauCeti.continuous_sinkhornDivergence_of_lipschitzWith`: weak continuity on separable
+  pseudometric spaces for bounded slicewise-Lipschitz costs.
 * `TauCeti.continuous_sinkhornNegentropy`, `TauCeti.continuous_sinkhornDivergence`, and
-  `TauCeti.tendsto_sinkhornDivergence_zero_iff_tendsto`: weak continuity and weak-convergence
-  metrization on compact spaces.
+  `TauCeti.tendsto_sinkhornDivergence_zero_iff_tendsto`: weak continuity at every temperature and
+  weak-convergence metrization on compact spaces.
 
 For a continuous finite-valued cost the continuity hypothesis on the Gibbs kernel is supplied by
 `TauCeti.continuous_entropicGibbsKernel`.
@@ -146,6 +162,12 @@ theorem sinkhornDivergence_self (c : X × X → ℝ≥0∞) (ε : ℝ≥0) (μ :
   rw [sinkhornDivergence_def]
   ring
 
+/-- The Sinkhorn negentropy is nonpositive. -/
+theorem sinkhornNegentropy_nonpos (c : X × X → ℝ≥0∞) (ε : ℝ≥0) (μ : Measure X) :
+    sinkhornNegentropy c ε μ ≤ 0 := by
+  rw [sinkhornNegentropy_def]
+  exact div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 ENNReal.toReal_nonneg) zero_le_two
+
 /-- For a constant cost `a`, the Sinkhorn negentropy of a probability measure is `-a.toReal / 2`. -/
 @[simp]
 theorem sinkhornNegentropy_const [IsProbabilityMeasure μ] (a : ℝ≥0∞) (ε : ℝ≥0) :
@@ -159,6 +181,12 @@ theorem sinkhornDivergence_const [IsProbabilityMeasure μ] [IsProbabilityMeasure
   rw [sinkhornDivergence_def, entropicTransportCost_const, entropicTransportCost_const,
     entropicTransportCost_const]
   ring
+
+/-- Transporting the cost along `Prod.swap` leaves the Sinkhorn negentropy of a finite measure
+unchanged. -/
+theorem sinkhornNegentropy_comp_swap [IsFiniteMeasure μ] (c : X × X → ℝ≥0∞) (ε : ℝ≥0) :
+    sinkhornNegentropy (c ∘ Prod.swap) ε μ = sinkhornNegentropy c ε μ := by
+  rw [sinkhornNegentropy_def, sinkhornNegentropy_def, entropicTransportCost_comp_swap c ε μ]
 
 /-- Exchanging the two arguments of the Sinkhorn divergence transports the cost along
 `Prod.swap`. -/
@@ -788,35 +816,35 @@ theorem sinkhornDivergence_smul_add_smul_right_lt [BorelSpace X] [HasOuterApprox
   exact sinkhornDivergence_smul_add_smul_left_lt ha hb hab hne hc hfin hε hk hkc hku
 
 /-- **Weak continuity of Sinkhorn negentropy on compact spaces.** For a continuous finite-valued
-cost on a compact space with measurable opens on `X` and `X × X`, and a positive temperature `ε`,
+cost on a compact space with measurable opens, and any temperature `ε : ℝ≥0` (including `ε = 0`),
 `μ ↦ sinkhornNegentropy c ε μ` is continuous on `ProbabilityMeasure X`. -/
-theorem continuous_sinkhornNegentropy [OpensMeasurableSpace X] [OpensMeasurableSpace (X × X)]
-    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0) :
+theorem continuous_sinkhornNegentropy [OpensMeasurableSpace X] (hc : Continuous c)
+    (hfin : ∀ z, c z ≠ ∞) :
     Continuous fun μ : ProbabilityMeasure X ↦ sinkhornNegentropy c ε (μ : Measure X) := by
   simp_rw [sinkhornNegentropy_def]
-  exact ((continuous_toReal_entropicTransportCost hc hfin hε).comp
+  exact ((continuous_toReal_entropicTransportCost hc hfin).comp
     (continuous_id.prodMk continuous_id)).neg.div_const 2
 
 /-- **Joint weak continuity of the Sinkhorn divergence on compact spaces.** For a continuous
-finite-valued cost on a compact space with measurable opens on `X` and `X × X`, and a positive
-temperature `ε`, `(μ, ν) ↦ sinkhornDivergence c ε μ ν` is jointly continuous on
+finite-valued cost on a compact space with measurable opens, and any temperature `ε : ℝ≥0`
+(including `ε = 0`), `(μ, ν) ↦ sinkhornDivergence c ε μ ν` is jointly continuous on
 `ProbabilityMeasure X × ProbabilityMeasure X`. -/
-theorem continuous_sinkhornDivergence [OpensMeasurableSpace X] [OpensMeasurableSpace (X × X)]
-    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0) :
+theorem continuous_sinkhornDivergence [OpensMeasurableSpace X] (hc : Continuous c)
+    (hfin : ∀ z, c z ≠ ∞) :
     Continuous fun p : ProbabilityMeasure X × ProbabilityMeasure X ↦
       sinkhornDivergence c ε (p.1 : Measure X) (p.2 : Measure X) := by
   simp_rw [sinkhornDivergence_eq_add_sinkhornNegentropy]
-  exact ((continuous_toReal_entropicTransportCost hc hfin hε).add
-    ((continuous_sinkhornNegentropy hc hfin hε).comp continuous_fst)).add
-    ((continuous_sinkhornNegentropy hc hfin hε).comp continuous_snd)
+  exact ((continuous_toReal_entropicTransportCost hc hfin).add
+    ((continuous_sinkhornNegentropy hc hfin).comp continuous_fst)).add
+    ((continuous_sinkhornNegentropy hc hfin).comp continuous_snd)
 
 /-- **The Sinkhorn divergence metrizes weak convergence** (Feydy--Séjourné--Vialard--Amari--
-Trouvé--Peyré, Theorem 1). On a compact Hausdorff Borel space with `HasOuterApproxClosed` and
-measurable opens on `X × X` (for instance any compact metric space), for a continuous finite-valued
-cost whose Gibbs kernel `exp (-c / ε)` is positive definite and universal at positive temperature
-`ε`, `μs` converges weakly to `μ` along `l` iff `sinkhornDivergence c ε (μs i) μ → 0` along `l`. -/
+Trouvé--Peyré, Theorem 1). On a compact Hausdorff Borel space with `HasOuterApproxClosed` (for
+instance any compact metrizable space), for a continuous finite-valued cost whose Gibbs kernel
+`exp (-c / ε)` is positive definite and universal at positive temperature `ε`, `μs` converges weakly
+to `μ` along `l` iff `sinkhornDivergence c ε (μs i) μ → 0` along `l`. -/
 theorem tendsto_sinkhornDivergence_zero_iff_tendsto [T2Space X] [BorelSpace X]
-    [HasOuterApproxClosed X] [OpensMeasurableSpace (X × X)] {ι : Type*} {l : Filter ι}
+    [HasOuterApproxClosed X] {ι : Type*} {l : Filter ι}
     {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X} (hc : Continuous c)
     (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0) (hk : Matrix.PosSemidef (entropicGibbsKernel c ε))
     (hku : IsUniversalKernel (entropicGibbsKernel c ε)) :
@@ -824,15 +852,144 @@ theorem tendsto_sinkhornDivergence_zero_iff_tendsto [T2Space X] [BorelSpace X]
       Tendsto μs l (𝓝 μ) := by
   have hcont : Continuous fun ν : ProbabilityMeasure X ↦
       sinkhornDivergence c ε (ν : Measure X) (μ : Measure X) :=
-    (continuous_sinkhornDivergence hc hfin hε).comp (continuous_id.prodMk continuous_const)
+    (continuous_sinkhornDivergence hc hfin).comp (continuous_id.prodMk continuous_const)
   refine ⟨fun h ↦ tendsto_nhds_of_unique_mapClusterPt fun ν hν ↦ ?_, fun h ↦ by
     simpa only [Function.comp_def, sinkhornDivergence_self] using (hcont.tendsto μ).comp h⟩
   obtain ⟨U, hUl, hUν⟩ := mapClusterPt_iff_ultrafilter.1 hν
   exact ProbabilityMeasure.toMeasure_injective
-    ((sinkhornDivergence_eq_zero_iff hc.measurable hfin hε hk
+    ((sinkhornDivergence_eq_zero_iff hc.measurable_prod_of_sigmaCompact_of_compact hfin hε hk
       (continuous_entropicGibbsKernel hc hfin) hku).1
       (tendsto_nhds_unique ((hcont.tendsto ν).comp hUν) (h.mono_left hUl)))
 
 end Compact
+
+/-! ### Quantitative `W₁` stability and weak continuity on non-compact spaces -/
+
+section Stability
+
+/-- **`W₁`-Lipschitz stability of the Sinkhorn negentropy, in `ℝ≥0∞`
+(Feydy et al., Proposition 2).** On an extended pseudometric space, for a measurable cost bounded
+by `B` whose slices are `K`-Lipschitz in each argument and a positive temperature `ε`, the Sinkhorn
+negentropy is `K`-Lipschitz with respect to `wassersteinEDist 1`, uniformly in `ε` and `B`. -/
+theorem ofReal_abs_sinkhornNegentropy_sub_le_wassersteinEDist_one {X : Type*}
+    [PseudoEMetricSpace X] [MeasurableSpace X] {c : X × X → ℝ≥0∞} {ε B K : ℝ≥0}
+    {μ μ' : Measure X} [IsProbabilityMeasure μ] [IsProbabilityMeasure μ']
+    (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    ENNReal.ofReal |sinkhornNegentropy c ε μ' - sinkhornNegentropy c ε μ| ≤
+      K * wassersteinEDist 1 μ' μ := by
+  have hb := ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one
+    (μ := μ) (μ' := μ') (ν := μ) (ν' := μ') hc hcB hL₁ hL₂ hε
+  have habs : |sinkhornNegentropy c ε μ' - sinkhornNegentropy c ε μ| =
+      |(entropicTransportCost c ε μ' μ').toReal - (entropicTransportCost c ε μ μ).toReal| / 2 := by
+    have hsub : sinkhornNegentropy c ε μ' - sinkhornNegentropy c ε μ =
+        -((entropicTransportCost c ε μ' μ').toReal -
+          (entropicTransportCost c ε μ μ).toReal) / 2 := by
+      rw [sinkhornNegentropy_def, sinkhornNegentropy_def]
+      ring
+    rw [hsub, abs_div, abs_neg, abs_of_pos (zero_lt_two' ℝ)]
+  rw [habs, ENNReal.ofReal_div_of_pos zero_lt_two, ENNReal.ofReal_ofNat]
+  refine (ENNReal.div_le_div_right hb 2).trans_eq ?_
+  rw [← mul_two, ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top]
+
+/-- **`W₁`-Lipschitz stability of the Sinkhorn negentropy, in real form
+(Feydy et al., Proposition 2).** -/
+theorem abs_sinkhornNegentropy_sub_le_wassersteinEDist_one {X : Type*}
+    [PseudoEMetricSpace X] [MeasurableSpace X] {c : X × X → ℝ≥0∞} {ε B K : ℝ≥0}
+    {μ μ' : Measure X} [IsProbabilityMeasure μ] [IsProbabilityMeasure μ']
+    (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0)
+    (hw : wassersteinEDist 1 μ' μ ≠ ∞) :
+    |sinkhornNegentropy c ε μ' - sinkhornNegentropy c ε μ| ≤
+      K * (wassersteinEDist 1 μ' μ).toReal :=
+  le_coe_mul_of_ofReal_le
+    (ofReal_abs_sinkhornNegentropy_sub_le_wassersteinEDist_one hc hcB hL₁ hL₂ hε) hw
+
+/-- **`W₁`-Lipschitz stability of the Sinkhorn divergence, in `ℝ≥0∞`
+(Feydy et al., Proposition 2).** On an extended pseudometric space, for a measurable cost bounded
+by `B` whose slices are `K`-Lipschitz in each argument and a positive temperature `ε`, the Sinkhorn
+divergence is `2 * K`-Lipschitz in each marginal with respect to `wassersteinEDist 1`, uniformly in
+`ε` and `B`. -/
+theorem ofReal_abs_sinkhornDivergence_sub_le_wassersteinEDist_one {X : Type*}
+    [PseudoEMetricSpace X] [MeasurableSpace X] {c : X × X → ℝ≥0∞} {ε B K : ℝ≥0}
+    {μ μ' ν ν' : Measure X} [IsProbabilityMeasure μ] [IsProbabilityMeasure μ']
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ν'] (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    ENNReal.ofReal |sinkhornDivergence c ε μ' ν' - sinkhornDivergence c ε μ ν| ≤
+      (2 * K : ℝ≥0) * wassersteinEDist 1 μ' μ + (2 * K : ℝ≥0) * wassersteinEDist 1 ν' ν := by
+  have hb_cross := ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one
+    (μ := μ) (μ' := μ') (ν := ν) (ν' := ν') hc hcB hL₁ hL₂ hε
+  have hb_μ := ofReal_abs_sinkhornNegentropy_sub_le_wassersteinEDist_one
+    (μ := μ) (μ' := μ') hc hcB hL₁ hL₂ hε
+  have hb_ν := ofReal_abs_sinkhornNegentropy_sub_le_wassersteinEDist_one
+    (μ := ν) (μ' := ν') hc hcB hL₁ hL₂ hε
+  have htri : |sinkhornDivergence c ε μ' ν' - sinkhornDivergence c ε μ ν| ≤
+      |(entropicTransportCost c ε μ' ν').toReal - (entropicTransportCost c ε μ ν).toReal| +
+      |sinkhornNegentropy c ε μ' - sinkhornNegentropy c ε μ| +
+      |sinkhornNegentropy c ε ν' - sinkhornNegentropy c ε ν| := by
+    have hdecomp : sinkhornDivergence c ε μ' ν' - sinkhornDivergence c ε μ ν =
+        ((entropicTransportCost c ε μ' ν').toReal - (entropicTransportCost c ε μ ν).toReal) +
+        (sinkhornNegentropy c ε μ' - sinkhornNegentropy c ε μ) +
+        (sinkhornNegentropy c ε ν' - sinkhornNegentropy c ε ν) := by
+      rw [sinkhornDivergence_eq_add_sinkhornNegentropy,
+        sinkhornDivergence_eq_add_sinkhornNegentropy]
+      ring
+    rw [hdecomp]
+    exact abs_add_three _ _ _
+  refine (ENNReal.ofReal_le_ofReal htri).trans
+    ((ENNReal.ofReal_add_le.trans (add_le_add ENNReal.ofReal_add_le le_rfl)).trans ?_)
+  refine (add_le_add (add_le_add hb_cross hb_μ) hb_ν).trans_eq ?_
+  push_cast
+  ring
+
+/-- **`W₁`-Lipschitz stability of the Sinkhorn divergence, in real form
+(Feydy et al., Proposition 2).** -/
+theorem abs_sinkhornDivergence_sub_le_wassersteinEDist_one {X : Type*}
+    [PseudoEMetricSpace X] [MeasurableSpace X] {c : X × X → ℝ≥0∞} {ε B K : ℝ≥0}
+    {μ μ' ν ν' : Measure X} [IsProbabilityMeasure μ] [IsProbabilityMeasure μ']
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ν'] (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0)
+    (hw₁ : wassersteinEDist 1 μ' μ ≠ ∞) (hw₂ : wassersteinEDist 1 ν' ν ≠ ∞) :
+    |sinkhornDivergence c ε μ' ν' - sinkhornDivergence c ε μ ν| ≤
+      2 * K * (wassersteinEDist 1 μ' μ).toReal + 2 * K * (wassersteinEDist 1 ν' ν).toReal := by
+  simpa only [NNReal.coe_mul, NNReal.coe_ofNat] using le_coe_mul_add_coe_mul_of_ofReal_le
+    (ofReal_abs_sinkhornDivergence_sub_le_wassersteinEDist_one hc hcB hL₁ hL₂ hε) hw₁ hw₂
+
+/-- **Weak continuity of the Sinkhorn negentropy for bounded slicewise-Lipschitz costs.** On a
+separable pseudometric space whose open sets are measurable, for a measurable cost bounded by `B`
+with `K₁`- and `K₂`-Lipschitz slices and a positive temperature `ε`, the Sinkhorn negentropy is
+continuous on `ProbabilityMeasure X`, with no compactness or moment assumption. -/
+theorem continuous_sinkhornNegentropy_of_lipschitzWith {X : Type*} [PseudoMetricSpace X]
+    [TopologicalSpace.SeparableSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    {c : X × X → ℝ≥0∞} {ε B K₁ K₂ : ℝ≥0} (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K₂ fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    Continuous fun μ : ProbabilityMeasure X ↦ sinkhornNegentropy c ε (μ : Measure X) := by
+  simp_rw [sinkhornNegentropy_def]
+  exact ((continuous_toReal_entropicTransportCost_of_lipschitzWith hc hcB hL₁ hL₂ hε).comp
+    (continuous_id.prodMk continuous_id)).neg.div_const 2
+
+/-- **Joint weak continuity of the Sinkhorn divergence for bounded slicewise-Lipschitz costs.** On a
+separable pseudometric space whose open sets are measurable (for instance any Polish metric space
+with its Borel σ-algebra), for a measurable cost bounded by `B` with `K₁`- and `K₂`-Lipschitz
+slices and a positive temperature `ε`, the Sinkhorn divergence is jointly continuous on
+`ProbabilityMeasure X × ProbabilityMeasure X`, with no compactness or moment assumption. -/
+theorem continuous_sinkhornDivergence_of_lipschitzWith {X : Type*} [PseudoMetricSpace X]
+    [TopologicalSpace.SeparableSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    {c : X × X → ℝ≥0∞} {ε B K₁ K₂ : ℝ≥0} (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hL₁ : ∀ y, LipschitzWith K₁ fun x ↦ (c (x, y)).toReal)
+    (hL₂ : ∀ x, LipschitzWith K₂ fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0) :
+    Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure X ↦
+      sinkhornDivergence c ε (q.1 : Measure X) (q.2 : Measure X) := by
+  simp_rw [sinkhornDivergence_eq_add_sinkhornNegentropy]
+  exact ((continuous_toReal_entropicTransportCost_of_lipschitzWith hc hcB hL₁ hL₂ hε).add
+    ((continuous_sinkhornNegentropy_of_lipschitzWith hc hcB hL₁ hL₂ hε).comp continuous_fst)).add
+    ((continuous_sinkhornNegentropy_of_lipschitzWith hc hcB hL₁ hL₂ hε).comp continuous_snd)
+
+end Stability
 
 end TauCeti

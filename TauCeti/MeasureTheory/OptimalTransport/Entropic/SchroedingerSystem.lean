@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 import Mathlib.Probability.Moments.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
+import TauCeti.MeasureTheory.Integral.Exp.Log
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -54,8 +55,10 @@ a different argument and is not proved here.
   Sinkhorn half-step, together with `TauCeti.measurable_logIntegralExp`,
   `TauCeti.integrable_exp_add_of_le`, `TauCeti.abs_logIntegralExp_le`, and
   `TauCeti.abs_logIntegralExp_sub_le`.
-* `TauCeti.exists_isCoupling_withDensity_exp_add`: the Schrödinger system for a bounded measurable
-  kernel has a solution by bounded measurable potentials.
+* `TauCeti.exists_isCoupling_withDensity_exp_add_of_ne_zero` and
+  `TauCeti.exists_isCoupling_withDensity_exp_add`: the Schrödinger system for a bounded measurable
+  kernel has a solution by bounded measurable potentials satisfying both marginal equations
+  pointwise everywhere when the marginals are nonzero.
 * `TauCeti.exists_isCoupling_withDensity_exp_add_of_eq_withDensity`: the same system written
   against a reference measure `R` with density `exp g` against `μ.prod ν`.
 * `TauCeti.IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue`: the Schrödinger
@@ -172,20 +175,11 @@ theorem abs_logIntegralExp_sub_le (hν : ν ≠ 0) {a₁ a₂ : A}
     (hosc : ∀ b, |h (a₁, b) - h (a₂, b)| ≤ δ) :
     |logIntegralExp h ν ψ a₁ - logIntegralExp h ν ψ a₂| ≤ δ := by
   have := NeZero.mk hν
-  have one_side {u v : A} (hu : Integrable (fun b ↦ Real.exp (h (u, b) + ψ b)) ν)
-      (hv : Integrable (fun b ↦ Real.exp (h (v, b) + ψ b)) ν)
-      (huv : ∀ b, h (u, b) - h (v, b) ≤ δ) :
-      logIntegralExp h ν ψ u - logIntegralExp h ν ψ v ≤ δ := by
-    have hle : ∫ b, Real.exp (h (u, b) + ψ b) ∂ν ≤
-        Real.exp δ * ∫ b, Real.exp (h (v, b) + ψ b) ∂ν := by
-      rw [← integral_const_mul]
-      exact integral_mono hu (hv.const_mul _) fun b ↦ by
-        rw [← Real.exp_add, Real.exp_le_exp]; linarith [huv b]
-    have hlog := (Real.log_le_log (integral_exp_pos hu) hle).trans_eq <| by
-      rw [Real.log_mul (Real.exp_pos _).ne' (integral_exp_pos hv).ne', Real.log_exp]
-    unfold logIntegralExp; linarith
-  exact abs_sub_le_iff.2 ⟨one_side ha₁ ha₂ fun b ↦ (abs_le.1 (hosc b)).2,
-    one_side ha₂ ha₁ fun b ↦ by linarith [(abs_le.1 (hosc b)).1]⟩
+  have h₁ := log_integral_exp_le_add_of_ae_le ha₁ ha₂
+    (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hosc b)).2])
+  have h₂ := log_integral_exp_le_add_of_ae_le ha₂ ha₁
+    (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hosc b)).1])
+  exact abs_sub_le_iff.2 ⟨by unfold logIntegralExp; linarith, by unfold logIntegralExp; linarith⟩
 
 /-- **The half-step contracts oscillations**, in bracket form: if `m ≤ ψ₁ - ψ₂ ≤ m + ω`, then the
 difference of the log-partition functions of `ψ₁` and `ψ₂` has oscillation at most
@@ -479,22 +473,19 @@ section Existence
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
   {g : X × Y → ℝ} {M : ℝ}
 
-/-- **The Schrödinger system for a bounded kernel.** Let `μ` be a finite measure, `ν` a measure of
-the same mass, and `g` a bounded measurable function on `X × Y`. Then there are bounded measurable
-potentials `φ` and `ψ` such that `exp (φ(x) + ψ(y) + g(x, y))` is the density, against
-`μ.prod ν`, of a coupling of `μ` and `ν`. -/
-theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ]
+/-- **The Schrödinger system for a bounded kernel and nonzero marginals, with pointwise marginal
+equations.** When `μ ≠ 0` is finite and `μ univ = ν univ`, there exist bounded measurable
+potentials `φ` and `ψ` whose tilted product density couples `μ` and `ν` and integrates to `1` in
+each variable at *every* point of `X` and `Y`. -/
+theorem exists_isCoupling_withDensity_exp_add_of_ne_zero [IsFiniteMeasure μ] (hμ : μ ≠ 0)
     (hμν : μ univ = ν univ) (hg : Measurable g) (hgM : ∀ z, |g z| ≤ M) :
     ∃ (φ : X → ℝ) (ψ : Y → ℝ) (C : ℝ), Measurable φ ∧ Measurable ψ ∧ (∀ x, |φ x| ≤ C) ∧
-      (∀ y, |ψ y| ≤ C) ∧ IsCoupling ((μ.prod ν).withDensity fun z ↦
+      (∀ y, |ψ y| ≤ C) ∧
+      (∀ x, ∫ y, Real.exp (φ x + ψ y + g (x, y)) ∂ν = 1) ∧
+      (∀ y, ∫ x, Real.exp (φ x + ψ y + g (x, y)) ∂μ = 1) ∧
+      IsCoupling ((μ.prod ν).withDensity fun z ↦
         ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z))) μ ν := by
   have : IsFiniteMeasure ν := ⟨hμν ▸ measure_lt_top μ univ⟩
-  by_cases hμ : μ = 0
-  · have hν : ν = 0 := by rw [← Measure.measure_univ_eq_zero, ← hμν, hμ, FunLike.coe_zero,
-      Pi.zero_apply]
-    subst hμ hν
-    exact ⟨0, 0, 0, measurable_const, measurable_const, fun _ ↦ by simp, fun _ ↦ by simp,
-      by simp⟩
   have hν : ν ≠ 0 := by
     rwa [Ne, ← Measure.measure_univ_eq_zero, ← hμν, Measure.measure_univ_eq_zero]
   obtain ⟨ψ, C, c, hψ, hC, hfix⟩ := exists_sinkhornSweep_eq_add hμ hν hg hgM
@@ -506,6 +497,7 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ]
       (abs_logIntegralExp_le hν (a := x) (by fun_prop) (fun y ↦ hgM (x, y)) hψ hC)
   set f : X × Y → ℝ≥0∞ := fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z)) with hf_def
   have hf : Measurable f := by fun_prop
+  -- Check the pointwise row and column `lintegral` equations for `f`.
   have hrow (x : X) : ∫⁻ y, f (x, y) ∂ν = 1 := by
     have := lintegral_ofReal_exp_add hν hg hgM hψ hC x (φ x)
     have h0 : φ x + logIntegralExp g ν ψ x = 0 := by simp only [hφ_def, neg_add_cancel]
@@ -526,11 +518,46 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ]
     rw [hf_def]
     simp only [Function.comp_apply, Prod.swap_prod_mk]
     ring_nf
+  -- Deduce that `f` defines a coupling and force `exp (-c) = 1` by comparing total masses.
   have hcoupling := isCoupling_withDensity_of_lintegral_eq hμν hf.aemeasurable (ae_of_all _ hrow)
     (ae_of_all _ hcol)
-  refine ⟨φ, ψ, max (M + C + |Real.log (ν.real univ)|) C, hφ, hψ,
-    fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _), ?_⟩
-  exact hcoupling
+  have hc1 : ENNReal.ofReal (Real.exp (-c)) = 1 := by
+    have hmass : ((μ.prod ν).withDensity f) univ = ENNReal.ofReal (Real.exp (-c)) * ν univ := by
+      rw [withDensity_apply _ .univ, Measure.restrict_univ, lintegral_prod_symm _ hf.aemeasurable]
+      simp [hcol]
+    exact (ENNReal.mul_eq_right (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)).1
+      (hmass.symm.trans hcoupling.measure_univ_right.symm)
+  -- Convert the `lintegral` marginal identities to Bochner integrals.
+  have hrow_int (x : X) : ∫ y, Real.exp (φ x + ψ y + g (x, y)) ∂ν = 1 :=
+    (integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ (Real.exp_pos _).le)
+      (by fun_prop : Measurable _).aestronglyMeasurable).trans <|
+      (congrArg ENNReal.toReal (hrow x)).trans ENNReal.toReal_one
+  have hcol_int (y : Y) : ∫ x, Real.exp (φ x + ψ y + g (x, y)) ∂μ = 1 :=
+    (integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ (Real.exp_pos _).le)
+      (by fun_prop : Measurable _).aestronglyMeasurable).trans <|
+      (congrArg ENNReal.toReal ((hcol y).trans hc1)).trans ENNReal.toReal_one
+  exact ⟨φ, ψ, max (M + C + |Real.log (ν.real univ)|) C, hφ, hψ,
+    fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _),
+    hrow_int, hcol_int, hcoupling⟩
+
+/-- **The Schrödinger system for a bounded kernel.** Let `μ` be a finite measure, `ν` a measure of
+the same mass, and `g` a bounded measurable function on `X × Y`. Then there are bounded measurable
+potentials `φ` and `ψ` such that `exp (φ(x) + ψ(y) + g(x, y))` is the density, against
+`μ.prod ν`, of a coupling of `μ` and `ν`. -/
+theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ]
+    (hμν : μ univ = ν univ) (hg : Measurable g) (hgM : ∀ z, |g z| ≤ M) :
+    ∃ (φ : X → ℝ) (ψ : Y → ℝ) (C : ℝ), Measurable φ ∧ Measurable ψ ∧ (∀ x, |φ x| ≤ C) ∧
+      (∀ y, |ψ y| ≤ C) ∧ IsCoupling ((μ.prod ν).withDensity fun z ↦
+        ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z))) μ ν := by
+  by_cases hμ : μ = 0
+  · have hν : ν = 0 := by rw [← Measure.measure_univ_eq_zero, ← hμν, hμ, FunLike.coe_zero,
+      Pi.zero_apply]
+    subst hμ hν
+    exact ⟨0, 0, 0, measurable_const, measurable_const, fun _ ↦ by simp, fun _ ↦ by simp,
+      by simp⟩
+  obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, -, -, hcoupling⟩ :=
+    exists_isCoupling_withDensity_exp_add_of_ne_zero hμ hμν hg hgM
+  exact ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hcoupling⟩
 
 /-- **The Schrödinger system against a reference measure with bounded log-density.** Let `μ` be a
 finite measure, `ν` a measure of the same mass, and let the reference measure `R` have density
@@ -586,31 +613,38 @@ theorem IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue
 bounded measurable cost `c` and a positive temperature `ε`, the regularised transport cost
 `TauCeti.entropicTransportCost c ε μ ν` is attained by a coupling whose density against
 `μ.prod ν` is `exp ((φ(x) + ψ(y) - c(x, y)) / ε)`, for bounded measurable potentials `φ` and
-`ψ`. -/
+`ψ` satisfying both Schrödinger marginal equations pointwise everywhere on `X` and `Y`. -/
 theorem exists_isCoupling_lintegral_add_mul_klDiv_eq_entropicTransportCost
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {c : X × Y → ℝ≥0∞} (hc : Measurable c)
     {B : ℝ≥0} (hcB : ∀ z, c z ≤ B) {ε : ℝ≥0} (hε : ε ≠ 0) :
     ∃ π, IsCoupling π μ ν ∧ ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) = entropicTransportCost c ε μ ν ∧
       ∃ (φ : X → ℝ) (ψ : Y → ℝ) (C : ℝ), Measurable φ ∧ Measurable ψ ∧ (∀ x, |φ x| ≤ C) ∧
-        (∀ y, |ψ y| ≤ C) ∧ π = (μ.prod ν).withDensity fun z ↦
+        (∀ y, |ψ y| ≤ C) ∧
+        (∀ x, ∫ y, Real.exp ((φ x + ψ y - (c (x, y)).toReal) / ε) ∂ν = 1) ∧
+        (∀ y, ∫ x, Real.exp ((φ x + ψ y - (c (x, y)).toReal) / ε) ∂μ = 1) ∧
+        π = (μ.prod ν).withDensity fun z ↦
           ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)) := by
   have hε' : (0 : ℝ) < ε := by positivity
   have hcB' (z : X × Y) : (c z).toReal ≤ B :=
     (ENNReal.toReal_mono ENNReal.coe_ne_top (hcB z)).trans_eq (ENNReal.coe_toReal B)
-  obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ := exists_isCoupling_withDensity_exp_add
-    (μ := μ) (ν := ν) (g := fun z ↦ -((c z).toReal / ε)) (M := B / ε) (by simp)
-    (hc.ennreal_toReal.div_const _).neg fun z ↦ by
-      rw [abs_neg, abs_div, abs_of_nonneg ENNReal.toReal_nonneg, abs_of_pos hε']
-      exact div_le_div_of_nonneg_right (hcB' z) hε'.le
+  obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hrow, hcol, hσ⟩ :=
+    exists_isCoupling_withDensity_exp_add_of_ne_zero (ν := ν) (IsProbabilityMeasure.ne_zero μ)
+      (by simp) (g := fun z ↦ -((c z).toReal / ε)) (M := B / ε)
+      (hc.ennreal_toReal.div_const _).neg fun z ↦ by
+        rw [abs_neg, abs_div, abs_of_nonneg ENNReal.toReal_nonneg, abs_of_pos hε']
+        exact div_le_div_of_nonneg_right (hcB' z) hε'.le
+  have hexponent (z : X × Y) :
+      φ z.1 + ψ z.2 + -((c z).toReal / ε) = (ε * φ z.1 + ε * ψ z.2 - (c z).toReal) / ε := by
+    field_simp
+    ring
+  have hexp2 (x : X) (y : Y) :
+      φ x + ψ y + -((c (x, y)).toReal / ε) = (ε * φ x + ε * ψ y - (c (x, y)).toReal) / ε :=
+    hexponent (x, y)
   have hGibbs : ((μ.prod ν).withDensity fun z ↦
       ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + -((c z).toReal / ε)))) =
       (μ.prod ν).withDensity fun z ↦
         ENNReal.ofReal (Real.exp ((ε * φ z.1 + ε * ψ z.2 - (c z).toReal) / ε)) := by
-    congr 1
-    funext z
-    congr 2
-    field_simp
-    ring
+    simp only [hexponent]
   rw [hGibbs] at hσ
   have hφi : Integrable (fun x ↦ ε * φ x) μ :=
     (Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)).const_mul _
@@ -620,11 +654,13 @@ theorem exists_isCoupling_lintegral_add_mul_klDiv_eq_entropicTransportCost
     (φ := fun x ↦ ε * φ x) (ψ := fun y ↦ ε * ψ y) hc.aemeasurable
     (ae_of_all _ fun z ↦ ((hcB z).trans_lt ENNReal.coe_lt_top).ne) hε rfl hφi hψi
   refine ⟨_, hσ, hopt, fun x ↦ ε * φ x, fun y ↦ ε * ψ y, ε * C, hφ.const_mul _, hψ.const_mul _,
-    fun x ↦ ?_, fun y ↦ ?_, rfl⟩
+    fun x ↦ ?_, fun y ↦ ?_, fun x ↦ ?_, fun y ↦ ?_, rfl⟩
   · rw [abs_mul, NNReal.abs_eq]
     exact mul_le_mul_of_nonneg_left (hφC x) ε.coe_nonneg
   · rw [abs_mul, NNReal.abs_eq]
     exact mul_le_mul_of_nonneg_left (hψC y) ε.coe_nonneg
+  · simpa only [← hexp2] using hrow x
+  · simpa only [← hexp2] using hcol y
 
 end Existence
 

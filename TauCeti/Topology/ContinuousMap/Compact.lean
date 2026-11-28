@@ -48,6 +48,9 @@ a uniform positive distance from every point outside its range.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
+* `ContinuousMap.exists_factor_lipschitzWith_one`: a continuous map from a product of compact spaces
+  into a pseudometric space factors through continuous surjections onto compact pseudometric spaces
+  as a continuous map whose slices in each variable are `1`-Lipschitz.
 * `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: point evaluation on `C(K, E)`
   for compact `K` has operator norm at most `1`, and exactly `1` when `E` has nontrivial topology.
 * `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a linear functional on `C(X, 𝕜)` that
@@ -58,6 +61,7 @@ a uniform positive distance from every point outside its range.
 public section
 
 open Metric
+open scoped BoundedContinuousFunction
 
 variable {X : Type*} [TopologicalSpace X]
 
@@ -118,6 +122,68 @@ theorem exists_pos_le_norm_sub_of_notMem_range {E : Type*} [CompactSpace X] [Nor
     (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
     ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
   simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
+
+section
+
+universe u v w
+
+/-- **Compact double-currying factorisation.** Any continuous map `f : C(A × B, Z)` from a product
+of compact topological spaces into a pseudometric space factors as `f (x, y) = g (Φ x, Ψ y)`
+through continuous surjections `Φ : A → K` and `Ψ : B → L` onto compact pseudometric spaces, where
+`g : K × L → Z` is continuous and `1`-Lipschitz in each variable separately. -/
+theorem exists_factor_lipschitzWith_one {A : Type u} {B : Type v} {Z : Type w}
+    [TopologicalSpace A] [CompactSpace A] [TopologicalSpace B] [CompactSpace B]
+    [PseudoMetricSpace Z] (f : C(A × B, Z)) :
+    ∃ (K L : Type max v w) (_ : PseudoMetricSpace K) (_ : PseudoMetricSpace L),
+      CompactSpace K ∧ CompactSpace L ∧
+      ∃ (Φ : A → K) (Ψ : B → L) (g : K × L → Z),
+        Continuous Φ ∧ Function.Surjective Φ ∧
+        Continuous Ψ ∧ Function.Surjective Ψ ∧
+        Continuous g ∧
+        (∀ l : L, LipschitzWith 1 fun k : K ↦ g (k, l)) ∧
+        (∀ k : K, LipschitzWith 1 fun l : L ↦ g (k, l)) ∧
+        ∀ x y, g (Φ x, Ψ y) = f (x, y) := by
+  -- Currying `f` embeds `A` onto a compact subset `K ⊆ C(B, Z)`.
+  let K := Set.range f.curry
+  have hKc : CompactSpace K := isCompact_iff_compactSpace.1 (isCompact_range f.curry.continuous)
+  -- Evaluating on `B × K` and currying again embeds `B` onto a compact subset `L ⊆ C(K, Z)`.
+  let evalBK : C(B × K, Z) := ⟨fun p ↦ p.2.val p.1,
+    (continuous_eval : Continuous fun p : (B →ᵇ Z) × B ↦ p.1 p.2).comp
+      (((ContinuousMap.isometryEquivBoundedOfCompact B Z).continuous.comp
+        (continuous_subtypeVal.comp continuous_snd)).prodMk continuous_fst)⟩
+  let L := Set.range evalBK.curry
+  have hLc : CompactSpace L :=
+    isCompact_iff_compactSpace.1 (isCompact_range evalBK.curry.continuous)
+  let Φ : A → K := Set.rangeFactorization f.curry
+  let Ψ : B → L := Set.rangeFactorization evalBK.curry
+  let g : K × L → Z := fun w ↦ w.2.val w.1
+  have evalBK_apply (y : B) (k : K) : evalBK (y, k) = k.val y := rfl
+  have hgc : Continuous g :=
+    (continuous_eval : Continuous fun p : (K →ᵇ Z) × K ↦ p.1 p.2).comp
+      (((ContinuousMap.isometryEquivBoundedOfCompact K Z).continuous.comp
+        (continuous_subtypeVal.comp continuous_snd)).prodMk continuous_fst)
+  refine ⟨K, L, inferInstance, inferInstance, hKc, hLc, Φ, Ψ, g,
+    f.curry.continuous.rangeFactorization, Set.rangeFactorization_surjective,
+    evalBK.curry.continuous.rangeFactorization, Set.rangeFactorization_surjective,
+    hgc, fun l ↦ ?_, fun k ↦ ?_, fun x y ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := l.property
+    refine LipschitzWith.of_dist_le_mul fun k₁ k₂ ↦ ?_
+    have h₁ : g (k₁, l) = k₁.val y := by
+      dsimp only [g]
+      rw [← hy, ContinuousMap.curry_apply, evalBK_apply]
+    have h₂ : g (k₂, l) = k₂.val y := by
+      dsimp only [g]
+      rw [← hy, ContinuousMap.curry_apply, evalBK_apply]
+    simpa only [NNReal.coe_one, one_mul, h₁, h₂, Subtype.dist_eq] using
+      ContinuousMap.dist_apply_le_dist (f := k₁.val) (g := k₂.val) y
+  · refine LipschitzWith.of_dist_le_mul fun l₁ l₂ ↦ ?_
+    simpa only [NNReal.coe_one, one_mul, g, Subtype.dist_eq] using
+      ContinuousMap.dist_apply_le_dist (f := l₁.val) (g := l₂.val) k
+  · dsimp only [g, Φ, Ψ]
+    rw [Set.rangeFactorization_coe, ContinuousMap.curry_apply, evalBK_apply,
+      Set.rangeFactorization_coe, ContinuousMap.curry_apply]
+
+end
 
 /-- Point evaluation on `C(K, E)` has operator norm at most `1`. -/
 theorem norm_evalCLM_le_one {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]

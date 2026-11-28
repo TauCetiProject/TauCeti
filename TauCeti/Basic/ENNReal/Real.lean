@@ -38,6 +38,10 @@ reparametrization of the class along surjections.
   `⨆ n : ℕ, ENNReal.ofReal (min x n) = ENNReal.ofReal x`.
 * `TauCeti.ofReal_sub_add_ofReal`: `ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p`
   for `0 ≤ q ≤ p`.
+* `TauCeti.toReal_le_coe_mul_add_coe_mul`: if `a ≤ w₁ * x + w₂ * y` in `ℝ≥0∞` with `x, y ≠ ∞`, then
+  `a.toReal ≤ w₁ * x.toReal + w₂ * y.toReal`.
+* `TauCeti.le_coe_mul_of_ofReal_le` and `TauCeti.le_coe_mul_add_coe_mul_of_ofReal_le`: extract real
+  bounds `r ≤ w * x.toReal` and `r ≤ w₁ * x.toReal + w₂ * y.toReal` from `ENNReal.ofReal r ≤ ...`.
 * `TauCeti.le_ofReal_inv_add_mul_of_add_le`: if `a + b ≤ V` and `b ≥ ω V`, then
   `a ≤ (1 + ω)⁻¹ V`.
 * `TauCeti.ofReal_mul_ofReal_add_ofReal_mul_ofReal`: `ENNReal.ofReal` folds
@@ -51,7 +55,7 @@ reparametrization of the class along surjections.
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace ENNReal
 
@@ -97,6 +101,37 @@ variable {α β : Type*}
 theorem ofReal_sub_add_ofReal {p q : ℝ} (hq : 0 ≤ q) (hqp : q ≤ p) :
     ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p := by
   rw [← ENNReal.ofReal_add (sub_nonneg.2 hqp) hq, sub_add_cancel]
+
+/-- Turn `a ≤ w₁ * x + w₂ * y` in `ℝ≥0∞` (with `ℝ≥0` weights and finite `x`, `y`) into the real
+inequality `a.toReal ≤ w₁ * x.toReal + w₂ * y.toReal`. -/
+theorem toReal_le_coe_mul_add_coe_mul {a x y : ℝ≥0∞} {w₁ w₂ : ℝ≥0}
+    (h : a ≤ (w₁ : ℝ≥0∞) * x + (w₂ : ℝ≥0∞) * y) (hx : x ≠ ∞) (hy : y ≠ ∞) :
+    a.toReal ≤ (w₁ : ℝ) * x.toReal + (w₂ : ℝ) * y.toReal := by
+  have hsum : (w₁ : ℝ≥0∞) * x + (w₂ : ℝ≥0∞) * y ≠ ∞ :=
+    ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top hx,
+      ENNReal.mul_ne_top ENNReal.coe_ne_top hy⟩
+  calc a.toReal
+      ≤ ((w₁ : ℝ≥0∞) * x + (w₂ : ℝ≥0∞) * y).toReal := ENNReal.toReal_mono hsum h
+    _ ≤ ((w₁ : ℝ≥0∞) * x).toReal + ((w₂ : ℝ≥0∞) * y).toReal := ENNReal.toReal_add_le
+    _ = (w₁ : ℝ) * x.toReal + (w₂ : ℝ) * y.toReal := by simp [ENNReal.toReal_mul]
+
+/-- Extract the real bound `r ≤ w * x.toReal` from `ENNReal.ofReal r ≤ w * x` when `x ≠ ∞`. -/
+theorem le_coe_mul_of_ofReal_le {r : ℝ} {x : ℝ≥0∞} {w : ℝ≥0}
+    (h : ENNReal.ofReal r ≤ (w : ℝ≥0∞) * x) (hx : x ≠ ∞) :
+    r ≤ (w : ℝ) * x.toReal := by
+  have hwx : (w : ℝ≥0∞) * x ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top hx
+  simpa [ENNReal.toReal_mul] using (ENNReal.ofReal_le_iff_le_toReal hwx).1 h
+
+/-- Extract the real bound `r ≤ w₁ * x.toReal + w₂ * y.toReal` from
+`ENNReal.ofReal r ≤ w₁ * x + w₂ * y` when `x ≠ ∞` and `y ≠ ∞`. -/
+theorem le_coe_mul_add_coe_mul_of_ofReal_le {r : ℝ} {x y : ℝ≥0∞} {w₁ w₂ : ℝ≥0}
+    (h : ENNReal.ofReal r ≤ (w₁ : ℝ≥0∞) * x + (w₂ : ℝ≥0∞) * y) (hx : x ≠ ∞) (hy : y ≠ ∞) :
+    r ≤ (w₁ : ℝ) * x.toReal + (w₂ : ℝ) * y.toReal := by
+  have hsum : (w₁ : ℝ≥0∞) * x + (w₂ : ℝ≥0∞) * y ≠ ∞ :=
+    ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top hx,
+      ENNReal.mul_ne_top ENNReal.coe_ne_top hy⟩
+  exact ((ENNReal.ofReal_le_iff_le_toReal hsum).1 h).trans
+    (toReal_le_coe_mul_add_coe_mul le_rfl hx hy)
 
 /-- If `a + b ≤ V` and `b ≥ ω V`, then `a ≤ (1 + ω)⁻¹ V`: the complement of a set filling an
 `ω` fraction of a set of measure `V` fills at most a `(1 + ω)⁻¹` fraction of it. -/
