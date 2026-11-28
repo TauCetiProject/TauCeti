@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import Mathlib.Geometry.Manifold.ContMDiff.Basic
 
 /-!
 # The set of points where a map is `C^n`
@@ -25,11 +26,14 @@ and analytic manifolds.
   open.
 * `ContMDiffAt.eventually_mdifferentiableAt`: `C^n` regularity at a point, with `n ≠ 0`,
   implies differentiability throughout a neighbourhood.
+* `TauCeti.contMDiffOn_of_eventuallyEq_const`: a map that is eventually constant within a set `s`
+  at every point of `s` is `C^n` on `s`.
 * The instances `NeZero (∞ : ℕ∞ω)` and `NeZero (ω : ℕ∞ω)`.
 -/
 
 public section
 
+open Filter Set
 open scoped ContDiff Topology
 
 namespace TauCeti
@@ -66,6 +70,13 @@ theorem _root_.ContMDiffAt.eventually_mdifferentiableAt [IsManifold I 1 M] [IsMa
   ((contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).1
     (hf.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn))).mono fun _ hy ↦
       hy.mdifferentiableAt one_ne_zero
+
+/-- A map between manifolds that is eventually equal to its value within `s` at every point of `s`
+is `C^n` on `s` for every `n`. -/
+theorem contMDiffOn_of_eventuallyEq_const {s : Set M}
+    (hf : ∀ x ∈ s, f =ᶠ[𝓝[s] x] fun _ ↦ f x) :
+    ContMDiffOn I I' n f s :=
+  fun x hx ↦ contMDiffWithinAt_const.congr_of_eventuallyEq (hf x hx) rfl
 
 end TauCeti
 

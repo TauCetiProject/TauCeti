@@ -8,9 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.Complex
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.VectorBundle.Core.Trivial
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
 
 /-!
@@ -27,10 +29,12 @@ is a holomorphic line bundle. Likewise, the point-indexed finite-rank core
 `IsQuotientCoveringMap.associatedFiniteRankCore ρ` and its character specialization
 `IsQuotientCoveringMap.characterFiniteRankCore χ` have locally constant transitions and hence are
 `C^n` (`isContMDiff_associatedFiniteRankCore`, `isContMDiff_characterFiniteRankCore`); for a
-character `χ`, `characterFiniteRankCoreDiffeomorph` identifies the total space of
-`characterFiniteRankCore χ` with that of `characterCore χ` via a `C^n` diffeomorphism over `X`,
-yielding the equivalence of nowhere-vanishing `C^n` sections
-(`exists_section_ne_zero_characterFiniteRankCore_iff`).
+character `χ`, `ofScalarCoreCharacterCoreDiffeomorph` identifies `FiniteRankBundleCore.ofScalarCore
+(hp.characterCore χ)` with `characterFiniteRankCore χ`, `characterFiniteRankCoreDiffeomorph`
+identifies the total space of `characterFiniteRankCore χ` with that of `characterCore χ` via a
+`C^n` diffeomorphism over `X`, yielding the equivalence of nowhere-vanishing `C^n` sections
+(`exists_section_ne_zero_characterFiniteRankCore_iff`) and global trivializations over complete
+fields (`exists_trivialization_baseSet_eq_univ_characterFiniteRankCore_iff`).
 
 When `p` is moreover a `C^n` local diffeomorphism, as the orbit projection of a free properly
 discontinuous action by `C^n` maps is (`TauCeti.isLocalDiffeomorph_quotientMk`), the regularity
@@ -57,19 +61,24 @@ the maximum principle). Hence the holomorphic sections of the bundle associated 
 correspond to the `ρ`-invariant vectors of `F`
 (`IsQuotientCoveringMap.mdifferentiable_section_associatedCore_iff_exists_eq_const`),
 the line bundle of a nontrivial character has no nonzero holomorphic section
-(`IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`), and the line bundle of `χ` is
+(`IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`), the line bundle of `χ` is
 holomorphically trivial exactly when `χ = 1`
-(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`).
+(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`), and
+two character line bundles are holomorphically isomorphic over `X` exactly when their characters
+coincide (`IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_eq`).
 
 ## Main results
 
 * `IsQuotientCoveringMap.isContMDiff_associatedCore`,
   `IsQuotientCoveringMap.isContMDiff_associatedFiniteRankCore`: the associated bundle (and its
   point-indexed finite-rank core) is `C^n`.
-* `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`,
-  `IsQuotientCoveringMap.exists_section_ne_zero_characterFiniteRankCore_iff`: total-space `C^n`
-  diffeomorphism and nowhere-vanishing section equivalence between `characterFiniteRankCore χ` and
-  `characterCore χ`.
+* `IsQuotientCoveringMap.ofScalarCoreCharacterCoreDiffeomorph`,
+  `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`,
+  `IsQuotientCoveringMap.exists_section_ne_zero_characterFiniteRankCore_iff`, and
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterFiniteRankCore_iff`:
+  total-space `C^n` diffeomorphisms, nowhere-vanishing section equivalence, and global
+  trivialization equivalence relating `FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)`,
+  `characterFiniteRankCore χ`, and `characterCore χ`.
 * `IsQuotientCoveringMap.contMDiffAt_section_associatedCore_iff`,
   `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff`: a section is `C^m` at `p y`, or
   globally, exactly when the corresponding equivariant function is `C^m` at `y`, or globally.
@@ -82,14 +91,24 @@ holomorphically trivial exactly when `χ = 1`
   over `X` have constant equivariant functions upstairs with `ρ`-invariant values.
 * `IsQuotientCoveringMap.eq_zero_of_mdifferentiable_section_characterCore`,
   `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`,
-  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`: if `p`
-  is differentiable with compact connected complex covering manifold `E`, the line bundle of a
-  nontrivial character over `X` has no nonzero holomorphic section and is not holomorphically
-  trivial. The analogous vanishing results for rank-one representations and the triviality
-  criterion for arbitrary representations are
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`,
+  `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_eq`: if `p` is differentiable
+  with compact connected complex covering manifold `E`, the line bundle of a nontrivial character
+  over `X` has no nonzero holomorphic section, is not holomorphically trivial, and distinct
+  characters yield non-isomorphic line bundles. The analogous vanishing results for rank-one
+  representations and the triviality criterion for arbitrary representations are
   `IsQuotientCoveringMap.eq_zero_of_mdifferentiable_section_associatedCore`,
   `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_associatedCore`, and
   `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one`.
+* `IsQuotientCoveringMap.contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff`,
+  `IsQuotientCoveringMap.contMDiff_totalSpaceMap_characterCoreHomEquiv_iff`,
+  `IsQuotientCoveringMap.characterCoreDiffeomorphOfSectionNeZero`,
+  `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization`, and
+  `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff`: twisting cocycle morphisms by
+  `χ₁⁻¹` shows that `hp.characterCore χ₁` and `hp.characterCore χ₂` are `C^n` bundle-equivalent
+  over `X` if and only if `hp.characterCore (χ₁⁻¹ * χ₂)` admits a global compatible `C^n`
+  trivialization (and, when `p` is a `C^n` local diffeomorphism, if and only if `E` admits a
+  nowhere-vanishing `(χ₁⁻¹ * χ₂)`-equivariant `C^n` function).
 
 ## References
 
@@ -210,6 +229,72 @@ theorem exists_section_ne_zero_characterFiniteRankCore_iff (χ : G →* 𝕜ˣ) 
       ((hp.characterFiniteRankCoreDiffeomorph IB n χ).symm.contMDiff.comp hτ).congr fun x ↦
         (hp.characterFiniteRankCoreDiffeomorph_symm_apply IB n χ ⟨x, τ x⟩).symm,
       fun x h0 ↦ hτ₀ x (congrFun h0 k₀)⟩
+
+/-- Total-space `C^n` diffeomorphism identifying
+`(FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).core.TotalSpace` with
+`(hp.characterFiniteRankCore χ).core.TotalSpace` over `X`. -/
+noncomputable def ofScalarCoreCharacterCoreDiffeomorph (χ : G →* 𝕜ˣ) :
+    (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).core.TotalSpace ≃ₘ^n⟮
+      IB.prod 𝓘(𝕜, Fin (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).rank → 𝕜),
+      IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟯
+      (hp.characterFiniteRankCore χ).core.TotalSpace :=
+  TauCeti.FiniteRankBundleCore.constIsoDiffeomorph
+    (A := TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ))
+    (D := hp.characterFiniteRankCore χ)
+    (hp.baseSet_ofScalarCore_characterCore χ)
+    (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
+    fun i j x _ _ ↦ hp.coordChange_ofScalarCore_characterCore_intertwines χ i j x
+
+@[simp] theorem coe_ofScalarCoreCharacterCoreDiffeomorph (χ : G →* 𝕜ˣ) :
+    ⇑(hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ) =
+      (hp.ofScalarCoreCharacterCoreIso χ).hom.totalSpaceMap := by
+  rw [hp.ofScalarCoreCharacterCoreIso_def χ]
+  exact TauCeti.FiniteRankBundleCore.coe_constIsoDiffeomorph (I := IB) (n := n) _ _ _
+
+@[simp] theorem coe_ofScalarCoreCharacterCoreDiffeomorph_symm (χ : G →* 𝕜ˣ) :
+    ⇑(hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ).symm =
+      (hp.ofScalarCoreCharacterCoreIso χ).inv.totalSpaceMap := by
+  rw [hp.ofScalarCoreCharacterCoreIso_def χ]
+  exact TauCeti.FiniteRankBundleCore.coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
+
+/-- Over a complete scalar field, `hp.characterFiniteRankCore χ` admits a global compatible `C^n`
+trivialization if and only if `hp.characterCore χ` does. -/
+theorem exists_trivialization_baseSet_eq_univ_characterFiniteRankCore_iff [CompleteSpace 𝕜]
+    (χ : G →* 𝕜ˣ) :
+    (∃ (e : Trivialization (Fin (hp.characterFiniteRankCore χ).rank → 𝕜)
+          (π _ (hp.characterFiniteRankCore χ).core.Fiber)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear X
+            (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) IB n).maximalAtlas
+            (TotalSpace _ (hp.characterFiniteRankCore χ).core.Fiber) ∧
+          e.baseSet = univ) ↔
+      ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore χ).Fiber)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
+            (TotalSpace 𝕜 (hp.characterCore χ).Fiber) ∧
+          e.baseSet = univ := by
+  have hhom : ContMDiff
+      (IB.prod 𝓘(𝕜,
+        Fin (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).rank → 𝕜))
+      (IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)) n
+      (hp.ofScalarCoreCharacterCoreIso χ).hom.totalSpaceMap :=
+    (hp.coe_ofScalarCoreCharacterCoreDiffeomorph IB n χ) ▸
+      (hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ).contMDiff
+  have hinv : ContMDiff
+      (IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜))
+      (IB.prod 𝓘(𝕜,
+        Fin (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).rank → 𝕜)) n
+      (hp.ofScalarCoreCharacterCoreIso χ).inv.totalSpaceMap :=
+    (hp.coe_ofScalarCoreCharacterCoreDiffeomorph_symm IB n χ) ▸
+      (hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ).symm.contMDiff
+  have hiff := VectorBundleCore.CoordinateHom.exists_trivialization_baseSet_eq_univ_iff_of_inv
+    (by simp) (by simp)
+    (hp.ofScalarCoreCharacterCoreIso χ).hom (hp.ofScalarCoreCharacterCoreIso χ).inv
+    (hp.ofScalarCoreCharacterCoreIso χ).hom_inv_id
+    (hp.ofScalarCoreCharacterCoreIso χ).inv_hom_id hhom hinv
+  exact hiff.symm.trans
+    (TauCeti.FiniteRankBundleCore.exists_trivialization_baseSet_eq_univ_ofScalarCore_iff
+      (hp.characterCore χ))
 
 end FiniteRankComparison
 
@@ -365,6 +450,261 @@ theorem exists_trivialization_baseSet_eq_univ_characterCore_iff (χ : G →* �
 
 end IsQuotientCoveringMap
 
+/-! ### Twisting `C^n` chart operators and bundle equivalences of scalar character cores -/
+
+namespace IsQuotientCoveringMap
+
+section CharacterTwisting
+
+open VectorBundleCore
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB}
+  {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X] [ChartedSpace HB X]
+  [Group G] [MulAction G E] {p : E → X} (hp : IsQuotientCoveringMap p G) {n : ℕ∞ω}
+
+/-- Multiplying a `C^n` operator-valued function on a chart overlap by the locally constant scalar
+`ψ (hp.deckChange e e' x)` preserves `ContMDiffOn`. -/
+private theorem contMDiffOn_deckChange_smul (ψ : G →* 𝕜ˣ) {e e' : E}
+    {g : X → 𝕜 →L[𝕜] 𝕜}
+    (hg : ContMDiffOn IB 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜) n g
+      ((hp.isLocalHomeomorph.localInverseAt e).source ∩
+        (hp.isLocalHomeomorph.localInverseAt e').source)) :
+    ContMDiffOn IB 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜) n (fun x ↦ (ψ (hp.deckChange e e' x) : 𝕜) • g x)
+      ((hp.isLocalHomeomorph.localInverseAt e).source ∩
+        (hp.isLocalHomeomorph.localInverseAt e').source) :=
+  have hψ : ContMDiffOn IB 𝓘(𝕜) n (fun x ↦ (ψ (hp.deckChange e e' x) : 𝕜))
+      ((hp.isLocalHomeomorph.localInverseAt e).source ∩
+        (hp.isLocalHomeomorph.localInverseAt e').source) :=
+    TauCeti.contMDiffOn_of_eventuallyEq_const fun _ hx ↦
+      ((hp.eventually_deckChange_eq hx).mono fun _ h ↦ congrArg (fun g ↦ (ψ g : 𝕜)) h).filter_mono
+        nhdsWithin_le_nhds
+  hψ.smul hg
+
+/-- Twisting a cocycle morphism via `hp.characterCoreHomEquiv χ₁ χ₂` preserves `C^n` regularity of
+every chart operator. -/
+theorem contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff (χ₁ χ₂ : G →* 𝕜ˣ)
+    (a : CoordinateHom (hp.characterCore χ₁) (hp.characterCore χ₂)) (e e' : E) :
+    ContMDiffOn IB 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜) n
+        (fun x ↦ (hp.characterCore (1 : G →* 𝕜ˣ)).inChartCoordinates
+          (hp.characterCore (χ₁⁻¹ * χ₂)) e e' x
+          ((hp.characterCoreHomEquiv χ₁ χ₂ a).fiberMap x))
+        ((hp.characterCore (1 : G →* 𝕜ˣ)).baseSet e ∩
+          (hp.characterCore (χ₁⁻¹ * χ₂)).baseSet e') ↔
+      ContMDiffOn IB 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜) n
+        (fun x ↦ (hp.characterCore χ₁).inChartCoordinates (hp.characterCore χ₂) e e' x
+          (a.fiberMap x))
+        ((hp.characterCore χ₁).baseSet e ∩ (hp.characterCore χ₂).baseSet e') := by
+  simp only [hp.fiberMap_characterCoreHomEquiv, hp.characterCore_baseSet]
+  refine ⟨fun hb ↦ (hp.contMDiffOn_deckChange_smul χ₁ hb).congr fun x hx ↦
+      hp.inChartCoordinates_characterCore_eq_smul χ₁ χ₂ a.fiberMap e e' hx,
+    fun ha ↦ (hp.contMDiffOn_deckChange_smul χ₁⁻¹ ha).congr fun x hx ↦ ?_⟩
+  rw [hp.inChartCoordinates_characterCore_eq_smul χ₁ χ₂ a.fiberMap e e' hx, MonoidHom.inv_apply,
+    smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
+
+/-- Twisting a cocycle morphism via `hp.characterCoreHomEquiv χ₁ χ₂` preserves `C^n` regularity of
+its glued total-space map. -/
+theorem contMDiff_totalSpaceMap_characterCoreHomEquiv_iff [CompleteSpace 𝕜] (χ₁ χ₂ : G →* 𝕜ˣ)
+    (a : CoordinateHom (hp.characterCore χ₁) (hp.characterCore χ₂)) :
+    ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
+        (hp.characterCoreHomEquiv χ₁ χ₂ a).totalSpaceMap ↔
+      ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n a.totalSpaceMap := by
+  rw [CoordinateHom.contMDiff_totalSpaceMap_iff, CoordinateHom.contMDiff_totalSpaceMap_iff]
+  exact forall₂_congr fun e e' ↦
+    hp.contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff χ₁ χ₂ a e e'
+
+/-- The canonical unit section `x ↦ 1` of `hp.characterCore 1` is `C^n` at every regularity. -/
+theorem contMDiff_one_section_characterCore_one :
+    ContMDiff IB (IB.prod 𝓘(𝕜)) n
+      (fun x : X ↦ TotalSpace.mk' 𝕜 (E := (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber) x (1 : 𝕜)) := by
+  let s : ∀ x, (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber x := fun _ ↦ (1 : 𝕜)
+  intro x
+  set y := (hp.characterCore (1 : G →* 𝕜ˣ)).indexAt x
+  have : MemTrivializationAtlas ((hp.characterCore (1 : G →* 𝕜ˣ)).localTriv y) := ⟨⟨y, rfl⟩⟩
+  refine (Trivialization.contMDiffAt_section_iff (s := s)
+    ((hp.characterCore (1 : G →* 𝕜ˣ)).localTriv y)
+    ((hp.characterCore (1 : G →* 𝕜ˣ)).mem_baseSet_at x)).2 ?_
+  refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
+  filter_upwards [((hp.characterCore (1 : G →* 𝕜ˣ)).isOpen_baseSet y).mem_nhds
+    ((hp.characterCore (1 : G →* 𝕜ˣ)).mem_baseSet_at x)] with x' _
+  simp [s, localTriv_apply, hp.characterCore_one_coordChange]
+
+/-- A `C^n` section `σ` of `hp.characterCore χ` defines a `C^n` family of fibrewise scalar
+multiplications `v ↦ v • σ x` from `hp.characterCore 1` to `hp.characterCore χ`. -/
+private theorem contMDiffOn_inChartCoordinates_smulRight_of_section (χ : G →* 𝕜ˣ)
+    {σ : ∀ x, (hp.characterCore χ).Fiber x}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n (fun x ↦ TotalSpace.mk' 𝕜 x (σ x))) (e e' : E) :
+    ContMDiffOn IB 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜) n
+      (fun x ↦ (hp.characterCore (1 : G →* 𝕜ˣ)).inChartCoordinates (hp.characterCore χ) e e' x
+        ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (σ x : 𝕜)))
+      ((hp.characterCore (1 : G →* 𝕜ˣ)).baseSet e ∩ (hp.characterCore χ).baseSet e') := by
+  have : MemTrivializationAtlas ((hp.characterCore χ).localTriv e') := ⟨⟨e', rfl⟩⟩
+  have hopen : IsOpen ((hp.characterCore (1 : G →* 𝕜ˣ)).baseSet e ∩
+      (hp.characterCore χ).baseSet e') :=
+    ((hp.characterCore (1 : G →* 𝕜ˣ)).isOpen_baseSet e).inter
+      ((hp.characterCore χ).isOpen_baseSet e')
+  have hloc : ContMDiffOn IB 𝓘(𝕜) n (fun x ↦ ((hp.characterCore χ).localTriv e' ⟨x, σ x⟩).snd)
+      ((hp.characterCore (1 : G →* 𝕜ˣ)).baseSet e ∩ (hp.characterCore χ).baseSet e') :=
+    (((hp.characterCore χ).localTriv e').contMDiffOn_section_iff hopen
+      (inter_subset_right.trans (by simp))).1 hσ.contMDiffOn
+  refine ((ContinuousLinearMap.lsmul 𝕜 𝕜).contMDiff.comp_contMDiffOn hloc).congr fun x _ ↦ ?_
+  rw [hp.inChartCoordinates_characterCore_one_smulRight χ (fun y ↦ (σ y : 𝕜)) e e' x]
+  exact ContinuousLinearMap.ext fun v ↦ mul_comm _ _
+
+private noncomputable def characterCoreSectionHom (χ₁ χ₂ : G →* 𝕜ˣ) {σ : X → 𝕜}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n fun x ↦
+      TotalSpace.mk' 𝕜 (E := (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber) x (σ x)) :
+    CoordinateHom (hp.characterCore χ₁) (hp.characterCore χ₂) :=
+  let ϕ : X → 𝕜 →L[𝕜] 𝕜 := fun x ↦ (ContinuousLinearMap.id 𝕜 𝕜).smulRight (σ x)
+  have hϕon := hp.contMDiffOn_inChartCoordinates_smulRight_of_section (χ₁⁻¹ * χ₂) hσ
+  have hϕ : ContMDiff IB (IB.prod 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜)) n (fun x ↦
+      TotalSpace.mk' (𝕜 →L[𝕜] 𝕜)
+        (E := fun y ↦ (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber y →L[𝕜]
+          (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber y) x (ϕ x)) :=
+    contMDiff_hom_bundle_iff_forall_contMDiffOn.2 hϕon
+  (hp.characterCoreHomEquiv χ₁ χ₂).symm (CoordinateHom.ofContinuous ϕ hϕ.continuous)
+
+private theorem fiberMap_characterCoreSectionHom (χ₁ χ₂ : G →* 𝕜ˣ) {σ : X → 𝕜}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n fun x ↦
+      TotalSpace.mk' 𝕜 (E := (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber) x (σ x))
+    (x : X) (v : 𝕜) :
+    (hp.characterCoreSectionHom χ₁ χ₂ hσ).fiberMap x v = σ x * v := by
+  simp only [characterCoreSectionHom, hp.fiberMap_characterCoreHomEquiv_symm,
+    CoordinateHom.fiberMap_ofContinuous, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.id_apply, smul_eq_mul]
+  exact mul_comm v (σ x)
+
+private theorem bijective_characterCoreSectionHom (χ₁ χ₂ : G →* 𝕜ˣ) {σ : X → 𝕜}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n fun x ↦
+      TotalSpace.mk' 𝕜 (E := (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber) x (σ x))
+    (hσ₀ : ∀ x, σ x ≠ 0) (x : X) :
+    Function.Bijective ((hp.characterCoreSectionHom χ₁ χ₂ hσ).fiberMap x) := by
+  have hc : σ x ≠ 0 := hσ₀ x
+  refine ⟨fun _ _ huv ↦ ?_, fun w ↦ ⟨(σ x)⁻¹ * w, ?_⟩⟩
+  · rw [hp.fiberMap_characterCoreSectionHom, hp.fiberMap_characterCoreSectionHom] at huv
+    exact mul_left_cancel₀ hc huv
+  · rw [hp.fiberMap_characterCoreSectionHom, mul_inv_cancel_left₀ hc w]
+
+variable [CompleteSpace 𝕜] (IB n)
+
+/-- Over a complete scalar field, a nowhere-vanishing `C^n` section `σ` of
+`hp.characterCore (χ₁⁻¹ * χ₂)` induces a `C^n` bundle diffeomorphism from
+`hp.characterCore χ₁` to `hp.characterCore χ₂` over `X`, multiplying each fibre by `σ x`. -/
+noncomputable def characterCoreDiffeomorphOfSectionNeZero (χ₁ χ₂ : G →* 𝕜ˣ) {σ : X → 𝕜}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n fun x ↦
+      TotalSpace.mk' 𝕜 (E := (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber) x (σ x))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    (hp.characterCore χ₁).TotalSpace ≃ₘ^n⟮IB.prod 𝓘(𝕜), IB.prod 𝓘(𝕜)⟯
+      (hp.characterCore χ₂).TotalSpace :=
+  (hp.characterCoreSectionHom χ₁ χ₂ hσ).toDiffeomorph
+    (fun i j ↦ by
+      rw [← hp.contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff χ₁ χ₂ _ i j]
+      simp only [characterCoreSectionHom, (hp.characterCoreHomEquiv χ₁ χ₂).apply_symm_apply,
+        CoordinateHom.fiberMap_ofContinuous]
+      exact hp.contMDiffOn_inChartCoordinates_smulRight_of_section (χ₁⁻¹ * χ₂) hσ i j)
+    (hp.bijective_characterCoreSectionHom χ₁ χ₂ hσ hσ₀)
+
+@[simp]
+theorem characterCoreDiffeomorphOfSectionNeZero_apply (χ₁ χ₂ : G →* 𝕜ˣ) {σ : X → 𝕜}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n fun x ↦
+      TotalSpace.mk' 𝕜 (E := (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber) x (σ x))
+    (hσ₀ : ∀ x, σ x ≠ 0) (q : (hp.characterCore χ₁).TotalSpace) :
+    hp.characterCoreDiffeomorphOfSectionNeZero IB n χ₁ χ₂ hσ hσ₀ q =
+      ⟨q.proj, σ q.proj • q.snd⟩ := by
+  rcases q with ⟨x, v⟩
+  rw [characterCoreDiffeomorphOfSectionNeZero, CoordinateHom.coe_toDiffeomorph,
+    CoordinateHom.totalSpaceMap_mk]
+  exact TotalSpace.ext rfl (heq_of_eq (hp.fiberMap_characterCoreSectionHom χ₁ χ₂ hσ x v))
+
+@[simp]
+theorem characterCoreDiffeomorphOfSectionNeZero_symm_apply (χ₁ χ₂ : G →* 𝕜ˣ) {σ : X → 𝕜}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n fun x ↦
+      TotalSpace.mk' 𝕜 (E := (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber) x (σ x))
+    (hσ₀ : ∀ x, σ x ≠ 0) (q : (hp.characterCore χ₂).TotalSpace) :
+    (hp.characterCoreDiffeomorphOfSectionNeZero IB n χ₁ χ₂ hσ hσ₀).symm q =
+      ⟨q.proj, (σ q.proj)⁻¹ • q.snd⟩ := by
+  refine (hp.characterCoreDiffeomorphOfSectionNeZero IB n χ₁ χ₂ hσ hσ₀).injective ?_
+  have h1 := (hp.characterCoreDiffeomorphOfSectionNeZero IB n χ₁ χ₂ hσ hσ₀).apply_symm_apply q
+  have h2 := hp.characterCoreDiffeomorphOfSectionNeZero_apply IB n χ₁ χ₂ hσ hσ₀
+    ⟨q.proj, (σ q.proj)⁻¹ • q.snd⟩
+  have h3 : q = ⟨q.proj, σ q.proj • ((σ q.proj)⁻¹ • q.snd)⟩ :=
+    TotalSpace.ext rfl (heq_of_eq (smul_inv_smul₀ (hσ₀ q.proj) (q.snd : 𝕜)).symm)
+  exact h1.trans (h3.trans h2.symm)
+
+variable {IB n}
+
+/-- Over a complete scalar field, any nowhere-vanishing `C^n` section of
+`hp.characterCore (χ₁⁻¹ * χ₂)` induces a `C^n` bundle equivalence between `hp.characterCore χ₁` and
+`hp.characterCore χ₂`. -/
+theorem exists_bundleDiffeomorph_characterCore_of_section_ne_zero (χ₁ χ₂ : G →* 𝕜ˣ)
+    {σ : ∀ x, (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber x}
+    (hσ : ContMDiff IB (IB.prod 𝓘(𝕜)) n fun x ↦ TotalSpace.mk' 𝕜 x (σ x))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    ∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
+      ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
+        (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd)) := by
+  let s : X → 𝕜 := fun x ↦ σ x
+  refine ⟨(hp.characterCoreSectionHom χ₁ χ₂ (σ := s) hσ).fiberEquiv
+      (hp.bijective_characterCoreSectionHom χ₁ χ₂ (σ := s) hσ hσ₀),
+    (hp.characterCoreDiffeomorphOfSectionNeZero IB n χ₁ χ₂ (σ := s) hσ hσ₀).contMDiff.congr
+      fun q ↦ ?_⟩
+  have h := hp.characterCoreDiffeomorphOfSectionNeZero_apply IB n χ₁ χ₂ (σ := s) hσ hσ₀ q
+  have h1 : TotalSpace.mk' 𝕜 q.proj (((hp.characterCoreSectionHom χ₁ χ₂ (σ := s) hσ).fiberEquiv
+        (hp.bijective_characterCoreSectionHom χ₁ χ₂ (σ := s) hσ hσ₀) q.proj) q.snd) =
+      ⟨q.proj, s q.proj • q.snd⟩ :=
+    TotalSpace.ext rfl (heq_of_eq ((CoordinateHom.fiberEquiv_apply _ _ q.proj q.snd).trans
+      (hp.fiberMap_characterCoreSectionHom χ₁ χ₂ (σ := s) hσ q.proj q.snd)))
+  exact h1.trans h.symm
+
+/-- Over a complete scalar field, the character line bundles `hp.characterCore χ₁` and
+`hp.characterCore χ₂` are `C^n` bundle-equivalent over `X` if and only if
+`hp.characterCore (χ₁⁻¹ * χ₂)` admits a global compatible `C^n` trivialization. -/
+theorem exists_bundleDiffeomorph_characterCore_iff_exists_trivialization (χ₁ χ₂ : G →* 𝕜ˣ) :
+    (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
+        ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd))) ↔
+      ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
+            (TotalSpace 𝕜 (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber) ∧
+          e.baseSet = univ := by
+  rw [ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
+    (finrank_self 𝕜)]
+  refine ⟨?_, fun ⟨σ, hσ, hσ₀⟩ ↦ hp.exists_bundleDiffeomorph_characterCore_of_section_ne_zero
+    χ₁ χ₂ hσ hσ₀⟩
+  rintro ⟨e, he⟩
+  obtain ⟨a, ha, hbij, -⟩ := CoordinateHom.exists_toDiffeomorph_eq e he
+  let b := hp.characterCoreHomEquiv χ₁ χ₂ a
+  have hbtot : ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n b.totalSpaceMap :=
+    (hp.contMDiff_totalSpaceMap_characterCoreHomEquiv_iff χ₁ χ₂ a).2
+      (a.contMDiff_totalSpaceMap ha)
+  refine ⟨fun x ↦ b.fiberMap x (1 : 𝕜),
+    (hbtot.comp hp.contMDiff_one_section_characterCore_one).congr fun x ↦
+      (CoordinateHom.totalSpaceMap_mk b x (1 : 𝕜)).symm, fun x h0 ↦ ?_⟩
+  have h0' : (hp.characterCoreHomEquiv χ₁ χ₂ a).fiberMap x (1 : 𝕜) = 0 := h0
+  rw [hp.fiberMap_characterCoreHomEquiv] at h0'
+  exact one_ne_zero ((hbij x).1 (h0'.trans (map_zero (a.fiberMap x)).symm))
+
+/-- If `p` is a `C^n` local diffeomorphism, `hp.characterCore χ₁` and `hp.characterCore χ₂` are
+`C^n` bundle-equivalent over `X` if and only if there is a nowhere-vanishing `C^n` function
+`f : E → 𝕜` satisfying `f (g • y) = (χ₁⁻¹ * χ₂) g * f y`. -/
+theorem exists_bundleDiffeomorph_characterCore_iff
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] {HM : Type*} [TopologicalSpace HM]
+    {I : ModelWithCorners 𝕜 EM HM} [ChartedSpace HM E]
+    (hpd : IsLocalDiffeomorph I IB n p) (χ₁ χ₂ : G →* 𝕜ˣ) :
+    (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
+        ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd))) ↔
+      ∃ f : E → 𝕜, ContMDiff I 𝓘(𝕜) n f ∧ (∀ y, f y ≠ 0) ∧
+        ∀ (g : G) (y : E), f (g • y) = (χ₁⁻¹ * χ₂) g * f y :=
+  (hp.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization χ₁ χ₂).trans
+    (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff hpd (χ₁⁻¹ * χ₂))
+
+end CharacterTwisting
+
+end IsQuotientCoveringMap
+
 /-! ### Holomorphic sections over a compact connected covering space -/
 
 namespace IsQuotientCoveringMap
@@ -509,5 +849,21 @@ theorem exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one [Connecte
     hp.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one _ hpd hn]
   exact MonoidHom.comp_eq_one_iff (Units.map_injective
     (FaithfulSMul.algebraMap_injective ℂ (ℂ →L[ℂ] ℂ)))
+
+/-- When `E` is a compact connected complex manifold and `p : E → X` is differentiable (`n ≠ 0`),
+two character line bundles `hp.characterCore χ₁` and `hp.characterCore χ₂` are `C^n`
+bundle-equivalent (in particular holomorphically isomorphic at `n = ∞`) if and only if
+`χ₁ = χ₂`. -/
+theorem exists_bundleDiffeomorph_characterCore_iff_eq [ConnectedSpace E]
+    (hn : n ≠ 0) (χ₁ χ₂ : G →* ℂˣ) :
+    (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[ℂ] (hp.characterCore χ₂).Fiber x,
+        ContMDiff (IB.prod 𝓘(ℂ)) (IB.prod 𝓘(ℂ)) n
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' ℂ p.proj (e p.proj p.snd))) ↔
+      χ₁ = χ₂ :=
+  ((hp.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization χ₁ χ₂).trans
+    (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one hpd hn
+      (χ₁⁻¹ * χ₂))).trans
+    ⟨fun h ↦ DFunLike.ext _ _ fun g ↦ inv_mul_eq_one.1 (DFunLike.congr_fun h g),
+      fun h ↦ h ▸ DFunLike.ext _ _ fun g ↦ inv_mul_cancel (χ₁ g)⟩
 
 end IsQuotientCoveringMap
