@@ -9,21 +9,23 @@ public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.Algebra.Lie.Loop
 public import Mathlib.Algebra.Lie.Weights.IsSimple
 public import TauCeti.Algebra.Lie.Extension.Basic
--- Proof-only: general universal central extension theorem, H² classification on loops, and form
+-- Proof-only: general kernel criterion, H² classification on loops, and form
 -- uniqueness.
 import TauCeti.Algebra.Lie.Extension.Universal
 import TauCeti.Algebra.Lie.Loop.Cocycle
 import TauCeti.Algebra.Lie.Weights.IsSimple
 
 /-!
-# Universal central extension property for the residue central extension of a loop algebra
+# Kernel criteria for the residue central extension of a loop algebra
 
 Specializing `LieAlgebra.ofTwoCocycle.lie_top_ker_eq_ker_of_surjective` via
 `twoCocycle_eq_span_sup_range_d₁₂` and `LieSubalgebra.exists_eq_smul_killingForm_of_isSimple`
-yields the universal central extension property for the residue central extension of
-`loopAlgebra K ℤ L`:
+yields kernel criteria (`⁅⊤, f.ker⁆ = f.ker`) for surjections from perfect Lie algebras with a
+central lift onto the residue central extension of `loopAlgebra K ℤ L`:
 `TauCeti.LieAlgebra.LoopAlgebra.lie_top_ker_eq_ker_of_surjective_to_ofTwoCocycle` and
 `TauCeti.LieAlgebra.LoopAlgebra.lie_top_ker_eq_ker_of_surjective_to_ofTwoCocycle_of_isSimple`.
+Both results establish conditional kernel equalities rather than the universal mapping property of
+a central extension.
 
 ## References
 
@@ -41,11 +43,12 @@ open _root_.LieAlgebra.ofTwoCocycle (centralElement)
 
 namespace TauCeti.LieAlgebra.LoopAlgebra
 
-/-- **Universal central extension property of the residue central extension**:
+/-- **Kernel criterion for the residue central extension**:
 for a Lie algebra `L` with nondegenerate Killing form over a characteristic-zero field `K` whose
 invariant bilinear forms are scalar multiples of a symmetric invariant form `Φ`, any surjective
 `f : G →ₗ⁅K⁆ ofTwoCocycle (twoCocycleOfBilinear K ℤ L Φ hΦ hΦs)` from a perfect Lie algebra `G`
-lifting `centralElement` to a central element satisfies `⁅⊤, f.ker⁆ = f.ker`. -/
+lifting `centralElement` to a central element satisfies `⁅⊤, f.ker⁆ = f.ker`. This is a
+conditional kernel criterion and does not establish the universal mapping property. -/
 theorem lie_top_ker_eq_ker_of_surjective_to_ofTwoCocycle
     {K L G : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
     [LieAlgebra.IsKilling K L] [LieRing G] [LieAlgebra K G]
@@ -61,12 +64,13 @@ theorem lie_top_ker_eq_ker_of_surjective_to_ofTwoCocycle
     (by rw [twoCocycleOfBilinear_coe]; exact twoCocycle_eq_span_sup_range_d₁₂ hΦs hspan)
     hf hperf hcG_cent hcG_map
 
-/-- **Universal central extension property for a split finite-dimensional simple Lie algebra**:
+/-- **Kernel criterion for the residue central extension of a split simple Lie algebra**:
 for any nonzero symmetric invariant bilinear form `Φ` on a split finite-dimensional simple Lie
 algebra `L` over a characteristic-zero field `K` (without assuming algebraic closure), any
 surjective homomorphism from a perfect Lie algebra `G` onto
 `ofTwoCocycle (twoCocycleOfBilinear K ℤ L Φ hΦ hΦs)` lifting the central element to a central
-element satisfies `⁅⊤, f.ker⁆ = f.ker`. -/
+element satisfies `⁅⊤, f.ker⁆ = f.ker`. This is a conditional kernel criterion and does not
+establish the universal mapping property. -/
 theorem lie_top_ker_eq_ker_of_surjective_to_ofTwoCocycle_of_isSimple
     {K L G : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
     [IsSimple K L] [LieRing G] [LieAlgebra K G] (H : LieSubalgebra K L) [H.IsCartanSubalgebra]

@@ -15,19 +15,22 @@ import TauCeti.Algebra.Lie.Perfect
 import TauCeti.Algebra.Lie.Quotient
 
 /-!
-# Universal central extension property for 1-dimensional central extensions
+# Kernel criterion for surjections onto 1-dimensional central extensions
 
 For a field `K` and a Lie algebra `L₀` whose scalar 2-cocycle `c₀` generates `H²(L₀, K)` modulo
-coboundaries, `LieAlgebra.ofTwoCocycle.lie_top_ker_eq_ker_of_surjective` shows that any surjective
-Lie algebra homomorphism `f : G →ₗ⁅K⁆ ofTwoCocycle c₀` from a perfect Lie algebra `G` admitting
-a central lift of `centralElement c₀` satisfies `⁅⊤, f.ker⁆ = f.ker`.
+coboundaries, `LieAlgebra.ofTwoCocycle.lie_top_ker_eq_ker_of_surjective` gives a conditional kernel
+criterion for surjections onto `ofTwoCocycle c₀`: any surjective Lie algebra homomorphism
+`f : G →ₗ⁅K⁆ ofTwoCocycle c₀` from a perfect Lie algebra `G` admitting a central lift of
+`centralElement c₀` satisfies `⁅⊤, f.ker⁆ = f.ker`. This is a kernel criterion for such
+surjections rather than a proof of the universal mapping property of a universal central
+extension.
 
 ## Main results
 
-* `LieAlgebra.ofTwoCocycle.lie_top_ker_eq_ker_of_surjective`: if every scalar 2-cocycle on `L₀`
-  lies in `K ∙ c₀ ⊔ range d₁₂`, then any surjective homomorphism `f : G →ₗ⁅K⁆ ofTwoCocycle c₀`
-  from a perfect Lie algebra `G` lifting `centralElement c₀` to a central element has
-  `⁅⊤, f.ker⁆ = f.ker`.
+* `LieAlgebra.ofTwoCocycle.lie_top_ker_eq_ker_of_surjective`: kernel criterion showing that if
+  every scalar 2-cocycle on `L₀` lies in `K ∙ c₀ ⊔ range d₁₂`, then any surjective homomorphism
+  `f : G →ₗ⁅K⁆ ofTwoCocycle c₀` from a perfect Lie algebra `G` lifting `centralElement c₀` to
+  a central element satisfies `⁅⊤, f.ker⁆ = f.ker`.
 
 ## References
 
@@ -245,10 +248,11 @@ private theorem exists_bracket_sum_pairing_eq_one
     simp only [hsum, map_sum, map_smul, smul_eq_mul, LieHom.map_lie, hχ_lie]
   simpa [χ, hcG] using h2.symm
 
-/-- **Universal central extension property for `ofTwoCocycle c₀`**: if every scalar 2-cocycle on
+/-- **Kernel criterion for surjections onto `ofTwoCocycle c₀`**: if every scalar 2-cocycle on
 `L₀` is a multiple of `c₀` modulo coboundaries, any surjective homomorphism
 `f : G →ₗ⁅K⁆ ofTwoCocycle c₀` from a perfect Lie algebra `G` admitting a central lift `cG` of
-`centralElement c₀` satisfies `⁅⊤, f.ker⁆ = f.ker`. -/
+`centralElement c₀` satisfies `⁅⊤, f.ker⁆ = f.ker`. This establishes a conditional kernel equality
+rather than the universal mapping property of a central extension. -/
 theorem lie_top_ker_eq_ker_of_surjective
     {K L₀ G : Type*} [Field K] [LieRing L₀] [LieAlgebra K L₀] [LieRing G] [LieAlgebra K G]
     {c₀ : twoCocycle K L₀ (TrivialLieModule K L₀ K)}
