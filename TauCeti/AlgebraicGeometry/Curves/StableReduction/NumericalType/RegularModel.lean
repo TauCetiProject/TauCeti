@@ -131,7 +131,7 @@ def specialFiberNumericalType : NumericalType.{u} where
     toBase.specialFiberWeight_pos _
       (toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
         ((Set.Finite.mem_toFinset _).mp i.property))⟩
-  intersection := toBase.specialFiberIntersectionMatrix hX hη
+  intersection := toBase.specialFiberIntersectionMatrix hη
   intersection_isSymm := toBase.specialFiberIntersectionMatrix_isSymm hX hη
     (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
     hC.finiteDimensional_one
@@ -146,7 +146,7 @@ def specialFiberNumericalType : NumericalType.{u} where
       (toBase.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity hX hη
         (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
         hC.finiteDimensional_one hπ hreg) i
-  weight_dvd i j := toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix hX hη i j
+  weight_dvd i j := toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix hη i j
   genus i := Module.finrank
     Γ((vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme, ⊤)
     (Cohomology (InvertibleSheaf.trivial (vanishingIdeal
@@ -177,7 +177,7 @@ its special fibre. -/
 @[simp]
 theorem specialFiberNumericalType_intersection :
     (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).intersection =
-      toBase.specialFiberIntersectionMatrix hX hη :=
+      toBase.specialFiberIntersectionMatrix hη :=
   (rfl)
 
 /-- Two components are adjacent in the numerical type of a regular model exactly when they are
@@ -240,7 +240,7 @@ theorem specialFiberNumericalType_congr {π' : R}
 theorem isReduced_specialFiber_iff_multiplicity_eq_one :
     IsReduced (specialFiber R toBase).left ↔
       ∀ i, (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i = 1 := by
-  rw [toBase.isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one_of_isRegular hX hη hπ]
+  rw [toBase.isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one hη hπ]
   exact ⟨fun h i ↦ PNat.eq (h i.val ((Set.Finite.mem_toFinset _).mp i.property)),
     fun h x hx ↦ congrArg PNat.val (h ⟨x, (Set.Finite.mem_toFinset _).mpr hx⟩)⟩
 

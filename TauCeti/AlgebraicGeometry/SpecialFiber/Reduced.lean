@@ -18,7 +18,7 @@ base with principal maximal ideal, the special fibre is reduced exactly when eve
 has multiplicity one. The generic point must lie outside the special fibre. No flatness,
 properness, or residue-field perfection hypothesis is needed for this criterion.
 
-On a regular scheme of dimension at most two, the factoriality hypothesis follows from
+On a regular scheme, the factoriality hypothesis follows from
 regularity. Thus the criterion applies to regular models over discrete valuation rings. It
 concerns reducedness over the residue field, not geometric reducedness; the latter additionally
 requires control after residue-field extension.
@@ -74,16 +74,5 @@ theorem isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one
         (by simpa using hπm) hπ0 x hx] at hcoe
       omega
 
-/-- On a regular integral Noetherian scheme of dimension at most two, the special fibre is
-reduced exactly when every component has multiplicity one. -/
-theorem isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one_of_isRegular
-    [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, Order.coheight x ≤ 2)
-    (hη : toBase (genericPoint X) ≠ closedPoint R) {π : R}
-    (hπ : maximalIdeal R = Ideal.span {π}) :
-    IsReduced (specialFiber R toBase).left ↔
-      ∀ x : CodimensionOnePoint X, toBase x = closedPoint R →
-        toBase.specialFiberMultiplicity π x = 1 := by
-  have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
-  exact toBase.isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one hη hπ
 
 end AlgebraicGeometry.Scheme.Hom

@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.RegularLocalRing.MiracleFlatness
 import TauCeti.RingTheory.CohenMacaulay.Normal
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
+import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 
 /-!
 # Flatness of quasi-finite morphisms from normal surfaces
@@ -90,8 +91,6 @@ theorem flat_stalkMap_of_isDominant_of_quasiFiniteAt_of_ringKrullDim_le_two
     [IsIntegrallyClosed (X.presheaf.stalk x)] [IsRegularLocalRing (Y.presheaf.stalk (f x))]
     (hx : f.QuasiFiniteAt x) (hle : ringKrullDim (Y.presheaf.stalk (f x)) ≤ 2) :
     (f.stalkMap x).hom.Flat := by
-  have : UniqueFactorizationMonoid (Y.presheaf.stalk (f x)) :=
-    TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two hle
   exact f.flat_stalkMap_of_isIntegrallyClosed_of_quasiFiniteAt_of_ringKrullDim_le_two hx
     (f.ringKrullDim_stalk_eq_of_quasiFiniteAt hx) hle
 

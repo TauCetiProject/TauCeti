@@ -51,14 +51,14 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R] {X : 
   (toBase : X ⟶ Spec (.of R)) [IsProper toBase]
 
 /-- **The weight of a component divides its intersection numbers.** For a regular Noetherian
-integral scheme `X`, proper over a local ring `R` of dimension at most one, with all points of
-codimension at most two and generic point away from the closed point, the weight `wᵢ` of the
+integral scheme `X`, proper over a local ring `R` of dimension at most one, with
+generic point away from the closed point, the weight `wᵢ` of the
 `i`-th component `Cᵢ` of the special fibre divides every entry `aᵢⱼ = (Cⱼ · Cᵢ)` of the `i`-th row
 of the intersection matrix. -/
-theorem specialFiberWeight_dvd_specialFiberIntersectionMatrix (hX : ∀ x : X, coheight x ≤ 2)
+theorem specialFiberWeight_dvd_specialFiberIntersectionMatrix
     (hη : toBase (genericPoint X) ≠ closedPoint R) (i j) :
     (toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property) : ℤ) ∣
-      toBase.specialFiberIntersectionMatrix hX hη i j := by
+      toBase.specialFiberIntersectionMatrix hη i j := by
   have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp
       i.property
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)

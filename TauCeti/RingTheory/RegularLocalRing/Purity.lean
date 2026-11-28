@@ -91,7 +91,6 @@ theorem etale_of_isUnramifiedAt_height_eq_one_of_ringKrullDim_le_two
       IsDomain (Localization.AtPrime 𝔮) ∧ IsIntegrallyClosed (Localization.AtPrime 𝔮))
     (hunram : ∀ (q : Ideal B) [q.IsPrime], q.height = 1 → Algebra.IsUnramifiedAt A q) :
     Algebra.Etale A B := by
-  have := IsRegularLocalRing.uniqueFactorizationMonoid hdim₂
   have hA : ¬IsField A := fun h ↦ absurd (ringKrullDim_eq_zero_of_isField h ▸ hdim₁) (by decide)
   -- `B` is unramified at every prime lying over a prime of `A` of height at most one.
   have key (q : Ideal B) [q.IsPrime] (hq : (q.under A).height ≤ 1) : Algebra.IsUnramifiedAt A q :=

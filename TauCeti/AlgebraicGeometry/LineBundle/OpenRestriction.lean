@@ -18,9 +18,9 @@ import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 # Restriction of line-bundle classes to dense open subschemes
 
 Let `X` be a Noetherian integral scheme whose local rings are unique factorization domains (for
-instance a regular scheme all of whose points have codimension at most two, such as a regular model
-of a curve over a discrete valuation ring), and let `j : U ⟶ X` be an open immersion from a
-nonempty scheme `U`. Under the Weil–Cartier Picard group isomorphism
+instance a regular scheme, such as a regular model of a curve over a discrete valuation ring),
+and let `j : U ⟶ X` be an open immersion from a nonempty scheme `U`. Under the Weil–Cartier
+Picard group isomorphism
 `Cl(X) ≃+ Additive (LineBundleClass X)` of `TauCeti.AlgebraicGeometry.CartierDivisor.Factorial`,
 pullback of line-bundle classes along `j` corresponds to restriction of Weil divisors along the
 injection of codimension-one points `CodimensionOnePoint U → CodimensionOnePoint X`.

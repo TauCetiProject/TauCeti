@@ -21,6 +21,7 @@ import TauCeti.RingTheory.Iwasawa.TorsionSplitting
 import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 import TauCeti.RingTheory.Support.Basic
+import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 
 /-!
 # The structure theorem up to pseudo-isomorphism
@@ -176,7 +177,6 @@ theorem exists_isPseudoIsomorphism_prod_pi_quotient_pow [IsRegularLocalRing A]
     ∃ (r : ℕ) (ι : Type u) (_ : Fintype ι) (𝔭 : ι → PrimeSpectrum A) (n : ι → ℕ),
       (∀ i, (𝔭 i).asIdeal.height = 1 ∧ n i ≠ 0) ∧
         ∃ f : M →ₗ[A] (Fin r → A) × ∀ i, A ⧸ (𝔭 i).asIdeal ^ n i, IsPseudoIsomorphism f := by
-  have := IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two hdim
   obtain ⟨φ, hφ⟩ := exists_isPseudoIsomorphism_prod_torsion_mkQ (A := A) (M := M)
   obtain ⟨ι, _, 𝔭, n, h𝔭n, g, hg⟩ :=
     exists_isPseudoIsomorphism_pi_quotient_pow (M := Submodule.torsion A M)
