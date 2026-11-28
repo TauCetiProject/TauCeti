@@ -39,8 +39,13 @@ Mathlib's `AlgebraicGeometry.SheafedSpace.epi_of_base_surjective_of_stalk_mono`,
 
 * `AlgebraicGeometry.PresheafedSpace.ext_of_app`: morphisms of presheafed spaces agreeing on the
   underlying map and on sections over every open are equal.
+* `AlgebraicGeometry.PresheafedSpace.comp_c_app_apply`: on sections in a concrete category, the
+  section map of a composite morphism of presheafed spaces is the composite of the section maps.
 * `AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`: a morphism which is
   surjective on points and a monomorphism on sections over every open is an epimorphism.
+* `AlgebraicGeometry.PresheafedSpace.Hom.iso_hom_appLE_comp_inv_appLE`,
+  `AlgebraicGeometry.PresheafedSpace.Hom.iso_inv_appLE_eq`: cancellation and inverse identification
+  for `appLE` of an isomorphism of presheafed spaces.
 -/
 
 public section
@@ -62,6 +67,15 @@ theorem ext_of_app {α β : X ⟶ Y} (w : α.base = β.base)
     (h : ∀ U, α.c.app (op U) ≫ X.presheaf.map (eqToHom congr((Opens.map $w.symm).obj U)).op =
       β.c.app (op U)) : α = β :=
   PresheafedSpace.ext α β w <| TopCat.Presheaf.ext fun U ↦ by simpa using h U
+
+/-- On sections in a concrete category, the section map of a composite morphism of presheafed spaces
+is the composite of the section maps. -/
+theorem comp_c_app_apply {FC : C → C → Type*} {CC : C → Type*}
+    [∀ R S, FunLike (FC R S) (CC R) (CC S)] [ConcreteCategory C FC]
+    {Z : PresheafedSpace.{_, _, w} C} (α : X ⟶ Y) (β : Y ⟶ Z)
+    (U : (Opens Z)ᵒᵖ) (s : ToType (Z.presheaf.obj U)) :
+    (α ≫ β).c.app U s = α.c.app (op ((Opens.map β.base).obj U.unop)) (β.c.app U s) :=
+  (ConcreteCategory.congr_hom (comp_c_app α β U) s).trans (ConcreteCategory.comp_apply _ _ s)
 
 /-- **A morphism of presheafed spaces which is surjective on points and a monomorphism on
 sections is an epimorphism.** -/
@@ -162,6 +176,35 @@ theorem congr_appLE {X Y : PresheafedSpace.{v, u, w} C} {k₁ k₂ : X ⟶ Y} (h
     (h₁ : V ≤ (Opens.map k₁.base).obj U) (h₂ : V ≤ (Opens.map k₂.base).obj U) :
     k₁.appLE U V h₁ = k₂.appLE U V h₂ := by
   subst hk; rfl
+
+/-- For an isomorphism `e : X ≅ Y` of presheafed spaces and matching opens `V ≤ e.hom⁻¹ U` and
+`U ≤ e.inv⁻¹ V`, the restricted section maps cancel. -/
+@[reassoc]
+theorem iso_hom_appLE_comp_inv_appLE {X Y : PresheafedSpace.{v, u, w} C} (e : X ≅ Y)
+    (U : Opens Y) (V : Opens X)
+    (hUV : V ≤ (Opens.map e.hom.base).obj U) (hVU : U ≤ (Opens.map e.inv.base).obj V) :
+    e.hom.appLE U V hUV ≫ e.inv.appLE V U hVU = 𝟙 (Y.presheaf.obj (op U)) := by
+  have h := appLE_comp_appLE e.inv e.hom U V U hUV hVU
+  rw [h, congr_appLE e.inv_hom_id _ (by simp), id_appLE]
+  exact (congrArg Y.presheaf.map (Subsingleton.elim _ (𝟙 (op U)))).trans (Y.presheaf.map_id (op U))
+
+/-- If `e : X ≅ Y` is an isomorphism of presheafed spaces with `e.hom.appLE U V hUV = f` and
+`g` is a left inverse to `f`, then `e.inv.appLE V U hVU = g`. -/
+theorem iso_inv_appLE_eq {X Y : PresheafedSpace.{v, u, w} C} (e : X ≅ Y)
+    (U : Opens Y) (V : Opens X)
+    (hUV : V ≤ (Opens.map e.hom.base).obj U) (hVU : U ≤ (Opens.map e.inv.base).obj V)
+    {f : Y.presheaf.obj (op U) ⟶ X.presheaf.obj (op V)}
+    {g : X.presheaf.obj (op V) ⟶ Y.presheaf.obj (op U)}
+    (hf : e.hom.appLE U V hUV = f) (hg : g ≫ f = 𝟙 (X.presheaf.obj (op V))) :
+    e.inv.appLE V U hVU = g := by
+  have hcomp : f ≫ e.inv.appLE V U hVU = 𝟙 (Y.presheaf.obj (op U)) :=
+    hf ▸ iso_hom_appLE_comp_inv_appLE e U V hUV hVU
+  calc
+    e.inv.appLE V U hVU
+        = 𝟙 (X.presheaf.obj (op V)) ≫ e.inv.appLE V U hVU := (Category.id_comp _).symm
+    _   = (g ≫ f) ≫ e.inv.appLE V U hVU := by rw [hg]
+    _   = g ≫ (f ≫ e.inv.appLE V U hVU) := Category.assoc _ _ _
+    _   = g := by rw [hcomp, Category.comp_id]
 
 end Hom
 

@@ -56,6 +56,9 @@ categorical stalks, compared with function germs by
 `TauCeti.holomorphicStructureSheaf.toFilterGerm`; the rings here are subrings of function germs,
 over any nontrivially normed field.
 
+For analytic germs of maps between charted spaces, see
+`TauCeti.Geometry.Manifold.ContMDiff.Germ.Map`.
+
 ## References
 
 * H. Whitney and F. Bruhat, *Quelques propriétés fondamentales des ensembles analytiques-réels*,

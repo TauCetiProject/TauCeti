@@ -17,11 +17,14 @@ functions `TauCeti.holomorphicStructureSheaf`, is a sheafed space of commutative
 (`TauCeti.holomorphicStructureSheaf.instIsLocalRingStalk`), so it is a locally ringed space
 (`TauCeti.holomorphicStructureSheaf.locallyRingedSpace`).
 
-For a boundaryless finite-dimensional model, `TauCeti.holomorphicStructureSheaf.smoothSheafIso`
-identifies this sheaf with the structure sheaf of Mathlib's `ChartedSpace.locallyRingedSpace`.
-The present definitions need no such hypothesis on the model. They are the ringed spaces of
-normalizations of nodal curves, whose glued structure sheaves are subsheaves of direct images of
-holomorphic structure sheaves.
+On a `C¹` complex manifold modelled on a boundaryless finite-dimensional space,
+`TauCeti.holomorphicStructureSheaf.smoothSheafIso` (in `StructureSheaf.SmoothComparison`)
+identifies this sheaf with the structure sheaf of Mathlib's `ChartedSpace.locallyRingedSpace`,
+inducing `smoothLocallyRingedSpaceIso` in `StructureSheaf.RingedSpace.SmoothComparison`.
+The present definitions require neither manifold regularity nor any boundaryless or
+finite-dimensionality assumption on the model. They are the ringed spaces of normalizations of
+nodal curves, whose glued structure sheaves are subsheaves of direct images of holomorphic
+structure sheaves.
 -/
 
 public noncomputable section

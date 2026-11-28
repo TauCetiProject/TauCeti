@@ -40,6 +40,13 @@ theorem compTendstoRingHom_apply {α β R : Type*} [Semiring R]
     {l : Filter α} {l' : Filter β} (f : α → β) (hf : Tendsto f l l') (s : Germ l' R) :
     compTendstoRingHom (R := R) f hf s = s.compTendsto f hf := (rfl)
 
+/-- Congruence of germ composition along equal germs tending to the target filter. -/
+theorem compTendsto'_congr {α β γ : Type*} {l : Filter α} {l' : Filter β}
+    (s : Germ l' γ) {g₁ g₂ : Germ l β} (hg : g₁ = g₂) (hg₁ : g₁.Tendsto l')
+    (hg₂ : g₂.Tendsto l') :
+    s.compTendsto' g₁ hg₁ = s.compTendsto' g₂ hg₂ := by
+  subst hg; rfl
+
 variable {α R A : Type*} {l : Filter α}
   [CommSemiring R] [Semiring A] [Algebra R A]
 
@@ -51,9 +58,22 @@ instance algebra : Algebra R (Germ l A) where
   smul_def' r g := inductionOn g fun f ↦
     (congrArg (fun f : α → A ↦ (f : Germ l A)) (Algebra.smul_def r f))
 
+/-- A constant germ is the germ of the corresponding constant function. -/
+theorem const_eq_coe {α β : Type*} {l : Filter α} (b : β) :
+    (b : Germ l β) = (fun _ : α ↦ b : Germ l β) := (rfl)
+
 /-- The scalar map to germs is represented by the pointwise scalar map. -/
 theorem algebraMap_eq (r : R) :
     algebraMap R (Germ l A) r = (fun _ : α ↦ algebraMap R A r : Germ l A) := (rfl)
+
+/-- For a commutative semiring `R`, the scalar map into `Germ l R` sends `r` to the constant germ
+`(r : Germ l R)`. -/
+theorem algebraMap_self_eq (r : R) :
+    algebraMap R (Germ l R) r = (r : Germ l R) :=
+  (algebraMap_eq r).trans <|
+    (congrArg (fun f : α → R ↦ (f : Germ l R))
+      (funext fun _ ↦ Algebra.algebraMap_self_apply r)).trans
+      (const_eq_coe r).symm
 
 /-- Projection of algebra-valued functions to their germs. -/
 def coeAlgHom (l : Filter α) : (α → A) →ₐ[R] Germ l A where

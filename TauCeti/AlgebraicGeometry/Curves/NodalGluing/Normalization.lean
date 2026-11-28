@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.RingedSpace
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RingedSpace
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RingedSpace.Defs
 public import Mathlib.Geometry.RingedSpace.OpenImmersion
 
 /-!
