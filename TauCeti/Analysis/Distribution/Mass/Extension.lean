@@ -831,7 +831,8 @@ theorem massRestrict_comp_monoCLM {Ω' : Opens E} {T : 𝓓^{n}(Ω, F) →L[ℝ]
       exact hx (by by_cases hxA : x ∈ A <;> simp [hxA, hφ0])).symm
   have hmap : (massMeasure T').map (Set.inclusion h) =
       (massMeasure T).restrict ((↑) ⁻¹' (Ω' : Set E)) := by
-    rw [← massMeasure_coe_linearMap T', ← massMeasure_coe_linearMap T]
+    rw [massMeasure_congr (T := T') (ContinuousLinearMap.coe_coe _).symm,
+      massMeasure_congr (T := T) (ContinuousLinearMap.coe_coe _).symm]
     exact map_massMeasure_comp_monoCLM (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT h
   rw [hvanish, ← hmap]
   refine ((Opens.isOpenEmbedding_of_le h).measurableEmbedding.lintegral_map (f := _)).trans_le
@@ -844,12 +845,13 @@ theorem massRestrict_comp_monoCLM {Ω' : Opens E} {T : 𝓓^{n}(Ω, F) →L[ℝ]
       simp [A', hyA, hyA_iff, φΩ, χΩ, TestFunction.monoCLM_apply, h]
   simpa only [hpt] using enorm_smul_sub_indicator_le φ A' (χ m y) y
 
-/-- For any functional `S`, `t ↦ (S ⌞ {u < t}) φ` is left-continuous in `t`, hence Borel
-measurable as a pointwise limit of dyadic step functions from below. -/
+/-- For any functional `S`, `t ↦ (S ⌞ {u < t}) φ` is Borel measurable. -/
 theorem measurable_massRestrict_lt_apply (S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) {u : E → ℝ}
     (hu : Measurable fun x : Ω => u x) (φ : 𝓓^{n}(Ω, F)) :
     Measurable fun t : ℝ =>
       massRestrict S (measurableSet_lt hu (measurable_const (a := t))) φ := by
+  -- Left-continuity follows from dominated convergence; approximate `t` from below by dyadic
+  -- step functions.
   let hA (s : ℝ) : MeasurableSet {x : Ω | u x < s} :=
     measurableSet_lt hu (measurable_const (a := s))
   let step (m : ℕ) (t : ℝ) : ℝ := ((⌊(2 : ℝ) ^ m * t⌋ : ℝ) - 1) / (2 : ℝ) ^ m

@@ -256,18 +256,9 @@ theorem ae_mass_slice_lt_top_of_lipschitzOnWith
 theorem ae_isNormal_slice_of_lipschitzOnWith
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsNormal T)
     (hu : LipschitzOnWith K u Ω) :
-    ∀ᵐ t : ℝ, IsNormal (slice T u t) := by
-  cases k with
-  | zero =>
-    filter_upwards [ae_mass_slice_lt_top_of_lipschitzOnWith hT.isLocallyNormal hT.mass_ne_top hu]
-      with t ht
-    exact isNormal_finZero_iff.2 ht.ne
-  | succ k =>
-    filter_upwards [ae_mass_slice_lt_top_of_lipschitzOnWith hT.isLocallyNormal hT.mass_ne_top hu,
-      ae_mass_slice_lt_top_of_lipschitzOnWith hT.comp_extDerivCLM.isLocallyNormal
-        (isNormal_succ_iff.1 hT).2 hu] with t ht1 ht2
-    rw [isNormal_succ_iff, slice_comp_extDerivCLM T u t, FunLike.coe_neg, mass_neg]
-    exact ⟨ht1.ne, ht2.ne⟩
+    ∀ᵐ t : ℝ, IsNormal (slice T u t) :=
+  ae_isNormal_slice_of_ae_mass_lt_top hT fun _ hS =>
+    ae_mass_slice_lt_top_of_lipschitzOnWith hS.isLocallyNormal hS.mass_ne_top hu
 
 /-- **Sublevel restrictions `T ⌞ {u < t}` of a normal current are normal almost everywhere.** -/
 theorem ae_isNormal_massRestrict_lt_of_lipschitzOnWith
@@ -379,20 +370,27 @@ private theorem lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_aux
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hu : LipschitzOnWith K u Ω) {c₀ : ℝ≥0∞} (hc₀top : c₀ ≠ ⊤)
     (hmaj : ∀ U : Opens E, U ≤ Ω →
-      ∃ m : ℝ → ℝ≥0∞, Measurable m ∧ (∀ t, localMass (slice T u t) U ≤ m t) ∧
-        ∫⁻ t, m t ≤ c₀ * localMass T U)
+      ∃ m : ℝ → ℝ≥0∞, Measurable m ∧
+        (∀ t, mass (slice (T ∘L (monoCLM ℝ : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) u t) ≤
+          m t) ∧
+        ∫⁻ t, m t ≤ c₀ * mass (T ∘L (monoCLM ℝ : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)))
     {w : Ω → ℝ≥0∞} (hw : Measurable w) :
     ∫⁻ t : ℝ, ∫⁻ x : Ω, w x ∂massMeasure (slice T u t) ≤
       c₀ * ∫⁻ x : Ω, w x ∂massMeasure T := by
+  have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
   refine Measure.lintegral_lintegral_le_of_isOpen hc₀top (fun U hU => ?_) hw
   let V : Opens E := ⟨(↑) '' U, Ω.isOpen.isOpenMap_subtypeVal _ hU⟩
-  obtain ⟨m, hm_meas, hm_le, hm_int⟩ := hmaj V (Subtype.coe_image_subset _ _)
+  have hV : V ≤ Ω := Subtype.coe_image_subset _ _
+  have hV_coe : (V : Set E) = Subtype.val '' U := rfl
+  obtain ⟨m, hm_meas, hm_le, hm_int⟩ := hmaj V hV
   refine ⟨m, hm_meas, ?_, ?_⟩
   · filter_upwards [ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT
       hu.locallyLipschitzOn] with t ht
-    rw [massMeasure_eq_localMass_image ht hU]
-    exact hm_le t
-  · rwa [massMeasure_eq_localMass_image hT.hasLocallyFiniteMass hU]
+    rw [massMeasure_eq_localMass_image ht hU, ← hV_coe]
+    simpa only [← mass_comp_monoCLM hV, ← coe_comp, slice_comp_monoCLM hT hV hu_meas t] using
+      hm_le t
+  · rw [massMeasure_eq_localMass_image hT.hasLocallyFiniteMass hU, ← hV_coe]
+    simpa only [← mass_comp_monoCLM hV, coe_comp] using hm_int
 
 /-- **Weighted Lipschitz slicing inequality** on a general normed space: for a locally normal
 `(k + 1)`-current `T`, `K`-Lipschitz `u` on `Ω`, and Borel measurable `w : Ω → ℝ≥0∞`,
@@ -401,16 +399,10 @@ theorem lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hu : LipschitzOnWith K u Ω) {w : Ω → ℝ≥0∞} (hw : Measurable w) :
     ∫⁻ t : ℝ, ∫⁻ x : Ω, w x ∂massMeasure (slice T u t) ≤
-      (k + 1 : ℝ≥0∞) * (K : ℝ≥0∞) * ∫⁻ x : Ω, w x ∂massMeasure T := by
-  have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
-  refine lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_aux hT hu (by finiteness)
-    (fun U hU => ?_) hw
-  obtain ⟨m, hm_meas, hm_le, hm_int⟩ :=
-    exists_measurable_mass_slice_le_of_lipschitzOnWith hT.comp_monoCLM (hu.mono hU)
-  refine ⟨m, hm_meas, fun t => ?_, ?_⟩
-  · simpa only [← mass_comp_monoCLM hU, ← coe_comp, slice_comp_monoCLM hT hU hu_meas t] using
-      hm_le t
-  · simpa only [← mass_comp_monoCLM hU, coe_comp] using hm_int
+      (k + 1 : ℝ≥0∞) * (K : ℝ≥0∞) * ∫⁻ x : Ω, w x ∂massMeasure T :=
+  lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_aux hT hu (by finiteness)
+    (fun _ hU => exists_measurable_mass_slice_le_of_lipschitzOnWith hT.comp_monoCLM (hu.mono hU))
+    hw
 
 /-! ### Sharp constants on inner product spaces -/
 
@@ -458,17 +450,10 @@ theorem lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_of_innerProd
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hu : LipschitzOnWith K u Ω) {w : Ω → ℝ≥0∞} (hw : Measurable w) :
     ∫⁻ t : ℝ, ∫⁻ x : Ω, w x ∂massMeasure (slice T u t) ≤
-      (K : ℝ≥0∞) * ∫⁻ x : Ω, w x ∂massMeasure T := by
-  have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
-  refine lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_aux hT hu ENNReal.coe_ne_top
-    (fun U hU => ?_) hw
-  obtain ⟨m, hm_meas, hm_le, hm_int⟩ :=
-    exists_measurable_mass_slice_le_of_lipschitzOnWith_of_innerProductSpace
-      hT.comp_monoCLM (hu.mono hU)
-  refine ⟨m, hm_meas, fun t => ?_, ?_⟩
-  · simpa only [← mass_comp_monoCLM hU, ← coe_comp, slice_comp_monoCLM hT hU hu_meas t] using
-      hm_le t
-  · simpa only [← mass_comp_monoCLM hU, coe_comp] using hm_int
+      (K : ℝ≥0∞) * ∫⁻ x : Ω, w x ∂massMeasure T :=
+  lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_aux hT hu ENNReal.coe_ne_top
+    (fun _ hU => exists_measurable_mass_slice_le_of_lipschitzOnWith_of_innerProductSpace
+      hT.comp_monoCLM (hu.mono hU)) hw
 
 /-- **Sharp Lipschitz slicing inequality on a strip on an inner product space**:
 `∫⁻ t in Ioo a b, mass ⟨T, u, t⟩ ≤ K * ‖T‖ {a < u < b}`. -/

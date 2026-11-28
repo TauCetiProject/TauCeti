@@ -56,8 +56,6 @@ them by open sets of almost the same measure.
   `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
-* `Distribution.massMeasure_coe_linearMap`: coercing a continuous linear functional to a linear
-  map preserves its mass measure.
 * `Distribution.aemeasurable_massMeasure_apply`, `Distribution.aemeasurable_lintegral_massMeasure`:
   a.e. measurability of `t ↦ ‖S t‖ A` and `t ↦ ∫⁻ x, w x ∂‖S t‖` for a pointwise measurable
   family that is a.e. of locally finite mass when `F` is second countable.
@@ -429,18 +427,6 @@ theorem eq_massMeasure_of_preimage_coe (hT : HasLocallyFiniteMass T) (ν : Measu
   refine Measure.OuterRegular.ext_isOpen fun U hU => ?_
   obtain ⟨U', hU', rfl⟩ := isOpen_induced_iff.1 hU
   rw [h U' hU', massMeasure_preimage_coe hT hU']
-
-/-- Coercing a continuous linear functional `T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ` to a linear map does not
-change its mass measure. -/
-@[simp]
-theorem massMeasure_coe_linearMap (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) :
-    massMeasure (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) = massMeasure T := by
-  by_cases hT : HasLocallyFiniteMass T
-  · refine eq_massMeasure_of_preimage_coe hT _ fun U hU => ?_
-    rw [massMeasure_preimage_coe (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT hU]
-    rfl
-  · rw [massMeasure_of_not_hasLocallyFiniteMass hT,
-      massMeasure_of_not_hasLocallyFiniteMass (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT]
 
 /-- For a pointwise measurable family of continuous linear functionals `S t` that almost everywhere
 have locally finite mass, if `F` is second countable then `t ↦ ‖S t‖ A` is `ν`-a.e. measurable

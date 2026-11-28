@@ -63,8 +63,10 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
   `TestFunction.norm_oneFormWedgeCLM_apply_le_of_innerProductSpace` and
   `TestFunction.enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace` without the `(k + 1)` factor.
 * `TestFunction.extDerivCLM_smulLeftCLM`: the Leibniz rule `d (f ω) = df ∧ ω + f dω`.
-* `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`: the boundary of a smooth multiple of
-  a current, `∂(fT) = f ∂T - T ⌞ df`.
+* `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`,
+  `ContinuousLinearMap.apply_smulLeftCLM_extDerivCLM_sub`: the boundary of a smooth multiple of
+  a current, `∂(fT) = f ∂T - T ⌞ df`, and its pointwise form
+  `T (f • dω) - (∂T) (f • ω) = -T (df ∧ ω)`.
 * `ContDiffMapSupportedIn.seminorm_bilinLeftCLM_mul_le`: the Leibniz bound
   `N_i(χ g) ≤ 2 ^ k N_k(χ) M` for the product of a complex smooth function `χ` supported in a
   compact set with a smooth function `g` whose derivatives of order at most `k` are bounded by `M`.
@@ -514,6 +516,17 @@ theorem comp_smulLeftCLM_comp_extDerivCLM
         T ∘L oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hf).2 := by
   ext ω
   simp [extDerivCLM_smulLeftCLM hf ω]
+
+/-- Pointwise Leibniz identity for currents: `T (f • dω) - (∂T) (f • ω) = -T (df ∧ ω)`. -/
+theorem apply_smulLeftCLM_extDerivCLM_sub
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) (hf : ContDiff ℝ (⊤ : ℕ∞) f)
+    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    T (smulLeftCLM hf (extDerivCLM ω)) - (T ∘L extDerivCLM) (smulLeftCLM hf ω) =
+      -T (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hf).2 ω) := by
+  have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T hf) ω
+  simp only [comp_apply, sub_apply] at hL ⊢
+  rw [hL]
+  abel
 
 end ContinuousLinearMap
 

@@ -21,12 +21,12 @@ Let `Ω` be an open set of a real normed space `E`, let `T` be a
 
 where `⌞` is the Borel restriction of a current of locally finite mass
 (`Distribution.massRestrict`) and `∂S = S ∘ d`. It measures the failure of restriction to the
-sublevel set `{u < t}` to commute with the boundary. It depends only on the values of `u` on `Ω`,
-vanishes when `u` is constant, is linear in `T` on locally normal currents, commutes with open
-restrictions and proper smooth pushforwards, satisfies `∂⟨T, u, t⟩ = -⟨∂T, u, t⟩`, and has
-`spt ⟨T, u, t⟩ ∩ Ω ⊆ spt T ∩ u⁻¹{t}` when `u` is continuous on `Ω`. For each test form `φ`, the
-level-set pairing `t ↦ ⟨T, u, t⟩ φ` is Borel measurable for every `T`, and for locally normal `T`
-and `u` continuous on `Ω` it is bounded, compactly supported, and integrable; when the codomain
+sublevel set `{u < t}` to commute with the boundary. It depends only on the values of `u` on `Ω`
+and satisfies `∂⟨T, u, t⟩ = -⟨∂T, u, t⟩`. For locally normal `T`, slicing vanishes when `u` is
+constant, is linear in `T`, commutes with open restrictions and proper smooth pushforwards, and
+has `spt ⟨T, u, t⟩ ∩ Ω ⊆ spt T ∩ u⁻¹{t}` when `u` is continuous on `Ω`. For each test form `φ`,
+the level-set pairing `t ↦ ⟨T, u, t⟩ φ` is Borel measurable for every `T`, and for locally normal
+`T` and `u` continuous on `Ω` it is bounded, compactly supported, and integrable; when the codomain
 `F` is second countable, `t ↦ localMass ⟨T, u, t⟩ U` and `t ↦ mass ⟨T, u, t⟩` are also Borel
 measurable.
 
@@ -340,15 +340,12 @@ a bounded interval of levels `t`, hence has compact support. -/
 theorem hasCompactSupport_slice_apply {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hu : ContinuousOn u Ω) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     HasCompactSupport fun t => slice T u t φ := by
-  obtain ⟨R, hR⟩ := Metric.isBounded_iff_subset_closedBall (c := (0 : ℝ)).1
-    (φ.hasCompactSupport.image_of_continuousOn (hu.mono φ.tsupport_subset)).isBounded
-  let M : ℝ := max R 0 + 1
+  obtain ⟨M, _, hM⟩ := φ.exists_pos_norm_lt_of_continuousOn hu
   refine HasCompactSupport.intro (isCompact_closedBall (0 : ℝ) M) fun t ht => ?_
   have ht' : M < |t| := by simpa [Metric.mem_closedBall, Real.dist_eq] using ht
-  refine slice_apply_eq_zero_of_notMem_Ioc hT (M := M) (fun x hx => ?_) fun htI =>
+  refine slice_apply_eq_zero_of_notMem_Ioc hT (M := M)
+    (fun x hx => by simpa [Real.norm_eq_abs] using hM x hx) fun htI =>
     ht'.not_ge (abs_le.2 ⟨htI.1.le, htI.2⟩)
-  exact ((by simpa [Metric.mem_closedBall, Real.dist_eq] using hR ⟨x, hx, rfl⟩ : |u x| ≤ R).trans
-    (le_max_left _ _)).trans_lt (lt_add_one _)
 
 /-- For every `(k + 1)`-current `T`, every `u : E → ℝ`, and every test form `φ`, the level-set
 pairing `t ↦ ⟨T, u, t⟩ φ` is Borel measurable. -/
@@ -365,6 +362,7 @@ set `U : Set E`. -/
 theorem measurable_localMass_slice [SecondCountableTopology F]
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) (u : E → ℝ) (U : Set E) :
     Measurable fun t : ℝ => localMass (slice T u t) U := by
+  -- `SecondCountableTopology (E [⋀^Fin k]→L[ℝ] F)` requires `FiniteDimensional ℝ E`.
   by_cases hE : FiniteDimensional ℝ E
   · exact measurable_localMass (fun t => (slice T u t).continuous)
       (measurable_slice_apply T u) U
@@ -563,10 +561,7 @@ theorem tendsto_neg_oneFormWedgeCLM_slice_apply
   have h := (tendsto_apply_smulLeftCLM_massRestrict hT₁ hA hf hfC hlim (extDerivCLM φ)).sub
     (tendsto_apply_smulLeftCLM_massRestrict hT₂ hA hf hfC hlim φ)
   rw [← slice_apply _ hum] at h
-  refine h.congr fun m => ?_
-  have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T (hf m)) φ
-  simp only [comp_apply, sub_apply] at hL
-  simp [hL]
+  exact h.congr fun m => apply_smulLeftCLM_extDerivCLM_sub T (hf m) φ
 
 private theorem exists_measurable_mass_slice_le_aux
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u)
@@ -645,26 +640,32 @@ theorem ae_mass_slice_lt_top {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[
     (ENNReal.mul_ne_top (by simp) hfin) hGint)] with t ht
   exact (hG t).trans_lt ht
 
+/-- If almost every slice by `u` of every normal current has finite mass, then almost every slice
+of a normal current `T` is normal: the boundary of a slice of `T` is minus a slice of `∂T`. -/
+theorem ae_isNormal_slice_of_ae_mass_lt_top {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hT : IsNormal T)
+    (h : ∀ {j : ℕ} (S : 𝓓(Ω, E [⋀^Fin (j + 1)]→L[ℝ] F) →L[ℝ] ℝ), IsNormal S →
+      ∀ᵐ t, mass (slice S u t) < ⊤) :
+    ∀ᵐ t, IsNormal (slice T u t) := by
+  cases k with
+  | zero =>
+    filter_upwards [h T hT] with t ht
+    exact isNormal_finZero_iff.2 ht.ne
+  | succ j =>
+    filter_upwards [h T hT, h _ hT.comp_extDerivCLM] with t ht ht'
+    refine isNormal_succ_iff.2 ⟨ht.ne, ?_⟩
+    simpa [slice_comp_extDerivCLM, mass_neg] using ht'.ne
+
 /-- **Slices of normal currents are normal.** If `T` is a normal `(k + 1)`-current and `u` is
 smooth with `‖du‖ ≤ L < ⊤` on `Ω`, then almost every slice `⟨T, u, t⟩` is a normal current. -/
 theorem ae_isNormal_slice {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsNormal T)
     (hu : ContDiff ℝ ∞ u) {L : ℝ≥0∞} (hL : L ≠ ⊤) (hdu : ∀ x ∈ Ω, ‖fderiv ℝ u x‖ₑ ≤ L) :
-    ∀ᵐ t, IsNormal (slice T u t) := by
-  have hfin {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin (j + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hS : IsNormal S) :
-      ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure S ≠ ⊤ :=
-    ne_top_of_le_ne_top (ENNReal.mul_ne_top hL hS.mass_ne_top)
-      (lintegral_massMeasure_le_mul_mass hS.isLocallyNormal.hasLocallyFiniteMass fun x => hdu x
-          x.property)
-  cases k with
-  | zero =>
-    filter_upwards [ae_mass_slice_lt_top hT.isLocallyNormal hu (hfin hT)] with t ht
-    exact isNormal_finZero_iff.2 ht.ne
-  | succ j =>
-    have hT' : IsNormal (T ∘L extDerivCLM) := hT.comp_extDerivCLM
-    filter_upwards [ae_mass_slice_lt_top hT.isLocallyNormal hu (hfin hT),
-      ae_mass_slice_lt_top hT'.isLocallyNormal hu (hfin hT')] with t ht ht'
-    refine isNormal_succ_iff.2 ⟨ht.ne, ?_⟩
-    simpa [slice_comp_extDerivCLM, mass_neg] using ht'.ne
+    ∀ᵐ t, IsNormal (slice T u t) :=
+  ae_isNormal_slice_of_ae_mass_lt_top hT fun _ hS =>
+    ae_mass_slice_lt_top hS.isLocallyNormal hu
+      (ne_top_of_le_ne_top (ENNReal.mul_ne_top hL hS.mass_ne_top)
+        (lintegral_massMeasure_le_mul_mass hS.isLocallyNormal.hasLocallyFiniteMass fun x =>
+          hdu x x.property))
 
 section InnerProductSpace
 

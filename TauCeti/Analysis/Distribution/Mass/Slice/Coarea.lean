@@ -245,14 +245,9 @@ theorem integral_mul_slice_apply {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
   -- Cut off to `(-M, M]` covering `u '' tsupport φ`, take the antiderivative `H s = ∫_s^M g`,
   -- and compare the `m → ∞` limits of the smooth-transition integrals on both sides.
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
-  obtain ⟨R, hR⟩ := Metric.isBounded_iff_subset_closedBall (c := (0 : ℝ)).1
-    (φ.hasCompactSupport.image_of_continuousOn
-      (hu.continuous.continuousOn.mono φ.tsupport_subset)).isBounded
-  let M : ℝ := max R 0 + 1
-  have hM : 0 < M := by positivity
+  obtain ⟨M, hM, hφ_lt'⟩ := φ.exists_pos_norm_lt_of_continuousOn hu.continuous.continuousOn
   have hφ_lt : ∀ x : Ω, (x : E) ∈ tsupport φ → |u x| < M := fun x hx => by
-    have huxR : |u x| ≤ R := by simpa [Metric.mem_closedBall, Real.dist_eq] using hR ⟨x, hx, rfl⟩
-    exact (huxR.trans (le_max_left _ _)).trans_lt (lt_add_one _)
+    simpa [Real.norm_eq_abs] using hφ_lt' x hx
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc (-M) M) fun t ht => by
       rw [slice_apply_eq_zero_of_notMem_Ioc hT hφ_lt ht, mul_zero],
     ← intervalIntegral.integral_of_le (by linarith : -M ≤ M)]
@@ -305,15 +300,9 @@ theorem integral_mul_slice_apply {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
           (abs_apply_smulLeftCLM_smoothTransition_le hT₂ hu φ m t))) (abs_nonneg _))
       ((hg.continuous.abs.intervalIntegrable (-M) M).mul_const C)
       (ae_of_all _ fun t _ => tendsto_const_nhds.mul <|
-        (tendsto_neg_oneFormWedgeCLM_slice_apply hT hu t φ).congr fun m => by
-          have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T (hf m t)) φ
-          simp only [comp_apply, sub_apply] at hL; rw [comp_apply]; linarith)
+        (tendsto_neg_oneFormWedgeCLM_slice_apply hT hu t φ).congr fun m =>
+          (apply_smulLeftCLM_extDerivCLM_sub T (hf m t) φ).symm)
   -- Apply the Leibniz rule to rewrite the limit in terms of `d(H ∘ u) = -(g ∘ u) du`.
-  have hleib : T (smulLeftCLM (hH.comp hu) (extDerivCLM φ)) -
-      (T ∘L extDerivCLM) (smulLeftCLM (hH.comp hu) φ) =
-      -T (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 (hH.comp hu)).2 φ) := by
-    have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T (hH.comp hu)) φ
-    simp only [comp_apply, sub_apply] at hL; rw [comp_apply]; linarith
   have hwedge : oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 (hH.comp hu)).2 φ =
       -smulLeftCLM (hg.comp hu) (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ) := by
     ext x
@@ -323,7 +312,8 @@ theorem integral_mul_slice_apply {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
         (-g (u x)) • (fderiv ℝ u x).smulRight (φ x) := by ext y; simp [smul_smul]
     rw [oneFormWedgeCLM_apply, hfd, hsmul, ContinuousAlternatingMap.alternatizeUncurryFin_smul]
     simp [neg_smul]
-  rw [tendsto_nhds_unique hlim_L hlim_R, hleib, hwedge, map_neg, neg_neg]
+  rw [tendsto_nhds_unique hlim_L hlim_R, apply_smulLeftCLM_extDerivCLM_sub T (hH.comp hu) φ,
+    hwedge, map_neg, neg_neg]
 
 /-- **Integrating all slices recovers contraction with `du`.** For a locally normal
 `(k + 1)`-current `T` and smooth `u : E → ℝ`, `∫ ⟨T, u, t⟩(φ) dt = T(du ∧ φ)`. -/
