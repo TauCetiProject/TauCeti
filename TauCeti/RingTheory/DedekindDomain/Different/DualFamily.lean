@@ -28,6 +28,8 @@ comparing a number-field different with the different of a completed extension.
 ## Main results
 
 * `TauCeti.exists_trace_mul_algebraMap_eq`: every `A`-linear form on `B` is a trace pairing.
+* `TauCeti.sum_smul_eq_of_dualFamily`: any element of `B` is reconstructed from its traces
+  against a finite trace-dual family `(bᵢ, yᵢ)`.
 * `TauCeti.exists_sum_trace_mul_smul_eq`: a projective integral closure has a finite trace-dual
   family `(bᵢ, yᵢ)` with `bᵢ ∈ B`, `yᵢ ∈ Bᵛ` and `x = ∑ᵢ Tr(x bᵢ) yᵢ`.
 
@@ -79,6 +81,45 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
   simp only [map_smul] at h
   rw [← algebraMap_smul K, ← algebraMap_smul K a (g₂ x)] at h
   exact (IsLocalization.map_units K ⟨a, ha⟩).smul_left_cancel.mp h
+
+omit [IsDomain A] [IsFractionRing A K] in
+/-- **Reconstruction from a finite trace-dual family.** Any `w : B` equals `∑ i, a i • b i` when
+`a i` represents `Tr_{L/K}(y i * w)` for a finite family `(b, y)` satisfying
+`∀ x, ∑ i, Tr_{L/K}(x * b i) • y i = x`. -/
+theorem sum_smul_eq_of_dualFamily {n : ℕ} (b : Fin n → B) (y : Fin n → L)
+    (hsum : ∀ x : L, ∑ i, Algebra.trace K L (x * algebraMap B L (b i)) • y i = x)
+    (w : B) (a : Fin n → A)
+    (ha : ∀ i, algebraMap A K (a i) = Algebra.trace K L (y i * algebraMap B L w)) :
+    ∑ i, a i • b i = w := by
+  apply IsIntegralClosure.algebraMap_injective B A L
+  rw [← sub_eq_zero]
+  refine (traceForm_nondegenerate K L).1 _ fun x ↦ ?_
+  have hterm (i : Fin n) :
+      Algebra.trace K L (x * algebraMap B L (a i • b i)) =
+        Algebra.trace K L (x * algebraMap B L (b i)) *
+          Algebra.trace K L (y i * algebraMap B L w) := by
+    calc Algebra.trace K L (x * algebraMap B L (a i • b i))
+      = Algebra.trace K L (algebraMap A K (a i) • (x * algebraMap B L (b i))) := by
+          rw [algebraMap.smul, ← algebraMap_smul K, mul_smul_comm]
+    _ = Algebra.trace K L (x * algebraMap B L (b i)) * algebraMap A K (a i) := by
+          rw [map_smul, smul_eq_mul, mul_comm]
+    _ = Algebra.trace K L (x * algebraMap B L (b i)) *
+          Algebra.trace K L (y i * algebraMap B L w) := by rw [ha i]
+  have htrace :
+      Algebra.trace K L (x * algebraMap B L (∑ i, a i • b i)) =
+        Algebra.trace K L (x * algebraMap B L w) := by
+    calc Algebra.trace K L (x * algebraMap B L (∑ i, a i • b i))
+      = ∑ i, Algebra.trace K L (x * algebraMap B L (a i • b i)) := by
+          simp only [map_sum, Finset.mul_sum]
+    _ = ∑ i, Algebra.trace K L (x * algebraMap B L (b i)) *
+          Algebra.trace K L (y i * algebraMap B L w) :=
+          Finset.sum_congr rfl fun i _ ↦ hterm i
+    _ = Algebra.trace K L ((∑ i, Algebra.trace K L (x * algebraMap B L (b i)) • y i) *
+          algebraMap B L w) := by
+          simp only [Finset.sum_mul, smul_mul_assoc, map_sum, map_smul, smul_eq_mul]
+    _ = Algebra.trace K L (x * algebraMap B L w) := by rw [hsum x]
+  rw [Algebra.traceForm_apply, mul_comm, mul_sub, map_sub, sub_eq_zero]
+  exact htrace
 
 variable [Module.Finite A B] [Module.Projective A B]
 

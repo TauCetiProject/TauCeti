@@ -387,4 +387,11 @@ theorem quotient (N : Submodule R M) (hN : IsClosed (N : Set M)) : IsCompactModu
 
 end IsCompactModule
 
+/-- Over a compact ring, every finitely generated submodule of a discrete module with continuous
+scalar action has a finite underlying set. -/
+theorem _root_.Submodule.FG.finite_of_discrete {R M : Type*} [CommRing R] [TopologicalSpace R]
+    [CompactSpace R] [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+    [ContinuousSMul R M] {M₀ : Submodule R M} (hM₀ : M₀.FG) : Finite M₀ :=
+  hM₀.isCompact.finite_of_discrete.to_subtype
+
 end TauCeti

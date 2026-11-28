@@ -99,6 +99,17 @@ omit [SeparatelyContinuousAdd M] in
 instance discreteTopology [DiscreteTopology M] (p : Submodule R M) : DiscreteTopology (M ⧸ p) :=
   discreteTopology_of_isOpen p (isOpen_discrete _)
 
+omit [SeparatelyContinuousAdd M] in
+/-- Scalar multiplication by `A` on `M ⧸ P` is continuous in the second variable when `A` acts
+through an `R`-algebra with continuous `R`-scalar multiplication on `M`. -/
+instance instContinuousConstSMul {A : Type*} [CommSemiring A] [Algebra A R] [Module A M]
+    [IsScalarTower A R M] [ContinuousConstSMul R M] (P : Submodule R M) :
+    ContinuousConstSMul A (M ⧸ P) where
+  continuous_const_smul a := by
+    simpa only [← algebraMap_smul R a] using
+      P.isQuotientMap_mkQ.continuous_iff.mpr
+        (P.continuous_mkQ.comp (continuous_const_smul (algebraMap A R a)))
+
 end Submodule.Quotient
 
 /-- The quotient of a second countable topological module by translations by a submodule is

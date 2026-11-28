@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.Length
 public import Mathlib.Topology.Algebra.Valued.ValuativeRel
+import TauCeti.Algebra.Module.Torsion.QuotientLinearMap
+import TauCeti.Algebra.Module.Torsion.Snake
 
 /-!
 # Maximal-ideal power quotients of a discretely valued field
@@ -17,6 +21,12 @@ multiplication by `r₀ ∈ 𝒪[K]` of valuation `valuation K c ^ d` shifts con
 to `𝓂[K] ^ (d + M)` (`TauCeti.mul_sub_mem_maximalIdeal_pow_iff`) and induces an injective linear map
 `TauCeti.mulLeftMaximalIdealPowQuotient`. The Artin–Schreier map `y ↦ y ^ 2 - y` is a bijection on
 maximal-ideal classes in `𝒪[K] ⧸ 𝓂[K] ^ (m + 1)` (`TauCeti.artinSchreierMaximalIdealQuotientEquiv`).
+
+For any uniformizer `ϖ`, `TauCeti.quotientMaximalIdealPowEquivTorsionBySet` identifies
+`𝒪[K] ⧸ 𝓂[K] ^ n` with the `𝓂[K] ^ n`-torsion of `K ⧸ 𝒪[K]` via `[a] ↦ [a / ϖ ^ n]`,
+yielding `TauCeti.length_linearMap_quotient_maximalIdeal_eq_one` (`Hom(𝒪[K] ⧸ 𝔪, K ⧸ 𝒪[K])`
+has length `1`), and `TauCeti.mk_inv_uniformizer_ne_zero` shows that `[ϖ⁻¹]` is nonzero in
+`K ⧸ 𝒪[K]`.
 
 ## References
 
@@ -132,5 +142,100 @@ theorem coe_artinSchreierMaximalIdealQuotientEquiv_apply (m : ℕ)
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0}) :
     (artinSchreierMaximalIdealQuotientEquiv K m x : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) = x.val ^ 2 - x.val := by
   rw [artinSchreierMaximalIdealQuotientEquiv, Equiv.coe_ofBijective]
+
+private theorem exact_algebraMap_mkQ_one (K : Type*) [Field K] [ValuativeRel K] :
+    Function.Exact (Algebra.linearMap 𝒪[K] K) (1 : Submodule 𝒪[K] K).mkQ := by
+  rw [Submodule.one_eq_range]
+  exact LinearMap.exact_map_mkQ_range (Algebra.linearMap 𝒪[K] K)
+
+private theorem bijective_smul_pow_uniformizer (K : Type*) [Field K] [ValuativeRel K]
+    {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (n : ℕ) :
+    Function.Bijective fun x : K ↦ (ϖ ^ n : 𝒪[K]) • x := by
+  simpa [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, SubmonoidClass.coe_pow] using
+    mulLeft_bijective₀ ((ϖ : K) ^ n) (pow_ne_zero n hϖ.coe_ne_zero)
+
+section
+open scoped Pointwise
+
+/-- Given a uniformizer `ϖ` of `𝒪[K]`, the `𝓂[K]^n`-torsion submodule of `K ⧸ 𝒪[K]` is
+`𝒪[K]`-linearly isomorphic to `𝒪[K] ⧸ 𝓂[K]^n`, via `[a] ↦ [a / ϖ^n]`. -/
+def quotientMaximalIdealPowEquivTorsionBySet {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (n : ℕ) :
+    (𝒪[K] ⧸ (𝓂[K] ^ n : Ideal 𝒪[K])) ≃ₗ[𝒪[K]]
+      Submodule.torsionBySet 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K))
+        ((𝓂[K] ^ n : Ideal 𝒪[K]) : Set 𝒪[K]) :=
+  have hmn : (𝓂[K] ^ n : Ideal 𝒪[K]) = Ideal.span {ϖ ^ n} := by
+    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+  have hq : (𝓂[K] ^ n : Ideal 𝒪[K]) = (ϖ ^ n) • (⊤ : Submodule 𝒪[K] 𝒪[K]) := by
+    rw [hmn]
+    simp [← Submodule.ideal_span_singleton_smul]
+  have ht : Submodule.torsionBy 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) (ϖ ^ n) =
+      Submodule.torsionBySet 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K))
+        ((𝓂[K] ^ n : Ideal 𝒪[K]) : Set 𝒪[K]) := by
+    rw [hmn, Submodule.torsionBySet_ideal_span_singleton_eq]
+  (Submodule.quotEquivOfEq _ _ hq).trans
+    ((torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one K)
+      (FaithfulSMul.algebraMap_injective 𝒪[K] K)
+      (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer K hϖ n)).symm.trans
+      (LinearEquiv.ofEq _ _ ht))
+
+end
+
+@[simp] theorem quotientMaximalIdealPowEquivTorsionBySet_mk {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ)
+    (n : ℕ) (a : 𝒪[K]) :
+    (quotientMaximalIdealPowEquivTorsionBySet hϖ n
+        (Ideal.Quotient.mk (𝓂[K] ^ n : Ideal 𝒪[K]) a) : K ⧸ (1 : Submodule 𝒪[K] K)) =
+      Submodule.Quotient.mk ((a : K) / (ϖ : K) ^ n) := by
+  have hsmul : (ϖ ^ n : 𝒪[K]) • ((a : K) / (ϖ : K) ^ n) = (a : K) := by
+    simp only [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, SubmonoidClass.coe_pow]
+    exact mul_div_cancel₀ _ (pow_ne_zero n hϖ.coe_ne_zero)
+  have hmem : Submodule.Quotient.mk (p := (1 : Submodule 𝒪[K] K)) ((a : K) / (ϖ : K) ^ n) ∈
+      Submodule.torsionBy 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) (ϖ ^ n) := by
+    rw [Submodule.mem_torsionBy_iff, ← Submodule.Quotient.mk_smul, hsmul,
+      Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
+    exact ⟨a, Algebra.algebraMap_ofSubsemiring_apply _ a⟩
+  let x : Submodule.torsionBy 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) (ϖ ^ n) :=
+    ⟨Submodule.Quotient.mk ((a : K) / (ϖ : K) ^ n), hmem⟩
+  have hinj : Function.Injective (Algebra.linearMap 𝒪[K] K) :=
+    FaithfulSMul.algebraMap_injective 𝒪[K] K
+  have hx : torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one K) hinj
+      (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer K hϖ n) x =
+      Submodule.Quotient.mk a := by
+    rw [torsionByδEquiv_apply]
+    exact torsionByδ_eq (exact_algebraMap_mkQ_one K) hinj
+      (Submodule.mkQ_surjective _) x rfl
+      ((Algebra.algebraMap_ofSubsemiring_apply _ a).trans hsmul.symm)
+  have hsymm := (torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one K) hinj
+    (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer K hϖ n)).symm_apply_eq.mpr
+    hx.symm
+  rw [← Ideal.Quotient.mk_eq_mk]
+  simp only [quotientMaximalIdealPowEquivTorsionBySet, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk, LinearEquiv.coe_ofEq_apply, hsymm, x]
+
+/-- **Cogenerator condition for `K ⧸ 𝒪[K]`**: `Hom_𝒪[K](𝒪[K] ⧸ 𝔪, K ⧸ 𝒪[K])` has length `1` for
+every maximal ideal `𝔪` of `𝒪[K]`. -/
+theorem length_linearMap_quotient_maximalIdeal_eq_one (K : Type*) [Field K] [ValuativeRel K]
+    [IsDiscreteValuationRing 𝒪[K]] :
+    ∀ 𝔪 : Ideal 𝒪[K], 𝔪.IsMaximal →
+      Module.length 𝒪[K] ((𝒪[K] ⧸ 𝔪) →ₗ[𝒪[K]] (K ⧸ (1 : Submodule 𝒪[K] K))) = 1 := by
+  intro 𝔪 h𝔪; obtain rfl := IsLocalRing.eq_maximalIdeal h𝔪
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have hpow : (𝓂[K] ^ 1 : Ideal 𝒪[K]) = 𝓂[K] := pow_one _
+  have e : ((𝒪[K] ⧸ 𝓂[K]) →ₗ[𝒪[K]] (K ⧸ (1 : Submodule 𝒪[K] K))) ≃ₗ[𝒪[K]] (𝒪[K] ⧸ 𝓂[K]) :=
+    (𝓂[K].quotientLinearMapEquivTorsionBySet _).trans
+      ((LinearEquiv.ofEq _ _ (by rw [hpow])).symm.trans
+        ((quotientMaximalIdealPowEquivTorsionBySet hϖ 1).symm.trans
+          (Submodule.quotEquivOfEq _ _ hpow)))
+  rw [e.length_eq, Module.length_eq_one_iff]
+  exact isSimpleModule_iff_isCoatom.mpr (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).out
+
+omit [IsDiscreteValuationRing 𝒪[K]] in
+/-- The class `[ϖ⁻¹] ∈ K ⧸ 𝒪[K]` of the inverse of any uniformizer `ϖ` is nonzero. -/
+theorem mk_inv_uniformizer_ne_zero {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
+    Submodule.Quotient.mk (p := (1 : Submodule 𝒪[K] K)) ((ϖ : K)⁻¹) ≠ 0 := by
+  rw [ne_eq, Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
+  rintro ⟨b, hb⟩
+  rw [Algebra.algebraMap_ofSubsemiring_apply] at hb
+  exact hϖ.not_isUnit (IsUnit.of_mul_eq_one b <| Subtype.ext <| by
+    push_cast; rw [hb, mul_inv_cancel₀ hϖ.coe_ne_zero])
 
 end TauCeti

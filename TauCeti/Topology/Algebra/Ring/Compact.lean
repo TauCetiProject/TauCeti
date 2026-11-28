@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.FiniteLength
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Compact
 import Mathlib.RingTheory.Filtration
 import Mathlib.Topology.Algebra.Module.Compact
+import TauCeti.RingTheory.Length
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import TauCeti.Topology.Algebra.Module.Compact
 
 /-!
 # The topology of a compact Hausdorff noetherian local ring is adic
@@ -28,12 +32,20 @@ instance a topological ring) is open, as it is for a compact Hausdorff noetheria
 (`IsLocalRing.isOpen_maximalIdeal`), the residue map is continuous for every topology on the
 residue field, being constant on the open cosets of the maximal ideal.
 
+We also record that in a compact totally disconnected commutative local topological ring, the
+maximal ideal is open (`TauCeti.isOpen_maximalIdeal_of_compact`), so a module over it has finite
+length if and only if it has a finite underlying set (`TauCeti.isFiniteLength_iff_finite`).
+
 ## Main results
 
 * `IsLocalRing.isAdic_maximalIdeal`: the topology of a compact Hausdorff noetherian local ring is
   its `m`-adic topology.
 * `IsLocalRing.continuous_residue`: the residue map of a local ring with continuous translations
   and open maximal ideal is continuous for every topology on its residue field.
+* `TauCeti.isOpen_maximalIdeal_of_compact`: in a compact totally disconnected commutative local
+  topological ring, the maximal ideal is open.
+* `IsFiniteLength.finite` and `TauCeti.isFiniteLength_iff_finite`: over such a ring, a module has
+  finite length if and only if it has a finite underlying set.
 -/
 
 public section
@@ -69,3 +81,44 @@ theorem continuous_residue {S : Type*} [CommRing S] [IsLocalRing S] [Topological
     simp
 
 end IsLocalRing
+
+namespace TauCeti
+
+section CompactLocal
+
+variable {R : Type*} [CommRing R] [IsLocalRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  [CompactSpace R] [TotallyDisconnectedSpace R]
+
+/-- In a compact totally disconnected commutative local topological ring, the maximal ideal is
+open. -/
+theorem isOpen_maximalIdeal_of_compact : IsOpen (IsLocalRing.maximalIdeal R : Set R) := by
+  have ⟨I, hIopen, h1⟩ : ∃ I : Ideal R, IsOpen (I : Set R) ∧ (1 : R) ∉ I := by
+    by_contra h; push Not at h
+    exact one_ne_zero (IsCompactModule.self.eq_zero_of_forall_mem_of_isOpen h)
+  exact Ideal.isOpen_of_isOpen_subideal (U := I) (I := IsLocalRing.maximalIdeal R)
+    (IsLocalRing.le_maximalIdeal fun htop ↦ h1 (htop ▸ Submodule.mem_top)) hIopen
+
+/-- Over a compact totally disconnected commutative local topological ring, every module of finite
+length has a finite underlying set. -/
+theorem _root_.IsFiniteLength.finite {M : Type*} [AddCommGroup M] [Module R M]
+    (hM : IsFiniteLength R M) : Finite M := by
+  have : Finite (R ⧸ IsLocalRing.maximalIdeal R) :=
+    AddSubgroup.quotient_finite_of_isOpen (IsLocalRing.maximalIdeal R).toAddSubgroup
+      (isOpen_maximalIdeal_of_compact (R := R))
+  induction hM with
+  | of_subsingleton => infer_instance
+  | @of_simple_quotient M _ _ N _ _ ih =>
+    obtain ⟨𝔪, h𝔪, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule R (M ⧸ N)›
+    rw [IsLocalRing.eq_maximalIdeal h𝔪] at e
+    have : Finite (M ⧸ N.toAddSubgroup) := Finite.of_equiv _ e.symm.toEquiv
+    exact Finite.of_addSubgroup_quotient N.toAddSubgroup
+
+/-- Over a compact totally disconnected commutative local topological ring, a module has finite
+length if and only if it has a finite underlying set. -/
+theorem isFiniteLength_iff_finite {M : Type*} [AddCommGroup M] [Module R M] :
+    IsFiniteLength R M ↔ Finite M :=
+  ⟨IsFiniteLength.finite, fun _ ↦ IsFiniteLength.of_finite⟩
+
+end CompactLocal
+
+end TauCeti

@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Valued.ValuativeRel
 public import TauCeti.Topology.Algebra.ValuativeRel.Integer
+import Mathlib.RingTheory.IntegralDomain
+import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.Algebra.IsUniformGroup.Subring
+import TauCeti.Topology.Algebra.Module.Submodule
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
@@ -20,7 +24,8 @@ Let `K` be a field whose topology is induced by its valuative relation, and whos
 integers `𝒪[K]` is a discrete valuation ring; a nonarchimedean local field is the motivating
 example. This file proves that the subspace topology of `𝒪[K]` is its `𝓂[K]`-adic topology, and
 reads the consequence back in `K`: the powers `𝓂[K] ^ n` form a neighbourhood basis of `0` in
-`K` consisting of open additive subgroups, which are moreover compact when `𝒪[K]` is.
+`K` consisting of open additive subgroups, which are moreover compact when `𝒪[K]` is, and a
+discrete `𝒪[K]`-module has continuous `𝒪[K]`-action iff it is torsion.
 
 So near `0` the topology of `K` is described by the ideals of `𝒪[K]` alone, with no reference to
 the value group. For a local field this is the additive counterpart of the statement that the
@@ -38,6 +43,8 @@ unit filtration `U(K,n)` is a neighbourhood basis of `1` in `Kˣ`
   a neighbourhood basis of `0` in `K`.
 * `TauCeti.isOpen_image_maximalIdeal_pow` and `TauCeti.isCompact_image_maximalIdeal_pow`: each of
   these images is open in `K`, and compact when `𝒪[K]` is.
+* `TauCeti.continuousSMul_iff_isTorsion`: a discrete `𝒪[K]`-module has continuous `𝒪[K]`-action
+  iff it is torsion.
 
 For a nonarchimedean local field the remaining point-set facts are Mathlib's: `𝒪[K]` is open
 (`Valuation.isOpen_integer`) and compact (`CompactSpace 𝒪[K]`), it is `𝓂[K]`-adically complete
@@ -134,6 +141,33 @@ maximal ideal is compact in `K`. -/
 theorem isCompact_image_maximalIdeal_pow [CompactSpace 𝒪[K]] (n : ℕ) :
     IsCompact (((↑) : 𝒪[K] → K) '' ((𝓂[K] ^ n : Ideal 𝒪[K]) : Set 𝒪[K])) :=
   ((isAdic_maximalIdeal K).isClosed_pow n).isCompact.image continuous_subtypeVal
+
+/-- **Continuity equals torsion on discrete `𝒪[K]`-modules**: a discrete `𝒪[K]`-module has
+continuous `𝒪[K]`-action iff every element is killed by a nonzero element of `𝒪[K]`. -/
+theorem continuousSMul_iff_isTorsion {K} [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsValuativeTopology K] [IsDiscreteValuationRing 𝒪[K]]
+    {M : Type*} [AddCommGroup M] [Module 𝒪[K] M] [TopologicalSpace M] [DiscreteTopology M] :
+    ContinuousSMul 𝒪[K] M ↔ Module.IsTorsion 𝒪[K] M := by
+  refine ⟨fun _ m ↦ ?_, fun htor ↦ ⟨continuous_prod_of_discrete_right.mpr fun m ↦ ?_⟩⟩
+  · obtain ⟨n, hn⟩ := (isAdic_maximalIdeal K).exists_pow_succ_le (isOpen_torsionOf m)
+    obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+    have hpow_ne : π ^ (n + 1) ≠ 0 := pow_ne_zero (n + 1) hπ.ne_zero
+    have hpow_mem : π ^ (n + 1) ∈ Ideal.torsionOf 𝒪[K] M m :=
+      hn (Ideal.pow_mem_pow (hπ.maximalIdeal_eq ▸ Ideal.subset_span rfl) (n + 1))
+    exact ⟨⟨π ^ (n + 1), mem_nonZeroDivisors_of_ne_zero hpow_ne⟩,
+      (Ideal.mem_torsionOf_iff m _).mp hpow_mem⟩
+  · obtain ⟨⟨a, ha⟩, ham⟩ := @htor m
+    obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+    obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+      (mt Ideal.span_singleton_eq_bot.mp (nonZeroDivisors.ne_zero ha)) hπ
+    have hIeq : (Ideal.span {a} : Ideal 𝒪[K]) = 𝓂[K] ^ n := by
+      rw [hn, ← Ideal.span_singleton_pow, ← hπ.maximalIdeal_eq]
+    have hker : IsOpen ((LinearMap.toSpanSingleton 𝒪[K] M m).toAddMonoidHom.ker : Set 𝒪[K]) :=
+      Ideal.isOpen_of_isOpen_subideal
+        ((Ideal.span_singleton_le_iff_mem _).mpr (LinearMap.mem_ker.mpr ham))
+        (hIeq ▸ (isAdic_maximalIdeal K).isOpen_pow n)
+    exact ((LinearMap.toSpanSingleton 𝒪[K] M m).toAddMonoidHom.isLocallyConstant_of_isOpen_ker
+      hker).continuous
 
 /-- In a complete discretely valued field `K`, the valuation ring `𝒪[K]` is `𝓂[K]`-adically
 complete. Together with `IsAdicComplete.henselianLocalRing`, this makes `𝒪[K]` a Henselian local
