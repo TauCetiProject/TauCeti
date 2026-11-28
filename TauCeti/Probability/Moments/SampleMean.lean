@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Independence.Integration
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.FiniteMean
+public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -30,6 +31,14 @@ sum of the expected squared norms. Only pairwise independence is used, through t
 cross term vanish. The sample mean is `TauCeti.finiteMean`, and the scalar statement is the
 case `E = ℝ`.
 
+For real variables, the sum of squared deviations from the sample mean then has expectation
+`(1 - r⁻¹) ∑ₖ ∫ (Xₖ - m)² dP`, by the König–Huygens identity `TauCeti.sum_sub_finiteMean_sq`.
+For a sample `z` of size `r` drawn independently from one law `ν`, that is under
+`Measure.pi fun _ ↦ ν`, the sample mean of `f (z i)` has expectation `∫ f dν` and variance
+`r⁻¹ Var_ν(f)`. For `r ≥ 1` the sum of the squared deviations from the sample mean has
+expectation `(r - 1) Var_ν(f)`, so for `r ≥ 2` the sample variance with divisor `r - 1` is
+unbiased for `Var_ν(f)`.
+
 ## Main statements
 
 * `TauCeti.integral_norm_sum_sq_of_pairwise_indepFun`: Bienaymé's identity for random vectors.
@@ -38,6 +47,13 @@ case `E = ℝ`.
 * `TauCeti.integral_norm_finiteMean_sub_sq_of_forall_eq` and
   `TauCeti.integral_norm_finiteMean_sub_sq_le_of_forall_le`: the mean-square error is `γ / r`
   when every per-sample error equals `γ`, and at most `γ / r` when every one is at most `γ`.
+* `TauCeti.integral_sum_sub_finiteMean_sq`: the expected sum of squared deviations from the
+  sample mean.
+* `MeasureTheory.MemLp.finiteMean_pi`, `TauCeti.integral_finiteMean_pi` and
+  `TauCeti.variance_finiteMean_pi`: integrability, mean and variance of the sample mean of an
+  independent sample from one law.
+* `TauCeti.integral_sum_sub_finiteMean_sq_pi`: the expected sum of squared deviations of a
+  nonempty sample, `(r - 1) Var_ν(f)`; for `r ≥ 2` the sample variance is unbiased.
 
 ## References
 
@@ -48,7 +64,7 @@ case `E = ℝ`.
 public section
 
 open MeasureTheory ProbabilityTheory Finset
-open scoped RealInnerProductSpace
+open scoped ENNReal RealInnerProductSpace
 
 namespace TauCeti
 
@@ -132,6 +148,33 @@ theorem integral_finiteMean_sub_sq [IsProbabilityMeasure μ] {Z : ι → Ω → 
       ((Fintype.card ι : ℝ) ^ 2)⁻¹ * ∑ i, ∫ ω, (Z i ω - c) ^ 2 ∂μ := by
   simpa only [Real.norm_eq_abs, sq_abs] using integral_norm_finiteMean_sub_sq hZ hmean hindep
 
+omit [Nonempty ι] in
+/-- **The expected sum of squared deviations from the sample mean.** If the real random variables
+`Z i` are square-integrable, pairwise independent and have a common mean `c`, then the sum of the
+squared deviations of the `Z i` from their sample mean has expectation
+`(1 - r⁻¹) ∑ᵢ ∫ (Z i - c)²`, where `r` is the number of samples. For no samples both sides
+are `0`. -/
+theorem integral_sum_sub_finiteMean_sq [IsProbabilityMeasure μ] {Z : ι → Ω → ℝ} {c : ℝ}
+    (hZ : ∀ i, MemLp (Z i) 2 μ) (hmean : ∀ i, μ[Z i] = c)
+    (hindep : Pairwise fun i j ↦ Z i ⟂ᵢ[μ] Z j) :
+    ∫ ω, ∑ i, (Z i ω - finiteMean ℝ (Z · ω)) ^ 2 ∂μ =
+      (1 - (Fintype.card ι : ℝ)⁻¹) * ∑ i, ∫ ω, (Z i ω - c) ^ 2 ∂μ := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp
+  have hr : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have hint (i : ι) : Integrable (fun ω ↦ (Z i ω - c) ^ 2) μ :=
+    ((hZ i).sub (memLp_const c)).integrable_sq
+  have hbar : MemLp (fun ω ↦ finiteMean ℝ (Z · ω)) 2 μ := by
+    simp only [finiteMean_eq_inv_smul_sum]
+    exact (memLp_finsetSum univ fun i _ ↦ hZ i).const_smul (Fintype.card ι : ℝ)⁻¹
+  have hbar' : Integrable (fun ω ↦ (finiteMean ℝ (Z · ω) - c) ^ 2) μ :=
+    (hbar.sub (memLp_const c)).integrable_sq
+  simp only [sum_sub_finiteMean_sq _ c]
+  rw [integral_sub (integrable_finsetSum _ fun i _ ↦ hint i) (hbar'.const_mul _),
+    integral_finsetSum _ fun i _ ↦ hint i, integral_const_mul,
+    integral_finiteMean_sub_sq hZ hmean hindep]
+  field_simp
+
 /-- If, in addition to the hypotheses of `TauCeti.integral_norm_finiteMean_sub_sq`, every sample
 has the same mean-square error `γ`, then the sample mean has mean-square error `γ / r`, where `r`
 is the number of samples. -/
@@ -160,5 +203,75 @@ theorem integral_norm_finiteMean_sub_sq_le_of_forall_le [IsProbabilityMeasure μ
     _ = γ / Fintype.card ι := by
         rw [sum_const, card_univ, nsmul_eq_mul]
         field_simp
+
+section Pi
+
+/-! ### Samples drawn independently from one law -/
+
+variable {M : Type*} [MeasurableSpace M] {ν : Measure M} [IsProbabilityMeasure ν]
+
+omit [Nonempty ι] [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E]
+  [BorelSpace E] in
+/-- The sample mean of a function in `Lᵖ(ν)` over a sample drawn independently from `ν` is in
+`Lᵖ` of the product law. -/
+theorem _root_.MeasureTheory.MemLp.finiteMean_pi [NormedSpace ℝ E] {p : ℝ≥0∞} {f : M → E}
+    (hf : MemLp f p ν) :
+    MemLp (fun z : ι → M ↦ finiteMean ℝ (fun i ↦ f (z i))) p (Measure.pi fun _ : ι ↦ ν) := by
+  simp only [finiteMean_eq_inv_smul_sum]
+  exact (memLp_finsetSum univ fun i _ ↦
+    hf.comp_measurePreserving (measurePreserving_eval _ i)).const_smul (Fintype.card ι : ℝ)⁻¹
+
+omit [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E] [BorelSpace E] in
+/-- The sample mean of an integrable `f` over a sample drawn independently from `ν` has
+expectation `∫ f dν`. -/
+theorem integral_finiteMean_pi [NormedSpace ℝ E] {f : M → E} (hf : Integrable f ν) :
+    ∫ z, finiteMean ℝ (fun i ↦ f (z i)) ∂(Measure.pi fun _ : ι ↦ ν) = ∫ x, f x ∂ν := by
+  have hr : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have heval (i : ι) : ∫ z, f (z i) ∂(Measure.pi fun _ : ι ↦ ν) = ∫ x, f x ∂ν :=
+    integral_comp_eval hf.aestronglyMeasurable
+  simp only [finiteMean_eq_inv_smul_sum]
+  rw [integral_smul, integral_finsetSum _ fun i _ ↦ integrable_comp_eval hf]
+  simp only [heval, sum_const, card_univ, smul_smul, ← Nat.cast_smul_eq_nsmul ℝ,
+    inv_mul_cancel₀ hr, one_smul]
+
+omit [Nonempty ι] in
+/-- The sample mean of a square-integrable real `f` over a sample of size `r` drawn independently
+from `ν` has variance `r⁻¹ Var_ν(f)`. For `r = 0` both sides are `0`. -/
+theorem variance_finiteMean_pi {f : M → ℝ} (hf : MemLp f 2 ν) :
+    variance (fun z ↦ finiteMean ℝ (fun i ↦ f (z i))) (Measure.pi fun _ : ι ↦ ν) =
+      (Fintype.card ι : ℝ)⁻¹ * variance f ν := by
+  -- The sample mean is `r⁻¹` times a sum of `r` independent copies of `f`: Mathlib's
+  -- `variance_sum_pi` gives the variance `r Var_ν(f)` of the sum.
+  have hsum : Var[fun z : ι → M ↦ ∑ i, f (z i); Measure.pi fun _ ↦ ν] = ∑ _ : ι, Var[f; ν] := by
+    simpa only [Finset.sum_fn] using variance_sum_pi (μ := fun _ : ι ↦ ν) fun _ ↦ hf
+  simp only [finiteMean_eq_inv_smul_sum, smul_eq_mul, variance_const_mul, hsum, sum_const,
+    card_univ, nsmul_eq_mul]
+  rcases eq_or_ne (Fintype.card ι : ℝ) 0 with hr | hr
+  · simp [hr]
+  · field_simp
+
+/-- **Unbiasedness of the sample variance.** For a square-integrable real `f` and a sample of
+size `r ≥ 1` drawn independently from `ν`, the sum of the squared deviations of the `f (z i)` from
+their sample mean has expectation `(r - 1) Var_ν(f)`. Hence for `r ≥ 2` the sample variance with
+divisor `r - 1` is unbiased for `Var_ν(f)`; for `r = 1` both sides are `0`. -/
+theorem integral_sum_sub_finiteMean_sq_pi {f : M → ℝ} (hf : MemLp f 2 ν) :
+    ∫ z, ∑ i, (f (z i) - finiteMean ℝ (fun i ↦ f (z i))) ^ 2 ∂(Measure.pi fun _ : ι ↦ ν) =
+      ((Fintype.card ι : ℝ) - 1) * variance f ν := by
+  have hr : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have hfm := hf.aestronglyMeasurable
+  have hZ (i : ι) : MemLp (fun z : ι → M ↦ f (z i)) 2 (Measure.pi fun _ : ι ↦ ν) :=
+    hf.comp_measurePreserving (measurePreserving_eval _ i)
+  have hindep : Pairwise fun i j ↦ (fun z : ι → M ↦ f (z i)) ⟂ᵢ[Measure.pi fun _ : ι ↦ ν]
+      fun z ↦ f (z j) := fun _ _ hij ↦ (iIndepFun_pi fun _ ↦ hfm.aemeasurable).indepFun hij
+  have hsq (i : ι) :
+      ∫ z, (f (z i) - ∫ x, f x ∂ν) ^ 2 ∂(Measure.pi fun _ : ι ↦ ν) = variance f ν := by
+    rw [variance_eq_integral hfm.aemeasurable]
+    exact integral_comp_eval (μ := fun _ : ι ↦ ν) (f := fun x ↦ (f x - ∫ x, f x ∂ν) ^ 2)
+      (by fun_prop)
+  refine (integral_sum_sub_finiteMean_sq hZ (fun _ ↦ integral_comp_eval hfm) hindep).trans ?_
+  simp only [hsq, sum_const, card_univ, nsmul_eq_mul]
+  field_simp
+
+end Pi
 
 end TauCeti
