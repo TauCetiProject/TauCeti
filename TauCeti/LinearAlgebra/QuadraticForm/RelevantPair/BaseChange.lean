@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Stabilizer
 
 /-!
 # Scalar extension for orthogonal relevant pairs
 
 Extension of scalars to a field extension `L / K` preserves orthogonal complements of
-nondegenerate finite-dimensional subspaces, orthogonal relevant pairs, framed orthogonal relevant
-pairs, and the stabilizer embedding `SO(Q_W) →* SO(Q_V)`.
+subspaces, orthogonal relevant pairs, framed orthogonal relevant pairs, and the stabilizer
+embedding `SO(Q_W) →* SO(Q_V)`.
 
 ## Main definitions
 
@@ -31,6 +30,8 @@ pairs, and the stabilizer embedding `SO(Q_W) →* SO(Q_V)`.
   `TauCeti.QuadraticMap.specialOrthogonalGroupBaseChange`.
 * `TauCeti.FramedOrthogonalRelevantPair.baseChange_complementEquiv_symm_tmul`: the base-changed
   inverse framing sends base-changed vectors to pure tensors.
+* `TauCeti.FramedOrthogonalRelevantPair.baseChange_lineVector`: the distinguished line vector of
+  the scalar-extended frame is `1 ⊗ₜ F.lineVector`.
 -/
 
 public section
@@ -46,7 +47,7 @@ namespace TauCeti
 section BaseChange
 
 variable {K : Type*} [Field K] [Invertible (2 : K)]
-  {W V : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+  {W V : Type*} [AddCommGroup W] [Module K W]
   [AddCommGroup V] [Module K V]
   {Q_W : QuadraticForm K W} {Q_V : QuadraticForm K V} {j : ℕ}
 
@@ -55,39 +56,34 @@ namespace OrthogonalRelevantPair
 /-- Scalar extension of `W^⊥` equals the orthogonal complement of `range (embed.baseChange L)`
 in `L ⊗[K] V`. -/
 theorem orthogonal_baseChange_eq (P : OrthogonalRelevantPair Q_W Q_V j)
-    (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] :
+    (L : Type*) [Field L] [Algebra K L] :
     P.orthogonal.baseChange L =
       LinearMap.BilinForm.orthogonal (Q_V.baseChange L).polarBilin
         (LinearMap.range (P.embed.baseChange L).toLinearMap) :=
-  P.embed.orthogonal_range_baseChange P.nondegenerate_domain L
+  P.embed.orthogonal_range_baseChange L
 
 /-- The canonical isometric equivalence identifying `(Q_V|_{W^⊥}).baseChange L` with
 `(Q_V.baseChange L)|_{(range (embed.baseChange L))^⊥}`. -/
 noncomputable def orthogonalBaseChangeIsometryEquiv (P : OrthogonalRelevantPair Q_W Q_V j)
-    (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] :
+    (L : Type*) [Field L] [Algebra K L] :
     (QuadraticForm.baseChange L (Q_V.restrict P.orthogonal)).IsometryEquiv
       ((Q_V.baseChange L).restrict
         (LinearMap.BilinForm.orthogonal (Q_V.baseChange L).polarBilin
-          (LinearMap.range (P.embed.baseChange L).toLinearMap))) where
-  toLinearEquiv :=
-    (Submodule.toBaseChange.toLinearEquiv L P.orthogonal).trans
-      (LinearEquiv.ofEq _ _ (P.orthogonal_baseChange_eq L))
-  map_app' x := by
-    set φ := (Submodule.toBaseChange.toLinearEquiv L P.orthogonal).trans
-      (LinearEquiv.ofEq _ _ (P.orthogonal_baseChange_eq L))
-    have h : ((Q_V.baseChange L).restrict _).comp φ.toLinearMap =
-        QuadraticForm.baseChange L (Q_V.restrict P.orthogonal) := by
-      apply baseChange_ext
-      intro u
-      simp [φ]
-    exact DFunLike.congr_fun h x
+          (LinearMap.range (P.embed.baseChange L).toLinearMap))) :=
+  (Q_V.baseChangeRestrict L P.orthogonal).trans
+    ((IsometryEquiv.refl (Q_V.baseChange L)).ofSubmodules _ _ (by
+      rw [show (IsometryEquiv.refl (Q_V.baseChange L)).toLinearMap = LinearMap.id from rfl,
+        Submodule.map_id]
+      exact P.orthogonal_baseChange_eq L))
 
+/-- On pure tensors, `orthogonalBaseChangeIsometryEquiv` sends `a ⊗ₜ u` to the vector with
+ambient coordinate `a ⊗ₜ (u : V)`. -/
 @[simp]
 theorem coe_orthogonalBaseChangeIsometryEquiv_tmul (P : OrthogonalRelevantPair Q_W Q_V j)
-    (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)]
+    (L : Type*) [Field L] [Algebra K L]
     (a : L) (u : P.orthogonal) :
-    ((P.orthogonalBaseChangeIsometryEquiv L (a ⊗ₜ u) : _) : L ⊗[K] V) = a ⊗ₜ (u : V) :=
-  (rfl)
+    ((P.orthogonalBaseChangeIsometryEquiv L (a ⊗ₜ u) : _) : L ⊗[K] V) = a ⊗ₜ (u : V) := by
+  simp [orthogonalBaseChangeIsometryEquiv]
 
 /-- Extend a complement framing `W^⊥ ≃qᵢ H^j ⊥ ⟨c⟩` along a field extension `L / K`. -/
 noncomputable def baseChangeComplementEquiv (P : OrthogonalRelevantPair Q_W Q_V j)
@@ -99,13 +95,13 @@ noncomputable def baseChangeComplementEquiv (P : OrthogonalRelevantPair Q_W Q_V 
           (LinearMap.range (P.embed.baseChange L).toLinearMap))).IsometryEquiv
       ((hyperbolicSum L j).prod
         (((Units.map (algebraMap K L : K →* L) c : Lˣ) : L) • QuadraticMap.sq)) :=
-  let eLine :
-      (QuadraticForm.baseChange L ((c : K) • QuadraticMap.sq)).IsometryEquiv
-        (((Units.map (algebraMap K L : K →* L) c : Lˣ) : L) • QuadraticMap.sq) :=
-    { toLinearEquiv := (baseChangeLine (c : K) L).toLinearEquiv
-      map_app' := (baseChangeLine (c : K) L).map_app' }
   (P.orthogonalBaseChangeIsometryEquiv L).symm.trans
-    ((e.baseChangeProd L).trans ((baseChangeHyperbolicSum (R := K) j L).prod eLine))
+    ((e.baseChangeProd L).trans
+      ((baseChangeHyperbolicSum (R := K) j L).prod
+        ((baseChangeLine (c : K) L).trans
+          (IsometryEquiv.ofEq
+            (congrArg (· • (QuadraticMap.sq : QuadraticForm L L))
+              (Units.coe_map (algebraMap K L : K →* L) c).symm)))))
 
 /-- The inverse of the base-changed complement framing maps base-changed coordinate tuples to
 pure tensors. -/
@@ -135,7 +131,8 @@ theorem baseChangeComplementEquiv_symm_tmul (P : OrthogonalRelevantPair Q_W Q_V 
       IsometryEquiv.baseChangeProd_tmul, e.apply_symm_apply y, IsometryEquiv.prod_apply]
     refine Prod.ext (funext fun i ↦ funext fun k ↦ ?_) ?_
     · exact baseChangeHyperbolicSum_tmul (R := K) j L a y.1 i k
-    · exact baseChangeLine_tmul (c : K) L a y.2
+    · rw [IsometryEquiv.trans_apply, IsometryEquiv.ofEq_apply]
+      exact baseChangeLine_tmul (c : K) L a y.2
   exact congrArg Subtype.val
     ((P.baseChangeComplementEquiv L c e).symm_apply_eq.mpr hf.symm)
 
@@ -149,19 +146,21 @@ noncomputable def baseChange (P : OrthogonalRelevantPair Q_W Q_V j)
     obtain ⟨c, ⟨e⟩⟩ := P.exists_complement
     exact ⟨Units.map (algebraMap K L : K →* L) c, ⟨P.baseChangeComplementEquiv L c e⟩⟩
 
+/-- Scalar extension of `P` extends its underlying isometric embedding `P.embed`. -/
 @[simp]
 theorem baseChange_embed (P : OrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] :
     (P.baseChange L).embed = P.embed.baseChange L :=
   (rfl)
 
+/-- On pure tensors, `(P.baseChange L).embed` applies `P.embed` to the vector factor. -/
 theorem baseChange_embed_tmul (P : OrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] (a : L) (w : W) :
     (P.baseChange L).embed (a ⊗ₜ w) = a ⊗ₜ P.embed w :=
   QuadraticMap.Isometry.baseChange_tmul P.embed a w
 
 /-- Scalar extension commutes with the stabilizer embedding `SO(Q_W) →* SO(Q_V)`. -/
-theorem stabilizerHom_baseChange [FiniteDimensional K V]
+theorem stabilizerHom_baseChange [FiniteDimensional K W] [FiniteDimensional K V]
     (P : OrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)]
     (g : specialOrthogonalGroup Q_W) :
@@ -200,12 +199,14 @@ noncomputable def baseChange (F : FramedOrthogonalRelevantPair Q_W Q_V j)
   complementEquiv :=
     F.toOrthogonalRelevantPair.baseChangeComplementEquiv L F.lineCoeff F.complementEquiv
 
+/-- Scalar extension of a framed pair extends its underlying isometric embedding `F.embed`. -/
 @[simp]
 theorem baseChange_embed (F : FramedOrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] :
     (F.baseChange L).embed = F.embed.baseChange L :=
   (rfl)
 
+/-- Forgetting the framing commutes with scalar extension. -/
 @[simp]
 theorem baseChange_toOrthogonalRelevantPair (F : FramedOrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] :
@@ -214,6 +215,7 @@ theorem baseChange_toOrthogonalRelevantPair (F : FramedOrthogonalRelevantPair Q_
   ext x
   simp
 
+/-- Scalar extension maps the distinguished line coefficient by `algebraMap K L`. -/
 @[simp]
 theorem baseChange_lineCoeff (F : FramedOrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] :
@@ -232,6 +234,8 @@ theorem baseChange_complementEquiv_symm_tmul (F : FramedOrthogonalRelevantPair Q
       a ⊗ₜ[K] (F.complementEquiv.symm y : V) :=
   F.toOrthogonalRelevantPair.baseChangeComplementEquiv_symm_tmul L F.lineCoeff F.complementEquiv a y
 
+/-- The distinguished line vector of the scalar-extended frame is the pure tensor
+`1 ⊗ₜ F.lineVector`. -/
 @[simp]
 theorem baseChange_lineVector (F : FramedOrthogonalRelevantPair Q_W Q_V j)
     (L : Type*) [Field L] [Algebra K L] [Invertible (2 : L)] :

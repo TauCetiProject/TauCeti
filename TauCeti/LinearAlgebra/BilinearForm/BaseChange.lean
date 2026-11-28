@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
@@ -56,6 +57,8 @@ compared with its real extension.
   algebra maps of the scalars.
 * `LinearMap.BilinForm.ker_baseChange`: the left kernel of a bilinear form commutes with a free
   scalar extension.
+* `LinearMap.BilinForm.orthogonal_baseChange`: the orthogonal complement of any submodule commutes
+  with a free scalar extension.
 * `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
 * `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
   nondegeneracy, without a finite-dimensionality assumption.
@@ -157,6 +160,44 @@ theorem ker_baseChange [Module.Free R A] (B : LinearMap.BilinForm R M) :
   · rw [Submodule.mem_comap, Submodule.restrictScalars_mem, LinearMap.mem_ker]
     ext y
     simp [LinearMap.mem_ker.1 hm]
+
+variable (A) in
+/-- **The orthogonal complement of any submodule commutes with free scalar extension.** For any
+bilinear form `B` and submodule `S`, extending scalars to a free `R`-algebra `A` carries
+`B.orthogonal S` to `(B.baseChange A).orthogonal (S.baseChange A)`, with no finiteness or
+nondegeneracy assumptions. -/
+theorem orthogonal_baseChange [Module.Free R A] (B : LinearMap.BilinForm R M)
+    (S : Submodule R M) :
+    (LinearMap.BilinForm.orthogonal B S).baseChange A =
+      LinearMap.BilinForm.orthogonal (B.baseChange A) (S.baseChange A) := by
+  classical
+  refine le_antisymm (Submodule.baseChange_le_iff_le_comap.2 fun m hm => ?_) (fun x hx => ?_)
+  · rw [Submodule.mem_comap, Submodule.restrictScalars_mem, TensorProduct.mk_apply,
+      LinearMap.BilinForm.mem_orthogonal_iff]
+    intro y hy
+    have hker : S.baseChange A ≤ LinearMap.ker ((B.baseChange A).flip (1 ⊗ₜ[R] m)) := by
+      rw [Submodule.baseChange_le_iff_le_comap]
+      intro s hs
+      rw [Submodule.mem_comap, Submodule.restrictScalars_mem, TensorProduct.mk_apply,
+        LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, LinearMap.BilinForm.baseChange_tmul,
+        LinearMap.BilinForm.mem_orthogonal_iff.mp hm s hs, zero_smul]
+    exact hker hy
+  · let b := Module.Free.chooseBasis R A
+    let e := TensorProduct.equivFinsuppOfBasisLeft (N := M) b
+    have hcoord (z : A ⊗[R] M) (i) (w : M) :
+        B w (e z i) = b.repr (B.baseChange A (1 ⊗ₜ[R] w) z) i := by
+      induction z with
+      | tmul a m => simp [e, mul_comm]
+      | add z z' hz hz' => simp [hz, hz']
+    have hmem (i) : e x i ∈ LinearMap.BilinForm.orthogonal B S := by
+      rw [LinearMap.BilinForm.mem_orthogonal_iff]
+      intro s hs
+      have h0 := LinearMap.BilinForm.mem_orthogonal_iff.mp hx (1 ⊗ₜ[R] s)
+        (Submodule.tmul_mem_baseChange_of_mem 1 hs)
+      simp [hcoord x i s, h0]
+    rw [← e.symm_apply_apply x, TensorProduct.equivFinsuppOfBasisLeft_symm_apply]
+    exact Submodule.finsuppSum_mem _ _ _ _ fun i _ =>
+      Submodule.tmul_mem_baseChange_of_mem _ (hmem i)
 
 variable (A) in
 /-- A free scalar extension preserves left separation of a bilinear form, with no finiteness

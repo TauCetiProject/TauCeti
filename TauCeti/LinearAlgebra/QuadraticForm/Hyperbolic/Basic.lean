@@ -204,10 +204,7 @@ theorem hyperbolicSum_apply (j : ℕ) (x : Fin j → Fin 2 → R) :
 @[simp]
 theorem polar_hyperbolicSum (j : ℕ) (x y : Fin j → Fin 2 → R) :
     polar (hyperbolicSum R j) x y = 2 * ∑ i : Fin j, (x i 0 * y i 0 - x i 1 * y i 1) := by
-  simp only [QuadraticMap.polar, hyperbolicSum_apply, Pi.add_apply, Finset.mul_sum]
-  rw [← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  ring
+  simp only [hyperbolicSum, QuadraticMap.Ring.polar_pi, polar_hyperbolicPlane, Finset.mul_sum]
 
 /-- The zero-fold hyperbolic sum is the zero quadratic form. -/
 @[simp]
@@ -239,30 +236,30 @@ def hyperbolicSumEquivWeightedSumSquares (j : ℕ) :
     (hyperbolicSum R j).IsometryEquiv
       (weightedSumSquares R fun p : Fin j × Fin 2 ↦ if p.2 = 0 then (1 : R) else -1) where
   toLinearEquiv :=
-    { toFun x p := x p.1 p.2
-      invFun y i k := y (i, k)
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
+    (LinearEquiv.piCurry R fun _ _ ↦ R).symm.trans
+      (LinearEquiv.piCongrLeft' R (fun _ : Σ _ : Fin j, Fin 2 ↦ R)
+        (Equiv.sigmaEquivProd (Fin j) (Fin 2)))
   map_app' x := by
     rw [weightedSumSquares_apply, hyperbolicSum_apply, Fintype.sum_prod_type]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp [Fin.sum_univ_two, pow_two, sub_eq_add_neg]
+    simp [Fin.sum_univ_two, pow_two, sub_eq_add_neg, Sigma.uncurry]
 
 /-- Evaluation of `hyperbolicSumEquivWeightedSumSquares`. -/
 @[simp]
 theorem hyperbolicSumEquivWeightedSumSquares_apply (j : ℕ)
     (x : Fin j → Fin 2 → R) (p : Fin j × Fin 2) :
-    hyperbolicSumEquivWeightedSumSquares (R := R) j x p = x p.1 p.2 :=
-  (rfl)
+    hyperbolicSumEquivWeightedSumSquares (R := R) j x p = x p.1 p.2 := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simp [hyperbolicSumEquivWeightedSumSquares, Sigma.uncurry]
 
 /-- Evaluation of the inverse of `hyperbolicSumEquivWeightedSumSquares`. -/
 @[simp]
 theorem hyperbolicSumEquivWeightedSumSquares_symm_apply (j : ℕ)
     (y : Fin j × Fin 2 → R) (i : Fin j) (k : Fin 2) :
-    (hyperbolicSumEquivWeightedSumSquares (R := R) j).symm y i k = y (i, k) :=
-  (rfl)
+    (hyperbolicSumEquivWeightedSumSquares (R := R) j).symm y i k = y (i, k) := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simp [hyperbolicSumEquivWeightedSumSquares, QuadraticMap.IsometryEquiv.symm, Sigma.curry,
+    Equiv.sigmaEquivProd]
 
 end HyperbolicSum
 

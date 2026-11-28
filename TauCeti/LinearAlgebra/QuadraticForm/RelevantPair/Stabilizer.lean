@@ -5,18 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Map
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
-# Stabilizer embeddings and isometry transport for orthogonal relevant pairs
+# Stabilizer embeddings and intertwining for orthogonal relevant pairs
 
 Given an orthogonal relevant pair `P : OrthogonalRelevantPair Q_W Q_V j` with finite-dimensional
 domain `W`, the orthogonal decomposition `V ≃qᵢ W ⊥ W^⊥` induces an injective group
-homomorphism `SO(Q_W) →* SO(Q_V)` acting trivially on `W^⊥`. Transporting relevant pairs and
-framed relevant pairs along isometric equivalences intertwines these stabilizer embeddings.
+homomorphism `SO(Q_W) →* SO(Q_V)` acting trivially on `W^⊥`. Transporting relevant pairs along
+isometric equivalences (defined in `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Map`)
+intertwines these stabilizer embeddings.
 
 ## Main definitions
 
@@ -24,17 +25,12 @@ framed relevant pairs along isometric equivalences intertwines these stabilizer 
   acting as the identity on `W^⊥`.
 * `TauCeti.FramedOrthogonalRelevantPair.stabilizerHom`: the stabilizer embedding of a framed
   relevant pair.
-* `TauCeti.OrthogonalRelevantPair.map`, `TauCeti.FramedOrthogonalRelevantPair.map`: transport along
-  isometric equivalences.
 
 ## Main results
 
 * `TauCeti.OrthogonalRelevantPair.stabilizerHom_injective`,
   `TauCeti.OrthogonalRelevantPair.mem_range_stabilizerHom_iff`: `stabilizerHom` is injective, with
   image the subgroup of `SO(Q_V)` fixing `W^⊥` pointwise.
-* `TauCeti.OrthogonalRelevantPair.orthogonal_map`,
-  `TauCeti.OrthogonalRelevantPair.mapOrthogonalEquiv`: transporting a relevant pair carries `W^⊥`
-  to the transported orthogonal complement.
 * `TauCeti.OrthogonalRelevantPair.specialOrthogonalGroupCongr_stabilizerHom`: any intertwining pair
   of isometries intertwines the stabilizer embeddings.
 * `TauCeti.OrthogonalRelevantPair.stabilizerHom_map`: transporting a relevant pair intertwines its
@@ -71,12 +67,14 @@ noncomputable def stabilizerHom :
       (MonoidHom.inl (specialOrthogonalGroup Q_W)
         (specialOrthogonalGroup (Q_V.restrict P.orthogonal))))
 
+/-- On the embedded subspace `range P.embed`, `P.stabilizerHom g` acts via `g`. -/
 @[simp]
 theorem stabilizerHom_apply_embed (g : specialOrthogonalGroup Q_W) (w : W) :
     (P.stabilizerHom g : V ≃ₗ[K] V) (P.embed w) = P.embed ((g : W ≃ₗ[K] W) w) := by
   have := P.finiteDimensional_orthogonal
   simp [stabilizerHom, IsometryEquiv.coe_specialOrthogonalGroupCongr_apply]
 
+/-- On the orthogonal complement `W^⊥`, `P.stabilizerHom g` acts as the identity. -/
 @[simp]
 theorem stabilizerHom_apply_of_mem_orthogonal (g : specialOrthogonalGroup Q_W)
     {v : V} (hv : v ∈ P.orthogonal) :
@@ -136,8 +134,8 @@ theorem mem_range_stabilizerHom_iff {h : specialOrthogonalGroup Q_V} :
       intro u
       simp [h', e, hfix u u.property]
     obtain ⟨g₁, hmain⟩ :=
-      QuadraticMap.exists_specialOrthogonalGroupProd_one_of_fix Q_W (Q_V.restrict P.orthogonal)
-        h' hinvariant hfix'
+      QuadraticMap.exists_specialOrthogonalGroupProd_one_of_preserves_inl_of_fixes_inr
+        Q_W (Q_V.restrict P.orthogonal) h' hinvariant hfix'
     refine ⟨g₁, ?_⟩
     have hcongr := congrArg e.specialOrthogonalGroupCongr hmain
     simpa [stabilizerHom, h'] using hcongr
@@ -159,11 +157,14 @@ noncomputable abbrev stabilizerHom :
     specialOrthogonalGroup Q_W →* specialOrthogonalGroup Q_V :=
   F.toOrthogonalRelevantPair.stabilizerHom
 
+/-- The stabilizer embedding fixes the distinguished line vector `F.lineVector`. -/
 @[simp]
 theorem stabilizerHom_apply_lineVector (g : specialOrthogonalGroup Q_W) :
     (F.stabilizerHom g : V ≃ₗ[K] V) F.lineVector = F.lineVector :=
   F.toOrthogonalRelevantPair.stabilizerHom_apply_of_mem_orthogonal g F.lineVector_mem_orthogonal
 
+/-- The stabilizer embedding fixes every vector in the framed hyperbolic summand. -/
+@[simp]
 theorem stabilizerHom_apply_hyperbolicMap (g : specialOrthogonalGroup Q_W)
     (x : Fin j → Fin 2 → K) :
     (F.stabilizerHom g : V ≃ₗ[K] V) (F.hyperbolicMap x) = F.hyperbolicMap x :=
@@ -172,83 +173,17 @@ theorem stabilizerHom_apply_hyperbolicMap (g : specialOrthogonalGroup Q_W)
 
 end FramedOrthogonalRelevantPair
 
-/-! ### Transport along isometries and intertwining of stabilizers -/
+/-! ### Intertwining of stabilizer embeddings -/
 
 namespace OrthogonalRelevantPair
 
-section Map
+section Intertwining
 
 variable {K : Type*} [Field K] [Invertible (2 : K)]
   {W V W' V' : Type*} [AddCommGroup W] [Module K W] [AddCommGroup V] [Module K V]
   [AddCommGroup W'] [Module K W'] [AddCommGroup V'] [Module K V']
   {Q_W : QuadraticForm K W} {Q_V : QuadraticForm K V}
   {Q_W' : QuadraticForm K W'} {Q_V' : QuadraticForm K V'} {j : ℕ}
-
-/-- Transport an orthogonal relevant pair along isometric equivalences of the domain and
-codomain. -/
-noncomputable def map (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    OrthogonalRelevantPair Q_W' Q_V' j where
-  embed := e_V.toIsometry.comp (P.embed.comp e_W.symm.toIsometry)
-  nondegenerate_domain := e_W.nondegenerate_iff.mp P.nondegenerate_domain
-  exists_complement := by
-    obtain ⟨c, ⟨e⟩⟩ := P.exists_complement
-    exact ⟨c, ⟨(e_V.orthogonalRangeCompEquiv P.embed e_W).symm.trans e⟩⟩
-
-@[simp]
-theorem map_embed (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') (w' : W') :
-    (P.map e_W e_V).embed w' = e_V (P.embed (e_W.symm w')) :=
-  (rfl)
-
-@[simp]
-theorem map_refl (P : OrthogonalRelevantPair Q_W Q_V j) :
-    P.map (IsometryEquiv.refl Q_W) (IsometryEquiv.refl Q_V) = P := by
-  ext w
-  rfl
-
-theorem map_trans {W'' V'' : Type*} [AddCommGroup W''] [Module K W'']
-    [AddCommGroup V''] [Module K V''] {Q_W'' : QuadraticForm K W''}
-    {Q_V'' : QuadraticForm K V''} (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V')
-    (e_W' : Q_W'.IsometryEquiv Q_W'') (e_V' : Q_V'.IsometryEquiv Q_V'') :
-    (P.map e_W e_V).map e_W' e_V' = P.map (e_W.trans e_W') (e_V.trans e_V') := by
-  ext w''
-  have hsymm : (e_W.trans e_W').symm w'' = e_W.symm (e_W'.symm w'') :=
-    (e_W.trans e_W').symm_apply_eq.mpr (by simp)
-  simp [hsymm, IsometryEquiv.trans_apply]
-
-/-- Transporting a relevant pair maps its orthogonal complement by the codomain equivalence. -/
-theorem orthogonal_map (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    (P.map e_W e_V).orthogonal = P.orthogonal.map e_V.toLinearMap :=
-  (P.embed.map_orthogonal_comp_isometryEquiv e_W e_V).symm
-
-/-- The codomain equivalence restricts to an isometric equivalence between the orthogonal
-complements of `P` and `P.map e_W e_V`. -/
-noncomputable def mapOrthogonalEquiv (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    (Q_V.restrict P.orthogonal).IsometryEquiv
-      (Q_V'.restrict (P.map e_W e_V).orthogonal) :=
-  e_V.ofSubmodules P.orthogonal (P.map e_W e_V).orthogonal (P.orthogonal_map e_W e_V).symm
-
-@[simp]
-theorem coe_mapOrthogonalEquiv_apply (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') (u : P.orthogonal) :
-    ((P.mapOrthogonalEquiv e_W e_V u : (P.map e_W e_V).orthogonal) : V') = e_V (u : V) :=
-  e_V.coe_ofSubmodules_apply (P.orthogonal_map e_W e_V).symm u
-
-@[simp]
-theorem coe_mapOrthogonalEquiv_symm_apply (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V')
-    (u : (P.map e_W e_V).orthogonal) :
-    (((P.mapOrthogonalEquiv e_W e_V).symm u : P.orthogonal) : V) = e_V.symm (u : V') :=
-  e_V.coe_ofSubmodules_symm_apply (P.orthogonal_map e_W e_V).symm u
-
-theorem mem_map_orthogonal_iff (P : OrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') {v' : V'} :
-    v' ∈ (P.map e_W e_V).orthogonal ↔ e_V.symm v' ∈ P.orthogonal := by
-  simp [P.orthogonal_map e_W e_V]
 
 /-- **Intertwining of stabilizer embeddings.** Any pair of isometric equivalences `(e_W, e_V)`
 intertwining the embeddings of two relevant pairs `P` and `P'` intertwines their stabilizer
@@ -294,88 +229,8 @@ theorem stabilizerHom_map [FiniteDimensional K W] [FiniteDimensional K W']
   ext w
   simp
 
-end Map
+end Intertwining
 
 end OrthogonalRelevantPair
-
-namespace FramedOrthogonalRelevantPair
-
-section Map
-
-variable {K : Type*} [Field K] [Invertible (2 : K)]
-  {W V W' V' : Type*} [AddCommGroup W] [Module K W] [AddCommGroup V] [Module K V]
-  [AddCommGroup W'] [Module K W'] [AddCommGroup V'] [Module K V']
-  {Q_W : QuadraticForm K W} {Q_V : QuadraticForm K V}
-  {Q_W' : QuadraticForm K W'} {Q_V' : QuadraticForm K V'} {j : ℕ}
-
-/-- Transport a framed orthogonal relevant pair along isometric equivalences `(e_W, e_V)`. -/
-noncomputable def map (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    FramedOrthogonalRelevantPair Q_W' Q_V' j where
-  embed := e_V.toIsometry.comp (F.embed.comp e_W.symm.toIsometry)
-  nondegenerate_domain := e_W.nondegenerate_iff.mp F.nondegenerate_domain
-  lineCoeff := F.lineCoeff
-  complementEquiv := (e_V.orthogonalRangeCompEquiv F.embed e_W).symm.trans F.complementEquiv
-
-@[simp]
-theorem map_embed (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') (w' : W') :
-    (F.map e_W e_V).embed w' = e_V (F.embed (e_W.symm w')) :=
-  (rfl)
-
-@[simp]
-theorem map_toOrthogonalRelevantPair (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    (F.map e_W e_V).toOrthogonalRelevantPair =
-      F.toOrthogonalRelevantPair.map e_W e_V := by
-  ext w'
-  simp
-
-@[simp]
-theorem map_lineCoeff (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    (F.map e_W e_V).lineCoeff = F.lineCoeff :=
-  (rfl)
-
-@[simp]
-theorem map_complementEquiv_symm (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V')
-    (y : (Fin j → Fin 2 → K) × K) :
-    ((F.map e_W e_V).complementEquiv.symm y : V') = e_V (F.complementEquiv.symm y : V) := by
-  let eSub := e_V.orthogonalRangeCompEquiv F.embed e_W
-  have hu : (eSub.symm.trans F.complementEquiv) (eSub (F.complementEquiv.symm y)) = y := by
-    rw [IsometryEquiv.trans_apply, eSub.symm_apply_apply, F.complementEquiv.apply_symm_apply]
-  have hsymm := congrArg Subtype.val ((F.map e_W e_V).complementEquiv.symm_apply_eq.mpr hu.symm)
-  exact hsymm.trans (e_V.coe_orthogonalRangeCompEquiv_apply F.embed e_W _)
-
-@[simp]
-theorem map_lineVector (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    (F.map e_W e_V).lineVector = e_V F.lineVector := by
-  rw [(F.map e_W e_V).lineVector_eq, F.lineVector_eq]
-  exact F.map_complementEquiv_symm e_W e_V (0, 1)
-
-@[simp]
-theorem map_refl (F : FramedOrthogonalRelevantPair Q_W Q_V j) :
-    F.map (IsometryEquiv.refl Q_W) (IsometryEquiv.refl Q_V) = F := by
-  ext y
-  · rfl
-  · simp
-
-theorem map_trans {W'' V'' : Type*} [AddCommGroup W''] [Module K W'']
-    [AddCommGroup V''] [Module K V''] {Q_W'' : QuadraticForm K W''}
-    {Q_V'' : QuadraticForm K V''} (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V')
-    (e_W' : Q_W'.IsometryEquiv Q_W'') (e_V' : Q_V'.IsometryEquiv Q_V'') :
-    (F.map e_W e_V).map e_W' e_V' = F.map (e_W.trans e_W') (e_V.trans e_V') := by
-  ext y
-  · have hsymm : (e_W.trans e_W').symm y = e_W.symm (e_W'.symm y) :=
-      (e_W.trans e_W').symm_apply_eq.mpr (by simp)
-    simp [hsymm, IsometryEquiv.trans_apply]
-  · simp [IsometryEquiv.trans_apply]
-
-end Map
-
-end FramedOrthogonalRelevantPair
 
 end TauCeti

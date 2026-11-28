@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
-public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
@@ -35,7 +35,6 @@ extension, in particular to the completions of a number field.
 
 ## Main definitions
 
-* `TauCeti.baseChangeHyperbolicSum`: base-change identification for `hyperbolicSum R j`.
 * `TauCeti.RegularFormPresentation.baseChange`: the presentation whose weights are the images of
   the original weights.
 * `TauCeti.RegularFormClass.baseChange`: scalar extension of isometry classes.
@@ -71,49 +70,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 universe u v w
-
-section HyperbolicSum
-
-variable {R : Type*} [CommRing R] [Invertible (2 : R)]
-
-private def weightedSumSquaresIndicatorEquiv (R : Type*) [CommRing R] (A : Type*)
-    [CommRing A] [Algebra R A] (j : ℕ) :
-    (weightedSumSquares A fun p : Fin j × Fin 2 ↦
-        algebraMap R A (if p.2 = 0 then (1 : R) else -1)).IsometryEquiv
-      (weightedSumSquares A fun p : Fin j × Fin 2 ↦ if p.2 = 0 then (1 : A) else -1) where
-  toLinearEquiv := LinearEquiv.refl A (Fin j × Fin 2 → A)
-  map_app' x := by
-    simp only [weightedSumSquares_apply]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    split_ifs <;> simp
-
-@[simp]
-private theorem weightedSumSquaresIndicatorEquiv_apply (R : Type*) [CommRing R] (A : Type*)
-    [CommRing A] [Algebra R A] (j : ℕ) (x : Fin j × Fin 2 → A) :
-    weightedSumSquaresIndicatorEquiv R A j x = x :=
-  (rfl)
-
-/-- Base change carries `hyperbolicSum R j` to `hyperbolicSum A j`. -/
-def baseChangeHyperbolicSum (j : ℕ) (A : Type*) [CommRing A] [Algebra R A]
-    [Invertible (2 : A)] :
-    ((hyperbolicSum R j).baseChange A).IsometryEquiv (hyperbolicSum A j) :=
-  ((hyperbolicSumEquivWeightedSumSquares (R := R) j).baseChange A).trans
-    ((_root_.QuadraticForm.baseChangeWeightedSumSquares (A := A)
-        (fun p : Fin j × Fin 2 ↦ if p.2 = 0 then (1 : R) else -1)).trans
-      ((weightedSumSquaresIndicatorEquiv R A j).trans
-        (hyperbolicSumEquivWeightedSumSquares (R := A) j).symm))
-
-/-- On pure tensors, `baseChangeHyperbolicSum` scales each algebra entry by the corresponding
-coordinate of the base vector. -/
-@[simp]
-theorem baseChangeHyperbolicSum_tmul (j : ℕ) (A : Type*) [CommRing A] [Algebra R A]
-    [Invertible (2 : A)] (a : A) (x : Fin j → Fin 2 → R) (i : Fin j) (k : Fin 2) :
-    baseChangeHyperbolicSum (R := R) j A (a ⊗ₜ x) i k = x i k • a := by
-  dsimp only [baseChangeHyperbolicSum]
-  simp [IsometryEquiv.trans_apply, IsometryEquiv.baseChange_tmul,
-    _root_.QuadraticForm.baseChangeWeightedSumSquares_apply, TensorProduct.piScalarRightHom_tmul]
-
-end HyperbolicSum
 
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
 variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]

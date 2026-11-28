@@ -83,8 +83,11 @@ the two summands gives an orthogonal family of the orthogonal sum.
   orthogonal family of `Q₁.prod Q₂`.
 * `QuadraticMap.polar_pi_single_left`, `QuadraticMap.polar_pi_single_right`,
   `QuadraticMap.nondegenerate_polarBilin_prod_iff`,
-  `QuadraticMap.nondegenerate_polarBilin_pi_iff`: single-summand polarization and nondegeneracy of
-  the polar form of an orthogonal product or finite orthogonal sum.
+  `QuadraticMap.nondegenerate_polarBilin_pi_iff`,
+  `QuadraticMap.orthogonal_polarBilin_range_inl`,
+  `QuadraticMap.orthogonalRangeInlEquiv`: single-summand polarization, nondegeneracy of
+  the polar form of an orthogonal product or finite orthogonal sum, and identification of the
+  orthogonal complement of the first summand.
 
 ## References
 
@@ -820,19 +823,13 @@ theorem mem_range_specialOrthogonalGroupProd_iff {g : specialOrthogonalGroup (Q�
 /-- A special orthogonal transformation of `Q₁.prod Q₂` that maps the first summand into itself
 and fixes the second summand pointwise is the orthogonal sum `(g₁, 1)` for some
 `g₁ ∈ SO(Q₁)`. -/
-theorem exists_specialOrthogonalGroupProd_one_of_fix
+theorem exists_specialOrthogonalGroupProd_one_of_preserves_inl_of_fixes_inr
     (h' : specialOrthogonalGroup (Q₁.prod Q₂))
     (hinvariant :
       ∀ m₁ : M₁, ((h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (m₁, 0)).2 = 0)
     (hfix : ∀ m₂ : M₂,
       (h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (0, m₂) = (0, m₂)) :
     ∃ g₁ : specialOrthogonalGroup Q₁, specialOrthogonalGroupProd Q₁ Q₂ (g₁, 1) = h' := by
-  have hblock2 :
-      LinearMap.snd R M₁ M₂ ∘ₗ
-        (h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂).toLinearMap ∘ₗ
-          LinearMap.inr R M₁ M₂ = LinearMap.id := by
-    ext m₂
-    simp [hfix m₂]
   have hmemO :
       (⟨h', specialOrthogonalGroup_le_orthogonalGroup _ h'.property⟩ :
           orthogonalGroup (Q₁.prod Q₂)) ∈
@@ -853,24 +850,9 @@ theorem exists_specialOrthogonalGroupProd_one_of_fix
     have hdet' := det_coe_specialOrthogonalGroup h'
     rw [hcoe, LinearEquiv.det_prodCongr, hf₂, LinearEquiv.det_refl, mul_one] at hdet'
     exact hdet'
-  have hblock1 :
-      LinearMap.fst R M₁ M₂ ∘ₗ
-        (h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂).toLinearMap ∘ₗ
-          LinearMap.inl R M₁ M₂ = (f₁ : M₁ ≃ₗ[R] M₁).toLinearMap := by
-    ext m₁
-    simp [hcoe]
-  have hprod : h' ∈ (specialOrthogonalGroupProd Q₁ Q₂).range := by
-    refine (mem_range_specialOrthogonalGroupProd_iff Q₁ Q₂).mpr
-      ⟨hinvariant, fun m₂ ↦ by simp [hfix m₂], ?_, by simp [hblock2]⟩
-    rw [hblock1, ← LinearEquiv.coe_det, hdet, Units.val_one]
-  obtain ⟨⟨g₁, g₂⟩, hg⟩ := hprod
-  have hg₂ : g₂ = 1 := by
-    ext m₂
-    have hm₂ := congrArg
-      (fun φ : specialOrthogonalGroup (Q₁.prod Q₂) ↦
-        ((φ : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (0, m₂)).2) hg
-    simpa [hfix m₂] using hm₂
-  exact ⟨g₁, by simpa [hg₂] using hg⟩
+  refine ⟨⟨f₁, mem_specialOrthogonalGroup_iff.mpr ⟨f₁.property, hdet⟩⟩, Subtype.ext ?_⟩
+  rw [coe_specialOrthogonalGroupProd, hcoe, hf₂]
+  rfl
 
 /-- `specialOrthogonalGroupProd` is natural with respect to products of isometric equivalences. -/
 @[simp]
@@ -1045,5 +1027,87 @@ theorem nondegenerate_polarBilin_pi_iff {ι : Type*} [Fintype ι] {M : ι → Ty
     exact hx (Pi.single i y)
 
 end PolarNondegenerate
+
+section OrthogonalRangeInl
+
+variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂]
+
+/-- When `Q₁` has nondegenerate polar bilinear form, the polar orthogonal complement of the first
+summand `range (Isometry.inl Q₁ Q₂)` in `Q₁.prod Q₂` is the second summand
+`range (Isometry.inr Q₁ Q₂)`. -/
+theorem orthogonal_polarBilin_range_inl
+    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) (hQ₁ : Q₁.polarBilin.Nondegenerate) :
+    LinearMap.BilinForm.orthogonal (Q₁.prod Q₂).polarBilin
+        (LinearMap.range (Isometry.inl Q₁ Q₂).toLinearMap) =
+      LinearMap.range (Isometry.inr Q₁ Q₂).toLinearMap := by
+  ext x
+  simp only [LinearMap.BilinForm.mem_orthogonal_iff, LinearMap.mem_range, Isometry.coe_toLinearMap,
+    Isometry.inl_apply, Isometry.inr_apply, polarBilin_apply_apply, forall_exists_index,
+    forall_apply_eq_imp_iff]
+  constructor
+  · intro hx
+    refine ⟨x.2, Prod.ext (hQ₁.2 x.1 fun y ↦ ?_).symm rfl⟩
+    have hy := hx y
+    rw [polarBilin_apply_apply]
+    simp only [QuadraticMap.polar, prod_apply, Prod.fst_add, Prod.snd_add, zero_add, map_zero,
+      add_zero] at hy ⊢
+    linear_combination hy
+  · rintro ⟨m₂, rfl⟩ w
+    simp [QuadraticMap.polar]
+
+/-- When `Q₁` has nondegenerate polar bilinear form, the restriction of `Q₁.prod Q₂` to the polar
+orthogonal complement of the first summand `range (Isometry.inl Q₁ Q₂)` is isometric to `Q₂`. -/
+noncomputable def orthogonalRangeInlEquiv
+    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) (hQ₁ : Q₁.polarBilin.Nondegenerate) :
+    ((Q₁.prod Q₂).restrict
+      (LinearMap.BilinForm.orthogonal (Q₁.prod Q₂).polarBilin
+        (LinearMap.range (Isometry.inl Q₁ Q₂).toLinearMap))).IsometryEquiv Q₂ :=
+  (IsometryEquiv.ofSubmodules (IsometryEquiv.refl (Q₁.prod Q₂))
+      (LinearMap.BilinForm.orthogonal (Q₁.prod Q₂).polarBilin
+        (LinearMap.range (Isometry.inl Q₁ Q₂).toLinearMap))
+      (LinearMap.range (Isometry.inr Q₁ Q₂).toLinearMap)
+      (by
+        rw [show (IsometryEquiv.refl (Q₁.prod Q₂)).toLinearMap = LinearMap.id from rfl,
+          Submodule.map_id]
+        exact orthogonal_polarBilin_range_inl Q₁ Q₂ hQ₁)).trans
+    ((Isometry.inr Q₁ Q₂).equivRestrictRange
+      (show Function.Injective (Isometry.inr Q₁ Q₂) from
+        fun _ _ h ↦ LinearMap.inr_injective (R := R) (M := M₁) (M₂ := M₂) h)).symm
+
+/-- Evaluating `orthogonalRangeInlEquiv` returns the second coordinate of the ambient vector. -/
+@[simp]
+theorem coe_orthogonalRangeInlEquiv_apply
+    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) (hQ₁ : Q₁.polarBilin.Nondegenerate)
+    (x : LinearMap.BilinForm.orthogonal (Q₁.prod Q₂).polarBilin
+      (LinearMap.range (Isometry.inl Q₁ Q₂).toLinearMap)) :
+    orthogonalRangeInlEquiv Q₁ Q₂ hQ₁ x = (x : M₁ × M₂).2 := by
+  have hx : (x : M₁ × M₂) ∈ LinearMap.range (Isometry.inr Q₁ Q₂).toLinearMap :=
+    orthogonal_polarBilin_range_inl Q₁ Q₂ hQ₁ ▸ x.property
+  obtain ⟨m₂, hm₂⟩ := hx
+  rw [orthogonalRangeInlEquiv, IsometryEquiv.trans_apply, IsometryEquiv.symm_apply_eq]
+  apply Subtype.ext
+  rw [Isometry.coe_equivRestrictRange_apply, IsometryEquiv.coe_ofSubmodules_apply,
+    IsometryEquiv.refl_apply, ← hm₂]
+  simp
+
+/-- The inverse of `orthogonalRangeInlEquiv` places a vector in the second summand `(0, m₂)`. -/
+@[simp]
+theorem coe_orthogonalRangeInlEquiv_symm_apply
+    (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) (hQ₁ : Q₁.polarBilin.Nondegenerate)
+    (m₂ : M₂) :
+    ((orthogonalRangeInlEquiv Q₁ Q₂ hQ₁).symm m₂ : M₁ × M₂) = (0, m₂) := by
+  have h := (orthogonalRangeInlEquiv Q₁ Q₂ hQ₁).apply_symm_apply m₂
+  rw [coe_orthogonalRangeInlEquiv_apply] at h
+  have hmem : ((orthogonalRangeInlEquiv Q₁ Q₂ hQ₁).symm m₂ : M₁ × M₂) ∈
+      LinearMap.range (Isometry.inr Q₁ Q₂).toLinearMap :=
+    orthogonal_polarBilin_range_inl Q₁ Q₂ hQ₁ ▸
+      ((orthogonalRangeInlEquiv Q₁ Q₂ hQ₁).symm m₂).property
+  obtain ⟨y, hy⟩ := hmem
+  have hy' : (0, y) = ((orthogonalRangeInlEquiv Q₁ Q₂ hQ₁).symm m₂ : M₁ × M₂) := hy
+  have hy2 : y = m₂ := by simpa [← hy'] using h
+  rw [← hy', hy2]
+
+end OrthogonalRangeInl
 
 end QuadraticMap

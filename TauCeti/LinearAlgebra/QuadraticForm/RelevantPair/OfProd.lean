@@ -22,8 +22,8 @@ witnesses.
 
 ## Main results
 
-* `TauCeti.FramedOrthogonalRelevantPair.ofProd_stabilizerHom`: `stabilizerHom` on `ofProd` is the
-  product inclusion `(g, 1)`.
+* `TauCeti.FramedOrthogonalRelevantPair.ofProd_stabilizerHom_apply`: `stabilizerHom` on `ofProd`
+  is the product inclusion `(g, 1)`.
 -/
 
 public section
@@ -42,61 +42,49 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
   {W : Type*} [AddCommGroup W] [Module K W]
   (Q_W : QuadraticForm K W) (hW : Q_W.Nondegenerate) (j : ℕ) (c : Kˣ)
 
-private theorem fst_eq_zero_of_mem_orthogonal
-    {Q_W : QuadraticForm K W} (hW : Q_W.Nondegenerate) {j : ℕ} {c : Kˣ}
-    (x : LinearMap.BilinForm.orthogonal
-      (Q_W.prod ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))).polarBilin
-      (LinearMap.range
-        (QuadraticMap.Isometry.inl Q_W
-          ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))).toLinearMap)) :
-    (x : W × (Fin j → Fin 2 → K) × K).1 = 0 := by
-  have hpol := LinearMap.BilinForm.mem_orthogonal_iff.mp x.property
-  refine (nondegenerate_polar_iff.mpr hW).1 _ fun w ↦ ?_
-  have hw := hpol (w, 0) ⟨w, rfl⟩
-  rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] at hw
-  simpa [QuadraticMap.polar] using hw
-
 /-- The canonical framed orthogonal relevant pair embedding `(W, Q_W)` as the first summand of
 `Q_W ⊥ (H^j ⊥ ⟨c⟩)`. -/
 noncomputable def ofProd :
     FramedOrthogonalRelevantPair Q_W
-      (Q_W.prod ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))) j where
-  embed := QuadraticMap.Isometry.inl Q_W ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))
-  nondegenerate_domain := hW
-  lineCoeff := c
-  complementEquiv :=
-    { toFun x := x.val.2
-      invFun y := ⟨(0, y), by
-        rw [LinearMap.BilinForm.mem_orthogonal_iff]
-        rintro _ ⟨w, rfl⟩
-        simp [QuadraticMap.polar]⟩
-      left_inv x :=
-        Subtype.ext (Prod.ext (fst_eq_zero_of_mem_orthogonal hW x).symm rfl)
-      right_inv _ := rfl
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl
-      map_app' x := by
-        simp [fst_eq_zero_of_mem_orthogonal hW x] }
+      (Q_W.prod ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))) j :=
+  let Q₂ : QuadraticForm K ((Fin j → Fin 2 → K) × K) :=
+    (hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq)
+  let e : ((Q_W.prod Q₂).restrict
+      (LinearMap.BilinForm.orthogonal (Q_W.prod Q₂).polarBilin
+        (LinearMap.range (QuadraticMap.Isometry.inl Q_W Q₂).toLinearMap))).IsometryEquiv Q₂ :=
+    QuadraticMap.orthogonalRangeInlEquiv Q_W Q₂ (nondegenerate_polar_iff.mpr hW)
+  { embed := QuadraticMap.Isometry.inl Q_W Q₂
+    nondegenerate_domain := hW
+    lineCoeff := c
+    complementEquiv := e }
 
+/-- Evaluating `ofProd.embed` at `w` places `w` in the first summand `(w, (0, 0))`. -/
 @[simp]
-theorem ofProd_embed (w : W) : (ofProd Q_W hW j c).embed w = (w, (0, 0)) :=
+theorem ofProd_embed_apply (w : W) : (ofProd Q_W hW j c).embed w = (w, (0, 0)) :=
   (rfl)
 
+/-- The distinguished line coefficient of `ofProd` is `c`. -/
 @[simp]
 theorem ofProd_lineCoeff : (ofProd Q_W hW j c).lineCoeff = c :=
   (rfl)
 
+/-- The inverse framing of `ofProd` places a complement vector `y` in the second summand
+`(0, y)`. -/
 @[simp]
 theorem ofProd_complementEquiv_symm_apply (y : (Fin j → Fin 2 → K) × K) :
-    ((ofProd Q_W hW j c).complementEquiv.symm y : W × (Fin j → Fin 2 → K) × K) = (0, y) :=
-  (rfl)
+    ((ofProd Q_W hW j c).complementEquiv.symm y : W × (Fin j → Fin 2 → K) × K) = (0, y) := by
+  dsimp only [ofProd]
+  exact QuadraticMap.coe_orthogonalRangeInlEquiv_symm_apply Q_W _ (nondegenerate_polar_iff.mpr hW) y
 
+/-- The distinguished line vector of `ofProd` is `(0, (0, 1))`. -/
 @[simp]
 theorem ofProd_lineVector : (ofProd Q_W hW j c).lineVector = (0, (0, 1)) := by
   simp [lineVector_eq]
 
+/-- The stabilizer embedding of `ofProd` at `g` is the product special orthogonal automorphism
+`(g, 1)`. -/
 @[simp]
-theorem ofProd_stabilizerHom [FiniteDimensional K W] (g : specialOrthogonalGroup Q_W) :
+theorem ofProd_stabilizerHom_apply [FiniteDimensional K W] (g : specialOrthogonalGroup Q_W) :
     (ofProd Q_W hW j c).stabilizerHom g =
       specialOrthogonalGroupProd Q_W ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))
         (g, 1) := by

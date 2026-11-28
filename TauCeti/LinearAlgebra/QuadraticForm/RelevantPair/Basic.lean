@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
-public import TauCeti.LinearAlgebra.QuadraticForm.Prod
-public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
@@ -15,7 +13,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Basic
 # Orthogonal relevant pairs and framed complements
 
 Given quadratic spaces `(W, Q_W)` and `(V, Q_V)` over a field `K` of characteristic not two, a
-*relevant pair* of hyperbolic index `j` consists of an isometric embedding `W →qᵢ Q_V` with
+*relevant pair* of hyperbolic index `j` consists of an isometric embedding `Q_W →qᵢ Q_V` with
 nondegenerate domain whose orthogonal complement `W^⊥` is isometric to `H^j ⊥ ⟨c⟩` for some
 nonzero scalar `c ∈ Kˣ`, where `H^j` is the orthogonal sum of `j` hyperbolic planes. A *framed*
 orthogonal relevant pair equips this datum with a chosen scalar `c` and an explicit isometric
@@ -26,7 +24,7 @@ so `V` is itself finite-dimensional and nondegenerate of dimension `dim W + 2j +
 
 ## Main definitions
 
-* `TauCeti.OrthogonalRelevantPair Q_W Q_V j`: an isometric embedding `W →qᵢ Q_V` with
+* `TauCeti.OrthogonalRelevantPair Q_W Q_V j`: an isometric embedding `Q_W →qᵢ Q_V` with
   nondegenerate domain whose orthogonal complement is isometric to `H^j ⊥ ⟨c⟩`.
 * `TauCeti.FramedOrthogonalRelevantPair Q_W Q_V j`: an orthogonal relevant pair equipped with a
   chosen unit `lineCoeff : Kˣ` and an explicit framing `W^⊥ ≃qᵢ H^j ⊥ ⟨lineCoeff⟩`.
@@ -62,7 +60,7 @@ complement in `V` is isometric to `H^j ⊥ ⟨c⟩` for some nonzero scalar `c`.
 structure OrthogonalRelevantPair {K : Type*} [Field K] [Invertible (2 : K)]
     {W V : Type*} [AddCommGroup W] [Module K W] [AddCommGroup V] [Module K V]
     (Q_W : QuadraticForm K W) (Q_V : QuadraticForm K V) (j : ℕ) where
-  /-- The underlying isometric embedding `W →qᵢ V`. -/
+  /-- The underlying isometric embedding `Q_W →qᵢ Q_V`. -/
   embed : Q_W →qᵢ Q_V
   /-- Nondegeneracy of the domain quadratic form `Q_W`. -/
   nondegenerate_domain : Q_W.Nondegenerate
@@ -81,7 +79,7 @@ unit `lineCoeff : Kˣ` and an explicit isometric equivalence from `W^⊥` onto
 structure FramedOrthogonalRelevantPair {K : Type*} [Field K] [Invertible (2 : K)]
     {W V : Type*} [AddCommGroup W] [Module K W] [AddCommGroup V] [Module K V]
     (Q_W : QuadraticForm K W) (Q_V : QuadraticForm K V) (j : ℕ) where
-  /-- The underlying isometric embedding `W →qᵢ V`. -/
+  /-- The underlying isometric embedding `Q_W →qᵢ Q_V`. -/
   embed : Q_W →qᵢ Q_V
   /-- Nondegeneracy of the domain quadratic form `Q_W`. -/
   nondegenerate_domain : Q_W.Nondegenerate
@@ -110,6 +108,7 @@ and the odd-dimensional hyperbolic-plus-line complement condition. -/
   nondegenerate_domain := F.nondegenerate_domain
   exists_complement := ⟨F.lineCoeff, ⟨F.complementEquiv⟩⟩
 
+/-- Forgetting the framing preserves the underlying isometric embedding. -/
 @[simp]
 theorem toOrthogonalRelevantPair_embed (F : FramedOrthogonalRelevantPair Q_W Q_V j) :
     F.toOrthogonalRelevantPair.embed = F.embed :=
@@ -163,6 +162,7 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 abbrev orthogonal : Submodule K V :=
   LinearMap.BilinForm.orthogonal Q_V.polarBilin (LinearMap.range P.embed.toLinearMap)
 
+/-- A vector lies in `W^⊥` if and only if its polar pairing with every `P.embed w` vanishes. -/
 theorem mem_orthogonal_iff {v : V} :
     v ∈ P.orthogonal ↔ ∀ w : W, polar Q_V (P.embed w) v = 0 := by
   simp [orthogonal, LinearMap.BilinForm.mem_orthogonal_iff]
@@ -171,26 +171,10 @@ theorem mem_orthogonal_iff {v : V} :
 theorem embed_injective : Function.Injective P.embed :=
   P.embed.injective_of_radical_eq_bot P.nondegenerate_domain.radical_eq_bot
 
-/-- The canonical isometric equivalence from `Q_W` to the restriction of `Q_V` to `range embed`. -/
-noncomputable def domainRangeEquiv :
-    Q_W.IsometryEquiv (Q_V.restrict (LinearMap.range P.embed.toLinearMap)) where
-  toLinearEquiv := LinearEquiv.ofInjective P.embed.toLinearMap P.embed_injective
-  map_app' w := P.embed.map_app w
-
-@[simp]
-theorem coe_domainRangeEquiv_apply (w : W) :
-    (P.domainRangeEquiv w : V) = P.embed w :=
-  (rfl)
-
-@[simp]
-theorem domainRangeEquiv_symm_embed (w : W) :
-    P.domainRangeEquiv.symm ⟨P.embed w, ⟨w, rfl⟩⟩ = w :=
-  P.domainRangeEquiv.symm_apply_apply w
-
 /-- The restriction of `Q_V` to the image of `embed` is nondegenerate. -/
 theorem nondegenerate_restrict_range :
     (Q_V.restrict (LinearMap.range P.embed.toLinearMap)).Nondegenerate :=
-  P.domainRangeEquiv.nondegenerate_iff.mp P.nondegenerate_domain
+  (P.embed.equivRestrictRange P.embed_injective).nondegenerate_iff.mp P.nondegenerate_domain
 
 /-- The orthogonal complement `W^⊥` is finite-dimensional. -/
 theorem finiteDimensional_orthogonal : FiniteDimensional K P.orthogonal := by
@@ -224,26 +208,31 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 /-- For a finite-dimensional domain `W`, `range embed` and `W^⊥` are complementary in `V`. -/
 theorem isCompl_orthogonal : IsCompl (LinearMap.range P.embed.toLinearMap) P.orthogonal := by
   have : FiniteDimensional K (LinearMap.range P.embed.toLinearMap) :=
-    Module.Finite.equiv P.domainRangeEquiv.toLinearEquiv
+    Module.Finite.equiv (P.embed.equivRestrictRange P.embed_injective).toLinearEquiv
   exact P.nondegenerate_restrict_range.isCompl_orthogonal
 
 /-- The orthogonal splitting `Q_W ⊥ Q_V|_{W^⊥} ≃qᵢ Q_V` determined by a relevant pair. -/
 noncomputable def ambientIsometryEquiv :
     (Q_W.prod (Q_V.restrict P.orthogonal)).IsometryEquiv Q_V :=
-  (P.domainRangeEquiv.prod (IsometryEquiv.refl (Q_V.restrict P.orthogonal))).trans
+  ((P.embed.equivRestrictRange P.embed_injective).prod
+      (IsometryEquiv.refl (Q_V.restrict P.orthogonal))).trans
     (IsometryEquiv.prodRestrictOrthogonal Q_V (LinearMap.range P.embed.toLinearMap)
       P.isCompl_orthogonal)
 
+/-- Evaluating the ambient splitting adds the embedded first component and the orthogonal second
+component. -/
 @[simp]
 theorem ambientIsometryEquiv_apply (x : W × P.orthogonal) :
     P.ambientIsometryEquiv x = P.embed x.1 + x.2 := by
   simp [ambientIsometryEquiv]
 
+/-- The inverse ambient splitting maps `P.embed w` to `(w, 0)`. -/
 @[simp]
 theorem ambientIsometryEquiv_symm_embed (w : W) :
     P.ambientIsometryEquiv.symm (P.embed w) = (w, 0) :=
   P.ambientIsometryEquiv.symm_apply_eq.mpr (by simp)
 
+/-- The inverse ambient splitting maps an orthogonal vector `u` to `(0, u)`. -/
 @[simp]
 theorem ambientIsometryEquiv_symm_of_mem_orthogonal (u : P.orthogonal) :
     P.ambientIsometryEquiv.symm u = (0, u) :=
@@ -309,19 +298,23 @@ noncomputable def lineVector : V := (F.complementEquiv.symm (0, 1) : V)
 theorem lineVector_eq : F.lineVector = (F.complementEquiv.symm (0, 1) : V) := by
   rfl
 
+/-- The distinguished line generator `F.lineVector` lies in `W^⊥`. -/
 theorem lineVector_mem_orthogonal : F.lineVector ∈ F.orthogonal :=
   (F.complementEquiv.symm (0, 1)).property
 
+/-- The quadratic value of `F.lineVector` is the unit `F.lineCoeff`. -/
 @[simp]
 theorem apply_lineVector : Q_V F.lineVector = F.lineCoeff := by
   have h := F.complementEquiv.symm.map_app (0, (1 : K))
   rw [QuadraticMap.restrict_apply] at h
   simpa [lineVector] using h
 
+/-- The distinguished line generator `F.lineVector` is anisotropic (`Q_V F.lineVector ≠ 0`). -/
 theorem apply_lineVector_ne_zero : Q_V F.lineVector ≠ 0 := by
   rw [F.apply_lineVector]
   exact F.lineCoeff.ne_zero
 
+/-- The distinguished line generator `F.lineVector` is nonzero. -/
 theorem lineVector_ne_zero : F.lineVector ≠ 0 :=
   fun h ↦ F.apply_lineVector_ne_zero (by rw [h, map_zero])
 
@@ -339,16 +332,19 @@ noncomputable def hyperbolicMap : hyperbolicSum K j →qᵢ Q_V where
     change Q_V (F.complementEquiv.symm (x, 0) : V) = hyperbolicSum K j x
     simpa using h
 
-@[simp]
+/-- Evaluating `F.hyperbolicMap` at `x` recovers the ambient image of `(x, 0)` under
+`F.complementEquiv.symm`. -/
 theorem hyperbolicMap_apply (x : Fin j → Fin 2 → K) :
     F.hyperbolicMap x = (F.complementEquiv.symm (x, 0) : V) :=
   (rfl)
 
+/-- Every vector in the framed hyperbolic summand lies in `W^⊥`. -/
 theorem hyperbolicMap_mem_orthogonal (x : Fin j → Fin 2 → K) :
     F.hyperbolicMap x ∈ F.orthogonal :=
   (F.complementEquiv.symm (x, 0)).property
 
 /-- Vectors in the framed hyperbolic summand are orthogonal to the distinguished line generator. -/
+@[simp]
 theorem polar_hyperbolicMap_lineVector (x : Fin j → Fin 2 → K) :
     polar Q_V (F.hyperbolicMap x) F.lineVector = 0 := by
   have h := F.complementEquiv.symm.polar_apply (x, (0 : K)) (0, (1 : K))
@@ -368,6 +364,8 @@ noncomputable def ambientIsometryEquiv [FiniteDimensional K W] :
   ((IsometryEquiv.refl Q_W).prod F.complementEquiv.symm).trans
     F.toOrthogonalRelevantPair.ambientIsometryEquiv
 
+/-- Evaluating the framed ambient splitting decomposes `(w, y)` into `F.embed w` plus the inverse
+framing at `y`. -/
 @[simp]
 theorem ambientIsometryEquiv_apply [FiniteDimensional K W]
     (x : W × (Fin j → Fin 2 → K) × K) :
@@ -375,11 +373,13 @@ theorem ambientIsometryEquiv_apply [FiniteDimensional K W]
   dsimp only [ambientIsometryEquiv]
   exact F.toOrthogonalRelevantPair.ambientIsometryEquiv_apply (x.1, F.complementEquiv.symm x.2)
 
+/-- The inverse framed ambient splitting maps `F.embed w` to `(w, (0, 0))`. -/
 @[simp]
 theorem ambientIsometryEquiv_symm_embed [FiniteDimensional K W] (w : W) :
     F.ambientIsometryEquiv.symm (F.embed w) = (w, (0, 0)) :=
   F.ambientIsometryEquiv.symm_apply_eq.mpr (by simp)
 
+/-- The inverse framed ambient splitting maps `F.lineVector` to `(0, (0, 1))`. -/
 @[simp]
 theorem ambientIsometryEquiv_symm_lineVector [FiniteDimensional K W] :
     F.ambientIsometryEquiv.symm F.lineVector = (0, (0, 1)) :=

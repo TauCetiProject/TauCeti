@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative

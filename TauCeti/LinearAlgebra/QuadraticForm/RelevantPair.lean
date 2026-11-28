@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Map
 public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Stabilizer
 public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.OfProd
@@ -18,8 +19,10 @@ This module re-exports the orthogonal relevant pair API:
 * `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Basic`:
   `OrthogonalRelevantPair`, `FramedOrthogonalRelevantPair`, orthogonal complement geometry,
   ambient splitting, and framing accessors.
+* `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Map`: transport of unframed and framed
+  relevant pairs along isometric equivalences.
 * `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Stabilizer`: the stabilizer embedding
-  `SO(Q_W) →* SO(Q_V)`, transport along isometries, and intertwining.
+  `SO(Q_W) →* SO(Q_V)` and intertwining under isometries.
 * `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.BaseChange`: compatibility with scalar
   extension to a field extension `L / K`.
 * `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.OfProd`: the canonical product model

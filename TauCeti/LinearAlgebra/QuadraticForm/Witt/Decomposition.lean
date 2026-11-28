@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 
 /-!
