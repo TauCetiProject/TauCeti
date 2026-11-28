@@ -32,6 +32,8 @@ integration. It does not require a chart representation of the path action.
 
 * `TauCeti.Manifold.movingMetricAction`: kinetic action with a scalar potential.
 * `TauCeti.Manifold.hasDerivAt_movingMetric_boundaryPairing`: the moving-metric product rule.
+* `TauCeti.Manifold.continuousOn_movingMetricAction_eulerPairing`: continuity of the interior
+  pairing, deduced from the density and boundary derivatives.
 * `TauCeti.Manifold.hasDerivAt_movingMetricAction`: the first variation with both endpoints.
 
 ## References
@@ -251,6 +253,44 @@ private theorem movingMetricAction_pointwise {a b : ℝ} {U : ℝ → M → ℝ}
     ring
   exact ⟨hG, hK, hid⟩
 
+/-- The interior pairing in the moving-metric first variation is continuous along a compact
+central slice. Its continuity follows from the kinetic-density and boundary-pairing derivatives,
+without a separate regularity hypothesis on the family of Levi-Civita connections. -/
+theorem continuousOn_movingMetricAction_eulerPairing {a b : ℝ} {U : ℝ → M → ℝ} {h : ℝ → ℝ}
+    (hF : ∀ t ∈ uIcc a b,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
+    (hg : ∀ t ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 1
+        (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+          (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+          p.2 ((g p.1).inner p.2)) (t, F 0 t))
+    (hU : ∀ t ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (fun p : ℝ × M ↦ U p.1 p.2)
+        (t, F 0 t))
+    (ht : ∀ t ∈ uIcc a b, HasDerivAt (fun r ↦ (g r).inner (F 0 t) (variationField I F t)
+      (curveVelocity I (F 0) t)) (h t) t) :
+    ContinuousOn (fun t ↦
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨(g t).toRiemannianMetric⟩
+      inner ℝ (variationField I F t) (acceleration (leviCivitaConnection I M) (F 0) t) +
+        h t - mvfderiv I (U t) (F 0 t) (variationField I F t)) (uIcc a b) := by
+  obtain ⟨hG, hK, hid⟩ := movingMetricAction_pointwise hF hg hU ht
+  have hraw : ContinuousOn (fun t ↦ fderiv ℝ (fun z : ℝ × ℝ ↦
+      (g z.2).inner (F z.1 z.2) (curveVelocity I (F z.1) z.2)
+        (curveVelocity I (F z.1) z.2) / 2 + U z.2 (F z.1 z.2)) (0, t) (1, 0))
+      (uIcc a b) := fun t ht' ↦
+    (((hG t ht').fderiv_right (m := 0) le_rfl).continuousAt.comp
+      (continuousAt_const.prodMk continuousAt_id)).clm_apply continuousAt_const
+      |>.continuousWithinAt
+  have hboundary : ContinuousOn (deriv (fun t ↦
+      (g t).inner (F 0 t) (variationField I F t) (curveVelocity I (F 0) t)))
+      (uIcc a b) := fun t ht' ↦
+    ((hK t ht').derivWithin (m := 0) le_rfl).continuousAt.continuousWithinAt
+  apply (hboundary.sub hraw).congr
+  intro t ht'
+  dsimp only [Pi.sub_apply]
+  rw [hid t ht']
+  ring
+
 /-- First variation of the moving-metric action: terminal momentum minus initial momentum,
 minus the integral of the acceleration, metric time derivative, and negative potential differential.
 No endpoint is required to be fixed. -/
@@ -283,19 +323,10 @@ theorem hasDerivAt_movingMetricAction {a b : ℝ} {U : ℝ → M → ℝ} {h : �
     inner ℝ (variationField I F t) (acceleration (leviCivitaConnection I M) (F 0) t) +
       h t - mvfderiv I (U t) (F 0 t) (variationField I F t)
   obtain ⟨hG, hK, hid⟩ := movingMetricAction_pointwise hF hg hU ht
-  have hrawCont : ContinuousOn (fun t ↦ fderiv ℝ G (0, t) (1, 0)) (uIcc a b) := by
-    intro t ht'
-    exact (((hG t ht').fderiv_right (m := 0) le_rfl).continuousAt.comp
-      (continuousAt_const.prodMk continuousAt_id)).clm_apply continuousAt_const
-      |>.continuousWithinAt
   have hderivCont : ContinuousOn (deriv K) (uIcc a b) := fun t ht' ↦
     ((hK t ht').derivWithin (m := 0) le_rfl).continuousAt.continuousWithinAt
-  have hRCont : ContinuousOn R (uIcc a b) := by
-    apply (hderivCont.sub hrawCont).congr
-    intro t ht'
-    dsimp only [Pi.sub_apply]
-    rw [hid t ht']
-    ring
+  have hRCont : ContinuousOn R (uIcc a b) :=
+    continuousOn_movingMetricAction_eulerPairing hF hg hU ht
   have hWo : IsOpen {z : ℝ × ℝ | ContDiffAt ℝ 1 G z} :=
     isOpen_iff_mem_nhds.2 fun z hz ↦ hz.eventually (by simp)
   obtain ⟨-, hD⟩ := TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hWo

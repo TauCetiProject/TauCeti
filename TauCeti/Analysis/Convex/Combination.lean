@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Between
 public import Mathlib.Basic.Real.Basic
@@ -377,3 +378,55 @@ theorem closedInterior_eq_image_convexHull {V P : Type*} [AddCommGroup V] [Modul
     Set.singleton_union, Set.singleton_union]
 
 end Affine.Triangle
+
+section QuadraticCorrection
+
+open Metric Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- An inward quadratic correction of an affine first jet stays in a convex set when its
+quadratic error is smaller than the available interior ball. -/
+theorem Convex.affineFirstJet_mem {S : Set E} (hS : Convex ℝ S)
+    {f c v z : E} {r B C s : ℝ} (hf : f ∈ S) (hball : ball z r ⊆ S)
+    (hC : 0 < C) (hBC : B < C * r) (hsmall : C * s ^ 2 ≤ 1)
+    (herror : ‖f - c - s • v‖ ≤ B * s ^ 2) :
+    (1 - C * s ^ 2) • (c + s • v) + (C * s ^ 2) • z ∈ S := by
+  by_cases hs : s = 0
+  · subst s
+    have hfc : f = c := sub_eq_zero.mp (norm_eq_zero.mp (by simpa using herror))
+    simpa [hfc] using hf
+  have hs₂ : 0 < s ^ 2 := sq_pos_of_ne_zero hs
+  let a := C * s ^ 2
+  have ha : 0 < a := mul_pos hC hs₂
+  have ha₁ : a ≤ 1 := hsmall
+  have hratio : 0 ≤ (1 - a) / a := div_nonneg (sub_nonneg.mpr ha₁) ha.le
+  have hratio_le : (1 - a) / a ≤ 1 / a := by
+    apply div_le_div_of_nonneg_right _ ha.le
+    linarith
+  have herr : ‖c + s • v - f‖ ≤ B * s ^ 2 := by
+    have heq : c + s • v - f = -(f - c - s • v) := by abel
+    simpa only [heq, norm_neg] using herror
+  have hBs : 0 ≤ B * s ^ 2 := (norm_nonneg _).trans herr
+  let z' := z + ((1 - a) / a) • (c + s • v - f)
+  have hz' : z' ∈ ball z r := by
+    rw [mem_ball, dist_eq_norm]
+    calc
+      ‖z' - z‖ = ((1 - a) / a) * ‖c + s • v - f‖ := by
+        simp only [z', add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+          abs_of_nonneg hratio]
+      _ ≤ ((1 - a) / a) * (B * s ^ 2) := mul_le_mul_of_nonneg_left herr hratio
+      _ ≤ (1 / a) * (B * s ^ 2) := mul_le_mul_of_nonneg_right hratio_le hBs
+      _ = B / C := by
+        dsimp only [a]
+        field_simp
+      _ < r := (div_lt_iff₀ hC).mpr (by simpa [mul_comm] using hBC)
+  have hmem := hS hf (hball hz') (sub_nonneg.mpr ha₁) ha.le (sub_add_cancel 1 a)
+  have hcoeff : a * ((1 - a) / a) = 1 - a := by field_simp
+  have heq : (1 - a) • (c + s • v) + a • z = (1 - a) • f + a • z' := by
+    dsimp only [z']
+    simp only [smul_add, smul_smul, hcoeff]
+    module
+  rwa [← heq] at hmem
+
+end QuadraticCorrection

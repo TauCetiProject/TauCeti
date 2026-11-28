@@ -86,6 +86,30 @@ variable (I g) in
         (curveVelocity I α s) / 2 + 2 * s ^ 2 * (g (T - s ^ 2)).scalarCurvature (α s) := by
   rfl
 
+variable (I g) in
+/-- The intrinsic Euler covector for the square-time reduced action, formed from the metric's
+actual Levi-Civita acceleration, Ricci tensor and scalar-curvature differential. -/
+def regularizedReducedEulerCovector (T : ℝ) (γ : ℝ → M) (s : ℝ) :
+    TangentSpace I (γ s) →ₗ[ℝ] ℝ :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g (T - s ^ 2)).toRiemannianMetric⟩
+  (((g (T - s ^ 2)).inner (γ s)).flip
+      (acceleration (leviCivitaConnection I M) γ s)).toLinearMap +
+    (4 * s) • ((leviCivitaConnection I M).ricciTensor (γ s)).flip (curveVelocity I γ s) -
+    (2 * s ^ 2) • (mvfderiv I (g (T - s ^ 2)).scalarCurvature (γ s)).toLinearMap
+
+/-- Evaluation of the intrinsic reduced Euler covector. -/
+@[simp]
+theorem regularizedReducedEulerCovector_apply {T : ℝ} {γ : ℝ → M} (s : ℝ)
+    (W : TangentSpace I (γ s)) :
+    regularizedReducedEulerCovector I g T γ s W =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g (T - s ^ 2)).toRiemannianMetric⟩;
+        inner ℝ W (acceleration (leviCivitaConnection I M) γ s) +
+          4 * s * (leviCivitaConnection I M).ricciTensor (γ s) W (curveVelocity I γ s) -
+          2 * s ^ 2 * mvfderiv I (g (T - s ^ 2)).scalarCurvature (γ s) W) := by
+  rfl
+
 /-- Square-time pullback preserves the metric and scalar-potential regularity along the path. -/
 private theorem regularized_family_regularity {s T : ℝ}
     (hg : ContMDiffAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 1
@@ -106,6 +130,96 @@ private theorem regularized_family_regularity {s T : ℝ}
   exact ⟨hg.comp (s, F 0 s) (htime (s, F 0 s)),
     (contMDiffAt_const.mul (contMDiffAt_fst.pow 2)).mul
       (hR.comp (s, F 0 s) (htime (s, F 0 s)))⟩
+
+/-- Lowering the metric's regularity preserves its acceleration pairing; the square-time
+potential differential has its expected scalar factor. -/
+private theorem regularized_eulerPairing_ofLE (G :
+    ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (α : ℝ → M) (s : ℝ) (W : TangentSpace I (α s)) (h : ℝ) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(G.ofLE (m := 1) (by norm_num)).toRiemannianMetric⟩;
+      inner ℝ W (acceleration (leviCivitaConnection I M) α s) + h -
+        mvfderiv I (fun x ↦ 2 * s ^ 2 * G.scalarCurvature x) (α s) W) =
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨G.toRiemannianMetric⟩;
+      inner ℝ W (acceleration (leviCivitaConnection I M) α s) + h -
+        2 * s ^ 2 * mvfderiv I G.scalarCurvature (α s) W) := by
+  have hv : mvfderiv I (fun x ↦ 2 * s ^ 2 * G.scalarCurvature x) (α s) W =
+      2 * s ^ 2 * mvfderiv I G.scalarCurvature (α s) W := by
+    simpa only [Pi.smul_def, smul_eq_mul, smul_apply] using
+      congrFun (congrArg DFunLike.coe
+        (TauCeti.mvfderiv_const_smul_field (I := I) (R := ℝ)
+          G.scalarCurvature (α s) (2 * s ^ 2))) W
+  rw [hv]
+  congr 2
+  simp only [ContMDiffRiemannianMetric.inner_eq, ContMDiffRiemannianMetric.ofLE_inner]
+  -- The installed bundle determines the native connection, including its instance arguments.
+  have hconn :
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(G.ofLE (m := 1) (by norm_num)).toRiemannianMetric⟩;
+        leviCivitaConnection I M) =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨G.toRiemannianMetric⟩; leviCivitaConnection I M) := by
+    congr! 1
+    exact congrArg RiemannianBundle.mk
+      (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE G _)
+  exact congrArg (fun cov : CovariantDerivative I E (TangentSpace I) ↦
+    G.inner (α s) W (acceleration cov α s)) hconn
+
+/-- The contracted forward Ricci derivative pulls back under square time with coefficient
+`4s`, at the fixed point and tangent vectors. -/
+private theorem hasDerivAt_inner_comp_squareTime {T s : ℝ} {x : M}
+    (V W : TangentSpace I x)
+    (hflow : HasDerivAt (fun r ↦ (g r).inner x V W)
+      (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g (T - s ^ 2)).toRiemannianMetric⟩;
+        (leviCivitaConnection I M).ricciTensor x V W)) (T - s ^ 2)) :
+    HasDerivAt (fun r ↦ (g (T - r ^ 2)).inner x V W)
+      (4 * s * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g (T - s ^ 2)).toRiemannianMetric⟩;
+        (leviCivitaConnection I M).ricciTensor x V W)) s := by
+  apply (hflow.comp s ((hasDerivAt_pow 2 s).const_sub T)).congr_deriv
+  ring
+
+/-- Square-time regularity and the contracted Ricci identity in the exact moving-metric
+form used by the derivative and continuity theorems. -/
+private theorem regularized_movingMetric_hypotheses {a b T : ℝ}
+    (hg : ∀ s ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 1
+        (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+          (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+          p.2 ((g p.1).inner p.2)) (T - s ^ 2, F 0 s))
+    (hR : ∀ s ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1
+        (fun p : ℝ × M ↦ (g p.1).scalarCurvature p.2) (T - s ^ 2, F 0 s))
+    (hflow : ∀ s ∈ uIcc a b,
+      HasDerivAt (fun r ↦ (g r).inner (F 0 s) (variationField I F s)
+        (curveVelocity I (F 0) s))
+        (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g (T - s ^ 2)).toRiemannianMetric⟩;
+          (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
+            (curveVelocity I (F 0) s))) (T - s ^ 2)) :
+    (∀ s ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 1
+        (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+          (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+          p.2 (((g (T - p.1 ^ 2)).ofLE (m := 1) (by norm_num)).inner p.2)) (s, F 0 s)) ∧
+    (∀ s ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1
+        (fun p : ℝ × M ↦ 2 * p.1 ^ 2 * (g (T - p.1 ^ 2)).scalarCurvature p.2)
+          (s, F 0 s)) ∧
+    (∀ s ∈ uIcc a b,
+      HasDerivAt (fun r ↦ ((g (T - r ^ 2)).ofLE (m := 1) (by norm_num)).inner
+        (F 0 s) (variationField I F s) (curveVelocity I (F 0) s))
+        (4 * s * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g (T - s ^ 2)).toRiemannianMetric⟩;
+          (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
+            (curveVelocity I (F 0) s))) s) := by
+  have hregular := fun s hs ↦ regularized_family_regularity (hg s hs) (hR s hs)
+  refine ⟨?_, fun s hs ↦ (hregular s hs).2, ?_⟩
+  · simpa only [ContMDiffRiemannianMetric.ofLE_inner] using fun s hs ↦ (hregular s hs).1
+  · simpa only [ContMDiffRiemannianMetric.ofLE_inner] using fun s hs ↦
+      hasDerivAt_inner_comp_squareTime (variationField I F s)
+        (curveVelocity I (F 0) s) (hflow s hs)
 
 /-- The first variation of the regularized reduced action, with both endpoint momenta,
 under the actual forward Ricci equation contracted with the variation field and velocity. -/
@@ -131,64 +245,52 @@ theorem hasDerivAt_regularizedReducedAction {a b T : ℝ}
       ((g (T - b ^ 2)).inner (F 0 b) (variationField I F b) (curveVelocity I (F 0) b) -
         (g (T - a ^ 2)).inner (F 0 a) (variationField I F a) (curveVelocity I (F 0) a) -
         ∫ s in a..b,
-          letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-            ⟨(g (T - s ^ 2)).toRiemannianMetric⟩
-          inner ℝ (variationField I F s) (acceleration (leviCivitaConnection I M) (F 0) s) +
-            4 * s * (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
-              (curveVelocity I (F 0) s) -
-            2 * s ^ 2 * mvfderiv I (g (T - s ^ 2)).scalarCurvature (F 0 s)
-              (variationField I F s)) 0 := by
+          regularizedReducedEulerCovector I g T (F 0) s (variationField I F s)) 0 := by
   let G := fun s ↦ g (T - s ^ 2)
   let U := fun (s : ℝ) (x : M) ↦ 2 * s ^ 2 * (G s).scalarCurvature x
-  have hregular := fun s hs ↦ regularized_family_regularity (hg s hs) (hR s hs)
-  have hG := fun s hs ↦ (hregular s hs).1
-  have hU := fun s hs ↦ (hregular s hs).2
-  have hpair : ∀ s ∈ uIcc a b,
-      HasDerivAt (fun r ↦ (G r).inner (F 0 s) (variationField I F s)
-        (curveVelocity I (F 0) s))
-        (4 * s * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-          ⟨(G s).toRiemannianMetric⟩;
-          (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
-            (curveVelocity I (F 0) s))) s := by
-    intro s hs
-    apply ((hflow s hs).comp s ((hasDerivAt_pow 2 s).const_sub T)).congr_deriv
-    ring
+  obtain ⟨hG, hU, hpair⟩ := regularized_movingMetric_hypotheses hg hR hflow
   have h := hasDerivAt_movingMetricAction (g := fun s ↦ (G s).ofLE (by norm_num))
-    (U := U) hF (by simpa only [ContMDiffRiemannianMetric.ofLE_inner] using hG) hU
-    (by simpa only [ContMDiffRiemannianMetric.ofLE_inner,
-      ContMDiffRiemannianMetric.toRiemannianMetric_ofLE] using hpair)
+    (U := U) hF hG hU hpair
   simp only [movingMetricAction_def, ContMDiffRiemannianMetric.ofLE_inner] at h
   refine h.congr_deriv ?_
   congr 1
   apply intervalIntegral.integral_congr
   intro s _
-  -- The local potential abbreviation must be opened before applying scalar linearity.
-  change _ - mvfderiv I (fun x ↦ 2 * s ^ 2 * (G s).scalarCurvature x)
-    (F 0 s) (variationField I F s) = _
-  have hv : mvfderiv I (fun x ↦ 2 * s ^ 2 * (G s).scalarCurvature x)
-      (F 0 s) (variationField I F s) =
-      2 * s ^ 2 * mvfderiv I (G s).scalarCurvature (F 0 s) (variationField I F s) := by
-    rw [show (fun x ↦ 2 * s ^ 2 * (G s).scalarCurvature x) =
-        (2 * s ^ 2) • (G s).scalarCurvature from rfl,
-      TauCeti.mvfderiv_const_smul_field (R := ℝ), smul_apply, smul_eq_mul]
-  rw [hv]
-  simp only [G]
-  congr 1
-  · congr 1
-    simp only [ContMDiffRiemannianMetric.inner_eq,
-      ContMDiffRiemannianMetric.ofLE_inner]
-    -- Compare the installed bundles before transporting the proof-dependent connection.
-    have hconn :
-        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-          ⟨((G s).ofLE (m := 1) (by norm_num)).toRiemannianMetric⟩;
-          leviCivitaConnection I M) =
-        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-          ⟨(G s).toRiemannianMetric⟩; leviCivitaConnection I M) := by
-      congr! 1
-      exact congrArg RiemannianBundle.mk
-        (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE (G s) _)
-    exact congrArg (fun cov : CovariantDerivative I E (TangentSpace I) ↦
-      (G s).inner (F 0 s) (variationField I F s) (acceleration cov (F 0) s)) hconn
+  simpa only [regularizedReducedEulerCovector_apply] using
+    regularized_eulerPairing_ofLE (G s) (F 0) s (variationField I F s) _
+
+/-- The intrinsic reduced Euler pairing with a variation field is continuous along the central
+compact slice. This is deduced from the moving-metric first variation and the actual Ricci
+pairing derivative; no joint regularity of the family of connections is assumed separately. -/
+theorem continuousOn_regularizedReducedAction_eulerPairing {a b T : ℝ}
+    (hF : ∀ s ∈ uIcc a b,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, s))
+    (hg : ∀ s ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 1
+        (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+          (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+          p.2 ((g p.1).inner p.2)) (T - s ^ 2, F 0 s))
+    (hR : ∀ s ∈ uIcc a b,
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1
+        (fun p : ℝ × M ↦ (g p.1).scalarCurvature p.2) (T - s ^ 2, F 0 s))
+    (hflow : ∀ s ∈ uIcc a b,
+      HasDerivAt (fun r ↦ (g r).inner (F 0 s) (variationField I F s)
+        (curveVelocity I (F 0) s))
+        (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g (T - s ^ 2)).toRiemannianMetric⟩;
+          (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
+            (curveVelocity I (F 0) s))) (T - s ^ 2)) :
+    ContinuousOn (fun s ↦
+      regularizedReducedEulerCovector I g T (F 0) s (variationField I F s)) (uIcc a b) := by
+  let G := fun s ↦ g (T - s ^ 2)
+  let U := fun (s : ℝ) (x : M) ↦ 2 * s ^ 2 * (G s).scalarCurvature x
+  obtain ⟨hG, hU, hpair⟩ := regularized_movingMetric_hypotheses hg hR hflow
+  have h := continuousOn_movingMetricAction_eulerPairing
+    (g := fun s ↦ (G s).ofLE (by norm_num)) (U := U) hF hG hU hpair
+  apply h.congr
+  intro s _
+  simpa only [regularizedReducedEulerCovector_apply] using
+    (regularized_eulerPairing_ofLE (G s) (F 0) s (variationField I F s) _).symm
 
 /-- Square-time substitution identifies the backward action of `α ∘ sqrt` on `a²..b²`
 with the regularized action of `α` on `a..b`, allowing `a = 0`. -/
@@ -238,6 +340,19 @@ theorem backwardReducedAction_comp_sqrt {α : ℝ → M} {a b T : ℝ}
   field_simp [ne_of_gt hspos]
   ring
 
+/-- Joint `C¹` regularity along the central slice gives the square-time action identity for
+all nearby variations, including initial square time zero. -/
+theorem eventuallyEq_backwardReducedAction_comp_sqrt {a b T : ℝ}
+    (ha : 0 ≤ a) (hab : a ≤ b)
+    (hF : ∀ s ∈ uIcc a b,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 1 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, s)) :
+    (fun u ↦ backwardReducedAction I g T (F u ∘ Real.sqrt) (a ^ 2) (b ^ 2)) =ᶠ[𝓝 0]
+      fun u ↦ regularizedReducedAction I g T (F u) a b := by
+  filter_upwards [TauCeti.eventually_mdifferentiableAt_slice isCompact_uIcc hF] with u hu
+  exact backwardReducedAction_comp_sqrt ha hab fun s hs ↦ hu s (by
+    rw [uIcc_of_le hab]
+    exact ⟨hs.1.le, hs.2.le⟩)
+
 /-- For a fixed-endpoint variation, both momentum terms vanish in the reduced first variation. -/
 theorem IsFixedEndpointVariation.hasDerivAt_regularizedReducedAction {a b T : ℝ}
     (hF : IsFixedEndpointVariation I 2 F a b)
@@ -258,13 +373,7 @@ theorem IsFixedEndpointVariation.hasDerivAt_regularizedReducedAction {a b T : �
             (curveVelocity I (F 0) s))) (T - s ^ 2)) :
     HasDerivAt (fun u ↦ regularizedReducedAction I g T (F u) a b)
       (-∫ s in a..b,
-          letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-            ⟨(g (T - s ^ 2)).toRiemannianMetric⟩
-          inner ℝ (variationField I F s) (acceleration (leviCivitaConnection I M) (F 0) s) +
-            4 * s * (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
-              (curveVelocity I (F 0) s) -
-            2 * s ^ 2 * mvfderiv I (g (T - s ^ 2)).scalarCurvature (F 0 s)
-              (variationField I F s)) 0 := by
+          regularizedReducedEulerCovector I g T (F 0) s (variationField I F s)) 0 := by
   refine (TauCeti.Manifold.hasDerivAt_regularizedReducedAction
     hF.contMDiffAt hg hR hflow).congr_deriv ?_
   rw [hF.variationField_left_eq_zero, hF.variationField_right_eq_zero]
@@ -291,13 +400,7 @@ theorem IsFixedEndpointVariation.integral_eq_zero_of_isLocalMin_regularizedReduc
             (curveVelocity I (F 0) s))) (T - s ^ 2))
     (hmin : IsLocalMin (fun u ↦ regularizedReducedAction I g T (F u) a b) 0) :
     (∫ s in a..b,
-      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g (T - s ^ 2)).toRiemannianMetric⟩
-      inner ℝ (variationField I F s) (acceleration (leviCivitaConnection I M) (F 0) s) +
-        4 * s * (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
-          (curveVelocity I (F 0) s) -
-        2 * s ^ 2 * mvfderiv I (g (T - s ^ 2)).scalarCurvature (F 0 s)
-          (variationField I F s)) = 0 := by
+      regularizedReducedEulerCovector I g T (F 0) s (variationField I F s)) = 0 := by
   exact neg_eq_zero.mp (hmin.hasDerivAt_eq_zero
     (IsFixedEndpointVariation.hasDerivAt_regularizedReducedAction hF hg hR hflow))
 
@@ -326,19 +429,10 @@ theorem hasDerivAt_backwardReducedAction_comp_sqrt {a b T : ℝ}
       ((g (T - b ^ 2)).inner (F 0 b) (variationField I F b) (curveVelocity I (F 0) b) -
         (g (T - a ^ 2)).inner (F 0 a) (variationField I F a) (curveVelocity I (F 0) a) -
         ∫ s in a..b,
-          letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-            ⟨(g (T - s ^ 2)).toRiemannianMetric⟩
-          inner ℝ (variationField I F s) (acceleration (leviCivitaConnection I M) (F 0) s) +
-            4 * s * (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
-              (curveVelocity I (F 0) s) -
-            2 * s ^ 2 * mvfderiv I (g (T - s ^ 2)).scalarCurvature (F 0 s)
-              (variationField I F s)) 0 := by
+          regularizedReducedEulerCovector I g T (F 0) s (variationField I F s)) 0 := by
   apply (hasDerivAt_regularizedReducedAction hF hg hR hflow).congr_of_eventuallyEq
-  filter_upwards [TauCeti.eventually_mdifferentiableAt_slice isCompact_uIcc
-    (fun s hs ↦ (hF s hs).of_le (by norm_num))] with u hu
-  exact backwardReducedAction_comp_sqrt ha hab fun s hs ↦ hu s (by
-    rw [uIcc_of_le hab]
-    exact ⟨hs.1.le, hs.2.le⟩)
+  exact eventuallyEq_backwardReducedAction_comp_sqrt ha hab
+    (fun s hs ↦ (hF s hs).of_le (by norm_num))
 
 /-- At a local minimum of the backward action of `F u ∘ sqrt`, the intrinsic reduced
 Euler–Lagrange pairing integrates to zero against the supplied fixed-endpoint variation. -/
@@ -363,19 +457,10 @@ theorem IsFixedEndpointVariation.integral_eq_zero_of_isLocalMin_backwardReducedA
             (curveVelocity I (F 0) s))) (T - s ^ 2))
     (hmin : IsLocalMin (fun u ↦ backwardReducedAction I g T (F u ∘ Real.sqrt) (a ^ 2) (b ^ 2)) 0) :
     (∫ s in a..b,
-      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g (T - s ^ 2)).toRiemannianMetric⟩
-      inner ℝ (variationField I F s) (acceleration (leviCivitaConnection I M) (F 0) s) +
-        4 * s * (leviCivitaConnection I M).ricciTensor (F 0 s) (variationField I F s)
-          (curveVelocity I (F 0) s) -
-        2 * s ^ 2 * mvfderiv I (g (T - s ^ 2)).scalarCurvature (F 0 s)
-          (variationField I F s)) = 0 := by
+      regularizedReducedEulerCovector I g T (F 0) s (variationField I F s)) = 0 := by
   apply hF.integral_eq_zero_of_isLocalMin_regularizedReducedAction hg hR hflow
   apply hmin.congr
-  filter_upwards [TauCeti.eventually_mdifferentiableAt_slice isCompact_uIcc
-    (fun s hs ↦ (hF.contMDiffAt s hs).of_le (by norm_num))] with u hu
-  exact backwardReducedAction_comp_sqrt ha hab fun s hs ↦ hu s (by
-    rw [uIcc_of_le hab]
-    exact ⟨hs.1.le, hs.2.le⟩)
+  exact eventuallyEq_backwardReducedAction_comp_sqrt ha hab
+    (fun s hs ↦ (hF.contMDiffAt s hs).of_le (by norm_num))
 
 end TauCeti.Manifold

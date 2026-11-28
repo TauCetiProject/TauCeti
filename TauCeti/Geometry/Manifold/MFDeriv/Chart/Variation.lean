@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Analysis.Calculus.Deriv.Add
@@ -43,6 +43,8 @@ displacement `φ t • e` small enough along `J`, then the variation is `C^n` on
 * `TauCeti.Manifold.contMDiffAt_chartVariation`: it is `C^n` at `(s, t)` when `γ` is `C^n` at `t`
   and the displaced point lies in the chart target.
 * `TauCeti.Manifold.variationField_chartVariation`: its variation field.
+* `TauCeti.Manifold.isFixedEndpointVariation_chartVariation`: a profile supported in the open
+  parameter interval gives a fixed-endpoint variation.
 * `TauCeti.Manifold.sinChartVariation`: the chart variation with amplitude `sin s`, a map of the
   plane.
 * `TauCeti.Manifold.contMDiff_sinChartVariation`: it is `C^n` on the plane for `C^n` data when the
@@ -169,6 +171,37 @@ theorem variationField_chartVariation (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I 
     TangentBundle.symmL_trivializationAt (by simpa using hJ t htJ), I.range_eq_univ,
     mfderivWithin_univ]
   exact (mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm (extChartAt I x₀ (γ t))).map_smul (φ t) e
+
+/-- For a profile supported in the chosen chart times, the chart-variation field has its
+coordinate formula at every time, including times outside that chart set. -/
+theorem variationField_chartVariation_of_support_subset
+    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφJ : Function.support φ ⊆ J)
+    (t : ℝ) :
+    variationField I (chartVariation I γ x₀ J φ e) t =
+      φ t • (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e := by
+  by_cases ht : t ∈ J
+  · exact variationField_chartVariation hJ ht
+  · have hφ : φ t = 0 := Function.notMem_support.mp fun h ↦ ht (hφJ h)
+    rw [variationField_eq_zero (Eventually.of_forall fun s ↦ by
+      rw [chartVariation_of_notMem ht, chartVariation_of_notMem ht]), hφ, zero_smul]
+    rfl
+
+omit [IsManifold I 1 M] in
+/-- On a `C^n` manifold, the chart variation of a curve which is `C^n` on `[a, b]`, for a `C^n`
+profile supported in an open set `J ⊆ uIoo a b`, is a `C^n` variation with fixed endpoints between
+`a` and `b`. -/
+theorem isFixedEndpointVariation_chartVariation {a b : ℝ} [IsManifold I n M] (hJo : IsOpen J)
+    (hJab : J ⊆ uIoo a b) (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ n φ)
+    (hφJ : tsupport φ ⊆ J) (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) :
+    IsFixedEndpointVariation I n (chartVariation I γ x₀ J φ e) a b := by
+  have hend : ∀ c ∉ uIoo a b, ∀ᶠ s in 𝓝 (0 : ℝ),
+      chartVariation I γ x₀ J φ e s c = chartVariation I γ x₀ J φ e 0 c :=
+    fun c hc ↦ .of_forall fun s ↦ by
+      rw [chartVariation_of_notMem (fun hcJ ↦ hc (hJab hcJ)),
+        chartVariation_of_notMem (fun hcJ ↦ hc (hJab hcJ))]
+  exact ⟨fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (hγ t ht)
+      fun htJ ↦ by simpa using (extChartAt I x₀).map_source (hJ t htJ),
+    hend a left_notMem_uIoo, hend b right_notMem_uIoo⟩
 
 end Boundaryless
 

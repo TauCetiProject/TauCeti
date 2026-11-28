@@ -131,22 +131,6 @@ variable {n : ℕ∞} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
 
 variable [I.Boundaryless]
 
-/-- On a `C^n` manifold, the chart variation of a curve which is `C^n` on `[a, b]`, for a `C^n`
-profile supported in an open set `J ⊆ uIoo a b`, is a `C^n` variation with fixed endpoints between
-`a` and `b`. -/
-private theorem isFixedEndpointVariation_chartVariation [IsManifold I n M] (hJo : IsOpen J)
-    (hJab : J ⊆ uIoo a b) (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ n φ)
-    (hφJ : tsupport φ ⊆ J) (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) :
-    IsFixedEndpointVariation I n (chartVariation I γ x₀ J φ e) a b := by
-  have hend : ∀ c ∉ uIoo a b, ∀ᶠ s in 𝓝 (0 : ℝ),
-      chartVariation I γ x₀ J φ e s c = chartVariation I γ x₀ J φ e 0 c :=
-    fun c hc ↦ .of_forall fun s ↦ by
-      rw [chartVariation_of_notMem (fun hcJ ↦ hc (hJab hcJ)),
-        chartVariation_of_notMem (fun hcJ ↦ hc (hJab hcJ))]
-  exact ⟨fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (hγ t ht)
-      fun htJ ↦ by simpa using (extChartAt I x₀).map_source (hJ t htJ),
-    hend a left_notMem_uIoo, hend b right_notMem_uIoo⟩
-
 variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
@@ -159,12 +143,8 @@ private theorem inner_variationField_chartVariation
         (acceleration (leviCivitaConnection I M) (chartVariation I γ x₀ J φ e 0) t) =
       φ t * inner ℝ ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
         (acceleration (leviCivitaConnection I M) γ t) := by
-  by_cases htJ : t ∈ J
-  · rw [chartVariation_zero hJ, variationField_chartVariation hJ htJ, real_inner_smul_left]
-  · have hφt : φ t = 0 := Function.notMem_support.mp fun h ↦ htJ (hφJ h)
-    rw [variationField_eq_zero (Eventually.of_forall fun s ↦ by
-      rw [chartVariation_of_notMem htJ, chartVariation_of_notMem htJ]), inner_zero_left, hφt,
-      zero_mul]
+  rw [chartVariation_zero hJ, variationField_chartVariation_of_support_subset hJ hφJ,
+    real_inner_smul_left]
 
 /-- **The chart variations of a critical point.** On a `C^n` manifold with `2 ≤ n`, let `γ` be a
 critical point of the energy among `C^n` variations between `a` and `b`, and let `φ` be a `C^n`

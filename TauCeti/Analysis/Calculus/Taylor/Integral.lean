@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.TaylorIntegral
 public import TauCeti.Analysis.Calculus.Deriv.Second
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Topology.MetricSpace.Holder
+import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Normed.Module.HahnBanach
@@ -380,3 +381,56 @@ theorem deriv_deriv_comp_add_smul_sub_norm_sq {f : E → ℝ} (x v : E) {t : ℝ
   ring
 
 end TauCeti
+
+section
+
+open Set Filter Metric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A family which is jointly `C²` along a compact slice has a uniform quadratic remainder
+in its first variable, after subtracting the value and first derivative on that slice. -/
+theorem IsCompact.exists_pos_uniform_quadratic_remainder_compact_slice
+    {f : ℝ × ℝ → E} {K : Set ℝ} (hK : IsCompact K)
+    (hf : ∀ t ∈ K, ContDiffAt ℝ 2 f (0, t)) :
+    ∃ δ > 0, ∃ B > 0, ∀ s : ℝ, |s| < δ → ∀ t ∈ K,
+      ‖f (s, t) - f (0, t) - s • fderiv ℝ f (0, t) (1, 0)‖ ≤ B * s ^ 2 := by
+  let S : Set (ℝ × ℝ) := ({0} : Set ℝ) ×ˢ K
+  have hS : IsCompact S := isCompact_singleton.prod hK
+  have hΩ : IsOpen {z : ℝ × ℝ | ContDiffAt ℝ 2 f z} :=
+    isOpen_iff_mem_nhds.mpr fun z hz ↦ hz.eventually (by simp)
+  have hSΩ : S ⊆ {z : ℝ × ℝ | ContDiffAt ℝ 2 f z} := by
+    rintro ⟨s, t⟩ ⟨hs, ht⟩
+    rcases mem_singleton_iff.mp hs with rfl
+    exact hf t ht
+  obtain ⟨δ, hδ, hδΩ⟩ := hS.exists_cthickening_subset_open hΩ hSΩ
+  have hH : ContinuousOn (iteratedFDeriv ℝ 2 f) (cthickening δ S) := by
+    intro z hz
+    have hz' : ContDiffAt ℝ 2 f z := hδΩ hz
+    exact (hz'.continuousAt_iteratedFDeriv (k := 2) le_rfl).continuousWithinAt
+  obtain ⟨M, hM⟩ := hS.cthickening.exists_bound_of_continuousOn hH
+  let B : ℝ := |M| + 1
+  have hB : 0 < B := by dsimp [B]; positivity
+  have hMB : M ≤ B := (le_abs_self M).trans (by dsimp [B]; linarith)
+  refine ⟨δ, hδ, B, hB, fun s hs t ht ↦ ?_⟩
+  have hseg {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) :
+      ((0, t) : ℝ × ℝ) + r • ((s, 0) : ℝ × ℝ) ∈ cthickening δ S := by
+    have hdist : dist (((0, t) : ℝ × ℝ) + r • ((s, 0) : ℝ × ℝ)) (0, t) = |r * s| := by
+      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
+      simp only [Prod.norm_mk, norm_zero, Real.norm_eq_abs, max_eq_left (abs_nonneg s)]
+      rw [abs_mul]
+    apply mem_cthickening_of_dist_le _ (0, t) δ S ⟨by simp, ht⟩
+    rw [hdist, abs_mul, abs_of_nonneg hr.1]
+    exact (mul_le_of_le_one_left (abs_nonneg s) hr.2).trans hs.le
+  have hTaylor := TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le
+    (f := f) (x := (0, t)) (y := (s, 0)) (n := 1) (M := B)
+    (fun r hr ↦ hδΩ (hseg hr))
+    (fun r hr ↦ (hM _ (hseg (Ioo_subset_Icc_self hr))).trans hMB)
+  have hlinear : fderiv ℝ f (0, t) (s, 0) = s • fderiv ℝ f (0, t) (1, 0) := by
+    simpa using (fderiv ℝ f (0, t)).map_smul s (1, 0)
+  have hrem :
+      ‖f (s, t) - f (0, t) - s • fderiv ℝ f (0, t) (1, 0)‖ ≤ B * s ^ 2 / 2 := by
+    simpa [Finset.sum_range_succ, hlinear, Real.norm_eq_abs, sq_abs, ← sub_sub] using hTaylor
+  exact hrem.trans (by nlinarith [mul_nonneg hB.le (sq_nonneg s)])
+
+end
