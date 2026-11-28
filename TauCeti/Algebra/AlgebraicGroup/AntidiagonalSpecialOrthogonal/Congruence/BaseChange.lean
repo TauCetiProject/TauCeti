@@ -70,15 +70,22 @@ theorem baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp (hi : i
       (coordinateHopfAlgebraBaseChangeIso R l K).hom ≫
         (coordinateHopfAlgebraIsoSpecialOrthogonal l
           (mul_self_map_of_mul_self_eq_neg_one (algebraMap R K) hi)).hom := by
-  rw [coordinateHopfAlgebraIsoSpecialOrthogonal_def, coordinateHopfAlgebraIsoSpecialOrthogonal_def]
-  have h₁ := baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R l K
-  have h₂ :=
-    SpecialOrthogonal.baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R K l
-  rw [coordinateMap_def, coordinateMap_def] at h₁
-  rw [SpecialOrthogonal.coordinateMap_def, SpecialOrthogonal.coordinateMap_def] at h₂
-  refine CommHopfAlgCat.baseChangeMap_quotientIsoOfComapEq_hom_comp _ _ _ _ _ _ h₁ h₂ ?_
-  rw [← map_congrUnit, ← map_inv]
-  exact GeneralLinear.baseChangeMap_conjCoordinateIso_hom_comp K (congrUnit l hi)⁻¹
+  have hsurj : Function.Surjective (coordinateMap R l).hom := by
+    rw [coordinateMap_def]
+    exact CommHopfAlgCat.mkQuotient_surjective _ _
+  refine CommHopfAlgCat.baseChangeMap_lift_comp_iso_hom (coordinateMap R l) hsurj
+    _ (coordinateMap K l) _ (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l)
+    (coordinateHopfAlgebraBaseChangeIso R l K)
+    (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l)
+    (baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R l K) ?_
+  rw [Category.assoc, Iso.inv_comp_eq]
+  simp only [coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom]
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, Functor.map_comp, Category.assoc,
+    CommHopfAlgCat.baseChangeFunctor_map, CommHopfAlgCat.baseChangeFunctor_map,
+    SpecialOrthogonal.baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom,
+    ← Category.assoc (CommHopfAlgCat.baseChangeMap (K := K) _),
+    GeneralLinear.baseChangeMap_conjCoordinateIso_hom_comp, Category.assoc,
+    ← map_congrUnit, ← map_inv]
 
 end Coordinate
 
