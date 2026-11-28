@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Equalizer
 import Mathlib.Algebra.FiveLemma
+import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.RingTheory.LocalRing.Module
 
 /-!
@@ -24,6 +25,8 @@ are flat, then so is `M`: a submodule of a flat module with flat quotient is fla
 * `Module.Flat.of_exact_of_lTensor_quotient_injective`: for an exact pair `M → N → P → 0` with
   `N` flat, the cokernel `P` is flat when `M → N` stays injective after tensoring with every
   `R ⧸ I`.
+* `Module.Flat.of_surjective_of_ker_inf_smul_top_le`: the target of a surjection `f` from a flat
+  module is flat when `ker f ∩ I M ⊆ I (ker f)` for every finitely generated ideal `I`.
 * `Function.Exact.flat_left_of_injective_of_surjective`: the first term of a short exact
   sequence whose other two terms are flat is flat.
 * `Submodule.flat_of_flat_quotient`: a submodule of a flat module with flat quotient is flat.
@@ -80,6 +83,41 @@ theorem Module.Flat.of_exact_of_lTensor_quotient_injective [Module.Flat R N]
     (LinearMap.exact_subtype_mkQ I) I.mkQ_surjective
     ((LinearMap.lTensor_inj_iff_rTensor_inj _ _).mp (hf hI))
     (Module.Flat.lTensor_preserves_injective_linearMap _ I.injective_subtype)
+
+/-- **Flatness of a quotient by the intersection criterion.** Let `f : M → N` be surjective with
+`M` flat over `R`. If `ker f ∩ I M ⊆ I (ker f)` for every finitely generated ideal `I`, then `N`
+is flat over `R`. This is the converse of `LinearMap.ker_inf_smul_top_eq_smul_of_flat`: the
+quotient `(ker f ∩ I M) ⧸ I (ker f)` is `Tor₁(R ⧸ I, N)`. -/
+theorem Module.Flat.of_surjective_of_ker_inf_smul_top_le [Module.Flat R M] (f : M →ₗ[R] N)
+    (hf : Function.Surjective f)
+    (h : ∀ ⦃I : Ideal R⦄, I.FG → LinearMap.ker f ⊓ I • ⊤ ≤ I • LinearMap.ker f) :
+    Module.Flat R N := by
+  apply Module.Flat.of_exact_of_lTensor_quotient_injective (LinearMap.ker f).subtype f
+    (LinearMap.exact_subtype_ker_map f) hf
+  intro I hI
+  let K := LinearMap.ker f
+  let q := (I • (⊤ : Submodule R K)).mapQ (I • (⊤ : Submodule R M)) K.subtype (by
+    rw [← Submodule.map_le_iff_le_comap, Submodule.map_smul'', Submodule.map_subtype_top]
+    exact Submodule.smul_mono le_rfl le_top)
+  have hq : Function.Injective q := by
+    rw [← LinearMap.ker_eq_bot, Submodule.ker_mapQ]
+    apply le_antisymm _ bot_le
+    rw [Submodule.map_le_iff_le_comap, Submodule.comap_bot, Submodule.ker_mkQ]
+    intro z hz
+    exact (Submodule.mem_smul_top_iff I K z).mpr (h hI ⟨z.property, hz⟩)
+  have he : (quotTensorEquivQuotSMul M I).toLinearMap ∘ₗ K.subtype.lTensor (R ⧸ I) =
+      q ∘ₗ (quotTensorEquivQuotSMul K I).toLinearMap := by
+    refine TensorProduct.ext' fun r z ↦ ?_
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+    simp [q]
+  intro x y hxy
+  apply (quotTensorEquivQuotSMul K I).injective
+  apply hq
+  -- Package function evaluation as composition to apply the named commuting-square identity.
+  change (q ∘ₗ (quotTensorEquivQuotSMul K I).toLinearMap) x =
+    (q ∘ₗ (quotTensorEquivQuotSMul K I).toLinearMap) y
+  rw [← he]
+  exact congrArg (quotTensorEquivQuotSMul M I) hxy
 
 /-- The first term of a short exact sequence whose middle and last terms are flat is flat. -/
 theorem Function.Exact.flat_left_of_injective_of_surjective

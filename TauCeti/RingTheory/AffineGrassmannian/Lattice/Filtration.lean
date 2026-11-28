@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.Algebra.Module.ProjectiveLattice
 public import TauCeti.LinearAlgebra.Pi
 import TauCeti.Algebra.Algebra.IsUnit
 
@@ -36,6 +37,12 @@ base change along any ring map `B → B'` for which `B'` also embeds in its coef
 
 ## Main results
 
+* `TauCeti.pow_smul_mem_diagonalLattice_iff`: `ξ ^ m v ∈ μ(ξ) Bⁿ` exactly when `v` lies in the
+  lattice of the cocharacter `μ - m`.
+* `TauCeti.diagonalLattice_eq_toSubmodule_map`: when `B` embeds in `K`, the lattice of a
+  cocharacter is the image of the standard lattice under a diagonal unit, so it is finite
+  projective and spans `Kⁿ`; the standard lattice is that of the zero cocharacter
+  (`TauCeti.toSubmodule_standard_eq_diagonalLattice_zero`).
 * `Submodule.monotone_latticeFiltration`: `Fil^m Λ ⊆ Fil^{m'} Λ` for `m ≤ m'`.
 * `Submodule.latticeFiltration_map_mulVecLin`: `Fil^m (g Λ) = (g mod ξ) Fil^m Λ` for
   `g ∈ GLₙ(B)`.
@@ -155,6 +162,75 @@ theorem mem_diagonalLattice {k : n → ℤ} {hξ : IsUnit (algebraMap B K ξ)} {
   simp only [diagonalLattice, Submodule.mem_pi, Set.mem_univ, true_imp_iff,
     Submodule.mem_span_singleton, Algebra.smul_def]
   exact forall_congr' fun i ↦ exists_congr fun b ↦ by rw [mul_comm, eq_comm]
+
+/-- Multiplying by `ξ ^ m` shifts the lattice of a cocharacter by `m`. -/
+theorem pow_smul_mem_diagonalLattice_iff (hξ : IsUnit (algebraMap B K ξ))
+    (k : n → ℤ) (m : ℕ) {v : n → K} :
+    ξ ^ m • v ∈ diagonalLattice k hξ ↔ v ∈ diagonalLattice (fun i ↦ k i - m) hξ := by
+  simp only [mem_diagonalLattice]
+  refine forall_congr' fun i ↦ exists_congr fun b ↦ ?_
+  have h₁ : (ξ ^ m • v) i = ((hξ.unit ^ m : Kˣ) : K) * v i := by
+    simp [Algebra.smul_def, Units.val_pow_eq_pow_val]
+  have h₂ : hξ.unit ^ k i = hξ.unit ^ m * hξ.unit ^ (k i - m) := by
+    rw [← zpow_natCast, ← zpow_add, add_sub_cancel]
+  rw [h₁, h₂, Units.val_mul, mul_assoc, Units.mul_right_inj]
+
+/-- The lattice of a cocharacter is finitely generated. -/
+theorem fg_diagonalLattice [Finite n] (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
+    (diagonalLattice k hξ).FG :=
+  Submodule.fg_pi fun _ ↦ Submodule.fg_span_singleton _
+
+/-- The lattice of a cocharacter spans `Kⁿ`: it contains `ξ ^ k_i e_i`, a unit multiple of the
+coordinate vector `e_i`. -/
+theorem span_diagonalLattice [Finite n] (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
+    Submodule.span K (diagonalLattice k hξ : Set (n → K)) = ⊤ := by
+  classical
+  refine eq_top_iff.mpr (((Pi.basisFun K n).unitsSMul fun i ↦ hξ.unit ^ k i).span_eq.ge.trans
+    (Submodule.span_le.mpr ?_))
+  rintro _ ⟨i, rfl⟩
+  have hmem : Pi.single i ((hξ.unit ^ k i : Kˣ) : K) ∈ diagonalLattice k hξ := by
+    rw [mem_diagonalLattice]
+    intro j
+    rcases eq_or_ne j i with rfl | hj
+    · exact ⟨1, by simp⟩
+    · exact ⟨0, by simp [hj]⟩
+  rw [Module.Basis.unitsSMul_apply, Pi.basisFun_apply, ← Pi.single_smul,
+    Units.smul_def, smul_eq_mul, mul_one]
+  exact Submodule.subset_span hmem
+
+section Diagonal
+
+variable [FaithfulSMul B K] [Finite n]
+
+/-- The lattice `μ(ξ) Bⁿ` of a cocharacter `μ = (k_i)` is the image of the standard lattice under
+the diagonal automorphism `μ(ξ)`, which multiplies the `i`-th coordinate by the unit `ξ ^ k_i`. -/
+theorem diagonalLattice_eq_toSubmodule_map (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
+    diagonalLattice k hξ =
+      ((ProjectiveLattice.standard B K n).map
+        (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.smulOfUnit (hξ.unit ^ k i))).toSubmodule := by
+  ext v
+  rw [ProjectiveLattice.mem_toSubmodule, ProjectiveLattice.mem_map,
+    ProjectiveLattice.mem_standard, mem_diagonalLattice]
+  refine forall_congr' fun i ↦ ⟨fun ⟨b, hb⟩ ↦ ⟨b, ?_⟩, fun ⟨b, hb⟩ ↦ ⟨b, ?_⟩⟩
+  · simp [LinearEquiv.smulOfUnit, Units.smul_def, hb]
+  · exact (Units.inv_mul_eq_iff_eq_mul _).mp
+      (by simpa [LinearEquiv.smulOfUnit, Units.smul_def] using hb.symm)
+
+/-- The lattice of a cocharacter is projective, as the image of the standard lattice. -/
+instance (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
+    Module.Projective B (diagonalLattice k hξ) :=
+  .of_equiv (LinearEquiv.ofEq _ _ (diagonalLattice_eq_toSubmodule_map k hξ).symm)
+
+variable (n) in
+/-- The standard lattice is the lattice of the zero cocharacter. -/
+theorem toSubmodule_standard_eq_diagonalLattice_zero (hξ : IsUnit (algebraMap B K ξ)) :
+    (ProjectiveLattice.standard B K n).toSubmodule = diagonalLattice (fun _ : n ↦ (0 : ℤ)) hξ := by
+  ext v
+  simp only [ProjectiveLattice.mem_toSubmodule, ProjectiveLattice.mem_standard, Set.mem_range,
+    mem_diagonalLattice, zpow_zero, Units.val_one, one_mul]
+  exact forall_congr' fun i ↦ ⟨fun ⟨b, hb⟩ ↦ ⟨b, hb.symm⟩, fun ⟨b, hb⟩ ↦ ⟨b, hb.symm⟩⟩
+
+end Diagonal
 
 end TauCeti
 
