@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 public import TauCeti.RingTheory.Nagata
 
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
@@ -39,7 +40,8 @@ flat over `R`, so `π` is a nonzerodivisor on them
 (`TauCeti.Model.algebraMap_mem_nonZeroDivisors_sections`), and the special fibre `Γ(U) ⧸ π Γ(U)` is
 of finite type over the residue field, hence Nagata (`TauCeti.Model.isNagata_sections_quotient`),
 of dimension at most `d` when the model has relative dimension at most `d`
-(`TauCeti.Model.krullDimLE_sections_quotient`).
+(`TauCeti.Model.krullDimLE_sections_quotient`). The generic fibre over `U` is the localization
+`Γ(U)[1/π]` (`TauCeti.Model.isLocalization_away_app_genericι`).
 -/
 
 public section
@@ -283,6 +285,27 @@ theorem range_genericι_eq_basicOpen (M : Model R K C toK) {π : R}
   ext x
   refine (not_congr (M.toBase.base_eq_closedPoint_iff_mem_zeroLocus hπ hπ0 x)).trans ?_
   rw [Scheme.zeroLocus_singleton, Set.mem_compl_iff, not_not]
+
+/-- Over an affine open `U` of the total space of a model, the sections of the generic fibre over
+`U ∩ C` are the localization of `Γ(X, U)` away from the image of a nonzero element `π` of the
+maximal ideal of `R`, such as a uniformizer. -/
+theorem isLocalization_away_app_genericι (M : Model R K C toK) {U : M.total.Opens}
+    (hU : IsAffineOpen U) {π : R} (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) :
+    letI := (M.genericι.app U).hom.toAlgebra
+    letI := M.toBase.sectionsAlgebra U
+    IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
+  have := M.isOpenImmersion_genericι
+  let := (M.genericι.app U).hom.toAlgebra
+  let := M.toBase.sectionsAlgebra U
+  refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
+  -- The generic fibre is the basic open of the pullback of `π`.
+  have hrange : M.genericι.opensRange =
+      M.toBase ⁻¹ᵁ (Spec (.of R)).basicOpen ((Scheme.ΓSpecIso (.of R)).inv π) := by
+    ext1
+    rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
+      M.range_genericι_eq_basicOpen hπ hπ0]
+  rw [hrange, M.toBase.algebraMap_sections]
+  exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
 
 /-- If the total space of a model `M` is irreducible, then its generic fibre `C` is nonempty. -/
 theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C :=

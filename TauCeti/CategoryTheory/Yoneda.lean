@@ -44,6 +44,8 @@ standard corepresentable functors `coyoneda.obj (op A)` and their universe lifts
   along an isomorphism `e` of presheaves applies `e` to its classifying elements.
 * `CategoryTheory.Functor.RepresentableBy.homEquiv_uniqueUpToIso_hom`: the isomorphism between two
   representing objects classifies the universal element of the first.
+* `CategoryTheory.Functor.RepresentableBy.homEquiv_comp_uniqueUpToIso_inv`: postcomposition
+  with the inverse comparison identifies the two representations on every point.
 * `CategoryTheory.Functor.RepresentableBy.homEquiv_homEquiv_symm_comp_naturality`: postcomposition
   with a morphism between representing objects, read through the two representations, commutes
   with the maps of the presheaves.
@@ -125,6 +127,16 @@ theorem homEquiv_uniqueUpToIso_hom {Y' : C} (R' : F.RepresentableBy Y') :
   rw [uniqueUpToIso_hom, Yoneda.fullyFaithful_preimage]
   -- the preimage under Yoneda is the image of `𝟙 Y` under `R'.homEquiv.symm ∘ R.homEquiv`
   exact R'.homEquiv.apply_symm_apply _
+
+/-- The comparison `uniqueUpToIso` of two representing objects carries the representation `e'` to
+the representation `e`. -/
+lemma homEquiv_comp_uniqueUpToIso_inv
+    {C : Type*} [Category C] {F : Cᵒᵖ ⥤ Type*} {Y Y' : C} (e : F.RepresentableBy Y)
+    (e' : F.RepresentableBy Y') {T : C} (x : T ⟶ Y') :
+    e.homEquiv (x ≫ (e.uniqueUpToIso e').inv) = e'.homEquiv x := by
+  have h : e.homEquiv (e.uniqueUpToIso e').inv = e'.homEquiv (𝟙 Y') :=
+    e.homEquiv.apply_symm_apply _
+  rw [e.homEquiv_comp, h, ← e'.homEquiv_comp, Category.comp_id]
 
 /-- Postcomposition with a morphism `s : Y ⟶ Y'` between representing objects, read through the
 representations `R` of `F` and `R'` of `G`, commutes with the maps of `F` and `G`. -/

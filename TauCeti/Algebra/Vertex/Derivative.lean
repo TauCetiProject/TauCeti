@@ -127,6 +127,20 @@ theorem ncoeff_apply_of_nonneg [HasUniqueDiv V] {T : Module.End R V} {vac : V}
     rw [hk', ih (k + 1) (by omega), map_zero, eq_comm, neg_smul, neg_eq_zero, natCast_zsmul] at h
     exact nsmul_right_injective k.succ_ne_zero (h.trans (smul_zero _).symm)
 
+/-- If `V` has unique divisibility, `T vac = 0`, and two `T`-covariant fields agree at mode `-1`
+on `vac`, then all of their modes agree on `vac`. -/
+theorem ncoeff_apply_eq_of_lie_of_neg_one_eq [HasUniqueDiv V] {T : Module.End R V} {vac : V}
+    (hvac : T vac = 0) {A B : VertexOperator R V}
+    (hA : ∀ m : ℤ, ⁅T, A[[m]]⁆ = (derivative A)[[m]])
+    (hB : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]])
+    (hneg : (A[[-1]]) vac = (B[[-1]]) vac) (n : ℤ) : (A[[n]]) vac = (B[[n]]) vac := by
+  rcases le_or_gt 0 n with hn | hn
+  · rw [ncoeff_apply_of_nonneg hvac hA hn, ncoeff_apply_of_nonneg hvac hB hn]
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
+    exact (nsmul_right_inj k.factorial_ne_zero).mp <| by
+      simpa only [factorial_smul_ncoeff_apply hvac hA k,
+        factorial_smul_ncoeff_apply hvac hB k] using congrArg (T ^ k) hneg
+
 namespace IsLocalOfOrder
 
 variable {A B : VertexOperator R V} {N : ℕ}

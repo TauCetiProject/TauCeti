@@ -24,7 +24,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 
 Let `a` be a coefficient matrix on `ℝ^{n+1}`, uniformly elliptic with constants `0 < λ ≤ Λ`,
 neither symmetric nor continuous in general, whose operators `a(x)` have vanishing mean
-oscillation, and let `2 < p < ∞`. This file proves the whole-space estimate with a zero-order
+oscillation, and let `1 < p < ∞`. This file proves the whole-space estimate with a zero-order
 shift: there is `λ₀ > 0` such that for every `μ ≥ λ₀` every `u ∈ W^{2,p}(ℝ^{n+1})` satisfies
 
 `μ ‖u‖_{Lᵖ} + √μ ‖∇u‖_{Lᵖ} + ‖D²u‖_{Lᵖ} ≤ C ‖∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu - μ u‖_{Lᵖ}`,
@@ -36,8 +36,8 @@ The estimate without the shift,
 `TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO`, keeps `‖u‖` on the
 right side; here it is absorbed, so the shifted operator is injective on `W^{2,p}(ℝ^{n+1})` for
 `μ ≥ λ₀` (`TauCeti.PDE.exists_forall_eq_zero_of_sum_mul_inner_sub_mul_eq_zero_of_memVMO`). This is
-the a priori estimate of Krylov's whole-space theorem for `p > 2`. Solvability of the shifted
-equation and the range `1 < p ≤ 2` are not treated here.
+the a priori estimate of Krylov's whole-space theorem. Solvability of the shifted equation is not
+treated here.
 
 ## The argument
 
@@ -641,11 +641,11 @@ end Tensor
 
 variable {n : ℕ}
 
-/-- **The zero-order term of the shifted estimate.** For `2 < p < ∞` there is `C`, depending on
+/-- **The zero-order term of the shifted estimate.** For `1 < p < ∞` there is `C`, depending on
 `n`, `p`, `λ`, `Λ`, such that for every uniformly elliptic coefficient field `a` of vanishing mean
 oscillation there is `λ₀ > 0` with `μ ‖u‖ ≤ C ‖∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu - μ u‖` on `W^{2,p}(ℝ^{n+1})` for
 every `μ ≥ λ₀`. -/
-private theorem exists_mul_norm_value_le_of_memVMO (hp : 2 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+private theorem exists_mul_norm_value_le_of_memVMO (hp : 1 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume →
       UniformlyEllipticOn univ a lam Lam →
@@ -673,7 +673,7 @@ private theorem exists_mul_norm_value_le_of_memVMO (hp : 2 < p) (hp_top : p ≠ 
   rwa [lpNorm_congr_ae hf, ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top] at h
 
 /-- **Krylov's whole-space `W^{2,p}` estimate with a zero-order shift, for coefficients of
-vanishing mean oscillation.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending
+vanishing mean oscillation.** Let `1 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending
 only on `n`, `p`, `λ` and `Λ`, with the following property. Let `a` be a coefficient matrix on
 `ℝ^{n+1}`, uniformly elliptic with constants `λ, Λ`, whose operators `a(x)` have vanishing mean
 oscillation. Then there is `λ₀ > 0` such that for every `μ ≥ λ₀`, every `u ∈ W^{2,p}(ℝ^{n+1})`
@@ -686,7 +686,7 @@ Unlike `TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVM
 does not contain `‖u‖`; in particular `u ↦ ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu - μ u` is injective on `W^{2,p}` for
 `μ ≥ λ₀`. -/
 theorem exists_mul_norm_add_sqrt_mul_norm_add_norm_le_of_sum_mul_inner_sub_mul_eq_of_memVMO
-    (hp : 2 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    (hp : 1 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume →
       UniformlyEllipticOn univ a lam Lam →
@@ -745,10 +745,10 @@ theorem exists_mul_norm_add_sqrt_mul_norm_add_norm_le_of_sum_mul_inner_sub_mul_e
         C₂ * (1 + 8 * C₁) * ‖f‖ := by gcongr
     _ = _ := by push_cast; ring
 
-/-- **Uniqueness for the shifted equation.** For `2 < p < ∞` and a uniformly elliptic coefficient
+/-- **Uniqueness for the shifted equation.** For `1 < p < ∞` and a uniformly elliptic coefficient
 field `a` of vanishing mean oscillation on `ℝ^{n+1}`, there is `λ₀ > 0` such that for `μ ≥ λ₀` the
 only `u ∈ W^{2,p}(ℝ^{n+1})` with `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu - μ u = 0` almost everywhere is `u = 0`. -/
-theorem exists_forall_eq_zero_of_sum_mul_inner_sub_mul_eq_zero_of_memVMO (hp : 2 < p)
+theorem exists_forall_eq_zero_of_sum_mul_inner_sub_mul_eq_zero_of_memVMO (hp : 1 < p)
     (hp_top : p ≠ ⊤) {lam Lam : ℝ}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (hvmo : MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume)

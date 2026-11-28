@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Analysis.Normed.Lp.ProdLp
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -101,25 +101,13 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
       refine ⟨Finset.range (i + 1), ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * |M j|,
         fun φ ↦ ((P φ).seminorm_le_iff ℝ (mul_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity)
           (apply_nonneg _ _)) i).2 fun _ p _ ↦ ?_⟩
-      refine (norm_iteratedFDeriv_smul_le (ψ.contDiff.comp contDiff_snd)
-        (φ.contDiff.comp contDiff_fst) p (mod_cast le_top)).trans ?_
-      rw [Finset.sum_mul]
-      refine Finset.sum_le_sum fun j hj ↦ ?_
-      have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
-      have hψj : ‖iteratedFDeriv ℝ j (ψ ∘ Prod.snd) p‖ ≤ |M j| :=
-        p.norm_iteratedFDeriv_comp_snd.le.trans
-          ((hM j ⟨p.2, rfl⟩).trans (le_abs_self _))
-      have hφj : ‖iteratedFDeriv ℝ (i - j) (φ ∘ Prod.fst) p‖ ≤
-          (Finset.range (i + 1)).sup (ContDiffMapSupportedIn.seminorm ℝ E F ⊤ K) φ :=
-        p.norm_iteratedFDeriv_comp_fst.le.trans
-          ((ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
-            (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (by omega))))
-      calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun p : E × D ↦ ψ p.2) p‖ *
-            ‖iteratedFDeriv ℝ (i - j) (fun p : E × D ↦ φ p.1) p‖
-          ≤ (i.choose j : ℝ) * |M j| *
-              (Finset.range (i + 1)).sup (ContDiffMapSupportedIn.seminorm ℝ E F ⊤ K) φ := by
-            gcongr
-            exacts [hψj, hφj] }
+      refine norm_iteratedFDeriv_smul_le_of_forall_le (ψ.contDiff.comp contDiff_snd)
+        (φ.contDiff.comp contDiff_fst) p (mod_cast le_top) (fun j _ ↦
+          p.norm_iteratedFDeriv_comp_snd.le.trans ((hM j ⟨p.2, rfl⟩).trans (le_abs_self _)))
+        fun j hj ↦ ?_
+      exact p.norm_iteratedFDeriv_comp_fst.le.trans
+        ((ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
+          (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (by omega)))) }
 
 /-- The **tensor product with a fixed test function** `ψ` on `O ⊆ D`: the continuous linear map
 sending a test function `φ` on `Ω` to the test function `(x, t) ↦ ψ t • φ x` on any open

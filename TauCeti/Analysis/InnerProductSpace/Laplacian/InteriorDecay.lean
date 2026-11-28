@@ -72,23 +72,53 @@ open Metric Set Filter Topology InnerProductSpace Laplacian
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The exponent `μ = c² / (4 c R + 2 n)` of the Gaussian barrier satisfies
-`4 R² μ² + 2 n μ ≤ c²`. -/
-private theorem four_mul_sq_mul_sq_add_two_mul_mul_le {c R n : ℝ} (hc : 0 < c) (hR : 0 ≤ R)
-    (hn : 0 ≤ n) :
-    4 * R ^ 2 * (c ^ 2 / (4 * c * R + 2 * n)) ^ 2 + 2 * n * (c ^ 2 / (4 * c * R + 2 * n)) ≤
-      c ^ 2 := by
-  set t := 4 * c * R + 2 * n
-  set μ := c ^ 2 / t
-  rcases (show 0 ≤ t by positivity).eq_or_lt with ht | ht
-  · simp [μ, ← ht, sq_nonneg]
+/-- The exponent `μ = c² / (4 c R s + 2 T)` of the Gaussian barrier satisfies
+`4 s² R² μ² + 2 T μ ≤ c²`. -/
+theorem four_mul_sq_mul_sq_mul_sq_add_two_mul_mul_le {c R s T : ℝ} (hc : 0 < c)
+    (hR : 0 ≤ R) (hs : 0 ≤ s) (hT : 0 ≤ T) :
+    4 * s ^ 2 * R ^ 2 * (c ^ 2 / (4 * c * R * s + 2 * T)) ^ 2 +
+      2 * T * (c ^ 2 / (4 * c * R * s + 2 * T)) ≤ c ^ 2 := by
+  set D := 4 * c * R * s + 2 * T
+  set μ := c ^ 2 / D
+  rcases (show 0 ≤ D by positivity).eq_or_lt with hD | hD
+  · simp [μ, ← hD, sq_nonneg]
   have hμ : 0 ≤ μ := by positivity
-  have hμt : μ * t = c ^ 2 := div_mul_cancel₀ _ ht.ne'
-  -- From `μ t = c²` and `t ≥ 4 c R`: `4 R μ ≤ c`, so `4 R² μ² ≤ 4 c R μ = μ t - 2 n μ`.
-  have hRμ : 4 * (R * μ) ≤ c := by
-    have : c * (4 * (R * μ)) ≤ c * c := by nlinarith [mul_nonneg hR hμ, mul_nonneg hn hμ]
+  have hμD : μ * D = c ^ 2 := div_mul_cancel₀ _ hD.ne'
+  have hsRμ : 0 ≤ s * R * μ := by positivity
+  -- From `μ D = c²` and `D ≥ 4 c R s`: `4 s R μ ≤ c`, so `4 s² R² μ² ≤ 4 c s R μ = μ D - 2 T μ`.
+  have hle : 4 * (s * R * μ) ≤ c := by
+    have : c * (4 * (s * R * μ)) ≤ c * c := by nlinarith [mul_nonneg hT hμ]
     exact le_of_mul_le_mul_left this hc
-  nlinarith [mul_nonneg hR hμ]
+  nlinarith [mul_le_mul_of_nonneg_left hle hsRμ]
+
+/-- The barrier exponent `c² s² / (4 c s σ + 2 (P + β s))` of the decay estimate on the ball of
+radius `s` is at least `c² s / (4 c σ + 2 β) - n / 8` when `0 ≤ P ≤ n σ²`. -/
+theorem neg_div_le_div_eight_add_neg_div {c s σ β P n : ℝ} (hc : 0 < c) (hs : 0 < s)
+    (hσ : 0 ≤ σ) (hβ : 0 ≤ β) (hn : 0 ≤ n) (hP : 0 ≤ P) (hPn : P ≤ n * σ ^ 2) :
+    -(c ^ 2 * s ^ 2 / (4 * c * s * σ + 2 * (P + β * s))) ≤
+      n / 8 + -(c ^ 2 * s / (4 * c * σ + 2 * β)) := by
+  set A := 4 * c * σ + 2 * β
+  have hDA : 4 * c * s * σ + 2 * (P + β * s) = s * A + 2 * P := by ring
+  rw [hDA]
+  rcases (show 0 ≤ A by positivity).eq_or_lt with hA | hA
+  · -- Then `σ = β = 0`, so `P = 0` and both exponents vanish.
+    have hσ0 : σ = 0 := by nlinarith
+    have hP0 : P = 0 := le_antisymm (by simpa [hσ0] using hPn) hP
+    simp only [← hA, hP0, mul_zero, add_zero, div_zero, neg_zero]
+    positivity
+  -- The difference of the exponents is `2 c² s P / (A (s A + 2 P)) ≤ 2 c² P / A² ≤ n / 8`.
+  have h1 : c ^ 2 * s / A - c ^ 2 * s ^ 2 / (s * A + 2 * P) =
+      2 * c ^ 2 * s * P / (A * (s * A + 2 * P)) := by
+    field_simp
+    ring
+  have h2 : 2 * c ^ 2 * s * P / (A * (s * A + 2 * P)) ≤ 2 * c ^ 2 * P / A ^ 2 := by
+    rw [div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c) hP) (mul_nonneg hA.le hP)]
+  have h3 : 2 * c ^ 2 * P / A ^ 2 ≤ n / 8 := by
+    rw [div_le_div_iff₀ (by positivity) (by norm_num)]
+    have hA2 : 16 * c ^ 2 * σ ^ 2 ≤ A ^ 2 := by nlinarith [mul_nonneg hc.le hσ]
+    nlinarith [mul_le_mul_of_nonneg_left hPn (sq_nonneg c), mul_le_mul_of_nonneg_left hA2 hn]
+  linarith
 
 /-- The Gaussian barrier `M exp (μ (‖y - x‖² - R²))`, `μ = c² / (4 c R + 2 n)`, is a supersolution
 of `-Δ + c²` on the closed ball of radius `R` about `x`, for `M ≥ 0`. -/
@@ -121,8 +151,9 @@ private theorem laplacian_gaussian_barrier_le {x y : E} {c R M : ℝ} (hc : 0 < 
   rw [← sub_eq_add_neg, hρ.contDiffAt.laplacian_comp_norm_sq, hdd, hd]
   have hρy : 0 ≤ ρ (‖y - x‖ ^ 2) := by positivity
   have hyR : ‖y - x‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hy 2
-  have hμ := four_mul_sq_mul_sq_add_two_mul_mul_le hc hR (Nat.cast_nonneg (α := ℝ)
-    (Module.finrank ℝ E))
+  have hμ : 4 * R ^ 2 * μ ^ 2 + 2 * n * μ ≤ c ^ 2 := by
+    simpa using four_mul_sq_mul_sq_mul_sq_add_two_mul_mul_le hc hR zero_le_one
+      (Nat.cast_nonneg (α := ℝ) (Module.finrank ℝ E))
   calc 4 * ‖y - x‖ ^ 2 * (μ ^ 2 * ρ (‖y - x‖ ^ 2)) + 2 * n * (μ * ρ (‖y - x‖ ^ 2))
       ≤ (4 * R ^ 2 * μ ^ 2 + 2 * n * μ) * ρ (‖y - x‖ ^ 2) := by
         nlinarith [mul_nonneg (sq_nonneg μ) hρy]
@@ -222,11 +253,11 @@ theorem le_div_sq_add_exp_mul_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} 
       (fun y hy ↦ hcd y (ball_subset_ball hsR.le hy)) (fun y hy ↦ hV y (ball_subset_ball hsR.le hy))
       (fun y hy ↦ hsub y (ball_subset_ball hsR.le hy))
       (fun y hy ↦ hle y (hsub' (sphere_subset_closedBall hy)))
-    -- `c² s² / (4 c s + 2 n) ≥ c s / 4 - n / 8`: the difference is `n² / 4` over `4 c s + 2 n`.
-    have ht : 0 < 4 * c * s + 2 * n := by positivity
     have hexp : -(c ^ 2 * s ^ 2 / (4 * c * s + 2 * n)) ≤ n / 8 + -(c * s / 4) := by
-      rw [neg_le, neg_add, neg_neg, le_div_iff₀ ht]
-      nlinarith [sq_nonneg n]
+      have hn : 0 ≤ n := Nat.cast_nonneg _
+      have h := neg_div_le_div_eight_add_neg_div hc hs zero_le_one le_rfl hn hn (by simp)
+      simp only [mul_one, zero_mul, mul_zero, add_zero] at h
+      rwa [show c ^ 2 * s / (4 * c) = c * s / 4 by field_simp] at h
     calc u x ≤ K / c ^ 2 + M * Real.exp (-(c ^ 2 * s ^ 2 / (4 * c * s + 2 * n))) := h
       _ ≤ K / c ^ 2 + M * Real.exp (n / 8 + -(c * s / 4)) := by gcongr
       _ = F s := by
