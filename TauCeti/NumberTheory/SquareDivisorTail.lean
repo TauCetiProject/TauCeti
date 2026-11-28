@@ -26,6 +26,10 @@ removing the singular locus `Δ = 0` before sieving. An element lies in the tail
 multiplicity is positive (`TauCeti.squareDivisorMultiplicity_pos_iff`), so on a finite set the
 tail has at most the summed multiplicity many elements
 (`TauCeti.ncard_inter_squareDivisorTail_le_sum`). Both decrease as the cutoff `M` grows.
+When `|Δ a| ≤ N ^ 2`, the multiplicity counts squarefree moduli in `(M, N]`
+(`TauCeti.squareDivisorMultiplicity_eq_card_Ioc`), so on a finite set with this uniform bound the
+summed multiplicity is a finite sum over those moduli of the number of `a` with `Δ a ≠ 0` and
+`m ^ 2 ∣ Δ a` (`TauCeti.sum_squareDivisorMultiplicity_eq_sum_Ioc`).
 
 The summed multiplicity is the left side of the summed tail estimates of Bhargava, Shankar and
 Wang, *Squarefree values of polynomial discriminants I*, Invent. Math. 228 (2022), Theorem 4.4
@@ -117,19 +121,45 @@ theorem squareDivisorMultiplicity_antitone (Δ : A → ℤ) (a : A) :
   rw [Finset.mem_filter] at hm ⊢
   exact ⟨hm.1, hMM'.trans_lt hm.2.1, hm.2.2⟩
 
+/-- If `|Δ a| ≤ N ^ 2`, the multiplicity is the number of squarefree `m ∈ (M, N]` with
+`m ^ 2 ∣ Δ a`, when `Δ a ≠ 0`. -/
+theorem squareDivisorMultiplicity_eq_card_Ioc [DecidablePred fun m : ℕ ↦ Squarefree m] {N : ℕ}
+    (hN : (Δ a).natAbs ≤ N ^ 2) :
+    squareDivisorMultiplicity Δ M a =
+      #{m ∈ Ioc M N | Δ a ≠ 0 ∧ Squarefree m ∧ ((m : ℕ) : ℤ) ^ 2 ∣ Δ a} := by
+  rw [squareDivisorMultiplicity_eq_card]
+  congr 1
+  ext m
+  simp only [mem_filter, Nat.mem_divisors, mem_Ioc]
+  constructor
+  · rintro ⟨⟨-, h0⟩, hM, hsq, hdvd⟩
+    have hle : m ^ 2 ≤ N ^ 2 := by
+      refine (Nat.le_of_dvd (Nat.pos_of_ne_zero h0) ?_).trans hN
+      rwa [← Int.natCast_dvd, Nat.cast_pow]
+    exact ⟨⟨hM, (Nat.pow_le_pow_iff_left two_ne_zero).mp hle⟩, Int.natAbs_ne_zero.mp h0, hsq, hdvd⟩
+  · rintro ⟨⟨hM, -⟩, h0, hsq, hdvd⟩
+    refine ⟨⟨?_, Int.natAbs_ne_zero.mpr h0⟩, hM, hsq, hdvd⟩
+    exact Int.natCast_dvd.mp ((dvd_pow_self (m : ℤ) two_ne_zero).trans hdvd)
+
 /-- If `|Δ a| ≤ N ^ 2`, every modulus counted by the multiplicity lies in `(M, N]`. -/
 theorem squareDivisorMultiplicity_le_card_Ioc {N : ℕ} (hN : (Δ a).natAbs ≤ N ^ 2) :
     squareDivisorMultiplicity Δ M a ≤ #{m ∈ Ioc M N | ((m : ℕ) : ℤ) ^ 2 ∣ Δ a} := by
   classical
-  rw [squareDivisorMultiplicity_eq_card]
-  refine Finset.card_le_card_of_injOn id (fun m hm ↦ ?_) (Set.injOn_id _)
-  simp only [Finset.coe_filter, Set.mem_ofPred_eq, Nat.mem_divisors] at hm
-  obtain ⟨⟨-, h0⟩, hM, -, hdvd⟩ := hm
-  have hle : m ^ 2 ≤ N ^ 2 := by
-    refine (Nat.le_of_dvd (Nat.pos_of_ne_zero h0) ?_).trans hN
-    rwa [← Int.natCast_dvd, Nat.cast_pow]
-  simp only [id, Finset.coe_filter, Finset.mem_Ioc, Set.mem_ofPred_eq]
-  exact ⟨⟨hM, (Nat.pow_le_pow_iff_left two_ne_zero).mp hle⟩, hdvd⟩
+  rw [squareDivisorMultiplicity_eq_card_Ioc hN]
+  exact Finset.card_le_card (Finset.monotone_filter_right _ fun _ _ h ↦ h.2.2)
+
+/-- If `|Δ a| ≤ N ^ 2` on a finite set `s`, the summed multiplicity over `s` is the sum over the
+squarefree moduli `m ∈ (M, N]` of the number of `a ∈ s` with `Δ a ≠ 0` and `m ^ 2 ∣ Δ a`. -/
+theorem sum_squareDivisorMultiplicity_eq_sum_Ioc [DecidablePred fun m : ℕ ↦ Squarefree m]
+    (s : Finset A) {N : ℕ} (hN : ∀ a ∈ s, (Δ a).natAbs ≤ N ^ 2) :
+    ∑ a ∈ s, squareDivisorMultiplicity Δ M a =
+      ∑ m ∈ Ioc M N with Squarefree m, #{a ∈ s | Δ a ≠ 0 ∧ (m : ℤ) ^ 2 ∣ Δ a} := by
+  rw [Finset.sum_congr rfl fun a ha ↦ squareDivisorMultiplicity_eq_card_Ioc (hN a ha),
+    Finset.sum_filter]
+  simp only [Finset.card_filter]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  split_ifs with hsq <;> simp [hsq]
 
 /-- On a finite set `s`, the tail has at most as many elements as the summed multiplicity. -/
 theorem ncard_inter_squareDivisorTail_le_sum (s : Finset A) (Δ : A → ℤ) (M : ℕ) :
