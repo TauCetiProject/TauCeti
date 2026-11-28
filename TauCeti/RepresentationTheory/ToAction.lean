@@ -17,6 +17,11 @@ A representation `ρ` of a monoid `G` on a `Λ`-module `M` makes `M` a `G`-set, 
 ## Main definitions
 
 * `Representation.toAction ρ`: the `G`-set underlying a representation.
+
+## Main results
+
+* `Representation.distribMulAction_compHom_smul`: under `DistribMulAction.compHom V ρ`, scalar
+  multiplication by `x : G` is application of `ρ x`.
 -/
 
 public section
@@ -44,5 +49,20 @@ theorem toAction_V : ρ.toAction.V = M :=
 @[simp]
 theorem toAction_ρ_apply (g : G) (m : ρ.toAction.V) : ρ.toAction.ρ g m = ρ g m :=
   (rfl)
+
+section DistribMulAction
+
+variable {k G' V : Type*} [Semiring k] [Monoid G'] [AddCommMonoid V] [Module k V]
+  (ρ' : Representation k G' V)
+
+/-- Under `DistribMulAction.compHom V ρ'`, scalar multiplication by `x` is application of
+`ρ' x`. -/
+theorem distribMulAction_compHom_smul (x : G') (v : V) :
+    letI : DistribMulAction G' V := DistribMulAction.compHom V ρ'
+    x • v = ρ' x v := by
+  let : DistribMulAction G' V := DistribMulAction.compHom V ρ'
+  rw [MulAction.compHom_smul_def, Module.End.smul_def]
+
+end DistribMulAction
 
 end Representation

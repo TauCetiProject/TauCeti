@@ -27,7 +27,7 @@ class `TauCeti.dihedralEvenExtensionClass n` inside `H²(C₂, C_{2n}^{inv})`, w
 maps to `0 : ZMod 2` under `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n`.
 Likewise, every reflection inverts the rotations, so through `DihedralGroup n ⧸ C_n ≃* C₂` and the
 rotation coordinate `C_n ≃* ZMod n` this cohomology is that of `C₂` acting on `ZMod n` by negation
-(`TauCeti.dihedralRotationsGroupCohomologyIsoNeg`), and there too the class is zero.
+(`TauCeti.dihedralRotationsGroupCohomologyIsoNeg`).
 
 This is separated from `TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic` so the subgroup and
 recognition API of `DihedralGroup` does not pull in group cohomology.
@@ -52,8 +52,6 @@ recognition API of `DihedralGroup` does not pull in group cohomology.
 * `TauCeti.dihedralEvenExtensionClass_eq_zero`: `dihedralEvenExtensionClass n = 0`.
 * `TauCeti.dihedralRotationsGroupCohomologyIsoNeg_def`: that identification is
   `Subgroup.quotientGroupCohomologyIsoNeg` for a reflection and the rotation coordinate.
-* `TauCeti.dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero`: the class also
-  vanishes in `H²(C₂, ZMod n)`.
 -/
 
 public section
@@ -150,13 +148,5 @@ theorem dihedralRotationsGroupCohomologyIsoNeg_def (m k : ℕ) :
         (fun _ hx ↦ conj_eq_inv_of_notMem_dihedralRotations (sr_notMem_dihedralRotations 0) hx)
         (dihedralRotationsMulEquiv m) k :=
   (rfl)
-
-/-- The class of the dihedral extension `C_m → DihedralGroup m → C₂` is zero in
-`H²(C₂, ZMod m)`. -/
-theorem dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero (m : ℕ)
-    (σ : (dihedralRotations m).quotientExtension.Section) (hσ : σ 1 = 1) :
-    (dihedralRotationsGroupCohomologyIsoNeg m 2).hom (GroupExtension.factorSet σ hσ
-      (dihedralRotations m).quotientExtension_inducesAction).cohomologyClass = 0 := by
-  rw [cohomologyClass_dihedralRotations_eq_zero, map_zero]
 
 end TauCeti

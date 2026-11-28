@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Cohomology
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Cohomology
-public import TauCeti.RepresentationTheory.Homological.GroupCohomology.CyclicAutomorphism
 import TauCeti.Data.ZMod.Two
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 
@@ -17,45 +16,29 @@ import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 For every positive integer `n`, the dihedral group `D₄ₙ = DihedralGroup (2 * n)` and the
 generalized quaternion group `Q₄ₙ = QuaternionGroup n` both sit in a short exact sequence
 `1 → C_{2n} → E → C₂ → 1` whose quotient `C₂` acts on the cyclic rotation subgroup `C_{2n}` by
-inversion (`TauCeti.invMulDistribMulAction`, or equivalently `AddEquiv.neg (ZMod (2 * n))` in
-additive coordinates).
+inversion (`TauCeti.invMulDistribMulAction`).
 
-This file compares the two classes inside a single cohomology group in two complementary ways:
+Transporting both quotient extensions to the common kernel `Multiplicative (ZMod (2 * n))` and
+quotient `Multiplicative (ZMod 2)` via `TauCeti.dihedralExtension`,
+`TauCeti.quaternionExtension`, and `TauCeti.groupCohomology.relabelCohomologyIso` compares
+`TauCeti.dihedralEvenExtensionClass n` and `TauCeti.quaternionExtensionClass n` inside
+`H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2` (`Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo`),
+sending the dihedral class to `0` and the quaternion class to `1`. They are distinct
+(`dihedralEvenExtensionClass_ne_quaternionExtensionClass`), exhaust `H²`
+(`eq_dihedralEvenExtensionClass_or_eq_quaternionExtensionClass`), witness that the two relabelled
+extensions are inequivalent (`isEmpty_equiv_dihedralEvenExtension_quaternionExtension`), and
+separate complement existence (`TauCeti.isComplement'_dihedralRotations_zpowers_sr 0`) from
+non-existence (`TauCeti.not_exists_isComplement'_quaternionRotations`).
 
-* **Via `cyclicRep` and `Subgroup.quotientGroupCohomologyIsoNeg`.** Through
-  `TauCeti.dihedralRotationsGroupCohomologyIsoNeg` and
-  `TauCeti.quaternionRotationsGroupCohomologyIsoNeg`, both quotient classes land in
-  `H²(C₂, ZMod (2 * n))`, which has `gcd 2 (2 * n) = 2` elements
-  (`TauCeti.natCard_groupCohomology_two_neg_zmod`). The dihedral class is zero
-  (`TauCeti.dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero`) and the quaternion
-  class is nonzero
-  (`TauCeti.quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero`), so they
-  exhaust `H²` (`eq_dihedral_or_eq_quaternion`) and differ (`dihedral_ne_quaternion`).
-* **Via relabelled extensions and `relabelCohomologyIso`.** Transporting both quotient extensions
-  to the common kernel `Multiplicative (ZMod (2 * n))` and quotient `Multiplicative (ZMod 2)` via
-  `TauCeti.dihedralExtension`, `TauCeti.quaternionExtension`, and
-  `TauCeti.groupCohomology.relabelCohomologyIso` compares `TauCeti.dihedralEvenExtensionClass n` and
-  `TauCeti.quaternionExtensionClass n` inside `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2`
-  (`Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo`), sending the dihedral class to `0`
-  and the quaternion class to `1`. They are distinct
-  (`dihedralEvenExtensionClass_ne_quaternionExtensionClass`), exhaust `H²`
-  (`eq_dihedralEvenExtensionClass_or_eq_quaternionExtensionClass`), witness that the two relabelled
-  extensions are inequivalent (`isEmpty_equiv_dihedralEvenExtension_quaternionExtension`), and
-  separate complement existence (`TauCeti.isComplement'_dihedralRotations_zpowers_sr 0`) from
-  non-existence (`TauCeti.not_exists_isComplement'_quaternionRotations`).
-* **The order-`8` case (`n = 2`) and coprime contrast.** At `n = 2`, `D₈` and `Q₈` are extensions
-  of `C₂` by `C₄` with `|C₄| = 4` and `[E : C₄] = 2` not coprime
-  (`not_coprime_card_index_dihedralFour`, `not_coprime_card_index_quaternionTwo`), and every
-  involution of `QuaternionGroup n` (`n ≠ 0`) lies inside the rotation subgroup
-  (`TauCeti.sq_eq_one_quaternionGroup_iff`). By contrast, for any Klein four-group `V` and every
-  action of `C₃` on `V`, coprimality `gcd(3, 4) = 1` forces `H^{k+1}(C₃, V) = 0`
-  (`subsingleton_groupCohomology_zmodThree_kleinFour`).
+At `n = 2`, `D₈` and `Q₈` are extensions of `C₂` by `C₄` with `|C₄| = 4` and `[E : C₄] = 2` not
+coprime (`not_coprime_card_index_dihedralFour`, `not_coprime_card_index_quaternionTwo`), and every
+involution of `QuaternionGroup n` (`n ≠ 0`) lies inside the rotation subgroup
+(`TauCeti.sq_eq_one_quaternionGroup_iff`). By contrast, for any Klein four-group `V` and every
+action of `C₃` on `V`, coprimality `gcd(3, 4) = 1` forces `H^{k+1}(C₃, V) = 0`
+(`subsingleton_groupCohomology_zmodThree_kleinFour`).
 
 ## Main results
 
-* `TauCeti.Examples.DihedralQuaternion.eq_dihedral_or_eq_quaternion`,
-  `TauCeti.Examples.DihedralQuaternion.dihedral_ne_quaternion`: the two classes are the two
-  elements of `H²(C₂, ZMod (2 * n))`.
 * `dihedralEvenExtensionClass_ne_quaternionExtensionClass`: the dihedral and quaternion classes
   are distinct inside `H²(C₂, C_{2n}^{inv})`.
 * `eq_dihedralEvenExtensionClass_or_eq_quaternionExtensionClass`: the dihedral and quaternion
@@ -78,52 +61,6 @@ namespace TauCeti.Examples.DihedralQuaternion
 
 open CategoryTheory _root_.groupCohomology
 open scoped IsMulCommutative IsKleinFour
-
-/-! ### Comparison in `H²(C₂, ZMod (2 * n))` via `quotientGroupCohomologyIsoNeg` -/
-
-section CyclicRepComparison
-
-attribute [local instance] Subgroup.quotientConjugationAction
-
-/-- In `H²(C₂, ZMod (2 * n))` for the action by negation, with `n ≠ 0`, any two nonzero classes
-are equal. -/
-theorem eq_of_ne_zero_of_ne_zero {n : ℕ} [NeZero n]
-    {x y : groupCohomology ((AddEquiv.neg (ZMod (2 * n))).cyclicRep
-      (AddEquiv.iterate_neg_two _)) 2} (hx : x ≠ 0) (hy : y ≠ 0) : x = y := by
-  have hcard := (natCard_groupCohomology_two_neg_zmod (2 * n)).trans (Nat.gcd_mul_right_right n 2)
-  obtain ⟨z, -, hz⟩ := (Nat.card_eq_two_iff' 0).1 hcard
-  exact (hz x hx).trans (hz y hy).symm
-
-/-- **The two extensions of `C₂` by `C₂ₙ` with the inversion action.** For `n ≠ 0`, every class in
-`H²(C₂, ZMod (2 * n))`, the generator of `C₂` acting by negation, is the class of the dihedral
-extension `C₂ₙ → D₄ₙ → C₂` or that of the quaternion extension `C₂ₙ → Q₄ₙ → C₂`. -/
-theorem eq_dihedral_or_eq_quaternion (n : ℕ) [NeZero n]
-    (σ : (dihedralRotations (2 * n)).quotientExtension.Section) (hσ : σ 1 = 1)
-    (τ : (quaternionRotations n).quotientExtension.Section) (hτ : τ 1 = 1)
-    (x : groupCohomology ((AddEquiv.neg (ZMod (2 * n))).cyclicRep
-      (AddEquiv.iterate_neg_two _)) 2) :
-    x = (dihedralRotationsGroupCohomologyIsoNeg (2 * n) 2).hom (GroupExtension.factorSet σ hσ
-        (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass ∨
-      x = (quaternionRotationsGroupCohomologyIsoNeg n 2).hom (GroupExtension.factorSet τ hτ
-        (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass := by
-  rw [dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero]
-  exact (eq_or_ne x 0).imp_right fun hx ↦
-    eq_of_ne_zero_of_ne_zero hx
-      (quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero n τ hτ)
-
-/-- For `n ≠ 0`, the classes of the dihedral and quaternion extensions of `C₂` by `C₂ₙ` differ
-in `H²(C₂, ZMod (2 * n))`, the generator of `C₂` acting by negation. -/
-theorem dihedral_ne_quaternion (n : ℕ) [NeZero n]
-    (σ : (dihedralRotations (2 * n)).quotientExtension.Section) (hσ : σ 1 = 1)
-    (τ : (quaternionRotations n).quotientExtension.Section) (hτ : τ 1 = 1) :
-    (dihedralRotationsGroupCohomologyIsoNeg (2 * n) 2).hom (GroupExtension.factorSet σ hσ
-        (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass ≠
-      (quaternionRotationsGroupCohomologyIsoNeg n 2).hom (GroupExtension.factorSet τ hτ
-        (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass := by
-  rw [dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero]
-  exact (quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero n τ hτ).symm
-
-end CyclicRepComparison
 
 /-! ### Separating `DihedralGroup (2 * n)` and `QuaternionGroup n` inside `H²(C₂, C_{2n}^{inv})` -/
 

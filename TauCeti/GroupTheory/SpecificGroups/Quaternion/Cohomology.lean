@@ -28,8 +28,7 @@ Transporting the rotation quotient extension along `quaternionRotationsMulEquiv 
 `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n` and is nonzero for `n ≠ 0`.
 Likewise, every element outside the rotations inverts them, so through `Q₄ₙ ⧸ C₂ₙ ≃* C₂` and the
 rotation coordinate `C₂ₙ ≃* ZMod (2 * n)` the rotation cohomology is that of `C₂` acting on
-`ZMod (2 * n)` by negation (`TauCeti.quaternionRotationsGroupCohomologyIsoNeg`), and there too the
-class is nonzero.
+`ZMod (2 * n)` by negation (`TauCeti.quaternionRotationsGroupCohomologyIsoNeg`).
 
 This is separated from `TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic` so the elementary
 subgroup and recognition API of `QuaternionGroup` does not pull in group cohomology.
@@ -57,8 +56,6 @@ subgroup and recognition API of `QuaternionGroup` does not pull in group cohomol
 * `TauCeti.quaternionExtensionClass_ne_zero`: `quaternionExtensionClass n ≠ 0` for `n ≠ 0`.
 * `TauCeti.quaternionRotationsGroupCohomologyIsoNeg_def`: that identification is
   `Subgroup.quotientGroupCohomologyIsoNeg` for `xa 0` and the rotation coordinate.
-* `TauCeti.quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero`: for nonzero
-  `n`, so is the image of the rotation class in `H²(C₂, ZMod (2 * n))`.
 -/
 
 public section
@@ -172,14 +169,5 @@ theorem quaternionRotationsGroupCohomologyIsoNeg_def (n k : ℕ) :
         (fun _ hx ↦ conj_eq_inv_of_notMem_quaternionRotations (xa_notMem_quaternionRotations 0) hx)
         (quaternionRotationsMulEquiv n) k :=
   (rfl)
-
-/-- For `n ≠ 0`, the class of the quaternion extension `C₂ₙ → Q₄ₙ → C₂` is nonzero in
-`H²(C₂, ZMod (2 * n))`. -/
-theorem quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero (n : ℕ) [NeZero n]
-    (σ : (quaternionRotations n).quotientExtension.Section) (hσ : σ 1 = 1) :
-    (quaternionRotationsGroupCohomologyIsoNeg n 2).hom (GroupExtension.factorSet σ hσ
-      (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass ≠ 0 :=
-  (map_ne_zero_iff _ (quaternionRotationsGroupCohomologyIsoNeg n 2).toLinearEquiv.injective).2
-    (cohomologyClass_quaternionRotations_ne_zero n σ hσ)
 
 end TauCeti
