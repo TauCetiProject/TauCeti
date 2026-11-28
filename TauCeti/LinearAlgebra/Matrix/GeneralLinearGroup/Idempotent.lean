@@ -32,6 +32,11 @@ endomorphism of `Matrix n n A`, hence induces a group endomorphism `IsIdempotent
 * `IsIdempotentElem.cutGL_cutGL`: cutting along `f` and then along `e` is cutting along `e * f`.
 * `IsIdempotentElem.star_cutGL`: the conjugate transpose of the cut of `g` along `e` is the cut
   of the conjugate transpose of `g` along `star e`.
+* `IsIdempotentElem.smul_add_smul_mul_smul_add_smul`: matrices cut along `e` and `1 - e` multiply
+  blockwise.
+* `IsIdempotentElem.val_cutGL_mul_cutGL`, `IsIdempotentElem.val_inv_cutGL_mul_cutGL`: the matrix
+  `he.cutGL a * he.one_sub.cutGL b` is `e • a + (1 - e) • b`, with inverse
+  `e • a⁻¹ + (1 - e) • b⁻¹`.
 
 ## References
 
@@ -113,5 +118,33 @@ theorem star_cutGL [StarRing A] (he : IsIdempotentElem e) (g : GL n A) :
     Star.star (he.cutGL g) = he.star.cutGL (Star.star g) := by
   ext : 1
   simp [Matrix.star_eq_conjTranspose]
+omit [DecidableEq n] in
+/-- Matrices cut along an idempotent `e` and `1 - e` multiply blockwise:
+`(e • a + (1 - e) • b) (e • c + (1 - e) • d) = e • a c + (1 - e) • b d`. -/
+theorem smul_add_smul_mul_smul_add_smul (he : IsIdempotentElem e) (a b c d : Matrix n n A) :
+    (e • a + (1 - e) • b) * (e • c + (1 - e) • d) = e • (a * c) + (1 - e) • (b * d) := by
+  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul, Matrix.mul_smul, smul_add,
+    smul_smul, he.eq, he.one_sub.eq, he.mul_one_sub_self, he.one_sub_mul_self, zero_smul,
+    add_zero, zero_add]
+
+/-- The matrix equal to `a` along `e` and to `b` along `1 - e`: the matrix underlying
+`he.cutGL a * he.one_sub.cutGL b` is `e • a + (1 - e) • b`. -/
+theorem val_cutGL_mul_cutGL (he : IsIdempotentElem e) (a b : GL n A) :
+    ((he.cutGL a * he.one_sub.cutGL b : GL n A) : Matrix n n A) =
+      e • (a : Matrix n n A) + (1 - e) • (b : Matrix n n A) := by
+  have h := he.smul_add_smul_mul_smul_add_smul (a : Matrix n n A) 1 1 b
+  rw [Matrix.mul_one, Matrix.one_mul] at h
+  rw [Units.val_mul, val_cutGL, val_cutGL, sub_sub_cancel, add_comm (_ • (b : Matrix n n A)), h]
+
+/-- The matrix underlying the inverse of `he.cutGL a * he.one_sub.cutGL b` is
+`e • a⁻¹ + (1 - e) • b⁻¹`. -/
+theorem val_inv_cutGL_mul_cutGL (he : IsIdempotentElem e) (a b : GL n A) :
+    (((he.cutGL a * he.one_sub.cutGL b)⁻¹ : GL n A) : Matrix n n A) =
+      e • ((a⁻¹ : GL n A) : Matrix n n A) + (1 - e) • ((b⁻¹ : GL n A) : Matrix n n A) := by
+  have h := he.smul_add_smul_mul_smul_add_smul 1 ((b⁻¹ : GL n A) : Matrix n n A)
+    ((a⁻¹ : GL n A) : Matrix n n A) 1
+  rw [Matrix.mul_one, Matrix.one_mul] at h
+  rw [_root_.mul_inv_rev, Units.val_mul, ← map_inv, ← map_inv, val_cutGL, val_cutGL,
+    sub_sub_cancel, add_comm ((1 - e) • _), h]
 
 end IsIdempotentElem

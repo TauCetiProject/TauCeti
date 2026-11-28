@@ -7,6 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.Submodule.Zeta
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GeneralizedIndex
+import Mathlib.Topology.Instances.Matrix
+import TauCeti.LinearAlgebra.Matrix.Range
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Lattices in the finite adeles of a number field and sums over their sublattices
@@ -22,6 +26,10 @@ An `Ô`-submodule `L` of `𝔸_f^κ` is a *lattice of rank `r`* if it is the `Ô
   of finite index of `Ô` are principal, it is the image of a lower triangular matrix `A` with
   `[Ô^r : M] = ∏ᵢ [Ô : (A i i)] = [det A]` (`NumberField.FiniteAdeleRing.exists_span_col_mul_eq`),
   so `B A` is a basis of `M`.
+* **Lattices spanned by invertible matrices.** For `w ∈ GL_n(𝔸_f)`, the `Ô`-span `w Ôⁿ` of the
+  columns of `w` is open and compact in `𝔸_fⁿ`, and every submodule of finite index of it is
+  `w a Ôⁿ` with `[det a]` the index (`NumberField.FiniteAdeleRing.exists_mul_span_col_eq`). For
+  integral `u`, `[Ôⁿ : u Ôⁿ] = [det u]` (`NumberField.FiniteAdeleRing.genIndex_det_eq_relIndex`).
 * **Sums over sublattices.** `∑_{M ⊂ L} [L : M]^(-(r+μ)) ≤ ζ_Ô(μ)^r` over the submodules of finite
   index of a lattice of rank `r`, with `ζ_Ô(μ) = ∑_I [Ô : I]^(-μ)` over the ideals of finite index
   (`NumberField.FiniteAdeleRing.IsLatticeOfRank.submoduleZeta_le`). This follows from
@@ -39,6 +47,12 @@ The discriminant of a lattice, for a CM field, is in
 * `NumberField.FiniteAdeleRing.IsLatticeOfRank.of_le`: sublattices of finite index.
 * `NumberField.FiniteAdeleRing.IsLatticeOfRank.submoduleZeta_le`: the bound on sums over
   sublattices.
+* `NumberField.FiniteAdeleRing.isOpen_span_col`, `NumberField.FiniteAdeleRing.isCompact_span_col`:
+  the `Ô`-span of the columns of `w ∈ GL_n(𝔸_f)` is open and compact.
+* `NumberField.FiniteAdeleRing.exists_mul_span_col_eq`: its submodules of finite index are spanned
+  by the columns of `w a`, with `[det a]` the index.
+* `NumberField.FiniteAdeleRing.genIndex_det_eq_relIndex`: `[det u] = [Ôⁿ : u Ôⁿ]` for an integral
+  `u ∈ GL_n(𝔸_f)`.
 
 ## References
 
@@ -200,5 +214,102 @@ theorem IsLatticeOfRank.submoduleZeta_le {L : Submodule (integralAdeles (𝓞 E)
     exact ⟨c, rfl⟩
   exact (Module.submoduleZeta_le_of_surjective h_surj _).trans
     (Module.submoduleZeta_pi_le (fun I hI ↦ isPrincipal_of_cardQuot_ne_zero hI) r μ)
+
+
+/-! ### Lattices spanned by invertible matrices -/
+
+section InvertibleMatrices
+
+open Matrix.GeneralLinearGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The `Ô`-span of the columns of `w ∈ GL_n(𝔸_f)` is the preimage of `Ôⁿ` under `w⁻¹`. -/
+theorem coe_span_col_eq_preimage (w : GL n 𝔸ᶠ[E]) :
+    (Submodule.span (integralAdeles (𝓞 E) E) (Set.range (w : Matrix n n 𝔸ᶠ[E]).col) :
+      Set (n → 𝔸ᶠ[E])) = (fun x ↦ ((w⁻¹ : GL n 𝔸ᶠ[E]) : Matrix n n 𝔸ᶠ[E]) *ᵥ x) ⁻¹'
+        Set.univ.pi fun _ ↦ (integralAdeles (𝓞 E) E : Set 𝔸ᶠ[E]) := by
+  ext x
+  simp [mem_span_col_iff_mulVec_inv_mem]
+
+/-- The `Ô`-span of the columns of `w ∈ GL_n(𝔸_f)` is open. -/
+theorem isOpen_span_col (w : GL n 𝔸ᶠ[E]) :
+    IsOpen (Submodule.span (integralAdeles (𝓞 E) E) (Set.range (w : Matrix n n 𝔸ᶠ[E]).col) :
+      Set (n → 𝔸ᶠ[E])) := by
+  rw [coe_span_col_eq_preimage]
+  exact (isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_integralAdeles (𝓞 E) E).preimage
+    (continuous_const.matrix_mulVec continuous_id)
+
+/-- The `Ô`-span of the columns of `w ∈ GL_n(𝔸_f)` is compact. -/
+theorem isCompact_span_col (w : GL n 𝔸ᶠ[E]) :
+    IsCompact (Submodule.span (integralAdeles (𝓞 E) E) (Set.range (w : Matrix n n 𝔸ᶠ[E]).col) :
+      Set (n → 𝔸ᶠ[E])) := by
+  have h : (Submodule.span (integralAdeles (𝓞 E) E) (Set.range (w : Matrix n n 𝔸ᶠ[E]).col) :
+      Set (n → 𝔸ᶠ[E])) = (fun y ↦ (w : Matrix n n 𝔸ᶠ[E]) *ᵥ y) ''
+        Set.univ.pi fun _ ↦ (integralAdeles (𝓞 E) E : Set 𝔸ᶠ[E]) := by
+    ext x
+    simp [mem_span_col_iff, Set.mem_image]
+  rw [h]
+  exact (isCompact_univ_pi fun _ ↦ isCompact_integralAdeles).image
+    (continuous_const.matrix_mulVec continuous_id)
+
+/-- An `Ô`-submodule of the column span of `w ∈ GL_n(𝔸_f)` of finite index in it is spanned by the
+columns of `w a`, for some `a ∈ GL_n(𝔸_f)` with `[det a]` the index. This is
+`NumberField.FiniteAdeleRing.exists_span_col_mul_eq` with the columns indexed by `n`. -/
+theorem exists_mul_span_col_eq (w : GL n 𝔸ᶠ[E])
+    {M : Submodule (integralAdeles (𝓞 E) E) (n → 𝔸ᶠ[E])}
+    (hM : M ≤ Submodule.span (integralAdeles (𝓞 E) E) (Set.range (w : Matrix n n 𝔸ᶠ[E]).col))
+    (h_index : M.toAddSubgroup.relIndex (Submodule.span (integralAdeles (𝓞 E) E)
+      (Set.range (w : Matrix n n 𝔸ᶠ[E]).col)).toAddSubgroup ≠ 0) :
+    ∃ a : GL n 𝔸ᶠ[E], Submodule.span (integralAdeles (𝓞 E) E)
+        (Set.range ((w * a : GL n 𝔸ᶠ[E]) : Matrix n n 𝔸ᶠ[E]).col) = M ∧
+      genIndex E (det a : 𝔸ᶠ[E]) = M.toAddSubgroup.relIndex (Submodule.span
+        (integralAdeles (𝓞 E) E) (Set.range (w : Matrix n n 𝔸ᶠ[E]).col)).toAddSubgroup := by
+  -- Index the columns of `w` by `Fin r` through `e`.
+  let e := Fintype.equivFin n
+  have h_range : Set.range ((w : Matrix n n 𝔸ᶠ[E]).submatrix id e.symm).col =
+      Set.range (w : Matrix n n 𝔸ᶠ[E]).col :=
+    e.symm.surjective.range_comp (w : Matrix n n 𝔸ᶠ[E]).col
+  rw [← h_range] at hM h_index ⊢
+  obtain ⟨A, hA, hA_span, hA_index⟩ := exists_span_col_mul_eq hM h_index
+  have ha : IsUnit (A.submatrix e e).det := by rwa [det_submatrix_equiv_self]
+  refine ⟨((isUnit_iff_isUnit_det _).2 ha).unit, ?_, ?_⟩
+  · -- The columns of `w (A.submatrix e e)` are those of `(w.submatrix id e.symm) A`.
+    have h_mul : (w : Matrix n n 𝔸ᶠ[E]) * A.submatrix e e =
+        ((w : Matrix n n 𝔸ᶠ[E]).submatrix id e.symm * A).submatrix id e := by
+      rw [submatrix_mul _ _ _ e _ e.bijective, submatrix_submatrix, Function.comp_id,
+        e.symm_comp_self, submatrix_id_id]
+    rw [Units.val_mul, IsUnit.unit_spec, h_mul, ← hA_span]
+    exact congrArg _ (e.surjective.range_comp
+      ((w : Matrix n n 𝔸ᶠ[E]).submatrix id e.symm * A).col)
+  · rw [val_det_apply, IsUnit.unit_spec, det_submatrix_equiv_self, hA_index]
+
+/-- **The index of an integral lattice.** For `u ∈ GL_n(𝔸_f)` with integral entries, the
+generalised index of `det u` is the index `[Ôⁿ : u Ôⁿ]` of the span of the columns of `u`. -/
+theorem genIndex_det_eq_relIndex {u : GL n 𝔸ᶠ[E]}
+    (hu : (u : Matrix n n 𝔸ᶠ[E]) ∈ (integralAdeles (𝓞 E) E).matrix) :
+    genIndex E (det u : 𝔸ᶠ[E]) = (Submodule.span (integralAdeles (𝓞 E) E)
+      (Set.range (u : Matrix n n 𝔸ᶠ[E]).col)).toAddSubgroup.relIndex
+        (Submodule.span (integralAdeles (𝓞 E) E)
+          (Set.range (1 : Matrix n n 𝔸ᶠ[E]).col)).toAddSubgroup := by
+  have h_le : Submodule.span (integralAdeles (𝓞 E) E) (Set.range (u : Matrix n n 𝔸ᶠ[E]).col) ≤
+      Submodule.span (integralAdeles (𝓞 E) E)
+        (Set.range ((1 : GL n 𝔸ᶠ[E]) : Matrix n n 𝔸ᶠ[E]).col) := by
+    rw [Submodule.span_le]
+    rintro _ ⟨j, rfl⟩
+    exact mem_span_col_one_iff.2 fun i ↦ hu i j
+  obtain ⟨a, ha_span, ha_index⟩ := exists_mul_span_col_eq 1 h_le
+    (AddSubgroup.relIndex_ne_zero_of_isOpen_of_isCompact (isOpen_span_col u)
+      (isCompact_span_col 1))
+  rw [one_mul] at ha_span
+  -- `u` differs from `a` by an element `k` of `GL_n(Ô)`, whose determinant has index `1`.
+  obtain ⟨k, rfl⟩ := exists_eq_mul_map_of_span_col_eq ha_span
+  rw [map_mul, Units.val_mul, map_mul, ha_index, Units.val_one]
+  have hk : genIndex E (det (map (integralAdeles (𝓞 E) E).val.toRingHom k) : 𝔸ᶠ[E]) = 1 := by
+    rw [val_det_apply]
+    exact genIndex_det_map_eq_one (k.mul_inv)
+  rw [hk, mul_one]
+
+end InvertibleMatrices
 
 end NumberField.FiniteAdeleRing

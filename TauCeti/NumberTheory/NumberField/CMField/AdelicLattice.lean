@@ -118,19 +118,12 @@ theorem genIndex_gramDet_eq_of_span_eq {B C : Matrix κ (Fin r) 𝔸ᶠ[E]}
     (h : Submodule.span (integralAdeles (𝓞 E) E) (Set.range B.col) =
       Submodule.span (integralAdeles (𝓞 E) E) (Set.range C.col)) :
     genIndex E (gramDet B) = genIndex E (gramDet C) := by
-  obtain ⟨l, hl⟩ := hB
-  obtain ⟨U, rfl⟩ := Matrix.exists_mul_map_eq_of_span_le h.ge
-  obtain ⟨V, hV⟩ := Matrix.exists_mul_map_eq_of_span_le h.le
-  set ι := algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E]
-  have hUV : U * V = 1 := by
-    refine Matrix.map_injective (f := ι) (fun x y hxy ↦ Subtype.ext (by simpa [ι] using hxy)) ?_
-    dsimp only
-    rw [Matrix.map_mul, Matrix.map_one _ (map_zero ι) (map_one ι)]
-    calc U.map ι * V.map ι
-      _ = l * B * (U.map ι * V.map ι) := by rw [hl, Matrix.one_mul]
-      _ = l * (B * U.map ι * V.map ι) := by rw [Matrix.mul_assoc l, Matrix.mul_assoc B]
-      _ = 1 := by rw [hV, hl]
-  rw [genIndex_gramDet_mul, genIndex_det_map_eq_one hUV, one_pow, one_mul]
+  -- `C = B k` for some `k ∈ GL_r(Ô)`, whose determinant has generalised index `1`.
+  obtain ⟨k, rfl⟩ := Matrix.exists_eq_mul_map_of_span_col_eq hB h
+  have hk : genIndex E (Matrix.GeneralLinearGroup.map (integralAdeles (𝓞 E) E).val.toRingHom k :
+      Matrix (Fin r) (Fin r) 𝔸ᶠ[E]).det = 1 :=
+    genIndex_det_map_eq_one k.mul_inv
+  rw [genIndex_gramDet_mul, hk, one_pow, one_mul]
 
 open Classical in
 /-- The **discriminant** `d_r(L) = [det(B^*B)]^(1/2)` of a lattice `L` of rank `r` in `𝔸_f^κ`, for

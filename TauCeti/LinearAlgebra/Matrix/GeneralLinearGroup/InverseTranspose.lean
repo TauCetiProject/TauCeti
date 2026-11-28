@@ -30,6 +30,7 @@ part of the pinned type-`A` graph automorphism.
   `Matrix.GeneralLinearGroup.inverseTranspose_symm`: inverse transpose is involutive.
 * `Matrix.GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv`: transpose is
   inverse transpose of the inverse.
+* `Matrix.GeneralLinearGroup.coe_inv_inverseTranspose`: the inverse of `(g⁻¹)ᵀ` is `gᵀ`.
 * `Matrix.GeneralLinearGroup.map_inverseTranspose`: naturality under ring homomorphisms.
 * `TauCeti.inverseTranspose_diagGL`: action on diagonal matrices.
 * `TauCeti.inverseTranspose_permutationGL`: permutation matrices are fixed.
@@ -84,6 +85,11 @@ inverse. -/
 theorem unop_transposeMulEquiv_eq_inverseTranspose_inv {R : Type*} [CommRing R] (g : GL n R) :
     (transposeMulEquiv n g).unop = inverseTranspose g⁻¹ :=
   Units.ext <| by rw [coe_unop_transposeMulEquiv, coe_inverseTranspose, inv_inv]
+
+/-- The inverse of the inverse transpose of `g` is the transpose of `g`. -/
+theorem coe_inv_inverseTranspose (g : GL n A) :
+    (((inverseTranspose g)⁻¹ : GL n A) : Matrix n n A) = (g : Matrix n n A)ᵀ := by
+  rw [← map_inv, coe_inverseTranspose, inv_inv]
 
 variable {B : Type*} [CommSemiring B]
 
