@@ -201,10 +201,10 @@ private theorem exists_norm_hypergeometricMellinBarnesIntegrand_strip_le (a b c 
   rw [hypergeometricMellinBarnesIntegrand_def, norm_mul, norm_mul, norm_mul, norm_mul]
   calc ‖Gamma (a + (x + T * I))‖ * ‖Gamma (b + (x + T * I))‖ * ‖Gamma (-(x + T * I))‖ *
         ‖(Gamma (c + (x + T * I)))⁻¹‖ * ‖(-z) ^ ((x : ℂ) + T * I)‖
-      ≤ (Ca * (1 + |T|) ^ Ka * Real.exp (-(π * |T| / 2))) *
-          (Cb * (1 + |T|) ^ Kb * Real.exp (-(π * |T| / 2))) *
-          (Cs * (1 + |T|) ^ Ks * Real.exp (-(π * |T| / 2))) *
-          (Cc * (1 + |T|) ^ Kc * Real.exp (π * |T| / 2)) *
+      ≤ (Ca * (1 + |T|) ^ Ka * Real.exp (-(π / 2) * |T|)) *
+          (Cb * (1 + |T|) ^ Kb * Real.exp (-(π / 2) * |T|)) *
+          (Cs * (1 + |T|) ^ Ks * Real.exp (-(π / 2) * |T|)) *
+          (Cc * (1 + |T|) ^ Kc * Real.exp ((π / 2) * |T|)) *
           (Cz * Real.exp (|arg (-z)| * |T|)) := by
         gcongr
         · exact ha x hx T (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hT)
@@ -212,15 +212,16 @@ private theorem exists_norm_hypergeometricMellinBarnesIntegrand_strip_le (a b c 
         · exact hc x hx T
         · exact hzb x hx T
     _ = Ca * Cb * Cs * Cc * Cz * (((1 + |T|) ^ Ka * (1 + |T|) ^ Kb * (1 + |T|) ^ Ks *
-          (1 + |T|) ^ Kc) * (Real.exp (-(π * |T| / 2)) * Real.exp (-(π * |T| / 2)) *
-          Real.exp (-(π * |T| / 2)) * Real.exp (π * |T| / 2) * Real.exp (|arg (-z)| * |T|))) := by
+          (1 + |T|) ^ Kc) * (Real.exp (-(π / 2) * |T|) * Real.exp (-(π / 2) * |T|) *
+          Real.exp (-(π / 2) * |T|) * Real.exp ((π / 2) * |T|) * Real.exp (|arg (-z)| * |T|))) := by
         ring
     _ = Ca * Cb * Cs * Cc * Cz * ((1 + |T|) ^ (Ka + Kb + Ks + Kc) *
           Real.exp (-((π - |arg (-z)|) * |T|))) := by
         rw [← Real.rpow_add (by positivity), ← Real.rpow_add (by positivity),
           ← Real.rpow_add (by positivity), ← Real.exp_add, ← Real.exp_add, ← Real.exp_add,
           ← Real.exp_add]
-        ring_nf
+        congr 3
+        ring
 
 /-- On a vertical strip `A ≤ Re t ≤ B`, the integrand of Barnes's integral tends to `0` as
 `|Im t| → ∞`, uniformly in `Re t`, when `-z ∈ slitPlane`. -/

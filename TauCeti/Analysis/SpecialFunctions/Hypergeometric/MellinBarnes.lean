@@ -595,6 +595,25 @@ private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : �
   have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
   have hmb := integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ haσ
     (TauCeti.ofReal_mul_mem_slitPlane hq hz)
+  have hsplit (y : ℝ) :
+      ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
+        (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+          (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (σ + y * I)) =
+        (t : ℂ) ^ (b + (σ + y * I) - 1) *
+          (1 - (t : ℂ)) ^ (c - a - b - (σ + y * I) - 1) *
+            (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (1 - z) ^ (σ + y * I)) := by
+    have hexp₁ : b - 1 + ((σ : ℂ) + y * I) = b + ((σ : ℂ) + y * I) - 1 := by ring
+    have hexp₂ : c - b - 1 + -a - ((σ : ℂ) + y * I) = c - a - b - ((σ : ℂ) + y * I) - 1 := by
+      ring
+    calc ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
+          (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+            (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (σ + y * I))
+        = Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+            ((t : ℂ) ^ (b - 1) * ((1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
+              (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ ((σ : ℂ) + y * I)) := by ring
+      _ = _ := by
+          rw [← cpow_add _ _ h1t_ne, mul_cpow_one_sub_cpow_mul_div_cpow ht0 ht1, hexp₁, hexp₂]
+          ring
   calc Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a))
       = ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
           (Gamma a * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (-a)) := by
@@ -606,16 +625,8 @@ private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : �
           (1 - (t : ℂ)) ^ (c - a - b - (σ + y * I) - 1) *
             (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (1 - z) ^ (σ + y * I)) := by
           rw [← mul_left_comm ((2 * π : ℂ)⁻¹), ← integral_const_mul]
-          refine congrArg _ (integral_congr_ae (Eventually.of_forall fun y ↦ ?_))
-          calc ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
-                (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
-                  (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (σ + y * I))
-              = Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
-                  ((t : ℂ) ^ (b - 1) * ((1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
-                    (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ ((σ : ℂ) + y * I)) := by ring
-            _ = _ := by
-                rw [← cpow_add _ _ h1t_ne, mul_cpow_one_sub_cpow_mul_div_cpow ht0 ht1]
-                ring_nf
+          congr 1
+          exact integral_congr_ae (Eventually.of_forall hsplit)
 
 /-- **Mellin–Barnes integral for Euler's hypergeometric integral in `1 - z` (DLMF 15.6.7).**
 On the entire cut plane `1 - z ∈ Complex.slitPlane`, for any vertical line `Re s = σ` separating
