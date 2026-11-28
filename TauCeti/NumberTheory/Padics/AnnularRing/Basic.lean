@@ -362,9 +362,9 @@ def U : AnnularRing p :=
     · simp [hm, PadicInt.norm_p]
     · simp only [norm_zero]; positivity⟩
 
-theorem coeff_T (m : ℤ) : (T : AnnularRing p).coeff m = if m = 1 then 1 else 0 := (rfl)
+@[simp] theorem coeff_T (m : ℤ) : (T : AnnularRing p).coeff m = if m = 1 then 1 else 0 := (rfl)
 
-theorem coeff_U (m : ℤ) : (U : AnnularRing p).coeff m = if m = -1 then (p : ℤ_[p]) else 0 :=
+@[simp] theorem coeff_U (m : ℤ) : (U : AnnularRing p).coeff m = if m = -1 then (p : ℤ_[p]) else 0 :=
   (rfl)
 
 /-- Multiplication by `T` shifts the normal form up by one degree. -/
@@ -378,7 +378,7 @@ theorem coeff_U (m : ℤ) : (U : AnnularRing p).coeff m = if m = -1 then (p : �
   rw [coeff_mul_of_coeff_eq_zero (k := -1) fun i hi ↦ by simp [coeff_U, hi]]
   simp [coeff_U]
 
-theorem coeff_T_pow (n : ℕ) (m : ℤ) :
+@[simp] theorem coeff_T_pow (n : ℕ) (m : ℤ) :
     ((T : AnnularRing p) ^ n).coeff m = if m = n then 1 else 0 := by
   induction n generalizing m with
   | zero => simp [coeff_one]
@@ -387,7 +387,7 @@ theorem coeff_T_pow (n : ℕ) (m : ℤ) :
     congr 1
     simp only [Nat.cast_succ, sub_eq_iff_eq_add]
 
-theorem coeff_U_pow (n : ℕ) (m : ℤ) :
+@[simp] theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     ((U : AnnularRing p) ^ n).coeff m = if m = -n then (p : ℤ_[p]) ^ n else 0 := by
   induction n generalizing m with
   | zero => simp [coeff_one]

@@ -78,11 +78,6 @@ private theorem smodEq_span_T_pow_iff {n : ℕ} {x y : AnnularRing p} :
     Ideal.mem_span_singleton, T_pow_dvd_iff]
   simp only [coeff_sub]
 
-/-- For fixed `m : ℤ`, `min 0 (m - n)` tends to `-∞` as `n → ∞`. -/
-private theorem tendsto_min_zero_sub_nat (m : ℤ) :
-    Tendsto (fun n : ℕ ↦ min (0 : ℤ) (m - n)) atTop atBot :=
-  tendsto_atBot.2 fun N ↦ eventually_atTop.2 ⟨(m - N).toNat, fun n hn ↦ by omega⟩
-
 /-- `AnnularRing p` is `(T)`-adically separated. -/
 instance instIsHausdorffSpanT : IsHausdorff (Ideal.span {(T : AnnularRing p)}) (AnnularRing p) := by
   refine ⟨fun x hx ↦ AnnularRing.ext <| funext fun m ↦ ?_⟩
@@ -346,6 +341,13 @@ degrees. -/
       (m + ((n + 1 : ℕ) : ℤ))
     rw [hmul, add_sub_cancel_right] at this
     exact this.symm.trans (congr_arg _ (by omega))
+
+/-- The coefficients of an integer power `T ^ k` in `H[1/T]` vanish outside degree `k`, where the
+coefficient is `1`. -/
+@[simp] theorem localizedCoeff_T_zpow (k m : ℤ) :
+    localizedCoeff p (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ k : Aˣ) :
+      A) m = if m = k then 1 else 0 := by
+  simpa [localizedCoeff_one, sub_eq_zero] using localizedCoeff_T_zpow_mul (p := p) k (1 : A) m
 
 /-- The convolution series converges to the coefficient of the product in `H[1/T]`. -/
 theorem hasSum_localizedCoeff_mul (x y : A) (m : ℤ) :

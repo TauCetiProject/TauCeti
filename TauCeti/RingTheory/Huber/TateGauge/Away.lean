@@ -13,10 +13,11 @@ public import TauCeti.RingTheory.Huber.TateGauge.Normed
 
 Let `A₀` be a commutative ring, `π ∈ A₀` a nonzerodivisor such that `A₀` is `π`-adically
 separated, and `A` a localisation of `A₀` away from `π`. Any radius `α ∈ (0, 1)` produces a norm
-datum `TauCeti.Huber.awayTateNormDatum` (for any topology on `A` with basis `πⁿ A₀`), with ring
-of definition `(algebraMap A₀ A).range` and pseudo-uniformiser `π`, and hence an ultrametric
-`NormedCommRing` structure `TauCeti.Huber.awayNormedCommRing` on `A` whose underlying `CommRing`,
-`UniformSpace`, and `TopologicalSpace` structures are definitionally `‹CommRing A›`,
+datum `TauCeti.Huber.awayTateNormDatum` (for any topology on `A` with separately continuous
+addition and zero-neighbourhood basis `πⁿ A₀`), with ring of definition `(algebraMap A₀ A).range`
+and pseudo-uniformiser `π`, and hence an ultrametric `NormedCommRing` structure
+`TauCeti.Huber.awayNormedCommRing` on `A` whose underlying `CommRing`, `UniformSpace`, and
+`TopologicalSpace` structures are definitionally `‹CommRing A›`,
 `TauCeti.Huber.awayUniformSpace π A`, and `TauCeti.Huber.awayTopology π A`.
 
 When `A₀` is additionally `π`-adically precomplete, `awayNormedCommRing` is complete; when `A` is
@@ -26,7 +27,8 @@ of norm `α`. None of these structures are registered as global instances.
 ## Main definitions
 
 * `TauCeti.Huber.awayTateNormDatum`: the `TateNormDatum A` attached to `(algebraMap A₀ A).range`,
-  `π`, and `α ∈ (0, 1)` for any topology with basis `πⁿ A₀`.
+  `π`, and `α ∈ (0, 1)` for any topology on `A` with separately continuous addition and
+  zero-neighbourhood basis `πⁿ A₀`.
 * `TauCeti.Huber.awayNormedCommRing`: the ultrametric `NormedCommRing A` induced by the
   `π`-adic Tate gauge of radius `α ∈ (0, 1)`.
 * `TauCeti.Huber.awayNormedPseudoUniformizer`: `π` as a multiplicative pseudo-uniformiser for
@@ -63,7 +65,8 @@ section Datum
 variable [SeparatelyContinuousAdd A]
 
 /-- The `TateNormDatum` on `A₀[1/π]` given by the ring of definition `(algebraMap A₀ A).range`,
-the pseudo-uniformiser `π`, and a chosen radius `α ∈ (0, 1)`. -/
+the pseudo-uniformiser `π`, and a chosen radius `α ∈ (0, 1)`, for any topology on `A` with
+separately continuous addition and zero-neighbourhood basis `πⁿ A₀`. -/
 def awayTateNormDatum {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) : TateNormDatum A where
   ringOfDefinition := (algebraMap A₀ A).range
   isOpen_ringOfDefinition := isOpen_range_algebraMap_of_hasBasis hb

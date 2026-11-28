@@ -39,9 +39,9 @@ We specialize this construction in two directions:
   while `ℚ_[p]` itself contains no points of the open annulus
   (`TauCeti.AnnularRing.not_exists_padic_annulus`).
 
-Every annulus evaluation is continuous for any `T`-adic topology on `H[1/T]` whose neighbourhoods
-of zero have basis `T ^ n H` (`TauCeti.AnnularRing.continuous_localizedEval₂`), and is the unique
-continuous ring homomorphism extending `f` and sending `T ↦ t`
+Every annulus evaluation is continuous for any additive group topology on `H[1/T]` whose
+neighbourhoods of zero have basis `T ^ n H` (`TauCeti.AnnularRing.continuous_localizedEval₂`), and
+is the unique continuous ring homomorphism extending `f` and sending `T ↦ t`
 (`TauCeti.AnnularRing.eq_localizedEval₂_of_continuous`).
 
 ## Main definitions
@@ -69,7 +69,8 @@ continuous ring homomorphism extending `f` and sending `T ↦ t`
 * `TauCeti.AnnularRing.evalAlgHom_toRingHom`, `TauCeti.AnnularRing.localizedEvalAlgHom_toRingHom`,
   `TauCeti.AnnularRing.eval_eq_eval₂`, `TauCeti.AnnularRing.localizedEval_eq_localizedEval₂`:
   comparison lemmas relating the specialized evaluations to `eval₂` and `localizedEval₂`.
-* `TauCeti.AnnularRing.continuous_localizedEval₂`: continuity for the `T`-adic topology on `H[1/T]`.
+* `TauCeti.AnnularRing.continuous_localizedEval₂`: continuity for any additive group topology on
+  `H[1/T]` with zero-neighbourhood basis `T ^ n H`.
 * `TauCeti.AnnularRing.not_exists_padic_annulus`: `ℚ_[p]` has no points in the open annulus.
 
 ## References
@@ -406,14 +407,16 @@ private theorem map_truncPart_eq (φ : AnnularRing p →+* K)
   simp only [truncPart, map_add, map_mul, hφ_U, eval₂_U, hT, hU]
 
 omit [CompleteSpace K] in
-/-- Power-decay estimate on `T ^ (N + 1) * y` for any ring homomorphism sending `T ↦ t`. -/
+/-- Power-decay estimate on `T ^ N * y` for any ring homomorphism sending `T ↦ t`. -/
 private theorem norm_map_T_pow_mul_le {t : Kˣ} (ψ : AnnularRing p →+* K) (hψ_T : ψ T = (t : K))
     (N : ℕ) {y : AnnularRing p} {R : ℝ} (hR : ‖ψ y‖ ≤ R) :
-    ‖ψ (T ^ (N + 1) * y)‖ ≤ ‖(t : K)‖ ^ (N + 1) * R := by
-  rw [map_mul, map_pow, hψ_T]
-  exact (norm_mul_le _ _).trans
-    (mul_le_mul (norm_pow_le' _ (Nat.succ_pos N)) hR (norm_nonneg _)
-      (pow_nonneg (norm_nonneg _) _))
+    ‖ψ (T ^ N * y)‖ ≤ ‖(t : K)‖ ^ N * R := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simpa using hR
+  · rw [map_mul, map_pow, hψ_T]
+    exact (norm_mul_le _ _).trans
+      (mul_le_mul (norm_pow_le' _ (Nat.pos_of_ne_zero hN)) hR (norm_nonneg _)
+        (pow_nonneg (norm_nonneg _) _))
 
 omit [CompleteSpace K] in
 /-- Power-decay estimate on `U ^ (N + 1) * y` for any ring homomorphism sending `U ↦ p * t⁻¹`. -/
@@ -458,8 +461,8 @@ private theorem norm_sub_eval₂_le_of_bound {C B M : ℝ}
     simp only [map_add, hP]
     abel
   have h1 := (norm_sub_le _ _).trans (add_le_add
-    (norm_map_T_pow_mul_le φ hφ_T N (hφ_bdd (truncTailPos x N)))
-    (norm_map_T_pow_mul_le (eval₂ f ⟨C, hC⟩ t ht htinv) (eval₂_T f ⟨C, hC⟩ t ht htinv) N
+    (norm_map_T_pow_mul_le φ hφ_T (N + 1) (hφ_bdd (truncTailPos x N)))
+    (norm_map_T_pow_mul_le (eval₂ f ⟨C, hC⟩ t ht htinv) (eval₂_T f ⟨C, hC⟩ t ht htinv) (N + 1)
       (hM (truncTailPos x N))))
   have h2 := (norm_sub_le _ _).trans (add_le_add
     (norm_map_U_pow_mul_le f hC φ hφ_U N (hφ_bdd (truncTailNeg x N)))
@@ -595,15 +598,9 @@ private theorem norm_localizedEval₂_le_of_mem_awayNhd_of_bound {M : ℝ}
     (hx : x ∈ Huber.awayNhd (T : AnnularRing p) A N) :
     ‖localizedEval₂ f hf t ht htinv x‖ ≤ M * ‖(t : K)‖ ^ N := by
   obtain ⟨a, rfl⟩ := Huber.mem_awayNhd.mp hx
-  rcases eq_or_ne N 0 with rfl | hN
-  · simpa using hM a
-  · rw [localizedEval₂_algebraMap, map_mul, map_pow, eval₂_T]
-    calc ‖(t : K) ^ N * eval₂ f hf t ht htinv a‖
-        ≤ ‖(t : K) ^ N‖ * ‖eval₂ f hf t ht htinv a‖ := norm_mul_le _ _
-      _ ≤ ‖(t : K)‖ ^ N * M :=
-          mul_le_mul (norm_pow_le' _ (Nat.pos_of_ne_zero hN)) (hM a) (norm_nonneg _)
-            (pow_nonneg (norm_nonneg _) _)
-      _ = M * ‖(t : K)‖ ^ N := mul_comm _ _
+  rw [localizedEval₂_algebraMap]
+  exact (norm_map_T_pow_mul_le (eval₂ f hf t ht htinv) (eval₂_T f hf t ht htinv) N
+    (hM a)).trans_eq (mul_comm _ _)
 
 /-- On the basic `T`-adic neighbourhood `T ^ N H`, the ultrametric evaluation `localizedEval₂` is
 bounded by `C * ‖t‖ ^ N`. -/
@@ -614,8 +611,8 @@ theorem norm_localizedEval₂_le_of_mem_awayNhd [IsUltrametricDist K] {C : ℝ}
   norm_localizedEval₂_le_of_mem_awayNhd_of_bound f hf t ht htinv
     (norm_eval₂_le f hf t ht htinv hC) hx
 
-/-- Every annulus evaluation `H[1/T] →+* K` is continuous for any `T`-adic topology on `H[1/T]`
-whose neighbourhoods of zero have basis `T ^ n H`. -/
+/-- Every annulus evaluation `H[1/T] →+* K` is continuous for any additive group topology on
+`H[1/T]` whose neighbourhoods of zero have basis `T ^ n H`. -/
 theorem continuous_localizedEval₂ [TopologicalSpace A] [IsTopologicalAddGroup A]
     (hb : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun n ↦
       (Huber.awayNhd (T : AnnularRing p) A n : Set A)) :
@@ -673,15 +670,19 @@ section EvalAlgHom
 variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedRing K] [Algebra ℤ_[p] K]
   [IsBoundedSMul ℤ_[p] K] [CompleteSpace K]
 
+omit [CompleteSpace K] in
+/-- Real-valued bound on `algebraMap ℤ_[p] K` derived from `[IsBoundedSMul ℤ_[p] K]`. -/
+private theorem exists_norm_algebraMap_le :
+    ∃ C : ℝ, ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] K a‖ ≤ C * ‖a‖ :=
+  (TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
+    ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩
+
 /-- The `ℤ_p`-algebra evaluation `H →ₐ[ℤ_[p]] K` at a unit `t : Kˣ` with `‖t‖ < 1` and
 `‖t⁻¹‖ < p`. -/
 def evalAlgHom (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
     AnnularRing p →ₐ[ℤ_[p]] K :=
-  have hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] K a‖ ≤ C * ‖a‖ :=
-    (TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
-      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩
-  { eval₂ (algebraMap ℤ_[p] K) hf t ht htinv with
-    commutes' := eval₂_algebraMap (algebraMap ℤ_[p] K) hf t ht htinv }
+  { eval₂ (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv with
+    commutes' := eval₂_algebraMap (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv }
 
 /-- The underlying ring homomorphism of `evalAlgHom` is `eval₂ (algebraMap ℤ_[p] K)`. -/
 theorem evalAlgHom_toRingHom (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
@@ -697,27 +698,18 @@ theorem evalAlgHom_apply (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹
 
 @[simp] theorem evalAlgHom_T (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
     evalAlgHom t ht htinv T = (t : K) :=
-  eval₂_T (algebraMap ℤ_[p] K)
-    ((TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
-      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩)
-    t ht htinv
+  eval₂_T (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv
 
 @[simp] theorem evalAlgHom_U (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
     evalAlgHom t ht htinv U = (p : K) * ((t⁻¹ : Kˣ) : K) :=
-  eval₂_U (algebraMap ℤ_[p] K)
-    ((TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
-      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩)
-    t ht htinv
+  eval₂_U (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv
 
 /-- The `ℤ_p`-algebra evaluation `H[1/T] →ₐ[ℤ_[p]] K` at a unit `t : Kˣ` with `‖t‖ < 1` and
 `‖t⁻¹‖ < p`. -/
 def localizedEvalAlgHom {A : Type*} [CommRing A] [Algebra (AnnularRing p) A]
     [IsLocalization.Away (T : AnnularRing p) A] [Algebra ℤ_[p] A]
     (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) : A →ₐ[ℤ_[p]] K :=
-  have hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] K a‖ ≤ C * ‖a‖ :=
-    (TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
-      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩
-  { localizedEval₂ (algebraMap ℤ_[p] K) hf t ht htinv with
+  { localizedEval₂ (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv with
     commutes' := fun c ↦ by
       have hmap : algebraMap ℤ_[p] A c =
           algebraMap (AnnularRing p) A (algebraMap ℤ_[p] (AnnularRing p) c) :=
@@ -738,10 +730,7 @@ theorem localizedEvalAlgHom_toRingHom {A : Type*} [CommRing A] [Algebra (Annular
     (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) (a : AnnularRing p) :
     localizedEvalAlgHom (A := A) t ht htinv (algebraMap (AnnularRing p) A a) =
       evalAlgHom t ht htinv a :=
-  localizedEval₂_algebraMap (algebraMap ℤ_[p] K)
-    ((TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
-      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩)
-    t ht htinv a
+  localizedEval₂_algebraMap (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv a
 
 end EvalAlgHom
 
@@ -893,7 +882,8 @@ theorem norm_localizedEval_le_pow_of_mem_awayNhd (t : K) (ht₀ : (p : ℝ)⁻¹
     ht₁ (norm_mk0_inv_lt_p ht₀)
     norm_padicIntAlgebraMap_le_one_mul hx).trans_eq (by simp)
 
-/-- Evaluation at `t` is continuous for any `T`-adic topology on `H[1/T]`. -/
+/-- Evaluation at `t` is continuous for any additive group topology on `H[1/T]` whose
+neighbourhoods of zero have basis `T ^ n H`. -/
 theorem continuous_localizedEval [TopologicalSpace A] [IsTopologicalAddGroup A]
     (hb : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun n ↦
       (Huber.awayNhd (T : AnnularRing p) A n : Set A))

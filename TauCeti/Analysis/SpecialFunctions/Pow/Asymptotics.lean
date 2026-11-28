@@ -251,6 +251,11 @@ theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : 
     ((tendsto_intCast_atBot_iff (R := ℝ)).2 hg)
   simpa [Function.comp_def, Real.rpow_intCast] using h
 
+/-- For any fixed integer `m`, `min 0 (m - n)` tends to `-∞` as `n : ℕ` tends to `∞`. -/
+theorem tendsto_min_zero_sub_nat (m : ℤ) :
+    Tendsto (fun n : ℕ ↦ min (0 : ℤ) (m - n)) atTop atBot :=
+  tendsto_atBot.2 fun N ↦ eventually_atTop.2 ⟨(m - N).toNat, fun n hn ↦ by omega⟩
+
 /-- For `q > 1`, the powers `b ^ (a / q ^ n)` of a fixed nonzero base `b` tend to one. -/
 theorem tendsto_const_rpow_div_pow_atTop {b q : ℝ} (hb : b ≠ 0) (hq : 1 < q) (a : ℝ) :
     Tendsto (fun n : ℕ ↦ b ^ (a / q ^ n)) atTop (𝓝 1) := by

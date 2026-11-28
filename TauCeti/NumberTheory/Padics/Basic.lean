@@ -33,7 +33,8 @@ by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
 
 For a `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
-when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` it is bounded
+when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K`, it scales norms
+by `‖(1 : K)‖` (`TauCeti.norm_padicIntAlgebraMap_eq_mul_norm_one`) and is bounded
 (`TauCeti.exists_norm_padicIntAlgebraMap_le`), and when `‖1‖ ≤ 1`
 (including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
 is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
@@ -159,17 +160,21 @@ section NormedAlgebra
 
 variable {p : ℕ} [Fact (Nat.Prime p)] {K : Type*} [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
 
+/-- In a seminormed `ℚ_p`-algebra, the structure map `ℤ_p → K` scales norms by `‖(1 : K)‖`. -/
+theorem norm_padicIntAlgebraMap_eq_mul_norm_one (a : ℤ_[p]) :
+    ‖padicIntAlgebraMap p K a‖ = ‖a‖ * ‖(1 : K)‖ := by
+  rw [padicIntAlgebraMap_apply, norm_algebraMap, PadicInt.norm_coe]
+
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the structure map `ℤ_p → K` preserves norms. -/
 theorem norm_padicIntAlgebraMap [NormOneClass K] (a : ℤ_[p]) :
     ‖padicIntAlgebraMap p K a‖ = ‖a‖ := by
-  simp [norm_algebraMap']
+  rw [norm_padicIntAlgebraMap_eq_mul_norm_one, norm_one, mul_one]
 
 /-- In a seminormed `ℚ_p`-algebra, the structure map `ℤ_p → K` is bounded:
 `‖padicIntAlgebraMap p K a‖ ≤ ‖(1 : K)‖ * ‖a‖`. -/
 theorem exists_norm_padicIntAlgebraMap_le :
     ∃ C : ℝ, ∀ a : ℤ_[p], ‖padicIntAlgebraMap p K a‖ ≤ C * ‖a‖ :=
-  ⟨‖(1 : K)‖, fun a ↦ by
-    rw [padicIntAlgebraMap_apply, norm_algebraMap, PadicInt.norm_coe, mul_comm]⟩
+  ⟨‖(1 : K)‖, fun a ↦ ((norm_padicIntAlgebraMap_eq_mul_norm_one a).trans (mul_comm _ _)).le⟩
 
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the structure map `ℤ_p → K` is an isometry. -/
 theorem isometry_padicIntAlgebraMap [NormOneClass K] : Isometry (padicIntAlgebraMap p K) :=
@@ -179,7 +184,7 @@ theorem isometry_padicIntAlgebraMap [NormOneClass K] : Isometry (padicIntAlgebra
 closed unit ball. This includes the zero seminorm, where `‖1‖ = 0`. -/
 theorem norm_padicIntAlgebraMap_le_one (h : ‖(1 : K)‖ ≤ 1) (a : ℤ_[p]) :
     ‖padicIntAlgebraMap p K a‖ ≤ 1 := by
-  rw [padicIntAlgebraMap_apply, norm_algebraMap, PadicInt.norm_coe]
+  rw [norm_padicIntAlgebraMap_eq_mul_norm_one]
   exact (mul_le_of_le_one_left (norm_nonneg _) a.norm_le_one).trans h
 
 /-- The norm of a natural number in a seminormed `ℚ_p`-algebra with `‖1‖ = 1` is its `p`-adic
