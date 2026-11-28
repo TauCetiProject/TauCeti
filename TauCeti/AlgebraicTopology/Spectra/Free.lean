@@ -91,13 +91,9 @@ lemma freeι_comp_map_comp_freeLevelIso_hom (n m : ℕ) (K : PointedSSet.{0})
     (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
     freeι n K ≫ ((free n).obj K).functor.map σ ≫ (freeLevelIso n m K).hom =
       Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ := by
-  have h : freeι n K ≫ ((free n).obj K).functor.map σ =
-      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ := by
-    dsimp only [free, Functor.comp_obj, DayFunctor.equiv]
-    rw [freeι, evaluationLeftAdjoint_obj_map]
-    exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
-  dsimp only [freeLevelIso]
-  exact h
+  dsimp only [freeLevelIso, free, Functor.comp_obj, DayFunctor.equiv, evaluationLeftAdjoint]
+  rw [Iso.refl_hom, Category.comp_id, freeι]
+  exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
 
 /-- Under `(freeLevelIso n m K).inv`, the `σ`-summand inclusion maps to the action of `σ` on the
 universal generator `freeι n K`. -/
@@ -107,8 +103,8 @@ lemma ι_comp_freeLevelIso_inv (n m : ℕ) (K : PointedSSet.{0})
     Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ ≫
         (freeLevelIso n m K).inv =
       freeι n K ≫ ((free n).obj K).functor.map σ := by
-  rw [← freeι_comp_map_comp_freeLevelIso_hom_assoc, Iso.hom_inv_id, Category.comp_id]
-  dsimp only [free, Functor.comp_obj]
+  rw [← freeι_comp_map_comp_freeLevelIso_hom, Category.assoc, Category.assoc, Iso.hom_inv_id,
+    Category.comp_id]
 
 /-- A morphism out of `(G_n K)_m` is determined on the summands `freeι n K ≫ (G_n K).map σ`. -/
 @[ext]

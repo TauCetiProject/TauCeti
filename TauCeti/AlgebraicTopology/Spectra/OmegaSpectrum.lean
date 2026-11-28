@@ -76,32 +76,26 @@ theorem isOmegaSpectrum_iff_mappingSpace_freeStabilizationMap (E : SymmetricSpec
       ((evaluation (1 + n)).obj E)) :=
     Iso.isIso_hom ((MonoidalClosed.internalHom.mapIso (ρ_ PointedSSet.circle).symm.op).app
       ((evaluation (1 + n)).obj E))
-  let f : ((mappingSpace ((free n).obj (𝟙_ _))).obj E).right ⟶
-      ((mappingSpace ((free (1 + n)).obj (PointedSSet.circle ⊗ 𝟙_ _))).obj E).right :=
-    ((mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E).right
-  let e₀ : ((mappingSpace ((free n).obj (𝟙_ _))).obj E).right ⟶ ((evaluation n).obj E).right :=
-    ((mappingSpaceFreeZeroIso n).hom.app E).right
-  let e₁ : ((mappingSpace ((free (1 + n)).obj (PointedSSet.circle ⊗ 𝟙_ _))).obj E).right ⟶
-      ((CategoryTheory.ihom PointedSSet.circle).obj ((evaluation (1 + n)).obj E)).right :=
-    ((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
-      (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E)).right
-  have heq : f ≫ e₁ = e₀ ≫ (E.smashPowAdjointStructureMap n).right :=
+  have heq :
+      ((mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E).right ≫
+        ((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
+          (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E)).right =
+      ((mappingSpaceFreeZeroIso n).hom.app E).right ≫
+        (E.smashPowAdjointStructureMap n).right :=
     congrArg PointedSSet.forgetBasepoint.map (mappingSpace_freeStabilizationMap_unit_eq n E)
-  have : IsIso e₀ :=
+  have hIso0 : IsIso ((mappingSpaceFreeZeroIso n).hom.app E).right :=
     Functor.map_isIso PointedSSet.forgetBasepoint ((mappingSpaceFreeZeroIso n).hom.app E)
-  have : IsIso e₁ :=
+  have hIso1 :
+      IsIso (((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
+        (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E)).right) :=
     Functor.map_isIso PointedSSet.forgetBasepoint
       ((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
         (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E))
-  -- Fold the mapping-space precomposition map into `f` so `cancel_right_of_respectsIso` applies.
-  change WeakEquivalence (E.smashPowAdjointStructureMap n).right ↔ WeakEquivalence f
   simp only [HomotopicalAlgebra.weakEquivalence_iff]
-  have h1 : (weakEquivalences SSet.{0}) (E.smashPowAdjointStructureMap n).right ↔
-      (weakEquivalences SSet.{0}) (e₀ ≫ (E.smashPowAdjointStructureMap n).right) :=
-    ((weakEquivalences SSet.{0}).cancel_left_of_respectsIso e₀ _).symm
-  have h2 : (weakEquivalences SSet.{0}) (f ≫ e₁) ↔ (weakEquivalences SSet.{0}) f :=
-    (weakEquivalences SSet.{0}).cancel_right_of_respectsIso f e₁
-  rw [h1, ← heq, h2]
+  rw [← (weakEquivalences SSet.{0}).cancel_left_of_respectsIso
+    ((mappingSpaceFreeZeroIso n).hom.app E).right, ← heq]
+  exact @MorphismProperty.cancel_right_of_respectsIso _ _ (weakEquivalences SSet.{0}) _ _ _ _ _ _
+    hIso1
 
 /-- A symmetric spectrum `E` is an Ω-spectrum if and only if `E ⟶ ⊤` is a level fibration and
 precomposition along every stabilization map `freeStabilizationMap n S⁰` is a weak equivalence
