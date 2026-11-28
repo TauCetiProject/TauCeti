@@ -13,6 +13,7 @@ public import Mathlib.Data.Set.Card
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
+import TauCeti.Data.Int.Interval
 
 /-!
 # Floors and decompositions into intervals
@@ -269,9 +270,8 @@ theorem exists_finset_forall_exists_le_lt_add {κ : Type*} [Finite κ] (hδ : 0 
   let round (g : κ → I) (k : κ) : K := (g k : ℤ) * δ
   refine ⟨Finset.univ.image round, ?_, ?_⟩
   · refine Finset.card_image_le.trans_eq ?_
-    rw [Finset.card_univ, Fintype.card_fun, Fintype.card_coe, Int.card_Icc,
+    rw [Finset.card_univ, Fintype.card_fun, Fintype.card_coe, Int.card_Icc_neg_natCast_natCast,
       Nat.card_eq_fintype_card]
-    exact congrArg (· ^ Fintype.card κ) (by lia)
   · intro a ha
     have hR : R / δ ≤ (m : K) := Nat.le_ceil _
     let g (k : κ) : I := ⟨⌈a k / δ⌉, Finset.mem_Icc.mpr (by
