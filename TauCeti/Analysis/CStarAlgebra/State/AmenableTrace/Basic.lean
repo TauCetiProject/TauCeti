@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Approximation
 public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Approximation
 public import TauCeti.Analysis.CStarAlgebra.State.TraceKernel
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
@@ -97,7 +98,7 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
 public section
 
 open Set WeakDual
-open TauCeti (ApproxBy RecoverOn RecoverUniform)
+open TauCeti (ApproxBy RecoverOn RecoverUniform forall_approxBy_iff_exists_superset)
 open scoped CStarAlgebra ComplexOrder
 
 namespace PositiveContinuousLinearMap
@@ -172,19 +173,6 @@ theorem isUniformAmenableTrace_iff_approxBy : τ.IsUniformAmenableTrace ↔
       ApproxBy (fun _ => CStarMatrix.normalizedTwoNorm) (RecoverUniform τ) F ε := by
   rw [isUniformAmenableTrace_iff]
   simp only [TauCeti.approxBy_iff, TauCeti.recoverUniform_iff]
-
-/-- The monotonicity of `ApproxBy`, in the form of the `_iff_exists_superset` lemmas. -/
-private theorem forall_approxBy_iff_exists_superset
-    {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
-    {R : Finset A → ℝ → ∀ k : ℕ, (A →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop}
-    (hR : ∀ ⦃F F' : Finset A⦄ ⦃ε ε' : ℝ⦄ ⦃k : ℕ⦄ ⦃φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ⦄,
-      F ⊆ F' → ε' ≤ ε → R F' ε' k φ → R F ε k φ) :
-    (∀ (F : Finset A) (ε : ℝ), 0 < ε → ApproxBy d R F ε) ↔
-      ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ F' : Finset A, F ⊆ F' ∧ ∃ ε' ≤ ε,
-        ApproxBy d R F' ε' :=
-  ⟨fun h F ε hε => ⟨F, subset_rfl, ε, le_rfl, h F ε hε⟩, fun h F ε hε => by
-    obtain ⟨F', hF, ε', hε', h'⟩ := h F ε hε
-    exact h'.mono hR hF hε'⟩
 
 /-- **Monotonicity of amenability.** A witness for `(F', ε')` is a witness for every `F ⊆ F'`
 and `ε ≥ ε'`, so it suffices to find, for each `(F, ε)`, a witness for some larger finite set
