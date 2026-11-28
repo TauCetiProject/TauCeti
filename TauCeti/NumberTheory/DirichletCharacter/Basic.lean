@@ -61,8 +61,10 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
   character at an integer prime to the new level.
 * `DirichletCharacter.changeLevel_natCast`: the raised character is `χ` at the naturals prime to
-  the new level and `0` at the others, and `DirichletCharacter.changeLevel_mul_prime_natCast`:
-  raising the level by a prime `p` kills the values at the multiples of `p` and keeps the others.
+  the new level and `0` at the others, and
+  `DirichletCharacter.changeLevel_natCast_eq_ite_coprime_div`: the same with the coprimality to
+  `n / d` in place of `n`, and `DirichletCharacter.changeLevel_mul_prime_natCast`: raising the
+  level by a prime `p` kills the values at the multiples of `p` and keeps the others.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
   at the integers prime to the level agree at every integer.
 * `DirichletCharacter.eq_changeLevel_iff_forall_isCoprime`,
@@ -163,18 +165,6 @@ theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : �
         (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
     _ = 0 := χ.sum_eq_zero_of_ne_one hχ
 
-/-- Any nonprincipal Dirichlet character at a nonzero level has level at least `3`, since
-`(ZMod 1)ˣ` and `(ZMod 2)ˣ` are trivial. -/
-theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
-  match N, NeZero.ne N, χ, hχ with
-  | 1, _, χ, hχ => exact absurd χ.level_one hχ
-  | 2, _, χ, hχ =>
-    refine absurd (MulChar.ext fun u ↦ ?_) hχ
-    rw [(by decide : ∀ u : (ZMod 2)ˣ, (u : ZMod 2) = 1) u]
-    simp
-  | _ + 3, _, _, _ => omega
-
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/
 theorem apply_eq_apply_of_factorsThrough {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
@@ -266,6 +256,13 @@ theorem subsingleton_of_le_two {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZ
     obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
     all_goals infer_instance
   exact ⟨fun χ ψ ↦ MulChar.ext fun u ↦ by rw [Subsingleton.elim u 1]; simp⟩
+
+/-- Any nonprincipal Dirichlet character at a nonzero level has level at least `3`, since
+`(ZMod 1)ˣ` and `(ZMod 2)ˣ` are trivial. -/
+theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
+  by_contra! h
+  exact hχ ((subsingleton_of_le_two (by omega)).elim χ 1)
 
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —
@@ -456,6 +453,21 @@ theorem changeLevel_natCast {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : 
   split_ifs with hm
   · exact changeLevel_natCast_of_coprime h χ hm
   · exact MulChar.map_nonunit _ (mt (ZMod.isUnit_iff_coprime m n).mp hm)
+
+/-- The value of a Dirichlet character raised from level `d` to level `n` at a natural number:
+`χ m` when `m` is prime to `n / d`, and `0` otherwise. -/
+theorem changeLevel_natCast_eq_ite_coprime_div {R : Type*} [CommMonoidWithZero R] {d n : ℕ}
+    (h : d ∣ n) (χ : DirichletCharacter R d) (m : ℕ) :
+    changeLevel h χ m = if m.Coprime (n / d) then χ m else 0 := by
+  -- At `m` prime to `n / d` but not to `n`, `m` is not prime to `d`, so `χ m = 0` already.
+  rw [changeLevel_natCast]
+  split_ifs with hmn hm hm
+  · rfl
+  · exact absurd (hmn.coprime_dvd_right (Nat.div_dvd_of_dvd h)) hm
+  · refine (χ.map_nonunit fun hu ↦ hmn ?_).symm
+    rw [← Nat.mul_div_cancel' h]
+    exact Nat.Coprime.mul_right ((ZMod.isUnit_iff_coprime m d).mp hu) hm
+  · rfl
 
 /-- Raising the level of a Dirichlet character from `M` to `M * p`, for a prime `p`, kills its
 values at the multiples of `p` and keeps the others: the new character is `0` at `n` when

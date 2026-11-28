@@ -44,6 +44,9 @@ of the kernel.
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
 
+For a left-invariant measure, a function whose left translate by some `g` is `c • f` with `c ≠ 1`
+has integral `0`: the integral of a character over a subgroup on which it is nontrivial vanishes.
+
 The integral of the difference `w (· + a) - w` of an integrable function against an
 a.e. strongly measurable, essentially bounded function `φ` (that is, `φ ∈ L^∞`) equals the
 integral of `w` against `φ (· - a) - φ`, by right-translation invariance. Only right translations
@@ -72,6 +75,11 @@ need to be measurable.
   convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
+* `TauCeti.setLIntegral_Ioc_comp_sub_le`: translating by `s ∈ [c, d]` bounds
+  `∫⁻ t in Ioc a b, g (t - s) ∂μ` by `∫⁻ u in Icc (a - d) (b - c), g u ∂μ`.
+* `TauCeti.integral_eq_zero_of_mul_left_eq_smul`, `TauCeti.integral_eq_zero_of_add_left_eq_smul`:
+  a function whose left translate by some `g` is `c • f` with `c ≠ 1` has integral `0` against a
+  left-invariant measure.
 -/
 
 public section
@@ -317,5 +325,43 @@ theorem integral_comp_add_sub_mul_eq {w φ : G → 𝕜} (hw : Integrable w μ) 
         ring
 
 end Translation
+
+/-- Translating by `s ∈ [c, d]` bounds the set Lebesgue integral of `t ↦ g (t - s)` over
+`(a, b]` by the integral of `g` over `[a - d, b - c]`, for any right-invariant measure on an
+ordered additive commutative group. -/
+theorem setLIntegral_Ioc_comp_sub_le {G : Type*} [AddCommGroup G] [PartialOrder G]
+    [IsOrderedAddMonoid G] [MeasurableSpace G] [MeasurableAdd G] {μ : Measure G}
+    [μ.IsAddRightInvariant] (g : G → ℝ≥0∞) {a b c d s : G} (hs : s ∈ Set.Icc c d) :
+    ∫⁻ t in Set.Ioc a b, g (t - s) ∂μ ≤ ∫⁻ u in Set.Icc (a - d) (b - c), g u ∂μ := by
+  have hsub : Set.Ioc a b ⊆ (fun t : G ↦ t - s) ⁻¹' Set.Icc (a - d) (b - c) := by
+    intro t ht
+    exact ⟨sub_le_sub ht.1.le hs.2, sub_le_sub ht.2 hs.1⟩
+  refine (lintegral_mono_set hsub).trans_eq ?_
+  simpa [sub_eq_add_neg] using (measurePreserving_sub_right μ s).setLIntegral_comp_preimage_emb
+    (MeasurableEquiv.subRight s).measurableEmbedding g (Set.Icc (a - d) (b - c))
+
+section TranslationScaling
+
+variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
+  [μ.IsMulLeftInvariant] [NormedDivisionRing 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [Module 𝕜 E] [NormSMulClass 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+
+/-- If a left translate `x ↦ f (g * x)` of a function is a scalar multiple `c • f` with `c ≠ 1`,
+then the integral of `f` against a left-invariant measure is `0`. For `c = -1` this is
+`MeasureTheory.integral_eq_zero_of_mul_left_eq_neg`; the typical use is the integral of a
+character over a subgroup on which it is nontrivial. -/
+@[to_additive (dont_translate := 𝕜) integral_eq_zero_of_add_left_eq_smul
+  /-- If a left translate `x ↦ f (g + x)` of a function is a scalar multiple `c • f` with
+  `c ≠ 1`, then the integral of `f` against a left-invariant measure is `0`. For `c = -1` this is
+  `MeasureTheory.integral_eq_zero_of_add_left_eq_neg`; the typical use is the integral of a
+  character over a subgroup on which it is nontrivial. -/]
+theorem integral_eq_zero_of_mul_left_eq_smul {f : G → E} {g : G} {c : 𝕜} (hc : c ≠ 1)
+    (hf : ∀ x, f (g * x) = c • f x) : ∫ x, f x ∂μ = 0 := by
+  have h : c • ∫ x, f x ∂μ = ∫ x, f x ∂μ := by
+    simp_rw [← integral_smul, ← hf, integral_mul_left_eq_self]
+  have h' : (1 - c) • ∫ x, f x ∂μ = 0 := by rw [sub_smul, one_smul, h, sub_self]
+  exact (smul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hc.symm)
+
+end TranslationScaling
 
 end TauCeti

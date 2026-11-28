@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.WittVector.IntervalRing.Radius
-public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Surjective
 import Mathlib.Analysis.Normed.Group.ControlledClosure

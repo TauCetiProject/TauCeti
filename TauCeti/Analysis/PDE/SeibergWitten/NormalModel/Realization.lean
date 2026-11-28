@@ -426,6 +426,14 @@ theorem coe_sobolevFrequencyNormalModelEquiv (hξ : ξ ≠ 0) :
       sobolevFrequencyNormalModel a ξ :=
   ContinuousLinearEquiv.coeFn_ofBijective _ _ _
 
+/-- The realization undoes its inverse: `T_ξ (T_ξ⁻¹ f) = f`. -/
+theorem sobolevFrequencyNormalModel_sobolevFrequencyNormalModelEquiv_symm_apply (hξ : ξ ≠ 0)
+    (f : WithLp 2 (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ × Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤)) :
+    sobolevFrequencyNormalModel a ξ
+      ((sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ).symm f) = f := by
+  rw [← coe_sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ,
+    ContinuousLinearEquiv.apply_symm_apply]
+
 /-- **The `L²` bound of the inverse**: for `(u, v) = T_ξ⁻¹ f`,
 `|ξ|² (‖u‖²_{L²} + ‖v‖²_{L²}) ≤ ‖f‖²`. -/
 theorem mul_norm_sq_add_norm_sq_sobolevFrequencyNormalModelEquiv_symm_le (hξ : ξ ≠ 0)
@@ -437,8 +445,7 @@ theorem mul_norm_sq_add_norm_sq_sobolevFrequencyNormalModelEquiv_symm_le (hξ : 
       ‖f‖ ^ 2 := by
   have h := mul_norm_sq_add_norm_sq_le_norm_sobolevFrequencyNormalModel_sq ξ hx.continuous hax
     ((sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ).symm f)
-  rwa [← coe_sobolevFrequencyNormalModelEquiv ξ hx hsol hlim hcov hax hξ,
-    ContinuousLinearEquiv.apply_symm_apply] at h
+  rwa [sobolevFrequencyNormalModel_sobolevFrequencyNormalModelEquiv_symm_apply] at h
 
 end Vortex
 

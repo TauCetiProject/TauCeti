@@ -90,7 +90,8 @@ theorem projectiveStableFunctor_map_eq_zero_of_matlisDualOp {N N' : ModuleCat.{m
   let P : FiniteProjectivePresentation N := .ofFinitePresentation
   let π : P.P₀ ⟶ N := ModuleCat.ofHom P.π
   have hπ := ModuleCat.mono_matlisDualOp_map_of_surjective R E π P.surjective
-  have hinj := isInjective_matlisDualOpObj_of_projective R E (ModuleCat.of Aᵐᵒᵖ P.P₀)
+  have hinj := (ExactStructure.abelian_isInjective_iff _).mpr
+    (injective_matlisDualOpObj_of_projective R E (ModuleCat.of Aᵐᵒᵖ P.P₀))
   rw [ExactStructure.injectiveStableFunctor_map_eq_zero_iff,
     ExactStructure.factorsThrough_injective_iff_exists_extension _ _
       ((ExactStructure.abelian_isInflation_iff _).mpr hπ) hinj] at hf

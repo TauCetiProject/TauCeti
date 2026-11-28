@@ -23,9 +23,9 @@ is prime, a natural number with nonzero cast is prime to it. A ring map from a r
 characteristic `p` to a nontrivial ring shows that the target has characteristic `p` as well. In
 characteristic a prime `p`, the binomial coefficient `(p - 1).choose k` is `(-1) ^ k` for
 `k ≤ p - 1`. In characteristic `p`, the natural-number representative of the inverse of `m` modulo
-`p` inverts the cast of `m` when `m` is prime to `p`, so in a semiring of characteristic a prime
-`p` every natural number prime to `p` is a unit; Mathlib's `CharP.isUnit_natCast_iff` states this
-for rings.
+`p` inverts the cast of `m` when `m` is prime to `p`, so in a semiring of characteristic `p` every
+natural number prime to `p` (and `m!` for `m < p` when `p` is prime) is a unit; Mathlib's
+`CharP.isUnit_natCast_iff` states this for rings.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -50,8 +50,12 @@ law.
   characteristic `p`.
 * `TauCeti.natCast_mul_natCast_val_inv_eq_one`: `m * (m⁻¹ : ZMod p).val = 1` in characteristic
   `p` when `m` is prime to `p`.
+* `TauCeti.isUnit_natCast_of_coprime`: `(m : R)` is a unit in characteristic `p` when `m` is
+  prime to `p`.
 * `TauCeti.isUnit_natCast_of_not_dvd`: in a semiring of characteristic a prime `p`, a natural
   number prime to `p` is a unit.
+* `TauCeti.isUnit_natCast_factorial_of_lt`: `(m ! : R)` is a unit in prime characteristic `p`
+  for `m < p`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -134,13 +138,26 @@ theorem natCast_mul_natCast_val_inv_eq_one {R : Type*} [NonAssocSemiring R] (p :
   exact CharP.natCast_eq_natCast' R p
     ((ZMod.natCast_eq_natCast_iff _ _ _).1 (by push_cast; exact ZMod.mul_val_inv hm))
 
+/-- In characteristic `p`, any natural number coprime to `p` casts to a unit in a semiring. -/
+theorem isUnit_natCast_of_coprime {R : Type*} [Semiring R] (p : ℕ) [CharP R p] {m : ℕ}
+    (hm : m.Coprime p) : IsUnit (m : R) :=
+  ((Nat.cast_commute (α := R) m ((m⁻¹ : ZMod p).val)).isUnit_mul_iff.mp
+    (by rw [natCast_mul_natCast_val_inv_eq_one p hm]; exact isUnit_one)).1
+
 /-- In a semiring of characteristic a prime `p`, a natural number prime to `p` is a unit. This is
 the semiring version of one direction of Mathlib's `CharP.isUnit_natCast_iff`, which needs a
 ring. -/
 theorem isUnit_natCast_of_not_dvd {R : Type*} [Semiring R] {p : ℕ} [CharP R p] (hp : p.Prime)
-    {n : ℕ} (hn : ¬p ∣ n) : IsUnit (n : R) := by
-  have h := natCast_mul_natCast_val_inv_eq_one (R := R) p ((hp.coprime_iff_not_dvd.2 hn).symm)
-  exact ⟨⟨n, _, h, (Nat.cast_commute _ _).eq.symm.trans h⟩, rfl⟩
+    {n : ℕ} (hn : ¬p ∣ n) : IsUnit (n : R) :=
+  isUnit_natCast_of_coprime p (hp.coprime_iff_not_dvd.2 hn).symm
+
+open scoped Nat in
+/-- In prime characteristic `p`, `(m ! : R)` is a unit in any semiring `R` for every `m < p`. -/
+theorem isUnit_natCast_factorial_of_lt {R : Type*} [Semiring R] (p : ℕ) [hp : Fact p.Prime]
+    [CharP R p] {m : ℕ} (hmp : m < p) : IsUnit (m ! : R) :=
+  isUnit_natCast_of_coprime p <| by
+    rw [Nat.coprime_comm, hp.out.coprime_iff_not_dvd, hp.out.dvd_factorial]
+    omega
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.ChartTopology
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -218,6 +219,14 @@ theorem tsupport_ofSupportedIn_subset (K : Compacts M) (σ : supportedIn I F ∞
   rw [coe_ofCompactlySupported, ofSupportedIn_apply, ← tsupport_def]
   exact mem_supportedIn.1 σ.property
 
+/-- Near a point mapped off the support of a test `s`, the composite `s ∘ f` vanishes. -/
+theorem eventually_apply_comp_eq_zero {X : Type*} [TopologicalSpace X] {f : X → M}
+    (hf : Continuous f) (s : BundleTest I F V) {x : X} (hfx : f x ∉ closure {y | s y ≠ 0}) :
+    ∀ᶠ z in nhds x, s (f z) = 0 :=
+  Filter.eventually_of_mem
+    (hf.continuousAt.preimage_mem_nhds (isClosed_closure.isOpen_compl.mem_nhds hfx))
+    fun _ hz ↦ Bundle.apply_eq_zero_of_notMem_closure hz
+
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames
@@ -408,6 +417,12 @@ theorem coe_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
     ⇑(t.chartTestCLM c hc hct φ) = (t.chartTestSection (n := ⊤) c hc hct φ).val :=
   (rfl)
 
+/-- The compactly supported section underlying an extended test is the extended section. -/
+theorem val_symm_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
+    ((BundleTest.ofCompactlySupported I F V).symm (t.chartTestCLM c hc hct φ)).val =
+      (t.chartTestSection (n := ⊤) c hc hct φ).val :=
+  ContMDiffSection.ext fun x ↦ congrFun (t.coe_chartTestCLM c hc hct φ) x
+
 /-- On the chart source, the extended test is the inverse frame applied to the value of the test
 function in coordinates. -/
 theorem chartTestCLM_apply_of_mem (φ : 𝓓(⟨c.target, c.open_target⟩, F)) {x : M}
@@ -509,8 +524,9 @@ end Bundle.Trivialization
 namespace TauCeti.BundleTest
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [BoundarylessManifold I M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
@@ -518,7 +534,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- **Functionals on bundle tests are determined by their local representatives.** On a
-boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, two functionals agree
+boundaryless Hausdorff manifold with finite-dimensional model, two functionals agree
 once their local representatives agree in every smooth chart lying over the base set of a
 trivialization of the bundle atlas: bundle tests are finite sums of chart extensions of native
 test functions (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`). -/

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.RingTheory.Jacobson.Semiprimary
+import TauCeti.RingTheory.Jacobson.TNilpotent
 import TauCeti.RingTheory.SimpleModule.Basic
 
 /-!

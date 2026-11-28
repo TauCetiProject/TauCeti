@@ -16,6 +16,7 @@ import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.NearlyHolomorphic
 import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 import TauCeti.Analysis.Complex.Conformal.LocalIndex
+import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 
 /-!
 # The zero charges of discs and the zero set of a pseudoholomorphic function
@@ -522,8 +523,10 @@ def PositiveCohomologyAssignment.zeroSet
   charge_eq_of_homotopy F hF _ _ := f.zeroCharge_eq_of_homotopy F hF
   charge_comp o _ h _ hθ _ := ContinuousMap.zeroCharge_comp o h hθ
   charge_eq_sum _ h c r hc hr hdisj hcov _ := ContinuousMap.zeroCharge_eq_sum h c r hc hr hdisj hcov
-  charge_pos _ h _ hu hhol _ hZ := ContinuousMap.zeroCharge_pos h (fun z ↦ congrArg f (hu z))
-    ((hf.isPseudoholomorphicOn univ).differentiableOn_comp hhol (mapsTo_univ _ _)) hZ
+  charge_pos _ h _ hu hhol _ hZ := by
+    rw [← SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth] at hf hhol
+    exact ContinuousMap.zeroCharge_pos h (fun z ↦ congrArg f (hu z))
+      ((hf.isPseudoholomorphicOn univ).differentiableOn_comp hhol (mapsTo_univ _ _)) hZ
 
 /-- The integer of a disc for the zero set of a `J`-holomorphic function is its zero charge. -/
 @[simp]

@@ -13,10 +13,10 @@ public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 -- Non-public: used only inside proofs.  A reduced matrix ring has at most one index, a
--- one-by-one matrix ring collapses to its base ring, and an equivalence of rings carries the
--- Jacobson radical onto the Jacobson radical and so descends to the quotients.
+-- one-by-one matrix ring collapses to its base ring, and a ring equivalence descends to the
+-- quotients by the Jacobson radicals.
 import Mathlib.LinearAlgebra.Matrix.Unique
-import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Jacobson.Quotient
 import TauCeti.RingTheory.Nilpotent.Reduced
 
 /-!
@@ -145,11 +145,7 @@ radical onto the Jacobson radical, hence descends to an equivalence of the quoti
 both semisimplicity and reducedness transport. -/
 theorem _root_.RingEquiv.isBasic_iff {A : Type v} {B : Type w} [Ring A] [Ring B] (e : A ≃+* B) :
     IsBasic A ↔ IsBasic B := by
-  have hmap : Ring.jacobson B = (Ring.jacobson A).map (e : A →+* B) :=
-    le_antisymm (by rw [Ideal.map_comap_of_equiv]; exact Ring.le_comap_jacobson (e.symm : B →+* A))
-      (Ideal.map_le_iff_le_comap.mpr (Ring.le_comap_jacobson (e : A →+* B)))
-  let q : (A ⧸ Ring.jacobson A) ≃+* (B ⧸ Ring.jacobson B) :=
-    Ideal.quotientEquiv _ _ e hmap
+  let q := e.quotientJacobsonCongr
   exact and_congr q.isSemisimpleRing_iff
     ⟨fun _ => isReduced_of_injective q.symm q.symm.injective,
       fun _ => isReduced_of_injective q q.injective⟩

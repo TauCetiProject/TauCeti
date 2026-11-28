@@ -29,6 +29,12 @@ This file also records how membership in a double coset `HaK` interacts with mul
 * `DoubleCoset.mul_mem_doubleCoset_of_mem_right`: membership in `HaK` is closed under right
   multiplication by `K`, for an arbitrary set `H` and subsemigroup `K`.
 * `DoubleCoset.mem_doubleCoset_of_quotient_eq`: recognising `HxK` from an equation in `G ⧸ K`.
+* `DoubleCoset.isEmpty_inv_mul_mul_mem_of_mk_ne`, `DoubleCoset.exists_inv_mul_mul_mem_iff`,
+  `DoubleCoset.nonempty_inv_mul_mul_mem_iff`,
+  `DoubleCoset.invMulMulMemEquivOfEq`, `DoubleCoset.invMulMulMemEquivOfBaseEq`: the `γ ∈ H`
+  with `x⁻¹ γ y ∈ K` exist exactly when `y ∈ HxK`. For `y' = γ₀ y k₀`, the map `γ ↦ γ γ₀` is a
+  bijection from the index set at `y'` to the one at `y`; for `x' = γ₀ x k₀`, the map
+  `γ ↦ γ₀⁻¹ γ` is a bijection from the index set at `x'` to the one at `x`.
 * `DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset`: the double coset `H (r w) K` of a product
   lies in the product `(H r L) (L w K)` of double cosets, for arbitrary sets `H`, `K` and any set
   `L` containing `1`, in any monoid.
@@ -116,6 +122,81 @@ lemma mem_doubleCoset_of_quotient_eq {H : Set G} {K : Subgroup G} {w x l : G} (h
     (h : (w : G ⧸ K) = ((l * x : G) : G ⧸ K)) : w ∈ doubleCoset x H K :=
   mem_doubleCoset.mpr ⟨l, hl, (l * x)⁻¹ * w, QuotientGroup.eq.mp h.symm,
     (mul_inv_cancel_left _ _).symm⟩
+
+/-- Off the double coset `HxK` there is no `γ ∈ H` with `x⁻¹ γ y ∈ K`. -/
+theorem isEmpty_inv_mul_mul_mem_of_mk_ne {H K : Subgroup G} {x y : G}
+    (h : DoubleCoset.mk H K y ≠ DoubleCoset.mk H K x) : IsEmpty {γ : H // x⁻¹ * γ * y ∈ K} :=
+  ⟨fun γ ↦ h <| DoubleCoset.eq.2
+    ⟨γ.val, γ.val.property, (x⁻¹ * γ * y)⁻¹, inv_mem γ.property, by simp [mul_assoc]⟩⟩
+
+/-- There is a `γ ∈ H` with `x⁻¹ γ y ∈ K` exactly when `y` lies in the double coset `HxK`. -/
+@[simp]
+theorem exists_inv_mul_mul_mem_iff {H K : Subgroup G} {x y : G} :
+    (∃ γ ∈ H, x⁻¹ * γ * y ∈ K) ↔ DoubleCoset.mk H K y = DoubleCoset.mk H K x := by
+  refine ⟨fun ⟨γ, hγ, hγK⟩ ↦ not_not.1 fun h ↦
+    (isEmpty_inv_mul_mul_mem_of_mk_ne h).false ⟨⟨γ, hγ⟩, hγK⟩, fun h ↦ ?_⟩
+  -- For `x = γ y k`, the element `γ` works: `x⁻¹ γ y = k⁻¹ ∈ K`.
+  obtain ⟨γ, hγ, k, hk, rfl⟩ := DoubleCoset.eq.1 h
+  exact ⟨γ, hγ, by simpa [mul_assoc] using inv_mem hk⟩
+
+/-- The index set `{γ ∈ H | x⁻¹ γ y ∈ K}` is nonempty exactly when `y` lies in `HxK`. -/
+theorem nonempty_inv_mul_mul_mem_iff {H K : Subgroup G} {x y : G} :
+    Nonempty {γ : H // x⁻¹ * γ * y ∈ K} ↔ DoubleCoset.mk H K y = DoubleCoset.mk H K x := by
+  rw [nonempty_subtype]
+  simp
+
+/-- Changing the evaluation point: for `y' = γ₀ y k₀`, with `γ₀ ∈ H` and `k₀ ∈ K`, the map
+`γ ↦ γ γ₀` is a bijection from `{γ ∈ H | x⁻¹ γ y' ∈ K}` (the new index set) to
+`{γ ∈ H | x⁻¹ γ y ∈ K}` (the old one). -/
+def invMulMulMemEquivOfEq {H K : Subgroup G} (x : G) {y y' : G} (γ₀ : H) (k₀ : K)
+    (hy : y' = γ₀ * y * k₀) : {γ : H // x⁻¹ * γ * y' ∈ K} ≃ {γ : H // x⁻¹ * γ * y ∈ K} :=
+  (Equiv.mulRight γ₀).subtypeEquiv fun γ ↦ by
+    subst hy
+    -- Regroup so that the factor `k₀ ∈ K` can be cancelled on the right.
+    have hassoc : x⁻¹ * γ * (γ₀ * y * k₀) = x⁻¹ * (γ * γ₀) * y * k₀ := by simp [mul_assoc]
+    rw [hassoc, Subgroup.mul_mem_cancel_right _ k₀.property]
+    simp
+
+/-- `DoubleCoset.invMulMulMemEquivOfEq` sends `γ` to `γ γ₀`. -/
+@[simp]
+theorem coe_invMulMulMemEquivOfEq_apply {H K : Subgroup G} (x : G) {y y' : G} (γ₀ : H) (k₀ : K)
+    (hy : y' = γ₀ * y * k₀) (γ : {γ : H // x⁻¹ * γ * y' ∈ K}) :
+    (invMulMulMemEquivOfEq x γ₀ k₀ hy γ : H) = γ * γ₀ := by
+  simp [invMulMulMemEquivOfEq]
+
+/-- The inverse of `DoubleCoset.invMulMulMemEquivOfEq` sends `γ` to `γ γ₀⁻¹`. -/
+@[simp]
+theorem coe_invMulMulMemEquivOfEq_symm_apply {H K : Subgroup G} (x : G) {y y' : G} (γ₀ : H)
+    (k₀ : K) (hy : y' = γ₀ * y * k₀) (γ : {γ : H // x⁻¹ * γ * y ∈ K}) :
+    ((invMulMulMemEquivOfEq x γ₀ k₀ hy).symm γ : H) = γ * γ₀⁻¹ := by
+  simp [invMulMulMemEquivOfEq]
+
+/-- Changing the base point: for `x' = γ₀ x k₀`, with `γ₀ ∈ H` and `k₀ ∈ K`, the map
+`γ ↦ γ₀⁻¹ γ` is a bijection from `{γ ∈ H | x'⁻¹ γ y ∈ K}` (the new index set) to
+`{γ ∈ H | x⁻¹ γ y ∈ K}` (the old one). -/
+def invMulMulMemEquivOfBaseEq {H K : Subgroup G} {x x' : G} (y : G) (γ₀ : H) (k₀ : K)
+    (hx : x' = γ₀ * x * k₀) : {γ : H // x'⁻¹ * γ * y ∈ K} ≃ {γ : H // x⁻¹ * γ * y ∈ K} :=
+  (Equiv.mulLeft γ₀⁻¹).subtypeEquiv fun γ ↦ by
+    subst hx
+    -- `(γ₀ x k₀)⁻¹ γ y = k₀⁻¹ (x⁻¹ (γ₀⁻¹ γ) y)`, and `k₀⁻¹ ∈ K` cancels on the left.
+    have hassoc : (γ₀ * x * k₀ : G)⁻¹ * γ * y = (k₀ : G)⁻¹ * (x⁻¹ * ↑(γ₀⁻¹ * γ) * y) := by
+      simp [mul_assoc]
+    rw [hassoc, Subgroup.mul_mem_cancel_left _ (inv_mem k₀.property)]
+    simp
+
+/-- `DoubleCoset.invMulMulMemEquivOfBaseEq` sends `γ` to `γ₀⁻¹ γ`. -/
+@[simp]
+theorem coe_invMulMulMemEquivOfBaseEq_apply {H K : Subgroup G} {x x' : G} (y : G) (γ₀ : H)
+    (k₀ : K) (hx : x' = γ₀ * x * k₀) (γ : {γ : H // x'⁻¹ * γ * y ∈ K}) :
+    (invMulMulMemEquivOfBaseEq y γ₀ k₀ hx γ : H) = γ₀⁻¹ * γ := by
+  simp [invMulMulMemEquivOfBaseEq]
+
+/-- The inverse of `DoubleCoset.invMulMulMemEquivOfBaseEq` sends `γ` to `γ₀ γ`. -/
+@[simp]
+theorem coe_invMulMulMemEquivOfBaseEq_symm_apply {H K : Subgroup G} {x x' : G} (y : G) (γ₀ : H)
+    (k₀ : K) (hx : x' = γ₀ * x * k₀) (γ : {γ : H // x⁻¹ * γ * y ∈ K}) :
+    ((invMulMulMemEquivOfBaseEq y γ₀ k₀ hx).symm γ : H) = γ₀ * γ := by
+  simp [invMulMulMemEquivOfBaseEq]
 
 /-- The double coset of a product occurs in the product of the corresponding double cosets, along
 any set `C` containing `1`. -/

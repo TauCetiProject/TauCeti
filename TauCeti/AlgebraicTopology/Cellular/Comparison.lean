@@ -113,6 +113,24 @@ lemma isIso_homologyMap_skeletonPair_map {j k : ℕ}
       ((isZero_singularHomology_skeletonPair_of_ne C R hk).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
+/-- **Attaching the top cells leaves homology unchanged away from their dimension.** If an
+embedding `f : Z → X` maps onto the `(j - 1)`-skeleton `skeletonLT C j` of a relative CW structure
+on `X` whose `j`-skeleton `skeletonLT C (j + 1)` is all of `X`, so that `X` is `Z` with cells of
+dimension `j` attached, then `f` induces an isomorphism on `Hₖ` for `k ≠ j` and `k ≠ j - 1`. -/
+lemma isIso_singularHomologyMap_of_range_eq_skeletonLT {Z : Type w} [TopologicalSpace Z]
+    {f : C(Z, X)} (hf : IsEmbedding f) {j k : ℕ} (hj : Set.range f = skeletonLT C (j : ℕ∞))
+    (hu : (skeletonLT C ((j + 1 : ℕ) : ℕ∞) : Set X) = Set.univ)
+    [HasExactColimitsOfShape (Discrete (cell C j)) A] (hk : k ≠ j) (hk' : k + 1 ≠ j) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor A k).obj R).map (TopCat.ofHom f)) := by
+  let H := (AlgebraicTopology.singularHomologyFunctor A k).obj R
+  have : IsIso (H.map (skeletonPair C j).map) := isIso_homologyMap_skeletonPair_map C R hk hk'
+  rw [← skeletonObjIsoOfRangeEq_hom_comp_map_comp hf hj hu]
+  -- The skeletal pair presents the skeleta as `TopPair.snd` and `TopPair.fst`, equal to
+  -- `skeletonObj` only up to unfolding, so `erw` is needed to split the composite.
+  erw [Functor.map_comp, Functor.map_comp]
+  exact IsIso.comp_isIso' (H.mapIso (skeletonObjIsoOfRangeEq hf hj)).isIso_hom
+    (IsIso.comp_isIso' this (H.mapIso (skeletonObjIsoOfEqUniv hu)).isIso_hom)
+
 section Colimit
 
 variable [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A]

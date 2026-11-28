@@ -52,6 +52,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
 * `QuotSMulTop.equivQuotSpanSingleton`: the `R`-linear equivalence `QuotSMulTop x R ≃ R ⧸ (x)`.
 * `Module.IsTorsionBy.quotSMulTopEquiv`: `M ⧸ x M ≃ M` when `x` kills `M`.
+* `Module.IsTorsionBy.tensorQuotEquiv`: `M ⊗[R] R ⧸ (x) ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 * `QuotSMulTop.mulPow`: multiplication by `xᵏ`, as a map `M ⧸ x M → M ⧸ xᵏ⁺¹ M`.
@@ -109,6 +110,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
   regularity on `M ⧸ I • ⊤`.
+* `Submodule.sup_smul_top_eq_top_iff`: quotienting by `I • ⊤` detects whether
+  `(I ⊔ J) • ⊤ = ⊤`.
 -/
 
 public section
@@ -351,6 +354,13 @@ theorem mem_annihilator_ker_map (x : R) {f : M →ₗ[R] N} {b : R} (hf : Inject
   rw [hbz, Submodule.Quotient.mk_eq_zero]
   exact Submodule.smul_mem_pointwise_smul m x ⊤ trivial
 
+open scoped TensorProduct in
+/-- The identification `M ⧸ x M ≃ M ⊗[R] R ⧸ (x)` sends the residue class of `m` to `m ⊗ 1`. -/
+@[simp]
+theorem equivTensorQuot_mk (x : R) (m : M) :
+    equivTensorQuot x M (Submodule.Quotient.mk m) = m ⊗ₜ 1 := by
+  simp [equivTensorQuot]
+
 end QuotSMulTop
 
 namespace Module.IsTorsionBy
@@ -375,6 +385,28 @@ theorem quotSMulTopEquiv_mk {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
 theorem quotSMulTopEquiv_symm_apply {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
     hx.quotSMulTopEquiv.symm m = Submodule.Quotient.mk m :=
   (LinearEquiv.symm_apply_eq _).2 (quotSMulTopEquiv_mk hx m).symm
+
+open scoped TensorProduct in
+/-- Tensoring with `R ⧸ (x)` leaves a module killed by `x` unchanged:
+`M ⊗[R] R ⧸ (x) ≃ M` when `x • M = 0`. -/
+noncomputable def tensorQuotEquiv {x : R} (hx : Module.IsTorsionBy R M x) :
+    M ⊗[R] (R ⧸ Ideal.span {x}) ≃ₗ[R] M :=
+  (QuotSMulTop.equivTensorQuot x M).symm ≪≫ₗ hx.quotSMulTopEquiv
+
+open scoped TensorProduct in
+/-- The identification `M ⊗[R] R ⧸ (x) ≃ M` sends `m ⊗ 1` to `m`. -/
+@[simp]
+theorem tensorQuotEquiv_tmul_one {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.tensorQuotEquiv (m ⊗ₜ 1) = m := by
+  rw [tensorQuotEquiv, LinearEquiv.trans_apply, ← QuotSMulTop.equivTensorQuot_mk,
+    LinearEquiv.symm_apply_apply, quotSMulTopEquiv_mk]
+
+open scoped TensorProduct in
+/-- The inverse of the identification `M ⊗[R] R ⧸ (x) ≃ M` sends `m` to `m ⊗ 1`. -/
+@[simp]
+theorem tensorQuotEquiv_symm_apply {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.tensorQuotEquiv.symm m = m ⊗ₜ 1 :=
+  (LinearEquiv.symm_apply_eq _).2 (tensorQuotEquiv_tmul_one hx m).symm
 
 end Module.IsTorsionBy
 
@@ -685,3 +717,12 @@ theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided
 end Ring
 
 end Ideal
+
+/-- Quotienting by `I • ⊤` detects whether `(I ⊔ J) • ⊤ = ⊤`. -/
+theorem Submodule.sup_smul_top_eq_top_iff {R : Type*} [Ring R] (M : Type*)
+    [AddCommGroup M] [Module R M] (I J : Ideal R) :
+    (I ⊔ J) • (⊤ : Submodule R M) = ⊤ ↔
+      J • (⊤ : Submodule R (M ⧸ (I • ⊤ : Submodule R M))) = ⊤ := by
+  simpa only [Submodule.sup_smul, Submodule.map_smul'', Submodule.map_top,
+    Submodule.range_mkQ] using
+    (Submodule.map_mkQ_eq_top (I • (⊤ : Submodule R M)) (J • ⊤)).symm

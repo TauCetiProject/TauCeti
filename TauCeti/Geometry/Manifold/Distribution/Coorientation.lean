@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.Annihilator
+public import TauCeti.Geometry.Manifold.Distribution.Quotient.Dual
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import Mathlib.LinearAlgebra.Orientation
@@ -39,7 +40,9 @@ Consequently `D` is the kernel of a global nowhere-zero smooth one-form exactly 
 line has a continuous nowhere-zero section
 (`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_continuous`), and exactly when
 the smooth line bundle `D⁰` is trivial: it has a smooth trivialization over all of `M`
-(`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization`).
+(`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization`). Since `D⁰`
+is the dual of the line bundle `TM ⧸ D`, this is also exactly when `TM ⧸ D` is trivial
+(`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization_quotient`).
 
 A **coorientation** of `D` (`TauCeti.IsCoorientation`) is an orientation of every annihilator line
 `D⁰_x` which near every point is the orientation in which some continuous local annihilating
@@ -77,6 +80,8 @@ coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
 * `TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization`: it is the
   kernel of a global nowhere-zero smooth one-form exactly when its annihilator line bundle is
   smoothly trivial.
+* `TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization_quotient`:
+  equivalently, when the quotient line bundle `TM ⧸ D` is smoothly trivial.
 * `TauCeti.SmoothForm.orientation_eq_coorientation_iff`,
   `TauCeti.SmoothForm.coorientation_eq_coorientation_iff`: a covector is positive for the
   coorientation of `α` exactly when it lies on the ray of `α`.
@@ -247,6 +252,26 @@ theorem exists_smoothForm_ker_eq_iff_exists_trivialization [FiniteDimensional �
       (CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff (P := Fin 1 → ℝ)).1
         hσ.continuous,
       fun x ↦ ⟨fun h ↦ hσ₀ x (Subtype.ext h), (σ x).property⟩⟩
+
+/-- **A hyperplane field is the kernel of a global one-form exactly when its quotient line is
+trivial.** A smooth hyperplane field `D` on a Hausdorff σ-compact manifold is the kernel of a smooth
+one-form vanishing nowhere exactly when the line bundle `TM ⧸ D`
+(`TauCeti.IsContMDiffDistribution.quotientPrebundle`) has a smooth linear trivialization over all
+of `M`. -/
+theorem exists_smoothForm_ker_eq_iff_exists_trivialization_quotient [FiniteDimensional ℝ E]
+    (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := (hD.quotientPrebundle hk).totalSpaceTopology
+    letI := (hD.quotientPrebundle hk).toFiberBundle
+    letI := (hD.quotientPrebundle hk).toVectorBundle
+    (∃ α : SmoothForm I M ℝ 1, ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) ↔
+      ∃ (e : Trivialization (Fin 1 → ℝ) (π (Fin 1 → ℝ) fun x ↦ TangentSpace I x ⧸ D x))
+        (_ : e.IsLinear ℝ),
+        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear M (Fin 1 → ℝ) I ∞).maximalAtlas
+          (TotalSpace (Fin 1 → ℝ) fun x ↦ TangentSpace I x ⧸ D x) ∧ e.baseSet = univ := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  rw [hD.exists_smoothForm_ker_eq_iff_exists_trivialization hk]
+  exact hD.exists_trivialization_annihilatorSpace_iff_quotient hk
 
 end IsContMDiffDistribution
 

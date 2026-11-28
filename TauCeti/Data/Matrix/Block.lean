@@ -55,6 +55,8 @@ and empty blocks.
 ## Main results
 
 * `Matrix.blockDiagonal'AlgHom_apply`: evaluation of `Matrix.blockDiagonal'AlgHom`.
+* `Matrix.sum_smul_fromBlocks_zero₁₂_zero₂₁`: a block-diagonal matrix acts separately on the two
+  parts of a family of vectors.
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.toBlocks₁₁_add`, `Matrix.toBlocks₁₁_sub`, `Matrix.toBlocks₁₁_smul` and their analogues
@@ -66,6 +68,9 @@ and empty blocks.
   non-unital `⋆`-algebra homomorphism.
 * `AlgHom.fromBlocks ρ₁ ρ₂`: the block-diagonal representation `x ↦ diag(ρ₁ x, ρ₂ x)` of two
   matrix representations, as an algebra homomorphism.
+* `Matrix.conjTranspose_fromBlocks_mul_fromBlocks_mul_fromBlocks`: congruence by a
+  block-diagonal matrix is blockwise congruence.
+* `Matrix.diagonal_comp_sumElim`: the diagonal matrix of concatenated entries is block diagonal.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
   the direct sum of idempotent matrices is idempotent, and that of star projections is a star
@@ -86,6 +91,32 @@ and empty blocks.
 -/
 
 namespace Matrix
+
+section OrthogonalSum
+
+variable {m n p q R : Type*}
+
+/-- **Congruence by a block-diagonal matrix is blockwise congruence**:
+`diag(x, y)ᴴ * diag(A, D) * diag(x, y) = diag(xᴴ * A * x, yᴴ * D * y)`, for rectangular blocks `x`
+and `y`. -/
+public theorem conjTranspose_fromBlocks_mul_fromBlocks_mul_fromBlocks [Fintype m] [Fintype n]
+    [NonUnitalNonAssocSemiring R] [StarAddMonoid R] (x : Matrix m p R) (y : Matrix n q R)
+    (A : Matrix m m R) (D : Matrix n n R) :
+    (fromBlocks x 0 0 y)ᴴ * fromBlocks A 0 0 D * fromBlocks x 0 0 y =
+      fromBlocks (xᴴ * A * x) 0 0 (yᴴ * D * y) := by
+  simp [fromBlocks_conjTranspose, fromBlocks_multiply]
+
+/-- **The Gram matrix of an orthogonal sum of diagonal forms**: the diagonal matrix of a function of
+concatenated entries is the block-diagonal matrix of the diagonal matrices of the two parts. -/
+public theorem diagonal_comp_sumElim [DecidableEq m] [DecidableEq n] [Zero R] {α : Type*}
+    (f : α → R) (d₁ : m → α) (d₂ : n → α) :
+    (diagonal fun i ↦ f (Sum.elim d₁ d₂ i)) =
+      fromBlocks (diagonal fun i ↦ f (d₁ i)) 0 0 (diagonal fun i ↦ f (d₂ i)) := by
+  rw [fromBlocks_diagonal]
+  congr 1
+  ext (i | i) <;> simp
+
+end OrthogonalSum
 
 /-- With fixed off-diagonal blocks, the assembled matrix determines both diagonal blocks. -/
 public theorem fromBlocks₁₁₂₂_injective {m n p q α : Type*}
@@ -109,6 +140,15 @@ public theorem forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff {m n p q �
         (∀ i j, i ≠ j → |D (row₂ i) j * D (row₂ j) i| ≤ bound) := by
   have hzero : |(0 : α)| = 0 := by simp [abs]
   simp [Sum.forall, hzero, hbound]
+
+/-- A block-diagonal matrix acts on a sum-indexed family by taking linear combinations separately
+in each block. -/
+public theorem sum_smul_fromBlocks_zero₁₂_zero₂₁ {m n p q R E : Type*}
+    [Fintype p] [Fintype q] [Zero R] [AddCommMonoid E] [SMulWithZero R E]
+    (A : Matrix m p R) (D : Matrix n q R) (x : p → E) (y : q → E) (i : m ⊕ n) :
+    (∑ j, fromBlocks A 0 0 D i j • Sum.elim x y j) =
+      Sum.elim (fun a ↦ ∑ j, A a j • x j) (fun d ↦ ∑ j, D d j • y j) i := by
+  cases i <;> simp [Fintype.sum_sum_type]
 
 section ToBlocksMul
 

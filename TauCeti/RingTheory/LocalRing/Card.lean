@@ -38,6 +38,8 @@ pairs not both even. These are the counts behind the indices of the congruence l
 
 * `TauCeti.IsLocalRing.card_eq_card_maximalIdeal_mul_card_residueField`: `#R = #𝔪 · q`, for any
   local ring.
+* `TauCeti.IsLocalRing.one_lt_card_residueField`: the residue field of a finite local ring has at
+  least two elements.
 * `TauCeti.IsLocalRing.card_residueField_mul_card_units`: `q · #Rˣ = #R · (q - 1)`.
 * `TauCeti.IsLocalRing.card_not_isUnimodular` and `TauCeti.IsLocalRing.card_isUnimodular`: there
   are `#𝔪ⁿ` non-unimodular and `#Rⁿ - #𝔪ⁿ` unimodular vectors `v : ι → R`, for `n = #ι`.
@@ -87,6 +89,11 @@ theorem card_not_isUnimodular (ι : Type*) [Fintype ι] :
     Nat.card_fun, Nat.card_eq_fintype_card (α := ι)]
 
 variable (R) [Finite R]
+
+/-- The residue field of a finite local ring has at least two elements. -/
+theorem one_lt_card_residueField : 1 < Nat.card (ResidueField R) :=
+  have : Finite (ResidueField R) := .of_surjective _ residue_surjective
+  Finite.one_lt_card
 
 /-- **The units of a finite local ring**: `q · #Rˣ = #R · (q - 1)`, where `q` is the size of the
 residue field. The units are the complement of the maximal ideal, which has index `q`. -/

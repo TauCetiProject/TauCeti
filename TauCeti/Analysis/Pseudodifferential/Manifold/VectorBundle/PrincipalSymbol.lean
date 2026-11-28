@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Elliptic
+import TauCeti.Algebra.Module.LinearMap.UnitSMul
 import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Topology.FiberBundle.Trivialization
+import TauCeti.Topology.VectorBundle.FiniteDimensional
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -63,7 +65,9 @@ commutator is linear over the functions, so its value at `x` only depends on `s(
 `TauCeti.classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators` for the matrix entries.
 In particular a smooth bundle map from `E` to `F`, acting on sections, has as principal symbol of
 order `0` its fibre map at every nonzero covector
-(`TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`).
+(`TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`), so over a manifold of positive
+dimension it has order `-1` only when it is zero
+(`TauCeti.mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`).
 
 An operator is **elliptic at** `x` (`TauCeti.IsSectionClassicalEllipticAt`) when `σ_m(P)(x, ξ)` is
 bijective for every nonzero covector `ξ`. Ellipticity is unchanged by perturbations of order
@@ -102,10 +106,15 @@ pseudodifferential operators between bundles applies to elliptic differential op
   `P` in arbitrary frames are read off from `σ_m(P)`.
 * `TauCeti.sectionClassicalPrincipalSymbol_eq_iff`: conversely, `σ_m(P)(x, ξ)` is the linear map
   whose readings in one pair of frames are the principal symbols of these entries.
+* `TauCeti.classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton`: more generally,
+  reading `P` along any smooth section `s` gives an operator with principal symbol
+  `χ(x) ℓ(t'ₓ (σ_m(P)(x, ξ) s(x)))`.
 * `TauCeti.sectionClassicalPrincipalSymbol_add`, `TauCeti.sectionClassicalPrincipalSymbol_smul`,
   `TauCeti.sectionClassicalPrincipalSymbol_zero`, `TauCeti.sectionClassicalPrincipalSymbol_neg`,
   `TauCeti.sectionClassicalPrincipalSymbol_sub`, `TauCeti.sectionClassicalPrincipalSymbol_sum`:
   linearity in the operator.
+* `TauCeti.sectionClassicalPrincipalSymbol_smul_of_ne_zero`: a nonzero scalar factor multiplies
+  the principal symbol, whatever the order of the operator.
 * `TauCeti.sectionClassicalPrincipalSymbol_eq_zero_iff`: the principal symbol of an operator of
   order `m` vanishes exactly when the operator has order `m - 1`.
 * `TauCeti.sectionClassicalPrincipalSymbol_zero_covector`,
@@ -117,6 +126,8 @@ pseudodifferential operators between bundles applies to elliptic differential op
   `f`, evaluated at `x`.
 * `TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`: a smooth bundle map acting on
   sections has as principal symbol of order `0` its fibre map at every nonzero covector.
+* `TauCeti.mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`: in positive
+  dimension, a smooth bundle map of order `-1` is zero.
 * `TauCeti.isSectionClassicalEllipticAt_add_iff`: ellipticity only depends on the principal symbol.
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
@@ -305,9 +316,68 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_output
     (trivializationAt W F x).symmL_apply (R := ℂ) hx]
 
 omit [FiniteDimensional ℂ W] in
-/-- **Changing the input frame.** The principal symbol of an entry of `P` with input frame
-`(t, ψ, v)` is a combination of the principal symbols of the entries with the preferred input frame
-at `x` and the same output, with the coefficients `ψ(x) bᵢ*(t₀ₓ t⁻¹ₓ v)`. -/
+/-- **Changing the input frame.** The principal symbol of `f ↦ χ ℓ(t' (P (f s)))`, reading `P`
+along a smooth section `s`, is a combination of the principal symbols of the entries with the
+preferred input frame at `x` and the same output, with the coefficients `bᵢ*(t₀ₓ s(x))` of `s(x)`
+in that frame. -/
+private theorem classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton_eq_sum
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯)
+    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
+    (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+        (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ _ s).restrictScalars
+          ℂ) x ξ =
+      ∑ i, (finBasis ℂ V).coord i ((trivializationAt V E x).continuousLinearMapAt ℂ x (s x)) *
+        classicalPrincipalSymbol m (sectionEntry (trivializationAt V E x)
+          (frameCutoff (V := V) (W := W) n E F x)
+          (tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x) (finBasis ℂ V i)
+          t' χ hχ ℓ P) x ξ := by
+  have hρ := tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x
+  have hx := FiberBundle.mem_baseSet_trivializationAt V E x
+  -- The coefficients `k i = ρ bᵢ*(t₀ s)` of `s` in the preferred frame `t₀`, and a cutoff `θ`
+  -- equal to `1` near `x`, supported where `ρ = 1` inside the base set of `t₀`.
+  set k : Fin (finrank ℂ V) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := fun i ↦
+    (trivializationAt V E x).cutoffFrameCoeff _ hρ ((finBasis ℂ V).coord i).toContinuousLinearMap s
+  obtain ⟨θ, hθU, hθ⟩ :=
+    ContMDiffMap.exists_tsupport_subset_eventually_eq_one (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
+      (inter_mem (frameCutoff_eventually_eq_one (V := V) (W := W) n E F x)
+        ((trivializationAt V E x).open_baseSet.mem_nhds hx))
+  set θc := ContMDiffMap.ofReal θ
+  set A := t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+    (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ _ s).restrictScalars ℂ
+  -- Near `x` the section `s` is `∑ᵢ kᵢ ρ t₀⁻¹ bᵢ`; the rest is cut off by `1 - θ`.
+  have hop : A = ∑ i, sectionEntry _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ P ∘ₗ
+      LinearMap.mulLeft ℂ (θc * k i) + A ∘ₗ LinearMap.mulLeft ℂ (1 - θc) := by
+    refine LinearMap.ext fun f ↦ ?_
+    simp only [A, LinearMap.add_apply, LinearMap.sum_apply, LinearMap.comp_apply,
+      LinearMap.mulLeft_apply, LinearMap.restrictScalars_apply, LinearMap.toSpanSingleton_apply,
+      sectionEntry_apply_eq_cutoffFrameCoeff]
+    rw [(trivializationAt V E x).smul_eq_sum_smul_cutoffFrameSection_add _ hρ (finBasis ℂ V) θ
+      hθU s f, map_add, map_sum, map_add, map_sum]
+  have hE (i : Fin (finrank ℂ V)) :=
+    (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ
+  have hA := cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators
+    t' χ hχ ℓ hP s
+  have hθx : θ x = 1 := hθ.self_of_nhds
+  rw [hop, classicalPrincipalSymbol_add
+      (Submodule.sum_mem _ fun i _ ↦
+        comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _)
+      (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _),
+    classicalPrincipalSymbol_sum _
+      fun i _ ↦ comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _,
+    classicalPrincipalSymbol_comp_mulLeft hA]
+  simp only [ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.sub_apply, Pi.one_apply, θc,
+    ContMDiffMap.ofReal_apply, hθx, Complex.ofReal_one, sub_self, mul_zero, add_zero]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [classicalPrincipalSymbol_comp_mulLeft (hE i)]
+  simp [k, ContMDiffMap.ofReal_apply, hθx, frameCutoff_self (V := V) (W := W) n E F x, mul_comm]
+
+omit [FiniteDimensional ℂ W] in
+/-- **Changing the input frame of an entry.** The principal symbol of an entry of `P` with input
+frame `(t, ψ, v)` is a combination of the principal symbols of the entries with the preferred input
+frame at `x` and the same output, with the coefficients `ψ(x) bᵢ*(t₀ₓ t⁻¹ₓ v)`. -/
 private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
     (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
     (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
@@ -322,47 +392,11 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
           (frameCutoff (V := V) (W := W) n E F x)
           (tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x) (finBasis ℂ V i)
           t' χ hχ ℓ P) x ξ := by
-  have hρ := tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x
-  have hx := FiberBundle.mem_baseSet_trivializationAt V E x
-  have hmem := (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2
-  -- The coefficients `k i = ρ bᵢ*(t₀ ψ t⁻¹ v)` of the input section in the preferred frame `t₀`,
-  -- and a cutoff `θ` equal to `1` near `x`, supported where `ρ = 1` inside the base set of `t₀`.
-  set k : Fin (finrank ℂ V) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := fun i ↦
-    (trivializationAt V E x).cutoffFrameCoeff _ hρ ((finBasis ℂ V).coord i).toContinuousLinearMap
-      (t.cutoffFrameSection ψ hψ v)
-  obtain ⟨θ, hθU, hθ⟩ :=
-    ContMDiffMap.exists_tsupport_subset_eventually_eq_one (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
-      (inter_mem (frameCutoff_eventually_eq_one (V := V) (W := W) n E F x)
-        ((trivializationAt V E x).open_baseSet.mem_nhds hx))
-  set θc := ContMDiffMap.ofReal θ
-  -- Near `x` the input section is `∑ᵢ kᵢ ρ t₀⁻¹ bᵢ`; the rest is cut off by `1 - θ`.
-  have hs := (trivializationAt V E x).smul_eq_sum_smul_cutoffFrameSection_add _ hρ
-    (finBasis ℂ V) θ hθU (t.cutoffFrameSection ψ hψ v)
-  have hop : sectionEntry t ψ hψ v t' χ hχ ℓ P =
-      ∑ i, sectionEntry _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ P ∘ₗ LinearMap.mulLeft ℂ (θc * k i) +
-        sectionEntry t ψ hψ v t' χ hχ ℓ P ∘ₗ LinearMap.mulLeft ℂ (1 - θc) := by
-    refine LinearMap.ext fun f ↦ ?_
-    simp only [LinearMap.add_apply, LinearMap.sum_apply, LinearMap.comp_apply,
-      LinearMap.mulLeft_apply, sectionEntry_apply_eq_cutoffFrameCoeff]
-    rw [hs f, map_add, map_sum, map_add, map_sum]
-  have hE (i : Fin (finrank ℂ V)) := hmem _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ
-  have hE₀ := hmem t ψ hψ v t' χ hχ ℓ
-  conv_lhs => rw [hop]
-  rw [classicalPrincipalSymbol_add
-      (Submodule.sum_mem _ fun i _ ↦
-        comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _)
-      (comp_mulLeft_mem_classicalPseudodifferentialOperators hE₀ _),
-    classicalPrincipalSymbol_sum _
-      fun i _ ↦ comp_mulLeft_mem_classicalPseudodifferentialOperators (hE i) _,
-    classicalPrincipalSymbol_comp_mulLeft hE₀]
-  have hθx : θ x = 1 := hθ.self_of_nhds
-  simp only [ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.sub_apply, Pi.one_apply, θc,
-    ContMDiffMap.ofReal_apply, hθx, Complex.ofReal_one, sub_self, mul_zero, add_zero]
+  rw [sectionEntry_eq_comp,
+    classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton_eq_sum hP]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [classicalPrincipalSymbol_comp_mulLeft (hE i)]
-  simp [k, ContMDiffMap.ofReal_apply, hθx, frameCutoff_self (V := V) (W := W) n E F x,
-    ← Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
-  ring
+  simp [← Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ,
+    map_smul, Complex.real_smul]
 
 /-! ### The transformation law -/
 
@@ -416,6 +450,33 @@ theorem sectionClassicalPrincipalSymbol_eq_iff
   have hc : ((χ x * ψ x : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (mul_ne_zero hχx hψx)
   exact mul_left_cancel₀ hc
     ((classicalPrincipalSymbol_sectionEntry hP t ψ hψ v t' χ hχ ℓ x ξ).symm.trans (h v ℓ))
+
+/-- **Reading an operator along a section.** For a smooth section `s` of `E`, a trivialization
+`t'` of `F` in its atlas, a cutoff `χ` supported in its base set and a complex-linear functional
+`ℓ`, the principal symbol at `ξ ∈ T*ₓM` of the classical pseudodifferential operator
+`f ↦ χ ℓ(t' (P (f s)))` is `χ(x) ℓ(t'ₓ (σ_m(P)(x, ξ) s(x)))`. That this operator is classical is
+`cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators`. The
+transformation law `TauCeti.classicalPrincipalSymbol_sectionEntry` is the case of the cut-off
+frame sections `s = ψ t⁻¹ v`. -/
+theorem classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯)
+    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
+    (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+        (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) x ξ =
+      (χ x : ℂ) * ℓ (t'.continuousLinearMapAt ℂ x
+        (sectionClassicalPrincipalSymbol m P x ξ (s x))) := by
+  rw [classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton_eq_sum hP]
+  conv_rhs => rw [← (trivializationAt V E x).sum_repr_smul_symmL (finBasis ℂ V)
+    (FiberBundle.mem_baseSet_trivializationAt V E x) (s x)]
+  simp only [map_sum, map_smul, smul_eq_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [classicalPrincipalSymbol_sectionEntry hP, frameCutoff_self (V := V) (W := W) n E F x,
+    (trivializationAt V E x).symmL_apply (R := ℂ) (FiberBundle.mem_baseSet_trivializationAt V E x)]
+  simp only [mul_one, Basis.coord_apply]
+  ring
 
 omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [∀ x, Module ℝ (E x)]
   [VectorBundle ℝ V E] [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
@@ -477,6 +538,20 @@ theorem sectionClassicalPrincipalSymbol_smul
     classicalPrincipalSymbol_smul (hmem _ _ _ _ _ _ _ _),
     ← coord_sectionClassicalPrincipalSymbol hP,
     LinearMap.smul_apply, map_smul, map_smul, smul_eq_mul]
+
+/-- Multiplying by a nonzero complex number multiplies the principal symbol, whether or not `P`
+is of order `m`. -/
+theorem sectionClassicalPrincipalSymbol_smul_of_ne_zero {c : ℂ} (hc : c ≠ 0) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol m (c • P) x ξ =
+      c • sectionClassicalPrincipalSymbol m P x ξ := by
+  by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
+  · exact sectionClassicalPrincipalSymbol_smul hP c x ξ
+  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
+    have hcP : c • P ∉ sectionClassicalPseudodifferentialOperators m :=
+      (Submodule.smul_mem_iff _ hc).not.2 hP
+    rw [sectionClassicalPrincipalSymbol_of_notMem hP, sectionClassicalPrincipalSymbol_of_notMem hcP,
+      smul_zero]
 
 /-- The principal symbol of the zero operator is `0`. -/
 @[simp]
@@ -672,6 +747,21 @@ theorem sectionClassicalPrincipalSymbol_apply_of_map_smul
   rw [hf] at h
   simpa using h
 
+/-- **Bundle maps of order `-1` vanish.** Over a manifold of positive dimension, an operator
+`P : Γ(E) → Γ(F)` which is linear over the smooth functions, that is a smooth bundle map, is a
+classical pseudodifferential operator of order `-1` only when it is zero: its principal symbol of
+order `0` at a nonzero covector is its fibre map. -/
+theorem mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul
+    [Nontrivial (CoordinateSpace n)]
+    (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) :
+    P ∈ sectionClassicalPseudodifferentialOperators (-1) ↔ P = 0 := by
+  refine ⟨fun hP₁ ↦ ?_, fun h ↦ h ▸ zero_mem _⟩
+  ext s x
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
+  rw [← sectionClassicalPrincipalSymbol_apply_of_map_smul hP hξ s,
+    sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one (m := 0) (by rwa [zero_sub]) x ξ]
+  simp
+
 /-! ### Ellipticity -/
 
 variable (m P) in
@@ -716,15 +806,8 @@ theorem isSectionClassicalElliptic_add_iff
 @[simp]
 theorem isSectionClassicalEllipticAt_smul_iff {c : ℂ} (hc : c ≠ 0) {x : M} :
     IsSectionClassicalEllipticAt m (c • P) x ↔ IsSectionClassicalEllipticAt m P x := by
-  by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
-  · refine forall₂_congr fun ξ _ ↦ ?_
-    rw [sectionClassicalPrincipalSymbol_smul hP, LinearMap.coe_smul]
-    exact (MulAction.bijective (Units.mk0 c hc)).of_comp_iff' _
-  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
-    have hcP : c • P ∉ sectionClassicalPseudodifferentialOperators m := fun h ↦ hP <| by
-      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
-    simp [isSectionClassicalEllipticAt_iff, sectionClassicalPrincipalSymbol_of_notMem hP,
-      sectionClassicalPrincipalSymbol_of_notMem hcP]
+  refine forall₂_congr fun ξ _ ↦ ?_
+  rw [sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.bijective_smul_iff hc.isUnit]
 
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]
@@ -738,11 +821,7 @@ covector is a linear isomorphism between the fibres. -/
 theorem IsSectionClassicalEllipticAt.finrank_eq [Nontrivial (CoordinateSpace n)] {x : M}
     (hPx : IsSectionClassicalEllipticAt m P x) : finrank ℂ V = finrank ℂ W := by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
-  rw [← ((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).toLinearEquiv.finrank_eq,
-    ← ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).toLinearEquiv.finrank_eq]
-  exact (LinearEquiv.ofBijective _ (hPx _ hξ)).finrank_eq
+  exact finrank_eq_of_bijective_fiber (hPx _ hξ)
 
 /-- **Ellipticity forces the order.** Over a manifold of positive dimension, an operator between
 bundles elliptic at some point is a classical pseudodifferential operator of order `m` unless both
@@ -755,16 +834,7 @@ theorem IsSectionClassicalEllipticAt.mem_or_subsingleton [Nontrivial (Coordinate
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
   have h0 := isSectionClassicalEllipticAt_iff.1 hPx _ hξ
   rw [sectionClassicalPrincipalSymbol_of_notMem hP] at h0
-  -- The zero map `E_x → F_x` is bijective, so both fibres are trivial.
-  have hE : Subsingleton (E x) := ⟨fun u v ↦ h0.1 (by simp)⟩
-  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
-    obtain ⟨u', rfl⟩ := h0.2 u
-    obtain ⟨v', rfl⟩ := h0.2 v
-    simp⟩
-  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
-    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
+  exact subsingleton_of_bijective_zero_fiber x h0
 
 /-- In dimension zero every covector vanishes, so every operator between bundles is elliptic at
 every point, whatever the ranks of the bundles. -/
