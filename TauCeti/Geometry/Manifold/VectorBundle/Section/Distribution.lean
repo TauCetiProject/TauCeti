@@ -218,6 +218,14 @@ theorem tsupport_ofSupportedIn_subset (K : Compacts M) (σ : supportedIn I F ∞
   rw [coe_ofCompactlySupported, ofSupportedIn_apply, ← tsupport_def]
   exact mem_supportedIn.1 σ.property
 
+/-- Near a point mapped off the support of a test `s`, the composite `s ∘ f` vanishes. -/
+theorem eventually_apply_comp_eq_zero {X : Type*} [TopologicalSpace X] {f : X → M}
+    (hf : Continuous f) (s : BundleTest I F V) {x : X} (hfx : f x ∉ closure {y | s y ≠ 0}) :
+    ∀ᶠ z in nhds x, s (f z) = 0 :=
+  Filter.eventually_of_mem
+    (hf.continuousAt.preimage_mem_nhds (isClosed_closure.isOpen_compl.mem_nhds hfx))
+    fun _ hz ↦ Bundle.apply_eq_zero_of_notMem_closure hz
+
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames
@@ -407,6 +415,12 @@ def chartTestCLM : 𝓓(⟨c.target, c.open_target⟩, F) →L[ℝ] BundleTest I
 theorem coe_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
     ⇑(t.chartTestCLM c hc hct φ) = (t.chartTestSection (n := ⊤) c hc hct φ).val :=
   (rfl)
+
+/-- The compactly supported section underlying an extended test is the extended section. -/
+theorem val_symm_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
+    ((BundleTest.ofCompactlySupported I F V).symm (t.chartTestCLM c hc hct φ)).val =
+      (t.chartTestSection (n := ⊤) c hc hct φ).val :=
+  ContMDiffSection.ext fun x ↦ congrFun (t.coe_chartTestCLM c hc hct φ) x
 
 /-- On the chart source, the extended test is the inverse frame applied to the value of the test
 function in coordinates. -/

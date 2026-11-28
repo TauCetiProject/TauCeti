@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Homology.Embedding.ExtendHomotopy
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import TauCeti.Algebra.Homology.TotalComplex.Additive
 public import TauCeti.Algebra.Homology.TotalComplex.Homotopy
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
+
+import TauCeti.Algebra.Homology.Embedding.MapExtend
 
 /-!
 # Total Čech complexes and refinement homotopies
@@ -43,11 +45,85 @@ namespace TauCeti.CategoryTheory
 
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Preadditive A] [HasZeroObject A]
-  [HasProducts.{w} A] [HasCoproducts.{0} A]
+  [HasProducts.{w} A]
   {ι κ : Type w} (U : ι → C) {V : κ → C}
 
 /-- Cochain complexes in a category with products have products, computed degreewise. -/
 instance hasProducts_cochainComplex : HasProducts.{w} (CochainComplex A ℤ) where
+
+variable (P : Cᵒᵖ ⥤ CochainComplex A ℤ)
+
+/-- Evaluation in internal degree `q` identifies a row of the zero-extended Čech bicomplex
+with the zero extension of the Čech complex of the evaluated coefficients. -/
+def extendedCechRowIso (q : ℤ) :
+    (HomologicalComplex₂.flip
+      (((cechComplexFunctor U).obj P).extend ComplexShape.embeddingUpNat)).X q ≅
+      ((cechComplexFunctor U).obj
+        (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).extend
+          ComplexShape.embeddingUpNat :=
+  HomologicalComplex.mapExtendIso (HomologicalComplex.eval A (ComplexShape.up ℤ) q)
+    ((cechComplexFunctor U).obj P) ComplexShape.embeddingUpNat ≪≫
+      (ComplexShape.embeddingUpNat.extendFunctor A).mapIso
+        ((cechComplexFunctorMapIso U (HomologicalComplex.eval A (ComplexShape.up ℤ) q)).app P)
+
+/-- In each nonnegative Čech degree, the row comparison is the coefficient evaluation
+comparison, transported through the canonical extension isomorphisms. -/
+lemma extendedCechRowIso_hom_f (q : ℤ) (p : ℕ) :
+    (extendedCechRowIso U P q).hom.f (p : ℤ) =
+      (HomologicalComplex.eval A (ComplexShape.up ℤ) q).map
+          ((((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
+            (i := p) rfl).hom) ≫
+        ((cechComplexFunctorMapIso U
+          (HomologicalComplex.eval A (ComplexShape.up ℤ) q)).hom.app P).f p ≫
+          (((cechComplexFunctor U).obj
+            (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).extendXIso
+              ComplexShape.embeddingUpNat (i := p) rfl).inv := by
+  simp only [extendedCechRowIso, Iso.trans_hom, HomologicalComplex.comp_f,
+    Functor.mapIso_hom]
+  dsimp only [ComplexShape.Embedding.extendFunctor]
+  rw [HomologicalComplex.mapExtendIso_hom_f _ _ _ (j := p) (j' := (p : ℤ)) rfl,
+    HomologicalComplex.extendMap_f _ _ (i := p) (i' := (p : ℤ)) rfl]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
+  rfl
+
+/-- The row comparison commutes with the maps induced by raw refinements of families. -/
+@[reassoc]
+lemma extendedCechRowIso_hom_comp_cechComplexMap
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (q : ℤ) :
+    ((flipFunctor A (ComplexShape.up ℤ) (ComplexShape.up ℤ)).map
+      (HomologicalComplex.extendMap (cechComplexMap P φ)
+        ComplexShape.embeddingUpNat)).f q ≫ (extendedCechRowIso U P q).hom =
+      (extendedCechRowIso V P q).hom ≫ HomologicalComplex.extendMap
+        (cechComplexMap (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q) φ)
+          ComplexShape.embeddingUpNat := by
+  ext p : 1
+  simp only [HomologicalComplex.comp_f, flipFunctor_map_f_f]
+  by_cases hp : ∃ n : ℕ, (n : ℤ) = p
+  · obtain ⟨n, rfl⟩ := hp
+    rw [extendedCechRowIso_hom_f, extendedCechRowIso_hom_f,
+      HomologicalComplex.extendMap_f _ _ (i := n) (i' := (n : ℤ)) rfl,
+      HomologicalComplex.extendMap_f _ _ (i := n) (i' := (n : ℤ)) rfl]
+    simp only [HomologicalComplex.comp_f, HomologicalComplex.eval_map, Category.assoc]
+    simp only [← HomologicalComplex.comp_f_assoc, Iso.inv_hom_id,
+      HomologicalComplex.id_f, Category.id_comp, Iso.inv_hom_id_assoc]
+    have h := congrArg (fun f ↦ f.f n)
+      (cechComplexFunctorMapIso_hom_app_comp_cechComplexMap U
+        (HomologicalComplex.eval A (ComplexShape.up ℤ) q) P φ)
+    simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
+      HomologicalComplex.eval_map] at h
+    simp only [HomologicalComplex.comp_f, Category.assoc]
+    simpa only [Category.assoc] using congrArg (fun f ↦
+      ((((cechComplexFunctor V).obj P).extendXIso ComplexShape.embeddingUpNat
+        (i := n) rfl).hom.f q) ≫ f ≫
+      (((cechComplexFunctor U).obj
+        (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).extendXIso
+          ComplexShape.embeddingUpNat (i := n) rfl).inv) h
+  · apply IsZero.eq_of_src
+    apply (HomologicalComplex.eval A (ComplexShape.up ℤ) q).map_isZero
+    exact ((cechComplexFunctor V).obj P).isZero_extend_X ComplexShape.embeddingUpNat p
+      fun n hn ↦ hp ⟨n, hn⟩
+
+variable [HasCoproducts.{0} A]
 
 /-- The direct-sum total Čech complex of a presheaf of cochain complexes, functorial in its
 coefficients. The Čech grading is extended by zero from `ℕ` to `ℤ` before totalization.
@@ -229,6 +305,18 @@ lemma cechTotalComplexHomologyMap_comp {ν : Type w} {W : ν → C}
   ext P
   rw [cechTotalComplexHomologyMap_app, cechTotalComplexMap_comp]
   exact HomologicalComplex.homologyMap_comp _ _ n
+
+/-- Refinements in both directions identify total Čech cohomology. Their composites
+induce identity maps by independence of the raw refinement functions. -/
+lemma isIso_cechTotalComplexHomologyMap_of_reverse
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    IsIso (cechTotalComplexHomologyMap A n φ) := by
+  refine ⟨⟨cechTotalComplexHomologyMap A n ψ, ?_, ?_⟩⟩
+  · rw [← cechTotalComplexHomologyMap_comp,
+      cechTotalComplexHomologyMap_eq A n (ψ ≫ φ) (𝟙 _), cechTotalComplexHomologyMap_id]
+  · rw [← cechTotalComplexHomologyMap_comp,
+      cechTotalComplexHomologyMap_eq A n (φ ≫ ψ) (𝟙 _), cechTotalComplexHomologyMap_id]
 
 end Homology
 

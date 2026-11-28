@@ -36,7 +36,7 @@ these constructions are inverse equivalences.
 * `SimplicialThickening.hom_ext_of_subsingleton`: maps into a mapping simplicial set with at most
   one path between its endpoints are equal.
 * `SimplicialThickening.ofFunctor`: the simplicial functor `C[Δ^J] ⥤ C` induced by an ordinary
-  functor `J ⥤ C`.
+  functor `J ⥤ C`, commuting with postcomposition (`SimplicialThickening.ofFunctor_comp`).
 * `SimplicialThickening.toFunctor`: the ordinary functor underlying a simplicial functor out of
   `C[Δ^J]`.
 * `SimplicialThickening.functorEquiv`: simplicial functors out of `C[Δ^J]` are ordinary functors
@@ -185,6 +185,28 @@ lemma ofFunctor_obj (G : J ⥤ C) (i : SimplicialThickening J) : (ofFunctor G).o
 lemma ofFunctor_map_eq (G : J ⥤ C) {i j : SimplicialThickening J} (h : i.as ≤ j.as) :
     (ofFunctor G).map i j = toUnit _ ≫ eHomEquiv SSet (G.map (homOfLE h)) :=
   ofFunctorMap_eq h
+
+/-- Postcomposing `ofFunctor G` with a simplicial functor `F` is `ofFunctor` applied to the
+composite of `G` with the ordinary functor induced by `F`. -/
+lemma ofFunctor_comp {D : Type*} [Category.{u} D] [SimplicialCategory D]
+    (G : J ⥤ C) (F : EnrichedFunctor SSet.{u} C D) :
+    (ofFunctor G).comp SSet F =
+      ofFunctor (G ⋙ ForgetEnrichment.equivInverse SSet C ⋙ F.forget ⋙
+        ForgetEnrichment.equivFunctor SSet D) := by
+  refine EnrichedFunctor.ext SSet (fun _ ↦ by simp) fun i j ↦ ?_
+  by_cases hij : i.as ≤ j.as
+  · rw [EnrichedFunctor.comp_map, ofFunctor_map_eq _ hij, ofFunctor_map_eq _ hij]
+    -- `EnrichedFunctor.comp` is semireducible, so `((ofFunctor G).comp SSet F).obj` in the
+    -- `eqToHom` domain from `EnrichedFunctor.ext` does not unify with `F.obj (G.obj _)` at
+    -- `reducible` transparency for `eqToHom_refl`.
+    change ((toUnit (i ⟶[SSet] j) ≫ eHomEquiv SSet (G.map (homOfLE hij))) ≫
+        F.map (G.obj i.as) (G.obj j.as)) ≫ 𝟙 _ = _
+    rw [Category.comp_id, Category.assoc]
+    exact congrArg (SemiCartesianMonoidalCategory.toUnit _ ≫ ·)
+      (Equiv.apply_symm_apply (eHomEquiv SSet (C := D))
+        (eHomEquiv SSet (G.map (homOfLE hij)) ≫ F.map (G.obj i.as) (G.obj j.as))).symm
+  · ext n p
+    exact absurd (Path.le (p.obj 0)) hij
 
 /-- The ordinary functor underlying a simplicial functor `C[Δ^J] ⥤ C`: a morphism `i ⟶ j` is
 sent to the image of the path from `i` to `j` through every element in between. -/
