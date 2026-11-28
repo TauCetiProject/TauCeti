@@ -25,7 +25,8 @@ cardinality of the group. The equivalence uses Mathlib's canonical
 
 ## Main results
 
-* `AddSubgroup.primaryPart`: the part of a subgroup in one primary component.
+* `AddSubgroup.primaryPart`: the part of a subgroup in one primary component, with
+  `AddSubgroup.natCard_primaryPart_of_le` when the subgroup already lies in that component.
 * `TauCeti.AddCommGroup.primaryDecomposition`: a finite abelian group is additively equivalent to
   the product of its prime-primary components.
 * `TauCeti.AddCommGroup.primaryDecomposition_apply`: the equivalence is the sum of the component
@@ -52,6 +53,13 @@ theorem mem_primaryPart_iff (H : AddSubgroup G) (p : ℕ)
     (x : AddCommGroup.primaryComponent G p) :
     x ∈ primaryPart H p ↔ (x : G) ∈ H :=
   Iff.rfl
+
+/-- When `H` lies inside the `p`-primary component, its `p`-primary part has the same cardinality as
+`H`. -/
+theorem natCard_primaryPart_of_le {H : AddSubgroup G} {p : ℕ}
+    (hH : H ≤ AddCommGroup.primaryComponent G p) :
+    Nat.card (H.primaryPart p) = Nat.card H :=
+  Nat.card_congr (AddSubgroup.addSubgroupOfEquivOfLe hH).toEquiv
 
 end AddSubgroup
 

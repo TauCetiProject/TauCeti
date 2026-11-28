@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
+public import TauCeti.LinearAlgebra.IntegralLattice.Gram
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 
 /-!
 # Discriminant bilinear modules of integral lattices
@@ -35,6 +37,10 @@ The pairing `b_L` is `B(x, y) mod ℤ`; the even-lattice refinement
 * `TauCeti.IntegralLattice.discriminantBilinearModule`: the packaged finite bilinear module.
 * `TauCeti.IntegralLattice.isNondegenerate_discriminantBilinearModule`: nondegeneracy of the
   discriminant pairing.
+* `TauCeti.IntegralLattice.natCard_discriminantBilinearModule`,
+  `TauCeti.IntegralLattice.odd_natCard_discriminantBilinearModule`, and
+  `TauCeti.IntegralLattice.discriminant_eq_of_isometry_discriminantBilinearModule`: the carrier
+  cardinality of `b_L` equals `L.discriminant`, so an isometry `b_L ≃ b_M` equates discriminants.
 * `TauCeti.IntegralLattice.Isometry.discriminantBilinearIsometry`: functoriality under lattice
   isometry.
 
@@ -168,6 +174,31 @@ theorem isNondegenerate_discriminantBilinearModule (L : IntegralLattice V)
       (L.discriminantBilinearModule_pairing a z).symm
     _ = L.discriminantBilinearModule.pairing b z := DFunLike.congr_fun hab z
     _ = L.discriminantPairing b z := L.discriminantBilinearModule_pairing b z
+
+/-- The cardinality of the discriminant bilinear module is the lattice discriminant. -/
+@[simp]
+theorem natCard_discriminantBilinearModule (L : IntegralLattice V) [L.IsNondegenerate] :
+    Nat.card L.discriminantBilinearModule = L.discriminant :=
+  -- `discriminantBilinearModule` is `@[expose]` with carrier `L.DiscriminantGroup`.
+  L.natCard_discriminantGroup
+
+/-- For a nondegenerate lattice of odd discriminant, the carrier of `L.discriminantBilinearModule`
+has odd cardinality. -/
+theorem odd_natCard_discriminantBilinearModule (L : IntegralLattice V) [L.IsNondegenerate]
+    (hL : Odd L.discriminant) :
+    Odd (Nat.card L.discriminantBilinearModule) := by
+  rw [L.natCard_discriminantBilinearModule]
+  exact hL
+
+/-- Nondegenerate integral lattices with isometric discriminant bilinear modules have equal
+discriminants. -/
+theorem discriminant_eq_of_isometry_discriminantBilinearModule {W : Type v} [AddCommGroup W]
+    [Module ℚ W] {L : IntegralLattice V} {M : IntegralLattice W}
+    [L.IsNondegenerate] [M.IsNondegenerate]
+    (f : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule) :
+    L.discriminant = M.discriminant := by
+  rw [← L.natCard_discriminantBilinearModule, ← M.natCard_discriminantBilinearModule]
+  exact Nat.card_congr f.toAddEquiv.toEquiv
 
 namespace Isometry
 
