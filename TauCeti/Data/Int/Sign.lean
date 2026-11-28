@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Ring.Int
+public import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -23,6 +24,7 @@ at the denominator `-1` is the sign factor of the numerator.
   in `x` over nonzero factors.
 * `Int.sign_sub_mul_add_sign`: for `0 ≤ a < M`, the signs of `a - m M` and `m` cancel, except
   at `m = 0`.
+* `Int.units_eq_one_of_ne_neg_one`: a unit of `ℤ` other than `-1` is `1`.
 -/
 
 public section
@@ -55,6 +57,10 @@ theorem sign_sub_mul_add_sign {a M : ℤ} (ha₀ : 0 ≤ a) (ha : a < M) (m : �
     · simp [Int.sign_eq_one_of_pos (lt_of_le_of_ne ha₀ ha'.symm), ha']
   · rw [Int.sign_eq_neg_one_of_neg (by nlinarith), Int.sign_eq_one_of_pos hm]
     simp [hm.ne']
+
+/-- A unit of `ℤ` other than `-1` is `1`. -/
+theorem units_eq_one_of_ne_neg_one {u : ℤˣ} (h : u ≠ -1) : u = 1 :=
+  (units_eq_one_or u).resolve_right h
 
 end Int
 

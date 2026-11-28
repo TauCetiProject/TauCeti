@@ -45,6 +45,8 @@ monoid with zero, and specialised to quadratic characters with values in a commu
   `MulChar.IsQuadratic.squarefree_ordCompl_two_conductor`,
   `MulChar.IsQuadratic.factorization_two_conductor_eq_zero_or_two_or_three`: the shape of the
   conductor.
+* `DirichletCharacter.conductor_dvd_eight_mul_of_sq_eq_one`: at level `2 ^ k * m`, a character
+  of order dividing two has conductor dividing `8 * m`.
 
 ## References
 
@@ -102,6 +104,28 @@ theorem factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one (hχ : 
   have : NeZero N := ⟨hN⟩
   exact χ.primitiveCharacter_isPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one
     (primitiveCharacter_pow_eq_one hχ)
+
+/-- Increasing the dyadic part of a level introduces no characters of order dividing two
+whose conductor fails to divide eight times the original level. -/
+theorem conductor_dvd_eight_mul_of_sq_eq_one {m k : ℕ}
+    {χ : DirichletCharacter R (2 ^ k * m)} (hχ : χ ^ 2 = 1) : χ.conductor ∣ 8 * m := by
+  by_cases hm : m = 0
+  · simp [hm]
+  have hN : 2 ^ k * m ≠ 0 := mul_ne_zero (pow_ne_zero _ (by decide)) hm
+  let : NeZero (2 ^ k * m) := ⟨hN⟩
+  rw [← Nat.factorization_le_iff_dvd χ.conductor_ne_zero (mul_ne_zero (by decide) hm)]
+  intro p
+  have h₈ : (8 : ℕ).factorization = Finsupp.single 2 3 := Nat.prime_two.factorization_pow (k := 3)
+  rw [Nat.factorization_mul (by decide : 8 ≠ 0) hm, h₈]
+  by_cases hp : p = 2
+  · subst p
+    have hχ₂ := factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one hχ
+    simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same]
+    omega
+  · have h := (Nat.factorization_le_iff_dvd χ.conductor_ne_zero hN).mpr
+      χ.conductor_dvd_level p
+    simpa [Nat.factorization_mul (pow_ne_zero k (by decide : 2 ≠ 0)) hm,
+      Nat.prime_two.factorization_pow, Finsupp.single_eq_of_ne hp] using h
 
 end SqEqOne
 

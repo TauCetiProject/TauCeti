@@ -13,6 +13,10 @@ public import TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Lift
 public import TauCeti.Algebra.Coalgebra.Primitive.BaseChange
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Primitive
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.SchematicClosure
+import Mathlib.Algebra.Polynomial.Bivariate
+import Mathlib.Algebra.Polynomial.Degree.SmallDegree
+import Mathlib.Algebra.Polynomial.Div
+import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 
 /-!
 # A closure ideal over a non-fraction field need not be a Hopf ideal
@@ -32,6 +36,11 @@ The argument works for any commutative ring `K` with an element `s`, `s * s = 2`
 endomorphism `σ` with `σ s = -s` (if `8 = 0` in `K`, then `8 ∈ I^♮` and the counit already
 fails). The Check takes `K = QuadraticAlgebra ℚ 2 0`, `s = ω` and `σ` the conjugation.
 
+When moreover `1` and `s` are linearly independent over `ℤ`, `I^♮` is exactly `(y² − 2x²)`, the
+ideal of the union of the line and its conjugate. Divide by `y² − 2x²`, monic in `y`: the
+remainder `r₀(x) + r₁(x) y` vanishes on the line, so `r₀(t) + s t r₁(t) = 0` in `K[t]`, and
+comparing coefficients gives `r₀ = r₁ = 0`.
+
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.ClosureNotHopf.lineHopfIdeal`: the Hopf ideal `(y − s x)` of
@@ -40,6 +49,8 @@ fails). The Check takes `K = QuadraticAlgebra ℚ 2 0`, `s = ω` and `σ` the co
   closure ideal in `ℤ[x, y]` is not the ideal of any Hopf ideal.
 * `TauCeti.AdditiveGroup.ClosureNotHopf.not_exists_hopfIdeal_closureIdeal_sqrtTwo`: the Check
   for `ℤ ⊂ ℚ(√2)`.
+* `TauCeti.AdditiveGroup.ClosureNotHopf.closureIdeal_lineHopfIdeal_eq`,
+  `TauCeti.AdditiveGroup.ClosureNotHopf.closureIdeal_sqrtTwo`: the closure ideal is `(y² − 2x²)`.
 -/
 
 public section
@@ -123,16 +134,24 @@ theorem mem_closureIdeal_lineHopfIdeal {s : K} (hs : s * s = 2) :
   simp only [hl, map_sub, map_mul, map_ofNat]
   linear_combination (-(ι₂ planeX * ι₂ planeX)) * hc
 
+/-- A point of `𝔾ₐ²` with values in a commutative `K`-algebra `L` that lies on the line
+`y = s x` kills the closure of the line. -/
+theorem map_eq_zero_of_mem_closureIdeal {L : Type*} [CommRing L] [Algebra K L] (s : K)
+    (φ : PlaneCoordinateRing →ₐ[ℤ] L) (hφ : φ planeY = s • φ planeX) {a : PlaneCoordinateRing}
+    (ha : a ∈ SchematicClosure.closureIdeal K (lineHopfIdeal s).toIdeal) :
+    φ a = 0 := by
+  rw [SchematicClosure.mem_closureIdeal, lineHopfIdeal_toIdeal, Ideal.mem_span_singleton'] at ha
+  obtain ⟨c, hc⟩ := ha
+  let Φ : K ⊗[ℤ] PlaneCoordinateRing →ₐ[K] L :=
+    Algebra.TensorProduct.lift (Algebra.ofId K L) φ fun _ _ ↦ Commute.all _ _
+  have h := congrArg Φ hc
+  simpa [Φ, lineEquation, hφ, Algebra.ofId_apply, Algebra.smul_def] using h.symm
+
 /-- The point `(1, s)` kills the closure of the line `y = s x`. -/
 theorem linePoint_eq_zero_of_mem_closureIdeal (s : K) {a : PlaneCoordinateRing}
     (ha : a ∈ SchematicClosure.closureIdeal K (lineHopfIdeal s).toIdeal) :
-    linePoint s a = 0 := by
-  rw [SchematicClosure.mem_closureIdeal, lineHopfIdeal_toIdeal, Ideal.mem_span_singleton'] at ha
-  obtain ⟨c, hc⟩ := ha
-  let Φ : K ⊗[ℤ] PlaneCoordinateRing →ₐ[K] K :=
-    Algebra.TensorProduct.lift (Algebra.ofId K K) (linePoint s) fun _ _ ↦ Commute.all _ _
-  have h := congrArg Φ hc
-  simpa [Φ, lineEquation] using h.symm
+    linePoint s a = 0 :=
+  map_eq_zero_of_mem_closureIdeal s (linePoint s) (by simp) ha
 
 /-- A ring endomorphism `σ` of `K` carries the point `(1, s)` to `(1, σ s)`. -/
 theorem comp_linePoint (s : K) (σ : K →+* K) :
@@ -194,5 +213,109 @@ theorem not_exists_hopfIdeal_closureIdeal_sqrtTwo :
         (lineHopfIdeal (ω : QuadraticAlgebra ℚ 2 0)).toIdeal :=
   not_exists_hopfIdeal_closureIdeal_lineHopfIdeal (by ext <;> simp) (starRingEnd _)
     (by ext <;> simp [starRingEnd_apply])
+
+/-! ### The closure ideal is `(y² − 2x²)` -/
+
+section Equation
+
+open Polynomial
+
+/-- The comparison `ℤ[x, y] ≃ ℤ[X][Y]`, `x ↦ X`, `y ↦ Y`. -/
+private noncomputable def polyPolyEquiv : PlaneCoordinateRing ≃ₐ[ℤ] ℤ[X][X] :=
+  (SymmetricAlgebra.equivMvPolynomial (Pi.basisFun ℤ (Fin 2))).trans
+    (Bivariate.equivMvPolynomial ℤ).symm
+
+/-- `polyPolyEquiv` sends `x` to `X`. -/
+private theorem polyPolyEquiv_planeX : polyPolyEquiv planeX = C X := by
+  rw [polyPolyEquiv, AlgEquiv.trans_apply, planeX, ← Pi.basisFun_apply,
+    equivMvPolynomial_ι_apply, Bivariate.equivMvPolynomial_symm_X_0]
+
+/-- `polyPolyEquiv` sends `y` to `Y`. -/
+private theorem polyPolyEquiv_planeY : polyPolyEquiv planeY = X := by
+  rw [polyPolyEquiv, AlgEquiv.trans_apply, planeY, ← Pi.basisFun_apply,
+    equivMvPolynomial_ι_apply, Bivariate.equivMvPolynomial_symm_X_1]
+
+/-- `polyPolyEquiv` sends `y² − 2x²` to the monic polynomial `Y² − 2X²` in `Y`. -/
+private theorem polyPolyEquiv_lineClosureEquation :
+    polyPolyEquiv (planeY * planeY - 2 * (planeX * planeX)) = X ^ 2 - C (2 * X ^ 2) := by
+  simp [polyPolyEquiv_planeX, polyPolyEquiv_planeY, sq, C_mul, map_ofNat]
+
+/-- Restriction of polynomials in `x`, `y` to the line `y = s x`, as polynomials in `x`. -/
+private noncomputable def restrictLine (s : K) : ℤ[X][X] →+* K[X] :=
+  eval₂RingHom (mapRingHom (Int.castRingHom K)) (C s * X)
+
+/-- `Y² − 2X²` vanishes on the line `y = s x` when `s * s = 2`. -/
+private theorem restrictLine_lineClosureEquation {s : K} (hs : s * s = 2) :
+    restrictLine s (X ^ 2 - C (2 * X ^ 2)) = 0 := by
+  have hC : C s * C s = (2 : K[X]) := by rw [← C_mul, hs, map_ofNat]
+  simp [restrictLine, eval₂_pow]
+  linear_combination (X ^ 2 : K[X]) * hC
+
+/-- If `1` and `s` are `ℤ`-linearly independent in `K`, then `f₀ + s x f₁ = 0` in `K[x]` for
+integer polynomials `f₀`, `f₁` only when both vanish. -/
+private theorem eq_zero_of_map_add_mul_eq_zero {s : K}
+    (hs : ∀ m n : ℤ, (m : K) + n * s = 0 → m = 0 ∧ n = 0) {f₀ f₁ : ℤ[X]}
+    (h : f₀.map (Int.castRingHom K) + C s * (f₁.map (Int.castRingHom K) * X) = 0) :
+    f₀ = 0 ∧ f₁ = 0 := by
+  have hc (n : ℕ) : (f₀.coeff (n + 1) : K) + f₁.coeff n * s = 0 := by
+    simpa [coeff_C_mul, coeff_mul_X, mul_comm] using congrArg (·.coeff (n + 1)) h
+  have h0 : (f₀.coeff 0 : K) + (0 : ℤ) * s = 0 := by
+    simpa [coeff_C_mul] using congrArg (·.coeff 0) h
+  constructor <;> ext n
+  · cases n with
+    | zero => simpa using (hs _ _ h0).1
+    | succ n => simpa using (hs _ _ (hc n)).1
+  · simpa using (hs _ _ (hc n)).2
+
+/-- **The closure of the line `y = s x` is `(y² − 2x²)`.** If `s * s = 2` and `1`, `s` are
+`ℤ`-linearly independent in `K`, the closure ideal in `ℤ[x, y]` of the Hopf ideal `(y − s x)` of
+`K ⊗_ℤ ℤ[x, y]` is generated by `y² − 2x²`. -/
+theorem closureIdeal_lineHopfIdeal_eq {s : K} (hs : s * s = 2)
+    (hind : ∀ m n : ℤ, (m : K) + n * s = 0 → m = 0 ∧ n = 0) :
+    SchematicClosure.closureIdeal K (lineHopfIdeal s).toIdeal =
+      Ideal.span {planeY * planeY - 2 * (planeX * planeX)} := by
+  refine le_antisymm (fun a ha ↦ ?_) ?_
+  · set p := polyPolyEquiv a with hp
+    set g : ℤ[X][X] := X ^ 2 - C (2 * X ^ 2) with hg_def
+    have hg : g.Monic := monic_X_pow_sub_C _ two_ne_zero
+    have hr := modByMonic_add_div p g
+    have hdeg : (p %ₘ g).degree ≤ 1 := by
+      have h := degree_modByMonic_lt p hg
+      rw [hg_def, degree_X_pow_sub_C (by norm_num)] at h
+      exact Order.le_of_lt_succ h
+    have hlin := eq_X_add_C_of_degree_le_one hdeg
+    have hz : restrictLine s (p %ₘ g) = 0 := by
+      -- `ℤ[x, y] → K[x]`, `x ↦ x`, `y ↦ s x`. `RingHom.toIntAlgHom` and `RingHom.comp` apply
+      -- definitionally, but `simp` cannot unfold them: the `ℤ`-algebra instances on `ℤ[x, y]`
+      -- differ.
+      let φ := ((restrictLine s).comp polyPolyEquiv.toRingHom).toIntAlgHom
+      have hφ : φ planeY = s • φ planeX := by
+        change restrictLine s (polyPolyEquiv planeY) = s • restrictLine s (polyPolyEquiv planeX)
+        simp [polyPolyEquiv_planeX, polyPolyEquiv_planeY, restrictLine, smul_eq_C_mul]
+      have h1 : restrictLine s p = 0 := map_eq_zero_of_mem_closureIdeal s φ hφ ha
+      rw [← hr, map_add, map_mul, restrictLine_lineClosureEquation hs, zero_mul, add_zero] at h1
+      exact h1
+    obtain ⟨h0, h1⟩ := eq_zero_of_map_add_mul_eq_zero (f₀ := (p %ₘ g).coeff 0)
+      (f₁ := (p %ₘ g).coeff 1) hind (by rw [← hz, hlin]; simp [restrictLine]; ring)
+    have hr0 : p %ₘ g = 0 := by rw [hlin, h0, h1]; simp
+    have hg' : polyPolyEquiv.symm g = planeY * planeY - 2 * (planeX * planeX) := by
+      rw [AlgEquiv.symm_apply_eq, polyPolyEquiv_lineClosureEquation]
+    rw [← polyPolyEquiv.symm_apply_apply a, ← hp, ← hr, hr0, zero_add, map_mul, hg']
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
+  · rw [Ideal.span_le, Set.singleton_subset_iff]
+    exact mem_closureIdeal_lineHopfIdeal hs
+
+open QuadraticAlgebra in
+/-- **Check: over `ℤ ⊂ ℚ(√2)` the closure of the line `y = √2 x` is `(y² − 2x²)`.** -/
+theorem closureIdeal_sqrtTwo :
+    SchematicClosure.closureIdeal (QuadraticAlgebra ℚ 2 0)
+        (lineHopfIdeal (ω : QuadraticAlgebra ℚ 2 0)).toIdeal =
+      Ideal.span {planeY * planeY - 2 * (planeX * planeX)} := by
+  refine closureIdeal_lineHopfIdeal_eq (by ext <;> simp) fun m n h ↦ ?_
+  have hre : (m : ℚ) = 0 := by simpa using congrArg QuadraticAlgebra.re h
+  have him : (n : ℚ) = 0 := by simpa using congrArg QuadraticAlgebra.im h
+  exact ⟨by exact_mod_cast hre, by exact_mod_cast him⟩
+
+end Equation
 
 end TauCeti.AdditiveGroup.ClosureNotHopf

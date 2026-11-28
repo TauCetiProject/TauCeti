@@ -68,10 +68,18 @@ Regularity of `0` for `μ` is where `ker dp ≤ range dι` enters. Given `λ ∈
 for some `λ' ∈ 𝔯*` (`LinearMap.range_dualMap_eq_dualAnnihilator_ker`), and a tangent vector `v`
 of `Z₁` with `dμ₁ (dπ₁ v) = λ'` gives `dμ (w + v) = λ`.
 
+Conversely, when `p ∘ ι = 1`, regularity of `0` for `μ` and for `μ_K` gives regularity of `0` for
+`μ₁` (`IsEquivariantMomentMap.forall_differential_surjective_of_mdifferentiable_of_comp_eq_one`).
+Given `λ' ∈ 𝔯*` and `z ∈ Z` with `μ₁ (π₁ z) = 0`, pick `w` with `dμ w = λ' ∘ dp`. Since
+`dp ∘ dι = 0`, `dμ_K w = 0`, so `w` is tangent to `Z₁`, and its image `dπ₁ w` has
+`dμ₁ (dπ₁ w) = λ'`.
+
 ## Main results
 
 * `IsEquivariantMomentMap.forall_differential_surjective_of_isSubmersion_of_ker_le_range`:
   regularity at both stages gives regularity of `0` for `μ`.
+* `IsEquivariantMomentMap.forall_differential_surjective_of_mdifferentiable_of_comp_eq_one`:
+  regularity of `0` for `μ` and for `μ_K` gives regularity of `0` for `μ₁`.
 * `IsEquivariantMomentMap.exists_diffeomorph_apply_eq_and_mpullback_eq_of_ker_le_range`:
   **reduction in stages** by a normal subgroup.
 
@@ -278,6 +286,56 @@ theorem forall_differential_surjective_of_isSubmersion_of_ker_le_range
   rw [map_add, LinearMap.add_apply, ← hu]
   simp only [ContinuousLinearMap.coe_coe] at hφξ
   rw [hφξ, add_sub_cancel]
+
+omit [IQ₁.Boundaryless] in
+/-- **Regularity at zero gives regularity of the residual moment map.** Let `K` act on `M` through
+`ι : K →* G` with `p ∘ ι = 1`, let `0` be a regular value of the restricted moment map
+`μ_K = μ ∘ dι`, let `π₁ : μ_K⁻¹(0) → Q₁` be a surjective map out of the level with its submanifold
+structure, and let `μ₁` be a moment map of an action of `R` on `Q₁` with `μ₁ (π₁ z) ∘ dp = μ z`. If
+`π₁` is differentiable, `dp` is surjective and `0` is a regular value of `μ`, then `0` is a regular
+value of `μ₁`. -/
+theorem forall_differential_surjective_of_mdifferentiable_of_comp_eq_one
+    (hμ : σ.IsEquivariantMomentMap μ) (hι : MDifferentiableAt IK I ι 1)
+    (hsmul : ∀ (k : K) (x : M), k • x = ι k • x) (hpι : p.comp ι = 1)
+    (hdp : Surjective (p.groupLieAlgebraMap I IR))
+    (hreg₁ : ∀ x, (μ x).comp (ι.groupLieAlgebraMap IK I).toLinearMap = 0 →
+      Surjective ((hμ.comp_monoidHom ι hι hsmul).differential x))
+    (hn₁ : finrank ℝ E' - finrank ℝ (GroupLieAlgebra IK K) = n₁)
+    (hreg : ∀ x, μ x = 0 → Surjective (hμ.differential x))
+    {η₁ : SmoothTwoForm IQ₁ Q₁} {μ₁ : Q₁ → Module.Dual ℝ (GroupLieAlgebra IR R)}
+    (h₁ : η₁.IsEquivariantMomentMap μ₁)
+    {π₁ : (hμ.comp_monoidHom ι hι hsmul).levelSubMulAction 0 → Q₁} (hπ₁surj : Surjective π₁)
+    (hμ₁ : ∀ z, (μ₁ (π₁ z)).comp (p.groupLieAlgebraMap I IR).toLinearMap = μ z) :
+    letI := (hμ.comp_monoidHom ι hι hsmul).levelSubMulActionChartedSpace 0 hreg₁ hn₁
+    MDifferentiable 𝓘(ℝ, Fin n₁ → ℝ) IQ₁ π₁ →
+      ∀ y, μ₁ y = 0 → Surjective (h₁.differential y) := by
+  have hK := hμ.comp_monoidHom ι hι hsmul
+  let := hK.levelSubMulActionChartedSpace 0 hreg₁ hn₁
+  intro hπ₁ y hy φ
+  obtain ⟨z, rfl⟩ := hπ₁surj y
+  -- Pick `w` with `dμ w = φ ∘ dp`. Then `dμ_K w = φ ∘ dp ∘ dι = 0`, as `p ∘ ι = 1`.
+  obtain ⟨w, hw⟩ := hreg z ((apply_eq_zero_iff hμ hι hsmul hdp hμ₁ z).1 hy)
+    (φ.comp (p.groupLieAlgebraMap I IR).toLinearMap)
+  have hwK : w ∈ LinearMap.ker (hK.differential z) := by
+    refine LinearMap.mem_ker.2 (LinearMap.ext fun κ ↦ ?_)
+    have h0 : p.groupLieAlgebraMap I IR (ι.groupLieAlgebraMap IK I κ) = 0 := by
+      rw [← ContinuousLinearMap.comp_apply,
+        p.groupLieAlgebraMap_comp_groupLieAlgebraMap_eq_zero ι hpι, zero_apply]
+    have hwκ := LinearMap.congr_fun hw (ι.groupLieAlgebraMap IK I κ)
+    rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, h0, map_zero,
+      IsMomentMap.differential_apply] at hwκ
+    rw [LinearMap.zero_apply, IsMomentMap.differential_apply]
+    simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] using hwκ
+  -- So `w` is tangent to the level, `w = di₁ u`, and `dμ₁ (dπ₁ u) ∘ dp = dμ w = φ ∘ dp`.
+  rw [← hK.range_mfderiv_coe_levelSubMulAction hreg₁ hn₁] at hwK
+  obtain ⟨u, rfl⟩ := hwK
+  refine ⟨mfderiv 𝓘(ℝ, Fin n₁ → ℝ) IQ₁ π₁ z u,
+    (LinearMap.cancel_right hdp).1 (LinearMap.ext fun ξ ↦ ?_)⟩
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    differential_mfderiv_apply_eq hμ h₁ hμ₁ z
+      ((hK.isSmoothEmbedding_coe_levelSubMulAction hreg₁ hn₁).contMDiff.mdifferentiableAt
+        (by simp)) (hπ₁ z) u ξ]
+  exact LinearMap.congr_fun hw ξ
 
 /-- **Reduction in stages by a normal subgroup.** Let `G` act on `(M, σ)` with a
 coadjoint-equivariant moment map `μ`, let `K` act on `M` through a homomorphism `ι : K →* G`,

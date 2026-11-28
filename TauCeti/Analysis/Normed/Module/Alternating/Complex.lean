@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
+public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.AlmostComplexType
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
 
 /-!
 # Complex contractions and coefficients of real one-forms
@@ -19,6 +20,10 @@ integrands with their coordinate expressions.
 bundled as a continuous complex-bilinear map in the vector and the form.
 `ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp` gives its anticommutation
 with alternation of a conjugate-linear family.
+
+`ContinuousAlternatingMap.IsOfType.holCurry` gives the type shift on each fibre, and
+`ContinuousAlternatingMap.IsOfType.sum_pairedWedge_holCurry_apply` is the coordinate Euler
+identity.
 -/
 
 public section
@@ -87,6 +92,45 @@ theorem holCurry_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
 theorem holCurry_apply_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) (w : Fin k → E) :
     holCurry v φ w = φ (Matrix.vecCons v w) - I • φ (Matrix.vecCons (I • v) w) := by
   simp [holCurry_apply]
+
+/-- Holomorphic contraction lowers the holomorphic degree of an alternating map. -/
+theorem IsOfType.holCurry {p q : ℕ} {φ : E [⋀^Fin (k + 1)]→L[ℝ] F}
+    (hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ E) (p + 1) q) (v : E) :
+    (ContinuousAlternatingMap.holCurry v φ).IsOfType (I • ContinuousLinearMap.id ℝ E) p q := by
+  have h := hφ.curryLeftTopological_sub_I_smul (fun w ↦ by simp [smul_smul]) v
+  simpa only [_root_.smul_apply, ContinuousLinearMap.id_apply,
+    ← curryLeft_eq_curryLeftTopological, ← holCurry_apply] using h
+
+/-- The coordinate wedges of the holomorphic contractions of a type `(p,q)` alternating map
+sum to `2 p` times that map. -/
+theorem IsOfType.sum_pairedWedge_holCurry_apply {ι : Type*} [DecidableEq ι] [Fintype ι]
+    {p q : ℕ} {φ : (ι → ℂ) [⋀^Fin (k + 1)]→L[ℝ] F}
+    (hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) p q) :
+    ∀ v : Fin (k + 1) → ι → ℂ,
+      ∑ i, pairedWedge (ContinuousLinearMap.lsmul ℝ ℂ)
+        (ContinuousLinearMap.lsmul ℝ ℂ).continuous₂
+        (ofSubsingleton ℝ (ι → ℂ) ℂ (0 : Fin 1)
+          (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i))
+        (ContinuousAlternatingMap.holCurry (Pi.single i 1) φ) (v ∘ Fin.cast (Nat.add_comm 1 k)) =
+          (2 * p : ℂ) • φ v := by
+  intro v
+  have hsum : ∑ i, (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
+      (ContinuousAlternatingMap.holCurry (Pi.single i 1) φ) = φ.curryLeft - I • φ.curryLeft ∘L
+        (I • ContinuousLinearMap.id ℝ (ι → ℂ)) := by
+    ext u : 1
+    have hu := congrArg (fun w ↦ ContinuousAlternatingMap.holCurry (k := k) (F := F) w φ)
+      (pi_eq_sum_univ' u)
+    simp only [_root_.map_sum, _root_.map_smul, _root_.sum_apply, _root_.smul_apply] at hu
+    simp [← holCurry_apply, hu]
+  have hfin : ∑ i, alternatizeUncurryFin
+      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
+        (ContinuousAlternatingMap.holCurry (Pi.single i 1) φ)) = (2 * p : ℂ) • φ := by
+    simp only [← alternatizeUncurryFinCLM_apply, ← _root_.map_sum, hsum]
+    exact hφ.alternatizeUncurryFin_curryLeft_sub_I_smul_comp
+  refine (Finset.sum_congr rfl fun i _ ↦ (alternatizeUncurryFin_smulRight_apply
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i)
+      (ContinuousAlternatingMap.holCurry (Pi.single i 1) φ) v).symm).trans ?_
+  exact (sum_apply _ _).symm.trans (congrArg (fun A ↦ A v) hfin)
 
 /-- Holomorphic contraction anticommutes with alternation of a conjugate-linear family. -/
 theorem alternatizeUncurryFin_holCurry_comp

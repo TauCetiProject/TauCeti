@@ -21,8 +21,9 @@ manifold `W^s(a₀)` of critical points of a Morse function on the target. At on
 the Hamiltonian perturbation is switched off, giving the three-point Gromov–Witten problem with
 Morse incidence conditions; at the other end the three necks become infinitely long and the curves
 break into the pair of pants and the three planes. This file computes the expected dimensions of
-the strata of limits of this family over the interior parameters and at the long-neck end, and
-states which of them have nonnegative expected dimension when sphere trees are attached, on the
+the strata of limits of this family over the interior parameters, at the long-neck end and, for
+multiply covered cores, at the end without perturbation, and states which of them have nonnegative
+expected dimension when sphere trees are attached, on the
 classical branch where every simple sphere has nonnegative first Chern number. The conventions,
 the reduction to simple spheres and the count for pairs of pants are those of
 `TauCeti.Geometry.Symplectic.Floer.SphereTree`.
@@ -82,11 +83,48 @@ its surviving strata are the unbroken cores over the interior, those with a sing
 trajectory, and at the long-neck end the unbroken configurations of planes and a pair of pants.
 None carries a bubble.
 
-The end where the Hamiltonian perturbation vanishes is not covered: there the core solves the
-unperturbed Cauchy–Riemann equation for a domain-independent structure, constant and multiply
-covered cores occur, and the stable sphere trees in class `A` are the quantum corrections of the
-Gromov–Witten problem, which survive. These are statements about expected dimensions; that strata
-of negative expected dimension are empty for generic data is not proved here.
+**The end without perturbation.** Where the Hamiltonian perturbation is switched off, the core
+solves the unperturbed Cauchy–Riemann equation of a domain-independent almost complex structure,
+with no domain-dependent perturbation left to make it regular. It may be constant, or a multiple
+cover `v ∘ φ` of a simple sphere `v` of class `B` by a branched cover `φ` of the three-pole sphere.
+The reduction to simple spheres merges it with the components of the limit that have the same image
+`v`, which together cover `v` with a total multiplicity `m` and have class `m B`, and replaces them
+by the unparametrized simple sphere `v`, marked at the images under `φ` of the three poles, of
+which `j ≤ 3` are distinct. With the
+incidence conditions and Morse chains at the poles, its expected dimension is that of the problem
+in the class `m B`, minus `2 (m - 1) c₁(B)`, minus two for each marked point lost to a coincidence
+of the images of the poles
+(`TauCeti.Floer.comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub`). With distinct
+marked points, `j = 3`, it is the expected dimension of the problem in the class `B`
+(`TauCeti.Floer.comparisonCoveredCoreDimension_three`), as for a core that is not multiply covered,
+which is its own reduction, and for a constant core; the strata over such cores are those of
+`TauCeti.Floer.sphereTreeDimension_comparisonCoreDimension_add_nonneg_iff`. With a tree of simple
+spheres attached to a multiply covered core, the stratum loses two more for each simple sphere when
+every simple sphere has nonnegative first Chern number
+(`TauCeti.Floer.sphereTreeDimension_comparisonCoveredCoreDimension_add_le`). In a problem of
+expected dimension at most one, a stratum then has nonnegative expected dimension exactly when it
+has no nonconstant bubble, `(m - 1) c₁(B) = 0`, its marked points are distinct, and few enough
+Morse trajectories have broken off
+(`TauCeti.Floer.sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff`), so which
+strata survive depends on the Chern number of `v`.
+
+* If `c₁(B) ≥ 1`, as for every nonconstant simple sphere of a positively monotone target, a stratum
+  has nonnegative expected dimension exactly when it has no nonconstant bubble, its core covers `v`
+  once, its marked points are distinct, and at most as many Morse trajectories have broken off as
+  the expected dimension of the problem (in the namespace `TauCeti.Floer`,
+  `sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff_of_one_le_chern`).
+* If `c₁(B) = 0`, as on a spherically `c₁`-zero target, the multiple covers are not excluded: a
+  core covering `v` any number `m` of times, with distinct marked points, has the full expected
+  dimension of the problem in its class `m B`
+  (`TauCeti.Floer.comparisonCoveredCoreDimension_three_eq_comparisonCoreDimension_nsmul`), and a
+  stratum has nonnegative expected dimension exactly when it has no nonconstant bubble, its marked
+  points are distinct and few enough Morse trajectories have broken off, whatever `m` (in the
+  namespace `TauCeti.Floer`,
+  `sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff_of_chern_eq_zero`).
+
+So at this end, unlike over the interior of the family, the dimension count does not remove the
+multiple covers of spheres of Chern number zero. These are statements about expected dimensions;
+that strata of negative expected dimension are empty for generic data is not proved here.
 
 ## References
 
@@ -370,5 +408,187 @@ theorem sphereTreeDimension_comparisonNeckDimension_nonneg_iff (n : ℤ) (c : G 
   refine (sphereTreeDimension_comparisonCoreDimension_add_nonneg_iff n c h₁ h₂ h₀ _ _ hB hm hρ hc
     (by linarith) parent node root).trans (and_congr_right fun _ => ?_)
   constructor <;> intro h <;> linarith
+
+/-! ### The end without perturbation -/
+
+/-- The expected dimension of the reduced stratum of a multiply covered core at the end of the PSS
+comparison family where the Hamiltonian perturbation vanishes, in a target of real dimension `2n`.
+There the core may be a cover `v ∘ φ` of a simple sphere `v` of class `B` by a branched cover `φ`
+of the three-pole sphere. Its reduction is the unparametrized simple sphere `v`, of expected
+dimension `2(n - 3) + 2 c₁(B)` (`TauCeti.unmarkedVirtualDimension`), marked at the images under
+`φ` of the three poles, of which `j` are distinct, each marked point adding two. The incidence
+conditions and the Morse chains at the poles are those of
+`TauCeti.Floer.comparisonCoreDimension`. -/
+def comparisonCoveredCoreDimension (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ)
+    (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ) (B : G) (j : ℕ) : ℤ :=
+  unmarkedVirtualDimension n 0 (c B) + 2 * j - (2 * n - h₁ (Fin.last k₁)) -
+    (2 * n - h₂ (Fin.last k₂)) - h₀ 0 + morseChainDimension h₁ + morseChainDimension h₂ +
+      morseChainDimension h₀
+
+theorem comparisonCoveredCoreDimension_def (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ}
+    (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ) (B : G) (j : ℕ) :
+    comparisonCoveredCoreDimension n c h₁ h₂ h₀ B j =
+      unmarkedVirtualDimension n 0 (c B) + 2 * j - (2 * n - h₁ (Fin.last k₁)) -
+        (2 * n - h₂ (Fin.last k₂)) - h₀ 0 + morseChainDimension h₁ + morseChainDimension h₂ +
+          morseChainDimension h₀ := by
+  rw [comparisonCoveredCoreDimension]
+
+/-- The reduced stratum of a core covering a simple sphere of class `B`, between critical points of
+Morse indices `i₁ = h₁ 0`, `i₂ = h₂ 0` and `i₀ = h₀ (last k₀)`, with `j` distinct marked points,
+has expected dimension `i₁ + i₂ - i₀ - 2n + 2 c₁(B)`, minus one for each of the `k₁ + k₂ + k₀`
+Morse trajectories that have broken off, minus two for each marked point lost to a coincidence. -/
+theorem comparisonCoveredCoreDimension_eq (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ}
+    (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ) (B : G) (j : ℕ) :
+    comparisonCoveredCoreDimension n c h₁ h₂ h₀ B j =
+      h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c B - (k₁ + k₂ + k₀) - 2 * (3 - j) := by
+  rw [comparisonCoveredCoreDimension, unmarkedVirtualDimension_def, morseChainDimension_eq,
+    morseChainDimension_eq, morseChainDimension_eq]
+  ring
+
+/-- **Multiply covered cores.** The reduced stratum of a core covering a simple sphere of class `B`
+`m` times, with `j` distinct marked points, has the expected dimension of the problem in the class
+`m B` of the core, minus `2 (m - 1) c₁(B)` and minus two for each marked point lost to a
+coincidence. -/
+theorem comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub (n : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ)
+    (B : G) (m j : ℕ) :
+    comparisonCoveredCoreDimension n c h₁ h₂ h₀ B j =
+      comparisonCoreDimension n c h₁ h₂ h₀ (m • B) - 2 * ((m - 1) * c B) - 2 * (3 - j) := by
+  rw [comparisonCoveredCoreDimension_eq, comparisonCoreDimension_eq, map_nsmul, nsmul_eq_mul]
+  ring
+
+/-- With three distinct marked points the reduced stratum has the expected dimension of the problem
+in the class `B` of the simple sphere, which is that of a core that is not multiply covered. -/
+theorem comparisonCoveredCoreDimension_three (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ}
+    (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ) (B : G) :
+    comparisonCoveredCoreDimension n c h₁ h₂ h₀ B 3 = comparisonCoreDimension n c h₁ h₂ h₀ B := by
+  rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B 1, one_smul]
+  ring
+
+/-- **Multiple covers of spheres of Chern number zero.** A core covering a simple sphere of first
+Chern number zero any number `m` of times, with three distinct marked points, has the full expected
+dimension of the problem in its class `m B`: the dimension count does not exclude it. -/
+theorem comparisonCoveredCoreDimension_three_eq_comparisonCoreDimension_nsmul (n : ℤ)
+    (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ)
+    (h₀ : Fin (k₀ + 1) → ℤ) {B : G} (hB : c B = 0) (m : ℕ) :
+    comparisonCoveredCoreDimension n c h₁ h₂ h₀ B 3 =
+      comparisonCoreDimension n c h₁ h₂ h₀ (m • B) := by
+  rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B m, hB]
+  ring
+
+/-- **Sphere trees on a multiply covered core.** On a target where every simple sphere has
+nonnegative first Chern number, a stratum of limits of the PSS comparison family at the end without
+perturbation, over a face of dimension `p` of the parameter space, whose core covers a simple
+sphere of class `B₀` `m` times with `j` distinct marked points and carries a tree of simple
+spheres, has expected dimension at most
+`i₁ + i₂ - i₀ - 2n + 2 c₁(A') + p - (k₁ + k₂ + k₀) - 2 #κ - 2 (m - 1) c₁(B₀) - 2 (3 - j)`, where
+`A' = m B₀ + ∑ v, B v` is the total class of the limit, including its bubbles. -/
+theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_le (n : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ)
+    (B₀ : G) (m j : ℕ) (p : ℤ) {B : ι → G} {B' : κ → G} {mv : ι → ℕ} {ρ : ι → κ}
+    (hB : ∀ v, B v = mv v • B' (ρ v)) (hm : ∀ v, 0 < mv v) (hρ : Function.Surjective ρ)
+    (hc : ∀ w, 0 ≤ c (B' w)) (parent : κ → Option κ) (node root : κ → P) :
+    sphereTreeDimension n (comparisonCoveredCoreDimension n c h₁ h₂ h₀ B₀ j + p)
+        (fun w => c (B' w)) parent node root ≤
+      h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) - (k₁ + k₂ + k₀) + p -
+        2 * Fintype.card κ - 2 * ((m - 1) * c B₀) - 2 * (3 - j) := by
+  have hcore : comparisonCoveredCoreDimension n c h₁ h₂ h₀ B₀ j + p =
+      comparisonCoreDimension n c h₁ h₂ h₀ (m • B₀) + (p - 2 * ((m - 1) * c B₀) - 2 * (3 - j)) := by
+    rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B₀ m j]
+    ring
+  rw [hcore]
+  exact (sphereTreeDimension_comparisonCoreDimension_add_le n c h₁ h₂ h₀ (m • B₀) _ hB hm hρ hc
+    parent node root).trans_eq (by ring)
+
+/-- **The strata at the end without perturbation.** On a target where every simple sphere has
+nonnegative first Chern number, consider the limits of the PSS comparison family at the end without
+perturbation, over a face of dimension `p` of the parameter space, whose core covers a simple
+sphere of class `B₀` `m ≥ 1` times, with `j ≤ 3` distinct marked points, in a total class `A'` for
+which the stratum with `k₁ + k₂ + k₀` broken-off Morse trajectories has expected dimension at most
+one. Such a stratum with a tree of simple spheres attached has nonnegative expected dimension
+exactly when it has no nonconstant sphere bubble, its multiple-cover loss `(m - 1) c₁(B₀)`
+vanishes, its marked points are distinct and at most `i₁ + i₂ - i₀ - 2n + 2 c₁(A') + p` Morse
+trajectories have broken off. -/
+theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff (n : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ) (h₀ : Fin (k₀ + 1) → ℤ)
+    {B₀ : G} {m j : ℕ} (p : ℤ) {B : ι → G} {B' : κ → G} {mv : ι → ℕ} {ρ : ι → κ}
+    (hB : ∀ v, B v = mv v • B' (ρ v)) (hm : ∀ v, 0 < mv v) (hρ : Function.Surjective ρ)
+    (hc : ∀ w, 0 ≤ c (B' w)) (hB₀ : 0 ≤ c B₀) (hm₀ : 0 < m) (hj : j ≤ 3)
+    (hA : h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) - (k₁ + k₂ + k₀) +
+      p ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (comparisonCoveredCoreDimension n c h₁ h₂ h₀ B₀ j + p)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ ((m : ℤ) - 1) * c B₀ = 0 ∧ j = 3 ∧
+        (k₁ + k₂ + k₀ : ℤ) ≤
+          h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) + p := by
+  have hL : 0 ≤ ((m : ℤ) - 1) * c B₀ := mul_nonneg (by omega) hB₀
+  refine (sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c (X := m • B₀)
+    (J := h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + p - 2 * ((m - 1) * c B₀) - 2 * (3 - j))
+    (k := k₁ + k₂ + k₀) hB hm hρ hc ?_ (by omega) parent node root).trans
+    (and_congr_right fun _ => ?_)
+  · rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B₀ m j,
+      comparisonCoreDimension_eq]
+    ring
+  · omega
+
+/-- **The strata at the end without perturbation, for spheres of positive Chern number.** On a
+target where every simple sphere has nonnegative first Chern number, consider the limits of the PSS
+comparison family at the end without perturbation, over a face of dimension `p` of the parameter
+space, whose core covers a simple sphere of class `B₀` with `c₁(B₀) ≥ 1` `m` times, with `j ≤ 3`
+distinct marked points, in a total class `A'` for which the stratum with `k₁ + k₂ + k₀` broken-off
+Morse trajectories has expected dimension at most one. Such a stratum with a tree of simple spheres
+attached has nonnegative expected dimension exactly when it has no nonconstant sphere bubble, its
+core is not multiply covered, its marked points are distinct and at most
+`i₁ + i₂ - i₀ - 2n + 2 c₁(A') + p` Morse trajectories have broken off. Every nonconstant simple
+sphere of a positively monotone target has `c₁ ≥ 1`. -/
+theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff_of_one_le_chern
+    (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ)
+    (h₀ : Fin (k₀ + 1) → ℤ) {B₀ : G} {m j : ℕ} (p : ℤ) {B : ι → G} {B' : κ → G} {mv : ι → ℕ}
+    {ρ : ι → κ} (hB : ∀ v, B v = mv v • B' (ρ v)) (hm : ∀ v, 0 < mv v)
+    (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w)) (hB₀ : 1 ≤ c B₀) (hm₀ : 0 < m)
+    (hj : j ≤ 3)
+    (hA : h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) - (k₁ + k₂ + k₀) +
+      p ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (comparisonCoveredCoreDimension n c h₁ h₂ h₀ B₀ j + p)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ m = 1 ∧ j = 3 ∧
+        (k₁ + k₂ + k₀ : ℤ) ≤
+          h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) + p := by
+  refine (sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff n c h₁ h₂ h₀ p hB hm
+    hρ hc (by omega) hm₀ hj hA parent node root).trans (and_congr_right fun _ => ?_)
+  rw [mul_eq_zero, or_iff_left (by omega : c B₀ ≠ 0), sub_eq_zero, Nat.cast_eq_one]
+
+/-- **The strata at the end without perturbation, for spheres of Chern number zero.** On a target
+where every simple sphere has nonnegative first Chern number, consider the limits of the PSS
+comparison family at the end without perturbation, over a face of dimension `p` of the parameter
+space, whose core covers a simple sphere of class `B₀` with `c₁(B₀) = 0` `m` times, with `j ≤ 3`
+distinct marked points, in a total class `A'` for which the stratum with `k₁ + k₂ + k₀` broken-off
+Morse trajectories has expected dimension at most one. Such a stratum with a tree of simple spheres
+attached has nonnegative expected dimension exactly when it has no nonconstant sphere bubble, its
+marked points are distinct and at most `i₁ + i₂ - i₀ - 2n + 2 c₁(A') + p` Morse trajectories have
+broken off, whatever the multiplicity `m`: the multiple covers survive the dimension count. On a
+spherically `c₁`-zero target every simple sphere has `c₁ = 0`. -/
+theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff_of_chern_eq_zero
+    (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₀ : ℕ} (h₁ : Fin (k₁ + 1) → ℤ) (h₂ : Fin (k₂ + 1) → ℤ)
+    (h₀ : Fin (k₀ + 1) → ℤ) {B₀ : G} {m j : ℕ} (p : ℤ) {B : ι → G} {B' : κ → G} {mv : ι → ℕ}
+    {ρ : ι → κ} (hB : ∀ v, B v = mv v • B' (ρ v)) (hm : ∀ v, 0 < mv v)
+    (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w)) (hB₀ : c B₀ = 0) (hj : j ≤ 3)
+    (hA : h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) - (k₁ + k₂ + k₀) +
+      p ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (comparisonCoveredCoreDimension n c h₁ h₂ h₀ B₀ j + p)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ j = 3 ∧
+        (k₁ + k₂ + k₀ : ℤ) ≤
+          h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) + p := by
+  -- The class `m B₀` enters only through `c₁`, so the count is that of the simple sphere, `m = 1`.
+  have hcls : c (m • B₀ + ∑ v, B v) = c ((1 : ℕ) • B₀ + ∑ v, B v) := by
+    simp only [map_add, map_nsmul, hB₀, smul_zero]
+  rw [hcls] at hA ⊢
+  refine (sphereTreeDimension_comparisonCoveredCoreDimension_add_nonneg_iff n c h₁ h₂ h₀ p hB hm
+    hρ hc hB₀.ge one_pos hj hA parent node root).trans (and_congr_right fun _ => ?_)
+  rw [hB₀, mul_zero, eq_self, true_and]
 
 end TauCeti.Floer

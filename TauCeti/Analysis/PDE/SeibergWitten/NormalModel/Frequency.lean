@@ -102,6 +102,8 @@ onto the moving kernels contribute commutator terms, which are not treated in th
 
 ## Main results
 
+* `pairedFrequencyCoupling_mul`, `adjoint_pairedFrequencyCoupling`: the paired coupling is
+  multiplication by `ξ` in the complex structure `J`, with adjoint the coupling at `conj ξ`.
 * `integral_norm_sq_add_norm_sq_frequencyNormalModel`: the energy identity.
 * `integral_inner_frequencyNormalRow_add_integral_inner_frequencyPairedRow`: the formal adjoint
   is the family at the conjugate frequency.
@@ -245,6 +247,40 @@ theorem normalFrequencyCoupling_zero : normalFrequencyCoupling 0 = 0 := by
 @[simp]
 theorem pairedFrequencyCoupling_zero : pairedFrequencyCoupling 0 = 0 := by
   simp [pairedFrequencyCoupling]
+
+/-- The paired coupling at frequency one is the identity. -/
+@[simp]
+theorem pairedFrequencyCoupling_one : pairedFrequencyCoupling 1 = ContinuousLinearMap.id ℝ _ := by
+  ext1 u
+  simp
+
+/-- **The paired coupling is multiplicative**: `b_P(ζ ξ) = b_P(ζ) ∘ b_P(ξ)`, since `b_P(ξ)` is
+multiplication by `ξ` in the complex structure `J`. -/
+theorem pairedFrequencyCoupling_mul (ζ ξ : ℂ) :
+    pairedFrequencyCoupling (ζ * ξ) = pairedFrequencyCoupling ζ ∘L pairedFrequencyCoupling ξ := by
+  ext1 u
+  simp only [ContinuousLinearMap.comp_apply, pairedFrequencyCoupling_apply, map_add, map_smul,
+    Vortex.variationComplexStructure_variationComplexStructure, mul_re, mul_im]
+  module
+
+/-- At a nonzero frequency `ξ`, the paired coupling at `ξ⁻¹` inverts the coupling at `ξ`. -/
+theorem pairedFrequencyCoupling_inv_comp {ξ : ℂ} (hξ : ξ ≠ 0) :
+    pairedFrequencyCoupling ξ⁻¹ ∘L pairedFrequencyCoupling ξ = ContinuousLinearMap.id ℝ _ := by
+  rw [← pairedFrequencyCoupling_mul, inv_mul_cancel₀ hξ, pairedFrequencyCoupling_one]
+
+/-- The paired coupling multiplies norms by `|ξ|`. -/
+theorem norm_pairedFrequencyCoupling_apply (ξ : ℂ) (u : EuclideanSpace ℝ (Fin 4)) :
+    ‖pairedFrequencyCoupling ξ u‖ = ‖ξ‖ * ‖u‖ := by
+  rw [pairedFrequencyCoupling_eq_pairedBaseCoupling, norm_pairedBaseCoupling_smulRight_innerSL]
+
+/-- The adjoint of the paired coupling at frequency `ξ` is the paired coupling at `conj ξ`. -/
+@[simp]
+theorem adjoint_pairedFrequencyCoupling (ξ : ℂ) :
+    ContinuousLinearMap.adjoint (pairedFrequencyCoupling ξ) = pairedFrequencyCoupling (conj ξ) :=
+  ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun u p ↦ by
+    rw [pairedFrequencyCoupling_eq_pairedBaseCoupling,
+      pairedFrequencyCoupling_eq_pairedBaseCoupling,
+      inner_pairedBaseCoupling_smulRight_innerSL_left, Complex.conj_conj]).symm
 
 /-- The normal coupling depends continuously on the frequency. -/
 theorem continuous_normalFrequencyCoupling : Continuous normalFrequencyCoupling := by

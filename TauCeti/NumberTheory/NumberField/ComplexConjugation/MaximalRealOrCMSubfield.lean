@@ -57,7 +57,9 @@ on the restriction of `τ` to `E_K`, and satisfies `2 • m(τ) = w` when `K` ha
   if and only if `K`
   has a CM subfield, if and only if `E_K ≠ K⁺`.
 * `TauCeti.NumberField.map_maximalRealSubfield_maximalRealOrCMSubfield`: the maximal real
-  subfield of `E_K` is `K⁺`, and
+  subfield of `E_K` is `K⁺`, through the inclusion, so
+  (`TauCeti.NumberField.maximalRealSubfieldMaximalRealOrCMSubfieldEquiv`) it is isomorphic to
+  `K⁺`, and
   `TauCeti.NumberField.finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two`:
   `[E_K : K⁺]` is `1` or `2`, so
   (`TauCeti.NumberField.finrank_maximalRealOrCMSubfield_eq_or_eq_two_mul`) `[E_K : ℚ]` is
@@ -363,6 +365,29 @@ private theorem fieldRange_algebraMap_maximalRealSubfield :
   rw [RingHom.map_fieldRange, h, Subfield.fieldRange_subtype,
     map_maximalRealSubfield_maximalRealOrCMSubfield]
 
+/-- **The maximal real subfield of `E_K` is isomorphic to `K⁺`**, through the inclusion
+`E_K ≤ K` (`map_maximalRealSubfield_maximalRealOrCMSubfield`). -/
+noncomputable def maximalRealSubfieldMaximalRealOrCMSubfieldEquiv :
+    maximalRealSubfield (maximalRealOrCMSubfield K) ≃+* maximalRealSubfield K :=
+  ((algebraMap (maximalRealSubfield K) (maximalRealOrCMSubfield K)).rangeRestrictFieldEquiv.trans
+    (RingEquiv.subfieldCongr fieldRange_algebraMap_maximalRealSubfield)).symm
+
+/-- The isomorphism `maximalRealSubfieldMaximalRealOrCMSubfieldEquiv` is the identity on `K`. -/
+@[simp]
+theorem coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_apply
+    (x : maximalRealSubfield (maximalRealOrCMSubfield K)) :
+    (maximalRealSubfieldMaximalRealOrCMSubfieldEquiv x : K) = (x : maximalRealOrCMSubfield K) := by
+  obtain ⟨y, rfl⟩ := maximalRealSubfieldMaximalRealOrCMSubfieldEquiv.symm.surjective x
+  simp [maximalRealSubfieldMaximalRealOrCMSubfieldEquiv, RingHom.rangeRestrictFieldEquiv_apply_coe]
+
+/-- The inverse of `maximalRealSubfieldMaximalRealOrCMSubfieldEquiv` is the identity on `K`. -/
+@[simp]
+theorem coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_symm_apply
+    (y : maximalRealSubfield K) :
+    ((maximalRealSubfieldMaximalRealOrCMSubfieldEquiv.symm y : maximalRealOrCMSubfield K) : K) =
+      y := by
+  rw [← coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_apply, RingEquiv.apply_symm_apply]
+
 /-- **`[E_K : K⁺]` is `1` or `2`**, for the algebra structure given by the inclusion
 `K⁺ ≤ E_K`: `E_K` is `K⁺` if it is totally real, and a quadratic extension of its maximal real
 subfield, which is `K⁺` (`map_maximalRealSubfield_maximalRealOrCMSubfield`), if it is CM. -/
@@ -379,12 +404,12 @@ theorem finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two :
       ⟨(algebraMap (maximalRealSubfield K) E).injective, hsurj⟩)
   · -- `K⁺` is identified with the maximal real subfield of `E_K`, over which `E_K` is quadratic.
     let i : maximalRealSubfield K ≃+* maximalRealSubfield E :=
-      (algebraMap (maximalRealSubfield K) E).rangeRestrictFieldEquiv.trans
-        (RingEquiv.subfieldCongr fieldRange_algebraMap_maximalRealSubfield)
+      maximalRealSubfieldMaximalRealOrCMSubfieldEquiv.symm
     have hc : (algebraMap (maximalRealSubfield E) E).comp i.toRingHom =
         (RingEquiv.refl E).toRingHom.comp (algebraMap (maximalRealSubfield K) E) :=
-      RingHom.ext fun x ↦ by
-        simp [i, Algebra.algebraMap_ofSubsemiring_apply, RingHom.rangeRestrictFieldEquiv_apply_coe]
+      RingHom.ext fun x ↦ Subtype.ext <|
+        (coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_symm_apply x).trans
+          (coe_algebraMap_maximalRealSubfield_maximalRealOrCMSubfield x).symm
     rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) hc]
     exact .inr (Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E)
 

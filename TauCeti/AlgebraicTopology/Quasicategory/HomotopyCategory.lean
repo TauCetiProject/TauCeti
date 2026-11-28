@@ -18,7 +18,9 @@ functors here fix the vertices and the classes of edges, and are mutually invers
 
 In particular an edge is an equivalence exactly when its class in the generators-and-relations
 homotopy category is invertible. This is the form needed when using comparison functors out
-of that homotopy category, for example for the differential graded nerve.
+of that homotopy category, for example for the differential graded nerve. The class of an
+equivalence is invertible in any simplicial set
+(`SSet.Edge.IsEquivalence.isIso_homotopyCategoryHomMk`).
 
 The comparison also describes the generators-and-relations homotopy category of a quasicategory
 directly: every morphism between two vertices is the class of an edge
@@ -145,6 +147,14 @@ end HomotopyCategory₂
 end SSet.Truncated
 
 namespace SSet.Edge
+
+/-- In any simplicial set, the class of an equivalence in the generators-and-relations homotopy
+category is an isomorphism, with inverse the class of an inverse edge. -/
+lemma IsEquivalence.isIso_homotopyCategoryHomMk {X : SSet.{u}} {x y : X _⦋0⦌} {e : X.Edge x y}
+    (he : e.IsEquivalence) : IsIso (HomotopyCategory.homMk e) :=
+  ⟨HomotopyCategory.homMk he.invStruct.inv,
+    (HomotopyCategory.homMk_comp_homMk he.invStruct.homInvId).trans (HomotopyCategory.homMk_id x),
+    (HomotopyCategory.homMk_comp_homMk he.invStruct.invHomId).trans (HomotopyCategory.homMk_id y)⟩
 
 variable {X : SSet.{u}} [Quasicategory X] {x y : X _⦋0⦌}
 

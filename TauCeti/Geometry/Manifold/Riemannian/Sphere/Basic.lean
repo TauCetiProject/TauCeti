@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Induced
 import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
@@ -27,6 +28,8 @@ Thurston's eight model geometries.
 
 * `TauCeti.sphereTangentEquiv`: the isometric identification of tangent spaces with the
   orthogonal complements of their radius vectors.
+* `TauCeti.sphereTangentProj`: continuous linear tangential projection
+  `E →L[ℝ] TangentSpace (𝓡 n) x`.
 * `TauCeti.sphereRoundMetric`: the analytic round metric on the unit sphere.
 * `TauCeti.instRiemannianBundleSphere`, `TauCeti.instIsContMDiffRiemannianBundleSphere` and
   `TauCeti.instIsContinuousRiemannianBundleSphere`: the corresponding instances.
@@ -42,6 +45,9 @@ Thurston's eight model geometries.
   squared length in `E`.
 * `TauCeti.contMDiff_coe_sphereTangentEquiv`: reading a tangent vector in `E` via
   `sphereTangentEquiv` is `C^m` on the tangent bundle.
+* `TauCeti.mfderiv_subtypeVal_sphereTangentProj`, `TauCeti.sphereTangentProj_mfderiv_subtypeVal`,
+  and `TauCeti.ker_sphereTangentProj`: ambient projection formula, left-inverse identity, and kernel
+  characterization for `TauCeti.sphereTangentProj`.
 * `TauCeti.edist_le_riemannianEDist_sphere`: the chordal distance in `E` is at most the round
   distance.
 
@@ -162,6 +168,73 @@ theorem inner_coe_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1)
   have h := (sphereTangentEquiv x v).property
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right, coe_sphereTangentEquiv_apply] at h
   rwa [mvfderiv_apply_eq_mfderiv_apply]
+
+/-- Tangential projection of an ambient vector in `E` into the native tangent space
+`TangentSpace (𝓡 n) x` at `x : sphere (0 : E) 1`, as a continuous linear map. -/
+def sphereTangentProj (x : sphere (0 : E) 1) : E →L[ℝ] TangentSpace (𝓡 n) x :=
+  (sphereTangentEquiv x).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp
+    (ℝ ∙ (x : E))ᗮ.orthogonalProjectionOnto
+
+/-- Unfolding of `TauCeti.sphereTangentProj` in terms of `TauCeti.sphereTangentEquiv` and
+orthogonal projection onto `(ℝ ∙ (x : E))ᗮ`. -/
+theorem sphereTangentProj_apply (x : sphere (0 : E) 1) (u : E) :
+    sphereTangentProj (n := n) x u =
+      (sphereTangentEquiv x).symm ((ℝ ∙ (x : E))ᗮ.orthogonalProjectionOnto u) := by
+  simp [sphereTangentProj]
+
+/-- Applying `TauCeti.sphereTangentEquiv` after `TauCeti.sphereTangentProj` recovers the
+orthogonal projection onto `(ℝ ∙ (x : E))ᗮ`. -/
+theorem sphereTangentEquiv_sphereTangentProj (x : sphere (0 : E) 1) (u : E) :
+    sphereTangentEquiv (n := n) x (sphereTangentProj (n := n) x u) =
+      (ℝ ∙ (x : E))ᗮ.orthogonalProjectionOnto u := by
+  rw [sphereTangentProj_apply, LinearIsometryEquiv.apply_symm_apply]
+
+/-- Ambient formula for the tangential projection `TauCeti.sphereTangentProj`: pushing the
+projected tangent vector forward by the differential of the sphere inclusion subtracts the
+radial component `⟪x, u⟫ • x` from `u`. -/
+@[simp]
+theorem mfderiv_subtypeVal_sphereTangentProj (x : sphere (0 : E) 1) (u : E) :
+    mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x (sphereTangentProj (n := n) x u) =
+      u - inner ℝ (x : E) u • (x : E) := by
+  refine (coe_sphereTangentEquiv_apply x _).symm.trans ?_
+  simp only [sphereTangentEquiv_sphereTangentProj, Submodule.coe_orthogonalProjectionOnto_apply,
+    Submodule.starProjection_orthogonal_val,
+    Submodule.starProjection_unit_singleton ℝ (norm_eq_of_mem_sphere x)]
+
+/-- On an ambient vector already orthogonal to the radius vector `x`, `TauCeti.sphereTangentProj`
+agrees with `(TauCeti.sphereTangentEquiv x).symm`. -/
+@[simp]
+theorem sphereTangentProj_of_mem_orthogonal {x : sphere (0 : E) 1} {u : E}
+    (hu : u ∈ (ℝ ∙ (x : E))ᗮ) :
+    sphereTangentProj (n := n) x u = (sphereTangentEquiv (n := n) x).symm ⟨u, hu⟩ := by
+  rw [sphereTangentProj_apply, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self ⟨u, hu⟩]
+
+/-- Left-inverse identity for `TauCeti.sphereTangentProj` against the differential of the sphere
+inclusion: projecting the ambient pushforward of a native tangent vector `v` recovers `v`
+exactly. -/
+@[simp]
+theorem sphereTangentProj_mfderiv_subtypeVal (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    sphereTangentProj x (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) = v := by
+  have hv : (sphereTangentEquiv x v : E) ∈ (ℝ ∙ (x : E))ᗮ := (sphereTangentEquiv x v).property
+  rw [← coe_sphereTangentEquiv_apply]
+  simp [sphereTangentProj_of_mem_orthogonal hv, -coe_sphereTangentEquiv_apply]
+
+/-- The radial vector `x` lies in the kernel of `TauCeti.sphereTangentProj x`. -/
+@[simp]
+theorem sphereTangentProj_coe_self (x : sphere (0 : E) 1) :
+    sphereTangentProj (n := n) x (x : E) = 0 := by
+  rw [sphereTangentProj_apply,
+    Submodule.orthogonalProjectionOnto_orthogonal_apply_eq_zero
+      (Submodule.mem_span_singleton_self (x : E)),
+    map_zero]
+
+/-- The kernel of `TauCeti.sphereTangentProj x` is the radial line `ℝ ∙ (x : E)`. -/
+@[simp]
+theorem ker_sphereTangentProj (x : sphere (0 : E) 1) :
+    (sphereTangentProj (n := n) x).ker = ℝ ∙ (x : E) := by
+  ext u
+  simp [sphereTangentProj_apply]
 
 /-- A nonzero tangent vector to the unit sphere has positive squared length in `E`: the
 differential of the inclusion is injective. -/

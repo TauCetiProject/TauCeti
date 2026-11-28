@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
@@ -86,6 +87,9 @@ depends on the cutoffs only through their values at the point.
   the inverse of a smooth homogeneous function of degree `m` on the cotangent bundle, where it
   vanishes at no nonzero covector, is smooth and homogeneous of degree `-m`; outside that set it
   may be cut off by a smooth function of the base point.
+* `TauCeti.cpow_mem_homogeneousCotangentSymbols`: the real power `s ^ r`, `r ≠ 0`, of a smooth
+  homogeneous function of degree `m` with values in the slit plane `ℂ \ (-∞, 0]` at nonzero
+  covectors is smooth and homogeneous of degree `m * r`.
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
@@ -366,6 +370,29 @@ theorem inv_mem_homogeneousCotangentSymbols
     (fun x ξ ↦ (s x ξ)⁻¹) ∈ homogeneousCotangentSymbols n M (-m) := by
   simpa using mul_inv_mem_homogeneousCotangentSymbols hs (σ := fun _ ↦ 1) contMDiff_const
     fun x _ ↦ hs0 x
+
+omit [T2Space M] in
+/-- **Real powers of a homogeneous symbol.** If `s` is a smooth positively homogeneous function of
+degree `m` on the cotangent bundle whose values at nonzero covectors lie in the slit plane
+`ℂ \ (-∞, 0]`, then for every real `r ≠ 0` its principal-branch power
+`(x, ξ) ↦ s(x, ξ) ^ r` is a smooth positively homogeneous function of degree `m * r`. For `r = 0`
+the power would be `1` at the zero covector, where these functions vanish. -/
+theorem cpow_mem_homogeneousCotangentSymbols
+    {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
+    (hs : s ∈ homogeneousCotangentSymbols n M m)
+    (hslit : ∀ x ξ, ξ ≠ 0 → s x ξ ∈ Complex.slitPlane) {r : ℝ} (hr : r ≠ 0) :
+    (fun x ξ ↦ s x ξ ^ (r : ℂ)) ∈ homogeneousCotangentSymbols n M (m * r) := by
+  obtain ⟨h0, hhom, hsmooth⟩ := mem_homogeneousCotangentSymbols_iff.1 hs
+  refine mem_homogeneousCotangentSymbols_iff.2 ⟨fun x ↦ ?_, fun x ξ t ht ↦ ?_,
+    fun e he p hp ↦ ?_⟩
+  · rw [h0 x, Complex.zero_cpow (Complex.ofReal_ne_zero.2 hr)]
+  · rw [hhom x ξ t ht, Complex.ofReal_mul_cpow (Real.rpow_nonneg ht.le m),
+      ← Complex.ofReal_cpow (Real.rpow_nonneg ht.le m), ← Real.rpow_mul ht.le]
+  · -- The chart reading of `s` takes values in the slit plane, where the power is analytic.
+    have hξ := (innerSL_comp_mvfderiv_eq_zero_iff
+      (IsManifold.maximalAtlas_subset_of_le (by simp) he) (e.map_target hp.1)).not.2 hp.2
+    exact ((analyticAt_id.cpow analyticAt_const (hslit _ _ hξ)).contDiffAt.restrict_scalars
+      ℝ).comp_contDiffWithinAt p (hsmooth e he p hp)
 
 /-! ### The principal symbol on the cotangent bundle -/
 

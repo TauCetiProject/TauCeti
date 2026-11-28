@@ -55,6 +55,8 @@ the imaginary part is `Im Ω = (Ω - Ωᴴ) / 2i`.
 * `TauCeti.mapToComplexStarAlgHom`, `TauCeti.posSemidef_mapToComplexStarAlgHom_iff`,
   `TauCeti.posDef_mapToComplexStarAlgHom_iff`: entrywise embedding of `Matrix n n 𝕜` into
   `Matrix n n ℂ`, preserving and reflecting positivity.
+* `Matrix.PosSemidef.map_re`: the real part of a positive semidefinite complex matrix, over any
+  index type, is positive semidefinite.
 -/
 
 public section
@@ -433,5 +435,21 @@ positive definite. -/
 theorem PosDef.map_re_conjTranspose_mul_self [Fintype m] [Fintype n] (M : Matrix m n ℂ)
     (hM : Function.Injective M.mulVec) : ((Mᴴ * M).map Complex.re).PosDef :=
   (PosDef.conjTranspose_mul_self M hM).map_re
+
+/-- The real part of a positive semidefinite complex matrix is positive semidefinite. The index type
+is arbitrary, so this applies to positive-definite kernels on any set. -/
+theorem PosSemidef.map_re {K : Matrix n n ℂ} (hK : K.PosSemidef) :
+    (K.map Complex.re).PosSemidef := by
+  -- Positive semidefiniteness is checked on finite principal submatrices.
+  refine posSemidef_iff_submatrix_finset.2 fun s ↦ ?_
+  have hs := posSemidef_iff_submatrix_finset.1 hK s
+  rw [submatrix_map]
+  refine .of_dotProduct_mulVec_nonneg (hs.isHermitian.map _ fun _ ↦ Complex.conj_re _)
+    fun x ↦ ?_
+  -- The real quadratic form at `x` is the real part of the complex one at `x` viewed in `ℂ`.
+  have hre : (star (fun i ↦ (x i : ℂ)) ⬝ᵥ (K.submatrix (↑) (↑) *ᵥ fun i ↦ (x i : ℂ))).re =
+      star x ⬝ᵥ ((K.submatrix (↑) (↑)).map Complex.re *ᵥ x) := by
+    simp [dotProduct, mulVec, Complex.re_sum, Finset.mul_sum]
+  exact hre ▸ (Complex.nonneg_iff.1 (hs.dotProduct_mulVec_nonneg _)).1
 
 end Matrix
