@@ -58,6 +58,10 @@ instance algebra : Algebra R (Germ l A) where
   smul_def' r g := inductionOn g fun f ↦
     (congrArg (fun f : α → A ↦ (f : Germ l A)) (Algebra.smul_def r f))
 
+/-- A constant germ is the germ of the corresponding constant function. -/
+theorem const_eq_coe {α β : Type*} {l : Filter α} (b : β) :
+    (b : Germ l β) = (fun _ : α ↦ b : Germ l β) := (rfl)
+
 /-- The scalar map to germs is represented by the pointwise scalar map. -/
 theorem algebraMap_eq (r : R) :
     algebraMap R (Germ l A) r = (fun _ : α ↦ algebraMap R A r : Germ l A) := (rfl)
@@ -66,7 +70,10 @@ theorem algebraMap_eq (r : R) :
 `(r : Germ l R)`. -/
 theorem algebraMap_self_eq (r : R) :
     algebraMap R (Germ l R) r = (r : Germ l R) :=
-  (algebraMap_eq r).trans (by simp; rfl)
+  (algebraMap_eq r).trans <|
+    (congrArg (fun f : α → R ↦ (f : Germ l R))
+      (funext fun _ ↦ Algebra.algebraMap_self_apply r)).trans
+      (const_eq_coe r).symm
 
 /-- Projection of algebra-valued functions to their germs. -/
 def coeAlgHom (l : Filter α) : (α → A) →ₐ[R] Germ l A where

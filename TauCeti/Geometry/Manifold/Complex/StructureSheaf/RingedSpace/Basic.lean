@@ -326,6 +326,38 @@ private theorem isoOfSheafIso_hom_c_app {T : TopCat} {P Q : TopCat.Sheaf CommRin
     (eqToHom_app _ _).trans (eqToHom_refl _ _)
   exact (congrArg (θ.inv.hom.app (op U) ≫ ·) heq).trans (Category.comp_id _)
 
+private theorem presheafedSpace_iso_hom_appLE_comp_inv_appLE {C : Type*} [Category C]
+    {X Y : PresheafedSpace C} (e : X ≅ Y) (U : Opens Y) (V : Opens X)
+    (hUV : V ≤ (Opens.map e.hom.base).obj U) (hVU : U ≤ (Opens.map e.inv.base).obj V) :
+    e.hom.appLE U V hUV ≫ e.inv.appLE V U hVU = 𝟙 (Y.presheaf.obj (op U)) := by
+  have h := PresheafedSpace.Hom.appLE_comp_appLE e.inv e.hom U V U hUV hVU
+  rw [h, PresheafedSpace.Hom.congr_appLE e.inv_hom_id _ (by simp), PresheafedSpace.Hom.id_appLE]
+  exact (congrArg Y.presheaf.map (Subsingleton.elim _ (𝟙 (op U)))).trans (Y.presheaf.map_id (op U))
+
+private theorem locallyRingedSpace_iso_inv_appLE_eq {X Y : LocallyRingedSpace}
+    (e : X ≅ Y) (U : Opens Y) (V : Opens X)
+    (hUV : V ≤ (Opens.map e.hom.base).obj U) (hVU : U ≤ (Opens.map e.inv.base).obj V)
+    {f : Y.presheaf.obj (op U) ⟶ X.presheaf.obj (op V)}
+    {g : X.presheaf.obj (op V) ⟶ Y.presheaf.obj (op U)}
+    (hf : e.hom.toHom.appLE U V hUV = f) (hg : g ≫ f = 𝟙 (X.presheaf.obj (op V))) :
+    e.inv.toHom.appLE V U hVU = g := by
+  let e' : X.toPresheafedSpace ≅ Y.toPresheafedSpace :=
+    { hom := e.hom.toHom
+      inv := e.inv.toHom
+      hom_inv_id := (LocallyRingedSpace.comp_toHom _ _).symm.trans
+        ((congrArg LocallyRingedSpace.Hom.toHom e.hom_inv_id).trans (LocallyRingedSpace.id_toHom _))
+      inv_hom_id := (LocallyRingedSpace.comp_toHom _ _).symm.trans
+        ((congrArg LocallyRingedSpace.Hom.toHom e.inv_hom_id).trans
+          (LocallyRingedSpace.id_toHom _)) }
+  have hcomp : f ≫ e.inv.toHom.appLE V U hVU = 𝟙 (Y.presheaf.obj (op U)) :=
+    hf ▸ presheafedSpace_iso_hom_appLE_comp_inv_appLE e' U V hUV hVU
+  calc
+    e.inv.toHom.appLE V U hVU
+        = 𝟙 (X.presheaf.obj (op V)) ≫ e.inv.toHom.appLE V U hVU := (Category.id_comp _).symm
+    _   = (g ≫ f) ≫ e.inv.toHom.appLE V U hVU := by rw [hg]
+    _   = g ≫ (f ≫ e.inv.toHom.appLE V U hVU) := Category.assoc _ _ _
+    _   = g := by rw [hcomp, Category.comp_id]
+
 private theorem isoOfSheafIso_inv_c_app {T : TopCat} {P Q : TopCat.Sheaf CommRingCat T}
     (hP : ∀ x : T, IsLocalRing (P.presheaf.stalk x))
     (hQ : ∀ x : T, IsLocalRing (Q.presheaf.stalk x))
@@ -343,20 +375,12 @@ private theorem isoOfSheafIso_inv_c_app {T : TopCat} {P Q : TopCat.Sheaf CommRin
       PresheafedSpace.isoOfComponents (Iso.refl T)
         (eqToIso (TopCat.Presheaf.Pushforward.id_eq P.presheaf) ≪≫
           (sheafToPresheaf _ _).mapIso θ)
-  have he_hom : e.hom.c.app (op U) = θ.inv.hom.app (op U) := isoOfSheafIso_hom_c_app hP hQ θ U
-  have he_id : e.inv.toHom ≫ e.hom.toHom =
-      𝟙 (⟨⟨⟨T, Q.presheaf⟩, Q.property⟩, hQ⟩ : LocallyRingedSpace).toPresheafedSpace :=
-    (LocallyRingedSpace.comp_toHom _ _).symm.trans
-      ((congrArg LocallyRingedSpace.Hom.toHom e.inv_hom_id).trans (LocallyRingedSpace.id_toHom _))
-  have he := PresheafedSpace.congr_app he_id (op U)
-  have hcomp : θ.inv.hom.app (op U) ≫ e.inv.c.app (op U) = 𝟙 _ := by
-    rw [PresheafedSpace.comp_c_app, he_hom, PresheafedSpace.id_c, NatTrans.id_app] at he
-    erw [Category.id_comp, eqToHom_map] at he
-    exact he.trans (eqToHom_refl _ _)
-  have hid : θ.hom.hom.app (op U) ≫ θ.inv.hom.app (op U) = 𝟙 _ :=
+  have hf : e.hom.toHom.appLE U U le_rfl = θ.inv.hom.app (op U) :=
+    (PresheafedSpace.Hom.appLE_eq_app e.hom.toHom U).trans (isoOfSheafIso_hom_c_app hP hQ θ U)
+  have hg : θ.hom.hom.app (op U) ≫ θ.inv.hom.app (op U) = 𝟙 _ :=
     congrArg (fun k ↦ k.hom.app (op U)) θ.hom_inv_id
-  rw [← Category.id_comp (e.inv.c.app (op U)), ← hid, Category.assoc]
-  exact (congrArg (θ.hom.hom.app (op U) ≫ ·) hcomp).trans (Category.comp_id _)
+  exact (PresheafedSpace.Hom.appLE_eq_app e.inv.toHom U).symm.trans
+    (locallyRingedSpace_iso_inv_appLE_eq e U U le_rfl le_rfl hf hg)
 
 /-- On sections over `U`, `(smoothLocallyRingedSpaceIso I X).hom` is the inverse section equivalence
 `(smoothSectionsEquiv I X U).symm`. -/
@@ -393,12 +417,13 @@ private theorem smoothLocallyRingedSpaceIso_inv_c_app_hom_apply (U : Opens X)
 @[simp]
 theorem smoothLocallyRingedSpaceIso_hom_stalkMap (x : X) :
     (smoothLocallyRingedSpaceIso I X).hom.stalkMap x = (smoothStalkIso I X x).inv := by
-  apply CommRingCat.hom_ext
-  apply RingHom.ext
-  intro s
+  refine ConcreteCategory.hom_ext _ _ fun s ↦ ?_
   obtain ⟨U, hx, g, rfl⟩ := (ChartedSpace.locallyRingedSpace I X).presheaf.exists_germ_eq s
-  erw [LocallyRingedSpace.stalkMap_germ_apply]
-  rw [smoothLocallyRingedSpaceIso_hom_c_app_hom_apply]
+  rw [LocallyRingedSpace.stalkMap_germ_apply]
+  have happ : ConcreteCategory.hom ((smoothLocallyRingedSpaceIso I X).hom.c.app (op U)) g =
+      (smoothSectionsEquiv I X U).symm g :=
+    smoothLocallyRingedSpaceIso_hom_c_app_hom_apply I X U g
+  rw [happ]
   exact (smoothStalkIso_inv_germ x U hx g).symm
 
 /-- On stalks at `x`, `(smoothLocallyRingedSpaceIso I X).inv` agrees with
@@ -406,12 +431,13 @@ theorem smoothLocallyRingedSpaceIso_hom_stalkMap (x : X) :
 @[simp]
 theorem smoothLocallyRingedSpaceIso_inv_stalkMap (x : X) :
     (smoothLocallyRingedSpaceIso I X).inv.stalkMap x = (smoothStalkIso I X x).hom := by
-  apply CommRingCat.hom_ext
-  apply RingHom.ext
-  intro s
+  refine ConcreteCategory.hom_ext _ _ fun s ↦ ?_
   obtain ⟨U, hx, g, rfl⟩ := (locallyRingedSpace I X).presheaf.exists_germ_eq s
-  erw [LocallyRingedSpace.stalkMap_germ_apply]
-  rw [smoothLocallyRingedSpaceIso_inv_c_app_hom_apply]
+  rw [LocallyRingedSpace.stalkMap_germ_apply]
+  have happ : ConcreteCategory.hom ((smoothLocallyRingedSpaceIso I X).inv.c.app (op U)) g =
+      smoothSectionsEquiv I X U g :=
+    smoothLocallyRingedSpaceIso_inv_c_app_hom_apply I X U g
+  rw [happ]
   exact (smoothStalkIso_hom_germ x U hx g).symm
 
 /-- On sections over `U`, `(smoothLocallyRingedSpaceIso I X).hom` preserves pointwise values. -/
@@ -444,16 +470,32 @@ theorem locallyRingedSpaceMap_comp_smoothLocallyRingedSpaceIso_hom
       (smoothLocallyRingedSpaceIso I X).hom ≫
         ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp)) :=
   locallyRingedSpace_hom_ext (by ext; rfl) fun U s x ↦ by
-    -- Re-bundle `U : Opens (ChartedSpace.locallyRingedSpace J Y)` as `V : Opens Y` so
-    -- `locallyRingedSpaceMap_c_app_apply` and `smoothLocallyRingedSpaceIso_hom_c_app_apply` match.
+    -- Re-bundle `U` as `V : Opens Y` so the holomorphic and smooth pointwise lemmas match.
     let V : Opens Y := ⟨U.carrier, U.isOpen⟩
     let sV : (smoothSheafCommRing J 𝓘(ℂ) Y ℂ).obj.obj (op V) := s
-    erw [LocallyRingedSpace.comp_c_app_apply,
-      locallyRingedSpaceMap_c_app_apply f hf V _ ⟨x.val, x.property⟩,
-      smoothLocallyRingedSpaceIso_hom_c_app_apply J Y V sV ⟨f x.val, x.property⟩,
-      LocallyRingedSpace.comp_c_app_apply,
-      smoothLocallyRingedSpaceIso_hom_c_app_apply I X _ _ _,
-      ChartedSpace.locallyRingedSpaceMap_c_app_apply f (hf.of_le (by simp)) sV x.property]
+    have hL :
+        (((locallyRingedSpaceMap f hf ≫
+            (smoothLocallyRingedSpaceIso J Y).hom).c.app (op U)).hom s) =
+          ((locallyRingedSpaceMap f hf).c.app (op V)).hom
+            (((smoothLocallyRingedSpaceIso J Y).hom.c.app (op V)).hom sV) :=
+      LocallyRingedSpace.comp_c_app_apply _ _ _ _
+    have hR :
+        ((((smoothLocallyRingedSpaceIso I X).hom ≫
+          ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s) =
+          ((smoothLocallyRingedSpaceIso I X).hom.c.app
+            (op ((Opens.map (ChartedSpace.locallyRingedSpaceMap f
+              (hf.of_le (by simp))).base).obj U))).hom
+            (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s) :=
+      LocallyRingedSpace.comp_c_app_apply _ _ _ _
+    rw [hL, hR]
+    have hL1 := locallyRingedSpaceMap_c_app_apply f hf V
+      (((smoothLocallyRingedSpaceIso J Y).hom.c.app (op V)).hom sV) ⟨x.val, x.property⟩
+    have hL2 := smoothLocallyRingedSpaceIso_hom_c_app_apply J Y V sV ⟨f x.val, x.property⟩
+    have hR1 := smoothLocallyRingedSpaceIso_hom_c_app_apply I X
+      ((Opens.map (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).base).obj U)
+      (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s) x
+    have hR2 := ChartedSpace.locallyRingedSpaceMap_c_app_apply f (hf.of_le (by simp)) sV x.property
+    exact hL1.trans (hL2.trans (hR1.trans hR2).symm)
 
 end SmoothComparison
 

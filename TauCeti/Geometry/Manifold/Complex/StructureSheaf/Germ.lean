@@ -143,7 +143,7 @@ variable (I X)
 theorem toFilterGerm_algebraMap (x : X) (l : Filter X) (hl : l ≤ 𝓝 x) (c : ℂ) :
     toFilterGerm I X x l hl (algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) c) =
       algebraMap ℂ (Germ l ℂ) c := by
-  rw [← germ_algebraMap I X ⊤ x trivial c, Germ.algebraMap_self_eq]
+  rw [← germ_algebraMap I X ⊤ x trivial c, Germ.algebraMap_self_eq, Germ.const_eq_coe]
   exact toFilterGerm_germ hl trivial _ (fun _ ↦ c) fun y ↦ algebraMap_apply (op ⊤) c y
 
 /-- Comparison of holomorphic germs with function germs along `l ≤ 𝓝 x`, as a `ℂ`-algebra
@@ -243,8 +243,8 @@ theorem germOfContMDiff_const (c : ℂ) (x : X) :
     germOfContMDiff (fun _ : X ↦ c) contMDiff_const x =
       algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) c :=
   toFilterGerm_nhds_injective x <| by
-    rw [toFilterGerm_germOfContMDiff, toFilterGerm_algebraMap, Germ.algebraMap_self_eq]
-    rfl
+    rw [toFilterGerm_germOfContMDiff, toFilterGerm_algebraMap, Germ.algebraMap_self_eq,
+      Germ.const_eq_coe]
 
 /-- A holomorphic germ vanishes exactly when a function with the same germ along `𝓝 x` vanishes
 near `x`. -/

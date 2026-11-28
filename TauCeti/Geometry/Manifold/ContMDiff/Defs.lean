@@ -28,6 +28,8 @@ and analytic manifolds.
   implies differentiability throughout a neighbourhood.
 * `TauCeti.eventually_contMDiffAt_comp`: composition of maps that are `C^n` near a point and its
   image is `C^n` near the point.
+* `TauCeti.eventually_mem_of_eventually_contMDiffAt`: a map that is `C^n` near `x` maps a
+  neighbourhood of `x` into any neighbourhood of `f x`.
 * The instances `NeZero (∞ : ℕ∞ω)` and `NeZero (ω : ℕ∞ω)`.
 -/
 
@@ -81,6 +83,13 @@ theorem eventually_contMDiffAt_comp {E'' : Type*} [NormedAddCommGroup E''] [Norm
     ∀ᶠ w in 𝓝 x, ContMDiffAt I I'' n (g ∘ f) w :=
   (hf.and ((hfx ▸ hf.self_of_nhds.continuousAt.tendsto).eventually hg)).mono fun w hw ↦
     ContMDiffAt.comp w hw.2 hw.1
+
+/-- If `f` is `C^n` near `x` with `f x = y`, then `f` eventually maps points near `x` into any
+neighbourhood `s ∈ 𝓝 y`. -/
+theorem eventually_mem_of_eventually_contMDiffAt
+    {x : M} {y : M'} (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I I' n f w)
+    (hfx : f x = y) {s : Set M'} (hs : s ∈ 𝓝 y) : ∀ᶠ w in 𝓝 x, f w ∈ s :=
+  (hfx ▸ hf.self_of_nhds.continuousAt.tendsto).eventually hs
 
 end TauCeti
 

@@ -121,6 +121,8 @@ theorem locallyRingedSpace_c_app_apply
   exact (smoothSheafCommRing.evalHom_germ IM 𝓘(𝕜) M 𝕜 _ x hx _).symm.trans
     (h.trans (smoothSheafCommRing.evalHom_germ IN 𝓘(𝕜) N 𝕜 V _ hx g))
 
+-- Not `@[simp]`: `simp` rewrites the pushforward domain in the implicit type of `Subtype.val`
+-- (`Functor.op_obj`, `TopCat.Presheaf.pushforward_obj_obj`), so this fails `simpNF`.
 /-- `ChartedSpace.locallyRingedSpaceMap` acts on sections by precomposition with `f`. -/
 theorem locallyRingedSpaceMap_c_app_apply (f : M → N) (hf : ContMDiff IM IN ∞ f)
     {V : Opens N} (g : (smoothSheafCommRing IN 𝓘(𝕜) N 𝕜).presheaf.obj (op V))

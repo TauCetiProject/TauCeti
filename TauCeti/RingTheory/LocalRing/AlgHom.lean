@@ -71,6 +71,7 @@ namespace TauCeti
 
 /-- The residue of a scalar `algebraMap k R c` in a commutative local `k`-algebra `R` equals the
 image of `c` in `IsLocalRing.ResidueField R`. -/
+@[simp]
 theorem residue_algebraMap {k R : Type*} [CommRing k] [CommRing R] [IsLocalRing R]
     [Algebra k R] (c : k) :
     IsLocalRing.residue R (algebraMap k R c) =

@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.AlgHom
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RingedSpace.Basic
 import Mathlib.Tactic.TFAE
-import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 /-!
@@ -490,26 +489,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
   (e : OpenPartialHomeomorph Y H') (he : e ∈ maximalAtlas J ω Y)
 
-include he in
-/-- The `i`-th linear coordinate function of an extended holomorphic chart `e.extend J`, centered
-at `z : E'`, as a holomorphic section on `⟨e.source, e.open_source⟩`. -/
-def extendCoordSection {ι : Type*} (b : Module.Basis ι ℂ E') (z : E') (i : ι) :
-    (holomorphicStructureSheaf J Y).obj.obj (op ⟨e.source, e.open_source⟩) :=
-  ofContMDiff (fun y : (⟨e.source, e.open_source⟩ : Opens Y) ↦ b.coord i (e.extend J y.val - z))
-    fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
-      (n := ω)).contMDiff.contMDiffAt.comp y
-      (((e.contMDiffAt_extend he y.property).comp y contMDiff_subtypeVal.contMDiffAt).sub
-        contMDiffAt_const)
-
-include he in
-/-- Evaluating `e.extendCoordSection he b z i` at `y` gives `b.coord i (e.extend J y.val - z)`. -/
-@[simp]
-theorem extendCoordSection_apply {ι : Type*} (b : Module.Basis ι ℂ E') (z : E') (i : ι)
-    (y : (⟨e.source, e.open_source⟩ : Opens Y)) :
-    toFun J Y (op ⟨e.source, e.open_source⟩) (e.extendCoordSection he b z i) y =
-      b.coord i (e.extend J y.val - z) :=
-  ofContMDiff_apply _ _ y
-
 private theorem extend_base_sub_eq_sum_of_c_app_top_algebraMap
     {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ E')
     (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
@@ -590,7 +569,8 @@ theorem contMDiff_base_of_c_app_top_algebraMap : ContMDiff I J ω φ.base := by
     ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (b i)).contDiff
       (n := ω)).contMDiff.contMDiffAt.comp w (contMDiff (t i) w)
   have hGx₀ : G ⟨x₀, hx₀⟩ = extChartAt J y₀ y₀ := by
-    dsimp [G, t, y₀, e, extChartAt]
+    dsimp only [G, t, e, y₀]
+    rw [extChartAt_coe, Function.comp_apply]
     exact (e.extend_base_sub_eq_sum_of_c_app_top_algebraMap he b φ hφ 0 ⟨x₀, hx₀⟩).trans
       (sub_zero _)
   have hx₀_tgt : G ⟨x₀, hx₀⟩ ∈ (extChartAt J y₀).target := by

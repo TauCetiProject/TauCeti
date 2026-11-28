@@ -54,15 +54,6 @@ public noncomputable section
 open CategoryTheory Filter IsManifold Opposite TopologicalSpace Topology
 open scoped ContDiff Manifold
 
-private theorem eventually_mem_of_eventually_contMDiffAt
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
-    {I : ModelWithCorners ℂ E H} {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
-    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
-    {J : ModelWithCorners ℂ E' H'} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H' Y]
-    {f : X → Y} {x : X} {y : Y} (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w)
-    (hfx : f x = y) {s : Set Y} (hs : s ∈ 𝓝 y) : ∀ᶠ w in 𝓝 x, f w ∈ s :=
-  (hfx ▸ hf.self_of_nhds.continuousAt.tendsto).eventually hs
-
 namespace OpenPartialHomeomorph
 
 open TauCeti TauCeti.holomorphicStructureSheaf

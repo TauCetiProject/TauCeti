@@ -50,6 +50,8 @@ open TauCeti TauCeti.holomorphicStructureSheaf
 
 namespace OpenPartialHomeomorph
 
+section
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {X : Type} [TopologicalSpace X] [ChartedSpace E X]
   (e : OpenPartialHomeomorph X E) (he : e ∈ maximalAtlas 𝓘(ℂ, E) ω X) (x : X)
@@ -110,9 +112,42 @@ theorem eval_holomorphicLinearCoordinateGerm (ℓ : StrongDual ℂ E) (hx : x �
   rw [eval_eq_of_toFilterGerm_eq (toFilterGerm_holomorphicLinearCoordinateGerm e he x ℓ hx le_rfl),
     sub_self, map_zero]
 
+end
+
+section ExtendedChart
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  (e : OpenPartialHomeomorph X H) (he : e ∈ maximalAtlas I ω X)
+
+include he in
+/-- The `i`-th linear coordinate function of an extended holomorphic chart `e.extend I`, centered
+at `z : E`, as a holomorphic section on `⟨e.source, e.open_source⟩`. -/
+def extendCoordSection {ι : Type*} (b : Module.Basis ι ℂ E) (z : E) (i : ι) :
+    (holomorphicStructureSheaf I X).obj.obj (op ⟨e.source, e.open_source⟩) :=
+  ofContMDiff (fun y : (⟨e.source, e.open_source⟩ : Opens X) ↦ b.coord i (e.extend I y.val - z))
+    fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
+      (n := ω)).contMDiff.contMDiffAt.comp y
+      (((e.contMDiffAt_extend he y.property).comp y contMDiff_subtypeVal.contMDiffAt).sub
+        contMDiffAt_const)
+
+include he in
+/-- Evaluating `e.extendCoordSection he b z i` at `y` gives `b.coord i (e.extend I y.val - z)`. -/
+@[simp]
+theorem extendCoordSection_apply {ι : Type*} (b : Module.Basis ι ℂ E) (z : E) (i : ι)
+    (y : (⟨e.source, e.open_source⟩ : Opens X)) :
+    toFun I X (op ⟨e.source, e.open_source⟩) (e.extendCoordSection he b z i) y =
+      b.coord i (e.extend I y.val - z) :=
+  ofContMDiff_apply _ _ y
+
+end ExtendedChart
+
 /-! ### Hadamard's lemma for holomorphic germs -/
 
-variable {x}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {X : Type} [TopologicalSpace X] [ChartedSpace E X]
+  (e : OpenPartialHomeomorph X E) (he : e ∈ maximalAtlas 𝓘(ℂ, E) ω X) {x : X}
 
 include he in
 /-- Every representative of a holomorphic germ at `x` is analytic at `e x` when read in the
