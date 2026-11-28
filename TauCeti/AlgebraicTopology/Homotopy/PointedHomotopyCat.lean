@@ -41,9 +41,9 @@ pointed homotopy category. It factors the fundamental-group functor
 ## Main results
 
 * `TauCeti.PointedHomotopyCat.quotient_map_eq_iff` and
-  `TauCeti.PointedHomotopyCat.quotient_map_comp_eq_id`: two based maps have the same class exactly
-  when they are homotopic relative to the base point, and compose to the identity when their
-  composite is homotopic to the identity relative to the base point.
+  `TauCeti.PointedHomotopyCat.quotient_map_comp_eq_id_iff`: two based maps have the same class
+  exactly when they are homotopic relative to the base point, and compose to the identity exactly
+  when their composite is homotopic to the identity relative to the base point.
 * `TauCeti.PointedHomotopyCat.quotient_comp_fundamentalGroupFunctor`: the fundamental group of
   based spaces factors through the pointed homotopy category.
 
@@ -154,15 +154,14 @@ theorem quotient_map_eq_iff {X Y : BasedTopologicalSpace.{u}} (f g : X ⟶ Y) :
       f.toContinuousMap.HomotopicRel g.toContinuousMap {X.basepoint} :=
   CategoryTheory.Quotient.functor_map_eq_iff _ f g
 
-/-- Two based maps whose composite is homotopic to the identity relative to the base point compose
-to the identity in `PointedHomotopyCat`. -/
-theorem quotient_map_comp_eq_id {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) (g : Y ⟶ X)
-    (h : (g.toContinuousMap.comp f.toContinuousMap).HomotopicRel (.id X.carrier) {X.basepoint}) :
-    quotient.map f ≫ quotient.map g = 𝟙 (quotient.obj X) := by
+/-- Two based maps compose to the identity in `PointedHomotopyCat` exactly when the composite of
+their underlying continuous maps is homotopic to the identity relative to the base point. -/
+theorem quotient_map_comp_eq_id_iff {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) (g : Y ⟶ X) :
+    quotient.map f ≫ quotient.map g = 𝟙 (quotient.obj X) ↔
+      (g.toContinuousMap.comp f.toContinuousMap).HomotopicRel (.id X.carrier) {X.basepoint} := by
   rw [← quotient.map_comp, ← quotient.map_id, quotient_map_eq_iff,
     BasedTopologicalSpace.comp_eq_hom_comp, BasedTopologicalSpace.Hom.toContinuousMap_comp,
     BasedTopologicalSpace.id_eq_hom_id, BasedTopologicalSpace.Hom.toContinuousMap_id]
-  exact h
 
 /-- **The fundamental group on the pointed homotopy category**, induced by the fundamental group of
 based spaces: pointed-homotopic maps induce the same homomorphism. -/
@@ -186,6 +185,18 @@ theorem fundamentalGroupFunctor_map_quotient_map {X Y : BasedTopologicalSpace.{u
     fundamentalGroupFunctor.map (quotient.map f) =
       BasedTopologicalSpace.fundamentalGroupFunctor.map f :=
   (rfl)
+
+/-- If the forward morphism of an isomorphism `e` in `PointedHomotopyCat` induces a group
+isomorphism `φ` on fundamental groups, then its inverse `e.inv` induces `φ.symm`. -/
+theorem fundamentalGroupFunctor_map_inv_of_map_hom_eq {X Y : BasedTopologicalSpace.{u}}
+    {e : quotient.obj X ≅ quotient.obj Y}
+    {φ : FundamentalGroup X.carrier X.basepoint ≃* FundamentalGroup Y.carrier Y.basepoint}
+    (he : fundamentalGroupFunctor.map e.hom = GrpCat.ofHom φ.toMonoidHom) :
+    fundamentalGroupFunctor.map e.inv = GrpCat.ofHom φ.symm.toMonoidHom := by
+  have hcomp := congrArg fundamentalGroupFunctor.map e.inv_hom_id
+  rw [CategoryTheory.Functor.map_comp, he, CategoryTheory.Functor.map_id] at hcomp
+  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦ φ.injective ?_
+  exact (congrArg (fun f ↦ f.hom a) hcomp).trans (φ.apply_symm_apply a).symm
 
 end PointedHomotopyCat
 

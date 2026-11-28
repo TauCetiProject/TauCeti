@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
 import TauCeti.AlgebraicTopology.ClassifyingSpace.MapsToAspherical
+import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 import TauCeti.Topology.Homotopy.Extension.CWComplex
 import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
@@ -36,12 +37,14 @@ homomorphisms `π₁(X) ⟶ G` (`TauCeti.classifyingSpaceHomotopyFunctorHomEquiv
 `classifyingSpace G → classifyingSpace H` is the class of `classifyingSpaceMap φ` for a unique
 homomorphism `φ`, namely the one it induces on fundamental groups.
 
-The cellular model determines the induced maps up to pointed homotopy, and is isomorphic to
-Milnor's model in `PointedHomotopyCat` (`TauCeti.cellularClassifyingSpacePointedHomotopyIso`).
-Consequently, for a presentation `e : PresentedGroup R ≃* G` and `φ : G →* H`, every pointed map
-from the cellular model of `G` to `classifyingSpace H` that induces `φ` is pointed homotopic to
-the comparison map of `TauCeti.cellularHomotopyEquivClassifyingSpace` followed by the map
-`classifyingSpaceMap φ` (`TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`).
+The cellular model determines the induced maps up to pointed homotopy, and is isomorphic in
+`PointedHomotopyCat` to every well-pointed aspherical space of CW type with the same fundamental
+group (`TauCeti.cellularClassifyingSpaceHomotopyEquivIso`), and in particular to Milnor's model
+(`TauCeti.cellularClassifyingSpacePointedHomotopyIso`). Consequently, for a presentation
+`e : PresentedGroup R ≃* G` and `φ : G →* H`, every pointed map from the cellular model of `G` to
+`classifyingSpace H` that induces `φ` is pointed homotopic to the comparison map of
+`TauCeti.cellularHomotopyEquivClassifyingSpace` followed by the map `classifyingSpaceMap φ`
+(`TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`).
 
 ## Main definitions
 
@@ -56,6 +59,9 @@ the comparison map of `TauCeti.cellularHomotopyEquivClassifyingSpace` followed b
 * `TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`: the classifying-space functor to the
   pointed homotopy category is fully faithful.
 * `TauCeti.cellularClassifyingSpaceBased`: the cellular classifying space as a based space.
+* `TauCeti.cellularClassifyingSpaceHomotopyEquivIso`: pointed isomorphism in `PointedHomotopyCat`
+  from the cellular model to any well-pointed aspherical space of CW type realizing a prescribed
+  isomorphism on `π₁`.
 * `TauCeti.cellularHomotopyEquivClassifyingSpaceBasedHom` and
   `TauCeti.cellularClassifyingSpacePointedHomotopyIso`: the comparison of the cellular model with
   Milnor's classifying space, as a based map and as an isomorphism in `PointedHomotopyCat`.
@@ -199,6 +205,16 @@ def classifyingSpaceHomotopyFunctorFullyFaithful :
   preimage_map :=
     NatIso.naturality_1 classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
 
+/-- The explicit formula for the inverse on morphisms of
+`classifyingSpaceHomotopyFunctorFullyFaithful`. -/
+theorem classifyingSpaceHomotopyFunctorFullyFaithful_preimage {G H : GrpCat.{u}}
+    (f : classifyingSpaceHomotopyFunctor.obj G ⟶ classifyingSpaceHomotopyFunctor.obj H) :
+    classifyingSpaceHomotopyFunctorFullyFaithful.preimage f =
+      classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.inv.app G ≫
+        PointedHomotopyCat.fundamentalGroupFunctor.map f ≫
+        classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H :=
+  (rfl)
+
 instance : classifyingSpaceHomotopyFunctor.{u}.Full :=
   classifyingSpaceHomotopyFunctorFullyFaithful.full
 
@@ -324,8 +340,8 @@ def cellularClassifyingSpacePointedHomotopyIso {G : GrpCat.{u}}
     ⟨h.choose, h.choose_spec.1⟩
   { hom := PointedHomotopyCat.quotient.map (cellularHomotopyEquivClassifyingSpaceBasedHom R e)
     inv := PointedHomotopyCat.quotient.map gHom
-    hom_inv_id := PointedHomotopyCat.quotient_map_comp_eq_id _ _ h.choose_spec.2.1
-    inv_hom_id := PointedHomotopyCat.quotient_map_comp_eq_id _ _ h.choose_spec.2.2 }
+    hom_inv_id := (PointedHomotopyCat.quotient_map_comp_eq_id_iff _ _).2 h.choose_spec.2.1
+    inv_hom_id := (PointedHomotopyCat.quotient_map_comp_eq_id_iff _ _).2 h.choose_spec.2.2 }
 
 @[simp]
 theorem cellularClassifyingSpacePointedHomotopyIso_hom {G : GrpCat.{u}}
@@ -335,6 +351,63 @@ theorem cellularClassifyingSpacePointedHomotopyIso_hom {G : GrpCat.{u}}
         (cellularHomotopyEquivClassifyingSpaceBasedHom R e) := by
   unfold cellularClassifyingSpacePointedHomotopyIso
   rfl
+
+/-- **The cellular classifying space is isomorphic in `PointedHomotopyCat` to every well-pointed
+aspherical space of CW type with the same fundamental group.** Its forward morphism is the pointed
+homotopy class of `cellularClassifyingSpaceHomotopyEquiv R hY φ`, inducing `φ` on `π₁`, and its
+inverse induces `φ⁻¹` with no base-point change. -/
+def cellularClassifyingSpaceHomotopyEquivIso {Y : BasedTopologicalSpace.{u}} [CWType Y.carrier]
+    (hY : IsAspherical Y.carrier Y.basepoint)
+    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
+    (φ : FundamentalGroup (cellularClassifyingSpace R) (cellularClassifyingSpaceBasepoint R) ≃*
+      FundamentalGroup Y.carrier Y.basepoint) :
+    PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R) ≅
+      PointedHomotopyCat.quotient.obj Y :=
+  PointedHomotopyCat.isoOfHomotopyEquiv
+    (hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint R) hY_hep
+    (cellularClassifyingSpaceHomotopyEquiv R hY φ)
+    (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY φ)
+
+/-- The forward morphism of `cellularClassifyingSpaceHomotopyEquivIso` is the pointed homotopy
+class of `cellularClassifyingSpaceHomotopyEquiv`. -/
+theorem cellularClassifyingSpaceHomotopyEquivIso_hom {Y : BasedTopologicalSpace.{u}}
+    [CWType Y.carrier] (hY : IsAspherical Y.carrier Y.basepoint)
+    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
+    (φ : FundamentalGroup (cellularClassifyingSpace R) (cellularClassifyingSpaceBasepoint R) ≃*
+      FundamentalGroup Y.carrier Y.basepoint) :
+    (cellularClassifyingSpaceHomotopyEquivIso R hY hY_hep φ).hom =
+      PointedHomotopyCat.quotient.map
+        ⟨(cellularClassifyingSpaceHomotopyEquiv R hY φ).toFun,
+          cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY φ⟩ :=
+  PointedHomotopyCat.isoOfHomotopyEquiv_hom _ _ _ _
+
+/-- The forward morphism of `cellularClassifyingSpaceHomotopyEquivIso` induces `φ` on `π₁`. -/
+@[simp]
+theorem fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_hom
+    {Y : BasedTopologicalSpace.{u}} [CWType Y.carrier] (hY : IsAspherical Y.carrier Y.basepoint)
+    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
+    (φ : FundamentalGroup (cellularClassifyingSpace R) (cellularClassifyingSpaceBasepoint R) ≃*
+      FundamentalGroup Y.carrier Y.basepoint) :
+    PointedHomotopyCat.fundamentalGroupFunctor.map
+        (cellularClassifyingSpaceHomotopyEquivIso R hY hY_hep φ).hom =
+      GrpCat.ofHom φ.toMonoidHom := by
+  rw [cellularClassifyingSpaceHomotopyEquivIso_hom,
+    PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map]
+  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦ ?_
+  exact mapOfEq_cellularClassifyingSpaceHomotopyEquiv_toFun_apply R hY φ a
+
+/-- The inverse morphism of `cellularClassifyingSpaceHomotopyEquivIso` induces `φ⁻¹` on `π₁`. -/
+@[simp]
+theorem fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_inv
+    {Y : BasedTopologicalSpace.{u}} [CWType Y.carrier] (hY : IsAspherical Y.carrier Y.basepoint)
+    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
+    (φ : FundamentalGroup (cellularClassifyingSpace R) (cellularClassifyingSpaceBasepoint R) ≃*
+      FundamentalGroup Y.carrier Y.basepoint) :
+    PointedHomotopyCat.fundamentalGroupFunctor.map
+        (cellularClassifyingSpaceHomotopyEquivIso R hY hY_hep φ).inv =
+      GrpCat.ofHom φ.symm.toMonoidHom :=
+  PointedHomotopyCat.fundamentalGroupFunctor_map_inv_of_map_hom_eq
+    (fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_hom R hY hY_hep φ)
 
 end Cellular
 

@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.OrderedMap
 public import TauCeti.Topology.CWComplex.Classical.FreeAction
 public import TauCeti.Topology.CWComplex.Classical.OrbitSpace
+import TauCeti.Topology.Homotopy.Extension.CWComplex
 
 /-!
 # The CW structures on Milnor's countable join and classifying space
@@ -73,6 +74,10 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
   `TauCeti.closedCell_classifyingSpaceCellEquiv_symm_mk` and
   `TauCeti.cellFrontier_classifyingSpaceCellEquiv_symm_mk`: the open cells, closed cells and cell
   frontiers of the classifying space are the images of those of the countable join.
+* `TauCeti.classifyingSpaceBasepoint_mem_skeletonLT_one`: the base point of the classifying space
+  lies in its `0`-skeleton.
+* `TauCeti.hasHomotopyExtensionProperty_classifyingSpaceBasepoint`: Milnor's classifying space is
+  well-pointed.
 
 ## References
 
@@ -450,6 +455,12 @@ theorem classifyingSpaceBasepoint_mem_skeletonLT_one :
     (Quotient.mk'' (RealizationCell.vertex _ ⟨0, 1⟩))) ?_
   rw [openCell_classifyingSpaceCellEquiv_symm_mk]
   exact ⟨universalGSpaceBasepoint G, by simp, classifyingSpaceProj_universalGSpaceBasepoint G⟩
+
+/-- **Milnor's classifying space is well-pointed.** Its base point lies in a Hausdorff CW complex,
+so it has the homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_classifyingSpaceBasepoint (G : Type u) [Group G] :
+    HasHomotopyExtensionProperty ({classifyingSpaceBasepoint G} : Set (classifyingSpace G)) :=
+  hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G)
 
 end ClassifyingSpace
 

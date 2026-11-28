@@ -286,11 +286,7 @@ theorem exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (G : Type u) 
     ∃ R : Set (FreeGroup G), LocallyPathConnectedSpace (cellularClassifyingSpace R) ∧
       SemilocallySimplyConnectedSpace (cellularClassifyingSpace R) ∧
       IsEilenbergMacLaneSpaceOne G (cellularClassifyingSpace R)
-        (cellularClassifyingSpaceBasepoint R) := by
-  let φ : FreeGroup G →* G := FreeGroup.lift id
-  have hφ : Function.Surjective φ := fun g ↦ ⟨FreeGroup.of g, FreeGroup.lift_apply_of⟩
-  let P := Group.Presentation.ofFreeGroupHom φ hφ φ.ker (Subgroup.normalClosure_eq_self _).symm
-  exact ⟨P.rel, inferInstance, inferInstance,
-    (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace P.rel).of_mulEquiv P.presentedGroupEquiv⟩
+        (cellularClassifyingSpaceBasepoint R) :=
+  ⟨_, inferInstance, inferInstance, isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker G⟩
 
 end TauCeti

@@ -28,11 +28,16 @@ and homotopies can be modified on the base or on a skeleton and extended over th
   property inside the complex.
 * `TauCeti.hasHomotopyExtensionProperty_base`: **the base of a relative CW complex has the
   homotopy extension property inside the complex.**
-* `Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty`: a subcomplex has the homotopy
-  extension property inside the complex, since the complex is a CW complex relative to it.
+* `Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty`,
+  `Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty_univ`: a subcomplex has the
+  homotopy extension property inside the complex (and inside the ambient space when `C = univ`),
+  since the complex is a CW complex relative to it.
 * `TauCeti.hasHomotopyExtensionProperty_range_of_coe_map_eq`: the range of a map between CW
   complexes carrying every cell onto a cell, characteristic maps included, has the homotopy
   extension property, being a subcomplex.
+* `TauCeti.hasHomotopyExtensionProperty_of_base_subset_of_subset_skeletonLT_one` and
+  `TauCeti.hasHomotopyExtensionProperty_of_subset_skeletonLT_one`: every subset between the
+  base and the `0`-skeleton is a subcomplex and hence has the homotopy extension property.
 * `TauCeti.hasHomotopyExtensionProperty_singleton`: **every point of a relative CW complex outside
   its base has the homotopy extension property inside the complex**, and
   `TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex` states this for a CW structure on
@@ -177,6 +182,14 @@ theorem _root_.Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty
     (E : Subcomplex C) : HasHomotopyExtensionProperty (Subtype.val ⁻¹' (E : Set X) : Set C) :=
   @hasHomotopyExtensionProperty_base X _ _ C E E.relCWComplex
 
+/-- **A subcomplex of `univ` has the homotopy extension property in the ambient space.** -/
+theorem _root_.Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty_univ
+    [CWComplex (univ : Set X)] (E : Subcomplex (univ : Set X)) :
+    HasHomotopyExtensionProperty (E : Set X) := by
+  have h := E.hasHomotopyExtensionProperty.image (Homeomorph.Set.univ X)
+  rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter]
+    at h
+
 /-- **The range of a map carrying cells onto cells has the homotopy extension property.** Let `W`
 and `Y` carry CW structures on `univ`, and let `g : W → Y` carry every `n`-cell `i` of `W` onto an
 `n`-cell `ι n i` of `Y`, in the sense that `map n (ι n i) = g ∘ map n i`. Then the range of `g`
@@ -207,9 +220,23 @@ theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [Topologi
         refine mem_iUnion₂.2 ⟨n, ⟨ι n i, i, rfl⟩, ?_⟩
         rw [openCell, himage]
         exact mem_image_of_mem g hw)
-  have h := E.hasHomotopyExtensionProperty.image (Homeomorph.Set.univ Y)
-  rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter]
-    at h
+  exact E.hasHomotopyExtensionProperty_univ
+
+/-- **Every subset between the base and the `0`-skeleton has the homotopy extension property.**
+Such a subset is the base together with a collection of `0`-cells, each a singleton closed cell,
+so it is a subcomplex of `C`. -/
+theorem hasHomotopyExtensionProperty_of_base_subset_of_subset_skeletonLT_one
+    {S : Set X} (hDS : D ⊆ S) (hS : S ⊆ (skeletonLT C 1 : Set X)) :
+    HasHomotopyExtensionProperty (Subtype.val ⁻¹' S : Set C) := by
+  have h := (Subcomplex.ofBaseSubsetSkeletonLTOne hDS hS).hasHomotopyExtensionProperty
+  rwa [Subcomplex.coe_ofBaseSubsetSkeletonLTOne] at h
+
+/-- **Every subset of the `0`-skeleton of a CW complex has the homotopy extension property.** -/
+theorem hasHomotopyExtensionProperty_of_subset_skeletonLT_one [CWComplex (univ : Set X)]
+    {S : Set X} (hS : S ⊆ (skeletonLT (univ : Set X) 1 : Set X)) :
+    HasHomotopyExtensionProperty S := by
+  simpa only [Subcomplex.coe_ofBaseSubsetSkeletonLTOne] using
+    (Subcomplex.ofBaseSubsetSkeletonLTOne (empty_subset S) hS).hasHomotopyExtensionProperty_univ
 
 /-- **A point of a relative CW complex outside its base has the homotopy extension property
 inside the complex.** -/

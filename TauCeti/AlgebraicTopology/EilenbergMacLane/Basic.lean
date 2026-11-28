@@ -102,6 +102,12 @@ theorem of_basepoint (h : IsAspherical X x) (x' : X) : IsAspherical X x' := by
   exact IsAspherical.mk h.pathConnectedSpace fun n ↦
     subsingleton_homotopyGroup_of_pathConnectedSpace (h.subsingleton_homotopyGroup n)
 
+/-- Every homotopy group of an aspherical space in dimension at least two is trivial at every
+base point. -/
+theorem subsingleton_homotopyGroup_add_two (h : IsAspherical X x) (x' : X) (n : ℕ) :
+    Subsingleton (π_ (n + 2) X x') :=
+  (h.of_basepoint x').subsingleton_homotopyGroup n
+
 /-- The product of two aspherical spaces is aspherical. -/
 theorem prod (hX : IsAspherical X x) (hY : IsAspherical Y y) :
     IsAspherical (X × Y) (x, y) := by
