@@ -14,8 +14,9 @@ import Mathlib.Algebra.Ring.Idempotent
 This file records elementary consequences of the submultiplicativity of the norm (for instance, a
 nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`, forcing an idempotent
 of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), including its form
-`‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact positive-power
-norms without `NormOneClass` (so `‖qⁿ‖ < 1 ↔ ‖q‖ < 1` for `n ≠ 0`, `TauCeti.norm_pow_lt_one_iff`),
+`‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), `‖1‖ ≤ 1`
+(`TauCeti.norm_one_le_one`) and exact positive-power norms for multiplicative norms without
+`NormOneClass` (so `‖qⁿ‖ < 1 ↔ ‖q‖ < 1` for `n ≠ 0`, `TauCeti.norm_pow_lt_one_iff`),
 an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
 multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
@@ -260,6 +261,16 @@ theorem _root_.Finset.norm_mul_prod_pow_le {ι R : Type*} [SeminormedCommRing R]
     rw [Finset.prod_insert ht, Finset.prod_insert ht, ← mul_assoc, ← mul_assoc]
     exact (ih _).trans (by gcongr; exact norm_mul_pow_le _ _ _)
 
+/-- Without the normalisation `‖1‖ = 1`, a multiplicative norm still satisfies `‖(1 : M)‖ ≤ 1`
+(since `‖1‖ * ‖1‖ = ‖1‖` forces `‖1‖ = 0` or `‖1‖ = 1`). -/
+@[simp]
+theorem norm_one_le_one {M : Type*} [Norm M] [MulOneClass M] [NormMulClass M] :
+    ‖(1 : M)‖ ≤ 1 := by
+  have hmul : ‖(1 : M)‖ * ‖(1 : M)‖ = ‖(1 : M)‖ := by simpa using (norm_mul (1 : M) 1).symm
+  rcases eq_or_ne ‖(1 : M)‖ 0 with h0 | h0
+  · exact h0.trans_le zero_le_one
+  · exact ((mul_eq_right₀ h0).mp hmul).le
+
 /-- Without the normalisation `‖1‖ = 1`, positive powers under a multiplicative norm satisfy
 `‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1)`. -/
 theorem norm_pow_succ {M : Type*} [Norm M] [Monoid M] [NormMulClass M] (x : M) (n : ℕ) :
@@ -389,6 +400,20 @@ theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {
       _ < ε / M * M := mul_lt_mul_of_pos_right hjlt (zero_lt_one.trans_le hM1)
       _ = ε := div_mul_cancel₀ ε (zero_lt_one.trans_le hM1).ne'
   exact hs.not_gt hprod
+
+/-- In a space with `Norm` whose nonzero norms are integer powers of `b > 1`, every element has
+norm either at most `b ^ k` or at least `b ^ (k + 1)`, so the open interval `(b ^ k, b ^ (k + 1))`
+contains no norms. -/
+theorem norm_le_zpow_or_zpow_succ_le_of_disc {A : Type*} [Norm A] {b : ℝ} (hb : 1 < b)
+    (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) (k : ℤ) (y : A) :
+    ‖y‖ ≤ b ^ k ∨ b ^ (k + 1) ≤ ‖y‖ := by
+  rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
+  · exact Or.inl (hy0 ▸ (zpow_pos (zero_lt_one.trans hb) k).le)
+  · obtain ⟨m, hm⟩ := hdisc y hy0
+    rw [hm]
+    rcases le_or_gt m k with hmk | hkm
+    · exact Or.inl (zpow_le_zpow_right₀ hb.le hmk)
+    · exact Or.inr (zpow_le_zpow_right₀ hb.le (by omega))
 
 end TauCeti
 
