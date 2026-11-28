@@ -13,6 +13,7 @@ import Mathlib.Algebra.Module.ZLattice.Basic
 import Mathlib.LinearAlgebra.Countable
 import Mathlib.MeasureTheory.Group.GeometryOfNumbers
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 import TauCeti.RingTheory.NormTrace.BaseChange
 
@@ -124,11 +125,9 @@ private theorem det_mul_regularNormBodyVolume_le [DecidableEq ι] (b c : Basis �
       b.regularNormBodyVolume := by
   let e := ((c.baseChange ℝ).equivFun.symm.trans (b.baseChange ℝ).equivFun).toContinuousLinearEquiv
   have he : LinearMap.det e.toLinearEquiv.toLinearMap = ((b.toMatrix c).det : ℝ) := by
-    have hmat : LinearMap.toMatrix (Pi.basisFun ℝ ι) (Pi.basisFun ℝ ι) e.toLinearEquiv.toLinearMap =
-        (b.toMatrix c).map (fun q => (q : ℝ)) := by
-      ext i j
-      simp [e, Basis.toMatrix_apply]
-    rw [← LinearMap.det_toMatrix (Pi.basisFun ℝ ι), hmat, Rat.cast_det]
+    simpa [e, LinearEquiv.coe_det, Basis.det_apply,
+      ← RingHom.mapMatrix_apply, ← RingHom.map_det] using
+      (c.baseChange ℝ).det_equivFun_symm_trans_equivFun (b.baseChange ℝ)
   refine c.mul_regularNormBodyVolume_le_of_image b e _ ?_ ?_
   · intro x hx
     simpa only [mem_regularNormRegion, e, LinearEquiv.coe_toContinuousLinearEquiv',
@@ -303,7 +302,8 @@ noncomputable def regularNormBodyInvariant : ℝ :=
 variable {D}
 
 /-- The normalized volume can be evaluated in any rational basis. -/
-theorem regularNormBodyInvariant_eq {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℚ D) :
+theorem _root_.Module.Basis.regularNormBodyInvariant_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι ℚ D) :
     regularNormBodyInvariant D =
       Real.sqrt |(Algebra.regularDiscr ℚ b : ℝ)| * b.regularNormBodyVolume.toReal := by
   let σ := Fintype.equivFinOfCardEq (finrank_eq_card_basis b).symm
@@ -320,12 +320,12 @@ theorem regularNormBodyInvariant_pos : 0 < regularNormBodyInvariant D := by
     rw [Algebra.regularDiscr_eq_det_toMatrix_regularTraceForm,
       ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero]
     exact nondegenerate_regularTraceForm
-  rw [regularNormBodyInvariant_eq b]
+  rw [b.regularNormBodyInvariant_eq]
   exact mul_pos (Real.sqrt_pos.2 (abs_pos.2 (Rat.cast_ne_zero.mpr hb)))
     (ENNReal.toReal_pos b.regularNormBodyVolume_pos.ne' b.regularNormBodyVolume_ne_top)
 
 /-- Isomorphic rational division algebras have the same normalized norm-body volume. -/
-theorem regularNormBodyInvariant_congr {E : Type*} [DivisionRing E] [Algebra ℚ E]
+theorem _root_.AlgEquiv.regularNormBodyInvariant_congr {E : Type*} [DivisionRing E] [Algebra ℚ E]
     [FiniteDimensional ℚ E] (e : D ≃ₐ[ℚ] E) :
     regularNormBodyInvariant D = regularNormBodyInvariant E := by
   let b := Module.finBasis ℚ D
@@ -336,7 +336,7 @@ theorem regularNormBodyInvariant_congr {E : Type*} [DivisionRing E] [Algebra ℚ
     simp only [Matrix.of_apply, Function.comp_apply, AlgEquiv.toLinearEquiv_apply]
     exact Algebra.regularTraceForm_algHom_apply e.toAlgHom e.injective
       e.toLinearEquiv.finrank_eq (b i) (b j)
-  rw [regularNormBodyInvariant_eq b, regularNormBodyInvariant_eq (b.map e.toLinearEquiv),
+  rw [b.regularNormBodyInvariant_eq, (b.map e.toLinearEquiv).regularNormBodyInvariant_eq,
     hdiscr, Basis.regularNormBodyVolume_map]
 
 namespace IntegralOrder.IsOrder
@@ -367,7 +367,7 @@ theorem regularNormBodyInvariant_le {O : Subalgebra ℤ D} (hO : IsOrder ℚ O)
     have h := ENNReal.toReal_mono (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)
       (c.regularNormBodyVolume_le_two_pow hc)
     simpa [finrank_eq_card_basis c, ENNReal.toReal_pow] using h
-  rw [regularNormBodyInvariant_eq c, hdiscr, mul_comm]
+  rw [c.regularNormBodyInvariant_eq, hdiscr, mul_comm]
   gcongr
 
 end IntegralOrder.IsOrder

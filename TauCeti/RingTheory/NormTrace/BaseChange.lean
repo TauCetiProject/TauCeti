@@ -147,7 +147,7 @@ end Norm
 
 section BasisCoordinates
 
-variable {R S B : Type*} [CommSemiring R] [CommRing S] [Ring B] [Algebra R S] [Algebra R B]
+variable {R S B : Type*} [CommSemiring R] [CommRing S] [Semiring B] [Algebra R S] [Algebra R B]
 variable {ι : Type*} [Fintype ι]
 
 /-- The regular norm in scalar-extended basis coordinates is the determinant of the
