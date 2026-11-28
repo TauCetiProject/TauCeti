@@ -25,6 +25,7 @@ We use Mathlib's quotient projection and coercion into `PSL(2, ℤ)` directly.
 The center is already described by
 `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`, and the
 projective relations for `S` come from `TauCeti.NumberTheory.Modular.Relations`.
+Projectively, `S * T = R` and `S * R = T`, and `S` and `R` have finite order.
 
 ## References
 
@@ -182,6 +183,23 @@ theorem orderOf_coe_U : orderOf (U : PSL(2, ℤ)) = 3 := by
   rw [ne_eq, QuotientGroup.eq_one_iff,
     SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   decide
+
+/-- Projective decomposition `S * T = R`. -/
+theorem coe_S_mul_coe_T : (S : PSL(2, ℤ)) * T = R := by
+  rw [R_def, QuotientGroup.mk_mul]
+
+/-- Projective recovery `S * R = T`. -/
+@[simp]
+theorem coe_S_mul_coe_R : (S : PSL(2, ℤ)) * R = T := by
+  rw [← coe_S_mul_coe_T, ← mul_assoc, ← sq, coe_S_sq, one_mul]
+
+/-- `S` has finite order in `PSL(2, ℤ)`. -/
+theorem isOfFinOrder_coe_S : IsOfFinOrder (S : PSL(2, ℤ)) :=
+  orderOf_pos_iff.mp (by simp)
+
+/-- `R` has finite order in `PSL(2, ℤ)`. -/
+theorem isOfFinOrder_coe_R : IsOfFinOrder (R : PSL(2, ℤ)) :=
+  orderOf_pos_iff.mp (by simp)
 
 /-- The modular triangle homomorphism with `x ↦ U`, `y ↦ S` and `z ↦ T`. -/
 def modularHom : TriangleGroup 3 2 0 →* PSL(2, ℤ) :=
