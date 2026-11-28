@@ -255,7 +255,8 @@ private theorem forall_posSemidef_norm_sub_one_lt_subgroupOf {𝕜 : Type*} [RCL
   have hre_lt : 1 - RCLike.re (φ h) < ε ^ 2 / 2 := by
     have hmul : (N : ℝ) * (ε ^ 2 / (2 * N)) = ε ^ 2 / 2 := by field_simp [hNpos.ne']
     nlinarith
-  have hnorm_sq : ‖φ h - 1‖ ^ 2 ≤ 2 * (1 - RCLike.re (φ h)) := hφ.norm_sub_one_sq_le h1 h
+  have hnorm_sq : ‖φ h - 1‖ ^ 2 ≤ 2 * (1 - RCLike.re (φ h)) :=
+    RCLike.norm_sub_one_sq_le_of_norm_le_one (hφ.norm_apply_le_one h1 h)
   exact (sq_lt_sq₀ (norm_nonneg _) hε.le).mp (by linarith)
 
 /-- **Ambient finite-index invariance of relative property (T).** For any subgroup `Λ` and any

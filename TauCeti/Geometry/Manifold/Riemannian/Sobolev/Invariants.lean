@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Laplacian
-public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.LpKoopman
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Reducing
 

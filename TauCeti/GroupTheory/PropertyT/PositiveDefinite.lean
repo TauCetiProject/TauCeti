@@ -15,7 +15,6 @@ import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.GroupTheory.PositiveDefinite.Bounds
 import TauCeti.GroupTheory.PositiveDefinite.Metric
-import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvexHull
 
 /-!
@@ -230,7 +229,8 @@ private theorem sq_div_eight_le_one_sub_re_inv_mul_mul {φ : Γ → ℂ}
   have hre_b : 1 - (φ b).re ≤ ε ^ 2 / 32 :=
     (RCLike.one_sub_re_le_norm_sub_one (φ b)).trans hb
   have hsq_g : (4 * u) ^ 2 ≤ 1 - (φ g).re := by
-    have hnorm : ‖φ g - 1‖ ^ 2 ≤ 2 * (1 - (φ g).re) := hφ.norm_sub_one_sq_le h1 g
+    have hnorm : ‖φ g - 1‖ ^ 2 ≤ 2 * (1 - (φ g).re) :=
+      RCLike.norm_sub_one_sq_le_of_norm_le_one (hφ.norm_apply_le_one h1 g)
     have hε_sq : ε ^ 2 ≤ ‖φ g - 1‖ ^ 2 := pow_le_pow_left₀ hε hg 2
     nlinarith
   have hsqrt_g : 4 * u ≤ Real.sqrt (1 - (φ g).re) := Real.le_sqrt_of_sq_le hsq_g
