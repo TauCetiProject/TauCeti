@@ -47,6 +47,9 @@ of one orientation class give an oriented atlas.
   `z ↦ c + R ^ 2 / conj (z - c)`.
 * `EuclideanGeometry.contDiffAt_inversion`: inversion is analytic away from its centre.
 * `TauCeti.snd_inversion`: the last coordinate of inversion about a centre in `E × {0}`.
+* `TauCeti.one_sub_norm_inversion_toLp_zero_neg_one_sqrt_two_sq`,
+  `TauCeti.snd_inversion_toLp_zero_neg_one_sqrt_two`: `1 - ‖·‖ ^ 2` and the last coordinate of
+  inversion in the sphere of radius `√2` centred at `(0, -1)`.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
@@ -55,6 +58,9 @@ of one orientation class give an oriented atlas.
 * `EuclideanGeometry.inv_lt_norm_inversion_iff`, `EuclideanGeometry.norm_inversion_lt_inv_iff`:
   the inversion about the origin in the unit sphere exchanges the regions `‖v‖ < r` and
   `r⁻¹ < ‖w‖`.
+* `EuclideanGeometry.norm_inversion_sq`, `EuclideanGeometry.one_sub_norm_inversion_sq`: the squared
+  norm of inversion in any sphere, and the conformal scaling of `1 - ‖y‖ ^ 2` when the sphere is
+  orthogonal to the unit sphere (`R ^ 2 = ‖c‖ ^ 2 - 1`).
 * `EuclideanGeometry.inner_fderiv_inversion`: inversion is conformal, its derivative scales inner
   products by `(R / dist x c) ^ 4`.
 * `EuclideanGeometry.inner_fderiv_inversion_div_dist_sq`: inversion preserves the cylinder metric
@@ -150,6 +156,35 @@ theorem norm_inversion_lt_inv_iff {V : Type*} [NormedAddCommGroup V] [InnerProdu
     ‖inversion (0 : V) 1 v‖ < r⁻¹ ↔ r < ‖v‖ := by
   rw [norm_inversion_zero_one, inv_lt_inv₀ (norm_pos_iff.2 hv) hr]
 
+/-- The squared Euclidean norm of sphere inversion: for `c, y : V` and `R : ℝ`,
+`‖inversion c R y‖² = (R / dist y c)⁴ ‖y - c‖² + 2 (R / dist y c)² ⟪y - c, c⟫ + ‖c‖²`. -/
+theorem norm_inversion_sq {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (c : V) (R : ℝ) (y : V) :
+    ‖inversion c R y‖ ^ 2 =
+      ((R / dist y c) ^ 2) ^ 2 * ‖y - c‖ ^ 2 +
+        2 * (R / dist y c) ^ 2 * inner ℝ (y - c) c + ‖c‖ ^ 2 := by
+  simp only [inversion_def, vsub_eq_sub, vadd_eq_add]
+  rw [norm_add_sq_real, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_smul_left]
+  ring
+
+/-- If the sphere of centre `c` and radius `R` is orthogonal to the unit sphere
+(`R ^ 2 = ‖c‖ ^ 2 - 1`), then for `y ≠ c`,
+`1 - ‖inversion c R y‖ ^ 2 = (R / dist y c) ^ 2 * (1 - ‖y‖ ^ 2)`. -/
+theorem one_sub_norm_inversion_sq {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {c y : V} {R : ℝ} (hR : R ^ 2 = ‖c‖ ^ 2 - 1) (hy : y ≠ c) :
+    1 - ‖inversion c R y‖ ^ 2 = (R / dist y c) ^ 2 * (1 - ‖y‖ ^ 2) := by
+  have hd : dist y c ≠ 0 := dist_ne_zero.2 hy
+  set t : ℝ := (R / dist y c) ^ 2
+  have ht_mul : t * ‖y - c‖ ^ 2 = ‖c‖ ^ 2 - 1 := by
+    dsimp only [t]
+    rw [← dist_eq_norm, div_pow, hR]
+    field_simp [hd]
+  have hinner : 2 * inner ℝ (y - c) c = ‖y‖ ^ 2 - ‖y - c‖ ^ 2 - ‖c‖ ^ 2 := by
+    rw [inner_sub_left, real_inner_self_eq_norm_sq]
+    linarith [norm_sub_sq_real y c]
+  rw [norm_inversion_sq, sq t, mul_assoc t t, ht_mul]
+  linear_combination ht_mul - t * hinner
+
 /-- **Inversion is conformal**: its derivative at `x` multiplies inner products by
 `(R / dist x c) ^ 4`. At the centre both sides vanish. -/
 theorem inner_fderiv_inversion {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -216,6 +251,36 @@ theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
     (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
       (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
   simp [EuclideanGeometry.inversion]
+
+/-- Inversion in the sphere of radius `√2` centred at `(0, -1)` satisfies
+`1 - ‖inversion (0, -1) √2 p‖ ^ 2 = 4 * p.snd / dist p (0, -1) ^ 2` for `p ≠ (0, -1)`. -/
+theorem one_sub_norm_inversion_toLp_zero_neg_one_sqrt_two_sq {p : WithLp 2 (E × ℝ)}
+    (hp : p ≠ WithLp.toLp 2 (0, -1)) :
+    1 - ‖EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) p‖ ^ 2 =
+      4 * p.snd / dist p (WithLp.toLp 2 (0, -1)) ^ 2 := by
+  set c : WithLp 2 (E × ℝ) := WithLp.toLp 2 (0, -1)
+  have hc : ‖c‖ ^ 2 = 1 := by rw [← real_inner_self_eq_norm_sq]; simp [c]
+  have hinner : inner ℝ (p - c) c = -(p.snd + 1) := by simp [c]
+  rw [norm_inversion_sq, hinner, hc, ← dist_eq_norm, div_pow, Real.sq_sqrt zero_le_two]
+  field_simp [dist_ne_zero.2 hp]
+  ring
+
+/-- The last coordinate of inversion in the sphere of radius `√2` centred at `(0, -1)` at
+`p ≠ (0, -1)` is `(1 - ‖p‖ ^ 2) / dist p (0, -1) ^ 2`. -/
+theorem snd_inversion_toLp_zero_neg_one_sqrt_two {p : WithLp 2 (E × ℝ)}
+    (hp : p ≠ WithLp.toLp 2 (0, -1)) :
+    (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) p).snd =
+      (1 - ‖p‖ ^ 2) / dist p (WithLp.toLp 2 (0, -1)) ^ 2 := by
+  let c : WithLp 2 (E × ℝ) := WithLp.toLp 2 (0, -1)
+  have hc : ‖c‖ ^ 2 = 1 := by rw [← real_inner_self_eq_norm_sq]; simp [c]
+  have hinner : inner ℝ p c = -p.snd := by simp [c]
+  have hd_sq : dist p c ^ 2 = ‖p‖ ^ 2 + 2 * p.snd + 1 := by
+    rw [dist_eq_norm, norm_sub_sq_real, hc, hinner]
+    ring
+  simp only [inversion_def, vsub_eq_sub, vadd_eq_add, div_pow, Real.sq_sqrt zero_le_two,
+    WithLp.add_snd, WithLp.smul_snd, WithLp.sub_snd, WithLp.toLp_snd, smul_eq_mul]
+  field_simp [dist_ne_zero.2 hp]
+  linarith [hd_sq]
 
 /-- Inversion in a sphere of positive radius sends a point other than the centre into the open
 ball exactly when the point lies outside the closed ball. -/

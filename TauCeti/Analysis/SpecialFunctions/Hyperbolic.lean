@@ -40,8 +40,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Real.tanh` is nonnegative exactly on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and
   smooth.
 * `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
-* `Real.hasDerivAt_tanh`, `Real.deriv_tanh` and `Real.one_sub_tanh_sq` — the derivative of
-  `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
+* `Real.hasDerivAt_tanh`, `Real.hasDerivAt_tanh'`, `Real.deriv_tanh`, `HasDerivAt.tanh`,
+  `HasDerivAt.tanh'` and `Real.one_sub_tanh_sq` — the derivative of `Real.tanh` is
+  `1 / cosh x ^ 2 = 1 - tanh x ^ 2`, together with its chain-rule forms.
 * `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
 * `Real.one_add_exp_two_mul`, `Real.one_add_tanh`, `Real.one_sub_tanh`,
@@ -178,10 +179,26 @@ theorem hasDerivAt_tanh (x : ℝ) : HasDerivAt tanh (1 / cosh x ^ 2) x := by
   convert h using 1
   rw [← sq, ← sq, cosh_sq_sub_sinh_sq]
 
+/-- The derivative of the hyperbolic tangent in Riccati form: `1 - tanh x ^ 2`. -/
+theorem hasDerivAt_tanh' (x : ℝ) : HasDerivAt tanh (1 - tanh x ^ 2) x :=
+  (one_sub_tanh_sq x).symm ▸ hasDerivAt_tanh x
+
 /-- The derivative of the hyperbolic tangent is `1 / cosh x ^ 2`. -/
 @[simp]
 theorem deriv_tanh (x : ℝ) : deriv tanh x = 1 / cosh x ^ 2 :=
   (hasDerivAt_tanh x).deriv
+
+/-- The chain rule for `Real.tanh`: composing with a function that has derivative `f'` at `x`
+multiplies the derivative by `1 / cosh (f x) ^ 2`. -/
+theorem _root_.HasDerivAt.tanh {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDerivAt f f' x) :
+    HasDerivAt (fun y ↦ Real.tanh (f y)) (1 / Real.cosh (f x) ^ 2 * f') x :=
+  (Real.hasDerivAt_tanh (f x)).comp x hf
+
+/-- The chain rule for `Real.tanh` in Riccati form: composing with a function that has derivative
+`f'` at `x` gives derivative `(1 - tanh (f x) ^ 2) * f'`. -/
+theorem _root_.HasDerivAt.tanh' {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDerivAt f f' x) :
+    HasDerivAt (fun y ↦ Real.tanh (f y)) ((1 - Real.tanh (f x) ^ 2) * f') x :=
+  (Real.hasDerivAt_tanh' (f x)).comp x hf
 
 /-- The derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`, so `(cosh x)⁻¹` solves
 `v' = -tanh(x) v`. -/
