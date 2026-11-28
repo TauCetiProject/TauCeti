@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Length.Support
 import Mathlib.Algebra.Module.LocalizedModule.Exact
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
-import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Length.Localization
 import TauCeti.RingTheory.Length
 
@@ -42,20 +41,6 @@ universe u
 namespace TauCeti.AlgebraicGeometry.Chow
 
 variable {R : Type*} [CommRing R] {d : ℕ}
-
-/-- A point of an affine scheme has dimension `d` exactly when its prime quotient does. -/
-theorem mem_pointsOfDimension_spec_iff {p : PrimeSpectrum R} :
-    (p : Spec (.of R)) ∈ pointsOfDimension (Spec (.of R)) d ↔ ringKrullDim (R ⧸ p.asIdeal) = d := by
-  have h : Order.height (α := Spec (.of R)) p = Order.coheight p :=
-    (Order.height_orderIso (specOrderIsoPrimeSpectrum (.of R)) p).symm.trans (Order.height_toDual p)
-  refine (mem_pointsOfDimension (X := Spec (.of R)) (x := p) (k := d)).trans ?_
-  rw [h, ← p.coheight_eq_ringKrullDim_quotient]
-  constructor
-  · rintro ⟨n, h, hn⟩
-    obtain rfl : n = d := by exact_mod_cast hn
-    exact_mod_cast h
-  · intro h
-    exact ⟨d, by exact_mod_cast h, rfl⟩
 
 variable [IsNoetherianRing R] (M : Type*) [AddCommGroup M] [Module R M]
 
