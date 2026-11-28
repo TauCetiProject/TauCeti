@@ -11,8 +11,9 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 /-!
 # Weighted products of conditional factors
 
-`Fintype.prod_prod_ite_mul_pow` combines `Fintype.prod_ite_eq'` with
-`Finset.prod_comm` to evaluate a weighted product with two singleton-supported factors.
+`Fintype.prod_prod_ite_mul_pow` splits a weighted double product of two singleton-supported
+factors into one product per selected index. The indices may coincide, so overlapping
+contributions can be collected without a case split.
 -/
 
 public section

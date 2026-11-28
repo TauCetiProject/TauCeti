@@ -75,7 +75,7 @@ linear test when the opposite argument comes from the distinguished block. -/
 private theorem dvd_of_direction_cover {p e : ℕ} (hp : p.Prime) {d : R}
     (hd : d ^ (p ^ e) ∣ (p : R))
     (Y Z : ∀ h : Option ι, (Fin (directionBlockSize height h) → R) →ₗ[R] (n → R))
-    (root : n → R) (hroot : ∀ i, root i ^ (p ^ e) = Z none 1 i)
+    (root : n → R) (hroot : ∀ i, d ^ (p ^ e) ∣ Z none 1 i - root i ^ (p ^ e))
     {h j : Option ι} (x : Fin (directionBlockSize height h) → R)
     (y : Fin (directionBlockSize height j) → R)
     (hcover : (∃ x', x = d • x') ∨ (∃ y', y = d ^ (p ^ e) • y') ∨
@@ -100,9 +100,14 @@ private theorem dvd_of_direction_cover {p e : ℕ} (hp : p.Prime) {d : R}
     exact dvd_mul_right ..
   · have hy : Z none y = y (0 : Fin 1) • Z none 1 := oneDirection (Z none) y
     rw [hy, dotProduct_smul, smul_eq_mul]
-    have hroot' : (fun i ↦ root i ^ (p ^ e)) = Z none 1 := funext hroot
+    have hdiff : d ^ (p ^ e) ∣
+        (fun i ↦ (Y h x i) ^ (p ^ e)) ⬝ᵥ Z none 1 -
+          (fun i ↦ (Y h x i) ^ (p ^ e)) ⬝ᵥ (fun i ↦ root i ^ (p ^ e)) := by
+      rw [← dotProduct_sub]
+      exact Finset.dvd_sum fun i _ ↦ (hroot i).mul_left _
     rw [dotProduct_comm] at hx
-    exact dvd_mul_of_dvd_right (hroot' ▸ pow_dvd_dotProduct_pow hp hd hx) _
+    exact dvd_mul_of_dvd_right ((dvd_iff_dvd_of_dvd_sub hdiff).2
+      (pow_dvd_dotProduct_pow hp hd hx)) _
   · have hx : Y none x = x (0 : Fin 1) • Y none 1 := oneDirection (Y none) x
     rw [hx, scalePow, smul_dotProduct, smul_eq_mul]
     exact dvd_mul_of_dvd_right hy _
@@ -112,19 +117,25 @@ when the partner block is distinguished and its place is marked. -/
 def DirectionPairExempt (markL markR : Bool) (h j : Option ι) : Prop :=
   h = none ∧ (markL = true ∨ j = none ∧ markR = true)
 
+/-- For arbitrary block labels, exemption requires a distinguished source and either a marked
+source place or a marked partner place with a distinguished partner block. -/
+theorem directionPairExempt_def (markL markR : Bool) (h j : Option ι) :
+    DirectionPairExempt markL markR h j ↔ h = none ∧ (markL = true ∨ j = none ∧ markR = true) :=
+  Iff.rfl
+
 /-- An ordinary source block is never exempt. -/
 @[simp] theorem directionPairExempt_some_left (markL markR : Bool) (i : ι) (j : Option ι) :
-    DirectionPairExempt markL markR (some i) j ↔ False := by simp [DirectionPairExempt]
+    DirectionPairExempt markL markR (some i) j ↔ False := by simp [directionPairExempt_def]
 
 /-- With an ordinary partner block, exemption requires a marked distinguished source. -/
 @[simp] theorem directionPairExempt_none_some (markL markR : Bool) (j : ι) :
     DirectionPairExempt markL markR (none : Option ι) (some j) ↔ markL = true := by
-  simp [DirectionPairExempt]
+  simp [directionPairExempt_def]
 
 /-- A pair of distinguished blocks is exempt when either place is marked. -/
 @[simp] theorem directionPairExempt_none_none (markL markR : Bool) :
     DirectionPairExempt markL markR (none : Option ι) none ↔ markL = true ∨ markR = true := by
-  simp [DirectionPairExempt]
+  simp [directionPairExempt_def]
 
 /-- The deduction in powers of the source modulus, where the partner modulus is its
 `q`-th power. The two minima choose between covering the source and covering the partner. -/
@@ -198,14 +209,16 @@ submodules that make all nonexempt pairings divisible by `d^(p^e)`. The `none` b
 height one, and `some i` has height `height i`. A pair is exempt only when its left block is
 `none` and either its left place is marked or its right block is `none` at a marked place.
 
-The weighted sum of the colength exponents, measured in powers of `d`, is the sum of the
-two minimum costs and the number of taller columns on the left. The exponent on the right
-is measured first in powers of `d^(p^e)`, so its contribution is multiplied by `p^e`.
+The partner's distinguished coordinates admit roots modulo `d^(p^e)`. The weighted sum
+of the colength exponents, measured in powers of `d`, is the sum of the two minimum costs
+and the number of columns in ordinary (`some`) source blocks, regardless of height. The
+exponent on the right is measured first in powers of `d^(p^e)`, so its contribution is
+multiplied by `p^e`.
 The submodules can be intersected before extracting any determinant witnesses. -/
 theorem exists_colengthDvd_frobenius_pairing [PreValuationRing R] [Fintype ι]
     {p e : ℕ} (hp : p.Prime) {d : R} (hd : d ^ (p ^ e) ∣ (p : R))
     (Y Z : ∀ h : Option ι, (Fin (h.elim 1 height) → R) →ₗ[R] (n → R))
-    (root : n → R) (hroot : ∀ i, root i ^ (p ^ e) = Z none 1 i)
+    (root : n → R) (hroot : ∀ i, d ^ (p ^ e) ∣ Z none 1 i - root i ^ (p ^ e))
     (a b : Option ι → ℕ) (markL markR : Bool) :
     ∃ (L M : ∀ h : Option ι, Submodule R (Fin (h.elim 1 height) → R)) (l r : Option ι → ℕ),
       (∀ h, (⊤ : Submodule R _).ColengthDvd (L h) (d ^ l h)) ∧

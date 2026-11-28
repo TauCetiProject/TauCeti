@@ -17,8 +17,8 @@ import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
 submodules from `TauCeti.exists_colengthDvd_frobenius_pairing` to impose all nonexempt
 congruences on one family of direction changes. Its weighted determinant divisibility
 bound is used in the theta-jet substitution.
-`AddValuation.exists_direction_matrices_with_le_frobenius_deduction` converts this divisibility
-to the normalized additive valuation budget.
+`AddValuation.exists_direction_matrices_with_det_valuation_le_frobenius_budget` converts
+this divisibility to the normalized additive valuation budget.
 
 The construction follows `New.exists_newDirection_dvd` in
 `grh/src/New/Derivatives/Divisibility/NullFrames.lean` of
@@ -37,10 +37,10 @@ namespace TauCeti
 matrix per place and block label suffices to make all nonexempt pairings divisible by `π`.
 The label `none` denotes the distinguished size-one block. A `some` block of size one
 follows the same exemption rule as any other `some` block. The function `a` gives column
-multiplicities. The modulus `π` divides `p`, each `d i` is a `p ^ e i`-th root of `π`,
-and each coordinate of the partner's distinguished direction `Y (partner i t) none 1`
-admits a `p ^ e i`-th root. The weighted product of matrix determinants divides the product
-of the local congruence costs expressed in the modulus roots. -/
+multiplicities. The modulus `π` divides `p`. For each `i ∈ s`, `d i` is a `p ^ e i`-th root
+of `π`, and each coordinate of the partner's distinguished direction `Y (partner i t) none 1`
+admits a `p ^ e i`-th root modulo `π`. The weighted product of matrix determinants divides
+the product of the local congruence costs expressed in the modulus roots. -/
 theorem exists_direction_matrices_with_dvd_frobenius_pairings
     {R ι n τ I : Type*} [CommRing R] [PreValuationRing R]
     [Fintype ι] [Fintype n] [Fintype τ] {height : ι → ℕ}
@@ -49,7 +49,7 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
     (a : τ → Option ι → ℕ)
     (Y : ∀ (_ : τ) (h : Option ι), (Fin (h.elim 1 height) → R) →ₗ[R] (n → R))
     (d : I → R) (hd : ∀ i ∈ s, d i ^ (p ^ e i) = π)
-    (hroot : ∀ i ∈ s, ∀ t j, ∃ x : R, x ^ (p ^ e i) = Y (partner i t) none 1 j) :
+    (hroot : ∀ i ∈ s, ∀ t j, ∃ x : R, π ∣ Y (partner i t) none 1 j - x ^ (p ^ e i)) :
     ∃ g : ∀ (_ : τ) (h : Option ι), Matrix (Fin (h.elim 1 height)) (Fin (h.elim 1 height)) R,
       (∀ i ∈ s, ∀ t h j, ¬DirectionPairExempt (mark t) (mark (partner i t)) h j →
         ∀ k k', π ∣ (fun u ↦ (Y t h (g t h k) u) ^ (p ^ e i)) ⬝ᵥ
@@ -62,7 +62,8 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
   have hlocal (i : s) (t : τ) :=
     exists_colengthDvd_frobenius_pairing (e := e i) (d := d i) hp
       ((hd i i.property).symm ▸ hπ) (Y t) (Y (partner i t)) (root i i.property t)
-      (hroot i i.property t) (a t) (a (partner i t)) (mark t) (mark (partner i t))
+      (by rw [hd i i.property]; exact hroot i i.property t)
+      (a t) (a (partner i t)) (mark t) (mark (partner i t))
   choose L M l r hL hM hcost hpair using hlocal
   let A (t : τ) (h : Option ι) (i : s) (u : τ) : Submodule R (Fin (h.elim 1 height) → R) :=
     (if t = u then L i u h else ⊤) ⊓ (if t = partner i u then M i u h else ⊤)
@@ -112,7 +113,7 @@ open TauCeti (DirectionPairExempt directionDeductionCost
 
 /-- The direction changes satisfying all nonexempt congruences for `s` can be chosen
 with total weighted determinant valuation at most `v π` times the normalized deduction. -/
-theorem exists_direction_matrices_with_le_frobenius_deduction
+theorem exists_direction_matrices_with_det_valuation_le_frobenius_budget
     {R ι n τ I : Type*} [CommRing R] [PreValuationRing R]
     [Fintype ι] [Fintype n] [Fintype τ] {height : ι → ℕ}
     (v : AddValuation R ℝ≥0∞) {p : ℕ} (hp : p.Prime) {π : R} (hπ : π ∣ (p : R))
@@ -120,7 +121,7 @@ theorem exists_direction_matrices_with_le_frobenius_deduction
     (a : τ → Option ι → ℕ)
     (Y : ∀ (_ : τ) (h : Option ι), (Fin (h.elim 1 height) → R) →ₗ[R] (n → R))
     (d : I → R) (hd : ∀ i ∈ s, d i ^ (p ^ e i) = π)
-    (hroot : ∀ i ∈ s, ∀ t j, ∃ x : R, x ^ (p ^ e i) = Y (partner i t) none 1 j) :
+    (hroot : ∀ i ∈ s, ∀ t j, ∃ x : R, π ∣ Y (partner i t) none 1 j - x ^ (p ^ e i)) :
     ∃ g : ∀ (_ : τ) (h : Option ι), Matrix (Fin (h.elim 1 height)) (Fin (h.elim 1 height)) R,
       (∀ i ∈ s, ∀ t h j, ¬DirectionPairExempt (mark t) (mark (partner i t)) h j →
         ∀ k k', π ∣ (fun u ↦ (Y t h (g t h k) u) ^ (p ^ e i)) ⬝ᵥ
