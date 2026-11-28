@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Exp
-public import TauCeti.Algebra.Polynomial.Derivative
+public import TauCeti.Algebra.Polynomial.ExpDerivFactor
 
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -84,7 +84,7 @@ theorem hasDerivAt_sum_eval_mul_exp {ι : Type*} (s : Finset ι) (γ : ι → �
       (∑ i ∈ s, (expDerivFactor (γ i) 1 (p i)).eval x * Real.exp (γ i * x)) x := by
   refine HasDerivAt.fun_sum fun i _ ↦ ?_
   refine (((p i).hasDerivAt x).fun_mul ((hasDerivAt_id' x).const_mul (γ i)).exp).congr_deriv ?_
-  simp only [expDerivFactor_one_apply, eval_add, eval_mul, eval_C, mul_one]
+  simp only [expDerivFactor_one, eval_add, eval_mul, eval_C, mul_one]
   ring
 
 end Finset
@@ -129,11 +129,11 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
         (fun i ↦ expDerivFactor (δ i) n (p i)) x).congr_deriv ?_
       simp only [F]
       refine sum_congr rfl fun i _ ↦ ?_
-      rw [expDerivFactor_one_apply, ← expDerivFactor_succ_apply]
+      rw [expDerivFactor_one, ← expDerivFactor_succ]
     have hF₀ : ∀ x ∈ Z, F 0 x = 0 := fun x hx ↦ by
       have h : F 0 x = Real.exp (-(γ a * x)) *
           ∑ i ∈ cons a t hat, (p i).eval x * Real.exp (γ i * x) := by
-        simp only [F, δ, expDerivFactor_zero, LinearMap.id_apply, mul_sum]
+        simp only [F, δ, expDerivFactor_zero, mul_sum]
         refine sum_congr rfl fun i _ ↦ ?_
         rw [mul_left_comm, ← Real.exp_add]
         congr 2
@@ -226,7 +226,7 @@ theorem hasDerivAt_sum_eval_mul_cexp {ι : Type*} (s : Finset ι) (γ : ι → �
       (∑ i ∈ s, (expDerivFactor (γ i) 1 (p i)).eval z * Complex.exp (γ i * z)) z := by
   refine HasDerivAt.fun_sum fun i _ ↦ ?_
   refine (((p i).hasDerivAt z).fun_mul ((hasDerivAt_id' z).const_mul (γ i)).cexp).congr_deriv ?_
-  simp only [expDerivFactor_one_apply, eval_add, eval_mul, eval_C, mul_one]
+  simp only [expDerivFactor_one, eval_add, eval_mul, eval_C, mul_one]
   ring
 
 /-- Iterated differentiation of `∑ₖ pₖ(z) exp(γₖ z)` applies `Polynomial.expDerivFactor γₖ n` to
@@ -242,8 +242,8 @@ theorem iteratedDeriv_sum_eval_mul_cexp {ι : Type*} (s : Finset ι) (γ : ι �
   | succ n ih =>
     funext z
     rw [iteratedDeriv_succ, ih, (s.hasDerivAt_sum_eval_mul_cexp γ _ z).deriv]
-    simp only [expDerivFactor_one_apply]
-    simp only [expDerivFactor_succ_apply]
+    simp only [expDerivFactor_one]
+    simp only [expDerivFactor_succ]
 
 end Finset
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The chord and the arc on a circle
@@ -40,6 +41,12 @@ circle.
   with the angular gap, so the distance to a fixed point of the circle is unimodal along it, and
   `TauCeti.ordConnected_inter_setOf_dist_circleMap_lt` — consequently a ball meets an arc of
   angular width at most `π` in a set of angles that is order connected.
+* `TauCeti.abs_mul_abs_sub_le_pi_div_two_mul_dist_circleMap` — conversely, Jordan's inequality
+  bounds the arc `|ρ| |θ - θ'|` within half a turn by `π / 2` times the chord, so
+  `TauCeti.antilipschitzWith_domRestrict_circleMap` — `circleMap ζ ρ` with `ρ ≠ 0` is
+  inverse-Lipschitz on any set of angles of width at most `π`, and
+  `TauCeti.exists_abs_sub_lt_and_circleMap_eq_of_mem_sphere_of_dist_lt` — a point of the circle
+  closer than the radius to the point at angle `θ` lies at an angle within `π / 2` of `θ`.
 * `TauCeti.preimage_circleMap_ball_inter_Icc` — for `0 < r ≤ 2ρ`, the angles within half a turn
   of `φ` that `circleMap c ρ` sends into the ball of radius `r` about its point at `φ` form the
   open interval of half-width `2 arcsin (r / (2ρ))` about `φ`.
@@ -245,6 +252,54 @@ theorem dist_circleMap_le_dist_circleMap_of_abs_sub_le (ζ : ℂ) (ρ : ℝ) {θ
     Real.sin_le_sin_of_le_of_le_pi_div_two
       (by linarith [abs_nonneg (u - θ₀), Real.pi_pos]) (by linarith) (by linarith)
   exact mul_le_mul_of_nonneg_left hsin (by positivity)
+
+/-- **Jordan's chord bound.** For angles at most half a turn apart, the chord of `circleMap ζ ρ` is
+at least `2 / π` times the arc `|ρ| |θ - θ'|`, by Jordan's inequality
+(`TauCeti.le_pi_div_two_mul_sin`) applied to the half-angle. -/
+theorem abs_mul_abs_sub_le_pi_div_two_mul_dist_circleMap (ζ : ℂ) (ρ : ℝ) {θ θ' : ℝ}
+    (h : |θ - θ'| ≤ π) :
+    |ρ| * |θ - θ'| ≤ π / 2 * dist (circleMap ζ ρ θ) (circleMap ζ ρ θ') := by
+  rw [dist_circleMap_eq_two_mul_sin_abs ζ ρ (by linarith [Real.pi_pos])]
+  have hj := le_pi_div_two_mul_sin (θ := |θ - θ'| / 2) (by positivity) (by linarith)
+  calc |ρ| * |θ - θ'| = 2 * |ρ| * (|θ - θ'| / 2) := by ring
+    _ ≤ 2 * |ρ| * (π / 2 * Real.sin (|θ - θ'| / 2)) := by gcongr
+    _ = π / 2 * (2 * |ρ| * Real.sin (|θ - θ'| / 2)) := by ring
+
+/-- **The circle chart is inverse-Lipschitz within half a turn.** On a set of angles any two of
+which are at most half a turn apart, `circleMap ζ ρ` with `ρ ≠ 0` is inverse-Lipschitz with
+constant `π / (2 |ρ|)` (`TauCeti.abs_mul_abs_sub_le_pi_div_two_mul_dist_circleMap`). -/
+theorem antilipschitzWith_domRestrict_circleMap (ζ : ℂ) {ρ : ℝ} (hρ : ρ ≠ 0) {s : Set ℝ}
+    (hs : ∀ a ∈ s, ∀ b ∈ s, |a - b| ≤ π) :
+    AntilipschitzWith (Real.toNNReal (π / 2 / |ρ|)) (s.domRestrict (circleMap ζ ρ)) :=
+  AntilipschitzWith.of_le_mul_dist fun a b ↦ by
+    have hρ' : 0 < |ρ| := abs_pos.2 hρ
+    rw [Real.coe_toNNReal _ (by positivity), Subtype.dist_eq, Set.domRestrict_apply,
+      Set.domRestrict_apply, div_mul_eq_mul_div, le_div_iff₀ hρ', mul_comm]
+    exact abs_mul_abs_sub_le_pi_div_two_mul_dist_circleMap ζ ρ (hs a a.property b b.property)
+
+/-- **A nearby point of the circle is within a quarter turn on the chart.** A point `z` of
+`sphere ζ ρ` at distance less than the radius `ρ` from `circleMap ζ ρ θ` is `circleMap ζ ρ φ` for
+an angle `φ` with `|φ - θ| < π / 2`: the chord at angle `π / 2` is `√2 ρ > ρ`, and within half a
+turn the chord grows with the angle
+(`TauCeti.dist_circleMap_le_dist_circleMap_of_abs_sub_le`). -/
+theorem exists_abs_sub_lt_and_circleMap_eq_of_mem_sphere_of_dist_lt (ζ : ℂ) {ρ θ : ℝ}
+    (hρ : 0 < ρ) {z : ℂ} (hz : z ∈ sphere ζ ρ) (hd : dist z (circleMap ζ ρ θ) < ρ) :
+    ∃ φ, |φ - θ| < π / 2 ∧ circleMap ζ ρ φ = z := by
+  have hz' : z ∈ circleMap ζ ρ '' Ioc (θ - π) (θ - π + 2 * π) := by
+    rw [(periodic_circleMap ζ ρ).image_Ioc Real.two_pi_pos]
+    refine ⟨(z - ζ).arg, ?_⟩
+    have h := circleMap_zero_norm_arg (z - ζ)
+    rw [mem_sphere_iff_norm.1 hz] at h
+    exact sub_left_injective ((circleMap_sub_center ζ ρ _).trans h)
+  obtain ⟨φ, ⟨hφ₁, hφ₂⟩, rfl⟩ := hz'
+  refine ⟨φ, lt_of_not_ge fun h ↦ hd.not_ge ?_, rfl⟩
+  have hφ : |φ - θ| ≤ π := abs_le.2 ⟨by linarith, by linarith⟩
+  have hle := dist_circleMap_le_dist_circleMap_of_abs_sub_le ζ ρ (u := θ + π / 2)
+    (by rwa [add_sub_cancel_left, abs_of_pos (by positivity)]) hφ
+  refine le_trans ?_ hle
+  rw [dist_circleMap_eq_two_mul_abs_sin, add_sub_cancel_left, abs_of_pos hρ,
+    show π / 2 / 2 = π / 4 by ring, Real.sin_pi_div_four, abs_of_pos (by positivity)]
+  nlinarith [Real.one_lt_sqrt_two]
 
 /-- **The sine of a half-angle is smallest at an end of the range of angles.** For
 `0 < m ≤ t ≤ w < 2 * π`, `sin (t / 2)` is at least `min (sin (m / 2)) (sin (w / 2))`, a positive

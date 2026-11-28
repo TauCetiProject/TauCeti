@@ -7,9 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
-public import Mathlib.RingTheory.PowerSeries.Exp
 public import Mathlib.RingTheory.PowerSeries.Expand
-public import TauCeti.Algebra.Polynomial.Derivative
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -53,6 +51,7 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
 * `PowerSeries.rescale_X_mul_derivative`, `PowerSeries.evalNegHom_X_mul_derivative`: rescaling
   and negating the variable commute with the Euler operator `X * d⁄dX`.
+* `PowerSeries.X_mul_derivative_mul`: the product rule for the Euler operator `X * d⁄dX`.
 * `PowerSeries.X_mul_derivative_multiset_prod_rescale`: if `Q G = X Q'`, the logarithmic
   derivative of `∏_{x ∈ s} Q(x t)` is `∑ₘ gₘ pₘ(s) tᵐ`, with `pₘ(s)` the power sums of `s`.
 * `PowerSeries.X_mul_derivative_expand`: the Euler operator `X * d⁄dX` commutes with `X ↦ Xᵖ` up to
@@ -100,9 +99,6 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.xLogDeriv`, `PowerSeries.toAdd_xLogDeriv`: `X` times the logarithmic derivative,
   `u ↦ X * u' * u⁻¹`, as a homomorphism from the units of `R⟦X⟧` to the additive group of `R⟦X⟧`,
   over any commutative ring.
-* `PowerSeries.derivative_rescale_exp`, `PowerSeries.derivative_coe_mul_rescale_exp`,
-  `PowerSeries.iterate_derivative_coe_mul_rescale_exp`: over a commutative `ℚ`-algebra, the `m`-th
-  formal derivative of `Q(X) exp(ψ X)` is `(expDerivFactor ψ m Q)(X) exp(ψ X)`.
 * `PowerSeries.eq_of_mul_derivative_eq_mul`: over a commutative ring with `HasUniqueDiv`, a series
   `P` solving `u * d⁄dX P = w * P` for `u` with non-zero-divisor constant coefficient is uniquely
   determined by `constantCoeff P`.
@@ -163,6 +159,12 @@ theorem rescale_X_mul_derivative (a : R) (φ : R⟦X⟧) :
     rescale a (X * d⁄dX φ) = X * d⁄dX (rescale a φ) := by
   ext n
   rw [coeff_rescale, coeff_X_mul_derivative, coeff_X_mul_derivative, coeff_rescale]
+  ring
+
+/-- The product rule for the Euler operator `X * d⁄dX`, in multiplicative form. -/
+theorem X_mul_derivative_mul (f g : R⟦X⟧) :
+    X * d⁄dX (f * g) = X * d⁄dX f * g + f * (X * d⁄dX g) := by
+  rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
   ring
 
 /-- The shifted coefficient identity when `n + 1` can be cancelled. -/
@@ -568,37 +570,5 @@ theorem coeff_eq_zero_of_derivative_eq_zero {R : Type*} [CommRing R] {p : ℕ}
   simp only [coeff_derivative, map_zero] at h
   exact (CharP.isUnit_natCast_iff (R := R) (Fact.out : p.Prime)).mpr hn |>.mul_right_eq_zero.mp
     (by simpa [Nat.cast_add, Nat.cast_one, mul_comm] using h)
-
-section Exp
-
-variable {A : Type*} [CommRing A] [Algebra ℚ A]
-
-/-- The formal derivative of `exp (ψ X)` is `ψ exp (ψ X)`. -/
-@[simp]
-theorem derivative_rescale_exp (ψ : A) :
-    d⁄dX (rescale ψ (exp A)) = C ψ * rescale ψ (exp A) := by
-  rw [derivative_rescale, derivative_exp]
-
-/-- Over a commutative `ℚ`-algebra, the formal derivative of `Q(X) exp(ψ X)` is
-`(Q'(X) + ψ Q(X)) exp(ψ X) = (expDerivFactor ψ 1 Q)(X) exp(ψ X)`. -/
-theorem derivative_coe_mul_rescale_exp (Q : Polynomial A) (ψ : A) :
-    d⁄dX ((Q : A⟦X⟧) * rescale ψ (exp A)) =
-      (Polynomial.expDerivFactor ψ 1 Q : A⟦X⟧) * rescale ψ (exp A) := by
-  rw [Derivation.leibniz, Polynomial.expDerivFactor_one_apply]
-  simp [derivative_coe]
-  ring
-
-/-- Over a commutative `ℚ`-algebra, the `m`-th formal derivative of an exponential polynomial
-`Q(X) exp(ψ X)` is `(expDerivFactor ψ m Q)(X) exp(ψ X)`. -/
-theorem iterate_derivative_coe_mul_rescale_exp (Q : Polynomial A) (ψ : A) (m : ℕ) :
-    (d⁄dX)^[m] ((Q : A⟦X⟧) * rescale ψ (exp A)) =
-      (Polynomial.expDerivFactor ψ m Q : A⟦X⟧) * rescale ψ (exp A) := by
-  induction m generalizing Q with
-  | zero => simp
-  | succ m ih =>
-    rw [Function.iterate_succ_apply, derivative_coe_mul_rescale_exp, ih,
-      ← Polynomial.expDerivFactor_add_apply]
-
-end Exp
 
 end PowerSeries

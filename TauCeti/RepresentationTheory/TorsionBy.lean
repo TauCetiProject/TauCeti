@@ -32,6 +32,10 @@ representations. For `k = ℤ`, `r = ℓ` a prime and `G` a group acting on abel
 the sequence of `G`-modules behind the comparison of `V ⧸ ℓV` with `V[ℓ]` in
 Neukirch–Schmidt–Wingberg, *Cohomology of Number Fields*, (7.3.3).
 
+The vectors annihilated by an ideal `I` similarly carry a representation over `k ⧸ I`,
+`Representation.torsionByIdeal`, functorial in intertwining maps. For the maximal ideal of a
+local coefficient ring this gives the representation on the socle over the residue field.
+
 ## Main definitions
 
 * `Representation.torsionBy`: the representation induced by `ρ` on the `r`-torsion `V[r]`.
@@ -75,6 +79,46 @@ theorem torsionBy_apply (ρ : Representation k G V) (r : k) (g : G) :
 theorem coe_torsionBy_apply (ρ : Representation k G V) (r : k) (g : G)
     (x : Submodule.torsionBy k V r) : (ρ.torsionBy r g x : V) = ρ g x :=
   (rfl)
+
+section IdealTorsion
+
+open Submodule
+
+variable {A G V W : Type*} [CommRing A] [Monoid G] [AddCommGroup V] [Module A V]
+  [AddCommGroup W] [Module A W]
+
+/-- The action on the vectors killed by `I`, as a representation over the quotient ring. -/
+def torsionByIdeal (ρ : Representation A G V) (I : Ideal A) :
+    Representation (A ⧸ I) G (torsionBySet A V I) where
+  toFun g := (ρ g).torsionByIdeal I
+  map_one' := by simp [Module.End.one_eq_id]
+  map_mul' g h := by simp [Module.End.mul_eq_comp]
+
+@[simp]
+theorem torsionByIdeal_apply (ρ : Representation A G V) (I : Ideal A) (g : G) :
+    ρ.torsionByIdeal I g = (ρ g).torsionByIdeal I := (rfl)
+
+/-- An intertwiner induces an intertwiner of the quotient-ring representations on ideal
+torsion. -/
+def IntertwiningMap.torsionByIdeal {ρ : Representation A G V} {σ : Representation A G W}
+    (f : ρ.IntertwiningMap σ) (I : Ideal A) :
+    (ρ.torsionByIdeal I).IntertwiningMap (σ.torsionByIdeal I) where
+  toLinearMap := f.toLinearMap.torsionByIdeal I
+  isIntertwining' g := by
+    simp only [torsionByIdeal_apply, ← LinearMap.torsionByIdeal_comp, f.isIntertwining']
+
+@[simp]
+theorem IntertwiningMap.toLinearMap_torsionByIdeal {ρ : Representation A G V}
+    {σ : Representation A G W} (f : ρ.IntertwiningMap σ) (I : Ideal A) :
+    (f.torsionByIdeal I).toLinearMap = f.toLinearMap.torsionByIdeal I := (rfl)
+
+@[simp]
+theorem IntertwiningMap.coe_torsionByIdeal_apply {ρ : Representation A G V}
+    {σ : Representation A G W} (f : ρ.IntertwiningMap σ) (I : Ideal A) (v : torsionBySet A V I) :
+    (f.torsionByIdeal I v : W) = f v :=
+  LinearMap.coe_torsionByIdeal_apply _ _ _
+
+end IdealTorsion
 
 namespace IntertwiningMap
 

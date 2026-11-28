@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
-public import TauCeti.Algebra.Polynomial.Derivative
+public import TauCeti.Algebra.Polynomial.ExpDerivFactor
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import TauCeti.Algebra.Polynomial.Taylor
@@ -63,9 +63,8 @@ Over an ultrametric seminormed commutative ring `K`, natural-number multiples sa
 `‖n • a‖ ≤ ‖a‖`, so formal differentiation shifts polynomial coefficients down by one degree
 without introducing factorial growth. Consequently, if `‖P.coeff i‖ * r ^ i ≤ B` for some `r > 0`,
 each application of `Polynomial.expDerivFactor c 1 = D + c` multiplies this weighted bound by at
-most `max r⁻¹ ‖c‖` (`Polynomial.norm_coeff_expDerivFactor_mul_pow_le`, with uniform specialization
-`Polynomial.norm_coeff_expDerivFactor_le` and corresponding closed-ball evaluation bounds
-`Polynomial.norm_eval_expDerivFactor_le_of_mul_pow_le` and
+most `max r⁻¹ ‖c‖` (`Polynomial.norm_coeff_expDerivFactor_mul_pow_le`, with closed-ball evaluation
+bounds `Polynomial.norm_eval_expDerivFactor_le_of_mul_pow_le` and
 `Polynomial.norm_eval_expDerivFactor_le`).
 
 Over an ultrametric seminormed integral domain with `‖1‖ = 1`, let `P` be a split monic
@@ -125,7 +124,7 @@ theorem norm_coeff_expDerivFactor_mul_pow_le (c : K) {P : K[X]} {r B : ℝ} (hr 
         rw [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, mul_comm]
       rw [hnsmul]
       exact IsUltrametricDist.norm_nsmul_le _ _
-    rw [expDerivFactor_succ_apply, coeff_add, coeff_derivative, coeff_C_mul]
+    rw [expDerivFactor_succ, coeff_add, coeff_derivative, coeff_C_mul]
     refine (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_add_le_max _ _)
       (by positivity)).trans ?_
     rw [max_mul_of_nonneg _ _ (by positivity), pow_succ', mul_assoc]
@@ -150,13 +149,6 @@ theorem norm_coeff_expDerivFactor_mul_pow_le (c : K) {P : K[X]} {r B : ℝ} (hr 
             mul_le_mul_of_nonneg_left (ih i) (norm_nonneg c)
         _ ≤ max r⁻¹ ‖c‖ * (max r⁻¹ ‖c‖ ^ m * B) :=
             mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
-
-/-- In an ultrametric seminormed commutative ring, applying `expDerivFactor c m` multiplies a
-uniform bound on the coefficients of `P` by at most `max 1 ‖c‖ ^ m`. -/
-theorem norm_coeff_expDerivFactor_le (c : K) {P : K[X]} {B : ℝ}
-    (hP : ∀ i, ‖P.coeff i‖ ≤ B) (m i : ℕ) :
-    ‖(expDerivFactor c m P).coeff i‖ ≤ max 1 ‖c‖ ^ m * B := by
-  simpa using norm_coeff_expDerivFactor_mul_pow_le c one_pos (by simpa using hP) m i
 
 /-- Ultrametric evaluation bound for `expDerivFactor c m P` on the closed ball `‖x‖ ≤ r` (`r > 0`)
 from an `r`-weighted coefficient bound on `P`. -/

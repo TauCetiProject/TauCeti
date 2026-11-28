@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.Padics.PadicNumbers
-public import TauCeti.RingTheory.PowerSeries.Derivative
+public import TauCeti.Algebra.Polynomial.ExpDerivFactor
+public import TauCeti.RingTheory.PowerSeries.Exp.Derivative
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Polynomial.Ultra
@@ -59,6 +60,8 @@ its `m`-th formal derivative evaluates via `FormalMultilinearSeries.ofScalarsSum
 ## References
 
 * A. Baker, *Transcendental Number Theory*, Cambridge University Press (1975), Chapter 2.
+* N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, 2nd ed., GTM 58,
+  Chapter IV, §1.
 * M. Karatarakis, `ExpSeries.lean` in `mkaratarakis/mathlib4`, commit
   `65cdef5722194f07709ab40ff46eede531f52f5d`, `Mathlib/NumberTheory/Transcendental/Baker/Padic/`.
 -/
@@ -134,7 +137,7 @@ theorem hasSum_coeff_coe_mul_rescale_exp [CompleteSpace L] (Q : L[X]) {ψ x : L}
   have hE_res : (rescale ψ (exp L)).IsRestricted ‖x‖ :=
     isRestricted_rescale_exp (norm_nonneg x) (by simpa [norm_mul] using h)
   have hmul_res : ((Q : PowerSeries L) * rescale ψ (exp L)).IsRestricted ‖x‖ :=
-    (IsRestricted.subring ‖x‖).mul_mem hQ_res hE_res
+    hQ_res.mul hE_res
   have hE_eval : (rescale ψ (exp L)).evalAt x = NormedSpace.exp (ψ * x) := by
     rw [evalAt_rescale, evalAt_exp, smul_eq_mul, mul_comm]
   simpa only [smul_eq_mul, hQ_res.evalAt_mul hE_res le_rfl, evalAt_coe,

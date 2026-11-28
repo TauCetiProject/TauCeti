@@ -39,20 +39,16 @@ lower the degree of a derivative even when it preserves the degree of the polyno
 Over an additively torsion-free target the second phenomenon cannot occur: preserving the degree
 of `p` preserves the degree of `p.derivative`.
 
+At a unit root `u`, the derivative of a reflected polynomial at `u⁻¹` is a unit multiple of
+its original derivative at `u` (`Polynomial.eval_derivative_reflect_mul_pow`).
+
 A self-reciprocal polynomial `p` of even degree bound `2 g`, one with `X ^ (2 g) p (1 / X) = p (X)`,
 satisfies `p' (1) = g p (1)`: the coefficients in degrees `i` and `2 g - i` agree and their
 weights `i - g` and `g - i` cancel. The characteristic polynomial of a symplectic matrix is the
 basic example.
 
-For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` preserves the
-degree of a polynomial and has trivial kernel. Over a commutative semiring,
-`Polynomial.expDerivFactor c m` packages the `m`-th power `(derivative + c • id) ^ m` as an
-`R`-linear endomorphism of `R[X]` (agreeing with `(fun Q ↦ Q' + C c * Q)^[m]` via
-`Polynomial.expDerivFactor_apply_eq_iterate`); because differentiation commutes with scalar
-multiplication, it expands binomially in iterated derivatives (`Polynomial.expDerivFactor_eq_sum`),
-never increases `natDegree`, has degree-`natDegree` coefficient `c ^ m * P.leadingCoeff`, and
-preserves `natDegree`, has trivial kernel, and has leading coefficient `c ^ m * P.leadingCoeff`
-whenever `R` has no zero divisors and `c ≠ 0`.
+For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
+iterates preserve the degree of a polynomial and have trivial kernel.
 
 Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a)` at `a`.
 
@@ -73,12 +69,6 @@ has no antiderivative.
 
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
-
-## References
-
-* A. Baker, *Transcendental Number Theory*, Cambridge University Press (1975), Chapter 2.
-* M. Karatarakis, `ExpSeries.lean` in `mkaratarakis/mathlib4`, commit
-  `65cdef5722194f07709ab40ff46eede531f52f5d`, `Mathlib/NumberTheory/Transcendental/Baker/Padic/`.
 -/
 
 public section
@@ -197,6 +187,30 @@ theorem _root_.Polynomial.eval_derivative_C_mul_X_sub_C_mul_X_sub_C_mul_X_sub_C 
     eval_sub, eval_C, eval_X, eval_one, eval_zero]
   ring
 
+/-- At a unit root `u` of `p`, reflection at a degree bound `k + 1` changes its derivative at the
+reciprocal root by the factor `-u / u^k`, expressed without division. -/
+theorem _root_.Polynomial.eval_derivative_reflect_mul_pow [CommRing R] (p : R[X])
+    {k : ℕ} (hk : p.natDegree ≤ k + 1) (u : Rˣ) (hu : p.IsRoot (u : R)) :
+    (p.reflect (k + 1)).derivative.eval (↑u⁻¹ : R) * (u : R) ^ k =
+      -(u : R) * p.derivative.eval (u : R) := by
+  by_cases hp : p = 0
+  · simp [hp]
+  have := Nontrivial.of_polynomial_ne hp
+  obtain ⟨q, hq⟩ := dvd_iff_isRoot.mpr hu
+  have hqne : q ≠ 0 := right_ne_zero_of_mul (hq ▸ hp)
+  have hdeg : p.natDegree = 1 + q.natDegree := by
+    rw [hq, (monic_X_sub_C (u : R)).natDegree_mul' hqne, natDegree_X_sub_C]
+  have hqk : q.natDegree ≤ k := by omega
+  have hreflect : p.reflect (k + 1) = (1 - C (u : R) * X) * q.reflect k := by
+    rw [hq, Nat.add_comm k 1, reflect_mul _ _ (by simp) hqk]
+    simp [reflect_sub, reflect_C]
+  let : Invertible (u : R) := u.isUnit.invertible
+  have heval : (q.reflect k).eval (↑u⁻¹ : R) * (u : R) ^ k = q.eval (u : R) := by
+    simpa only [invOf_units, eval₂_id] using
+      eval₂_reflect_mul_pow (RingHom.id R) (u : R) k q hqk
+  rw [hreflect, hq]
+  simp [derivative_mul, mul_assoc, heval]
+
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/
 theorem _root_.Polynomial.derivative_eval_one_of_reflect_eq [CommRing R] {p : R[X]} {g : ℕ}
@@ -280,210 +294,28 @@ theorem _root_.Polynomial.derivative_add_C_mul_eq_zero_iff (hδ : δ ≠ 0) :
   by_contra hq
   exact coeff_natDegree_derivative_add_C_mul_ne_zero hδ hq (by rw [h, coeff_zero])
 
+/-- For `δ ≠ 0`, every iterate of the operator `q ↦ q' + δ q` preserves the degree of a
+polynomial. -/
+@[simp]
+theorem _root_.Polynomial.natDegree_iterate_derivative_add_C_mul (hδ : δ ≠ 0) (n : ℕ) :
+    ((fun r ↦ derivative r + C δ * r)^[n] q).natDegree = q.natDegree := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Function.iterate_succ_apply', natDegree_derivative_add_C_mul hδ, ih]
+
+/-- For `δ ≠ 0`, every iterate of the operator `q ↦ q' + δ q` has trivial kernel. -/
+@[simp]
+theorem _root_.Polynomial.iterate_derivative_add_C_mul_eq_zero_iff (hδ : δ ≠ 0) (n : ℕ) :
+    (fun r ↦ derivative r + C δ * r)^[n] q = 0 ↔ q = 0 := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Function.iterate_succ_apply', derivative_add_C_mul_eq_zero_iff hδ, ih]
+
 end ShiftedDerivative
 
 end TauCeti
 
 namespace Polynomial
-
-section ExpDerivFactor
-
-variable {R : Type*} [CommSemiring R]
-
-/-- The `m`-th iterate `(D + c) ^ m` of the shifted derivative `Q ↦ Q' + c Q` on `R[X]`, as an
-`R`-linear endomorphism. Under formal differentiation of power series, multiplying by `exp (c X)`
-intertwines `d/dX` with `expDerivFactor c 1`. -/
-noncomputable def expDerivFactor (c : R) (m : ℕ) : R[X] →ₗ[R] R[X] :=
-  (derivative + c • LinearMap.id) ^ m
-
-theorem expDerivFactor_def (c : R) (m : ℕ) :
-    expDerivFactor c m = (derivative + c • LinearMap.id) ^ m :=
-  (rfl)
-
-@[simp]
-theorem expDerivFactor_zero (c : R) : expDerivFactor c 0 = LinearMap.id :=
-  (rfl)
-
-theorem expDerivFactor_one (c : R) : expDerivFactor c 1 = derivative + c • LinearMap.id :=
-  pow_one _
-
-theorem expDerivFactor_one_apply (c : R) (P : R[X]) :
-    expDerivFactor c 1 P = derivative P + C c * P := by
-  simp [expDerivFactor_one, smul_eq_C_mul]
-
-theorem expDerivFactor_succ (c : R) (m : ℕ) :
-    expDerivFactor c (m + 1) = (derivative + c • LinearMap.id) ∘ₗ expDerivFactor c m :=
-  pow_succ' _ m
-
-theorem expDerivFactor_succ' (c : R) (m : ℕ) :
-    expDerivFactor c (m + 1) = expDerivFactor c m ∘ₗ (derivative + c • LinearMap.id) :=
-  pow_succ _ m
-
-theorem expDerivFactor_succ_apply (c : R) (m : ℕ) (P : R[X]) :
-    expDerivFactor c (m + 1) P =
-      derivative (expDerivFactor c m P) + C c * expDerivFactor c m P := by
-  simp [expDerivFactor_succ, smul_eq_C_mul]
-
-theorem expDerivFactor_succ_apply' (c : R) (m : ℕ) (P : R[X]) :
-    expDerivFactor c (m + 1) P = expDerivFactor c m (derivative P + C c * P) := by
-  simp [expDerivFactor_succ', smul_eq_C_mul]
-
-theorem expDerivFactor_add (c : R) (m n : ℕ) :
-    expDerivFactor c (m + n) = expDerivFactor c m ∘ₗ expDerivFactor c n :=
-  pow_add _ m n
-
-theorem expDerivFactor_add_apply (c : R) (m n : ℕ) (P : R[X]) :
-    expDerivFactor c (m + n) P = expDerivFactor c m (expDerivFactor c n P) := by
-  rw [expDerivFactor_add]
-  rfl
-
-/-- Applying `expDerivFactor c m` agrees with iterating `Q ↦ Q' + C c * Q` `m` times. -/
-theorem expDerivFactor_apply_eq_iterate (c : R) (m : ℕ) (P : R[X]) :
-    expDerivFactor c m P = (fun Q ↦ derivative Q + C c * Q)^[m] P := by
-  rw [expDerivFactor_def, _root_.pow_apply_eq_iterate]
-  congr 2
-  ext Q
-  simp [smul_eq_C_mul]
-
-/-- At `c = 0`, `expDerivFactor 0 m` is the `m`-th iterated derivative. -/
-@[simp]
-theorem expDerivFactor_zero_left (m : ℕ) (P : R[X]) :
-    expDerivFactor (0 : R) m P = derivative^[m] P := by
-  simp [expDerivFactor_apply_eq_iterate]
-
-/-- Differentiation commutes with `expDerivFactor c m`. -/
-theorem commute_derivative_expDerivFactor (c : R) (m : ℕ) :
-    Commute (derivative : R[X] →ₗ[R] R[X]) (expDerivFactor c m) := by
-  refine Commute.pow_right (Commute.add_right (Commute.refl _) ?_) m
-  ext P
-  simp
-
-theorem derivative_expDerivFactor (c : R) (m : ℕ) (P : R[X]) :
-    derivative (expDerivFactor c m P) = expDerivFactor c m (derivative P) :=
-  LinearMap.congr_fun (commute_derivative_expDerivFactor c m) P
-
-@[simp]
-theorem expDerivFactor_C (c a : R) (m : ℕ) :
-    expDerivFactor c m (C a) = C (c ^ m * a) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [expDerivFactor_succ_apply, ih, derivative_C]
-    simp
-    ring
-
-/-- **Binomial form of `(D + c) ^ m`.** Since differentiation commutes with scalar multiplication by
-`c`, `expDerivFactor c m P = ∑ j ≤ m, (m choose j) c ^ (m - j) P⁽ʲ⁾`. -/
-theorem expDerivFactor_eq_sum (c : R) (m : ℕ) (P : R[X]) :
-    expDerivFactor c m P =
-      ∑ j ∈ Finset.range (m + 1), C ((m.choose j : R) * c ^ (m - j)) * derivative^[j] P := by
-  have hcomm : Commute (derivative : R[X] →ₗ[R] R[X]) (c • LinearMap.id) := by
-    ext Q
-    simp
-  rw [expDerivFactor_def, hcomm.add_pow, LinearMap.sum_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp [mul_apply_eq_comp, natCast_apply_eq_smul, smul_pow, _root_.pow_apply_eq_iterate,
-    smul_eq_C_mul]
-  ring
-
-/-- Explicit binomial expansion of `expDerivFactor c m (X ^ d)`, the polynomial factor of the
-`m`-th derivative of `X ^ d exp(c X)`. -/
-theorem expDerivFactor_X_pow (c : R) (m d : ℕ) :
-    expDerivFactor c m (X ^ d) =
-      ∑ j ∈ Finset.range (m + 1),
-        C ((m.choose j : R) * c ^ (m - j) * d.descFactorial j) * X ^ (d - j) := by
-  rw [expDerivFactor_eq_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [iterate_derivative_X_pow_eq_C_mul, ← mul_assoc, ← C_mul]
-
-theorem coeff_expDerivFactor (c : R) (m : ℕ) (P : R[X]) (i : ℕ) :
-    (expDerivFactor c m P).coeff i =
-      ∑ j ∈ Finset.range (m + 1), (m.choose j : R) * c ^ (m - j) * (derivative^[j] P).coeff i := by
-  rw [expDerivFactor_eq_sum, ← lcoeff_apply, map_sum]
-  simp only [lcoeff_apply, coeff_C_mul]
-
-theorem eval_expDerivFactor (c : R) (m : ℕ) (P : R[X]) (x : R) :
-    (expDerivFactor c m P).eval x =
-      ∑ j ∈ Finset.range (m + 1), (m.choose j : R) * c ^ (m - j) * (derivative^[j] P).eval x := by
-  rw [expDerivFactor_eq_sum, eval_finsetSum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [eval_mul, eval_C]
-
-/-- `expDerivFactor` commutes with `Polynomial.map` along any ring homomorphism. -/
-theorem map_expDerivFactor {S : Type*} [CommSemiring S] (f : R →+* S) (c : R) (m : ℕ)
-    (P : R[X]) : (expDerivFactor c m P).map f = expDerivFactor (f c) m (P.map f) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [expDerivFactor_succ_apply, expDerivFactor_succ_apply]
-    simp [← derivative_map, ih]
-
-/-- Applying `expDerivFactor c m` does not increase `natDegree`. -/
-theorem natDegree_expDerivFactor_le (c : R) (m : ℕ) (P : R[X]) :
-    (expDerivFactor c m P).natDegree ≤ P.natDegree := by
-  induction m with
-  | zero => exact le_rfl
-  | succ m ih =>
-    rw [expDerivFactor_succ_apply]
-    exact (natDegree_add_le _ _).trans <| max_le
-      ((natDegree_derivative_le _).trans ((Nat.sub_le _ _).trans ih))
-      ((natDegree_C_mul_le _ _).trans ih)
-
-/-- Applying `expDerivFactor c m` does not increase `degree`. -/
-theorem degree_expDerivFactor_le (c : R) (m : ℕ) (P : R[X]) :
-    (expDerivFactor c m P).degree ≤ P.degree := by
-  rcases eq_or_ne P 0 with rfl | hP
-  · simp
-  · exact degree_le_natDegree.trans
-      ((WithBot.coe_le_coe.mpr (natDegree_expDerivFactor_le c m P)).trans_eq
-        (degree_eq_natDegree hP).symm)
-
-/-- The coefficient of `expDerivFactor c m P` in degree `P.natDegree` is `c ^ m * P.leadingCoeff`:
-each differentiation drops the top term below degree `P.natDegree`. -/
-theorem coeff_expDerivFactor_natDegree (c : R) (m : ℕ) (P : R[X]) :
-    (expDerivFactor c m P).coeff P.natDegree = c ^ m * P.leadingCoeff := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    have hzero : (expDerivFactor c m P).coeff (P.natDegree + 1) = 0 :=
-      coeff_eq_zero_of_natDegree_lt
-        ((natDegree_expDerivFactor_le c m P).trans_lt (Nat.lt_succ_self _))
-    rw [expDerivFactor_succ_apply]
-    simp [coeff_derivative, hzero, ih]
-    ring
-
-section NoZeroDivisors
-
-variable [NoZeroDivisors R] {c : R}
-
-/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` preserves the degree
-of a polynomial whenever `c ≠ 0`. -/
-@[simp]
-theorem natDegree_expDerivFactor (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
-    (expDerivFactor c m P).natDegree = P.natDegree := by
-  induction m with
-  | zero => simp
-  | succ m ih => rw [expDerivFactor_succ_apply, natDegree_derivative_add_C_mul hc, ih]
-
-/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` has trivial kernel
-whenever `c ≠ 0`. -/
-@[simp]
-theorem expDerivFactor_eq_zero_iff (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
-    expDerivFactor c m P = 0 ↔ P = 0 := by
-  induction m with
-  | zero => simp
-  | succ m ih => rw [expDerivFactor_succ_apply, derivative_add_C_mul_eq_zero_iff hc, ih]
-
-/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` scales the leading
-coefficient by `c ^ m` whenever `c ≠ 0`. -/
-@[simp]
-theorem leadingCoeff_expDerivFactor (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
-    (expDerivFactor c m P).leadingCoeff = c ^ m * P.leadingCoeff := by
-  rw [leadingCoeff, natDegree_expDerivFactor hc, coeff_expDerivFactor_natDegree]
-
-end NoZeroDivisors
-
-end ExpDerivFactor
 
 /-- The quotient of `p` by `X - a` takes the value `p' (a)` at `a`, over any commutative ring.
 Note that `a` need not be a root of `p`. -/

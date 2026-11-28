@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FiniteKernel
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.FDeriv.Truncation
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
@@ -286,19 +287,21 @@ theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mul_integral_norm_sq_le {c c₁
   have hVn (n : ℕ) : ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 *
       ‖y z‖ ^ 2) ≤ ENNReal.ofReal (K * ∫ z, ‖y z‖ ^ 2) := by
     have hε : 0 < 1 / ((n : ℝ) + 1) := by positivity
-    have hV0 := exp_div_one_add_mul_exp_nonneg (E := ℂ) (b := 1) d hε.le
+    have hV0 (z : ℂ) : 0 ≤ W z / (1 + 1 / ((n : ℝ) + 1) * W z) :=
+      div_one_add_mul_nonneg (Real.exp_pos _).le hε.le
     refine lintegral_ofReal_sq_mul_norm_sq_le hx
       (fun u hu huc hu0 ↦ hR u hu huc fun z hz ↦ hu0 z (hz.trans hRR')) hd0 hc₁
       (Real.exp_pos _).le (hb 2) hb01 (fun z hz ↦ hb1 z (by simpa using hz))
       (fun z hz ↦ hb0 z (by simpa using hz)) hbd hbb hb'c
       (fun z hz ↦ hb'0 z (by simpa using hz))
-      (contDiff_exp_div_one_add_mul_exp d one_pos hε.le) hV0
-      (exp_div_one_add_mul_exp_le_one_div d hε) (fun z ↦ ?_) (fun z hz ↦ ?_) hyK
-    · refine (norm_fderiv_exp_div_one_add_mul_exp_le d one_pos hε.le z).trans ?_
-      rw [abs_of_nonneg hd0]
-      exact mul_le_mul_of_nonneg_right
-        (mul_le_of_le_one_right hd0 (norm_div_sqrt_add_norm_sq_le_one zero_le_one z)) (hV0 z)
-    · exact (exp_div_one_add_mul_exp_le_exp d hε.le z).trans (Real.exp_le_exp.2
+      ((contDiff_exp_mul_sqrt_add_norm_sq d one_pos).div_one_add_mul
+        (fun _ ↦ (Real.exp_pos _).le) hε.le) hV0
+      (fun _ ↦ div_one_add_mul_le_one_div (Real.exp_pos _).le hε) (fun z ↦ ?_) (fun z hz ↦ ?_)
+      hyK
+    · simpa only [abs_of_nonneg hd0] using norm_fderiv_div_one_add_mul_le
+        ((contDiff_exp_mul_sqrt_add_norm_sq (n := 1) d one_pos).differentiable (by simp) z)
+        (Real.exp_pos _) hε.le (norm_fderiv_exp_mul_sqrt_add_norm_sq_le d one_pos z)
+    · exact (div_one_add_mul_le_self (Real.exp_pos _).le hε.le).trans (Real.exp_le_exp.2
         (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by gcongr)) hd0))
   have hWy := lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
     (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) d one_pos).continuous.aemeasurable
