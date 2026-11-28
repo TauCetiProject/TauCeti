@@ -61,66 +61,22 @@ theorem linearTensor_smul (G : ModCat.{w} Cᵒᵖ) (F : ModCat.{w} C) (r : R)
   exact (AdditiveFunctor.liftToModuleCat_smul R (.of (tensor.obj G)) F r z).trans
     (ConcreteCategory.congr_hom (congrArg (tensor.obj G).map h) z)
 
-/-- The class of a pure tensor, viewed in the scalar module on the tensor product. -/
-noncomputable abbrev linearTmul {G : ModCat.{w} Cᵒᵖ} {F : ModCat.{w} C}
-    (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
-    ((linearTensor R).obj G).obj F :=
-  tmul X x y
-
 /-- On pure tensors, the scalar acts on the second entry. -/
 @[simp]
 theorem linearTensor_smul_tmul (G : ModCat.{w} Cᵒᵖ) (F : ModCat.{w} C) (r : R)
     (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
-    r • linearTmul R X x y =
-      linearTmul R X x (F.obj.map (r • 𝟙 (op X)) y) := by
+    HSMul.hSMul (β := ↑(((linearTensor R).obj G).obj F)) r (tmul X x y) =
+      tmul X x (F.obj.map (r • 𝟙 (op X)) y) := by
   simpa only [tensor_obj_map_tmul, AdditiveFunctor.smulEnd_hom_app] using
     linearTensor_smul R G F r (tmul X x y)
 
 /-- On pure tensors, the scalar can equally act on the first entry. -/
 theorem linearTensor_smul_tmul_left (G : ModCat.{w} Cᵒᵖ) (F : ModCat.{w} C) (r : R)
     (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
-    r • linearTmul R X x y =
-      linearTmul R X (G.obj.map (r • 𝟙 (op (op X))) x) y := by
+    HSMul.hSMul (β := ↑(((linearTensor R).obj G).obj F)) r (tmul X x y) =
+      tmul X (G.obj.map (r • 𝟙 (op (op X))) x) y := by
   simpa only [← tensor_map_app_smulEnd, tensor_map_app_tmul,
     AdditiveFunctor.smulEnd_hom_app] using linearTensor_smul R G F r (tmul X x y)
-
-/-- Tensoring a map in the second variable retains the underlying additive map. -/
-@[simp]
-theorem linearTensor_obj_map_apply (G : ModCat.{w} Cᵒᵖ) {F F' : ModCat.{w} C}
-    (β : F ⟶ F') (z : tensorObj G F) :
-    ((linearTensor R).obj G).map β z = (tensor.obj G).map β z := (rfl)
-
-/-- Tensoring a map in the first variable retains the underlying additive map. -/
-@[simp]
-theorem linearTensor_map_app_apply {G G' : ModCat.{w} Cᵒᵖ} (α : G ⟶ G')
-    (F : ModCat.{w} C) (z : tensorObj G F) :
-    ((linearTensor R).map α).app F z = (tensor.map α).app F z := (rfl)
-
-variable {G : ModCat.{w} Cᵒᵖ} {F F' : ModCat.{w} C} in
-/-- A map of left modules acts on the second entry of a pure tensor in the scalar module. -/
-@[simp↓]
-theorem linearTensor_obj_map_tmul (β : F ⟶ F') (X : C) (x : G.obj.obj (op (op X)))
-    (y : F.obj.obj (op X)) :
-    ((linearTensor R).obj G).map β (linearTmul R X x y) =
-      linearTmul R X x (β.hom.app (op X) y) :=
-  tensor_obj_map_tmul G β X x y
-
-variable {G G' : ModCat.{w} Cᵒᵖ} {F : ModCat.{w} C} in
-/-- A map of right modules acts on the first entry of a pure tensor in the scalar module. -/
-@[simp↓]
-theorem linearTensor_map_app_tmul (α : G ⟶ G') (X : C) (x : G.obj.obj (op (op X)))
-    (y : F.obj.obj (op X)) :
-    ((linearTensor R).map α).app F (linearTmul R X x y) =
-      linearTmul R X (α.hom.app (op (op X)) x) y :=
-  tensor_map_app_tmul α F X x y
-
-variable {G : ModCat.{w} Cᵒᵖ} {F : ModCat.{w} C} in
-/-- A morphism of the base category can be moved between the entries of a pure tensor
-in the scalar module. -/
-theorem linearTmul_balance {X Y : C} (f : X ⟶ Y) (x : G.obj.obj (op (op X)))
-    (y : F.obj.obj (op Y)) :
-    linearTmul R Y (G.obj.map f.op.op x) y = linearTmul R X x (F.obj.map f.op y) :=
-  tmul_balance f x y
 
 instance (G : ModCat.{w} Cᵒᵖ) : ((linearTensor R).obj G).Additive :=
   inferInstanceAs ((AdditiveFunctor.of (tensor.obj G)).liftToModuleCat R).Additive
@@ -173,7 +129,7 @@ variable {G : ModCat.{w} Cᵒᵖ} {F : ModCat.{w} C} in
 @[ext]
 theorem linearTensor_hom_ext {M : ModuleCat.{w} R} {p q : ((linearTensor R).obj G).obj F ⟶ M}
     (h : ∀ (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)),
-      p (linearTmul R X x y) = q (linearTmul R X x y)) : p = q :=
+      p (tmul X x y) = q (tmul X x y)) : p = q :=
   (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}).map_injective (tensorObj_hom_ext h)
 
 section CommRing
@@ -193,9 +149,9 @@ instance (F : ModCat.{w} C) : ((linearTensor S).flip.obj F).Linear S :=
     ext z
     have h : r • 𝟙 G = smulEnd S r G := by
       simp [AdditiveFunctor.sourceLinear_smul_eq_comp_smulEnd]
-    exact (linearTensor_map_app_apply S (r • 𝟙 G) F z).trans (by
-      rw [h, tensor_map_app_smulEnd]
-      exact (linearTensor_smul S G F r z).symm)
+    change (tensor.map (r • 𝟙 G)).app F z = r • z
+    rw [h, tensor_map_app_smulEnd]
+    exact (linearTensor_smul S G F r z).symm
 
 /-- The curried tensor bifunctor is linear for the scalar action induced by `C` on its
 right modules. -/
@@ -210,20 +166,21 @@ variable {G : ModCat.{w} Cᵒᵖ} {F : ModCat.{w} C} {M : ModuleCat.{w} S}
 /-- The pure-tensor pairing on each pair of module values is bilinear over the scalar ring. -/
 noncomputable def linearTmulLinear (X : C) :
     G.moduleObj S (op (op X)) →ₗ[S] F.moduleObj S (op X) →ₗ[S] ((linearTensor S).obj G).obj F :=
-  LinearMap.mk₂ S (fun x y ↦ linearTmul S X x y)
+  LinearMap.mk₂ S (tmul (G := G) (F := F) X)
     (fun x x' y ↦ add_tmul X x x' y)
     (fun r x y ↦
-      (congrArg (fun x' ↦ linearTmul S X x' y) (G.moduleObj_smul S (op (op X)) r x)).trans
+      (congrArg (fun x' ↦ tmul (G := G) (F := F) X x' y)
+        (G.moduleObj_smul S (op (op X)) r x)).trans
         (linearTensor_smul_tmul_left S G F r X x y).symm)
     (fun x y y' ↦ tmul_add X x y y')
     (fun r x y ↦
-      (congrArg (linearTmul S X x) (F.moduleObj_smul S (op X) r y)).trans
+      (congrArg (tmul (G := G) (F := F) X x) (F.moduleObj_smul S (op X) r y)).trans
         (linearTensor_smul_tmul S G F r X x y).symm)
 
 /-- The bilinear pairing sends a pair of elements to their pure tensor. -/
 @[simp]
 theorem linearTmulLinear_apply (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
-    linearTmulLinear S X x y = linearTmul S X x y := (rfl)
+    linearTmulLinear S X x y = tmul X x y := (rfl)
 
 private def restrictPairing
     (b : ∀ X : C, G.moduleObj S (op (op X)) →ₗ[S] F.moduleObj S (op X) →ₗ[S] M)
@@ -265,7 +222,7 @@ theorem linearTensorDesc_tmul
     (hb : ∀ ⦃X Y : C⦄ (f : X ⟶ Y) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op Y)),
       b Y (G.obj.map f.op.op x) y = b X x (F.obj.map f.op y))
     (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
-    linearTensorDesc S b hb (linearTmul S X x y) = b X x y :=
+    linearTensorDesc S b hb (tmul X x y) = b X x y :=
   tensorDesc_tmul (A := (forget₂ (ModuleCat.{w} S) AddCommGrpCat.{w}).obj M)
     (restrictPairing S b) (fun _ _ g x y ↦ hb g x y) X x y
 
