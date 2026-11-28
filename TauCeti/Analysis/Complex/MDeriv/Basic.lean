@@ -207,20 +207,23 @@ theorem mDeriv_zero_fun (σ : Fin n → ℕ) : mDeriv σ (0 : (Fin n → ℂ) �
 
 /-- A mixed partial derivative of an entire function is entire. -/
 theorem differentiable_mDeriv {f : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (σ : Fin n → ℕ) :
-    Differentiable ℂ (mDeriv σ f) :=
-  differentiable_listDeriv hf _ σ
+    Differentiable ℂ (mDeriv σ f) := by
+  rw [mDeriv_eq_listDeriv]
+  exact differentiable_listDeriv hf _ σ
 
 /-- Raising the `i`-th order of a mixed partial derivative of an entire function by one applies
 `∂ᵢ`: `D^{σ + eᵢ} f = ∂ᵢ (D^σ f)`. -/
 theorem mDeriv_add_single {f : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (σ : Fin n → ℕ)
-    (i : Fin n) : mDeriv (σ + Pi.single i 1) f = partialDeriv i (mDeriv σ f) :=
-  listDeriv_add_single hf (List.nodup_finRange n) (List.mem_finRange i) σ
+    (i : Fin n) : mDeriv (σ + Pi.single i 1) f = partialDeriv i (mDeriv σ f) := by
+  simp only [mDeriv_eq_listDeriv]
+  exact listDeriv_add_single hf (List.nodup_finRange n) (List.mem_finRange i) σ
 
 /-- Mixed partial derivatives of an entire function compose by adding multi-orders:
 `D^σ (D^τ f) = D^{σ + τ} f`. -/
 theorem mDeriv_mDeriv {f : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (σ τ : Fin n → ℕ) :
-    mDeriv σ (mDeriv τ f) = mDeriv (σ + τ) f :=
-  listDeriv_listDeriv hf _ σ τ
+    mDeriv σ (mDeriv τ f) = mDeriv (σ + τ) f := by
+  simp only [mDeriv_eq_listDeriv]
+  exact listDeriv_listDeriv hf _ σ τ
 
 /-- The mixed partial derivative of multi-order `k eᵢ` is `∂ᵢ^k`. -/
 @[simp]
@@ -244,14 +247,16 @@ theorem mDeriv_eq_iterate_partialDeriv_mDeriv_update_zero {f : (Fin n → ℂ) �
 
 /-- `D^σ` is additive on entire functions. -/
 theorem mDeriv_add {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
-    (σ : Fin n → ℕ) : mDeriv σ (f + g) = mDeriv σ f + mDeriv σ g :=
-  listDeriv_add hf hg _ σ
+    (σ : Fin n → ℕ) : mDeriv σ (f + g) = mDeriv σ f + mDeriv σ g := by
+  simp only [mDeriv_eq_listDeriv]
+  exact listDeriv_add hf hg _ σ
 
 /-- `D^σ` commutes with multiplication by a constant. -/
 @[simp]
 theorem mDeriv_const_mul {f : (Fin n → ℂ) → ℂ} (c : ℂ) (σ : Fin n → ℕ) :
-    mDeriv σ (fun z ↦ c * f z) = fun z ↦ c * mDeriv σ f z :=
-  listDeriv_const_mul c _ σ
+    mDeriv σ (fun z ↦ c * f z) = fun z ↦ c * mDeriv σ f z := by
+  simp only [mDeriv_eq_listDeriv]
+  exact listDeriv_const_mul c _ σ
 
 /-- `D^σ` commutes with subtraction on entire functions. -/
 theorem mDeriv_sub {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
@@ -265,8 +270,9 @@ theorem mDeriv_sub {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (
 theorem mDeriv_mul_of_update_eq {φ f : (Fin n → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
     (hf : Differentiable ℂ f) {σ : Fin n → ℕ}
     (hφσ : ∀ j, σ j ≠ 0 → ∀ z s, φ (update z j s) = φ z) :
-    mDeriv σ (fun z ↦ φ z * f z) = fun z ↦ φ z * mDeriv σ f z :=
-  listDeriv_mul_of_update_eq hφ hf _ fun j _ ↦ hφσ j
+    mDeriv σ (fun z ↦ φ z * f z) = fun z ↦ φ z * mDeriv σ f z := by
+  simp only [mDeriv_eq_listDeriv]
+  exact listDeriv_mul_of_update_eq hφ hf _ fun j _ ↦ hφσ j
 
 /-- `D^σ` commutes with finite sums of entire functions. -/
 theorem mDeriv_sum {ι : Type*} (s : Finset ι) {f : ι → (Fin n → ℂ) → ℂ}

@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Complex.MDeriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.FDeriv.Pi
-import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Complex.MDeriv.Roots
 
 /-!

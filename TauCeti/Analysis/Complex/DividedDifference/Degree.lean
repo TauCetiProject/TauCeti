@@ -22,8 +22,9 @@ import TauCeti.RingTheory.Polynomial.DegreeLT
 The coordinate divided difference `TauCeti.partialDslope i` at `ζ` agrees with Euclidean division
 by `X - C ζ` along polynomial coordinate lines in direction `i`, lowers polynomial degree in `z i`
 by one, and preserves polynomial degree bounds in every other coordinate `j ≠ i` for entire
-functions (by Lagrange interpolation along coordinate `j` and linearity of `dslope · ζ`). It also
-commutes with `partialDeriv j` (`j ≠ i`) and lowers iterated `partialDeriv i` order by one.
+functions (by Lagrange interpolation along coordinate `j` and linearity of `dslope · ζ`). On entire
+functions (with finite coordinates and a complete target), it also commutes with `partialDeriv j`
+(`j ≠ i`) and lowers iterated `partialDeriv i` order by one.
 
 ## Main results
 
@@ -32,9 +33,9 @@ commutes with `partialDeriv j` (`j ≠ i`) and lowers iterated `partialDeriv i` 
 * `TauCeti.exists_degree_lt_and_partialDslope_eq_eval`: coordinate polynomial degree preservation
   under `partialDslope`.
 * `TauCeti.partialDeriv_partialDslope_of_ne`, `TauCeti.iterate_partialDeriv_partialDslope_of_ne`:
-  `∂ⱼ` commutes with `f ↦ partialDslope i f ζ` for `j ≠ i`.
+  `∂ⱼ` commutes with `f ↦ partialDslope i f ζ` on entire functions for `j ≠ i`.
 * `TauCeti.iterate_partialDeriv_partialDslope_eq_zero`: `partialDslope i f ζ` has lower
-  `partialDeriv i`-order than `f`.
+  `partialDeriv i`-order than `f` for entire `f`.
 -/
 
 public section
@@ -112,8 +113,8 @@ section PartialDeriv
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [Finite ι] [CompleteSpace E]
   {f : (ι → ℂ) → E}
 
-/-- The partial derivative `∂ⱼ` in another variable `j ≠ i` commutes with the divided difference
-in the `i`-th variable. -/
+/-- On entire functions (with finite coordinates and a complete target), the partial derivative `∂ⱼ`
+in another variable `j ≠ i` commutes with the divided difference in the `i`-th variable. -/
 theorem partialDeriv_partialDslope_of_ne (hf : Differentiable ℂ f) {i j : ι} (hji : j ≠ i)
     (ζ : ℂ) : partialDeriv j (partialDslope i f ζ) = partialDslope i (partialDeriv j f) ζ := by
   ext z
@@ -139,9 +140,10 @@ theorem partialDeriv_partialDslope_of_ne (hf : Differentiable ℂ f) {i j : ι} 
       (z i - ζ)⁻¹).deriv.trans ?_
     rw [update_eq_self, hz]
 
-/-- The iterated partial derivatives `∂ⱼ^m` in another variable `j ≠ i` commute with the divided
-difference in the `i`-th variable. In particular, if `f` is a polynomial of degree at most `e` in
-`zⱼ`, in the sense that `∂ⱼ^(e+1) f = 0`, then so is `partialDslope i f ζ`. -/
+/-- On entire functions (with finite coordinates and a complete target), the iterated partial
+derivatives `∂ⱼ^m` in another variable `j ≠ i` commute with the divided difference in the `i`-th
+variable. In particular, if `f` is a polynomial of degree at most `e` in `zⱼ`, in the sense that
+`∂ⱼ^(e+1) f = 0`, then so is `partialDslope i f ζ`. -/
 theorem iterate_partialDeriv_partialDslope_of_ne (hf : Differentiable ℂ f) {i j : ι}
     (hji : j ≠ i) (ζ : ℂ) (m : ℕ) :
     (partialDeriv j)^[m] (partialDslope i f ζ) = partialDslope i ((partialDeriv j)^[m] f) ζ := by

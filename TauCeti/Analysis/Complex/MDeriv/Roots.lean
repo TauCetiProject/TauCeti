@@ -7,15 +7,15 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Complex.MDeriv.Basic
-import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.MDeriv.Degree
 import TauCeti.Analysis.Complex.PartialDeriv.Roots
 
 /-!
 # Root-multiplicity vanishing and Hermite uniqueness for mixed partial derivatives
 
-Every mixed partial derivative `TauCeti.mDeriv κ` annihilates `y ↦ g y * P.eval (y i)` at `z`
-whenever `κ i < P.rootMultiplicity (z i)`
+For any entire function `g : (Fin n → ℂ) → ℂ`, every mixed partial derivative `TauCeti.mDeriv κ`
+annihilates `y ↦ g y * P.eval (y i)` at `z` whenever `κ i < P.rootMultiplicity (z i)`
 (`TauCeti.mDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity`).
 Conversely, an entire function `f₀ : (Fin n → ℂ) → ℂ` with coordinate polynomial degree strictly
 less than `deg (P j)` in every coordinate `z_j` whose mixed partial derivatives vanish on the
@@ -24,7 +24,7 @@ Cartesian root set `∏ᵢ Pᵢ⁻¹(0)` up to the root multiplicities is identi
 
 ## Main results
 
-* `TauCeti.mDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity`: `mDeriv κ` annihilates
+* `TauCeti.mDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity`: for entire `g`, `mDeriv κ` annihilates
   `y ↦ g y * P.eval (y i)` at `z` whenever `κ i < P.rootMultiplicity (z i)`.
 * `TauCeti.eq_zero_of_degree_lt_of_mDeriv_eq_zero`: Hermite-type uniqueness on `∏ᵢ Pᵢ⁻¹(0)` for
   entire functions with coordinate polynomial degree bounds.

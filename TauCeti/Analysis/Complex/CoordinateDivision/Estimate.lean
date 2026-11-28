@@ -15,9 +15,10 @@ import TauCeti.Topology.MetricSpace.Pseudo.Pi
 /-!
 # Polydisc supremum bounds for univariate coordinate polynomial division
 
-Polydisc supremum estimates for the univariate quotient `TauCeti.partialDivByMonic` and remainder
-`TauCeti.partialModByMonic` of an entire function `f : (ι → ℂ) → E` by a monic polynomial
-`P ∈ ℂ[X]` of degree `p` whose roots lie in `closedBall (c i) r`:
+For finite `ι`, a complete complex normed space `E`, and a monic polynomial `P ∈ ℂ[X]` of
+degree `p` whose roots lie in `closedBall (c i) r`, this file establishes polydisc supremum
+estimates for the univariate quotient `TauCeti.partialDivByMonic` and remainder
+`TauCeti.partialModByMonic` of an entire function `f : (ι → ℂ) → E`:
 
 * for `r < R` and `‖f‖ ≤ M` on `closedBall c R`, we have
   `‖f₁‖ ≤ (2 / (R - r)) ^ p M` and `‖f₀‖ ≤ (∑_{j < p} (2 (R + r) / (R - r)) ^ j) M` there;
@@ -49,34 +50,34 @@ section List
 variable {ι E : Type*} [DecidableEq ι] [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℂ E]
   [CompleteSpace E]
 
-/-- The bound `(2 / (R - r)) ^ (length l) M` for the iterated divided difference along `l`. -/
-private theorem norm_foldl_partialDslope_le {i : ι} {f : (ι → ℂ) → E} {c : ι → ℂ} {r R M : ℝ}
+/-- The bound `(2 / (R - r)) ^ (length l) M` for `partialDivByList` along `l`. -/
+private theorem norm_partialDivByList_le {i : ι} {f : (ι → ℂ) → E} {c : ι → ℂ} {r R M : ℝ}
     (hf : Differentiable ℂ f) {l : List ℂ} (hl : ∀ ζ ∈ l, ζ ∈ closedBall (c i) r) (hrR : r < R)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : ι → ℂ} (hz : z ∈ closedBall c R) :
-    ‖l.foldl (fun g ζ ↦ partialDslope i g ζ) f z‖ ≤ (2 / (R - r)) ^ l.length * M := by
+    ‖partialDivByList i f l z‖ ≤ (2 / (R - r)) ^ l.length * M := by
   induction l generalizing f M with
-  | nil => simpa using hM z hz
+  | nil => simpa [partialDivByList_nil] using hM z hz
   | cons ζ l ih =>
-    have := ih (differentiable_partialDslope hf i ζ)
+    have hq := ih (differentiable_partialDslope hf i ζ)
       (fun ζ' h ↦ hl ζ' (List.mem_cons_of_mem _ h))
       (fun w hw ↦ norm_partialDslope_le_of_mem_closedBall hf.differentiableOn
         (hl ζ List.mem_cons_self) hrR hM hw)
-    calc ‖(ζ :: l).foldl (fun g ζ ↦ partialDslope i g ζ) f z‖
-        ≤ (2 / (R - r)) ^ l.length * (2 * M / (R - r)) := this
+    calc ‖partialDivByList i f (ζ :: l) z‖
+        = ‖partialDivByList i (partialDslope i f ζ) l z‖ := by rw [partialDivByList_cons]
+      _ ≤ (2 / (R - r)) ^ l.length * (2 * M / (R - r)) := hq
       _ = (2 / (R - r)) ^ (ζ :: l).length * M := by
         rw [List.length_cons, pow_succ]
         ring
 
-/-- The bound `(∑_{j < length l} (2 (R + r) / (R - r)) ^ j) M` for the remainder along `l`. -/
-private theorem norm_sub_prod_eval_smul_foldl_le {i : ι} {f : (ι → ℂ) → E} {c : ι → ℂ}
+/-- The bound `(∑_{j < length l} (2 (R + r) / (R - r)) ^ j) M` for `partialModByList` along `l`. -/
+private theorem norm_partialModByList_le {i : ι} {f : (ι → ℂ) → E} {c : ι → ℂ}
     {r R M : ℝ} (hf : Differentiable ℂ f) {l : List ℂ}
     (hl : ∀ ζ ∈ l, ζ ∈ closedBall (c i) r) (hrR : r < R)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : ι → ℂ} (hz : z ∈ closedBall c R) :
-    ‖f z - ((l.map fun ζ ↦ X - C ζ).prod).eval (z i) •
-        l.foldl (fun g ζ ↦ partialDslope i g ζ) f z‖ ≤
+    ‖partialModByList i f l z‖ ≤
       (∑ j ∈ Finset.range l.length, (2 * (R + r) / (R - r)) ^ j) * M := by
   induction l generalizing f M with
-  | nil => simp
+  | nil => simp [partialModByList_nil]
   | cons ζ l ih =>
     have hζ := hl ζ List.mem_cons_self
     have hRr : R - r ≠ 0 := (sub_pos.2 hrR).ne'
@@ -96,18 +97,8 @@ private theorem norm_sub_prod_eval_smul_foldl_le {i : ι} {f : (ι → ℂ) → 
       rw [List.length_cons, Finset.sum_range_succ', Finset.mul_sum]
       simp only [pow_succ', pow_zero]
       ring
-    have hstep : f z - (((ζ :: l).map fun ξ ↦ X - C ξ).prod).eval (z i) •
-          (ζ :: l).foldl (fun g ξ ↦ partialDslope i g ξ) f z =
-        f (update z i ζ) + (z i - ζ) • (partialDslope i f ζ z -
-          ((l.map fun ξ ↦ X - C ξ).prod).eval (z i) •
-            l.foldl (fun g ξ ↦ partialDslope i g ξ) (partialDslope i f ζ) z) := by
-      simp only [List.map_cons, List.prod_cons, eval_mul, eval_sub, eval_X, eval_C,
-        List.foldl_cons, mul_smul]
-      rw [smul_sub, ← add_sub_assoc, add_sub_smul_partialDslope]
-    rw [hstep, hS]
-    calc ‖f (update z i ζ) + (z i - ζ) • (partialDslope i f ζ z -
-            ((l.map fun ξ ↦ X - C ξ).prod).eval (z i) •
-              l.foldl (fun g ξ ↦ partialDslope i g ξ) (partialDslope i f ζ) z)‖
+    rw [partialModByList_cons, hS]
+    calc ‖f (update z i ζ) + (z i - ζ) • partialModByList i (partialDslope i f ζ) l z‖
         ≤ M + (R + r) * (S * (2 * M / (R - r))) := by
           refine (norm_add_le _ _).trans (add_le_add h₂ ?_)
           rw [norm_smul]
@@ -130,8 +121,9 @@ theorem norm_partialDivByMonic_le (hf : Differentiable ℂ f)
     (hroots : ∀ ζ ∈ P.roots, ζ ∈ closedBall (c i) r) (hrR : r < R)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) (hz : z ∈ closedBall c R) :
     ‖partialDivByMonic i f P z‖ ≤ (2 / (R - r)) ^ P.natDegree * M := by
-  rw [partialDivByMonic_def, ← IsAlgClosed.card_roots_eq_natDegree, ← Multiset.length_toList]
-  exact norm_foldl_partialDslope_le hf (fun ζ hζ ↦ hroots ζ (Multiset.mem_toList.1 hζ)) hrR hM hz
+  rw [partialDivByMonic_eq_partialDivByList, ← IsAlgClosed.card_roots_eq_natDegree,
+    ← Multiset.length_toList]
+  exact norm_partialDivByList_le hf (fun ζ hζ ↦ hroots ζ (Multiset.mem_toList.1 hζ)) hrR hM hz
 
 /-- **Size of the remainder.** If `P` is monic, `f` is entire, the roots of `P` lie in
 `closedBall (c i) r` with `r < R` and `‖f‖ ≤ M` on `closedBall c R`, then the remainder of `f`
@@ -142,14 +134,9 @@ theorem norm_partialModByMonic_le (hP : P.Monic) (hf : Differentiable ℂ f)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) (hz : z ∈ closedBall c R) :
     ‖partialModByMonic i f P z‖ ≤
       (∑ j ∈ Finset.range P.natDegree, (2 * (R + r) / (R - r)) ^ j) * M := by
-  have hprod : (P.roots.toList.map fun ζ ↦ X - C ζ).prod = P := by
-    rw [← Multiset.prod_coe, ← Multiset.map_coe, Multiset.coe_toList]
-    exact prod_multiset_X_sub_C_of_monic_of_roots_card_eq hP IsAlgClosed.card_roots_eq_natDegree
-  rw [partialModByMonic_apply, partialDivByMonic_def, ← IsAlgClosed.card_roots_eq_natDegree,
+  rw [partialModByMonic_eq_partialModByList hP, ← IsAlgClosed.card_roots_eq_natDegree,
     ← Multiset.length_toList]
-  simpa only [hprod] using
-    norm_sub_prod_eval_smul_foldl_le hf (fun ζ hζ ↦ hroots ζ (Multiset.mem_toList.1 hζ))
-      hrR hM hz
+  exact norm_partialModByList_le hf (fun ζ hζ ↦ hroots ζ (Multiset.mem_toList.1 hζ)) hrR hM hz
 
 /-- **Size of the quotient, Waldschmidt's form.** If `f` is entire, the roots of `P` lie in
 `closedBall (c i) r`, `0 < R`, `5 r ≤ R` and `‖f‖ ≤ M` on `closedBall c R`, then the quotient of

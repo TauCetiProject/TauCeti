@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.Analysis.Complex.PartialDeriv.Basic
+import Mathlib.LinearAlgebra.Lagrange
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
-import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.Liouville
 import TauCeti.RingTheory.Polynomial.DegreeLT
 
@@ -19,8 +19,8 @@ import TauCeti.RingTheory.Polynomial.DegreeLT
 Differentiating an entire function `f : (ι → ℂ) → ℂ` along any coordinate `i` (once or iterated
 `m` times) preserves strict polynomial degree bounds `Q.degree < d` along every coordinate line `j`.
 Along `j = i` this follows from polynomial differentiation, and along `j ≠ i` it follows by
-evaluating `partialDslope i f (z i)` on the hyperplane `w i = z i`. Moreover, vanishing of
-`(partialDeriv i)^[d] f` characterizes entire functions that agree along every `zᵢ`-line with a
+differentiating the coordinate-line Lagrange interpolation identity along `i`. Moreover, vanishing
+of `(partialDeriv i)^[d] f` characterizes entire functions that agree along every `zᵢ`-line with a
 polynomial of degree `< d` (`TauCeti.iterate_partialDeriv_eq_zero_iff_exists_degree_lt`), so any
 operator `T` sending `0` to `0` and commuting with `(partialDeriv j)^[n]` on an entire function `f`
 (with `T f` entire) also preserves strict coordinate-`j` polynomial degree bounds.
@@ -58,9 +58,39 @@ theorem exists_degree_lt_and_partialDeriv_eq_eval {ι : Type*} [DecidableEq ι] 
     have hfun : (fun s ↦ f (update (update z j w) j s)) = fun s ↦ Q.eval s :=
       funext fun s ↦ by simp [hQ]
     rw [hfun, Polynomial.deriv]
-  · obtain ⟨Q, hQ, hQz⟩ := exists_degree_lt_and_partialDslope_eq_eval hf i j (z i) hdeg z
-    exact ⟨Q, hQ, fun w ↦ by
-      rw [← partialDslope_of_eq (hf _) (update_of_ne (Ne.symm hij) w z), hQz]⟩
+  · obtain ⟨n, rfl, _⟩ := Polynomial.exists_mem_evalDegreeLT_of_exists_degree_lt (hdeg z)
+    have := Fintype.ofFinite ι
+    let s : Finset ℕ := Finset.range n
+    let v : ℕ → ℂ := fun m ↦ (m : ℂ)
+    have hv : Set.InjOn v s := Nat.cast_injective.injOn
+    refine ⟨Lagrange.interpolate s v (fun m ↦ partialDeriv i f (update z j (v m))), ?_,
+      fun w ↦ ?_⟩
+    · simpa only [s, Finset.card_range] using
+        Lagrange.degree_interpolate_lt (fun m ↦ partialDeriv i f (update z j (v m))) hv
+    · have hline (w : ℂ) : (fun u ↦ f (update (update z j w) i u)) =
+          fun u ↦ ∑ m ∈ s, (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u) := by
+        ext u
+        obtain ⟨Qu, hQu_deg, hQu⟩ := hdeg (update z i u)
+        have hQu_eq : Qu = Lagrange.interpolate s v (fun m ↦ f (update (update z i u) j (v m))) :=
+          Lagrange.eq_interpolate_of_eval_eq _ hv
+            (by simpa only [s, Finset.card_range] using hQu_deg)
+            fun m _ ↦ (hQu (v m)).symm
+        rw [update_comm hij, hQu w, hQu_eq, Lagrange.interpolate_apply, eval_finsetSum]
+        refine Finset.sum_congr rfl fun m _ ↦ ?_
+        rw [eval_mul, eval_C, mul_comm, update_comm (Ne.symm hij)]
+      have hdiff (m : ℕ) (_ : m ∈ s) : DifferentiableAt ℂ
+          (fun u ↦ (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u)) (z i) :=
+        (differentiable_comp_update hf (update z j (v m)) i (z i)).const_mul _
+      rw [partialDeriv_eq_deriv_update (hf _) i, update_of_ne (Ne.symm hij), hline w,
+        deriv_fun_sum hdiff, Lagrange.interpolate_apply, eval_finsetSum]
+      refine Finset.sum_congr rfl fun m _ ↦ ?_
+      have hpart (m : ℕ) :
+          deriv (fun s ↦ f (update (update z j (v m)) i s)) (z i) =
+            partialDeriv i f (update z j (v m)) := by
+        simpa only [update_of_ne (Ne.symm hij)] using
+          (partialDeriv_eq_deriv_update (hf (update z j (v m))) i).symm
+      rw [deriv_const_mul _ (differentiable_comp_update hf (update z j (v m)) i (z i)), hpart m,
+        eval_mul, eval_C, mul_comm]
 
 /-- Iterated differentiation of an entire function along coordinate `i` preserves a strict
 polynomial degree bound `< d` in every coordinate `j`. -/
