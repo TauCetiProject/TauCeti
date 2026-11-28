@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 public import Mathlib.GroupTheory.Coset.Basic
 
 /-!
-# Products and sums over subtypes and cosets
+# Products and sums over subtypes, cosets and disjoint indicators
 
 Mathlib's `tprod_subtype` rewrites a product over a subtype `{b // p b}` as a product over the
 whole type of the multiplicative indicator. Two products over different subtypes therefore agree
@@ -20,11 +20,22 @@ the defining predicates.
 
 * `tprod_subtype_eq_of_mulIndicator_eq`, `tsum_subtype_eq_of_indicator_eq`: products (sums)
   over two subtypes agree when the factors (summands), extended by one (zero), agree.
+* `Pairwise.hasProd_mulIndicator_apply_of_mem`, `Pairwise.tprod_mulIndicator_apply_of_mem`
+  (additive: `Pairwise.hasSum_indicator_apply_of_mem`, `Pairwise.tsum_indicator_apply_of_mem`):
+  over a pairwise disjoint family of sets, at a point of the `i`-th set, the product of the
+  multiplicative indicators (the sum of the indicators) reduces to the `i`-th factor (summand).
+  This evaluates countably-valued functions written as `∑ₙ 𝟙_{Aₙ} cₙ` with disjoint `Aₙ`.
+* `Pairwise.hasProd_mulIndicator_apply`, `Pairwise.tprod_mulIndicator_apply_mem`
+  (additive: `Pairwise.hasSum_indicator_apply`, `Pairwise.tsum_indicator_apply_mem`): at any
+  point, such a product (sum) converges unconditionally, and its value is one (zero) or one of
+  the factors (summands).
 * `hasProd_union_leftCoset`, `hasSum_union_leftAddCoset`: a product (sum) over the union of a
   subgroup `s` and a left coset `g • s` (`g +ᵥ s`) with `g ∉ s`, computed coset by coset.
 -/
 
 public section
+
+open Function
 
 namespace TauCeti
 
@@ -53,3 +64,60 @@ theorem hasProd_union_leftCoset {α G : Type*} [CommMonoid α] [TopologicalSpace
   exact ha.mul_disjoint hdisj ((Subgroup.leftCosetEquivSubgroup g).symm.hasProd_iff.mp hb)
 
 end TauCeti
+
+namespace Pairwise
+
+/-- At a point of the `i`-th set of a pairwise disjoint family, the product of the multiplicative
+indicators has the `i`-th factor as its value. -/
+@[to_additive /-- At a point of the `i`-th set of a pairwise disjoint family, the sum of the
+indicators has the `i`-th summand as its value. -/]
+theorem hasProd_mulIndicator_apply_of_mem {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
+    {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) {i : ι} {x : β}
+    (hx : x ∈ s i) : HasProd (fun j ↦ (s j).mulIndicator (f j) x) (f i x) := by
+  convert hasProd_single i fun j hj ↦
+    Set.mulIndicator_of_notMem (fun hxj ↦ Set.disjoint_left.1 (hs hj) hxj hx) (f j)
+  exact (Set.mulIndicator_of_mem hx (f i)).symm
+
+/-- At a point of the `i`-th set of a pairwise disjoint family, the product of the multiplicative
+indicators is the `i`-th factor. -/
+@[to_additive /-- At a point of the `i`-th set of a pairwise disjoint family, the sum of the
+indicators is the `i`-th summand. -/]
+theorem tprod_mulIndicator_apply_of_mem {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
+    {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) {i : ι} {x : β}
+    (hx : x ∈ s i) : ∏' j, (s j).mulIndicator (f j) x = f i x := by
+  rw [tprod_eq_mulSingle i fun j hj ↦
+    Set.mulIndicator_of_notMem (fun hxj ↦ Set.disjoint_left.1 (hs hj) hxj hx) (f j)]
+  exact Set.mulIndicator_of_mem hx (f i)
+
+/-- Over a pairwise disjoint family of sets, the multiplicative indicators at any point are
+unconditionally multipliable: the product is the factor of the set containing the point, or one
+if there is none. -/
+@[to_additive /-- Over a pairwise disjoint family of sets, the indicators at any point are
+unconditionally summable: the sum is the summand of the set containing the point, or zero if
+there is none. -/]
+theorem hasProd_mulIndicator_apply {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
+    {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) (x : β) :
+    HasProd (fun j ↦ (s j).mulIndicator (f j) x) (∏' j, (s j).mulIndicator (f j) x) := by
+  by_cases hx : ∃ i, x ∈ s i
+  · obtain ⟨i, hi⟩ := hx
+    rw [hs.tprod_mulIndicator_apply_of_mem f hi]
+    exact hs.hasProd_mulIndicator_apply_of_mem f hi
+  · have h1 (j : ι) : (s j).mulIndicator (f j) x = 1 :=
+      Set.mulIndicator_of_notMem (fun hj ↦ hx ⟨j, hj⟩) (f j)
+    simpa only [h1, tprod_one] using hasProd_one
+
+/-- Over a pairwise disjoint family of sets, the product of the multiplicative indicators at a
+point is one or one of the factors at that point. -/
+@[to_additive /-- Over a pairwise disjoint family of sets, the sum of the indicators at a point
+is zero or one of the summands at that point. -/]
+theorem tprod_mulIndicator_apply_mem {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
+    {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) (x : β) :
+    ∏' j, (s j).mulIndicator (f j) x ∈ insert 1 (Set.range fun j ↦ f j x) := by
+  by_cases hx : ∃ i, x ∈ s i
+  · obtain ⟨i, hi⟩ := hx
+    exact Or.inr ⟨i, (hs.tprod_mulIndicator_apply_of_mem f hi).symm⟩
+  · have h1 (j : ι) : (s j).mulIndicator (f j) x = 1 :=
+      Set.mulIndicator_of_notMem (fun hj ↦ hx ⟨j, hj⟩) (f j)
+    exact Or.inl (by simp only [h1, tprod_one])
+
+end Pairwise
