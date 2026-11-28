@@ -81,6 +81,13 @@ theorem norm_lpKoopman_apply (g : Multiplicative τ) (f : Lp E p μ) :
   letI := ϕ.toAddAction
   TauCeti.norm_lpKoopman_apply g f
 
+/-- `U_(-t)` moves `f` as far as `U_t` does: `‖U_(-t) f - f‖ = ‖U_t f - f‖`. -/
+theorem norm_lpKoopman_neg_apply_sub (t : τ) (f : Lp E p μ) :
+    ‖lpKoopman 𝕜 E p μ ϕ hϕ (Multiplicative.ofAdd (-t)) f - f‖ =
+      ‖lpKoopman 𝕜 E p μ ϕ hϕ (Multiplicative.ofAdd t) f - f‖ :=
+  letI := ϕ.toAddAction
+  TauCeti.norm_lpKoopman_inv_apply_sub (Multiplicative.ofAdd t) f
+
 /-- The `L²` pullback representation of a measure-preserving flow is unitary. -/
 theorem isUnitary_lpKoopman {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
     [InnerProductSpace 𝕜 E] : (lpKoopman 𝕜 E 2 μ ϕ hϕ).IsUnitary :=
