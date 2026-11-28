@@ -14,7 +14,18 @@ import TauCeti.Probability.Moments.Determinacy
 
 A finite measure with exponential moments on a neighbourhood of zero is determined by its
 Laplace transform there. The proof uses scalar MGF determinacy for each real projection and
-Mathlib's characteristic-function uniqueness theorem.
+Mathlib's characteristic-function uniqueness theorem. In signed form: a real function whose
+products with the exponentials `exp ⟪u, ·⟫` are integrable with integral zero for all `u` near
+zero vanishes almost everywhere.
+
+## Main results
+
+* `MeasureTheory.Measure.ext_of_integral_exp_inner_eq`: if a measure `μ` has exponential moments
+  on a neighbourhood of zero (so it is finite), a finite measure `ν` whose Laplace transform agrees
+  with that of `μ` near zero equals `μ`.
+* `MeasureTheory.ae_eq_zero_of_integral_exp_inner_mul_eq_zero`: a real function whose products
+  with `exp ⟪u, ·⟫` are integrable with integral zero for all `u` near zero vanishes almost
+  everywhere, for any measure.
 
 ## References
 
@@ -27,7 +38,7 @@ public section
 open Filter MeasureTheory ProbabilityTheory Real
 open scoped RealInnerProductSpace Topology
 
-namespace MeasureTheory.Measure
+namespace MeasureTheory
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] [CompleteSpace E]
@@ -36,7 +47,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- Laplace transforms agreeing near zero determine a finite measure on a complete,
 second-countable real inner product space. Exponential integrability near zero is
 only required of the first measure. -/
-theorem ext_of_integral_exp_inner_eq [IsFiniteMeasure ν]
+theorem Measure.ext_of_integral_exp_inner_eq [IsFiniteMeasure ν]
     (hint : ∀ᶠ u in 𝓝 (0 : E), Integrable (fun x ↦ exp ⟪u, x⟫) μ)
     (heq : (fun u ↦ ∫ x, exp ⟪u, x⟫ ∂μ) =ᶠ[𝓝 (0 : E)]
       (fun u ↦ ∫ x, exp ⟪u, x⟫ ∂ν)) :
@@ -72,4 +83,45 @@ theorem ext_of_integral_exp_inner_eq [IsFiniteMeasure ν]
       _ = charFun (ν.map id) y :=
         (charFun_map_eq_charFun_map_inner_one aemeasurable_id y).symm
 
-end MeasureTheory.Measure
+/-- A real function `h` such that `exp ⟪u, ·⟫ * h` is integrable with integral `0` for all `u`
+near zero vanishes almost everywhere. This is the signed form of
+`MeasureTheory.Measure.ext_of_integral_exp_inner_eq`; the measure need not be finite. -/
+theorem ae_eq_zero_of_integral_exp_inner_mul_eq_zero {h : E → ℝ}
+    (hint : ∀ᶠ u in 𝓝 (0 : E), Integrable (fun x ↦ exp ⟪u, x⟫ * h x) μ)
+    (hzero : ∀ᶠ u in 𝓝 (0 : E), ∫ x, exp ⟪u, x⟫ * h x ∂μ = 0) :
+    h =ᵐ[μ] 0 := by
+  have hh : Integrable h μ := by simpa using hint.self_of_nhds
+  -- The positive and negative parts of `h` as densities: `μ.withDensity (ofReal ∘ k)` for
+  -- `k = h` and `k = -h`. Their Laplace transforms are lower integrals against `μ`.
+  have hlint (k : E → ℝ) (hk : AEMeasurable k μ) (u : E) :
+      ∫⁻ x, ENNReal.ofReal (exp ⟪u, x⟫) ∂μ.withDensity (fun x ↦ ENNReal.ofReal (k x)) =
+        ∫⁻ x, ENNReal.ofReal (exp ⟪u, x⟫ * k x) ∂μ := by
+    rw [lintegral_withDensity_eq_lintegral_mul₀ hk.ennreal_ofReal (by fun_prop)]
+    congr with x
+    rw [Pi.mul_apply, ENNReal.ofReal_mul (exp_pos _).le, mul_comm]
+  have hexp (ρ : Measure E) (u : E) : AEStronglyMeasurable (fun x ↦ exp ⟪u, x⟫) ρ :=
+    (by fun_prop : Continuous fun x : E ↦ exp ⟪u, x⟫).aestronglyMeasurable
+  have hpos (ρ : Measure E) (u : E) : 0 ≤ᵐ[ρ] fun x ↦ exp ⟪u, x⟫ :=
+    ae_of_all _ fun x ↦ (exp_pos _).le
+  have hneg (u : E) (x : E) : exp ⟪u, x⟫ * -h x = -(exp ⟪u, x⟫ * h x) := mul_neg _ _
+  have : IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (-h x)) :=
+    isFiniteMeasure_withDensity_ofReal hh.neg.hasFiniteIntegral
+  have heq : μ.withDensity (fun x ↦ ENNReal.ofReal (h x)) =
+      μ.withDensity (fun x ↦ ENNReal.ofReal (-h x)) := by
+    refine Measure.ext_of_integral_exp_inner_eq ?_ ?_
+    · filter_upwards [hint] with u hu
+      rw [← lintegral_ofReal_ne_top_iff_integrable (hexp _ u) (hpos _ u), hlint h hh.aemeasurable]
+      exact hu.lintegral_lt_top.ne
+    · filter_upwards [hint, hzero] with u hu hu0
+      rw [integral_eq_lintegral_of_nonneg_ae (hpos _ u) (hexp _ u),
+        integral_eq_lintegral_of_nonneg_ae (hpos _ u) (hexp _ u), hlint h hh.aemeasurable,
+        hlint (fun x ↦ -h x) hh.aemeasurable.neg]
+      simp only [hneg]
+      rwa [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hu, sub_eq_zero] at hu0
+  filter_upwards [(withDensity_eq_iff hh.aemeasurable.ennreal_ofReal
+    hh.aemeasurable.neg.ennreal_ofReal hh.lintegral_lt_top.ne).mp heq] with x hx
+  have hmax := congrArg ENNReal.toReal hx
+  rw [ENNReal.toReal_ofReal', ENNReal.toReal_ofReal'] at hmax
+  simpa [hmax] using (max_zero_sub_eq_self (h x)).symm
+
+end MeasureTheory

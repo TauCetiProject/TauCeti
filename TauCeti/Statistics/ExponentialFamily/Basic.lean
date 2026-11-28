@@ -19,7 +19,10 @@ import TauCeti.MeasureTheory.Measure.Tilted
 The natural parameter space consists of the parameters at which the exponential weight is
 integrable. It is convex. The associated law is Mathlib's exponential tilt. Pushing the
 reference measure forward by the statistic preserves the parameter space and the log
-partition function, and gives the law of the statistic under each tilt.
+partition function, and gives the law of the statistic under each tilt. On the natural parameter
+space, integrability and a vanishing Bochner integral under the law are integrability and a
+vanishing Bochner integral of the exponentially weighted observable under the reference measure;
+for integrable observables the former is a zero mean.
 
 ## References
 
@@ -75,6 +78,24 @@ theorem integral_exponentialFamilyMeasure_eq_div (g : X → ℝ) :
   congr with x
   simp only [smul_eq_mul]
   ring
+
+/-- On the natural parameter space, an observable with values in a real normed space is
+integrable under the exponential-family measure iff its product with the exponential weight is
+integrable under the reference measure. -/
+theorem integrable_exponentialFamilyMeasure_iff {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hη : η ∈ naturalParameterSpace ν T) {g : X → F} :
+    Integrable g (exponentialFamilyMeasure ν T η) ↔
+      Integrable (fun x ↦ exp ⟪η, T x⟫ • g x) ν := by
+  rw [exponentialFamilyMeasure_def, integrable_tilted_iff (mem_naturalParameterSpace.mp hη)]
+
+/-- On the natural parameter space, an observable with values in a real normed space has
+vanishing Bochner integral under the exponential-family measure iff its product with the
+exponential weight has vanishing Bochner integral under the reference measure. This is
+`TauCeti.integral_tilted_eq_zero_iff` for the tilt by `x ↦ ⟪η, T x⟫`. -/
+theorem integral_exponentialFamilyMeasure_eq_zero_iff {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hη : η ∈ naturalParameterSpace ν T) {g : X → F} :
+    ∫ x, g x ∂exponentialFamilyMeasure ν T η = 0 ↔ ∫ x, exp ⟪η, T x⟫ • g x ∂ν = 0 := by
+  rw [exponentialFamilyMeasure_def, integral_tilted_eq_zero_iff (mem_naturalParameterSpace.mp hη)]
 
 @[simp]
 theorem exponentialFamilyMeasure_zero_measure (T : X → E) (η : E) :
