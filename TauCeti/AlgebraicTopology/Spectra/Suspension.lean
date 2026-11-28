@@ -75,36 +75,15 @@ lemma suspensionLevelIso_hom_dayStructureMap (K : PointedSSet.{0}) (p q : ℕ) :
           (suspensionLevelIso K (p + q)).hom := by
   apply (cancel_epi (α_ (PointedSSet.circle.smashPow (Fin p))
     (PointedSSet.circle.smashPow (Fin q)) K).hom).1
-  simp only [Iso.hom_inv_id_assoc]
-  simp only [suspensionLevelIso_hom, SymmetricSequence.tensorFreeZeroι_def,
-    Mod.dayStructureMap_def, freeMod_smul, DayFunctor.comp_natTrans, NatTrans.comp_app,
-    whiskerLeft_comp, Category.assoc]
-  -- Move the generator out of the triple smash and cancel its isomorphism.
-  -- Here `erw` identifies sphere powers with the corresponding functor objects.
-  erw [← associator_naturality_right_assoc, ← whisker_exchange_assoc]
-  rw [cancel_epi]
-  have hρ := (DayFunctor.η SymmetricSequence.sphere
-    (SymmetricSequence.sphere ⊗ (SymmetricSequence.free 0).obj K)).naturality
-      ((𝟙 (FiniteBijection.mk p), (ρ_ (FiniteBijection.mk q)).hom) :
-        (FiniteBijection.mk p, FiniteBijection.mk q ⊗ FiniteBijection.mk 0) ⟶
-          (FiniteBijection.mk p, FiniteBijection.mk q))
-  simp only [Functor.comp_map, tensor_map, externalProductBifunctor_obj_map,
-    FiniteBijection.toEquiv_id, PointedSSet.smashPowReindex_refl, id_whiskerRight,
-    Category.id_comp, id_tensorHom] at hρ
-  -- Identify the underlying free-module object before rewriting naturality components.
-  dsimp only [free, freeMod, Functor.comp_obj]
-  rw [reassoc_of% hρ]
-  -- Move the right unitor through the Day unit and the inverse associator.
-  erw [NatTrans.naturality_assoc]
-  erw [reassoc_of% DayFunctor.whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app
-    SymmetricSequence.sphere SymmetricSequence.sphere ((SymmetricSequence.free 0).obj K)
-      (FiniteBijection.mk p) (FiniteBijection.mk q) (𝟙_ FiniteBijection),
-    Iso.hom_inv_id_assoc, ← Functor.map_comp_assoc, ← rightUnitor_tensor_hom]
-  -- Multiplication restricts to the sphere functor's block-concatenation tensorator.
-  erw [NatTrans.naturality, DayFunctor.η_app_comp_whiskerRight_natTrans_app_assoc,
-    ← comp_whiskerRight_assoc, DayFunctor.η_app_comp_mul_natTrans_app]
-  -- The sphere functor is the circle's smash-power functor, and the block sum has length p + q.
-  rfl
+  simp only [Iso.hom_inv_id_assoc, suspensionLevelIso_hom,
+    SymmetricSequence.tensorFreeZeroι_def, Mod.dayStructureMap_def, freeMod_smul]
+  have hday :=
+    DayFunctor.associator_hom_whiskerLeft_comp_rightUnitor_action
+      SymmetricSequence.sphere SymmetricSequence.sphere ((SymmetricSequence.free 0).obj K)
+      (MonObj.mul (X := SymmetricSequence.sphere)) (SymmetricSequence.freeι 0 K)
+      (FiniteBijection.mk p) (FiniteBijection.mk q)
+  rw [DayFunctor.η_app_comp_mul_natTrans_app] at hday
+  exact hday
 
 /-- The suspension spectrum of the pointed zero-sphere is the sphere spectrum. -/
 noncomputable def suspensionUnitIso : (free 0).obj (𝟙_ PointedSSet.{0}) ≅ 𝟙_ SymmetricSpectrum :=

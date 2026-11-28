@@ -40,6 +40,9 @@ initial in every positive level.
   whiskerings to Day convolutions with an identity.
 * `LawfulDayConvolutionMonoidalCategoryStruct.ι_map_associator_inv_eq_associator_inv`: `ι`
   carries the inverse associator to the inverse Day convolution associator.
+* `DayFunctor.isIso_of_isIso_app`: componentwise invertibility of a morphism of Day functors.
+* `DayFunctor.associator_hom_whiskerLeft_comp_rightUnitor_action`:
+  compatibility of a Day-convolution action with right-unitor transport along a unit-degree map.
 * `DayFunctor.tensor_tensor_hom_ext`, `DayFunctor.unit_tensor_hom_ext`,
   `DayFunctor.tensor_unit_hom_ext`: extensionality for morphisms out of iterated Day convolutions.
 * `Functor.isIso_dayConvolutionUnitCan`: the structure map of a Day convolution unit is an
@@ -164,6 +167,23 @@ namespace DayFunctor
 
 open LawfulDayConvolutionMonoidalCategoryStruct
 
+section
+
+variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
+  [MonoidalCategory C] [MonoidalCategory V]
+
+/-- A morphism of Day functors is an isomorphism if each component of its underlying natural
+transformation is an isomorphism. -/
+lemma isIso_of_isIso_app {F G : C ⊛⥤ V} (α : F ⟶ G)
+    (h : ∀ c : C, IsIso (α.natTrans.app c)) :
+    IsIso α := by
+  have : ∀ c : C, IsIso (((equiv C V).functor.map α).app c) := h
+  have : IsIso ((equiv C V).functor.map α) :=
+    NatIso.isIso_of_isIso_app ((equiv C V).functor.map α)
+  exact isIso_of_reflects_iso α (equiv C V).functor
+
+end
+
 variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
     [MonoidalCategory C] [MonoidalCategory V]
     [∀ (F G : C ⥤ V), (tensor C).HasPointwiseLeftKanExtension (F ⊠ G)]
@@ -238,6 +258,54 @@ lemma whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app (F G H : C
     ι_map_associator_inv_eq_associator_inv C V (C ⊛⥤ V) F G H
   rw [h]
   exact DayConvolution.associator_inv_unit_unit F.functor G.functor H.functor x y z
+
+/-- Passing the right unitor `(ρ_ q).hom` through the Day convolution units `η G H` and
+`η F (G ⊗ H)` and the inverse associator `(α_ F G H).inv` gives the left-associated Day
+convolution units followed by the image of the indexing-category unitor `(ρ_ (p ⊗ q)).hom` under
+the underlying convolution functor `((F ⊗ G) ⊗ H).functor`. -/
+@[reassoc]
+lemma associator_hom_whiskerLeft_η_app_comp_rightUnitor_comp_associator_inv_natTrans_app
+    (F G H : C ⊛⥤ V) (p q : C) :
+    (α_ (F.functor.obj p) (G.functor.obj q) (H.functor.obj (𝟙_ C))).hom ≫
+      F.functor.obj p ◁ (η G H).app (q, 𝟙_ C) ≫
+      F.functor.obj p ◁ (G ⊗ H).functor.map (ρ_ q).hom ≫
+      (η F (G ⊗ H)).app (p, q) ≫
+      (α_ F G H).inv.natTrans.app (p ⊗ q) =
+    (η F G).app (p, q) ▷ H.functor.obj (𝟙_ C) ≫
+      (η (F ⊗ G) H).app (p ⊗ q, 𝟙_ C) ≫
+      ((F ⊗ G) ⊗ H).functor.map (ρ_ (p ⊗ q)).hom := by
+  have hη : F.functor.obj p ◁ (G ⊗ H).functor.map (ρ_ q).hom ≫
+      (η F (G ⊗ H)).app (p, q) =
+      (η F (G ⊗ H)).app (p, q ⊗ 𝟙_ C) ≫
+        (F ⊗ (G ⊗ H)).functor.map (p ◁ (ρ_ q).hom) := by
+    simpa using (η F (G ⊗ H)).naturality ((𝟙 p, (ρ_ q).hom) : (p, q ⊗ 𝟙_ C) ⟶ (p, q))
+  have hnat : (F ⊗ G ⊗ H).functor.map (p ◁ (ρ_ q).hom) ≫ (α_ F G H).inv.natTrans.app (p ⊗ q) =
+      (α_ F G H).inv.natTrans.app (p ⊗ q ⊗ 𝟙_ C) ≫
+        ((F ⊗ G) ⊗ H).functor.map (p ◁ (ρ_ q).hom) :=
+    (α_ F G H).inv.natTrans.naturality (p ◁ (ρ_ q).hom)
+  rw [reassoc_of% hη, hnat, whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app_assoc]
+  simp only [Iso.hom_inv_id_assoc, ← Functor.map_comp, ← rightUnitor_tensor_hom]
+
+/-- Compatibility of a Day-convolution action map `μ : F ⊗ G ⟶ G` with right-unitor transport
+along a morphism `ι : L ⟶ H.functor.obj (𝟙_ C)` into the unit degree of `H`. -/
+@[reassoc]
+lemma associator_hom_whiskerLeft_comp_rightUnitor_action
+    (F G H : C ⊛⥤ V) (μ : F ⊗ G ⟶ G) {L : V} (ι : L ⟶ H.functor.obj (𝟙_ C)) (p q : C) :
+    (α_ (F.functor.obj p) (G.functor.obj q) L).hom ≫
+      F.functor.obj p ◁
+        (G.functor.obj q ◁ ι ≫ (η G H).app (q, 𝟙_ C) ≫ (G ⊗ H).functor.map (ρ_ q).hom) ≫
+      (η F (G ⊗ H)).app (p, q) ≫
+      (α_ F G H).inv.natTrans.app (p ⊗ q) ≫
+      (μ ▷ H).natTrans.app (p ⊗ q) =
+    ((η F G).app (p, q) ≫ μ.natTrans.app (p ⊗ q)) ▷ L ≫
+      (G.functor.obj (p ⊗ q) ◁ ι ≫ (η G H).app (p ⊗ q, 𝟙_ C) ≫
+        (G ⊗ H).functor.map (ρ_ (p ⊗ q)).hom) := by
+  simp only [whiskerLeft_comp, Category.assoc]
+  rw [← associator_naturality_right_assoc, ← whisker_exchange_assoc,
+    associator_hom_whiskerLeft_η_app_comp_rightUnitor_comp_associator_inv_natTrans_app_assoc,
+    (μ ▷ H).natTrans.naturality (ρ_ (p ⊗ q)).hom,
+    η_app_comp_whiskerRight_natTrans_app_assoc, ← comp_whiskerRight_assoc]
+  rfl
 
 /-- The left unitor `𝟙_ ⊗ F ≅ F` restricted along the Day convolution units. -/
 @[reassoc (attr := simp)]

@@ -87,16 +87,10 @@ private lemma pointwiseSmashι_app (K : PointedSSet.{0}) (X : SymmetricSequence.
       (β_ K (X.functor.obj c)).hom ≫ tensorFreeZeroι X K c.len := rfl
 
 private instance (K : PointedSSet.{0}) (X : SymmetricSequence.{0}) :
-    IsIso (pointwiseSmashι K X) := by
-  have : ∀ c : FiniteBijection,
-      IsIso (((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-        (pointwiseSmashι K X)).app c) := by
-    rintro ⟨n⟩
-    exact IsIso.comp_isIso' (β_ K (X.functor.obj (FiniteBijection.mk n))).isIso_hom
+    IsIso (pointwiseSmashι K X) :=
+  DayFunctor.isIso_of_isIso_app (pointwiseSmashι K X) fun ⟨n⟩ ↦
+    IsIso.comp_isIso' (β_ K (X.functor.obj (FiniteBijection.mk n))).isIso_hom
       (isIso_tensorFreeZeroι X K n)
-  have : IsIso ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-      (pointwiseSmashι K X)) := NatIso.isIso_of_isIso_app _
-  exact isIso_of_reflects_iso _ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor
 
 private noncomputable def pointwiseSmashRightIso (K : PointedSSet.{0}) :
     pointwiseSmash K ≅ MonoidalCategory.tensorRight ((free 0).obj K) :=
@@ -301,6 +295,16 @@ spectrum coordinate. On objects this is the existing `levelSmash` construction. 
 noncomputable abbrev levelSmashRight (K : PointedSSet.{0}) :
     SymmetricSpectrum ⥤ SymmetricSpectrum :=
   Mod.tensorRight ((SymmetricSequence.free 0).obj K)
+
+/-- Passing across `tensorFreeZeroι` is natural in the symmetric spectrum under
+`levelSmashRight L`. -/
+@[reassoc]
+lemma tensorFreeZeroι_comp_evaluation_map_levelSmashRight_map
+    {X Y : SymmetricSpectrum} (f : X ⟶ Y) (L : PointedSSet.{0}) (n : ℕ) :
+    SymmetricSequence.tensorFreeZeroι X.X L n ≫
+        (evaluation n).map ((levelSmashRight L).map f) =
+      (evaluation n).map f ▷ L ≫ SymmetricSequence.tensorFreeZeroι Y.X L n :=
+  (SymmetricSequence.tensorFreeZeroι_naturality_left f.hom L n).symm
 
 /-- The point-set cotensor `E^K`: the internal function spectrum from the free spectrum `F₀ K`.
 Its levels are the pointed mapping objects `Map_*(K, E_n)` (`cotensorLevelIso`). -/

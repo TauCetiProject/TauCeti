@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
 public import TauCeti.AlgebraicTopology.Spectra.Free
 public import TauCeti.AlgebraicTopology.Spectra.StructureMap
+public import TauCeti.AlgebraicTopology.Spectra.Tensor
+
+import TauCeti.CategoryTheory.Monoidal.Closed.InternalCurrying
 
 /-!
 # Stabilization maps between free symmetric spectra
@@ -19,6 +23,12 @@ Under the free/evaluation and suspension/loop adjunctions, precomposition with t
 is postcomposition with the adjoint structure map `E_n → Ω E_(1+n)`. We prove this on
 actual maps, together with its strict bijectivity criterion. In particular, testing against
 all pointed simplicial sets detects when the adjoint structure map is an isomorphism.
+Using the free-spectrum mapping-space identifications `Map(F_n K, E) ≅ Map_*(K, E_n)`
+(`SymmetricSpectrum.mappingSpaceFreeIso`) and `Map(F_n S⁰, E) ≅ E_n`
+(`SymmetricSpectrum.mappingSpaceFreeZeroIso`), we also identify precomposition along
+`freeStabilizationMap n K` on mapping spaces with `Map_*(K, E.smashPowAdjointStructureMap n)`
+(`mappingSpace_freeStabilizationMap_eq`), and for `K = S⁰` with `E.smashPowAdjointStructureMap n`
+itself (`mappingSpace_freeStabilizationMap_unit_eq`).
 This is a point-set statement, not a claim that strict bijectivity detects Ω-spectra:
 stable localization instead uses derived mapping spaces and weak equivalences.
 
@@ -139,5 +149,107 @@ theorem isIso_adjointStructureMap_iff (n : ℕ) (E : SymmetricSpectrum) :
         (fun f : (free n).obj K ⟶ E ↦ freeStabilizationMap n K ≫ f) := by
   rw [isIso_iff_yoneda_map_bijective]
   exact forall_congr' fun K ↦ (bijective_freeStabilizationMap_precomp_iff n K E).symm
+
+/-! ### Stabilization precomposition on mapping spaces -/
+
+private lemma smashPowStructureMap_levelSmash_comp_aux (n : ℕ) {K L : PointedSSet.{0}}
+    (X E : SymmetricSpectrum) (ι : K ⟶ (evaluation n).obj X)
+    (ε : (levelSmash X).obj L ⟶ E) :
+    ((PointedSSet.circle ◁ ι ≫ X.smashPowStructureMap n) ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι X.X L (1 + n)) ≫
+      (evaluation (1 + n)).map ε =
+      (α_ PointedSSet.circle K L).hom ≫
+        PointedSSet.circle ◁ (ι ▷ L ≫
+          SymmetricSequence.tensorFreeZeroι X.X L n ≫ (evaluation n).map ε) ≫
+        E.smashPowStructureMap n := by
+  have hε : ((levelSmash X).obj L).smashPowStructureMap n ≫ (evaluation (1 + n)).map ε =
+      PointedSSet.circle ◁ (evaluation n).map ε ≫ E.smashPowStructureMap n :=
+    Mod.smashPowStructureMap_hom ε n
+  rw [comp_whiskerRight_assoc, tensorFreeZeroι_comp_levelSmash_smashPowStructureMap,
+    Category.assoc, Category.assoc, Category.assoc, associator_naturality_middle_assoc]
+  congr 1
+  rw [hε, whiskerLeft_comp, whiskerLeft_comp, Category.assoc, Category.assoc]
+
+private lemma freeStabilizationMap_levelSmash_comp (n : ℕ) (K L : PointedSSet.{0})
+    (E : SymmetricSpectrum) (ε : (levelSmash ((free n).obj K)).obj L ⟶ E) :
+    freeι (1 + n) (PointedSSet.circle ⊗ K) ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι ((free (1 + n)).obj (PointedSSet.circle ⊗ K)).X L
+          (1 + n) ≫
+        (evaluation (1 + n)).map ((levelSmashRight L).map (freeStabilizationMap n K) ≫ ε) =
+      (α_ PointedSSet.circle K L).hom ≫
+        PointedSSet.circle ◁ (freeι n K ▷ L ≫
+          SymmetricSequence.tensorFreeZeroι ((free n).obj K).X L n ≫ (evaluation n).map ε) ≫
+        E.smashPowStructureMap n := by
+  rw [Functor.map_comp, ← Category.assoc (SymmetricSequence.tensorFreeZeroι _ _ (1 + n)),
+    tensorFreeZeroι_comp_evaluation_map_levelSmashRight_map, Category.assoc,
+    ← comp_whiskerRight_assoc, freeι_stabilizationMap]
+  exact smashPowStructureMap_levelSmash_comp_aux n ((free n).obj K) E (freeι n K) ε
+
+/-- Under `mappingSpaceFreeIso` and `ihomCurryIso`, precomposition along
+`freeStabilizationMap n K : F_(1+n)(S¹ ∧ K) ⟶ F_n K` agrees with
+`Map_*(K, E.smashPowAdjointStructureMap n)`. -/
+theorem mappingSpace_freeStabilizationMap_eq (n : ℕ) (K : PointedSSet.{0})
+    (E : SymmetricSpectrum) :
+    (mappingSpaceBifunctor.map (freeStabilizationMap n K).op).app E ≫
+        (mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ K)).hom.app E ≫
+        (MonoidalClosed.ihomCurryIso PointedSSet.circle K ((evaluation (1 + n)).obj E)).hom =
+      (mappingSpaceFreeIso n K).hom.app E ≫
+        (CategoryTheory.ihom K).map (E.smashPowAdjointStructureMap n) := by
+  rw [← levelSmashMappingSpaceAdjunction₂.homEquiv_map_app_counit_app
+      (freeStabilizationMap n K) E]
+  simp only [ParametrizedAdjunction.homEquiv_eq, levelSmashMappingSpaceAdjunction₂_adj,
+    levelSmashBifunctor_map_app]
+  change ((free (1 + n)).obj (PointedSSet.circle ⊗ K)).levelSmashMappingSpaceAdjunction.homEquiv
+        (((free n).obj K).mappingSpace.obj E) E
+        ((levelSmashRight (((free n).obj K).mappingSpace.obj E)).map
+            (freeStabilizationMap n K) ≫
+          ((free n).obj K).levelSmashMappingSpaceAdjunction.counit.app E) ≫
+      (mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ K)).hom.app E ≫
+        (MonoidalClosed.ihomCurryIso PointedSSet.circle K ((evaluation (1 + n)).obj E)).hom =
+    _
+  apply MonoidalClosed.uncurry_injective
+  apply MonoidalClosed.uncurry_injective
+  rw [← Category.assoc, MonoidalClosed.uncurry_uncurry_comp_ihomCurryIso_hom,
+    homEquiv_comp_mappingSpaceFreeIso_hom_app, MonoidalClosed.uncurry_natural_right,
+    MonoidalClosed.uncurry_natural_left, uncurry_mappingSpaceFreeIso_hom_app]
+  simp only [MonoidalClosed.uncurry_curry, Mod.uncurry_smashPowAdjointStructureMap,
+    ← cancel_epi (α_ PointedSSet.circle K ((mappingSpace ((free n).obj K)).obj E)).hom,
+    Iso.hom_inv_id_assoc]
+  exact freeStabilizationMap_levelSmash_comp n K ((mappingSpace ((free n).obj K)).obj E) E
+    ((levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E)
+
+/-- For `K = S⁰`, precomposition along `freeStabilizationMap n S⁰` agrees, under
+`mappingSpaceFreeZeroIso n` on the source and `mappingSpaceFreeIso (1 + n) (S¹ ∧ S⁰)` followed by
+precomposition with `(ρ_ S¹).inv : S¹ ⟶ S¹ ∧ S⁰` on the target, with the adjoint structure map
+`E.smashPowAdjointStructureMap n`. -/
+theorem mappingSpace_freeStabilizationMap_unit_eq (n : ℕ) (E : SymmetricSpectrum) :
+    (mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E ≫
+        (mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
+        (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E) =
+      (mappingSpaceFreeZeroIso n).hom.app E ≫ E.smashPowAdjointStructureMap n := by
+  have h1 :
+      (mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
+        (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E) =
+      ((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
+        (MonoidalClosed.ihomCurryIso PointedSSet.circle (𝟙_ _)
+          ((evaluation (1 + n)).obj E)).hom) ≫
+        MonoidalClosed.unitNatIso.inv.app
+          ((CategoryTheory.ihom PointedSSet.circle).obj ((evaluation (1 + n)).obj E)) := by
+    rw [Category.assoc, MonoidalClosed.ihomCurryIso_hom_comp_unitNatIso_inv]
+  have h2 := congrArg
+    (· ≫ MonoidalClosed.unitNatIso.inv.app
+      ((CategoryTheory.ihom PointedSSet.circle).obj ((evaluation (1 + n)).obj E)))
+    (mappingSpace_freeStabilizationMap_eq n (𝟙_ _) E)
+  have h3 :
+      ((mappingSpaceFreeIso n (𝟙_ _)).hom.app E ≫
+          (CategoryTheory.ihom (𝟙_ _)).map (E.smashPowAdjointStructureMap n)) ≫
+        MonoidalClosed.unitNatIso.inv.app
+          ((CategoryTheory.ihom PointedSSet.circle).obj ((evaluation (1 + n)).obj E)) =
+      (mappingSpaceFreeZeroIso n).hom.app E ≫ E.smashPowAdjointStructureMap n := by
+    rw [mappingSpaceFreeZeroIso_hom_app]
+    simp only [Category.assoc, MonoidalClosed.unitNatIso.inv.naturality, Functor.id_map]
+  refine (congrArg ((mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E ≫ ·)
+    h1).trans ?_
+  exact (Category.assoc _ _ _).symm.trans (h2.trans h3)
 
 end TauCeti.SymmetricSpectrum

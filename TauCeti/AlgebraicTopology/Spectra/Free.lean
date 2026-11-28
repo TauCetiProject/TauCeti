@@ -77,6 +77,99 @@ lemma freeι_naturality (n : ℕ) {K L : PointedSSet.{0}} (f : K ⟶ L) :
         ((free n).map f).natTrans.app (FiniteBijection.mk n) :=
   (Limits.Sigma.ι_comp_desc (fun h ↦ f ≫ Limits.Sigma.ι (fun _ ↦ L) h) (𝟙 _)).symm
 
+/-- Level `m` of `G_n K` is the coproduct of copies of `K` indexed by bijections `Fin n ≃ Fin m`. -/
+noncomputable def freeLevelIso (n m : ℕ) (K : PointedSSet.{0}) :
+    ((free n).obj K).functor.obj (FiniteBijection.mk m) ≅
+      ∐ fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K :=
+  -- `free n` evaluates at `mk m` to this coproduct by definition of `evaluationLeftAdjoint`.
+  Iso.refl _
+
+/-- Under `freeLevelIso`, postcomposing the universal generator `freeι n K` with the action of
+`σ : mk n ⟶ mk m` yields the `σ`-summand inclusion into the coproduct. -/
+@[reassoc]
+lemma freeι_comp_map_comp_freeLevelIso_hom (n m : ℕ) (K : PointedSSet.{0})
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
+    freeι n K ≫ ((free n).obj K).functor.map σ ≫ (freeLevelIso n m K).hom =
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ := by
+  dsimp only [freeLevelIso, free, Functor.comp_obj, DayFunctor.equiv, evaluationLeftAdjoint]
+  rw [Iso.refl_hom, Category.comp_id, freeι]
+  exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
+
+/-- Under `(freeLevelIso n m K).inv`, the `σ`-summand inclusion maps to the action of `σ` on the
+universal generator `freeι n K`. -/
+@[reassoc (attr := simp)]
+lemma ι_comp_freeLevelIso_inv (n m : ℕ) (K : PointedSSet.{0})
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
+    Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ ≫
+        (freeLevelIso n m K).inv =
+      freeι n K ≫ ((free n).obj K).functor.map σ := by
+  rw [← freeι_comp_map_comp_freeLevelIso_hom, Category.assoc, Category.assoc, Iso.hom_inv_id,
+    Category.comp_id]
+
+/-- A morphism out of `(G_n K)_m` is determined on the summands `freeι n K ≫ (G_n K).map σ`. -/
+@[ext]
+lemma free_level_hom_ext {n m : ℕ} {K Y : PointedSSet.{0}}
+    {f g : ((free n).obj K).functor.obj (FiniteBijection.mk m) ⟶ Y}
+    (h : ∀ σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m,
+      freeι n K ≫ ((free n).obj K).functor.map σ ≫ f =
+        freeι n K ≫ ((free n).obj K).functor.map σ ≫ g) :
+    f = g := by
+  rw [← cancel_epi (freeLevelIso n m K).inv]
+  refine Limits.Sigma.hom_ext _ _ fun σ ↦ ?_
+  rw [ι_comp_freeLevelIso_inv_assoc, ι_comp_freeLevelIso_inv_assoc]
+  exact h σ
+
+/-- Under `freeLevelIso`, the action of a map `f : K ⟶ L` on generators in level `m` is the
+summandwise map `Limits.Sigma.map fun _ ↦ f` on the coproduct presentation. -/
+@[reassoc]
+lemma freeLevelIso_hom_naturality (n m : ℕ) {K L : PointedSSet.{0}} (f : K ⟶ L) :
+    ((free n).map f).natTrans.app (FiniteBijection.mk m) ≫ (freeLevelIso n m L).hom =
+      (freeLevelIso n m K).hom ≫ Limits.Sigma.map fun _ ↦ f := by
+  refine free_level_hom_ext fun σ ↦ ?_
+  rw [((free n).map f).natTrans.naturality_assoc, ← Category.assoc (freeι n K),
+    ← freeι_naturality, Category.assoc, freeι_comp_map_comp_freeLevelIso_hom,
+    ← Limits.Sigma.ι_map (fun _ ↦ f) σ, ← freeι_comp_map_comp_freeLevelIso_hom]
+  simp only [Category.assoc]
+
+/-- Under `(freeLevelIso n m K).inv`, the summandwise map `Limits.Sigma.map fun _ ↦ f`
+transports to the action of `f : K ⟶ L` on generators in level `m`. -/
+@[reassoc]
+lemma freeLevelIso_inv_naturality (n m : ℕ) {K L : PointedSSet.{0}} (f : K ⟶ L) :
+    (Limits.Sigma.map fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ f) ≫
+        (freeLevelIso n m L).inv =
+      (freeLevelIso n m K).inv ≫ ((free n).map f).natTrans.app (FiniteBijection.mk m) := by
+  rw [Iso.comp_inv_eq, Category.assoc, freeLevelIso_hom_naturality, Iso.inv_hom_id_assoc]
+
+/-- Under `freeLevelIso`, the action of a bijection `τ : mk m ⟶ mk m'` between levels is
+reindexing the coproduct summands by postcomposition with `τ`. -/
+@[reassoc]
+lemma map_comp_freeLevelIso_hom (n : ℕ) {m m' : ℕ} (K : PointedSSet.{0})
+    (τ : FiniteBijection.mk m ⟶ FiniteBijection.mk m') :
+    ((free n).obj K).functor.map τ ≫ (freeLevelIso n m' K).hom =
+      (freeLevelIso n m K).hom ≫
+        Limits.Sigma.map' (fun σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ σ ≫ τ)
+          fun _ ↦ 𝟙 K := by
+  refine free_level_hom_ext fun σ ↦ ?_
+  calc
+    freeι n K ≫ ((free n).obj K).functor.map σ ≫ ((free n).obj K).functor.map τ ≫
+        (freeLevelIso n m' K).hom
+      = Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m' ↦ K) (σ ≫ τ) := by
+        rw [← Functor.map_comp_assoc, freeι_comp_map_comp_freeLevelIso_hom]
+    _ = (freeι n K ≫ ((free n).obj K).functor.map σ ≫ (freeLevelIso n m K).hom) ≫
+          Limits.Sigma.map' (fun σ ↦ σ ≫ τ) (fun _ ↦ 𝟙 K) := by
+        rw [freeι_comp_map_comp_freeLevelIso_hom, Limits.Sigma.ι_comp_map', Category.id_comp]
+    _ = _ := by simp only [Category.assoc]
+
+/-- Under `(freeLevelIso n m K).inv`, reindexing the coproduct summands by postcomposition with
+`τ : mk m ⟶ mk m'` transports to the bijection action between levels. -/
+@[reassoc]
+lemma sigmaMap'_comp_freeLevelIso_inv (n : ℕ) {m m' : ℕ} (K : PointedSSet.{0})
+    (τ : FiniteBijection.mk m ⟶ FiniteBijection.mk m') :
+    Limits.Sigma.map' (fun σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ σ ≫ τ)
+          (fun _ ↦ 𝟙 K) ≫ (freeLevelIso n m' K).inv =
+      (freeLevelIso n m K).inv ≫ ((free n).obj K).functor.map τ := by
+  rw [Iso.comp_inv_eq, Category.assoc, map_comp_freeLevelIso_hom, Iso.inv_hom_id_assoc]
+
 /-- The unit of the free symmetric sequence adjunction is the universal generator. -/
 @[simp]
 lemma freeEvaluationAdjunction_unit_app (n : ℕ) (K : PointedSSet.{0}) :
@@ -97,6 +190,17 @@ lemma freeι_comp_homEquiv_symm (n : ℕ) {K : PointedSSet.{0}}
         (FiniteBijection.mk n) = g := by
   have h := ((freeEvaluationAdjunction n).homEquiv K Y).apply_symm_apply g
   rw [Adjunction.homEquiv_unit, freeEvaluationAdjunction_unit_app] at h
+  exact h
+
+/-- Maps out of a free symmetric sequence are determined by the universal generator. -/
+@[ext]
+lemma free_hom_ext {n : ℕ} {K : PointedSSet.{0}} {Y : SymmetricSequence.{0}}
+    {f g : (free n).obj K ⟶ Y}
+    (h : freeι n K ≫ f.natTrans.app (FiniteBijection.mk n) =
+      freeι n K ≫ g.natTrans.app (FiniteBijection.mk n)) :
+    f = g := by
+  apply ((freeEvaluationAdjunction n).homEquiv K Y).injective
+  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, freeEvaluationAdjunction_unit_app]
   exact h
 
 /-- The free symmetric sequence `G_n K` is the point in every level `m ≠ n`: there is no bijection
@@ -132,20 +236,15 @@ private lemma freeι_comp_freeZeroUnitHom :
 /-- The map `G₀ S⁰ ⟶ 𝟙` is an isomorphism: in level zero it is `S⁰ ≅ 𝟙₀` after the generator, and
 in positive levels both symmetric sequences are the point. -/
 private lemma isIso_freeZeroUnitHom : IsIso freeZeroUnitHom := by
-  have hn : ∀ c : FiniteBijection, IsIso (freeZeroUnitHom.natTrans.app c) := by
-    rintro ⟨_ | m⟩
-    · have : IsIso (freeι 0 (𝟙_ PointedSSet.{0}) ≫
-          freeZeroUnitHom.natTrans.app (FiniteBijection.mk 0)) := by
-        rw [freeι_comp_freeZeroUnitHom]
-        infer_instance
-      exact IsIso.of_isIso_comp_left (freeι 0 (𝟙_ PointedSSet.{0})) _
-    · exact Limits.isIso_of_isInitial (isInitialFreeObj _ (Nat.succ_ne_zero m))
-        (isInitialUnitObj m) _
-  have : IsIso ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-      freeZeroUnitHom) := by
-    rw [DayFunctor.equiv_functor_map]
-    exact @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ hn
-  exact isIso_of_reflects_iso _ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor
+  refine DayFunctor.isIso_of_isIso_app freeZeroUnitHom ?_
+  rintro ⟨_ | m⟩
+  · have : IsIso (freeι 0 (𝟙_ PointedSSet.{0}) ≫
+        freeZeroUnitHom.natTrans.app (FiniteBijection.mk 0)) := by
+      rw [freeι_comp_freeZeroUnitHom]
+      infer_instance
+    exact IsIso.of_isIso_comp_left (freeι 0 (𝟙_ PointedSSet.{0})) _
+  · exact Limits.isIso_of_isInitial (isInitialFreeObj _ (Nat.succ_ne_zero m))
+      (isInitialUnitObj m) _
 
 /-- The free symmetric sequence `G₀ S⁰` on the unit `S⁰` in level zero is the unit of the Day
 convolution. On the generator it is the identification `S⁰ ≅ 𝟙₀` of level zero of the unit

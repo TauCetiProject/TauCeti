@@ -7,7 +7,12 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.AddBasepoint
 public import TauCeti.AlgebraicTopology.Spectra.Free
+public import TauCeti.AlgebraicTopology.Spectra.StructureMap
 public import TauCeti.CategoryTheory.Limits.Shapes.Products
+public import TauCeti.CategoryTheory.Monoidal.Mod.Free.Closed
+
+import TauCeti.CategoryTheory.Adjunction.Unique
+import TauCeti.CategoryTheory.Monoidal.Closed.InternalCurrying
 
 /-!
 # Smashing symmetric spectra with pointed simplicial sets, and mapping spaces
@@ -29,11 +34,18 @@ hand. Write `G₀ K` for the free symmetric sequence `(SymmetricSequence.free 0)
 The level formula `X_n ∧ K ≅ (X ∧ K)_n` holds for the Day convolution `X ⊗ G₀ K` of any symmetric
 sequence `X`, and is an instance of the wedge formula for Day convolution: in the wedge over the
 subsets `S` of `Fin n` of `X_{#S} ∧ (G₀ K)_{#Sᶜ}`, every summand with `S ≠ Fin n` is the point.
+Together with the coproduct formula for free symmetric sequences, this yields the free
+symmetric-sequence comparison `G_n K ⊗ G₀ L ≅ G_n (K ∧ L)` and hence the free spectrum smash
+comparisons `(F_n K) ∧ L ≅ F_n (K ∧ L)` and `F_n S⁰ ∧ L ≅ F_n L`. Uniqueness of right adjoints
+then yields the free mapping-space identifications `Map(F_n K, E) ≅ Map_*(K, E_n)` and
+`Map(F_n S⁰, E) ≅ E_n`.
 
 ## Main definitions
 
 * `SymmetricSequence.tensorFreeZeroι X K n`: the isomorphism `X_n ∧ K ⟶ (X ⊗ G₀ K)_n`, natural in
   `X` and `K` and `Σ_n`-equivariant.
+* `SymmetricSequence.freeTensorFreeZeroIso n K`: the isomorphism `G_n K ⊗ G₀ L ≅ G_n (K ∧ L)`,
+  natural in `L`.
 * `SymmetricSpectrum.levelSmash X`: the functor `K ↦ X ∧ K`.
 * `SymmetricSpectrum.mappingSpace X`: the functor `Y ↦ Map(X, Y)`.
 * `SymmetricSpectrum.levelSmashMappingSpaceAdjunction X`: the adjunction `X ∧ - ⊣ Map(X, -)`.
@@ -42,6 +54,11 @@ subsets `S` of `Fin n` of `X_{#S} ∧ (G₀ K)_{#Sᶜ}`, every summand with `S �
   `X ∧ Δ[m]₊ ⟶ Y`.
 * `SymmetricSpectrum.unitHomMappingSpaceEquiv`: the vertices of `Map(X, Y)`, the based maps
   `S⁰ ⟶ Map(X, Y)`, are the maps `X ⟶ Y`.
+* `SymmetricSpectrum.levelSmashFreeIso n K`: the natural isomorphism `(F_n K) ∧ L ≅ F_n (K ∧ L)`.
+* `SymmetricSpectrum.levelSmashFreeZeroIso n`: the natural isomorphism `F_n S⁰ ∧ L ≅ F_n L`.
+* `SymmetricSpectrum.mappingSpaceFreeIso n K`: the natural isomorphism
+  `Map(F_n K, E) ≅ Map_*(K, E_n)`.
+* `SymmetricSpectrum.mappingSpaceFreeZeroIso n`: the natural isomorphism `Map(F_n S⁰, E) ≅ E_n`.
 
 These are point-set constructions; deriving them requires the stable model structure.
 
@@ -161,6 +178,156 @@ lemma tensorFreeZeroι_comp_whiskerLeft_freeZeroUnitIso_hom (X : SymmetricSequen
   simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id] at h
   refine h.trans ?_
   rw [CategoryTheory.Functor.map_id, Category.comp_id]
+
+/-- The canonical comparison map `G_n (K ∧ L) ⟶ G_n K ⊗ G₀ L`, adjoint to the generator
+inclusion `K ∧ L ⟶ (G_n K)_n ∧ L ≅ (G_n K ⊗ G₀ L)_n`. -/
+private noncomputable def freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}) :
+    (free n).obj (K ⊗ L) ⟶ (free n).obj K ⊗ (free 0).obj L :=
+  ((freeEvaluationAdjunction n).homEquiv _ _).symm
+    (freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n)
+
+@[reassoc]
+private lemma freeι_comp_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}) :
+    freeι n (K ⊗ L) ≫ (freeTensorFreeZeroHom n K L).natTrans.app (FiniteBijection.mk n) =
+      freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n :=
+  freeι_comp_homEquiv_symm n _
+
+/-- Level `m` of `G_n (K ∧ L)` is isomorphic to `(G_n K)_m ∧ L`, since `tensorRight L`
+preserves the defining coproduct. -/
+private noncomputable def freeTensorLevelIso (n m : ℕ) (K L : PointedSSet.{0}) :
+    ((free n).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m) ≅
+      ((free n).obj K).functor.obj (FiniteBijection.mk m) ⊗ L :=
+  freeLevelIso n m (K ⊗ L) ≪≫
+    (Limits.PreservesCoproduct.iso (tensorRight L)
+      (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K)).symm ≪≫
+    (tensorRight L).mapIso (freeLevelIso n m K).symm
+
+private lemma freeι_comp_map_comp_freeTensorLevelIso_hom (n m : ℕ) (K L : PointedSSet.{0})
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
+    freeι n (K ⊗ L) ≫ ((free n).obj (K ⊗ L)).functor.map σ ≫
+        (freeTensorLevelIso n m K L).hom =
+      (freeι n K ≫ ((free n).obj K).functor.map σ) ▷ L := by
+  calc
+    freeι n (K ⊗ L) ≫ ((free n).obj (K ⊗ L)).functor.map σ ≫
+        (freeTensorLevelIso n m K L).hom
+      = (freeι n (K ⊗ L) ≫ ((free n).obj (K ⊗ L)).functor.map σ ≫
+          (freeLevelIso n m (K ⊗ L)).hom) ≫
+          (Limits.sigmaComparison (tensorRight L) fun _ ↦ K) ≫
+          (tensorRight L).map (freeLevelIso n m K).inv := by
+        simp only [freeTensorLevelIso, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
+          PreservesCoproduct.iso_inv, Category.assoc]
+    _ = (Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K ⊗ L) σ ≫
+          (Limits.sigmaComparison (tensorRight L) fun _ ↦ K)) ≫
+          (tensorRight L).map (freeLevelIso n m K).inv := by
+        rw [freeι_comp_map_comp_freeLevelIso_hom, Category.assoc]
+    _ = _ := by
+        have hσ := Limits.ι_comp_sigmaComparison (tensorRight L)
+          (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ
+        dsimp only [Functor.flip_obj_obj, curriedTensor_obj_obj,
+          Functor.flip_obj_map, curriedTensor_map_app] at hσ ⊢
+        rw [hσ, ← comp_whiskerRight, ι_comp_freeLevelIso_inv]
+
+private lemma isIso_freeTensorFreeZeroHom_app (n m : ℕ) (K L : PointedSSet.{0}) :
+    IsIso ((freeTensorFreeZeroHom n K L).natTrans.app (FiniteBijection.mk m)) := by
+  have heq : (freeTensorFreeZeroHom n K L).natTrans.app (FiniteBijection.mk m) =
+      (freeTensorLevelIso n m K L).hom ≫ tensorFreeZeroι ((free n).obj K) L m := by
+    refine free_level_hom_ext fun σ ↦ ?_
+    have hnat := map_whiskerRight_comp_tensorFreeZeroι ((free n).obj K) L σ
+    have hstep := freeι_comp_map_comp_freeTensorLevelIso_hom n m K L σ
+    rw [(freeTensorFreeZeroHom n K L).natTrans.naturality σ,
+      freeι_comp_freeTensorFreeZeroHom_assoc]
+    dsimp only [free, Functor.comp_obj] at hnat hstep ⊢
+    rw [← hnat, ← comp_whiskerRight_assoc, ← hstep, Category.assoc, Category.assoc]
+  rw [heq]
+  infer_instance
+
+private lemma isIso_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}) :
+    IsIso (freeTensorFreeZeroHom n K L) :=
+  DayFunctor.isIso_of_isIso_app (freeTensorFreeZeroHom n K L) fun ⟨m⟩ ↦
+    isIso_freeTensorFreeZeroHom_app n m K L
+
+private lemma freeTensorFreeZeroHom_naturality (n : ℕ) (K : PointedSSet.{0})
+    {L L' : PointedSSet.{0}} (f : L ⟶ L') :
+    (free n).map (K ◁ f) ≫ freeTensorFreeZeroHom n K L' =
+      freeTensorFreeZeroHom n K L ≫ (free n).obj K ◁ (free 0).map f := by
+  calc
+    (free n).map (K ◁ f) ≫ freeTensorFreeZeroHom n K L'
+      = ((freeEvaluationAdjunction n).homEquiv (K ⊗ L)
+            ((free n).obj K ⊗ (free 0).obj L')).symm
+          (K ◁ f ≫ (freeι n K ▷ L' ≫ tensorFreeZeroι ((free n).obj K) L' n)) :=
+        ((freeEvaluationAdjunction n).homEquiv_naturality_left_symm (K ◁ f) _).symm
+    _ = ((freeEvaluationAdjunction n).homEquiv (K ⊗ L)
+            ((free n).obj K ⊗ (free 0).obj L')).symm
+          ((freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n) ≫
+            ((free n).obj K ◁ (free 0).map f).natTrans.app (FiniteBijection.mk n)) := by
+        have hsq : K ◁ f ≫ freeι n K ▷ L' ≫ tensorFreeZeroι ((free n).obj K) L' n =
+            (freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n) ≫
+              ((free n).obj K ◁ (free 0).map f).natTrans.app (FiniteBijection.mk n) := by
+          rw [whisker_exchange_assoc, tensorFreeZeroι_naturality_right, Category.assoc]
+        exact congrArg ((freeEvaluationAdjunction n).homEquiv (K ⊗ L)
+          ((free n).obj K ⊗ (free 0).obj L')).symm hsq
+    _ = freeTensorFreeZeroHom n K L ≫ (free n).obj K ◁ (free 0).map f :=
+        (freeEvaluationAdjunction n).homEquiv_naturality_right_symm _
+          ((free n).obj K ◁ (free 0).map f)
+
+/-- Smashing a free symmetric sequence `G_n K` on the right with `G₀ L` is naturally isomorphic
+in `L` to `G_n (K ∧ L)`. -/
+noncomputable def freeTensorFreeZeroIso (n : ℕ) (K : PointedSSet.{0}) :
+    free 0 ⋙ tensorLeft ((free n).obj K) ≅ tensorLeft K ⋙ free n :=
+  (NatIso.ofComponents
+    (fun L ↦ have := isIso_freeTensorFreeZeroHom n K L; asIso (freeTensorFreeZeroHom n K L))
+    (fun f ↦ freeTensorFreeZeroHom_naturality n K f)).symm
+
+private lemma freeTensorFreeZeroIso_inv_app (n : ℕ) (K L : PointedSSet.{0}) :
+    (freeTensorFreeZeroIso n K).inv.app L = freeTensorFreeZeroHom n K L := (rfl)
+
+/-- On the generating level `n`, `(freeTensorFreeZeroIso n K).inv.app L` sends the generator
+`K ∧ L` to `(freeι n K ▷ L) ≫ tensorFreeZeroι ((free n).obj K) L n`. -/
+@[reassoc (attr := simp)]
+lemma freeι_comp_freeTensorFreeZeroIso_inv_app (n : ℕ) (K L : PointedSSet.{0}) :
+    freeι n (K ⊗ L) ≫ ((freeTensorFreeZeroIso n K).inv.app L).natTrans.app (FiniteBijection.mk n) =
+      freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n :=
+  freeι_comp_freeTensorFreeZeroHom n K L
+
+/-- The inverse free-tensor comparison `(freeTensorFreeZeroIso n K).inv.app L` is natural in the
+generating pointed simplicial set `K`. -/
+@[reassoc]
+lemma freeTensorFreeZeroIso_inv_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
+    (f : K ⟶ K') (L : PointedSSet.{0}) :
+    (free n).map (f ▷ L) ≫ (freeTensorFreeZeroIso n K').inv.app L =
+      (freeTensorFreeZeroIso n K).inv.app L ≫ (free n).map f ▷ (free 0).obj L := by
+  rw [freeTensorFreeZeroIso_inv_app, freeTensorFreeZeroIso_inv_app]
+  calc
+    (free n).map (f ▷ L) ≫ freeTensorFreeZeroHom n K' L
+      = ((freeEvaluationAdjunction n).homEquiv (K ⊗ L)
+            ((free n).obj K' ⊗ (free 0).obj L)).symm
+          (f ▷ L ≫ (freeι n K' ▷ L ≫ tensorFreeZeroι ((free n).obj K') L n)) :=
+        ((freeEvaluationAdjunction n).homEquiv_naturality_left_symm (f ▷ L) _).symm
+    _ = ((freeEvaluationAdjunction n).homEquiv (K ⊗ L)
+            ((free n).obj K' ⊗ (free 0).obj L)).symm
+          ((freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n) ≫
+            ((free n).map f ▷ (free 0).obj L).natTrans.app (FiniteBijection.mk n)) := by
+        have hsq : f ▷ L ≫ freeι n K' ▷ L ≫ tensorFreeZeroι ((free n).obj K') L n =
+            (freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n) ≫
+              ((free n).map f ▷ (free 0).obj L).natTrans.app (FiniteBijection.mk n) := by
+          rw [← comp_whiskerRight_assoc, freeι_naturality, comp_whiskerRight_assoc,
+            Category.assoc, tensorFreeZeroι_naturality_left]
+        exact congrArg ((freeEvaluationAdjunction n).homEquiv (K ⊗ L)
+          ((free n).obj K' ⊗ (free 0).obj L)).symm hsq
+    _ = freeTensorFreeZeroHom n K L ≫ (free n).map f ▷ (free 0).obj L :=
+        (freeEvaluationAdjunction n).homEquiv_naturality_right_symm _
+          ((free n).map f ▷ (free 0).obj L)
+
+/-- The free-tensor comparison `(freeTensorFreeZeroIso n K).hom.app L` is natural in the
+generating pointed simplicial set `K`. -/
+@[reassoc]
+lemma freeTensorFreeZeroIso_hom_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
+    (f : K ⟶ K') (L : PointedSSet.{0}) :
+    (free n).map f ▷ (free 0).obj L ≫ (freeTensorFreeZeroIso n K').hom.app L =
+      (freeTensorFreeZeroIso n K).hom.app L ≫ (free n).map (f ▷ L) :=
+  (CommSq.mk (freeTensorFreeZeroIso_inv_app_naturality n f L) :
+    CommSq ((free n).map (f ▷ L)) ((freeTensorFreeZeroIso n K).app L).symm.hom
+      ((freeTensorFreeZeroIso n K').app L).symm.hom ((free n).map f ▷ (free 0).obj L)).vert_inv.w
 
 end SymmetricSequence
 
@@ -293,6 +460,195 @@ lemma unitHomMappingSpaceEquiv_symm_apply (X Y : SymmetricSpectrum) (f : X ⟶ Y
     (unitHomMappingSpaceEquiv X Y).symm f =
       (levelSmashMappingSpaceAdjunction X).homEquiv _ _ ((levelSmashUnitIso X).hom ≫ f) := by
   simp [unitHomMappingSpaceEquiv]
+
+/-! ### Naturality and structure maps of levelwise smash -/
+
+/-- Passing across `tensorFreeZeroι` is natural in the pointed simplicial set under
+`levelSmash X`. -/
+@[reassoc]
+lemma tensorFreeZeroι_comp_evaluation_map_levelSmash_map (X : SymmetricSpectrum)
+    {K L : PointedSSet.{0}} (f : K ⟶ L) (n : ℕ) :
+    SymmetricSequence.tensorFreeZeroι X.X K n ≫
+        (evaluation n).map ((levelSmash X).map f) =
+      (evaluation n).obj X ◁ f ≫ SymmetricSequence.tensorFreeZeroι X.X L n :=
+  (SymmetricSequence.tensorFreeZeroι_naturality_right X.X f n).symm
+
+/-- Passing across `tensorFreeZeroι` intertwines the structure map of `X` with the structure map
+of `X ∧ L`. -/
+@[reassoc]
+lemma tensorFreeZeroι_comp_levelSmash_smashPowStructureMap
+    (X : SymmetricSpectrum) (L : PointedSSet.{0}) (n : ℕ) :
+    X.smashPowStructureMap n ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι X.X L (1 + n) =
+      (α_ PointedSSet.circle (X.X.functor.obj (FiniteBijection.mk n)) L).hom ≫
+        PointedSSet.circle ◁ SymmetricSequence.tensorFreeZeroι X.X L n ≫
+        ((levelSmash X).obj L).smashPowStructureMap n := by
+  have hday : (α_ (SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1))
+          (X.X.functor.obj (FiniteBijection.mk n)) L).hom ≫
+        SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1) ◁
+          SymmetricSequence.tensorFreeZeroι X.X L n ≫
+        ((levelSmash X).obj L).dayStructureMap (FiniteBijection.mk 1) (FiniteBijection.mk n) =
+      X.dayStructureMap (FiniteBijection.mk 1) (FiniteBijection.mk n) ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι X.X L (1 + n) := by
+    simp only [SymmetricSequence.tensorFreeZeroι_def, Mod.dayStructureMap_def,
+      Mod.tensorLeft_smul]
+    exact
+      DayFunctor.associator_hom_whiskerLeft_comp_rightUnitor_action
+        SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)
+        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X))
+        (SymmetricSequence.freeι 0 L) (FiniteBijection.mk 1) (FiniteBijection.mk n)
+  rw [Mod.smashPowStructureMap_def, Mod.smashPowStructureMap_def, comp_whiskerRight,
+    Category.assoc, hday.symm, associator_naturality_left_assoc, whisker_exchange_assoc]
+
+/-! ### Free smash comparisons and mapping spaces out of free spectra -/
+
+/-- Smashing a free symmetric spectrum `F_n K` on the right with `L` is naturally isomorphic in
+`L` to `F_n (K ∧ L)`. -/
+noncomputable def levelSmashFreeIso (n : ℕ) (K : PointedSSet.{0}) :
+    levelSmash ((free n).obj K) ≅ MonoidalCategory.tensorLeft K ⋙ free n :=
+  Functor.isoWhiskerLeft (SymmetricSequence.free 0)
+      (Mod.tensorLeftFreeIso (A := SymmetricSequence.sphere) ((SymmetricSequence.free n).obj K)) ≪≫
+    Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerRight (SymmetricSequence.freeTensorFreeZeroIso n K)
+      (freeMod SymmetricSequence.sphere) ≪≫
+    Functor.associator _ _ _
+
+/-- The underlying symmetric-sequence morphism of `(levelSmashFreeIso n K).inv.app L`. -/
+lemma levelSmashFreeIso_inv_app_hom (n : ℕ) (K L : PointedSSet.{0}) :
+    ((levelSmashFreeIso n K).inv.app L).hom =
+      SymmetricSequence.sphere ◁ (SymmetricSequence.freeTensorFreeZeroIso n K).inv.app L ≫
+        (α_ SymmetricSequence.sphere ((SymmetricSequence.free n).obj K)
+          ((SymmetricSequence.free 0).obj L)).inv := by
+  simp [levelSmashFreeIso]
+
+/-- On the generating level `n`, `(levelSmashFreeIso n K).inv.app L` sends the generator
+`K ∧ L` into `(F_n K)_n ∧ L ≅ (F_n K ∧ L)_n`. -/
+@[reassoc (attr := simp)]
+lemma freeι_comp_evaluation_map_levelSmashFreeIso_inv_app (n : ℕ) (K L : PointedSSet.{0}) :
+    freeι n (K ⊗ L) ≫ (evaluation n).map ((levelSmashFreeIso n K).inv.app L) =
+      freeι n K ▷ L ≫ SymmetricSequence.tensorFreeZeroι ((free n).obj K).X L n := by
+  have hcomp : ((levelSmashFreeIso n K).inv.app L).hom =
+      ((freeMod SymmetricSequence.sphere).map
+        ((SymmetricSequence.freeTensorFreeZeroIso n K).inv.app L)).hom ≫
+      ((Mod.tensorLeftFreeIso (A := SymmetricSequence.sphere)
+        ((SymmetricSequence.free n).obj K)).inv.app ((SymmetricSequence.free 0).obj L)).hom := by
+    simp [levelSmashFreeIso]
+  dsimp only [evaluation]
+  rw [hcomp, freeι_eq, DayFunctor.comp_natTrans, NatTrans.comp_app,
+    Category.assoc, Mod.tensorLeftFreeIso_inv_app_hom]
+  have hmod : (freeModι SymmetricSequence.sphere ((SymmetricSequence.free n).obj (K ⊗ L))) ≫
+      ((freeMod SymmetricSequence.sphere).map
+        ((SymmetricSequence.freeTensorFreeZeroIso n K).inv.app L)).hom ≫
+      (α_ SymmetricSequence.sphere ((SymmetricSequence.free n).obj K)
+        ((SymmetricSequence.free 0).obj L)).inv =
+      ((SymmetricSequence.freeTensorFreeZeroIso n K).inv.app L) ≫
+        (freeModι SymmetricSequence.sphere ((SymmetricSequence.free n).obj K) ▷
+          (SymmetricSequence.free 0).obj L) := by
+    rw [← freeModι_naturality_assoc]
+    dsimp only [Functor.comp_obj, MonoidalCategory.curriedTensor_obj_obj]
+    rw [freeModι_tensor]
+  have hmodApp := congrArg (fun g : (SymmetricSequence.free n).obj (K ⊗ L) ⟶ _ ↦
+    g.natTrans.app (FiniteBijection.mk n)) hmod
+  simp only [DayFunctor.comp_natTrans, NatTrans.comp_app] at hmodApp
+  rw [hmodApp, ← Category.assoc, SymmetricSequence.freeι_comp_freeTensorFreeZeroIso_inv_app,
+    Category.assoc, ← SymmetricSequence.tensorFreeZeroι_naturality_left, ← comp_whiskerRight_assoc,
+    ← freeι_eq]
+  -- `((free n).obj K).X` is `SymmetricSequence.sphere ⊗ (SymmetricSequence.free n).obj K`.
+  rfl
+
+/-- Smashing `F_n S⁰` with `L` is naturally isomorphic in `L` to `F_n L`. -/
+noncomputable def levelSmashFreeZeroIso (n : ℕ) :
+    levelSmash ((free n).obj (𝟙_ _)) ≅ free n :=
+  levelSmashFreeIso n (𝟙_ _) ≪≫
+    Functor.isoWhiskerRight (leftUnitorNatIso PointedSSet.{0}) (free n) ≪≫
+    Functor.leftUnitor (free n)
+
+/-- On the generating level `n`, `(levelSmashFreeZeroIso n).inv.app L` sends the generator
+`L` through `(λ_ L).inv` into `(F_n S⁰)_n ∧ L ≅ (F_n S⁰ ∧ L)_n`. -/
+@[reassoc (attr := simp)]
+lemma freeι_comp_evaluation_map_levelSmashFreeZeroIso_inv_app (n : ℕ) (L : PointedSSet.{0}) :
+    freeι n L ≫ (evaluation n).map ((levelSmashFreeZeroIso n).inv.app L) =
+      (λ_ L).inv ≫ freeι n (𝟙_ _) ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι ((free n).obj (𝟙_ _)).X L n := by
+  have hinv : (levelSmashFreeZeroIso n).inv.app L =
+      (free n).map (λ_ L).inv ≫ (levelSmashFreeIso n (𝟙_ _)).inv.app L := by
+    simp [levelSmashFreeZeroIso]
+  rw [hinv, Functor.map_comp, ← Category.assoc, ← freeι_naturality, Category.assoc,
+    freeι_comp_evaluation_map_levelSmashFreeIso_inv_app]
+
+/-- Mapping out of the free symmetric spectrum `F_n K` into `E` is naturally isomorphic to the
+pointed mapping space `Map_*(K, E_n)`. -/
+noncomputable def mappingSpaceFreeIso (n : ℕ) (K : PointedSSet.{0}) :
+    mappingSpace ((free n).obj K) ≅ evaluation n ⋙ CategoryTheory.ihom K :=
+  (levelSmashMappingSpaceAdjunction ((free n).obj K)).rightAdjointUniq
+    (((CategoryTheory.ihom.adjunction K).comp (freeEvaluationAdjunction n)).ofNatIsoLeft
+      (levelSmashFreeIso n K).symm)
+
+/-- Under `mappingSpaceFreeIso n K`, the adjunction bijection of `f : F_n K ∧ L ⟶ E` takes the
+level-`n` component of `f`, restricts it along the generator `freeι n K` and `tensorFreeZeroι`, and
+curries the resulting `K ∧ L ⟶ E_n`. -/
+@[reassoc]
+lemma homEquiv_comp_mappingSpaceFreeIso_hom_app (n : ℕ) (K L : PointedSSet.{0})
+    (E : SymmetricSpectrum) (f : (levelSmash ((free n).obj K)).obj L ⟶ E) :
+    (levelSmashMappingSpaceAdjunction ((free n).obj K)).homEquiv L E f ≫
+        (mappingSpaceFreeIso n K).hom.app E =
+      MonoidalClosed.curry (freeι n K ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι ((free n).obj K).X L n ≫ (evaluation n).map f) := by
+  let adj2 := ((CategoryTheory.ihom.adjunction K).comp (freeEvaluationAdjunction n)).ofNatIsoLeft
+    (levelSmashFreeIso n K).symm
+  rw [mappingSpaceFreeIso, Adjunction.homEquiv_comp_rightAdjointUniq_hom_app _ adj2]
+  dsimp only [adj2]
+  rw [Adjunction.homEquiv_ofNatIsoLeft_apply, Adjunction.comp_homEquiv]
+  simp only [Equiv.trans_apply, Iso.symm_hom]
+  dsimp only [MonoidalCategory.curriedTensor_obj_obj]
+  rw [Adjunction.homEquiv_unit (freeEvaluationAdjunction n), freeEvaluationAdjunction_unit_app,
+    Functor.map_comp, ← Category.assoc, freeι_comp_evaluation_map_levelSmashFreeIso_inv_app,
+    MonoidalClosed.homEquiv_apply_eq, Category.assoc]
+
+/-- Uncurrying `(mappingSpaceFreeIso n K).hom.app E` yields restriction of the counit evaluation
+along the generator `freeι n K` and `tensorFreeZeroι`. -/
+@[reassoc]
+lemma uncurry_mappingSpaceFreeIso_hom_app (n : ℕ) (K : PointedSSet.{0}) (E : SymmetricSpectrum) :
+    MonoidalClosed.uncurry ((mappingSpaceFreeIso n K).hom.app E) =
+      freeι n K ▷ (mappingSpace ((free n).obj K)).obj E ≫
+        SymmetricSequence.tensorFreeZeroι ((free n).obj K).X
+          ((mappingSpace ((free n).obj K)).obj E) n ≫
+        (evaluation n).map ((levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E) := by
+  rw [← Category.id_comp ((mappingSpaceFreeIso n K).hom.app E),
+    ← Adjunction.right_triangle_components (levelSmashMappingSpaceAdjunction ((free n).obj K)),
+    ← Adjunction.homEquiv_unit, homEquiv_comp_mappingSpaceFreeIso_hom_app,
+    MonoidalClosed.uncurry_curry]
+
+/-- Mapping out of `F_n S⁰` into `E` is naturally isomorphic to level `E_n`. -/
+noncomputable def mappingSpaceFreeZeroIso (n : ℕ) :
+    mappingSpace ((free n).obj (𝟙_ _)) ≅ evaluation n :=
+  mappingSpaceFreeIso n (𝟙_ _) ≪≫
+    Functor.isoWhiskerLeft (evaluation n) MonoidalClosed.unitNatIso.symm
+
+/-- On components, `(mappingSpaceFreeZeroIso n).hom.app E` factors through
+`mappingSpaceFreeIso n S⁰` and `MonoidalClosed.unitNatIso.inv`. -/
+@[reassoc]
+lemma mappingSpaceFreeZeroIso_hom_app (n : ℕ) (E : SymmetricSpectrum) :
+    (mappingSpaceFreeZeroIso n).hom.app E =
+      (mappingSpaceFreeIso n (𝟙_ _)).hom.app E ≫
+        MonoidalClosed.unitNatIso.inv.app ((evaluation n).obj E) := by
+  simp [mappingSpaceFreeZeroIso]
+
+/-- Under `mappingSpaceFreeZeroIso n`, the adjunction bijection `F_n S⁰ ∧ L ⟶ E` corresponds to
+restriction along the generator and `tensorFreeZeroι`, precomposed with `(λ_ L).inv`. -/
+@[reassoc]
+lemma homEquiv_comp_mappingSpaceFreeZeroIso_hom_app (n : ℕ) (L : PointedSSet.{0})
+    (E : SymmetricSpectrum) (f : (levelSmash ((free n).obj (𝟙_ _))).obj L ⟶ E) :
+    (levelSmashMappingSpaceAdjunction ((free n).obj (𝟙_ _))).homEquiv L E f ≫
+        (mappingSpaceFreeZeroIso n).hom.app E =
+      (λ_ L).inv ≫ freeι n (𝟙_ _) ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι ((free n).obj (𝟙_ _)).X L n ≫
+        (evaluation n).map f := by
+  rw [mappingSpaceFreeZeroIso_hom_app, ← Category.assoc,
+    homEquiv_comp_mappingSpaceFreeIso_hom_app]
+  simp only [MonoidalClosed.unitNatIso_inv_app, ← Category.assoc (MonoidalClosed.curry _),
+    leftUnitor_inv_naturality, Category.assoc, ← MonoidalClosed.uncurry_eq,
+    MonoidalClosed.uncurry_curry]
 
 end SymmetricSpectrum
 
