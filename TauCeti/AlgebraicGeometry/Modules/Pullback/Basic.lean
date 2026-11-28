@@ -364,6 +364,26 @@ lemma unitToPushforwardObjUnit_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
   ext U
   rfl
 
+/-- The canonical restriction–pullback comparison on the structure sheaf agrees with the
+canonical identification of its restriction with the structure sheaf of the open subscheme. -/
+theorem restrictFunctorIsoPullback_unit {X Y : Scheme.{u}} (j : X ⟶ Y)
+    [IsOpenImmersion j] :
+    (Scheme.Modules.restrictFunctorIsoPullback j).hom.app
+        (𝟙_ Y.Modules) ≫ (Scheme.Modules.pullbackObjUnitIso j).hom =
+      (Scheme.Modules.restrictUnitIso j).hom := by
+  apply ((Scheme.Modules.restrictAdjunction j).homEquiv _ _).injective
+  rw [Adjunction.homEquiv_unit, Functor.map_comp, ← Category.assoc,
+    Scheme.Modules.restrictFunctorIsoPullback, Adjunction.unit_leftAdjointUniq_hom_app,
+    ← Adjunction.homEquiv_unit,
+    Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom]
+  rw [Adjunction.homEquiv_unit]
+  ext U s
+  -- Both transposes act on structure-sheaf sections by the open immersion's ring map.
+  change j.app U s = (j.appIso (j ⁻¹ᵁ U)).hom
+    (Y.presheaf.map (homOfLE (Set.image_preimage_subset j U.carrier)).op s)
+  rw [← j.app_appIso_inv U]
+  exact (Iso.inv_hom_id_apply (j.appIso (j ⁻¹ᵁ U)) (j.app U s)).symm
+
 /-- Along the identity, `𝟙^* 𝒪_X ≅ 𝒪_X` is the identity isomorphism of pullback. -/
 lemma pullbackObjUnitIso_id (X : Scheme.{u}) :
     (pullbackObjUnitIso (𝟙 X)).hom = (pullbackId X).hom.app _ := by

@@ -117,6 +117,16 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open CategoryTheory Limits
 
+/-- On sections, restriction of the structure sheaf is identified with the structure sheaf
+by the ring isomorphism of an open immersion. -/
+lemma restrictUnitIso_hom_app {X Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f]
+    (U : X.Opens)
+    (s : Γ((show Y.Modules from SheafOfModules.unit Y.ringCatSheaf).restrict f, U)) :
+    (restrictUnitIso f).hom.app U s =
+      (f.appIso U).hom
+        (((show Y.Modules from SheafOfModules.unit Y.ringCatSheaf).restrictAppIso f U).hom s) :=
+  rfl
+
 /-- Restriction acts on the sections over `U` of a morphism `φ` as `φ` on the sections over the
 image `f ''ᵁ U`, under the identifications `Scheme.Modules.restrictAppIso`. -/
 @[reassoc (attr := simp)]

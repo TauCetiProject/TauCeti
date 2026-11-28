@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.Over
+public import Mathlib.CategoryTheory.RepresentedBy
 
 import TauCeti.CategoryTheory.Sites.Hypercover.One
 
@@ -122,6 +123,37 @@ lemma sigmaPresheaf_map_left_mk {Y Z : Over S} (f : Z ⟶ Y) (s : P.obj (op Y)) 
   refine congrArg (Sigma.mk _) ?_
   rw [← Functor.map_comp_apply, ← op_comp]
   exact congrArg (fun g ↦ P.map g s) (congrArg Quiver.Hom.op (by ext; simp))
+
+/-- If the presheaf of pairs `sigmaPresheaf P` is represented by an object `Y` of `C`, then
+`P` is represented over `S` by the structure morphism given by the universal pair on `Y`. -/
+theorem isRepresentable_of_isRepresentable_sigmaPresheaf
+    [(sigmaPresheaf P).IsRepresentable] : P.IsRepresentable := by
+  obtain ⟨Y, ⟨e⟩⟩ := Functor.IsRepresentable.has_representation (F := sigmaPresheaf P)
+  let x := e.homEquiv (𝟙 Y)
+  let A : Over S := mk x.fst
+  let y : P.obj (op A) := x.snd
+  have he {T : C} (a : T ⟶ Y) : e.homEquiv a = (sigmaPresheaf P).map a.op x := by
+    simpa using e.homEquiv_comp a (𝟙 Y)
+  have hmap {W : Over S} (b : W ⟶ A) :
+      e.homEquiv b.left = (⟨W.hom, P.map b.op y⟩ : (sigmaPresheaf P).obj (op W.left)) := by
+    rw [he]
+    exact sigmaPresheaf_map_left_mk b y
+  have hbij (W : Over S) : Function.Bijective (fun b : W ⟶ A ↦ P.map b.op y) := by
+    refine ⟨fun a b h ↦ ?_, fun z ↦ ?_⟩
+    · apply OverMorphism.ext
+      apply e.homEquiv.injective
+      rw [hmap, hmap]
+      exact congrArg (Sigma.mk (β := fun h : W.left ⟶ S ↦ P.obj (op (mk h))) W.hom) h
+    · let a := e.homEquiv.symm (⟨W.hom, z⟩ : (sigmaPresheaf P).obj (op W.left))
+      have ha : e.homEquiv a = ⟨W.hom, z⟩ := e.homEquiv.apply_symm_apply _
+      have hpair : (sigmaPresheaf P).map a.op
+          (⟨A.hom, y⟩ : (sigmaPresheaf P).obj (op Y)) = ⟨W.hom, z⟩ := (he a).symm.trans ha
+      have hw : a ≫ A.hom = W.hom := congrArg Sigma.fst hpair
+      let b : W ⟶ A := homMk a hw
+      refine ⟨b, sigma_mk_injective (β := fun h : W.left ⟶ S ↦ P.obj (op (mk h))) ?_⟩
+      exact (hmap b).symm.trans ha
+  have represented : P.IsRepresentedBy y := ⟨fun {W} ↦ hbij W⟩
+  exact represented.representableBy.isRepresentable
 
 /-- **Sheaves on `Over S` give sheaves on `C`.** If `S` is a sheaf for a sieve `R` on `T` and
 `P` is a sheaf for the corresponding sieve on `(T, h)` for every `h : T ⟶ S`, then
