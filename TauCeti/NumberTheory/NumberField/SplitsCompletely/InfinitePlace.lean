@@ -103,6 +103,7 @@ theorem equivPrimesOverTransversal_symm_apply (w : InfinitePlace E) (Q : P.prime
 
 /-- If the translate of `Q` belongs to the transversal, it labels the corresponding translate
 of the infinite base place. -/
+@[simp]
 theorem equivPrimesOverTransversal_apply_smul (w : InfinitePlace E) (Q : P.primesOver (𝓞 E))
     (hP : (P.primesOver (𝓞 E)).ncard = Module.finrank ℚ E)
     {S : Set (P.primesOver (𝓞 E))}

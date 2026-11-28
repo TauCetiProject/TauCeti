@@ -147,8 +147,9 @@ noncomputable def galEquivPrimesOver (P : Ideal A)
 theorem galEquivPrimesOver_apply (P : Ideal A)
     (Q : P.primesOver (𝓞 L)) (hP : (P.primesOver (𝓞 L)).ncard = finrank K L)
     (g : Gal(L/K)) : P.galEquivPrimesOver Q hP g = g • Q := by
-  rw [galEquivPrimesOver, Equiv.trans_apply, Equiv.trans_apply,
-    show (QuotientGroup.quotientEquivSelf Gal(L/K)).symm g = QuotientGroup.mk g from rfl,
+  -- Mathlib gives no evaluation lemma for this inverse; its `invFun` is the quotient map.
+  have hmk : (QuotientGroup.quotientEquivSelf Gal(L/K)).symm g = QuotientGroup.mk g := rfl
+  rw [galEquivPrimesOver, Equiv.trans_apply, Equiv.trans_apply, hmk,
     Subgroup.quotientEquivOfEq_mk, TauCeti.quotientStabilizerEquiv_mk]
 
 /-- The inverse Galois torsor bijection recovers the automorphism carrying `Q` to `g • Q`. -/
