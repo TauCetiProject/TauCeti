@@ -18,14 +18,14 @@ torus `TauCeti.dominantTorus m v` is the submonoid of `m → Rˣ` consisting of 
 whose entry valuations are monotone (`i ≤ j → v (t i) ≤ v (t j)`). When `m` is finite and
 `Γ₀ˣ` is multiplicatively Archimedean (for instance `ℤᵐ⁰` or `ℝ≥0` for a non-archimedean local
 field), high powers of any strictly dominant diagonal element absorb arbitrary off-diagonal
-entries into the valuation ring and shift any diagonal tuple into `dominantTorus m v`
-(ShortGRH `IntegralRepresentationsOfGeneralLinearGroups`, Layer 6).
+entries into the valuation ring and shift any diagonal tuple into `dominantTorus m v`, as used
+to define the Iwahori–Hecke operators `U_t` for dominant `t`.
 
 * `TauCeti.dominantTorus`: the submonoid `{t : m → Rˣ | Monotone fun i ↦ v (t i : R)}`.
 * `TauCeti.mem_dominantTorus_iff`: membership characterization.
 * `TauCeti.eventually_valuation_pow_div_mul_le_one`: for a strictly dominant `t` over a valued
-  field with `[MulArchimedean Γ₀ˣ]`, `(t i / t j) ^ k * a i j` is integral for all `i < j` and
-  all sufficiently large `k`.
+  division ring with `[MulArchimedean Γ₀ˣ]`, `(t i / t j) ^ k * a i j` is integral for all
+  `i < j` and all sufficiently large `k`.
 * `TauCeti.eventually_pow_mul_mem_dominantTorus`: for strictly dominant `t` and any `s : m → Kˣ`,
   `t ^ k * s ∈ dominantTorus m v` for all sufficiently large `k`.
 
@@ -46,9 +46,9 @@ open Filter
 
 namespace TauCeti
 
-section CommRing
+section Ring
 
-variable (m : Type*) [Preorder m] {R Γ₀ : Type*} [CommRing R]
+variable (m : Type*) [Preorder m] {R Γ₀ : Type*} [Ring R]
   [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀)
 
 /-- The submonoid of diagonal tuples `t : m → Rˣ` whose valuations are monotone in the index:
@@ -64,11 +64,12 @@ theorem mem_dominantTorus_iff {t : m → Rˣ} :
     t ∈ dominantTorus m v ↔ Monotone fun i ↦ v (t i : R) :=
   Iff.rfl
 
-end CommRing
+end Ring
 
-section Field
+section DivisionRing
 
-variable {m K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀}
+variable {m K Γ₀ : Type*} [DivisionRing K] [LinearOrderedCommGroupWithZero Γ₀]
+  {v : Valuation K Γ₀}
 
 /-- If `t : m → Kˣ` has strictly increasing valuations on a finite preordered type `m` and
 `Γ₀ˣ` is multiplicatively Archimedean, then `(t i) ^ k / (t j) ^ k * a i j` has valuation `≤ 1`
@@ -89,7 +90,7 @@ theorem eventually_valuation_pow_div_mul_le_one [Preorder m] [Finite m] [MulArch
       let u : Γ₀ˣ := Units.mk0 (v (t j : K) / v (t i : K)) (div_ne_zero htj hti)
       let b : Γ₀ˣ := Units.mk0 (v (a i j)) ha
       have hu : (1 : Γ₀ˣ) < u := by
-        change (1 : Γ₀) < v (t j : K) / v (t i : K)
+        rw [← Units.val_lt_val, Units.val_one, Units.val_mk0]
         exact (one_lt_div₀ (pos_iff_ne_zero.mpr hti)).mpr (ht hij)
       obtain ⟨N, hN⟩ := MulArchimedean.arch b hu
       filter_upwards [eventually_ge_atTop N] with k hk _
@@ -98,17 +99,17 @@ theorem eventually_valuation_pow_div_mul_le_one [Preorder m] [Finite m] [MulArch
       have h_pos : (0 : Γ₀) < (u : Γ₀) ^ k :=
         pow_pos (pos_iff_ne_zero.mpr (div_ne_zero htj hti)) k
       have h_div : v ((t i : K) ^ k / (t j : K) ^ k * a i j) = (b : Γ₀) / (u : Γ₀) ^ k := by
-        simp only [u, b, Units.val_mk0, map_mul, map_div₀, map_pow, div_pow, div_div_eq_mul_div,
-          mul_comm, mul_div_assoc]
+        simp only [u, b, Units.val_mk0, map_mul, map_div₀, map_pow, div_pow]
+        rw [div_div_eq_mul_div, div_mul_eq_mul_div, mul_comm (v (a i j))]
       rw [h_div, div_le_one₀ h_pos]
       exact hk_le
   · filter_upwards with k h
     exact absurd h hij
 
-/-- If `t : m → Kˣ` has strictly increasing valuations on a finite linearly ordered type `m` and
+/-- If `t : m → Kˣ` has strictly increasing valuations on a finite partially ordered type `m` and
 `Γ₀ˣ` is multiplicatively Archimedean, then for every `s : m → Kˣ`, the product `t ^ k * s` lies
 in `dominantTorus m v` for all sufficiently large `k : ℕ`. -/
-theorem eventually_pow_mul_mem_dominantTorus [LinearOrder m] [Finite m] [MulArchimedean Γ₀ˣ]
+theorem eventually_pow_mul_mem_dominantTorus [PartialOrder m] [Finite m] [MulArchimedean Γ₀ˣ]
     {t : m → Kˣ} (ht : StrictMono fun i ↦ v (t i : K)) (s : m → Kˣ) :
     ∀ᶠ k : ℕ in atTop, t ^ k * s ∈ dominantTorus m v := by
   filter_upwards [eventually_valuation_pow_div_mul_le_one ht fun i j ↦ (s i : K) / (s j : K)]
@@ -126,6 +127,6 @@ theorem eventually_pow_mul_mem_dominantTorus [LinearOrder m] [Finite m] [MulArch
   rw [h_eq, div_le_one₀ hpos] at hle
   simpa [Pi.mul_apply, Pi.pow_apply, Units.val_mul, Units.val_pow_eq_pow_val] using hle
 
-end Field
+end DivisionRing
 
 end TauCeti
