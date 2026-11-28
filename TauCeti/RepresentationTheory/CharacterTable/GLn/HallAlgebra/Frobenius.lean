@@ -278,7 +278,7 @@ variable {k : Type*} [Field k] [Fintype k] [DecidableEq k] {ι : Type*} [LinearO
 private theorem rankInner_prod_rankPart_empty (F : ι → HallAlgebra k) {n : Type*} [Fintype n]
     [DecidableEq n] (b : n → ι) (hs : ∀ i, b i ∈ (∅ : Finset ι))
     [Fintype (blockTriangularGroup k b)] (X : HallAlgebra k) :
-    rankInner (Fintype.card n) (∏ a ∈ ∅, (F a).rankPart (Fintype.card {i // b i = a})) X =
+    rankInner (Fintype.card n) (∏ a ∈ ∅, rankPart (Fintype.card {i // b i = a}) (F a)) X =
       𝔼 g : blockTriangularGroup k b, conj (∏ a ∈ ∅,
         ((F a).toClassFunction {i // b i = a}).val (BlockTriangularGroup.diagBlock b a g)) *
           (X.toClassFunction n).val g := by
@@ -298,11 +298,11 @@ private theorem rankInner_prod_rankPart_insert (F : ι → HallAlgebra k) {m : �
     (ih : ∀ b' : {i // ¬b i = m} → ι, (∀ i, b' i ∈ s) →
       ∀ [Fintype (blockTriangularGroup k b')] (X : HallAlgebra k),
         rankInner (Fintype.card {i // ¬b i = m})
-            (∏ a ∈ s, (F a).rankPart (Fintype.card {i // b' i = a})) X =
+            (∏ a ∈ s, rankPart (Fintype.card {i // b' i = a}) (F a)) X =
           𝔼 g : blockTriangularGroup k b', conj (∏ a ∈ s,
             ((F a).toClassFunction {i // b' i = a}).val (BlockTriangularGroup.diagBlock b' a g)) *
               (X.toClassFunction {i // ¬b i = m}).val g) :
-    rankInner (Fintype.card n) (∏ a ∈ insert m s, (F a).rankPart (Fintype.card {i // b i = a})) X =
+    rankInner (Fintype.card n) (∏ a ∈ insert m s, rankPart (Fintype.card {i // b i = a}) (F a)) X =
       𝔼 g : blockTriangularGroup k b, conj (∏ a ∈ insert m s,
         ((F a).toClassFunction {i // b i = a}).val (BlockTriangularGroup.diagBlock b a g)) *
           (X.toClassFunction n).val g := by
@@ -312,8 +312,8 @@ private theorem rankInner_prod_rankPart_insert (F : ι → HallAlgebra k) {m : �
     (Finset.mem_insert.1 (hs i)).resolve_left i.property
   have := Fintype.ofFinite (blockTriangularGroup k (restLevel b m))
   -- The levels in `s` have the same sizes for `b` and for `b′`.
-  have h_prod : ∏ a ∈ s, (F a).rankPart (Fintype.card {i // b i = a}) =
-      ∏ a ∈ s, (F a).rankPart (Fintype.card {i : {i // ¬b i = m} // restLevel b m i = a}) :=
+  have h_prod : ∏ a ∈ s, rankPart (Fintype.card {i // b i = a}) (F a) =
+      ∏ a ∈ s, rankPart (Fintype.card {i : {i // ¬b i = m} // restLevel b m i = a}) (F a) :=
     Finset.prod_congr rfl fun a ha ↦ by
       rw [Fintype.card_congr (Equiv.subtypeSubtypeEquivSubtype fun h ↦ h ▸ (hm a ha).ne).symm]
   have h_dim : Fintype.card n = Fintype.card {i // b i = m} + Fintype.card {i // ¬b i = m} := by
@@ -345,7 +345,7 @@ private theorem rankInner_prod_rankPart_insert (F : ι → HallAlgebra k) {m : �
 private theorem rankInner_prod_rankPart (F : ι → HallAlgebra k) (s : Finset ι) {n : Type*}
     [Fintype n] [DecidableEq n] (b : n → ι) (hs : ∀ i, b i ∈ s)
     [Fintype (blockTriangularGroup k b)] (X : HallAlgebra k) :
-    rankInner (Fintype.card n) (∏ a ∈ s, (F a).rankPart (Fintype.card {i // b i = a})) X =
+    rankInner (Fintype.card n) (∏ a ∈ s, rankPart (Fintype.card {i // b i = a}) (F a)) X =
       𝔼 g : blockTriangularGroup k b, conj (∏ a ∈ s,
         ((F a).toClassFunction {i // b i = a}).val (BlockTriangularGroup.diagBlock b a g)) *
           (X.toClassFunction n).val g := by
@@ -364,7 +364,7 @@ parabolic induction. -/
 theorem expect_toClassFunction_prod_rankPart {n : Type*} [Fintype n] [DecidableEq n]
     (b : n → ι) (F : ι → HallAlgebra k) {s : Finset ι} (hs : ∀ i, b i ∈ s)
     [Fintype (blockTriangularGroup k b)] (Y : ClassFunction ℂ (GL n k)) :
-    𝔼 g : GL n k, conj (((∏ a ∈ s, (F a).rankPart (Fintype.card {i // b i = a})).toClassFunction
+    𝔼 g : GL n k, conj (((∏ a ∈ s, rankPart (Fintype.card {i // b i = a}) (F a)).toClassFunction
         n).val g) * Y.val g =
       𝔼 g : blockTriangularGroup k b, conj (∏ a ∈ s,
         ((F a).toClassFunction {i // b i = a}).val (BlockTriangularGroup.diagBlock b a g)) *

@@ -331,6 +331,34 @@ theorem rankInner_eq_zero_of_right {n : ℕ} (F : HallAlgebra k) {H : HallAlgebr
     rankInner n F H = 0 :=
   Finset.expect_eq_zero fun g _ ↦ by rw [hH _ (by simp), mul_zero]
 
+/-- The rank-`n` inner product with `H|_m` on the right is `⟨F, H⟩_n` if `n = m` and `0`
+otherwise. -/
+@[simp]
+theorem rankInner_rankPart_right (n m : ℕ) (F H : HallAlgebra k) :
+    rankInner n F (rankPart m H) = if n = m then rankInner n F H else 0 := by
+  split_ifs with h
+  · subst h
+    simp [rankInner_def, rankPart_apply]
+  · exact rankInner_eq_zero_of_right F (fun c hc ↦ by simp [rankPart_apply, hc, h])
+
+/-- The rank-`n` inner product with `F|_m` on the left is `⟨F, H⟩_n` if `n = m` and `0`
+otherwise. -/
+@[simp]
+theorem rankInner_rankPart_left (n m : ℕ) (F H : HallAlgebra k) :
+    rankInner n (rankPart m F) H = if n = m then rankInner n F H else 0 := by
+  rw [← conj_rankInner, rankInner_rankPart_right, apply_ite conj, conj_rankInner, map_zero]
+
+/-- Elements supported in distinct ranks are orthogonal for `rankInner n` for every `n`. -/
+@[simp]
+theorem rankInner_rankPart_rankPart_of_ne (n : ℕ) {m m' : ℕ} (h : m ≠ m')
+    (F H : HallAlgebra k) :
+    rankInner n (rankPart m F) (rankPart m' H) = 0 := by
+  rw [rankInner_rankPart_left, rankInner_rankPart_right]
+  split_ifs with h1 h2
+  · exact absurd (h1.symm.trans h2) h
+  · rfl
+  · rfl
+
 /-- In rank `0` the inner product is the product of the values at the class of size `0`. -/
 theorem rankInner_zero (F H : HallAlgebra k) {o : SimilarityClass k} (ho : o.dim = 0) :
     rankInner 0 F H = conj (F o) * H o := by

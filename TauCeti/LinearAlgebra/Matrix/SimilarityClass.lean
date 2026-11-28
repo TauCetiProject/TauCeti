@@ -334,6 +334,14 @@ theorem isConj_of_ofEnd_toLin'_eq {n : Type*} [Fintype n] [DecidableEq n] {g h :
 variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
   [AddCommGroup W] [Module k W] [Module.Finite k W]
 
+open Module.End (blockTriangular) in
+/-- The similarity class of a block-triangular endomorphism has dimension equal to the sum of the
+dimensions of its diagonal blocks. -/
+@[simp]
+theorem dim_ofEnd_blockTriangular (a : Module.End k V) (b : Module.End k W) (x : W →ₗ[k] V) :
+    (ofEnd (blockTriangular a b x)).dim = (ofEnd a).dim + (ofEnd b).dim := by
+  simp [dim_ofEnd, Module.finrank_prod]
+
 open Module.End (blockTriangular blockTriangular_apply) in
 /-- A semisimple block upper triangular map `(v, w) ↦ (a v + x w, b w)` is similar to the block
 diagonal map `a ⊕ b`. -/
