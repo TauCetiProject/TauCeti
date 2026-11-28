@@ -104,6 +104,13 @@ lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :
     Ext.id_mapExactFunctor x
   rw [extComparison_apply, hid]
 
+/-- With identities for `β` and `α`, the comparison map is restriction along `φ`. -/
+lemma extComparison_id_id_apply (φ : C' ⥤ C) (x : Ext.{t} N F n) :
+    extComparison.{t, t'} φ (𝟙 (φ ⋙ F)) (𝟙 (φ ⋙ N)) n x =
+      x.mapExactFunctor ((whiskeringLeft C' C AddCommGrpCat.{w}).obj φ) := by
+  rw [extComparison_apply]
+  exact (Ext.mk₀_id_comp _).trans (Ext.comp_mk₀_id _)
+
 /-- For the identity functor, isomorphisms `β` and `α` give a bijective comparison: its inverse
 is the comparison along their inverses. -/
 lemma isExtComparisonBijective_id_of_isIso (β : F ⟶ G) (α : M ⟶ N) [IsIso β] [IsIso α] :

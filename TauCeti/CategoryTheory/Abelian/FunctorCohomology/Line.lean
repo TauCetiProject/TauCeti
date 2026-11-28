@@ -45,6 +45,8 @@ along `c ↦ (c, ⋆)`, so Mathlib's `CategoryTheory.Adjunction.extEquiv` identi
   `Extⁿ(N, F) ≃ Extⁿ(ℕ →₀ N, F ∘ Prod.fst)`.
 * `CategoryTheory.isLineFor_prodNatFst`: the projection `X × ℕ ⟶ X` is a line for every
   coefficient functor.
+* `CategoryTheory.SingleObj.toAdd_comp`, `CategoryTheory.SingleObj.toAdd_id`: composition in
+  `SingleObj (Multiplicative A)`, for instance in `Bℕ`, is addition in `A`, with identity `0`.
 
 ## References
 
@@ -70,14 +72,23 @@ local notation "⋆" => SingleObj.star (Multiplicative ℕ)
 
 namespace CategoryTheory
 
-/-- The element of `ℕ` given by a morphism of `Bℕ` is additive along composition. -/
-private lemma toAdd_comp {a b c : Bℕ} (f : a ⟶ b) (g : b ⟶ c) :
-    Multiplicative.toAdd (α := ℕ) (f ≫ g) =
-      Multiplicative.toAdd (α := ℕ) f + Multiplicative.toAdd (α := ℕ) g :=
-  (toAdd_mul (α := ℕ) g f).trans (add_comm _ _)
+namespace SingleObj
 
-/-- The identity of `Bℕ` is the element `0` of `ℕ`. -/
-private lemma toAdd_id (a : Bℕ) : Multiplicative.toAdd (α := ℕ) (𝟙 a) = 0 := rfl
+variable {A : Type*} [AddCommMonoid A]
+
+/-- In the one-object category `SingleObj (Multiplicative A)` of an additive commutative monoid `A`,
+composition, which is multiplication in the opposite order (`CategoryTheory.SingleObj.comp_as_mul`),
+is addition in `A`. For `A = ℕ` this is composition in `Bℕ`. -/
+lemma toAdd_comp {a b c : SingleObj (Multiplicative A)} (f : a ⟶ b) (g : b ⟶ c) :
+    Multiplicative.toAdd (α := A) (f ≫ g) =
+      Multiplicative.toAdd (α := A) f + Multiplicative.toAdd (α := A) g :=
+  (toAdd_mul (α := A) g f).trans (add_comm _ _)
+
+/-- In `SingleObj (Multiplicative A)`, the identity is the element `0` of `A`. -/
+lemma toAdd_id (a : SingleObj (Multiplicative A)) : Multiplicative.toAdd (α := A) (𝟙 a) = 0 :=
+  rfl
+
+end SingleObj
 
 variable (C : Type u) [Category.{v} C]
 
@@ -92,11 +103,11 @@ def prodNat : (C ⥤ Type w) ⥤ C × Bℕ ⥤ Type w where
       map_id c := by
         ext p
         · simp
-        · simp [toAdd_id]
+        · simp [SingleObj.toAdd_id]
       map_comp f g := by
         ext p
         · simp
-        · simp [toAdd_comp, add_assoc] }
+        · simp [SingleObj.toAdd_comp, add_assoc] }
   map φ :=
     { app c := ↾fun p ↦ (φ.app c.1 p.1, p.2)
       naturality c d f := by
@@ -111,12 +122,12 @@ lemma prodNat_obj_obj (X : C ⥤ Type w) (c : C × Bℕ) :
 
 variable {C} in
 /-- `X × ℕ` acts on `(x, k)` through `X` and by translation of `k`. Not a `simp` lemma, as are none
-of the lemmas below evaluating maps of `X × ℕ` and of `ℕ →₀ N` on elements: `simp` rewrites the
-types in their left-hand sides. -/
+of the lemmas below evaluating maps of `X × ℕ` on elements: `simp` rewrites the types in their
+left-hand sides. -/
 lemma prodNat_obj_map_apply (X : C ⥤ Type w) {c d : C × Bℕ} (f : c ⟶ d) (x : X.obj c.1) (k : ℕ) :
     ((prodNat C).obj X).map f ((x, k) : ((prodNat C).obj X).obj c) =
       ((X.map f.1 x, k + Multiplicative.toAdd (α := ℕ) f.2) : ((prodNat C).obj X).obj d) :=
-  rfl
+  (rfl)
 
 variable {C} in
 /-- `φ × ℕ` acts on `(x, k)` through `φ`. -/
@@ -124,7 +135,7 @@ lemma prodNat_map_app_apply {X X' : C ⥤ Type w} (φ : X ⟶ X') (c : C × Bℕ
     (k : ℕ) :
     ((prodNat C).map φ).app c ((x, k) : ((prodNat C).obj X).obj c) =
       ((φ.app c.1 x, k) : ((prodNat C).obj X').obj c) :=
-  rfl
+  (rfl)
 
 /-- The functor `N ↦ (ℕ →₀ N)` from functors on `C` to functors on `C × Bℕ`: `(ℕ →₀ N)(c, ⋆)` is
 the group of finitely supported functions `ℕ → N(c)`, a morphism `f` of `C` acting through `N(f)`
@@ -140,11 +151,11 @@ noncomputable def finsuppNat : (C ⥤ AddCommGrpCat.{w}) ⥤ C × Bℕ ⥤ AddCo
       map_id c := by
         ext : 1
         refine Finsupp.addHom_ext fun k a ↦ ?_
-        simp [toAdd_id]
+        simp [SingleObj.toAdd_id]
       map_comp f g := by
         ext : 1
         refine Finsupp.addHom_ext fun k a ↦ ?_
-        simp [toAdd_comp, add_assoc] }
+        simp [SingleObj.toAdd_comp, add_assoc] }
   map φ :=
     { app c := AddCommGrpCat.ofHom (Finsupp.mapRange.addMonoidHom (φ.app c.1).hom)
       naturality c d f := by
@@ -211,12 +222,6 @@ instance : PreservesFiniteLimits (finsuppNat C : (C ⥤ AddCommGrpCat.{w}) ⥤ _
 instance : PreservesFiniteColimits (finsuppNat C : (C ⥤ AddCommGrpCat.{w}) ⥤ _) :=
   finsuppNat_exact.2
 
-/-- A functor on `C × Bℕ` sends `𝟙 c ×ₘ 𝟙 a` to the identity. -/
-private lemma map_id_prod_id_apply (M : C × Bℕ ⥤ AddCommGrpCat.{w}) (c : C) (a : Bℕ)
-    (x : M.obj (c, a)) : M.map (𝟙 c ×ₘ 𝟙 a) x = x := by
-  rw [← prod_id, M.map_id]
-  rfl
-
 /-- Naturality of the counit of `finsuppNatAdjunction`, on the underlying group homomorphisms:
 sending the coefficient of `k` through the action of `k` commutes with the action of `f`. -/
 private lemma liftAddHom_comp_finsuppNat_map (M : C × Bℕ ⥤ AddCommGrpCat.{w}) {c d : C × Bℕ}
@@ -233,7 +238,7 @@ private lemma liftAddHom_comp_finsuppNat_map (M : C × Bℕ ⥤ AddCommGrpCat.{w
     have h : (f.1 ×ₘ 𝟙 ⋆) ≫
         (𝟙 d.1 ×ₘ (Multiplicative.ofAdd (k + Multiplicative.toAdd f.2) : ⋆ ⟶ d.2)) =
         (𝟙 c.1 ×ₘ (Multiplicative.ofAdd k : ⋆ ⟶ c.2)) ≫ f :=
-      Prod.hom_ext (by simp) (Multiplicative.toAdd.injective (by simp [toAdd_comp]))
+      Prod.hom_ext (by simp) (Multiplicative.toAdd.injective (by simp [SingleObj.toAdd_comp]))
     rw [← ConcreteCategory.comp_apply, ← M.map_comp, h, M.map_comp, ConcreteCategory.comp_apply]
 
 variable (C) in
@@ -277,8 +282,10 @@ noncomputable def finsuppNatAdjunction :
     (show (Finsupp.liftAddHom fun k ↦
           (M.map (𝟙 c ×ₘ (Multiplicative.ofAdd k : ⋆ ⟶ ⋆))).hom).comp
         (Finsupp.singleAddHom 0) = AddMonoidHom.id _ from
-      AddMonoidHom.ext fun a ↦ (Finsupp.liftAddHom_apply_single _ _ _).trans
-        (map_id_prod_id_apply M c _ a)))
+      AddMonoidHom.ext fun a ↦ (Finsupp.liftAddHom_apply_single _ _ _).trans (by
+        rw [show (𝟙 c ×ₘ (Multiplicative.ofAdd 0 : ⋆ ⟶ ⋆)) = 𝟙 (c, ⋆) from Prod.hom_ext (by simp)
+          (Multiplicative.toAdd.injective (by simp [SingleObj.toAdd_id])), M.map_id,
+          AddCommGrpCat.id_apply, AddMonoidHom.id_apply])))
 
 /-- The unit of `finsuppNatAdjunction` puts an element in the coefficient of `0`. -/
 lemma finsuppNatAdjunction_unit_app_app_apply (N : C ⥤ AddCommGrpCat.{w}) (c : C) (a : N.obj c) :
@@ -297,7 +304,6 @@ lemma finsuppNatAdjunction_counit_app_app_single (M : C × Bℕ ⥤ AddCommGrpCa
 
 /-- The *augmentation* `(ℕ →₀ N) ⟶ N`, which adds up the coefficients, to `N` read on `C × Bℕ`
 with `ℕ` acting trivially. -/
-@[expose]
 noncomputable def Functor.finsuppNatAugmentation (N : C ⥤ AddCommGrpCat.{w}) :
     (finsuppNat C).obj N ⟶ Prod.fst C Bℕ ⋙ N where
   app _ := AddCommGrpCat.ofHom (Finsupp.liftAddHom fun _ ↦ AddMonoidHom.id _)
@@ -323,14 +329,19 @@ lemma finsuppNatAdjunction_unit_app_comp_finsuppNatAugmentation
 
 /-- The projection `X × ℕ ⟶ X` from the functor `X × ℕ` on `C × Bℕ` to `X` read on `C × Bℕ` with
 `ℕ` acting trivially. -/
-@[expose]
 def Functor.prodNatFst (X : C ⥤ Type w) : (prodNat C).obj X ⟶ Prod.fst C Bℕ ⋙ X where
   app _ := ↾fun p ↦ p.1
 
 /-- The projection sends `(x, k)` to `x`. -/
 lemma Functor.prodNatFst_app_apply (X : C ⥤ Type w) (c : C × Bℕ) (x : X.obj c.1) (k : ℕ) :
     X.prodNatFst.app c ((x, k) : ((prodNat C).obj X).obj c) = x :=
-  rfl
+  (rfl)
+
+/-- The projection `X × ℕ ⟶ X` is natural in `X`: `φ × ℕ` followed by the projection is the
+projection followed by `φ`. -/
+lemma Functor.prodNat_map_comp_prodNatFst {X X' : C ⥤ Type w} (φ : X ⟶ X') :
+    (prodNat C).map φ ≫ X'.prodNatFst = X.prodNatFst ≫ (Prod.fst C Bℕ).whiskerLeft φ :=
+  NatTrans.ext (funext fun _ ↦ rfl)
 
 /-- The free abelian functor on `X × ℕ` is `ℕ →₀ ℤ[X]`, the generator of `(x, k)` corresponding to
 the coefficient `single k x`. -/
@@ -424,30 +435,21 @@ lemma isLineFor_iff (F : C ⥤ AddCommGrpCat.{w}) {Y : C × Bℕ ⥤ Type w} {U 
 /-- **The projection `X × ℕ ⟶ X` is a line** for every coefficient functor. -/
 theorem isLineFor_prodNatFst (F : C ⥤ AddCommGrpCat.{w}) (X : C ⥤ Type w) :
     IsLineFor.{t, t'} F X.prodNatFst := by
-  refine (isLineFor_iff F _).2 fun n ↦ ?_
-  let e := X.prodNatCompFreeIso
-  -- The comparison map along the projection is the one along the augmentation, followed by
-  -- pull-back along the isomorphism `e`.
-  have hcomm : e.hom ≫ (X ⋙ AddCommGrpCat.free).finsuppNatAugmentation =
-      Functor.whiskerRight X.prodNatFst AddCommGrpCat.free ≫
-        (Prod.fst C Bℕ).whiskerLeft (𝟙 (X ⋙ AddCommGrpCat.free)) := by
-    rw [Functor.prodNatCompFreeIso_hom_comp_finsuppNatAugmentation, Functor.whiskerLeft_id']
-    exact (Category.comp_id _).symm
-  have h (x : Ext.{t} (X ⋙ AddCommGrpCat.free) F n) :
-      Functor.extComparison (N := X ⋙ AddCommGrpCat.free) (Prod.fst C Bℕ)
-        (𝟙 (Prod.fst C Bℕ ⋙ F)) (Functor.whiskerRight X.prodNatFst AddCommGrpCat.free) n x =
-      (Ext.mk₀ e.hom).comp (Functor.extComparison.{t, t'} (Prod.fst C Bℕ) (𝟙 _)
-        (X ⋙ AddCommGrpCat.free).finsuppNatAugmentation n x) (zero_add n) := by
-    rw [Functor.mk₀_comp_extComparison _ _ hcomm, Ext.mk₀_id_comp]
-  have hb : Function.Bijective fun y : Ext.{t'} ((finsuppNat C).obj (X ⋙ AddCommGrpCat.free))
-      (Prod.fst C Bℕ ⋙ F) n ↦ (Ext.mk₀ e.hom).comp y (zero_add n) :=
-    Function.bijective_iff_has_inverse.2 ⟨fun y ↦ (Ext.mk₀ e.inv).comp y (zero_add n),
-      fun y ↦ by simp [Ext.mk₀_comp_mk₀_assoc], fun y ↦ by simp [Ext.mk₀_comp_mk₀_assoc]⟩
-  rw [show ⇑(Functor.extComparison (N := X ⋙ AddCommGrpCat.free) (Prod.fst C Bℕ)
-      (𝟙 (Prod.fst C Bℕ ⋙ F)) (Functor.whiskerRight X.prodNatFst AddCommGrpCat.free) n) =
-      _ ∘ _ from funext h]
-  exact hb.comp ((Functor.isExtComparisonBijective_iff _ _ _).1
-    (Functor.isExtComparisonBijective_finsuppNatAugmentation _ _) n)
+  -- The comparison along the projection is the one along the augmentation (Shapiro's lemma)
+  -- composed with the one along the isomorphism `ℤ[X × ℕ] ≅ ℕ →₀ ℤ[X]`.
+  have h := (Functor.isExtComparisonBijective_finsuppNatAugmentation.{t, t'}
+    (X ⋙ AddCommGrpCat.free) F).comp
+      (Functor.isExtComparisonBijective_id_of_isIso.{t'} (𝟙 (Prod.fst C Bℕ ⋙ F))
+        X.prodNatCompFreeIso.hom)
+  -- Whiskering on the left by `𝟭` is the identity by definition.
+  have hα : X.prodNatCompFreeIso.hom ≫
+      (𝟭 (C × Bℕ)).whiskerLeft (X ⋙ AddCommGrpCat.free).finsuppNatAugmentation =
+        Functor.whiskerRight X.prodNatFst AddCommGrpCat.free :=
+    X.prodNatCompFreeIso_hom_comp_finsuppNatAugmentation
+  rw [Functor.whiskerLeft_id', hα] at h
+  -- `𝟭 ⋙ Prod.fst` is `Prod.fst`, and `𝟙 ≫ 𝟙` is `𝟙`, by definition; `rw` cannot rewrite them,
+  -- since the composite functor occurs in the types of the coefficient maps.
+  exact h
 
 end Ext
 

@@ -39,7 +39,11 @@ general notion of a morphism inducing bijections on `Extⁿ(-, F)`
   generators.
 * `CategoryTheory.Functor.CorepresentableBy.freeHomAddEquiv`: the additive Yoneda lemma: if `Y`
   is corepresented by `A`, morphisms `ℤ[Y] ⟶ F` are the elements of `F(A)`. Hence `ℤ[Y]` is
-  projective, so its cohomology vanishes in positive degrees (`Ext.eq_zero_of_projective`).
+  projective, so its cohomology vanishes in positive degrees (`Ext.eq_zero_of_projective`), and
+  in degree `0` it is `Ext⁰(ℤ[Y], F) ≃ F(A)`
+  (`CategoryTheory.Functor.CorepresentableBy.extZeroAddEquiv`). An endomorphism `g` of `A`
+  induces the endomorphism `CategoryTheory.Functor.CorepresentableBy.precompEndo` of `Y`,
+  precomposition with `g`, which these bijections turn into `F(g)`.
 * `CategoryTheory.extFreeCoproductAddEquiv`: the cohomology of a disjoint union of functors is
   the product of the cohomology groups of its pieces, by restriction to the summands.
 
@@ -91,6 +95,15 @@ lemma whiskerRight_free_app_of {Y Y' : C ⥤ Type w} (a : Y ⟶ Y') (c : C) (y :
         (FreeAddCommGroup.of y : (Y ⋙ AddCommGrpCat.free).obj c) =
       (FreeAddCommGroup.of (a.app c y) : (Y' ⋙ AddCommGrpCat.free).obj c) :=
   FreeAddCommGroup.map_of_apply _
+
+/-- `ℤ[φ.whiskerLeft a]` is `φ.whiskerLeft ℤ[a]`: both have the components `ℤ[a_{φ d}]`. Mathlib's
+`CategoryTheory.Functor.whiskerRight_left` states this for any functor in place of `ℤ[-]`, up to
+the associators `(φ ⋙ Y) ⋙ ℤ[-] ≅ φ ⋙ (Y ⋙ ℤ[-])`, which are identities. -/
+lemma whiskerRight_whiskerLeft_free {D : Type*} [Category* D] (φ : D ⥤ C) {Y Y' : C ⥤ Type w}
+    (a : Y ⟶ Y') :
+    Functor.whiskerRight (φ.whiskerLeft a) AddCommGrpCat.free =
+      φ.whiskerLeft (Functor.whiskerRight a AddCommGrpCat.free) :=
+  rfl
 
 /-! ### The additive Yoneda lemma -/
 
@@ -145,6 +158,37 @@ lemma Functor.CorepresentableBy.freeHomAddEquiv_comp {Y : C ⥤ Type w} {A : C}
   -- `(Y ⋙ free).obj A` only up to unfolding.
   rfl
 
+/-- The endomorphism of a functor `Y` corepresented by `A` induced by `g : A ⟶ A`: the element
+of `Y(c)` given by a morphism `k : A ⟶ c` goes to the one given by `g ≫ k`. -/
+def Functor.CorepresentableBy.precompEndo {Y : C ⥤ Type w} {A : C} (e : Y.CorepresentableBy A)
+    (g : A ⟶ A) : Y ⟶ Y where
+  app _ := ↾fun y ↦ e.homEquiv (g ≫ e.homEquiv.symm y)
+  naturality c c' f := by
+    ext y
+    exact (congrArg e.homEquiv ((congrArg (g ≫ ·) (e.homEquiv_symm_comp y f).symm).trans
+      (Category.assoc _ _ _).symm)).trans (e.homEquiv_comp f _)
+
+/-- `e.precompEndo g` precomposes with `g` the morphism that an element represents. -/
+lemma Functor.CorepresentableBy.precompEndo_app_apply {Y : C ⥤ Type w} {A : C}
+    (e : Y.CorepresentableBy A) (g : A ⟶ A) (c : C) (y : Y.obj c) :
+    (e.precompEndo g).app c y = e.homEquiv (g ≫ e.homEquiv.symm y) :=
+  (rfl)
+
+/-- Under the additive Yoneda lemma, precomposition with `ℤ[e.precompEndo g]` is `F(g)`. -/
+lemma Functor.CorepresentableBy.freeHomAddEquiv_whiskerRight_precompEndo_comp {Y : C ⥤ Type w}
+    {A : C} (e : Y.CorepresentableBy A) (g : A ⟶ A) (F : C ⥤ AddCommGrpCat.{w})
+    (f : Y ⋙ AddCommGrpCat.free ⟶ F) :
+    e.freeHomAddEquiv F (Functor.whiskerRight (e.precompEndo g) AddCommGrpCat.free ≫ f) =
+      F.map g (e.freeHomAddEquiv F f) := by
+  rw [freeHomAddEquiv_apply, freeHomAddEquiv_apply]
+  -- Both sides evaluate `f` at the generator of `g`, seen as an element of `Y(A)`.
+  have h : (e.precompEndo g).app A (e.homEquiv (𝟙 A)) = Y.map g (e.homEquiv (𝟙 A)) := by
+    rw [precompEndo_app_apply, ← e.homEquiv_comp, Equiv.symm_apply_apply, Category.comp_id,
+      Category.id_comp]
+  exact (congrArg (f.app A) ((FreeAddCommGroup.map_of_apply _).trans
+    ((congrArg FreeAddCommGroup.of h).trans (FreeAddCommGroup.map_of_apply _).symm))).trans
+    (NatTrans.naturality_apply f g _)
+
 /-- The free abelian functor on a corepresentable functor is projective. -/
 instance projective_free {Y : C ⥤ Type w} [Y.IsCorepresentable] :
     Projective (Y ⋙ AddCommGrpCat.free) where
@@ -154,6 +198,47 @@ instance projective_free {Y : C ⥤ Type w} [Y.IsCorepresentable] :
       (e.freeHomAddEquiv X f)
     refine ⟨(e.freeHomAddEquiv E).symm x, (e.freeHomAddEquiv X).injective ?_⟩
     rw [e.freeHomAddEquiv_comp, AddEquiv.apply_symm_apply, hx]
+
+section ExtZero
+
+variable [HasExt.{t} (C ⥤ AddCommGrpCat.{w})]
+
+/-- **The additive Yoneda lemma in degree `0`.** If `Y` is corepresented by `A`, then
+`Ext⁰(ℤ[Y], F) ≃ F(A)`: a class of degree `0` is a morphism `ℤ[Y] ⟶ F`
+(`CategoryTheory.Abelian.Ext.addEquiv₀`), which is an element of `F(A)`
+(`CategoryTheory.Functor.CorepresentableBy.freeHomAddEquiv`). -/
+noncomputable def Functor.CorepresentableBy.extZeroAddEquiv {Y : C ⥤ Type w} {A : C}
+    (e : Y.CorepresentableBy A) (F : C ⥤ AddCommGrpCat.{w}) :
+    Ext.{t} (Y ⋙ AddCommGrpCat.free) F 0 ≃+ F.obj A :=
+  Ext.addEquiv₀.trans (e.freeHomAddEquiv F)
+
+/-- `e.extZeroAddEquiv F` reads a class of degree `0` as a morphism `ℤ[Y] ⟶ F` and applies the
+additive Yoneda lemma. -/
+lemma Functor.CorepresentableBy.extZeroAddEquiv_apply {Y : C ⥤ Type w} {A : C}
+    (e : Y.CorepresentableBy A) (F : C ⥤ AddCommGrpCat.{w})
+    (x : Ext.{t} (Y ⋙ AddCommGrpCat.free) F 0) :
+    e.extZeroAddEquiv F x = e.freeHomAddEquiv F (Ext.addEquiv₀ x) :=
+  (rfl)
+
+/-- The class of degree `0` corresponding to an element `a` of `F(A)` is that of the morphism
+`ℤ[Y] ⟶ F` corresponding to `a`. -/
+@[simp]
+lemma Functor.CorepresentableBy.extZeroAddEquiv_symm_apply {Y : C ⥤ Type w} {A : C}
+    (e : Y.CorepresentableBy A) (F : C ⥤ AddCommGrpCat.{w}) (a : F.obj A) :
+    (e.extZeroAddEquiv F).symm a = Ext.mk₀ ((e.freeHomAddEquiv F).symm a) :=
+  (rfl)
+
+/-- Under the additive Yoneda lemma in degree `0`, pull-back along `ℤ[e.precompEndo g]` is
+`F(g)`. -/
+lemma Functor.CorepresentableBy.extZeroAddEquiv_mk₀_whiskerRight_precompEndo_comp
+    {Y : C ⥤ Type w} {A : C} (e : Y.CorepresentableBy A) (g : A ⟶ A) (F : C ⥤ AddCommGrpCat.{w})
+    (x : Ext.{t} (Y ⋙ AddCommGrpCat.free) F 0) :
+    e.extZeroAddEquiv F ((Ext.mk₀ (Functor.whiskerRight (e.precompEndo g)
+      AddCommGrpCat.free)).comp x (zero_add 0)) = F.map g (e.extZeroAddEquiv F x) := by
+  rw [extZeroAddEquiv_apply, extZeroAddEquiv_apply, TauCeti.ext_addEquiv₀_mk₀_comp,
+    freeHomAddEquiv_whiskerRight_precompEndo_comp]
+
+end ExtZero
 
 /-! ### Disjoint unions -/
 

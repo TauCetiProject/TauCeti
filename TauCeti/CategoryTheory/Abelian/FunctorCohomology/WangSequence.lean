@@ -177,7 +177,6 @@ variable {C : Type u} [Category.{v} C]
 
 /-- The action of `1 ∈ ℕ` on a functor `Y` on `C × Bℕ`, as an endomorphism `γ` of the restriction
 of `Y` to `C`. -/
-@[expose, simps]
 def Functor.actionOne {D : Type*} [Category* D] (Y : C × Bℕ ⥤ D) :
     Prod.sectL C ⋆ ⋙ Y ⟶ Prod.sectL C ⋆ ⋙ Y where
   app c := Y.map (𝟙 c ×ₘ Multiplicative.ofAdd 1)
@@ -187,8 +186,13 @@ def Functor.actionOne {D : Type*} [Category* D] (Y : C × Bℕ ⥤ D) :
       Prod.hom_ext (by simp) (by simp)
     exact (Y.map_comp _ _).symm.trans ((congrArg Y.map h).trans (Y.map_comp _ _))
 
+/-- The action `γ` of `1 ∈ ℕ` at `c` is the image of `(𝟙 c, 1)` under `Y`. -/
+@[simp]
+lemma Functor.actionOne_app {D : Type*} [Category* D] (Y : C × Bℕ ⥤ D) (c : C) :
+    Y.actionOne.app c = Y.map (𝟙 c ×ₘ Multiplicative.ofAdd 1) :=
+  (rfl)
+
 /-- The translation `(x, k) ↦ (x, k + 1)` of `X × ℕ`. -/
-@[expose]
 def Functor.prodNatShift (X : C ⥤ Type w) : (prodNat C).obj X ⟶ (prodNat C).obj X where
   app _ := ↾fun p ↦ (p.1, p.2 + 1)
   naturality c d f := by
@@ -199,7 +203,14 @@ def Functor.prodNatShift (X : C ⥤ Type w) : (prodNat C).obj X ⟶ (prodNat C).
 lemma Functor.prodNatShift_app_apply (X : C ⥤ Type w) (c : C × Bℕ) (x : X.obj c.1) (k : ℕ) :
     X.prodNatShift.app c ((x, k) : ((prodNat C).obj X).obj c) =
       ((x, k + 1) : ((prodNat C).obj X).obj c) :=
-  rfl
+  (rfl)
+
+/-- The translation of `X × ℕ` followed by the projection `X × ℕ ⟶ X` is the projection. -/
+lemma Functor.prodNatShift_comp_prodNatFst (X : C ⥤ Type w) :
+    X.prodNatShift ≫ X.prodNatFst = X.prodNatFst := by
+  ext c ⟨x, k⟩
+  exact (congrArg (X.prodNatFst.app c) (X.prodNatShift_app_apply c x k)).trans
+    ((X.prodNatFst_app_apply c x (k + 1)).trans (X.prodNatFst_app_apply c x k).symm)
 
 /-- `γᵏ` is the action of `k ∈ ℕ`: `γᵏ⁺¹ x = γᵏ (γ x)`. -/
 private lemma map_ofAdd_succ_apply (Y : C × Bℕ ⥤ Type w) (c : C) (a : Bℕ) (k : ℕ)
@@ -208,21 +219,21 @@ private lemma map_ofAdd_succ_apply (Y : C × Bℕ ⥤ Type w) (c : C) (a : Bℕ)
       Y.map (𝟙 c ×ₘ Multiplicative.ofAdd k : (c, ⋆) ⟶ (c, a))
         (Y.map (𝟙 c ×ₘ Multiplicative.ofAdd 1 : (c, ⋆) ⟶ (c, ⋆)) x) := by
   rw [← Functor.map_comp_apply]
-  -- In `Bℕ`, composition is multiplication in `Multiplicative ℕ`, in the opposite order.
-  exact congrArg (fun g ↦ Y.map g x) (Prod.hom_ext (by simp) (ofAdd_add k 1))
+  exact congrArg (fun g ↦ Y.map g x)
+    (Prod.hom_ext (by simp)
+      (Multiplicative.toAdd.injective (by simp [SingleObj.toAdd_comp, add_comm])))
 
 /-- For `Y` on `C × Bℕ` with restriction `Y₀` to `C`, the map `Y₀ × ℕ ⟶ Y`, `(x, k) ↦ γᵏ x`. -/
-@[expose]
 def Functor.prodNatAct (Y : C × Bℕ ⥤ Type w) :
     (prodNat C).obj (Prod.sectL C ⋆ ⋙ Y) ⟶ Y where
   app c := ↾fun p ↦ Y.map (𝟙 c.1 ×ₘ (Multiplicative.ofAdd p.2 : ⋆ ⟶ c.2)) p.1
   naturality c d f := by
     ext ⟨x, k⟩
-    -- In `Bℕ`, composition is multiplication in `Multiplicative ℕ`, in the opposite order.
     have h : (f.1 ×ₘ 𝟙 ⋆) ≫ (𝟙 d.1 ×ₘ
         (Multiplicative.ofAdd (k + Multiplicative.toAdd f.2) : ⋆ ⟶ d.2)) =
         (𝟙 c.1 ×ₘ (Multiplicative.ofAdd k : ⋆ ⟶ c.2)) ≫ f :=
-      Prod.hom_ext (by simp) ((mul_one _).trans ((ofAdd_add _ _).trans (mul_comm _ _)))
+      Prod.hom_ext (by simp)
+        (Multiplicative.toAdd.injective (by simp [SingleObj.toAdd_comp]))
     exact (Functor.map_comp_apply Y _ _ x).symm.trans
       ((congrArg (fun g ↦ Y.map g x) h).trans (Functor.map_comp_apply Y _ _ x))
 
@@ -232,7 +243,7 @@ lemma Functor.prodNatAct_app_apply (Y : C × Bℕ ⥤ Type w) (c : C × Bℕ)
     Y.prodNatAct.app c
         ((x, k) : ((prodNat C).obj (Prod.sectL C ⋆ ⋙ Y)).obj c) =
       Y.map (𝟙 c.1 ×ₘ (Multiplicative.ofAdd k : ⋆ ⟶ c.2)) x :=
-  rfl
+  (rfl)
 
 /-- `γ` followed by the action map is the translation followed by the action map:
 `γᵏ (γ x) = γᵏ⁺¹ x`. -/
@@ -279,55 +290,9 @@ section Criterion
 
 variable {C' : Type u'} [Category.{v'} C']
 
-/-- The endomorphism of a functor `R` corepresented by `E` induced by `g : E ⟶ E`: precomposition
-with `g`. -/
-private def corepEndo {R : C' ⥤ Type w} {E : C'} (hR : R.CorepresentableBy E) (g : E ⟶ E) :
-    R ⟶ R where
-  app _ := ↾fun r ↦ hR.homEquiv (g ≫ hR.homEquiv.symm r)
-  naturality X X' f := by
-    ext r
-    exact (congrArg hR.homEquiv ((congrArg (g ≫ ·) (hR.homEquiv_symm_comp r f).symm).trans
-      (Category.assoc _ _ _).symm)).trans (hR.homEquiv_comp f _)
-
-private lemma corepEndo_app_apply {R : C' ⥤ Type w} {E : C'} (hR : R.CorepresentableBy E)
-    (g : E ⟶ E) (X : C') (r : R.obj X) :
-    (corepEndo hR g).app X r = hR.homEquiv (g ≫ hR.homEquiv.symm r) :=
-  rfl
-
-/-- Under the additive Yoneda lemma, precomposition with `ℤ[corepEndo hR g]` is `F'.map g`. -/
-private lemma freeHomAddEquiv_corepEndo {R : C' ⥤ Type w} {E : C'} (hR : R.CorepresentableBy E)
-    (g : E ⟶ E) (F' : C' ⥤ AddCommGrpCat.{w}) (χ : R ⋙ AddCommGrpCat.free ⟶ F') :
-    hR.freeHomAddEquiv F' (Functor.whiskerRight (corepEndo hR g) AddCommGrpCat.free ≫ χ) =
-      F'.map g (hR.freeHomAddEquiv F' χ) := by
-  rw [Functor.CorepresentableBy.freeHomAddEquiv_apply,
-    Functor.CorepresentableBy.freeHomAddEquiv_apply]
-  -- Both sides evaluate `χ` at the generator of `g`, seen as an element of `R E`.
-  have h : (corepEndo hR g).app E (hR.homEquiv (𝟙 E)) = R.map g (hR.homEquiv (𝟙 E)) := by
-    rw [corepEndo_app_apply, ← hR.homEquiv_comp, Equiv.symm_apply_apply, Category.comp_id,
-      Category.id_comp]
-  exact (congrArg (χ.app E) ((FreeAddCommGroup.map_of_apply _).trans
-    ((congrArg FreeAddCommGroup.of h).trans (FreeAddCommGroup.map_of_apply _).symm))).trans
-    (NatTrans.naturality_apply χ g _)
-
 variable [HasExt.{t} (C ⥤ AddCommGrpCat.{w})] [HasExt.{t'} (C × Bℕ ⥤ AddCommGrpCat.{w})]
   [HasExt.{t''} (C' ⥤ AddCommGrpCat.{w})] {ψ : C ⥤ C'} {F' : C' ⥤ AddCommGrpCat.{w}}
   {R : C' ⥤ Type w} {Y : C × Bℕ ⥤ Type w}
-
-variable (ψ F') in
-/-- Restriction along `ψ`, `Extⁿ(ℤ[R], F') ⟶ Extⁿ(ℤ[R ∘ ψ], F' ∘ ψ)`. -/
-private noncomputable abbrev wangRes (R : C' ⥤ Type w) (n : ℕ)
-    (y : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' n) :
-    Ext.{t} (ψ ⋙ R ⋙ AddCommGrpCat.free) (ψ ⋙ F') n :=
-  y.mapExactFunctor ((Functor.whiskeringLeft C C' AddCommGrpCat.{w}).obj ψ)
-
-omit [HasExt.{t'} (C × Bℕ ⥤ AddCommGrpCat.{w})] in
-/-- Restriction along `ψ` is the comparison map of `(ψ, 𝟙)` along `𝟙`. -/
-private lemma extComparison_id_id_eq_wangRes (R : C' ⥤ Type w) (n : ℕ) :
-    ⇑(Functor.extComparison.{t'', t} (N := R ⋙ AddCommGrpCat.free) ψ (𝟙 (ψ ⋙ F'))
-      (𝟙 (ψ ⋙ R ⋙ AddCommGrpCat.free)) n) = wangRes ψ F' R n := by
-  ext y
-  rw [Functor.extComparison_apply]
-  exact (Ext.mk₀_id_comp _).trans (Ext.comp_mk₀_id _)
 
 variable (ψ F') in
 /-- The line `Y₀ × ℕ ⟶ Y₀`: `Extⁿ(ℤ[Y₀], F' ∘ ψ) ⟶ Extⁿ(ℤ[Y₀ × ℕ], F' ∘ ψ ∘ pr)`. -/
@@ -350,7 +315,8 @@ private noncomputable def wangTheta (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R) (n
 private lemma wangTheta_apply (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R) (n : ℕ)
     (y : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' n) :
     wangTheta e n y = wangLine ψ F' Y n
-      ((Ext.mk₀ (Functor.whiskerRight e.hom AddCommGrpCat.free)).comp (wangRes ψ F' R n y)
+      ((Ext.mk₀ (Functor.whiskerRight e.hom AddCommGrpCat.free)).comp
+        (y.mapExactFunctor ((Functor.whiskeringLeft C C' AddCommGrpCat.{w}).obj ψ))
         (zero_add n)) :=
   rfl
 
@@ -359,14 +325,18 @@ private lemma wangTheta_bijective (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R)
       (𝟙 (ψ ⋙ F')) (𝟙 (ψ ⋙ R ⋙ AddCommGrpCat.free))) (n : ℕ) :
     Function.Bijective (wangTheta (F' := F') e n) := by
   rw [show ⇑(wangTheta (F' := F') e n) = _ from funext (wangTheta_apply e n)]
+  -- Pull-back along `ℤ[e.hom]` is the comparison map along the isomorphism `ℤ[e.hom]`, and
+  -- restriction along `ψ` the comparison map of `(ψ, 𝟙)` along `𝟙`.
   have he : Function.Bijective fun y : Ext.{t} (ψ ⋙ R ⋙ AddCommGrpCat.free) (ψ ⋙ F') n ↦
-      (Ext.mk₀ (Functor.whiskerRight e.hom AddCommGrpCat.free)).comp y (zero_add n) :=
-    Function.bijective_iff_has_inverse.2
-      ⟨fun y ↦ (Ext.mk₀ (Functor.whiskerRight e.inv AddCommGrpCat.free)).comp y (zero_add n),
-        fun y ↦ by simp [Ext.mk₀_comp_mk₀_assoc, ← Functor.whiskerRight_comp],
-        fun y ↦ by simp [Ext.mk₀_comp_mk₀_assoc, ← Functor.whiskerRight_comp]⟩
-  have hres := (Functor.isExtComparisonBijective_iff _ _ _).1 hF' n
-  rw [extComparison_id_id_eq_wangRes] at hres
+      (Ext.mk₀ (Functor.whiskerRight e.hom AddCommGrpCat.free)).comp y (zero_add n) := by
+    convert (Functor.isExtComparisonBijective_iff _ _ _).1
+      (Functor.isExtComparisonBijective_id_of_isIso.{t} (𝟙 (ψ ⋙ F'))
+        (Functor.whiskerRight e.hom AddCommGrpCat.free)) n using 1
+    exact funext fun y ↦ by rw [Functor.extComparison_id_apply, Ext.comp_mk₀_id]
+  have hres : Function.Bijective fun y : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' n ↦
+      y.mapExactFunctor ((Functor.whiskeringLeft C C' AddCommGrpCat.{w}).obj ψ) := by
+    convert (Functor.isExtComparisonBijective_iff _ _ _).1 hF' n using 1
+    exact funext fun y ↦ (Functor.extComparison_id_id_apply ψ y).symm
   exact ((isLineFor_iff _ _).1 (isLineFor_prodNatFst _ _) n).comp (he.comp hres)
 
 omit [HasExt.{t''} (C' ⥤ AddCommGrpCat.{w})] in
@@ -375,9 +345,7 @@ private lemma mk₀_prodNatShift_comp_wangLine {n : ℕ}
     (w : Ext.{t} (Prod.sectL C ⋆ ⋙ Y ⋙ AddCommGrpCat.free) (ψ ⋙ F') n) :
     (Ext.mk₀ (Functor.whiskerRight (Functor.prodNatShift (Prod.sectL C ⋆ ⋙ Y))
       AddCommGrpCat.free)).comp (wangLine ψ F' Y n w) (zero_add n) = wangLine ψ F' Y n w := by
-  have h : Functor.prodNatShift (Prod.sectL C ⋆ ⋙ Y) ≫ (Prod.sectL C ⋆ ⋙ Y).prodNatFst =
-      (Prod.sectL C ⋆ ⋙ Y).prodNatFst :=
-    NatTrans.ext (funext fun _ ↦ rfl)
+  have h := Functor.prodNatShift_comp_prodNatFst (Prod.sectL C ⋆ ⋙ Y)
   rw [Functor.mk₀_comp_extComparison (γ := 𝟙 (Prod.sectL C ⋆ ⋙ Y ⋙ AddCommGrpCat.free))
     (b := Functor.whiskerRight (Prod.sectL C ⋆ ⋙ Y).prodNatFst AddCommGrpCat.free),
     Ext.mk₀_id_comp]
@@ -392,12 +360,9 @@ private lemma mk₀_map_actionOne_comp_wangLine {n : ℕ}
         (wangLine ψ F' Y n w) (zero_add n) =
       wangLine ψ F' Y n
         ((Ext.mk₀ (Functor.whiskerRight Y.actionOne AddCommGrpCat.free)).comp w (zero_add n)) := by
-  have h : (prodNat C).map Y.actionOne ≫ (Prod.sectL C ⋆ ⋙ Y).prodNatFst =
-      (Prod.sectL C ⋆ ⋙ Y).prodNatFst ≫ (Prod.fst C Bℕ).whiskerLeft Y.actionOne :=
-    NatTrans.ext (funext fun _ ↦ rfl)
   refine Functor.mk₀_comp_extComparison _ _ ?_ w
-  rw [← Functor.whiskerRight_comp, h, Functor.whiskerRight_comp]
-  rfl
+  rw [← Functor.whiskerRight_comp, Functor.prodNat_map_comp_prodNatFst, Functor.whiskerRight_comp,
+    whiskerRight_whiskerLeft_free]
 
 omit [HasExt.{t} (C ⥤ AddCommGrpCat.{w})] [HasExt.{t'} (C × Bℕ ⥤ AddCommGrpCat.{w})]
   [HasExt.{t''} (C' ⥤ AddCommGrpCat.{w})] in
@@ -406,46 +371,51 @@ private lemma actionOne_comp_hom {E : C'} (hR : R.CorepresentableBy E)
     (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R) (g : E ⟶ E)
     (hg : ∀ (c : C) (y : Y.obj (c, ⋆)), hR.homEquiv.symm (e.hom.app c (Y.actionOne.app c y)) =
       g ≫ hR.homEquiv.symm (e.hom.app c y)) :
-    Y.actionOne ≫ e.hom = e.hom ≫ ψ.whiskerLeft (corepEndo hR g) := by
+    Y.actionOne ≫ e.hom = e.hom ≫ ψ.whiskerLeft (hR.precompEndo g) := by
   ext c y
-  exact hR.homEquiv.symm_apply_eq.1 (hg c y)
+  exact (hR.homEquiv.symm_apply_eq.1 (hg c y)).trans (hR.precompEndo_app_apply g _ _).symm
 
 omit [HasExt.{t'} (C × Bℕ ⥤ AddCommGrpCat.{w})] in
 /-- Pull-back along `γ` after restriction along `ψ` and pull-back along `e` is restriction along
-`ψ` and pull-back along `e` after pull-back along `corepEndo hR g`. -/
-private lemma mk₀_actionOne_comp_wangRes {E : C'} (hR : R.CorepresentableBy E)
+`ψ` and pull-back along `e` after pull-back along `hR.precompEndo g`. -/
+private lemma mk₀_actionOne_comp_mapExactFunctor {E : C'} (hR : R.CorepresentableBy E)
     (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R) (g : E ⟶ E)
     (hg : ∀ (c : C) (y : Y.obj (c, ⋆)), hR.homEquiv.symm (e.hom.app c (Y.actionOne.app c y)) =
       g ≫ hR.homEquiv.symm (e.hom.app c y)) {n : ℕ}
     (y : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' n) :
     (Ext.mk₀ (Functor.whiskerRight Y.actionOne AddCommGrpCat.free)).comp
-        ((Ext.mk₀ (Functor.whiskerRight e.hom AddCommGrpCat.free)).comp (wangRes ψ F' R n y)
+        ((Ext.mk₀ (Functor.whiskerRight e.hom AddCommGrpCat.free)).comp
+          (y.mapExactFunctor ((Functor.whiskeringLeft C C' AddCommGrpCat.{w}).obj ψ))
           (zero_add n)) (zero_add n) =
       (Ext.mk₀ (Functor.whiskerRight e.hom AddCommGrpCat.free)).comp
-        (wangRes ψ F' R n ((Ext.mk₀ (Functor.whiskerRight (corepEndo hR g)
-          AddCommGrpCat.free)).comp y (zero_add n))) (zero_add n) := by
+        (((Ext.mk₀ (Functor.whiskerRight (hR.precompEndo g) AddCommGrpCat.free)).comp y
+          (zero_add n)).mapExactFunctor ((Functor.whiskeringLeft C C' AddCommGrpCat.{w}).obj ψ))
+        (zero_add n) := by
   rw [Ext.mk₀_comp_mk₀_assoc, ← Functor.whiskerRight_comp, actionOne_comp_hom hR e g hg,
-    Functor.whiskerRight_comp, ← Ext.mk₀_comp_mk₀_assoc, wangRes, wangRes,
-    Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀]
-  -- `ℤ[ψ.whiskerLeft ρ]` and `ψ.whiskerLeft ℤ[ρ]` agree by definition.
-  rfl
+    Functor.whiskerRight_comp, ← Ext.mk₀_comp_mk₀_assoc, Ext.mapExactFunctor_comp,
+    Ext.mapExactFunctor_mk₀, Functor.whiskeringLeft_obj_map, whiskerRight_whiskerLeft_free]
 
 /-- **Pull-back along the Wang differential.** Through `wangTheta`, pull-back along the
-differential of the Wang sequence is pull-back along `corepEndo hR g` minus the identity. -/
+differential of the Wang sequence is pull-back along `ℤ[hR.precompEndo g]` minus the identity. -/
 private lemma mk₀_wangSequence_f_comp_wangTheta {E : C'} (hR : R.CorepresentableBy E)
     (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R) (g : E ⟶ E)
     (hg : ∀ (c : C) (y : Y.obj (c, ⋆)), hR.homEquiv.symm (e.hom.app c (Y.actionOne.app c y)) =
       g ≫ hR.homEquiv.symm (e.hom.app c y)) {n : ℕ}
     (y : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' n) :
     (Ext.mk₀ Y.wangSequence.f).comp (wangTheta e n y) (zero_add n) =
-      wangTheta e n ((Ext.mk₀ (Functor.whiskerRight (corepEndo hR g) AddCommGrpCat.free)).comp y
-        (zero_add n)) - wangTheta e n y := by
-  -- Unfold the Wang differential, writing out the objects of the Wang sequence.
+      wangTheta e n ((Ext.mk₀ (Functor.whiskerRight (hR.precompEndo g) AddCommGrpCat.free)).comp
+        y (zero_add n)) - wangTheta e n y := by
+  -- Write out the Wang differential (`Functor.wangSequence_f`) together with the objects
+  -- `Y.wangSequence.X₁`, `Y.wangSequence.X₂` in the implicit arguments of `Ext.mk₀` and `Ext.comp`.
+  -- `rw [Functor.wangSequence_f]` leaves these objects folded, and then neither `Ext.mk₀_sub` (its
+  -- subtraction lives on the hom-group of `ℤ[Y₀ × ℕ]`) nor the lemmas below match; `dsimp` with the
+  -- `simps` lemmas makes no progress, since the goal is only type-correct up to unfolding them.
   change (Ext.mk₀ (Functor.whiskerRight ((prodNat C).map Y.actionOne) AddCommGrpCat.free -
       Functor.whiskerRight (Functor.prodNatShift (Prod.sectL C ⋆ ⋙ Y)) AddCommGrpCat.free)).comp
         (wangTheta e n y) (zero_add n) = _
-  rw [Ext.mk₀_sub, Ext.sub_comp, wangTheta_apply, wangTheta_apply, mk₀_prodNatShift_comp_wangLine,
-    mk₀_map_actionOne_comp_wangLine, mk₀_actionOne_comp_wangRes hR e g hg]
+  rw [Ext.mk₀_sub, Ext.sub_comp, wangTheta_apply, wangTheta_apply,
+    mk₀_prodNatShift_comp_wangLine, mk₀_map_actionOne_comp_wangLine,
+    mk₀_actionOne_comp_mapExactFunctor hR e g hg]
 
 /-- The restriction `Y₀ ⟶ Q` to `C × {⋆}` of a map `q : Y ⟶ Q` to a functor `Q` on `C`, read on
 `C × Bℕ` with `ℕ` acting trivially. -/
@@ -461,8 +431,9 @@ private lemma prodNatAct_comp {Q : C ⥤ Type w} (q : Y ⟶ Prod.fst C Bℕ ⋙ 
     Y.prodNatAct ≫ q =
       (Prod.sectL C ⋆ ⋙ Y).prodNatFst ≫ (Prod.fst C Bℕ).whiskerLeft (restrictStar q) := by
   ext c ⟨y, k⟩
-  exact (NatTrans.naturality_apply q (𝟙 c.1 ×ₘ (Multiplicative.ofAdd k : ⋆ ⟶ c.2)) y).trans
-    (Functor.map_id_apply Q c.1 (q.app (c.1, ⋆) y))
+  refine ((NatTrans.naturality_apply q (𝟙 c.1 ×ₘ (Multiplicative.ofAdd k : ⋆ ⟶ c.2)) y).trans
+    (Functor.map_id_apply Q c.1 (q.app (c.1, ⋆) y))).trans ?_
+  exact congrArg ((restrictStar q).app c.1) ((Prod.sectL C ⋆ ⋙ Y).prodNatFst_app_apply c y k).symm
 
 omit [HasExt.{t} (C ⥤ AddCommGrpCat.{w})] [HasExt.{t'} (C × Bℕ ⥤ AddCommGrpCat.{w})]
   [HasExt.{t''} (C' ⥤ AddCommGrpCat.{w})] in
@@ -495,20 +466,6 @@ private lemma whiskerRight_restrictStar_comp {A : C} {E : C'} (hR : R.Corepresen
     _ = _ := (congrArg (((hR.freeHomAddEquiv F').symm (F'.map i a)).app (ψ.obj c))
         (whiskerRight_free_app_of e.hom c y)).symm
 
-/-- The additive Yoneda lemma in degree `0`: `Ext⁰(ℤ[R], F') ≃ F'(E)` for `R` corepresented by
-`E`. -/
-private noncomputable abbrev extYoneda {E : C'} (hR : R.CorepresentableBy E)
-    (F' : C' ⥤ AddCommGrpCat.{w}) : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' 0 ≃+ F'.obj E :=
-  Ext.addEquiv₀.trans (hR.freeHomAddEquiv F')
-
-omit [HasExt.{t} (C ⥤ AddCommGrpCat.{w})] [HasExt.{t'} (C × Bℕ ⥤ AddCommGrpCat.{w})] in
-private lemma extYoneda_corepEndo {E : C'} (hR : R.CorepresentableBy E) (g : E ⟶ E)
-    (y : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' 0) :
-    extYoneda hR F' ((Ext.mk₀ (Functor.whiskerRight (corepEndo hR g) AddCommGrpCat.free)).comp y
-      (zero_add 0)) = F'.map g (extYoneda hR F' y) := by
-  simp only [extYoneda, AddEquiv.trans_apply, TauCeti.ext_addEquiv₀_mk₀_comp,
-    freeHomAddEquiv_corepEndo]
-
 /-- `ℤ[Y₀ × ℕ]` has no cohomology in positive degrees. -/
 private lemma ext_wangSequence_X₂_eq_zero {E : C'} (hR : R.CorepresentableBy E)
     (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R)
@@ -531,12 +488,13 @@ private lemma exists_mk₀_wangSequence_f_comp_eq {E : C'} (hR : R.Corepresentab
     ∃ w : Ext.{t'} Y.wangSequence.X₂ (Prod.fst C Bℕ ⋙ ψ ⋙ F') 0,
       (Ext.mk₀ Y.wangSequence.f).comp w (zero_add 0) = z := by
   obtain ⟨y, rfl⟩ := (wangTheta_bijective e hF' 0).2 z
-  obtain ⟨b, hb⟩ := hK (extYoneda hR F' y)
-  refine ⟨wangTheta e 0 ((extYoneda hR F').symm b), ?_⟩
+  obtain ⟨b, hb⟩ := hK (hR.extZeroAddEquiv F' y)
+  refine ⟨wangTheta e 0 ((hR.extZeroAddEquiv F').symm b), ?_⟩
   rw [mk₀_wangSequence_f_comp_wangTheta hR e g hg, ← map_sub]
   congr 1
-  apply (extYoneda hR F').injective
-  rw [map_sub, extYoneda_corepEndo, AddEquiv.apply_symm_apply]
+  apply (hR.extZeroAddEquiv F').injective
+  rw [map_sub, Functor.CorepresentableBy.extZeroAddEquiv_mk₀_whiskerRight_precompEndo_comp,
+    AddEquiv.apply_symm_apply]
   exact hb
 
 /-- `ℤ[Y]` has no cohomology in positive degrees: by the Wang sequence, its cohomology in degree
@@ -577,12 +535,12 @@ private lemma mk₀_wangSequence_g_comp_extComparison {A : C} {E : C'}
       ((congrArg (Functor.whiskerRight · AddCommGrpCat.free) (prodNatAct_comp q)).trans
         (Functor.whiskerRight_comp _ _ _))
   refine (Functor.mk₀_comp_extComparison _ _ hcond _).trans ?_
-  rw [wangTheta_apply, wangRes, Ext.mapExactFunctor_mk₀, Ext.mk₀_comp_mk₀, Ext.mk₀_comp_mk₀]
+  rw [wangTheta_apply, Ext.mapExactFunctor_mk₀, Ext.mk₀_comp_mk₀, Ext.mk₀_comp_mk₀]
   exact congrArg _ (congrArg Ext.mk₀ (whiskerRight_restrictStar_comp hR hQ e i q hq a))
 
 /-- The pull-back to `ℤ[Y₀ × ℕ]` of a class of `ℤ[Y]` in degree `0` is fixed by `F'(g)`, read
 through `wangTheta` and the additive Yoneda lemma: the Wang differential kills it. -/
-private lemma map_extYoneda_eq_of_wangTheta_eq {E : C'} (hR : R.CorepresentableBy E)
+private lemma map_extZeroAddEquiv_eq_of_wangTheta_eq {E : C'} (hR : R.CorepresentableBy E)
     (e : Prod.sectL C ⋆ ⋙ Y ≅ ψ ⋙ R) (g : E ⟶ E)
     (hg : ∀ (c : C) (y : Y.obj (c, ⋆)), hR.homEquiv.symm (e.hom.app c (Y.actionOne.app c y)) =
       g ≫ hR.homEquiv.symm (e.hom.app c y))
@@ -591,8 +549,8 @@ private lemma map_extYoneda_eq_of_wangTheta_eq {E : C'} (hR : R.CorepresentableB
     (z : Ext.{t'} Y.wangSequence.X₃ (Prod.fst C Bℕ ⋙ ψ ⋙ F') 0)
     (y : Ext.{t''} (R ⋙ AddCommGrpCat.free) F' 0)
     (hy : wangTheta e 0 y = (Ext.mk₀ Y.wangSequence.g).comp z (zero_add 0)) :
-    F'.map g (extYoneda hR F' y) = extYoneda hR F' y := by
-  rw [← extYoneda_corepEndo]
+    F'.map g (hR.extZeroAddEquiv F' y) = hR.extZeroAddEquiv F' y := by
+  rw [← Functor.CorepresentableBy.extZeroAddEquiv_mk₀_whiskerRight_precompEndo_comp]
   congr 1
   refine (wangTheta_bijective e hF' 0).1 (sub_eq_zero.1 ?_)
   rw [← mk₀_wangSequence_f_comp_wangTheta hR e g hg, hy]
@@ -627,7 +585,7 @@ theorem IsLineFor.of_koszulExact {A : C} {E : C'} (hR : R.CorepresentableBy E) {
   -- Through the additive Yoneda lemma for `Q`, in degree `0` the line map of `q` followed by the
   -- injective pull-back along `ℤ[Y₀ × ℕ] ⟶ ℤ[Y]` is `wangTheta` after `F'(i)`.
   let Υ' : F'.obj (ψ.obj A) ≃+ Ext.{t} (Q ⋙ AddCommGrpCat.free) (ψ ⋙ F') 0 :=
-    (Ext.addEquiv₀.trans (hQ.freeHomAddEquiv (ψ ⋙ F'))).symm
+    (hQ.extZeroAddEquiv (ψ ⋙ F')).symm
   have hp₀ : Function.Injective fun z : Ext.{t'} Y.wangSequence.X₃ (Prod.fst C Bℕ ⋙ ψ ⋙ F') 0 ↦
       (Ext.mk₀ Y.wangSequence.g).comp z (zero_add 0) :=
     Ext.precomp_mk₀_injective_of_epi _ _
@@ -638,20 +596,19 @@ theorem IsLineFor.of_koszulExact {A : C} {E : C'} (hR : R.CorepresentableBy E) {
     · obtain ⟨a, rfl⟩ := Υ'.surjective x
       obtain ⟨a', rfl⟩ := Υ'.surjective x'
       have h := congrArg (fun z ↦ (Ext.mk₀ Y.wangSequence.g).comp z (zero_add 0)) hxx'
-      simp only [Υ', AddEquiv.symm_trans_apply, Ext.addEquiv₀_symm_apply,
+      simp only [Υ', Functor.CorepresentableBy.extZeroAddEquiv_symm_apply,
         mk₀_wangSequence_g_comp_extComparison hR hQ e i q hq] at h
       rw [hK.injective ((hR.freeHomAddEquiv F').symm.injective (Ext.mk₀_bijective _ _ |>.1
         (hΘ.1 h)))]
     · obtain ⟨y, hy⟩ := hΘ.2 ((Ext.mk₀ Y.wangSequence.g).comp z (zero_add 0))
       -- `y` is fixed by `F'(g)`, hence comes from `F'(ψ A)`.
       obtain ⟨a, ha⟩ := hK.mem_range_of_apply_eq
-        (map_extYoneda_eq_of_wangTheta_eq hR e g hg hF' z y hy)
+        (map_extZeroAddEquiv_eq_of_wangTheta_eq hR e g hg hF' z y hy)
       refine ⟨Υ' a, hp₀ ?_⟩
-      simp only [Υ', AddEquiv.symm_trans_apply, Ext.addEquiv₀_symm_apply,
+      simp only [Υ', Functor.CorepresentableBy.extZeroAddEquiv_symm_apply,
         mk₀_wangSequence_g_comp_extComparison hR hQ e i q hq, ha]
-      rw [← hy]
-      congr 1
-      exact (extYoneda hR F').symm_apply_apply y
+      rw [← hy, ← Functor.CorepresentableBy.extZeroAddEquiv_symm_apply,
+        AddEquiv.symm_apply_apply]
   | succ n =>
     exact ⟨fun x x' _ ↦ (Ext.eq_zero_of_projective x).trans (Ext.eq_zero_of_projective x').symm,
       fun z ↦ ⟨0, (map_zero _).trans
