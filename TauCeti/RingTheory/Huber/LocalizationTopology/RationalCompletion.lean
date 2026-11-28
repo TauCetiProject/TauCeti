@@ -39,8 +39,8 @@ the structural and universal properties of `ratLoc`.
 * `TauCeti.Huber.IsRationalCompletion.isPowerBounded_algebraMap_mul_unit_inv`: power-boundedness
   of `t / s` (`t ∈ T`).
 * `TauCeti.Huber.IsRationalCompletion.localizationAlgHom`, `localizationAlgHom_algebraMap`,
-  `continuous_localizationAlgHom`, and `denseRange_localizationAlgHom`: dense copy of
-  `Localization.Away s`.
+  `ratLocEquiv_coe`, `continuous_localizationAlgHom`, and `denseRange_localizationAlgHom`: dense
+  copy of `Localization.Away s`.
 * `TauCeti.Huber.IsRationalCompletion.ringHom_ext_of_continuous`,
   `existsUnique_continuous_algHom`, `existsUnique_continuous_algHom_of_refines`,
   `comp_localizationAlgHom`, `map_localizationAlgHom`, and `denseRange_of_comp_algebraMap_eq`:
@@ -109,11 +109,9 @@ variable {P : PairOfDefinition A} {T : Finset A} {s : A}
 /-- A chosen bicontinuous `A`-algebra equivalence `ratLoc P T s _ ≃ₐ[A] B`. -/
 noncomputable def IsRationalCompletion.ratLocEquiv (h : IsRationalCompletion P T s hT B) :
     ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT) ≃ₐ[A] B := h.choose
-
 /-- `IsRationalCompletion.ratLocEquiv` is continuous. -/
 theorem IsRationalCompletion.continuous_ratLocEquiv (h : IsRationalCompletion P T s hT B) :
     Continuous h.ratLocEquiv := h.choose_spec.1
-
 /-- The inverse of `IsRationalCompletion.ratLocEquiv` is continuous. -/
 theorem IsRationalCompletion.continuous_ratLocEquiv_symm (h : IsRationalCompletion P T s hT B) :
     Continuous h.ratLocEquiv.symm := h.choose_spec.2
@@ -135,7 +133,6 @@ theorem IsRationalCompletion.congr_pairOfDefinition (h : IsRationalCompletion P 
     have _ := PairOfDefinition.locUniformSpace_congr_pairOfDefinition P P' T s S hden hden'
     have _ := PairOfDefinition.toCompletionLoc_heq_pairOfDefinition P P' T s S hden hden'; congr!
   exact hF.mp h
-
 /-- Equivalence form of `IsRationalCompletion.congr_pairOfDefinition`. -/
 theorem isRationalCompletion_congr_pairOfDefinition (P P' : PairOfDefinition A) (T : Finset A)
     (s : A) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
@@ -153,34 +150,28 @@ theorem IsRationalCompletion.of_algEquiv {B' : Type*} [CommRing B'] [Topological
 theorem IsRationalCompletion.continuous_algebraMap (h : IsRationalCompletion P T s hT B) :
     Continuous (algebraMap A B) :=
   let ⟨e, he, _⟩ := h; (he.comp (continuous_algebraMap_ratLoc P T s _)).congr e.commutes
-
 /-- The denominator `s` becomes a unit in any model of `A⟨T/s⟩`. -/
 theorem IsRationalCompletion.isUnit_algebraMap (h : IsRationalCompletion P T s hT B) :
     IsUnit (algebraMap A B s) := let ⟨e, _, _⟩ := h
   by simpa [e.commutes s] using (isUnit_algebraMap_ratLoc P T s _).map e.toRingHom
-
 /-- Any model of `A⟨T/s⟩` is Hausdorff. -/
 theorem IsRationalCompletion.t2Space (h : IsRationalCompletion P T s hT B) : T2Space B :=
   let ⟨e, _, he'⟩ := h; .of_injective_continuous e.symm.injective he'
-
 /-- Any model of `A⟨T/s⟩` is a topological ring. -/
 theorem IsRationalCompletion.isTopologicalRing (h : IsRationalCompletion P T s hT B) :
     IsTopologicalRing B := let ⟨e, he, he'⟩ := h
   _root_.Topology.IsInducing.isTopologicalRing e.symm.toRingHom
     (Homeomorph.mk e.toEquiv he he').symm.isInducing
-
 /-- Any model of `A⟨T/s⟩` is a Huber ring. -/
 theorem IsRationalCompletion.isHuberRing (h : IsRationalCompletion P T s hT B) :
     @IsHuberRing B _ _ h.isTopologicalRing :=
   have := h.isTopologicalRing; let ⟨e, he, he'⟩ := h; IsHuberRing.of_isOpenQuotientMap
     (f := e.toRingHom) (Homeomorph.mk e.toEquiv he he').isOpenQuotientMap
-
 /-- Over a Tate ring `A`, any model of `A⟨T/s⟩` is a Tate ring. -/
 theorem IsRationalCompletion.isTateRing [IsTateRing A] (h : IsRationalCompletion P T s hT B) :
     @IsTateRing B _ _ h.isTopologicalRing :=
   have := h.isTopologicalRing; have := h.isHuberRing
   IsTateRing.of_continuous h.continuous_algebraMap
-
 /-- Any model of `A⟨T/s⟩` with a compatible `IsUniformAddGroup` uniform structure is complete. -/
 theorem IsRationalCompletion.completeSpace {B : Type*} [CommRing B] [UniformSpace B]
     [IsUniformAddGroup B] [Algebra A B] (h : IsRationalCompletion P T s hT B) : CompleteSpace B :=
@@ -202,7 +193,6 @@ theorem IsRationalCompletion.ringHom_ext_of_continuous (h : IsRationalCompletion
       simpa only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
         AlgEquiv.coe_toRingEquiv, ← algebraMap_ratLoc, e.commutes] using RingHom.congr_fun hfg a)
   exact RingHom.ext fun x ↦ by simpa using congrArg (· (e.symm x)) hfe
-
 /-- Two continuous `A`-algebra homomorphisms out of a model of `A⟨T/s⟩` into a Hausdorff
 `A`-algebra are equal. -/
 theorem IsRationalCompletion.algHom_ext_of_continuous (h : IsRationalCompletion P T s hT B)
@@ -280,7 +270,6 @@ noncomputable def IsRationalCompletion.localizationAlgHom
     (h : IsRationalCompletion P T s hT B) : Localization.Away s →ₐ[A] B where
   toRingHom := IsLocalization.Away.lift s h.isUnit_algebraMap
   commutes' := IsLocalization.Away.lift_eq s h.isUnit_algebraMap
-
 /-- On `A`, `IsRationalCompletion.localizationAlgHom` agrees with `algebraMap A B`. -/
 theorem IsRationalCompletion.localizationAlgHom_algebraMap (h : IsRationalCompletion P T s hT B)
     (a : A) : h.localizationAlgHom (algebraMap A (Localization.Away s) a) = algebraMap A B a :=
@@ -302,18 +291,38 @@ private theorem IsRationalCompletion.localizationAlgHom_eq_comp_coe
         Completion.coe_coeRingHom]
       rw [← P.toCompletionLoc_apply T s _ hden a, ← algebraMap_ratLoc, e.commutes])
   exact funext (RingHom.congr_fun heq)
-
+/-- On the dense image of `Localization.Away s`, `IsRationalCompletion.ratLocEquiv` agrees with
+`IsRationalCompletion.localizationAlgHom`. -/
+@[simp] theorem IsRationalCompletion.ratLocEquiv_coe (h : IsRationalCompletion P T s hT B)
+    (x : Localization.Away s) :
+    h.ratLocEquiv (@Completion.coe' (Localization.Away s)
+      (P.locUniformSpace T s (Localization.Away s)
+        (P.hasDenominatorPower_of_isOpen_span T s _ hT)) x) = h.localizationAlgHom x :=
+  (congrFun (h.localizationAlgHom_eq_comp_coe h.ratLocEquiv) x).symm
+/-- `IsRationalCompletion.ratLocEquiv.symm` sends `h.localizationAlgHom x` to
+`Completion.coe' x`. -/
+@[simp] theorem IsRationalCompletion.ratLocEquiv_symm_localizationAlgHom
+    (h : IsRationalCompletion P T s hT B) (x : Localization.Away s) :
+    h.ratLocEquiv.symm (h.localizationAlgHom x) = @Completion.coe' (Localization.Away s)
+      (P.locUniformSpace T s (Localization.Away s)
+        (P.hasDenominatorPower_of_isOpen_span T s _ hT)) x :=
+  h.ratLocEquiv.symm_apply_eq.mpr (h.ratLocEquiv_coe x).symm
+/-- On `ratLoc`, `IsRationalCompletion.localizationAlgHom` coincides with `Completion.coe'`. -/
+@[simp] theorem localizationAlgHom_ratLoc (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (x : Localization.Away s) :
+    (isRationalCompletion_ratLoc P T s hT).localizationAlgHom x = @Completion.coe'
+      (Localization.Away s) (P.locUniformSpace T s (Localization.Away s)
+        (P.hasDenominatorPower_of_isOpen_span T s _ hT)) x :=
+  congrFun ((isRationalCompletion_ratLoc P T s hT).localizationAlgHom_eq_comp_coe AlgEquiv.refl) x
 /-- `IsRationalCompletion.localizationAlgHom` is continuous for the localisation topology. -/
 theorem IsRationalCompletion.continuous_localizationAlgHom (h : IsRationalCompletion P T s hT B) :
-    letI :=
-      P.locTopology T s (Localization.Away s) (P.hasDenominatorPower_of_isOpen_span T s _ hT)
+    letI := P.locTopology T s (Localization.Away s) (P.hasDenominatorPower_of_isOpen_span T s _ hT)
     Continuous h.localizationAlgHom := by
   let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
   let _ := P.locUniformSpace _ s _ hden; obtain ⟨e, he, -⟩ := id h
   rw [← P.locUniformSpace_toTopologicalSpace T s (Localization.Away s) hden,
     h.localizationAlgHom_eq_comp_coe e]
   exact he.comp (Completion.continuous_coe (Localization.Away s))
-
 /-- `IsRationalCompletion.localizationAlgHom` has dense range in `B`. -/
 theorem IsRationalCompletion.denseRange_localizationAlgHom (h : IsRationalCompletion P T s hT B) :
     DenseRange h.localizationAlgHom := by
@@ -333,7 +342,6 @@ theorem IsRationalCompletion.comp_localizationAlgHom (hB : IsRationalCompletion 
   IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ by
     simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       localizationAlgHom_algebraMap]; exact RingHom.congr_fun hφ a)
-
 /-- Pointwise form of `IsRationalCompletion.comp_localizationAlgHom`. -/
 theorem IsRationalCompletion.map_localizationAlgHom (hB : IsRationalCompletion P T s hT B)
     {P' : PairOfDefinition A} {T' : Finset A} {hT' : IsOpen (Ideal.span (T' : Set A) : Set A)}
@@ -342,7 +350,6 @@ theorem IsRationalCompletion.map_localizationAlgHom (hB : IsRationalCompletion P
     (hφ : φ.comp (algebraMap A B) = algebraMap A C) (x : Localization.Away s) :
     φ (hB.localizationAlgHom x) = hC.localizationAlgHom x :=
   RingHom.congr_fun (hB.comp_localizationAlgHom hC hφ) x
-
 /-- Any `A`-compatible ring homomorphism between two rational completions at the *same*
 denominator `s` has dense range. -/
 theorem IsRationalCompletion.denseRange_of_comp_algebraMap_eq (hB : IsRationalCompletion P T s hT B)
