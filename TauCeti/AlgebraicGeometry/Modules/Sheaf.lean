@@ -61,13 +61,6 @@ universe u
 
 noncomputable section
 
-/-- Composition of scheme-module morphisms acts sectionwise by composition. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.comp_val_app_apply
-    {X : Scheme.{u}} {M N P : X.Modules}
-    (f : M ⟶ N) (g : N ⟶ P) (U : X.Opens) (m : M.val.obj (.op U)) :
-    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
-    ((f ≫ g).val.app (.op U) m = g.val.app (.op U) (f.val.app (.op U) m)) := rfl
-
 namespace Scheme.Modules
 
 variable (X : Scheme.{u})

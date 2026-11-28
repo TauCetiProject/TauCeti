@@ -65,6 +65,39 @@ theorem finiteType_ΓSpecIso_inv_comp_appLE {U : X.Opens} (hU : IsAffineOpen U) 
   (f.finiteType_appLE (isAffineOpen_top _) hU le_top).comp
     (.of_surjective _ (Scheme.ΓSpecIso A).symm.commRingCatIsoToRingEquiv.surjective)
 
+/-- On an affine open of a scheme locally of finite type over `R`, finitely many regular
+functions generate the coordinate ring over the restricted coefficient map. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_polynomial_generators
+    {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U) {R : Type u} [CommRing R]
+    (c : R →+* Γ(X, ⊤))
+    [LocallyOfFiniteType (X.toSpecΓ ≫ Spec.map (CommRingCat.ofHom c))] :
+    ∃ (K : Type u) (_ : Finite K) (g : K → Γ(X, U)),
+      Function.Surjective (MvPolynomial.eval₂Hom
+        ((X.presheaf.map (homOfLE le_top).op).hom.comp c) g) := by
+  let φ : R →+* Γ(X, U) := (X.presheaf.map (homOfLE le_top).op).hom.comp c
+  have hφ : φ.FiniteType := by
+    have h := (X.toSpecΓ ≫ Spec.map (CommRingCat.ofHom c)).finiteType_ΓSpecIso_inv_comp_appLE hU
+    convert h using 1
+    ext r
+    simp [φ, Scheme.Hom.appLE]
+  let : Algebra R Γ(X, U) := φ.toAlgebra
+  have : Algebra.FiniteType R Γ(X, U) := hφ
+  obtain ⟨K, hK, g, hg⟩ := Algebra.FiniteType.iff_quotient_mvPolynomial'.mp this
+  let : Fintype K := hK
+  refine ⟨K, inferInstance, fun k ↦ g (MvPolynomial.X k), ?_⟩
+  have heq : g.toRingHom = MvPolynomial.eval₂Hom φ (fun k ↦ g (MvPolynomial.X k)) := by
+    apply MvPolynomial.ringHom_ext
+    · intro r
+      simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+        MvPolynomial.algebraMap_eq, MvPolynomial.eval₂Hom_C,
+        RingHom.algebraMap_toAlgebra] using g.commutes r
+    · intro k
+      simp
+  -- The scalar action is induced by the restricted coefficient homomorphism `φ`.
+  change Function.Surjective (MvPolynomial.eval₂Hom φ (fun k ↦ g (MvPolynomial.X k)))
+  rw [← heq]
+  exact hg
+
 /-- The morphism `Spec S ⟶ Spec R` induced by a ring map `f : R ⟶ S` is locally of finite type
 if and only if `f` is of finite type. -/
 @[simp]

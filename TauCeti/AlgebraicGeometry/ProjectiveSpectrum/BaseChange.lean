@@ -59,6 +59,16 @@ universe u
 variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
   (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
 
+/-- A morphism defined by global homogeneous coordinates preserves its coefficient map. -/
+@[reassoc]
+theorem fromOfGlobalSections_toSpecCoeff {X : Scheme.{u}} (f : A →+* Γ(X, ⊤))
+    (hf : (HomogeneousIdeal.irrelevant 𝒜).toIdeal.map f = ⊤) :
+    fromOfGlobalSections 𝒜 f hf ≫ toSpecCoeff 𝒜 =
+      X.toSpecΓ ≫ Spec.map (CommRingCat.ofHom (f.comp (algebraMap R A))) := by
+  rw [toSpecCoeff_def, ← Category.assoc, fromOfGlobalSections_toSpecZero,
+    Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  congr 3
+
 variable (S : Type u) [CommRing S] [Algebra R S]
 
 /-- The projective projection induced by coefficient extension. Flatness is not needed to

@@ -97,6 +97,29 @@ end LineBundle
 
 namespace InvertibleSheaf
 
+noncomputable section
+
+open MonoidalCategory
+
+/-- The native monoidal tensor power, retaining the underlying sheaf on which sections are
+formed. Its underlying sheaf computes directly on the native section type. -/
+@[expose, reducible]
+def monoidalTensorPow (L : InvertibleSheaf X) (n : ℕ) : InvertibleSheaf X :=
+  ⟨TauCeti.tensorPow L.obj n, inferInstance⟩
+
+/-- The underlying sheaf of the native power is the monoidal power of the underlying sheaf. -/
+@[simp]
+theorem monoidalTensorPow_obj (L : InvertibleSheaf X) (n : ℕ) :
+    (L.monoidalTensorPow n).obj = TauCeti.tensorPow L.obj n := rfl
+
+/-- The power with a definitionally specified underlying sheaf is canonically isomorphic to the
+monoidal power in the category of invertible sheaves. -/
+def monoidalTensorPowIso (L : InvertibleSheaf X) (n : ℕ) :
+    L.monoidalTensorPow n ≅ TauCeti.tensorPow L n :=
+  ObjectProperty.isoMk _ (eqToIso (tensorPow_obj L n).symm)
+
+end
+
 variable (X) in
 /-- The `n`-th tensor power of the trivial line bundle is the trivial line bundle: transport to
 the monoidal unit and remove its tensor powers with `TauCeti.tensorPowUnitIso`. -/

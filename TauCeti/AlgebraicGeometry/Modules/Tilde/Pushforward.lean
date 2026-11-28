@@ -61,7 +61,7 @@ theorem tildeRestrictScalarsIsoPushforward_hom_toOpen (m : M) :
   dsimp only [tildeRestrictScalarsIsoPushforward, Iso.trans_hom, Functor.mapIso_hom,
     Iso.symm_hom, asIso_hom]
   -- Full transparency identifies scheme modules with their underlying sheaf category.
-  erw [Scheme.Modules.Hom.comp_val_app_apply, Scheme.Modules.Hom.comp_val_app_apply,
+  erw [SheafOfModules.comp_val_app_apply, SheafOfModules.comp_val_app_apply,
     tilde_map_val_app_toOpen (R := R)
       ((ModuleCat.restrictScalars φ.hom).map ((tilde.toTildeΓNatIso (R := S)).hom.app M)) ⊤ m,
     tilde_map_val_app_toOpen (R := R)

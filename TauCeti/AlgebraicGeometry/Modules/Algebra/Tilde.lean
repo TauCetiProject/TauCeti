@@ -136,7 +136,7 @@ lemma tildeHomPushforwardEquiv_globalSectionsSmul
       c * q.tildeHomPushforwardEquiv M φ m := by
   rw [Scheme.Hom.tildeHomPushforwardEquiv_apply,
     Scheme.Hom.tildeHomPushforwardEquiv_apply]
-  erw [Scheme.Modules.Hom.comp_val_app_apply,
+  erw [SheafOfModules.comp_val_app_apply,
     Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
     Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
     Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply,

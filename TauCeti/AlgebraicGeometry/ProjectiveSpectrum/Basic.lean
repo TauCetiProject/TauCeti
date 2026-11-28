@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
 public import Mathlib.RingTheory.GradedAlgebra.Radical
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Points of `Proj` through standard charts, and compatibilities of `Proj.map`
@@ -98,6 +100,64 @@ universe u
 
 variable {A B σ τ : Type u} [CommRing A] [CommRing B] [SetLike σ A] [AddSubgroupClass σ A]
   [SetLike τ B] [AddSubgroupClass τ B] {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- Pulling the sections of a standard projective chart back to its affine spectrum is the
+canonical map from the chart ring to the global functions of its spectrum. -/
+@[reassoc]
+theorem awayToSection_comp_awayι_appLE {t : A} {d : ℕ} (ht : t ∈ 𝒜 d) (hd : 0 < d) :
+    awayToSection 𝒜 t ≫ (awayι 𝒜 t ht hd).appLE (basicOpen 𝒜 t) ⊤
+        (by rw [← opensRange_awayι 𝒜 t ht hd];
+            exact (Scheme.Hom.preimage_opensRange _).ge) =
+      (Scheme.ΓSpecIso _).inv := by
+  have hchart : (basicOpenIsoSpec 𝒜 t ht hd).hom.appTop =
+      (Scheme.ΓSpecIso _).hom ≫ awayToSection 𝒜 t ≫ (basicOpen 𝒜 t).topIso.inv := by
+    rw [basicOpenIsoSpec_hom]
+    exact basicOpenToSpec_app_top 𝒜 t
+  have hι : (basicOpenIsoSpec 𝒜 t ht hd).hom ≫ awayι 𝒜 t ht hd = (basicOpen 𝒜 t).ι := by
+    rw [← basicOpenIsoSpec_inv_ι, Iso.hom_inv_id_assoc]
+  have hiso : IsIso ((basicOpenIsoSpec 𝒜 t ht hd).hom.appTop) :=
+    (Scheme.Γ.mapIso (basicOpenIsoSpec 𝒜 t ht hd).op).isIso_hom
+  have hpre : ⊤ ≤ awayι 𝒜 t ht hd ⁻¹ᵁ basicOpen 𝒜 t := by
+    rw [← opensRange_awayι 𝒜 t ht hd]
+    exact (Scheme.Hom.preimage_opensRange _).ge
+  have hmaps : (awayι 𝒜 t ht hd).appLE (basicOpen 𝒜 t) ⊤ hpre ≫
+        (basicOpenIsoSpec 𝒜 t ht hd).hom.appTop = (basicOpen 𝒜 t).topIso.inv := by
+    calc
+      _ = ((basicOpenIsoSpec 𝒜 t ht hd).hom ≫ awayι 𝒜 t ht hd).appLE
+          (basicOpen 𝒜 t) ⊤
+          (le_top.trans ((TopologicalSpace.Opens.map (basicOpenIsoSpec 𝒜 t ht hd).hom.base).map
+            (homOfLE hpre)).le) :=
+        Scheme.Hom.appLE_comp_appLE _ _ _ ⊤ ⊤ hpre le_top
+      _ = (basicOpen 𝒜 t).topIso.inv := by
+        have htop : ⊤ ≤ (basicOpen 𝒜 t).ι ⁻¹ᵁ basicOpen 𝒜 t :=
+          (Scheme.Opens.ι_preimage_self _).ge
+        refine (Scheme.Hom.congr_appLE _ hι _ _ _ htop).trans ?_
+        rw [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_inv]
+        exact congrArg (Proj 𝒜).presheaf.map (Subsingleton.elim _ _)
+  apply (cancel_mono ((basicOpenIsoSpec 𝒜 t ht hd).hom.appTop)).mp
+  rw [Category.assoc, hmaps]
+  rw [hchart, Iso.inv_hom_id_assoc]
+
+/-- Pullback through a projective affine chart evaluates its localized coordinate sections
+by the morphism to the spectrum of the chart ring. -/
+theorem comp_awayι_appLE_awayToSection {Y : Scheme.{u}} {t : A} {d : ℕ}
+    (ht : t ∈ 𝒜 d) (hd : 0 < d) (g : Y ⟶ Spec (.of (Away 𝒜 t)))
+    (h : ⊤ ≤ (g ≫ awayι 𝒜 t ht hd) ⁻¹ᵁ basicOpen 𝒜 t) (a : Away 𝒜 t) :
+    (g ≫ awayι 𝒜 t ht hd).appLE (basicOpen 𝒜 t) ⊤ h (awayToSection 𝒜 t a) =
+      ((Scheme.ΓSpecIso _).inv ≫ g.appTop) a := by
+  have hg : g.appLE ⊤ ⊤ le_top = g.appTop := by
+    exact g.appLE_eq_app
+  have hpre : ⊤ ≤ awayι 𝒜 t ht hd ⁻¹ᵁ basicOpen 𝒜 t := by
+    rw [← opensRange_awayι 𝒜 t ht hd]
+    exact (Scheme.Hom.preimage_opensRange _).ge
+  have hcomp := Scheme.Hom.appLE_comp_appLE g (awayι 𝒜 t ht hd)
+    (basicOpen 𝒜 t) ⊤ ⊤ hpre le_top
+  have hmaps : (g ≫ awayι 𝒜 t ht hd).appLE (basicOpen 𝒜 t) ⊤ h =
+      (awayι 𝒜 t ht hd).appLE (basicOpen 𝒜 t) ⊤ hpre ≫ g.appTop := by
+    rw [← hg]
+    exact hcomp.symm
+  rw [hmaps, ← ConcreteCategory.comp_apply, ← Category.assoc,
+    awayToSection_comp_awayι_appLE]
 
 /-- The `R`-point of `Proj A` with homogeneous coordinates `φ : A →+* R`, read on the standard
 chart `D₊(f)`, does not depend on the homogeneous element `f` of positive degree with `φ f` a
