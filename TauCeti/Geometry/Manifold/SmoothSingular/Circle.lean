@@ -115,6 +115,23 @@ private theorem pathClassIntegral_circleAngularForm_circleLoopSimplex :
       (fun t ↦ TauCeti.TopCat.path₁_simplex₁_apply _ t)]
   exact pathIntegral_circleAngularForm_circleExp_two_pi_mul
 
+/-- The inclusion of smooth singular chains into continuous singular chains sends the cycle of
+`circleLoopSimplex` to `simplexChain circleLoopSimplex.val 1`. -/
+private theorem iCycles_cyclesMap_circleLoopSimplex :
+    (((singularChains ℤ).obj (.of Circle)).iCycles 1).hom
+      (HomologicalComplex.cyclesMap
+        (SSet.chainComplexMap (smoothSingularSubcomplex (𝓡 1) Circle).ι (ModuleCat.of ℤ ℤ)) 1
+        (((smoothSingularSubcomplex (𝓡 1) Circle : SSet).chainComplex
+          (ModuleCat.of ℤ ℤ)).moduleCatCyclesMk _ 0 (ChainComplex.next_nat_succ 0)
+            d_ιChainComplex_circleLoopSimplex)) =
+      simplexChain circleLoopSimplex.val (1 : ℤ) := by
+  change (((TopCat.toSSet.obj (TopCat.of Circle)).chainComplex (ModuleCat.of ℤ ℤ)).iCycles 1).hom
+      _ = _
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
+    HomologicalComplex.iCycles_moduleCatCyclesMk, ← ConcreteCategory.comp_apply,
+    SSet.ι_chainComplexMap_f]
+  rfl
+
 /-- On `Circle`, the inclusion of smooth singular chains into continuous singular chains is nonzero
 on `H₁(Circle; ℤ)`: the class of `circleLoopSimplex` has period `2π ≠ 0` under
 `homologyPeriodHom circleAngularForm`. -/
@@ -135,15 +152,7 @@ theorem homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero :
         ((((singularChains ℤ).obj (.of Circle)).iCycles 1).hom w) = 0 :=
     (homologyPeriodHom_homologyπ (φ := circleAngularForm) w).symm.trans
       ((congrArg (homologyPeriodHom circleAngularForm) himg).trans (map_zero _))
-  have hi : (((singularChains ℤ).obj (.of Circle)).iCycles 1).hom w =
-      simplexChain circleLoopSimplex.val (1 : ℤ) :=
-    (K.moduleCat_iCycles_cyclesMap_apply 1 φ zK).trans
-      ((congrArg (φ.f 1) (K.iCycles_moduleCatCyclesMk 1 _ 0 (ChainComplex.next_nat_succ 0)
-        d_ιChainComplex_circleLoopSimplex)).trans
-        (ConcreteCategory.congr_hom
-          (SSet.ι_chainComplexMap_f _ _ (smoothSingularSubcomplex (𝓡 1) Circle).ι
-            (ModuleCat.of ℤ ℤ) circleLoopSimplex) (1 : ℤ)))
-  rw [hi, chainsDesc_simplexChain_one,
+  rw [iCycles_cyclesMap_circleLoopSimplex, chainsDesc_simplexChain_one,
     pathClassIntegral_circleAngularForm_circleLoopSimplex] at hper
   linarith [Real.pi_pos]
 

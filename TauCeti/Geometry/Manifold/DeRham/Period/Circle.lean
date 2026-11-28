@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Manifold.DeRham.Circle
 public import TauCeti.Geometry.Manifold.DeRham.Period
 
+import TauCeti.Geometry.Manifold.Instances.Sphere
+
 /-!
 # First de Rham cohomology of the circle through periods
 
@@ -60,14 +62,10 @@ theorem period_mk_circleAngularClosedForm_expLoop :
     period (I := 𝓡 1) (1 : Circle) (mk (𝓡 1) 1 circleAngularClosedForm)
         (Additive.ofMul (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))) =
       2 * Real.pi := by
-  rw [period_mk]
-  have hcurve : ContMDiff 𝓘(ℝ, ℝ) (𝓡 1) 1 (fun t : ℝ ↦ Circle.exp (2 * Real.pi * t)) :=
-    (contMDiff_circleExp (m := 1)).comp
-      ((contDiff_const.mul contDiff_id).contMDiff :
-        ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) 1 (fun t : ℝ ↦ 2 * Real.pi * t))
-  rw [coe_circleAngularClosedForm,
+  rw [period_mk, coe_circleAngularClosedForm,
     periodHom_ofMul_eq_pathIntegral (isSmoothForm_circleAngularForm.of_le (by norm_num))
-      mextDeriv_circleAngularForm hcurve (fun t ↦ Circle.expLoop_apply t)]
+      mextDeriv_circleAngularForm (contMDiff_circleExp_two_pi_mul.of_le (by norm_num))
+      (fun t ↦ Circle.expLoop_apply t)]
   exact pathIntegral_circleAngularForm_circleExp_two_pi_mul
 
 /-- **`H¹_dR(S¹)` is spanned by the angular class.** Every first de Rham class on the circle is
