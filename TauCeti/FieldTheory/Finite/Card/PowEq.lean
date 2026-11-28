@@ -29,7 +29,8 @@ size of `{x : f(x) ^ ((q - 1) / d') = 1}`, which the auxiliary polynomial bounds
 ## Main results
 
 * `TauCeti.FiniteField.natCard_pow_eq_of_ne_zero`: the number of roots of `y ^ d = a` for `a ≠ 0`.
-* `TauCeti.FiniteField.card_filter_pow_eq_apply`: the number of points of `y ^ d = g(x)`.
+* `TauCeti.FiniteField.card_filter_pow_eq_eq_card_filter_zero_add_mul`: the number of points of
+  `y ^ d = g(x)`.
 
 ## Implementation notes
 
@@ -83,7 +84,8 @@ with `q` elements, or more generally a finite commutative group with zero whose 
 cyclic group. Let `d ≠ 0`, and write `d' = gcd(q - 1, d)`. For every function `g : F → F`, the
 number of pairs `(x, y)` with `y ^ d = g(x)` is
 `#{x : g(x) = 0} + d' · #{x : g(x) ^ ((q - 1) / d') = 1}`. -/
-theorem card_filter_pow_eq_apply [Fintype F] [DecidableEq F] {d : ℕ} (hd : d ≠ 0) (g : F → F) :
+theorem card_filter_pow_eq_eq_card_filter_zero_add_mul [Fintype F] [DecidableEq F] {d : ℕ}
+    (hd : d ≠ 0) (g : F → F) :
     #{z : F × F | z.2 ^ d = g z.1} = #{x | g x = 0} + (Nat.card F - 1).gcd d *
       #{x | g x ^ ((Nat.card F - 1) / (Nat.card F - 1).gcd d) = 1} := by
   have hq : 0 < Nat.card F - 1 := Nat.sub_pos_of_lt Finite.one_lt_card

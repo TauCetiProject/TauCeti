@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.RootsOfUnity.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.IntegrallyClosed
 
 import TauCeti.Algebra.GroupWithZero.Units.Basic
-import TauCeti.FieldTheory.Finite.Card
+import TauCeti.FieldTheory.Finite.Card.Basic
 import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!

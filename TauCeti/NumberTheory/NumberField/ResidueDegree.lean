@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import Mathlib.RingTheory.DedekindDomain.Factorization
-import TauCeti.FieldTheory.Finite.Card
+import TauCeti.FieldTheory.Finite.Card.Basic
 import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 

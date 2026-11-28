@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.GaloisField
-import TauCeti.FieldTheory.Finite.Card
+import TauCeti.FieldTheory.Finite.Card.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.PowMonoidHom
 
 /-!
