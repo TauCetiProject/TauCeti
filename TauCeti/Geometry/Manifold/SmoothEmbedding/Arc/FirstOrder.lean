@@ -202,10 +202,7 @@ private theorem inner_fderiv_track_left_fst (F : Concordance K K')
     {L : Circle → sphere (0 : E) 1} {θ₀ : ℝ}
     (h₀ : ∀ t, F (Circle.exp θ₀, t) = (L (Circle.exp θ₀), t)) (t : ℝ) :
     ⟪(fderiv ℝ (track F) (θ₀, t) (1, 0)).1, (L (Circle.exp θ₀) : E)⟫ = 0 := by
-  have hmd : MDifferentiableAt (𝓡 1) (𝓡 n) (fun z => (F (z, t)).1) (Circle.exp θ₀) :=
-    (F.toSmoothEmbedding.contMDiff.mdifferentiableAt (by simp)).fst.comp (Circle.exp θ₀)
-      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
-  have h := inner_deriv_coe_comp_circleExp_eq_zero hmd
+  have h := inner_deriv_coe_comp_circleExp_eq_zero (f := fun z => (F (z, t)).1) (t := θ₀)
   rw [h₀ t] at h
   rw [fderiv_track_left_apply, real_inner_comm]
   exact h
