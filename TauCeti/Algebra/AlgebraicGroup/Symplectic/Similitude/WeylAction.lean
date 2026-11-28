@@ -356,14 +356,11 @@ theorem centralDegree_flipWeight (i : Fin g) (wt : Weight g) :
 `Sym(Bool) ≀ Sym(g)` to the `ℤ`-algebra automorphisms of `L_g` that moves each monomial by
 `weylWeight`. -/
 def weylLaurent (g : ℕ) :
-    WreathProduct (Equiv.Perm Bool) (Fin g) →* (Laurent g ≃ₐ[ℤ] Laurent g) where
-  toFun w := MonoidAlgebra.domCongr ℤ ℤ (AddEquiv.toMultiplicative (weylWeight w))
-  map_one' := by
-    ext f
-    simp
-  map_mul' w v := by
-    ext f
-    simp [weylWeight_mul]
+    WreathProduct (Equiv.Perm Bool) (Fin g) →* (Laurent g ≃ₐ[ℤ] Laurent g) :=
+  MonoidAlgebra.domCongrAut.comp
+    { toFun w := AddEquiv.toMultiplicative (weylWeight w)
+      map_one' := MulEquiv.ext fun _ ↦ congrArg Multiplicative.ofAdd (weylWeight_one _)
+      map_mul' w v := MulEquiv.ext fun _ ↦ congrArg Multiplicative.ofAdd (weylWeight_mul w v _) }
 
 /-- The Weyl action moves the monomial of `wt` to the monomial of `weylWeight w wt`. -/
 @[simp]
