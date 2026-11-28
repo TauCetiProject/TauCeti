@@ -551,21 +551,6 @@ theorem compSnakeMiddle_eq_comp_prodMap_comp [IsTopologicalAddGroup G] :
   apply ContinuousLinearMap.ext; rintro ⟨x, y⟩
   ext <;> simp [sub_eq_add_neg]
 
-omit [TopologicalSpace E] [TopologicalSpace F] [IsTopologicalAddGroup F] [TopologicalSpace G] in
-private theorem index_id_prodMap (U : E →ₗ[R] G) :
-    (LinearMap.id (R := R) (M := F) |>.prodMap U).index = U.index := by
-  rw [LinearMap.index_eq_finrank_sub, LinearMap.index_eq_finrank_sub,
-    LinearMap.ker_prodMap, LinearMap.ker_id, LinearMap.range_prodMap, LinearMap.range_id]
-  have hker : Module.finrank R ((⊥ : Submodule R F).prod U.ker) = Module.finrank R U.ker := by
-    let : Unique (⊥ : Submodule R F) := uniqueOfSubsingleton 0
-    exact (Submodule.prodEquiv _ _ ≪≫ₗ LinearEquiv.uniqueProd).finrank_eq
-  have hcoker : Module.finrank R ((F × G) ⧸ (⊤ : Submodule R F).prod U.range) =
-      Module.finrank R (G ⧸ U.range) := by
-    have : Subsingleton (F ⧸ (⊤ : Submodule R F)) := Submodule.Quotient.subsingleton_iff.mpr rfl
-    let : Unique (F ⧸ (⊤ : Submodule R F)) := uniqueOfSubsingleton 0
-    exact (Submodule.quotientProdEquiv _ _ ≪≫ₗ LinearEquiv.uniqueProd).finrank_eq
-  rw [hker, hcoker]
-
 /-- `compSnakeMiddle T S` has the same index as the composite `S ∘L T`, with no finiteness or
 topological-group assumptions on `E` or `G`. -/
 @[simp] theorem index_compSnakeMiddle : (compSnakeMiddle T S).index = (S ∘L T).index := by
@@ -577,7 +562,7 @@ topological-group assumptions on `E` or `G`. -/
       LinearMap.id.prodMap (S ∘L T).toLinearMap := by
     apply LinearMap.ext; rintro ⟨v, x⟩; ext <;> simp [eCod, eDom, sub_eq_add_neg]
   have hidx := congrArg LinearMap.index hconj
-  rw [LinearMap.index_equiv_comp, LinearMap.index_comp_equiv, index_id_prodMap] at hidx
+  rw [LinearMap.index_equiv_comp, LinearMap.index_comp_equiv, LinearMap.index_id_prodMap] at hidx
   rw [index_def, index_def]
   exact hidx
 
