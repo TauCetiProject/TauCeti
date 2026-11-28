@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Invariant
+public import TauCeti.LinearAlgebra.TensorProduct.Invariant
 public import TauCeti.RingTheory.FittingIdeal.Content
 public import TauCeti.RingTheory.Grassmannian.Basic
 
@@ -73,6 +73,22 @@ namespace Module.Grassmannian
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
   {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+
+/-- Scalar extension preserves invariant kernels in the native Grassmannian tensor tower,
+without requiring constant quotient rank or flatness of the coefficient map. -/
+theorem invtSubmodule_ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B]
+    {N : Submodule A (A ⊗[R] M)} {t : Module.End R M}
+    (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) :
+    (baseChangeMkQ B N).ker ∈ Module.End.invtSubmodule (t.baseChange B) := by
+  rw [ker_baseChangeMkQ_eq_map]
+  have he : (AlgebraTensorModule.cancelBaseChange R A B B M).conj
+      ((t.baseChange A).baseChange B) = t.baseChange B := by
+    apply LinearMap.ext
+    intro x
+    rw [LinearEquiv.conj_apply, LinearMap.baseChange_baseChange]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  rw [← he, LinearEquiv.map_mem_invtSubmodule_conj_iff]
+  exact N.invtSubmodule_ker_baseChange hN
 
 /-- The **stable locus** of a point `N` of `G(k, A ⊗[R] M; A)` for an endomorphism `t` of `M`: the
 content of the image of `N` under the base change `t_A` of `t` followed by the projection to the
