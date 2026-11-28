@@ -50,14 +50,6 @@ open Polynomial
 
 namespace Matrix
 
-private lemma fromBlocks_zero₁₂_zero₂₁_pow {R m n : Type*} [CommRing R]
-    [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
-    (B : Matrix m m R) (D : Matrix n n R) (k : ℕ) :
-    (fromBlocks B 0 0 D) ^ k = fromBlocks (B ^ k) 0 0 (D ^ k) := by
-  induction k with
-  | zero => simp [fromBlocks_one]
-  | succ k ih => simp [pow_succ, ih, fromBlocks_multiply]
-
 /-- Over a commutative ring without additive torsion, if `(A ^ m).trace` equals
 `(B ^ m).trace + ∑ e ∈ S, α e ^ m` for every `m ≤ Fintype.card n`, then the characteristic
 polynomial of `A` is `B.charpoly * ∏ e ∈ S, (X - C (α e))`. -/
@@ -85,7 +77,7 @@ theorem charpoly_eq_mul_of_trace_pow_add {R n r ι : Type*} [CommRing R] [IsAddT
   have hM : A.charpoly = M.charpoly := by
     refine charpoly_eq_of_trace_pow_eq hcard fun j _ hjn ↦ ?_
     rw [h_trace j hjn]
-    simpa [M, D, fromBlocks_zero₁₂_zero₂₁_pow, trace_fromBlocks, diagonal_pow, trace_diagonal]
+    simpa [M, D, fromBlocks_diagonal_pow, trace_fromBlocks, diagonal_pow, trace_diagonal]
       using (Finset.sum_attach S fun e ↦ α e ^ j).symm
   rw [hM, charpoly_fromBlocks_zero₁₂, charpoly_diagonal]
   simp only [Finset.univ_eq_attach]
