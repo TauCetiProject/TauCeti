@@ -551,14 +551,20 @@ theorem ContDiffBump.normed_convolution_le_sqrt_one_sub_norm_sq {G F : Type*}
       ρ.continuous_normed.locallyIntegrable
       ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ F).symm.continuous.comp (hh.prodMk hφ₀)) y
   let E2 := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ F).toContinuousLinearMap
+  have hE2_fst (p : WithLp 2 (ℝ × F)) :
+      ((ContinuousLinearMap.fst ℝ ℝ F).comp E2) p = p.fst := rfl
+  have hE2_snd (p : WithLp 2 (ℝ × F)) :
+      ((ContinuousLinearMap.snd ℝ ℝ F).comp E2) p = p.snd := rfl
   have h1 : ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] F') y).fst =
       (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] h) y := by
-    simpa [E2, F'] using
-      (((ContinuousLinearMap.fst ℝ ℝ F).comp E2).convolution_lsmul_comp_comm hex).symm
+    have hcomm := (((ContinuousLinearMap.fst ℝ ℝ F).comp E2).convolution_lsmul_comp_comm hex).symm
+    simp only [hE2_fst] at hcomm
+    exact hcomm
   have h2 : ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] F') y).snd =
       (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] φ₀) y := by
-    simpa [E2, F'] using
-      (((ContinuousLinearMap.snd ℝ ℝ F).comp E2).convolution_lsmul_comp_comm hex).symm
+    have hcomm := (((ContinuousLinearMap.snd ℝ ℝ F).comp E2).convolution_lsmul_comp_comm hex).symm
+    simp only [hE2_snd] at hcomm
+    exact hcomm
   have hnorm := WithLp.prod_norm_sq_eq_of_L2 ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] F') y)
   rw [h1, h2, Real.norm_eq_abs, sq_abs] at hnorm
   exact Real.le_sqrt_of_sq_le

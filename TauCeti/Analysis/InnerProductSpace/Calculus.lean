@@ -67,6 +67,8 @@ are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`.
   unit ball.
 * `OpenPartialHomeomorph.hasFDerivAt_univBall`: the derivative of the radial map onto a ball of
   radius `r > 0`.
+* `ContDiff.sqrt_sq_add_norm_sq_add`: `x ↦ √(d x ^ 2 + ‖g x‖ ^ 2 + c)` is `Cⁿ` when `d` and
+  `g` are `Cⁿ` (into a real inner product space) and `0 < c`.
 -/
 
 public section
@@ -197,3 +199,13 @@ theorem fderiv_inner_sub_inner_apply [CompleteSpace E] [CompleteSpace F] {f : E 
 end TauCeti
 
 end Phase
+
+/-- If `d : E → ℝ` and `g : E → F` are `Cⁿ` (into a real inner product space `F`) and `0 < c`,
+then `x ↦ √(d x ^ 2 + ‖g x‖ ^ 2 + c)` is `Cⁿ`. -/
+theorem _root_.ContDiff.sqrt_sq_add_norm_sq_add {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    {n : WithTop ℕ∞} {d : E → ℝ} {g : E → F} (hd : ContDiff ℝ n d) (hg : ContDiff ℝ n g)
+    {c : ℝ} (hc : 0 < c) :
+    ContDiff ℝ n (fun x ↦ √(d x ^ 2 + ‖g x‖ ^ 2 + c)) :=
+  (((hd.pow 2).add (hg.norm_sq ℝ)).add contDiff_const).sqrt fun _ ↦ by positivity
+

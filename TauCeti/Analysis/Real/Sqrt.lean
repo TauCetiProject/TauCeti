@@ -464,10 +464,11 @@ theorem abs_sqrt_sq_add_sq_sub_sqrt_sq_add_sq_le (a b g : ℝ) :
       (abs_add_le a b).trans (add_le_add
         (abs_le_sqrt (le_add_of_nonneg_right (sq_nonneg g)))
         (abs_le_sqrt (le_add_of_nonneg_right (sq_nonneg g))))
+    have hdiff : (√(a ^ 2 + g ^ 2) - √(b ^ 2 + g ^ 2)) *
+        (√(a ^ 2 + g ^ 2) + √(b ^ 2 + g ^ 2)) = (a - b) * (a + b) := by
+      linear_combination hA - hB
     refine le_of_mul_le_mul_right ?_ hpos
-    rw [← abs_of_pos hpos, ← abs_mul, abs_of_pos hpos,
-      show (√(a ^ 2 + g ^ 2) - √(b ^ 2 + g ^ 2)) * (√(a ^ 2 + g ^ 2) + √(b ^ 2 + g ^ 2)) =
-        (a - b) * (a + b) by linear_combination hA - hB, abs_mul]
+    rw [← abs_of_pos hpos, ← abs_mul, abs_of_pos hpos, hdiff, abs_mul]
     exact mul_le_mul_of_nonneg_left hab (abs_nonneg _)
 
 /-- The map `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)` on every real `t`. -/

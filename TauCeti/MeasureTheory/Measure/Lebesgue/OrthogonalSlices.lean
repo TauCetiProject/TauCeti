@@ -12,7 +12,9 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Orthogonal line coordinates and Lebesgue sections
@@ -61,7 +63,7 @@ preservation for linear isometries and for the `L²` product.
 public noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal RealInnerProductSpace
+open scoped ENNReal RealInnerProductSpace symmDiff
 
 namespace TauCeti
 
@@ -387,6 +389,47 @@ theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set 
   refine lintegral_congr fun t ↦ ?_
   classical
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, norm_add_smul_sq e he]
+
+/-- An open symmetric subgraph `{x : E | |⟪e, x⟫| < f y / 2}` over `(ℝ ∙ e)ᗮ` is
+null-measurable whenever the height function `f` is a.e. measurable. -/
+theorem nullMeasurableSet_setOf_abs_inner_lt_div_two (e : E) (he : ‖e‖ = 1)
+    {f : (ℝ ∙ e)ᗮ → ℝ} (hf : AEMeasurable f volume) :
+    NullMeasurableSet
+      {x : E | |⟪e, x⟫| < f ((orthogonalLineEquiv e he).symm x).1 / 2} volume :=
+  have hq : QuasiMeasurePreserving
+      (fun x : E ↦ ((orthogonalLineEquiv e he).symm x).1) volume volume :=
+    Measure.quasiMeasurePreserving_fst.comp
+      (MeasurePreserving.symm (orthogonalLineEquiv e he).toHomeomorph.toMeasurableEquiv
+        (measurePreserving_orthogonalLineEquiv e he)).quasiMeasurePreserving
+  nullMeasurableSet_lt (continuous_const.inner continuous_id).abs.measurable.aemeasurable
+    ((hf.comp_quasiMeasurePreserving hq).div_const 2)
+
+/-- The volume of the symmetric difference between two null-measurable symmetric subgraphs is
+bounded by the lower Lebesgue integral of the absolute difference of their clipped heights
+`max (f y) 0`. -/
+theorem volume_symmDiff_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
+    {f g : (ℝ ∙ e)ᗮ → ℝ} (hf : AEMeasurable f volume) (hg : AEMeasurable g volume) :
+    volume ({x : E | |⟪e, x⟫| < f ((orthogonalLineEquiv e he).symm x).1 / 2} ∆
+        {x : E | |⟪e, x⟫| < g ((orthogonalLineEquiv e he).symm x).1 / 2}) ≤
+      ∫⁻ y : (ℝ ∙ e)ᗮ, ENNReal.ofReal |max (f y) 0 - max (g y) 0| := by
+  rw [volume_eq_lintegral_volume_lineSection e he
+    ((nullMeasurableSet_setOf_abs_inner_lt_div_two e he hf).symmDiff
+      (nullMeasurableSet_setOf_abs_inner_lt_div_two e he hg))]
+  refine lintegral_mono fun y ↦ ?_
+  have hsymm :
+      {t : ℝ | (y : E) + t • e ∈
+          {x : E | |⟪e, x⟫| < f ((orthogonalLineEquiv e he).symm x).1 / 2} ∆
+            {x : E | |⟪e, x⟫| < g ((orthogonalLineEquiv e he).symm x).1 / 2}} =
+        Metric.eball (0 : ℝ) (ENNReal.ofReal (max (f y) 0) / 2) ∆
+          Metric.eball (0 : ℝ) (ENNReal.ofReal (max (g y) 0) / 2) := by
+    rw [ENNReal.ofReal_max, ENNReal.ofReal_zero, max_eq_left zero_le,
+      ENNReal.ofReal_max, ENNReal.ofReal_zero, max_eq_left zero_le,
+      ← lineSection_setOf_abs_inner_lt_div_two e he f y,
+      ← lineSection_setOf_abs_inner_lt_div_two e he g y]
+    ext t
+    simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
+  rw [hsymm]
+  exact volume_eball_ofReal_symmDiff_le (max (f y) 0) (max (g y) 0)
 
 end TauCeti
 
