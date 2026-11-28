@@ -213,6 +213,12 @@ theorem semichar_add_eq_circleExp_mul (l m : L) :
 theorem semichar_apply_zero : D.semichar 0 = 1 := by
   simpa using D.semichar_add_eq_circleExp_mul_mul 0 0
 
+/-- The semicharacter at `-l` is the inverse of its value at `l`, as `E (l, -l) = 0`. -/
+@[simp]
+theorem semichar_apply_neg (l : L) : D.semichar (-l) = (D.semichar l)⁻¹ := by
+  refine eq_inv_of_mul_eq_one_right ?_
+  simpa using (D.semichar_add_eq_circleExp_mul l (-l)).symm
+
 /-- **The Riemann form is integral on `L`**: for `l, m ∈ L`, `E (l, m)` is an integer. Comparing
 `χ (l + m)` with `χ (m + l)` gives `exp (2πi E (l, m)) = 1`. -/
 theorem exists_riemannForm_eq_intCast (l m : L) : ∃ n : ℤ, D.riemannForm l m = n := by

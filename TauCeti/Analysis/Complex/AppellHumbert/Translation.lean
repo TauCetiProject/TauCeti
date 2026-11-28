@@ -250,6 +250,18 @@ theorem twistedTranslate_twistedTranslate (u v : V) (f : V → ℂ) :
   rw [← mul_assoc, ← exp_add, h_exp, exp_add, add_assoc]
   ring
 
+/-- The twisted translation by `-u` is a left inverse of the twisted translation by `u`. -/
+@[simp]
+theorem twistedTranslate_neg_twistedTranslate (u : V) (f : V → ℂ) :
+    D.twistedTranslate (-u) (D.twistedTranslate u f) = f := by
+  simp [twistedTranslate_twistedTranslate]
+
+/-- The twisted translation by `-u` is a right inverse of the twisted translation by `u`. -/
+@[simp]
+theorem twistedTranslate_twistedTranslate_neg (u : V) (f : V → ℂ) :
+    D.twistedTranslate u (D.twistedTranslate (-u) f) = f := by
+  simpa using D.twistedTranslate_neg_twistedTranslate (-u) f
+
 /-- **The Heisenberg commutation relation**: two twisted translations commute up to the phase
 `exp (2πi E (v, u))`. -/
 theorem twistedTranslate_twistedTranslate_eq_smul_swap (u v : V) (f : V → ℂ) :
@@ -367,6 +379,18 @@ theorem twistedTranslateEnd_mul (a b : D.riemannForm.dualSubmodule L) :
     rw [mul_apply_eq_comp, coe_twistedTranslateEnd_apply, coe_twistedTranslateEnd_apply,
       LinearMap.smul_apply, Submodule.coe_smul, coe_twistedTranslateEnd_apply,
       Submodule.coe_add, D.twistedTranslate_twistedTranslate])
+
+/-- `U_(-a)` is a left inverse of `U_a` on the theta functions. -/
+@[simp]
+theorem twistedTranslateEnd_neg_mul (a : D.riemannForm.dualSubmodule L) :
+    D.twistedTranslateEnd (-a) * D.twistedTranslateEnd a = 1 :=
+  LinearMap.ext fun f ↦ Subtype.ext (by simp)
+
+/-- `U_(-a)` is a right inverse of `U_a` on the theta functions. -/
+@[simp]
+theorem twistedTranslateEnd_mul_neg (a : D.riemannForm.dualSubmodule L) :
+    D.twistedTranslateEnd a * D.twistedTranslateEnd (-a) = 1 :=
+  LinearMap.ext fun f ↦ Subtype.ext (by simp)
 
 /-! ### Normalised translations -/
 
