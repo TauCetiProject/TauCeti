@@ -116,6 +116,18 @@ theorem bmAlgebra_eq_span (rel : X → X → Fin (d + 1)) :
     bmAlgebra rel = Submodule.span ℝ (Set.range (adjMat rel)) := by
   exact (rfl)
 
+/-- An element lies in the Bose–Mesner algebra if and only if it is a real linear combination of
+the adjacency matrices. -/
+theorem mem_bmAlgebra_iff (rel : X → X → Fin (d + 1)) {M : Matrix X X ℝ} :
+    M ∈ bmAlgebra rel ↔ ∃ c : Fin (d + 1) → ℝ, ∑ i, c i • adjMat rel i = M :=
+  Submodule.mem_span_range_iff_exists_fun ℝ
+
+/-- A real submodule of matrices contains the Bose–Mesner algebra if and only if it contains every
+adjacency matrix. -/
+theorem bmAlgebra_le_iff (rel : X → X → Fin (d + 1)) {S : Submodule ℝ (Matrix X X ℝ)} :
+    bmAlgebra rel ≤ S ↔ ∀ i, adjMat rel i ∈ S := by
+  simp only [bmAlgebra_eq_span, Submodule.span_le, Set.range_subset_iff, SetLike.mem_coe]
+
 /-- Defining equation for `valency`: the averaged number of pairs in class `i`. -/
 theorem valency_def [Fintype X] (rel : X → X → Fin (d + 1)) (i : Fin (d + 1)) :
     valency rel i = (#{p : X × X | rel p.1 p.2 = i} : ℝ) / Fintype.card X :=
