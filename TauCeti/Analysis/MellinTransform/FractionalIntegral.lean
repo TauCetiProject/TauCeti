@@ -215,6 +215,23 @@ theorem repeatedIntegralAtTop_one (g : ℝ → E) (t : ℝ) :
     repeatedIntegralAtTop g 1 t = -∫ τ in Ioi t, g τ := by
   simp [repeatedIntegralAtTop_succ]
 
+/-- The repeated integrals commute with scalar multiplication. -/
+theorem repeatedIntegralAtTop_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℝ 𝕜 E] (c : 𝕜) (g : ℝ → E) (j : ℕ) (t : ℝ) :
+    repeatedIntegralAtTop (fun τ ↦ c • g τ) j t = c • repeatedIntegralAtTop g j t := by
+  cases j with
+  | zero => rfl
+  | succ j =>
+    simp only [repeatedIntegralAtTop_succ, smul_comm _ c, integral_smul]
+
+/-- The repeated integrals are additive on functions whose defining integrals converge. -/
+theorem repeatedIntegralAtTop_sub {g₁ g₂ : ℝ → E} {t : ℝ} {j : ℕ}
+    (h₁ : IntegrableOn (fun τ ↦ (τ - t) ^ j • g₁ τ) (Ioi t))
+    (h₂ : IntegrableOn (fun τ ↦ (τ - t) ^ j • g₂ τ) (Ioi t)) :
+    repeatedIntegralAtTop (fun τ ↦ g₁ τ - g₂ τ) (j + 1) t =
+      repeatedIntegralAtTop g₁ (j + 1) t - repeatedIntegralAtTop g₂ (j + 1) t := by
+  simp only [repeatedIntegralAtTop_succ, smul_sub, integral_sub h₁ h₂]
+
 /-- If `(τ - t)^j g(τ)` is integrable on `(t, ∞)`, then the repeated integral of order `j` is
 integrable on `(t, ∞)`. -/
 theorem integrableOn_repeatedIntegralAtTop [CompleteSpace E] {g : ℝ → E} {t : ℝ} {j : ℕ}
@@ -544,6 +561,12 @@ theorem fractionalIntegral_sub {μ x : ℝ} {g₁ g₂ : ℝ → E}
     fractionalIntegral μ (fun t ↦ g₁ t - g₂ t) x =
       fractionalIntegral μ g₁ x - fractionalIntegral μ g₂ x := by
   simp only [fractionalIntegral_def, smul_sub, intervalIntegral.integral_sub h₁ h₂]
+
+/-- The fractional integral commutes with scalar multiplication. -/
+theorem fractionalIntegral_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℝ 𝕜 E] (μ : ℝ) (c : 𝕜) (g : ℝ → E) (x : ℝ) :
+    fractionalIntegral μ (fun t ↦ c • g t) x = c • fractionalIntegral μ g x := by
+  simp only [fractionalIntegral_def, smul_comm _ c, intervalIntegral.integral_smul]
 
 /-- The fractional integral of a scalar function times a constant vector. -/
 theorem fractionalIntegral_smul_const [CompleteSpace E] (μ : ℝ) (g : ℝ → ℝ) (c : E) (x : ℝ) :
