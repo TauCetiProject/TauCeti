@@ -99,6 +99,12 @@ theorem projectiveMap_mk (f : R →+* S) (g : Matrix.SpecialLinearGroup (Fin n) 
       QuotientGroup.mk (Matrix.SpecialLinearGroup.map f g) := by
   exact QuotientGroup.map_mk _ _ _ _ g
 
+/-- Extension of scalars along a ring embedding is injective on projective special linear groups. -/
+theorem projectiveMap_injective {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (projectiveMap n f) :=
+  (QuotientGroup.map_injective_iff _ _ _ _).2
+    (Subgroup.comap_center_le_center (Matrix.SpecialLinearGroup.map_injective hf))
+
 /-- Extension of scalars by the identity is the identity on projective special linear groups. -/
 @[simp]
 theorem projectiveMap_id :
