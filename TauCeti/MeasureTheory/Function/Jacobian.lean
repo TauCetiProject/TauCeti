@@ -74,6 +74,9 @@ a permutation of the vertices of a simplex, acts on integrals over it.
 
 * `MeasureTheory.lintegral_image_eq_lintegral_abs_det_fderiv_mul₀`: the change of variables
   formula for lower integrals on a null-measurable set.
+* `MeasureTheory.lintegral_image_ofReal_le_of_abs_det_mul_le`: a pointwise bound
+  `|det f'| * F ∘ f ≤ G` on `s` bounds the lower integral of `F` over `f '' s` by that of `G`
+  over `s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_image`: the pushforward of `μ` on `s` is at most
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
@@ -135,6 +138,18 @@ theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul₀ (hs : NullMeasurableS
   rw [← setLIntegral_congr himage, ← setLIntegral_congr hsu,
     lintegral_image_eq_lintegral_abs_det_fderiv_mul μ hu (fun x hx ↦ (hf' x (hus hx)).mono hus)
       (hf.mono hus) g]
+
+/-- **Change of variables with a pointwise bound.** If `f` is injective and differentiable on a
+null-measurable set `s`, and `|det f'| * F ∘ f ≤ G` on `s`, then the lower integral of `F` over
+`f '' s` is at most that of `G` over `s`. -/
+theorem lintegral_image_ofReal_le_of_abs_det_mul_le (hs : NullMeasurableSet s μ)
+    (hf' : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x) (hf : InjOn f s) {F G : E → ℝ}
+    (h : ∀ x ∈ s, |(f' x).det| * F (f x) ≤ G x) :
+    ∫⁻ x in f '' s, ENNReal.ofReal (F x) ∂μ ≤ ∫⁻ x in s, ENNReal.ofReal (G x) ∂μ := by
+  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul₀ μ hs hf' hf]
+  refine lintegral_mono_ae ((ae_restrict_iff'₀ hs).2 (ae_of_all _ fun x hx ↦ ?_))
+  rw [← ENNReal.ofReal_mul (abs_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal (h x hx)
 
 /-- **Pushforward bound from a Jacobian lower bound.** If `f` is injective and differentiable on
 a null-measurable set `s`, and `c ≤ |det f'|` on `s` with `c > 0`, then `f` pushes `μ` restricted to

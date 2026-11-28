@@ -73,6 +73,8 @@ element (`TauCeti.diagGL_const`).
   relabelling its entries.
 * `TauCeti.natCard_diagonalTorus`: the torus has `(q - 1)ⁿ` elements over a division semiring
   with `q` elements.
+* `TauCeti.neg_one_mem_diagonalTorus` and `TauCeti.map_det_diagonalTorus`: the torus contains `-1`,
+  and the determinant maps it onto `kˣ` when `n ≥ 1`.
 * `TauCeti.centralizer_diagonalTorus`: the diagonal torus is its own centralizer.
 * `TauCeti.mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL` and
   `TauCeti.mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL`: inside any subgroup, an element
@@ -394,6 +396,18 @@ theorem coe_inv_of_coe_eq_diagonal {g : GL ι k} {d : ι → k}
 
 end DivisionRing
 
+section Ring
+
+variable [Ring k]
+
+/-- `-1` lies in the diagonal torus. -/
+theorem neg_one_mem_diagonalTorus : (-1 : GL (Fin n) k) ∈ diagonalTorus k n :=
+  mem_diagonalTorus_iff_exists_diagGL.2 ⟨fun _ ↦ -1, by
+    ext i j
+    by_cases h : i = j <;> simp [h]⟩
+
+end Ring
+
 variable [CommRing k]
 
 /-- The determinant of a diagonal matrix is the product of its diagonal entries. -/
@@ -402,6 +416,10 @@ theorem det_diagGL (t : ι → kˣ) :
     Matrix.GeneralLinearGroup.det (diagGL t) = ∏ i, t i := by
   apply Units.ext
   simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_diagonal]
+
+/-- The determinant of `diag(1, d)` is `d`. -/
+theorem det_diagGL_one_left (d : kˣ) : Matrix.GeneralLinearGroup.det (diagGL ![1, d]) = d := by
+  simp [Fin.prod_univ_two]
 
 /-- Mapping the entries of `diagGL t` along a ring homomorphism gives the diagonal matrix of the
 mapped units. -/
@@ -486,5 +504,12 @@ theorem det_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k 
     (Matrix.GeneralLinearGroup.det g : k) = ∏ i, (g : Matrix (Fin n) (Fin n) k) i i := by
   obtain ⟨t, rfl⟩ := hg
   simp
+
+/-- **The determinant is surjective on the diagonal torus** of `GLₙ` for `n ≥ 1`. -/
+theorem map_det_diagonalTorus [NeZero n] :
+    (diagonalTorus k n).map Matrix.GeneralLinearGroup.det = ⊤ := by
+  refine eq_top_iff.2 fun u _ ↦ ⟨diagGL (Function.update 1 0 u), ?_, ?_⟩
+  · exact mem_diagonalTorus_iff_exists_diagGL.2 ⟨_, rfl⟩
+  · simp [det_diagGL, Finset.prod_update_of_mem]
 
 end TauCeti

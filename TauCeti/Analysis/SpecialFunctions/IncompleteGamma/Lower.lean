@@ -23,6 +23,8 @@ both defined through Tricomi's entire function `γ*` of
   for `0 < Re a`;
 * `Complex.lowerIncompleteGamma_eq_mul_regularizedHGFun`: the regularized form of the Kummer
   representation DLMF 8.5.1, `γ(a, z) = a⁻¹ z^a Γ(a + 1) 𝐌(a, a + 1, −z)`, for every `a`;
+* `Complex.cpow_neg_mul_lowerIncompleteGamma`: `z^{−a} γ(a, z) = Γ(a) γ*(a, z)` for `z ≠ 0` and
+  every `a`;
 * `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul`: DLMF 8.2.1 rescaled,
   `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0`, `0 ≤ x`;
 * `Complex.tendsto_mul_lowerIncompleteGamma`: for `z ≠ 0`, `γ(·, z)` has simple poles at
@@ -132,6 +134,13 @@ theorem lowerIncompleteGamma_eq_mul_regularizedHGFun (a z : ℂ) :
   · simp
   · rw [Gamma_add_one a ha]
     field_simp
+
+/-- Off `0`, `z^{−a} γ(a, z) = Γ(a) γ*(a, z)` for every `a`. -/
+theorem cpow_neg_mul_lowerIncompleteGamma {z : ℂ} (hz : z ≠ 0) (a : ℂ) :
+    z ^ (-a) * lowerIncompleteGamma a z = Gamma a * tricomiIncompleteGamma a z := by
+  have h : z ^ a ≠ 0 := by simp [cpow_eq_zero_iff, hz]
+  rw [lowerIncompleteGamma_def, regularizedGamma_def, cpow_neg]
+  field_simp
 
 /-- For `z ≠ 0`, `P(·, z)` is entire. -/
 theorem differentiable_regularizedGamma_left {z : ℂ} (hz : z ≠ 0) :

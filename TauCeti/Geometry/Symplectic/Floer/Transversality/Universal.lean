@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
+import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.Analysis.Sobolev.Cylinder.Periodization
-import TauCeti.LinearAlgebra.Submodule.Quotient
-import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.UniformSpace.UniformConvergence.Periodic
 
 /-!
@@ -19,7 +18,7 @@ Let `(V, ω)` be a finite-dimensional symplectic vector space, `J_t` a family of
 structures of period one in `t`, and `u` a nonstationary Floer trajectory of a Hamiltonian `H_t`
 of period one in `t`, `∂s u + J_t(u) (∂t u - X_{H_t}(u)) = 0`, of period one in `t` and
 asymptotic to one-periodic orbits. Its linearized operator `D_u` is realized as a bounded operator
-`W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator`). Varying the
+`W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator 2`). Varying the
 almost complex structure along `J + τ Y` changes the Floer operator at `u` to first order by
 `Y_t(u) (∂t u - X_{H_t}(u))`. The *universal* linearized operator adds these variations to `D_u`.
 Floer, Hofer and Salamon showed that it is onto; this is the transversality input for choosing
@@ -40,8 +39,8 @@ almost complex structures for which every Floer trajectory is regular.
   of finite codimension. Hence finitely many variations `Y₁, …, Y_N` already make
   `(ξ, c) ↦ D_u ξ + ∑ cᵢ Yᵢ(u) (∂t u - X_H(u))` onto
   (`TauCeti.SymplecticForm.exists_surjective_floerSobolevOperator_coprod`), by
-  `Submodule.sup_eq_top_of_dense` and `Submodule.exists_finset_subset_sup_span_eq_top`. This is
-  the universal operator of the family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric
+  `ContinuousLinearMap.IsFredholm.exists_surjective_coprod_fintypeLinearCombination_of_dense`.
+  This is the universal operator of the family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric
   transversality theorem of `TauCeti.Analysis.Fredholm.Parametric`.
 
 ## References
@@ -115,7 +114,7 @@ theorem eq_zero_of_forall_inner_floerSobolevOperator_eq_zero (ω : SymplecticFor
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop (Icc 0 1))
     {η : Lp V 2 stripMeasure}
-    (hD : ∀ x, ⟪η, ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (hD : ∀ x, ⟪η, ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) u x⟫_ℝ = 0)
     (hY : ∀ Y : ℝ × V → V →L[ℝ] V, ContDiff ℝ n Y → (∀ t y, Y (t + 1, y) = Y (t, y)) →
       (∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) →
@@ -217,12 +216,12 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
         (∀ p, (Y i p : Module.End ℝ F) ∈ ω.compatibleTangentSpace (J p.1 p.2)) ∧
         y i =ᵐ[stripMeasure]
           fun z ↦ Y i (z.2, u z) (sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u z)) ∧
-      Function.Surjective ((ω.floerSobolevOperator
+      Function.Surjective ((ω.floerSobolevOperator 2
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
           u).coprod (Fintype.linearCombination ℝ y).toContinuousLinearMap) := by
   -- `L²(ℝ × [0, 1], F)` is a real Hilbert space for the real part of the inner product of `F`.
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  set D := ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+  set D := ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
     (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   set δ := sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u
   -- The admissible variations of the Floer operator, as elements of `L²`.
@@ -233,7 +232,6 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
   have hD : D.IsFredholm := ω.isFredholm_floerSobolevOperator_of_compatible hω
     (hJ.of_le (WithTop.coe_le_coe.2 (le_trans (by norm_num) hn))) hJc hX hH hHper hxm hxmper hndm
     hxp hxpper hndp (hu.of_le one_le_two) huxm hδm huxp hδp
-  have := hD.finite_coker
   -- The range of `D_u` and the variations span a dense subspace: its orthogonal is trivial.
   have hdense : Dense ((D.range ⊔ Submodule.span ℝ S : Submodule ℝ (Lp F 2 stripMeasure)) :
       Set (Lp F 2 stripMeasure)) := by
@@ -257,17 +255,10 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
     filter_upwards [hm.coeFn_toLp] with z hz
     rw [hz]
   -- Finitely many variations already span a complement of the closed range of `D_u`.
-  obtain ⟨t, hts, htop⟩ := Submodule.exists_finset_subset_sup_span_eq_top (by
-    simpa only [← sup_assoc, sup_idem] using Submodule.sup_eq_top_of_dense hD.isClosed_range hdense)
-  choose! Y hY using fun y (hy : y ∈ t) ↦ hts hy
-  set e := t.equivFin
-  refine ⟨t.card, fun i ↦ Y (e.symm i), fun i ↦ e.symm i, fun i ↦ hY _ (e.symm i).property, ?_⟩
-  have hrange : Set.range (fun i ↦ ((e.symm i : t) : Lp F 2 stripMeasure)) = t := by
-    ext y
-    exact ⟨fun ⟨i, hi⟩ ↦ hi ▸ (e.symm i).property, fun hy ↦ ⟨e ⟨y, hy⟩, by simp⟩⟩
-  refine LinearMap.range_eq_top.1 ?_
-  rw [ContinuousLinearMap.range_coprod, ← htop, ← hrange, ← Fintype.range_linearCombination]
-  rw [LinearMap.coe_toContinuousLinearMap]
+  obtain ⟨N, y, hyS, hsurj⟩ :=
+    hD.exists_surjective_coprod_fintypeLinearCombination_of_dense hdense
+  choose Y hY using hyS
+  exact ⟨N, Y, y, hY, hsurj⟩
 
 end Surjective
 

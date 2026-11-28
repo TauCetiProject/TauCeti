@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Ba
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
+import TauCeti.Geometry.Manifold.DifferentialOperator.Complexification
 
 /-!
 # Classical pseudodifferential operators on a manifold
@@ -53,7 +54,14 @@ values on compactly supported functions, and hence by its chart compressions.
   functions on either side and local operators (`TauCeti.IsProperlySupported.of_local`) are
   properly supported. A local operator takes the same value at `x` on functions that agree near
   `x` (`TauCeti.apply_eq_of_eventuallyEq_of_local`) and does not enlarge supports
-  (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`).
+  (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`). On a compact set, a properly supported
+  operator only sees its input on another compact set
+  (`TauCeti.IsProperlySupported.exists_isCompact_forall_eqOn`).
+* `TauCeti.IsProperlySupported.locallyFinite_setOf_mem_union_and_mulLeft_comp_comp_mulLeft_ne_zero`:
+  for a properly supported `P` and compactly supported functions `gᵢ` with locally finite supports,
+  only finitely many pieces `gᵢ P gⱼ` are nonzero near every compact set
+  (`TauCeti.IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_left` and
+  `TauCeti.IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_right`).
 * `TauCeti.isProperlySupported_locallyFiniteSum`: the locally finite sum
   `ContMDiffMap.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
   outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and each `Pᵢ` only sees
@@ -63,6 +71,9 @@ values on compactly supported functions, and hence by its chart compressions.
   the operators on `C^∞(M, ℂ)`.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_forall_mulLeft_comp_mem`: the class is
+  local; a properly supported operator which near every compact set agrees with a classical
+  pseudodifferential operator of order `m` is one.
 * `TauCeti.mem_classicalPseudodifferentialOperators_iff_forall_isCompact`: membership is local on
   inputs. A properly supported operator has order `m` exactly when, on the functions supported in
   any given compact set, it agrees with some operator of order `m`.
@@ -70,6 +81,11 @@ values on compactly supported functions, and hence by its chart compressions.
   `ContMDiffMap.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of
   order `m` is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its
   input near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
+  Without the second condition, the sum is one as soon as it is properly supported
+  (`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators_of_isProperlySupported`).
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_forall_isCompact`: a properly supported
+  operator which agrees on every compact set with a classical pseudodifferential operator of
+  order `m` is one.
 * `TauCeti.conj_mem_classicalPseudodifferentialOperators_iff`: invariance under diffeomorphisms.
   For a diffeomorphism `Φ : N → M`, the transport `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` of `P` to `N` is a
   classical pseudodifferential operator of order `m` exactly when `P` is one; proper support is
@@ -89,6 +105,14 @@ values on compactly supported functions, and hence by its chart compressions.
   Grothendieck's sense, is a classical pseudodifferential operator of order `m`. Its symbol in a
   chart is the polynomial symbol of the compression, with no smoothing remainder
   (`ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression`).
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_mem_differentialOperators`: more generally,
+  a complex-linear differential operator of order at most `m` on the complex-valued smooth
+  functions, for commutators with complex-valued functions, is a classical pseudodifferential
+  operator of order `m`, being `A + i B` for complexifications `A` and `B` of real ones: the real
+  and imaginary parts `u ↦ Re (Q u)` and `u ↦ Im (Q u)` on real-valued functions are real
+  differential operators of order at most `m`
+  (`TauCeti.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators`,
+  `TauCeti.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators`).
 
 ## References
 
@@ -145,6 +169,16 @@ theorem isProperlySupported_id :
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :=
   fun K hK ↦ ⟨K, hK, fun _ hf ↦ hf, fun _ hf x hx ↦ hf.self_of_nhdsSet x hx⟩
 
+/-- On a compact manifold every operator is properly supported. -/
+theorem isProperlySupported_of_compactSpace [CompactSpace M]
+    (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    IsProperlySupported P := fun _ _ ↦ ⟨univ, isCompact_univ, fun _ _ ↦ subset_univ _,
+  fun f hf x _ ↦ by
+    -- A function vanishing near `univ` is zero.
+    have hf0 : f = 0 := ContMDiffMap.ext fun y ↦ by simpa using hf.self_of_nhdsSet y (mem_univ y)
+    simp [hf0]⟩
+
 theorem IsProperlySupported.add (hP : IsProperlySupported P) (hQ : IsProperlySupported Q) :
     IsProperlySupported (P + Q) := by
   intro K hK
@@ -190,22 +224,35 @@ theorem IsProperlySupported.comp_mulLeft (hP : IsProperlySupported P)
     exact tsupport_mul_subset_right.trans hf
   · simp [hy]
 
+/-- **A properly supported operator only sees its input on a compact set.** For a properly
+supported operator `P` and a compact set `K`, there is a compact set `K'` such that `P f` and
+`P g` agree on `K` whenever `f` and `g` agree on `K'`. -/
+theorem IsProperlySupported.exists_isCompact_forall_eqOn (hP : IsProperlySupported P) {K : Set M}
+    (hK : IsCompact K) :
+    ∃ K' : Set M, IsCompact K' ∧ ∀ f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      EqOn f g K' → EqOn (P f) (P g) K := by
+  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
+  obtain ⟨K₁, hK₁, -, hP₂⟩ := hP K hK
+  -- `f - g` vanishes on the interior of `K'`, a neighbourhood of `K₁`.
+  obtain ⟨K', hK', hK₁K'⟩ := exists_compact_superset hK₁
+  refine ⟨K', hK', fun f g hfg x hx ↦ ?_⟩
+  have h := hP₂ (f - g) (Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK₁K') fun y hy ↦ by
+    simp [hfg (interior_subset hy)]) x hx
+  simpa [sub_eq_zero] using h
+
 /-- **Composition.** The composition of two properly supported operators is properly
 supported. -/
 theorem IsProperlySupported.comp (hP : IsProperlySupported P) (hQ : IsProperlySupported Q) :
     IsProperlySupported (P ∘ₗ Q) := by
-  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
   intro K hK
   obtain ⟨K₁, hK₁, hQ₁, -⟩ := hQ K hK
   obtain ⟨K₂, hK₂, hP₁, -⟩ := hP K₁ hK₁
-  obtain ⟨K₃, hK₃, -, hP₂⟩ := hP K hK
-  obtain ⟨L, hL, hK₃L⟩ := exists_compact_superset hK₃
+  obtain ⟨L, hL, hPL⟩ := hP.exists_isCompact_forall_eqOn hK
   obtain ⟨K₄, hK₄, -, hQ₂⟩ := hQ L hL
   refine ⟨K₂ ∪ K₄, hK₂.union hK₄, fun f hf ↦ (hP₁ _ (hQ₁ f hf)).trans subset_union_left,
-    fun f hf ↦ hP₂ (Q f) ?_⟩
+    fun f hf x hx ↦ ?_⟩
   have hQf := hQ₂ f (hf.filter_mono (nhdsSet_mono subset_union_right))
-  exact Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK₃L) fun y hy ↦
-    hQf y (interior_subset hy)
+  simpa using hPL (Q f) 0 (fun y hy ↦ by simpa using hQf y hy) hx
 
 /-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, takes
 the same value at `x` on two functions that agree near `x`. -/
@@ -300,6 +347,81 @@ theorem isProperlySupported_locallyFiniteSum [T2Space M] (hS : LocallyFinite S)
     rw [hloc i f (hf.filter_mono (nhdsSet_mono (subset_biUnion_of_mem hi))),
       ContMDiffMap.coe_zero, Pi.zero_apply]
 
+/-! #### Pieces of a properly supported operator along a locally finite family -/
+
+variable {g : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+
+/-- **Only finitely many pieces `gᵢ P gⱼ` with `j` fixed are nonzero.** If `P` is properly
+supported and the supports of the functions `gᵢ` form a locally finite family, then for every `j`
+with `gⱼ` compactly supported, `gᵢ P gⱼ ≠ 0` for only finitely many `i`: the outputs of `P` on
+functions supported in `supp gⱼ` lie in a compact set, which meets only finitely many `supp gᵢ`. -/
+theorem IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_right
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (hg : LocallyFinite fun i ↦ tsupport (g i)) {j : ι}
+    (hgj : HasCompactSupport (g j)) :
+    {i | LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j) ≠ 0}.Finite := by
+  obtain ⟨K', hK', hsupp, -⟩ := isProperlySupported_iff.1 hP _ hgj
+  refine (hg.finite_nonempty_inter_compact hK').subset fun i hi ↦ ?_
+  by_contra hiK
+  refine hi (LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ ?_)
+  -- At a point of `supp gᵢ`, which misses `K'`, the output `P (gⱼ f)` vanishes.
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+    LinearMap.zero_apply, ContMDiffMap.coe_zero, Pi.zero_apply]
+  by_cases hx : x ∈ tsupport (g i)
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hiK ⟨x, hx,
+      hsupp _ (by rw [ContMDiffMap.coe_mul]; exact tsupport_mul_subset_left) h⟩, mul_zero]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul]
+
+/-- **Only finitely many pieces `gᵢ P gⱼ` with `i` fixed are nonzero.** If `P` is properly
+supported and the supports of the functions `gⱼ` form a locally finite family, then for every `i`
+with `gᵢ` compactly supported, `gᵢ P gⱼ ≠ 0` for only finitely many `j`: the values of `P` on
+`supp gᵢ` only depend on its input near a compact set, which meets only finitely many `supp gⱼ`. -/
+theorem IsProperlySupported.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_left
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (hg : LocallyFinite fun j ↦ tsupport (g j)) {i : ι}
+    (hgi : HasCompactSupport (g i)) :
+    {j | LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g j) ≠ 0}.Finite := by
+  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
+  obtain ⟨K', hK', -, hloc⟩ := isProperlySupported_iff.1 hP _ hgi
+  obtain ⟨L, hL, hK'L⟩ := exists_compact_superset hK'
+  refine (hg.finite_nonempty_inter_compact hL).subset fun j hj ↦ ?_
+  by_contra hjL
+  refine hj (LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ ?_)
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+    LinearMap.zero_apply, ContMDiffMap.coe_zero, Pi.zero_apply]
+  by_cases hx : x ∈ tsupport (g i)
+  · -- `gⱼ f` vanishes on `interior L`, a neighbourhood of `K'` which misses `supp gⱼ`.
+    refine (congrArg _ (hloc _ (Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK'L)
+      fun y hy ↦ ?_) x hx)).trans (mul_zero _)
+    simp [image_eq_zero_of_notMem_tsupport fun h ↦ hjL ⟨y, h, interior_subset hy⟩]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul]
+
+/-- **The nonzero pieces `gᵢ P gⱼ` are locally finite.** If `P` is properly supported and the
+compactly supported functions `gᵢ` have supports in sets `Bᵢ` forming a locally finite family, then
+the sets `Bᵢ ∪ Bⱼ`, over the pairs `(i, j)` with `gᵢ P gⱼ ≠ 0`, form a locally finite family. -/
+theorem IsProperlySupported.locallyFinite_setOf_mem_union_and_mulLeft_comp_comp_mulLeft_ne_zero
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) {B : ι → Set M} (hB : LocallyFinite B)
+    (hgB : ∀ i, tsupport (g i) ⊆ B i) (hgc : ∀ i, HasCompactSupport (g i)) :
+    LocallyFinite fun p : ι × ι ↦ {x | x ∈ B p.1 ∪ B p.2 ∧
+      LinearMap.mulLeft ℂ (g p.1) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g p.2) ≠ 0} := by
+  have hgf : LocallyFinite fun i ↦ tsupport (g i) := hB.subset hgB
+  intro x
+  obtain ⟨U, hU, hUf⟩ := hB x
+  -- A pair whose set meets `U` has a first or second index among the finitely many with `Bᵢ`
+  -- meeting `U`, and then finitely many choices of the other index.
+  refine ⟨U, hU, ((hUf.biUnion fun i _ ↦
+    ((hP.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_left hgf (hgc i)).image
+      fun j ↦ (i, j))).union (hUf.biUnion fun j _ ↦
+    ((hP.finite_setOf_mulLeft_comp_comp_mulLeft_ne_zero_right hgf (hgc j)).image
+      fun i ↦ (i, j)))).subset ?_⟩
+  rintro ⟨i, j⟩ ⟨y, ⟨hyB | hyB, hT⟩, hyU⟩
+  · exact Or.inl (mem_biUnion ⟨y, hyB, hyU⟩ ⟨j, hT, rfl⟩)
+  · exact Or.inr (mem_biUnion ⟨y, hyB, hyU⟩ ⟨i, hT, rfl⟩)
+
 end ProperSupport
 
 variable [T2Space M]
@@ -381,6 +503,28 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
 
+/-- **The class is local.** A properly supported operator `P` is a classical pseudodifferential
+operator of order `m` as soon as, near every compact set `K`, it agrees with one: for every compact
+`K` there is a smooth function `g` equal to `1` on `K` such that `u ↦ g · P u` is a classical
+pseudodifferential operator of order `m`. Indeed a chart compression of `P` by `φ` and `ψ` only
+sees `P u` on the compact set `e⁻¹(supp φ)`. -/
+theorem mem_classicalPseudodifferentialOperators_of_forall_mulLeft_comp_mem {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hP : IsProperlySupported P)
+    (h : ∀ K : Set M, IsCompact K → ∃ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      EqOn (⇑g) 1 K ∧ LinearMap.mulLeft ℂ g ∘ₗ P ∈ classicalPseudodifferentialOperators m) :
+    P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨g, hg1, hgP⟩ := h _ (e.isCompact_symm_image_tsupport φ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hgP).2 e he φ ψ
+  refine ⟨a, fun u x ↦ ?_⟩
+  rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+    OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
+    LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply]
+  by_cases hx : x ∈ tsupport φ
+  · rw [hg1 (mem_image_of_mem _ hx), Pi.one_apply, one_mul]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_smul, zero_smul]
+
 /-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
 classical pseudodifferential operator of every order: each chart compression is multiplication by
 a constant, and on `ℝ⁰` a constant symbol is classical of every order. -/
@@ -431,19 +575,20 @@ variable {m : ℝ} {ι : Type*}
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
   {hP : ∀ f, LocallyFinite fun i ↦ Function.support (P i f)} {S : ι → Set M}
 
-/-- **Locally finite sums of pseudodifferential operators.** Let `Pᵢ` be classical
-pseudodifferential operators of order `m` on `M`, and `Sᵢ` compact sets forming a locally finite
-family, such that the outputs of `Pᵢ` are supported in `Sᵢ` and `Pᵢ f = 0` whenever `f` vanishes
-near `Sᵢ`. Then the locally finite sum `f ↦ ∑ᵢ Pᵢ f` is a classical pseudodifferential operator of
-order `m`. -/
-theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyFinite S)
-    (hSc : ∀ i, IsCompact (S i)) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
+/-- **Properly supported locally finite sums of pseudodifferential operators.** Let `Pᵢ` be
+classical pseudodifferential operators of order `m` on `M` whose outputs are supported in sets `Sᵢ`
+forming a locally finite family. If the locally finite sum `f ↦ ∑ᵢ Pᵢ f` is properly supported,
+then it is a classical pseudodifferential operator of order `m`. Proper support of the sum is not
+automatic: the `Pᵢ` may see their inputs far from the `Sᵢ`. It holds when each `Pᵢ` only sees its
+input near a compact `Sᵢ` (`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators`), and
+also, for instance, when the sum is the difference of two properly supported operators. -/
+theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators_of_isProperlySupported
+    (hS : LocallyFinite S) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
     (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
-    (hloc : ∀ i f, (∀ᶠ y in 𝓝ˢ (S i), f y = 0) → P i f = 0) :
+    (hprop : IsProperlySupported (ContMDiffMap.locallyFiniteSum P hP)) :
     ContMDiffMap.locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m := by
   classical
-  refine mem_classicalPseudodifferentialOperators_iff.2
-    ⟨isProperlySupported_locallyFiniteSum hS hSc hsupp hloc, fun e he φ ψ ↦ ?_⟩
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hprop, fun e he φ ψ ↦ ?_⟩
   -- In a chart, only the finitely many `Pᵢ` with `Sᵢ` meeting `e⁻¹(supp φ)` contribute.
   have hK := e.isCompact_symm_image_tsupport φ
   set I := (hS.finite_nonempty_inter_compact hK).toFinset
@@ -455,7 +600,41 @@ theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyF
   · simp [hx]
   rw [ContMDiffMap.locallyFiniteSum_apply_eq_sum hS hsupp hK _ ⟨x, subset_tsupport _ hx, rfl⟩]
 
+/-- **Locally finite sums of pseudodifferential operators.** Let `Pᵢ` be classical
+pseudodifferential operators of order `m` on `M`, and `Sᵢ` compact sets forming a locally finite
+family, such that the outputs of `Pᵢ` are supported in `Sᵢ` and `Pᵢ f = 0` whenever `f` vanishes
+near `Sᵢ`. Then the locally finite sum `f ↦ ∑ᵢ Pᵢ f` is a classical pseudodifferential operator of
+order `m`. -/
+theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyFinite S)
+    (hSc : ∀ i, IsCompact (S i)) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
+    (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
+    (hloc : ∀ i f, (∀ᶠ y in 𝓝ˢ (S i), f y = 0) → P i f = 0) :
+    ContMDiffMap.locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m :=
+  locallyFiniteSum_mem_classicalPseudodifferentialOperators_of_isProperlySupported hS hPm hsupp
+    (isProperlySupported_locallyFiniteSum hS hSc hsupp hloc)
+
 end LocallyFiniteSum
+
+/-- **The class is determined on compact sets.** A properly supported operator `P` is a classical
+pseudodifferential operator of order `m` as soon as it agrees on every compact set `K` with one:
+there is a classical pseudodifferential operator `Q` of order `m` with `P f = Q f` on `K` for
+every `f`. Indeed a chart compression of `P` only evaluates its outputs on a compact set. -/
+theorem mem_classicalPseudodifferentialOperators_of_forall_isCompact {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P)
+    (h : ∀ K : Set M, IsCompact K → ∃ Q ∈ classicalPseudodifferentialOperators m,
+      ∀ f, ∀ x ∈ K, P f x = Q f x) :
+    P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨Q, hQ, hPQ⟩ := h _ (e.isCompact_symm_image_tsupport φ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hQ).2 e he φ ψ
+  refine ⟨a, fun u x ↦ ?_⟩
+  rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+    OpenPartialHomeomorph.complexChartCompression_apply]
+  by_cases hx : φ x = 0
+  · simp [hx]
+  · rw [hPQ _ _ ⟨x, subset_tsupport _ hx, rfl⟩]
 
 /-! ### Invariance under diffeomorphisms -/
 
@@ -503,8 +682,9 @@ section Multiplication
 
 /-- The cutoff `φ · L (g ∘ e⁻¹)` in a chart `e`, for a complex-valued smooth function `g` on `M`
 and a real-linear functional `L` on `ℂ`. For `L` the real and the imaginary part, these cutoffs
-split `φ · (g ∘ e⁻¹)`, as the next lemma shows. -/
-private def chartPartCutoff {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+split `φ · (g ∘ e⁻¹)` (`TauCeti.chartPartCutoff_re_add_im`), so that multiplying an operator by `g`
+splits its chart compressions (`TauCeti.complexChartCompression_mulLeft_comp`). -/
+def chartPartCutoff {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (L : ℂ →L[ℝ] ℝ)
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) : 𝓓(⟨e.target, e.open_target⟩, ℝ) :=
@@ -512,18 +692,45 @@ private def chartPartCutoff {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (g.contMDiff.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas he)))) φ
 
 omit [T2Space M] in
+/-- The cutoff `φ · L (g ∘ e⁻¹)` evaluated at a point of the chart. -/
+@[simp]
+theorem chartPartCutoff_apply {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (L : ℂ →L[ℝ] ℝ)
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (y : CoordinateSpace n) :
+    chartPartCutoff he g L φ y = L (g (e.symm y)) * φ y :=
+  TestFunction.smulLeftCLMOfContDiffOn_apply _ φ y
+
+omit [T2Space M] in
 /-- The cutoffs by the real and imaginary parts of `g` in the chart add up to `φ · (g ∘ e⁻¹)`. -/
-private theorem chartPartCutoff_re_add_im {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+theorem chartPartCutoff_re_add_im {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (y : CoordinateSpace n) :
     (chartPartCutoff he g Complex.reCLM φ y : ℂ) +
         Complex.I * chartPartCutoff he g Complex.imCLM φ y = φ y * g (e.symm y) := by
-  simp only [chartPartCutoff, TestFunction.smulLeftCLMOfContDiffOn_apply, Function.comp_apply,
-    Complex.reCLM_apply, Complex.imCLM_apply, smul_eq_mul]
+  simp only [chartPartCutoff_apply, Complex.reCLM_apply, Complex.imCLM_apply]
   conv_rhs => rw [← Complex.re_add_im (g (e.symm y))]
   push_cast
   ring
+
+/-- **Chart compressions of a product with a function.** In a chart `e`, the compression of `g P`
+by `φ` and `ψ` is the compression of `P` by `φ (Re g)` and `ψ` plus `i` times its compression by
+`φ (Im g)` and `ψ`, where `g` is read in the chart (`TauCeti.chartPartCutoff`). -/
+theorem complexChartCompression_mulLeft_comp {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
+    e.complexChartCompression he φ ψ (LinearMap.mulLeft ℂ g ∘ₗ P) f y =
+      e.complexChartCompression he (chartPartCutoff he g Complex.reCLM φ) ψ P f y +
+        Complex.I *
+          e.complexChartCompression he (chartPartCutoff he g Complex.imCLM φ) ψ P f y := by
+  simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
+    LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply, Complex.real_smul]
+  linear_combination
+    -P (e.complexCutoffPullback he ψ f) (e.symm y) * chartPartCutoff_re_add_im he g φ y
 
 /-- **The identity in a chart.** The compression of the identity by `φ` and `ψ` in a chart is
 multiplication by `φ ψ`, the quantization of the symbol `φ(x) ψ(x)` of order `0`. -/
@@ -570,12 +777,8 @@ theorem mulLeft_comp_mem_classicalPseudodifferentialOperators {m : ℝ}
   obtain ⟨a₂, ha₂⟩ := hP.2 e he (chartPartCutoff he g Complex.imCLM φ) ψ
   refine ⟨a₁ + Complex.I • a₂, fun u x ↦ ?_⟩
   rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add,
-    ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂, smul_eq_mul]
-  simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
-    LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply, Complex.real_smul]
-  linear_combination
-    P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm x) *
-      chartPartCutoff_re_add_im he g φ x
+    ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂, smul_eq_mul,
+    complexChartCompression_mulLeft_comp]
 
 /-- **Multiplication on the right.** If `P` is a classical pseudodifferential operator of order
 `m`, then so is `u ↦ P (g u)` for every complex-valued smooth function `g`. In a chart, the
@@ -703,5 +906,27 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
       fun e he φ ψ ↦ ⟨_,
       ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression he φ
         ψ ⟨D, hD⟩⟩⟩
+
+/-- **Complex differential operators are classical pseudodifferential operators.** A
+complex-linear operator `Q` on the complex-valued smooth functions on `M` which is a differential
+operator of order at most `m` in Grothendieck's sense, for commutators with multiplication by
+complex-valued smooth functions, is a classical pseudodifferential operator of order `m`. This
+extends `TauCeti.complexifyLinearMap_mem_classicalPseudodifferentialOperators` from
+complexifications of real differential operators to all complex ones. -/
+theorem mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      m) :
+    Q ∈ classicalPseudodifferentialOperators (n := n) (M := M) m := by
+  -- `Q = A + i B` for the complexifications of the real differential operators `A u = Re (Q u)`
+  -- and `B u = Im (Q u)`.
+  rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q]
+  exact add_mem (complexifyLinearMap_mem_classicalPseudodifferentialOperators
+      (re_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ))
+    (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators
+      (im_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ)))
 
 end TauCeti

@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Tiling
+public import TauCeti.Combinatorics.Tiling.Lozenge.Height
+public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Data.Int.Interval
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Order
+import Mathlib.Order.SuccPred.Int
 
 /-!
 # Row tilings
@@ -20,6 +23,7 @@ their laws realise the slopes on the edge `t = 0` of the slope triangle.
 ## Main definitions
 
 * `TauCeti.rowTiling`: the row tiling `M_ε`, as a configuration `TriEdge → Bool`.
+* `TauCeti.rowHeight ε x`: `Σ_{0 ≤ i < x} ε_i − Σ_{x ≤ i < 0} ε_i`, the height of `M_ε` at `(x, y)`.
 
 ## Main statements
 
@@ -30,6 +34,8 @@ their laws realise the slopes on the edge `t = 0` of the slope triangle.
 * `TauCeti.continuous_rowTiling`: `ε ↦ M_ε` is continuous for the product topologies.
 * `TauCeti.rowTiling_vadd`: translating `M_ε` by `w` shifts `ε` by the first coordinate of `w`; in
   particular `M_ε` is invariant under `e₂`, and `e₁` shifts `ε` to `x ↦ ε (x - 1)`.
+* `TauCeti.tilingHeight_rowTiling`: the height of `M_ε` is `H_{M_ε}(x, y) = rowHeight ε x`, which
+  is `Σ_{0 ≤ i < x} ε_i` for `x ≥ 0` and `−Σ_{x ≤ i < 0} ε_i` for `x < 0`, independent of `y`.
 
 ## References
 
@@ -118,5 +124,52 @@ theorem rowTiling_true (e : TriEdge) : rowTiling (fun _ => true) e = decide (e.k
 theorem rowTiling_false (e : TriEdge) : rowTiling (fun _ => false) e = decide (e.k = 2) := by
   obtain ⟨v, k⟩ := e
   fin_cases k <;> rfl
+
+/-! ### Heights of row tilings -/
+
+/-- The number of `i` with `0 ≤ i < x` and `ε i`, minus the number of `i` with `x ≤ i < 0` and
+`ε i`: one of the two sums is empty. -/
+def rowHeight (ε : ℤ → Bool) (x : ℤ) : ℤ :=
+  ∑ i ∈ Finset.Ico 0 x, (if ε i then 1 else 0) - ∑ i ∈ Finset.Ico x 0, (if ε i then 1 else 0)
+
+theorem rowHeight_def (ε : ℤ → Bool) (x : ℤ) :
+    rowHeight ε x =
+      ∑ i ∈ Finset.Ico 0 x, (if ε i then 1 else 0) - ∑ i ∈ Finset.Ico x 0, (if ε i then 1 else 0) :=
+  (rfl)
+
+@[simp] theorem rowHeight_zero (ε : ℤ → Bool) : rowHeight ε 0 = 0 := by
+  simp [rowHeight_def]
+
+theorem rowHeight_of_nonneg (ε : ℤ → Bool) {x : ℤ} (hx : 0 ≤ x) :
+    rowHeight ε x = ∑ i ∈ Finset.Ico 0 x, if ε i then 1 else 0 := by
+  simp [rowHeight, Finset.Ico_eq_empty_of_le hx]
+
+theorem rowHeight_of_neg (ε : ℤ → Bool) {x : ℤ} (hx : x < 0) :
+    rowHeight ε x = -∑ i ∈ Finset.Ico x 0, if ε i then 1 else 0 := by
+  simp [rowHeight, Finset.Ico_eq_empty_of_le hx.le]
+
+/-- `rowHeight ε` increases by `1` from `x` to `x + 1` when `ε x`, and is constant otherwise. -/
+theorem rowHeight_add_one (ε : ℤ → Bool) (x : ℤ) :
+    rowHeight ε (x + 1) = rowHeight ε x + if ε x then 1 else 0 := by
+  rcases le_or_gt 0 x with hx | hx
+  · rw [rowHeight, rowHeight, Finset.Ico_eq_empty_of_le (by omega : (0 : ℤ) ≤ x + 1),
+      Finset.Ico_eq_empty_of_le hx, ← Finset.sum_Ico_add_eq_sum_Ico_add_one hx]
+    simp
+  · rw [rowHeight, rowHeight, Finset.Ico_eq_empty_of_le (by omega : x + 1 ≤ 0),
+      Finset.Ico_eq_empty_of_le hx.le, ← Finset.insert_Ico_add_one_left_eq_Ico hx,
+      Finset.sum_insert (by simp)]
+    ring
+
+/-- **The height of a row tiling**: `H_{M_ε}(x, y) = Σ_{0 ≤ i < x} ε_i − Σ_{x ≤ i < 0} ε_i`. -/
+@[simp] theorem tilingHeight_rowTiling (ε : ℤ → Bool) (v : ℤ × ℤ) :
+    tilingHeight {e | rowTiling ε e = true} v = rowHeight ε v.1 := by
+  refine (congrFun ((isTiling_rowTiling ε).eq_tilingHeight (g := fun v => rowHeight ε v.1)
+    (isCochainPrimitiveOn_univ_iff.2 fun e => ?_) (rowHeight_zero ε)) v).symm
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  by_cases he : rowTiling ε ⟨(x, y), k⟩ = true
+  · rw [heightCochain_of_mem he]
+    fin_cases k <;> simp_all [rowHeight_add_one]
+  · rw [heightCochain_of_notMem he]
+    fin_cases k <;> simp_all [rowHeight_add_one]
 
 end TauCeti

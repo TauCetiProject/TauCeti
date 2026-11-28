@@ -135,9 +135,7 @@ private theorem exists_forall_le_linearizationPotential (c : Fin m → ℂ) :
     ∃ R : ℝ, ∀ z : ℂ, R < ‖z‖ → 1 / 16 ≤ linearizationPotential c z := by
   have hP : ∀ᶠ z in cocompact ℂ, 1 ≤ ‖(monicOfCoeff c).eval z‖ := by
     rcases Nat.eq_zero_or_pos m with rfl | hm
-    · have h1 : monicOfCoeff c = 1 :=
-        (monic_monicOfCoeff c).natDegree_eq_zero.1 (natDegree_monicOfCoeff c)
-      simp [h1]
+    · simp
     have hdeg : 0 < (monicOfCoeff c).degree :=
       _root_.Polynomial.natDegree_pos_iff_degree_pos.1 (by rwa [natDegree_monicOfCoeff])
     exact (_root_.Polynomial.tendsto_norm_atTop _ hdeg

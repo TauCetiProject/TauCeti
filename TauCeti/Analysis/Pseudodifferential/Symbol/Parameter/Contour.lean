@@ -63,11 +63,17 @@ at every order (`hasFTaylorSeriesUpToOn_integral_of_le_bound`).
 * `TauCeti.ParameterSymbol.coefficient_contourIntegral`: its coefficient.
 * `TauCeti.ParameterSymbol.mixedDeriv_contourIntegral`: its mixed derivatives are the integrals of
   the mixed derivatives of the symbols `a(·, ·, γ(t))`.
+* `TauCeti.ParameterSymbol.hasCompactSpatialSupport_contourIntegral`: it vanishes at the positions
+  outside a compact set when `a` does.
 * `TauCeti.ParameterSymbol.contourIntegral_add`, `TauCeti.ParameterSymbol.contourIntegral_smul`,
   `TauCeti.ParameterSymbol.contourIntegral_neg`, `TauCeti.ParameterSymbol.contourIntegral_sub`:
   it is linear in `a`, so a parametrix may be integrated term by term.
 * `TauCeti.ParameterSymbol.contourIntegralₗ`: the contour integral as a `ℂ`-linear map, with
   `TauCeti.ParameterSymbol.contourIntegral_sum` for finite sums.
+* `TauCeti.ParameterSymbol.exists_integrable_norm_mul_one_add_sqrt_rpow_le`: the bound by an
+  integrable function of the weight `‖g t‖ (1 + ‖γ t‖ ^ (1 / 2)) ^ μ` along the path, which also
+  controls the quantized integrands
+  (`TauCeti.ParameterSymbol.quantizeSchwartzValue_contourIntegral`).
 
 ## References
 
@@ -307,6 +313,33 @@ private theorem parameterWeight_rpow_le {c : ℝ} (hc : ∀ t, 1 + |t| ≤ c * (
         rw [Real.div_rpow hS.le (by positivity), Real.rpow_neg (by positivity), div_eq_mul_inv,
           mul_comm]
 
+/-- **The weight along the path is integrable.** Let `γ` go to infinity at least linearly,
+`1 + |t| ≤ c (1 + ‖γ t‖)`, and let `‖g t‖ ≤ C (|t| ^ σ + (1 + |t|) ^ σ)`. For `μ ≤ 0` with `-1 < σ`
+and `σ + μ / 2 < -1`, the function `t ↦ ‖g t‖ (1 + ‖γ t‖ ^ (1 / 2)) ^ μ` is dominated by an
+integrable function. A parameter-dependent symbol of order `μ ≤ 0` has size at most a multiple of
+`(1 + ‖z‖ ^ (1 / 2)) ^ μ` at the spectral parameter `z`, uniformly in the frequency, so this bounds
+the integrand `g(t) a(x, ξ, γ(t))` of a contour integral, and the operators `g(t) Op(a(γ t))`,
+by one integrable function of the time. -/
+theorem exists_integrable_norm_mul_one_add_sqrt_rpow_le
+    (hγc : ∃ c, ∀ t, 1 + |t| ≤ c * (1 + ‖γ t‖))
+    (hgσ : ∃ C, ∀ t, ‖g t‖ ≤ C * (|t| ^ σ + (1 + |t|) ^ σ)) (hσ : -1 < σ) {μ : ℝ} (hμ : μ ≤ 0)
+    (hσμ : σ + μ / 2 < -1) :
+    ∃ G : ℝ → ℝ, Integrable G ∧ ∀ t, ‖g t‖ * (1 + Real.sqrt ‖γ t‖) ^ μ ≤ G t := by
+  obtain ⟨c, hc⟩ := hγc
+  obtain ⟨C, hC⟩ := hgσ
+  refine ⟨fun t ↦ C * (1 + Real.sqrt c) ^ (-μ) * lineWeight σ μ 1 t,
+    (integrable_lineWeight hσ hμ hσμ le_rfl).const_mul _, fun t ↦ ?_⟩
+  -- The parameter weight at the zero frequency is `1 + ‖γ t‖ ^ (1 / 2)`.
+  have hw := parameterWeight_rpow_le hc hμ (0 : CoordinateSpace 0) t
+  simp only [parameterWeight_def, norm_zero, add_zero, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, zero_pow] at hw
+  calc ‖g t‖ * (1 + Real.sqrt ‖γ t‖) ^ μ ≤ (C * (|t| ^ σ + (1 + |t|) ^ σ)) *
+        ((1 + Real.sqrt c) ^ (-μ) * (Real.sqrt 1 + Real.sqrt (1 + |t|)) ^ μ) :=
+        mul_le_mul (hC t) hw (by positivity) ((norm_nonneg _).trans (hC t))
+    _ = C * (1 + Real.sqrt c) ^ (-μ) * lineWeight σ μ 1 t := by
+        rw [lineWeight]
+        ring
+
 /-- At each point of the path the integrand is smooth in the position and the frequency. -/
 private theorem contDiff_smul_coefficient (t : ℝ) :
     ContDiff ℝ ∞ fun q ↦ g t • a.coefficient (q, γ t) :=
@@ -359,17 +392,16 @@ private theorem exists_bound_iteratedFDeriv_smul_coefficient
     (p₀ : CoordinateSpace n × CoordinateSpace n) (k : ℕ) :
     ∃ G : ℝ → ℝ, Integrable G ∧ ∀ t, ∀ p ∈ Metric.ball p₀ 1,
       ‖iteratedFDeriv ℝ k (fun q ↦ g t • a.coefficient (q, γ t)) p‖ ≤ G t := by
-  obtain ⟨c, hc⟩ := hγc
-  obtain ⟨C, hC⟩ := hgσ
   have hm0 : m ≤ 0 := by linarith
+  obtain ⟨G, hG, hGb⟩ := exists_integrable_norm_mul_one_add_sqrt_rpow_le hγc hgσ hσ hm0
+    (by linarith)
   -- One constant for the mixed derivatives along all words of length `k`, on a compact ball.
   have hK := isCompact_closedBall p₀.1 1
   choose D hD0 hD using fun w : Fin k → Fin n ⊕ Fin n ↦ a.exists_norm_mixedDeriv_coefficient_le
     hK ((List.ofFn w).filterMap Sum.getLeft?) ((List.ofFn w).filterMap Sum.getRight?)
   set M := ∑ w, D w
   have hM : 0 ≤ M := Finset.sum_nonneg fun w _ ↦ hD0 w
-  refine ⟨fun t ↦ C * M * (1 + Real.sqrt c) ^ (-m) * lineWeight σ m 1 t,
-    (integrable_lineWeight hσ hm0 (by linarith) le_rfl).const_mul _, fun t p hp ↦ ?_⟩
+  refine ⟨fun t ↦ M * G t, hG.const_mul _, fun t p hp ↦ ?_⟩
   have hpK : p.1 ∈ Metric.closedBall p₀.1 1 := by
     rw [Metric.mem_closedBall]
     exact (le_max_left _ _).trans (Metric.mem_ball.1 hp).le
@@ -382,23 +414,13 @@ private theorem exists_bound_iteratedFDeriv_smul_coefficient
     rw [Finset.sum_mul]
     refine Finset.sum_le_sum fun w _ ↦ (hD w p.1 hpK p.2 (γ t) (hγΛ t)).trans ?_
     exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hw (by simp)) (hD0 w)
-  -- The parameter weight is controlled along the path, uniformly in the frequency.
-  have hweight : parameterWeight p.2 (γ t) ^ m ≤ (1 + Real.sqrt c) ^ (-m) *
-      (Real.sqrt 1 + Real.sqrt (1 + |t|)) ^ m := by
-    refine (parameterWeight_rpow_le hc hm0 p.2 t).trans (mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_nonpos (by positivity) ?_ hm0) (by positivity))
-    gcongr
-    simp
-  have hgt : ‖g t‖ ≤ C * (|t| ^ σ + (1 + |t|) ^ σ) := hC t
   rw [iteratedFDeriv_smul_coefficient, norm_smul]
   calc ‖g t‖ * ‖iteratedFDeriv ℝ k (fun q ↦ a.coefficient (q, γ t)) p‖
-      ≤ (C * (|t| ^ σ + (1 + |t|) ^ σ)) * (M * ((1 + Real.sqrt c) ^ (-m) *
-          (Real.sqrt 1 + Real.sqrt (1 + |t|)) ^ m)) :=
-        mul_le_mul hgt (hsum.trans (mul_le_mul_of_nonneg_left hweight hM)) (norm_nonneg _)
-          ((norm_nonneg _).trans hgt)
-    _ = C * M * (1 + Real.sqrt c) ^ (-m) * lineWeight σ m 1 t := by
-        rw [lineWeight]
-        ring
+      ≤ ‖g t‖ * (M * (1 + Real.sqrt ‖γ t‖) ^ m) :=
+        mul_le_mul_of_nonneg_left (hsum.trans (mul_le_mul_of_nonneg_left
+          (parameterWeight_rpow_le_one_add_sqrt_rpow p.2 (γ t) hm0) hM)) (norm_nonneg _)
+    _ = M * (‖g t‖ * (1 + Real.sqrt ‖γ t‖) ^ m) := by ring
+    _ ≤ M * G t := mul_le_mul_of_nonneg_left (hGb t) hM
 
 /-- On the unit ball around each point, the integrals of the derivatives of the integrand form a
 Taylor series of `(x, ξ) ↦ ∫ g(t) a(x, ξ, γ(t)) dt`: differentiation under the integral sign. -/
@@ -544,6 +566,14 @@ theorem mixedDeriv_contourIntegral (α β : List (Fin n)) (x ξ : CoordinateSpac
     funext (a.coefficient_toSymbol z)
   simp only [hI, hz]
   exact a.mixedDeriv_integral_smul_coefficient hγ hγΛ hg hγc hgσ hσ hm α β x ξ
+
+/-- If a parameter-dependent symbol vanishes at the positions outside a compact set `K`, for every
+frequency and spectral parameter, then so does its contour integral. -/
+theorem hasCompactSpatialSupport_contourIntegral {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (ha : ∀ x ∉ K, ∀ ξ z, a.coefficient ((x, ξ), z) = 0) :
+    (a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm).HasCompactSpatialSupport :=
+  Symbol.hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ by
+    simp [coefficient_contourIntegral, ha x hx]⟩
 
 /-- The contour integral of the zero symbol is the zero symbol. -/
 @[simp]

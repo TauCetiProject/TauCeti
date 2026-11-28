@@ -49,11 +49,11 @@ local notation "Flat" => IsRestricted.subring (R := R) (c ∘ e)
 coordinates. No multiplicativity of the coefficient norm is assumed. -/
 theorem norm_mul_add_eq_max_of_isMulDistinguished_split {g : Flat}
     (hg : PowerSeries.IsMulDistinguished (c none) s
-      (restrictedSplitEquiv e g : PowerSeries Inner)) (q : Flat) {r : Flat}
+      (restrictedSplitEquiv e rfl g : PowerSeries Inner)) (q : Flat) {r : Flat}
     (hr : ∀ t : ι →₀ ℕ, s ≤ t (e.symm none) → coeff t (r : MvPowerSeries ι R) = 0) :
     ‖g * q + r‖ = max (‖g‖ * ‖q‖) ‖r‖ := by
-  have h := hg.gaussNorm_mul_add_eq_max Fact.out (restrictedSplitEquiv e q).property
-    ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e r s).mpr hr)
+  have h := hg.gaussNorm_mul_add_eq_max Fact.out (restrictedSplitEquiv e rfl q).property
+    ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e rfl r s).mpr hr)
   simpa only [← PowerSeries.norm_eq_gaussNorm, ← Subring.coe_mul, ← Subring.coe_add,
     ← map_mul, ← map_add, norm_restrictedSplitEquiv] using h
 
@@ -61,47 +61,47 @@ theorem norm_mul_add_eq_max_of_isMulDistinguished_split {g : Flat}
 bounds on the competing decompositions. -/
 theorem eq_and_eq_of_mul_add_eq_mul_add_of_isMulDistinguished_split {g : Flat}
     (hg : PowerSeries.IsMulDistinguished (c none) s
-      (restrictedSplitEquiv e g : PowerSeries Inner)) {q q' r r' : Flat}
+      (restrictedSplitEquiv e rfl g : PowerSeries Inner)) {q q' r r' : Flat}
     (hr : ∀ t : ι →₀ ℕ, s ≤ t (e.symm none) → coeff t (r : MvPowerSeries ι R) = 0)
     (hr' : ∀ t : ι →₀ ℕ, s ≤ t (e.symm none) → coeff t (r' : MvPowerSeries ι R) = 0)
     (h : g * q + r = g * q' + r') : q = q' ∧ r = r' := by
-  have h' := congrArg (fun x : Flat ↦ (restrictedSplitEquiv e x : PowerSeries Inner)) h
+  have h' := congrArg (fun x : Flat ↦ (restrictedSplitEquiv e rfl x : PowerSeries Inner)) h
   simp only [map_add, map_mul, Subring.coe_add, Subring.coe_mul] at h'
-  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add Fact.out (restrictedSplitEquiv e q).property
-    (restrictedSplitEquiv e q').property ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e r s).mpr
-        hr)
-    ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e r' s).mpr hr') h'
-  exact ⟨(restrictedSplitEquiv e).injective (Subtype.ext hq),
-    (restrictedSplitEquiv e).injective (Subtype.ext hr)⟩
+  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add Fact.out
+    (restrictedSplitEquiv e rfl q).property (restrictedSplitEquiv e rfl q').property
+    ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e rfl r s).mpr hr)
+    ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e rfl r' s).mpr hr') h'
+  exact ⟨(restrictedSplitEquiv e rfl).injective (Subtype.ext hq),
+    (restrictedSplitEquiv e rfl).injective (Subtype.ext hr)⟩
 
 /-- Weierstrass division in any specified variable, with quotient and remainder estimates in
 the original Gauss norm. The remainder has degree less than `s` in `e.symm none`.
 This includes degree zero, where the remainder is zero. -/
 theorem exists_mul_add_eq_of_isMulDistinguished_split [CompleteSpace R] {g : Flat}
     (hg : PowerSeries.IsMulDistinguished (c none) s
-      (restrictedSplitEquiv e g : PowerSeries Inner)) (f : Flat) :
+      (restrictedSplitEquiv e rfl g : PowerSeries Inner)) (f : Flat) :
     ∃ q r : Flat,
       (∀ t : ι →₀ ℕ, s ≤ t (e.symm none) → coeff t (r : MvPowerSeries ι R) = 0) ∧
       g * q + r = f ∧ ‖q‖ ≤ ‖f‖ / ‖g‖ ∧ ‖r‖ ≤ ‖f‖ := by
-  let E := IsRestricted.renameAlgEquiv (R := R) e c
+  let E := IsRestricted.renameAlgEquivOfEq (R := R) e c rfl
   obtain ⟨q, r, hr, hqr, hqnorm, hrnorm⟩ := exists_mul_add_eq_of_isMulDistinguished
     (g := E g) (by simpa only [restrictedSplitEquiv_apply] using hg) (E f)
   refine ⟨E.symm q, E.symm r, ?_, ?_, ?_, ?_⟩
-  · apply (forall_coeff_restrictedSplitEquiv_eq_zero_iff e _ s).mp
+  · apply (forall_coeff_restrictedSplitEquiv_eq_zero_iff e rfl _ s).mp
     simpa only [restrictedSplitEquiv_apply, E, AlgEquiv.apply_symm_apply] using
       (forall_coeff_restrictedOptionEquiv_eq_zero_iff r s).mpr hr
   · apply E.injective
     simpa using hqr
-  · rw [← IsRestricted.norm_renameAlgEquiv e c (E.symm q)]
-    simpa only [E, AlgEquiv.apply_symm_apply, IsRestricted.norm_renameAlgEquiv] using hqnorm
-  · rw [← IsRestricted.norm_renameAlgEquiv e c (E.symm r)]
-    simpa only [E, AlgEquiv.apply_symm_apply, IsRestricted.norm_renameAlgEquiv] using hrnorm
+  · rw [← IsRestricted.norm_renameAlgEquivOfEq e c rfl (E.symm q)]
+    simpa only [E, AlgEquiv.apply_symm_apply, IsRestricted.norm_renameAlgEquivOfEq] using hqnorm
+  · rw [← IsRestricted.norm_renameAlgEquivOfEq e c rfl (E.symm r)]
+    simpa only [E, AlgEquiv.apply_symm_apply, IsRestricted.norm_renameAlgEquivOfEq] using hrnorm
 
 /-- Every dividend has exactly one quotient-remainder pair in the selected variable.
 Uniqueness does not impose the estimates as extra hypotheses. -/
 theorem existsUnique_mul_add_eq_of_isMulDistinguished_split [CompleteSpace R] {g : Flat}
     (hg : PowerSeries.IsMulDistinguished (c none) s
-      (restrictedSplitEquiv e g : PowerSeries Inner)) (f : Flat) :
+      (restrictedSplitEquiv e rfl g : PowerSeries Inner)) (f : Flat) :
     ∃! p : Flat × Flat,
       (∀ t : ι →₀ ℕ, s ≤ t (e.symm none) → coeff t (p.2 : MvPowerSeries ι R) = 0) ∧
       g * p.1 + p.2 = f := by
@@ -115,42 +115,46 @@ theorem existsUnique_mul_add_eq_of_isMulDistinguished_split [CompleteSpace R] {g
 polynomials, even if no norm normalisation of the polynomial is assumed. -/
 theorem eq_and_eq_of_mul_eq_of_mul_eq_of_isMulDistinguished_split {g : Flat}
     (hg : PowerSeries.IsMulDistinguished (c none) s
-      (restrictedSplitEquiv e g : PowerSeries Inner)) {u u' : Flat} {ω ω' : Polynomial Inner}
+      (restrictedSplitEquiv e rfl g : PowerSeries Inner)) {u u' : Flat} {ω ω' : Polynomial Inner}
     (hu : IsUnit u) (hu' : IsUnit u')
     (hω : ω.IsMonicOfDegree s) (hω' : ω'.IsMonicOfDegree s)
-    (h : u * (restrictedSplitEquiv e).symm (PowerSeries.polynomialToRestricted (c none) ω) = g)
-    (h' : u' * (restrictedSplitEquiv e).symm (PowerSeries.polynomialToRestricted (c none) ω') = g) :
+    (h : u * (restrictedSplitEquiv e rfl).symm (PowerSeries.polynomialToRestricted (c none) ω) = g)
+    (h' : u' * (restrictedSplitEquiv e rfl).symm
+      (PowerSeries.polynomialToRestricted (c none) ω') = g) :
     u = u' ∧ ω = ω' := by
   have key {u : Flat} {ω : Polynomial Inner}
-      (h : u * (restrictedSplitEquiv e).symm (PowerSeries.polynomialToRestricted (c none) ω) = g) :
-      (restrictedSplitEquiv e u : PowerSeries Inner) * (ω : PowerSeries Inner) =
-        (restrictedSplitEquiv e g : PowerSeries Inner) := by
-    have hh := congrArg (fun x : Flat ↦ (restrictedSplitEquiv e x : PowerSeries Inner)) h
+      (h : u * (restrictedSplitEquiv e rfl).symm
+        (PowerSeries.polynomialToRestricted (c none) ω) = g) :
+      (restrictedSplitEquiv e rfl u : PowerSeries Inner) * (ω : PowerSeries Inner) =
+        (restrictedSplitEquiv e rfl g : PowerSeries Inner) := by
+    have hh := congrArg (fun x : Flat ↦ (restrictedSplitEquiv e rfl x : PowerSeries Inner)) h
     simpa only [map_mul, AlgEquiv.apply_symm_apply, Subring.coe_mul,
       PowerSeries.coe_polynomialToRestricted] using hh
   obtain ⟨h1, h2⟩ := hg.eq_and_eq_of_mul_eq_of_mul_eq Fact.out
-    (hu.map (restrictedSplitEquiv e)) (hu'.map (restrictedSplitEquiv e)) hω hω' (key h) (key h')
-  exact ⟨(restrictedSplitEquiv e).injective h1, h2⟩
+    (hu.map (restrictedSplitEquiv e rfl)) (hu'.map (restrictedSplitEquiv e rfl))
+    hω hω' (key h) (key h')
+  exact ⟨(restrictedSplitEquiv e rfl).injective h1, h2⟩
 
 /-- Weierstrass preparation in any specified variable, with the polynomial's Gauss norm
 normalised to `c none ^ s`. The unit factor is multiplicative even over a nonreduced Banach ring. -/
 theorem exists_isNormMulUnit_isMonicOfDegree_mul_eq_of_isMulDistinguished_split
     [CompleteSpace R] {g : Flat}
     (hg : PowerSeries.IsMulDistinguished (c none) s
-      (restrictedSplitEquiv e g : PowerSeries Inner)) :
+      (restrictedSplitEquiv e rfl g : PowerSeries Inner)) :
     ∃ (u : Flat) (ω : Polynomial Inner), IsNormMulUnit u ∧ ω.IsMonicOfDegree s ∧
-      ‖((restrictedSplitEquiv e).symm (PowerSeries.polynomialToRestricted (c none) ω) : Flat)‖ =
+      ‖((restrictedSplitEquiv e rfl).symm (PowerSeries.polynomialToRestricted (c none) ω) : Flat)‖ =
         c none ^ s ∧
-      u * (restrictedSplitEquiv e).symm (PowerSeries.polynomialToRestricted (c none) ω) = g := by
+      u * (restrictedSplitEquiv e rfl).symm
+        (PowerSeries.polynomialToRestricted (c none) ω) = g := by
   obtain ⟨u, ω, hu, hω, hn, huω⟩ :=
-    hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq (restrictedSplitEquiv e g).property
-  refine ⟨(restrictedSplitEquiv e).symm u, ω, ?_, hω, ?_, ?_⟩
-  · exact (MulEquiv.isNormMulUnit_iff (restrictedSplitEquiv e).toMulEquiv
-      (norm_restrictedSplitEquiv e) _).mp (by simpa using hu)
-  · rw [← norm_restrictedSplitEquiv e, AlgEquiv.apply_symm_apply,
+    hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq (restrictedSplitEquiv e rfl g).property
+  refine ⟨(restrictedSplitEquiv e rfl).symm u, ω, ?_, hω, ?_, ?_⟩
+  · exact (MulEquiv.isNormMulUnit_iff (restrictedSplitEquiv e rfl).toMulEquiv
+      (norm_restrictedSplitEquiv e rfl) _).mp (by simpa using hu)
+  · rw [← norm_restrictedSplitEquiv e rfl, AlgEquiv.apply_symm_apply,
       PowerSeries.norm_eq_gaussNorm, PowerSeries.coe_polynomialToRestricted]
     exact hn
-  · apply (restrictedSplitEquiv e).injective
+  · apply (restrictedSplitEquiv e rfl).injective
     apply Subtype.ext
     simpa only [map_mul, AlgEquiv.apply_symm_apply, Subring.coe_mul,
       PowerSeries.coe_polynomialToRestricted] using huω
