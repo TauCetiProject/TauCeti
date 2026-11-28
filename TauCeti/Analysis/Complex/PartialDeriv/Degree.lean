@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.Analysis.Complex.PartialDeriv.Basic
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.Liouville

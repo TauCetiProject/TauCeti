@@ -22,13 +22,14 @@ given a finite set `E i ⊆ closedBall (c i) r` and multiplicities `k i : ℂ �
 `p ≤ ∑ ζ ∈ E i, k i ζ`, and that when `0 < p` every mixed partial derivative `mDeriv σ f ξ` with
 `∀ i, σ i < k i (ξ i)` vanishes on the Cartesian product `{ξ | ∀ i, ξ i ∈ E i}`.
 
-Trimming the weights `k i` via `Finsupp.exists_le_degree_eq` to finitely supported weights `k' i`
-of total degree `p` and dividing `f` by the monic coordinate polynomials
-`P i = Polynomial.ofMultiset (k' i).toMultiset` of degree `p` expresses `f(z)` as
-`∑ i, g i z * (P i).eval (z i)` with controlled supremum norms on `closedBall c R`, yielding the
-estimate `‖f z‖ ≤ M * (6 ^ n * r / R) ^ p` on `closedBall c r` (including the degenerate cases
-`p = 0`, `n = 0`, `r = 0`, and `r ≤ R < 5 * r`). For finite sets of cardinality `#(E i) ≥ S₁` and
-uniform coordinate multiplicity `S₀`, this specialises directly to Waldschmidt's Schwarz lemma for
+In the positive-radius, positive-exponent regime (`0 < r`, `0 < p`, `0 < n`) with `5 * r ≤ R`,
+selecting size-`p` root multisets `s i` supported on `E i` with multiplicities bounded by `k i` and
+dividing `f` by the monic coordinate polynomials `P i = Polynomial.ofMultiset (s i)` of degree `p`
+expresses `f(z)` as `∑ i, g i z * (P i).eval (z i)` with controlled supremum norms on
+`closedBall c R`, yielding the estimate `‖f z‖ ≤ M * (6 ^ n * r / R) ^ p` on `closedBall c r`.
+The remaining cases (`p = 0`, `n = 0`, `r = 0`, and `r ≤ R < 5 * r`) are handled separately,
+extending the estimate to all `r ≤ R`. For finite sets of cardinality `#(E i) ≥ S₁` and uniform
+coordinate multiplicity `S₀`, this specialises directly to Waldschmidt's Schwarz lemma for
 Cartesian products `‖f z‖ ≤ M * (18 ^ n * r / R) ^ (S₀ * S₁)` — the analytic extrapolation tool in
 several-variable transcendence proofs such as the Schneider–Lang criterion and Baker's theorem on
 linear forms in logarithms.
@@ -57,6 +58,25 @@ namespace TauCeti
 
 /-! ### Preliminary helpers -/
 
+/-- Selects a multiset `s` of size `p` supported on `E` whose multiplicities are bounded by `k`. -/
+private theorem exists_multiset_card_eq_of_le_sum {E : Finset ℂ} {k : ℂ → ℕ} {p : ℕ}
+    (hsum : p ≤ ∑ ζ ∈ E, k ζ) :
+    ∃ s : Multiset ℂ, s.card = p ∧ (∀ ζ ∈ s, ζ ∈ E) ∧ ∀ ζ, s.count ζ ≤ k ζ := by
+  classical
+  let K : ℂ →₀ ℕ := Finsupp.indicator E fun a _ ↦ k a
+  have hK_deg : K.degree = ∑ ζ ∈ E, k ζ := by
+    simp [K, Finset.sum_attach]
+  obtain ⟨k', hk'_le, hk'_deg⟩ := Finsupp.exists_le_degree_eq K p (hK_deg.symm ▸ hsum)
+  refine ⟨k'.toMultiset, (Finsupp.card_toMultiset_eq_degree k').trans hk'_deg, fun ζ hζ ↦ ?_,
+    fun ζ ↦ ?_⟩
+  · exact Finsupp.support_indicator_subset _ _ <|
+      Finsupp.support_mono hk'_le ((Finsupp.mem_toMultiset _ _).mp hζ)
+  · rw [Finsupp.count_toMultiset]
+    by_cases hζE : ζ ∈ E
+    · simpa [K, hζE] using hk'_le ζ
+    · have h0 : k' ζ = 0 := Nat.eq_zero_of_le_zero (by simpa [K, hζE] using hk'_le ζ)
+      simp [h0]
+
 /-- Core `0 < n`, `0 < p`, `0 < r`, `5 * r ≤ R` regime of the weighted Cartesian Schwarz lemma. -/
 private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (Fin n → ℂ) → ℂ}
     (hf : Differentiable ℂ f) {E : Fin n → Finset ℂ} {k : Fin n → ℂ → ℕ} {p : ℕ}
@@ -71,29 +91,24 @@ private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (F
   have hR_pos : 0 < R := by linarith
   have hzR : z ∈ closedBall c R := closedBall_subset_closedBall (by linarith) hz
   have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans (hM z hzR)
-  let K (i : Fin n) : ℂ →₀ ℕ := Finsupp.indicator (E i) fun a _ ↦ k i a
-  have hK_deg (i : Fin n) : (K i).degree = ∑ ζ ∈ E i, k i ζ := by
-    simp [K, Finset.sum_attach]
-  choose k' hk'_le hk'_deg using fun i ↦
-    Finsupp.exists_le_degree_eq (K i) p ((hK_deg i).symm ▸ hsum i)
-  let P (i : Fin n) : ℂ[X] := Polynomial.ofMultiset (k' i).toMultiset
-  have hP_monic (i : Fin n) : (P i).Monic := monic_multisetProd_X_sub_C _
-  have hcard (i : Fin n) : (k' i).toMultiset.card = p :=
-    (Finsupp.card_toMultiset_eq_degree (k' i)).trans (hk'_deg i)
-  have hP_deg (i : Fin n) : (P i).natDegree = p :=
-    (natDegree_multiset_prod_X_sub_C_eq_card _).trans (hcard i)
-  have hmem (i : Fin n) {ζ : ℂ} (hζ : ζ ∈ (k' i).toMultiset) : ζ ∈ E i :=
-    Finsupp.support_indicator_subset _ _ <|
-      Finsupp.support_mono (hk'_le i) ((Finsupp.mem_toMultiset _ _).mp hζ)
+  choose s hs_card hs_mem hs_count using fun i ↦ exists_multiset_card_eq_of_le_sum (hsum i)
+  let P (i : Fin n) : ℂ[X] := Polynomial.ofMultiset (s i)
+  have hP_monic (i : Fin n) : (P i).Monic := by
+    dsimp only [P]
+    rw [ofMultiset_apply]
+    exact monic_multisetProd_X_sub_C _
+  have hP_deg (i : Fin n) : (P i).natDegree = p := by
+    dsimp only [P]
+    rw [ofMultiset_apply, natDegree_multiset_prod_X_sub_C_eq_card, hs_card i]
   have hP_mem (i : Fin n) {ζ : ℂ} (hζ : (P i).IsRoot ζ) : ζ ∈ E i :=
-    hmem i (roots_ofMultiset (k' i).toMultiset ▸ (mem_roots (hP_monic i).ne_zero).mpr hζ)
+    hs_mem i ζ (roots_ofMultiset (s i) ▸ (mem_roots (hP_monic i).ne_zero).mpr hζ)
   obtain ⟨f₀, g, hf₀, hg, hdiv, hdeg₀, hdeg_g⟩ :=
     exists_eq_add_sum_mul_eval_of_ne_zero hf fun i ↦ (hP_monic i).ne_zero
   have hf₀_zero : f₀ = 0 :=
     eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero hf₀ hg hdiv hdeg₀ fun ξ hξ κ hκ ↦
       hzero ξ (fun i ↦ hP_mem i (hξ i)) κ fun i ↦ (hκ i).trans_le <| by
-        rw [← count_roots, roots_ofMultiset, Finsupp.count_toMultiset]
-        simpa [K, hP_mem i (hξ i)] using hk'_le i (ξ i)
+        rw [← count_roots, roots_ofMultiset]
+        exact hs_count i (ξ i)
   obtain ⟨-, hg_bound⟩ := norm_le_of_eq_add_sum_mul_eval_of_monic hf₀ hg hP_monic
     hdiv hdeg₀ hdeg_g hR_pos hrR (fun i ζ hζ ↦ hE i (hP_mem i hζ)) hM hzR
   have hsum_deg : ∑ j : Fin n, (P j).natDegree = n * p := by simp [hP_deg]
@@ -105,8 +120,8 @@ private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (F
     _ ≤ ∑ _ : Fin n, ((3 : ℝ) ^ (n * p) / R ^ p * M) * (2 * r) ^ p :=
         sum_le_sum fun i _ ↦ by
           rw [norm_mul]
-          have hPi : ‖(P i).eval (z i)‖ ≤ (2 * r) ^ p := hcard i ▸
-            norm_eval_ofMultiset_le_two_mul_pow (fun ζ hζ ↦ hE i (hmem i hζ))
+          have hPi : ‖(P i).eval (z i)‖ ≤ (2 * r) ^ p := hs_card i ▸
+            norm_eval_ofMultiset_le_two_mul_pow (fun ζ hζ ↦ hE i (hs_mem i ζ hζ))
               (mem_closedBall.mpr ((dist_le_pi_dist z c i).trans (mem_closedBall.mp hz)))
           exact mul_le_mul (by simpa [hsum_deg, hP_deg i] using hg_bound i) hPi
             (norm_nonneg _) (by positivity)

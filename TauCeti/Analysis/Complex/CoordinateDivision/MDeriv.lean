@@ -15,8 +15,8 @@ import TauCeti.Analysis.Complex.MDeriv.Roots
 # Mixed-derivative remainder vanishing for multivariate coordinate division
 
 This file connects mixed partial derivatives `TauCeti.mDeriv` to multivariate coordinate
-polynomial division (`TauCeti.Analysis.Complex.CoordinateDivision.Multivariate`): if a multivariate
-division remainder `f₀` satisfies `f(z) = f₀(z) + ∑ i, g_i(z) (P i).eval (z i)` with
+polynomial division (`TauCeti.Analysis.Complex.CoordinateDivision.Multivariate`): if entire
+functions `f₀` and `g_i` satisfy `f(z) = f₀(z) + ∑ i, g_i(z) (P i).eval (z i)` with
 `deg_{z_j} f₀ < deg (P j)` while `D^κ f(ζ) = 0` at every root tuple `ζ ∈ ∏ᵢ Pᵢ⁻¹(0)` for all
 multi-orders `κ` with `κᵢ < (P i).rootMultiplicity (ζ i)`, then `f₀ = 0`
 (Waldschmidt 2000, §4.3, Lemma 4.8).

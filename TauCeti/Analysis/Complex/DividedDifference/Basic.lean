@@ -107,7 +107,8 @@ theorem partialDslope_zero_fun (i : ι) (ζ : ℂ) :
     partialDslope i (0 : (ι → ℂ) → E) ζ = 0 :=
   partialDslope_const i 0 ζ
 
-/-- Evaluating `partialDslope i f ζ` at `update z i ζ` gives `partialDeriv i f (update z i ζ)`. -/
+/-- When `f` is differentiable at `update z i ζ`, evaluating `partialDslope i f ζ` at
+`update z i ζ` gives `partialDeriv i f (update z i ζ)`. -/
 @[simp]
 theorem partialDslope_update_self [Finite ι] {f : (ι → ℂ) → E} {z : ι → ℂ} {i : ι} {ζ : ℂ}
     (hf : DifferentiableAt ℂ f (update z i ζ)) :

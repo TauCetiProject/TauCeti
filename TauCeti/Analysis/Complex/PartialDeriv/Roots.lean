@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.PartialDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.Algebra.Polynomial.Splits
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 
@@ -76,23 +77,16 @@ theorem eq_zero_of_degree_lt_of_iterate_partialDeriv_eq_zero [Finite ι]
     f₀ z = 0 := by
   have := Fintype.ofFinite ι
   obtain ⟨Q, hQdeg, hQ⟩ := hdeg
-  have hP0 : P ≠ 0 := ne_zero_of_degree_gt hQdeg
   suffices hQ0 : Q = 0 by simpa [hQ0] using hQ (z k)
-  by_contra hQ0
-  have hmult (ζ : ℂ) : P.rootMultiplicity ζ ≤ Q.rootMultiplicity ζ := by
-    rcases Nat.eq_zero_or_pos (P.rootMultiplicity ζ) with hm0 | hmpos
-    · simp [hm0]
-    · have hζroot : P.IsRoot ζ := (rootMultiplicity_pos hP0).mp hmpos
-      rw [le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hQ0]
-      intro m hm
-      have hfz : (partialDeriv k)^[m] f₀ (update z k ζ) = 0 := hzero ζ hζroot m hm
-      rw [iterate_partialDeriv_eq_iteratedDeriv_update hf₀ k m (update z k ζ), update_self] at hfz
-      have hline : (fun w ↦ f₀ (update (update z k ζ) k w)) = fun w ↦ Q.eval w :=
-        funext fun w ↦ by simp [hQ]
-      rw [hline, Polynomial.iteratedDeriv_eq_factorial_mul_eval_hasseDeriv] at hfz
-      exact (mul_eq_zero.mp hfz).resolve_left (Nat.cast_ne_zero.mpr m.factorial_ne_zero)
-  have hdvd : P ∣ Q := (IsAlgClosed.dvd_iff_roots_le_roots hP0 hQ0).mpr
-    (Multiset.le_iff_count.mpr fun ζ ↦ by simpa [count_roots] using hmult ζ)
-  exact hQ0 (eq_zero_of_dvd_of_degree_lt hdvd hQdeg)
+  refine (IsAlgClosed.splits P).eq_zero_of_degree_lt_of_rootMultiplicity_le hQdeg
+    fun hQ0 ζ hζ ↦ ?_
+  rw [le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hQ0]
+  intro m hm
+  have hfz : (partialDeriv k)^[m] f₀ (update z k ζ) = 0 := hzero ζ hζ m hm
+  rw [iterate_partialDeriv_eq_iteratedDeriv_update hf₀ k m (update z k ζ), update_self] at hfz
+  have hline : (fun w ↦ f₀ (update (update z k ζ) k w)) = fun w ↦ Q.eval w :=
+    funext fun w ↦ by simp [hQ]
+  rw [hline, Polynomial.iteratedDeriv_eq_factorial_mul_eval_hasseDeriv] at hfz
+  exact (mul_eq_zero.mp hfz).resolve_left (Nat.cast_ne_zero.mpr m.factorial_ne_zero)
 
 end TauCeti

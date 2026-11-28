@@ -22,9 +22,10 @@ Closure properties of functions `f : (ι → R) → R` whose restrictions along 
   degree bound `< d`.
 * `TauCeti.exists_degree_lt_and_add_sum_mul_eval_eq_eval`: adding finite sums
   `∑ a ∈ t, g a z * (P a).eval (z a)` with `j ∉ t` preserves a coordinate-`j` polynomial degree
-  bound `< d`.
+  bound `< d` when `f₀` and each coefficient function `g a` (`a ∈ t`) already satisfy that bound.
 * `TauCeti.exists_degree_lt_and_add_mul_eval_eq_eval`: adding a single term
-  `gᵢ z * Pᵢ.eval (z i)` with `i ≠ j` preserves a coordinate-`j` polynomial degree bound `< d`.
+  `gᵢ z * Pᵢ.eval (z i)` with `i ≠ j` preserves a coordinate-`j` polynomial degree bound `< d`
+  when `f₀` and `gᵢ` already satisfy that bound.
 -/
 
 public section
@@ -46,7 +47,8 @@ theorem exists_degree_lt_and_sub_eq_eval [Ring R] {f g : (ι → R) → R} {j : 
     (Polynomial.evalDegreeLT R n).sub_mem hfz (Polynomial.mem_evalDegreeLT.mpr (hg z))
 
 /-- Adding finite sums `∑ a ∈ t, g a z * (P a).eval (z a)` preserves a coordinate-`j`
-polynomial degree bound `< d` when `j ∉ t`. -/
+polynomial degree bound `< d` when `f₀` and each coefficient function `g a` (`a ∈ t`) already
+satisfy that bound and `j ∉ t`. -/
 theorem exists_degree_lt_and_add_sum_mul_eval_eq_eval [CommSemiring R] {f₀ : (ι → R) → R}
     {g : ι → (ι → R) → R} {P : ι → R[X]} {j : ι} {d : WithBot ℕ} {t : Finset ι} (hjt : j ∉ t)
     (hf₀ : ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)
@@ -71,7 +73,7 @@ theorem exists_degree_lt_and_add_sum_mul_eval_eq_eval [CommSemiring R] {f₀ : (
         (Polynomial.mem_evalDegreeLT.mpr (hg a ha z)))
 
 /-- Adding a single term `gᵢ w * Pᵢ.eval (w i)` with `i ≠ j` preserves a coordinate-`j`
-polynomial degree bound `< d`. -/
+polynomial degree bound `< d` when `f₀` and `gᵢ` already satisfy that bound. -/
 theorem exists_degree_lt_and_add_mul_eval_eq_eval [CommSemiring R] {f₀ gᵢ : (ι → R) → R}
     {Pᵢ : R[X]} (i j : ι) (hij : i ≠ j) {d : WithBot ℕ}
     (hf₀ : ∀ z, ∃ Q : R[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)

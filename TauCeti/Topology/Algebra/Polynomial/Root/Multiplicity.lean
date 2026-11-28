@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Polynomial.Basic
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.Algebra.Polynomial.Splits
 import TauCeti.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Topology.LocallyConstant.Basic
@@ -138,17 +139,9 @@ isolated points, where `P` splits, `Q.degree < P.degree`, and `g` is continuous 
 theorem eq_zero_of_eval_add_mul_eval_eq_zero {K : Type*} [Field K] [TopologicalSpace K]
     [IsTopologicalRing K] [T2Space K] [∀ ζ : K, (𝓝[≠] ζ).NeBot] {g : K → K} {P Q : K[X]}
     (hP : P.Splits) (hdeg : Q.degree < P.degree) (hg : ∀ ζ, P.IsRoot ζ → ContinuousAt g ζ)
-    (h : ∀ w, Q.eval w + g w * P.eval w = 0) : Q = 0 := by
-  have hP0 : P ≠ 0 := ne_zero_of_degree_gt hdeg
-  by_contra hQ0
-  classical
-  have hdvd : P ∣ Q := hP.dvd_of_roots_le_roots hP0 <| Multiset.le_iff_count.mpr fun ζ ↦ by
-    rw [count_roots, count_roots]
-    rcases Nat.eq_zero_or_pos (P.rootMultiplicity ζ) with h0 | hpos
-    · simp [h0]
-    · exact rootMultiplicity_le_of_eval_add_mul_eval_eq_zero
-        (hg ζ ((rootMultiplicity_pos hP0).mp hpos)) hP0 hQ0 h
-  exact hQ0 (eq_zero_of_dvd_of_degree_lt hdvd hdeg)
+    (h : ∀ w, Q.eval w + g w * P.eval w = 0) : Q = 0 :=
+  hP.eq_zero_of_degree_lt_of_rootMultiplicity_le hdeg fun hQ0 ζ hζ ↦
+    rootMultiplicity_le_of_eval_add_mul_eval_eq_zero (hg ζ hζ) (ne_zero_of_degree_gt hdeg) hQ0 h
 
 end Polynomial
 

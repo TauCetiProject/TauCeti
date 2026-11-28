@@ -10,8 +10,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import TauCeti.Algebra.Polynomial.CoordinateLine
-import TauCeti.Analysis.Complex.CoordinateDivision.Basic
+import TauCeti.Algebra.Polynomial.Degree.CoordinateLine
+import TauCeti.Analysis.Complex.CoordinateDivision.Estimate
 import TauCeti.Analysis.Complex.PartialDeriv.Degree
 import TauCeti.Topology.Algebra.Polynomial.Basic
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
@@ -19,9 +19,10 @@ import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 /-!
 # Multivariate coordinate polynomial division for entire functions
 
-For any finite linearly ordered index type `ι`, applying the univariate coordinate division
-(`TauCeti.partialDivByMonic`, `TauCeti.partialModByMonic`) backwards across the coordinates
-yields Waldschmidt's multivariate polynomial division (Waldschmidt 2000, §4.3, Lemma 4.8):
+For any finite linearly ordered index type `ι` and any family of nonzero polynomials `P : ι → ℂ[X]`,
+applying the univariate coordinate division (`TauCeti.partialDivByMonic`,
+`TauCeti.partialModByMonic`) backwards across the coordinates yields Waldschmidt's multivariate
+polynomial division (Waldschmidt 2000, §4.3, Lemma 4.8):
 
   `f(z) = f₀(z) + ∑ i, g_i(z) (P i).eval (z i)`,
 
