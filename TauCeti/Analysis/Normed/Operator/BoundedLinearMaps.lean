@@ -26,6 +26,10 @@ to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
 Bounded operators act jointly continuously on their domain for the operator norm topology
 (`IsBoundedSMul.continuousSMul`), and so does every submonoid of them, such as a
 unitary group.
+
+A family `A : α → E →L[𝕜] F` on a linear order converging to invertible operators at `-∞` and `+∞`
+is eventually invertible outside `[a, b]` with `a ≤ b`
+(`ContinuousLinearMap.eventually_le_and_forall_notMem_Ioo_isInvertible`).
 -/
 
 public section
@@ -87,5 +91,27 @@ theorem ContinuousAt.tendsto_prodMk_clm_apply {𝕜 X E F : Type*} [Nontrivially
   have h : ContinuousAt (fun z : X × E ↦ e z.1 z.2) (a, 0) :=
     (he.comp (f := Prod.fst) (x := (a, (0 : E))) continuousAt_fst).clm_apply continuousAt_snd
   simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
+
+/-- If a family `A : α → E →L[𝕜] F` on a linear order converges to invertible operators at `-∞`
+and `+∞`, then eventually in `atBot ×ˢ atTop` we have `a ≤ b` and `A s` is invertible for every
+`s ∉ Set.Ioo a b`. -/
+theorem ContinuousLinearMap.eventually_le_and_forall_notMem_Ioo_isInvertible
+    {𝕜 α E F : Type*} [NontriviallyNormedField 𝕜] [LinearOrder α]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {A : α → E →L[𝕜] F} {Bbot Btop : E →L[𝕜] F}
+    (hBbot : Bbot.IsInvertible) (hBtop : Btop.IsInvertible)
+    (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop)) :
+    ∀ᶠ ab in atBot ×ˢ atTop, ab.1 ≤ ab.2 ∧ ∀ s ∉ Set.Ioo ab.1 ab.2, (A s).IsInvertible := by
+  by_cases hα : Nonempty α
+  · obtain ⟨a₀, ha₀⟩ := eventually_atBot.1 (hbot.eventually hBbot.eventually_nhds)
+    obtain ⟨b₀, hb₀⟩ := eventually_atTop.1 (htop.eventually hBtop.eventually_nhds)
+    filter_upwards [(eventually_le_atBot (min a₀ b₀)).prod_mk (eventually_ge_atTop (max a₀ b₀))]
+      with ⟨a, b⟩ ⟨ha, hb⟩
+    refine ⟨ha.trans (min_le_max.trans hb), fun s hs ↦ ?_⟩
+    rcases not_and_or.1 hs with h | h
+    · exact ha₀ s ((not_lt.1 h).trans (ha.trans (min_le_left _ _)))
+    · exact hb₀ s (((le_max_right _ _).trans hb).trans (not_lt.1 h))
+  · exact Eventually.of_forall fun ab ↦ (hα ⟨ab.1⟩).elim
 
 end

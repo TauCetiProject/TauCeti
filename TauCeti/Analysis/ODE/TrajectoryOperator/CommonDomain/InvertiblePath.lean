@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Spectral.CommonDomain
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
+public import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.IndexLocalization
@@ -24,7 +25,7 @@ from `B₁` on every bounded interval by operators bounded through `ι`. Then
 on `B₀` and `B₁` (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq`).
 
 This file proves that the index vanishes when `B₀` and `B₁` are joined by a path `γ` of
-invertible `ι`-symmetric operators whose differences from `B₀` are bounded through `ι`
+invertible `ι`-symmetric operators `γ t` whose differences from `B₀` are bounded through `ι`
 (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero_of_path`). This is the
 counterpart for the index of `∂ₛ + A(s)` of the vanishing of the spectral flow of a path of
 invertible operators (`TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`). In particular,
@@ -44,8 +45,8 @@ without changing the index
 (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_of_forall_isInvertible`): the
 index can change only when the limits pass through noninvertible operators.
 
-For each `t`, the family `M_t(s) = B₀ + ψ(s) (γ t - B₀)`, where `ψ` is
-`Real.smoothTransition`, runs from `B₀` to `γ t`. Its trajectory operator is Fredholm for every
+For each `t`, the family `M_t(s) = B₀ + ψ(s) (γ t - B₀)` (`TauCeti.smoothSegmentPath`), where `ψ`
+is `Real.smoothTransition`, runs from `B₀` to `γ t`. Its trajectory operator is Fredholm for every
 `t`, since `γ t` is invertible, and it depends continuously on `t`, so its index does not depend
 on `t`. At `t = 0` the family is constant, with index zero, and at `t = 1` it has the limits of
 `A`, so it has the index of `D_A`.
@@ -79,68 +80,74 @@ open scoped ENNReal InnerProductSpace Topology
 
 local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
 
+section SmoothSegment
+
 variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup H]
-  [InnerProductSpace ℝ H] {ι : D →L[ℝ] H}
+  [NormedSpace ℝ H]
 
-/-- The family `s ↦ B₀ + ψ(s) (B - B₀)` from `B₀` to `B`, for `ψ = Real.smoothTransition`. -/
-private def model (B₀ B : D →L[ℝ] H) (s : ℝ) : D →L[ℝ] H :=
-  B₀ + Real.smoothTransition s • (B - B₀)
-
-private theorem continuous_model (B₀ B : D →L[ℝ] H) : Continuous (model B₀ B) :=
-  continuous_const.add (Real.smoothTransition.continuous.smul continuous_const)
-
-private theorem norm_model_sub_model_le (B₀ B B' : D →L[ℝ] H) (s : ℝ) :
-    ‖model B₀ B s - model B₀ B' s‖ ≤ ‖B - B'‖ := by
-  have : model B₀ B s - model B₀ B' s = Real.smoothTransition s • (B - B') := by
-    simp only [model, smul_sub]
-    abel
-  rw [this, norm_smul, Real.norm_of_nonneg (Real.smoothTransition.nonneg s)]
+/-- The smooth segment path `TauCeti.smoothSegmentPath B₀ B` is essentially bounded. -/
+theorem memLp_smoothSegmentPath (B₀ B : D →L[ℝ] H) :
+    MemLp (smoothSegmentPath B₀ B) ∞ μ₀ := by
+  refine memLp_top_of_bound ((contDiff_smoothSegmentPath (x := B₀) (y := B) (n := 0)).continuous
+    |>.aestronglyMeasurable) (‖B₀‖ + ‖B - B₀‖) (ae_of_all _ fun s ↦ ?_)
+  rw [smoothSegmentPath_def]
+  refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
+  rw [norm_smul, Real.norm_of_nonneg (Real.smoothTransition.nonneg s)]
   exact mul_le_of_le_one_left (norm_nonneg _) (Real.smoothTransition.le_one s)
 
-private theorem memLp_model (B₀ B : D →L[ℝ] H) : MemLp (model B₀ B) ∞ μ₀ := by
-  refine memLp_top_of_bound (continuous_model B₀ B).aestronglyMeasurable (‖B₀‖ + ‖B - B₀‖)
-    (ae_of_all _ fun s ↦ ?_)
-  have h := norm_model_sub_model_le B₀ B B₀ s
-  rw [show model B₀ B₀ s = B₀ by simp [model]] at h
-  calc ‖model B₀ B s‖ ≤ ‖B₀‖ + ‖model B₀ B s - B₀‖ := norm_le_norm_add_norm_sub' _ _
-    _ ≤ ‖B₀‖ + ‖B - B₀‖ := by gcongr
+/-- The `L∞` class of `TauCeti.smoothSegmentPath B₀ B`. -/
+def smoothSegmentPathL (B₀ B : D →L[ℝ] H) : Lp (D →L[ℝ] H) ∞ μ₀ :=
+  (memLp_smoothSegmentPath B₀ B).toLp _
 
-/-- The `L∞` class of the family `s ↦ B₀ + ψ(s) (B - B₀)`. -/
-private def modelL (B₀ B : D →L[ℝ] H) : Lp (D →L[ℝ] H) ∞ μ₀ :=
-  (memLp_model B₀ B).toLp _
+/-- `TauCeti.WeakDerivStep.smoothSegmentPathL B₀ B` agrees almost everywhere with
+`TauCeti.smoothSegmentPath B₀ B`. -/
+theorem smoothSegmentPathL_ae (B₀ B : D →L[ℝ] H) :
+    smoothSegmentPathL B₀ B =ᵐ[μ₀] smoothSegmentPath B₀ B :=
+  (memLp_smoothSegmentPath B₀ B).coeFn_toLp
 
-private theorem modelL_ae (B₀ B : D →L[ℝ] H) : modelL B₀ B =ᵐ[μ₀] model B₀ B :=
-  (memLp_model B₀ B).coeFn_toLp
-
-/-- The class of the family `s ↦ B₀ + ψ(s) (B - B₀)` depends `1`-Lipschitz on `B`. -/
-private theorem lipschitzWith_modelL (B₀ : D →L[ℝ] H) : LipschitzWith 1 (modelL B₀) :=
+/-- The `L∞` class `TauCeti.WeakDerivStep.smoothSegmentPathL B₀` depends `1`-Lipschitz on the
+endpoint `B`. -/
+private theorem lipschitzWith_smoothSegmentPathL (B₀ : D →L[ℝ] H) :
+    LipschitzWith 1 (smoothSegmentPathL B₀) :=
   LipschitzWith.of_dist_le_mul fun B B' ↦ by
     rw [NNReal.coe_one, one_mul, dist_eq_norm, dist_eq_norm]
     refine Lp.norm_le_of_ae_bound_top (norm_nonneg _) ?_
-    filter_upwards [Lp.coeFn_sub (modelL B₀ B) (modelL B₀ B'), modelL_ae B₀ B, modelL_ae B₀ B']
-      with s hs h h'
+    filter_upwards [Lp.coeFn_sub (smoothSegmentPathL B₀ B) (smoothSegmentPathL B₀ B'),
+      smoothSegmentPathL_ae B₀ B, smoothSegmentPathL_ae B₀ B'] with s hs h h'
     rw [hs, Pi.sub_apply, h, h']
-    exact norm_model_sub_model_le B₀ B B' s
+    have heq : smoothSegmentPath B₀ B s - smoothSegmentPath B₀ B' s =
+        Real.smoothTransition s • (B - B') := by
+      simp only [smoothSegmentPath_def, smul_sub]
+      abel
+    rw [heq, norm_smul, Real.norm_of_nonneg (Real.smoothTransition.nonneg s)]
+    exact mul_le_of_le_one_left (norm_nonneg _) (Real.smoothTransition.le_one s)
 
-private theorem tendsto_model_atBot (B₀ B : D →L[ℝ] H) : Tendsto (model B₀ B) atBot (𝓝 B₀) :=
-  tendsto_const_nhds.congr' <| (eventually_le_atBot 0).mono fun s hs ↦ by
-    simp [model, Real.smoothTransition.zero_of_nonpos hs]
-
-private theorem tendsto_model_atTop (B₀ B : D →L[ℝ] H) : Tendsto (model B₀ B) atTop (𝓝 B) :=
-  tendsto_const_nhds.congr' <| (eventually_ge_atTop 1).mono fun s hs ↦ by
-    simp [model, Real.smoothTransition.one_of_one_le hs]
-
-/-- If `B - B₀` is bounded through `ι`, then so is `B₀ + ψ(s) (B - B₀) - B`, uniformly in `s`. -/
-private theorem norm_model_sub_apply_le {B₀ B : D →L[ℝ] H} {c : ℝ}
+/-- If `B - B₀` is bounded through `ι`, then so is `smoothSegmentPath B₀ B s - B`, uniformly in
+`s`. -/
+theorem norm_smoothSegmentPath_sub_apply_le {ι B₀ B : D →L[ℝ] H} {c : ℝ}
     (hc : ∀ x, ‖(B - B₀) x‖ ≤ c * ‖ι x‖) (s : ℝ) (x : D) :
-    ‖(model B₀ B s - B) x‖ ≤ c * ‖ι x‖ := by
-  have : (model B₀ B s - B) x = (1 - Real.smoothTransition s) • -((B - B₀) x) := by
-    simp only [model, sub_apply, add_apply, smul_apply]
+    ‖(smoothSegmentPath B₀ B s - B) x‖ ≤ c * ‖ι x‖ := by
+  have heq : (smoothSegmentPath B₀ B s - B) x =
+      (1 - Real.smoothTransition s) • -((B - B₀) x) := by
+    simp only [smoothSegmentPath_def, sub_apply, add_apply, smul_apply]
     module
-  rw [this, norm_smul, norm_neg, Real.norm_of_nonneg
+  rw [heq, norm_smul, norm_neg, Real.norm_of_nonneg
     (sub_nonneg.2 (Real.smoothTransition.le_one s))]
   exact mul_le_of_le_one_left (norm_nonneg _)
     (sub_le_self _ (Real.smoothTransition.nonneg s)) |>.trans (hc x)
+
+/-- If `B - B₀` is bounded through `ι`, then `smoothSegmentPath B₀ B s - B` satisfies the
+bounded-window bound through `ι` needed by
+`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`. -/
+theorem ae_norm_smoothSegmentPath_sub_apply_le {ι B₀ B : D →L[ℝ] H}
+    (hbdd : ∃ c, ∀ x, ‖(B - B₀) x‖ ≤ c * ‖ι x‖) (T : ℝ) :
+    ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(smoothSegmentPath B₀ B s - B) x‖ ≤ c * ‖ι x‖ :=
+  hbdd.imp fun _ hc ↦ ae_of_all _ fun s _ x ↦ norm_smoothSegmentPath_sub_apply_le hc s x
+
+end SmoothSegment
+
+variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup H]
+  [InnerProductSpace ℝ H] {ι : D →L[ℝ] H}
 
 /-- **The index vanishes between limits joined by invertible operators.** Let `ι` be compact and
 let `γ` be a path from `B₀` to `B₁` of invertible `ι`-symmetric operators `γ t` whose differences
@@ -160,26 +167,27 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_path [CompleteSpace D] [
   have hB₀ : B₀.IsInvertible := by simpa using hγ 0
   have hSymm₁ : ∀ x y : D, ⟪B₁ x, ι y⟫_ℝ = ⟪ι x, B₁ y⟫_ℝ := by simpa using hSymm 1
   have hB₁ : B₁.IsInvertible := by simpa using hγ 1
-  -- The model family from `B₀` to `γ t` satisfies the hypotheses of the Fredholm theorem.
-  have hc' (t : unitInterval) (T : ℝ) : ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T →
-      ∀ x, ‖(model B₀ (γ t) s - γ t) x‖ ≤ c * ‖ι x‖ := by
-    obtain ⟨c, hc⟩ := hbdd t
-    exact ⟨c, ae_of_all _ fun s _ x ↦ norm_model_sub_apply_le hc s x⟩
+  -- The smooth segment family from `B₀` to `γ t` satisfies the hypotheses of the Fredholm theorem.
   have hF (t : unitInterval) :
-      (familyDomainTrajectoryOperator (p := 2) ι (modelL B₀ (γ t))).IsFredholm :=
-    isFredholm_familyDomainTrajectoryOperator hι hSymm₀ hB₀ (hSymm t) (hγ t) (modelL_ae _ _)
-      (tendsto_model_atBot _ _) (tendsto_model_atTop _ _) (hc' t)
-  -- Along the path, the index of the model family is constant.
+      (familyDomainTrajectoryOperator (p := 2) ι (smoothSegmentPathL B₀ (γ t))).IsFredholm :=
+    isFredholm_familyDomainTrajectoryOperator hι hSymm₀ hB₀ (hSymm t) (hγ t)
+      (smoothSegmentPathL_ae _ _) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
+      (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
+      (ae_norm_smoothSegmentPath_sub_apply_le (hbdd t))
+  -- Along the path, the index of the smooth segment family is constant.
   have hpath := Continuous.index_eq_of_preconnectedSpace
     ((continuous_familyDomainTrajectoryOperator ι).comp
-      ((lipschitzWith_modelL B₀).continuous.comp γ.continuous)) hF 0 1
+      ((lipschitzWith_smoothSegmentPathL B₀).continuous.comp γ.continuous)) hF 0 1
   simp only [Path.source, Path.target] at hpath
-  -- At `t = 0` the model family is constant, at `t = 1` it has the limits of `A`.
+  -- At `t = 0` the smooth segment family is constant, at `t = 1` it has the limits of `A`.
   rw [index_familyDomainTrajectoryOperator_eq hι hSymm₀ hB₀ hSymm₁ hB₁ hAL hbot htop hc
-    (modelL_ae B₀ B₁) (tendsto_model_atBot _ _) (tendsto_model_atTop _ _)
-    (by simpa using hc' 1), ← hpath]
-  exact index_familyDomainTrajectoryOperator_eq_zero hι hSymm₀ hB₀ (modelL_ae B₀ B₀)
-    (tendsto_model_atBot _ _) (tendsto_model_atTop _ _) (by simpa using hc' 0)
+    (smoothSegmentPathL_ae B₀ B₁) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
+    (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
+    (ae_norm_smoothSegmentPath_sub_apply_le (by simpa using hbdd 1)), ← hpath]
+  exact index_familyDomainTrajectoryOperator_eq_zero hι hSymm₀ hB₀
+    (smoothSegmentPathL_ae B₀ B₀) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
+    (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
+    (ae_norm_smoothSegmentPath_sub_apply_le (by simpa using hbdd 0))
 
 /-- **The index vanishes between shifts across no eigenvalue.** Let `ι` be compact and `B` an
 `ι`-symmetric operator such that `B - c ι` is invertible for every `c` between `a` and `b`. Let

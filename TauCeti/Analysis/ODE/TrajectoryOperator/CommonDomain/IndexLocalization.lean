@@ -79,7 +79,7 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddComm
 
 /-- For a continuous path, an almost everywhere bound of `A s - B` through `ι` on bounded windows
 holds at every time of every compact interval. -/
-theorem forall_norm_sub_apply_le {B : D →L[ℝ] H} (hA : Continuous A)
+theorem exists_forall_mem_Icc_norm_sub_apply_le_of_ae {B : D →L[ℝ] H} (hA : Continuous A)
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - B) x‖ ≤ c * ‖ι x‖) (R : ℝ) :
     ∃ c, ∀ r ∈ Icc (-R) R, ∀ x, ‖(A r - B) x‖ ≤ c * ‖ι x‖ := by
   obtain ⟨c, hc⟩ := hc (R + 1)
@@ -131,7 +131,7 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     (familyDomainTrajectoryOperator (p := 2) ι AL).index = 0 := by
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
-  have hb := forall_norm_sub_apply_le hA hc
+  have hb := exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
   have hSymmbot (x y : D) : ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ :=
     ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (.of_forall fun s ↦ hSymm s x y)
   -- The class in `L∞` of the path stopped at `t`.
@@ -178,7 +178,7 @@ theorem index_familyDomainTrajectoryOperator_eq_of_ae_eq_IccExtend (hι : IsComp
     (familyDomainTrajectoryOperator (p := 2) ι AL).index =
       (familyDomainTrajectoryOperator (p := 2) ι AL').index := by
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
-  have hb := forall_norm_sub_apply_le hA hc
+  have hb := exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
   have hpt := exists_norm_sub_apply_le hb
   have hb₀ : ∃ c, ∀ x, ‖(Btop - Btop) x‖ ≤ c * ‖ι x‖ := ⟨0, fun x ↦ by simp⟩
   have hSymmbot (x y : D) : ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ :=
