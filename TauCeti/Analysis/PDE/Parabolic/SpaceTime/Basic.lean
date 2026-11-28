@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.MetricSpace.Snowflaking
 
 /-!
@@ -28,11 +29,18 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime E`: space-time `E × ℝ` with the parabolic distance.
 * `TauCeti.ParabolicSpaceTime.ofCoords`, `space`, `time`: the coordinates of a point.
 * `TauCeti.ParabolicSpaceTime.dist_eq`: the parabolic distance formula.
+* `TauCeti.ParabolicSpaceTime.ball_ofCoords_subset_preimage_ball_inter_preimage_Ioo` and
+  `TauCeti.ParabolicSpaceTime.preimage_ball_inter_preimage_Ioo_subset_ball`: the parabolic ball of
+  radius `r` about `(x, t)` lies in the cylinder `B(x, r) × (t - r², t + r²)` and contains the
+  cylinder `B(x, r / 2) × (t - r² / 4, t + r² / 4)`.
 * `TauCeti.ParabolicSpaceTime.coordsHomeomorph`: the homeomorphism with ordinary `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.timeReverse`: the time reversal `(x, t) ↦ (x, T - t)`, an isometry.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.spatialSlice`, `TauCeti.ParabolicSpaceTime.timeSlice`: the
   continuous inclusions of a fixed-time spatial slice and of a fixed-position time slice.
+* `TauCeti.ParabolicSpaceTime.holderWith_slabTime` and
+  `TauCeti.ParabolicSpaceTime.holderWith_timeSlice`: the slab time coordinate is `2`-Hölder and
+  each time slice is `(1 / 2)`-Hölder with constant `1`.
 * `TauCeti.ParabolicSpaceTime.iccTimeReverse` and `TauCeti.ParabolicSpaceTime.slabTimeReverse`:
   the time reversal `t ↦ T - t`, as an isometry from the interval `[T - b, T - a]` onto `[a, b]`
   and from the slab `E × [T - b, T - a]` onto `E × [a, b]`.
@@ -307,6 +315,36 @@ theorem dist_ofCoords_ofCoords_same_space (x : E) (t s : ℝ) :
     dist (ofCoords x t) (ofCoords x s) = √|t - s| := by
   simp [dist_ofCoords]
 
+/-- **A parabolic ball lies in a cylinder.** The parabolic ball of radius `r` about `(x, t)` lies
+in the cylinder `B(x, r) × (t - r², t + r²)`. -/
+theorem ball_ofCoords_subset_preimage_ball_inter_preimage_Ioo (x : E) (t r : ℝ) :
+    ball (ofCoords x t) r ⊆ space ⁻¹' ball x r ∩ time ⁻¹' Ioo (t - r ^ 2) (t + r ^ 2) := by
+  intro p hp
+  rw [mem_ball] at hp
+  have hsqrt : √|p.time - t| < r := by
+    simpa only [time_ofCoords] using (sqrt_abs_time_sub_le_dist p _).trans_lt hp
+  have habs := (Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hsqrt)).1 hsqrt
+  refine ⟨mem_ball.2 (by simpa only [space_ofCoords] using (dist_space_le p _).trans_lt hp), ?_⟩
+  rw [mem_preimage, mem_Ioo]
+  constructor <;> linarith [abs_lt.1 habs]
+
+/-- **A cylinder lies in a parabolic ball.** The parabolic ball of radius `r` about `(x, t)`
+contains the cylinder `B(x, r / 2) × (t - r² / 4, t + r² / 4)`. With
+`ball_ofCoords_subset_preimage_ball_inter_preimage_Ioo`, the
+parabolic balls are comparable to, but not equal to, these cylinders. -/
+theorem preimage_ball_inter_preimage_Ioo_subset_ball (x : E) (t r : ℝ) :
+    space ⁻¹' ball x (r / 2) ∩ time ⁻¹' Ioo (t - r ^ 2 / 4) (t + r ^ 2 / 4) ⊆
+      ball (ofCoords x t) r := by
+  rintro p ⟨hx, ht⟩
+  rw [mem_preimage, mem_ball] at hx
+  rw [mem_preimage, mem_Ioo] at ht
+  have hr : 0 < r / 2 := dist_nonneg.trans_lt hx
+  have hsq : (r / 2) ^ 2 = r ^ 2 / 4 := by ring
+  have hsqrt : √|p.time - t| < r / 2 :=
+    (Real.sqrt_lt' hr).2 (hsq ▸ abs_lt.2 ⟨by linarith, by linarith⟩)
+  rw [mem_ball, dist_eq, space_ofCoords, time_ofCoords]
+  linarith
+
 end PseudoMetricSpace
 
 section TopologicalSpace
@@ -371,6 +409,29 @@ theorem isClosed_slab (a b : ℝ) : IsClosed (slab (E := E) a b) :=
   isClosed_Icc.preimage continuous_time
 
 end TopologicalSpace
+
+section PseudoEMetricSpaceMaps
+
+variable [PseudoEMetricSpace E]
+
+/-- The slab time projection is `2`-Hölder with constant `1`. -/
+theorem holderWith_slabTime {a b : ℝ} :
+    HolderWith 1 2 (slabTime : slab (E := E) a b → Icc a b) := by
+  intro p q
+  rw [ENNReal.coe_one, one_mul, Subtype.edist_eq, coe_slabTime, coe_slabTime, NNReal.coe_ofNat]
+  calc edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time
+      = (edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time ^ (1 / 2 : ℝ)) ^
+          (2 : ℝ) := by
+        rw [← ENNReal.rpow_mul, one_div_mul_cancel two_ne_zero, ENNReal.rpow_one]
+    _ ≤ edist p q ^ (2 : ℝ) :=
+        ENNReal.rpow_le_rpow (edist_time_rpow_le (p : ParabolicSpaceTime E) q) two_pos.le
+
+/-- Every fixed-space time slice `t ↦ (x, t)` of a slab is `(1 / 2)`-Hölder with constant `1`. -/
+theorem holderWith_timeSlice {a b : ℝ} (x : E) :
+    HolderWith 1 (1 / 2) (timeSlice (E := E) (a := a) (b := b) x) := fun t s ↦ by
+  simpa [timeSlice_apply] using (edist_slabMk_same_space_rpow x t s 1).le
+
+end PseudoEMetricSpaceMaps
 
 /-! ### Time reversal -/
 

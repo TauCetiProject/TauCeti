@@ -177,11 +177,20 @@ theorem contDiff_backgroundWeight {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
   rw [hh]
   exact (hf.norm_sq ℝ).div (contDiff_const.add (hf.norm_sq ℝ)) fun z ↦ by positivity
 
+/-- The background amplitudes of sections depending on a parameter are as smooth, jointly in the
+parameter and the point, as the sections, including at their zeros. -/
+theorem contDiff_parametric_backgroundAmplitude {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {f : P → ℂ → ℂ} {n : WithTop ℕ∞}
+    (hf : ContDiff ℝ n fun p : P × ℂ ↦ f p.1 p.2) :
+    ContDiff ℝ n fun p : P × ℂ ↦ backgroundAmplitude (f p.1) p.2 := by
+  have h : ContDiff ℝ n fun p : P × ℂ ↦ 1 + ‖f p.1 p.2‖ ^ 2 := contDiff_const.add (hf.norm_sq ℝ)
+  exact (h.log fun p ↦ by positivity).neg.div_const 2
+
 /-- The background amplitude is as smooth as `f`, including at the zeros of `f`. -/
 theorem contDiff_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
-    ContDiff ℝ n (backgroundAmplitude f) := by
-  have h : ContDiff ℝ n fun z ↦ 1 + ‖f z‖ ^ 2 := contDiff_const.add (hf.norm_sq ℝ)
-  exact (h.log fun z ↦ by positivity).neg.div_const 2
+    ContDiff ℝ n (backgroundAmplitude f) :=
+  (contDiff_parametric_backgroundAmplitude (P := Unit) (f := fun _ ↦ f)
+    (hf.comp contDiff_snd)).comp ((contDiff_const (c := ())).prodMk contDiff_id)
 
 /-- The background amplitude is as smooth at `z` as `f`. -/
 theorem contDiffAt_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f z) :

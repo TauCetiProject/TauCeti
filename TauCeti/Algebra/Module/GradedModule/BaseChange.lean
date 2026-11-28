@@ -52,9 +52,10 @@ theorem coe_decompose_baseChange_tmul (s : S) (x : M) (i : ι) :
 
 end TauCeti.InternalGrading
 
-namespace TauCeti.LinearMap.IsHomogeneous
+namespace LinearMap.IsHomogeneous
 
 open scoped TensorProduct
+open TauCeti (InternalGrading)
 
 section Families
 
@@ -88,4 +89,4 @@ theorem baseChange_internalGrading {G : InternalGrading R M ι} {H : InternalGra
     IsHomogeneous (f.baseChange S) (G.baseChange S).piece (H.baseChange S).piece q := by
   simpa only [LinearMap.isHomogeneous_def, InternalGrading.baseChange_piece] using hf.baseChange S
 
-end TauCeti.LinearMap.IsHomogeneous
+end LinearMap.IsHomogeneous

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 -- Private: the endpoint-ratio identity of winding numbers, the injectivity of integer
 -- multiples of `2πi` and the base points of path components are used only inside proofs.
 import TauCeti.Analysis.Complex.WindingNormalization
-import TauCeti.Analysis.Contour.Winding.EndpointRatio
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Topology.Connected.PathConnected
 
 /-!
@@ -132,8 +132,9 @@ theorem exp_pathIntegral_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, �
   have hcont : ContinuousOn (u ∘ γ) (uIcc a b) := hc.continuous.continuousOn
   have hii := Contour.intervalIntegrable_inv_sub_mul_deriv hcont hu₀
     (hc.continuous_deriv_one.intervalIntegrable a b)
-  have he := Contour.exp_two_pi_I_mul_windingNumber_of_avoidance countable_empty hcont
-    (fun t _ ↦ hc.differentiable one_ne_zero t) hu₀ hii
+  have hac : AbsolutelyContinuousOnInterval (u ∘ γ) a b :=
+    (hc.contDiffOn (s := uIcc a b)).absolutelyContinuousOnInterval
+  have he := hac.exp_two_pi_I_mul_windingNumber (z := 0) fun ⟨t, ht, h⟩ ↦ hu₀ t ht h
   rw [Contour.windingNumber_eq_integral_of_avoidance hcont hu₀ hii, ← mul_assoc,
     mul_inv_cancel₀ two_pi_I_ne_zero, one_mul] at he
   rw [hint, he, sub_zero, sub_zero, Function.comp_apply, Function.comp_apply]
@@ -300,7 +301,7 @@ theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
       simp only [LinearMap.toSpanSingleton_apply, zsmul_eq_mul, Fin.coe_ofNat_eq_mod, Nat.zero_mod,
         Nat.mod_succ, pow_zero, pow_one, one_smul, neg_smul]
       ring
-  obtain ⟨z, rfl⟩ := (H₁AddEquivHomology (.of M)).surjective.comp H₁.mk_surjective c
+  obtain ⟨z, rfl⟩ := (H₁AddEquivHomology ℤ (.of M)).surjective.comp H₁.mk_surjective c
   refine ⟨chainsDesc N (z : ((singularChains ℤ).obj (.of M)).X 1), ?_⟩
   rw [Function.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, hL]
   simp [mem_cycles₁_iff.1 z.property, zsmul_eq_mul]
@@ -444,7 +445,8 @@ theorem exists_mlogDeriv_eq_of_homologyPeriodHom_eq_int_mul {r : ℕ∞} (hr : 1
   have hpath {a a' y : M} (e : a = a') (p : Path a y) (q : Path a' y) :
       exp (pathClassIntegral φ (.mk p)) = exp (pathClassIntegral φ (.mk q)) := by
     subst e
-    obtain ⟨n, hn⟩ := hper (H₁AddEquivHomology (.of M) (loopClass (X := .of M) (p.trans q.symm)))
+    obtain ⟨n, hn⟩ :=
+      hper (H₁AddEquivHomology ℤ (.of M) (loopClass ℤ (X := .of M) (p.trans q.symm)))
     rw [homologyPeriodHom_loopClass, Path.Homotopic.Quotient.mk_trans,
       Path.Homotopic.Quotient.mk_symm, pathClassIntegral_trans, pathClassIntegral_symm] at hn
     exact exp_eq_exp_iff_exists_int.mpr ⟨n, by rw [← hn]; ring⟩

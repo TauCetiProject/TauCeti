@@ -49,6 +49,9 @@ row-superstandard tableau.
 * `TauCeti.TypeAHeckeAlgebra.youngRowSymmetrizer_mul_self` and
   `TauCeti.TypeAHeckeAlgebra.youngAntisymmetrizer_mul_self`: quantum-factorial
   quasi-idempotence.
+* `TauCeti.TypeAHeckeAlgebra.reverse_youngRowSymmetrizer` and
+  `TauCeti.TypeAHeckeAlgebra.reverse_youngAntisymmetrizer`: both are fixed by the reversal
+  anti-involution `T_w ↦ T_(w⁻¹)`.
 * `TauCeti.TypeAHeckeAlgebra.groupAlgebraEquiv_youngRowSymmetrizer_shapePartition`: classical
   `q = 1` specialization to `YoungTableau.rowSymmetrizer`.
 
@@ -104,6 +107,18 @@ theorem youngRowSymmetrizer_mem_parabolic (q : Rˣ) {n : ℕ} (μ : n.Partition)
 theorem youngAntisymmetrizer_mem_parabolic (q : Rˣ) {n : ℕ} (μ : n.Partition) :
     youngAntisymmetrizer q μ ∈ parabolic q (youngParabolicSet μ) :=
   parabolicEigenSum_mem_parabolic (permCoxeterSystem n) (youngParabolicSet μ) (-(↑q⁻¹ : R))
+
+/-- The Young `q`-symmetrizer is fixed by the reversal anti-involution `T_w ↦ T_(w⁻¹)`. -/
+@[simp]
+theorem reverse_youngRowSymmetrizer (q : Rˣ) {n : ℕ} (μ : n.Partition) :
+    reverse q (youngRowSymmetrizer (R := R) q μ) = youngRowSymmetrizer q μ :=
+  reverse_parabolicEigenSum _ _ _
+
+/-- The Young `q`-antisymmetrizer is fixed by the reversal anti-involution `T_w ↦ T_(w⁻¹)`. -/
+@[simp]
+theorem reverse_youngAntisymmetrizer (q : Rˣ) {n : ℕ} (μ : n.Partition) :
+    reverse q (youngAntisymmetrizer (R := R) q μ) = youngAntisymmetrizer q μ :=
+  reverse_parabolicEigenSum _ _ _
 
 open scoped Classical in
 /-- The PBW coefficient of `w` in `youngRowSymmetrizer q μ` is `q ^ ℓ(w)` on `youngSubgroup μ` and

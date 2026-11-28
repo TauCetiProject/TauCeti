@@ -17,7 +17,6 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Transport
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -82,7 +81,9 @@ orbit this is `SymplecticForm.eventually_eq_zero_of_asymptoticOperator_eq_smul`.
 return map, `det (1 - Ψ(1)) ≠ 0` persists for small `δ` with no periodicity assumption
 (`Floer.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero`), and it holds at a
 nondegenerate orbit of a Hamiltonian
-(`SymplecticForm.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt`).
+(`SymplecticForm.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt`), in particular
+for the shifted field at weight zero
+(`SymplecticForm.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt`).
 
 On the cylinder, the same cancellation gives the integrated form of `D* D = -∂s² + A²` over
 `[a, b] × [0, 1]`, in which the cross term only contributes the slice pairings
@@ -109,10 +110,11 @@ a nondegenerate orbit so are the loop operators of the weighted shifts `A - δ` 
 weights `δ` (`SymplecticForm.eventually_isInvertible_loopOperator_sub_smul`). The Sobolev
 realization of the cylinder operator `D` is not treated here. For an actual orbit,
 the continuity hypothesis on `S` is
-`TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`, and for a one-periodic orbit
-of a one-periodic `C³` Hamiltonian, `S` is a `C¹` loop on the circle
-(`SymplecticForm.exists_loop_eq_fderiv_hamiltonianVectorField`). The model case of a
-constant orthogonal complex structure on an inner product space is the operator
+`TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`, and for a one-periodic `C³`
+Hamiltonian, `S` is a `C¹` loop on the circle along any one-periodic `C¹` loop
+(`SymplecticForm.exists_loop_eq_fderiv_hamiltonianVectorField`), such as a one-periodic orbit
+(`SymplecticForm.contDiff_one_of_hasDerivAt_hamiltonianVectorField`). The model case
+of a constant orthogonal complex structure on an inner product space is the operator
 `TauCeti.orbitTorusOperator`.
 
 ## References
@@ -965,6 +967,42 @@ theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt (ω : Symp
     simpa using hv
   exact (sub_eq_zero.1 hv').symm
 
+/-- **The shifted return map at weight zero.** The case `δ = 0` of the return-map hypothesis on
+the shifted field `S_t - δ J_t` used by the weighted end estimates: at an orbit `x` as in
+`det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt`, the return map of
+`S_t - 0 • J_t` satisfies `det (1 - Ψ(1)) ≠ 0` for every family `J_t` of linear maps. -/
+theorem det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    (J : ℝ → V →L[ℝ] V) :
+    LinearMap.det ((1 - dysonSeriesLeft
+      (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) - (0 : ℝ) • J t) 1 : V →L[ℝ] V) :
+        V →ₗ[ℝ] V) ≠ 0 := by
+  simpa only [zero_smul, sub_zero] using
+    ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd
+
+/-- **The shifted return map at small weights.** At an orbit `x` as in
+`det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt` and for a continuous family `J_t`
+of almost complex structures, the return map of the shifted field `S_t - δ J_t` satisfies
+`det (1 - Ψ(1)) ≠ 0` for every weight `δ` close enough to `0`. -/
+theorem eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero_of_isNondegenerateFixedPt
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → AlmostComplexStructure V} (hJc : Continuous J) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), LinearMap.det ((1 - dysonSeriesLeft
+      (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+        δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0 :=
+  Floer.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero
+    (ω.continuous_fderiv_hamiltonianVectorField_comp hH
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+    hJc (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
+
 /-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
 one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally
 Lipschitz, and for continuous one-periodic almost complex structures `J_t`, the weighted
@@ -983,8 +1021,7 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
   have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
     ω.continuous_fderiv_hamiltonianVectorField_comp hH
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
-  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 :=
-    fun t ↦ by simp only [hHp t, hxp t]
+  have hSp := ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp
   have hclosed := Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul hSc hSp hJc hJp
   have h₀ :=
     (isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero ω hX hH hHp hx hxp
@@ -994,26 +1031,18 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
   by_contra hne
   exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
 
-/-- **The linearized Hamiltonian vector field along a periodic orbit is a loop.** Along a
-one-periodic orbit `x` of a one-periodic, jointly `C³` time-dependent Hamiltonian `H`, the
-linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))` descends to a continuous loop on the
-circle `ℝ / ℤ`, and it is of class `C¹` in `t`. -/
+/-- **The linearized Hamiltonian vector field along a periodic loop is a loop.** Along a
+one-periodic `C¹` loop `x`, for instance a one-periodic orbit, and for a one-periodic, jointly `C³`
+time-dependent Hamiltonian `H`, the linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))`
+descends to a continuous loop on the circle `ℝ / ℤ`, and it is of class `C¹` in `t`. -/
 theorem exists_loop_eq_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 3 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1) :
+    (hH : ContDiff ℝ 3 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V} (hx : ContDiff ℝ 1 x)
+    (hxp : Periodic x 1) :
     ∃ S : C(AddCircle (1 : ℝ), V →L[ℝ] V),
       (∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ∧
         ContDiff ℝ 1 fun t : ℝ ↦ S t := by
-  set f : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
-  have hxc : ContDiff ℝ 1 x :=
-    contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
-        (by simpa using hH.of_le (by norm_num))).continuous hx
-  have hf : ContDiff ℝ 1 f :=
-    ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hxc
-      (by norm_num)
-  have hper : Periodic f 1 := fun t ↦ by simp only [f, hHp t, hxp t]
+  have hf := ω.contDiff_fderiv_hamiltonianVectorField_comp (n := 1) hH hx
+  have hper := ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp
   refine ⟨⟨hper.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hf.continuous⟩,
     fun t ↦ hper.lift_coe t, ?_⟩
   simpa only [ContinuousMap.coe_mk, hper.lift_coe] using hf

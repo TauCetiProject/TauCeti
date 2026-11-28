@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Compactness.LocallyCompact
 import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Topology of open subgroups and their coset spaces
@@ -45,6 +46,7 @@ A compact set meets only finitely many left cosets of an open subgroup
   compact they form a coinitial family in `OpenSubgroup G`.
 * `IsCompact.finite_image_mk`: a compact set meets only finitely many left cosets of an open
   subgroup.
+* `Subgroup.isOpen_conjAct_smul_subgroupOf`: for `K` open, `H ∩ aKa⁻¹` is open in `H`.
 -/
 
 public section
@@ -163,16 +165,13 @@ theorem continuous_mk_comap_iff [SeparatelyContinuousMul H] (U : OpenSubgroup H)
     (hf : Continuous f) {g : X → G} :
     (Continuous fun x ↦ (g x : G ⧸ (U.comap f hf).toSubgroup)) ↔
       (Continuous fun x ↦ (f (g x) : H ⧸ U.toSubgroup)) := by
-  let φ : G ⧸ (U.comap f hf).toSubgroup → H ⧸ U.toSubgroup :=
-    Quotient.map' f fun a b h ↦ by
-      simpa only [QuotientGroup.leftRel_apply, toSubgroup_comap, Subgroup.mem_comap,
-        map_mul, map_inv] using h
   constructor
   · intro h
-    have hφ : Continuous φ :=
-      (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr
-        (QuotientGroup.continuous_mk.comp hf)
-    exact hφ.comp h
+    have hφ : Continuous (TauCeti.QuotientGroup.mapComap f U.toSubgroup) :=
+      (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr <| by
+        rw [TauCeti.QuotientGroup.mapComap_comp_mk]
+        exact QuotientGroup.continuous_mk.comp hf
+    exact (hφ.comp h).congr fun x ↦ TauCeti.QuotientGroup.mapComap_mk f U.toSubgroup (g x)
   · intro h
     apply IsLocallyConstant.continuous
     rw [IsLocallyConstant.iff_isOpen_fiber_apply]
@@ -182,8 +181,10 @@ theorem continuous_mk_comap_iff [SeparatelyContinuousMul H] (U : OpenSubgroup H)
           {(g x : G ⧸ (U.comap f hf).toSubgroup)} =
         (fun y ↦ (f (g y) : H ⧸ U.toSubgroup)) ⁻¹' {(f (g x) : H ⧸ U.toSubgroup)} := by
       ext y
-      simp only [Set.mem_preimage, Set.mem_singleton_iff, QuotientGroup.eq]
-      simp only [toSubgroup_comap, Subgroup.mem_comap, map_mul, map_inv]
+      rw [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_preimage, Set.mem_singleton_iff,
+        ← TauCeti.QuotientGroup.mapComap_mk f U.toSubgroup,
+        ← TauCeti.QuotientGroup.mapComap_mk f U.toSubgroup]
+      exact (TauCeti.QuotientGroup.injective_mapComap f U.toSubgroup).eq_iff.symm
     rw [hfiber]
     exact h.isOpen_preimage _ (isOpen_discrete _)
 
@@ -195,3 +196,15 @@ theorem IsCompact.finite_image_mk {G : Type*} [Group G] [TopologicalSpace G]
     (((↑) : G → G ⧸ (W : Subgroup G)) '' K).Finite := by
   have := QuotientGroup.discreteTopology W.isOpen
   exact (hK.image continuous_quotient_mk').finite_of_discrete
+
+namespace Subgroup
+
+open scoped Pointwise
+
+/-- For `K` open, `H ∩ aKa⁻¹`, as a subgroup of `H`, is open in `H`. -/
+theorem isOpen_conjAct_smul_subgroupOf {G : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] (H : Subgroup G) {K : Subgroup G} (hK : IsOpen (K : Set G))
+    (a : G) : IsOpen ((ConjAct.toConjAct a • K).subgroupOf H : Set H) :=
+  H.subgroupOf_isOpen _ (by rw [coe_pointwise_smul]; exact hK.smul _)
+
+end Subgroup

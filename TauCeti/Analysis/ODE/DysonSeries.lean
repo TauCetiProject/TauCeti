@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Analysis.ODE.Caratheodory
@@ -18,6 +19,8 @@ import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Order.ProjIcc
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
+import TauCeti.Topology.Algebra.Star.RealModule
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
@@ -33,7 +36,7 @@ The coefficient `p` need not be bounded on the whole line.
 
 Existence on the whole line cannot be taken from `TauCeti.timeDependentFlow`, whose suspended
 field must be globally Lipschitz, nor from the Carathéodory solutions of
-`TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard`, which live on one compact interval;
+`TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard`, which live on one compact interval;
 the series also supplies the explicit expansion. Uniqueness is
 `Continuous.eq_of_hasDerivAt_clm_apply`.
 
@@ -73,10 +76,25 @@ one-parameter automorphism groups of C⋆-algebras.
   value lies in the `ε`-eigenspace of `Γ d ^ n`, the solution is twisted by `ε` along `n d`.
 * `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
   that is skew for a continuous bilinear map `B` preserves `B`.
+* `TauCeti.apply_dysonSeries_neg_apply`: the inverse of such a propagator is its adjoint for
+  `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
+* `TauCeti.dysonSeriesLeft_add`: `Γ (a + t) = Γₐ t * Γ a` for the left series `Γₐ` of the
+  translated path `s ↦ p (a + s)`.
+* `TauCeti.dysonSeriesLeft_comp_const_add`: `Γₐ t = Γ (a + t) * Γ(a)⁻¹`, with the inverse given
+  by the Dyson series of `-p`.
+* `TauCeti.star_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mem_unitary`: the adjoint of the left
+  series of `p` is the series of `s ↦ star (p s)`, and the left series of a skew-adjoint path is
+  unitary.
+* `TauCeti.norm_dysonSeriesLeft_sub_le`: in a C⋆-ring, the left series of two skew-adjoint paths
+  differ at time `t` by at most `|∫₀ᵗ ‖p - q‖|`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
+* `TauCeti.commute_dysonSeries`, `TauCeti.commute_dysonSeriesLeft`: an element commuting with
+  every value of `p` commutes with both Dyson series of `p`.
+* `TauCeti.dysonSeriesLeft_apply_I_smul`, `TauCeti.dysonSeries_neg_apply_I_smul`: the propagator
+  of a path of complex-linear maps and its inverse are complex linear.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 * `TauCeti.exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm`,
@@ -85,6 +103,8 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.exists_forall_norm_le_mul_integral_norm_of_norm_le`: if `w 0` is bounded by the
   deviation `w d - Γ d (w 0)`, then `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` on `[0, d]`; boundary value problems and
   twisted periodic problems both reduce to this.
+* `TauCeti.norm_sub_dysonSeriesLeft_apply_le_add_mul_integral`: Volterra integral error estimate
+  for a continuous curve solving a forced linear integral equation relative to `dysonSeriesLeft`.
 
 ## References
 
@@ -314,6 +334,16 @@ theorem eq_mul_dysonSeries (hp : Continuous p) {f : ℝ → B}
   rw [mul_assoc]
   exact (hasDerivAt_dysonSeries hp t).const_mul (f 0)
 
+/-- An element commuting with every value of a continuous path `p` commutes with its Dyson
+series: `a Γ` and `Γ a` both solve `X' = X p` with initial value `a`. -/
+theorem commute_dysonSeries (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s)) (t : ℝ) :
+    Commute a (dysonSeries p t) :=
+  congrFun (eq_of_hasDerivAt_mul hp (f := fun s => a * dysonSeries p s)
+    (g := fun s => dysonSeries p s * a)
+    (fun s => by simpa only [mul_assoc] using (hasDerivAt_dysonSeries hp s).const_mul a)
+    (fun s => ((hasDerivAt_dysonSeries hp s).mul_const a).congr_deriv (by
+      rw [mul_assoc, mul_assoc, (ha s).eq])) (t₀ := 0) (by simp)) t
+
 section Star
 
 variable [StarRing B] [ContinuousStar B]
@@ -322,8 +352,7 @@ variable [StarRing B] [ContinuousStar B]
 theorem dysonSeries_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) = -p t) (t : ℝ) :
     dysonSeries p t ∈ unitary B := by
   -- Continuity of `star` makes it commute with real scalars.
-  have : StarModule ℝ B :=
-    ⟨fun r x => by simpa using map_real_smul (starAddEquiv : B ≃+ B) continuous_star r x⟩
+  have : StarModule ℝ B := ContinuousStar.starModule_real
   have hΓ := hasDerivAt_dysonSeries hp
   have hΓstar (t : ℝ) :
       HasDerivAt (fun s => star (dysonSeries p s)) (-(p t * star (dysonSeries p t))) t :=
@@ -390,13 +419,21 @@ theorem dysonSeriesLeft_const (a : B) (t : ℝ) :
   simpa using (eq_dysonSeriesLeft_mul continuous_const
     (fun t ↦ hasDerivAt_exp_smul_const' (𝕂 := ℝ) a t) t).symm
 
+/-- The left Dyson series over `[0, a + t]` factors through the left Dyson series of the
+translated path `s ↦ p (a + s)`: `Γ (a + t) = Γₐ t * Γ a`. -/
+theorem dysonSeriesLeft_add (hp : Continuous p) (a t : ℝ) :
+    dysonSeriesLeft p (a + t) = dysonSeriesLeft (fun s => p (a + s)) t * dysonSeriesLeft p a := by
+  simpa using eq_dysonSeriesLeft_mul (p := fun s => p (a + s)) (hp.comp (continuous_const_add a))
+    (f := fun t => dysonSeriesLeft p (a + t))
+    (fun t => (hasDerivAt_dysonSeriesLeft hp (a + t)).comp_const_add a t) t
+
 /-- For a periodic path, the left Dyson series over a translated period factors through the
 left Dyson series over one period: `Γ (t + d) = Γ t * Γ d`. -/
 theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
     (hper : Function.Periodic p d) (t : ℝ) :
     dysonSeriesLeft p (t + d) = dysonSeriesLeft p t * dysonSeriesLeft p d := by
-  simpa using eq_dysonSeriesLeft_mul hp (f := fun t => dysonSeriesLeft p (t + d))
-    (fun t => by simpa [hper t] using (hasDerivAt_dysonSeriesLeft hp (t + d)).comp_add_const t d) t
+  rw [add_comm, dysonSeriesLeft_add hp]
+  simp_rw [add_comm d, hper.funext]
 
 /-- For a periodic path, the left Dyson series over `n` periods is the `n`-th power of the left
 Dyson series over one period: `Γ (n d) = Γ d ^ n`. For a propagator this says that the return
@@ -444,6 +481,77 @@ series of `-p`. -/
 theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeriesLeft p t) :=
   ⟨⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩,
     rfl⟩
+
+/-- The left Dyson series of the translated path `s ↦ p (a + s)` is `Γ (a + t) * Γ(a)⁻¹`, where
+the inverse `Γ(a)⁻¹` is the Dyson series of `-p` at time `a`. -/
+theorem dysonSeriesLeft_comp_const_add (hp : Continuous p) (a t : ℝ) :
+    dysonSeriesLeft (fun s => p (a + s)) t = dysonSeriesLeft p (a + t) * dysonSeries (-p) a := by
+  rw [dysonSeriesLeft_add hp, mul_assoc, dysonSeriesLeft_mul_dysonSeries_neg hp, mul_one]
+
+section Star
+
+variable [StarRing B] [ContinuousStar B]
+
+/-- The adjoint of the left Dyson series of `p` is the Dyson series of the adjoint path
+`s ↦ star (p s)`. -/
+theorem star_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
+    star (dysonSeriesLeft p t) = dysonSeries (fun s => star (p s)) t := by
+  -- Continuity of `star` makes it commute with real scalars.
+  have : StarModule ℝ B := ContinuousStar.starModule_real
+  -- `star Γ` solves `X' = X (star p)` with `X 0 = 1`.
+  simpa using eq_mul_dysonSeries (p := fun s => star (p s)) hp.star
+    (f := fun s => star (dysonSeriesLeft p s))
+    (fun s => (hasDerivAt_dysonSeriesLeft hp s).star.congr_deriv (by simp [star_mul])) t
+
+/-- The left Dyson series of a skew-adjoint path is unitary. -/
+theorem dysonSeriesLeft_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) = -p t)
+    (t : ℝ) : dysonSeriesLeft p t ∈ unitary B := by
+  -- For a skew-adjoint path the adjoint path is `-p`, whose series inverts the left series.
+  rw [Unitary.mem_iff, star_dysonSeriesLeft hp, show (fun s => star (p s)) = -p from funext hskew]
+  exact ⟨dysonSeries_neg_mul_dysonSeriesLeft hp t, dysonSeriesLeft_mul_dysonSeries_neg hp t⟩
+
+/-- **Comparison of unitary propagators.** In a C⋆-ring, the left Dyson series of two continuous
+skew-adjoint paths `p` and `q` differ at time `t` by at most `|∫₀ᵗ ‖p - q‖|`. -/
+theorem norm_dysonSeriesLeft_sub_le [CStarRing B] {q : ℝ → B} (hp : Continuous p)
+    (hq : Continuous q) (hpskew : ∀ t, star (p t) = -p t) (hqskew : ∀ t, star (q t) = -q t)
+    (t : ℝ) :
+    ‖dysonSeriesLeft p t - dysonSeriesLeft q t‖ ≤ |∫ s in 0..t, ‖p s - q s‖| := by
+  have : StarModule ℝ B := ContinuousStar.starModule_real
+  have hpu := dysonSeriesLeft_mem_unitary hp hpskew
+  have hqu := dysonSeriesLeft_mem_unitary hq hqskew
+  -- `W = Γ_p⋆ Γ_q` has derivative `Γ_p⋆ (q - p) Γ_q`, whose norm is `‖p - q‖`, and `W 0 = 1`.
+  have hW (s : ℝ) : HasDerivAt (fun s => star (dysonSeriesLeft p s) * dysonSeriesLeft q s)
+      (star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s) s :=
+    ((hasDerivAt_dysonSeriesLeft hp s).star.mul (hasDerivAt_dysonSeriesLeft hq s)).congr_deriv
+      (by simp only [star_mul, hpskew]; noncomm_ring)
+  have hnorm (s : ℝ) :
+      ‖star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s‖ = ‖p s - q s‖ := by
+    rw [CStarRing.norm_mul_mem_unitary _ (hqu s),
+      CStarRing.norm_mem_unitary_mul _ (Unitary.star_mem (hpu s)), norm_sub_rev]
+  have hint := integral_eq_sub_of_hasDerivAt (fun s _ => hW s)
+    ((((continuous_dysonSeriesLeft hp).star.mul (hq.sub hp)).mul
+      (continuous_dysonSeriesLeft hq)).intervalIntegrable 0 t)
+  -- `‖Γ_p - Γ_q‖ = ‖Γ_p⋆ (Γ_p - Γ_q)‖ = ‖W - 1‖`.
+  calc ‖dysonSeriesLeft p t - dysonSeriesLeft q t‖
+      = ‖star (dysonSeriesLeft p t) * dysonSeriesLeft q t - 1‖ := by
+        rw [norm_sub_rev, ← CStarRing.norm_mem_unitary_mul _ (Unitary.star_mem (hpu t)), mul_sub,
+          Unitary.star_mul_self_of_mem (hpu t)]
+    _ = ‖∫ s in 0..t, star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s‖ := by
+        rw [hint, dysonSeriesLeft_zero, dysonSeriesLeft_zero, star_one, one_mul]
+    _ ≤ |∫ s in 0..t, ‖star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s‖| :=
+        norm_integral_le_abs_integral_norm
+    _ = |∫ s in 0..t, ‖p s - q s‖| := by simp_rw [hnorm]
+
+end Star
+
+/-- An element commuting with every value of a continuous path `p` commutes with its left Dyson
+series. This is `TauCeti.commute_dysonSeries` in the opposite algebra. -/
+theorem commute_dysonSeriesLeft (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s))
+    (t : ℝ) : Commute a (dysonSeriesLeft p t) := by
+  have h := commute_dysonSeries (p := fun s => MulOpposite.op (p s))
+    (MulOpposite.continuous_op.comp hp) (a := MulOpposite.op a) (fun s => (ha s).op) t
+  rw [← op_dysonSeriesLeft] at h
+  exact h.unop
 
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
@@ -566,6 +674,17 @@ theorem apply_dysonSeriesLeft_apply_dysonSeriesLeft {M : ℝ → X →L[ℝ] X} 
     (fun r => (hd r).deriv) t 0
   simpa [dysonSeriesLeft_zero] using hc
 
+/-- **The inverse propagator is the adjoint for a preserved form.** If the continuous path `M` of
+bounded operators is skew for a bilinear map `B`, so that the propagator `Ψ = dysonSeriesLeft M`
+preserves `B` (`TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`), then its inverse
+`Ψ(t)⁻¹ = dysonSeries (-M) t` satisfies `B u (Ψ(t)⁻¹ w) = B (Ψ(t) u) w`. -/
+theorem apply_dysonSeries_neg_apply {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (B : X →L[ℝ] X →L[ℝ] W)
+    (hskew : ∀ r u w, B (M r u) w + B u (M r w) = 0) (t : ℝ) (u w : X) :
+    B u (dysonSeries (-M) t w) = B (dysonSeriesLeft M t u) w := by
+  rw [← apply_dysonSeriesLeft_apply_dysonSeriesLeft hM B hskew t u, ← mul_apply_eq_comp,
+    dysonSeriesLeft_mul_dysonSeries_neg hM, one_apply_eq_self]
+
 /-- **Variation of constants.** For continuous `M` and `f`, the map
 `w t = Ψ t (x + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
 `Ψ(s)⁻¹ = dysonSeries (-M) s`, solves the inhomogeneous equation `w' t = M t (w t) + f t`. -/
@@ -687,6 +806,89 @@ theorem exists_forall_norm_le_mul_integral_norm_of_norm_le {M : ℝ → X →L[�
     _ ≤ B * (K * (C * ∫ s in 0..d, ‖f s‖) + ∫ s in 0..d, ‖f s‖) := by gcongr
     _ = B * (K * C + 1) * ∫ s in 0..d, ‖f s‖ := by ring
 
+section Complex
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {M : ℝ → E →L[ℝ] E}
+
+open Complex (I)
+
+variable [CompleteSpace E]
+
+/-- The propagator of a continuous path of complex-linear maps is complex linear. -/
+theorem dysonSeriesLeft_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
+    (t : ℝ) (v : E) : dysonSeriesLeft M t (I • v) = I • dysonSeriesLeft M t v :=
+  ContinuousLinearMap.commute_I_smul_one_iff.1
+    (commute_dysonSeriesLeft hM (ContinuousLinearMap.commute_I_smul_one_iff.2 <| hMI ·) t) v
+
+/-- The inverse `dysonSeries (-M)` of the propagator of a continuous path of complex-linear maps
+is complex linear. -/
+theorem dysonSeries_neg_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
+    (t : ℝ) (v : E) : dysonSeries (-M) t (I • v) = I • dysonSeries (-M) t v :=
+  ContinuousLinearMap.commute_I_smul_one_iff.1 (commute_dysonSeries hM.neg
+    (fun s ↦ (ContinuousLinearMap.commute_I_smul_one_iff.2 (hMI s)).neg_right) t) v
+
+end Complex
+
 end Left
+
+section LinearizationError
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+
+/-- **Volterra integral bound for a forced linear equation.** If a continuous curve `δ` on `[0, τ]`
+satisfies `δ t = δ 0 + ∫ s in 0..t, (M s (δ s) + r s)` for a continuous path of operators `M`
+with `‖M s‖ ≤ CD` and interval-integrable forcing residual `r` with `‖r s‖ ≤ R₀` on `[0, τ]`,
+then `w t = δ t - dysonSeriesLeft M t (δ 0)` satisfies
+`‖w t‖ ≤ R₀ * t + CD * ∫ s in 0..t, ‖w s‖` on `[0, τ]`. -/
+theorem norm_sub_dysonSeriesLeft_apply_le_add_mul_integral {M : ℝ → E →L[ℝ] E} {δ r : ℝ → E}
+    {τ R₀ CD : ℝ} (hM : Continuous M) (hδ : ContinuousOn δ (Icc 0 τ))
+    (hr : IntervalIntegrable r MeasureTheory.volume 0 τ) (hCD : ∀ s ∈ Icc 0 τ, ‖M s‖ ≤ CD)
+    (hr_le : ∀ s ∈ Icc 0 τ, ‖r s‖ ≤ R₀)
+    (hδ_int : ∀ t ∈ Icc 0 τ, δ t = δ 0 + ∫ s in (0 : ℝ)..t, (M s (δ s) + r s))
+    {t : ℝ} (ht : t ∈ Icc 0 τ) :
+    ‖δ t - dysonSeriesLeft M t (δ 0)‖ ≤
+      R₀ * t + CD * ∫ s in (0 : ℝ)..t, ‖δ s - dysonSeriesLeft M s (δ 0)‖ := by
+  let w : ℝ → E := fun s ↦ δ s - dysonSeriesLeft M s (δ 0)
+  have hA_cont : Continuous (fun s ↦ dysonSeriesLeft M s (δ 0)) :=
+    (continuous_dysonSeriesLeft hM).clm_apply continuous_const
+  have hw_cont : ContinuousOn (fun s ↦ ‖w s‖) (Icc 0 τ) :=
+    (hδ.sub hA_cont.continuousOn).norm
+  have hsub_t : uIcc 0 t ⊆ Icc 0 τ := uIcc_of_le ht.1 ▸ Icc_subset_Icc_right ht.2
+  have hsub_τ : uIcc 0 t ⊆ uIcc 0 τ :=
+    uIcc_of_le (ht.1.trans ht.2) ▸ hsub_t
+  have hIntA := (hM.clm_apply hA_cont).intervalIntegrable (μ := MeasureTheory.volume) 0 t
+  have hIntδ : IntervalIntegrable (fun s ↦ M s (δ s) + r s) MeasureTheory.volume 0 t :=
+    ((hM.continuousOn.clm_apply hδ).mono hsub_t).intervalIntegrable.add (hr.mono_set hsub_τ)
+  have hA_int : dysonSeriesLeft M t (δ 0) - δ 0 =
+      ∫ s in (0 : ℝ)..t, M s (dysonSeriesLeft M s (δ 0)) := by
+    simpa using (intervalIntegral.integral_eq_sub_of_hasDerivAt
+      (fun s _ ↦ hasDerivAt_dysonSeriesLeft_apply hM (δ 0) s) hIntA).symm
+  have hw_eq : w t = ∫ s in (0 : ℝ)..t, (r s + M s (w s)) := by
+    -- Cancel the common initial value `δ 0` before substituting the integral equations.
+    have hw_sub : w t = (δ t - δ 0) - (dysonSeriesLeft M t (δ 0) - δ 0) := by
+      dsimp [w]; abel
+    rw [hw_sub, hδ_int t ht, add_sub_cancel_left, hA_int,
+      ← intervalIntegral.integral_sub hIntδ hIntA]
+    refine intervalIntegral.integral_congr fun s _ ↦ ?_
+    simp only [w, map_sub]; abel
+  have hw_int : IntervalIntegrable (fun s ↦ CD * ‖w s‖) MeasureTheory.volume 0 t :=
+    ((continuousOn_const.mul hw_cont).mono hsub_t).intervalIntegrable
+  have hrem_int : IntervalIntegrable (fun s ↦ ‖r s‖ + CD * ‖w s‖) MeasureTheory.volume 0 t :=
+    (hr.norm.mono_set hsub_τ).add hw_int
+  -- Fold the goal into the local `let`-binding `w` (including under the integral) so `rw [hw_eq]`
+  -- applies.
+  change ‖w t‖ ≤ R₀ * t + CD * ∫ s in (0 : ℝ)..t, ‖w s‖
+  rw [hw_eq]
+  refine (intervalIntegral.norm_integral_le_of_norm_le ht.1 ?_ hrem_int).trans ?_
+  · filter_upwards with s hs
+    exact (norm_add_le _ _).trans (add_le_add le_rfl ((ContinuousLinearMap.le_opNorm _ _).trans
+      (mul_le_mul_of_nonneg_right (hCD s ⟨hs.1.le, hs.2.trans ht.2⟩) (norm_nonneg _))))
+  · refine (intervalIntegral.integral_mono_on ht.1 hrem_int (intervalIntegrable_const.add hw_int)
+      fun s hs ↦ add_le_add (hr_le s ⟨hs.1, hs.2.trans ht.2⟩) le_rfl).trans ?_
+    rw [intervalIntegral.integral_add intervalIntegrable_const hw_int,
+      intervalIntegral.integral_const, intervalIntegral.integral_const_mul, sub_zero, smul_eq_mul,
+      mul_comm t R₀]
+
+end LinearizationError
 
 end TauCeti

@@ -9,11 +9,12 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LSeries.SumCoeff
 public import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
-# A level-dependent bound for continued Dirichlet L-functions
+# Bounds for Dirichlet L-functions and their Dirichlet series
 
 Cancellation over a full period bounds the partial sums of a nonprincipal character of level
 `N` by `N`, so they are `O(1)` (`DirichletCharacter.isBigO_sum_Icc_one`). Partial summation then
@@ -24,15 +25,27 @@ on the level. For a primitive character the level is its conductor.
 
 At `s = 1` the same integral is `∫_{t > 1} S(t) / t²`, where `S(t)` is the sum of `χ k` over
 `1 ≤ k ≤ t`. Using `‖S(t)‖ ≤ t` on `(1, N]` and `‖S(t)‖ ≤ N` beyond gives
-`‖L(1, χ)‖ ≤ 1 + log N`. No primitivity is assumed, so this bound also holds for imprimitive
-characters such as the product of two characters taken at the least common multiple of their
-levels. Combining the nonprincipal bound with the fractional-part bound on `riemannZeta` and the
-Euler-factor bound on `N.primeFactors` also yields
+`‖L(1, χ)‖ ≤ 1 + log N`, and hence `‖L(1, χ)‖ ≤ (1 + t⁻¹) N ^ t` for every `t > 0`. No
+primitivity is assumed, so these bounds also hold for imprimitive characters such as the product
+of two characters taken at the least common multiple of their levels. Combining the nonprincipal
+bound with the fractional-part bound on `riemannZeta` and the Euler-factor bound on
+`N.primeFactors` also yields
 `‖L(s, χ)‖ ≤ N (‖s - 1‖⁻¹ + 1 + ‖s‖ / Re(s))` on `Re(s) > 0` (away from `s = 1` when `χ = 1`) for
 every character `χ` of level `N`, principal or nonprincipal.
 
-The function being bounded is the native analytic continuation, not the Dirichlet series
-(which need not converge absolutely in this half-plane). No zero-free hypothesis is required.
+The bounds on `Re(s) > 0` above are for the native analytic continuation, not the Dirichlet
+series (which need not converge absolutely in this half-plane). No zero-free hypothesis is
+required.
+
+On `Re(s) ≥ 1 + 1 / A`, where the Dirichlet series converges absolutely, comparison with
+`ζ(Re s) < 1 + 1 / (Re s - 1)` gives `‖L(s, χ)‖ ≤ 1 + A`
+(`DirichletCharacter.norm_LSeries_le_one_add`).
+
+## Provenance
+
+`DirichletCharacter.norm_LSeries_le_one_add` is adapted from `New.norm_LSeries_char_le` in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/Analytic/PrimeNumberTheorem/LFunctionGrowth.lean`.
 
 ## References
 
@@ -141,6 +154,17 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
         Set.Ioc_union_Ioi_eq_Ioi hN]
     _ ≤ 1 + Real.log N := by linarith
 
+/-- **A power bound for `L(1, χ)`.** For every `t > 0`, the continued L-function of a nonprincipal
+character of level `N` satisfies `‖L(1, χ)‖ ≤ (1 + t⁻¹) N ^ t`. This is the logarithmic bound
+`norm_LFunction_one_le_one_add_log` with `log N ≤ N ^ t / t`. -/
+theorem norm_LFunction_one_le_mul_rpow (hχ : χ ≠ 1) {t : ℝ} (ht : 0 < t) :
+    ‖χ.LFunction 1‖ ≤ (1 + t⁻¹) * (N : ℝ) ^ t := by
+  have hlog := Real.log_le_rpow_div (Nat.cast_nonneg N) ht
+  have h1 : 1 ≤ (N : ℝ) ^ t := Real.one_le_rpow (Nat.one_le_cast.mpr NeZero.one_le) ht.le
+  calc ‖χ.LFunction 1‖ ≤ 1 + Real.log N := χ.norm_LFunction_one_le_one_add_log hχ
+    _ ≤ (N : ℝ) ^ t + (N : ℝ) ^ t / t := by linarith
+    _ = (1 + t⁻¹) * (N : ℝ) ^ t := by ring
+
 /-- On `Re(s) > 0` (away from `s = 1` when `χ = 1`), the continued L-function of any Dirichlet
 character of level `N` — principal or nonprincipal — satisfies
 `‖L(s, χ)‖ ≤ N (‖s - 1‖⁻¹ + 1 + ‖s‖ / Re(s))`. -/
@@ -157,5 +181,31 @@ theorem norm_LFunction_le {s : ℂ} (hs : 0 < s.re) (h1 : s ≠ 1 ∨ χ ≠ 1) 
       _ = (N : ℝ) * (‖s‖ / s.re) := mul_div_assoc _ _ _
       _ ≤ (N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re) :=
           mul_le_mul_of_nonneg_left (le_add_of_nonneg_left (by positivity)) (Nat.cast_nonneg N)
+
+omit [NeZero N] in
+/-- If `Re s ≥ 1 + 1 / A` with `A > 0`, then the Dirichlet series of `χ` has
+`‖L(s, χ)‖ ≤ 1 + A`. -/
+theorem norm_LSeries_le_one_add {s : ℂ} {A : ℝ} (hA : 0 < A) (hs : 1 + 1 / A ≤ s.re) :
+    ‖LSeries (fun n ↦ χ n) s‖ ≤ 1 + A := by
+  -- The series is dominated termwise by `ζ(Re s) < 1 + 1 / (Re s - 1)`.
+  have hs_one : 1 < s.re := by linarith [one_div_pos.2 hA]
+  have h_summable : Summable fun n : ℕ ↦ 1 / (n : ℝ) ^ s.re :=
+    Real.summable_one_div_nat_rpow.2 hs_one
+  have term_le (n : ℕ) : ‖LSeries.term (χ ·) s n‖ ≤ 1 / (n : ℝ) ^ s.re := by
+    rw [LSeries.norm_term_eq]
+    split_ifs
+    · positivity
+    · exact div_le_div_of_nonneg_right (χ.norm_le_one _) (by positivity)
+  calc ‖LSeries (fun n ↦ χ n) s‖
+    _ ≤ ∑' n : ℕ, 1 / (n : ℝ) ^ s.re := tsum_of_norm_bounded h_summable.hasSum term_le
+    _ = ∑' n : ℕ, 1 / ((n : ℝ) + 1) ^ s.re := by
+      rw [h_summable.tsum_eq_zero_add]
+      simp [Real.zero_rpow (one_pos.trans hs_one).ne']
+    _ = ∑' n : ℕ, ((n : ℝ) + 1) ^ (-s.re) :=
+      tsum_congr fun n ↦ by rw [Real.rpow_neg (by positivity), one_div]
+    _ = (riemannZeta s.re).re := (TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re hs_one).tsum_eq
+    _ ≤ 1 + 1 / (s.re - 1) :=
+      (TauCeti.riemannZeta_re_lt_one_add_one_div_sub_one (by linarith) hs_one.ne').le
+    _ ≤ 1 + A := by linarith [(one_div_le hA (sub_pos.2 hs_one)).1 (by linarith)]
 
 end DirichletCharacter

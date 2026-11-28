@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.Topology.Algebra.Module.Equiv.Basic
 
 /-!
@@ -22,12 +26,22 @@ tempered distribution `T` pulls back along `e` to the tempered distribution
 
 (`TemperedDistribution.compCLMOfContinuousLinearEquiv`), the case of a linear map of the pullback
 `TemperedDistribution.compCLM` along a change of variables. On the distribution of a Schwartz
-function `u` it is the distribution of `u ∘ e`.
+function `u` it is the distribution of `u ∘ e`, and on the distribution of an `Lᵖ` function `u` it
+is the distribution of the `Lᵖ` function `u ∘ e`, of norm `|det e|^{-1/p} ‖u‖_p`, for every
+additive Haar measure.
 
-When `E` is an inner product space and `A` is a linear isometry, `|det A| = 1` and the pullback is
+When `E` is an inner product space, the Fourier transform turns `e` into the adjoint `(e⁻¹)†` of its
+inverse acting on the frequencies, `𝓕 (e^* T) = |det e|⁻¹ ((e⁻¹)†)^* (𝓕 T)`, as it does for
+functions (`ContinuousLinearEquiv.fourier_comp`). Hence `e^*` carries the Fourier multiplier with
+symbol `g ∘ e†` to the one with symbol `g`: `T_g (e^* T) = e^* (T_{g ∘ e†} T)`. For the dilation
+`e = c • id`, `e† = e`, so dilating a distribution dilates the symbols of the Fourier multipliers
+applied to it; this is how dyadic dilations shift Littlewood–Paley blocks.
+
+When `A` is a linear isometry, `|det A| = 1` and the pullback is
 `(A^* T) f = T (f ∘ A⁻¹)`. It then commutes with the Fourier transform, since the Fourier
-transform of `u ∘ A` is `𝓕 u ∘ A`, and hence with every Fourier multiplier whose symbol is
-invariant under `A`, in particular with the Bessel potentials `J^s`, whose symbol
+transform of `u ∘ A` is `𝓕 u ∘ A`. Hence it carries the Fourier multiplier with symbol `g` to the
+one with symbol `g ∘ A`, so commutes with every Fourier multiplier whose symbol is invariant under
+`A`, in particular with the Bessel potentials `J^s`, whose symbol
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2)` only depends on `‖ξ‖`. Since `A` preserves Lebesgue measure, the pullback
 of an `Lᵖ` function is the `Lᵖ` function `u ∘ A`, of the same norm. Together these say that `A^*`
 preserves every Bessel-potential space `H^{s,p}`; the resulting isometries of `H^{s,p}` are built
@@ -42,13 +56,22 @@ space side.
   `compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM`, and functoriality
   `compCLMOfContinuousLinearEquiv_trans`, `compCLMOfContinuousLinearEquiv_refl` and
   `compCLMOfContinuousLinearEquiv_symm_apply_apply`,
-  `compCLMOfContinuousLinearEquiv_apply_symm_apply`.
+  `compCLMOfContinuousLinearEquiv_apply_symm_apply`, and its interaction
+  `compCLMOfContinuousLinearEquiv_smulLeftCLM` with multiplication by a function.
+* `exists_compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_and_norm_eq`:
+  on `Lᵖ`, the pullback is the precomposition `u ↦ u ∘ e`, of norm `|det e|^{-1/p} ‖u‖_p`.
+* `TemperedDistribution.fourier_compCLMOfContinuousLinearEquiv_eq_smul` and
+  `TemperedDistribution.fourierInv_compCLMOfContinuousLinearEquiv_eq_smul`: the Fourier transform
+  and its inverse of `e^* T` are `|det e|⁻¹ ((e⁻¹)†)^*` applied to those of `T`.
+* `TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_eq`:
+  `T_g (e^* T) = e^* (T_{g ∘ e†} T)`.
 * `TemperedDistribution.compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply`: for a
   linear isometry, `(A^* T) f = T (f ∘ A⁻¹)`.
 * `TemperedDistribution.fourier_compCLMOfContinuousLinearEquiv` and
   `TemperedDistribution.fourierInv_compCLMOfContinuousLinearEquiv`: the Fourier transform and its
   inverse commute with `A^*`.
-* `TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`: so does every
+* `TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`: `A^*` carries the
+  Fourier multiplier with symbol `g` to the one with symbol `g ∘ A`, so it commutes with every
   Fourier multiplier with an `A`-invariant symbol, and in particular
   `TemperedDistribution.besselPotential_compCLMOfContinuousLinearEquiv`: every Bessel potential.
 * `compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_compMeasurePreserving`: on `Lᵖ`, the
@@ -144,6 +167,13 @@ theorem compCLMOfContinuousLinearEquiv_apply_symm_apply (e : E ≃L[ℝ] E) (T :
     LinearEquiv.toEquiv_symm]
   exact compCLM_compCLM_symm _ _ _ T
 
+/-- The pullback of `g T` along `e` is `(g ∘ e) e^* T`. -/
+theorem compCLMOfContinuousLinearEquiv_smulLeftCLM (e : E ≃L[ℝ] E) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (T : 𝓢'(E, F)) :
+    compCLMOfContinuousLinearEquiv F e (smulLeftCLM F g T) =
+      smulLeftCLM F (g ∘ e) (compCLMOfContinuousLinearEquiv F e T) := by
+  rw [compCLMOfContinuousLinearEquiv, compCLM_smulLeftCLM _ _ hg, ContinuousLinearEquiv.coe_toEquiv]
+
 end Pullback
 
 section Embedding
@@ -163,7 +193,138 @@ theorem compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM (μ : Measure E
   rw [SchwartzMap.compCLM_apply, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
     ContinuousLinearEquiv.coe_toEquiv]
 
+open scoped ENNReal in
+/-- **The pullback on `Lᵖ`.** For every additive Haar measure `μ`, the pullback along a continuous
+linear automorphism `e` of the distribution of `u ∈ Lᵖ(μ)` is the distribution of `u ∘ e ∈ Lᵖ(μ)`,
+of norm `‖u ∘ e‖_p = |det e|^{-1/p} ‖u‖_p`. -/
+theorem exists_compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_and_norm_eq
+    [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (e : E ≃L[ℝ] E) (u : Lp F p μ) :
+    ∃ v : Lp F p μ, compCLMOfContinuousLinearEquiv F e (u : 𝓢'(E, F)) = v ∧ v =ᵐ[μ] u ∘ e ∧
+      ‖v‖ = |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ ^ p.toReal⁻¹ * ‖u‖ := by
+  have hdet : 0 < |LinearMap.det (e : E →ₗ[ℝ] E)| :=
+    abs_pos.2 (e : E ≃ₗ[ℝ] E).isUnit_det'.ne_zero
+  obtain ⟨v, hv, hae, -⟩ := exists_compCLM_toTemperedDistribution_eq_and_norm_le μ (φ := e.toEquiv)
+    (by rw [ContinuousLinearEquiv.coe_toEquiv]; exact e.hasTemperateGrowth)
+    (by rw [ContinuousLinearEquiv.coe_toEquiv_symm]; exact e.symm.hasTemperateGrowth) hdet
+    (fun x ↦ by rw [ContinuousLinearEquiv.coe_toEquiv, e.fderiv]; exact le_rfl) u
+  rw [ContinuousLinearEquiv.coe_toEquiv] at hae
+  refine ⟨v, hv, hae, ?_⟩
+  rw [Lp.norm_def, eLpNorm_congr_ae hae, Measure.eLpNorm_comp_continuousLinearEquiv,
+    ENNReal.toReal_mul, ← Lp.norm_def]
+  simp [← ENNReal.toReal_rpow]
+
 end Embedding
+
+/-! ### The Fourier transform under linear changes of variables -/
+
+section Fourier
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+section TVS
+
+variable [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousConstSMul ℂ F]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The common step of `fourier_compCLMOfContinuousLinearEquiv_eq_smul` and
+`fourierInv_compCLMOfContinuousLinearEquiv_eq_smul`: if `Φ` is the transpose of a map `φ` of test
+functions with the change of variables law `φ (f ∘ A) = |det A|⁻¹ • φ f ∘ (A⁻¹)†`, then
+`Φ (e^* T) = |det e|⁻¹ • ((e⁻¹)†)^* (Φ T)`. -/
+private theorem compCLMOfContinuousLinearEquiv_eq_smul_of_comp {Φ : 𝓢'(E, F) → 𝓢'(E, F)}
+    {φ : 𝓢(E, ℂ) → 𝓢(E, ℂ)} (hΦ : ∀ T f, Φ T f = T (φ f))
+    (hφ : ∀ (A : E ≃L[ℝ] E) (f : 𝓢(E, ℂ)) (y : E),
+      φ (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A f) y =
+        |LinearMap.det (A : E →ₗ[ℝ] E)|⁻¹ •
+          φ f (ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y))
+    (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
+    Φ (compCLMOfContinuousLinearEquiv F e T) =
+      ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) •
+        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (Φ T) := by
+  set e' := e.symm.adjointEquiv
+  have hne : LinearMap.det (e' : E →ₗ[ℝ] E) ≠ 0 := (e' : E ≃ₗ[ℝ] E).isUnit_det'.ne_zero
+  -- On test functions: `φ (f ∘ e'⁻¹) = |det e'| • φ f ∘ e⁻¹`, since `(e'⁻¹)⁻¹† = e'† = e⁻¹`.
+  have hf (f : 𝓢(E, ℂ)) : φ (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e'.symm f) =
+      ((|LinearMap.det (e' : E →ₗ[ℝ] E)| : ℝ) : ℂ) •
+        SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e.symm (φ f) := by
+    ext ξ
+    have hadj : ContinuousLinearMap.adjoint (e' : E →L[ℝ] E) ξ = e.symm ξ := by
+      simp [e', ContinuousLinearEquiv.coe_adjointEquiv]
+    simp [hφ, hadj, LinearEquiv.det_coe_symm, Complex.coe_smul]
+  ext f
+  rw [hΦ, compCLMOfContinuousLinearEquiv_apply_apply, smul_apply,
+    compCLMOfContinuousLinearEquiv_apply_apply, hΦ, hf, map_smul, smul_smul, smul_smul]
+  congr 1
+  simp [hne]
+
+/-- **The Fourier transform under a linear change of variables.** The pullback along a continuous
+linear automorphism `e` acts on the frequencies by the adjoint of `e⁻¹`:
+`𝓕 (e^* T) = |det e|⁻¹ • ((e⁻¹)†)^* (𝓕 T)`. On a Schwartz function this is
+`ContinuousLinearEquiv.fourier_comp`. For a linear isometry `(e⁻¹)† = e` and `|det e| = 1`, which
+is `TemperedDistribution.fourier_compCLMOfContinuousLinearEquiv`. -/
+theorem fourier_compCLMOfContinuousLinearEquiv_eq_smul (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
+    𝓕 (compCLMOfContinuousLinearEquiv F e T) =
+      ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) •
+        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (𝓕 T) :=
+  compCLMOfContinuousLinearEquiv_eq_smul_of_comp fourier_apply
+    (fun A f y ↦ by simp [SchwartzMap.fourier_coe, ContinuousLinearEquiv.fourier_comp]) e T
+
+/-- **The inverse Fourier transform under a linear change of variables**:
+`𝓕⁻ (e^* T) = |det e|⁻¹ • ((e⁻¹)†)^* (𝓕⁻ T)`. On a Schwartz function this is
+`ContinuousLinearEquiv.fourierInv_comp`. -/
+theorem fourierInv_compCLMOfContinuousLinearEquiv_eq_smul (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
+    𝓕⁻ (compCLMOfContinuousLinearEquiv F e T) =
+      ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) •
+        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (𝓕⁻ T) :=
+  compCLMOfContinuousLinearEquiv_eq_smul_of_comp fourierInv_apply
+    (fun A f y ↦ by simp [SchwartzMap.fourierInv_coe, ContinuousLinearEquiv.fourierInv_comp]) e T
+
+end TVS
+
+variable [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **Fourier multipliers under a linear change of variables.** The pullback along a continuous
+linear automorphism `e` carries the Fourier multiplier with symbol `g ∘ e†` to the one with symbol
+`g`: `T_g (e^* T) = e^* (T_{g ∘ e†} T)`. For a dilation `e = c • id` this says that dilating
+the variable by `c` dilates the symbol by `c`. For a linear isometry `e† = e⁻¹`, which is
+`TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`. -/
+theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_eq (e : E ≃L[ℝ] E) (g : E → ℂ)
+    (T : 𝓢'(E, F)) :
+    fourierMultiplierCLM F g (compCLMOfContinuousLinearEquiv F e T) =
+      compCLMOfContinuousLinearEquiv F e (fourierMultiplierCLM F (g ∘ e.adjointEquiv) T) := by
+  by_cases hg : g.HasTemperateGrowth
+  · set e' := e.symm.adjointEquiv
+    have hg' : (g ∘ e.adjointEquiv).HasTemperateGrowth :=
+      e.adjointEquiv.hasTemperateGrowth_comp_iff.2 hg
+    -- `e†` and `e'` are inverse to each other, and `(e'⁻¹)† = e†† = e`.
+    have hcomp : (g ∘ e.adjointEquiv) ∘ e' = g := funext fun x ↦ by
+      simpa [e'] using congrArg g (e.symm.adjoint_symm_adjoint_apply x)
+    have hsymm : e'.symm.adjointEquiv = e := by
+      ext x
+      simp [e', ContinuousLinearEquiv.adjointEquiv_symm, ContinuousLinearEquiv.coe_adjointEquiv]
+    have hdet : |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ * |LinearMap.det (e' : E →ₗ[ℝ] E)|⁻¹ = 1 := by
+      have he : LinearMap.det (e.symm : E →ₗ[ℝ] E) = (LinearMap.det (e : E →ₗ[ℝ] E))⁻¹ :=
+        LinearEquiv.det_coe_symm (e : E ≃ₗ[ℝ] E)
+      have hne : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (e : E ≃ₗ[ℝ] E).isUnit_det'.ne_zero
+      rw [ContinuousLinearEquiv.det_adjointEquiv, star_trivial, he]
+      simp [hne]
+    have hsmul (S : 𝓢'(E, F)) : smulLeftCLM F g (compCLMOfContinuousLinearEquiv F e' S) =
+        compCLMOfContinuousLinearEquiv F e' (smulLeftCLM F (g ∘ e.adjointEquiv) S) := by
+      rw [compCLMOfContinuousLinearEquiv_smulLeftCLM _ hg', hcomp]
+    rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+      fourier_compCLMOfContinuousLinearEquiv_eq_smul, map_smul, hsmul, fourierInv_smul,
+      fourierInv_compCLMOfContinuousLinearEquiv_eq_smul, hsymm, smul_smul, ← Complex.ofReal_mul,
+      hdet]
+    simp
+  · have hg' : ¬(g ∘ e.adjointEquiv).HasTemperateGrowth :=
+      e.adjointEquiv.hasTemperateGrowth_comp_iff.not.2 hg
+    ext u
+    rw [compCLMOfContinuousLinearEquiv_apply_apply]
+    simp [fourierMultiplierCLM_apply_apply, hg, hg']
+
+end Fourier
 
 /-! ### Linear isometries -/
 
@@ -213,30 +374,31 @@ end TVS
 
 variable [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- A Fourier multiplier whose symbol `g` is invariant under the linear isometry `A`,
-`g (A ξ) = g ξ`, commutes with the pullback along `A`. -/
-theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) (hgA : ∀ ξ, g (A ξ) = g ξ) (T : 𝓢'(E, F)) :
-    fourierMultiplierCLM F g (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
+/-- The pullback along a linear isometry `A` intertwines Fourier multipliers, carrying the
+symbol `g` to `g ∘ A`: `T_{g ∘ A} (A^* T) = A^* (T_g T)`. In particular a Fourier multiplier whose
+symbol is invariant under `A` commutes with `A^*`. -/
+theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (g : E → ℂ)
+    (T : 𝓢'(E, F)) :
+    fourierMultiplierCLM F (g ∘ A) (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (fourierMultiplierCLM F g T) := by
-  have hcomp : g ∘ A.toContinuousLinearEquiv.toEquiv = g := by
-    rw [ContinuousLinearEquiv.coe_toEquiv, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    exact funext hgA
-  have hsmul (S : 𝓢'(E, F)) : smulLeftCLM F g (compCLMOfContinuousLinearEquiv F
-      A.toContinuousLinearEquiv S) =
-        compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (smulLeftCLM F g S) := by
-    rw [compCLMOfContinuousLinearEquiv, compCLM_smulLeftCLM _ _ hg, hcomp]
-  rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
-    fourier_compCLMOfContinuousLinearEquiv, hsmul, fourierInv_compCLMOfContinuousLinearEquiv]
+  by_cases hg : g.HasTemperateGrowth
+  · rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+      fourier_compCLMOfContinuousLinearEquiv, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      ← compCLMOfContinuousLinearEquiv_smulLeftCLM _ hg, fourierInv_compCLMOfContinuousLinearEquiv]
+  · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
+    ext u
+    simp [fourierMultiplierCLM_apply_apply, hg, hgA]
 
 /-- The Bessel potential `J^s` commutes with the pullback along a linear isometry. -/
 theorem besselPotential_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (s : ℝ) (T : 𝓢'(E, F)) :
     besselPotential E F s (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (besselPotential E F s T) := by
+  have h := fourierMultiplierCLM_compCLMOfContinuousLinearEquiv A
+    (fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) T
   rw [besselPotential]
-  exact fourierMultiplierCLM_compCLMOfContinuousLinearEquiv A
-    (Complex.hasTemperateGrowth_ofReal.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _))
-    (fun ξ ↦ by simp) T
+  rwa [show (fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) ∘ A =
+    fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) from funext fun x ↦ by simp] at h
 
 variable [CompleteSpace F]
 

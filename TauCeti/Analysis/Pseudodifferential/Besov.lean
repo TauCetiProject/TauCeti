@@ -34,6 +34,10 @@ For `p = ∞` this is the Hölder–Zygmund estimate `‖Op(a) u‖_{𝒞^{s-m}}
 Consequently `Op(a)` extends to a bounded operator `b^s_{p,∞} → b^{s-m}_{p,∞}` between the little
 Besov spaces, the closures of the Schwartz functions (`TauCeti.Symbol.quantizeLittleBesov`), with
 operator norm bounded uniformly in `p`; for `p = ∞` these are the little Hölder–Zygmund spaces.
+For operator-valued symbols `TauCeti.Symbol n V W m` between finite-dimensional spaces, the
+Hölder–Zygmund estimate (`p = q = ∞`) is the theorem
+`HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_finiteDimensional`
+in `TauCeti.Analysis.Pseudodifferential.Zygmund`.
 
 ## The argument
 
@@ -59,6 +63,8 @@ integrable function of `η`, and Minkowski's integral inequality
 
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le`:
   the estimate `B^s_{p,∞} → B^{s-m}_{p,∞}` on Schwartz functions, uniformly in `p`.
+* `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le`:
+  the estimate `B^r_{p,∞} → B^s_{p,∞}` on Schwartz functions for `s ≤ r - m`.
 * `TauCeti.Symbol.quantizeLittleBesov`: the bounded extension `b^s_{p,∞} → b^{s-m}_{p,∞}` between
   the little Besov spaces, with its values on Schwartz functions
   (`TauCeti.Symbol.coe_quantizeLittleBesov_toLittleBesovCLM`) and a bound on its operator norm
@@ -475,6 +481,22 @@ theorem HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_
     _ = K * I * U := by
         simp only [c, Real.rpow_neg zero_le_two]
         field_simp
+
+/-- **Besov mapping into a lower order.** Let `a` be a scalar symbol of order `m` with compact
+spatial support, `1 ≤ p ≤ ∞` and `s ≤ r - m`. There is `C` such that every Schwartz function `u`
+satisfies `‖Op(a) u‖_{B^s_{p,∞}} ≤ C ‖u‖_{B^r_{p,∞}}`: `Op(a)` maps `B^r_{p,∞}` to
+`B^{r-m}_{p,∞}`, which embeds into `B^s_{p,∞}`. -/
+theorem HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n)) {s r : ℝ}
+    (hsr : s ≤ r - m) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    ∃ C, ∀ u : 𝓢(CoordinateSpace n, ℂ),
+      ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p ∞ (quantizeUniformCLM a ha.isUniform u)‖ ≤
+        C * ‖SchwartzMap.toBesovSpaceCLM ℂ φ r p ∞ u‖ := by
+  obtain ⟨C, -, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le φ r
+  refine ⟨‖BesovSpace.inclusion ℂ φ p (q := ∞) (q' := ∞) hsr le_rfl‖ * C, fun u ↦ ?_⟩
+  rw [← SchwartzMap.inclusion_toBesovSpaceCLM hsr le_rfl, mul_assoc]
+  exact (ContinuousLinearMap.le_opNorm _ _).trans
+    (mul_le_mul_of_nonneg_left (hC u) (norm_nonneg _))
 
 /-! ### The operator on the little Besov spaces -/
 

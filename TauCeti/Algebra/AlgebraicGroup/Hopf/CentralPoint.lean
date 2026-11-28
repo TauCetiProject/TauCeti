@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.Coalgebra.Convolution
+import Mathlib.RingTheory.Congruence.Hom
 
 /-!
 # Central points of an affine group scheme
@@ -65,7 +66,7 @@ namespace TauCeti
 
 namespace HopfAlgebra
 
-universe u v w
+universe u v w x
 
 section Definition
 
@@ -115,9 +116,39 @@ theorem IsCentralPoint.mapValue {g : WithConv (H →ₐ[R] A)} (hg : IsCentralPo
   rw [← MonoidHom.comp_apply, ← AlgHom.mapValue_comp]
   exact hg (ψ.comp φ) h
 
+/-- A central point commutes with every point over any commutative `R`-algebra after changing the
+value algebra, without restricting the universe of the target value algebra. -/
+theorem IsCentralPoint.commute_mapValue {g : WithConv (H →ₐ[R] A)} (hg : IsCentralPoint g)
+    {B : Type x} [CommRing B] [Algebra R B] (φ : A →ₐ[R] B) (h : WithConv (H →ₐ[R] B)) :
+    Commute (AlgHom.mapValue φ g) h := by
+  let c : RingCon (A ⊗[R] H) :=
+    ringConGen fun x y ↦ ∃ a b : A ⊗[R] H, x = a * b ∧ y = b * a
+  let _ : CommRing c.Quotient :=
+    { (inferInstance : Ring c.Quotient) with
+      mul_comm := fun x y ↦ Quotient.inductionOn₂ x y fun a b ↦
+        Quotient.sound (RingConGen.Rel.of _ _ ⟨a, b, rfl, rfl⟩) }
+  let π : A ⊗[R] H →ₐ[R] c.Quotient := c.mkₐ R
+  let φ₀ : A →ₐ[R] c.Quotient := π.comp Algebra.TensorProduct.includeLeft
+  let h₀ : WithConv (H →ₐ[R] c.Quotient) := toConv (π.comp Algebra.TensorProduct.includeRight)
+  have hc : Commute (AlgHom.mapValue φ₀ g) h₀ := hg φ₀ h₀
+  let m : A ⊗[R] H →ₐ[R] B := Algebra.TensorProduct.productMap φ h.ofConv
+  have hm : c ≤ RingCon.ker m.toRingHom := RingCon.ringConGen_le.2 fun x y ⟨a, b, hx, hy⟩ ↦ by
+    rw [RingCon.ker_apply, hx, hy, map_mul, map_mul, mul_comm]
+  let ψ : c.Quotient →ₐ[R] B := c.liftₐ m hm
+  have hφ : ψ.comp φ₀ = φ := by
+    ext a
+    simp [ψ, φ₀, π, m]
+  have hh : AlgHom.mapValue ψ h₀ = h := by
+    apply ofConv_injective
+    ext a
+    simp [ψ, h₀, π, m, AlgHom.mapValue_apply]
+  have hc' := hc.map (AlgHom.mapValue (H := H) ψ)
+  rw [← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, hφ, hh] at hc'
+  exact hc'
+
 section CoordinateEquiv
 
-variable {K : Type v} [Ring K] [_root_.Bialgebra R K]
+variable {K : Type x} [Ring K] [_root_.Bialgebra R K]
 
 /-- Precomposition by a bialgebra equivalence preserves universal centrality of points. -/
 theorem IsCentralPoint.mapDomain_bialgEquiv {g : WithConv (K →ₐ[R] A)}
@@ -125,7 +156,7 @@ theorem IsCentralPoint.mapDomain_bialgEquiv {g : WithConv (K →ₐ[R] A)}
     IsCentralPoint (BialgHom.mapDomain (A := A) e.toBialgHom g) := by
   intro B _ _ φ h
   let E := BialgEquiv.mapDomainMulEquiv (A := B) e
-  have hc := hg φ (E.symm h)
+  have hc := hg.commute_mapValue φ (E.symm h)
   have hc' := hc.map E.toMonoidHom
   simp only [MulEquiv.coe_toMonoidHom] at hc'
   have hnatural :
@@ -257,7 +288,7 @@ theorem convMul_includeRight_includeLeft :
         toConv (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) =
       toConv ((Algebra.TensorProduct.comm R H H).toAlgHom.comp
         (_root_.Bialgebra.comulAlgHom R H)) := by
-  simpa using (Bialgebra.toConv_comp_comulAlgHom
+  simpa using (AlgHom.toConv_comp_comulAlgHom
     (Algebra.TensorProduct.comm R H H).toAlgHom).symm
 
 variable (R H) in

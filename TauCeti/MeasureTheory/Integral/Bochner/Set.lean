@@ -24,14 +24,18 @@ bounded interval `[a, b)` is integrable against a locally finite measure, that t
 many disjoint measurable subsets, that an almost everywhere positive function has positive
 integral, bounds for the integral of the reciprocal of a function bounded below by a positive
 constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
-ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
-from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
-`h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
+ball `B`, the bound `∫ ‖f‖ ≤ K |s|` for a function bounded by `K` on a set `s` of finite measure
+and vanishing off it, the integral of `Φ x (f₀ x)` for an almost everywhere zero
+extension `f₀` of `f` from `s` and an integrand `Φ` vanishing at `0`, the pairing
+`∫ h φ = ∫_B (φ - c) h` of a function `h` of integral zero vanishing off `B`, and that a
+continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
+measure positive on nonempty open sets.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
 that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, that a pointwise
 bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals, and turns a bound
 on the Lebesgue integral of a nonnegative function into integrability and a bound on its Bochner
-integral.
+integral. Finally, the set integrals of two integrable functions over any set differ by at most
+their `L¹` distance.
 
 ## Main statements
 
@@ -51,8 +55,14 @@ integral.
   measurable set integrates to `∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
+* `TauCeti.integral_norm_le_of_forall_compl_eq_zero`: a function bounded by `K` on a set `s` of
+  finite measure and vanishing off it has `∫ ‖f‖ ≤ K |s|`.
 * `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
   extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
+* `TauCeti.integral_mul_eq_setIntegral_sub_mul`: if `h` vanishes off `B` and has integral zero,
+  then `∫ h φ = ∫_B (φ - c) h` for every constant `c`.
+* `TauCeti.setIntegral_le_setIntegral_add_setIntegral`: if nonnegative `f` and `g` agree off a
+  measurable set `T`, then `∫_S f ≤ ∫_S g + ∫_T f` on any set `S`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
@@ -70,6 +80,8 @@ integral.
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
+* `MeasureTheory.edist_setIntegral_le_eLpNorm_sub`: on every set, the set integrals of two
+  integrable functions differ by at most their `L¹` distance.
 * `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
   integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
   measure finite on compact sets.
@@ -273,6 +285,16 @@ theorem setIntegral_sq_le_of_support_subset_closedBall {E : Type*} [PseudoMetric
         rw [measureReal_restrict_apply hmeasB]
         exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
 
+/-- A function bounded by `K` on a set `s` of finite measure and vanishing off it has
+`∫ ‖f‖ ≤ K |s|`. -/
+theorem integral_norm_le_of_forall_compl_eq_zero {X E : Type*} [MeasurableSpace X]
+    {mu : Measure X} [SeminormedAddCommGroup E] {f : X → E} {s : Set X} {K : ℝ}
+    (hs : mu s < ∞) (hfK : ∀ x ∈ s, ‖f x‖ ≤ K) (hf0 : ∀ x ∉ s, f x = 0) :
+    ∫ x, ‖f x‖ ∂mu ≤ K * mu.real s := by
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by rw [hf0 x hx, norm_zero]]
+  exact (Real.le_norm_self _).trans (norm_setIntegral_le_of_norm_le_const hs
+    fun x hx => (norm_norm (f x)).trans_le (hfK x hx))
+
 /-- If `f₀` is almost everywhere the zero extension `1_s f` of `f` and `Φ x 0 = 0` for every
 `x`, then the integral of `Φ x (f₀ x)` over the whole space is the integral of `Φ x (f x)`
 over `s`. -/
@@ -284,6 +306,44 @@ theorem integral_eq_setIntegral_of_ae_eq_indicator {X E G : Type*} [MeasurableSp
   rw [← integral_indicator₀ hs]
   refine integral_congr_ae (h.mono fun x hx => ?_)
   by_cases hx' : x ∈ s <;> simp [hx, hx', hΦ]
+
+/-- If `h` vanishes off `B` and has integral zero, its pairing with `φ` only sees `φ - c` on `B`,
+for any constant `c`: `∫ h φ = ∫_B (φ - c) h`. -/
+theorem integral_mul_eq_setIntegral_sub_mul {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {B : Set α} {h φ : α → ℝ}
+    (hh : Integrable h (μ.restrict B)) (hsupp : ∀ᵐ x ∂μ, x ∉ B → h x = 0)
+    (hmean : ∫ x, h x ∂μ = 0) (c : ℝ)
+    (hint : Integrable (fun x => (φ x - c) * h x) (μ.restrict B)) :
+    ∫ x, h x * φ x ∂μ = ∫ x in B, (φ x - c) * h x ∂μ := by
+  rw [← setIntegral_eq_integral_of_ae_compl_eq_zero (s := B)
+    (by filter_upwards [hsupp] with x hx hxB; rw [hx hxB, zero_mul])]
+  calc ∫ x in B, h x * φ x ∂μ = ∫ x in B, ((φ x - c) * h x + c * h x) ∂μ :=
+        integral_congr_ae (ae_of_all _ fun x => by ring)
+    _ = _ := by
+        rw [integral_add hint (hh.const_mul c), integral_const_mul,
+          (setIntegral_eq_integral_of_ae_compl_eq_zero hsupp).trans hmean, mul_zero, add_zero]
+
+/-- If two nonnegative integrable functions satisfy `g = f` off a measurable set `T`, then on
+every set `S` the integral of `f` is at most that of `g` plus the integral of `f` on `T`. -/
+theorem setIntegral_le_setIntegral_add_setIntegral {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {f g : X → ℝ} {S T : Set X} (hT : MeasurableSet T) (hf0 : ∀ z, 0 ≤ f z)
+    (hg0 : ∀ z, 0 ≤ g z) (hfi : Integrable f μ) (hgi : Integrable g μ)
+    (hgf : ∀ z ∉ T, g z = f z) :
+    ∫ z in S, f z ∂μ ≤ (∫ z in S, g z ∂μ) + ∫ z in T, f z ∂μ := by
+  have hind : Integrable (T.indicator f) μ := hfi.indicator hT
+  calc ∫ z in S, f z ∂μ ≤ ∫ z in S, (g z + T.indicator f z) ∂μ := by
+        refine setIntegral_mono hfi.integrableOn (hgi.integrableOn.add hind.integrableOn)
+          fun z ↦ ?_
+        by_cases hz : z ∈ T
+        · rw [indicator_of_mem hz]
+          linarith [hg0 z]
+        · rw [indicator_of_notMem hz, hgf z hz, add_zero]
+    _ = (∫ z in S, g z ∂μ) + ∫ z in S, T.indicator f z ∂μ :=
+        integral_add hgi.integrableOn hind.integrableOn
+    _ ≤ (∫ z in S, g z ∂μ) + ∫ z in T, f z ∂μ := by
+        gcongr
+        rw [← integral_indicator hT]
+        exact setIntegral_le_integral hind (ae_of_all _ (indicator_nonneg fun z _ ↦ hf0 z))
 
 end TauCeti
 
@@ -386,6 +446,18 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
+
+/-- On every set `A`, the set integrals of two integrable functions differ by at most the `L¹`
+distance of the functions. -/
+theorem edist_setIntegral_le_eLpNorm_sub {f g : α → E} (hf : Integrable f μ)
+    (hg : Integrable g μ) (A : Set α) :
+    edist (∫ x in A, f x ∂μ) (∫ x in A, g x ∂μ) ≤ eLpNorm (f - g) 1 μ := by
+  calc edist (∫ x in A, f x ∂μ) (∫ x in A, g x ∂μ) ≤ ∫⁻ x in A, edist (f x) (g x) ∂μ :=
+        edist_integral_le_lintegral_edist hf.restrict hg.restrict
+    _ = ∫⁻ x in A, ‖f x - g x‖ₑ ∂μ := by simp_rw [eDist_eq_eNorm_sub]
+    _ ≤ ∫⁻ x, ‖f x - g x‖ₑ ∂μ := setLIntegral_le_lintegral _ _
+    _ = eLpNorm (f - g) 1 μ :=
+        (eLpNorm_one_eq_lintegral_eNorm (hf.sub hg).aestronglyMeasurable).symm
 
 end MeasureTheory
 

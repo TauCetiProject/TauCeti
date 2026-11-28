@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+import TauCeti.Analysis.Normed.Module.Finite.Dual
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -22,20 +23,25 @@ coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for th
 of measures on `ℤ_p`.
 
 Finally, it records that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is the structure
-map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of norm at most `1` whose
+map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding
+(`PadicInt.isEmbedding_algebraMap` for the structure map) of norm at most `1` whose
 range is the closed unit ball (`TauCeti.range_padicInt_coe_ringHom`). These are the hypotheses
 under which `ℚ_[p]`-valued measures of norm at most `1` come from `ℤ_[p]`-valued measures. It also
 maps exactly the maximal ideal of `ℤ_[p]` into the open unit ball
 (`PadicInt.norm_coe_ringHom_lt_one_iff`); together with the norm bound, this is the hypothesis under
-which formal and normed Weierstrass degrees over `ℤ_[p]` are compared.
+which formal and normed Weierstrass degrees over `ℤ_[p]` are compared. A `ℚ_[p]`-linear form bounded
+by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
+(`PadicInt.norm_apply_le_of_mem_span_subring`).
 
 For a `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
 when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1`
 (including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
 is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
-`p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), and a nonzero integer `n` has norm at least
-`1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`).
+`p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
+(`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
+`1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`; for natural numbers in a normed division
+ring, `TauCeti.norm_inv_natCast_le` states `‖1 / n‖ ≤ n`).
 
 Two continuous ring homomorphisms from `ℚ_[p]` to a Hausdorff semiring are equal
 (`RingHom.ext_padic_of_continuous`), since they agree on the dense subfield `ℚ`; for instance a
@@ -87,6 +93,20 @@ theorem norm_coe_ringHom_lt_one_iff {a : ℤ_[p]} :
 /-- The inclusion `ℤ_[p] → ℚ_[p]` is a topological embedding. -/
 theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
   isometry_subtypeVal.isEmbedding
+
+/-- The structure map `ℤ_[p] → ℚ_[p]` of the `ℤ_[p]`-algebra `ℚ_[p]` is a topological
+embedding. -/
+theorem isEmbedding_algebraMap : Topology.IsEmbedding (algebraMap ℤ_[p] ℚ_[p]) := by
+  rw [algebraMap_eq_coe_ringHom]
+  exact isEmbedding_coe_ringHom
+
+/-- A `ℚ_[p]`-linear form whose values on a set `s` have absolute value at most `r` has values of
+absolute value at most `r` on the whole `ℤ_[p]`-span of `s`, by the ultrametric inequality. -/
+theorem norm_apply_le_of_mem_span_subring {V : Type*} [AddCommGroup V] [Module ℚ_[p] V]
+    {f : V →ₗ[ℚ_[p]] ℚ_[p]} {s : Set V} {r : ℝ} (hr : 0 ≤ r) (hf : ∀ y ∈ s, ‖f y‖ ≤ r) {x : V}
+    (hx : x ∈ Submodule.span (subring p) s) : ‖f x‖ ≤ r :=
+  (f.restrictScalars (subring p)).norm_apply_le_of_mem_span
+    (fun c ↦ (mem_subring_iff p).mp c.property) hr hf hx
 
 end PadicInt
 
@@ -160,6 +180,10 @@ norm. -/
 theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
   rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
 
+/-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the prime `p` has norm `p⁻¹`. -/
+theorem norm_natCast_p [NormOneClass K] : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
+  rw [norm_natCast_eq_norm_padic (p := p), Padic.norm_p]
+
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, an integer `n` has norm at least `1 / |n|`,
 because the `p`-part of `n` divides `n`. For `n = 0` both sides are `0` by the convention
 `0⁻¹ = 0`. -/
@@ -167,6 +191,15 @@ theorem inv_abs_le_norm_intCast (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [Semi
     [NormedAlgebra ℚ_[p] K] [NormOneClass K] (n : ℤ) : (|n| : ℝ)⁻¹ ≤ ‖(n : K)‖ := by
   rw [← norm_natAbs n, norm_natCast_eq_norm_padic (p := p), ← Int.cast_abs, ← Nat.cast_natAbs]
   exact Padic.inv_natCast_le_norm_natCast n.natAbs
+
+/-- In a normed division ring that is a normed `ℚ_p`-algebra, `‖1 / n‖ ≤ n`: the inverse form of
+`Padic.inv_natCast_le_norm_natCast`. For `n = 0` the left side is `0`. -/
+theorem norm_inv_natCast_le (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [NormedDivisionRing K]
+    [NormedAlgebra ℚ_[p] K] (n : ℕ) : ‖(n : K)⁻¹‖ ≤ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  rw [norm_inv, norm_natCast_eq_norm_padic (p := p)]
+  exact inv_le_of_inv_le₀ (by positivity) (Padic.inv_natCast_le_norm_natCast n)
 
 end NormedAlgebra
 

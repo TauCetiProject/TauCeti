@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
+public import TauCeti.Analysis.Analytic.TaylorSeries
 public import TauCeti.Analysis.Complex.Periodic
+import TauCeti.Topology.LimUnder
 
 /-!
 # The `q`-expansion as a linear map, and uniqueness of coefficients for raw functions
@@ -128,6 +130,14 @@ lemma UpperHalfPlane.hasFPowerSeriesAt_cuspFunction {f : ℍ → ℂ}
   simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
     using hfanalytic.hasFPowerSeriesAt
 
+/-- When a cusp function is analytic at zero, its Taylor series is the `q`-expansion. -/
+theorem UpperHalfPlane.qExpansion_eq_taylorSeries {f : ℍ → ℂ}
+    (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
+    qExpansion h f = taylorSeries (cuspFunction h f) 0 := by
+  ext n
+  rw [(hasFPowerSeriesAt_cuspFunction hf).coeff_taylorSeries]
+  simp
+
 /-- **Uniqueness of `q`-expansion coefficients, for a raw function on `ℍ`.** If `f` is given by
 a convergent expansion `f τ = ∑' m, c m * 𝕢 h τ ^ m` and its cusp function is analytic at `0`,
 then the `c m` are the coefficients of `qExpansion h f`.
@@ -146,13 +156,18 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
 
 /-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
-    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h := by
-  rcases eq_or_ne h 0 with rfl | hh
-  · exact fun x ↦ by simp
-  exact _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
-    simp only [coe_vadd, Function.Periodic.qParam, mul_add, add_div,
-      mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
-      Complex.exp_two_pi_mul_I, one_mul]
+    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h :=
+  _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
+    rw [coe_vadd, add_comm]
+    exact TauCeti.Periodic.periodic_qParam h τ
+
+/-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
+`h`-periodic, read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ}
+    (hfper : Function.Periodic (f ∘ ofComplex) h) (k : ℕ) :
+    Function.Periodic
+      ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
+  simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
 
 section CuspFunction
 
@@ -178,19 +193,28 @@ theorem UpperHalfPlane.cuspFunction_map_eventuallyEq (op : ℂ → ℂ) (f : ℍ
   eventually_nhdsWithin_of_forall fun q hq ↦ by
     simp only [cuspFunction_of_ne_zero (Set.mem_compl_singleton_iff.mp hq)]
 
+/-- The cusp function of a pullback along the local parameter agrees with the original
+function on a punctured neighbourhood of zero. -/
+theorem UpperHalfPlane.cuspFunction_comp_qParam_eventuallyEq_nhdsNE (hh : 0 < h)
+    {ψ : ℂ → ℂ} :
+    cuspFunction h (fun τ : ℍ ↦ ψ (Function.Periodic.qParam h τ)) =ᶠ[𝓝[≠] 0] ψ := by
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
+  have hq0 : q ≠ 0 := Set.mem_compl_singleton_iff.mp hq
+  rw [cuspFunction_of_ne_zero hq0,
+    ofComplex_apply_of_im_pos (Function.Periodic.im_invQParam_pos_of_norm_lt_one hh
+      (mem_ball_zero_iff.mp hqn) hq0),
+    Function.Periodic.qParam_right_inv hh.ne' hq0]
+
 /-- Off `q = 0` and inside the unit disc, the cusp function of `𝕢 ^ k * f` is `q ^ k` times the
 cusp function of `f`. -/
 theorem UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq (hh : 0 < h) (k : ℕ)
     (f : ℍ → ℂ) :
     cuspFunction h (fun τ ↦ Function.Periodic.qParam h τ ^ k * f τ) =ᶠ[𝓝[≠] 0]
-      fun q ↦ q ^ k * cuspFunction h f q := by
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
-  rw [cuspFunction_of_ne_zero hq, cuspFunction_of_ne_zero hq,
-    ofComplex_apply_of_im_pos (Function.Periodic.im_invQParam_pos_of_norm_lt_one hh
-      (mem_ball_zero_iff.mp hqn) hq)]
-  rw [Function.Periodic.qParam_right_inv hh.ne' hq]
+      fun q ↦ q ^ k * cuspFunction h f q :=
+  (cuspFunction_map₂_eventuallyEq (· * ·) _ _).trans
+    ((cuspFunction_comp_qParam_eventuallyEq_nhdsNE hh (ψ := fun q ↦ q ^ k)).mul
+      EventuallyEq.rfl)
 
 /-- Cusp functions which agree off `q = 0` agree near `q = 0`: the value at `0` is the limit
 along the punctured neighbourhoods. -/
@@ -201,7 +225,7 @@ theorem UpperHalfPlane.cuspFunction_eventuallyEq_nhds
   simp only [cuspFunction]
   rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne,
     Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
-  exact congrArg lim (Filter.map_congr hfg)
+  exact Filter.limUnder_congr hfg
 
 /-- A cusp function which agrees off `q = 0` with a function continuous at `0` agrees with it
 near `0`. -/
@@ -212,6 +236,14 @@ theorem UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt {ψ : ℂ 
   simp only [cuspFunction]
   rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
   exact ((hψ.tendsto.mono_left nhdsWithin_le_nhds).congr' hf.symm).limUnder_eq
+
+/-- Pulling a function continuous at zero back along the local parameter recovers its germ
+as the cusp function. -/
+theorem UpperHalfPlane.cuspFunction_comp_qParam_eventuallyEq (hh : 0 < h) {ψ : ℂ → ℂ}
+    (hψ : ContinuousAt ψ 0) :
+    cuspFunction h (fun τ : ℍ ↦ ψ (Function.Periodic.qParam h τ)) =ᶠ[𝓝 0] ψ :=
+  cuspFunction_eventuallyEq_nhds_of_continuousAt
+    (cuspFunction_comp_qParam_eventuallyEq_nhdsNE hh) hψ
 
 /-- The `q`-expansion only depends on the cusp function off `q = 0`. -/
 theorem UpperHalfPlane.qExpansion_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFunction h g) :
@@ -311,6 +343,19 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_pow (hf : MeromorphicAt (cuspF
 theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
+
+/-- The cusp function of a finite product is meromorphic at `0` when all the cusp functions of
+the factors are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} {s : Finset ι}
+    {F : ι → ℍ → ℂ} (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) :
+    MeromorphicAt (cuspFunction h (∏ i ∈ s, F i)) 0 := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [Pi.one_def]
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi]
+    exact meromorphicAt_cuspFunction_mul (hF i (Finset.mem_insert_self i s))
+      (ih fun k hk ↦ hF k (Finset.mem_insert_of_mem hk))
 
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}

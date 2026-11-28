@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import Mathlib.RingTheory.Polynomial.Pochhammer
@@ -37,7 +38,9 @@ All statements concern the real cast of the law, which is its analytic interface
   `(-∞, 0]`;
 * `integral_ascPochhammer_map_cast_yuleSimonMeasure`: the rising-factorial moments;
 * `integral_id_map_cast_yuleSimonMeasure` and `variance_id_map_cast_yuleSimonMeasure`: the mean
-  and variance.
+  and variance;
+* `integral_of_hasLaw_yuleSimonMeasure` and `variance_of_hasLaw_yuleSimonMeasure`: the
+  corresponding formulas for a Yule–Simon random variable.
 
 ## References
 
@@ -130,10 +133,9 @@ private theorem yuleSimonWeightReal_mul_ascPochhammer_eq {m : ℕ} (hm : (m : �
         (Gamma (k + m) / Gamma (k + ρ) - Gamma ((k + 1 : ℕ) + m) / Gamma ((k + 1 : ℕ) + ρ)) := by
   have hρ : 0 < ρ := (Nat.cast_nonneg m).trans_lt hm
   have hk' : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
-  have hΓk := Gamma_pos_of_pos hk'
-  have hasc : (ascPochhammer ℝ m).eval (k : ℝ) * Gamma k = Gamma (k + m) := by
-    have hk_ne (j : ℕ) : (k : ℝ) ≠ -j := by linarith [(j.cast_nonneg : (0 : ℝ) ≤ j)]
-    rw [← Gamma_add_nat_div_Gamma_eq _ hk_ne, div_mul_cancel₀ _ hΓk.ne']
+  have hasc : (ascPochhammer ℝ m).eval (k : ℝ) * Gamma k = Gamma (k + m) :=
+    (Gamma_add_natCast_eq_ascPochhammer_eval_mul (fun j => by
+      linarith [(j.cast_nonneg : (0 : ℝ) ≤ j)]) m).symm
   have hsub : ρ - m ≠ 0 := (sub_pos.mpr hm).ne'
   have h1 : Gamma (k + (ρ + 1)) = (k + ρ) * Gamma (k + ρ) := by
     rw [← add_assoc, Gamma_add_one (by positivity)]
@@ -209,6 +211,26 @@ theorem variance_id_map_cast_yuleSimonMeasure (hρ : 2 < ρ) :
   have h2 : ρ - 2 ≠ 0 := by linarith
   field_simp
   ring
+
+/-- The mean of a Yule–Simon random variable, after casting its values to the reals, is
+`ρ / (ρ - 1)` for `ρ > 1`. -/
+theorem integral_of_hasLaw_yuleSimonMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℕ} (hρ : 1 < ρ) (hX : HasLaw X (yuleSimonMeasure ρ) P) :
+    ∫ ω, (X ω : ℝ) ∂P = ρ / (ρ - 1) := by
+  have hcast : HasLaw (fun ω ↦ (X ω : ℝ))
+      ((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)) P :=
+    (hasLaw_map (by fun_prop)).comp hX
+  rw [hcast.integral_eq, integral_id_map_cast_yuleSimonMeasure hρ]
+
+/-- The variance of a Yule–Simon random variable, after casting its values to the reals, is
+`ρ² / ((ρ - 1)² (ρ - 2))` for `ρ > 2`. -/
+theorem variance_of_hasLaw_yuleSimonMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℕ} (hρ : 2 < ρ) (hX : HasLaw X (yuleSimonMeasure ρ) P) :
+    variance (fun ω ↦ (X ω : ℝ)) P = ρ ^ 2 / ((ρ - 1) ^ 2 * (ρ - 2)) := by
+  have hcast : HasLaw (fun ω ↦ (X ω : ℝ))
+      ((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)) P :=
+    (hasLaw_map (by fun_prop)).comp hX
+  rw [hcast.variance_eq, variance_id_map_cast_yuleSimonMeasure hρ]
 
 end Probability
 

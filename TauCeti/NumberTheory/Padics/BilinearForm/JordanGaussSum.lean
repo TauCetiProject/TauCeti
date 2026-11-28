@@ -48,9 +48,7 @@ Conway–Sloane `2`-adic symbol: the quantity
 
 is an isometry invariant
 (`LinearMap.BilinForm.IsJordanSplitting.prod_χ₈_pow_mul_stdAddChar_sum_eq_of_equivalent`).
-So the oddities of the constituents up to `j` are invariant in total modulo `8`, up to `4` times
-the number of signs `ε i = -1` with `j - i` even, while the individual signs and oddities are not:
-sign walking `⟨1⟩ ⊥ 2 !![0, 1; 1, 0] ≅ ⟨5⟩ ⊥ 2 !![2, 1; 1, 2]`
+Sign walking `⟨1⟩ ⊥ 2 !![0, 1; 1, 0] ≅ ⟨5⟩ ⊥ 2 !![2, 1; 1, 2]`
 (`TauCeti.equivalent_toBilin'_unary_two_hyperbolic`) changes the sign and the oddity of the
 constituent of index `0` together, from `(1, 1)` to `(-1, 5)`, and leaves `ε 0 · e(t 0 / 8)`
 unchanged.
@@ -94,7 +92,8 @@ private theorem IsJordanSplitting.sum_stdAddChar_dotProduct_two_pow_smul_toMatri
           stdAddChar (PadicInt.toZModPow 3 (C w w)) := by
   have h2 : (2 : ℤ_[2]) ^ i ∈ nonZeroDivisors ℤ_[2] :=
     mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero)
-  have hCs : C.IsSymm := IsSymm.of_smul h2 (hC ▸ hB.restrict (N i))
+  have hCs : C.IsSymm := (IsSMulRegular.of_ne_zero (pow_ne_zero i two_ne_zero)).isSymm_smul_iff.mp
+    (hC ▸ hB.restrict (N i))
   have hdet : IsUnit (C.toMatrix d).det :=
     d.isUnit_det_of_isPerfPair d C ((h.isModular i).isPerfPair_of_smul_eq h2 hC)
   obtain ⟨m, rfl⟩ : ∃ m, k = i + m := ⟨k - i, by omega⟩

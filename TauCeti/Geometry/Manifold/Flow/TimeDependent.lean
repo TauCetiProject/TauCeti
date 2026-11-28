@@ -9,8 +9,13 @@ public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Translation
 
 /-!
@@ -25,28 +30,19 @@ suspension yields the maximal time-dependent flow of `X`:
 which passes through `x` at time `s`. It is defined on the set `TauCeti.timeDependentFlowDomain X`
 of triples `((s, t), x)`, and is total, with junk values outside that set.
 
-For a jointly `C^n` time-dependent field on a finite-dimensional boundaryless manifold, `1 ≤ n`,
-this is the fundamental theorem on time-dependent flows: the domain is open and contains every
-triple `((s, s), x)`, the flow is jointly `C^n` on it, its curves `t ↦ timeDependentFlowOf X s t x`
-solve the equation and are the unique solutions through `x` at time `s`, and the two-time
-composition law holds wherever its terms are defined. A time-dependent field vanishing outside a
-compact subset of `M` at all times has a complete suspension, and then every time map is a `C^n`
-diffeomorphism of `M`, with inverse the time map in the opposite direction.
+For a jointly `C^n` time-dependent field on a boundaryless manifold modelled on a complete normed
+space, `1 ≤ n`, this is the fundamental theorem on time-dependent flows: the domain is open and
+contains every triple `((s, s), x)`, the flow is jointly `C^n` on it, its curves
+`t ↦ timeDependentFlowOf X s t x` solve the equation and are the unique solutions through `x` at
+time `s`, and the two-time composition law holds wherever its terms are defined. A time-dependent
+field vanishing outside a compact subset of `M` at all times has a complete suspension, and then
+every time map is a `C^n` diffeomorphism of `M`, with inverse the time map in the opposite
+direction.
 
-A solution can fail to exist up to a finite time `b` only by leaving every compact subset of `M`
-before `b`. This is the **escape criterion**, proved by applying the autonomous escape criteria
-`mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ico` and `_Ioc` to the suspension and to
-the compact set `[s, b] × K`: the maximal integral curve of the suspension runs at unit speed in
-the clock coordinate. On a noncompact manifold a solution of an equation as simple as `y' = y²`
-on `ℝ` reaches infinity in finite time, and compact containment of the solution is the hypothesis
-under which its existence through a given time interval, for instance `[0, 1]` in Moser's
-argument, can be asserted. A field vanishing outside a fixed compact set keeps every solution in a
-compact set, so its suspension is complete.
-
-Compactly supported time-dependent fields are the input to the isotopy extension theorem: the
-velocity of a moving compact submanifold, extended to a compactly supported field on the ambient
-manifold, has a complete suspension, and its time maps are the ambient diffeomorphisms that carry
-the initial position of the submanifold to the later ones.
+The **escape criterion** says a solution can fail to reach a finite time only by leaving every
+compact subset. It follows from the autonomous escape criteria applied to the suspension on
+`[s, b] × K`. A field vanishing outside a fixed compact set has complete suspension, providing
+the ambient diffeomorphisms used in isotopy extension.
 
 ## Main definitions
 
@@ -77,9 +73,11 @@ the initial position of the submanifold to the later ones.
   spaces which the flow carries along over short times is carried along every trajectory.
 * `TauCeti.isOpen_setOf_forall_timeDependentFlowOf_mem`: the points whose trajectory passes
   through an open subset of `ℝ × M` at every time of a compact set form an open set.
-* `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
-* `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
-  of the flow.
+* `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`;
+  `TauCeti.curveVelocity_timeDependentFlowOf` states this for their velocity.
+* `TauCeti.mem_timeDependentFlowDomain_of_forall_hasMFDerivAt` and
+  `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every global solution stays in the domain, and
+  every solution on an open interval is a curve of the flow.
 * `TauCeti.contMDiffOn_of_contMDiff_of_hasMFDerivAt_timeDependent` and
   `TauCeti.contMDiff_of_contMDiff_of_forall_hasMFDerivAt_timeDependent`: solutions of the
   equation for a `C^n` field are `C^n`.
@@ -93,8 +91,26 @@ the initial position of the submanifold to the later ones.
   `t ↦ X (t + θ)` from `s` to `t` is the flow of `X` from `s + θ` to `t + θ`.
 * `TauCeti.timeDependentFlowOf_const_smul`: the time-dependent flow of a constant multiple `c • v`
   of a complete autonomous field `v` is a time map of the flow of `v`.
+* `TauCeti.timeDependentFlowOf_const_eq_flowOf_of_mem`: with no completeness, the time-dependent
+  flow of an autonomous field `v` from `s` to `t` is defined wherever the flow of `v` is defined for
+  time `t - s`, and is that time map there.
+  `TauCeti.eventually_flowOf_eventuallyEq_timeDependentFlowOf_of_mem` is its local form near a
+  point of the domain of the flow of `v`.
 * `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
-  from `s` to `t`.
+  from `s` to `t`, and `TauCeti.isLocalDiffeomorphAt_timeDependentFlowOf`: the time map is a local
+  diffeomorphism wherever it is defined.
+* `TauCeti.isLocalDiffeomorphAt_flowOf`: the time-`t` map of the maximal flow of a `C^n` field,
+  complete or not, is a local diffeomorphism wherever it is defined.
+* `TauCeti.contMDiffAt_timeDependentFlowOf`: the time map is `C^n` at every point where it is
+  defined, and `TauCeti.contMDiffAt_timeDependentFlowOf_comp` its composite with `C^n` initial
+  times, final times and initial points.
+* `TauCeti.curveVelocity_timeDependentFlowOf_comp`: the transverse velocity of the trajectories
+  through a curve of initial points is the derivative of the time map applied to its velocity.
+* `TauCeti.contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf`: along a trajectory, the
+  linearized flow `u ↦ dφ_{s, u} v` is one degree less regular than the field, and so is
+  `(u, v) ↦ dφ_{s, u} v` (`TauCeti.contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf_prod`).
+* `TauCeti.injective_mfderiv_timeDependentFlowOf`: the derivative of the time map is injective
+  wherever the flow is defined, with no completeness assumption on the field.
 * `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico`,
   `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ioc` and
   `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo`: the escape criterion, a solution
@@ -133,6 +149,7 @@ public section
 noncomputable section
 
 open Set
+open TauCeti.Manifold
 open scoped Manifold ContDiff Topology
 
 namespace TauCeti
@@ -160,6 +177,23 @@ theorem timeDependentSuspensionField_snd (X : ℝ → (x : M) → TangentSpace I
     (timeDependentSuspensionField X p).2 = X p.1 p.2 :=
   (rfl)
 
+/-- For a family `X` of time-dependent vector fields on `M`, indexed by the points `a` of a
+manifold `N` and jointly `C^n` in the parameter, the time and the point, and a real number `c`,
+the fields `(c, X a)` form a jointly `C^n` family of vector fields on `ℝ × M` indexed by `N`. -/
+theorem contMDiff_const_prod_field_param [IsManifold I 1 M] {n : ℕ∞ω} {F G N : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+    [TopologicalSpace N] [ChartedSpace G N] {X : N → ℝ → (x : M) → TangentSpace I x} (c : ℝ)
+    (hX : ContMDiff (J.prod (𝓘(ℝ, ℝ).prod I)) I.tangent n
+      (fun z : N × ℝ × M ↦ (⟨z.2.2, X z.1 z.2.1 z.2.2⟩ : TangentBundle I M))) :
+    ContMDiff (J.prod (𝓘(ℝ, ℝ).prod I)) (𝓘(ℝ, ℝ).prod I).tangent n
+      (fun z : N × ℝ × M ↦
+        (⟨z.2, (c, X z.1 z.2.1 z.2.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
+  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
+      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
+    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
+    ((hclock.comp (contMDiff_fst.comp contMDiff_snd)).prodMk hX)
+
 /-- For a jointly `C^n` time-dependent vector field `X` and a real number `c`, the field `(c, X)`
 on `ℝ × M` is a `C^n` vector field. For `c = 1` it is the suspension of `X`, for `c = 0` it is the
 vertical field of `X`, and for `X = 0` and `c = 1` it is the unit field `∂_t` of the time
@@ -169,12 +203,10 @@ theorem contMDiff_const_prod_field [IsManifold I 1 M] {n : ℕ∞ω}
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) :
     ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent n
-      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
-      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
-    ((hclock.comp contMDiff_fst).prodMk hX)
+      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) :=
+  -- The constant family at `X`, indexed by `ℝ`, read at the parameter `0`.
+  (contMDiff_const_prod_field_param (J := 𝓘(ℝ, ℝ)) (X := fun _ ↦ X) c
+    (hX.comp contMDiff_snd)).comp ((contMDiff_const (c := (0 : ℝ))).prodMk contMDiff_id)
 
 /-- The suspension of a jointly `C^n` time-dependent vector field is a `C^n` vector field on
 `ℝ × M`. -/
@@ -218,8 +250,8 @@ theorem timeDependentFlowOf_def :
 /-- Outside the domain of the time-dependent flow, the flow takes the junk value `x`. -/
 theorem timeDependentFlowOf_of_notMem (h : ((s, t), x) ∉ timeDependentFlowDomain X) :
     timeDependentFlowOf X s t x = x := by
-  rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
-  rw [timeDependentFlowOf_def, flowOf_apply, maximalIntegralCurve_eq_of_not_mem h]
+  rw [mem_timeDependentFlowDomain] at h
+  rw [timeDependentFlowOf_def, flowOf_of_notMem h]
 
 /-! ### Solutions of the time-dependent equation -/
 
@@ -254,6 +286,16 @@ theorem mem_timeDependentFlowDomain_of_hasMFDerivAt {γ : ℝ → M} {a b : ℝ}
   refine (isMIntegralCurveOn_lift (s := s) hγ).subset_maximalIntegralCurveInterval
     (x := (s, γ s)) ?_ (by simp) ?_ <;> constructor <;> linarith [hs.1, hs.2, ht.1, ht.2]
 
+/-- A global solution `γ` of the time-dependent equation stays in the domain of the time-dependent
+flow between any two times `s` and `t`: `((s, t), γ s)` lies in it. -/
+theorem mem_timeDependentFlowDomain_of_forall_hasMFDerivAt {γ : ℝ → M}
+    (hγ : ∀ u, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u)))) (s t : ℝ) :
+    ((s, t), γ s) ∈ timeDependentFlowDomain X :=
+  mem_timeDependentFlowDomain_of_hasMFDerivAt (a := min s t - 1) (b := max s t + 1)
+    (fun u _ ↦ hγ u)
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+
 /-- The constant curve at a point where `X` vanishes at all times solves the time-dependent
 equation. -/
 private theorem hasMFDerivAt_const_of_forall_eq_zero (hx : ∀ u, X u x = 0) (u : ℝ) :
@@ -264,10 +306,8 @@ private theorem hasMFDerivAt_const_of_forall_eq_zero (hx : ∀ u, X u x = 0) (u 
 /-- A point at which `X` vanishes at all times stays in the domain of the time-dependent flow. -/
 theorem mem_timeDependentFlowDomain_of_forall_eq_zero (hx : ∀ u, X u x = 0) (s t : ℝ) :
     ((s, t), x) ∈ timeDependentFlowDomain X :=
-  mem_timeDependentFlowDomain_of_hasMFDerivAt (γ := fun _ ↦ x) (a := min s t - 1)
-    (b := max s t + 1) (fun u _ ↦ hasMFDerivAt_const_of_forall_eq_zero hx u)
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  mem_timeDependentFlowDomain_of_forall_hasMFDerivAt (γ := fun _ ↦ x)
+    (hasMFDerivAt_const_of_forall_eq_zero hx) s t
 
 /-- The times at which the flow from `(s, x)` is defined form an interval. -/
 theorem ordConnected_setOf_mem_timeDependentFlowDomain (s : ℝ) (x : M) :
@@ -396,6 +436,14 @@ theorem hasMFDerivAt_timeDependentFlowOf (h : ((s, t), x) ∈ timeDependentFlowD
   -- `Prod.snd ∘ c ∘ (· - s)` is `fun u ↦ timeDependentFlowOf X s u x` by definition.
   exact hsnd
 
+/-- The velocity of a curve of the time-dependent flow at every time `t` at which it is defined
+is the field at time `t` at the current point. -/
+theorem curveVelocity_timeDependentFlowOf (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    curveVelocity I (fun u ↦ timeDependentFlowOf X s u x) t =
+      X t (timeDependentFlowOf X s t x) := by
+  simpa only [curveVelocityWithin_univ] using curveVelocityWithin_eq_of_hasMFDerivWithinAt
+    (hasMFDerivAt_timeDependentFlowOf hX h).hasMFDerivWithinAt uniqueDiffWithinAt_univ
+
 /-- **Uniqueness of solutions.** A solution `γ` of the time-dependent equation on an open interval
 containing `s` and `t` is the curve of the time-dependent flow through `γ s` at time `s`. -/
 theorem timeDependentFlowOf_eq_of_hasMFDerivAt {γ : ℝ → M} {a b : ℝ}
@@ -409,13 +457,22 @@ theorem timeDependentFlowOf_eq_of_hasMFDerivAt {γ : ℝ → M} {a b : ℝ}
   rw [timeDependentFlowOf_def, flowOf_apply, heq]
   simp only [add_sub_cancel]
 
+/-- **Uniqueness of global solutions.** A solution `γ` of the time-dependent equation defined for
+all time is, between any two times `s` and `t`, the curve of the time-dependent flow through `γ s`
+at time `s`. -/
+theorem timeDependentFlowOf_eq_of_forall_hasMFDerivAt {γ : ℝ → M}
+    (hγ : ∀ u, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u)))) (s t : ℝ) :
+    timeDependentFlowOf X s t (γ s) = γ t :=
+  timeDependentFlowOf_eq_of_hasMFDerivAt hX (a := min s t - 1) (b := max s t + 1)
+    (fun u _ ↦ hγ u)
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+
 /-- A point at which `X` vanishes at all times is fixed by the time-dependent flow. -/
 theorem timeDependentFlowOf_eq_self_of_forall_eq_zero (hx : ∀ u, X u x = 0) (s t : ℝ) :
     timeDependentFlowOf X s t x = x :=
-  timeDependentFlowOf_eq_of_hasMFDerivAt hX (γ := fun _ ↦ x) (a := min s t - 1)
-    (b := max s t + 1) (fun u _ ↦ hasMFDerivAt_const_of_forall_eq_zero hx u)
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX (γ := fun _ ↦ x)
+    (hasMFDerivAt_const_of_forall_eq_zero hx) s t
 
 /-- **The two-time composition law.** Flowing from time `r` to time `s` and then from `s` to `t`
 is flowing from `r` to `t`, provided both steps are defined; the composite is then defined. -/
@@ -513,12 +570,56 @@ theorem timeDependentFlowOf_const_smul [T2Space M] [IsManifold I 1 M] [Boundaryl
     rw [isMIntegralCurve_iff_isMIntegralCurveOn]
     simpa [hcomplete.mem_flowDomain] using isMIntegralCurveOn_flowOf hv x
   have hγ := (hcurve.comp_mul c).comp_add (-s)
-  have h := timeDependentFlowOf_eq_of_hasMFDerivAt hX (X := fun _ ↦ c • v)
-    (γ := fun u ↦ flowOf v ((u + -s) * c) x) (s := s) (t := t) (a := min s t - 1)
-    (b := max s t + 1) (fun u _ ↦ hγ u)
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  have h := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX (X := fun _ ↦ c • v)
+    (γ := fun u ↦ flowOf v ((u + -s) * c) x) hγ s t
   simpa [flowOf_zero, sub_eq_add_neg] using h
+
+/-- **The time-dependent flow of an autonomous field.** For a `C¹` vector field `v`, wherever the
+flow of `v` is defined for time `t - s` at `x`, the time-dependent flow of the time-independent
+field `v` from time `s` to time `t` is defined at `x` and is the time-`(t - s)` map of the flow of
+`v`. Unlike `TauCeti.timeDependentFlowOf_const_smul`, no completeness of `v` is assumed. -/
+theorem timeDependentFlowOf_const_eq_flowOf_of_mem [T2Space M] [IsManifold I 1 M]
+    [BoundarylessManifold I M] {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (h : (t - s, x) ∈ flowDomain v) :
+    ((s, t), x) ∈ timeDependentFlowDomain (fun _ ↦ v) ∧
+      timeDependentFlowOf (fun _ ↦ v) s t x = flowOf v (t - s) x := by
+  obtain ⟨γ, a, b, hγ, hγ0, h0, ht, heq⟩ :=
+    exists_isMIntegralCurveOn_maximalIntegralCurve_eq (mem_flowDomain.1 h)
+  -- The trajectory of `v` through `x`, started at time `s`, solves the time-dependent equation.
+  have hc : IsMIntegralCurveOn (γ ∘ (· - s)) v {r | r - s ∈ Ioo a b} :=
+    (isMIntegralCurveOn_comp_sub (dt := s)).2 hγ
+  have hγ' (u : ℝ) (hu : u ∈ Ioo (a + s) (b + s)) : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ γ (r - s)) u
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (v (γ (u - s)))) :=
+    (IsMIntegralCurveOn.isMIntegralCurveAt hc
+      ((isOpen_Ioo.preimage (continuous_sub_right s)).mem_nhds
+        ⟨by linarith [hu.1], by linarith [hu.2]⟩)).hasMFDerivAt
+  have hs : s ∈ Ioo (a + s) (b + s) := ⟨by linarith [h0.1], by linarith [h0.2]⟩
+  have ht' : t ∈ Ioo (a + s) (b + s) := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have hγs : (fun r ↦ γ (r - s)) s = x := by simp [hγ0]
+  refine ⟨hγs ▸ mem_timeDependentFlowDomain_of_hasMFDerivAt hγ' hs ht', ?_⟩
+  calc timeDependentFlowOf (fun _ ↦ v) s t x = γ (t - s) := by
+        conv_lhs => rw [← hγs]
+        exact timeDependentFlowOf_eq_of_hasMFDerivAt (hv.comp contMDiff_snd) hγ' hs ht'
+    _ = flowOf v (t - s) x := by rw [flowOf_apply, heq]
+
+/-- Near a point `(t, x)` of the domain of the flow of a `C¹` vector field `v`, the time maps of
+the flow of `v` are those of the time-dependent flow of the time-independent field `v` from
+time `0`. -/
+theorem eventually_flowOf_eventuallyEq_timeDependentFlowOf_of_mem [CompleteSpace E] [T2Space M]
+    [IsManifold I 1 M] [BoundarylessManifold I M] {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (h : (t, x) ∈ flowDomain v) :
+    ∀ᶠ u in 𝓝 t, flowOf v u =ᶠ[𝓝 x] timeDependentFlowOf (fun _ ↦ v) 0 u := by
+  have hmem : ∀ᶠ p in 𝓝 t ×ˢ 𝓝 x, p ∈ flowDomain v := by
+    rw [← nhds_prod_eq]
+    exact (isOpen_flowDomain hv).mem_nhds h
+  obtain ⟨pa, hpa, pb, hpb, hP⟩ := Filter.eventually_prod_iff.1 hmem
+  filter_upwards [hpa] with u hu
+  filter_upwards [hpb] with p hp
+  have hup := timeDependentFlowOf_const_eq_flowOf_of_mem hv (s := 0) (t := u) (x := p)
+    (by simpa using hP hu hp)
+  rw [hup.2, sub_zero]
 
 /-- On a complete normed model space, the time-dependent flow of a `C^n` field, `1 ≤ n`, is
 jointly `C^n` in
@@ -542,22 +643,45 @@ theorem contMDiffOn_timeDependentFlowOf [CompleteSpace E] [T2Space M]
     (ht.sub hs).prodMk (hs.prodMk contMDiff_snd)
   exact contMDiff_snd.comp_contMDiffOn (hflow.comp hg.contMDiffOn fun _ hp ↦ hp)
 
-/-- In finite dimensions, the maps of the time-dependent flow of a `C^n` field, `1 ≤ n`, from a
-fixed initial time `s` form a family which is jointly `C^n` in the final time and the point at every
-point of the domain. -/
-theorem contMDiffAt_uncurry_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+/-- On a complete normed model space, let `X` be a jointly `C^n` field, `1 ≤ n`, and let `σ`, `τ`
+and `c` be `C^n` at `z`, with the flow from `(σ z, c z)` defined at time `τ z`. Then
+`y ↦ timeDependentFlowOf X (σ y) (τ y) (c y)` is `C^n` at `z`. -/
+theorem contMDiffAt_timeDependentFlowOf_comp [CompleteSpace E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n)
+    [IsManifold I n M] {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace G] {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {σ τ : N → ℝ} {c : N → M} {z : N} (hσ : ContMDiffAt J 𝓘(ℝ, ℝ) n σ z)
+    (hτ : ContMDiffAt J 𝓘(ℝ, ℝ) n τ z) (hc : ContMDiffAt J I n c z)
+    (h : ((σ z, τ z), c z) ∈ timeDependentFlowDomain X) :
+    ContMDiffAt J I n (fun y ↦ timeDependentFlowOf X (σ y) (τ y) (c y)) z := by
+  have hflow : ContMDiffAt ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I n
+      (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ((σ z, τ z), c z) :=
+    (contMDiffOn_timeDependentFlowOf hn hX).contMDiffAt
+      ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)
+  exact hflow.comp (f := fun y ↦ ((σ y, τ y), c y)) z ((hσ.prodMk hτ).prodMk hc)
+
+/-- On a complete normed model space, the time map of the time-dependent flow of a jointly `C^n`
+field, `1 ≤ n`, is `C^n` at every point at which it is defined. -/
+theorem contMDiffAt_timeDependentFlowOf [CompleteSpace E] [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
-    ContMDiffAt (𝓘(ℝ, ℝ).prod I) I n (Function.uncurry (timeDependentFlowOf X s)) (t, x) := by
-  have hflow := (contMDiffOn_timeDependentFlowOf hn hX).contMDiffAt
-    ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)
-  have hg : ContMDiffAt (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) n
-      (fun q : ℝ × M ↦ ((s, q.1), q.2)) (t, x) :=
-    ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
-  exact ContMDiffAt.comp (g := fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2)
-    (t, x) hflow hg
+    ContMDiffAt I I n (timeDependentFlowOf X s t) x :=
+  contMDiffAt_timeDependentFlowOf_comp hn hX contMDiffAt_const contMDiffAt_const contMDiffAt_id h
+
+/-- On a complete normed model space, the maps of the time-dependent flow of a `C^n` field,
+`1 ≤ n`, from a fixed initial time `s` form a family which is jointly `C^n` in the final time and
+the point at every point of the domain. -/
+theorem contMDiffAt_uncurry_timeDependentFlowOf [CompleteSpace E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod I) I n (Function.uncurry (timeDependentFlowOf X s)) (t, x) :=
+  contMDiffAt_timeDependentFlowOf_comp hn hX contMDiffAt_const contMDiffAt_fst contMDiffAt_snd h
 
 /-- **Solutions of a `C^n` time-dependent equation are `C^n`.** On a complete normed model space, a
 curve `γ` with `γ' u = X u (γ u)` on an open interval is `C^n` there when the time-dependent field
@@ -626,7 +750,7 @@ include hX
 theorem mem_timeDependentFlowDomain_self (s : ℝ) (x : M) :
     ((s, s), x) ∈ timeDependentFlowDomain X := by
   rw [mem_timeDependentFlowDomain, sub_self]
-  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX) (s, x)
+  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX (s, x))
 
 variable [T2Space M]
 
@@ -888,16 +1012,17 @@ theorem timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero [CompleteSpace E]
 
 section PartialDiffeomorph
 
-variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
+variable [CompleteSpace E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
   {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
   (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 
 /-- The time map from `s` to `t` of the time-dependent flow of a jointly `C^n` field, `1 ≤ n`, on a
-finite-dimensional boundaryless manifold, as a `C^n` partial diffeomorphism of `M`. Its source is
+boundaryless manifold modelled on a complete normed space, as a `C^n` partial diffeomorphism of
+`M`. Its source is
 the open set of points from which the flow is defined from time `s` up to time `t`, its target is
 the open set of points from which it is defined from time `t` back to time `s`, and its inverse is
-the time map from `t` to `s`. No completeness is needed. -/
+the time map from `t` to `s`. No completeness of the field is needed. -/
 def timeDependentFlowPartialDiffeomorph (s t : ℝ) : PartialDiffeomorph I I M M n :=
   have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
   { toFun := timeDependentFlowOf X s t
@@ -945,23 +1070,50 @@ theorem mem_timeDependentFlowPartialDiffeomorph_target_iff {s t : ℝ} {x : M} :
       ((t, s), x) ∈ timeDependentFlowDomain X :=
   (Iff.rfl)
 
+include hn hX in
+/-- **The time maps are local diffeomorphisms.** The time map `φ_{s,t}` of the flow of a jointly
+`C^n` field, `1 ≤ n`, on a boundaryless manifold modelled on a complete normed space, is a `C^n`
+local diffeomorphism at every point from which the flow is defined up to time `t`; its local
+inverse is the time map from `t` back to `s`. No completeness of the field is needed. -/
+theorem isLocalDiffeomorphAt_timeDependentFlowOf {s t : ℝ} {x : M}
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    IsLocalDiffeomorphAt I I n (timeDependentFlowOf X s t) x := by
+  have hΦ := (timeDependentFlowPartialDiffeomorph hn hX s t).isLocalDiffeomorphAt I I _
+    ((mem_timeDependentFlowPartialDiffeomorph_source_iff hn hX).2 h)
+  rwa [show ⇑(timeDependentFlowPartialDiffeomorph hn hX s t).toPartialEquiv =
+      timeDependentFlowOf X s t from
+        funext (timeDependentFlowPartialDiffeomorph_apply hn hX s t)] at hΦ
+
+include hn in
+/-- **The time maps of a flow are local diffeomorphisms.** For a `C^n` vector field `v`, `1 ≤ n`,
+the time-`t` map of its maximal flow is a `C^n` local diffeomorphism at every point whose
+trajectory is defined at time `t`. No completeness of `v` is needed. -/
+theorem isLocalDiffeomorphAt_flowOf {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (hx : (t, x) ∈ flowDomain v) : IsLocalDiffeomorphAt I I n (flowOf v t) x := by
+  have hv1 := hv.of_le (m := 1) (by exact_mod_cast hn)
+  exact (isLocalDiffeomorphAt_timeDependentFlowOf hn (X := fun _ ↦ v) (hv.comp contMDiff_snd)
+    (timeDependentFlowOf_const_eq_flowOf_of_mem hv1 (s := 0) (by simpa using hx)).1
+    ).congr_of_eventuallyEq
+    (eventually_flowOf_eventuallyEq_timeDependentFlowOf_of_mem hv1 hx).self_of_nhds
+
 end PartialDiffeomorph
 
-/-- In finite dimensions, each map of the time-dependent flow of a `C¹` field is differentiable at
-every point at which it is defined. -/
-theorem mdifferentiableAt_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+/-- On a complete normed model space, each map of the time-dependent flow of a `C¹` field is
+differentiable at every point at which it is defined. -/
+theorem mdifferentiableAt_timeDependentFlowOf [CompleteSpace E] [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
-  (timeDependentFlowPartialDiffeomorph le_rfl hX s t).mdifferentiableAt one_ne_zero h
+  (contMDiffAt_timeDependentFlowOf le_rfl hX h).mdifferentiableAt one_ne_zero
 
-/-- **The chain rule for the two-time composition law.** In finite dimensions, if the flow of a
-`C¹` field is defined from time `s` to time `t` at `x`, and from time `t` to time `u` at its image,
-then the differential of the flow map from `s` to `u` at `x` is the composite of the differentials
-of the two steps. -/
-theorem mfderiv_timeDependentFlowOf_trans_of_mem [FiniteDimensional ℝ E] [T2Space M]
+/-- **The chain rule for the two-time composition law.** On a complete normed model space, if the
+flow of a `C¹` field is defined from time `s` to time `t` at `x`, and from time `t` to time `u` at
+its image, then the differential of the flow map from `s` to `u` at `x` is the composite of the
+differentials of the two steps. -/
+theorem mfderiv_timeDependentFlowOf_trans_of_mem [CompleteSpace E] [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
@@ -1108,23 +1260,30 @@ theorem isMIntegralCurveOn_timeDependentFlowOf [T2Space M] [IsManifold I 1 M]
   rw [hT u hu] at h
   exact h.hasMFDerivWithinAt
 
-variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
+variable [CompleteSpace E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
   {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
   (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hn hX
 
-/-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, on a finite-dimensional manifold is
-complete, its time-dependent flow is jointly `C^n` in both times and the initial point. -/
+/-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, on a manifold modelled on a complete
+normed space is complete, its time-dependent flow is jointly `C^n` in both times and the initial
+point. -/
 theorem contMDiff_timeDependentFlowOf :
     ContMDiff ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I n
       (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) := by
   rw [← contMDiffOn_univ, ← timeDependentFlowDomain_eq_univ hcomplete]
   exact contMDiffOn_timeDependentFlowOf hn hX
 
-/-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, on a finite-dimensional manifold is
-complete, the time-dependent flow from time `s` to time `t` is a `C^n` diffeomorphism, with
-inverse the time-dependent flow from `t` to `s`. -/
+/-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, on a manifold modelled on a complete
+normed space is complete, the time-dependent flow from time `s` to time `t` is continuous. -/
+theorem continuous_timeDependentFlowOf (s t : ℝ) : Continuous (timeDependentFlowOf X s t) :=
+  (contMDiff_timeDependentFlowOf hcomplete hn hX).continuous.comp
+    (by fun_prop : Continuous fun x : M ↦ ((s, t), x))
+
+/-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, on a manifold modelled on a complete
+normed space is complete, the time-dependent flow from time `s` to time `t` is a `C^n`
+diffeomorphism, with inverse the time-dependent flow from `t` to `s`. -/
 def timeDependentFlowDiffeomorph (s t : ℝ) : M ≃ₘ^n⟮I, I⟯ M :=
   have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
   { toFun := timeDependentFlowOf X s t
@@ -1243,5 +1402,95 @@ theorem hasMFDerivAt_timeDependentFlowOf_comp {F G N : Type*} [NormedAddCommGrou
   exact add_comm _ _
 
 end Global
+
+section Local
+
+variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
+
+section CompleteSpace
+
+variable [CompleteSpace E]
+
+/-- **The linearized flow is jointly `C^m` in time and in the tangent vector.** Let `X` be
+jointly `C^n`, with `m + 1 ≤ n`. At every time `t` at which the flow from `(s, x)` is defined, the
+tangent vector `dφ_{s, u} v` at `φ_{s, u}(x)` is a `C^m` function of the pair `(u, v)` into the
+tangent bundle. -/
+theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf_prod {m n : ℕ∞} (hmn : m + 1 ≤ n)
+    [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (v : E) (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) I.tangent m
+      (fun p : ℝ × E ↦ Bundle.TotalSpace.mk' E (timeDependentFlowOf X s p.1 x)
+        (mfderiv I I (timeDependentFlowOf X s p.1) x p.2)) (t, v) := by
+  have hn : 1 ≤ n := le_add_self.trans hmn
+  -- The tangent vector `(0, v)` to `ℝ × M` at `(u, x)` varies smoothly with `(u, v)`. The vector
+  -- `v` is an element of the model space `E`, which is what `TangentSpace I x` unfolds to.
+  have hlift : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) (𝓘(ℝ, ℝ).prod I).tangent m
+      (fun p : ℝ × E ↦ (equivTangentBundleProd 𝓘(ℝ, ℝ) ℝ I M).symm (⟨p.1, 0⟩, ⟨x, p.2⟩)) :=
+    contMDiff_equivTangentBundleProd_symm.comp
+      ((contMDiff_tangentBundle_mk_zero contMDiff_fst).prodMk
+        (contMDiff_tangentBundle_mk_constBase (v := fun p : ℝ × E ↦ p.2) contMDiff_snd x))
+  -- The differential of the uncurried flow carries this lift to a `C^m` field along the trajectory.
+  refine (ContMDiffAt.mfderiv_apply_sectionAlong (contMDiffAt_uncurry_timeDependentFlowOf hn hX h)
+    (b := fun p : ℝ × E ↦ (p.1, x)) (s := fun p ↦ ((0, p.2) : ℝ × E)) (hlift (t, v))
+    (by exact_mod_cast hmn)).congr_of_eventuallyEq ?_
+  filter_upwards [(by fun_prop : Continuous fun p : ℝ × E ↦ ((s, p.1), x)).continuousAt
+    |>.preimage_mem_nhds
+      ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)] with p hp
+  -- On the vertical vector `(0, v)`, the differential of the uncurried flow is that of `φ_{s, u}`.
+  exact congrArg (Bundle.TotalSpace.mk' E _) (MDifferentiableAt.mfderiv_uncurry_apply_zero_mk
+    ((contMDiffAt_uncurry_timeDependentFlowOf hn hX hp).mdifferentiableAt
+      (by exact_mod_cast (one_pos.trans_le hn).ne')) p.2).symm
+
+/-- **The linearized flow is `C^m` in time.** Let `X` be jointly `C^n`, with `m + 1 ≤ n`.
+At every time `t` at which the flow from `(s, x)` is defined, the tangent vector
+`dφ_{s, u} v` at `φ_{s, u}(x)` is a `C^m` function of `u` into the tangent bundle. -/
+theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hmn : m + 1 ≤ n)
+    [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (v : TangentSpace I x) (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent m (fun u ↦ Bundle.TotalSpace.mk' E (timeDependentFlowOf X s u x)
+      (mfderiv I I (timeDependentFlowOf X s u) x v)) t :=
+  (contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf_prod hmn hX v h).comp t
+    (contMDiffAt_id.prodMk contMDiffAt_const)
+
+variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+    (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+include hX
+
+/-- Near a point of the domain of the flow from time `s`, the trajectories through the points of
+a continuous family of initial points solve the field equation at time `t`. -/
+theorem eventually_curveVelocity_timeDependentFlowOf_eq {α : Type*} [TopologicalSpace α]
+    {c : α → M} {q : α} (hc : ContinuousAt c q)
+    (h : ((s, t), c q) ∈ timeDependentFlowDomain X) :
+    ∀ᶠ r in 𝓝 q, curveVelocity I (fun u ↦ timeDependentFlowOf X s u (c r)) t =
+      X t (timeDependentFlowOf X s t (c r)) := by
+  filter_upwards [(continuousAt_const.prodMk hc).preimage_mem_nhds
+    ((isOpen_timeDependentFlowDomain hX).mem_nhds h)] with r hr
+  exact curveVelocity_timeDependentFlowOf hX hr
+
+/-- The transverse velocity of the trajectories through a curve `c` of initial points is the
+derivative of the flow applied to the velocity of the curve, at a parameter `q` where `c` is
+differentiable and the flow from `(s, c q)` is defined at time `t`. -/
+theorem curveVelocity_timeDependentFlowOf_comp {c : ℝ → M} {q : ℝ}
+    (hc : MDifferentiableAt 𝓘(ℝ, ℝ) I c q) (h : ((s, t), c q) ∈ timeDependentFlowDomain X) :
+    curveVelocity I (fun a ↦ timeDependentFlowOf X s t (c a)) q =
+      mfderiv I I (timeDependentFlowOf X s t) (c q) (curveVelocity I c q) := by
+  simpa only [curveVelocityWithin_univ, Function.comp_def] using
+    curveVelocityWithin_map (mdifferentiableAt_timeDependentFlowOf hX h) uniqueDiffWithinAt_univ
+      hc.mdifferentiableWithinAt
+
+/-- **The derivative of the flow is injective.** Wherever the time-dependent flow from `s` to `t`
+is defined at `x`, flowing back from `t` to `s` is a left inverse near `x`, so `dφ_{s, t}` is
+injective at `x`. No completeness of the field is needed. -/
+theorem injective_mfderiv_timeDependentFlowOf (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    Function.Injective (mfderiv I I (timeDependentFlowOf X s t) x) :=
+  ((timeDependentFlowPartialDiffeomorph le_rfl hX s t).isInvertible_mfderiv one_ne_zero h).injective
+
+end CompleteSpace
+
+end Local
 
 end TauCeti

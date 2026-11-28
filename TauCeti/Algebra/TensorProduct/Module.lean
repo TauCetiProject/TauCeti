@@ -31,6 +31,12 @@ with commuting outer actions can reuse the same extension of linearity.
 an action of `A ⊗[R] B` on `M ⊗[R] N`, using Mathlib's `Algebra.lsmul`,
 `Algebra.TensorProduct.map`, and `Module.endTensorEndAlgHom`. This construction requires only
 algebras, without a coproduct.
+
+Conversely to the factor actions above, commuting actions of a commutative ring `R` and a ring
+`A` on `M` give an action of `R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms:
+`TauCeti.tensorToModuleEnd R A M`, extending Mathlib's `Module.toModuleEnd`.
+It is compatible with tensoring by an `R`-module `N`, `M ↦ M ⊗[R] N`
+(`TauCeti.tensorToModuleEnd_rTensor`).
 -/
 
 public section
@@ -61,6 +67,33 @@ theorem smul_moduleLeft (a : A) (m : M) :
 theorem smul_moduleRight (b : B) (m : M) :
     letI := moduleRight (k := k) (A := A) (B := B) M
     b • m = ((1 : A) ⊗ₜ[k] b) • m := rfl
+
+section
+
+variable {M} {N : Type*} [AddCommMonoid N] [Module (A ⊗[k] B) N]
+
+/-- A tensor-product-linear map commutes with the restricted first-factor action. -/
+theorem _root_.LinearMap.map_smul_moduleLeft (f : M →ₗ[A ⊗[k] B] N) (a : A) (m : M) :
+    letI := moduleLeft (k := k) (A := A) (B := B) M
+    letI := moduleLeft (k := k) (A := A) (B := B) N
+    f (a • m) = a • f m := by
+  simp only [smul_moduleLeft, map_smul]
+
+/-- A tensor-product-linear map commutes with the restricted second-factor action. -/
+theorem _root_.LinearMap.map_smul_moduleRight (f : M →ₗ[A ⊗[k] B] N) (b : B) (m : M) :
+    letI := moduleRight (k := k) (A := A) (B := B) M
+    letI := moduleRight (k := k) (A := A) (B := B) N
+    f (b • m) = b • f m := by
+  simp only [smul_moduleRight, map_smul]
+
+end
+
+/-- Successive actions of the restricted factors give the action of their pure tensor. -/
+theorem smul_moduleLeft_smul_moduleRight (a : A) (b : B) (m : M) :
+    letI := moduleLeft (k := k) (A := A) (B := B) M
+    letI := moduleRight (k := k) (A := A) (B := B) M
+    a • (b • m) = (a ⊗ₜ[k] b) • m := by
+  simp only [smul_moduleLeft, smul_moduleRight, ← mul_smul, tmul_mul_tmul, mul_one, one_mul]
 
 /-- The restricted factor actions commute. -/
 theorem moduleSMulCommClass :
@@ -152,6 +185,30 @@ noncomputable def tensorPairAction : A ⊗[R] B →ₐ[R] Module.End R (M ⊗[R]
     tensorPairAction R M N (a ⊗ₜ[R] b) (m ⊗ₜ[R] n) =
       (a • m) ⊗ₜ[R] (b • n) := (rfl)
 
+/-- The element `a ⊗ 1` acts on `M ⊗[R] N` through the left factor. -/
+@[simp]
+theorem tensorPairAction_tmul_one (a : A) (x : M ⊗[R] N) :
+    tensorPairAction R M N (a ⊗ₜ[R] (1 : B)) x = a • x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul m n => simp [TensorProduct.smul_tmul']
+  | add x y hx hy => rw [map_add, smul_add, hx, hy]
+
+/-- The element `1 ⊗ b` acts on `M ⊗[R] N` through the right factor. -/
+@[simp]
+theorem tensorPairAction_one_tmul (b : B) (x : M ⊗[R] N) :
+    tensorPairAction R M N ((1 : A) ⊗ₜ[R] b) x = (Algebra.lsmul R R N b).lTensor M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul m n => simp
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+
+/-- The element `1 ⊗ b` acts on `M ⊗[R] N` through the right factor, which is the left factor
+of `N ⊗[R] M`. -/
+theorem comm_tensorPairAction_one_tmul (b : B) (x : M ⊗[R] N) :
+    TensorProduct.comm R M N (tensorPairAction R M N ((1 : A) ⊗ₜ[R] b) x) =
+      b • TensorProduct.comm R M N x := by
+  rw [tensorPairAction_one_tmul, ← LinearMap.rTensor_comm,
+    TensorProduct.AlgebraTensorModule.smul_eq_lsmul_rTensor]
+
 variable {M' N' : Type*}
 variable [AddCommMonoid M'] [Module R M'] [Module A M'] [IsScalarTower R A M']
 variable [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
@@ -174,3 +231,39 @@ theorem tensorPairAction_natural (f : M →ₗ[A] M') (g : N →ₗ[B] N')
 end PairAction
 
 end TauCeti.BialgebraModule
+
+namespace TauCeti
+
+variable (R A M : Type*) [CommRing R] [Ring A] [AddCommMonoid M] [Module R M] [Module A M]
+  [SMulCommClass A R M]
+
+/-- Commuting actions of a commutative ring `R` and a ring `A` on `M` combine into the action of
+`R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms, `r ⊗ a ↦ (m ↦ r • a • m)`. -/
+noncomputable def tensorToModuleEnd : R ⊗[ℤ] A →ₐ[R] Module.End R M :=
+  -- `M` is only an `AddCommMonoid`, so `Module.End R M` has no canonical `Ring` instance; this
+  -- local one, induced by the `R`-algebra structure, exists only so that `RingHom.toIntAlgHom`
+  -- applies. The declared type uses only the semiring structure of `Module.End R M`.
+  letI : Ring (Module.End R M) := _root_.Algebra.semiringToRing R
+  lift (Algebra.ofId R _) (Module.toModuleEnd R (S := A) M).toIntAlgHom
+    fun r _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _
+
+variable {R A M}
+
+@[simp]
+theorem tensorToModuleEnd_tmul (r : R) (a : A) (m : M) :
+    tensorToModuleEnd R A M (r ⊗ₜ a) m = r • a • m := by
+  simp [tensorToModuleEnd]
+
+/-- **Compatibility with tensoring by an `R`-module `N`**: on `M ⊗[R] N`, with `A` acting on the
+first factor, `R ⊗[ℤ] A` acts through its action on `M`. -/
+theorem tensorToModuleEnd_rTensor [SMulCommClass R A M] (N : Type*) [AddCommMonoid N]
+    [Module R N] (t : R ⊗[ℤ] A) :
+    tensorToModuleEnd R A (M ⊗[R] N) t = (tensorToModuleEnd R A M t).rTensor N := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r a =>
+    apply _root_.TensorProduct.ext'
+    intro m n
+    simp [TensorProduct.smul_tmul']
+  | add s t hs ht => rw [map_add, map_add, hs, ht, LinearMap.rTensor_add]
+
+end TauCeti

@@ -13,7 +13,8 @@ public import TauCeti.Logic.Function.Extend
 
 `MonoidHom.compLeft f I` applies `f : α →* β` coordinatewise to a family `I → α`. It sends the
 one-point family `Pi.mulSingle i a` to the one-point family `Pi.mulSingle i (f a)`, since `f` sends
-`1` to `1`.
+`1` to `1`; more generally, `f ∘ Pi.mulSingle i a = Pi.mulSingle i (f a)` holds for any
+`1`-preserving map `f` (`TauCeti.map_comp_mulSingle`, `TauCeti.map_comp_single`).
 
 Restriction `g ↦ fun i ↦ g (f i)` of a product of monoids along an injective map `f`, the monoid
 homomorphism `MonoidHom.pi fun i ↦ Pi.evalMonoidHom G (f i)`, is surjective: extend by `1` off the
@@ -21,14 +22,31 @@ range of `f`.
 
 ## Main results
 
+* `TauCeti.map_comp_mulSingle`, `TauCeti.map_comp_single`: composing a `1`- or `0`-preserving map
+  with a one-point family gives the mapped one-point family.
 * `MonoidHom.compLeft_mulSingle`, `AddMonoidHom.compLeft_single`: post-composition maps
   one-point families to one-point families.
 * `MonoidHom.pi_evalMonoidHom_surjective_of_injective`,
   `AddMonoidHom.pi_evalAddMonoidHom_surjective_of_injective`: restriction of a product of monoids
   along an injective map is surjective.
+* `Function.extend_const_eq_mulSingle`, `Function.extend_const_eq_single`: extending a constant
+  family from a unique index type yields `Pi.mulSingle` / `Pi.single`.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- A map preserving `1` applied coordinatewise to `Pi.mulSingle i a` gives
+`Pi.mulSingle i (f a)`. -/
+@[to_additive (attr := simp) /-- A map preserving `0` applied coordinatewise to `Pi.single i a`
+gives `Pi.single i (f a)`. -/]
+theorem map_comp_mulSingle {F α β I : Type*} [One α] [One β] [DecidableEq I] [FunLike F α β]
+    [OneHomClass F α β] (f : F) (i : I) (a : α) :
+    f ∘ Pi.mulSingle i a = Pi.mulSingle i (f a) :=
+  (Pi.mulSingle_op (fun _ ↦ f) (fun _ ↦ map_one f) i a).symm
+
+end TauCeti
 
 namespace MonoidHom
 
@@ -40,7 +58,7 @@ variable {α β I : Type*} [MulOneClass α] [MulOneClass β] [DecidableEq I]
 `Pi.single i a` to `Pi.single i (f a)`. -/]
 theorem compLeft_mulSingle (f : α →* β) (i : I) (a : α) :
     f.compLeft I (Pi.mulSingle i a) = Pi.mulSingle i (f a) :=
-  funext fun j ↦ Pi.apply_mulSingle (fun _ ↦ f) (fun _ ↦ map_one f) i a j
+  TauCeti.map_comp_mulSingle f i a
 
 /-- Restriction `g ↦ fun i ↦ g (f i)` of a product of monoids along an injective map `f` is
 surjective: extend by `1` off the range of `f`. -/
@@ -52,3 +70,13 @@ theorem pi_evalMonoidHom_surjective_of_injective {σ τ : Type*} {G : τ → Typ
   hf.surjective_pi_comp_right 1
 
 end MonoidHom
+
+/-- Extending a constant family on a unique index type `κ` along `f : κ → ι` with fallback `1`
+produces `Pi.mulSingle (f default) x`. -/
+@[to_additive /-- Extending a constant family on a unique index type `κ` along `f : κ → ι` with
+fallback `0` produces `Pi.single (f default) x`. -/]
+theorem Function.extend_const_eq_mulSingle {κ ι α : Type*} [Unique κ] [DecidableEq ι]
+    [One α] (f : κ → ι) (x : α) :
+    Function.extend f (fun _ ↦ x) 1 = Pi.mulSingle (f default) x := by
+  rw [← Subsingleton.pi_mulSingle_eq default x,
+    (Function.injective_of_subsingleton f).extend_mulSingle]

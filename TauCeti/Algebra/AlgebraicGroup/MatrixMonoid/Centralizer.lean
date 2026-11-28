@@ -45,6 +45,13 @@ theorem centralizerIdeal_def (X : Matrix ι ι R) :
         X.map MvPolynomial.C * Matrix.mvPolynomialX ι ι R :
         Matrix ι ι (MvPolynomial (ι × ι) R)) ij.1 ij.2) := (rfl)
 
+/-- Each entry of the generic commutator `YX - XY` lies in the centralizer ideal of `X`. -/
+theorem commutator_entry_mem_centralizerIdeal (X : Matrix ι ι R) (i j : ι) :
+    (Matrix.mvPolynomialX ι ι R * X.map (MvPolynomial.C : R →+* MvPolynomial (ι × ι) R) -
+      X.map MvPolynomial.C * Matrix.mvPolynomialX ι ι R :
+        Matrix ι ι (MvPolynomial (ι × ι) R)) i j ∈ centralizerIdeal X :=
+  Ideal.subset_span ⟨(i, j), rfl⟩
+
 /-- A polynomial point satisfies the centralizer equations exactly when its matrix commutes
 with the base change of `X`. No reducedness assumption is imposed on the value algebra. -/
 theorem centralizerIdeal_le_ker_iff {A : Type*} [CommRing A] [Algebra R A]

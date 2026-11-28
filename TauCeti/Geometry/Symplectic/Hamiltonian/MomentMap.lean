@@ -61,7 +61,8 @@ finite-dimensional manifold, its image is the annihilator `𝔤_x^0` of the isot
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_differential`). So `dμ_x` is surjective exactly when
 `𝔤_x = 0`, that is, when the action is locally free at `x`, and the rank of `dμ_x` is the
 dimension of the orbit tangent space. These identities describe the tangent spaces of the
-levels of a moment map, the starting point of symplectic reduction. Along a Hamiltonian vector
+levels of a moment map, the starting point of symplectic reduction; the levels themselves are
+closed (`TauCeti.SmoothTwoForm.IsMomentMap.isClosed_preimage_singleton`). Along a Hamiltonian vector
 field `X` of a function `f` the differential is `⟨dμ_x(X x), Z⟩ = -df_x(Z_M x)`
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_apply_of_isHamiltonianVectorField`), so `X` is
 tangent to the level at `x` exactly when `df_x` vanishes on every `Z_M x`
@@ -79,10 +80,11 @@ compatible with restriction of the action. For a closed form, `d(σ(Z_M, Z'_M)) 
 manifold (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq`), and it is a Lie algebra
 `2`-cocycle (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_mem_twoCocycle`). The cocycle
 vanishes at `x` exactly when `σ(Z_M x, Z'_M x) = μ(x)(⁅Z, Z'⁆)` for all `Z, Z'`
-(`TauCeti.SmoothTwoForm.momentCocycle_eq_zero_iff`), and then `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`, so the
-isotropy algebra `𝔤_x` lies in the coadjoint stabilizer of `μ(x)`
-(`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`). For a nondegenerate form, if
-moreover `μ(x)` is coadjoint-fixed, the components of `μ` pairwise Poisson-commute at `x`
+(`TauCeti.SmoothTwoForm.momentCocycle_eq_zero_iff`). Then the isotropy algebra `𝔤_x` lies in the
+coadjoint stabilizer of `μ(x)`, whether or not `μ` is a moment map
+(`TauCeti.SmoothTwoForm.isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero`), and for a moment
+map `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`. For a nondegenerate form, if moreover `μ(x)` is coadjoint-fixed,
+the components of `μ` pairwise Poisson-commute at `x`
 (`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`). More generally, where the cocycle
 vanishes the moment map is a Poisson map to `𝔤*` with its positive Lie–Poisson structure: functions
 `f` and `g` whose differentials at `x` are `⟨dμ_x(·), Z⟩` and `⟨dμ_x(·), Z'⟩` have Hamiltonian
@@ -172,6 +174,16 @@ theorem eval₂_apply (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) (v : TangentS
 theorem mdifferentiableAt (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) :
     MDifferentiableAt I 𝓘(ℝ) (fun y ↦ μ y Z) x :=
   (h.contMDiff Z).mdifferentiableAt (by simp)
+
+/-- **The levels of a moment map are closed.** The level `μ⁻¹(c)` is the intersection of the levels
+`μ_Z⁻¹(c Z)` of the continuous components. -/
+theorem isClosed_preimage_singleton (h : σ.IsMomentMap a μ) (c : Module.Dual ℝ 𝔤) :
+    IsClosed (μ ⁻¹' {c}) := by
+  have : μ ⁻¹' {c} = ⋂ Z, {x | μ x Z = c Z} := by
+    ext x
+    simp [LinearMap.ext_iff]
+  rw [this]
+  exact isClosed_iInter fun Z ↦ isClosed_eq (h.contMDiff Z).continuous continuous_const
 
 /-- Adding a constant `ν ∈ 𝔤*` to a moment map gives a moment map of the same action. -/
 theorem add_const (h : σ.IsMomentMap a μ) (ν : Module.Dual ℝ 𝔤) :
@@ -274,7 +286,7 @@ theorem hamiltonianVectorField_eq (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegen
 theorem poissonBracket_eq_mvfderiv (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (f : M → ℝ)
     (Z : 𝔤) (x : M) :
     σ.poissonBracket f (fun y ↦ μ y Z) x = mvfderiv I f x (a Z x) := by
-  rw [hσ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_eq hσ]
+  rw [σ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_eq hσ]
 
 /-- The Poisson bracket `{μ_Z, f}` is minus the derivative of `f` along the generated vector field
 `Z_M`. -/
@@ -539,6 +551,16 @@ private theorem mdifferentiableAt_eval₂ (σ : SmoothTwoForm I M) (a : Infinite
     σ.mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![a Z y, a Z' y] i)
       fun i ↦ by fin_cases i <;> exact (a.contMDiff _ x).mdifferentiableAt (by simp)
 
+/-- If the cocycle of `μ` vanishes at `x`, the isotropy algebra `𝔤_x` is contained in the
+coadjoint stabilizer of `μ(x)`: for `Z_M x = 0`, `μ(x)(⁅Z, Z'⁆) = σ(Z_M x, Z'_M x) = 0` for all
+`Z'`. No moment map identity is needed. -/
+theorem isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero {x : M}
+    (hc : σ.momentCocycle a μ x = 0) : a.isotropy x ≤ lieAnnihilator ℝ 𝔤 (μ x) := fun Z hZ ↦ by
+  rw [mem_lieAnnihilator]
+  ext Z'
+  rw [Module.Dual.lie_apply, LinearMap.zero_apply, neg_eq_zero, ← momentCocycle_eq_zero_iff.1 hc,
+    (a.mem_isotropy_iff x).1 hZ, SmoothBundleForm.eval₂_zero_left]
+
 namespace IsMomentMap
 
 /-- For a nondegenerate form on a finite-dimensional manifold, the cocycle of a moment map is
@@ -593,13 +615,6 @@ theorem poissonBracket_eq_apply_lie_of_mvfderiv_eq [FiniteDimensional ℝ E]
     σ.poissonBracket f g x = μ x ⁅Z, Z'⁆ := by
   rw [poissonBracket_def, h.hamiltonianVectorField_apply_eq_of_mvfderiv_eq hσ hf,
     h.hamiltonianVectorField_apply_eq_of_mvfderiv_eq hσ hg, momentCocycle_eq_zero_iff.1 hc]
-
-/-- If the cocycle of a moment map vanishes at `x`, the isotropy algebra `𝔤_x` is contained in the
-coadjoint stabilizer of `μ(x)`. -/
-theorem isotropy_le_lieAnnihilator (h : σ.IsMomentMap a μ) {x : M}
-    (hc : σ.momentCocycle a μ x = 0) : a.isotropy x ≤ lieAnnihilator ℝ 𝔤 (μ x) := fun Z hZ ↦ by
-  rw [mem_lieAnnihilator, ← h.differential_apply_of_momentCocycle_eq_zero hc,
-    (a.mem_isotropy_iff x).1 hZ, map_zero]
 
 section Closed
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -16,27 +15,24 @@ Bounded operators out of a finite-dimensional space are determined by the images
 with operator norm controlled by the norms of those images. Hence such operators into `E` are
 approximated in operator norm by operators factoring through any operator `g : F →L[𝕜] E` of
 dense range. On a finite-dimensional domain over a locally compact field, such as `ℝ`, `ℂ` or a
-`p`-adic field, strict pointwise norm bounds are equivalent to strict operator-norm bounds. Over
-a complete field, an operator into a finite-dimensional space from a space of the same `finrank`
-is invertible as soon as it is injective.
-
-Bounded operators between finite-dimensional spaces form a finite-dimensional space over every
-finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
-real-linear operators into a complex space.
+`p`-adic field, strict pointwise norm bounds are equivalent to strict operator-norm bounds.
 
 ## Main results
 
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
+* `ContinuousLinearMap.tendsto_opNorm_zero_of_forall_tendsto_zero`: on a finite-dimensional
+  domain, pointwise convergence to zero gives operator-norm convergence to zero.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional domain over a locally compact field.
-* `ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq`: an operator into a
-  finite-dimensional space from a space of the same `finrank` is invertible exactly when it is
-  injective.
-* `ContinuousLinearMap.finiteDimensional_of_isScalarTower`: `E →L[𝕜] F` is finite-dimensional
-  over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
+* `LinearMap.norm_toContinuousLinearMap_pos`: a nonzero linear map out of a finite-dimensional
+  space has positive operator norm.
+* `LinearMap.norm_toContinuousLinearMap_linearIsometry_comp`,
+  `LinearMap.norm_toContinuousLinearMap_comp_linearIsometryEquiv`: the operator norm of a linear
+  map out of a finite-dimensional space is unchanged by a linear isometry on the left and an
+  isometric isomorphism on the right.
 -/
 
 public section
@@ -66,6 +62,23 @@ theorem denseRange_comp {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E
           simpa [Module.Basis.constrL_basis, ← dist_eq_norm] using (hy i).le
     _ = r / 2 := by field_simp
     _ < r := half_lt_self hr
+
+open Filter Topology in
+/-- On a finite-dimensional space, operators that tend to zero at every point tend to zero in
+operator norm: pointwise smallness at the finitely many vectors of a basis is uniform smallness on
+the unit ball (`Module.Basis.exists_opNorm_le`). -/
+theorem tendsto_opNorm_zero_of_forall_tendsto_zero {F ι : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {l : Filter ι} {T : ι → V →L[𝕜] F}
+    (h : ∀ x, Tendsto (fun i ↦ T i x) l (𝓝 0)) :
+    Tendsto (fun i ↦ ‖T i‖) l (𝓝 0) := by
+  set v := Module.finBasis 𝕜 V
+  obtain ⟨C, -, hC⟩ := v.exists_opNorm_le (F := F)
+  have hsum : Tendsto (fun i ↦ C * ∑ j, ‖T i (v j)‖) l (𝓝 0) := by
+    simpa using (tendsto_finsetSum _ fun j _ ↦ (h (v j)).norm).const_mul C
+  refine squeeze_zero (fun i ↦ norm_nonneg _)
+    (fun i ↦ hC (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) fun j ↦ ?_) hsum
+  exact Finset.single_le_sum (f := fun j ↦ ‖T i (v j)‖) (fun _ _ ↦ norm_nonneg _)
+    (Finset.mem_univ j)
 
 section StrictNorm
 
@@ -105,40 +118,6 @@ theorem opNorm_lt_iff (A : E →SL[σ₁₂] F) {c : ℝ} (hc : 0 < c) :
 
 end StrictNorm
 
-section ScalarExtension
-
-variable {𝕜 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedAlgebra 𝕜 𝕜'] [FiniteDimensional 𝕜 𝕜']
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 𝕜' F]
-  [FiniteDimensional 𝕜' F]
-
-/-- Bounded `𝕜`-linear operators between finite-dimensional spaces form a finite-dimensional
-space over a finite extension `𝕜'` of `𝕜` acting compatibly on the codomain, for instance over
-`ℂ` for real-linear operators into a finite-dimensional complex space. -/
-theorem finiteDimensional_of_isScalarTower : FiniteDimensional 𝕜' (E →L[𝕜] F) := by
-  have : FiniteDimensional 𝕜 F := Module.Finite.trans 𝕜' F
-  exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (E →L[𝕜] F)
-
-end ScalarExtension
-
-section Invertible
-
-variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup U] [NormedSpace 𝕜 U]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
-
-/-- A continuous linear map into a finite-dimensional space, from a space of the same `finrank`,
-is invertible exactly when it is injective. The domain need not be assumed finite-dimensional:
-it injects into the codomain. -/
-theorem isInvertible_iff_injective_of_finrank_eq {A : U →L[𝕜] G}
-    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) : A.IsInvertible ↔ Function.Injective A := by
-  refine ⟨IsInvertible.injective, fun hinj ↦ ?_⟩
-  have := FiniteDimensional.of_injective (A : U →ₗ[𝕜] G) hinj
-  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩
-
-end Invertible
-
 end ContinuousLinearMap
 
 section MapsTo
@@ -177,3 +156,36 @@ theorem IsCompact.isCompact_setOfPred_mapsTo {K : Set F} (hK : IsCompact K) {s :
   exact hwi ▸ hw ▸ hT (hav i)
 
 end MapsTo
+
+namespace LinearMap
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A nonzero linear map out of a finite-dimensional space has positive operator norm. -/
+theorem norm_toContinuousLinearMap_pos {A : E →ₗ[𝕜] F} (hA : A ≠ 0) :
+    0 < ‖toContinuousLinearMap A‖ := by
+  rw [norm_pos_iff]
+  exact (map_ne_zero_iff _ toContinuousLinearMap.injective).mpr hA
+
+/-- Composing a linear map out of a finite-dimensional space on the left with a linear isometry
+leaves its operator norm unchanged. -/
+theorem norm_toContinuousLinearMap_linearIsometry_comp (W : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    ‖toContinuousLinearMap (W.toLinearMap ∘ₗ A)‖ = ‖toContinuousLinearMap A‖ := by
+  have h : toContinuousLinearMap (W.toLinearMap ∘ₗ A) =
+      W.toContinuousLinearMap.comp (toContinuousLinearMap A) := by
+    ext; simp
+  rw [h, W.norm_toContinuousLinearMap_comp]
+
+/-- Composing a linear map out of a finite-dimensional space on the right with an isometric
+isomorphism leaves its operator norm unchanged. -/
+theorem norm_toContinuousLinearMap_comp_linearIsometryEquiv [FiniteDimensional 𝕜 G]
+    (A : E →ₗ[𝕜] F) (U : G ≃ₗᵢ[𝕜] E) :
+    ‖toContinuousLinearMap (A ∘ₗ (U : G →ₗ[𝕜] E))‖ = ‖toContinuousLinearMap A‖ := by
+  have h : toContinuousLinearMap (A ∘ₗ (U : G →ₗ[𝕜] E)) =
+      (toContinuousLinearMap A).comp (U : G →L[𝕜] E) := by
+    ext; simp
+  rw [h, (toContinuousLinearMap A).opNorm_comp_linearIsometryEquiv]
+
+end LinearMap

@@ -8,8 +8,13 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
+import Mathlib.Algebra.Module.Submodule.Union
+import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.Order.Interval.Set.Infinite
 import TauCeti.LinearAlgebra.LinearIndependent.Extend
+import TauCeti.LinearAlgebra.LinearMap.Comp
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Linear functionals and hyperplanes
@@ -21,10 +26,14 @@ of `r • id` through `f` when `r` annihilates `ker f`, and the dimension count 
 of `ker f` by moving each other `X i` into `ker f` along `X j`.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
-algebra is finite-dimensional is itself finite-dimensional.
+algebra is finite-dimensional is itself finite-dimensional. In a projective module over any
+semiring, functionals also detect membership in `I • M` for a two-sided ideal `I`.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
-family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
+family of vectors. Finitely many linearly independent functionals take independent values on any
+vector space. Over any ring, a finite biorthogonal family of vectors `v` and linear forms `f`
+splits the module as the span of the `v j` plus the common kernel of the `f i`. Linearly
+independent functionals, as many as the dimension, span the dual space
 and so separate points. Conversely, a separating family of functionals on a finite-dimensional
 space contains such a family, which gives coordinates on the space.
 
@@ -55,12 +64,20 @@ space contains such a family, which gives coordinates on the space.
 * `Module.Dual.linearIndependent_sub_div_smul` and `Module.Dual.span_sub_div_smul_eq_ker`: if
   `X` is a basis and `f (X j) ≠ 0`, the vectors `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, form a
   basis of `ker f`.
+* `Module.Dual.span_sup_inf_ker_ne_top`: if `ker φ₁ ≠ ker φ₂` both avoid `p`, then
+  `span K {p} ⊔ (ker φ₁ ⊓ ker φ₂) ≠ ⊤`.
+* `TauCeti.exists_forall_pos_and_forall_notMem`: find a point preserving finitely many strict
+  linear inequalities while avoiding finitely many proper submodules.
 * `Module.Dual.span_range_comp_eq_top_of_injective`: pulling a spanning family of forms back along
   an injective linear map still spans the dual.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
   functional vanishes on `p` and equals one at some vector.
+* `Submodule.isCompl_span_range_iInf_ker_of_apply_eq_ite`: a finite biorthogonal family of vectors
+  `v` and linear forms `f` splits the module as `span (range v) ⊕ ⋂ᵢ ker (f i)`.
+* `Module.forall_dual_apply_mem_iff`: in a projective module, `m ∈ I • M` for a two-sided ideal
+  `I` exactly when every linear functional takes a value in `I` at `m`.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is, and `Module.Finite.of_surjective_end`: in particular once a finite-dimensional space
   maps linearly onto its endomorphism algebra.
@@ -70,6 +87,8 @@ space contains such a family, which gives coordinates on the space.
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
   independent family of functionals has a biorthogonal family of vectors.
+* `LinearIndependent.pi_surjective`: finitely many linearly independent functionals assemble into
+  a surjective map `LinearMap.pi l`, on any vector space.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
 * `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
@@ -78,6 +97,8 @@ space contains such a family, which gives coordinates on the space.
 * `Module.Dual.span_range_proj` and `LinearIndependent.exists_linearIndependent_sumElim_proj`: the
   coordinate forms span the dual of `Rⁱ`, so over a field a linearly independent family of forms
   extends by coordinate forms to a basis of the dual.
+* `Module.Dual.exists_ne_zero_apply_nonpos`: in a module of rank greater than one over a linearly
+  ordered division ring, any two linear functionals are both nonpositive at some nonzero vector.
 * `Module.Dual.exists_bijective_pi_of_iInf_ker_eq_bot`: on a finite-dimensional space, a family
   of functionals with no common zero but `0` contains `finrank K V` members that form coordinates.
 * `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
@@ -305,6 +326,29 @@ theorem smul_evalEquiv_symm_dualMap {L P : Type*} [AddCommGroup L] [Module K L]
   simp only [map_sub, map_smul, apply_evalEquiv_symm_apply, LinearEquiv.dualMap_apply, smul_eq_mul,
     h, mul_comm, sub_self]
 
+/-- If two hyperplanes `ker φ₁ ≠ ker φ₂` both avoid `p`, then
+`span K {p} ⊔ (ker φ₁ ⊓ ker φ₂) ≠ ⊤`. -/
+theorem span_sup_inf_ker_ne_top {φ₁ φ₂ : Dual K V} {p : V}
+    (hne : LinearMap.ker φ₁ ≠ LinearMap.ker φ₂)
+    (hp₁ : p ∉ LinearMap.ker φ₁) (hp₂ : p ∉ LinearMap.ker φ₂) :
+    Submodule.span K {p} ⊔ (LinearMap.ker φ₁ ⊓ LinearMap.ker φ₂) ≠ ⊤ := by
+  let ψ : Dual K V := (φ₂ p) • φ₁ - (φ₁ p) • φ₂
+  have hle : Submodule.span K {p} ⊔ (LinearMap.ker φ₁ ⊓ LinearMap.ker φ₂) ≤ LinearMap.ker ψ :=
+    sup_le (by rw [Submodule.span_singleton_le_iff_mem, LinearMap.mem_ker]; simp [ψ, mul_comm])
+      fun _ ⟨hv₁, hv₂⟩ => by simp [ψ, LinearMap.mem_ker.mp hv₁, LinearMap.mem_ker.mp hv₂]
+  have hψ0 : ψ ≠ 0 := fun h0 => hne <| Submodule.ext fun v => by
+    have hv := LinearMap.congr_fun h0 v
+    simp only [ψ, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, LinearMap.zero_apply,
+      sub_eq_zero] at hv
+    have h1 : φ₁ p ≠ 0 := by simpa [LinearMap.mem_ker] using hp₁
+    have h2 : φ₂ p ≠ 0 := by simpa [LinearMap.mem_ker] using hp₂
+    simp only [LinearMap.mem_ker]
+    exact ⟨fun h => (mul_eq_zero.mp (by rw [← hv, h, mul_zero])).resolve_left h1,
+      fun h => (mul_eq_zero.mp (by rw [hv, h, mul_zero])).resolve_left h2⟩
+  intro htop
+  rw [htop, top_le_iff] at hle
+  exact hψ0 (LinearMap.ker_eq_top.mp hle)
+
 /-- Pulling a spanning family of forms back along an injective linear map still spans the dual. -/
 theorem span_range_comp_eq_top_of_injective {W : Type*} [AddCommGroup W] [Module K W]
     {L : ι → Dual K V} (hL : Submodule.span K (Set.range L) = ⊤) {f : W →ₗ[K] V}
@@ -327,6 +371,59 @@ theorem span_range_proj {R ι : Type*} [CommSemiring R] [Finite ι] :
   rw [h, Basis.span_eq]
 
 end Module.Dual
+
+namespace TauCeti
+
+section OrderedField
+
+variable {K V : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup V] [Module K V]
+
+/-- Perturb a point `q` along a direction avoiding a finite family of proper submodules so that
+finitely many strictly positive linear conditions are preserved while avoiding every submodule in
+the family. -/
+theorem exists_forall_pos_and_forall_notMem (q : V) (L : Finset (Module.Dual K V))
+    (hL : ∀ φ ∈ L, 0 < φ q) (ℬ : Finset (Submodule K V)) (hℬ : ∀ S ∈ ℬ, S ≠ ⊤) :
+    ∃ q' : V, (∀ φ ∈ L, 0 < φ q') ∧ (∀ S ∈ ℬ, q' ∉ S) := by
+  classical
+  obtain ⟨v, hv⟩ := Submodule.exists_forall_notMem_of_forall_ne_top
+    (fun S : ℬ => (S : Submodule K V)) (fun S => hℬ S.val S.property)
+  let bounds : Finset K := insert 1 (L.image fun φ => φ q / (|φ v| + 1))
+  let ε : K := bounds.min' (Finset.insert_nonempty _ _)
+  have hε : 0 < ε := by
+    have hmem : ε ∈ bounds := Finset.min'_mem bounds (Finset.insert_nonempty _ _)
+    rcases Finset.mem_insert.mp hmem with h1 | h2
+    · rw [h1]; exact zero_lt_one
+    · obtain ⟨φ, hφ, hφeq⟩ := Finset.mem_image.mp h2
+      rw [← hφeq]
+      exact div_pos (hL φ hφ) (add_pos_of_nonneg_of_pos (abs_nonneg _) zero_lt_one)
+  have hbad_fin : (⋃ S ∈ ℬ, {s : K | q + s • v ∈ S}).Finite :=
+    ℬ.finite_toSet.biUnion fun S hS => Set.Subsingleton.finite fun s₁ hs₁ s₂ hs₂ => by
+      by_contra hne
+      have hdiff : (s₁ - s₂) • v ∈ S := by
+        have heq : (q + s₁ • v) - (q + s₂ • v) = (s₁ - s₂) • v := by module
+        exact heq ▸ S.sub_mem hs₁ hs₂
+      have hvS := S.smul_mem (s₁ - s₂)⁻¹ hdiff
+      rw [smul_smul, inv_mul_cancel₀ (sub_ne_zero.mpr hne), one_smul] at hvS
+      exact hv ⟨S, hS⟩ hvS
+  obtain ⟨s, hsIoo, hsnot⟩ := (Set.Ioo_infinite hε).exists_notMem_finite hbad_fin
+  refine ⟨q + s • v, fun φ hφ => ?_, fun S hS hmem => hsnot (Set.mem_biUnion hS hmem)⟩
+  have hden : 0 < |φ v| + 1 := add_pos_of_nonneg_of_pos (abs_nonneg _) zero_lt_one
+  have hs_lt : s < φ q / (|φ v| + 1) := lt_of_lt_of_le hsIoo.2
+    (Finset.min'_le bounds _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ hφ)))
+  have hmul : s * (|φ v| + 1) < φ q := (lt_div_iff₀ hden).mp hs_lt
+  have hnonneg : 0 ≤ s * (|φ v| + φ v) :=
+    mul_nonneg hsIoo.1.le (neg_le_iff_add_nonneg.mp (neg_le_abs (φ v)))
+  rw [map_add, map_smul, smul_eq_mul]
+  calc
+    0 < s := hsIoo.1
+    _ ≤ s + s * (|φ v| + φ v) := le_add_of_nonneg_right hnonneg
+    _ = s * (|φ v| + 1) + s * φ v := by ring
+    _ < φ q + s * φ v := add_lt_add_left hmul _
+
+end OrderedField
+
+end TauCeti
 
 namespace Submodule
 
@@ -359,7 +456,40 @@ theorem exists_dual_apply_eq_one_of_ne_top {p : Submodule K V} (hp : p ≠ ⊤) 
   rw [hfp, mem_bot] at hxmap
   exact hxmap
 
+/-- **Splitting by a biorthogonal family.** If the linear forms `f i` and the vectors `v j` are
+biorthogonal, `f i (v j) = if i = j then 1 else 0`, with `ι` finite, then `M` is the internal
+direct sum of the span of the `v j` and the common kernel of the `f i`. The projection onto the
+first summand is `m ↦ ∑ j, f j m • v j`. -/
+theorem isCompl_span_range_iInf_ker_of_apply_eq_ite {R M ι : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [Finite ι] [DecidableEq ι] {v : ι → M} {f : ι → M →ₗ[R] R}
+    (h : ∀ i j, f i (v j) = if i = j then 1 else 0) :
+    IsCompl (span R (Set.range v)) (⨅ i, LinearMap.ker (f i)) := by
+  have := Fintype.ofFinite ι
+  have hcomp : LinearMap.pi f ∘ₗ Fintype.linearCombination R v = LinearMap.id := by
+    refine LinearMap.pi_ext' fun j ↦ LinearMap.ext_ring (funext fun i ↦ ?_)
+    simp [Fintype.linearCombination_apply_single, h, Pi.single_apply]
+  have hc := (LinearMap.bijective_comp_iff.1 (by rw [hcomp]; exact Function.bijective_id)).2.1
+  rwa [Fintype.range_linearCombination, LinearMap.ker_pi] at hc
+
 end Submodule
+
+namespace Module
+
+/-- In a projective module, the elements of `I • M` for a two-sided ideal `I` are those at which
+every linear functional takes a value in `I`. For `I = ⊥` this is
+`Module.forall_dual_apply_eq_zero_iff`. -/
+theorem forall_dual_apply_mem_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Module.Projective R M] (I : Ideal R) [I.IsTwoSided] (m : M) :
+    (∀ φ : Module.Dual R M, φ m ∈ I) ↔ m ∈ I • (⊤ : Submodule R M) := by
+  refine ⟨fun h ↦ ?_, fun hm φ ↦ ?_⟩
+  · -- Write `m` in a dual basis, `m = ∑ φₓ(m) • x`, with each coefficient in `I`.
+    obtain ⟨s, hs⟩ := Module.Projective.out (R := R) (P := M)
+    rw [← hs m, Finsupp.linearCombination_apply]
+    exact Submodule.sum_mem _ fun x _ ↦
+      Submodule.smul_mem_smul (h (Finsupp.lapply x ∘ₗ s)) Submodule.mem_top
+  · exact φ.apply_mem_of_mem_smul_top hm
+
+end Module
 
 namespace Module.Finite
 
@@ -439,6 +569,21 @@ theorem exists_forall_apply_eq_ite_of_dual [FiniteDimensional K V] {f : ι → D
   exact if_congr eq_comm rfl rfl
 
 end Biorthogonal
+
+/-- Finitely many linearly independent functionals assemble into a surjective map
+`LinearMap.pi l : V →ₗ[K] ι → K`: their values can be prescribed independently. No
+finite-dimensionality of `V` is needed. -/
+theorem pi_surjective {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Finite ι]
+    {l : ι → Module.Dual K V} (hl : LinearIndependent K l) :
+    Function.Surjective (LinearMap.pi l) := by
+  have hl' : LinearIndependent K fun i ↦ (l i : V → K) :=
+    hl.map' (LinearMap.ltoFun K V K K) (LinearMap.ker_eq_bot.mpr DFunLike.coe_injective)
+  -- The values of the family at a vector are the components of `LinearMap.pi l`.
+  have hpi : ⇑(LinearMap.pi l) = flip fun i ↦ ⇑(l i) :=
+    funext fun v ↦ funext fun i ↦ LinearMap.pi_apply l v i
+  rw [← LinearMap.range_eq_top, ← Submodule.span_eq (LinearMap.range (LinearMap.pi l)),
+    LinearMap.coe_range, hpi]
+  exact span_flip_eq_top_iff_linearIndependent.mpr hl'
 
 section Separation
 
@@ -530,6 +675,23 @@ theorem exists_bijective_pi_of_iInf_ker_eq_bot [FiniteDimensional K V] (L : ι �
       (hli.comp _ e.symm.injective).eq_zero_of_forall_apply_eq_zero (by simp) fun i ↦
         congrFun hx i
   exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by simp)).mp hinj⟩
+
+/-- In a module of rank greater than one over a linearly ordered division ring, any two linear
+functionals admit a nonzero vector on which both are nonpositive. -/
+theorem exists_ne_zero_apply_nonpos {K V : Type*} [DivisionRing K] [LinearOrder K]
+    [IsOrderedAddMonoid K] [AddCommGroup V] [Module K V]
+    (h : 1 < Module.rank K V) (f₁ f₂ : Dual K V) :
+    ∃ v : V, v ≠ 0 ∧ f₁ v ≤ 0 ∧ f₂ v ≤ 0 := by
+  have hnot_inj : ¬Function.Injective f₁ := fun hinj => by
+    have hrank := f₁.lift_rank_le_of_injective hinj
+    rw [Module.rank_self, Cardinal.lift_one, Cardinal.lift_le_one_iff] at hrank
+    exact h.not_ge hrank
+  obtain ⟨v₀, hv₀_mem, hv₀_ne⟩ := (Submodule.ne_bot_iff _).mp
+    (mt LinearMap.ker_eq_bot.mp hnot_inj)
+  have hv₀_f₁ : f₁ v₀ = 0 := LinearMap.mem_ker.mp hv₀_mem
+  rcases le_total (f₂ v₀) 0 with h2 | h2
+  · exact ⟨v₀, hv₀_ne, hv₀_f₁.le, h2⟩
+  · exact ⟨-v₀, neg_ne_zero.mpr hv₀_ne, by simp [hv₀_f₁], by simpa using h2⟩
 
 end Module.Dual
 

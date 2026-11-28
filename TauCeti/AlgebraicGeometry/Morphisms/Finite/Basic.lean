@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.LocalRing.Module
@@ -27,23 +29,36 @@ finitely many maximal ideals, `Γ(X, ⊤)` therefore also has finitely many maxi
 This finiteness is used to compute the rank of a finite morphism over a field as the dimension
 of its global sections.
 
+A scheme finite over `Spec R` is the spectrum of a finite `R`-algebra, flat over `R` when the
+morphism is flat (`AlgebraicGeometry.Scheme.Hom.exists_iso_Spec_of_isFinite`). So is the fibre
+`X ×_Y Spec R` of a finite morphism `X ⟶ Y` over any `Spec R ⟶ Y`
+(`AlgebraicGeometry.Scheme.Hom.exists_iso_Spec_pullback_of_isFinite`), for instance over the
+identity section of a group scheme over `Spec R`.
+
 For a finite flat morphism `g : Z ⟶ Y` over an affine scheme `Y` whose global sections form a local
 ring, `Γ(Z, ⊤)` is free over `Γ(Y, ⊤)` (`AlgebraicGeometry.Scheme.Hom.free_appTop`), with no
 finite-presentation assumption. If `g : Y ⟶ S` is finite, flat and locally of finite presentation
 (finite locally free), its sections `Γ(Y, g⁻¹ U)` over an affine open `U` of `S` form a projective
 `Γ(S, U)`-module (`AlgebraicGeometry.Scheme.Hom.projective_app`).
 
-Finite, flat, locally finite type and locally finitely presented morphisms each respect
-isomorphisms (`TauCeti.isFinite_respectsIso`, `TauCeti.flat_respectsIso`,
-`TauCeti.locallyOfFiniteType_respectsIso` and `TauCeti.locallyOfFinitePresentation_respectsIso`),
+Finite, locally finite type and locally finitely presented morphisms each respect isomorphisms
+(`TauCeti.isFinite_respectsIso`, `TauCeti.locallyOfFiniteType_respectsIso` and
+`TauCeti.locallyOfFinitePresentation_respectsIso`; for flat morphisms this is
+`TauCeti.flat_respectsIso` in `TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic`),
 and hence transfer from a closed immersion composite `i ≫ f` to `i.ker.subschemeι ≫ f`
 (`AlgebraicGeometry.Scheme.Hom.isFinite_ker_subschemeι_comp`,
 `AlgebraicGeometry.Scheme.Hom.flat_ker_subschemeι_comp`,
 `AlgebraicGeometry.Scheme.Hom.locallyOfFinitePresentation_ker_subschemeι_comp`).
 
-Finiteness of a morphism is local on the target (`TauCeti.isZariskiLocalAtTarget_isFinite`); this
-is recorded as an instance because instance search does not derive it from Mathlib's affine
-description of `IsFinite`.
+The instance stating that finiteness of a morphism is local on the target
+(`AlgebraicGeometry.isZariskiLocalAtTarget_isFinite`) is in
+`TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal`.
+
+## References
+
+* The statement of `AlgebraicGeometry.Scheme.Hom.exists_iso_Spec_pullback_of_isFinite` follows
+  the folder `grh` of https://github.com/lsernau/grh-lean at commit
+  72fead102f663d5c7a407964a13dc0cf9d977207 (`New.Variety.exists_finite_kernel_ring`).
 -/
 
 public section
@@ -62,6 +77,33 @@ theorem Scheme.Hom.moduleFinite_appTop {R : Type u} [CommRing R] {X : Scheme.{u}
     Module.Finite R Γ(X, ⊤) := by
   rw [← RingHom.finite_algebraMap, hf]
   exact (RingHom.finite_respectsIso.cancel_left_isIso _ _).mpr f.finite_appTop
+
+/-- A scheme finite over `Spec R` is the spectrum of a finite `R`-algebra, which is flat over `R`
+when the morphism is flat: there are a finite ring homomorphism `φ : R ⟶ A` and an isomorphism
+`X ≅ Spec A` under which `g` becomes `Spec.map φ`. -/
+theorem Scheme.Hom.exists_iso_Spec_of_isFinite {R : CommRingCat.{u}} {X : Scheme.{u}}
+    (g : X ⟶ Spec R) [IsFinite g] :
+    ∃ (A : CommRingCat.{u}) (φ : R ⟶ A) (e : X ≅ Spec A),
+      e.hom ≫ Spec.map φ = g ∧ φ.hom.Finite ∧ (Flat g → φ.hom.Flat) := by
+  have : IsAffine X := isAffine_of_isAffineHom g
+  refine ⟨Γ(X, ⊤), (Scheme.ΓSpecIso R).inv ≫ g.appTop, X.isoSpec, ?_,
+    (RingHom.finite_respectsIso.cancel_left_isIso _ _).mpr g.finite_appTop,
+    fun _ ↦ (RingHom.Flat.respectsIso.cancel_left_isIso _ _).mpr g.flat_appTop⟩
+  -- Naturality of `isoSpec` turns the goal into `Spec.map` of `Γ(Spec R, ⊤) ≅ R` and back.
+  rw [Spec.map_comp, Scheme.isoSpec_hom_naturality_assoc, Scheme.isoSpec_Spec_hom]
+  simp
+
+/-- **The fibre of a finite morphism over an affine point.** For a finite morphism `f : X ⟶ Y` and
+any `s : Spec R ⟶ Y`, the fibre `X ×_Y Spec R` is `Spec A` for a finite `R`-algebra `A`,
+compatibly with the projection to `Spec R`, and `A` is flat over `R` if `f` is flat. For `s` the
+identity section `η[B].left` of a group scheme `B` over `Spec R` and `f` a homomorphism, this
+fibre is the kernel of `f` (`TauCeti.GroupScheme.isPullback_kernel_left`). -/
+theorem Scheme.Hom.exists_iso_Spec_pullback_of_isFinite {R : CommRingCat.{u}} {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [IsFinite f] (s : Spec R ⟶ Y) :
+    ∃ (A : CommRingCat.{u}) (φ : R ⟶ A) (e : Limits.pullback f s ≅ Spec A),
+      e.hom ≫ Spec.map φ = Limits.pullback.snd f s ∧ φ.hom.Finite ∧ (Flat f → φ.hom.Flat) := by
+  obtain ⟨A, φ, e, he, hfin, hflat⟩ := (Limits.pullback.snd f s).exists_iso_Spec_of_isFinite
+  exact ⟨A, φ, e, he, hfin, fun _ ↦ hflat inferInstance⟩
 
 /-- For a finite morphism `g : Z ⟶ Spec R` over a ring `R` with finitely many maximal ideals, the
 coordinate ring `Γ(Z, ⊤)` has finitely many maximal ideals. -/
@@ -109,12 +151,6 @@ instance isFinite_respectsIso :
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
 
-/-- Flat morphisms of schemes respect isomorphisms. -/
-instance flat_respectsIso :
-    MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition
-    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
 /-- Morphisms of schemes locally of finite type respect isomorphisms. -/
 instance locallyOfFiniteType_respectsIso :
     MorphismProperty.RespectsIso (@LocallyOfFiniteType : MorphismProperty Scheme.{u}) :=
@@ -127,14 +163,6 @@ instance locallyOfFinitePresentation_respectsIso :
       (@LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
-/-- Finiteness of a morphism of schemes is local on the target. Instance search does not find
-this from Mathlib's affine description of `IsFinite`, so it is recorded here, using that finite
-means integral and locally of finite type (`AlgebraicGeometry.IsFinite.eq_inf`). -/
-instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} :=
-  IsFinite.eq_inf ▸ @MorphismProperty.IsLocalAtTarget.inf _ _ _ _ _
-    (@HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty)
-    (HasRingHomProperty.instIsZariskiLocalAtTarget @LocallyOfFiniteType)
 
 end TauCeti
 

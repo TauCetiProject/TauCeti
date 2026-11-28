@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5
+Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5, Codex
 -/
 module
 
@@ -9,9 +9,11 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.RingTheory.Idempotents
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
+import TauCeti.Data.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
@@ -29,6 +31,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.exists_det_submatrix_ne_zero_of_linearIndepOn`: over a field, for a matrix with
+  independent rows, independent columns extend to a column basis with a nonzero maximal minor.
 * `Matrix.linearIndependent_row_of_map`: row independence over a domain lifts along every ring
   homomorphism of domains, such as a reduction `ℤ → ZMod ℓ`.
 * `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
@@ -41,6 +45,12 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   to the independent rows of a matrix `A`, with complementary sizes, the kernel of `A` is the span
   of `x`.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
+* `Matrix.ker_mulVecLin_transpose_mul_diagonal_mul` and
+  `Matrix.rank_transpose_mul_diagonal_mul`: positive diagonal weights preserve the kernel and
+  rank of a Gram matrix over a linearly ordered ring and field, respectively.
+* `Matrix.isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map`: the weighted transpose kernel
+  and column range of a matrix over a linearly ordered field remain complementary after mapping
+  its entries to any field.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
 * `Matrix.linearIndependent_rat_row_iff`: the case of integer matrices extended to `ℚ`.
@@ -50,6 +60,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   matrix-vector multiplication.
 * `Matrix.finite_of_mulVec_surjective`: a matrix whose `mulVec` is surjective has finitely many
   rows.
+* `Matrix.mulVec_surjective_iff_linearIndependent_row`: over a field, `A.mulVec` is surjective
+  exactly when the rows of `A` are linearly independent.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
@@ -62,6 +74,13 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
   negation preserve the rank.
 * `Matrix.rank_add_le`: over a field, the rank of a sum is at most the sum of the ranks.
+* `Matrix.IsIdempotentElem.rank_one_sub_add_rank`, `Matrix.IsIdempotentElem.rank_add` and
+  `Matrix.OrthogonalIdempotents.rank_sum`: over a field, the ranks of `e` and `1 - e` add up to
+  the size of the matrix, and the rank of a sum of orthogonal idempotent matrices is the sum of
+  their ranks.
+* `Matrix.rank_fromBlocks_zero₁₂_zero₂₁` and `Matrix.rank_fromBlocks_zero₁₁_zero₂₂`: over a
+  field with finite column index types, the ranks of block-diagonal and off-diagonal block
+  matrices are the sums of the ranks of their respective blocks.
 * `Matrix.rank_conjTranspose_of_field` and
   `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
   structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
@@ -81,6 +100,65 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 public section
 
 namespace Matrix
+
+/-- **The kernel shrinks**: let `β, δ` satisfy the isotropy relation `βᴴ δ + δᴴ β = 0`, and let
+`w` be in the kernel of `δ` with `(β w)ᵢ ≠ 0`. Replacing the `i`-th row of `δ` by `c` times the
+`i`-th row of `β`, for `c ≠ 0`, gives a matrix whose kernel is strictly contained in that of `δ`. -/
+theorem ker_mulVecLin_row_replacement_lt {K p q : Type*} [CommRing K] [IsDomain K] [StarRing K]
+    [Fintype p] [DecidableEq p] [Fintype q] {β δ : Matrix p q K} (hiso : βᴴ * δ + δᴴ * β = 0)
+    {w : q → K}
+    (hw : δ *ᵥ w = 0) {i : p} (hi : (β *ᵥ w) i ≠ 0) {c : K} (hc : c ≠ 0) :
+    LinearMap.ker ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β).mulVecLin <
+      LinearMap.ker δ.mulVecLin := by
+  -- The isotropy relation, tested on `w` and a vector `v`.
+  have hiso_v (v : q → K) : star (β *ᵥ w) ⬝ᵥ (δ *ᵥ v) + star (δ *ᵥ w) ⬝ᵥ (β *ᵥ v) = 0 := by
+    have h := congrArg (fun M ↦ star w ⬝ᵥ (M *ᵥ v)) hiso
+    simp only [Matrix.add_mulVec, ← Matrix.mulVec_mulVec, dotProduct_add, dotProduct_mulVec,
+      ← star_mulVec, Matrix.zero_mulVec, dotProduct_zero] at h
+    rwa [← dotProduct_mulVec, ← dotProduct_mulVec] at h
+  have hmulVec (v : q → K) : ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β) *ᵥ v =
+      δ *ᵥ v - Function.update (0 : p → K) i ((δ *ᵥ v) i) +
+        Function.update (0 : p → K) i (c * (β *ᵥ v) i) := by
+    simp [Matrix.add_mulVec, Matrix.sub_mulVec, ← Matrix.mulVec_mulVec, single_mulVec]
+  refine IsConcreteLE.lt_iff_le_and_exists.mpr ⟨fun v hv ↦ ?_, w, by simpa using hw, fun hw' ↦ ?_⟩
+  · simp only [LinearMap.mem_ker, mulVecLin_apply, hmulVec] at hv ⊢
+    -- Off `i` the new matrix agrees with `δ`, and at `i` it reads `c (β v)ᵢ`.
+    have hoff (m : p) (hm : m ≠ i) : (δ *ᵥ v) m = 0 := by
+      simpa [Function.update_apply, hm] using congrFun hv m
+    have hβv : (β *ᵥ v) i = 0 := by
+      simpa [hc] using congrFun hv i
+    -- So `δ v` is supported at `i`, and the isotropy relation with `w` kills its value there.
+    have hδv : δ *ᵥ v = Pi.single i ((δ *ᵥ v) i) := by
+      ext m
+      by_cases hm : m = i
+      · subst hm; simp
+      · simp [hoff m hm, hm]
+    have h := hiso_v v
+    rw [hw, star_zero, zero_dotProduct, add_zero, hδv, dotProduct_single, Pi.star_apply,
+      mul_eq_zero, star_eq_zero] at h
+    rw [hδv, h.resolve_left hi, Pi.single_zero]
+  · simp only [LinearMap.mem_ker, mulVecLin_apply, hmulVec, hw] at hw'
+    simpa [hc, hi] using congrFun hw' i
+
+/-- A matrix supported at a single entry has rank at most one. -/
+theorem rank_single_le_one.{u} {R : Type u} {m n : Type*} [CommSemiring R]
+    [DecidableEq m] [DecidableEq n]
+    (i : m) (j : n) (a : R) : (single i j a).rank ≤ 1 := by
+  have hspan : Submodule.span R (Set.range (single i j a).col) ≤
+      Submodule.span R {Pi.single i a} := by
+    rw [Submodule.span_le, Set.range_subset_iff]
+    intro k
+    rw [← row_transpose, transpose_single, row_single, Pi.single_apply]
+    split_ifs
+    · exact Submodule.subset_span (Set.mem_singleton _)
+    · exact Submodule.zero_mem _
+  rw [← finrank_span_range_col]
+  apply Module.finrank_le_of_rank_le
+  rw [Nat.cast_one]
+  refine (Submodule.rank_mono hspan).trans ?_
+  rw [← LinearMap.range_toSpanSingleton, ← Cardinal.lift_le.{u}]
+  simpa only [CommSemiring.rank_self, Cardinal.lift_one] using
+    lift_rank_range_le (LinearMap.toSpanSingleton R (m → R) (Pi.single i a))
 
 /-- The difference of matrices that agree outside one column has rank at most one. -/
 theorem rank_sub_le_one_of_col_eq {R m n : Type*} [CommRing R] [StrongRankCondition R]
@@ -116,24 +194,41 @@ section LinearIndependent
 
 variable {m n R : Type*} [Fintype m] [DecidableEq m] [Finite n]
 
+/-- **Column basis extension.** For a matrix with linearly independent rows over a field, every
+linearly independent set of columns extends to a column basis: an embedding `e` of the rows into
+the columns whose range contains the set and whose square submatrix is invertible. -/
+theorem exists_det_submatrix_ne_zero_of_linearIndepOn {K : Type*} [Field K] {A : Matrix m n K}
+    (hA : LinearIndependent K A.row) {s : Set n} (hs : LinearIndepOn K A.col s) :
+    ∃ e : m ↪ n, s ⊆ Set.range e ∧ (A.submatrix id e).det ≠ 0 := by
+  classical
+  have := Fintype.ofFinite n
+  -- The columns span, since the rows are independent.
+  have hspan : Submodule.span K (Set.range A.col) = ⊤ := by
+    apply Submodule.eq_top_of_finrank_eq
+    rw [finrank_span_range_col, hA.rank_matrix, Module.finrank_fintype_fun_eq_card]
+  -- Extend `s` to a set `B` of columns forming a basis; it has as many elements as there are rows.
+  obtain ⟨B, -, hsB, hBspan, hBli⟩ := exists_linearIndepOn_extension hs (Set.subset_univ s)
+  have hBtop : ⊤ ≤ Submodule.span K (Set.range fun j : B => A.col j) := by
+    rw [← Set.image_eq_range, ← hspan, Submodule.span_le, ← Set.image_univ]
+    exact hBspan
+  have hcard : Fintype.card m = Fintype.card B := by
+    rw [← Module.finrank_fintype_fun_eq_card (R := K),
+      Module.finrank_eq_card_basis (Module.Basis.mk hBli hBtop)]
+  let e : m ≃ B := Fintype.equivOfCardEq hcard
+  refine ⟨e.toEmbedding.trans (Function.Embedding.subtype _),
+    fun j hj => ⟨e.symm ⟨j, hsB hj⟩, by simp⟩, ?_⟩
+  -- The columns of the square submatrix are the basis `B`.
+  exact ((isUnit_iff_isUnit_det _).1
+    (linearIndependent_col_iff_isUnit.1 (hBli.comp e e.injective))).ne_zero
+
 /-- The field case of `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: a family
 of independent columns of the size of the row rank exists. -/
 private theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field {K : Type*}
     [Field K] {A : Matrix m n K} :
     LinearIndependent K A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
-  have : Fintype n := Fintype.ofFinite n
   refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ ↦ ?_⟩
-  · obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K A.col
-    have : Finite κ := Finite.of_injective a ha
-    have : Fintype κ := Fintype.ofFinite κ
-    have hcard : Fintype.card m = Fintype.card κ := by
-      rw [linearIndependent_iff_card_eq_finrank_span.1 hli, Set.finrank, hspan,
-        finrank_span_range_col, h.rank_matrix]
-    let e : m ↪ n := (Fintype.equivOfCardEq hcard).toEmbedding.trans ⟨a, ha⟩
-    -- The columns of the square submatrix are the columns `A.col (e j)` (`col_submatrix_eq_comp`).
-    have hcol : LinearIndependent K (A.submatrix id e).col :=
-      hli.comp _ (Fintype.equivOfCardEq hcard).injective
-    exact ⟨e, ((isUnit_iff_isUnit_det _).1 (linearIndependent_col_iff_isUnit.1 hcol)).ne_zero⟩
+  · obtain ⟨e, -, he⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn h (linearIndepOn_empty K _)
+    exact ⟨e, he⟩
   · -- The rows of the square submatrix are the rows of `A` restricted to the columns `e`.
     exact LinearIndependent.of_comp (LinearMap.funLeft K K e)
       (linearIndependent_rows_of_det_ne_zero he)
@@ -260,6 +355,72 @@ theorem ker_mulVecLin_eq_span_of_dotProduct_eq_zero {K ι m n : Type*} [Field K]
 
 end KernelDimension
 
+section WeightedGram
+
+/-- A Gram matrix with strictly positive diagonal weights has the same kernel as the original
+matrix over a linearly ordered commutative ring. This is the weighted analogue of
+`Matrix.ker_mulVecLin_transpose_mul_self`. -/
+theorem ker_mulVecLin_transpose_mul_diagonal_mul {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [Fintype n] [DecidableEq m]
+    (A : Matrix m n R) (w : m → R) (hw : ∀ i, 0 < w i) :
+    LinearMap.ker (Aᵀ * diagonal w * A).mulVecLin = LinearMap.ker A.mulVecLin := by
+  ext x
+  simp only [LinearMap.mem_ker, mulVecLin_apply, ← mulVec_mulVec]
+  constructor
+  · intro h
+    have h' := congrArg (dotProduct x) h
+    rw [dotProduct_transpose_mulVec, dotProduct_zero] at h'
+    have hs : w ⬝ᵥ (fun i ↦ (A *ᵥ x) i ^ 2) = 0 := by
+      simpa only [mulVec_diagonal, dotProduct, pow_two, mul_assoc] using h'
+    have hz := (TauCeti.dotProduct_eq_zero_iff_of_pos hw (fun i ↦ sq_nonneg ((A *ᵥ x) i))).1 hs
+    ext i
+    exact sq_eq_zero_iff.1 (congrFun hz i)
+  · intro h
+    rw [h, mulVec_zero, mulVec_zero]
+
+/-- A Gram matrix with strictly positive diagonal weights has the same rank as the original
+matrix over a linearly ordered field. This is the weighted analogue of
+`Matrix.rank_transpose_mul_self`. -/
+theorem rank_transpose_mul_diagonal_mul {R m n : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [Finite n] [DecidableEq m]
+    (A : Matrix m n R) (w : m → R) (hw : ∀ i, 0 < w i) :
+    (Aᵀ * diagonal w * A).rank = A.rank := by
+  let := Fintype.ofFinite n
+  have h := congrArg (fun S : Submodule R (n → R) ↦ Module.finrank R S)
+    (ker_mulVecLin_transpose_mul_diagonal_mul A w hw)
+  rw [finrank_ker_mulVecLin, finrank_ker_mulVecLin] at h
+  have hA := A.rank_le_card_width
+  have hGram := (Aᵀ * diagonal w * A).rank_le_card_width
+  omega
+
+/-- After mapping a matrix and its positively weighted transpose from a linearly ordered field
+to any field, the kernel of the weighted transpose complements the column range of the matrix.
+The target field can be unordered. -/
+theorem isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map {R K m n : Type*} [Field R]
+    [LinearOrder R] [IsStrictOrderedRing R] [Field K] [Fintype m] [Fintype n] [DecidableEq m]
+    (A : Matrix m n R) (φ : R →+* K) (w : m → R) (hw : ∀ i, 0 < w i) :
+    IsCompl (LinearMap.ker ((Aᵀ * diagonal w).map φ).mulVecLin)
+      (LinearMap.range (A.map φ).mulVecLin) := by
+  set D := A.map φ
+  set B := (Aᵀ * diagonal w).map φ
+  have hrank : (B * D).rank = D.rank := by
+    dsimp only [B, D]
+    rw [← Matrix.map_mul, Matrix.rank_map, Matrix.rank_map]
+    exact rank_transpose_mul_diagonal_mul A w hw
+  have hrankB : B.rank ≤ D.rank := by
+    dsimp only [B, D]
+    rw [Matrix.rank_map, Matrix.rank_map]
+    exact (Matrix.rank_mul_le_left _ _).trans_eq A.rank_transpose
+  apply (Submodule.isCompl_iff_disjoint _ _ ?_).2
+  · apply Disjoint.symm
+    apply Submodule.disjoint_ker_of_finrank_le B.mulVecLin
+    rw [← LinearMap.range_comp, ← mulVecLin_mul, finrank_range_mulVecLin,
+      finrank_range_mulVecLin, hrank]
+  · rw [finrank_ker_mulVecLin, finrank_range_mulVecLin, Module.finrank_fintype_fun_eq_card]
+    omega
+
+end WeightedGram
+
 section FullColumnRank
 
 variable {R m n : Type*} [CommSemiring R] [OrzechProperty R] [Nontrivial R] [Fintype n]
@@ -282,6 +443,16 @@ theorem finite_of_mulVec_surjective {K : Type*} [Field K] {m n : Type*} [Fintype
   have : Module.Finite K (m → K) := Module.Finite.of_surjective (mulVecLin A) h
   classical
   exact (Pi.linearIndependent_single_one m K).finite
+
+/-- Over a field, `A.mulVec` is surjective exactly when the rows of `A` are linearly
+independent. -/
+theorem mulVec_surjective_iff_linearIndependent_row {K : Type*} [Field K] {m n : Type*}
+    [Finite m] [Fintype n] {A : Matrix m n K} :
+    A.mulVec.Surjective ↔ LinearIndependent K A.row := by
+  have := Fintype.ofFinite m
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mulVec_surjective⟩
+  rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, finrank_span_range_row]
+  exact (mulVec_surjective_iff_rank_eq_card.mp h).symm
 
 end FiniteRows
 
@@ -403,6 +574,39 @@ theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := b
       (LinearMap.range B.mulVecLin))
   exact LinearMap.range_add_le A.mulVecLin B.mulVecLin
 
+/-- Over a field, the rank of the block-diagonal matrix `fromBlocks A 0 0 D` is the sum of the
+ranks of `A` and `D`. -/
+theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Finite l']
+    (A : Matrix m l K) (D : Matrix m' l' K) :
+    (fromBlocks A 0 0 D).rank = A.rank + D.rank := by
+  classical
+  have := Fintype.ofFinite l
+  have := Fintype.ofFinite l'
+  have h : (fromBlocks A 0 0 D).mulVecLin =
+      (LinearEquiv.sumArrowLequivProdArrow m m' K K).symm.toLinearMap ∘ₗ
+        (A.mulVecLin.prodMap D.mulVecLin) ∘ₗ
+          (LinearEquiv.sumArrowLequivProdArrow l l' K K).toLinearMap := by
+    refine LinearMap.ext fun x => ?_
+    obtain ⟨⟨u, v⟩, rfl⟩ := (LinearEquiv.sumArrowLequivProdArrow l l' K K).symm.surjective x
+    ext (i | i) <;> simp [fromBlocks_mulVec, Function.comp_def]
+  have hr : LinearMap.range (fromBlocks A 0 0 D).mulVecLin =
+      ((LinearMap.range A.mulVecLin).prod (LinearMap.range D.mulVecLin)).map
+        (LinearEquiv.sumArrowLequivProdArrow m m' K K).symm.toLinearMap := by
+    simp [h, LinearMap.range_comp, LinearMap.range_prodMap]
+  simp only [← finrank_range_mulVecLin]
+  rw [hr, LinearEquiv.finrank_map_eq]
+  exact (Submodule.prodEquiv _ _).finrank_eq.trans Module.finrank_prod
+
+/-- Over a field with finite column index types, an off-diagonal block matrix has rank equal
+to the sum of the ranks of its two blocks. -/
+@[simp]
+theorem rank_fromBlocks_zero₁₁_zero₂₂ {K m n p q : Type*} [Field K] [Finite n] [Finite q]
+    (B : Matrix m q K) (C : Matrix p n K) :
+    (fromBlocks 0 B C 0).rank = B.rank + C.rank := by
+  rw [← rank_submatrix (fromBlocks 0 B C 0) (Equiv.refl _) (Equiv.sumComm q n)]
+  simpa only [Equiv.coe_refl, Equiv.sumComm_apply, fromBlocks_submatrix_sum_swap_right,
+    submatrix_id_id] using rank_fromBlocks_zero₁₂_zero₂₁ B C
+
 /-- Over a field, if `P + e + Q = 1` then the ranks of `P`, `e` and `Q` add up to at least the
 size of the matrices. -/
 lemma card_le_rank_add_rank_add_rank [Fintype m] [DecidableEq m] (P e Q : Matrix m m K)
@@ -449,6 +653,45 @@ lemma rank_add_rank_add_rank_eq_card [Fintype m] [DecidableEq m]
   have hσ := rank_mul_le_left A₁ σ
   have hτ := rank_mul_le_right τ A₂
   omega
+
+/-- The ranks of an idempotent matrix `e` and of the complementary idempotent `1 - e` add up to
+the size of the matrix: this is the decomposition `e + (1 - e) = 1` with `e (1 - e) = 0`. -/
+theorem IsIdempotentElem.rank_one_sub_add_rank [Fintype m] [DecidableEq m] {e : Matrix m m K}
+    (he : IsIdempotentElem e) : (1 - e).rank + e.rank = Fintype.card m := by
+  have h := rank_add_rank_add_rank_eq_card e (1 - e) (0 : Matrix m m K) 1 0 he.eq
+    (by rw [mul_sub, mul_one, he.eq, sub_self]) (zero_mul _) (zero_mul _) (by simp)
+  rw [rank_zero, add_zero] at h
+  omega
+
+/-- The rank of the sum of two idempotent matrices `p` and `q` with `p * q = 0` and `q * p = 0`
+is the sum of their ranks: `p`, `q` and `1 - p - q` are mutually annihilating, and `p + q` is the
+idempotent complementary to `1 - p - q`. -/
+theorem IsIdempotentElem.rank_add [Fintype m] {p q : Matrix m m K}
+    (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (hpq : p * q = 0) (hqp : q * p = 0) :
+    (p + q).rank = p.rank + q.rank := by
+  classical
+  have hle := rank_add_rank_add_rank_le p q (1 - p - q) hp.eq hpq
+    (by simp [sub_mul, hp.eq, hqp]) (by simp [sub_mul, hq.eq, hpq])
+  have hcard := IsIdempotentElem.rank_one_sub_add_rank (hp.add hq (by simp [hpq, hqp]))
+  rw [← sub_sub] at hcard
+  have := rank_add_le p q
+  omega
+
+/-- The rank of a sum of orthogonal idempotent matrices is the sum of their ranks: the range of
+the sum is the direct sum of the ranges. -/
+theorem OrthogonalIdempotents.rank_sum [Fintype m] [DecidableEq m] {I : Type*}
+    {e : I → Matrix m m K} (he : OrthogonalIdempotents e) (s : Finset I) :
+    (∑ i ∈ s, e i).rank = ∑ i ∈ s, (e i).rank := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    have hqp : (∑ i ∈ s, e i) * e a = 0 := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_eq_zero fun i hi => he.ortho (ne_of_mem_of_not_mem hi ha)
+    rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih]
+    exact IsIdempotentElem.rank_add (he.idem a) he.isIdempotentElem_sum
+      (he.mul_sum_of_notMem ha) hqp
 
 section Field
 
@@ -584,6 +827,15 @@ theorem rank_conjTranspose_of_field {R : Type*} [Field R] [StarRing R] {m n : Ty
     [Finite n] (A : Matrix m n R) : Aᴴ.rank = A.rank := by
   have h : Aᴴ = (A.map (starRingEnd R))ᵀ := rfl
   rw [h, rank_transpose, rank_map]
+
+/-- The difference of two Hermitian dilations has twice the rank of the difference of the
+underlying rectangular matrices. -/
+theorem rank_fromBlocks_zero_conjTranspose_zero_sub {R : Type*} [Field R] [StarRing R]
+    {m n : Type*} [Finite m] [Finite n] (A B : Matrix m n R) :
+    (fromBlocks 0 A Aᴴ 0 - fromBlocks 0 B Bᴴ 0).rank = 2 * (A - B).rank := by
+  simp only [sub_eq_add_neg, fromBlocks_neg, fromBlocks_add, neg_zero, add_zero,
+    ← conjTranspose_neg, ← conjTranspose_add, rank_fromBlocks_zero₁₁_zero₂₂,
+    rank_conjTranspose_of_field, two_mul]
 
 section StarField
 

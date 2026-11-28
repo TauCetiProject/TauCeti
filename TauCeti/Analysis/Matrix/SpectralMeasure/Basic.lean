@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
-public import TauCeti.Analysis.Matrix.Resolvent.Basic
+public import TauCeti.Analysis.Matrix.Resolvent.NormalizedTrace
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
@@ -63,6 +63,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   polynomial have the same spectral measure;
 * `Matrix.spectralMeasure_units_conj`, `Matrix.eigenvalueMeasure_units_conj` — both measures are
   invariant under conjugation by an invertible matrix;
+* `Matrix.IsHermitian.spectralMeasure_pos_iff` — the spectral measure charges a set if and only if
+  some eigenvalue lies in it;
 * `Matrix.eigenvalueMeasure_apply` — the eigenvalue measure of a set is the proportion of
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
@@ -125,6 +127,14 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     (hA : A.IsHermitian) :
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
+
+/-- The empirical spectral measure of a Hermitian matrix charges a set if and only if some
+eigenvalue lies in it. The set need not be measurable. -/
+theorem IsHermitian.spectralMeasure_pos_iff {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    {s : Set ℝ} :
+    0 < (A.spectralMeasure hA : Measure ℝ) s ↔ ∃ k, hA.eigenvalues₀ k ∈ s := by
+  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    empiricalMeasureOfFintype_pos_iff]
 
 /-- Applying a real star-algebra homomorphism entrywise preserves the spectral measure of a
 Hermitian matrix. In particular, real symmetric matrices have the same spectral measure when
@@ -443,9 +453,9 @@ theorem gram_spectralMeasure_moments_mul_card_eq {p q : Type*} [Fintype p] [Deci
 of a complex Hermitian matrix is the normalized trace of its resolvent `(A - z • 1)⁻¹`. -/
 theorem resolventTransform_spectralMeasure (A : Matrix n n ℂ) (hA : A.IsHermitian) {z : ℂ}
     (hz : z ∉ spectrum ℂ A) :
-    resolventTransform (A.spectralMeasure hA : Measure ℝ) z =
-      ((Fintype.card n : ℕ) : ℂ)⁻¹ * (A - z • 1)⁻¹.trace := by
-  rw [resolventTransform_apply, integral_spectralMeasure, hA.trace_inv_sub_smul_one hz,
+    resolventTransform (A.spectralMeasure hA : Measure ℝ) z = A.normalizedResolventTrace z := by
+  rw [normalizedResolventTrace_def, resolventTransform_apply, integral_spectralMeasure,
+    hA.trace_inv_sub_smul_one hz,
     Complex.real_smul]
   simp [resolvent, Ring.inverse_eq_inv']
 

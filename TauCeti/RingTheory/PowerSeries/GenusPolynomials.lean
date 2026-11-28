@@ -9,8 +9,10 @@ public import TauCeti.RingTheory.PowerSeries.Cartier
 public import TauCeti.RingTheory.PowerSeries.CharacteristicSeries
 public import TauCeti.RingTheory.PowerSeries.MultiplicativeSequence
 
+import TauCeti.RingTheory.PowerSeries.Derivative
+
 /-!
-# The Todd, L and Â polynomials in low degree
+# Coefficients of the Todd, L and Â polynomials
 
 Hirzebruch's multiplicative sequences of the Todd, L and Â genera are the universal polynomials
 expressing the Todd class in the Chern classes, and the L and Â classes in the Pontryagin
@@ -19,6 +21,10 @@ classes. This file identifies their first terms over a `ℚ`-algebra `A`:
 * `Td = 1 + c₁/2 + (c₁² + c₂)/12 + c₁c₂/24 + …`;
 * `L = 1 + p₁/3 + (7p₂ - p₁²)/45 + (62p₃ - 13p₁p₂ + 2p₁³)/945 + …`;
 * `Â = 1 - p₁/24 + (7p₁² - 4p₂)/5760 + …`.
+
+In every degree `k` it also computes the coefficient of the top Pontryagin class in `Lₖ`:
+modulo products of lower Pontryagin classes, `Lₖ = sₖ pₖ` with
+`sₖ = (-1)ᵏ⁻¹ 2²ᵏ (2²ᵏ⁻¹ - 1) B₂ₖ / (2k)!`, from the logarithmic derivative of `L`.
 
 The Todd polynomials are the multiplicative sequence of the Todd series
 `Td(X) = X / (1 - e^{-X})`, applied to the Chern roots, so the variable `j` stands for `c_{j+1}`.
@@ -48,6 +54,8 @@ dimension `2n`.
   `L₂ = (7p₂ - p₁²)/45` and `L₃ = (62p₃ - 13p₁p₂ + 2p₁³)/945`.
 * `TauCeti.coeff_six_multiset_prod_rescale_hirzebruchLSeries`: the same formula for `L₃` in terms
   of the roots, for any number of roots.
+* `TauCeti.coeff_single_multiplicativeSequence_cartier_hirzebruchLSeries`: in every degree `k`, the
+  coefficient of `pₖ` in `Lₖ` is `sₖ = (-1)ᵏ⁻¹ 2²ᵏ (2²ᵏ⁻¹ - 1) B₂ₖ / (2k)!`.
 * `TauCeti.coeff_multiset_prod_rescale_two_mul_rescale_half_hirzebruchLSeries`: for `n` roots,
   the half-argument products `∏ xⱼ / tanh (xⱼ / 2)` and `∏ L(xⱼ)` agree in degree `n`.
 * `TauCeti.multiplicativeSequence_cartier_aHatSeries_one`,
@@ -202,6 +210,64 @@ theorem coeff_multiset_prod_rescale_two_mul_rescale_half_hirzebruchLSeries (s : 
   rw [← map_ofNat C 2, coeff_multiset_prod_rescale_C_mul_rescale, hs, ← mul_pow,
     ← map_ofNat (algebraMap ℚ A) 2, ← map_mul, mul_inv_cancel₀ (two_ne_zero' ℚ), map_one, one_pow,
     one_mul]
+
+variable {n} in
+/-- **The indecomposable coefficient of the L polynomials**: for `k = i + 1 ≤ n`, the coefficient
+of the top Pontryagin class `pₖ` in `Lₖ` is
+`sₖ = (-1)ᵏ⁻¹ 2²ᵏ (2²ᵏ⁻¹ - 1) B₂ₖ / (2k)!`. For instance `s₁ = 1/3`, `s₂ = 7/45` and
+`s₃ = 62/945`. Modulo products of lower Pontryagin classes, `Lₖ` is therefore `sₖ pₖ`. Here the
+Cartier component `cartier A 2 0 (hirzebruchLSeries A)` is the series `P` with `P(X²) = L(X)`, and
+the variable `i` of its multiplicative sequence stands for the Pontryagin class `pₖ`. -/
+theorem coeff_single_multiplicativeSequence_cartier_hirzebruchLSeries (i : Fin n) :
+    ((cartier A 2 0 (hirzebruchLSeries A)).multiplicativeSequence n (i + 1)).coeff
+        (Finsupp.single i 1) =
+      algebraMap ℚ A ((-1) ^ (i : ℕ) * 2 ^ (2 * ((i : ℕ) + 1)) * (2 ^ (2 * (i : ℕ) + 1) - 1) *
+        bernoulli (2 * ((i : ℕ) + 1)) / (2 * ((i : ℕ) + 1)).factorial) := by
+  set L := hirzebruchLSeries A
+  set M := 1 + rescale 2 L - 2 * L
+  -- `M` is even, since `L` is.
+  have hM : expand 2 two_ne_zero (cartier A 2 0 M) = M := by
+    refine expand_cartier_zero_of_coeff_eq_zero _ _ fun m hm ↦ ?_
+    have hL : coeff m L = 0 := coeff_hirzebruchLSeries_of_odd A (Nat.odd_iff.2
+      (Nat.two_dvd_ne_zero.1 hm))
+    have hm0 : m ≠ 0 := by rintro rfl; exact hm (dvd_zero 2)
+    simp [M, ← map_ofNat C 2, coeff_rescale, hL, coeff_one, hm0]
+  -- The logarithmic derivative of `P` with `P(X²) = L(X)` is `M(√X) / 2`.
+  have h2 : C (algebraMap ℚ A 2⁻¹) * 2 = (1 : A⟦X⟧) := by
+    simpa only [map_mul, map_ofNat, map_one, RingHom.comp_apply] using
+      congrArg ((C : A →+* A⟦X⟧).comp (algebraMap ℚ A)) (inv_mul_cancel₀ (two_ne_zero' ℚ))
+  have hG : cartier A 2 0 L * (C (algebraMap ℚ A 2⁻¹) * cartier A 2 0 M) =
+      X * d⁄dX (cartier A 2 0 L) := by
+    refine expand_injective 2 two_ne_zero ?_
+    have hd := X_mul_derivative_expand 2 two_ne_zero (cartier A 2 0 L)
+    rw [expand_cartier_hirzebruchLSeries, X_mul_derivative_hirzebruchLSeries] at hd
+    rw [map_mul, map_mul, expand_cartier_hirzebruchLSeries, expand_C, hM]
+    linear_combination C (algebraMap ℚ A 2⁻¹) * hd +
+      expand 2 two_ne_zero (X * d⁄dX (cartier A 2 0 L)) * h2
+  -- The coefficient of `X²ᵏ` in `M` is `(2²ᵏ - 2) 2²ᵏ B₂ₖ / (2k)!`.
+  have hk : 2 * ((i : ℕ) + 1) ≠ 1 := by omega
+  have hk0 : 2 * ((i : ℕ) + 1) ≠ 0 := by omega
+  have hc : coeff (2 * ((i : ℕ) + 1)) M = algebraMap ℚ A ((2 ^ (2 * ((i : ℕ) + 1)) - 2) *
+      (2 ^ (2 * ((i : ℕ) + 1)) * bernoulli (2 * ((i : ℕ) + 1)) /
+        (2 * ((i : ℕ) + 1)).factorial)) := by
+    have hL : coeff (2 * ((i : ℕ) + 1)) L = algebraMap ℚ A (2 ^ (2 * ((i : ℕ) + 1)) *
+        bernoulli (2 * ((i : ℕ) + 1)) / (2 * ((i : ℕ) + 1)).factorial) :=
+      coeff_hirzebruchLSeries A hk
+    simp only [M, map_add, map_sub, coeff_one, hk0, ite_false, coeff_rescale, ← map_ofNat C 2,
+      coeff_C_mul, hL, zero_add]
+    simp only [← map_ofNat (algebraMap ℚ A), ← map_pow, ← map_mul, ← map_sub]
+    congr 1
+    ring
+  rw [coeff_single_multiplicativeSequence (constantCoeff_cartier_hirzebruchLSeries A) hG,
+    coeff_C_mul, coeff_cartier, add_zero, hc]
+  -- In `ℚ`, `sₖ` is `(-1)ᵏ⁻¹ / 2` times the coefficient `hc` of `X²ᵏ` in `M`.
+  have hs : ((-1) ^ (i : ℕ) * 2 ^ (2 * ((i : ℕ) + 1)) * (2 ^ (2 * (i : ℕ) + 1) - 1) *
+      bernoulli (2 * ((i : ℕ) + 1)) / (2 * ((i : ℕ) + 1)).factorial : ℚ) =
+      (-1) ^ (i : ℕ) * (2⁻¹ * ((2 ^ (2 * ((i : ℕ) + 1)) - 2) * (2 ^ (2 * ((i : ℕ) + 1)) *
+        bernoulli (2 * ((i : ℕ) + 1)) / (2 * ((i : ℕ) + 1)).factorial))) := by
+    ring
+  rw [hs]
+  simp only [map_mul, map_pow, map_neg, map_one]
 
 /-! ### The Â polynomials -/
 

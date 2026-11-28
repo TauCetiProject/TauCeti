@@ -68,14 +68,24 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   `Finset.range n`.
 * `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
 * `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
+* `TauCeti.sum_range_succ_ascPochhammer_mul_pow`: the sums
+  `Sₙ = ∑_{k<n} (a + k + 1)_{n−k−1} zᵏ` satisfy `S_{n+1} = (a + n) Sₙ + zⁿ`.
+* `TauCeti.ascPochhammer_eval_sub_natCast_add_add_one`: the reindexing
+  `(a − n + k + 1)_{n−k−1} = (a − (n − 1 − k))_{n−1−k}`.
 * `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
   `∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`, from Mathlib's `Ring.descPochhammer_smeval_add`.
 * `TauCeti.ascPochhammer_eval_ne_zero`: over a domain, the rising factorial `(c)ₖ` does not
   vanish when `c` is not a nonpositive integer.
+* `TauCeti.descPochhammer_eval_ne_zero`: over a domain, the falling factorial does not vanish at
+  a point that is not a natural number.
+* `TauCeti.sum_choose_mul_descPochhammer_eval`: the Chu–Vandermonde identity
+  `∑_{j ≤ n} C(n, j) u^{(j)} v^{(n - j)} = (u + v)^{(n)}` for falling factorials of commuting
+  `u` and `v`.
 * `TauCeti.ascPochhammer_eval_neg_mul_ascPochhammer_eval`,
   `TauCeti.ascPochhammer_eval_neg_mul_ascPochhammer_eval_add_two`: the products
   `(−a)ₖ (a)ₖ = (−1)ᵏ ∏_{l<k} (a² − l²)` and `(−a)ₖ (a + 2)ₖ = (−1)ᵏ ∏_{l<k} ((a + 1)² − (l + 1)²)`.
 * `TauCeti.two_pow_mul_ascPochhammer_eval_div_two`: `2ᵏ (b/2)ₖ = ∏_{l<k} (2l + b)`.
+* `TauCeti.prod_range_sub_two_mul`: `∏_{r<k} (x − 2r) = (−2)ᵏ (−x/2)ₖ`.
 -/
 
 public section
@@ -336,6 +346,30 @@ theorem ascPochhammer_eval_ne_zero {R : Type*} [Ring R] [IsDomain R] {c : R}
   rintro ⟨m, -, hm⟩
   exact hc m (by rw [hm, neg_neg])
 
+/-- The falling factorial `c (c - 1) ⋯ (c - k + 1)` does not vanish when `c` is not a natural
+number. -/
+theorem descPochhammer_eval_ne_zero {R : Type*} [Ring R] [IsDomain R] {c : R}
+    (hc : ∀ m : ℕ, c ≠ m) (k : ℕ) : (descPochhammer R k).eval c ≠ 0 := by
+  have h := ascPochhammer_eval_ne_zero (c := -c) (fun m hm ↦ hc m (neg_inj.mp hm)) k
+  rw [ascPochhammer_eval_neg_eq_descPochhammer] at h
+  exact right_ne_zero_of_mul h
+
+/-- **The Chu–Vandermonde identity** for falling factorials of commuting elements of a ring:
+`∑_{j ≤ n} C(n, j) u^{(j)} v^{(n - j)} = (u + v)^{(n)}`, where `u^{(j)}` is the falling factorial
+`(descPochhammer R j).eval u`. It is Mathlib's `Ring.descPochhammer_smeval_add`, written with
+polynomial evaluation. -/
+theorem sum_choose_mul_descPochhammer_eval {R : Type*} [Ring R] (n : ℕ) {u v : R}
+    (h : Commute u v) :
+    ∑ j ∈ Finset.range (n + 1), (n.choose j : R) * (descPochhammer R j).eval u *
+      (descPochhammer R (n - j)).eval v = (descPochhammer R n).eval (u + v) := by
+  have hbridge (k : ℕ) (r : R) : (descPochhammer R k).eval r = (descPochhammer ℤ k).smeval r := by
+    rw [descPochhammer_smeval_eq_ascPochhammer, ascPochhammer_smeval_eq_eval,
+      descPochhammer_eval_eq_ascPochhammer]
+  rw [hbridge, Ring.descPochhammer_smeval_add n h,
+    Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [hbridge, hbridge, mul_assoc]
+
 section Ascending
 
 variable {R : Type*}
@@ -395,6 +429,45 @@ theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R
   rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk', hck]
   ring
 
+/-- The sums `Sₙ = ∑_{k<n} (a + k + 1)_{n−k−1} zᵏ` satisfy `S_{n+1} = (a + n) Sₙ + zⁿ`. -/
+theorem sum_range_succ_ascPochhammer_mul_pow [Semiring R] (a z : R) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (ascPochhammer R (n + 1 - k - 1)).eval (a + k + 1) * z ^ k =
+      (a + n) * ∑ k ∈ Finset.range n, (ascPochhammer R (n - k - 1)).eval (a + k + 1) * z ^ k +
+        z ^ n := by
+  -- The last term `k = n` has the empty Pochhammer symbol.
+  have hlast : n + 1 - n - 1 = 0 := by omega
+  rw [Finset.sum_range_succ, hlast, ascPochhammer_zero, eval_one, one_mul, Finset.mul_sum]
+  congr 1
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hk : k < n := Finset.mem_range.mp hk
+  -- For `k < n` the Pochhammer length `n + 1 - k - 1` is one more than `n - k - 1`.
+  have hlen : n + 1 - k - 1 = n - k - 1 + 1 := by omega
+  -- The new factor `a + k + 1 + (n - k - 1)` is `a + n`, by an identity in `ℕ` cast to `R`.
+  have hn : k + 1 + (n - k - 1) = n := by omega
+  have hsum : (k : R) + 1 + ((n - k - 1 : ℕ) : R) = n := by
+    simpa only [Nat.cast_add, Nat.cast_one] using congrArg (Nat.cast : ℕ → R) hn
+  have hfac : a + k + 1 + ((n - k - 1 : ℕ) : R) = a + n := by
+    simpa only [add_assoc] using congrArg (fun x : R => a + x) hsum
+  -- The factor `a + n` commutes with the rising factorial at `a + k + 1`.
+  have hc : Commute ((ascPochhammer R (n - k - 1)).eval (a + k + 1)) (a + n) := by
+    rw [← hfac, ← ascPochhammer_smeval_eq_eval]
+    exact smeval_commute_left ℕ _ ((Commute.refl _).add_right (Nat.cast_commute _ _).symm)
+  rw [hlen, ascPochhammer_succ_eval, hfac, hc.eq, mul_assoc]
+
+/-- The reindexing behind downward recurrences: `(a − n + k + 1)_{n−k−1}` is `f (n − 1 − k)`
+for `f j = (a − j)ⱼ`. For `n ≤ k` both lengths truncate to `0` and both sides are `1`. -/
+theorem ascPochhammer_eval_sub_natCast_add_add_one [Ring R] (a : R) (n k : ℕ) :
+    (ascPochhammer R (n - k - 1)).eval (a - n + k + 1) =
+      (ascPochhammer R (n - 1 - k)).eval (a - ((n - 1 - k : ℕ) : R)) := by
+  have hlen : n - k - 1 = n - 1 - k := by omega
+  rw [hlen]
+  rcases lt_or_ge k n with hk | hk
+  · congr 1
+    rw [Nat.cast_sub (by omega), Nat.cast_sub (by omega), Nat.cast_one]
+    abel
+  · have h0 : n - 1 - k = 0 := by omega
+    rw [h0, ascPochhammer_zero, eval_one, eval_one]
+
 /-- `(−a)ₖ (a)ₖ = (−1)ᵏ ∏_{l<k} (a² − l²)`. -/
 theorem ascPochhammer_eval_neg_mul_ascPochhammer_eval [CommRing R] (a : R) (k : ℕ) :
     (ascPochhammer R k).eval (-a) * (ascPochhammer R k).eval a =
@@ -426,6 +499,14 @@ theorem two_pow_mul_ascPochhammer_eval_div_two {K : Type*} [Field K] [NeZero (2 
     -- Only `b / 2 * 2 = b` is needed, which uses `2 ≠ 0`.
     have h2 : b / 2 * 2 = b := div_mul_cancel₀ b two_ne_zero
     linear_combination (2 ^ k * (ascPochhammer K k).eval (b / 2)) * h2
+
+/-- `∏_{r<k} (x − 2r) = (−2)ᵏ (−x/2)ₖ`, the product of an arithmetic progression with step `−2`. -/
+theorem prod_range_sub_two_mul {K : Type*} [Field K] [NeZero (2 : K)] (x : K) (k : ℕ) :
+    ∏ r ∈ Finset.range k, (x - 2 * r) = (-2) ^ k * (ascPochhammer K k).eval (-x / 2) := by
+  have h := Finset.prod_neg (s := Finset.range k) fun r : ℕ => 2 * (r : K) + -x
+  rw [Finset.card_range] at h
+  rw [neg_pow, mul_assoc, two_pow_mul_ascPochhammer_eval_div_two, ← h]
+  exact Finset.prod_congr rfl fun r _ => by ring
 
 end Ascending
 

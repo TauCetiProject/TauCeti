@@ -31,6 +31,8 @@ shrinking homotopies of the fibre are built.
 * `TauCeti.MoorePath.truncate_trans_drop`: `γ.truncate s` followed by `γ.drop s` is `γ`.
 * `TauCeti.MoorePath.truncate_trans_of_le`, `TauCeti.MoorePath.truncate_trans_length_add`: the
   truncations of a concatenation.
+* `TauCeti.MoorePath.drop_trans_of_le`, `TauCeti.MoorePath.drop_trans_length_add`: the pieces of a
+  concatenation from a time on.
 * `TauCeti.MoorePath.truncateFromHomotopy`: truncation deforms the Moore paths starting in a set
   `A` onto the constant paths at their sources.
 -/
@@ -116,6 +118,12 @@ theorem _root_.Continuous.moorePath_retrace {f : Y → MoorePath X} {g : Y → �
   have h := hf.moorePath_truncate hg
   exact h.moorePath_trans h.moorePath_symm _
 
+/-- At a turning time `s` before the end of `γ`, the path `γ.truncate s` followed by its reversal
+is at `γ s`. -/
+theorem truncate_trans_symm_apply_self (γ : MoorePath X) {s : ℝ≥0} (hs : s ≤ γ.length) :
+    ((γ.truncate s).trans (γ.truncate s).symm (by simp)) s = γ s := by
+  rw [trans_apply_of_le _ _ _ (by simp [hs]), truncate_apply, min_self]
+
 /-- Truncating a concatenation before the end of its first piece truncates the first piece. -/
 theorem truncate_trans_of_le (γ δ : MoorePath X) (h : γ.target = δ.source) {s : ℝ≥0}
     (hs : s ≤ γ.length) : (γ.trans δ h).truncate s = γ.truncate s := by
@@ -190,6 +198,28 @@ theorem _root_.Continuous.moorePath_drop {f : Y → MoorePath X} {g : Y → ℝ�
   refine continuous_iff.2 ⟨by simp only [length_drop]; fun_prop, ?_⟩
   simp only [drop_apply]
   fun_prop
+
+/-- Dropping a concatenation before the end of its first piece drops from the first piece. -/
+theorem drop_trans_of_le (γ δ : MoorePath X) (h : γ.target = δ.source) {s : ℝ≥0}
+    (hs : s ≤ γ.length) :
+    (γ.trans δ h).drop s = (γ.drop s).trans δ (by rw [target_drop, h]) := by
+  refine ext (by simp [tsub_add_eq_add_tsub hs]) fun t ↦ ?_
+  rw [drop_apply]
+  rcases le_total (s + t) γ.length with ht | ht
+  · rw [trans_apply_of_le _ _ _ ht, trans_apply_of_le _ _ _ (le_tsub_of_add_le_left ht),
+      drop_apply]
+  · have ht' : γ.length - s ≤ t := tsub_le_iff_left.2 ht
+    rw [trans_apply_of_length_le _ _ _ ht, trans_apply_of_length_le _ _ _ ht', length_drop]
+    congr 1
+    rw [← NNReal.coe_inj, NNReal.coe_sub ht, NNReal.coe_sub ht', NNReal.coe_sub hs,
+      NNReal.coe_add]
+    ring
+
+/-- Dropping a concatenation after the end of its first piece drops from the second piece. -/
+theorem drop_trans_length_add (γ δ : MoorePath X) (h : γ.target = δ.source) (u : ℝ≥0) :
+    (γ.trans δ h).drop (γ.length + u) = δ.drop u :=
+  ext (by simp [add_tsub_add_eq_tsub_left]) fun t ↦ by
+    rw [drop_apply, drop_apply, add_assoc, trans_apply_length_add]
 
 /-- A Moore path is the concatenation of its truncation at `s` with its piece from `s` on. -/
 theorem truncate_trans_drop (γ : MoorePath X) (s : ℝ≥0) :

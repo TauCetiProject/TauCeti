@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Poincare.Betweenness
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Poincaré geodesics are Euclidean circles orthogonal to the unit circle
@@ -470,10 +471,7 @@ denominator. -/
 private lemma im_div_eq_zero_iff {w v : ℂ} (hv : v ≠ 0) :
     (w / v).im = 0 ↔ (w * conj v).im = 0 := by
   have hnv : normSq v ≠ 0 := fun h => hv (Complex.normSq_eq_zero.mp h)
-  have h : (w / v).im = (w * conj v).im / normSq v := by
-    rw [Complex.div_im, Complex.mul_im, Complex.conj_re, Complex.conj_im]
-    ring
-  rw [h, div_eq_zero_iff]
+  rw [Complex.div_im_eq_im_mul_conj_div_normSq, div_eq_zero_iff]
   simp [hnv]
 
 /-- **The equation of a geodesic through the origin.** A point `z` of the Poincaré disc lies on
@@ -481,9 +479,7 @@ the radial geodesic in direction `u` exactly when `conj u * z` is real, that is,
 the Euclidean diameter in direction `u`. -/
 theorem mem_range_radialGeodesic_iff (u : Circle) (z : PoincareDisc) :
     z ∈ Set.range (radialGeodesic u) ↔ (conj (u : ℂ) * (toUnitDisc z : ℂ)).im = 0 := by
-  have huu : (u : ℂ) * conj (u : ℂ) = 1 := by
-    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, Circle.norm_coe]
-    norm_num
+  have huu := Circle.coe_mul_conj u
   constructor
   · rintro ⟨t, rfl⟩
     rw [coe_radialGeodesic]

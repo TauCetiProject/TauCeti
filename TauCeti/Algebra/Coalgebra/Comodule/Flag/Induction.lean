@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Triangular
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Building upper-unitriangular bases from fixed vectors
@@ -28,6 +29,9 @@ complete flag needed to embed a faithful representation into an upper-unitriangu
   `v ↦ v ⊗ 1`.
 * `TauCeti.Comodule.hasNonzeroFixedVector_iff_fixedSubcomodule_ne_bot`: that happens exactly when
   the fixed subcomodule is nonzero.
+* `TauCeti.Comodule.hasNonzeroFixedVector_of_injective` and
+  `TauCeti.Comodule.hasNonzeroFixedVector_of_forall_subcomodule`: fixed vectors along injective
+  morphisms, and the reduction to finite-dimensional subcomodules.
 * `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperUnitriangular_of_fixed_vectors`:
   if every nonzero finite-dimensional comodule has such a vector, every finite-dimensional
   comodule admits an upper-unitriangular basis.
@@ -76,6 +80,27 @@ theorem hasNonzeroFixedVector_iff_fixedSubcomodule_ne_bot :
   rw [hasNonzeroFixedVector_iff, Subcomodule.ne_bot_iff]
   exact ⟨fun ⟨v, hv, hvc⟩ ↦ ⟨v, mem_fixedSubcomodule.mpr hvc, hv⟩,
     fun ⟨v, hvm, hv⟩ ↦ ⟨v, hv, mem_fixedSubcomodule.mp hvm⟩⟩
+
+/-- An injective comodule morphism carries a nonzero fixed vector to a nonzero fixed vector. -/
+theorem hasNonzeroFixedVector_of_injective {N : Type*} [AddCommGroup N] [Module k N]
+    [Comodule k H N] (f : Hom k H N M) (hf : Function.Injective f)
+    (hN : HasNonzeroFixedVector k H N) : HasNonzeroFixedVector k H M := by
+  obtain ⟨v, hv, hvc⟩ := hN
+  exact ⟨f v, fun h ↦ hv (hf (h.trans (map_zero f).symm)),
+    mem_fixedSubcomodule.mp (f.mem_fixedSubcomodule (mem_fixedSubcomodule.mpr hvc))⟩
+
+/-- A nonzero comodule has a nonzero fixed vector as soon as every nonzero finite-dimensional
+subcomodule does: a nonzero vector lies in a finite-dimensional subcomodule. -/
+theorem hasNonzeroFixedVector_of_forall_subcomodule [Nontrivial M]
+    (h : ∀ N : Subcomodule k H M, FiniteDimensional k N → Nontrivial N →
+      HasNonzeroFixedVector k H N) :
+    HasNonzeroFixedVector k H M := by
+  obtain ⟨m, hm0⟩ := exists_ne (0 : M)
+  obtain ⟨N, hNfin, hmN⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) m
+  -- `↥N` and `↥N.toSubmodule` subtype the same carrier, so `hNfin` is finite-dimensionality
+  -- of `N` itself.
+  exact hasNonzeroFixedVector_of_injective (Subcomodule.subtype N) (Subcomodule.subtype_injective N)
+    (h N hNfin ⟨⟨⟨m, hmN⟩, 0, fun h ↦ hm0 (congrArg Subtype.val h)⟩⟩)
 
 /-- If every nonzero finite-dimensional `H`-comodule has a nonzero fixed vector, then every
 finite-dimensional `H`-comodule has a basis with upper-unitriangular coefficient matrix.

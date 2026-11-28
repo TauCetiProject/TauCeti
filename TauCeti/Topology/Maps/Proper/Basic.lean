@@ -35,6 +35,9 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 * `IsProperMap.of_isEmbedding_of_range_eq`: the pullback of a proper map along an embedding of its
   codomain is proper. This is Mathlib's `IsProperMap.restrictPreimage`, stated for a square of
   embeddings rather than for subtypes.
+* `IsProperMap.restrictPreimage_range_of_isEmbedding`: the converse direction, giving a proper
+  restriction from a proper pullback along an embedding.
+* `IsProperMap.pullback_snd`: proper maps are stable under base change along continuous maps.
 * `IsProperMap.exists_tendsto_of_tendsto_apply_prodMk`: ultrafilter convergence for a proper map
   `h : T × Y → W` evaluated at a variable first coordinate `φ z` that is continuous away from a
   set `A` where `t ↦ h (t, y)` is independent of `t`.
@@ -146,6 +149,41 @@ theorem IsProperMap.of_isEmbedding_of_range_eq {X' Y' : Type*} [TopologicalSpace
     exact (congrFun hcomm x').symm
   · rw [hi.nhds_eq_comap, ← map_le_iff_le_comap]
     exact hle
+
+/-- **The restriction of a map over the range of an embedding is proper when its pullback is.**
+If `f ∘ i = j ∘ f'`, where `i` and `j` are embeddings and the range of `i` is the preimage under
+`f` of the range of `j`, and `f'` is proper, then the restriction of `f` over the range of `j` is
+proper. This is a converse of `IsProperMap.of_isEmbedding_of_range_eq`. -/
+theorem IsProperMap.restrictPreimage_range_of_isEmbedding {X' Y' : Type*} [TopologicalSpace X']
+    [TopologicalSpace Y'] {f' : X' → Y'} {i : X' → X} {j : Y' → Y} (hf' : IsProperMap f')
+    (hi : IsEmbedding i) (hj : IsEmbedding j) (hcomm : f ∘ i = j ∘ f')
+    (hrange : Set.range i = f ⁻¹' Set.range j) :
+    IsProperMap ((Set.range j).restrictPreimage f) := by
+  let ei : X' ≃ₜ f ⁻¹' Set.range j := hi.toHomeomorph.trans (.setCongr hrange)
+  have h : (Set.range j).restrictPreimage f = hj.toHomeomorph ∘ f' ∘ ei.symm := by
+    funext x
+    obtain ⟨x', rfl⟩ := ei.surjective x
+    apply Subtype.ext
+    simpa [ei, Homeomorph.setCongr] using congrFun hcomm x'
+  rw [h]
+  exact hj.toHomeomorph.isProperMap.comp (hf'.comp ei.symm.isProperMap)
+
+/-- **Proper maps are stable under base change.** If `f : X → Y` is proper and `g : Z → Y` is
+continuous, the projection from the fiber product `X ×_Y Z` to `Z` is proper. The fiber product is
+the preimage of the graph of `g` under the proper map `Prod.map f id`. -/
+theorem IsProperMap.pullback_snd {f : X → Y} {g : Z → Y} (hf : IsProperMap f)
+    (hg : Continuous g) : IsProperMap (Function.Pullback.snd : f.Pullback g → Z) := by
+  refine (hf.prodMap isProperMap_id).of_isEmbedding_of_range_eq IsEmbedding.subtypeVal
+    (Function.LeftInverse.isEmbedding (f := Prod.snd) (fun _ ↦ rfl) continuous_snd
+      (hg.prodMk continuous_id)) (funext fun p ↦ Prod.ext p.property rfl) ?_
+  ext ⟨x, z⟩
+  constructor
+  · rintro ⟨p, hp⟩
+    rw [← hp]
+    exact ⟨p.val.2, Prod.ext p.property.symm rfl⟩
+  · rintro ⟨z', h⟩
+    obtain rfl : z' = z := congrArg Prod.snd h
+    exact ⟨⟨(x, z'), (congrArg Prod.fst h).symm⟩, rfl⟩
 
 /-- **Ultrafilter convergence for a proper map evaluated at a variable first coordinate.** If
 `h : T × Y → W` is proper with `T` Hausdorff, `t ↦ h (t, y)` is independent of `t` for `y ∈ A`,

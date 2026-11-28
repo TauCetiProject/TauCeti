@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.FiniteBaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.InfiniteBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
-import Mathlib.LinearAlgebra.Countable
+import TauCeti.NumberTheory.NumberField.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular
@@ -184,12 +184,25 @@ theorem adeleBaseChangeAlgEquiv_toAlgHom :
     (adeleBaseChangeAlgEquiv K L).toAlgHom = adeleBaseChangeHom K L :=
   (rfl)
 
+/-- The algebraic comparison sends a pure tensor to the extended adele times the diagonal
+field element. -/
+@[simp]
+theorem adeleBaseChangeAlgEquiv_tmul (a : AdeleRing (𝓞 K) K) (x : L) :
+    adeleBaseChangeAlgEquiv K L (a ⊗ₜ x) =
+      adeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (AdeleRing (𝓞 L) L) x :=
+  adeleBaseChangeHom_tmul K L a x
+
 /-- The algebraic inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
 theorem adeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
     (adeleBaseChangeAlgEquiv K L).symm (algebraMap L (AdeleRing (𝓞 L) L) x) = 1 ⊗ₜ[K] x := by
   apply (adeleBaseChangeAlgEquiv K L).injective
-  simp [adeleBaseChangeAlgEquiv]
+  simp
+
+/-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem adeleBaseChangeAlgEquiv_one_tmul (x : L) :
+    adeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (AdeleRing (𝓞 L) L) x := by
+  simp
 
 variable [TopologicalSpace (AdeleRing (𝓞 K) K ⊗[K] L)]
   [IsModuleTopology (AdeleRing (𝓞 K) K) (AdeleRing (𝓞 K) K ⊗[K] L)]
@@ -213,7 +226,6 @@ def adeleBaseChangeEquiv :
   -- The tensor product is σ-compact, as a finite free module over a σ-compact ring. The
   -- additive open mapping theorem then gives the inverse.
   letI := IsModuleTopology.isTopologicalAddGroup (AdeleRing (𝓞 K) K) (AdeleRing (𝓞 K) K ⊗[K] L)
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   letI := TauCeti.ModuleTopology.sigmaCompactSpace
     ((Module.finBasis K L).baseChange (AdeleRing (𝓞 K) K))
   have ho : IsOpenMap e := e.toAddMonoidHom.isOpenMap_of_sigmaCompact e.surjective hc
@@ -238,14 +250,18 @@ field element. -/
 @[simp]
 theorem adeleBaseChangeEquiv_tmul (a : AdeleRing (𝓞 K) K) (x : L) :
     adeleBaseChangeEquiv K L (a ⊗ₜ x) =
-      adeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (AdeleRing (𝓞 L) L) x := by
-  have h : (adeleBaseChangeEquiv K L).toAlgHom = adeleBaseChangeHom K L := by simp
-  exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans (adeleBaseChangeHom_tmul K L a x)
+      adeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (AdeleRing (𝓞 L) L) x :=
+  adeleBaseChangeAlgEquiv_tmul K L a x
 
 /-- The continuous comparison restricts on `𝔸_K ⊗ 1` to the extension map `𝔸_K → 𝔸_L`. -/
 theorem adeleBaseChangeEquiv_tmul_one (a : AdeleRing (𝓞 K) K) :
     adeleBaseChangeEquiv K L (a ⊗ₜ 1) = adeleExtension (𝓞 K) K (𝓞 L) L a := by
   rw [adeleBaseChangeEquiv_tmul, map_one, mul_one]
+
+/-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem adeleBaseChangeEquiv_one_tmul (x : L) :
+    adeleBaseChangeEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (AdeleRing (𝓞 L) L) x := by
+  simp
 
 /-- The continuous comparison is the pair of the infinite- and finite-adele comparisons, after
 splitting the source tensor product into its two components. -/

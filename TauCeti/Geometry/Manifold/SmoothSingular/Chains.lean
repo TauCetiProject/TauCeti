@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothSingular.Integral
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 
 /-!
 # Integration over smooth singular chains
@@ -22,7 +23,9 @@ maps. No compactness or finite-dimensionality assumption on the manifold is need
 `TauCeti.integrationCochain φ` is the same functional on the degree term of Mathlib's simplicial
 chain complex of `smoothSingularSubcomplex`. The comparison uses the existing
 `SSet.chainsLinearEquivFinsupp`, so integration uses the canonical chain complex, including its
-induced maps. Its value on a simplex with coefficient `a` is `a • σ.integral φ`.
+induced maps. Its value on a simplex with coefficient `a` is `a • σ.integral φ`. Transporting the
+simplex values of the integration cochain over `R` to an integral cochain gives the integral
+integration cochain (`TauCeti.cochainValuesEquiv_symm_cochainValuesEquiv_integrationCochain`).
 With real coefficients this is the chain pairing used to construct the de Rham comparison; with
 integer coefficients it gives the periods of closed forms on integral smooth singular homology.
 Stokes supplies the remaining compatibility with differentials needed for a cochain map. The
@@ -192,6 +195,19 @@ theorem integrationCochain_ιChainComplex (φ : RoughForm I M F p) (σ : SmoothS
       (smoothSingularSubcomplex I M : SSet) σ a]
   exact chainIntegral_single σ a φ
 
+/-- The integral cochain with the simplex values of the integration cochain of a form over `R` is
+its integral integration cochain. -/
+theorem cochainValuesEquiv_symm_cochainValuesEquiv_integrationCochain (φ : RoughForm I M F p) :
+    (cochainValuesEquiv ℤ (ModuleCat.of ℤ F) (smoothSingularSubcomplex I M : SSet) p).symm
+        (cochainValuesEquiv R (ModuleCat.of R F) (smoothSingularSubcomplex I M : SSet) p
+          (integrationCochain (R := R) φ)) =
+      integrationCochain (R := ℤ) φ := by
+  apply (cochainValuesEquiv ℤ (ModuleCat.of ℤ F) (smoothSingularSubcomplex I M : SSet)
+    p).injective
+  funext σ
+  rw [LinearEquiv.apply_symm_apply, cochainValuesEquiv_apply, cochainValuesEquiv_apply,
+    integrationCochain_ιChainComplex, integrationCochain_ιChainComplex, one_smul, one_smul]
+
 /-- Integrating the zero form gives the zero cochain. -/
 @[simp]
 theorem integrationCochain_zero :
@@ -199,6 +215,14 @@ theorem integrationCochain_zero :
   apply ModuleCat.hom_ext
   ext c
   simp [integrationCochain_apply (I := I)]
+
+/-- The integration cochain of the negative of a form is the negative cochain. -/
+@[simp]
+theorem integrationCochain_neg (φ : RoughForm I M F p) :
+    integrationCochain (R := R) (-φ) = -integrationCochain φ := by
+  apply ModuleCat.hom_ext
+  ext c
+  simp [integrationCochain_apply (I := I), chainIntegral_eq_sum]
 
 /-- The integration cochain is homogeneous in the form. -/
 @[simp]
@@ -216,6 +240,11 @@ theorem integrationCochain_add [IsManifold I 1 M] {φ ψ : RoughForm I M F p}
   ext c
   simp [integrationCochain_apply (I := I), chainIntegral_add_form _ hφ hψ]
 
+/-- Integration takes the sum of two smooth forms to the sum of their cochains. -/
+theorem SmoothForm.integrationCochain_add [IsManifold I 1 M] (φ ψ : SmoothForm I M F p) :
+    integrationCochain (R := R) (φ + ψ).val = integrationCochain φ.val + integrationCochain ψ.val :=
+  TauCeti.integrationCochain_add (φ.isSmoothForm.of_le (by simp)) (ψ.isSmoothForm.of_le (by simp))
+
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N] [ChartedSpace H' N]
 
@@ -228,8 +257,19 @@ theorem integrationCochain_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
   apply ModuleCat.hom_ext
   ext c
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, integrationCochain_apply (I := I),
-    integrationCochain_apply (I := J),
-    SSet.chainsLinearEquivFinsupp_chainComplexMap_f, chainIntegral_mapDomain hf]
+    integrationCochain_apply (I := J), SSet.chainsLinearEquivFinsupp_chainComplexMap_f,
+    chainIntegral_mapDomain hf]
+
+/-- Element form of `TauCeti.integrationCochain_naturality`: integrating over the pushforward of a
+chain is integrating the pulled-back form. -/
+theorem integrationCochain_chainComplexMap_apply {f : M → N} (hf : ContMDiff I J ∞ f)
+    (ψ : RoughForm J N F p)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).X p) :
+    (integrationCochain ψ).hom
+        (((SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of R R)).f p).hom
+          c) =
+      (integrationCochain (mpullback I J f ψ)).hom c := by
+  rw [← integrationCochain_naturality hf, ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end Cochain
 

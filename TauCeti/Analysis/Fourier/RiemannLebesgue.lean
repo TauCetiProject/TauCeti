@@ -5,10 +5,17 @@ Authors: Robby Sneiderman, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 
 /-!
-# Riemann--Lebesgue for sine modulation and along a vertical line
+# Riemann--Lebesgue for Fourier coefficients, sine modulation and along a vertical line
+
+The Fourier coefficients of any function on the circle `AddCircle T` tend to `0` as the frequency
+`n → ±∞`, that is, along the cofinite filter on `ℤ`. This is Mathlib's Riemann--Lebesgue lemma on
+`ℝ` applied to the restriction of the function to a period interval. As there, no hypothesis on
+the function is needed: if it is not integrable, every coefficient is `0`. The same holds for the
+coefficients `fourierCoeffOn` of a function on an interval `[a, b]`.
 
 Testing a function on the vertical line `Re s = c` against a Dirichlet series produces the
 oscillating factor `x ^ (i t)`, which is the Fourier character of frequency `-(2π)⁻¹ log x` in
@@ -21,6 +28,12 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 ## Main declarations
 
+* `TauCeti.tendsto_fourierCoeff_cofinite`, `TauCeti.tendsto_fourierCoeffOn_cofinite`: the Fourier
+  coefficients of any function on the circle, or on an interval, tend to `0` as `n → ±∞`.
+* `TauCeti.tendsto_integral_exp_sum_mul_I_smul_cocompact`,
+  `TauCeti.tendsto_integral_exp_sum_int_mul_I_smul_cofinite`: the Fourier integrals
+  `∫ e^{i ∑ᵢ ξᵢxᵢ} f(x) dx` of any function on `ℝ^ι` tend to `0` as `ξ → ∞` in `ℝ^ι`, or in
+  `ℤ^ι`.
 * `MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop`: sine-modulated integrals
   tend to zero as the real frequency tends to positive infinity.
 
@@ -35,12 +48,42 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 public section
 
-open Complex Filter MeasureTheory
+open Complex Filter MeasureTheory Set
 open scoped FourierTransform Real Topology
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Riemann--Lebesgue for Fourier coefficients**: the Fourier coefficients of any function on
+`AddCircle T` tend to `0` as `n → ±∞`. If `f` is not integrable, every coefficient is `0`. -/
+theorem tendsto_fourierCoeff_cofinite {T : ℝ} [hT : Fact (0 < T)] (f : AddCircle T → E) :
+    Tendsto (fourierCoeff f) cofinite (𝓝 0) := by
+  have hfreq : Tendsto (fun n : ℤ ↦ (n : ℝ) * T⁻¹) cofinite (cocompact ℝ) :=
+    ((Homeomorph.mulRight₀ T⁻¹ (inv_ne_zero hT.out.ne')).isClosedEmbedding.tendsto_cocompact).comp
+      Int.tendsto_coe_cofinite
+  have h := ((Real.tendsto_integral_exp_smul_cocompact
+    ((Ioc 0 T).indicator fun x : ℝ ↦ f x)).comp hfreq).const_smul (1 / T)
+  rw [smul_zero] at h
+  refine h.congr fun n ↦ ?_
+  rw [fourierCoeff_eq_intervalIntegral f n 0, zero_add, intervalIntegral.integral_of_le hT.out.le,
+    ← integral_indicator measurableSet_Ioc]
+  rw [indicator_smul]
+  congr 1
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Circle.smul_def, Real.fourierChar_apply, fourier_coe_apply]
+  congr 2
+  push_cast
+  field_simp
+
+/-- **Riemann--Lebesgue for Fourier coefficients on an interval**: the Fourier coefficients
+`fourierCoeffOn hab f n` of any function `f` on `[a, b]` tend to `0` as `n → ±∞`. -/
+theorem tendsto_fourierCoeffOn_cofinite {a b : ℝ} (hab : a < b) (f : ℝ → E) :
+    Tendsto (fourierCoeffOn hab f) cofinite (𝓝 0) := by
+  -- `fourierCoeffOn` is defined as the Fourier coefficient of the `(b - a)`-periodic lift of `f`.
+  have := Fact.mk (sub_pos.2 hab)
+  exact tendsto_fourierCoeff_cofinite _
 
 /-- **Riemann--Lebesgue on a vertical line**: the integral of `f` against the oscillating factor
 `x ^ (i t)` tends to `0` as `x → ∞`.
@@ -95,6 +138,50 @@ theorem integrable_inv_sub_one_mul_mul_cpow {psi : ℝ → ℂ} {x sigma : ℝ} 
     ((continuous_const.div (by fun_prop) hdenom).mul
       (continuous_cpow_mul_I hx)).aestronglyMeasurable (.of_forall hpolebound)).congr
     (.of_forall fun t ↦ by ring)
+
+/-- The linear map `x ↦ -(2π)⁻¹ ∑ᵢ xᵢ ⬝ᵢ` from `ℝ^ι` to its dual, sending `x` to the frequency
+of the character `e^{i ∑ᵢ xᵢyᵢ}` in the normalization of `Real.fourierChar`. It is Mathlib's
+`dotProductEquiv`, scaled by `-(2π)⁻¹`. -/
+private noncomputable def charFreq (ι : Type*) [Fintype ι] [DecidableEq ι] :
+    (ι → ℝ) →ₗ[ℝ] StrongDual ℝ (ι → ℝ) :=
+  -(2 * π)⁻¹ • (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ (dotProductEquiv ℝ ι).toLinearMap)
+
+private theorem charFreq_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (x y : ι → ℝ) :
+    charFreq ι x y = -(2 * π)⁻¹ * ∑ i, x i * y i := by
+  simp [charFreq, dotProduct]
+
+private theorem charFreq_injective (ι : Type*) [Fintype ι] [DecidableEq ι] :
+    Function.Injective (charFreq ι) :=
+  (smul_right_injective (StrongDual ℝ (ι → ℝ)) (r := -(2 * π)⁻¹)
+    (by simp [Real.pi_ne_zero])).comp
+    (LinearMap.toContinuousLinearMap.injective.comp (dotProductEquiv ℝ ι).injective)
+
+/-- **Riemann--Lebesgue on `ℝ^ι`**: the Fourier integrals `∫ e^{i ∑ᵢ ξᵢxᵢ} f(x) dx` of any
+function `f` on `ℝ^ι`, for a finite index type `ι`, tend to `0` as the real frequency `ξ → ∞` in
+`ℝ^ι`. If `f` is not integrable, every integral is `0`. -/
+theorem tendsto_integral_exp_sum_mul_I_smul_cocompact {ι : Type*} [Fintype ι]
+    (f : (ι → ℝ) → E) :
+    Tendsto (fun ξ : ι → ℝ ↦ ∫ x, exp ((∑ i, ξ i * x i : ℝ) * I) • f x) (cocompact (ι → ℝ))
+      (𝓝 0) := by
+  classical
+  refine ((tendsto_integral_exp_smul_cocompact f volume).comp
+    ((charFreq ι).isClosedEmbedding_of_injective
+      (LinearMap.ker_eq_bot.2 (charFreq_injective ι))).tendsto_cocompact).congr
+    fun ξ ↦ integral_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Circle.smul_def, Real.fourierChar_apply, charFreq_apply]
+  congr 3
+  field_simp
+
+/-- **Riemann--Lebesgue on `ℝ^ι` along `ℤ^ι`**: the Fourier integrals `∫ e^{i ∑ᵢ dᵢxᵢ} f(x) dx`
+of any function `f` on `ℝ^ι`, for a finite index type `ι`, tend to `0` as `d → ∞` in `ℤ^ι`. This
+is `tendsto_integral_exp_sum_mul_I_smul_cocompact` restricted to the closed lattice `ℤ^ι`. -/
+theorem tendsto_integral_exp_sum_int_mul_I_smul_cofinite {ι : Type*} [Fintype ι]
+    (f : (ι → ℝ) → E) :
+    Tendsto (fun d : ι → ℤ ↦ ∫ x, exp ((∑ i, d i * x i : ℝ) * I) • f x) cofinite (𝓝 0) := by
+  rw [← cocompact_eq_cofinite]
+  exact (tendsto_integral_exp_sum_mul_I_smul_cocompact f).comp
+    (Topology.IsClosedEmbedding.piMap fun _ ↦ Int.isClosedEmbedding_coe_real).tendsto_cocompact
 
 end TauCeti
 

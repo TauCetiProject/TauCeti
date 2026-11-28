@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
@@ -68,6 +68,8 @@ element `∑ x ∈ s, single x r` has every orbit sum equal to `r`.
   `⨆ g ∈ s, range (ρ g - 1)`.
 * `Representation.coinvariantsKer_eq_range_of_forall_mem_zpowers`: if `g` generates `G`, the
   coinvariant kernel is `range (ρ g - 1)`.
+* `Representation.sum_apply_sub_card_nsmul_mem_coinvariantsKer`: modulo the coinvariant kernel,
+  a sum of `#s` translates of `v` is `#s • v`.
 * `Representation.mem_coinvariantsKer_iff_exists_sum`: for finite `G`, the coinvariant kernel
   is the set of sums `∑ g, (ρ g (y g) - y g)`.
 * `Representation.coinvariantsEquivOfIsTrivial`: the coinvariants of a trivial representation are
@@ -368,6 +370,21 @@ theorem coinvariantsEquivQuotientTwo_symm_mk (h : ∀ g, ρ g = 1 ∨ ρ g = -1)
   (LinearEquiv.symm_apply_eq _).2 (coinvariantsEquivQuotientTwo_mk h hg₀ v).symm
 
 end Sign
+
+/-! ### Finite sums of translates -/
+
+section Translates
+
+variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+
+/-- Modulo the coinvariant kernel, a sum of `#s` translates of `x` is `#s • x`. -/
+theorem sum_apply_sub_card_nsmul_mem_coinvariantsKer (ρ : Representation k G V) {ι : Type*}
+    (s : Finset ι) (f : ι → G) (x : V) :
+    ∑ i ∈ s, ρ (f i) x - s.card • x ∈ Coinvariants.ker ρ := by
+  rw [← Finset.sum_const, ← Finset.sum_sub_distrib]
+  exact Submodule.sum_mem _ fun i _ ↦ Coinvariants.sub_mem_ker _ _
+
+end Translates
 
 /-! ### The coinvariant kernel of a representation of a finite monoid -/
 
