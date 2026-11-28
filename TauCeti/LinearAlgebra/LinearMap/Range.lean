@@ -110,12 +110,6 @@ theorem rangeEqEquivSurjective_apply_val
       f.val.codRestrict W (fun x ↦ f.property.le (LinearMap.mem_range_self f.val x)) :=
   (rfl)
 
-/-- The forward equivalence leaves each output unchanged in the ambient module. -/
-theorem rangeEqEquivSurjective_apply_coe
-    (f : {f : M →ₛₗ[σ] N // f.range = W}) (x : M) :
-    ((W.rangeEqEquivSurjective f).val x : N) = f.val x := by
-  simp only [rangeEqEquivSurjective_apply_val, LinearMap.codRestrict_apply]
-
 /-- The inverse equivalence composes with the submodule inclusion. -/
 @[simp]
 theorem rangeEqEquivSurjective_symm_apply_coe

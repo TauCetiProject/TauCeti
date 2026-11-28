@@ -34,7 +34,7 @@ namespace TauCeti
 /-- The number of rank-`r` maps from an `n`-dimensional space to an `m`-dimensional space
 over a field of order `q` is `[m r]_q ∏_{i<r} (q^n - q^i)`. -/
 theorem natCard_linearMap_finrank_range_eq_gaussianBinomial_mul_prod
-    (K V W : Type*) [Field K] [Finite K]
+    (K V W : Type*) [DivisionRing K] [Finite K]
     [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     [AddCommGroup W] [Module K W] [FiniteDimensional K W] (r : ℕ) :
     Nat.card {f : V →ₗ[K] W // finrank K f.range = r} =
@@ -53,14 +53,19 @@ theorem natCard_linearMap_finrank_range_eq_gaussianBinomial_mul_prod
       natCard_linearMap_surjective, U.property]
   let e := Equiv.sigmaSubtypeFiberEquivSubtype (LinearMap.range : (V →ₗ[K] W) → Submodule K W)
     (q := fun U ↦ finrank K U = r) (fun _ ↦ Iff.rfl)
-  rw [Nat.card_congr e.symm, Nat.card_sigma, sum_const_nat (fun U _ ↦ countFiber U),
-    card_univ, ← Nat.card_eq_fintype_card, card_submodule_finrank_eq_gaussianBinomial,
-    Nat.card_eq_fintype_card (α := K)]
+  calc
+    _ = Nat.card {U : Submodule K W // finrank K U = r} *
+        ∏ i : Fin r, (Nat.card K ^ finrank K V - Nat.card K ^ i.val) := by
+      rw [Nat.card_congr e.symm, Nat.card_sigma,
+        Nat.card_eq_fintype_card (α := {U : Submodule K W // finrank K U = r})]
+      simp only [countFiber, sum_const, card_univ, Nat.nsmul_eq_mul]
+    _ = _ := by
+      rw [card_submodule_finrank_eq_gaussianBinomial, Nat.card_eq_fintype_card (α := K)]
 
 /-- The rank-`r` count for maps from dimension `n` to dimension `m` over a field of order `q`
 equals `∏_{i<r} (q^m - q^i) (q^n - q^i) / (q^r - q^i)` in `ℚ`. -/
 theorem natCast_card_linearMap_finrank_range_eq_prod_div
-    (K V W : Type*) [Field K] [Finite K]
+    (K V W : Type*) [DivisionRing K] [Finite K]
     [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     [AddCommGroup W] [Module K W] [FiniteDimensional K W] (r : ℕ) :
     (Nat.card {f : V →ₗ[K] W // finrank K f.range = r} : ℚ) =
