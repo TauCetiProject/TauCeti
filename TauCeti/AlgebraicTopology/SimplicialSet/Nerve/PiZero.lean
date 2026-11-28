@@ -62,6 +62,11 @@ end
 @[simp] lemma π₀EquivConnectedComponents_mapπ₀_nerveMap {C D : Type u} [Category.{v} C]
     [Category.{v} D] (F : C ⥤ D) (z : SSet.π₀ (nerve C)) :
     π₀EquivConnectedComponents D (SSet.mapπ₀ (nerveMap F) z) =
-      F.mapConnectedComponents (π₀EquivConnectedComponents C z) :=
-  SSet.π₀.rec (fun _ ↦ rfl) z
+      F.mapConnectedComponents (π₀EquivConnectedComponents C z) := by
+  induction z using SSet.π₀.rec with | _ x =>
+  have h : (nerveMap F).app (op ⦋0⦌) x = nerveEquiv.symm (F.obj (nerveEquiv x)) := by
+    conv_lhs => rw [← Equiv.symm_apply_apply nerveEquiv x]
+    exact nerveMap_app_nerveEquiv_symm F (nerveEquiv x)
+  rw [SSet.mapπ₀_mk, h, π₀EquivConnectedComponents_mk_nerveEquiv_symm,
+    π₀EquivConnectedComponents_mk, Functor.mapConnectedComponents_mk]
 end CategoryTheory.nerve

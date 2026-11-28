@@ -113,9 +113,10 @@ noncomputable def asSmallHomeomorph : classifyingSpace (AsSmall.{w} C) ≃ₜ cl
   -- `(nerve (AsSmall.{w} C)) _⦋n⦌` is definitionally `ComposableArrows (AsSmall.{w} C) n`,
   -- which `SSet.toTop_map_toTopObjMk` expects syntactically.
   change asSmallHomeomorph.{w} C (SSet.toTopObjMk (X := nerve (AsSmall.{w} C)) σ' w₀) = _
-  rw [asSmallHomeomorph, Homeomorph.trans_apply, TopCat.homeoOfIso_apply, Functor.mapIso_hom,
-    SSet.toTop_map_toTopObjMk, SSet.toTopUliftHomeomorph_toTopObjMk,
-    nerve.asSmallIso_hom_app_down]
+  simp only [asSmallHomeomorph, Homeomorph.trans_apply, TopCat.homeoOfIso_apply, Functor.mapIso_hom,
+    SSet.toTop_map_toTopObjMk, SSet.toTopUliftHomeomorph_toTopObjMk]
+  exact congrArg (SSet.toTopObjMk (X := nerve C) · w₀)
+    (nerve.asSmallIso_hom_app_down (n := op ⦋n⦌) σ)
 @[simp] lemma asSmallHomeomorph_symm_toTopObjMk {n : ℕ} (σ : ComposableArrows C n)
     (w₀ : StdSimplex ℝ (Fin (n + 1))) :
     (asSmallHomeomorph.{w} C).symm (SSet.toTopObjMk (X := nerve C) σ w₀) =
@@ -301,14 +302,12 @@ noncomputable def finSuccHomeomorphStdSimplex (n : ℕ) :
       StdSimplex.map (fun i ↦ σ.obj i) w := by
   simp only [finSuccHomeomorphStdSimplex, Homeomorph.trans_apply, TopCat.homeoOfIso_apply,
     Functor.mapIso_hom, SSet.toTop_map_toTopObjMk]
-  let φ : ⦋d⦌ ⟶ ⦋n⦌ := SSet.stdSimplex.objEquiv ((nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ)
-  -- `Δ[n].map φ.op` pulls back `𝟙 ⦋n⦌` to `φ`, which agrees with `(finSuccIsoStdSimplex n).hom`
-  -- on `σ` by definition of `SSet.stdSimplex.objEquiv`.
-  have hσ : (nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ =
-      Δ[n].map φ.op (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋n⦌)) := by ext k : 3; rfl
-  rw [hσ, SSet.toTopObjMk_map, ← SSet.toTop_map_yonedaEquiv_symm_toTopHomeo_symm,
-    SSet.yonedaEquiv_symm_stdSimplex_id ⦋n⦌, CategoryTheory.Functor.map_id,
-    CategoryTheory.id_apply, Homeomorph.apply_symm_apply]
+  have hyon : SSet.yonedaEquiv.symm ((nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ) =
+      SSet.stdSimplex.map (SSet.stdSimplex.objEquiv
+        ((nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ)) :=
+    SSet.yonedaEquiv.symm_apply_eq.2 (by rw [SSet.yonedaEquiv_map, Equiv.symm_apply_apply])
+  rw [← SSet.toTop_map_yonedaEquiv_symm_toTopHomeo_symm, hyon,
+    SimplexCategory.toTopHomeo_naturality_apply, Homeomorph.apply_symm_apply]
   exact congrArg (StdSimplex.map · w) (funext fun i ↦ nerve.finSuccIsoStdSimplex_hom_app_apply σ i)
 @[simp] lemma finSuccHomeomorphStdSimplex_vertex (n : ℕ) (i : Fin (n + 1)) :
     finSuccHomeomorphStdSimplex n (vertex i) = StdSimplex.single i :=
@@ -601,13 +600,16 @@ lemma toClassifyingSpaceHomotopy_apply {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁
     (c : C) :
     η.toClassifyingSpaceHomotopy (t, classifyingSpace.vertex c) =
       classifyingSpace.edge (η.app c) t := by
-  rw [toClassifyingSpaceHomotopy_apply, classifyingSpace.asSmallHomeomorph_symm_vertex,
+  simp only [toClassifyingSpaceHomotopy_apply, classifyingSpace.asSmallHomeomorph_symm_vertex,
     classifyingSpaceHomotopy_apply_vertex, classifyingSpace.edge_apply, nerve.edgeMk_edge,
-    classifyingSpace.asSmallHomeomorph_toTopObjMk, Functor.mapComposableArrows_obj_mk₁,
-    classifyingSpace.edge_apply, nerve.edgeMk_edge]
-  -- `AsSmall.down.map (AsSmall.up.map (η.app (AsSmall.down.obj (AsSmall.up.obj c))))` is
-  -- definitionally `η.app c`.
-  rfl
+    classifyingSpace.asSmallHomeomorph_toTopObjMk, Functor.whiskerLeft_app,
+    Functor.whiskerRight_app, Functor.comp_obj]
+  refine congrArg (SSet.toTopObjMk (X := nerve D) · _) ?_
+  rw [← Functor.mapComposableArrows_obj_mk₁ AsSmall.up]
+  simp only [Functor.mapComposableArrows_obj, CategoryTheory.Functor.assoc, AsSmall.up_comp_down,
+    CategoryTheory.Functor.comp_id]
+  exact congrArg (fun x ↦ ComposableArrows.mk₁ (η.app x))
+    ((AsSmall.down_obj _).trans (AsSmall.up_obj_down.{v₂, u₂, max u₃ v₃} c))
 private lemma toClassifyingSpaceHomotopy_toTopObjMk_of_prism {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁)
     {p n : ℕ} (σ : ComposableArrows C p) (s : StdSimplex ℝ (Fin (p + 1))) (t : unitInterval)
     (α : ⦋n⦌ ⟶ ⦋p⦌) (β : ⦋n⦌ ⟶ ⦋1⦌) (w : StdSimplex ℝ (Fin (n + 1)))

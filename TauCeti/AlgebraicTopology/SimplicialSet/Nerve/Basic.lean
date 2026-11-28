@@ -388,7 +388,12 @@ def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
       -- definitionally on objects and morphisms.
       left_inv _ := Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
       right_inv _ := Prod.ext (Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl)
-        (Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl) }) fun _ ↦ rfl
+        (Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl) })
+    -- `(nerve _).map` is precomposition, which commutes definitionally with postcomposition by
+    -- `Prod.fst` and `Prod.snd`.
+    fun _ ↦ by
+      ext σ; exact Prod.ext (Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl)
+        (Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl)
 @[simp] lemma prodIso_hom_app_fst {C D : Type u} [Category.{v} C] [Category.{v} D]
     {n : SimplexCategoryᵒᵖ} (σ : (nerve (C × D)).obj n) :
     dsimp% ((prodIso C D).hom.app n σ).1 = σ ⋙ CategoryTheory.Prod.fst C D := (rfl)
@@ -424,7 +429,10 @@ def asSmallIso (C : Type u) [Category.{v} C] :
       -- `AsSmall.up` and `AsSmall.down` are mutual inverses definitionally on objects and
       -- morphisms, and `mapComposableArrows` is postcomposition.
       left_inv _ := Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
-      right_inv _ := ULift.ext <| Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl }) fun _ ↦ rfl
+      right_inv _ := ULift.ext <| Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl })
+    -- `(nerve _).map` is precomposition, which commutes definitionally with postcomposition by
+    -- `AsSmall.down`.
+    fun _ ↦ by ext σ; exact ULift.ext <| Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 @[simp] lemma asSmallIso_hom_app_down {C : Type u} [Category.{v} C] {n : SimplexCategoryᵒᵖ}
     (σ : ComposableArrows (AsSmall.{w} C) n.unop.len) :
     ((asSmallIso.{w} C).hom.app n σ).down = (AsSmall.down.mapComposableArrows n.unop.len).obj σ :=
