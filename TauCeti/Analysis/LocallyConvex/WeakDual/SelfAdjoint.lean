@@ -86,6 +86,7 @@ theorem extendFromSelfAdjoint_apply (ψ : WeakDual ℝ (selfAdjoint A)) (a : A) 
   simp [extendFromSelfAdjoint, WeakDual.extendRCLikeL_apply_apply, realPart_I_smul, sub_neg_eq_add]
 
 /-- On a self-adjoint element `a`, `extendFromSelfAdjoint ψ` evaluates to `(ψ a : ℂ)`. -/
+@[simp high]
 theorem extendFromSelfAdjoint_apply_coe (ψ : WeakDual ℝ (selfAdjoint A)) (a : selfAdjoint A) :
     extendFromSelfAdjoint ψ (a : A) = (ψ a : ℂ) := by
   simp [selfAdjoint.realPart_coe, selfAdjoint.imaginaryPart_coe]

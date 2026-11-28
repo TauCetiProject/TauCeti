@@ -91,9 +91,10 @@ variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 /-- The states of `B` restricting along `f` to a given functional `φ` of `A` form a weak-* compact
 set. -/
 theorem isCompact_stateSpace_inter_preimage (f : F) (φ : WeakDual ℂ A) :
-    IsCompact (stateSpace B ∩ pullbackFunctional A f ⁻¹' {φ}) :=
-  isCompact_stateSpace.inter_right <|
-    isClosed_singleton.preimage (pullbackFunctional A f).continuous
+    IsCompact (stateSpace B ∩
+      (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ⁻¹' {φ}) :=
+  isCompact_stateSpace.inter_right <| isClosed_singleton.preimage
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional.continuous
 
 end Compact
 
@@ -108,19 +109,31 @@ C⋆-algebras, the states of `B` restricting to a pure state `φ` of `A` form an
 state space of `B`. Neither `A`, `B` nor `f` need be unital. -/
 theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : WeakDual ℂ A}
     (hφ : φ ∈ extremePoints ℝ (stateSpace A)) :
-    IsExtreme ℝ (stateSpace B) (stateSpace B ∩ pullbackFunctional A f ⁻¹' {φ}) := by
+    IsExtreme ℝ (stateSpace B)
+      (stateSpace B ∩
+        (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ⁻¹' {φ}) := by
   refine ⟨inter_subset_left, fun ψ₁ hψ₁ ψ₂ hψ₂ ψ hψ hseg => ⟨hψ₁, ?_⟩⟩
   obtain ⟨a, b, ha, hb, hab, rfl⟩ := hseg
-  have hcomb : a • pullbackFunctional A f ψ₁ + b • pullbackFunctional A f ψ₂ = φ := by
-    rw [← (hψ.2 : pullbackFunctional A f (a • ψ₁ + b • ψ₂) = φ)]
+  have hcomb :
+      a • (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ψ₁ +
+          b • (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ψ₂ =
+        φ := by
+    rw [← (hψ.2 : (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (a • ψ₁ + b • ψ₂) = φ)]
     exact DFunLike.ext _ _ fun x => by simp
   have hle₁ := norm_toStrongDual_pullbackFunctional_le_one f hψ₁
   have hle₂ := norm_toStrongDual_pullbackFunctional_le_one f hψ₂
   -- the norms of the restrictions average to at least `‖φ‖ = 1`, so both are `1`
-  have h1 : 1 ≤ a * ‖toStrongDual (pullbackFunctional A f ψ₁)‖ +
-      b * ‖toStrongDual (pullbackFunctional A f ψ₂)‖ := by
-    have hsplit : toStrongDual φ = (a : ℂ) • toStrongDual (pullbackFunctional A f ψ₁) +
-        (b : ℂ) • toStrongDual (pullbackFunctional A f ψ₂) := by
+  have h1 : 1 ≤
+      a * ‖toStrongDual
+        ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ψ₁)‖ +
+      b * ‖toStrongDual
+        ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ψ₂)‖ := by
+    have hsplit : toStrongDual φ =
+        (a : ℂ) • toStrongDual
+          ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ψ₁) +
+        (b : ℂ) • toStrongDual
+          ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ψ₂) := by
       rw [← hcomb]
       exact ContinuousLinearMap.ext fun x => by simp
     calc (1 : ℝ) = ‖toStrongDual φ‖ := (norm_toStrongDual_of_mem_stateSpace hφ.1).symm
@@ -139,11 +152,14 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 `λ + ψ a` at `λ + a`. The restriction need not be a state (it may have norm less than one), so
 this is not a case of `PositiveContinuousLinearMap.eq_unitization_of_mem_stateSpace`. -/
 private theorem injOn_pullbackFunctional_inr_stateSpace_aux :
-    InjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
+    InjOn (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+        A →L[ℂ] Unitization ℂ A).pullbackFunctional
       (stateSpace (Unitization ℂ A)) := by
   have key {ψ : WeakDual ℂ (Unitization ℂ A)} (hψ : ψ ∈ stateSpace (Unitization ℂ A))
       (x : Unitization ℂ A) :
-      ψ x = x.fst + pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ x.snd := by
+      ψ x = x.fst +
+        (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+          A →L[ℂ] Unitization ℂ A).pullbackFunctional ψ x.snd := by
     have hinl : (Unitization.inl x.fst : Unitization ℂ A) = x.fst • 1 := by ext <;> simp
     conv_lhs => rw [← Unitization.inl_fst_add_inr_snd_eq x, hinl]
     simp [map_one_of_mem_stateSpace hψ]
@@ -154,13 +170,15 @@ private theorem injOn_pullbackFunctional_inr_stateSpace_aux :
 theorem mem_extremePoints_stateSpace_of_pullbackFunctional_inr {φ : WeakDual ℂ A}
     (hφ : φ ∈ extremePoints ℝ (stateSpace A)) {ψ : WeakDual ℂ (Unitization ℂ A)}
     (hψ : ψ ∈ stateSpace (Unitization ℂ A))
-    (h : pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ = φ) :
+    (h : (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+        A →L[ℂ] Unitization ℂ A).pullbackFunctional ψ = φ) :
     ψ ∈ extremePoints ℝ (stateSpace (Unitization ℂ A)) := by
   have hface := isExtreme_stateSpace_inter_preimage_pullbackFunctional
     (B := Unitization ℂ A) (Unitization.inrNonUnitalStarAlgHom ℂ A) hφ
   -- the face of states restricting to `φ` is the single point `ψ`
   have hE : stateSpace (Unitization ℂ A) ∩
-      pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ⁻¹' {φ} = {ψ} :=
+      (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+        A →L[ℂ] Unitization ℂ A).pullbackFunctional ⁻¹' {φ} = {ψ} :=
     Subset.antisymm (fun χ ⟨hχ, hχφ⟩ =>
       injOn_pullbackFunctional_inr_stateSpace_aux hχ hψ (hχφ.trans h.symm))
       (singleton_subset_iff.2 ⟨hψ, h⟩)
@@ -171,8 +189,10 @@ theorem mem_extremePoints_stateSpace_of_pullbackFunctional_inr {φ : WeakDual �
 state of `A`. -/
 theorem pullbackFunctional_inr_mem_extremePoints_stateSpace {ψ : WeakDual ℂ (Unitization ℂ A)}
     (hψ : ψ ∈ extremePoints ℝ (stateSpace (Unitization ℂ A)))
-    (hψA : pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ ∈ stateSpace A) :
-    pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ ∈
+    (hψA : (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+        A →L[ℂ] Unitization ℂ A).pullbackFunctional ψ ∈ stateSpace A) :
+    (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+        A →L[ℂ] Unitization ℂ A).pullbackFunctional ψ ∈
       extremePoints ℝ (stateSpace A) := by
   refine ⟨hψA, fun χ₁ hχ₁ χ₂ hχ₂ hseg => ?_⟩
   obtain ⟨χ₁', hχ₁', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hχ₁
@@ -197,7 +217,8 @@ variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 /-- Extension of states along an injective unital star homomorphism of unital C⋆-algebras. -/
 private theorem surjOn_pullbackFunctional_stateSpace_of_unital (f : F)
     (hf : Function.Injective f) :
-    SurjOn (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
+    SurjOn (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (stateSpace B) (stateSpace A) := by
   intro φ hφ
   let i : A →ₗᵢ[ℂ] B := ⟨(f : A →ₗ[ℂ] B), NonUnitalStarAlgHom.norm_map f hf⟩
   obtain ⟨ψ, hψ, hnorm⟩ := i.exists_extension_norm_eq (toStrongDual φ)
@@ -212,10 +233,11 @@ private theorem surjOn_pullbackFunctional_stateSpace_of_unital (f : F)
 C⋆-algebras. -/
 private theorem surjOn_pullbackFunctional_extremePoints_stateSpace_of_unital (f : F)
     (hf : Function.Injective f) :
-    SurjOn (pullbackFunctional A f) (extremePoints ℝ (stateSpace B))
-      (extremePoints ℝ (stateSpace A)) := by
+    SurjOn (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (extremePoints ℝ (stateSpace B)) (extremePoints ℝ (stateSpace A)) := by
   have h := surjOn_extremePoints_image
-    ((pullbackFunctional A f).restrictScalars ℝ).toContinuousAffineMap
+    (((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional).restrictScalars
+      ℝ).toContinuousAffineMap
     (isCompact_stateSpace (A := B))
   rwa [ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.coe_restrictScalars',
     (surjOn_pullbackFunctional_stateSpace_of_unital f hf).image_eq_of_mapsTo
@@ -233,16 +255,22 @@ variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 `Unitization.starMap f` and then to `A`. -/
 private theorem pullbackFunctional_pullbackFunctional_inr (f : F)
     (ψ : WeakDual ℂ (Unitization ℂ B)) :
-    pullbackFunctional A f (pullbackFunctional B (Unitization.inrNonUnitalStarAlgHom ℂ B) ψ) =
-      pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A)
-        (pullbackFunctional (Unitization ℂ A) (Unitization.starMap (.ofClass f : A →⋆ₙₐ[ℂ] B)) ψ) :=
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+        ((PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ B) :
+          B →L[ℂ] Unitization ℂ B).pullbackFunctional ψ) =
+      (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+          A →L[ℂ] Unitization ℂ A).pullbackFunctional
+        ((PositiveContinuousLinearMap.ofClass
+          (Unitization.starMap (.ofClass f : A →⋆ₙₐ[ℂ] B)) :
+          Unitization ℂ A →L[ℂ] Unitization ℂ B).pullbackFunctional ψ) :=
   DFunLike.ext _ _ fun a => by simp
 
 /-- **Extension of states.** Along an injective star homomorphism `f : A → B` of C⋆-algebras,
 every state of `A` is the restriction `φ ∘ f` of a state `φ` of `B`. Neither `A`, `B` nor `f` need
 be unital. -/
 theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f) :
-    SurjOn (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
+    SurjOn (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (stateSpace B) (stateSpace A) := by
   intro φ hφ
   obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hφ
   obtain ⟨ψ', hψ', rfl⟩ := surjOn_pullbackFunctional_stateSpace_of_unital
@@ -256,8 +284,8 @@ theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f)
 every pure state of `A` is the restriction `φ ∘ f` of a pure state `φ` of `B`. Neither `A`, `B`
 nor `f` need be unital. -/
 theorem surjOn_pullbackFunctional_extremePoints_stateSpace (f : F) (hf : Function.Injective f) :
-    SurjOn (pullbackFunctional A f) (extremePoints ℝ (stateSpace B))
-      (extremePoints ℝ (stateSpace A)) := by
+    SurjOn (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (extremePoints ℝ (stateSpace B)) (extremePoints ℝ (stateSpace A)) := by
   intro φ hφ
   obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hφ.1
   obtain ⟨ψ', hψ', rfl⟩ := surjOn_pullbackFunctional_extremePoints_stateSpace_of_unital
@@ -284,7 +312,7 @@ theorem exists_mem_stateSpace_forall_apply_coe_eq (S : StarSubalgebra ℂ A)
     [IsClosed (S : Set A)] {φ : WeakDual ℂ S} (hφ : φ ∈ stateSpace S) :
     ∃ ψ ∈ stateSpace A, ∀ s : S, ψ s = φ s := by
   obtain ⟨ψ, hψ, rfl⟩ := surjOn_pullbackFunctional_stateSpace S.subtype Subtype.val_injective hφ
-  exact ⟨ψ, hψ, fun s => (pullbackFunctional_apply S.subtype ψ s).symm⟩
+  exact ⟨ψ, hψ, fun s => by simp⟩
 
 /-- **Extension of pure states from a C⋆-subalgebra.** Every pure state of a closed star subalgebra
 `S` of a unital C⋆-algebra `A`, containing the unit of `A`, is the restriction of a pure state of
@@ -294,7 +322,7 @@ theorem exists_mem_extremePoints_stateSpace_forall_apply_coe_eq (S : StarSubalge
     ∃ ψ ∈ extremePoints ℝ (stateSpace A), ∀ s : S, ψ s = φ s := by
   obtain ⟨ψ, hψ, rfl⟩ :=
     surjOn_pullbackFunctional_extremePoints_stateSpace S.subtype Subtype.val_injective hφ
-  exact ⟨ψ, hψ, fun s => (pullbackFunctional_apply S.subtype ψ s).symm⟩
+  exact ⟨ψ, hψ, fun s => by simp⟩
 
 end StarSubalgebra
 
@@ -398,7 +426,9 @@ private theorem exists_apply_map_eq_of_norm_eq_one (f : F) (hf : Function.Inject
   refine ⟨ofClass ω, hω1, fun b ↦ ?_⟩
   have h1 := DFunLike.congr_fun hφτ b
   have h2 := DFunLike.congr_fun hωφ (f b)
-  simp only [TauCeti.pullbackFunctional_apply, StrongDual.toWeakDual_apply] at h1 h2
+  simp only [ContinuousLinearMap.pullbackFunctional_apply,
+    PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+    PositiveContinuousLinearMap.coe_ofClass, StrongDual.toWeakDual_apply] at h1 h2
   rw [← h2] at h1
   simpa using h1
 

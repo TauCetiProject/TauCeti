@@ -331,7 +331,8 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 /-- Every state `φ` of `A` is the restriction of a state of `Unitization ℂ A`, namely
 `λ + a ↦ λ + φ a`. -/
 theorem surjOn_pullbackFunctional_inr_stateSpace :
-    SurjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
+    SurjOn (PositiveContinuousLinearMap.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A) :
+        A →L[ℂ] Unitization ℂ A).pullbackFunctional
       (stateSpace (Unitization ℂ A)) (stateSpace A) := by
   intro φ hφ
   let τ : A →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
@@ -340,7 +341,9 @@ theorem surjOn_pullbackFunctional_inr_stateSpace :
   · rw [PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff,
       PositiveContinuousLinearMap.norm_unitization]
     exact norm_toStrongDual_of_mem_stateSpace hφ
-  · simp only [pullbackFunctional_apply, Unitization.inrNonUnitalStarAlgHom_apply,
+  · simp only [ContinuousLinearMap.pullbackFunctional_apply,
+      PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+      PositiveContinuousLinearMap.coe_ofClass, Unitization.inrNonUnitalStarAlgHom_apply,
       StrongDual.toWeakDual_apply]
     exact (τ.unitization_apply_inr a).trans
       (PositiveContinuousLinearMap.mk₀_apply (R := ℂ) _ _ a)

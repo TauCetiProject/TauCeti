@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Completion
 public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
+import TauCeti.Analysis.LocallyConvex.WeakDual.Completion
 import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
@@ -46,16 +47,6 @@ section CompletionStates
 
 open OrderUnit
 
-private theorem pullbackFunctional_toComplL_eq_iff
-    {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    (φ : WeakDual ℝ E) (ψ : WeakDual ℝ (UniformSpace.Completion E)) :
-    (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ = φ ↔
-      ψ = StrongDual.toWeakDual ((toStrongDual φ).fromCompletion) := by
-  rw [← toStrongDual_inj, ContinuousLinearMap.toStrongDual_pullbackFunctional,
-    ContinuousLinearMap.comp_toComplL_eq_iff,
-    ← toStrongDual_inj ψ (StrongDual.toWeakDual ((toStrongDual φ).fromCompletion)),
-    StrongDual.toStrongDual_toWeakDual]
-
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
 
@@ -80,8 +71,9 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
     · simpa [ψ] using ((toStrongDual φ).fromCompletion_apply_coe e).trans
         (apply_eq_one_of_mem_stateSpace hφ)
   have hψeq : (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ = φ :=
-    (pullbackFunctional_toComplL_eq_iff φ ψ).2 rfl
-  refine ⟨ψ, ⟨hψmem, hψeq⟩, fun ψ' ⟨_, hψ'eq⟩ => (pullbackFunctional_toComplL_eq_iff φ ψ').1 hψ'eq⟩
+    (WeakDual.pullbackFunctional_toComplL_eq_iff φ ψ).2 rfl
+  refine ⟨ψ, ⟨hψmem, hψeq⟩, fun ψ' ⟨_, hψ'eq⟩ =>
+    (WeakDual.pullbackFunctional_toComplL_eq_iff φ ψ').1 hψ'eq⟩
 
 private theorem IsOrderUnitNorm.mapsTo_pullbackFunctional_completion_stateSpace :
     MapsTo (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional
@@ -171,7 +163,7 @@ theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_symm_apply
 theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_symm_val (φ : stateSpace e) :
     (he.completionStateSpaceHomeomorph.symm φ).val =
       StrongDual.toWeakDual ((toStrongDual φ.val).fromCompletion) := by
-  rw [← pullbackFunctional_toComplL_eq_iff, ← he.completionStateSpaceHomeomorph_val,
+  rw [← WeakDual.pullbackFunctional_toComplL_eq_iff, ← he.completionStateSpaceHomeomorph_val,
     he.completionStateSpaceHomeomorph.apply_symm_apply]
 
 /-- `completionStateSpaceHomeomorph` preserves convex combinations of states. -/

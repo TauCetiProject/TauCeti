@@ -518,40 +518,52 @@ private theorem pullbackFunctional_mem_image {PA : (A →P[ℂ] ℂ) → Prop}
     {PB : (B →P[ℂ] ℂ) → Prop} (f : F) (hP : ∀ σ, PB σ → PA (σ.comp (.ofClass f)))
     (hφ : φ ∈ (fun σ : B →P[ℂ] ℂ => StrongDual.toWeakDual (σ : B →L[ℂ] ℂ)) ''
       {σ | σ.IsTracialState ∧ PB σ})
-    (hf : pullbackFunctional A f φ ∈ stateSpace A) :
-    pullbackFunctional A f φ ∈ (fun τ : A →P[ℂ] ℂ => StrongDual.toWeakDual (τ : A →L[ℂ] ℂ)) ''
-      {τ | τ.IsTracialState ∧ PA τ} := by
+    (hf : (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      stateSpace A) :
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      (fun τ : A →P[ℂ] ℂ => StrongDual.toWeakDual (τ : A →L[ℂ] ℂ)) ''
+        {τ | τ.IsTracialState ∧ PA τ} := by
   obtain ⟨σ, ⟨hσ, hσ'⟩, rfl⟩ := hφ
-  rw [pullbackFunctional_toWeakDual, toWeakDual_mem_stateSpace_iff] at hf
-  rw [pullbackFunctional_toWeakDual]
+  rw [ContinuousLinearMap.pullbackFunctional_toWeakDual,
+    ← PositiveContinuousLinearMap.toContinuousLinearMap_comp,
+    toWeakDual_mem_stateSpace_iff] at hf
+  rw [ContinuousLinearMap.pullbackFunctional_toWeakDual,
+    ← PositiveContinuousLinearMap.toContinuousLinearMap_comp]
   exact ⟨_, ⟨hσ.comp_of_norm_eq_one f hf, hP σ hσ'⟩, rfl⟩
 
 /-- **Pullback of amenable traces.** If `φ ∈ AT(B)` and its restriction along a star
 homomorphism `f : A → B` is a state, then that restriction lies in `AT(A)`. -/
 theorem pullbackFunctional_mem_amenableTraces (f : F) (hφ : φ ∈ amenableTraces B)
-    (hf : pullbackFunctional A f φ ∈ stateSpace A) :
-    pullbackFunctional A f φ ∈ amenableTraces A :=
+    (hf : (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      stateSpace A) :
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      amenableTraces A :=
   pullbackFunctional_mem_image f (fun _ h => h.comp f) hφ hf
 
 /-- **Pullback of quasidiagonal traces.** If `φ ∈ AT_QD(B)` and its restriction along a star
 homomorphism `f : A → B` is a state, then that restriction lies in `AT_QD(A)`. -/
 theorem pullbackFunctional_mem_quasidiagonalTraces (f : F) (hφ : φ ∈ quasidiagonalTraces B)
-    (hf : pullbackFunctional A f φ ∈ stateSpace A) :
-    pullbackFunctional A f φ ∈ quasidiagonalTraces A :=
+    (hf : (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      stateSpace A) :
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      quasidiagonalTraces A :=
   pullbackFunctional_mem_image f (fun _ h => h.comp f) hφ hf
 
 /-- **Pullback of uniform amenable traces.** If `φ ∈ UAT(B)` and its restriction along a star
 homomorphism `f : A → B` is a state, then that restriction lies in `UAT(A)`. -/
 theorem pullbackFunctional_mem_uniformAmenableTraces (f : F) (hφ : φ ∈ uniformAmenableTraces B)
-    (hf : pullbackFunctional A f φ ∈ stateSpace A) :
-    pullbackFunctional A f φ ∈ uniformAmenableTraces A :=
+    (hf : (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      stateSpace A) :
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      uniformAmenableTraces A :=
   pullbackFunctional_mem_image f (fun _ h => h.comp f) hφ hf
 
 /-- **Lifting amenable traces from quotients.** Precomposition with a surjective star
 homomorphism `A → B` maps `AT(B)` to `AT(A)`. -/
 theorem mapsTo_pullbackFunctional_amenableTraces_of_surjective (f : F)
     (hf : Function.Surjective f) :
-    MapsTo (pullbackFunctional A f) (amenableTraces B) (amenableTraces A) := fun _ hφ =>
+    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (amenableTraces B) (amenableTraces A) := fun _ hφ =>
   pullbackFunctional_mem_amenableTraces f hφ <| mapsTo_pullbackFunctional_stateSpace_of_surjective
     f hf <| tracialStates_subset_stateSpace <| amenableTraces_subset_tracialStates hφ
 
@@ -559,7 +571,8 @@ theorem mapsTo_pullbackFunctional_amenableTraces_of_surjective (f : F)
 homomorphism `A → B` maps `AT_QD(B)` to `AT_QD(A)`. -/
 theorem mapsTo_pullbackFunctional_quasidiagonalTraces_of_surjective (f : F)
     (hf : Function.Surjective f) :
-    MapsTo (pullbackFunctional A f) (quasidiagonalTraces B) (quasidiagonalTraces A) := fun _ hφ =>
+    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (quasidiagonalTraces B) (quasidiagonalTraces A) := fun _ hφ =>
   pullbackFunctional_mem_quasidiagonalTraces f hφ <|
     mapsTo_pullbackFunctional_stateSpace_of_surjective f hf <| tracialStates_subset_stateSpace <|
       quasidiagonalTraces_subset_tracialStates hφ
@@ -568,7 +581,8 @@ theorem mapsTo_pullbackFunctional_quasidiagonalTraces_of_surjective (f : F)
 homomorphism `A → B` maps `UAT(B)` to `UAT(A)`. -/
 theorem mapsTo_pullbackFunctional_uniformAmenableTraces_of_surjective (f : F)
     (hf : Function.Surjective f) :
-    MapsTo (pullbackFunctional A f) (uniformAmenableTraces B) (uniformAmenableTraces A) :=
+    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (uniformAmenableTraces B) (uniformAmenableTraces A) :=
   fun _ hφ => pullbackFunctional_mem_uniformAmenableTraces f hφ <|
     mapsTo_pullbackFunctional_stateSpace_of_surjective f hf <| tracialStates_subset_stateSpace <|
       uniformAmenableTraces_subset_tracialStates hφ
@@ -584,21 +598,24 @@ variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 /-- **Restriction of amenable traces.** Precomposition with a unital star homomorphism `A → B`
 maps `AT(B)` to `AT(A)`; in particular amenable traces restrict to unital C⋆-subalgebras. -/
 theorem mapsTo_pullbackFunctional_amenableTraces (f : F) :
-    MapsTo (pullbackFunctional A f) (amenableTraces B) (amenableTraces A) := fun _ hφ =>
+    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (amenableTraces B) (amenableTraces A) := fun _ hφ =>
   pullbackFunctional_mem_amenableTraces f hφ <| mapsTo_pullbackFunctional_stateSpace f <|
     tracialStates_subset_stateSpace <| amenableTraces_subset_tracialStates hφ
 
 /-- **Restriction of quasidiagonal traces.** Precomposition with a unital star homomorphism
 `A → B` maps `AT_QD(B)` to `AT_QD(A)`. -/
 theorem mapsTo_pullbackFunctional_quasidiagonalTraces (f : F) :
-    MapsTo (pullbackFunctional A f) (quasidiagonalTraces B) (quasidiagonalTraces A) := fun _ hφ =>
+    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (quasidiagonalTraces B) (quasidiagonalTraces A) := fun _ hφ =>
   pullbackFunctional_mem_quasidiagonalTraces f hφ <| mapsTo_pullbackFunctional_stateSpace f <|
     tracialStates_subset_stateSpace <| quasidiagonalTraces_subset_tracialStates hφ
 
 /-- **Restriction of uniform amenable traces.** Precomposition with a unital star homomorphism
 `A → B` maps `UAT(B)` to `UAT(A)`. -/
 theorem mapsTo_pullbackFunctional_uniformAmenableTraces (f : F) :
-    MapsTo (pullbackFunctional A f) (uniformAmenableTraces B) (uniformAmenableTraces A) :=
+    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (uniformAmenableTraces B) (uniformAmenableTraces A) :=
   fun _ hφ => pullbackFunctional_mem_uniformAmenableTraces f hφ <|
     mapsTo_pullbackFunctional_stateSpace f <| tracialStates_subset_stateSpace <|
       uniformAmenableTraces_subset_tracialStates hφ

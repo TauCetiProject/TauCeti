@@ -51,8 +51,7 @@ C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpa
 * `TauCeti.OrderUnit.mem_stateSpace_iff_exists_positiveContinuousLinearMap`,
   `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_exists_positiveLinearMap`: states are the
   normalized positive (continuous) linear functionals.
-* `TauCeti.OrderUnit.toWeakDual_comp_mem_stateSpace`,
-  `ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace`: states pull back along unital
+* `ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace`: states pull back along unital
   monotone continuous linear maps; in particular they restrict to subspaces containing `e`.
 * `TauCeti.OrderUnit.toWeakDual_inv_smul_mem_stateSpace`: a monotone functional `g` with
   `0 < g e` normalizes to a state.
@@ -127,24 +126,15 @@ theorem isClosed_stateSpace : IsClosed (stateSpace e) :=
   (isClosed_monotone.preimage coeFn_continuous).inter
     (isClosed_eq (eval_continuous e) continuous_const)
 
-/-- **Pullback of states.** Composing a state of `F` with a monotone continuous linear map
-`T : E →L[ℝ] F` sending `e` to `f` gives a state of `E`. For the inclusion of a subspace
+/-- **Pullback of states.** Composing a state with a unital monotone continuous linear map
+`T : E →L[ℝ] F` via `pullbackFunctional` yields a state; for the inclusion of a subspace
 containing `e`, this is the restriction of states. -/
-theorem toWeakDual_comp_mem_stateSpace {F : Type*} [AddCommGroup F] [Module ℝ F]
-    [TopologicalSpace F] [Preorder F] {f : F} {T : E →L[ℝ] F} (hT : Monotone T) (hTe : T e = f)
-    {φ : WeakDual ℝ F} (hφ : φ ∈ stateSpace f) :
-    StrongDual.toWeakDual ((toStrongDual φ).comp T) ∈ stateSpace e :=
-  ⟨by simpa [StrongDual.coe_toWeakDual, ContinuousLinearMap.coe_comp, coe_toStrongDual] using
-    hφ.1.comp hT, by simpa [hTe] using hφ.2⟩
-
-/-- Composing a state with a unital positive continuous linear map via `pullbackFunctional`
-yields a state. -/
 theorem _root_.ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace {F : Type*}
     [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [Preorder F] {f : F} (T : E →L[ℝ] F)
     (hT : Monotone T) (hTe : T e = f) :
-    MapsTo T.pullbackFunctional (stateSpace f) (stateSpace e) := fun φ hφ => by
-  rw [← toWeakDual_toStrongDual (T.pullbackFunctional φ), T.toStrongDual_pullbackFunctional]
-  exact toWeakDual_comp_mem_stateSpace hT hTe hφ
+    MapsTo T.pullbackFunctional (stateSpace f) (stateSpace e) := fun _ hφ =>
+  ⟨fun _ _ hab => by simpa only [ContinuousLinearMap.pullbackFunctional_apply] using hφ.1 (hT hab),
+    by simp [hTe, hφ.2]⟩
 
 /-- **Normalization.** A monotone continuous linear functional `g` with `0 < g e`, divided by its
 value at `e`, is a state. -/
@@ -173,18 +163,6 @@ theorem toWeakDual_mem_stateSpace_iff {ω : E →P[ℝ] ℝ} :
     StrongDual.toWeakDual (ω : E →L[ℝ] ℝ) ∈ stateSpace e ↔ ω e = 1 := by
   simpa [mem_stateSpace_iff, StrongDual.coe_toWeakDual] using fun _ => OrderHomClass.mono ω
 
-/-- The states of `(E, e)` are exactly the positive continuous linear functionals `E →P[ℝ] ℝ`
-with `ω e = 1`, viewed in the weak-* dual. -/
-theorem mem_stateSpace_iff_exists_positiveContinuousLinearMap :
-    φ ∈ stateSpace e ↔
-      ∃ ω : E →P[ℝ] ℝ, ω e = 1 ∧ StrongDual.toWeakDual (ω : E →L[ℝ] ℝ) = φ := by
-  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ => h ▸ toWeakDual_mem_stateSpace_iff.2 hω⟩
-  let ω : E →P[ℝ] ℝ :=
-    { toLinearMap := (toStrongDual φ : E →ₗ[ℝ] ℝ)
-      monotone' := by simpa [coe_toStrongDual] using hφ.1
-      cont := (toStrongDual φ).cont }
-  exact ⟨ω, hφ.2, toWeakDual_toStrongDual φ⟩
-
 /-- The canonical bijection between `stateSpace e` and normalized positive continuous linear
 functionals `{ω : E →P[ℝ] ℝ // ω e = 1}`. -/
 noncomputable def stateSpaceEquivPositiveContinuousLinearMap (e : E) :
@@ -209,6 +187,16 @@ theorem stateSpaceEquivPositiveContinuousLinearMap_symm_apply (e : E)
     (ω : {ω : E →P[ℝ] ℝ // ω e = 1}) (a : E) :
     ((stateSpaceEquivPositiveContinuousLinearMap e).symm ω).val a = ω.val a :=
   (rfl)
+
+/-- The states of `(E, e)` are exactly the positive continuous linear functionals `E →P[ℝ] ℝ`
+with `ω e = 1`, viewed in the weak-* dual. -/
+theorem mem_stateSpace_iff_exists_positiveContinuousLinearMap :
+    φ ∈ stateSpace e ↔
+      ∃ ω : E →P[ℝ] ℝ, ω e = 1 ∧ StrongDual.toWeakDual (ω : E →L[ℝ] ℝ) = φ := by
+  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ => h ▸ toWeakDual_mem_stateSpace_iff.2 hω⟩
+  refine ⟨(stateSpaceEquivPositiveContinuousLinearMap e ⟨φ, hφ⟩).val,
+    (stateSpaceEquivPositiveContinuousLinearMap e ⟨φ, hφ⟩).property,
+    congrArg Subtype.val ((stateSpaceEquivPositiveContinuousLinearMap e).left_inv ⟨φ, hφ⟩)⟩
 
 end PartialOrder
 
@@ -264,11 +252,10 @@ variable [IsOrderedAddMonoid E]
 theorem mem_stateSpace_iff_norm_eq_one_and_apply_eq_one (h : IsOrderUnitNorm e) :
     φ ∈ OrderUnit.stateSpace e ↔ ‖toStrongDual φ‖ = 1 ∧ φ e = 1 := by
   refine ⟨fun hφ => ⟨h.norm_toStrongDual_of_mem_stateSpace hφ, hφ.2⟩, fun ⟨hn, h1⟩ =>
-    OrderUnit.mem_stateSpace_iff_map_nonneg.2 ⟨fun a ha => ?_, h1⟩⟩
-  rw [← toStrongDual_apply]
-  refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (u := e) (toStrongDual φ)
-    (fun g => ?_) (h.nonneg_iff_norm_smul_sub_le.1 ha)
-  simpa [h1, hn] using (toStrongDual φ).le_opNorm g
+    OrderUnit.mem_stateSpace_iff.2 ⟨?_, h1⟩⟩
+  have hmono : Monotone (toStrongDual φ) :=
+    (h.monotone_iff_opNorm_eq_apply_unit (toStrongDual φ)).2 (by rw [hn, toStrongDual_apply, h1])
+  simpa [coe_toStrongDual] using hmono
 
 /-- **Existence of states.** An order-unit space has a state, by the Hahn–Banach theorem. -/
 theorem stateSpace_nonempty (h : IsOrderUnitNorm e) : (OrderUnit.stateSpace e).Nonempty := by

@@ -57,8 +57,7 @@ theorem IsOrderUnitNorm.exists_mem_stateSpace_abs_apply_eq_norm (a : E) :
     continuous_abs.comp (eval_continuous a)
   obtain ⟨φ₀, hφ₀, hmax⟩ := he.isCompact_stateSpace.exists_isMaxOn he.stateSpace_nonempty
     hcont.continuousOn
-  refine ⟨φ₀, hφ₀, le_antisymm (he.abs_apply_le_of_mem_stateSpace hφ₀ a) ?_⟩
-  exact (he.norm_le_iff_forall_mem_stateSpace (abs_nonneg _)).2 fun φ hφ => hmax hφ
+  exact ⟨φ₀, hφ₀, (IsMaxOn.iSup_eq hφ₀ hmax).symm.trans (he.norm_eq_iSup_states a).symm⟩
 
 end Attainment
 

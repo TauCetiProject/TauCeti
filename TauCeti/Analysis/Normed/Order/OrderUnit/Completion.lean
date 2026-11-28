@@ -63,16 +63,12 @@ theorem coe_completionPosCone :
       closure (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) := by
   let : PosSMulMono ℝ E := he.posSMulMono
   have : OrderClosedTopology E := he.orderClosedTopology
-  ext x
-  simp only [completionPosCone, SetLike.mem_coe, ProperCone.mem_map]
-  rw [← SetLike.mem_coe, PointedCone.coe_closure, PointedCone.coe_map,
-    ProperCone.toPointedCone_positive]
-  have himg : ((UniformSpace.Completion.toComplL (S := ℝ) (α := E) :
-      E →ₗ[ℝ] UniformSpace.Completion E) '' (PointedCone.positive ℝ E : Set E)) =
-      (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) := by
-    ext y
-    simp [UniformSpace.Completion.toComplL]
-  rw [himg]
+  change ((ProperCone.map (UniformSpace.Completion.toComplL (S := ℝ) (α := E))
+    (ProperCone.positive ℝ E) : PointedCone ℝ (UniformSpace.Completion E)) :
+    Set (UniformSpace.Completion E)) = _
+  rw [ProperCone.coe_map, PointedCone.coe_closure, PointedCone.coe_map,
+    ProperCone.toPointedCone_positive, PointedCone.coe_positive]
+  rfl
 
 /-- An element of `E` lies in `he.completionPosCone` iff it is nonnegative in `E`. -/
 @[simp]
@@ -89,6 +85,12 @@ private theorem norm_sub_le_norm_add_of_mem_completionPosCone
     {u v : UniformSpace.Completion E}
     (hu : u ∈ he.completionPosCone) (hv : v ∈ he.completionPosCone) :
     ‖u - v‖ ≤ ‖u + v‖ := by
+  have hbase {p q : E} (hp : 0 ≤ p) (hq : 0 ≤ q) : ‖p - q‖ ≤ ‖p + q‖ := by
+    refine he.norm_le_norm_of_neg_le_of_le ?_ ?_
+    · rw [neg_add, sub_eq_add_neg]
+      exact add_le_add ((neg_nonpos.mpr hp).trans hp) le_rfl
+    · rw [sub_eq_add_neg]
+      exact add_le_add le_rfl ((neg_nonpos.mpr hq).trans hq)
   rw [← SetLike.mem_coe, he.coe_completionPosCone] at hu hv
   let S : Set (UniformSpace.Completion E) :=
     ((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)
@@ -98,17 +100,11 @@ private theorem norm_sub_le_norm_add_of_mem_completionPosCone
   refine closure_minimal ?_
     (isClosed_le (continuous_fst.sub continuous_snd).norm
       (continuous_fst.add continuous_snd).norm) huv
-  rintro ⟨u', v'⟩ ⟨⟨p, hp, hup⟩, ⟨q, hq, hvq⟩⟩
-  dsimp only at hup hvq
-  rw [← hup, ← hvq]
-  simp only [Set.mem_ofPred_eq, Pi.sub_apply, Pi.add_apply]
+  rintro ⟨_, _⟩ ⟨⟨p, hp, rfl⟩, ⟨q, hq, rfl⟩⟩
+  change ‖(p : UniformSpace.Completion E) - q‖ ≤ ‖(p : UniformSpace.Completion E) + q‖
   rw [← UniformSpace.Completion.coe_sub, ← UniformSpace.Completion.coe_add,
     UniformSpace.Completion.norm_coe, UniformSpace.Completion.norm_coe]
-  refine he.norm_le_norm_of_neg_le_of_le ?_ ?_
-  · rw [neg_add, sub_eq_add_neg]
-    exact add_le_add ((neg_nonpos.mpr hp).trans hp) le_rfl
-  · rw [sub_eq_add_neg]
-    exact add_le_add le_rfl ((neg_nonpos.mpr hq).trans hq)
+  exact hbase hp hq
 
 /-- The completion positive cone is pointed (`x ∈ C` and `-x ∈ C` imply `x = 0`). -/
 theorem eq_zero_of_mem_completionPosCone_of_neg_mem

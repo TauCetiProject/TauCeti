@@ -55,15 +55,22 @@ theorem ev₀_algebraMap (f : C(unitInterval, ℂ)) :
 state `χ` of `M₂` sends the scalar matrix of `f` to `f(0)`. -/
 theorem pullbackFunctional_ev₀_apply_algebraMap {χ : WeakDual ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ)}
     (hχ : χ ∈ stateSpace (CStarMatrix (Fin 2) (Fin 2) ℂ)) (f : C(unitInterval, ℂ)) :
-    pullbackFunctional _ ev₀ χ (algebraMap _ (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) f) =
+    (PositiveContinuousLinearMap.ofClass ev₀ :
+        CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ) →L[ℂ]
+          CStarMatrix (Fin 2) (Fin 2) ℂ).pullbackFunctional χ
+        (algebraMap _ (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) f) =
       f 0 := by
-  rw [pullbackFunctional_apply, ev₀_algebraMap, map_algebraMap_of_mem_stateSpace hχ]
+  rw [ContinuousLinearMap.pullbackFunctional_apply,
+    PositiveContinuousLinearMap.coe_toContinuousLinearMap, PositiveContinuousLinearMap.coe_ofClass,
+    ev₀_algebraMap, map_algebraMap_of_mem_stateSpace hχ]
 
 /-- **Pure extensions of `δ₀`.** For a unit vector `ξ`, the state `f ↦ ⟪ξ, f(0) ξ⟫` of
 `M₂(C[0,1])` is pure; it extends `δ₀` by `pullbackFunctional_ev₀_apply_algebraMap`. -/
 theorem pullbackFunctional_vectorFunctional_mem_extremePoints_stateSpace {ξ : Fin 2 → ℂ}
     (hξ : star ξ ⬝ᵥ ξ = 1) :
-    pullbackFunctional _ ev₀ (vectorFunctional ξ) ∈
+    (PositiveContinuousLinearMap.ofClass ev₀ :
+        CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ) →L[ℂ]
+          CStarMatrix (Fin 2) (Fin 2) ℂ).pullbackFunctional (vectorFunctional ξ) ∈
       Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) :=
   pullbackFunctional_mem_extremePoints_stateSpace ev₀ ev₀_surjective
     (vectorFunctional_mem_extremePoints_stateSpace hξ)
@@ -71,14 +78,18 @@ theorem pullbackFunctional_vectorFunctional_mem_extremePoints_stateSpace {ξ : F
 /-- The functional `f ↦ tr(f(0))/2` of `M₂(C[0,1])` is a state; it extends `δ₀` by
 `pullbackFunctional_ev₀_apply_algebraMap`. -/
 theorem pullbackFunctional_normalizedTraceFunctional_mem_stateSpace :
-    pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∈
+    (PositiveContinuousLinearMap.ofClass ev₀ :
+        CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ) →L[ℂ]
+          CStarMatrix (Fin 2) (Fin 2) ℂ).pullbackFunctional (normalizedTraceFunctional (Fin 2)) ∈
       stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) :=
   mapsTo_pullbackFunctional_stateSpace_of_surjective ev₀ ev₀_surjective
     (normalizedTraceFunctional_mem_stateSpace (Fin 2))
 
 /-- **A non-pure extension of `δ₀`.** The state `f ↦ tr(f(0))/2` of `M₂(C[0,1])` is not pure. -/
 theorem pullbackFunctional_normalizedTraceFunctional_notMem_extremePoints_stateSpace :
-    pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∉
+    (PositiveContinuousLinearMap.ofClass ev₀ :
+        CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ) →L[ℂ]
+          CStarMatrix (Fin 2) (Fin 2) ℂ).pullbackFunctional (normalizedTraceFunctional (Fin 2)) ∉
       Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) := by
   rw [pullbackFunctional_mem_extremePoints_stateSpace_iff ev₀ ev₀_surjective]
   exact StateExtensionExamples.normalizedTraceFunctional_notMem_extremePoints_stateSpace

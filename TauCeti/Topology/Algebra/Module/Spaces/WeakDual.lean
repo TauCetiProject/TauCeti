@@ -22,7 +22,10 @@ compatible with the `𝕜`-action.
 It also records that, for ordered `E` and `𝕜`, the functionals that are nonnegative on
 nonnegative elements form a weak-* closed set, `WeakDual.isClosed_setOf_map_nonneg`, and defines
 precomposition `ContinuousLinearMap.pullbackFunctional` of functionals along a continuous linear
-map `T : E →L[𝕜] F` as a weak-star continuous linear map `WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E`.
+map `T : E →L[𝕜] F` as a weak-star continuous linear map `WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E`,
+together with its strong-dual compatibility `ContinuousLinearMap.pullbackFunctional_toWeakDual`
+and injectivity along maps with dense range
+`ContinuousLinearMap.pullbackFunctional_injective_of_denseRange`.
 -/
 
 public section
@@ -83,6 +86,13 @@ theorem toStrongDual_pullbackFunctional [AddCommMonoid F] [Module 𝕜 F] [Topol
     WeakDual.toStrongDual (T.pullbackFunctional φ) = (WeakDual.toStrongDual φ).comp T :=
   (rfl)
 
+/-- Pulling back a strong dual element viewed in `WeakDual` gives precomposition with `T`. -/
+@[simp]
+theorem pullbackFunctional_toWeakDual [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    (T : E →L[𝕜] F) (g : StrongDual 𝕜 F) :
+    T.pullbackFunctional (StrongDual.toWeakDual g) = StrongDual.toWeakDual (g.comp T) :=
+  (rfl)
+
 /-- Pulling back along the identity map is the identity on `WeakDual 𝕜 E`. -/
 @[simp]
 theorem pullbackFunctional_id :
@@ -96,5 +106,14 @@ theorem pullbackFunctional_comp [AddCommMonoid F] [Module 𝕜 F] [TopologicalSp
     [AddCommMonoid G] [Module 𝕜 G] [TopologicalSpace G] (S : F →L[𝕜] G) (T : E →L[𝕜] F) :
     (S.comp T).pullbackFunctional = T.pullbackFunctional.comp S.pullbackFunctional :=
   ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => rfl
+
+/-- Pullback of functionals along a continuous linear map with dense range is injective, when the
+scalar field is Hausdorff. -/
+theorem pullbackFunctional_injective_of_denseRange [T2Space 𝕜]
+    [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    {T : E →L[𝕜] F} (hT : DenseRange T) :
+    Function.Injective T.pullbackFunctional := fun φ ψ h =>
+  DFunLike.ext' <| hT.equalizer φ.continuous ψ.continuous <| funext fun a =>
+    congrArg (fun χ : WeakDual 𝕜 E => χ a) h
 
 end ContinuousLinearMap

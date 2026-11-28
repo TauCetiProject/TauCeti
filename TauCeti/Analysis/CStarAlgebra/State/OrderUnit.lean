@@ -27,13 +27,15 @@ order-unit state space `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
 * `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`,
   `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_val`,
   `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_symm_val`,
+  `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_symm_apply_coe`,
   `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_convexCombo`,
   `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_symm_convexCombo`: weak-star homeomorphism between
   `TauCeti.stateSpace A` and `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`, preserving convex
   combinations.
-* `TauCeti.OrderUnit.cstarPositiveContinuousLinearMapEquivStateSpace`: bijection between normalized
-  positive continuous complex-linear functionals `{ω : A →P[ℂ] ℂ // ω 1 = 1}` and
-  `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
+* `TauCeti.OrderUnit.cstarPositiveContinuousLinearMapEquivStateSpace`,
+  `TauCeti.OrderUnit.cstarPositiveContinuousLinearMapEquivStateSpace_symm_apply_coe`: bijection
+  between normalized positive continuous complex-linear functionals `{ω : A →P[ℂ] ℂ // ω 1 = 1}`
+  and `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
 
 ## References
 
@@ -126,6 +128,14 @@ theorem cstarStateSpaceHomeomorph_symm_apply (ψ : stateSpace (1 : selfAdjoint A
       (ψ.val (ℜ a) : ℂ) + Complex.I * (ψ.val (ℑ a) : ℂ) := by
   simp [cstarStateSpaceHomeomorph]
 
+/-- Evaluating the inverse of `cstarStateSpaceHomeomorph` at a self-adjoint element `a` gives
+`(ψ.val a : ℂ)`. -/
+@[simp high]
+theorem cstarStateSpaceHomeomorph_symm_apply_coe (ψ : stateSpace (1 : selfAdjoint A))
+    (a : selfAdjoint A) :
+    (cstarStateSpaceHomeomorph.symm ψ).val (a : A) = (ψ.val a : ℂ) := by
+  simp [cstarStateSpaceHomeomorph]
+
 /-- `cstarStateSpaceHomeomorph` preserves convex combinations of states. -/
 theorem cstarStateSpaceHomeomorph_convexCombo {φ₁ φ₂ : TauCeti.stateSpace A}
     {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) (hst : s + t = 1) :
@@ -188,6 +198,14 @@ theorem cstarPositiveContinuousLinearMapEquivStateSpace_symm_apply
     (cstarPositiveContinuousLinearMapEquivStateSpace.symm ψ).val a =
       (ψ.val (ℜ a) : ℂ) + Complex.I * (ψ.val (ℑ a) : ℂ) :=
   cstarStateSpaceHomeomorph_symm_apply ψ a
+
+/-- Evaluating the inverse of `cstarPositiveContinuousLinearMapEquivStateSpace` at a self-adjoint
+element `a` gives `(ψ.val a : ℂ)`. -/
+@[simp high]
+theorem cstarPositiveContinuousLinearMapEquivStateSpace_symm_apply_coe
+    (ψ : stateSpace (1 : selfAdjoint A)) (a : selfAdjoint A) :
+    (cstarPositiveContinuousLinearMapEquivStateSpace.symm ψ).val (a : A) = (ψ.val a : ℂ) :=
+  cstarStateSpaceHomeomorph_symm_apply_coe ψ a
 
 end CStarCorrespondence
 

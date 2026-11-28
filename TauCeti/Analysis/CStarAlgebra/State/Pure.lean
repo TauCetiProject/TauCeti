@@ -106,7 +106,8 @@ surjective star homomorphism of C⋆-algebras, not necessarily unital, the pullb
 pure state `φ` of `B` is a pure state of `A`. -/
 theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.Surjective f)
     {φ : WeakDual ℂ B} (hφ : φ ∈ Set.extremePoints ℝ (stateSpace B)) :
-    pullbackFunctional A f φ ∈ Set.extremePoints ℝ (stateSpace A) := by
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+      Set.extremePoints ℝ (stateSpace A) := by
   refine mem_extremePoints.2 ⟨mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hφ.1,
     fun ψ₁ hψ₁ ψ₂ hψ₂ hseg ↦ ?_⟩
   -- both states vanish on `star k * k` for `k` in the kernel, as their combination does
@@ -115,7 +116,9 @@ theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.S
       (by simp [hk])
   -- so, by Cauchy–Schwarz, on the kernel, and they factor through `f`
   have hfac {ψ : WeakDual ℂ A} (hψ : ψ ∈ stateSpace A)
-      (h0 : ∀ k, f k = 0 → ψ (star k * k) = 0) : ψ ∈ pullbackFunctional A f '' stateSpace B :=
+      (h0 : ∀ k, f k = 0 → ψ (star k * k) = 0) :
+      ψ ∈ (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ''
+        stateSpace B :=
     (mem_image_pullbackFunctional_stateSpace_iff f hf).2 ⟨hψ, fun k hk ↦
       (PositiveContinuousLinearMap.mk₀ (toStrongDual ψ) fun _ ↦
         map_nonneg_of_mem_stateSpace hψ).map_eq_zero_of_map_star_mul_self_eq_zero (h0 k hk)⟩
@@ -123,9 +126,12 @@ theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.S
   obtain ⟨χ₂, hχ₂, rfl⟩ := hfac hψ₂ fun k hk ↦ (hker k hk).2
   obtain ⟨s, t, hs, ht, hst, h⟩ := hseg
   have hseg' : φ ∈ openSegment ℝ χ₁ χ₂ :=
-    ⟨s, t, hs, ht, hst, pullbackFunctional_injective_of_surjective f hf (by
-      rw [map_add, (pullbackFunctional A f).map_smul_of_tower,
-        (pullbackFunctional A f).map_smul_of_tower]
+    ⟨s, t, hs, ht, hst, ContinuousLinearMap.pullbackFunctional_injective_of_denseRange
+      (show Function.Surjective (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B) from
+        hf).denseRange (by
+      rw [map_add,
+        ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional).map_smul_of_tower,
+        ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional).map_smul_of_tower]
       exact h)⟩
   obtain ⟨e₁, e₂⟩ := (mem_extremePoints.1 hφ).2 χ₁ hχ₁ χ₂ hχ₂ hseg'
   exact ⟨congrArg _ e₁, congrArg _ e₂⟩
@@ -135,23 +141,29 @@ surjective star homomorphism of C⋆-algebras, not necessarily unital, a functio
 pure state if and only if its pullback `φ ∘ f` is a pure state of `A`. -/
 theorem pullbackFunctional_mem_extremePoints_stateSpace_iff (f : F) (hf : Function.Surjective f)
     {φ : WeakDual ℂ B} :
-    pullbackFunctional A f φ ∈ Set.extremePoints ℝ (stateSpace A) ↔
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ ∈
+        Set.extremePoints ℝ (stateSpace A) ↔
       φ ∈ Set.extremePoints ℝ (stateSpace B) := by
   refine ⟨fun h ↦ ?_, pullbackFunctional_mem_extremePoints_stateSpace f hf⟩
   -- the pullback is a state vanishing on the kernel, hence the pullback of a state
   obtain ⟨χ, hχ, hχφ⟩ := (mem_image_pullbackFunctional_stateSpace_iff f hf).2
     ⟨h.1, fun k hk ↦ by simp [hk]⟩
-  obtain rfl := pullbackFunctional_injective_of_surjective f hf hχφ
+  obtain rfl := ContinuousLinearMap.pullbackFunctional_injective_of_denseRange
+    (show Function.Surjective (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B) from
+      hf).denseRange hχφ
   refine mem_extremePoints.2 ⟨hχ, fun χ₁ hχ₁ χ₂ hχ₂ hseg ↦ ?_⟩
   obtain ⟨s, t, hs, ht, hst, hφseg⟩ := hseg
   obtain ⟨e₁, e₂⟩ := (mem_extremePoints.1 h).2 _
     (mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hχ₁) _
     (mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hχ₂)
     ⟨s, t, hs, ht, hst, by
-      rw [← hφseg, map_add, (pullbackFunctional A f).map_smul_of_tower,
-        (pullbackFunctional A f).map_smul_of_tower]⟩
-  exact ⟨pullbackFunctional_injective_of_surjective f hf e₁,
-    pullbackFunctional_injective_of_surjective f hf e₂⟩
+      rw [← hφseg, map_add,
+        ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional).map_smul_of_tower,
+        ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional).map_smul_of_tower]⟩
+  have hinj := ContinuousLinearMap.pullbackFunctional_injective_of_denseRange
+    (show Function.Surjective (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B) from
+      hf).denseRange
+  exact ⟨hinj e₁, hinj e₂⟩
 
 end Pullback
 
