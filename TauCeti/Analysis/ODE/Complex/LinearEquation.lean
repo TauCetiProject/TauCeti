@@ -35,7 +35,10 @@ initial-value theorem when `0 < r`, and holding vacuously on the empty ball when
 initial-jet linear isomorphism `LinearEquation.initialJetEquivBall` on positive-radius discs,
 and `Module.finrank ℂ E.solutionSpace = n`. Non-monic scalar equations
 `∑ i : Fin (m + 1), p i z * iteratedDeriv i y z = 0` with nowhere-zero leading coefficient
-`p (Fin.last m)` normalize to monic equations via `LinearEquation.ofLeadingNeZero`.
+`p (Fin.last m)` normalize to monic equations via `LinearEquation.ofLeadingNeZero`. Second-order
+equations `y'' + f y' + g y = 0` are constructed directly via `LinearEquation.ofTwo`, with
+`LinearEquation.isSolution_iff_deriv_deriv` and `LinearEquation.isSolution_ofTwo_iff` characterizing
+`LinearEquation.IsSolution` in terms of `deriv`.
 
 ## References
 
@@ -645,6 +648,54 @@ theorem mem_solutionSpace_ofLeadingNeZero {U : Opens ℂ} {m : ℕ} (hm : 0 < m)
   rw [mem_solutionSpace, isSolution_ofLeadingNeZero_iff]
   exact ⟨fun h z ↦ h.2 z z.property, fun h ↦
     ⟨HolomorphicFunctions.analyticOnNhd_extend Subset.rfl f, fun z hz ↦ h ⟨z, hz⟩⟩⟩
+
+/-! ### Second-order characterization in terms of `deriv` -/
+
+/-- Solutions of the second-order equation `y'' + a₁ y' + a₀ y = 0` are the functions analytic on
+the domain that satisfy it there, written with `deriv` in place of `iteratedDeriv`. -/
+theorem isSolution_iff_deriv_deriv {E : LinearEquation U 2} {y : ℂ → ℂ} :
+    E.IsSolution y ↔ AnalyticOnNhd ℂ y U ∧ ∀ z ∈ U, deriv (deriv y) z +
+      HolomorphicFunctions.extend (E.coeff 1) z * deriv y z +
+        HolomorphicFunctions.extend (E.coeff 0) z * y z = 0 := by
+  rw [isSolution_iff]
+  refine and_congr_right fun _ ↦ forall₂_congr fun z _ ↦ ?_
+  simp only [Fin.sum_univ_two, Fin.isValue, Fin.val_zero, Fin.val_one, iteratedDeriv_zero,
+    iteratedDeriv_one]
+  rw [iteratedDeriv_succ, iteratedDeriv_one]
+  constructor <;> intro h <;> linear_combination h
+
+/-- Construct a second-order monic linear differential equation `y'' + f y' + g y = 0` on `U` from
+holomorphic coefficients `f` and `g`. -/
+def ofTwo {U : Opens ℂ} (f g : ℂ → ℂ) (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) : LinearEquation U 2 where
+  order_pos := by omega
+  coeff := ![HolomorphicFunctions.of U g hg, HolomorphicFunctions.of U f hf]
+
+/-- The zero-order coefficient of `LinearEquation.ofTwo f g hf hg` evaluates to `g` on `U`. -/
+@[simp]
+theorem extend_ofTwo_coeff_zero {U : Opens ℂ} {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) {z : ℂ} (hz : z ∈ U) :
+    HolomorphicFunctions.extend ((ofTwo f g hf hg).coeff 0) z = g z := by
+  simp [ofTwo, HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]
+
+/-- The first-order coefficient of `LinearEquation.ofTwo f g hf hg` evaluates to `f` on `U`. -/
+@[simp]
+theorem extend_ofTwo_coeff_one {U : Opens ℂ} {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) {z : ℂ} (hz : z ∈ U) :
+    HolomorphicFunctions.extend ((ofTwo f g hf hg).coeff 1) z = f z := by
+  simp [ofTwo, HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]
+
+/-- Ambient solutions of `LinearEquation.ofTwo f g hf hg` are precisely complex-differentiable
+functions on `U` satisfying `deriv (deriv y) z + f z * deriv y z + g z * y z = 0` on `U`. -/
+@[simp]
+theorem isSolution_ofTwo_iff {U : Opens ℂ} {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) (y : ℂ → ℂ) :
+    (ofTwo f g hf hg).IsSolution y ↔ DifferentiableOn ℂ y U ∧
+      ∀ z ∈ U, deriv (deriv y) z + f z * deriv y z + g z * y z = 0 := by
+  rw [isSolution_iff_deriv_deriv]
+  refine and_congr ⟨fun h ↦ h.differentiableOn, fun h ↦ h.analyticOnNhd U.isOpen⟩
+    (forall₂_congr fun z hz ↦ ?_)
+  simp only [extend_ofTwo_coeff_zero hf hg hz, extend_ofTwo_coeff_one hf hg hz]
 
 /-! The following checks fix the coefficient sign, unscaled-jet convention, and disc dimension. -/
 

@@ -79,8 +79,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   base on a suitable sector.
 * `TauCeti.exists_analyticAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
   extends to a `k`-th root function analytic at that point.
-* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
-  lowers or raises the exponent by one, including at the base `0`.
+* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'`, `TauCeti.cpow_eq_cpow_sub_natCast_mul_pow` --
+  multiplying a principal power by `w⁻¹` or `w` lowers or raises the exponent by one (including at
+  the base `0`), and a principal power of a nonzero base factors out any natural power `w ^ n`.
 * `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
   the quotient lies in the slit plane.
 * `TauCeti.hasDerivAt_factorial_mul_choose_mul_cpow` -- the derivatives of `x ↦ x ^ α` on
@@ -404,6 +405,11 @@ theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^
   rcases eq_or_ne w 0 with rfl | hw
   · rw [zero_cpow hs, mul_zero]
   · rw [cpow_add _ _ hw, cpow_one]
+
+/-- For a nonzero base `w` and any natural number `n`, `w ^ s = w ^ (s - n) * w ^ n`. -/
+theorem cpow_eq_cpow_sub_natCast_mul_pow {w : ℂ} (hw : w ≠ 0) (s : ℂ) (n : ℕ) :
+    w ^ s = w ^ (s - n) * w ^ n := by
+  rw [← Complex.cpow_natCast w n, ← Complex.cpow_add _ _ hw, sub_add_cancel]
 
 /-- The derivative of the power `w ↦ ((w - α) / (w - γ)) ^ a` at a point `z` where the quotient
 lies in the slit plane is the power times its logarithmic derivative

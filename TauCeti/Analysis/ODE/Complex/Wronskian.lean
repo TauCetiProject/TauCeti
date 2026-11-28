@@ -63,19 +63,6 @@ namespace LinearEquation
 
 variable {U : Opens ℂ} {E : LinearEquation U 2} {y y₁ y₂ : ℂ → ℂ} {z : ℂ}
 
-/-- Solutions of the second-order equation `y'' + a₁ y' + a₀ y = 0` are the functions analytic on
-the domain that satisfy it there, written with `deriv` in place of `iteratedDeriv`. -/
-theorem isSolution_iff_deriv_deriv :
-    E.IsSolution y ↔ AnalyticOnNhd ℂ y U ∧ ∀ z ∈ U, deriv (deriv y) z +
-      HolomorphicFunctions.extend (E.coeff 1) z * deriv y z +
-        HolomorphicFunctions.extend (E.coeff 0) z * y z = 0 := by
-  rw [isSolution_iff]
-  refine and_congr_right fun _ ↦ forall₂_congr fun z _ ↦ ?_
-  simp only [Fin.sum_univ_two, Fin.isValue, Fin.val_zero, Fin.val_one, iteratedDeriv_zero,
-    iteratedDeriv_one]
-  rw [iteratedDeriv_succ, iteratedDeriv_one]
-  constructor <;> intro h <;> linear_combination h
-
 /-- A solution of the second-order equation `y'' + a₁ y' + a₀ y = 0` satisfies
 `y'' = -(a₁ y') - a₀ y` at every point of the domain. -/
 theorem IsSolution.deriv_deriv_eq (hy : E.IsSolution y) (hz : z ∈ U) :

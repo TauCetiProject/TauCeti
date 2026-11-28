@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -16,6 +18,7 @@ import TauCeti.Analysis.Complex.IteratedDeriv
 # Derivatives of the complex logarithm
 
 This file records the derivative of a logarithm with a scaled argument on its slit domain, the
+pointwise product rule for `u ↦ w u * Complex.log (u - z₀)` on the translated slit plane, the
 first two derivatives of `u * log` on `Complex.slitPlane`, and the smoothness and higher
 derivatives along the real parameter `t : ℝ` of the shifted principal complex logarithm
 `t ↦ Complex.log ((t : ℂ) + z)` whenever `(u : ℂ) + z` lies in `Complex.slitPlane`.
@@ -24,6 +27,8 @@ derivatives along the real parameter `t : ℝ` of the shifted principal complex 
 
 * `Complex.hasDerivAt_log_div_const`: the derivative of `w ↦ log (w / c)` is `z⁻¹` on the
   resulting slit domain.
+* `HasDerivAt.mul_log_sub`: pointwise first derivative of `u ↦ w u * Complex.log (u - z₀)` on the
+  translated slit plane `z - z₀ ∈ Complex.slitPlane`.
 * `Complex.deriv_mul_log`, `Complex.deriv_deriv_mul_log`: at a point of `Complex.slitPlane`, the
   first two derivatives of `u * log` are `u' log + u / z` and `u'' log + 2 u' / z - u / z²`.
 * `Complex.contDiffAt_log_ofReal_add`: arbitrary-order real smoothness of `t ↦ Complex.log (t + z)`
@@ -93,3 +98,16 @@ theorem iteratedDeriv_log_ofReal_add {k : ℕ} (hk : 1 ≤ k) {u : ℝ} {z : ℂ
   rw [hexp, zpow_neg, zpow_natCast, div_eq_mul_inv]
 
 end Complex
+
+namespace TauCeti
+
+/-- Pointwise first derivative of `u ↦ w u * Complex.log (u - z₀)` at a point `z` with
+`z - z₀ ∈ Complex.slitPlane`. -/
+theorem _root_.HasDerivAt.mul_log_sub {w : ℂ → ℂ} {w' z₀ z : ℂ}
+    (hw : HasDerivAt w w' z) (hzs : z - z₀ ∈ Complex.slitPlane) :
+    HasDerivAt (fun u ↦ w u * Complex.log (u - z₀))
+      (w' * Complex.log (z - z₀) + (z - z₀)⁻¹ * w z) z :=
+  (hw.mul (((hasDerivAt_id z).sub_const z₀).clog hzs)).congr_deriv
+    (by dsimp only [id]; rw [one_div]; ring)
+
+end TauCeti
