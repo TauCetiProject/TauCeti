@@ -7,14 +7,16 @@ module
 
 public import TauCeti.Geometry.Lie.TestFunction.Convolution.Basic
 public import TauCeti.Geometry.Lie.TestFunction.RightDeriv.Basic
+import TauCeti.Geometry.Lie.TestFunction.Continuity
 import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Deriv
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Derivatives of a convolution of test functions
 
-Let `G` be a real Lie group modelled on a complete space and `μ` a measure on `G` that is finite on
-compact sets. The left and right differentiations of test functions are the derivatives along the
-exponential lines through a point:
+Let `G` be a real Lie group and `μ` a measure on `G` that is finite on compact sets.
+On complete models the left and right differentiations of test functions can be computed
+along exponential lines through a point:
 
 `R(X) a (g) = d/dt|₀ a (g exp(tX))`, `L_X a (g) = d/dt|₀ a (exp(tX) g)`
 
@@ -33,8 +35,9 @@ of `a` in the first, and outside `g (supp b)⁻¹` in the second.
 ## Main results
 
 * `TauCeti.LieTestFunction.rightDeriv_convolution`: `R(X) (a * b) = a * R(X) b`.
-* `TauCeti.LieTestFunction.leftDeriv_convolution`: `L_X (a * b) = L_X a * b` for a left-invariant
-  measure.
+* `TauCeti.LieTestFunction.leftDeriv_convolution`,
+  `TauCeti.LieTestFunction.leftDerivWord_convolution`:
+  left differentiation acts on the first factor for a left-invariant measure.
 
 ## References
 
@@ -90,40 +93,73 @@ theorem rightDeriv_convolution (X : GroupLieAlgebra I G) (a b : LieTestFunction 
   refine (hasDerivAt_apply_mul_mulInvariantExp_smul_zero X (convolution μ a b) g).unique ?_
   simpa [f, e] using hderiv
 
+omit [CompleteSpace E] [I.Boundaryless] in
 /-- **Left differentiation acts on the first factor of a convolution** for a left-invariant
 measure: `L_X (a * b) = L_X a * b`. -/
-theorem leftDeriv_convolution [MeasurableMul G] [μ.IsMulLeftInvariant] (X : GroupLieAlgebra I G)
-    (a b : LieTestFunction I G) :
+theorem leftDeriv_convolution [μ.IsMulLeftInvariant]
+    (a b : LieTestFunction I G) (X : GroupLieAlgebra I G) :
     leftDeriv X (convolution μ a b) = convolution μ (leftDeriv X a) b := by
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  have hi : I.IsInteriorPoint (1 : G) := ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1
+  obtain ⟨γ, hγ₀, hγ, hvel⟩ := Manifold.exists_contMDiffAt_curveVelocity_eq (n := 1) 1 hi X 0
+  have hcurve (c : LieTestFunction I G) (y : G) :
+      HasDerivAt (fun t ↦ c (γ t * y)) (leftDeriv X c y) 0 := by
+    have hγ' := Manifold.hasMFDerivAt_curveVelocity (hγ.mdifferentiableAt one_ne_zero)
+    have hc := (rightTranslate y c).contMDiff.mdifferentiableAt (x := γ 0) (by simp)
+    have hd := Manifold.hasDerivAt_comp_curve hc hγ'
+    have heq := congrArg (fun z : G ↦ mvfderiv I (rightTranslate y c) z X) hγ₀
+    rw [hvel, heq, ← mulRightInvariantVectorField_one (I := I) (G := G) X,
+      ← leftDeriv_apply, leftDeriv_rightTranslate] at hd
+    simpa only [Function.comp_def, rightTranslate_apply, one_mul] using hd
   ext g
-  let e : ℝ → G := fun t ↦ mulInvariantExp (I := I) (G := G) (t • X)
-  have he : ContMDiff 𝓘(ℝ, ℝ) I ∞ e := contMDiff_mulInvariantExp_smul X
-  let f : ℝ → G → ℂ := fun t x ↦ a (e t * x) * b (x⁻¹ * g)
-  have hf : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℂ) ∞ (uncurry f) :=
-    ((ContinuousLinearMap.mul ℝ ℂ).contMDiff.comp
-      (a.contMDiff.comp ((he.comp contMDiff_fst).mul contMDiff_snd))).clm_apply
-      (b.contMDiff.comp (contMDiff_snd.inv.mul contMDiff_const))
-  -- the integrand vanishes unless `x⁻¹ * g ∈ tsupport b`, a compact condition on `x`
+  let f : ℝ → G → ℂ := fun t x ↦ a (γ t * x) * b (x⁻¹ * g)
+  have hf (x : G) : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ, ℂ) 1 (uncurry f) (0, x) := by
+    have ha := a.contMDiff.of_le (by simp : (1 : ℕ∞ω) ≤ ∞)
+    have hb := b.contMDiff.of_le (by simp : (1 : ℕ∞ω) ≤ ∞)
+    have hab := ((ContinuousLinearMap.mul ℝ ℂ).contMDiff.contMDiffAt.comp (0, x)
+      (ha.contMDiffAt.comp (0, x)
+        ((hγ.comp (0, x) contMDiff_fst.contMDiffAt).mul contMDiff_snd.contMDiffAt))).clm_apply
+      (hb.comp (contMDiff_snd.inv.mul (contMDiff_const (c := g)))).contMDiffAt
+    simpa only [uncurry_def, Function.comp_apply, Pi.mul_apply, ContinuousLinearMap.mul_apply']
+      using hab
   let K : Set G := (fun y ↦ g * y⁻¹) '' tsupport b
   have hK : IsCompact K := b.hasCompactSupport.isCompact.image (by fun_prop)
-  have hKb {x : G} (hx : x ∉ K) : x⁻¹ * g ∉ tsupport b := fun h ↦ hx ⟨x⁻¹ * g, h, by group⟩
+  have hKb {x : G} (hx : x ∉ K) : x⁻¹ * g ∉ tsupport b := fun h ↦ hx ⟨_, h, by group⟩
   have hderiv := hK.hasDerivAt_parametric_integral (μ := μ) (t₀ := 0) (f := f)
-    hK.isClosed.measurableSet hK.measure_lt_top.ne
-    (fun x _ ↦ (hf (0, x)).of_le (by simp))
-    (.of_forall fun t x hx ↦ by simp [f, image_eq_zero_of_notMem_tsupport (hKb hx)])
+    hK.isClosed.measurableSet hK.measure_lt_top.ne (fun x _ ↦ hf x)
+    (.of_forall fun t x hx ↦ by simp only [f, image_eq_zero_of_notMem_tsupport (hKb hx), mul_zero])
   have hfx (x : G) : deriv (fun s ↦ f s x) 0 = leftDeriv X a x * b (x⁻¹ * g) :=
-    ((hasDerivAt_apply_mulInvariantExp_smul_mul_zero X a x).mul_const (b (x⁻¹ * g))).deriv
+    ((hcurve a x).mul_const (b (x⁻¹ * g))).deriv
   simp only [hfx] at hderiv
-  refine (hasDerivAt_apply_mulInvariantExp_smul_mul_zero X (convolution μ a b) g).unique ?_
-  -- substitute `x ↦ exp(tX) x` in `(a * b) (exp(tX) g)`
-  have hconv (t : ℝ) :
-      convolution μ a b (mulInvariantExp (I := I) (G := G) (t • X) * g) = ∫ x, f t x ∂μ := by
-    rw [convolution_apply, ← integral_mul_left_eq_self _ (e t)]
-    simp [f, e, mul_assoc]
-  rw [funext hconv, convolution_apply]
-  exact hderiv
+  refine (hcurve (convolution μ a b) g).unique ?_
+  have hconv (t : ℝ) : convolution μ a b (γ t * g) = ∫ x, f t x ∂μ := by
+    rw [convolution_apply]
+    by_cases hμ : μ = 0
+    · simp only [hμ, integral_zero_measure]
+    have hmap := map_mul_left_eq_self μ (γ t)
+    -- A non-AE-measurable pushforward would force `μ` to be a Dirac measure.
+    have hm : AEMeasurable (γ t * ·) μ := by
+      by_contra h
+      have hdirac := hmap.symm.trans (Measure.map_of_not_aemeasurable_of_ne_zero h hμ)
+      have : MeasurableSingletonClass G := ⟨fun x ↦ isClosed_singleton.measurableSet⟩
+      exact h (hdirac ▸ aemeasurable_dirac)
+    have hint := (integrable_mul_inv_mul μ a b (γ t * g)).aestronglyMeasurable
+    rw [← hmap] at hint
+    conv_lhs => rw [← hmap, integral_map hm hint]
+    simp only [f, mul_inv_rev, mul_assoc, inv_mul_cancel_left]
+  rwa [funext hconv, convolution_apply]
+
+omit [CompleteSpace E] [I.Boundaryless] in
+/-- Iterated left differentiation of a convolution against a left-invariant measure acts on
+the first factor. -/
+theorem leftDerivWord_convolution [μ.IsMulLeftInvariant]
+    (a b : LieTestFunction I G) (w : List (GroupLieAlgebra I G)) :
+    leftDerivWord w (convolution μ a b) = convolution μ (leftDerivWord w a) b := by
+  induction w with
+  | nil => simp only [leftDerivWord_nil, LinearMap.id_apply]
+  | cons X w ih =>
+    rw [leftDerivWord_cons, LinearMap.comp_apply, ih, leftDeriv_convolution, LinearMap.comp_apply]
 
 end LieTestFunction
 
