@@ -47,6 +47,8 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   `1` giving full mass to a point is the Dirac measure at that point.
 * `MeasureTheory.Measure.eq_dirac_of_subsingleton` — a probability measure on a subsingleton
   space is the Dirac measure at any point.
+* `TauCeti.eventuallyEmptyOrUniv_ae_dirac` — every null-measurable set is almost empty or almost
+  everything for a Dirac measure.
 * `TauCeti.exists_eq_sum_smul_dirac_of_ae_mem_finset` — a probability measure carried by a
   finite set is a convex combination of the Dirac measures at its points.
 * `TauCeti.isProbabilityMeasure_sum_smul_dirac` — conversely, a convex combination of Dirac
@@ -194,6 +196,15 @@ theorem sum_map_dirac_apply_eq_zero {s : Multiset X} {A : Set X} (hA : Measurabl
 end Multiset
 
 namespace TauCeti
+
+/-- **Zero–one law of a point mass.** Every null-measurable set is almost empty or almost
+everything for `Measure.dirac x`, according to whether its measurable hull contains `x`. -/
+theorem eventuallyEmptyOrUniv_ae_dirac {X : Type*} [MeasurableSpace X] {x : X} {s : Set X}
+    (hs : NullMeasurableSet s (Measure.dirac x)) :
+    Filter.EventuallyEmptyOrUniv s (ae (Measure.dirac x)) := by
+  refine Filter.EventuallyEmptyOrUniv.congr ?_ hs.toMeasurable_ae_eq
+  refine Filter.eventuallyConst_iff_exists_eventuallyEq.2 ⟨_, (ae_dirac_iff ?_).2 rfl⟩
+  by_cases h : x ∈ toMeasurable (Measure.dirac x) s <;> simp [h, ← Set.compl_ofPred]
 
 /-- A probability measure carried by a finite set `s` is a convex combination of the Dirac
 measures at the points of `s`: indexed by `s` itself, its weights are the masses of the points,

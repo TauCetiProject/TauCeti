@@ -62,10 +62,12 @@ theorem moduleFinite_kaehlerDifferential_integers (P' : Place k' F') :
     Module.Finite P'.integers Ω[P'.integers⁄(P'.restrict k F).integers] := by
   let O := (P'.restrict k F).integers
   let B := integralClosure O F'
-  let _ := algebraIntegralClosureIntegers k F P'
-  have : IsScalarTower O B P'.integers := isScalarTower_integers_integralClosure_integers k F P'
-  have : IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers :=
-    isLocalization_centerIntegralClosure_integers k F P'
+  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
+  let _ := P'.integersAlgebra hB
+  have := P'.isScalarTower_integers hB
+  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
+  have : IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers := by
+    simpa only [centerIntegralClosure_def] using P'.isLocalization_integers_center hB
   have : Algebra.FormallyEtale B P'.integers :=
     .of_isLocalization (centerIntegralClosure k F P').asIdeal.primeCompl
   have : Module.Finite O B := IsIntegralClosure.finite O F F' B
@@ -83,10 +85,12 @@ theorem fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (P' : Plac
   let O := (P'.restrict k F).integers
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
-  let _ := algebraIntegralClosureIntegers k F P'
-  have : IsScalarTower O B P'.integers := isScalarTower_integers_integralClosure_integers k F P'
-  have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    isLocalization_centerIntegralClosure_integers k F P'
+  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
+  let _ := P'.integersAlgebra hB
+  have := P'.isScalarTower_integers hB
+  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
+  have : IsLocalization q.asIdeal.primeCompl P'.integers := by
+    simpa only [q, centerIntegralClosure_def] using P'.isLocalization_integers_center hB
   have : IsLocalization.AtPrime P'.integers q.asIdeal := ‹_›
   have : Algebra.FormallyEtale B P'.integers := .of_isLocalization q.asIdeal.primeCompl
   have : Module.Finite O B := IsIntegralClosure.finite O F F' B

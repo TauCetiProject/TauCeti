@@ -56,6 +56,8 @@ divisor map behind Taubes's identification of the framed vortex moduli with `Sym
 * `TauCeti.Vortex.fluxMoment_eq_sum_map_pow`: the flux moments are the power sums of the zeros.
 * `TauCeti.Vortex.newtonPolynomial_fluxMoment`, `TauCeti.Vortex.roots_newtonPolynomial_fluxMoment`:
   the moment polynomial of a vortex is the polynomial of its zero divisor.
+* `TauCeti.Vortex.newtonPolynomial_integral_one_sub_normSq_smul_mul_pow`: the Newton polynomial of
+  the moments of the flux density dilated by `ε` is `∏_{a ∈ D} (W - ε a)`.
 * `TauCeti.Vortex.framedVortexDivisor_eq_roots_newtonPolynomial_fluxMoment`,
   `TauCeti.Vortex.esymm_framedVortexDivisor_eq_newtonCoeff_fluxMoment`: the divisor of a framed
   vortex from its flux moments.
@@ -217,6 +219,30 @@ theorem newtonPolynomial_fluxMoment
     (hD : IsZeroMultiplicity (sectionValue x) (D.count ·)) :
     newtonPolynomial (fluxMoment x) (Multiset.card D) = (D.map fun z ↦ X - C z).prod := by
   rw [fluxMoment_eq_fun_sum_map_pow hb₁ hb₂ hp hq hsol hlim hD, newtonPolynomial_sum_map_pow]
+
+/-- **The Newton polynomial of a dilated plane vortex.** For a `C²` vortex on the whole plane whose
+section satisfies `|α| → 1` at infinity, with zero divisor `D`, and a dilation factor `ε`, the
+moments `M_k = (16π)⁻¹ ∫ (ε w)ᵏ (1 - |α(w)|²) dw` of the dilated flux density are the power sums of
+`ε D`, so its Newton polynomial of degree `deg D` is `∏_{a ∈ D} (W - ε a)`. -/
+theorem newtonPolynomial_integral_one_sub_normSq_smul_mul_pow
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
+    (hD : IsZeroMultiplicity (sectionValue x) (D.count ·)) (ε : ℂ) :
+    newtonPolynomial (fun k ↦ (16 * π : ℂ)⁻¹ *
+        ∫ w, (1 - 4 * (x w 2 ^ 2 + x w 3 ^ 2)) • (ε * w) ^ k) (Multiset.card D) =
+      (D.map fun a ↦ X - C (ε * a)).prod := by
+  have hM : (fun k ↦ (16 * π : ℂ)⁻¹ * ∫ w, (1 - 4 * (x w 2 ^ 2 + x w 3 ^ 2)) • (ε * w) ^ k) =
+      fun k ↦ ((D.map (ε * ·)).map (· ^ k)).sum := by
+    funext k
+    have h := integral_one_sub_normSq_smul_eval_eq hb₁ hb₂ hp hq hsol hlim hD ((C ε * X) ^ k)
+    simp only [eval_pow, eval_mul, eval_C, eval_X] at h
+    rw [h, Multiset.map_map]
+    have hπ : (16 * π : ℂ) ≠ 0 := by exact_mod_cast (by positivity : (16 * π : ℝ) ≠ 0)
+    rw [← mul_assoc, inv_mul_cancel₀ hπ, one_mul, Function.comp_def]
+  rw [hM, ← Multiset.card_map (ε * ·) D, newtonPolynomial_sum_map_pow, Multiset.map_map,
+    Function.comp_def]
 
 /-- **The zero divisor of a plane vortex from its flux moments.** For a `C²` vortex on the whole
 plane whose section satisfies `|α| → 1` at infinity, with zero divisor `D`, the roots of the monic

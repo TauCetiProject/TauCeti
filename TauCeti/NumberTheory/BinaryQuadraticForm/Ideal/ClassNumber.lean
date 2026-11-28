@@ -66,6 +66,9 @@ is not a unique factorization domain.
   number of any quadratic field of discriminant `-n` is `#(primitiveReducedForms n)`.
 * `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class number of `ℚ(√(-20))` is
   `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of unique factorization there.
+* `TauCeti.BinaryQuadraticForm.classNumber_neg_fifteen_eq_two` and
+  `TauCeti.BinaryQuadraticForm.classNumber_neg_thirty_one_eq_three`: the class numbers of
+  `ℚ(√(-15))` and `ℚ(√(-31))` are `2` and `3`.
 
 ## References
 
@@ -190,6 +193,20 @@ theorem classNumber_neg_twenty_eq_two :
     NumberField.classNumber (QuadraticAlgebra ℚ ((-(20 : ℕ) : ℤ) : ℚ) 0) = 2 := by
   rw [classNumber_eq_card_primitiveReducedForms 20
     (by simpa using Multiquadratic.isFundamentalDiscr_neg_twenty)]
+  decide +kernel
+
+/-- **`ℚ(√(-15))` has class number two**, certified by its two primitive reduced forms
+`x² + x y + 4 y²` and `2 x² + x y + 2 y²` of discriminant `-15`. -/
+theorem classNumber_neg_fifteen_eq_two :
+    NumberField.classNumber (QuadraticAlgebra ℚ ((-(15 : ℕ) : ℤ) : ℚ) 0) = 2 := by
+  rw [classNumber_eq_card_primitiveReducedForms 15 (by decide +kernel)]
+  decide +kernel
+
+/-- **`ℚ(√(-31))` has class number three**, certified by its three primitive reduced forms
+`x² + x y + 8 y²` and `2 x² ± x y + 4 y²` of discriminant `-31`. -/
+theorem classNumber_neg_thirty_one_eq_three :
+    NumberField.classNumber (QuadraticAlgebra ℚ ((-(31 : ℕ) : ℤ) : ℚ) 0) = 3 := by
+  rw [classNumber_eq_card_primitiveReducedForms 31 (by decide +kernel)]
   decide +kernel
 
 /-- **Unique factorization fails in `ℚ(√(-5))`**: its ring of integers, of class number two, is

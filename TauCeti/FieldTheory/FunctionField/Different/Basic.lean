@@ -189,44 +189,6 @@ instance centerIntegralClosure_liesOver_maximalIdeal :
   rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
   exact center_liesOver k F P' _
 
-/-- The `integralClosure 𝒪_P F'`-algebra structure on `𝒪_{P'}` induced by inclusion in `F'`. -/
-@[instance_reducible]
-noncomputable def algebraIntegralClosureIntegers :
-    Algebra (integralClosure ((P'.restrict k F).integers) F') P'.integers :=
-  ((algebraMap (integralClosure ((P'.restrict k F).integers) F') F').codRestrict
-    P'.integers (algebraMap_mem_integers_of_mem_integralClosure k F P')).toAlgebra
-
-omit [FiniteDimensional F F'] in
-/-- The scalar tower `𝒪_P → integralClosure 𝒪_P F' → 𝒪_{P'}` holds for
-`algebraIntegralClosureIntegers`. -/
-theorem isScalarTower_integers_integralClosure_integers :
-    letI := algebraIntegralClosureIntegers k F P'
-    IsScalarTower ((P'.restrict k F).integers)
-      (integralClosure ((P'.restrict k F).integers) F') P'.integers :=
-  letI := algebraIntegralClosureIntegers k F P'
-  .of_algebraMap_eq fun _ ↦ rfl
-
-/-- **`𝒪_{P'}` is the localization of the local model at the centre of `P'`**: along
-`algebraIntegralClosureIntegers`, `P'.integers` is a localization of
-`integralClosure ((P'.restrict k F).integers) F'` away from
-`(centerIntegralClosure k F P').asIdeal`. -/
-theorem isLocalization_centerIntegralClosure_integers :
-    letI := algebraIntegralClosureIntegers k F P'
-    IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers := by
-  let _ := algebraIntegralClosureIntegers k F P'
-  let q := centerIntegralClosure k F P'
-  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let eB : HeightOneSpectrum.valuationSubringAtPrime F' q ≃ₐ[
-      integralClosure ((P'.restrict k F).integers) F'] P'.integers :=
-    AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring (by
-          dsimp only [q]
-          rw [centerIntegralClosure_def]
-          exact P'.valuationSubringAtPrime_eq_integers hB)))
-      fun _ ↦ rfl
-  exact IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB
-
 /-- **Residue-field separability on the local model**: the residue extension of
 `integralClosure 𝒪_P F'` over `𝒪_P` at the centre of `P'` is separable if and only if the residue
 extension `F'_{P'} / F_P` of the two places is separable. -/
@@ -339,12 +301,14 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
       Algebra.FormallyUnramified (P'.restrict k F).integers P'.integers := by
   rw [differentExponent_eq_zero_iff]
   let O := (P'.restrict k F).integers
+  let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
-  let _ := algebraIntegralClosureIntegers k F P'
-  have : IsScalarTower O (integralClosure O F') P'.integers :=
-    isScalarTower_integers_integralClosure_integers k F P'
+  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
+  let _ := P'.integersAlgebra hB
+  have := P'.isScalarTower_integers hB
+  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    isLocalization_centerIntegralClosure_integers k F P'
+    P'.isLocalization_integers_center hB
   exact Algebra.FormallyUnramified.iff_of_equiv
     ((IsLocalization.algEquiv q.asIdeal.primeCompl (Localization.AtPrime q.asIdeal)
       P'.integers).restrictScalars O)
@@ -352,7 +316,7 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
 /-- **The different ideal extended to the valuation ring `𝒪_{P'}`**: extending the different ideal
 of the local model `𝒪'_P / 𝒪_P` to `𝒪_{P'}` yields `𝔪_{P'} ^ d(P' ∣ P)`. -/
 theorem differentIdeal_map_integers_eq_maximalIdeal_pow :
-    letI := algebraIntegralClosureIntegers k F P'
+    letI := P'.integersAlgebra (algebraMap_mem_integers_of_mem_integralClosure k F P')
     (differentIdeal (P'.restrict k F).integers
         (integralClosure (P'.restrict k F).integers F')).map
       (algebraMap (integralClosure (P'.restrict k F).integers F') P'.integers) =
@@ -360,14 +324,18 @@ theorem differentIdeal_map_integers_eq_maximalIdeal_pow :
   let O := (P'.restrict k F).integers
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
-  let _ := algebraIntegralClosureIntegers k F P'
-  have : IsScalarTower O B P'.integers := isScalarTower_integers_integralClosure_integers k F P'
+  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
+  let _ := P'.integersAlgebra hB
+  have := P'.isScalarTower_integers hB
+  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    isLocalization_centerIntegralClosure_integers k F P'
+    P'.isLocalization_integers_center hB
   have : IsLocalization.AtPrime P'.integers q.asIdeal := ‹_›
   have hB0 : differentIdeal O B ≠ ⊥ := differentIdeal_ne_bot_of_isSeparable (K := F) (L := F')
   have hInj : Function.Injective (algebraMap B P'.integers) := fun a b hab ↦
-    IsIntegralClosure.algebraMap_injective B O F' (congrArg (fun x : P'.integers ↦ (x : F')) hab)
+    IsIntegralClosure.algebraMap_injective B O F'
+      (by simpa only [coe_algebraMap_integersAlgebra] using
+        congrArg (fun x : P'.integers ↦ (x : F')) hab)
   have hmap0 : (differentIdeal O B).map (algebraMap B P'.integers) ≠ ⊥ := by
     intro h
     refine hB0 (eq_bot_iff.mpr fun x hx ↦ hInj.eq_iff.mp ?_)

@@ -60,6 +60,12 @@ theorem symmetricPower_apply (ρ : Representation R G M) (d : ℕ) (g : G) :
     ρ.symmetricPower d g = SymmetricPower.map (ι := Fin d) (ρ g) :=
   (rfl)
 
+/-- Symmetric powers commute with restriction along a monoid homomorphism. -/
+@[simp]
+theorem symmetricPower_comp {H : Type*} [Monoid H] (ρ : Representation R G M) (f : H →* G)
+    (d : ℕ) : symmetricPower (ρ.comp f) d = (ρ.symmetricPower d).comp f :=
+  MonoidHom.ext fun _ ↦ rfl
+
 /-- The symmetric-power action applies the original action to every factor of a pure tensor.
 
 This is intentionally not a simp lemma: `symmetricPower_apply` followed by

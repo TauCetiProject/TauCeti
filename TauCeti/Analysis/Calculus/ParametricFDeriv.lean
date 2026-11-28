@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.TangentCone.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Mixed derivatives of a parametric map
@@ -54,6 +57,8 @@ over a general nontrivially normed field, it is analyticity.
 * `TauCeti.hasFDerivAt_spatialFDeriv`: mixed derivatives for a normed parameter space.
 * `hasDerivAt_spatialFDeriv`: the spatial Jacobian differentiates to the spatial derivative of the
   parameter velocity.
+* `TauCeti.fderiv_fderiv_slice_piLp_apply_comm`: the same for a coordinate of a map into a finite
+  `L^p` product, differentiated before the parameter derivative is taken.
 * `TauCeti.hasDerivAt_fderivWithin_slice`: the case of a scalar parameter of mixed derivatives
   within a set.
 * `deriv_spatialFDeriv_apply`: the parameter derivative of the spatial Jacobian equals the
@@ -393,6 +398,31 @@ theorem fderiv_fderiv_slice_apply_comm {P : Type*} [NormedAddCommGroup P] [Norme
   rw [((hasFDerivAt_spatialFDeriv hF).clm_apply_const v).fderiv,
     (hasFDerivAt_parameterFDeriv_apply (hF.of_le le_minSmoothness) h).fderiv]
   simp only [ContinuousLinearMap.flip_apply]
+
+/-- **Mixed partial derivatives of a coordinate commute.** For a map `F` into a finite `L^p`
+product with the minimum smoothness needed for symmetric second derivatives, differentiating the
+coordinate `i` of `F` in the second variable in the direction `v` and then in the first variable
+in the direction `h` is the derivative in the direction `v` of the coordinate `i` of the
+derivative of `F` in the first variable in the direction `h`. -/
+theorem fderiv_fderiv_slice_piLp_apply_comm {ι : Type*} [Fintype ι] {β : ι → Type*}
+    [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace 𝕜 (β i)] {r : ENNReal} [Fact (1 ≤ r)]
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P] {F : P × E → PiLp r β} {p : P} {x : E}
+    (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (p, x)) (i : ι) (h : P) (v : E) :
+    fderiv 𝕜 (fun q ↦ fderiv 𝕜 (fun y ↦ F (q, y) i) x v) p h =
+      fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h i) x v := by
+  have hi : ContDiffAt 𝕜 (minSmoothness 𝕜 2) (fun qy ↦ F qy i) (p, x) :=
+    (PiLp.proj (𝕜 := 𝕜) r β i).contDiff.contDiffAt.comp (g := fun y : PiLp r β ↦ y i) _ hF
+  rw [fderiv_fderiv_slice_apply_comm hi h v]
+  -- Near `x`, the parameter derivative of the coordinate is the coordinate of the derivative.
+  have hev : ∀ᶠ y in 𝓝 x, ContDiffAt 𝕜 1 F (p, y) :=
+    (continuous_const.prodMk continuous_id : Continuous fun y : E ↦ (p, y)).continuousAt.eventually
+      ((hF.of_le (le_minSmoothness.trans' (by norm_num))).eventually (by simp))
+  have heq : (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y) i) p h) =ᶠ[𝓝 x]
+      fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h i := by
+    filter_upwards [hev] with y hy
+    exact ((hy.differentiableAt one_ne_zero).hasFDerivAt_slice_fst.differentiableAt :
+      DifferentiableAt 𝕜 (fun q ↦ F (q, y)) p).fderiv_piLp_apply i h
+  rw [heq.fderiv_eq]
 
 /-- **Mixed derivatives within a set, scalar parameter.** The case `P = 𝕜` of
 `hasFDerivAt_fderivWithin_slice`, with the parameter derivative written as `deriv`. -/

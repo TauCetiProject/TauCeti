@@ -17,16 +17,29 @@ For a general bilinear map `B` with `2` invertible, half of its skew part `ω = 
 quadratic diagonal `q x = ⅟2 • B x x` satisfy the coboundary relation
 `⅟2 • ω x y + q (x + y) = B x y + q x + q y` (`LinearMap.BilinMap.polarization_cocycle`).
 
+A pairing `B : X × Y → C` gives such a `B` on `W = X × Y`, its **polarized form**
+`((x, y), (x', y')) ↦ B x y'` (`LinearMap.polarizedForm`). Its skew part
+`((x, y), (x', y')) ↦ B x y' - B x' y` is alternating, and it is the symplectic form of `W` for
+which `X` and `Y` are complementary Lagrangians when `B` is a perfect pairing; the polarized
+form is the bilinear map of the polarized coordinates of the Heisenberg group of `W`.
+
+## Main definitions
+
+* `LinearMap.polarizedForm`: the bilinear map `((x, y), (x', y')) ↦ B x y'` on `X × Y` of a
+  pairing `B : X × Y → C`.
+
 ## Main results
 
 * `LinearMap.IsAlt.invOf_two_smul_sub_flip`: `⅟2 • ω - (⅟2 • ω)ᵀ = ω` for alternating `ω` when
   `2` is invertible.
 * `LinearMap.BilinMap.polarization_cocycle`: `⅟2 • (B - Bᵀ) x y + q (x + y) = B x y + q x + q y`
   for `q x = ⅟2 • B x x` when `2` is invertible.
+* `LinearMap.isAlt_polarizedForm_sub_flip`: the skew part of a polarized form is alternating.
 
 ## References
 
 * A. Weil, *Sur certains groupes d'opérateurs unitaires*, Acta Math. 111 (1964), I.§3.
+* S. Kudla, *Notes on the local theta correspondence* (1996), I.2, for polarized coordinates.
 -/
 
 public section
@@ -77,3 +90,33 @@ theorem polarization_cocycle (B : LinearMap.BilinMap R M N) [Invertible (2 : R)]
   simp only [smul_add, invOf_smul_smul]
 
 end LinearMap.BilinMap
+
+namespace LinearMap
+
+variable {R X Y C : Type*} [CommSemiring R] [AddCommMonoid X] [Module R X]
+  [AddCommMonoid Y] [Module R Y]
+
+section AddCommMonoid
+
+variable [AddCommMonoid C] [Module R C]
+
+/-- The **polarized form** of a pairing `B : X × Y → C`: the bilinear map
+`((x, y), (x', y')) ↦ B x y'` on `X × Y`. Its skew part `((x, y), (x', y')) ↦ B x y' - B x' y`
+is alternating, and is the symplectic form of the polarization `X × Y` when `B` is a perfect
+pairing. -/
+def polarizedForm (B : X →ₗ[R] Y →ₗ[R] C) : LinearMap.BilinMap R (X × Y) C :=
+  B.compl₁₂ (LinearMap.fst R X Y) (LinearMap.snd R X Y)
+
+@[simp]
+theorem polarizedForm_apply (B : X →ₗ[R] Y →ₗ[R] C) (w v : X × Y) :
+    B.polarizedForm w v = B w.1 v.2 :=
+  (rfl)
+
+end AddCommMonoid
+
+/-- The skew part `((x, y), (x', y')) ↦ B x y' - B x' y` of a polarized form is alternating. -/
+theorem isAlt_polarizedForm_sub_flip [AddCommGroup C] [Module R C] (B : X →ₗ[R] Y →ₗ[R] C) :
+    (B.polarizedForm - B.polarizedForm.flip).IsAlt := fun w ↦ by
+  simp
+
+end LinearMap
