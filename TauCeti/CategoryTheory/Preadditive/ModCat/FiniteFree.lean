@@ -113,11 +113,11 @@ theorem exists_biproduct_desc_app_id {F : ModCat.{v} C} {m : ℕ} {Y : Fin m →
         naturality T U g := by
           ext (f : T.unop ⟶ Y j)
           exact (p j).naturality_apply g f }
+  -- Each component of `a` uses the function of the corresponding component of `p`.
+  have app_a (j : Fin m) (T : Cᵒᵖ) (f : T.unop ⟶ Y j) :
+      (a j).hom.app T f = (p j).app T f := rfl
   refine ⟨biproduct.desc a, fun j ↦ ?_⟩
-  rw [biproduct.ι_desc]
-  -- The additive component of `a j` has the underlying function of `p j` by construction.
-  change (p j).app (op (Y j)) (𝟙 (Y j)) = y j
-  rw [← yonedaEquiv_apply]
+  rw [biproduct.ι_desc, app_a, ← yonedaEquiv_apply]
   exact (yonedaEquiv (X := Y j) (F := F.obj ⋙ forget AddCommGrpCat)).apply_symm_apply (y j)
 
 /-- A finite free module is projective. -/

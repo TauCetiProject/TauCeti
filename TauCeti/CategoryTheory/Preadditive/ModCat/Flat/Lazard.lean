@@ -63,6 +63,11 @@ theorem homMk_left_hom {i j : FiniteFreeOver F} (a : i.left.obj ⟶ j.left.obj)
     (h : a ≫ j.hom = i.hom) : (homMk a h).left.hom = a :=
   (rfl)
 
+@[simp]
+private theorem comp_left_hom {i j k : FiniteFreeOver F} (f : i ⟶ j) (g : j ⟶ k) :
+    (f ≫ g).left.hom = f.left.hom ≫ g.left.hom := by
+  rw [CostructuredArrow.comp_left, ObjectProperty.FullSubcategory.comp_hom]
+
 end FiniteFreeOver
 
 /-- The arrow from the empty sum of representables gives an object over every module. -/
@@ -95,8 +100,8 @@ instance (F : ModCat.{v} C) [F.Flat] : IsFiltered (FiniteFreeOver F) where
     refine ⟨k, FiniteFreeOver.homMk a hab, ?_⟩
     apply CostructuredArrow.hom_ext
     apply ObjectProperty.hom_ext
-    simpa only [CostructuredArrow.comp_left, ObjectProperty.FullSubcategory.comp_hom,
-      FiniteFreeOver.homMk_left_hom, Preadditive.sub_comp, sub_eq_zero] using ha
+    simpa only [FiniteFreeOver.comp_left_hom, FiniteFreeOver.homMk_left_hom,
+      Preadditive.sub_comp, sub_eq_zero] using ha
 
 /-- Equational flatness is equivalent to filteredness of the maps from finite free modules. -/
 theorem flat_iff_isFiltered_finiteFreeOver : F.Flat ↔ IsFiltered (FiniteFreeOver F) := by
@@ -110,7 +115,8 @@ theorem flat_iff_isFiltered_finiteFreeOver : F.Flat ↔ IsFiltered (FiniteFreeOv
   let b : i ⟶ j := FiniteFreeOver.homMk 0 (by simp [i])
   obtain ⟨k, g, hg⟩ := IsFilteredOrEmpty.cocone_maps a b
   have hz : d ≫ g.left.hom = 0 := by
-    simpa [a, b] using congrArg (fun t : i ⟶ k ↦ t.left.hom) hg
+    simpa only [FiniteFreeOver.comp_left_hom, a, b, FiniteFreeOver.homMk_left_hom, zero_comp]
+      using congrArg (fun t : i ⟶ k ↦ t.left.hom) hg
   obtain ⟨q, hq⟩ := CokernelCofork.IsColimit.desc' hc g.left.hom hz
   refine ⟨k.left.obj, k.left.property, q, k.hom, Cofork.IsColimit.hom_ext hc ?_⟩
   have hq' : p ≫ q = g.left.hom := by simpa only [CokernelCofork.π_ofπ] using hq
@@ -141,8 +147,7 @@ private def isColimit_forgetEval_finiteFreeOver [F.Flat] (X : C) :
   have transition {i j : FiniteFreeOver F} (f : i ⟶ j) :
       ((CostructuredArrow.proj (isFiniteFree C).ι F ⋙ (isFiniteFree C).ι) ⋙ E).map f =
         E.map f.left.hom := by
-    rw [Functor.comp_map _ E, Functor.comp_map (CostructuredArrow.proj (isFiniteFree C).ι F),
-      CostructuredArrow.proj_map, ObjectProperty.ι_map]
+    simp only [Functor.comp_map, CostructuredArrow.proj_map, ObjectProperty.ι_map]
   have lift (G : ModCat.{v} C) (x : E.obj G) :
       ∃ p : (yoneda C).obj X ⟶ G, E.map p generator = x := by
     obtain ⟨p, hp⟩ := exists_biproduct_desc_app_id (Y := fun _ : Fin 1 ↦ X) fun _ ↦ x
@@ -170,8 +175,8 @@ private def isColimit_forgetEval_finiteFreeOver [F.Flat] (X : C) :
     obtain ⟨l, f, hf⟩ := IsFilteredOrEmpty.cocone_maps a b
     refine ⟨l, f, ?_⟩
     have he : p ≫ f.left.hom = q ≫ f.left.hom := by
-      simpa only [a, b, CostructuredArrow.comp_left, ObjectProperty.FullSubcategory.comp_hom,
-        FiniteFreeOver.homMk_left_hom] using congrArg (fun t : k ⟶ l ↦ t.left.hom) hf
+      simpa only [FiniteFreeOver.comp_left_hom, a, b, FiniteFreeOver.homMk_left_hom]
+        using congrArg (fun t : k ⟶ l ↦ t.left.hom) hf
     rw [transition]
     simpa only [E.map_comp_apply, hp, hq] using
       congrArg (fun t : (yoneda C).obj X ⟶ l.left.obj ↦ E.map t generator) he
