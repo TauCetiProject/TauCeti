@@ -5,159 +5,186 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
+public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.MulIndicator
 
 /-!
 # The finite idele for a Weil lattice
 
-Suppose an integral relative different generator `x` is associated to its conjugate, and the
-primes dividing `x` divide either `β` or its conjugate, which are coprime. Put `x⁻¹` at
-the primes dividing `β` and `1` elsewhere. The resulting finite idele and its conjugate
-multiply to `x⁻¹` up to local integer units. A multiple of `x` clears its denominators.
+The finite Weil idele records the local denominator factors of the Weil lattice.
+`TauCeti.GlobalNumberFields.finiteWeilIdele` uses `FiniteAdeleRing.mulIndicator` to put
+`c⁻¹` at the primes containing `β` and `1` elsewhere.
+`TauCeti.GlobalNumberFields.inv_finiteWeilIdele_apply` gives the inverse component `c` at
+those primes and `1` elsewhere. The inverse is integral, and a multiple of `c` clears
+the denominators of the idele.
 
-The normalization follows `New.Parameters.α` and
-`New.Parameters.v_alpha_mul_star_mul_relDifferentGen` in `New/Derivatives/Field/WeilData.lean`
-of lsernau/grh-lean (commit `72fead1`).
+`RingEquiv.finiteWeilIdele_mul_map_mul_mem_integralUnits` computes the product with an
+automorphic image modulo integral units. In the CM case,
+`TauCeti.GlobalNumberFields.finiteWeilIdele_mul_star_mul_mem_integralUnits` identifies
+the product with its conjugate with the principal idele of `c⁻¹` modulo integral units.
+Since conjugation preserves the finite modulus and integral units have modulus one, this
+determines the square of the finite modulus of the Weil idele.
+
+This construction and normalization follow `New.Parameters.α`, `New.Parameters.inv_alpha_mem`,
+`New.Parameters.q₁_mul_alpha_mem`, and `New.Parameters.v_alpha_mul_star_mul_relDifferentGen`
+in `grh/src/New/Derivatives/Field/WeilData.lean` of
+[lsernau/grh-lean](https://github.com/lsernau/grh-lean), revision `72fead1`
+(Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
 
-open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing NumberField
-open scoped NumberField.AdeleRing
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum IsDedekindDomain.FiniteAdeleRing
+open NumberField NumberField.IsCMField
+open scoped NumberField.AdeleRing FiniteAdeleRing
 
-namespace TauCeti
+namespace TauCeti.GlobalNumberFields
 
-open GlobalNumberFields
+section DedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+variable {c : R}
+
+/-- The finite Weil idele has component `c⁻¹` at primes containing `β` and `1` elsewhere. -/
+noncomputable def finiteWeilIdele (β : R) (hc : c ≠ 0) : 𝔸ᶠ[R, K]ˣ :=
+  Units.map (mulIndicator {w : HeightOneSpectrum R | β ∈ w.asIdeal})
+    ((unitEmbedding R K (Units.mk0 (algebraMap R K c) (by
+      simpa only [map_zero] using (IsFractionRing.injective R K).ne hc)))⁻¹)
+
+open Classical in
+/-- Evaluate the finite Weil idele at a finite place. -/
+@[simp]
+theorem finiteWeilIdele_apply (β : R) (hc : c ≠ 0) (w : HeightOneSpectrum R) :
+    (finiteWeilIdele K β hc : 𝔸ᶠ[R, K]) w =
+      if β ∈ w.asIdeal then (((algebraMap R K c)⁻¹ : K) : w.adicCompletion K) else 1 := by
+  rw [finiteWeilIdele, Units.coe_map, mulIndicator_apply, ← map_inv (unitEmbedding R K)]
+  simp only [unitEmbedding_apply, FiniteAdeleRing.algebraMap_apply, Units.val_inv_eq_inv_val,
+    Units.val_mk0, Set.mem_ofPred_eq]
+
+open Classical in
+/-- The inverse finite Weil idele has component `c` at primes containing `β` and `1` elsewhere. -/
+@[simp↓]
+theorem inv_finiteWeilIdele_apply (β : R) (hc : c ≠ 0) (w : HeightOneSpectrum R) :
+    (↑((finiteWeilIdele K β hc)⁻¹) : 𝔸ᶠ[R, K]) w =
+      if β ∈ w.asIdeal then (algebraMap R K c : w.adicCompletion K) else 1 := by
+  rw [← coe_unitsProj_apply, map_inv, Units.val_inv_eq_inv_val, coe_unitsProj_apply,
+    finiteWeilIdele_apply]
+  have hcoe : (((algebraMap R K c)⁻¹ : K) : w.adicCompletion K) =
+      (algebraMap R K c : w.adicCompletion K)⁻¹ :=
+    map_inv₀ (algebraMap K (w.adicCompletion K)) _
+  rw [hcoe]
+  split_ifs <;> simp only [inv_inv, inv_one]
+
+/-- The inverse of the finite Weil idele is integral at every finite place. -/
+theorem inv_finiteWeilIdele_mem_integralAdeles (β : R) (hc : c ≠ 0) :
+    (↑((finiteWeilIdele K β hc)⁻¹) : 𝔸ᶠ[R, K]) ∈ integralAdeles R K := by
+  let S : Set (HeightOneSpectrum R) := {w | β ∈ w.asIdeal}
+  rw [finiteWeilIdele, ← map_inv (Units.map (mulIndicator (K := K) S)), inv_inv]
+  rw [Units.coe_map, unitEmbedding_apply, Units.val_mk0, mulIndicator_mem_integralAdeles]
+  exact fun w _ ↦ coe_algebraMap_mem R K w c
+
+/-- Multiplication by an integral multiple of `c` clears the denominators of the
+finite Weil idele. -/
+theorem algebraMap_mul_finiteWeilIdele_mem_integralAdeles_of_dvd
+    (β : R) (hc : c ≠ 0) {q : R} (hq : c ∣ q) :
+    algebraMap R 𝔸ᶠ[R, K] q * (finiteWeilIdele K β hc : 𝔸ᶠ[R, K]) ∈
+      integralAdeles R K := by
+  classical
+  refine mem_integralAdeles.mpr fun w ↦ ?_
+  rw [FiniteAdeleRing.mul_apply, IsScalarTower.algebraMap_apply R K 𝔸ᶠ[R, K],
+    FiniteAdeleRing.algebraMap_apply, finiteWeilIdele_apply]
+  split_ifs
+  · obtain ⟨t, rfl⟩ := hq
+    have hcK : algebraMap R K c ≠ 0 := by
+      simpa only [map_zero] using (IsFractionRing.injective R K).ne hc
+    have he : algebraMap R K (c * t) * (algebraMap R K c)⁻¹ = algebraMap R K t := by
+      rw [map_mul, mul_right_comm, mul_inv_cancel₀ hcK, one_mul]
+    rw [← adicCompletion.coe_mul, he]
+    exact coe_algebraMap_mem R K w t
+  · simpa only [mul_one] using coe_algebraMap_mem R K w q
+
+end DedekindDomain
 
 variable {E : Type*} [Field E] [NumberField E]
+variable {β c : 𝓞 E}
 
-open Classical in
-/-- An inverse diagonal component selected by ideal membership is transported to the
-corresponding component selected by membership of the conjugate integer. -/
-private theorem finiteAdeleEquiv_mulIndicator_inv_apply (σ : E ≃+* E) (β : 𝓞 E) (x : E)
-    (v : HeightOneSpectrum (𝓞 E)) :
-    finiteAdeleEquiv E E σ
-        (mulIndicator {w | β ∈ w.asIdeal} (algebraMap E 𝔸ᶠ[E] x⁻¹)) v =
-      if RingOfIntegers.mapRingEquiv σ β ∈ v.asIdeal then
-        (algebraMap E 𝔸ᶠ[E] (σ x)⁻¹) v else 1 := by
-  rw [finiteAdeleEquiv_apply, mulIndicator_apply]
-  split_ifs with h h' h'
-  · simp only [FiniteAdeleRing.algebraMap_apply, HeightOneSpectrum.adicCompletionExtension_coe]
-    exact congrArg (fun y : E ↦ (y : v.adicCompletion E)) (map_inv₀ σ x)
-  · simp only [Set.mem_ofPred_eq, HeightOneSpectrum.under_asIdeal, Ideal.under,
-      Ideal.mem_comap] at h
-    exact (h' h).elim
-  · exfalso
-    apply h
-    simp only [Set.mem_ofPred_eq, HeightOneSpectrum.under_asIdeal, Ideal.under, Ideal.mem_comap]
-    exact h'
+/-- Transporting a finite Weil idele by a field automorphism transports both the integer
+selecting the places and the integer inverted there. -/
+@[simp↓]
+theorem _root_.RingEquiv.map_finiteWeilIdele (σ : E ≃+* E) (β : 𝓞 E) (hc : c ≠ 0) :
+    Units.map (finiteAdeleEquiv E E σ).toMonoidHom (finiteWeilIdele E β hc) =
+      finiteWeilIdele E (c := RingOfIntegers.mapRingEquiv σ c) (RingOfIntegers.mapRingEquiv σ β)
+        (by simpa only [map_zero] using (RingOfIntegers.mapRingEquiv σ).injective.ne hc) := by
+  classical
+  apply Units.ext
+  refine FiniteAdeleRing.ext E fun w ↦ ?_
+  have hcoe : (↑(Units.map (finiteAdeleEquiv E E σ).toMonoidHom (finiteWeilIdele E β hc)) :
+      𝔸ᶠ[E]) = finiteAdeleEquiv E E σ (finiteWeilIdele E β hc) := Units.coe_map _ _
+  obtain ⟨v, rfl⟩ := (equivOfRingEquiv (RingOfIntegers.mapRingEquiv σ)).surjective w
+  have hmem : RingOfIntegers.mapRingEquiv σ β ∈
+      (equivOfRingEquiv (RingOfIntegers.mapRingEquiv σ) v).asIdeal ↔ β ∈ v.asIdeal := by
+    rw [asIdeal_equivOfRingEquiv, ← Ideal.symm_apply_mem_of_equiv_iff, RingEquiv.symm_apply_apply]
+  rw [hcoe, finiteAdeleEquiv_apply_eq_adicCompletionCongr σ (σ.valuation_equivOfRingEquiv v),
+    finiteWeilIdele_apply, finiteWeilIdele_apply, hmem]
+  split_ifs
+  · have hinv : σ ((c : E)⁻¹) = ((RingOfIntegers.mapRingEquiv σ c : 𝓞 E) : E)⁻¹ := by
+      rw [RingOfIntegers.mapRingEquiv_apply, map_inv₀]
+    have hdiag := adicCompletionCongr_algebraMap (σ.valuation_equivOfRingEquiv v) ((c : E)⁻¹)
+    rw [hinv] at hdiag
+    simpa only [algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
+      using hdiag
   · exact map_one _
 
-/-- Compute the valuation of the product with the conjugate at one place. -/
-private theorem valued_mulIndicator_mul_conj_mul_eq_one (σ : E ≃+* E) {β x : 𝓞 E}
-    (hβ : IsCoprime β (RingOfIntegers.mapRingEquiv σ β))
-    (hassoc : Associated (RingOfIntegers.mapRingEquiv σ x) x)
-    (hxE : (x : E) ≠ 0) (v : HeightOneSpectrum (𝓞 E))
-    (hsupport : x ∈ v.asIdeal → β * RingOfIntegers.mapRingEquiv σ β ∈ v.asIdeal) :
-    let a := mulIndicator {w | β ∈ w.asIdeal} (algebraMap E 𝔸ᶠ[E] (x : E)⁻¹)
-    Valued.v ((a * finiteAdeleEquiv E E σ a * algebraMap (𝓞 E) 𝔸ᶠ[E] x) v) = 1 := by
+/-- If `β` is coprime to its image under `σ`, `c` is associated to its image, and every prime
+containing `c` contains `β` or its image, multiplying the finite Weil idele, its image and
+the principal idele of `c` gives an everywhere-integral unit. -/
+theorem _root_.RingEquiv.finiteWeilIdele_mul_map_mul_mem_integralUnits
+    (σ : E ≃+* E) (hc : c ≠ 0) (hβ : IsCoprime β (RingOfIntegers.mapRingEquiv σ β))
+    (hassoc : Associated c (RingOfIntegers.mapRingEquiv σ c))
+    (hsupport : ∀ w : HeightOneSpectrum (𝓞 E), c ∈ w.asIdeal →
+      β ∈ w.asIdeal ∨ RingOfIntegers.mapRingEquiv σ β ∈ w.asIdeal) :
+    finiteWeilIdele E β hc *
+      Units.map (finiteAdeleEquiv E E σ).toMonoidHom (finiteWeilIdele E β hc) *
+      unitEmbedding (𝓞 E) E (Units.mk0 (c : E) (RingOfIntegers.coe_ne_zero_iff.mpr hc)) ∈
+        integralUnits (𝓞 E) E := by
   classical
-  let b := RingOfIntegers.mapRingEquiv σ β
-  intro a
-  dsimp only [a]
-  rw [FiniteAdeleRing.mul_apply, FiniteAdeleRing.mul_apply, mulIndicator_apply,
-    finiteAdeleEquiv_mulIndicator_inv_apply, IsScalarTower.algebraMap_apply (𝓞 E) E]
-  simp only [FiniteAdeleRing.algebraMap_apply]
-  have hval : v.valuation E (x : E) ≠ 0 := (Valuation.ne_zero_iff _).2 hxE
-  have hconj : v.valuation E (σ (x : E)) = v.valuation E (x : E) := by
+  refine mem_integralUnits_iff.mpr fun w ↦ ?_
+  have hcσ : w.intValuation (RingOfIntegers.mapRingEquiv σ c) = w.intValuation c := by
     obtain ⟨u, hu⟩ := hassoc
-    have he := congrArg (algebraMap (𝓞 E) E) hu
-    rw [map_mul] at he
-    -- The algebra map from the ring of integers to its field is its coercion.
-    change ((RingOfIntegers.mapRingEquiv σ x : 𝓞 E) : E) * (u : 𝓞 E) = (x : E) at he
-    rw [RingOfIntegers.mapRingEquiv_apply] at he
-    have huval := (v.valuation_eq_one_iff_notMem (K := E) (r := (u : 𝓞 E))).mpr
-      (fun hm ↦ v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ hm u.isUnit))
-    calc
-      _ = v.valuation E (σ (x : E) * (u : 𝓞 E)) := by rw [map_mul, huval, mul_one]
-      _ = _ := congrArg (v.valuation E) he
-  have hnot : ¬ (β ∈ v.asIdeal ∧ b ∈ v.asIdeal) := by
-    rintro ⟨h₁, h₂⟩
-    obtain ⟨a, c, hac⟩ := hβ
-    exact v.isPrime.ne_top (v.asIdeal.eq_top_of_isUnit_mem
-      (hac ▸ v.asIdeal.add_mem (v.asIdeal.mul_mem_left a h₁) (v.asIdeal.mul_mem_left c h₂))
-      isUnit_one)
-  have hunit (h₁ : β ∉ v.asIdeal) (h₂ : b ∉ v.asIdeal) :
-      v.valuation E (x : E) = 1 :=
-    v.valuation_eq_one_iff_notMem.mpr fun hxv ↦ (v.isPrime.mem_or_mem (hsupport hxv)).elim h₁ h₂
-  by_cases h₁ : β ∈ v.asIdeal <;> by_cases h₂ : b ∈ v.asIdeal
-  · exact (hnot ⟨h₁, h₂⟩).elim
-  · simp [b, h₁, h₂, map_inv₀, hval]
-  · simp [b, h₁, h₂, map_inv₀, hconj, hval]
-  · simp [b, h₁, h₂, hunit h₁ h₂]
+    rw [← hu, map_mul, intValuation_eq_one_iff.mpr (w.asIdeal.notMem_of_isUnit u.isUnit), mul_one]
+  have hcval := w.intValuation_ne_zero c hc
+  simp only [σ.map_finiteWeilIdele, Units.val_mul, FiniteAdeleRing.mul_apply, finiteWeilIdele_apply,
+    unitEmbedding_apply, FiniteAdeleRing.algebraMap_apply, Units.val_mk0, map_mul]
+  split_ifs with hb hσ hσ <;>
+    simp only [valuedAdicCompletion_eq_valuation', map_inv₀, valuation_of_algebraMap,
+      hcσ, map_one, mul_one, one_mul, inv_mul_cancel₀ hcval]
+  · exact (w.isPrime.notMem_of_isCoprime_of_mem hβ hb hσ).elim
+  · exact intValuation_eq_one_iff.mpr fun hm ↦ (hsupport w hm).elim hb hσ
 
-open Classical in
-/-- Construct the finite idele with component `x⁻¹` at the primes containing `β` and `1` at
-all other primes. Its inverse is integral, any integral multiple `n` of `x` clears its
-denominators, and its product with its conjugate and `x` has valuation one at every place.
-Here `Valued.v` is multiplicative, so valuation one means an integer unit. -/
-theorem _root_.RingEquiv.exists_weilFiniteIdele (σ : E ≃+* E) {β x n : 𝓞 E}
-    (hβ : IsCoprime β (RingOfIntegers.mapRingEquiv σ β))
-    (hassoc : Associated (RingOfIntegers.mapRingEquiv σ x) x)
-    (hsupport : β * RingOfIntegers.mapRingEquiv σ β ∈ (Ideal.span {x}).radical) (hn : x ∣ n) :
-    ∃ α : 𝔸ᶠ[E]ˣ,
-      (∀ v : HeightOneSpectrum (𝓞 E), (α : 𝔸ᶠ[E]) v =
-        if β ∈ v.asIdeal then ((x : E)⁻¹ : v.adicCompletion E) else 1) ∧
-      (↑(α⁻¹) : 𝔸ᶠ[E]) ∈ integralAdeles (𝓞 E) E ∧
-      algebraMap (𝓞 E) 𝔸ᶠ[E] n * (α : 𝔸ᶠ[E]) ∈ integralAdeles (𝓞 E) E ∧
-      ∀ v : HeightOneSpectrum (𝓞 E),
-        Valued.v (((α : 𝔸ᶠ[E]) * finiteAdeleEquiv E E σ ↑α * algebraMap (𝓞 E) 𝔸ᶠ[E] x) v) =
-          1 := by
-  let S : Set (HeightOneSpectrum (𝓞 E)) := {v | β ∈ v.asIdeal}
-  obtain ⟨k, hk⟩ := Ideal.mem_radical_iff.mp hsupport
-  have hβ₀ : β ≠ 0 := by
-    intro h
-    subst β
-    simpa using hβ.ne_zero_or_ne_zero
-  have hx : x ≠ 0 := by
-    rintro rfl
-    have hb₀ : RingOfIntegers.mapRingEquiv σ β ≠ 0 := fun h ↦
-      hβ₀ ((RingOfIntegers.mapRingEquiv σ).injective (h.trans (map_zero _).symm))
-    apply pow_ne_zero k (mul_ne_zero hβ₀ hb₀)
-    rwa [Ideal.span_singleton_zero, Ideal.mem_bot] at hk
-  have hxE : (x : E) ≠ 0 := by exact_mod_cast hx
-  let μ := (Units.map (mulIndicator (K := E) S)).comp (unitEmbedding (𝓞 E) E)
-  let α := μ (Units.mk0 (x : E) hxE)⁻¹
-  have hα : (α : 𝔸ᶠ[E]) = mulIndicator S (algebraMap E 𝔸ᶠ[E] (x : E)⁻¹) := (rfl)
-  have hαinv : (↑(α⁻¹) : 𝔸ᶠ[E]) = mulIndicator S (algebraMap E 𝔸ᶠ[E] (x : E)) := by
-    simp [α, μ]
-  refine ⟨α, fun v ↦ ?_, ?_, ?_, ?_⟩
-  · rw [hα, mulIndicator_apply]
-    -- Use the algebra map to the completion to transport inversion inside the selected component.
-    change (if β ∈ v.asIdeal then algebraMap E (v.adicCompletion E) (x : E)⁻¹ else 1) = _
-    rw [map_inv₀]
-    rfl
-  · rw [hαinv, mulIndicator_mem_integralAdeles]
-    exact fun v _ ↦ v.coe_mem_adicCompletionIntegers (K := E) x
-  · obtain ⟨c, rfl⟩ := hn
-    rw [hα, mem_integralAdeles]
-    intro v
-    rw [FiniteAdeleRing.mul_apply, mulIndicator_apply]
-    -- Express diagonal components using the same two algebra maps into the completion.
-    change (algebraMap E (v.adicCompletion E) ((x * c : 𝓞 E) : E) *
-      (if v ∈ S then algebraMap E (v.adicCompletion E) (x : E)⁻¹ else 1)) ∈ _
-    split_ifs
-    · have he : algebraMap (𝓞 E) E (x * c) * (x : E)⁻¹ = (c : E) := by
-        rw [map_mul (algebraMap (𝓞 E) E), mul_comm (x : E), mul_assoc,
-          mul_inv_cancel₀ hxE, mul_one]
-      rw [← map_mul, he]
-      exact v.coe_mem_adicCompletionIntegers (K := E) c
-    · rw [mul_one]
-      exact v.coe_mem_adicCompletionIntegers (K := E) (x * c)
-  · intro v
-    rw [hα]
-    exact valued_mulIndicator_mul_conj_mul_eq_one σ hβ hassoc hxE v fun hv ↦
-      v.isPrime.mem_of_pow_mem k ((Ideal.span_le.mpr (by simpa using hv)) hk)
+/-- Complex conjugation of a finite Weil idele conjugates its two defining integers. -/
+@[simp]
+theorem star_finiteWeilIdele [IsCMField E] (β : 𝓞 E) (hc : c ≠ 0) :
+    star (finiteWeilIdele E β hc) =
+      finiteWeilIdele E (c := ringOfIntegersComplexConj E c) (ringOfIntegersComplexConj E β)
+        (by simpa only [map_zero] using (ringOfIntegersComplexConj E).injective.ne hc) := by
+  rw [FiniteAdeleRing.star_unit_eq_map]
+  -- Both maps on integers are the restriction of `complexConj E`.
+  exact (complexConj E).toRingEquiv.map_finiteWeilIdele β hc
 
-end TauCeti
+/-- If `β` is coprime to its conjugate, `c` is associated to its conjugate, and every prime
+containing `c` contains `β` or its conjugate, the product of the finite Weil idele, its
+conjugate and the principal idele of `c` is an integral unit. -/
+theorem finiteWeilIdele_mul_star_mul_mem_integralUnits [IsCMField E]
+    (hc : c ≠ 0) (hβ : IsCoprime β (ringOfIntegersComplexConj E β))
+    (hassoc : Associated c (ringOfIntegersComplexConj E c))
+    (hsupport : ∀ w : HeightOneSpectrum (𝓞 E), c ∈ w.asIdeal →
+      β ∈ w.asIdeal ∨ ringOfIntegersComplexConj E β ∈ w.asIdeal) :
+    finiteWeilIdele E β hc * star (finiteWeilIdele E β hc) *
+      unitEmbedding (𝓞 E) E (Units.mk0 (c : E) (RingOfIntegers.coe_ne_zero_iff.mpr hc)) ∈
+        integralUnits (𝓞 E) E := by
+  rw [FiniteAdeleRing.star_unit_eq_map]
+  exact (complexConj E).toRingEquiv.finiteWeilIdele_mul_map_mul_mem_integralUnits
+    hc hβ hassoc hsupport
+
+end TauCeti.GlobalNumberFields
