@@ -44,14 +44,15 @@ theorem measureReal_norm_sub_integral_ge_le_of_bounded_differences
   have hF : Integrable F P := (integrable_norm_iff hFm).mp
     ((hnorm.integrable.add (integrable_const (∫ w, ‖F w‖ ∂P))).congr
       (ae_of_all _ fun ω ↦ sub_add_cancel _ _))
+  have ht_half : 0 ≤ t / 2 := by positivity
   have hre := h.measureReal_abs_sub_integral_ge_le_of_bounded_differences hX
     (fun x ↦ RCLike.re (f x)) (RCLike.continuous_re.measurable.comp hf) c (fun i x y hxy ↦ by
       simpa only [map_sub] using (RCLike.abs_re_le_norm (f x - f y)).trans (hbd i x y hxy))
-    (show 0 ≤ t / 2 by positivity)
+    ht_half
   have him := h.measureReal_abs_sub_integral_ge_le_of_bounded_differences hX
     (fun x ↦ RCLike.im (f x)) (RCLike.continuous_im.measurable.comp hf) c (fun i x y hxy ↦ by
       simpa only [map_sub] using (RCLike.abs_im_le_norm (f x - f y)).trans (hbd i x y hxy))
-    (show 0 ≤ t / 2 by positivity)
+    ht_half
   rw [integral_re hF] at hre
   rw [integral_im hF] at him
   let A := {ω | t / 2 ≤ |RCLike.re (F ω) - RCLike.re (∫ w, F w ∂P)|}

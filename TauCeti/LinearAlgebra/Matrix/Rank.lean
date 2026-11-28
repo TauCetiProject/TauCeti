@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5
+Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5, Codex
 -/
 module
 
@@ -78,8 +78,9 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.OrthogonalIdempotents.rank_sum`: over a field, the ranks of `e` and `1 - e` add up to
   the size of the matrix, and the rank of a sum of orthogonal idempotent matrices is the sum of
   their ranks.
-* `Matrix.rank_fromBlocks_zero₁₂_zero₂₁`: over a field, the rank of a block-diagonal matrix is the
-  sum of the ranks of its diagonal blocks.
+* `Matrix.rank_fromBlocks_zero₁₂_zero₂₁` and `Matrix.rank_fromBlocks_zero₁₁_zero₂₂`: over a
+  field, the ranks of block-diagonal and off-diagonal block matrices are the sums of the
+  ranks of their respective blocks.
 * `Matrix.rank_conjTranspose_of_field` and
   `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
   structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
@@ -556,6 +557,15 @@ theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Fini
   simp only [← finrank_range_mulVecLin]
   rw [hr, LinearEquiv.finrank_map_eq]
   exact (Submodule.prodEquiv _ _).finrank_eq.trans Module.finrank_prod
+
+/-- An off-diagonal block matrix has rank equal to the sum of the ranks of its two blocks. -/
+@[simp]
+theorem rank_fromBlocks_zero₁₁_zero₂₂ {K m n p q : Type*} [Field K] [Finite n] [Finite q]
+    (B : Matrix m q K) (C : Matrix p n K) :
+    (fromBlocks 0 B C 0).rank = B.rank + C.rank := by
+  rw [← rank_submatrix (fromBlocks 0 B C 0) (Equiv.refl _) (Equiv.sumComm q n)]
+  simpa only [Equiv.coe_refl, Equiv.sumComm_apply, fromBlocks_submatrix_sum_swap_right,
+    submatrix_id_id] using rank_fromBlocks_zero₁₂_zero₂₁ B C
 
 /-- Over a field, if `P + e + Q = 1` then the ranks of `P`, `e` and `Q` add up to at least the
 size of the matrices. -/
