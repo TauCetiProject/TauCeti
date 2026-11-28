@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Nat.ModEq
 public import Mathlib.NumberTheory.NumberField.CMField
-import Mathlib.Analysis.Real.Pi.Bounds
+import TauCeti.NumberTheory.ModularForms.ThetaLift.AuxiliarySize
 import TauCeti.NumberTheory.NumberField.CMField.GaussianNorm
 
 /-!
@@ -47,24 +47,14 @@ theorem logLevelMin_mem_Icc {m : ℕ} {w M D L : ℝ} (hm : 2 ≤ m) (hL : log (
     (hw : w ∈ Icc 0 L) (hM : M ∈ Icc (exp (20 * L)) (exp (22 * L)))
     (hD : D ∈ Icc 1 (exp L)) : logLevelMin m w M D L ∈ Icc (m * L) (24 * m * L) := by
   have hm' : 2 ≤ (m : ℝ) := by exact_mod_cast hm
-  have hMpos := (exp_pos _).trans_le hM.1
-  have hDpos : 0 < D := zero_lt_one.trans_le hD.1
-  have hπ : 0 < log (2 * π) := log_pos (by linarith [pi_gt_three])
-  have hMlo : 20 * L ≤ log M := (le_log_iff_exp_le hMpos).2 hM.1
-  have hMhi : log M ≤ 22 * L := (log_le_iff_le_exp hMpos).2 hM.2
-  have hDlo : 0 ≤ log D := log_nonneg hD.1
-  have hDhi : log D ≤ L := (log_le_iff_le_exp hDpos).2 hD.2
-  have hlog : log (M * D / (2 * π)) = log M + log D - log (2 * π) := by
-    rw [log_div (mul_ne_zero hMpos.ne' hDpos.ne') (by positivity),
-      log_mul hMpos.ne' hDpos.ne']
-  have hlo : 19 * L ≤ log (M * D / (2 * π)) := by linarith
-  have hhi : log (M * D / (2 * π)) ≤ 23 * L := by linarith
+  obtain ⟨hlo, hhi⟩ := log_M_mul_rootDiscr_div_two_pi_mem_Icc hL hM hD
+  have hL₀ : 0 ≤ L := hw.1.trans hw.2
   have hm₀ : 0 ≤ (m : ℝ) - 1 := by linarith
   rw [logLevelMin_def, mem_Icc]
   constructor
   · nlinarith [mul_nonneg (Nat.cast_nonneg m) hw.1,
       mul_le_mul_of_nonneg_left hlo hm₀,
-      mul_nonneg (sub_nonneg.mpr hm') (hπ.le.trans hL)]
+      mul_nonneg (sub_nonneg.mpr hm') hL₀]
   · nlinarith [mul_le_mul_of_nonneg_left hw.2 (Nat.cast_nonneg m),
       mul_le_mul_of_nonneg_left hhi hm₀]
 
