@@ -18,7 +18,8 @@ A recurrence is nondegenerate when its characteristic polynomial has nonzero con
 coefficient and no quotient of distinct characteristic roots is a root of unity.
 Roots are taken in the algebraic closure of the coefficient field, not just in that field:
 in particular, irreducible characteristic polynomials do not satisfy the condition vacuously.
-Repeated roots are allowed.
+Repeated roots are allowed. Characteristic roots that already lie in the coefficient field
+inherit the conclusions, so their quotients have infinite order there as well.
 
 The power characterization says precisely that distinct roots remain distinct on every
 positive-step arithmetic progression. Nondegeneracy passes to characteristic-polynomial
@@ -82,6 +83,23 @@ theorem IsNondegenerate.not_isOfFinOrder_div (h : E.IsNondegenerate)
     (hθ' : θ' ∈ E.charPoly.rootSet (AlgebraicClosure K)) (hne : θ ≠ θ') :
     ¬IsOfFinOrder (θ / θ') :=
   h.2 hθ hθ' hne
+
+/-- Distinct characteristic roots in the coefficient field of a nondegenerate recurrence have a
+quotient of infinite multiplicative order. -/
+theorem IsNondegenerate.not_isOfFinOrder_div_of_mem_roots (h : E.IsNondegenerate) {θ θ' : K}
+    (hθ : θ ∈ E.charPoly.roots) (hθ' : θ' ∈ E.charPoly.roots) (hne : θ ≠ θ') :
+    ¬IsOfFinOrder (θ / θ') := by
+  let f := algebraMap K (AlgebraicClosure K)
+  have hroot {x : K} (hx : x ∈ E.charPoly.roots) :
+      f x ∈ E.charPoly.rootSet (AlgebraicClosure K) := by
+    have hx' : x ∈ E.charPoly.rootSet K := by
+      rw [E.charPoly_monic.mem_rootSet, coe_aeval_eq_eval]
+      exact isRoot_of_mem_roots hx
+    simpa only [f, Algebra.ofId_apply] using
+      rootSet_mapsTo (Algebra.ofId K (AlgebraicClosure K)) hx'
+  intro hfin
+  apply h.2 (hroot hθ) (hroot hθ') (f.injective.ne hne)
+  simpa [map_div₀] using (f : K →* AlgebraicClosure K).isOfFinOrder hfin
 
 /-- Nondegeneracy is equivalent to the nonzero constant coefficient condition together
 with separation of all distinct characteristic roots by every positive natural power. -/
