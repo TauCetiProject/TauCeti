@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -56,6 +57,8 @@ transported by contactomorphisms (`TauCeti.isLegendrianImmersion_diffeomorph_com
 * `TauCeti.isLegendrianImmersion_comp_diffeomorph_iff`,
   `TauCeti.isLegendrianImmersion_diffeomorph_comp_iff`: invariance under reparametrization and
   transport by contactomorphisms, with their embedding counterparts.
+* `TauCeti.IsLegendrianImmersion.codRestrict`: a Legendrian immersion with image in an open subset
+  is Legendrian for the restricted contact structure.
 
 ## References
 
@@ -178,12 +181,10 @@ theorem isLegendrianImmersion_iff_finrank_le [IsManifold J 2 N] [Nonempty N] {n 
     (hf : Manifold.IsImmersion J I ∞ f) (hfD : IsHorizontalMap J D f) :
     IsLegendrianImmersion J D f ↔ finrank ℝ E ≤ 2 * finrank ℝ E' + 1 := by
   refine ⟨fun h ↦ h.two_mul_finrank_add_one.ge, fun h ↦
-    ⟨⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩, hf, hfD,
-      le_antisymm ?_ h⟩⟩
+    ⟨hD.of_le hn, hf, hfD, le_antisymm ?_ h⟩⟩
   obtain ⟨y⟩ := ‹Nonempty N›
   have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
-  exact hfD.two_mul_finrank_add_one_le
-    ⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩ le_rfl
+  exact hfD.two_mul_finrank_add_one_le (hD.of_le hn) le_rfl
     ((hf.contMDiff y).of_le (by simp)) (hf.mfderiv_injective (by simp) y)
 
 
@@ -286,5 +287,16 @@ theorem isLegendrianEmbedding_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂
       ((isLegendrianImmersion_diffeomorph_comp_iff ψ hD hD₂ hψ).2 h.toIsLegendrianImmersion)⟩
 
 end Transport
+
+/-- **Restriction to an open subset.** A Legendrian immersion with image in an open subset `U` is
+a Legendrian immersion into `U`, for the restriction of the contact structure to `U`. -/
+theorem IsLegendrianImmersion.codRestrict [IsManifold I ∞ M] (hf : IsLegendrianImmersion J D f)
+    (U : TopologicalSpace.Opens M) (h : ∀ y, f y ∈ U) :
+    IsLegendrianImmersion (I := I) (M := U) J (fun x ↦ D x) (fun y ↦ ⟨f y, h y⟩) := by
+  refine ⟨hf.isContactDistribution.comp_subtypeVal le_rfl U, hf.isImmersion.codRestrict U h,
+    isHorizontalMap_iff.2 fun y v ↦ ?_, hf.two_mul_finrank_add_one⟩
+  -- Following the restriction by the inclusion of `U` gives back `f`.
+  rw [← Manifold.mfderiv_subtype_val_comp_apply]
+  exact hf.isHorizontalMap.mfderiv_mem y v
 
 end TauCeti

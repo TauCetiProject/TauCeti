@@ -31,9 +31,10 @@ in the boundary of `p` changes by one sign for each of `p` and `q` in the revers
 `𝔬'` is the conjugate of the boundary for `𝔬` by the involution `Finsupp.signReversal` of the
 chains negating the coefficients on the reversal set
 (`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_eq_signReversal_comp`, and its graded form
-`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryAt_eq_signReversal_comp`). In particular the
-integral boundary squares to zero for one choice of orientation data exactly when it does for any
-other.
+`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryAt_eq_signReversal_comp`). In particular a
+boundary coefficient vanishes for one choice of orientation data exactly when it does for any other
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_eq_zero_iff_eq_zero`), and the integral
+boundary squares to zero for one choice exactly when it does for any other.
 
 When the boundaries square to zero, the sign reversals are therefore the components of an
 isomorphism of integral Morse chain complexes
@@ -74,6 +75,8 @@ When the charts agree, the reversal set of `𝔬` and `𝔬.reverse S` is `S`
   difference.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_reversalSet`: the boundary
   coefficients for two choices of orientation data.
+* `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_eq_zero_iff_eq_zero`: whether a
+  boundary coefficient vanishes does not depend on the orientation data.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_eq_signReversal_comp` and
   `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryAt_eq_signReversal_comp`: the boundaries for
   two choices of orientation data are conjugate.
@@ -361,6 +364,17 @@ theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_iff_eq_zero (R : Ty
         LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [h, ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, ← map_mul,
     map_eq_zero_iff _ (RingEquiv.injective _)]
+
+variable (𝔬 𝔬' hf) in
+include hf in
+/-- **Whether a boundary coefficient vanishes does not depend on the orientation data**: changing
+the orientation data changes each coefficient of the integral boundary at most by a sign
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_reversalSet`). -/
+theorem signedMorseBoundaryCoeff_eq_zero_iff_eq_zero (p q : criticalPoints 𝓘(ℝ, E) f) :
+    hX.signedMorseBoundaryCoeff 𝔬' p q = 0 ↔ hX.signedMorseBoundaryCoeff 𝔬 p q = 0 := by
+  classical
+  rw [signedMorseBoundaryCoeff_reversalSet 𝔬 𝔬' hf]
+  split_ifs <;> simp
 
 /-! ### The isomorphism of integral Morse chain complexes -/
 

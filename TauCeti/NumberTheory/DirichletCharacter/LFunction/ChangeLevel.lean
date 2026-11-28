@@ -21,14 +21,19 @@ Thus passage between an imprimitive character and its primitive character costs 
 small power of the ambient level. This applies in particular to products of primitive quadratic
 characters at their common level, including primes dividing both conductors.
 
-The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
-meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
-pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
-The factors are also nonzero on `Re(s) < 0`:
-`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
+The factors are analytic everywhere and, by
+`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero`, nonzero off the imaginary axis. So
+raising the level preserves zeros and exact meromorphic orders wherever `Re(s) ≠ 0`, including
+the simple pole at `s = 1` for principal characters. At `s = 1` pointwise L-function comparison
+requires nonprincipal characters, as in the native continuation API.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
-by David Loeffler and Michael Stoll.
+by David Loeffler and Michael Stoll. When the levels have the same prime factors,
+`DirichletCharacter.LFunction_changeLevel_eq_of_primeFactors_eq` shows that no correction
+is needed, away from the possible pole. This comparison is used in
+`New.exists_regularL_eq_of_sq_eq_one` in `grh/src/Lib/Analytic/Primes.lean` of
+https://github.com/lsernau/grh-lean (rev. `72fead1`).
+
 For the elementary finite-product estimates see Davenport, *Multiplicative Number Theory*,
 the treatment of imprimitive characters and Siegel's theorem.
 -/
@@ -134,14 +139,23 @@ theorem LFunction_changeLevel_eventuallyEq_nhds {M N : ℕ} [NeZero M] [NeZero N
   · exact Eventually.of_forall fun z ↦ by
       simp [Finset.prod_apply, LFunction_changeLevel hMN χ (.inl hχ), mul_comm]
 
-/-- Raising the level preserves the zeros of the continued L-function in the open right
-half-plane. At the possible pole `1`, require the original character to be nonprincipal. -/
+/-- Raising the level without adding prime factors leaves the L-function unchanged, away from
+`1` in the principal case and everywhere in the nonprincipal case. -/
+theorem LFunction_changeLevel_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZero N]
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) (h : N.primeFactors = M.primeFactors)
+    {s : ℂ} (hs : χ ≠ 1 ∨ s ≠ 1) : (χ.changeLevel hMN).LFunction s = χ.LFunction s := by
+  rw [LFunction_changeLevel hMN χ hs, h, Finset.prod_eq_one, mul_one]
+  intro p hp
+  simp [χ.map_nonunit (ZMod.not_isUnit_of_mem_primeFactors hp)]
+
+/-- Raising the level preserves the zeros of the continued L-function off the imaginary axis.
+At the possible pole `1`, require the original character to be nonprincipal. -/
 @[simp] theorem LFunction_changeLevel_eq_zero_iff {M N : ℕ} [NeZero M] [NeZero N]
-    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re)
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : s.re ≠ 0)
     (h : χ ≠ 1 ∨ s ≠ 1) :
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
-  simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne']
+  simp only [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs, or_false]
 
 /-- A Dirichlet character and its inducing primitive character have the same zeros of the
 continued L-function in the open right half-plane. At the possible pole `1`, require the primitive
@@ -150,19 +164,19 @@ theorem LFunction_primitiveCharacter_eq_zero_iff {N : ℕ} [NeZero N] (χ : Diri
     {s : ℂ} (hs : 0 < s.re) (h : χ.primitiveCharacter ≠ 1 ∨ s ≠ 1) :
     χ.primitiveCharacter.LFunction s = 0 ↔ χ.LFunction s = 0 := by
   conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
-  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs h).symm
+  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs.ne' h).symm
 
-/-- Raising the level preserves the meromorphic order of the continued L-function at every point of
-the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
+/-- Raising the level preserves the meromorphic order of the continued L-function off the
+imaginary axis, including at `s = 1` for principal characters. -/
 @[simp] theorem meromorphicOrderAt_LFunction_changeLevel {M N : ℕ} [NeZero M] [NeZero N]
-    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re) :
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : s.re ≠ 0) :
     meromorphicOrderAt (changeLevel hMN χ).LFunction s = meromorphicOrderAt χ.LFunction s := by
   have hPdiff : Differentiable ℂ
       (∏ p ∈ N.primeFactors, fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z)) :=
     Differentiable.finsetProd fun _ hp ↦ Complex.differentiable_one_sub_mul_cpow_neg
       (mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero) _
   have hPs : (∏ p ∈ N.primeFactors, fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z)) s ≠ 0 := by
-    simpa [Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne'
+    simpa [Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs
   rw [meromorphicOrderAt_congr (LFunction_changeLevel_eventuallyEq_nhdsNE χ hMN s),
     meromorphicOrderAt_mul_of_ne_zero (hPdiff.analyticAt s) hPs]
 
@@ -194,10 +208,10 @@ namespace TauCeti
 
 open DirichletCharacter
 
-/-- On the open right half-plane `Re(s) > 0`, the principal Dirichlet `L`-function modulo `N` has
-the same meromorphic order as `riemannZeta` (including `-1` at `s = 1`). -/
+/-- Off the imaginary axis, the principal Dirichlet `L`-function modulo `N` has the same
+meromorphic order as `riemannZeta` (including `-1` at `s = 1`). -/
 theorem meromorphicOrderAt_LFunctionTrivChar_eq_meromorphicOrderAt_riemannZeta
-    {N : ℕ} [NeZero N] {s : ℂ} (hs : 0 < s.re) :
+    {N : ℕ} [NeZero N] {s : ℂ} (hs : s.re ≠ 0) :
     meromorphicOrderAt (LFunctionTrivChar N) s = meromorphicOrderAt riemannZeta s := by
   have hch : changeLevel (one_dvd N) (1 : DirichletCharacter ℂ 1) = 1 := map_one _
   have h := meromorphicOrderAt_LFunction_changeLevel (1 : DirichletCharacter ℂ 1) (one_dvd N) hs
