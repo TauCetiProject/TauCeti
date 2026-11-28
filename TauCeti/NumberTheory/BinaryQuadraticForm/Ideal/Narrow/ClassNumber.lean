@@ -8,15 +8,14 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Class
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Narrow.Equivalence
 public import TauCeti.NumberTheory.BinaryQuadraticForm.IndefiniteReduction.Cycles
-public import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
+public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NormNum.Prime
-import TauCeti.NumberTheory.FundamentalDiscriminant
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
+import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
 import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
-import TauCeti.NumberTheory.QuadraticOrder.Field
 
 /-!
 # Narrow class numbers of real quadratic orders from cycles of reduced forms
@@ -36,7 +35,13 @@ of `O_D` is represented by a primitive Gauss reduced form
 (`exists_mem_primitiveGaussReducedForms_picClass_eq`). When `D > 0` is a fundamental discriminant,
 `O_D` is the maximal order of `ℚ(√D)` (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), so
 `maximalOrderNarrowPicEquiv` identifies `NarrowPic O_D` with `NumberField.NarrowClassGroup` and
-counts the narrow class group by primitive cycles (`nat_card_narrowClassGroup`).
+counts the narrow class group by primitive cycles (`nat_card_narrowClassGroup`). More generally, in
+any quadratic number field `K` with `f² discr K = D > 0`, evaluation at `f √(discr K)` identifies
+`O_D` with the order `ℤ + f 𝓞 K` of conductor `f` in `K`
+(`QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder`), transporting the cycle count via
+`NumberFieldOrder.narrowPicMulEquivOfRingEquiv` to `NarrowPic (ℤ + f 𝓞 K)`
+(`nat_card_narrowPic_intAddMulOrder`) and, at `f = 1`, to `NarrowClassGroup K`
+(`nat_card_narrowClassGroup_of_discr_eq`).
 
 The final section certifies the narrow and wide class numbers at the three canonical indefinite test
 discriminants `D = 5`, `8`, and `12`:
@@ -64,6 +69,12 @@ discriminants `D = 5`, `8`, and `12`:
   cycle represent the same wide Picard class.
 * `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup`: for a positive fundamental discriminant
   `D`, `#Cl⁺(ℚ(√D))` equals the number of cycles of `primitiveReductionPerm D`.
+* `TauCeti.BinaryQuadraticForm.nat_card_narrowPic_intAddMulOrder`: if `f² discr K = D > 0` in a
+  quadratic field `K`, `#NarrowPic (ℤ + f 𝓞 K)` equals the number of cycles of
+  `primitiveReductionPerm D`.
+* `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_of_discr_eq`: for any quadratic field `K`
+  of positive discriminant `D`, `#Cl⁺(K)` equals the number of cycles of
+  `primitiveReductionPerm D`.
 * `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_five`,
   `TauCeti.BinaryQuadraticForm.classNumber_five`,
   `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_eight`,
@@ -165,6 +176,47 @@ theorem nat_card_narrowClassGroup (D : ℤ) [Fact (¬ IsSquare D)] (hpos : 0 < D
     nat_card_narrowPic D hfund.emod_four_eq_zero_or_one hpos]
 
 end Fundamental
+
+section Conductor
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Narrow Picard numbers of real quadratic orders of conductor `f` from reduced cycles.** Let `K`
+be a quadratic field and `f ≥ 1` with `f² discr K = D > 0`. The narrow Picard group of the order
+`ℤ + f 𝓞 K` of conductor `f` has cardinality equal to the number of cycles of
+`primitiveReductionPerm D`. -/
+theorem nat_card_narrowPic_intAddMulOrder (hK : Module.finrank ℚ K = 2) {f : ℕ} [NeZero f]
+    {D : ℤ} [Fact (¬ IsSquare D)] (hpos : 0 < D) (hD : (f : ℤ) ^ 2 * NumberField.discr K = D) :
+    Nat.card (NarrowPic (intAddMulOrder K f)) =
+      Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) := by
+  have hD4 : D % 4 = 0 ∨ D % 4 = 1 := hD ▸ QuadraticOrder.sq_mul_emod_four_eq_zero_or_one
+    (Multiquadratic.isFundamentalDiscr_discr hK).emod_four_eq_zero_or_one (f : ℤ)
+  obtain ⟨δ, hδ⟩ := Multiquadratic.exists_sq_eq_discr hK
+  have hfδ : ((f : K) * δ) ^ 2 = (D : K) := by
+    rw [mul_pow, hδ, ← hD]
+    push_cast
+    ring
+  rw [← QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder hK hD4 hD.symm _ hfδ,
+    ← nat_card_narrowPic D hD4 hpos]
+  let e := QuadraticOrder.algEquivOfSqrt D ((f : K) * δ) hfδ hK
+  refine (Nat.card_congr
+    (NumberFieldOrder.narrowPicMulEquivOfRingEquiv e.toRingEquiv fun x ↦ ?_).toEquiv).symm
+  rw [QuadraticOrder.numberFieldOrderOfSqrt_toSubalgebra,
+    QuadraticOrder.numberFieldOrder_toSubalgebra, Subalgebra.mem_map]
+  exact ⟨fun ⟨z, hz, hzx⟩ ↦ e.injective hzx ▸ hz, fun hx ↦ ⟨x, hx, rfl⟩⟩
+
+/-- **Narrow class numbers of real quadratic fields from reduced cycles.** Any quadratic number
+field `K` of positive discriminant `D` has narrow class number equal to the number of cycles of
+`primitiveReductionPerm D`. -/
+theorem nat_card_narrowClassGroup_of_discr_eq (hK : Module.finrank ℚ K = 2) {D : ℤ}
+    [Fact (¬ IsSquare D)] (hpos : 0 < D) (hD : NumberField.discr K = D) :
+    Nat.card (NumberField.NarrowClassGroup K) =
+      Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) := by
+  rw [← Nat.card_congr (maximalOrderNarrowPicEquiv K).toEquiv,
+    ← NumberFieldOrder.intAddMulOrder_one,
+    nat_card_narrowPic_intAddMulOrder hK hpos (by simpa using hD)]
+
+end Conductor
 
 /-! ### Certified narrow and wide class numbers at `D = 5`, `8`, `12` -/
 
