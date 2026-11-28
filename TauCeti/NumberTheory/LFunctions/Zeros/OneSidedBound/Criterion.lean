@@ -8,15 +8,16 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily.CompensatedRiesz
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.OneSided
+import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Poles
 
 /-!
 # One-sided zero exclusion for the signed prime remainder
 
-The Laplace transform of the signed Legendre-weighted remainder is a difference of
-ordinary Dirichlet Riesz transforms after shifting the Laplace parameter by one.
-For a prime whose twists have no zeros in a prescribed box, the one-sided Landau
-argument then rules out a zero of an untwisted character in that box.
+After shifting the Laplace parameter by one, the signed Legendre-weighted remainder
+has a transform expressible as a difference of ordinary Dirichlet Riesz transforms.
+For zero exclusion we use the meromorphic normal form of the signed transform:
+a one-sided upper bound and twist nonvanishing on the real segment give analyticity.
+At a point where the twists do not vanish, analyticity rules out an untwisted zero.
 
 This is the fixed-prime step of `New.LFunction_ne_zero_of_primeRemainder_le` in
 `grh/src/New/Reduction/Zeros/Criterion.lean` of [grh-lean](https://github.com/lsernau/grh-lean),
@@ -25,7 +26,7 @@ revision `72fead1`.
 
 public section
 
-open ArithmeticFunction.vonMangoldt Complex DirichletCharacter Filter MeasureTheory Set
+open ArithmeticFunction.vonMangoldt Complex DirichletCharacter Filter
 
 namespace TauCeti.OneSidedBound
 
@@ -82,20 +83,22 @@ theorem LFunction_ne_zero_of_primeRemainder_le {q d : ℕ} [NeZero q] [Fact d.Pr
     (htwist : ∀ ψ : DirichletCharacter ℂ q, ∀ z : ℂ, β < z.re → z.re < 1 →
       |z.im| ≤ |ρ.im| → (ψ.legendreTwist d).LFunction z ≠ 0) : χ.LFunction ρ ≠ 0 := by
   let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
-  let g := fun u : ℝ ↦ (q.totient : ℝ) * Real.exp u * primeRemainder d q (Real.exp u)
-  have hg : ∀ᶠ u : ℝ in atTop, g u ≤ (q.totient : ℝ) * Real.exp (β * u) := by
-    filter_upwards [Real.tendsto_exp_atTop.eventually hR] with u hu
-    calc
-      _ ≤ (q.totient : ℝ) * Real.exp u * Real.exp u ^ (β - 1) := by
-        dsimp only [g]
-        gcongr
-      _ = _ := by rw [← Real.exp_mul, mul_assoc, ← Real.exp_add]; congr 2; ring
-  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp hg
-  exact χ.LFunction_ne_zero_of_hasLaplace_sub_rieszRemainderMellin
-    (fun ψ ↦ ψ.legendreTwist d) (A := 1) (u₀ := u₀) hβ hρ hreg
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun u hu ↦ hu₀ u hu.le)
-    (fun _ hs ↦ hasLaplace_totient_mul_exp_mul_primeRemainder d q hd hc hs)
-    (fun b hb hb₁ ψ ↦ htwist ψ b (by simpa using hb.1) (by simpa using hb₁) (by simp))
-    (fun hρ₁ ψ ↦ htwist ψ ρ hρ hρ₁ le_rfl)
+  have ha := (analyticAt_and_hasLaplace_primeRemainderTransform_of_eventually_le d q hd hc hβ
+    (C := 1) (by simpa only [one_mul] using hR)
+    (fun b hb ψ ↦ htwist ψ b (by simpa using hb.1) (by simpa using hb.2) (by simp)) hρ).1
+  have htw (ψ : DirichletCharacter ℂ q) : (quadraticTwist d ψ).entireLFunction ρ ≠ 0 := by
+    rcases lt_or_ge ρ.re 1 with h | h
+    · rw [quadraticTwist_eq_legendreTwist, entireLFunction_legendreTwist _ d hd hc]
+      exact htwist ψ ρ hρ h le_rfl
+    · exact (quadraticTwist d ψ).entireLFunction_ne_zero_of_one_le_re h
+  have h₀ : ρ ≠ 0 := ne_zero_of_re_pos (hβ.trans_lt hρ)
+  have hE : χ.entireLFunction ρ ≠ 0 := fun hχ ↦
+    ha.meromorphicOrderAt_nonneg.not_gt
+      ((meromorphicOrderAt_primeRemainderTransform_neg_iff d q h₀ htw).mpr ⟨χ, hχ⟩)
+  rcases eq_or_ne χ 1 with rfl | hχ
+  · have hρ₁ := hreg.resolve_right (not_not.mpr rfl)
+    rw [entireLFunction_one, LFunctionTrivChar₁_apply_of_ne_one q hρ₁] at hE
+    exact right_ne_zero_of_mul hE
+  · rwa [entireLFunction_of_ne_one hχ] at hE
 
 end TauCeti.OneSidedBound
