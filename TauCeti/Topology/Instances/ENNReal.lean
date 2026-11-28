@@ -21,6 +21,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
 
 * `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated near `0` by `‖h‖ₑ` times a
   finite constant vanishes as `h → 0`.
+* `ENNReal.tendsto_mul_add_pow_mul_of_tendsto_zero`: `C (b + cᵢ)^k cᵢ → 0` when `cᵢ → 0` and
+  `C`, `b` are finite.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
 * `ENNReal.tendsto_of_le_liminf_of_le_div`: a family with lower limit at least `a`, bounded by
@@ -32,6 +34,7 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
   `a ≤ b + c`.
+* `ENNReal.tendsto_inv_natCast_add_nhds_zero`: `((k : ℝ≥0∞) + c)⁻¹` converges to `0` as `k → ∞`.
 * `ENNReal.le_of_forall_pos_le_add_ofReal_mul`: if `a ≤ b + ε C` for every `ε > 0`, with `C`
   finite, then `a ≤ b`.
 * `ENNReal.le_of_forall_one_lt_le_ofReal_pow_mul`: if `a ≤ c ^ k b` for every real `c > 1`, then
@@ -73,6 +76,16 @@ theorem tendsto_of_le_add_of_le_add {ι : Type*} {l : Filter ι} {a w : ι → �
     (h := fun i ↦ b + w i) ?_ ?_ (hge.mono fun i hi ↦ tsub_le_iff_right.2 hi) hle
   · simpa using ENNReal.Tendsto.sub tendsto_const_nhds hw (Or.inr ENNReal.zero_ne_top)
   · simpa using tendsto_const_nhds.add hw
+
+/-- In `ℝ≥0∞`, if `cᵢ → 0` and the constants `C` and `b` are finite, then
+`C (b + cᵢ)^k cᵢ → 0`. -/
+theorem _root_.ENNReal.tendsto_mul_add_pow_mul_of_tendsto_zero {ι : Type*} {l : Filter ι}
+    {c : ι → ℝ≥0∞} (hc : Filter.Tendsto c l (𝓝 0)) {C b : ℝ≥0∞} (hC : C ≠ ∞) (hb : b ≠ ∞)
+    (k : ℕ) : Filter.Tendsto (fun i => C * (b + c i) ^ k * c i) l (𝓝 0) := by
+  have h₁ : Filter.Tendsto (fun i => C * (b + c i) ^ k) l (𝓝 (C * (b + 0) ^ k)) :=
+    ENNReal.Tendsto.const_mul (ENNReal.Tendsto.pow (tendsto_const_nhds.add hc)) (Or.inr hC)
+  have hfin : C * (b + 0) ^ k ≠ ∞ := ENNReal.mul_ne_top hC (ENNReal.pow_ne_top (by simpa))
+  simpa using ENNReal.Tendsto.mul h₁ (Or.inr ENNReal.zero_ne_top) hc (Or.inr hfin)
 
 /-- In `ℝ≥0∞`, a family whose lower limit is at least `a` and which is bounded by quotients
 `gᵢ / dᵢ`, with `gᵢ → a` and `dᵢ → 1`, converges to `a`. -/
@@ -126,6 +139,12 @@ theorem _root_.ENNReal.le_add_of_forall_one_lt_le_add_mul {a b c : ℝ≥0∞}
   have hlim : Filter.Tendsto (fun t : ℝ≥0 => b + t * c) (𝓝[>] 1) (𝓝 (b + c)) := by
     simpa using tendsto_const_nhds.add (ENNReal.Tendsto.mul_const h1 (Or.inr hc))
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
+
+/-- For any `c : ℝ≥0∞`, `((k : ℝ≥0∞) + c)⁻¹` converges to `0` as `k → ∞`. -/
+protected theorem _root_.ENNReal.tendsto_inv_natCast_add_nhds_zero (c : ℝ≥0∞) :
+    Filter.Tendsto (fun k : ℕ ↦ ((k : ℝ≥0∞) + c)⁻¹) Filter.atTop (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ENNReal.tendsto_inv_nat_nhds_zero
+    (fun _ ↦ zero_le) fun _ ↦ ENNReal.inv_le_inv.mpr le_self_add
 
 /-- If `a ≤ b + ε C` for every `ε > 0`, with `C` finite, then `a ≤ b`. This is the form in which
 an approximation with error `ε` against a finite mass `C` passes to the limit. -/

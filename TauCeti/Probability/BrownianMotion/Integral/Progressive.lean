@@ -10,7 +10,6 @@ public import TauCeti.Probability.Process.TimeAverage
 public import TauCeti.MeasureTheory.Measure.NNReal
 import TauCeti.Probability.Process.Progressive
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
-import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Progressive inputs for local Brownian integration
@@ -82,8 +81,6 @@ theorem exists_locallyBrownianIntegrable_ae_time
       ((↑) : ℝ≥0 → ℝ))) < ∞ := by
     simpa only [Function.comp_apply] using
       (lintegral_congr_ae (heqn.fun_comp (fun x : ℝ ↦ ‖x‖ₑ ^ 2))).trans_lt hω
-  rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc,
-    ← TauCeti.Probability.timeMeasure_def] at hfinite
   exact (hm.of_uncurry_right (y := ω)).aestronglyMeasurable
     |>.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hfinite
 

@@ -33,7 +33,9 @@ longer windows linearly in their length, and so makes the measure locally finite
   `μ (x, a) → μ (-∞, a)` and `μ [x, a] → μ (-∞, a]` as `x → -∞`.
 * `MeasureTheory.tendsto_measure_Iio_nhdsGT`, `MeasureTheory.tendsto_measure_Iic_nhdsGT`:
   `μ (-∞, x) → μ (-∞, a]` and `μ (-∞, x] → μ (-∞, a]` as `x → a⁺`, provided some `μ (-∞, r)`,
-  respectively `μ (-∞, r]`, with `r > a` is finite.
+  respectively `μ (-∞, r]`, with `r > a` is finite;
+  `MeasureTheory.tendsto_measureReal_Iio_nhdsGT` is the real-valued form of the first for a finite
+  measure.
 * `MeasureTheory.Measure.continuousWithinAt_Iio_measure_Iic`: the cumulative function of an
   atomless measure is left-continuous, without a finiteness assumption.
 * `MeasureTheory.Measure.continuous_cumulative_restrict_lt_top`: restricting an atomless
@@ -220,6 +222,17 @@ theorem tendsto_measure_Iic_nhdsGT (hf : ∃ r > a, μ (Iic r) ≠ ∞) :
   rw [← h]
   exact tendsto_measure_biInter_gt (fun _ _ => measurableSet_Iic.nullMeasurableSet)
     (fun _ _ _ hij => Iic_subset_Iic.2 hij) hf
+
+/-- For a finite measure, the real mass of `(-∞, x)` tends to the real mass of `(-∞, a]` as
+`x → a⁺`. -/
+theorem tendsto_measureReal_Iio_nhdsGT [IsFiniteMeasure μ] (a : α) :
+    Tendsto (fun x => μ.real (Iio x)) (𝓝[>] a) (𝓝 (μ.real (Iic a))) := by
+  by_cases h : ∃ r, a < r
+  · obtain ⟨r, hr⟩ := h
+    exact (ENNReal.tendsto_toReal (measure_ne_top μ _)).comp
+      (tendsto_measure_Iio_nhdsGT ⟨r, hr, measure_ne_top μ _⟩)
+  · rw [show Ioi a = ∅ from eq_empty_of_forall_notMem fun r hr => h ⟨r, hr⟩, nhdsWithin_empty]
+    exact tendsto_bot
 
 namespace Measure
 

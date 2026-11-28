@@ -11,26 +11,33 @@ public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Wiener
 import Mathlib.Topology.Sequences
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 
 /-!
-# The square-integrable Itô integral process and Itô's covariance
+# The square-integrable Itô integral process, time continuity, and Itô's covariance
 
-Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file uses the
-almost sure identification `TauCeti.Probability.IsItoIntegral.ae_eq_l2Integral` with
-`IsFilteredPreBrownianReal.l2Integral` to deduce zero expectation (`integral_eq_zero`), covariance
-(`integral_mul`), increment square integrability (`memLp_sub`, `memLp_sub_restrict`),
+Extending `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`, this module establishes
+`L²(P)` continuity in time (`TauCeti.Probability.IsItoIntegral.continuous_toLp`) and zero
+expectation (`TauCeti.Probability.IsItoIntegral.integral_eq_zero`) for any continuous Itô integral
+of a `BrownianIntegrable` integrand, without assuming path continuity of the integrator `W`.
+
+Where only single-horizon expected square energy
+`MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)`
+holds, it proves zero expectation (`integral_eq_zero_of_memLp`), covariance
+(`integral_mul_of_memLp`), increment square integrability (`memLp_sub`, `memLp_sub_restrict`),
 unconditional, event-wise, and conditional increment Itô isometries (`integral_sub_sq_of_memLp`,
 `setIntegral_sub_sq_of_memLp`, `condExp_sub_sq_of_memLp`), finite-horizon `L²(P)` continuity
-(`continuous_toLp`), and for deterministic `L²` integrands identification with `wienerIntegral`
-(`ae_eq_wienerIntegral`) and its centered Gaussian law (`hasLaw_gaussianReal`).
+(`continuous_toLp_of_memLp`), and for deterministic `L²` integrands identification with
+`wienerIntegral` (`ae_eq_wienerIntegral`) and its centered Gaussian law (`hasLaw_gaussianReal`).
 
 ## References
 
-* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, 2nd ed., 1991, §3.2.B–C.
+* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+  Springer, 1991, §3.2.B–C.
 -/
 
 public section
@@ -41,12 +48,60 @@ open Filter MeasureTheory ProbabilityTheory Set
 open Finset hiding Iic mem_Iic
 open scoped ENNReal NNReal InnerProductSpace Topology
 
-namespace TauCeti
+namespace TauCeti.Probability.IsItoIntegral
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} {W H K I J : ℝ≥0 → Ω → ℝ}
 
-namespace Probability.IsItoIntegral
+/-- **`L²(P)` time continuity**: the `L²(P)` class `t ↦ (hI.memLp hW hH t).toLp (I t)` of a
+continuous Itô integral of a `BrownianIntegrable` integrand varies continuously in `t`, without
+assuming path continuity of `W`. -/
+theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) :
+    Continuous fun t : ℝ≥0 ↦ (hI.memLp hW hH t).toLp (I t) := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  refine continuous_iff_continuousAt.2 fun t₀ ↦ tendsto_iff_edist_tendsto_0.2 ?_
+  have hne_fst : ∀ᵐ t ∂timeMeasure (t₀ + 1), t ≠ t₀ := by
+    simp only [ae_iff, ne_eq, not_not, ofPred_eq_eq_singleton,
+      timeMeasure_apply _ (measurableSet_singleton t₀)]
+    by_cases h0 : t₀ ∈ Ioc 0 (t₀ + 1) <;> simp [h0]
+  have hne : ∀ᵐ p ∂(timeMeasure (t₀ + 1)).prod P, p.1 ≠ t₀ :=
+    (Measure.quasiMeasurePreserving_fst (μ := timeMeasure (t₀ + 1)) (ν := P)).ae hne_fst
+  have hlim : Tendsto (fun t ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦ (uIoc t₀ t).indicator (H · p.2) p.1 - 0) 2
+        ((timeMeasure (t₀ + 1)).prod P)) (𝓝 t₀) (𝓝 0) := by
+    refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
+      (.of_forall fun t ↦ (hH.memLp_timeMeasure (t₀ + 1)).aestronglyMeasurable.indicator
+        ((measurableSet_uIoc (a := t₀) (b := t)).prod MeasurableSet.univ) |>.congr
+          (.of_forall fun p ↦ by
+            by_cases hp : p.1 ∈ uIoc t₀ t <;> simp [Function.uncurry_def, hp]))
+      (hH.memLp_timeMeasure (t₀ + 1))
+      (.of_forall fun t ↦ .of_forall fun p ↦ by
+        simpa only [Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul, Function.uncurry_def] using
+          eNorm_indicator_le_eNorm_self (H · p.2) p.1)
+      (hne.mono fun p hp ↦ tendsto_const_nhds.congr' <| by
+        rcases lt_or_gt_of_ne hp with hlt | hgt
+        · filter_upwards [eventually_gt_nhds hlt] with t ht
+          rw [Set.indicator_of_notMem (by simp [Set.mem_uIoc, hlt.not_gt, ht.not_gt])]
+        · filter_upwards [eventually_lt_nhds hgt] with t ht
+          rw [Set.indicator_of_notMem (by simp [Set.mem_uIoc, hgt.not_ge, ht.not_ge])])
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (.of_forall fun _ ↦ zero_le)
+    (Eventually.mono (Iio_mem_nhds (lt_add_one t₀)) fun t (ht : t < t₀ + 1) ↦ ?_)
+  rw [Lp.edist_toLp_toLp]
+  simp only [sub_zero]
+  rcases le_total t₀ t with hle | hle
+  · rw [hI.eLpNorm_sub_eq hW hH hle, uIoc_of_le hle]
+    exact eLpNorm_mono_measure _ (Measure.prod_mono (timeMeasure_mono ht.le) le_rfl)
+  · rw [← eLpNorm_neg, neg_sub, hI.eLpNorm_sub_eq hW hH hle, uIoc_of_ge hle]
+    exact eLpNorm_mono_measure _ (Measure.prod_mono (timeMeasure_mono le_self_add) le_rfl)
+
+/-- Every continuous Itô integral of a `BrownianIntegrable` integrand has expectation zero at every
+horizon, without assuming path continuity of `W` or adaptation of `I`. -/
+theorem integral_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
+    ∫ ω, I T ω ∂P = 0 :=
+  (integral_congr_ae (hI.ae_eq_l2Integral hW hH T)).trans (hW.integral_l2Integral T _)
 
 /-- Against a filtered pre-Brownian motion, every Itô integral of a deterministic `L²` integrand
 `u` agrees almost surely at horizon `t` with `hW.toIsPreBrownianReal.wienerIntegral`. -/
@@ -55,7 +110,7 @@ theorem ae_eq_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ W P) {u : ℝ�
     (hu : MemLp u 2 (timeMeasure t)) :
     I t =ᵐ[P] hW.toIsPreBrownianReal.wienerIntegral t (hu.toLp u) := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have h := hI.ae_eq_l2Integral hW (hu.comp_measurePreserving measurePreserving_fst)
+  have h := hI.ae_eq_l2Integral_of_memLp hW (hu.comp_measurePreserving measurePreserving_fst)
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   rwa [← hW.l2Integral_compMeasurePreserving_fst t (hu.toLp u),
     Lp.toLp_compMeasurePreserving hu (ℱ.measurePreserving_fst_predictableMeasure P t)]
@@ -74,15 +129,15 @@ theorem hasLaw_gaussianReal (hW : IsFilteredPreBrownianReal ℱ W P) {u : ℝ≥
     (hI.ae_eq_wienerIntegral hW hu)
 
 /-- Every Itô integral against `W` with finite expected square energy on `(0, t]` has zero mean. -/
-theorem integral_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem integral_eq_zero_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
     (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) : ∫ ω, I t ω ∂P = 0 :=
-  (integral_congr_ae (hI.ae_eq_l2Integral hW hH)).trans (hW.integral_l2Integral t _)
+  (integral_congr_ae (hI.ae_eq_l2Integral_of_memLp hW hH)).trans (hW.integral_l2Integral t _)
 
 /-- **Itô's covariance identity.** Against a filtered pre-Brownian motion, the inner product of two
 Itô integrals at horizon `t` with finite expected square energy on `(0, t]` equals the time-product
 integral of `H * K` on `(0, t] × Ω`. -/
-theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem integral_mul_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) {t : ℝ≥0}
     (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
     (hK : MemLp (Function.uncurry K) 2 ((timeMeasure t).prod P)) :
@@ -93,8 +148,9 @@ theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
   let hKp := (ℱ.memLp_predictableMeasure_iff P hJ.isStronglyPredictable t 2).2 hK
   have hlhs : ∫ ω, I t ω * J t ω ∂P =
       ⟪hW.l2Integral t (hHp.toLp _), hW.l2Integral t (hKp.toLp _)⟫_ℝ :=
-    (integral_congr_ae <| (hI.ae_eq_l2Integral hW hH).mp <| (hJ.ae_eq_l2Integral hW hK).mono
-      fun _ h₂ h₁ ↦ by simp [h₁, h₂, mul_comm]).trans (L2.inner_def _ _).symm
+    (integral_congr_ae <| (hI.ae_eq_l2Integral_of_memLp hW hH).mp <|
+      (hJ.ae_eq_l2Integral_of_memLp hW hK).mono fun _ h₂ h₁ ↦ by simp [h₁, h₂, mul_comm]).trans
+      (L2.inner_def _ _).symm
   rw [hlhs, (hW.l2Integral t).inner_map_map, L2.inner_def]
   exact (integral_congr_ae <| hHp.coeFn_toLp.mp <|
     hKp.coeFn_toLp.mono fun _ h₂ h₁ ↦ by simp [h₁, h₂, Function.uncurry, mul_comm]).trans
@@ -124,7 +180,7 @@ theorem memLp_sub_restrict (hW : IsFilteredPreBrownianReal ℱ W P)
     MemLp (I t - I s) 2 (P.restrict A) := by
   obtain ⟨hcut, hH_mem⟩ := isItoIntegral_ite_lt_indicator_memLp hW hI hA hH
   refine (memLp_indicator_iff_restrict (ℱ.le s A hA).nullMeasurableSet).1 ?_
-  convert hcut.memLp hW hH_mem using 1
+  convert hcut.memLp_of_memLp hW hH_mem using 1
   ext ω
   by_cases hω : ω ∈ A <;> simp [hω, min_eq_left hst]
 
@@ -147,7 +203,7 @@ theorem setIntegral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     ∫ ω in A, (I t ω - I s ω) ^ 2 ∂P =
       ∫ p in Ioc s t ×ˢ A, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
   obtain ⟨hcut, hH_mem⟩ := isItoIntegral_ite_lt_indicator_memLp hW hI hA hH
-  have hsq := hcut.integral_sq hW hH_mem
+  have hsq := hcut.integral_sq_of_memLp hW hH_mem
   simp only [min_eq_left hst] at hsq
   have hAm : MeasurableSet A := ℱ.le s A hA
   have hlhs : ∫ ω, (A.indicator (fun _ ↦ (1 : ℝ)) ω * (I t ω - I s ω)) ^ 2 ∂P =
@@ -236,16 +292,16 @@ private theorem integral_sub_sq_eq_integral_indicator_Ioc
 
 /-- **Finite-horizon `L²(P)` continuity of the Itô integral.** When `H` has finite expected square
 energy on `(0, T]`, the map taking `t ∈ [0, T]` to the `L²(P)` class of `I t` is continuous. -/
-theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem continuous_toLp_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {T : ℝ≥0}
     (hH : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P)) :
     letI := (hW.hasLaw_eval 0).isProbabilityMeasure
     Continuous (fun t : Iic T ↦
-      (hI.memLp hW (hH.mono_measure
+      (hI.memLp_of_memLp hW (hH.mono_measure
         (Measure.prod_mono (timeMeasure_mono t.property) le_rfl))).toLp (I t)) := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let mem (t : Iic T) : MemLp (I t) 2 P :=
-    hI.memLp hW (hH.mono_measure (Measure.prod_mono (timeMeasure_mono t.property) le_rfl))
+    hI.memLp_of_memLp hW (hH.mono_measure (Measure.prod_mono (timeMeasure_mono t.property) le_rfl))
   rw [continuous_iff_seqContinuous]
   intro u t hu
   rw [tendsto_iff_edist_tendsto_0]
@@ -268,6 +324,4 @@ theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
   simpa only [Pi.sub_apply, Real.norm_eq_abs, sq_abs] using
     (hdiff_mem.eLpNorm_two_eq_ofReal_sqrt_integral).symm
 
-end Probability.IsItoIntegral
-
-end TauCeti
+end TauCeti.Probability.IsItoIntegral

@@ -52,6 +52,8 @@ commutative ring.
   of `(X - a) * q`.
 * `PowerSeries.coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one`: factors congruent to `1` modulo
   `X ^ (n + 1)` do not affect the `n`-th coefficient of a finite product.
+* `PowerSeries.coeff_mul_prod_one_add_X_pow_of_lt`: multiplying by a finite product of factors
+  `1 + X ^ d i` with `k < d i` does not change the `k`-th coefficient.
 * `PowerSeries.coeff_prod_sum_type`: the coefficients of a product over `σ ⊕ τ` of mapped factors
   are a convolution over the antidiagonal.
 * `PowerSeries.coeff_one_prod_sum_one_sub_X_pow_mul_two`: twice the linear coefficient of
@@ -108,6 +110,19 @@ theorem coeff_prod_sum_type {A B : Type*} [CommSemiring A] [CommSemiring B] {σ 
     coeff n (∏ k, h k) = ∑ p ∈ antidiagonal n,
       φ (coeff p.1 (∏ i, f i)) * ψ (coeff p.2 (∏ j, g j)) := by
   simp only [Fintype.prod_sum_type, hf, hg, ← map_prod, coeff_mul, coeff_map]
+
+/-- Multiplying a power series by a finite product of factors `1 + X ^ d i` with `k < d i`
+does not change the `k`-th coefficient. -/
+theorem coeff_mul_prod_one_add_X_pow_of_lt {k : ℕ} {t : Finset ι} {d : ι → ℕ}
+    (ht : ∀ i ∈ t, k < d i) (f : R⟦X⟧) :
+    coeff k (f * ∏ i ∈ t, (1 + (X : R⟦X⟧) ^ d i)) = coeff k f := by
+  classical
+  induction t using Finset.induction_on generalizing f with
+  | empty => simp
+  | insert a t ha ih =>
+    rw [Finset.prod_insert ha, ← mul_assoc, ih (fun i hi ↦ ht i (Finset.mem_insert_of_mem hi)),
+      mul_add, mul_one, map_add, coeff_mul_X_pow',
+      ite_eq_right (Nat.not_le.mpr (ht a (Finset.mem_insert_self a t))), add_zero]
 
 section Ring
 

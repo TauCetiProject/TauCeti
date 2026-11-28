@@ -18,10 +18,14 @@ import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 /-!
 # Elementary Brownian isometry in the predictable energy measure
 
-The second moment of an elementary Brownian gain is the lower square-energy integral
-of its holding against the finite-horizon predictable measure. This identifies the
-finite-grid isometry with the native predictable `L²` norm used for completion, without
-introducing an integral operator or assuming that the general stochastic integral exists.
+The second moment of an elementary Brownian gain equals the lower square-energy integral of its
+holding against the trimmed predictable measure at the last grid date `τ n`
+(`TauCeti.Probability.IsFilteredPreBrownianReal.lintegral_enorm_sq_simpleGains`), and, at an
+arbitrary observation time `t`, its `L²(P)` norm equals the `L²` norm of its holding against
+`(timeMeasure t).prod P` (`TauCeti.Probability.IsFilteredPreBrownianReal.eLpNorm_simpleGains`),
+even when the grid extends beyond `t`. Together these identify the finite-grid isometry with the
+native predictable `L²` norm used for completion, without introducing an integral operator or
+assuming that the general stochastic integral exists.
 
 At an arbitrary observation time `t`, the `L²(P)` norm of the elementary integral equals the
 `L²` norm of its holding for Lebesgue time on `(0,t]` times `P`
@@ -29,9 +33,9 @@ At an arbitrary observation time `t`, the `L²(P)` norm of the elementary integr
 `eLpNorm_simpleGains_sub`); the grid may extend beyond `t`. This is the form used to show that
 elementary integrals of `L²`-approximating holdings are Cauchy in `L²(P)` at every time.
 
-Heights need only be square integrable and measurable at their left endpoints.
-The grid may be empty or have repeated dates; Brownian path regularity and usual
-conditions on the filtration are not needed.
+Both isometries require a nondecreasing grid (`MonotoneOn τ (Set.Iic n)`), which may be empty or
+have repeated dates; heights need only be square integrable and measurable at their left endpoints,
+and Brownian path regularity and usual conditions on the filtration are not needed.
 
 ## References
 

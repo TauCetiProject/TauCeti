@@ -72,6 +72,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.ker_baseChange`: scalar extension to a faithful algebra keeps the kernel of a
   representation on a flat module.
+* `Representation.asAlgebraHom_baseChange_mapAlgHom`: an element of `R[G]`, with its coefficients
+  mapped to `A`, acts on `A ⊗_R V` as the base change of its action on `V`.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
 * `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
@@ -175,6 +177,24 @@ theorem ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra 
     (by simpa using LinearMap.congr_fun hg (1 ⊗ₜ v))
 
 end BaseChange
+
+section AsAlgebraHom
+
+variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable [AddCommMonoid V] [Module R V]
+
+/-- An element of `R[G]`, read in `A[G]` by mapping its coefficients to `A`, acts on the base
+change of `ρ` as the base change of its action on `V`. -/
+@[simp]
+theorem asAlgebraHom_baseChange_mapAlgHom (ρ : Representation R G V) (a : MonoidAlgebra R G) :
+    (baseChange A ρ).asAlgebraHom (MonoidAlgebra.mapAlgHom G (Algebra.ofId R A) a) =
+      (ρ.asAlgebraHom a).baseChange A := by
+  induction a using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, ha, hb, LinearMap.baseChange_add]
+  | single g c => simp [asAlgebraHom_single, LinearMap.baseChange_smul, algebraMap_smul]
+
+end AsAlgebraHom
 
 section Invariants
 

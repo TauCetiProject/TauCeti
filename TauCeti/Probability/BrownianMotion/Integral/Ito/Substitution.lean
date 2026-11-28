@@ -20,7 +20,9 @@ elementary integral of `K` against `I` is an Itô integral of `K H` against `W`:
 `∫ K d(∫ H dW) = ∫ K H dW`  (`TauCeti.Probability.IsItoIntegral.simpleGains`).
 
 The heights of `K` need not be bounded or integrable, and `H` need only have an Itô integral;
-no moment condition is imposed.
+no moment condition is imposed. The case of a single interval is the **multiplier rule**
+(`TauCeti.Probability.IsItoIntegral.mul_sub_min`): for `s ≤ u` and `ξ` measurable at time `s`,
+the process `ξ (I_{u ∧ t} - I_{s ∧ t})` is an Itô integral of `1_{(s,u]} ξ H`.
 
 The proof multiplies the simple approximants of `H` by `K` on common grids
 (`TauCeti.Finance.exists_simpleHolding_simpleGains_eq_mul`). Their square errors are multiplied
@@ -102,16 +104,35 @@ theorem IsItoIntegral.simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
       simp only [mem_ofPred_eq, hhold] at hω ⊢
       exact hω.trans (lintegral_enorm_simpleHolding_mul_sub_le hτ _ _ _ ω)
     · -- The elementary integrals of `K` against the approximating integrals converge.
-      have hWm (u : ℝ≥0) : AEStronglyMeasurable (W u) P :=
-        hW.adapted.measurable.aestronglyMeasurable
       have hconv := TendstoInMeasure.finset_sum (Finset.range n) fun j hj ↦
         (tendstoInMeasure_const (a j)).mul
           ((ha j (Finset.mem_range.mp hj)).mono (ℱ.le _)).aestronglyMeasurable
-          ((hI.aestronglyMeasurable hWm _).sub (hI.aestronglyMeasurable hWm _))
+          ((hI.aestronglyMeasurable hW.adapted _).sub (hI.aestronglyMeasurable hW.adapted _))
           ((hI.tendstoInMeasure_simpleGains_of_le hW (min_le_right (τ (j + 1)) t) hσ hb
             hbH).sub (hI.tendstoInMeasure_simpleGains_of_le hW (min_le_right (τ j) t) hσ hb hbH))
       rw [show Finance.simpleGains τ n a I t = _ from funext (Finance.simpleGains_def τ n a I t)]
       refine hconv.congr_left fun k ↦ ae_of_all _ fun ω ↦ ?_
       rw [hgain, Finance.simpleGains_def]
+
+/-- **Multiplier rule.** Against a pre-Brownian motion relative to the filtration, if `I` is an
+Itô integral of `H`, `s ≤ u` and `ξ` is measurable at time `s`, then the process
+`ξ (I_{u ∧ t} - I_{s ∧ t})` is an Itô integral of `1_{(s,u]} ξ H`. The variable `ξ` need not
+be bounded or integrable. -/
+theorem IsItoIntegral.mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {s u : ℝ≥0} (hsu : s ≤ u) {ξ : Ω → ℝ}
+    (hξ : StronglyMeasurable[ℱ s] ξ) :
+    IsItoIntegral ℱ P W (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ ξ ω) t * H t ω)
+      (fun t ω ↦ ξ ω * (I (min u t) ω - I (min s t) ω)) := by
+  -- The one-interval grid `s ≤ u` with height `ξ`.
+  have hτ : MonotoneOn (fun j : ℕ ↦ if j = 0 then s else u) (Iic 1) := fun i _ j _ hij ↦ by
+    by_cases hi : i = 0 <;> by_cases hj : j = 0 <;> simp [hi, hj] <;> omega
+  have h := hI.simpleGains hW hτ (a := fun _ ↦ ξ) fun j hj ↦ by
+    obtain rfl := Nat.lt_one_iff.mp hj
+    simpa using hξ
+  have hgain : Finance.simpleGains (fun j : ℕ ↦ if j = 0 then s else u) 1 (fun _ ↦ ξ) I =
+      fun t ω ↦ ξ ω * (I (min u t) ω - I (min s t) ω) := by
+    ext t ω
+    simp [Finance.simpleGains_def]
+  simpa [Finance.simpleHolding_def, hgain] using h
 
 end TauCeti.Probability

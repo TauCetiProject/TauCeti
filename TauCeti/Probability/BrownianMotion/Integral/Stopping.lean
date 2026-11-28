@@ -26,9 +26,13 @@ expected square-energy norm on every finite horizon. Along stopping times conver
 to a stopping time `τ` eventually from above, the cutoffs of a `LocallyBrownianIntegrable`
 integrand converge to the `[0, τ]` cutoff in pathwise square energy in probability on every finite
 horizon (`LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_of_tendsto_of_le`, specialized
-to `LocallyBrownianIntegrable.tendsto_measure_lintegral_dyadicCeilTime`). These facts allow
-approximation and localization of stochastic-integral inputs. The pathwise-domain closure results
-impose no moment assumptions. No stochastic integral is constructed here.
+to `LocallyBrownianIntegrable.tendsto_measure_lintegral_dyadicCeilTime`), and under a finite
+measure `P`, cutting off at the upward dyadic approximations `dyadicCeilTime k ∘ σ` converges in
+probability in pathwise square energy on `(0, T]` to the cutoff at `σ`
+(`TauCeti.LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq`).
+These facts allow approximation and localization of stochastic-integral inputs. The
+pathwise-domain closure results impose no moment assumptions. No stochastic integral is
+constructed here.
 
 ## References
 
@@ -95,8 +99,8 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
       ((Probability.timeMeasure T).prod P))
       atTop (𝓝 0) := by
   apply tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
-    (Eventually.of_forall fun n ↦ ((hH.ite_le (hτ n)).memLp T).aestronglyMeasurable)
-    (hH.memLp T)
+    (Eventually.of_forall fun n ↦ ((hH.ite_le (hτ n)).memLp_timeMeasure T).aestronglyMeasurable)
+    (hH.memLp_timeMeasure T)
   · exact Eventually.of_forall fun n ↦ Eventually.of_forall fun p ↦ by
       dsimp only [Function.uncurry]
       split_ifs <;> simp
@@ -126,9 +130,11 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_of_tendsto_of
       (hH.isStronglyPredictable.ite_le hτ)).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const
         2).lintegral_prod_left' measurableSet_Ici) ?_
   filter_upwards [hH.ae_memLp, hlim, hle] with ω hω hlimω hleω
+  have hT : MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure T) := by
+    simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using hω T
   filter_upwards [(tendsto_lintegral_ite_le_pow_of_tendsto_of_le two_ne_zero hlimω hleω
-    ((hω T).aestronglyMeasurable.eNorm.pow_const 2)
-    ((hω T).aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 (hω T)).ne).eventually
+    (hT.aestronglyMeasurable.eNorm.pow_const 2)
+    (hT.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hT).ne).eventually
     (eventually_lt_nhds hε)] with d hd using by simpa using hd
 
 /-- Along `dyadicCeilTime d ∘ τ` for a stopping time `τ`, the pathwise square-energy error on
@@ -143,5 +149,52 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_dyadicCeilTime [IsFi
   hH.tendsto_measure_lintegral_ite_le_of_tendsto_of_le (fun d ↦ hτ.dyadicCeilTime d) hτ
     (.of_forall fun ω ↦ tendsto_dyadicCeilTime (τ ω))
     (.of_forall fun ω ↦ .of_forall fun d ↦ le_dyadicCeilTime d (τ ω)) T hε
+
+/-- On a finite measure space `P`, stopping a locally Brownian-integrable integrand at the dyadic
+ceilings `dyadicCeilTime k ∘ σ` converges in probability in pathwise square energy on `(0, T]` to
+the cutoff at `σ`. -/
+theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq
+    [IsFiniteMeasure P] (hH : LocallyBrownianIntegrable ℱ P H) (hσ : IsStoppingTime ℱ σ)
+    (T : ℝ≥0) (ε : ℝ≥0∞) (hε : 0 < ε) :
+    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s,
+      ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
+        if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2
+      ∂Probability.timeMeasure T}) atTop (𝓝 0) := by
+  let D (k : ℕ) (ω : Ω) : ℝ≥0∞ := ∫⁻ s,
+    ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
+      if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2 ∂Probability.timeMeasure T
+  have hpred (k : ℕ) : IsStronglyPredictable ℱ (fun s ω ↦
+      (if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
+        if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0) :=
+    (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable.sub
+      (hH.ite_le hσ).isStronglyPredictable
+  have hDm (k : ℕ) : Measurable (D k) := (hpred k).measurable_lintegral_enorm_sq
+  simpa only [measure_empty] using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop
+    MeasurableSet.empty (fun k ↦ measurableSet_le measurable_const (hDm k)) <| by
+    filter_upwards [hH.ae_memLp] with ω hω
+    have hT : MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure T) := by
+      simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using hω T
+    have hdom (k : ℕ) (s : ℝ≥0) :
+        ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
+          if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2 ≤ ‖H s ω‖ₑ ^ 2 := by
+      by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
+      · rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
+      · rw [ite_eq_right hs, sub_zero]; split_ifs <;> simp
+    have hpt (s : ℝ≥0) : Tendsto (fun k ↦
+        ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
+          if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2) atTop (𝓝 0) := by
+      by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
+      · refine tendsto_const_nhds.congr fun k ↦ ?_
+        rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
+      · refine tendsto_const_nhds.congr' <|
+          ((tendsto_dyadicCeilTime (σ ω)).eventually (eventually_lt_nhds (lt_of_not_ge hs))).mono
+            fun k hk ↦ by dsimp only; rw [ite_eq_right hk.not_ge, ite_eq_right hs]; simp
+    have hD0 : Tendsto (fun k ↦ D k ω) atTop (𝓝 0) := by
+      simpa [D] using tendsto_lintegral_of_dominated_convergence (fun s ↦ ‖H s ω‖ₑ ^ 2)
+        (fun k ↦ (hpred k).measurable_enorm_sq_path)
+        (fun k ↦ .of_forall (hdom k))
+        ((AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
+          hT.aestronglyMeasurable).mp hT).ne (.of_forall hpt)
+    exact (hD0.eventually (eventually_lt_nhds hε)).mono fun k hk ↦ by simp [hk.not_ge]
 
 end TauCeti

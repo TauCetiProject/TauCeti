@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 import TauCeti.MeasureTheory.Measure.NNReal
@@ -19,9 +20,11 @@ import TauCeti.MeasureTheory.Measure.NNReal
 time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
 The origin has zero mass. Interval masses, monotonicity in the horizon and restriction to
 shorter horizons are recorded explicitly for time-product measures used in stochastic
-integration. Integrals for time measure are interval integrals over `(0,T]`
-(`TauCeti.Probability.integral_timeMeasure`), and continuous functions lie in every `Lᵖ` space
-of a finite horizon (`Continuous.memLp_timeMeasure`).
+integration; on `(0, t]` (and `(0, t] × Ω`), cutting off at `(s, ∞)` agrees almost everywhere
+with cutting off at `(s, t]` (`indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure`,
+`indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure_prod`). Integrals for time measure are interval
+integrals over `(0,T]` (`TauCeti.Probability.integral_timeMeasure`), and continuous functions lie
+in every `Lᵖ` space of a finite horizon (`Continuous.memLp_timeMeasure`).
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
 clipped to the horizon; the extension lemmas describe their images. The `L²` inner product of
@@ -125,6 +128,13 @@ theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ 
   rw [timeMeasure_def]
   exact ae_restrict_mem measurableSet_Ioc
 
+/-- Almost every time-outcome pair has its time coordinate in the finite horizon, excluding the
+origin. -/
+theorem ae_mem_Ioc_timeMeasure_prod {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) (T : ℝ≥0) :
+    ∀ᵐ p ∂(timeMeasure T).prod P, p.1 ∈ Ioc 0 T :=
+  (Measure.quasiMeasurePreserving_fst (μ := timeMeasure T) (ν := P)).ae
+    (ae_mem_Ioc_timeMeasure T)
+
 /-- A continuous function on time lies in every `Lᵖ` space of a finite horizon. -/
 theorem _root_.Continuous.memLp_timeMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ≥0 → E}
     (hf : Continuous f) (p : ℝ≥0∞) (T : ℝ≥0) : MemLp f p (timeMeasure T) := by
@@ -137,6 +147,10 @@ theorem _root_.Continuous.memLp_timeMeasure {E : Type*} [NormedAddCommGroup E] {
 @[simp]
 theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
+
+/-- The initial time carries no mass, independently of the horizon. -/
+theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
+  simp
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]
@@ -154,6 +168,25 @@ theorem timeMeasure_restrict_of_le {S T : ℝ≥0} (hST : S ≤ T) :
 theorem timeMeasure_mono {S T : ℝ≥0} (hST : S ≤ T) : timeMeasure S ≤ timeMeasure T := by
   rw [← timeMeasure_restrict_of_le hST]
   exact Measure.restrict_le_self
+
+/-- On the finite horizon `(0, t]`, cutting off at `(s, ∞)` agrees almost everywhere with cutting
+off at `(s, t]`. -/
+theorem indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure {E : Type*} [Zero E]
+    (f : ℝ≥0 → E) (s t : ℝ≥0) :
+    (Ioi s).indicator f =ᵐ[timeMeasure t] (Ioc s t).indicator f := by
+  filter_upwards [ae_mem_Ioc_timeMeasure t] with u hu
+  by_cases hus : s < u <;> simp [hus, hu.2]
+
+/-- On `(0, t] × Ω`, cutting off a process in time at `(s, ∞)` agrees
+`(timeMeasure t).prod P`-almost everywhere with cutting it off at `(s, t]`, for any measure
+`P`. -/
+theorem indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure_prod {Ω E : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} [Zero E]
+    (H : ℝ≥0 → Ω → E) (s t : ℝ≥0) :
+    (fun p : ℝ≥0 × Ω ↦ (Ioi s).indicator (H · p.2) p.1) =ᵐ[(timeMeasure t).prod P]
+      fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (H · p.2) p.1 := by
+  filter_upwards [ae_mem_Ioc_timeMeasure_prod P t] with p hp
+  by_cases hps : s < p.1 <;> simp [hps, hp.2]
 
 /-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/
 theorem indicatorConstLp_Iic_min_timeMeasure {E : Type*} [NormedAddCommGroup E]
