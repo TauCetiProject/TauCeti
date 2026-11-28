@@ -51,17 +51,10 @@ private theorem log_norm_unitCharacter (n : AlgebraicInfinityType K) (u : (𝓞 
   simp_rw [norm_zpow, Real.log_zpow]
   rw [← Finset.sum_fiberwise Finset.univ InfinitePlace.mk]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
-  have hfiber : (Finset.univ.filter fun σ : K →+* ℂ ↦ InfinitePlace.mk σ = w) =
-      {w.embedding, conjugate w.embedding} := by
-    ext σ
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-      Finset.mem_singleton]
-    have hmk := InfinitePlace.mk_eq_iff (φ := w.embedding) (ψ := σ)
-    simpa only [mk_embedding, eq_comm] using hmk
   have hne : w.embedding ≠ conjugate w.embedding := fun h ↦
     IsTotallyComplex.complexEmbedding_not_isReal w.embedding
       (ComplexEmbedding.isReal_iff.mpr h.symm)
-  rw [hfiber, Finset.sum_pair hne, ← InfinitePlace.apply, mk_embedding,
+  rw [w.filter_mk_eq_pair, Finset.sum_pair hne, ← InfinitePlace.apply, mk_embedding,
     ← InfinitePlace.apply, mk_conjugate_eq, mk_embedding, Int.cast_add, add_mul]
 
 open NumberField.Units NumberField.Units.dirichletUnitTheorem in

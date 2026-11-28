@@ -84,6 +84,8 @@ absolute value on `ℚ`.
   conjugate, in one order or the other.
 * `NumberField.InfinitePlace.mk_eq_mk_iff_of_isUnramified`: embeddings with a common restriction
   and the same unramified infinite place are equal.
+* `NumberField.InfinitePlace.filter_mk_eq_pair`: the embeddings defining a place are its
+  chosen embedding and its conjugate.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
 * `NumberField.InfinitePlace.under_rat`: an infinite place restricts to the real absolute value
   on `ℚ`.
@@ -101,6 +103,16 @@ open scoped ComplexOrder
 namespace NumberField
 
 variable {K : Type*} [Field K]
+
+open scoped Classical in
+/-- The embeddings defining an infinite place are its chosen embedding and its conjugate,
+which coincide at a real place. -/
+theorem InfinitePlace.filter_mk_eq_pair [Fintype (K →+* ℂ)] (w : InfinitePlace K) :
+    (Finset.univ.filter fun σ : K →+* ℂ ↦ mk σ = w) =
+      {w.embedding, ComplexEmbedding.conjugate w.embedding} := by
+  ext σ
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Finset.mem_singleton]
+  simpa only [mk_embedding, eq_comm] using (mk_eq_iff (φ := w.embedding) (ψ := σ))
 
 /-- A totally real field has no complex infinite places. -/
 instance IsTotallyReal.instIsEmptyIsComplex [IsTotallyReal K] :
