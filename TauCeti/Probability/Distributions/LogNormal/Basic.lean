@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
@@ -54,6 +55,10 @@ hence the general mean and variance, need no hypothesis on `v` at all.
   mean `exp (m + v / 2)` and the variance `(exp v - 1) * exp (2 * m + v)`;
 * `integrableExpSet_id_logNormalMeasure` — the exponential moments exist exactly for `t ≤ 0`, with
   `not_integrable_exp_mul_logNormalMeasure` the matching non-integrability for `t > 0`;
+* `ProbabilityTheory.HasLaw.integral_rpow_logNormalMeasure`,
+  `ProbabilityTheory.HasLaw.variance_logNormalMeasure`, and the neighbouring `HasLaw` results —
+  the carrier, moment, and exponential-integrability formulas for random variables with a
+  log-normal law;
 * `integral_id_logNormalMeasure_zero_var` and `variance_id_logNormalMeasure_zero_var` — the
   boundary mean `exp m` and variance `0`;
 * `mgf_id_logNormalMeasure_zero_var`, `cgf_id_logNormalMeasure_zero_var` and
@@ -481,6 +486,20 @@ theorem not_integrable_exp_mul_logNormalMeasure (m : ℝ) (hv : v ≠ 0) (ht : 0
             * ((√(2 * π * (v : ℝ)))⁻¹ * Real.exp (-(x - m) ^ 2 / (2 * (v : ℝ)))) := by ring
   exact MeasureTheory.not_integrable_of_eventually_le_atTop one_pos hev
 
+/-- An exponential moment of a log-normal law is finite exactly when the log-variance is zero or
+the exponential rate is nonpositive. -/
+theorem integrable_exp_mul_logNormalMeasure_iff (m : ℝ) (v : ℝ≥0) (t : ℝ) :
+    Integrable (fun x => Real.exp (t * x)) (logNormalMeasure m v) ↔ v = 0 ∨ t ≤ 0 := by
+  by_cases hv : v = 0
+  · subst v
+    simp only [true_or, iff_true]
+    rw [logNormalMeasure_zero_var]
+    exact integrable_dirac (by simp)
+  · simp only [hv, false_or]
+    exact ⟨fun hint => not_lt.mp fun ht =>
+      not_integrable_exp_mul_logNormalMeasure m hv ht hint,
+      integrable_exp_mul_logNormalMeasure m v⟩
+
 /-- **The exponential-integrability domain of a log-normal law with nonzero log-variance is the
 nonpositive half-line.** -/
 theorem integrableExpSet_id_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
@@ -529,3 +548,87 @@ theorem measurable_logNormalMeasure :
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+  {m : ℝ} {v : ℝ≥0}
+
+/-- A random variable with a log-normal law is almost surely positive, including at zero
+log-variance. -/
+theorem ae_pos_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) :
+    ∀ᵐ ω ∂P, 0 < X ω :=
+  hX.ae (TauCeti.Probability.ae_pos_logNormalMeasure m v)
+
+/-- Every real power of a log-normal random variable is integrable. -/
+theorem integrable_rpow_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) (q : ℝ) :
+    Integrable (fun ω => X ω ^ q) P := by
+  simpa only [Function.comp_def] using
+    (hX.integrable_comp_iff (f := fun x : ℝ => x ^ q) (by fun_prop)).2
+      (TauCeti.Probability.integrable_rpow_logNormalMeasure m v q)
+
+/-- The real-power moments of a log-normal random variable, including negative powers and the
+zero-log-variance boundary. -/
+theorem integral_rpow_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) (q : ℝ) :
+    ∫ ω, X ω ^ q ∂P = Real.exp (q * m + q ^ 2 * (v : ℝ) / 2) := by
+  rw [← Function.comp_def (f := fun x : ℝ => x ^ q), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_rpow_logNormalMeasure]
+
+/-- Every natural power of a log-normal random variable is integrable. -/
+theorem integrable_pow_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) (n : ℕ) :
+    Integrable (fun ω => X ω ^ n) P := by
+  simpa only [Function.comp_def] using
+    (hX.integrable_comp_iff (f := fun x : ℝ => x ^ n) (by fun_prop)).2
+      (TauCeti.Probability.integrable_pow_logNormalMeasure m v n)
+
+/-- The natural raw moments of a log-normal random variable. -/
+theorem integral_pow_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) (n : ℕ) :
+    ∫ ω, X ω ^ n ∂P =
+      Real.exp ((n : ℝ) * m + (n : ℝ) ^ 2 * (v : ℝ) / 2) := by
+  rw [← Function.comp_def (f := fun x : ℝ => x ^ n), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_logNormalMeasure]
+
+/-- The expectation of a log-normal random variable. -/
+theorem integral_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) :
+    ∫ ω, X ω ∂P = Real.exp (m + (v : ℝ) / 2) := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_logNormalMeasure]
+
+/-- The variance of a log-normal random variable. -/
+theorem variance_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) :
+    variance X P = (Real.exp (v : ℝ) - 1) * Real.exp (2 * m + (v : ℝ)) := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_logNormalMeasure]
+
+/-- An exponential moment of a log-normal random variable is finite exactly when the
+log-variance is zero or the exponential rate is nonpositive. -/
+theorem integrable_exp_mul_logNormalMeasure_iff
+    (hX : HasLaw X (logNormalMeasure m v) P) (t : ℝ) :
+    Integrable (fun ω => Real.exp (t * X ω)) P ↔ v = 0 ∨ t ≤ 0 := by
+  simpa only [Function.comp_def] using
+    (hX.integrable_comp_iff (f := fun x : ℝ => Real.exp (t * x)) (by fun_prop)).trans
+      (TauCeti.Probability.integrable_exp_mul_logNormalMeasure_iff m v t)
+
+/-- The exact exponential-integrability domain of a log-normal random variable. It is all of
+`ℝ` at zero log-variance and the nonpositive half-line otherwise. -/
+theorem integrableExpSet_logNormalMeasure (hX : HasLaw X (logNormalMeasure m v) P) :
+    integrableExpSet X P = if v = 0 then Set.univ else Set.Iic 0 := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq,
+    hX.integrable_exp_mul_logNormalMeasure_iff]
+  by_cases hv : v = 0 <;> simp [hv]
+
+/-- The moment-generating function of a zero-log-variance log-normal random variable. -/
+theorem mgf_logNormalMeasure_zero_var
+    (hX : HasLaw X (logNormalMeasure m 0) P) (t : ℝ) :
+    mgf X P t = Real.exp (t * Real.exp m) := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq,
+    TauCeti.Probability.mgf_id_logNormalMeasure_zero_var]
+
+/-- The cumulant-generating function of a zero-log-variance log-normal random variable. -/
+theorem cgf_logNormalMeasure_zero_var
+    (hX : HasLaw X (logNormalMeasure m 0) P) (t : ℝ) :
+    cgf X P t = t * Real.exp m := by
+  rw [cgf, hX.mgf_logNormalMeasure_zero_var, Real.log_exp]
+
+end ProbabilityTheory.HasLaw
