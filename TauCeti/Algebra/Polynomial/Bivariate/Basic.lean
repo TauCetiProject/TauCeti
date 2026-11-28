@@ -188,18 +188,14 @@ theorem natDegree_coeff_mul_le_of_le {R : Type*} [Semiring R] {P Q : R[X][Y]} {a
   exact natDegree_sum_le_of_forall_le _ _ fun x _ ↦
     natDegree_mul_le.trans (add_le_add (hP _) (hQ _))
 
-/-- If every coefficient of each `P i` in `R[X][Y]` has natural degree at most `a`, every
-coefficient of `∏ i ∈ s, P i` has natural degree at most `#s * a`. -/
+/-- If every coefficient of each `P i` in `R[X][Y]` has natural degree at most `a i`, every
+coefficient of `∏ i ∈ s, P i` has natural degree at most `∑ i ∈ s, a i`. -/
 theorem natDegree_coeff_prod_le_of_le {R ι : Type*} [CommSemiring R] (s : Finset ι)
-    (P : ι → R[X][Y]) {a : ℕ} (hP : ∀ i ∈ s, ∀ j, ((P i).coeff j).natDegree ≤ a) (n : ℕ) :
-    ((∏ i ∈ s, P i).coeff n).natDegree ≤ s.card * a := by
-  classical
-  induction s using Finset.induction_on generalizing n with
-  | empty => simp [coeff_one]; split_ifs <;> simp
-  | insert i s hi ih =>
-    rw [Finset.prod_insert hi, Finset.card_insert_of_notMem hi, add_mul, one_mul,
-      add_comm (s.card * a)]
-    exact natDegree_coeff_mul_le_of_le (hP i (Finset.mem_insert_self i s))
-      (fun j ↦ ih (fun k hk ↦ hP k (Finset.mem_insert_of_mem hk)) j) n
+    (P : ι → R[X][Y]) {a : ι → ℕ} (hP : ∀ i ∈ s, ∀ j, ((P i).coeff j).natDegree ≤ a i) (n : ℕ) :
+    ((∏ i ∈ s, P i).coeff n).natDegree ≤ ∑ i ∈ s, a i := by
+  refine (natDegree_swap_le_iff _ _).1 ?_ n
+  rw [map_prod]
+  exact (natDegree_prod_le _ _).trans
+    (Finset.sum_le_sum fun i hi ↦ (natDegree_swap_le_iff _ _).2 (hP i hi))
 
 end Polynomial

@@ -10,8 +10,8 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.RingTheory.Localization.FractionRing
-import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Bivariate.Basic
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.FieldTheory.Finite.Polynomial
 import TauCeti.FieldTheory.Finite.RootsOfUnity
 import TauCeti.FieldTheory.Kummer.RationalFunction
@@ -92,26 +92,15 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
     aeval (algebraMap F[X] (FractionRing F[X]) (C (f.eval a)) /
       algebraMap F[X] (FractionRing F[X]) f) Q = 0 := by
   set q := Nat.card F
-  set d := Q.natDegree
-  -- `f ^ q ≡ f(a)` modulo `(X - a) ^ q`, so `G = (scaleRoots Q f)(f(a)) ≡ f ^ d · Q(f ^ (q - 1))`.
+  -- `f ^ q ≡ f(a)` modulo `(X - a) ^ q`, so `G = (scaleRoots Q f)(f(a))` is congruent to
+  -- `(scaleRoots Q f)(f ^ q) = f ^ deg Q · Q(f ^ (q - 1))` (`Polynomial.scaleRoots_eval_mul`).
   have hfq : (X - C a) ^ q ∣ f ^ q - C (f.eval a) :=
     X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval a f
   have hG : (X - C a) ^ q ∣ (Q.scaleRoots f).eval (C (f.eval a)) := by
-    have hq1 : 1 ≤ q := Nat.one_le_iff_ne_zero.2 Nat.card_pos.ne'
-    rw [← dvd_sub_right (dvd_mul_of_dvd_right hdvd (f ^ d)), eval_eq_sum_range,
-      eval_eq_sum_range, natDegree_scaleRoots, Finset.mul_sum, ← Finset.sum_sub_distrib]
-    refine Finset.dvd_sum fun j hj ↦ ?_
-    have hj' : j ≤ d := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
-    have hpow : f ^ d * (f ^ (q - 1)) ^ j = (f ^ q) ^ j * f ^ (d - j) := by
-      rw [← pow_mul, ← pow_mul, ← pow_add, ← pow_add]
-      congr 1
-      zify [hq1, hj']
-      ring
-    have : f ^ d * (Q.coeff j * (f ^ (q - 1)) ^ j) - Q.coeff j * f ^ (d - j) * C (f.eval a) ^ j =
-        Q.coeff j * f ^ (d - j) * ((f ^ q) ^ j - C (f.eval a) ^ j) := by
-      linear_combination Q.coeff j * hpow
-    rw [coeff_scaleRoots, this]
-    exact dvd_mul_of_dvd_right (hfq.trans (sub_dvd_pow_sub_pow _ _ _)) _
+    have h1 : (X - C a) ^ q ∣ (Q.scaleRoots f).eval (f ^ q) := by
+      rw [← mul_pow_sub_one Nat.card_pos.ne' f, scaleRoots_eval_mul]
+      exact dvd_mul_of_dvd_right hdvd _
+    exact (dvd_sub_right h1).1 (hfq.trans (sub_dvd_eval_sub _ _ _))
   have hG0 : (Q.scaleRoots f).eval (C (f.eval a)) = 0 := by
     refine eq_zero_of_dvd_of_natDegree_lt hG ?_
     rw [natDegree_pow, natDegree_X_sub_C, mul_one, eval_eq_sum_range, natDegree_scaleRoots]
@@ -120,7 +109,7 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
     rw [coeff_scaleRoots, ← C_pow]
     refine (natDegree_mul_C_le _ _).trans (natDegree_mul_le.trans (add_le_add (hQcd _) ?_))
     exact natDegree_pow_le.trans (Nat.mul_le_mul_right _ (by lia))
-  -- In the fraction field, `G = f ^ d · Q(f(a) / f)` (`Polynomial.scaleRoots_eval₂_mul`).
+  -- In the fraction field, `G = f ^ deg Q · Q(f(a) / f)` (`Polynomial.scaleRoots_eval₂_mul`).
   set φ := algebraMap F[X] (FractionRing F[X])
   have hfK : φ f ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective F[X] _)).2 hf₀
   have h := scaleRoots_eval₂_mul (p := Q) φ (φ (C (f.eval a)) / φ f) f
@@ -143,13 +132,12 @@ private theorem exists_prod_comp_eq_expand {e D : ℕ} (he : e ≠ 0) {ζ : F}
     have hNdeg : N.natDegree ≤ e * (e - 1) := by
       refine (natDegree_prod_le (Finset.range e) _).trans ?_
       refine (Finset.sum_le_card_nsmul _ _ (e - 1) fun k _ ↦ ?_).trans (by simp)
-      exact natDegree_comp_le.trans ((Nat.mul_le_mul hP'
-        ((natDegree_C_mul_le _ _).trans natDegree_X_le)).trans (by lia))
+      exact (natDegree_comp_C_mul_X_le _ _).trans hP'
     rw [← hN, natDegree_expand, mul_comm e] at hNdeg
     have := Nat.le_of_mul_le_mul_right hNdeg (Nat.pos_of_ne_zero he)
     lia
   · rw [coeff_contract he]
-    refine (natDegree_coeff_prod_le_of_le _ _ (a := D) (fun k _ i ↦ ?_) _).trans (by simp)
+    refine (natDegree_coeff_prod_le_of_le _ _ (a := fun _ ↦ D) (fun k _ i ↦ ?_) _).trans (by simp)
     rw [comp_C_mul_X_coeff]
     exact natDegree_mul_le.trans (by rw [← C_pow, ← C_pow, natDegree_C, add_zero]; exact hPcd _)
 
@@ -195,7 +183,7 @@ private theorem eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
   have hinj := IsFractionRing.injective F[X] (FractionRing F[X])
   set φ := algebraMap F[X] (FractionRing F[X])
   have hP0 : P.map φ = 0 := by
-    refine eq_zero_of_prod_comp_C_mul_X_eq_expand (irreducible_X_pow_sub_C_div he0 hfa hf)
+    refine eq_zero_of_prod_comp_C_mul_X_eq_expand (irreducible_X_pow_sub_C_div he0 hfa hf).prime
       (ζ := φ (C ζ)) ((map_ne_zero_iff _ hinj).2 (C_ne_zero.2 (hζ.ne_zero he0)))
       ((natDegree_map_le).trans_lt hPdeg) (Q := Q.map φ) ?_ (by rwa [eval_map, ← aeval_def])
     rw [← map_expand, ← hNQ, Polynomial.map_prod]
