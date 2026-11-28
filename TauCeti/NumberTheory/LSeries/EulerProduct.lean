@@ -29,6 +29,10 @@ factor is nonzero, and its inverse is the local contribution to the Euler produc
 This is the shape of the L-function of a normalized Hecke eigenform, where `c p = χ(p) p^(k-1)`
 (Diamond–Shurman, Theorem 5.9.2), and it covers the completely multiplicative case `c = 0`.
 
+Restricting `a` to the indices prime to a modulus `Q` keeps the recurrence, with `c` restricted
+in the same way, so its L-series is the Euler product over the primes `p ∤ Q`; for `Q ≠ 0` it is
+`L(a, s)` times the finitely many quadratic factors at the primes `p ∣ Q`.
+
 Where the L-series converges absolutely and no local factor vanishes, `L(a, s) ≠ 0`: the Euler
 product is then an absolutely convergent product of nonzero factors. Under the recurrence the
 local factors never vanish, so the L-series is nonzero throughout its region of absolute
@@ -47,6 +51,10 @@ convergence.
   `∏'`.
 * `TauCeti.LSeries.LSeries_eulerProduct_of_recurrence`: the same, as convergence of the finite
   partial products over `Nat.primesBelow n`.
+* `TauCeti.LSeries.LSeries_coprime_eulerProduct_hasProd_of_recurrence`: the Euler product of
+  the coefficients prime to a modulus `Q`, over the primes `p ∤ Q`.
+* `TauCeti.LSeries.LSeries_coprime_eq_mul_prod_of_recurrence`: for `Q ≠ 0`, the L-series of
+  the coefficients prime to `Q` is `L(a, s)` times the quadratic factors at the primes `p ∣ Q`.
 * `TauCeti.LSeries.LSeries_ne_zero_of_tsum_term_prime_pow_ne_zero`: for a multiplicative `a` with
   absolutely convergent L-series, `L(a, s) ≠ 0` as soon as no local factor vanishes.
 * `TauCeti.LSeries.LSeries_ne_zero_of_recurrence`: under the recurrence, `L(a, s) ≠ 0` wherever
@@ -173,6 +181,94 @@ theorem LSeries_eulerProduct_of_recurrence (h₁ : a 1 = 1)
   have hp := prime_of_mem_primesBelow hp
   exact tsum_term_prime_pow_eq_inv_of_recurrence (p := ⟨p, hp⟩) h₁ (hrec p hp)
     (hs.comp_injective (Nat.pow_right_injective hp.two_le))
+
+/-! ### Removing the Euler factors at the primes dividing a modulus -/
+
+/-- **The Euler product of the coefficients prime to a modulus.** Under the hypotheses of
+`TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`, the L-series of the coefficients
+`a n` with `n` prime to `Q`, the others replaced by `0`, is the Euler product over the primes
+`p ∤ Q` of the quadratic factors, the factors at the primes `p ∣ Q` being replaced by `1`. -/
+theorem LSeries_coprime_eulerProduct_hasProd_of_recurrence (h₁ : a 1 = 1)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
+    (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
+      a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
+    (hs : LSeriesSummable a s) (Q : ℕ) :
+    HasProd (fun p : Primes ↦ if (p : ℕ).Coprime Q then
+        (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹ else 1)
+      (LSeries (fun n ↦ if n.Coprime Q then a n else 0) s) := by
+  -- the restricted coefficients satisfy the recurrence with `c` restricted in the same way
+  have H := LSeries_eulerProduct_hasProd_of_recurrence
+    (a := fun n ↦ if n.Coprime Q then a n else 0) (c := fun n ↦ if n.Coprime Q then c n else 0)
+    (s := s) (by simp [h₁])
+    (fun {m n} hm hn hmn ↦ by
+      by_cases hmQ : m.Coprime Q
+      · by_cases hnQ : n.Coprime Q
+        · simp only [ite_eq_left (Nat.Coprime.mul_left hmQ hnQ), ite_eq_left hmQ,
+            ite_eq_left hnQ, hmul hm hn hmn]
+        · simp only [ite_eq_right (mt Nat.Coprime.coprime_mul_left hnQ), ite_eq_right hnQ,
+            mul_zero]
+      · simp only [ite_eq_right (mt Nat.Coprime.coprime_mul_right hmQ), ite_eq_right hmQ,
+          zero_mul])
+    (fun p hp r ↦ by
+      by_cases hpQ : p.Coprime Q
+      · simp only [ite_eq_left (Nat.Coprime.pow_left _ hpQ), ite_eq_left hpQ]
+        exact hrec p hp r
+      · have hpow (e : ℕ) : ¬(p ^ (e + 1)).Coprime Q := by
+          rwa [Nat.coprime_pow_left_iff e.succ_pos]
+        simp only [ite_eq_right (hpow _), ite_eq_right hpQ, zero_mul, sub_zero])
+    (Summable.of_norm_bounded hs.norm fun n ↦ ?_)
+  · refine H.congr_fun fun p ↦ ?_
+    by_cases hpQ : (p : ℕ).Coprime Q
+    · simp only [ite_eq_left hpQ]
+    · simp only [ite_eq_right hpQ, zero_mul, sub_zero, add_zero, inv_one]
+  · rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    rw [LSeries.term_of_ne_zero hn, LSeries.term_of_ne_zero hn]
+    split_ifs
+    · exact le_rfl
+    · rw [zero_div, norm_zero]
+      exact norm_nonneg _
+
+/-- **Removing the Euler factors at the primes dividing a modulus.** Under the hypotheses of
+`TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`, for a nonzero modulus `Q` the
+L-series of the coefficients prime to `Q` is the L-series of `a` times the quadratic factors at
+the primes dividing `Q`:
+
+`L(a · 1_{(n, Q) = 1}, s) = L(a, s) ∏_{p ∣ Q} (1 - a p * p ^ (-s) + c p * p ^ (-2 s))`. -/
+theorem LSeries_coprime_eq_mul_prod_of_recurrence (h₁ : a 1 = 1)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
+    (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
+      a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
+    (hs : LSeriesSummable a s) {Q : ℕ} (hQ : Q ≠ 0) :
+    LSeries (fun n ↦ if n.Coprime Q then a n else 0) s =
+      LSeries a s *
+        ∏ p ∈ Q.primeFactors, (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s)) := by
+  set E : ℕ → ℂ := fun p ↦ 1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s)
+  -- the factors at the primes dividing `Q`, as a finitely supported family over the primes
+  have hT (p : Primes) : p ∈ Q.primeFactors.preimage (fun p : Primes ↦ (p : ℕ))
+      Subtype.val_injective.injOn ↔ ¬(p : ℕ).Coprime Q := by
+    refine Finset.mem_preimage.trans ?_
+    rw [Nat.mem_primeFactors_of_ne_zero hQ, Nat.Prime.coprime_iff_not_dvd p.prop, not_not]
+    exact and_iff_right p.prop
+  have hfin : HasProd (fun p : Primes ↦ if (p : ℕ).Coprime Q then 1 else E p)
+      (∏ p ∈ Q.primeFactors, E p) := by
+    have H := hasProd_prod_of_ne_finset_one (L := SummationFilter.unconditional Primes)
+      (s := Q.primeFactors.preimage (fun p : Primes ↦ (p : ℕ)) Subtype.val_injective.injOn)
+      (f := fun p : Primes ↦ if (p : ℕ).Coprime Q then 1 else E p) fun p hp ↦
+        ite_eq_left (not_not.mp (mt (hT p).mpr hp))
+    convert H using 1
+    symm
+    refine Finset.prod_bij (fun p _ ↦ (p : ℕ)) (fun p hp ↦ Finset.mem_preimage.mp hp)
+      (fun p _ q _ h ↦ Subtype.ext h) (fun p hp ↦ ⟨⟨p, Nat.prime_of_mem_primeFactors hp⟩,
+        Finset.mem_preimage.mpr hp, rfl⟩) fun p hp ↦ ite_eq_right ((hT p).mp hp)
+  have H := (LSeries_eulerProduct_hasProd_of_recurrence h₁ hmul hrec hs).mul hfin
+  refine (LSeries_coprime_eulerProduct_hasProd_of_recurrence h₁ hmul hrec hs Q).unique
+    (H.congr_fun fun p ↦ ?_)
+  by_cases hpQ : (p : ℕ).Coprime Q
+  · rw [ite_eq_left hpQ, ite_eq_left hpQ, mul_one]
+  · rw [ite_eq_right hpQ, ite_eq_right hpQ]
+    exact (inv_mul_cancel₀ (localFactor_ne_zero_of_recurrence h₁ p (hrec p p.prop)
+      (hs.comp_injective (Nat.pow_right_injective p.prop.two_le)))).symm
 
 /-! ### Nonvanishing -/
 
