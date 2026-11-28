@@ -1146,6 +1146,20 @@ theorem Hom.map_hom_left {D₀ : DescentDatum p X} {E₀ : DescentDatum p Y} (f 
     (f.map L).hom.left = L.map f.hom.left :=
   (rfl)
 
+/-- Transport along a pullback-preserving functor preserves identity morphisms of descent data. -/
+@[simp]
+theorem Hom.map_id (D₀ : DescentDatum p X) :
+    (Hom.id D₀).map L = Hom.id (D₀.map L) :=
+  Hom.ext (Over.OverMorphism.ext (by simp))
+
+/-- Transport along a pullback-preserving functor preserves composition of morphisms of descent
+data. -/
+@[simp]
+theorem Hom.map_comp {Z : Over S'} {D₀ : DescentDatum p X} {E₀ : DescentDatum p Y}
+    {F₀ : DescentDatum p Z} (g : Hom E₀ F₀) (f : Hom D₀ E₀) :
+    (g.comp f).map L = (g.map L).comp (f.map L) :=
+  Hom.ext (Over.OverMorphism.ext (by simp))
+
 /-- Reflect a morphism of descent data along a faithful pullback-preserving functor `L`. -/
 def Hom.ofMap [L.Faithful] {D₀ : DescentDatum p X} {E₀ : DescentDatum p Y} (g : X ⟶ Y)
     (h : Hom (D₀.map L) (E₀.map L)) (hg : h.hom.left = L.map g.left) : Hom D₀ E₀ where

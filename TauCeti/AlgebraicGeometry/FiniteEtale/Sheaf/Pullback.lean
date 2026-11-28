@@ -53,14 +53,15 @@ variable {S T : Scheme.{u}}
 private noncomputable def toEtaleCompSmallEtaleBaseChangeForgetIso (p : T ⟶ S) :
     (toEtale S ⋙ p.smallEtaleBaseChange) ⋙ Etale.forget T ≅
       (TauCeti.FiniteEtaleScheme.pullback p ⋙ toEtale T) ⋙ Etale.forget T :=
-  Functor.associator _ _ _ ≪≫
-    Functor.isoWhiskerLeft (toEtale S) p.smallEtaleBaseChangeCompForgetIso ≪≫
-    (Functor.associator _ _ _).symm ≪≫
-    Functor.isoWhiskerRight (eqToIso (toEtale_comp_forget S)) _ ≪≫
-    eqToIso (pullback_comp_ι p).symm ≪≫
-    Functor.isoWhiskerLeft (TauCeti.FiniteEtaleScheme.pullback p)
-      (eqToIso (toEtale_comp_forget T).symm) ≪≫
-    (Functor.associator _ _ _).symm
+  NatIso.ofComponents
+    (fun X ↦ CategoryTheory.Over.isoMk (Iso.refl (Limits.pullback X.obj.hom p))
+      (Category.id_comp _))
+    fun {X Y} f ↦ by
+      ext1
+      refine (Category.comp_id _).trans ((Category.id_comp _).symm.trans ?_)
+      simp only [Functor.comp_map, Etale.forget_map_left, smallEtaleBaseChange_map_left,
+        forget_map_toEtale_map, pullback_map_hom]
+      rfl
 
 /-- Compatibility of `toEtale` and base change `smallEtaleBaseChange` with `pullback p`, lifted
 from `Over T` along the fully faithful forgetful functor `Etale.forget T`. -/
@@ -80,16 +81,7 @@ lemma toEtaleCompSmallEtaleBaseChangeIso_hom_app_left (p : T ⟶ S)
   have h : Functor.whiskerRight (toEtaleCompSmallEtaleBaseChangeIso p).hom (Etale.forget T) =
       (toEtaleCompSmallEtaleBaseChangeForgetIso p).hom :=
     ((Functor.FullyFaithful.ofFullyFaithful (Etale.forget T)).whiskeringRight _).map_preimage _
-  refine (congrArg (fun η ↦ (η.app X).left) h).trans ?_
-  simp only [toEtaleCompSmallEtaleBaseChangeForgetIso, Iso.trans_hom, Functor.isoWhiskerLeft_hom,
-    Functor.isoWhiskerRight_hom, NatTrans.comp_app, Functor.whiskerLeft_app,
-    Functor.whiskerRight_app, Functor.associator_hom_app,
-    eqToIso.hom, Category.id_comp,
-    smallEtaleBaseChangeCompForgetIso_hom_app_left, Over.comp_left,
-    Functor.comp_obj, Etale.forget_obj_left, Over.pullback_obj_left,
-    Etale.forget_obj_hom, Functor.id_obj, Functor.const_obj_obj, ObjectProperty.ι_obj,
-    CategoryTheory.eqToHom_app, CategoryTheory.eqToHom_map, Over.eqToHom_left]
-  exact (Category.id_comp _).trans (eqToHom_refl (Limits.pullback X.obj.hom p) rfl)
+  exact congrArg (fun η ↦ (η.app X).left) h
 
 /-- On underlying schemes, the inverse component of `toEtaleCompSmallEtaleBaseChangeIso` is the
 identity on `Limits.pullback X.obj.hom p`. -/

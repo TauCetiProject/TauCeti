@@ -119,10 +119,15 @@ private noncomputable def preimageDescentDatumHom {S S' : Scheme.{u}} (p : S' �
   have : IsIso g_et :=
     let := hΦ.reflectsIsomorphisms
     isIso_of_reflects_iso g_et Φ
-  have hf_map : f_map.hom.left = (toScheme S).map g_et.left := by
-    have h := congrArg CategoryTheory.Over.Hom.left (hΦ.map_preimage g_scheme)
-    dsimp only [g_scheme, g_scheme_iso] at h
-    exact h.symm
+  have hf_map : f_map.hom.left = (toScheme S).map g_et.left :=
+    have h1 : (Φ.map g_et).left = e_left.hom :=
+      (congrArg CategoryTheory.Over.Hom.left (hΦ.map_preimage g_scheme)).trans
+        (CategoryTheory.Over.isoMk_hom_left _ _)
+    have h2 : (Φ.map g_et).left = g_et.left.left :=
+      (Etale.forget_map_left (U.iteratedSliceEquiv.functor.map g_et)).trans
+        (Etale.iteratedSliceEquiv_functor_map_left U g_et)
+    ((asIso_hom f_map.hom.left).symm.trans (h1.symm.trans h2)).trans
+      (MorphismProperty.Over.forget_comp_forget_map @Etale ⊤ S g_et.left).symm
   let f_et : (TauCeti.DescentDatum.baseChange p₀ X₀_et).Hom D :=
     TauCeti.DescentDatum.Hom.ofMap (toScheme S) g_et f_map hf_map
   have : IsIso f_et.hom := by
@@ -184,7 +189,9 @@ theorem exists_toSheaf_iso_of_smallEtalePullback_iso {S S' : Scheme.{u}} (p : S'
   have hp₀ : (toScheme S).map p₀ = p := toScheme_map_homMk p
   have hX_hom : (toScheme S).map X_et.hom = X.obj.hom := toScheme_map_toEtale_inverse_hom p X
   have : Surjective ((toScheme S).map p₀) := by rw [hp₀]; exact ‹Surjective p›
-  have : Surjective p₀.left := this
+  have : Surjective p₀.left := by
+    rw [← MorphismProperty.Over.forget_comp_forget_map @Etale ⊤ S p₀]
+    exact ‹Surjective ((toScheme S).map p₀)›
   have hp_flat : Flat p := inferInstance
   have : Flat ((toScheme S).map p₀) := by rw [hp₀]; exact hp_flat
   have : QuasiCompact ((toScheme S).map p₀) := by rw [hp₀]; exact ‹QuasiCompact p›

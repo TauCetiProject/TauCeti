@@ -138,15 +138,10 @@ theorem isSheafFor_singleton_over_of_surjective (F : Sheaf (smallEtaleTopology S
 theorem isSheafFor_mapPullbackAdj_counit_of_surjective (F : Sheaf (smallEtaleTopology S) (Type u))
     {U V : S.Etale} (g : U ⟶ V) [Surjective g.left] (T : Over V) :
     Presieve.IsSheafFor (F.over V).obj (.singleton ((Over.mapPullbackAdj g).counit.app T)) := by
-  have hsurj : Surjective (pullback.fst T.hom g).left :=
-    MorphismProperty.of_isPullback (P := @Surjective)
-      (IsPullback.of_isLimit
-        (isLimitOfHasPullbackOfPreservesLimit (Etale.forget S ⋙ Over.forget S) T.hom g)).flip
-      ‹_›
   have hcounit : ((Over.mapPullbackAdj g).counit.app T).left = pullback.fst T.hom g := by
     simp only [Over.mapPullbackAdj_counit_app, Over.homMk_left]
   have : Surjective ((Over.mapPullbackAdj g).counit.app T).left.left :=
-    hcounit ▸ hsurj
+    hcounit ▸ Etale.surjective_pullback_fst T.hom g
   exact isSheafFor_singleton_over_of_surjective F V ((Over.mapPullbackAdj g).counit.app T)
 
 /-- A family of étale `S`-schemes covers the small étale site of `S`, in the sense that it

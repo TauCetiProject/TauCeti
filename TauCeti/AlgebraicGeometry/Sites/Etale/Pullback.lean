@@ -260,6 +260,8 @@ noncomputable def yonedaCompSmallEtaleMapPushforwardIso (j : X ⟶ Y) [Etale j] 
       (j.smallEtalePullbackIsoMapPushforward (Type u)).symm ≪≫
     j.yonedaCompSmallEtalePullbackIso
 
+/-- Evaluating the forward component of `j.yonedaCompSmallEtaleMapPushforwardIso` on a section
+applies the base-change adjunction equivalence `j.smallEtaleMapBaseChangeAdj.homEquiv`. -/
 @[simp]
 lemma yonedaCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply (j : X ⟶ Y) [Etale j]
     (V : Y.Etale) (W : X.Etale) (s : j.smallEtaleMap.obj W ⟶ V) :
@@ -268,6 +270,9 @@ lemma yonedaCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply (j : X ⟶ Y) 
   j.smallEtaleMapBaseChangeAdj.sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom_app_apply
     (smallEtaleTopology X) (smallEtaleTopology Y) V W s
 
+/-- Evaluating the inverse component of `j.yonedaCompSmallEtaleMapPushforwardIso` on a section
+applies the inverse base-change adjunction equivalence
+`(j.smallEtaleMapBaseChangeAdj.homEquiv W V).symm`. -/
 @[simp]
 lemma yonedaCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply (j : X ⟶ Y) [Etale j]
     (V : Y.Etale) (W : X.Etale) (t : W ⟶ j.smallEtaleBaseChange.obj V) :
@@ -276,6 +281,9 @@ lemma yonedaCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply (j : X ⟶ Y) 
   j.smallEtaleMapBaseChangeAdj.yonedaCompSheafPullbackIso_inv_comp_sheafPullbackIso_hom_app_apply
     (smallEtaleTopology X) (smallEtaleTopology Y) V W t
 
+/-- For an étale morphism `j : X ⟶ Y`, the forward component of `j.yonedaCompSmallEtalePullbackIso`
+factors through `j.smallEtalePullbackIsoMapPushforward` and
+`j.yonedaCompSmallEtaleMapPushforwardIso`. -/
 lemma yonedaCompSmallEtalePullbackIso_hom_app_of_etale (j : X ⟶ Y) [Etale j] (V : Y.Etale) :
     j.yonedaCompSmallEtalePullbackIso.hom.app V =
       (j.smallEtalePullbackIsoMapPushforward (Type u)).hom.app
@@ -283,6 +291,9 @@ lemma yonedaCompSmallEtalePullbackIso_hom_app_of_etale (j : X ⟶ Y) [Etale j] (
         j.yonedaCompSmallEtaleMapPushforwardIso.hom.app V := by
   simp [yonedaCompSmallEtaleMapPushforwardIso]
 
+/-- For an étale morphism `j : X ⟶ Y`, the inverse component of `j.yonedaCompSmallEtalePullbackIso`
+factors through `j.yonedaCompSmallEtaleMapPushforwardIso` and
+`j.smallEtalePullbackIsoMapPushforward`. -/
 lemma yonedaCompSmallEtalePullbackIso_inv_app_of_etale (j : X ⟶ Y) [Etale j] (V : Y.Etale) :
     j.yonedaCompSmallEtalePullbackIso.inv.app V =
       j.yonedaCompSmallEtaleMapPushforwardIso.inv.app V ≫

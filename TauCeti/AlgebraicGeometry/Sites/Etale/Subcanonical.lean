@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
 import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
+import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 import TauCeti.CategoryTheory.Sites.Subcanonical
 
 /-!
@@ -86,12 +87,7 @@ theorem Etale.effectiveEpi_of_surjective {S : Scheme.{u}} {U V : S.Etale} (f : U
 theorem Etale.effectiveEpi_pullback_fst_of_surjective {S : Scheme.{u}} {U V W : S.Etale}
     (f : U ⟶ W) (g : V ⟶ W) [Surjective g.left] :
     EffectiveEpi (Limits.pullback.fst f g) :=
-  have : Surjective (Limits.pullback.fst f g).left :=
-    MorphismProperty.of_isPullback (P := @Surjective)
-      (IsPullback.of_isLimit
-        (Limits.isLimitOfHasPullbackOfPreservesLimit
-          (Etale.forget S ⋙ Over.forget S) f g)).flip
-      ‹_›
+  have := Etale.surjective_pullback_fst f g
   Etale.effectiveEpi_of_surjective _
 
 end AlgebraicGeometry.Scheme
