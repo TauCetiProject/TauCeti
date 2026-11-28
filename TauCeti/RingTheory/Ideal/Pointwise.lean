@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Pointwise
 
 /-!
@@ -15,7 +16,8 @@ A group acting on a ring by ring automorphisms permutes its maximal ideals: the 
 companion of Mathlib's `Ideal.IsPrime.smul`. In a commutative semiring, distinct ideals in the
 orbit of a maximal ideal are therefore pairwise coprime. For an `A`-linear action on `S`, any
 extended ideal `I.map (algebraMap A S)` and any ideal stabilized by `g` map into themselves under
-`MulSemiringAction.toAlgHom A S g`.
+`MulSemiringAction.toAlgHom A S g`. Contracting an ideal along `algebraMap A B` intertwines
+the pointwise actions of automorphisms of `A` and `B` that `algebraMap A B` intertwines.
 
 ## Main results
 
@@ -26,6 +28,10 @@ extended ideal `I.map (algebraMap A S)` and any ideal stabilized by `g` map into
   action element.
 * `Ideal.le_comap_toAlgHom_of_mem_stabilizer`: an element of `MulAction.stabilizer G I` maps `I`
   into itself via `MulSemiringAction.toAlgHom`.
+* `Ideal.under_smul_eq_smul_under`: if `algebraMap A B (σ • a) = δ • algebraMap A B a` for all
+  `a`, then `(δ • Q).under A = σ • Q.under A`.
+* `Ideal.orbit_inertia_stabilizer`: for any `G`-action, the orbits of the inertia subgroup of
+  `MulAction.stabilizer G Q` coincide with the orbits of `Q.inertia G`.
 -/
 
 public section
@@ -82,5 +88,29 @@ theorem le_comap_toAlgHom_of_mem_stabilizer {A S G : Type*} [CommSemiring A] [Se
   intro s hs
   rw [mem_comap, MulSemiringAction.toAlgHom_apply, ← hg']
   exact smul_mem_pointwise_smul g s I hs
+
+/-- **Contraction intertwines pointwise actions.** If `σ` acting on `A` and `δ` acting on `B` are
+intertwined by `algebraMap A B`, then the contraction of `δ • Q` to `A` is `σ` applied to the
+contraction of `Q`. Unlike `Ideal.smul_under`, the groups acting on `A` and on `B` may differ. -/
+theorem under_smul_eq_smul_under {A B G H : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
+    [Group G] [Group H] [MulSemiringAction G A] [MulSemiringAction H B] {σ : G} {δ : H}
+    (h : ∀ a : A, algebraMap A B (σ • a) = δ • algebraMap A B a) (Q : Ideal B) :
+    (δ • Q).under A = σ • Q.under A := by
+  ext y
+  rw [mem_pointwise_smul_iff_inv_smul_mem, mem_under, mem_under, ← smul_inv_smul σ y, h,
+    inv_smul_smul, smul_mem_pointwise_smul_iff]
+
+/-- For any action of `G` on `X`, the orbits of the inertia subgroup of the stabilizer of `Q`
+coincide with the orbits of `Q.inertia G`, because `Q.inertia G ≤ MulAction.stabilizer G Q`. -/
+theorem orbit_inertia_stabilizer {G R X : Type*} [Group G] [Ring R] [MulSemiringAction G R]
+    [MulAction G X] (Q : Ideal R) (x : X) :
+    MulAction.orbit (Q.inertia (MulAction.stabilizer G Q)) x = MulAction.orbit (Q.inertia G) x := by
+  ext y
+  simp only [MulAction.mem_orbit_iff, Subgroup.smul_def]
+  constructor
+  · rintro ⟨⟨d, hd⟩, rfl⟩
+    exact ⟨⟨d.val, Ideal.coe_mem_inertia.mpr hd⟩, rfl⟩
+  · rintro ⟨⟨g, hg⟩, rfl⟩
+    exact ⟨⟨⟨g, Q.inertia_le_stabilizer hg⟩, Ideal.coe_mem_inertia.mp hg⟩, rfl⟩
 
 end Ideal

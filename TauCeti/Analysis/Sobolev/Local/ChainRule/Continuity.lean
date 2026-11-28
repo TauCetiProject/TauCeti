@@ -31,8 +31,10 @@ Let `g : F → G` be `C¹` on an open set `W`. For a continuous map `u : ℂ →
 
 The uniform convergence hypothesis is not implied by `W^{1,p}(K)` convergence on an arbitrary
 compact set `K`, nor for `p ≤ 2`. For `p > 2` and continuous maps on an open planar domain,
-Morrey's embedding turns `W^{1,p}_loc` convergence into locally uniform convergence; that
-consequence is not proved here.
+Morrey's embedding turns `W^{1,p}_loc` convergence into locally uniform convergence
+(`TauCeti.tendstoLocallyUniformlyOn_of_tendsto_eLpNormWkp_of_two_lt_mul`), and
+`TauCeti.MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub_of_continuousOn` states the continuity
+without the hypothesis.
 
 ## Main declarations
 

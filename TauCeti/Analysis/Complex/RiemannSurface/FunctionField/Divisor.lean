@@ -28,7 +28,17 @@ meromorphic functions is needed.
 The same pullback computation bounds the degree of a finite holomorphic map `F : X → ℙ¹` by its
 poles. At a pole the affine part of `F` has order minus the local multiplicity, so if this order
 is at least `-D` everywhere, for an effective divisor `D`, then the fibre of `∞` counted with
-multiplicity is bounded by `D` and `deg F ≤ deg D`.
+multiplicity is bounded by `D` and `deg F ≤ deg D`. For `D = n[p]`,
+`TauCeti.RiemannSurface.FiniteHolomorphicMap.singlePole_of_neg_le_meromorphicOrderAt`
+uses this pullback-divisor bound to identify the entire fibre over infinity as `{p}` and the
+order there as minus the degree.
+
+Since a nonconstant meromorphic function `f` is the pullback of the sphere coordinate along itself,
+its local multiplicities are orders: at a point where `f` takes a finite value `c` the order of
+`f - c` is the local multiplicity of `f`
+(`TauCeti.RiemannSurface.MeromorphicFunction.order_sub_algebraMap_eq_localMultiplicity`), and at a
+pole the order of `f` is minus the local multiplicity
+(`TauCeti.RiemannSurface.MeromorphicFunction.order_eq_neg_localMultiplicity`).
 
 ## References
 
@@ -64,6 +74,56 @@ theorem order_coordinate_infty : order (∞ : OnePoint ℂ) coordinate = -1 := b
   rw [invChart_infty]
   simpa only [Pi.inv_def, id_eq, _root_.meromorphicOrderAt_id] using
     (_root_.meromorphicOrderAt_inv (f := (id : ℂ → ℂ)) (x := 0))
+
+/-- The function `z - c` on the sphere has a simple zero at `c`. -/
+@[simp]
+theorem order_coordinate_sub_algebraMap (c : ℂ) :
+    order (c : OnePoint ℂ)
+      (coordinate - algebraMap ℂ (MeromorphicFunction (OnePoint ℂ)) c) = 1 := by
+  -- In the affine chart at `c` the function is `z ↦ z - c`.
+  have h : (coordinate - algebraMap ℂ (MeromorphicFunction (OnePoint ℂ)) c).finitePart ∘
+      affineChart.symm = fun z ↦ z - c := by
+    funext z
+    rw [comp_apply, affineChart_symm_apply, finitePart_of_eq_coe
+      (sub_apply_of_eq_coe (coordinate_apply _) (congrFun (coe_algebraMap c) _))]
+  rw [order_apply, meromorphicOrderAt_def, chartAt_coe, h, affineChart_coe,
+    _root_.meromorphicOrderAt_id_sub_const]
+
+section LocalMultiplicity
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  [ConnectedSpace X] {f : MeromorphicFunction X} {x : X}
+
+/-- A nonconstant meromorphic function is the pullback of the coordinate of the Riemann sphere
+along itself. -/
+@[simp]
+theorem comap_coordinate (hne : ∃ x₁ x₂, f x₁ ≠ f x₂) :
+    comap f f.mdifferentiable hne coordinate = f :=
+  ext fun _ ↦ by rw [comap_apply, coordinate_apply]
+
+/-- **The local multiplicity at a finite value.** At a point `x` where a nonconstant meromorphic
+function `f` takes the finite value `c`, the order of `f - c` is the local multiplicity of `f`. -/
+theorem order_sub_algebraMap_eq_localMultiplicity (hne : ∃ x₁ x₂, f x₁ ≠ f x₂) {c : ℂ}
+    (hx : f x = c) :
+    order x (f - algebraMap ℂ (MeromorphicFunction X) c) = localMultiplicity f x := by
+  have h := meromorphicOrderAt_finitePart_comap (⇑f) f.mdifferentiable hne
+    (coordinate - algebraMap ℂ _ c) x
+  rwa [comap_sub, comap_coordinate, comap_algebraMap, ← order_apply, ← order_apply, hx,
+    order_coordinate_sub_algebraMap, one_mul] at h
+
+/-- **The local multiplicity at a pole.** At a pole `x` of a nonconstant meromorphic function `f`,
+the order of `f` is minus the local multiplicity of `f`. This is the meromorphic-function form of
+`FiniteHolomorphicMap.meromorphicOrderAt_affineChart_comp_of_eq_infty`, without the assumption that
+the fibres of `f` are finite. -/
+theorem order_eq_neg_localMultiplicity (hne : ∃ x₁ x₂, f x₁ ≠ f x₂) (hx : f x = ∞) :
+    order x f = ((-(localMultiplicity f x : ℤ) : ℤ) : WithTop ℤ) := by
+  have h := meromorphicOrderAt_finitePart_comap (⇑f) f.mdifferentiable hne coordinate x
+  rw [comap_coordinate, ← order_apply, ← order_apply, hx, order_coordinate_infty] at h
+  rw [h, ← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg]
+  norm_cast
+  exact neg_one_mul _
+
+end LocalMultiplicity
 
 /-- The coordinate's principal divisor is `[0] - [∞]`. -/
 theorem principalDivisor_coordinate :
@@ -211,5 +271,34 @@ theorem degree_le_degree_of_neg_le_meromorphicOrderAt [CompactSpace X] [T2Space 
   rw [← degree_divisorPullback_ofPoint F ∞]
   exact WeilDivisor.degree_le_of_le
     (divisorPullback_ofPoint_infty_le_of_neg_le_meromorphicOrderAt hD F hF)
+
+/-- A finite holomorphic map to the sphere whose poles are bounded by `n[p]` has exactly one
+pole, at `p`. Its order there is minus its degree, and its degree is at most `n`. -/
+theorem singlePole_of_neg_le_meromorphicOrderAt [CompactSpace X] [T2Space X]
+    (F : FiniteHolomorphicMap X (OnePoint ℂ)) (p : X) (n : ℕ)
+    (hF : ∀ x, ((-WeilDivisor.coeff (n • WeilDivisor.ofPoint p) x : ℤ) : WithTop ℤ) ≤
+      meromorphicOrderAt (fun y ↦ affineChart (F y)) x) :
+    degree F ≤ n ∧ F ⁻¹' {∞} = {p} ∧
+      meromorphicOrderAt (fun y ↦ affineChart (F y)) p = ((-(degree F : ℤ) : ℤ) : WithTop ℤ) := by
+  classical
+  have hD := nsmul_nonneg (WeilDivisor.ofPoint_nonneg p) n
+  have hdiv := F.divisorPullback_ofPoint_infty_le_of_neg_le_meromorphicOrderAt hD hF
+  have hpoint (x : X) (hx : F x = ∞) : x = p := by
+    by_contra hxp
+    have h : (localMultiplicity F x : ℤ) ≤ 0 := by
+      simpa [coeff_divisorPullback, hx, hxp] using WeilDivisor.le_iff.mp hdiv x
+    exact (localMultiplicity_pos F x).not_ge (by exact_mod_cast h)
+  have hfib : F ⁻¹' {∞} = {p} :=
+    (F.surjective.nonempty_preimage.mpr (Set.singleton_nonempty ∞)).subset_singleton_iff.mp
+      (Set.subset_singleton_iff.mpr hpoint)
+  have hp : F p = ∞ := hfib.symm.subset (Set.mem_singleton p)
+  have hdeg : degree F = localMultiplicity F p :=
+    degree_eq_localMultiplicity_of_preimage_eq_singleton F hfib
+  have horder : meromorphicOrderAt (fun y ↦ affineChart (F y)) p =
+      ((-(degree F : ℤ) : ℤ) : WithTop ℤ) := by
+    rw [hdeg, F.meromorphicOrderAt_affineChart_comp_of_eq_infty hp]
+  have hbound := F.degree_le_degree_of_neg_le_meromorphicOrderAt hD hF
+  simp only [map_nsmul, WeilDivisor.degree_ofPoint, nsmul_eq_mul, mul_one] at hbound
+  exact ⟨by exact_mod_cast hbound, hfib, horder⟩
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap

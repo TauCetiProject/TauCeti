@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Derivatives of improper tail integrals
@@ -32,6 +33,9 @@ integrability it suffices that `f` be continuous on `[-A, A]` for `A = ∫ u in 
 particular the integral of `g * Ψ ^ k` is `Ψ x ^ (k + 1) / (k + 1)`
 (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`) and that of `g * exp Ψ` is
 `exp (Ψ x) - 1` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
+If `f` is only integrable on each `(y, ∞)` with `y > a` and continuous on `(a, ∞)`, the tail
+integral still has derivative `-f x` at every `x > a`
+(`MeasureTheory.hasDerivAt_integral_Ioi_of_continuousOn`).
 The tail integral of a function nonnegative on `(a, ∞)` is antitone there
 (`MeasureTheory.antitoneOn_integral_Ioi`). If `f` is continuous from the right at `a` and `f`
 and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
@@ -39,9 +43,14 @@ and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
 (`MeasureTheory.integral_Ioi_of_hasDerivAt_of_integrableOn`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
-ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
+ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For a compactly
+supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable
+(`HasCompactSupport.integrable_id_mul_deriv`) and integration by parts gives `∫ x ψ' x = -∫ ψ`
+(`HasCompactSupport.integral_id_mul_deriv_eq_neg_integral`). For general
 Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
-change of variables `y = c + b * x` (`0 < b`) on `Ioi a`.
+change of variables `y = c + b * x` (`0 < b`) on `Ioi a`. Splitting `(c, ∞)` at two points bounds
+the norm of an integral over it by the integrals of majorants of its integrand on the three pieces
+(`TauCeti.norm_integral_Ioi_le_of_three_pieces`).
 
 The integrals of a function integrable on a strip `ℝ × T` over the rectangles `[a i, b i] × T`
 converge to its integral over the strip as `a i → -∞` and `b i → ∞`
@@ -59,6 +68,12 @@ integrable function over them converge to its integral. A nonnegative function w
 these preimages converge as the radii `r i` tend to infinity has the limit as its integral
 over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
 example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
+
+For improper interval integrals on a ray `[a, ∞)`,
+`MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub` shifts the lower endpoint between
+any two points of `[a, ∞)`, while
+`TauCeti.tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici` records the
+`intervalIntegral.integral_undef` collapse when local integrability fails.
 
 ## References
 
@@ -220,6 +235,16 @@ end MeasureTheory.IntegrableOn
 
 namespace MeasureTheory
 
+/-- If `f` is continuous on `(a, ∞)` and integrable on `(y, ∞)` for every `y > a`, then its tail
+integral has derivative `-f x` at every `x > a`. Unlike `IntegrableOn.hasDerivAt_integral_Ioi`,
+`f` need not be integrable on `(a, ∞)` itself. -/
+theorem hasDerivAt_integral_Ioi_of_continuousOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} {a x : ℝ}
+    (hint : ∀ y ∈ Ioi a, IntegrableOn f (Ioi y)) (hcont : ContinuousOn f (Ioi a))
+    (hx : x ∈ Ioi a) : HasDerivAt (fun t ↦ ∫ s in Ioi t, f s) (-f x) x := by
+  obtain ⟨y, hay, hyx⟩ := exists_between (mem_Ioi.1 hx)
+  exact (hint y hay).hasDerivAt_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hx)) hyx
+
 /-- If `f` is nonnegative on `(a, ∞)` and integrable on `(x, ∞)` for every `x > a`, then its tail
 integral `x ↦ ∫ v in Ioi x, f v` is antitone on `(a, ∞)`. -/
 theorem antitoneOn_integral_Ioi {f : ℝ → ℝ} {a : ℝ} (hf : ∀ v ∈ Ioi a, 0 ≤ f v)
@@ -265,6 +290,33 @@ theorem HasCompactSupport.integral_Ioi_fderiv_apply_ray {u : E → F}
   simpa only [hderiv, zero_smul, add_zero] using h
 
 end Ray
+
+section IdMulDeriv
+
+open MeasureTheory
+
+variable {ψ : ℝ → ℝ}
+
+/-- For a compactly supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable. -/
+theorem HasCompactSupport.integrable_id_mul_deriv (hψc : HasCompactSupport ψ)
+    (hψ : ContDiff ℝ 1 ψ) : Integrable fun x ↦ x * deriv ψ x :=
+  (continuous_id.mul (hψ.continuous_deriv le_rfl)).integrable_of_hasCompactSupport
+    (hψc.deriv.mul_left (f := fun x : ℝ ↦ x))
+
+/-- **Integration by parts against the identity.** For a compactly supported `C¹` function `ψ`
+on `ℝ`, `∫ x ψ' x = -∫ ψ`. -/
+theorem HasCompactSupport.integral_id_mul_deriv_eq_neg_integral (hψc : HasCompactSupport ψ)
+    (hψ : ContDiff ℝ 1 ψ) : ∫ x, x * deriv ψ x = -∫ x, ψ x := by
+  have h := integral_mul_deriv_eq_deriv_mul_of_integrable (u := fun x : ℝ ↦ x)
+    (u' := fun _ ↦ 1) (v := ψ) (v' := deriv ψ) (fun x _ ↦ hasDerivAt_id x)
+    (fun x _ ↦ (hψ.differentiable one_ne_zero x).hasDerivAt) (hψc.integrable_id_mul_deriv hψ)
+    ((continuous_const.mul hψ.continuous).integrable_of_hasCompactSupport
+      (hψc.mul_left (f := fun _ : ℝ ↦ (1 : ℝ))))
+    ((continuous_id.mul hψ.continuous).integrable_of_hasCompactSupport
+      (hψc.mul_left (f := fun x : ℝ ↦ x)))
+  simpa using h
+
+end IdMulDeriv
 
 namespace MeasureTheory.AECover
 
@@ -373,4 +425,64 @@ theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [Norm
       g (Ioi (c + b * a)),
     preimage_const_add_Ioi, add_sub_cancel_left]
 
+/-- If `g` fails `LocallyIntegrableOn g (Ici x) μ` for a measure without point masses, then
+`∫ t in x..R, g t ∂μ = 0` for all sufficiently large `R` by `intervalIntegral.integral_undef`,
+so `fun R ↦ ∫ t in x..R, g t ∂μ` tends to `0`. -/
+theorem tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ]
+    {x : ℝ} (hnot : ¬ LocallyIntegrableOn g (Ici x) μ) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 0) := by
+  rw [LocallyIntegrableOn] at hnot; push Not at hnot
+  obtain ⟨y, hy, hy_not⟩ := hnot
+  have hnot_Icc : ¬ IntegrableOn g (Icc x (y + 1)) μ := fun hIcc ↦ hy_not ⟨Icc x (y + 1), by
+    filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one y))] with _ h1 h2 using ⟨h1, h2.le⟩, hIcc⟩
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ge_atTop (y + 1)] with R hR
+  exact (intervalIntegral.integral_undef fun hInt ↦ hnot_Icc
+    (((intervalIntegrable_iff_integrableOn_Icc_of_le (by linarith [mem_Ici.mp hy])
+      eNorm_ne_top).mp hInt).mono_set (Icc_subset_Icc_right hR))).symm
+
+/-- **Bounding an integral over `(c, ∞)` piece by piece.** Split `(c, ∞)` at `c ≤ a ≤ δ`: if `‖φ‖`
+is dominated by integrable `g₁`, `g₂`, `g₃` on `(c, a]`, `(a, δ]` and `(δ, ∞)`, then
+`‖∫_c^∞ φ‖ ≤ ∫_c^a g₁ + ∫_a^δ g₂ + ∫_δ^∞ g₃`. -/
+theorem norm_integral_Ioi_le_of_three_pieces {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {φ : ℝ → E} {g₁ g₂ g₃ : ℝ → ℝ} {c a δ : ℝ} (hca : c ≤ a) (haδ : a ≤ δ)
+    (hφ : AEStronglyMeasurable φ (volume.restrict (Ioi c)))
+    (hi₁ : IntegrableOn g₁ (Ioc c a)) (hi₂ : IntegrableOn g₂ (Ioc a δ))
+    (hi₃ : IntegrableOn g₃ (Ioi δ)) (hb₁ : ∀ t ∈ Ioc c a, ‖φ t‖ ≤ g₁ t)
+    (hb₂ : ∀ t ∈ Ioc a δ, ‖φ t‖ ≤ g₂ t) (hb₃ : ∀ t ∈ Ioi δ, ‖φ t‖ ≤ g₃ t) :
+    ‖∫ t in Ioi c, φ t‖ ≤ (∫ t in Ioc c a, g₁ t) + (∫ t in Ioc a δ, g₂ t) + ∫ t in Ioi δ, g₃ t := by
+  have hφi {s : Set ℝ} {g : ℝ → ℝ} (hs : MeasurableSet s) (hsc : s ⊆ Ioi c)
+      (hg : IntegrableOn g s volume) (hb : ∀ t ∈ s, ‖φ t‖ ≤ g t) : IntegrableOn φ s :=
+    Integrable.mono' hg (hφ.mono_set hsc : AEStronglyMeasurable φ (volume.restrict s))
+      ((ae_restrict_iff' hs).mpr (Eventually.of_forall hb))
+  have hφ₁ := hφi measurableSet_Ioc Ioc_subset_Ioi_self hi₁ hb₁
+  have hφ₂ := hφi measurableSet_Ioc (fun t ht ↦ hca.trans_lt ht.1) hi₂ hb₂
+  have hφ₃ := hφi measurableSet_Ioi (Ioi_subset_Ioi (hca.trans haδ)) hi₃ hb₃
+  have hn {s : Set ℝ} {g : ℝ → ℝ} (hs : MeasurableSet s) (hg : IntegrableOn g s volume)
+      (hb : ∀ t ∈ s, ‖φ t‖ ≤ g t) : ‖∫ t in s, φ t‖ ≤ ∫ t in s, g t :=
+    norm_integral_le_of_norm_le hg ((ae_restrict_iff' hs).mpr (Eventually.of_forall hb))
+  rw [← Ioc_union_Ioi_eq_Ioi hca, setIntegral_union (Ioc_disjoint_Ioi le_rfl)
+    measurableSet_Ioi hφ₁ (by rw [← Ioc_union_Ioi_eq_Ioi haδ]; exact hφ₂.union hφ₃),
+    ← Ioc_union_Ioi_eq_Ioi haδ, setIntegral_union (Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
+    hφ₂ hφ₃, ← add_assoc]
+  exact (norm_add₃_le).trans (add_le_add_three (hn measurableSet_Ioc hi₁ hb₁)
+    (hn measurableSet_Ioc hi₂ hb₂) (hn measurableSet_Ioi hi₃ hb₃))
+
 end TauCeti
+
+/-- **Basepoint shifting for improper interval integrals on `[a, ∞)`.** If `g` is locally
+integrable on `[a, ∞)` and its improper integral from `b ≥ a` converges to `L`, then for every
+`x ≥ a` its improper integral from `x` converges to `L - ∫ t in b..x, g t ∂μ`. -/
+theorem MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} {a b x : ℝ} {L : E}
+    (hg : LocallyIntegrableOn g (Ici a) μ) (hb : a ≤ b) (hx : a ≤ x)
+    (hconv : Tendsto (fun R : ℝ ↦ ∫ t in b..R, g t ∂μ) atTop (𝓝 L)) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 (L - ∫ t in b..x, g t ∂μ)) := by
+  refine (hconv.sub_const (∫ t in b..x, g t ∂μ)).congr' ?_
+  filter_upwards [eventually_ge_atTop a] with R hR
+  rw [← intervalIntegral.integral_add_adjacent_intervals
+      (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hb hx))
+      (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hx hR)),
+    add_sub_cancel_left]

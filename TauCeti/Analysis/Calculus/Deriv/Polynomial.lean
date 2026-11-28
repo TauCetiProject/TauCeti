@@ -33,6 +33,8 @@ partial-fraction expansion of a rational function with a pole of order `m` at `a
 
 * `Polynomial.iteratedDeriv`: the iterated derivative of a polynomial function.
 * `Polynomial.hasDerivAt_eval_div_eval`: the quotient rule `(P / Q)' = W(Q, P) / Q²`.
+* `Polynomial.differentiableOn_eval_div_eval`: a polynomial quotient `p / q` is differentiable on
+  any set where `q` does not vanish.
 
 * `Polynomial.iteratedDeriv_eval_zero`: its value at `0` is `n !` times the coefficient of
   degree `n`.
@@ -76,6 +78,13 @@ theorem hasDerivAt_eval_div_eval {P Q : 𝕜[X]} {a : 𝕜} (hQ : Q.eval a ≠ 0
   rw [wronskian]
   simp only [eval_sub, eval_mul]
   ring
+
+/-- A rational function `p / q` of polynomials is differentiable on any set where `q` does not
+vanish. -/
+theorem differentiableOn_eval_div_eval {p q : 𝕜[X]} {s : Set 𝕜}
+    (hq : ∀ z ∈ s, q.eval z ≠ 0) :
+    DifferentiableOn 𝕜 (fun z ↦ p.eval z / q.eval z) s :=
+  p.differentiable.differentiableOn.div q.differentiable.differentiableOn hq
 
 /-- The `n`-th derivative of a polynomial function at `0` is `n !` times the coefficient of
 degree `n`. -/

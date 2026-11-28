@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.NumberTheory.RamificationInertia.Galois
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
@@ -79,6 +79,12 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   `TauCeti.LocalFieldsRamification.map_autCongr_lowerRamificationGroup`: transport of the lower
   filtration along valuation-preserving or base-continuous ring equivalences and `K`-algebra
   equivalences.
+* `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_ramificationGroupReal` and
+  `TauCeti.LocalFieldsRamification.lowerJump_iff_isLocalRingLowerJump`: agreement with the
+  `TauCeti.IsLocalRing` lower filtration and lower breaks on `𝒪[L]`.
+* `TauCeti.LocalFieldsRamification.ramificationGroup_integerRing_eq_integralClosure`:
+  agreement of the lower filtration on `𝒪[L]` with that on `integralClosure 𝒪[K₀] L` for
+  `K₀ ⊆ K ⊆ L`.
 
 ## References
 
@@ -101,6 +107,8 @@ abbrev RamificationIndexDomain : Set ℝ := Set.Ici (-1 : ℝ)
 theorem _root_.Nat.cast_mem_ramificationIndexDomain (n : ℕ) :
     (n : ℝ) ∈ RamificationIndexDomain :=
   le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)
+
+section
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -311,6 +319,13 @@ theorem lowerRamificationGroupReal_def (u : ℝ) :
     lowerRamificationGroupReal K L u = lowerRamificationGroup K L ⌈u⌉ :=
   TauCeti.IsLocalRing.ramificationGroupReal_def _ _ u
 
+/-- The real-indexed local-field filtration is the real-indexed ramification filtration of the
+integer ring. -/
+theorem lowerRamificationGroupReal_eq_ramificationGroupReal (u : ℝ) :
+    lowerRamificationGroupReal K L u =
+      TauCeti.IsLocalRing.ramificationGroupReal (L ≃ₐ[K] L) 𝒪[L] u :=
+  (rfl)
+
 variable {K L} in
 /-- Membership in the real-indexed lower ramification groups. -/
 @[simp]
@@ -355,23 +370,19 @@ theorem lowerJump_iff (u : RamificationIndexDomain) :
     LowerJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
       lowerRamificationGroupReal K L v < lowerRamificationGroupReal K L u := Iff.rfl
 
+/-- `LowerJump` agrees with `TauCeti.IsLocalRing.LowerJump` on `𝒪[L]`. -/
+theorem lowerJump_iff_isLocalRingLowerJump (u : RamificationIndexDomain) :
+    LowerJump K L u ↔ TauCeti.IsLocalRing.LowerJump (L ≃ₐ[K] L) 𝒪[L] u := by
+  rw [lowerJump_iff, TauCeti.IsLocalRing.lowerJump_iff]
+  simp_rw [lowerRamificationGroupReal_eq_ramificationGroupReal]
+  exact ⟨fun hu v huv ↦ hu ⟨v, u.property.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
+
 /-- Every lower break occurs at an integer index. -/
 theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u) :
     ∃ i : ℤ, ∃ hi : (-1 : ℝ) ≤ (i : ℝ), u = ⟨i, hi⟩ := by
-  let i := ⌈(u : ℝ)⌉
-  have hu : (u : ℝ) ≤ (i : ℝ) := Int.le_ceil _
-  have hi : (-1 : ℝ) ≤ (i : ℝ) := u.property.trans hu
-  refine ⟨i, hi, ?_⟩
-  rcases eq_or_lt_of_le hu with heq | hlt
-  · exact Subtype.ext heq
-  · have hstrict := (lowerJump_iff K L u).mp h ⟨(i : ℝ), hi⟩
-      (Subtype.mk_lt_mk.mpr hlt)
-    have hsame : lowerRamificationGroupReal K L (i : ℝ) =
-        lowerRamificationGroupReal K L (u : ℝ) := by
-      simp only [lowerRamificationGroupReal_def, Int.ceil_intCast]
-      rfl
-    rw [hsame] at hstrict
-    exact False.elim ((lt_irrefl _) hstrict)
+  obtain ⟨i, hi, hu⟩ :=
+    TauCeti.IsLocalRing.lowerJump_eq_intCast ((lowerJump_iff_isLocalRingLowerJump K L u).1 h)
+  exact ⟨i, by exact_mod_cast hi, Subtype.ext hu⟩
 
 /-- At an integer `i ≥ -1`, a lower break is exactly a strict decrease from `G_i` to
 `G_{i+1}`. -/
@@ -379,28 +390,8 @@ theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u)
 theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
     LowerJump K L ⟨i, hi⟩ ↔
       lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i := by
-  constructor
-  · intro h
-    have hi' : (-1 : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by
-      have h : (i : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by push_cast; linarith
-      exact hi.trans h
-    have hsucc : (⟨(i : ℝ), hi⟩ : RamificationIndexDomain) < ⟨(i + 1 : ℤ), hi'⟩ := by
-      apply Subtype.mk_lt_mk.mpr
-      exact_mod_cast (by omega : i < i + 1)
-    simpa only [lowerRamificationGroupReal_intCast] using
-      (lowerJump_iff K L _).mp h ⟨(i + 1 : ℤ), hi'⟩ hsucc
-  · intro h
-    apply (lowerJump_iff K L _).mpr
-    intro v hiv
-    have hreal : (i : ℝ) < (v : ℝ) := hiv
-    have hceil : i + 1 ≤ ⌈(v : ℝ)⌉ := by
-      have hlt : i < ⌈(v : ℝ)⌉ := (Int.lt_ceil).2 hreal
-      omega
-    have hle : lowerRamificationGroupReal K L v ≤
-        lowerRamificationGroup K L (i + 1) := by
-      rw [lowerRamificationGroupReal_def]
-      exact lowerRamificationGroup_antitone K L hceil
-    simpa only [Subtype.coe_mk, lowerRamificationGroupReal_intCast] using lt_of_le_of_lt hle h
+  rw [lowerJump_iff_isLocalRingLowerJump, Subtype.coe_mk, TauCeti.IsLocalRing.lowerJump_intCast_iff,
+    lowerRamificationGroup_def, lowerRamificationGroup_def]
 
 variable {K L} in
 /-- For a nontrivial automorphism group, `G_u` is trivial exactly for real `u` past the largest
@@ -556,5 +547,28 @@ theorem map_autCongr_lowerRamificationGroup (φ : L ≃ₐ[K] L') (i : ℤ) :
 end AlgEquiv
 
 end Transport
+
+end
+
+section IntegralClosure
+
+open TauCeti.IsLocalRing in
+/-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, the lower ramification filtration
+of `Gal(L/K)` on `𝒪[L]` equals its lower ramification filtration on `integralClosure 𝒪[K₀] L`. -/
+theorem ramificationGroup_integerRing_eq_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)] (i : ℤ) :
+    ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
+      ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) i := by
+  simpa only [Subgroup.comap_id] using ramificationGroup_eq_comap_of_ringEquiv
+    (φ := MonoidHom.id (L ≃ₐ[K] L))
+    (e := (TauCeti.integerRingEquivIntegralClosure K₀ L).toRingEquiv)
+    (fun _ _ ↦ Subtype.ext (by simp)) i
+
+end IntegralClosure
 
 end TauCeti.LocalFieldsRamification

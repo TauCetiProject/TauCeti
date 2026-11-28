@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Topology.Algebra.Module.Orthogonal
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -25,10 +26,15 @@ This file proves that these subspaces are norm closed and that passing to norm c
 not change an annihilator. Over the real or complex field, the preannihilator of the
 annihilator is precisely the norm closure of the original subspace. Consequently continuous
 annihilators distinguish norm closures, and a subspace is dense exactly when its annihilator
-is zero. No completeness or closedness hypothesis is needed. Dually, a finite-dimensional
-subspace of the strong dual is the continuous annihilator of its preannihilator. As an
+is zero. No completeness or closedness hypothesis is needed. In particular, a closed subspace whose
+annihilator is finite-dimensional has finite codimension
+(`Submodule.finiteDimensional_quotient_of_finiteDimensional_orthogonalBilin`). Dually, a
+finite-dimensional subspace of the strong dual is the continuous annihilator of its
+preannihilator. As an
 application, `ContinuousLinearMap.surjective_smul_add_apply_iff` decides when the map
 `(τ, ξ) ↦ τ • w + H ξ` onto the dual of a finite-dimensional space is onto, for a symmetric `H`.
+Over the real or complex field, a weak sum of a subfamily lies in the closed linear span of the
+family (`TauCeti.mem_topologicalClosure_span_range_of_forall_hasSum_indicator`).
 
 The analytic input is `exists_dual_vector''`, the norming-functional form of Hahn–Banach,
 applied to the seminormed quotient. In particular, the results also apply to seminormed
@@ -54,20 +60,13 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A preannihilator is norm closed in the original space. -/
 theorem isClosed_orthogonalBilin_topDualPairing (G : Submodule 𝕜 (StrongDual 𝕜 E)) :
-    IsClosed (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) := by
-  have heq : (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) =
-      ⋂ f ∈ G, {x | f x = 0} := by ext; simp
-  rw [heq]
-  exact isClosed_biInter fun f _ => isClosed_eq f.continuous continuous_const
+    IsClosed (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) :=
+  G.isClosed_orthogonalBilin _ fun f _ ↦ f.continuous
 
 /-- A continuous annihilator is norm closed in the strong dual. -/
 theorem isClosed_orthogonalBilin_topDualPairing_flip (S : Submodule 𝕜 E) :
-    IsClosed (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) := by
-  have heq : (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) =
-      ⋂ x ∈ S, {f | f x = 0} := by ext; simp
-  rw [heq]
-  exact isClosed_biInter fun x _ => isClosed_eq (ContinuousLinearMap.apply 𝕜 𝕜 x).continuous
-    continuous_const
+    IsClosed (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) :=
+  S.isClosed_orthogonalBilin _ fun x _ ↦ (ContinuousLinearMap.apply 𝕜 𝕜 x).continuous
 
 /-- Passing to norm closure does not change the continuous annihilator. -/
 @[simp]
@@ -186,9 +185,53 @@ theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜
     rw [← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S, h,
       Submodule.orthogonalBilin_bot]
 
+/-- **Finite codimension from a finite-dimensional annihilator.** A closed subspace whose
+continuous annihilator is finite-dimensional has finite codimension: by the double-annihilator
+theorem it is the common kernel of the evaluations on the annihilator, so the quotient embeds in
+the dual of the annihilator. -/
+theorem finiteDimensional_quotient_of_finiteDimensional_orthogonalBilin (S : Submodule 𝕜 E)
+    (hS : IsClosed (S : Set E))
+    [FiniteDimensional 𝕜 (S.orthogonalBilin (topDualPairing 𝕜 E).flip)] :
+    FiniteDimensional 𝕜 (E ⧸ S) := by
+  set G := S.orthogonalBilin (topDualPairing 𝕜 E).flip
+  -- Evaluation on the annihilator.
+  let L : E →ₗ[𝕜] Module.Dual 𝕜 G := (topDualPairing 𝕜 E).flip.compl₂ G.subtype
+  have hker : S = LinearMap.ker L := by
+    rw [← hS.submodule_topologicalClosure_eq,
+      ← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S]
+    ext x
+    simp only [mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply, LinearMap.mem_ker,
+      LinearMap.ext_iff, LinearMap.compl₂_apply, Submodule.subtype_apply, LinearMap.zero_apply,
+      Subtype.forall, L, G]
+  -- `Module.Dual 𝕜 G` is elaborated with the additive monoid structure of the submodule `G`, not
+  -- that of an additive group, so instance search does not find this instance.
+  have : FiniteDimensional 𝕜 (Module.Dual 𝕜 G) :=
+    Subspace.instModuleDualFiniteDimensional (K := 𝕜) (V := G)
+  exact .equiv ((Submodule.quotEquivOfEq _ _ hker).trans L.quotKerEquivRange).symm
+
 end RCLike
 
 end Submodule
+
+namespace TauCeti
+
+variable {𝕜 ι E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A weak sum of a subfamily lies in the norm closure of the linear span of the family: if
+`∑_{i ∈ A} f (u i)` sums to `f y` for every continuous functional `f`, then `y` lies in the closed
+linear span of the `u i`. -/
+theorem mem_topologicalClosure_span_range_of_forall_hasSum_indicator {u : ι → E} {A : Set ι}
+    {y : E} (hy : ∀ f : StrongDual 𝕜 E, HasSum (fun i ↦ f (A.indicator u i)) (f y)) :
+    y ∈ (Submodule.span 𝕜 (Set.range u)).topologicalClosure := by
+  rw [Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero]
+  intro f hf
+  refine (hy f).unique ?_
+  convert hasSum_zero with i
+  by_cases hi : i ∈ A
+  · simp [hi, hf _ (Submodule.subset_span (Set.mem_range_self _))]
+  · simp [hi]
+
+end TauCeti
 
 /-! ### Maps onto the dual of a finite-dimensional space -/
 

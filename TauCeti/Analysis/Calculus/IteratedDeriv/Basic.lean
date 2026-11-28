@@ -6,6 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -17,9 +18,15 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 This file collects general results about `iteratedDeriv`:
 
 * `TauCeti.iteratedDeriv_iteratedDeriv`: iterated derivatives compose additively.
-* `TauCeti.iteratedDeriv_eq_of_derivative_tower`, `TauCeti.contDiff_of_derivative_tower`: in a
-  sequence of functions linked by ordinary derivatives, the iterated derivatives of the initial
-  function are the later functions, and the initial function is smooth.
+* `TauCeti.iteratedDeriv_eqOn_of_derivative_tower`: in a finite sequence of functions linked by
+  ordinary derivatives on an open set, the iterated derivatives of the initial function agree
+  there with the later functions.
+* `TauCeti.contDiff_of_finite_derivative_tower`, `TauCeti.iteratedDeriv_eq_of_derivative_tower`,
+  `TauCeti.contDiff_of_derivative_tower`: in a finite or infinite sequence of functions linked by
+  ordinary derivatives, the iterated derivatives of the initial function are the later functions,
+  and the initial function is `C^m` or smooth.
+* `ContDiffOn.hasDerivAt_and_hasDerivAt_deriv`: a function that is `C²` on an open set has
+  derivative `deriv f` there, and `deriv f` has derivative `iteratedDeriv 2 f` there.
 * `TauCeti.iteratedDeriv_const_pi`: the `k`-th iterated derivative of a constant-across-coordinates
   family `ζ ↦ fun _ : α ↦ g ζ` is the constant family of `k`-th iterated derivatives.
 * `TauCeti.iteratedDerivInr`: the `k`-th iterated derivative of `f : (σ ⊕ τ → 𝕜) → F` in the
@@ -27,11 +34,15 @@ This file collects general results about `iteratedDeriv`:
   (`TauCeti.iteratedDerivInr_apply`, `TauCeti.iteratedDerivInr_zero`,
   `TauCeti.iteratedDerivInr_sumElim`, `TauCeti.iteratedDerivInr_const_pi`) and the
   Fréchet-derivative step (`DifferentiableAt.iteratedDerivInr_succ_eq_fderiv`).
+* `ContDiff.hasDerivAt_iteratedDeriv`: the derivative of the `r`-th iterated derivative of a `C^n`
+  function, `r < n`, is its `(r + 1)`-th iterated derivative.
+* `ContDiffOn.differentiableOn_iteratedDeriv`: on an open set, every iterated derivative of order
+  `< n` of a `C^n` function is differentiable.
 -/
 
 public section
 
-open scoped ContDiff
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -43,13 +54,47 @@ theorem iteratedDeriv_iteratedDeriv (n k : ℕ) (f : 𝕜 → E) :
     iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
   simp only [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
 
+/-- In a tower of functions whose first `n` members have the stated successive ordinary
+derivatives on an open set `U`, the `n`-th iterated derivative of the zeroth function agrees with
+the `n`-th function on `U`. -/
+theorem iteratedDeriv_eqOn_of_derivative_tower {F : ℕ → 𝕜 → E} {U : Set 𝕜} (hU : IsOpen U)
+    {n : ℕ} (hF : ∀ k < n, ∀ x ∈ U, HasDerivAt (F k) (F (k + 1) x) x) :
+    Set.EqOn (iteratedDeriv n (F 0)) (F n) U := by
+  induction n with
+  | zero => exact fun x _ ↦ by rw [iteratedDeriv_zero]
+  | succ n ih =>
+    intro x hx
+    have h : iteratedDeriv n (F 0) =ᶠ[𝓝 x] F n :=
+      Filter.eventually_of_mem (hU.mem_nhds hx) (ih fun k hk ↦ hF k (Nat.lt_succ_of_lt hk))
+    rw [iteratedDeriv_succ]
+    exact ((hF n n.lt_succ_self x hx).congr_of_eventuallyEq h).deriv
+
+/-- A finite tower of functions up to order `m` with successive ordinary derivatives and
+continuous top level gives a `C^m` zeroth function. -/
+theorem contDiff_of_finite_derivative_tower (F : ℕ → 𝕜 → E) (m : ℕ)
+    (hF : ∀ k < m, ∀ x, HasDerivAt (F k) (F (k + 1) x) x) (hcont : Continuous (F m)) :
+    ContDiff 𝕜 m (F 0) := by
+  have hiter : ∀ k ≤ m, iteratedDeriv k (F 0) = F k := by
+    intro k hk
+    induction k with
+    | zero => exact iteratedDeriv_zero
+    | succ k ih =>
+      rw [iteratedDeriv_succ, ih (Nat.le_of_succ_le hk)]
+      exact funext fun x ↦ (hF k hk x).deriv
+  refine contDiff_nat_iff_iteratedDeriv.2 ⟨fun k hk ↦ ?_, fun k hk ↦ ?_⟩
+  · rw [hiter k hk]
+    rcases hk.eq_or_lt with rfl | hlt
+    · exact hcont
+    · exact Differentiable.continuous fun x ↦ (hF k hlt x).differentiableAt
+  · rw [hiter k hk.le]
+    exact fun x ↦ (hF k hk x).differentiableAt
+
 /-- In a tower of functions with the stated successive ordinary derivatives, the `k`-th iterated
 derivative of the zeroth function is the `k`-th function. -/
 theorem iteratedDeriv_eq_of_derivative_tower {F : ℕ → 𝕜 → E}
-    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) (k : ℕ) : iteratedDeriv k (F 0) = F k := by
-  -- `F` semiconjugates the successor to `deriv`, so `F k = deriv^[k] (F 0)`.
-  have h : Function.Semiconj F Nat.succ deriv := fun n => (funext fun x => (hF n x).deriv).symm
-  simpa [iteratedDeriv_eq_iterate, Nat.succ_iterate] using ((h.iterate_right k).eq 0).symm
+    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) (k : ℕ) : iteratedDeriv k (F 0) = F k :=
+  funext fun x ↦
+    iteratedDeriv_eqOn_of_derivative_tower isOpen_univ (fun j _ y _ ↦ hF j y) (Set.mem_univ x)
 
 /-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
 function. -/
@@ -59,6 +104,17 @@ theorem contDiff_of_derivative_tower (F : ℕ → 𝕜 → E)
   intro k _
   rw [iteratedDeriv_eq_of_derivative_tower hF k]
   exact fun x ↦ (hF k x).differentiableAt
+
+/-- A function that is `C²` on an open set `s` has derivative `deriv f x` at every `x ∈ s`, and
+`deriv f` has derivative `iteratedDeriv 2 f x` there. -/
+theorem _root_.ContDiffOn.hasDerivAt_and_hasDerivAt_deriv {f : 𝕜 → E} {s : Set 𝕜} {x : 𝕜}
+    (hf : ContDiffOn 𝕜 2 f s) (hs : IsOpen s) (hx : x ∈ s) :
+    HasDerivAt f (deriv f x) x ∧ HasDerivAt (deriv f) (iteratedDeriv 2 f x) x := by
+  have hxs := hs.mem_nhds hx
+  refine ⟨((hf.contDiffAt hxs).differentiableAt (by norm_num)).hasDerivAt, ?_⟩
+  rw [iteratedDeriv_succ, iteratedDeriv_one]
+  exact (((hf.deriv_of_isOpen hs (m := 1) (by norm_num)).contDiffAt hxs).differentiableAt
+    (by norm_num)).hasDerivAt
 
 variable {σ τ F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
@@ -125,6 +181,19 @@ theorem iteratedDerivInr_const_pi {α : Type*} [Fintype α] [Unique τ] (k : ℕ
 
 end TauCeti
 
+section ContDiff
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The derivative of the `r`-th iterated derivative of a `C^n` function, `r < n`, is its
+`(r + 1)`-th iterated derivative. -/
+theorem ContDiff.hasDerivAt_iteratedDeriv {f : 𝕜 → F} {n : ℕ∞ω} {r : ℕ} (hf : ContDiff 𝕜 n f)
+    (hr : r < n) (x : 𝕜) : HasDerivAt (iteratedDeriv r f) (iteratedDeriv (r + 1) f x) x := by
+  rw [iteratedDeriv_succ]
+  exact (hf.differentiable_iteratedDeriv r hr x).hasDerivAt
+
+end ContDiff
+
 section IteratedDerivInr
 
 variable {𝕜 σ τ F : Type*} [NontriviallyNormedField 𝕜] [Unique τ]
@@ -156,3 +225,12 @@ theorem DifferentiableAt.iteratedDerivInr_succ_eq_fderiv [Finite σ] {f : (σ �
   simpa [hφz, Function.comp_def] using (hGφ.comp_hasDerivAt (z (.inr default)) hφ_deriv).deriv
 
 end IteratedDerivInr
+
+/-- On an open set `s`, every iterated derivative of order `< n` of a `C^n` function is
+differentiable on `s`. -/
+theorem ContDiffOn.differentiableOn_iteratedDeriv {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {s : Set 𝕜} {n : ℕ∞ω} {m : ℕ}
+    (hf : ContDiffOn 𝕜 n f s) (hmn : m < n) (hs : IsOpen s) :
+    DifferentiableOn 𝕜 (iteratedDeriv m f) s :=
+  (hf.differentiableOn_iteratedDerivWithin hmn hs.uniqueDiffOn).congr
+    fun _ hz ↦ (iteratedDerivWithin_of_isOpen hs hz).symm

@@ -28,8 +28,12 @@ the middle level `t = 1 / 2` (`TauCeti.morseDigonSlice`). They are rigid when
 `ind q = ind p + 1`: such trajectories, of continuation index `-1`, appear only at isolated
 parameters. The homotopy `K = TauCeti.morseDegreeOneMap f₀ hf₁ (morseDigonSlice V)`, of degree
 `+1`, counts them modulo two. As for the continuation map, the definitions take no hypothesis on
-`V`; they are the trajectory counts only when the slices are finite, which is expected for
-admissible families under the parametrized transversality condition, and is not proved here.
+`V`; they are the trajectory counts only when the slices are finite, which holds for transverse
+families of `C¹` continuation fields between Morse–Smale pseudo-gradients of Morse functions whose
+transition maps are continuous jointly in the parameter and the point, and differentiable at the
+digon trajectories (`TauCeti.IsContinuationFamily.finite_morseDigonSlice`), in particular for
+transverse families of continuation fields jointly `C¹` in the parameter and the point
+(`TauCeti.IsContinuationFamily.finite_morseDigonSlice_of_contMDiff`).
 
 **The ends of the one-dimensional digon trajectory spaces.** When `ind p = ind q`, the digon
 trajectories from `p` to `q` are expected to form a one-dimensional space with four kinds of ends:
@@ -50,7 +54,11 @@ between any two critical points of equal index, the four kinds of ends are evenl
 half of the independence of the continuation map from the choice of path within its homotopy class;
 the geometric half, that these four sets are the ends of compact one-dimensional manifolds with
 boundary, needs the compactification and gluing of the parametrized continuation trajectory spaces
-and is not proved here.
+and is not proved here. For a family of continuation fields with uniform end windows, the digon
+trajectories are described through the transition maps of the slab in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Digon`, which restates the criterion for
+the intersections of the unstable manifolds of `X₀` with the preimages of the stable manifolds of
+`X₁` under a one-parameter family of diffeomorphisms of `M`.
 
 **The chain homotopy.** When `F⁰` is a chain map and the digon identity holds, `F¹` is a chain
 map as well (`LinearMap.comp_eq_comp_of_comp_add_comp_eq_add`), and the graded homotopy

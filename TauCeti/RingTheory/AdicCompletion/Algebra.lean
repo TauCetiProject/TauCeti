@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.RingTheory.AdicCompletion.Completeness
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.RingTheory.AdicCompletion.AlgHom
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The powers of the extended ideal in the adic completion of a ring
@@ -26,12 +28,18 @@ exponential characteristic of `R`.
 ## Main results
 
 * `AdicCompletion.ker_evalₐ_eq_map_pow`: the kernel of `R̂ → R ⧸ I ^ n` is `I ^ n R̂`.
+* `AdicCompletion.ker_toQuotient`: the kernel of `toQuotient` for any ideal containing a
+  power of the finitely generated completion ideal.
 * `AdicCompletion.quotientMapPowAlgEquiv`: the isomorphism of `R`-algebras
   `R̂ ⧸ I ^ n R̂ ≃ R ⧸ I ^ n`.
 * `AdicCompletion.algebraMap_mem_map_pow_iff`: the image of `x ∈ R` lies in `I ^ n R̂` if and
   only if `x ∈ I ^ n`.
 * `AdicCompletion.exists_sub_algebraMap_mem_map_pow`: every element of `R̂` is congruent
   modulo `I ^ n R̂` to the image of an element of `R`.
+* `AdicCompletion.of_smul`: the canonical map `N → N̂` from an `R̂`-module to its `I`-adic
+  completion is `R̂`-linear.
+* `AdicCompletion.ringHom_ext`: two ring homomorphisms out of `R̂` into a ring that is Hausdorff
+  for an ideal `J`, which carry `I R̂` into `J` and agree on the image of `R`, are equal.
 * `AdicCompletion.quotientMap_algebraMap_bijective`: the map `R ⧸ I ^ n → R̂ ⧸ (I R̂) ^ n` induced
   by `R → R̂` is bijective; `AdicCompletion.quotientMap_algebraMap_bijective_one` is the case
   `n = 1`.
@@ -62,6 +70,24 @@ theorem ker_evalₐ_eq_map_pow (fg : I.FG) (n : ℕ) :
     -- The factor map is the quotient equivalence from which `evalₐ` is built.
     exact map_eq_zero_iff _ (Ideal.quotientEquivAlgOfEq R eq).injective
   · simp [← pow_smul_top_eq_ker_eval fg, Ideal.smul_top_eq_map]
+
+/-- For finitely generated `I` and any ideal `K` containing a power of `I`, the kernel of
+the projection `AdicCompletion I R →+* R ⧸ K` is the extension of `K` to the completion. -/
+theorem ker_toQuotient (I : Ideal R) {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (hfg : I.FG) :
+    RingHom.ker (toQuotient I hK) = K.map (algebraMap R (AdicCompletion I R)) := by
+  obtain ⟨n, hn⟩ := hK
+  have hcomp : (evalₐ I n).toRingHom.comp (algebraMap R (AdicCompletion I R)) =
+      Ideal.Quotient.mk (I ^ n) :=
+    RingHom.ext (evalₐ_of I n)
+  have hker : RingHom.ker (evalₐ I n).toRingHom =
+      (I ^ n).map (algebraMap R (AdicCompletion I R)) :=
+    ker_evalₐ_eq_map_pow hfg n
+  have hpullback : (K.map (Ideal.Quotient.mk (I ^ n))).comap (evalₐ I n).toRingHom =
+      K.map (algebraMap R (AdicCompletion I R)) := by
+    rw [← hcomp, ← Ideal.map_map,
+      Ideal.comap_map_of_surjective' (evalₐ I n).toRingHom (surjective_evalₐ I n), hker]
+    exact sup_eq_left.mpr (Ideal.map_mono hn)
+  simpa only [toQuotient_eq I _ hn, ← RingHom.comap_ker, Ideal.Quotient.factor_ker] using hpullback
 
 /-- For a finitely generated ideal `I`, the adic completion modulo the extension of `I ^ n` is
 `R ⧸ I ^ n`: the isomorphism is induced by the projection `R̂ → R ⧸ I ^ n`. -/
@@ -98,6 +124,45 @@ theorem exists_sub_algebraMap_mem_map_pow (fg : I.FG) (n : ℕ) (x : AdicComplet
   refine ⟨y, ?_⟩
   rw [← ker_evalₐ_eq_map_pow fg, RingHom.mem_ker, map_sub, ← hy]
   exact sub_eq_zero.mpr (evalₐ_of I n y).symm
+
+/-- For a finitely generated ideal `I` and a module `N` over the completion `R̂` (with compatible
+`R`-module structure), the canonical map `N → N̂` into the `I`-adic completion of `N` is
+`R̂`-linear, and not only `R`-linear. -/
+theorem of_smul (fg : I.FG) {N : Type*} [AddCommGroup N] [Module (AdicCompletion I R) N]
+    [Module R N] [IsScalarTower R (AdicCompletion I R) N] (x : AdicCompletion I R) (m : N) :
+    of I N (x • m) = x • of I N m := by
+  ext n
+  -- `x` is the image of some `y ∈ R` up to an element `d` of `I ^ n R̂`
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_map_pow fg n x
+  obtain ⟨d, hd, rfl⟩ : ∃ d ∈ (I ^ n).map (algebraMap R (AdicCompletion I R)),
+      x = d + algebraMap R _ y := ⟨_, hy, (sub_add_cancel _ _).symm⟩
+  -- so `d • m` vanishes in `N ⧸ I ^ n N`, and `d` acts by zero on the `n`-th level of `N̂`
+  have hm : d • m ∈ (I ^ n • ⊤ : Submodule R N) := by
+    have h : d • m ∈ ((I ^ n).map (algebraMap R (AdicCompletion I R)) • ⊤ :
+        Submodule (AdicCompletion I R) N) := Submodule.smul_mem_smul hd Submodule.mem_top
+    rwa [← Submodule.restrictScalars_mem R, Ideal.smul_restrictScalars,
+      Submodule.restrictScalars_top] at h
+  have hx : evalₐ I n d = 0 := by rwa [← RingHom.mem_ker, ker_evalₐ_eq_map_pow fg]
+  simpa [add_smul, smul_eval, hx, (Submodule.Quotient.mk_eq_zero _).mpr hm] using
+    val_smul_eq_evalₐ_smul I n d (Submodule.Quotient.mk m)
+
+/-- **Ring homomorphisms out of the adic completion are determined on `R`.** For a finitely
+generated ideal `I`, two ring homomorphisms `R̂ → T` into a ring that is Hausdorff for an ideal `J`,
+which both carry `I R̂` into `J` and agree on the image of `R`, are equal. -/
+theorem ringHom_ext {T : Type*} [CommRing T] {J : Ideal T} [IsHausdorff J T] (fg : I.FG)
+    {g h : AdicCompletion I R →+* T}
+    (hg : I.map (algebraMap R (AdicCompletion I R)) ≤ J.comap g)
+    (hh : I.map (algebraMap R (AdicCompletion I R)) ≤ J.comap h)
+    (H : g.comp (algebraMap R (AdicCompletion I R)) = h.comp (algebraMap R (AdicCompletion I R))) :
+    g = h := by
+  refine RingHom.ext (congrFun (IsHausdorff.funext' J fun n x ↦ ?_))
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_map_pow fg n x
+  rw [Ideal.map_pow] at hy
+  have hy' := RingHom.congr_fun H y
+  simp only [RingHom.comp_apply] at hy'
+  rw [Ideal.Quotient.eq, ← sub_add_cancel x (algebraMap R _ y), map_add, map_add, hy',
+    add_sub_add_right_eq_sub]
+  exact sub_mem (Ideal.map_mem_pow_of_le_comap g hg hy) (Ideal.map_mem_pow_of_le_comap h hh hy)
 
 /-- For a finitely generated ideal `I`, the map `R ⧸ I ^ n → R̂ ⧸ (I R̂) ^ n` induced by the
 canonical map `R → R̂` is bijective: `R` and its `I`-adic completion have the same reductions. -/

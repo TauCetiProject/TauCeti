@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
@@ -74,7 +74,11 @@ The pullback of a `C^n` vector bundle along a `C^n` map `f`, given as an element
 `ContinuousMapClass` rather than as a bundled `C^n` map, is a `C^n` vector bundle
 (`Bundle.Pullback.contMDiffVectorBundle`). In particular this makes the pullback along the
 underlying continuous map `(g : C(B', B))` of a bundled `C^n` map `g` a `C^n` vector bundle
-(`ContMDiffVectorBundle.pullbackContinuousMap`).
+(`ContMDiffVectorBundle.pullbackContinuousMap`), and the restriction of a `C^n` vector bundle to
+an open subset, its pullback along the inclusion, a `C^n` vector bundle
+(`Bundle.Pullback.contMDiffVectorBundle_opens`), as are the pullbacks of a `C^n` vector bundle
+along the projections of a product (`Bundle.Pullback.contMDiffVectorBundle_fst`,
+`Bundle.Pullback.contMDiffVectorBundle_snd`).
 
 ## References
 
@@ -390,6 +394,25 @@ its coercion through `C(B', B)`. -/
 instance ContMDiffVectorBundle.pullbackContinuousMap [ContMDiffVectorBundle n F E IB]
     (g : C^n⟮IB', B'; IB, B⟯) : ContMDiffVectorBundle n F ((g : C(B', B)) *ᵖ E) IB' :=
   Bundle.Pullback.contMDiffVectorBundle (f := (g : C(B', B))) g.contMDiff
+
+/-- The restriction of a `C^n` vector bundle to an open subset, its pullback along the inclusion,
+is a `C^n` vector bundle. -/
+instance Bundle.Pullback.contMDiffVectorBundle_opens [ContMDiffVectorBundle n F E IB]
+    (U : TopologicalSpace.Opens B) :
+    ContMDiffVectorBundle n F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, B)) *ᵖ E) IB :=
+  Bundle.Pullback.contMDiffVectorBundle contMDiff_subtypeVal
+
+/-- The pullback of a `C^n` vector bundle on `B` along the first projection of `B × B'` is a `C^n`
+vector bundle. -/
+instance Bundle.Pullback.contMDiffVectorBundle_fst [ContMDiffVectorBundle n F E IB] :
+    ContMDiffVectorBundle n F ((ContinuousMap.fst : C(B × B', B)) *ᵖ E) (IB.prod IB') :=
+  Bundle.Pullback.contMDiffVectorBundle contMDiff_fst
+
+/-- The pullback of a `C^n` vector bundle on `B` along the second projection of `B' × B` is a `C^n`
+vector bundle. -/
+instance Bundle.Pullback.contMDiffVectorBundle_snd [ContMDiffVectorBundle n F E IB] :
+    ContMDiffVectorBundle n F ((ContinuousMap.snd : C(B' × B, B)) *ᵖ E) (IB'.prod IB) :=
+  Bundle.Pullback.contMDiffVectorBundle contMDiff_snd
 
 end ContMDiffVectorBundle
 

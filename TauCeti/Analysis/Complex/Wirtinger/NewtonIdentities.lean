@@ -52,8 +52,15 @@ equation of the elementary symmetric functions of points moving by `D_C`.
 Under a change of frame `W ↦ g W` the moments become `gᵏ M_k` and `g^ℓ \bar g Q_ℓ`, the Newton
 coefficients become `gʲ b_j` (`TauCeti.newton_eq_pow_mul`), and the coefficients of `D_C` become
 `ν - g⁻¹ \bar∂g` and `(g / \bar g) μ`. The defect `E_k` is then multiplied by `gᵏ`
-(`TauCeti.conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul`), so the equation above is
-frame-independent.
+(`TauCeti.conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul`), and the combination `A_j` by `gʲ`
+(`TauCeti.sum_smul_conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul`), so the equation above is
+frame-independent. In the form through the roots, the roots become `g R`, and the left side
+`\bar∂ b_j + j ν b_j + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` is multiplied by `gʲ`
+(`TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`): the remainder `R_j`
+transforms like `b_j`. For a constant frame this holds without differentiability
+(`TauCeti.conjWirtingerDeriv_const_pow_mul_add_add_esymm_erase_eq_pow_smul`); a nonzero real
+constant `a`, the passage from rescaled to physical coefficients `aʲ b_j`, leaves `ν` and `μ`
+unchanged.
 
 Here `\bar∂` is `TauCeti.conjWirtingerDeriv`, the base is any complex normed space, and the
 `(0,1)`-forms `ν`, `μ` and `E_k` are complex-antilinear functionals.
@@ -65,6 +72,12 @@ Here `\bar∂` is `TauCeti.conjWirtingerDeriv`, the base is any complex normed s
 * `TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton`: its form through the roots.
 * `TauCeti.norm_conjWirtingerDeriv_add_esymm_erase_le_of_newton`: the bound on its remainder.
 * `TauCeti.conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul`: the frame law of the defects.
+* `TauCeti.sum_smul_conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul`: the frame law of their
+  Newton combination `A_j`.
+* `TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`: the frame law of the
+  equation through the roots.
+* `TauCeti.conjWirtingerDeriv_const_pow_mul_add_add_esymm_erase_eq_pow_smul`: the same for a
+  constant frame, without differentiability.
 
 ## References
 
@@ -198,5 +211,83 @@ theorem conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul {g : V → ℂ} {M : V �
   rw [hpow]
   field_simp
   module
+
+/-- **The frame law of the Newton combination of the defects.** Under a change of frame
+`W ↦ g W` as in `TauCeti.conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul`, with the coefficients
+`b_i` becoming `gⁱ b_i`, the combination
+`A_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} E_k / k` of the moment defects `E_k` is multiplied by
+`gʲ`. -/
+theorem sum_smul_conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul {g : V → ℂ}
+    (hg : DifferentiableAt ℝ g x) (hgx : g x ≠ 0) (hM : ∀ k ∈ Icc 1 j, DifferentiableAt ℝ (M k) x)
+    (ν μ : V →L⋆[ℂ] ℂ) (Q : ℕ → ℂ) :
+    ∑ k ∈ Icc 1 j, ((-1) ^ (k - 1) * (g x ^ (j - k) * b (j - k) x) / k) •
+        (conjWirtingerDeriv (fun y ↦ g y ^ k * M k y) x +
+          (k * (g x ^ k * M k x)) • (ν - (g x)⁻¹ • conjWirtingerDeriv g x) +
+          (k * (g x ^ (k - 1) * conj (g x) * Q (k - 1))) • ((g x / conj (g x)) • μ)) =
+      g x ^ j • ∑ k ∈ Icc 1 j, ((-1) ^ (k - 1) * b (j - k) x / k) •
+        (conjWirtingerDeriv (M k) x + (k * M k x) • ν + (k * Q (k - 1)) • μ) := by
+  rw [smul_sum]
+  refine sum_congr rfl fun k hk ↦ ?_
+  rw [conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul hg hgx (hM k hk), smul_smul, smul_smul,
+    ← pow_sub_mul_pow (g x) (mem_Icc.1 hk).2]
+  congr 1
+  ring
+
+/-- **The frame law of the equation of the Newton coefficients through the roots.** Under a
+change of frame `W ↦ g W` of the normal line, with `g(x) ≠ 0`, a coefficient `b_j` becomes
+`gʲ b_j`, the multiset `R` of roots becomes `g R`, and the coefficients of
+`D_C = \bar∂ + ν W + μ \bar W` become `ν - g⁻¹ \bar∂g` and `(g / \bar g) μ`. Then the left side
+
+`\bar∂ b_j + j ν b_j + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)`
+
+of the equation of `TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton` is multiplied by
+`gʲ`, for `0 < j`. So the equation is frame-independent, and its remainder `R_j` transforms like
+the coefficient `b_j`. -/
+theorem conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul {g b : V → ℂ}
+    (hg : DifferentiableAt ℝ g x) (hgx : g x ≠ 0) (hb : DifferentiableAt ℝ b x) (hj : 0 < j)
+    (ν μ : V →L⋆[ℂ] ℂ) (R : Multiset ℂ) :
+    conjWirtingerDeriv (fun y ↦ g y ^ j * b y) x +
+        (j * (g x ^ j * b x)) • (ν - (g x)⁻¹ • conjWirtingerDeriv g x) +
+        ((R.map (g x * ·)).map fun w ↦ conj w * ((R.map (g x * ·)).erase w).esymm (j - 1)).sum •
+          ((g x / conj (g x)) • μ) =
+      g x ^ j • (conjWirtingerDeriv b x + (j * b x) • ν +
+        (R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum • μ) := by
+  have hgx' : conj (g x) ≠ 0 := (map_ne_zero _).2 hgx
+  rw [R.sum_map_mul_esymm_erase_map_mul (fun a ↦ map_mul (starRingEnd ℂ) (g x) a),
+    conjWirtingerDeriv_fun_mul (f := fun y ↦ g y ^ j) (hg.pow j) hb,
+    conjWirtingerDeriv_fun_pow hg]
+  simp only [smul_add, smul_sub, smul_smul]
+  rw [← pow_sub_one_mul hj.ne' (g x)]
+  field_simp
+  module
+
+/-- **The frame law of the equation through the roots for a constant frame.** For a constant
+frame `W ↦ c W`, a coefficient `b_j` becomes `cʲ b_j`, the roots `R` become `c R`, `ν` is
+unchanged and `μ` becomes `(c / \bar c) μ`; the left side
+
+`\bar∂ b_j + j ν b_j + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)`
+
+of the equation of `TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton` is multiplied by
+`cʲ`, for `0 < j`. Unlike `TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`,
+this needs no differentiability of `b` and allows `c = 0`. For a nonzero real `c = a`,
+`c / \bar c = 1` and `μ` is unchanged:
+this is the passage from rescaled coefficients `b_j` to physical coefficients `aʲ b_j`. -/
+theorem conjWirtingerDeriv_const_pow_mul_add_add_esymm_erase_eq_pow_smul {b : V → ℂ} (c : ℂ)
+    (hj : 0 < j) (ν μ : V →L⋆[ℂ] ℂ) (R : Multiset ℂ) :
+    conjWirtingerDeriv (fun y ↦ c ^ j * b y) x + (j * (c ^ j * b x)) • ν +
+        ((R.map (c * ·)).map fun w ↦ conj w * ((R.map (c * ·)).erase w).esymm (j - 1)).sum •
+          ((c / conj c) • μ) =
+      c ^ j • (conjWirtingerDeriv b x + (j * b x) • ν +
+        (R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum • μ) := by
+  have hb : (fun y ↦ c ^ j * b y) = c ^ j • b := funext fun y ↦ by rw [Pi.smul_apply, smul_eq_mul]
+  rw [R.sum_map_mul_esymm_erase_map_mul (fun a ↦ map_mul (starRingEnd ℂ) c a), hb,
+    conjWirtingerDeriv_const_smul]
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [zero_pow hj.ne', zero_mul, zero_smul]
+    module
+  have hc' : conj c ≠ 0 := (map_ne_zero _).2 hc
+  simp only [smul_add, smul_smul]
+  rw [← pow_sub_one_mul hj.ne' c]
+  field_simp
 
 end TauCeti

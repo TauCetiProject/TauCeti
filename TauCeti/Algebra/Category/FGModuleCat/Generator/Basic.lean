@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 -- Private: the comparison of separators with generators in `ModuleCat R`, and the regular module
 -- as a projective object of `FGModuleCat R`, and finite intersections in Artinian modules.
+import Mathlib.Algebra.Category.ModuleCat.AB
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Generator
 import TauCeti.RingTheory.Artinian.Module
@@ -52,11 +53,15 @@ projective object of `mod R`, such as `R`, splits.
   module category.
 * `FGModuleCat.isSeparator_of_isGenerator`: a generator is a separator, in any universe.
 * `FGModuleCat.isSeparator`: the regular module is a separator of `FGModuleCat R`.
+* `FGModuleCat.isSeparator_shrink`: the same holds for the regular module shrunk to the universe
+  of the modules.
 * `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a finitely generated projective
   module lies in the additive closure `add M` of every finitely generated generator `M`, in any
   universe.
 * `FGModuleCat.isCoseparator_iff`: `M` is a coseparator of `mod R` exactly when linear maps into
   `M` separate the points of every finitely generated module.
+* `CategoryTheory.IsCoseparator.exists_mono_biproduct`: an object of `mod R` that is Artinian as a
+  module embeds into a finite biproduct of copies of a coseparator `M`.
 * `CategoryTheory.IsCoseparator.additiveClosure_of_injective`: dually, an injective object of
   `mod R` that is Artinian as a module lies in `add M` for every coseparator `M`.
 * `FGModuleCat.isSeparator_iff_additiveClosure` and `FGModuleCat.isSeparator_iff_exists_retract`:
@@ -115,6 +120,12 @@ regular module does. -/
 theorem _root_.FGModuleCat.isSeparator : IsSeparator (FGModuleCat.of R R) :=
   FGModuleCat.isSeparator_of_isGenerator _
 
+variable (R) in
+/-- The regular module shrunk to the universe of the modules is a separator of `mod R`. -/
+theorem _root_.FGModuleCat.isSeparator_shrink [Small.{v} R] :
+    IsSeparator (FGModuleCat.of R (Shrink.{v} R)) :=
+  (FGModuleCat.isSeparator_iff_isSeparator_obj _).2 (ModuleCat.isSeparator R)
+
 /-- **Finitely generated projective modules are summands of finite sums of a generator**: if `M`
 is a generator of the module category, then a projective object of `FGModuleCat R` lies in `add M`.
 The modules may live in any universe. -/
@@ -150,6 +161,28 @@ theorem _root_.FGModuleCat.isCoseparator_iff (M : FGModuleCat.{v} R) :
     have hfg := hf (ObjectProperty.homMk (ModuleCat.ofHom g))
     exact hg (by simpa using congr(($hfg).hom.hom x))
 
+/-- **Finitely generated Artinian modules embed into finite sums of a coseparator**: if `M` is a
+coseparator of `mod R`, then every object `X` of `mod R` that is Artinian as a module admits a
+monomorphism into a finite biproduct of copies of `M`. -/
+theorem _root_.CategoryTheory.IsCoseparator.exists_mono_biproduct {M : FGModuleCat.{v} R}
+    (hM : IsCoseparator M) (X : FGModuleCat.{v} R) [IsArtinian R X.obj] :
+    ∃ (n : ℕ) (i : X ⟶ ⨁ fun _ : Fin n ↦ M), Mono i := by
+  -- As `X` is Artinian, it embeds into a finite power `Mⁿ`.
+  obtain ⟨n, g, hg⟩ :=
+    IsArtinian.exists_injective_linearMap_pi ((FGModuleCat.isCoseparator_iff M).1 hM X)
+  let ι : X ⟶ ⨁ fun _ : Fin n ↦ M :=
+    biproduct.lift fun j ↦ ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g))
+  -- The `j`-th coordinate of `ι` is `proj j ∘ g`, so `ι` is injective because `g` is.
+  refine ⟨n, ι, ConcreteCategory.mono_of_injective ι fun x y hxy ↦ hg <| funext fun j ↦ ?_⟩
+  have hπ : ι ≫ biproduct.π _ j =
+      ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g)) := biproduct.lift_π _ j
+  have h := congrArg (ConcreteCategory.hom (biproduct.π (fun _ : Fin n ↦ M) j)) hxy
+  rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hπ] at h
+  -- `h` evaluates `ObjectProperty.homMk (ModuleCat.ofHom (proj j ∘ₗ g))` at `x` and `y`; these
+  -- wrappers have no simp lemmas through `ConcreteCategory.hom` (`simpa` leaves them), and the
+  -- value is `g x j` by definition of `homMk`, `ofHom`, `proj` and `∘ₗ`.
+  exact h
+
 /-- **Artinian injective modules are summands of finite sums of a coseparator**: if `M` is a
 coseparator of `mod R`, then an injective object of `mod R` that is Artinian as a module lies in
 `add M`. This is dual to `FGModuleCat.additiveClosure_of_isGenerator_of_projective`. The modules
@@ -158,16 +191,9 @@ theorem _root_.CategoryTheory.IsCoseparator.additiveClosure_of_injective {M : FG
     (hM : IsCoseparator M) (I : FGModuleCat.{v} R) [Injective I] [IsArtinian R I.obj] :
     additiveClosure M I := by
   -- As `I` is Artinian, it embeds into a finite power `Mⁿ`, and the embedding splits.
-  obtain ⟨n, g, hg⟩ :=
-    IsArtinian.exists_injective_linearMap_pi ((FGModuleCat.isCoseparator_iff M).1 hM I)
-  let ι : I ⟶ ⨁ fun _ : Fin n ↦ M :=
-    biproduct.lift fun j ↦ ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g))
-  have : Mono ι := Preadditive.mono_of_cancel_zero ι fun {Z} h hh ↦ by
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun z ↦ hg ?_))
-    ext j
-    simpa [ι] using congr(($hh ≫ biproduct.π _ j).hom.hom z)
+  obtain ⟨n, ι, _⟩ := hM.exists_mono_biproduct I
   exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
-    ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
+    (additiveClosure_biproduct (M := M) n)
 
 /-- **The regular module lies in the additive closure of a generator**: if `M` is a generator of
 the module category, then the regular module lies in `add M`. -/

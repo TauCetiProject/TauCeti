@@ -43,6 +43,8 @@ weights.
   families vanishing outside them.
 * `Submodule.isCompl_pi_bot_compl`: the families vanishing on `s` and those vanishing off `s`
   are complementary.
+* `Submodule.isCompl_pi_univ_iff`: two products of submodules over all coordinates are
+  complementary exactly when they are complementary at every coordinate.
 * `Submodule.span_image_map_pi_bot`: over a finite index type, the families vanishing on `J` with
   coefficients in `S` are spanned by the coordinatewise images under a ring map `R →+* S` of
   those with coefficients in `R`.
@@ -69,8 +71,12 @@ weights.
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
   disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearEquiv.conj_lsmul_eq_piMap`: conjugating by an `A`-linear equivalence onto a product
+  turns the action of `a : A` into the coordinatewise action of `a` on the factors.
 * `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
   `Pi.single i x` gives the one-point family `Pi.single i (f x)`.
+* `LinearMap.map_single_one_one_eq_sub`: a linear map on `Fin 2 → K` takes `Pi.single 1 1` to
+  the difference of its values at `1` and at `Pi.single 0 1`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -92,6 +98,9 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
+* `TauCeti.coordEq`, `TauCeti.coordEq_eq_ker`, `TauCeti.mem_coordEq_iff`,
+  `TauCeti.eq_or_eq_of_coordEq_eq`, and `TauCeti.injective_of_forall_proj_sub_proj_ne_zero`: the
+  coordinate-equality hyperplane `{v | v a = v b}` and coordinate-difference injectivity.
 * `TauCeti.piMatrixLinearEquiv`: the `R`-linear equivalence flattening a family of matrices
   `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α`.
 -/
@@ -132,6 +141,25 @@ public theorem isCompl_pi_bot_compl {R ι : Type*} {M : ι → Type*} [Semiring 
   · simp [Set.piecewise_eq_of_notMem _ _ _ hi]
   · ext i
     by_cases hi : i ∈ s <;> simp [hi]
+
+/-- Two products of submodules over all coordinates are complementary exactly when they are
+complementary at every coordinate. -/
+public theorem isCompl_pi_univ_iff {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] {p q : ∀ i, Submodule R (M i)} :
+    IsCompl (pi Set.univ p) (pi Set.univ q) ↔ ∀ i, IsCompl (p i) (q i) := by
+  classical
+  simp only [isCompl_iff, disjoint_def, codisjoint_iff_exists_add_eq, mem_pi, Set.mem_univ,
+    forall_const, forall_and]
+  refine and_congr ⟨fun h i x hp hq ↦ ?_, fun h x hp hq ↦ funext fun i ↦ h i _ (hp i) (hq i)⟩
+    ⟨fun h i x ↦ ?_, fun h x ↦ ?_⟩
+  · -- `Pi.single i x` lies in both products.
+    have hmem (r : ∀ i, Submodule R (M i)) (hr : x ∈ r i) (j : ι) : Pi.single i x j ∈ r j := by
+      rcases eq_or_ne j i with rfl | hj <;> simp [*]
+    simpa using congrFun (h (Pi.single i x) (hmem p hp) (hmem q hq)) i
+  · obtain ⟨u, v, hu, hv, huv⟩ := h (Pi.single i x)
+    exact ⟨u i, v i, hu i, hv i, by simpa using congrFun huv i⟩
+  · choose u v hu hv huv using fun i ↦ h i (x i)
+    exact ⟨u, v, hu, hv, funext huv⟩
 
 /-- **Base change of a coordinate subspace.** For a ring map `f : R →+* S` and a finite index
 type, the families in `ι → S` vanishing on `J` are the `S`-span of the coordinatewise images
@@ -401,6 +429,18 @@ public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
 
 end FinsetUnion
 
+/-- **An equivalence onto a product diagonalizes the action of scalars.** Conjugating by an
+`A`-linear equivalence `e : M ≃ₗ[A] ∀ i, N i`, viewed over `R`, turns the action of `a : A` on `M`
+into the coordinatewise action `LinearMap.piMap` of `a` on the factors. -/
+public theorem conj_lsmul_eq_piMap {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {ι : Type*} {N : ι → Type*}
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] [∀ i, Module A (N i)]
+    [∀ i, IsScalarTower R A (N i)] (e : M ≃ₗ[A] ∀ i, N i) (a : A) :
+    (e.restrictScalars R).conj (Algebra.lsmul R R M a) =
+      LinearMap.piMap fun i => Algebra.lsmul R R (N i) a := by
+  refine LinearMap.ext fun y => funext fun x => ?_
+  simp [LinearEquiv.conj_apply]
+
 end LinearEquiv
 
 namespace LinearMap
@@ -468,9 +508,36 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
 
+/-- For a linear map `A` on `Fin 2 → K`, the value at `Pi.single 1 1` is the difference of the
+values at `1` and at `Pi.single 0 1`, since `1 = Pi.single 0 1 + Pi.single 1 1`. -/
+public theorem map_single_one_one_eq_sub {K V : Type*} [Semiring K] [AddCommGroup V] [Module K V]
+    (A : (Fin 2 → K) →ₗ[K] V) : A (Pi.single 1 1) = A 1 - A (Pi.single 0 1) := by
+  rw [eq_sub_iff_add_eq, ← map_add, add_comm]
+  congr 1
+  simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
+
 end LinearMap
 
 namespace Module.Basis
+
+/-- The determinant, in a product basis of a finite dependent product, of a family of vectors each
+concentrated in one factor, `Pi.single i (v i l)`, is the product of the determinants of the
+families `v i` in the factor bases. -/
+public theorem det_pi_single {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*}
+    [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)] (b : ∀ i, Basis (κ i) R (M i))
+    (v : ∀ i, κ i → M i) :
+    (Pi.basis b).det (fun x : Σ i, κ i ↦ Pi.single x.fst (v x.fst x.snd)) =
+      ∏ i, (b i).det (v i) := by
+  have he : (Pi.basis b).toMatrix (fun x : Σ i, κ i ↦ Pi.single x.fst (v x.fst x.snd)) =
+      Matrix.blockDiagonal' fun i ↦ (b i).toMatrix (v i) := by
+    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
+    simp only [Basis.toMatrix_apply, Pi.basis_repr, Matrix.blockDiagonal'_apply]
+    split_ifs with h
+    · subst h
+      simp
+    · simp [Pi.single_eq_of_ne h]
+  simp only [Basis.det_apply, he, Matrix.det_blockDiagonal']
 
 /-- The determinant of a change between product bases of a finite dependent product is the
 product of the factor change-of-basis determinants. This is the dependent-family version of
@@ -479,15 +546,8 @@ public theorem det_pi {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] 
     [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*} [∀ i, Fintype (κ i)]
     [∀ i, DecidableEq (κ i)] (b b' : ∀ i, Basis (κ i) R (M i)) :
     (Pi.basis b).det (Pi.basis b') = ∏ i, (b i).det (b' i) := by
-  have he : (Pi.basis b).toMatrix (Pi.basis b') =
-      Matrix.blockDiagonal' fun i ↦ (b i).toMatrix (b' i) := by
-    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
-    simp only [Basis.toMatrix_apply, Pi.basis_apply, Pi.basis_repr, Matrix.blockDiagonal'_apply]
-    split_ifs with h
-    · subst h
-      simp
-    · simp [Pi.single_eq_of_ne h]
-  simp only [Basis.det_apply, he, Matrix.det_blockDiagonal']
+  rw [← det_pi_single b fun i ↦ b' i]
+  exact congrArg _ (funext (Pi.basis_apply b'))
 
 end Module.Basis
 
@@ -633,5 +693,43 @@ public theorem piMatrixLinearEquiv_symm_apply (a : (p : Σ i, κ i × μ i) → 
   simp [piMatrixLinearEquiv, Sigma.curry]
 
 end MatrixCoordinates
+
+section CoordEq
+
+/-- The coordinate-equality hyperplane `{v : ι → R | v a = v b}`. -/
+public def coordEq (R : Type*) [Ring R] {ι : Type*} (a b : ι) : Submodule R (ι → R) :=
+  LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b)
+
+/-- `coordEq R a b` is the kernel of the coordinate-difference functional `proj a - proj b`. -/
+public theorem coordEq_eq_ker (R : Type*) [Ring R] {ι : Type*} (a b : ι) :
+    coordEq R a b = LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b) :=
+  (rfl)
+
+@[simp]
+public theorem mem_coordEq_iff {R ι : Type*} [Ring R] (a b : ι) (v : ι → R) :
+    v ∈ coordEq R a b ↔ v a = v b := by
+  simp [coordEq, sub_eq_zero]
+
+/-- If `coordEq R a b = coordEq R c d` with `c ≠ d`, then `c` is `a` or `b`. -/
+public theorem eq_or_eq_of_coordEq_eq {R ι : Type*} [Ring R] [Nontrivial R] {a b c d : ι}
+    (hcd : c ≠ d) (heq : coordEq R a b = coordEq R c d) : c = a ∨ c = b := by
+  classical
+  by_contra! hneither
+  have hmem : Pi.single c (1 : R) ∈ coordEq R a b := by
+    rw [mem_coordEq_iff, Pi.single_eq_of_ne hneither.1.symm, Pi.single_eq_of_ne hneither.2.symm]
+  rw [heq, mem_coordEq_iff, Pi.single_eq_same, Pi.single_eq_of_ne hcd.symm] at hmem
+  exact one_ne_zero hmem
+
+/-- A vector on which every coordinate-difference map `proj a - proj b` (`a ≠ b`) is nonzero is
+injective. -/
+public theorem injective_of_forall_proj_sub_proj_ne_zero {R ι M : Type*} [Semiring R]
+    [AddCommGroup M] [Module R M] {p : ι → M}
+    (hp : ∀ a b : ι, a ≠ b →
+      ((LinearMap.proj a : (ι → M) →ₗ[R] M) - (LinearMap.proj b : (ι → M) →ₗ[R] M)) p ≠ 0) :
+    Function.Injective p := fun a b hab => by
+  by_contra hne
+  exact hp a b hne (by simp [hab])
+
+end CoordEq
 
 end TauCeti

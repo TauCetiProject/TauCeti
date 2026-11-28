@@ -39,7 +39,16 @@ topological additive group, the convex join of any two compact sets is compact
 given point `y`, the union of the segments from `y` to `y` and to the points of `K`
 (`TopologicalSpace.Compacts.starHull`). For an inducing map `j : U → E` whose range is star-convex
 about `y ∈ range j`, the preimages of these star hulls are cofinal among the compact subsets of `U`
-(`Topology.IsInducing.exists_compacts_le_starConvex_image`).
+(`Topology.IsInducing.exists_compacts_le_starConvex_image`). By
+`TauCeti.isCompact_convexHull_union`, over a linearly ordered field with compact closed intervals
+(`CompactIccSpace`), adjoining a point to a compact convex set keeps its convex hull compact
+without finite-dimensionality, so in a Hausdorff space the closed convex hull of `insert x s` lies
+in any set containing `x` and star-convex about every point of a compact convex superset of `s`
+(`IsCompact.closure_convexHull_insert_subset_of_forall_starConvex`). Over a linearly ordered field
+with compact closed intervals (`CompactIccSpace`), in a topological vector space, the
+convex hull of a finite union of sets with compact convex hulls is compact
+(`TauCeti.isCompact_convexHull_union`, `Finset.isCompact_convexHull_biUnion`), although the convex
+hull of a single compact set need not be in infinite dimension.
 -/
 
 public section
@@ -198,6 +207,56 @@ theorem IsCompact.convexJoin {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [A
       exact ⟨a, ha, b, hb, θ, hθ, rfl⟩
   rw [this]
   exact ((hs.prod ht).prod isCompact_Icc).image (by fun_prop)
+
+section ConvexHullUnion
+
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜]
+  [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+
+/-- If two sets have compact convex hulls, so does their union. When both sets are nonempty, its
+convex hull is the convex join of the two convex hulls. -/
+theorem TauCeti.isCompact_convexHull_union {s t : Set E} (hs : IsCompact (convexHull 𝕜 s))
+    (ht : IsCompact (convexHull 𝕜 t)) : IsCompact (convexHull 𝕜 (s ∪ t)) := by
+  rcases s.eq_empty_or_nonempty with rfl | hs₀
+  · simpa using ht
+  rcases t.eq_empty_or_nonempty with rfl | ht₀
+  · simpa using hs
+  rw [convexHull_union hs₀ ht₀]
+  exact hs.convexJoin ht
+
+/-- If finitely many sets have compact convex hulls, so does their union. In particular the convex
+hull of a finite union of compact convex sets is compact. -/
+theorem Finset.isCompact_convexHull_biUnion {ι : Type*} (s : Finset ι) {t : ι → Set E}
+    (ht : ∀ i ∈ s, IsCompact (convexHull 𝕜 (t i))) :
+    IsCompact (convexHull 𝕜 (⋃ i ∈ s, t i)) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s _ ih =>
+    rw [Finset.set_biUnion_insert]
+    exact TauCeti.isCompact_convexHull_union (ht i (Finset.mem_insert_self i s))
+      (ih fun j hj ↦ ht j (Finset.mem_insert_of_mem hj))
+
+end ConvexHullUnion
+
+/-- In a Hausdorff topological vector space over a linearly ordered field with compact closed
+intervals (`CompactIccSpace`), if `s` is contained in a compact convex set `K`, `x ∈ t`, and `t` is
+star-convex about every point of `K`, then the closure of the convex hull of `insert x s` lies in
+`t`. -/
+theorem IsCompact.closure_convexHull_insert_subset_of_forall_starConvex {𝕜 E : Type*}
+    [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜]
+    [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [T2Space E]
+    [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] {s K t : Set E} {x : E}
+    (hK : IsCompact K) (hKc : Convex 𝕜 K) (hsK : s ⊆ K) (hx : x ∈ t)
+    (h : ∀ y ∈ K, StarConvex 𝕜 y t) :
+    closure (convexHull 𝕜 (insert x s)) ⊆ t :=
+  (closure_minimal (convexHull_mono (insert_subset_insert hsK))
+    (by
+      rw [Set.insert_eq]
+      exact (TauCeti.isCompact_convexHull_union (by simp)
+        (by rwa [hKc.convexHull_eq])).isClosed)).trans
+    (hKc.convexHull_insert_subset_of_forall_starConvex hx h)
 
 namespace TopologicalSpace.Compacts
 

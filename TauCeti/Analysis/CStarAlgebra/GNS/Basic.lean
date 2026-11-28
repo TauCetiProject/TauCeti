@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.Normed.Operator.Mul
+import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
 # The GNS class map and cyclic vector
@@ -77,6 +77,16 @@ theorem denseRange_toGNS (f : A →ₚ[ℂ] ℂ) : DenseRange f.toGNS :=
   UniformSpace.Completion.denseRange_coe.comp f.toPreGNS.surjective.denseRange
     (UniformSpace.Completion.continuous_coe _)
 
+/-- Two continuous semilinear maps from the GNS space to a Hausdorff space are equal when they
+agree on the classes of the pre-GNS space, which are dense. -/
+theorem gns_continuousLinearMap_ext (f : A →ₚ[ℂ] ℂ) {R : Type*} [Semiring R] {σ : ℂ →+* R}
+    {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E] [Module R E]
+    {T S : f.GNS →SL[σ] E} (h : ∀ c : f.PreGNS, T c = S c) : T = S := by
+  ext x
+  induction x using UniformSpace.Completion.induction_on with
+  | hp => apply isClosed_eq <;> fun_prop
+  | ih c => exact h c
+
 /-- A separable C⋆-algebra has separable GNS Hilbert spaces for all its positive functionals. -/
 instance (f : A →ₚ[ℂ] ℂ) [TopologicalSpace.SeparableSpace A] :
     TopologicalSpace.SeparableSpace f.GNS :=
@@ -118,6 +128,9 @@ noncomputable def gnsVector (f : B →ₚ[ℂ] ℂ) : f.GNS :=
 
 /-- The canonical GNS vector is the class of the unit. -/
 theorem gnsVector_def (f : B →ₚ[ℂ] ℂ) : f.gnsVector = (f.toPreGNS 1 : f.GNS) := (rfl)
+
+/-- The canonical GNS vector is the image of the unit under the class map `f.toGNS`. -/
+theorem gnsVector_eq_toGNS_one (f : B →ₚ[ℂ] ℂ) : f.gnsVector = f.toGNS 1 := (rfl)
 
 /-- Acting on the canonical GNS vector produces the class of the acting element. -/
 @[simp]
@@ -175,3 +188,21 @@ theorem norm_toSpanSingleton_gnsVector_sq (f : B →ₚ[ℂ] ℂ) :
 end Unital
 
 end PositiveLinearMap
+
+namespace PositiveContinuousLinearMap
+
+/-- For a positive contraction `e`, the squared distance from its GNS class to the class of
+the unit is at most the norm of the functional minus the real part of its value at `e`. -/
+theorem norm_gnsVector_sub_toGNS_sq_le {A : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    (f : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) :
+    ‖f.gnsVector - f.toGNS e‖ ^ 2 ≤ ‖(f : A →L[ℂ] ℂ)‖ - (f e).re := by
+  rw [PositiveLinearMap.gnsVector_eq_toGNS_one, ← map_sub]
+  have hnorm : ‖f.toGNS (1 - e)‖ ^ 2 = ‖f (star (1 - e) * (1 - e))‖ := by
+    simpa only [← Complex.ofReal_pow, Complex.norm_real, Real.norm_eq_abs, abs_sq,
+      coe_toPositiveLinearMap] using
+      congrArg norm (f.norm_toGNS_sq (1 - e))
+  rw [hnorm]
+  exact f.norm_map_star_one_sub_mul_one_sub_le he he₁
+
+end PositiveContinuousLinearMap

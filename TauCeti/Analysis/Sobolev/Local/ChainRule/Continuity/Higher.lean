@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.ChainRule.Continuity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
+import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
@@ -37,14 +38,17 @@ terms in `W^{k,p}(K)` by products of these norms on `V`, so both tend to `0`.
 
 The derivative count matches the order-one statement: convergence in `W^{k+1,p}` needs `g` to be
 `C^{k+1}`, given the locally uniform convergence. For `p > 2`, Morrey's embedding turns
-`W^{1,p}_loc` convergence of continuous maps into locally uniform convergence; that consequence is
-not used here, and the locally uniform convergence remains a hypothesis, as in the order-one
-statement.
+`W^{k+1,p}_loc` convergence of continuous maps into locally uniform convergence
+(`TauCeti.tendstoLocallyUniformlyOn_of_tendsto_eLpNormWkp_of_two_lt_mul`), so for maps continuous
+on `Ω` the hypothesis can be dropped
+(`TauCeti.MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub_of_continuousOn`).
 
 ## Main declarations
 
 * `TauCeti.MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub`: continuity of composition with a
   `C^{k+1}` map in `W^{k+1,p}` on compact subsets.
+* `TauCeti.MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub_of_continuousOn`: the same for a limit
+  continuous on `Ω`, without the locally uniform convergence hypothesis.
 
 ## References
 
@@ -227,21 +231,43 @@ theorem MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub {G : Type uG} [NormedAddCommG
       Tendsto (fun n => eLpNormWkp p K (k + 1) (u n - u₀)) l (𝓝 0)) :
     ∀ K ⊆ (Ω : Set ℂ), IsCompact K →
       Tendsto (fun n => eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀)) l (𝓝 0) := by
-  -- Move the values to `ULift G`, which lies in a universe at least that of `F`.
-  let e : G ≃L[ℝ] ULift.{uF} G := (LinearIsometryEquiv.ulift ℝ G).symm.toContinuousLinearEquiv
-  have hg' : ContDiffOn ℝ (k + 1) (fun x => e (g x)) W := e.contDiff.comp_contDiffOn hg
+  -- Move the values to `ULift G`, which lies in a universe at least that of `F`; this does not
+  -- change any `W^{k,p}` size.
+  let e : G ≃ₗᵢ[ℝ] ULift.{uF} G := (LinearIsometryEquiv.ulift ℝ G).symm
+  have hg' : ContDiffOn ℝ (k + 1) (fun x => e (g x)) W :=
+    e.toContinuousLinearEquiv.contDiff.comp_contDiffOn hg
   intro K hKΩ hK
   have h := tendsto_eLpNormWkp_succ_comp_sub_aux hp k (g := fun x => e (g x)) hu₀ hW hg' hu₀W
     huc hunif hlim K hKΩ hK
-  have hle (n : ι) : eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) ≤
-      ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ *
-        eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) := by
-    convert eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G) using 2
-    ext z
+  have heq (n : ι) : eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) =
+      eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) := by
+    rw [← eLpNormWkp_linearIsometryEquiv_comp e]
+    refine congrArg _ (funext fun z => ?_)
     simp
-  have h' := ENNReal.Tendsto.const_mul (a := ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ) h
-    (Or.inr eNorm_ne_top)
-  rw [mul_zero] at h'
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h' (fun _ => zero_le) hle
+  simpa only [heq] using h
+
+/-- **Continuity of composition in `W^{k+1,p}_loc` for continuous maps.** Let `p > 2`, let `F`
+and `G` be finite-dimensional, let `g : F → G` be `C^{k+1}` on an open set `W`, and let
+`u₀ ∈ W^{k+1,p}_loc(Ω)` be continuous on `Ω` with `u₀(Ω) ⊆ W`. For every compact `K ⊆ Ω` let maps
+`uₙ` be eventually continuous on `K` with `‖uₙ - u₀‖_{W^{k+1,p}(K)} → 0`. Then
+`‖g ∘ uₙ - g ∘ u₀‖_{W^{k+1,p}(K)} → 0` for every compact `K ⊆ Ω`. This is
+`TauCeti.MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub` with the locally uniform convergence supplied
+by Morrey's embedding. -/
+theorem MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub_of_continuousOn {G : Type uG}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] (hp : 2 < p) {k : ℕ}
+    {ι : Type*} {l : Filter ι} {u : ι → ℂ → F} {u₀ : ℂ → F} {g : F → G} {W : Set F}
+    (hu₀ : MemWkpLoc p Ω (k + 1) u₀) (hu₀c : ContinuousOn u₀ Ω) (hW : IsOpen W)
+    (hg : ContDiffOn ℝ (k + 1) g W) (hu₀W : MapsTo u₀ Ω W)
+    (huc : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∀ᶠ n in l, ContinuousOn (u n) K)
+    (hlim : ∀ K ⊆ (Ω : Set ℂ), IsCompact K →
+      Tendsto (fun n => eLpNormWkp p K (k + 1) (u n - u₀)) l (𝓝 0)) :
+    ∀ K ⊆ (Ω : Set ℂ), IsCompact K →
+      Tendsto (fun n => eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀)) l (𝓝 0) := by
+  have hp2 : (2 : ℝ≥0∞) < p := by exact_mod_cast hp
+  have hkp : (2 : ℝ≥0∞) < ((k + 1 : ℕ) : ℝ≥0∞) * p :=
+    hp2.trans_le (le_mul_of_one_le_left zero_le (by exact_mod_cast Nat.succ_pos k))
+  exact hu₀.tendsto_eLpNormWkp_succ_comp_sub hp hW hg hu₀W huc
+    (tendstoLocallyUniformlyOn_of_tendsto_eLpNormWkp_of_two_lt_mul (one_le_two.trans hp2.le) hkp
+      huc hu₀c hlim) hlim
 
 end TauCeti

@@ -34,6 +34,9 @@ Since `L ⊆ W`, the set `L` is also the connected component of its level in `W`
 (`Topology.IsInducing.image_connectedComponentIn_preimage`), and it is compact and regular there
 when it is so in `M`
 (`IsNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField`).
+Reading the complete flows on `W` in `M`, each `X_{F_i}` is complete along `L`: its maximal flow
+through a point of `L` is defined at every time and stays in `L`
+(`IsNondegenerate.mem_flowDomain_and_flowOf_mem_connectedComponentIn_of_isCompact`).
 
 This is how the theorems about the action of complete commuting Hamiltonian flows, such as the
 Liouville–Arnold theorem near a compact regular component of a level, hold with no global
@@ -52,6 +55,8 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 * `exists_opens_isCompact_connectedComponentIn_isCompleteVectorField`: a compact regular component
   of a level is a compact regular component of a level of the restricted family on such a
   neighbourhood.
+* `mem_flowDomain_and_flowOf_mem_connectedComponentIn_of_isCompact`: the Hamiltonian vector fields
+  of the family are complete along a compact component of a level, and their flows preserve it.
 
 ## References
 
@@ -172,6 +177,49 @@ theorem exists_opens_isCompact_connectedComponentIn_isCompleteVectorField [T2Spa
       (y := ⟨x, hxW⟩) (by rwa [Subtype.range_coe])
   refine ⟨W, hxW, himage, by rwa [Subtype.isCompact_iff, himage], fun z hz ↦ ?_, hcommW, hcW⟩
   exact (hreg z (himage ▸ mem_image_of_mem _ hz)).comp (isRegularPoint_subtype_val z)
+
+/-- **Commuting Hamiltonian flows are complete along a compact component of a level.** Let `F` be
+a family of pairwise Poisson-commuting `C²` functions for a nondegenerate form `σ` on a
+finite-dimensional boundaryless Hausdorff manifold, and let the connected component `L` of `x` in
+its level `F⁻¹(F x)` be compact. The Hamiltonian vector fields `X_{F_i}` need not be complete on
+`M`, but for every point `y` of `L` and every time `t`, the maximal flow of `X_{F_i}` through `y`
+is defined at time `t`, and it stays in `L`. -/
+theorem mem_flowDomain_and_flowOf_mem_connectedComponentIn_of_isCompact [T2Space M]
+    [BoundarylessManifold I M] {ι : Type*} [Fintype ι] {F : M → ι → ℝ}
+    (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) 2 F) (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
+    {x : M} (hK : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) (i : ι) {y : M}
+    (hy : y ∈ connectedComponentIn (F ⁻¹' {F x}) x) (t : ℝ) :
+    (t, y) ∈ flowDomain (σ.hamiltonianVectorField (F · i)) ∧
+      flowOf (σ.hamiltonianVectorField (F · i)) t y ∈ connectedComponentIn (F ⁻¹' {F x}) x := by
+  obtain ⟨W, hLW, -, -, hcW⟩ :=
+    hσ.exists_opens_isCompleteVectorField_hamiltonianVectorField hF hcomm hK
+  have hFi (j : ι) : ContMDiff I 𝓘(ℝ) 2 (F · j) := contMDiff_pi_module_iff.1 hF j
+  -- A global integral curve of the complete restricted field through `y`, read in `M`, is an
+  -- integral curve of `X_{F_i}`, since the inclusion of `W` carries Hamiltonian vector fields of
+  -- restrictions to those on `M`.
+  obtain ⟨γ, hγ0, hγ⟩ := (isCompleteVectorField_iff_exists_isMIntegralCurve
+    ((hσ.mpullback_subtype_val W).contMDiff_hamiltonianVectorField (n := 1) (by simp)
+      ((hFi i).comp contMDiff_subtypeVal))).1 (hcW i) ⟨y, hLW hy⟩
+  have hγM : IsMIntegralCurve (fun s ↦ (γ s : M)) (σ.hamiltonianVectorField (F · i)) :=
+    isMIntegralCurve_iff_isMIntegralCurveOn.2
+      (hγ.isMIntegralCurveOn univ).coe_of_hamiltonianVectorField_mpullback_subtype_val
+  have hγ0' : (γ 0 : M) = y := congrArg Subtype.val hγ0
+  refine ⟨mem_flowDomain.2 ?_, ?_⟩
+  · rw [hγM.maximalIntegralCurveInterval_eq_univ hγ0']
+    exact mem_univ t
+  rw [← hγ0', flowOf_eq_of_isMIntegralCurve
+    (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (hFi i)) hγM t]
+  -- The curve stays in the level of `y`, since every `F_j` is a first integral of `F_i`; being
+  -- connected, it stays in the component of `y` in that level, which is `L`.
+  have hlev : range (fun s ↦ (γ s : M)) ⊆ F ⁻¹' {F x} := by
+    rintro _ ⟨s, rfl⟩
+    refine funext fun j ↦ ?_
+    rw [← (connectedComponentIn_subset _ _ hy : F y = F x), ← hγ0']
+    exact (isFirstIntegral_iff.2 fun z ↦ hcomm j i z).apply_eq_of_isMIntegralCurve hγM
+      (fun s ↦ ((hFi j).mdifferentiable (by simp)) _) 0 s
+  rw [connectedComponentIn_eq hy]
+  exact (isPreconnected_range hγM.continuous).subset_connectedComponentIn ⟨0, hγ0'⟩ hlev
+    (mem_range_self t)
 
 end IsNondegenerate
 

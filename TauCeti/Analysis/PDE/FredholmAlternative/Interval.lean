@@ -49,7 +49,12 @@ while the weak solutions of `-u'' - u = sin 2x` are exactly the functions `sin (
 With `κ = 2`, which is not a square of an integer, the problem `-u'' - 2u = ℓ` is uniquely
 solvable for every `ℓ`
 (`TauCeti.PDE.existsUnique_forall_energyFormH1_neg_two_eq_intervalDomain_zero_pi`), although its
-form is not coercive.
+form is not coercive. Gårding's inequality `(1/2) ‖u‖²_{H¹} ≤ ∫ |u'|² - 2 ∫ u² + β ‖u‖²_{L²}`
+holds on `H¹₀(0, π)` exactly for `β ≥ 2`
+(`TauCeti.PDE.isLeast_half_mul_norm_sq_le_energyFormH1_add_intervalDomain_zero_pi`), with
+equality at `β = 2` on `sin x`, whose energy is `π/2 - π = -π/2`
+(`TauCeti.PDE.energyFormH1_neg_two_self_eq_of_value_ae_eq_sin`). So a shift is needed, and the
+shift `5/2` of the general Gårding inequality is not optimal.
 
 ## References
 
@@ -79,15 +84,6 @@ private theorem ae_isSymm_one :
       ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x).IsSymm :=
   ae_of_all _ fun _ ↦ Matrix.isSymm_one
 
-/-- The energy form of `-u'' - κ u` is the energy form of `-u''` minus `κ` times the `L²` inner
-product. -/
-private theorem energyFormH1_one_zero_neg (κ : ℝ) (u v : W1p volume (intervalDomain a b) 2) :
-    energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) u v =
-      energyFormH1 (fun _ ↦ 1) 0 0 u v - κ * ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  simpa only [Pi.zero_apply, zero_sub] using
-    energyFormH1_mass_sub_const (c := 0)
-      (memLp_energyIntegrand_const_zero_zero (1 : Matrix (Fin 1) (Fin 1) ℝ)) κ u v
-
 /-- The sine modes are weak Dirichlet eigenfunctions
 (`TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`). Restating this here fixes the
 instances of `W1p0` to those of this file once, so that rewriting with the eigenfunction identity
@@ -116,28 +112,6 @@ private theorem isWeakSolutionDirichlet_one_zero_const_iff (c : ℝ)
           ⟪f, W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ :=
   isWeakSolutionDirichlet_iff_inner f u
 
-/-- Distinct sine modes of `(a, b)` have distinct Dirichlet eigenvalues. -/
-private theorem sq_natCast_mul_pi_div_ne (hab : a < b) {j k : ℕ} (h : j ≠ k) :
-    (j * π / (b - a)) ^ 2 ≠ (k * π / (b - a)) ^ 2 := by
-  have hba : 0 < b - a := sub_pos.2 hab
-  rw [Ne, pow_left_inj₀ (by positivity) (by positivity) two_ne_zero,
-    div_left_inj₀ hba.ne', mul_left_inj' Real.pi_ne_zero, Nat.cast_inj]
-  exact h
-
-/-- Integrating against the `j`-th sine mode is the `L²` pairing with its `H¹₀` representative. -/
-private theorem setIntegral_mul_sin_eq_inner
-    (F : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
-    {s : W1p0 volume (intervalDomain a b) 2} {j : ℕ}
-    (hs : W1p.value (s : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (j * π * (x 0 - a) / (b - a))) :
-    ∫ x in intervalDomain a b, F x * Real.sin (j * π * (x 0 - a) / (b - a)) =
-      ⟪F, W1p.value (s : W1p volume (intervalDomain a b) 2)⟫_ℝ := by
-  rw [← dirichletForcing_apply, dirichletForcing_apply_eq_setIntegral]
-  refine integral_congr_ae ?_
-  filter_upwards [hs] with x hx
-  rw [hx]
-
 /-- An eigenfunction `u` for the `k`-th eigenvalue with `⟪u, s_k⟫ = t ⟪s_k, s_k⟫` is `t s_k`: their
 difference is orthogonal to every sine mode. -/
 private theorem value_eq_smul_of_inner_eq (hab : a < b) {k : ℕ}
@@ -162,7 +136,7 @@ private theorem value_eq_smul_of_inner_eq (hab : a < b) {k : ℕ}
     W1p.value (u : W1p volume (intervalDomain a b) 2) =
       t • W1p.value (s : W1p volume (intervalDomain a b) 2) := by
   rw [← sub_eq_zero]
-  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun j _ ↦ ?_
+  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero _ fun j _ ↦ ?_
   obtain ⟨sj, hsj, hsjeq⟩ := exists_value_ae_eq_sin hab j
   rw [setIntegral_mul_sin_eq_inner _ hsj, inner_sub_left, real_inner_smul_left]
   by_cases hjk : j = k
@@ -225,7 +199,7 @@ theorem forall_energyFormH1_eq_zero_iff_exists_value_ae_eq_intervalDomain (hab :
         =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
           fun x ↦ t * Real.sin (k * π * (x 0 - a) / (b - a)) := by
   obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_sin hab k
-  simp only [energyFormH1_one_zero_neg, sub_eq_zero]
+  simp only [energyFormH1_one_zero_const, neg_mul, ← sub_eq_add_neg, sub_eq_zero]
   refine ⟨fun hu ↦ ?_, fun ⟨t, ht⟩ ↦ energyFormH1_eq_of_value_ae_eq_mul_sin hs hseq ht⟩
   obtain ⟨t, ht⟩ := exists_inner_eq_mul_inner_self
     (W1p.value (u : W1p volume (intervalDomain a b) 2))
@@ -335,7 +309,7 @@ private theorem exists_ne_zero_forall_energyFormH1_eq_zero (hab : a < b) {k : �
       energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
         (s : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) = 0 := by
   obtain ⟨s, hs0, hs⟩ := exists_ne_zero_energyFormH1_eq hab hk
-  exact ⟨s, hs0, fun v ↦ by rw [energyFormH1_one_zero_neg, hs v, sub_self]⟩
+  exact ⟨s, hs0, fun v ↦ by rw [energyFormH1_one_zero_const, hs v, neg_mul, add_neg_cancel]⟩
 
 /-- At an eigenvalue, both `0` and an eigenfunction solve the homogeneous problem. -/
 private theorem not_forall_existsUnique_forall_energyFormH1_eq (hab : a < b) {k : ℕ}
@@ -365,8 +339,8 @@ private theorem isDirichletEigenvalue_of_ne_zero (κ : ℝ) {u : W1p0 volume (in
           (v : W1p volume (intervalDomain a b) 2) =
         κ * ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
           W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ := fun v ↦ by
-    rw [← sub_eq_zero, ← energyFormH1_one_zero_neg]
-    exact hu v
+    have h := hu v
+    rwa [energyFormH1_one_zero_const, neg_mul, ← sub_eq_add_neg, sub_eq_zero] at h
   exact (isDirichletEigenvalue_iff κ).2 ⟨u, hu0, h⟩
 
 /-- **The Fredholm alternative for `-u'' - κ u` on an interval.** The Dirichlet problem
@@ -406,7 +380,8 @@ theorem not_isCoercive_energyFormH1L0_intervalDomain_of_le (hab : a < b) {κ : �
   have heig : IsDirichletEigenvalue volume (intervalDomain a b) (fun _ ↦ 1) 0 (fun _ ↦ -κ)
       ((π / (b - a)) ^ 2 - κ) :=
     (isDirichletEigenvalue_iff _).2 ⟨s, hs0, fun v ↦ by
-      rw [energyFormH1_one_zero_neg, hs v, Nat.cast_one, one_mul, sub_mul]⟩
+      rw [energyFormH1_one_zero_const, hs v, Nat.cast_one, one_mul, sub_mul, neg_mul,
+        ← sub_eq_add_neg]⟩
   linarith [pos_of_isDirichletEigenvalue hcoeff hcoercive heig]
 
 /-! ### Resonant forcing by another sine mode -/
@@ -445,7 +420,7 @@ private theorem forall_energyFormH1_eq_iff_forall_sub_eq_zero (κ : ℝ)
           W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) = 0 := by
   refine forall_congr' fun v ↦ ?_
   rw [← hu₀ v, Submodule.coe_sub]
-  simp only [energyFormH1_one_zero_neg, energyFormH1_sub_left
+  simp only [energyFormH1_one_zero_const, energyFormH1_sub_left
     (memLp_energyIntegrand_const_zero_zero (1 : Matrix (Fin 1) (Fin 1) ℝ)), W1p.value_sub,
     inner_sub_left]
   constructor <;> intro h <;> linarith
@@ -465,7 +440,7 @@ private theorem isWeakSolutionDirichlet_of_coe_eq (hab : a < b) {k m : ℕ} (hmk
         (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
       ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
         W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ := by
-  simp only [hus, energyFormH1_smul_left, energyFormH1_one_zero_neg, hsmeq v]
+  simp only [hus, energyFormH1_smul_left, energyFormH1_one_zero_const, hsmeq v]
   linear_combination ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
       W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ *
     inv_mul_cancel₀ (sub_ne_zero.2 (sq_natCast_mul_pi_div_ne hab hmk))
@@ -618,6 +593,80 @@ theorem existsUnique_forall_energyFormH1_neg_two_eq_intervalDomain_zero_pi
   have : k ≤ 1 := by nlinarith
   interval_cases k
   norm_num at hk'
+
+/-! ### Gårding's inequality for `-u'' - 2u` on `(0, π)` -/
+
+/-- The energy form of `-u'' - 2u` on `(0, π)` is the Dirichlet energy minus twice the squared
+`L²` norm. -/
+private theorem energyFormH1_neg_two_self_eq (u : W1p volume (intervalDomain 0 π) 2) :
+    energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) u u =
+      ‖W1p.gradient u‖ ^ 2 - 2 * ‖W1p.value u‖ ^ 2 := by
+  rw [energyFormH1_one_zero_const, energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+    real_inner_self_eq_norm_sq]
+  ring
+
+/-- On `(0, π)`, an element of `H¹₀(0, π)` with value `sin x` has Dirichlet energy
+`∫ |u'|² = π/2`. -/
+private theorem norm_gradient_sq_of_value_ae_eq_sin {u : W1p0 volume (intervalDomain 0 π) 2}
+    (hu : W1p.value (u : W1p volume (intervalDomain 0 π) 2)
+      =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x ↦ Real.sin (x 0)) :
+    ‖W1p.gradient (u : W1p volume (intervalDomain 0 π) 2)‖ ^ 2 = π / 2 := by
+  have h := energyFormH1_self_eq_of_value_ae_eq_sin Real.pi_pos (k := 1) one_pos
+    (by simpa only [sin_one_mul_pi_div] using hu)
+  rwa [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq, sq_one_mul_pi_div,
+    one_mul, sub_zero] at h
+
+/-- **The form of `-u'' - 2u` is negative on `sin x`.** On `(0, π)`, an element of `H¹₀(0, π)` with
+value `sin x` has `∫ |u'|² - 2 ∫ u² = π/2 - π = -π/2`. -/
+theorem energyFormH1_neg_two_self_eq_of_value_ae_eq_sin
+    {u : W1p0 volume (intervalDomain 0 π) 2}
+    (hu : W1p.value (u : W1p volume (intervalDomain 0 π) 2)
+      =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x ↦ Real.sin (x 0)) :
+    energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) (u : W1p volume (intervalDomain 0 π) 2)
+      (u : W1p volume (intervalDomain 0 π) 2) = -(π / 2) := by
+  rw [energyFormH1_neg_two_self_eq, norm_gradient_sq_of_value_ae_eq_sin hu,
+    norm_value_sq_of_value_ae_eq_sin Real.pi_pos (k := 1) one_pos
+      (by simpa only [sin_one_mul_pi_div] using hu), sub_zero]
+  ring
+
+/-- **The least Gårding shift of `-u'' - 2u` on `(0, π)`.** With the constant `C₀ = 1/2` of
+Gårding's inequality for the lower ellipticity constant `λ = 1`, the least `β` for which
+
+`(1/2) ‖u‖²_{H¹} ≤ ∫ |u'|² - 2 ∫ u² + β ‖u‖²_{L²}` for every `u ∈ H¹₀(0, π)`
+
+is `β = 2`. It is attained by `sin x`, on which the inequality is an equality at `β = 2`
+(`TauCeti.PDE.energyFormH1_neg_two_self_eq_of_value_ae_eq_sin`), and it holds for every `u` by the
+sharp Poincaré inequality `‖u‖_{L²} ≤ ‖u'‖_{L²}` on `(0, π)`. The general shift
+`λ/2 + γ + β₀²/(2λ)` of `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm_of_norm_le`
+is `5/2` here, for the mass bound `γ = 2` and no drift, so it is not optimal, and no shift below
+`2` works. -/
+theorem isLeast_half_mul_norm_sq_le_energyFormH1_add_intervalDomain_zero_pi :
+    IsLeast {β : ℝ | ∀ u : W1p0 volume (intervalDomain 0 π) 2,
+        1 / 2 * ‖(u : W1p volume (intervalDomain 0 π) 2)‖ ^ 2 ≤
+          energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) (u : W1p volume (intervalDomain 0 π) 2)
+            (u : W1p volume (intervalDomain 0 π) 2) +
+            β * ‖W1p.value (u : W1p volume (intervalDomain 0 π) 2)‖ ^ 2} 2 := by
+  refine ⟨fun u ↦ ?_, fun β hβ ↦ ?_⟩
+  · -- The sharp Poincaré inequality `‖u‖² ≤ ‖u'‖²` on `(0, π)`.
+    have hP := (isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain Real.pi_pos).1 u
+    rw [sub_zero, div_self Real.pi_ne_zero, one_pow, one_mul, energyFormH1_one_zero_zero_eq_inner,
+      real_inner_self_eq_norm_sq] at hP
+    rw [energyFormH1_neg_two_self_eq, W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+    linarith
+  · -- Test the inequality on `sin x`.
+    obtain ⟨s, hs, -⟩ := exists_value_ae_eq_sin Real.pi_pos 1
+    have hs' : W1p.value (s : W1p volume (intervalDomain 0 π) 2)
+        =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
+          fun x ↦ Real.sin (x 0) := by
+      simpa only [sin_one_mul_pi_div] using hs
+    have h := hβ s
+    rw [energyFormH1_neg_two_self_eq_of_value_ae_eq_sin hs',
+      W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
+      norm_value_sq_of_value_ae_eq_sin Real.pi_pos one_pos hs, sub_zero,
+      norm_gradient_sq_of_value_ae_eq_sin hs'] at h
+    nlinarith [Real.pi_pos]
 
 end PDE
 

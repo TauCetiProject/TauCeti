@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Algebra.CharP.Invertible
 
 /-!
@@ -365,9 +366,7 @@ private theorem coeff_eq_one_or_neg_one (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -
     (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = 1 ∨
       (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = -1 := by
   have hprod : ∏ i ∈ s ∩ t, Q (b i) = 1 ∨ ∏ i ∈ s ∩ t, Q (b i) = -1 :=
-    Finset.prod_induction _ (fun x : R ↦ x = 1 ∨ x = -1)
-      (fun x y hx hy ↦ by rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> simp)
-      (Or.inl rfl) fun i _ ↦ hQ i
+    Finset.prod_eq_one_or_neg_one (s ∩ t) fun i _ ↦ hQ i
   rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with h | h <;> rw [h] <;>
     rcases hprod with h' | h' <;> rw [h'] <;> simp
 

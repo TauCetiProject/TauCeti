@@ -366,20 +366,15 @@ def leftIdeal (P : ProperCone ℝ A) (hP : IsHereditary P) : ClosedSubmodule ℂ
   carrier := {x : A | star x * x ∈ P}
   zero_mem' := by simp
   add_mem' {x y} hx hy := by
-    have hpar : star (x + y) * (x + y) + star (x - y) * (x - y) =
-        (2 : ℝ) • (star x * x + star y * y) := by
-      rw [two_smul]
-      simp only [star_add, star_sub, add_mul, sub_mul, mul_add, mul_sub]
-      abel
-    have hle : star (x + y) * (x + y) ≤ (2 : ℝ) • (star x * x + star y * y) := by
-      rw [← hpar]
-      exact le_add_of_nonneg_right (star_mul_self_nonneg (x - y))
+    have hle : star (x + y) * (x + y) ≤ (2 : ℝ) • (star x * x + star y * y) :=
+      calc star (x + y) * (x + y)
+          ≤ star (x + y) * (x + y) + star (x - y) * (x - y) :=
+            le_add_of_nonneg_right (star_mul_self_nonneg (x - y))
+        _ = (2 : ℝ) • (star x * x + star y * y) := by
+          rw [star_add_mul_add_add_star_sub_mul_sub, two_nsmul, two_smul]
     exact hP.mem_of_le (star_mul_self_nonneg (x + y)) hle (P.smul_mem (add_mem hx hy) zero_le_two)
   smul_mem' c {x} hx := by
-    have hsmul : star (c • x) * (c • x) = (‖c‖ ^ 2 : ℝ) • (star x * x) := by
-      rw [star_smul, mul_smul_comm, smul_mul_assoc, smul_smul, Complex.star_def,
-        Complex.mul_conj', ← Complex.ofReal_pow, Complex.coe_smul]
-    rw [Set.mem_ofPred_eq, hsmul]
+    rw [Set.mem_ofPred_eq, star_smul_mul_smul]
     exact P.smul_mem hx (sq_nonneg ‖c‖)
   isClosed' := P.isClosed.preimage (continuous_star.mul continuous_id)
 
@@ -613,14 +608,18 @@ theorem exists_mul_eq_of_star_mul_self_mem (B : NonUnitalStarSubalgebra ℂ A)
   let ι : B →L[ℂ] A := B.toSubmodule.subtypeL
   let R : A →L[ℂ] B →L[ℂ] A := ((ContinuousLinearMap.mul ℂ A).flip.comp ι).flip
   have hR_assoc (z : A) (b₁ b₂ : B) : R (R z b₁) b₂ = R z (b₁ * b₂) := mul_assoc z b₁ b₂
-  have hx_mem :
-      x ∈ (Submodule.span ℂ (Set.range fun p : A × B => R p.1 p.2)).topologicalClosure := by
-    rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
-    refine closure_mono Submodule.subset_span ?_
-    exact mem_closure_of_tendsto (hl.tendsto_mul_of_star_mul_self_mem hx)
-      (Eventually.of_forall fun e => ⟨(x, e), rfl⟩)
+  have hR_flip (e : B) : R.flip e x = x * (e : A) := by
+    simp only [R, ι, ContinuousLinearMap.flip_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.mul_apply']
+    exact congrArg (x * ·) (Submodule.subtypeL_apply B.toSubmodule e)
+  have hx_mem : x ∈ R.flip.essentialSubmodule :=
+    (R.flip.isClosed_essentialSubmodule).mem_of_tendsto
+      (hl.tendsto_mul_of_star_mul_self_mem hx)
+      (Eventually.of_forall fun e => by
+        rw [SetLike.mem_coe, ← hR_flip]
+        exact R.flip.apply_mem_essentialSubmodule e x)
   obtain ⟨b, y, hb_norm, hy_mem, hy_dist, hfac⟩ :=
-    ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span_right R hR_assoc
+    ContinuousLinearMap.exists_apply_eq_of_mem_essentialSubmodule_right R hR_assoc
       hl.eventually_norm hl.tendsto_mul_left hx_mem hε
   exact ⟨b, b.property, y, hb_norm, hy_mem, hy_dist, hfac⟩
 

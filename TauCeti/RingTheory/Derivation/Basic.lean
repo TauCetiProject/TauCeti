@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Data.Nat.Choose.Sum
@@ -16,7 +17,8 @@ A derivation vanishes on the image `(n : A)` of a natural number (`Derivation.ma
 numeric literal `(OfNat.ofNat n : A)` with `2 ≤ n` is not syntactically such a cast, so `simp`
 does not apply that lemma to it. This file adds the literal form `Derivation.map_ofNat`, so that
 `simp` differentiates polynomial expressions with numeric coefficients, for instance partial
-derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
+derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`. In characteristic `p`, any derivation also
+annihilates `p`-th powers (`Derivation.map_pow_eq_zero_of_charP`).
 
 A derivation differentiates a finite product termwise: `D (∏ i ∈ s, f i)` is the sum over
 `j ∈ s` of `D (f j)` times the product of the other factors. In particular, a derivation `δ`
@@ -24,8 +26,11 @@ with `δ tⱼ = δᵢⱼ` sends a monomial `∏ⱼ tⱼ ^ βⱼ` to `βᵢ ∏�
 
 Iterates of a derivation remain linear over the scalars, so they commute with finite scalar
 linear combinations. On products they satisfy the general Leibniz rule
-`Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`. The iterates of a multiple `b • D` by `b : A` are
-combinations `(b • D)^[n] = ∑ k ≤ n, c n k * D^[k]` of the iterates of `D`, with coefficients
+`Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`, and they commute with multiplication by an element
+whose derivative vanishes. If `D (D N) = 0`, then `Dⁱ (N ^ p)` is `p (p - 1) ⋯ (p - i + 1)` times
+`D N ^ i * N ^ (p - i)`; so when also `D (D L) = 0`, `Dᵏ` kills `N ^ p * L ^ q` once `p + q < k`.
+The iterates of a multiple `b • D` by `b : A` are combinations
+`(b • D)^[n] = ∑ k ≤ n, c n k * D^[k]` of the iterates of `D`, with coefficients
 `c n k = smulIterCoeff D b n k` given by an explicit recursion; the coefficient of `D` in
 `(b • D)^[n + 1]` is `(b • D)^[n] b`.
 
@@ -45,17 +50,26 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
+* `Derivation.map_pow_eq_zero_of_charP`: in characteristic `p`, any derivation vanishes on `p`-th
+  powers.
 * `Derivation.leibniz_prod`: the Leibniz rule for finite products.
 * `Derivation.apply_prod_pow_of_apply_eq`: a derivation dual to the `i`-th coordinate
   differentiates a monomial in the coordinates by lowering its `i`-th exponent.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
+* `Derivation.iterate_apply_mul_of_apply_eq_zero`: iterates commute with multiplication by a
+  constant.
+* `Derivation.iterate_apply_pow_of_apply_apply_eq_zero`: the iterated derivatives of `N ^ p` when
+  `D (D N) = 0`.
+* `Derivation.iterate_apply_pow_mul_pow_eq_zero`: `Dᵏ (N ^ p * L ^ q) = 0` when `p + q < k` and
+  `N`, `L` have vanishing second derivative.
 * `Derivation.iterate_apply_pow_of_apply_eq_one`: if `D x = 1`, then `D^[j] (x ^ k)` is the
   descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.smulIterCoeff`: the coefficients of the expansion of `(b • D)^[n]`, `b : A`.
 * `Derivation.iterate_smul_apply_eq_sum`: `(b • D)^[n]` as a combination of the `D^[k]`.
+* `Derivation.iterate_smul_apply_eq_add_sum`: the split expansion of `(b • D)^[n]` for `2 ≤ n`.
 * `Derivation.smulIterCoeff_succ_one`: the coefficient of `D` in `(b • D)^[n + 1]`.
 * `Derivation.map_smulIterCoeff`: the coefficients are natural in the ring.
 * `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
@@ -77,6 +91,10 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M] [Al
 @[simp]
 theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 0 := by
   rw [← Nat.cast_ofNat, map_natCast]
+
+/-- In characteristic `p`, any derivation annihilates `p`-th powers. -/
+theorem map_pow_eq_zero_of_charP {p : ℕ} [CharP A p] (x : A) : D (x ^ p) = 0 := by
+  rw [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul A, CharP.cast_eq_zero, zero_smul]
 
 /-- **Leibniz rule for finite products**: `D (∏ i ∈ s, f i)` is the sum over `j ∈ s` of
 `D (f j)` times the product of the other factors. -/
@@ -136,18 +154,48 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
     refine Finset.sum_congr rfl fun ij hij => ?_
     rw [n.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm, mul_comm]
 
+/-- Iterates of a derivation commute with multiplication by an element whose derivative
+vanishes. -/
+theorem iterate_apply_mul_of_apply_eq_zero (D : Derivation R A A) {c : A} (hc : D c = 0) (n : ℕ)
+    (x : A) : D^[n] (c * x) = c * D^[n] x := by
+  induction n generalizing x with
+  | zero => rfl
+  | succ n ih => simp [ih, leibniz, hc]
+
+/-- The iterated derivatives of a power of an element `N` with `D (D N) = 0`:
+`D^i (N ^ p) = p (p - 1) ⋯ (p - i + 1) • D N ^ i * N ^ (p - i)`. In particular they vanish for
+`i > p`. -/
+theorem iterate_apply_pow_of_apply_apply_eq_zero (D : Derivation R A A) {N : A} (hN : D (D N) = 0)
+    (i p : ℕ) :
+    D^[i] (N ^ p) = p.descFactorial i • (D N ^ i * N ^ (p - i)) := by
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    rw [Function.iterate_succ_apply', ih, map_nsmul, leibniz, leibniz_pow, leibniz_pow, hN,
+      Nat.descFactorial_succ, Nat.sub_sub]
+    simp only [nsmul_eq_mul, smul_eq_mul, Nat.cast_mul]
+    ring
+
+/-- A product `N ^ p * L ^ q` of powers of two elements with vanishing second derivative is
+killed by `D^k` once `p + q < k`. -/
+theorem iterate_apply_pow_mul_pow_eq_zero (D : Derivation R A A) {N L : A} (hN : D (D N) = 0)
+    (hL : D (D L) = 0) {p q k : ℕ} (h : p + q < k) : D^[k] (N ^ p * L ^ q) = 0 := by
+  rw [iterate_apply_mul]
+  refine Finset.sum_eq_zero fun ij hij => ?_
+  rw [Finset.mem_antidiagonal] at hij
+  rw [iterate_apply_pow_of_apply_apply_eq_zero D hN,
+    iterate_apply_pow_of_apply_apply_eq_zero D hL]
+  rcases lt_or_ge p ij.1 with hp | hp
+  · simp [Nat.descFactorial_eq_zero_iff_lt.2 hp]
+  · simp [Nat.descFactorial_eq_zero_iff_lt.2 (by omega : q < ij.2)]
+
 /-- **Iterated derivatives of powers of a coordinate.** If `D x = 1`, then
 `D^[j] (x ^ k)` is the descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`. In
 particular `D^[k] (x ^ k) = k !`, and `D^[j] (x ^ k) = 0` for `j > k`. -/
 theorem iterate_apply_pow_of_apply_eq_one (D : Derivation R A A) {x : A} (hx : D x = 1)
     (k j : ℕ) : D^[j] (x ^ k) = k.descFactorial j * x ^ (k - j) := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    rw [Function.iterate_succ_apply', ih, leibniz, leibniz_pow, hx, map_natCast,
-      Nat.descFactorial_succ, Nat.sub_sub]
-    simp only [smul_eq_mul, nsmul_eq_mul, mul_one, mul_zero, add_zero, Nat.cast_mul]
-    ring
+  rw [iterate_apply_pow_of_apply_apply_eq_zero D (by simp [hx]), hx, one_pow, one_mul,
+    nsmul_eq_mul]
 
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
@@ -253,6 +301,19 @@ theorem iterate_smul_apply_eq_sum (D : Derivation R A A) (b y : A) (n : ℕ) :
     rw [mul_add, Finset.mul_sum, Finset.mul_sum, hshift]
     simp only [mul_assoc]
     ring
+
+/-- The expansion `iterate_smul_apply_eq_sum` for `n ≥ 2`, with its extreme coefficients
+`smulIterCoeff D b n 0 = 0` and `smulIterCoeff D b n n = b ^ n` made explicit. -/
+theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {n : ℕ}
+    (hn : 2 ≤ n) : (b • D)^[n] y = b ^ n * D^[n] y + smulIterCoeff D b n 1 * D y +
+      ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
+  -- Split off the top term `k = n`, then the bottom terms `k = 0` and `k = 1`.
+  rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_eq_sum_Ico_succ_bot (by omega)]
+  simp only [smulIterCoeff_self, smulIterCoeff_succ_zero, zero_mul, zero_add,
+    Function.iterate_one]
+  ring
 
 /-- An element whose derivative is a unit is squarefree: if `a = x * x * y`, then `x` divides
 `D a = x * D (x * y) + x * y * D x`. -/

@@ -21,7 +21,9 @@ Unlike `Filtration.nullAugment`, this construction does not adjoin nonmeasurable
 of null sets. Completing its sigma-algebras afterwards recovers `Filtration.nullAugment`.
 Equivalent measures give the same augmentation. Ambient-measurable versions of adapted
 processes become adapted after this augmentation; no path regularity is needed for that
-fixed-time assertion. Right-continuation is a separate operation.
+fixed-time assertion. On a first-countable linearly ordered time axis with the order topology,
+original-space null augmentation commutes with right-continuation
+(`MeasureTheory.Filtration.rightCont_ambientNullAugmentation`).
 
 ## References
 
@@ -145,6 +147,72 @@ theorem nullAugment_ambientNullAugmentation_apply (ℱ : Filtration ι m) (P : M
     obtain ⟨t, ht, hst⟩ := (ℱ.measurableSet_nullAugment_iff P i s).mp hs
     exact ((ℱ.ambientNullAugmentation P).measurableSet_nullAugment_iff P i s).mpr
       ⟨t, ℱ.le_ambientNullAugmentation P i t ht, hst⟩
+
+end MeasureTheory.Filtration
+
+namespace MeasureTheory.Filtration
+
+/-- At every time of a partially ordered index set, the right-continuation of the original-space
+null augmentation is the ambient-measurable part of `(ℱ.nullAugment P).rightCont`. -/
+theorem rightCont_ambientNullAugmentation_apply_eq_inf {Ω ι : Type*} {m : MeasurableSpace Ω}
+    [PartialOrder ι] (ℱ : Filtration ι m) (P : Measure Ω) (i : ι) :
+    (ℱ.ambientNullAugmentation P).rightCont i = m ⊓ (ℱ.nullAugment P).rightCont i := by
+  classical
+  let := Preorder.topology ι
+  have : OrderTopology ι := ⟨rfl⟩
+  by_cases hne : (nhdsWithin i (Set.Ioi i)).NeBot
+  · rw [(ℱ.ambientNullAugmentation P).rightCont_eq_of_neBot_nhdsGT i,
+      (ℱ.nullAugment P).rightCont_eq_of_neBot_nhdsGT i]
+    refine le_antisymm ?_ ?_
+    · obtain ⟨j₀, hj₀⟩ := hne.nonempty_of_mem self_mem_nhdsWithin
+      exact le_inf ((iInf₂_le j₀ hj₀).trans inf_le_left)
+        (le_iInf₂ fun j hj ↦ (iInf₂_le j hj).trans inf_le_right)
+    · exact le_iInf₂ fun j hj ↦ inf_le_inf_left m (iInf₂_le j hj)
+  · rw [rightCont_apply, ite_eq_right hne, rightCont_apply, ite_eq_right hne,
+      ambientNullAugmentation_apply]
+
+/-- On a first-countable linearly ordered time axis with the order topology, original-space null
+augmentation commutes with right-continuation (via
+`MeasureTheory.Filtration.rightCont_nullAugment_apply`). Neither density nor absence of a maximum
+time is required. -/
+theorem rightCont_ambientNullAugmentation {Ω ι : Type*} {m : MeasurableSpace Ω}
+    [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [FirstCountableTopology ι]
+    (ℱ : Filtration ι m) (P : Measure Ω) :
+    (ℱ.ambientNullAugmentation P).rightCont = ℱ.rightCont.ambientNullAugmentation P := by
+  apply Filtration.ext
+  funext i
+  rw [rightCont_ambientNullAugmentation_apply_eq_inf, rightCont_nullAugment_apply,
+    ambientNullAugmentation_apply]
+
+/-- Original-space null augmentation preserves right-continuity of filtrations on any
+first-countable linearly ordered time axis with the order topology. -/
+instance isRightContinuous_ambientNullAugmentation {Ω ι : Type*} {m : MeasurableSpace Ω}
+    [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [FirstCountableTopology ι]
+    (ℱ : Filtration ι m) (P : Measure Ω) [ℱ.IsRightContinuous] :
+    (ℱ.ambientNullAugmentation P).IsRightContinuous :=
+  ⟨by rw [rightCont_ambientNullAugmentation, IsRightContinuous.eq]⟩
+
+/-- If every event of `ℱ.rightCont i` agrees `P`-almost everywhere with an event of `ℱ i`, then
+`ℱ.rightCont` is contained in `ℱ.ambientNullAugmentation P`. -/
+theorem rightCont_le_ambientNullAugmentation_of_rightCont_le_nullAugment
+    {Ω ι : Type*} {m : MeasurableSpace Ω} [PartialOrder ι]
+    {ℱ : Filtration ι m} {P : Measure Ω} (h : ∀ i, ℱ.rightCont i ≤ ℱ.nullAugment P i) :
+    ℱ.rightCont ≤ ℱ.ambientNullAugmentation P :=
+  fun i ↦ le_inf (ℱ.rightCont.le i) (h i)
+
+/-- On a first-countable linearly ordered time axis with the order topology, if every event of
+`ℱ.rightCont i` agrees `P`-almost everywhere with an event of `ℱ i`, then
+`ℱ.ambientNullAugmentation P` is right-continuous. -/
+theorem isRightContinuous_ambientNullAugmentation_of_rightCont_le_nullAugment
+    {Ω ι : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [TopologicalSpace ι]
+    [OrderTopology ι] [FirstCountableTopology ι] {ℱ : Filtration ι m} {P : Measure Ω}
+    (h : ∀ i, ℱ.rightCont i ≤ ℱ.nullAugment P i) :
+    (ℱ.ambientNullAugmentation P).IsRightContinuous := by
+  constructor
+  rw [rightCont_ambientNullAugmentation]
+  exact (ambientNullAugmentation_mono
+    (rightCont_le_ambientNullAugmentation_of_rightCont_le_nullAugment h) P).trans_eq
+    (ambientNullAugmentation_idem ℱ P)
 
 end MeasureTheory.Filtration
 

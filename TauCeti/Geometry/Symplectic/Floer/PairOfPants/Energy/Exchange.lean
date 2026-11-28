@@ -93,7 +93,10 @@ whole of `S`
 solution with tame almost complex structures the energy is nonnegative, so the area plus the
 Hamiltonian terms at the asymptotic orbits is at least `-(B₀ + B₁ + B_∞)`, uniformly in `c`
 (`IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap_exchangePerturbation` in
-`SmoothTwoForm`). Once the area is expressed through the actions of capped orbits and the class of
+`SmoothTwoForm`), and if the area plus these terms is at most `A`, then the energy over every part
+of `S` is at most `A + B₀ + B₁ + B_∞`
+(`IsNondegenerate.setIntegral_floerEnergyDensity_exchangePerturbation_le` in `SmoothTwoForm`).
+Once the area is expressed through the actions of capped orbits and the class of
 the solution, this becomes the lower bound on the valuation of the output monomials of the
 commutativity homotopy on a closed symplectic manifold.
 
@@ -450,6 +453,54 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap_exchan
   have h := abs_le.1 (hω.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le hH hHs hB hc₀
     hc₁ hu hx hxinf hE hA)
   linarith [h.2]
+
+/-- **A solution of bounded topological energy has bounded energy over every part of `S`, along
+the input-exchange family, for a manifold target.** Let `u` solve the Floer equation on `S` for the
+member `c ∈ [0, 1]` of the family, for almost complex structures tamed by the two-form, under the
+hypotheses of `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation`,
+with symplectic area plus the Hamiltonian terms at the asymptotic orbits at most `A`. Then over
+every subset `Ω ⊆ S` the energy is at most `A + B₀ + B₁ + B_∞`, uniformly in `c`; this is the
+energy bound that compactness of the family consumes. -/
+theorem IsNondegenerate.setIntegral_floerEnergyDensity_exchangePerturbation_le
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {x : Puncture → ℝ → M}
+    (hx : ∀ q ≠ inf, ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
+    (hxinf : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (x inf t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap)
+    {A : ℝ}
+    (htop : (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) ≤ A)
+    {Ω : Set (ℝ × ℝ)} (hΩ : Ω ⊆ thricePuncturedSphereReal) :
+    ∫ z in Ω, ω.floerEnergyDensity
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u z ≤
+      A + ∑ q, B q := by
+  have habs := hω.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le hH hHs hB hc₀ hc₁
+    hu hx hxinf hE hA
+  refine (hω.setIntegral_floerEnergyDensity_mono_set hΩ
+    isOpen_thricePuncturedSphereReal.measurableSet hE hJ hfloer).trans ?_
+  linarith [(abs_sub_le_iff.1 habs).1]
 
 end SmoothTwoForm
 

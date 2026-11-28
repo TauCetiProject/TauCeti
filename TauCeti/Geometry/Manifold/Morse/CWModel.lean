@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Morse.Cell.Adjunction
 public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
@@ -18,7 +19,8 @@ Let `f` be a Morse function on a compact boundaryless manifold `M`. Then `M` is 
 equivalent to a finite CW complex whose `λ`-cells are labelled by the critical points of `f` of
 index `λ` (`TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv`). In particular every compact
 smooth boundaryless manifold, which carries a Morse function by `TauCeti.exists_isMorse`, has
-finite CW type (`TauCeti.FiniteCWType.of_isManifold`).
+finite CW type (`TauCeti.FiniteCWType.of_isManifold`), so its integral homology is finitely
+generated (`TauCeti.finite_singularHomology_int_of_isManifold`).
 
 The model is built one critical level at a time, along the sublevels `M_a = {f ≤ a}`. Across a
 compact band without critical points the sublevel keeps its homotopy type
@@ -80,6 +82,9 @@ compactness of `M` is needed.
   `λ`.
 * `TauCeti.IsMorse.finiteCWType` and `TauCeti.FiniteCWType.of_isManifold`: compact boundaryless
   smooth manifolds have finite CW type.
+* `TauCeti.finite_singularHomology_int_of_isManifold`,
+  `TauCeti.addGroup_fg_singularHomology_of_isManifold`: the integral homology of a compact
+  boundaryless manifold is finitely generated.
 
 ## References
 
@@ -398,5 +403,32 @@ theorem FiniteCWType.of_isManifold [CompactSpace M] : FiniteCWType M := by
   · exact FiniteCWType.of_discreteTopology M
   · have := FiniteDimensional.of_locallyCompact_manifold M I
     exact (exists_isMorse (I := I) (M := M)).choose_spec.finiteCWType
+
+omit [FiniteDimensional ℝ E] in
+variable (I M) in
+include I in
+/-- **The integral homology of a compact manifold is finitely generated.** A compact boundaryless
+smooth manifold `M` has finitely generated integral homology `Hⱼ(M; ℤ)` in every degree. -/
+theorem finite_singularHomology_int_of_isManifold [CompactSpace M] (j : ℕ) :
+    Module.Finite ℤ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} ℤ) j).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
+  have := FiniteCWType.of_isManifold M I
+  exact finite_singularHomology_int_of_finiteCWType M j
+
+omit [FiniteDimensional ℝ E] in
+variable (I) in
+include I in
+/-- **The integral homology of a compact manifold is a finitely generated group.** For a compact
+boundaryless smooth manifold `X` in `Type`, the integral homology `Hⱼ(X; ℤ)` with coefficients
+`ℤ` is a finitely generated abelian group in every degree. -/
+theorem addGroup_fg_singularHomology_of_isManifold {X : Type} [TopologicalSpace X]
+    [ChartedSpace H X] [IsManifold I ∞ X] [T2Space X] [CompactSpace X] (j : ℕ) :
+    AddGroup.FG (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) j).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of X)) := by
+  have := FiniteCWType.of_isManifold X I
+  have := finite_singularHomology_of_finiteCWType X (ModuleCat.of ℤ ℤ) j
+  -- The `ℤ`-module structure of a `ModuleCat ℤ` object is not syntactically the canonical one of
+  -- an additive group, so `convert` identifies the two, `ℤ`-module structures being unique.
+  exact Module.Finite.iff_addGroup_fg.1 (by convert this; exact Subsingleton.elim _ _)
 
 end TauCeti
