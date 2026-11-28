@@ -43,6 +43,7 @@ to a Néron model using the group law.
 * `Model.homEquiv`: the bijection between `S`-morphisms `Y ⟶ M.model` and morphisms
   `(Over.pullback j).obj Y ⟶ A`, for a test object `Y`.
 * `Model.extend`: the unique extension of a generic morphism from a test object.
+* `Model.genericι`: the morphism from the marked fibre to the total space of the model.
 * `Model.ofLE`: a model for a class of test morphisms, regarded as a model for a smaller class.
 * `WeakNeronModel.ofNeronModel`: a Néron model, regarded as a weak Néron model.
 * `Model.ofIsTerminal`: the base `S` is the model of a terminal object of `Over η`.
@@ -117,6 +118,33 @@ attribute [instance] smooth isSeparated quasiCompact
 
 variable {P Q : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop} {j : η ⟶ S} {A B : Over η} (M : Model P j A)
 
+/-- The morphism from the marked fibre to the total space of the model. -/
+def genericι : A.left ⟶ M.model.left :=
+  M.genericIso.inv.left ≫ pullback.fst M.model.hom j
+
+/-- The marking followed by the map to the total space is the base change projection. -/
+@[reassoc (attr := simp)]
+theorem genericIso_hom_left_genericι :
+    M.genericIso.hom.left ≫ M.genericι = pullback.fst M.model.hom j := by
+  simp [genericι]
+
+/-- The inverse marking followed by the base change projection is the map to the total space. -/
+@[reassoc (attr := simp)]
+theorem genericIso_inv_left_fst :
+    M.genericIso.inv.left ≫ pullback.fst M.model.hom j = M.genericι :=
+  (rfl)
+
+/-- The marked fibre sits over the given base morphism. -/
+@[reassoc (attr := simp)]
+theorem genericι_comp_hom : M.genericι ≫ M.model.hom = A.hom ≫ j := by
+  rw [genericι, Category.assoc, pullback.condition, ← Category.assoc]
+  exact congrArg (· ≫ j) (Over.w M.genericIso.inv)
+
+/-- The square determined by the marking is cartesian. -/
+theorem isPullback_genericι : IsPullback M.genericι A.hom M.model.hom j :=
+  .of_iso_pullback ⟨M.genericι_comp_hom⟩ ((Over.forget η).mapIso M.genericIso.symm) rfl
+    (Over.w M.genericIso.inv)
+
 /-- Two `S`-morphisms from a test object into a model are equal as soon as their marked
 restrictions to `A` are. -/
 theorem hom_ext {Y : Over S} (hY : P Y.hom) {f g : Y ⟶ M.model}
@@ -165,6 +193,39 @@ theorem eq_extend_iff {Y : Over S} {hY : P Y.hom} {f : (Over.pullback j).obj Y �
     {g : Y ⟶ M.model} :
     g = M.extend Y hY f ↔ (Over.pullback j).map g ≫ M.genericIso.hom = f := by
   rw [extend, Equiv.eq_symm_apply, homEquiv_apply]
+
+/-- A morphism extends `f` if and only if the square with the marked fibre map commutes. -/
+theorem eq_extend_iff_genericι {Y : Over S} {hY : P Y.hom}
+    {f : (Over.pullback j).obj Y ⟶ A} {g : Y ⟶ M.model} :
+    g = M.extend Y hY f ↔ pullback.fst Y.hom j ≫ g.left = f.left ≫ M.genericι := by
+  rw [M.eq_extend_iff]
+  have hfst : ((Over.pullback j).map g ≫ M.genericIso.hom).left ≫ M.genericι =
+      pullback.fst Y.hom j ≫ g.left := by
+    simp [Over.pullback_map_left]
+  rw [← hfst]
+  refine ⟨fun h ↦ by rw [h], fun h ↦ Over.OverMorphism.ext ?_⟩
+  exact M.isPullback_genericι.hom_ext h (by simp)
+
+/-- Precomposing an extension with the base change projection gives the original morphism to
+the marked fibre followed by its map to the total space. -/
+@[reassoc (attr := simp)]
+theorem fst_comp_extend_left {Y : Over S} (hY : P Y.hom) (f : (Over.pullback j).obj Y ⟶ A) :
+    pullback.fst Y.hom j ≫ (M.extend Y hY f).left = f.left ≫ M.genericι :=
+  M.eq_extend_iff_genericι.mp rfl
+
+/-- Every section of the marked fibre extends uniquely to a section of the model when the
+base itself belongs to the test class. -/
+theorem existsUnique_section (hP : P (𝟙 S)) (x : Over.mk (𝟙 η) ⟶ A) :
+    ∃! s : Over.mk (𝟙 S) ⟶ M.model, j ≫ s.left = x.left ≫ M.genericι := by
+  let q : (Over.pullback j).obj (Over.mk (𝟙 S)) ⟶ Over.mk (𝟙 η) :=
+    Over.homMk (pullback.snd (𝟙 S) j) (by simp)
+  have hf : pullback.fst (𝟙 S) j = pullback.snd (𝟙 S) j ≫ j := by
+    simpa using pullback.condition (f := 𝟙 S) (g := j)
+  have hsection (s : Over.mk (𝟙 S) ⟶ M.model) :
+      s = M.extend _ hP (q ≫ x) ↔ j ≫ s.left = x.left ≫ M.genericι := by
+    rw [M.eq_extend_iff_genericι]
+    simp only [Over.mk_hom, hf, Over.comp_left, q, Over.homMk_left, Category.assoc, cancel_epi]
+  exact ⟨_, (hsection _).1 rfl, fun s hs ↦ (hsection s).2 hs⟩
 
 /-- Uniqueness of the extension: a morphism whose marked restriction is `f` is the extension
 of `f`. -/
@@ -239,6 +300,12 @@ theorem ofLE_genericIso (M : Model Q j A) (hPQ : ∀ ⦃X Y : Scheme.{u}⦄ (f :
     (M.ofLE hPQ).genericIso = M.genericIso :=
   (rfl)
 
+/-- Weakening the test class preserves the map from the marked fibre to the total space. -/
+@[simp]
+theorem ofLE_genericι (M : Model Q j A) (hPQ : ∀ ⦃X Y : Scheme.{u}⦄ (f : X ⟶ Y), P f → Q f) :
+    (M.ofLE hPQ).genericι = M.genericι :=
+  (rfl)
+
 /-- Extension into a model, regarded as a model for a smaller class of test morphisms, is its
 original extension. -/
 @[simp]
@@ -285,6 +352,15 @@ def extendHom (N : NeronModel j B) (φ : A ⟶ B) : M.model ⟶ N.model :=
 theorem map_extendHom (N : NeronModel j B) (φ : A ⟶ B) :
     (Over.pullback j).map (M.extendHom N φ) ≫ N.genericIso.hom = M.genericIso.hom ≫ φ :=
   N.map_extend _ _
+
+/-- Extension of a morphism commutes with the maps from the marked fibres to the total spaces. -/
+@[reassoc (attr := simp)]
+theorem genericι_comp_extendHom_left (N : NeronModel j B) (φ : A ⟶ B) :
+    M.genericι ≫ (M.extendHom N φ).left = φ.left ≫ N.genericι := by
+  simpa only [Over.comp_left, Category.assoc, Model.genericIso_hom_left_genericι,
+    Over.pullback_map_left, pullback.lift_fst, Model.genericIso_inv_left_fst_assoc,
+    Over.inv_left_hom_left_assoc] using
+    congrArg (fun f ↦ M.genericIso.inv.left ≫ f.left ≫ N.genericι) (M.map_extendHom N φ)
 
 /-- A morphism of Néron models is the extension of `φ` if and only if it restricts to `φ` along
 the markings. -/
