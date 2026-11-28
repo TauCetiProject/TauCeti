@@ -175,11 +175,20 @@ theorem botPreservingToTopPreservingOp_comp_topPreservingOpToBotPreserving :
 
 /-- Strict isomorphism of categories `Δ_⊤ᵒᵖ ≅ Δ_⊥`. The underlying equivalence is
 `topBotIsoCat.toEquivalence`. -/
-@[expose, simps functor inverse]
 def topBotIsoCat : IsoCat TopPreservingᵒᵖ BotPreserving where
   functor := topPreservingOpToBotPreserving
   inverse := botPreservingToTopPreservingOp
   unit_eq := topPreservingOpToBotPreserving_comp_botPreservingToTopPreservingOp.symm
   counit_eq := botPreservingToTopPreservingOp_comp_topPreservingOpToBotPreserving
+
+/-- Forward functor of `topBotIsoCat`. -/
+@[simp]
+theorem topBotIsoCat_functor :
+    topBotIsoCat.functor = topPreservingOpToBotPreserving := (rfl)
+
+/-- Inverse functor of `topBotIsoCat`. -/
+@[simp]
+theorem topBotIsoCat_inverse :
+    topBotIsoCat.inverse = botPreservingToTopPreservingOp := (rfl)
 
 end TauCeti.SimplexCategory

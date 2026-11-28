@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 public import Mathlib.AlgebraicTopology.SimplexCategory.Rev
-public import Mathlib.CategoryTheory.Widesubcategory
+public import TauCeti.CategoryTheory.Widesubcategory
 
 /-!
 # Endpoint-preserving maps in the simplex category
@@ -179,40 +179,6 @@ the greatest vertex. -/
 abbrev EndpointPreserving := WideSubcategory preservesEndpoints
 
 section WideSubcategory
-
-/-- The faithful inclusion `WideSubcategory P ⥤ WideSubcategory Q` between wide subcategories of
-`SimplexCategory` induced by `P ≤ Q`. -/
-@[expose] def wideSubcategoryInclusionOfLE {P Q : MorphismProperty _root_.SimplexCategory}
-    [P.IsMultiplicative] [Q.IsMultiplicative] (h : P ≤ Q) :
-    WideSubcategory P ⥤ WideSubcategory Q where
-  obj x := ⟨x.obj⟩
-  map f := ⟨f.hom, h _ f.property⟩
-
-instance {P Q : MorphismProperty _root_.SimplexCategory}
-    [P.IsMultiplicative] [Q.IsMultiplicative] (h : P ≤ Q) :
-    (wideSubcategoryInclusionOfLE h).Faithful where
-  map_injective eq := WideSubcategory.hom_ext _ (congrArg (fun g ↦ g.hom) eq)
-
-/-- Object map of `wideSubcategoryInclusionOfLE`. -/
-@[simp]
-lemma wideSubcategoryInclusionOfLE_obj {P Q : MorphismProperty _root_.SimplexCategory}
-    [P.IsMultiplicative] [Q.IsMultiplicative] (h : P ≤ Q) (x : WideSubcategory P) :
-    (wideSubcategoryInclusionOfLE h).obj x = ⟨x.obj⟩ := (rfl)
-
-/-- Morphism projection of `wideSubcategoryInclusionOfLE`. -/
-@[simp]
-lemma wideSubcategoryInclusionOfLE_map_hom {P Q : MorphismProperty _root_.SimplexCategory}
-    [P.IsMultiplicative] [Q.IsMultiplicative] (h : P ≤ Q) {x y : WideSubcategory P}
-    (f : x ⟶ y) :
-    ((wideSubcategoryInclusionOfLE h).map f).hom = f.hom := (rfl)
-
-/-- Composing `wideSubcategoryInclusionOfLE h` with the inclusion of `WideSubcategory Q` into
-`SimplexCategory` recovers the inclusion of `WideSubcategory P`. -/
-@[simp]
-lemma wideSubcategoryInclusionOfLE_comp_inclusion {P Q : MorphismProperty _root_.SimplexCategory}
-    [P.IsMultiplicative] [Q.IsMultiplicative] (h : P ≤ Q) :
-    wideSubcategoryInclusionOfLE h ⋙ wideSubcategoryInclusion Q = wideSubcategoryInclusion P :=
-  (rfl)
 
 /-- The unique morphism in `WideSubcategory P` to `⟨⦋0⦌⟩`, given that `P` contains every constant
 map to `⦋0⦌`. -/

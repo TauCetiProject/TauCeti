@@ -313,11 +313,18 @@ theorem uncut_comp_cut : uncut ⋙ cut = 𝟭 _ := by
 
 /-- The isomorphism of categories `Δ₊ᵒᵖ ≅ Δ_∂` given by the cut functor and its inverse. The
 underlying equivalence is `cutIsoCat.toEquivalence`. -/
-@[expose, simps functor inverse]
 def cutIsoCat : IsoCat AugmentedSimplexCategoryᵒᵖ EndpointPreserving where
   functor := cut
   inverse := uncut
   unit_eq := cut_comp_uncut.symm
   counit_eq := uncut_comp_cut
+
+/-- Forward functor of `cutIsoCat`. -/
+@[simp]
+theorem cutIsoCat_functor : cutIsoCat.functor = cut := (rfl)
+
+/-- Inverse functor of `cutIsoCat`. -/
+@[simp]
+theorem cutIsoCat_inverse : cutIsoCat.inverse = uncut := (rfl)
 
 end TauCeti.AugmentedSimplexCategory
