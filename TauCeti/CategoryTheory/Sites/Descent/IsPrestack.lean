@@ -164,8 +164,10 @@ lemma _root_.CategoryTheory.Functor.pullHom_toPseudofunctor'_eq (K : Cᵒᵖ ⥤
   have hcomp {U : C} (r : V ⟶ U) : K.toPseudofunctor'.mapComp' r.op.toLoc f.op.toLoc
       (f ≫ r).op.toLoc = eqToIso (K.map_comp r.op f.op) := by
     rw [Pseudofunctor.mapComp', PrelaxFunctor.map₂Iso_eqToIso, Functor.toPseudofunctor'_mapComp]
+    -- The two maps being compared are definitionally the ordinary functor maps of `K`.
     exact eqToIso_trans _ _
   simp only [pullHom, hcomp p, hcomp q, eqToIso.hom, eqToIso.inv, Cat.eqToHom_app]
+  -- The remaining map of `K.toPseudofunctor'` on `f.op.toLoc` is definitionally `K.map f.op`.
   rfl
 
 variable {D : Type*} [Category* D] (p : D ⥤ C)
