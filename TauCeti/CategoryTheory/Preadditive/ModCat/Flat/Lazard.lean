@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.ObjectProperty.Ind
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Flat.Factorization
 import Mathlib.Algebra.Category.Grp.FilteredColimits
+import TauCeti.CategoryTheory.Preadditive.ModCat.Evaluation
 
 /-!
 # The Lazard–Govorov presentation of flat modules
@@ -124,6 +125,57 @@ instance essentiallySmall_finiteFreeOver (F : ModCat.{v} C) [EssentiallySmall.{v
   have : LocallySmall.{v} (Cᵒᵖ ⥤ AddCommGrpCat.{v}) := locallySmall_of_faithful e.functor
   exact inferInstanceAs (EssentiallySmall (CostructuredArrow (isFiniteFree C).ι F))
 
+private def isColimit_forgetEval_finiteFreeOver [F.Flat] (X : C) :
+    IsColimit ((forgetEval X).mapCocone
+      ((Functor.LeftExtension.mk (𝟭 _) (isFiniteFree C).ι.rightUnitor.inv).coconeAt F)) := by
+  let E := forgetEval X
+  let c := (Functor.LeftExtension.mk (𝟭 _) (isFiniteFree C).ι.rightUnitor.inv).coconeAt F
+  let generator : E.obj ((yoneda C).obj X) := 𝟙 X
+  have leg (i : FiniteFreeOver F) (x : E.obj i.left.obj) :
+      (E.mapCocone c).ι.app i x = E.map i.hom x := by
+    have h : c.ι.app i = i.hom := by
+      simp only [c, Functor.LeftExtension.coconeAt_ι_app, Functor.LeftExtension.mk_hom,
+        Functor.LeftExtension.mk_right, Functor.rightUnitor_inv_app, Functor.id_map]
+      exact Category.id_comp _
+    rw [Functor.mapCocone_ι_app, h]
+  have transition {i j : FiniteFreeOver F} (f : i ⟶ j) :
+      ((CostructuredArrow.proj (isFiniteFree C).ι F ⋙ (isFiniteFree C).ι) ⋙ E).map f =
+        E.map f.left.hom := by
+    rw [Functor.comp_map _ E, Functor.comp_map (CostructuredArrow.proj (isFiniteFree C).ι F),
+      CostructuredArrow.proj_map, ObjectProperty.ι_map]
+  have lift (G : ModCat.{v} C) (x : E.obj G) :
+      ∃ p : (yoneda C).obj X ⟶ G, E.map p generator = x := by
+    obtain ⟨p, hp⟩ := exists_biproduct_desc_app_id (Y := fun _ : Fin 1 ↦ X) fun _ ↦ x
+    let a := biproduct.ι ((yoneda C).obj ∘ fun _ : Fin 1 ↦ X) 0 ≫ p
+    exact ⟨a, (forgetEval_map_apply X a generator).trans (hp 0)⟩
+  have hY := isFiniteFree_yoneda_obj X
+  refine Types.FilteredColimit.isColimitOf' _ (E.mapCocone c) ?_ ?_
+  · -- Every element comes from the identity generator of a representable.
+    intro x
+    obtain ⟨p, hp⟩ := lift F x
+    let i : FiniteFreeOver F := FiniteFreeOver.mk _ hY p
+    exact ⟨i, generator, ((leg i _).trans hp).symm⟩
+  · -- Equality in `F` gives two parallel arrows over `F` from that representable.
+    intro i x y h
+    rw [leg, leg] at h
+    obtain ⟨p, hp⟩ := lift i.left.obj x
+    obtain ⟨q, hq⟩ := lift i.left.obj y
+    have w : p ≫ i.hom = q ≫ i.hom := by
+      suffices E.map (p ≫ i.hom) generator = E.map (q ≫ i.hom) generator from
+        yoneda_hom_ext_of_forgetEval this
+      simpa only [E.map_comp_apply, hp, hq] using h
+    let k : FiniteFreeOver F := FiniteFreeOver.mk _ hY (p ≫ i.hom)
+    let a : k ⟶ i := FiniteFreeOver.homMk p rfl
+    let b : k ⟶ i := FiniteFreeOver.homMk q w.symm
+    obtain ⟨l, f, hf⟩ := IsFilteredOrEmpty.cocone_maps a b
+    refine ⟨l, f, ?_⟩
+    have he : p ≫ f.left.hom = q ≫ f.left.hom := by
+      simpa only [a, b, CostructuredArrow.comp_left, ObjectProperty.FullSubcategory.comp_hom,
+        FiniteFreeOver.homMk_left_hom] using congrArg (fun t : k ⟶ l ↦ t.left.hom) hf
+    rw [transition]
+    simpa only [E.map_comp_apply, hp, hq] using
+      congrArg (fun t : (yoneda C).obj X ⟶ l.left.obj ↦ E.map t generator) he
+
 /-- For a flat module, the given arrows from its finite free modules form a colimit cocone. -/
 def Flat.denseAtIsFiniteFreeι [EssentiallySmall.{v} C] [F.Flat] :
     (isFiniteFree C).ι.DenseAt F := by
@@ -141,39 +193,7 @@ def Flat.denseAtIsFiniteFreeι [EssentiallySmall.{v} C] [F.Flat] :
   apply evaluationJointlyReflectsColimits
   intro X
   apply isColimitOfReflects U
-  have lift (G : ModCat.{v} C) (x : G.obj.obj X) :
-      ∃ p : (yoneda C).obj X.unop ⟶ G, p.hom.app X (𝟙 X.unop) = x := by
-    obtain ⟨p, hp⟩ := exists_biproduct_desc_app_id (Y := fun _ : Fin 1 ↦ X.unop) fun _ ↦ x
-    exact ⟨_, hp 0⟩
-  have hY := isFiniteFree_yoneda_obj X.unop
-  apply Types.FilteredColimit.isColimitOf'
-  · -- Every element comes from the identity generator of a representable.
-    intro x
-    obtain ⟨p, hp⟩ := lift F x
-    let i : FiniteFreeOver F := FiniteFreeOver.mk _ hY p
-    exact ⟨i, 𝟙 X.unop, hp.symm⟩
-  · -- Equality in `F` gives two parallel arrows over `F` from that representable.
-    intro i x y h
-    -- The cocone leg in `Type` is the underlying function of the component of `i.hom` at `X`.
-    change i.hom.hom.app X x = i.hom.hom.app X y at h
-    obtain ⟨p, hp⟩ := lift i.left.obj x
-    obtain ⟨q, hq⟩ := lift i.left.obj y
-    have w : p ≫ i.hom = q ≫ i.hom := by
-      apply ObjectProperty.hom_ext
-      apply preadditiveYoneda_obj_hom_ext
-      rwa [← hp, ← hq] at h
-    let k : FiniteFreeOver F := FiniteFreeOver.mk _ hY (p ≫ i.hom)
-    let a : k ⟶ i := FiniteFreeOver.homMk p rfl
-    let b : k ⟶ i := FiniteFreeOver.homMk q w.symm
-    obtain ⟨l, f, hf⟩ := IsFilteredOrEmpty.cocone_maps a b
-    refine ⟨l, f, ?_⟩
-    -- The transition in `Type` comes from the underlying module map of `f` evaluated at `X`.
-    change f.left.hom.hom.app X x = f.left.hom.hom.app X y
-    have he : p ≫ f.left.hom = q ≫ f.left.hom := by
-      simpa only [a, b, CostructuredArrow.comp_left, ObjectProperty.FullSubcategory.comp_hom,
-        FiniteFreeOver.homMk_left_hom] using congrArg (fun t : k ⟶ l ↦ t.left.hom) hf
-    rw [← hp, ← hq]
-    exact congrArg (fun t : (yoneda C).obj X.unop ⟶ l.left.obj ↦ t.hom.app X (𝟙 X.unop)) he
+  exact isColimit_forgetEval_finiteFreeOver X.unop
 
 /-- A flat module over an essentially small preadditive category is a small filtered colimit of
 finite free modules. -/
