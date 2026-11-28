@@ -40,6 +40,7 @@ its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges
   in the graph;
 * `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window;
 * `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array;
+* `SimpleGraph.Hom.mapDart_symm` — a graph homomorphism commutes with reversing a dart;
 * `SimpleGraph.Embedding.isoInduceRange_apply` — evaluating `isoInduceRange` at a vertex gives the
   corresponding range subtype vertex.
 -/
@@ -121,6 +122,15 @@ theorem adjArray_injective :
     Function.Injective (adjArray : SimpleGraph V → V × V → Bool) := fun G G' h => by
   ext i j
   simpa only [adjArray_apply, decide_eq_decide] using congrFun h (i, j)
+
+namespace Hom
+
+/-- A graph homomorphism commutes with reversing a dart. -/
+theorem mapDart_symm {G : SimpleGraph V} {H : SimpleGraph W} (f : G →g H) (d : G.Dart) :
+    f.mapDart d.symm = (f.mapDart d).symm := by
+  ext <;> simp
+
+end Hom
 
 namespace Embedding
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.Combinatorics.Quiver.Reorient
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
@@ -30,11 +31,14 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.Orientation`: a choice of one dart from each reversed pair.
 * `TauCeti.DoubledQuiver.Orientation.ofLinearOrder`: orient every edge from its smaller endpoint
   to its larger endpoint.
+* `TauCeti.DoubledQuiver.Orientation.comap`: pull an orientation back along a graph homomorphism.
 * `SimpleGraph.Coloring.sourceSink`: direct every edge toward the `true` endpoint of a
   two-colouring.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
+* `TauCeti.DoubledQuiver.OrientedQuiver.map`: a graph homomorphism that sends chosen darts to
+  chosen darts maps one oriented quiver to the other.
 * `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder`,
   `TauCeti.DoubledQuiver.OrientedQuiver.lt_of_path_of_length_pos_ofLinearOrder`,
   `TauCeti.DoubledQuiver.OrientedQuiver.le_of_path_ofLinearOrder`, and
@@ -122,6 +126,23 @@ target. -/
 @[simp]
 theorem mem_ofLinearOrder_iff [LinearOrder V] (d : G.Dart) :
     d ∈ ofLinearOrder G ↔ d.fst < d.snd :=
+  Iff.rfl
+
+variable {G} {W : Type*} {H : SimpleGraph W}
+
+/-- The pullback of an orientation of `H` along a graph homomorphism `f : G →g H`: a dart of `G`
+is chosen exactly when its image under `f` is chosen. -/
+def comap (f : G →g H) (o : Orientation H) : Orientation G where
+  carrier := {d | f.mapDart d ∈ o}
+  symm_mem_iff_notMem d := by
+    simp only [Set.mem_ofPred_eq, f.mapDart_symm]
+    exact o.symm_mem_iff_notMem _
+
+/-- A dart belongs to the pulled-back orientation exactly when its image belongs to the
+orientation. -/
+@[simp]
+theorem mem_comap_iff (f : G →g H) (o : Orientation H) (d : G.Dart) :
+    d ∈ o.comap f ↔ f.mapDart d ∈ o :=
   Iff.rfl
 
 end Orientation
@@ -359,6 +380,27 @@ theorem forget_arrow {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) 
       Quiver.homOfEq (DoubledQuiver.arrow G h)
         (forget_obj G o i).symm (forget_obj G o j).symm := by
   apply Subsingleton.elim
+
+section map
+
+variable {G} {W : Type*} {H : SimpleGraph W} (f : G →g H) {o₁ : Orientation G}
+  {o₂ : Orientation H}
+
+/-- A graph homomorphism `f : G →g H` that sends each dart chosen by `o₁` to a dart chosen by
+`o₂` maps the oriented quiver of `o₁` to the oriented quiver of `o₂`, sending each vertex `v` to
+`f v`. For example, `f` maps the quiver of `o₂.comap f` to the quiver of `o₂`. -/
+def map (h : ∀ d ∈ o₁, f.mapDart d ∈ o₂) : OrientedQuiver G o₁ ⥤q OrientedQuiver H o₂ where
+  obj i := vertex H o₂ (f ((vertexEquiv G o₁).symm i))
+  map e := arrow H o₂ (f.map_adj e.val)
+    (by simpa only [SimpleGraph.Hom.mapDart_apply, Prod.map_apply] using h _ e.property)
+
+/-- The prefunctor `OrientedQuiver.map f h` acts on vertices by `f`. -/
+@[simp]
+theorem map_obj (h : ∀ d ∈ o₁, f.mapDart d ∈ o₂) (i : OrientedQuiver G o₁) :
+    (map f h).obj i = vertex H o₂ (f ((vertexEquiv G o₁).symm i)) :=
+  (rfl)
+
+end map
 
 end OrientedQuiver
 
