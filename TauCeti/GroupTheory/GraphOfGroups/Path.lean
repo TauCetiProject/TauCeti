@@ -68,6 +68,9 @@ at `a`.
 * `TauCeti.GraphOfGroups.π₁.vertexHom_eq_conj_comp`, `π₁.map_vertexHom_eq_map_conj`: the
   conjugations of `A_b` into `π₁(𝔸, a)` along two paths from `a` to `b` differ by an inner
   automorphism, so the images of a subgroup of `A_b` along them are conjugate.
+* `TauCeti.GraphOfGroups.π₁.vertexHom_cons_vertex`,
+  `TauCeti.GraphOfGroups.π₁.vertexHom_cons_dart_comp_ωArrow`: extending the conjugating path by a
+  vertex letter or a dart.
 * `TauCeti.GraphOfGroups.Path.nonempty_of_preconnected`: over a preconnected graph any two
   vertices are joined by an `𝔸`-path.
 * `TauCeti.GraphOfGroups.π₁.toπ₁Tree_vertexHom`: the image of `p g p⁻¹` in `π₁(𝔸, T)`.
@@ -326,6 +329,13 @@ theorem comp_left_iff {p : 𝔸.Path x y} {q r : 𝔸.Path y z} :
   rw [Quiver.Path.nil_comp, Quiver.Path.nil_comp] at hq hr
   exact hq.symm.trans ((h.comp_left p.reverse).trans hr)
 
+/-- A common final path can be cancelled from homotopic paths. -/
+theorem comp_right_iff {p q : 𝔸.Path x y} {r : 𝔸.Path y z} :
+    Homotopic (p.comp r) (q.comp r) ↔ Homotopic p q :=
+  ⟨fun h ↦ (comp_comp_reverse p r).symm.trans
+      ((h.comp_right r.reverse).trans (comp_comp_reverse q r)),
+    fun h ↦ h.comp_right r⟩
+
 end Homotopic
 
 /-- A path is homotopic to `r p⁻¹` exactly when its concatenation with `p` is homotopic to `r`. -/
@@ -466,6 +476,40 @@ composes the conjugation with the inner automorphism by the class of `s`. -/
 theorem vertexHom_comp (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     vertexHom (s.comp q) = (MulAut.conj (mk s) : π₁ 𝔸 a →* π₁ 𝔸 a).comp (vertexHom q) :=
   MonoidHom.ext (vertexHom_comp_apply s q)
+
+/-- Extending the conjugating path by a vertex group letter `g` precomposes `vertexHom` with inner
+conjugation by `g`. -/
+theorem vertexHom_cons_vertex (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom (p.cons (Letter.vertex g)) =
+      (vertexHom p).comp (MulAut.conj g : 𝔸.vertexGroup b →* 𝔸.vertexGroup b) := by
+  ext h
+  rw [← Path.comp_ofVertex, vertexHom_apply, MonoidHom.comp_apply, vertexHom_apply,
+    MonoidHom.coe_ofClass, MulAut.conj_apply, mk_eq_mk_iff, Quiver.Path.reverse_comp,
+    Path.reverse_ofVertex]
+  simp only [← Quiver.Path.comp_assoc, Path.comp_ofVertex]
+  exact (((Path.Homotopic.mul p g h).cons _).trans
+    (Path.Homotopic.mul p (g * h) g⁻¹)).comp_right p.reverse
+
+theorem vertexHom_cons_vertex_apply (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g h : 𝔸.vertexGroup b) :
+    vertexHom (p.cons (Letter.vertex g)) h = vertexHom p (g * h * g⁻¹) :=
+  DFunLike.congr_fun (vertexHom_cons_vertex p g) h
+
+/-- Extending the conjugating path by a dart `e : b ⟶ c` identifies the `ω_e`-elements at `c`
+with the `α_e`-elements at `b` inside `π₁(𝔸, a)`. -/
+theorem vertexHom_cons_dart_comp_ωArrow {c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :
+    (vertexHom (p.cons (Letter.dart e))).comp (𝔸.ωArrow e) =
+      (vertexHom p).comp (𝔸.αArrow e) := by
+  ext c₀
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, vertexHom_apply, vertexHom_apply,
+    mk_eq_mk_iff, Quiver.Path.reverse, ← Quiver.Path.comp_assoc,
+    Path.comp_ofVertex, Path.comp_ofVertex, Quiver.Path.comp_toPath_eq_cons, Letter.reverse_dart]
+  exact ((Path.Homotopic.dart_ωArrow p e c₀).cons _ |>.trans
+    (Path.Homotopic.dart_reverse _ e)).comp_right p.reverse
+
+theorem vertexHom_cons_dart_ωArrow_apply {c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
+    vertexHom (p.cons (Letter.dart e)) (𝔸.ωArrow e c₀) = vertexHom p (𝔸.αArrow e c₀) :=
+  DFunLike.congr_fun (vertexHom_cons_dart_comp_ωArrow p e) c₀
 
 /-- The conjugations of `A_b` into `π₁(𝔸, a)` along two paths `q` and `r` from `a` to `b` differ
 by the inner automorphism by the class of `r q⁻¹`. -/

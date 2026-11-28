@@ -88,6 +88,13 @@ theorem src_mem_componentVertices {e : Γ.E} (he : e ∈ Γ.componentDarts v) :
 theorem tgt_mem_componentVertices {e : Γ.E} (he : e ∈ Γ.componentDarts v) :
     Γ.tgt e ∈ Γ.componentVertices v := Γ.tgt_mem_componentVertices_of_src_mem v he
 
+/-- The darts of the component of `v` are the darts induced on its vertices. -/
+theorem componentDarts_eq_inducedDarts :
+    Γ.componentDarts v = Γ.inducedDarts (Γ.componentVertices v) := by
+  ext e
+  rw [mem_inducedDarts_iff]
+  exact ⟨fun he => ⟨he, Γ.tgt_mem_componentVertices v he⟩, fun he => he.1⟩
+
 /-- The connected component of `v` in `Γ`, as a Serre graph. -/
 abbrev component : SerreGraph.{u, v} :=
   Γ.subgraph (Γ.componentVertices v) (Γ.componentDarts v) (fun _ => Γ.src_mem_componentVertices v)

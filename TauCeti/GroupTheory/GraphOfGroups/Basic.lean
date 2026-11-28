@@ -93,6 +93,14 @@ theorem α_injective (e : Γ.E) : Function.Injective (𝔸.α e) := by
   intro c c' h
   simpa only [α_apply, EmbeddingLike.apply_eq_iff_eq, (𝔸.ω_injective _).eq_iff] using h
 
+variable {𝔸} in
+/-- When every vertex group is trivial, every edge group is also trivial since each edge group
+embeds into a vertex group. -/
+instance [∀ v, Subsingleton (𝔸.vertexGroup v)] (y : Γ.GeomEdge) :
+    Subsingleton (𝔸.edgeGroup y) := by
+  obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective y
+  exact (𝔸.ω_injective e).subsingleton
+
 /-- The map `α` of a reversed dart is `ω` of the dart: `α_{rev e} = ω_e`. -/
 @[simp] theorem α_rev_apply (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toGeomEdge (Γ.rev e))) :
     𝔸.α (Γ.rev e) c = 𝔸.ω e (MulEquiv.cast (M := 𝔸.edgeGroup) (Γ.toGeomEdge_rev e) c) := by
