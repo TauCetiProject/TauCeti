@@ -391,7 +391,7 @@ instance isIso_fromPerfection [IsPerfect X p] : IsIso (X.fromPerfection p hX) :=
     ((X.fromPerfection_iff p hX (MorphismProperty.isomorphisms Scheme)).2 fun U ↦ ?_)
   have : IsIso (CommRingCat.ofHom (ColimitPerfection.of Γ(X, U.val) p
       (natCast_app_eq_zero hX U.val))) :=
-    (ConcreteCategory.isIso_iff_bijective _).2 (ColimitPerfection.bijective_of _ p _)
+    (ConcreteCategory.isIso_iff_bijective _).2 (ColimitPerfection.of_bijective _ p _)
   exact (MorphismProperty.isomorphisms.iff _).2 inferInstance
 
 /-! ### The universal property of the perfection -/

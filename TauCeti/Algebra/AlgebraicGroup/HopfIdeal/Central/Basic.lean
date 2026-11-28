@@ -273,8 +273,9 @@ variable {R : Type u} [CommRing R]
 /-- Pulling a central Hopf ideal back along a bijective bialgebra morphism preserves centrality.
 Contravariantly, an isomorphism of affine group schemes carries central closed subgroup schemes
 to central closed subgroup schemes. -/
-theorem IsCentral.comapOfSurjective_of_bijective {H K : Type v} [CommRing H] [CommRing K]
-    [HopfAlgebra R H] [HopfAlgebra R K] {I : HopfIdeal R K} (hI : I.IsCentral)
+theorem IsCentral.comapOfSurjective_of_bijective {H : Type v} {K : Type w}
+    [CommRing H] [CommRing K] [HopfAlgebra R H] [HopfAlgebra R K]
+    {I : HopfIdeal R K} (hI : I.IsCentral)
     (f : H →ₐc[R] K) (hinj : Function.Injective f) (hsurj : Function.Surjective f) :
     (I.comapOfSurjective f hsurj).IsCentral := by
   apply (CommHopfAlgCat.isCentral_iff_forall_isCentralPoint
