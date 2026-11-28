@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Finiteness.Defs
-import Mathlib.LinearAlgebra.Isomorphisms
+public import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Quotients of submodules
@@ -31,6 +31,8 @@ the case `φ = p.subtype`.
 
 Two surjective linear maps with the same kernel identify their codomains, by the first
 isomorphism theorem; `LinearMap.equivOfSurjectiveOfKerEq` packages this equivalence.
+Descending a surjective linear map along another surjection preserves surjectivity
+(`LinearMap.liftOfSurjective_surjective`).
 
 For linear maps `f : M₁ → M₂` and `g : M₂ → M₃` with `g ∘ f = 0`, the homology of
 `M₁ → M₂ → M₃` can be described either as `ker g` modulo the image of `f`, or as the image of
@@ -196,6 +198,14 @@ namespace LinearMap
 variable {R M N N' : Type*} [Ring R] [AddCommGroup M] [AddCommGroup N] [AddCommGroup N']
   [Module R M] [Module R N] [Module R N'] (g : M →ₗ[R] N) (h : M →ₗ[R] N')
   (hg : Function.Surjective g) (hh : Function.Surjective h) (hk : ker g = ker h)
+
+/-- Descending a surjective linear map along a surjection preserves surjectivity. -/
+theorem liftOfSurjective_surjective (f : M →ₗ[R] N) (hf : Function.Surjective f)
+    (g : M →ₗ[R] N') (hfg : ker f ≤ ker g) (hg : Function.Surjective g) :
+    Function.Surjective (f.liftOfSurjective hf ⟨g, hfg⟩) := by
+  intro y
+  obtain ⟨x, rfl⟩ := hg y
+  exact ⟨f x, equivOfSurjective_apply hf hfg⟩
 
 /-- Two surjective linear maps with the same kernel identify their codomains, by the first
 isomorphism theorem. -/
