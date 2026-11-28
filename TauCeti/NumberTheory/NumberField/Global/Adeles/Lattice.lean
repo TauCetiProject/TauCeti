@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Submodule.Zeta
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GeneralizedIndex
+import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
 # Lattices in the finite adeles of a number field and sums over their sublattices
@@ -33,6 +34,10 @@ The discriminant of a lattice, for a CM field, is in
 
 ## Main declarations
 
+* `NumberField.FiniteAdeleRing.exists_range_mulVecLin_eq_genIndex_det`: a submodule `N` of finite
+  index of `Ô^r` is `A Ô^r` for a square matrix `A` over `Ô` with `[det A] = [Ô^r : N]`.
+* `NumberField.FiniteAdeleRing.cardQuot_range_mulVecLin_eq_genIndex_det`: `[Ô^r : C Ô^r] = [det C]`
+  for a square matrix `C` over `Ô` (both sides `0` when `det C` is not a unit of `𝔸_f`).
 * `NumberField.FiniteAdeleRing.exists_span_col_mul_eq`: a submodule of finite index of the span of
   the columns of `B` is spanned by the columns of `B A`, with `[det A]` its index.
 * `NumberField.FiniteAdeleRing.IsLatticeOfRank`: lattices of rank `r` in `𝔸_f^κ`.
@@ -98,6 +103,84 @@ private theorem map_colMap_span_col (B : Matrix κ (Fin r) 𝔸ᶠ[E])
   congr 2
   exact funext (colMap_col B A)
 
+/-- **A basis of a submodule of finite index of `Ô^r`.** An `Ô`-submodule `N` of finite index of
+`Ô^r` is the image of a square matrix `A` over `Ô` whose determinant is a unit of `𝔸_f`, with
+`[det A] = [Ô^r : N]`; `A` can be taken lower triangular, since the ideals of finite index of `Ô`
+are principal. -/
+theorem exists_range_mulVecLin_eq_genIndex_det
+    {N : Submodule (integralAdeles (𝓞 E) E) (Fin r → integralAdeles (𝓞 E) E)}
+    (hN : N.cardQuot ≠ 0) :
+    ∃ A : Matrix (Fin r) (Fin r) (integralAdeles (𝓞 E) E), LinearMap.range A.mulVecLin = N ∧
+      IsUnit (A.map (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E])).det ∧
+      genIndex E (A.map (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E])).det = N.cardQuot := by
+  obtain ⟨A, hA_tri, hA_range, hA_index⟩ :=
+    Submodule.exists_isLowerTriangular_range_mulVecLin_eq
+      (fun I hI ↦ isPrincipal_of_cardQuot_ne_zero hI) _ hN
+  have h_entry (i : Fin r) : (Ideal.span {A i i}).cardQuot ≠ 0 :=
+    Finset.prod_ne_zero_iff.1 (hA_index ▸ hN) i (Finset.mem_univ i)
+  have h_det : (A.map (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E])).det =
+      ∏ i, algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E] (A i i) := by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_of_isLowerTriangular _ hA_tri, map_prod]
+  refine ⟨A, hA_range, ?_, ?_⟩
+  · rw [h_det]
+    exact IsUnit.prod_univ_iff.2 fun i ↦ isUnit_coe_of_cardQuot_span_singleton_ne_zero (h_entry i)
+  · rw [h_det, map_prod, hA_index, Nat.cast_prod]
+    exact Finset.prod_congr rfl fun i _ ↦
+      genIndex_eq_cardQuot (isUnit_coe_of_cardQuot_span_singleton_ne_zero (h_entry i))
+
+/-- The image `C Ô^r` of a square matrix over `Ô` with determinant a unit of `𝔸_f` has finite
+index in `Ô^r`: it contains `(det C) Ô^r`. -/
+private theorem cardQuot_range_mulVecLin_ne_zero
+    {C : Matrix (Fin r) (Fin r) (integralAdeles (𝓞 E) E)}
+    (hC : IsUnit (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E] C.det)) :
+    (LinearMap.range C.mulVecLin).cardQuot ≠ 0 := by
+  set I := Ideal.span {C.det}
+  have hI : Nat.card (integralAdeles (𝓞 E) E ⧸ I) ≠ 0 := by
+    have h0 : genIndex E (C.det : 𝔸ᶠ[E]) ≠ 0 := by simpa using (genIndex_units_pos hC.unit).ne'
+    rw [genIndex_eq_cardQuot hC] at h0
+    rw [← Submodule.cardQuot_apply]
+    exact_mod_cast h0
+  -- `(det C) Ô^r ≤ C Ô^r` by Cramer's rule.
+  have hle : ∀ x ∈ Ideal.pi fun _ : Fin r ↦ I, x ∈ LinearMap.range C.mulVecLin := by
+    intro x hx
+    choose y hy using fun i ↦ Ideal.mem_span_singleton'.1 (hx i)
+    refine ⟨C.cramer y, funext fun i ↦ ?_⟩
+    rw [mulVecLin_apply, mulVec_cramer, Pi.smul_apply, smul_eq_mul, mul_comm, hy]
+  have hpi : (Ideal.pi fun _ : Fin r ↦ I).cardQuot ≠ 0 := by
+    rw [Submodule.cardQuot_apply, Nat.card_congr (Ideal.piQuotEquiv (Fin r) I).toEquiv,
+      Nat.card_pi]
+    exact Finset.prod_ne_zero_iff.2 fun _ _ ↦ hI
+  exact ne_zero_of_dvd_ne_zero hpi
+    (AddSubgroup.index_dvd_of_le (K := (LinearMap.range C.mulVecLin).toAddSubgroup) hle)
+
+/-- **The index of the image of a square matrix over `Ô`.** For a square matrix `C` over the
+integral finite adeles `Ô`, the index of the image `C Ô^r` in `Ô^r` is the generalised index of
+`det C`; both sides are `0` when `det C` is not a unit of the finite adeles. -/
+theorem cardQuot_range_mulVecLin_eq_genIndex_det
+    {C : Matrix (Fin r) (Fin r) (integralAdeles (𝓞 E) E)} :
+    ((LinearMap.range C.mulVecLin).cardQuot : ℚ) =
+      genIndex E (C.map (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E])).det := by
+  set ι := algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E]
+  have hι : Function.Injective ι := Subtype.val_injective
+  have hdet : (C.map ι).det = ι C.det := by rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  by_cases h0 : (LinearMap.range C.mulVecLin).cardQuot = 0
+  · -- infinite index: a unit determinant would make the index finite
+    rw [h0, Nat.cast_zero, eq_comm, genIndex_eq_zero_iff]
+    exact fun hC ↦ cardQuot_range_mulVecLin_ne_zero (hdet ▸ hC) h0
+  obtain ⟨A, hA_range, hA_unit, hA_index⟩ := exists_range_mulVecLin_eq_genIndex_det h0
+  -- `A = C V` and `C = A U`; `det C` is a unit as `det A` is, so `V U = 1`.
+  obtain ⟨U, hU⟩ := exists_mul_eq_of_range_le fun j ↦ hA_range ▸ col_mem_range_mulVecLin C j
+  obtain ⟨V, hV⟩ := exists_mul_eq_of_range_le fun j ↦ hA_range.symm ▸ col_mem_range_mulVecLin A j
+  have hC : IsUnit (C.map ι).det :=
+    isUnit_of_mul_isUnit_left (by rwa [← det_mul, ← Matrix.map_mul, hV])
+  have hVU : V * U = 1 := by
+    refine Matrix.map_injective hι ?_
+    dsimp only
+    rw [Matrix.map_mul, Matrix.map_one _ (map_zero ι) (map_one ι)]
+    refine ((Matrix.isUnit_iff_isUnit_det _).2 hC).mul_left_cancel ?_
+    rw [Matrix.mul_one, ← Matrix.map_mul, ← Matrix.map_mul, ← Matrix.mul_assoc, hV, hU]
+  rw [← hA_index, ← hV, Matrix.map_mul, det_mul, map_mul, genIndex_det_map_eq_one hVU, mul_one]
+
 /-- Let `B` be a matrix over the finite adeles, and `M` an `Ô`-submodule of finite index of the
 `Ô`-span of its columns. Then `M` is spanned by the columns of `B A` for a
 square matrix `A` with invertible determinant, and `[det A]` is the index of `M`. -/
@@ -115,21 +198,10 @@ theorem exists_span_col_mul_eq {B : Matrix κ (Fin r) 𝔸ᶠ[E]}
       (Submodule.span (integralAdeles (𝓞 E) E) (Set.range B.col)).toAddSubgroup := by
     rw [← range_colMap]
     exact M.toAddSubgroup.index_comap (colMap B).toAddMonoidHom
-  obtain ⟨A, hA_tri, hA_range, hA_index⟩ :=
-    Submodule.exists_isLowerTriangular_range_mulVecLin_eq
-      (fun I hI ↦ isPrincipal_of_cardQuot_ne_zero hI) _ (h_comap.trans_ne h_index)
-  have h_entry (i : Fin r) : (Ideal.span {A i i}).cardQuot ≠ 0 :=
-    Finset.prod_ne_zero_iff.1 (hA_index ▸ h_comap ▸ h_index) i (Finset.mem_univ i)
-  have h_det : (A.map (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E])).det =
-      ∏ i, algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E] (A i i) := by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_of_isLowerTriangular _ hA_tri, map_prod]
-  refine ⟨A.map (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E]), ?_, ?_, ?_⟩
-  · rw [h_det]
-    exact IsUnit.prod_univ_iff.2 fun i ↦ isUnit_coe_of_cardQuot_span_singleton_ne_zero (h_entry i)
-  · rw [← map_colMap_span_col, hA_range, Submodule.map_comap_eq_self (range_colMap B ▸ hM)]
-  · rw [h_det, map_prod, ← h_comap, hA_index, Nat.cast_prod]
-    exact Finset.prod_congr rfl fun i _ ↦
-      genIndex_eq_cardQuot (isUnit_coe_of_cardQuot_span_singleton_ne_zero (h_entry i))
+  obtain ⟨A, hA_range, hA_unit, hA_index⟩ :=
+    exists_range_mulVecLin_eq_genIndex_det (h_comap.trans_ne h_index)
+  refine ⟨A.map (algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E]), hA_unit, ?_, by rw [hA_index, h_comap]⟩
+  rw [← map_colMap_span_col, hA_range, Submodule.map_comap_eq_self (range_colMap B ▸ hM)]
 
 /-- An `Ô`-submodule `L` of `𝔸_f^κ` is a **lattice of rank `r`** if it is the `Ô`-span of the
 columns of `x a`, where `x` is a `κ × r` matrix over the number field `E` with independent columns

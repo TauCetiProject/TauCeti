@@ -24,6 +24,12 @@ off the entries of a reindexed matrix: `A.reindex eₘ eₙ = A'` gives `A' (e�
 (`Matrix.apply_apply_of_reindex_eq`), and shows that the `n × m` matrix of an injection
 `f : m ↪ n` has a left inverse, its transpose (`Matrix.submatrix_one_mul_submatrix_one`).
 
+Selecting rows or columns of a product selects them in one factor (`Matrix.mul_submatrix_id`,
+`Matrix.submatrix_id_mul`, and `Matrix.transpose_map_submatrix_mul` and
+`Matrix.transpose_map_submatrix_mul_mul_submatrix` for an entrywise twisted transpose), and a
+product with a vector vanishing at the indices `e (β)` of a splitting `e : β ⊕ α ≃ ν` only sees the
+columns `e (α)` (`Matrix.mulVec_eq_mulVec_comp_of_comp_eq_zero`).
+
 For the Cartan matrix of a Dynkin diagram these permutations are the diagram symmetries.
 
 ## Main definitions
@@ -81,6 +87,53 @@ theorem apply_apply_of_reindex_eq {l m n o α : Type*} {A : Matrix m n α} {A' :
     A' (eₘ a) (eₙ b) = A a b := by
   subst h
   simp
+
+section SelectRowsColumns
+
+variable {l m n p α : Type*} [Fintype m] [Mul α] [AddCommMonoid α]
+
+/-- Selecting the columns `f` of a product selects them in the right factor. -/
+theorem mul_submatrix_id (M : Matrix l m α) (N : Matrix m n α) (f : p → n) :
+    M * N.submatrix id f = (M * N).submatrix id f := by
+  rw [submatrix_mul _ _ _ id _ Function.bijective_id, submatrix_id_id]
+
+/-- Selecting the rows `f` of a product selects them in the left factor. -/
+theorem submatrix_id_mul (M : Matrix l m α) (N : Matrix m n α) (f : p → l) :
+    M.submatrix f id * N = (M * N).submatrix f id := by
+  rw [submatrix_mul _ _ _ id _ Function.bijective_id, submatrix_id_id]
+
+/-- The rows `f` of `(g ^ σ)ᵀ J` are `((g_{·, f}) ^ σ)ᵀ J`, where `^ σ` applies `σ` to every
+entry. -/
+theorem transpose_map_submatrix_mul {F : Type*} [FunLike F α α] {σ : F} (g : Matrix m l α)
+    (J : Matrix m n α) (f : p → l) :
+    ((g.submatrix id f).map σ)ᵀ * J = ((g.map σ)ᵀ * J).submatrix f id := by
+  rw [← submatrix_id_mul, ← submatrix_map, transpose_submatrix]
+
+/-- With `^ σ` applying `σ` to every entry, `((g_{·, f}) ^ σ)ᵀ J N_{·, h}` is the block `(f, h)` of
+`(g ^ σ)ᵀ J N`. -/
+theorem transpose_map_submatrix_mul_mul_submatrix {o q : Type*} [Fintype n] {F : Type*}
+    [FunLike F α α] {σ : F} (g : Matrix m l α) (J : Matrix m n α) (N : Matrix n o α) (f : p → l)
+    (h : q → o) :
+    ((g.submatrix id f).map σ)ᵀ * J * N.submatrix id h = ((g.map σ)ᵀ * J * N).submatrix f h := by
+  rw [transpose_map_submatrix_mul, ← submatrix_mul _ _ _ _ _ Function.bijective_id]
+
+end SelectRowsColumns
+
+/-- A product `H *ᵥ x`, where `x` vanishes at the indices `e (β)` of a splitting `e : β ⊕ α ≃ ν`,
+only involves the columns `e (α)` of `H` and the entries `e (α)` of `x`: `x` is the zero extension
+of its entries at `e (α)` (`Matrix.mulVec_extend_zero`). -/
+theorem mulVec_eq_mulVec_comp_of_comp_eq_zero {A ν β α m : Type*} [NonUnitalNonAssocSemiring A]
+    [Fintype ν] [Fintype α] {H : Matrix m ν A} {x : ν → A} (e : β ⊕ α ≃ ν)
+    (hx : x ∘ e ∘ Sum.inl = 0) :
+    H *ᵥ x = H.submatrix id (e ∘ Sum.inr) *ᵥ (x ∘ e ∘ Sum.inr) := by
+  have hinj : Function.Injective (e ∘ Sum.inr) := e.injective.comp Sum.inr_injective
+  have hext : (e ∘ Sum.inr).extend (x ∘ e ∘ Sum.inr) 0 = x := by
+    funext j
+    obtain ⟨b | a, rfl⟩ := e.surjective j
+    · rw [Function.extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ Sum.inr_ne_inl (e.injective ha)]
+      exact (congrFun hx b).symm
+    · exact hinj.extend_apply _ _ a
+  rw [← mulVec_extend_zero hinj, hext]
 
 /-- The `n × m` matrix of an injection `f : m ↪ n` and its transpose compose to the identity of
 `m`: the columns of the first are distinct standard basis vectors. -/

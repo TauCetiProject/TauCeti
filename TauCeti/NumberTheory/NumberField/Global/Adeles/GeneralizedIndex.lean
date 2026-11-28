@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.FiniteAdeleRing
 public import Mathlib.RingTheory.FractionalIdeal.Norm
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FiniteIndexIdeal
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+import TauCeti.LinearAlgebra.Matrix.SubalgebraEntries
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
@@ -29,6 +30,8 @@ and `0` otherwise (`NumberField.FiniteAdeleRing.genIndex`). It is multiplicative
 * `NumberField.FiniteAdeleRing.genIndex_eq_cardQuot`: `[g] = [Ô : gÔ]`.
 * `NumberField.FiniteAdeleRing.genIndex_map`: invariance under automorphisms preserving `Ô`.
 * `NumberField.FiniteAdeleRing.genIndex_det_map_eq_one`: `[det U] = 1` for `U ∈ GL_r(Ô)`.
+* `NumberField.FiniteAdeleRing.genIndex_det_eq_one_of_mul_eq_one`: the same for a matrix over
+  `𝔸_f` with entries in `Ô` and a right inverse with entries in `Ô`.
 
 ## Attribution
 
@@ -174,5 +177,17 @@ theorem genIndex_det_map_eq_one {n : Type*} [Fintype n] [DecidableEq n]
   rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, Subalgebra.algebraMap_apply,
     genIndex_eq_cardQuot (h_unit.map (algebraMap (integralAdeles (𝓞 K) K) 𝔸ᶠ[K])),
     Ideal.span_singleton_eq_top.2 h_unit, Submodule.cardQuot_top, Nat.cast_one]
+
+/-- A square matrix `M` over `𝔸_f` with entries in `Ô` and a right inverse with entries in `Ô` has
+a determinant of generalised index `1`: `genIndex_det_map_eq_one` in `𝔸_f` coordinates. -/
+theorem genIndex_det_eq_one_of_mul_eq_one {n : Type*} [Fintype n] [DecidableEq n]
+    {M M' : Matrix n n 𝔸ᶠ[K]} (hM : ∀ i j, M i j ∈ integralAdeles (𝓞 K) K)
+    (hM' : ∀ i j, M' i j ∈ integralAdeles (𝓞 K) K) (h : M * M' = 1) : genIndex K M.det = 1 := by
+  obtain ⟨U, rfl⟩ := Subalgebra.exists_map_algebraMap_eq hM
+  obtain ⟨V, rfl⟩ := Subalgebra.exists_map_algebraMap_eq hM'
+  refine genIndex_det_map_eq_one (V := V) (Matrix.map_injective
+    (f := algebraMap (integralAdeles (𝓞 K) K) 𝔸ᶠ[K]) Subtype.val_injective ?_)
+  dsimp only
+  rw [Matrix.map_mul, h, Matrix.map_one _ (map_zero _) (map_one _)]
 
 end NumberField.FiniteAdeleRing

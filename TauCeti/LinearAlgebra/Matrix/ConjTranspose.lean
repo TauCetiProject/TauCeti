@@ -21,6 +21,8 @@ back to that of `B` (`star x * A * x = B`) carries pairings for `B` to pairings 
 * `Matrix.map_star_eq_map_starRingEnd`: `M.map star = M.map (starRingEnd α)`.
 * `Matrix.conjTranspose_map_intCast`: an integral matrix, viewed as a matrix over a star ring
   such as `ℂ`, has `Xᴴ = Xᵀ`.
+* `Matrix.transpose_map_mul`, `Matrix.transpose_map_transpose_map`: for an entrywise map `σ`,
+  `M ↦ (M.map σ)ᵀ` reverses products when `σ` is multiplicative, and is an involution when `σ` is.
 * `Matrix.conjTranspose_mul_mul_mul_of_star_mul_mul_eq`: if `star x * A * x = B`, then
   `(x F)ᴴ A (x F') = Fᴴ B F'`.
 -/
@@ -44,6 +46,20 @@ theorem conjTranspose_map_intCast {R : Type*} [Ring R] [StarRing R] (X : Matrix 
     (X.map ((↑) : ℤ → R))ᴴ = (X.map ((↑) : ℤ → R))ᵀ := by
   ext i j
   simp
+
+/-- The `σ`-twisted transpose reverses products: `((M N) ^ σ)ᵀ = (N ^ σ)ᵀ (M ^ σ)ᵀ`, where `^ σ`
+applies `σ` to every entry, for `σ` in any type of non-unital ring endomorphisms. -/
+theorem transpose_map_mul {m n R S : Type*} [Fintype m] [NonUnitalNonAssocCommSemiring R]
+    [FunLike S R R] [NonUnitalRingHomClass S R R] (σ : S) (M : Matrix l m R) (N : Matrix m n R) :
+    ((M * N).map σ)ᵀ = (N.map σ)ᵀ * (M.map σ)ᵀ := by
+  ext i j
+  simp only [transpose_apply, map_apply, Matrix.mul_apply, map_sum, map_mul, mul_comm]
+
+/-- For an involution `σ`, the `σ`-twisted transpose is an involution on matrices. -/
+@[simp]
+theorem transpose_map_transpose_map {n R : Type*} {σ : R → R} (hσ : Function.Involutive σ)
+    (M : Matrix l n R) : (((M.map σ)ᵀ).map σ)ᵀ = M :=
+  Matrix.ext fun i j ↦ hσ (M i j)
 
 section NonUnitalSemiring
 
