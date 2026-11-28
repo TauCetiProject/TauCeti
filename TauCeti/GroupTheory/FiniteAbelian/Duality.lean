@@ -146,4 +146,34 @@ theorem dual_ker_eq_zpowers [CommGroup A] [Finite A]
       simp [hg]
   exact congrArg OrderDual.ofDual ((OrderIso.symm_apply_eq _).mp h).symm
 
+/-- If restriction to `A` preserves the order of `ψ`, its powers give all characters of
+`A / ker(ψ|_A)` without repetition. -/
+noncomputable def zpowersEquivCosetCharacters [CommGroup A] [Finite A] (ψ : A →* Rˣ)
+    (H : Subgroup A) [HasEnoughRootsOfUnity R (Monoid.exponent H)]
+    (horder : orderOf (ψ.comp H.subtype) = orderOf ψ) :
+    Subgroup.zpowers ψ ≃* ((H ⧸ ψ.ker.subgroupOf H) →* Rˣ) := by
+  let r := domRestrictHom H Rˣ
+  have hr : r ψ = ψ.comp H.subtype := rfl
+  have heq : (Subgroup.zpowers ψ).map r = (domRestrictHom (ψ.ker.subgroupOf H) Rˣ).ker := by
+    rw [r.map_zpowers, hr, ← dual_ker_eq_zpowers, ← comap_ker, Subgroup.comap_subtype]
+    rfl
+  have hψfin : IsOfFinOrder ψ := isOfFinOrder_iff_pow_eq_one.mpr
+    ⟨Nat.card A, Nat.card_pos, MonoidHom.ext fun a ↦ by
+      simp only [pow_apply, one_apply, ← map_pow, pow_card_eq_one', map_one]⟩
+  have : Finite ↥(Subgroup.zpowers ψ) := hψfin.finite_zpowers
+  have hb : Function.Bijective (r.subgroupMap (Subgroup.zpowers ψ)) :=
+    (Nat.bijective_iff_surjective_and_card _).mpr ⟨r.subgroupMap_surjective _, by
+      rw [r.map_zpowers, Nat.card_zpowers, Nat.card_zpowers, hr, horder]⟩
+  exact (MulEquiv.ofBijective _ hb).trans <| (MulEquiv.subgroupCongr heq).trans <|
+    domRestrictHomKerEquiv Rˣ _
+
+/-- The quotient character evaluates on a coset representative as the original power does. -/
+@[simp] theorem zpowersEquivCosetCharacters_apply_mk [CommGroup A] [Finite A] (ψ : A →* Rˣ)
+    (H : Subgroup A) [HasEnoughRootsOfUnity R (Monoid.exponent H)]
+    (horder : orderOf (ψ.comp H.subtype) = orderOf ψ) (χ : Subgroup.zpowers ψ) (t : H) :
+    ψ.zpowersEquivCosetCharacters H horder χ (t : H ⧸ ψ.ker.subgroupOf H) = χ.val t := by
+  rw [zpowersEquivCosetCharacters, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    domRestrictHomKerEquiv_apply_coe]
+  rfl
+
 end MonoidHom
