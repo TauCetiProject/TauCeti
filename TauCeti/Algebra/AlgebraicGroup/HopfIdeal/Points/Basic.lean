@@ -36,6 +36,8 @@ the point factors uniquely through the quotient algebra.
   cocommutative, the cut-out point subgroup is commutative.
 * `CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff`: membership in the point subgroup cut out
   by an ideal mapped along a morphism is detected after pullback.
+* `CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup`: the restricted `BialgHom.mapDomain`
+  homomorphism between cut-out point subgroups, with functoriality laws.
 * `CommHopfAlgCat.Hom.mem_quotientPointsSubgroup_map_iff_of_eq_mkQuotient`: the same along a
   quotient morphism, with the pullback written through `quotientPointsHom`.
 * `BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
@@ -276,6 +278,73 @@ theorem mapDomain_mem_quotientPointsSubgroup_of_map_le
   intro x hx
   rw [BialgHom.mapDomain_apply_apply]
   exact hf _ (hIJ (HopfIdeal.mem_map_of_mem phi.hom hx))
+
+/-- The point map induced by a Hopf-algebra morphism sending `I` into `J`, restricted to the
+cut-out point subgroups. -/
+noncomputable def _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup
+    {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
+    {I : HopfIdeal R H} {J : HopfIdeal R K} (hIJ : I.map phi.hom ≤ J) (A : CommAlgCat.{w} R) :
+    quotientPointsSubgroup K J A →* quotientPointsSubgroup H I A :=
+  ((BialgHom.mapDomain (A := A) phi.hom).domRestrict (quotientPointsSubgroup K J A)).codRestrict
+    (quotientPointsSubgroup H I A)
+    fun g ↦ mapDomain_mem_quotientPointsSubgroup_of_map_le phi hIJ A g.property
+
+/-- The restricted subgroup map `mapDomainQuotientPointsSubgroup` is induced by
+`BialgHom.mapDomain`. -/
+lemma _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup_apply
+    {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
+    {I : HopfIdeal R H} {J : HopfIdeal R K} (hIJ : I.map phi.hom ≤ J) (A : CommAlgCat.{w} R)
+    (g : quotientPointsSubgroup K J A) :
+    phi.mapDomainQuotientPointsSubgroup hIJ A g =
+      ⟨BialgHom.mapDomain (A := A) phi.hom g,
+        mapDomain_mem_quotientPointsSubgroup_of_map_le phi hIJ A g.property⟩ :=
+  (rfl)
+
+/-- Coercing `mapDomainQuotientPointsSubgroup` gives `BialgHom.mapDomain`. -/
+@[simp]
+lemma _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply
+    {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
+    {I : HopfIdeal R H} {J : HopfIdeal R K} (hIJ : I.map phi.hom ≤ J) (A : CommAlgCat.{w} R)
+    (g : quotientPointsSubgroup K J A) :
+    (phi.mapDomainQuotientPointsSubgroup hIJ A g :
+      HopfAlgebra.points (R := R) (H := H) A) =
+      BialgHom.mapDomain (A := A) phi.hom g :=
+  (rfl)
+
+/-- Pulling back along the identity morphism restricts to the identity on cut-out point
+subgroups. -/
+@[simp]
+lemma _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup_id
+    {H : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
+    (hI : I.map (𝟙 H : H ⟶ H).hom ≤ I) (A : CommAlgCat.{w} R) :
+    _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup (𝟙 H) hI A =
+      MonoidHom.id (quotientPointsSubgroup H I A) :=
+  MonoidHom.ext fun g ↦ Subtype.ext <| WithConv.ofConv_injective <| AlgHom.ext fun x ↦ by
+    rw [_root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
+      BialgHom.mapDomain_apply_apply]
+    rfl
+
+/-- Pulling back along a composite morphism restricts to the contravariant composite on cut-out
+point subgroups. -/
+@[simp]
+lemma _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup_comp
+    {H K L : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K) (psi : K ⟶ L)
+    {I : HopfIdeal R H} {J : HopfIdeal R K} {M : HopfIdeal R L}
+    (hIJ : I.map phi.hom ≤ J) (hJM : J.map psi.hom ≤ M) (A : CommAlgCat.{w} R) :
+    (phi.mapDomainQuotientPointsSubgroup hIJ A).comp
+        (psi.mapDomainQuotientPointsSubgroup hJM A) =
+      (phi ≫ psi).mapDomainQuotientPointsSubgroup (by
+        rw [CommHopfAlgCat.hom_comp, ← HopfIdeal.map_map]
+        exact (HopfIdeal.map_mono psi.hom hIJ).trans hJM) A :=
+  MonoidHom.ext fun g ↦ Subtype.ext <| WithConv.ofConv_injective <| AlgHom.ext fun x ↦ by
+    rw [MonoidHom.comp_apply,
+      _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
+      BialgHom.mapDomain_apply_apply,
+      _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
+      BialgHom.mapDomain_apply_apply,
+      _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
+      BialgHom.mapDomain_apply_apply,
+      CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
 
 /-- For the quotient morphism `q : H ⟶ H ⧸ I`, given with `hq : q = mkQuotient H I`, a point of
 `H ⧸ I` vanishes on the image of a Hopf ideal `J` of `H` exactly when the corresponding point of

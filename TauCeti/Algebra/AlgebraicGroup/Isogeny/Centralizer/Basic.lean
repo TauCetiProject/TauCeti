@@ -15,10 +15,10 @@ import Mathlib.RingTheory.RingHom.Finite
 /-!
 # Centralizers under separable isogenies
 
-For an isogeny `π : G → G'` of smooth affine groups with étale kernel, the differential
-identifies their Lie algebras. The centralizer of `x` in `G` is the scheme-theoretic inverse
-image of the centralizer of `dπ(x)` in `G'`. This gives a comparison of the actual defining
-ideals, and therefore of their points over every coefficient algebra.
+For an isogeny `π : G → G'` of smooth affine groups with étale kernel over an arbitrary field `k`,
+the differential identifies their Lie algebras. The centralizer of `x` in `G` is the
+scheme-theoretic inverse image of the centralizer of `dπ(x)` in `G'`. This gives a comparison of
+the actual defining ideals, and therefore of their points over every coefficient algebra.
 
 In characteristic zero, Cartier's theorem supplies smoothness and reducedness of the finite
 kernel, so no smoothness or étale-kernel hypothesis is required. Centrality, connectedness and
@@ -29,7 +29,8 @@ The restricted map `BialgHom.centralizerMap` is itself an isogeny: it is the bas
 `π` along the closed immersion of the target centralizer. This does not identify the two
 centralizers or their component groups, and does not assert an isomorphism. In particular,
 surjectivity on points follows over algebraically closed fields, not over arbitrary value
-algebras.
+algebras; for the component-group specializations over an algebraically closed field, see
+`TauCeti.Algebra.AlgebraicGroup.Isogeny.Centralizer.ComponentGroup`.
 
 ## References
 
@@ -85,29 +86,13 @@ private theorem centralizerMap_of_map_eq
     (hideal : (centralizerHopfIdeal H (dualCotangentMap f.hom x)).map f.hom =
       centralizerHopfIdeal K x) :
     IsIsogeny (_root_.CommHopfAlgCat.ofHom (f.hom.centralizerMap x)) := by
-  have hI := congrArg HopfIdeal.toIdeal hideal
-  -- The direct ring-hom coercion and the coercion through AlgHom have the same values.
-  have hcoe : f.hom.toAlgHom.toRingHom = (f.hom : H →+* K) := by
-    ext a
-    rfl
-  have h := (RingHom.finite_isStableUnderBaseChange.and
-    RingHom.FaithfullyFlat.isStableUnderBaseChange).quotientMap (f.hom : H →+* K)
-      (centralizerHopfIdeal H (dualCotangentMap f.hom x)).toIdeal
-      (hcoe ▸ ⟨hf.finite, hf.faithfullyFlat⟩)
-  rw [HopfIdeal.map_toIdeal] at hI
-  have h' := (RingHom.finite_respectsIso.and RingHom.FaithfullyFlat.respectsIso).left
-    _ (Ideal.quotEquivOfEq hI) h
-  have hmap : (f.hom.centralizerMap x).toAlgHom.toRingHom =
-      (Ideal.quotEquivOfEq hI).toRingHom.comp
-        (Ideal.quotientMap _ (f.hom : H →+* K) Ideal.le_comap_map) := by
-    ext a
-    simp only [RingHom.comp_apply, Ideal.quotientMap_mk, RingEquiv.toRingHom_eq_coe,
-      RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom]
-    exact f.hom.centralizerMap_mk x a
-  apply (isIsogeny_iff _).mpr
-  rw [_root_.CommHopfAlgCat.hom_ofHom, AlgHom.Finite, hmap]
-  exact h'
+  refine (isIsogeny_iff _).mpr ⟨?_, ?_⟩
+  · rw [_root_.CommHopfAlgCat.hom_ofHom, AlgHom.Finite,
+      f.hom.centralizerMap_toRingHom_eq x hideal]
+    exact RingHom.finite_respectsIso.left _ _
+      (RingHom.finite_isStableUnderBaseChange.quotientMap f.hom.toAlgHom.toRingHom _ hf.finite)
+  · rw [_root_.CommHopfAlgCat.hom_ofHom]
+    exact f.hom.faithfullyFlat_centralizerMap_of_map_eq hf.faithfullyFlat x hideal
 
 /-- An isogeny with injective differential restricts to an isogeny between the centralizers
 of corresponding Lie algebra elements. The coordinate map is finite and faithfully flat,

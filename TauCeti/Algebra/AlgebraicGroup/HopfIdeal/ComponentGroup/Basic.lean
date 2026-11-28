@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+public import TauCeti.Algebra.Group.Equiv.Cast
 
 /-!
 # Component groups of closed subgroups
@@ -25,17 +25,19 @@ the rational points of `N`, viewed inside `G(k)`:
   the identity component `I.identityComponent`. Hence `π₀(N) ≃* N(k) ⧸ N°(k)`
   (`TauCeti.HopfIdeal.quotientMulEquivComponentGroup`).
 * `TauCeti.HopfIdeal.componentGroupInclusion I : π₀(N) →* π₀(G)` is induced by the inclusion
-  `N ⊆ G`.
-* `TauCeti.HopfIdeal.componentGroupConjugationEquiv` is the isomorphism `π₀(N) ≃* π₀(gNg⁻¹)`
-  induced by conjugation by a rational point `g`; on rational points it sends the component
-  of `n` to the component of `gng⁻¹`.
+  `N ⊆ G` (trivial when `G` is connected, `TauCeti.HopfIdeal.componentGroupInclusion_eq_one`).
+* `MulEquiv.cast` transports component groups along equalities of Hopf ideals
+  (`TauCeti.HopfIdeal.cast_rationalComponentMap`), and
+  `TauCeti.HopfIdeal.componentGroupEquivOfEqBot` identifies `π₀(V(⊥)) ≃* π₀(G)`.
 * `TauCeti.HopfIdeal.componentGroupMap I J f h : π₀(N') →* π₀(N)` is induced by a homomorphism
-  `φ : G' → G` mapping the closed subgroup `N'` cut out by `J` into `N`. It is surjective when
-  the coordinate map of `φ` is injective and `N'` is the inverse image of `N`
+  `φ : G' → G` mapping the closed subgroup `N'` cut out by `J` into `N`. It commutes with the
+  ambient inclusions (`TauCeti.HopfIdeal.componentGroupInclusion_comp_componentGroupMap`) and is
+  surjective when the coordinate map of `φ` is injective and `N'` is the inverse image of `N`
   (`TauCeti.HopfIdeal.componentGroupMap_surjective`).
 
 These are the maps by which component groups of particular closed subgroups, such as
-centralizers, are compared under inclusion, conjugation and homomorphisms.
+centralizers, are compared under inclusion and homomorphisms. (Conjugation of closed-subgroup
+component groups lives in `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup.Conjugation`.)
 
 ## References
 
@@ -79,6 +81,14 @@ noncomputable def rationalComponentMap (I : HopfIdeal k H) :
   (FiniteTypeCommHopfAlgCat.rationalComponentMap (quotient H I)).comp
     (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom
 
+/-- The defining factorization of `HopfIdeal.rationalComponentMap` through the quotient-points
+isomorphism. -/
+theorem rationalComponentMap_def (I : HopfIdeal k H) :
+    I.rationalComponentMap =
+      (FiniteTypeCommHopfAlgCat.rationalComponentMap (quotient H I)).comp
+        (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom := by
+  rw [rationalComponentMap]
+
 /-- The component map of `I` is the rational component map of the finite-type affine group
 `H ⧸ I`, applied to the point of `H ⧸ I` through which `n` factors. -/
 theorem rationalComponentMap_apply (I : HopfIdeal k H)
@@ -120,19 +130,8 @@ theorem rationalComponentMap_eq_one_iff (I : HopfIdeal k H)
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) := by
   rw [HopfIdeal.rationalComponentMap_apply,
     FiniteTypeCommHopfAlgCat.rationalComponentMap_eq_one_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff (quotient H I).obj,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff H.obj I.identityComponent]
-  -- `N°` is cut out in `G` by the functions whose restriction to `N` vanishes on `N°`.
-  constructor
-  · intro h x hx
-    have hx' := h _ ((mem_identityComponent I x).mp hx)
-    rwa [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
-      CommHopfAlgCat.liftQuotientPoint_mk] at hx'
-  · intro h y hy
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [CommHopfAlgCat.liftQuotientPoint_mk]
-    exact h x ((mem_identityComponent I x).mpr
-      (by rwa [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk]))
+    ← I.quotientPointsHom_mem_quotientPointsSubgroup_identityComponent_iff (CommAlgCat.of k k),
+    CommHopfAlgCat.quotientPointsHom_liftQuotientPoint]
 
 /-- The kernel of the component map of `N` consists of the rational points of `N°`. -/
 theorem ker_rationalComponentMap (I : HopfIdeal k H) :
@@ -171,7 +170,7 @@ theorem quotientMulEquivComponentGroup_mk (I : HopfIdeal k H)
 /-- If the coordinate morphism `u : H ⧸ I ⟶ K ⧸ J` is induced by an algebra map `F : H → K`, then
 `π₀(u)` sends the component of a rational point `n` of `J` to the component of the point
 `n ∘ F` of `I`. -/
-private theorem mapComponentGroup_rationalComponentMap_of_mk
+theorem mapComponentGroup_rationalComponentMap_of_mk
     {K : FiniteTypeCommHopfAlgCat.{u, u} k} {I : HopfIdeal k H} {J : HopfIdeal k K}
     (u : quotient H I ⟶ quotient K J) (F : H →ₐ[k] K)
     (hu : ∀ a : H, toBialgHom u (Ideal.Quotient.mk I.toIdeal a) =
@@ -218,60 +217,51 @@ theorem componentGroupInclusion_rationalComponentMap (I : HopfIdeal k H)
   rw [BialgHom.mapDomain_apply]
   exact congrArg _ h
 
+/-- If `G` is connected, the homomorphism `π₀(N) →* π₀(G)` induced by the inclusion `N ⊆ G` of
+any closed subgroup is trivial (even though `π₀(N)` itself may be nontrivial). -/
+theorem componentGroupInclusion_eq_one (I : HopfIdeal k H)
+    [PreconnectedSpace (PrimeSpectrum H)] (C : I.ComponentGroup) :
+    I.componentGroupInclusion C = 1 :=
+  Subsingleton.elim _ _
+
 end Inclusion
 
-section Conjugation
+section Transport
 
-/-- **Conjugation of component groups.** Conjugation by a rational point `g` induces an
-isomorphism `π₀(N) ≃* π₀(gNg⁻¹)`, where `N` is cut out by `I` and `gNg⁻¹` by
-`J = I.conjugate g`. -/
-noncomputable def componentGroupConjugationEquiv (I J : HopfIdeal k H)
-    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) (hJ : J = I.conjugate g) :
-    I.ComponentGroup ≃* J.ComponentGroup :=
-  mapComponentGroupMulEquiv (I.quotientConjugationIso J g hJ)
-
-/-- On rational points, the conjugation isomorphism sends the component of `n` to the component
-of `gng⁻¹`. -/
+/-- Transporting a rational-point component across an equality of Hopf ideals preserves the
+underlying rational point. -/
 @[simp]
-theorem componentGroupConjugationEquiv_rationalComponentMap (I J : HopfIdeal k H)
-    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) (hJ : J = I.conjugate g)
+theorem cast_rationalComponentMap {I J : HopfIdeal k H} (hIJ : I = J)
     (n : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
-    componentGroupConjugationEquiv I J g hJ (I.rationalComponentMap n) =
-      J.rationalComponentMap ⟨g * n * g⁻¹,
-        hJ ▸ (CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff I g n).mpr n.property⟩ := by
-  rw [componentGroupConjugationEquiv, mapComponentGroupMulEquiv_apply]
-  -- `gng⁻¹` is the point `n ∘ conj g`, which is what the coordinate isomorphism pulls back to.
-  exact mapComponentGroup_rationalComponentMap_of_mk _ (HopfAlgebra.pointConjugationAlgHom g)
-    (fun a ↦ by rw [quotientConjugationIso_hom_apply, quotientConjugationEquiv_mk]) _ _
-    (HopfAlgebra.comp_pointConjugationAlgHom_self g _).symm
+    _root_.cast (congrArg (fun I : HopfIdeal k H ↦ I.ComponentGroup) hIJ)
+        (I.rationalComponentMap n) =
+      J.rationalComponentMap ⟨n.val, hIJ ▸ n.property⟩ := by
+  subst hIJ
+  rfl
 
-/-- Conjugation by the identity point induces the identity of `π₀(N)`. -/
+/-- Transporting a closed-subgroup component group along `I = ⊥` identifies it with `π₀(G)`. -/
+noncomputable def componentGroupEquivOfEqBot {I : HopfIdeal k H} (hI : I = ⊥) :
+    I.ComponentGroup ≃* ConnectedComponents (PrimeSpectrum H) :=
+  let e : H ≅ quotient H I :=
+    (quotientBotIso H).symm ≪≫ eqToIso (congrArg (quotient H) hI.symm)
+  mapComponentGroupMulEquiv e
+
+/-- On rational points, the identification `π₀(V(⊥)) ≃* π₀(G)` sends a rational point to its
+ambient component. -/
 @[simp]
-theorem componentGroupConjugationEquiv_one (I : HopfIdeal k H) :
-    componentGroupConjugationEquiv I I 1 (conjugate_one I).symm =
-      MulEquiv.refl I.ComponentGroup := by
-  ext c
-  obtain ⟨n, rfl⟩ := I.rationalComponentMap_surjective c
-  rw [componentGroupConjugationEquiv_rationalComponentMap, MulEquiv.refl_apply]
-  congr 1
-  exact Subtype.ext (by simp)
+theorem componentGroupEquivOfEqBot_rationalComponentMap {I : HopfIdeal k H} (hI : I = ⊥)
+    (n : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
+    componentGroupEquivOfEqBot hI (I.rationalComponentMap n) =
+      FiniteTypeCommHopfAlgCat.rationalComponentMap H n := by
+  have he :
+      ((quotientBotIso H).symm ≪≫ eqToIso (congrArg (quotient H) hI.symm)).hom =
+        mkQuotient H I := by
+    rw [Iso.trans_hom, Iso.symm_hom, quotientBotIso_inv, eqToIso.hom,
+      mkQuotient_comp_eqToHom hI]
+  rw [componentGroupEquivOfEqBot, mapComponentGroupMulEquiv_apply, he]
+  exact I.componentGroupInclusion_rationalComponentMap n
 
-/-- Conjugating by `g` and then by `g'` is conjugating by `g' * g`. -/
-theorem componentGroupConjugationEquiv_trans (I J L : HopfIdeal k H)
-    (g g' : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
-    (hJ : J = I.conjugate g) (hL : L = J.conjugate g') :
-    (componentGroupConjugationEquiv I J g hJ).trans
-        (componentGroupConjugationEquiv J L g' hL) =
-      componentGroupConjugationEquiv I L (g' * g) (by rw [hL, hJ, conjugate_mul]) := by
-  ext c
-  obtain ⟨n, rfl⟩ := I.rationalComponentMap_surjective c
-  rw [MulEquiv.trans_apply, componentGroupConjugationEquiv_rationalComponentMap,
-    componentGroupConjugationEquiv_rationalComponentMap,
-    componentGroupConjugationEquiv_rationalComponentMap]
-  congr 1
-  exact Subtype.ext (by simp [mul_assoc])
-
-end Conjugation
+end Transport
 
 section Map
 
@@ -285,6 +275,12 @@ noncomputable def componentGroupMap (I : HopfIdeal k H) (J : HopfIdeal k K) (f :
     (h : I.map (toBialgHom f) ≤ J) : J.ComponentGroup →* I.ComponentGroup :=
   mapComponentGroup (quotientMap I J f h)
 
+/-- The homomorphism `componentGroupMap` is `mapComponentGroup` on `quotientMap`. -/
+theorem componentGroupMap_eq_mapComponentGroup (I : HopfIdeal k H) (J : HopfIdeal k K)
+    (f : H ⟶ K) (h : I.map (toBialgHom f) ≤ J) :
+    componentGroupMap I J f h = mapComponentGroup (quotientMap I J f h) := by
+  rw [componentGroupMap]
+
 /-- On rational points, the induced map of component groups sends the component of `c` to the
 component of `φ(c)`. -/
 @[simp]
@@ -292,11 +288,26 @@ theorem componentGroupMap_rationalComponentMap (I : HopfIdeal k H) (J : HopfIdea
     (f : H ⟶ K) (h : I.map (toBialgHom f) ≤ J)
     (c : CommHopfAlgCat.quotientPointsSubgroup K.obj J (CommAlgCat.of k k)) :
     componentGroupMap I J f h (J.rationalComponentMap c) =
-      I.rationalComponentMap
-        ⟨BialgHom.mapDomain (A := k) (toBialgHom f) c,
-          CommHopfAlgCat.mapDomain_mem_quotientPointsSubgroup_of_map_le f.hom h _ c.property⟩ :=
+      I.rationalComponentMap (f.hom.mapDomainQuotientPointsSubgroup h (CommAlgCat.of k k) c) :=
   mapComponentGroup_rationalComponentMap_of_mk _ (toBialgHom f) (quotientMap_mk I J f h) _ _
-    (BialgHom.mapDomain_apply _ _)
+    ((f.hom.coe_mapDomainQuotientPointsSubgroup_apply h (CommAlgCat.of k k) c).trans
+      (BialgHom.mapDomain_apply _ _))
+
+/-- For nested closed subgroups `V(J) ⊆ V(I)` (`I ≤ J`), the induced component-group map
+`π₀(V(J)) → π₀(V(I))` agrees with the inclusion `V(J)(k) ⊆ V(I)(k)`. -/
+@[simp]
+theorem
+    _root_.TauCeti.FiniteTypeCommHopfAlgCat.mapComponentGroup_quotientMapOfLe_rationalComponentMap
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) {I J : HopfIdeal k H} (hIJ : I ≤ J)
+    (g : CommHopfAlgCat.quotientPointsSubgroup H.obj J (CommAlgCat.of k k)) :
+    mapComponentGroup (quotientMapOfLe H hIJ) (J.rationalComponentMap g) =
+      I.rationalComponentMap
+        ⟨g.val, CommHopfAlgCat.quotientPointsSubgroup_le_of_le H.obj hIJ _ g.property⟩ := by
+  exact mapComponentGroup_rationalComponentMap_of_mk (quotientMapOfLe H hIJ) (AlgHom.id k H)
+    (fun h ↦ by
+      simpa only [Ideal.Quotient.mkₐ_eq_mk, AlgHom.id_apply] using quotientMapOfLe_mk H hIJ h)
+    g ⟨g.val, CommHopfAlgCat.quotientPointsSubgroup_le_of_le H.obj hIJ _ g.property⟩
+    (by rw [AlgHom.comp_id, WithConv.toConv_ofConv])
 
 /-- Along the identity morphism, the induced map of component groups is the identity. -/
 @[simp]
@@ -316,6 +327,35 @@ theorem componentGroupMap_comp {L : FiniteTypeCommHopfAlgCat.{u, u} k} (I : Hopf
         exact (HopfIdeal.map_mono (toBialgHom g) hf).trans hg) := by
   rw [componentGroupMap, componentGroupMap, componentGroupMap, ← mapComponentGroup_comp,
     quotientMap_comp]
+
+/-- Transporting the target of `componentGroupMap` with `MulEquiv.cast` agrees with
+`componentGroupMap` at the transported ideal. -/
+theorem cast_comp_componentGroupMap {I I' : HopfIdeal k H}
+    (hI : I = I') (J : HopfIdeal k K) (f : H ⟶ K) (h : I.map (toBialgHom f) ≤ J) :
+    (MulEquiv.cast (M := fun I : HopfIdeal k H ↦ I.ComponentGroup) hI).toMonoidHom.comp
+        (componentGroupMap I J f h) =
+      componentGroupMap I' J f (hI ▸ h) := by
+  subst hI
+  rfl
+
+/-- Transporting the source of `componentGroupMap` with `MulEquiv.cast` agrees with
+`componentGroupMap` at the original ideal. -/
+theorem componentGroupMap_comp_cast (I : HopfIdeal k H)
+    {J J' : HopfIdeal k K} (hJ : J = J') (f : H ⟶ K) (h : I.map (toBialgHom f) ≤ J) :
+    (componentGroupMap I J' f (hJ ▸ h)).comp
+        (MulEquiv.cast (M := fun J : HopfIdeal k K ↦ J.ComponentGroup) hJ).toMonoidHom =
+      componentGroupMap I J f h := by
+  subst hJ
+  rfl
+
+/-- Induced maps of closed-subgroup component groups commute with the inclusions into the
+ambient component groups. -/
+theorem componentGroupInclusion_comp_componentGroupMap (I : HopfIdeal k H) (J : HopfIdeal k K)
+    (f : H ⟶ K) (h : I.map (toBialgHom f) ≤ J) :
+    I.componentGroupInclusion.comp (componentGroupMap I J f h) =
+      (mapComponentGroup f).comp J.componentGroupInclusion := by
+  rw [componentGroupInclusion, componentGroupInclusion, componentGroupMap,
+    ← mapComponentGroup_comp, ← mapComponentGroup_comp, mkQuotient_comp_quotientMap]
 
 /-- **Surjectivity of component group maps.** Let `φ : G' → G` be a homomorphism of affine groups
 whose coordinate map is injective, so that `φ` is surjective on rational points, and suppose the
@@ -340,7 +380,9 @@ theorem componentGroupMap_surjective (I : HopfIdeal k H) (J : HopfIdeal k K) (f 
     exact n.property
   refine ⟨J.rationalComponentMap ⟨c, hcJ⟩, ?_⟩
   rw [componentGroupMap_rationalComponentMap]
-  exact congrArg _ (Subtype.ext hmap)
+  refine congrArg _ (Subtype.ext ?_)
+  rw [CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply]
+  exact hmap
 
 end Map
 

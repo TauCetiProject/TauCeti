@@ -22,6 +22,8 @@ when the kernels are equal.
 
 * `MonoidHom.mem_eqLocus`: membership in the equality locus is pointwise equality.
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
+* `MonoidHom.ker_eq_map_of_comp_eq`: the kernel after a surjection is the image of the source
+  kernel.
 * `MonoidHom.range_le_comap_range_of_comp_eq`: in a commutative square, the range of one side is
   carried into the range of the opposite side.
 * `MonoidHom.ker_le_comap_ker_of_comp_eq`: in a commutative square, the kernel of one side is
@@ -56,6 +58,14 @@ range. -/]
 theorem range_comp_of_surjective {N P : Type*} [Group N] [Group P] (g : N →* P) (f : G →* N)
     (hf : Function.Surjective f) : (g.comp f).range = g.range :=
   SetLike.coe_injective <| by simpa only [coe_range, coe_comp] using hf.range_comp g
+
+/-- If `ψ.comp p = φ` and `p` is surjective, then `ker ψ` is the image of `ker φ` under `p`. -/
+@[to_additive /-- If `ψ.comp p = φ` and `p` is surjective, then `ker ψ` is the image of
+`ker φ` under `p`. -/]
+theorem ker_eq_map_of_comp_eq {Q : Type*} [Group Q] {p : G →* Q} (hp : Function.Surjective p)
+    {φ : G →* M} {ψ : Q →* M} (hcomp : ψ.comp p = φ) :
+    ψ.ker = φ.ker.map p := by
+  rw [← Subgroup.map_comap_eq_self_of_surjective hp ψ.ker, MonoidHom.comap_ker, hcomp]
 
 /-- In a commutative square `f₁ ∘ d = d' ∘ f₀` of group homomorphisms, `f₁` carries the range of
 `d` into the range of `d'`; this is what makes the square induce a map of cokernels

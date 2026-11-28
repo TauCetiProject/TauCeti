@@ -868,6 +868,13 @@ lemma forget₂_commHopfAlgCat_map_mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, 
       (mkQuotient H I) = CommHopfAlgCat.mkQuotient H.obj I :=
   rfl
 
+/-- The finite-type quotient morphism acts on elements as the ideal quotient map. -/
+lemma toBialgHom_mkQuotient_apply (H : FiniteTypeCommHopfAlgCat.{u, v} R)
+    (I : HopfIdeal R H) (a : H) :
+    toBialgHom (mkQuotient H I) a = Ideal.Quotient.mk I.toIdeal a := by
+  rw [← Ideal.Quotient.mkₐ_eq_mk R I.toIdeal]
+  exact CommHopfAlgCat.mkQuotient_apply H.obj I a
+
 /-- Morphisms out of a finite-type Hopf-algebra quotient are determined by their composites
 with the quotient morphism. -/
 @[ext]

@@ -22,7 +22,9 @@ For a closed subgroup `N` of an affine group `G`, `HopfIdeal.identityComponent` 
 to the coordinate algebra obtained by taking the identity component inside `N`.
 
 The identity component has the same tangent Lie algebra as `N`, and hence the same dimension
-when `N` is smooth. Conjugating `N` by a rational point `g` conjugates `N°`:
+when `N` is smooth. An `A`-point of `N` lies in `N°(A)` exactly when its inclusion into `G(A)`
+lies in `N°(A)` (`HopfIdeal.quotientPointsHom_mem_quotientPointsSubgroup_identityComponent_iff`).
+Conjugating `N` by a rational point `g` conjugates `N°`:
 `(gNg⁻¹)° = gN°g⁻¹`, an equality of closed subgroup schemes. When `G` and `N` are reduced,
 normality of `N` implies normality of `N°` in `G`: the identity component is characteristic
 in `N`, and normality can be tested on rational points. All statements are over an
@@ -44,7 +46,7 @@ open CategoryTheory
 
 namespace TauCeti.HopfIdeal
 
-universe u
+universe u w
 
 noncomputable section
 
@@ -67,6 +69,21 @@ theorem mem_identityComponent (I : HopfIdeal k H) (x : H) :
         HopfAlgebra.identityComponentHopfIdeal
           (k := k) (H := FiniteTypeCommHopfAlgCat.quotient H I) :=
   by rw [identityComponent, mem_comapOfSurjective]
+
+/-- An `A`-point of `H ⧸ I` lies in the identity component of `H ⧸ I` if and only if its
+ambient inclusion lies in the `A`-points of `I.identityComponent`. -/
+theorem quotientPointsHom_mem_quotientPointsSubgroup_identityComponent_iff
+    (I : HopfIdeal k H) (A : CommAlgCat.{w} k)
+    (q : HopfAlgebra.points (R := k) (H := FiniteTypeCommHopfAlgCat.quotient H I) A) :
+    CommHopfAlgCat.quotientPointsHom H.obj I A q ∈
+        CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent A ↔
+      q ∈ CommHopfAlgCat.quotientPointsSubgroup
+        (FiniteTypeCommHopfAlgCat.quotient H I).obj
+        (HopfAlgebra.identityComponentHopfIdeal (k := k)
+          (H := FiniteTypeCommHopfAlgCat.quotient H I)) A := by
+  rw [identityComponent, CommHopfAlgCat.quotientPointsHom_apply, ← BialgHom.mapDomain_apply]
+  exact BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff _
+    (CommHopfAlgCat.mkQuotient_surjective _ _) _ A q
 
 /-- The identity component of a closed subgroup is contained in that subgroup.
 The inequality is reversed on defining ideals. -/
