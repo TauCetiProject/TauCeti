@@ -83,22 +83,13 @@ theorem exists_openSubgroup_finset_forall_mul_fst_eq [IsTopologicalGroup G] {Y :
     ∃ (U : OpenSubgroup G) (T : Finset (G ⧸ U.toSubgroup)),
       (∀ u ∈ U, ∀ a z, f (a * u, z) = f (a, z)) ∧
         ∀ a z, f (a, z) ≠ 0 → (a : G ⧸ U.toSubgroup) ∈ T := by
-  -- Uniformly on the compact support, `f (a * u, z) = f (a, z)` for `u` near `1`.
-  have hF : Continuous fun q : (G × Y) × G => (q.1.1 * q.2, q.1.2) := by fun_prop
-  obtain ⟨V, hVo, hV1, hV⟩ :=
-    (f.isLocallyConstant.comp_continuous hF).exists_isOpen_forall_mem_eq hf.isCompact (1 : G)
-  have hVn : V ∈ nhds (1 : G) := hVo.mem_nhds hV1
-  -- So the stabilizer of `a ↦ f (a, ·)` under right translation contains `V ∩ V⁻¹` and is open.
+  -- For `u` near `1`, `f (a * u, z) = f (a, z)` for all `(a, z)`, so the stabilizer of
+  -- `a ↦ f (a, ·)` under right translation is open.
   let S := TauCeti.rightTranslationStabilizer fun a z => f (a, z)
-  have hS : IsOpen (S : Set G) := by
-    refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
-      (inv_mem_nhds_one G hVn)) fun u hu => TauCeti.mem_rightTranslationStabilizer.2 fun a => ?_)
-    funext z
-    by_cases ha : (a, z) ∈ tsupport f
-    · simpa using hV u hu.1 _ ha
-    by_cases hau : (a * u, z) ∈ tsupport f
-    · simpa using (hV u⁻¹ hu.2 _ hau).symm
-    rw [image_eq_zero_of_notMem_tsupport ha, image_eq_zero_of_notMem_tsupport hau]
+  have hS : IsOpen (S : Set G) := Subgroup.isOpen_of_mem_nhds _ <|
+    (TauCeti.eventually_forall_apply_act_eq_of_hasCompactSupport (act := fun p u => (p.1 * u, p.2))
+      f.isLocallyConstant hf (by fun_prop) (fun _ => by simp) (fun _ _ => by simp)).mono
+      fun _ hu => TauCeti.mem_rightTranslationStabilizer.2 fun a => funext fun z => hu (a, z)
   have hfin := (isCompact_image_fst_support hf).finite_image_mk ⟨S, hS⟩
   exact ⟨⟨S, hS⟩, hfin.toFinset,
     fun u hu a z => congrFun (TauCeti.mem_rightTranslationStabilizer.1 hu a) z,
