@@ -12,7 +12,7 @@ public import Mathlib.Topology.FiberBundle.Constructions
 /-!
 # Pullbacks of fibre bundles
 
-Five facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
+Six facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
 `f x`, needed to pull back bundles with extra structure on their fibres or on their atlas.
 
 * The fibres of `f *ᵖ E` carry the scalar operations and monoid actions on the fibres of `E`
@@ -29,13 +29,22 @@ Five facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is t
   total space of `f *ᵖ E` is determined by its projection and its lift
   (`Bundle.Pullback.totalSpace_ext`).
 * A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
-  the total space of `E` are (`Bundle.Pullback.continuous_iff`).
+  the total space of `E` are (`Bundle.Pullback.continuous_iff`); in particular continuous
+  fibrewise maps pull back to continuous fibrewise maps (`Bundle.Pullback.continuous_fiberwise`).
 * The canonical lift is the base change of `f` along the projection of `E`, so it inherits
   openness from `f` (`Bundle.Pullback.isOpenMap_lift`). If `f` is the quotient map of a covering
   action of a group `G` and `G` acts on the total space of `f *ᵖ E` over its action on the base,
   fixing the lifts of points, then the lift is the quotient map of this action
   (`Bundle.Pullback.isQuotientCoveringMap_lift`). For the orientation double cover this makes the
   total space of the bundle pulled back to the cover a double cover of the original total space.
+* If a monoid `G` acts on `B'` and `f` is invariant, `f (g • x) = f x`, then `G` acts on the total
+  space of `f *ᵖ E` by moving base points and keeping vectors
+  (`Bundle.Pullback.totalSpaceMulAction`). This action covers the action on `B'`, fixes the lifts
+  of points, and is continuous when the action on `B'` is; for a quotient covering map `f` it
+  presents the total space of `E` as the quotient of the total space of `f *ᵖ E`
+  (`Bundle.Pullback.totalSpaceMulAction_isQuotientCoveringMap_lift`). For the universal cover of
+  the base, this is the deck action of the fundamental group on the bundle pulled back to the
+  universal cover.
 -/
 
 public section
@@ -96,6 +105,50 @@ theorem Bundle.Pullback.totalSpace_ext {f : B' → B} {z z' : TotalSpace F (f *�
   obtain rfl : y = y' := h
   exact congrArg (TotalSpace.mk y) (TotalSpace.mk_injective (F := F) (E := E) (f y) h')
 
+section TotalSpaceMulAction
+
+variable {G : Type*} [Monoid G] [MulAction G B'] {f : B' → B}
+
+/-- **The action on a pullback bundle over an action on its base.** Let a monoid `G` act on `B'`,
+and let `f : B' → B` be invariant, `f (g • x) = f x`. Then `G` acts on the total space of
+`f *ᵖ E` by moving the base point and keeping the vector: the fibre over `g • x` is the fibre of
+`E` over `f (g • x) = f x`, which is the fibre over `x`. This action covers the action on `B'`
+(`Bundle.Pullback.totalSpaceMulAction_proj_smul`) and fixes the lift of each point to the total
+space of `E` (`Bundle.Pullback.totalSpaceMulAction_lift_smul`).
+
+This is not an instance, since it depends on the invariance of `f`; when the fibres are additive
+groups, the total space also carries the fibrewise action `Bundle.TotalSpace.instMulAction` of
+groups acting on the fibres, which keeps the base point instead. -/
+abbrev Bundle.Pullback.totalSpaceMulAction (hf : ∀ (g : G) (x : B'), f (g • x) = f x) :
+    MulAction G (TotalSpace F (f *ᵖ E)) :=
+  letI : SMul G (TotalSpace F (f *ᵖ E)) :=
+    ⟨fun g z ↦ ⟨g • z.proj, cast (congrArg E (hf g z.proj).symm) z.snd⟩⟩
+  have hlift (g : G) (z : TotalSpace F (f *ᵖ E)) : Pullback.lift f (g • z) = Pullback.lift f z :=
+    TotalSpace.mk_cast (hf g z.proj).symm z.snd
+  { one_smul z := totalSpace_ext (one_smul G z.proj) (hlift 1 z)
+    mul_smul g g' z := totalSpace_ext (mul_smul g g' z.proj)
+      ((hlift _ z).trans ((hlift g _).trans (hlift g' z)).symm) }
+
+/-- The action `Bundle.Pullback.totalSpaceMulAction` on the total space of a pullback bundle covers
+the action on the base. -/
+@[simp]
+theorem Bundle.Pullback.totalSpaceMulAction_proj_smul (hf : ∀ (g : G) (x : B'), f (g • x) = f x)
+    (g : G) (z : TotalSpace F (f *ᵖ E)) :
+    letI := totalSpaceMulAction (F := F) (E := E) hf
+    (g • z).proj = g • z.proj :=
+  (rfl)
+
+/-- The action `Bundle.Pullback.totalSpaceMulAction` on the total space of a pullback bundle fixes
+the lift of each point to the total space of the original bundle. -/
+@[simp]
+theorem Bundle.Pullback.totalSpaceMulAction_lift_smul (hf : ∀ (g : G) (x : B'), f (g • x) = f x)
+    (g : G) (z : TotalSpace F (f *ᵖ E)) :
+    letI := totalSpaceMulAction (F := F) (E := E) hf
+    Pullback.lift f (g • z) = Pullback.lift f z :=
+  TotalSpace.mk_cast (hf g z.proj).symm z.snd
+
+end TotalSpaceMulAction
+
 variable [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)]
 
 omit [TopologicalSpace B] in
@@ -105,6 +158,17 @@ theorem Bundle.Pullback.continuous_iff {Z : Type*} [TopologicalSpace Z] {f : B' 
     {g : Z → TotalSpace F (f *ᵖ E)} :
     Continuous g ↔ Continuous (fun z ↦ (g z).proj) ∧ Continuous (fun z ↦ Pullback.lift f (g z)) :=
   (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.trans continuous_prodMk
+
+omit [TopologicalSpace B] in
+/-- Pulling back a continuous fibrewise map `Φ b : E b → E' b` of total spaces along any map
+`f : B' → B` gives a continuous fibrewise map of the total spaces of `f *ᵖ E` and `f *ᵖ E'`. -/
+theorem Bundle.Pullback.continuous_fiberwise {F' : Type*} {E' : B → Type*}
+    [TopologicalSpace (TotalSpace F' E')] {Φ : ∀ b, E b → E' b}
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E'))
+    (f : B' → B) :
+    Continuous fun v : TotalSpace F (f *ᵖ E) ↦
+      (⟨v.proj, Φ (f v.proj) v.snd⟩ : TotalSpace F' (f *ᵖ E')) :=
+  continuous_iff.2 ⟨Pullback.continuous_proj F E f, hΦ.comp (Pullback.continuous_lift F E f)⟩
 
 omit [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)] in
 /-- The canonical lift sends the points of the total space of `f *ᵖ E` over `U` whose lift lies in
@@ -173,6 +237,39 @@ theorem Bundle.Pullback.isQuotientCoveringMap_lift {G : Type*} [Group G] [MulAct
       fun g ⟨_, ⟨y, hy, rfl⟩, hy'⟩ ↦ hUd g ⟨_, ⟨y.proj, hy, rfl⟩, ?_⟩⟩
     rw [mem_preimage, hproj] at hy'
     exact hy'
+
+section TotalSpaceMulAction
+
+variable {G : Type*} [Monoid G] [MulAction G B'] {f : B' → B}
+
+omit [TopologicalSpace B] in
+/-- The action `Bundle.Pullback.totalSpaceMulAction` on the total space of a pullback bundle is
+continuous when the action on the base is: it acts on base points and fixes lifts. -/
+theorem Bundle.Pullback.totalSpaceMulAction_continuousConstSMul [ContinuousConstSMul G B']
+    (hf : ∀ (g : G) (x : B'), f (g • x) = f x) :
+    letI := totalSpaceMulAction (F := F) (E := E) hf
+    ContinuousConstSMul G (TotalSpace F (f *ᵖ E)) :=
+  letI := totalSpaceMulAction (F := F) (E := E) hf
+  ⟨fun g ↦ continuous_iff.2
+    ⟨((continuous_const_smul g).comp (Pullback.continuous_proj F E f)).congr fun z ↦
+        (totalSpaceMulAction_proj_smul hf g z).symm,
+      (Pullback.continuous_lift F E f).congr fun z ↦
+        (totalSpaceMulAction_lift_smul hf g z).symm⟩⟩
+
+end TotalSpaceMulAction
+
+/-- **The pullback along a quotient covering map is a quotient covering map.** If `f : B' → B` is
+the quotient covering map of an action of a group `G`, the canonical lift
+`Bundle.Pullback.lift f` presents the total space of `E` as the quotient of the total space of
+`f *ᵖ E` by the action `Bundle.Pullback.totalSpaceMulAction`, which moves base points and keeps
+vectors. -/
+theorem Bundle.Pullback.totalSpaceMulAction_isQuotientCoveringMap_lift {G : Type*} [Group G]
+    [MulAction G B'] {f : B' → B} (hf : IsQuotientCoveringMap f G) (hπ : Continuous (π F E)) :
+    letI := totalSpaceMulAction (F := F) (E := E) fun g _ ↦ hf.map_smul g
+    IsQuotientCoveringMap (Pullback.lift (F := F) (E := E) f) G :=
+  letI := totalSpaceMulAction (F := F) (E := E) fun g _ ↦ hf.map_smul g
+  isQuotientCoveringMap_lift hf hπ (totalSpaceMulAction_proj_smul _)
+    (totalSpaceMulAction_lift_smul _)
 
 /-- If `f` is a topological inducing map and the projection `π F E` is continuous, then
 `Pullback.lift f` is a topological inducing map. -/

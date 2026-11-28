@@ -9,8 +9,8 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborh
 public import TauCeti.Topology.Covering.PuncturedDisc
 
 import TauCeti.GroupTheory.Perm.Partition
-import TauCeti.Topology.Covering.Finite
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.Covering.Finite.Basic
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The power-map charts of the components over the punctures

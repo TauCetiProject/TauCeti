@@ -15,9 +15,9 @@ import TauCeti.Data.Fin.Basic
 /-!
 # Transporting list rotations
 
-This file records how list rotations act on their finite index types and interact with filtering
-and with powers of words, and how the permutation formed by a list interacts with mapping by an
-equivalence.
+This file records how list rotations act on their finite index types and interact with filtering,
+with powers of words and with prefix products, and how the permutation formed by a list interacts
+with mapping by an equivalence.
 
 These lemmas transport a cyclic order, and the successor permutation it induces, across a
 renaming of indices. They are needed when comparing a combinatorial construction built from a
@@ -27,7 +27,11 @@ permutation, and renaming the entries by an equivalence conjugates that permutat
 example, `TauCeti.KnotTheory.BraidWord.Cyclic` uses them to identify the closures of cyclically
 rotated braid words. Separately, rotating a power of a word gives a power of the rotated word:
 in the combinatorics of words of Lyndon and Schützenberger, a cyclic conjugate of a power is used
-throughout as a power of a cyclic conjugate.
+throughout as a power of a cyclic conjugate. Consequently a power of a cyclic conjugate of a word
+is a factor of a power of the word, and a word is a power `uⁿ`, `n ≥ 2`, of a word exactly when
+its cyclic conjugates are. Finally, the prefix sums (and products) of a rotated list are computed
+from those of the original list, as needed when a construction indexed by the prefix sums of a
+cycle of digits is compared with the same construction for a rotated cycle.
 
 ## Main results
 
@@ -40,6 +44,8 @@ throughout as a power of a cyclic conjugate.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 * `List.IsRotated.apply_prod_eq`: a function `φ` with `φ (x * y) = φ (y * x)`, such as a trace,
   takes the same value on the products of cyclically rotated lists.
+* `List.prod_take_mul_prod_take_rotate`: the prefix products of a rotated list, computed from
+  the prefix products of the doubled list.
 * `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
 * `List.apply_rotate_of_append_singleton`: a function of lists that is unchanged by moving the
   first entry to the end is invariant under every rotation.
@@ -47,6 +53,10 @@ throughout as a power of a cyclic conjugate.
   gives the `n`-th power of the same rotation of `w`.
 * `List.exists_isRotated_flatten_replicate_of_append_eq`: a cyclic conjugate of a power of a word
   is a power of a cyclic conjugate of that word.
+* `List.IsRotated.flatten_replicate_infix`: a power of a cyclic conjugate of a word is a factor of
+  a power of that word.
+* `List.IsRotated.exists_eq_flatten_replicate_iff`: a word is a power `uⁿ`, `n ≥ 2`, exactly when
+  its cyclic conjugates are.
 
 ## References
 
@@ -181,6 +191,23 @@ theorem IsRotated.apply_prod_eq {M R : Type*} [Monoid M] {φ : M → R}
   rw [rotate_eq_drop_append_take_mod, prod_append, hφ, ← prod_append,
     take_append_drop]
 
+/-- Prefix products of a rotated list, read off the doubled list `l ++ l`: for `r, j ≤ l.length`,
+the product of the first `r` entries of `l` times the product of the first `j` entries of
+`l.rotate r` is the product of the first `r + j` entries of `l ++ l`, that is, of the first `r + j`
+entries of `l` times the first `r + j - l.length` entries of `l`. -/
+@[to_additive /-- Prefix sums of a rotated list, read off the doubled list `l ++ l`: for
+`r, j ≤ l.length`, the sum of the first `r` entries of `l` plus the sum of the first `j` entries
+of `l.rotate r` is the sum of the first `r + j` entries of `l ++ l`, that is, of the first `r + j`
+entries of `l` plus the first `r + j - l.length` entries of `l`. -/]
+theorem prod_take_mul_prod_take_rotate {M : Type*} [Monoid M] {l : List M} {r j : ℕ}
+    (hr : r ≤ l.length) (hj : j ≤ l.length) :
+    (l.take r).prod * ((l.rotate r).take j).prod =
+      (l.take (r + j)).prod * (l.take (r + j - l.length)).prod := by
+  rw [rotate_eq_drop_append_take hr]
+  simp only [take_append, take_take, take_add, prod_append, length_drop, ← mul_assoc]
+  congr 3
+  omega
+
 /-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
 its entries by the same amount. -/
 theorem ofFn_comp_finRotate_pow {α : Type*} {n : ℕ} (f : Fin n → α) (k : ℕ) :
@@ -231,5 +258,27 @@ theorem exists_isRotated_flatten_replicate_of_append_eq {α : Type*} {w s t : Li
       t ++ s = (replicate n w').flatten :=
   ⟨w.rotate s.length, IsRotated.forall w _,
     by rw [← rotate_append_length_eq, ← h, rotate_flatten_replicate]⟩
+
+/-- If `l` is a rotation of `l'`, the concatenation of `n` copies of `l` is a factor of the
+concatenation of `n + 1` copies of `l'`. -/
+theorem IsRotated.flatten_replicate_infix {α : Type*} {l l' : List α} (h : l ~r l') (n : ℕ) :
+    (replicate n l).flatten <:+: (replicate (n + 1) l').flatten := by
+  obtain ⟨k, hk, rfl⟩ := isRotated_iff_mod.1 h.symm
+  rw [rotate_eq_drop_append_take hk]
+  -- `x (y x)ⁿ y = (x y)ⁿ x y = (x y)ⁿ⁺¹` with `x = l'.take k` and `y = l'.drop k`
+  refine ⟨l'.take k, l'.drop k, ?_⟩
+  have hblock := append_flatten_map_append (replicate n (l'.drop k)) (l'.take k)
+  simp only [map_replicate] at hblock
+  rw [hblock]
+  simp [replicate_succ']
+
+/-- A cyclic rotation of a word is a power `uⁿ` of a word `u` with `n ≥ 2` exactly when the word
+itself is such a power. -/
+theorem IsRotated.exists_eq_flatten_replicate_iff {α : Type*} {l l' : List α} (h : l ~r l') :
+    (∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) ↔ ∃ u n, 2 ≤ n ∧ l' = (replicate n u).flatten := by
+  suffices ∀ {l l' : List α}, l ~r l' → (∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) →
+      ∃ u n, 2 ≤ n ∧ l' = (replicate n u).flatten from ⟨this h, this h.symm⟩
+  rintro l l' ⟨k, rfl⟩ ⟨u, n, hn, rfl⟩
+  exact ⟨u.rotate k, n, hn, rotate_flatten_replicate u n k⟩
 
 end List

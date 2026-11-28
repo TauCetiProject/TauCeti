@@ -14,7 +14,9 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Basic
 
 Restriction along a DG algebra morphism defines a faithful linear functor between the categories
 of right DG modules. Restriction along the identity is naturally isomorphic to the identity
-functor, and restriction along a composite is naturally isomorphic to successive restriction.
+functor, and restriction along a composite is naturally isomorphic to successive restriction, so
+restriction along an isomorphism of DG algebras is an equivalence of categories
+(`TauCeti.DGRightModuleCat.restrictScalarsEquivalence`).
 These comparisons identify the carrier wrappers introduced by restriction, and preserve both the
 internal grading and the differential. They provide the ordinary categorical restriction side
 of extension/restriction of scalars. Restriction changes neither the underlying complexes nor the
@@ -432,6 +434,73 @@ noncomputable def restrictScalarsComp (f : DGAlgHom hA hB) (g : DGAlgHom hB hC) 
 theorem restrictScalarsComp_app (f : DGAlgHom hA hB) (g : DGAlgHom hB hC)
     (M : DGRightModuleCat.{uR, uC, uM} hC) :
     (restrictScalarsComp f g).app M = restrictScalarsCompApp f g M := (rfl)
+
+section Equivalence
+
+/-- **Restriction along an isomorphism of DG algebras is an equivalence**: if `f` and `g` are
+mutually inverse DG algebra morphisms, then restriction along `g` is inverse to restriction along
+`f`. The unit and counit come from `restrictScalarsId` and `restrictScalarsComp`. This is the DG
+analogue of Mathlib's `ModuleCat.restrictScalarsEquivalenceOfRingEquiv`. -/
+@[expose]
+noncomputable def restrictScalarsEquivalence (f : DGAlgHom hA hB) (g : DGAlgHom hB hA)
+    (hfg : f.comp g = DGAlgHom.id hB) (hgf : g.comp f = DGAlgHom.id hA) :
+    DGRightModuleCat.{uR, uB, uM} hB ≌ DGRightModuleCat.{uR, uA, uM} hA where
+  functor := restrictScalars f
+  inverse := restrictScalars g
+  unitIso := restrictScalarsId.symm ≪≫ eqToIso (by rw [hfg]) ≪≫ restrictScalarsComp g f
+  counitIso := (restrictScalarsComp f g).symm ≪≫ eqToIso (by rw [hgf]) ≪≫ restrictScalarsId
+  functor_unitIso_comp M := by
+    ext x
+    apply (restrictScalarsEquiv f M).injective
+    simp [← Iso.app_hom, ← Iso.app_inv, restrictScalarsEquiv_eqToHom_apply hgf,
+      restrictScalarsEquiv_eqToHom_apply hfg.symm]
+
+variable (f : DGAlgHom hA hB) (g : DGAlgHom hB hA) (hfg : f.comp g = DGAlgHom.id hB)
+  (hgf : g.comp f = DGAlgHom.id hA)
+
+@[simp]
+theorem restrictScalarsEquivalence_functor :
+    (restrictScalarsEquivalence.{uR, uA, uB, uM} f g hfg hgf).functor = restrictScalars f :=
+  (rfl)
+
+@[simp]
+theorem restrictScalarsEquivalence_inverse :
+    (restrictScalarsEquivalence.{uR, uA, uB, uM} f g hfg hgf).inverse = restrictScalars g :=
+  (rfl)
+
+/-- The component of the unit of `restrictScalarsEquivalence` at `M`. -/
+@[simp]
+theorem restrictScalarsEquivalence_unitIso_hom_app (M : DGRightModuleCat.{uR, uB, uM} hB) :
+    (restrictScalarsEquivalence f g hfg hgf).unitIso.hom.app M =
+      (restrictScalarsIdApp M).inv ≫ eqToHom (by rw [hfg]) ≫
+        (restrictScalarsCompApp g f M).hom := by
+  simp [restrictScalarsEquivalence, ← Iso.app_hom, ← Iso.app_inv]
+
+/-- The component of the inverse of the unit of `restrictScalarsEquivalence` at `M`. -/
+@[simp]
+theorem restrictScalarsEquivalence_unitIso_inv_app (M : DGRightModuleCat.{uR, uB, uM} hB) :
+    (restrictScalarsEquivalence f g hfg hgf).unitIso.inv.app M =
+      (restrictScalarsCompApp g f M).inv ≫ eqToHom (by rw [hfg]) ≫
+        (restrictScalarsIdApp M).hom := by
+  simp [restrictScalarsEquivalence, ← Iso.app_hom, ← Iso.app_inv]
+
+/-- The component of the counit of `restrictScalarsEquivalence` at `M`. -/
+@[simp]
+theorem restrictScalarsEquivalence_counitIso_hom_app (M : DGRightModuleCat.{uR, uA, uM} hA) :
+    (restrictScalarsEquivalence f g hfg hgf).counitIso.hom.app M =
+      (restrictScalarsCompApp f g M).inv ≫ eqToHom (by rw [hgf]) ≫
+        (restrictScalarsIdApp M).hom := by
+  simp [restrictScalarsEquivalence, ← Iso.app_hom, ← Iso.app_inv]
+
+/-- The component of the inverse of the counit of `restrictScalarsEquivalence` at `M`. -/
+@[simp]
+theorem restrictScalarsEquivalence_counitIso_inv_app (M : DGRightModuleCat.{uR, uA, uM} hA) :
+    (restrictScalarsEquivalence f g hfg hgf).counitIso.inv.app M =
+      (restrictScalarsIdApp M).inv ≫ eqToHom (by rw [hgf]) ≫
+        (restrictScalarsCompApp f g M).hom := by
+  simp [restrictScalarsEquivalence, ← Iso.app_hom, ← Iso.app_inv]
+
+end Equivalence
 
 /-- **Restriction of scalars carries homotopy retracts.** If `M` is a homotopy retract of a
 complex `M₀` over the ground ring, through chain maps `i : M → M₀` and `r : M₀ → M` with

@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Projective
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Full sets of sections of a finite locally free scheme

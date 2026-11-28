@@ -143,6 +143,24 @@ theorem additiveContent_neg_eq_zero_iff {Q : R} (hQ : Q ≠ 0) (c : ℤ) :
     additiveContent Q (-c) = 0 ↔ additiveContent Q c = 0 := by
   rw [additiveContent_neg hQ, neg_eq_zero, mul_eq_zero, or_iff_right (zpow_ne_zero _ hQ)]
 
+/-- Additive contents separate contents less than `n` apart as soon as the `Q`-integers
+`[d]_Q`, `0 < d < n`, are nonzero: `[x]_Q - [y]_Q = Q ^ y [x - y]_Q`. -/
+theorem additiveContent_inj {Q : R} (hQ : Q ≠ 0) {n : ℕ}
+    (hn : ∀ d : ℕ, 0 < d → d < n → additiveContent Q d ≠ 0) {x y : ℤ} (hxy : |x - y| < n) :
+    additiveContent Q x = additiveContent Q y ↔ x = y := by
+  refine ⟨fun h => ?_, congrArg _⟩
+  by_contra hne
+  have hzero : additiveContent Q (x - y) = 0 := by
+    have hadd := additiveContent_add hQ y (x - y)
+    rw [add_sub_cancel, h, left_eq_add, mul_eq_zero] at hadd
+    exact hadd.resolve_left (zpow_ne_zero _ hQ)
+  obtain ⟨m, hm | hm⟩ := Int.eq_nat_or_neg (x - y)
+  · rw [hm] at hzero hxy
+    exact hn m (by omega) (by simpa using hxy) hzero
+  · rw [hm, additiveContent_neg_eq_zero_iff hQ] at hzero
+    rw [hm, abs_neg] at hxy
+    exact hn m (by omega) (by simpa using hxy) hzero
+
 /-- Away from `Q = 1`, the additive content is the usual quotient. -/
 theorem additiveContent_eq_div {Q : R} (hQ : Q ≠ 0) (hQ1 : Q ≠ 1) (c : ℤ) :
     additiveContent Q c = (Q ^ c - 1) / (Q - 1) := by
@@ -182,6 +200,22 @@ end TauCeti.TypeAHeckeAlgebra
 namespace YoungDiagram
 
 open TauCeti.TypeAHeckeAlgebra
+
+/-- Additive contents separate the addable cells when the quantum integers through
+`μ.card + 1` are nonzero. -/
+theorem injOn_additiveContent_cellContent_of_forall_ne_zero (μ : YoungDiagram)
+    {R : Type*} [Field R] {Q : R} (hQ : Q ≠ 0)
+    (hQint : ∀ d : ℕ, 0 < d → d ≤ μ.card + 1 → additiveContent Q d ≠ 0) :
+    Set.InjOn (fun c => additiveContent Q (cellContent c)) {c | IsAddable μ c} := by
+  intro c hc d hd he
+  by_contra hne
+  have hbound := (Finset.mem_Icc.mp (hc.natAbs_cellContent_sub_mem hd hne)).2
+  have habs : |cellContent c - cellContent d| < ((μ.card + 2 : ℕ) : ℤ) := by
+    rw [← Int.natCast_natAbs]
+    have hnat : (cellContent c - cellContent d).natAbs < μ.card + 2 := by omega
+    exact_mod_cast hnat
+  exact hne (μ.injOn_cellContent hc hd
+    ((additiveContent_inj hQ (fun e he' he'' => hQint e he' (by omega)) habs).mp he))
 
 /-- Additive contents separate the addable cells of a fixed diagram at every
 positive parameter, including `Q = 1`. No bound on the diagram size is needed. -/

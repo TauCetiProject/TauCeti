@@ -46,7 +46,7 @@ noncomputable def d16e8GlueVector :
 /-- The first component of the glue vector is the checkerboard spinor. -/
 @[simp]
 theorem d16e8GlueVector_zero :
-    d16e8GlueVector ⟨0, by decide⟩ =
+    d16e8GlueVector 0 =
       (rootLatticeIsometryCheckerboard 16 (by decide) (isSimplyLaced_D 16)).symm
         (checkerboardSpinor 16) := (rfl)
 
@@ -60,7 +60,8 @@ theorem d16e8GlueVector_mem_dualCarrier :
   rw [mem_dualCarrier_pi_iff]
   intro i
   fin_cases i
-  · rw [d16e8GlueVector_zero]
+  · simp only [Fin.mk_zero']
+    rw [d16e8GlueVector_zero]
     exact (Isometry.apply_mem_dualCarrier_iff
       (rootLatticeIsometryCheckerboard 16 (by decide) (isSimplyLaced_D 16)).symm _).mpr
         checkerboardSpinor_mem_dualCarrier
@@ -114,7 +115,7 @@ private theorem glueVector_class :
       checkerboardSpinorClass_def, Isometry.discriminantGroupEquiv_mk]
     exact congrArg Submodule.Quotient.mk (Subtype.ext (by
       simp only [coe_piDualCarrierEquiv_apply, Isometry.coe_dualCarrierEquiv_apply,
-        d16e8GlueVector_zero]
+        Fin.mk_zero', d16e8GlueVector_zero]
       -- The inverse dual-carrier map and inverse ambient isometry have the same function.
       rfl))
   · rw [spinorWord_one, map_zero]
@@ -212,7 +213,8 @@ theorem mem_niemeierD16E8_carrier_iff_checkerboard
         y ⟨0, by decide⟩ ∈ ((D 16).rootLattice (isSimplyLaced_D 16)).carrier ∧
         y ⟨1, by decide⟩ ∈ (E8.rootLattice (isSimplyLaced_E8)).carrier :=
     (mem_pi_carrier_iff _ _).trans Fin.forall_fin_two
-  simp only [hmem, Pi.sub_apply, d16e8GlueVector_zero, d16e8GlueVector_one, sub_zero]
+  simp only [hmem, Pi.sub_apply, Fin.mk_zero', d16e8GlueVector_zero, d16e8GlueVector_one,
+    sub_zero]
   -- The explicit indices require the same table-to-component conversion as above.
   erw [← Isometry.apply_mem_carrier_iff
       (rootLatticeIsometryCheckerboard 16 (by decide) (isSimplyLaced_D 16)),
@@ -232,7 +234,9 @@ theorem form_d16e8GlueVector_self :
       (E8.rootLattice isSimplyLaced_E8).form
         (d16e8GlueVector ⟨1, by decide⟩) (d16e8GlueVector ⟨1, by decide⟩) := by
     rw [pi_form]
-    exact (piForm_apply _ d16e8GlueVector d16e8GlueVector).trans (Fin.sum_univ_two _)
+    exact (LinearMap.BilinForm.pi_apply _ d16e8GlueVector d16e8GlueVector).trans
+      (Fin.sum_univ_two _)
+  simp only [Fin.mk_zero'] at hsum
   rw [hsum, d16e8GlueVector_zero, d16e8GlueVector_one]
   -- The zero vector in the E₈ summand still has its table component type.
   erw [map_zero, add_zero]

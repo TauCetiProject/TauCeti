@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Theta.Metric
+public import TauCeti.Analysis.Complex.ThetaLine.Basic
 public import TauCeti.Analysis.Complex.Theta.Sections
 import TauCeti.Analysis.Complex.Theta.Vanishing
 

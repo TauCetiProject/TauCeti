@@ -52,7 +52,7 @@ local instance : Flat (Spec (.of (NodeAlgebra R a)) ↘ Spec (.of R)) :=
 
 local instance :
     LocallyOfFinitePresentation (Spec (.of (NodeAlgebra R a)) ↘ Spec (.of R)) :=
-  locallyOfFinitePresentation_spec a
+  locallyOfFinitePresentation_SpecMap_algebraMap R (NodeAlgebra R a)
 
 local instance :
     PureRelativeDimension 1 (Spec (.of (NodeAlgebra R a)) ↘ Spec (.of R)) :=

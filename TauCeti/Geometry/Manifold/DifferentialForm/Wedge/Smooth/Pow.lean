@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
@@ -50,6 +50,10 @@ def wedgePow (φ : SmoothForm I M ℝ k) : (m : ℕ) → SmoothForm I M ℝ (k *
   | 0 => ⟨RoughForm.ofFunction I fun _ ↦ (1 : ℝ),
       (isSmoothForm_ofFunction_iff.mpr contMDiff_const).mem_smoothBundleForms⟩
   | m + 1 => wedge (wedgePow φ m) φ
+
+/-- The empty wedge power is the constant function `1`. -/
+theorem wedgePow_zero (φ : SmoothForm I M ℝ k) :
+    (φ.wedgePow 0).val = RoughForm.ofFunction I fun _ ↦ (1 : ℝ) := (rfl)
 
 /-- The successor wedge power is the previous power wedged with the form. -/
 theorem wedgePow_succ (φ : SmoothForm I M ℝ k) (m : ℕ) :

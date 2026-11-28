@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
-public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor.Basic
 
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 import Mathlib.LinearAlgebra.TensorProduct.Projective

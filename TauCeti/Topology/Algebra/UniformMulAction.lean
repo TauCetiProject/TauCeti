@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Topology.Algebra.GroupCompletion
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.UniformRing
@@ -49,6 +50,8 @@ algebra automorphism `σ` acting through `AlgEquiv.applyMulSemiringAction`, this
 * `UniformSpace.Completion.algEquiv_smul_def`, `UniformSpace.Completion.algEquiv_smul_coe`: an
   algebra automorphism `σ` acts on the completion by its extension `UniformSpace.Completion.map σ`,
   which is `σ` on the image of the algebra. For instance this is the Galois action on `ℂ_p`.
+* `UniformSpace.Completion.algEquiv_restrictScalars_smul`: restricting the scalars of an algebra
+  automorphism does not change its action on the completion.
 -/
 
 public section
@@ -155,6 +158,14 @@ theorem algEquiv_smul_def (σ : A ≃ₐ[R] A) (x : Completion A) : σ • x = C
 theorem algEquiv_smul_coe [UniformContinuousConstSMul (A ≃ₐ[R] A) A] (σ : A ≃ₐ[R] A) (x : A) :
     σ • (x : Completion A) = ((σ x : A) : Completion A) := by
   rw [← coe_smul, AlgEquiv.smul_def]
+
+/-- Restricting the scalars of an algebra automorphism `σ` does not change its action on the
+completion. -/
+@[simp]
+theorem algEquiv_restrictScalars_smul {S : Type*} [CommSemiring S] [Algebra R S] [Algebra S A]
+    [IsScalarTower R S A] (σ : A ≃ₐ[S] A) (x : Completion A) :
+    σ.restrictScalars R • x = σ • x := by
+  rw [algEquiv_smul_def, algEquiv_smul_def, AlgEquiv.coe_restrictScalars]
 
 end AlgEquiv
 

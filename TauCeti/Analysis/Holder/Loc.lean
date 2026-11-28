@@ -13,10 +13,11 @@ public import Mathlib.Topology.Metrizable.Uniformity
 public import Mathlib.Topology.Sets.Compacts
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Holder.Normed
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
+import TauCeti.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -549,12 +550,8 @@ theorem tendsto_nhds {ι : Type*} {l : Filter ι} {u : ι → CkHolderLocSpace k
     {f : CkHolderLocSpace k α Ω F} :
     Tendsto u l (𝓝 f) ↔ ∀ (K : Compacts E) (hK : (K : Set E) ⊆ Ω),
       Tendsto (fun i ↦ CkHolderLocSpace.seminorm K hK (u i - f)) l (𝓝 0) := by
-  rw [(withSeminorms (k := k) (α := α) (Ω := Ω) (F := F)).tendsto_nhds]
-  refine ⟨fun h K hK ↦ ?_, fun h K ε hε ↦ ?_⟩
-  · refine Metric.tendsto_nhds.2 fun ε hε ↦ (h ⟨K, hK⟩ ε hε).mono fun i hi ↦ ?_
-    rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)]
-  · refine (Metric.tendsto_nhds.1 (h K.val K.property) ε hε).mono fun i hi ↦ ?_
-    rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)] at hi
+  rw [(withSeminorms (k := k) (α := α) (Ω := Ω) (F := F)).tendsto_nhds_iff_tendsto_zero]
+  exact ⟨fun h K hK ↦ h ⟨K, hK⟩, fun h K ↦ h K.val K.property⟩
 
 section Restrict
 

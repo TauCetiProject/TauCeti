@@ -18,7 +18,8 @@ an object by a scalar is compatible with every morphism to or from the unit: a s
 the unit factor of `Y ⊗ 𝟙_ C` can be moved past any morphism `Y ⊗ 𝟙_ C ⟶ 𝟙_ C`
 (`TauCeti.whiskerLeft_scalar_comp`), and dually a scalar acting on the unit factor of `𝟙_ C ⊗ Y`
 can be moved past any morphism `𝟙_ C ⟶ 𝟙_ C ⊗ Y` (`TauCeti.comp_scalar_whiskerRight`). In
-particular scalars commute with each other (`TauCeti.scalar_comm`).
+particular scalars commute with each other (`TauCeti.scalar_comm`), so the automorphisms of the
+unit form a commutative group.
 
 A scalar `a` acts on every object `Y` in two ways, from the left as
 `(λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom` and from the right as `(ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom`. The two
@@ -35,7 +36,10 @@ holds at the unit, is preserved by isomorphisms, and is closed under tensor prod
 circle value central on a generating object is central on every interpreted tensor word in that
 object, without requiring it to be central on every object of the ambient category. Agreement is
 also closed under composition of scalars, so any finite number of such circles can be moved
-between the two sides.
+between the two sides, and it is carried along strong monoidal functors, the image of a scalar
+being read through the unit comparisons (`TauCeti.CirclesCommuteAt.map`). For a strong monoidal
+functor, centrality of the image scalar at the image object is the equality of the images of the
+two actions (`TauCeti.circlesCommuteAt_map_iff`).
 
 ## References
 
@@ -80,6 +84,11 @@ theorem comp_scalar_whiskerRight {Y : C} (a : 𝟙_ C ⟶ 𝟙_ C) (e : 𝟙_ C 
 theorem scalar_comm (a b : 𝟙_ C ⟶ 𝟙_ C) : a ≫ b = b ≫ a := by
   rw [← cancel_epi (λ_ (𝟙_ C)).hom, ← leftUnitor_naturality_assoc, unitors_equal,
     whiskerLeft_scalar_comp, Category.assoc]
+
+/-- The automorphisms of the unit of a monoidal category form a commutative group, since scalars
+commute. -/
+instance commGroupAutTensorUnit : CommGroup (Aut (𝟙_ C)) where
+  mul_comm a b := Aut.ext (Iso.ext (scalar_comm b.asIso.hom a.asIso.hom))
 
 /-- In a braided monoidal category, a scalar acts on every object in the same way from the left
 and from the right. -/
@@ -166,6 +175,28 @@ theorem CirclesCommuteAt.comp {d e : 𝟙_ C ⟶ 𝟙_ C} {X : C}
     _ = ((λ_ X).inv ≫ d ▷ X ≫ (λ_ X).hom) ≫
           ((λ_ X).inv ≫ e ▷ X ≫ (λ_ X).hom) := by rw [hd, he]
     _ = (λ_ X).inv ≫ (d ≫ e) ▷ X ≫ (λ_ X).hom := by simp
+
+/-- Under a strong monoidal functor, centrality at `F.obj X` of the image of `d`, viewed as a
+scalar of the target through the unit comparisons, is equality of the images of the two scalar
+actions of `d` on `X`. -/
+theorem circlesCommuteAt_map_iff {D : Type*} [Category* D] [MonoidalCategory D] (F : C ⥤ D)
+    [F.Monoidal] (d : 𝟙_ C ⟶ 𝟙_ C) (X : C) :
+    CirclesCommuteAt (Functor.LaxMonoidal.ε F ≫ F.map d ≫ Functor.OplaxMonoidal.η F)
+        (F.obj X) ↔
+      F.map ((ρ_ X).inv ≫ X ◁ d ≫ (ρ_ X).hom) = F.map ((λ_ X).inv ≫ d ▷ X ≫ (λ_ X).hom) := by
+  simp only [circlesCommuteAt_iff, Functor.map_comp, Functor.Monoidal.map_rightUnitor_inv,
+    Functor.Monoidal.map_whiskerLeft, Functor.Monoidal.map_rightUnitor,
+    Functor.Monoidal.map_leftUnitor_inv, Functor.Monoidal.map_whiskerRight,
+    Functor.Monoidal.map_leftUnitor, MonoidalCategory.whiskerLeft_comp,
+    MonoidalCategory.comp_whiskerRight, Category.assoc, Functor.Monoidal.μ_δ_assoc]
+
+/-- A strong monoidal functor carries a scalar central at `X` to a scalar central at the image
+of `X`: the image of `d`, viewed as a scalar of the target through the unit comparisons. -/
+theorem CirclesCommuteAt.map {D : Type*} [Category* D] [MonoidalCategory D] (F : C ⥤ D)
+    [F.Monoidal] {d : 𝟙_ C ⟶ 𝟙_ C} {X : C} (h : CirclesCommuteAt d X) :
+    CirclesCommuteAt (Functor.LaxMonoidal.ε F ≫ F.map d ≫ Functor.OplaxMonoidal.η F)
+      (F.obj X) :=
+  (circlesCommuteAt_map_iff F d X).2 (congrArg F.map h)
 
 /-- A scalar multiple of the identity of the unit is central at every object of a monoidal
 linear category. Thus prescribing a loop value `δ • 𝟙` needs no separate centrality assumption. -/

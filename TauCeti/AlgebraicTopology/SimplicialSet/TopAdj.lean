@@ -82,6 +82,17 @@ lemma toSSet_map_app_toSSetObjEquiv_symm {X Y : TopCat.{u}} (f : X ⟶ Y) {n : S
     (TopCat.toSSet.map f).app n ((X.toSSetObjEquiv n).symm g) =
       (Y.toSSetObjEquiv n).symm ((ConcreteCategory.hom f).comp g) := rfl
 
+/-- Evaluating the continuous map `X.toSSetObjEquiv n σ` at `w` applies the underlying morphism
+`σ.down : SimplexCategory.toTop.obj n.unop ⟶ X` to
+`SSet.toTopSimplex.hom.app n.unop (n.unop.toTopHomeo.symm w)`. -/
+lemma toSSetObjEquiv_apply {X : TopCat.{u}} {n : SimplexCategoryᵒᵖ}
+    (σ : (TopCat.toSSet.obj X).obj n) (w : StdSimplex ℝ (Fin (n.unop.len + 1))) :
+    X.toSSetObjEquiv n σ w =
+      ConcreteCategory.hom (X := SimplexCategory.toTop.{u}.obj n.unop) (Y := X) σ.down
+        (SSet.toTopSimplex.{u}.hom.app n.unop (n.unop.toTopHomeo.{u}.symm w)) :=
+  congrArg (ConcreteCategory.hom (X := SimplexCategory.toTop.{u}.obj n.unop) (Y := X) σ.down)
+    (ULift.ext (n.unop.toTopHomeo.{u}.apply_symm_apply w).symm)
+
 /-- The `i`-th face of the singular simplex of a map `f` out of a standard simplex is the singular
 simplex of any map `g` agreeing with `f` on the `i`-th facet. -/
 lemma δ_toSSetObjEquiv_symm_eq {X : TopCat.{u}} {n : ℕ} (f : C(StdSimplex ℝ (Fin (n + 2)), X))
@@ -315,6 +326,13 @@ lemma toTopObjMk_map {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w 
   have h := ConcreteCategory.congr_hom ((sSetTopAdj.unit.app X).naturality θ.op) x
   dsimp at h
   rw [toTopObjMk, toTopObjMk, h, TopCat.toSSetObjEquiv_naturality_apply]
+
+/-- The point of a face of a simplex is the point of the simplex with the transported
+coordinates. -/
+lemma toTopObjMk_δ {n : ℕ} (i : Fin (n + 2)) (x : X _⦋n + 1⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    toTopObjMk (X.δ i x) w = toTopObjMk x (StdSimplex.map (SimplexCategory.δ i) w) :=
+  toTopObjMk_map (SimplexCategory.δ i) x w
 
 /-- The value of a continuous map out of `|X|` at the point of a simplex is the value of the
 corresponding singular simplex. -/

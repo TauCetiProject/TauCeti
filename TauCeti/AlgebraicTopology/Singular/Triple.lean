@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
@@ -31,7 +32,8 @@ functorial as well, and the connecting morphism is natural for morphisms of trip
 The short exact sequence and its connecting morphism use an abelian coefficient category.  The
 zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
 coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
-to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when the connecting morphism
+to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), as it does membership in any Serre
+class (`TopTriple.prop_singularHomology_totalPair`), and when the connecting morphism
 `H_{d+1}(X, A) ⟶ H_d(A, B)` vanishes (for instance when `H_{d+1}(X, A) = 0`) it propagates
 projectivity, provided the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has projective dimension at most
 one, for instance over hereditary coefficient categories
@@ -105,8 +107,9 @@ private noncomputable def outerPairToShortComplexMap :
   comm₂₃ := (T.singularChainComplexπ_comp_totalToOuter R).trans (Category.comp_id _).symm
 
 /-- The morphism of relative singular chain sequences induced by a morphism of triples, used to
-prove the naturality of the connecting morphism. -/
-private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
+prove the naturality of the connecting morphisms in homology and cohomology. -/
+@[simps]
+noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
     (R : C) : T.singularChainComplexShortComplex R ⟶ T'.singularChainComplexShortComplex R where
   τ₁ := TopPair.singularChainComplexMap (innerPair.map φ) R
   τ₂ := TopPair.singularChainComplexMap (totalPair.map φ) R
@@ -115,6 +118,24 @@ private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.
     (TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R)).naturality φ
   comm₂₃ := (Functor.whiskerRight totalToOuter
     (TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R)).naturality φ
+
+/-- The identity morphism of triples induces the identity morphism of relative singular chain
+sequences. -/
+@[simp]
+lemma singularChainComplexShortComplexMap_id :
+    singularChainComplexShortComplexMap (𝟙 T) R = 𝟙 _ := by
+  ext : 1 <;> exact (congrArg (TopPair.singularChainComplexMap · R)
+    (CategoryTheory.Functor.map_id _ T)).trans (TopPair.singularChainComplexMap_id _ R)
+
+/-- A composite of morphisms of triples induces the composite of the morphisms of relative
+singular chain sequences. -/
+@[simp, reassoc]
+lemma singularChainComplexShortComplexMap_comp {T T' T'' : TopTriple.{w}} (φ : T ⟶ T')
+    (ψ : T' ⟶ T'') :
+    singularChainComplexShortComplexMap (φ ≫ ψ) R =
+      singularChainComplexShortComplexMap φ R ≫ singularChainComplexShortComplexMap ψ R := by
+  ext : 1 <;> exact (congrArg (TopPair.singularChainComplexMap · R) (Functor.map_comp _ φ ψ)).trans
+    (TopPair.singularChainComplexMap_comp _ R _)
 
 /-- The maps `Hₙ(A, B) ⟶ Hₙ(X, B) ⟶ Hₙ(X, A)` of a triple compose to zero. -/
 @[reassoc (attr := simp)]
@@ -252,13 +273,23 @@ theorem isIso_singularHomologyδ_of_isZero (n m : ℕ)
     IsIso (T.singularHomologyδ R n m h) :=
   (T.shortExact_singularChainComplexShortComplex R).isIso_δ n m (by simpa) hn hm
 
+/-- **Serre classes pass from the inner and outer pairs to the total pair**: if `Hₙ(A, B)` and
+`Hₙ(X, A)` lie in a Serre class `Q`, so does `Hₙ(X, B)`, which is an extension of a quotient of
+the first by a subobject of the second. -/
+theorem prop_singularHomology_totalPair (Q : ObjectProperty A) [Q.IsSerreClass] (n : ℕ)
+    (hinner : Q ((innerPair.obj T).singularHomology R n))
+    (houter : Q ((outerPair.obj T).singularHomology R n)) :
+    Q ((totalPair.obj T).singularHomology R n) :=
+  Q.prop_X₂_of_exact (T.singularHomology_exact_total R n) hinner houter
+
 /-- **Vanishing passes from the inner and outer pairs to the total pair**: if `Hₙ(A, B)` and
-`Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. -/
+`Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. This is `TopTriple.prop_singularHomology_totalPair` for the
+Serre class of zero objects. -/
 theorem isZero_singularHomology_totalPair (n : ℕ)
     (hinner : IsZero ((innerPair.obj T).singularHomology R n))
     (houter : IsZero ((outerPair.obj T).singularHomology R n)) :
     IsZero ((totalPair.obj T).singularHomology R n) :=
-  (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
+  T.prop_singularHomology_totalPair R IsZero n hinner houter
 
 /-- **Enlarging the subspace by an acyclic pair**: if `Hₙ(A, B)` vanishes, and so does `Hₘ(A, B)`
 for `m + 1 = n`, then `Hₙ(X, B) ⟶ Hₙ(X, A)` is an isomorphism. -/

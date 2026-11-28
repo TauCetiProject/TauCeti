@@ -17,7 +17,7 @@ prime `p`, each realization takes the cast of `legendreSym p D`. Whenever `2 ≠
 coefficient ring, its value at `p` is `-1` exactly when `D` is not a square modulo `p`, and these
 realizations retain conductor `|D|`, are primitive, and are nonprincipal exactly when `D ≠ 1`. In
 particular the real and complex realizations have the same coefficients under the canonical scalar
-embedding.
+embedding, and each realization is the Kronecker character `(D / ·)` with values in its ring.
 
 These comparisons let analytic Dirichlet-character APIs use precisely the character constructed
 from prime discriminants, without choosing a second quadratic character.
@@ -41,6 +41,16 @@ noncomputable def fundamentalDiscriminantCharCast (R : Type*) [CommRing R]
     (hD : Int.IsFundamentalDiscr D) (a : ZMod D.natAbs) :
     fundamentalDiscriminantCharCast R D hD a = (fundamentalDiscriminantChar D hD a : R) :=
   (rfl)
+
+/-- The scalar realization of a fundamental-discriminant character is the Kronecker character
+`(D / ·)` with values in `R`. -/
+theorem fundamentalDiscriminantCharCast_eq_kroneckerChar {R : Type*} [CommRing R]
+    (hD : Int.IsFundamentalDiscr D) (hD' : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) :
+    fundamentalDiscriminantCharCast R D hD = kroneckerChar R D hD' hD.ne_zero := by
+  have := hD.neZero_natAbs
+  refine MulChar.ext' fun a ↦ ?_
+  obtain ⟨n, rfl⟩ := ZMod.intCast_surjective a
+  simp [fundamentalDiscriminantCharCast_apply]
 
 /-- Realizations commute with scalar maps, including the embedding of real into complex values. -/
 @[simp] theorem fundamentalDiscriminantCharCast_ringHomComp {R S : Type*}

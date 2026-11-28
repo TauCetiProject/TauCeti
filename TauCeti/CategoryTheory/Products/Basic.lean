@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Countable
 public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.EssentiallySmall
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
@@ -17,8 +18,9 @@ import Mathlib.CategoryTheory.Adjunction.Limits
 /-!
 # Basic structures on product categories
 
-This file supplies componentwise smallness, zero morphisms, and zero objects for Cartesian product
-categories. These structures let additive constructions and invariants apply to products.
+This file supplies componentwise smallness, countability, zero morphisms, and zero objects for
+Cartesian product categories. These structures let additive constructions and invariants apply to
+products.
 
 It also shows that pushout and pullback squares in a product category are detected
 componentwise: a square in `C × D` is a pushout (resp. pullback) exactly when both of its
@@ -56,6 +58,12 @@ instance instHasZeroMorphismsProd [HasZeroMorphisms C] [HasZeroMorphisms D] :
 noncomputable instance [EssentiallySmall.{w₁} C] [EssentiallySmall.{w₂} D] :
     EssentiallySmall.{max w₁ w₂} (C × D) :=
   EssentiallySmall.mk' ((equivSmallModel C).prod (equivSmallModel D))
+
+/-- A product of countable categories is countable. -/
+instance instCountableCategoryProd [CountableCategory C] [CountableCategory D] :
+    CountableCategory (C × D) where
+  countableHom X Y := Function.Injective.countable (f := fun f : X ⟶ Y ↦ (f.1, f.2))
+    (fun _ _ h ↦ Prod.hom_ext (congrArg _root_.Prod.fst h) (congrArg _root_.Prod.snd h))
 
 /-- A pair of zero objects is a zero object of the product category. -/
 instance [HasZeroObject C] [HasZeroObject D] : HasZeroObject (C × D) where

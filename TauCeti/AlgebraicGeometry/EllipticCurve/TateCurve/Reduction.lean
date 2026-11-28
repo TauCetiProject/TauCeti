@@ -7,11 +7,19 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
+public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.JInvariant
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Specialization
 -- Proof-only: the unit-`c₄` minimality criterion and Tate's test for split multiplicative
 -- reduction on an equation whose reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
+-- Proof-only: the nonintegrality of `j` under multiplicative reduction, the classification of
+-- multiplicative curves with given `j` over a Henselian base, and the adic completeness of `𝒪[K]`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGoodReduction
+import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.SplitMultiplicative
+import TauCeti.RingTheory.Henselian.Basic
+import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Reduction of the Tate curve
@@ -32,16 +40,34 @@ In particular `E_q` never has potential good reduction
 (`WeierstrassCurve.HasMultiplicativeReduction.not_hasPotentialGoodReduction`), matching
 `|j(E_q)| = 1 / |q| > 1` (`TauCeti.norm_tateCurveAt_j`).
 
+Conversely, every elliptic curve `E` over `K` with split multiplicative reduction is isomorphic
+over `K` to `E_q` for exactly one `q` with `|q| < 1`, namely the parameter with `j(E_q) = j(E)`.
+Multiplicative reduction makes `|j(E)| > 1`, so this parameter exists; `E` and `E_q` then have
+split multiplicative reduction and the same `j`-invariant, and such curves are isomorphic over the
+fraction field of the Henselian ring `𝒪[K]`
+(`WeierstrassCurve.exists_smul_eq_of_j_eq_of_hasSplitMultiplicativeReduction`). This holds in
+every residue characteristic, including `2`. When the reduction of `E` is multiplicative but
+possibly nonsplit, `E` is the twist of `E_q` by its node quadratic `T² + a₁ T + n`, whose roots
+reduce to the slopes of the tangent lines at the node; it has integral coefficients and unit
+discriminant, so the twist is unramified.
+
 ## Main results
 
 * `TauCeti.isIntegral_tateCurveAt`: the specialized Tate equation is integral over `𝒪[K]`.
 * `TauCeti.valuation_tateCurveAt_Δ`: `v(Δ(q)) = v(q)`.
 * `TauCeti.hasSplitMultiplicativeReduction_tateCurveAt`: the specialized Tate equation is minimal
   and has split multiplicative reduction.
+* `WeierstrassCurve.HasMultiplicativeReduction.one_lt_norm_j`: multiplicative reduction gives
+  `|j| > 1`.
+* `TauCeti.existsUnique_smul_eq_tateCurveAt`: a curve with split multiplicative reduction is
+  isomorphic over `K` to `E_q` for exactly one `q` with `|q| < 1`.
+* `TauCeti.exists_smul_eq_quadraticTwistOf_tateCurveAt`: a curve with multiplicative reduction is
+  isomorphic over `K` to the twist of `E_q` by its node quadratic, an unramified quadratic.
 
 ## References
 
-* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, V.3 and V.5.
+* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, V.3 and V.5
+  (Theorem V.5.3 for the converse).
 * J. Tate, *A review of non-Archimedean elliptic functions*, in *Elliptic curves, modular forms,
   & Fermat's last theorem* (Hong Kong, 1993), International Press (1995), 162–184.
 -/
@@ -52,7 +78,7 @@ namespace TauCeti
 
 open WeierstrassCurve IsLocalRing IsDiscreteValuationRing IsDedekindDomain.HeightOneSpectrum
   Polynomial
-open scoped NormedField Valued
+open scoped _root_.NormedField Valued
 
 variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
@@ -120,6 +146,46 @@ instance hasSplitMultiplicativeReduction_tateCurveAt (q : Kˣ) (hq : ‖(q : K)�
   convert Splits.X.mul (Splits.X_add_C (1 : ResidueField 𝒪[K])) using 1
   simp [hred₁, hred₂]
   ring
+
+omit [CompleteSpace K] in
+/-- **Multiplicative reduction gives `|j| > 1`**: the `j`-invariant of a curve with multiplicative
+reduction does not lie in `𝒪[K]`. -/
+theorem _root_.WeierstrassCurve.HasMultiplicativeReduction.one_lt_norm_j {E : WeierstrassCurve K}
+    [E.IsElliptic] (h : E.HasMultiplicativeReduction 𝒪[K]) : 1 < ‖E.j‖ := by
+  by_contra! hj
+  exact h.not_isInteger_j (R := 𝒪[K]) ⟨⟨E.j, Valued.integer.mem_iff.mpr hj⟩, rfl⟩
+
+/-- **A curve with split multiplicative reduction is a Tate curve** (Tate). An elliptic curve over
+`K` with split multiplicative reduction is isomorphic over `K` to the specialized Tate curve `E_q`
+for exactly one `q ∈ Kˣ` with `|q| < 1`. This holds in every residue characteristic. -/
+theorem existsUnique_smul_eq_tateCurveAt (E : WeierstrassCurve K) [E.IsElliptic]
+    [hE : E.HasSplitMultiplicativeReduction 𝒪[K]] :
+    ∃! q : {q : Kˣ // ‖(q : K)‖ < 1},
+      ∃ C : VariableChange K, C • E = tateCurveAt q.val q.property := by
+  have hj := hE.one_lt_norm_j
+  -- a variable change preserves `j`, so `E` determines `q` through `j(E_q) = j(E)`
+  have hjC {q : {q : Kˣ // ‖(q : K)‖ < 1}} (h : ∃ C : VariableChange K,
+      C • E = tateCurveAt q.val q.property) : (tateCurveAt q.val q.property).j = E.j := by
+    obtain ⟨C, hC⟩ := h
+    simp_rw [← hC, variableChange_j]
+  obtain ⟨q, hq, hq'⟩ := existsUnique_tateCurveAt_j E.j hj
+  refine ⟨q, ?_, fun q' hq'' ↦ hq' q' (hjC hq'')⟩
+  exact exists_smul_eq_of_j_eq_of_hasSplitMultiplicativeReduction 𝒪[K] hq.symm
+
+/-- **A curve with multiplicative reduction is a twisted Tate curve** (Tate). An elliptic curve
+`E` over `K` with multiplicative reduction, given by a minimal equation, is isomorphic over `K`
+to the twist of `E_q`, for the parameter `q` with `j(E_q) = j(E)`, by the trace `-a₁` and norm
+`n = coeff₀ / c₄` of a root of the node quadratic `T² + a₁ T + n` of `E`. This quadratic has
+integral coefficients and unit discriminant, and it has a root in `K` exactly when the reduction
+is split. -/
+theorem exists_smul_eq_quadraticTwistOf_tateCurveAt (E : WeierstrassCurve K) [E.IsElliptic]
+    [hE : E.HasMultiplicativeReduction 𝒪[K]] :
+    ∃ C : VariableChange K, C • E =
+      (tateCurveAt (tateParameterOfJ E.j hE.one_lt_norm_j)
+        (norm_tateParameterOfJ_lt_one _ _)).quadraticTwistOf
+        (-E.a₁) (E.nodePolynomial.coeff 0 / E.c₄) :=
+  exists_smul_eq_quadraticTwistOf_of_j_eq_of_hasMultiplicativeReduction 𝒪[K]
+    (j_tateCurveAt_tateParameterOfJ _ _)
 
 end TauCeti
 

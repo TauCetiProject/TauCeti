@@ -13,9 +13,9 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 # The local parameter under translation, period rescaling, and differentiation
 
 Identities for the local parameter `𝕢 h z = exp (2 π I z / h)` at a cusp: translating
-the argument multiplies by an exponential, the `m`-th power of the local parameter at
-period `m * h` is the local parameter at period `h`, the values at the integer offsets
-`b < p` satisfy the roots-of-unity orthogonality relation, the parameter differentiates to
+the argument multiplies by an exponential, so that `𝕢 h` has period `h`, the `m`-th power of the
+local parameter at period `m * h` is the local parameter at period `h`, the values at the integer
+offsets `b < p` satisfy the roots-of-unity orthogonality relation, the parameter differentiates to
 itself times `2πi/h`, and the logarithmic derivative of any periodic function of
 nonzero width `h` factors through its cusp function along the parameter.
 
@@ -23,6 +23,7 @@ nonzero width `h` factors through its cusp function along the parameter.
 
 * `TauCeti.Periodic.qParam_zpow`: `𝕢 h z ^ n = exp (2 π I n z / h)`.
 * `TauCeti.Periodic.qParam_sub`: `𝕢 h (z - j) = 𝕢 h z * exp (-2 π I j / h)`.
+* `TauCeti.Periodic.periodic_qParam`: the parameter `𝕢 h` has period `h`.
 * `TauCeti.Periodic.qParam_add_half`: translation by half a period negates the parameter.
 * `TauCeti.Periodic.qParam_add_mul_I_pow`: along the vertical ray from `z`, the powers of the
   local parameter acquire the factor `e^{-2πmt/h}`; this decays when `h > 0` and `m > 0`.
@@ -68,6 +69,14 @@ theorem qParam_sub (z j : ℂ) : 𝕢 h (z - j) = 𝕢 h z * exp (-2 * π * I * 
   simp only [qParam, ← Complex.exp_add]
   ring_nf
 
+/-- The local parameter `𝕢 h` has period `h`. -/
+theorem periodic_qParam (h : ℝ) : Function.Periodic (𝕢 h) h := fun z ↦ by
+  rcases eq_or_ne h 0 with rfl | hh
+  · simp
+  have : -2 * π * I * -(h : ℂ) / h = 2 * π * I := by
+    field_simp [ofReal_ne_zero.mpr hh]
+  rw [← sub_neg_eq_add, qParam_sub, this, exp_two_pi_mul_I, mul_one]
+
 /-- Translating by half a period negates the local parameter. -/
 theorem qParam_add_half (hh : h ≠ 0) (z : ℂ) :
     𝕢 h (z + (h : ℂ) / 2) = -𝕢 h z := by
@@ -107,6 +116,11 @@ theorem exp_pi_mul_I_mul_eq_qParam_pow (hh : h ≠ 0) {t : ℝ} {m : ℕ} (ht : 
   rw [ht']
   push_cast
   field_simp
+
+/-- The local parameter at width two is `exp (π I z)`. -/
+theorem exp_pi_mul_I_mul_eq_qParam_two (z : ℂ) : exp (π * I * z) = 𝕢 2 z := by
+  simpa using exp_pi_mul_I_mul_eq_qParam_pow
+    (h := 2) (t := 1) (m := 1) (by norm_num) (by norm_num) z
 
 /-- **Orthogonality of the `p`-th roots of unity**, in the local-parameter spelling: the
 values `𝕢 p b = exp (2 π I b / p)` at the integer offsets `b < p` are the `p`-th roots of

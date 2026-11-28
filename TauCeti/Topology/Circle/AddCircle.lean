@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import TauCeti.Algebra.AddCircle
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The additive circle and the complex unit circle
@@ -30,6 +30,7 @@ Finally, a continuous family `ψ (θ, ·)` of maps of `AddCircle T` starting at 
 `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at small positive times, moves,
 at some small time, every point forward by a small continuous amount, and the short secants
 `(q τ, q (τ + w))` of a loop `q` stay near the diagonal.
+A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an integer.
 
 ## Main definitions
 
@@ -59,8 +60,12 @@ at some small time, every point forward by a small continuous amount, and the sh
   `AddCircle.exists_tendsto_add_int_mul_of_tendsto_coe` — a real function whose classes in the
   circle stay near, or tend to, a point lifts near, or tends to, one of its lifts, on a
   preconnected set or along a filter with a preconnected basis.
+* `Function.Periodic.exists_uniformContinuous_eq_comp_circleExp` — a continuous function of nonzero
+  period `T` factors through `t ↦ exp (2πit / T)` by a uniformly continuous function on `Circle`.
 * `Function.Injective.secant_ne_zero` — a short forward secant of an injective circle map is nonzero
   when its defining function has no zeros off the diagonal.
+* `UnitAddCircle.coe_eq_zero_iff` — a real number vanishes in `ℝ/ℤ` exactly when it is an
+  integer.
 * `ContinuousMap.exists_pos_forall_secant_mem` — the short secants `(q τ, q (τ + w))` of a loop
   `q` lie in any given open neighborhood of the diagonal.
 * `TauCeti.circleProdHomeomorphUnitAddTorus_apply`,
@@ -266,6 +271,12 @@ end Lift
 
 end AddCircle
 
+/-- A real number is zero in `ℝ/ℤ` exactly when it is an integer. -/
+theorem UnitAddCircle.coe_eq_zero_iff {a : ℝ} :
+    (a : UnitAddCircle) = 0 ↔ ∃ n : ℤ, a = n := by
+  rw [AddCircle.coe_eq_zero_iff]
+  simp only [zsmul_one, eq_comm]
+
 namespace ContinuousMap
 
 open Set Filter
@@ -305,6 +316,24 @@ theorem secant_ne_zero {X Y : Type*} [Zero Y] {T : ℝ} [Fact (0 < T)]
   exact hw.1.ne' ((AddCircle.coe_eq_zero_iff_of_mem_Ico ⟨hw.1.le, hw.2⟩).1 hw0)
 
 end Function.Injective
+
+namespace Function.Periodic
+
+/-- **A continuous periodic function is uniformly continuous on the circle.** A continuous function
+`g` of nonzero period `T` on `ℝ` factors through `t ↦ exp (2π i t / T)` by a uniformly continuous
+function on the circle: points `t`, `t'` whose images on the circle are close have close values. -/
+theorem exists_uniformContinuous_eq_comp_circleExp {E : Type*} [UniformSpace E]
+    {g : ℝ → E} {T : ℝ} (hT : T ≠ 0) (hp : Periodic g T) (hg : Continuous g) :
+    ∃ G : Circle → E, UniformContinuous G ∧ ∀ t, g t = G (Circle.exp (2 * Real.pi / T * t)) := by
+  -- `g` descends to `AddCircle T ≃ₜ Circle`, which is compact.
+  have hl : Continuous hp.lift :=
+    (QuotientAddGroup.isQuotientMap_mk (AddSubgroup.zmultiples T)).continuous_iff.2 hg
+  refine ⟨hp.lift ∘ (AddCircle.homeomorphCircle hT).symm,
+    CompactSpace.uniformContinuous_of_continuous
+      (hl.comp (AddCircle.homeomorphCircle hT).symm.continuous), fun t ↦ ?_⟩
+  rw [Function.comp_apply, AddCircle.homeomorphCircle_symm_exp hT, hp.lift_coe]
+
+end Function.Periodic
 
 namespace TauCeti
 

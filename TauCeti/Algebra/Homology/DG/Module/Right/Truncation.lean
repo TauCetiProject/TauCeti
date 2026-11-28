@@ -39,11 +39,16 @@ degree reasons, so by the Leibniz rule it sends a cycle of degree `m` to a cycle
 
 The truncations increase with `m` (`TauCeti.DGRightModuleCat.truncLESubmodule_mono`, with the
 morphisms `TauCeti.DGRightModuleCat.truncLEInclusion` between them) and exhaust `M`
-(`TauCeti.DGRightModuleCat.iSup_truncLESubmodule`): every DG module over such an algebra is the
-directed union of sub-DG modules whose cohomology is bounded above, that is, homologically
-bounded below. This reduces statements about DG local systems with cohomology bounded on one
-side, proved through convergent spectral sequences, to arbitrary DG local systems, by passing to
-the directed colimit.
+(`TauCeti.DGRightModuleCat.iSup_truncLESubmodule`), every finite set of elements lying in one of
+them (`TauCeti.DGRightModuleCat.exists_forall_mem_truncLESubmodule`): every DG module over such an
+algebra is the directed union of sub-DG modules whose cohomology is bounded above, that is,
+homologically bounded below. This reduces statements about DG local systems with cohomology
+bounded on one side, proved through convergent spectral sequences, to arbitrary DG local systems,
+by passing to the directed colimit (`TauCeti.Algebra.Homology.DG.Twisted.RowFinite.DirectedUnion`
+does this for twisted complexes). A natural transformation between functors of DG right modules
+that pass to this directed colimit is an isomorphism as soon as it is one on the modules with
+cohomology bounded above
+(`TauCeti.DGRightModuleCat.isIso_app_of_forall_cohomologyGrading_eq_bot`).
 
 The hypothesis on `𝒜` cannot be dropped: over the graded algebra `R[t]` with `t` of degree `1`
 and zero differential, acting freely on itself, the cycle `1` of degree `0` lies in `τ^{≤ 0}`
@@ -74,7 +79,7 @@ namespace TauCeti
 
 namespace DGRightModuleCat
 
-universe uR uA uM
+universe v uR uA uM
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d}
@@ -250,6 +255,15 @@ theorem exists_mem_truncLESubmodule (x : M) : ∃ m, x ∈ M.truncLESubmodule h�
   exact ⟨b + 1, mem_truncLESubmodule.2
     ⟨fun p hp ↦ hzero p (by omega), by rw [hzero (b + 1) (by omega), map_zero]⟩⟩
 
+/-- Every finite set of elements of `M` lies in one truncation `τ^{≤ m} M`: the truncations form a
+directed family exhausting `M`. -/
+theorem exists_forall_mem_truncLESubmodule (s : Finset M) :
+    ∃ m, ∀ x ∈ s, x ∈ M.truncLESubmodule h𝒜 m := by
+  classical
+  choose k hk using fun x : M ↦ exists_mem_truncLESubmodule (h𝒜 := h𝒜) x
+  obtain ⟨b, hb⟩ := (s.image k).bddAbove
+  exact ⟨b, fun x hx ↦ truncLESubmodule_mono (hb (Finset.mem_image_of_mem k hx)) (hk x)⟩
+
 /-- **The truncations exhaust the module.** -/
 theorem iSup_truncLESubmodule : ⨆ m, M.truncLESubmodule h𝒜 m = ⊤ :=
   eq_top_iff.2 fun x _ ↦ by
@@ -335,6 +349,23 @@ theorem ιTruncLE_apply {m : ℤ} (x : M.truncLE h𝒜 m) :
 /-- The inclusion of the truncation is injective. -/
 theorem ιTruncLE_injective (m : ℤ) : Function.Injective (M.ιTruncLE h𝒜 m) :=
   Subtype.val_injective.comp (M.truncLEEquiv h𝒜 m).injective
+
+/-- The image of the inclusion of `τ^{≤ m} M` is `truncLESubmodule`. -/
+@[simp]
+theorem range_ιTruncLE (m : ℤ) :
+    Set.range (M.ιTruncLE h𝒜 m) = M.truncLESubmodule h𝒜 m := by
+  ext x
+  refine ⟨?_, fun hx ↦ ⟨(M.truncLEEquiv h𝒜 m).symm ⟨x, hx⟩, by simp⟩⟩
+  rintro ⟨y, rfl⟩
+  exact (M.truncLEEquiv h𝒜 m y).property
+
+/-- Every finite set of elements of `M` lies in the image of one inclusion `τ^{≤ m} M ⟶ M`: the
+inclusions of the truncations form a directed family exhausting `M`. -/
+theorem exists_forall_mem_range_ιTruncLE (s : Finset M) :
+    ∃ m, ∀ x ∈ s, x ∈ Set.range (M.ιTruncLE h𝒜 m) :=
+  (M.exists_forall_mem_truncLESubmodule (h𝒜 := h𝒜) s).imp fun _ hk x hx ↦ by
+    rw [range_ιTruncLE]
+    exact hk x hx
 
 variable (M h𝒜) in
 /-- The inclusion `τ^{≤ m} M ⟶ τ^{≤ m'} M` of truncations for `m ≤ m'`. -/
@@ -462,6 +493,46 @@ theorem isQuasiIso_ιTruncLE {m : ℤ}
       rw [h0]
       exact zero_mem _
   exact LinearMap.mem_range.1 hx
+
+/-! ### Functors determined by the truncations -/
+
+/-- **Natural transformations which are isomorphisms on modules with cohomology bounded above are
+isomorphisms.** Let `α : F ⟶ G` be a natural transformation between functors from DG right modules
+over a nonpositively graded DG algebra to modules, which is an isomorphism on every DG right module
+whose cohomology vanishes above some degree. Let `M` be a DG right module such that every element of
+`F M` and of `G M` comes from some truncation `τ^{≤ k} M`, and every element of `G (τ^{≤ k} M)`
+vanishing in `G M` already vanishes in some `G (τ^{≤ k'} M)`. Then `α` is an isomorphism on `M`.
+
+The two conditions on `G` say that `G M` is the directed colimit of the `G (τ^{≤ k} M)`, the first
+condition on `F` that `F M` is a quotient of it. They hold for homology of twisted complexes and
+its direct limits along continuation maps, since the truncations exhaust `M`. This is how a
+comparison proved for coefficients with homology bounded below, through convergent spectral
+sequences, extends to arbitrary coefficients. -/
+theorem isIso_app_of_forall_cohomologyGrading_eq_bot {R' : Type*} [Ring R']
+    {F G : DGRightModuleCat.{uR, uA, uM} h ⥤ ModuleCat.{v} R'} (α : F ⟶ G)
+    (hα : ∀ N : DGRightModuleCat.{uR, uA, uM} h,
+      (∃ k, ∀ p, k < p → N.isDGRightModule.cohomologyGrading p = ⊥) → IsIso (α.app N))
+    (hF : ∀ x : F.obj M, ∃ k, ∃ y, F.map (M.ιTruncLE h𝒜 k) y = x)
+    (hG : ∀ x : G.obj M, ∃ k, ∃ y, G.map (M.ιTruncLE h𝒜 k) y = x)
+    (hG₀ : ∀ k (y : G.obj (M.truncLE h𝒜 k)), G.map (M.ιTruncLE h𝒜 k) y = 0 →
+      ∃ k', ∃ hkk' : k ≤ k', G.map (M.truncLEInclusion h𝒜 hkk') y = 0) :
+    IsIso (α.app M) := by
+  have hτ (k : ℤ) : Function.Bijective (α.app (M.truncLE h𝒜 k)) :=
+    (ConcreteCategory.isIso_iff_bijective _).1
+      (hα _ ⟨k, fun _ hp ↦ M.cohomologyGrading_truncLE_eq_bot hp⟩)
+  rw [ConcreteCategory.isIso_iff_bijective]
+  refine ⟨(injective_iff_map_eq_zero (α.app M).hom).2 fun x hx ↦ ?_, fun z ↦ ?_⟩
+  · -- `x` comes from `τ^{≤ k} M`, and its image under `α` vanishes in some `τ^{≤ k'} M`.
+    obtain ⟨k, y, rfl⟩ := hF x
+    obtain ⟨k', hkk', hk'⟩ := hG₀ k _ ((NatTrans.naturality_apply α _ y).symm.trans hx)
+    have hy : F.map (M.truncLEInclusion h𝒜 hkk') y = 0 :=
+      (injective_iff_map_eq_zero (α.app _).hom).1 (hτ k').1 _
+        ((NatTrans.naturality_apply α _ y).trans hk')
+    rw [← M.truncLEInclusion_ιTruncLE hkk', F.map_comp, ConcreteCategory.comp_apply, hy,
+      map_zero]
+  · obtain ⟨k, w, rfl⟩ := hG z
+    obtain ⟨y, rfl⟩ := (hτ k).2 w
+    exact ⟨F.map (M.ιTruncLE h𝒜 k) y, NatTrans.naturality_apply α _ y⟩
 
 end DGRightModuleCat
 

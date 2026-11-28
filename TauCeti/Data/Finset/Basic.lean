@@ -57,6 +57,11 @@ import TauCeti.Data.Set.PowersetCard
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
   are the corresponding identities for an integer cancelling the cardinality of the finset.
+* `Finset.card_filter_apply_lt_lt_card_filter_apply_lt`, `Finset.card_filter_apply_lt_lt_card`,
+  `Finset.injOn_card_filter_apply_lt` and `Finset.exists_card_filter_apply_lt_eq` describe the
+  positions `#{c ∈ s | f a < f c}` of the elements of a finset `s` in the decreasing order of a key
+  `f : ι → α` with values in an order: they decrease as the key grows, lie below `#s`, and, for a
+  key injective on `s`, enumerate the numbers below `#s` without repetition.
 * `Finset.Nonempty.exists_forall_lt_insert_eq` writes a nonempty finset of a linear order as its
   minimum inserted into a finset above it, and `Finset.min'_insert_of_forall_le` recovers that
   minimum.
@@ -86,8 +91,10 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
-  has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
-  coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
+  has distinct coordinates, `Finset.filter_ne_product_nonempty` finds such a pair when the first
+  factor has two elements and the second is nonempty, `Finset.card_filter_ne_product` counts the
+  pairs with distinct coordinates in any product by their first coordinate,
+  `Finset.card_filter_ne_product_comm`
   says that this count is symmetric in the two factors,
   `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
   half of the product when the second factor has at least two elements, and
@@ -219,6 +226,14 @@ theorem filter_ne_product_of_disjoint {α : Type*} {s t : Finset α} [DecidableE
     (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
+
+/-- A product whose first factor has two elements and whose second factor is nonempty contains a
+pair with distinct coordinates. -/
+theorem filter_ne_product_nonempty {α : Type*} {s t : Finset α} [DecidableEq α] (hs : 1 < #s)
+    (ht : t.Nonempty) : ((s ×ˢ t).filter fun p => p.1 ≠ p.2).Nonempty := by
+  obtain ⟨y, hy⟩ := ht
+  obtain ⟨x, hx, hxy⟩ := exists_mem_ne hs y
+  exact ⟨(x, y), mem_filter.2 ⟨mem_product.2 ⟨hx, hy⟩, hxy⟩⟩
 
 /-- A rectangle `X ×ˢ Y` of disjoint sets, with sides carrying an `ε`-fraction of the sides of a
 block `A ×ˢ B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
@@ -660,6 +675,45 @@ theorem neg_card_filter_lt_add_neg_card_filter_gt {α : Type*} [LinearOrder α] 
     -(#{x ∈ s | x < t} : ℤ) + -(#{x ∈ s | t < x} : ℤ) = d + 1 := by
   have := card_filter_lt_add_card_filter_gt_add_one ht
   omega
+
+section Key
+
+variable {ι α : Type*} {s : Finset ι} {f : ι → α}
+
+/-- An element `b` of `s` with a larger key than `a` has fewer elements of `s` with a larger key
+than itself: it comes earlier than `a` in the decreasing order of the keys `f`. -/
+theorem card_filter_apply_lt_lt_card_filter_apply_lt [Preorder α] [DecidableLT α] {a b : ι}
+    (hb : b ∈ s) (h : f a < f b) : #{c ∈ s | f b < f c} < #{c ∈ s | f a < f c} := by
+  refine card_lt_card ((ssubset_iff_of_subset fun c hc ↦ ?_).2 ⟨b, mem_filter.2 ⟨hb, h⟩, ?_⟩)
+  · rw [mem_filter] at hc ⊢
+    exact ⟨hc.1, h.trans hc.2⟩
+  · exact fun hb' ↦ lt_irrefl _ (mem_filter.1 hb').2
+
+/-- The position `#{c ∈ s | f a < f c}` of an element `a` of `s` in the decreasing order of the
+keys `f` is less than the size of `s`. -/
+theorem card_filter_apply_lt_lt_card [Preorder α] [DecidableLT α] {a : ι} (ha : a ∈ s) :
+    #{c ∈ s | f a < f c} < #s :=
+  card_lt_card (filter_ssubset.2 ⟨a, ha, lt_irrefl _⟩)
+
+/-- For keys `f` injective on `s`, the elements of `s` have distinct positions
+`#{c ∈ s | f a < f c}` in the decreasing order of the keys. -/
+theorem injOn_card_filter_apply_lt [LinearOrder α] (hf : Set.InjOn f s) :
+    Set.InjOn (fun a ↦ #{c ∈ s | f a < f c}) s := by
+  intro a ha b hb hab
+  rcases lt_trichotomy (f a) (f b) with h | h | h
+  · exact absurd hab (card_filter_apply_lt_lt_card_filter_apply_lt hb h).ne'
+  · exact hf ha hb h
+  · exact absurd hab (card_filter_apply_lt_lt_card_filter_apply_lt ha h).ne
+
+/-- For keys `f` injective on `s`, every number `j` below the size of `s` is the position
+`#{c ∈ s | f a < f c}` of an element `a` of `s` in the decreasing order of the keys. -/
+theorem exists_card_filter_apply_lt_eq [LinearOrder α] (hf : Set.InjOn f s) {j : ℕ}
+    (hj : j < #s) : ∃ a ∈ s, #{c ∈ s | f a < f c} = j :=
+  surjOn_of_injOn_of_card_le (fun a ↦ #{c ∈ s | f a < f c})
+    (fun _ ha ↦ mem_coe.2 (mem_range.2 (card_filter_apply_lt_lt_card ha)))
+    (injOn_card_filter_apply_lt hf) (by simp) (mem_coe.2 (mem_range.2 hj))
+
+end Key
 
 /-- The elements of a finset inside `Ioo a b` that lie below `t` lie in `Ioo a t`. -/
 theorem filter_lt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] {a b t : α}

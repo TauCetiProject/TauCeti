@@ -63,6 +63,9 @@ connected, the quotient graph is `Γ`.
 * `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex`,
   `TauCeti.GraphOfGroups.stabilizer_bassSerreDart`: the vertex and dart stabilizers are the
   conjugates of the vertex groups and of the edge group images.
+* `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex_eq_bot`,
+  `TauCeti.GraphOfGroups.stabilizer_bassSerreTree_dart_eq_bot`: trivial vertex groups give
+  trivial vertex stabilizers, and trivial edge groups give trivial dart stabilizers.
 * `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreDart_eq_self_iff`,
   `TauCeti.GraphOfGroups.vertexHom_cons_smul_bassSerreDart_eq_self_iff`: which elements of the
   stabilizers of the endpoints of a dart fix the dart.
@@ -599,6 +602,20 @@ theorem stabilizer_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e
   exact sigma_mk_injective.eq_iff.trans <| sigma_mk_injective.eq_iff.trans
     sigma_mk_injective.eq_iff
 
+/-- A vertex `p A_b` with trivial vertex group `A_b` has trivial stabilizer. -/
+theorem stabilizer_bassSerreVertex_eq_bot {b : Γ.V} [Subsingleton (𝔸.vertexGroup b)]
+    (p : 𝔸.Path ⟨a⟩ ⟨b⟩) : stabilizer (π₁ 𝔸 a) (bassSerreVertex p) = ⊥ := by
+  rw [stabilizer_bassSerreVertex, MonoidHom.range_eq_bot_iff]
+  exact Subsingleton.elim _ _
+
+/-- When every edge group is trivial, for instance for a free product, every dart of the
+Bass–Serre tree has trivial stabilizer. -/
+theorem stabilizer_bassSerreTree_dart_eq_bot [∀ z, Subsingleton (𝔸.edgeGroup z)]
+    (d : (bassSerreTree 𝔸 a).E) : stabilizer (π₁ 𝔸 a) d = ⊥ := by
+  obtain ⟨b, c, p, e, rfl⟩ := bassSerreDart_surjective d
+  rw [stabilizer_bassSerreDart, MonoidHom.range_eq_bot_iff.2 (Subsingleton.elim _ _),
+    Subgroup.map_bot]
+
 /-- The element `p g p⁻¹` with `g ∈ A_b` fixes the dart `p α_e(A_e)` exactly when
 `g ∈ α_e(A_e)`. -/
 @[simp]
@@ -619,13 +636,17 @@ theorem vertexHom_cons_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Pat
   rw [← mem_stabilizer_iff, ← GTree.stabilizer_rev, rev_bassSerreDart, stabilizer_bassSerreDart,
     range_αArrow_reverse, Subgroup.mem_map_iff_mem (π₁.vertexHom_injective _)]
 
+/-- The class of `q p⁻¹` carries the vertex `p A_b` to the vertex `q A_b`. -/
+theorem mk_comp_reverse_smul_bassSerreVertex {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    π₁.mk (q.comp p.reverse) • bassSerreVertex p = bassSerreVertex q := by
+  rw [smul_bassSerreVertex]
+  exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp q p)
+
 /-- `π₁(𝔸, a)` acts transitively on the vertices `p A_b` over a vertex `b` of `Γ`: the class of
 `q p⁻¹` carries `p A_b` to `q A_b`. -/
 theorem exists_smul_bassSerreVertex_eq {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     ∃ g : π₁ 𝔸 a, g • bassSerreVertex p = bassSerreVertex q :=
-  ⟨π₁.mk (q.comp p.reverse), by
-    rw [smul_bassSerreVertex]
-    exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp q p)⟩
+  ⟨_, mk_comp_reverse_smul_bassSerreVertex p q⟩
 
 /-- `π₁(𝔸, a)` acts transitively on the darts `p α_e(A_e)` over a dart `e` of `Γ`. -/
 theorem exists_smul_bassSerreDart_eq {b c : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :

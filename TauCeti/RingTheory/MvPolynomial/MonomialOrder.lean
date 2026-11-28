@@ -43,6 +43,8 @@ the images of the generators of the Lazard ring in a polynomial ring.
 * `MonomialOrder.degree_eq_of_forall_lt`, `MonomialOrder.degree_eq_of_forall_mem_lt`: strict
   comparisons preserving the leading exponent, including comparisons on a set containing the
   support.
+* `MonomialOrder.degree_eq_of_support_subset`: a polynomial whose support lies in that of `f` and
+  contains the leading exponent of `f` has the same leading exponent.
 * `MonomialOrder.leadingCoeff_eq_of_degree_eq`, `MonomialOrder.leadingTerm_eq_of_degree_eq`,
   `MonomialOrder.sPolynomial_eq_of_degree_eq`: orders agreeing on leading exponents also agree
   on the corresponding leading coefficients, leading terms and S-polynomials.
@@ -85,7 +87,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
   maximal-weight component in the original order.
 * `MonomialOrder.monicNormalize`: over a field, a polynomial divided by its leading coefficient,
   monic with the same leading exponent when the polynomial is nonzero
-  (`MonomialOrder.monic_monicNormalize`, `MonomialOrder.degree_monicNormalize`).
+  (`MonomialOrder.monic_monicNormalize`, `MonomialOrder.degree_monicNormalize`), together with
+  leading-term recovery from a weighted component equal to `X^(m.degree f)`
+  (`MonomialOrder.ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq`,
+  `MonomialOrder.weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize`).
 * `MonomialOrder.monic_aeval_monomial_one`, `MonomialOrder.degree_aeval_monomial_one`: for a
   family `c` of monic polynomials, `∏ i, c i ^ w i` is monic with leading exponent
   `A w = ∑ i, w i • m.degree (c i)`.
@@ -148,6 +153,14 @@ theorem degree_eq_of_forall_mem_lt [CommSemiring R] (n : MonomialOrder σ)
   intro a ha hne
   exact h a (hf ha) _ (hf (m.degree_mem_support hf0))
     (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
+
+/-- If the support of `g` lies in that of `f` and contains the leading exponent of `f`, then `g`
+has the same leading exponent as `f`. The coefficient rings of `f` and `g` may differ. -/
+theorem degree_eq_of_support_subset {S : Type*} [CommSemiring R] [CommSemiring S]
+    {f : MvPolynomial σ R} {g : MvPolynomial σ S} (h : g.support ⊆ f.support)
+    (hf : m.degree f ∈ g.support) : m.degree g = m.degree f :=
+  m.toSyn.injective
+    (le_antisymm (m.degree_le_iff.2 fun _ he ↦ m.le_degree (h he)) (m.le_degree hf))
 
 /-- Orders agreeing on the leading exponent of a polynomial agree on its leading coefficient. -/
 theorem leadingCoeff_eq_of_degree_eq [CommSemiring R] (n : MonomialOrder σ)
@@ -588,6 +601,12 @@ theorem C_leadingCoeff_mul_monicNormalize (f : MvPolynomial σ k) :
   rw [monicNormalize_def, ← mul_assoc, ← C_mul, mul_inv_cancel₀ (m.leadingCoeff_ne_zero_iff.2 hf),
     C_1, one_mul]
 
+/-- Scaling the normalization of `f` by the leading coefficient of `f` recovers `f`. -/
+@[simp]
+theorem leadingCoeff_smul_monicNormalize (f : MvPolynomial σ k) :
+    m.leadingCoeff f • m.monicNormalize f = f := by
+  rw [smul_eq_C_mul, m.C_leadingCoeff_mul_monicNormalize]
+
 /-- A monic polynomial is its own normalization. -/
 theorem Monic.monicNormalize_eq (hf : m.Monic f) : m.monicNormalize f = f := by
   simp [monicNormalize_def, hf.leadingCoeff_eq_one]
@@ -612,10 +631,33 @@ contains `f`. -/
 theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
     [SMulMemClass S k (MvPolynomial σ k)] {A : S} : m.monicNormalize f ∈ A ↔ f ∈ A := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← C_leadingCoeff_mul_monicNormalize (m := m) f, ← smul_eq_C_mul]
+  · rw [← leadingCoeff_smul_monicNormalize (m := m) f]
     exact SMulMemClass.smul_mem _ h
   · rw [monicNormalize_def, ← smul_eq_C_mul]
     exact SMulMemClass.smul_mem _ h
+
+/-- If the weighted homogeneous component of `m.monicNormalize f` at the weight of `m.degree f`
+equals `monomial (m.degree f) 1`, then `f` is nonzero. -/
+theorem ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq
+    {M : Type*} [AddCommMonoid M] {w : σ → M}
+    (hf : weightedHomogeneousComponent w (Finsupp.weight w (m.degree f))
+      (m.monicNormalize f) = monomial (m.degree f) 1) :
+    f ≠ 0 := by
+  rintro rfl
+  simp at hf
+
+/-- If the weighted homogeneous component of `m.monicNormalize f` at the weight of `m.degree f`
+equals `monomial (m.degree f) 1`, then the corresponding weighted homogeneous component of `f` is
+`m.leadingTerm f`. -/
+theorem weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize
+    {M : Type*} [AddCommMonoid M] {w : σ → M}
+    (hf : weightedHomogeneousComponent w (Finsupp.weight w (m.degree f))
+      (m.monicNormalize f) = monomial (m.degree f) 1) :
+    weightedHomogeneousComponent w (Finsupp.weight w (m.degree f)) f = m.leadingTerm f := by
+  have h := congrArg (weightedHomogeneousComponent w (Finsupp.weight w (m.degree f)))
+    (m.leadingCoeff_smul_monicNormalize f)
+  rw [map_smul, hf, smul_monomial] at h
+  simpa [leadingTerm] using h.symm
 
 end MonicNormalize
 

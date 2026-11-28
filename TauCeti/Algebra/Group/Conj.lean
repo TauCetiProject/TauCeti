@@ -11,6 +11,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.OrderOfElement
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Inversion and powers of conjugacy classes, and the size of a class
@@ -32,6 +33,7 @@ conjugation action.
 ## Main statements
 
 * `TauCeti.isConj_inv_iff`: conjugacy is inherited by inverses in both directions.
+* `IsConj.zpow`: conjugacy is preserved by integer powers in a group.
 * `ConjClasses.inv_mk`: the inverse of the class of `g` is the class of `g⁻¹`.
 * `ConjClasses.conj_mem_carrier` and `ConjClasses.conj_inv_mem_carrier`: a conjugacy class is
   closed under conjugation.
@@ -61,6 +63,8 @@ conjugation action.
   a class is nonzero in any semiring where the group order is, and
   `ConjClasses.card_carrier_div_card_ne_zero` the nonvanishing of `#C / #G` for a finite group.
 * `ConjClasses.mem_carrier_iff_of_isConj`: conjugate elements lie in the same conjugacy classes.
+* `ConjClasses.mk_out`: the class of the chosen representative of a class is that class.
+* `ConjClasses.mk_one_eq_mk_iff`: the class of `1` contains only `1`.
 * `ConjClasses.pow`: the power operation itself, with `C ^ j` its notation.
 * `ConjClasses.mem_pow_iff`: an element lies in `C ^ j` exactly when it is a
   `j`-th power of a member of `C`, with `ConjClasses.mk_pow` the computation rule.
@@ -133,6 +137,14 @@ instance instInvolutiveInvConjClasses : InvolutiveInv (ConjClasses G) where
     exact congrArg ConjClasses.mk (inv_inv g)
 
 end TauCeti
+
+namespace IsConj
+
+/-- Conjugacy is preserved by integer powers in a group. -/
+theorem zpow {G : Type*} [Group G] {a b : G} (z : ℤ) : IsConj a b → IsConj (a ^ z) (b ^ z)
+  | ⟨c, hc⟩ => ⟨c, hc.zpow_right z⟩
+
+end IsConj
 
 namespace ConjClasses
 
@@ -374,6 +386,18 @@ theorem mem_carrier_iff_of_isConj {M : Type*} [Monoid M] {a b : M} {C : ConjClas
     (h : IsConj a b) : a ∈ C.carrier ↔ b ∈ C.carrier := by
   rw [mem_carrier_iff_mk_eq, mem_carrier_iff_mk_eq, mk_eq_mk_iff_isConj.mpr h]
 
+/-- The class of the chosen representative of a conjugacy class is that class. -/
+@[simp]
+theorem mk_out {M : Type*} [Monoid M] (C : ConjClasses M) : ConjClasses.mk C.out = C :=
+  -- `ConjClasses M` is the quotient by `IsConj.setoid M`, whose class map is `ConjClasses.mk`.
+  Quotient.out_eq C
+
+/-- The class of `1` is the class of `x` exactly when `x = 1`. -/
+@[simp]
+theorem mk_one_eq_mk_iff {M : Type*} [Monoid M] {x : M} :
+    ConjClasses.mk 1 = ConjClasses.mk x ↔ x = 1 := by
+  rw [mk_eq_mk_iff_isConj, isConj_one_right]
+
 /-! ### Powers of a conjugacy class -/
 
 variable {M : Type*} [Monoid M]
@@ -563,15 +587,8 @@ variable {M : Type*} [Monoid M]
 
 /-- Elements of different orders lie in different conjugacy classes, even in a monoid. -/
 theorem mk_ne_mk_of_orderOf_ne {a b : M} (h : orderOf a ≠ orderOf b) :
-    ConjClasses.mk a ≠ ConjClasses.mk b := by
-  intro hclasses
-  apply h
-  rw [orderOf_eq_orderOf_iff]
-  intro n
-  have hc := mk_eq_mk_iff_isConj.mp hclasses
-  constructor <;> intro hpow
-  · simpa only [hpow, isConj_one_right] using hc.pow n
-  · simpa only [hpow, isConj_one_right] using hc.symm.pow n
+    ConjClasses.mk a ≠ ConjClasses.mk b :=
+  fun hclasses => h (mk_eq_mk_iff_isConj.mp hclasses).orderOf_eq
 
 /-- **A nonidentity square in the cyclic group of order four.** The generator has order four, its
 class squares to the class of the element of order two, and those two classes are distinct. A group

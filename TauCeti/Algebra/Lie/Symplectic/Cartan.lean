@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.Lie.Matrix.NegConjTranspose
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 
@@ -15,7 +16,10 @@ The symplectic Lie algebra is stable under transpose. Restricting the matrix Lie
 automorphism `TauCeti.negTransposeLieEquiv` gives its involution `X ↦ -Xᵀ`.
 On symplectic Lie matrices it is conjugation by `J`, just as inverse transpose is
 conjugation by `J` on the symplectic group. The fixed and negated vectors are
-respectively the skew-symmetric and symmetric symplectic Lie matrices.
+respectively the skew-symmetric and symmetric symplectic Lie matrices. Over `ℝ` it is the
+restriction `LieSubalgebra.restrictNegConjTranspose` of negative conjugate transpose
+(`LieAlgebra.Symplectic.restrictNegConjTranspose_sp`), so it is an instance of the matrix Cartan
+criterion of `TauCeti.Algebra.Lie.CartanInvolution.Matrix`.
 
 ## References
 
@@ -36,18 +40,7 @@ variable (l R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the symplectic Lie algebra. -/
 def cartanInvolution : sp l R ≃ₗ⁅R⁆ sp l R :=
-  (TauCeti.negTransposeLieEquiv (l ⊕ l) R).ofSubalgebras (sp l R) (sp l R) (by
-    ext X
-    constructor
-    · rintro ⟨Y, hY, rfl⟩
-      -- Subalgebra images use the underlying Lie homomorphism. Expose its function
-      -- so the public evaluation lemma for negative transpose applies.
-      change TauCeti.negTransposeLieEquiv (l ⊕ l) R Y ∈ sp l R
-      rw [TauCeti.negTransposeLieEquiv_apply]
-      exact (sp l R).neg_mem (transpose_mem_sp hY)
-    · intro hX
-      refine ⟨-Xᵀ, (sp l R).neg_mem (transpose_mem_sp hX), ?_⟩
-      simp)
+  (sp l R).restrictNegTranspose fun _ ↦ transpose_mem_sp
 
 variable {l R}
 
@@ -60,16 +53,13 @@ theorem coe_cartanInvolution (X : sp l R) :
 /-- Applying the symplectic Lie involution twice gives the original vector. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (X : sp l R) :
-    cartanInvolution l R (cartanInvolution l R X) = X := by
-  apply Subtype.ext
-  simp
+    cartanInvolution l R (cartanInvolution l R X) = X :=
+  LieSubalgebra.restrictNegTranspose_restrictNegTranspose _ _ X
 
 /-- The symplectic Lie involution is its own inverse. -/
 @[simp]
-theorem cartanInvolution_symm : (cartanInvolution l R).symm = cartanInvolution l R := by
-  apply LieEquiv.ext
-  intro X
-  rw [LieEquiv.symm_apply_eq, cartanInvolution_cartanInvolution]
+theorem cartanInvolution_symm : (cartanInvolution l R).symm = cartanInvolution l R :=
+  LieSubalgebra.restrictNegTranspose_symm _ _
 
 /-- Fixed vectors of the Lie involution are the skew-symmetric symplectic Lie matrices. -/
 @[simp]
@@ -84,5 +74,12 @@ theorem cartanInvolution_eq_neg_iff (X : sp l R) :
     cartanInvolution l R X = -X ↔ (X : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = X := by
   rw [← Subtype.coe_inj, coe_cartanInvolution]
   exact neg_inj
+
+/-- On the real symplectic Lie algebra, `X ↦ -Xᴴ` is `LieAlgebra.Symplectic.cartanInvolution`. -/
+theorem restrictNegConjTranspose_sp :
+    (sp l ℝ).restrictNegConjTranspose (fun _ ↦ conjTranspose_mem_sp) = cartanInvolution l ℝ :=
+  LieEquiv.ext fun X ↦ Subtype.ext <| by
+    rw [LieSubalgebra.coe_restrictNegConjTranspose_apply, coe_cartanInvolution,
+      conjTranspose_eq_transpose_of_trivial]
 
 end LieAlgebra.Symplectic

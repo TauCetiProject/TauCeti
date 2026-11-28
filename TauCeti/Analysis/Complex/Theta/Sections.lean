@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Theta.Factor
+public import TauCeti.Analysis.Complex.ThetaLine.Basic
 
 /-!
 # Holomorphic sections of the level-`k` theta line

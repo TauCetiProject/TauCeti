@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Vanishing exponential damping of a half-line integral
@@ -20,10 +21,22 @@ line `Re s = sigma` inside its half-plane of convergence and the line is pushed 
 `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary` uses it for the simple-pole
 term of the Wiener--Ikehara identity.
 
+Separately, increasing the damping rate from `σ` to `x ≥ σ` multiplies the integrand by
+`e^{-(x-σ)t}`, which is at most `1` for `t ≥ 0` and at most `e^{-(x-σ)δ}` for `t ≥ δ`
+(`TauCeti.exp_neg_sub_mul_le_of_le`). This preserves integrability for any measure carried by
+`[0, ∞)`, and on `(δ, ∞)` it gains the factor `e^{-(x-σ)δ}`: this bounds the tail of a Laplace
+integral.
+
 ## Main results
 
 * `TauCeti.tendsto_setIntegral_exp_smul`: the damped integral converges to the undamped one as
   `sigma` decreases to `1`.
+* `MeasureTheory.IntegrableOn.tendsto_setIntegral_Ioi_exp_neg_mul_smul`: on an open
+  half-line the same limit holds for the damping rate decreasing to zero.
+* `TauCeti.integrable_exp_neg_mul_smul_of_le`: if `e^{-σt} G(t)` is integrable for a measure
+  carried by `[0, ∞)`, so is the more strongly damped `e^{-xt} G(t)` for every `x ≥ σ`.
+* `TauCeti.norm_setIntegral_Ioi_exp_neg_mul_smul_le`: on `(δ, ∞)` the extra damping
+  `e^{-(x-σ)t}` is at most `e^{-(x-σ)δ}`, which bounds the tail of a Laplace integral.
 -/
 
 public section
@@ -53,5 +66,58 @@ theorem tendsto_setIntegral_exp_smul (hf : IntegrableOn f (Ici a) μ) :
   · have hexp : Tendsto (fun sigma : ℝ ↦ Real.exp (-u * (sigma - 1))) (𝓝 1) (𝓝 1) :=
       (by fun_prop : Continuous fun sigma : ℝ ↦ Real.exp (-u * (sigma - 1))).tendsto' 1 1 (by simp)
     simpa using (hexp.mono_left nhdsWithin_le_nhds).smul_const (f u)
+
+/-- For a function integrable on `(a, ∞)`, the damped integral with factor `exp (-ε * t)`
+converges to the undamped integral as `ε` tends to zero from above. -/
+theorem _root_.MeasureTheory.IntegrableOn.tendsto_setIntegral_Ioi_exp_neg_mul_smul
+    (hf : IntegrableOn f (Ioi a) μ) :
+    Tendsto (fun ε : ℝ ↦ ∫ t in Ioi a, Real.exp (-ε * t) • f t ∂μ)
+      (𝓝[>] 0) (𝓝 (∫ t in Ioi a, f t ∂μ)) := by
+  -- Apply the limit at rate `sigma - 1` to the measure restricted to the open half-line.
+  have hε : ∀ᶠ ε : ℝ in 𝓝[>] 0, 0 < ε := self_mem_nhdsWithin
+  have hmap : Tendsto (fun ε : ℝ ↦ ε + 1) (𝓝[>] 0) (𝓝[≥] (1 : ℝ)) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (by simpa using (tendsto_id (x := 𝓝 (0 : ℝ)) |>.add_const 1).mono_left nhdsWithin_le_nhds)
+      (hε.mono fun ε h ↦ by simpa using h.le)
+  have hrestrict : (μ.restrict (Ioi a)).restrict (Ici a) = μ.restrict (Ioi a) := by
+    rw [Measure.restrict_restrict measurableSet_Ici, inter_eq_right.mpr Ioi_subset_Ici_self]
+  have hf' : IntegrableOn f (Ici a) (μ.restrict (Ioi a)) := by
+    rw [IntegrableOn, hrestrict]
+    exact hf.integrable
+  have hexp (ε t : ℝ) : -t * ((ε + 1) - 1) = -ε * t := by ring
+  simpa only [Function.comp_def, hrestrict, hexp] using
+    (tendsto_setIntegral_exp_smul hf').comp hmap
+
+/-- If `t ↦ e^{-σt} G(t)` is integrable for a measure `μ` carried by `[0, ∞)`, then so is
+`t ↦ e^{-xt} G(t)` for every `x ≥ σ`. -/
+theorem integrable_exp_neg_mul_smul_of_le {G : ℝ → E} {σ x : ℝ}
+    (hint : Integrable (fun t => Real.exp (-σ * t) • G t) μ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t)
+    (hx : σ ≤ x) : Integrable (fun t => Real.exp (-x * t) • G t) μ := by
+  have h := hint.bdd_smul 1 (φ := fun t => Real.exp (-(x - σ) * t))
+    (by fun_prop : Continuous fun t : ℝ => Real.exp (-(x - σ) * t)).aestronglyMeasurable
+    (by
+      filter_upwards [hμ] with t ht
+      rw [Real.norm_of_nonneg (Real.exp_pos _).le]
+      simpa using exp_neg_sub_mul_le_of_le hx ht)
+  refine h.congr (.of_forall fun t => ?_)
+  simp only [Pi.smul_apply', smul_smul, ← Real.exp_add]
+  ring_nf
+
+/-- The part of a Laplace integral beyond `δ`: if `t ↦ e^{-σt} G(t)` is integrable on `(δ, ∞)`
+for a measure `μ` and `x ≥ σ`, then
+`‖∫_δ^∞ e^{-xt} G(t) dμ(t)‖ ≤ e^{-(x-σ)δ} ∫_δ^∞ ‖e^{-σt} G(t)‖ dμ(t)`. -/
+theorem norm_setIntegral_Ioi_exp_neg_mul_smul_le {G : ℝ → E} {σ x δ : ℝ}
+    (hint : IntegrableOn (fun t => Real.exp (-σ * t) • G t) (Ioi δ) μ) (hx : σ ≤ x) :
+    ‖∫ t in Ioi δ, Real.exp (-x * t) • G t ∂μ‖ ≤
+      Real.exp (-(x - σ) * δ) * ∫ t in Ioi δ, ‖Real.exp (-σ * t) • G t‖ ∂μ := by
+  rw [← integral_const_mul]
+  refine norm_integral_le_of_norm_le (hint.norm.const_mul _) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+  have hsplit : Real.exp (-x * t) = Real.exp (-(x - σ) * t) * Real.exp (-σ * t) := by
+    rw [← Real.exp_add]
+    ring_nf
+  rw [norm_smul, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le,
+    Real.norm_of_nonneg (Real.exp_pos _).le, hsplit, mul_assoc]
+  exact mul_le_mul_of_nonneg_right (exp_neg_sub_mul_le_of_le hx ht.le) (by positivity)
 
 end TauCeti

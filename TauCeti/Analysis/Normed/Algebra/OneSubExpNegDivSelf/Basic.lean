@@ -30,6 +30,7 @@ map.
 * `norm_oneSubExpNegDivSelf_sub_one_le`: over `ℝ` or `ℂ`, the series differs from `1` by at most
   `exp ‖a‖ - 1`.
 * `isUnit_oneSubExpNegDivSelf`: consequently it is a unit when `‖a‖ < log 2`.
+* `Real.tsum_pow_div_factorial_succ`: over `ℝ`, `∑ yⁿ / (n + 1)! = (exp y - 1) / y` for `y ≠ 0`.
 
 ## References
 
@@ -168,3 +169,17 @@ theorem isUnit_oneSubExpNegDivSelf {a : A} (ha : ‖a‖ < Real.log 2) :
   exact sub_sub_self 1 (oneSubExpNegDivSelf 𝕂 a) ▸ (Units.oneSub _ h).isUnit
 
 end Bound
+
+section Real
+
+/-- Over `ℝ`, the series `∑_{n ≥ 0} yⁿ / (n + 1)!` of `oneSubExpNegDivSelf` at `-y` sums to
+`(exp y - 1) / y` for `y ≠ 0`. -/
+theorem Real.tsum_pow_div_factorial_succ {y : ℝ} (hy : y ≠ 0) :
+    ∑' n : ℕ, y ^ n / ((n + 1).factorial : ℝ) = (Real.exp y - 1) / y := by
+  have h := mul_oneSubExpNegDivSelf (𝕂 := ℝ) (-y)
+  rw [oneSubExpNegDivSelf_eq_tsum, neg_neg, ← Real.exp_eq_exp_ℝ] at h
+  simp only [smul_eq_mul, inv_mul_eq_div] at h
+  rw [eq_div_iff hy]
+  linear_combination -h
+
+end Real

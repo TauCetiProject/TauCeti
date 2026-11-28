@@ -14,6 +14,9 @@ public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
+import TauCeti.Analysis.InnerProductSpace.Spectrum
+
+import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # Singular values, the two Gram spectra, and the singular system
@@ -58,6 +61,7 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
   for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
+* `LinearMap.operatorAbs_rightSingularBasis`: `|A| vᵢ = σᵢ vᵢ`.
 * `LinearMap.singularValues_eq_single_of_finrank_eq_one`: on a one-dimensional source the only
   singular value is `‖A x‖` for a unit vector `x`.
 * `LinearMap.singularValues_mul_norm_le_norm_apply`,
@@ -74,6 +78,8 @@ of `A` run over the whole basis without splitting off the kernel.
   decomposition in rank-one form.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
+* `LinearMap.trace_adjoint_comp_eq_sum_singularValues_mul_inner`:
+  `tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`.
 
 ## Comparison of singular values
 
@@ -84,6 +90,8 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_comp_le_right`: if `‖C x‖ ≤ c ‖x‖` for every `x`, with `c ≥ 0`, then
+  `σᵢ(A C) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_le_of_norm_apply_le`: if `‖A x‖ ≤ c ‖x‖` for every `x`, with
   `c ≥ 0`, then `σᵢ(A) ≤ c` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
@@ -324,6 +332,15 @@ theorem apply_rightSingularBasis_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
     A (A.rightSingularBasis i) = 0 ↔ A.singularValues i = 0 := by
   rw [← norm_eq_zero, norm_apply_rightSingularBasis]
 
+/-- Applying the operator modulus `|A| = √(A† A)` to a right singular vector `vᵢ` scales it by
+the singular value `σᵢ`. -/
+theorem operatorAbs_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
+    A.operatorAbs (A.rightSingularBasis i) =
+      ((A.singularValues i : ℝ) : 𝕜) • A.rightSingularBasis i := by
+  rw [(isPositive_adjoint_comp_self A).sqrt_unique A.isPositive_operatorAbs A.operatorAbs_sq,
+    (isPositive_adjoint_comp_self A).sqrt_apply_of_apply_eq_smul
+      (A.adjoint_comp_self_rightSingularBasis i), Real.sqrt_sq (A.singularValues_nonneg i)]
+
 /-- On the span of the right singular vectors `vᵢ` with `i ≤ n`, `A` stretches every vector by at
 least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
 theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
@@ -355,7 +372,8 @@ theorem sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (A : E →ₗ[𝕜]
   have hm : finrank 𝕜 E = m := by
     rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
   rw [A.sq_singularValues_fin hm k,
-    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e hμ he]
+    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e.toBasis hμ
+      (by simpa using he)]
 
 /-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
 most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
@@ -394,6 +412,28 @@ theorem apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
   by_cases hc : A.singularValues i = 0
   · rw [(A.apply_rightSingularBasis_eq_zero_iff).mpr hc, smul_zero]
   · rw [mul_inv_cancel₀ (by simpa using hc), one_smul]
+
+/-- A map factors `A` through its modulus exactly when it sends each right singular
+vector of nonzero singular value to its corresponding left singular vector. -/
+theorem comp_operatorAbs_eq_iff_apply_rightSingularBasis (D : E →ₗ[𝕜] F) :
+    D ∘ₗ A.operatorAbs = A ↔
+      ∀ i : Fin (finrank 𝕜 E), A.singularValues i ≠ 0 →
+        D (A.rightSingularBasis i) = A.leftSingularVector i := by
+  constructor
+  · intro h i hi
+    have hσ : ((A.singularValues i : ℝ) : 𝕜) ≠ 0 := by simpa using hi
+    have hv := LinearMap.congr_fun h (A.rightSingularBasis i)
+    rw [comp_apply, A.operatorAbs_rightSingularBasis, map_smul, A.apply_rightSingularBasis i] at hv
+    exact smul_right_injective F hσ hv
+  · intro h
+    apply A.rightSingularBasis.toBasis.ext
+    intro i
+    simp only [OrthonormalBasis.coe_toBasis, comp_apply, A.operatorAbs_rightSingularBasis,
+      map_smul]
+    rw [A.apply_rightSingularBasis i]
+    by_cases hi : A.singularValues i = 0
+    · simp [hi]
+    · rw [h i hi]
 
 /-- The left singular vectors are orthonormal up to the zero vectors at the vanishing singular
 values: `⟪uᵢ, uⱼ⟫` is `1` if `i = j` and `σᵢ ≠ 0`, and `0` otherwise. -/
@@ -507,6 +547,16 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
   rw [hw j hj]
   simp [u, ← hij]
 
+/-- The Hilbert–Schmidt trace pairing `tr (A† B)` expanded in the singular system of `B`:
+`tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`. -/
+theorem trace_adjoint_comp_eq_sum_singularValues_mul_inner (B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (adjoint A ∘ₗ B) =
+      ∑ i : Fin (finrank 𝕜 E), ((B.singularValues i : ℝ) : 𝕜) *
+        ⟪A (B.rightSingularBasis i), B.leftSingularVector i⟫ := by
+  rw [trace_eq_sum_inner _ B.rightSingularBasis]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [comp_apply, adjoint_inner_right, B.apply_rightSingularBasis i, inner_smul_right]
+
 end SingularSystem
 
 section Comparison
@@ -549,6 +599,14 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
     (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) (i : ℕ) :
     (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
+
+/-- **Bounded-factor domination on the right.** If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`,
+then `σᵢ(A C) ≤ c σᵢ(A)` for every `i`. -/
+theorem singularValues_comp_le_right (A : F →ₗ[𝕜] G) (C : E →ₗ[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+    (hC : ∀ x, ‖C x‖ ≤ c * ‖x‖) (i : ℕ) :
+    (A ∘ₗ C).singularValues i ≤ c * A.singularValues i := by
+  rw [← singularValues_adjoint, adjoint_comp, ← A.singularValues_adjoint]
+  exact singularValues_comp_le _ _ (norm_adjoint_apply_le hc hC) i
 
 /-- If `‖A x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `A` has operator norm at most `c`), then
 every singular value of `A` is at most `c`. -/
