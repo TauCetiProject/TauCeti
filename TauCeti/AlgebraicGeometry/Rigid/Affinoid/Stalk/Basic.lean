@@ -54,6 +54,9 @@ local description of immersions, are built on.
 * `TauCeti.AffinoidSubdomain.stalk K x`: the analytic stalk `𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.germ`: the germ at `x` of a section over `U ∋ x`.
 * `TauCeti.AffinoidSubdomain.toStalk`: the germ map `A → 𝒪_{Sp A,x}`.
+* `TauCeti.AffinoidSubdomain.stalkLift`: the ring homomorphism out of the stalk induced by
+  compatible ring homomorphisms out of the coordinate algebras of affinoid neighbourhoods.
+* `TauCeti.AffinoidSubdomain.stalkCongr`: transport of stalks along an equality of points.
 * `TauCeti.AffinoidSubdomain.localizationToStalk`: the factorisation `A_𝔪 → 𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.quotientPowEquiv`: `A ⧸ 𝔪ₓⁿ ≃ 𝒪_{Sp A,x} ⧸ 𝔪ⁿ`.
 * `TauCeti.AffinoidSubdomain.completionRingEquiv`: the `𝔪ₓ`-adic completion of `A` is the
@@ -161,6 +164,64 @@ theorem germ_eq_germ_iff {U V : AffinoidSubdomain K A} (hU : x ∈ U) (hV : x �
   -- The fibre maps of `ringPresheaf` are `germ`, by definition.
   exact this
 
+/-- A section has zero germ at `x` iff it restricts to zero on a smaller affinoid neighbourhood
+of `x`. -/
+theorem germ_eq_zero_iff {U : AffinoidSubdomain K A} (hx : x ∈ U) (f : U.sections) :
+    germ U hx f = 0 ↔ ∃ (W : AffinoidSubdomain K A) (hWU : W ≤ U), x ∈ W ∧ restrict hWU f = 0 := by
+  rw [← map_zero (germ U hx), germ_eq_germ_iff]
+  simp only [map_zero]
+  exact ⟨fun ⟨W, hWU, _, hxW, hW⟩ ↦ ⟨W, hWU, hxW, hW⟩,
+    fun ⟨W, hWU, hxW, hW⟩ ↦ ⟨W, hWU, hWU, hxW, hW⟩⟩
+
+/-- **The universal property of the analytic stalk.** Ring homomorphisms out of the coordinate
+algebras of the affinoid neighbourhoods of `x`, compatible with restriction, induce a ring
+homomorphism out of the stalk at `x`. -/
+noncomputable def stalkLift {S : Type u} [CommRing S]
+    (g : ∀ U : AffinoidSubdomain K A, x ∈ U → U.sections →+* S)
+    (hg : ∀ (U V : AffinoidSubdomain K A) (hUV : U ≤ V) (hx : x ∈ U),
+      (g U hx).comp (restrict hUV).toRingHom = g V (hUV hx)) :
+    stalk K x →+* S :=
+  ((weakGTopology.point x).presheafFiberDesc (P := ringPresheaf K A) (T := CommRingCat.of S)
+    (fun U h ↦ CommRingCat.ofHom (g U (by simpa using h.down.down)))
+    (fun U V f h ↦ by
+      ext s
+      exact (congrArg (g U _) (ringPresheaf_map_apply (leOfHom f) s)).trans
+        (DFunLike.congr_fun (hg U V (leOfHom f) _) s))).hom
+
+/-- The homomorphism induced on the stalk restricts to the given homomorphisms on germs. -/
+@[simp]
+theorem stalkLift_germ {S : Type u} [CommRing S]
+    (g : ∀ U : AffinoidSubdomain K A, x ∈ U → U.sections →+* S)
+    (hg : ∀ (U V : AffinoidSubdomain K A) (hUV : U ≤ V) (hx : x ∈ U),
+      (g U hx).comp (restrict hUV).toRingHom = g V (hUV hx))
+    {U : AffinoidSubdomain K A} (hx : x ∈ U) (f : U.sections) :
+    stalkLift g hg (germ U hx f) = g U hx f :=
+  ConcreteCategory.congr_hom
+    ((weakGTopology.point x).toPresheafFiber_presheafFiberDesc (P := ringPresheaf K A) _ _ U
+      (weakGTopology.pointElement x (by simpa using hx))) f
+
+/-- Ring homomorphisms out of the analytic stalk agree once they agree on germs. -/
+@[ext]
+theorem stalk_ringHom_ext {S : Type*} [Semiring S] {φ ψ : stalk K x →+* S}
+    (h : ∀ (U : AffinoidSubdomain K A) (hx : x ∈ U) (f : U.sections),
+      φ (germ U hx f) = ψ (germ U hx f)) : φ = ψ := by
+  ext s
+  obtain ⟨U, hx, f, rfl⟩ := exists_germ_eq s
+  exact h U hx f
+
+variable (K) in
+/-- Transport of analytic stalks along an equality `x = x'` of classical points. -/
+noncomputable def stalkCongr {x x' : MaximalSpectrum A} (h : x = x') :
+    stalk K x ≃+* stalk K x' :=
+  h ▸ RingEquiv.refl _
+
+/-- Transport of stalks sends the germ of `f` at `x` to the germ of `f` at `x'`. -/
+@[simp]
+theorem stalkCongr_germ {x' : MaximalSpectrum A} (h : x = x') {U : AffinoidSubdomain K A}
+    (hx : x ∈ U) (f : U.sections) : stalkCongr K h (germ U hx f) = germ U (h ▸ hx) f := by
+  subst h
+  rfl
+
 /-- Germs at `x` of sections over `U` factor through restriction to a smaller neighbourhood. -/
 theorem germ_comp_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) (hx : x ∈ U) :
     (germ U hx).comp (restrict h).toRingHom = germ V (h hx) :=
@@ -245,18 +306,19 @@ theorem exists_isUnit_restrict {U : AffinoidSubdomain K A} (hx : x ∈ U) {f : U
       z ∈ W' ↔ pointNorm K z f ≠ 0 ∧ ‖ϖ‖ ^ n ≤ pointNorm K z f := by
     rw [← SetLike.mem_coe, coe_rational, mem_rationalDomain]
     simp only [forall_const, pointNorm_algebraMap, norm_pow, ne_eq]
-  refine ⟨U.mapSubdomain hA.out W', U.mapSubdomain_le hA.out W', ?_, ?_⟩
-  · rw [← SetLike.mem_coe, coe_mapSubdomain]
-    exact ⟨y, (hW' y).mpr ⟨(hn.trans_le' (by positivity)).ne', hn.le⟩, hy⟩
-  · have hW := (U.mapSubdomain hA.out W').isAffinoidAlgebra
+  have hW'U : U.isAffinoidSubdomainMap.imageSubdomain hA.out W' ≤ U :=
+    U.isAffinoidSubdomainMap.coe_imageSubdomain_subset hA.out W'
+  refine ⟨U.isAffinoidSubdomainMap.imageSubdomain hA.out W', hW'U, ?_, ?_⟩
+  · exact (IsAffinoidSubdomainMap.mem_imageSubdomain _ _).mpr
+      ⟨y, (hW' y).mpr ⟨(hn.trans_le' (by positivity)).ne', hn.le⟩, hy⟩
+  · have hW := (U.isAffinoidSubdomainMap.imageSubdomain hA.out W').isAffinoidAlgebra
     refine hW.isUnit_iff_forall_pointNorm_ne_zero.mpr fun z ↦ ?_
     rw [← hW.pointNorm_maximalSpectrumComap]
     have hz : hB.maximalSpectrumComap U.toSections
-        (hW.maximalSpectrumComap (restrict (U.mapSubdomain_le hA.out W')) z) ∈
-          (U.mapSubdomain hA.out W' : Set (MaximalSpectrum A)) :=
-      (isAffinoidSubdomainMap_restrict (U.mapSubdomain_le hA.out W')
-        ).range_maximalSpectrumComap_subset ⟨z, rfl⟩
-    rw [coe_mapSubdomain,
+        (hW.maximalSpectrumComap (restrict hW'U) z) ∈
+          (U.isAffinoidSubdomainMap.imageSubdomain hA.out W' : Set (MaximalSpectrum A)) :=
+      (isAffinoidSubdomainMap_restrict hW'U).range_maximalSpectrumComap_subset ⟨z, rfl⟩
+    rw [IsAffinoidSubdomainMap.coe_imageSubdomain,
       (U.isAffinoidSubdomainMap.maximalSpectrumComap_injective hA.out).mem_set_image] at hz
     exact ((hW' _).mp hz).1
 

@@ -43,6 +43,8 @@ finite abelian group, `I` its augmentation ideal and `e i` the orders of a basis
 
 The file also records the global form of Nakayama's lemma: a finitely generated submodule `N` with
 `N = m • N` for every maximal ideal `m` is zero (`Submodule.eq_bot_of_forall_isMaximal_le_smul`).
+Applied to a quotient, it shows that a submodule `N` of a finite module `M` with `M = N + m • M`
+for every maximal ideal `m` is all of `M` (`Submodule.eq_top_of_forall_isMaximal_le_sup_smul`).
 Over `ℤ` this passes from statements modulo every prime to integral statements: a finitely
 generated subgroup `N` of an abelian group with `N = p • N` for every prime `p` is zero
 (`Submodule.eq_bot_of_forall_prime_le_smul`).
@@ -117,6 +119,17 @@ theorem eq_bot_of_forall_isMaximal_le_smul {N : Submodule R M} (hN : N.FG)
   obtain ⟨r, hr1, hr⟩ := exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul m N hN (h m hm)
   refine hm.ne_top ((Ideal.eq_top_iff_one _).2 ?_)
   simpa using m.sub_mem (hle (mem_annihilator.2 hr)) hr1
+
+/-- **Nakayama's lemma, globally, for a submodule of a finite module.** A submodule `N` of a
+finite module `M` with `M = N + m • M` for every maximal ideal `m` is all of `M`. -/
+theorem eq_top_of_forall_isMaximal_le_sup_smul [Module.Finite R M] (N : Submodule R M)
+    (h : ∀ m : Ideal R, m.IsMaximal → ⊤ ≤ N ⊔ m • ⊤) : N = ⊤ := by
+  -- Apply Nakayama's lemma to the finite quotient `M ⧸ N`.
+  have h' := eq_bot_of_forall_isMaximal_le_smul (N := (⊤ : Submodule R (M ⧸ N)))
+    Module.Finite.fg_top fun m hm ↦ by
+      simpa [map_sup, map_smul''] using map_mono (f := N.mkQ) (h m hm)
+  rw [← Quotient.subsingleton_iff]
+  exact (Submodule.subsingleton_iff R).mp (subsingleton_of_bot_eq_top h'.symm)
 
 /-- **Nakayama's lemma over `ℤ`.** A finitely generated subgroup `N` of an abelian group with
 `N ≤ p • N` for every prime `p` is zero. -/
