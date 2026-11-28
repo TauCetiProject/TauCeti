@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Frattini
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Uniform
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.FiniteGeneration
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.MaximalSubgroup
 
 /-!
 # Compact `p`-adic analytic groups
@@ -48,6 +51,9 @@ lower `p`-series for large `k`.
   `p`-adic analytic.
 * `TauCeti.IsCompactPAdicAnalytic.exists_isProP`: a compact `p`-adic analytic group has an open
   normal pro-`p` subgroup.
+* `TauCeti.IsCompactPAdicAnalytic.isOpen_profiniteFrattini`: the Frattini subgroup is open,
+  using `Subgroup.map_subtype_profiniteFrattini_le` and openness of the uniform subgroup's
+  pro-`p` Frattini subgroup.
 * `TauCeti.IsUniform.isCompactPAdicAnalytic`, `TauCeti.isCompactPAdicAnalytic_of_finite`,
   `TauCeti.isCompactPAdicAnalytic_multiplicative_pi_padicInt`: compact uniform groups, finite
   discrete groups and `ℤ_p ^ X` for finite `X` are compact `p`-adic analytic.
@@ -135,6 +141,21 @@ omit hp in
 theorem exists_isProP (hG : IsCompactPAdicAnalytic p G) :
     ∃ U : OpenNormalSubgroup G, IsProP p U.toSubgroup :=
   hG.exists_isUniform.imp fun _ hU ↦ hU.isProP
+
+/-- A compact `p`-adic analytic group has open Frattini subgroup. Thus its Frattini quotient is
+finite and detects full closed subgroups. See Masser–Zannier (2020), proof of Lemma 5.1. -/
+theorem isOpen_profiniteFrattini (hG : IsCompactPAdicAnalytic p G) :
+    IsOpen (profiniteFrattini G : Set G) := by
+  have := hG.compactSpace
+  have := hG.totallyDisconnectedSpace
+  obtain ⟨U, hU⟩ := hG.exists_isUniform
+  have := U.isNormal'
+  have hOpen : IsOpen (profiniteFrattini U.toSubgroup : Set U.toSubgroup) := by
+    rw [← hU.isProP.proPFrattini_eq_profiniteFrattini]
+    exact hU.isTopologicallyFinitelyGenerated.isOpen_proPFrattini p
+  refine Subgroup.isOpen_mono U.toSubgroup.map_subtype_profiniteFrattini_le ?_
+  rw [Subgroup.coe_map, Subgroup.coe_subtype]
+  exact U.isOpen.isOpenMap_subtypeVal _ hOpen
 
 /-- **An open subgroup of a compact `p`-adic analytic group is compact `p`-adic analytic.** -/
 theorem of_isOpen (hG : IsCompactPAdicAnalytic p G) {H : Subgroup G}
