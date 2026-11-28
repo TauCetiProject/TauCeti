@@ -335,4 +335,20 @@ theorem smoothAverage_eq_averageMap [Fintype K] [TopologicalSpace K] [Separately
   rw [QuotientGroup.quotientBot_symm_apply]
   exact σ.apply_eq_apply_of_quotientGroup_mk_eq hbot (QuotientGroup.out_eq' _).symm
 
+/-- Averaging a vector in a subrepresentation `W` over a compact subgroup `C` remains in `W`.
+Adapted from grh-lean (`src/Lib/LocalGL/Iwahori/ParahoricStructure.lean`,
+`New.compactMean_mem_cyclicSpan`, Apache 2.0, Copyright 2026 Anthropic PBC). -/
+theorem smoothAverage_mem_subrepresentation {G : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] (ρ : Representation A G V) [IsSmooth ρ]
+    (C : Subgroup G) [CompactSpace C] (hC : TauCeti.HasUnitProOrder A C)
+    (W : Subrepresentation ρ) {v : V} (hv : v ∈ W) :
+    smoothAverage (ρ.comp C.subtype) hC v ∈ W := by
+  have h0 : W.toSubmodule.mkQ (smoothAverage (ρ.comp C.subtype) hC v) = 0 := by
+    rw [map_smoothAverage_of_forall_apply_eq (ρ.comp C.subtype) hC W.toSubmodule.mkQ
+      (fun k ↦ by
+        simp only [Submodule.mkQ_apply, Submodule.Quotient.eq]
+        exact W.toSubmodule.sub_mem (W.apply_mem_toSubmodule k.val hv) hv)]
+    exact (Submodule.Quotient.mk_eq_zero W.toSubmodule).mpr hv
+  exact (Submodule.Quotient.mk_eq_zero W.toSubmodule).mp h0
+
 end Representation

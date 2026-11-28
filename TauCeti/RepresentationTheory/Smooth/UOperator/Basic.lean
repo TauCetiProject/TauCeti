@@ -244,4 +244,12 @@ theorem doubleCosetOperator_apply_eq_relIndex_smul_uOperator {t : G}
 
 end DoubleCoset
 
+/-- Every `U`-operator `ρ.uOperator C hC t` preserves every subrepresentation `W`.
+Adapted from grh-lean (`src/Lib/LocalGL/Iwahori/ParahoricStructure.lean`,
+`New.compactMean_mem_cyclicSpan`, Apache 2.0, Copyright 2026 Anthropic PBC). -/
+theorem uOperator_mem_subrepresentation (W : Subrepresentation ρ) (t : G) {v : V} (hv : v ∈ W) :
+    ρ.uOperator C hC t v ∈ W := by
+  rw [uOperator_apply]
+  exact ρ.smoothAverage_mem_subrepresentation C hC W (W.apply_mem_toSubmodule t hv)
+
 end Representation
