@@ -7,11 +7,14 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Conj
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Orbit
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Number
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.CoprimeExponents
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.Coxeter.Element
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import TauCeti.LinearAlgebra.RootSystem.Basic
+import TauCeti.RingTheory.Polynomial.Roots
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
 # The Coxeter number and the exponents of a Weyl group
@@ -23,13 +26,18 @@ its order, the **Coxeter number**. This file proves:
 
 * the number of roots is `|Φ| = r h`, equivalently `|Φ⁺| = r h / 2`;
 * every exponent `dᵢ - 1`, for the degrees `dᵢ` of a homogeneous basic invariant system, is less
-  than `h`.
+  than `h`;
+* the multiset of basic-invariant exponents `dᵢ - 1` equals `(classifiedDynkinType b).exponents`,
+  and the multiset of invariant degrees `dᵢ` equals `(classifiedDynkinType b).degrees`.
 
 With the computation of the eigenvalues of the bipartite Coxeter element at a regular
 eigenvector (`RootPairing.exists_isPrimitiveRoot_charpoly_bipartiteCoxeterElement_eq_prod`), the
 second statement says that its eigenvalues are `ζ ^ eᵢ` for a primitive `h`-th root of unity `ζ`,
 with exponents `1 ≤ eᵢ < h` (the lower bound is
-`RootPairing.two_le_of_injective_aeval_weylGroupRootRep_dual`).
+`RootPairing.two_le_of_injective_aeval_weylGroupRootRep_dual`). Comparing this rational
+characteristic polynomial with its complex eigenvalue multiset from
+`TauCeti.HasCartanType.roots_charpoly_of_actsBy` then identifies the basic-invariant exponents and
+degrees with the Dynkin-type lists `exponents` and `degrees`.
 
 ## The argument
 
@@ -52,6 +60,11 @@ are conjugate, the results hold for every Coxeter element.
   order of any Coxeter element.
 * `RootPairing.degree_sub_one_lt_orderOf_wordProd`: every exponent `dᵢ - 1` of a homogeneous basic
   invariant system is less than the order of any Coxeter element.
+* `RootPairing.map_sub_one_eq_exponents_classifiedDynkinType`: the multiset of exponents `dᵢ - 1`
+  of any homogeneous basic invariant system equals
+  `Multiset.ofList (classifiedDynkinType b).exponents`.
+* `RootPairing.map_eq_degrees_classifiedDynkinType`: the multiset of degrees `dᵢ` of any
+  homogeneous basic invariant system equals `Multiset.ofList (classifiedDynkinType b).degrees`.
 
 ## References
 
@@ -158,5 +171,152 @@ theorem degree_sub_one_lt_orderOf_wordProd [Finite κ] (b : P.Base) {l : List b.
   obtain ⟨c⟩ := nonempty_coloring_graph_coxeterMatrixOfBase P b
   rw [← P.orderOf_bipartiteCoxeterElement_eq_orderOf_wordProd b c hl hl']
   exact (P.natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement b c hf hbij).2 k
+
+/-- Transfer a factorization `p = ∏ i, (X - ζ ^ e i)` from a primitive `h`-th root of unity in one
+rational domain to a primitive `h`-th root of unity in another. -/
+private theorem map_eq_prod_of_map_eq_prod {K₁ K₂ ι' : Type*} [CommRing K₁] [IsDomain K₁]
+    [Algebra ℚ K₁] [CommRing K₂] [IsDomain K₂] [Algebra ℚ K₂] [Fintype ι'] {h : ℕ} (hh : 0 < h)
+    {ζ : K₁} {ξ : K₂} (hζ : IsPrimitiveRoot ζ h) (hξ : IsPrimitiveRoot ξ h) {p : ℚ[X]}
+    {e : ι' → ℕ} (hprod : p.map (algebraMap ℚ K₁) = ∏ i, (X - C (ζ ^ e i))) :
+    p.map (algebraMap ℚ K₂) = ∏ i, (X - C (ξ ^ e i)) := by
+  have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
+  let F : ℚ[X][X] := ∏ i, (X - C (X ^ e i))
+  have hF₁ : F.map (aeval ζ).toRingHom = ∏ i, (X - C (ζ ^ e i)) := by
+    simp [F, Polynomial.map_prod]
+  have hF₂ : F.map (aeval ξ).toRingHom = ∏ i, (X - C (ξ ^ e i)) := by
+    simp [F, Polynomial.map_prod]
+  ext j
+  have hj := congr(($hprod).coeff j)
+  rw [← hF₁, coeff_map, coeff_map] at hj
+  rw [← hF₂, coeff_map, coeff_map]
+  obtain ⟨q, hq⟩ : cyclotomic h ℚ ∣ F.coeff j - C (p.coeff j) := by
+    rw [hζ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]
+    exact minpoly.dvd ℚ ζ (by simpa [sub_eq_zero] using hj.symm)
+  have hcy : aeval ξ (cyclotomic h ℚ) = 0 := by
+    rw [aeval_def, eval₂_eq_eval_map, map_cyclotomic]
+    exact (hξ.isRoot_cyclotomic hh).eq_zero
+  have hξq := congr(aeval ξ $hq)
+  rw [map_mul, hcy, zero_mul, map_sub, aeval_C, sub_eq_zero] at hξq
+  simpa using hξq.symm
+
+/-- **The basic-invariant exponents of `Sym(M*)^W` equal the exponents of the classified Dynkin
+type.** For any base `b` of a finite irreducible reduced crystallographic root system over an
+algebraically closed field containing `ℝ`, and any finite homogeneous basic invariant system of
+`Sym(M*)^W` with degrees `d`, the multiset of exponents `d k - 1` equals
+`Multiset.ofList (classifiedDynkinType b).exponents`. -/
+theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d k))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    Finset.univ.val.map (fun k ↦ d k - 1) = Multiset.ofList (classifiedDynkinType b).exponents := by
+  classical
+  have := P.finite_weight_of_isRootSystem
+  obtain ⟨c⟩ := nonempty_coloring_graph_coxeterMatrixOfBase P b
+  let g := (weylCoxeterSystem P b).bipartiteCoxeterElement c
+  have := P.finite_weylGroup_of_base b
+  obtain ⟨x, ζ, hx, hgx, hζ⟩ :=
+    P.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot b c
+  have hchar := P.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot b hf hbij hx hgx
+    hζ hζ
+  obtain ⟨l₁, l₂, -, -, hnd, hall, hw⟩ :=
+    (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
+  rw [weylCoxeterSystem_wordProd] at hw
+  set l := l₁ ++ l₂
+  let t := classifiedDynkinType b
+  have ht : t.Valid := valid_classifiedDynkinType b
+  have hct : HasCartanType P b t := hasCartanType_classifiedDynkinType b
+  have hh : orderOf g = t.coxeterNumber := by
+    change orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) = t.coxeterNumber
+    rw [← hw]
+    exact b.orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall
+  have hpos : 0 < orderOf g := orderOf_pos g
+  let W : Matrix b.support b.support ℤ := (l.map b.cartanMatrix.reflMatrix).prod
+  let q : ℚ[X] := W.charpoly.map (Int.castRingHom ℚ)
+  have hqC : q.map (algebraMap ℚ ℂ) = (W.map (Int.castRingHom ℂ)).charpoly := by
+    rw [Polynomial.map_map,
+      Subsingleton.elim ((algebraMap ℚ ℂ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℂ),
+      Matrix.charpoly_map]
+  have hqK : q.map (algebraMap ℚ K) = (P.weylGroupRootRep g).charpoly := by
+    change q.map (algebraMap ℚ K) =
+      (P.weylGroupRootRep ((weylCoxeterSystem P b).bipartiteCoxeterElement c)).charpoly
+    rw [← hw, (b.actsBy_wordProd l).charpoly_weylGroupRootRep, Polynomial.map_map,
+      Subsingleton.elim ((algebraMap ℚ K).comp (Int.castRingHom ℚ)) (Int.castRingHom K)]
+  have hroots : (W.map (Int.castRingHom ℂ)).charpoly.roots =
+      Multiset.ofList (t.exponents.map fun e : ℕ =>
+        Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (orderOf g : ℂ)))) := by
+    rw [hh]
+    exact hct.roots_charpoly_of_actsBy ht hnd hall (b.actsBy_wordProd l)
+  simp_rw [← exp_two_pi_I_div_pow (orderOf g : ℂ)] at hroots
+  set ζ₀ : ℂ := Complex.exp (2 * Real.pi * Complex.I / (orderOf g : ℂ))
+  have hζ₀ : IsPrimitiveRoot ζ₀ (orderOf g) := Complex.isPrimitiveRoot_exp _ hpos.ne'
+  have hcard : (W.map (Int.castRingHom ℂ)).charpoly.roots.card =
+      (W.map (Int.castRingHom ℂ)).charpoly.natDegree := by
+    rw [hroots, Multiset.coe_card, List.length_map, t.length_exponents,
+      Matrix.charpoly_natDegree_eq_dim]
+    exact hct.card_support.symm.trans (Fintype.card_coe b.support).symm
+  have hprodC : q.map (algebraMap ℚ ℂ) =
+      ∏ i : Fin t.exponents.length, (X - C (ζ₀ ^ t.exponents[i])) := by
+    rw [hqC, ← prod_multiset_X_sub_C_of_monic_of_roots_card_eq (Matrix.charpoly_monic _) hcard,
+      hroots, Multiset.map_coe, Multiset.prod_coe, List.map_map]
+    conv_lhs => rw [← List.ofFn_getElem (xs := t.exponents), List.map_ofFn, Fin.prod_ofFn]
+    rfl
+  have hprodK := map_eq_prod_of_map_eq_prod hpos hζ₀ hζ hprodC
+  rw [hqK, hchar] at hprodK
+  have hrootsEq := congrArg Polynomial.roots hprodK
+  simp only [roots_prod_X_sub_C_map] at hrootsEq
+  let s₁ : Multiset ℕ := Finset.univ.val.map fun k ↦ d k - 1
+  let s₂ : Multiset ℕ := Finset.univ.val.map fun i : Fin t.exponents.length ↦ t.exponents[i]
+  have hs₂ : s₂ = Multiset.ofList t.exponents := by
+    dsimp only [s₂]
+    rw [Fin.univ_val_map]
+    exact congrArg Multiset.ofList List.ofFn_getElem
+  rw [← hs₂]
+  have hlt₁ : ∀ a ∈ s₁, a < orderOf g := by
+    intro a ha
+    rw [Multiset.mem_map] at ha
+    obtain ⟨k, -, rfl⟩ := ha
+    change d k - 1 < orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)
+    rw [← hw]
+    exact P.degree_sub_one_lt_orderOf_wordProd b hnd hall hf hbij k
+  have hlt₂ : ∀ a ∈ s₂, a < orderOf g := by
+    intro a ha
+    rw [hs₂, Multiset.mem_coe] at ha
+    exact hh ▸ t.lt_coxeterNumber_of_mem_exponents ht ha
+  refine Multiset.ext.mpr fun a ↦ ?_
+  by_cases ha : a < orderOf g
+  · have hc (s : Multiset ℕ) (hs : ∀ b ∈ s, b < orderOf g) :
+        (s.map (ζ ^ ·)).count (ζ ^ a) = s.count a := by
+      simp only [Multiset.count_eq_card_filter_eq, Multiset.filter_map]
+      rw [Multiset.card_map]
+      congr 1
+      exact Multiset.filter_congr fun b hb ↦ by
+        simp only [Function.comp_apply]
+        exact ⟨fun hb' ↦ hζ.pow_inj ha (hs b hb) hb', fun hb' ↦ hb' ▸ rfl⟩
+    have hmap : s₁.map (ζ ^ ·) = s₂.map (ζ ^ ·) := by
+      simpa [s₁, s₂, Multiset.map_map, Function.comp_def] using hrootsEq
+    rw [← hc s₁ hlt₁, ← hc s₂ hlt₂, hmap]
+  · rw [Multiset.count_eq_zero.mpr (fun h ↦ ha (hlt₁ a h)),
+      Multiset.count_eq_zero.mpr (fun h ↦ ha (hlt₂ a h))]
+
+/-- **The basic invariant degrees of `Sym(M*)^W` equal the fundamental degrees of the classified
+Dynkin type.** For any base `b` of a finite irreducible reduced crystallographic root system over
+an algebraically closed field containing `ℝ`, and any finite homogeneous basic invariant system of
+`Sym(M*)^W` with degrees `d`, the multiset of degrees `d k` equals
+`Multiset.ofList (classifiedDynkinType b).degrees`. -/
+theorem map_eq_degrees_classifiedDynkinType [Fintype κ] (b : P.Base)
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d k))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    Finset.univ.val.map d = Multiset.ofList (classifiedDynkinType b).degrees := by
+  have heq : (Finset.univ.val.map (fun k ↦ d k - 1)).map (· + 1) =
+      (Multiset.ofList (classifiedDynkinType b).exponents).map (· + 1) :=
+    congrArg (Multiset.map (· + 1)) (P.map_sub_one_eq_exponents_classifiedDynkinType b hf hbij)
+  rw [Multiset.map_coe, ← DynkinType.degrees_def, Multiset.map_map] at heq
+  refine (Multiset.map_congr rfl fun k _ ↦ ?_).symm.trans heq
+  have h2 := P.two_le_of_injective_aeval_weylGroupRootRep_dual hf hbij.injective k
+  dsimp only [Function.comp_apply]
+  omega
 
 end RootPairing

@@ -379,14 +379,30 @@ theorem HasCartanType.orderOf_wordProd [Finite ι] [CharZero R] [IsDomain R] [P.
   | F4 => exact Coxeter.orderOf_wordProd_of_hasCartanType_F4 h hnd hall
   | G2 => exact Coxeter.orderOf_wordProd_of_hasCartanType_G2 h hnd hall
 
+/-- **For a base `b` of valid Cartan type `t`, `|Φ| = r * h`**, where `r = b.support.card` is the
+rank and `h = t.coxeterNumber` is the Coxeter number. -/
+theorem HasCartanType.natCard_eq_card_support_mul_coxeterNumber [Finite ι] [CharZero R]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) :
+    Nat.card ι = b.support.card * t.coxeterNumber := by
+  rw [h.natCard_eq_numRoots ht, h.card_support, t.numRoots_eq_rank_mul_coxeterNumber]
+
+/-- **For a base `b` of valid Cartan type `t`, `h = |Φ| / r`**, where `r = b.support.card`. -/
+theorem HasCartanType.coxeterNumber_eq_natCard_div_card_support [Finite ι] [CharZero R]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) :
+    t.coxeterNumber = Nat.card ι / b.support.card := by
+  rw [h.natCard_eq_numRoots ht, h.card_support]
+  exact t.coxeterNumber_eq_numRoots_div_rank ht
+
 /-- **Root-count formula `|Φ| = r * h`** for a base of valid Cartan type `t`. -/
 theorem HasCartanType.natCard_eq_card_support_mul_orderOf_wordProd [Finite ι] [CharZero R]
     [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
     (h : HasCartanType P b t) (ht : t.Valid) {l : List b.support} (hnd : l.Nodup)
     (hall : ∀ i, i ∈ l) :
     Nat.card ι = b.support.card * orderOf (wordProd P b l) := by
-  rw [h.natCard_eq_numRoots ht, t.numRoots_eq_rank_mul_coxeterNumber, h.card_support,
-    h.orderOf_wordProd ht hnd hall]
+  rw [h.orderOf_wordProd ht hnd hall]
+  exact h.natCard_eq_card_support_mul_coxeterNumber ht
 
 /-- **The order of any Coxeter element of a base of valid Cartan type `t` equals `|Φ| / r`.** -/
 theorem HasCartanType.orderOf_wordProd_eq_natCard_div_card_support [Finite ι] [CharZero R]
@@ -394,8 +410,8 @@ theorem HasCartanType.orderOf_wordProd_eq_natCard_div_card_support [Finite ι] [
     (h : HasCartanType P b t) (ht : t.Valid) {l : List b.support} (hnd : l.Nodup)
     (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = Nat.card ι / b.support.card := by
-  have hpos : 0 < b.support.card := h.card_support ▸ DynkinType.rank_pos ht
-  rw [h.natCard_eq_card_support_mul_orderOf_wordProd ht hnd hall, Nat.mul_div_right _ hpos]
+  rw [h.orderOf_wordProd ht hnd hall]
+  exact h.coxeterNumber_eq_natCard_div_card_support ht
 
 /-- **Positive-root count `2 * |Φ⁺| = r * h`** for a base of valid Cartan type `t`. -/
 theorem HasCartanType.two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd [Finite ι]
@@ -421,22 +437,6 @@ theorem HasCartanType.sum_degrees_eq_ncard_posRoots_add_card_support [Finite ι]
     (h : HasCartanType P b t) (ht : t.Valid) :
     t.degrees.sum = (posRoots P b).ncard + b.support.card := by
   rw [t.sum_degrees, ← t.sum_exponents, h.sum_exponents_eq_ncard_posRoots ht, h.card_support]
-
-/-- **For a base `b` of valid Cartan type `t`, `|Φ| = r * h`**, where `r = b.support.card` is the
-rank and `h = t.coxeterNumber` is the Coxeter number. -/
-theorem HasCartanType.natCard_eq_card_support_mul_coxeterNumber [Finite ι] [CharZero R]
-    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    Nat.card ι = b.support.card * t.coxeterNumber := by
-  rw [h.natCard_eq_numRoots ht, h.card_support, t.numRoots_eq_rank_mul_coxeterNumber]
-
-/-- **For a base `b` of valid Cartan type `t`, `h = |Φ| / r`**, where `r = b.support.card`. -/
-theorem HasCartanType.coxeterNumber_eq_natCard_div_card_support [Finite ι] [CharZero R]
-    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    t.coxeterNumber = Nat.card ι / b.support.card := by
-  rw [h.natCard_eq_numRoots ht, h.card_support]
-  exact t.coxeterNumber_eq_numRoots_div_rank ht
 
 /-- **Uniform complex eigenvalue multiset on the simple roots** for any base of valid Cartan type
 `t`: `exp (2πi e / h)` as `e` runs over `t.exponents`, retaining multiplicity. -/

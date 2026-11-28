@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `orderOf` for `Matrix.orderOf_negCycleMatrix`.
-public import Mathlib.GroupTheory.OrderOfElement
 -- `Algebra.leftMulMatrix`, `Matrix.charpoly` and `charpoly_leftMulMatrix`.
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Minpoly
 -- `Module.End.hasEigenvalue_iff_isRoot_charpoly` and `Matrix.charpoly_toLin'`.
@@ -51,13 +49,9 @@ Companion matrices are the normal form of cyclic endomorphisms, and in a suitabl
 monodromies `h_∞` and `h_0⁻¹` of a hypergeometric differential equation are companion matrices
 (Levelt's theorem; Beukers–Heckman, Theorem 3.5).
 
-For `X^n + 1`, the companion matrix indexed directly by `Fin n` is `Matrix.negCycleMatrix`, the
-signed `n`-cycle matrix (`Matrix.negCycleMatrix_eq_reindex_companion`).
-
 ## Main definitions
 
 * `Polynomial.companion`: the companion matrix of a polynomial.
-* `Matrix.negCycleMatrix`: the signed `n`-cycle matrix (companion matrix of `X^n + 1` on `Fin n`).
 
 ## Main results
 
@@ -71,9 +65,6 @@ signed `n`-cycle matrix (`Matrix.negCycleMatrix_eq_reindex_companion`).
 * `Polynomial.mem_spectrum_companion_iff`, `Polynomial.hasEigenvalue_toLin'_companion_iff`: its
   spectrum consists of the `μ` at which `p` takes a non-unit value; over a domain its eigenvalues
   are the roots of `p` in the coefficient ring.
-* `Matrix.negCycleMatrix_eq_reindex_companion`, `Matrix.charpoly_negCycleMatrix`,
-  `Matrix.orderOf_negCycleMatrix`: identification of `Matrix.negCycleMatrix` with
-  `(X^n + 1).companion`, its characteristic polynomial `X^n + 1`, and its order `2 * n`.
 
 ## References
 
@@ -170,125 +161,3 @@ theorem hasEigenvalue_toLin'_companion_iff [IsDomain R] (hp : p.Monic) {μ : R} 
 end CommRing
 
 end Polynomial
-
-namespace Matrix
-
-section NegCycleMatrix
-
-open Polynomial
-
-/-- The signed `n`-cycle matrix sending `eⱼ ↦ eⱼ₊₁` for `j + 1 < n` and `eₙ₋₁ ↦ -e₀`. -/
-def negCycleMatrix (n : ℕ) {R : Type*} [Zero R] [One R] [Neg R] :
-    Matrix (Fin n) (Fin n) R :=
-  Matrix.of fun r j =>
-    if j.val + 1 < n then (if r.val = j.val + 1 then 1 else 0)
-    else (if r.val = 0 then -1 else 0)
-
-/-- Entrywise formula for `Matrix.negCycleMatrix`. -/
-@[simp]
-theorem negCycleMatrix_apply (n : ℕ) {R : Type*} [Zero R] [One R] [Neg R] (r j : Fin n) :
-    (negCycleMatrix n : Matrix (Fin n) (Fin n) R) r j =
-      if j.val + 1 < n then (if r.val = j.val + 1 then 1 else 0)
-      else (if r.val = 0 then -1 else 0) :=
-  (rfl)
-
-/-- Over any nontrivial ring `R`, `Matrix.negCycleMatrix n` is the companion matrix of `X^n + 1`,
-reindexed along `(X ^ n + 1 : R[X]).natDegree = n`. -/
-theorem negCycleMatrix_eq_reindex_companion (n : ℕ) {R : Type*} [Ring R] [Nontrivial R] :
-    (negCycleMatrix n : Matrix (Fin n) (Fin n) R) =
-      ((X ^ n + 1 : R[X]).companion).reindex
-        (finCongr (by simp)) (finCongr (by simp)) := by
-  ext r j
-  have hdeg : (X ^ n + 1 : R[X]).natDegree = n := by simp
-  simp only [negCycleMatrix_apply, Matrix.reindex_apply, Matrix.submatrix_apply,
-    finCongr_symm, finCongr_apply, Fin.val_cast, Polynomial.companion_apply, hdeg]
-  have hr : r.val < n := r.isLt
-  have hj : j.val < n := j.isLt
-  by_cases hj1 : j.val + 1 < n
-  · have hjne : j.val + 1 ≠ n := by omega
-    simp only [hj1, ↓reduceIte, hjne]
-  · have hj_eq : j.val + 1 = n := by omega
-    simp only [hj_eq, lt_self_iff_false, ↓reduceIte, hr.ne, Polynomial.coeff_add,
-      Polynomial.coeff_X_pow, Polynomial.coeff_one, zero_add]
-    split_ifs <;> simp
-
-/-- Applying the signed `n`-cycle matrix to the `j`-th standard basis vector shifts it to `j + 1`,
-or sends the last basis vector `eₙ₋₁` to `-e₀`. -/
-theorem negCycleMatrix_mulVec_single {n : ℕ} {R : Type*} [Ring R] (j : Fin n) :
-    (negCycleMatrix n : Matrix (Fin n) (Fin n) R) *ᵥ Pi.single j 1 =
-      if hj : j.val + 1 < n then Pi.single ⟨j.val + 1, hj⟩ 1
-      else -Pi.single ⟨0, by have := j.isLt; omega⟩ 1 := by
-  ext r
-  by_cases hj : j.val + 1 < n
-  · simp [Matrix.mulVec_single, negCycleMatrix_apply, hj, Pi.single_apply, Fin.ext_iff]
-  · by_cases hr : r.val = 0 <;>
-      simp [Matrix.mulVec_single, negCycleMatrix_apply, hj, hr, Pi.single_apply, Fin.ext_iff]
-
-/-- Powers of the signed `n`-cycle matrix shift `eⱼ` forward by `m` steps while `j + m < n`. -/
-theorem negCycleMatrix_pow_mulVec_single {n : ℕ} {R : Type*} [Ring R] (j : Fin n) (m : ℕ)
-    (hm : j.val + m < n) :
-    (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ m *ᵥ Pi.single j 1 =
-      Pi.single ⟨j.val + m, hm⟩ 1 := by
-  induction m generalizing j with
-  | zero => rw [pow_zero, Matrix.one_mulVec]; congr 1
-  | succ m ih =>
-    have hj1 : j.val + 1 < n := by omega
-    rw [pow_succ, ← Matrix.mulVec_mulVec, negCycleMatrix_mulVec_single]
-    split_ifs
-    rw [ih ⟨j.val + 1, hj1⟩ (by simp; omega)]
-    congr 1; ext; simp; omega
-
-/-- The `n`-th power of the signed `n`-cycle matrix is `-1` (`1 ≤ n`). -/
-theorem negCycleMatrix_pow_self {n : ℕ} {R : Type*} [Ring R] (hn : 1 ≤ n) :
-    (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ n = -1 := by
-  apply Matrix.ext_of_mulVec_single
-  intro j
-  have hpow : (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ n =
-      (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ (j.val + (1 + (n - 1 - j.val))) :=
-    congrArg (_ ^ ·) (by have := j.isLt; omega)
-  rw [hpow, pow_add, pow_add, pow_one, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
-    negCycleMatrix_pow_mulVec_single j (n - 1 - j.val) (by have := j.isLt; omega),
-    negCycleMatrix_mulVec_single]
-  split_ifs with h
-  · simp at h; have := j.isLt; omega
-  · rw [Matrix.mulVec_neg, negCycleMatrix_pow_mulVec_single ⟨0, by omega⟩ j.val (by simp),
-      Matrix.neg_mulVec, Matrix.one_mulVec]
-    congr 2; ext; simp
-
-/-- The characteristic polynomial of the signed `n`-cycle matrix is `X^n + 1` (`1 ≤ n`). -/
-theorem charpoly_negCycleMatrix {n : ℕ} {R : Type*} [CommRing R] (hn : 1 ≤ n) :
-    (negCycleMatrix n : Matrix (Fin n) (Fin n) R).charpoly = X ^ n + 1 := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact Subsingleton.elim _ _
-  · rw [negCycleMatrix_eq_reindex_companion, Matrix.charpoly_reindex]
-    exact Polynomial.charpoly_companion
-      (by simpa using Polynomial.monic_X_pow_add_C (1 : R) (by omega))
-
-/-- The multiplicative order of the signed `n`-cycle matrix is `2 * n` (`1 ≤ n`, when `2 ≠ 0`). -/
-theorem orderOf_negCycleMatrix {n : ℕ} {R : Type*} [Ring R] [NeZero (2 : R)] (hn : 1 ≤ n) :
-    orderOf (negCycleMatrix n : Matrix (Fin n) (Fin n) R) = 2 * n := by
-  have h10 : (1 : R) ≠ 0 := fun h1 => NeZero.ne (2 : R) (by rw [← one_add_one_eq_two, h1, add_zero])
-  refine (orderOf_eq_iff (by omega)).2 ⟨?_, fun m hm hpos h1 => ?_⟩
-  · rw [mul_comm, pow_mul, negCycleMatrix_pow_self hn, neg_one_sq]
-  · rcases lt_trichotomy m n with hlt | rfl | hgt
-    · have hv := congrFun (negCycleMatrix_pow_mulVec_single (R := R) (⟨0, by omega⟩ : Fin n) m
-        (by simpa using hlt)) ⟨0, by omega⟩
-      simp [h1, Fin.ext_iff, hpos.ne', h10] at hv
-    · have h0 := congrFun₂ (negCycleMatrix_pow_self (R := R) hn ▸ h1) ⟨0, by omega⟩ ⟨0, by omega⟩
-      simp only [Matrix.neg_apply, Matrix.one_apply_eq] at h0
-      exact NeZero.ne (2 : R) (calc
-        (2 : R) = 1 + 1 := one_add_one_eq_two.symm
-        _ = -1 + 1 := congrArg (· + 1) h0.symm
-        _ = 0 := neg_add_cancel 1)
-    · have hm_split : m = n + (m - n) := by omega
-      have hm_pos : m - n ≠ 0 := by omega
-      have hneg1 : (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ (m - n) = -1 := by
-        rw [hm_split, pow_add, negCycleMatrix_pow_self hn, neg_one_mul] at h1
-        exact neg_eq_iff_eq_neg.mp h1
-      have hv := congrFun (negCycleMatrix_pow_mulVec_single (R := R) (⟨0, by omega⟩ : Fin n) (m - n)
-        (by simp; omega)) ⟨0, by omega⟩
-      simp [hneg1, Fin.ext_iff, hm_pos, h10] at hv
-
-end NegCycleMatrix
-
-end Matrix
