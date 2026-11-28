@@ -35,6 +35,8 @@ degree one preserves every homogeneous submodule.
   and one are the scalars and the module itself.
 * `AlgHom.apply_eq_pow_mul_of_forall_ι_eq`: rescaling generator values in the target
   algebra rescales homogeneous values by the corresponding power.
+* `LinearMap.apply_eq_mul_of_mem_homogeneousSubmodule`: generalized Euler identity for a linear
+  map satisfying the Leibniz rule relative to an algebra homomorphism.
 * `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
   to degree one preserves every homogeneous submodule.
 
@@ -80,6 +82,29 @@ theorem _root_.AlgHom.apply_eq_pow_mul_of_forall_ι_eq {A : Type*}
   | mem_mul m hm _ _ _ ih =>
     obtain ⟨y, rfl⟩ := hm
     simp only [map_mul, h, ih, pow_succ]
+    ring
+
+variable {R M} in
+/-- **Generalized Euler identity on homogeneous elements.** If `φ : SymmetricAlgebra R M →ₐ[R] A`
+is an algebra homomorphism into a commutative semiring and `D : SymmetricAlgebra R M →ₗ[R] A` is
+a linear map annihilating `1` and satisfying the `φ`-Leibniz rule
+`D (a * b) = φ a * D b + φ b * D a` and `D (ι R M x) = c * φ (ι R M x)` on generators, then
+`D p = n * c * φ p` for every homogeneous element `p` of degree `n`. -/
+theorem _root_.LinearMap.apply_eq_mul_of_mem_homogeneousSubmodule {A : Type*}
+    [CommSemiring A] [Algebra R A] (D : SymmetricAlgebra R M →ₗ[R] A)
+    (φ : SymmetricAlgebra R M →ₐ[R] A) (hD_one : D 1 = 0)
+    (hD_mul : ∀ a b, D (a * b) = φ a * D b + φ b * D a)
+    {c : A} (hD_ι : ∀ x, D (SymmetricAlgebra.ι R M x) = c * φ (SymmetricAlgebra.ι R M x))
+    {n : ℕ} {p : SymmetricAlgebra R M} (hp : p ∈ homogeneousSubmodule R M n) :
+    D p = n * c * φ p := by
+  induction hp using Submodule.pow_induction_on_left' with
+  | algebraMap r =>
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, hD_one, smul_zero, Nat.cast_zero, zero_mul,
+      zero_mul]
+  | add x y _ _ _ ihx ihy => simp [ihx, ihy, mul_add]
+  | mem_mul m hm i x _ ih =>
+    obtain ⟨y, rfl⟩ := hm
+    simp only [hD_mul, hD_ι, map_mul, ih, Nat.cast_succ]
     ring
 
 /-- Scaling a linear evaluation by `r` scales the value of a homogeneous polynomial of

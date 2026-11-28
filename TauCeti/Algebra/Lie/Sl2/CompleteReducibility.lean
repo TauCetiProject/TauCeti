@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.CompleteReducibility
-public import TauCeti.Algebra.Lie.Sl2.Casimir
+public import TauCeti.Algebra.Lie.Sl2.Casimir.Basic
 
 /-!
 # Complete reducibility for `sl₂`
@@ -21,9 +21,9 @@ The argument is the classical one, and all of it except the Casimir step is fiel
 algebra-agnostic; that part lives in `TauCeti/Algebra/Lie/CompleteReducibility.lean`, whose
 `TauCeti.HasInvariantOutsideIrreducible` is the single input it consumes. This file supplies that
 input for an `sl₂` triple, using the concrete Casimir operator of
-`TauCeti/Algebra/Lie/Sl2/Casimir.lean`, which is built from the triple alone and so needs neither
-the universal enveloping algebra nor the Killing form; the general Casimir argument for a semisimple
-Lie algebra is in `TauCeti/Algebra/Lie/HighestWeight/CompleteReducibility.lean`.
+`TauCeti/Algebra/Lie/Sl2/Casimir/Basic.lean`, which is built from the triple alone and so needs
+neither the universal enveloping algebra nor the Killing form; the general Casimir argument for a
+semisimple Lie algebra is in `TauCeti/Algebra/Lie/HighestWeight/CompleteReducibility.lean`.
 
 Concretely, if `L` carries `M` into an irreducible proper submodule `N` and acts nontrivially
 somewhere on `M`, then `L` acts nontrivially on `N` — otherwise the action would compose to zero,

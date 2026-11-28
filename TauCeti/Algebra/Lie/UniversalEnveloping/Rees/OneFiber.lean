@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Basic
+public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.UnitFiber
 
 /-!
@@ -17,7 +18,8 @@ base change along evaluation `R[t] → R` at one. The comparison sends `j(x)` to
 its inverse sends `ι(x)` to the specialized Rees generator.
 
 These comparisons require neither freeness of the Lie algebra nor a characteristic hypothesis.
-They use the exhaustive PBW filtration.
+They use the exhaustive PBW filtration. They are natural with respect to Lie algebra
+homomorphisms via `reesMap` and `Ideal.quotientMapₐ`.
 
 ## References
 
@@ -31,7 +33,7 @@ open scoped TensorProduct
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v
+universe u v w
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
@@ -84,5 +86,50 @@ theorem reesOneFiberEquiv_symm_ι (x : L) :
   let := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
   rw [← evalOne_reesGenerator R L x]
   exact coeffSubalgebra.baseChangeEvalOneEquiv_symm_evalOne _ _ _ _ _
+
+section Functoriality
+
+variable {L} {M : Type w} [LieRing M] [LieAlgebra R M]
+
+/-- Naturality of `quotientReesParameterSubOneEquiv` under `Ideal.quotientMapₐ` induced by
+`reesMap R f`. -/
+theorem quotientReesParameterSubOneEquiv_comp_quotientMapₐ (f : L →ₗ⁅R⁆ M)
+    (h : Ideal.span {reesParameter R L - 1} ≤
+      (Ideal.span {reesParameter R M - 1}).comap ((reesMap R f).restrictScalars R)) :
+    (quotientReesParameterSubOneEquiv R M).toAlgHom.comp
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M - 1})
+          ((reesMap R f).restrictScalars R) h) =
+      (map R f).comp (quotientReesParameterSubOneEquiv R L).toAlgHom := by
+  refine Ideal.Quotient.algHom_ext R ?_
+  ext p
+  simp [coeffSubalgebra.evalOne_eq_eval]
+
+/-- Naturality of `quotientReesParameterSubOneEquiv` on quotient classes under
+`Ideal.quotientMapₐ` induced by `reesMap R f`. -/
+@[simp]
+theorem quotientReesParameterSubOneEquiv_map (f : L →ₗ⁅R⁆ M)
+    (h : Ideal.span {reesParameter R L - 1} ≤
+      (Ideal.span {reesParameter R M - 1}).comap ((reesMap R f).restrictScalars R))
+    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) :
+    quotientReesParameterSubOneEquiv R M
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M - 1})
+          ((reesMap R f).restrictScalars R) h q) =
+      map R f (quotientReesParameterSubOneEquiv R L q) :=
+  AlgHom.congr_fun (quotientReesParameterSubOneEquiv_comp_quotientMapₐ R f h) q
+
+/-- Naturality of the tensor-product `t = 1` fibre `reesOneFiberEquiv`. -/
+@[simp]
+theorem reesOneFiberEquiv_map (f : L →ₗ⁅R⁆ M) :
+    letI := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
+    ∀ z : R ⊗[R[X]] reesAlgebra R L,
+      reesOneFiberEquiv R M (Algebra.TensorProduct.map (AlgHom.id R R) (reesMap R f) z) =
+        map R f (reesOneFiberEquiv R L z) := by
+  let := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
+  intro z
+  exact TensorProduct.inductionOn z
+    (fun r p ↦ by simp [reesOneFiberEquiv_tmul, coeffSubalgebra.evalOne_eq_eval])
+    (fun x y hx hy ↦ by simp [hx, hy])
+
+end Functoriality
 
 end TauCeti.UniversalEnvelopingAlgebra

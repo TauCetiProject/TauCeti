@@ -116,14 +116,8 @@ theorem _root_.AlgHom.apply_derivationOfEnd_eq_mul_of_mem_homogeneousSubmodule {
     [CommSemiring A] [Algebra R A] (φ : SymmetricAlgebra R M →ₐ[R] A) {f : Module.End R M} {c : A}
     (h : ∀ x, φ (ι R M (f x)) = c * φ (ι R M x)) {n : ℕ} {p : SymmetricAlgebra R M}
     (hp : p ∈ homogeneousSubmodule R M n) :
-    φ (derivationOfEnd R M f p) = n * c * φ p := by
-  induction hp using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add x y _ _ _ ihx ihy => simp [ihx, ihy, mul_add]
-  | mem_mul m hm i x _ ih =>
-    obtain ⟨y, rfl⟩ := hm
-    simp only [Derivation.leibniz, smul_eq_mul, map_add, map_mul, derivationOfEnd_ι, h, ih]
-    push_cast
-    ring
+    φ (derivationOfEnd R M f p) = n * c * φ p :=
+  (φ.toLinearMap.comp (derivationOfEnd R M f).toLinearMap).apply_eq_mul_of_mem_homogeneousSubmodule
+    φ (by simp) (fun a b ↦ by simp [Derivation.leibniz]) (fun x ↦ by simp [h]) hp
 
 end SymmetricAlgebra

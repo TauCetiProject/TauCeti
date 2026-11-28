@@ -171,13 +171,10 @@ theorem reesSymbol_eq_zero_iff_exists_X_mul_eq (p : Rees f) :
   constructor
   · intro hp
     have hc := (reesSymbol_eq_zero_iff f p).mp hp
-    have h0 : (p : A[X]).coeff 0 = 0 := by simpa using hc 0
-    have hq : (p : A[X]).divX ∈ coeffSubalgebra (wordFiltration f) := by
-      apply mem_coeffSubalgebra_iff.mpr
-      intro n
-      simpa only [Polynomial.coeff_divX, wordFiltrationPrevious_succ] using hc (n + 1)
-    refine ⟨⟨(p : A[X]).divX, hq⟩, Subtype.ext ?_⟩
-    simpa [h0] using Polynomial.X_mul_divX_add (p : A[X])
+    exact (coeffSubalgebra.exists_X_mul_eq_iff (wordFiltration f)
+      (one_mem_wordFiltration f 1) p).mpr
+      ⟨by simpa using hc 0,
+       fun n ↦ by simpa only [wordFiltrationPrevious_succ] using hc (n + 1)⟩
   · rintro ⟨q, rfl⟩
     simp
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Casimir
+public import TauCeti.Algebra.Lie.Sl2.Casimir.Basic
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Basic.Complex.Basic
 

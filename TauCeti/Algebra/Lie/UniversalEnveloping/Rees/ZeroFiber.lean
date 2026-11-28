@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
 public import TauCeti.Algebra.WordFiltration.Rees
 
@@ -20,14 +20,15 @@ which kills `j(x)`.
 The comparison composes the generic word-filtration symbol map with the inverse of the
 native PBW equivalence `pbwAssociatedGradedEquiv`. Its coefficientwise kernel description
 records precisely the loss of one filtration step needed to divide a commutator by the
-parameter and then take its symbol.
+parameter and then take its symbol. We also record naturality of `reesSpecializationZero`
+and `reesZeroFiberEquiv` along Lie algebra homomorphisms via `reesMap` and `Ideal.quotientMapₐ`.
 -/
 
 public section
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v
+universe u v w
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
@@ -116,7 +117,16 @@ theorem ker_reesSpecializationZero :
     simpa [wordReesEquiv_reesParameter, (coeffSubalgebra.commute_X _ _ q).eq] using hq
   · rintro ⟨q, rfl⟩
     refine ⟨wordReesEquiv R L q, ?_⟩
-    simp [wordReesEquiv_reesParameter, (coeffSubalgebra.commute_X _ _ _).eq]
+    rw [← (commute_reesParameter R L q).eq]
+    simp [wordReesEquiv_reesParameter]
+
+/-- An element of `reesAlgebra R L` specializes to `0` in `SymmetricAlgebra R L` if and only if it
+is divisible by `reesParameter R L`. -/
+theorem reesSpecializationZero_eq_zero_iff_exists_reesParameter_mul (p : reesAlgebra R L) :
+    reesSpecializationZero R L p = 0 ↔ ∃ q : reesAlgebra R L, reesParameter R L * q = p := by
+  rw [← AlgHom.coe_toRingHom, ← RingHom.mem_ker, ker_reesSpecializationZero,
+    Ideal.mem_span_singleton']
+  exact exists_congr fun q ↦ by rw [(commute_reesParameter R L q).eq]
 
 /-- The PBW zero fibre is canonically the symmetric algebra, without a choice of basis. -/
 noncomputable def reesZeroFiberEquiv :
@@ -140,5 +150,49 @@ theorem reesZeroFiberEquiv_symm_ι (x : L) :
       Ideal.Quotient.mk _ (reesGenerator R L x) := by
   apply (reesZeroFiberEquiv R L).symm_apply_eq.mpr
   simp
+
+section Functoriality
+
+variable {L} {M : Type w} [LieRing M] [LieAlgebra R M] [Module.Free R M]
+
+/-- **Naturality of `reesSpecializationZero`.** For Lie algebras free as `R`-modules, zero
+specialization intertwines `reesMap R f` with `SymmetricAlgebra.map R f.toLinearMap`. -/
+theorem reesSpecializationZero_comp_reesMap (f : L →ₗ⁅R⁆ M) :
+    (reesSpecializationZero R M).comp ((reesMap R f).restrictScalars R) =
+      (SymmetricAlgebra.map R f.toLinearMap).comp (reesSpecializationZero R L) :=
+  reesAlgebra_algHom_ext (by simp) (fun x ↦ by simp)
+
+@[simp]
+theorem reesSpecializationZero_reesMap (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
+    reesSpecializationZero R M (reesMap R f p) =
+      SymmetricAlgebra.map R f.toLinearMap (reesSpecializationZero R L p) :=
+  AlgHom.congr_fun (reesSpecializationZero_comp_reesMap R f) p
+
+/-- **Naturality of `reesZeroFiberEquiv` under `Ideal.quotientMapₐ` induced by `reesMap R f`.** -/
+theorem reesZeroFiberEquiv_comp_quotientMapₐ (f : L →ₗ⁅R⁆ M)
+    (h : Ideal.span {reesParameter R L} ≤
+      (Ideal.span {reesParameter R M}).comap ((reesMap R f).restrictScalars R)) :
+    (reesZeroFiberEquiv R M).toAlgHom.comp
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M})
+          ((reesMap R f).restrictScalars R) h) =
+      (SymmetricAlgebra.map R f.toLinearMap).comp (reesZeroFiberEquiv R L).toAlgHom := by
+  refine Ideal.Quotient.algHom_ext R ?_
+  ext p
+  simp
+
+/-- **Naturality of `reesZeroFiberEquiv` on quotient classes under `Ideal.quotientMapₐ` induced by
+`reesMap R f`.** -/
+@[simp]
+theorem reesZeroFiberEquiv_map (f : L →ₗ⁅R⁆ M)
+    (h : Ideal.span {reesParameter R L} ≤
+      (Ideal.span {reesParameter R M}).comap ((reesMap R f).restrictScalars R))
+    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) :
+    reesZeroFiberEquiv R M
+        (Ideal.quotientMapₐ (Ideal.span {reesParameter R M})
+          ((reesMap R f).restrictScalars R) h q) =
+      SymmetricAlgebra.map R f.toLinearMap (reesZeroFiberEquiv R L q) :=
+  AlgHom.congr_fun (reesZeroFiberEquiv_comp_quotientMapₐ R f h) q
+
+end Functoriality
 
 end TauCeti.UniversalEnvelopingAlgebra

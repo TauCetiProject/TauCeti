@@ -57,6 +57,21 @@ abbrev reesAlgebra : Subalgebra R U[X] :=
 noncomputable abbrev reesParameter : reesAlgebra R L :=
   coeffSubalgebra.X (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
 
+/-- The deformation parameter commutes with every element of the PBW Rees algebra. -/
+theorem commute_reesParameter (a : reesAlgebra R L) :
+    Commute (reesParameter R L) a :=
+  coeffSubalgebra.commute_X (pbwFiltration R L) (one_mem_pbwFiltration R L 1) a
+
+/-- Left multiplication by the deformation parameter is injective on the PBW Rees algebra. -/
+theorem reesParameter_mul_injective :
+    Function.Injective (fun a : reesAlgebra R L ↦ reesParameter R L * a) :=
+  coeffSubalgebra.X_mul_injective (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
+
+@[simp]
+theorem reesParameter_mul_right_inj {a b : reesAlgebra R L} :
+    reesParameter R L * a = reesParameter R L * b ↔ a = b :=
+  (reesParameter_mul_injective R L).eq_iff
+
 /-- The PBW Rees algebra is an algebra over the polynomial parameter ring. -/
 noncomputable instance : Algebra R[X] (reesAlgebra R L) :=
   coeffSubalgebra.algebra (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
@@ -171,5 +186,49 @@ theorem adjoin_range_reesGenerator :
     · exact Algebra.subset_adjoin ha
   rw [adjoin_reesParameter_union_range_reesGenerator] at hle
   exact top_unique hle
+
+section Extensionality
+
+variable {R L} {A : Type*}
+
+/-- Two `R`-algebra homomorphisms out of `reesAlgebra R L` are equal as soon as they agree on
+`reesParameter R L` and on every `reesGenerator R L x`. -/
+theorem reesAlgebra_algHom_ext [Semiring A] [Algebra R A]
+    {φ ψ : reesAlgebra R L →ₐ[R] A}
+    (hX : φ (reesParameter R L) = ψ (reesParameter R L))
+    (hj : ∀ x : L, φ (reesGenerator R L x) = ψ (reesGenerator R L x)) :
+    φ = ψ := by
+  refine AlgHom.ext_of_adjoin_eq_top (adjoin_reesParameter_union_range_reesGenerator R L) ?_
+  rintro p (hp | ⟨x, rfl⟩)
+  · obtain rfl := Set.mem_singleton_iff.mp hp
+    exact hX
+  · exact hj x
+
+/-- Two `R[X]`-algebra homomorphisms out of `reesAlgebra R L` are equal as soon as they agree on
+every `reesGenerator R L x`. -/
+@[ext]
+theorem reesAlgebra_paramAlgHom_ext [Semiring A] [Algebra R[X] A]
+    {φ ψ : reesAlgebra R L →ₐ[R[X]] A}
+    (hj : ∀ x : L, φ (reesGenerator R L x) = ψ (reesGenerator R L x)) :
+    φ = ψ := by
+  refine AlgHom.ext_of_adjoin_eq_top (adjoin_range_reesGenerator R L) ?_
+  rintro _ ⟨x, rfl⟩
+  exact hj x
+
+/-- An element of `reesAlgebra R L` is central if and only if it commutes with every linear Rees
+generator `reesGenerator R L x`. -/
+theorem mem_center_reesAlgebra_iff {z : reesAlgebra R L} :
+    z ∈ Subalgebra.center R (reesAlgebra R L) ↔ ∀ x : L, Commute z (reesGenerator R L x) := by
+  refine ⟨fun hz x ↦ (Subalgebra.mem_center_iff.mp hz (reesGenerator R L x)).symm, fun h ↦ ?_⟩
+  refine Subalgebra.mem_center_iff.mpr fun b ↦ ?_
+  have hb : b ∈ Algebra.adjoin R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) :=
+    (adjoin_reesParameter_union_range_reesGenerator R L).symm ▸ Algebra.mem_top
+  refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute hb ?_).symm.eq
+  rintro p (hp | ⟨x, rfl⟩)
+  · obtain rfl := Set.mem_singleton_iff.mp hp
+    exact (commute_reesParameter R L z).symm
+  · exact h x
+
+end Extensionality
 
 end TauCeti.UniversalEnvelopingAlgebra

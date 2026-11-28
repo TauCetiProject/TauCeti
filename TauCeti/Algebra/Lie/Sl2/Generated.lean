@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Casimir
+public import TauCeti.Algebra.Lie.Sl2.Casimir.Basic
 -- Non-public: `TauCeti.isIrreducible_iff_isAtom`, `TauCeti.lieSubmoduleOrderIsoOfEqTop` and
 -- `TauCeti.lieModuleEquivOfEqTop` are used only inside proofs.
 import TauCeti.Algebra.Lie.Submodule.Atom
