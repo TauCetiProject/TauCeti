@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
+import TauCeti.Analysis.InnerProductSpace.QuadraticForm.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 import TauCeti.LinearAlgebra.TensorProduct.Basic
@@ -225,6 +226,7 @@ private theorem complexProdTensor_complexVolume_of_map_prod_aux
     (Rhs : (CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F) →
       Orientation ℝ V (Fin n) → Orientation ℝ W (Fin m) → Module.End ℂ (E ⊗[ℂ] F))
     (hbase : ∀ (b₁ : OrthonormalBasis (Fin n) ℝ V) (b₂ : OrthonormalBasis (Fin m) ℝ W)
+      (_hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
       (ρ₂' : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F),
       complexProdTensor hQ b₁.toBasis.orientation hQ₁ hn ρ₁ ρ₂'
           (complexVolume Q
@@ -237,7 +239,7 @@ private theorem complexProdTensor_complexVolume_of_map_prod_aux
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) = Rhs ρ₂ o₁ o₂ := by
   let b₁ : OrthonormalBasis (Fin n) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
-  let b₂ : OrthonormalBasis (Fin m) ℝ W := (stdOrthonormalBasis ℝ W).reindex (finCongr Fact.out)
+  obtain ⟨b₂, hQb₂⟩ := Q₂.exists_orthonormalBasis_isOrthoᵢ_associated (Fact.out : finrank ℝ W = m)
   have hpos (ρ₂' : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
       (o₂' : Orientation ℝ W (Fin m)) :
       complexProdTensor hQ b₁.toBasis.orientation hQ₁ hn ρ₁ ρ₂'
@@ -245,46 +247,46 @@ private theorem complexProdTensor_complexVolume_of_map_prod_aux
             (WithLp.linearEquiv 2 ℝ (V × W)).symm)) =
         Rhs ρ₂' b₁.toBasis.orientation o₂' := by
     rcases b₂.toBasis.orientation_eq_or_eq_neg o₂' with rfl | rfl
-    · exact hbase b₁ b₂ ρ₂'
-    · rw [Orientation.map_prod_neg_right, complexVolume_neg_orientation, map_neg, hbase b₁ b₂ ρ₂',
-        hneg_right]
+    · exact hbase b₁ b₂ hQb₂ ρ₂'
+    · rw [Orientation.map_prod_neg_right, complexVolume_neg_orientation, map_neg,
+        hbase b₁ b₂ hQb₂ ρ₂', hneg_right]
   subst ho
   rcases b₁.toBasis.orientation_eq_or_eq_neg o₁ with rfl | rfl
   · exact hpos ρ₂ o₂
   · rw [Orientation.map_prod_neg_left, complexVolume_neg_orientation, map_neg,
       complexProdTensor_neg_orientation_eq_involute, hpos (ρ₂.comp involute) o₂, hneg_left]
 
-/-- **Frame-free product chirality**: for even `n` and `m`, `Q₁ v = -‖v‖²`, `Q₂ w = -‖w‖²`, and
-`V ⊕ W` oriented by transporting `o₁.prod o₂` along `(WithLp.linearEquiv 2 ℝ (V × W)).symm`, the
-normalized complex volume element of `V ⊕ W` acts on `E ⊗ F` by `Γ_V ⊗ Γ_W`. This holds for every
-pair of orientations `(o₁, o₂)`, including `-positiveOrientation` in dimension zero. -/
-theorem complexProdTensor_complexVolume_of_map_prod (hm : Even m) (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
+/-- **Frame-free product chirality**: for even `n` and `m`, `Q₁ v = -‖v‖²`, any quadratic form
+`Q₂` on `W`, and `V ⊕ W` oriented by transporting `o₁.prod o₂` along
+`(WithLp.linearEquiv 2 ℝ (V × W)).symm`, the normalized complex volume element of `V ⊕ W` acts on
+`E ⊗ F` by `Γ_V ⊗ Γ_W`. This holds for every pair of orientations `(o₁, o₂)`, including
+`-positiveOrientation` in dimension zero. -/
+theorem complexProdTensor_complexVolume_of_map_prod (hm : Even m)
     (ho : (o₁.prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
       TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂)) :=
   complexProdTensor_complexVolume_of_map_prod_aux hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o
     (fun ρ₂' o₁' o₂' ↦ TensorProduct.map (ρ₁ (complexVolume Q₁ o₁')) (ρ₂' (complexVolume Q₂ o₂')))
-    (fun b₁ b₂ ρ₂' ↦ complexProdTensor_complexVolume hQ b₁.toBasis.orientation hQ₁ hn ρ₁ ρ₂'
-      b₂.toBasis.orientation _ hm b₁ rfl b₂ rfl (b₂.isOrthoᵢ_associated hQ₂)
+    (fun b₁ b₂ hQb₂ ρ₂' ↦ complexProdTensor_complexVolume hQ b₁.toBasis.orientation hQ₁ hn ρ₁ ρ₂'
+      b₂.toBasis.orientation _ hm b₁ rfl b₂ rfl hQb₂
       (b₁.orientation_reindex_prod b₂ Fact.out Fact.out))
     (fun ρ₂' o₁' o₂' ↦ by simp)
     (fun ρ₂' o₁' o₂' ↦ by simp [hm.neg_one_pow])
     ho
 
-/-- **Frame-free odd product volume**: for even `n` and odd `m`, `Q₁ v = -‖v‖²`, `Q₂ w = -‖w‖²`,
-and `V ⊕ W` oriented by `o₁.prod o₂`, the normalized complex volume element of `V ⊕ W` acts on
-`E ⊗ F` by `1 ⊗ ω_W`, for every orientation `o₁` of `V` (including in rank zero). -/
+/-- **Frame-free odd product volume**: for even `n` and odd `m`, `Q₁ v = -‖v‖²`, any quadratic form
+`Q₂` on `W`, and `V ⊕ W` oriented by `o₁.prod o₂`, the normalized complex volume element of
+`V ⊕ W` acts on `E ⊗ F` by `1 ⊗ ω_W`, for every orientation `o₁` of `V` (including in rank zero). -/
 theorem complexProdTensor_complexVolume_of_odd_of_map_prod (hm : Odd m)
-    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (ho : (o₁.prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
       (ρ₂ (complexVolume Q₂ o₂)).lTensor E :=
   complexProdTensor_complexVolume_of_map_prod_aux hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o
     (fun ρ₂' _ o₂' ↦ (ρ₂' (complexVolume Q₂ o₂')).lTensor E)
-    (fun b₁ b₂ ρ₂' ↦ complexProdTensor_complexVolume_of_odd hQ b₁.toBasis.orientation hQ₁ hn ρ₁ ρ₂'
-      b₂.toBasis.orientation _ hm b₁ rfl b₂ rfl (b₂.isOrthoᵢ_associated hQ₂)
+    (fun b₁ b₂ hQb₂ ρ₂' ↦ complexProdTensor_complexVolume_of_odd hQ b₁.toBasis.orientation hQ₁ hn ρ₁
+      ρ₂' b₂.toBasis.orientation _ hm b₁ rfl b₂ rfl hQb₂
       (b₁.orientation_reindex_prod b₂ Fact.out Fact.out))
     (fun ρ₂' _ o₂' ↦ by simp)
     (fun ρ₂' _ o₂' ↦ by simp [hm.neg_one_pow])
@@ -294,7 +296,6 @@ theorem complexProdTensor_complexVolume_of_odd_of_map_prod (hm : Odd m)
 `o₁` to `-o₁` reverses the product orientation `o` to `-o` (`Orientation.prod_neg_left`) and
 negates the action of the product chirality on `E ⊗ F`. -/
 theorem complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod (hm : Even m)
-    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (ho : (o₁.prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (complexVolume Q (-o)) =
@@ -302,8 +303,8 @@ theorem complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod (hm : Ev
   have ho' : ((-o₁).prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = -o := by
     rw [Orientation.map_prod_neg_left, ho]
-  rw [complexProdTensor_complexVolume_of_map_prod hQ (-o₁) hQ₁ hn ρ₁ ρ₂ o₂ (-o) hm hQ₂ ho',
-    complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho]
+  rw [complexProdTensor_complexVolume_of_map_prod hQ (-o₁) hQ₁ hn ρ₁ ρ₂ o₂ (-o) hm ho',
+    complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm ho]
   simp [TensorProduct.map_neg_left]
 
 end SecondFactor
