@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Characte
 
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Rational
 import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
 
 /-!
@@ -293,6 +294,15 @@ theorem isOpen_range_cyclotomicTowerCharacter [∀ i, HasEnoughRootsOfUnity L (p
     IsOpen ((cyclotomicTowerCharacter p K L).range : Set ℤ_[p]ˣ) := by
   rw [range_cyclotomicTowerCharacter]
   exact isOpen_range_localCyclotomicCharacter p K
+
+/-- Over a number field the full cyclotomic character has open image in `ℤ_pˣ`. -/
+theorem isOpen_range_cyclotomicTowerCharacter_of_finite_rat
+    [∀ i, HasEnoughRootsOfUnity L (p ^ i)] [Algebra ℚ K] [FiniteDimensional ℚ K] :
+    IsOpen ((cyclotomicTowerCharacter p K L).range : Set ℤ_[p]ˣ) := by
+  rw [range_cyclotomicTowerCharacter]
+  exact isOpen_range_localCyclotomicCharacter_of_isOpen p ℚ K
+    (by rw [MonoidHom.range_eq_top.mpr (surjective_localCyclotomicCharacter_rat p),
+          Subgroup.coe_top]; exact isOpen_univ)
 
 end Character
 
