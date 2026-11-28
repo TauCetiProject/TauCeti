@@ -148,14 +148,14 @@ variable (hF' : IsFunctionField k' F') {D : Divisor k F} {s : Place k F → F}
 /-- The local map `L(Con D) → 𝒪'_P ⧸ 𝒪_P · k'`, `z ↦ s P · z`, for `s P` of order `D P` at `P`. -/
 private noncomputable def localMap (P : Place k F) :
     riemannRochSpace (Divisor.conorm k' F' D) →ₗ[k'] P.singularityQuotient k' F' :=
-  (Submodule.mkQ _).comp <|
+  (P.singularityQuotientMkQ k' F').comp <|
     ((LinearMap.mulLeft k' (algebraMap F F' (s P))).comp
       (riemannRochSpace (Divisor.conorm k' F' D)).subtype).codRestrict _ fun z ↦ by
         simpa [Algebra.smul_def] using
           (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P
 
 private theorem localMap_apply (P : Place k F) (z : riemannRochSpace (Divisor.conorm k' F' D)) :
-    localMap hF' hs0 hs P z = Submodule.Quotient.mk ⟨algebraMap F F' (s P) * z, by
+    localMap hF' hs0 hs P z = P.singularityQuotientMkQ k' F' ⟨algebraMap F F' (s P) * z, by
       simpa [Algebra.smul_def] using
         (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P⟩ :=
   (rfl)
@@ -163,9 +163,8 @@ private theorem localMap_apply (P : Place k F) (z : riemannRochSpace (Divisor.co
 private theorem localMap_eq_zero_iff (P : Place k F) (z : riemannRochSpace
     (Divisor.conorm k' F' D)) :
     localMap hF' hs0 hs P z = 0 ↔ s P • (z : F') ∈ P.constantSpanIntegers k' F' := by
-  rw [localMap_apply, Submodule.Quotient.mk_eq_zero]
+  rw [localMap_apply, Place.singularityQuotientMkQ_eq_zero_iff]
   simp only [Algebra.smul_def]
-  exact Iff.rfl
 
 include h hn in
 /-- **The local maps are jointly surjective** on any finite set of places, as soon as `A_F(D) + F`
@@ -176,7 +175,7 @@ private theorem pi_localMap_surjective
     Function.Surjective (LinearMap.pi fun P : S ↦ localMap hF' hs0 hs (P : Place k F)) := by
   classical
   intro y
-  choose y' hy' using fun P : S ↦ Submodule.Quotient.mk_surjective _ (y P)
+  choose y' hy' using fun P : S ↦ (P : Place k F).singularityQuotientMkQ_surjective k' F' (y P)
   set c := constantBasisOfFinrankEq h hn (finBasis k k')
   -- the coordinates of the targets, with the pole allowed by `D` restored, as repartitions of `F`
   let a : Fin (finrank k k') → Place k F → F := fun j P ↦
@@ -224,10 +223,8 @@ private theorem pi_localMap_surjective
   refine ⟨⟨z, hzmem⟩, funext fun P ↦ ?_⟩
   have hP := hloc P
   rw [dite_eq_left P.property] at hP
-  rw [LinearMap.pi_apply, ← hy' P]
-  simp only [localMap, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply]
-  rw [Submodule.Quotient.eq]
-  simpa [Submodule.submoduleOf, Algebra.smul_def] using hP
+  rw [LinearMap.pi_apply, ← hy' P, localMap_apply, Place.singularityQuotientMkQ_eq_iff]
+  simpa [Algebra.smul_def] using hP
 
 /-- The common kernel of the local maps contains `L(D) · k'`. -/
 private theorem span_le_ker_pi_localMap (S : Finset (Place k F)) :

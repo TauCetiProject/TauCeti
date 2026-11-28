@@ -26,12 +26,18 @@ is `k`-linearly isomorphic to `P.singularityQuotient k' F'`.
 ## Main definitions
 
 * `TauCeti.Place.singularityQuotient`: the quotient `𝒪'_P ⧸ 𝒪_P · k'`.
+* `TauCeti.Place.singularityQuotientMkQ`: the `k'`-linear quotient projection
+  `𝒪'_P →ₗ[k'] 𝒪'_P ⧸ 𝒪_P · k'`.
 * `TauCeti.Place.singularityDegree`: its `k'`-dimension `δ_P`.
 * `TauCeti.Place.singularityQuotientLinearEquiv`: when `F' / F` is purely inseparable,
   `𝒪_{P'} ⧸ 𝒪_P · k'` is `k`-linearly isomorphic to `P.singularityQuotient k' F'`.
 
 ## Main results
 
+* `TauCeti.Place.singularityQuotientMkQ_surjective`,
+  `TauCeti.Place.singularityQuotientMkQ_eq_zero_iff`,
+  `TauCeti.Place.singularityQuotientMkQ_eq_iff`: surjectivity, zero criterion, and equality
+  criterion for `singularityQuotientMkQ` in terms of `constantSpanIntegers`.
 * `TauCeti.Place.singularityDegree_eq_zero_iff`: when `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional,
   `δ_P = 0` exactly when `𝒪_P · k'` is integrally closed in `F'`.
 * `TauCeti.Place.singularityQuotientLinearEquiv_mk`: action of `singularityQuotientLinearEquiv` on
@@ -71,6 +77,30 @@ closed in `F'`. -/
 abbrev singularityQuotient : Type v' :=
   ↥(integralClosureSubmodule k' F' P) ⧸
     (constantSpanIntegers k' F' P).submoduleOf (integralClosureSubmodule k' F' P)
+
+/-- The `k'`-linear quotient projection `𝒪'_P →ₗ[k'] 𝒪'_P ⧸ 𝒪_P · k'`. -/
+noncomputable def singularityQuotientMkQ :
+    ↥(integralClosureSubmodule k' F' P) →ₗ[k'] singularityQuotient k' F' P :=
+  Submodule.mkQ ((constantSpanIntegers k' F' P).submoduleOf (integralClosureSubmodule k' F' P))
+
+/-- The quotient projection `𝒪'_P →ₗ[k'] 𝒪'_P ⧸ 𝒪_P · k'` is surjective. -/
+theorem singularityQuotientMkQ_surjective :
+    Function.Surjective (singularityQuotientMkQ k' F' P) :=
+  Submodule.mkQ_surjective _
+
+/-- An element of `𝒪'_P` vanishes in `𝒪'_P ⧸ 𝒪_P · k'` if and only if it lies in `𝒪_P · k'`. -/
+@[simp]
+theorem singularityQuotientMkQ_eq_zero_iff (x : ↥(integralClosureSubmodule k' F' P)) :
+    singularityQuotientMkQ k' F' P x = 0 ↔ (x : F') ∈ constantSpanIntegers k' F' P := by
+  rw [singularityQuotientMkQ, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+  exact Iff.rfl
+
+/-- Two elements of `𝒪'_P` have the same image in `𝒪'_P ⧸ 𝒪_P · k'` if and only if their
+difference lies in `𝒪_P · k'`. -/
+theorem singularityQuotientMkQ_eq_iff (x y : ↥(integralClosureSubmodule k' F' P)) :
+    singularityQuotientMkQ k' F' P x = singularityQuotientMkQ k' F' P y ↔
+      (x : F') - y ∈ constantSpanIntegers k' F' P := by
+  rw [← sub_eq_zero, ← map_sub, singularityQuotientMkQ_eq_zero_iff, Submodule.coe_sub]
 
 /-- The **singularity degree** `δ_P = dim_{k'} (𝒪'_P ⧸ 𝒪_P · k')` of `P` in `F' = F · k'`: the
 total `k'`-dimensional normalization defect along the fiber over `P` of the curve of `F / k` after
@@ -183,13 +213,13 @@ theorem singularityQuotientLinearEquiv_mk [Algebra.IsIntegral k k']
     [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F')
     (x : P'.integers) :
     P'.singularityQuotientLinearEquiv k F hF' (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨(x : F'),
+      (P'.restrict k F).singularityQuotientMkQ k' F' ⟨(x : F'),
         ((P'.restrict k F).mem_integralClosureSubmodule_iff k' F').2
           ((Place.isIntegral_integers_restrict_iff hF' P').2 x.property)⟩ := by
   let _ := Place.integersAlgebraBase k P'; have := Place.isScalarTower_integersAlgebraBase k P'
   have := Place.isScalarTower_integers_restrict k F P'
-  simpa [singularityQuotientLinearEquiv] using congrArg Submodule.Quotient.mk
-    (Subtype.ext (coe_singularityIntegersEquiv_apply k F hF' P' x))
+  simpa [singularityQuotientLinearEquiv, singularityQuotientMkQ] using
+    congrArg Submodule.Quotient.mk (Subtype.ext (coe_singularityIntegersEquiv_apply k F hF' P' x))
 
 end
 

@@ -65,13 +65,8 @@ private theorem shift_mul_apply_of_X_sub_C_pow_dvd {f : R[X]} {c : R} {A : Matri
     (k i : Fin n) :
     ((of fun k j : Fin n ↦ ((X + C c) ^ (j : ℕ)).coeff k) * A) k i =
       ((taylor c f) ^ (i : ℕ)).coeff k := by
-  have hdvd : X ^ n ∣ (taylor c f) ^ (i : ℕ) - ∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ) := by
-    simpa [taylor_apply] using X_sub_C_pow_dvd_iff.mp (hA i)
-  have hzero : ((taylor c f) ^ (i : ℕ)).coeff k =
-      (∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ)).coeff k :=
-    sub_eq_zero.mp ((coeff_sub _ _ k).symm.trans ((X_pow_dvd_iff.mp hdvd) k k.isLt))
-  rw [hzero, finsetSum_coeff, Matrix.mul_apply]; exact Finset.sum_congr rfl fun j _ ↦ by
-    rw [of_apply, coeff_C_mul, mul_comm]
+  rw [Matrix.mul_apply, ← taylor_pow]
+  simpa only [of_apply] using (coeff_taylor_eq_sum_of_X_sub_C_pow_dvd_sub (hA i) k.isLt).symm
 
 /-- Multiplying on the right by the monic shift matrix of `X - C (f.eval c)` turns the columns from
 `(taylor c f) ^ m` into `(taylor c f - C (f.eval c)) ^ i`. -/
