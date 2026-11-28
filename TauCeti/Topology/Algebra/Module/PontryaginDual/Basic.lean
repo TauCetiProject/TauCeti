@@ -461,8 +461,7 @@ def pontryaginDualEquiv {R₁ R₂ S E₁ E₂ M : Type*}
       e.symm ψ.toContinuousLinearMap.toLinearMap m = G ψ.toContinuousMap m)
     (ψ : ModulePontryaginDual R₂ E₂ M) (m : M) :
     (e.pontryaginDualEquiv F hF heF G hG heG).symm ψ m =
-      e.symm ψ.toContinuousLinearMap.toLinearMap m := by
-  simp [pontryaginDualEquiv]; rfl
+      e.symm ψ.toContinuousLinearMap.toLinearMap m := (rfl)
 
 end LinearEquiv
 

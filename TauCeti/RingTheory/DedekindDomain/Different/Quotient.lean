@@ -58,7 +58,8 @@ def mulByTraceDualQuotientMap (y : L) (hy : y ∈ Submodule.traceDual A K (1 : S
   (1 : Submodule A K).liftQ
     { toFun := fun k ↦ Submodule.Quotient.mk (k • y)
       map_add' := fun _ _ ↦ by rw [add_smul, Submodule.Quotient.mk_add]
-      map_smul' := fun _ _ ↦ by simp only [RingHom.id_apply, smul_assoc]; rfl } fun k hk ↦ by
+      map_smul' := fun _ _ ↦ by
+        simp only [RingHom.id_apply, smul_assoc, Submodule.Quotient.mk_smul] } fun k hk ↦ by
       obtain ⟨a, rfl⟩ := Submodule.mem_one.mp hk
       rw [LinearMap.mem_ker, LinearMap.coe_mk, AddHom.coe_mk, Submodule.Quotient.mk_eq_zero,
         algebraMap_smul, ← algebraMap_smul B a y]

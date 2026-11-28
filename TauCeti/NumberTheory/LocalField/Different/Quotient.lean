@@ -100,6 +100,6 @@ theorem mk_inv_uniformizer_mem_ker_directTracePairing (hram : ¬ IsUnramified K 
     rw [← pow_succ', Nat.sub_add_cancel hd]
   refine Submodule.mem_one.mpr ⟨ϖ ^ (differentExponent K L - 1), ?_⟩
   simp only [map_pow, Algebra.algebraMap_ofSubsemiring_apply]
-  rw [hpow, inv_mul_cancel_left₀ (ZeroMemClass.coe_eq_zero.not.mpr hϖ.ne_zero)]
+  rw [hpow, inv_mul_cancel_left₀ hϖ.coe_ne_zero]
 
 end TauCeti
