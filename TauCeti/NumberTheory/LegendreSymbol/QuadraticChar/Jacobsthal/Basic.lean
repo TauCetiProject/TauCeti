@@ -31,6 +31,8 @@ The Jacobi-sum expansions of `ψ_n` and `φ_n` are in
 * `TauCeti.jacobsthalPhi_def`, `TauCeti.jacobsthalPsi_def`: the defining formulas.
 * `TauCeti.jacobsthalPhi_one`, `TauCeti.jacobsthalPsi_two`: `φ_1(a) = ψ_2(a) = -1` for `a ≠ 0`, in
   odd characteristic.
+* `TauCeti.sum_quadraticChar_sub_sq`: `∑_x η(c - x²) = -η(-1)` for `c ≠ 0`, in odd
+  characteristic.
 * `TauCeti.jacobsthalPhi_zero_right_of_even`, `TauCeti.jacobsthalPhi_zero_right_of_odd`:
   `φ_n(0)` is `0` for even `n` in odd characteristic, and `q - 1` for odd `n`.
 * `TauCeti.jacobsthalPhi_mul_pow`: `φ_n(a sⁿ) = η(s)^(n + 1) φ_n(a)` for `s ≠ 0`, and
@@ -94,6 +96,15 @@ theorem jacobsthalPsi_two (hF : ringChar F ≠ 2) {a : F} (ha : a ≠ 0) :
   rw [jacobsthalPsi, h, sum_quadraticChar_add hF a, zero_add, ← jacobsthalPhi_one hF ha,
     jacobsthalPhi_def]
   simp only [pow_one]
+
+/-- `∑_x η(c - x²) = -η(-1)` for `c ≠ 0` in odd characteristic. -/
+theorem sum_quadraticChar_sub_sq (hF : ringChar F ≠ 2) {c : F} (hc : c ≠ 0) :
+    ∑ x : F, quadraticChar F (c - x ^ 2) = -quadraticChar F (-1) := by
+  -- `η(c - x²) = η(-1) η(x² - c)`, and `∑_x η(x² - c) = ψ_2(-c) = -1`.
+  have h := jacobsthalPsi_two hF (neg_ne_zero.mpr hc)
+  rw [jacobsthalPsi_def] at h
+  have e (x : F) : c - x ^ 2 = -1 * (x ^ 2 + -c) := by ring
+  simp_rw [e, map_mul, ← mul_sum, h, mul_neg_one]
 
 /-- `φ_n(0) = ∑_x η(x)^(n + 1) = 0` for even `n` in odd characteristic. -/
 theorem jacobsthalPhi_zero_right_of_even (hF : ringChar F ≠ 2) {n : ℕ} (hn : Even n) :

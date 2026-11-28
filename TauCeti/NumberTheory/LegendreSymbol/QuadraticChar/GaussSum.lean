@@ -21,9 +21,11 @@ preimages `x`, turns the sum into `∑_a χ(c a) ψ(a)`, since `ψ` sums to zero
 
 This is how the quadratic Gauss sums of a finite field with an arbitrary nonzero coefficient are
 reduced to the one with coefficient `1`, which is the Gauss sum `g(χ, ψ)`. Its square is
-`χ(-1) q`. The file also records `∑_a χ(a) ψ(a b) = χ(b) ∑_x ψ(x²)` and the
-character sum `∑_x χ(c - x²) = -χ(-1)` for `c ≠ 0`, the inputs of Ghosh and Sarnak's point
-counts on Markoff surfaces over `𝔽_p`.
+`χ(-1) q`. The file also records `∑_a χ(a) ψ(a b) = χ(b) ∑_x ψ(x²)`, an input of Ghosh and
+Sarnak's point counts on Markoff surfaces over `𝔽_p`. The character sum
+`∑_x χ(c - x²) = -χ(-1)` for `c ≠ 0`, another input of these counts, is
+`TauCeti.sum_quadraticChar_sub_sq` in
+`TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Jacobsthal.Basic`.
 
 ## Main results
 
@@ -31,7 +33,6 @@ counts on Markoff surfaces over `𝔽_p`.
 * `TauCeti.sum_addChar_sq_eq_gaussSum`: `∑_x ψ(x²) = g(χ, ψ)`.
 * `TauCeti.sum_addChar_sq_sq`: `(∑_x ψ(x²))² = χ(-1) q`.
 * `TauCeti.sum_quadraticChar_mul_addChar_mul`: `∑_a χ(a) ψ(a b) = χ(b) ∑_x ψ(x²)`.
-* `TauCeti.sum_quadraticChar_sub_sq`: `∑_x χ(c - x²) = -χ(-1)` for `c ≠ 0`.
 
 ## References
 
@@ -86,18 +87,15 @@ theorem sum_addChar_sq_sq (hF : ringChar F ≠ 2) {ψ : AddChar F R} (hψ : ψ �
   rcases eq_or_ne (ringChar R) 2 with hR | hR
   · -- In characteristic `2`, `χ` reads as `1` off `0`, so both sides are `1`.
     have : CharP R 2 := ringChar.of_eq hR
-    have hχ1 {a : F} (ha : a ≠ 0) : (quadraticChar F a : R) = 1 := by
-      rcases quadraticChar_dichotomy ha with h | h <;> simp [h, CharTwo.neg_eq]
-    have h0 := AddChar.sum_eq_zero_of_ne_one hψ
-    rw [← add_sum_erase _ _ (mem_univ 0), AddChar.map_zero_eq_one, add_comm,
-      ← eq_neg_iff_add_eq_zero] at h0
-    have hS : ∑ x, ψ (x ^ 2) = -1 := by
-      rw [sum_addChar_sq_eq_gaussSum hF hψ, gaussSum, ← add_sum_erase _ _ (mem_univ 0), ← h0]
-      simp only [MulChar.ringHomComp_apply, eq_intCast, quadraticChar_zero, Int.cast_zero,
-        zero_mul, zero_add]
-      exact sum_congr rfl fun a ha ↦ by rw [hχ1 (ne_of_mem_erase ha), one_mul]
+    have hχ : (quadraticChar F).ringHomComp (Int.castRingHom R) = 1 := by
+      ext a
+      rcases quadraticChar_dichotomy a.ne_zero with h | h <;>
+        simp [MulChar.ringHomComp_apply, h, CharTwo.neg_eq]
+    have h1 := congr($hχ (-1))
+    simp only [MulChar.ringHomComp_apply, eq_intCast] at h1
+    rw [MulChar.one_apply isUnit_neg_one] at h1
     obtain ⟨k, hk⟩ := Nat.odd_iff.mpr (FiniteField.odd_card_of_char_ne_two hF)
-    rw [hS, hχ1 (neg_ne_zero.mpr one_ne_zero), hk]
+    rw [sum_addChar_sq_eq_gaussSum hF hψ, hχ, gaussSum_one_left hψ, h1, hk]
     simp [CharTwo.two_eq_zero]
   have hχ : (quadraticChar F).ringHomComp (Int.castRingHom R) ≠ 1 := by
     obtain ⟨a, ha⟩ := quadraticChar_exists_neg_one' hF
@@ -128,18 +126,5 @@ theorem sum_quadraticChar_mul_addChar_mul (hF : ringChar F ≠ 2) {ψ : AddChar 
   simp only [MulChar.ringHomComp_apply, eq_intCast]
   rw [← h, ← mul_assoc, hb2, one_mul]
   simp_rw [mul_comm _ b]
-
-omit [CommRing R] [IsDomain R] in
-/-- For `c ≠ 0` in a finite field of odd characteristic, `∑_x χ(c - x²) = -χ(-1)`. -/
-theorem sum_quadraticChar_sub_sq (hF : ringChar F ≠ 2) {c : F} (hc : c ≠ 0) :
-    ∑ x : F, quadraticChar F (c - x ^ 2) = -quadraticChar F (-1) := by
-  -- Group `x` by `u = x²`: the sum is `∑_u (1 + χ(u)) χ(c - u) = ∑_u χ(u (c - u))`.
-  have h := sum_comp_mul_sq hF one_ne_zero fun u ↦ quadraticChar F (c - u)
-  simp only [one_mul, smul_eq_mul, add_mul, sum_add_distrib] at h
-  have h0 : ∑ u : F, quadraticChar F (c - u) = 0 :=
-    (Equiv.sum_comp (Equiv.subLeft c) (quadraticChar F)).trans (quadraticChar_sum_zero hF)
-  have h1 := sum_quadraticChar_mul_sub hF c
-  rw [ite_eq_right hc] at h1
-  simp_rw [h, h0, zero_add, ← map_mul, h1, mul_neg_one]
 
 end TauCeti
