@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Norm
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.Convex.Cone.InfDist
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Topology.Algebra.Module.Cone
 import TauCeti.Topology.MetricSpace.CoboundedImage
 
 /-!
@@ -58,6 +62,15 @@ decays rapidly on `Γ` and `g` decays rapidly everywhere, `g (ξ - p ζ) F ζ` d
 `ξ ∈ Γ'` and `ζ` jointly. This is how a cone in which a localized Fourier transform decays is
 transported along the transpose of an injective linear map, such as the inclusion `x ↦ (x, 0)`.
 
+For a cone `Γ ⊆ E × E` of directions over an open set `Ω`, closed in `Ω × (E \ {0})`, a closed
+cone of directions avoiding the directions of `Γ` at a point `x₀ ∈ Ω` still avoids them over a
+neighbourhood of `x₀`, again by compactness of the unit sphere. This is how a cone in which a
+localized Fourier transform decays is chosen uniformly near a point.
+
+Conversely, decay forbids constancy: a function with `(1 + ‖η‖) ‖g η‖` bounded on an open cone
+around `ξ ≠ 0` vanishes wherever it is constant along a line `t ↦ t • ξ + w`, since the line
+eventually lies in the cone. This is how lower bounds on wave front sets are proved.
+
 ## Main results
 
 * `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
@@ -65,6 +78,8 @@ transported along the transpose of an injective linear map, such as the inclusio
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `IsOpen.exists_isOpen_cone_subset_isClosed_cone`: an open cone `Γ` containing `ξ` contains the
   nonzero elements of a closed cone `F` which contains an open cone `Γ'` containing `ξ`.
+* `IsOpen.eq_zero_of_forall_smul_add_eq`: a function with `(1 + ‖η‖) ‖g η‖` bounded on an open
+  cone around `ξ ≠ 0` vanishes wherever it is constant along a line `t ↦ t • ξ + w`.
 * `IsOpen.exists_pos_setOf_norm_fst_lt_subset`: an open cone of `E × D` containing the nonzero
   vectors of `{0} × D` contains a cone `‖ζ.1‖ < c ‖ζ.2‖` around them.
 * `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
@@ -104,10 +119,21 @@ transported along the transpose of an injective linear map, such as the inclusio
 * `TauCeti.exists_finset_subset_biUnion_interior_and_isOpen_cone`: finitely many of given
   neighbourhoods of the points of a compact set cover it, and the corresponding open cones
   intersect in an open cone.
+* `IsOpen.isClosed_insert_zero_setOf_mem`, `IsOpen.exists_mem_nhds_disjoint_prod`,
+  `IsOpen.exists_mem_nhds_cone_disjoint_prod_infDist_lt`: for a cone `Γ ⊆ E × E` closed in
+  `Ω × (E \ {0})`, the directions of `Γ` at `x₀ ∈ Ω` with `0` form a closed set, a closed cone of
+  directions avoiding `Γ` at `x₀` avoids it over a neighbourhood of `x₀`, and the directions far
+  from those of `Γ` at `x₀` form such a cone.
+* `IsClosed.zero_mem_of_smul_mem`: a nonempty closed set closed under multiplication by positive
+  reals contains `0`.
 * `TauCeti.forall_smul_mem_neg`, `TauCeti.forall_smul_mem_compl`, `TauCeti.forall_smul_mem_add`,
   `TauCeti.forall_smul_mem_insert_zero`: the negative and the complement of a set closed under
   multiplication by positive reals, the sum of two such sets, and such a set with `0` adjoined, are
-  closed under multiplication by positive reals.
+  closed under multiplication by positive reals; so is `{0}`
+  (`TauCeti.forall_smul_mem_singleton_zero`).
+* `TauCeti.exists_nhds_cone_le_norm_of_continuous_of_homogeneous`: a continuous function
+  `f (y, η)`, positively homogeneous of degree `N` in `η` and nonzero at `(x, ξ)`, is bounded
+  below by `c₀ ‖η‖ ^ N` for `y` near `x` and `η` in an open cone around `ξ`.
 
 ## References
 
@@ -404,7 +430,48 @@ theorem exists_cone_mul_add_le_norm_apply_sub {X : Type*} [NormedAddCommGroup X]
     rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
     linarith
 
+
+open Filter in
+/-- **Decay in a cone forces vanishing along lines.** Let `Γ` be an open cone containing a nonzero
+`ξ`, and let `(1 + ‖η‖) ‖g η‖` be bounded on `Γ`. If `g` is constant along the line
+`t ↦ t • ξ + w`, then the constant is zero: the line eventually lies in `Γ`, where
+`‖g (t • ξ + w)‖ ≤ C / (1 + ‖t • ξ + w‖)` tends to `0`. Applied to a localized Fourier transform,
+this shows that a distribution is not microlocally smooth. -/
+theorem eq_zero_of_forall_smul_add_eq {F : Type*} [NormedAddCommGroup F] {g : E → F} {Γ : Set E}
+    (hΓ : IsOpen Γ) {ξ : E} (hξΓ : ξ ∈ Γ) (hξ : ξ ≠ 0)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) {C : ℝ}
+    (hC : ∀ η ∈ Γ, (1 + ‖η‖) * ‖g η‖ ≤ C) {w : E} {c : F} (hc : ∀ t : ℝ, g (t • ξ + w) = c) :
+    c = 0 := by
+  have hξpos : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hgrow : Tendsto (fun t : ℝ => 1 + ‖t • ξ + w‖) atTop atTop := by
+    refine tendsto_atTop_mono (fun t => ?_)
+      (tendsto_atTop_add_const_right _ (-‖w‖) (tendsto_id.atTop_mul_const hξpos))
+    have h := norm_sub_le (t • ξ + w) w
+    rw [add_sub_cancel_right, norm_smul, Real.norm_eq_abs] at h
+    have := mul_le_mul_of_nonneg_right (le_abs_self t) (norm_nonneg ξ)
+    simp only [id]
+    linarith
+  refine norm_le_zero_iff.1 (ge_of_tendsto ((tendsto_const_nhds (x := C)).div_atTop hgrow) ?_)
+  filter_upwards [hΓ.eventually_smul_add_mem hξΓ hcone w] with t ht
+  have hbound := hC _ ht
+  rw [hc] at hbound
+  exact (le_div_iff₀' (by positivity)).2 hbound
+
 end IsOpen
+
+namespace IsClosed
+
+/-- A closed set closed under multiplication by positive reals contains `0` as soon as it is
+nonempty. -/
+theorem zero_mem_of_smul_mem {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousSMul ℝ E] {V : Set E} (hV : IsClosed V)
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ξ : E} (hξ : ξ ∈ V) : (0 : E) ∈ V := by
+  have h : Filter.Tendsto (fun n : ℕ ↦ (1 / ((n : ℝ) + 1)) • ξ) Filter.atTop (nhds 0) := by
+    have h0 := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const ξ
+    rwa [zero_smul] at h0
+  exact hV.mem_of_tendsto h (Filter.Eventually.of_forall fun n ↦ hVcone _ (by positivity) ξ hξ)
+
+end IsClosed
 
 namespace TauCeti
 
@@ -833,7 +900,138 @@ theorem forall_smul_mem_insert_zero [Module ℝ E] {Γ : Set E}
   · simp
   · exact Set.mem_insert_of_mem _ (hc t ht ξ hξ)
 
+/-- The set `{0}` is closed under multiplication by positive reals. -/
+theorem forall_smul_mem_singleton_zero [Module ℝ E] :
+    ∀ t : ℝ, 0 < t → ∀ ξ ∈ ({0} : Set E), t • ξ ∈ ({0} : Set E) := by
+  rintro t - ξ rfl
+  simp
+
+section NormedSpace
+
+variable [NormedSpace ℝ E]
+
+open Topology in
+/-- **An elliptic cone for a homogeneous function, uniformly near a point.** Let `f (y, η)` be
+continuous and positively homogeneous of degree `N` in `η`. If `f (x, ξ) ≠ 0`, then there are a
+neighbourhood `U` of `x`, an open cone `Γ` around `ξ` and `c₀ > 0` such that
+`c₀ ‖η‖ ^ N ≤ ‖f (y, η)‖` for every `y ∈ U` and `η ∈ Γ`. -/
+theorem exists_nhds_cone_le_norm_of_continuous_of_homogeneous {f : E × E → ℂ}
+    (hf : Continuous f) {N : ℕ}
+    (hhom : ∀ y η : E, ∀ t : ℝ, 0 < t → f (y, t • η) = (t : ℂ) ^ N * f (y, η)) {x ξ : E}
+    (hξ : f (x, ξ) ≠ 0) :
+    ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ, c₀ * ‖η‖ ^ N ≤ ‖f (y, η)‖ := by
+  -- `‖ξ‖ ^ N ≠ 0`: otherwise `ξ = 0` and `N ≠ 0`, and homogeneity forces `f (x, 0) = 0`.
+  have hξN : 0 < ‖ξ‖ ^ N := by
+    rcases eq_or_ne ξ 0 with rfl | hξ0
+    · rcases Nat.eq_zero_or_pos N with rfl | hN
+      · simp
+      · have h2 := congrArg norm (hhom x 0 2 two_pos)
+        rw [smul_zero, norm_mul, norm_pow, Complex.norm_real, Real.norm_two] at h2
+        have h2N : (2 : ℝ) ≤ 2 ^ N := le_self_pow₀ one_le_two hN.ne'
+        exact absurd (norm_eq_zero.1 (by nlinarith [norm_nonneg (f (x, 0))])) hξ
+    · exact pow_pos (norm_pos_iff.2 hξ0) N
+  set c₀ : ℝ := ‖f (x, ξ)‖ / (2 * ‖ξ‖ ^ N)
+  have hc₀ : 0 < c₀ := div_pos (norm_pos_iff.2 hξ) (by positivity)
+  -- A product neighbourhood `U × V` of `(x, ξ)` on which `c₀ ‖η‖ ^ N < ‖f (y, η)‖`.
+  have hO : IsOpen {p : E × E | c₀ * ‖p.2‖ ^ N < ‖f p‖} :=
+    isOpen_lt (by fun_prop) hf.norm
+  have hxξ : (x, ξ) ∈ {p : E × E | c₀ * ‖p.2‖ ^ N < ‖f p‖} := by
+    simp only [mem_ofPred_eq, c₀]
+    rw [div_mul_eq_mul_div, mul_div_mul_right _ _ hξN.ne']
+    linarith [norm_pos_iff.2 hξ]
+  obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.1 (hO.mem_nhds hxξ)
+  -- The cone over `interior V`.
+  obtain ⟨Γ, hΓ, hξΓ, hcone, hmem⟩ :=
+    isOpen_interior.exists_cone_exists_smul_mem (mem_interior_iff_mem_nhds.2 hV)
+  refine ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, fun y hy η hη ↦ ?_⟩
+  obtain ⟨t, ht, hη⟩ := hmem η hη
+  have h : c₀ * ‖t • η‖ ^ N < ‖f (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
+  rw [hhom y η t ht] at h
+  simp only [norm_mul, norm_pow, Complex.norm_real, norm_smul, Real.norm_of_nonneg ht.le,
+    mul_pow] at h
+  refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht N).le).le
+  linarith
+
+end NormedSpace
+
 end TauCeti
+
+namespace IsOpen
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+omit [NormedSpace ℝ E] in
+/-- **The directions of a cone at a point.** If `Γ ⊆ E × E` is closed in `Ω × (E \ {0})`, then
+for `x ∈ Ω` the directions `ξ` with `(x, ξ) ∈ Γ`, together with `0`, form a closed set. -/
+theorem isClosed_insert_zero_setOf_mem {Ω : Set E} {Γ : Set (E × E)}
+    (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) {x : E} (hx : x ∈ Ω) :
+    IsClosed (insert 0 {ξ | (x, ξ) ∈ Γ}) := by
+  refine isOpen_compl_iff.1 ?_
+  have h : (insert 0 {ξ | (x, ξ) ∈ Γ})ᶜ = (fun ξ ↦ (x, ξ)) ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ) := by
+    ext ξ
+    simp [hx]
+  rw [h]
+  exact hΓ.preimage (by fun_prop)
+
+/-- **A cone of directions avoiding `Γ` at a point avoids it nearby.** Let `Γ ⊆ E × E` be closed
+in `Ω × (E \ {0})`, closed under positive scaling of the second component, with nonzero second
+components. If no nonzero direction of the closed cone `A` is a direction of `Γ` at `x₀ ∈ Ω`, then
+`U × A` is disjoint from `Γ` for a neighbourhood `U` of `x₀`. -/
+theorem exists_mem_nhds_disjoint_prod [ProperSpace E] {Ω : Set E} {Γ : Set (E × E)}
+    (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ)
+    (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {x₀ : E} (hx₀ : x₀ ∈ Ω) {A : Set E} (hA : IsClosed A)
+    (hAcone : ∀ t : ℝ, 0 < t → ∀ a ∈ A, t • a ∈ A) (hA0 : ∀ a ∈ A, a ≠ 0 → (x₀, a) ∉ Γ) :
+    ∃ U ∈ nhds x₀, Disjoint (U ×ˢ A) Γ := by
+  set C : Set (E × E) := {x₀} ×ˢ (A ∩ sphere 0 1)
+  have hC : IsCompact C := isCompact_singleton.prod ((isCompact_sphere 0 1).inter_left hA)
+  have hCsub : C ⊆ (Ω ×ˢ {0}ᶜ) \ Γ := by
+    rintro ⟨x, a⟩ ⟨hx, ha, ha1⟩
+    rw [mem_singleton_iff] at hx
+    subst hx
+    have ha0 : a ≠ 0 := ne_zero_of_mem_sphere one_ne_zero ⟨a, ha1⟩
+    exact ⟨⟨hx₀, ha0⟩, hA0 a ha ha0⟩
+  obtain ⟨δ, hδ, hδsub⟩ := hC.exists_thickening_subset_open hΓ hCsub
+  refine ⟨ball x₀ δ, ball_mem_nhds _ hδ, disjoint_left.2 ?_⟩
+  rintro ⟨x, a⟩ ⟨hx, ha⟩ hxa
+  have ha0 : a ≠ 0 := hΓ0 _ hxa
+  have hna : 0 < ‖a‖ := norm_pos_iff.2 ha0
+  have hmem : (x, ‖a‖⁻¹ • a) ∈ thickening δ C := by
+    refine mem_thickening_iff.2 ⟨(x₀, ‖a‖⁻¹ • a), ⟨rfl, hAcone _ (inv_pos.2 hna) a ha, ?_⟩, ?_⟩
+    · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hna.ne']
+    · rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
+      exact mem_ball.1 hx
+  exact (hδsub hmem).2 (hcone _ hxa _ (inv_pos.2 hna))
+
+/-- **A cone of directions far from `Γ` at a point.** Let `Γ ⊆ E × E` be as in
+`IsOpen.exists_mem_nhds_disjoint_prod`. For `θ > 0`, the directions `a` at distance at least
+`θ ‖a‖` from the directions of `Γ` at `x₀ ∈ Ω` (with `0` adjoined) form a closed cone `A` such
+that `U × A` is disjoint from `Γ` for a neighbourhood `U` of `x₀`; the directions outside `A` are
+within `θ ‖a‖` of those of `Γ` at `x₀`. -/
+theorem exists_mem_nhds_cone_disjoint_prod_infDist_lt [ProperSpace E] {Ω : Set E}
+    {Γ : Set (E × E)} (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ))
+    (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {x₀ : E}
+    (hx₀ : x₀ ∈ Ω) {θ : ℝ} (hθ : 0 < θ) :
+    ∃ U ∈ nhds x₀, ∃ A : Set E, IsClosed A ∧ (∀ t : ℝ, 0 < t → ∀ a ∈ A, t • a ∈ A) ∧
+      Disjoint (U ×ˢ A) Γ ∧ ∀ a ∉ A, infDist a (insert 0 {ξ | (x₀, ξ) ∈ Γ}) < θ * ‖a‖ := by
+  set Z : Set E := insert 0 {ξ | (x₀, ξ) ∈ Γ}
+  have hZc : ∀ t : ℝ, 0 < t → ∀ z ∈ Z, t • z ∈ Z :=
+    TauCeti.forall_smul_mem_insert_zero fun t ht _ hξ ↦ hcone _ hξ t ht
+  set A : Set E := {a | θ * ‖a‖ ≤ infDist a Z}
+  have hA : IsClosed A :=
+    isClosed_le (continuous_const.mul continuous_norm) (continuous_infDist_pt Z)
+  have hAc : ∀ t : ℝ, 0 < t → ∀ a ∈ A, t • a ∈ A := fun t ht a ha ↦ by
+    simp only [A, mem_ofPred_eq, infDist_smul_of_smul_mem hZc ht, norm_smul,
+      Real.norm_of_nonneg ht.le] at ha ⊢
+    nlinarith
+  have hAΓ : ∀ a ∈ A, a ≠ 0 → (x₀, a) ∉ Γ := fun a ha ha0 hmem ↦ by
+    have h0 : infDist a Z = 0 := infDist_zero_of_mem (Or.inr hmem)
+    have : 0 < θ * ‖a‖ := by have := norm_pos_iff.2 ha0; positivity
+    exact (lt_irrefl (0 : ℝ)) (this.trans_le (h0 ▸ ha))
+  obtain ⟨U, hU, hUΓ⟩ := hΓ.exists_mem_nhds_disjoint_prod hcone hΓ0 hx₀ hA hAc hAΓ
+  exact ⟨U, hU, A, hA, hAc, hUΓ, fun a ha ↦ by simpa [A] using ha⟩
+
+end IsOpen
 
 namespace ContinuousLinearMap
 

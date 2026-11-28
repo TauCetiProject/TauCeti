@@ -41,6 +41,9 @@ which relative cup products are taken.
 * `TopPair.rightAlexanderWhitneyDiagonal`, characterized by
   `TopPair.singularChainComplexπ_rightAlexanderWhitneyDiagonal` and natural in maps of pairs
   (`TopPair.rightAlexanderWhitneyDiagonal_naturality`).
+* `TopPair.alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ`: the relative diagonal
+  followed by the quotient map on its second factor is the right relative diagonal followed by the
+  quotient map on its first factor.
 * `TopPair.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy`: the right relative diagonal
   followed by the Koszul braiding is chain homotopic to the relative diagonal
   `TopPair.alexanderWhitneyDiagonal` of the braided coefficient morphism.
@@ -126,6 +129,39 @@ lemma rightAlexanderWhitneyDiagonal_naturality {P P' : TopPair.{w}} (f : P ⟶ P
       (singularChainComplexπ_rightAlexanderWhitneyDiagonal_assoc P u _).symm
   exact (congrArg (_ ⊗ₘ ·) (singularChainComplexπ_pair_naturality f S)).trans
     (whiskerLeft_comp_tensorHom _ _ _).symm
+
+/-- The relative Alexander–Whitney diagonal followed by the quotient map on its second factor is
+the right relative one followed by the quotient map on its first factor: both are descents of the
+Alexander–Whitney diagonal of `X` followed by the quotient maps on both factors. -/
+lemma alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ (P : TopPair.{w})
+    (u : T ⟶ R ⊗ S) :
+    P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
+      P.rightAlexanderWhitneyDiagonal u ≫
+        (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
+  -- The two quotient maps act on different factors, so they commute.
+  have hx : (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S) ≫
+      (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
+        ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S) ≫
+          (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
+    -- Both whiskers are totalizations `HomologicalComplex.mapBifunctorMap` with an identity
+    -- factor, so both sides are the totalization of the two quotient maps.
+    refine (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _).symm.trans <|
+      Eq.trans ?_ (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _)
+    congr 1
+    · exact (Category.comp_id (P.singularChainComplexπ R)).trans
+        (Category.id_comp (P.singularChainComplexπ R)).symm
+    · exact (Category.id_comp (P.singularChainComplexπ S)).trans
+        (Category.comp_id (P.singularChainComplexπ S)).symm
+  rw [← cancel_epi (P.singularChainComplexπ T)]
+  -- The subspace chains of `toSSetPair.obj P` agree with those of `P.fst` only up to unfolding, so
+  -- the two descent identities are combined by `Eq.trans` rather than rewritten.
+  have h := (congrArg (· ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S))
+    (singularChainComplexπ_alexanderWhitneyDiagonal P u)).trans <| (Category.assoc _ _ _).trans <|
+      (congrArg (P.fst.alexanderWhitneyDiagonal u ≫ ·) hx).trans <|
+        (Category.assoc _ _ _).symm.trans <|
+          congrArg (· ≫ (P.singularChainComplexπ R ▷ P.singularChainComplex S))
+            (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u).symm
+  exact (Category.assoc _ _ _).symm.trans (h.trans (Category.assoc _ _ _))
 
 section Braiding
 

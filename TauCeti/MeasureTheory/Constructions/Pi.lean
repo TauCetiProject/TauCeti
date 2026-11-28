@@ -6,8 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi.SplitAt
+
 import Mathlib.Probability.Independence.Basic
-import TauCeti.MeasureTheory.MeasurableSpace.Pi
+import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 
 /-!
 # Coordinate projections of finite product measures
@@ -42,7 +44,7 @@ independent, and each single coordinate has law `μ a` (Mathlib's `measurePreser
 is the two-variable companion of `measurePreserving_eval`, and is what transports an
 almost-everywhere statement about a pair back to the product space.
 
-**Splitting off one coordinate.** Mathlib's `Equiv.piSplitAt` pushes `Measure.pi μ` forward to
+**Splitting off one coordinate.** `MeasurableEquiv.piSplitAt` pushes `Measure.pi μ` forward to
 `μ i₀ ⊗ Measure.pi fun j : {i // i ≠ i₀} ↦ μ j`. Mathlib splits a product measure along a
 predicate and leaves both halves as products over subtypes; a construction that singles out one
 index wants the one-element half collapsed to the factor itself.
@@ -271,7 +273,7 @@ theorem measurePreserving_eval_pair (μ : ∀ i, Measure (α i))
     (measurable_pi_apply b).aemeasurable] at hindep
   rw [hindep, (measurePreserving_eval μ a).map_eq, (measurePreserving_eval μ b).map_eq]
 
-/-- **Splitting off one coordinate of a finite product measure.** Mathlib's `Equiv.piSplitAt`,
+/-- **Splitting off one coordinate of a finite product measure.** `MeasurableEquiv.piSplitAt`,
 which reads a product-distributed assignment as its value at `i₀` paired with its values at the
 remaining indices, pushes `Measure.pi μ` forward to
 `μ i₀ ⊗ Measure.pi fun j : {i // i ≠ i₀} => μ j`.
@@ -279,22 +281,17 @@ remaining indices, pushes `Measure.pi μ` forward to
 This is Mathlib's `MeasureTheory.measurePreserving_piEquivPiSubtypeProd` for the predicate
 `(· = i₀)`, with the one-element factor collapsed to `μ i₀`. -/
 theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i₀ : ι) :
-    MeasurePreserving (Equiv.piSplitAt i₀ α)
+    MeasurePreserving (MeasurableEquiv.piSplitAt i₀ α)
       (Measure.pi μ) ((μ i₀).prod (Measure.pi fun j : {i // i ≠ i₀} => μ j)) := by
   let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.property⟩
   let _ : Fintype {i : ι // i = i₀} := Subtype.fintype _
-  -- Composing the split at `(· = i₀)` with the collapse of its one-element factor evaluates,
-  -- coordinate by coordinate, to the pair above.  The application lemmas below reduce both
-  -- measurable equivalences to their underlying maps; what is left is that the unique element of
-  -- `{i // i = i₀}` is `i₀` and that `i ≠ i₀` is by definition `¬ i = i₀`.
-  have hfun : Prod.map (MeasurableEquiv.piUnique fun i : {i : ι // i = i₀} => α i)
-        (id : (∀ j : {i : ι // i ≠ i₀}, α j) → ∀ j : {i : ι // i ≠ i₀}, α j) ∘
-      MeasurableEquiv.piEquivPiSubtypeProd α (· = i₀)
-      = ⇑(Equiv.piSplitAt i₀ α) := by
-    funext w
-    simp only [Function.comp_apply, MeasurableEquiv.piEquivPiSubtypeProd, MeasurableEquiv.coe_mk,
-      Equiv.piEquivPiSubtypeProd_apply, Prod.map_apply, id_eq, MeasurableEquiv.piUnique,
-      Equiv.piUnique_apply, Equiv.piSplitAt_apply]
+  have hfun :
+      Prod.map (MeasurableEquiv.piUnique fun i : {i : ι // i = i₀} => α i) id ∘
+        MeasurableEquiv.piEquivPiSubtypeProd α (· = i₀) =
+      ⇑(MeasurableEquiv.piSplitAt i₀ α) := by
+    funext x
+    rw [MeasurableEquiv.piSplitAt_apply]
+    -- The singleton factor evaluates at its default element `⟨i₀, rfl⟩`.
     rfl
   rw [← hfun]
   exact ((measurePreserving_piUnique fun i : {i : ι // i = i₀} => μ i).prod

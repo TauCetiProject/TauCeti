@@ -25,8 +25,11 @@ splitting Cartan subalgebra.
   the weight space of `n • α + β` is non-trivial.
 * `RootPairing.Base.mem_rootSpace_iff_forall_lie_coroot`: membership in a root space can be
   checked on the simple coroots of a base.
+* `TauCeti.killingForm_eq_sum_root`: on the Cartan subalgebra, `κ(h, h') = ∑_γ γ(h) γ(h')`, and
+  `TauCeti.eq_zero_of_forall_root_apply_eq_zero`: the roots separate its points.
 * `TauCeti.rootSpace_neg_eq_bot_iff`: the roots are closed under negation, so a functional on the
   Cartan subalgebra is a root exactly when its negative is.
+* `TauCeti.subsingleton_of_isEmpty_root`: without roots, `L` is trivial.
 -/
 
 public section
@@ -84,6 +87,29 @@ theorem killingForm_ne_zero_of_mem_rootSpace {α : Weight K H L} (hα : α.IsNon
     (toSubmodule_rootSpace_eq_span (-α) hα.neg f hf₀ hf).le hy
   simp [hef]
 
+/-- **The Killing form on the Cartan subalgebra is the sum over the roots**:
+`κ(h, h') = ∑_γ γ(h) γ(h')`. -/
+theorem killingForm_eq_sum_root (h h' : H) :
+    killingForm K L h h' = ∑ γ ∈ H.root, γ h * γ h' := by
+  have := LinearMap.congr_fun₂ (restrict_killingForm_eq_sum (K := K) (L := L) (H := H)) h h'
+  simp only [LinearMap.BilinForm.restrict_apply, LinearMap.sum_apply, LinearMap.smulRight_apply,
+    LinearMap.smul_apply, smul_eq_mul] at this
+  exact this.trans <| Finset.sum_congr rfl fun γ _ ↦
+    congrArg₂ (· * ·) (Weight.toLinear_apply K H L γ h) (Weight.toLinear_apply K H L γ h')
+
+omit [CharZero K] in
+/-- **The roots separate the points of the Cartan subalgebra**: a point on which every root
+vanishes is zero. -/
+theorem eq_zero_of_forall_root_apply_eq_zero {h : H} (hh : ∀ γ ∈ H.root, γ h = 0) : h = 0 := by
+  -- `h` lies in the kernel of every weight: the zero weight vanishes, and the others are roots.
+  have hmem : h ∈ ⨅ α : Weight K H L, α.ker := by
+    refine Submodule.mem_iInf _ |>.mpr fun α ↦ ?_
+    rw [LinearMap.mem_ker, Weight.toLinear_apply]
+    by_cases hα : α.IsZero
+    · exact congr_fun hα h
+    · exact hh α (by simpa [LieSubalgebra.root] using hα)
+  rwa [iInf_ker_weight_eq_bot, Submodule.mem_bot] at hmem
+
 omit [CharZero K] [FiniteDimensional K L] in
 /-- The roots of a Lie algebra with non-degenerate Killing form are closed under negation, so a
 functional on the Cartan subalgebra is a root exactly when its negative is. -/
@@ -94,6 +120,21 @@ theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
   have key (ψ : H → K) (hψ : rootSpace H ψ ≠ ⊥) : rootSpace H (-ψ) ≠ ⊥ :=
     (-(⟨ψ, hψ⟩ : Weight K H L)).genWeightSpace_ne_bot
   exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩
+
+omit [CharZero K] in
+/-- **Without roots a Lie algebra with non-degenerate Killing form is trivial.** If there are no
+roots, `L` is its Cartan subalgebra, which is abelian, and an abelian Killing Lie algebra is
+zero. -/
+theorem subsingleton_of_isEmpty_root [IsEmpty H.root] : Subsingleton L := by
+  have hnz (α : Weight K H L) : ¬α.IsNonZero := fun hα ↦
+    IsEmpty.false (⟨α, by simpa [LieSubalgebra.root] using hα⟩ : H.root)
+  have htop : H.toLieSubmodule = ⊤ := by
+    simpa [hnz] using cartan_sup_iSup_rootSpace_eq_top (H := H)
+  have hH : H = ⊤ := H.toSubmodule_eq_top.mp <| by
+    rw [← LieSubalgebra.coe_toLieSubmodule, htop, LieSubmodule.top_toSubmodule]
+  have : IsLieAbelian L :=
+    (H.incl.range_eq_top.mp (H.incl_range.trans hH)).isLieAbelian inferInstance
+  exact subsingleton_of_isKilling_of_isLieAbelian K L
 
 end TauCeti
 

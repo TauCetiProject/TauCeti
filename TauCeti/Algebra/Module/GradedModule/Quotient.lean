@@ -48,6 +48,8 @@ differential over a polynomial ring whose variables move the degree; the kernel 
   submodule is homogeneous projection in the ambient module.
 * `TauCeti.InternalGrading.mem_ker_piece`: an element of the kernel of a homogeneous map is
   homogeneous exactly when it is homogeneous in the source.
+* `TauCeti.InternalGrading.map_subtype_ker_piece`: viewed in the source, the degree-`p` piece of
+  the kernel of a homogeneous map is the part of the kernel lying in degree `p`.
 * `TauCeti.InternalGrading.decompose_quotient_mk`: homogeneous projection commutes with the
   quotient map.
 * `TauCeti.InternalGrading.isHomogeneous_rangeRestrict`: the corestriction of a homogeneous map
@@ -171,7 +173,29 @@ theorem coe_decompose_ker (p : ι) (z : _root_.LinearMap.ker f) :
       decompose G.piece (z : M) p :=
   G.coe_decompose_submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker p z
 
+/-- The grading of the kernel of `f` vanishes in every degree in which the grading of `M` does. -/
+theorem ker_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.ker hf).piece p = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun _ hz ↦ Subtype.ext <|
+    (Submodule.eq_bot_iff _).mp hp _ ((G.mem_ker_piece hf).1 hz)
+
 end Ker
+
+section KerSubtype
+
+variable [AddRightCancelMonoid ι] {N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] (G : InternalGrading R M ι) {H : InternalGrading R N ι}
+  {f : M →ₗ[R] N} {r : ι} (hf : LinearMap.IsHomogeneous f G.piece H.piece r)
+
+/-- The degree-`p` piece of the grading of the kernel of `f`, viewed in `M`, consists of the
+elements of degree `p` in the kernel. -/
+theorem map_subtype_ker_piece (p : ι) :
+    ((G.ker hf).piece p).map (_root_.LinearMap.ker f).subtype =
+      G.piece p ⊓ _root_.LinearMap.ker f := by
+  ext x
+  simp only [Submodule.mem_map, mem_ker_piece, Submodule.mem_inf]
+  exact ⟨fun ⟨z, hz, hzx⟩ ↦ hzx ▸ ⟨hz, z.property⟩, fun ⟨hx, hk⟩ ↦ ⟨⟨x, hk⟩, hx, rfl⟩⟩
+
+end KerSubtype
 
 section Quotient
 
@@ -213,6 +237,10 @@ theorem mem_quotient_piece_iff {p : ι} {y : M ⧸ U} :
 theorem mk_mem_quotient_piece {p : ι} {x : M} (hx : x ∈ G.piece p) :
     (Submodule.Quotient.mk x : M ⧸ U) ∈ (G.quotient U hU).piece p :=
   (G.mem_quotient_piece_iff U hU).2 ⟨x, hx, rfl⟩
+
+/-- The grading of the quotient vanishes in every degree in which the grading of `M` does. -/
+theorem quotient_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.quotient U hU).piece p = ⊥ := by
+  rw [quotient_piece, hp, Submodule.map_bot]
 
 /-- The quotient map by a homogeneous submodule has degree zero. -/
 theorem isHomogeneous_mkQ [AddMonoid ι] :

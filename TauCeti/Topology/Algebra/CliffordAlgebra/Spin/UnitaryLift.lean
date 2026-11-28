@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
-import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Four
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Neg
 import TauCeti.Topology.Algebra.Quaternion.Unitary
@@ -40,7 +39,12 @@ structure `J₀`, along a unitary frame, are continuous as well
 * `OrthonormalBasis.continuous_spinCUnitary`: the lift `U(2) → Spinᶜ(Q)` along a frame is
   continuous.
 * `OrthonormalBasis.continuous_centralizerSpinCLift` and `TauCeti.continuous_unitarySpinCLift`:
-  the lifts of the unitary group of a complex structure are continuous.
+  the lifts of the unitary group of a complex structure are continuous; the latter is bundled as
+  the continuous homomorphism `TauCeti.unitarySpinCLiftContinuousMonoidHom`.
+* `TauCeti.canonicalLineCharacter` and `TauCeti.inv_det_comp_unitarySpinCLift`: the inverse
+  complex determinant `det_ℂ⁻¹ : U(ℝ⁴, J₀) → U(1)`, the character of the canonical line, as a
+  continuous homomorphism, and the identity `det⁻¹ ∘ σ = det_ℂ⁻¹` along the lift
+  `σ = TauCeti.unitarySpinCLift`.
 
 ## References
 
@@ -114,12 +118,49 @@ variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace �
 /-- The `Spinᶜ` lift of the unitary group of `ℝ⁴` is continuous. -/
 @[fun_prop]
 theorem continuous_unitarySpinCLift : Continuous (unitarySpinCLift hJ₀ e h₀ h₂) := by
-  have hQ (v : EuclideanSpace ℝ (Fin 4)) :
-      (-LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 4)))) v = -‖v‖ ^ 2 := by
-    simp
-  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ hQ
-    (QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ).ne_zero]
+  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero]
   exact ((EuclideanSpace.basisFun (Fin 4) ℝ).continuous_realSpinCGroupEquiv_symm _ _ _).comp
     (e.continuous_centralizerSpinCLift hJ₀ h₀ h₂ _ _)
+
+/-- The lift `TauCeti.unitarySpinCLift` of `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, as a continuous
+homomorphism. It is exposed so that its underlying homomorphism is `TauCeti.unitarySpinCLift` by
+definition, which is what the extension of structure group along it is stated with. -/
+@[expose] noncomputable def unitarySpinCLiftContinuousMonoidHom :
+    Subgroup.centralizer {J₀} →ₜ*
+      spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
+  ⟨unitarySpinCLift hJ₀ e h₀ h₂, continuous_unitarySpinCLift hJ₀ e h₀ h₂⟩
+
+@[simp]
+theorem unitarySpinCLiftContinuousMonoidHom_apply (g : Subgroup.centralizer {J₀}) :
+    unitarySpinCLiftContinuousMonoidHom hJ₀ e h₀ h₂ g = unitarySpinCLift hJ₀ e h₀ h₂ g :=
+  (rfl)
+
+/-- The **character of the canonical line**: the inverse complex determinant
+`U(ℝ⁴, J₀) → U(1)`, `g ↦ det_ℂ(g)⁻¹`, where `det_ℂ(g)` is the determinant of the unitary matrix of
+`g` in the frame `e` (`OrthonormalBasis.centralizerToUnitaryGroup`). The anticanonical line
+`Λ²_ℂ` is associated to the unitary frames by `det_ℂ`
+(`TauCeti.OrthonormalFrameBundle.unitaryFrameDetEquiv`), and the canonical line by its
+inverse. -/
+noncomputable def canonicalLineCharacter : Subgroup.centralizer {J₀} →ₜ* Circle where
+  toMonoidHom := (Matrix.UnitaryGroup.detCircle.comp (e.centralizerToUnitaryGroup hJ₀ h₀ h₂))⁻¹
+  continuous_toFun :=
+    (Matrix.UnitaryGroup.continuous_detCircle.comp
+      (e.continuous_centralizerToUnitaryGroup hJ₀ h₀ h₂)).inv
+
+@[simp]
+theorem canonicalLineCharacter_apply (g : Subgroup.centralizer {J₀}) :
+    canonicalLineCharacter hJ₀ e h₀ h₂ g =
+      (Matrix.UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g))⁻¹ :=
+  (rfl)
+
+/-- The inverse determinant character of `Spinᶜ(4)` restricts along the canonical lift
+`σ = TauCeti.unitarySpinCLift` to the character of the canonical line: `(det σ(g))⁻¹ = det_ℂ(g)⁻¹`
+(`TauCeti.det_unitarySpinCLift`). -/
+theorem inv_det_comp_unitarySpinCLift :
+    (spinCGroup.det (realCliffordForm 4 0)
+        (nondegenerate_realCliffordForm 4 0).ne_zero)⁻¹.comp (unitarySpinCLift hJ₀ e h₀ h₂) =
+      (canonicalLineCharacter hJ₀ e h₀ h₂).toMonoidHom := by
+  ext g
+  simp [det_unitarySpinCLift]
 
 end TauCeti
