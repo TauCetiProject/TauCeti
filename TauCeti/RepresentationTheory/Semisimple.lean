@@ -11,6 +11,9 @@ public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.RingTheory.Semisimple.Multiplicity
 public import TauCeti.RingTheory.Semisimple.Trace.Basic
+-- Non-public: used only inside the proofs about the image of `k[G]`.
+import TauCeti.RingTheory.SimpleModule.Basic
+import TauCeti.RingTheory.SimpleModule.Subalgebra
 
 /-!
 # Semisimple representations are determined by their characters
@@ -32,6 +35,10 @@ spaces of intertwining maps out of their irreducible subrepresentations
 (`Representation.nonempty_equiv_of_finrank_intertwiningMap_eq`). This is the form in which
 multiplicities are known for the kernel and cokernel of an equivariant Fredholm operator.
 
+A representation is semisimple exactly when `V` is a semisimple module over the image of `k[G]`
+in `End_k(V)`; it is semisimple when that image is a semisimple ring, and conversely in finite
+dimension.
+
 ## Main results
 
 * `Representation.trace_asAlgebraHom_eq_of_character_eq`: representations with the same character
@@ -40,6 +47,12 @@ multiplicities are known for the kernel and cokernel of an equivariant Fredholm 
   representations with the same character are equivalent.**
 * `Representation.isSemisimpleRepresentation_prod`: a product of semisimple representations is
   semisimple.
+* `Representation.isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom`:
+  over any commutative ring `k`, `ρ.asModule` is semisimple over `k[G]` exactly when `V` is
+  semisimple over the image of `k[G]`.
+* `Representation.isSemisimpleRepresentation_of_isSemisimpleRing_range_asAlgebraHom` and
+  `Representation.isSemisimpleRing_range_asAlgebraHom`: a representation is semisimple when the
+  image of `k[G]` is a semisimple ring, and conversely in finite dimension.
 * `Representation.nonempty_equiv_of_finrank_intertwiningMap_eq`: over any field, two
   finite-dimensional semisimple representations are equivalent when every irreducible
   subrepresentation of either has intertwiner spaces of the same dimension into both.
@@ -54,6 +67,23 @@ public section
 open scoped MonoidAlgebra
 
 namespace Representation
+
+section CommRing
+
+variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+
+/-- `ρ.asModule` is semisimple over `k[G]` exactly when `V` is semisimple over the image of
+`k[G]` in `End_k(V)`. -/
+theorem isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom
+    (ρ : Representation k G V) :
+    IsSemisimpleModule k[G] ρ.asModule ↔ IsSemisimpleModule ρ.asAlgebraHom.range V := by
+  -- `ρ.asModule` is a type synonym for `V`; its `range`-module structure is that of `V`, through
+  -- which the action of `k[G]` on `ρ.asModule` factors.
+  let : Module ρ.asAlgebraHom.range ρ.asModule := (inferInstance : Module ρ.asAlgebraHom.range V)
+  exact RingHom.isSemisimpleModule_iff_of_surjective (M := ρ.asModule)
+    ρ.asAlgebraHom.rangeRestrict.toRingHom (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl
+
+end CommRing
 
 variable {k G V W : Type*} [Field k] [Monoid G]
   [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
@@ -92,6 +122,32 @@ instance isSemisimpleRepresentation_prod (ρ : Representation k G V) (σ : Repre
   have := IsSemisimpleModule.prod (R := k[G]) (M := ρ.asModule) (N := σ.asModule)
   exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mpr
     (IsSemisimpleModule.congr (ρ.prodAsModuleEquiv σ))
+
+/-- **A representation whose image algebra is a semisimple ring is semisimple.** No finiteness is
+needed: `V` is a module over the image `A` of `k[G]` in `End_k(V)`, semisimple because `A` is, and
+its subrepresentations are its `A`-submodules. -/
+theorem isSemisimpleRepresentation_of_isSemisimpleRing_range_asAlgebraHom
+    (ρ : Representation k G V) [IsSemisimpleRing ρ.asAlgebraHom.range] :
+    ρ.IsSemisimpleRepresentation := by
+  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule,
+    isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom]
+  infer_instance
+
+/-- **The image algebra of a finite-dimensional semisimple representation is a semisimple
+ring.** -/
+theorem isSemisimpleRing_range_asAlgebraHom (ρ : Representation k G V) [FiniteDimensional k V]
+    [ρ.IsSemisimpleRepresentation] : IsSemisimpleRing ρ.asAlgebraHom.range := by
+  have := (isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom ρ).mp <|
+    (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
+  exact Subalgebra.isSemisimpleRing_of_isSemisimpleModule _
+
+/-- A finite-dimensional representation is semisimple exactly when the image of `k[G]` in
+`End_k(V)` is a semisimple ring. -/
+theorem isSemisimpleRing_range_asAlgebraHom_iff (ρ : Representation k G V)
+    [FiniteDimensional k V] :
+    IsSemisimpleRing ρ.asAlgebraHom.range ↔ ρ.IsSemisimpleRepresentation :=
+  ⟨fun _ ↦ isSemisimpleRepresentation_of_isSemisimpleRing_range_asAlgebraHom ρ,
+    fun _ ↦ isSemisimpleRing_range_asAlgebraHom ρ⟩
 
 /-- **Semisimple representations are determined by intertwiner dimensions.** Two
 finite-dimensional semisimple representations `ρ` and `σ` of a monoid over a field are equivalent
