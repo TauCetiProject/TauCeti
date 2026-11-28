@@ -33,7 +33,7 @@ between the two sides of a weak equation.
   drift.
 * `TauCeti.PDE.integrable_inner_gradient_mul_value`: the pairing is integrable for a measurable
   drift `‖b‖ ≤ β + |d|` with `d ∈ Lᵖ(Ω)` and a test `v ∈ H¹(Ω) ∩ L^q(Ω)`, `1/p + 1/q = 1/2`, by
-  the Hölder bound `TauCeti.PDE.integrable_const_add_norm_mul_norm_mul_norm`.
+  the Hölder bound `TauCeti.integrable_const_add_norm_mul_norm_mul_norm`.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
   `H¹(Ω) → L²(Ω)`, with norm at most `(‖b‖_∞ + ‖c‖_∞) ‖J‖` for the jet map `J`
   (`TauCeti.PDE.norm_lowerOrderL_le_eLpNorm`), hence at most `(|β| + |γ|) ‖J‖` for bounds
@@ -168,18 +168,6 @@ theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner_of_integrable
   simp only [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply,
     Pi.zero_apply, inner_zero_left, zero_mul]
   ring
-
-/-- If `d ∈ Lᵖ`, `g ∈ L²` and `f ∈ L² ∩ L^q` with `1/p + 1/q = 1/2`, then `(C + |d|) |g| |f|` is
-integrable for every constant `C`. -/
-theorem integrable_const_add_norm_mul_norm_mul_norm {μ : Measure (EuclideanSpace ℝ ι)}
-    {d : EuclideanSpace ℝ ι → ℝ} {p q : ENNReal} (C : ℝ) (hd : MemLp d p μ)
-    (hpq : p⁻¹ + q⁻¹ = 2⁻¹) {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 μ)
-    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 μ) (hfq : MemLp f q μ) :
-    Integrable (fun x ↦ (C + ‖d x‖) * (‖g x‖ * ‖f x‖)) μ := by
-  have : p.HolderTriple q 2 := ⟨hpq⟩
-  exact (((hg.norm.integrable_mul hf.norm).const_mul C).add
-    (hd.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) hg hfq)).congr
-    (ae_of_all _ fun x ↦ by simp only [Pi.add_apply, Pi.mul_apply]; ring)
 
 /-- **The drift pairing for a drift in `Lᵖ`.** Let `b` be almost everywhere strongly measurable
 on `Ω` with `‖b‖ ≤ β + |d|` there, for a constant `β` and `d ∈ Lᵖ(Ω)`. If `u ∈ H¹(Ω)` and

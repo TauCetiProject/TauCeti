@@ -55,7 +55,8 @@ integration-by-parts arguments:
   `TauCeti.integral_norm_mul_norm_mul_norm_le` and
   `MeasureTheory.MemLp.integrable_norm_mul_norm_mul_norm`: Hölder's inequality in three factors,
   `∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for `1/p + 1/q = 1/s` and `1/r + 1/s = 1`, and the resulting
-  integrability.
+  integrability; `TauCeti.integrable_const_add_norm_mul_norm_mul_norm`: `(C + ‖d‖) ‖g‖ ‖f‖` is
+  integrable for `d ∈ Lᵖ`, `g ∈ L²` and `f ∈ L² ∩ L^q` with `1/p + 1/q = 1/2`.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
 * `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
@@ -402,5 +403,17 @@ theorem integral_norm_mul_norm_mul_norm_le {α E F G : Type*} [MeasurableSpace �
     ((lintegral_congr fun x ↦ ?_).trans_le hle)
   rw [ENNReal.ofReal_mul (norm_nonneg _), ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm,
     ofReal_norm, ofReal_norm]
+
+/-- If `d ∈ Lᵖ`, `g ∈ L²` and `f ∈ L² ∩ L^q` with `1/p + 1/q = 1/2`, then `(C + ‖d‖) ‖g‖ ‖f‖` is
+integrable for every constant `C`. -/
+theorem integrable_const_add_norm_mul_norm_mul_norm {α E F G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+    {d : α → E} {p q : ℝ≥0∞} (C : ℝ) (hd : MemLp d p μ) (hpq : p⁻¹ + q⁻¹ = 2⁻¹) {g : α → F}
+    (hg : MemLp g 2 μ) {f : α → G} (hf : MemLp f 2 μ) (hfq : MemLp f q μ) :
+    Integrable (fun x ↦ (C + ‖d x‖) * (‖g x‖ * ‖f x‖)) μ := by
+  have : p.HolderTriple q 2 := ⟨hpq⟩
+  exact (((hg.norm.integrable_mul hf.norm).const_mul C).add
+    (hd.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) hg hfq)).congr
+    (ae_of_all _ fun x ↦ by simp only [Pi.add_apply, Pi.mul_apply]; ring)
 
 end TauCeti
