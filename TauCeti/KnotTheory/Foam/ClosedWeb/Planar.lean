@@ -322,9 +322,6 @@ theorem orbitCount_rotation : orbitCount W.rotation = Nat.card W.Vertex :=
 theorem orbitCount_endSwap : orbitCount W.endSwap = Nat.card W.Edge :=
   W.toRibbonGraph.orbitCount_rotW.trans (Nat.card_eq_fintype_card (α := W.toRibbonGraph.W)).symm
 
-private theorem card_end : Nat.card W.End = 2 * Nat.card W.Edge := by
-  rw [Nat.card_prod, Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool, mul_comm]
-
 /-- The ribbon graph has the faces of the effective rotation system. -/
 @[simp] theorem faceCount_toRibbonGraph : W.toRibbonGraph.faceCount = W.faceCount := by
   rw [BipartiteRibbonGraph.faceCount_def, ← Nat.card_eq_fintype_card, ← orbitCount_def,
