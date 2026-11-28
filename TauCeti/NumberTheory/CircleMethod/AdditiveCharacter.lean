@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Group.AddCircle
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
@@ -18,8 +19,9 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
 
 * `TauCeti.expTwoPiI α = e(α) = exp(2πiα)`, the additive character of `ℝ` trivial on `ℤ`. It is
   the coercion of Mathlib's `Real.fourierChar` to `ℂ` (`TauCeti.expTwoPiI_eq_fourierChar`); the
-  file records its algebraic API (additivity, inverses, conjugation, powers, periodicity, the
-  kernel `ℤ`) in the form used by exponential sums.
+  file records its algebraic API (additivity, inverses, conjugation, powers, periodicity, real and
+  imaginary parts, the kernel `ℤ`, and `TauCeti.stdAddChar_intCast_eq_expTwoPiI` linking it to
+  `ZMod.stdAddChar`) in the form used by exponential sums.
 * `TauCeti.integral_expTwoPiI_intCast`: orthogonality, `∫₀¹ e(mα) dα = 1_{m = 0}` for `m : ℤ`.
   This is what turns a count of solutions of an additive equation into an integral over `[0, 1]`.
 * `TauCeti.distInt α = ‖α‖ = |α - round α|`, the distance from `α` to the nearest integer. It is
@@ -27,9 +29,10 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
   most `1 / 2`, and it controls the sine: `2‖α‖ ≤ |sin (πα)|`
   (`TauCeti.two_mul_distInt_le_abs_sin`).
 * `TauCeti.sum_expTwoPiI_eq`: the geometric sum
-  `∑_{n=1}^N e(nβ) = e(β) (e(Nβ) - 1) / (e(β) - 1)` off the integers, and
+  `∑_{n=1}^N e(nβ) = e(β) (e(Nβ) - 1) / (e(β) - 1)` off the integers,
+  `TauCeti.norm_sum_Ioc_expTwoPiI_eq` for its exact modulus `|sin (πNβ)| / |sin (πβ)|`, and
   `TauCeti.norm_sum_expTwoPiI_le`, the bound `|∑_{n=1}^N e(nβ)| ≤ min(N, 1 / (2‖β‖))`, with its
-  form `TauCeti.norm_sum_Ioc_expTwoPiI_le` over an interval `A < m ≤ B`.
+  forms `TauCeti.norm_sum_Ioc_expTwoPiI_le` and `TauCeti.norm_sum_Ioc_expTwoPiI_mul_div_le`.
 
 The bound `1 / (2‖β‖)` is stated with the value `N` when `‖β‖ = 0`, by an explicit `if`: with
 Lean's convention `1 / 0 = 0` the minimum would be `0` there, while the sum has norm exactly `N`
@@ -150,6 +153,43 @@ theorem expTwoPiI_periodic : Function.Periodic expTwoPiI 1 := fun α ↦ by
 theorem norm_expTwoPiI_sub_one (α : ℝ) : ‖expTwoPiI α - 1‖ = 2 * |Real.sin (π * α)| := by
   rw [norm_sub_rev, expTwoPiI_def, UpperHalfPlane.norm_one_sub_exp_two_pi_I_mul, abs_mul,
     abs_two]
+
+/-- Euler's formula for `e(α)`: `e(α) = cos (2πα) + sin (2πα) * I`. -/
+theorem expTwoPiI_eq_cos_add_sin_mul_I (α : ℝ) :
+    expTwoPiI α = (Real.cos (2 * π * α) : ℂ) + (Real.sin (2 * π * α) : ℂ) * I := by
+  rw [expTwoPiI_def, show 2 * (π : ℂ) * I * α = ((2 * π * α : ℝ) : ℂ) * I by push_cast; ring,
+    Complex.exp_mul_I]
+  norm_cast
+
+@[simp]
+theorem re_expTwoPiI (α : ℝ) : (expTwoPiI α).re = Real.cos (2 * π * α) := by
+  simp only [expTwoPiI_eq_cos_add_sin_mul_I, Complex.add_re, Complex.mul_re, Complex.ofReal_re,
+    Complex.ofReal_im, Complex.I_re, Complex.I_im, mul_zero, zero_mul, sub_zero, add_zero]
+
+@[simp]
+theorem im_expTwoPiI (α : ℝ) : (expTwoPiI α).im = Real.sin (2 * π * α) := by
+  simp only [expTwoPiI_eq_cos_add_sin_mul_I, Complex.add_im, Complex.mul_im, Complex.ofReal_re,
+    Complex.ofReal_im, Complex.I_re, Complex.I_im, zero_add, mul_one, mul_zero, add_zero]
+
+/-- `e(α) + e(-α) = 2 cos (2πα)`. -/
+theorem expTwoPiI_add_neg_eq_cos (α : ℝ) :
+    expTwoPiI α + expTwoPiI (-α) = 2 * (Real.cos (2 * π * α) : ℂ) := by
+  simp only [expTwoPiI_eq_cos_add_sin_mul_I, mul_neg, Real.cos_neg, Real.sin_neg, ofReal_neg]
+  ring
+
+/-- `e(α) - e(-α) = 2 i sin (2πα)`. -/
+theorem expTwoPiI_sub_neg_eq_sin (α : ℝ) :
+    expTwoPiI α - expTwoPiI (-α) = 2 * I * (Real.sin (2 * π * α) : ℂ) := by
+  simp only [expTwoPiI_eq_cos_add_sin_mul_I, mul_neg, Real.cos_neg, Real.sin_neg, ofReal_neg]
+  ring
+
+/-- Mathlib's `ZMod.stdAddChar` evaluated at an integer `k` is `e(k / q)`. -/
+theorem stdAddChar_intCast_eq_expTwoPiI {q : ℕ} [NeZero q] (k : ℤ) :
+    ZMod.stdAddChar (k : ZMod q) = expTwoPiI ((k : ℝ) / q) := by
+  rw [ZMod.stdAddChar_coe, expTwoPiI_def]
+  congr 1
+  push_cast
+  ring
 
 /-- **Orthogonality** on `ℝ / ℤ`: `∫₀¹ e(mα) dα = 1` if `m = 0` and `0` otherwise. -/
 theorem integral_expTwoPiI_intCast (m : ℤ) :
@@ -342,6 +382,73 @@ theorem norm_sum_Ioc_expTwoPiI_le (A B : ℕ) (β : ℝ) :
     rw [← expTwoPiI_add, addRightEmbedding_apply, Nat.cast_add, add_mul, add_comm]
   rw [h, norm_mul, norm_expTwoPiI, one_mul]
   exact norm_sum_expTwoPiI_le _ β
+
+/-- Exact modulus of a shifted geometric sum off the integers: for `M : ℤ`, `N : ℕ`, and `β : ℝ`
+with `distInt β ≠ 0`, `‖∑ n ∈ Ioc M (M + N), e(nβ)‖ = |sin (π N β)| / |sin (π β)|`. -/
+theorem norm_sum_Ioc_expTwoPiI_eq (M : ℤ) (N : ℕ) {β : ℝ} (hβ : distInt β ≠ 0) :
+    ‖∑ n ∈ Finset.Ioc M (M + N), expTwoPiI (n * β)‖ =
+      |Real.sin (π * N * β)| / |Real.sin (π * β)| := by
+  have hshift : ∑ n ∈ Finset.Ioc M (M + N), expTwoPiI (n * β) =
+      expTwoPiI (M * β) * ∑ k ∈ Finset.Icc 1 N, expTwoPiI (k * β) := by
+    rw [Int.Ioc_eq_finset_map, add_sub_cancel_left, Int.toNat_natCast, Finset.sum_map,
+      Finset.mul_sum, ← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply,
+      Int.cast_add, Int.cast_natCast]
+    rw [← expTwoPiI_add]
+    congr 1
+    push_cast
+    ring
+  rw [hshift, norm_mul, norm_expTwoPiI, one_mul, sum_expTwoPiI_eq N hβ,
+    norm_div, norm_mul, norm_expTwoPiI, one_mul, norm_expTwoPiI_sub_one,
+    norm_expTwoPiI_sub_one, mul_div_mul_left _ _ two_ne_zero, mul_assoc]
+
+/-- Exact modulus of a character-expansion geometric sum: for `1 ≤ b < q`, `M : ℤ`, and `N : ℕ`,
+`‖∑ n ∈ Ioc M (M + N), e(b * n / q)‖ = |sin (π * b * N / q)| / sin (π * b / q)`. -/
+theorem norm_sum_Ioc_expTwoPiI_mul_div_eq {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b < q)
+    (M : ℤ) (N : ℕ) :
+    ‖∑ n ∈ Finset.Ioc M (M + N), expTwoPiI ((b : ℝ) * n / q)‖ =
+      |Real.sin (π * b * N / q)| / Real.sin (π * b / q) := by
+  have hqpos : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
+  have hbpos : (0 : ℝ) < b := by exact_mod_cast (by omega : 0 < b)
+  have hdist : distInt ((b : ℝ) / q) ≠ 0 := by
+    intro h
+    obtain ⟨m, hm⟩ := distInt_eq_zero_iff.mp h
+    have hm₀ : (0 : ℝ) < m := hm ▸ div_pos hbpos hqpos
+    have hm₁ : (m : ℝ) < 1 := hm ▸ (div_lt_one hqpos).mpr (by exact_mod_cast hbq)
+    have : (0 : ℤ) < m := Int.cast_pos.mp hm₀
+    have : m < 1 := Int.cast_lt.mp (by exact_mod_cast hm₁)
+    omega
+  have hsin_pos : 0 < Real.sin (π * b / q) :=
+    Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos)
+      (by rw [div_lt_iff₀ hqpos]; nlinarith [Real.pi_pos, show (b : ℝ) < q by exact_mod_cast hbq])
+  have heq : ∑ n ∈ Finset.Ioc M (M + N), expTwoPiI ((b : ℝ) * n / q) =
+      ∑ n ∈ Finset.Ioc M (M + N), expTwoPiI (n * ((b : ℝ) / q)) := by
+    refine Finset.sum_congr rfl fun n _ ↦ ?_
+    congr 2
+    ring
+  rw [heq, norm_sum_Ioc_expTwoPiI_eq M N hdist,
+    show π * (N : ℝ) * ((b : ℝ) / q) = π * b * N / q by ring,
+    show π * ((b : ℝ) / q) = π * b / q by ring, abs_of_pos hsin_pos]
+
+/-- Upper bound for a character-expansion geometric sum: for `1 ≤ b < q`, `M : ℤ`, and `N : ℕ`,
+`‖∑ n ∈ Ioc M (M + N), e(b * n / q)‖ ≤ min N (sin (π * b / q))⁻¹`. -/
+theorem norm_sum_Ioc_expTwoPiI_mul_div_le {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b < q)
+    (M : ℤ) (N : ℕ) :
+    ‖∑ n ∈ Finset.Ioc M (M + N), expTwoPiI ((b : ℝ) * n / q)‖ ≤
+      min (N : ℝ) (Real.sin (π * b / q))⁻¹ := by
+  refine le_min ?_ ?_
+  · calc
+      ‖∑ n ∈ Finset.Ioc M (M + N), expTwoPiI ((b : ℝ) * n / q)‖
+        ≤ ∑ _n ∈ Finset.Ioc M (M + N), ‖expTwoPiI ((b : ℝ) * _n / q)‖ := norm_sum_le _ _
+      _ = N := by simp [norm_expTwoPiI, Int.card_Ioc]
+  · rw [norm_sum_Ioc_expTwoPiI_mul_div_eq hb₀ hbq, inv_eq_one_div]
+    have hqpos : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
+    have hbpos : (0 : ℝ) < b := by exact_mod_cast (by omega : 0 < b)
+    have hsin_pos : 0 < Real.sin (π * b / q) :=
+      Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos)
+        (by rw [div_lt_iff₀ hqpos]; nlinarith [Real.pi_pos, show (b : ℝ) < q by exact_mod_cast hbq])
+    exact div_le_div_of_nonneg_right (Real.abs_sin_le_one _) hsin_pos.le
 
 /-! ### Checks -/
 
