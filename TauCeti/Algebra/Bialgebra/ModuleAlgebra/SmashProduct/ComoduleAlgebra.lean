@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
-public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Map
+public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 
@@ -248,33 +248,18 @@ theorem coactAlgHom_comp_mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModul
     (ComoduleAlgebra.coactAlgHom R H (SmashProduct ν)).comp (mapBialg g f) =
       (Algebra.TensorProduct.map (mapBialg g f) g.toAlgHom).comp
         (ComoduleAlgebra.coactAlgHom R K (SmashProduct μ)) := by
-  let _ := Comodule.cofree R K A
-  let _ := Comodule.cofree R H A
-  let _ := Comodule.cofree R H B
-  let _ : Comodule R H (SmashProduct μ) := Comodule.Corestrict g.toCoalgHom
-  let _ : Comodule R H (A ⊗[R] K) := Comodule.Corestrict g.toCoalgHom
-  let φ : Comodule.Hom R H (SmashProduct μ) (SmashProduct ν) :=
-    (Comodule.transportToHom (linearEquivTensor ν).symm).comp
-      ((Comodule.Hom.cofreeMap (C := H) f.toAlgHom.toLinearMap).comp
-        ((Comodule.Hom.cofreeLTensor A g.toCoalgHom).comp
-          (Comodule.corestrictHom g.toCoalgHom
-            (Comodule.transportInvHom (linearEquivTensor μ).symm))))
-  have hφ : φ.toLinearMap = (mapBialg g f).toLinearMap := by
-    rw [toLinearMap_mapBialg]
-    simp only [φ, Comodule.Hom.comp_toLinearMap, Comodule.transportToHom_toLinearMap,
-      Comodule.Hom.cofreeMap_toLinearMap, Comodule.Hom.cofreeLTensor_toLinearMap,
-      Comodule.corestrictHom_toLinearMap, Comodule.transportInvHom_toLinearMap,
-      LinearEquiv.symm_symm, LinearMap.comp_assoc, ← LinearMap.rTensor_comp_lTensor]
-    rfl
-  exact AlgHom.ext fun x => by
-    have h := Comodule.Hom.map_coact_apply φ x
-    have hφx : φ x = mapBialg g f x := LinearMap.congr_fun hφ x
-    simp only [Comodule.corestrict_coact_apply, hφ, hφx] at h
-    rw [AlgHom.comp_apply, ComoduleAlgebra.coactAlgHom_apply, ← h, AlgHom.comp_apply,
-      ComoduleAlgebra.coactAlgHom_apply, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
-      LinearMap.id_comp, LinearMap.comp_id]
-    exact (LinearMap.congr_fun
-      (Algebra.TensorProduct.toLinearMap_map (mapBialg g f) g.toAlgHom) _).symm
+  apply SmashProduct.algHom_ext
+  · rw [AlgHom.comp_assoc, mapBialg_comp_includeA, ← AlgHom.comp_assoc _ includeA,
+      coactAlgHom_comp_includeA, AlgHom.comp_assoc,
+      AlgHom.comp_assoc (Algebra.TensorProduct.map _ _), coactAlgHom_comp_includeA,
+      ← AlgHom.comp_assoc _ Algebra.TensorProduct.includeLeft,
+      Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_assoc, mapBialg_comp_includeA]
+  · rw [AlgHom.comp_assoc, mapBialg_comp_includeH, ← AlgHom.comp_assoc _ includeH,
+      coactAlgHom_comp_includeH, AlgHom.comp_assoc _ (ComoduleAlgebra.coactAlgHom R K _),
+      coactAlgHom_comp_includeH, ← AlgHom.comp_assoc (Algebra.TensorProduct.map (mapBialg g f) _),
+      ← Algebra.TensorProduct.map_comp, mapBialg_comp_includeH, AlgHom.comp_id,
+      AlgHom.comp_assoc, ← BialgHom.map_comp_comulAlgHom, ← AlgHom.comp_assoc,
+      ← Algebra.TensorProduct.map_comp, AlgHom.id_comp]
 
 /-- Pointwise form of `coactAlgHom_comp_mapBialg`. -/
 theorem coact_mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
