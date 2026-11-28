@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.Analysis.RCLike.Sqrt
-public import Mathlib.Geometry.Manifold.MFDeriv.Defs
-public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
+import TauCeti.Algebra.Ring.Int.Parity
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.OneVariable
@@ -27,8 +27,9 @@ Using the eta-quotient identity `TauCeti.jacobiTheta_two_mul_eq_eta_pow_div` (de
 file identifies `θ(2 τ)` with the level-`4` eta quotient `η(2 τ)⁵ / (η(τ)² η(4 τ)²)` and derives
 Shimura's weight-`1/2` automorphy factor `j(γ, z) = θ(2 · γ z) / θ(2 z)` for `γ ∈ Γ₀(4)` via
 `TauCeti.ModularForm.etaQuotient_smul`, reducing to
-`TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d` in the `c ≥ 0` case
-and passing to `-γ` via `TauCeti.ModularForm.etaMultiplier_neg_of_c_pos` when `c < 0`.
+`TauCeti.ModularForm.etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_nonneg_of_odd` in the
+`c ≥ 0` case and passing to `-γ` via
+`TauCeti.ModularForm.etaQuotientMultiplier_eq_I_zpow_mul_of_c_neg` when `c < 0`.
 
 ## Main definitions
 
@@ -41,6 +42,8 @@ and passing to `-γ` via `TauCeti.ModularForm.etaMultiplier_neg_of_c_pos` when `
 
 * `TauCeti.thetaMultiplierPhase_sq`:
   `thetaMultiplierPhase d ^ 2 = (ZMod.χ₄ d : ℂ)` for every `d : ℤ`.
+* `TauCeti.I_mul_thetaMultiplierPhase_neg_inv_mul_χ₄`:
+  `I * (thetaMultiplierPhase (-d))⁻¹ * (ZMod.χ₄ d : ℂ) = (thetaMultiplierPhase d)⁻¹` for `d : ℤ`.
 * `TauCeti.thetaAutomorphyFactor_mul`: the cocycle law
   `j(γ₁ * γ₂, z) = j(γ₁, γ₂ • z) * j(γ₂, z)` for all `γ₁, γ₂ ∈ SL(2, ℤ)`.
 * `TauCeti.mdifferentiable_thetaAutomorphyFactor`: `thetaAutomorphyFactor γ` is holomorphic on `ℍ`
@@ -93,16 +96,12 @@ theorem thetaMultiplierPhase_of_even {d : ℤ} (hd : Even d) : thetaMultiplierPh
   obtain ⟨k, rfl⟩ := hd
   rw [thetaMultiplierPhase_def, ite_eq_right (by omega), ite_eq_right (by omega)]
 
-private lemma odd_emod_four_eq {d : ℤ} (hd : Odd d) : d % 4 = 1 ∨ d % 4 = 3 := by
-  obtain ⟨k, rfl⟩ := hd
-  omega
-
 /-- `thetaMultiplierPhase d = 0` if and only if `d` is even. -/
 @[simp]
 theorem thetaMultiplierPhase_eq_zero_iff (d : ℤ) : thetaMultiplierPhase d = 0 ↔ Even d := by
   refine ⟨fun h ↦ ?_, thetaMultiplierPhase_of_even⟩
   by_contra hodd
-  rcases odd_emod_four_eq (Int.not_even_iff_odd.mp hodd) with hm | hm
+  rcases Int.odd_emod_four_eq (Int.not_even_iff_odd.mp hodd) with hm | hm
   · rw [thetaMultiplierPhase_one_mod_four hm] at h
     exact one_ne_zero h
   · rw [thetaMultiplierPhase_three_mod_four hm] at h
@@ -141,7 +140,7 @@ theorem thetaMultiplierPhase_sq (d : ℤ) : thetaMultiplierPhase d ^ 2 = (ZMod.�
       obtain ⟨k, rfl⟩ := hd
       omega
     rw [ite_eq_right hne]
-    rcases odd_emod_four_eq hd with hm | hm
+    rcases Int.odd_emod_four_eq hd with hm | hm
     · rw [thetaMultiplierPhase_one_mod_four hm, ite_eq_left hm]
       norm_num
     · rw [thetaMultiplierPhase_three_mod_four hm, ite_eq_right (by omega)]
@@ -149,14 +148,14 @@ theorem thetaMultiplierPhase_sq (d : ℤ) : thetaMultiplierPhase d ^ 2 = (ZMod.�
 
 /-- For odd `d`, `‖thetaMultiplierPhase d‖ = 1`. -/
 theorem norm_thetaMultiplierPhase {d : ℤ} (hd : Odd d) : ‖thetaMultiplierPhase d‖ = 1 := by
-  rcases odd_emod_four_eq hd with hm | hm
+  rcases Int.odd_emod_four_eq hd with hm | hm
   · rw [thetaMultiplierPhase_one_mod_four hm, norm_one]
   · rw [thetaMultiplierPhase_three_mod_four hm, norm_I]
 
 /-- For odd `d`, `(thetaMultiplierPhase d)⁻¹ = if d % 4 = 1 then 1 else -I`. -/
 theorem thetaMultiplierPhase_inv {d : ℤ} (hd : Odd d) :
     (thetaMultiplierPhase d)⁻¹ = if d % 4 = 1 then 1 else -I := by
-  rcases odd_emod_four_eq hd with hm | hm
+  rcases Int.odd_emod_four_eq hd with hm | hm
   · rw [thetaMultiplierPhase_one_mod_four hm, ite_eq_left hm, inv_one]
   · rw [thetaMultiplierPhase_three_mod_four hm, ite_eq_right (by omega), inv_I]
 
@@ -167,7 +166,7 @@ theorem thetaMultiplierPhase_neg (d : ℤ) :
     thetaMultiplierPhase (-d) = I * star (thetaMultiplierPhase d) := by
   rcases Int.even_or_odd d with hd | hd
   · rw [thetaMultiplierPhase_of_even hd.neg, thetaMultiplierPhase_of_even hd, star_zero, mul_zero]
-  · rcases odd_emod_four_eq hd with hm | hm
+  · rcases Int.odd_emod_four_eq hd with hm | hm
     · rw [thetaMultiplierPhase_three_mod_four (by omega), thetaMultiplierPhase_one_mod_four hm,
         star_one, mul_one]
     · rw [thetaMultiplierPhase_one_mod_four (by omega), thetaMultiplierPhase_three_mod_four hm,
@@ -176,7 +175,7 @@ theorem thetaMultiplierPhase_neg (d : ℤ) :
 /-- For odd `d`, `thetaMultiplierPhase d * thetaMultiplierPhase (-d) = I`. -/
 theorem thetaMultiplierPhase_mul_neg {d : ℤ} (hd : Odd d) :
     thetaMultiplierPhase d * thetaMultiplierPhase (-d) = I := by
-  rcases odd_emod_four_eq hd with hm | hm
+  rcases Int.odd_emod_four_eq hd with hm | hm
   · rw [thetaMultiplierPhase_one_mod_four hm, thetaMultiplierPhase_three_mod_four (by omega),
       one_mul]
   · rw [thetaMultiplierPhase_three_mod_four hm, thetaMultiplierPhase_one_mod_four (by omega),
@@ -190,6 +189,25 @@ theorem star_thetaMultiplierPhase (d : ℤ) :
   · rw [thetaMultiplierPhase_of_even hd, star_zero, inv_zero]
   · rw [Complex.star_def]
     exact (Complex.inv_eq_conj (norm_thetaMultiplierPhase hd)).symm
+
+/-- Sign-change identity for Shimura's phase factor:
+`I * (thetaMultiplierPhase (-d))⁻¹ * (ZMod.χ₄ d : ℂ) = (thetaMultiplierPhase d)⁻¹` for every `d : ℤ`
+(both sides vanish when `d` is even). -/
+theorem I_mul_thetaMultiplierPhase_neg_inv_mul_χ₄ (d : ℤ) :
+    I * (thetaMultiplierPhase (-d))⁻¹ * (ZMod.χ₄ d : ℂ) = (thetaMultiplierPhase d)⁻¹ := by
+  rcases Int.even_or_odd d with hd | hd
+  · rw [thetaMultiplierPhase_of_even hd.neg, thetaMultiplierPhase_of_even hd, inv_zero, mul_zero,
+      zero_mul]
+  have hmul := thetaMultiplierPhase_mul_neg hd
+  have hneg_ne : thetaMultiplierPhase (-d) ≠ 0 := thetaMultiplierPhase_ne_zero hd.neg
+  have hinv_neg : I * (thetaMultiplierPhase (-d))⁻¹ = thetaMultiplierPhase d := by
+    rw [← hmul, mul_assoc, mul_inv_cancel₀ hneg_ne, mul_one]
+  rw [hinv_neg, ← thetaMultiplierPhase_sq]
+  have hpow4 : thetaMultiplierPhase d ^ 4 = 1 := by
+    calc thetaMultiplierPhase d ^ 4
+        = (thetaMultiplierPhase d ^ 2) ^ 2 := by ring
+      _ = 1 := by rw [thetaMultiplierPhase_sq]; exact_mod_cast ZMod.χ₄_intCast_sq hd
+  exact eq_inv_of_mul_eq_one_left (by rw [← hpow4]; ring)
 
 /-! ### Evaluation of the level-`4` theta eta-quotient multiplier on `Γ₀(4)` -/
 
@@ -209,47 +227,27 @@ private lemma jacobiTheta_two_mul_eq_etaQuotient {τ : ℂ} (hτ : 0 < τ.im) :
     Nat.reduceEqDiff, Finset.prod_singleton, Nat.cast_ofNat, thetaExpVec]
   norm_num [div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm, zpow_neg, zpow_ofNat]
 
-private lemma odd_apply_one_one_of_mem_Gamma0_four {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4) :
-    Odd (γ 1 1) :=
-  γ.odd_apply_one_of_even_apply_zero
-    (even_iff_two_dvd.mpr (dvd_trans (by decide) (mem_Gamma0_iff_dvd.mp hγ)))
-
-private lemma chi4_sq_eq_one_of_odd {d : ℤ} (hd : Odd d) : ((ZMod.χ₄ d : ℤ) : ℂ) ^ 2 = 1 := by
-  rw [← kroneckerSym_neg_one_left_of_odd hd]
-  exact sq_intCast_kroneckerSym_eq_one (by simp)
-
 private lemma kroneckerSym_two_mul_e24_three_mul_sub_three {d : ℤ} (hd : Odd d) :
     (kroneckerSym 2 d : ℂ) * e24 (3 * d - 3) = (thetaMultiplierPhase d)⁻¹ := by
-  rw [kroneckerSym_two_left, thetaMultiplierPhase_inv hd]
-  obtain ⟨m, r, hr0, hr8, rfl⟩ : ∃ m r : ℤ, 0 ≤ r ∧ r < 8 ∧ d = 8 * m + r :=
-    ⟨d / 8, d % 8, Int.emod_nonneg _ (by norm_num), Int.emod_lt_of_pos _ (by norm_num), by omega⟩
-  have hr : r = 1 ∨ r = 3 ∨ r = 5 ∨ r = 7 := by
-    obtain ⟨t, ht⟩ := hd
+  rw [kroneckerSym_two_left, thetaMultiplierPhase_inv hd, ZMod.χ₈_int_mod_eight]
+  have hcongr : e24 (3 * d - 3) = e24 (3 * (d % 8) - 3) :=
+    e24_congr (Int.modEq_iff_dvd.mpr ⟨-(d / 8), by omega⟩)
+  have hmod4 : d % 4 = (d % 8) % 4 := by omega
+  have hr : d % 8 = 1 ∨ d % 8 = 3 ∨ d % 8 = 5 ∨ d % 8 = 7 := by
+    obtain ⟨t, rfl⟩ := hd
     omega
-  have h8 : ((8 : ℤ) : ZMod 8) = 0 := by decide
-  have hχ₈ (a : ℤ) : ZMod.χ₈ ((8 * m + a : ℤ) : ZMod 8) = ZMod.χ₈ a := by
-    rw [Int.cast_add, Int.cast_mul, h8, zero_mul, zero_add]
-  have hcongr (a : ℤ) : e24 (3 * (8 * m + a) - 3) = e24 (3 * a - 3) :=
-    e24_congr (Int.modEq_iff_dvd.mpr ⟨-m, by ring⟩)
-  rw [hχ₈, hcongr]
-  rcases hr with rfl | rfl | rfl | rfl
-  · have harg : (3 * (1 : ℤ) - 3) = 0 := by norm_num
-    rw [ite_eq_left (by omega), ZMod.χ₈_int_eq_if_mod_eight, harg, e24_zero]
+  rw [hcongr, hmod4]
+  rcases hr with h | h | h | h <;> rw [h]
+  · rw [show ZMod.χ₈ (1 : ℤ) = 1 by decide, show (3 * (1 : ℤ) - 3) = 0 by norm_num, e24_zero]
     norm_num
-  · have harg : (2 * π * I * 6 / 24 : ℂ) = π / 2 * I := by ring
-    rw [ite_eq_right (by omega), ZMod.χ₈_int_eq_if_mod_eight, e24_def]
+  · rw [show ZMod.χ₈ (3 : ℤ) = -1 by decide, show (3 * (3 : ℤ) - 3) = 6 by norm_num, e24_six]
     norm_num
-    rw [harg, Complex.exp_pi_div_two_mul_I]
-  · have harg : (2 * π * I * 12 / 24 : ℂ) = π * I := by ring
-    rw [ite_eq_left (by omega), ZMod.χ₈_int_eq_if_mod_eight, e24_def]
+  · rw [show ZMod.χ₈ (5 : ℤ) = -1 by decide,
+      show (3 * (5 : ℤ) - 3) = 12 * (1 : ℕ) by norm_num, e24_twelve_mul]
     norm_num
-    rw [harg, Complex.exp_pi_mul_I]
-    ring
-  · have harg : (2 * π * I * 18 / 24 : ℂ) = π * I + π / 2 * I := by ring
-    rw [ite_eq_right (by omega), ZMod.χ₈_int_eq_if_mod_eight, e24_def]
+  · rw [show ZMod.χ₈ (7 : ℤ) = 1 by decide,
+      e24_congr (show (3 * (7 : ℤ) - 3) ≡ -6 [ZMOD 24] by decide), e24_neg_six]
     norm_num
-    rw [harg, Complex.exp_add, Complex.exp_pi_mul_I, Complex.exp_pi_div_two_mul_I]
-    ring
 
 private lemma prod_kroneckerSym_thetaExpVec {γ : SL(2, ℤ)} {t : ℤ} (ht : γ 1 0 = 4 * t) :
     ∏ δ ∈ (4 : ℕ).divisors, (kroneckerSym ((4 / δ : ℕ) * t) (γ 1 1) : ℂ) ^ thetaExpVec δ =
@@ -300,25 +298,11 @@ private lemma etaQuotientMultiplier_thetaExpVec_of_c_nonneg {γ : SL(2, ℤ)} (h
       (thetaMultiplierPhase (γ 1 1))⁻¹ * kroneckerSym (γ 1 0) (γ 1 1) := by
   obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
   have ht0 : 0 ≤ t := by omega
-  have hdo : Odd (γ 1 1) := odd_apply_one_one_of_mem_Gamma0_four hγ
-  let E : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((4 / δ : ℕ) * t) -
-    γ 0 1 * δ * γ 1 1 * (((4 / δ : ℕ) * t) ^ 2 - 1) +
-    3 * γ 1 1 - 3 - 3 * ((4 / δ : ℕ) * t) * γ 1 1
-  have hε (δ : ℕ) (hδ : δ ∈ (4 : ℕ).divisors) :
-      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
-        (kroneckerSym ((4 / δ : ℕ) * t) (γ 1 1) : ℂ) * e24 (E δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ :=
-      conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
-    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
-      (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact hdo),
-      h00, h01, h10, h11, e24_def]
-  have hsum : ∑ δ ∈ (4 : ℕ).divisors, thetaExpVec δ * E δ = 3 * γ 1 1 - 3 := by
-    have h1 : ∑ δ ∈ (4 : ℕ).divisors, ((4 / δ : ℕ) : ℤ) * thetaExpVec δ = 0 := by decide
-    have h2 : ∑ δ ∈ (4 : ℕ).divisors, (δ : ℤ) * thetaExpVec δ = 0 := by decide
-    rw [sum_mul_evenExp 4 thetaExpVec (γ 0 0) (γ 0 1) (γ 1 1) t, h1, h2,
-      sum_divisors_four_thetaExpVec]
-    ring
-  rw [etaQuotientMultiplier_eq_prod thetaExpVec hγ hε, prod_mul_e24_zpow, hsum,
+  have hdo : Odd (γ 1 1) := odd_apply_one_one_of_mem_Gamma0 (by decide : Even 4) hγ
+  have h1 : ∑ δ ∈ (4 : ℕ).divisors, ((4 / δ : ℕ) : ℤ) * thetaExpVec δ = 0 := by decide
+  have h2 : ∑ δ ∈ (4 : ℕ).divisors, (δ : ℤ) * thetaExpVec δ = 0 := by decide
+  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_nonneg_of_odd thetaExpVec hγ ht ht0 hdo,
+    h1, h2, sum_divisors_four_thetaExpVec, zero_mul, zero_mul, zero_add, zero_add, one_mul,
     prod_kroneckerSym_thetaExpVec ht, mul_right_comm,
     kroneckerSym_two_mul_e24_three_mul_sub_three hdo]
 
@@ -332,33 +316,19 @@ private lemma etaQuotientMultiplier_thetaExpVec (γ : Gamma0 4) :
     simp only [Subgroup.coe_mul, Gamma0.coe_negOne, neg_one_mul,
       Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
     omega
-  have hdo : Odd ((γ : SL(2, ℤ)) 1 1) := odd_apply_one_one_of_mem_Gamma0_four γ.property
-  rw [etaQuotientMultiplier_of_c_neg 4 thetaExpVec γ hc, sum_divisors_four_thetaExpVec, zpow_one,
+  have hdo : Odd ((γ : SL(2, ℤ)) 1 1) :=
+    odd_apply_one_one_of_mem_Gamma0 (by decide : Even 4) γ.property
+  rw [etaQuotientMultiplier_eq_I_zpow_mul_of_c_neg 4 thetaExpVec γ hc,
+    sum_divisors_four_thetaExpVec, zpow_one,
     etaQuotientMultiplier_thetaExpVec_of_c_nonneg (Gamma0.negOne 4 * γ).property hc_pos]
   simp only [Subgroup.coe_mul, Gamma0.coe_negOne, neg_one_mul,
     Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
-  rw [kroneckerSym_neg_neg_of_odd hc.ne hdo, ite_eq_left hc, one_mul, Int.cast_mul]
-  have hphase : I * (thetaMultiplierPhase (-((γ : SL(2, ℤ)) 1 1)))⁻¹ *
-      ((ZMod.χ₄ ((γ : SL(2, ℤ)) 1 1) : ℤ) : ℂ) =
-      (thetaMultiplierPhase ((γ : SL(2, ℤ)) 1 1))⁻¹ := by
-    have hmul := thetaMultiplierPhase_mul_neg hdo
-    have hneg_ne : thetaMultiplierPhase (-((γ : SL(2, ℤ)) 1 1)) ≠ 0 :=
-      thetaMultiplierPhase_ne_zero hdo.neg
-    have hinv_neg : I * (thetaMultiplierPhase (-((γ : SL(2, ℤ)) 1 1)))⁻¹ =
-        thetaMultiplierPhase ((γ : SL(2, ℤ)) 1 1) := by
-      rw [← hmul, mul_assoc, mul_inv_cancel₀ hneg_ne, mul_one]
-    rw [hinv_neg, ← thetaMultiplierPhase_sq]
-    have hpow4 : thetaMultiplierPhase ((γ : SL(2, ℤ)) 1 1) ^ 4 = 1 := by
-      calc thetaMultiplierPhase ((γ : SL(2, ℤ)) 1 1) ^ 4
-          = (thetaMultiplierPhase ((γ : SL(2, ℤ)) 1 1) ^ 2) ^ 2 := by ring
-        _ = 1 := by rw [thetaMultiplierPhase_sq, chi4_sq_eq_one_of_odd hdo]
-    exact eq_inv_of_mul_eq_one_left (by rw [← hpow4]; ring)
-  linear_combination (kroneckerSym ((γ : SL(2, ℤ)) 1 0) ((γ : SL(2, ℤ)) 1 1) : ℂ) * hphase
+  rw [kroneckerSym_neg_neg_of_odd (.inl hc.ne) hdo, ite_eq_left hc, one_mul, Int.cast_mul]
+  linear_combination
+    (kroneckerSym ((γ : SL(2, ℤ)) 1 0) ((γ : SL(2, ℤ)) 1 1) : ℂ) *
+      I_mul_thetaMultiplierPhase_neg_inv_mul_χ₄ ((γ : SL(2, ℤ)) 1 1)
 
 /-! ### The theta automorphy factor `j(γ, z)` on `SL(2, ℤ)` and `Γ₀(4)` -/
-
-private lemma jacobiTheta_two_mul_ne_zero (z : ℍ) : jacobiTheta (2 * (z : ℂ)) ≠ 0 :=
-  jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos)
 
 /-- **The theta automorphy factor** `j(γ, z) = θ(2 · γ z) / θ(2 z)` for `γ ∈ SL(2, ℤ)` and
 `z ∈ ℍ`. On `Γ₀(4)`, it equals Shimura's weight-`1/2` factor
@@ -376,16 +346,12 @@ theorem thetaAutomorphyFactor_def (γ : SL(2, ℤ)) (z : ℍ) :
 /-- For each `γ ∈ SL(2, ℤ)`, `z ↦ thetaAutomorphyFactor γ z` is holomorphic on `ℍ`. -/
 theorem mdifferentiable_thetaAutomorphyFactor (γ : SL(2, ℤ)) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (thetaAutomorphyFactor γ) := fun z ↦ by
-  have hθ : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (fun w : ℍ ↦ jacobiTheta (2 * (w : ℂ))) := fun w ↦ by
-    have h2 : DifferentiableAt ℂ (fun y : ℂ ↦ jacobiTheta (2 * y)) (w : ℂ) :=
-      (differentiableAt_jacobiTheta (by simpa using mul_pos two_pos w.im_pos)).comp (w : ℂ)
-        ((differentiableAt_const (2 : ℂ)).mul differentiableAt_id)
-    exact h2.mdifferentiableAt.comp w w.mdifferentiable_coe
   have hsmul : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (fun w : ℍ ↦ γ • w) := fun w ↦ by
     have h := UpperHalfPlane.mdifferentiable_smul (g := Matrix.SpecialLinearGroup.mapGL ℝ γ)
       (by simp) w
     simpa only [Matrix.SpecialLinearGroup.mapGL_smul] using h
-  exact ((hθ.comp hsmul) z).div (hθ z) (jacobiTheta_two_mul_ne_zero z)
+  exact ((mdifferentiable_jacobiTheta_two_mul.comp hsmul) z).div
+    (mdifferentiable_jacobiTheta_two_mul z) (jacobiTheta_two_mul_ne_zero z)
 
 /-- The theta automorphy factor never vanishes on the upper half-plane. -/
 @[simp]
@@ -394,7 +360,7 @@ theorem thetaAutomorphyFactor_ne_zero (γ : SL(2, ℤ)) (z : ℍ) :
   div_ne_zero (jacobiTheta_two_mul_ne_zero (γ • z)) (jacobiTheta_two_mul_ne_zero z)
 
 /-- Rewriting `θ(2 · γ z)` in terms of `thetaAutomorphyFactor γ z` and `θ(2 z)`. -/
-theorem jacobiTheta_two_mul_smul_eq (γ : SL(2, ℤ)) (z : ℍ) :
+theorem jacobiTheta_two_mul_smul_eq_thetaAutomorphyFactor_mul (γ : SL(2, ℤ)) (z : ℍ) :
     jacobiTheta (2 * ((γ • z : ℍ) : ℂ)) =
       thetaAutomorphyFactor γ z * jacobiTheta (2 * (z : ℂ)) :=
   (div_mul_cancel₀ _ (jacobiTheta_two_mul_ne_zero z)).symm
@@ -411,6 +377,8 @@ theorem thetaAutomorphyFactor_mul (γ₁ γ₂ : SL(2, ℤ)) (z : ℍ) :
 theorem thetaAutomorphyFactor_one (z : ℍ) : thetaAutomorphyFactor 1 z = 1 := by
   rw [thetaAutomorphyFactor_def, one_smul, div_self (jacobiTheta_two_mul_ne_zero z)]
 
+/-- Negating the matrix leaves `thetaAutomorphyFactor` unchanged: `γ` and `-γ` have the same
+automorphy factor, so it descends to `PSL(2, ℤ)`. -/
 @[simp]
 theorem thetaAutomorphyFactor_neg (γ : SL(2, ℤ)) (z : ℍ) :
     thetaAutomorphyFactor (-γ) z = thetaAutomorphyFactor γ z := by
@@ -468,11 +436,11 @@ theorem thetaAutomorphyFactor_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamm
 `thetaAutomorphyFactor γ z ^ 2 = χ₄(d) · (c z + d)`. -/
 theorem thetaAutomorphyFactor_sq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4) (z : ℍ) :
     thetaAutomorphyFactor γ z ^ 2 = (ZMod.χ₄ (γ 1 1) : ℂ) * ((γ 1 0 : ℂ) * z + γ 1 1) := by
-  have hdo : Odd (γ 1 1) := odd_apply_one_one_of_mem_Gamma0_four hγ
+  have hdo : Odd (γ 1 1) := odd_apply_one_one_of_mem_Gamma0 (by decide : Even 4) hγ
   have hcop : (γ 1 0).gcd (γ 1 1) = 1 :=
     Int.isCoprime_iff_gcd_eq_one.mp (γ.isCoprime_row 1)
   have hχ_inv : ((ZMod.χ₄ (γ 1 1) : ℤ) : ℂ)⁻¹ = ZMod.χ₄ (γ 1 1) :=
-    inv_eq_of_mul_eq_one_left (by rw [← sq, chi4_sq_eq_one_of_odd hdo])
+    inv_eq_of_mul_eq_one_left (by rw [← sq]; exact_mod_cast ZMod.χ₄_intCast_sq hdo)
   rw [thetaAutomorphyFactor_of_mem_Gamma0 hγ z, mul_pow, mul_pow, inv_pow,
     thetaMultiplierPhase_sq, hχ_inv, sq_intCast_kroneckerSym_eq_one hcop, mul_one,
     Complex.sq_sqrt]

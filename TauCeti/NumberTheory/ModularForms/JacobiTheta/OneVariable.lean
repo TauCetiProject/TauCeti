@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Order
+public import Mathlib.NumberTheory.ModularForms.JacobiTheta.Manifold
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+import TauCeti.NumberTheory.ModularForms.Degeneracy
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -30,12 +32,14 @@ Three identities, a positivity statement and two estimates for Mathlib's `jacobi
 * `TauCeti.norm_jacobiTheta₂_sub_one_le`: for real `z`, `‖θ₂(z, τ) - 1‖ ≤ ‖θ(i im τ) - 1‖`.
 * `TauCeti.tendsto_jacobiTheta_comap_im_atTop`: `θ(τ) → 1` as `im τ → ∞`.
 * `TauCeti.periodic_jacobiTheta_two`: `jacobiTheta` is periodic with period `2`.
+* `TauCeti.mdifferentiable_jacobiTheta_two_mul`: `w ↦ jacobiTheta (2 * (w : ℂ))` is holomorphic
+  on `ℍ`.
 -/
 
 public section
 
 open Complex Filter Topology
-open scoped Real ComplexOrder
+open scoped Real ComplexOrder Manifold UpperHalfPlane
 
 namespace TauCeti
 
@@ -211,5 +215,12 @@ theorem tendsto_jacobiTheta_comap_im_atTop :
 /-- `jacobiTheta` is periodic with period `2`. -/
 theorem periodic_jacobiTheta_two : Function.Periodic jacobiTheta 2 := fun τ ↦ by
   rw [add_comm, jacobiTheta_two_add]
+
+/-- The scaled theta function `w ↦ jacobiTheta (2 * (w : ℂ))` is holomorphic on `ℍ`. -/
+theorem mdifferentiable_jacobiTheta_two_mul :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (fun w : ℍ ↦ jacobiTheta (2 * (w : ℂ))) := by
+  simpa [Function.comp_def, coe_scaleGL_smul] using
+    mdifferentiable_jacobiTheta.comp
+      (UpperHalfPlane.mdifferentiable_smul (val_det_scaleGL_pos (d := 2)))
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
+import TauCeti.Algebra.Ring.Int.Parity
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
@@ -23,6 +24,7 @@ zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd int
 * `ZMod.χ₄_two_mul_add_one`: `χ₄ (2 v + 1) = (-1) ^ v`.
 * `ZMod.χ₄_natCast_eq_neg_of_dvd_add`, `ZMod.χ₈_natCast_eq_of_dvd_add`: the same statements for
   natural numbers `b`, `b'` with `4 ∣ b + b'`, respectively `8 ∣ b + b'`.
+* `ZMod.χ₄_natCast_mul_self`, `ZMod.χ₄_intCast_sq`: `χ₄ a ^ 2 = 1` for odd `a`.
 * `ZMod.int_mul_χ₄_modEq_one`: sign-normalizing an odd integer gives `1` modulo `4`.
 * `ZMod.χ₈_intCast_eq_zero_iff`: `χ₈ a = 0` exactly when `a` is even.
 * `ZMod.χ₈_intCast_eq_negOnePow`: `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd `a`.
@@ -60,6 +62,12 @@ theorem χ₄_natCast_mul_self {a : ℕ} (ha : Odd a) : χ₄ a * χ₄ a = 1 :=
   rcases Nat.odd_mod_four_iff.mp (Nat.odd_iff.mp ha) with h | h
   · rw [χ₄_nat_one_mod_four h, one_mul]
   · rw [χ₄_nat_three_mod_four h, neg_one_mul, neg_neg]
+
+/-- For odd `a : ℤ`, `χ₄ a ^ 2 = 1`. -/
+theorem χ₄_intCast_sq {a : ℤ} (ha : Odd a) : χ₄ a ^ 2 = 1 := by
+  rcases Int.odd_emod_four_eq ha with h | h
+  · rw [χ₄_int_one_mod_four h, one_pow]
+  · rw [χ₄_int_three_mod_four h, neg_one_sq]
 
 /-- Multiplying an odd integer by its `χ₄` value gives its unique sign choice congruent to
 `1` modulo `4`. -/

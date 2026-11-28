@@ -191,22 +191,16 @@ private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ}
   obtain ⟨A, hA⟩ := h24
   obtain ⟨B, hB⟩ := h24'
   obtain ⟨v, hv⟩ := hdo
-  let E : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((N / δ : ℕ) * t) -
-    γ 0 1 * δ * γ 1 1 * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * γ 1 1 - 3 - 3 * ((N / δ : ℕ) * t) * γ 1 1
-  have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
-      (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
-      (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) * e24 (E δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
-    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
-      (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact ⟨v, hv⟩),
-      h00, h01, h10, h11, e24_def]
   -- The exponents sum to `k (12 v)` modulo `24`, and `e(12 v k / 24) = χ₄(d) ^ k = (-1 / d) ^ k`.
-  have hsum : ∑ δ ∈ N.divisors, r δ * E δ ≡ k * (12 * v) [ZMOD 24] := by
+  have hsum : (∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) *
+        ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 - 3 * t * γ 1 1) +
+      (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (γ 0 1 * γ 1 1) +
+      (∑ δ ∈ N.divisors, r δ) * (3 * γ 1 1 - 3) ≡ k * (12 * v) [ZMOD 24] := by
     refine Int.modEq_iff_dvd.mpr ⟨-(B * ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 -
       3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)), ?_⟩
-    rw [sum_mul_evenExp, hA, hB, hk, hv]
+    rw [hA, hB, hk, hv]
     ring
-  rw [etaQuotientMultiplier_eq_prod r hγ hε, prod_mul_e24_zpow,
+  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_nonneg_of_odd r hγ ht ht0 ⟨v, hv⟩,
     e24_congr hsum, e24_mul, e24_twelve_mul_eq_χ₄, prod_kroneckerSym_div_left hk γ ht ht0, symb,
     kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, mul_comm]
 
