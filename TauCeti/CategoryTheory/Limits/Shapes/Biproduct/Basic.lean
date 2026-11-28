@@ -13,7 +13,6 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
-import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
 # Binary biproduct squares
@@ -567,14 +566,6 @@ instance (priority := 100) preservesBiproductsOfShape_comp (J : Type w) (F : C �
   preserves := { preserves := fun hb =>
     ⟨isBilimitOfPreserves G (isBilimitOfPreserves F hb)⟩ }
 
-/-- The composite of functors preserving binary biproducts preserves binary biproducts. -/
-instance (priority := 100) preservesBinaryBiproducts_comp (F : C ⥤ D) (G : D ⥤ E)
-    [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
-    [PreservesBinaryBiproducts F] [PreservesBinaryBiproducts G] :
-    PreservesBinaryBiproducts (F ⋙ G) where
-  preserves := { preserves := fun hb =>
-    ⟨isBinaryBilimitOfPreserves G (isBinaryBilimitOfPreserves F hb)⟩ }
-
 /-- A functor preserving zero morphisms, products and coproducts of shape `J` preserves
 biproducts of that shape. -/
 instance (priority := 100) preservesBiproductsOfShape_of_preservesLimits_and_colimits
@@ -612,11 +603,6 @@ theorem Bicone.IsBilimit.isZero_pt_iff {J : Type w} {f : J → C} {b : Bicone f}
   ⟨fun h j ↦ (IsZero.iff_id_eq_zero _).2 <| (bicone_ι_π_self b j).symm.trans <| by
       rw [h.eq_of_src (b.π j) 0, comp_zero],
     fun h ↦ (IsZero.iff_id_eq_zero _).2 <| hb.isLimit.hom_ext fun j ↦ (h j.as).eq_of_tgt _ _⟩
-
-/-- An equivalence of categories preserves binary biproducts. -/
-instance (priority := 100) preservesBinaryBiproducts_of_isEquivalence (F : C ⥤ D)
-    [F.IsEquivalence] : PreservesBinaryBiproducts F :=
-  preservesBinaryBiproducts_of_preservesBiproducts F
 
 end CategoryTheory.Limits
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import Mathlib.Algebra.Module.Presentation.Basic
 
