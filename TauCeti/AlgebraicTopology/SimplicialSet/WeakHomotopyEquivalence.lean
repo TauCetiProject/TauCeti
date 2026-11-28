@@ -43,6 +43,8 @@ homotopy equivalence, which is Kerodon's definition of weak contractibility.
 * `SSet.isWeaklyContractible_op_iff`: opposite preserves and reflects weak contractibility.
 * `SSet.isWeaklyContractible_iff_isWeakHomotopyEquivalence`: `K` is weakly contractible exactly
   when `K ⟶ Δ[0]` is a weak homotopy equivalence.
+* `SSet.isWeaklyContractible_iff_of_isWeakHomotopyEquivalence`: weak homotopy equivalences
+  preserve and reflect weak contractibility.
 
 ## References
 
@@ -238,6 +240,15 @@ lemma isWeaklyContractible_iff_isWeakHomotopyEquivalence {K : SSet.{u}} (p : K �
 instance {K : SSet.{u}} [IsWeaklyContractible K] (p : K ⟶ Δ[0]) :
     IsWeakHomotopyEquivalence p :=
   (isWeaklyContractible_iff_isWeakHomotopyEquivalence p).1 ‹_›
+
+/-- Weakly contractible simplicial sets are preserved and reflected by weak homotopy
+equivalences. -/
+lemma isWeaklyContractible_iff_of_isWeakHomotopyEquivalence {X Y : SSet.{u}} (f : X ⟶ Y)
+    [IsWeakHomotopyEquivalence f] : IsWeaklyContractible X ↔ IsWeaklyContractible Y := by
+  let q := stdSimplex.isTerminalObj₀.from Y
+  rw [isWeaklyContractible_iff_isWeakHomotopyEquivalence (f ≫ q),
+    isWeaklyContractible_iff_isWeakHomotopyEquivalence q]
+  exact ⟨fun _ ↦ IsWeakHomotopyEquivalence.of_precomp f q, fun _ ↦ inferInstance⟩
 
 /-- Opposite preserves weak contractibility, by testing homotopy classes of maps into Kan
 complexes and reversing their homotopies. -/
