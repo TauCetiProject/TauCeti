@@ -369,9 +369,7 @@ theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ 
   have h : p = ∑ ν, c ν.val • schurPolyBasis σ R n ν := by
     refine Subtype.ext ?_
     simp only [hp, Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis]
-    rw [← Fintype.sum_subtype_add_sum_subtype (fun l : n.Partition => l.parts.card ≤
-      Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
-      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.property), smul_zero], add_zero]
+    exact sum_smul_schurPoly_eq_sum_card_le le_rfl c
   rw [h, Module.Basis.repr_sum_self]
 
 /-- **The Schur polynomials span the symmetric polynomials**: every symmetric polynomial in `N`

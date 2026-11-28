@@ -27,9 +27,10 @@ This is `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`. The sum runs over the p
 `c_ν` is the number `Nat.card (TauCeti.LRTableau λ ν μ)` of Littlewood–Richardson tableaux, by the
 bijection `TauCeti.lrTableauEquivYamanouchi`; for taller `ν` the Schur polynomial `s_ν` vanishes.
 So the coefficients may equally be taken to be the Littlewood–Richardson coefficients
-(`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`). Comparing coefficients
-in the `ℤ`-linearly independent Schur basis in `|λ| + |μ|` variables immediately gives the symmetry
-`c^ν_{λ μ} = c^ν_{μ λ}` (`TauCeti.natCard_lrTableau_comm`).
+(`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`). Comparing the two
+`ℤ`-polynomial expansions of `s_λ · s_μ = s_μ · s_λ` in `|λ| + |μ|` variables via uniqueness of
+their natural-number coefficients (`TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq`) immediately gives
+the symmetry `c^ν_{λ μ} = c^ν_{μ λ}` (`TauCeti.natCard_lrTableau_comm`).
 
 ## Stembridge's proof
 

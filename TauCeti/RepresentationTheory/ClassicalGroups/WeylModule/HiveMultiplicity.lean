@@ -174,18 +174,21 @@ theorem finrank_invariants_two_std_checks :
         rationalWeylFDRep ℂ 2 ⟨![1, 0], by decide⟩ ⊗
           rationalWeylFDRep ℂ 2 ⟨![1, 0], by decide⟩ ⊗
           rationalWeylFDRep ℂ 2 ⟨![0, 0], by decide⟩) = 0 := by
-  rw [finrank_invariants_eq_hiveCount, finrank_invariants_eq_hiveCount]
+  rw [finrank_hom_tensorUnit_tensor_eq, finrank_hom_tensorUnit_tensor_eq]
   constructor
-  · have hb : ![(⟨![1, 0], by decide⟩ : DominantWeight 2).val,
-        (⟨![1, 0], by decide⟩ : DominantWeight 2).val,
-        (⟨![-1, -1], by decide⟩ : DominantWeight 2).val] =
-        productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
-      rw [productBoundary_def]
-      simp only [Matrix.vecCons_inj, and_true, true_and]
-      ext i; fin_cases i <;> simp
-    rw [hb]
-    exact hiveCount_two_std_std_det
-  · refine hiveCount_eq_zero_of_sum_ne_zero ?_
-    simp [Fin.sum_univ_three, Fin.sum_univ_two]
+  · have hdual : DominantWeight.dual (⟨![-1, -1], by decide⟩ : DominantWeight 2) =
+        ⟨![1, 1], by decide⟩ := by
+      ext i; fin_cases i <;> simp [DominantWeight.dual_apply]
+    rw [hdual, finrank_hom_two_std_std]
+    simp
+  · have hdual : DominantWeight.dual (⟨![0, 0], by decide⟩ : DominantWeight 2) =
+        ⟨![0, 0], by decide⟩ := by
+      ext i; fin_cases i <;> simp [DominantWeight.dual_apply]
+    rw [hdual, finrank_hom_two_std_std]
+    have hne₁ : (⟨![0, 0], by decide⟩ : DominantWeight 2) ≠ ⟨![2, 0], by decide⟩ := by
+      intro h; simpa using congrArg (fun w => w.val 0) h
+    have hne₂ : (⟨![0, 0], by decide⟩ : DominantWeight 2) ≠ ⟨![1, 1], by decide⟩ := by
+      intro h; simpa using congrArg (fun w => w.val 0) h
+    simp [hne₁, hne₂]
 
 end TauCeti.Hive

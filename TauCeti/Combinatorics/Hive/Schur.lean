@@ -38,8 +38,7 @@ is `TauCeti.Hive.hiveCount_comm` (via `TauCeti.natCard_lrTableau_comm`).
   `TauCeti.Hive.map_finsum_hiveCount_smul_diagramSchurPoly`,
   `TauCeti.Hive.eval₂_finsum_hiveCount_smul_diagramSchurPoly`,
   `TauCeti.Hive.aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly`,
-  `TauCeti.Hive.finsum_hiveCount_smul_diagramSchurPoly_eq_of_shape_eq`,
-  `TauCeti.Hive.aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_of_colLen_le`, and
+  `TauCeti.Hive.finsum_hiveCount_smul_diagramSchurPoly_eq_of_shape_eq`, and
   `TauCeti.Hive.finsum_hiveCount_smul_diagramSchurPoly_eq_zero`:
   finite support, coefficient-ring transport, evaluation transport, rank comparison and
   vanishing, and last-variable specialization along `Fin.snoc · 0`.
@@ -95,15 +94,15 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n N : ℕ} (h
     have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 :=
       Function.support_smul_subset_left (fun γ => hiveCount (productBoundary lam μ γ))
         (fun γ => diagramSchurPoly N R γ.shape) hγ_supp
-    obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
-    have hγ_poly : γ.IsPolynomial := isPolynomial_of_productBoundary h.property hlam hμ
-    rw [hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ hγ_poly] at hcnt
-    obtain ⟨T⟩ := (Nat.card_pos_iff.mp (Nat.pos_of_ne_zero hcnt)).1
-    refine Finset.mem_coe.mpr (Finset.mem_map.mpr
-      ⟨⟨γ.shape.toPartition T.card_eq, by
-        rw [YoungDiagram.ofPartition_toPartition]
-        exact DominantWeight.colLen_zero_shape_le γ⟩, Finset.mem_univ _, ?_⟩)
-    rw [hemb, YoungDiagram.ofPartition_toPartition, weightOfShape_shape hγ_poly]
+    rw [hiveCount_productBoundary_of_isPolynomial hlam hμ γ] at hcnt
+    split_ifs at hcnt with hγ_poly
+    · obtain ⟨T⟩ := (Nat.card_pos_iff.mp (Nat.pos_of_ne_zero hcnt)).1
+      refine Finset.mem_coe.mpr (Finset.mem_map.mpr
+        ⟨⟨γ.shape.toPartition T.card_eq, by
+          rw [YoungDiagram.ofPartition_toPartition]
+          exact DominantWeight.colLen_zero_shape_le γ⟩, Finset.mem_univ _, ?_⟩)
+      rw [hemb, YoungDiagram.ofPartition_toPartition, weightOfShape_shape hγ_poly]
+    · exact absurd rfl hcnt
   rw [finsum_eq_sum_of_support_subset f hsupp, Finset.sum_map,
     diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
     sum_nsmul_diagramSchurPoly_eq_sum_colLen_le hN]
@@ -182,24 +181,6 @@ theorem finsum_hiveCount_smul_diagramSchurPoly_eq_of_shape_eq {m n N : ℕ} {R :
         hiveCount (productBoundary lam₂ μ₂ γ) • diagramSchurPoly N R γ.shape := by
   rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount hNm hl₁ hm₁,
     hlam, hμ, diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount hNn hl₂ hm₂]
-
-/-- Setting the last variable to `0` transports the `(N + 1)`-variable hive-indexed Schur sum of
-rank `m ≥ N` for polynomial weights of at most `n ≥ N` rows to the `N`-variable Schur expansion of
-rank `n` (agreeing with the `(N + 1)`-variable product expansion when `N + 1 ≤ m`). -/
-theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_of_colLen_le {m n N : ℕ}
-    (hNm : N ≤ m) (hNn : N ≤ n) {R : Type*} [CommSemiring R] {lam μ : DominantWeight m}
-    (hl : lam.IsPolynomial) (hm : μ.IsPolynomial)
-    (hln : lam.shape.colLen 0 ≤ n) (hmn : μ.shape.colLen 0 ≤ n) :
-    aeval (Fin.snoc (X : Fin N → MvPolynomial (Fin N) R) 0)
-        (∑ᶠ γ : DominantWeight m,
-          hiveCount (productBoundary lam μ γ) • diagramSchurPoly (N + 1) R γ.shape) =
-      ∑ᶠ γ : DominantWeight n,
-        hiveCount (productBoundary (weightOfShape n lam.shape) (weightOfShape n μ.shape) γ) •
-          diagramSchurPoly N R γ.shape := by
-  rw [aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly]
-  exact finsum_hiveCount_smul_diagramSchurPoly_eq_of_shape_eq hNm hNn hl hm
-    (isPolynomial_weightOfShape _ _) (isPolynomial_weightOfShape _ _)
-    (shape_weightOfShape hln).symm (shape_weightOfShape hmn).symm
 
 /-- The hive-indexed Schur sum in `N` variables vanishes when either polynomial input weight of
 rank `n` has more than `N` rows (which in particular forces `N < n`). -/
