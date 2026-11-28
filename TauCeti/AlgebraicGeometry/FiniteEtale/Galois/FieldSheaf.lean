@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.OneHypercoverDense
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 

@@ -12,6 +12,9 @@ public import TauCeti.Probability.Distributions.Gamma.Cdf
 # Cumulative distribution function of the inverse-gamma distribution
 
 This file computes the inverse-gamma cdf as an upper regularized Gamma value.
+
+It also gives the corresponding event probability for a random variable with an inverse-gamma
+law.
 -/
 
 public section
@@ -69,6 +72,17 @@ theorem cdf_inverseGammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
         exact measure_singleton _)).symm
     rw [measure_congr hsets, ← measureReal_def, measureReal_Ioi_gammaMeasure ha hr x⁻¹,
       div_eq_mul_inv]
+
+/-- For positive shape and rate, an inverse-gamma random variable satisfies `P(X ≤ x) = 0` when
+`x ≤ 0`, and `P(X ≤ x) = 1 - regularizedGamma a (r / x)` when `x > 0`. -/
+theorem measureReal_le_of_hasLaw_inverseGammaMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} (ha : 0 < a) (hr : 0 < r)
+    (hX : HasLaw X (inverseGammaMeasure a r) P) (x : ℝ) :
+    P.real {ω | X ω ≤ x} =
+      if x ≤ 0 then 0 else 1 - regularizedGamma a (r / x) := by
+  let _ := isProbabilityMeasure_inverseGammaMeasure ha hr
+  rw [hX.measureReal_eq (p := fun y : ℝ => y ≤ x) measurableSet_Iic, Set.Iic_def,
+    ← cdf_eq_real, cdf_inverseGammaMeasure_eq ha hr]
 
 
 end Probability

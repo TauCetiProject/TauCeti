@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.Data.Nat.Totient
-import Mathlib.GroupTheory.Index
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.RingTheory.Artinian.Module
 -- Supplies completeness of Artinian local rings, needed by the Henselian instance.
@@ -15,6 +14,7 @@ import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.ZMod.LocalRing
 import TauCeti.Data.ZMod.ExactDivisor
 import TauCeti.Data.ZMod.LocalRing
+import TauCeti.Data.ZMod.ReductionFiber
 import TauCeti.RingTheory.Henselian.Basic
 
 /-!
@@ -34,8 +34,6 @@ reduction differ by a principal unit whose `n`-th power is `1`.
 
 ## Main results
 
-* `ZMod.card_ker_unitsMap_mul_totient`: for `n ∣ m` with `m ≠ 0`, the kernel of
-  `(ZMod m)ˣ → (ZMod n)ˣ` has `φ m / φ n` elements.
 * `ZMod.card_ker_unitsMap_prime_pow`: the kernel of `(ZMod (p ^ (k + 1)))ˣ → (ZMod p)ˣ` has
   `p ^ k` elements.
 * `ZMod.existsUnique_pow_eq_of_unitsMap_eq_one`: for `n` coprime to `p`, a unit congruent to one
@@ -57,15 +55,6 @@ public section
 open scoped TauCeti.ExactDivisor
 
 namespace ZMod
-
-/-- The kernel of the reduction `(ZMod m)ˣ → (ZMod n)ˣ` along `n ∣ m` has `φ m / φ n` elements,
-stated without division. -/
-theorem card_ker_unitsMap_mul_totient {m n : ℕ} [NeZero m] (h : n ∣ m) :
-    Nat.card (unitsMap h).ker * n.totient = m.totient := by
-  have : NeZero n := ⟨fun hn ↦ NeZero.ne m (eq_zero_of_zero_dvd (hn ▸ h))⟩
-  have hcard := Subgroup.card_ker_mul_card_of_surjective (unitsMap_surjective h)
-  rwa [Nat.card_eq_fintype_card (α := (ZMod n)ˣ), Nat.card_eq_fintype_card (α := (ZMod m)ˣ),
-    card_units_eq_totient, card_units_eq_totient] at hcard
 
 /-- The units of `ZMod (p ^ (k + 1))` congruent to one modulo the prime `p` form a subgroup
 with `p ^ k` elements. -/

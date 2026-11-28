@@ -28,6 +28,8 @@ of the positive powers of a prime are strictly increasing.
 * `TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient`: for `n ≠ 0`,
   `∏_{p ∣ n} (1 - 1 / p)⁻¹ = n / φ(n)`.
 * `TauCeti.Nat.pow_dvd_totient_pow_succ`: `ℓ ^ m ∣ φ(ℓ ^ (m + 1))` for every `ℓ`.
+* `Nat.totient_mul_of_primeFactors_subset`: if `k` introduces no new prime factors into `n`,
+  then `φ(nk) = k φ(n)`.
 -/
 
 public section
@@ -97,5 +99,25 @@ theorem strictMono_totient_prime_pow_succ {p : ℕ} (hp : p.Prime) :
     StrictMono fun k : ℕ ↦ (p ^ (k + 1)).totient := by
   simp only [totient_prime_pow_succ hp]
   exact (pow_right_strictMono₀ hp.one_lt).mul_const (Nat.sub_pos_of_lt hp.one_lt)
+
+/-- Multiplying `n` by a factor `k` supported on the primes of `n` multiplies its totient by `k`.
+The formula includes `n = 0` and `k = 0`. -/
+theorem totient_mul_of_primeFactors_subset {n k : ℕ} (h : k.primeFactors ⊆ n.primeFactors) :
+    (n * k).totient = k * n.totient := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  have hs : (n * k).primeFactors = n.primeFactors := by
+    rw [Nat.primeFactors_mul hn hk, Finset.union_eq_left.mpr h]
+  have hpos : 0 < ∏ p ∈ n.primeFactors, p :=
+    Nat.pos_of_dvd_of_pos (Nat.prod_primeFactors_dvd n) (Nat.pos_of_ne_zero hn)
+  apply Nat.eq_of_mul_eq_mul_right hpos
+  calc
+    (n * k).totient * ∏ p ∈ n.primeFactors, p = (n * k) * ∏ p ∈ n.primeFactors, (p - 1) := by
+      simpa only [hs] using Nat.totient_mul_prod_primeFactors (n * k)
+    _ = k * (n * ∏ p ∈ n.primeFactors, (p - 1)) := by ac_rfl
+    _ = (k * n.totient) * ∏ p ∈ n.primeFactors, p := by
+      rw [mul_assoc k, Nat.totient_mul_prod_primeFactors]
 
 end Nat

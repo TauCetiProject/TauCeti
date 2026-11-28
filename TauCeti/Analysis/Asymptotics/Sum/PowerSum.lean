@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.RingTheory.Binomial
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.PSeriesComplex
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals

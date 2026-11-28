@@ -202,6 +202,35 @@ theorem comp_assoc {O₄ : Type u₄} {H₄ : Quiver.{h₄} O₄} {V₄ : Quiver
     (F.comp G).comp K = F.comp (G.comp K) :=
   ext (StrictDoubleFunctor.comp_assoc _ _ _)
 
+/-- Exchange horizontal and vertical generators and cell boundaries. The body is exposed
+so the endpoints of the transposed generator maps compute. -/
+@[expose]
+def transpose (F : ImplicitDoubleFunctor D₁ D₂) :
+    ImplicitDoubleFunctor D₁.transpose D₂.transpose where
+  toStrictDoubleFunctor := F.toStrictDoubleFunctor.transpose
+  hGenerator := F.vGenerator
+  vGenerator := F.hGenerator
+  hMap_toPath := F.vMap_toPath
+  vMap_toPath := F.hMap_toPath
+
+@[simp] theorem transpose_toStrictDoubleFunctor (F : ImplicitDoubleFunctor D₁ D₂) :
+    F.transpose.toStrictDoubleFunctor = F.toStrictDoubleFunctor.transpose := rfl
+
+@[simp] theorem transpose_hGenerator (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
+    (f : @Quiver.Hom O₁ V₁ a b) : F.transpose.hGenerator f = F.vGenerator f := rfl
+
+@[simp] theorem transpose_vGenerator (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
+    (f : @Quiver.Hom O₁ H₁ a b) : F.transpose.vGenerator f = F.hGenerator f := rfl
+
+@[simp] theorem transpose_transpose (F : ImplicitDoubleFunctor D₁ D₂) :
+    F.transpose.transpose = F := ext rfl
+
+@[simp] theorem id_transpose : (id D₁).transpose = id D₁.transpose := ext rfl
+
+@[simp] theorem comp_transpose (F : ImplicitDoubleFunctor D₁ D₂)
+    (G : ImplicitDoubleFunctor D₂ D₃) :
+    (F.comp G).transpose = F.transpose.comp G.transpose := ext rfl
+
 end ImplicitDoubleFunctor
 
 end TauCeti

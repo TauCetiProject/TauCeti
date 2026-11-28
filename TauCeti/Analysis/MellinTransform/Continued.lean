@@ -6,7 +6,7 @@ Authors: Claude Code
 module
 
 public import Mathlib.Analysis.MellinTransform
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics

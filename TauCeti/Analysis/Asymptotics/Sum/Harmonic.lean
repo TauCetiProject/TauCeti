@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.ZetaValues
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.Harmonic.Bounds
