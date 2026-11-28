@@ -68,6 +68,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in a division semiring, without a
   differentiability hypothesis.
+* `TauCeti.mfderiv_const_smul_apply`: the manifold derivative of `y ↦ a • y` on a normed space acts
+  by `a • ·` under `NormedSpace.fromTangentSpace`.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
 * `TauCeti.mvfderiv_apply_eq_neg_mul_mul_of_mul_eq_one`: the derivative of a pointwise inverse in a
@@ -466,6 +468,15 @@ theorem mvfderiv_const_smul_field {R : Type*} [DivisionSemiring R] [Module R F]
       ((c⁻¹ • ContinuousLinearMap.id 𝕜 F).mdifferentiableAt (x := (c • g) x)).comp x hcg)
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hcg]
+
+/-- The manifold derivative of `y ↦ a • y` on a normed space acts by `a • ·` under
+`NormedSpace.fromTangentSpace`. -/
+theorem mfderiv_const_smul_apply (a : 𝕜) (x v : F) :
+    mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F) (fun y : F ↦ a • y) x ((NormedSpace.fromTangentSpace x).symm v) =
+      a • (NormedSpace.fromTangentSpace (a • x)).symm v := by
+  have hd : HasFDerivAt (fun y : F ↦ a • y) (a • ContinuousLinearMap.id 𝕜 F) x :=
+    (hasFDerivAt_id x).const_smul a
+  simp [mfderiv_eq_fderiv, hd.fderiv]
 
 /-- The Leibniz rule for the derivative of a vector-valued function, read in the target space,
 multiplied by a function with values in a normed algebra acting on the target, such as a complex

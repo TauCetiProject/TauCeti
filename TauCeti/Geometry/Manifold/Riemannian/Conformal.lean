@@ -37,8 +37,14 @@ uses `Riemannian.Tensor.rieszDual`. The inverse-metric laws hold for `Cⁿ` metr
 For the Yamabe problem, `f = u ^ (4 / (n - 2))` with `u` positive, so that
 `f ^ (n / 2) = u ^ (2 n / (n - 2))`.
 
+## Main definitions
+
+* `TauCeti.rescaledMetric`: constant rescaling `c • g` (`0 < c`) of the ambient `C^m` Riemannian
+  metric on the tangent bundle of a `C¹` manifold.
+
 ## Main results
 
+* `TauCeti.rescaledMetric_inner`: the fibrewise inner product of `rescaledMetric` scales by `c`.
 * `TauCeti.WithMetric.inner_rescale`: the inner product of the rescaled metric.
 * `TauCeti.WithMetric.mfderiv_ofWithMetric_rieszDual_rescale`: raising a covector's index
   for the rescaled metric multiplies its transported Riesz dual by `f⁻¹`.
@@ -73,6 +79,43 @@ open Bundle
 open scoped Manifold ContDiff
 
 noncomputable section
+
+namespace TauCeti
+
+section
+
+open scoped RealInnerProductSpace
+
+/-- The constant rescaling `c • g` (`0 < c`) of the ambient `C^m` Riemannian metric on the tangent
+bundle of a `C¹` manifold `M`. -/
+def rescaledMetric {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (m : ℕ∞ω)
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    {c : ℝ} (hc : 0 < c) :
+    ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x) :=
+  (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := m)
+    (F := E) (V := fun x : M ↦ TangentSpace I x)).rescale (fun _ ↦ c) contMDiff_const
+      (fun _ ↦ hc)
+
+/-- The fibrewise inner product of `rescaledMetric` is `c` times the ambient inner product. -/
+@[simp]
+theorem rescaledMetric_inner {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {m : ℕ∞ω}
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    {c : ℝ} (hc : 0 < c) (x : M) (v w : TangentSpace I x) :
+    (rescaledMetric I M m hc).inner x v w = c * ⟪v, w⟫ := by
+  rw [rescaledMetric, ContMDiffRiemannianMetric.rescale_inner,
+    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
+  -- `RiemannianBundle` defines the fibre inner product to be `RiemannianBundle.g.inner`.
+  rfl
+
+end
+
+end TauCeti
 
 namespace TauCeti.WithMetric
 

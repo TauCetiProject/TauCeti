@@ -177,6 +177,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
   `M * R' ^ p < ε`.
 * `Real.rpow_sub_mul_mul_rpow_mul`: `x ^ ((s - a) t) x ^ (a t) = x ^ (s t)` for `0 < x`.
+* `Real.mul_rpow_sub_mul_rpow`: `(a * r) ^ (u - y) * a ^ y = a ^ u * r ^ (u - y)` for `0 < a`
+  and `0 ≤ r`.
 * `Real.rpow_sub_pow_mul_rpow_mul_natCast`: `(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for
   `0 < x`.
 * `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
@@ -610,6 +612,12 @@ theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ)
 theorem rpow_sub_mul_mul_rpow_mul {x : ℝ} (hx : 0 < x) (s a t : ℝ) :
     x ^ ((s - a) * t) * x ^ (a * t) = x ^ (s * t) := by
   rw [← rpow_add hx, ← add_mul, sub_add_cancel]
+
+/-- Splitting a scaled power across a shift: `(a * r) ^ (u - y) * a ^ y = a ^ u * r ^ (u - y)`
+for `a > 0` and `r ≥ 0`. -/
+theorem mul_rpow_sub_mul_rpow {a r : ℝ} (ha : 0 < a) (hr : 0 ≤ r) (u y : ℝ) :
+    (a * r) ^ (u - y) * a ^ y = a ^ u * r ^ (u - y) := by
+  rw [mul_rpow ha.le hr, mul_right_comm, ← rpow_add ha, sub_add_cancel]
 
 /-- Trading `a` orders in a natural-number scaled exponent:
 `(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for `0 < x`. -/

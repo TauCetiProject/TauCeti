@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
@@ -36,6 +37,9 @@ containing that set. Connectedness of the exterior therefore forces all such com
 coincide. This uniqueness result and the corresponding filled-hull alternative are proved in
 `TauCeti/Analysis/Normed/Module/FilledHull.lean`.
 
+The file also records how nonzero scalar dilation acts on the complement of a closed ball
+(`TauCeti.smul_compl_closedBall`).
+
 ## Main results
 
 * `TauCeti.isPathConnected_compl_closedBall` — the exterior of a closed ball is path-connected in
@@ -48,6 +52,8 @@ coincide. This uniqueness result and the corresponding filled-hull alternative a
   least two.
 * `TauCeti.isPathConnected_compl_union_closedBall` — the exterior of a union of two closed balls
   is path-connected in a real normed space of dimension at least two.
+* `TauCeti.smul_compl_closedBall` — nonzero scalar multiplication maps `(closedBall x r)ᶜ` onto
+  `(closedBall (c • x) (‖c‖ * r))ᶜ`.
 
 ## References
 
@@ -59,6 +65,7 @@ public section
 namespace TauCeti
 
 open Metric Set
+open scoped Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -149,5 +156,13 @@ theorem isPathConnected_compl_union_closedBall (h : 1 < Module.rank ℝ E) (x₁
   isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded h
     (convex_closedBall x₁ r₁) isClosed_closedBall isBounded_closedBall
     (convex_closedBall x₂ r₂) isClosed_closedBall isBounded_closedBall
+
+/-- Scaling by a nonzero scalar `c` maps the exterior of `closedBall x r` onto the exterior of
+`closedBall (c • x) (‖c‖ * r)`. -/
+theorem smul_compl_closedBall {𝕜 F : Type*} [NormedField 𝕜] [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {c : 𝕜} (hc : c ≠ 0) (x : F) (r : ℝ) :
+    c • (closedBall x r)ᶜ = (closedBall (c • x) (‖c‖ * r))ᶜ := by
+  rw [← Set.image_smul, Set.image_compl_eq (IsUnit.mk0 c hc).smul_bijective,
+    Set.image_smul, smul_closedBall' hc]
 
 end TauCeti

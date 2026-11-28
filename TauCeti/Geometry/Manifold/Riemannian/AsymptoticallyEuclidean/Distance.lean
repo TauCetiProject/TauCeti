@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 import Mathlib.Algebra.Order.Chebyshev
+import TauCeti.Analysis.Convex.Segment
+import TauCeti.Topology.MetricSpace.Annulus
 
 /-!
 # The Riemannian distance on an asymptotically Euclidean end
@@ -31,6 +33,13 @@ show that the Riemannian distance induces the manifold topology.
 In particular the end goes off to infinity in `M`: on a Riemannian manifold whose distance is a
 metric, `φ` tends to infinity along the cobounded filter of `ℝⁿ`.
 
+On an extended-metric Riemannian manifold `M`, the uniform order-`0` metric bound of an
+asymptotically Euclidean end `φ` on `(closedBall 0 R)ᶜ` also gives a uniform operator bound on
+`mfderiv φ` on every finite exterior annulus `{z | R < ‖z‖ ≤ R₁}`. Integrating this bound along
+radial segments yields radial extended-distance estimates to spheres, which imply that the image
+`φ '' ((closedBall 0 R)ᶜ ∩ closedBall 0 R')` of every exterior collar is totally bounded
+(`IsAsymptoticallyEuclideanEnd.totallyBounded_image_compl_inter_closedBall`).
+
 ## Main results
 
 * `TauCeti.IsAsymptoticallyEuclideanEnd.exists_abs_norm_mfderiv_sub_norm_le`: the differential of
@@ -45,10 +54,17 @@ metric, `φ` tends to infinity along the cobounded filter of `ℝⁿ`.
   `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_dist_div_norm`: `d(p, φ x) / ‖x‖ → 1`.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_cobounded`: for `t > 0`, `φ x` tends to infinity
   in `M` as `‖x‖ → ∞`.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.totallyBounded_image_compl_inter_closedBall`: on an
+  extended-metric Riemannian manifold, the image of any exterior collar
+  `(closedBall 0 R)ᶜ ∩ closedBall 0 R'` under an asymptotically Euclidean end is totally bounded.
 
 ## References
 
-* J. M. Lee, T. H. Parker, *The Yamabe problem*, Bull. Amer. Math. Soc. 17 (1987), §8 and §9.
+* R. Bartnik, *The mass of an asymptotically flat manifold*, Comm. Pure Appl. Math. 39 (1986),
+  661–693.
+* S. Cecchini and R. Zeidler, *The positive mass theorem and distance estimates in the spin
+  setting*, Trans. Amer. Math. Soc. 377 (2024), 5271–5288, arXiv:2108.11972v2.
+* J. M. Lee and T. H. Parker, *The Yamabe problem*, Bull. Amer. Math. Soc. 17 (1987), §8 and §9.
 * `Mathlib/Geometry/Manifold/Riemannian/Basic.lean` (S. Gouëzel),
   `setOfPred_riemannianEDist_lt_subset_nhds`: the continuity argument showing that a short path
   cannot leave a coordinate neighbourhood, adapted here to annuli of an end.
@@ -56,22 +72,26 @@ metric, `φ` tends to infinity along the cobounded filter of `ℝⁿ`.
 
 public section
 
-open Bornology Bundle Filter Manifold Metric Set
-open scoped ContDiff Manifold Topology
+open Bornology Bundle Filter Manifold Metric Set TopologicalSpace
+open scoped ContDiff ENNReal Manifold Topology
 
 noncomputable section
 
 namespace TauCeti
 
+variable {n : ℕ}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
 namespace IsAsymptoticallyEuclideanEnd
 
-variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {t R : ℝ}
+variable {t : ℝ}
 
 section Topological
 
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {φ : EuclideanSpace ℝ (Fin n) → M}
+variable {R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
 
 /-! ### The differential of an end is asymptotically isometric -/
 
@@ -144,7 +164,7 @@ theorem eventually_abs_norm_mfderiv_sub_norm_le (h : IsAsymptoticallyEuclideanEn
 
 /-! ### The lower bound -/
 
-variable [IsManifold I ∞ M]
+variable [IsManifold I 1 M]
 
 /-- A path from `φ x` that stays in the image of the closed annulus `b ≤ ‖y‖ ≤ 2 ‖x‖ - b`, on which
 the differential of `φ` stretches vectors by at least `c > 0`, and that is shorter than
@@ -161,14 +181,14 @@ private theorem mem_image_annulus_of_pathELength_lt (h : IsAsymptoticallyEuclide
   set S : Set (EuclideanSpace ℝ (Fin n)) := closedBall 0 (2 * ‖x‖ - b) \ ball 0 b
   have hSR : S ⊆ (closedBall 0 R)ᶜ :=
     (sdiff_subset_compl _ _).trans (compl_subset_compl.2 (closedBall_subset_ball hb))
-  -- Read the path in the coordinates of the end, through the inverse `ψ` of the end.
-  set ψ := h.toPartialDiffeomorph.symm
+  -- Read the path in the coordinates of the end, through the `C¹` inverse `ψ` of the end.
+  set ψ := (h.toPartialDiffeomorph 1 le_rfl (by simp)).symm
   have hmem {r} (hr : r ∈ Icc 0 s) : ψ (γ r) ∈ S ∧ φ (ψ (γ r)) = γ r := by
     obtain ⟨y, hy, hyr⟩ := hsub hr
-    rw [← hyr, h.toPartialDiffeomorph_symm_apply_apply (hSR hy)]
+    rw [← hyr, h.toPartialDiffeomorph_symm_apply_apply 1 le_rfl (by simp) (hSR hy)]
     exact ⟨hy, rfl⟩
   have hy : ContDiffOn ℝ 1 (ψ ∘ γ) (Icc 0 s) :=
-    contMDiffOn_iff_contDiffOn.1 ((ψ.contMDiffOn.of_le (by simp)).comp hγ fun r hr ↦ by
+    contMDiffOn_iff_contDiffOn.1 (ψ.contMDiffOn.comp hγ fun r hr ↦ by
       rw [mem_preimage, ← (hmem hr).2, PartialDiffeomorph.symm_toPartialEquiv,
         PartialEquiv.symm_source, toPartialDiffeomorph_target]
       exact mem_image_of_mem φ (hSR (hmem hr).1))
@@ -179,7 +199,7 @@ private theorem mem_image_annulus_of_pathELength_lt (h : IsAsymptoticallyEuclide
   have hlen := Manifold.ofReal_mul_eNorm_sub_le_pathELength_comp hs hy hdiff
     fun r hr ↦ hc _ (hmem hr).1
   have hx : ψ (φ x) = x :=
-    h.toPartialDiffeomorph_symm_apply_apply (by simpa using hb.trans hbx)
+    h.toPartialDiffeomorph_symm_apply_apply 1 le_rfl (by simp) (by simpa using hb.trans hbx)
   rw [pathELength_congr (γ := φ ∘ ψ ∘ γ) (γ' := γ) fun r hr ↦ (hmem hr).2,
     Function.comp_apply, Function.comp_apply, hγ0, hx] at hlen
   -- The coordinates have moved by less than `‖x‖ - b`.
@@ -265,6 +285,121 @@ theorem ofReal_mul_sub_le_riemannianEDist [T2Space M] (h : IsAsymptoticallyEucli
     ofReal_mul_sub_le_riemannianEDist_of_lt h ha hb.1 hc hp hb.2)
 
 end Topological
+
+/-! ### Collar total boundedness -/
+
+/-- Radial extended-distance estimate from `φ x` (`R < ‖x‖ < R₀ ≤ R₁`) to the outer sphere
+`sphere 0 R₀`. -/
+private theorem edist_image_radial_le {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+    {R R₀ R₁ C : ℝ} (hR₀ : R₀ ≤ R₁)
+    {φ : EuclideanSpace ℝ (Fin n) → M} (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    (hC : ∀ z ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ, ∀ v : EuclideanSpace ℝ (Fin n),
+      |‖mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ z v‖ - ‖v‖| ≤ C * ‖z‖ ^ (-t) * ‖v‖)
+    {x : EuclideanSpace ℝ (Fin n)} (hxR : R < ‖x‖) (hxR₀ : ‖x‖ < R₀) :
+    edist (φ x) (φ ((R₀ / ‖x‖) • x)) ≤
+      ENNReal.ofReal ((R₀ - ‖x‖) * (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)))) := by
+  have hx_pos : 0 < ‖x‖ := h.radius_pos.trans hxR
+  let y : EuclideanSpace ℝ (Fin n) := (R₀ / ‖x‖) • x
+  have h1 : 1 ≤ R₀ / ‖x‖ := (one_le_div hx_pos).2 hxR₀.le
+  have hseg (z : EuclideanSpace ℝ (Fin n)) (hz : z ∈ segment ℝ x y) :
+      R < ‖z‖ ∧ ‖z‖ ≤ R₁ := by
+    obtain ⟨hlo, hhi⟩ := norm_mem_Icc_of_mem_segment_smul h1 hz
+    refine ⟨hxR.trans_le hlo, hhi.trans ?_⟩
+    rw [div_mul_cancel₀ _ hx_pos.ne']
+    exact hR₀
+  have hdiff : ∀ z ∈ segment ℝ x y, ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I 1 φ z :=
+    fun z hz ↦ (h.contMDiffOn.contMDiffAt
+      (isClosed_closedBall.isOpen_compl.mem_nhds (by simpa using (hseg z hz).1))).of_le (by simp)
+  have hyx : y - x = (R₀ / ‖x‖ - 1) • x := by
+    simp only [y, sub_smul, one_smul]
+  have hnorm_yx : ‖y - x‖ = R₀ - ‖x‖ := by
+    rw [hyx, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 h1), sub_mul,
+      div_mul_cancel₀ _ hx_pos.ne', one_mul]
+  refine IsRiemannianManifold.edist_le_of_norm_mfderiv_le hdiff fun z hz ↦ ?_
+  have hz_gt : R < ‖z‖ := (hseg z hz).1
+  have hz_le : ‖z‖ ≤ R₁ := (hseg z hz).2
+  have hrpow : ‖z‖ ^ (-t) ≤ max (R ^ (-t)) (R₁ ^ (-t)) := by
+    rcases le_total 0 (-t) with ht0 | ht0
+    · exact (Real.rpow_le_rpow (norm_nonneg z) hz_le ht0).trans (le_max_right _ _)
+    · exact (Real.rpow_le_rpow_of_nonpos h.radius_pos hz_gt.le ht0).trans (le_max_left _ _)
+  have h1z := (le_abs_self _).trans (hC z (by simpa using hz_gt) (y - x))
+  have hCpow : C * ‖z‖ ^ (-t) ≤ max C 0 * max (R ^ (-t)) (R₁ ^ (-t)) :=
+    mul_le_mul (le_max_left C 0) hrpow (Real.rpow_nonneg (norm_nonneg z) _) (le_max_right C 0)
+  rw [← hnorm_yx]
+  calc ‖mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ z (y - x)‖
+      ≤ ‖y - x‖ + C * ‖z‖ ^ (-t) * ‖y - x‖ := by linarith
+    _ ≤ ‖y - x‖ + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)) * ‖y - x‖ := by gcongr
+    _ = ‖y - x‖ * (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t))) := by ring
+
+/-- On an extended-metric Riemannian manifold, the image of the collar
+`(closedBall 0 R)ᶜ ∩ closedBall 0 R'` under an asymptotically Euclidean end is totally bounded,
+since it is approximated in `edist` by compact inner truncations using the uniform radial
+derivative bound. -/
+theorem totallyBounded_image_compl_inter_closedBall {M : Type*} [PseudoEMetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsRiemannianManifold I M] {R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
+    (h : IsAsymptoticallyEuclideanEnd I t R φ) (R' : ℝ) :
+    TotallyBounded (φ '' ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ ∩ closedBall 0 R')) := by
+  rw [EMetric.totallyBounded_iff]
+  intro ε hε
+  -- Step 1: Choose a radial collar thickness `0 < η ≤ 1` so radial travel across `η` is `< ε / 2`.
+  obtain ⟨C, hC⟩ := h.exists_abs_norm_mfderiv_sub_norm_le
+  set R₁ : ℝ := R + 1
+  let M₁ : ℝ := 1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t))
+  have hM₁ : 0 ≤ M₁ := add_nonneg zero_le_one
+    (mul_nonneg (le_max_right C 0)
+      ((Real.rpow_nonneg h.radius_pos.le _).trans (le_max_left _ _)))
+  obtain ⟨r, -, hr0, hr_lt⟩ := ENNReal.lt_iff_exists_real_btwn.1 (ENNReal.half_pos hε.ne')
+  have hr0' : 0 < r := ENNReal.ofReal_pos.1 hr0
+  obtain ⟨c, hc, hcM⟩ := exists_pos_mul_lt hr0' M₁
+  let η : ℝ := min 1 c
+  have hη_pos : 0 < η := lt_min zero_lt_one hc
+  have hη_le1 : η ≤ 1 := min_le_left _ _
+  have hη_mul : ENNReal.ofReal (η * M₁) < ε / 2 :=
+    (ENNReal.ofReal_le_ofReal <| by
+      rw [mul_comm]
+      exact (mul_le_mul_of_nonneg_left (min_le_right _ _) hM₁).trans hcM.le).trans_lt hr_lt
+  -- Step 2: Cover the compact annulus `{z | R + η ≤ ‖z‖ ≤ max R' (R + η)}` by `(ε / 2)`-balls.
+  let A : Set (EuclideanSpace ℝ (Fin n)) := {z | R + η ≤ ‖z‖ ∧ ‖z‖ ≤ max R' (R + η)}
+  have hA_comp : IsCompact A := by
+    simpa only [sub_zero] using
+      TauCeti.isCompact_setOf_le_norm_sub_le (0 : EuclideanSpace ℝ (Fin n)) (R + η)
+        (max R' (R + η))
+  have hA_sub : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := fun z hz ↦ by
+    simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le]
+    linarith [hz.1]
+  have hφA_tb : TotallyBounded (φ '' A) :=
+    (hA_comp.image_of_continuousOn (h.contMDiffOn.continuousOn.mono hA_sub)).totallyBounded
+  obtain ⟨t₀, ht₀_fin, ht₀_cov⟩ :=
+    EMetric.totallyBounded_iff.1 hφA_tb (ε / 2) (ENNReal.half_pos hε.ne')
+  refine ⟨t₀, ht₀_fin, ?_⟩
+  -- Step 3: Points with `R + η ≤ ‖x‖` lie directly in `A`; points with `R < ‖x‖ < R + η`
+  -- lie within `ε / 2` of their radial projection onto `‖z‖ = R + η`.
+  rintro _ ⟨x, ⟨hxR, hxR'⟩, rfl⟩
+  have hxR_lt : R < ‖x‖ := by simpa using hxR
+  rcases le_or_gt (R + η) ‖x‖ with hx_ge | hx_lt
+  · have hxA : x ∈ A := ⟨hx_ge, (mem_closedBall_zero_iff.1 hxR').trans (le_max_left _ _)⟩
+    obtain ⟨p, hp, hxp⟩ := mem_iUnion₂.1 (ht₀_cov ⟨x, hxA, rfl⟩)
+    exact mem_iUnion₂.2 ⟨p, hp, Metric.eball_subset_eball ENNReal.half_le_self hxp⟩
+  · have hx_pos : 0 < ‖x‖ := h.radius_pos.trans hxR_lt
+    have hRη_pos : 0 < R + η := by linarith [h.radius_pos]
+    let y : EuclideanSpace ℝ (Fin n) := ((R + η) / ‖x‖) • x
+    have hy_norm : ‖y‖ = R + η := by
+      rw [norm_smul, Real.norm_of_nonneg (div_nonneg hRη_pos.le hx_pos.le),
+        div_mul_cancel₀ _ hx_pos.ne']
+    have hyA : y ∈ A := ⟨hy_norm.ge, hy_norm.le.trans (le_max_right _ _)⟩
+    obtain ⟨p, hp, hyp⟩ := mem_iUnion₂.1 (ht₀_cov ⟨y, hyA, rfl⟩)
+    have hed : edist (φ x) (φ y) < ε / 2 := by
+      have h1 : edist (φ x) (φ y) ≤ ENNReal.ofReal ((R + η - ‖x‖) * M₁) :=
+        edist_image_radial_le (R₁ := R₁) (by linarith) h hC hxR_lt hx_lt
+      have h2 : (R + η - ‖x‖) * M₁ ≤ η * M₁ :=
+        mul_le_mul_of_nonneg_right (by linarith) hM₁
+      exact h1.trans_lt ((ENNReal.ofReal_le_ofReal h2).trans_lt hη_mul)
+    refine mem_iUnion₂.2 ⟨p, hp, ?_⟩
+    rw [Metric.mem_eball] at hyp ⊢
+    exact (edist_triangle _ (φ y) _).trans_lt
+      ((ENNReal.add_lt_add hed hyp).trans_eq (ENNReal.add_halves ε))
 
 /-! ### Asymptotics of the distance -/
 
@@ -395,3 +530,5 @@ end Metric
 end IsAsymptoticallyEuclideanEnd
 
 end TauCeti
+
+end
