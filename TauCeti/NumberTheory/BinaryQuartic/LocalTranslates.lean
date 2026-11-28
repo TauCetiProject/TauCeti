@@ -87,10 +87,6 @@ section FractionField
 
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-private theorem exists_uniformizer_unit {ϖ : R} (hϖ : Irreducible ϖ) :
-    ∃ π : Kˣ, algebraMap R K ϖ = π :=
-  ⟨Units.mk0 _ (IsFractionRing.to_map_eq_zero_iff.not.mpr hϖ.ne_zero), (Units.val_mk0 _).symm⟩
-
 variable [IsDomain R] [IsDiscreteValuationRing R]
 
 /-- Away from square divisibility of the discriminant, the only projective elements
@@ -99,13 +95,15 @@ theorem smul_mem_coefficientRange_iff_of_not_sq_dvd_disc {ϖ : R} (hϖ : Irreduc
     (f : BinaryQuartic R) (hf : ¬ϖ ^ 2 ∣ f.disc) (g : PGL(2, K)) :
     g • (algebraMap R K ∘ f) ∈ coefficientRange (algebraMap R K) ↔
       g ∈ (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage := by
-  obtain ⟨π, hπ⟩ := exists_uniformizer_unit (K := K) hϖ
+  obtain ⟨π, hπ⟩ := IsLocalization.map_units K
+    (⟨ϖ, mem_nonZeroDivisors_iff_ne_zero.mpr hϖ.ne_zero⟩ : nonZeroDivisors R)
   refine ⟨fun hg ↦ ?_, fun hg ↦ (smul_mem_coefficientRange_iff hg _).mpr
     (comp_mem_coefficientRange _ _)⟩
-  obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
+  obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ.symm g
   rcases k with _ | k
   · rwa [doubleCoset_mk_diagGL_pow_zero] at hk
-  · have hdiv := pow_mul_two_dvd_disc_of_mem_doubleCoset (IsFractionRing.injective R K) hπ f hk hg
+  · have hdiv := pow_mul_two_dvd_disc_of_mem_doubleCoset
+      (IsFractionRing.injective R K) hπ.symm f hk hg
     exact (hf ((pow_dvd_pow ϖ (by omega)).trans hdiv)).elim
 
 /-- For a nonsingular integral quartic over a DVR with finite residue field, the set of
@@ -114,13 +112,15 @@ theorem finite_orbitWeightCosets_of_disc_ne_zero [Finite (IsLocalRing.ResidueFie
     {ϖ : R} (hϖ : Irreducible ϖ) (f : BinaryQuartic R) (hf : f.disc ≠ 0) :
     ((GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage.orbitWeightCosets
       (coefficientRange (algebraMap R K)) (algebraMap R K ∘ f)).Finite := by
-  obtain ⟨π, hπ⟩ := exists_uniformizer_unit (K := K) hϖ
+  obtain ⟨π, hπ⟩ := IsLocalization.map_units K
+    (⟨ϖ, mem_nonZeroDivisors_iff_ne_zero.mpr hϖ.ne_zero⟩ : nonZeroDivisors R)
   refine ((Set.finite_le_nat (multiplicity ϖ f.disc)).biUnion
-    (fun k _ ↦ finite_image_mk_rightRel_doubleCoset_mk_diagGL_pow hϖ hπ k)).subset ?_
+    (fun k _ ↦ finite_image_mk_rightRel_doubleCoset_mk_diagGL_pow hϖ hπ.symm k)).subset ?_
   intro c hc
   obtain ⟨g, hg, rfl⟩ := Subgroup.mem_orbitWeightCosets.mp hc
-  obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
-  have hdiv := pow_mul_two_dvd_disc_of_mem_doubleCoset (IsFractionRing.injective R K) hπ f hk hg
+  obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ.symm g
+  have hdiv := pow_mul_two_dvd_disc_of_mem_doubleCoset
+    (IsFractionRing.injective R K) hπ.symm f hk hg
   have hmul : FiniteMultiplicity ϖ f.disc := .of_not_isUnit hϖ.not_isUnit hf
   have hk' : k * 2 ≤ multiplicity ϖ f.disc := hmul.pow_dvd_iff_le_multiplicity.mp hdiv
   exact Set.mem_iUnion₂.mpr ⟨k, Nat.le_trans (by omega : k ≤ k * 2) hk', ⟨g, hk, rfl⟩⟩

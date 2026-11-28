@@ -47,8 +47,9 @@ theorem mem_coefficientRange {φ : R →+* S} {f : BinaryQuartic S} :
 
 /-- Mapping a quartic coefficientwise produces a member of the coefficient range. -/
 @[simp] theorem comp_mem_coefficientRange (φ : R →+* S) (f : BinaryQuartic R) :
-    φ ∘ f ∈ coefficientRange φ :=
-  ⟨f, rfl⟩
+    φ ∘ f ∈ coefficientRange φ := by
+  rw [coefficientRange_eq_range]
+  exact ⟨f, rfl⟩
 
 /-- Projective transformations coming from the source ring preserve the coefficient range. -/
 @[simp] theorem smul_mem_coefficientRange_iff {φ : R →+* S} {g : PGL(2, S)}

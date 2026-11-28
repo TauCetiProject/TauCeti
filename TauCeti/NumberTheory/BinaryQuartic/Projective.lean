@@ -38,8 +38,10 @@ instance : MulAction (PGL(2, R)) (BinaryQuartic R) :=
 
 /-- A projective matrix acts by twisted substitution with any representative. -/
 @[simp] theorem mk_smul (g : GL (Fin 2) R) (f : BinaryQuartic R) :
-    ProjGenLinGroup.mk g • f = twistedSMul g f :=
-  (rfl)
+    ProjGenLinGroup.mk g • f = twistedSMul g f := by
+  let : MulAction (GL (Fin 2) R) (BinaryQuartic R) :=
+    { smul := twistedSMul, one_smul := twistedSMul_one, mul_smul := twistedSMul_mul }
+  exact ProjGenLinGroup.mk_smul twistedSMul_scalar g f
 
 /-- The coefficient of `x^(4-i) y^i` under the twisted action of `diag(1,u)` is
 scaled by `u^(i-2)`. Multiplying by `u²` writes the formula with natural powers. -/
@@ -74,14 +76,6 @@ theorem sq_mul_mk_diagGL_smul_apply (u : Rˣ) (f : BinaryQuartic R) (i : Fin 5) 
 @[simp] theorem projGenLinGroup_map_smul_comp (f : BinaryQuartic R) (φ : R →+* S)
     (g : PGL(2, R)) : ProjGenLinGroup.map φ g • (φ ∘ f) = φ ∘ (g • f) := by
   induction g using ProjGenLinGroup.induction_on with
-  | mk g =>
-    simp only [ProjGenLinGroup.map_mk, mk_smul, twistedSMul_def]
-    funext i
-    have hdet : ((GeneralLinearGroup.det (GeneralLinearGroup.map φ g))⁻¹ : Sˣ).val =
-        φ ((GeneralLinearGroup.det g)⁻¹ : Rˣ).val := by
-      simp only [GeneralLinearGroup.map_det, Units.coe_map_inv, MonoidHom.coe_ofClass]
-    simp only [Pi.smul_apply, smul_eq_mul, Function.comp_apply, map_mul, map_pow, hdet]
-    exact congrArg (fun x ↦ φ ((GeneralLinearGroup.det g)⁻¹ : Rˣ).val ^ 2 * x)
-      (congrFun (smul_comp f φ g) i)
+  | mk g => simp
 
 end TauCeti.BinaryQuartic

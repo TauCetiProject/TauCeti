@@ -137,16 +137,16 @@ theorem dvd_disc_of_dvd_coeff_zero_of_dvd_sq_coeff_one {d : R} {f : BinaryQuarti
   let I : Ideal R := Ideal.span {d}
   let q := Ideal.Quotient.mk I
   have h0' : q (f 0) = 0 :=
-    Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h0)
+    (Ideal.Quotient.eq_zero_iff_dvd d (f 0)).mpr h0
   have h1' : q (f 1) ^ 2 = 0 := by
     rw [← map_pow]
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h1)
+    exact (Ideal.Quotient.eq_zero_iff_dvd d (f 1 ^ 2)).mpr h1
   have h3 : q (f 1) ^ 3 = 0 := pow_eq_zero_of_le (by decide) h1'
   have h4 : q (f 1) ^ 4 = 0 := pow_eq_zero_of_le (by decide) h1'
   have hd : q f.disc = 0 := by
     rw [← disc_comp]
     simp [disc_def, h0', h1', h3, h4]
-  exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hd)
+  exact (Ideal.Quotient.eq_zero_iff_dvd d f.disc).mp hd
 
 end BinaryQuartic
 
