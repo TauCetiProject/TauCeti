@@ -29,6 +29,9 @@ manifold-derivative API and the derivatives of extended charts.
   image has injective derivative.
 * `TauCeti.mfderiv_apply_mfderiv_of_eventuallyEq_comp`: if `Φ ∘ Ψ = κ` near `x`, then `dΦ` takes
   `dΨ(u)` to `dκ(u)`.
+* `MDifferentiableAt.mfderiv_apply_mfderiv_of_eventuallyEq_id`,
+  `MDifferentiableAt.surjective_mfderiv_of_eventuallyEq_id`: if `g ∘ f =ᶠ[𝓝 x] id`, then
+  `dg_(f x) (df_x v) = v` and `dg_(f x)` is surjective.
 * `TauCeti.surjective_mfderiv_of_comp_eq`: a map `k` with `i₂ ∘ k = π ∘ j` along immersions `i₁`,
   `i₂` has surjective derivative when `dπ` is surjective and every tangent vector whose image under
   `dπ` is tangent to the image of `i₂` is carried by `di₁` into the image of `d(i₁ ∘ j)`.
@@ -133,6 +136,26 @@ theorem mfderiv_apply_mfderiv_of_eventuallyEq_comp {Ψ : M → N} {Φ : N → P}
   rw [← mfderiv_comp_apply x hΦ hΨ, hΦΨ.mfderiv_eq]
   -- The cast between the tangent spaces at `(Φ ∘ Ψ) x` and `κ x` is definitionally the identity.
   rfl
+
+section EventuallyEqId
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` and both maps are differentiable, then `dg_(f x) (df_x v) = v`. -/
+theorem _root_.MDifferentiableAt.mfderiv_apply_mfderiv_of_eventuallyEq_id {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) (v : TangentSpace I x) :
+    mfderiv J I g (f x) (mfderiv I J f x v) = v := by
+  simpa using mfderiv_apply_mfderiv_of_eventuallyEq_comp hgf hg hf v
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` and both maps are differentiable, then `dg_(f x)` is surjective. -/
+theorem _root_.MDifferentiableAt.surjective_mfderiv_of_eventuallyEq_id {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) : Function.Surjective (mfderiv J I g (f x)) :=
+  fun v ↦ ⟨mfderiv I J f x v, hg.mfderiv_apply_mfderiv_of_eventuallyEq_id hf hgf v⟩
+
+end EventuallyEqId
 
 variable {E₁ H₁ M₁ E₂ H₂ M₂ F H' N F₂ H₂' N₂ : Type*}
   [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [TopologicalSpace H₁] {I₁ : ModelWithCorners 𝕜 E₁ H₁}
