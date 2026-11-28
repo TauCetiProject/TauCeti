@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.Const
-public import Mathlib.CategoryTheory.Whiskering
 
 /-!
 # Whiskering with constant functors

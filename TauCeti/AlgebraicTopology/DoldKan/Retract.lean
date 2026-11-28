@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.AlgebraicTopology.DoldKan.EquivalencePseudoabelian
 
 /-!
@@ -31,6 +32,8 @@ projection `CategoryTheory.Idempotents.DoldKan.PInftyToN`, the bundled retract
 * `CategoryTheory.Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`: chain homotopy
   equivalence `N.obj X ≃ K[X]`.
 * `CategoryTheory.Idempotents.DoldKan.N.fullyFaithful`: full faithfulness of `N`.
+* `CategoryTheory.SimplicialObject.quasiIso_N_map_iff`: a simplicial morphism induces a
+  quasi-isomorphism on `N` iff it does on alternating face map complexes.
 -/
 
 public noncomputable section
@@ -204,3 +207,25 @@ instance N.faithful : (N (C := C)).Faithful :=
   N.fullyFaithful.faithful
 
 end CategoryTheory.Idempotents.DoldKan
+
+namespace CategoryTheory.SimplicialObject
+
+open Idempotents.DoldKan
+
+/-- A morphism `f : X ⟶ Y` of simplicial objects in an idempotent-complete preadditive category
+with finite coproducts and homology induces a quasi-isomorphism on normalized chains
+`Idempotents.DoldKan.N` if and only if it induces a quasi-isomorphism on alternating face map
+complexes. -/
+theorem quasiIso_N_map_iff {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
+    [IsIdempotentComplete C] [CategoryWithHomology C] {X Y : SimplicialObject C} (f : X ⟶ Y) :
+    QuasiIso (N.map f) ↔ QuasiIso ((alternatingFaceMapComplex C).map f) := by
+  have : QuasiIso (inclusionN.app X) := by
+    rw [← homotopyEquivNAlternatingFaceMapComplex_hom]
+    exact (homotopyEquivNAlternatingFaceMapComplex X).quasiIso_hom
+  have : QuasiIso (inclusionN.app Y) := by
+    rw [← homotopyEquivNAlternatingFaceMapComplex_hom]
+    exact (homotopyEquivNAlternatingFaceMapComplex Y).quasiIso_hom
+  rw [← quasiIso_iff_comp_right (N.map f) (inclusionN.app Y), inclusionN.naturality f,
+    quasiIso_iff_comp_left (inclusionN.app X) ((alternatingFaceMapComplex C).map f)]
+
+end CategoryTheory.SimplicialObject

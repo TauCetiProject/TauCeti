@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.AlgebraicTopology.DoldKan.Equivalence
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.Algebra.Homology.Embedding.TruncLE
 public import TauCeti.AlgebraicTopology.DoldKan.Normalized

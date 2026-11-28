@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.DoldKan.Equivalence
+public import TauCeti.AlgebraicTopology.DoldKan.Retract
 
 /-!
 # Chain maps out of the normalized Moore complex
@@ -25,6 +26,10 @@ alternating face map complexes have the simplices as a basis.
   maps `K[X] ⟶ L` vanishing on degeneracies.
 * `CategoryTheory.Abelian.DoldKan.N_eq_normalizedMooreComplex`: `Abelian.DoldKan.N` equals
   `AlgebraicTopology.normalizedMooreComplex A`.
+* `CategoryTheory.SimplicialObject.quasiIso_normalizedMooreComplex_map_iff_N`,
+  `CategoryTheory.SimplicialObject.quasiIso_normalizedMooreComplex_map_iff`: quasi-isomorphism
+  comparisons between `normalizedMooreComplex`, `Idempotents.DoldKan.N`, and
+  `alternatingFaceMapComplex`.
 -/
 
 public section
@@ -98,3 +103,30 @@ lemma N_eq_normalizedMooreComplex {A : Type*} [Category* A] [Abelian A] :
   rfl
 
 end CategoryTheory.Abelian.DoldKan
+
+namespace CategoryTheory.SimplicialObject
+
+open AlgebraicTopology
+
+variable {A : Type*} [Category* A] [Abelian A]
+
+/-- In an abelian category, a morphism `f : X ⟶ Y` of simplicial objects induces a quasi-isomorphism
+on normalized Moore complexes if and only if it induces a quasi-isomorphism on pseudoabelian
+normalized chains `Idempotents.DoldKan.N`. -/
+theorem quasiIso_normalizedMooreComplex_map_iff_N {X Y : SimplicialObject A} (f : X ⟶ Y) :
+    QuasiIso ((normalizedMooreComplex A).map f) ↔ QuasiIso (Idempotents.DoldKan.N.map f) := by
+  rw [← Abelian.DoldKan.N_eq_normalizedMooreComplex,
+    ← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
+    quasiIso_iff_comp_left (Abelian.DoldKan.comparisonN.hom.app X) _,
+    quasiIso_iff_comp_right (Idempotents.DoldKan.N.map f)
+      (Abelian.DoldKan.comparisonN.inv.app Y)]
+
+/-- In an abelian category, a morphism `f : X ⟶ Y` of simplicial objects induces a quasi-isomorphism
+on normalized Moore complexes if and only if it induces a quasi-isomorphism on alternating face map
+complexes. -/
+theorem quasiIso_normalizedMooreComplex_map_iff {X Y : SimplicialObject A} (f : X ⟶ Y) :
+    QuasiIso ((normalizedMooreComplex A).map f) ↔
+      QuasiIso ((alternatingFaceMapComplex A).map f) :=
+  (quasiIso_normalizedMooreComplex_map_iff_N f).trans (quasiIso_N_map_iff f)
+
+end CategoryTheory.SimplicialObject
