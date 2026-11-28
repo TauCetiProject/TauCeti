@@ -10,7 +10,6 @@ public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Choose.Bounds
-import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -149,8 +148,7 @@ theorem exists_pos_choose_mul_pow_le_exp (B : ℝ) {a : ℝ} (ha : 0 < a) :
       dsimp only [r] at hbudget ⊢
       nlinarith only [hbk, hbudget]
 
-/-- Every tail `∑_{j ≥ c} n.choose j` of the binomial sum is at most `exp n`: it is at most the
-full sum `2 ^ n`, and `2 ^ n = (1 + n / n) ^ n ≤ exp n`. -/
+/-- The sum of the binomial coefficients `n.choose j` with `j ≥ c` is at most `exp n`. -/
 theorem sum_range_choose_add_le_exp (n c : ℕ) :
     ∑ j ∈ Finset.range (n + 1 - c), (n.choose (j + c) : ℝ) ≤ Real.exp n := by
   calc _ = ∑ j ∈ Finset.Ico c (n + 1), (n.choose j : ℝ) := by
@@ -159,11 +157,11 @@ theorem sum_range_choose_add_le_exp (n c : ℕ) :
         Finset.sum_le_sum_of_subset_of_nonneg
           (by rw [Finset.range_eq_Ico]; exact Finset.Ico_subset_Ico_left (Nat.zero_le c))
           fun _ _ _ ↦ by positivity
-    _ = 2 ^ n := by exact_mod_cast Nat.sum_range_choose n
-    _ = (1 + (n : ℝ) / n) ^ n := by
+    _ ≤ Real.exp n := by
         rcases n.eq_zero_or_pos with rfl | hn
         · simp
-        · rw [div_self (by positivity)]; norm_num
-    _ ≤ Real.exp n := Real.one_add_div_pow_le_exp (neg_le_self (Nat.cast_nonneg n))
+        · have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+          simpa only [div_mul_cancel₀ _ hn', ← Real.exp_natCast_mul, mul_one] using
+            (Real.sum_choose_le_exp_pow (d := n) (m := n) le_rfl)
 
 end TauCeti
