@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.Borcherds
+public import TauCeti.Algebra.Vertex.StateFieldProduct
 public import TauCeti.Algebra.Vertex.Hom
 public import TauCeti.Algebra.Vertex.Restrict
 public import Mathlib.Order.CompleteLattice.Defs

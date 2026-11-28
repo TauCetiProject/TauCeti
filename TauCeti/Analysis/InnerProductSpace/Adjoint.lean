@@ -110,7 +110,8 @@ passage preserves its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
 Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
 conjugation by an isometric isomorphism of Hilbert spaces commutes with adjoints
-(`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`).
+(`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`). The adjoint of the inverse of such an
+isomorphism is the isomorphism itself (`LinearIsometryEquiv.adjoint_toContinuousLinearEquiv_symm`).
 
 -/
 
@@ -708,6 +709,18 @@ theorem adjoint_conjContinuousAlgEquiv [CompleteSpace E] [CompleteSpace F] (e : 
   -- Mathlib's star algebra equivalence `e.conjStarAlgEquiv` is defined as this conjugation
   -- together with its compatibility with `star = adjoint`, so `map_star` is the statement.
   (map_star e.conjStarAlgEquiv T).symm
+
+/-- The adjoint of the inverse of an isometric isomorphism of Hilbert spaces, viewed as a
+continuous linear equivalence, is the isomorphism itself: its transpose inverse `(e⁻¹)ᵀ` is `e`.
+
+Mathlib's `LinearIsometryEquiv.adjoint_eq_symm` states this for `e.symm`, whose coercion is
+rewritten by `simp` to that of `e.toContinuousLinearEquiv.symm`, so `simp` cannot apply it here. -/
+@[simp]
+theorem adjoint_toContinuousLinearEquiv_symm [CompleteSpace E] [CompleteSpace F]
+    (e : E ≃ₗᵢ[𝕜] F) :
+    ContinuousLinearMap.adjoint (e.toContinuousLinearEquiv.symm : F →L[𝕜] E) = e := by
+  rw [← toContinuousLinearEquiv_symm]
+  exact e.symm.adjoint_eq_symm
 
 end LinearIsometryEquiv
 

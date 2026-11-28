@@ -33,6 +33,8 @@ field `F` with `q` elements, `#Fˣ = q - 1` (Mathlib's `Fintype.card_units`).
   `∑ x, χ x ψ (a - b x) = χ(b⁻¹) ∑ x, χ x ψ (a - x)`.
 * `MulChar.sum_mul_apply_sub_mul_eq_mul_jacobiSum`: for units `a` and `b`,
   `∑ x, χ x ψ (a - b x) = χ(b⁻¹) (χ ψ)(a) J(χ, ψ)`.
+* `MulChar.sum_mul_apply_add_eq_mul_jacobiSum`: for a unit `a`,
+  `∑ u, χ u ψ (u + a) = ψ(a) χ(-a) J(χ, ψ)`.
 * `MulChar.sum_mul_apply_neg_eq_ite`: with values in a domain, `∑ x, χ x ψ (-x)` is `χ(-1) #Fˣ`
   if `χ ψ = 1` and zero otherwise.
 -/
@@ -83,6 +85,17 @@ theorem sum_mul_apply_sub_eq_mul_jacobiSum (χ ψ : MulChar F R) (c : Fˣ) :
 theorem sum_mul_apply_sub_mul_eq_mul_jacobiSum (χ ψ : MulChar F R) (a b : Fˣ) :
     ∑ x, χ x * ψ (a - b * x) = χ ↑b⁻¹ * ((χ * ψ) a * jacobiSum χ ψ) := by
   rw [sum_mul_apply_sub_mul_eq, sum_mul_apply_sub_eq_mul_jacobiSum]
+
+/-- **The translated Jacobi sum.** For a unit `a`, `∑ u, χ u ψ (u + a) = ψ(a) χ(-a) J(χ, ψ)`. -/
+theorem sum_mul_apply_add_eq_mul_jacobiSum (χ ψ : MulChar F R) (a : Fˣ) :
+    ∑ u, χ u * ψ (u + a) = ψ a * χ (-(a : F)) * jacobiSum χ ψ := by
+  -- This is `sum_mul_apply_sub_mul_eq_mul_jacobiSum` at `b = -1`.
+  have h := sum_mul_apply_sub_mul_eq_mul_jacobiSum χ ψ a (-1)
+  simp only [inv_neg, inv_one, Units.val_neg, Units.val_one, neg_one_mul, sub_neg_eq_add,
+    mul_apply] at h
+  simp_rw [add_comm _ (a : F)]
+  rw [h, neg_eq_neg_one_mul (a : F), map_mul]
+  ring
 
 /-- **The Jacobi sum at `c = 0`.** With values in a domain, `∑ x, χ x ψ (-x)` is `χ(-1) #Fˣ` if
 `χ ψ = 1` and zero otherwise. -/

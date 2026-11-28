@@ -19,7 +19,7 @@ The proof has two steps:
 1. The kernel of `A` on `(O ⧸ Ideal.span {a}) ^ k` is the orthogonal of `A.rowLattice a`, hence
    isomorphic via `Submodule.orthogonalPiEquiv` to
    `Hom_O((k → O) ⧸ A.rowLattice a, O ⧸ Ideal.span {a})`. Since `(k → O) ⧸ A.rowLattice a` is
-   annihilated by `a ≠ 0`, `IsDiscreteValuationRing.length_linearMap_quotient_span_singleton_right`
+   annihilated by `a ≠ 0`, `TauCeti.length_linearMap_quotient_span_singleton_right`
    shows this Hom module has the same length as `(k → O) ⧸ A.rowLattice a`.
 2. For any matrix `M : Matrix ι k O` with `Nonempty (k → ι)`, the quotient
    `(k → O) ⧸ Submodule.span O (Set.range M.row)` has length equal to the least valuation of a
@@ -82,7 +82,7 @@ theorem isLeast_length_ker (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* O) (ha : 
     rw [← map_smul, mkQ_apply, Submodule.Quotient.mk_eq_zero]
     exact (A.map ev).smul_mem_rowLattice (ev a) v
   rw [length_ker_eq_length_linearMap,
-    length_linearMap_quotient_span_singleton_right ha h_kill,
+    TauCeti.length_linearMap_quotient_span_singleton_right ha h_kill,
     ← Set.image_image (addVal O) ev, image_rowLatticeMinors]
   exact (A.map ev).isLeast_length_quotient_rowLattice (ev a)
 

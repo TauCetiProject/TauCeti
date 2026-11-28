@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.DiracSystem.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
@@ -140,27 +141,20 @@ theorem diracFundamentalMatrix_christoffelDarboux_apply (hq : IntegrableOn q (uI
       (fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q s w)) (uIcc 0 t) := by
     simp only [toEuclideanCLM_diracFundamentalMatrix]
     exact continuousOn_propagator_left (integrableOn_toEuclideanCLM_diracCoeff hq w) left_mem_uIcc
-  -- The integrand of the operator identity is continuous, so the evaluation at the basis vector
-  -- `eⱼ` followed by the `i`-th coordinate commutes with the integral.
+  -- The integrand of the operator identity is continuous, so the entry functional
+  -- `X ↦ (X eⱼ)ᵢ` commutes with the integral.
   have hFc : ContinuousOn (fun s ↦
       star (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q s lam)) *
         toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q s z)) (uIcc 0 t) :=
     ((star_isometry (E := EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2))).continuous
       |>.comp_continuousOn (hc lam)).mul (hc z)
-  have h := congrArg (fun X ↦ EuclideanSpace.proj (𝕜 := ℂ) i (X (EuclideanSpace.single j 1)))
-    (diracFundamentalMatrix_christoffelDarboux hq lam z)
-  simp only [sub_apply, smul_apply,
-    ContinuousLinearMap.intervalIntegral_apply hFc.intervalIntegrable, map_sub, map_smul] at h
-  rw [← (EuclideanSpace.proj (𝕜 := ℂ) i).intervalIntegral_comp_comm
-    (hFc.clm_apply continuousOn_const).intervalIntegrable] at h
-  have he (X : Matrix (Fin 2) (Fin 2) ℂ) :
-      EuclideanSpace.proj (𝕜 := ℂ) i (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) X
-        (EuclideanSpace.single j 1)) = X i j := by
-    simp
+  have h := congrArg (euclideanEntryCLM ℂ i j) (diracFundamentalMatrix_christoffelDarboux hq lam z)
+  rw [map_sub, map_smul, ← (euclideanEntryCLM ℂ i j).intervalIntegral_comp_comm
+    hFc.intervalIntegrable] at h
   have hs (X : Matrix (Fin 2) (Fin 2) ℂ) :
       star (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) X) = toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) Xᴴ := by
     rw [← star_eq_conjTranspose, map_star]
-  simp only [hs, ← map_mul, he] at h
+  simp only [hs, ← map_mul, euclideanEntryCLM_toEuclideanCLM] at h
   simpa using h
 
 /-- **The kernel identity of a column.** If `q` is integrable on `[0, t]` (or `[t, 0]`), the `j`-th
