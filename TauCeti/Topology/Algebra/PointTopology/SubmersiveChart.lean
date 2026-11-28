@@ -12,12 +12,14 @@ public import TauCeti.RingTheory.Extension.Presentation.Submersive
 public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Localization
 public import TauCeti.Topology.Algebra.PointTopology.Presentation
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.RingTheory.Etale.Kaehler
+import TauCeti.Analysis.Analytic.Inverse
 import TauCeti.Analysis.Calculus.ImplicitFunction.Data
 import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 import TauCeti.RingTheory.Kaehler.Conormal
 import TauCeti.Topology.Algebra.Module.Equiv.Pi
+-- The analytic inverse theorem uses the underlying strict-derivative chart.
+import all Mathlib.Analysis.Calculus.Implicit
 
 /-!
 # Local charts on the points of smooth algebras
@@ -156,26 +158,14 @@ private theorem analyticAt_coe_levelSetChart_symm (x : S →ₐ[K] K)
   let e := φ.levelSetChart (c := 0) hx
   have hz : ((0 : σ → K), z) ∈ φ.toOpenPartialHomeomorph.target := by
     simpa only [e, ImplicitFunctionData.levelSetChart_target, Set.mem_preimage] using h
-  let y := P.toPresentation.pointsHomeomorphZeroSet.symm (e.symm z)
-  have hy : (P.implicitData y).pt = φ.toOpenPartialHomeomorph.symm (0, z) := by
-    calc
-      (P.implicitData y).pt = (e.symm z : ι → K) := by
-        funext i
-        exact P.toPresentation.pointsHomeomorphZeroSet_symm_apply_val _ i
-      _ = _ := φ.coe_levelSetChart_symm_apply hx h
-  obtain ⟨D, hD⟩ := (P.implicitData y).isInvertible_fderiv_prodFun
   have hfun : φ.prodFun = fun v ↦ (fun j ↦ eval v (P.relation j), P.coordProj v) :=
     funext φ.prodFun_apply
-  have hfun' : (P.implicitData y).prodFun = φ.prodFun := by
-    funext v
-    rw [ImplicitFunctionData.prodFun_apply, hfun]
-  have ha : AnalyticAt K φ.toOpenPartialHomeomorph (φ.toOpenPartialHomeomorph.symm (0, z)) := by
-    rw [ImplicitFunctionData.toOpenPartialHomeomorph_coe, hfun]
+  have ha : AnalyticAt K φ.prodFun (φ.toOpenPartialHomeomorph.symm (0, z)) := by
+    rw [hfun]
     exact (analyticOnNhd_eval_family P.relation _ trivial).prod (P.coordProj.analyticAt _)
-  have hInv := φ.toOpenPartialHomeomorph.analyticAt_symm hz ha <| by
-    rw [ImplicitFunctionData.toOpenPartialHomeomorph_coe, ← hy]
-    rw [hfun'] at hD
-    exact hD.symm
+  have hInv : AnalyticAt K φ.toOpenPartialHomeomorph.symm ((0 : σ → K), z) := by
+    rw [ImplicitFunctionData.toOpenPartialHomeomorph] at hz ha ⊢
+    exact φ.hasStrictFDerivAt.analyticAt_toOpenPartialHomeomorph_symm hz ha
   refine (hInv.comp (analyticAt_const.prod analyticAt_id)).congr ?_
   filter_upwards [e.open_target.mem_nhds h] with w hw
   exact (φ.coe_levelSetChart_symm_apply hx hw).symm
