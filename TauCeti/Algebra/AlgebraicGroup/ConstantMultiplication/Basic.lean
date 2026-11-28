@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 
 /-!
@@ -78,7 +78,8 @@ multiplication, and the last that they are closed under inversion.
   `TauCeti.ConstantMultiplication.inclusion`: the subgroup scheme preserving the multiplication
   and its closed immersion into the general linear group scheme.
 * `TauCeti.ConstantMultiplication.mem_definingPointsSubgroup_iff`: an ambient point is cut out
-  exactly when its matrix preserves the multiplication.
+  exactly when its matrix preserves the multiplication. Its matrix subgroup version is
+  `TauCeti.ConstantMultiplication.mem_hopfIdealPointsSubgroup_iff`.
 
 ## References
 
@@ -659,6 +660,15 @@ theorem mem_definingPointsSubgroup_iff
       exact h
     exact definingHopfIdeal_toIdeal_le_ker_of_preserves_map_genericMatrix R n C _ hpres
       (HopfIdeal.mem_toIdeal.mpr hy)
+
+/-- An invertible matrix belongs to the subgroup defined by the multiplication relations
+exactly when it preserves the multiplication. -/
+theorem mem_hopfIdealPointsSubgroup_iff (g : Matrix.GeneralLinearGroup (Fin n) A) :
+    g ∈ GeneralLinear.hopfIdealPointsSubgroup n (definingHopfIdeal R n C) A ↔
+      Preserves R n C (g : Matrix (Fin n) (Fin n) A) := by
+  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff]
+  have h := mem_definingPointsSubgroup_iff R n C ((GeneralLinear.pointsMulEquiv n).symm g)
+  rwa [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, MulEquiv.apply_symm_apply] at h
 
 end Points
 
