@@ -285,6 +285,18 @@ theorem reverse_inv_mul_inv {x : (CliffordAlgebra Q)ˣ} {r : Rˣ}
   rw [← mul_assoc, ← Algebra.commutes, mul_assoc, ← reverse.map_mul, Units.mul_inv,
     reverse.map_one, mul_one]
 
+/-- Reversal fixes the conjugate of a reversal-fixed element by a unit `x` with
+`reverse x * x = 1`, because reversal then inverts `x`. -/
+theorem reverse_mul_mul_inv_eq_self {x : (CliffordAlgebra Q)ˣ}
+    (hx : reverse (x : CliffordAlgebra Q) * (x : CliffordAlgebra Q) = 1) {y : CliffordAlgebra Q}
+    (hy : reverse y = y) :
+    reverse ((x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q)) =
+      (x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q) := by
+  have hxr := Units.eq_inv_of_mul_eq_one_right hx
+  have hxir : reverse (↑x⁻¹ : CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
+    rw [← hxr, reverse_reverse]
+  simp only [reverse.map_mul, hy, hxr, hxir, mul_assoc]
+
 section Bivector
 
 variable [Invertible (2 : R)]

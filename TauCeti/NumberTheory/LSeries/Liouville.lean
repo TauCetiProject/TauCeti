@@ -78,9 +78,7 @@ theorem LSeriesHasSum_liouville {s : ℂ} (hs : 1 < s.re) :
     have H := EulerProduct.eulerProduct_completely_multiplicative_hasProd
       (f := f) (by simpa only [hterm] using hsum.norm)
     simpa only [hprime, sub_neg_eq_add, hterm, _root_.LSeries] using H
-  have hs2 : 1 < (2 * s).re := by
-    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-    linarith
+  have hs2 := one_lt_re_two_mul hs
   have hp2 : HasProd (fun p : Primes ↦ (1 - (p : ℂ) ^ (-(2 * s)))⁻¹)
       (_root_.LSeries (fun n ↦ (ArithmeticFunction.liouville n : ℂ)) s *
         riemannZeta s) := by

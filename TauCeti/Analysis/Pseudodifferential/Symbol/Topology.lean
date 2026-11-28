@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 
 /-!
@@ -41,12 +42,17 @@ The main results are:
   `TauCeti.Symbol.spatialDerivCLM`: these operations as continuous linear maps;
 * `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
   at a point is a continuous linear function of the symbol;
+* `TauCeti.Symbol.continuous_of_seminorm_sub_le`: a family of symbols is continuous when the
+  seminorms of its differences are dominated by seminorms of the differences of a continuous
+  family;
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
 * `TauCeti.Symbol.seminorm_comp_le`: the Leibniz estimate bounding the seminorms of a composition
   `b ∘ a` by sums of products of seminorms of `b` and `a`, so that compositions of families with
   uniformly bounded seminorms have uniformly bounded seminorms
-  (`TauCeti.Symbol.exists_seminorm_comp_le`);
+  (`TauCeti.Symbol.exists_seminorm_comp_le`), and composition on the left with a fixed symbol
+  preserves bounds by finitely many seminorms
+  (`TauCeti.Symbol.exists_seminorm_comp_le_sum_seminorm`);
 * `TauCeti.Symbol.continuous_comp`: composition of symbols is jointly continuous, so the
   composition of two continuous parameter families is continuous (`Continuous.symbol_comp`);
   with one factor fixed it is a continuous linear map (`TauCeti.Symbol.compLeftCLM`,
@@ -57,8 +63,8 @@ any derivative its seminorms vanish (`TauCeti.Symbol.seminorm_const_nil_nil`,
 `TauCeti.Symbol.seminorm_const_eq_zero`). On every compact set its seminorms are at most `‖T‖`
 (`TauCeti.Symbol.seminorm_const_le`).
 
-The seminorms are set up following Mathlib's seminorms of the Schwartz space
-(`SchwartzMap.seminorm`).
+The seminorms are the best constants `Seminorm.weightedSup` of these weighted estimates, as for
+Mathlib's seminorms of the Schwartz space (`SchwartzMap.seminorm`).
 
 ## References
 
@@ -84,80 +90,35 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
 
 section Seminorm
 
-/-- The admissible constants in the estimate of `∂_x^α ∂_ξ^β a` on `K`. -/
-private def bounds (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : Set ℝ :=
-  {c | 0 ≤ c ∧ ∀ x ∈ K, ∀ ξ,
-    ‖mixedDeriv α β a.coefficient x ξ‖ ≤ c * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)}
-
-private theorem bounds_nonempty (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : (bounds K α β a).Nonempty :=
-  let ⟨C, hC, h⟩ := a.exists_bound K K.isCompact α β
-  ⟨C, hC, h⟩
-
-private theorem bounds_bddBelow (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : BddBelow (bounds K α β a) :=
-  ⟨0, fun _ hc => hc.1⟩
-
-/-- The best constant in the estimate of `∂_x^α ∂_ξ^β a` on `K`. -/
-private def seminormAux (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : ℝ :=
-  sInf (bounds K α β a)
-
-private theorem seminormAux_nonneg (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) : 0 ≤ seminormAux K α β a :=
-  le_csInf (bounds_nonempty K α β a) fun _ hc => hc.1
-
-private theorem le_seminormAux (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∈ K) (ξ : CoordinateSpace n) :
-    ‖mixedDeriv α β a.coefficient x ξ‖ ≤
-      seminormAux K α β a * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  have hw := rpow_weight_pos ξ (m - β.length)
-  rw [← div_le_iff₀ hw]
-  exact le_csInf (bounds_nonempty K α β a) fun c hc => (div_le_iff₀ hw).2 (hc.2 x hx ξ)
-
-private theorem seminormAux_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a : Symbol n V W m) {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
-    seminormAux K α β a ≤ C :=
-  csInf_le (bounds_bddBelow K α β a) ⟨hC, h⟩
-
-private theorem seminormAux_zero (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
-    seminormAux K α β (0 : Symbol n V W m) = 0 :=
-  le_antisymm (seminormAux_le_bound K α β 0 le_rfl fun _ _ _ => by simp)
-    (seminormAux_nonneg K α β 0)
-
-private theorem seminormAux_add_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (a b : Symbol n V W m) :
-    seminormAux K α β (a + b) ≤ seminormAux K α β a + seminormAux K α β b :=
-  seminormAux_le_bound K α β _ (add_nonneg (seminormAux_nonneg K α β a)
-    (seminormAux_nonneg K α β b)) fun x hx ξ => by
-      rw [coefficient_add]
-      exact norm_mixedDeriv_add_le a.contDiff_coefficient b.contDiff_coefficient
-        (le_seminormAux K α β a hx ξ) (le_seminormAux K α β b hx ξ)
-
-private theorem seminormAux_smul_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
-    (c : ℂ) (a : Symbol n V W m) : seminormAux K α β (c • a) ≤ ‖c‖ * seminormAux K α β a :=
-  seminormAux_le_bound K α β _ (mul_nonneg (norm_nonneg c) (seminormAux_nonneg K α β a))
-    fun x hx ξ => by
-      rw [coefficient_smul]
-      exact norm_mixedDeriv_smul_le c (le_seminormAux K α β a hx ξ)
+/-- The mixed derivative `a ↦ ∂_x^α ∂_ξ^β a(x, ξ)` at a fixed point, as a linear map. -/
+private def mixedDerivLinearMap (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    Symbol n V W m →ₗ[ℂ] V →L[ℂ] W where
+  toFun a := mixedDeriv α β a.coefficient x ξ
+  map_add' a b := mixedDeriv_add a.contDiff_coefficient b.contDiff_coefficient α β x ξ
+  map_smul' c _ := mixedDeriv_const_smul c α β x ξ
 
 /-- The seminorm `p_{K,α,β}` on the symbols of order `m`: the best constant `C` in the estimate
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)` for all positions `x ∈ K` and all frequencies `ξ`,
 where `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)`. -/
 protected def seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
     Seminorm ℂ (Symbol n V W m) :=
-  Seminorm.ofSMulLE (seminormAux K α β) (seminormAux_zero K α β) (seminormAux_add_le K α β)
-    (seminormAux_smul_le K α β)
+  Seminorm.weightedSup (fun i : K × CoordinateSpace n => mixedDerivLinearMap α β i.1 i.2)
+    (fun i => (1 + ‖i.2‖ ^ 2) ^ ((m - β.length) / 2)) (fun i => rpow_weight_pos i.2 _)
+
+/-- Every symbol satisfies the weighted estimates defining `Symbol.seminorm K α β`. -/
+private theorem exists_bound_mixedDerivLinearMap (K : Compacts (CoordinateSpace n))
+    (α β : List (Fin n)) (a : Symbol n V W m) :
+    ∃ C, ∀ i : K × CoordinateSpace n,
+      ‖mixedDerivLinearMap α β i.1 i.2 a‖ ≤ C * (1 + ‖i.2‖ ^ 2) ^ ((m - β.length) / 2) :=
+  let ⟨C, _, h⟩ := a.exists_bound K K.isCompact α β; ⟨C, fun i => h i.1 i.1.property i.2⟩
 
 /-- The seminorm `p_{K,α,β}(a)` bounds `‖∂_x^α ∂_ξ^β a(x, ξ)‖ / ⟨ξ⟩^(m - |β|)` for `x ∈ K`. -/
 theorem le_seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
     (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∈ K) (ξ : CoordinateSpace n) :
     ‖mixedDeriv α β a.coefficient x ξ‖ ≤
       Symbol.seminorm K α β a * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-  le_seminormAux K α β a hx ξ
+  Seminorm.norm_le_weightedSup (fun i : K × CoordinateSpace n => mixedDerivLinearMap α β i.1 i.2)
+    _ _ (exists_bound_mixedDerivLinearMap K α β) a (⟨x, hx⟩, ξ)
 
 /-- A constant in the estimate of `∂_x^α ∂_ξ^β a` on `K` bounds the seminorm `p_{K,α,β}(a)`. -/
 theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
@@ -165,7 +126,7 @@ theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin 
     (h : ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
     Symbol.seminorm K α β a ≤ C :=
-  seminormAux_le_bound K α β a hC h
+  Seminorm.weightedSup_le _ _ _ hC fun i => h i.1 i.1.property i.2
 
 /-- The seminorm `p_{K,α,β}(a)` is at most `C ≥ 0` exactly when `C` is a constant in the estimate
 of `∂_x^α ∂_ξ^β a` on `K`. -/
@@ -390,15 +351,11 @@ variable (n V W m) in
 on the symbols of order `m`; in particular the value `a ↦ a(x, ξ)` for `α = β = []`. -/
 def mixedDerivCLM (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     Symbol n V W m →L[ℂ] V →L[ℂ] W :=
-  let L : Symbol n V W m →ₗ[ℂ] V →L[ℂ] W :=
-    { toFun a := mixedDeriv α β a.coefficient x ξ
-      map_add' a b := mixedDeriv_add a.contDiff_coefficient b.contDiff_coefficient α β x ξ
-      map_smul' c a := mixedDeriv_const_smul c α β x ξ }
-  { toLinearMap := L
-    cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) L
+  { toLinearMap := mixedDerivLinearMap α β x ξ
+    cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) _
       (Seminorm.IsBounded.of_real fun _ => ⟨{({x}, α, β)},
         (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2), fun a => by
-          simpa [L, mul_comm] using le_seminorm {x} α β a rfl ξ⟩) }
+          simpa [mixedDerivLinearMap, mul_comm] using le_seminorm {x} α β a rfl ξ⟩) }
 
 @[simp]
 theorem mixedDerivCLM_apply (α β : List (Fin n)) (x ξ : CoordinateSpace n) (a : Symbol n V W m) :
@@ -409,6 +366,36 @@ symbol `a`; in particular so is the value `a(x, ξ)`. -/
 theorem continuous_mixedDeriv (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     Continuous fun a : Symbol n V W m => mixedDeriv α β a.coefficient x ξ :=
   (mixedDerivCLM n V W m α β x ξ).continuous
+
+open Filter Topology in
+/-- A family `t ↦ F t` of symbols is continuous if every seminorm of `F t - F t₀` is at most a
+constant times finitely many seminorms on one compact set `K` of `a t - a t₀`, for a continuous
+family `a` of symbols. -/
+theorem continuous_of_seminorm_sub_le {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V']
+    [NormedAddCommGroup W'] [NormedSpace ℂ W'] {X : Type*} [TopologicalSpace X]
+    {a : X → Symbol n V W m} (ha : Continuous a) (K : Compacts (CoordinateSpace n))
+    {F : X → Symbol n V' W' m'}
+    (hF : ∀ (L : Compacts (CoordinateSpace n)) (α β : List (Fin n)),
+      ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), ∀ t t₀,
+        Symbol.seminorm L α β (F t - F t₀) ≤
+          C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 (a t - a t₀)) :
+    Continuous F := by
+  refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
+  rw [ContinuousAt, withSeminorms.tendsto_nhds]
+  rintro ⟨L, α, β⟩ ε hε
+  obtain ⟨s, C, hC⟩ := hF L α β
+  have ha' (i : List (Fin n) × List (Fin n)) :
+      Tendsto (fun t ↦ Symbol.seminorm K i.1 i.2 (a t - a t₀)) (𝓝 t₀) (𝓝 0) := by
+    simpa only [Function.comp_def, seminormFamily_apply] using
+      ((withSeminorms.continuous_seminorm (K, i.1, i.2)).comp
+        (show Continuous fun t ↦ a t - a t₀ from ha.sub continuous_const)).tendsto' t₀ 0
+        (by simp)
+  have hP : Tendsto (fun t ↦ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 (a t - a t₀)) (𝓝 t₀)
+      (𝓝 0) := by
+    simpa using (tendsto_finsetSum s fun i _ ↦ ha' i).const_mul C
+  have key : Tendsto (fun t ↦ Symbol.seminorm L α β (F t - F t₀)) (𝓝 t₀) (𝓝 0) :=
+    squeeze_zero (fun _ ↦ apply_nonneg _ _) (fun t ↦ hC t t₀) hP
+  simpa only [seminormFamily_apply] using (tendsto_order.1 key).2 ε hε
 
 end Topology
 
@@ -452,6 +439,59 @@ theorem exists_seminorm_comp_le {ι : Type*} (K : Compacts (CoordinateSpace n))
   refine List.sum_le_sum fun t _ => List.sum_le_sum fun s _ => ?_
   exact mul_le_mul (hCb _ _ i) (hCa _ _ i) (apply_nonneg _ _)
     ((apply_nonneg _ _).trans (hCb _ _ i))
+
+/-- A finite sum `∑ₑ cₑ Gₑ(i)` with nonnegative coefficients, over a list of indices `e`, of
+quantities `Gₑ(i)` each of which is at most a constant times finitely many seminorms on `K` of the
+symbols `a i`, uniformly in `i`, is itself at most a constant times finitely many seminorms on `K`
+of `a i`, uniformly in `i`. -/
+theorem exists_listSum_le_sum_seminorm {ι κ E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [NormedAddCommGroup F] [NormedSpace ℂ F] {m₀ : ℝ} (K : Compacts (CoordinateSpace n))
+    (a : ι → Symbol n E F m₀) (l : List κ) (c : κ → ℝ) (hc : ∀ e ∈ l, 0 ≤ c e) (G : κ → ι → ℝ)
+    (hG : ∀ e ∈ l, ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ i, G e i ≤ C * ∑ j ∈ s, Symbol.seminorm K j.1 j.2 (a i)) :
+    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ i, (l.map fun e ↦ c e * G e i).sum ≤ C * ∑ j ∈ s, Symbol.seminorm K j.1 j.2 (a i) := by
+  classical
+  induction l with
+  | nil => exact ⟨∅, 0, le_rfl, fun i ↦ by simp⟩
+  | cons e l ih =>
+    obtain ⟨s, C, hC0, hC⟩ := hG e List.mem_cons_self
+    obtain ⟨t, D, hD0, hD⟩ := ih (fun e' he' ↦ hc e' (List.mem_cons_of_mem e he'))
+      fun e' he' ↦ hG e' (List.mem_cons_of_mem e he')
+    have hce := hc e List.mem_cons_self
+    refine ⟨s ∪ t, c e * C + D, add_nonneg (mul_nonneg hce hC0) hD0, fun i ↦ ?_⟩
+    have hs : ∑ j ∈ s, Symbol.seminorm K j.1 j.2 (a i) ≤
+        ∑ j ∈ s ∪ t, Symbol.seminorm K j.1 j.2 (a i) :=
+      Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left fun _ _ _ ↦ apply_nonneg _ _
+    have ht : ∑ j ∈ t, Symbol.seminorm K j.1 j.2 (a i) ≤
+        ∑ j ∈ s ∪ t, Symbol.seminorm K j.1 j.2 (a i) :=
+      Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_right fun _ _ _ ↦ apply_nonneg _ _
+    rw [List.map_cons, List.sum_cons, add_mul, mul_assoc]
+    exact add_le_add
+      (mul_le_mul_of_nonneg_left ((hC i).trans (mul_le_mul_of_nonneg_left hs hC0)) hce)
+      ((hD i).trans (mul_le_mul_of_nonneg_left ht hD0))
+
+/-- Composition on the left with a fixed symbol `b` preserves linear seminorm estimates: if every
+seminorm on `L` of `x i` is at most a constant times finitely many seminorms on `K` of `a i`,
+uniformly in `i`, then so is every seminorm on `L` of `b ∘ x i`, by the Leibniz estimate
+`seminorm_comp_le`. -/
+theorem exists_seminorm_comp_le_sum_seminorm {ι E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [NormedAddCommGroup F] [NormedSpace ℂ F] {m₀ : ℝ}
+    (K L : Compacts (CoordinateSpace n)) (b : Symbol n W U m') (x : ι → Symbol n V W m)
+    (a : ι → Symbol n E F m₀)
+    (hx : ∀ γ δ : List (Fin n), ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ i, Symbol.seminorm L γ δ (x i) ≤ C * ∑ j ∈ s, Symbol.seminorm K j.1 j.2 (a i))
+    (α β : List (Fin n)) :
+    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ i, Symbol.seminorm L α β (b.comp (x i)) ≤ C * ∑ j ∈ s, Symbol.seminorm K j.1 j.2 (a i) := by
+  obtain ⟨s, C, hC0, hC⟩ := exists_listSum_le_sum_seminorm K a β.sublists'.revzip (fun _ ↦ 1)
+    (fun _ _ ↦ zero_le_one)
+    (fun t i ↦ (α.sublists'.revzip.map fun s ↦
+      Symbol.seminorm L s.1 t.1 b * Symbol.seminorm L s.2 t.2 (x i)).sum)
+    fun t _ ↦ exists_listSum_le_sum_seminorm K a α.sublists'.revzip
+      (fun s ↦ Symbol.seminorm L s.1 t.1 b) (fun _ _ ↦ apply_nonneg _ _)
+      (fun s i ↦ Symbol.seminorm L s.2 t.2 (x i)) fun s _ ↦ hx s.2 t.2
+  exact ⟨s, C, hC0, fun i ↦ (seminorm_comp_le L α β b (x i)).trans (by simpa using hC i)⟩
 
 /-- If all products `p_{K,α₁,β₁}(b_i) p_{K,α₂,β₂}(a_i)` tend to zero, then so does
 `p_{K,α,β}(b_i ∘ a_i)`, by the Leibniz estimate `seminorm_comp_le`. -/

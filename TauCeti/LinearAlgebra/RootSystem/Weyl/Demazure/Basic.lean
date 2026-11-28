@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Invariant
-import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 import TauCeti.Algebra.MonoidAlgebra.Telescope
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 
 /-!
 # The integral Demazure operator of a root
@@ -48,7 +48,7 @@ Since `1 - e^{-α}` is not a zero divisor in `ℤ[M]`, the localization identity
   `RootPairing.demazureOperator_single_of_coroot'_eq_neg_one`: the root strings above.
 * `RootPairing.one_sub_single_neg_root_mul_demazureOperator`: the localization identity, and
   `RootPairing.demazureOperator_eq_iff`: it characterizes `Dᵢ`, because multiplication by
-  `1 - e^{-αᵢ}` is injective (`RootPairing.isLeftRegular_one_sub_single_neg_root`).
+  `1 - e^{-αᵢ}` is injective (`RootPairing.isRegular_one_sub_single_neg_root`).
 * `RootPairing.coeff_reflection_demazureOperator`: the coefficients of `Dᵢ f` are constant along
   `sᵢ`.
 * `RootPairing.demazureOperator_eq_self_iff`: `Dᵢ f = f` exactly when `sᵢ f = f`.
@@ -141,11 +141,11 @@ private lemma one_sub_single_neg_root_mul_demazureOperator_single (x : M) :
   · have hx : -P.root i + (x - (n : ℤ) • P.root i) = x - (n + 1) • P.root i := by
       rw [natCast_zsmul, succ_nsmul]; abel
     rw [P.demazureOperator_single_of_coroot'_eq_natCast i hn,
-      TauCeti.one_sub_single_neg_mul_sum_sub, hn, hx]
+      AddCommute.one_sub_single_neg_mul_sum_sub (.all _ _), hn, hx]
   · have hx : -P.root i + (x - (-(n : ℤ) - 1) • P.root i) = x + n • P.root i := by
       rw [sub_smul, neg_smul, natCast_zsmul, one_smul]; abel
     rw [P.demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one i hn, mul_neg,
-      TauCeti.one_sub_single_neg_mul_sum_add, neg_sub, hn, hx]
+      AddCommute.one_sub_single_neg_mul_sum_add (.all _ _), neg_sub, hn, hx]
 
 /-- **The localization identity** of the Demazure operator:
 `(1 - e^{-αᵢ}) Dᵢ(f) = f - e^{-αᵢ} sᵢ(f)`, where `sᵢ` reindexes `ℤ[M]` along the reflection of
@@ -162,22 +162,6 @@ theorem one_sub_single_neg_root_mul_demazureOperator (f : AddMonoidAlgebra ℤ M
       map_zsmul, mul_smul_comm, smul_sub]
     simp
 
-/-- Multiplication by `1 - e^{-αᵢ}` is injective on `ℤ[M]`, since `-αᵢ` has infinite order. -/
-theorem isLeftRegular_one_sub_single_neg_root :
-    IsLeftRegular (1 - single (-P.root i) 1 : AddMonoidAlgebra ℤ M) := by
-  intro f g h
-  beta_reduce at h
-  have hα : ¬IsOfFinAddOrder (-P.root i) := by
-    rw [isOfFinAddOrder_iff_nsmul_eq_zero]
-    rintro ⟨n, hn, hnα⟩
-    have := congrArg (P.coroot' i) hnα
-    simp only [smul_neg, map_neg, map_nsmul, root_coroot'_eq_pairing, pairing_same, map_zero,
-      nsmul_eq_mul, neg_eq_zero] at this
-    omega
-  rw [← sub_eq_zero]
-  refine TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder hα ?_
-  linear_combination -h
-
 /-- The localization identity characterizes the Demazure operator: `Dᵢ f` is the unique `g` with
 `(1 - e^{-αᵢ}) g = f - e^{-αᵢ} sᵢ(f)`. -/
 theorem demazureOperator_eq_iff {f g : AddMonoidAlgebra ℤ M} :
@@ -185,7 +169,7 @@ theorem demazureOperator_eq_iff {f g : AddMonoidAlgebra ℤ M} :
       (1 - single (-P.root i) 1) * g =
         f - single (-P.root i) 1 * mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
   refine ⟨fun h ↦ h ▸ P.one_sub_single_neg_root_mul_demazureOperator i f, fun h ↦ ?_⟩
-  exact P.isLeftRegular_one_sub_single_neg_root i
+  exact (P.isRegular_one_sub_single_neg_root i).left
     ((P.one_sub_single_neg_root_mul_demazureOperator i f).trans h.symm)
 
 /-! ### Consequences of the localization identity -/

@@ -24,8 +24,12 @@ each vertex `i` of `F` to the appended final vertex `Y` by `F.map (homOfLE (Fin.
 (`CategoryTheory.ComposableArrows.totalArrow_postcomp_castSucc`,
 `CategoryTheory.ComposableArrows.totalArrow_postcomp_castSucc_last`), and applying a functor to the
 string maps its arrows along the functor
-(`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`) and commutes with
-prepending (`CategoryTheory.Functor.mapComposableArrows_obj_precomp`). A string of at least one
+(`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`), respects identities,
+composites, `0`-simplices, and `1`-simplices (`CategoryTheory.Functor.id_mapComposableArrows_obj`,
+`CategoryTheory.Functor.comp_mapComposableArrows_obj`,
+`CategoryTheory.Functor.mapComposableArrows_obj_mk₀`,
+`CategoryTheory.Functor.mapComposableArrows_obj_mk₁`), and commutes with prepending
+(`CategoryTheory.Functor.mapComposableArrows_obj_precomp`). A string of at least one
 arrow is already determined by its first arrow and the remaining string
 (`CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`).
 
@@ -62,6 +66,10 @@ theorem totalArrow_left (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i 
 @[simp]
 theorem totalArrow_right (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
     (F.totalArrow i j hij).right = F.obj j := (rfl)
+
+/-- After dropping the first vertex, vertex `1` becomes the first vertex of the tail. -/
+theorem δ₀_left (F : ComposableArrows C (n + 1)) : F.δ₀.left = F.obj 1 := by
+  rfl
 
 theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
     F.totalArrow i j hij = ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩ := (rfl)
@@ -181,6 +189,34 @@ theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_precomp {D : Type*
   rw [totalArrow_mapComposableArrows_obj, totalArrow_def, totalArrow_def]
   -- By definition of `precomp`, both first arrows are `Φ.map f`.
   rfl
+
+/-- Applying a functor to the `0`-simplex `mk₀ X` gives `mk₀ (Φ.obj X)`. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_mk₀ {D : Type*} [Category D]
+    (Φ : C ⥤ D) (X : C) :
+    (Φ.mapComposableArrows 0).obj (mk₀ X) = mk₀ (Φ.obj X) :=
+  ext₀ rfl
+
+/-- Applying a functor to the `1`-simplex `mk₁ f` gives `mk₁ (Φ.map f)`. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_mk₁ {D : Type*} [Category D]
+    (Φ : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
+    (Φ.mapComposableArrows 1).obj (mk₁ f) = mk₁ (Φ.map f) :=
+  ext₁ rfl rfl (by simp)
+
+/-- Applying the identity functor to a string of composable arrows leaves it unchanged. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.id_mapComposableArrows_obj (F : ComposableArrows C n) :
+    ((𝟭 C).mapComposableArrows n).obj F = F :=
+  ext_of_totalArrow fun _ _ _ ↦ by simp [totalArrow_def]
+
+/-- Applying a composite functor to a string of composable arrows applies each functor in turn. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.comp_mapComposableArrows_obj {D E : Type*}
+    [Category D] [Category E] (Φ : C ⥤ D) (Ψ : D ⥤ E) (F : ComposableArrows C n) :
+    ((Φ ⋙ Ψ).mapComposableArrows n).obj F =
+      (Ψ.mapComposableArrows n).obj ((Φ.mapComposableArrows n).obj F) :=
+  ext_of_totalArrow fun _ _ _ ↦ by simp [totalArrow_def]
 
 section Postcomp
 

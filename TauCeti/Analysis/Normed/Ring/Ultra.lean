@@ -8,8 +8,14 @@ module
 public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
-import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
+public import Mathlib.RingTheory.Multiplicity
+import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Data.Nat.Choose.Factorization
+import Mathlib.RingTheory.Ideal.Operations
+import Mathlib.RingTheory.Ideal.Quotient.Defs
 import TauCeti.Algebra.Group.ForwardDiff
+import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -17,28 +23,46 @@ import TauCeti.Analysis.Normed.Ring.Basic
 
 An ultrametric seminormed ring is a nonarchimedean topological ring: its open balls about zero
 are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit
-ball is an open subring. In an ultrametric normed ring, a finite or infinite product of elements
-each within `ε ≤ 1` of `1` is again within `ε` of `1`, and over a complete ultrametric commutative
-ring an infinite product `∏' i, (1 + f i)` or `∏' i, (1 - f i)` converges whenever `f` tends to
-`0` along the cofinite filter. A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their
-arguments is bounded by its first argument `q w`, and it depends on `w` in a `‖q‖`-Lipschitz way
-when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and
-`t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
+ball is an open subring. In an ultrametric seminormed ring, the product of two elements each
+within `B` of `1` (`0 ≤ B ≤ 1`) or strictly within `ε` of `1` (`0 < ε ≤ 1`) satisfies the same
+bound, and over a commutative ultrametric seminormed ring the same bound holds for finite
+`Finset.prod` products (see `TauCeti.Analysis.Normed.Ring.InfiniteProd.Ultra` for infinite
+products). A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their arguments is bounded by its
+first argument `q w`, and it depends on `w` in a `‖q‖`-Lipschitz way when its terms are
+`1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and `t² / (1 - t)³` are
+Lipschitz on the open unit ball of an ultrametric field.
 
-Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
-`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one. Since the forward differences
-of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
+Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. For a
+power-multiplicative seminorm, every element integral over `ℤ` has norm at most one. When
+`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one, and if `‖n‖ < 1` then
+multiplying by a natural number coprime to `n` does not change norms; in particular every natural
+number coprime to `n` has norm one. For a prime `p` with `‖p‖ < 1`, the binomial coefficient
+`(p ^ (k + 1)).choose (p ^ k)`, exactly divisible by `p`, thus has the norm of `p`. Since the
+forward differences of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
+
+If moreover the seminorm is power-multiplicative, the `p`-th power map raises a distance
+`‖x‖ ≥ 1` from `1` to its `p`-th power, `‖(1 + x) ^ p - 1‖ = ‖x‖ ^ p`, because the intermediate
+binomial coefficients are divisible by `p`. Hence an element whose `p`-power powers `y ^ p ^ n`
+tend to `1` lies strictly within distance one of `1`.
 
 ## Main results
 
+* `IsUltrametricDist.norm_le_one_of_isIntegral`: algebraic integers lie in the closed unit ball of
+  an ultrametric seminormed ring whose seminorm is power-multiplicative.
 * `IsUltrametricDist.exists_lt_norm_natCast_eq_one`: arbitrarily large natural numbers have norm
   one in an ultrametric seminormed ring with `‖1‖ = 1`.
+* `IsUltrametricDist.norm_mul_natCast_eq_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, then
+  `‖x * m‖ = ‖x‖` for every `x` and every natural number `m` coprime to `n`.
+* `IsUltrametricDist.norm_natCast_eq_one_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, every natural
+  number coprime to `n` has norm one.
+* `IsUltrametricDist.norm_choose_prime_pow_succ`: if a prime `p` has `‖p‖ < 1`, the binomial
+  coefficient `(p ^ (k + 1)).choose (p ^ k)` has the norm of `p`.
+* `TauCeti.norm_one_add_pow_prime_sub_one`, `TauCeti.norm_one_add_pow_prime_pow_sub_one`: for a
+  power-multiplicative seminorm with `‖p‖ < 1` and `1 ≤ ‖x‖`, `‖(1 + x) ^ p ^ n - 1‖ = ‖x‖ ^ p ^ n`.
+* `TauCeti.norm_sub_one_lt_one_of_tendsto_pow_prime_pow`: for such a seminorm, `y ^ p ^ n → 1`
+  forces `‖y - 1‖ < 1`.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
   ring.
-* `IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero`,
-  `IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero` and
-  `IsUltrametricDist.multipliable_one_sub_of_tendsto_cofinite_zero`: unconditional convergence of
-  `∏' i, (1 ± f i)` in a complete ultrametric seminormed commutative ring when `f → 0` cofinitely.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
 * `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
@@ -61,15 +85,22 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
   `1`-Lipschitz on the unit circle of an ultrametric field.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
-* `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
-  `TauCeti.norm_tprod_sub_one_lt`: finite and infinite products of elements strictly within `ε ≤ 1`
-  of `1` remain strictly within `ε` of `1`.
+* `TauCeti.norm_mul_sub_one_le` and `TauCeti.norm_mul_sub_one_lt`: binary multiplication bounds
+  near `1` (closed for `0 ≤ B ≤ 1`, strict for `0 < ε ≤ 1`) over any ultrametric seminormed ring
+  (without commutativity).
+* `TauCeti.norm_prod_sub_one_le` and `TauCeti.norm_prod_sub_one_lt`: over a commutative
+  ultrametric seminormed ring, unordered `Finset.prod` products of elements within `B` of `1`
+  (`0 ≤ B ≤ 1`) or strictly within `ε` of `1` (`0 < ε ≤ 1`) satisfy the same bound.
+* `TauCeti.norm_add_add_mul_le`: the group law `a + b + a b` keeps the closed ball of radius
+  `ε ≤ 1` about `0`.
+* `TauCeti.norm_inv_sub_one_eq`: inversion preserves distance less than one from `1`.
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
-* `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
-* `TauCeti.norm_pow_sub_pow_le_of_norm_le_one` and
-  `TauCeti.norm_prod_pow_sub_prod_pow_le`: powers and monomials on the closed unit ball are
-  `1`-Lipschitz.
+* `TauCeti.norm_prod_sub_prod_le`, `TauCeti.norm_prod_sub_prod_le_mul_prod`, and
+  `TauCeti.norm_pow_sub_pow_le_mul_pow`: uniform and weighted perturbation bounds for finite
+  products and powers.
+* `TauCeti.norm_prod_pow_sub_prod_pow_le`: monomials in two close families lying in a
+  norm-bounded subring differ by a bound independent of their degree.
 * `TauCeti.norm_fwdDiff_iter_pow_mul_pow_le`: for `‖x‖, ‖h‖ ≤ c`, the `k`-th forward difference
   of `y ↦ yᵐ` with step `h` at `x` satisfies `‖Δₕᵏ (y ↦ yᵐ)(x)‖ cᵏ ≤ ‖k!‖ ‖h‖ᵏ cᵐ`.
 -/
@@ -80,6 +111,17 @@ public section
 theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R]
     [IsUltrametricDist R] (z : ℤ) : ‖(z : R)‖ ≤ ‖(1 : R)‖ := by
   simpa using IsUltrametricDist.norm_zsmul_le (1 : R) z
+
+/-- In a seminormed ring whose seminorm is power-multiplicative and ultrametric, every element
+integral over `ℤ` has norm at most `1`. This is the norm analogue of
+`IsNonarchimedean.apply_le_one_of_isIntegral_int`, and like it a case of
+`IsNonarchimedean.apply_le_one_of_isIntegral_of_isPowMul`. -/
+theorem IsUltrametricDist.norm_le_one_of_isIntegral {R : Type*} [SeminormedRing R]
+    [IsUltrametricDist R] (hR : IsPowMul (‖·‖ : R → ℝ)) {x : R} (hx : IsIntegral ℤ x) :
+    ‖x‖ ≤ 1 :=
+  isNonarchimedean_norm.apply_le_one_of_isIntegral_of_isPowMul norm_nonneg norm_mul_le hR
+    (fun z ↦ eq_intCast (algebraMap ℤ R) z ▸ (norm_intCast_le_norm_one z).trans hR.map_one_le_one)
+    hx
 
 /-- In an ultrametric seminormed ring with `‖1‖ = 1`, arbitrarily large natural numbers have norm
 one: of two consecutive natural numbers, one has norm one, since their difference does. -/
@@ -96,41 +138,85 @@ theorem IsUltrametricDist.exists_lt_norm_natCast_eq_one (R : Type*) [SeminormedR
   rw [norm_neg, hsum, norm_one] at h3
   exact (h3.trans_lt (max_lt h2 h1)).false
 
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a natural number `n` has norm less
+than one, multiplying any element on the right by a natural number coprime to `n` does not change
+its norm. -/
+theorem IsUltrametricDist.norm_mul_natCast_eq_of_coprime {R : Type*} [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m)
+    (x : R) : ‖x * (m : R)‖ = ‖x‖ := by
+  refine ((norm_mul_le _ _).trans ?_).antisymm (not_lt.mp fun hlt ↦ ?_)
+  · exact mul_le_of_le_one_right (norm_nonneg _) (norm_natCast_le_one R m)
+  -- Bézout: `n * a + m * b = 1`, hence `x = x * (n * a) + (x * m) * b`.
+  have hsum : x = x * (n * (n.gcdA m : R)) + x * m * (n.gcdB m : R) := by
+    have h : (n : ℤ) * n.gcdA m + m * n.gcdB m = 1 := by
+      rw [← Nat.gcd_eq_gcd_ab, hnm.gcd_eq_one, Nat.cast_one]
+    have h' : (n : R) * (n.gcdA m : R) + (m : R) * (n.gcdB m : R) = 1 := by
+      exact_mod_cast congrArg (Int.cast (R := R)) h
+    calc x = x * (n * (n.gcdA m : R) + m * (n.gcdB m : R)) := by rw [h', mul_one]
+      _ = _ := by rw [mul_add, mul_assoc]
+  have h1 : ‖x * (n * (n.gcdA m : R))‖ < ‖x‖ := by
+    have hx0 : 0 < ‖x‖ := (norm_nonneg _).trans_lt hlt
+    calc ‖x * (n * (n.gcdA m : R))‖ ≤ ‖x‖ * (‖(n : R)‖ * 1) := by
+          refine (norm_mul_le _ _).trans ?_
+          gcongr
+          exact (norm_mul_le _ _).trans (by gcongr; exact norm_intCast_le_one R _)
+      _ < ‖x‖ * 1 := by gcongr; rwa [mul_one]
+      _ = ‖x‖ := mul_one _
+  have h2 : ‖x * m * (n.gcdB m : R)‖ < ‖x‖ := by
+    calc ‖x * m * (n.gcdB m : R)‖ ≤ ‖x * m‖ * 1 :=
+          (norm_mul_le _ _).trans (by gcongr; exact norm_intCast_le_one R _)
+      _ < ‖x‖ := by rwa [mul_one]
+  have h := IsUltrametricDist.norm_add_le_max (x * (n * (n.gcdA m : R))) (x * m * (n.gcdB m : R))
+  rw [← hsum] at h
+  exact (h.trans_lt (max_lt h1 h2)).false
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a natural number `n` has norm less
+than one, every natural number coprime to `n` has norm one. -/
+theorem IsUltrametricDist.norm_natCast_eq_one_of_coprime {R : Type*} [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m) :
+    ‖(m : R)‖ = 1 := by
+  simpa using norm_mul_natCast_eq_of_coprime hnR hnm (1 : R)
+
+namespace TauCeti
+
+/-- A prime of norm less than one determines the norm of every nonzero natural number. -/
+theorem norm_natCast_eq_pow_multiplicity {C : Type*} [SeminormedRing C]
+    [NormOneClass C] [NormMulClass C] [IsUltrametricDist C] {p : ℕ}
+    (hp : p.Prime) (hpC : ‖(p : C)‖ < 1)
+    {m : ℕ} (hm : m ≠ 0) : ‖(m : C)‖ = ‖(p : C)‖ ^ multiplicity p m := by
+  have hfin : FiniteMultiplicity p m :=
+    Nat.finiteMultiplicity_iff.mpr ⟨hp.ne_one, Nat.pos_of_ne_zero hm⟩
+  obtain ⟨u, hu, hpu⟩ := hfin.exists_eq_pow_mul_and_not_dvd
+  conv_lhs => rw [hu]
+  rw [Nat.cast_mul, Nat.cast_pow, norm_mul, norm_pow,
+    IsUltrametricDist.norm_natCast_eq_one_of_coprime hpC (hp.coprime_iff_not_dvd.mpr hpu),
+    mul_one]
+
+end TauCeti
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a prime `p` has norm less than one,
+the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`, which is exactly divisible by `p`, has the
+norm of `p`. -/
+theorem IsUltrametricDist.norm_choose_prime_pow_succ {R : Type*} [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] {p : ℕ} (hp : p.Prime)
+    (hpR : ‖(p : R)‖ < 1) (k : ℕ) : ‖((p ^ (k + 1)).choose (p ^ k) : R)‖ = ‖(p : R)‖ := by
+  have hc : (p ^ (k + 1)).choose (p ^ k) ≠ 0 :=
+    (Nat.choose_pos (Nat.pow_le_pow_right hp.pos (Nat.le_succ k))).ne'
+  have hfact : ((p ^ (k + 1)).choose (p ^ k)).factorization p = 1 := by
+    rw [Nat.factorization_choose_prime_pow hp (Nat.pow_le_pow_right hp.pos (Nat.le_succ k))
+      (pow_ne_zero _ hp.ne_zero), Nat.factorization_pow_self hp]
+    omega
+  have h := Nat.ordProj_mul_ordCompl_eq_self ((p ^ (k + 1)).choose (p ^ k)) p
+  have hu := Nat.not_dvd_ordCompl hp hc
+  rw [hfact, pow_one] at h hu
+  rw [← h, Nat.cast_mul, norm_mul_natCast_eq_of_coprime hpR (hp.coprime_iff_not_dvd.mpr hu)]
+
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open
 additive subgroup, namely a small open ball. -/
 instance IsUltrametricDist.nonarchimedeanRing {R : Type*} [SeminormedRing R]
     [IsUltrametricDist R] : NonarchimedeanRing R where
   is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean
-
-/-- In a complete ultrametric seminormed commutative ring, if `f` tends to `0` along the cofinite
-filter, then the family of finite partial products `s ↦ ∏ i ∈ s, f i` is summable. -/
-theorem IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero {ι R : Type*}
-    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
-    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
-    Summable fun s : Finset ι ↦ ∏ i ∈ s, f i :=
-  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (TauCeti.tendsto_finsetProd_cofinite_zero hf)
-
-/-- In a complete ultrametric seminormed commutative ring, `∏' i, (1 + f i)` is unconditionally
-multipliable whenever `f` tends to `0` along the cofinite filter. Unlike
-`NonarchimedeanGroup.multipliable_of_tendsto_cofinite_one`, the factors `1 + f i` need not be
-units. -/
-theorem IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero {ι R : Type*}
-    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
-    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
-    Multipliable fun i ↦ 1 + f i :=
-  multipliable_one_add_of_summable_prod
-    (IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero hf)
-
-/-- In a complete ultrametric seminormed commutative ring, `∏' i, (1 - f i)` is unconditionally
-multipliable whenever `f` tends to `0` along the cofinite filter. -/
-theorem IsUltrametricDist.multipliable_one_sub_of_tendsto_cofinite_zero {ι R : Type*}
-    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
-    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
-    Multipliable fun i ↦ 1 - f i := by
-  simpa only [sub_eq_add_neg] using
-    IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero (by simpa using hf.neg)
 
 section UnitClosedBall
 
@@ -345,10 +431,9 @@ theorem norm_one_sub_cube_div_sub_one_sub_cube_div_le {v w : K} (hv : ‖v‖ = 
 
 end Field
 
-/-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
-`a * b`. -/
-theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
-    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε := by
+/-- In an ultrametric seminormed ring, if `a` and `b` are within `B ≤ 1` of `1`, so is `a * b`. -/
+theorem norm_mul_sub_one_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {B : ℝ} (hB : B ≤ 1) (ha : ‖a - 1‖ ≤ B) (hb : ‖b - 1‖ ≤ B) : ‖a * b - 1‖ ≤ B := by
   calc ‖a * b - 1‖ = ‖(a - 1) * (b - 1) + (a - 1) + (b - 1)‖ := by
         congr 1
         simp only [mul_sub, sub_mul, mul_one, one_mul]
@@ -356,8 +441,36 @@ theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
     _ ≤ max (max ‖(a - 1) * (b - 1)‖ ‖a - 1‖) ‖b - 1‖ :=
       (IsUltrametricDist.norm_add_le_max _ _).trans
         (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
-    _ < ε := max_lt (max_lt ((norm_mul_le _ _).trans_lt
-      ((mul_le_of_le_one_right (norm_nonneg _) (hb.le.trans hε)).trans_lt ha)) ha) hb
+    _ ≤ B := max_le (max_le ((norm_mul_le _ _).trans
+      ((mul_le_of_le_one_right (norm_nonneg _) (hb.trans hB)).trans ha)) ha) hb
+
+/-- In an ultrametric seminormed ring, if `a` and `b` are both strictly within `ε ≤ 1` of `1`,
+so is `a * b`. -/
+theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε :=
+  (norm_mul_sub_one_le ((max_le ha.le hb.le).trans hε) (le_max_left _ _)
+    (le_max_right _ _)).trans_lt (max_lt ha hb)
+
+/-- In an ultrametric normed ring, the group law `a ⊕ b = a + b + a b` keeps the closed ball of
+radius `ε ≤ 1` about `0`, since `a ⊕ b = (1 + a) (1 + b) - 1`. -/
+theorem norm_add_add_mul_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a‖ ≤ ε) (hb : ‖b‖ ≤ ε) : ‖a + b + a * b‖ ≤ ε := by
+  have h := norm_mul_sub_one_le hε (a := 1 + a) (b := 1 + b) (by simpa using ha)
+    (by simpa using hb)
+  convert h using 2
+  simp only [add_mul, mul_add, one_mul, mul_one]
+  abel
+
+/-- In an ultrametric normed division ring, an element `x` within distance less than one of `1`
+has an inverse at the same distance from `1`: `‖x⁻¹ - 1‖ = ‖x - 1‖`. Unlike the Neumann estimate
+`TauCeti.norm_inverse_one_sub_sub_one`, this needs no convergent geometric series, so it applies
+over incomplete fields such as an algebraic closure of `ℚ_[p]`. -/
+theorem norm_inv_sub_one_eq {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K] {x : K}
+    (hx : ‖x - 1‖ < 1) : ‖x⁻¹ - 1‖ = ‖x - 1‖ := by
+  have hx₁ : ‖x‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one ((norm_sub_rev _ _).trans_lt hx)
+  have hx₀ : x ≠ 0 := norm_ne_zero_iff.1 (hx₁.symm ▸ one_ne_zero)
+  calc ‖x⁻¹ - 1‖ = ‖x⁻¹ * (1 - x)‖ := by rw [mul_sub, mul_one, inv_mul_cancel₀ hx₀]
+    _ = ‖x - 1‖ := by simp [hx₁, norm_sub_rev]
 
 /-- In an ultrametric seminormed ring, a power of an element `x` of norm at most
 one is no farther from `1` than `x` is: `‖x ^ n - 1‖ ≤ ‖x - 1‖`. -/
@@ -372,8 +485,21 @@ theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [IsUltra
       _ ≤ ‖x - 1‖ := max_le ((norm_mul_le _ _).trans
         ((mul_le_of_le_one_left (norm_nonneg _) hx).trans ih)) le_rfl
 
-/-- In an ultrametric normed commutative ring, a finite product of elements each within
-`ε ≤ 1` of `1` is again within `ε` of `1` (for `0 < ε`). -/
+/-- In an ultrametric seminormed commutative ring, a finite product of elements within `B ≤ 1` of
+`1` is again within `B` of `1` (for `0 ≤ B`). -/
+theorem norm_prod_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    (s : Finset ι) (f : ι → R) {B : ℝ} (hB0 : 0 ≤ B) (hB1 : B ≤ 1)
+    (hf : ∀ i ∈ s, ‖f i - 1‖ ≤ B) : ‖∏ i ∈ s, f i - 1‖ ≤ B := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hB0
+  | insert j s hj ih =>
+    rw [Finset.prod_insert hj]
+    exact norm_mul_sub_one_le hB1 (hf j (Finset.mem_insert_self j s))
+      (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
+
+/-- In an ultrametric seminormed commutative ring, a finite product of elements each strictly within
+`ε ≤ 1` of `1` is again strictly within `ε` of `1` (for `0 < ε`). -/
 theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
     (s : Finset ι) (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
     (hf : ∀ i ∈ s, ‖f i - 1‖ < ε) : ‖∏ i ∈ s, f i - 1‖ < ε := by
@@ -385,47 +511,28 @@ theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametri
     exact norm_mul_sub_one_lt hε (hf j (Finset.mem_insert_self j s))
       (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
 
-/-- In an ultrametric seminormed commutative ring, an infinite product of elements each strictly
-within `ε ≤ 1` of `1` is again strictly within `ε` of `1` (for `0 < ε`). -/
-theorem norm_tprod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
-    (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
-    (hf : ∀ i, ‖f i - 1‖ < ε) : ‖(∏' i, f i) - 1‖ < ε := by
-  by_cases hm : Multipliable f
-  · have ha := hm.hasProd
-    generalize ∏' i, f i = a at ha ⊢
-    obtain ⟨s₀, hs₀⟩ := (ha.eventually (Metric.ball_mem_nhds a hε0)).exists
-    have h1 : ‖a - ∏ i ∈ s₀, f i‖ < ε := by
-      rw [← dist_eq_norm, dist_comm]
-      exact Metric.mem_ball.mp hs₀
-    calc ‖a - 1‖ = ‖(a - ∏ i ∈ s₀, f i) + ((∏ i ∈ s₀, f i) - 1)‖ := by rw [sub_add_sub_cancel]
-      _ ≤ max ‖a - ∏ i ∈ s₀, f i‖ ‖(∏ i ∈ s₀, f i) - 1‖ := IsUltrametricDist.norm_add_le_max _ _
-      _ < ε := max_lt h1 (norm_prod_sub_one_lt s₀ f hε0 hε fun i _ ↦ hf i)
-  · simpa [tprod_eq_one_of_not_multipliable hm] using hε0
-
-/-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate,
-their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural subtraction,
-so the statement includes the empty product and `M = 0`. -/
-theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
-    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M ε : ℝ} (hε : 0 ≤ ε)
-    (hf : ∀ i ∈ s, ‖f i‖ ≤ M) (hg : ∀ i ∈ s, ‖g i‖ ≤ M)
-    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ ε) :
-    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ ε * M ^ (s.card - 1) := by
+/-- **Weighted perturbation bound for finite products in an ultrametric ring.** If two finite
+families satisfy `‖f i‖ ≤ M i`, `‖g i‖ ≤ M i`, and `‖f i - g i‖ ≤ δ * M i` for every `i ∈ s`
+with `0 ≤ δ`, then their products satisfy `‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ δ * ∏ i ∈ s, M i`. -/
+theorem norm_prod_sub_prod_le_mul_prod {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M : ι → ℝ} {δ : ℝ} (hδ : 0 ≤ δ)
+    (hf : ∀ i ∈ s, ‖f i‖ ≤ M i) (hg : ∀ i ∈ s, ‖g i‖ ≤ M i)
+    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ δ * M i) :
+    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ δ * ∏ i ∈ s, M i := by
   classical
   induction s using Finset.induction_on with
-  | empty => simp [hε]
+  | empty => simpa using hδ
   | insert a s ha ih =>
     rcases s.eq_empty_or_nonempty with rfl | hs
     · simpa using hfg a (by simp)
-    have hprod : ‖∏ i ∈ s, f i‖ ≤ M ^ s.card := by
-      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := TauCeti.norm_prod_le_prod_norm_of_nonempty hs f
-        _ ≤ ∏ _i ∈ s, M := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
-          fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
-        _ = M ^ s.card := Finset.prod_const _
-    have htail := ih (fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
-      (fun i hi ↦ hg i (Finset.mem_insert_of_mem hi))
-      (fun i hi ↦ hfg i (Finset.mem_insert_of_mem hi))
-    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.card_insert_of_notMem ha,
-      Nat.add_sub_cancel]
+    have hmem : ∀ i ∈ s, i ∈ insert a s := fun i hi ↦ Finset.mem_insert_of_mem hi
+    have hprod : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, M i :=
+      (TauCeti.norm_prod_le_prod_norm_of_nonempty hs f).trans
+        (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i hi ↦ hf i (hmem i hi))
+    have htail := ih (fun i hi ↦ hf i (hmem i hi)) (fun i hi ↦ hg i (hmem i hi))
+      (fun i hi ↦ hfg i (hmem i hi))
+    have hMa : 0 ≤ M a := (norm_nonneg (g a)).trans (hg a (Finset.mem_insert_self a s))
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.prod_insert ha]
     calc ‖f a * ∏ i ∈ s, f i - g a * ∏ i ∈ s, g i‖ =
           ‖(f a - g a) * ∏ i ∈ s, f i + g a * (∏ i ∈ s, f i - ∏ i ∈ s, g i)‖ := by
             congr 1
@@ -434,55 +541,152 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
           (‖g a‖ * ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖) :=
         (IsUltrametricDist.norm_add_le_max _ _).trans
           (max_le_max (norm_mul_le _ _) (norm_mul_le _ _))
-      _ ≤ max (ε * M ^ s.card) (M * (ε * M ^ (s.card - 1))) :=
-        max_le_max (mul_le_mul (hfg a (by simp)) hprod (norm_nonneg _) hε)
-          (mul_le_mul (hg a (by simp)) htail (norm_nonneg _)
-            ((norm_nonneg _).trans (hg a (by simp))))
-      _ = ε * M ^ s.card := by
-        have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
-        rw [mul_left_comm M ε, ← pow_succ', hcard, max_self]
+      _ ≤ max ((δ * M a) * ∏ i ∈ s, M i) (M a * (δ * ∏ i ∈ s, M i)) :=
+        max_le_max
+          (mul_le_mul (hfg a (Finset.mem_insert_self a s)) hprod (norm_nonneg _)
+            (mul_nonneg hδ hMa))
+          (mul_le_mul (hg a (Finset.mem_insert_self a s)) htail (norm_nonneg _) hMa)
+      _ = δ * (M a * ∏ i ∈ s, M i) := by
+        rw [mul_assoc, mul_left_comm (M a) δ, max_self]
 
-/-- In an ultrametric seminormed ring, if `‖x‖ ≤ 1` and `‖y‖ ≤ 1`, then
-`‖x ^ m - y ^ m‖ ≤ ‖x - y‖` for every `m : ℕ`. -/
-theorem norm_pow_sub_pow_le_of_norm_le_one {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
-    {x y : R} (hx : ‖x‖ ≤ 1) (hy : ‖y‖ ≤ 1) (m : ℕ) : ‖x ^ m - y ^ m‖ ≤ ‖x - y‖ := by
-  induction m with
+/-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate (with
+`0 ≤ ε`), their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural
+subtraction, so the statement includes the empty product and `M = 0`. -/
+theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M ε : ℝ} (hε : 0 ≤ ε)
+    (hf : ∀ i ∈ s, ‖f i‖ ≤ M) (hg : ∀ i ∈ s, ‖g i‖ ≤ M)
+    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ ε) :
+    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ ε * M ^ (s.card - 1) := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp [hε]
+  have ⟨i₀, hi₀⟩ := hs
+  have hM0 : 0 ≤ M := (norm_nonneg (f i₀)).trans (hf i₀ hi₀)
+  rcases eq_or_lt_of_le hM0 with rfl | hM
+  · by_cases hcard : s.card = 1
+    · obtain ⟨a, rfl⟩ := Finset.card_eq_one.mp hcard
+      simpa using hfg a (Finset.mem_singleton_self a)
+    · have hpos : 0 < s.card := Finset.card_pos.mpr hs
+      have hcard2 : s.card - 1 ≠ 0 := by omega
+      have hprod_le (h : ι → R) (hh : ∀ i ∈ s, ‖h i‖ ≤ 0) : ‖∏ i ∈ s, h i‖ ≤ 0 :=
+        calc ‖∏ i ∈ s, h i‖ ≤ ∏ i ∈ s, ‖h i‖ := TauCeti.norm_prod_le_prod_norm_of_nonempty hs h
+          _ ≤ ∏ _i ∈ s, (0 : ℝ) := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) hh
+          _ = 0 := by simp [hs.ne_empty]
+      have hsub : ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ 0 :=
+        (norm_sub_le _ _).trans (add_nonpos (hprod_le f hf) (hprod_le g hg))
+      simpa [zero_pow hcard2] using hsub
+  · have h := norm_prod_sub_prod_le_mul_prod (s := s) (f := f) (g := g) (M := fun _ ↦ M)
+      (div_nonneg hε hM0) hf hg fun i hi ↦ by
+        simpa only [div_mul_cancel₀ _ hM.ne'] using hfg i hi
+    have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
+    rw [Finset.prod_const, ← hcard, pow_succ', ← mul_assoc, div_mul_cancel₀ _ hM.ne'] at h
+    exact h
+
+/-- **Ultrametric perturbation bound for powers.** If `‖x‖ ≤ r`, `‖y‖ ≤ r`, and `‖x - y‖ ≤ δ * r`
+with `0 ≤ δ`, then `‖x ^ m - y ^ m‖ ≤ δ * r ^ m` for every `m : ℕ`. -/
+theorem norm_pow_sub_pow_le_mul_pow {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {x y : R} {r δ : ℝ} (hδ : 0 ≤ δ) (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r)
+    (hxy : ‖x - y‖ ≤ δ * r) (m : ℕ) :
+    ‖x ^ m - y ^ m‖ ≤ δ * r ^ m := by
+  simpa using norm_prod_sub_prod_le_mul_prod (s := Finset.range m)
+    (f := fun _ ↦ x) (g := fun _ ↦ y) (M := fun _ ↦ r) hδ
+    (fun _ _ ↦ hx) (fun _ _ ↦ hy) (fun _ _ ↦ hxy)
+
+/-- **Monomials in close families of a bounded subring are close.** In an ultrametric seminormed
+commutative ring, let `b` and `y` be families whose members indexed by a finset `s` lie in a
+subring `R₀` with elements of norm at most `N`, and satisfy `‖bᵢ - yᵢ‖ ≤ δ`. Then the monomials
+`∏ bᵢ ^ dᵢ` and `∏ yᵢ ^ dᵢ` over `s` differ by at most `N * δ`, whatever the degree: their
+difference lies in the ideal of `R₀` generated by the `bᵢ - yᵢ`. Compare
+`norm_prod_sub_prod_le`, whose bound grows with the number of factors. -/
+theorem norm_prod_pow_sub_prod_pow_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {R₀ : Subring R} {N δ : ℝ} (hN : ∀ x ∈ R₀, ‖x‖ ≤ N) (hδ : 0 ≤ δ) (s : Finset ι)
+    {b y : ι → R} (hb : ∀ i ∈ s, b i ∈ R₀) (hy : ∀ i ∈ s, y i ∈ R₀)
+    (hby : ∀ i ∈ s, ‖b i - y i‖ ≤ δ) (d : ι → ℕ) :
+    ‖∏ i ∈ s, b i ^ d i - ∏ i ∈ s, y i ^ d i‖ ≤ N * δ := by
+  have hN0 : 0 ≤ N := (norm_nonneg _).trans (hN 0 R₀.zero_mem)
+  -- work in `R₀`, indexing by the finite type `s`
+  let x : s → R₀ := fun i ↦ ⟨b i, hb i i.property⟩
+  let z : s → R₀ := fun i ↦ ⟨y i, hy i i.property⟩
+  have hmem : ∏ i, x i ^ d i - ∏ i, z i ^ d i ∈ Ideal.span (Set.range fun i ↦ x i - z i) := by
+    rw [← Ideal.Quotient.eq, map_prod, map_prod]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    have hi : Ideal.Quotient.mk (Ideal.span (Set.range fun i ↦ x i - z i)) (x i) =
+        Ideal.Quotient.mk _ (z i) :=
+      Ideal.Quotient.eq.mpr (Ideal.subset_span (Set.mem_range_self i))
+    rw [map_pow, map_pow, hi]
+  obtain ⟨c, hc⟩ := Ideal.mem_span_range_iff_exists_fun.mp hmem
+  have hsum : ∏ i ∈ s, b i ^ d i - ∏ i ∈ s, y i ^ d i = ∑ i, (c i : R) * (b i - y i) := by
+    rw [← Finset.prod_coe_sort s, ← Finset.prod_coe_sort s fun i ↦ y i ^ d i]
+    simpa [x, z] using congrArg (R₀.subtype) hc.symm
+  rw [hsum]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hN0 hδ) fun i _ ↦ ?_
+  calc ‖(c i : R) * (b i - y i)‖ ≤ ‖(c i : R)‖ * ‖b i - y i‖ := norm_mul_le _ _
+    _ ≤ N * δ := mul_le_mul (hN _ (c i).property) (hby i i.property) (norm_nonneg _) hN0
+
+section PrimePower
+
+open Filter Topology
+
+variable {R : Type*} [SeminormedRing R] [NormOneClass R] [IsUltrametricDist R] {p : ℕ}
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` and power-multiplicative seminorm in which the
+prime `p` has norm less than one, the `p`-th power map raises the distance to `1` to the `p`-th
+power once that distance is at least one: if `1 ≤ ‖x‖`, then `‖(1 + x) ^ p - 1‖ = ‖x‖ ^ p`. The
+intermediate binomial coefficients are divisible by `p`, so their terms are strictly smaller than
+`x ^ p`. -/
+theorem norm_one_add_pow_prime_sub_one (hR : IsPowMul (‖·‖ : R → ℝ)) (hp : p.Prime)
+    (hpR : ‖(p : R)‖ < 1) {x : R} (hx : 1 ≤ ‖x‖) : ‖(1 + x) ^ p - 1‖ = ‖x‖ ^ p := by
+  have hx0 : 0 < ‖x‖ := one_pos.trans_le hx
+  have hxp : ‖x ^ p‖ = ‖x‖ ^ p := hR x hp.one_le
+  have hS : ‖(p : R) * ∑ k ∈ Finset.Ioo 0 p, 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)‖ <
+      ‖x‖ ^ p := by
+    refine (norm_mul_le _ _).trans_lt ?_
+    rcases (Finset.Ioo 0 p).eq_empty_or_nonempty with h | h
+    · simpa [h] using pow_pos hx0 p
+    obtain ⟨k, hk, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty h
+      fun k ↦ 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)
+    have hk' := Finset.mem_Ioo.mp hk
+    calc ‖(p : R)‖ * ‖∑ k ∈ Finset.Ioo 0 p, 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)‖
+        ≤ ‖(p : R)‖ * ‖x‖ ^ (p - 1) := by
+          refine mul_le_mul_of_nonneg_left (hle.trans ?_) (norm_nonneg _)
+          rw [one_pow, one_mul]
+          refine (norm_mul_le _ _).trans ?_
+          refine (mul_le_of_le_one_right (norm_nonneg _)
+            (IsUltrametricDist.norm_natCast_le_one R _)).trans ?_
+          exact (norm_pow_le _ _).trans (pow_le_pow_right₀ hx (by omega))
+      _ < ‖x‖ ^ (p - 1) := mul_lt_of_lt_one_left (pow_pos hx0 _) hpR
+      _ ≤ ‖x‖ ^ p := pow_le_pow_right₀ hx (Nat.sub_le _ _)
+  rw [(Commute.one_left x).add_pow_prime_eq' hp, one_pow, add_sub_right_comm, add_sub_cancel_left,
+    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [hxp]; exact hS.ne'), hxp,
+    max_eq_left hS.le]
+
+/-- Iterating `TauCeti.norm_one_add_pow_prime_sub_one`: if `1 ≤ ‖x‖`, then
+`‖(1 + x) ^ p ^ n - 1‖ = ‖x‖ ^ p ^ n` for every `n`. -/
+theorem norm_one_add_pow_prime_pow_sub_one (hR : IsPowMul (‖·‖ : R → ℝ)) (hp : p.Prime)
+    (hpR : ‖(p : R)‖ < 1) {x : R} (hx : 1 ≤ ‖x‖) (n : ℕ) :
+    ‖(1 + x) ^ p ^ n - 1‖ = ‖x‖ ^ p ^ n := by
+  induction n with
   | zero => simp
-  | succ m ih =>
-    rcases m with _ | m
-    · simp
-    · calc ‖x ^ (m + 2) - y ^ (m + 2)‖ =
-            ‖x * (x ^ (m + 1) - y ^ (m + 1)) + (x - y) * y ^ (m + 1)‖ := by
-              rw [mul_sub, sub_mul, ← pow_succ', ← pow_succ', sub_add_sub_cancel]
-        _ ≤ max ‖x * (x ^ (m + 1) - y ^ (m + 1))‖ ‖(x - y) * y ^ (m + 1)‖ :=
-          IsUltrametricDist.norm_add_le_max _ _
-        _ ≤ ‖x - y‖ := max_le
-          ((norm_mul_le _ _).trans ((mul_le_of_le_one_left (norm_nonneg _) hx).trans ih))
-          ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
-            ((norm_pow_le' y (Nat.succ_pos m)).trans (pow_le_one₀ (norm_nonneg y) hy))))
+  | succ n ih =>
+    have h := norm_one_add_pow_prime_sub_one hR hp hpR (x := (1 + x) ^ p ^ n - 1)
+      (ih ▸ one_le_pow₀ hx)
+    rw [add_sub_cancel, ← pow_mul, ← pow_succ, ih, ← pow_mul, ← pow_succ] at h
+    exact h
 
-/-- In an ultrametric seminormed commutative ring, if two `ι`-tuples lie in the closed unit ball,
-then every monomial `∏ i, xᵢ ^ νᵢ` is `1`-Lipschitz:
-`‖∏ i, a i ^ ν i - ∏ i, b i ^ ν i‖ ≤ ‖a - b‖`. -/
-theorem norm_prod_pow_sub_prod_pow_le {ι R : Type*} [Fintype ι] [SeminormedCommRing R]
-    [IsUltrametricDist R] {a b : ι → R} (ha : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, ‖b i‖ ≤ 1)
-    (ν : ι → ℕ) :
-    ‖∏ i, a i ^ ν i - ∏ i, b i ^ ν i‖ ≤ ‖a - b‖ := by
-  classical
-  let s : Finset ι := Finset.univ.filter fun i ↦ ν i ≠ 0
-  have hprod (c : ι → R) : ∏ i, c i ^ ν i = ∏ i ∈ s, c i ^ ν i :=
-    (Finset.prod_subset (Finset.filter_subset _ _) fun i _ hi ↦ by
-      have h0 : ν i = 0 := by simpa [s] using hi
-      simp [h0]).symm
-  rw [hprod a, hprod b]
-  simpa only [one_pow, mul_one] using TauCeti.norm_prod_sub_prod_le (s := s)
-    (M := 1) (ε := ‖a - b‖) (norm_nonneg _)
-    (fun i hi ↦ (norm_pow_le' (a i) (Nat.pos_of_ne_zero (Finset.mem_filter.mp hi).2)).trans
-      (pow_le_one₀ (norm_nonneg _) (ha i)))
-    (fun i hi ↦ (norm_pow_le' (b i) (Nat.pos_of_ne_zero (Finset.mem_filter.mp hi).2)).trans
-      (pow_le_one₀ (norm_nonneg _) (hb i)))
-    (fun i _ ↦ (norm_pow_sub_pow_le_of_norm_le_one (ha i) (hb i) (ν i)).trans
-      (norm_le_pi_norm (a - b) i))
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` and power-multiplicative seminorm in which the
+prime `p` has norm less than one, an element whose `p`-power powers tend to `1` lies strictly within
+distance one of `1`. -/
+theorem norm_sub_one_lt_one_of_tendsto_pow_prime_pow (hR : IsPowMul (‖·‖ : R → ℝ))
+    (hp : p.Prime) (hpR : ‖(p : R)‖ < 1) {y : R} (hy : Tendsto (fun n ↦ y ^ p ^ n) atTop (𝓝 1)) :
+    ‖y - 1‖ < 1 := by
+  by_contra! h
+  have hge (n : ℕ) : 1 ≤ ‖y ^ p ^ n - 1‖ := by
+    have := norm_one_add_pow_prime_pow_sub_one hR hp hpR h n
+    rw [add_sub_cancel] at this
+    exact this ▸ one_le_pow₀ h
+  have h0 : (1 : ℝ) ≤ 0 := ge_of_tendsto' (tendsto_iff_norm_sub_tendsto_zero.mp hy) hge
+  exact absurd h0 (by norm_num)
+
+end PrimePower
 
 section FwdDiff
 

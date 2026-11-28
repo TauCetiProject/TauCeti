@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.AlgebraicTopology.Cellular.Homology
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Colimit
 
@@ -113,6 +113,24 @@ lemma isIso_homologyMap_skeletonPair_map {j k : ℕ}
       ((isZero_singularHomology_skeletonPair_of_ne C R hk).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
+/-- **Attaching the top cells leaves homology unchanged away from their dimension.** If an
+embedding `f : Z → X` maps onto the `(j - 1)`-skeleton `skeletonLT C j` of a relative CW structure
+on `X` whose `j`-skeleton `skeletonLT C (j + 1)` is all of `X`, so that `X` is `Z` with cells of
+dimension `j` attached, then `f` induces an isomorphism on `Hₖ` for `k ≠ j` and `k ≠ j - 1`. -/
+lemma isIso_singularHomologyMap_of_range_eq_skeletonLT {Z : Type w} [TopologicalSpace Z]
+    {f : C(Z, X)} (hf : IsEmbedding f) {j k : ℕ} (hj : Set.range f = skeletonLT C (j : ℕ∞))
+    (hu : (skeletonLT C ((j + 1 : ℕ) : ℕ∞) : Set X) = Set.univ)
+    [HasExactColimitsOfShape (Discrete (cell C j)) A] (hk : k ≠ j) (hk' : k + 1 ≠ j) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor A k).obj R).map (TopCat.ofHom f)) := by
+  let H := (AlgebraicTopology.singularHomologyFunctor A k).obj R
+  have : IsIso (H.map (skeletonPair C j).map) := isIso_homologyMap_skeletonPair_map C R hk hk'
+  rw [← skeletonObjIsoOfRangeEq_hom_comp_map_comp hf hj hu]
+  -- The skeletal pair presents the skeleta as `TopPair.snd` and `TopPair.fst`, equal to
+  -- `skeletonObj` only up to unfolding, so `erw` is needed to split the composite.
+  erw [Functor.map_comp, Functor.map_comp]
+  exact IsIso.comp_isIso' (H.mapIso (skeletonObjIsoOfRangeEq hf hj)).isIso_hom
+    (IsIso.comp_isIso' this (H.mapIso (skeletonObjIsoOfEqUniv hu)).isIso_hom)
+
 section Colimit
 
 variable [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A]
@@ -134,21 +152,14 @@ lemma isIso_homologyMap_skeletonBasePairToComplex_fst {m k : ℕ} (hk : k < m)
       exact ⟨n, fun x hx ↦ ⟨⟨x.val, hn ⟨x, hx, rfl⟩⟩, rfl⟩⟩
   -- From the `m`-skeleton on, the diagram of homology objects in degree `k` is constant.
   have hconst : (skeletonFunctor C ⋙
-      (AlgebraicTopology.singularHomologyFunctor A k).obj R).IsEventuallyConstantFrom (m + 1) := by
-    intro j φ
-    induction j, φ.le using Nat.le_induction with
-    | base => rw [Subsingleton.elim φ (𝟙 _), CategoryTheory.Functor.map_id]; infer_instance
-    | succ j hj ih =>
-      rw [Subsingleton.elim φ (homOfLE hj ≫ homOfLE j.le_succ), Functor.map_comp]
-      have := ih (homOfLE hj)
+      (AlgebraicTopology.singularHomologyFunctor A k).obj R).IsEventuallyConstantFrom (m + 1) :=
+    Functor.isEventuallyConstantFrom_of_isIso_map_succ fun j hj ↦ by
       have := hExact j (by lia)
       -- The diagram sends `j ≤ j + 1` to the inclusion of the pair of consecutive skeleta.
-      have hmap : (skeletonFunctor C).map (homOfLE j.le_succ) = (skeletonPair C j).map := rfl
-      have : IsIso ((skeletonFunctor C ⋙
-          (AlgebraicTopology.singularHomologyFunctor A k).obj R).map (homOfLE j.le_succ)) := by
-        rw [Functor.comp_map, hmap]
-        exact isIso_homologyMap_skeletonPair_map C R (by lia) (by lia)
-      infer_instance
+      have hmap : (skeletonFunctor C).map (homOfLE (Order.le_succ j)) =
+          (skeletonPair C j).map := rfl
+      rw [Functor.comp_map, hmap]
+      exact isIso_homologyMap_skeletonPair_map C R (by lia) (by lia)
   rw [skeletonBasePairToComplex_fst]
   -- The leg of the colimit cocone at `m + 1` is by definition the homology map of the inclusion.
   exact hconst.isIso_ι_of_isColimit hc

@@ -9,6 +9,7 @@ public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.Probability.Process.Predictable.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 import Mathlib.MeasureTheory.Integral.Prod
@@ -24,6 +25,8 @@ space is the expected-square-energy space for Brownian integrands.
 The measure agrees with the ambient product measure on predictable sets. In particular,
 `(s,t] × A`, with `A` known at `s` and `t ≤ T`, has mass `(t-s) P(A)`. The initial-time
 slice has mass zero, and restricting to a shorter horizon commutes with trimming.
+The symmetric difference of initial time strips has mass equal to their clipped endpoint
+distance times the mass of their common event.
 Filtered measure-preserving sample maps preserve these predictable measures, even with
 different ambient measurable spaces.
 Native `lintegral_trim`, `integral_trim`, and `eLpNorm_trim` then identify predictable
@@ -37,6 +40,10 @@ by zero is an isometry; restriction is a contraction and is a left inverse to ex
 The extension construction transports `TauCeti.extendByZeroLpₗᵢ` together with its
 representative identity, and its API follows the deterministic `timeMeasureExtendLp` API.
 
+Product-`L²` convergence to zero of differences between two strongly predictable process
+families implies that the pathwise square energy of their difference tends to zero in measure
+(`MeasureTheory.IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm`).
+
 ## References
 
 * I. Karatzas, S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
@@ -46,7 +53,7 @@ representative identity, and its API follows the deterministic `timeMeasureExten
 public section
 
 open MeasureTheory Set TauCeti.Probability
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal symmDiff
 
 namespace MeasureTheory.Filtration
 
@@ -111,6 +118,23 @@ theorem predictableMeasure_Ioc_prod (ℱ : Filtration ℝ≥0 m) (P : Measure Ω
       ENNReal.ofReal ((min t T : ℝ≥0) - (s : ℝ)) * P A := by
   rw [predictableMeasure_apply _ _ _ (measurableSet_predictable_Ioc_prod _ _ hA),
     Measure.prod_prod, timeMeasure_Ioc]
+
+/-- Initial predictable strips over the same event differ by their clipped endpoint
+distance times the event mass. -/
+@[simp]
+theorem predictableMeasure_symmDiff_Ioc_prod (ℱ : Filtration ℝ≥0 m)
+    (P : Measure Ω) [SFinite P] (T s t : ℝ≥0) {A : Set Ω}
+    (hA : MeasurableSet[ℱ (min s t)] A) :
+    ℱ.predictableMeasure P T ((Ioc 0 s ×ˢ A) ∆ (Ioc 0 t ×ˢ A)) =
+      ENNReal.ofReal |(min s T : ℝ≥0) - (min t T : ℝ≥0)| * P A := by
+  have hstrip : (Ioc 0 s ×ˢ A) ∆ (Ioc 0 t ×ˢ A) = uIoc s t ×ˢ A := by
+    ext p
+    simp only [mem_symmDiff, mem_prod, mem_Ioc, mem_uIoc]
+    have : (0 : ℝ≥0) ≤ min s t := bot_le
+    grind
+  have hmeas : MeasurableSet[ℱ.predictable] (uIoc s t ×ˢ A) := by
+    simpa only [uIoc] using measurableSet_predictable_Ioc_prod (min s t) (max s t) hA
+  rw [hstrip, predictableMeasure_apply _ _ _ hmeas, Measure.prod_prod, timeMeasure_uIoc]
 
 /-- At a horizon beyond the right endpoint, a predictable rectangle has its full time length. -/
 theorem predictableMeasure_Ioc_prod_of_le (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
@@ -502,12 +526,19 @@ theorem ae_eq_predictableMeasure_iff {E : Type*} [MeasurableSpace E] [Measurable
     f =ᵐ[ℱ.predictableMeasure P T] g ↔ f =ᵐ[(timeMeasure T).prod P] g :=
   ⟨ae_eq_of_ae_eq_trim, ae_eq_trim_of_measurable ℱ.predictable_le_prod hf hg⟩
 
+/-- For predictable functions the native `eLpNorm` coincides with the ambient time-product
+`eLpNorm`, at every exponent (in particular exponent two). -/
+theorem eLpNorm_predictableMeasure {E : Type*} [TopologicalSpace E] [ContinuousENorm E]
+    {f : ℝ≥0 × Ω → E} (hf : StronglyMeasurable[ℱ.predictable] f) (T : ℝ≥0) (p : ℝ≥0∞) :
+    eLpNorm f p (ℱ.predictableMeasure P T) = eLpNorm f p ((timeMeasure T).prod P) := by
+  rw [predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
+
 /-- For predictable functions the native `MemLp` condition can be tested in the ambient
 product measure, at every exponent (in particular exponent two). -/
 theorem memLp_predictableMeasure_iff {E : Type*} [TopologicalSpace E] [ContinuousENorm E]
     {f : ℝ≥0 × Ω → E} (hf : StronglyMeasurable[ℱ.predictable] f) (T : ℝ≥0) (p : ℝ≥0∞) :
     MemLp f p (ℱ.predictableMeasure P T) ↔ MemLp f p ((timeMeasure T).prod P) := by
-  simp only [MemLp, predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
+  simp only [MemLp, ℱ.eLpNorm_predictableMeasure P hf T p]
 
 end Dictionary
 
@@ -527,3 +558,39 @@ theorem memLp_indicator_Ioc_predictableMeasure {E : Type*} [TopologicalSpace E]
   by_cases hq : q.1 ∈ Ioc s t <;> simp [hq]
 
 end MeasureTheory.Filtration
+
+namespace MeasureTheory.IsStronglyPredictable
+
+open Filter
+open scoped Topology
+
+/-- For a strongly predictable process `H` and an s-finite measure `μ` on time, the pathwise
+square energy `ω ↦ ∫⁻ s, ‖H s ω‖ₑ ^ 2 ∂μ` is measurable. -/
+theorem measurable_lintegral_enorm_sq
+    {ι Ω' E : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
+    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    {mΩ' : MeasurableSpace Ω'} {ℱ' : Filtration ι mΩ'}
+    {μ : Measure ι} [SFinite μ] [TopologicalSpace E] [ContinuousENorm E]
+    {H : ι → Ω' → E} (hH : IsStronglyPredictable ℱ' H) :
+    Measurable fun ω ↦ ∫⁻ s, ‖H s ω‖ₑ ^ 2 ∂μ :=
+  ((hH.mono ℱ'.predictable_le_prod).eNorm.pow_const 2).lintegral_prod_left'
+
+/-- Product-`L²` convergence to zero of differences between two families of strongly predictable
+processes implies that the pathwise square energy of their difference tends to zero in
+`Q`-measure. -/
+theorem tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+    {ι Ω' E κ : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
+    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    {mΩ' : MeasurableSpace Ω'} {ℱ' : Filtration ι mΩ'}
+    {μ : Measure ι} {Q : Measure Ω'} [SFinite μ] [SFinite Q] [SeminormedAddCommGroup E]
+    {l : Filter κ} {F G : κ → ι → Ω' → E}
+    (hF : ∀ k, IsStronglyPredictable ℱ' (F k))
+    (hG : ∀ k, IsStronglyPredictable ℱ' (G k))
+    (hl2 : Tendsto (fun k ↦ eLpNorm (fun p : ι × Ω' ↦ F k p.1 p.2 - G k p.1 p.2) 2
+      (μ.prod Q)) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun k ↦ Q {ω | ε ≤ ∫⁻ s, ‖F k s ω - G k s ω‖ₑ ^ 2 ∂μ}) l (𝓝 0) :=
+  TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+    (fun k ↦ (((hF k).sub (hG k)).mono ℱ'.predictable_le_prod).aestronglyMeasurable) hl2 hε
+
+end MeasureTheory.IsStronglyPredictable

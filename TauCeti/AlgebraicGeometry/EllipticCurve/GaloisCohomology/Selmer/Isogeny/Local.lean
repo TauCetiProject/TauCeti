@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Real
@@ -48,6 +49,9 @@ the indices of the dual isogeny `φ̂` at every finite place and at the real pla
   curves have good reduction and the place is prime to `deg φ`, so that
   `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel` applies. This is the
   finite support of the product of the local factors at the finite places;
+* over `ℚ`, the product of these local factors over all places, finite and infinite, is the
+  product of local Kummer ratios `TauCeti.Isogeny.kummerRatioProduct`, through which periods and
+  Tamagawa numbers enter Cassels' formula;
 * over `ℝ`, if `φ^*ω₂ = c ω₁`, the local factor is `Ω(E₂) / (|c| Ω(E₁))`, the ratio of the real
   periods (`TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul`), and the local factors
   of `φ` and `φ̂` multiply to `1 / deg φ`, from `n · #(E(ℝ) ⧸ n E(ℝ)) = #E(ℝ)[n]`
@@ -64,6 +68,11 @@ combine `TauCeti.Isogeny.natCard_range_kummerMap` with
 
 * `TauCeti.Isogeny.natCard_localCondition_selmerStructure`: the local condition of the `φ`-Selmer
   structure at `L i` has order `[E₂(L i) : φ(E₁(L i))]`.
+* `TauCeti.Isogeny.kummerRatio_baseChange_eq_natCard_localCondition_selmerStructure_div`: the
+  Kummer ratio of `φ` over `L i` is `#H¹_φ(L i) / #E₁(L i)[φ]`.
+* `TauCeti.Isogeny.kummerRatioProduct_eq_finprod_natCard_localCondition_selmerStructure_div`: over
+  `ℚ`, the product of local Kummer ratios is the product over all places `v` of
+  `#H¹_φ(ℚ_v) / #E₁(ℚ_v)[φ]`.
 * `TauCeti.Isogeny.finite_range_kummerMap_of_degree_ne_zero`: the local Kummer image at a finite
   place is finite.
 * `TauCeti.Isogeny.natCard_localCondition_selmerStructure_mul_natCard_localCondition_dual`: at
@@ -112,7 +121,20 @@ theorem natCard_localCondition_selmerStructure
     (i : ι) [DecidableEq (L i)] :
     Nat.card ((φ.selmerStructure τ).localCondition i) =
       (ofIsogeny (φ.baseChange (L i))).pointMapHom.range.index := by
-  rw [selmerStructure_localCondition, ← range_kummerMap, natCard_range_kummerMap]
+  rw [selmerStructure_localCondition, ← range_kummerMap,
+    natCard_range_kummerMap]
+
+/-- **The local Kummer ratio is the order of the local condition of `Sel_φ` over that of the
+local kernel**: for a separable isogeny `φ`, the Kummer ratio of `φ` over `L i` is
+`#H¹_φ(L i) / #E₁(L i)[φ]`, where `H¹_φ(L i)` is the local condition at `L i` of the
+`φ`-Selmer structure. -/
+theorem kummerRatio_baseChange_eq_natCard_localCondition_selmerStructure_div
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
+    (i : ι) [DecidableEq (L i)] :
+    (φ.baseChange (L i)).kummerRatio =
+      Nat.card ((φ.selmerStructure τ).localCondition i) /
+        Nat.card (ofIsogeny (φ.baseChange (L i))).pointMapHom.ker := by
+  rw [kummerRatio_def, natCard_localCondition_selmerStructure]
 
 end Field
 
@@ -226,5 +248,31 @@ theorem natCard_localCondition_selmerStructure_mul_natCard_localCondition_dual
   exact fun h ↦ hφ (by rw [← map_natCast (algebraMap R K), h, map_zero])
 
 end Global
+
+/-! ### The product over all places of `ℚ` -/
+
+section Rat
+
+variable [∀ v : GlobalNumberFields.Place ℚ, DecidableEq v.Completion]
+  {W₁ W₂ : WeierstrassCurve ℚ} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+/-- **The product of the local factors of `Sel_φ` over all places of `ℚ`**: for an isogeny `φ`
+over `ℚ`, the product of local Kummer ratios `φ.kummerRatioProduct` is the finitary product, over
+the finite and infinite places `v` of `ℚ`, of `#H¹_φ(ℚ_v) / #E₁(ℚ_v)[φ]`, where `H¹_φ(ℚ_v)` is the
+local condition at `v` of the `φ`-Selmer structure. This is the product of local factors in
+Cassels' formula for `#Sel_φ / #Sel_φ̂`. -/
+theorem kummerRatioProduct_eq_finprod_natCard_localCondition_selmerStructure_div
+    (τ : ∀ v : GlobalNumberFields.Place ℚ,
+      SeparableClosure ℚ →ₐ[ℚ] SeparableClosure v.Completion) :
+    φ.kummerRatioProduct =
+      ∏ᶠ v : GlobalNumberFields.Place ℚ, (Nat.card ((φ.selmerStructure τ).localCondition v) /
+        Nat.card (ofIsogeny (φ.baseChange v.Completion)).pointMapHom.ker : ℚ) := by
+  have := (φ.isSeparable_dual_and_self_iff.2 (Nat.cast_ne_zero.mpr φ.degree_pos.ne')).2
+  rw [kummerRatioProduct_eq_finprod_place]
+  exact finprod_congr fun v ↦
+    kummerRatio_baseChange_eq_natCard_localCondition_selmerStructure_div φ τ v
+
+end Rat
 
 end TauCeti.Isogeny

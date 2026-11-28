@@ -65,11 +65,11 @@ theorem residue_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K)
           ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
             (mem_powerBoundedSubring.mpr (ha i))⟩)
         (polydiscReduction n K f) := by
-  simpa only [evalAtHom_def] using
+  simpa only [evalAtHom_eq_weightedEvalHom] using
     residue_weightedEvalHom_eq_eval_polydiscReduction a ha
       ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K) a).2 ha) f
       (by
-        rw [← evalAtHom_def a ha]
+        rw [← evalAtHom_eq_weightedEvalHom a ha]
         exact (powerBoundedSubring_eq_integer (K := K)).le
           (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f))
 
@@ -85,7 +85,7 @@ theorem norm_evalAtHom_eq_one_iff_eval_polydiscReduction_ne_zero (a : Fin n → 
           ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
             (mem_powerBoundedSubring.mpr (ha i))⟩)
         (polydiscReduction n K f) ≠ 0 := by
-  simpa only [evalAtHom_def] using
+  simpa only [evalAtHom_eq_weightedEvalHom] using
     norm_weightedEvalHom_eq_one_iff_eval_polydiscReduction_ne_zero a ha
       ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K) a).2 ha) f
 

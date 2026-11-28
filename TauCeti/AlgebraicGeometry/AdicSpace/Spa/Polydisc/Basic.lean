@@ -110,6 +110,10 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
 * `TauCeti.ValuationSpectrum.valuation_weightedX_sub_weightedC_eq_of_lt` and
   `TauCeti.ValuationSpectrum.norm_sub_le_of_valuation_eq`: comparisons of the values of a point
   on linear polynomials `Tᵢ - b`, through the constant `b₂ - b₁ = (Tᵢ - b₁) - (Tᵢ - b₂)`.
+* `TauCeti.ValuationSpectrum.eq_classicalPoint_zero`,
+  `TauCeti.ValuationSpectrum.subsingleton_closedPolydisc_zero`, and
+  `TauCeti.ValuationSpectrum.range_classicalPoint_zero_eq_univ`: in dimension `0`, every point of
+  `closedPolydisc 0 K` is the unique classical point.
 
 ## References
 
@@ -167,6 +171,21 @@ theorem comap_weightedC_mem_spa (v : closedPolydisc k A) :
       (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha)))
           (closedPolydisc_def k A ▸ v.property)
 
+variable {k A} in
+/-- The preimage of a basic open `R(T/s)` (`rationalSubset`) in the closed polydisc
+`closedPolydisc k A` is open. -/
+theorem isOpen_val_preimage_rationalSubset_closedPolydisc
+    (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight))
+    (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    IsOpen (Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s :
+      Set (closedPolydisc k A)) := by
+  have h := isOpen_val_preimage_rationalSubset
+    (powerBoundedSubring (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)) T s
+  rw [← closedPolydisc_def] at h
+  exact h
+
 end Polydisc
 
 section ClassicalPoints
@@ -182,10 +201,8 @@ noncomputable def evalAtHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
   weightedEvalHom isWeightFamily_one_weight continuousAt_id
     ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id A) a).2 ha)
 
-/-- The unfolding equation for `evalAtHom`: evaluation at `a` is `weightedEvalHom` along the
-identity of `A`. `evalAtHom` is not `@[expose]`d, so this equation exposes its definition across
-the module boundary. -/
-theorem evalAtHom_def (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+/-- `evalAtHom` is `TauCeti.Huber.weightedEvalHom` along `RingHom.id A`. -/
+theorem evalAtHom_eq_weightedEvalHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
     evalAtHom a ha = weightedEvalHom isWeightFamily_one_weight continuousAt_id
       ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id A) a).2 ha) :=
   (rfl)
@@ -658,18 +675,6 @@ theorem norm_sub_le_of_valuation_eq {k : ℕ} {v : closedPolydisc k K} {i : Fin 
   refine (Valuation.map_sub _ _ _).trans (max_le h₁.le ?_)
   rwa [h₂, closedPolydisc_valuation_weightedC_le_iff]
 
-/-- **The zero-dimensional closed polydisc over an ultrametric normed field is a subsingleton**:
-every restricted power series in zero variables is constant, and every point of the polydisc
-compares constants by their norms. -/
-instance subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) := by
-  refine ⟨fun v w ↦ Subtype.ext <| ext' fun f g ↦ ?_⟩
-  have hconst : ∀ h : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set K))
-      isWeightFamily_one_weight,
-      h = weightedC _ isWeightFamily_one_weight (weightedRestrictedSubringFinZeroEquiv _ h) :=
-    fun h ↦ ((weightedRestrictedSubringFinZeroEquiv _).symm_apply_apply h).symm.trans
-      (Subtype.ext (by simp))
-  rw [hconst f, hconst g, closedPolydisc_vle_weightedC_iff, closedPolydisc_vle_weightedC_iff]
-
 section Complete
 
 variable {k : ℕ} [CompleteSpace K]
@@ -687,7 +692,6 @@ theorem normClassicalPoint_def (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a 
   (rfl)
 
 /-- Every classical point attached to any `x : Spa (K, K°)` equals `normClassicalPoint`. -/
-@[simp]
 theorem classicalPoint_eq_normClassicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k → K)
     (ha : ∀ i, IsPowerBounded (a i)) :
     classicalPoint x a ha = normClassicalPoint a ha := by
@@ -734,7 +738,7 @@ end Complete
 /-- **The classical locus of the closed polydisc `closedPolydisc k K`**: the set of `K`-rational
 classical points parametrised by power-bounded tuples `a ∈ (K°)ᵏ`. -/
 noncomputable def classicalPoints (k : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K]
-    [NonarchimedeanRing K] [CompleteSpace K] : Set (closedPolydisc k K) :=
+    [CompleteSpace K] : Set (closedPolydisc k K) :=
   Set.range fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
     normClassicalPoint a.val a.property
 
@@ -748,7 +752,7 @@ theorem range_normClassicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K] 
 /-- Membership in `classicalPoints k K`: a point lies in the classical locus iff it equals
 `normClassicalPoint a ha` for some power-bounded tuple `a ∈ (K°)ᵏ`. -/
 theorem mem_classicalPoints_iff {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
-    [NonarchimedeanRing K] [CompleteSpace K] {v : closedPolydisc k K} :
+    [CompleteSpace K] {v : closedPolydisc k K} :
     v ∈ classicalPoints k K ↔
       ∃ (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)), normClassicalPoint a ha = v := by
   simp only [← range_normClassicalPoint_eq_classicalPoints, Set.mem_range, Subtype.exists]
@@ -764,15 +768,47 @@ theorem normClassicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
 theorem classicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
     classicalPoint x a ha ∈ classicalPoints k K := by
-  simp
+  simp [classicalPoint_eq_normClassicalPoint]
 
 /-- Every `x : Spa (K, K°)` sweeps out the same locus `classicalPoints k K`. -/
 theorem range_classicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) :
     Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
         classicalPoint x a.val a.property) = classicalPoints k K := by
-  simp
+  simp [classicalPoint_eq_normClassicalPoint]
 
 end NormedField
+
+section DimensionZero
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+
+/-- **In dimension `0`, every point of `closedPolydisc 0 K` is the unique classical point.** -/
+theorem eq_classicalPoint_zero (x : spa (powerBoundedSubring K)) (v : closedPolydisc 0 K) :
+    v = classicalPoint x Fin.elim0 (fun i ↦ i.elim0) := by
+  let e := weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set K))
+  have he : ∀ a : K, e.symm a = weightedC _ isWeightFamily_one_weight a := fun a ↦
+    Subtype.ext (by simp [e])
+  refine Subtype.ext (ext' fun f g ↦ ?_)
+  rw [← e.symm_apply_apply f, ← e.symm_apply_apply g, he, he,
+    closedPolydisc_vle_weightedC_iff, classicalPoint_vle, evalAtHom_weightedC,
+    evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.property]
+
+/-- In dimension `0`, `closedPolydisc 0 K` has at most one point (indeed exactly one whenever
+`Spa (K, K°)` is nonempty). -/
+instance subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) where
+  allEq v w := by
+    let x : spa (powerBoundedSubring K) := ⟨_, comap_weightedC_mem_spa v⟩
+    rw [eq_classicalPoint_zero x v, eq_classicalPoint_zero x w]
+
+/-- **In dimension `0`, the classical points exhaust `closedPolydisc 0 K`.** -/
+theorem range_classicalPoint_zero_eq_univ (x : spa (powerBoundedSubring K)) :
+    Set.range (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦
+      classicalPoint x a.val a.property) = Set.univ := by
+  ext v
+  simp only [Set.mem_range, Set.mem_univ, iff_true]
+  exact ⟨⟨Fin.elim0, fun i ↦ i.elim0⟩, (eq_classicalPoint_zero x v).symm⟩
+
+end DimensionZero
 
 end TauCeti.ValuationSpectrum

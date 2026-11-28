@@ -206,10 +206,8 @@ theorem timeDependentFlowDomain_clockField : timeDependentFlowDomain clockField 
 /-- **The flow of `X_t = t`** from time `s` to time `t` is `x ↦ x + (t² - s²) / 2`. -/
 theorem timeDependentFlowOf_clockField (s t x : ℝ) :
     timeDependentFlowOf clockField s t x = x + (t ^ 2 - s ^ 2) / 2 := by
-  simpa using timeDependentFlowOf_eq_of_hasMFDerivAt contMDiff_clockField (s := s) (t := t)
-    (a := min s t - 1) (b := max s t + 1) (fun u _ ↦ hasMFDerivAt_clockSolution s x u)
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  simpa using timeDependentFlowOf_eq_of_forall_hasMFDerivAt contMDiff_clockField
+    (hasMFDerivAt_clockSolution s x) s t
 
 -- Flowing back from `t` to `s` undoes the flow from `s` to `t`.
 example (s t x : ℝ) :

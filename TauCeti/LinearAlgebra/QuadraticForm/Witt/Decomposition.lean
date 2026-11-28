@@ -57,6 +57,8 @@ decomposition follows from the regular one.
   anisotropic part of `⟨a, b⟩` when it is hyperbolic.
 * `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an
   isometry of quadratic forms.
+* `QuadraticForm.wittIndex_formClass_restrict_orthogonal_span_pair_add_one`: splitting off a
+  hyperbolic plane lowers the Witt index by one.
 * `QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`: a regular form represents
   a unit `c` exactly when adjoining `⟨-c⟩` to its class gives an isotropic class.
 
@@ -465,6 +467,21 @@ theorem _root_.QuadraticForm.exists_equivalent_hyperbolicPresentation_prod (Q : 
     obtain ⟨r, hr⟩ := exists_presentedForm_equivalent Q hQ
     rw [formClass_mk Q hQ r hr, RegularFormClass.mk_eq_mk_iff] at hclass
     exact (hr.trans hclass).trans (equivalent_presentedForm_append_prod _ p)
+
+/-- Splitting off the hyperbolic plane spanned by isotropic vectors `x, y` with `polar Q x y = 1`
+lowers the Witt index of a regular space by one. -/
+theorem _root_.QuadraticForm.wittIndex_formClass_restrict_orthogonal_span_pair_add_one
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {x y : V} (hx : Q x = 0) (hy : Q y = 0)
+    (hxy : polar Q x y = 1) :
+    RegularFormClass.wittIndex (formClass (Q.restrict
+      (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y})))
+      (hQ.nondegenerate_restrict_orthogonal_span_pair hx hy hxy)) + 1 =
+      RegularFormClass.wittIndex (formClass Q hQ) := by
+  have hclass : formClass Q hQ = 1 • hyperbolicClass K + formClass _
+      (hQ.nondegenerate_restrict_orthogonal_span_pair hx hy hxy) := by
+    rw [one_nsmul, ← formClass_hyperbolicPlane, ← formClass_prod, formClass_eq_iff]
+    exact Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hx hy hxy
+  rw [hclass, RegularFormClass.wittIndex_nsmul_hyperbolicClass_add, add_comm]
 
 end Form
 

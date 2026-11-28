@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Homotopy.Basic
 import Mathlib.Topology.Compactness.Compact
+import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Invariant sets and basic flow lemmas
@@ -22,6 +23,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
 * `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
   and conversely.
+* `Flow.apply_eq_self_of_forall_pos`: a point fixed at every positive time is fixed at every time.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
 * `Flow.orbit_eq_iff`: two points have the same orbit exactly when one lies on the orbit of the
   other.
@@ -29,8 +31,19 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
   have these two orbits.
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
 * `Flow.prod`: the product of two flows with the same time.
+* `Flow.continuous_eval_const`: the flow line `t ↦ ϕ t x` through a point is continuous.
+* `Flow.continuousVAdd`: the action `ϕ.toAddAction` of a flow is jointly continuous.
+* `Flow.map_nsmul`: the time-`(k • t)` map is the `k`-th iterate of the time-`t` map.
+* `Flow.coe_toHomeomorph`, `Flow.coe_toHomeomorph_symm`: the homeomorphism `ϕ.toHomeomorph t` is
+  the time-`t` map, with inverse the time-`(-t)` map.
+* `Flow.timeChange`: the time change `t ↦ ϕ (c * t)` of a flow by a factor `c`.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
+* `Flow.tendsto_abs_atTop_of_forall_apply_ne`: times between points converging to two points that
+  no time joins tend to infinity in absolute value.
+* `Flow.homotopic_of_eq_apply`: maps sending each point to two times of its flow line are homotopic.
+* `Flow.homotopic_id_restrict`: on a forward invariant set, each forward time map is homotopic to
+  the identity.
 -/
 
 public section
@@ -60,6 +73,15 @@ theorem map_neg_apply_map [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ
 @[simp]
 theorem map_apply_map_neg [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ t (ϕ (-t) x) = x := by
   rw [← ϕ.map_add, add_neg_cancel, ϕ.map_zero_apply]
+
+/-- A point fixed by the flow at every positive time is fixed at every time. -/
+theorem apply_eq_self_of_forall_pos [AddCommGroup τ] [LinearOrder τ] [IsOrderedAddMonoid τ]
+    {ϕ : Flow τ α} {x : α} (h : ∀ t, 0 < t → ϕ t x = x) (t : τ) : ϕ t x = x := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · conv_lhs => rw [← h (-t) (neg_pos.2 ht)]
+    exact map_apply_map_neg ϕ t x
+  · exact map_zero_apply ϕ x
+  · exact h t ht
 
 /-- All points of an orbit have the same orbit. -/
 @[simp]
@@ -111,6 +133,50 @@ theorem prod_apply {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ
     (t : τ) (p : α × β) : ϕ.prod ψ t p = (ϕ t p.1, ψ t p.2) :=
   (rfl)
 
+/-- The flow line `t ↦ ϕ t x` through a point `x` is continuous. -/
+theorem continuous_eval_const [AddZero τ] (ϕ : Flow τ α) (x : α) : Continuous fun t ↦ ϕ t x :=
+  ϕ.continuous continuous_id continuous_const
+
+/-- The action `ϕ.toAddAction` of a flow is jointly continuous, since `t +ᵥ x` is `ϕ t x` by
+definition of `Flow.toAddAction`. -/
+theorem continuousVAdd [AddMonoid τ] (ϕ : Flow τ α) :
+    @ContinuousVAdd τ α ϕ.toAddAction.toVAdd _ _ :=
+  letI := ϕ.toAddAction
+  ⟨ϕ.cont'⟩
+
+/-- The time-`(k • t)` map of a flow is the `k`-th iterate of its time-`t` map. -/
+theorem map_nsmul [AddMonoid τ] (ϕ : Flow τ α) (k : ℕ) (t : τ) : ϕ (k • t) = (ϕ t)^[k] := by
+  induction k with
+  | zero => simp [ϕ.map_zero]
+  | succ k ih =>
+    funext x
+    rw [succ_nsmul', ϕ.map_add, ih, Function.iterate_succ_apply']
+
+/-- The homeomorphism `ϕ.toHomeomorph t` is the time-`t` map. -/
+@[simp]
+theorem coe_toHomeomorph [AddGroup τ] (ϕ : Flow τ α) (t : τ) : ⇑(ϕ.toHomeomorph t) = ϕ t :=
+  (rfl)
+
+/-- The inverse of the homeomorphism `ϕ.toHomeomorph t` is the time-`(-t)` map. -/
+@[simp]
+theorem coe_toHomeomorph_symm [AddGroup τ] (ϕ : Flow τ α) (t : τ) :
+    ⇑(ϕ.toHomeomorph t).symm = ϕ (-t) :=
+  (rfl)
+
+/-- The **time change** of a flow by a factor `c`: the flow `t ↦ ϕ (c * t)`. -/
+def timeChange [NonUnitalNonAssocSemiring τ] [ContinuousMul τ] (ϕ : Flow τ α) (c : τ) :
+    Flow τ α where
+  toFun t := ϕ (c * t)
+  cont' := ϕ.continuous (continuous_const.mul continuous_fst) continuous_snd
+  map_add' t s x := by rw [mul_add, ϕ.map_add]
+  map_zero' x := by rw [mul_zero, ϕ.map_zero_apply]
+
+/-- The time-`t` map of the time change by `c` is the time-`(c * t)` map. -/
+@[simp]
+theorem timeChange_apply [NonUnitalNonAssocSemiring τ] [ContinuousMul τ] (ϕ : Flow τ α)
+    (c t : τ) : ϕ.timeChange c t = ϕ (c * t) :=
+  (rfl)
+
 /-- **A uniform time to reach an open set.** If the forward orbit of every point of a compact set
 `C` meets an open set `W` at some positive time, then there is one time `T` such that each of these
 orbits meets `W` at some time in `(0, T)`. -/
@@ -129,6 +195,31 @@ theorem exists_forall_exists_mem_Ioo_apply_mem [AddZero τ] [Preorder τ] [IsDir
   obtain ⟨T, hT⟩ := exists_gt σ
   exact Set.mem_iUnion.2 ⟨T, σ, ⟨hσ, hT⟩, hσW⟩
 
+/-- **Times between converging points diverge when no time joins the limits.** Let `y n → y₀` and
+`ϕ (t n) (y n) → z₀` along a filter. If no time carries `y₀` to `z₀`, then `|t n| → ∞`. Indeed, the
+pairs of points joined by a time of a compact interval `[-K, K]` form a closed set, which would
+contain `(y₀, z₀)` if the times `t n` were frequently in `[-K, K]`. -/
+theorem tendsto_abs_atTop_of_forall_apply_ne [T2Space α] (ϕ : Flow ℝ α) {y₀ z₀ : α}
+    (h : ∀ t, ϕ t y₀ ≠ z₀) {ι : Type*} {l : Filter ι} {y : ι → α} {t : ι → ℝ}
+    (hy : Filter.Tendsto y l (nhds y₀))
+    (hz : Filter.Tendsto (fun n ↦ ϕ (t n) (y n)) l (nhds z₀)) :
+    Filter.Tendsto (fun n ↦ |t n|) l Filter.atTop := by
+  refine Filter.tendsto_atTop.2 fun K ↦ ?_
+  by_contra hK
+  -- The pairs joined by a time in `[-K, K]` are the projection of a closed subset of the product
+  -- with the compact interval.
+  have hS : IsClosed {w : α × α | ∃ s ∈ Set.Icc (-K) K, ϕ s w.1 = w.2} := by
+    have hC : IsClosed {sw : Set.Icc (-K) K × (α × α) | ϕ sw.1 sw.2.1 = sw.2.2} :=
+      isClosed_eq (ϕ.continuous (continuous_subtypeVal.comp continuous_fst)
+        (continuous_fst.comp continuous_snd)) (continuous_snd.comp continuous_snd)
+    convert isClosedMap_snd_of_compactSpace _ hC using 1
+    ext w
+    simp
+  obtain ⟨s, -, hs⟩ := hS.mem_of_frequently_of_tendsto
+    ((Filter.not_eventually.1 hK).mono fun n hn ↦ ⟨t n, abs_le.1 (not_le.1 hn).le, rfl⟩)
+    (hy.prodMk_nhds hz)
+  exact h s hs
+
 /-- **Homotopy along flow lines.** Two maps into a space `Z` embedded in `α` which send each `y` to
 the flow line of `p y` at the times `τ₀ y` and `τ₁ y` are homotopic, provided the flow line stays
 in `Z` at the times in between. -/
@@ -145,5 +236,16 @@ theorem homotopic_of_eq_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpa
     exact ϕ.continuous (by fun_prop) (hp.comp continuous_snd)
   · exact hι.injective ((hG (0, y)).trans (by simp [hF₀]))
   · exact hι.injective ((hG (1, y)).trans (by simp [hF₁]))
+
+/-- On a forward invariant set, the time-`t` map of the flow with `t ≥ 0` is homotopic to the
+identity, through the time-`u t` maps with `u ∈ [0, 1]`. -/
+theorem homotopic_id_restrict {ϕ : Flow ℝ α} {s : Set α} (hs : IsForwardInvariant ϕ s) {t : ℝ}
+    (ht : 0 ≤ t) :
+    (ContinuousMap.id s).Homotopic
+      ⟨(hs ht).restrict (ϕ t) s s, (ϕ.continuous_toFun t).restrict (hs ht)⟩ :=
+  ϕ.homotopic_of_eq_apply Topology.IsEmbedding.subtypeVal continuous_subtypeVal
+    continuous_const continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ t)
+    (fun x ↦ by simp) (fun _ ↦ rfl) fun x u hu ↦
+      ⟨⟨ϕ (u * t) x, hs (mul_nonneg hu.1 ht) x.property⟩, by simp⟩
 
 end Flow

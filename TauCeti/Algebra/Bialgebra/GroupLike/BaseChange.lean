@@ -31,6 +31,8 @@ characters. No finite-generation, smoothness, or characteristic hypothesis is ne
 
 * `TauCeti.groupLikeBaseChange`: the canonical scalar-extension map on characters.
 * `TauCeti.groupLikeBaseChange_injective`: injectivity along a faithfully flat extension.
+* `TauCeti.span_groupLike_eq_top_of_surjective`: spanning by group-like elements descends
+  when every extended character descends.
 * `TauCeti.groupLikeBaseChange_bijective`: preservation of characters under the stated
   spanning, torsion-free, and connected-spectrum hypotheses.
 * `TauCeti.groupLikeBaseChangeEquiv`: the resulting multiplicative equivalence.
@@ -81,6 +83,26 @@ theorem groupLikeBaseChange_injective {R K A : Type*} [CommRing R] [CommRing K] 
   _root_.GroupLike.val_injective <|
     Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := K) A
       (congrArg _root_.GroupLike.val h)
+
+/-- Spanning by group-like elements descends along a faithfully flat extension of the base ring
+when every character over the extension comes from one over the base. -/
+theorem span_groupLike_eq_top_of_surjective {R K A : Type*} [CommRing R] [CommRing K]
+    [Algebra R K] [Module.FaithfullyFlat R K] [Ring A] [Bialgebra R A]
+    (hsurj : Function.Surjective (groupLikeBaseChange (R := R) (K := K) (A := A)))
+    (hspan : Submodule.span K
+      (Set.range (_root_.GroupLike.val (R := K) (A := K ⊗[R] A))) = ⊤) :
+    Submodule.span R (Set.range (_root_.GroupLike.val (R := R) (A := A))) = ⊤ := by
+  let p := Submodule.span R (Set.range (_root_.GroupLike.val (R := R) (A := A)))
+  have hp : p.baseChange K = ⊤ := by
+    apply top_unique
+    rw [← hspan]
+    apply Submodule.span_le.mpr
+    rintro _ ⟨g, rfl⟩
+    obtain ⟨h, rfl⟩ := hsurj g
+    rw [val_groupLikeBaseChange]
+    exact p.tmul_mem_baseChange_of_mem 1 (Submodule.subset_span ⟨h, rfl⟩)
+  apply Submodule.baseChange_injective (A := K)
+  simpa only [Submodule.baseChange_top] using hp
 
 section Split
 

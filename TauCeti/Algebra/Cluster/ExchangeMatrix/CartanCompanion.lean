@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Basic
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 
 import Mathlib.Algebra.Order.Ring.Abs
@@ -16,7 +16,8 @@ import Mathlib.Algebra.Order.Ring.Abs
 The Cartan companion has diagonal entries two and off-diagonal entries `-|bᵢⱼ|`.
 Every positive skew-symmetrizer of an exchange matrix symmetrizes its companion.
 The construction commutes with transposition and injective simultaneous restriction; its
-block formula applies even when the off-diagonal blocks are nonzero. No finite-index
+block formula applies even when the off-diagonal blocks are nonzero. Source or sink mutation
+preserves the companion. No finite-index
 hypothesis is needed except for the matrix product with a diagonal symmetrizer.
 
 ## References
@@ -50,6 +51,13 @@ theorem cartanCompanion_apply_self (B : Matrix K K ℤ) (i : K) :
 @[simp]
 theorem cartanCompanion_apply_of_ne (B : Matrix K K ℤ) {i j : K} (hij : i ≠ j) :
     B.cartanCompanion i j = -|B i j| := by simp [cartanCompanion_apply, hij]
+
+/-- The product of transposed off-diagonal companion entries is the absolute value of the
+original entry product. -/
+theorem cartanCompanion_apply_mul_apply_of_ne (B : Matrix K K ℤ) {i j : K} (hij : i ≠ j) :
+    B.cartanCompanion i j * B.cartanCompanion j i = |B i j * B j i| := by
+  simp only [cartanCompanion_apply_of_ne _ hij, cartanCompanion_apply_of_ne _ hij.symm,
+    neg_mul_neg, abs_mul]
 
 /-- A companion entry vanishes exactly at an off-diagonal zero of the original matrix. -/
 @[simp]
@@ -97,6 +105,20 @@ theorem cartanCompanion_fromBlocks {L : Type*} [DecidableEq L]
   ext (i | i) (j | j) <;> simp [cartanCompanion_apply]
 
 namespace IsSkewSymmetrizer
+
+/-- A source or sink mutation preserves the Cartan companion. -/
+theorem cartanCompanion_matrixMutation_of_row_nonneg_or_nonpos
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (k : K)
+    (hk : (∀ l, 0 ≤ B k l) ∨ ∀ l, B k l ≤ 0) :
+    (TauCeti.matrixMutation (Function.Embedding.refl K) B k).cartanCompanion =
+      B.cartanCompanion := by
+  ext i j
+  simp only [cartanCompanion_apply]
+  split_ifs with hij
+  · rfl
+  · rw [h.matrixMutation_apply_of_row_nonneg_or_nonpos k i j hk]
+    split_ifs <;> simp
+
 
 /-- A positive skew-symmetrizer gives symmetric weighted entries in the Cartan companion. -/
 theorem mul_cartanCompanion_apply {B : Matrix K K ℤ} {s : K → ℤ}

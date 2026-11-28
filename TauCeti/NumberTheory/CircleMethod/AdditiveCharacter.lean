@@ -28,11 +28,14 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
   (`TauCeti.two_mul_distInt_le_abs_sin`).
 * `TauCeti.sum_expTwoPiI_eq`: the geometric sum
   `∑_{n=1}^N e(nβ) = e(β) (e(Nβ) - 1) / (e(β) - 1)` off the integers, and
-  `TauCeti.norm_sum_expTwoPiI_le`, the bound `|∑_{n=1}^N e(nβ)| ≤ min(N, 1 / (2‖β‖))`.
+  `TauCeti.norm_sum_expTwoPiI_le`, the bound `|∑_{n=1}^N e(nβ)| ≤ min(N, 1 / (2‖β‖))`, with its
+  form `TauCeti.norm_sum_Ioc_expTwoPiI_le` over an interval `A < m ≤ B`.
 
 The bound `1 / (2‖β‖)` is stated with the value `N` when `‖β‖ = 0`, by an explicit `if`: with
 Lean's convention `1 / 0 = 0` the minimum would be `0` there, while the sum has norm exactly `N`
-at the integers (`TauCeti.sum_expTwoPiI_of_distInt_eq_zero`).
+at the integers (`TauCeti.sum_expTwoPiI_of_distInt_eq_zero`). The capped minimum
+`if ‖x‖ = 0 then Y else min(Y, 1 / ‖x‖)` is monotone in the cap `Y`
+(`TauCeti.ite_min_inv_distInt_le_of_le`).
 
 ## References
 
@@ -229,6 +232,27 @@ theorem distInt_periodic : Function.Periodic distInt 1 := fun α ↦ by
 theorem distInt_neg (α : ℝ) : distInt (-α) = distInt α := by
   rw [distInt_eq_norm, distInt_eq_norm, AddCircle.coe_neg, norm_neg]
 
+theorem distInt_le_abs (α : ℝ) : distInt α ≤ |α| := by
+  simpa using distInt_le_abs_sub_intCast α 0
+
+/-- `‖·‖` is subadditive: `‖α + β‖ ≤ ‖α‖ + ‖β‖`. -/
+theorem distInt_add_le (α β : ℝ) : distInt (α + β) ≤ distInt α + distInt β := by
+  simp only [distInt_eq_norm, AddCircle.coe_add]
+  exact norm_add_le _ _
+
+/-- A fraction `k / q` with `q ∤ k` is at distance at least `1 / q` from the integers. -/
+theorem one_div_le_distInt_intCast_div {q : ℕ} {k : ℤ} (hk : ¬(q : ℤ) ∣ k) :
+    1 / (q : ℝ) ≤ distInt (k / q) := by
+  rcases Nat.eq_zero_or_pos q with rfl | hq
+  · simp
+  have hq' : (0 : ℝ) < q := by exact_mod_cast hq
+  set r := round ((k : ℝ) / q)
+  have hne : k - q * r ≠ 0 := fun h ↦ hk ⟨r, by linarith⟩
+  have h1 : (1 : ℝ) ≤ |((k - q * r : ℤ) : ℝ)| := by exact_mod_cast Int.one_le_abs hne
+  rw [distInt_def, show (k : ℝ) / q - r = ((k - q * r : ℤ) : ℝ) / q by
+    push_cast; field_simp, abs_div, abs_of_pos hq']
+  exact div_le_div_of_nonneg_right h1 hq'.le
+
 /-- `2‖α‖ ≤ |sin (πα)|`, from Jordan's inequality `2|x| / π ≤ |sin x|` for `|x| ≤ π / 2`. -/
 theorem two_mul_distInt_le_abs_sin (α : ℝ) : 2 * distInt α ≤ |Real.sin (π * α)| := by
   -- `|sin (π ·)|` is `1`-periodic, so it is unchanged when `α` is replaced by `r = α - round α`.
@@ -291,6 +315,33 @@ theorem norm_sum_expTwoPiI_le (N : ℕ) (β : ℝ) :
   · exact norm_sum_expTwoPiI_le_natCast N β
   · exact le_min (norm_sum_expTwoPiI_le_natCast N β)
       (norm_sum_expTwoPiI_le_one_div N hβ)
+
+/-- Raising the cap `Y` raises the capped minimum `min(Y, 1 / ‖x‖)`, taken to be `Y` when
+`‖x‖ = 0`. -/
+theorem ite_min_inv_distInt_le_of_le {x Y Y' : ℝ} (h : Y ≤ Y') :
+    (if distInt x = 0 then Y else min Y (distInt x)⁻¹) ≤
+      if distInt x = 0 then Y' else min Y' (distInt x)⁻¹ := by
+  split_ifs
+  exacts [h, min_le_min_right _ h]
+
+/-- The geometric-sum bound over an interval of naturals:
+`|∑_{A < m ≤ B} e(mβ)| ≤ min(B - A, 1 / (2‖β‖))`, with the value `B - A` when `‖β‖ = 0`. -/
+theorem norm_sum_Ioc_expTwoPiI_le (A B : ℕ) (β : ℝ) :
+    ‖∑ m ∈ Finset.Ioc A B, expTwoPiI (m * β)‖ ≤
+      if distInt β = 0 then ((B - A : ℕ) : ℝ)
+      else min ((B - A : ℕ) : ℝ) (1 / (2 * distInt β)) := by
+  have hI : Finset.Ioc A B = (Finset.Icc 1 (B - A)).map (addRightEmbedding A) := by
+    rw [Finset.map_add_right_Icc]
+    ext m
+    simp only [Finset.mem_Ioc, Finset.mem_Icc]
+    omega
+  have h : ∑ m ∈ Finset.Ioc A B, expTwoPiI (m * β) =
+      expTwoPiI (A * β) * ∑ k ∈ Finset.Icc 1 (B - A), expTwoPiI (k * β) := by
+    rw [hI, Finset.sum_map, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [← expTwoPiI_add, addRightEmbedding_apply, Nat.cast_add, add_mul, add_comm]
+  rw [h, norm_mul, norm_expTwoPiI, one_mul]
+  exact norm_sum_expTwoPiI_le _ β
 
 /-! ### Checks -/
 

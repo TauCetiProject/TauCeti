@@ -145,6 +145,27 @@ theorem comp {f : β → γ} {g : α → β} (hf : ComputableIn O f) (hg : Compu
   exact (Nat.RecursiveIn.comp hf hg).of_eq fun n => by
     cases decode (α := α) n <;> simp [Encodable.encodek]
 
+/-- An oracle-computable function whose range is the encoding of `S` can be decoded to an
+oracle-computable function with range `S`. Decoding preserves injectivity, and `a` supplies a
+default for numbers outside the encoding. -/
+theorem exists_decoded_range {f : α → ℕ} {S : Set β} (hf : ComputableIn O f) (a : β)
+    (hr : Set.range f = encode '' S) :
+    ∃ g : α → β, ComputableIn O g ∧ Set.range g = S ∧
+      (Function.Injective f → Function.Injective g) := by
+  let d (n : ℕ) := (decode n).getD a
+  have hd : Computable d := Computable.decode.option_getD (Computable.const a)
+  have hinv : Function.LeftInverse d (encode (α := β)) := fun x => by simp [d]
+  refine ⟨d ∘ f, hd.computableIn.comp hf, ?_, ?_⟩
+  · rw [Set.range_comp, hr]
+    exact hinv.image_image S
+  · intro h m n he
+    obtain ⟨x, _, hx⟩ := hr ▸ Set.mem_range_self m
+    obtain ⟨y, _, hy⟩ := hr ▸ Set.mem_range_self n
+    apply h
+    rw [← hx, ← hy]
+    apply congrArg encode
+    simpa only [Function.comp_apply, ← hx, ← hy, hinv x, hinv y] using he
+
 /-- Pairing total oracle-computable functions. -/
 theorem pair {f : α → β} {g : α → γ} (hf : ComputableIn O f) (hg : ComputableIn O g) :
     ComputableIn O (fun a => (f a, g a)) := by
@@ -197,6 +218,12 @@ theorem rfind {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α →
     rcases (p a m).eq_none_or_eq_some with hm | ⟨b, hm⟩
     · simp [hm]
     · cases b <;> simp [hm]
+
+/-- A partial function out of `ℕ` is recursive in `O` iff its encoded composition is
+`Nat.RecursiveIn` in `O`. -/
+theorem iff_nat_map_encode {β : Type*} [Primcodable β] {O : Set (ℕ →. ℕ)} {f : ℕ →. β} :
+    RecursiveIn O f ↔ Nat.RecursiveIn O fun n => (f n).map encode := by
+  simp [RecursiveIn]
 
 end RecursiveIn
 
@@ -318,6 +345,22 @@ theorem list_range_map {f : α → ℕ → β} (hf : ComputableIn₂ O f) :
   induction n with
   | zero => rfl
   | succ n ih => simp [List.range_succ, ih]
+
+/-- Lifting a primitive-recursive computation on `Option ℕ` prefix lists to any `O`-computable
+family `σ`, when at bound `k` the computation depends only on the prefix `(List.range k).map (σ a)`
+via list lookup. -/
+theorem computableIn_of_primrec_range_map_option {β γ : Type*} [Primcodable β] [Primcodable γ]
+    {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ O σ)
+    {F : (ℕ → Option ℕ) → ℕ → β → γ}
+    (hF : Primrec fun p : List (Option ℕ) × ℕ × β =>
+      F (fun z => p.1[z]?.bind id) p.2.1 p.2.2)
+    (hprefix : ∀ a k b,
+      F (fun z => (((List.range k).map (σ a))[z]?).bind id) k b = F (σ a) k b) :
+    ComputableIn O fun p : α × ℕ × β => F (σ p.1) p.2.1 p.2.2 := by
+  have hp : ComputableIn O fun p : α × ℕ × β => (List.range p.2.1).map (σ p.1) :=
+    hσ.list_range_map.comp (ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd))
+  exact RecursiveIn.of_eq (hF.computableIn.comp (hp.pair ComputableIn.snd))
+    fun p => congrArg Part.some (hprefix p.1 p.2.1 p.2.2)
 
 end ComputableIn₂
 

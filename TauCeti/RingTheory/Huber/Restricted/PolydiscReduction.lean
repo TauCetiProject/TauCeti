@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Reduction
+public import TauCeti.RingTheory.Huber.Restricted.Gauss.Valuation
 public import TauCeti.RingTheory.Huber.Restricted.Reduction
-public import TauCeti.RingTheory.Huber.Restricted.UnitGaussValuation
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Subring
 
-import TauCeti.RingTheory.Huber.Restricted.Comparison
+import TauCeti.RingTheory.Huber.Restricted.Comparison.Basic
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
 
 /-!

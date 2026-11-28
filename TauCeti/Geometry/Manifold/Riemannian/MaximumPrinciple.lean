@@ -1,33 +1,43 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Otis Chodosh
+Authors: The Tau Ceti contributors, Otis Chodosh, Giada Franz
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.CriticalHessian
-import TauCeti.Analysis.Calculus.DerivativeTest
-import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-
-import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.SecondDerivativeTest
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 
 /-!
 # The maximum principle for the Laplace–Beltrami operator
 
-On a boundaryless Riemannian manifold, this file proves the pointwise second-derivative test for
-the Riemannian Hessian and the Laplace–Beltrami operator `Δ = div ∘ grad`, and the resulting
-comparison principle for semilinear elliptic equations on a compact manifold.
+On a finite-dimensional Riemannian manifold, this file proves the pointwise sign tests for
+the Laplace–Beltrami operator `Δ = div ∘ grad` and contact comparisons at interior points.
+The pointwise Hessian second-derivative tests are in
+`TauCeti.Geometry.Manifold.Riemannian.Hessian.SecondDerivativeTest`.
 
-At a critical point of a `C²` function the Levi-Civita correction term of the Hessian vanishes,
-so the Riemannian Hessian is the ordinary second derivative of the function read in the
-preferred chart. Consequently the Hessian is negative semidefinite at a local maximum and
-positive semidefinite at a local minimum, and the same holds for its trace `Δ`.
+At an interior local maximum of a `C²` function, `Δ` is nonpositive; at an interior local
+minimum, it is nonnegative. The pointwise sign tests and contact comparisons require only
+interiority at the point in question.
 
 On a compact boundaryless manifold, evaluating at a maximum of `u - v` gives the comparison
 principle: if `h(x, ·)` is strictly increasing for every `x`, a subsolution
 `h(x, u) ≤ Δ u` lies below a supersolution `Δ v ≤ h(x, v)`. In particular a semilinear equation
 `Δ u = h(x, u)` with strictly increasing nonlinearity has at most one `C²` solution. This is the
 uniqueness mechanism for the curvature equation of conformal metrics on closed surfaces.
+
+Let `K` be a compact subset of a boundaryless Riemannian manifold. Its *boundary part*
+`K \ interior K` plays the role of the boundary of a domain. This file proves the classical weak
+maximum principle on `K` for the Laplace–Beltrami operator `Δ = div ∘ grad`.
+If `Δ w > 0` on the interior of `K`, then `w` attains its maximum over `K` at a point of
+`K \ interior K`, because at an interior maximum the Laplacian is nonpositive. If moreover
+`Δ u ≥ 0` on the interior of `K`, then the same holds for `u + ε w` for every `ε > 0`, and letting
+`ε → 0` shows that `u` is bounded on `K` by its bounds on `K \ interior K`. In Euclidean space
+`w = |x|²` is such a strict subsolution; on a general manifold one has to be supplied.
+The dual minimum principles give boundary minima for negative Laplacian and lower bounds for
+superharmonic functions, using the same strictly subharmonic barrier.
 
 The second-derivative test also applies to functions that are only lower semicontinuous,
 through smooth barriers. Two `C²` functions `f ≤ g` touching at `x` satisfy `Δ f x ≤ Δ g x`.
@@ -44,8 +54,6 @@ part of the curvature of large-parameter Seiberg–Witten solutions.
 
 ## Main results
 
-* `TauCeti.Manifold.hessian_self_nonpos_of_isLocalMax`,
-  `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the second-derivative test.
 * `TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax`,
   `TauCeti.Manifold.laplaceBeltrami_nonneg_of_isLocalMin`: the sign of `Δ` at local extrema.
 * `TauCeti.Manifold.hessian_self_le_of_eventuallyLE_of_eq`,
@@ -68,14 +76,27 @@ part of the curvature of large-parameter Seiberg–Witten solutions.
 * `TauCeti.Manifold.le_of_le_laplaceBeltrami_of_laplaceBeltrami_le`: the comparison principle.
 * `TauCeti.Manifold.le_max_div_zero_of_mul_sq_sub_mul_le_laplaceBeltrami`: the bound
   `u ≤ max (b / a) 0` for a subsolution of `a u² - b u ≤ Δu` with `a > 0`.
+* `TauCeti.Manifold.exists_mem_sdiff_interior_isMaxOn_of_laplaceBeltrami_pos`: a function with
+  positive Laplacian on the interior of a nonempty compact set `K` attains its maximum over `K`
+  on `K \ interior K`.
+* `TauCeti.Manifold.exists_mem_sdiff_interior_isMinOn_of_laplaceBeltrami_neg`: a function with
+  negative Laplacian on the interior of a nonempty compact set `K` attains its minimum over `K`
+  on `K \ interior K`.
+* `TauCeti.Manifold.le_of_laplaceBeltrami_nonneg_of_forall_mem_sdiff_interior_le`:
+  the weak maximum principle for subharmonic functions, in the presence of a strict subsolution.
+* `TauCeti.Manifold.ge_of_laplaceBeltrami_nonpos_of_forall_mem_sdiff_interior_ge`:
+  the weak minimum principle for superharmonic functions, in the presence of a strict subsolution.
 
 ## References
 
 * Otis Chodosh's formalization in `riccardobrasca/ColdingMinicozziTheory`,
   `ForTauCeti/Geometry/Manifold/Riemannian/Hessian/Contact.lean`, revision
   `d540eafdb38a37ee49e7298d601131ceaa207ced`, for the upper-contact comparisons.
+* Giada Franz's formalization in `riccardobrasca/ColdingMinicozziTheory`,
+  `ForTauCeti/Geometry/Manifold/Riemannian/MaximumPrinciple/Compact.lean`, revision
+  `dce3b2954b2845d2a9609395ece4cf0910cd1694` (Apache 2.0), for the compact-set results.
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Springer, 2001, Chapter 3 (the classical maximum principle).
+  Springer, 2001, Chapter 3, especially Theorem 3.1 (the classical weak maximum principle).
 * J. L. Kazdan and F. W. Warner, *Curvature functions for compact 2-manifolds*, Ann. of Math. 99
   (1974), 14–47 (comparison of sub- and supersolutions on a compact manifold).
 * R. S. Hamilton, *Four-manifolds with positive curvature operator*, J. Differential Geom. 24
@@ -86,7 +107,7 @@ part of the curvature of large-parameter Seiberg–Witten solutions.
 
 public section
 
-open Bundle Filter
+open Bundle Filter Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -94,79 +115,62 @@ noncomputable section
 namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {x : M}
 
-/-- At a local maximum of a `C²` function on a boundaryless Riemannian manifold, the Hessian is
-negative semidefinite. -/
-theorem hessian_self_nonpos_of_isLocalMax (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hmax : IsLocalMax f x) (v : TangentSpace I x) : hessian I f x v v ≤ 0 := by
-  have hmax' : IsLocalMax (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-    have hm : IsLocalMax f ((extChartAt I x).symm (extChartAt I x x)) := by simpa using hmax
-    exact hm.comp_continuous (continuousAt_extChartAt_symm x)
-  rw [hessian_eq_criticalHessian hf (mem_criticalPoints.1 (hmax.mem_criticalPoints (I := I))),
-    criticalHessian_def]
-  exact fderiv_fderiv_self_nonpos_of_isLocalMax
-    (hf.contDiffAt_comp_extChartAt_symm.eventually_differentiableAt (by norm_num)) hmax' v
-
-/-- At a local maximum of a `C²` function on a boundaryless Riemannian manifold, the
+/-- At an interior local maximum of a `C²` function on a Riemannian manifold, the
 Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
 theorem laplaceBeltrami_nonpos_of_isLocalMax (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hmax : IsLocalMax f x) : laplaceBeltrami I f x ≤ 0 := by
+    (hx : I.IsInteriorPoint x) (hmax : IsLocalMax f x) : laplaceBeltrami I f x ≤ 0 := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
-  exact Finset.sum_nonpos fun i _ ↦ hessian_self_nonpos_of_isLocalMax hf hmax _
+  exact Finset.sum_nonpos fun i _ ↦
+    hessian_self_nonpos_of_isLocalMax hf hx hmax _
 
-/-- At a local maximum of `f + k g`, with `f` and `g` both `C²`, on a boundaryless Riemannian
+/-- At a local maximum of `f + k g`, with `f` and `g` both `C²`, at an interior point of a
+Riemannian
 manifold, `Δ f + k Δ g ≤ 0`. -/
 theorem laplaceBeltrami_add_mul_nonpos_of_isLocalMax {g : M → ℝ} {k : ℝ}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x)
-    (hmax : IsLocalMax (fun y ↦ f y + k * g y) x) :
+    (hx : I.IsInteriorPoint x) (hmax : IsLocalMax (fun y ↦ f y + k * g y) x) :
     laplaceBeltrami I f x + k * laplaceBeltrami I g x ≤ 0 := by
   have hkg : ContMDiffAt I 𝓘(ℝ) 2 (k • g) x := by
     simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiffAt_const.mul hg
   -- The pointwise function `y ↦ f y + k * g y` is `f + k • g`.
   have hfg : (fun y ↦ f y + k * g y) = f + k • g := rfl
-  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax (hf.add hkg) (hfg ▸ hmax)
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax (hf.add hkg) hx (hfg ▸ hmax)
   rwa [laplaceBeltrami_add_of_contMDiffAt I hf hkg,
     laplaceBeltrami_smul_of_contMDiffAt I k hg] at hΔ
 
-/-- At a local minimum of a `C²` function on a boundaryless Riemannian manifold, the Hessian is
-positive semidefinite. -/
-theorem hessian_self_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hmin : IsLocalMin f x) (v : TangentSpace I x) : 0 ≤ hessian I f x v v := by
-  have hmin' : IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-    have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by simpa using hmin
-    exact hm.comp_continuous (continuousAt_extChartAt_symm x)
-  rw [hessian_eq_criticalHessian hf (mem_criticalPoints.1 (hmin.mem_criticalPoints (I := I))),
-    criticalHessian_def]
-  exact fderiv_fderiv_self_nonneg_of_isLocalMin
-    (hf.contDiffAt_comp_extChartAt_symm.eventually_differentiableAt (by norm_num)) hmin' v
-
-/-- At a local minimum of a `C²` function on a boundaryless Riemannian manifold, the
+/-- At an interior local minimum of a `C²` function on a Riemannian manifold, the
 Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/
 theorem laplaceBeltrami_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hmin : IsLocalMin f x) : 0 ≤ laplaceBeltrami I f x := by
+    (hx : I.IsInteriorPoint x) (hmin : IsLocalMin f x) : 0 ≤ laplaceBeltrami I f x := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
-  exact Finset.sum_nonneg fun i _ ↦ hessian_self_nonneg_of_isLocalMin hf hmin _
+  exact Finset.sum_nonneg fun i _ ↦
+    hessian_self_nonneg_of_isLocalMin hf hx hmin _
 
-/-- If `g` touches `f` from above, its diagonal Hessian at the contact point is larger. -/
+/-- If `g` touches `f` from above at an interior point, its diagonal Hessian there is larger. -/
 theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hx : I.IsInteriorPoint x)
+    (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
     (heq : f x = g x) (v : TangentSpace I x) : hessian I f x v v ≤ hessian I g x v v := by
   have hmin : IsLocalMin (g - f) x := by
     filter_upwards [hle] with y hy
     simpa only [Pi.sub_apply, ← heq, sub_self] using sub_nonneg.mpr hy
   have hh : 0 ≤ hessian I (g - f) x v v :=
-    hessian_self_nonneg_of_isLocalMin (hg.sub hf) hmin v
-  rw [hessian_sub_of_contMDiffAt I (f := g) (g := f) hg hf] at hh
+    hessian_self_nonneg_of_isLocalMin (hg.sub hf) hx hmin v
+  rw [I.hessian_sub_of_mdifferentiableAt_mgradient (f := g) (g := f)
+    (hg.eventually_mdifferentiableAt two_ne_zero) (hf.eventually_mdifferentiableAt two_ne_zero)
+    (mdifferentiableAt_mgradient hg) (mdifferentiableAt_mgradient hf)] at hh
   exact sub_nonneg.mp hh
 
-/-- If `g` touches `f` from above, its Laplace–Beltrami operator is larger at contact. -/
+/-- If `g` touches `f` from above at an interior point, its Laplace–Beltrami operator is larger. -/
 theorem laplaceBeltrami_le_of_eventuallyLE_of_eq {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hx : I.IsInteriorPoint x)
+    (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
     (heq : f x = g x) : laplaceBeltrami I f x ≤ laplaceBeltrami I g x := by
   have hmax : IsLocalMax (f - g) x := by
     filter_upwards [hle] with y hy
@@ -174,39 +178,44 @@ theorem laplaceBeltrami_le_of_eventuallyLE_of_eq {g : M → ℝ}
   have hsub : ContMDiffAt I 𝓘(ℝ) 2 (f - g) x := hf.sub hg
   have hadd := laplaceBeltrami_add_of_contMDiffAt I hsub hg
   rw [sub_add_cancel] at hadd
-  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax hsub hmax
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax hsub hx hmax
   linarith
 
 /-- On a compact boundaryless Riemannian manifold, a `C²` function attains its maximum at a point
 where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
-theorem exists_forall_ge_and_laplaceBeltrami_nonpos [CompactSpace M] [Nonempty M]
+theorem exists_forall_ge_and_laplaceBeltrami_nonpos [I.Boundaryless] [CompactSpace M] [Nonempty M]
     (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f y ≤ f x₀) ∧ laplaceBeltrami I f x₀ ≤ 0 := by
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hf.continuous.continuousOn
   exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
-    laplaceBeltrami_nonpos_of_isLocalMax hf.contMDiffAt (hx₀.isLocalMax Filter.univ_mem)⟩
+    laplaceBeltrami_nonpos_of_isLocalMax hf.contMDiffAt BoundarylessManifold.isInteriorPoint
+      (hx₀.isLocalMax Filter.univ_mem)⟩
 
 /-- On a compact boundaryless Riemannian manifold, a `C²` function attains its minimum at a point
 where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/
-theorem exists_forall_le_and_laplaceBeltrami_nonneg [CompactSpace M] [Nonempty M]
+theorem exists_forall_le_and_laplaceBeltrami_nonneg [I.Boundaryless] [CompactSpace M] [Nonempty M]
     (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f x₀ ≤ f y) ∧ 0 ≤ laplaceBeltrami I f x₀ := by
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty hf.continuous.continuousOn
   exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
-    laplaceBeltrami_nonneg_of_isLocalMin hf.contMDiffAt (hx₀.isLocalMin Filter.univ_mem)⟩
+    laplaceBeltrami_nonneg_of_isLocalMin hf.contMDiffAt BoundarylessManifold.isInteriorPoint
+      (hx₀.isLocalMin Filter.univ_mem)⟩
 
 /-- **Touching functions are ordered by their Laplacians.** If `f ≤ g` near `x` and `f x = g x`,
-with `f` and `g` both `C²` at `x`, on a boundaryless Riemannian manifold, then `Δ f x ≤ Δ g x`.
+with `f` and `g` both `C²` at the interior point `x` of a Riemannian manifold, then `Δ f x ≤ Δ g x`.
 Neither function needs to be `C²` away from `x`; for instance `g` may be a smooth upper barrier
 for a function `μ` that is not differentiable, touching it at `x`, and `f` a test function touching
 `μ` from below. -/
 theorem laplaceBeltrami_le_laplaceBeltrami_of_eventuallyLE {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : f ≤ᶠ[𝓝 x] g)
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hx : I.IsInteriorPoint x)
+    (hle : f ≤ᶠ[𝓝 x] g)
     (heq : f x = g x) : laplaceBeltrami I f x ≤ laplaceBeltrami I g x := by
   -- `f - g` has a local maximum, of value `0`, at `x`.
-  have hΔ := laplaceBeltrami_add_mul_nonpos_of_isLocalMax (k := -1) hf hg (by
+  have hΔ := laplaceBeltrami_add_mul_nonpos_of_isLocalMax (k := -1) hf hg hx (by
     filter_upwards [hle] with y hy
     rw [heq]
     linarith)
   linarith
+
+variable [I.Boundaryless]
 
 /-- **The maximum principle for functions with smooth upper barriers.** On a compact boundaryless
 Riemannian manifold, let `μ` be a lower semicontinuous function, not necessarily continuous or
@@ -232,8 +241,8 @@ theorem le_of_forall_exists_laplaceBeltrami_neg [CompactSpace M] {μ : M → ℝ
   have hconst : (fun _ ↦ μ x₀) ≤ᶠ[𝓝 x₀] f := by
     filter_upwards [hle] with z hz
     exact (hx₀ (Set.mem_univ z)).trans hz
-  have hΔ₀ := laplaceBeltrami_le_laplaceBeltrami_of_eventuallyLE contMDiffAt_const hf hconst
-    heq.symm
+  have hΔ₀ := laplaceBeltrami_le_laplaceBeltrami_of_eventuallyLE contMDiffAt_const hf
+    BoundarylessManifold.isInteriorPoint hconst heq.symm
   rw [laplaceBeltrami_const] at hΔ₀
   linarith
 
@@ -343,5 +352,72 @@ theorem le_max_div_zero_of_mul_sq_sub_mul_le_laplaceBeltrami [CompactSpace M] {u
   -- At the maximum `Δu ≤ 0`, so `(a u) u ≤ b u`, and `u > 0` there.
   have hle : u x₀ * a * u x₀ ≤ b * u x₀ := by linarith [h x₀]
   exact le_max_of_le_left ((le_div_iff₀ ha).2 (le_of_mul_le_mul_right hle hu₀))
+
+variable {K : Set M}
+
+/-- **Strict weak maximum principle.** A function that is continuous on a nonempty compact set
+`K`, and `C²` with positive Laplacian on the interior of `K`, attains its maximum over `K` at a
+point of `K \ interior K`. -/
+theorem exists_mem_sdiff_interior_isMaxOn_of_laplaceBeltrami_pos (hK : IsCompact K)
+    (hne : K.Nonempty) {w : M → ℝ} (hcont : ContinuousOn w K)
+    (hw : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 w x)
+    (hpos : ∀ x ∈ interior K, 0 < laplaceBeltrami I w x) :
+    ∃ x ∈ K \ interior K, IsMaxOn w K x := by
+  obtain ⟨x, hxK, hmax⟩ := hK.exists_isMaxOn hne hcont
+  refine ⟨x, ⟨hxK, fun hx ↦ ?_⟩, hmax⟩
+  exact (hpos x hx).not_ge (laplaceBeltrami_nonpos_of_isLocalMax (hw x hx)
+    BoundarylessManifold.isInteriorPoint (hmax.isLocalMax (mem_interior_iff_mem_nhds.1 hx)))
+
+/-- **Strict weak minimum principle.** A function that is continuous on a nonempty compact set
+`K`, and `C²` with negative Laplacian on the interior of `K`, attains its minimum over `K` at a
+point of `K \ interior K`. -/
+theorem exists_mem_sdiff_interior_isMinOn_of_laplaceBeltrami_neg (hK : IsCompact K)
+    (hne : K.Nonempty) {w : M → ℝ} (hcont : ContinuousOn w K)
+    (hw : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 w x)
+    (hneg : ∀ x ∈ interior K, laplaceBeltrami I w x < 0) :
+    ∃ x ∈ K \ interior K, IsMinOn w K x := by
+  obtain ⟨x, hxK, hmin⟩ := hK.exists_isMinOn hne hcont
+  refine ⟨x, ⟨hxK, fun hx ↦ ?_⟩, hmin⟩
+  exact (hneg x hx).not_ge (laplaceBeltrami_nonneg_of_isLocalMin (hw x hx)
+    BoundarylessManifold.isInteriorPoint (hmin.isLocalMin (mem_interior_iff_mem_nhds.1 hx)))
+
+/-- **Weak maximum principle.** Let `K` be compact and let `u` and `w` be continuous on
+`K` and `C²` on its interior. If `Δ u ≥ 0` and `Δ w > 0` on the interior of `K`, then every
+upper bound of `u` on `K \ interior K` is an upper bound of `u` on `K`. -/
+theorem le_of_laplaceBeltrami_nonneg_of_forall_mem_sdiff_interior_le (hK : IsCompact K)
+    {u w : M → ℝ} (hcu : ContinuousOn u K) (hcw : ContinuousOn w K)
+    (hu : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 u x)
+    (hw : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 w x)
+    (hΔu : ∀ x ∈ interior K, 0 ≤ laplaceBeltrami I u x)
+    (hΔw : ∀ x ∈ interior K, 0 < laplaceBeltrami I w x) {c : ℝ}
+    (hc : ∀ x ∈ K \ interior K, u x ≤ c) {x : M} (hx : x ∈ K) : u x ≤ c := by
+  refine (hK.bddAbove_image hcw).le_of_forall_pos_exists_add_mul_le fun ε hε ↦ ?_
+  have hεw (y : M) (hy : y ∈ interior K) : ContMDiffAt I 𝓘(ℝ) 2 (ε • w) y :=
+    (contMDiffAt_const (c := ε)).mul (hw y hy)
+  have hv (y : M) (hy : y ∈ interior K) : ContMDiffAt I 𝓘(ℝ) 2 (u + ε • w) y :=
+    (hu y hy).add (hεw y hy)
+  obtain ⟨z, hz, hmax⟩ := exists_mem_sdiff_interior_isMaxOn_of_laplaceBeltrami_pos hK
+    ⟨x, hx⟩ (hcu.add (hcw.const_smul ε)) hv fun y hy ↦ by
+      rw [laplaceBeltrami_add_of_contMDiffAt I (hu y hy) (hεw y hy),
+        laplaceBeltrami_smul_of_contMDiffAt I ε (hw y hy)]
+      exact add_pos_of_nonneg_of_pos (hΔu y hy) (mul_pos hε (hΔw y hy))
+  exact ⟨z, hz.1, isMaxOn_iff.1 hmax x hx, hc z hz⟩
+
+/-- **Weak minimum principle.** Let `K` be compact and let `u` and `w` be continuous on
+`K` and `C²` on its interior. If `Δ u ≤ 0` and `Δ w > 0` on the interior of `K`, then every
+lower bound of `u` on `K \ interior K` is a lower bound of `u` on `K`. -/
+theorem ge_of_laplaceBeltrami_nonpos_of_forall_mem_sdiff_interior_ge (hK : IsCompact K)
+    {u w : M → ℝ} (hcu : ContinuousOn u K) (hcw : ContinuousOn w K)
+    (hu : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 u x)
+    (hw : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 w x)
+    (hΔu : ∀ x ∈ interior K, laplaceBeltrami I u x ≤ 0)
+    (hΔw : ∀ x ∈ interior K, 0 < laplaceBeltrami I w x) {c : ℝ}
+    (hc : ∀ x ∈ K \ interior K, c ≤ u x) {x : M} (hx : x ∈ K) : c ≤ u x := by
+  apply neg_le_neg_iff.mp
+  refine le_of_laplaceBeltrami_nonneg_of_forall_mem_sdiff_interior_le hK hcu.neg hcw
+    (fun y hy ↦ (hu y hy).neg) hw ?_ hΔw (fun y hy ↦ neg_le_neg (hc y hy)) hx
+  intro y hy
+  rw [← neg_one_smul ℝ u, laplaceBeltrami_smul_of_contMDiffAt I (-1) (hu y hy)]
+  simpa only [neg_one_mul, neg_nonneg] using hΔu y hy
 
 end TauCeti.Manifold

@@ -62,9 +62,13 @@ those components.
   invariants.
 * `Representation.charEigenspace_eq_bot`: if some `g` acts trivially and `χ(g) - 1` acts
   injectively on `V`, then `V^χ = 0`.
+* `Representation.exists_mem_charEigenspace_of_apply_mem_span`: over a field, a nonzero vector
+  spanning a `G`-stable line lies in `V^χ` for some linear character `χ`.
 * `Representation.charSum_apply_mem`, `Representation.charSum_apply_of_mem`,
   `Representation.charSum_comp_charSum`: `S_χ` lands in `V^χ`, is `#G` on `V^χ`, and squares to
   `#G • S_χ`.
+* `Representation.charSum_apply_eq_zero_of_mem_invariants`: over a domain, a nontrivial character
+  sum kills invariant vectors.
 * `Representation.charSum_self_apply`, `Representation.charSum_sub_self_inv_apply`: the translation
   law and the Euler-factor identity.
 * `Representation.IntertwiningMap.map_charSum`: intertwining maps commute with character sums.
@@ -236,6 +240,24 @@ theorem charSum_apply_of_mem {v : V} (hv : v ∈ ρ.charEigenspace χ) :
   rw [mem_charEigenspace_iff_inv_smul] at hv
   simp [charSum_apply, hv, Nat.card_eq_fintype_card]
 
+/-- On invariant vectors the character sum is multiplication by `∑ g, χ(g)⁻¹`. -/
+theorem charSum_apply_of_mem_invariants {v : V} (hv : v ∈ ρ.invariants) :
+    ρ.charSum χ v = (∑ g, (((χ g)⁻¹ : kˣ) : k)) • v := by
+  rw [mem_invariants] at hv
+  simp [charSum_apply, hv, Finset.sum_smul]
+
+/-- **A nontrivial character sum kills invariant vectors** when the coefficients form a domain,
+since then `∑ g, χ(g)⁻¹ = 0`. Over a ring with zero divisors this fails: for the group of order two
+acting trivially on `ZMod 8` and the character with value `3`, `S_χ(1) = 1 + 3 = 4`. -/
+theorem charSum_apply_eq_zero_of_mem_invariants [IsDomain k] (hχ : χ ≠ 1) {v : V}
+    (hv : v ∈ ρ.invariants) : ρ.charSum χ v = 0 := by
+  have hχ' : (Units.coeHom k).comp χ⁻¹ ≠ 1 := fun h ↦ hχ <| MonoidHom.ext fun g ↦ by
+    simpa using DFunLike.congr_fun h g
+  have := sum_hom_units_eq_zero _ hχ'
+  simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
+    MonoidHom.inv_apply] at this
+  rw [charSum_apply_of_mem_invariants ρ χ hv, this, zero_smul]
+
 /-- **The character sum squares to the group order times itself**: `S_χ ∘ S_χ = #G • S_χ`. -/
 theorem charSum_comp_charSum : ρ.charSum χ ∘ₗ ρ.charSum χ = Nat.card G • ρ.charSum χ :=
   LinearMap.ext fun v => ρ.charSum_apply_of_mem χ (ρ.charSum_apply_mem χ v)
@@ -318,5 +340,29 @@ theorem exact_charEigenspaceMap (hG : IsUnit (Nat.card G : k)) {f : Intertwining
 end IntertwiningMap
 
 end Exact
+
+section StableLine
+
+variable {K : Type*} [Field K] [Module K V] [Group G] (ρ : Representation K G V)
+
+/-- **The character of a stable line.** Over a field, a nonzero vector `v` spanning a line stable
+under every `ρ g` lies in the `χ`-eigensubmodule of some linear character `χ`: the group acts on
+the line `K v` through `χ`. -/
+theorem exists_mem_charEigenspace_of_apply_mem_span {v : V} (hv : v ≠ 0)
+    (h : ∀ g, ρ g v ∈ Submodule.span K {v}) : ∃ χ : G →* Kˣ, v ∈ ρ.charEigenspace χ := by
+  choose c hc using fun g ↦ Submodule.mem_span_singleton.1 (h g)
+  have hinj := smul_left_injective K hv
+  have hmul (g g' : G) : c (g * g') = c g * c g' := hinj <| by
+    dsimp only
+    rw [hc, map_mul, Module.End.mul_eq_comp, LinearMap.comp_apply, ← hc g', map_smul, ← hc g,
+      smul_smul, mul_comm]
+  have hne (g : G) : c g ≠ 0 := fun h0 ↦ hv <| by
+    rw [← inv_self_apply ρ g v, ← hc g, h0, zero_smul, map_zero]
+  refine ⟨{ toFun g := Units.mk0 (c g) (hne g)
+            map_one' := Units.ext (hinj (by simp [hc]))
+            map_mul' g g' := Units.ext (hmul g g') }, ?_⟩
+  exact (mem_charEigenspace_iff _ _).2 fun g ↦ (hc g).symm
+
+end StableLine
 
 end Representation

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
 public import TauCeti.Analysis.MellinTransform
-import Mathlib.LinearAlgebra.Countable
+import TauCeti.NumberTheory.NumberField.Countable
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -18,6 +19,12 @@ The cone above a set `D` of norm-one archimedean parameters consists of the posi
 whose surface part lies in `D`. Restricting `archHaar` to this cone gives the image of
 `(surfaceHaar.restrict D) × multHaar` under radial scaling. Consequently integration over the
 cone splits into a surface integral and a radial Mellin transform.
+
+Furthermore, the squared unit action `unitScale` factors through an action of
+`(𝓞 K)ˣ ⧸ torsion K` on `realSpace K` in which each quotient element acts continuously and
+preserves `archHaar K` (registered as scoped instances in `TauCeti.LFunctions`), and for every
+unit fundamental domain `D`, `unitCone D` is a measure-theoretic fundamental domain for this
+action (`isFundamentalDomain_unitCone`).
 
 Over a unit fundamental domain `D`, the translates of the cone by the action
 `y ↦ (|u|_w² y_w)_w` of the units cover the positive orthant, every point exactly `w = #μ(K)`
@@ -37,6 +44,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+  NumberField.Units
 
 namespace TauCeti.LFunctions
 
@@ -140,6 +148,65 @@ theorem hasMellin_integral_surfaceScale {D : Set (realSpace K)} (hD : Measurable
   · rw [← integral_multHaar_cpow_smul, integral_unitCone_eq_integral_surfaceScale hD hf]
     exact (integral_congr_ae havg).symm
 
+/-! ### The unit-quotient action and fundamental domain property of `unitCone` -/
+
+/-- The action of `(𝓞 K)ˣ ⧸ torsion K` on `realSpace K` induced by `unitScale`. Roots of unity have
+absolute value `1` at every infinite place, so `unitScale` factors through the torsion quotient.
+Scoped to `TauCeti.LFunctions` so it does not leak globally onto
+`realSpace K = InfinitePlace K → ℝ`. -/
+scoped instance instMulActionQuotientTorsionRealSpace :
+    MulAction ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) :=
+  let unitScaleHom : (𝓞 K)ˣ →* Function.End (realSpace K) :=
+    { toFun := unitScale
+      map_one' := funext unitScale_one
+      map_mul' u v := funext fun y ↦ (unitScale_unitScale u v y).symm }
+  MulAction.ofEndHom <| QuotientGroup.lift (torsion K) unitScaleHom fun _ hu ↦
+    funext (unitScale_eq_self_of_mem_torsion hu)
+
+/-- On cosets `QuotientGroup.mk u`, the scoped `(𝓞 K)ˣ ⧸ torsion K` action on `realSpace K` is
+`unitScale u`. -/
+@[simp]
+theorem mk_smul_realSpace (u : (𝓞 K)ˣ) (y : realSpace K) :
+    (QuotientGroup.mk u : (𝓞 K)ˣ ⧸ torsion K) • y = unitScale u y :=
+  (rfl)
+
+/-- Each element of `(𝓞 K)ˣ ⧸ torsion K` acts continuously on `realSpace K`. -/
+scoped instance instContinuousConstSMulQuotientTorsionRealSpace :
+    ContinuousConstSMul ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) :=
+  ⟨fun g ↦ QuotientGroup.induction_on g continuous_unitScale⟩
+
+/-- The multiplicative Haar measure `archHaar K` is invariant under the scoped
+`(𝓞 K)ˣ ⧸ torsion K` action on `realSpace K`. -/
+scoped instance instSMulInvariantMeasureQuotientTorsionRealSpace :
+    SMulInvariantMeasure ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) (archHaar K) :=
+  ⟨fun g _ hs ↦ QuotientGroup.induction_on g fun u ↦
+    (measurePreserving_unitScale u).measure_preimage hs.nullMeasurableSet⟩
+
+/-- For any unit fundamental domain `D` on the norm-one hypersurface, the cone `unitCone D` is a
+measure-theoretic fundamental domain for `(𝓞 K)ˣ ⧸ torsion K` on `realSpace K` with respect to
+`archHaar K`. -/
+theorem isFundamentalDomain_unitCone {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) :
+    IsFundamentalDomain ((𝓞 K)ˣ ⧸ torsion K) (unitCone D) (archHaar K) := by
+  refine IsFundamentalDomain.mk'' (measurableSet_unitCone hD.measurableSet).nullMeasurableSet
+    ?_ ?_ fun g ↦ (measurePreserving_smul g (archHaar K)).quasiMeasurePreserving
+  · filter_upwards [ae_archHaar_pos] with y hy
+    obtain ⟨u, hu⟩ := hD.exists_unitScale_mem _ (surfacePart_mem_normOneSurface hy)
+    exact ⟨QuotientGroup.mk u, mem_unitCone.mpr
+      ⟨fun w ↦ by rw [mk_smul_realSpace]; exact unitScale_pos (hy w) u,
+        by rwa [mk_smul_realSpace, surfacePart_unitScale]⟩⟩
+  · intro g hg
+    refine Disjoint.aedisjoint (Set.disjoint_left.mpr ?_)
+    rintro y ⟨z, hz, rfl⟩ hy
+    induction g using QuotientGroup.induction_on with
+    | H u =>
+      dsimp only at hy
+      rw [mk_smul_realSpace, mem_unitCone] at hy
+      have hut : u ∈ torsion K :=
+        (hD.unitScale_mem_iff _ (mem_unitCone.mp hz).2 u).mp
+          (by rw [← surfacePart_unitScale]; exact hy.2)
+      exact hg ((QuotientGroup.eq_one_iff u).mpr hut)
+
 /-! ### The unit orbits of a cone -/
 
 namespace IsUnitFundamentalDomain
@@ -187,7 +254,6 @@ theorem hasSum_integral_unitCone_unitScale (hD : IsUnitFundamentalDomain K D)
     {g : realSpace K → E} (hg : Integrable g (archHaar K)) :
     HasSum (fun u : (𝓞 K)ˣ ↦ ∫ y in unitCone D, g (unitScale u y) ∂archHaar K)
       (Units.torsionOrder K • ∫ y, g y ∂archHaar K) := by
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   have : Countable (𝓞 K)ˣ := Function.Injective.countable (Units.val_injective (α := 𝓞 K))
   have hmeas (u : (𝓞 K)ˣ) : Measurable (unitScale (K := K) u) :=
     Measurable.of_eval fun w ↦ by

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Probability.Moments.Determinacy
 import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Chi.Moments
+import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 import TauCeti.Probability.Distributions.Gaussian.Symmetry
 import TauCeti.Probability.Moments.Basic
 
@@ -37,8 +39,12 @@ The formulas follow the standard calculation in, for example, Johnson, Kotz, and
 * `integral_sub_pow_two_mul_add_one_gaussianReal` and
   `centralMoment_id_two_mul_add_one_gaussianReal` say that every odd centered moment vanishes.
 * `integral_sq_gaussianReal` evaluates the second raw moment.
+* `setIntegral_sq_tail_gaussianReal_le` and `sqrt_setIntegral_sq_tail_gaussianReal_le` bound the
+  quadratic tail integral of `gaussianReal 0 1` by `3 / t²` and its square root by `√3 / t`.
 * `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
   first-moment integrability for one or two Gaussian coordinates.
+* `isMomentDeterminate_gaussianReal`: a real Gaussian law is determined by its moments, so the
+  method of moments applies to Gaussian limits.
 -/
 
 public section
@@ -149,5 +155,48 @@ theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
     centralMoment id (2 * n + 1) (gaussianReal m v) = 0 :=
   (centralMoment_eq_integral_sub_pow (X := id) integral_id_gaussianReal _).trans
     (integral_sub_pow_two_mul_add_one_gaussianReal m v n)
+
+/-- **A real Gaussian law is determined by its moments**: every measure on `ℝ` with the finite
+moments of `gaussianReal m v` is `gaussianReal m v`. -/
+@[simp]
+theorem isMomentDeterminate_gaussianReal (m : ℝ) (v : ℝ≥0) :
+    (gaussianReal m v).IsMomentDeterminate :=
+  .of_integrable_exp_mul_abs one_pos (integrable_exp_mul_abs (X := id)
+    (integrable_exp_mul_gaussianReal 1) (integrable_exp_mul_gaussianReal (-1)))
+
+/-- Fourth-moment bound on the quadratic tail of a standard real Gaussian. -/
+theorem setIntegral_sq_tail_gaussianReal_le {t : ℝ} (ht : 0 < t) :
+    ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 ≤ 3 / t ^ 2 := by
+  have hs : MeasurableSet {r : ℝ | t < |r|} :=
+    measurableSet_lt measurable_const continuous_abs.measurable
+  have hint4 : Integrable (fun r : ℝ ↦ r ^ 4) (gaussianReal 0 1) :=
+    TauCeti.integrable_pow_gaussianReal 0 1 4
+  have hint_dom : Integrable (fun r : ℝ ↦ r ^ 4 / t ^ 2) (gaussianReal 0 1) :=
+    hint4.div_const _
+  calc
+    ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1
+        ≤ ∫ r in {r : ℝ | t < |r|}, r ^ 4 / t ^ 2 ∂gaussianReal 0 1 := by
+      refine setIntegral_mono_on (TauCeti.integrable_pow_gaussianReal 0 1 2).integrableOn
+        hint_dom.integrableOn hs fun r hr ↦ ?_
+      have hsq : t ^ 2 ≤ r ^ 2 := by
+        rw [← sq_abs r]
+        exact pow_le_pow_left₀ ht.le (le_of_lt hr) 2
+      rw [le_div_iff₀ (pow_pos ht 2)]
+      nlinarith [sq_nonneg r]
+    _ ≤ ∫ r, r ^ 4 / t ^ 2 ∂gaussianReal 0 1 :=
+      setIntegral_le_integral hint_dom (Filter.Eventually.of_forall fun _ ↦ by positivity)
+    _ = 3 / t ^ 2 := by
+      rw [integral_div]
+      have h4 := integral_sub_pow_four_gaussianReal 0 1
+      simp only [sub_zero, NNReal.coe_one, one_pow, mul_one] at h4
+      rw [h4]
+
+/-- Square-root fourth-moment bound on the quadratic tail of a standard real Gaussian. -/
+theorem sqrt_setIntegral_sq_tail_gaussianReal_le {t : ℝ} (ht : 0 < t) :
+    √(∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ √3 / t := by
+  calc
+    √(∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ √(3 / t ^ 2) :=
+      Real.sqrt_le_sqrt (setIntegral_sq_tail_gaussianReal_le ht)
+    _ = √3 / t := by rw [Real.sqrt_div (by norm_num), Real.sqrt_sq ht.le]
 
 end TauCeti.Probability

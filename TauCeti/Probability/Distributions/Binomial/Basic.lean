@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Binomial
 public import Mathlib.Probability.Independence.CharacteristicFunction
 public import Mathlib.Probability.Moments.Basic
+public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.GeneratingFunction
 import TauCeti.Probability.Distributions.Bernoulli.Basic
@@ -26,6 +27,9 @@ characterization of Mathlib's binomial measure.  The native law remains
   carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
 * `TauCeti.Probability.integral_sq_id_map_cast_binomial` computes its second raw moment;
+* `TauCeti.Probability.integrableExpSet_binomial` and
+  `TauCeti.Probability.integrableExpSet_map_cast_binomial` identify the exact
+  exponential-integrability domains of the native and cast laws;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
   functions;
@@ -33,6 +37,13 @@ characterization of Mathlib's binomial measure.  The native law remains
 * `TauCeti.Probability.binomial_conv_binomial` proves additivity of the native binomial laws;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_bernoulli` identifies a finite sum of independent
   Bernoulli variables with a binomial law.
+* `ProbabilityTheory.HasLaw.pgf_binomial` computes the probability-generating function of a
+  natural-valued binomial random variable;
+* `ProbabilityTheory.HasLaw.integral_sq_map_cast_binomial` gives the second raw moment;
+* `ProbabilityTheory.HasLaw.integrableExpSet_map_cast_binomial` gives the exact exponential
+  domain;
+* `ProbabilityTheory.HasLaw.mgf_map_cast_binomial` and
+  `ProbabilityTheory.HasLaw.cgf_map_cast_binomial` compute the real exponential transforms.
 
 ## References
 
@@ -65,6 +76,19 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
   apply Finset.sum_congr rfl
   intro k _
   ring
+
+/-- Every real observable of a native binomial law has full exponential-integrability domain. -/
+@[simp]
+theorem integrableExpSet_binomial (X : ℕ → ℝ) (n : ℕ) (p : unitInterval) :
+    integrableExpSet X Bin(n, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_binomial _
+
+/-- Every real observable of a cast binomial law has full exponential-integrability domain. -/
+@[simp]
+theorem integrableExpSet_map_cast_binomial {R : Type*} [MeasurableSpace R]
+    [AddMonoidWithOne R] [MeasurableSingletonClass R] (X : R → ℝ) (n : ℕ)
+    (p : unitInterval) : integrableExpSet X Bin(R, n, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_map_cast_binomial _
 
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
@@ -220,3 +244,53 @@ theorem integral_sq_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- The probability-generating function of a natural-valued binomial random variable. -/
+theorem pgf_binomial {X : Ω → ℕ} {n : ℕ} {p : unitInterval}
+    (hX : HasLaw X Bin(n, p) P) (t : ℝ) :
+    pgf X P t = (1 - (p : ℝ) + (p : ℝ) * t) ^ n :=
+  (TauCeti.Probability.HasLaw.pgf_eq hX t).trans
+    (TauCeti.Probability.pgf_binomial n p t)
+
+/-- Every real exponential moment of a real-valued binomial random variable is integrable. -/
+theorem integrable_exp_mul_map_cast_binomial {X : Ω → ℝ} {n : ℕ} {p : unitInterval}
+    (hX : HasLaw X Bin(ℝ, n, p) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  simpa only [Function.comp_def] using
+    hX.integrable_fun_comp (integrable_map_cast_binomial fun x : ℝ ↦ Real.exp (t * x))
+
+/-- The exact exponential-integrability domain of a real-valued binomial random variable is all
+of `ℝ`. -/
+theorem integrableExpSet_map_cast_binomial {X : Ω → ℝ} {n : ℕ} {p : unitInterval}
+    (hX : HasLaw X Bin(ℝ, n, p) P) : integrableExpSet X P = Set.univ := by
+  ext t
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true] using
+    hX.integrable_exp_mul_map_cast_binomial t
+
+/-- The second raw moment of a real-valued binomial random variable. -/
+theorem integral_sq_map_cast_binomial {X : Ω → ℝ} {n : ℕ} {p : unitInterval}
+    (hX : HasLaw X Bin(ℝ, n, p) P) :
+    ∫ ω, X ω ^ 2 ∂P = (p : ℝ) * (1 - p) * n + ((p : ℝ) * n) ^ 2 := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ 2), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sq_id_map_cast_binomial]
+
+/-- The moment-generating function of a real-valued binomial random variable. -/
+theorem mgf_map_cast_binomial {X : Ω → ℝ} {n : ℕ} {p : unitInterval}
+    (hX : HasLaw X Bin(ℝ, n, p) P) (t : ℝ) :
+    mgf X P t = (1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq]
+  exact TauCeti.Probability.mgf_id_map_cast_binomial n p t
+
+/-- The cumulant-generating function of a real-valued binomial random variable. -/
+theorem cgf_map_cast_binomial {X : Ω → ℝ} {n : ℕ} {p : unitInterval}
+    (hX : HasLaw X Bin(ℝ, n, p) P) (t : ℝ) :
+    cgf X P t = Real.log ((1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n) := by
+  rw [cgf, hX.mgf_map_cast_binomial]
+
+end ProbabilityTheory.HasLaw

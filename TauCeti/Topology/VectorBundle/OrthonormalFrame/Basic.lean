@@ -80,6 +80,10 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 
 * `TauCeti.OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply`: applying frames to vectors
   is jointly continuous.
+* `TauCeti.OrthonormalFrameBundle.continuousOn_frame_symm_apply`,
+  `TauCeti.OrthonormalFrameBundle.continuous_frame_symm_apply`: vectors read in frames,
+  `y ↦ (f y).frame.symm (w y)`, depend continuously on the frames and the vectors; in particular a
+  continuous section read in the frames, `p ↦ p.frame.symm (σ p.proj)`, is continuous.
 * `Bundle.Trivialization.continuous_orthonormalFrame`,
   `Bundle.Trivialization.continuous_orthonormalFrame_symm_apply`: the local orthonormal frame is a
   continuous local section, and reading vectors in it is continuous.
@@ -332,6 +336,34 @@ theorem continuous_totalSpaceMk_frame_apply [FiniteDimensional 𝕜 V] :
   filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds hU] with q hq
   exact coord_apply hq q.2
 
+/-- **Vectors read in orthonormal frames depend continuously on both.** For a bundle with
+continuous fibre norms, a family of frames `f y` and of vectors `w y` over the same base points,
+both continuous on `s`, the vector `(f y).frame.symm (w y)` of `V` representing `w y` in the frame
+`f y` is continuous on `s`: its coefficient on each vector `b i` of an orthonormal basis of `V` is
+the inner product of the frame applied to `b i` with `w y`. -/
+theorem continuousOn_frame_symm_apply [ContinuousFiberNorm F E] [FiniteDimensional 𝕜 V]
+    {Y : Type*} [TopologicalSpace Y] {s : Set Y} {f : Y → OrthonormalFrameBundle 𝕜 F E V}
+    (hf : ContinuousOn f s) {w : ∀ y, E (f y).proj}
+    (hw : ContinuousOn (fun y ↦ (⟨(f y).proj, w y⟩ : TotalSpace F E)) s) :
+    ContinuousOn (fun y ↦ (f y).frame.symm (w y)) s := by
+  let b := stdOrthonormalBasis 𝕜 V
+  have h (i) : ContinuousOn (fun y ↦ inner 𝕜 ((f y).frame (b i)) (w y) • b i) s :=
+    (((continuous_totalSpaceMk_frame (b i)).comp_continuousOn
+      hf).inner_bundle_of_continuousFiberNorm hw).smul continuousOn_const
+  refine (continuousOn_finsetSum Finset.univ fun i _ ↦ h i).congr fun y _ ↦ ?_
+  rw [← b.sum_repr' ((f y).frame.symm (w y))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← LinearIsometryEquiv.inner_map_map (f y).frame, LinearIsometryEquiv.apply_symm_apply]
+
+/-- **A continuous section read in orthonormal frames is continuous.** For a bundle with continuous
+fibre norms and a continuous section `σ`, the vector `p.frame.symm (σ p.proj)` of `V` representing
+`σ` in the frame `p` depends continuously on `p`. -/
+theorem continuous_frame_symm_apply [ContinuousFiberNorm F E] [FiniteDimensional 𝕜 V]
+    {σ : ∀ b, E b} (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) :
+    Continuous fun p : OrthonormalFrameBundle 𝕜 F E V ↦ p.frame.symm (σ p.proj) :=
+  continuousOn_univ.1 (continuousOn_frame_symm_apply continuousOn_id
+    (hσ.comp continuous_proj).continuousOn)
+
 -- Here and below, `CompleteSpace V` follows from `FiniteDimensional 𝕜 V`, but instance search does
 -- not find it for a variable field `𝕜`; it is needed for the star structure on `V →L[𝕜] V`.
 /-- The right action of the unitary group on orthonormal frames is continuous. -/
@@ -511,10 +543,12 @@ theorem baseSet_orthonormalFrameBundle :
       Trivialization _ (proj : OrthonormalFrameBundle 𝕜 F E V → B)).baseSet = e.baseSet :=
   (rfl)
 
-private theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
+/-- The inverse of the trivialization carries `(y, g)` to the frame `orthonormalFrameAt` at `y`
+acted on by `g`, for every `y`. -/
+theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
     (e.orthonormalFrameBundle c b).toOpenPartialHomeomorph.symm q =
       op q.2 • (⟨q.1, orthonormalFrameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
-  rfl
+  (rfl)
 
 private theorem orthonormalFrameBundle_apply (p : OrthonormalFrameBundle 𝕜 F E V) :
     e.orthonormalFrameBundle c b p =
@@ -612,6 +646,13 @@ namespace TauCeti.OrthonormalFrameBundle
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
   [TopologicalSpace B] [FiberBundle F E] [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
   [CompleteSpace V]
+
+omit [ContinuousFiberNorm F E] [CompleteSpace V] in
+/-- An orthonormal frame of a fibre identifies `V` linearly with the model fibre `F`: the frame
+followed by a linear trivialization of `E` at its base point. -/
+theorem nonempty_linearEquiv (p : OrthonormalFrameBundle 𝕜 F E V) : Nonempty (V ≃ₗ[𝕜] F) :=
+  ⟨p.frame.toLinearEquiv.trans ((trivializationAt F E p.proj).continuousLinearEquivAt 𝕜 p.proj
+    (mem_baseSet_trivializationAt F E p.proj)).toLinearEquiv⟩
 
 /-- When `V` has the dimension of the model fibre, the orthonormal frame bundle is locally trivial
 with fibre the unitary group of `V`, by trivializations equivariant for the right action. -/

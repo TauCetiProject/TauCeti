@@ -135,6 +135,13 @@ def isColimitCokernelCoforkTwistedChainComplex :
     IsColimit (P.cokernelCoforkTwistedChainComplex L) :=
   cokernelIsCokernel _
 
+/-- The relative twisted chain complex of a pair is the cokernel of the inclusion of the twisted
+chains of its subspace, with the relative quotient map as the cokernel map. -/
+def isColimitCokernelCoforkTwistedChainComplexπ :
+    IsColimit (CokernelCofork.ofπ (P.twistedChainComplexπ L)
+      (P.twistedChainComplexMap_comp_twistedChainComplexπ L)) :=
+  P.cokernelCoforkTwistedChainComplex_def L ▸ P.isColimitCokernelCoforkTwistedChainComplex L
+
 /-- In every degree the subspace inclusion followed by the relative quotient is zero. -/
 @[reassoc (attr := simp)]
 lemma twistedChainComplex_condition_f (i : ℕ) :
@@ -329,6 +336,14 @@ lemma twistedChainComplexπ_comp_twistedChainComplexCoefficientMap (η : L ⟶ K
       LocalCoefficientSystem.twistedChainComplexCoefficientMap η ≫
         P.twistedChainComplexπ K :=
   P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
+
+/-- The quotient maps on twisted chains commute with the coefficient map in each degree. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplexπ_f_comp_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (n : ℕ) :
+    (P.twistedChainComplexπ L).f n ≫ (P.twistedChainComplexCoefficientMap η).f n =
+      (LocalCoefficientSystem.twistedChainComplexCoefficientMap η).f n ≫
+        (P.twistedChainComplexπ K).f n :=
+  HomologicalComplex.congr_hom (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η) n
 
 /-- The identity of a coefficient system induces the identity on relative twisted chains. -/
 @[simp]

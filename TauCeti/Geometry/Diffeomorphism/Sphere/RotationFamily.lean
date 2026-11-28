@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.Degree.SphereRotation
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Topology.Algebra.OrthogonalGroup
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Geometry.Sphere.Connected
 import TauCeti.Geometry.Sphere.Equator
 
@@ -268,7 +268,7 @@ theorem joined_one_sphereRotationDiff (p : sphere (0 : E) 1) (k : ℕ∞ω)
       (PathConnectedSpace.joined (1 : Circle) (Circle.homeomorphSphere.symm x.2)).map
         (continuous_const.prodMk Circle.homeomorphSphere.continuous)
   have hz1 : (Circle.homeomorphSphere 1 : ℂ) = 1 :=
-    (Circle.coe_homeomorphSphere_apply 1).trans Circle.coe_one
+    congrArg Subtype.val Circle.homeomorphSphere_one
   simpa only [sphereRotationDiff_of_coe_eq_one p k x.1 hz1] using
     hj.map (sphereRotationDiff (n := n) p k).continuous
 

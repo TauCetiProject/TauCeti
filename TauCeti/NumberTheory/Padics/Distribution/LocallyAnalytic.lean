@@ -13,9 +13,10 @@ public import TauCeti.NumberTheory.Padics.Distribution.Polynomial
 
 `TauCeti.LocallyAnalytic p S E` is Mathlib's native `Module.DirectLimit` of the analytic
 coefficient stages along `AnalyticStage.transitionLE S`. Its canonical maps `ofStage S h`
-identify a vector with each of its re-expansions. Mathlib's `Module.DirectLimit.exists_of`
-gives a stage representative for every element. Compatible linear maps extend uniquely
-by `Module.DirectLimit.lift` and `Module.DirectLimit.hom_ext`; `lift_ofStage` reads the
+identify a vector with each of its re-expansions. Every element has a stage representative
+(`exists_ofStage`, from Mathlib's `Module.DirectLimit.exists_of`), and by re-expansion one of
+level at least any prescribed `n` (`exists_ofStage_ge`). Compatible linear maps extend
+uniquely by `Module.DirectLimit.lift` and `Module.DirectLimit.hom_ext`; `lift_ofStage` reads the
 extension on the named stage maps.
 The equation `ofStage_def` connects the named stage maps with this native API without
 unfolding their bodies.
@@ -69,6 +70,10 @@ theorem ofStage_def (h : ℕ) :
       Module.DirectLimit.of S ℕ (fun k ↦ AnalyticStage p k E)
         (fun _ _ hhk ↦ (AnalyticStage.transitionLE S hhk).toLinearMap) h := (rfl)
 
+/-- Every locally analytic function comes from a vector of some analytic stage. -/
+theorem exists_ofStage (f : LocallyAnalytic p S E) : ∃ h c, ofStage S h c = f :=
+  Module.DirectLimit.exists_of f
+
 /-- Mathlib's universal property of the direct limit, read on the named stage maps: the linear
 map induced by a compatible family restricts to each member of the family. -/
 @[simp]
@@ -86,6 +91,13 @@ theorem lift_ofStage {P : Type*} [AddCommMonoid P] [Module S P]
 theorem ofStage_transitionLE {h k : ℕ} (hhk : h ≤ k) (c : AnalyticStage p h E) :
     ofStage S k (AnalyticStage.transitionLE S hhk c) = ofStage S h c :=
   Module.DirectLimit.of_f
+
+/-- Every locally analytic function comes from a vector of a stage of level at least `n`. -/
+theorem exists_ofStage_ge (n : ℕ) (f : LocallyAnalytic p S E) :
+    ∃ h, n ≤ h ∧ ∃ c : AnalyticStage p h E, ofStage S h c = f := by
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  exact ⟨max h n, le_max_right h n, AnalyticStage.transitionLE S (le_max_left h n) c,
+    ofStage_transitionLE S _ c⟩
 
 /-- Adjacent re-expansion does not change a direct-limit element. -/
 @[simp]
@@ -148,7 +160,7 @@ theorem range_eval :
   ext f
   constructor
   · rintro ⟨z, rfl⟩
-    obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of z
+    obtain ⟨h, c, rfl⟩ := exists_ofStage S z
     exact Set.mem_iUnion.mpr ⟨h, c, (eval_ofStage S h c).symm⟩
   · intro hf
     obtain ⟨h, c, rfl⟩ := Set.mem_iUnion.mp hf

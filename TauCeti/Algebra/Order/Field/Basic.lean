@@ -69,7 +69,8 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
 Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and for
 nonnegative elements in a linearly ordered semifield the bounded-metric gauge `t ↦ t / (1 + t)` is
 nonnegative, strictly below `1`, monotone, subadditive, subhomogeneous under factors `≥ 1`, and
-zero only at `0`.
+zero only at `0`. For `0 ≤ w` the truncation `w / (1 + ε w)` lies between `0` and `w` when
+`0 ≤ ε`, and below `1 / ε` when `0 < ε`.
 
 ## Main results
 
@@ -77,6 +78,8 @@ zero only at `0`.
   determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
   `a ≤ m`.
+* `TauCeti.add_le_of_le_affine_sub`: an affine quadratic interpolation bound above its initial
+  value forces the corresponding endpoint lower bound.
 * `TauCeti.nonpos_of_forall_pos_mul_sq_mul_le`: if `0 < a` and `a * r ^ 2 * t ≤ C` for every
   `r > 0`, then `t ≤ 0`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -111,13 +114,21 @@ zero only at `0`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv`: choosing a uniform cutoff constant `c > 0`
+  yielding both `δ ≤ cutoff` and `M * L < weight * δ⁻¹` from `δ ≤ c / L`.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
   `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
+* `TauCeti.div_one_add_mul_nonneg`, `TauCeti.div_one_add_mul_le_self`,
+  `TauCeti.div_one_add_mul_le_one_div`: for `0 ≤ w`, the truncation `w / (1 + ε w)` lies between
+  `0` and `w` when `0 ≤ ε`, and is at most `1 / ε` when `0 < ε`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.add_mul_div_le_add`: `t + m * M / t ≤ m + M` for `0 < t` and `m ≤ t ≤ M`.
+* `TauCeti.mul_le_sq_div_of_add_mul_le`: `a * b ≤ c ^ 2 / (4 * k)` for `0 < k` and
+  `0 ≤ a + k * b ≤ c`.
 -/
 
 public section
@@ -165,6 +176,18 @@ theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
     linarith
   · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
     nlinarith
+
+/-- If a quadratic interpolation bound stays above its initial value `a`, its
+endpoint value `b` is at least `a + D`. -/
+theorem add_le_of_le_affine_sub {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b D : K}
+    (h : ∀ t ∈ Set.Ioo (0 : K) 1, a ≤ (1 - t) * a + t * b - t * (1 - t) * D) :
+    a + D ≤ b := by
+  apply le_of_forall_mem_Ioc_mul_le (C := D) (δ₀ := 1 / 2) (by positivity)
+  intro t ht
+  have hbound : a + (1 - t) * D ≤ b :=
+    le_of_mul_le_mul_left (by linarith [h t ⟨ht.1, by linarith [ht.2]⟩]) ht.1
+  linarith
 
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
@@ -440,6 +463,27 @@ theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStri
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
 
+/-- Given positive `cutoff`, threshold `L₀`, `weight`, and `M`, there is `c > 0` with
+`c ≤ cutoff * L₀` such that whenever `0 < δ`, `L₀ ≤ L`, and `δ ≤ c / L`, we have both
+`δ ≤ cutoff` and `M * L < weight * δ⁻¹`. -/
+theorem exists_pos_le_mul_and_mul_lt_mul_inv {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {cutoff L₀ weight M : α}
+    (hcutoff : 0 < cutoff) (hL₀ : 0 < L₀) (hweight : 0 < weight) (hM : 0 < M) :
+    ∃ c : α, 0 < c ∧ c ≤ cutoff * L₀ ∧
+      ∀ {δ L : α}, 0 < δ → L₀ ≤ L → δ ≤ c / L →
+        δ ≤ cutoff ∧ M * L < weight * δ⁻¹ := by
+  refine ⟨min (cutoff * L₀) (weight / (2 * M)), by positivity, min_le_left _ _,
+    fun {δ L} hδ hL hδc ↦ ?_⟩
+  have hLpos : 0 < L := hL₀.trans_le hL
+  refine ⟨hδc.trans (div_le_of_le_mul₀ hLpos.le hcutoff.le
+    ((min_le_left _ _).trans (mul_le_mul_of_nonneg_left hL hcutoff.le))), ?_⟩
+  rw [lt_mul_inv_iff₀ hδ]
+  calc M * L * δ ≤ M * L * (weight / (2 * M) / L) := by
+        gcongr
+        exact hδc.trans (div_le_div_of_nonneg_right (min_le_right _ _) hLpos.le)
+    _ = weight / 2 := by field_simp
+    _ < weight := half_lt_self hweight
+
 /-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is nonnegative. -/
 theorem div_one_add_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : 0 ≤ t / (1 + t) :=
@@ -491,6 +535,39 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
+divided by `t`. -/
+theorem add_mul_div_le_add {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {t m M : K} (ht : 0 < t) (hmt : m ≤ t) (htM : t ≤ M) : t + m * M / t ≤ m + M := by
+  have key : m + M - (t + m * M / t) = (M - t) * (t - m) / t := by field_simp; ring
+  rw [← sub_nonneg, key]
+  exact div_nonneg (mul_nonneg (sub_nonneg.2 htM) (sub_nonneg.2 hmt)) ht.le
+
+/-- If `0 < k` and `0 ≤ a + k * b ≤ c`, then `a * b ≤ c ^ 2 / (4 * k)`: the inequality of
+arithmetic and geometric means for `a` and `k * b`. -/
+theorem mul_le_sq_div_of_add_mul_le {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b c k : K} (hk : 0 < k) (h₀ : 0 ≤ a + k * b)
+    (h : a + k * b ≤ c) : a * b ≤ c ^ 2 / (4 * k) := by
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (a - k * b), mul_self_le_mul_self h₀ h]
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is nonnegative. -/
+theorem div_one_add_mul_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {w ε : α} (hw : 0 ≤ w) (hε : 0 ≤ ε) : 0 ≤ w / (1 + ε * w) :=
+  div_nonneg hw (add_nonneg zero_le_one (mul_nonneg hε hw))
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is at most `w`. -/
+theorem div_one_add_mul_le_self {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {w ε : α} (hw : 0 ≤ w) (hε : 0 ≤ ε) : w / (1 + ε * w) ≤ w :=
+  div_le_self hw (le_add_of_nonneg_right (mul_nonneg hε hw))
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε > 0`, is at most `1 / ε`. -/
+theorem div_one_add_mul_le_one_div {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {w ε : α} (hw : 0 ≤ w) (hε : 0 < ε) : w / (1 + ε * w) ≤ 1 / ε := by
+  rw [div_le_div_iff₀ (add_pos_of_pos_of_nonneg zero_lt_one (mul_nonneg hε.le hw)) hε, one_mul,
+    mul_comm]
+  exact le_add_of_nonneg_left zero_le_one
 
 end TauCeti
 

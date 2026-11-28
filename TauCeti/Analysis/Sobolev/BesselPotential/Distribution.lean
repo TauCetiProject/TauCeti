@@ -21,6 +21,7 @@ continuous linear map, so that the spaces `H^{s,p}` for different `s` can be com
 
 * `BesselPotentialSpace.toDistrCLM`: the inclusion `H^{s,p}(E, F) →L[ℂ] 𝓢'(E, F)`.
 * `BesselPotentialSpace.toDistrCLM_injective`: it is injective.
+* `BesselPotentialSpace.toDistr_sum`: it commutes with finite sums.
 * `BesselPotentialSpace.toDistr_eq_toDistr_iff`: elements of `H^{s,p₀}` and `H^{s,p₁}` are the
   same tempered distribution exactly when their `Lᵖ` functions agree almost everywhere.
 * `BesselPotentialSpace.norm_copy`, `BesselPotentialSpace.memSobolev_toDistr_of_eq`: moving an
@@ -60,9 +61,26 @@ theorem toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, 
     toDistrCLM E F s p u = u.toDistr := by
   simp [toDistrCLM]
 
+/-- Pairing the tempered distribution of `u ∈ H^{s,p}` with a Schwartz function `φ`, as a
+continuous linear functional on `H^{s,p}`: evaluation at `φ` after `toDistrCLM`. -/
+theorem evalCLM_comp_toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (φ : 𝓢(E, ℂ))
+    (u : H^{s, p}(E, F)) :
+    (PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) F φ ∘L toDistrCLM E F s p) u = u.toDistr φ := by
+  rw [ContinuousLinearMap.comp_apply, toDistrCLM_apply]
+  -- `PointwiseConvergenceCLM.evalCLM` evaluates through the coercion of `𝓢(E, ℂ) →L[ℂ] F`, while
+  -- `𝓢'(E, F)` is the type synonym `𝓢(E, ℂ) →Lₚₜ[ℂ] F` with its own coercion to functions; the
+  -- two agree by definition.
+  rfl
+
 theorem toDistrCLM_injective {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     Function.Injective (toDistrCLM E F s p) := fun u v h ↦
   ext (by simpa using h)
+
+/-- The tempered distribution of a finite sum is the sum of the tempered distributions. -/
+@[simp, norm_cast]
+theorem toDistr_sum {ι : Type*} {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (t : Finset ι)
+    (u : ι → H^{s, p}(E, F)) : (∑ i ∈ t, u i).toDistr = ∑ i ∈ t, (u i).toDistr := by
+  simpa only [toDistrCLM_apply] using map_sum (toDistrCLM E F s p) u t
 
 section Exponents
 

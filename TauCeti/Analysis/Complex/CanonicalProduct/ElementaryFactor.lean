@@ -20,10 +20,17 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Log.Taylor
 The primary factor `weierstrassFactor p z` is `(1 - z)` times the exponential of the
 first `p` positive logarithmic terms. Its only zero is a simple zero at one, for every genus.
 The definition uses Mathlib's `Complex.logTaylor`, with an equivalent finite-sum formula.
+Raising the genus by one multiplies the factor by `exp (z ^ (p + 1) / (p + 1))`
+(`weierstrassFactor_succ`), and factors at opposite points pair to a factor of half the genus,
+`E_p(z) * E_p(-z) = E_{p / 2}(z ^ 2)` (`weierstrassFactor_mul_weierstrassFactor_neg`). The
+rescaled factor `w ↦ E_p(w / a)` vanishes exactly at a nonzero `a`, with order one there
+(`analyticOrderAt_weierstrassFactor_div`).
 
 Every genus satisfies the sharp bound `‖E_p(z) - 1‖ ≤ ‖z‖ ^ (p + 1)` on the entire closed
 unit disk. Radial integration compares its derivative with a nonnegative real profile of
-total mass one, including genus zero and the simple zero at one.
+total mass one, including genus zero and the simple zero at one. Combined with the crude estimate
+outside the disk it gives the global bound `‖E_p z‖ ≤ exp ((p + 1) * ‖z‖ ^ (p + 1))`
+(`norm_weierstrassFactor_le_exp`), which controls the growth of canonical products.
 
 Away from its zero, `E_p z` is the exponential of the Taylor remainder of `log (1 - z)` after
 its first `p` terms. This gives lower bounds for `log ‖E_p z‖` of the two kinds used by
@@ -81,6 +88,40 @@ theorem weierstrassFactor_one_left (z : ℂ) :
     weierstrassFactor 1 z = (1 - z) * exp z := by
   simp [weierstrassFactor_eq_mul_exp_sum]
 
+/-- Stepping from genus `p` to genus `p + 1` multiplies by `exp (z ^ (p + 1) / (p + 1))`. -/
+theorem weierstrassFactor_succ (p : ℕ) (z : ℂ) :
+    weierstrassFactor (p + 1) z = weierstrassFactor p z * exp (z ^ (p + 1) / (p + 1)) := by
+  rw [weierstrassFactor_eq_mul_exp_sum, Finset.sum_range_succ, exp_add, ← mul_assoc,
+    ← weierstrassFactor_eq_mul_exp_sum]
+
+/-- Symmetric pairing for primary factors: `E_p(z) * E_p(-z) = E_{p / 2}(z ^ 2)`. -/
+theorem weierstrassFactor_mul_weierstrassFactor_neg (p : ℕ) (z : ℂ) :
+    weierstrassFactor p z * weierstrassFactor p (-z) = weierstrassFactor (p / 2) (z ^ 2) := by
+  induction p with
+  | zero =>
+    simp only [Nat.zero_div, weierstrassFactor_zero_left]
+    ring
+  | succ p ih =>
+    rw [weierstrassFactor_succ, weierstrassFactor_succ, mul_mul_mul_comm, ih, ← exp_add]
+    rcases Nat.even_or_odd (p + 1) with ⟨k, hk⟩ | ⟨k, hk⟩
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : k ≠ 0)
+      have hp2 : p / 2 = m := by omega
+      have hsucc2 : (p + 1) / 2 = m + 1 := by omega
+      have h2m : 2 * (m + 1) = p + 1 := by omega
+      have heven : (-z) ^ (p + 1) = z ^ (p + 1) := Even.neg_pow ⟨m + 1, hk⟩ z
+      have hterm : z ^ (p + 1) / ((p : ℂ) + 1) + (-z) ^ (p + 1) / ((p : ℂ) + 1) =
+          (z ^ 2) ^ (m + 1) / ((m : ℂ) + 1) := by
+        rw [heven, ← pow_mul, h2m]
+        have hm0 : ((m : ℂ) + 1) ≠ 0 := Nat.cast_add_one_ne_zero m
+        have hp1 : ((p : ℂ) + 1) = 2 * ((m : ℂ) + 1) := by exact_mod_cast h2m.symm
+        rw [hp1]
+        field_simp
+        ring
+      rw [hterm, hp2, hsucc2, ← weierstrassFactor_succ]
+    · have hp2 : (p + 1) / 2 = p / 2 := by omega
+      have hodd : (-z) ^ (p + 1) = -(z ^ (p + 1)) := Odd.neg_pow ⟨k, hk⟩ z
+      rw [hp2, hodd, neg_div, add_neg_cancel, exp_zero, mul_one]
+
 /-- Every elementary factor is normalized to one at the origin. -/
 @[simp]
 theorem weierstrassFactor_zero (p : ℕ) : weierstrassFactor p 0 = 1 := by
@@ -97,6 +138,15 @@ theorem weierstrassFactor_eq_zero_iff (p : ℕ) {z : ℂ} :
     weierstrassFactor p z = 0 ↔ z = 1 := by
   rw [weierstrassFactor_def, mul_eq_zero, or_iff_left (exp_ne_zero _), sub_eq_zero]
   exact eq_comm
+
+/-- With total division `z / 0 = 0`, `weierstrassFactor p (z / a)` vanishes if and only if `a ≠ 0`
+and `a = z`. -/
+theorem weierstrassFactor_div_eq_zero_iff (p : ℕ) (a z : ℂ) :
+    weierstrassFactor p (z / a) = 0 ↔ a ≠ 0 ∧ a = z := by
+  rw [weierstrassFactor_eq_zero_iff]
+  by_cases ha : a = 0
+  · simp [ha]
+  · simp [ha, div_eq_one_iff_eq ha, eq_comm]
 
 /-- The derivative of `E_p` is `-z ^ p * exp (-logTaylor (p + 1) (-z))`. -/
 theorem hasDerivAt_weierstrassFactor (p : ℕ) (z : ℂ) :
@@ -217,6 +267,43 @@ theorem norm_weierstrassFactor_sub_one_le (p : ℕ) {z : ℂ} (hz : ‖z‖ ≤ 
     _ = ‖z‖ ^ (p + 1) := by
       rw [intervalIntegral.integral_const_mul, integral_primaryFactorProfile, mul_one, pow_succ']
 
+/-- Every primary factor has a global exponential bound of order `p + 1`:
+`‖E_p z‖ ≤ exp ((p + 1) * ‖z‖ ^ (p + 1))` on the whole plane, including genus zero. -/
+theorem norm_weierstrassFactor_le_exp (p : ℕ) (z : ℂ) :
+    ‖weierstrassFactor p z‖ ≤ Real.exp ((p + 1) * ‖z‖ ^ (p + 1)) := by
+  rcases le_or_gt ‖z‖ 1 with hz | hz
+  · calc
+      _ ≤ ‖(1 : ℂ)‖ + ‖weierstrassFactor p z - 1‖ := norm_le_norm_add_norm_sub' _ _
+      _ ≤ ‖z‖ ^ (p + 1) + 1 := by
+        rw [norm_one, add_comm]
+        gcongr
+        exact norm_weierstrassFactor_sub_one_le p hz
+      _ ≤ Real.exp (‖z‖ ^ (p + 1)) := Real.add_one_le_exp _
+      _ ≤ _ := Real.exp_le_exp.mpr
+        (le_mul_of_one_le_left (by positivity) (by linarith [p.cast_nonneg (α := ℝ)]))
+  · -- Outside the unit disk the linear factor and each exponent term are at most `‖z‖ ^ (p + 1)`.
+    have hlin : ‖1 - z‖ ≤ Real.exp (‖z‖ ^ (p + 1)) :=
+      calc
+        _ ≤ ‖z‖ + 1 := by simpa [add_comm] using norm_sub_le (1 : ℂ) z
+        _ ≤ Real.exp ‖z‖ := Real.add_one_le_exp _
+        _ ≤ _ := Real.exp_le_exp.mpr (le_self_pow₀ hz.le (by omega))
+    have hexp : (∑ k ∈ Finset.range p, z ^ (k + 1) / (k + 1)).re ≤ p * ‖z‖ ^ (p + 1) :=
+      calc
+        _ ≤ ∑ k ∈ Finset.range p, ‖z ^ (k + 1) / (k + 1)‖ :=
+          (re_le_norm _).trans (norm_sum_le _ _)
+        _ ≤ ∑ _k ∈ Finset.range p, ‖z‖ ^ (p + 1) := by
+          refine Finset.sum_le_sum fun k hk ↦ ?_
+          rw [norm_div, norm_pow, ← Nat.cast_add_one, norm_natCast]
+          calc
+            _ ≤ ‖z‖ ^ (k + 1) := div_le_self (by positivity) (by simp)
+            _ ≤ ‖z‖ ^ (p + 1) :=
+              pow_le_pow_right₀ hz.le (by simpa using (Finset.mem_range.mp hk).le)
+        _ = p * ‖z‖ ^ (p + 1) := by simp
+    rw [weierstrassFactor_eq_mul_exp_sum, norm_mul, norm_exp]
+    calc
+      _ ≤ Real.exp (‖z‖ ^ (p + 1)) * Real.exp (p * ‖z‖ ^ (p + 1)) := by gcongr
+      _ = _ := by rw [← Real.exp_add]; congr 1; ring
+
 /-- Away from its zero, a primary factor is the exponential of the remainder of the Taylor
 series of `log (1 - z)` after its first `p` terms. -/
 theorem weierstrassFactor_eq_exp_log_sub_logTaylor (p : ℕ) {z : ℂ} (hz : z ≠ 1) :
@@ -312,6 +399,21 @@ theorem analyticOrderAt_weierstrassFactor_mul (p : ℕ) {c z : ℂ} (h : c * z =
   rw [heq, analyticOrderAt_comp_of_deriv_ne_zero hg (by rwa [hd.deriv]), h]
   exact analyticOrderAt_weierstrassFactor_one p
 
+/-- Analytic order of `w ↦ weierstrassFactor p (c * w)` at an arbitrary point `z : ℂ`. -/
+theorem analyticOrderAt_weierstrassFactor_mul_eq_ite (p : ℕ) (c z : ℂ) :
+    analyticOrderAt (fun w ↦ weierstrassFactor p (c * w)) z = if c * z = 1 then 1 else 0 := by
+  split_ifs with h
+  · exact analyticOrderAt_weierstrassFactor_mul p h
+  · have hana : AnalyticAt ℂ (fun w ↦ weierstrassFactor p (c * w)) z := by fun_prop
+    exact hana.analyticOrderAt_eq_zero.mpr (mt (weierstrassFactor_eq_zero_iff p).mp h)
+
+/-- For a nonzero root location `a`, `w ↦ weierstrassFactor p (w / a)` has analytic order `1` at `a`
+and `0` everywhere else. -/
+theorem analyticOrderAt_weierstrassFactor_div (p : ℕ) {a : ℂ} (ha : a ≠ 0) (z : ℂ) :
+    analyticOrderAt (fun w ↦ weierstrassFactor p (w / a)) z = if z = a then 1 else 0 := by
+  simpa only [div_eq_inv_mul, inv_mul_eq_one₀ ha, eq_comm] using
+    analyticOrderAt_weierstrassFactor_mul_eq_ite p a⁻¹ z
+
 /-- The rational logarithmic derivative of the genus-one factor with slope `a`,
 using total division at its pole. -/
 noncomputable def logDerivWeierstrassFactorOneMul (a z : ℂ) : ℂ :=
@@ -365,20 +467,5 @@ theorem norm_weierstrassFactor_one_le_exp (z : ℂ) :
     positivity
   · rw [← Real.exp_log h]
     exact Real.exp_le_exp.mpr (log_norm_weierstrassFactor_one_le z)
-
-/-- The genus-one factor has a global quadratic exponential bound. -/
-theorem norm_weierstrassFactor_one_le_exp_sq (z : ℂ) :
-    ‖weierstrassFactor 1 z‖ ≤ Real.exp (3 * ‖z‖ ^ 2) := by
-  by_cases hz : ‖z‖ ≤ 1
-  · calc
-      _ ≤ ‖(1 : ℂ)‖ + ‖weierstrassFactor 1 z - 1‖ := norm_le_norm_add_norm_sub' _ _
-      _ ≤ ‖z‖ ^ 2 + 1 := by
-        have hsharp : ‖weierstrassFactor 1 z - 1‖ ≤ ‖z‖ ^ 2 :=
-          norm_weierstrassFactor_sub_one_le 1 hz
-        simpa only [norm_one, add_comm] using add_le_add_left hsharp 1
-      _ ≤ Real.exp (‖z‖ ^ 2) := Real.add_one_le_exp _
-      _ ≤ Real.exp (3 * ‖z‖ ^ 2) := Real.exp_le_exp.mpr (by nlinarith [sq_nonneg ‖z‖])
-  · exact (norm_weierstrassFactor_one_le_exp z).trans
-      (Real.exp_le_exp.mpr (by nlinarith [norm_nonneg z]))
 
 end Complex

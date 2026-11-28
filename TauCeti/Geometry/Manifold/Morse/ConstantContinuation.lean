@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Prod
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Trajectories of the continuation field of a constant path
@@ -25,7 +26,8 @@ with an adapted pseudo-gradient `X` of `f` in the space direction the field is t
 `V(x, t) = (X x, C t (1 - t²))` (`TauCeti.constantContinuationField`).
 
 This file determines all of its trajectories between the critical points `(p, 0)` and `(q, 1)` of
-the slab, on a compact boundaryless manifold `M` and for `C > 0`.
+the slab, on a compact boundaryless manifold `M` and for `C > 0`. The field is as smooth as `X`
+(`TauCeti.contMDiff_constantContinuationField`).
 
 * **Product structure.** A curve is an integral curve of `V` exactly when its components are an
   integral curve of `X` and a negative gradient trajectory of the base potential
@@ -44,10 +46,14 @@ the slab, on a compact boundaryless manifold `M` and for `C > 0`.
   exactly one unparametrized continuation trajectory from `(p, 0)` to `(p, 1)` and none from
   `(p, 0)` to `(q, 1)` with `q ≠ p`. These are the counts defining the continuation map, so for a
   constant path they form the identity matrix.
+* **Product fields in general.** The argument for the space component applies to any product field
+  `(X x, Y b)` on `M × N`: under the Morse–Smale condition, the Morse index does not rise along a
+  trajectory of it.
 
 ## Main declarations
 
 * `TauCeti.constantContinuationField`: the field `(X x, C t (1 - t²))` on `M × ℝ`.
+* `TauCeti.contMDiff_constantContinuationField`: it is as smooth as `X`.
 * `TauCeti.isMIntegralCurve_constantContinuationField_iff`: its integral curves are pairs.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -58,6 +64,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   end level.
 * `IsMorseSmale.isMIntegralCurve_constantContinuationField_and_tendsto_iff_of_le`: the
   constant-path identity.
+* `IsMorseSmale.manifoldMorseIndex_le_of_isMIntegralCurve_prodVectorField`: the Morse index does
+  not rise along a trajectory of a product field.
 
 ## References
 
@@ -106,6 +114,22 @@ theorem constantContinuationField_fst (X : (x : M) → TangentSpace I x) (C : �
 theorem constantContinuationField_snd (X : (x : M) → TangentSpace I x) (C : ℝ) (z : M × ℝ) :
     (constantContinuationField X C z).2 = C * z.2 * (1 - z.2 ^ 2) :=
   (Manifold.prodVectorField_snd _ _ z).trans (by rw [gradient_intervalBasePotential]; ring)
+
+/-- **The continuation field of a constant path is as smooth as `X`**: if the section
+`x ↦ (x, X x)` of the tangent bundle of `M` is `C^n`, so is the section `z ↦ (z, V z)` of the
+tangent bundle of `M × ℝ`, for `V = (X x, C t (1 - t²))`. For a smooth pseudo-gradient this is the
+smoothness under which `V` has transition diffeomorphisms. -/
+theorem contMDiff_constantContinuationField [IsManifold I 1 M] {X : (x : M) → TangentSpace I x}
+    {n : WithTop ℕ∞} (hX : ContMDiff I I.tangent n fun x ↦ (⟨x, X x⟩ : TangentBundle I M))
+    (C : ℝ) :
+    ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)).tangent n
+      fun z ↦ (⟨z, constantContinuationField X C z⟩ : TangentBundle (I.prod 𝓘(ℝ)) (M × ℝ)) := by
+  have hv : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n fun t : ℝ ↦ -∇ (intervalBasePotential C) t := by
+    simp only [gradient_intervalBasePotential]
+    exact ContDiff.contMDiff (by fun_prop)
+  rw [constantContinuationField_def]
+  exact Manifold.contMDiff_prodVectorField hX
+    (contMDiff_tangentBundle_mk_modelSpace contMDiff_id hv)
 
 /-- **The trajectories of the continuation field of a constant path are pairs**: a curve in
 `M × ℝ` is an integral curve of `constantContinuationField X C` exactly when its space component is
@@ -193,6 +217,29 @@ namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
 include h hf
+
+section ProdVectorField
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- **The Morse index does not rise along a trajectory of a product field.** Under the Morse–Smale
+condition, if an integral curve of the product field `(X x, Y b)` on `M × N` runs from `(p, b)` to
+`(q, b')`, then `ind q ≤ ind p`: its space component is a trajectory of `X` from `p` to `q`. -/
+theorem manifoldMorseIndex_le_of_isMIntegralCurve_prodVectorField
+    {Y : (b : N) → TangentSpace J b} {γ : ℝ → M × N}
+    (hγ : IsMIntegralCurve γ (Manifold.prodVectorField X Y)) {b b' : N}
+    (hp : Tendsto γ atBot (𝓝 (p, b))) (hq : Tendsto γ atTop (𝓝 (q, b'))) :
+    manifoldMorseIndex 𝓘(ℝ, E) f q ≤ manifoldMorseIndex 𝓘(ℝ, E) f p := by
+  rcases eq_or_ne p q with rfl | hpq
+  · exact le_rfl
+  obtain ⟨hy, -⟩ := hX.mem_unstableSet_inter_stableSet_of_isMIntegralCurve
+    (Manifold.isMIntegralCurve_prodVectorField_iff.1 hγ).1
+    ((continuous_fst.tendsto _).comp hp) ((continuous_fst.tendsto _).comp hq)
+  exact (h.manifoldMorseIndex_lt hf hpq ⟨_, hy⟩).le
+
+end ProdVectorField
 
 /-- **The constant-path continuation trajectories.** Under the Morse–Smale condition,
 for `C > 0`, a critical point `p` and a point `q` with `ind p ≤ ind q`, an integral curve of

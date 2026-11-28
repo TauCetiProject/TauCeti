@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLittlewoodPaley
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 public import TauCeti.Analysis.Fourier.FourierCharDeriv
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -21,7 +23,8 @@ distribution it is the inverse Fourier transform of the Dirac mass at `ξ`
 basic example on which the dyadic decomposition can be computed exactly.
 
 * Every Fourier multiplier acts on `e_ξ` by its value at `ξ`; in particular the Littlewood–Paley
-  blocks are `Δⱼ e_ξ = ψⱼ(ξ) e_ξ` (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`).
+  blocks are `Δⱼ e_ξ = ψⱼ(ξ) e_ξ` (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`
+  in `TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley`).
   If `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`, the plane wave is its own block of index `j + 1` and all
   its other blocks vanish
   (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le`); for the bump
@@ -29,10 +32,15 @@ basic example on which the dyadic decomposition can be computed exactly.
   the piece `ψ_{j+1} = φ (2^{-(j+1)} ·) - φ (2^{-j} ·)` of the convention here, which is
   supported in the annulus `2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`. If `‖ξ‖ ≤ φ.rIn`, the plane wave
   is its own low-frequency block `Δ₀` and has no other block
-  (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`). For `ξ = 0` this is
-  the constant function `1`, which is the distribution `volume.toTemperedDistribution`
-  (`TemperedDistribution.fourierInv_delta_zero`): `Δ₀ 1 = 1` and `Δⱼ 1 = 0` for `j ≥ 1`
-  (`TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`).
+  (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le` in
+  `TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley`). For `ξ = 0` this is the
+  constant function `1`, which is the distribution `volume.toTemperedDistribution`
+  (`TemperedDistribution.fourierInv_delta_zero` in
+  `TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier`): `Δ₀ 1 = 1` and `Δⱼ 1 = 0`
+  for `j ≥ 1` (`TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume` in
+  `TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley`), while all its homogeneous
+  blocks vanish
+  (`TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution_volume`).
 * Differentiation multiplies `e_ξ` by its frequency, `∂_m e_ξ = 2πi ⟪ξ, m⟫ e_ξ`
   (`TemperedDistribution.lineDerivOp_fourierInv_delta`). Since `|e_ξ| = 1`, the plane wave of
   frequency `‖ξ‖ = R` in the direction `m = ξ / R` has `‖∂_m e_ξ‖_∞ = 2π R ‖e_ξ‖_∞`, while its
@@ -43,13 +51,12 @@ basic example on which the dyadic decomposition can be computed exactly.
 
 ## Main declarations
 
-* `TemperedDistribution.fourierInv_delta`, `TemperedDistribution.fourierInv_delta_zero`: the
-  inverse Fourier transform of `δ_ξ` is the plane wave `e_ξ`, and that of `δ₀` is the constant `1`.
-* `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
-  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le`,
-  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`,
-  `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of plane
-  waves and of the constant `1`.
+* `TemperedDistribution.fourierInv_delta`: the inverse Fourier transform of `δ_ξ` is the plane
+  wave `e_ξ`.
+* `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le`: a plane wave
+  of dyadic frequency `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn` is its own block `Δ_{j+1}`.
+* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution_volume`: the
+  homogeneous blocks of the constant `1` vanish.
 * `TemperedDistribution.lineDerivOp_fourierInv_delta`: the derivatives of a plane wave.
 * `TauCeti.two_mul_pi_le_of_forall_lineDerivOp_eq_and_norm_le`: the constant of Bernstein's
   inequality for one derivative in `L^∞` is at least `2π`.
@@ -79,22 +86,7 @@ theorem fourierInv_delta (ξ : E) :
   ext f
   simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq, Circle.smul_def, mul_comm]
 
-/-- **The inverse Fourier transform of `δ₀` is the constant function `1`**, which as a tempered
-distribution is integration against the volume. -/
-theorem fourierInv_delta_zero : 𝓕⁻ (delta (0 : E)) = volume.toTemperedDistribution := by
-  ext f
-  simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
-
 variable (φ : ContDiffBump (0 : E))
-
-/-- **The Littlewood–Paley blocks of a plane wave.** The block `Δⱼ` multiplies the plane wave
-`𝓕⁻ δ_ξ` by the value `ψⱼ(ξ)` of the `j`-th piece of the partition. -/
-@[simp]
-theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
-    littlewoodPaleyBlock ℂ φ j (𝓕⁻ (delta ξ)) =
-      (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) • 𝓕⁻ (delta ξ) := by
-  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierInv_delta
-    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
 
 /-- **A plane wave of dyadic frequency is a single block.** If `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`,
 then the plane wave `𝓕⁻ δ_ξ` is its own block of index `j + 1`, and all its other blocks vanish. -/
@@ -117,27 +109,17 @@ theorem littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le {j : ℕ} {�
       have hr : 0 < φ.rIn := φ.rIn_pos
       exact h₂.trans (by gcongr <;> first | omega | norm_num)
 
-/-- **A plane wave of low frequency is its own low-frequency block.** If `‖ξ‖ ≤ φ.rIn`, then the
-plane wave `𝓕⁻ δ_ξ` is its block `Δ₀`, and all its other blocks vanish. -/
-theorem littlewoodPaleyBlock_fourierInv_delta_of_norm_le {ξ : E} (h : ‖ξ‖ ≤ φ.rIn) (k : ℕ) :
-    littlewoodPaleyBlock ℂ φ k (𝓕⁻ (delta ξ)) = if k = 0 then 𝓕⁻ (delta ξ) else 0 := by
-  rw [littlewoodPaleyBlock_fourierInv_delta]
-  rcases k with _ | k
-  · rw [φ.inhomogeneousLittlewoodPaley_zero, φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h)]
-    simp
-  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
-      (h.trans (le_mul_of_one_le_left φ.rIn_pos.le (one_le_pow₀ one_le_two)))]
-    simp
-
-/-- **The Littlewood–Paley blocks of the constant `1`.** The constant function `1`, the tempered
-distribution `volume.toTemperedDistribution`, is its own low-frequency block `Δ₀`, and its blocks
-`Δⱼ`, `j ≥ 1`, vanish. -/
+/-- **The homogeneous blocks of the constant `1` vanish.** The Fourier transform of the constant
+function `1`, the tempered distribution `volume.toTemperedDistribution`, is the Dirac mass at the
+origin, which every homogeneous block `Pⱼ` annihilates. -/
 @[simp]
-theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
-    littlewoodPaleyBlock ℂ φ k (volume : Measure E).toTemperedDistribution =
-      if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
-  rw [← fourierInv_delta_zero]
-  exact littlewoodPaleyBlock_fourierInv_delta_of_norm_le φ (by simpa using φ.rIn_pos.le) k
+theorem homogeneousLittlewoodPaleyBlock_toTemperedDistribution_volume (j : ℤ) :
+    homogeneousLittlewoodPaleyBlock ℂ φ j (volume : Measure E).toTemperedDistribution = 0 := by
+  refine homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero φ
+    (fun ψ hψ ↦ ?_) j
+  -- `𝓕 1 ψ = ∫ 𝓕 ψ = ψ 0`, and `ψ 0 = 0` since `ψ` vanishes near the origin.
+  have h0 : ψ 0 = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hψ h rfl
+  simpa [SchwartzMap.integral_fourier_eq] using h0
 
 /-- **The derivatives of a plane wave.** Differentiating the plane wave `𝓕⁻ δ_ξ` in the direction
 `m` multiplies it by `2πi ⟪ξ, m⟫`. -/
