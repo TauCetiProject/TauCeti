@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Simple
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
+import TauCeti.CategoryTheory.Preadditive.Radical.Minimal
 
 /-!
 # Projective covers of functors
@@ -103,14 +104,8 @@ when every endomorphism `ψ` of `P` with `(-, ψ) ≫ p = 0` lies in the radical
 theorem isRepresentableProjectiveCover_iff {P : C} (p : preadditiveYoneda.obj P ⟶ F) :
     IsRepresentableProjectiveCover p ↔
       Epi p ∧ ∀ ψ : P ⟶ P, preadditiveYoneda.map ψ ≫ p = 0 → ψ ∈ jacobsonRadical P P := by
-  constructor
-  · rintro ⟨hp, hmin⟩
-    exact ⟨hp, fun ψ hψ ↦ mem_jacobsonRadical_iff_isIso_id_sub_comp_left.2 fun g ↦
-      hmin _ (by simp [hψ])⟩
-  · rintro ⟨hp, hrad⟩
-    refine ⟨hp, fun φ hφ ↦ ?_⟩
-    have h := hrad (𝟙 P - φ) (by simp [hφ])
-    simpa using mem_jacobsonRadical_iff_isIso_id_sub_comp_right.1 h (𝟙 P)
+  have h := preadditiveYoneda.right_minimal_iff_map_comp_eq_zero p
+  exact ⟨fun ⟨hp, hmin⟩ ↦ ⟨hp, h.mp hmin⟩, fun ⟨hp, hrad⟩ ↦ ⟨hp, h.mpr hrad⟩⟩
 
 namespace IsRepresentableProjectiveCover
 

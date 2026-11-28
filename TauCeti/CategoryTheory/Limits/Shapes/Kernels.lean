@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Equalizers
@@ -22,6 +23,8 @@ assumed: all the relevant cocones and coforks are given.  This is the special ca
 This is how a quotient construction, such as relative chains as the quotient of the chains of a
 space by those of a subspace, inherits a colimit description from the two objects it is formed
 from.
+
+Applying `Hom(W, -)` to a kernel or `Hom(-, W)` to a cokernel gives an exact pair of functions.
 
 The file also records that the square of a cokernel against a zero object is a pushout
 (`CategoryTheory.IsPushout.of_isColimit_cokernelCofork`), and that so is the square comparing the
@@ -52,6 +55,35 @@ def isColimitOfIsColimitCokernelCofork (hπ : ∀ j, IsColimit (CokernelCofork.o
   isColimitOfIsColimitCofork (β := 0) (g := 0) hπ hF hG hf (fun _ ↦ by simp) hp hcok
 
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C]
+  {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {w : f ≫ g = 0}
+
+/-- Applying `Hom(W, -)` to `X ⟶ Y ⟶ Z` gives an exact pair if `f` is a kernel of `g`. -/
+theorem IsLimit.exact_postcomp (h : IsLimit (KernelFork.ofι f w)) (W : C) :
+    Function.Exact (fun a : W ⟶ X ↦ a ≫ f) (fun b : W ⟶ Y ↦ b ≫ g) := by
+  intro b
+  constructor
+  · intro hb
+    obtain ⟨a, ha⟩ := KernelFork.IsLimit.lift' h b hb
+    exact ⟨a, by simpa only [KernelFork.ι_ofι] using ha⟩
+  · rintro ⟨a, rfl⟩
+    simp [Category.assoc, w]
+
+/-- Applying `Hom(-, W)` to `X ⟶ Y ⟶ Z` gives an exact pair if `g` is a cokernel of `f`. -/
+theorem IsColimit.exact_precomp (h : IsColimit (CokernelCofork.ofπ g w)) (W : C) :
+    Function.Exact (fun a : Z ⟶ W ↦ g ≫ a) (fun b : Y ⟶ W ↦ f ≫ b) := by
+  intro b
+  constructor
+  · intro hb
+    obtain ⟨a, ha⟩ := CokernelCofork.IsColimit.desc' h b hb
+    exact ⟨a, by simpa only [CokernelCofork.π_ofπ] using ha⟩
+  · rintro ⟨a, rfl⟩
+    simp [← Category.assoc, w]
+
+end CategoryTheory.Limits
 
 namespace CategoryTheory.IsPushout
 

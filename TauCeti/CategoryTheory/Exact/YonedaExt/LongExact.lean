@@ -133,9 +133,8 @@ theorem injective_comp_f : Function.Injective fun a : W ⟶ X ↦ a ≫ e.f :=
 /-- **Exactness at `Hom(W, Y)`**: a morphism into the middle term is killed by the deflation
 exactly when it factors through the inflation. -/
 theorem exact_comp_f_comp_g :
-    Function.Exact (fun a : W ⟶ X ↦ a ≫ e.f) fun t : W ⟶ e.obj ↦ t ≫ e.g := fun t ↦
-  ⟨fun ht ↦ ⟨e.isKernelCokernelPair.lift t ht, e.isKernelCokernelPair.lift_f t ht⟩,
-    by rintro ⟨a, rfl⟩; simp⟩
+    Function.Exact (fun a : W ⟶ X ↦ a ≫ e.f) fun t : W ⟶ e.obj ↦ t ≫ e.g :=
+  e.isKernelCokernelPair.fIsKernel.exact_postcomp W
 
 /-- **Exactness at `Hom(W, Z)`**: the connecting map `u ↦ u^* [e]` vanishes exactly on the
 morphisms factoring through the deflation. -/
@@ -166,9 +165,8 @@ theorem injective_g_comp : Function.Injective fun b : Z ⟶ W ↦ e.g ≫ b :=
 /-- **Exactness at `Hom(Y, W)`**: a morphism out of the middle term is killed by the inflation
 exactly when it factors through the deflation. -/
 theorem exact_g_comp_f_comp :
-    Function.Exact (fun b : Z ⟶ W ↦ e.g ≫ b) fun t : e.obj ⟶ W ↦ e.f ≫ t := fun t ↦
-  ⟨fun ht ↦ ⟨e.isKernelCokernelPair.desc t ht, e.isKernelCokernelPair.g_desc t ht⟩,
-    by rintro ⟨b, rfl⟩; simp⟩
+    Function.Exact (fun b : Z ⟶ W ↦ e.g ≫ b) fun t : e.obj ⟶ W ↦ e.f ≫ t :=
+  e.isKernelCokernelPair.gIsCokernel.exact_precomp W
 
 /-- **Exactness at `Hom(X, W)`**: the connecting map `v ↦ v_* [e]` vanishes exactly on the
 morphisms extending along the inflation. -/
