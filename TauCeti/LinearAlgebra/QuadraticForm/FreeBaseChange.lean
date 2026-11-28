@@ -7,8 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basis
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
+import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
 # Base change of quadratic forms on free modules
@@ -45,6 +48,8 @@ are not isometric.
 * `QuadraticForm.nondegenerate_polarBilin_freeBaseChange_iff`: on a finite free module, along an
   injective map of integral domains, base change preserves and reflects nondegeneracy of the
   polar form.
+* `QuadraticForm.nondegenerate_freeBaseChange_iff`: over a field, extension to a nonzero
+  reduced algebra preserves and reflects nondegeneracy of the quadratic form.
 -/
 
 public section
@@ -177,6 +182,83 @@ theorem freeBaseChange_comp [Module.Free R N] (Q : QuadraticForm R N) (f : M →
       QuadraticMap.comp_apply]).symm
 
 end Free
+
+section Radical
+
+section GroundRing
+
+variable (A) [Module.Free R M] [FaithfulSMul R A]
+
+/-- Along an injective scalar extension, a ground-ring vector belongs to the radical
+exactly when its image does. -/
+@[simp]
+theorem one_tmul_mem_radical_freeBaseChange_iff (Q : QuadraticForm R M) (v : M) :
+    (1 : A) ⊗ₜ[R] v ∈ (Q.freeBaseChange A).radical ↔ v ∈ Q.radical := by
+  have hinj := FaithfulSMul.algebraMap_injective R A
+  have hval : Q.freeBaseChange A (1 ⊗ₜ v) = 0 ↔ Q v = 0 := by
+    rw [freeBaseChange_one_tmul, map_eq_zero_iff _ hinj]
+  simp only [QuadraticMap.mem_radical_iff]
+  refine and_congr hval ⟨fun h ↦ LinearMap.ext fun w ↦ ?_, fun h ↦ LinearMap.ext fun x ↦ ?_⟩
+  · have he := DFunLike.congr_fun h (1 ⊗ₜ[R] w)
+    simpa [Algebra.smul_def, map_eq_zero_iff _ hinj] using he
+  · induction x with
+    | tmul a w =>
+      have hw := DFunLike.congr_fun h w
+      simpa using congrArg (fun t : R ↦ t • a) hw
+    | add x y hx hy => simp_all
+
+end GroundRing
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+variable (A : Type*) [CommRing A] [Algebra K A] [IsReduced A]
+
+/-- If the polar kernel has rank at most one, the quadratic radical commutes with
+extension to a reduced algebra over the ground field. -/
+theorem radical_freeBaseChange_of_rank_ker_le_one (Q : QuadraticForm K V)
+    (h : Module.rank K Q.polarBilin.ker ≤ 1) :
+    (Q.freeBaseChange A).radical = Q.radical.baseChange A := by
+  nontriviality A
+  refine le_antisymm (fun x hx ↦ ?_) (Submodule.baseChange_le_iff_le_comap.mpr fun v hv ↦
+    (Q.one_tmul_mem_radical_freeBaseChange_iff A v).mpr hv)
+  obtain ⟨v, hv, hspan⟩ := (rank_submodule_le_one_iff _).mp h
+  obtain ⟨hxq, hker⟩ := QuadraticMap.mem_radical_iff.mp hx
+  have hxker := LinearMap.mem_ker.mpr hker
+  rw [polarBilin_freeBaseChange, LinearMap.BilinForm.ker_baseChange] at hxker
+  have hmem := Submodule.baseChange_mono (A := A) hspan hxker
+  rw [Submodule.baseChange_span, Set.image_singleton, TensorProduct.mk_apply] at hmem
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hmem
+  by_cases hc : c = 0
+  · simp [hc]
+  have hq : Q v = 0 := by
+    by_contra hq
+    have hu := (isUnit_iff_ne_zero.mpr hq).map (algebraMap K A)
+    rw [QuadraticMap.map_smul, freeBaseChange_one_tmul, smul_eq_mul, hu.mul_left_eq_zero] at hxq
+    exact hc (eq_zero_of_pow_eq_zero (n := 2) (by simpa [pow_two] using hxq))
+  have hv' : v ∈ Q.radical := QuadraticMap.mem_radical_iff.mpr ⟨hq, LinearMap.mem_ker.mp hv⟩
+  exact (Q.radical.baseChange A).smul_mem c (Submodule.tmul_mem_baseChange_of_mem _ hv')
+
+/-- Quadratic nondegeneracy is preserved and reflected by extension to any nonzero
+reduced algebra over the field. -/
+@[simp]
+theorem nondegenerate_freeBaseChange_iff [Nontrivial A] (Q : QuadraticForm K V) :
+    (Q.freeBaseChange A).Nondegenerate ↔ Q.Nondegenerate := by
+  have hrank : Module.rank A (Q.freeBaseChange A).polarBilin.ker ≤ 1 ↔
+      Module.rank K Q.polarBilin.ker ≤ 1 := by
+    rw [polarBilin_freeBaseChange, LinearMap.BilinForm.ker_baseChange,
+      Submodule.rank_baseChange_of_isComplemented _ (exists_isCompl _),
+      Cardinal.lift_le_one_iff]
+  constructor
+  · intro h
+    refine ⟨(Submodule.eq_bot_iff _).mpr fun v hv ↦ ?_, hrank.mp h.rank_rad_polar_le⟩
+    have hz := (Submodule.eq_bot_iff _).mp h.radical_eq_bot _ <|
+      (Q.one_tmul_mem_radical_freeBaseChange_iff A v).mpr hv
+    simpa using hz
+  · intro h
+    refine ⟨?_, hrank.mpr h.rank_rad_polar_le⟩
+    rw [radical_freeBaseChange_of_rank_ker_le_one _ _ h.rank_rad_polar_le,
+      h.radical_eq_bot, Submodule.baseChange_bot]
+
+end Radical
 
 end QuadraticForm
 

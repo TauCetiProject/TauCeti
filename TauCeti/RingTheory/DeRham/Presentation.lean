@@ -158,6 +158,12 @@ theorem symbolRelations_eq_span : symbolRelations A B n = Submodule.span A (rela
 
 variable {A B n}
 
+/-- `symbolMap` evaluates a single `Finsupp.single (c, v) a` to `a • elementary A c v`. -/
+@[simp]
+theorem symbolMap_single (c : B) (v : Fin n → B) (a : A) :
+    symbolMap A B n (Finsupp.single (c, v) a) = a • elementary A c v := by
+  rw [symbolMap, Finsupp.linearCombination_single]
+
 /-- `symbolMap` evaluates `[c; v]` to the elementary form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁`. -/
 @[simp]
 theorem symbolMap_sym (c : B) (v : Fin n → B) : symbolMap A B n (sym A c v) = elementary A c v := by
@@ -273,6 +279,19 @@ theorem forms_hom_ext {M : Type*} [AddCommGroup M] [Module A M] {f g : Forms A B
     (h : ∀ (c : B) (v : Fin n → B), f (elementary A c v) = g (elementary A c v)) : f = g :=
   (LinearMap.cancel_right (symbolMap_surjective A B n)).1 <|
     symbols_hom_ext fun c v => by simpa only [LinearMap.comp_apply, symbolMap_sym] using h c v
+
+/-- Additive induction principle on `Forms A B n`: a predicate holding on `0`, closed under
+addition, and holding on every elementary form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁` holds on all `n`-forms. -/
+theorem induction_elementary {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] {n : ℕ}
+    {P : Forms A B n → Prop} (zero : P 0) (add : ∀ ω₁ ω₂, P ω₁ → P ω₂ → P (ω₁ + ω₂))
+    (elem : ∀ (c : B) (v : Fin n → B), P (elementary A c v)) (ω : Forms A B n) :
+    P ω := by
+  obtain ⟨s, rfl⟩ := symbolMap_surjective A B n ω
+  induction s using Finsupp.induction with
+  | zero => simpa using zero
+  | single_add p a s _ _ ih =>
+    rw [map_add, symbolMap_single, elementary_def, ← smul_assoc]
+    exact add _ _ (elem (a • p.1) p.2) ih
 
 end
 

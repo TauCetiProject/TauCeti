@@ -247,7 +247,8 @@ def chartSobolevSpaceZeroEquivLp (hμ : HasSmoothPositiveDensity (CoordinateSpac
     (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) :
     chartSobolevSpace he ψ 0 ≃L[ℂ] Lp ℂ 2 μ :=
   (LinearEquiv.refl ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯).extend
-    (toChartSobolevSpace he ψ 0) (ContMDiffMap.toL2 μ) (denseRange_toChartSobolevSpace he ψ 0)
+    (toChartSobolevSpace he ψ 0) (ContMDiffMap.toL2 μ)
+    (chartReading he ψ 0).denseRange_toRangeClosure
     (by simpa using exists_norm_toLp_le_norm_chartReading_zero he ψ hμ hψ)
     (ContMDiffMap.denseRange_toL2 μ)
     (by simpa using exists_norm_chartReading_zero_le_norm_toLp he ψ hμ)
@@ -337,9 +338,9 @@ theorem inner_chartSobolevToLp_eq_of_forall_integral_inner_eq
     inner ℂ (chartSobolevToLp μ he ψ hμ hψ ht (A x)) (chartSobolevToLp μ he ψ hμ hψ hs' y) =
       inner ℂ (chartSobolevToLp μ he ψ hμ hψ hs x) (chartSobolevToLp μ he ψ hμ hψ ht' (B y)) := by
   -- Both sides are continuous in `x` and `y`, and agree on smooth functions.
-  refine (denseRange_toChartSobolevSpace he ψ s).induction_on x
+  refine (chartReading he ψ s).denseRange_toRangeClosure.induction_on x
     (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
-  refine (denseRange_toChartSobolevSpace he ψ s').induction_on y
+  refine (chartReading he ψ s').denseRange_toRangeClosure.induction_on y
     (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
   simp only [hA, hB, chartSobolevToLp_toChartSobolevSpace, ← ContMDiffMap.toL2_apply,
     ContMDiffMap.inner_toL2, hPQ]

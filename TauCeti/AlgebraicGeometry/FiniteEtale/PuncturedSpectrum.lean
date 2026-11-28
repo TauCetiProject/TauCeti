@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 public import Mathlib.RingTheory.Depth.Basic
 public import Mathlib.AlgebraicGeometry.Restrict
-public import TauCeti.RingTheory.LocalRing.RingHom
+public import TauCeti.RingTheory.LocalRing.RingHom.Basic
 import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 import TauCeti.Algebra.Algebra.Pi

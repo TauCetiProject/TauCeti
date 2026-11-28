@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.FiberBundle.Basic
 public import TauCeti.Topology.FiberBundle.Principal.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # The fibre bundle of a locally trivial map
@@ -22,12 +23,14 @@ coordinate changes.
 
 This is the passage from a bundle given by its total space, as in classical differential geometry,
 to Mathlib's `FiberBundle` on a family of fibres. The trivializations are packaged as a
-`TauCeti.MapFiber.Atlas F proj`, and the fibre bundle is the definition
-`TauCeti.MapFiber.Atlas.fiberBundle` rather than an instance, because it depends on the atlas.
+`TauCeti.MapFiber.Atlas F proj` (optionally with an explicit covering set `charts` containing each
+`trivAt b`, or built from a covering set via `TauCeti.MapFiber.Atlas.ofSet`), and the fibre bundle
+is the definition `TauCeti.MapFiber.Atlas.fiberBundle` rather than an instance, because it depends
+on the atlas.
 
 More generally, any family of fibres `Q` over `B` whose total space is identified with `P` over `B`
 by a homeomorphism `h` is a fibre bundle (`TauCeti.MapFiber.Atlas.fiberBundleOfHomeomorph`), with
-the trivializations `e.compTotalSpaceHomeomorph h` transported along `h`; the fibres of `proj` are
+the trivializations `e.compHomeomorphOfEq h hh` transported along `h`; the fibres of `proj` are
 the case `h = TauCeti.MapFiber.totalSpaceHomeomorph`. This lets a bundle given by its total space
 be presented by fibres of a prescribed type, for instance in a smaller universe.
 
@@ -42,11 +45,12 @@ identified with `P` by an equivariant homeomorphism
 
 * `TauCeti.MapFiber proj b`: the fibre of `proj` over `b`.
 * `TauCeti.MapFiber.totalSpaceHomeomorph`: the total space of the fibres is homeomorphic to `P`.
-* `Bundle.Trivialization.compTotalSpaceHomeomorph`: a trivialization of `proj` as a trivialization
-  of a family of fibres whose total space is homeomorphic to `P` over `B`.
 * `Bundle.Trivialization.toMapFiber`: a trivialization of `proj` as a trivialization of the bundle
   of its fibres.
-* `TauCeti.MapFiber.Atlas`: a choice of a trivialization of `proj` around every point of `B`.
+* `TauCeti.MapFiber.Atlas`: a choice of a trivialization of `proj` around every point of `B`,
+  together with a set `charts` of trivializations containing each chosen chart.
+* `TauCeti.MapFiber.Atlas.ofTrivAt`, `TauCeti.MapFiber.Atlas.ofSet`: build an atlas from chosen
+  trivializations or from any covering set of trivializations.
 * `TauCeti.MapFiber.Atlas.fiberBundleOfHomeomorph`: the fibre bundle structure on a family of
   fibres whose total space is homeomorphic to `P` over `B`.
 * `TauCeti.MapFiber.Atlas.fiberBundle`: the fibre bundle structure on the fibres of `proj`.
@@ -54,6 +58,8 @@ identified with `P` by an equivariant homeomorphism
 
 ## Main results
 
+* `Bundle.Trivialization.isEquivariant_toMapFiber_iff`: equivariance characterization for
+  `t.toMapFiber`.
 * `TauCeti.MapFiber.Atlas.principalBundle_of_homeomorph`, `TauCeti.MapFiber.Atlas.principalBundle`:
   equivariant trivializations make the bundle of fibres a principal bundle.
 
@@ -166,86 +172,55 @@ open TauCeti
 variable {B P F : Type*} [TopologicalSpace B] [TopologicalSpace P] [TopologicalSpace F]
   {proj : P → B} (e : Trivialization F proj)
 
-section TotalSpaceHomeomorph
-
-variable {Q : B → Type*} [TopologicalSpace (TotalSpace F Q)] (h : TotalSpace F Q ≃ₜ P)
-  (hh : ∀ x, proj (h x) = x.proj)
-
-/-- A trivialization of a map `proj : P → B` as a trivialization, with the same base set, of a
-family of fibres `Q` whose total space is identified with `P` over `B` by the homeomorphism `h`:
-the point `x` of the total space is sent to `e (h x)`. This is `e.compHomeomorph h` with its
-projection `proj ∘ h` replaced by `π F Q` using `hh`. -/
-def compTotalSpaceHomeomorph : Trivialization F (π F Q) where
-  __ := e.compHomeomorph h
-  source_eq := by
-    ext x
-    simp [(e.compHomeomorph h).mem_source, hh]
-  proj_toFun x hx := ((e.compHomeomorph h).proj_toFun x hx).trans (hh x)
-
-@[simp]
-theorem compTotalSpaceHomeomorph_apply (x : TotalSpace F Q) :
-    e.compTotalSpaceHomeomorph h hh x = e (h x) :=
-  (rfl)
-
-@[simp]
-theorem compTotalSpaceHomeomorph_symm_apply (y : B × F) :
-    (e.compTotalSpaceHomeomorph h hh).toOpenPartialHomeomorph.symm y =
-      h.symm (e.toOpenPartialHomeomorph.symm y) :=
-  (rfl)
-
-@[simp]
-theorem compTotalSpaceHomeomorph_baseSet :
-    (e.compTotalSpaceHomeomorph h hh).baseSet = e.baseSet :=
-  (rfl)
-
-@[simp]
-theorem compTotalSpaceHomeomorph_source :
-    (e.compTotalSpaceHomeomorph h hh).source = h ⁻¹' e.source :=
-  (rfl)
-
-/-- The coordinate changes between the trivializations of `Q` coming from trivializations of
-`proj` are those between the trivializations of `proj`. -/
-@[simp]
-theorem compTotalSpaceHomeomorph_coordChange (e' : Trivialization F proj) :
-    (e.compTotalSpaceHomeomorph h hh).coordChange (e'.compTotalSpaceHomeomorph h hh) =
-      e.coordChange e' :=
-  funext fun _ ↦ funext fun _ ↦ by
-    simp [Trivialization.coordChange, compTotalSpaceHomeomorph_apply]
-
-end TotalSpaceHomeomorph
-
 /-- A trivialization of a map `proj` as a trivialization, with the same base set, of the bundle of
 fibres of `proj`: the point `p` of the fibre over `b` is sent to `e p`. -/
 def toMapFiber : Trivialization F (π F (MapFiber proj)) :=
-  e.compTotalSpaceHomeomorph (MapFiber.totalSpaceHomeomorph F proj)
+  e.compHomeomorphOfEq (MapFiber.totalSpaceHomeomorph F proj)
     MapFiber.proj_totalSpaceHomeomorph
 
 @[simp]
 theorem toMapFiber_apply (x : TotalSpace F (MapFiber proj)) :
     e.toMapFiber x = e (MapFiber.totalSpaceHomeomorph F proj x) :=
-  (rfl)
+  e.compHomeomorphOfEq_apply _ _ x
 
 @[simp]
 theorem toMapFiber_symm_apply (y : B × F) :
     e.toMapFiber.toOpenPartialHomeomorph.symm y =
       (MapFiber.totalSpaceHomeomorph F proj).symm (e.toOpenPartialHomeomorph.symm y) :=
-  (rfl)
+  e.compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply _ _ y
 
 @[simp]
 theorem toMapFiber_baseSet : e.toMapFiber.baseSet = e.baseSet :=
-  (rfl)
+  e.compHomeomorphOfEq_baseSet _ _
 
 @[simp]
 theorem toMapFiber_source :
     e.toMapFiber.source = (MapFiber.totalSpaceHomeomorph F proj) ⁻¹' e.source :=
-  (rfl)
+  e.compHomeomorphOfEq_source _ _
 
 /-- The coordinate changes between trivializations of the fibres of `proj` are those between the
 trivializations of `proj` they come from. -/
 @[simp]
 theorem toMapFiber_coordChange (e' : Trivialization F proj) :
     e.toMapFiber.coordChange e'.toMapFiber = e.coordChange e' :=
-  (rfl)
+  e.compHomeomorphOfEq_coordChange e' (MapFiber.totalSpaceHomeomorph F proj)
+    MapFiber.proj_totalSpaceHomeomorph
+
+/-- `t.toMapFiber` is `G`-equivariant iff `t` intertwines the right `G`-action on
+`proj ⁻¹' t.baseSet` with right multiplication on the second factor `G`. -/
+theorem isEquivariant_toMapFiber_iff {G : Type*} [Group G] [TopologicalSpace G]
+    [MulAction Gᵐᵒᵖ P] (t : Trivialization G proj)
+    (hinv : ∀ (g : Gᵐᵒᵖ) (x : P), proj (g • x) = proj x) :
+    (letI := TauCeti.MapFiber.mulAction hinv; t.toMapFiber.IsEquivariant) ↔
+      ∀ x : P, proj x ∈ t.baseSet → ∀ g : G, (t (op g • x)).2 = (t x).2 * g :=
+  letI := TauCeti.MapFiber.mulAction hinv
+  isEquivariant_iff_of_equiv t.toMapFiber t (TauCeti.MapFiber.totalSpaceHomeomorph G proj).toEquiv
+    t.toMapFiber_baseSet
+    (fun p ↦ TauCeti.MapFiber.proj_totalSpaceHomeomorph p)
+    (fun p ↦ t.toMapFiber_apply p)
+    fun g p ↦ by
+      simp only [Homeomorph.coe_toEquiv, TauCeti.MapFiber.totalSpaceHomeomorph_apply]
+      exact TauCeti.MapFiber.coe_smul hinv (op g) p.snd
 
 end Bundle.Trivialization
 
@@ -259,16 +234,60 @@ namespace MapFiber
 
 variable (F) in
 /-- An atlas of a map `proj : P → B` with model fibre `F`: a trivialization `trivAt b` of `proj`
-whose base set contains `b`, for every point `b` of `B`. -/
+whose base set contains `b`, for every point `b` of `B`, together with the set `charts` of
+trivializations belonging to the atlas. -/
 structure Atlas (proj : P → B) where
   /-- The trivialization chosen at a point of the base. -/
   trivAt : B → Trivialization F proj
   /-- The trivialization chosen at `b` trivializes `proj` over a neighbourhood of `b`. -/
   mem_baseSet_trivAt : ∀ b, b ∈ (trivAt b).baseSet
+  /-- The set of trivializations belonging to the atlas. -/
+  charts : Set (Trivialization F proj)
+  /-- Every chosen trivialization `trivAt b` belongs to `charts`. -/
+  trivAt_mem_charts : ∀ b, trivAt b ∈ charts
 
 namespace Atlas
 
 variable {proj : P → B} (A : Atlas F proj)
+
+/-- Construct a `MapFiber.Atlas` from a choice of trivialization `trivAt b` at every base point
+`b`. -/
+def ofTrivAt (trivAt : B → Trivialization F proj)
+    (mem_baseSet_trivAt : ∀ b, b ∈ (trivAt b).baseSet) :
+    Atlas F proj where
+  trivAt := trivAt
+  mem_baseSet_trivAt := mem_baseSet_trivAt
+  charts := range trivAt
+  trivAt_mem_charts := mem_range_self
+
+/-- The chosen trivialization of `Atlas.ofTrivAt trivAt h` is `trivAt`. -/
+@[simp]
+theorem trivAt_ofTrivAt (trivAt : B → Trivialization F proj)
+    (mem_baseSet_trivAt : ∀ b, b ∈ (trivAt b).baseSet) :
+    (ofTrivAt trivAt mem_baseSet_trivAt).trivAt = trivAt :=
+  (rfl)
+
+/-- The chart set of `Atlas.ofTrivAt trivAt h` is `range trivAt`. -/
+@[simp]
+theorem charts_ofTrivAt (trivAt : B → Trivialization F proj)
+    (mem_baseSet_trivAt : ∀ b, b ∈ (trivAt b).baseSet) :
+    (ofTrivAt trivAt mem_baseSet_trivAt).charts = range trivAt :=
+  (rfl)
+
+/-- Construct a `MapFiber.Atlas` from a covering set `charts` of trivializations of `proj`. -/
+noncomputable def ofSet (charts : Set (Trivialization F proj))
+    (hcharts : ∀ b : B, ∃ t ∈ charts, b ∈ t.baseSet) : Atlas F proj where
+  trivAt b := (hcharts b).choose
+  mem_baseSet_trivAt b := (hcharts b).choose_spec.2
+  charts := charts
+  trivAt_mem_charts b := (hcharts b).choose_spec.1
+
+/-- The chart set of `Atlas.ofSet charts hcharts` is `charts`. -/
+@[simp]
+theorem charts_ofSet (charts : Set (Trivialization F proj))
+    (hcharts : ∀ b : B, ∃ t ∈ charts, b ∈ t.baseSet) :
+    (ofSet charts hcharts).charts = charts :=
+  (rfl)
 
 /-- **A family of fibres of a locally trivial map is a fibre bundle.** Let `Q` be a family of
 fibres over `B` whose total space is identified with `P` over `B` by the homeomorphism `h`, and in
@@ -279,10 +298,10 @@ def fiberBundleOfHomeomorph {Q : B → Type*} [TopologicalSpace (TotalSpace F Q)
     [∀ b, TopologicalSpace (Q b)] (h : TotalSpace F Q ≃ₜ P) (hh : ∀ x, proj (h x) = x.proj)
     (hQ : ∀ b, IsInducing (TotalSpace.mk b : Q b → TotalSpace F Q)) : FiberBundle F Q where
   totalSpaceMk_isInducing' := hQ
-  trivializationAtlas' := range fun b ↦ (A.trivAt b).compTotalSpaceHomeomorph h hh
-  trivializationAt' b := (A.trivAt b).compTotalSpaceHomeomorph h hh
-  mem_baseSet_trivializationAt' := A.mem_baseSet_trivAt
-  trivialization_mem_atlas' b := mem_range_self b
+  trivializationAtlas' := (fun t ↦ t.compHomeomorphOfEq h hh) '' A.charts
+  trivializationAt' b := (A.trivAt b).compHomeomorphOfEq h hh
+  mem_baseSet_trivializationAt' b := by simp [A.mem_baseSet_trivAt]
+  trivialization_mem_atlas' b := ⟨A.trivAt b, A.trivAt_mem_charts b, rfl⟩
 
 /-- The trivialization at `b` of the bundle `A.fiberBundleOfHomeomorph h hh hQ` is that of `A`,
 transported along `h`. -/
@@ -291,7 +310,7 @@ theorem trivializationAt_fiberBundleOfHomeomorph {Q : B → Type*}
     (hh : ∀ x, proj (h x) = x.proj) (hQ : ∀ b, IsInducing (TotalSpace.mk b : Q b → TotalSpace F Q))
     (b : B) :
     letI := A.fiberBundleOfHomeomorph h hh hQ
-    trivializationAt F Q b = (A.trivAt b).compTotalSpaceHomeomorph h hh :=
+    trivializationAt F Q b = (A.trivAt b).compHomeomorphOfEq h hh :=
   (rfl)
 
 /-- The trivializations of the atlas of `A.fiberBundleOfHomeomorph h hh hQ` are those of `A`,
@@ -301,7 +320,7 @@ theorem mem_trivializationAtlas_fiberBundleOfHomeomorph_iff {Q : B → Type*}
     (hh : ∀ x, proj (h x) = x.proj) (hQ : ∀ b, IsInducing (TotalSpace.mk b : Q b → TotalSpace F Q))
     (e : Trivialization F (π F Q)) :
     letI := A.fiberBundleOfHomeomorph h hh hQ
-    e ∈ trivializationAtlas F Q ↔ ∃ b, (A.trivAt b).compTotalSpaceHomeomorph h hh = e :=
+    e ∈ trivializationAtlas F Q ↔ ∃ t ∈ A.charts, t.compHomeomorphOfEq h hh = e :=
   Iff.rfl
 
 /-- **The fibre bundle of a locally trivial map.** The fibres of `proj`, with their subspace
@@ -317,16 +336,23 @@ theorem trivializationAt_eq (b : B) :
     trivializationAt F (MapFiber proj) b = (A.trivAt b).toMapFiber :=
   A.trivializationAt_fiberBundleOfHomeomorph _ _ _ b
 
+/-- The trivialization atlas of `A.fiberBundle` is
+`Bundle.Trivialization.toMapFiber '' A.charts`. -/
+@[simp]
+theorem trivializationAtlas_fiberBundle :
+    letI := A.fiberBundle
+    trivializationAtlas F (MapFiber proj) = Bundle.Trivialization.toMapFiber '' A.charts :=
+  (rfl)
+
 /-- The trivializations of the atlas of the bundle of fibres are those of `A`. -/
 theorem mem_trivializationAtlas_iff (e : Trivialization F (π F (MapFiber proj))) :
     letI := A.fiberBundle
-    e ∈ trivializationAtlas F (MapFiber proj) ↔ ∃ b, (A.trivAt b).toMapFiber = e :=
+    e ∈ trivializationAtlas F (MapFiber proj) ↔ ∃ t ∈ A.charts, t.toMapFiber = e :=
   A.mem_trivializationAtlas_fiberBundleOfHomeomorph_iff _ _ _ e
 
 end Atlas
 
 /-! ### Principal bundles given by their total space -/
-
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [MulAction Gᵐᵒᵖ P] {proj : P → B}
 
@@ -339,26 +365,26 @@ theorem Atlas.principalBundle_of_homeomorph (A : Atlas G proj) {Q : B → Type*}
     (h : TotalSpace G Q ≃ₜ P) (hh : ∀ x, proj (h x) = x.proj)
     (hQ : ∀ b, IsInducing (TotalSpace.mk b : Q b → TotalSpace G Q))
     (hsmul : ∀ b (q : Q b) (g : Gᵐᵒᵖ), h ⟨b, g • q⟩ = g • h ⟨b, q⟩)
-    (hA : ∀ b (p : P), proj p ∈ (A.trivAt b).baseSet → ∀ g : G,
-      (A.trivAt b (op g • p)).2 = (A.trivAt b p).2 * g) :
+    (hA : ∀ t ∈ A.charts, ∀ (p : P), proj p ∈ t.baseSet → ∀ g : G,
+      (t (op g • p)).2 = (t p).2 * g) :
     letI := A.fiberBundleOfHomeomorph h hh hQ
     PrincipalBundle G Q := by
   let := A.fiberBundleOfHomeomorph h hh hQ
   refine ⟨fun e he ↦ ?_⟩
-  obtain ⟨b, rfl⟩ := he.out
+  obtain ⟨t, ht, rfl⟩ := (A.mem_trivializationAtlas_fiberBundleOfHomeomorph_iff _ _ _ e).1 he.out
   refine ⟨fun b' hb' q g ↦ ?_⟩
-  have hq : proj (h ⟨b', q⟩) ∈ (A.trivAt b).baseSet := by
+  have hq : proj (h ⟨b', q⟩) ∈ t.baseSet := by
     rw [hh]
-    exact hb'
-  simpa only [Bundle.Trivialization.compTotalSpaceHomeomorph_apply, hsmul] using hA b _ hq g
+    simpa using hb'
+  simpa only [Bundle.Trivialization.compHomeomorphOfEq_apply, hsmul] using hA t ht _ hq g
 
 /-- **Principal bundles given by their total space.** Let `G` act on the right on `P`, preserving
 the fibres of `proj`, and let every trivialization of the atlas `A` intertwine the action with right
 multiplication on `G`. Then the fibres of `proj` form a principal `G`-bundle. -/
 theorem Atlas.principalBundle (A : Atlas G proj)
     (hproj : ∀ (g : Gᵐᵒᵖ) (p : P), proj (g • p) = proj p)
-    (hA : ∀ b (p : P), proj p ∈ (A.trivAt b).baseSet → ∀ g : G,
-      (A.trivAt b (op g • p)).2 = (A.trivAt b p).2 * g) :
+    (hA : ∀ t ∈ A.charts, ∀ (p : P), proj p ∈ t.baseSet → ∀ g : G,
+      (t (op g • p)).2 = (t p).2 * g) :
     letI := A.fiberBundle
     letI := mulAction hproj
     PrincipalBundle G (MapFiber proj) :=

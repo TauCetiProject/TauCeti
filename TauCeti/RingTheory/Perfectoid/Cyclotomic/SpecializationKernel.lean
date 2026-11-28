@@ -41,6 +41,9 @@ As a consequence the ideal `(μ)` does not depend on the choice of `ε`.
 * `PreTilt.mu_dvd_of_forall_fontaineTheta_iterate_eq_zero`: if `θ(φ^j(a)) = 0` for all `j`,
   then `μ ∣ a`.
 * `PreTilt.mem_span_mu_iff`: `a ∈ (μ)` if and only if `θ(φ^j(a)) = 0` for all `j`.
+* `PreTilt.frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero`,
+  `PreTilt.mem_span_frobeniusEquiv_symm_mu_iff`: the same for `τ = φ^(-1)(μ)` and `j ≥ 1`: `a ∈ (τ)`
+  if and only if `θ(φ^(j+1)(a)) = 0` for all `j`.
 * `PreTilt.span_mu_eq_span_mu`: the ideal `(μ)` is independent of `ε`.
 * `PreTilt.iInf_span_xiLevel_eq_span_mu`: `⋂_{r ≥ 1} (ξ_r) = (μ)`.
 
@@ -51,7 +54,10 @@ coordinate argument behind it are adapted from `New.Period.mu_dvd_of_theta_frobE
 `New.Period.Witt.dvd_of_mem_of_constantCoeff_dvd` and the auxiliary
 `pow_pow_dvd_constantCoeff_mu_of_eq_mul` in `src/Lib/PadicHodge/PeriodRings/Ainf.lean` of
 grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), where
-they are proved for `C = ℂ_p` with a fixed compatible system of roots of unity.
+they are proved for `C = ℂ_p` with a fixed compatible system of roots of unity. The `τ` statements
+`PreTilt.frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero` and
+`PreTilt.mem_span_frobeniusEquiv_symm_mu_iff` follow `New.Period.tau_dvd_of_theta_frobEnd` in the
+same file.
 
 ## References
 
@@ -159,6 +165,30 @@ theorem mem_span_mu_iff (ε : PreTilt (𝒪[C]) p)
   rw [iterate_map_mul, map_mul,
     fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero ε (ε.untilt_eq_one_of_isPrimitiveRoot hε),
     zero_mul]
+
+/-- An element of `A_inf` lies in `(τ)`, where `τ = φ^(-1)(μ)`, exactly when it is killed by
+`θ ∘ φ^j` for every `j ≥ 1`, provided the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of
+unity. -/
+theorem mem_span_frobeniusEquiv_symm_mu_iff (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
+    {a : WittVector p (PreTilt (𝒪[C]) p)} :
+    a ∈ Ideal.span {(frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε)} ↔
+      ∀ j, fontaineTheta (𝒪[C]) p (((frobeniusEquiv p (PreTilt (𝒪[C]) p))^[j + 1]) a) = 0 := by
+  rw [Ideal.mem_span_singleton, ← map_dvd_iff (frobeniusEquiv p (PreTilt (𝒪[C]) p)),
+    RingEquiv.apply_symm_apply, ← Ideal.mem_span_singleton, mem_span_mu_iff ε hε]
+  simp only [Function.iterate_succ_apply]
+
+/-- **Divisibility by `τ = φ^(-1)(μ)`.** If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root
+of unity and `θ(φ^j(a)) = 0` for every `j ≥ 1`, then `φ^(-1)(μ)` divides `a`. -/
+theorem frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero
+    (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
+    {a : WittVector p (PreTilt (𝒪[C]) p)}
+    (ha : ∀ j, fontaineTheta (𝒪[C]) p (((frobeniusEquiv p (PreTilt (𝒪[C]) p))^[j + 1]) a) = 0) :
+    (frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε) ∣ a :=
+  Ideal.mem_span_singleton.mp ((mem_span_frobeniusEquiv_symm_mu_iff ε hε).mpr ha)
 
 /-- The ideal `(μ)` does not depend on the choice of `ε`: any two admissible compatible systems
 of roots of unity give the same ideal. -/

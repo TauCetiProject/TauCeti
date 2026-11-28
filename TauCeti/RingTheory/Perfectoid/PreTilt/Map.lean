@@ -54,6 +54,8 @@ the corresponding constructions on the rings themselves.
 * `WittVector.theta_natural`: naturality of Fontaine's map.
 * `WittVector.map_mapEquiv_ker_fontaineTheta`: a ring isomorphism `e : A ≃+* B` induces an
   isomorphism `W(A♭) ≃+* W(B♭)` carrying `ker θ_A` onto `ker θ_B`.
+* `PreTilt.map_eq_map_iff`: if `θ_A` is surjective, ring homomorphisms `A → B` with the same tilt
+  are equal.
 
 ## References
 
@@ -205,3 +207,18 @@ theorem map_mapEquiv_ker_fontaineTheta (e : A ≃+* B) :
   simp [← comap_symm, RingHom.mem_ker]
 
 end WittVector
+
+namespace PreTilt
+
+variable {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : A)] [Fact ¬IsUnit (p : B)]
+  [IsAdicComplete (span {(p : A)}) A] [IsAdicComplete (span {(p : B)}) B]
+
+/-- **Tilting is faithful on rings with surjective Fontaine map.** If `θ_A` is surjective, for
+instance if `A` is integral perfectoid, two ring homomorphisms `A → B` with the same tilt are
+equal. -/
+theorem map_eq_map_iff (hθ : Function.Surjective (WittVector.fontaineTheta A p))
+    {h₁ h₂ : A →+* B} : map p h₁ = map p h₂ ↔ h₁ = h₂ := by
+  refine ⟨fun h ↦ (RingHom.cancel_right hθ).mp ?_, fun h ↦ h ▸ rfl⟩
+  rw [← WittVector.theta_natural_comp, ← WittVector.theta_natural_comp, h]
+
+end PreTilt
