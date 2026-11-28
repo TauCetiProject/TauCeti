@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicCompletion.Pi
 import Mathlib.RingTheory.Finiteness.Projective
+import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.RingTheory.AdicCompletion.Pow
 import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.LocalRing.Monogenic
@@ -53,6 +54,8 @@ their restrictions to the module.
 * `AdicCompletion.linearMap_ext_of_finite`: a linear map over the completion out of the completion
   of a finite module is determined on the image of the module, since
   `AdicCompletion.ofTensorProduct` is surjective.
+* `AdicCompletion.finite`: the `I`-adic completion of a finite `R`-module is a finite module over
+  `AdicCompletion I R`.
 
 ## References
 
@@ -162,3 +165,9 @@ theorem AdicCompletion.linearMap_ext_of_finite [Module.Finite R M] {P : Type*} [
   induction t using TensorProduct.inductionOn with
   | tmul a x => simp [ofTensorProduct_tmul, h]
   | add s t hs ht => simp [hs, ht]
+
+/-- The `I`-adic completion of a finite `R`-module is a finite module over the `I`-adic completion
+of `R`. No Noetherian hypothesis on `R` is needed. -/
+instance AdicCompletion.finite [Module.Finite R M] :
+    Module.Finite (AdicCompletion I R) (AdicCompletion I M) :=
+  Module.Finite.of_surjective (ofTensorProduct I M) (ofTensorProduct_surjective_of_finite I M)

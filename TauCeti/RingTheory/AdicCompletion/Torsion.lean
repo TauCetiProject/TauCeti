@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Finite
+import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
+import TauCeti.RingTheory.AdicCompletion.Algebra
 
 /-!
 # The completion action on ideal-power-torsion modules
@@ -21,6 +23,14 @@ residue modulo `I ^ n`. The hypothesis is membership of every element in
 `AdicCompletion.torsion_smul_eq` characterizes its action. Every `R`-linear map
 between such modules is linear for these completion actions, and restriction of scalars recovers
 the original action of `R`.
+
+When `I` is finitely generated, the same residue formula
+(`AdicCompletion.smul_eq_of_mem_torsionBySet`) holds for any `AdicCompletion I R`-module structure
+extending the `R`-action on an `I`-power-torsion module. Consequently, the `R`-submodules and
+`AdicCompletion I R`-submodules coincide
+(`TauCeti.AdicCompletion.submoduleOrderIsoOfPrimaryComponent`), preserving Artinianness and
+Noetherianness, and every `R`-linear map out of such a module is automatically completion-linear
+(`TauCeti.AdicCompletion.restrictScalarsEquivOfPrimaryComponent`).
 
 For a finite `R`-module `N`, `TauCeti.AdicCompletion.torsionLiftEquiv` identifies `R`-linear maps
 `N → M` with completion-linear maps `AdicCompletion I N → M`; its inverse is restriction along
@@ -188,6 +198,25 @@ namespace LinearMap
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
 variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+private theorem map_adicCompletion_smul_of_eq [Module (AdicCompletion I R) M]
+    [Module (AdicCompletion I R) N]
+    (hM_smul : ∀ (a : AdicCompletion I R) (x : M) {n : ℕ} (r : R),
+      x ∈ Submodule.torsionBySet R M ↑(I ^ n) →
+      AdicCompletion.evalₐ I n a = Ideal.Quotient.mk (I ^ n) r → a • x = r • x)
+    (hN_smul : ∀ (a : AdicCompletion I R) (y : N) {n : ℕ} (r : R),
+      y ∈ Submodule.torsionBySet R N ↑(I ^ n) →
+      AdicCompletion.evalₐ I n a = Ideal.Quotient.mk (I ^ n) r → a • y = r • y)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) (f : M →ₗ[R] N)
+    (a : AdicCompletion I R) (x : M) : f (a • x) = a • f x := by
+  obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem M I x).mp (hM x)
+  have hfx : f x ∈ Submodule.torsionBySet R N ↑(I ^ n) := by
+    rw [Submodule.mem_torsionBySet_iff] at hn ⊢
+    intro r
+    rw [← f.map_smul, hn r, f.map_zero]
+  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n a)
+  rw [hM_smul a x r hn hr.symm, hN_smul a (f x) r hfx hr.symm, f.map_smul]
+
 variable (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
 variable (hN : ∀ y : N, y ∈ Ideal.primaryComponent N I)
 
@@ -197,15 +226,13 @@ completion actions. -/
 theorem map_adicCompletion_smul (f : M →ₗ[R] N) (a : AdicCompletion I R) (x : M) :
     letI := TauCeti.AdicCompletion.torsionModule hM
     letI := TauCeti.AdicCompletion.torsionModule hN
-    f (a • x) = a • f x := by
-  obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem M I x).mp (hM x)
-  have hfx : f x ∈ Submodule.torsionBySet R N ↑(I ^ n) := by
-    rw [Submodule.mem_torsionBySet_iff] at hn ⊢
-    intro r
-    rw [← f.map_smul, hn r, f.map_zero]
-  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n a)
-  rw [a.torsion_smul_eq hM x r hn hr.symm,
-    a.torsion_smul_eq hN (f x) r hfx hr.symm, f.map_smul]
+    f (a • x) = a • f x :=
+  letI := TauCeti.AdicCompletion.torsionModule hM
+  letI := TauCeti.AdicCompletion.torsionModule hN
+  map_adicCompletion_smul_of_eq
+    (fun a x {_} r hx ha ↦ a.torsion_smul_eq hM x r hx ha)
+    (fun a y {_} r hy ha ↦ a.torsion_smul_eq hN y r hy ha)
+    hM f a x
 
 end LinearMap
 
@@ -213,6 +240,7 @@ namespace TauCeti.AdicCompletion
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
 variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
 variable (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
 variable (hN : ∀ y : N, y ∈ Ideal.primaryComponent N I)
 
@@ -221,17 +249,10 @@ variable (hN : ∀ y : N, y ∈ Ideal.primaryComponent N I)
 def torsionRestrictScalarsEquiv :
     letI := TauCeti.AdicCompletion.torsionModule hM
     letI := TauCeti.AdicCompletion.torsionModule hN
-    (M →ₗ[AdicCompletion I R] N) ≃ₗ[R] (M →ₗ[R] N) := by
+    (M →ₗ[AdicCompletion I R] N) ≃ₗ[R] (M →ₗ[R] N) :=
   letI := TauCeti.AdicCompletion.torsionModule hM
   letI := TauCeti.AdicCompletion.torsionModule hN
-  exact
-    { LinearMap.restrictScalarsₗ R (AdicCompletion I R) M N R with
-      invFun := fun f ↦
-        { toFun := f
-          map_add' := f.map_add
-          map_smul' := f.map_adicCompletion_smul hM hN }
-      left_inv := fun f ↦ by ext; rfl
-      right_inv := fun f ↦ by ext; rfl }
+  LinearMap.restrictScalarsEquivOfMapSmul R fun f ↦ f.map_adicCompletion_smul hM hN
 
 /-- The comparison of Hom modules is restriction of scalars. -/
 @[simp]
@@ -239,12 +260,21 @@ theorem torsionRestrictScalarsEquiv_apply
     (f : letI := TauCeti.AdicCompletion.torsionModule hM
          letI := TauCeti.AdicCompletion.torsionModule hN
          M →ₗ[AdicCompletion I R] N) (x : M) :
-    torsionRestrictScalarsEquiv hM hN f x = f x := (rfl)
+    torsionRestrictScalarsEquiv hM hN f x = f x := by
+  let := TauCeti.AdicCompletion.torsionModule hM
+  let := TauCeti.AdicCompletion.torsionModule hN
+  exact congrArg (fun g : M →ₗ[R] N ↦ g x)
+    (LinearMap.restrictScalarsEquivOfMapSmul_apply R
+      (fun f ↦ f.map_adicCompletion_smul hM hN) f)
 
 /-- Extending a linear map to the canonical completion actions preserves its values. -/
 @[simp]
 theorem torsionRestrictScalarsEquiv_symm_apply (f : M →ₗ[R] N) (x : M) :
-    (torsionRestrictScalarsEquiv hM hN).symm f x = f x := (rfl)
+    (torsionRestrictScalarsEquiv hM hN).symm f x = f x := by
+  let := TauCeti.AdicCompletion.torsionModule hM
+  let := TauCeti.AdicCompletion.torsionModule hN
+  exact LinearMap.restrictScalarsEquivOfMapSmul_symm_apply R
+    (fun f ↦ f.map_adicCompletion_smul hM hN) f x
 
 open _root_.AdicCompletion
 
@@ -355,5 +385,143 @@ theorem torsionLiftEquiv_symm_apply
     (g : letI := torsionModule hM
          AdicCompletion I N →ₗ[AdicCompletion I R] M) (x : N) :
     (torsionLiftEquiv hM).symm g x = g (of I N x) := (rfl)
+
+end TauCeti.AdicCompletion
+
+namespace AdicCompletion
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+variable {M : Type*} [AddCommGroup M] [Module R M]
+variable [Module (AdicCompletion I R) M] [IsScalarTower R (AdicCompletion I R) M]
+
+/-- Any `AdicCompletion I R`-module structure extending the `R`-action acts on an element killed
+by `I ^ n` via `r` whenever `a - algebraMap R (AdicCompletion I R) r` lies in `(I ^ n).map _`. -/
+theorem smul_eq_of_sub_mem_map_pow (a : AdicCompletion I R) {x : M} {n : ℕ} (r : R)
+    (hx : x ∈ Submodule.torsionBySet R M ↑(I ^ n))
+    (ha : a - algebraMap R (AdicCompletion I R) r ∈
+      (I ^ n).map (algebraMap R (AdicCompletion I R))) :
+    a • x = r • x := by
+  have hzero : (a - algebraMap R (AdicCompletion I R) r) • x = 0 :=
+    (Submodule.mem_torsionBySet_iff _ _).mp
+      ((Submodule.mem_torsionBySet_map_iff (S := AdicCompletion I R) (I ^ n)).mpr hx) ⟨_, ha⟩
+  rw [sub_smul, algebraMap_smul, sub_eq_zero] at hzero
+  exact hzero
+
+/-- For a finitely generated ideal `I`, any `AdicCompletion I R`-module structure extending the
+`R`-action acts on an element killed by `I ^ n` through its residue modulo `I ^ n`. -/
+theorem smul_eq_of_mem_torsionBySet (a : AdicCompletion I R) (hI : I.FG) {x : M} {n : ℕ} (r : R)
+    (hx : x ∈ Submodule.torsionBySet R M ↑(I ^ n))
+    (ha : evalₐ I n a = Ideal.Quotient.mk (I ^ n) r) :
+    a • x = r • x := by
+  refine a.smul_eq_of_sub_mem_map_pow r hx ?_
+  rw [← ker_evalₐ_eq_map_pow hI n, RingHom.mem_ker]
+  simp [ha, algebraMap_apply, evalₐ_of]
+
+end AdicCompletion
+
+namespace LinearMap
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+variable [Module (AdicCompletion I R) M] [IsScalarTower R (AdicCompletion I R) M]
+variable [Module (AdicCompletion I R) N] [IsScalarTower R (AdicCompletion I R) N]
+
+/-- For a finitely generated ideal `I`, every `R`-linear map out of an `I`-power-torsion module
+automatically commutes with any compatible `AdicCompletion I R`-actions on domain and codomain. -/
+theorem map_adicCompletion_smul_of_fg (f : M →ₗ[R] N) (hI : I.FG)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) (a : AdicCompletion I R) (x : M) :
+    f (a • x) = a • f x :=
+  map_adicCompletion_smul_of_eq
+    (fun a _ {_} r hx ha ↦ a.smul_eq_of_mem_torsionBySet hI r hx ha)
+    (fun a _ {_} r hy ha ↦ a.smul_eq_of_mem_torsionBySet hI r hy ha)
+    hM f a x
+
+end LinearMap
+
+namespace TauCeti.AdicCompletion
+
+open _root_.AdicCompletion
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+variable [Module (_root_.AdicCompletion I R) M] [IsScalarTower R (_root_.AdicCompletion I R) M]
+
+/-- For a finitely generated ideal `I` and an `I`-power-torsion module `M` equipped with a
+compatible `AdicCompletion I R`-action, restriction of scalars identifies completion-linear maps
+out of `M` with `R`-linear maps, as an `AdicCompletion I R`-linear equivalence. -/
+def restrictScalarsEquivOfPrimaryComponent (hI : I.FG)
+    [Module (_root_.AdicCompletion I R) N] [IsScalarTower R (_root_.AdicCompletion I R) N]
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) :
+    (M →ₗ[_root_.AdicCompletion I R] N) ≃ₗ[_root_.AdicCompletion I R] (M →ₗ[R] N) :=
+  LinearMap.restrictScalarsEquivOfMapSmul (_root_.AdicCompletion I R)
+    fun f ↦ f.map_adicCompletion_smul_of_fg hI hM
+
+/-- `restrictScalarsEquivOfPrimaryComponent` is restriction of scalars. -/
+@[simp]
+theorem restrictScalarsEquivOfPrimaryComponent_apply (hI : I.FG)
+    [Module (_root_.AdicCompletion I R) N] [IsScalarTower R (_root_.AdicCompletion I R) N]
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
+    (f : M →ₗ[_root_.AdicCompletion I R] N) :
+    restrictScalarsEquivOfPrimaryComponent hI hM f = f.restrictScalars R :=
+  LinearMap.restrictScalarsEquivOfMapSmul_apply (_root_.AdicCompletion I R)
+    (fun f ↦ f.map_adicCompletion_smul_of_fg hI hM) f
+
+/-- The inverse of `restrictScalarsEquivOfPrimaryComponent` preserves values. -/
+@[simp]
+theorem restrictScalarsEquivOfPrimaryComponent_symm_apply_apply (hI : I.FG)
+    [Module (_root_.AdicCompletion I R) N] [IsScalarTower R (_root_.AdicCompletion I R) N]
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
+    (f : M →ₗ[R] N) (x : M) :
+    (restrictScalarsEquivOfPrimaryComponent hI hM).symm f x = f x :=
+  LinearMap.restrictScalarsEquivOfMapSmul_symm_apply (_root_.AdicCompletion I R)
+    (fun f ↦ f.map_adicCompletion_smul_of_fg hI hM) f x
+
+/-- For a finitely generated ideal `I` and an `I`-power-torsion module `M` equipped with a
+compatible `AdicCompletion I R`-action, the `AdicCompletion I R`-submodules and `R`-submodules
+of `M` coincide. -/
+def submoduleOrderIsoOfPrimaryComponent (hI : I.FG)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) :
+    Submodule (_root_.AdicCompletion I R) M ≃o Submodule R M where
+  toFun P := P.restrictScalars R
+  invFun P :=
+    { P with
+      smul_mem' a x hx := by
+        obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem M I x).mp (hM x)
+        obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (evalₐ I n a)
+        rw [a.smul_eq_of_mem_torsionBySet hI r hn hr.symm]
+        exact P.smul_mem r hx }
+  left_inv _ := Submodule.ext fun _ ↦ Iff.rfl
+  right_inv _ := Submodule.ext fun _ ↦ Iff.rfl
+  map_rel_iff' := Iff.rfl
+
+/-- `submoduleOrderIsoOfPrimaryComponent` restricts scalars to `R`. -/
+@[simp]
+theorem submoduleOrderIsoOfPrimaryComponent_apply (hI : I.FG)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
+    (P : Submodule (_root_.AdicCompletion I R) M) :
+    submoduleOrderIsoOfPrimaryComponent hI hM P = P.restrictScalars R := (rfl)
+
+/-- An element belongs to the completion-submodule corresponding to `P` iff it belongs to `P`. -/
+@[simp]
+theorem mem_submoduleOrderIsoOfPrimaryComponent_symm (hI : I.FG)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) (P : Submodule R M) (x : M) :
+    x ∈ (submoduleOrderIsoOfPrimaryComponent hI hM).symm P ↔ x ∈ P := Iff.rfl
+
+/-- For a finitely generated ideal `I` and an `I`-power-torsion module `M` with a compatible
+completion action, `M` is Artinian over `AdicCompletion I R` iff it is Artinian over `R`. -/
+theorem isArtinian_iff_of_primaryComponent (hI : I.FG)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) :
+    IsArtinian (_root_.AdicCompletion I R) M ↔ IsArtinian R M :=
+  let e := submoduleOrderIsoOfPrimaryComponent hI hM
+  ⟨fun _ ↦ e.symm.strictMono.wellFoundedLT, fun _ ↦ e.strictMono.wellFoundedLT⟩
+
+/-- For a finitely generated ideal `I` and an `I`-power-torsion module `M` with a compatible
+completion action, `M` is Noetherian over `AdicCompletion I R` iff it is Noetherian over `R`. -/
+theorem isNoetherian_iff_of_primaryComponent (hI : I.FG)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) :
+    IsNoetherian (_root_.AdicCompletion I R) M ↔ IsNoetherian R M := by
+  let e := submoduleOrderIsoOfPrimaryComponent hI hM
+  rw [isNoetherian_iff, isNoetherian_iff]
+  exact ⟨fun _ ↦ e.symm.strictMono.wellFoundedGT, fun _ ↦ e.strictMono.wellFoundedGT⟩
 
 end TauCeti.AdicCompletion

@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MatlisDuality.Finite
+import TauCeti.Algebra.Module.Dual.Bidual
 
 /-!
 # Matlis duality for Artinian modules over a complete local ring
 
 Let `R` be a Noetherian local ring, complete for its maximal ideal, and let `E` be an injective
 hull of its residue field, with Matlis dual `D(M) = Hom_R(M, E)`. For an Artinian module `M`, this
-file proves that `D(M)` is finitely generated and that evaluation `M → D(D(M))` is bijective. With
-the finitely generated case of `TauCeti/RingTheory/MatlisDuality/Finite.lean`, the dual exchanges
-the two classes: `M` is Artinian exactly when `D(M)` is finitely generated, and finitely generated
-exactly when `D(M)` is Artinian. The residue field may be infinite.
+file proves that `D(M)` is finitely generated, that evaluation `M → D(D(M))` is bijective, and
+that `Hom_R(-, E)` is bijective on morphisms into `M`. With the finitely generated case of
+`TauCeti/RingTheory/MatlisDuality/Finite.lean`, the dual exchanges the two classes: `M` is Artinian
+exactly when `D(M)` is finitely generated, and finitely generated exactly when `D(M)` is Artinian.
+The residue field may be infinite.
 
 Finiteness of `D(M)` is `TauCeti.finite_linearMap_of_isArtinian`, since completeness makes every
 endomorphism of `E` a scalar. For biduality, evaluation on `M` is injective because `E` is a
@@ -29,6 +31,8 @@ so no nonzero functional vanishes on that image, and evaluation on `M` is surjec
   finitely generated.
 * `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_of_isArtinian` and
   `TauCeti.IsInjectiveEnvelope.evalEquivOfIsArtinian`: biduality for Artinian modules.
+* `TauCeti.IsInjectiveEnvelope.bijective_lcomp_of_isArtinian`: `Hom_R(-, E)` is bijective on
+  morphisms into any Artinian module.
 * `TauCeti.IsInjectiveEnvelope.isArtinian_iff_finite_linearMap` and
   `TauCeti.IsInjectiveEnvelope.finite_iff_isArtinian_linearMap`: the dual exchanges Artinian and
   finitely generated modules.
@@ -43,7 +47,7 @@ public section
 
 noncomputable section
 
-universe u v w
+universe u v w z
 
 namespace TauCeti.IsInjectiveEnvelope
 
@@ -116,5 +120,12 @@ theorem finite_iff_isArtinian_linearMap : Module.Finite R M ↔ IsArtinian R (M 
   -- `M` embeds by evaluation into its double dual, which is finitely generated.
   have := hι.finite_linearMap_of_isArtinian (M →ₗ[R] E)
   exact Module.Finite.of_injective _ (injective_applyₗ_of_injective (M := M) hι.injective)
+
+/-- Over a complete Noetherian local ring, Matlis duality is bijective on morphisms into any
+Artinian module. -/
+theorem bijective_lcomp_of_isArtinian
+    (N : Type z) [AddCommGroup N] [Module R N] [IsArtinian R N] :
+    Function.Bijective (fun f : M →ₗ[R] N ↦ f.lcomp R E) :=
+  bijective_lcomp_of_bijective_applyₗ (hι.bijective_applyₗ_of_isArtinian N)
 
 end TauCeti.IsInjectiveEnvelope

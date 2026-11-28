@@ -8,13 +8,15 @@ module
 public import TauCeti.Algebra.Module.Injective.Bidual
 public import TauCeti.RingTheory.MatlisDuality.Artinian
 public import TauCeti.RingTheory.MatlisDuality.Endomorphism
+import TauCeti.Algebra.Module.Dual.Bidual
 
 /-!
 # Matlis duality for finitely generated modules
 
 Let `R` be a Noetherian local ring and `E` an injective hull of its residue field.
 The hull and the Matlis dual `Hom_R(M, E)` of every finitely generated `R`-module `M`
-are Artinian. If `R` is complete, evaluation identifies `M` with its double Matlis dual.
+are Artinian. If `R` is complete, evaluation identifies `M` with its double Matlis dual,
+and `Hom_R(-, E)` is bijective on morphisms into `M`.
 The residue field may be infinite.
 
 Completeness identifies the existing endomorphism algebra `End_R(E) ≅ R̂` with `R`.
@@ -32,7 +34,7 @@ public section
 
 noncomputable section
 
-universe u v w
+universe u v w z
 
 namespace TauCeti.IsInjectiveEnvelope
 
@@ -60,7 +62,11 @@ theorem isArtinian_linearMap_of_finite (M : Type w) [AddCommGroup M] [Module R M
   exact isArtinian_of_injective (e.toLinearMap.comp (f.lcomp R E))
     (e.injective.comp (LinearMap.lcomp_injective_of_surjective f hf))
 
+section Complete
+
 variable [IsAdicComplete (maximalIdeal R) R]
+
+section Eval
 
 variable (M : Type w) [AddCommGroup M] [Module R M] [Module.Finite R M]
 
@@ -87,5 +93,16 @@ theorem evalEquivOfFinite_symm_apply_apply (φ : (M →ₗ[R] E) →ₗ[R] E) (f
   simpa only [evalEquivOfFinite_apply_apply] using
     congrArg (fun ψ : (M →ₗ[R] E) →ₗ[R] E ↦ ψ f)
       ((hι.evalEquivOfFinite M).apply_symm_apply φ)
+
+end Eval
+
+/-- Over a complete Noetherian local ring, Matlis duality is bijective on morphisms into any
+finitely generated module. -/
+theorem bijective_lcomp_of_finite (M : Type w) [AddCommGroup M] [Module R M]
+    (N : Type z) [AddCommGroup N] [Module R N] [Module.Finite R N] :
+    Function.Bijective (fun f : M →ₗ[R] N ↦ f.lcomp R E) :=
+  bijective_lcomp_of_bijective_applyₗ (hι.bijective_applyₗ_of_finite N)
+
+end Complete
 
 end TauCeti.IsInjectiveEnvelope

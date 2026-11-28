@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Basic
+public import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.RingTheory.Length.Algebra
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
@@ -102,29 +103,13 @@ noncomputable def matlisDualityOn (P : ObjectProperty (ModuleCat.{max v w} A))
     (Q : ObjectProperty (ModuleCat.{max v w} Aᵐᵒᵖ))
     (hP : ∀ M, P M → IsFiniteLength R M) (hQ : ∀ N, Q N → IsFiniteLength R N)
     (hPQ : ∀ M, P M → Q (matlisDualObj R E M)) (hQP : ∀ N, Q N → P (matlisDualOpObj R E N)) :
-    P.FullSubcategoryᵒᵖ ≌ Q.FullSubcategory where
-  functor := ObjectProperty.lift _ (P.ι.op ⋙ matlisDual R E) fun M => hPQ _ M.unop.property
-  inverse := (ObjectProperty.lift _ (Q.ι.op ⋙ matlisDualOp R E) fun N =>
-    hQP _ N.unop.property).rightOp
-  unitIso := NatIso.ofComponents (fun M =>
-      (ObjectProperty.isoMk _ (matlisDualEvalIso hE M.unop.obj (hP _ M.unop.property))).symm.op)
-    (fun {X Y} g => Quiver.Hom.unop_inj <| (Iso.inv_comp_eq _).mpr <|
-      ((Iso.eq_comp_inv _).mpr <| ObjectProperty.hom_ext _ <|
-        matlisDualEvalIso_hom_naturality hE g.unop.hom (hP _ Y.unop.property)
-          (hP _ X.unop.property)).trans (Category.assoc _ _ _))
-  counitIso := NatIso.ofComponents (fun N =>
-      (ObjectProperty.isoMk _ (matlisDualEvalIsoOp (A := A) hE N.obj (hQ _ N.property))).symm)
-    (fun {X Y} g => (Iso.comp_inv_eq _).mpr <| ((Iso.eq_inv_comp _).mpr <|
-      (ObjectProperty.hom_ext _ <|
-        (matlisDualEvalIsoOp_hom_naturality (A := A) hE g.hom (hQ _ X.property)
-          (hQ _ Y.property)).symm)).trans
-        (Category.assoc _ _ _).symm)
-  functor_unitIso_comp M := by
-    refine ObjectProperty.hom_ext _ ?_
-    exact (Iso.comp_inv_eq_id (matlisDualEvalIsoOp (A := A) hE (matlisDualObj R E M.unop.obj)
-      (hQ _ (hPQ _ M.unop.property)))).mpr
-      (matlisDualEvalIsoOp_matlisDualObj_hom hE M.unop.obj (hP _ M.unop.property)
-        (hQ _ (hPQ _ M.unop.property))).symm
+    P.FullSubcategoryᵒᵖ ≌ Q.FullSubcategory :=
+  ObjectProperty.antiEquivalence P Q (matlisDual R E) (matlisDualOp R E) hPQ hQP
+    (fun M hM => matlisDualEvalIso hE M (hP M hM))
+    (fun hX hX' g => matlisDualEvalIso_hom_naturality hE g (hP _ hX) (hP _ hX'))
+    (fun N hN => matlisDualEvalIsoOp (A := A) hE N (hQ N hN))
+    (fun hY hY' g => matlisDualEvalIsoOp_hom_naturality (A := A) hE g (hQ _ hY) (hQ _ hY'))
+    (fun M hM => matlisDualEvalIsoOp_matlisDualObj_hom hE M (hP M hM) (hQ _ (hPQ M hM)))
 
 section OnLemmas
 
