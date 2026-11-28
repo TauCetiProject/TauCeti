@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
+public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 public import TauCeti.CategoryTheory.Preadditive.AdditiveFunctor
+
+import Mathlib.Algebra.Category.ModuleCat.Abelian
+import Mathlib.Algebra.Category.ModuleCat.Colimits
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 
 /-!
 # Module-valued lifts of additive functors
@@ -31,7 +36,7 @@ public section
 
 universe w
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace CategoryTheory.AdditiveFunctor
 
@@ -172,6 +177,63 @@ theorem liftToModuleCatFunctor_obj :
 theorem liftToModuleCatFunctor_map_app_apply {F G : D ⥤+ AddCommGrpCat.{w}} (α : F ⟶ G)
     (X : D) (x : (F.liftToModuleCat R).obj X) :
     (((liftToModuleCatFunctor (D := D) R).map α).app X).hom x = α.hom.app X x := (rfl)
+
+variable (D) in
+/-- Forgetting the scalars of the module-valued lift recovers the inclusion of additive
+functors into the functor category. -/
+def liftToModuleCatFunctorForgetIso :
+    liftToModuleCatFunctor.{w} D R ⋙
+      (Functor.whiskeringRight D _ _).obj (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}) ≅
+      (additiveFunctor D AddCommGrpCat.{w}).ι :=
+  NatIso.ofComponents (fun F ↦ F.liftToModuleCatForgetIso R) (by
+    intro F G α
+    apply NatTrans.ext
+    funext X
+    simp only [Functor.comp_map, Functor.whiskeringRight_obj_map, Functor.whiskerRight_app,
+      NatTrans.comp_app, ObjectProperty.ι_map]
+    apply AddCommGrpCat.ext
+    intro x
+    simp only [ConcreteCategory.comp_apply]
+    rewrite (config := { transparency := .default })
+      [liftToModuleCatForgetIso_hom_app_apply R G X, ModuleCat.forget₂_map]
+    exact liftToModuleCatFunctor_map_app_apply R α X x)
+
+/-- The functorial comparison at each additive functor is its pointwise forgetful comparison. -/
+@[simp]
+theorem liftToModuleCatFunctorForgetIso_app (F : D ⥤+ AddCommGrpCat.{w}) :
+    (liftToModuleCatFunctorForgetIso D R).app F = F.liftToModuleCatForgetIso R := (rfl)
+
+variable (D) in
+private abbrev whiskerForgetScalars : (D ⥤ ModuleCat.{w} R) ⥤ D ⥤ AddCommGrpCat.{w} :=
+  (Functor.whiskeringRight D _ _).obj (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
+
+instance : (liftToModuleCatFunctor.{w} D R).Additive := by
+  have : (liftToModuleCatFunctor.{w} D R ⋙ whiskerForgetScalars D R).Additive :=
+    Functor.additive_of_iso (liftToModuleCatFunctorForgetIso D R).symm
+  exact Functor.additive_of_comp_faithful _ (whiskerForgetScalars D R)
+
+instance : (liftToModuleCatFunctor.{w} D R).Faithful :=
+  Functor.Faithful.of_comp_iso (liftToModuleCatFunctorForgetIso D R)
+
+instance : PreservesFiniteLimits (liftToModuleCatFunctor.{w} D R) := by
+  have : HasLimitsOfSize.{0, 0} (ModuleCat.{w} R) := ModuleCat.hasLimitsOfSize.{0, 0, w}
+  have : PreservesFiniteLimits (additiveFunctor D AddCommGrpCat.{w}).ι :=
+    ⟨fun _ _ _ ↦ inferInstance⟩
+  have : PreservesFiniteLimits (liftToModuleCatFunctor.{w} D R ⋙ whiskerForgetScalars D R) :=
+    preservesFiniteLimits_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
+  have : ReflectsFiniteLimits (whiskerForgetScalars.{w} D R) := ⟨fun _ _ _ ↦ inferInstance⟩
+  exact preservesFiniteLimits_of_reflects_of_preserves (liftToModuleCatFunctor.{w} D R)
+    (whiskerForgetScalars D R)
+
+instance : PreservesFiniteColimits (liftToModuleCatFunctor.{w} D R) := by
+  have : PreservesFiniteColimits (additiveFunctor D AddCommGrpCat.{w}).ι :=
+    ⟨fun _ _ _ ↦ inferInstance⟩
+  have : PreservesFiniteColimits (liftToModuleCatFunctor.{w} D R ⋙ whiskerForgetScalars D R) :=
+    preservesFiniteColimits_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
+  have : ReflectsFiniteColimits (whiskerForgetScalars.{w} D R) :=
+    { reflects := fun _ _ _ ↦ reflectsColimitsOfShape_of_reflectsIsomorphisms }
+  exact preservesFiniteColimits_of_reflects_of_preserves (liftToModuleCatFunctor.{w} D R)
+    (whiskerForgetScalars D R)
 
 end CategoryTheory.AdditiveFunctor
 

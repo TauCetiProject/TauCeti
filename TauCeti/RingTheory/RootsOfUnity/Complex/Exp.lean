@@ -23,6 +23,7 @@ numbers strictly less than `h`.
 * `TauCeti.injOn_exp_two_pi_I_div`: `e ↦ exp(2πi * (e / h))` is injective on `Set.Iio h`.
 * `TauCeti.nodup_map_exp_two_pi_I_div`: distinct natural numbers strictly below `h` map to
   distinct complex roots of unity `exp(2πi * (e / h))`.
+* `TauCeti.one_add_exp_two_pi_mul_I_div_ne_zero`: `1 + exp(2πi / l) ≠ 0` for `3 ≤ l`.
 -/
 
 public section
@@ -65,5 +66,15 @@ theorem nodup_map_exp_two_pi_I_div {h : ℕ} {l : List ℕ} (hnd : l.Nodup)
     (l.map fun e : ℕ => exp (2 * π * I * ((e : ℂ) / (h : ℂ)))).Nodup :=
   (List.nodup_map_iff_inj_on hnd).mpr fun _ ha _ hb =>
     injOn_exp_two_pi_I_div h (hlt _ ha) (hlt _ hb)
+
+/-- `1 + exp (2 * π * I / l) ≠ 0` for `3 ≤ l`: if `exp (2 * π * I / l) = -1`, then its square
+would be `1`, contradicting that it is a primitive `l`-th root of unity. -/
+theorem one_add_exp_two_pi_mul_I_div_ne_zero {l : ℕ} (hl : 3 ≤ l) :
+    1 + exp (2 * π * I / l) ≠ 0 := by
+  intro h0
+  have hζ : exp (2 * π * I / l) = -1 := eq_neg_of_add_eq_zero_right h0
+  have hsq : exp (2 * π * I / l) ^ 2 = 1 := by rw [hζ, neg_one_sq]
+  exact (Complex.isPrimitiveRoot_exp l (by omega)).pow_ne_one_of_pos_of_lt two_ne_zero
+    (by omega) hsq
 
 end TauCeti

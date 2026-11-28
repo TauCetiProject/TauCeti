@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
@@ -26,11 +27,28 @@ The unit-shift case is already supplied by `Complex.hasMellin_one_add_cpow_neg`.
 Scaling gives the arbitrary positive shift. These formulas supply the model integrals
 for expansions of Stieltjes transforms.
 
+On `(0, 1) × ℝ`, a Beta kernel `t ^ (u y - 1) * (1 - t) ^ (v y - 1)` whose exponent functions
+`u, v : ℝ → ℂ` are measurable with constant positive real parts `u₀, v₀` combines with any
+integrable function `g : ℝ → ℂ` into a product-integrable kernel
+`Complex.integrable_beta_mul_profile`, justifying Fubini swaps in Beta-weighted vertical
+integrals.
+
 For `0 < α < 1` the Stieltjes transform of `t ^ (-α)` is
 `∫₀^∞ t ^ (-α) (t + z)⁻¹ dt = π / sin (π α) * z ^ (-α)` for every `z` in the slit plane
 (`Complex.integral_cpow_neg_mul_inv_add`). For positive real `z` this is Euler's integral
 `B(1 - α, α) = π / sin (π α)` after scaling; both sides are holomorphic in `z` on the slit plane,
 so the identity theorem extends it there.
+
+## Main results
+
+* `Complex.integrableOn_cpow_mul_add_cpow`: absolute integrability on `(0, ∞)` of the shifted
+  complex beta kernel `t ^ (a - 1) * (x + t) ^ (-(a + b))`.
+* `Complex.integral_cpow_mul_add_cpow`: evaluation of the shifted complex beta integral (DLMF
+  2.6.4).
+* `Complex.integrable_beta_mul_profile`: product integrability on `(0, 1) × ℝ` of
+  `t ^ (u y - 1) * (1 - t) ^ (v y - 1) * g y` when `Re (u y) = u₀ > 0`, `Re (v y) = v₀ > 0`,
+  and `g` is integrable on `ℝ`.
+* `Complex.integral_cpow_neg_mul_inv_add`: the Stieltjes transform of `t ^ (-α)` on the slit plane.
 
 ## References
 
@@ -100,6 +118,47 @@ theorem integral_cpow_mul_add_cpow {a b : ℂ} {x : ℝ}
     _ = (Gamma a * Gamma b / Gamma (a + b)) *
         ((x : ℂ) ^ (1 : ℂ) * (x : ℂ) ^ (-b - 1)) := by rw [cpow_one]; ring
     _ = _ := by rw [← cpow_add _ _ hx0]; congr 2; ring
+
+/-- Product integrability on `(0, 1) × ℝ` of a Beta-weighted kernel
+`(t, y) ↦ t ^ (u y - 1) * (1 - t) ^ (v y - 1) * g y`, where `u, v : ℝ → ℂ` are measurable with
+constant positive real parts `u₀, v₀` and `g : ℝ → ℂ` is integrable on `ℝ`. -/
+theorem integrable_beta_mul_profile {u₀ v₀ : ℝ} {u v : ℝ → ℂ} {g : ℝ → ℂ}
+    (hu_meas : Measurable u) (hv_meas : Measurable v)
+    (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
+    (hu₀ : 0 < u₀) (hv₀ : 0 < v₀) (hg_int : Integrable g) :
+    Integrable
+      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
+  have hmeas_oo : (volume.restrict (Ioo (0 : ℝ) 1)).prod (volume : Measure ℝ) =
+      volume.restrict (Ioo (0 : ℝ) 1 ×ˢ (univ : Set ℝ)) := by
+    simpa [Measure.volume_eq_prod] using
+      Measure.prod_restrict (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ))
+        (Ioo 0 1) univ
+  have hφ : Integrable
+      (fun t : ℝ ↦ ‖(t : ℂ) ^ ((u₀ : ℂ) - 1) * (1 - (t : ℂ)) ^ ((v₀ : ℂ) - 1)‖)
+      (volume.restrict (Ioo (0 : ℝ) 1)) := by
+    have hb_conv := betaIntegral_convergent (u := u₀) (v := v₀) (by simpa using hu₀)
+      (by simpa using hv₀)
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hb_conv
+    exact (hb_conv.mono_set Ioo_subset_Ioc_self).norm
+  have hbeta_meas : AEStronglyMeasurable
+      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1))
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) :=
+    (by fun_prop : Measurable fun p : ℝ × ℝ ↦
+      (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1)).aestronglyMeasurable
+  have hF_meas : AEStronglyMeasurable
+      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) :=
+    hbeta_meas.mul hg_int.aestronglyMeasurable.comp_snd
+  refine (hφ.mul_prod hg_int.norm).mono' hF_meas ?_
+  rw [hmeas_oo]
+  filter_upwards [ae_restrict_mem (measurableSet_Ioo.prod MeasurableSet.univ)] with
+    ⟨t, y⟩ ⟨⟨ht0, ht1⟩, _⟩
+  have h1t : 0 < 1 - t := sub_pos.2 ht1
+  rw [← ofReal_one, ← ofReal_sub]
+  simp only [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, norm_cpow_eq_rpow_re_of_pos h1t,
+    sub_re, ofReal_re, hu_re, hv_re]
+  exact le_rfl
 
 -- The elementary and half-integer cases check the normalization and the shift factor.
 example {x : ℝ} (hx : 0 < x) :

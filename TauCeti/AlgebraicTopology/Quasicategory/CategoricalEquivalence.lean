@@ -68,6 +68,9 @@ the full faithfulness of `f`.
   equivalences of `Fun(X, Y)`.
 * `SSet.QCat.nonempty_iso_of_isEquivalence`: conversely, an equivalence of `Fun(X, Y)` between the
   vertices corresponding to `f` and `g` gives an invertible `2`-morphism `f ≅ g`.
+* `SSet.QCat.IsCategoricalEquivalence.of_iso`,
+  `SSet.QCat.IsCategoricalEquivalence.of_isEquivalence`: categorical equivalences are invariant
+  under invertible `2`-morphisms, that is under equivalences of `Fun(X, Y)`.
 * `SSet.QCat.isFullyFaithful_iff_of_iso`: isomorphic `1`-morphisms are fully faithful together.
 * `SSet.QCat.IsCategoricalEquivalence.isFullyFaithful`: **a categorical equivalence is fully
   faithful.**
@@ -315,6 +318,13 @@ lemma pre_app {g : X ⟶ Y} (hg : IsCategoricalEquivalence g) (E : SSet.{u}) [Qu
   · exact NatTrans.congr_app (pre_map e.inv.hom e.hom.hom) E
   · exact (NatTrans.congr_app (pre_map e.hom.hom e.inv.hom) E).symm
   · exact NatTrans.congr_app (pre_id X.obj) E
+
+/-- A map of quasicategories joined to a categorical equivalence by an equivalence of the functor
+quasicategory `Fun(X, Y)` is a categorical equivalence. -/
+lemma of_isEquivalence {f g : X ⟶ Y} (hf : IsCategoricalEquivalence f)
+    (α : Edge ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) ((ihomObj₀Equiv X.obj Y.obj).symm g.hom))
+    (hα : α.IsEquivalence) : IsCategoricalEquivalence g :=
+  of_iso (nonempty_iso_of_isEquivalence hα).some hf
 
 /-- A categorical equivalence of quasicategories induces an equivalence of homotopy
 categories. -/
