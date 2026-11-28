@@ -45,7 +45,11 @@ continuous.
   the complex numbers `1` and `i`; conversely `TauCeti.equivRealProdCLM_one` and
   `TauCeti.equivRealProdCLM_I`.
 * `TauCeti.fderiv_comp_equivRealProdCLM_one` and `TauCeti.fderiv_comp_equivRealProdCLM_I`: read
-  in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
+  in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`;
+  `TauCeti.norm_fderiv_continuousLinearEquiv_comp_equivRealProdCLM_one_sq_le` and
+  `TauCeti.norm_fderiv_stdComplexLineReal_sq_le_continuousLinearEquiv_comp_equivRealProdCLM`
+  compare `‖∂ₛ(L ∘ v ∘ equivRealProdCLM)‖²` and `‖fderiv ℝ v‖²` / `‖∂ₛv‖²` across a continuous
+  linear equivalence `L`.
 * `ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le`: the value of a map
   `A : ℝ × ℝ →L[ℝ] V` on `(0, 1)` is within `‖A - (σ, τ) ↦ τ X‖` of `X`.
 * `LinearMap.apply_stdComplexLine` and `ContinuousLinearMap.apply_stdComplexLine`: a real-linear
@@ -154,6 +158,68 @@ lemma fderiv_comp_equivRealProdCLM_I {E : Type*} [NormedAddCommGroup E] [NormedS
       fderiv ℝ u (Complex.equivRealProdCLM y) stdComplexLineImag := by
   rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, equivRealProdCLM_I]
+
+/-- Composing `v : ℝ × ℝ → E` with a continuous linear equivalence `L : E ≃L[ℝ] F` and
+`Complex.equivRealProdCLM` bounds `‖∂ₛ(L ∘ v ∘ Complex.equivRealProdCLM)‖²` by
+`‖L‖² * ‖fderiv ℝ v‖²`. -/
+theorem norm_fderiv_continuousLinearEquiv_comp_equivRealProdCLM_one_sq_le
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (L : E ≃L[ℝ] F) (v : ℝ × ℝ → E) (y : ℂ) :
+    ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1‖ ^ 2 ≤
+      ‖(L : E →L[ℝ] F)‖ ^ 2 * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ ^ 2 := by
+  have hfw : fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1 =
+      L (fderiv ℝ v (Complex.equivRealProdCLM y) stdComplexLineReal) :=
+    (congrArg (fun f : ℂ →L[ℝ] F ↦ f 1)
+      (L.comp_fderiv (f := v ∘ Complex.equivRealProdCLM) (x := y))).trans
+      (congrArg L (fderiv_comp_equivRealProdCLM_one v y))
+  have h1 : ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1‖ ≤
+      ‖(L : E →L[ℝ] F)‖ * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ := by
+    have h2 : ‖fderiv ℝ v (Complex.equivRealProdCLM y) stdComplexLineReal‖ ≤
+        ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ := by
+      simpa [stdComplexLineReal] using
+        (fderiv ℝ v (Complex.equivRealProdCLM y)).le_opNorm stdComplexLineReal
+    rw [hfw]
+    exact (L.toContinuousLinearMap.le_opNorm _).trans
+      (mul_le_mul_of_nonneg_left h2 (norm_nonneg _))
+  calc ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1‖ ^ 2
+      ≤ (‖(L : E →L[ℝ] F)‖ * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖) ^ 2 := by gcongr
+    _ = ‖(L : E →L[ℝ] F)‖ ^ 2 * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ ^ 2 := by rw [mul_pow]
+
+/-- Inverse coordinate comparison: `‖∂ₛv(c)‖²` is bounded by `‖L.symm‖²` times
+`‖∂ₛ(L ∘ v ∘ Complex.equivRealProdCLM)(Complex.equivRealProdCLM.symm c)‖²`. -/
+theorem norm_fderiv_stdComplexLineReal_sq_le_continuousLinearEquiv_comp_equivRealProdCLM
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (L : E ≃L[ℝ] F) (v : ℝ × ℝ → E) (c : ℝ × ℝ) :
+    ‖fderiv ℝ v c stdComplexLineReal‖ ^ 2 ≤
+      ‖(L.symm : F →L[ℝ] E)‖ ^ 2 *
+        ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+          (Complex.equivRealProdCLM.symm c) 1‖ ^ 2 := by
+  have hfw : fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+        (Complex.equivRealProdCLM.symm c) 1 =
+      L (fderiv ℝ v c stdComplexLineReal) := by
+    have h1 := congrArg (fun f : ℂ →L[ℝ] F ↦ f 1)
+      (L.comp_fderiv (f := v ∘ Complex.equivRealProdCLM) (x := Complex.equivRealProdCLM.symm c))
+    simpa only [Function.comp_def, ContinuousLinearEquiv.apply_symm_apply] using
+      h1.trans (congrArg L (fderiv_comp_equivRealProdCLM_one v (Complex.equivRealProdCLM.symm c)))
+  have h2 : ‖fderiv ℝ v c stdComplexLineReal‖ ≤
+      ‖(L.symm : F →L[ℝ] E)‖ *
+        ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+          (Complex.equivRealProdCLM.symm c) 1‖ := by
+    have h1 : fderiv ℝ v c stdComplexLineReal =
+        L.symm (fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+          (Complex.equivRealProdCLM.symm c) 1) := by
+      rw [hfw, ContinuousLinearEquiv.symm_apply_apply]
+    rw [h1]
+    exact L.symm.toContinuousLinearMap.le_opNorm _
+  calc ‖fderiv ℝ v c stdComplexLineReal‖ ^ 2
+      ≤ (‖(L.symm : F →L[ℝ] E)‖ *
+          ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+            (Complex.equivRealProdCLM.symm c) 1‖) ^ 2 := by gcongr
+    _ = ‖(L.symm : F →L[ℝ] E)‖ ^ 2 *
+          ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+            (Complex.equivRealProdCLM.symm c) 1‖ ^ 2 := by rw [mul_pow]
 
 /-- Applying a map `A : ℝ × ℝ →L[ℝ] V` to `(0, 1)` and subtracting `X` costs at most the distance of
 `A` from `(σ, τ) ↦ τ X`. -/
