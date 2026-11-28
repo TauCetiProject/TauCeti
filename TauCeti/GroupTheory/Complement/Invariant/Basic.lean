@@ -58,8 +58,7 @@ theorem exists_invariant_complement (N : Subgroup W) [N.Normal] [IsMulCommutativ
   have hindex : (P.toSubgroup.map i).index = P.toSubgroup.index * Nat.card A := by
     rw [index_map_of_injective _ hi]
     congr 1
-    rw [range_inl_eq_ker_rightHom, index_ker,
-      MonoidHom.range_eq_top.mpr rightHom_surjective, card_top]
+    rw [range_inl_eq_ker_rightHom, index_ker_rightHom]
   have hcop : Nat.Coprime (P.toSubgroup.map i).index (Nat.card (N.map i)) := by
     rw [hindex, hcard, hncard, hmcard]
     exact ((Fact.out : p.Prime).coprime_pow_of_not_dvd P.not_dvd_index).mul_left

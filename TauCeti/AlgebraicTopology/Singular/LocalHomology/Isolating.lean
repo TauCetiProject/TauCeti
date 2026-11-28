@@ -203,7 +203,7 @@ theorem localDegree_restrict_eq_sum_localIndex {U : Opens M} {f : C(M, N)} {y : 
     Finset.sum_map]
   -- Each local index of the restriction is that of `f`, by naturality under open embeddings.
   refine Finset.sum_congr rfl fun x _ ↦ ?_
-  have h := localIndex_comap hF o o' U.isOpenEmbedding' IsOpenEmbedding.id
+  have h := o.localIndex_comap o' hF U.isOpenEmbedding' IsOpenEmbedding.id
     (f := (f.restrict U : C(U, N))) (g := f) (x := x) (.of_forall fun _ ↦ rfl)
   rwa [comap_id] at h
 

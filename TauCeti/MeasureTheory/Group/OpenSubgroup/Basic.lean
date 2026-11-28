@@ -40,7 +40,8 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 * **Translated-coset calculations:** For a measurable subgroup `H`, left translation `u ↦ g * u`
   from `(H, μ.comap (↑))` onto `(G, μ.restrict (g • H))` is a measure-preserving measurable
   embedding, identifying set integrals, lower Lebesgue integrals, `IntegrableOn`, and `Lᵖ` seminorms
-  on left cosets `g • H` with integrals over `H` independent of the coset representative. For a
+  on left cosets `g • H` with integrals over `H` independent of the coset representative; in
+  particular a set integral over `H` is invariant under left translation by elements of `H`. For a
   regular Haar measure on a locally compact group, right translation `u ↦ u * g` scales the coset
   measure on `(· * g) '' H` by `Measure.modularCharacter g⁻¹`, giving the corresponding right-coset
   formulas and representative independence.
@@ -60,6 +61,7 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
   `MeasureTheory.isCompact_of_isOpen_of_measure_ne_top_of_isAddLeftInvariant`).
 * `MeasureTheory.setIntegral_leftCoset_eq_comap`,
   `MeasureTheory.integral_mul_left_comap_eq_of_inv_mul_mem`,
+  `MeasureTheory.setIntegral_mul_left_eq_self_of_mem`,
   `MeasureTheory.setIntegral_rightCoset_eq_modularCharacter_smul_comap`,
   `MeasureTheory.modularCharacter_smul_integral_mul_right_comap_eq_of_mul_inv_mem`:
   translated-coset integral formulas and coset-representative independence.
@@ -286,6 +288,17 @@ theorem integral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] {E : Type*
   rw [← integral_mul_left_eq_self (fun u : H ↦ f (g₁ * (u : G))) ⟨g₁⁻¹ * g₂, hg⟩]
   congr 1 with u
   simp [MulMemClass.coe_mul, ← mul_assoc]
+
+/-- A set integral over a subgroup `H` is invariant under left translation by an element of `H`,
+for a left-invariant measure. -/
+@[to_additive /-- A set integral over an additive subgroup `H` is invariant under translation by an
+element of `H`, for a left-invariant measure. -/]
+theorem setIntegral_mul_left_eq_self_of_mem [SubgroupClass S G] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [μ.IsMulLeftInvariant] (f : G → E) {s : G}
+    (hs : s ∈ H) : ∫ x in (H : Set G), f (s * x) ∂μ = ∫ x in (H : Set G), f x ∂μ := by
+  have hpre : (s * ·) ⁻¹' (H : Set G) = H := Set.ext fun _ ↦ mul_mem_cancel_left hs
+  simpa [hpre] using (measurePreserving_mul_left μ s).setIntegral_preimage_emb
+    (measurableEmbedding_mulLeft s) f H
 
 end LeftCosets
 

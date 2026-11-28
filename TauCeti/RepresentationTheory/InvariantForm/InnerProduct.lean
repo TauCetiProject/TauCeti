@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates
 
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
 /-!
 # Invariant inner products for finite actions
@@ -67,9 +68,7 @@ theorem sumOfConjugatesForm_inner_apply_self (ρ : Representation ℝ G V) (x : 
 /-- The orbit-sum inner product is positive definite. -/
 theorem posDef_toQuadraticMap_sumOfConjugatesForm_inner (ρ : Representation ℝ G V) :
     (sumOfConjugatesForm ρ (innerₗ V)).toQuadraticMap.PosDef :=
-  posDef_toQuadraticMap_sumOfConjugatesForm fun x hx ↦ by
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, innerₗ_apply_apply]
-    exact real_inner_self_pos.mpr hx
+  posDef_toQuadraticMap_sumOfConjugatesForm TauCeti.posDef_toQuadraticMap_innerₗ
 
 /-- The orbit-sum quadratic value varies continuously in finite dimensions. -/
 theorem continuous_sumOfConjugatesForm_inner_apply_self [FiniteDimensional ℝ V]

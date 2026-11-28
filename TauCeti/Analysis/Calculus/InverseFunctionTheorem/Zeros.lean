@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Topology.UniformSpace.HeineCantor
-public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Family
 public import TauCeti.Topology.Compactness.Compact
 import TauCeti.Analysis.Calculus.FDeriv.Equiv

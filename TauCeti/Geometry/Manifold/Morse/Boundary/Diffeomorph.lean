@@ -91,7 +91,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace E M']
   {f : M → ℝ} {f' : M' → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
   {X' : (x : M') → TangentSpace 𝓘(ℝ, E) x} {σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M'}
-  [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E) ∞ M']
+  [IsManifold 𝓘(ℝ, E) ∞ M]
 
 variable (hf : f' ∘ σ = f)
 
@@ -103,7 +103,7 @@ variable {x : M} (φ : MorseChart E f' (σ x))
 @[simp]
 theorem pullback_negativeCoord : (φ.pullback hf).negativeCoord = φ.negativeCoord := by
   ext v i
-  exact (negativeCoord_apply _ v i).trans (negativeCoord_apply φ v i).symm
+  exact (MorseBottChart.negativeCoord_apply _ v i).trans (φ.negativeCoord_apply v i).symm
 
 /-- The pullback keeps the extension by zero of the coordinates of negative weight. -/
 @[simp]
@@ -168,11 +168,27 @@ theorem pullback_orientation (p : criticalPoints 𝓘(ℝ, E) f) :
       (𝔬'.orientation (criticalPointsEquivOfComp hf p)) :=
   rfl
 
+open scoped Classical in
+/-- **Reversing orientations commutes with the pullback**: pulling back the orientations of `𝔬'`
+reversed at the critical points of `S` gives the pulled-back orientations reversed at the critical
+points that `σ` carries into `S`. -/
+theorem pullback_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f')) [DecidablePred (· ∈ S)] :
+    (𝔬'.reverse S).pullback hf hσX =
+      (𝔬'.pullback hf hσX).reverse (criticalPointsEquivOfComp hf ⁻¹' S) := by
+  ext p
+  · simp
+  · refine heq_of_eq (funext fun p ↦ ?_)
+    simp only [pullback_orientation, reverse_orientation, Set.mem_preimage]
+    by_cases hp : criticalPointsEquivOfComp hf p ∈ S <;> simp only [hp, ↓reduceIte]
+    · exact Orientation.reindex_neg (R := ℝ) _ _
+    · congr 1
+
 end MorseOrientation
 
 namespace IsAdaptedPseudoGradient
 
-variable [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'] [T2Space M']
+variable [IsManifold 𝓘(ℝ, E) ∞ M'] [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M]
+  [CompactSpace M'] [T2Space M']
   (hX : IsAdaptedPseudoGradient f X) (hX' : IsAdaptedPseudoGradient f' X')
   (hσX : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y (X y) = X' (σ y))
 

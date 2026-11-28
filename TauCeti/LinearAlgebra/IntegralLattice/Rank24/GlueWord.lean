@@ -179,6 +179,17 @@ theorem encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD {m : ℕ} {s : Fin m →
   funext k
   exact (getD_encodeGlueWord t ht w (σ k)).symm
 
+/-- The Conway--Sloane digit label in coordinate `k` of a glue word reindexed along `σ` is the
+digit of the original word in position `σ k`. -/
+theorem val_glueLabelEquiv_symm_piGlueAlphabetCongr {m : ℕ} {s : Fin m → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (σ : Fin m ≃ Fin n) (h : ∀ k, t (σ k) = s k)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) (k : Fin m) :
+    (((s k).glueLabelEquiv (hs k)).symm
+        (DynkinType.piGlueAlphabetCongr t ht σ h w k)).val =
+      (encodeGlueWord t ht w).getD (σ k) 0 := by
+  rw [← getD_encodeGlueWord, encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD,
+    List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
+
 /-- **Digits are unchanged by passing to an equal family of components**: if the components
 `s k` over `Fin m` are the components `t k` over `Fin n` read along `m = n`, then a glue word and
 its image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same digit list. -/
@@ -418,7 +429,7 @@ theorem form_glueWordVector_self_of_getD_lt {n : ℕ} (t : Fin n → DynkinType)
     (hl : ∀ i : Fin n, l.getD i 0 < (t i).glueLabelCount) :
     (pi fun i ↦ (t i).rootLattice (ht i)).form (glueWordVector t l) (glueWordVector t l) =
       glueWordMinimum t l := by
-  rw [pi_form, piForm_apply, glueWordMinimum_def]
+  rw [pi_form, LinearMap.BilinForm.pi_apply, glueWordMinimum_def]
   exact Finset.sum_congr rfl fun i _ ↦
     (t i).form_glueLabelVector_self (hv i) (ht i) ⟨_, hl i⟩
 

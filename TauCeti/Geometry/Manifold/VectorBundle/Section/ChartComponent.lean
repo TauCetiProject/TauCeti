@@ -8,9 +8,12 @@ module
 public import TauCeti.Analysis.Distribution.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Support
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -54,7 +57,15 @@ which carries the Jacobian `|det Dκ⁻¹|` (`TestFunction.pushforwardCLM`), giv
 ## Main declarations
 
 * `Bundle.Trivialization.chartComponent`: the component along `v` of the local representative of
-  `T` in a chart and a frame, as a complex distribution on the chart target.
+  `T` in a chart and a frame, as a complex distribution on the chart target. It is a real
+  distribution, fixed by complex conjugation (`Bundle.Trivialization.mapCLM_conj_chartComponent`).
+* `Bundle.Trivialization.isVanishingOn_chartComponent`,
+  `Bundle.Trivialization.dsupport_chartComponent_inter_target_subset`: the components of `T`
+  vanish where `T` does, so over the chart target they are supported in the chart image of the
+  support of the functional.
+* `Bundle.Trivialization.isVanishingOn_of_isVanishingOn_chartDistributionCLM`: conversely, a
+  functional on bundle tests vanishes over the part of a chart where its local representative
+  vanishes.
 * `Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`: the change of chart and frame for the
   components.
 * `Bundle.Trivialization.contDiffOn_abs_det_fderiv_mul_coord_coordChangeL`: the smoothness of the
@@ -139,6 +150,15 @@ theorem chartComponent_sub (T T' : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
   ext φ
   simp
 
+/-- The components of a real functional are real distributions: complex conjugation fixes
+them. -/
+@[simp]
+theorem mapCLM_conj_chartComponent (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    mapCLM conjCLE.toContinuousLinearMap (t.chartComponent c hc hct T v) =
+      t.chartComponent c hc hct T v := by
+  ext φ
+  simp
+
 /-- The component along `v` of the local representative of the point mass `δ_x ℓ`, in a chart
 whose source contains `x`, is the Euclidean point mass at `c x` times `ℓ (t⁻¹ v)`. -/
 theorem chartComponent_delta_of_mem {x : M} (hx : x ∈ c.source) (ℓ : V x →L[ℝ] ℝ) (v : F) :
@@ -165,6 +185,47 @@ theorem chartComponent_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ
     ← chartDistributionCLM_apply_apply]
   conv_lhs => rw [← b.sum_repr v]
   simp only [map_sum, map_smul, smul_eq_mul, ofReal_sum, ofReal_mul]
+
+variable {t c hc hct} in
+/-- If over an open set `B` the local representative of `S` is `g` times that of `T`, then so are
+its components. -/
+theorem restrictCLM_chartComponent_eq_smulLeftCLM {S T : BundleTest I F V →L_c[ℝ] ℝ} {B : Opens E}
+    {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
+    (h : (restrictCLM (t.chartDistributionCLM c hc hct S) : 𝓓'(B, F →L[ℝ] ℝ)) =
+      Distribution.smulLeftCLM hg (restrictCLM (t.chartDistributionCLM c hc hct T))) (v : F) :
+    (restrictCLM (t.chartComponent c hc hct S v) : 𝓓'(B, ℂ)) =
+      Distribution.smulLeftCLM hg (restrictCLM (t.chartComponent c hc hct T v)) := by
+  ext φ
+  have h := congr($h φ v)
+  simp only [restrictCLM_apply, chartDistributionCLM_apply_apply,
+    Distribution.smulLeftCLM_apply] at h
+  simp [h]
+
+/-- If a functional `T` on bundle tests vanishes on a set `U`, then its components in a chart `c`
+and a frame `t` vanish on the part `c.target ∩ c⁻¹ ⁻¹' U` of the chart target read from `U`. -/
+theorem isVanishingOn_chartComponent {T : BundleTest I F V →L_c[ℝ] ℝ} {U : Set M}
+    (hTU : BundleTest.IsVanishingOn ⇑T U) (v : F) :
+    IsVanishingOn (t.chartComponent c hc hct T v) (c.target ∩ c.symm ⁻¹' U) := by
+  intro φ hφ
+  rw [chartComponent_apply, BundleTest.isVanishingOn_iff.1 hTU _ ?_, Complex.ofReal_zero]
+  have h := tsupport_chartTestSection (n := ⊤) t c hc hct
+    (TestFunction.postcompCLM (toSpanSingleton ℝ v) φ)
+  rw [ContMDiffSection.tsupport_def] at h
+  rw [coe_chartTestCLM, h]
+  rintro _ ⟨z, hz, rfl⟩
+  rw [TestFunction.postcompCLM_apply] at hz
+  exact (hφ (tsupport_comp_subset (map_zero _) φ hz)).2
+
+/-- Over the chart target, the support of a component of `T` lies in the image under the chart of
+the support of `T`. -/
+theorem dsupport_chartComponent_inter_target_subset (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    Distribution.dsupport (t.chartComponent c hc hct T v) ∩ c.target ⊆
+      c.symm ⁻¹' BundleTest.dsupport T := by
+  rintro z ⟨hzT, hzc⟩
+  by_contra hx
+  obtain ⟨U, hU, hxU, hTU⟩ := BundleTest.notMem_dsupport_iff.1 hx
+  exact (Distribution.notMem_dsupport_iff z).2 ⟨_, isVanishingOn_chartComponent t c hc hct hTU v,
+    c.isOpen_inter_preimage_symm hU, hzc, hxU⟩ hzT
 
 /-! ### Changes of chart and frame -/
 
@@ -316,5 +377,66 @@ theorem exists_restrictCLM_chartComponent_eq_sum
       fun j z hz ↦ (hgf j z (subset_closure hz)).eq_of_nhds⟩
 
 end Transition
+
+end Bundle.Trivialization
+
+/-! ### Vanishing read in a chart -/
+
+namespace Bundle.Trivialization
+
+open TauCeti
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
+  (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
+
+/-- **Vanishing is read in a chart.** If the local representative of a functional `T` on bundle
+tests in a smooth chart `c` with smooth inverse and a frame `t` vanishes on an open subset `B` of
+the chart target, then `T` vanishes on the part `c.source ∩ c ⁻¹' B` of the chart source. This is
+the converse of `Bundle.Trivialization.isVanishingOn_chartComponent`. -/
+theorem isVanishingOn_of_isVanishingOn_chartDistributionCLM
+    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) {T : BundleTest I F V →L_c[ℝ] W}
+    {B : Set E} (hB : IsOpen B)
+    (hT : Distribution.IsVanishingOn (t.chartDistributionCLM c hc hct T) B) :
+    BundleTest.IsVanishingOn ⇑T (c.source ∩ c ⁻¹' B) := by
+  refine BundleTest.isVanishingOn_iff.2 fun Φ hΦ ↦ ?_
+  have hK := BundleTest.isCompact_tsupport Φ
+  -- A cutoff `ψ` equal to `1` on the support of `Φ`, with compact support over `B`.
+  obtain ⟨ψ, hψ, hψ1, hψK, hψU, -⟩ :=
+    hK.exists_contMDiff_one_nhds_tsupport_subset I (c.isOpen_inter_preimage hB) hΦ
+  set ψ' : C^∞⟮I, M; ℝ⟯ := ⟨ψ, hψ⟩ with hψ'
+  have hψc : tsupport ψ' ⊆ c.source := hψU.trans inter_subset_left
+  let L : Compacts E := ⟨c '' tsupport ψ', hψK.isCompact.image_of_continuousOn
+    (c.continuousOn.mono hψc)⟩
+  have hL : (L : Set E) ⊆ c.target := image_subset_iff.2 fun _ hz ↦ c.map_source (hψc hz)
+  have hLB : (L : Set E) ⊆ B := image_subset_iff.2 fun _ hz ↦ (hψU hz).2
+  -- `Φ` is the chart extension of its chart localization `Φ'` along `ψ`.
+  have hΦ' : t.chartTestCLM c hc hct (TestFunction.ofSupportedIn hL
+      (t.chartLocalizationCLM c hcs hct ψ' L hL (mapsTo_image _ _) Φ)) = Φ := by
+    refine BundleTest.ext fun z ↦ ?_
+    rw [coe_chartTestCLM, chartLocalizationCLM_apply,
+      chartTestSection_chartLocalization _ _ _ _ _ _ _ _ hc hψc, ContMDiffSection.smul_apply]
+    by_cases hz : z ∈ closure {x | Φ x ≠ 0}
+    · rw [hψ', ContMDiffMap.coeFn_mk, hψ1.self_of_nhdsSet z hz, one_smul]
+    · rw [Bundle.apply_eq_zero_of_notMem_closure hz, smul_zero]
+  set Φ' : 𝓓(⟨c.target, c.open_target⟩, F) := TestFunction.ofSupportedIn hL
+    (t.chartLocalizationCLM c hcs hct ψ' L hL (mapsTo_image _ _) Φ)
+  have hΦ'B : tsupport Φ' ⊆ B := by
+    rw [TestFunction.coe_ofSupportedIn]
+    exact (ContDiffMapSupportedIn.tsupport_subset _).trans hLB
+  -- In a basis, `Φ'` splits into real test functions supported in `B` times vectors of `F`.
+  rw [← hΦ', ← TestFunction.sum_postcompCLM_toSpanSingleton_coord (Module.finBasis ℝ F) Φ',
+    map_sum, map_sum]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  rw [← chartDistributionCLM_apply_apply, hT _ (by
+    rw [TestFunction.postcompCLM_apply]
+    exact (tsupport_comp_subset (map_zero _) Φ').trans hΦ'B), zero_apply]
 
 end Bundle.Trivialization

@@ -69,7 +69,8 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
 Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and for
 nonnegative elements in a linearly ordered semifield the bounded-metric gauge `t ↦ t / (1 + t)` is
 nonnegative, strictly below `1`, monotone, subadditive, subhomogeneous under factors `≥ 1`, and
-zero only at `0`.
+zero only at `0`. For `0 ≤ w` the truncation `w / (1 + ε w)` lies between `0` and `w` when
+`0 ≤ ε`, and below `1 / ε` when `0 < ε`.
 
 ## Main results
 
@@ -77,6 +78,8 @@ zero only at `0`.
   determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
   `a ≤ m`.
+* `TauCeti.add_le_of_le_affine_sub`: an affine quadratic interpolation bound above its initial
+  value forces the corresponding endpoint lower bound.
 * `TauCeti.nonpos_of_forall_pos_mul_sq_mul_le`: if `0 < a` and `a * r ^ 2 * t ≤ C` for every
   `r > 0`, then `t ≤ 0`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -119,7 +122,13 @@ zero only at `0`.
   `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
+* `TauCeti.div_one_add_mul_nonneg`, `TauCeti.div_one_add_mul_le_self`,
+  `TauCeti.div_one_add_mul_le_one_div`: for `0 ≤ w`, the truncation `w / (1 + ε w)` lies between
+  `0` and `w` when `0 ≤ ε`, and is at most `1 / ε` when `0 < ε`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.add_mul_div_le_add`: `t + m * M / t ≤ m + M` for `0 < t` and `m ≤ t ≤ M`.
+* `TauCeti.mul_le_sq_div_of_add_mul_le`: `a * b ≤ c ^ 2 / (4 * k)` for `0 < k` and
+  `0 ≤ a + k * b ≤ c`.
 -/
 
 public section
@@ -167,6 +176,18 @@ theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
     linarith
   · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
     nlinarith
+
+/-- If a quadratic interpolation bound stays above its initial value `a`, its
+endpoint value `b` is at least `a + D`. -/
+theorem add_le_of_le_affine_sub {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b D : K}
+    (h : ∀ t ∈ Set.Ioo (0 : K) 1, a ≤ (1 - t) * a + t * b - t * (1 - t) * D) :
+    a + D ≤ b := by
+  apply le_of_forall_mem_Ioc_mul_le (C := D) (δ₀ := 1 / 2) (by positivity)
+  intro t ht
+  have hbound : a + (1 - t) * D ≤ b :=
+    le_of_mul_le_mul_left (by linarith [h t ⟨ht.1, by linarith [ht.2]⟩]) ht.1
+  linarith
 
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
@@ -514,6 +535,39 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
+divided by `t`. -/
+theorem add_mul_div_le_add {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {t m M : K} (ht : 0 < t) (hmt : m ≤ t) (htM : t ≤ M) : t + m * M / t ≤ m + M := by
+  have key : m + M - (t + m * M / t) = (M - t) * (t - m) / t := by field_simp; ring
+  rw [← sub_nonneg, key]
+  exact div_nonneg (mul_nonneg (sub_nonneg.2 htM) (sub_nonneg.2 hmt)) ht.le
+
+/-- If `0 < k` and `0 ≤ a + k * b ≤ c`, then `a * b ≤ c ^ 2 / (4 * k)`: the inequality of
+arithmetic and geometric means for `a` and `k * b`. -/
+theorem mul_le_sq_div_of_add_mul_le {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b c k : K} (hk : 0 < k) (h₀ : 0 ≤ a + k * b)
+    (h : a + k * b ≤ c) : a * b ≤ c ^ 2 / (4 * k) := by
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (a - k * b), mul_self_le_mul_self h₀ h]
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is nonnegative. -/
+theorem div_one_add_mul_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {w ε : α} (hw : 0 ≤ w) (hε : 0 ≤ ε) : 0 ≤ w / (1 + ε * w) :=
+  div_nonneg hw (add_nonneg zero_le_one (mul_nonneg hε hw))
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is at most `w`. -/
+theorem div_one_add_mul_le_self {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {w ε : α} (hw : 0 ≤ w) (hε : 0 ≤ ε) : w / (1 + ε * w) ≤ w :=
+  div_le_self hw (le_add_of_nonneg_right (mul_nonneg hε hw))
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε > 0`, is at most `1 / ε`. -/
+theorem div_one_add_mul_le_one_div {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {w ε : α} (hw : 0 ≤ w) (hε : 0 < ε) : w / (1 + ε * w) ≤ 1 / ε := by
+  rw [div_le_div_iff₀ (add_pos_of_pos_of_nonneg zero_lt_one (mul_nonneg hε.le hw)) hε, one_mul,
+    mul_comm]
+  exact le_add_of_nonneg_left zero_le_one
 
 end TauCeti
 

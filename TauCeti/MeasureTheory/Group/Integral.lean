@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Group.Measure
@@ -30,12 +32,20 @@ For a right-invariant `s`-finite measure `μ`, integrating `z ↦ f (x * g z)` o
 against an `s`-finite measure `ν` (or over a set `s`) and then `x` against `μ` factors out
 `ν univ` (or `ν s`) times `∫⁻ x, f x ∂μ` by Tonelli's theorem and right-translation invariance.
 
+For a group `G` acting jointly measurably on `X` and preserving an `s`-finite measure `μ`, and a
+finite measure `ν` on `G`, the translates `(x, g) ↦ F (g • x)` of an integrable `F` are integrable
+for `μ.prod ν`, and `∫ (∫ F (g • x) dν(g)) dμ(x) = ν(G) • ∫ F dμ` by Fubini's theorem and
+invariance.
+
 For a translation-invariant measure, the row and column integrals of a convolution kernel
 `k (ξ - ζ)` with integrable `k ≥ 0` all equal `∫ k`; these are the bounds that Schur's test asks
 of the kernel.
 
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
+
+For a left-invariant measure, a function whose left translate by some `g` is `c • f` with `c ≠ 1`
+has integral `0`: the integral of a character over a subgroup on which it is nontrivial vanishes.
 
 The integral of the difference `w (· + a) - w` of an integrable function against an
 a.e. strongly measurable, essentially bounded function `φ` (that is, `φ ∈ L^∞`) equals the
@@ -57,11 +67,17 @@ need to be measurable.
   `TauCeti.lintegral_setLIntegral_mul_right`, `TauCeti.lintegral_setLIntegral_add_right`,
   `TauCeti.lintegral_setLIntegral_div_right`, `TauCeti.lintegral_setLIntegral_sub_right`:
   factoring out the parameter measure when integrating right-translated lower Lebesgue integrals.
+* `TauCeti.integrable_smul_prod`, `TauCeti.integral_integral_smul_eq` and their additive versions
+  `TauCeti.integrable_vadd_prod`, `TauCeti.integral_integral_vadd_eq`: Fubini's theorem for the
+  translates of an integrable function under a measure-preserving action.
 * `TauCeti.lintegral_ofReal_sub_left_eq_ofReal_integral`,
   `TauCeti.lintegral_ofReal_sub_right_eq_ofReal_integral`: the row and column integrals of a
   convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
+* `TauCeti.integral_eq_zero_of_mul_left_eq_smul`, `TauCeti.integral_eq_zero_of_add_left_eq_smul`:
+  a function whose left translate by some `g` is `c • f` with `c ≠ 1` has integral `0` against a
+  left-invariant measure.
 -/
 
 public section
@@ -189,6 +205,42 @@ theorem lintegral_setLIntegral_div_right [MeasurableInv G] (hf : AEMeasurable f 
 
 end LIntegral
 
+section ActionFubini
+
+variable {G X E : Type*} [MeasurableSpace G] [MeasurableSpace X] [Group G] [MulAction G X]
+  [MeasurableSMul₂ G X] {μ : Measure X} [SFinite μ] [SMulInvariantMeasure G X μ]
+  {ν : Measure G} [IsFiniteMeasure ν] [NormedAddCommGroup E] {F : X → E}
+
+/-- For an integrable `F` and a finite measure `ν` on `G`, the translates `(x, g) ↦ F (g • x)` are
+integrable for `μ.prod ν`. -/
+@[to_additive integrable_vadd_prod
+/-- For an integrable `F` and a finite measure `ν` on `G`, the translates `(x, g) ↦ F (g +ᵥ x)` are
+integrable for `μ.prod ν`. -/]
+theorem integrable_smul_prod (hF : Integrable F μ) :
+    Integrable (fun p : X × G => F (p.2 • p.1)) (μ.prod ν) := by
+  have hqmp : QuasiMeasurePreserving (fun p : X × G => p.2 • p.1) (μ.prod ν) μ :=
+    .prod_of_left (measurable_snd.smul measurable_fst).aemeasurable
+      (.of_forall fun g => (measurePreserving_smul g μ).quasiMeasurePreserving)
+  refine (integrable_prod_iff' (hF.1.comp_quasiMeasurePreserving hqmp)).2
+    ⟨ae_of_all _ fun g => (measurePreserving_smul g μ).integrable_comp_of_integrable hF, ?_⟩
+  exact (integrable_const (∫ x, ‖F x‖ ∂μ)).congr
+    (ae_of_all _ fun g => (integral_smul_eq_self (μ := μ) (fun x => ‖F x‖)).symm)
+
+/-- For an integrable `F` and a finite measure `ν` on `G`,
+`∫ (∫ F (g • x) dν(g)) dμ(x) = ν(G) • ∫ F dμ`. -/
+@[to_additive
+/-- For an integrable `F` and a finite measure `ν` on `G`,
+`∫ (∫ F (g +ᵥ x) dν(g)) dμ(x) = ν(G) • ∫ F dμ`. -/]
+theorem integral_integral_smul_eq [NormedSpace ℝ E] (hF : Integrable F μ) :
+    ∫ x, (∫ g, F (g • x) ∂ν) ∂μ = ν.real univ • ∫ x, F x ∂μ := by
+  rw [integral_integral_swap (integrable_smul_prod hF)]
+  simp only [integral_smul_eq_self]
+  by_cases hE : CompleteSpace E
+  · exact integral_const _
+  · simp [integral_of_not_completeSpace hE]
+
+end ActionFubini
+
 section ConvolutionKernel
 
 variable {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] {μ : Measure G}
@@ -271,5 +323,29 @@ theorem integral_comp_add_sub_mul_eq {w φ : G → 𝕜} (hw : Integrable w μ) 
         ring
 
 end Translation
+
+section TranslationScaling
+
+variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
+  [μ.IsMulLeftInvariant] [NormedDivisionRing 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [Module 𝕜 E] [NormSMulClass 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+
+/-- If a left translate `x ↦ f (g * x)` of a function is a scalar multiple `c • f` with `c ≠ 1`,
+then the integral of `f` against a left-invariant measure is `0`. For `c = -1` this is
+`MeasureTheory.integral_eq_zero_of_mul_left_eq_neg`; the typical use is the integral of a
+character over a subgroup on which it is nontrivial. -/
+@[to_additive (dont_translate := 𝕜) integral_eq_zero_of_add_left_eq_smul
+  /-- If a left translate `x ↦ f (g + x)` of a function is a scalar multiple `c • f` with
+  `c ≠ 1`, then the integral of `f` against a left-invariant measure is `0`. For `c = -1` this is
+  `MeasureTheory.integral_eq_zero_of_add_left_eq_neg`; the typical use is the integral of a
+  character over a subgroup on which it is nontrivial. -/]
+theorem integral_eq_zero_of_mul_left_eq_smul {f : G → E} {g : G} {c : 𝕜} (hc : c ≠ 1)
+    (hf : ∀ x, f (g * x) = c • f x) : ∫ x, f x ∂μ = 0 := by
+  have h : c • ∫ x, f x ∂μ = ∫ x, f x ∂μ := by
+    simp_rw [← integral_smul, ← hf, integral_mul_left_eq_self]
+  have h' : (1 - c) • ∫ x, f x ∂μ = 0 := by rw [sub_smul, one_smul, h, sub_self]
+  exact (smul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hc.symm)
+
+end TranslationScaling
 
 end TauCeti

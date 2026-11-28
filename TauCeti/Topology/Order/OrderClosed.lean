@@ -38,6 +38,8 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
   `Filter.Tendsto.atTop_min` and `Filter.Tendsto.min_atTop`).
 * `MapClusterPt.ge_of_monotone_atTop` and `MapClusterPt.le_of_monotone_atBot`: a monotone family
   is bounded above by its cluster points at `atTop` and below by its cluster points at `atBot`.
+* `ContinuousAt.mem_interior_strict_epigraph`: above a point where `g` is continuous, the strict
+  epigraph `{p | g p.1 < p.2}` is a neighbourhood.
 * `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
   monotonicity of an index map matching boundary limits of sections on `C` along a set `B`
   meeting `closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
@@ -47,6 +49,9 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
   no limit in `α`.
 * `TauCeti.not_tendsto_nhds_of_continuousAt_comp_eq`: a sequence `ℕ → β` whose image under a
   continuous map `β → α` is unbounded above converges to no limit in `β`.
+* `TauCeti.inter_closure_subset_setOf_le`: if, inside an open set `U`, a set `Ω` is the strict
+  sublevel set `{z | f z < g z}` of two functions continuous on `U`, then inside `U` the closure of
+  `Ω` lies in `{z | f z ≤ g z}`. This is the local form of Mathlib's `closure_lt_subset_le`.
 -/
 
 public section
@@ -130,6 +135,15 @@ theorem MapClusterPt.le_of_monotone_atBot {ι α : Type*} [Preorder ι] [Topolog
     (hf : Monotone f) (i : ι) : a ≤ f i :=
   isClosed_Iic.mem_of_mapClusterPt ha <| (eventually_le_atBot i).mono fun _ hj ↦ hf hj
 
+/-- **The strict epigraph is open above a point of continuity.** If `g` is continuous at `x₀` and
+`g x₀ < t`, then `(x₀, t)` is an interior point of the strict epigraph `{p | g p.1 < p.2}`. -/
+theorem ContinuousAt.mem_interior_strict_epigraph {X α : Type*} [TopologicalSpace X]
+    [TopologicalSpace α] [LinearOrder α] [OrderClosedTopology α] {g : X → α} {x₀ : X}
+    (hg : ContinuousAt g x₀) {t : α} (ht : g x₀ < t) :
+    (x₀, t) ∈ interior {p : X × α | g p.1 < p.2} :=
+  mem_interior_iff_mem_nhds.2 <|
+    (hg.comp continuousAt_fst).eventually_lt continuousAt_snd ht
+
 namespace TauCeti
 
 section BoundarySection
@@ -195,5 +209,17 @@ theorem not_tendsto_nhds_of_continuousAt_comp_eq {α β : Type*}
     (huv : ∀ n, g (v n) = u n) (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) :
     ¬ Tendsto v atTop (𝓝 b) :=
   fun h ↦ not_tendsto_nhds_of_forall_exists_le hu (g b) ((hg.tendsto.comp h).congr huv)
+
+/-- If `Ω` agrees with `{z | f z < g z}` on an open set `U` where `f` and `g` are continuous, then
+the points of `U` in the closure of `Ω` satisfy `f z ≤ g z`. This is the local form of Mathlib's
+`closure_lt_subset_le`, as used for a domain described near a boundary point by a defining
+inequality. -/
+theorem inter_closure_subset_setOf_le {X α : Type*} [TopologicalSpace X] [TopologicalSpace α]
+    [Preorder α] [OrderClosedTopology α] {U Ω : Set X} {f g : X → α} (hU : IsOpen U)
+    (hf : ContinuousOn f U) (hg : ContinuousOn g U) (hΩ : U ∩ Ω = U ∩ {z | f z < g z}) :
+    U ∩ closure Ω ⊆ {z | f z ≤ g z} := fun y hy => by
+  have hcl : y ∈ closure (U ∩ {z | f z < g z}) := hΩ ▸ hU.inter_closure hy
+  exact ((hf y hy.1).mono Set.inter_subset_left).closure_le hcl
+    ((hg y hy.1).mono Set.inter_subset_left) fun z hz => le_of_lt hz.2
 
 end TauCeti

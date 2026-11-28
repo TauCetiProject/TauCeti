@@ -6,13 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Fin.Basic
+public import Mathlib.Order.Fin.Tuple
 public import Mathlib.Order.Interval.Set.Defs
+import Mathlib.Order.UpperLower.Basic
+
+import Mathlib.Order.Fin.InsertNth
 
 /-!
 # Order characterizations on `Fin`
 
 This file characterizes elements of `Fin (k + 1)` by how they sit relative to the embedded indices
-`i'.castSucc` (`i' : Fin k`).
+`i'.castSucc` (`i' : Fin k`), provides monotonicity lemmas for `Fin.snoc`, and records that the
+embedded indices `Fin.castLE` form an initial segment.
 
 ## Main results
 
@@ -21,8 +26,13 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
   below every `i'` with `j ≤ i'.castSucc`.
 * `Fin.eq_iff_forall_castSucc_lt_and_le`: two indices `r, j : Fin (k + 1)` are equal if and only
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
+* `Fin.monotone_snoc`, `Fin.strictMono_snoc`: appending a coordinate above (resp. strictly above)
+  all previous coordinates preserves monotonicity (resp. strict monotonicity).
 * `Fin.strictMono_of_forall_mem_Ioo`: a tuple separated by a sequence, `a k < w k < a (k + 1)`,
   is strictly increasing.
+* `Fin.isLowerSet_range_castLE`: the image of `Fin.castLE` is an initial segment.
+* `Fin.isLowerSet_iff_exists_eq_setOf_val_lt`: the lower sets of `Fin n` are the initial
+  segments `{i | i < m}`.
 -/
 
 public section
@@ -78,6 +88,27 @@ theorem eq_iff_forall_castSucc_lt_and_le {k : ℕ} {r j : Fin (k + 1)} :
       let i' : Fin k := ⟨r.val, by omega⟩
       exact (lt_irrefl r) (hlow i' hlt)
 
+/-- Appending a coordinate that bounds all previous coordinates preserves monotonicity. -/
+theorem monotone_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
+    (hf : Monotone f) (ha : ∀ i, f i ≤ a) :
+    Monotone (Fin.snoc (α := fun _ => α) f a) := by
+  cases n with
+  | zero => rw [Fin.monotone_iff_le_succ]; exact fun i => Fin.elim0 i
+  | succ m =>
+    rw [← Fin.insertNth_last']
+    exact Fin.insertNth_last_monotone hf a (ha (Fin.last m))
+
+/-- Appending a coordinate strictly above all previous coordinates preserves strict
+monotonicity. -/
+theorem strictMono_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
+    (hf : StrictMono f) (ha : ∀ i, f i < a) :
+    StrictMono (Fin.snoc (α := fun _ => α) f a) := by
+  cases n with
+  | zero => rw [Fin.strictMono_iff_lt_succ]; exact fun i => Fin.elim0 i
+  | succ m =>
+    rw [← Fin.insertNth_last']
+    exact Fin.strictMono_insertNth_last hf a (ha (Fin.last m))
+
 /-- A tuple `w` separated by a `ℤ`-indexed sequence `a`, in the sense that
 `a k < w k < a (k + 1)` for every index `k`, is strictly increasing. -/
 theorem strictMono_of_forall_mem_Ioo {α : Type*} [Preorder α] {n : ℕ} {w : Fin n → α}
@@ -86,5 +117,21 @@ theorem strictMono_of_forall_mem_Ioo {α : Type*} [Preorder α] {n : ℕ} {w : F
   · exact fun i ↦ i.elim0
   · exact strictMono_iff_lt_succ.2 fun i ↦
       ((h i.castSucc).2.trans_le (le_of_eq (by simp))).trans (h i.succ).1
+
+/-- The image of `Fin.castLE` is an initial segment of `Fin l`. -/
+theorem isLowerSet_range_castLE {k l : ℕ} (h : k ≤ l) :
+    IsLowerSet (Set.range (castLE h)) := by
+  rw [range_castLE]
+  exact fun _ _ hab hb ↦ lt_of_le_of_lt (le_iff_val_le_val.mp hab) hb
+
+/-- The lower sets of `Fin n` are the initial segments `{i | i < m}`, for `m : ℕ`. -/
+theorem isLowerSet_iff_exists_eq_setOf_val_lt {n : ℕ} {s : Set (Fin n)} :
+    IsLowerSet s ↔ ∃ m : ℕ, s = {i : Fin n | (i : ℕ) < m} := by
+  refine ⟨fun hs ↦ ?_, ?_⟩
+  · rcases hs.eq_univ_or_Iio with rfl | ⟨a, rfl⟩
+    · exact ⟨n, by ext i; simp⟩
+    · exact ⟨a, by ext i; simp⟩
+  · rintro ⟨m, rfl⟩ i j hji hi
+    exact (le_def.1 hji).trans_lt hi
 
 end Fin

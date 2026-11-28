@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Expand
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -56,14 +57,19 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
   at `x`, which vanishes in degree zero.
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
+* `PowerSeries.subst_exp_inj`: substitution into `exp` is injective on series without constant
+  term.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
-* `PowerSeries.map_logOf`: the formal logarithm commutes with ring homomorphisms between
-  `ℚ`-algebras.
+* `PowerSeries.logOf_rescale`, `PowerSeries.logOf_expand`: `log` commutes with rescaling and
+  expansion.
+* `PowerSeries.map_logOf`, `PowerSeries.map_subst_exp`: the formal logarithm and substitution
+  into `exp` commute with ring homomorphisms between `ℚ`-algebras.
 * `PowerSeries.coeff_logOf_sub_mem`: if two series with constant coefficient one are congruent
   modulo an ideal, coefficient by coefficient, so are their logarithms.
 * `PowerSeries.logOf_eq_mk_iff`: `log f = ∑ sₙ Xⁿ / n` exactly when `(∑ sₙ₊₁ Xⁿ) f = f'`.
-* `PowerSeries.logOf_one_sub_C_mul_X` and `PowerSeries.logOf_one_sub_C_mul_X_add_C_mul_X_sq`: the
-  logarithms of `1 - c X` and of `1 - a X + q X²`.
+* `PowerSeries.logOf_one_sub_C_mul_X`, `PowerSeries.logOf_one_sub_C_mul_X_pow`, and
+  `PowerSeries.logOf_one_sub_C_mul_X_add_C_mul_X_sq`: the logarithms of `1 - c X`, `1 - c X ^ j`,
+  and `1 - a X + q X²`.
 * `PowerSeries.subst_exp_mul_one_sub_C_mul_X`: `exp (∑ cⁿ Xⁿ / n) (1 - c X) = 1`.
 * `PowerSeries.subst_exp_mul_one_sub_X_mul_one_sub_C_mul_X`:
   `exp (∑ (1 + qⁿ - tₙ) Xⁿ / n) (1 - X) (1 - q X) = 1 - a X + q X²`.
@@ -203,6 +209,12 @@ theorem logOf_inj {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoef
     logOf f = logOf g ↔ f = g :=
   ⟨fun h ↦ by rw [← subst_exp_logOf hf, h, subst_exp_logOf hg], congrArg logOf⟩
 
+/-- Substitution into the formal exponential is injective on power series without constant
+term. -/
+theorem subst_exp_inj {f g : A⟦X⟧} (hf : constantCoeff f = 0) (hg : constantCoeff g = 0) :
+    (exp A).subst f = (exp A).subst g ↔ f = g :=
+  ⟨fun h ↦ by rw [← logOf_subst_exp hf, h, logOf_subst_exp hg], fun h ↦ h ▸ rfl⟩
+
 /-- The formal logarithm turns products into sums: `log (f g) = log f + log g` when `f` and `g`
 have constant coefficient one. -/
 theorem logOf_mul {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoeff g = 1) :
@@ -240,6 +252,23 @@ theorem logOf_prod {ι : Type*} {s : Finset ι} {f : ι → A⟦X⟧}
         (by rw [map_prod]; exact Finset.prod_eq_one hs),
       ih hs]
 
+/-- The formal logarithm commutes with rescaling when the constant coefficient is one. -/
+theorem logOf_rescale (q : A) {f : A⟦X⟧} (hf : constantCoeff f = 1) :
+    logOf (rescale q f) = rescale q (logOf f) := by
+  have hsub1 : HasSubst (f - 1) := HasSubst.sub_one hf
+  have hsub2 : HasSubst (q • X : A⟦X⟧) := HasSubst.of_constantCoeff_zero' (by simp)
+  rw [logOf_eq, logOf_eq, rescale_eq_subst, rescale_eq_subst,
+    ← (by rw [subst_sub hsub2, subst_one] :
+      subst (q • X : A⟦X⟧) (f - 1) = subst (q • X : A⟦X⟧) f - 1),
+    subst_comp_subst_apply hsub1 hsub2]
+
+/-- The formal logarithm commutes with expansion when the constant coefficient is one. -/
+theorem logOf_expand (p : ℕ) (hp : p ≠ 0) {f : A⟦X⟧} (hf : constantCoeff f = 1) :
+    logOf (expand p hp f) = expand p hp (logOf f) := by
+  have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
+  rw [logOf_eq, logOf_eq, ← (by rw [map_sub, map_one] : expand p hp (f - 1) = expand p hp f - 1)]
+  exact (PowerSeries.expand_subst p hp hsub (log A)).symm
+
 /-- The formal logarithm commutes with ring homomorphisms between `ℚ`-algebras, on power series
 with constant coefficient one. -/
 theorem map_logOf {B : Type*} [CommRing B] [Algebra ℚ B] (φ : A →+* B) {f : A⟦X⟧}
@@ -248,6 +277,13 @@ theorem map_logOf {B : Type*} [CommRing B] [Algebra ℚ B] (φ : A →+* B) {f :
   have h : map φ ((log A).subst (f - 1)) = (map φ (log A)).subst (map φ (f - 1)) :=
     map_subst hsub _
   rw [logOf_eq, logOf_eq, h, map_log, map_sub, map_one]
+
+/-- Coefficientwise ring homomorphisms commute with substituting into `PowerSeries.exp`. -/
+theorem map_subst_exp {B : Type*} [CommRing B] [Algebra ℚ B] (φ : A →+* B) {a : A⟦X⟧}
+    (ha : HasSubst a) :
+    map φ ((exp A).subst a) = (exp B).subst (map φ a) := by
+  have h : map φ ((exp A).subst a) = (map φ (exp A)).subst (map φ a) := map_subst ha _
+  rw [h, map_exp]
 
 /-- **The formal logarithm respects congruences of coefficients.** If the coefficients of two
 power series with constant coefficient one are congruent modulo an ideal `I`, then so are the
@@ -269,6 +305,12 @@ theorem logOf_one_sub_C_mul_X (c : A) :
     logOf (1 - C c * X) = mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n := by
   rw [logOf_eq_mk_iff (by simp), mul_sub, mul_one, mul_comm _ (C c * X), mul_assoc]
   ext (_ | n) <;> simp [coeff_succ_X_mul, pow_succ, mul_comm]
+
+/-- The logarithm of `1 - c X ^ j` (`j ≠ 0`) is the `j`-fold expansion of `-∑ cⁿ Xⁿ / n`. -/
+theorem logOf_one_sub_C_mul_X_pow (c : A) {j : ℕ} (hj : j ≠ 0) :
+    logOf (1 - C c * X ^ j) = expand j hj (mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n) := by
+  have hexp : expand j hj (1 - C c * X) = 1 - C c * X ^ j := by simp [expand_C]
+  rw [← hexp, logOf_expand j hj (by simp), logOf_one_sub_C_mul_X]
 
 /-- The logarithm of `1 - a X + q X²` is `-∑ tₙ Xⁿ / n`, where `t` is the sequence with `t₀ = 2`,
 `t₁ = a` and `tₙ₊₂ = a tₙ₊₁ - q tₙ`. If `1 - a X + q X²` factors as `(1 - α X)(1 - β X)`, then

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
+public import TauCeti.NumberTheory.NumberField.RingOfIntegers.QuadraticAlgebra
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.NumberTheory.SumTwoSquares
@@ -15,6 +16,7 @@ import TauCeti.NumberTheory.LegendreSymbol.NormForm
 import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
 
 /-!
 # The ring of integers of a quadratic field
@@ -23,9 +25,10 @@ For a quadratic number field `K = ℚ(√d)` — presented by an algebraic integ
 `minpoly ℤ θ = X² - d` and `Algebra.adjoin ℚ {θ} = ⊤` — with `d` squarefree, the ring of integers
 depends on `d mod 4`:
 
-* `d ≢ 1 (mod 4)`: `𝓞 K = ℤ[θ]` and `NumberField.discr K = 4 * d`;
-* `d ≡ 1 (mod 4)`: `𝓞 K = ℤ[ω]` with `ω = (1+θ)/2 = NumberField.halfGen`, and
-  `NumberField.discr K = d`.
+* `d ≢ 1 (mod 4)`: `𝓞 K = ℤ[θ]`, `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ d 0`, and
+  `NumberField.discr K = 4 * d`;
+* `d ≡ 1 (mod 4)`: `𝓞 K = ℤ[ω]` with `ω = (1+θ)/2 = NumberField.halfGen`,
+  `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ ((d - 1) / 4) 1`, and `NumberField.discr K = d`.
 
 The content is the "no more integers" step: an algebraic integer `z` with `(z : K) = a + b·θ`
 (`a, b : ℚ`) has `2a ∈ ℤ` and `a² - d·b² ∈ ℤ` (its trace and norm), whence `2a, 2b ∈ ℤ` (using that
@@ -43,8 +46,12 @@ some prime `p ≡ 3 (mod 4)` divides `d`.
 ## Main results
 
 * `NumberField.adjoin_gen_eq_top_of_mod_four_ne_one`: `𝓞 K = ℤ[θ]` for `d % 4 ≠ 1`.
+* `TauCeti.NumberField.ringOfIntegersAlgEquivGen`: `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ d 0` for
+  `d % 4 ≠ 1`.
 * `NumberField.discr_eq_four_mul_of_mod_four_ne_one`: `discr K = 4d` for `d % 4 ≠ 1`.
 * `NumberField.adjoin_halfGen_eq_top_of_mod_four_eq_one`: `𝓞 K = ℤ[(1+θ)/2]` for `d ≡ 1`.
+* `TauCeti.NumberField.ringOfIntegersAlgEquivHalfGen`:
+  `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ ((d - 1) / 4) 1` for `d ≡ 1`.
 * `NumberField.minpoly_halfGen`: the minimal polynomial of `(1+θ)/2` is `X² - X + (1-d)/4`.
 * `NumberField.adjoin_rat_halfGen_eq_top`: `(1+θ)/2` generates `K` over `ℚ`.
 * `NumberField.discr_eq_of_squarefree_of_mod_four_eq_one`: `discr K = d` for `d ≡ 1`.
@@ -68,17 +75,6 @@ open Polynomial NumberField Module
 namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- A rational number whose image in a number field is an algebraic integer is an integer. -/
-private theorem exists_intCast_eq_of_algebraMap_mem_range {q : ℚ}
-    (h : algebraMap ℚ K q ∈ (algebraMap (𝓞 K) K).range) : ∃ n : ℤ, (n : ℚ) = q := by
-  obtain ⟨w, hw⟩ := h
-  have hint : IsIntegral ℤ q := by
-    have hwint : IsIntegral ℤ (algebraMap ℚ K q) := by
-      rw [← hw]; exact (IsIntegralClosure.isIntegral ℤ K w).algebraMap
-    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom ℤ ℚ K)
-      (FaithfulSMul.algebraMap_injective ℚ K)).mp hwint
-  exact (IsIntegrallyClosed.isIntegral_iff).mp hint
 
 /-- If `d` is squarefree and `d · B²` is an integer for a rational `B`, then `B` is an integer:
 the reduced denominator squared divides `d`, so is a unit. -/
@@ -139,8 +135,9 @@ private theorem exists_intCast_coords (hmin : minpoly ℤ θ = X ^ 2 - C d)
       rw [this] at hroot; linear_combination hroot
     rw [heq, map_sub, map_mul, map_pow, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K,
       RingOfIntegers.coe_eq_algebraMap]
-  obtain ⟨N, hN⟩ := exists_intCast_eq_of_algebraMap_mem_range hmem
-  exact ⟨N, hN⟩
+  obtain ⟨w, hw⟩ := hmem
+  obtain ⟨N, rfl⟩ := RingOfIntegers.exists_intCast_eq_of_coe_mem_range (y := w) ⟨_, hw.symm⟩
+  exact ⟨N, (algebraMap ℚ K).injective (by simpa using hw)⟩
 
 /-- **Parity from the norm residue.** If `A² - d·B² = 4N` with `d ≡ 2, 3 (mod 4)`, then `A` and
 `B` are both even: squares are `0, 1 (mod 4)`, so `A² ≡ d·B² (mod 4)` is impossible unless `B`
@@ -349,6 +346,53 @@ theorem adjoin_halfGen_eq_top_of_mod_four_eq_one (hmin : minpoly ℤ θ = X ^ 2 
   exact add_mem (zsmul_mem (one_mem _) k)
     (zsmul_mem (Algebra.subset_adjoin (Set.mem_singleton _)) l)
 
+end NumberField
+
+namespace TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- **Quadratic-algebra presentation of `𝓞 K` when `d ≡ 1 (mod 4)`**: for squarefree `d` with
+`d % 4 = 1`, `𝓞 K` is isomorphic over `ℤ` to `QuadraticAlgebra ℤ ((d - 1) / 4) 1`, sending
+`halfGen hmin hd4` to `QuadraticAlgebra.omega`. -/
+noncomputable def ringOfIntegersAlgEquivHalfGen (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 = 1) :
+    𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ ((d - 1) / 4) 1 :=
+  ringOfIntegersAlgEquivOfAdjoin
+    (by
+      have haeval := minpoly.aeval ℤ (halfGen hmin hd4)
+      rw [minpoly_halfGen hmin hd4, show (1 - d) / 4 = -((d - 1) / 4) by omega] at haeval
+      simp only [map_add, map_sub, map_pow, map_neg, map_intCast, aeval_X, zsmul_eq_mul,
+        eq_intCast, Int.cast_one, one_mul] at haeval ⊢
+      linear_combination haeval)
+    (adjoin_halfGen_eq_top_of_mod_four_eq_one hmin hgen hsf hd4)
+    (fun ⟨q, hq⟩ ↦ gen_notMem_range hmin ⟨2 * q - 1, by
+      rw [coe_halfGen] at hq; rw [map_sub, map_mul, map_one, map_ofNat, hq]; ring⟩)
+
+/-- The inverse of `ringOfIntegersAlgEquivHalfGen` sends `z` to
+`z.re • 1 + z.im • halfGen hmin hd4`. -/
+@[simp]
+theorem ringOfIntegersAlgEquivHalfGen_symm_apply (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 = 1)
+    (z : QuadraticAlgebra ℤ ((d - 1) / 4) 1) :
+    (ringOfIntegersAlgEquivHalfGen hmin hgen hsf hd4).symm z =
+      z.re • 1 + z.im • halfGen hmin hd4 := by
+  simp [ringOfIntegersAlgEquivHalfGen]
+
+/-- `ringOfIntegersAlgEquivHalfGen` sends `halfGen hmin hd4` to `QuadraticAlgebra.omega`. -/
+@[simp]
+theorem ringOfIntegersAlgEquivHalfGen_apply_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 = 1) :
+    ringOfIntegersAlgEquivHalfGen hmin hgen hsf hd4 (halfGen hmin hd4) =
+      QuadraticAlgebra.omega := by
+  simp [ringOfIntegersAlgEquivHalfGen]
+
+end TauCeti.NumberField
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
 /-- **The discriminant of `ℚ(√d)` when `d ≡ 1 (mod 4)`.** For squarefree `d` with `d % 4 = 1`, the
 field discriminant is `disc K = d` (the ring of integers is `ℤ[(1+θ)/2]`, whose `{1, ω}` basis has
 discriminant `d`). -/
@@ -466,6 +510,34 @@ end NumberField
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- **Quadratic-algebra presentation of `𝓞 K` when `d ≢ 1 (mod 4)`**: for squarefree `d` with
+`d % 4 ≠ 1`, `𝓞 K` is isomorphic over `ℤ` to `QuadraticAlgebra ℤ d 0`, sending `θ` to
+`QuadraticAlgebra.omega`. -/
+noncomputable def ringOfIntegersAlgEquivGen (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) :
+    𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ d 0 :=
+  ringOfIntegersAlgEquivOfAdjoin
+    (by
+      apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+      simpa [sq, zsmul_eq_mul, RingOfIntegers.coe_eq_algebraMap] using coe_gen_sq hmin)
+    (adjoin_gen_eq_top_of_mod_four_ne_one hmin hgen hsf hd4)
+    (gen_notMem_range hmin)
+
+/-- The inverse of `ringOfIntegersAlgEquivGen` sends `z` to `z.re • 1 + z.im • θ`. -/
+@[simp]
+theorem ringOfIntegersAlgEquivGen_symm_apply (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 ≠ 1)
+    (z : QuadraticAlgebra ℤ d 0) :
+    (ringOfIntegersAlgEquivGen hmin hgen hsf hd4).symm z = z.re • 1 + z.im • θ := by
+  simp [ringOfIntegersAlgEquivGen]
+
+/-- `ringOfIntegersAlgEquivGen` sends `θ` to `QuadraticAlgebra.omega`. -/
+@[simp]
+theorem ringOfIntegersAlgEquivGen_apply_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) :
+    ringOfIntegersAlgEquivGen hmin hgen hsf hd4 θ = QuadraticAlgebra.omega := by
+  simp [ringOfIntegersAlgEquivGen]
 
 /-- If `d ≡ 1 (mod 4)`, then a finite set of primes dividing the discriminant of `ℚ(√d)` has
 product dividing `|d|`. -/

@@ -77,6 +77,11 @@ orientation character `π₁(M, x) →* ℤˣ` read in `Rˣ`. -/
 def orientation (hd : finrank ℝ E = d) (x : M) : RankOneLocalSystem M x R :=
   ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp (orientationCharacter hd x))
 
+theorem orientation_def (hd : finrank ℝ E = d) (x : M) :
+    orientation R hd x =
+      ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp (orientationCharacter hd x)) :=
+  (rfl)
+
 variable {R}
 
 /-- The monodromy of the orientation local system is the orientation character. -/
@@ -120,6 +125,13 @@ orientation character is trivial. -/
 theorem orientation_eq_one_iff_orientationCharacter_eq_one (h : (2 : R) ≠ 0)
     (hd : finrank ℝ E = d) (x : M) : orientation R hd x = 1 ↔ orientationCharacter hd x = 1 :=
   (ofMonodromy_unitsMap_comp_eq_one_iff _).trans (or_iff_left h)
+
+/-- **The orientation local system is defined over `ℤ`**: extending its coefficients along a ring
+homomorphism `φ : R →+* R'` gives the orientation local system with coefficients in `R'`. -/
+@[simp]
+theorem mapRingHom_orientation {R' : Type*} [CommRing R'] (φ : R →+* R') (hd : finrank ℝ E = d)
+    (x : M) : mapRingHom φ (orientation R hd x) = orientation R' hd x :=
+  mapRingHom_ofMonodromy_unitsMap_comp φ _
 
 end RankOneLocalSystem
 

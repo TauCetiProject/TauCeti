@@ -77,6 +77,8 @@ approximates `a`.
   common denominator in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
   strong approximation with explicit precision at finitely many places and integrality everywhere.
+* `IsDedekindDomain.FiniteAdeleRing.exists_sub_algebraMap_mem_integralAdeles`: every finite adele
+  differs from a diagonal element by an integral finite adele.
 * `IsDedekindDomain.FiniteAdeleRing.denseRange_algebraMap`: `K` is dense in the finite adele ring.
 * `IsDedekindDomain.FiniteAdeleRing.closure_image_algebraMap_integer` and
   `IsDedekindDomain.FiniteAdeleRing.closure_range_algebraMap`: the closure of the `S`-integers in
@@ -343,6 +345,15 @@ theorem sub_algebraMap_add_algebraMap_mem_integralAdeles {f : FiniteAdeleRing R 
   rw [map_add, ← IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), sub_add_eq_sub_sub]
   exact sub_mem hx ((integralAdeles R K).algebraMap_mem y)
 
+variable (K) in
+/-- If `R` is not a field, the diagonal map `K → 𝔸_f` is injective: `R` then has a maximal
+ideal, hence a finite place, and `K` embeds in its completion there. -/
+theorem algebraMap_injective (hR : ¬ IsField R) :
+    Function.Injective (algebraMap K (FiniteAdeleRing R K)) := by
+  obtain ⟨M, hM⟩ := Ideal.exists_maximal R
+  let v : HeightOneSpectrum R := ⟨M, hM.isPrime, Ring.ne_bot_of_isMaximal_of_not_isField hM hR⟩
+  exact fun x y h ↦ by simpa using congr($h v)
+
 end IsDedekindDomain.FiniteAdeleRing
 
 /-! ### Strong approximation -/
@@ -439,6 +450,15 @@ theorem exists_forall_sub_algebraMap_mem_adicCompletionIntegers (a : FiniteAdele
     rw [mem_adicCompletionIntegers]
     exact hx v
   simpa only [neg_sub] using neg_mem hxa
+
+/-- Every finite adele differs from a diagonal element by an element of the subalgebra
+`integralAdeles` of integral finite adeles. -/
+theorem exists_sub_algebraMap_mem_integralAdeles (a : FiniteAdeleRing R K) :
+    ∃ x : K, a - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K :=
+  (exists_forall_sub_algebraMap_mem_adicCompletionIntegers a).imp fun _ hx ↦
+    mem_integralAdeles.mpr fun v ↦ by
+      rw [sub_apply, algebraMap_apply]
+      exact hx v
 
 /-- **Every neighbourhood of `0` in the finite adele ring contains a basic congruence
 neighbourhood.**  There are a finite set `I` of places and exponents `n` such that every finite

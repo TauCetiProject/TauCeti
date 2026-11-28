@@ -5,20 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Rank
+public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
 /-!
 # Regular elements by minimal centralizer dimension
 
 An element `x` of a Lie algebra `L` over a field `K` is **regular** when its centralizer
 `ker (ad x)` has the smallest dimension among the centralizers of all elements of `L`
-(`LieAlgebra.IsCentralizerRegular`). For a semisimple Lie algebra over an algebraically closed
-field of characteristic zero this minimal dimension is the rank, and the regular elements include
-both the regular semisimple elements and the regular nilpotent ones. If `L` is the Lie algebra of
-an affine algebraic group `G` over a field of characteristic zero, the centralizer `C_G(x)` is
-smooth with Lie algebra `ker (ad x)`, so these are also the elements whose group centralizer has
-minimal dimension.
+(`LieAlgebra.IsCentralizerRegular`). When the Killing form is nondegenerate and the field is
+infinite this minimal dimension is the rank `LieAlgebra.rank K L`
+(`LieAlgebra.isCentralizerRegular_iff_finrank_ker_ad_eq_rank`), and every element regular in
+Mathlib's sense is regular (`LieAlgebra.IsRegular.isCentralizerRegular`). Regular nilpotent
+elements need not exist under these conditions alone: `su(2)` over `ℝ` has a nondegenerate
+Killing form but no nonzero nilpotent elements. Over a field of characteristic zero, when a Cartan
+subalgebra splits `L` (for instance over an algebraically closed field), the nilpositive element
+of the principal `sl₂` triple is a regular nilpotent element
+(`IsSl2Triple.isCentralizerRegular_e`). If `L` is the Lie algebra of an affine algebraic group `G`
+over a field of characteristic zero, the centralizer `C_G(x)` is smooth with Lie algebra
+`ker (ad x)`, so these are also the elements whose group centralizer has minimal dimension.
 
 This notion differs from Mathlib's `LieAlgebra.IsRegular`, which is stated for `L` finite free
 over a commutative ring `R`. There the coefficients of the characteristic polynomial of `ad x` are
@@ -43,7 +52,13 @@ finite dimension regularity is the lower bound `rank (ad x₀) ≤ rank (ad x)` 
 element `x₀`. In the coordinates of a basis of a finite-dimensional `L` this bound is a
 Zariski-open condition, since it asks for a nonzero minor of the matrix of `ad x`, whose entries
 are linear in the coordinates of `x`. Over an infinite field the regular elements therefore form
-a nonempty Zariski-open and Zariski-dense subset of `L`. Regularity is preserved by Lie algebra
+a nonempty Zariski-open and Zariski-dense subset of `L`. The same holds inside any subspace of `L`
+that contains a regular element, since the minors of `ad x` restrict to polynomial functions on
+it. The elements regular in Mathlib's sense are those at which a nonzero polynomial function, the
+coefficient of index `LieAlgebra.rank K L` of the characteristic polynomial of `ad x`, does not
+vanish. By density this polynomial cannot vanish at all regular elements, so some element is
+regular in both senses
+(`LieAlgebra.exists_isRegular_and_isCentralizerRegular`). Regularity is preserved by Lie algebra
 isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dimension the element
 `0` is regular only when `L` is abelian.
 
@@ -69,6 +84,11 @@ isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dim
   elements form a Zariski-closed set.
 * `Module.Basis.vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot`: over an infinite field
   the regular elements are Zariski dense.
+* `LieAlgebra.exists_isRegular_and_isCentralizerRegular`: over an infinite field some element is
+  regular both in Mathlib's sense and in the sense of this file.
+* `LieAlgebra.lift_eval_eq_zero_of_forall_isCentralizerRegular_of_mem`: over an infinite field the
+  regular elements of a subspace containing one are Zariski dense in it, as polynomial functions on
+  `L` vanishing at them vanish on the subspace.
 
 ## References
 
@@ -235,6 +255,58 @@ theorem vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot [Infinite K] :
   exact (ad K L).toLinearMap.vanishingIdeal_setOfPred_le_finrank_range_eq_bot b le_rfl
 
 end Module.Basis
+
+namespace LieAlgebra
+
+variable (K : Type*) (L : Type*) [Field K] [Infinite K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L]
+
+/-- **Some element is regular in both senses.** Over an infinite field, some element of `L` is
+both `LieAlgebra.IsRegular` and `LieAlgebra.IsCentralizerRegular`. -/
+theorem exists_isRegular_and_isCentralizerRegular :
+    ∃ x : L, IsRegular K x ∧ IsCentralizerRegular K x := by
+  classical
+  let b := Module.finBasis K L
+  have hq := polyCharpoly_coeff_rank_ne_zero K L b
+  by_contra! h
+  refine hq (Ideal.mem_bot.mp ?_)
+  rw [← b.vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot, mem_vanishingIdeal_iff]
+  rintro _ ⟨x, hx, rfl⟩
+  have hreg := mt (h x) (not_not.mpr hx)
+  rw [isRegular_iff_coeff_polyCharpoly_rank_ne_zero (b := b), not_not] at hreg
+  simpa [Module.Basis.equivFun_apply] using hreg
+
+variable {K L} in
+attribute [local instance 100] LieRing.ofAssociativeRing in
+/-- **The regular elements of a subspace are Zariski dense in it.** Over an infinite field, let
+`V` be a subspace of a finite-dimensional Lie algebra `L` containing a regular element of `L`. A
+polynomial function on `L` vanishing at every regular element of `V` vanishes on all of `V`. -/
+theorem lift_eval_eq_zero_of_forall_isCentralizerRegular_of_mem {V : Submodule K L}
+    (hV : ∃ x₀ ∈ V, IsCentralizerRegular K x₀) {p : SymmetricAlgebra K (Dual K L)}
+    (hp : ∀ y ∈ V, IsCentralizerRegular K y → SymmetricAlgebra.lift (Dual.eval K L y) p = 0)
+    {x : L} (hx : x ∈ V) : SymmetricAlgebra.lift (Dual.eval K L x) p = 0 := by
+  classical
+  obtain ⟨x₀, hx₀V, hx₀⟩ := hV
+  let b := Module.finBasis K V
+  -- the restriction of `p` to `V`, as a polynomial in the coordinates of `b`
+  set P := SymmetricAlgebra.equivMvPolynomial b.dualBasis
+    (SymmetricAlgebra.map K V.subtype.dualMap p)
+  have hP (v : V) :
+      eval (b.equivFun v) P = SymmetricAlgebra.lift (Dual.eval K L v) p := by
+    rw [← b.lift_eval_apply_eq_eval_equivMvPolynomial_dualBasis,
+      SymmetricAlgebra.lift_eval_map_dualMap, Submodule.subtype_apply]
+  -- the regular elements of `V` are those where `ad` has rank at least that of `ad x₀`
+  have hdense :=
+    ((ad K L).toLinearMap ∘ₗ V.subtype).vanishingIdeal_setOfPred_le_finrank_range_eq_bot b
+      (x₀ := ⟨x₀, hx₀V⟩) le_rfl
+  have hP0 : P = 0 := by
+    rw [← Ideal.mem_bot, ← hdense, mem_vanishingIdeal_iff]
+    rintro _ ⟨v, hv, rfl⟩
+    rw [aeval_eq_eval, hP]
+    exact hp v v.property (hx₀.isCentralizerRegular_iff_finrank_range_le.mpr hv)
+  simpa [hP0] using (hP ⟨x, hx⟩).symm
+
+end LieAlgebra
 
 /-! ### Invariance under Lie algebra isomorphisms -/
 

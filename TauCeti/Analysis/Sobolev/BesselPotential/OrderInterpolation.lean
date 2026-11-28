@@ -8,9 +8,10 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Density
 public import TauCeti.Analysis.Sobolev.BesselPotential.AnalyticFamily
 public import TauCeti.Analysis.Sobolev.BesselPotential.ExponentInterpolation
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Algebra.Order.Floor.Abs
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Data.ENNReal.InterpolatedExponent
 
@@ -63,8 +64,15 @@ equivalent, not equal.
   isomorphism `[H^{s₀,p₀}, H^{s₁,p₁}]_θ ≃L[ℂ] H^{s_θ,p_θ}`, with
   `TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceComplexMethodContinuousLinearEquiv_apply`.
 * `TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`: a continuous linear map of
-  tempered distributions that maps `H^{s₀,p₀}` into `H^{t₀,p₀}` and `H^{s₁,p₁}` into `H^{t₁,p₁}`
-  maps `H^{s_θ,p_θ}` into `H^{t_θ,p_θ}`.
+  tempered distributions that maps `H^{s₀,p₀}` into `H^{t₀,q₀}` and `H^{s₁,p₁}` into `H^{t₁,q₁}`
+  maps `H^{s_θ,p_θ}` into `H^{t_θ,q_θ}`.
+* `TemperedDistribution.MemSobolev.map_of_forall_intCast`: a continuous linear map of tempered
+  distributions that maps `H^{k,p}` into `H^{k,q}` for every integer `k` with `|k| ≤ ⌈|s|⌉` maps
+  `H^{s,p}` into `H^{s,q}`.
+* `BesselPotentialSpace.exists_norm_inclusion_le_mul_norm_inclusion_rpow_mul_norm_rpow`: the
+  interpolation inequality `‖u‖_{H^{t,p}} ≤ C ‖u‖_{H^{r,p}} ^ (1 - θ) ‖u‖_{H^{s,p}} ^ θ` for
+  `t = (1 - θ) r + θ s`; for `p = 2` it holds with `C = 1`
+  (`BesselPotentialSpace.norm_inclusion_le_norm_inclusion_rpow_mul_norm_rpow`).
 
 ## References
 
@@ -643,22 +651,27 @@ namespace TemperedDistribution
 open TauCeti TauCeti.CompatibleCouple
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
-  {s₀ s₁ t₀ t₁ θ : ℝ} {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)]
+  {s₀ s₁ t₀ t₁ θ : ℝ} {p₀ p₁ p q₀ q₁ q : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)]
+  [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q)]
 
-/-- **Interpolation of Bessel-potential regularity.** Let `1 < p₀, p₁ < ∞`, `0 < θ < 1`,
-`s_θ = (1 - θ) s₀ + θ s₁`, `t_θ = (1 - θ) t₀ + θ t₁` and `1 / p = (1 - θ) / p₀ + θ / p₁`. A
-continuous linear map `A` of tempered distributions that maps `H^{s₀,p₀}` into `H^{t₀,p₀}` and
-`H^{s₁,p₁}` into `H^{t₁,p₁}` also maps `H^{s_θ,p}` into `H^{t_θ,p}`. The orders may shift, as for
-a differential operator of order `m` with `tⱼ = sⱼ - m`. -/
+/-- **Interpolation of Bessel-potential regularity.** Let `1 < p₀, p₁, q₀, q₁ < ∞`, `0 < θ < 1`,
+`s_θ = (1 - θ) s₀ + θ s₁`, `t_θ = (1 - θ) t₀ + θ t₁`, `1 / p = (1 - θ) / p₀ + θ / p₁` and
+`1 / q = (1 - θ) / q₀ + θ / q₁`. A continuous linear map `A` of tempered distributions that maps
+`H^{s₀,p₀}` into `H^{t₀,q₀}` and `H^{s₁,p₁}` into `H^{t₁,q₁}` also maps `H^{s_θ,p}` into
+`H^{t_θ,q}`. The orders may shift, as for a differential operator of order `m` with
+`tⱼ = sⱼ - m`, and so may the exponents, as for multiplication by a Schwartz function, which maps
+`H^{s,p}` into `H^{s,q}` for `q ≤ p`. -/
 theorem MemSobolev.map_of_memSobolev_of_memSobolev (hp₀ : 1 < p₀) (hp₀_top : p₀ ≠ ∞)
-    (hp₁ : 1 < p₁) (hp₁_top : p₁ ≠ ∞) (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (hp₁ : 1 < p₁) (hp₁_top : p₁ ≠ ∞) (hq₀ : 1 < q₀) (hq₀_top : q₀ ≠ ∞) (hq₁ : 1 < q₁)
+    (hq₁_top : q₁ ≠ ∞) (hθ : θ ∈ Ioo (0 : ℝ) 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
-    (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G)) (h₀ : ∀ u, MemSobolev s₀ p₀ u → MemSobolev t₀ p₀ (A u))
-    (h₁ : ∀ u, MemSobolev s₁ p₁ u → MemSobolev t₁ p₁ (A u)) {u : 𝓢'(E, F)}
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)
+    (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G)) (h₀ : ∀ u, MemSobolev s₀ p₀ u → MemSobolev t₀ q₀ (A u))
+    (h₁ : ∀ u, MemSobolev s₁ p₁ u → MemSobolev t₁ q₁ (A u)) {u : 𝓢'(E, F)}
     (hu : MemSobolev ((1 - θ) * s₀ + θ * s₁) p u) :
-    MemSobolev ((1 - θ) * t₀ + θ * t₁) p (A u) := by
+    MemSobolev ((1 - θ) * t₀ + θ * t₁) q (A u) := by
   set C := besselPotentialSpace E F s₀ p₀ s₁ p₁
-  set D := besselPotentialSpace E G t₀ p₀ t₁ p₁
+  set D := besselPotentialSpace E G t₀ q₀ t₁ q₁
   -- `A` restricts to the two endpoint spaces, compatibly on their intersection.
   set T₀ := BesselPotentialSpace.mapCLM A fun v : H^{s₀, p₀}(E, F) ↦ h₀ _ v.memSobolev_toDistr
   set T₁ := BesselPotentialSpace.mapCLM A fun v : H^{s₁, p₁}(E, F) ↦ h₁ _ v.memSobolev_toDistr
@@ -666,8 +679,8 @@ theorem MemSobolev.map_of_memSobolev_of_memSobolev (hp₀ : 1 < p₀) (hp₀_top
     D.sumSpaceEmbed_injective (by simpa [T₀, T₁, C, D] using congr_arg A (C.embed₀_interFst x))
   set eC := besselPotentialSpaceComplexMethodContinuousLinearEquiv E F s₀ s₁ p₀ p₁ hp₀ hp₀_top
     hp₁ hp₁_top hθ hp
-  set eD := besselPotentialSpaceComplexMethodContinuousLinearEquiv E G t₀ t₁ p₀ p₁ hp₀ hp₀_top
-    hp₁ hp₁_top hθ hp
+  set eD := besselPotentialSpaceComplexMethodContinuousLinearEquiv E G t₀ t₁ q₀ q₁ hq₀ hq₀_top
+    hq₁ hq₁_top hθ hq
   -- The interpolated map sends `u` to `A u`: split `u = x₀ + x₁` with `xⱼ ∈ H^{sⱼ,pⱼ}`.
   have h := (eD (ComplexMethodSpace.map θ T₀ T₁ hT (eC.symm hu.toBesselPotentialSpace)))
     |>.memSobolev_toDistr
@@ -683,4 +696,75 @@ theorem MemSobolev.map_of_memSobolev_of_memSobolev (hp₀ : 1 < p₀) (hp₀_top
   rw [← hx] at hu'
   simpa [← hu', T₀, T₁, C, D] using h
 
+/-- **Real orders from integer orders.** Let `1 < p, q < ∞`. A continuous linear map `A` of
+tempered distributions that maps `H^{k,p}` into `H^{k,q}` for every integer `k` with
+`|k| ≤ ⌈|s|⌉` also maps `H^{s,p}` into `H^{s,q}`. For non-integer `s`, interpolate between the
+integer orders `⌊s⌋` and `⌊s⌋ + 1`. -/
+theorem MemSobolev.map_of_forall_intCast (hp : 1 < p) (hp_top : p ≠ ∞) (hq : 1 < q)
+    (hq_top : q ≠ ∞) {s : ℝ} (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G))
+    (hA : ∀ k : ℤ, k.natAbs ≤ ⌈|s|⌉₊ → ∀ u, MemSobolev k p u → MemSobolev k q (A u))
+    {u : 𝓢'(E, F)} (hu : MemSobolev s p u) : MemSobolev s q (A u) := by
+  have h₀ := Int.natAbs_floor_le_natCeil_abs s
+  rcases eq_or_ne (Int.fract s) 0 with hs | hs
+  · -- An integer order `s = ⌊s⌋`.
+    have hk : (⌊s⌋ : ℝ) = s := (sub_eq_zero.1 ((Int.self_sub_floor s).trans hs)).symm
+    rw [← hk] at hu ⊢
+    exact hA _ h₀ _ hu
+  have hθ : s = (1 - Int.fract s) * ((⌊s⌋ : ℤ) : ℝ) + Int.fract s * ((⌊s⌋ + 1 : ℤ) : ℝ) := by
+    rw [← Int.self_sub_floor]
+    push_cast
+    ring
+  have hθ' : Int.fract s ∈ Ioo (0 : ℝ) 1 :=
+    ⟨(Int.fract_nonneg s).lt_of_ne' hs, Int.fract_lt_one s⟩
+  have hr (r : ℝ≥0∞) :
+      r⁻¹ = ENNReal.ofReal (1 - Int.fract s) * r⁻¹ + ENNReal.ofReal (Int.fract s) * r⁻¹ := by
+    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ'.2]) hθ'.1.le, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
+  rw [hθ] at hu ⊢
+  exact map_of_memSobolev_of_memSobolev hp hp_top hp hp_top hq hq_top hq hq_top hθ' (hr p) (hr q)
+    A (hA _ h₀) (hA _ (Int.natAbs_floor_add_one_le_natCeil_abs hs)) hu
+
 end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+open TauCeti TauCeti.CompatibleCouple
+
+variable {r s t θ : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **The interpolation inequality of the `H^{·,p}` scale.** Let `1 < p < ∞`, `0 < θ < 1` and
+`t = (1 - θ) r + θ s` with `r ≤ t ≤ s`. There is `C` with
+`‖u‖_{H^{t,p}} ≤ C ‖u‖_{H^{r,p}} ^ (1 - θ) ‖u‖_{H^{s,p}} ^ θ` for every `u ∈ H^{s,p}(E, F)`. It
+comes from the complex interpolation `[H^{r,p}, H^{s,p}]_θ = H^{t,p}`
+(`TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`); for `p = 2`
+the inequality holds with `C = 1`
+(`BesselPotentialSpace.norm_inclusion_le_norm_inclusion_rpow_mul_norm_rpow`). -/
+theorem exists_norm_inclusion_le_mul_norm_inclusion_rpow_mul_norm_rpow (hp : 1 < p)
+    (hp_top : p ≠ ∞) (hrt : r ≤ t) (hts : t ≤ s) (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (ht : t = (1 - θ) * r + θ * s) :
+    ∃ C : ℝ, ∀ u : H^{s, p}(E, F),
+      ‖inclusion hts u‖ ≤ C * ‖inclusion (hrt.trans hts) u‖ ^ (1 - θ) * ‖u‖ ^ θ := by
+  have hpθ : p⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * p⁻¹ := by
+    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ.2]) hθ.1.le, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
+  let C := besselPotentialSpace E F r p s p
+  let e : C.ComplexMethodSpace θ ≃L[ℂ] H^{(1 - θ) * r + θ * s, p}(E, F) :=
+    besselPotentialSpaceComplexMethodContinuousLinearEquiv E F r s p p hp hp_top hp hp_top hθ hpθ
+  refine ⟨‖e.toContinuousLinearMap‖, fun u ↦ ?_⟩
+  -- `u` is the element `(u, u)` of `H^{r,p} ∩ H^{s,p}`, whose norm in `[H^{r,p}, H^{s,p}]_θ` is
+  -- at most the geometric mean of its two norms.
+  let x : C.inter := ⟨(inclusion (hrt.trans hts) u, u), C.mem_inter_iff.2 (by simp [C])⟩
+  have hx : inclusion hts u = (e (ComplexMethodSpace.ofInter θ x)).copy t ht.symm := by
+    refine ext ?_
+    rw [toDistr_copy _ ht.symm]
+    simp [x, e, C, ComplexMethodSpace.toSum_ofInter ⟨hθ.1.le, hθ.2.le⟩]
+  calc ‖inclusion hts u‖ = ‖e (ComplexMethodSpace.ofInter θ x)‖ := by
+        rw [hx, norm_copy]
+    _ ≤ ‖e.toContinuousLinearMap‖ * ‖ComplexMethodSpace.ofInter θ x‖ :=
+        e.toContinuousLinearMap.le_opNorm _
+    _ ≤ ‖e.toContinuousLinearMap‖ * (‖C.interFst x‖ ^ (1 - θ) * ‖C.interSnd x‖ ^ θ) := by
+        gcongr
+        exact ComplexMethodSpace.norm_ofInter_le_rpow_mul_rpow ⟨hθ.1.le, hθ.2.le⟩ x
+    _ = _ := by rw [interFst_apply, interSnd_apply, mul_assoc]
+
+end BesselPotentialSpace

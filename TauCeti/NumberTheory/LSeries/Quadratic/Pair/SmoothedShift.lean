@@ -16,7 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Bounds
 import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Residue
-import TauCeti.NumberTheory.LSeries.SmoothedSum
+import TauCeti.NumberTheory.LSeries.SmoothedSum.Basic
 import TauCeti.NumberTheory.LSeries.Twist
 
 /-!

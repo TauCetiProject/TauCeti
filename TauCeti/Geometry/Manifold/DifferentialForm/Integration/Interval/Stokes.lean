@@ -65,10 +65,7 @@ theorem integralTopForm_mextDeriv_ofFunction_Icc (f : ℝ → ℝ)
   simp only [hη, ContinuousLinearEquiv.apply_symm_apply]
   exact intervalIntegral.integral_deriv_of_contDiffOn_Icc hf hab.out.le
 
-attribute [local instance] intervalSuccessorChartedSpace intervalBoundaryChartedSpace
-
-local instance : IsManifold (𝓡∂ (0 + 1)) ∞ (Icc a b) := instIsManifoldIcc a b
-
+attribute [local instance] intervalBoundaryChartedSpace
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1
     ((𝓡∂ (0 + 1)).boundary (Icc a b)) := isManifold_boundary (n := 0) (Icc a b)
