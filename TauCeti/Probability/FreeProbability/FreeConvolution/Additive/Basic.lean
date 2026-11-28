@@ -205,26 +205,16 @@ theorem rSeries_integral_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ
     TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConv ν)) id =
       TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id +
         TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ν) id := by
-  let τ : Fin 2 → Measure ℝ := ![μ, ν]
-  have : ∀ i, IsProbabilityMeasure (τ i) := Fin.forall_fin_two.2 ⟨‹_›, ‹_›⟩
-  have : ∀ i, CompactSpace (τ i).support :=
-    Fin.forall_fin_two.2 ⟨isCompact_iff_compactSpace.mp hμ, isCompact_iff_compactSpace.mp hν⟩
-  let φ := TauCeti.FreeLawRealization.state τ
-  let x := TauCeti.FreeLawRealization.generator τ 0
-  let y := TauCeti.FreeLawRealization.generator τ 1
-  have hx := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 0
-  have hy := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 1
-  have h1 := φ.map_ofReal_rSeries_integral_law hx
-  have h2 := φ.map_ofReal_rSeries_integral_law hy
-  rw [TauCeti.FreeLawRealization.law_generator τ 0] at h1
-  rw [TauCeti.FreeLawRealization.law_generator τ 1] at h2
+  obtain ⟨A, _, _, _, φ, g, hφ1, hfree, hgt, hgf, -, -, hlt, hlf, hladd⟩ :=
+    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
+  have h1 := φ.map_ofReal_rSeries_integral_law hgt
+  have h2 := φ.map_ofReal_rSeries_integral_law hgf
+  rw [hlt] at h1
+  rw [hlf] at h2
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [map_add, ← show φ.law (x + y) = μ.freeConv ν by
-    simpa [τ] using TauCeti.FreeLawRealization.law_add_generator τ (by decide : (0 : Fin 2) ≠ 1),
-    φ.map_ofReal_rSeries_integral_law (hx.add hy)]
-  exact ((TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).rSeries_add
-    (TauCeti.FreeLawRealization.state_one τ) (by decide : (0 : Fin 2) ≠ 1)).trans
-    (by simpa [τ] using congrArg₂ (· + ·) h1.symm h2.symm)
+  rw [map_add, ← hladd, φ.map_ofReal_rSeries_integral_law (hgt.add hgf)]
+  exact (hfree.rSeries_add hφ1 Bool.false_ne_true.symm).trans
+    (by simpa using congrArg₂ (· + ·) h1.symm h2.symm)
 
 /-- **Additivity of free cumulants under free additive convolution.** -/
 theorem freeCumulant_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]

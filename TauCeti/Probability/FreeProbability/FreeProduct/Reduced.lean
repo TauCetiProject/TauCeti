@@ -100,6 +100,11 @@ theorem representation_hilbertClassMap (a b : LinearAlgebra.FreeProduct ℂ A) :
 def vacuum : HilbertSpace φ hφ :=
   (freeProductPositiveFunctional φ hφ).hilbertCyclicVector
 
+/-- The unit of the algebraic free product maps to the vacuum vector. -/
+@[simp]
+theorem hilbertClassMap_one : hilbertClassMap φ hφ 1 = vacuum φ hφ :=
+  (freeProductPositiveFunctional φ hφ).hilbertCyclicVector_def.symm
+
 @[simp]
 theorem norm_vacuum : ‖vacuum φ hφ‖ = 1 :=
   (freeProductPositiveFunctional φ hφ).norm_hilbertCyclicVector
