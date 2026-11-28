@@ -178,6 +178,7 @@ theorem cotangentSpaceEquiv_refl_toLinearMap {R : Type*} [CommRing R] [IsLocalRi
 
 /-- Applying `cotangentSpaceEquiv` to the identity ring equivalence is the identity on the
 cotangent space. -/
+@[simp]
 theorem cotangentSpaceEquiv_refl_apply {R : Type*} [CommRing R] [IsLocalRing R]
     (v : CotangentSpace R) :
     cotangentSpaceEquiv (RingEquiv.refl R) v = v := by
