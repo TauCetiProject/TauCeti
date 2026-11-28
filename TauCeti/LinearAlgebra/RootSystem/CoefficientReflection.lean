@@ -34,6 +34,8 @@ the Weyl orbit of the simple root `α`, so reducedness cannot be dropped from th
 
 * `RootPairing.Base.coe_toWeightBasisInt_equivFun_symm_coefficientReflection`: evaluation in the
   root lattice intertwines the reflection on columns with the actual reflection.
+* `RootPairing.Base.sum_zsmul_root_injective`: an integer combination of the simple roots determines
+  its coefficients.
 * `RootPairing.Base.rootCoefficients_eq_iff`: the characterization of the column of a root.
 * `RootPairing.Base.rootCoefficients_apply_of_injective`: the column of a root, read from an
   expansion in a relabelling of some simple roots.
@@ -90,6 +92,22 @@ theorem _root_.RootPairing.reflection_sum_zsmul_root [P.IsCrystallographic] {κ 
 theorem coe_toWeightBasisInt_equivFun_symm (c : b.support → ℤ) :
     ((b.toWeightBasisInt.equivFun.symm c : P.rootSpan ℤ) : V) = ∑ k, c k • P.root k := by
   simp [Basis.equivFun_symm_apply]
+
+/-- An integer combination of the simple roots determines its coefficients. -/
+theorem sum_zsmul_root_injective : Injective fun c : b.support → ℤ ↦ ∑ k, c k • P.root k :=
+  fun c c' (h : ∑ k, c k • P.root k = ∑ k, c' k • P.root k) ↦
+    b.toWeightBasisInt.equivFun.symm.injective <| Subtype.ext <| by
+      rw [coe_toWeightBasisInt_equivFun_symm, coe_toWeightBasisInt_equivFun_symm, h]
+
+/-- Integer combinations of the simple roots, labelled along `r`, determine their coefficients. -/
+theorem sum_zsmul_root_comp_injective {κ : Type*} [Fintype κ] (r : κ ≃ b.support) :
+    Injective fun c : κ → ℤ ↦ ∑ k, c k • P.root (r k) := by
+  intro c c' (h : ∑ k, c k • P.root (r k) = ∑ k, c' k • P.root (r k))
+  rw [← r.symm.sum_comp, ← r.symm.sum_comp fun k ↦ c' k • P.root (r k)] at h
+  simp_rw [Equiv.apply_symm_apply] at h
+  have := b.sum_zsmul_root_injective h
+  funext k
+  simpa using congrFun this (r k)
 
 /-! ### The column of a root -/
 
