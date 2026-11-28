@@ -51,7 +51,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_norm_coeff_le`: for finitely many variables,
   `f ∈ W` iff `‖aᵥ‖ ≤ C ρ^{-|ν|}` for some `ρ > 1` and `C`; such bounds follow from the
   geometric decay `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` with `0 < q < 1`
-  (`MvPowerSeries.exists_norm_coeff_le_mul_inv_pow_of_le_pow`).
+  (`MvPowerSeries.exists_norm_coeff_le_mul_inv_pow_of_le_pow`). Any two overconvergent series
+  satisfy a common bound `‖aᵥ‖ ≤ C η^{|ν|}` with `0 < η < 1`
+  (`TauCeti.Dagger.exists_norm_coeff_le_of_mem_washnitzerAlgebra`).
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_pow_eq_norm`: over a nontrivially normed
   field the radii may be taken in the divisible hull `√|K^×|` of the value group.
 * `TauCeti.Dagger.washnitzerAlgebra.denseRange_toTate`: `W` is dense in the Tate algebra;
@@ -189,6 +191,27 @@ theorem mem_washnitzerAlgebra_iff_norm_coeff_le [Finite σ] {f : MvPowerSeries �
     calc ‖coeff ν f‖ * ρ' ^ ν.degree ≤ C * (ρ ^ ν.degree)⁻¹ * ρ' ^ ν.degree :=
           mul_le_mul_of_nonneg_right (hC ν) (by positivity)
       _ = C * (ρ' / ρ) ^ ν.degree := by rw [div_pow]; ring
+
+/-- **A common coefficient bound for two overconvergent series.** Two overconvergent series `f`
+and `g` satisfy a common bound `‖aᵥ‖ ≤ C η^{|ν|}` with `0 < η < 1`. -/
+theorem exists_norm_coeff_le_of_mem_washnitzerAlgebra {f g : MvPowerSeries σ R}
+    (hf : f ∈ washnitzerAlgebra σ R) (hg : g ∈ washnitzerAlgebra σ R) :
+    ∃ η : ℝ, 0 < η ∧ η < 1 ∧ ∃ C : ℝ, ∀ ν : σ →₀ ℕ,
+      ‖coeff ν f‖ ≤ C * η ^ ν.degree ∧ ‖coeff ν g‖ ≤ C * η ^ ν.degree := by
+  obtain ⟨ρ, hρ, hf⟩ := hf
+  obtain ⟨ρ', hρ', hg⟩ := hg
+  -- Both series are restricted at the smaller radius `r = min ρ ρ'`, so their weighted
+  -- coefficients `‖aᵥ‖ r^{|ν|}` are bounded.
+  obtain ⟨hf, hg⟩ := isRestricted_min_of_one_lt hρ hρ' hf hg
+  have hr : 1 < min ρ ρ' := lt_min hρ hρ'
+  obtain ⟨C, hC⟩ := (isRestricted_const_iff.1 hf).bddAbove_range_of_cofinite
+  obtain ⟨C', hC'⟩ := (isRestricted_const_iff.1 hg).bddAbove_range_of_cofinite
+  have hle {a D : ℝ} (ν : σ →₀ ℕ) (h : a * min ρ ρ' ^ ν.degree ≤ D) (hD : D ≤ max C C') :
+      a ≤ max C C' * (min ρ ρ')⁻¹ ^ ν.degree := by
+    rw [inv_pow, ← div_eq_mul_inv, le_div_iff₀ (pow_pos (by linarith) _)]
+    exact h.trans hD
+  exact ⟨(min ρ ρ')⁻¹, inv_pos.2 (by linarith), inv_lt_one_of_one_lt₀ hr, max C C', fun ν ↦
+    ⟨hle ν (hC ⟨ν, rfl⟩) (le_max_left _ _), hle ν (hC' ⟨ν, rfl⟩) (le_max_right _ _)⟩⟩
 
 /-- With no variables every power series is a constant, so every series is overconvergent. -/
 theorem washnitzerAlgebra_eq_top [IsEmpty σ] : washnitzerAlgebra σ R = ⊤ :=

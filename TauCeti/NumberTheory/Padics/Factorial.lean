@@ -9,8 +9,10 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Data.Nat.Digits.Lemmas
 import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -41,6 +43,10 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
   `TauCeti.div_sub_logb_le_multiplicity_prod_factorial`: its form for a multi-index `κ`,
   `v_p(∏ᵢ κᵢ!) ≥ |κ| / (p - 1) - #supp(κ) (⌊log_p |κ|⌋ + 1)`, and the weaker form with
   `log_p max(|κ|, 1) + 1`.
+* `TauCeti.norm_factorial_mul_pow_le`: in an ultrametric normed ring with `‖1‖ = 1` and
+  `(p : K) ≠ 0`, if `‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹` (for instance `c = π⁻¹` with `π ^ (p - 1) = -p`),
+  then `‖s! c ^ s‖ ≤ ‖p‖⁻¹ ^ (⌊log_p s⌋ + 1)`; consequently `‖s! c ^ s‖ η ^ s → 0` for `|η| < 1`
+  (`TauCeti.tendsto_norm_factorial_mul_pow_mul_pow`).
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
 
@@ -56,6 +62,8 @@ here.
 ## References
 
 * A.-M. Legendre, *Essai sur la théorie des nombres*, 2nd ed., Courcier, Paris, 1808.
+* K. S. Kedlaya, *Fourier transforms and p-adic 'Weil II'*, Compos. Math. 142 (2006),
+  Lemma 4.1.1.
 -/
 
 public section
@@ -151,6 +159,80 @@ theorem div_sub_log_le_multiplicity_factorial (p : ℕ) [hp : Fact p.Prime] (n :
   push_cast [Nat.cast_sub hp.out.one_le] at h
   rw [sub_le_iff_le_add, div_le_iff₀ hp1]
   linarith
+
+open Nat in
+/-- **Factorials against powers of a constant of norm `‖p‖^{-1/(p-1)}`.** In a normed ring with
+an ultrametric norm, `‖1‖ = 1` and `(p : K) ≠ 0`, let `‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹`, for instance
+`c = π⁻¹` with `π ^ (p - 1) = -p` in a field. Then `‖s! c ^ s‖ ≤ ‖p‖⁻¹ ^ (⌊log_p s⌋ + 1)`: by
+Legendre's bound with the number of digits, `v_p(s!)` falls short of `s / (p - 1)` by at most the
+number of base-`p` digits of `s`. -/
+theorem norm_factorial_mul_pow_le {K : Type*} [NormedRing K] [NormOneClass K]
+    [IsUltrametricDist K] (p : ℕ) [hp : Fact p.Prime] {c : K} (hp0 : (p : K) ≠ 0)
+    (hc : ‖c‖ ^ (p - 1) ≤ ‖(p : K)‖⁻¹) (s : ℕ) :
+    ‖(s ! : K) * c ^ s‖ ≤ ‖(p : K)‖⁻¹ ^ (Nat.log p s + 1) := by
+  set q := ‖(p : K)‖
+  have hq0 : 0 < q := norm_pos_iff.2 hp0
+  have hr : 1 ≤ q⁻¹ := (one_le_inv₀ hq0).2 (IsUltrametricDist.norm_natCast_le_one K p)
+  -- The part of `s!` prime to `p` has norm at most one.
+  have hfac : ‖(s ! : K)‖ ≤ q ^ multiplicity p s ! := by
+    obtain ⟨u, hu⟩ := pow_multiplicity_dvd p s !
+    conv_lhs => rw [hu, Nat.cast_mul, Nat.cast_pow]
+    calc ‖(p : K) ^ multiplicity p s ! * (u : K)‖ ≤ ‖(p : K) ^ multiplicity p s !‖ * ‖(u : K)‖ :=
+          norm_mul_le _ _
+      _ ≤ q ^ multiplicity p s ! * 1 :=
+          mul_le_mul (norm_pow_le _ _) (IsUltrametricDist.norm_natCast_le_one K u) (norm_nonneg _)
+            (by positivity)
+      _ = q ^ multiplicity p s ! := mul_one _
+  have hp1 : p - 1 ≠ 0 := by have := hp.out.two_le; omega
+  -- Compare `(p - 1)`-th powers, where the exponents of `q` are integers.
+  refine (norm_mul_le _ _).trans <| (mul_le_mul_of_nonneg_left (norm_pow_le _ _)
+    (norm_nonneg _)).trans ?_
+  rw [← pow_le_pow_iff_left₀ (by positivity) (by positivity) hp1]
+  calc (‖(s ! : K)‖ * ‖c‖ ^ s) ^ (p - 1)
+      = ‖(s ! : K)‖ ^ (p - 1) * (‖c‖ ^ (p - 1)) ^ s := by ring
+    _ ≤ (q ^ multiplicity p s !) ^ (p - 1) * q⁻¹ ^ s := by gcongr
+    _ ≤ (q ^ multiplicity p s !) ^ (p - 1) *
+          q⁻¹ ^ ((p - 1) * (multiplicity p s ! + (Nat.log p s + 1))) := by
+      gcongr
+      exact le_sub_one_mul_multiplicity_factorial_add_log p s
+    _ = (q⁻¹ ^ (Nat.log p s + 1)) ^ (p - 1) := by
+      simp only [inv_pow]
+      field_simp [hq0.ne']
+      ring
+
+open Nat in
+/-- **`s! c ^ s` grows more slowly than any exponential.** Under the hypotheses of
+`TauCeti.norm_factorial_mul_pow_le`, `‖s! c ^ s‖ η ^ s → 0` for every `|η| < 1`, since
+`‖p‖⁻¹ ^ ⌊log_p s⌋` grows at most polynomially in `s`. If `p = 0` in `K`, then `c = 0`. -/
+theorem tendsto_norm_factorial_mul_pow_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
+    [IsUltrametricDist K] (p : ℕ) [hp : Fact p.Prime] {c : K}
+    (hc : ‖c‖ ^ (p - 1) ≤ ‖(p : K)‖⁻¹) {η : ℝ} (hη : |η| < 1) :
+    Tendsto (fun s : ℕ ↦ ‖(s ! : K) * c ^ s‖ * η ^ s) atTop (𝓝 0) := by
+  by_cases hp0 : (p : K) = 0
+  · -- Then `c = 0`, and the sequence vanishes from `s = 1` on.
+    rw [hp0, norm_zero, inv_zero] at hc
+    have hc0 : c = 0 := norm_eq_zero.1 <| (pow_eq_zero_iff (by have := hp.out.two_le; omega)).1
+      (le_antisymm hc (by positivity))
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ne_atTop 0] with s hs
+    simp [hc0, zero_pow hs]
+  set q := ‖(p : K)‖
+  obtain ⟨r, hpr⟩ := pow_unbounded_of_one_lt q⁻¹ (by exact_mod_cast hp.out.one_lt : (1 : ℝ) < p)
+  have hlim : Tendsto (fun s : ℕ ↦ q⁻¹ * ((s : ℝ) ^ r * |η| ^ s)) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_const_mul_const_pow_of_abs_lt_one r
+      (by rwa [abs_abs])).const_mul q⁻¹
+  refine squeeze_zero_norm' ?_ hlim
+  filter_upwards [eventually_ne_atTop 0] with s hs
+  -- `‖p‖⁻¹ ^ ⌊log_p s⌋ ≤ (p ^ ⌊log_p s⌋) ^ r ≤ s ^ r`.
+  have hlog : q⁻¹ ^ Nat.log p s ≤ (s : ℝ) ^ r :=
+    calc q⁻¹ ^ Nat.log p s ≤ ((p : ℝ) ^ r) ^ Nat.log p s := by gcongr
+      _ = ((p ^ Nat.log p s : ℕ) : ℝ) ^ r := by push_cast; ring
+      _ ≤ (s : ℝ) ^ r := by gcongr; exact Nat.pow_log_le_self p hs
+  rw [Real.norm_eq_abs, abs_mul, abs_norm, abs_pow]
+  calc ‖(s ! : K) * c ^ s‖ * |η| ^ s ≤ q⁻¹ ^ (Nat.log p s + 1) * |η| ^ s := by
+        gcongr; exact norm_factorial_mul_pow_le p hp0 hc s
+    _ = q⁻¹ * (q⁻¹ ^ Nat.log p s * |η| ^ s) := by ring
+    _ ≤ q⁻¹ * ((s : ℝ) ^ r * |η| ^ s) := by gcongr
 
 /-- The `p`-adic valuation of `∏ᵢ κᵢ!` is the sum of those of the `κᵢ!`. -/
 private theorem multiplicity_prod_factorial (p : ℕ) [Fact p.Prime] {ι : Type*} (κ : ι →₀ ℕ) :
