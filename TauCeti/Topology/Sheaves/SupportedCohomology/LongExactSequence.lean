@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Sheaves.Flasque.Module
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
+import TauCeti.CategoryTheory.Abelian.DiagramLemmas.Four
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -136,7 +137,13 @@ theorem exact_map_supportedModuleHPresheafFunctor (hT : T.ShortExact) (n : ℕ) 
   rw [ShortComplex.exact_iff_evaluation]
   intro W
   rw [ShortComplex.moduleCat_exact_iff]
-  exact fun x hx ↦ Ext.covariant_sequence_exact₂ _ hT x hx
+  intro x hx
+  dsimp only [ShortComplex.map_f, ShortComplex.map_g, evaluation_obj_map] at hx ⊢
+  let x' : T.X₂.supportedModuleH S W.unop n := x
+  change ((supportedModuleHPresheafFunctor S n).map T.g).app W x' = 0 at hx
+  rw [supportedModuleHPresheafFunctor_map_app_apply] at hx
+  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₂ _ hT x' hx
+  exact ⟨y, (supportedModuleHPresheafFunctor_map_app_apply S n T.f W y).trans hy⟩
 
 /-- The coefficient sequence is exact immediately before its connecting map. -/
 theorem exact_supportedModuleHPresheafFunctor_map_g_δ (hT : T.ShortExact) (n : ℕ) :
@@ -146,8 +153,13 @@ theorem exact_supportedModuleHPresheafFunctor_map_g_δ (hT : T.ShortExact) (n : 
   rw [ShortComplex.exact_iff_evaluation]
   intro W
   rw [ShortComplex.moduleCat_exact_iff]
-  exact fun x hx ↦ Ext.covariant_sequence_exact₃ _ hT x rfl
-    ((supportedModuleHPresheafδ_app_apply S hT n W x).symm.trans hx)
+  intro x hx
+  dsimp only [ShortComplex.map_f, ShortComplex.map_g, evaluation_obj_map] at hx ⊢
+  let x' : T.X₃.supportedModuleH S W.unop n := x
+  change (supportedModuleHPresheafδ S hT n).app W x' = 0 at hx
+  rw [supportedModuleHPresheafδ_app_apply] at hx
+  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₃ _ hT x' rfl hx
+  exact ⟨y, (supportedModuleHPresheafFunctor_map_app_apply S n T.g W y).trans hy⟩
 
 /-- The coefficient sequence is exact immediately after its connecting map. -/
 theorem exact_supportedModuleHPresheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
@@ -158,7 +170,11 @@ theorem exact_supportedModuleHPresheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
   intro W
   rw [ShortComplex.moduleCat_exact_iff]
   intro x hx
-  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₁ _ hT x hx rfl
+  dsimp only [ShortComplex.map_f, ShortComplex.map_g, evaluation_obj_map] at hx ⊢
+  let x' : T.X₁.supportedModuleH S W.unop (n + 1) := x
+  change ((supportedModuleHPresheafFunctor S (n + 1)).map T.f).app W x' = 0 at hx
+  rw [supportedModuleHPresheafFunctor_map_app_apply] at hx
+  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₁ _ hT x' hx rfl
   exact ⟨y, (supportedModuleHPresheafδ_app_apply S hT n W y).trans hy⟩
 
 /-- A flasque middle term makes the positive-degree connecting morphism an
@@ -258,6 +274,33 @@ instance epi_supportedModuleHPresheafδ (hT : T.ShortExact)
       exact epi_comp _ _
     rwa [supportedModuleHPresheafδZero, Iso.hom_inv_id_assoc] at this
   · infer_instance
+
+/-- Given a morphism `φ : T ⟶ T'` of short exact sequences of sheaves with flasque middle
+terms, if `φ.τ₂` induces an epimorphism and `φ.τ₃` induces an isomorphism on degree-`n` supported
+cohomology, then `φ.τ₁` induces an isomorphism on degree-`(n + 1)` supported cohomology. -/
+theorem isIso_supportedModuleHPresheafFunctor_map_τ₁_succ
+    (hT : T.ShortExact) (hT' : T'.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₂.obj] [TopCat.Presheaf.IsFlasque T'.X₂.obj]
+    (φ : T ⟶ T') (n : ℕ)
+    [Epi ((supportedModuleHPresheafFunctor S n).map φ.τ₂)]
+    [IsIso ((supportedModuleHPresheafFunctor S n).map φ.τ₃)] :
+    IsIso ((supportedModuleHPresheafFunctor S (n + 1)).map φ.τ₁) := by
+  let R₁ := ShortComplex.mk ((supportedModuleHPresheafFunctor S n).map T.g)
+    (supportedModuleHPresheafδ S hT n) (supportedModuleHPresheafFunctor_map_g_δ S hT n)
+  let R₂ := ShortComplex.mk ((supportedModuleHPresheafFunctor S n).map T'.g)
+    (supportedModuleHPresheafδ S hT' n) (supportedModuleHPresheafFunctor_map_g_δ S hT' n)
+  let ψ : R₁ ⟶ R₂ :=
+    { τ₁ := (supportedModuleHPresheafFunctor S n).map φ.τ₂
+      τ₂ := (supportedModuleHPresheafFunctor S n).map φ.τ₃
+      τ₃ := (supportedModuleHPresheafFunctor S (n + 1)).map φ.τ₁
+      comm₁₂ := by
+        dsimp only [R₁, R₂]
+        rw [← Functor.map_comp, ← Functor.map_comp, φ.comm₂₃]
+      comm₂₃ := supportedModuleHPresheafδ_naturality S hT hT' φ n }
+  have : Epi R₁.g := epi_supportedModuleHPresheafδ S hT n
+  have : Epi R₂.g := epi_supportedModuleHPresheafδ S hT' n
+  exact ShortComplex.isIso_τ₃_of_epi_of_isIso ψ
+    (exact_supportedModuleHPresheafFunctor_map_g_δ S hT' n)
 
 end
 

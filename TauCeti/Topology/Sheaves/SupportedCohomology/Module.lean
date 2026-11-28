@@ -732,6 +732,16 @@ private lemma supportedModuleHPresheaf_hom_ext {S₁ S₂ : Closeds X}
   ext W x
   exact h (op W) x
 
+variable {S} in
+/-- Evaluating a sum of morphisms of supported cohomology presheaves on a class adds their
+values. -/
+private lemma supportedModuleHPresheaf_add_app_apply {S₁ S₂ : Closeds X}
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m k : ℕ}
+    (φ ψ : F.supportedModuleHPresheaf S₁ m ⟶ G.supportedModuleHPresheaf S₂ k)
+    (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH S₁ W.unop m) :
+    (φ + ψ).app W x = φ.app W x + ψ.app W x :=
+  (rfl)
+
 /-- The morphism of presheaves `H_Sᵐ(-, F) ⟶ H_Sᵏ(-, G)` given by the Yoneda
 product with an `Ext` class `α : Extⁿ(F, G)`, where `m + n = k`. For
 `α = Ext.mk₀ f` this is the map induced by a morphism of sheaves `f : F ⟶ G`,
@@ -744,7 +754,11 @@ def supportedModuleHPresheafPostcomp
   app W := ModuleCat.ofHom (Ext.postcompOfLinear α R
     ((S.supportedFreeModuleSheafFunctor R).obj W.unop) hk)
   naturality _ _ _ := by
-    ext x
+    refine ModuleCat.hom_ext <| LinearMap.ext fun (x : F.supportedModuleH S _ m) ↦ ?_
+    change Ext.postcompOfLinear α R _ hk ((F.supportedModuleHPresheaf S m).map _ x) =
+      (G.supportedModuleHPresheaf S k).map _ (Ext.postcompOfLinear α R _ hk x)
+    simp only [TauCeti.coe_postcompOfLinear, AddMonoidHom.flip_apply,
+      Ext.bilinearComp_apply_apply, supportedModuleHPresheaf_map_apply]
     exact Ext.comp_assoc _ x α (zero_add m) hk (by omega)
 
 /-- Evaluating `CategoryTheory.Sheaf.supportedModuleHPresheafPostcomp` on an open `W` computes the
@@ -774,9 +788,8 @@ lemma supportedModuleHPresheafPostcomp_add
     (α β : Ext.{u} F G n) (hk : m + n = k) :
     supportedModuleHPresheafPostcomp S (α + β) hk =
       supportedModuleHPresheafPostcomp S α hk + supportedModuleHPresheafPostcomp S β hk := by
-  ext W x
-  rw [NatTrans.app_add]
-  simp only [ModuleCat.hom_add, LinearMap.add_apply]
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
+  simp only [supportedModuleHPresheaf_add_app_apply, supportedModuleHPresheafPostcomp_app_apply]
   exact Ext.comp_add x α β hk
 
 /-- For a degree-zero class `Ext.mk₀ f`, Yoneda postcomposition is the map of
@@ -800,10 +813,8 @@ lemma supportedModuleHPresheafPostcomp_comp
     supportedModuleHPresheafPostcomp S α hk ≫ supportedModuleHPresheafPostcomp S β hl =
       supportedModuleHPresheafPostcomp S (α.comp β hp) (by omega) := by
   refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
-  rw [NatTrans.comp_app,
-    ConcreteCategory.comp_apply ((supportedModuleHPresheafPostcomp S α hk).app W) _ x,
-    supportedModuleHPresheafPostcomp_app_apply, supportedModuleHPresheafPostcomp_app_apply,
-    supportedModuleHPresheafPostcomp_app_apply]
+  simp only [TopCat.Presheaf.comp_app, ModuleCat.hom_comp, LinearMap.coe_comp,
+    Function.comp_def, supportedModuleHPresheafPostcomp_app_apply]
   exact Ext.comp_assoc x α β hk hp (by omega)
 
 variable {S} in
@@ -815,11 +826,9 @@ lemma supportedModuleHPresheafMap_supportedModuleHPresheafPostcomp {Z : Closeds 
     F.supportedModuleHPresheafMap hZS m ≫ supportedModuleHPresheafPostcomp S α hk =
       supportedModuleHPresheafPostcomp Z α hk ≫ G.supportedModuleHPresheafMap hZS k := by
   refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
-  rw [NatTrans.comp_app, NatTrans.comp_app,
-    ConcreteCategory.comp_apply ((F.supportedModuleHPresheafMap hZS m).app W) _ x,
-    ConcreteCategory.comp_apply ((supportedModuleHPresheafPostcomp Z α hk).app W) _ x,
-    supportedModuleHPresheafMap_app_apply, supportedModuleHPresheafPostcomp_app_apply,
-    supportedModuleHPresheafPostcomp_app_apply, supportedModuleHPresheafMap_app_apply]
+  simp only [TopCat.Presheaf.comp_app, ModuleCat.hom_comp, LinearMap.coe_comp,
+    Function.comp_def, supportedModuleHPresheafMap_app_apply,
+    supportedModuleHPresheafPostcomp_app_apply]
   exact Ext.comp_assoc _ x α (zero_add m) hk (by omega)
 
 variable {S} in

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.LocalCohomology.LongExactSequence
-import TauCeti.CategoryTheory.Abelian.DiagramLemmas.Four
 import TauCeti.Topology.Sheaves.SupportedCohomology.Composition
 
 /-!
@@ -481,26 +480,12 @@ theorem isIso_supportedModuleHPresheafFunctor_map_supportedSubmoduleι {j : ℕ}
         τ₃ := T.X₃.supportedSubmoduleι S
         comm₁₂ := (supportedSubmoduleFunctor_map_ι S T.f).symm
         comm₂₃ := (supportedSubmoduleFunctor_map_ι S T.g).symm }
-    -- compare the exact segments `H_Z^j(-, X₂) ⟶ H_Z^j(-, X₃) ⟶ H_Z^{j+1}(-, X₁)`
-    let R₁ := ShortComplex.mk ((supportedModuleHPresheafFunctor Z j).map T'.g)
-      (supportedModuleHPresheafδ Z hT' j) (supportedModuleHPresheafFunctor_map_g_δ Z hT' j)
-    let R₂ := ShortComplex.mk ((supportedModuleHPresheafFunctor Z j).map T.g)
-      (supportedModuleHPresheafδ Z hT j) (supportedModuleHPresheafFunctor_map_g_δ Z hT j)
-    let ψ : R₁ ⟶ R₂ :=
-      { τ₁ := (supportedModuleHPresheafFunctor Z j).map φ.τ₂
-        τ₂ := (supportedModuleHPresheafFunctor Z j).map φ.τ₃
-        τ₃ := (supportedModuleHPresheafFunctor Z (j + 1)).map φ.τ₁
-        comm₁₂ := by
-          dsimp only [R₁, R₂]
-          rw [← Functor.map_comp, ← Functor.map_comp, φ.comm₂₃]
-        comm₂₃ := supportedModuleHPresheafδ_naturality Z hT' hT φ j }
-    have : Epi R₁.g := epi_supportedModuleHPresheafδ Z hT' j
-    have : Epi R₂.g := epi_supportedModuleHPresheafδ Z hT j
-    have : IsIso ψ.τ₁ := ih T.X₂ fun q _ ↦ isZero_supportedModuleHSheaf_succ_of_isFlasque S T.X₂ q
-    have : IsIso ψ.τ₂ := ih T.X₃ fun q hq ↦
-      isZero_supportedModuleHSheaf_X₃_of_shortExact S hT (h (q + 1) (by omega))
-    exact ShortComplex.isIso_τ₃_of_epi_of_isIso ψ
-      (exact_supportedModuleHPresheafFunctor_map_g_δ Z hT j)
+    -- transfer the degree-`j` isomorphisms on `X₂` and `X₃` to degree `j + 1` on `X₁`
+    have : IsIso ((supportedModuleHPresheafFunctor Z j).map φ.τ₂) :=
+      ih T.X₂ fun q _ ↦ isZero_supportedModuleHSheaf_succ_of_isFlasque S T.X₂ q
+    have : IsIso ((supportedModuleHPresheafFunctor Z j).map φ.τ₃) :=
+      ih T.X₃ fun q hq ↦ isZero_supportedModuleHSheaf_X₃_of_shortExact S hT (h (q + 1) (by omega))
+    exact isIso_supportedModuleHPresheafFunctor_map_τ₁_succ Z hT' hT φ j
 
 /-- If the local cohomology sheaves `𝓗_S^{q+1}(F)` vanish for all `q < j`, then for every closed
 `Z ≤ S` the inclusion `Γ_S(F) ⟶ F` induces bijections `H_Z^j(W, Γ_S(F)) ⟶ H_Z^j(W, F)`. -/
@@ -649,10 +634,8 @@ lemma supportedModuleHZeroEquiv_supportedModuleHPresheafEdgeIso_hom_app
         ((F.supportedModuleHPresheafEdgeIso h hZS (add_zero n)).hom.app (op W) x) =
       F.supportedModuleHEdgeEquiv (fun q hq ↦ h q hq.le hq.ne) hZS W x := by
   simp only [supportedModuleHPresheafEdgeIso, supportedModuleHPresheafEdgeIsoZero, eqToIso_refl,
-    Iso.refl_trans, Iso.trans_hom, Iso.symm_hom]
-  rw [NatTrans.comp_app,
-    ConcreteCategory.comp_apply
-      ((F.supportedModuleHPresheafIsoSupportedSubmodule _ hZS).hom.app (op W)) _ x,
+    Iso.refl_trans, Iso.trans_hom, Iso.symm_hom, TopCat.Presheaf.comp_app, ModuleCat.hom_comp,
+    LinearMap.coe_comp, Function.comp_def,
     supportedModuleHPresheafIsoSupportedSubmodule_hom_app_apply,
     supportedModuleHPresheafZeroIso_inv_app_apply, LinearEquiv.apply_symm_apply]
 
