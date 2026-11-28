@@ -7,16 +7,28 @@ module
 
 public import Mathlib.MeasureTheory.VectorMeasure.WithDensityVec
 public import TauCeti.MeasureTheory.VectorMeasure.ScalarIntegral
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.ENNReal
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import TauCeti.MeasureTheory.Integral.Bochner.RelativelyCompact
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Integration against a vector measure with density
 
 For a measure `ν` and an integrable `g : X → F`, Mathlib's `ν.withDensityᵥ g` is the vector
-measure `s ↦ ∫ x in s, g x ∂ν`, and its variation is `ν.withDensity ‖g‖ₑ`
-(`MeasureTheory.Measure.variation_withDensityᵥ`). This file computes integrals against it through
-a continuous bilinear pairing `B : E →L[ℝ] F →L[ℝ] G`:
+measure `s ↦ ∫ x in s, g x ∂ν`. For every `g`, its variation is at most `ν.withDensity ‖g‖ₑ`, so
+it is at most `C • ν` whenever `‖g‖ₑ ≤ C` holds `ν`-almost everywhere, and in particular at most
+`eLpNorm g ∞ ν • ν`. Here `eLpNorm g ∞ ν` is Mathlib's extended `L^∞` seminorm: it is the
+`ν`-essential supremum of `‖g‖ₑ` when `g` is `ν`-a.e. strongly measurable, and `∞` otherwise. When
+`F` is a Banach space and `g` is integrable, the variation equals `ν.withDensity ‖g‖ₑ`
+(`MeasureTheory.Measure.variation_withDensityᵥ`), and conversely a bound by `C • ν` gives
+`‖g‖ₑ ≤ C` `ν`-almost everywhere, for an arbitrary measure `ν`. The textbook form of these bounds
+assumes a σ-finite `ν`; the converse here reduces to that case through
+`MeasureTheory.withDensity_le_withDensity_iff`, since an integrable density vanishes off a set on
+which `ν` is σ-finite.
+
+This file computes integrals against `ν.withDensityᵥ g` through a continuous bilinear pairing
+`B : E →L[ℝ] F →L[ℝ] G`:
 
 `∫ᵛ x, f x ∂[B; ν.withDensityᵥ g] = ∫ x, B (f x) (g x) ∂ν`
 
@@ -60,6 +72,11 @@ on a σ-finite measure space.
 
 ## Main declarations
 
+* `MeasureTheory.Measure.variation_withDensityᵥ_le_smul`,
+  `MeasureTheory.Measure.variation_withDensityᵥ_le_eLpNorm_top_smul` and
+  `MeasureTheory.Measure.variation_withDensityᵥ_le_smul_iff`: a density with `‖g‖ₑ ≤ C`
+  `ν`-almost everywhere gives a vector measure of variation at most `C • ν`, in particular at most
+  `eLpNorm g ∞ ν • ν`; conversely for an integrable density with values in a Banach space.
 * `MeasureTheory.VectorMeasure.integral_withDensityᵥ`: integration against `ν.withDensityᵥ g`
   through a bilinear pairing is the Bochner integral of the pairing against `ν`.
 * `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ`: the scalar form
@@ -96,9 +113,13 @@ on a σ-finite measure space.
 ## References
 
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw–Hill, 1987, Chapter 6.
-* J. Diestel and J. J. Uhl, *Vector Measures*, Chapter II, §2, for the compactness of the range.
-* T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces, Volume I*,
-  Springer, 2016, proof of Theorem 1.3.10, for gluing densities along an exhaustion.
+* J. Diestel and J. J. Uhl, Jr., *Vector Measures*, Mathematical Surveys 15, American
+  Mathematical Society, 1977, Chapter II, §2: Theorem 4, the variation of an indefinite Bochner
+  integral is the integral of the norm of the density, and the compactness of the range.
+* T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces, Volume I:
+  Martingales and Littlewood–Paley Theory*, Springer, 2016, Section 1.3: vector measures given
+  by Bochner integrable densities and their variation; proof of Theorem 1.3.10, for gluing
+  densities along an exhaustion.
 -/
 
 public section
@@ -136,6 +157,36 @@ theorem Measure.variation_withDensityᵥ_absolutelyContinuous (ν : Measure X) (
     (ν.withDensityᵥ g).variation ≪ ν :=
   (Measure.absolutelyContinuous_of_le (Measure.variation_withDensityᵥ_le ν g)).trans
     (withDensity_absolutelyContinuous _ _)
+
+/-- If `‖g‖ₑ ≤ C` holds `ν`-almost everywhere, the variation of the vector measure with density `g`
+with respect to `ν` is at most `C • ν`. Neither integrability of `g` nor completeness is needed. -/
+theorem Measure.variation_withDensityᵥ_le_smul {g : X → F} {C : ℝ≥0∞}
+    (hg : ∀ᵐ x ∂ν, ‖g x‖ₑ ≤ C) : (ν.withDensityᵥ g).variation ≤ C • ν := by
+  refine (Measure.variation_withDensityᵥ_le ν g).trans ?_
+  rw [← withDensity_const]
+  exact withDensity_mono hg
+
+/-- The variation of the vector measure with density `g` with respect to `ν` is at most
+`eLpNorm g ∞ ν • ν`. The coefficient is Mathlib's extended `L^∞` seminorm: the `ν`-essential
+supremum of `‖g‖ₑ` when `g` is `ν`-a.e. strongly measurable, and `∞` otherwise. This is the
+bound `|m|(A) ≤ ‖g‖_∞ ν(A)` that follows from Diestel–Uhl, Chapter II, §2, Theorem 4. -/
+theorem Measure.variation_withDensityᵥ_le_eLpNorm_top_smul (ν : Measure X) (g : X → F) :
+    (ν.withDensityᵥ g).variation ≤ eLpNorm g ∞ ν • ν :=
+  Measure.variation_withDensityᵥ_le_smul <|
+    ae_le_eLpNormEssSup.mono fun _ hx => hx.trans eLpNormEssSup_le_eLpNorm_top
+
+/-- For an integrable density `g` with values in a Banach space, the variation of the vector
+measure with density `g` with respect to `ν` is at most `C • ν` exactly when `‖g‖ₑ ≤ C` holds
+`ν`-almost everywhere. The measure `ν` is arbitrary: the textbook argument for σ-finite `ν`
+(Diestel–Uhl, Chapter II, §2, Theorem 4) extends through
+`MeasureTheory.withDensity_le_withDensity_iff`. -/
+theorem Measure.variation_withDensityᵥ_le_smul_iff [CompleteSpace F] {g : X → F}
+    (hg : Integrable g ν) {C : ℝ≥0∞} :
+    (ν.withDensityᵥ g).variation ≤ C • ν ↔ ∀ᵐ x ∂ν, ‖g x‖ₑ ≤ C := by
+  rw [Measure.variation_withDensityᵥ hg, ← withDensity_const]
+  exact withDensity_le_withDensity_iff <|
+    ENNReal.aefinStronglyMeasurable_of_aemeasurable hg.hasFiniteIntegral.ne
+      hg.aestronglyMeasurable.eNorm
 
 namespace VectorMeasure
 

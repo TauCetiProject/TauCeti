@@ -23,8 +23,9 @@ property holding `ν`-almost everywhere holds at `f x` for `μ`-almost every `x`
 
 If a finite measure `ν` is absolutely continuous with respect to `μ`, then `ν s` is uniformly
 small whenever `μ s` is small. This quantitative form of `ν ≪ μ` holds for an arbitrary
-reference measure `μ`, with no σ-finiteness and hence no Radon–Nikodym derivative. It is what
-transfers approximation properties, such as regularity, from `μ` to `ν`.
+reference measure `μ`: it requires neither σ-finiteness of `μ` nor the existence of a
+Radon–Nikodym derivative, and it is equivalent to `ν ≪ μ`. It is what transfers approximation
+properties, such as regularity, from `μ` to `ν`.
 
 Each summand of a sum of measures is absolutely continuous with respect to the sum, so `μ + ν`
 is a common dominating measure for `μ` and `ν`.
@@ -37,6 +38,8 @@ is a common dominating measure for `μ` and `ν`.
   along `f` `μ`-almost everywhere.
 * `MeasureTheory.Measure.AbsolutelyContinuous.exists_pos_measure_lt_of_measure_lt`: the `ε`–`δ`
   form of absolute continuity of a finite measure.
+* `MeasureTheory.Measure.absolutelyContinuous_iff_forall_exists_pos_measure_lt`: absolute
+  continuity of a finite measure is equivalent to its `ε`–`δ` form.
 * `MeasureTheory.Measure.absolutelyContinuous_self_add`,
   `MeasureTheory.Measure.absolutelyContinuous_add_self`: `μ ≪ μ + ν` and `ν ≪ μ + ν`.
 * `MeasureTheory.Measure.AbsolutelyContinuous.tendsto_measure_zero`: transfer vanishing
@@ -131,3 +134,19 @@ theorem tendsto_measure_zero {ι : Type*} {l : Filter ι} {s : ι → Set α}
   exact (hs.eventually_lt_const hδ).mono fun i hi ↦ (hsmall (s i) hi).le
 
 end MeasureTheory.Measure.AbsolutelyContinuous
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} {m : MeasurableSpace α} {μ ν : Measure α}
+
+/-- **`ε`–`δ` characterization of absolute continuity.** A finite measure `ν` is absolutely
+continuous with respect to `μ` exactly when for every `ε ≠ 0` there is `δ > 0` such that
+`μ s < δ` implies `ν s < ε`, for every set `s`. The reference measure `μ` is arbitrary. -/
+theorem absolutelyContinuous_iff_forall_exists_pos_measure_lt [IsFiniteMeasure ν] :
+    ν ≪ μ ↔ ∀ ε ≠ 0, ∃ δ > 0, ∀ s, μ s < δ → ν s < ε := by
+  refine ⟨fun h _ hε ↦ h.exists_pos_measure_lt_of_measure_lt hε, fun h s hs ↦ ?_⟩
+  by_contra hνs
+  obtain ⟨δ, hδ, hsmall⟩ := h (ν s) hνs
+  exact (hsmall s (hs ▸ hδ)).false
+
+end MeasureTheory.Measure

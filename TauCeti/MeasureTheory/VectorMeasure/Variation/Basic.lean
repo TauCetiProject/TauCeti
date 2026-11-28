@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
 public import TauCeti.MeasureTheory.VectorMeasure.Operations
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 
 /-!
 # Variation of vector measures: null sets and continuous linear maps
@@ -23,6 +24,12 @@ absolutely continuous with respect to `|μ|`.
 ## Main declarations
 
 * `MeasureTheory.VectorMeasure.variation_absolutelyContinuous_iff`: `|μ| ≪ ν ↔ μ ≪ᵥ ν`.
+* `MeasureTheory.VectorMeasure.variation_absolutelyContinuous_iff_forall_exists_eNorm_lt`: for
+  finite variation, `|μ| ≪ ν` exactly when `‖μ s‖ₑ` is small whenever `ν s` is small.
+* `MeasureTheory.VectorMeasure.tendsto_eNorm_apply_of_variation_absolutelyContinuous` and
+  `MeasureTheory.VectorMeasure.tendsto_apply_of_variation_absolutelyContinuous`: for finite
+  variation with `|μ| ≪ ν`, `‖μ (s i)‖ₑ → 0`, and for normed targets `μ (s i) → 0`, whenever
+  `ν (s i) → 0`.
 * `MeasureTheory.VectorMeasure.apply_sdiff_of_variation_eq_zero`: `μ (s \ t) = μ s` when
   `|μ| t = 0`.
 * `MeasureTheory.VectorMeasure.variation_mapRangeL_le`: `|φ ∘ μ| ≤ ‖φ‖₊ • |μ|`.
@@ -30,7 +37,11 @@ absolutely continuous with respect to `|μ|`.
 
 ## References
 
-* J. Diestel and J. J. Uhl, Jr., *Vector Measures*, Chapter I, §1.
+* J. Diestel and J. J. Uhl, Jr., *Vector Measures*, Chapter I, §1, and Chapter I, §2, Theorem 1
+  (Pettis): the `ε`–`δ` form of absolute continuity of a vector measure.
+* T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces, Volume I:
+  Martingales and Littlewood–Paley Theory*, Springer, 2016, Section 1.3: absolute continuity
+  of vector measures of bounded variation.
 -/
 
 public section
@@ -68,7 +79,50 @@ theorem apply_sdiff_of_variation_eq_zero {s t : Set X} (hs : MeasurableSet s)
   rw [← of_add_of_sdiff (ht.inter hs) hs Set.inter_subset_right, h0, zero_add,
     Set.sdiff_inter_self_eq_sdiff]
 
+/-- **`ε`–`δ` absolute continuity of a vector measure.** A vector measure of finite variation has
+variation absolutely continuous with respect to a positive measure `ν` exactly when `‖μ s‖ₑ` is
+uniformly small on the sets `s` of small `ν`-measure. The measure `ν` is arbitrary. This is the
+finite-variation case of Pettis' theorem (Diestel–Uhl, Chapter I, §2, Theorem 1), obtained here by
+applying the scalar criterion to `|μ|`. -/
+theorem variation_absolutelyContinuous_iff_forall_exists_eNorm_lt [IsFiniteMeasure μ.variation]
+    {ν : Measure X} :
+    μ.variation ≪ ν ↔ ∀ ε ≠ 0, ∃ δ > 0, ∀ s, ν s < δ → ‖μ s‖ₑ < ε := by
+  refine ⟨fun h ε hε => ?_, fun h => variation_absolutelyContinuous_iff.2 <|
+    AbsolutelyContinuous.mk fun s hs hνs => ?_⟩
+  · obtain ⟨δ, hδ, hsmall⟩ := h.exists_pos_measure_lt_of_measure_lt hε
+    exact ⟨δ, hδ, fun s hs => (eNorm_measure_le_variation μ s).trans_lt (hsmall s hs)⟩
+  · rw [Measure.toENNRealVectorMeasure_apply_measurable hs] at hνs
+    by_contra hμs
+    obtain ⟨δ, hδ, hsmall⟩ := h ‖μ s‖ₑ (eNorm_ne_zero.2 hμs)
+    exact (hsmall s (hνs ▸ hδ)).false
+
+/-- If a vector measure of finite variation has variation absolutely continuous with respect to
+`ν`, the extended norms of its values on a family of sets whose `ν`-measures tend to zero tend to
+zero. The sets need not be measurable, and the index filter is arbitrary. -/
+theorem tendsto_eNorm_apply_of_variation_absolutelyContinuous [IsFiniteMeasure μ.variation]
+    {ν : Measure X} (h : μ.variation ≪ ν) {ι : Type*} {l : Filter ι} {s : ι → Set X}
+    (hs : Filter.Tendsto (fun i => ν (s i)) l (nhds 0)) :
+    Filter.Tendsto (fun i => ‖μ (s i)‖ₑ) l (nhds 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h.tendsto_measure_zero hs)
+    (fun _ => zero_le) fun i => eNorm_measure_le_variation μ (s i)
+
 end NullSets
+
+section Normed
+
+variable {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F]
+
+/-- If a vector measure of finite variation has variation absolutely continuous with respect to
+`ν`, its values on a family of sets whose `ν`-measures tend to zero tend to zero. The sets need not
+be measurable, and the index filter is arbitrary. -/
+theorem tendsto_apply_of_variation_absolutelyContinuous {μ : VectorMeasure X F}
+    [IsFiniteMeasure μ.variation] {ν : Measure X} (h : μ.variation ≪ ν) {ι : Type*}
+    {l : Filter ι} {s : ι → Set X} (hs : Filter.Tendsto (fun i => ν (s i)) l (nhds 0)) :
+    Filter.Tendsto (fun i => μ (s i)) l (nhds 0) :=
+  tendsto_zero_iff_eNorm_tendsto_zero.2 <|
+    tendsto_eNorm_apply_of_variation_absolutelyContinuous h hs
+
+end Normed
 
 variable {X F F' 𝕜 : Type*} [MeasurableSpace X] [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
