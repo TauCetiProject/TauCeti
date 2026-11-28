@@ -21,8 +21,15 @@ and avoid exposing the definitional equality of the objects being transported.
 
 * `TauCeti.eqToHom_self_comp`: transporting along an equality of an object with itself, which may
   only be definitional, leaves a composite unchanged.
+* `TauCeti.eqToHom_comp_eqToHom`, `TauCeti.eqToHom_comp_eqToHom_comp`,
+  `TauCeti.eqToHom_comp_eqToHom_eq`, and `TauCeti.eqToHom_comp_eqToHom_comp_eq`: composing
+  `eqToHom` transports agrees with transporting directly or along another factorization, even when
+  endpoints or intermediate objects are only definitionally equal.
 * `TauCeti.eqToHom_conjugate_cancel`: transporting a morphism and then transporting it back leaves
   it unchanged.
+* `TauCeti.eqToHom_conj_comp_eqToHom`: merging `eqToHom` transports on opposite sides of a
+  morphism agrees with merging them on the other side, even when endpoints are only definitionally
+  equal.
 * `TauCeti.eqToHom_conjugate_eq_id`, `TauCeti.eqToHom_conjugate_eq_comp` and
   `TauCeti.eqToHom_conjugate_add`: transporting an identity, a composite or a sum gives the
   identity, the composite of the transports or the sum of the transports.
@@ -44,8 +51,8 @@ and avoid exposing the definitional equality of the objects being transported.
   functor of two morphisms between equal endpoints agree up to the transports along those
   equalities.
 * `CategoryTheory.Functor.map_homOfLE_eq` and `CategoryTheory.Functor.unop_map_homOfLE_eq`: a
-  functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to the
-  identifications of the endpoints.
+  functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to
+  the identifications of the endpoints.
 * `CategoryTheory.Functor.eqToHom_conjugate_map_eqToHom_conjugate`: transporting `F.map` of a
   conjugated morphism back along the induced object equalities recovers the conjugate of `F.map`.
 * `CategoryTheory.Functor.map_comp_eq_of_eqToHom_conjugate`: a commuting triangle of conjugated
@@ -69,12 +76,57 @@ between objects that are definitionally equal but not syntactically equal, so th
 theorem eqToHom_self_comp {C : Type*} [Category* C] {Y Z : C} (h : Y = Y) (f : Y ⟶ Z) :
     eqToHom h ≫ f = f := by simp
 
+/-- Composing two `eqToHom` transports equals the direct `eqToHom` transport. This applies when
+the endpoints or intermediate object are only definitionally equal, so `eqToHom_trans` fails to
+rewrite under `simp`. -/
+theorem eqToHom_comp_eqToHom {C : Type*} [Category* C] {X Y Z : C}
+    (p : X = Y) (q : Y = Z) (r : X = Z) :
+    eqToHom p ≫ eqToHom q = eqToHom r := by
+  subst p q
+  simp
+
+/-- Composing three `eqToHom` transports equals the direct `eqToHom` transport. This applies when
+the endpoints or intermediate objects are only definitionally equal, so `eqToHom_trans` fails to
+rewrite under `simp`. -/
+theorem eqToHom_comp_eqToHom_comp {C : Type*} [Category* C] {W X Y Z : C}
+    (p : W = X) (q : X = Y) (r : Y = Z) (s : W = Z) :
+    eqToHom p ≫ eqToHom q ≫ eqToHom r = eqToHom s := by
+  subst p q r
+  simp
+
+/-- Two composites of two `eqToHom` transports between definitionally equal endpoints are equal. -/
+theorem eqToHom_comp_eqToHom_eq {C : Type*} [Category* C] {X Y Y' Z : C}
+    (p₁ : X = Y) (p₂ : Y = Z) (q₁ : X = Y') (q₂ : Y' = Z) :
+    eqToHom p₁ ≫ eqToHom p₂ = eqToHom q₁ ≫ eqToHom q₂ := by
+  subst p₁ p₂ q₁
+  simp
+
+/-- Two composites of three `eqToHom` transports between definitionally equal endpoints are
+equal. -/
+theorem eqToHom_comp_eqToHom_comp_eq {C : Type*} [Category* C] {W X X' Y Y' Z : C}
+    (p₁ : W = X) (p₂ : X = Y) (p₃ : Y = Z)
+    (q₁ : W = X') (q₂ : X' = Y') (q₃ : Y' = Z) :
+    eqToHom p₁ ≫ eqToHom p₂ ≫ eqToHom p₃ = eqToHom q₁ ≫ eqToHom q₂ ≫ eqToHom q₃ := by
+  subst p₁ p₂ p₃ q₁ q₂
+  simp
+
 /-- Transporting a morphism along object equalities and then back leaves it unchanged. -/
 theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
     (hX : X = X') (hY : Y = Y') (f : X' ⟶ Y') :
     eqToHom hX.symm ≫ (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hY = f := by
   subst X'
   subst Y'
+  simp
+
+/-- Merging `eqToHom` transports on opposite sides of a morphism `m` agrees with merging them on
+the other side, even when endpoints are only definitionally equal. -/
+theorem eqToHom_conj_comp_eqToHom {C : Type*} [Category* C]
+    {a b b' d e f : C}
+    (h₁ : a = b) (m : b ⟶ d) (h₂ : d = e) (h₃ : e = f)
+    (h₄ : a = b') (h₅ : b' = b) (h₆ : d = f) :
+    (eqToHom h₁ ≫ m ≫ eqToHom h₂) ≫ eqToHom h₃ =
+      eqToHom h₄ ≫ eqToHom h₅ ≫ m ≫ eqToHom h₆ := by
+  subst h₁ h₂ h₃ h₄
   simp
 
 /-- **A transported identity is the identity**: conjugating a morphism equal to `𝟙 Y` by the

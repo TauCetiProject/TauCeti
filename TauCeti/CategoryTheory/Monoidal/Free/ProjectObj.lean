@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Free.Basic
+public import TauCeti.CategoryTheory.Monoidal.Free.Basic
+import TauCeti.CategoryTheory.EqToHom
+import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
 # Transporting interpretations of tensor words along isomorphisms
@@ -16,7 +18,8 @@ by `f : C → D`. This file transports such interpretations along isomorphisms: 
 isomorphisms `e a : f a ≅ g a` extends to isomorphisms
 `FreeMonoidalCategory.projectObjIso e X : projectObj f X ≅ projectObj g X` for every word `X`,
 the unit word going to the identity and a tensor word to the tensor product of isomorphisms.
-The extension is compatible with identities, composites and inverses of the families.
+The extension is compatible with identities, composites, inverses, object-equality transports of
+the families, and word substitution (`FreeMonoidalCategory.projectObjIso_projectObj`).
 
 These isomorphisms are the objectwise data of morphisms between interpretations of a tensor
 signature, which are families of isomorphisms of generators compatible with the generating
@@ -25,7 +28,7 @@ morphisms after extension to their source and target words.
 
 public section
 
-universe u u' v'
+universe u u' u'' v'
 
 namespace CategoryTheory.FreeMonoidalCategory
 
@@ -91,5 +94,75 @@ theorem projectObjIso_symm (e : ∀ a, f a ≅ g a) (X : FreeMonoidalCategory C)
     rw [hX, hY]
     ext
     simp
+
+/-- Extending equality transports on generators to a tensor word gives the equality transport
+induced by `projectObj_congr`. -/
+@[simp]
+theorem projectObjIso_eqToIso (h : ∀ a, f a = g a) (X : FreeMonoidalCategory C) :
+    projectObjIso (fun a ↦ eqToIso (h a)) X = eqToIso (projectObj_congr h X) := by
+  induction X with
+  | of a => rfl
+  | unit => ext; rfl
+  | tensor X Y hX hY =>
+    dsimp only [projectObjIso, projectObj]
+    rw [hX, hY]
+    exact TauCeti.eqToIso_tensorIso_eqToIso (projectObj_congr h X) (projectObj_congr h Y)
+
+/-- Transporting `projectObjIso e` along an equality of tensor words `w = w'` conjugates its
+component by `eqToHom`. -/
+theorem projectObjIso_congr_word (e : ∀ a, f a ≅ g a)
+    {w w' : FreeMonoidalCategory C} (hw : w = w') :
+    (projectObjIso e w).hom =
+      eqToHom (congrArg (projectObj f) hw) ≫ (projectObjIso e w').hom ≫
+        eqToHom (congrArg (projectObj g) hw).symm := by
+  subst hw
+  simp
+
+/-- Extending generator isomorphisms `e` along tensor words `h` and then over a word `X` agrees
+with evaluating `projectObjIso e` on the substituted word `projectObj h X`, up to
+`projectObj_projectObj`. -/
+theorem projectObjIso_projectObj {C' : Type u''} {f g : C' → D} (e : ∀ b, f b ≅ g b)
+    (h : C → FreeMonoidalCategory C') (X : FreeMonoidalCategory C) :
+    projectObjIso (fun a ↦ projectObjIso e (h a)) X =
+      eqToIso (projectObj_projectObj f h X).symm ≪≫
+        projectObjIso e (projectObj h X) ≪≫
+        eqToIso (projectObj_projectObj g h X) := by
+  induction X with
+  | of a =>
+    ext
+    -- Both endpoints of `projectObj_projectObj` on `.of a` are definitionally `projectObj _ (h a)`,
+    -- and both `projectObjIso` applications reduce definitionally to `projectObjIso e (h a)`.
+    apply eq_of_heq
+    simp only [Iso.trans_hom, eqToIso.hom, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
+    rfl
+  | unit =>
+    ext
+    -- Both endpoints of `projectObj_projectObj` on `.unit` are definitionally `𝟙_ D`,
+    -- and both sides reduce definitionally to `𝟙 (𝟙_ D)`.
+    apply eq_of_heq
+    simp only [Iso.trans_hom, eqToIso.hom, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
+    rfl
+  | tensor X Y ihX ihY =>
+    ext
+    -- `induction X` produces `FreeMonoidalCategory.tensor X Y`, whereas `projectObjIso_tensor`
+    -- and `projectObj_tensorObj` are stated with `X ⊗ Y`.
+    change (projectObjIso (fun a ↦ projectObjIso e (h a)) (X ⊗ Y)).hom =
+      (eqToIso (projectObj_projectObj f h (X ⊗ Y)).symm ≪≫
+        projectObjIso e (projectObj h (X ⊗ Y)) ≪≫
+        eqToIso (projectObj_projectObj g h (X ⊗ Y))).hom
+    rw [projectObjIso_tensor, tensorIso_hom, ihX, ihY]
+    simp only [Iso.trans_hom, eqToIso.hom, ← MonoidalCategory.tensorHom_comp_tensorHom,
+      TauCeti.eqToHom_tensorHom_eqToHom]
+    rw [projectObjIso_congr_word e (projectObj_tensorObj h X Y), projectObjIso_tensor,
+      tensorIso_hom]
+    refine (congrArg₂ (· ≫ ·)
+      (TauCeti.eqToHom_comp_eqToHom (projectObj_projectObj f h (X ⊗ Y)).symm
+        (congrArg (projectObj f) (projectObj_tensorObj h X Y)) _).symm
+      (congrArg (_ ≫ ·) (TauCeti.eqToHom_comp_eqToHom
+        (congrArg (projectObj g) (projectObj_tensorObj h X Y)).symm
+        (projectObj_projectObj g h (X ⊗ Y)) _).symm)).trans ?_
+    exact (Category.assoc _ _ _).trans <|
+      congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans
+        (Category.assoc _ _ _).symm)
 
 end CategoryTheory.FreeMonoidalCategory
