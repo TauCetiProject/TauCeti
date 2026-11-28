@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 public import TauCeti.Geometry.Manifold.FiberProduct.IteratedSubmersion
-import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
@@ -31,13 +31,17 @@ coface and codegeneracy maps `Fin.succAbove` and `Fin.predAbove` gives the Čech
   `face_castSucc_comp_degeneracy_succ_of_le`, `face_castSucc_comp_degeneracy` and
   `face_succ_comp_degeneracy`, `face_succ_comp_degeneracy_castSucc_of_gt`, and
   `degeneracy_castSucc_comp_degeneracy`), transferred from `SimplexCategory` via contravariant
-  functoriality `reindex (β ∘ α) = reindex α ∘ reindex β`.
+  functoriality `reindex (β ∘ α) = reindex α ∘ reindex β`, packaged as the `SimplexCategory`
+  action `TauCeti.IteratedFiberProduct.mapSimplex` (continuous by
+  `TauCeti.IteratedFiberProduct.continuous_mapSimplex`).
 
 When `π` is a `C^n` submersion (`1 ≤ n`) between finite-dimensional boundaryless real manifolds and
 each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChartedSpace`:
 
-* every reindexing map `reindex α` is `C^{m'}` (`m' ≤ n`), and a bijection `α : Fin k₁ ≃ Fin k₂`
-  induces a `C^n` diffeomorphism (`TauCeti.iteratedFiberProductReindexDiffeomorph`);
+* every reindexing map `reindex α` is `C^{m'}` (`m' ≤ n`, `TauCeti.contMDiff_reindex`), and in
+  particular `mapSimplex θ` is `C^{m'}` (`TauCeti.contMDiff_mapSimplex`), while a bijection
+  `α : Fin k₁ ≃ Fin k₂` induces a `C^n` diffeomorphism
+  (`TauCeti.iteratedFiberProductReindexDiffeomorph`);
 * reindexing along any injective map `α : Fin (m₁ + 1) → Fin (m₂ + 1)` is a surjective `C^n`
   submersion (`TauCeti.isSubmersion_reindex_of_injective`); in particular, every face map `face i`
   is a surjective `C^n` submersion (`TauCeti.isSubmersion_face`,
@@ -230,6 +234,90 @@ theorem degeneracy_const {m : ℕ} (i : Fin (m + 1)) (z : Y) :
 theorem baseProj_degeneracy {m : ℕ} (i : Fin (m + 1)) (y : IteratedFiberProduct π (m + 1)) :
     baseProj (degeneracy i y) = baseProj y :=
   baseProj_reindex i.predAbove y
+
+section SimplexCategory
+
+open CategoryTheory
+open scoped Simplicial
+
+/-- Contravariant Čech nerve action of `θ : ⦋a⦌ ⟶ ⦋b⦌` in `SimplexCategory` on
+`IteratedFiberProduct π`. -/
+def mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1) :=
+  reindex θ.toOrderHom
+
+/-- `mapSimplex θ` is reindexing along `θ.toOrderHom`. -/
+theorem mapSimplex_eq_reindex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    (mapSimplex θ : IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1)) =
+      reindex θ.toOrderHom := (rfl)
+
+/-- The underlying tuple of `mapSimplex θ y` is `y.1 ∘ θ.toOrderHom`. -/
+@[simp]
+theorem coe_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
+    (mapSimplex θ y : Fin (a + 1) → Y) = y.val ∘ θ.toOrderHom := (rfl)
+
+/-- Evaluating `mapSimplex θ y` at `i` evaluates `y` at `θ.toOrderHom i`. -/
+theorem eval_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1))
+    (i : Fin (a + 1)) :
+    eval i (mapSimplex θ y) = eval (θ.toOrderHom i) y := by
+  rw [mapSimplex_eq_reindex, eval_reindex]
+
+/-- `mapSimplex θ` sends a constant diagonal tuple to the constant diagonal tuple. -/
+@[simp]
+theorem mapSimplex_const {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (z : Y) :
+    mapSimplex (π := π) θ (const (b + 1) z) = const (a + 1) z := by
+  rw [mapSimplex_eq_reindex, reindex_const]
+
+/-- Every Čech-nerve map `mapSimplex θ` commutes with `baseProj`. -/
+@[simp]
+theorem baseProj_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
+    baseProj (mapSimplex θ y) = baseProj y := by
+  rw [mapSimplex_eq_reindex, baseProj_reindex]
+
+/-- `mapSimplex` sends the identity morphism in `SimplexCategory` to the identity. -/
+@[simp]
+theorem mapSimplex_id {a : ℕ} :
+    (mapSimplex (𝟙 ⦋a⦌) : IteratedFiberProduct π (a + 1) → IteratedFiberProduct π (a + 1)) =
+      id := by
+  rw [mapSimplex_eq_reindex, SimplexCategory.id_toOrderHom, OrderHom.id_coe, reindex_id]
+
+/-- Pointwise form of `mapSimplex_id`. -/
+@[simp]
+theorem mapSimplex_id_apply {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
+    mapSimplex (𝟙 ⦋a⦌) y = y := by
+  rw [mapSimplex_eq_reindex, SimplexCategory.id_toOrderHom, OrderHom.id_coe, reindex_id_apply]
+
+/-- `mapSimplex` is contravariantly functorial on `SimplexCategory`. -/
+theorem mapSimplex_comp {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂ : ⦋b⦌ ⟶ ⦋c⦌) :
+    mapSimplex (π := π) (θ₁ ≫ θ₂) = mapSimplex θ₁ ∘ mapSimplex θ₂ := by
+  simp only [mapSimplex, SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, reindex_comp]
+
+/-- Pointwise form of `mapSimplex_comp`, normalizing nested `mapSimplex` applications. -/
+@[simp]
+theorem mapSimplex_mapSimplex {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂ : ⦋b⦌ ⟶ ⦋c⦌)
+    (y : IteratedFiberProduct π (c + 1)) :
+    mapSimplex θ₁ (mapSimplex θ₂ y) = mapSimplex (θ₁ ≫ θ₂) y := by
+  simp only [mapSimplex, SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, reindex_reindex]
+
+/-- `mapSimplex` sends `SimplexCategory.δ i` to `face i`. -/
+@[simp]
+theorem mapSimplex_δ {a : ℕ} (i : Fin (a + 2)) :
+    mapSimplex (π := π) (SimplexCategory.δ i) = face i := by
+  funext y
+  refine ext fun j ↦ ?_
+  rw [mapSimplex_eq_reindex, face_eq_reindex, eval_reindex, eval_reindex]
+  exact congrArg (fun k ↦ eval k y) (SimplexCategory.δ_apply i j)
+
+/-- `mapSimplex` sends `SimplexCategory.σ i` to `degeneracy i`. -/
+@[simp]
+theorem mapSimplex_σ {a : ℕ} (i : Fin (a + 1)) :
+    mapSimplex (π := π) (SimplexCategory.σ i) = degeneracy i := by
+  funext y
+  refine ext fun j ↦ ?_
+  rw [mapSimplex_eq_reindex, degeneracy_eq_reindex, eval_reindex, eval_reindex]
+  exact congrArg (fun k ↦ eval k y) (SimplexCategory.σ_apply i j)
+
+end SimplexCategory
 
 /-! ### Simplicial identities -/
 
@@ -427,6 +515,19 @@ theorem continuous_reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) :
   Continuous.subtype_mk
     (continuous_pi fun i ↦ (continuous_eval (π := π) (α i)).congr fun a ↦ eval_apply (α i) a) _
 
+section SimplexCategory
+
+open CategoryTheory
+open scoped Simplicial
+
+/-- Every Čech-nerve map `mapSimplex θ : Y^[b + 1] → Y^[a + 1]` is continuous. -/
+theorem continuous_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    Continuous (mapSimplex (π := π) θ) := by
+  rw [mapSimplex_eq_reindex]
+  exact continuous_reindex θ.toOrderHom
+
+end SimplexCategory
+
 /-- Every face map `face i : Y^[m + 2] → Y^[m + 1]` is continuous. -/
 theorem continuous_face {m : ℕ} (i : Fin (m + 2)) :
     Continuous (face (π := π) i) :=
@@ -484,6 +585,26 @@ theorem contMDiff_reindex {m₁ m₂ : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n)
   refine (contMDiff_iteratedFiberProduct_iff hn hπ hm').2 fun i ↦ ?_
   simp only [IteratedFiberProduct.eval_reindex]
   exact contMDiff_eval hn hπ hm' (α i)
+
+section SimplexCategory
+
+open CategoryTheory
+open scoped Simplicial
+
+/-- Every Čech-nerve map `mapSimplex θ : Y^[b + 1] → Y^[a + 1]` is `C^{m'}` for `m' ≤ n`. -/
+theorem contMDiff_mapSimplex {a b : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    letI := iteratedFiberProductChartedSpace hn hπ b
+    letI := iteratedFiberProductChartedSpace hn hπ a
+    ContMDiff
+      𝓘(ℝ, Fin ((b + 1) * finrank ℝ EY - b * finrank ℝ EM) → ℝ)
+      𝓘(ℝ, Fin ((a + 1) * finrank ℝ EY - a * finrank ℝ EM) → ℝ) m'
+      (IteratedFiberProduct.mapSimplex θ :
+        IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1)) := by
+  let := iteratedFiberProductChartedSpace hn hπ b
+  let := iteratedFiberProductChartedSpace hn hπ a
+  exact contMDiff_reindex hn hπ hm' θ.toOrderHom
+
+end SimplexCategory
 
 /-- Reindexing along an equivalence `α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)` induces a `C^n`
 diffeomorphism `Y^[m₂ + 1] ≃ₘ^n Y^[m₁ + 1]`. In particular, permuting the factors of `Y^[k]` is a

@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.LinearAlgebra.Pi
+import TauCeti.Topology.Connected.Basic
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -28,6 +30,12 @@ On an open subset of the affine space itself, applying `TauCeti.isPreconnected_c
 to the open subtype shows that removing a set relatively closed and discrete in `U` from a
 preconnected open set `U` keeps it preconnected
 (`IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`), without manifold machinery.
+
+It also gives a punctured-neighbourhood obstruction to being locally Euclidean: if one fixed
+family of more than two pairwise disjoint open sets covers the punctured space `{x₀}ᶜ` and every
+open neighbourhood of `x₀` meets every member away from `x₀`, then no open neighbourhood of `x₀`
+is homeomorphic to an open subset of `Fin n → ℝ`
+(`TauCeti.not_homeomorph_of_punctured_nhds_splits`).
 
 In any real seminormed space, the `δ`-thickening of a preconnected set is again preconnected
 (`IsPreconnected.thickening`), because `thickening δ s = s + ball 0 δ` is the continuous sum image
@@ -47,13 +55,17 @@ of the product of two preconnected sets.
   greater than one keeps it preconnected.
 * `IsPreconnected.thickening`: the `δ`-thickening of a preconnected set in a real seminormed space
   is preconnected.
+* `TauCeti.not_homeomorph_of_punctured_nhds_splits`: if one fixed family of more than two
+  pairwise disjoint open sets covers `{x₀}ᶜ` and every open neighbourhood of `x₀` meets every
+  member away from `x₀`, then `x₀` has no open neighbourhood homeomorphic to an open subset of
+  `Fin n → ℝ`.
 * `TauCeti.instConnectedSpaceNonZero`: the nonzero vectors of a nontrivial complex normed space are
   connected, since as a real vector space it has dimension at least two.
 -/
 
 public section
 
-open Metric Set Topology
+open Function Metric Set Topology
 open scoped Pointwise
 
 namespace TauCeti
@@ -128,6 +140,123 @@ theorem _root_.IsPreconnected.thickening {s : Set E} (hs : IsPreconnected s) (δ
 end TauCeti
 
 namespace TauCeti
+
+/-- Auxiliary dimension-`1` step for `not_homeomorph_of_punctured_nhds_splits`: removing the centre
+splits an open interval in `Fin 1 → ℝ` into two connected pieces, which cannot meet `m ≥ 3`
+pairwise disjoint open sets covering the punctured neighbourhood. -/
+private theorem not_homeomorph_finOne_of_punctured_nhds_splits
+    {X : Type*} [TopologicalSpace X] {x₀ : X} {m : ℕ} (hm : 2 < m) {Q : Fin m → Set X}
+    (hQ_disj : Pairwise (Disjoint on Q))
+    {U : Set X} {V : Set (Fin 1 → ℝ)} (hx₀ : x₀ ∈ U) (hV : IsOpen V) (e : U ≃ₜ V)
+    {r : ℝ} (hr : 0 < r) (hballV : Metric.ball (e ⟨x₀, hx₀⟩).val r ⊆ V)
+    {S₀ : Set X}
+    (hS₀_eq : S₀ = Subtype.val ''
+      (e.symm '' (Subtype.val ⁻¹' (Metric.ball (e ⟨x₀, hx₀⟩).val r \ {(e ⟨x₀, hx₀⟩).val}) :
+        Set V)))
+    (hpre_sub : ∀ {C : Set X}, IsPreconnected C → C ⊆ S₀ → ∃ k : Fin m, C ⊆ Q k)
+    (hS₀_Q : ∀ k : Fin m, (S₀ ∩ Q k).Nonempty) : False := by
+  let y₀ : Fin 1 → ℝ := (e ⟨x₀, hx₀⟩).val
+  let φ := IsometryEquiv.funUnique (Fin 1) ℝ
+  let z₀ : ℝ := φ y₀
+  have hball : φ.symm '' Metric.ball z₀ r = Metric.ball y₀ r := by simp [z₀]
+  have hy₀ : φ.symm z₀ = (e ⟨x₀, hx₀⟩).val := φ.symm_apply_apply y₀
+  let C : Set ℝ → Set X := fun I ↦ Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (φ.symm '' I)))
+  have hpiece : ∀ I : Set ℝ, I ⊆ Metric.ball z₀ r → z₀ ∉ I → IsPreconnected I →
+      ∃ i : Fin m, C I ⊆ Q i := by
+    intro I hI hz₀ hIconn
+    have hIV : φ.symm '' I ⊆ V := (image_mono hI).trans (hball.symm ▸ hballV)
+    have hC_pre : IsPreconnected (C I) :=
+      isPreconnected_image_symm_preimage hV e hIV (hIconn.image _ φ.symm.continuous.continuousOn)
+    have hC_sub : C I ⊆ S₀ := by
+      rw [hS₀_eq]
+      refine image_mono (image_mono (preimage_mono ?_))
+      rw [← hball, ← hy₀]
+      exact Set.subset_sdiff_singleton (image_mono hI) fun ⟨t, ht, htv⟩ ↦
+        hz₀ (φ.symm.injective htv ▸ ht)
+    exact hpre_sub hC_pre hC_sub
+  let J₁ : Set ℝ := Ioo (z₀ - r) z₀
+  let J₂ : Set ℝ := Ioo z₀ (z₀ + r)
+  obtain ⟨i₁, hi₁⟩ := hpiece J₁
+    (Real.ball_eq_Ioo z₀ r ▸ Ioo_subset_Ioo_right (by linarith)) (fun h ↦ lt_irrefl _ h.2)
+    isPreconnected_Ioo
+  obtain ⟨i₂, hi₂⟩ := hpiece J₂
+    (Real.ball_eq_Ioo z₀ r ▸ Ioo_subset_Ioo_left (by linarith)) (fun h ↦ lt_irrefl _ h.1)
+    isPreconnected_Ioo
+  have hJ : J₁ ∪ J₂ = Metric.ball z₀ r \ {z₀} := by
+    rw [Real.ball_eq_Ioo]
+    exact Set.Ioo_union_Ioo_eq_Ioo_sdiff_singleton (by linarith) (by linarith)
+  have hS₀_cover : S₀ ⊆ C J₁ ∪ C J₂ := by
+    have hdiff : φ.symm '' Metric.ball z₀ r \ {(e ⟨x₀, hx₀⟩).val} = φ.symm '' (J₁ ∪ J₂) := by
+      rw [hJ, Set.image_sdiff φ.symm.injective, image_singleton, hy₀]
+    rw [hS₀_eq, ← hball, hdiff]
+    simp only [C, image_union, preimage_union, subset_rfl]
+  obtain ⟨k, hk₁, hk₂⟩ := Fin.exists_ne_and_ne_of_two_lt i₁ i₂ hm
+  obtain ⟨x, hxS, hxQ⟩ := hS₀_Q k
+  rcases hS₀_cover hxS with hxC | hxC
+  · exact Set.disjoint_left.mp (hQ_disj hk₁) hxQ (hi₁ hxC)
+  · exact Set.disjoint_left.mp (hQ_disj hk₂) hxQ (hi₂ hxC)
+
+/-- Punctured-neighbourhood obstruction to being locally Euclidean: if `x₀` has a family of
+`m > 2` pairwise disjoint open sets `Q k` covering `{x₀}ᶜ` such that every open neighbourhood of
+`x₀` meets every `Q k` away from `x₀`, then no open neighbourhood of `x₀` is homeomorphic to an
+open subset of `Fin n → ℝ`. -/
+theorem not_homeomorph_of_punctured_nhds_splits
+    {X : Type*} [TopologicalSpace X] {x₀ : X} {m : ℕ} (hm : 2 < m)
+    (Q : Fin m → Set X) (hQ_open : ∀ k, IsOpen (Q k)) (hQ_disj : Pairwise (Disjoint on Q))
+    (hQ_cover : ∀ {x}, x ≠ x₀ → x ∈ ⋃ k, Q k)
+    (hQ_mem : ∀ W : Set X, IsOpen W → x₀ ∈ W → ∀ k, ((W \ {x₀}) ∩ Q k).Nonempty)
+    {n : ℕ} {U : Set X} {V : Set (Fin n → ℝ)} (hU : IsOpen U) (hx₀ : x₀ ∈ U) (hV : IsOpen V) :
+    IsEmpty (U ≃ₜ V) := by
+  refine ⟨fun e ↦ ?_⟩
+  let y₀ : Fin n → ℝ := (e ⟨x₀, hx₀⟩).val
+  obtain ⟨r, hr, hballV⟩ := Metric.isOpen_iff.mp hV y₀ (e ⟨x₀, hx₀⟩).property
+  let B : Set U := (fun u ↦ (e u).val) ⁻¹' Metric.ball y₀ r
+  have hB_open : IsOpen B :=
+    Metric.isOpen_ball.preimage (continuous_subtypeVal.comp e.continuous)
+  have hu₀ : ⟨x₀, hx₀⟩ ∈ B := Metric.mem_ball_self hr
+  let W : Set X := Subtype.val '' B
+  have hW_open : IsOpen W := hU.isOpenMap_subtypeVal B hB_open
+  have hxW : x₀ ∈ W := ⟨⟨x₀, hx₀⟩, hu₀, rfl⟩
+  let S₀ : Set X := Subtype.val '' (B \ {⟨x₀, hx₀⟩})
+  have hS₀_eq_sdiff : S₀ = W \ {x₀} := by
+    simp only [S₀, W, Set.image_sdiff Subtype.val_injective, image_singleton]
+  have hS₀_Q : ∀ k : Fin m, (S₀ ∩ Q k).Nonempty := fun k ↦
+    hS₀_eq_sdiff ▸ hQ_mem W hW_open hxW k
+  have hS₀_sub : S₀ ⊆ ⋃ k, Q k := fun _ hx ↦ hQ_cover (hS₀_eq_sdiff ▸ hx).2
+  have hpre_sub : ∀ {C : Set X}, IsPreconnected C → C ⊆ S₀ → ∃ k, C ⊆ Q k := by
+    intro C hC hCS
+    by_cases hne : C.Nonempty
+    · obtain ⟨x, hx⟩ := hne
+      obtain ⟨k, hk⟩ := mem_iUnion.mp (hS₀_sub (hCS hx))
+      exact ⟨k, hC.subset_of_subset_iUnion hQ_open hQ_disj (hCS.trans hS₀_sub) ⟨x, hx, hk⟩⟩
+    · rw [Set.not_nonempty_iff_eq_empty.mp hne]
+      exact ⟨⟨0, by omega⟩, empty_subset _⟩
+  have hS₀_eq :
+      S₀ = Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (Metric.ball y₀ r \ {y₀}) : Set V)) := by
+    have hpre : (e.symm.symm ⁻¹' (Subtype.val ⁻¹' {y₀} : Set V)) = {⟨x₀, hx₀⟩} := by
+      ext u; simp [y₀, Subtype.val_inj, e.injective.eq_iff]
+    rw [e.symm.image_eq_preimage_symm, Set.preimage_sdiff, Set.preimage_sdiff, hpre]
+    rfl
+  rcases lt_trichotomy n 1 with hn0 | rfl | hn2
+  · obtain rfl : n = 0 := Nat.lt_one_iff.mp hn0
+    have hsub0 : Subsingleton (Fin 0 → ℝ) := inferInstance
+    have hsubV : Subsingleton V := ⟨fun a b ↦ Subtype.ext (hsub0.elim a.val b.val)⟩
+    obtain ⟨_, ⟨u, ⟨-, hune⟩, rfl⟩, -⟩ := hS₀_Q ⟨0, by omega⟩
+    exact hune (e.injective (hsubV.elim (e u) (e ⟨x₀, hx₀⟩)))
+  · exact not_homeomorph_finOne_of_punctured_nhds_splits hm hQ_disj hx₀ hV e hr hballV hS₀_eq
+      hpre_sub hS₀_Q
+  · have hrank : 1 < Module.rank ℝ (Fin n → ℝ) := by
+      rw [← Module.finrank_eq_rank, Module.finrank_fintype_fun_eq_card, Fintype.card_fin]
+      exact_mod_cast hn2
+    have hS₀_pre : IsPreconnected S₀ := by
+      rw [hS₀_eq]
+      exact isPreconnected_image_symm_preimage hV e (sdiff_subset.trans hballV)
+        (isConnected_ball_sdiff_singleton hrank y₀ hr).isPreconnected
+    obtain ⟨i, hi⟩ := hpre_sub hS₀_pre Subset.rfl
+    have : Nontrivial (Fin m) := Fin.nontrivial_iff_two_le.mpr (by omega)
+    obtain ⟨k, hki⟩ := exists_ne i
+    obtain ⟨_, hxS, hxQ⟩ := hS₀_Q k
+    exact Set.disjoint_left.mp (hQ_disj hki) hxQ (hi hxS)
 
 /-- The nonzero vectors of a nontrivial complex normed space are connected: as a real vector space
 it has dimension at least two. -/

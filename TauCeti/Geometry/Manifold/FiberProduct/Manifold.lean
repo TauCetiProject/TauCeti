@@ -33,7 +33,9 @@ The existence-only form is
 `TauCeti.exists_isManifold_transverseFiberProduct_isSmoothEmbedding`.
 The embedding gives the smooth universal property via
 `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: a map into the fibre product is smooth
-exactly when both component maps are smooth. In particular both projections are smooth.
+exactly when both component maps are smooth. In particular both projections are smooth, and
+compatible diffeomorphisms of the factors induce a diffeomorphism of transverse fibre products
+(`TauCeti.transverseFiberProductCongr`).
 No Hausdorff or countability assumptions are used, and the fibre product may be empty.
 
 ## References
@@ -262,3 +264,151 @@ theorem eq_zero_of_mfderiv_transverseFiberProduct :
   exact Prod.ext h₁ h₂
 
 end TauCeti
+
+section Congr
+
+open Function Set Module Filter Topology
+open scoped Manifold ContDiff
+
+namespace TauCeti
+
+/-- Compatible `C^n` diffeomorphisms `e₁ : X₁ ≃ₘ^n Z₁` and `e₂ : X₂ ≃ₘ^n Z₂` induce a `C^n`
+diffeomorphism between transverse fibre products `{p : X₁ × X₂ // f₁ p.1 = f₂ p.2}` and
+`{q : Z₁ × Z₂ // g₁ q.1 = g₂ q.2}`. -/
+noncomputable def transverseFiberProductCongr
+    {EN HN N EX₁ HX₁ X₁ EX₂ HX₂ X₂ EZ₁ HZ₁ Z₁ EZ₂ HZ₂ Z₂ : Type*}
+    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
+    {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {n : ℕ∞ω} [IsManifold IN n N] [IN.Boundaryless] [FiniteDimensional ℝ EN]
+    [NormedAddCommGroup EX₁] [NormedSpace ℝ EX₁] [TopologicalSpace HX₁]
+    [NormedAddCommGroup EX₂] [NormedSpace ℝ EX₂] [TopologicalSpace HX₂]
+    [NormedAddCommGroup EZ₁] [NormedSpace ℝ EZ₁] [TopologicalSpace HZ₁]
+    [NormedAddCommGroup EZ₂] [NormedSpace ℝ EZ₂] [TopologicalSpace HZ₂]
+    {IX₁ : ModelWithCorners ℝ EX₁ HX₁} {IX₂ : ModelWithCorners ℝ EX₂ HX₂}
+    {IZ₁ : ModelWithCorners ℝ EZ₁ HZ₁} {IZ₂ : ModelWithCorners ℝ EZ₂ HZ₂}
+    [TopologicalSpace X₁] [ChartedSpace HX₁ X₁] [IsManifold IX₁ n X₁] [IX₁.Boundaryless]
+    [FiniteDimensional ℝ EX₁]
+    [TopologicalSpace X₂] [ChartedSpace HX₂ X₂] [IsManifold IX₂ n X₂] [IX₂.Boundaryless]
+    [FiniteDimensional ℝ EX₂]
+    [TopologicalSpace Z₁] [ChartedSpace HZ₁ Z₁] [IsManifold IZ₁ n Z₁] [IZ₁.Boundaryless]
+    [FiniteDimensional ℝ EZ₁]
+    [TopologicalSpace Z₂] [ChartedSpace HZ₂ Z₂] [IsManifold IZ₂ n Z₂] [IZ₂.Boundaryless]
+    [FiniteDimensional ℝ EZ₂]
+    (hn : 1 ≤ n)
+    {f₁ : X₁ → N} {f₂ : X₂ → N} {g₁ : Z₁ → N} {g₂ : Z₂ → N}
+    (hf₁ : ContMDiff IX₁ IN n f₁) (hf₂ : ContMDiff IX₂ IN n f₂)
+    (htrans_f : ∀ p : X₁ × X₂, f₁ p.1 = f₂ p.2 →
+      (mfderiv IX₁ IN f₁ p.1).range ⊔
+        (((tangentSpaceCast IN (f₂ p.2) (f₁ p.1)).toContinuousLinearMap).comp
+          (mfderiv IX₂ IN f₂ p.2)).range = ⊤)
+    (hg₁ : ContMDiff IZ₁ IN n g₁) (hg₂ : ContMDiff IZ₂ IN n g₂)
+    (htrans_g : ∀ q : Z₁ × Z₂, g₁ q.1 = g₂ q.2 →
+      (mfderiv IZ₁ IN g₁ q.1).range ⊔
+        (((tangentSpaceCast IN (g₂ q.2) (g₁ q.1)).toContinuousLinearMap).comp
+          (mfderiv IZ₂ IN g₂ q.2)).range = ⊤)
+    (e₁ : X₁ ≃ₘ^n⟮IX₁, IZ₁⟯ Z₁) (e₂ : X₂ ≃ₘ^n⟮IX₂, IZ₂⟯ Z₂)
+    (hcompat : ∀ p : X₁ × X₂, f₁ p.1 = f₂ p.2 ↔ g₁ (e₁ p.1) = g₂ (e₂ p.2)) :
+    letI := transverseFiberProductChartedSpace hn hf₁ hf₂ htrans_f
+    letI := transverseFiberProductChartedSpace hn hg₁ hg₂ htrans_g
+    {p : X₁ × X₂ // f₁ p.1 = f₂ p.2} ≃ₘ^n⟮
+      𝓘(ℝ, Fin (finrank ℝ EX₁ + finrank ℝ EX₂ - finrank ℝ EN) → ℝ),
+      𝓘(ℝ, Fin (finrank ℝ EZ₁ + finrank ℝ EZ₂ - finrank ℝ EN) → ℝ)⟯
+      {q : Z₁ × Z₂ // g₁ q.1 = g₂ q.2} := by
+  letI := transverseFiberProductChartedSpace hn hf₁ hf₂ htrans_f
+  letI := transverseFiberProductChartedSpace hn hg₁ hg₂ htrans_g
+  have hemb_f := isSmoothEmbedding_coe_transverseFiberProduct hn hf₁ hf₂ htrans_f
+  have hemb_g := isSmoothEmbedding_coe_transverseFiberProduct hn hg₁ hg₂ htrans_g
+  exact
+    { toEquiv := Equiv.subtypeEquiv (e₁.toEquiv.prodCongr e₂.toEquiv) hcompat
+      contMDiff_toFun := hemb_g.contMDiff_iff_comp.2
+        ((e₁.contMDiff.prodMap e₂.contMDiff).comp hemb_f.contMDiff)
+      contMDiff_invFun := hemb_f.contMDiff_iff_comp.2
+        ((e₁.symm.contMDiff.prodMap e₂.symm.contMDiff).comp hemb_g.contMDiff) }
+
+/-- The forward map of `transverseFiberProductCongr` applies `e₁` and `e₂` coordinatewise. -/
+@[simp]
+theorem coe_transverseFiberProductCongr_apply
+    {EN HN N EX₁ HX₁ X₁ EX₂ HX₂ X₂ EZ₁ HZ₁ Z₁ EZ₂ HZ₂ Z₂ : Type*}
+    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
+    {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {n : ℕ∞ω} [IsManifold IN n N] [IN.Boundaryless] [FiniteDimensional ℝ EN]
+    [NormedAddCommGroup EX₁] [NormedSpace ℝ EX₁] [TopologicalSpace HX₁]
+    [NormedAddCommGroup EX₂] [NormedSpace ℝ EX₂] [TopologicalSpace HX₂]
+    [NormedAddCommGroup EZ₁] [NormedSpace ℝ EZ₁] [TopologicalSpace HZ₁]
+    [NormedAddCommGroup EZ₂] [NormedSpace ℝ EZ₂] [TopologicalSpace HZ₂]
+    {IX₁ : ModelWithCorners ℝ EX₁ HX₁} {IX₂ : ModelWithCorners ℝ EX₂ HX₂}
+    {IZ₁ : ModelWithCorners ℝ EZ₁ HZ₁} {IZ₂ : ModelWithCorners ℝ EZ₂ HZ₂}
+    [TopologicalSpace X₁] [ChartedSpace HX₁ X₁] [IsManifold IX₁ n X₁] [IX₁.Boundaryless]
+    [FiniteDimensional ℝ EX₁]
+    [TopologicalSpace X₂] [ChartedSpace HX₂ X₂] [IsManifold IX₂ n X₂] [IX₂.Boundaryless]
+    [FiniteDimensional ℝ EX₂]
+    [TopologicalSpace Z₁] [ChartedSpace HZ₁ Z₁] [IsManifold IZ₁ n Z₁] [IZ₁.Boundaryless]
+    [FiniteDimensional ℝ EZ₁]
+    [TopologicalSpace Z₂] [ChartedSpace HZ₂ Z₂] [IsManifold IZ₂ n Z₂] [IZ₂.Boundaryless]
+    [FiniteDimensional ℝ EZ₂]
+    (hn : 1 ≤ n)
+    {f₁ : X₁ → N} {f₂ : X₂ → N} {g₁ : Z₁ → N} {g₂ : Z₂ → N}
+    (hf₁ : ContMDiff IX₁ IN n f₁) (hf₂ : ContMDiff IX₂ IN n f₂)
+    (htrans_f : ∀ p : X₁ × X₂, f₁ p.1 = f₂ p.2 →
+      (mfderiv IX₁ IN f₁ p.1).range ⊔
+        (((tangentSpaceCast IN (f₂ p.2) (f₁ p.1)).toContinuousLinearMap).comp
+          (mfderiv IX₂ IN f₂ p.2)).range = ⊤)
+    (hg₁ : ContMDiff IZ₁ IN n g₁) (hg₂ : ContMDiff IZ₂ IN n g₂)
+    (htrans_g : ∀ q : Z₁ × Z₂, g₁ q.1 = g₂ q.2 →
+      (mfderiv IZ₁ IN g₁ q.1).range ⊔
+        (((tangentSpaceCast IN (g₂ q.2) (g₁ q.1)).toContinuousLinearMap).comp
+          (mfderiv IZ₂ IN g₂ q.2)).range = ⊤)
+    (e₁ : X₁ ≃ₘ^n⟮IX₁, IZ₁⟯ Z₁) (e₂ : X₂ ≃ₘ^n⟮IX₂, IZ₂⟯ Z₂)
+    (hcompat : ∀ p : X₁ × X₂, f₁ p.1 = f₂ p.2 ↔ g₁ (e₁ p.1) = g₂ (e₂ p.2))
+    (p : {p : X₁ × X₂ // f₁ p.1 = f₂ p.2}) :
+    letI := transverseFiberProductChartedSpace hn hf₁ hf₂ htrans_f
+    letI := transverseFiberProductChartedSpace hn hg₁ hg₂ htrans_g
+    ((transverseFiberProductCongr hn hf₁ hf₂ htrans_f hg₁ hg₂ htrans_g e₁ e₂ hcompat p :
+        {q : Z₁ × Z₂ // g₁ q.1 = g₂ q.2}) : Z₁ × Z₂) = (e₁ p.val.1, e₂ p.val.2) :=
+  (rfl)
+
+/-- The inverse of `transverseFiberProductCongr` applies `e₁.symm` and `e₂.symm` coordinatewise. -/
+@[simp]
+theorem coe_transverseFiberProductCongr_symm_apply
+    {EN HN N EX₁ HX₁ X₁ EX₂ HX₂ X₂ EZ₁ HZ₁ Z₁ EZ₂ HZ₂ Z₂ : Type*}
+    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
+    {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {n : ℕ∞ω} [IsManifold IN n N] [IN.Boundaryless] [FiniteDimensional ℝ EN]
+    [NormedAddCommGroup EX₁] [NormedSpace ℝ EX₁] [TopologicalSpace HX₁]
+    [NormedAddCommGroup EX₂] [NormedSpace ℝ EX₂] [TopologicalSpace HX₂]
+    [NormedAddCommGroup EZ₁] [NormedSpace ℝ EZ₁] [TopologicalSpace HZ₁]
+    [NormedAddCommGroup EZ₂] [NormedSpace ℝ EZ₂] [TopologicalSpace HZ₂]
+    {IX₁ : ModelWithCorners ℝ EX₁ HX₁} {IX₂ : ModelWithCorners ℝ EX₂ HX₂}
+    {IZ₁ : ModelWithCorners ℝ EZ₁ HZ₁} {IZ₂ : ModelWithCorners ℝ EZ₂ HZ₂}
+    [TopologicalSpace X₁] [ChartedSpace HX₁ X₁] [IsManifold IX₁ n X₁] [IX₁.Boundaryless]
+    [FiniteDimensional ℝ EX₁]
+    [TopologicalSpace X₂] [ChartedSpace HX₂ X₂] [IsManifold IX₂ n X₂] [IX₂.Boundaryless]
+    [FiniteDimensional ℝ EX₂]
+    [TopologicalSpace Z₁] [ChartedSpace HZ₁ Z₁] [IsManifold IZ₁ n Z₁] [IZ₁.Boundaryless]
+    [FiniteDimensional ℝ EZ₁]
+    [TopologicalSpace Z₂] [ChartedSpace HZ₂ Z₂] [IsManifold IZ₂ n Z₂] [IZ₂.Boundaryless]
+    [FiniteDimensional ℝ EZ₂]
+    (hn : 1 ≤ n)
+    {f₁ : X₁ → N} {f₂ : X₂ → N} {g₁ : Z₁ → N} {g₂ : Z₂ → N}
+    (hf₁ : ContMDiff IX₁ IN n f₁) (hf₂ : ContMDiff IX₂ IN n f₂)
+    (htrans_f : ∀ p : X₁ × X₂, f₁ p.1 = f₂ p.2 →
+      (mfderiv IX₁ IN f₁ p.1).range ⊔
+        (((tangentSpaceCast IN (f₂ p.2) (f₁ p.1)).toContinuousLinearMap).comp
+          (mfderiv IX₂ IN f₂ p.2)).range = ⊤)
+    (hg₁ : ContMDiff IZ₁ IN n g₁) (hg₂ : ContMDiff IZ₂ IN n g₂)
+    (htrans_g : ∀ q : Z₁ × Z₂, g₁ q.1 = g₂ q.2 →
+      (mfderiv IZ₁ IN g₁ q.1).range ⊔
+        (((tangentSpaceCast IN (g₂ q.2) (g₁ q.1)).toContinuousLinearMap).comp
+          (mfderiv IZ₂ IN g₂ q.2)).range = ⊤)
+    (e₁ : X₁ ≃ₘ^n⟮IX₁, IZ₁⟯ Z₁) (e₂ : X₂ ≃ₘ^n⟮IX₂, IZ₂⟯ Z₂)
+    (hcompat : ∀ p : X₁ × X₂, f₁ p.1 = f₂ p.2 ↔ g₁ (e₁ p.1) = g₂ (e₂ p.2))
+    (q : {q : Z₁ × Z₂ // g₁ q.1 = g₂ q.2}) :
+    letI := transverseFiberProductChartedSpace hn hf₁ hf₂ htrans_f
+    letI := transverseFiberProductChartedSpace hn hg₁ hg₂ htrans_g
+    (((transverseFiberProductCongr hn hf₁ hf₂ htrans_f hg₁ hg₂ htrans_g e₁ e₂ hcompat).symm q :
+        {p : X₁ × X₂ // f₁ p.1 = f₂ p.2}) : X₁ × X₂) = (e₁.symm q.val.1, e₂.symm q.val.2) :=
+  (rfl)
+
+end TauCeti
+
+end Congr

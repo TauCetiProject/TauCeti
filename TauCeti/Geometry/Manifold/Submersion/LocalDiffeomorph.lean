@@ -9,22 +9,27 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 import TauCeti.Geometry.Manifold.Submersion.Basic
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
-# Composing submersions with local diffeomorphisms
+# Local diffeomorphisms and submersions
 
 Mathlib defines `Manifold.IsSubmersionAt` by a normal form in charts: around `x` there are charts
 of the source and target in which the map reads as the projection `(u, v) ↦ u`. This file proves
 that composing with a `C^n` **local diffeomorphism**, on either side, preserves this normal form at
-a point, with the same complement. It is the submersion counterpart of
+a point, with the same complement, and that every `C^n` local diffeomorphism (`n ≠ 0`) between
+boundaryless manifolds is itself a submersion with trivial complement `PUnit.{1}` (and hence so is
+every `C^n` diffeomorphism). It is the submersion counterpart of
 `TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph`.
 
-Nothing has to be recombined. A partial diffeomorphism `Φ` of the source carries a chart `ψ` of
-the maximal atlas to the chart `Φ ≫ ψ`, and `f ∘ Φ` read in it is `f` read in `ψ`. On the target,
-a partial diffeomorphism `Θ` near `f x` pulls a chart `χ` back to `Θ⁻¹ ≫ χ`, and `Θ ∘ f` read in
-it is `f` read in `χ`, once the source chart is shrunk so that `f` maps it into the source of `Θ`.
+Nothing has to be recombined when composing. A partial diffeomorphism `Φ` of the source carries a
+chart `ψ` of the maximal atlas to the chart `Φ ≫ ψ`, and `f ∘ Φ` read in it is `f` read in `ψ`. On
+the target, a partial diffeomorphism `Θ` near `f x` pulls a chart `χ` back to `Θ⁻¹ ≫ χ`, and `Θ ∘ f`
+read in it is `f` read in `χ`, once the source chart is shrunk so that `f` maps it into the source
+of `Θ`.
 
 Precomposition with a local diffeomorphism `g` also reflects the normal form: `f` is a submersion
 at `g x` as soon as `f ∘ g` is a submersion at `x`, because near `g x` the map `f` agrees with
@@ -32,6 +37,11 @@ at `g x` as soon as `f ∘ g` is a submersion at `x`, because near `g x` the map
 of a quotient manifold, such as the orbit space of a free properly discontinuous action, is shown
 to be a submersion: the orbit projection is a local diffeomorphism, so it suffices to check the
 lift of the map to the covering manifold.
+
+For a `C^n` local diffeomorphism `f : M → N` (`n ≠ 0`) between boundaryless manifolds, `mfderiv`
+identifies the model spaces `E ≃L[𝕜] E'`, so pulling back a target chart along a representing
+partial diffeomorphism yields a source chart in which `f` reads as `u ↦ (L u).1` with complement
+`PUnit.{1}`.
 
 ## Main results
 
@@ -46,6 +56,13 @@ lift of the map to the covering manifold.
   diffeomorphism at `x` neither creates nor destroys the normal form at `x`.
 * `IsLocalDiffeomorphAt.isSubmersionAt_comp_iff`,
   `IsLocalDiffeomorphAt.comp_isSubmersionAt`: the same statements for `IsSubmersionAt`.
+* `IsLocalDiffeomorphAt.isSubmersionAtOfComplement`, `IsLocalDiffeomorphAt.isSubmersionAt`: a `C^n`
+  local diffeomorphism at `x` (`n ≠ 0`) between boundaryless manifolds is a submersion at `x` with
+  complement `PUnit.{1}`.
+* `IsLocalDiffeomorph.isSubmersionOfComplement`, `IsLocalDiffeomorph.isSubmersion`: every `C^n`
+  local diffeomorphism (`n ≠ 0`) between boundaryless manifolds is a submersion.
+* `Diffeomorph.isSubmersionOfComplement`, `Diffeomorph.isSubmersion`: every `C^n` diffeomorphism
+  (`n ≠ 0`) between boundaryless manifolds is a submersion.
 
 ## References
 
@@ -189,6 +206,107 @@ theorem comp_isSubmersionAt [IsManifold J n P] {k : N → P} {x : M}
     h.isSubmersionAtOfComplement_complement).isSubmersionAt
 
 end IsLocalDiffeomorphAt
+
+/-! ### Local diffeomorphisms and diffeomorphisms as submersions -/
+
+section LocalDiffeomorph
+
+open Function Set
+open OpenPartialHomeomorph (transHomeomorph_source transHomeomorph_target trans_source trans_target
+  extend_target extendTrans_source extendTrans_target extendTrans_symm_apply)
+open scoped Manifold ContDiff
+
+variable {𝕜 E E' H G M N : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G} [I.Boundaryless] [J.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M]
+  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J n N]
+
+/-- A `C^n` local diffeomorphism at `x` (`n ≠ 0`) between boundaryless manifolds is a submersion at
+`x` with complement `PUnit.{1}`. -/
+theorem IsLocalDiffeomorphAt.isSubmersionAtOfComplement {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) :
+    Manifold.IsSubmersionAtOfComplement PUnit.{1} I J n f x := by
+  have hcont : ContinuousAt f x := hf.contMDiffAt.continuousAt
+  obtain ⟨L₀⟩ : Nonempty (E ≃L[𝕜] E') := ⟨(tangentSpaceCastModel I x).symm.trans <|
+    (hf.mfderivToContinuousLinearEquiv hn).trans (tangentSpaceCastModel J (f x))⟩
+  obtain ⟨Θ, hxΘ, hfΘ⟩ := hf; let ψ := chartAt G (f x)
+  have hψ : ψ ∈ IsManifold.maximalAtlas J n N := IsManifold.chart_mem_maximalAtlas (f x)
+  let Ψ := ψ.extendTrans J L₀.symm.toHomeomorph
+  let Ξ := Θ.toOpenPartialHomeomorph.trans Ψ
+  let φ := Ξ.trans I.interiorChart.symm
+  have hΞ : ContMDiffOn I 𝓘(𝕜, E) n Ξ Ξ.source :=
+    (ψ.contMDiffOn_extendTrans hψ L₀.symm.contDiff).comp (Θ.contMDiffOn.mono inter_subset_left)
+      fun _ hz ↦ hz.2
+  have hΞs : ContMDiffOn 𝓘(𝕜, E) I n Ξ.symm Ξ.target :=
+    Θ.symm.contMDiffOn.comp ((ψ.contMDiffOn_extendTrans_symm hψ L₀.contDiff).mono
+      inter_subset_left) fun _ hz ↦ hz.2
+  have hφ := Ξ.trans_interiorChart_symm_mem_maximalAtlas hΞ hΞs
+  have hxφ : x ∈ φ.source := by
+    have hxΨ : Θ.toOpenPartialHomeomorph x ∈ Ψ.source := by
+      rw [ψ.extendTrans_source, ← OpenPartialHomeomorph.coe_toPartialEquiv,
+        Θ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv, ← hfΘ hxΘ]
+      exact mem_chart_source G (f x)
+    have hxΞ : x ∈ Ξ.source := by
+      rw [trans_source, mem_inter_iff, mem_preimage, Θ.toOpenPartialHomeomorph_source]
+      exact ⟨hxΘ, hxΨ⟩
+    rwa [OpenPartialHomeomorph.trans_interiorChart_symm_source]
+  let L : E ≃L[𝕜] E' × PUnit.{1} := L₀.trans (ContinuousLinearEquiv.prodUnique 𝕜 E' PUnit.{1}).symm
+  refine .mk_of_continuousAt hcont L φ ψ hxφ (mem_chart_source G (f x)) hφ hψ fun u hu ↦ ?_
+  have huΞ : u ∈ Ξ.target := by
+    rwa [OpenPartialHomeomorph.extend_trans_interiorChart_symm_target] at hu
+  rw [trans_target, mem_inter_iff, mem_preimage] at huΞ
+  have huΨ : L₀ u ∈ (ψ.extend J).target := by
+    simpa only [ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
+      ContinuousLinearEquiv.coe_toHomeomorph] using
+      (ψ.mem_extendTrans_target_iff J L₀.symm.toHomeomorph u).1 huΞ.1
+  have hΨsymm : Ψ.symm u = (ψ.extend J).symm (L₀ u) := by
+    rw [ψ.extendTrans_symm_apply J L₀.symm.toHomeomorph u,
+      ← ContinuousLinearEquiv.toHomeomorph_symm, L₀.symm_symm,
+      ContinuousLinearEquiv.coe_toHomeomorph, ψ.extend_coe_symm, Function.comp_apply]
+  have hyΘ : (ψ.extend J).symm (L₀ u) ∈ Θ.toOpenPartialHomeomorph.target := hΨsymm ▸ huΞ.2
+  have hsymm :
+      (φ.extend I).symm u = Θ.toOpenPartialHomeomorph.symm ((ψ.extend J).symm (L₀ u)) := by
+    rw [congrFun (OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm (I := I) Ξ) u,
+      OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_apply,
+      hΨsymm]
+  dsimp only [comp_apply]
+  rw [hsymm, hfΘ (by simpa only [Θ.toOpenPartialHomeomorph_source] using
+    Θ.toOpenPartialHomeomorph.map_target hyΘ),
+    ← Θ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+    OpenPartialHomeomorph.coe_toPartialEquiv, Θ.toOpenPartialHomeomorph.right_inv hyΘ]
+  exact (ψ.extend J).right_inv huΨ
+
+/-- A `C^n` local diffeomorphism at `x` (`n ≠ 0`) between boundaryless manifolds is a submersion at
+`x`. -/
+theorem IsLocalDiffeomorphAt.isSubmersionAt {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : Manifold.IsSubmersionAt I J n f x :=
+  (hf.isSubmersionAtOfComplement hn).isSubmersionAt
+
+/-- A `C^n` local diffeomorphism (`n ≠ 0`) between boundaryless manifolds is a submersion with
+complement `PUnit.{1}`. -/
+theorem IsLocalDiffeomorph.isSubmersionOfComplement {f : M → N}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) :
+    Manifold.IsSubmersionOfComplement PUnit.{1} I J n f :=
+  Manifold.isSubmersionOfComplement_iff.mpr fun x ↦ (hf x).isSubmersionAtOfComplement hn
+
+/-- A `C^n` local diffeomorphism (`n ≠ 0`) between boundaryless manifolds is a submersion. -/
+theorem IsLocalDiffeomorph.isSubmersion {f : M → N}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) : Manifold.IsSubmersion I J n f :=
+  (hf.isSubmersionOfComplement hn).isSubmersion
+
+/-- A `C^n` diffeomorphism (`n ≠ 0`) between boundaryless manifolds is a submersion with complement
+`PUnit.{1}`. -/
+theorem Diffeomorph.isSubmersionOfComplement (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) :
+    Manifold.IsSubmersionOfComplement PUnit.{1} I J n Φ :=
+  Φ.isLocalDiffeomorph.isSubmersionOfComplement hn
+
+/-- A `C^n` diffeomorphism (`n ≠ 0`) between boundaryless manifolds is a submersion. -/
+theorem Diffeomorph.isSubmersion (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) :
+    Manifold.IsSubmersion I J n Φ := Φ.isLocalDiffeomorph.isSubmersion hn
+
+end LocalDiffeomorph
 
 namespace IsLocalDiffeomorph
 

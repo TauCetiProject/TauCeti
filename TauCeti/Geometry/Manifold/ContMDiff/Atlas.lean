@@ -54,7 +54,8 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 * `OpenPartialHomeomorph.contMDiffOn_extendTrans`, `OpenPartialHomeomorph.contMDiffAt_extendTrans`
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
-  transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
+  transported by `OpenPartialHomeomorph.extendTrans` and of its inverse, with target membership
+  characterised by `OpenPartialHomeomorph.mem_extendTrans_target_iff`.
 * `OpenPartialHomeomorph.contMDiffAt_extend_symm`: the inverse of an extended chart `e.extend I`
   of the maximal atlas is `C^n` at the model coordinate `I (e x)` of a point of its source.
 -/
@@ -168,6 +169,22 @@ end CompSymm
 end TauCeti
 
 namespace OpenPartialHomeomorph
+
+section
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [TopologicalSpace H] [TopologicalSpace M]
+
+/-- For a boundaryless model `I`, a point lies in `(c.extendTrans I Ψ).target` if and only if
+its preimage under `Ψ` lies in `(c.extend I).target`. -/
+theorem mem_extendTrans_target_iff (c : OpenPartialHomeomorph M H) (I : ModelWithCorners 𝕜 E H)
+    [I.Boundaryless] (Ψ : E ≃ₜ F) (v : F) :
+    v ∈ (c.extendTrans I Ψ).target ↔ Ψ.symm v ∈ (c.extend I).target := by
+  rw [extendTrans_target, OpenPartialHomeomorph.extend_target, I.range_eq_univ, Set.inter_univ,
+    Set.mem_preimage]
+
+end
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
