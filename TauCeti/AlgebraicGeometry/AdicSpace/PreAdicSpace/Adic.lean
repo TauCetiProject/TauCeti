@@ -81,11 +81,6 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isSheafyRing`: `Spa(A, A⁺)`
   with a sheaf structure presheaf — in particular, the adic spectrum of a sheafy Huber pair — is
   an adic space.
-* `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionLocalization`: if the
-  structure presheaf of `Spa(A, A⁺)` is a sheaf, so is that of every rational localisation
-  `Spa(A⟨T/s⟩, A_U⁺)`.
-* `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_rationalLocalizationPair`: the same,
-  for the rational localisation as a pair.
 * `TauCeti.Huber.isSheafyForEveryPresentation_rationalLocalizationPair`: rational localisation
   preserves `TauCeti.Huber.IsSheafyForEveryPresentation`.
 
@@ -644,59 +639,7 @@ theorem isAdic_presentationLimitPreAdicSpace
     PreAdicSpace.isAdic (presentationLimitPreAdicSpace P Aplus hAplus hP) :=
   ⟨hs, (isPreAdic_presentationLimitPreAdicSpace P Aplus hAplus hP).isLocallyAffinoid⟩
 
-include hAplus hP in
-/-- **Rational localisation preserves the sheaf condition**: if the structure presheaf of
-`Spa(A, A⁺)` is a sheaf and `T` spans an open ideal, then the structure presheaf of
-`Spa(A⟨T/s⟩, A_U⁺)` is a sheaf. By Wedhorn's Remark 8.8
-(`presentationLimitPreAdicSpaceLocIso`), `Spa(A⟨T/s⟩, A_U⁺)` is isomorphic in `𝒱^pre` to the
-restriction of `Spa(A, A⁺)` to `R(T/s)`, and the restriction of a sheaf to an open is a sheaf. -/
-theorem isSheaf_presentationLimitPresheaf_completionLocalization (T : Finset A) (s : A)
-    (S : Type u) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
-    (hden : P.HasDenominatorPower T s S) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-    (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
-      (presentationLimitPresheaf P Aplus)) :
-    letI := P.locUniformSpace T s S hden
-    letI := P.isUniformAddGroup_locUniformSpace T s S hden
-    letI := P.isTopologicalRing_locUniformSpace T s S hden
-    Presheaf.IsSheaf
-      (Opens.grothendieckTopology ↥(spa (P.completedPlusSubring Aplus T s S hden)))
-      (presentationLimitPresheaf (P.completionLocalization T s S hden)
-        (P.completedPlusSubring Aplus T s S hden)) :=
-  letI := P.locUniformSpace T s S hden
-  letI := P.isUniformAddGroup_locUniformSpace T s S hden
-  letI := P.isTopologicalRing_locUniformSpace T s S hden
-  ObjectProperty.prop_of_iso PreAdicSpace.isSheafy
-    (presentationLimitPreAdicSpaceLocIso P Aplus T s S hden hAplus hP hT)
-    (PreAdicSpace.isSheafy_restrict _ hs)
-
 end
-
-open Huber.PairOfDefinition PreAdicSpace in
-/-- If `T` spans an open ideal and the structure presheaf of `Spa(A, A⁺)` is a sheaf, then so is the
-structure presheaf of `Spa` of the rational localisation `(A⟨T/s⟩, A_U⁺)`, as a pair
-(`PairOfDefinition.rationalLocalizationPair`). -/
-theorem isSheaf_presentationLimitPresheaf_rationalLocalizationPair {A : Type u}
-    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus) (T : Finset A) (s : A)
-    (L : Type u) [CommRing L] [Algebra A L] [IsLocalization.Away s L]
-    (hden : P.HasDenominatorPower T s L) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa U.plus))
-      (presentationLimitPresheaf P U.plus)) :
-    letI := P.locUniformSpace T s L hden
-    letI := P.isUniformAddGroup_locUniformSpace T s L hden
-    letI := P.isTopologicalRing_locUniformSpace T s L hden
-    letI := P.isHuberRing_completion_locTopology T s L hden
-    Presheaf.IsSheaf
-      (Opens.grothendieckTopology ↥(spa (P.rationalLocalizationPair U hP T s L hden).plus))
-      (presentationLimitPresheaf (P.completionLocalization T s L hden)
-        (P.rationalLocalizationPair U hP T s L hden).plus) := by
-  let _ := P.locUniformSpace T s L hden
-  have _ := P.isUniformAddGroup_locUniformSpace T s L hden
-  have _ := P.isTopologicalRing_locUniformSpace T s L hden
-  have _ := P.isHuberRing_completion_locTopology T s L hden
-  rw [rationalLocalizationPair_plus]
-  exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
-    U.isRingOfIntegralElements.isPowerBounded_of_mem hP T s L hden hT hsheaf
 
 /-- Rational localisation preserves `TauCeti.Huber.IsSheafyForEveryPresentation`. -/
 theorem _root_.TauCeti.Huber.isSheafyForEveryPresentation_rationalLocalizationPair {A : Type u}

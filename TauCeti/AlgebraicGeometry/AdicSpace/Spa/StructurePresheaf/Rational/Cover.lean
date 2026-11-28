@@ -46,10 +46,10 @@ statement is reduced to standard rational covers, for which it is
   the original cover.
 
 Intersections of rational opens are rational, so gluing along rational covers of rational opens is
-the sheaf condition on the basis of rational opens (`isSheaf_rational_comp_of_isSheafFor_ofArrows`).
-Since the presentation-limit presheaf is the limit of its values on that basis, the presheaf of
-sets underlying it is then a sheaf on all opens
-(`isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing`).
+the sheaf condition on the basis of rational opens
+(`isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows`). Since the presentation-limit
+presheaf is the limit of its values on that basis, the presheaf of sets underlying it is then a
+sheaf on all opens (`isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing`).
 
 The statements concern the sheaf condition in degree zero, for the presentation-limit presheaf as a
 presheaf of sets; neither the topology on the sections nor higher Čech cohomology is treated here.
@@ -209,9 +209,10 @@ theorem isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing
   apply TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology
     (X := TopCat.of ↥(spa Aplus)) _ _ (isBasis_spaRationalOpens Aplus) hAdapted
   exact (isSheaf_iff_isSheaf_of_type _ _).mpr
-    (isSheaf_rational_comp_of_isSheafFor_ofArrows P G fun hW hU hcov ↦
-      isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P hC hA hP hAplus hW hU
-        hcov)
+    (isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus
+      (presentationLimitPresheaf P Aplus ⋙ G) fun hW hU hcov ↦
+        isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P hC hA hP hAplus hW hU
+          hcov)
 
 /-! ### The strongly noetherian case -/
 

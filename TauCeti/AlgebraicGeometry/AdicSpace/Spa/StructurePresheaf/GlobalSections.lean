@@ -244,6 +244,23 @@ theorem presentationLimitTopIso_inv (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPow
     (presentationLimitTopIso (P := P) Aplus hAplus).inv = toPresentationLimit Aplus ⊤ :=
   (rfl)
 
+/-- Under `presentationLimitRationalIso`, restriction from the whole spectrum to `R(p)` is the
+structure map `A → A⟨p⟩`. -/
+theorem presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+    (c : CompleteSeparatedTopCommRingCat.of A) :
+    (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val
+          ((presentationLimitMap le_top).hom.val ((toPresentationLimit Aplus ⊤).hom.val c))) =
+      toCompletionLoc P p.num p.den _ p.hasDenominatorPower
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c) := by
+  have key : toPresentationLimit Aplus ⊤ ≫ presentationLimitMap le_top ≫
+      (presentationLimitRationalIso Aplus hAplus p hp).hom = p.toCompletionLocObjHom := by simp
+  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val c)) key).trans ?_
+  rw [Presentation.toCompletionLocObjHom_hom]
+  exact (eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).inv_hom_id_apply _
+
 end TauCeti.ValuationSpectrum
 
 end

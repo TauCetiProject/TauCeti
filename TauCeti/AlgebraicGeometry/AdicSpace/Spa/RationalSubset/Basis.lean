@@ -80,6 +80,8 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.isCompact_of_mem_spaRationalFamily`: every member of the family is
   quasi-compact. Each result also has an `_of_pairOfDefinition` form for use with a specified
   pair of definition.
+* `TauCeti.ValuationSpectrum.exists_finite_subcover_spaRationalOpens`: every open cover of a
+  rational open admits a finite subcover.
 * `TauCeti.ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily`: a rational open pulls back
   to a rational open when the ring map sends open ideals to open ideals.
 * `TauCeti.ValuationSpectrum.bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily`: preimage
@@ -507,6 +509,14 @@ theorem finsetInf_mem_spaRationalOpens [IsHuberRing A] {Aplus : Subring A} {ι :
     (h : ∀ i ∈ s, U i ∈ spaRationalOpens Aplus) : s.inf U ∈ spaRationalOpens Aplus := by
   rw [mem_spaRationalOpens, Opens.coe_finset_inf, Finset.inf_set_eq_iInter]
   exact biInter_mem_spaRationalFamily s fun i hi ↦ mem_spaRationalOpens.mp (h i hi)
+
+/-- Quasi-compactness of rational opens extracts a finite subcover from any open cover. -/
+theorem exists_finite_subcover_spaRationalOpens [IsHuberRing A] {Aplus : Subring A}
+    {W : Opens (spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) {ι : Type*}
+    {U : ι → Opens (spa Aplus)} (hcov : ⨆ i, U i = W) :
+    ∃ I : Finset ι, (⨆ k : ↥I, U k.val) = W :=
+  Opens.exists_finite_subcover_of_isCompact
+    (isCompact_of_mem_spaRationalFamily (mem_spaRationalOpens.mp hW)) hcov
 
 /-! ### Finite rational refinements -/
 

@@ -57,6 +57,9 @@ The consequences for `TauCeti.Huber.IsSheafyForEveryPresentation` are in
   the sheaf property under isomorphism.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionPlus_iff` : invariance of
   the sheaf property under completion.
+* `TauCeti.ValuationSpectrum.isSheafFor_presentationLimitPresheaf_comp_iff_of_pairOfDefinition` :
+  switching the pair of definition on a fixed ring preserves `Presieve.IsSheafFor` for
+  `presentationLimitPresheaf` postcomposed with any functor into `Type*`.
 
 ## References
 
@@ -302,6 +305,28 @@ theorem isSheaf_presentationLimitPresheaf_iff_of_ringEquiv (e : A ≃+* B) (he :
     (G := presentationLimitPresheaf P' (Aplus.map (e : A →+* B)))
     (spaComapTopIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
     (presentationLimitPresheafIsoPushforward _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
+
+/-- On a fixed topological ring `A`, switching the pair of definition preserves
+`Presieve.IsSheafFor` for `presentationLimitPresheaf` postcomposed with any functor into
+`Type*`. -/
+theorem isSheafFor_presentationLimitPresheaf_comp_iff_of_pairOfDefinition
+    (Q₁ Q₂ : PairOfDefinition A) (Aplus : Subring A)
+    (G : CompleteSeparatedTopCommRingCat.{v} ⥤ Type*)
+    {W : Opens ↥(spa Aplus)} (R : Presieve W) :
+    R.IsSheafFor (presentationLimitPresheaf Q₁ Aplus ⋙ G) ↔
+      R.IsSheafFor (presentationLimitPresheaf Q₂ Aplus ⋙ G) := by
+  let eG := Functor.isoWhiskerRight
+    (presentationLimitPresheafIsoPushforward (P := Q₁) (P' := Q₂) (Aplus := Aplus) (Bplus := Aplus)
+      (RingHom.id A) continuous_id (fun _ ha ↦ ha) (RingHom.id A) continuous_id
+      (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ha ↦ ha) ≪≫
+    eqToIso (congrArg
+      (fun f : TopCat.of ↥(spa Aplus) ⟶ TopCat.of ↥(spa Aplus) ↦
+        (TopCat.Presheaf.pushforward _ f).obj (presentationLimitPresheaf Q₂ Aplus))
+      (spaComapTopHom_id (Aplus := Aplus))) ≪≫
+    TopCat.Presheaf.Pushforward.id (X := TopCat.of ↥(spa Aplus))
+      (presentationLimitPresheaf Q₂ Aplus))
+    G
+  exact ⟨Presieve.isSheafFor_iso eG, Presieve.isSheafFor_iso eG.symm⟩
 
 end TauCeti.ValuationSpectrum
 

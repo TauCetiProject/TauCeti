@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.CategoryTheory.Sites.TopologicalBasis
-public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
 
 /-!
@@ -36,6 +35,12 @@ extension along their inclusion.
 * `TauCeti.ValuationSpectrum.isSheaf_iff_isSheafFor_rationalCover` : the criterion.
 * `(TauCeti.ValuationSpectrum.rationalOpensFunctor Aplus).IsCoverDense` : the rational opens are
   cover-dense, for a Huber ring `A`.
+* `TauCeti.ValuationSpectrum.isSheafFor_spaRationalOpens_of_finite` : quasi-compactness of
+  rational opens reduces the set-level sheaf condition for arbitrary rational covers of rational
+  opens to finite rational covers of rational opens.
+* `TauCeti.ValuationSpectrum.isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows` :
+  gluing along rational covers of rational opens gives the sheaf condition for the restricted
+  topology on the rational basis.
 
 The rational basis itself, in the `Opens` form this consumes, is
 `TauCeti.ValuationSpectrum.isBasis_spaRationalOpens` in
@@ -49,11 +54,13 @@ The rational basis itself, in the `Opens` form this consumes, is
 
 namespace TauCeti.ValuationSpectrum
 
-open CategoryTheory _root_.TopologicalSpace TauCeti.Huber TauCeti.TopologicalSpace.Opens
+open CategoryTheory Opposite _root_.TopologicalSpace TauCeti.Huber TauCeti.TopologicalSpace.Opens
 
 public section
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+universe v w u₁ u₂
+
+variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
 /-- **Sheafhood on `Spa(A,A⁺)` is decided by rational covers.** A presheaf valued in any category
 is a sheaf for the topology of the adic spectrum exactly when it satisfies the sheaf condition for
@@ -86,6 +93,40 @@ instance [IsHuberRing A] : (rationalOpensFunctor Aplus).IsCoverDense
     (Opens.grothendieckTopology ↥(spa Aplus)) :=
   -- the rational opens form a basis of the topology of `Spa(A, A⁺)`
   coverDense_inducedFunctor_subtypeVal (isBasis_spaRationalOpens Aplus)
+
+/-- Compactness of rational opens upgrades set-level gluing from finite rational covers of rational
+opens to arbitrary rational covers of rational opens, for any presheaf of types on
+`Spa(A, A⁺)`. -/
+theorem isSheafFor_spaRationalOpens_of_finite [IsHuberRing A]
+    {F : (Opens ↥(spa Aplus))ᵒᵖ ⥤ Type w}
+    (hfin : ∀ {W : Opens ↥(spa Aplus)} {κ : Type u₁} [Finite κ] {V : κ → Opens ↥(spa Aplus)},
+      W ∈ spaRationalOpens Aplus → (∀ k, V k ∈ spaRationalOpens Aplus) →
+      ∀ hcov : ⨆ k, V k = W,
+      (Presieve.ofArrows V fun k ↦ homOfLE ((le_iSup V k).trans_eq hcov)).IsSheafFor F)
+    {W : Opens ↥(spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) {ι : Type u₂}
+    {U : ι → Opens ↥(spa Aplus)} (hU : ∀ i, U i ∈ spaRationalOpens Aplus)
+    (hcov : ⨆ i, U i = W) :
+    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor F :=
+  TauCeti.TopologicalSpace.Opens.isSheafFor_ofArrows_of_finite
+    (fun _ _ hU hV ↦ inf_mem_spaRationalOpens hU hV)
+    (fun _ hW ↦ isCompact_of_mem_spaRationalFamily (mem_spaRationalOpens.mp hW))
+    hfin hW hU hcov
+
+/-- **The sheaf condition on the rational basis.** For any presheaf of types `F` on `Spa(A, A⁺)`,
+if `F` satisfies the sheaf condition for every cover of a rational open by rational opens, then its
+restriction to the rational opens is a sheaf for the topology restricted from `Spa(A, A⁺)`.
+Intersections of rational opens are rational, which is what lets compatibility on the basis stand
+in for compatibility on pairwise intersections. -/
+theorem isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows [IsHuberRing A]
+    (F : (Opens ↥(spa Aplus))ᵒᵖ ⥤ Type w)
+    (hrat : ∀ {W : Opens ↥(spa Aplus)} {ι : Type v} {U : ι → Opens ↥(spa Aplus)},
+      W ∈ spaRationalOpens Aplus → (∀ i, U i ∈ spaRationalOpens Aplus) → ∀ hcov : ⨆ i, U i = W,
+      (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor F) :
+    Presieve.IsSheaf
+      ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
+      ((rationalOpensFunctor Aplus).op ⋙ F) :=
+  TauCeti.TopologicalSpace.Opens.isSheaf_restrictedTopology_of_isSheafFor_ofArrows
+    (fun _ _ hU hV ↦ inf_mem_spaRationalOpens hU hV) F hrat
 
 end
 

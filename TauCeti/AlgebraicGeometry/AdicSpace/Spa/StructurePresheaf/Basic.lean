@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Topology.Sheaves.Presheaf
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.CompleteSeparated.RefinementCategory
 public import TauCeti.Topology.Category.TopCommRingCat.CompleteSeparated.Limits
@@ -35,6 +36,8 @@ functor along the forgetful map, and the value is its limit — which exists bec
 * `TauCeti.ValuationSpectrum.presentationLimit` : the limit itself.
 * `TauCeti.ValuationSpectrum.presentationLimitMap` : the restriction morphism of a containment.
 * `TauCeti.ValuationSpectrum.presentationLimitPresheaf` : the presheaf they assemble into.
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafInCommRingCat` : the underlying
+  `CommRingCat`-valued presheaf after forgetting the topology on sections.
 
 ## Main results
 
@@ -554,6 +557,13 @@ theorem eqToHom_presentationLimit {V W : Opens ↥(spa Aplus)} (e : V = W)
   subst e
   simp
 
+/-- **Restricting along an equality of opens is an isomorphism** on `presentationLimit`. -/
+theorem isIso_presentationLimitMap_of_eq {V W : Opens ↥(spa Aplus)} (h : V = W) :
+    IsIso (presentationLimitMap (P := P) h.le) :=
+  ⟨presentationLimitMap (P := P) h.ge,
+    by rw [presentationLimitMap_comp, presentationLimitMap_refl],
+    by rw [presentationLimitMap_comp, presentationLimitMap_refl]⟩
+
 /-- **The presheaf `V ↦ presentationLimit V`** on `Spa(A,A⁺)`, valued in
 `CompleteSeparatedTopCommRingCat`. Both functor laws are reindexing identities for the limit:
 restricting along `le_refl` is the identity on the index, and restricting twice is restricting
@@ -592,6 +602,61 @@ theorem presentationLimitPresheaf_map (P : PairOfDefinition A) (Aplus : Subring 
         presentationLimitMap (P := P) (leOfHom h.unop) ≫
           eqToHom (presentationLimitPresheaf_obj P Aplus W).symm :=
   (rfl)
+
+/-- The presentation-limit presheaf after forgetting the topology on its section rings.
+
+This is the presheaf whose stalks are the ring colimits used in the locally ringed-space
+structure. The topology is forgotten only after taking the limits that define sections. -/
+@[expose] noncomputable def presentationLimitPresheafInCommRingCat (P : PairOfDefinition A)
+    (Aplus : Subring A) : (TopCat.of ↥(spa Aplus)).Presheaf CommRingCat.{v} :=
+  presentationLimitPresheaf P Aplus ⋙
+    TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat
+
+/-- Forgetting the topology of the presentation-limit presheaf gives its ring presheaf. -/
+@[simp]
+theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition A)
+    (Aplus : Subring A) :
+    presentationLimitPresheafInCommRingCat P Aplus = presentationLimitPresheaf P Aplus ⋙
+      TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat :=
+  rfl
+
+/-- Evaluating the underlying ring presheaf on an open gives the underlying ring of the
+presentation limit over that open. -/
+theorem presentationLimitPresheafInCommRingCat_obj (P : PairOfDefinition A)
+    (Aplus : Subring A) (V : (Opens ↥(spa Aplus))ᵒᵖ) :
+    (presentationLimitPresheafInCommRingCat P Aplus).obj V =
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
+        (presentationLimit (P := P) Aplus V.unop) :=
+  (Functor.congr_obj (presentationLimitPresheafInCommRingCat_def P Aplus) V).trans <|
+    congrArg (TopCommRingCat.isCompleteSeparated.ι ⋙
+      forget₂ TopCommRingCat CommRingCat).obj (presentationLimitPresheaf_obj P Aplus V)
+
+/-- Restriction in the underlying ring presheaf is the underlying morphism of the reindexing map
+between presentation limits. The equality transports account for the sealed evaluation theorem
+`presentationLimitPresheaf_obj`. -/
+theorem presentationLimitPresheafInCommRingCat_map (P : PairOfDefinition A)
+    (Aplus : Subring A) {V W : (Opens ↥(spa Aplus))ᵒᵖ} (h : V ⟶ W) :
+    (presentationLimitPresheafInCommRingCat P Aplus).map h ≫
+        eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus W) =
+      eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus V) ≫
+        (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+          (presentationLimitMap (P := P) (leOfHom h.unop)) := by
+  let e := presentationLimitPresheafInCommRingCat_def P Aplus
+  let eV := congrArg
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
+    (presentationLimitPresheaf_obj P Aplus V)
+  let eW := congrArg
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
+    (presentationLimitPresheaf_obj P Aplus W)
+  have hV : presentationLimitPresheafInCommRingCat_obj P Aplus V =
+      (Functor.congr_obj e V).trans eV := Subsingleton.elim _ _
+  have hW : presentationLimitPresheafInCommRingCat_obj P Aplus W =
+      (Functor.congr_obj e W).trans eW := Subsingleton.elim _ _
+  rw [hV, hW, ← eqToHom_trans (Functor.congr_obj e W) eW,
+    ← eqToHom_trans (Functor.congr_obj e V) eV, ← eqToHom_app e W,
+    ← eqToHom_app e V, (eqToHom e).naturality_assoc]
+  simp only [Functor.comp_map, presentationLimitPresheaf_map, Functor.map_comp, eqToHom_map,
+    Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 end
 

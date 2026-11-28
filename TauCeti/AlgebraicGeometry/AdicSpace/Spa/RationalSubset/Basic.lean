@@ -381,6 +381,26 @@ theorem rationalSubset_inter (Aplus : Subring A) (T₁ T₂ : Finset A) (s₁ s�
   rw [rationalSubset_def, rationalSubset_def, rationalSubset_def, ← basicOpenFinset_inter]
   exact (Set.inter_inter_distrib_left _ _ _).symm
 
+open scoped Classical Pointwise in
+/-- **Meet of basic opens**: `spaBasicOpen A⁺ T₁ s₁ ⊓ spaBasicOpen A⁺ T₂ s₂` is presented by the
+product numerator set `insert s₁ T₁ * insert s₂ T₂` and denominator `s₁ * s₂`. -/
+theorem spaBasicOpen_inf (Aplus : Subring A) (T₁ T₂ : Finset A) (s₁ s₂ : A) :
+    spaBasicOpen Aplus T₁ s₁ ⊓ spaBasicOpen Aplus T₂ s₂ =
+      spaBasicOpen Aplus (insert s₁ T₁ * insert s₂ T₂) (s₁ * s₂) := by
+  ext x
+  simp [← rationalSubset_inter]
+
+/-- **An intersection equality of basic opens gives the intersection equality of rational
+subsets**: if `spaBasicOpen A⁺ T' s' = spaBasicOpen A⁺ T₁ s₁ ⊓ spaBasicOpen A⁺ T₂ s₂`, then
+`R(T'/s') = R(T₁/s₁) ∩ R(T₂/s₂)`. -/
+theorem rationalSubset_eq_inter_of_spaBasicOpen_eq_inf {Aplus : Subring A}
+    {T' T₁ T₂ : Finset A} {s' s₁ s₂ : A}
+    (h : spaBasicOpen Aplus T' s' = spaBasicOpen Aplus T₁ s₁ ⊓ spaBasicOpen Aplus T₂ s₂) :
+    rationalSubset Aplus T' s' = rationalSubset Aplus T₁ s₁ ∩ rationalSubset Aplus T₂ s₂ := by
+  classical
+  rw [rationalSubset_inter]
+  exact rationalSubset_eq_of_spaBasicOpen_eq (h.trans (spaBasicOpen_inf Aplus T₁ T₂ s₁ s₂))
+
 /-- The rational open of the common refinement of two presentations is their intersection. -/
 theorem spaBasicOpen_commonRefinement {P : Huber.PairOfDefinition A} (Aplus : Subring A)
     (p q : P.Presentation) :

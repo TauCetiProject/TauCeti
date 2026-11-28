@@ -36,7 +36,7 @@ subset is quasi-compact, so finitely many members of the cover already separate 
 the rings of sections are discrete, the sections over `R(T/s)` then carry the topology induced by
 restriction to the cover. Gluing along rational covers of rational subsets is the sheaf condition
 on the basis of rational subsets, and so on all opens
-(`TauCeti.ValuationSpectrum.isSheaf_rational_comp_of_isSheafFor_ofArrows`,
+(`TauCeti.ValuationSpectrum.isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows`,
 `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheaf_rational`).
 
 No noetherian or finiteness hypothesis is needed: unlike the Tate case, completing the
@@ -357,7 +357,8 @@ theorem isSheaf_presentationLimitPresheaf_of_discreteTopology :
   refine isSheaf_presentationLimitPresheaf_of_isSheaf_rational <|
     Presheaf.isSheaf_of_isSheaf_comp _ _ TopCommRingCat.isCompleteSeparated.ι fun E ↦ ?_
   -- a sheaf of topological rings is one whose continuous homomorphisms out of each `E` glue
-  exact isSheaf_rational_comp_of_isSheafFor_ofArrows P _ fun hW hU hcov ↦
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  exact isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus _ fun hW hU hcov ↦
     isSheafFor_ofArrows_spaRationalOpens P Aplus hW hU hcov E
 
 end TauCeti.ValuationSpectrum
