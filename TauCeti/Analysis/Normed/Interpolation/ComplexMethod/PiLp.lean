@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.PiLp
 public import TauCeti.Data.ENNReal.InterpolatedExponent
-import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Density
 import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Endpoints
 import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Poisson
 import TauCeti.Analysis.Normed.Lp.PiLp.Holder
@@ -246,12 +245,14 @@ private theorem piLpFamilyContinuousLinearEquiv_apply_eq_fwd
       piLpFamilySumEquiv C q₀ q₁ (toSum u) i := by
   obtain ⟨g, rfl⟩ := mk_surjective u; simp [toSum_mk]
 
+private theorem piLpFamilyContinuousLinearEquiv_symm_apply_eq_inv
+    (v : PiLp q (fun i => (C i).ComplexMethodSpace θ)) :
+    (piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ).symm v = piLpFamilyCLEInv C q₀ q₁ q θ v := (rfl)
+
 @[simp] theorem piLpFamilyContinuousLinearEquiv_symm_mk (h : ∀ i, (C i).stripTraces) :
     (piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ).symm (WithLp.toLp q fun i => mk θ (h i)) =
       mk θ ((piLpFamilyStripTracesEquiv C q₀ q₁).symm h) := by
-  refine (piLpFamilyContinuousLinearEquiv C q₀ q₁ q θ).injective (PiLp.ext fun i => ?_)
-  rw [ContinuousLinearEquiv.apply_symm_apply, PiLp.toLp_apply,
-    piLpFamilyContinuousLinearEquiv_mk_apply, ContinuousLinearEquiv.apply_symm_apply]
+  rw [piLpFamilyContinuousLinearEquiv_symm_apply_eq_inv, piLpFamilyCLEInv_mk]
 
 @[simp] theorem toSum_piLpFamilyContinuousLinearEquiv_symm
     (v : PiLp q (fun i => (C i).ComplexMethodSpace θ)) :
@@ -450,10 +451,14 @@ def piLpEquiv :
     (C.piLp ι q₀ q₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ] PiLp q (fun _ : ι => C.ComplexMethodSpace θ) :=
   piLpFamilyEquiv (fun _ : ι => C) hq
 
+/-- `piLpEquiv` is the constant-family specialization of `piLpFamilyEquiv`. -/
+theorem piLpEquiv_def :
+    piLpEquiv C hq = piLpFamilyEquiv (fun _ : ι => C) hq := (rfl)
+
 @[simp] theorem piLpEquiv_apply_sumSpaceEmbed_toSum (u : (C.piLp ι q₀ q₁).ComplexMethodSpace θ)
     (k : ι) : C.sumSpaceEmbed (toSum (piLpEquiv C hq u k)) =
       (C.piLp ι q₀ q₁).sumSpaceEmbed (toSum u) k := by
-  rw [piLpEquiv, coe_piLpFamilyEquiv,
+  rw [piLpEquiv_def, coe_piLpFamilyEquiv,
     toSum_piLpFamilyContinuousLinearEquiv_apply (fun _ : ι => C),
     sumSpaceEmbed_piLpFamilySumEquiv_apply (fun _ : ι => C)]
 

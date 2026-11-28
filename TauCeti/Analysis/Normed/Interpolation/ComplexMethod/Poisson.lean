@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Integral.BoundedContinuousFunction
 import TauCeti.MeasureTheory.Integral.ZeroAtInfty.Log
 
 /-!
@@ -17,11 +18,12 @@ import TauCeti.MeasureTheory.Integral.ZeroAtInfty.Log
 
 On the open vertical strip `0 < re z < 1`, the holomorphic strip Poisson kernels
 `TauCeti.holoPoisson₀` and `TauCeti.holoPoisson₁` realize the real Poisson kernels
-`TauCeti.stripPoisson₀` and `TauCeti.stripPoisson₁` as real parts, so convolving real boundary
-data against `holoPoisson₀` and `holoPoisson₁` yields holomorphic functions whose real parts are
-the corresponding `stripPoisson₀` and `stripPoisson₁` integrals. The real kernels `stripPoisson₀`
-and `stripPoisson₁` satisfy uniform one-sided approximate-identity lower bounds for nonnegative
-bounded uniformly continuous data along contracted boundary centers
+`TauCeti.stripPoisson₀` and `TauCeti.stripPoisson₁` as real parts, so convolving integrable real
+boundary data (here, the clipped logarithmic envelopes `TauCeti.logMaxDiv g₀ δ` and
+`TauCeti.logMaxDiv g₁ δ`) against `holoPoisson₀` and `holoPoisson₁` yields holomorphic functions
+whose real parts are the corresponding `stripPoisson₀` and `stripPoisson₁` integrals. The real
+kernels `stripPoisson₀` and `stripPoisson₁` satisfy uniform one-sided approximate-identity lower
+bounds for nonnegative bounded uniformly continuous data along contracted boundary centers
 (`TauCeti.exists_forall_sub_le_integral_mul_contracted_stripPoisson₀`,
 `TauCeti.exists_forall_sub_le_integral_mul_contracted_stripPoisson₁`). Applying these to the
 clipped logarithmic envelopes `TauCeti.logMaxDiv` yields Bergh–Löfström's

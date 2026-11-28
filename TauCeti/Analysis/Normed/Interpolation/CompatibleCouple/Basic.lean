@@ -607,14 +607,16 @@ theorem interFst_reflInter (x : X) : (refl 𝕜 X).interFst (reflInter 𝕜 x) =
 theorem interSnd_reflInter (x : X) : (refl 𝕜 X).interSnd (reflInter 𝕜 x) = x :=
   (rfl)
 
+@[simp]
 theorem reflInter_interFst (x : (refl 𝕜 X).inter) :
-    reflInter 𝕜 ((refl 𝕜 X).interFst x) = x := by
+    reflInter 𝕜 (x : X × X).1 = x := by
   have h := (refl 𝕜 X).mem_inter_iff.1 x.property
   simp only [refl_embed₀, refl_embed₁, ContinuousLinearMap.id_apply] at h
   exact Subtype.ext (Prod.ext rfl h)
 
+@[simp]
 theorem reflInter_interSnd (x : (refl 𝕜 X).inter) :
-    reflInter 𝕜 ((refl 𝕜 X).interSnd x) = x := by
+    reflInter 𝕜 (x : X × X).2 = x := by
   have h := (refl 𝕜 X).mem_inter_iff.1 x.property
   simp only [refl_embed₀, refl_embed₁, ContinuousLinearMap.id_apply] at h
   exact Subtype.ext (Prod.ext h.symm rfl)

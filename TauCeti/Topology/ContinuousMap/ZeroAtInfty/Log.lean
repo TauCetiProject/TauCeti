@@ -5,64 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import TauCeti.Analysis.SpecialFunctions.Log.MaxDiv
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 /-!
 # Clipped logarithmic envelopes for functions vanishing at infinity
 
-For a function `f : α → E` into a normed type and a threshold `δ > 0`, the clipped logarithmic
-envelope `TauCeti.logMaxDiv f δ x = Real.log (max ‖f x‖ δ / δ)` is everywhere nonnegative, satisfies
-`Real.log δ + logMaxDiv f δ x = Real.log (max ‖f x‖ δ)`, is continuous when `f` is continuous
-(`TauCeti.continuous_logMaxDiv`), and when `f : C₀(α, E)` and `[R1Space α]` holds it has compact
-support (`ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv`).
+For `f : C₀(α, E)`, `δ > 0`, and `[R1Space α]`, the clipped logarithmic envelope
+`TauCeti.logMaxDiv f δ` has compact support
+(`ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv`).
 -/
 
 public section
 
-open Filter Topology
 open scoped ZeroAtInfty
-
-namespace TauCeti
-
-variable {α E : Type*}
-
-/-- The clipped logarithmic envelope `x ↦ Real.log (max ‖f x‖ δ / δ)` of `f : α → E` above
-threshold `δ > 0`. It is nonnegative (`TauCeti.logMaxDiv_nonneg`), continuous when `f` is
-continuous (`TauCeti.continuous_logMaxDiv`), and compactly supported when `f : C₀(α, E)` and
-`[R1Space α]` holds (`ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv`). -/
-noncomputable def logMaxDiv [Norm E] (f : α → E) (δ : ℝ) (x : α) : ℝ :=
-  Real.log (max ‖f x‖ δ / δ)
-
-/-- Defining formula for `TauCeti.logMaxDiv`. -/
-theorem logMaxDiv_def [Norm E] (f : α → E) (δ : ℝ) (x : α) :
-    logMaxDiv f δ x = Real.log (max ‖f x‖ δ / δ) := (rfl)
-
-/-- For `δ > 0`, `TauCeti.logMaxDiv f δ x = 0` exactly when `‖f x‖ ≤ δ`. -/
-@[simp] theorem logMaxDiv_eq_zero_iff [Norm E] (f : α → E) {δ : ℝ} (hδ : 0 < δ) (x : α) :
-    logMaxDiv f δ x = 0 ↔ ‖f x‖ ≤ δ := by
-  have hpos : 0 < max ‖f x‖ δ / δ := div_pos (hδ.trans_le (le_max_right _ _)) hδ
-  rw [logMaxDiv_def, Real.log_eq_zero]
-  simp [hpos.ne', (by linarith : max ‖f x‖ δ / δ ≠ -1), div_eq_one_iff_eq hδ.ne']
-
-/-- For `δ > 0`, `TauCeti.logMaxDiv f δ` is continuous whenever `f` is continuous. -/
-@[fun_prop]
-theorem continuous_logMaxDiv [TopologicalSpace α] [SeminormedAddCommGroup E] {f : α → E}
-    (hf : Continuous f) {δ : ℝ} (hδ : 0 < δ) : Continuous (logMaxDiv f δ) :=
-  Continuous.log ((hf.norm.max continuous_const).div_const δ) fun _ ↦
-    (div_pos (hδ.trans_le (le_max_right _ _)) hδ).ne'
-
-/-- For `δ > 0`, `TauCeti.logMaxDiv f δ` is everywhere nonnegative. -/
-theorem logMaxDiv_nonneg [Norm E] (f : α → E) {δ : ℝ} (hδ : 0 < δ) (x : α) :
-    0 ≤ logMaxDiv f δ x :=
-  Real.log_nonneg ((one_le_div hδ).2 (le_max_right _ _))
-
-/-- Splitting `Real.log (max ‖f x‖ δ)` into `Real.log δ + TauCeti.logMaxDiv f δ x`. -/
-theorem log_add_logMaxDiv [Norm E] (f : α → E) {δ : ℝ} (hδ : 0 < δ) (x : α) :
-    Real.log δ + logMaxDiv f δ x = Real.log (max ‖f x‖ δ) := by
-  rw [logMaxDiv_def, Real.log_div (hδ.trans_le (le_max_right _ _)).ne' hδ.ne']; ring
-
-end TauCeti
 
 namespace ZeroAtInftyContinuousMap
 

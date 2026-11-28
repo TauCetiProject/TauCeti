@@ -15,10 +15,10 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 On a countable type with measurable singletons, the `L^p` seminorm `eLpNorm f p count` of a
 function `f` for the counting measure is its `ℓ^p` norm: the sum `(∑' i, ‖f i‖ ^ p) ^ (1 / p)` for
-finite `p` and the supremum `⨆ i, ‖f i‖` for `p = ∞`. This file records these formulas, the
+`0 < p < ∞` and the supremum `⨆ i, ‖f i‖` for `p = ∞`. This file records these formulas, the
 corresponding comparison with Mathlib's sequence spaces `lp` (`f` lies in `ℓ^p` exactly when its
-counting-measure seminorm is finite, and for `f ∈ lp` the seminorm is the `lp` norm), and the
-finite-index comparison `ENNReal.ofReal ‖WithLp.toLp s f‖ = eLpNorm f s count`.
+counting-measure seminorm is finite, and for `f ∈ lp` the seminorm is the `lp` norm), and, for
+`s ≠ 0`, the finite-index comparison `ENNReal.ofReal ‖WithLp.toLp s f‖ = eLpNorm f s count`.
 
 This lets estimates proved with the measure-theoretic `L^p` machinery, such as Schur's test for
 integral kernels, be read as estimates in `lp` and `PiLp`.
@@ -100,24 +100,13 @@ namespace TauCeti
 
 /-- For `s ≠ 0`, `ENNReal.ofReal ‖WithLp.toLp s f‖` equals the `Lˢ` seminorm of `f` for the
 counting measure. -/
-theorem ofReal_norm_toLp_eq_eLpNorm_count {ι E : Type*} [Fintype ι] [SeminormedAddCommGroup E]
-    {s : ℝ≥0∞} (hs : s ≠ 0) (f : ι → E) :
-    letI : MeasurableSpace ι := ⊤
+theorem ofReal_norm_toLp_eq_eLpNorm_count {ι E : Type*} [Fintype ι] [MeasurableSpace ι]
+    [MeasurableSingletonClass ι] [SeminormedAddCommGroup E] {s : ℝ≥0∞} (hs : s ≠ 0) (f : ι → E) :
     ENNReal.ofReal ‖WithLp.toLp s f‖ = MeasureTheory.eLpNorm f s MeasureTheory.Measure.count := by
-  let _ : MeasurableSpace ι := ⊤
-  have _ : MeasurableSingletonClass ι := ⟨fun _ ↦ trivial⟩
   rcases eq_or_ne s ∞ with rfl | hs_top
-  · rw [PiLp.norm_eq_ciSup, MeasureTheory.eLpNorm_count_top]
-    cases isEmpty_or_nonempty ι
-    · simp
-    · obtain ⟨i₀, hi₀⟩ := Finite.exists_max fun i ↦ ‖f i‖
-      have hL : (⨆ i, ‖WithLp.toLp ∞ f i‖) = ‖f i₀‖ :=
-        le_antisymm (ciSup_le fun i ↦ by simpa [PiLp.toLp_apply] using hi₀ i)
-          ((le_ciSup (Set.Finite.bddAbove (Set.finite_range _)) i₀).trans_eq' (by simp))
-      have hR : (⨆ i, ‖f i‖ₑ) = ENNReal.ofReal ‖f i₀‖ := le_antisymm
-        (iSup_le fun i ↦ by rw [← ofReal_norm]; exact ENNReal.ofReal_le_ofReal (hi₀ i))
-        ((ofReal_norm _).trans_le (le_iSup (fun i ↦ ‖f i‖ₑ) i₀))
-      rw [hL, hR]
+  · rw [← coe_nnNorm, ENNReal.ofReal_coe_nnreal, PiLp.nnNorm_eq_ciSup,
+      ENNReal.coe_iSup (Set.Finite.bddAbove (Set.finite_range _)), MeasureTheory.eLpNorm_count_top]
+    simp [eNorm_eq_nnNorm]
   · have hs' : 0 < s.toReal := ENNReal.toReal_pos hs hs_top
     rw [PiLp.norm_eq_sum hs', MeasureTheory.eLpNorm_count_eq_tsum hs hs_top, tsum_fintype,
       ← ENNReal.ofReal_rpow_of_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity) (by positivity),
