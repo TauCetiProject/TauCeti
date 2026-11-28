@@ -152,16 +152,50 @@ def constOne : HallAlgebra k :=
 theorem constOne_apply (c : SimilarityClass k) : (constOne : HallAlgebra k) c = 1 :=
   (rfl)
 
-/-- The rank-`n` part `A|_n` of `A`: equal to `A` on the classes of size `n` and to `0` on the
-others. -/
-def rankPart (n : ℕ) (F : HallAlgebra k) : HallAlgebra k :=
-  fun c ↦ if c.dim = n then F c else 0
+/-- The rank-`n` part `A|_n` of `A` as a `ℂ`-linear projection: equal to `A` on the classes of
+size `n` and to `0` on the others. -/
+def rankPart (n : ℕ) : HallAlgebra k →ₗ[ℂ] HallAlgebra k where
+  toFun F c := if c.dim = n then F c else 0
+  map_add' F H := by ext c; by_cases h : c.dim = n <;> simp [h]
+  map_smul' a F := by ext c; by_cases h : c.dim = n <;> simp [h]
 
 /-- The value of `A|_n` at a class. -/
 @[simp]
 theorem rankPart_apply (n : ℕ) (F : HallAlgebra k) (c : SimilarityClass k) :
     rankPart n F c = if c.dim = n then F c else 0 :=
   (rfl)
+
+/-- Composing two rank projections gives the same projection when the ranks coincide and `0`
+otherwise. -/
+theorem rankPart_rankPart (m n : ℕ) (F : HallAlgebra k) :
+    rankPart m (rankPart n F) = if m = n then rankPart n F else 0 := by
+  have hind (d : ℕ) (G : HallAlgebra k) :
+      (rankPart d G : SimilarityClass k → ℂ) =
+        Set.indicator {c : SimilarityClass k | c.dim = d} G :=
+    funext fun c ↦ by simp [Set.indicator]
+  split_ifs with h
+  · subst h
+    ext c
+    exact congrFun (by rw [hind, hind, Set.indicator_indicator, Set.inter_self, ← hind]) c
+  · ext c
+    have hdisj : {c : SimilarityClass k | c.dim = m} ∩ {c : SimilarityClass k | c.dim = n} = ∅ := by
+      ext x
+      simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
+      rintro ⟨h1, h2⟩
+      exact h (h1.symm.trans h2)
+    exact congrFun (by rw [hind, hind, Set.indicator_indicator, hdisj, Set.indicator_empty]; rfl) c
+
+/-- Applying `rankPart n` twice is the same as applying it once. -/
+@[simp]
+theorem rankPart_rankPart_self (n : ℕ) (F : HallAlgebra k) :
+    rankPart n (rankPart n F) = rankPart n F := by
+  simp [rankPart_rankPart]
+
+/-- Applying `rankPart m` after `rankPart n` for `m ≠ n` gives `0`. -/
+@[simp]
+theorem rankPart_rankPart_of_ne {m n : ℕ} (h : m ≠ n) (F : HallAlgebra k) :
+    rankPart m (rankPart n F) = 0 := by
+  simp [rankPart_rankPart, h]
 
 /-- The unit of the Hall algebra: the indicator of the classes of size `0`. -/
 instance : One (HallAlgebra k) :=
@@ -170,7 +204,7 @@ instance : One (HallAlgebra k) :=
 /-- The unit `1` is the indicator of the classes of size `0`. -/
 @[simp]
 theorem one_apply (c : SimilarityClass k) : (1 : HallAlgebra k) c = if c.dim = 0 then 1 else 0 :=
-  (rfl)
+  rankPart_apply 0 constOne c
 
 /-- The value of `A` at the class of `g`, as a class function on `GL_n(k)`. -/
 noncomputable def toClassFunction (F : HallAlgebra k) (n : Type*) [Fintype n] [DecidableEq n] :

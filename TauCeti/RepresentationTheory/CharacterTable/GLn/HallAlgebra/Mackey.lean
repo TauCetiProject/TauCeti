@@ -187,6 +187,20 @@ theorem blockAverage_one_ofEnd (a : Module.End k V) (b : Module.End k W) :
   simp only [one_apply, dim_ofEnd, Module.finrank_prod, Nat.add_eq_zero_iff]
   split_ifs <;> simp_all
 
+/-- The block average of `F|_n` at `(a, b)` equals the block average of `F` when `a.dim + b.dim = n`
+and vanishes otherwise. -/
+theorem blockAverage_rankPart (n : ℕ) (F : HallAlgebra k) (a b : SimilarityClass k) :
+    blockAverage (rankPart n F) a b = if a.dim + b.dim = n then blockAverage F a b else 0 := by
+  simp only [blockAverage, rankPart_apply, dim_ofEnd, Module.finrank_prod, Module.finrank_fin_fun]
+  split_ifs <;> simp
+
+/-- Restricting a cuspidal element of the Hall algebra to a single rank preserves cuspidality. -/
+theorem IsCuspidal.rankPart {F : HallAlgebra k} (hF : F.IsCuspidal) (n : ℕ) :
+    (rankPart n F).IsCuspidal := by
+  rw [isCuspidal_iff]
+  intro a b ha hb
+  rw [blockAverage_rankPart, hF.blockAverage_eq_zero ha hb, ite_self]
+
 /-! ### Mackey's formula -/
 
 section Mackey
