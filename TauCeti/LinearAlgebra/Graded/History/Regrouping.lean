@@ -60,10 +60,12 @@ theorem sum_sum_comp_homogeneousHistory_comp_eq
       intro e _
       simpa only [LinearMap.comp_assoc] using
         p.sum_comp_homogeneousHistory_comp_eq T ℳ f
-          (g.comp (q.homogeneousHistory T ℳ e)) S hS
+          (g.comp (q.homogeneousHistory T ℳ e)) S
+          (fun d hd => by simp only [hS d hd, LinearMap.comp_zero])
     _ = _ := by
       simpa only [composeLinear_comp, LinearMap.comp_assoc] using
-        q.sum_comp_homogeneousHistory_comp_eq T ℳ ((p.composeLinear T).comp f) g U hU
+        q.sum_comp_homogeneousHistory_comp_eq T ℳ ((p.composeLinear T).comp f) g U
+          (fun e he => by simp only [hU e he, LinearMap.comp_zero])
 
 open Classical in
 /-- Reindex any selected histories on a finite rectangle as histories of the

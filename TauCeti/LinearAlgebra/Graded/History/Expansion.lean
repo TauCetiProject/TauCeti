@@ -182,16 +182,30 @@ theorem sum_homogeneousHistory_comp_eq (S : Finset (p.Degrees ι))
   exact (Finset.sum_subset (historySupport_subset_of_comp_eq_zero T ℳ p f S hS y)
     fun d _ hd => by simpa using hd).symm
 
-/-- A linear output map commutes with the uniformly supported history expansion.
-The support bound is imposed before the output map. -/
+open Classical in
+/-- A supplied support expands the composite if the remaining histories vanish after
+the linear output map. -/
 theorem sum_comp_homogeneousHistory_comp_eq {O : Type*} [AddCommMonoid O] [Module R O]
     (g : M b →ₗ[R] O) (S : Finset (p.Degrees ι))
-    (hS : ∀ d ∉ S, (p.homogeneousHistory T ℳ d).comp f = 0) :
+    (hS : ∀ d ∉ S, g.comp ((p.homogeneousHistory T ℳ d).comp f) = 0) :
     ∑ d ∈ S, g.comp ((p.homogeneousHistory T ℳ d).comp f) =
       g.comp ((p.composeLinear T).comp f) := by
-  rw [← sum_homogeneousHistory_comp_eq T ℳ p f S hS]
   ext y
-  simp
+  simp only [LinearMap.sum_apply, LinearMap.comp_apply]
+  rw [← sum_homogeneousHistory T ℳ p (f y), map_sum]
+  let P := p.historySupport T ℳ (f y)
+  calc
+    _ = ∑ d ∈ S ∪ P, g (p.homogeneousHistory T ℳ d (f y)) := by
+      apply Finset.sum_subset Finset.subset_union_left
+      intro d _ hd
+      exact LinearMap.congr_fun (hS d hd) y
+    _ = _ := by
+      symm
+      apply Finset.sum_subset Finset.subset_union_right
+      intro d _ hd
+      have hz : p.homogeneousHistory T ℳ d (f y) = 0 := by
+        simpa only [P, mem_historySupport, ne_eq, not_not] using hd
+      rw [hz, map_zero]
 
 open Classical in
 /-- Within a uniformly supported expansion along a nonempty path, selecting the
@@ -220,7 +234,7 @@ theorem sum_homogeneousHistory_cons_terminal_comp_eq {b c : Q} (p : Path a b)
     _ = _ := by
       simpa only [LinearMap.comp_assoc] using
         sum_comp_homogeneousHistory_comp_eq T ℳ (p.cons e) f
-          (homogeneousComponent (ℳ c) η) S hS
+          (homogeneousComponent (ℳ c) η) S (fun d hd => by simp only [hS d hd, LinearMap.comp_zero])
 
 /-- A finite generating set of inputs gives a uniform finite history support on its span. -/
 theorem exists_uniform_historySupport_of_fg (P : Submodule R (M a)) (hP : P.FG) :
