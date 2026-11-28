@@ -35,7 +35,7 @@ open _root_.MvPowerSeries
 variable {p : ℕ} [Fact p.Prime] {F K R : Type*}
   [NormedField F] [NormedAlgebra ℚ_[p] F] [FiniteDimensional ℚ_[p] F]
   [NormedField K] [NormedAlgebra ℚ_[p] K]
-  [NormedCommRing R] [NormedAlgebra K R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+  [NormedCommRing R] [NormedAlgebra K R] [IsUltrametricDist R] [CompleteSpace R]
   [NormedSpace ℚ_[p] R] [IsScalarTower ℚ_[p] K R]
   {k : ℕ} {r s : Fin k → ℝ}
 
@@ -66,26 +66,33 @@ theorem coe_expansion_eq_of_char_eq [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s 
       κ.char = κ'.char → (κ.expansion : MvPowerSeries (Fin k) R) = κ'.expansion := by
   intro κ κ' hchar
   obtain ⟨ε, hε, hε1, hεr, hεs⟩ := exists_common_radius (r := r) (s := s)
+  let C : ℝ := max 1 ‖(1 : R)‖
+  have hC : 0 < C := lt_of_lt_of_le zero_lt_one (le_max_left _ _)
+  let δ : ℝ := ε / C
+  have hδ : 0 < δ := div_pos hε hC
+  have hδε : δ ≤ ε := div_le_self hε.le (le_max_left _ _)
   let c : Fin k → ℝ := fun _ ↦ ε
   have hcr : c ≤ r := hεr
   have hcs : c ≤ s := hεs
   let f := restrictedRadiusHom (fun _ ↦ hε.le) hcr κ.expansion
   let g := restrictedRadiusHom (fun _ ↦ hε.le) hcs κ'.expansion
-  have hbound (y : F) (hy : ‖y‖ ≤ ε) (i : Fin k) : ‖algebraMap K R (σ i y)‖ ≤ c i := by
-    rw [norm_algebraMap', (σ i).isometry.norm_map_of_map_zero (map_zero (σ i))]
-    exact hy
+  have hbound (y : F) (hy : ‖y‖ ≤ δ) (i : Fin k) : ‖algebraMap K R (σ i y)‖ ≤ c i := by
+    rw [norm_algebraMap, (σ i).isometry.norm_map_of_map_zero (map_zero (σ i))]
+    exact (mul_le_mul hy (le_max_right _ _) (norm_nonneg _) hδ.le).trans_eq
+      (div_mul_cancel₀ ε hC.ne')
   suffices hfg : f = g by
     simpa [f, g] using congrArg (fun w : IsRestricted.subring (R := R) c ↦ w.val) hfg
   apply sub_eq_zero.mp
-  refine eq_zero_of_restrictedEval₂_algHom_eq_zero (r := c) (hr := fun _ ↦ ⟨hε⟩)
-    σ hσ hk hε φ hφ (f - g) hbound ?_
+  refine eq_zero_of_restrictedEval₂_algHom_arg_eq_zero
+    σ hσ hk hδ φ hφ (f - g) hbound ?_
   intro y hy
   have : IsUltrametricDist F := .of_normedAlgebra ℚ_[p]
   let : CompleteSpace F := FiniteDimensional.completeSpace ℚ_[p] F
-  let z : Subring.unitClosedBall F := ⟨y, Subring.mem_unitClosedBall.mpr (hy.trans hε1.le)⟩
+  let z : Subring.unitClosedBall F :=
+    ⟨y, Subring.mem_unitClosedBall.mpr (hy.trans (hδε.trans hε1.le))⟩
   have hu : IsUnit (1 + z) := by
     apply isUnit_unitClosedBall_of_norm_sub_one_lt
-    simpa [z] using hy.trans_lt hε1
+    simpa [z] using hy.trans_lt (hδε.trans_lt hε1)
   obtain ⟨u, hu⟩ := hu
   rw [map_sub, sub_eq_zero]
   calc

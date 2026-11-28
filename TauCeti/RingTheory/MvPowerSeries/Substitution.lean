@@ -41,7 +41,7 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 
 ## Main results
 
-* `MvPowerSeries.subst_matrix_mulVec` : substituting linear forms composes their matrices.
+* `Matrix.subst_map_mulVec` : substituting linear forms composes their matrices.
 * `MvPowerSeries.aeval_subst` : a continuous algebra homomorphism applied to a substitution is the
   evaluation at the substituted family.
 * `PowerSeries.aeval_subst` : the same for a substitution into a univariate series.
@@ -142,13 +142,12 @@ the work, so no new continuity lemma is needed.
 
 public section
 
-namespace MvPowerSeries
+namespace Matrix
 
-open WithPiTopology
+open MvPowerSeries
 
-open Matrix in
 /-- Substituting the rows of a compatible matrix into linear forms multiplies the matrices. -/
-theorem subst_matrix_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fintype τ]
+theorem subst_map_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fintype τ]
     (A : Matrix ι κ R) (B : Matrix κ τ R) (i : ι) :
     subst (B.map C *ᵥ X) ((A.map C *ᵥ X) i) = ((A * B).map C *ᵥ X) i := by
   have hb : HasSubst (B.map C *ᵥ X) :=
@@ -166,6 +165,12 @@ theorem subst_matrix_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fint
       substAlgHom_X hb j
   rw [AlgHom.toRingHom_eq_coe] at hA hX
   rw [hA, hX, mulVec_mulVec, ← Matrix.map_mul]
+
+end Matrix
+
+namespace MvPowerSeries
+
+open WithPiTopology
 
 variable {σ τ : Type*}
 variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]

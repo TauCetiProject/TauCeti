@@ -13,22 +13,22 @@ import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
-# Small invertible embeddings matrices
+# Small invertible matrices of algebra homomorphism values
 
-For a full family of distinct embeddings of a finite extension of a nontrivially normed
-field, `TauCeti.exists_norm_lt_isUnit_embeddingsMatrix` gives a basis with arbitrarily small
-norm whose embeddings matrix is invertible. Rescaling a basis by nonzero scalars makes its
-elements small, while linear independence of embeddings ensures invertibility.
+For a full family of distinct algebra homomorphisms from a finite-dimensional seminormed
+commutative algebra over a nontrivially normed field to an extension field,
+`TauCeti.exists_norm_lt_isUnit_embeddingsMatrix` gives a basis of arbitrarily small vectors
+whose matrix of homomorphism values is invertible.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- For a full family of distinct embeddings, there is an invertible matrix of their values
-on a basis whose elements have norm less than any given positive bound. -/
+/-- For a full family of distinct algebra homomorphisms to a field, there is an invertible matrix
+of their values on a basis whose elements have norm less than any given positive bound. -/
 theorem exists_norm_lt_isUnit_embeddingsMatrix {F K Ω : Type*} [NontriviallyNormedField F]
-    [NormedField K] [NormedAlgebra F K] [FiniteDimensional F K] [Field Ω] [Algebra F Ω]
+    [SeminormedCommRing K] [NormedAlgebra F K] [FiniteDimensional F K] [Field Ω] [Algebra F Ω]
     {k : ℕ} (σ : Fin k → K →ₐ[F] Ω) (hσ : Function.Injective σ)
     (hk : Module.finrank F K = k) {ε : ℝ} (hε : 0 < ε) :
     ∃ b : Fin k → K, (∀ j, ‖b j‖ < ε) ∧

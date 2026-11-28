@@ -15,14 +15,14 @@ public import TauCeti.RingTheory.MvPowerSeries.Substitution
 A matrix whose entries satisfy the bounds `‖Aᵢⱼ‖ sⱼ ≤ rᵢ` pulls restricted series on the
 polydisc of radii `r` back to the polydisc of radii `s`. An invertible matrix gives an
 injective pullback. The proof uses the formal inverse and requires a radius bound
-only on the forward matrix.
+only on the forward matrix. The matrix-first API is `Matrix.restrictedLinearSubst`.
 -/
 
 public section
 
-namespace TauCeti.MvPowerSeries
+namespace Matrix
 
-open _root_.MvPowerSeries Matrix
+open MvPowerSeries TauCeti.MvPowerSeries
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {k m : ℕ}
   {r : Fin k → ℝ} {s : Fin m → ℝ}
@@ -77,13 +77,15 @@ theorem coe_restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
 
 /-- Evaluating a linear pullback in a complete ultrametric ring is evaluating the original
 series at the image under the coefficient-mapped matrix. -/
-theorem restrictedEval₂_restrictedLinearSubst {S : Type*} [NormedCommRing S]
-    [IsUltrametricDist S] [CompleteSpace S] (φ : R →+* S)
-    (A : Matrix (Fin k) (Fin m) R) (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (x : Fin m → S)
+theorem restrictedEval₂_restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
+    {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S] (φ : R →+* S)
+    (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (x : Fin m → S)
     (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (hx : ∀ j, ‖x j‖ ≤ s j)
     (f : IsRestricted.subring (R := R) r) :
     restrictedEval₂ φ x hφ hx (restrictedLinearSubst A hA f) =
-      restrictedEval₂ φ (A.map φ *ᵥ x) hφ (A.norm_map_mulVec_le φ hA x hφ hx) f := by
+      restrictedEval₂ φ (A.map φ *ᵥ x) hφ ((A.map φ).norm_mulVec_le_of_bound (fun i ↦ Fact.out)
+        (fun i j ↦ (mul_le_mul_of_nonneg_right (hφ _) (Fact.out : 0 < s j).le).trans
+          (hA i j)) x hx) f := by
   let g : Fin k → IsRestricted.subring (R := R) s := fun i ↦
     polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j)
   have hg : ∀ i, ‖g i‖ ≤ r i := fun i ↦
@@ -99,16 +101,9 @@ theorem restrictedEval₂_restrictedLinearSubst {S : Type*} [NormedCommRing S]
     rw [hp]
     rw [← MvPolynomial.coe_eval₂Hom, RingHom.map_mulVec]
     simp [Function.comp_def]
-  have hs := (hasSum_restrictedAnalyticSubst g hg f).map (restrictedEval₂ φ x hφ hx)
-    (continuous_restrictedEval₂ φ x hφ hx)
-  have ht := hasSum_restrictedEval₂ φ (A.map φ *ᵥ x) hφ
-    (A.norm_map_mulVec_le φ hA x hφ hx) f
-  apply HasSum.unique hs
-  convert ht using 1
-  funext t
-  rw [TauCeti.Huber.weightedEvalTerm_def]
-  simp only [Function.comp_apply, map_mul, map_prod, map_pow, restrictedEval₂_algebraMap,
-    congrFun h]
+  unfold restrictedLinearSubst
+  rw [restrictedEval₂_restrictedAnalyticSubst φ hφ x hx g hg]
+  simp only [h]
 
 /-- An invertible linear change of variables gives an injective pullback. Only the forward
 matrix needs to satisfy the radius bounds. -/
@@ -129,7 +124,7 @@ theorem restrictedLinearSubst_injective {s : Fin k → ℝ} [∀ i, Fact (0 < s 
     have hb' : b = (↑(u⁻¹) : Matrix (Fin k) (Fin k) R).map C *ᵥ X := by
       funext j
       simp only [b, mulVec_apply_eq_sum, Matrix.map_apply]
-    rw [ha', hb', subst_matrix_mulVec, u.mul_inv]
+    rw [ha', hb', subst_map_mulVec, u.mul_inv]
     simp
   intro f g hfg
   apply Subtype.ext
@@ -140,4 +135,4 @@ theorem restrictedLinearSubst_injective {s : Fin k → ℝ} [∀ i, Fact (0 < s 
     simpa only [coe_restrictedLinearSubst, a] using e
   simpa only [subst_comp_subst_apply ha hb, hcomp, subst_self, id_eq] using h'
 
-end TauCeti.MvPowerSeries
+end Matrix

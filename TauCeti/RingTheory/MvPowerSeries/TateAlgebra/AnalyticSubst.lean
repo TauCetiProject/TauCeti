@@ -185,6 +185,26 @@ theorem restrictedAnalyticSubst_zero_apply
   rw [coe_restrictedAnalyticSubst_eq_subst _ _ HasSubst.zero, coe_algebraMap_isRestrictedSubring]
   exact subst_zero_eq_C_constantCoeff.trans (by simp)
 
+/-- **Evaluation of a substitution**: for `b` in a complete ultrametric ring with `‖bⱼ‖ ≤ s'ⱼ`,
+evaluating `f(g)` at `b` is evaluating `f` at the values `gᵢ(b)`. The source radii may be zero. -/
+theorem restrictedEval₂_restrictedAnalyticSubst {m : ℕ} {s' : Fin m → ℝ} [∀ j, Fact (0 < s' j)]
+    {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S] (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (b : Fin m → S) (hb : ∀ j, ‖b j‖ ≤ s' j)
+    (g : Fin k → IsRestricted.subring (R := R) s') (hg : ∀ i, ‖g i‖ ≤ r i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedEval₂ φ b hφ hb (restrictedAnalyticSubst g hg f) =
+      restrictedEval₂ φ (fun i ↦ restrictedEval₂ φ b hφ hb (g i)) hφ
+        (fun i ↦ (norm_restrictedEval₂_le φ b hφ hb (g i)).trans (hg i)) f := by
+  have hs := (hasSum_restrictedAnalyticSubst g hg f).map (restrictedEval₂ φ b hφ hb)
+    (continuous_restrictedEval₂ φ b hφ hb)
+  have ht := hasSum_restrictedEval₂ φ (fun i ↦ restrictedEval₂ φ b hφ hb (g i)) hφ
+    (fun i ↦ (norm_restrictedEval₂_le φ b hφ hb (g i)).trans (hg i)) f
+  apply HasSum.unique hs
+  convert ht using 1
+  funext t
+  rw [weightedEvalTerm_def]
+  simp only [Function.comp_apply, map_mul, map_prod, map_pow, restrictedEval₂_algebraMap]
+
 variable [∀ i, Fact (0 < r i)]
 
 /-- **Analytic substitution does not increase the Gauss norm**: `‖f(g)‖_s ≤ ‖f‖_r`. -/
@@ -275,23 +295,6 @@ theorem restrictedAnalyticSubst_restrictedAnalyticSubst {m : ℕ} {s' : Fin m �
       restrictedAnalyticSubst (fun i ↦ restrictedAnalyticSubst h hh (g i))
         (fun i ↦ (norm_restrictedAnalyticSubst_le h hh (g i)).trans (hg i)) f :=
   DFunLike.congr_fun (restrictedAnalyticSubst_comp g hg h hh) f
-
-/-- **Evaluation of a substitution**: for `b` in a complete ultrametric ring with `‖bⱼ‖ ≤ s'ⱼ`,
-evaluating `f(g)` at `b` is evaluating `f` at the values `gᵢ(b)`. -/
-theorem restrictedEval₂_restrictedAnalyticSubst {m : ℕ} {s' : Fin m → ℝ} [∀ j, Fact (0 < s' j)]
-    {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S] (φ : R →+* S)
-    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (b : Fin m → S) (hb : ∀ j, ‖b j‖ ≤ s' j)
-    (g : Fin k → IsRestricted.subring (R := R) s') (hg : ∀ i, ‖g i‖ ≤ r i)
-    (f : IsRestricted.subring (R := R) r) :
-    restrictedEval₂ φ b hφ hb (restrictedAnalyticSubst g hg f) =
-      restrictedEval₂ φ (fun i ↦ restrictedEval₂ φ b hφ hb (g i)) hφ
-        (fun i ↦ (norm_restrictedEval₂_le φ b hφ hb (g i)).trans (hg i)) f := by
-  have h := eq_restrictedEval₂ φ (fun i ↦ restrictedEval₂ φ b hφ hb (g i)) hφ
-    (fun i ↦ (norm_restrictedEval₂_le φ b hφ hb (g i)).trans (hg i))
-    ((restrictedEval₂ φ b hφ hb).comp (restrictedAnalyticSubst g hg).toRingHom)
-    ((continuous_restrictedEval₂ φ b hφ hb).comp (continuous_restrictedAnalyticSubst g hg))
-    (fun a ↦ by simp) fun i ↦ by simp
-  exact DFunLike.congr_fun h f
 
 end AnalyticSubst
 

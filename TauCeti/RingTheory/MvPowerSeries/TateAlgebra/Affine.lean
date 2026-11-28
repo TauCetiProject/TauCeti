@@ -154,6 +154,7 @@ theorem restrictedAffine_comp [∀ i, Fact (0 < t i)] (b v : Fin k → R) (hb : 
         Pi.add_apply, Pi.mul_apply]
       ring
 
+omit [∀ i, Fact (0 < r i)] in
 /-- **Evaluation of an affine substitution**: for `b` in a complete ultrametric ring with
 `‖bᵢ‖ ≤ sᵢ`, evaluating `f(a + u Y)` at `b` is evaluating `f` at `φ(a) + φ(u) b`. -/
 theorem restrictedEval₂_restrictedAffine {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
