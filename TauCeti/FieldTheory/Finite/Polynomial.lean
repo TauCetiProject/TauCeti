@@ -18,7 +18,9 @@ and `Polynomial.hasseDeriv_pow_card_eq_zero` with `q = Fintype.card K`). The `Na
 also holds over an infinite field, where `Nat.card K = 0`. In particular they vanish
 at every order `k` with `0 < k < q`, since `Nat.not_dvd_of_pos_of_lt` shows that `q` does not
 divide such a `k`. Mathlib's `FiniteField.card'` writes `q` as a power of the characteristic, which
-reduces the claim to `Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`.
+reduces the claim to `Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`. Consequently a Hasse
+derivative of order `k < q` commutes with multiplication by a `q`-th power
+(`Polynomial.hasseDeriv_mul_pow_natCard`).
 
 The polynomial `X ^ q ^ n - X` is separable for `n ≠ 0` over any commutative ring with `q`
 elements (`Polynomial.separable_X_pow_card_pow_sub_X`).
@@ -55,6 +57,22 @@ theorem hasseDeriv_pow_natCard_eq_zero {k : ℕ} (hk : ¬Nat.card K ∣ k) (f : 
   | inr _ =>
     rw [Nat.card_eq_zero_of_infinite, zero_dvd_iff] at hk
     rw [Nat.card_eq_zero_of_infinite, pow_zero, hasseDeriv_apply_one k (Nat.pos_of_ne_zero hk)]
+
+/-- Over a finite field with `q = Nat.card K` elements, a Hasse derivative of order `k < q`
+commutes with multiplication by a `q`-th power. -/
+theorem hasseDeriv_mul_pow_natCard {k : ℕ} (hk : k < Nat.card K) (f g : K[X]) :
+    hasseDeriv k (f * g ^ Nat.card K) = hasseDeriv k f * g ^ Nat.card K := by
+  have : Finite K := Nat.finite_of_card_ne_zero (by omega)
+  have := Fintype.ofFinite K
+  -- Mathlib's `FiniteField.card'` writes `q` as a power `p ^ n` of the characteristic.
+  obtain ⟨p, _, n, hp, hcard⟩ := FiniteField.card' K
+  have : Fact p.Prime := ⟨hp⟩
+  have hq : Nat.card K = p ^ (n : ℕ) := by rw [Nat.card_eq_fintype_card, hcard]
+  -- `g ^ q` is the expansion of `g` by `q = p ^ n`, which `hasseDeriv_expand_mul` pulls out.
+  have hg : g ^ Nat.card K = expand K (p ^ (n : ℕ)) g := by
+    rw [← hq, Nat.card_eq_fintype_card, FiniteField.Polynomial.expand_card]
+  rw [hq] at hk
+  simpa only [hg, mul_comm] using hasseDeriv_expand_mul hk g f
 
 /-- Over a finite field with `q = Fintype.card K` elements, the Hasse derivatives of `f ^ q` vanish
 at every order `k` not divisible by `q`, for instance at every `k` with `0 < k < q`. -/
