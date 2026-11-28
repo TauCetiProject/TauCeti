@@ -24,7 +24,8 @@ preserves finite limits and covering sieves, giving direct image `f.smallEtalePu
 weak sheafification) inverse image `f.smallEtalePullback A`:
 
 * **Pseudofunctoriality**: `smallEtalePullbackId`, `smallEtalePullbackComp`,
-  `smallEtalePullbackCongr`, and `smallEtalePullbackConstantSheafIso`.
+  `smallEtalePullbackCongr`, and `smallEtalePullbackConstantSheafIso` (with naturality
+  `smallEtalePullbackConstantSheafIso_hom_naturality`, `_inv_naturality`).
 * **Étale morphism case**: for étale `j : X ⟶ Y`, `j.smallEtaleMap ⊣ j.smallEtaleBaseChange`
   yields `isRightAdjoint_smallEtalePushforward_of_etale`, `smallEtalePullbackIsoMapPushforward`,
   and `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`; restriction to `Over U` is
@@ -34,10 +35,11 @@ weak sheafification) inverse image `f.smallEtalePullback A`:
   left exactness from the conservative family of geometric points. For an étale monomorphism
   `j`, `smallEtaleMapCompFiberIso` identifies the fibre at `s ≫ j` of an étale `X`-scheme regarded
   over `Y` with its fibre at `s`.
-* **Local evaluation on sections**: `evalUnitSelf` pulls a section of a sheaf over an étale
-  `S`-scheme `u : U ⟶ S` back to the terminal object of `U.Etale`, and
-  `exists_etaleCover_of_mem_smallEtaleTopology_terminal` extracts a jointly surjective étale
-  cover from a covering sieve of `Etale.mk (𝟙 S)`.
+* **Local evaluation and étale covers**: `smallEtaleBaseChangeSelfDiag` is the diagonal section,
+  `evalUnitSelf` pulls a section of a sheaf over an étale `S`-scheme `u : U ⟶ S` back to the
+  terminal object of `U.Etale`, `exists_etaleCover_of_mem_smallEtaleTopology_terminal` extracts a
+  jointly surjective étale cover from a covering sieve of `Etale.mk (𝟙 S)`, and
+  `iUnion_range_comp_sigma` refines jointly surjective covers.
 
 ## References
 
@@ -236,6 +238,31 @@ noncomputable abbrev smallEtalePullbackConstantSheafIso (f : X ⟶ Y) (A : Type*
   f.smallEtaleBaseChange.sheafPullbackConstantSheafIso A
     (smallEtaleTopology Y) (smallEtaleTopology X) M
 
+/-- Naturality of `smallEtalePullbackConstantSheafIso.hom` in the constant value. -/
+@[reassoc]
+lemma smallEtalePullbackConstantSheafIso_hom_naturality (f : X ⟶ Y) (A : Type*) [Category* A]
+    [HasWeakSheafify (smallEtaleTopology Y) A] [HasWeakSheafify (smallEtaleTopology X) A]
+    [(f.smallEtalePushforward A).IsRightAdjoint] {M N : A} (φ : M ⟶ N) :
+    (f.smallEtalePullback A).map ((constantSheaf (smallEtaleTopology Y) A).map φ) ≫
+        (f.smallEtalePullbackConstantSheafIso A N).hom =
+      (f.smallEtalePullbackConstantSheafIso A M).hom ≫
+        (constantSheaf (smallEtaleTopology X) A).map φ := by
+  simp only [Functor.sheafPullbackConstantSheafIso_hom]
+  exact f.smallEtaleBaseChange.sheafPullbackConstantSheafHom_naturality A
+    (smallEtaleTopology Y) (smallEtaleTopology X) φ
+
+/-- Naturality of `smallEtalePullbackConstantSheafIso.inv` in the constant value. -/
+@[reassoc]
+lemma smallEtalePullbackConstantSheafIso_inv_naturality (f : X ⟶ Y) (A : Type*) [Category* A]
+    [HasWeakSheafify (smallEtaleTopology Y) A] [HasWeakSheafify (smallEtaleTopology X) A]
+    [(f.smallEtalePushforward A).IsRightAdjoint] {M N : A} (φ : M ⟶ N) :
+    (constantSheaf (smallEtaleTopology X) A).map φ ≫
+        (f.smallEtalePullbackConstantSheafIso A N).inv =
+      (f.smallEtalePullbackConstantSheafIso A M).inv ≫
+        (f.smallEtalePullback A).map ((constantSheaf (smallEtaleTopology Y) A).map φ) :=
+  f.smallEtaleBaseChange.sheafPullbackConstantSheafIso_inv_naturality A
+    (smallEtaleTopology Y) (smallEtaleTopology X) φ
+
 /-- When `j : X ⟶ Y` is étale, `j.smallEtalePullback A` identifies naturally with sheaf
 precomposition along `j.smallEtaleMap : X.Etale ⥤ Y.Etale`. -/
 noncomputable abbrev smallEtalePullbackIsoMapPushforward (j : X ⟶ Y) [Etale j]
@@ -253,6 +280,40 @@ section EvalUnitSelf
 noncomputable def smallEtaleBaseChangeSelfDiag {S U : Scheme.{u}} (u : U ⟶ S) [Etale u] :
     Etale.mk (𝟙 U) ⟶ u.smallEtaleBaseChange.obj (Etale.mk u) :=
   MorphismProperty.Over.homMk (pullback.lift (𝟙 U) (𝟙 U) rfl) (pullback.lift_snd _ _ _)
+
+/-- On underlying schemes, `u.smallEtaleBaseChangeSelfDiag` is the diagonal `pullback.lift (𝟙 U)
+(𝟙 U) rfl`. -/
+lemma smallEtaleBaseChangeSelfDiag_left {S U : Scheme.{u}} (u : U ⟶ S) [Etale u] :
+    u.smallEtaleBaseChangeSelfDiag.left = pullback.lift (𝟙 U) (𝟙 U) rfl :=
+  (rfl)
+
+/-- Composing `u.smallEtaleBaseChangeSelfDiag` with the first pullback projection gives `𝟙 U`. -/
+@[simp]
+lemma smallEtaleBaseChangeSelfDiag_left_fst {S U : Scheme.{u}} (u : U ⟶ S) [Etale u] :
+    u.smallEtaleBaseChangeSelfDiag.left ≫ pullback.fst u u = 𝟙 U :=
+  pullback.lift_fst _ _ _
+
+/-- Reassociated form of `smallEtaleBaseChangeSelfDiag_left_fst`. -/
+@[simp]
+lemma smallEtaleBaseChangeSelfDiag_left_fst_assoc {S U : Scheme.{u}} (u : U ⟶ S) [Etale u]
+    {Z : Scheme.{u}} (h : U ⟶ Z) :
+    u.smallEtaleBaseChangeSelfDiag.left ≫ pullback.fst u u ≫ h = h :=
+  (Category.assoc _ _ _).symm.trans
+    ((eq_whisker (smallEtaleBaseChangeSelfDiag_left_fst u) h).trans (Category.id_comp h))
+
+/-- Composing `u.smallEtaleBaseChangeSelfDiag` with the second pullback projection gives `𝟙 U`. -/
+@[simp]
+lemma smallEtaleBaseChangeSelfDiag_left_snd {S U : Scheme.{u}} (u : U ⟶ S) [Etale u] :
+    u.smallEtaleBaseChangeSelfDiag.left ≫ pullback.snd u u = 𝟙 U :=
+  pullback.lift_snd _ _ _
+
+/-- Reassociated form of `smallEtaleBaseChangeSelfDiag_left_snd`. -/
+@[simp]
+lemma smallEtaleBaseChangeSelfDiag_left_snd_assoc {S U : Scheme.{u}} (u : U ⟶ S) [Etale u]
+    {Z : Scheme.{u}} (h : U ⟶ Z) :
+    u.smallEtaleBaseChangeSelfDiag.left ≫ pullback.snd u u ≫ h = h :=
+  (Category.assoc _ _ _).symm.trans
+    ((eq_whisker (smallEtaleBaseChangeSelfDiag_left_snd u) h).trans (Category.id_comp h))
 
 /-- Pulling a section of `F` over `Etale.mk u` back to the terminal object `Etale.mk (𝟙 U)` of
 `U.Etale` along the adjunction unit and the diagonal `u.smallEtaleBaseChangeSelfDiag`. -/
@@ -313,7 +374,7 @@ lemma smallEtalePullback_map_comp_constantSheafIso_evalUnitSelf {S U : Scheme.{u
     (u : U ⟶ S) [Etale u] {A : Type*} [Category* A]
     [HasWeakSheafify (smallEtaleTopology S) A] [HasWeakSheafify (smallEtaleTopology U) A]
     {FA : A → A → Type*} {CD : A → Type*} [∀ X Y, FunLike (FA X Y) (CD X) (CD Y)]
-    [ConcreteCategory A FA] [(u.smallEtalePushforward A).IsRightAdjoint]
+    [ConcreteCategory A FA]
     {F : Sheaf (smallEtaleTopology S) A} {N : A}
     (φ : F ⟶ (constantSheaf (smallEtaleTopology S) A).obj N)
     {s : ToType (F.obj.obj (Opposite.op (Etale.mk u)))} {n : ToType N}
@@ -546,5 +607,17 @@ theorem exists_etaleCover_of_mem_smallEtaleTopology_terminal {S : Scheme.{u}}
   · obtain ⟨z, hz⟩ := hidx s
     exact Set.mem_iUnion.mpr ⟨s, z, (congrArg (fun f : (V (idx s)).left ⟶ S ↦ f z)
       (hg' (idx s)).symm).trans hz⟩
+
+/-- Refining a jointly surjective family `u : ∀ i, U i ⟶ S` by jointly surjective families
+`v i : ∀ k, V i k ⟶ U i` yields a jointly surjective `Σ`-indexed family. -/
+lemma iUnion_range_comp_sigma {S : Scheme.{u}} {ι : Type*} {U : ι → Scheme.{u}}
+    {u : ∀ i, U i ⟶ S} (hu : ⋃ i, Set.range (u i) = .univ)
+    {κ : ι → Type*} {V : ∀ i, κ i → Scheme.{u}}
+    {v : ∀ i, ∀ k : κ i, V i k ⟶ U i} (hv : ∀ i, ⋃ k, Set.range (v i k) = .univ) :
+    (⋃ p : Σ i, κ i, Set.range (v p.1 p.2 ≫ u p.1)) = .univ := by
+  refine Set.eq_univ_of_forall fun s ↦ ?_
+  obtain ⟨i, x, rfl⟩ := Set.mem_iUnion.mp (hu ▸ Set.mem_univ s)
+  obtain ⟨k, z, rfl⟩ := Set.mem_iUnion.mp (hv i ▸ Set.mem_univ x)
+  exact Set.mem_iUnion.mpr ⟨⟨i, k⟩, z, Scheme.Hom.comp_apply (v i k) (u i) z⟩
 
 end AlgebraicGeometry.Scheme

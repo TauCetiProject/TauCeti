@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Constructible
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Constructible.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Monoidal.Pullback
 
 /-!

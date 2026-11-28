@@ -7,10 +7,14 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
 public import TauCeti.AlgebraicGeometry.Sites.Etale.LocallyConstant
+public import TauCeti.CategoryTheory.Sites.LocallyConstant.Module
+
+import Mathlib.Algebra.BigOperators.Pi
 
 /-!
 # Étale sheaves of modules: geometric stalks and finite lisse sheaves
@@ -69,6 +73,10 @@ needed.
   `CategoryTheory.Sheaf.isFiniteLisse_iff_of_etaleCover`,
   `CategoryTheory.Sheaf.isFiniteLisse_iff_of_openCover`: geometric characterization, base-change
   stability, and étale/Zariski descent for finite lisse sheaves.
+* `CategoryTheory.Sheaf.exists_etaleCover_map_constantSheaf`,
+  `CategoryTheory.Sheaf.exists_etaleCover_lift_constantSheaf_of_projective`: étale-local
+  constancy of morphisms between constant sheaves and local lifting from finitely generated
+  projective modules along epimorphisms onto constant sheaves.
 
 ## References
 
@@ -349,5 +357,121 @@ theorem isFiniteLisse_iff_of_openCover (𝒰 : S.OpenCover) :
   F.isLocallyConstantIn_smallEtaleTopology_iff_of_openCover _ 𝒰
 
 end Descent
+
+section ConstantSheaf
+
+/-- Any morphism `φ : const M ⟶ const N` of constant étale sheaves of `Λ`-modules on `S` with
+`M` finitely generated comes étale-locally from a constant `Λ`-linear map `M ⟶ N`. -/
+theorem exists_etaleCover_map_constantSheaf
+    {M N : ModuleCat.{u} Λ} [Module.Finite Λ M]
+    (φ : (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M ⟶
+      (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N) :
+    ∃ (ι : Type u) (U : ι → Scheme.{u}) (u : ∀ i, U i ⟶ S) (_ : ∀ i, Etale (u i)),
+      (⋃ i, Set.range (u i) = .univ) ∧
+        ∀ i, ∃ f : M ⟶ N,
+          ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) M).inv ≫
+            ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ ≫
+            ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) N).hom =
+              (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map f := by
+  obtain ⟨R, hR, hRg⟩ := exists_mem_overPullback_map_eq_of_iso (J := smallEtaleTopology S)
+    φ (Y := Etale.mk (𝟙 S)) (Iso.refl _) (Iso.refl _)
+  obtain ⟨ι, U, u, hu_et, _, hgR, hcov⟩ := exists_etaleCover_of_mem_smallEtaleTopology_terminal hR
+  refine ⟨ι, U, u, hu_et, hcov, fun i ↦ ?_⟩
+  have := hu_et i
+  obtain ⟨gi, hgi⟩ := hgR i
+  obtain ⟨f, hf⟩ := hRg gi hgi
+  have hrefl (G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) :
+      (overIsoRestrict (Iso.refl (G.over (Etale.mk (𝟙 S)))) gi).hom = 𝟙 _ := by
+    ext W : 3
+    exact (overIsoRestrict_hom_hom_app (Iso.refl _) gi W).trans rfl
+  rw [hrefl, hrefl, Category.comp_id, Category.id_comp] at hf
+  let e := (Etale.mk (u i)).smallEtalePullbackIsoOver (ModuleCat.{u} Λ)
+  have hpb : ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ =
+      ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map
+        ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).map f) := by
+    have h₁ := e.hom.naturality φ
+    have h₂ := e.hom.naturality ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).map f)
+    have h₃ := congrArg ((Etale.mk (u i)).overSheafEquiv (ModuleCat.{u} Λ)).functor.map hf
+    exact (cancel_mono (e.hom.app _)).1 ((h₁.trans (congrArg (e.hom.app _ ≫ ·) h₃)).trans h₂.symm)
+  exact ⟨f, by
+    rw [hpb, Hom.smallEtalePullbackConstantSheafIso_hom_naturality, Iso.inv_hom_id_assoc]⟩
+
+private theorem exists_etaleCover_lift_constantSheaf_fin
+    {N : ModuleCat.{u} Λ} {a : ℕ}
+    {E : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
+    (g : E ⟶ (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N) [Epi g]
+    (πN : ModuleCat.of Λ (Fin a → Λ) ⟶ N) :
+    ∃ (ι : Type u) (U : ι → Scheme.{u}) (u : ∀ i, U i ⟶ S) (_ : ∀ i, Etale (u i)),
+      (⋃ i, Set.range (u i) = .univ) ∧
+        ∀ i, ∃ h : (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).obj
+            (ModuleCat.of Λ (Fin a → Λ)) ⟶
+            ((u i).smallEtalePullback (ModuleCat.{u} Λ)).obj E,
+          h ≫ ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map g ≫
+            ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) N).hom =
+            (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map πN := by
+  let F₀ : ModuleCat.{u} Λ := ModuleCat.of Λ (Fin a → Λ)
+  let n : Fin a → N := fun k ↦ πN (Pi.single k 1)
+  let T_S : S.Etale := Etale.mk (𝟙 S)
+  let R := ⨅ k : Fin a, Presheaf.imageSieve g.hom
+    ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj N)).app (op T_S) (n k))
+  have hloc : Presheaf.IsLocallySurjective (smallEtaleTopology S) g.hom :=
+    (Sheaf.isLocallySurjective_iff_epi' (φ := g)).2 inferInstance
+  have hR : R ∈ smallEtaleTopology S T_S :=
+    (smallEtaleTopology S).iInf_mem fun k ↦ Presheaf.imageSieve_mem (smallEtaleTopology S) g.hom _
+  obtain ⟨ι, U, u, hu_et, _, hαR, hcov⟩ := exists_etaleCover_of_mem_smallEtaleTopology_terminal hR
+  refine ⟨ι, U, u, hu_et, hcov, fun i ↦ ?_⟩
+  have := hu_et i
+  obtain ⟨αi, hαi⟩ := hαR i
+  choose s hs using fun k : Fin a ↦ (iInf_le _ k : R ≤ _) _ hαi
+  let T_U : (U i).Etale := Etale.mk (𝟙 (U i))
+  let hterm_U : IsTerminal T_U :=
+    IsTerminal.isTerminalOfObj (Etale.forget (U i)) _ CategoryTheory.Over.mkIdTerminal
+  let s' : Fin a → (((u i).smallEtalePullback (ModuleCat.{u} Λ)).obj E).obj.obj (op T_U) :=
+    fun k ↦ (u i).evalUnitSelf E (s k)
+  let h := ((constantSheafAdj (smallEtaleTopology (U i)) (ModuleCat.{u} Λ) hterm_U).homEquiv
+    F₀ _).symm (ModuleCat.ofHom (Fintype.linearCombination Λ s'))
+  refine ⟨h, ((constantSheafAdj (smallEtaleTopology (U i))
+    (ModuleCat.{u} Λ) hterm_U).homEquiv F₀ _).injective ?_⟩
+  rw [Adjunction.homEquiv_naturality_right, Equiv.apply_symm_apply, constantSheafAdj_homEquiv_map]
+  refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
+  conv_lhs => rw [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
+    ModuleCat.hom_ofHom, Fintype.linearCombination_apply, map_sum]
+  conv_rhs => rw [pi_eq_sum_univ' c, ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
+    map_sum, map_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [map_smul, map_smul, map_smul]
+  refine congrArg (c k • ·) ?_
+  have hsk := (hs k).trans (toSheafify_app_const_map_apply (smallEtaleTopology S) N αi.op (n k))
+  simpa only [Functor.flip_obj_map, ObjectProperty.ι_map, ObjectProperty.FullSubcategory.comp_hom,
+    NatTrans.comp_app, ConcreteCategory.comp_apply, s'] using
+    (u i).smallEtalePullback_map_comp_constantSheafIso_evalUnitSelf g hsk
+
+/-- Given an epimorphism `g : E ⟶ const N` and a linear map `πN : F₀ ⟶ N` from a finitely
+generated projective `Λ`-module `F₀`, there exists an étale cover of `S` over each piece of which
+`πN` lifts along the pullback of `g` to `const F₀ ⟶ u^* E`. -/
+theorem exists_etaleCover_lift_constantSheaf_of_projective
+    {F₀ N : ModuleCat.{u} Λ} [Module.Projective Λ F₀] [Module.Finite Λ F₀]
+    {E : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
+    (g : E ⟶ (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N) [Epi g]
+    (πN : F₀ ⟶ N) :
+    ∃ (ι : Type u) (U : ι → Scheme.{u}) (u : ∀ i, U i ⟶ S) (_ : ∀ i, Etale (u i)),
+      (⋃ i, Set.range (u i) = .univ) ∧
+        ∀ i, ∃ h : (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).obj F₀ ⟶
+            ((u i).smallEtalePullback (ModuleCat.{u} Λ)).obj E,
+          h ≫ ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map g ≫
+            ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) N).hom =
+            (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map πN := by
+  obtain ⟨a, p, hp⟩ := Module.Finite.exists_fin' Λ F₀
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property p LinearMap.id hp
+  obtain ⟨ι, U, u, hu_et, hcov, hlifts⟩ :=
+    exists_etaleCover_lift_constantSheaf_fin g (ModuleCat.ofHom p ≫ πN)
+  refine ⟨ι, U, u, hu_et, hcov, fun i ↦ ?_⟩
+  obtain ⟨h, hh⟩ := hlifts i
+  refine ⟨(constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map (ModuleCat.ofHom s) ≫ h,
+    ?_⟩
+  rw [Category.assoc, hh, ← Functor.map_comp, ← Category.assoc, ← ModuleCat.ofHom_comp, hs,
+    ModuleCat.ofHom_id, Category.id_comp]
+
+end ConstantSheaf
 
 end CategoryTheory.Sheaf

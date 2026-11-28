@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Constructible
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Constructible.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ExtensionByZero
 public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Products
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint

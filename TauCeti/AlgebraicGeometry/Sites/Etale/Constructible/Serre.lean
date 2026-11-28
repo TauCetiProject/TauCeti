@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.Algebra.Homology.DerivedCategory.HomologyIn
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Constructible
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Constructible.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Serre
 
 /-!
@@ -18,7 +18,7 @@ Let `X` be a scheme and `Λ` a ring. This file proves that constructible étale 
 `Λ`-modules on `X` (`AlgebraicGeometry.Scheme.constructibleSheaf X Λ`) are closed under cokernels
 over any ring `Λ`, and closed under kernels and extensions when `Λ` is left Noetherian. Together
 with the instances `IsClosedUnderIsomorphisms` and `ContainsZero` from
-`TauCeti.AlgebraicGeometry.Sites.Etale.Constructible`, constructible sheaves form a weak
+`TauCeti.AlgebraicGeometry.Sites.Etale.Constructible.Basic`, constructible sheaves form a weak
 Serre class in `Sheaf (smallEtaleTopology X) (ModuleCat.{u} Λ)` over any left Noetherian ring `Λ`.
 
 For two sheaves `F` and `G` constructible on an open `U`, passing to the common refinement
