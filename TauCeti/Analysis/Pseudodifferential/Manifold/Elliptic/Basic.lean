@@ -54,6 +54,8 @@ elliptic of order `2` (`TauCeti.IsLaplaceType.isClassicalElliptic_complexifyLine
 
 ## Main results
 
+* `TauCeti.isClassicalElliptic_of_mem_slitPlane`: an operator whose principal symbol lies in the
+  slit plane `ℂ \ (-∞, 0]` at nonzero covectors is elliptic.
 * `TauCeti.isClassicalEllipticAt_add_iff`, `TauCeti.isClassicalEllipticAt_smul_iff`: ellipticity
   is unchanged by perturbations of order `m - 1` and by nonzero scalars.
 * `TauCeti.IsClassicalEllipticAt.mem`, `TauCeti.IsClassicalEllipticAt.notMem_sub_one`: in positive
@@ -121,6 +123,14 @@ theorem isClassicalEllipticAt_iff {x : M} :
 
 theorem isClassicalElliptic_iff : IsClassicalElliptic m P ↔ ∀ x : M, IsClassicalEllipticAt m P x :=
   Iff.rfl
+
+/-- An operator whose principal symbol takes values in the slit plane `ℂ \ (-∞, 0]` at nonzero
+covectors, for instance a real positive principal symbol, is elliptic. -/
+theorem isClassicalElliptic_of_mem_slitPlane
+    (h : ∀ x ξ, ξ ≠ 0 → classicalPrincipalSymbol m P x ξ ∈ Complex.slitPlane) :
+    IsClassicalElliptic m P :=
+  isClassicalElliptic_iff.2 fun x ↦ isClassicalEllipticAt_iff.2 fun ξ hξ ↦
+    Complex.slitPlane_ne_zero (h x ξ hξ)
 
 /-- **Ellipticity ignores lower order terms.** Adding an operator of order `m - 1` does not change
 ellipticity at a point. -/

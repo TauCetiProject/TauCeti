@@ -17,7 +17,8 @@ import TauCeti.LinearAlgebra.LinearIndependent.Fin
 A subspace of a finite-dimensional vector space over a division ring is spanned by a subset of
 a finite basis of the ambient space. The cardinality of that subset is the dimension of the
 subspace. This is useful when constructions on coordinate summands must be applied to arbitrary
-subspaces. The basis is assembled from bases of the subspace and of a complement.
+subspaces. The basis is assembled from bases of the subspace and of a complement. Equivalently,
+in that basis the subspace is cut out by the vanishing of the remaining coordinates.
 
 Two subspaces admit bases sharing an initial basis of their intersection, whose
 combined complementary parts complete a basis of their sum. This gives compatible
@@ -53,6 +54,22 @@ theorem exists_basis_span_image_eq (W : Submodule k V) :
     ext x
     simp [s, c, Module.Basis.prod_apply]
   rw [himage, ← Submodule.map_span, bW.span_eq, Submodule.map_top, Submodule.range_subtype]
+
+/-- In a suitable basis indexed by any type `ι` of size `finrank k V`, a subspace `W` is cut out by
+the vanishing of the coordinates outside a set of `finrank k W` indices. -/
+theorem exists_basis_mem_iff_forall_repr_eq_zero (W : Submodule k V) {ι : Type*} [Fintype ι]
+    (hι : Module.finrank k V = Fintype.card ι) :
+    ∃ (b : Module.Basis ι k V) (s : Finset ι),
+      (∀ v, v ∈ W ↔ ∀ i ∉ s, b.repr v i = 0) ∧ s.card = Module.finrank k W := by
+  obtain ⟨b, s, hspan, hs⟩ := W.exists_basis_span_image_eq
+  let e : Fin (Module.finrank k V) ≃ ι := Fintype.equivOfCardEq (by simp [hι])
+  refine ⟨b.reindex e, s.map e.toEmbedding, fun v => ?_, by simpa using hs⟩
+  rw [← hspan, Module.Basis.mem_span_image]
+  refine ⟨fun h i hi => ?_, fun h i hi => ?_⟩
+  · by_contra hne
+    exact hi (Finset.mem_map_equiv.2 (h (by simpa using hne)))
+  · by_contra his
+    exact (Finsupp.mem_support_iff.1 hi) (by simpa using h (e i) (by simpa using his))
 
 end
 

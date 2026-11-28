@@ -37,6 +37,14 @@ it is not a unit.
 * `PreTilt.isRegular_natCast_mu`, `PreTilt.isRegular_natCast_xi`,
   `PreTilt.isRegular_natCast_xiTilde`, `PreTilt.isRegular_natCast_xiLevel`,
   `PreTilt.isRegular_natCast_xiTildeLevel`: the regular pairs.
+* `PreTilt.prime_xi`: for a complete perfectoid nonarchimedean field `C`, `ξ` is a prime element
+  of `A_inf = W(O_C♭)`, since it generates the kernel of Fontaine's map onto the domain `O_C`.
+
+## Provenance
+
+The statement of `PreTilt.prime_xi` follows `New.Period.Ainf.prime_xi` in
+`src/Lib/PadicHodge/PeriodRings/Ainf.lean` of grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic, PBC), where it is proved for `C = ℂ_p`.
 
 ## References
 
@@ -151,5 +159,26 @@ theorem isRegular_natCast_xiTildeLevel (ε : PreTilt A p)
     rw [hc, map_mul, fontaineThetaShifted_xiTilde_eq_zero ε hε, zero_mul]
 
 end RegularPairs
+
+section PerfectoidField
+
+open scoped NormedField Valued
+
+variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C] [IsUltrametricDist C]
+  [CompleteSpace C] [IsPerfectoidTateRing p C]
+  [Fact ¬IsUnit (p : 𝒪[C])] [IsAdicComplete (Ideal.span {(p : 𝒪[C])}) (𝒪[C])]
+
+/-- **`ξ` is a prime element of `A_inf`.** For a complete perfectoid nonarchimedean field `C`
+and `ε ∈ O_C♭` such that the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, the
+cyclotomic period `ξ` generates the kernel of Fontaine's map onto the domain `O_C`. -/
+theorem prime_xi (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p) :
+    Prime (xi p ε) := by
+  rw [← Ideal.span_singleton_prime (xi_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε)),
+    ← ker_fontaineTheta_eq_span_xi ε hε]
+  exact RingHom.ker_isPrime _
+
+end PerfectoidField
 
 end PreTilt

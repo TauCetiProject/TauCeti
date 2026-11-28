@@ -72,24 +72,20 @@ namespace TauCeti
 
 variable (k : Type u) [CommRing k]
 
-/-- **Connected-cover projection homology isomorphism.** Let `X` be a Hausdorff, path-connected
-space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`. If every `K(πₘ₊₂(X), m + 1)` space
-has the `k`-homology of a point, then the projection `X⟨m + 2⟩ ⟶ X` induces an isomorphism on
-`k`-homology in every degree `q`. -/
+/-- **The projection from the `(m + 2)`-connected cover is a homology isomorphism** when its
+`K(πₘ₊₂(X), m + 1)` fibres are `k`-acyclic. -/
 theorem isIso_singularHomologyMap_nConnectedCoverProj_of_fiber (X : TopCat.{u}) [T2Space X]
     [PathConnectedSpace X] (x : X) (m : ℕ)
     (hX : ∀ j, j ≠ 0 → j < m + 2 → Subsingleton (π_ j X x))
     (hK : ∀ {Y : Type u} [TopologicalSpace Y] {y : Y},
       IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Y y →
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
-    (q : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) q).obj
-      (ModuleCat.of k k)).map (nConnectedCoverProj (m + 2) X x)) :=
-  -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it is `k`-acyclic and the
-  -- projection is a `k`-homology isomorphism.
+    (i : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map
+      (nConnectedCoverProj (m + 2) X x)) :=
   isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
     (serreFibrations_nConnectedCoverProj (m + 2) X x)
-    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK q
+    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK i
 
 /-- **Connected-cover homology vanishing in a single degree.** Let `X` be a Hausdorff,
 path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and whose `k`-homology
@@ -103,6 +99,8 @@ theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{u}) 
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
     {q : ℕ} (hq : Subsingleton (((singularChains k).obj X).homology q)) :
     Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology q) := by
+  -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it is `k`-acyclic and the
+  -- projection is a `k`-homology isomorphism.
   have := isIso_singularHomologyMap_nConnectedCoverProj_of_fiber k X x m hX hK q
   exact (subsingleton_singularChains_homology_iff_of_isIso _
     (nConnectedCoverProj (m + 2) X x) _).2 hq

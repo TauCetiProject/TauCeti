@@ -44,6 +44,9 @@ The block upper triangular endomorphism `Module.End.blockTriangular a b x` of `V
   under `g` and under its transpose.
 * `Module.End.prod_mem_invtSubmodule_blockTriangular`: `A × B` is invariant under a block map
   whose diagonal blocks preserve `A` and `B` and whose upper right block maps `B` into `A`.
+* `Module.End.exists_sylvester_eq`: on a Fitting component `C = ker T` of `g` (with `T` commuting
+  with everything that commutes with `g`, and `C` complementary to `range T`), the Sylvester map
+  `y ↦ g|_C ∘ y - y ∘ g|_{V / C}` on `Hom(V / C, C)` is surjective.
 
 ## References
 
@@ -54,6 +57,9 @@ The block upper triangular endomorphism `Module.End.blockTriangular a b x` of `V
   stated for `Mathlib`'s `Module.End.invtSubmodule` and with the invariant block first. The
   annihilator lemmas are the invariance steps of the commutativity proof of the `CommRing`
   instance on `New.Hall` there.
+* Adapted from grh-lean as above: the injectivity of the Sylvester map on a Fitting component,
+  from the proof of `New.Hall.IsCuspidal.exists_charpoly_eq_pow` in
+  `src/Lib/LocalGL/Green/CuspidalFunctions.lean`.
 -/
 
 public section
@@ -69,6 +75,11 @@ variable {R M M' : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMo
 def Module.End.invtRestrict (g : Module.End R M) {W : Submodule R M}
     (hW : W ∈ g.invtSubmodule) : Module.End R W :=
   g.restrict ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem g).1 hW)
+
+/-- `Module.End.invtRestrict` is `LinearMap.restrict`. -/
+theorem Module.End.invtRestrict_def {W : Submodule R M} (hW : W ∈ g.invtSubmodule) :
+    g.invtRestrict hW = g.restrict ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem g).1 hW) :=
+  (rfl)
 
 /-- The restriction of `g` to `W` acts as `g`. -/
 @[simp]
@@ -102,6 +113,11 @@ variable {R M M' : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M
 def Module.End.invtQuot (g : Module.End R M) {W : Submodule R M}
     (hW : W ∈ g.invtSubmodule) : Module.End R (M ⧸ W) :=
   W.mapQ W g ((Module.End.mem_invtSubmodule g).1 hW)
+
+/-- `Module.End.invtQuot` is `Submodule.mapQ`. -/
+theorem Module.End.invtQuot_def {W : Submodule R M} (hW : W ∈ g.invtSubmodule) :
+    g.invtQuot hW = W.mapQ W g ((Module.End.mem_invtSubmodule g).1 hW) :=
+  (rfl)
 
 /-- The map induced on `M ⧸ W` sends the class of `x` to the class of `g x`. -/
 @[simp]
@@ -179,5 +195,46 @@ theorem prod_mem_invtSubmodule_blockTriangular {a : Module.End R V} {b : Module.
   exact ⟨by simpa using add_mem (hA _ hp.1) (hx hp.2), by simpa using hB _ hp.2⟩
 
 end BlockTriangular
+
+/-! ### The Sylvester map on a Fitting component -/
+
+section Sylvester
+
+variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] [Module.Finite k V]
+
+/-- Let `T` commute with every map commuting with `g`, with `C = ker T` complementary to
+`range T` (a Fitting component). Then the Sylvester map `y ↦ g|_C ∘ y - y ∘ g|_{V / C}` is
+injective, hence surjective. -/
+theorem exists_sylvester_eq {g T : Module.End k V} {C : Submodule k V}
+    (hC : C ∈ g.invtSubmodule) (hCT : LinearMap.ker T = C) (hN : IsCompl C (LinearMap.range T))
+    (hT : ∀ Y : Module.End k V, Commute Y g → Commute Y T) (x : (V ⧸ C) →ₗ[k] C) :
+    ∃ y : (V ⧸ C) →ₗ[k] C, g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x := by
+  let S : ((V ⧸ C) →ₗ[k] C) →ₗ[k] ((V ⧸ C) →ₗ[k] C) :=
+    { toFun y := g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC
+      map_add' y y' := by rw [LinearMap.comp_add, LinearMap.add_comp]; abel
+      map_smul' c y := by ext; simp [smul_sub] }
+  suffices h_inj : Function.Injective S by
+    obtain ⟨y, hy⟩ := LinearMap.injective_iff_surjective.1 h_inj x
+    exact ⟨y, hy⟩
+  refine (injective_iff_map_eq_zero S).2 fun y hy ↦ ?_
+  have hy' (v : V) : (y (Submodule.Quotient.mk (g v)) : V) = g (y (Submodule.Quotient.mk v)) := by
+    have := congrArg (fun z ↦ ((z (Submodule.Quotient.mk v) : C) : V)) (sub_eq_zero.1 hy)
+    simpa [S] using this.symm
+  -- `y` read on `V` commutes with `g`, hence with `T`; it kills `C` and `range T`.
+  let Y : Module.End k V := C.subtype ∘ₗ y ∘ₗ C.mkQ
+  have hYT := hT Y (LinearMap.ext fun v ↦ by simp [Y, hy'])
+  have hY : Y = 0 := by
+    refine LinearMap.ext fun v ↦ ?_
+    obtain ⟨c, hc, _, ⟨w, rfl⟩, rfl⟩ := Submodule.mem_sup.1 (hN.sup_eq_top ▸ Submodule.mem_top :
+      v ∈ C ⊔ LinearMap.range T)
+    have hYc : Y c = 0 := by simp [Y, (Submodule.Quotient.mk_eq_zero C).2 hc]
+    have hYw : Y (T w) = 0 := by
+      rw [← mul_apply_eq_comp, hYT.eq, mul_apply_eq_comp, ← LinearMap.mem_ker, hCT]
+      exact (y (C.mkQ w)).prop
+    simp [map_add, hYc, hYw]
+  ext v
+  simpa [Y] using LinearMap.congr_fun hY v
+
+end Sylvester
 
 end Module.End
