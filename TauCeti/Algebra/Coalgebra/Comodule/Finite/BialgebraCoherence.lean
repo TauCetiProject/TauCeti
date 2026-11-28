@@ -227,22 +227,22 @@ end TensorPresentation.CoefficientCompatibility
 
 end Projective
 
-section Ring
+section Semiring
 
 variable {K : Type u} [CommSemiring K] {B : Type v}
-variable [AddCommGroup B] [Module K B] [cB : Coalgebra K B] [Module.Projective K B]
+variable [AddCommMonoid B] [Module K B] [cB : Coalgebra K B] [Module.Projective K B]
 
 namespace TensorPresentation.CoefficientCompatibility
 
 variable {T : TensorPresentation (K := K) (B := B)}
 variable {μ : B ⊗[K] B →ₗ[K] B} {e : B} (h : T.CoefficientCompatibility μ e)
 
-/-- The commutative ring with multiplication `μ` and unit `e`, retaining the original additive
-group. The scalar algebra is constructed separately so its module is the original one too.
+/-- The commutative semiring with multiplication `μ` and unit `e`, retaining the original additive
+monoid. The scalar algebra is constructed separately so its module is the original one too.
 The body is exposed to identify its additive operations with those of the input module. -/
 @[instance_reducible, expose]
-noncomputable def commRing : CommRing B where
-  __ := (inferInstance : AddCommGroup B)
+noncomputable def commSemiring : CommSemiring B where
+  __ := (inferInstance : AddCommMonoid B)
   mul a b := μ (a ⊗ₜ[K] b)
   one := e
   -- Restate the new multiplication fields in terms of the supplied linear map.
@@ -263,24 +263,24 @@ noncomputable def commRing : CommRing B where
   mul_one := h.mul_one
   mul_comm := h.mul_comm
 
-/-- Multiplication in the constructed ring is the supplied map on pure tensors. -/
+/-- Multiplication in the constructed semiring is the supplied map on pure tensors. -/
 @[simp]
-theorem commRing_mul (a b : B) : letI := h.commRing; a * b = μ (a ⊗ₜ[K] b) :=
+theorem commSemiring_mul (a b : B) : letI := h.commSemiring; a * b = μ (a ⊗ₜ[K] b) :=
   (rfl)
 
-/-- The constructed ring has the supplied unit. -/
+/-- The constructed semiring has the supplied unit. -/
 @[simp]
-theorem commRing_one : letI := h.commRing; (1 : B) = e :=
+theorem commSemiring_one : letI := h.commSemiring; (1 : B) = e :=
   (rfl)
 
-/-- The scalar algebra of the constructed ring, with the original scalar action.
+/-- The scalar algebra of the constructed semiring, with the original scalar action.
 The body is exposed to identify its module with the input module and hence retain its coalgebra. -/
 @[instance_reducible, expose]
-noncomputable def algebra : letI := h.commRing; Algebra K B := by
-  letI := h.commRing
+noncomputable def algebra : letI := h.commSemiring; Algebra K B := by
+  letI := h.commSemiring
   exact Algebra.ofModule
     (fun r a b ↦ by
-      -- Reduce multiplication in the selected ring, keeping the original scalar action.
+      -- Reduce multiplication in the selected semiring, keeping the original scalar action.
       change μ ((r • a) ⊗ₜ[K] b) = r • μ (a ⊗ₜ[K] b)
       simp [← TensorProduct.smul_tmul'])
     (fun r a b ↦ by
@@ -296,12 +296,13 @@ variable {μ : B ⊗[K] B →ₗc[K] B} {η : K →ₗc[K] B}
 variable (h : T.CoefficientCompatibility μ.toLinearMap (η 1))
 
 /-- A coherent coefficient tensor with coalgebra multiplication and unit defines a commutative
-bialgebra. Install `h.commRing` and then `h.bialgebra`; its coalgebra and scalar action are the
-original ones, and its multiplication and unit are characterized by `commRing_mul` and
-`commRing_one`. Its body is exposed to identify the parent module and coalgebra with the input. -/
+bialgebra. Install `h.commSemiring` and then `h.bialgebra`; its coalgebra and scalar action are the
+original ones, and its multiplication and unit are characterized by `commSemiring_mul` and
+`commSemiring_one`. Its body is exposed to identify the parent module and coalgebra
+with the input. -/
 @[instance_reducible, expose]
-noncomputable def bialgebra : letI := h.commRing; Bialgebra K B := by
-  letI := h.commRing
+noncomputable def bialgebra : letI := h.commSemiring; Bialgebra K B := by
+  letI := h.commSemiring
   letI := h.algebra
   have hcomul : ∀ a b : B, Coalgebra.comul (R := K) (a * b) =
       Coalgebra.comul (R := K) a * Coalgebra.comul (R := K) b := by
@@ -309,8 +310,8 @@ noncomputable def bialgebra : letI := h.commRing; Bialgebra K B := by
     have hμ : (μ : B ⊗[K] B →ₗ[K] B) = LinearMap.mul' K B := by
       apply TensorProduct.ext'
       intro x y
-      exact (commRing_mul h x y).symm
-    simp only [commRing_mul h, CoalgHom.toLinearMap_eq_ofClass, CoalgHom.coe_linearMapOfClass]
+      exact (commSemiring_mul h x y).symm
+    simp only [commSemiring_mul h, CoalgHom.toLinearMap_eq_ofClass, CoalgHom.coe_linearMapOfClass]
     rw [← CoalgHomClass.map_comp_comul_apply μ]
     rw [TensorProduct.comul_tmul, TensorProduct.AlgebraTensorModule.tensorTensorTensorComm_eq]
     simp only [hμ]
@@ -318,21 +319,22 @@ noncomputable def bialgebra : letI := h.commRing; Bialgebra K B := by
       (LinearMap.congr_fun (LinearMap.mul'_tensor (R := K) (A := B) (B := B))
         (Coalgebra.comul (R := K) a ⊗ₜ[K] Coalgebra.comul (R := K) b)).symm
   refine Bialgebra.mk' K B ?_ ?_ ?_ (hcomul _ _)
-  · simpa only [commRing_one h, CommSemiring.counit_apply] using CoalgHomClass.counit_comp_apply η 1
+  · simpa only [commSemiring_one h, CommSemiring.counit_apply] using
+      CoalgHomClass.counit_comp_apply η 1
   · intro a b
-    simpa only [commRing_mul h, CoalgHom.toLinearMap_eq_ofClass,
+    simpa only [commSemiring_mul h, CoalgHom.toLinearMap_eq_ofClass,
       CoalgHom.coe_linearMapOfClass, TensorProduct.counit_tmul,
       smul_eq_mul, _root_.mul_comm] using
       CoalgHomClass.counit_comp_apply μ (a ⊗ₜ[K] b)
-  · rw [commRing_one h, ← CoalgHomClass.map_comp_comul_apply η]
+  · rw [commSemiring_one h, ← CoalgHomClass.map_comp_comul_apply η]
     simp only [CommSemiring.comul_apply, TensorProduct.map_tmul,
-      Algebra.TensorProduct.one_def, commRing_one h]
+      Algebra.TensorProduct.one_def, commSemiring_one h]
     rfl
 
 /-- The bialgebra construction retains the input coalgebra. -/
 @[simp]
 theorem bialgebra_toCoalgebra :
-    letI := h.commRing
+    letI := h.commSemiring
     letI := h.algebra
     (h.bialgebra).toCoalgebra = cB :=
   (rfl)
@@ -340,13 +342,35 @@ theorem bialgebra_toCoalgebra :
 /-- The algebra map of the constructed bialgebra is the supplied coalgebra unit map. -/
 @[simp]
 theorem bialgebra_algebraMap (r : K) :
-    letI := h.commRing
+    letI := h.commSemiring
     letI := h.bialgebra
     algebraMap K B r = η r := by
-  let _ := h.commRing
+  let _ := h.commSemiring
   let _ := h.bialgebra
-  rw [Algebra.algebraMap_eq_smul_one, commRing_one h]
+  rw [Algebra.algebraMap_eq_smul_one, commSemiring_one h]
   simpa using (map_smul η r (1 : K)).symm
+
+end TensorPresentation.CoefficientCompatibility
+
+end Semiring
+
+section Ring
+
+variable {K : Type u} [CommSemiring K] {B : Type v}
+variable [AddCommGroup B] [Module K B] [Coalgebra K B] [Module.Projective K B]
+
+namespace TensorPresentation.CoefficientCompatibility
+
+variable {T : TensorPresentation (K := K) (B := B)}
+variable {μ : B ⊗[K] B →ₗ[K] B} {e : B} (h : T.CoefficientCompatibility μ e)
+
+/-- The commutative ring obtained from the constructed semiring when the original additive
+monoid is a group. Its exposed body retains the original additive group and the multiplication
+and unit of `commSemiring`. -/
+@[instance_reducible, expose]
+noncomputable def commRing : CommRing B where
+  __ := h.commSemiring
+  __ := (inferInstance : AddCommGroup B)
 
 end TensorPresentation.CoefficientCompatibility
 
