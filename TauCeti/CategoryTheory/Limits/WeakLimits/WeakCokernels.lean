@@ -30,10 +30,10 @@ def IsWeakCokernel {X Y Z : C} (f : X ⟶ Y) (q : Y ⟶ Z) : Prop :=
 
 /-- A weak kernel fork in the opposite category gives a weak cokernel. -/
 theorem _root_.CategoryTheory.Limits.IsWeakLimit.isWeakCokernel
-    {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {i : Z ⟶ X}
-    {h : i ≫ f = 0} (hi : IsWeakLimit (KernelFork.ofι i h)) :
-    IsWeakCokernel f.unop i.unop :=
-  ⟨by simpa only [Quiver.Hom.op_unop] using h, ⟨by simpa only [Quiver.Hom.op_unop] using hi⟩⟩
+    {X Y : Cᵒᵖ} {f : X ⟶ Y} {s : KernelFork f} (hs : IsWeakLimit s) :
+    IsWeakCokernel f.unop s.ι.unop :=
+  ⟨by simpa only [Quiver.Hom.op_unop] using KernelFork.condition s,
+    ⟨by simpa only [Quiver.Hom.op_unop] using hs.ofIsoWeakLimit (isoOfι s)⟩⟩
 
 /-- A weak cokernel kills the given arrow. -/
 @[reassoc (attr := simp)]
@@ -47,6 +47,12 @@ theorem IsWeakCokernel.nonempty_isWeakLimit {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶
     Nonempty (IsWeakLimit (KernelFork.ofι (f := f.op) q.op (by
       simpa only [op_comp, op_zero] using congrArg Quiver.Hom.op hq.comp_eq_zero))) :=
   hq.choose_spec
+
+/-- A weak cokernel witnesses the existence of a weak kernel in the opposite category. -/
+theorem IsWeakCokernel.hasWeakKernel {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶ Z}
+    (hq : IsWeakCokernel f q) : HasWeakKernel f.op := by
+  obtain ⟨h⟩ := hq.nonempty_isWeakLimit
+  exact HasWeakLimit.mk ⟨_, h⟩
 
 /-- Every morphism that kills the given arrow factors through its weak cokernel. -/
 theorem IsWeakCokernel.exists_desc {X Y Z W : C} {f : X ⟶ Y} {q : Y ⟶ Z}
@@ -83,10 +89,9 @@ theorem _root_.CategoryTheory.Limits.IsColimit.isWeakCokernel
 
 /-- A limiting kernel fork in the opposite category gives a weak cokernel. -/
 theorem _root_.CategoryTheory.Limits.IsLimit.isWeakCokernel
-    {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {i : Z ⟶ X}
-    {h : i ≫ f = 0} (hi : IsLimit (KernelFork.ofι i h)) :
-    IsWeakCokernel f.unop i.unop :=
-  hi.isWeakLimit.isWeakCokernel
+    {X Y : Cᵒᵖ} {f : X ⟶ Y} {s : KernelFork f} (hs : IsLimit s) :
+    IsWeakCokernel f.unop s.ι.unop :=
+  hs.isWeakLimit.isWeakCokernel
 
 /-- The zero endomorphism of the target is a weak cokernel of an epimorphism. -/
 theorem IsWeakCokernel.zero_of_epi {X Y : C} (f : X ⟶ Y) [Epi f] :
@@ -97,7 +102,7 @@ theorem IsWeakCokernel.zero_of_epi {X Y : C} (f : X ⟶ Y) [Epi f] :
 theorem exists_isWeakCokernel {X Y : C} (f : X ⟶ Y) [HasWeakKernel f.op] :
     ∃ (Z : C) (q : Y ⟶ Z), IsWeakCokernel f q := by
   refine ⟨_, (weakKernel.ι f.op).unop, ?_⟩
-  simpa only [Quiver.Hom.unop_op] using
-    (weakKernelIsWeakKernel f.op).isWeakCokernel (h := weakKernel.condition f.op)
+  simpa only [Fork.ι_ofι, Quiver.Hom.unop_op] using
+    (weakKernelIsWeakKernel f.op).isWeakCokernel
 
 end TauCeti

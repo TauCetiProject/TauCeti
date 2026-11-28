@@ -42,7 +42,7 @@ theorem flat_iff_isHomological (F : ModCat.{w} C) : F.Flat ↔ F.obj.IsHomologic
       simpa only [Quiver.Hom.op_unop] using
         Flat.exact_of_isWeakCokernel (F := F) (isWeakCokernel_of_distTriang_op hT)
     exact S.ab_exact_iff_function_exact.mpr he
-  · apply (flat_iff_exists_isWeakCokernel_exact F).mpr
+  · apply (flat_iff_forall_exists_isWeakCokernel_exact F).mpr
     intro X Y f
     obtain ⟨Z, q, k, hT⟩ := distinguished_cocone_triangle₁ f.op
     let T := Triangle.mk q f.op k

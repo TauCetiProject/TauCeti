@@ -36,8 +36,8 @@ theorem isWeakCokernel_of_distTriang [HasZeroObject C] [HasShift C ℤ]
 cokernel pair in the original category. -/
 theorem isWeakCokernel_of_distTriang_op [HasZeroObject Cᵒᵖ] [HasShift Cᵒᵖ ℤ]
     [∀ n : ℤ, (shiftFunctor Cᵒᵖ n).Additive] [Pretriangulated Cᵒᵖ] {T : Triangle Cᵒᵖ}
-    (hT : T ∈ distTriang Cᵒᵖ) : TauCeti.IsWeakCokernel T.mor₂.unop T.mor₁.unop :=
-  (isWeakLimitKernelForkOfDistTriangle T hT).isWeakCokernel
-    (h := comp_distTriang_mor_zero₁₂ T hT)
+    (hT : T ∈ distTriang Cᵒᵖ) : TauCeti.IsWeakCokernel T.mor₂.unop T.mor₁.unop := by
+  simpa only [kernelForkOfDistTriangle, KernelFork.ι_ofι] using
+    (isWeakLimitKernelForkOfDistTriangle T hT).isWeakCokernel
 
 end CategoryTheory.Pretriangulated
