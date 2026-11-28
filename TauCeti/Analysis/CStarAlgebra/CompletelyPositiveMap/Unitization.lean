@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix

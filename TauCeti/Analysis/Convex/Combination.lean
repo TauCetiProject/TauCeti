@@ -24,14 +24,15 @@ This file collects facts on three topics about finite convex combinations in a v
 linearly ordered field: sub-convex combinations, the centroid, and the closed interiors of
 simplices given in an affine chart.
 
-A convex set containing `0` also contains every combination `∑ i, w i • z i` of its points with
-nonnegative weights of total at most `1`, the missing weight being put on `0`
-(`Convex.sum_mem_of_zero_mem`). If the set is moreover symmetric, the coefficients may have any
-sign as long as their absolute values sum to at most `1` (`Convex.sum_mem_of_sum_abs_le_one`). In
-particular such a set contains the weighted cross-polytope `{x | ∑ i, a i * |b.repr x i| ≤ 1}` as
-soon as it contains each `(a i)⁻¹ • b i` for positive weights `a i`
-(`Convex.weighted_crosspolytope_subset`). This containment is the step in the lower bound of
-Minkowski's second theorem that places a cross-polytope spanned by vectors attaining the
+A convex set contains the equal-weight average `(t.card : 𝕜)⁻¹ • ∑ i ∈ t, z i` of any nonempty
+finite family of its points (`Convex.inv_card_smul_sum_mem`), and a convex set containing `0` also
+contains every combination `∑ i, w i • z i` of its points with nonnegative weights of total at most
+`1`, the missing weight being put on `0` (`Convex.sum_mem_of_zero_mem`). If the set is moreover
+symmetric, the coefficients may have any sign as long as their absolute values sum to at most `1`
+(`Convex.sum_mem_of_sum_abs_le_one`). In particular such a set contains the weighted cross-polytope
+`{x | ∑ i, a i * |b.repr x i| ≤ 1}` as soon as it contains each `(a i)⁻¹ • b i` for positive
+weights `a i` (`Convex.weighted_crosspolytope_subset`). This containment is the step in the lower
+bound of Minkowski's second theorem that places a cross-polytope spanned by vectors attaining the
 successive minima inside the body; its volume is `OrthonormalBasis.volume_weighted_crosspolytope`.
 
 Over a linearly ordered field there is no topology to speak of relative interiors, but the
@@ -105,6 +106,17 @@ variable {𝕜 E ι : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRin
 namespace Convex
 
 variable {s : Set E}
+
+/-- A convex set contains the equal-weight average `(t.card : 𝕜)⁻¹ • ∑ i ∈ t, z i` of any
+nonempty finite family of its points. -/
+theorem inv_card_smul_sum_mem (hs : Convex 𝕜 s) {t : Finset ι} (ht : t.Nonempty) {z : ι → E}
+    (hz : ∀ i ∈ t, z i ∈ s) :
+    ((t.card : 𝕜)⁻¹ • ∑ i ∈ t, z i) ∈ s := by
+  have hw : 0 < ∑ _i ∈ t, (1 : 𝕜) := by
+    simp only [sum_const, nsmul_eq_mul, mul_one, Nat.cast_pos]
+    exact ht.card_pos
+  simpa only [Finset.centerMass, sum_const, nsmul_eq_mul, mul_one, one_smul] using
+    hs.centerMass_mem (fun _ _ ↦ zero_le_one) hw hz
 
 /-- A convex set containing `0` contains every combination of its points with nonnegative
 weights of total at most `1`. -/

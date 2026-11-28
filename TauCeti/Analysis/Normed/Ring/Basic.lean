@@ -11,13 +11,13 @@ import Mathlib.Algebra.Ring.Idempotent
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm (for instance, a
-nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`, forcing an idempotent
-of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), including its form
-`‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact positive-power
-norms without `NormOneClass` (so `‖qⁿ‖ < 1 ↔ ‖q‖ < 1` for `n ≠ 0`, `TauCeti.norm_pow_lt_one_iff`),
-an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
-multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
+This file records elementary consequences of the submultiplicativity of the norm (including bounds
+on powers, finite products, and commutators, as well as `IsIdempotentElem.one_le_norm` for a
+nonzero idempotent, forcing an idempotent of norm `< 1` to be `0` and one within `< 1` of `1` to
+be `1`), including its form `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm
+(`TauCeti.eNorm_mul_le`), exact positive-power norms without `NormOneClass` (so `‖qⁿ‖ < 1 ↔ ‖q‖ < 1`
+for `n ≠ 0`, `TauCeti.norm_pow_lt_one_iff`), an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm
+is multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
 with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
@@ -331,6 +331,13 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- In a seminormed ring, the commutator `a * b - b * a` has norm at most `2 * ‖a‖ * ‖b‖`. -/
+theorem norm_commutator_le {A : Type*} [NonUnitalSeminormedRing A] (a b : A) :
+    ‖a * b - b * a‖ ≤ 2 * ‖a‖ * ‖b‖ :=
+  calc ‖a * b - b * a‖ ≤ ‖a * b‖ + ‖b * a‖ := norm_sub_le _ _
+    _ ≤ ‖a‖ * ‖b‖ + ‖b‖ * ‖a‖ := add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
+    _ = 2 * ‖a‖ * ‖b‖ := by ring
 
 /-- An element of norm less than `1` is not `1`, that is, `1 - x ≠ 0`. -/
 theorem one_sub_ne_zero_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R] {x : R}

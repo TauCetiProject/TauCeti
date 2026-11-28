@@ -98,6 +98,8 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
   enough `ε > 0`, farther than `ε` from each point of `S`.
 * `TauCeti.norm_le_div_of_isFixedPt` -- a fixed point `v` of `T` with `‖T v‖ ≤ R + γ ‖v‖` and
   `γ < 1` satisfies `‖v‖ ≤ R / (1 - γ)`.
+* `TauCeti.tendsto_nhds_iff_norm_sub_lt` -- filter convergence `Tendsto f l (𝓝 y)` expressed in
+  terms of `∀ ε > 0, ∀ᶠ x in l, ‖f x - y‖ < ε`.
 -/
 
 public section
@@ -310,5 +312,13 @@ theorem norm_le_div_of_isFixedPt {E : Type*} [Norm E] {T : E → E} {v : E} {R �
   rw [hv.eq] at hT
   rw [le_div_iff₀ (sub_pos.2 hγ)]
   linarith
+
+/-- Filter convergence in a seminormed additive group expressed in terms of norm balls:
+`f` tends to `y` along `l` if and only if `‖f x - y‖ < ε` eventually along `l` for every `ε > 0`,
+generalizing `NormedAddGroup.tendsto_nhds_zero` to an arbitrary limit `y`. -/
+theorem tendsto_nhds_iff_norm_sub_lt {α E : Type*} [SeminormedAddCommGroup E]
+    {f : α → E} {l : Filter α} {y : E} :
+    Tendsto f l (𝓝 y) ↔ ∀ ε > 0, ∀ᶠ x in l, ‖f x - y‖ < ε := by
+  simp only [Metric.tendsto_nhds, dist_eq_norm]
 
 end TauCeti

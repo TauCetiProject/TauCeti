@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Multiplier
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 
 /-!
 # Coefficient approximate units on the convolution algebra
@@ -47,7 +47,7 @@ theorem tendsto_coefficientMul {l : Filter A} (hl : l.IsIncreasingApproximateUni
   have hδ : 0 < δ := by positivity
   have he := Metric.tendstoUniformlyOn_iff.1
     (hl.tendstoUniformlyOn_mul_right
-      (f.ofConv.hasCompactSupport.isCompact_range f.ofConv.continuous)) δ hδ
+      (f.ofConv.hasCompactSupport.isCompact_range f.ofConv.continuous).totallyBounded) δ hδ
   filter_upwards [he] with e he
   have hb (s : G) : ‖e * f.ofConv s - f.ofConv s‖ ≤ δ := by
     simpa only [id_eq, dist_eq_norm, norm_sub_rev] using (he _ (Set.mem_range_self s)).le
