@@ -445,14 +445,16 @@ end Algebraic
 /-- Over a seminormed commutative `ℚ_p`-algebra carrying a compatible `ℤ_p`-algebra structure,
 the algebraic weight `algebraic K v` agrees with the `v`-th power of `inclusion K`. -/
 theorem algebraic_eq_inclusion_zpow (K : Type*) [SeminormedCommRing K] [NormedAlgebra ℚ_[p] K]
-    [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K] [IsScalarTower ℤ_[p] ℚ_[p] K] (v : ℤ) :
+    [Algebra ℤ_[p] K] [IsScalarTower ℤ_[p] ℚ_[p] K] (v : ℤ) :
+    haveI : ContinuousSMul ℤ_[p] K := IsScalarTower.continuousSMul ℚ_[p]
     (algebraic (p := p) K v : WeightSpace p K) = inclusion (p := p) K ^ v := by
+  have hmap : algebraMap ℤ_[p] K = padicIntAlgebraMap p K := by
+    ext a
+    rw [IsScalarTower.algebraMap_apply ℤ_[p] ℚ_[p] K, PadicInt.algebraMap_apply,
+      padicIntAlgebraMap_apply]
   refine ContinuousMonoidHom.ext fun x ↦ ?_
-  have h : Units.map (algebraMap ℤ_[p] K : ℤ_[p] →* K) x = inclusion (p := p) K x := by
-    ext
-    rw [Units.coe_map, MonoidHom.coe_ofClass, coe_inclusion_apply, padicIntAlgebraMap_apply,
-      IsScalarTower.algebraMap_apply ℤ_[p] ℚ_[p] K, PadicInt.algebraMap_apply]
-  rw [algebraic_apply, ContinuousMonoidHom.zpow_apply, h]
+  rw [algebraic_apply, ContinuousMonoidHom.zpow_apply, hmap]
+  rfl
 
 section Construction
 

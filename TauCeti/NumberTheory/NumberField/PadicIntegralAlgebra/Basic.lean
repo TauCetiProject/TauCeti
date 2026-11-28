@@ -308,8 +308,9 @@ theorem normUnits_unitsMap_algebraMap (u : (𝓞 K)ˣ) :
 
 /-- The inclusion of global units into `O_pˣ` is injective. -/
 theorem globalUnitInclusion_injective :
-    Function.Injective (globalUnitInclusion K p) :=
-  Units.map_injective (algebraMap_ringOfIntegers_injective K p)
+    Function.Injective (globalUnitInclusion K p) := by
+  rw [globalUnitInclusion]
+  exact Units.map_injective (algebraMap_ringOfIntegers_injective K p)
 
 /-- On the `p`-adic image of a global congruence unit modulo `N > 2`, the `p`-adic norm `N_p` is
 trivial. -/

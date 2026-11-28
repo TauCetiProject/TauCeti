@@ -335,13 +335,20 @@ theorem inverseNormPullback_coprod_algebraic
     inverseNormPullback K p
         ((algebraicGeometricWeight K p E a).coprod (WeightSpace.algebraic E v)) =
       algebraicGeometricWeight K p E (fun σ ↦ 2 * a σ - v) := by
-  rw [inverseNormPullback_coprod, algebraic_comp_normUnitsHom K p E hE v, sq,
-    ← algebraicGeometricWeight_add, ← algebraicGeometricWeight_neg,
-    ← algebraicGeometricWeight_add]
-  congr 1
-  ext σ
-  simp only [Pi.add_apply, Pi.neg_apply]
-  omega
+  have hexp : (fun σ ↦ 2 * a σ - v) = (a + a) + -fun _ ↦ v := by
+    ext σ
+    simp only [Pi.add_apply, Pi.neg_apply]
+    omega
+  calc
+    inverseNormPullback K p
+        ((algebraicGeometricWeight K p E a).coprod (WeightSpace.algebraic E v))
+      = algebraicGeometricWeight K p E a ^ 2 *
+          (algebraicGeometricWeight K p E (fun _ ↦ v))⁻¹ := by
+        rw [inverseNormPullback_coprod, algebraic_comp_normUnitsHom K p E hE v]
+    _ = algebraicGeometricWeight K p E ((a + a) + -fun _ ↦ v) := by
+        simp only [sq, algebraicGeometricWeight_add, algebraicGeometricWeight_neg]
+    _ = algebraicGeometricWeight K p E (fun σ ↦ 2 * a σ - v) := by
+        rw [hexp]
 
 end Splitting
 
