@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 
 /-!
 # Jacobi operator equations and their logarithmic derivative
@@ -17,7 +18,8 @@ For operator curves satisfying `J' = V` and `V' = -K ∘ J`, the logarithmic der
 `V ∘ J⁻¹` satisfies the Riccati equation wherever `J` is invertible. If `K` is symmetric,
 the mutual Wronskian is constant; when it vanishes at an initial point this makes
 `V ∘ J⁻¹` symmetric. The Wronskian statements apply on arbitrary convex parameter sets,
-including closed intervals, without finite dimensionality or completeness.
+including closed intervals, without finite dimensionality or completeness. The velocity is
+continuous on the parameter set; its differential equation is required only in the interior.
 
 The Riccati identity holds over any nontrivially normed field. The Wronskian and symmetry
 statements use a real inner product space. Applying them to geodesic variations
@@ -44,6 +46,8 @@ The native covariant Jacobi-field Wronskian is in
 public section
 
 namespace TauCeti
+
+open Set
 
 section Normed
 
@@ -99,46 +103,58 @@ theorem hasDerivWithinAt_jacobi_wronskian
     ring
   exact hz ▸ HasDerivWithinAt.sub (hJu.inner ℝ hVv) (hVu.inner ℝ hJv)
 
-/-- The mutual Wronskian of a Jacobi operator is constant on a convex parameter set. -/
+/-- The mutual Wronskian is constant on a convex parameter set. Symmetry is needed only
+in the interior; continuity carries conservation to included endpoints. -/
 theorem jacobi_wronskian_eq
     {J V K : ℝ → E →L[ℝ] E} {s : Set ℝ} {a t : ℝ}
     (hJ : ∀ r ∈ s, HasDerivWithinAt J (V r) s r)
-    (hV : ∀ r ∈ s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
-    (hK : ∀ r ∈ s, LinearMap.IsSymmetric (K r).toLinearMap)
+    (hVc : ContinuousOn V s)
+    (hV : ∀ r ∈ interior s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
+    (hK : ∀ r ∈ interior s, LinearMap.IsSymmetric (K r).toLinearMap)
     (hs : Convex ℝ s) (ha : a ∈ s) (ht : t ∈ s) (u v : E) :
     inner ℝ (J t u) (V t v) - inner ℝ (V t u) (J t v) =
       inner ℝ (J a u) (V a v) - inner ℝ (V a u) (J a v) := by
-  have hh := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (fun r hr ↦ hasDerivWithinAt_jacobi_wronskian (hJ r hr) (hV r hr)
-      (hK r hr) u v)
-    (C := 0) (fun _ _ ↦ by simp) hs ha ht
-  simpa only [zero_mul, norm_le_zero_iff, sub_eq_zero] using hh
+  let W := fun r ↦ inner ℝ (J r u) (V r v) - inner ℝ (V r u) (J r v)
+  have hJc : ContinuousOn J s := fun r hr ↦ (hJ r hr).continuousWithinAt
+  have hc : ContinuousOn W s :=
+    ((hJc.clm_apply continuousOn_const).inner (hVc.clm_apply continuousOn_const)).sub
+      ((hVc.clm_apply continuousOn_const).inner (hJc.clm_apply continuousOn_const))
+  have hd (r : ℝ) (hr : r ∈ interior s) : HasDerivWithinAt W 0 (interior s) r :=
+    hasDerivWithinAt_jacobi_wronskian ((hJ r (interior_subset hr)).mono interior_subset)
+      ((hV r hr).mono interior_subset) (hK r hr) u v
+  have hmono := monotoneOn_of_hasDerivWithinAt_nonneg hs hc hd (fun _ _ ↦ le_rfl)
+  have hanti := antitoneOn_of_hasDerivWithinAt_nonpos hs hc hd (fun _ _ ↦ le_rfl)
+  rcases le_total a t with hat | hta
+  · exact le_antisymm (hanti ha ht hat) (hmono ha ht hat)
+  · exact le_antisymm (hmono ht ha hta) (hanti ht ha hta)
 
 /-- Jacobi fields vanishing initially have vanishing mutual Wronskian. -/
 theorem jacobi_wronskian_eq_zero
     {J V K : ℝ → E →L[ℝ] E} {s : Set ℝ} {a t : ℝ}
     (hJ : ∀ r ∈ s, HasDerivWithinAt J (V r) s r)
-    (hV : ∀ r ∈ s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
-    (hK : ∀ r ∈ s, LinearMap.IsSymmetric (K r).toLinearMap)
+    (hVc : ContinuousOn V s)
+    (hV : ∀ r ∈ interior s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
+    (hK : ∀ r ∈ interior s, LinearMap.IsSymmetric (K r).toLinearMap)
     (hs : Convex ℝ s) (ha : a ∈ s) (hzero : J a = 0) (ht : t ∈ s) (u v : E) :
     inner ℝ (J t u) (V t v) - inner ℝ (V t u) (J t v) = 0 := by
   simpa only [hzero, zero_apply, inner_zero_left, inner_zero_right, sub_self]
-    using jacobi_wronskian_eq hJ hV hK hs ha ht u v
+    using jacobi_wronskian_eq hJ hVc hV hK hs ha ht u v
 
 /-- Before singularity, a Jacobi operator with initially vanishing Wronskian has symmetric
 logarithmic derivative. -/
 theorem isSymmetric_jacobi_logDeriv
     {J V K : ℝ → E →L[ℝ] E} {s : Set ℝ} {a t : ℝ}
     (hJ : ∀ r ∈ s, HasDerivWithinAt J (V r) s r)
-    (hV : ∀ r ∈ s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
-    (hK : ∀ r ∈ s, LinearMap.IsSymmetric (K r).toLinearMap)
+    (hVc : ContinuousOn V s)
+    (hV : ∀ r ∈ interior s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
+    (hK : ∀ r ∈ interior s, LinearMap.IsSymmetric (K r).toLinearMap)
     (hs : Convex ℝ s) (ha : a ∈ s)
     (hW : ∀ u v, inner ℝ (J a u) (V a v) - inner ℝ (V a u) (J a v) = 0)
     (ht : t ∈ s) (hinv : (J t).IsInvertible) :
     LinearMap.IsSymmetric ((V t).comp (J t).inverse).toLinearMap := by
   intro x y
   simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply]
-  have hw := jacobi_wronskian_eq hJ hV hK hs ha ht
+  have hw := jacobi_wronskian_eq hJ hVc hV hK hs ha ht
     ((J t).inverse x) ((J t).inverse y)
   rw [hW] at hw
   simpa only [hinv.self_apply_inverse] using (sub_eq_zero.mp hw).symm

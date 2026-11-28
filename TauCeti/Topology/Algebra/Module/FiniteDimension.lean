@@ -22,6 +22,7 @@ public import TauCeti.LinearAlgebra.Basis.Semilinear
 -- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.Module.Multilinear.ModuleTopology
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -199,6 +200,41 @@ theorem toMatrixCLM_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module
 theorem det_toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
     (f : E →L[𝕜] E) : (toMatrixCLM b f).det = LinearMap.det (f : E →ₗ[𝕜] E) :=
   LinearMap.det_toMatrix b _
+
+
+/-- Matrix coordinates preserve composition. -/
+theorem toMatrixCLM_comp {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 E) (A B : E →L[𝕜] E) :
+    toMatrixCLM b (A.comp B) = toMatrixCLM b A * toMatrixCLM b B := by
+  simp only [toMatrixCLM_apply, toLinearMap_comp, LinearMap.toMatrix_comp b b b]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+
+/-- Forgetting continuity commutes with the total inverse of a finite-dimensional
+endomorphism, including its zero value at a nonunit. -/
+@[simp] theorem toLinearMap_inverse (A : V →L[𝕜] V) :
+    A.inverse.toLinearMap = Ring.inverse A.toLinearMap := by
+  have h := map_ringInverse (Module.End.toContinuousLinearMap (𝕜 := 𝕜) V).symm A
+  -- The finite-dimensional endomorphism equivalence forgets continuity certificates.
+  change (Ring.inverse A).toLinearMap = Ring.inverse A.toLinearMap at h
+  simpa only [ContinuousLinearMap.ringInverse_eq_inverse] using h
+
+/-- Matrix coordinates commute with the total inverse, including at singular operators. -/
+theorem toMatrixCLM_inverse {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 V) (A : V →L[𝕜] V) :
+    toMatrixCLM b A.inverse = (toMatrixCLM b A)⁻¹ := by
+  simp only [toMatrixCLM_apply, toLinearMap_inverse, LinearMap.toMatrix_ringInverse]
+
+/-- Matrix coordinates of composition with a total inverse. -/
+theorem toMatrixCLM_comp_inverse {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 V) (A B : V →L[𝕜] V) :
+    toMatrixCLM b (A.comp B.inverse) = toMatrixCLM b A * (toMatrixCLM b B)⁻¹ := by
+  rw [toMatrixCLM_comp, toMatrixCLM_inverse]
 
 end ContinuousLinearMap
 

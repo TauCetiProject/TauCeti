@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -41,6 +42,12 @@ namespace ContinuousLinearMap
 
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+
+omit [CompleteSpace 𝕜] in
+/-- An invertible endomorphism of a finite-dimensional space has nonzero determinant. -/
+theorem IsInvertible.det_ne_zero {A : V →L[𝕜] V} (hA : A.IsInvertible) :
+    A.toLinearMap.det ≠ 0 := fun hz ↦
+  (LinearMap.det_eq_zero_iff_ker_ne_bot.mp hz) (LinearMap.ker_eq_bot.mpr hA.injective)
 
 /-- On continuous linear maps out of a finite-dimensional space, postcomposition with a
 continuous linear map of dense range has dense range: each `T : V →L[𝕜] E` is approximated in

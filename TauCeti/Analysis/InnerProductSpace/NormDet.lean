@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Operator.Conformal
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.Analysis.InnerProductSpace.Adjoint
@@ -227,6 +228,14 @@ theorem ContinuousLinearMap.continuous_normDet_adjoint [CompleteSpace U] :
   ContinuousLinearMap.continuous_normDet.comp ContinuousLinearMap.adjoint.continuous
 
 namespace ContinuousLinearMap
+
+/-- An invertible linear map between real inner product spaces has positive norm determinant. -/
+theorem IsInvertible.normDet_pos {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {A : E →L[ℝ] F} (hA : A.IsInvertible) :
+    0 < A.toLinearMap.normDet := by
+  have hne := (A.toLinearMap.normDet_ne_zero_tfae.out 5 1).mp hA.injective
+  exact lt_of_le_of_ne A.toLinearMap.normDet_nonneg hne.symm
 
 /-- The Jacobian of the adjoint of a continuous linear map into a finite-dimensional inner product
 space is positive exactly when the map is surjective. The domain need only be complete, not
