@@ -72,14 +72,6 @@ theorem ofValuation_valuation_specializes_of_le {K : Type*} [Field K] {O W : Val
   rw [← W.mapOfLE_valuation_apply O h, ← W.mapOfLE_valuation_apply O h, map_eq_zero]
   exact ⟨W.monotone_mapOfLE O h hfs.1, hfs.2⟩
 
-/-- The valuation subring of the point of `Spv K` given by a valuation subring `O` of a field `K`
-is `O`. -/
-@[simp]
-theorem valuationSubring_valuation_ofValuation {K : Type*} [Field K] (O : ValuationSubring K) :
-    (ofValuation O.valuation).valuation.valuationSubring = O :=
-  ((Valuation.isEquiv_iff_valuationSubring _ _).mp
-    (isEquiv_valuation_ofValuation O.valuation)).trans O.valuationSubring_valuation
-
 /-- **Specialization of points of a field is reverse inclusion of valuation subrings.** For
 valuation subrings `O` and `W` of a field `K`, the point of `Spv K` given by `O` specializes to the
 point given by `W` exactly when `W ⊆ O`: an element `a ∈ W` puts the point of `W` in the basic open
