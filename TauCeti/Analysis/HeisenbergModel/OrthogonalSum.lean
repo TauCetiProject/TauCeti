@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Complex.Basic
 
 /-!
-# Orthogonal sums and transport of reproducing models
+# Orthogonal sums of reproducing models
 
 An *orthogonal sum* of Heisenberg data with vacua is an isomorphism of topological groups
 `φ : W₁ × W₂ ≃ W` under which the Heisenberg datum and the vacuum of `W` are the products of those
@@ -22,15 +22,15 @@ which `e` is a vacuum, and the tensor product `(v ⊗ w) (φ (x₁, x₂)) = v x
 bilinear map `M(β₁, e₁) × M(β₂, e₂) → M(β, e)`, multiplicative for norms and for `⟨·, ·⟩`,
 compatible with the Heisenberg operators and with the Weil representations of product actions.
 
-Along an isomorphism `φ : W' ≃ W` that matches the vacua and, up to the identity or complex
-conjugation `σ`, the Heisenberg data, `v ↦ σ ∘ v ∘ φ` is a norm-preserving `σ`-semilinear map of
-reproducing models (`TauCeti.ReproducingModel.transport`).
+The product `β₁ ⊠ β₂` of two Heisenberg data (`TauCeti.HeisenbergDatum.prod`), with the product
+vacuum, is their orthogonal sum along the identity.
 
 ## Main definitions
 
 * `TauCeti.HeisenbergDatum.OrthogonalSum`: an orthogonal sum of Heisenberg data with vacua.
+* `TauCeti.HeisenbergDatum.OrthogonalSum.prod`: the orthogonal sum structure of the product of two
+  Heisenberg data.
 * `TauCeti.HeisenbergDatum.OrthogonalSum.tmul`: the tensor product of model vectors.
-* `TauCeti.ReproducingModel.transport`: transport of the model along an isomorphism.
 
 ## Main results
 
@@ -44,7 +44,6 @@ reproducing models (`TauCeti.ReproducingModel.transport`).
   `TauCeti.HeisenbergDatum.OrthogonalSum.heisenbergRep_tmul`,
   `TauCeti.HeisenbergDatum.OrthogonalSum.weilRep_tmul`,
   `TauCeti.HeisenbergDatum.OrthogonalSum.exists_restriction`: the tensor product.
-* `TauCeti.ReproducingModel.norm_transport`: transport preserves norms.
 
 ## Provenance
 
@@ -52,8 +51,7 @@ Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyrigh
 Anthropic, PBC), file `src/Lib/Weil/Construction/WeilOperators.lean`
 (`New.Heisenberg.OrthogonalSum` with `isVacuum`, `measurePreserving_equiv`, `tmul`, `tmul_apply`,
 `modelInner_tmul`, `norm_tmul`, `weilRep_tmul`, `tmul_vacElem`, `heisenbergOp_tmul`,
-`exists_restriction`, `New.Heisenberg.Rep.integrated_tmul`, `New.Heisenberg.IsVacuum.transport`,
-`New.Heisenberg.IsVacuum.norm_transport`). The Haar normalisation step
+`exists_restriction`, `New.Heisenberg.Rep.integrated_tmul`). The Haar normalisation step
 (`New.addHaar_eq_of_integral_eq_one` in `src/Lib/General/Measure/HaarNormalisation.lean`) is
 `MeasureTheory.Measure.eq_addHaar_of_integral_eq` in
 `TauCeti/MeasureTheory/Measure/Haar/IntegralUnique.lean`.
@@ -80,6 +78,21 @@ structure OrthogonalSum (β : HeisenbergDatum W) (β₁ : HeisenbergDatum W₁)
   equiv : W₁ × W₂ ≃ₜ+ W
   apply_equiv_equiv (x y : W₁ × W₂) : β (equiv x) (equiv y) = β₁ x.1 y.1 * β₂ x.2 y.2
   vacuum_equiv (x : W₁ × W₂) : e (equiv x) = e₁ x.1 * e₂ x.2
+
+/-- The product of two Heisenberg data, with the product vacuum, is their orthogonal sum along the
+identity of `W₁ × W₂`. -/
+def OrthogonalSum.prod (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂) (e₁ : W₁ → ℂ)
+    (e₂ : W₂ → ℂ) :
+    (β₁.prod β₂).OrthogonalSum β₁ β₂ (fun x ↦ e₁ x.1 * e₂ x.2) e₁ e₂ where
+  equiv := ContinuousAddEquiv.refl (W₁ × W₂)
+  apply_equiv_equiv x y := prod_apply β₁ β₂ x y
+  vacuum_equiv _ := (rfl)
+
+@[simp]
+theorem OrthogonalSum.prod_equiv (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂)
+    (e₁ : W₁ → ℂ) (e₂ : W₂ → ℂ) :
+    (OrthogonalSum.prod β₁ β₂ e₁ e₂).equiv = ContinuousAddEquiv.refl (W₁ × W₂) :=
+  (rfl)
 
 namespace Representation
 
@@ -368,99 +381,5 @@ end TensorProduct
 end OrthogonalSum
 
 end HeisenbergDatum
-
-/-! ### Transport along isomorphisms -/
-
-namespace ReproducingModel
-
-/-- An isometric ring endomorphism of `ℂ` (the identity or complex conjugation) fixes the values
-of a vacuum. -/
-private theorem map_vacuum_comp {W W' : Type*} [AddCommGroup W'] [TopologicalSpace W']
-    [MeasurableSpace W'] {β' : HeisenbergDatum W'} {μ' : Measure W'} {e : W → ℂ} {e' : W' → ℂ}
-    (he' : β'.IsVacuum μ' e') {σ : ℂ →+* ℂ} [RingHomIsometric σ] {φ : W' → W}
-    (hφ : ∀ x, e (φ x) = e' x) (x : W') : σ (e (φ x)) = e' x := by
-  rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl
-  · simp [hφ]
-  · simp [hφ, he'.conj_apply]
-
-variable {W W' : Type*} [AddCommGroup W] [TopologicalSpace W] [MeasurableSpace W]
-  [IsTopologicalAddGroup W] [BorelSpace W] [SecondCountableTopology W] [LocallyCompactSpace W]
-  [AddCommGroup W'] [TopologicalSpace W'] [MeasurableSpace W'] [IsTopologicalAddGroup W']
-  [BorelSpace W'] {β : HeisenbergDatum W} {μ : Measure W} {e : W → ℂ} {β' : HeisenbergDatum W'}
-  {μ' : Measure W'} {e' : W' → ℂ} [μ.IsAddHaarMeasure] [μ'.IsAddHaarMeasure]
-  [he : β.IsVacuum μ e] [he' : β'.IsVacuum μ' e'] {σ : ℂ →+* ℂ} [RingHomIsometric σ]
-  {φ : W' ≃ₜ+ W}
-
-variable (μ μ') in
-include he he' in
-/-- An isomorphism of topological groups that matches two vacua carries the Haar measure of the
-second to that of the first: both give `‖e‖ ^ 2` the integral `1`. -/
-theorem measurePreserving_of_vacuum (hφ : ∀ x, e (φ x) = e' x) : MeasurePreserving φ μ' μ := by
-  have h_cont := he.continuous
-  have h_one : ∫ x, ‖e x‖ ^ 2 ∂(map φ μ') = 1 := by
-    rw [integral_map (by fun_prop) (by fun_prop)]
-    simp_rw [hφ]
-    exact he'.integral_norm_sq_eq_one
-  exact ⟨by fun_prop, eq_addHaar_of_integral_eq (h_one.trans he.integral_norm_sq_eq_one.symm)
-    (by rw [he.integral_norm_sq_eq_one]; exact one_ne_zero)⟩
-
-variable (μ μ') in
-/-- The function `σ ∘ v ∘ φ` transported along an isomorphism lies in the model. -/
-private def transportFun (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y) (hφ : ∀ x, e (φ x) = e' x)
-    (v : ReproducingModel β μ e) : ReproducingModel β' μ' e' :=
-  mk (fun x ↦ σ (v (φ x)))
-    (by
-      have h_int := (measurePreserving_of_vacuum (β := β) (β' := β') μ μ'
-        hφ).integrable_comp_of_integrable v.integrable
-      exact h_int.norm.mono' (σ.isometry.continuous.comp_aestronglyMeasurable h_int.1)
-        (.of_forall fun x ↦ by simp [RingHomIsometric.norm_map]))
-    fun x ↦ by
-      -- Apply `σ` to the reproducing identity of `v` at `φ x` and substitute `φ`.
-      have h_pt (y : W') : σ (v (φ y) * (β (φ y) (φ x) * e (φ x - φ y))) =
-          σ (v (φ y)) * (β' y x * e' (x - y)) := by
-        rw [map_mul, map_mul, hβ, ← map_sub, map_vacuum_comp he' hφ]
-      simp_rw [← h_pt]
-      rw [← v.integral_mul_kernel (φ x), ← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ'
-        hφ).integral_comp φ.toHomeomorph.measurableEmbedding]
-      rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl
-      · simp
-      · exact integral_conj
-
-private theorem transportFun_apply (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y)
-    (hφ : ∀ x, e (φ x) = e' x) (v : ReproducingModel β μ e) (x : W') :
-    transportFun μ μ' hβ hφ v x = σ (v (φ x)) := by
-  rw [transportFun, mk_apply]
-
-variable (μ μ') in
-/-- *Transport* of the model along an isomorphism `φ : W' ≃ W` of topological groups with
-`σ (β (φ x) (φ y)) = β' x y` and `e (φ x) = e' x`, where `σ` is the identity or complex
-conjugation: the norm-preserving `σ`-semilinear map `v ↦ σ ∘ v ∘ φ`. -/
-def transport (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y) (hφ : ∀ x, e (φ x) = e' x) :
-    ReproducingModel β μ e →SL[σ] ReproducingModel β' μ' e' :=
-  LinearMap.mkContinuous
-    { toFun := transportFun μ μ' hβ hφ
-      map_add' v w := ext fun x ↦ by simp [transportFun_apply]
-      map_smul' c v := ext fun x ↦ by simp [transportFun_apply] }
-    1 fun v ↦ by
-      refine le_of_eq ?_
-      rw [one_mul, norm_eq_integral_norm, norm_eq_integral_norm,
-        ← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ' hφ).integral_comp
-          φ.toHomeomorph.measurableEmbedding]
-      simp [transportFun_apply, RingHomIsometric.norm_map]
-
-@[simp]
-theorem transport_apply (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y) (hφ : ∀ x, e (φ x) = e' x)
-    (v : ReproducingModel β μ e) (x : W') : transport μ μ' hβ hφ v x = σ (v (φ x)) :=
-  transportFun_apply hβ hφ v x
-
-/-- Transport preserves the norm. -/
-theorem norm_transport (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y) (hφ : ∀ x, e (φ x) = e' x)
-    (v : ReproducingModel β μ e) : ‖transport μ μ' hβ hφ v‖ = ‖v‖ := by
-  rw [norm_eq_integral_norm, norm_eq_integral_norm,
-    ← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ' hφ).integral_comp
-      φ.toHomeomorph.measurableEmbedding]
-  simp [RingHomIsometric.norm_map]
-
-end ReproducingModel
 
 end TauCeti

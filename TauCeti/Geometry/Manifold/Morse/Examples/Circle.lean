@@ -158,6 +158,14 @@ noncomputable instance : Fintype (criticalPoints 𝓘(ℝ) circleCos) :=
   ((Set.toFinite ({0, ((π : ℝ) : AddCircle (2 * π))} : Set (AddCircle (2 * π)))).subset fun _ hx ↦
     mem_criticalPoints_circleCos_iff.1 hx).fintype
 
+/-- The cosine has exactly two critical points, its maximum and its minimum. -/
+theorem eq_circleCosMaxCrit_or_eq_circleCosMinCrit (x : criticalPoints 𝓘(ℝ) circleCos) :
+    x = circleCosMaxCrit ∨ x = circleCosMinCrit :=
+  (mem_criticalPoints_circleCos_iff.1 x.property).imp Subtype.ext Subtype.ext
+
+theorem circleCosMaxCrit_ne_circleCosMinCrit : circleCosMaxCrit ≠ circleCosMinCrit :=
+  fun h ↦ Real.Angle.pi_ne_zero (congrArg Subtype.val h).symm
+
 /-! ### Stability of the cosine -/
 
 /-- **Explicit `C²` stability of the cosine.** If `h` is a `2π`-periodic `C²` function with

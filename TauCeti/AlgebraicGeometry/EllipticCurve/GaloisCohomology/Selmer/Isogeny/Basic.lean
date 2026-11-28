@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.R
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Sha
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Comparison
 
 /-!
 # The Selmer group of an isogeny
@@ -80,8 +81,14 @@ group.
 
 * `TauCeti.Isogeny.mem_selmerGroup_iff`: a class is `φ`-Selmer exactly when its image in
   `H¹(G_K, E₁)` lies in the Shafarevich–Tate group.
+* `TauCeti.Isogeny.selmerGroup_le_selmerGroup_relaxedAt`: the `φ`-Selmer group lies in any
+  relaxed `φ`-Selmer group.
 * `TauCeti.Isogeny.mem_selmerGroup_iff_forall_kerRes_mem_range_kummerMap`: the `φ`-Selmer group
   is cut out by the images of the local Kummer maps.
+* `TauCeti.Isogeny.card_shafarevichTateGroupKer_eq_card_ker_shaMap` and
+  `TauCeti.Isogeny.card_sha_eq_card_shafarevichTateGroupKer_mul`: comparing
+  `φ.shafarevichTateGroupKer τ` with `(ofIsogeny φ).shaMap.ker` and factoring `#Sha(W₁/K)` into
+  kernel and image orders of `φ` over a number field.
 * `TauCeti.Isogeny.kummerSelmerMap_injective`,
   `TauCeti.Isogeny.exact_kummerSelmerMap_selmerShaMap` and
   `TauCeti.Isogeny.selmerShaMap_surjective`: the `φ`-descent sequence
@@ -190,6 +197,12 @@ theorem selmerGroup_le_comp {κ : Type*} (f : κ → ι) :
   rw [mem_selmerGroup_iff] at hc ⊢
   exact W₁.shafarevichTateGroup_le_comp τ f hc
 
+/-- Every class in `φ.selmerGroup τ` lies in the `T`-relaxed Selmer group for any set `T` of
+indices. -/
+theorem selmerGroup_le_selmerGroup_relaxedAt (T : Set ι) :
+    φ.selmerGroup τ ≤ ((φ.selmerStructure τ).relaxedAt T).selmerGroup :=
+  (φ.selmerGroup_def τ).symm ▸ (φ.selmerStructure τ).selmerGroup_le_selmerGroup_relaxedAt T
+
 /-- **The `φ`-Selmer group is cut out by the local Kummer images**: for a separable isogeny `φ`, a
 class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly when its restriction to every `L i` comes
 from a point of `E₂(L i)` under the local Kummer map of `φ`. -/
@@ -221,6 +234,31 @@ theorem shafarevichTateGroupKer_eq_ker_shafarevichTateMap :
   ext c
   rw [mem_shafarevichTateGroupKer_iff, AddMonoidHom.mem_ker, ← Subtype.val_inj,
     Hom.coe_shafarevichTateMap, ZeroMemClass.coe_zero, Hom.pointH1Map_def]
+
+section NumberField
+
+variable [NumberField K]
+
+/-- Over a number field `K`, the kernel `φ.shafarevichTateGroupKer τ` has the same cardinality as
+`(ofIsogeny φ).shaMap.ker` for any family `τ` of embeddings over the places of `K`. -/
+theorem card_shafarevichTateGroupKer_eq_card_ker_shaMap
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    Nat.card (φ.shafarevichTateGroupKer τ) = Nat.card (ofIsogeny φ).shaMap.ker := by
+  rw [φ.shafarevichTateGroupKer_eq_ker_shafarevichTateMap τ, (ofIsogeny φ).card_ker_shaMap τ]
+
+/-- **Factoring `#Sha(W₁/K)` into kernel and image orders of an isogeny**: along any family `τ`
+of embeddings of separable closures over the places of a number field `K`,
+`#Sha(W₁/K) = #Sha(W₁/K)[φ] · #φ(Sha(W₁/K))`. -/
+theorem card_sha_eq_card_shafarevichTateGroupKer_mul
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    Nat.card W₁.sha =
+      Nat.card (φ.shafarevichTateGroupKer τ) * Nat.card (ofIsogeny φ).shaMap.range := by
+  rw [φ.card_shafarevichTateGroupKer_eq_card_ker_shaMap τ]
+  exact (AddSubgroup.card_ker_mul_card_range (ofIsogeny φ).shaMap).symm
+
+end NumberField
 
 /-! ### The `φ`-descent sequence of Selmer groups -/
 
