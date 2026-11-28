@@ -18,6 +18,8 @@ Its squared norm therefore has chi-squared law with degrees of freedom equal to 
 of the subspace. Projections onto any family of mutually orthogonal subspaces are jointly
 independent, as are their squared norms. The product-measure identities describe their joint
 laws, and the `HasLaw` results transfer them to random vectors on any probability space.
+This also yields integrability, expectation `dim K`, and MGF `(1 - 2 * t) ^ (-(dim K / 2))` for
+`t < 2⁻¹` of `‖K.starProjection x‖ ^ 2`.
 
 Zero subspaces, zero-dimensional ambient spaces, and empty projection families are included.
 No assumption that the subspaces span the ambient space is needed.
@@ -67,6 +69,59 @@ theorem map_norm_sq_starProjection_stdGaussian (K : Submodule ℝ E) :
     ← K.map_orthogonalProjectionOnto_stdGaussian,
     Measure.map_map (by fun_prop) (by fun_prop)]
   simp only [Function.comp_def, Submodule.starProjection_apply, Submodule.norm_coe]
+
+/-- The squared length of a standard Gaussian projected onto a subspace is integrable. -/
+theorem integrable_norm_sq_starProjection_stdGaussian (K : Submodule ℝ E) :
+    Integrable (fun x : E ↦ ‖K.starProjection x‖ ^ 2) (stdGaussian E) := by
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ K) with h0 | hpos
+  · rw [Submodule.finrank_eq_zero.mp h0]
+    simp
+  · have hid : Integrable id (TauCeti.Probability.chiSquaredMeasure (Module.finrank ℝ K)) :=
+      ((TauCeti.Probability.integrable_rpow_chiSquaredMeasure_iff (Nat.cast_pos.mpr hpos) 1).mpr
+        (by linarith [Nat.cast_nonneg (α := ℝ) (Module.finrank ℝ K)])).congr
+        (.of_forall Real.rpow_one)
+    rw [← K.map_norm_sq_starProjection_stdGaussian] at hid
+    exact (integrable_map_measure aestronglyMeasurable_id (by fun_prop)).mp hid
+
+/-- The expected squared length of a standard Gaussian projected onto a subspace equals the
+dimension of the subspace. -/
+@[simp]
+theorem integral_norm_sq_starProjection_stdGaussian (K : Submodule ℝ E) :
+    ∫ x : E, ‖K.starProjection x‖ ^ 2 ∂stdGaussian E = Module.finrank ℝ K := by
+  have h := integral_map (μ := stdGaussian E) (f := id)
+    (φ := fun x : E ↦ ‖K.starProjection x‖ ^ 2) (by fun_prop) aestronglyMeasurable_id
+  rw [K.map_norm_sq_starProjection_stdGaussian] at h
+  simpa [TauCeti.Probability.integral_id_chiSquaredMeasure (Nat.cast_nonneg _)] using h.symm
+
+/-- For `t < 2⁻¹`, the exponential tilt `exp (t * ‖K.starProjection x‖ ^ 2)` is integrable under
+`stdGaussian E`. -/
+theorem integrable_exp_mul_norm_sq_starProjection_stdGaussian (K : Submodule ℝ E) {t : ℝ}
+    (ht : t < 2⁻¹) :
+    Integrable (fun x : E ↦ Real.exp (t * ‖K.starProjection x‖ ^ 2)) (stdGaussian E) := by
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ K) with h0 | hpos
+  · rw [Submodule.finrank_eq_zero.mp h0]
+    simp
+  · have hint : Integrable (fun y : ℝ ↦ Real.exp (t * y))
+        (TauCeti.Probability.chiSquaredMeasure (Module.finrank ℝ K)) := by
+      have ht' : t ∈ integrableExpSet id
+          (TauCeti.Probability.chiSquaredMeasure (Module.finrank ℝ K)) := by
+        rw [TauCeti.Probability.integrableExpSet_id_chiSquaredMeasure (Nat.cast_pos.mpr hpos)]
+        simpa [one_div] using ht
+      simpa only [id_eq] using integrable_of_mem_integrableExpSet ht'
+    rw [← K.map_norm_sq_starProjection_stdGaussian] at hint
+    exact (integrable_map_measure (g := fun y : ℝ ↦ Real.exp (t * y))
+      (f := fun x : E ↦ ‖K.starProjection x‖ ^ 2) (by fun_prop) (by fun_prop)).mp hint
+
+/-- The moment-generating function of `‖K.starProjection x‖ ^ 2` under `stdGaussian E` on the
+half-line `t < 2⁻¹`. Zero-dimensional subspaces give `1`. -/
+@[simp]
+theorem mgf_norm_sq_starProjection_stdGaussian (K : Submodule ℝ E) {t : ℝ} (ht : t < 2⁻¹) :
+    mgf (fun x : E ↦ ‖K.starProjection x‖ ^ 2) (stdGaussian E) t =
+      (1 - 2 * t) ^ (-((Module.finrank ℝ K : ℝ) / 2)) := by
+  rw [mgf, ← TauCeti.Probability.mgf_id_chiSquaredMeasure (Nat.cast_nonneg _) ht, mgf,
+    ← K.map_norm_sq_starProjection_stdGaussian]
+  exact (integral_map (φ := fun x : E ↦ ‖K.starProjection x‖ ^ 2)
+    (f := fun y : ℝ ↦ Real.exp (t * y)) (by fun_prop) (by fun_prop)).symm
 
 end Submodule
 
