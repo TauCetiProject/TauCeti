@@ -246,48 +246,47 @@ theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero
     j.inChart_extChartAt_self]
   exact sub_eq_zero.2 (hu.mfderiv_apply_commute v)
 
-/-- Near the chart centre, the coordinate expression in the charts at `x` and at `u x` of a map
-`u` pseudoholomorphic near `x` solves the Cauchy–Riemann equation at every point `z`, with the
-source structure `j.inChart x z` read in the chart at `z`. -/
+/-- Away from the chart centre, the coordinate expression of `u` in the charts at `x` and at `u x`
+solves the Cauchy–Riemann equation at every chart point `z` whose point `y` is one where `u` is
+pseudoholomorphic and lands in the target chart, for the source structure read in the chart at `x`
+at `z`. -/
+theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_of_mem
+    {z : E} (hz : z ∈ (extChartAt I x).target)
+    (hu : IsPseudoholomorphicAt j J u ((extChartAt I x).symm z))
+    (hw : u ((extChartAt I x).symm z) ∈ (extChartAt I' (u x)).source) :
+    cauchyRiemannOperator (j.inChart x z) (J.inChart (u x))
+      (writtenInExtChartAt I I' x u) z = 0 := by
+  have hsymm : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x).symm z :=
+    (mdifferentiableWithinAt_extChartAt_symm hz).mdifferentiableAt
+      (by simp [I.range_eq_univ])
+  -- The inverse chart carries the source structure read in the chart to `j`.
+  have hj (v : E) : mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z (j.inChart x z v) =
+      j ((extChartAt I x).symm z) (mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z v) := by
+    have hinv := congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt hz)
+      (j ((extChartAt I x).symm z)
+        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z v)))
+    rw [I.range_eq_univ, mfderivWithin_univ] at hinv
+    rw [j.inChart_apply_eq_mfderiv x hz, I.range_eq_univ, mfderivWithin_univ]
+    exact hinv
+  ext v
+  rw [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero]
+  refine J.fderiv_extChartAt_comp_apply_eq_inChart (u x) (u := u ∘ (extChartAt I x).symm)
+    (hu.mdifferentiableAt.continuousAt.comp (continuousAt_extChartAt_symm'' hz)) hw ?_
+  rw [mfderiv_comp z hu.mdifferentiableAt hsymm]
+  exact (congrArg (mfderiv I I' u _) (hj v)).trans (hu.mfderiv_apply_commute _)
+
+/-- If `u` is pseudoholomorphic near `x`, its coordinate expression in the charts at `x` and at
+`u x` solves the Cauchy–Riemann equation near the chart centre, for the source structure read in
+the chart at `x`. -/
 theorem eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero
     (hu : ∀ᶠ y in 𝓝 x, IsPseudoholomorphicAt j J u y) :
     ∀ᶠ z in 𝓝 (extChartAt I x x), cauchyRiemannOperator (j.inChart x z) (J.inChart (u x))
       (writtenInExtChartAt I I' x u) z = 0 := by
-  have hsymm : Filter.Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
-    have h := (continuousAt_extChartAt_symm (I := I) x).tendsto
-    rwa [extChartAt_to_inv] at h
   have hc : ContinuousAt u x := hu.self_of_nhds.mdifferentiableAt.continuousAt
-  filter_upwards [extChartAt_target_mem_nhds (I := I) x, hsymm.eventually hu,
-    hsymm.eventually (hc.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I') (u x)))]
-    with z hz hhol hsrc
-  set y := (extChartAt I x).symm z
-  have hφ : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x).symm z := by
-    have h := mdifferentiableWithinAt_extChartAt_symm (I := I) hz
-    rwa [ModelWithCorners.Boundaryless.range_eq_univ, mdifferentiableWithinAt_univ] at h
-  have hD : mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z =
-      mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z := by
-    rw [ModelWithCorners.Boundaryless.range_eq_univ, mfderivWithin_univ]
-  have hcomp : mfderiv 𝓘(ℝ, E) I' (u ∘ (extChartAt I x).symm) z =
-      (mfderiv I I' u y).comp (mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z) :=
-    mfderiv_comp z hhol.mdifferentiableAt hφ
-  -- The derivative of the inverse chart carries `j.inChart x z` to `j y`.
-  have hj (w : E) : mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z (j.inChart x z w) =
-      j y (mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z w) := by
-    rw [j.inChart_apply_eq_mfderiv x hz, ← hD]
-    exact congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt (I := I) hz) _)
-  have hcont : ContinuousAt (u ∘ (extChartAt I x).symm) z :=
-    hhol.mdifferentiableAt.continuousAt.comp (f := (extChartAt I x).symm)
-      (continuousAt_extChartAt_symm'' hz)
-  ext v
-  rw [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero]
-  refine J.fderiv_extChartAt_comp_apply_eq_inChart (u x) (u := u ∘ (extChartAt I x).symm) hcont
-    hsrc ?_
-  rw [hcomp]
-  -- Evaluate the composite derivative; the vectors of `E` are read as tangent vectors of `E`.
-  change mfderiv I I' u y (mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z (j.inChart x z v)) =
-    J (u y) (mfderiv I I' u y (mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z v))
-  rw [hj]
-  exact hhol.mfderiv_apply_commute _
+  filter_upwards [extChartAt_target_mem_nhds (I := I) x, extChartAt_preimage_mem_nhds hu,
+    extChartAt_preimage_mem_nhds
+      (hc.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I') (u x)))] with z hz hzu hzc
+  exact hzu.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_of_mem hz hzc
 
 end Chart
 

@@ -79,6 +79,9 @@ Taubes measures the fields near a pseudoholomorphic curve, at the scale `h = (2r
   uniformly local norms.
 * `Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le`: the trace estimate for the mixed norms of
   a tube, uniformly in `h`, across a normal or a horizontal coordinate.
+* `Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le_map_inrL2`,
+  `Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le_comap_sndₗ`: the tangent and normal
+  cases with the normal subspaces expressed through the coordinate embedding and projection.
 
 ## References
 
@@ -245,5 +248,54 @@ theorem mixedSemiclassicalSobolevNorm_hyperplane_le (hu : ContDiff ℝ (j + 1) u
         exact (TauCeti.semiclassicalSobolevNorm_hyperplane_le hU hUc one_pos b).trans
           (mul_le_mul_of_nonneg_left hmix zero_le_two)
     _ = (j + 1) * 2 ^ (j + 2) * W.mixedSemiclassicalSobolevNorm (j + 1) h u := by ring
+
+/-- **The trace on a tangent hyperplane, uniformly in the scale.** Let `V` be a subspace of `E`,
+read as the normal directions of `ℝ × E` through the vectors `(0, v)`, `v ∈ V`, so that the first
+coordinate of `ℝ × E` is a tangent direction. For `h > 0` and `u` compactly supported of class
+`Cʲ⁺¹` on `ℝ × E`, the restriction of `u` to the hyperplane `{a} × E` satisfies
+`‖u(a, ·)‖_{j,h,V} ≤ (j + 1) 2ʲ⁺² ‖u‖_{j+1,h,V}`. The constant is independent of `h`, `a` and
+`u`. -/
+theorem mixedSemiclassicalSobolevNorm_hyperplane_le_map_inrL2 {u : WithLp 2 (ℝ × E) → F}
+    (hu : ContDiff ℝ (j + 1) u) (hsupp : HasCompactSupport u) (hh : 0 < h) (a : ℝ) :
+    V.mixedSemiclassicalSobolevNorm j h (fun y ↦ u (WithLp.toLp 2 (a, y))) ≤
+      (j + 1) * 2 ^ (j + 2) *
+        (V.map (WithLp.inrL2 ℝ ℝ E).toLinearMap).mixedSemiclassicalSobolevNorm (j + 1) h u := by
+  have hW : ((⊥ : Submodule ℝ ℝ).prod V).comap
+      (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap =
+      V.map (WithLp.inrL2 ℝ ℝ E).toLinearMap := by
+    ext x
+    change (x.fst = 0 ∧ x.snd ∈ V) ↔ _
+    constructor
+    · rintro ⟨hx, hv⟩
+      refine ⟨x.snd, hv, ?_⟩
+      simp only [ContinuousLinearMap.coe_coe, WithLp.inrL2_apply]
+      apply WithLp.ofLp_injective 2
+      exact Prod.ext hx.symm rfl
+    · rintro ⟨y, hy, rfl⟩
+      simp only [ContinuousLinearMap.coe_coe, WithLp.inrL2_apply, WithLp.toLp_fst,
+        WithLp.toLp_snd]
+      exact ⟨trivial, hy⟩
+  simpa only [hW] using V.mixedSemiclassicalSobolevNorm_hyperplane_le ⊥ hu hsupp hh a
+
+/-- **The trace on a normal hyperplane, uniformly in the scale.** Let `V` be a subspace of `E`,
+read as part of the normal directions of `ℝ × E` through the vectors `(s, v)`, `v ∈ V`, so that
+the first coordinate of `ℝ × E` is a normal direction too. For `h > 0` and `u` compactly
+supported of class `Cʲ⁺¹` on `ℝ × E`, the restriction of `u` to the hyperplane `{a} × E`
+satisfies `‖u(a, ·)‖_{j,h,V} ≤ (j + 1) 2ʲ⁺² ‖u‖_{j+1,h,ℝ × V}`. The constant is independent of
+`h`, `a` and `u`; the normalizations of the volume, by `h^(dim V)` on the left and by
+`h^(dim V + 1)` on the right, are those for which a field concentrated at the scale `h` near
+the hyperplane has comparable norms on both sides. -/
+theorem mixedSemiclassicalSobolevNorm_hyperplane_le_comap_sndₗ {u : WithLp 2 (ℝ × E) → F}
+    (hu : ContDiff ℝ (j + 1) u) (hsupp : HasCompactSupport u) (hh : 0 < h) (a : ℝ) :
+    V.mixedSemiclassicalSobolevNorm j h (fun y ↦ u (WithLp.toLp 2 (a, y))) ≤
+      (j + 1) * 2 ^ (j + 2) *
+        (V.comap (WithLp.sndₗ 2 ℝ ℝ E)).mixedSemiclassicalSobolevNorm (j + 1) h u := by
+  have hW : ((⊤ : Submodule ℝ ℝ).prod V).comap
+      (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap =
+      V.comap (WithLp.sndₗ 2 ℝ ℝ E) := by
+    ext x
+    change (x.fst ∈ (⊤ : Submodule ℝ ℝ) ∧ x.snd ∈ V) ↔ x.snd ∈ V
+    simp
+  simpa only [hW] using V.mixedSemiclassicalSobolevNorm_hyperplane_le ⊤ hu hsupp hh a
 
 end Submodule

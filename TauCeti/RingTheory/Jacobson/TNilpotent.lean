@@ -165,7 +165,7 @@ theorem isSuperfluous_smul_top_of_isNilpotent {I : Ideal A} (hI : IsNilpotent I)
 T-nilpotent left ideal `J`, no nonzero module satisfies `J • M = M`. -/
 theorem IsLeftTNilpotent.subsingleton_of_smul_top_eq_top {J : Ideal A}
     (hJ : IsLeftTNilpotent (J : Set A)) (h : J • (⊤ : Submodule A M) = ⊤) : Subsingleton M :=
-  isSuperfluous_top_iff.mp (h ▸ hJ.isSuperfluous_smul_top)
+  (Submodule.subsingleton_iff A).mp (isSuperfluous_top_iff.mp (h ▸ hJ.isSuperfluous_smul_top))
 
 end Semiring
 

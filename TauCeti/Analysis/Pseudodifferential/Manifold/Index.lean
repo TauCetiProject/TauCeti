@@ -162,7 +162,7 @@ private theorem chartSobolevExtension_add_eq_and_isCompactOperator :
         chartSobolevExtension hc ψ hc' φ P s (s - m) +
           chartSobolevExtension hc ψ hc' φ R s (s - m) ∧
       IsCompactOperator (chartSobolevExtension hc ψ hc' φ R s (s - m)) :=
-  ⟨chartSobolevExtension_add (exists_norm_chartReading_apply_le hP hψ le_rfl)
+  ⟨LinearMap.rangeClosureExtension_add (exists_norm_chartReading_apply_le hP hψ le_rfl)
       (exists_norm_chartReading_apply_le hR hψ (by linarith)),
     isCompactOperator_chartSobolevExtension_of_mem hR hψ (by linarith)⟩
 
@@ -275,8 +275,8 @@ theorem index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem
       chartSobolevExtension hc' φ hc ψ Q (s - m) s =
         1 + chartSobolevExtension hc' φ hc' φ (P ∘ₗ Q - LinearMap.id) (s - m) (s - m) := by
     rw [chartSobolevExtension_comp_of_mem hP hQ hφ hψ (by linarith) le_rfl,
-      ← chartSobolevExtension_id_self (he := hc') (ψ := φ) (s := s - m),
-      ← chartSobolevExtension_add
+      ← LinearMap.rangeClosureExtension_id_self (R := chartReading hc' φ (s - m)),
+      ← LinearMap.rangeClosureExtension_add
         (exists_norm_chartReading_apply_le id_mem_classicalPseudodifferentialOperators hφ hid)
         (exists_norm_chartReading_apply_le hPQ hφ (by linarith)),
       add_sub_cancel]
@@ -327,7 +327,7 @@ theorem isLocallyConstant_index_chartSobolevExtension_sum_smul {X : Type*}
   -- The extension of `∑ₖ fₖ(x) Aₖ` is `∑ₖ fₖ(x) • (extension of Aₖ)`, continuous in `x`.
   have hext : ∀ x, chartSobolevExtension hc ψ hc' φ (∑ k, f k x • A k) s (s - m) =
       ∑ k, f k x • chartSobolevExtension hc ψ hc' φ (A k) s (s - m) := fun x ↦
-    chartSobolevExtension_eq _ fun u ↦ by
+    LinearMap.rangeClosureExtension_eq _ fun u ↦ by
       simp [chartSobolevExtension_toChartSobolevSpace_of_mem (hA _) hψ le_rfl]
   have hmem : ∀ x, ∑ k, f k x • A k ∈ classicalPseudodifferentialOperators m := fun x ↦
     Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ (hA k)
