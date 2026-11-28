@@ -187,9 +187,8 @@ private theorem eq_laurentQExpansion_coeff_zero {f : ℍ → ℂ} (hf : MDiff f)
     (hmer : MeromorphicAt (cuspFunction 1 f) 0)
     (h0 : 0 ≤ meromorphicOrderAt (cuspFunction 1 f) 0) (τ : ℍ) :
     f τ = (UpperHalfPlane.laurentQExpansion 1 f).coeff 0 := by
-  have han : AnalyticAt ℂ (cuspFunction 1 f) 0 := by
-    simpa using UpperHalfPlane.analyticAt_cuspFunction_qParam_pow_mul hmer (k := 0)
-      (by simpa using h0)
+  have han : AnalyticAt ℂ (cuspFunction 1 f) 0 :=
+    (UpperHalfPlane.meromorphicOrderAt_cuspFunction_nonneg_iff_analyticAt hmer).mp h0
   have hper : Function.Periodic (f ∘ ofComplex) 1 :=
     UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
       rw [← modular_T_smul]
@@ -258,10 +257,7 @@ theorem exists_aeval_j_eq {f : ℍ → ℂ} (hf : MDiff f)
     (hmer : MeromorphicAt (cuspFunction 1 f) 0)
     (hR : ∀ n ≤ 0, (UpperHalfPlane.laurentQExpansion 1 f).coeff n ∈ (algebraMap R ℂ).range) :
     ∃ P : R[X], ∀ τ, aeval (j τ) P = f τ := by
-  obtain ⟨N, hN⟩ : ∃ N : ℕ, ((-N : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction 1 f) 0 := by
-    cases meromorphicOrderAt (cuspFunction 1 f) 0 using WithTop.recTopCoe with
-    | top => exact ⟨0, le_top⟩
-    | coe m => exact ⟨(-m).toNat, WithTop.coe_le_coe.mpr (by omega)⟩
+  obtain ⟨N, hN⟩ := UpperHalfPlane.exists_neg_le_meromorphicOrderAt_cuspFunction 1 f
   obtain ⟨P, -, hP⟩ := exists_natDegree_le_and_aeval_j_eq hf hinv hmer hN hR
   exact ⟨P, hP⟩
 

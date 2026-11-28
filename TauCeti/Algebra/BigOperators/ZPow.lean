@@ -31,6 +31,9 @@ allowed to vanish.
 * `Finset.prod_zpow_eq_zpow_sum` and `Finset.prod_zpow_eq_zpow_sum_of_isUnit`:
   `∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i`, in a commutative group and, for a unit `y`, in a division
   commutative monoid.
+* `Finset.prod_zpow_zpow` and `Finset.prod_zpow_pow`:
+  `(∏ i ∈ s, f i ^ m i) ^ n = ∏ i ∈ s, (f i ^ n) ^ m i` for integral and natural outer exponents
+  `n` in a division commutative monoid (with additive counterparts).
 * `Finset.prod_Ioc_ite_div_ite_eq_zpow`: for `|k| ≤ N`, the product over `-N < t ≤ N` of `d` to the
   power `[t ≤ k] - [t ≤ 0]` is `d ^ k`.
 * `Finset.prod_zpow_mul_eq_prod_of_sq_eq_one`: for `y ^ 2 = 1` and an even exponent sum, the
@@ -60,6 +63,23 @@ theorem prod_zpow_eq_zpow_sum_of_isUnit [DivisionCommMonoid α] (s : Finset ι) 
     (hy : IsUnit y) (e : ι → ℤ) : ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
   obtain ⟨u, rfl⟩ := hy
   simpa using congrArg Units.val (prod_zpow_eq_zpow_sum s u e)
+
+/-- Raising a product of integer powers to an integer power commutes the outer exponent past the
+inner exponents: `(∏ i ∈ s, f i ^ m i) ^ n = ∏ i ∈ s, (f i ^ n) ^ m i`. -/
+@[to_additive /-- Scaling a sum of integer multiples by an integer commutes the outer multiplier
+past the inner multipliers: `n • ∑ i ∈ s, m i • f i = ∑ i ∈ s, m i • (n • f i)`. -/]
+theorem prod_zpow_zpow [DivisionCommMonoid α] (s : Finset ι) (f : ι → α) (m : ι → ℤ) (n : ℤ) :
+    (∏ i ∈ s, f i ^ m i) ^ n = ∏ i ∈ s, (f i ^ n) ^ m i := by
+  rw [← prod_zpow]
+  exact prod_congr rfl fun i _ ↦ zpow_comm (f i) (m i) n
+
+/-- Raising a product of integer powers to a natural power commutes the outer exponent past the
+inner exponents: `(∏ i ∈ s, f i ^ m i) ^ n = ∏ i ∈ s, (f i ^ n) ^ m i`. -/
+@[to_additive /-- Scaling a sum of integer multiples by a natural number commutes the outer
+multiplier past the inner multipliers: `n • ∑ i ∈ s, m i • f i = ∑ i ∈ s, m i • (n • f i)`. -/]
+theorem prod_zpow_pow [DivisionCommMonoid α] (s : Finset ι) (f : ι → α) (m : ι → ℤ) (n : ℕ) :
+    (∏ i ∈ s, f i ^ m i) ^ n = ∏ i ∈ s, (f i ^ n) ^ m i := by
+  simpa only [zpow_natCast] using prod_zpow_zpow s f m n
 
 /-- For a nonzero `d` and `|k| ≤ N`, the product over the window `-N < t ≤ N` of `d` to the power
 `[t ≤ k] - [t ≤ 0]` is `d ^ k`. -/

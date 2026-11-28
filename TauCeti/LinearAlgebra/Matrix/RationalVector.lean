@@ -10,7 +10,7 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Data.ZMod.Basic
 
 /-!
-# Principal congruence matrices on vectors with bounded denominator
+# Principal congruence matrices and rational-denominator vectors
 
 A matrix congruent to the identity modulo `N` fixes every row vector in
 `(N⁻¹ℤ/ℤ)ⁿ`. The statements here give an actual integral translation between
@@ -18,6 +18,9 @@ the two vectors in any division ring, rather than passing to a quotient: writing
 matrix as `1 + N • B`, the translation of `a / N` is `a B`.
 If `N` casts to zero, division by zero makes both vectors zero.
 This is useful for transformation laws whose multipliers depend on integral translations.
+
+This file also records that right multiplication by an integer matrix commutes with dividing a
+vector by `N` (`Matrix.vecMul_div_map_intCast`).
 -/
 
 public section
@@ -34,6 +37,18 @@ theorem exists_eq_one_add_smul_of_map_eq_one {ι : Type*} [DecidableEq ι]
     simpa [Matrix.one_apply, sub_eq_zero] using congr_fun₂ hM i j
   choose B hB using hdiv
   exact ⟨Matrix.of B, by ext i j; simp [← hB]⟩
+
+/-- Multiplying a rational-denominator row vector `a / N` on the right by an integer matrix `M`
+commutes with dividing by `N`: `(a / N) ᵥ* M = (a ᵥ* M) / N` in any division ring. -/
+theorem vecMul_div_map_intCast {ι κ K : Type*} [Fintype ι] [DivisionRing K]
+    (M : Matrix ι κ ℤ) (N : ℕ) (a : ι → ℤ) :
+    (fun i ↦ (a i : K) / N) ᵥ* M.map (Int.castRingHom K) =
+      fun j ↦ (((a ᵥ* M) j : ℤ) : K) / N := by
+  ext j
+  simp only [vecMul, dotProduct, Matrix.map_apply, eq_intCast, Int.cast_sum, Int.cast_mul,
+    div_eq_mul_inv, Finset.sum_mul, mul_assoc]
+  exact Finset.sum_congr rfl fun i _ ↦
+    congrArg _ (Nat.commute_cast (M i j : K) N).inv_right₀.symm.eq
 
 /-- The matrix `1 + N • B` carries `a / N` to `a / N + a B`, an explicit integral translation,
 whenever `N` does not cast to zero. -/

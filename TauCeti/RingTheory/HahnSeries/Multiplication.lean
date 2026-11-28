@@ -58,7 +58,9 @@ The sum of the lower bounds bounds the support of the product
 (`HahnSeries.add_le_of_mem_support_mul`), and for powers `HahnSeries.nsmul_le_of_mem_support_pow`
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
 `HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
-of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
+of nonnegative exponent, and in particular the constant `1`, have nonnegative order, and
+`HahnSeries.order_eq_of_orderTop_eq` extracts the finite `order` from a finite `orderTop`.
+`HahnSeries.orderTop_prod` extends the order formula from binary products to `Finset.prod`.
 `HahnSeries.commute_C_iff` characterizes when a Hahn series commutes with a constant series `C c`:
 each coefficient commutes with `c`.
 -/
@@ -236,6 +238,12 @@ theorem zero_le_orderTop_single {a : Γ} (ha : 0 ≤ a) (r : R) : 0 ≤ (single 
 theorem zero_le_orderTop_one [One R] : 0 ≤ (1 : HahnSeries Γ R).orderTop :=
   zero_le_orderTop_single le_rfl 1
 
+/-- If the `orderTop` of a Hahn series is a finite element `k`, then its `order` equals `k`. -/
+theorem order_eq_of_orderTop_eq {x : HahnSeries Γ R} {k : Γ} (h : x.orderTop = k) :
+    x.order = k :=
+  WithTop.coe_injective ((order_eq_orderTop_of_ne_zero
+    (orderTop_ne_top.mp (by rw [h]; exact WithTop.coe_ne_top))).trans h)
+
 end OrderTop
 
 variable {Γ R : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
@@ -284,6 +292,21 @@ theorem coeff_pow_nsmul_of_forall_le [Semiring R] {x : HahnSeries Γ R} {a : Γ}
   | succ n ih =>
     rw [pow_succ, succ_nsmul, coeff_mul_add_of_forall_le (nsmul_le_of_mem_support_pow hx n) hx,
       ih, pow_succ]
+
+section Prod
+
+variable {Γ R ι : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [CommSemiring R] [NoZeroDivisors R]
+
+/-- The order of a finite product of Hahn series is the sum of their orders. -/
+@[simp]
+theorem orderTop_prod [Nontrivial R] (s : Finset ι) (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).orderTop = ∑ i ∈ s, (f i).orderTop := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => simp [Finset.prod_cons, Finset.sum_cons, ih]
+
+end Prod
 
 /-- Two Hahn series commute if each coefficient of one commutes with each coefficient of
 the other. -/
