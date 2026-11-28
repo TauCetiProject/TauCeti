@@ -28,7 +28,9 @@ all of which a construction transporting a group of matrices along a change of s
   injective on general linear groups.
 * `Matrix.GeneralLinearGroup.mem_range_map_iff_of_injective`: along an injective ring hom `f`, an
   invertible matrix comes from the source exactly when its entries and those of its inverse lie in
-  the range of `f`.
+  the range of `f`; `Matrix.GeneralLinearGroup.mem_range_map_subtype_iff` is the case of the
+  inclusion of a subring, and `Matrix.GeneralLinearGroup.map_mem_range_map_subtype_iff` compares
+  the subrings on the two sides of a ring hom.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
   `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
@@ -89,6 +91,22 @@ theorem mem_range_map_iff_of_injective {f : R →+* S} (hf : Function.Injective 
         Units.mul_inv]
     · simp only [Matrix.map_mul, hM', hN', Matrix.map_one _ (map_zero f) (map_one f),
         Units.inv_mul]
+
+/-- **Which invertible matrices come from a subring** `s`: those whose entries, and whose
+inverse's entries, all lie in `s`. -/
+theorem mem_range_map_subtype_iff (s : Subring S) {g : GL n S} :
+    g ∈ (Matrix.GeneralLinearGroup.map (n := n) s.subtype).range ↔
+      (∀ i j, (g : Matrix n n S) i j ∈ s) ∧ ∀ i j, (↑g⁻¹ : Matrix n n S) i j ∈ s := by
+  rw [mem_range_map_iff_of_injective s.subtype_injective, Subring.range_subtype]
+
+/-- **Change of scalars matches invertible matrices from two subrings** `r ⊆ R` and `s ⊆ S` when
+`f : R →+* S` carries exactly the elements of `r` into `s`, for instance when `r` is the preimage
+of `s`: then `map f g` comes from `s` exactly when `g` comes from `r`. -/
+theorem map_mem_range_map_subtype_iff {f : R →+* S} {r : Subring R} {s : Subring S}
+    (h : ∀ x, f x ∈ s ↔ x ∈ r) {g : GL n R} :
+    Matrix.GeneralLinearGroup.map f g ∈ (Matrix.GeneralLinearGroup.map (n := n) s.subtype).range ↔
+      g ∈ (Matrix.GeneralLinearGroup.map (n := n) r.subtype).range := by
+  simp only [mem_range_map_subtype_iff, ← map_inv, Matrix.GeneralLinearGroup.map_apply, h]
 
 /-- Change of scalars commutes with negation. Together with Mathlib's `map_one`, `map_mul` and
 `map_inv`, this lets subgroup constructions involving `-1`, such as `Subgroup.adjoinNegOne`, be

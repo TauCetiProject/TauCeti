@@ -350,8 +350,7 @@ private theorem injOn_neighborResidues_prod (h : conjPlace w = w) {ϖ : w.adicCo
   set τ := adicCompletionCongr w w _ (valuation_complexConj_of_conjPlace_eq h)
   have hτ (x : w.adicCompletion E) (hx : x ∈ w.adicCompletionIntegers E) :
       τ x ∈ w.adicCompletionIntegers E :=
-    (mem_adicCompletionIntegers _ _ _).2
-      ((valued_adicCompletionCongr _ x).trans_le ((mem_adicCompletionIntegers _ _ _).1 hx))
+    adicCompletionCongr_mem_adicCompletionIntegers_iff _ |>.2 hx
   rintro ⟨-, -⟩ ⟨⟨t₁, h₁, hs₁, rfl⟩, ⟨t₁', h₁', hs₁', rfl⟩⟩ ⟨-, -⟩
     ⟨⟨t₂, h₂, hs₂, rfl⟩, ⟨t₂', h₂', hs₂', rfl⟩⟩ heq
   simp only [← map_mul, ← map_add] at heq
