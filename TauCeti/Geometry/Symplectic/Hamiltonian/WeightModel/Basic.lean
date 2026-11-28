@@ -114,7 +114,8 @@ torus.
   of the generator for the angles `α_i(ξ)`.
 * `TauCeti.hasDerivAt_weightRotation_hamiltonianVectorField`: `t ↦ (t ξ) • z` is the integral
   curve of the Hamiltonian vector field of `μ^ξ` through `z`.
-* `TauCeti.range_weightMomentMap`: the image of `μ` is the cone spanned by the `-α_i`.
+* `TauCeti.range_weightMomentMap`: the image of `μ` is the cone spanned by the `-α_i`; in
+  particular `μ` takes values in the span of the weights (`TauCeti.weightMomentMap_mem_span`).
 * `Module.Basis.range_weightMomentMap_neg`: when the negated weights form a basis `b` of `𝔱*`,
   the image of `μ` is the cone of covectors with nonnegative coordinates in `b`.
 * `TauCeti.weightRotation_apply_eq_self_iff`, `TauCeti.weightGenerator_apply_eq_zero_iff`: the
@@ -479,6 +480,14 @@ theorem hasDerivAt_weightRotation_hamiltonianVectorField (α : ι → StrongDual
         (weightRotation (fun i ↦ α i (t • ξ)) x)) t := by
   simp only [map_smul, hamiltonianVectorField_weightMomentMap]
   exact hasDerivAt_weightRotation_smul (fun i ↦ α i ξ) x t
+
+/-- The moment map of the weight model takes values in the span of the weights. -/
+theorem weightMomentMap_mem_span (α : ι → StrongDual ℝ 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightMomentMap α x ∈ Submodule.span ℝ (Set.range α) := by
+  rw [weightMomentMap_def]
+  exact Submodule.sum_mem _ fun i _ ↦
+    Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self i))
 
 /-- **The local moment cone.** The image of the moment map is the convex cone spanned by the
 negated weights `-α_i`. -/

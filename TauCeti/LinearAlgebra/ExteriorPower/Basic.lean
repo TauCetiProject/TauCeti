@@ -42,6 +42,7 @@ and moving the remaining factors by vectors of that subspace does not change the
 
 * `exteriorPower.mem_span_ιMulti`: every element of `⋀[R]^n M` is in the span of the
   decomposable vectors.
+* `exteriorPower.coe_ιMulti_two`: in the exterior algebra, `m ∧ a` is the product `ι m * ι a`.
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
   `Module.finrank R M < d`.
 * `exteriorPower.instProjective`: exterior powers of projective modules are projective.
@@ -135,6 +136,13 @@ membership form of `exteriorPower.ιMulti_span`, ready for `Submodule.span_induc
 theorem mem_span_ιMulti [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ} (x : ⋀[R]^n M) :
     x ∈ Submodule.span R (Set.range (ιMulti R n)) :=
   ιMulti_span R n M ▸ Submodule.mem_top
+
+/-- In the exterior algebra, the exterior product of two vectors is the product of their images:
+`m ∧ a = ι m * ι a`. -/
+theorem coe_ιMulti_two [CommRing R] [AddCommGroup M] [Module R M] (m a : M) :
+    (ιMulti R 2 ![m, a] : _root_.ExteriorAlgebra R M) =
+      _root_.ExteriorAlgebra.ι R m * _root_.ExteriorAlgebra.ι R a := by
+  simp [_root_.ExteriorAlgebra.ιMulti_apply]
 
 section Vanishing
 

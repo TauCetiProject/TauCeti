@@ -100,12 +100,12 @@ theorem isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate {X : Type*} [T
     (N : ℕ) :
     IsCompact (insert 0 (range fun x ↦ ∑' m : Λ,
       ((((1 + w x) ^ N : ℝ) : ℂ) * a x m) • χ.modulate (m : E))) := by
-  obtain ⟨b, hb, hb0, hbound⟩ :=
+  obtain ⟨b, hb, -, hbound⟩ :=
     exists_summable_one_add_pow_mul_norm_mul_seminorm_modulate_le Λ hw ha χ N
   have hnorm (x : X) (m : Λ) : ‖(((1 + w x) ^ N : ℝ) : ℂ) * a x m‖ = (1 + w x) ^ N * ‖a x m‖ := by
     have := hw x
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  refine isCompact_insert_range_tsum_smul_of_dominated hb hb0 (fun x k m ↦ ?_) (fun m ↦ ?_)
+  refine isCompact_insert_range_tsum_smul_of_dominated hb (fun x k m ↦ ?_) (fun m ↦ ?_)
     fun m ↦ ?_
   · rw [hnorm]
     exact hbound x k m

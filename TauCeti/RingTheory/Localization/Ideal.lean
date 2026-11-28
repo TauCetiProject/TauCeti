@@ -22,6 +22,8 @@ multiplier, as produced by Nakayama's lemma.
 
 ## Main results
 
+* `RingHom.ker_eq_map_of_isLocalization`: the kernel of a homomorphism extended to a localization
+  is the extension of its original kernel.
 * `Ideal.map_algebraMap_away_eq_span_singleton`: if `r • I ≤ (t)` and `t ∈ I`, then `I`
   generates `(t)` in the localization away from `r`.
 * `Ideal.exists_notMem_smul_le_span_singleton_of_map_le`: a finitely generated ideal which becomes
@@ -48,6 +50,14 @@ of the localization by a proper ideal has characteristic zero (`IsLocalization.c
 public section
 
 open scoped Pointwise
+
+/-- The kernel of a ring homomorphism extended to a localization is the extension of its
+original kernel. -/
+theorem RingHom.ker_eq_map_of_isLocalization {A B R : Type*} [CommSemiring A] [CommSemiring B]
+    [Semiring R] [Algebra A B] (ψ : B →+* R) (S : Submonoid A) [IsLocalization S B]
+    {φ : A →+* R} (h : ψ.comp (algebraMap A B) = φ) :
+    RingHom.ker ψ = (RingHom.ker φ).map (algebraMap A B) := by
+  rw [← IsLocalization.map_under S B (RingHom.ker ψ), Ideal.under, RingHom.comap_ker, h]
 
 namespace Ideal
 

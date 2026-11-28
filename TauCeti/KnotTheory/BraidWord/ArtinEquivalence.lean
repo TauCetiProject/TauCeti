@@ -84,6 +84,23 @@ theorem induction {motive : BraidWord n → BraidWord n → Prop}
   | symm _ _ hww' ih => exact symm hww' ih
   | trans _ _ _ hww' hw'w'' ih ih' => exact trans hww' hw'w'' ih ih'
 
+/-- An Artin step preserves the length of a word. -/
+theorem _root_.TauCeti.BraidWord.ArtinStep.length_eq {w w' : BraidWord n} (h : ArtinStep w w') :
+    w.length = w'.length := by
+  cases h <;> simp
+
+/-- Artin moves preserve the length of a word. -/
+theorem length_eq {w w' : BraidWord n} (h : ArtinEquiv w w') : w.length = w'.length :=
+  h.induction ArtinStep.length_eq (fun _ ↦ rfl) (fun _ ih ↦ ih.symm)
+    (fun _ _ ih ih' ↦ ih.trans ih')
+
+/-- **Free cancellation is needed**: the word `σ₀ σ₀⁻¹` and the empty word both represent the
+trivial braid on two strands, but Artin moves alone do not relate them, since they preserve
+length. -/
+theorem _root_.TauCeti.BraidWord.not_artinEquiv_cancel_nil :
+    ¬ ArtinEquiv ([(0, 1), (0, -1)] : BraidWord 2) [] :=
+  fun h ↦ by simpa using h.length_eq
+
 /-- Adding a common prefix preserves Artin equivalence. -/
 theorem append_left (pre : BraidWord n) {w w' : BraidWord n} (h : ArtinEquiv w w') :
     ArtinEquiv (pre ++ w) (pre ++ w') := by

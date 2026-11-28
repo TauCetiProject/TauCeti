@@ -735,6 +735,15 @@ theorem exact_kerToCoker_cokerToCokerComp :
   rw [exact_iff]
   simp [kerToCoker, cokerToCokerComp, range_comp, Submodule.ker_mapQ, Submodule.comap_map_eq]
 
+/-- An injection `g` induces an injection `coker f → coker (g ∘ f)`. -/
+theorem cokerToCokerComp_injective (hg : Function.Injective g) :
+    Function.Injective (f.cokerToCokerComp g) := by
+  rw [← ker_eq_bot, (f.exact_kerToCoker_cokerToCokerComp g).linearMap_ker_eq]
+  apply range_eq_bot.mpr
+  ext x
+  have hx : (x : N) = 0 := hg (by simp)
+  simp [hx]
+
 /-- The kernel–cokernel sequence of a composition is exact at `P ⧸ range (g ∘ f)`: the cokernels
 form an exact sequence `N ⧸ range f → P ⧸ range (g ∘ f) → P ⧸ range g`. -/
 theorem exact_cokerToCokerComp_factor :
