@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 
@@ -66,6 +67,13 @@ at `k = 2`, where `log k > 0`.
   `[0, ∞)`.
 * `TauCeti.intervalIntegrable_mul_sum_Icc`: weighted by a function locally integrable on
   `[1, ∞)`, the step function is interval integrable between any two reals.
+* `TauCeti.intervalIntegrable_natFloor_div`: `u ↦ ⌊u⌋₊ / u` is interval integrable between any
+  two reals.
+* `TauCeti.integral_natFloor_div`: `∫_1^y ⌊u⌋₊ / u du = ⌊y⌋₊ log y - ∑_{1 ≤ m ≤ y} log m`.
+* `TauCeti.intervalIntegrable_sum_Icc_div_mul`, `TauCeti.integral_sum_Icc_div_mul`,
+  `TauCeti.integral_sum_Icc_div_mul_eq_sum`,
+  `TauCeti.integral_sum_Icc_div_mul_of_hasDerivAt_off_countable`: step-function integral exchange
+  for `(∑_{1 ≤ n ≤ x / t} c n) * w t`.
 * `TauCeti.exists_tendsto_sum_mul_and_norm_le`: the limit and norm bound for a decaying weight
   with integrable derivative against bounded coefficient partial sums.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
@@ -141,6 +149,170 @@ theorem intervalIntegrable_mul_sum_Icc {𝕜 : Type*} [RCLike 𝕜] (c : ℕ →
         integrableOn_zero.congr_fun (fun t ht ↦ by simp [Nat.floor_eq_zero.mpr ht.2])
           measurableSet_Ioo
   exact (key a).symm.trans (key b)
+
+/-- The function `u ↦ ⌊u⌋₊ / u` is interval integrable between any two reals (it vanishes for
+`u < 1`). -/
+theorem intervalIntegrable_natFloor_div (a b : ℝ) :
+    IntervalIntegrable (fun u : ℝ ↦ (⌊u⌋₊ : ℝ) / u) volume a b := by
+  have hc : ContinuousOn (fun t : ℝ ↦ t⁻¹) (Ici 1) :=
+    continuousOn_inv₀.mono fun t ht ↦ ne_of_gt (zero_lt_one.trans_le ht)
+  have hbase := intervalIntegrable_mul_sum_Icc (fun _ : ℕ ↦ (1 : ℝ))
+    (hc.locallyIntegrableOn measurableSet_Ici) a b
+  refine (intervalIntegrable_congr fun t _ ↦ ?_).mp hbase
+  simp only [Finset.sum_const, Nat.card_Icc, Nat.add_sub_cancel, nsmul_eq_mul, mul_one]
+  rw [div_eq_inv_mul]
+
+/-- Integral of `⌊u⌋₊ / u` via Abel summation: for every `y : ℝ`,
+`∫_1^y ⌊u⌋₊ / u du = ⌊y⌋₊ log y - ∑_{1 ≤ m ≤ y} log m`. -/
+theorem integral_natFloor_div (y : ℝ) :
+    ∫ u in (1 : ℝ)..y, (⌊u⌋₊ : ℝ) / u =
+      (⌊y⌋₊ : ℝ) * Real.log y - ∑ m ∈ Finset.Icc 1 ⌊y⌋₊, Real.log m := by
+  rcases le_or_gt 1 y with hy | hy
+  · let c : ℕ → ℝ := fun k ↦ if k = 0 then 0 else 1
+    have hc_sum (n : ℕ) : ∑ k ∈ Finset.Icc 0 n, c k = n := by
+      rw [Finset.sum_Icc_zero_eq_sum_Icc_one (f := c) (by simp [c])]
+      have : ∑ m ∈ Finset.Icc 1 n, c m = ∑ _m ∈ Finset.Icc 1 n, (1 : ℝ) :=
+        Finset.sum_congr rfl fun m hm ↦ by
+          simp [c, Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1]
+      rw [this]
+      simp
+    have habel := sum_mul_eq_sub_integral_mul₀ c rfl y
+      (fun t ht ↦ Real.differentiableAt_log (by linarith [ht.1]))
+      (by
+        rw [Real.deriv_log']
+        exact (continuousOn_inv₀.mono fun t ht ↦
+          ne_of_gt (by linarith [ht.1] : (0 : ℝ) < t)).integrableOn_Icc)
+    have hsum1 : ∑ k ∈ Finset.Icc 0 ⌊y⌋₊, Real.log k * c k =
+        ∑ m ∈ Finset.Icc 1 ⌊y⌋₊, Real.log m := by
+      rw [Finset.sum_Icc_zero_eq_sum_Icc_one (f := fun k ↦ Real.log k * c k) (by simp [c])]
+      refine Finset.sum_congr rfl fun m hm ↦ ?_
+      have hm0 : m ≠ 0 := Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1
+      simp [c, hm0]
+    rw [hsum1, hc_sum ⌊y⌋₊, Real.deriv_log'] at habel
+    have hint :
+        ∫ u in (1 : ℝ)..y, (⌊u⌋₊ : ℝ) / u =
+          ∫ t in Ioc 1 y, t⁻¹ * ∑ k ∈ Finset.Icc 0 ⌊t⌋₊, c k := by
+      rw [intervalIntegral.integral_of_le hy]
+      refine setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ ?_
+      rw [hc_sum ⌊t⌋₊]
+      ring
+    rw [hint]
+    linarith
+  · rw [intervalIntegral.integral_symm y 1, intervalIntegral.integral_of_le hy.le,
+      integral_Ioc_eq_integral_Ioo, setIntegral_eq_zero_of_forall_eq_zero fun u hu ↦ by
+        simp [Nat.floor_eq_zero.mpr hu.2]]
+    simp [Nat.floor_eq_zero.mpr hy]
+
+/-! ### Step-function integral exchange for reciprocal arguments -/
+
+/-- On `(1, x]`, `(∑_{1 ≤ n ≤ x / t} c n) * w t` agrees with the finite sum of
+indicator-weighted copies `∑_{1 ≤ n ≤ x} c n * (Iic (x / n)).indicator w t`. -/
+private theorem eqOn_sum_Icc_div_mul {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {x : ℝ}
+    (hx : 1 ≤ x) (w : ℝ → 𝕜) :
+    Set.EqOn (fun t ↦ (∑ n ∈ Finset.Icc 1 ⌊x / t⌋₊, c n) * w t)
+      (fun t ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n * (Set.Iic (x / n)).indicator w t)
+      (Set.Ioc 1 x) := by
+  intro t ht
+  have ht0 : 0 < t := lt_of_lt_of_le zero_lt_one ht.1.le
+  have hx0 : 0 ≤ x := zero_le_one.trans hx
+  have hfloor : ⌊x / t⌋₊ ≤ ⌊x⌋₊ := Nat.floor_mono (div_le_self hx0 ht.1.le)
+  dsimp only
+  rw [Finset.sum_mul]
+  symm
+  calc ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n * (Set.Iic (x / n)).indicator w t
+      = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, if n ≤ ⌊x / t⌋₊ then c n * w t else 0 := by
+        refine Finset.sum_congr rfl fun n hn ↦ ?_
+        have hn0 : (0 : ℝ) < n := by exact_mod_cast (Finset.mem_Icc.mp hn).1
+        have hmem : t ∈ Set.Iic (x / n) ↔ n ≤ ⌊x / t⌋₊ := by
+          rw [Set.mem_Iic, le_div_iff₀ hn0, mul_comm t (n : ℝ), ← le_div_iff₀ ht0,
+            ← Nat.le_floor_iff (div_nonneg hx0 ht0.le)]
+        by_cases h : t ∈ Set.Iic (x / n)
+        · simp [h, hmem.mp h]
+        · simp [h, mt hmem.mpr h]
+    _ = ∑ n ∈ (Finset.Icc 1 ⌊x⌋₊).filter (· ≤ ⌊x / t⌋₊), c n * w t := by
+        rw [Finset.sum_filter]
+    _ = ∑ n ∈ Finset.Icc 1 ⌊x / t⌋₊, c n * w t := by
+        congr 1
+        ext n
+        simp only [Finset.mem_filter, Finset.mem_Icc]
+        exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hfloor⟩, h.2⟩⟩
+
+private theorem integrableOn_sum_Icc_indicator {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {x : ℝ}
+    (hx : 1 ≤ x) {w : ℝ → 𝕜} (hw : IntervalIntegrable w volume 1 x) :
+    ∀ n ∈ Finset.Icc 1 ⌊x⌋₊,
+      IntegrableOn (fun t ↦ c n * (Set.Iic (x / n)).indicator w t) (Set.Ioc 1 x) :=
+  fun _ _ ↦ (((intervalIntegrable_iff_integrableOn_Ioc_of_le hx).mp hw).indicator
+    measurableSet_Iic).const_mul _
+
+/-- If `w` is interval integrable on `1..x`, then so is `t ↦ (∑_{1 ≤ n ≤ x / t} c n) * w t`. -/
+theorem intervalIntegrable_sum_Icc_div_mul {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {x : ℝ}
+    (hx : 1 ≤ x) {w : ℝ → 𝕜} (hw : IntervalIntegrable w volume 1 x) :
+    IntervalIntegrable (fun t ↦ (∑ n ∈ Finset.Icc 1 ⌊x / t⌋₊, c n) * w t) volume 1 x :=
+  (intervalIntegrable_iff_integrableOn_Ioc_of_le hx).mpr <|
+    IntegrableOn.congr_fun
+      (integrable_finsetSum (Finset.Icc 1 ⌊x⌋₊) (integrableOn_sum_Icc_indicator c hx hw))
+      (eqOn_sum_Icc_div_mul c hx w).symm measurableSet_Ioc
+
+/-- Integrating `(∑_{1 ≤ n ≤ x / t} c n) * w t` over `[1, x]` swaps with the sum:
+`∫_1^x (∑_{1 ≤ n ≤ x / t} c n) * w t dt = ∑_{1 ≤ n ≤ x} c n * ∫_1^{x / n} w t dt`. -/
+theorem integral_sum_Icc_div_mul {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {x : ℝ}
+    (hx : 1 ≤ x) {w : ℝ → 𝕜} (hw : IntervalIntegrable w volume 1 x) :
+    ∫ t in (1 : ℝ)..x, (∑ n ∈ Finset.Icc 1 ⌊x / t⌋₊, c n) * w t =
+      ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n * ∫ t in (1 : ℝ)..(x / n), w t := by
+  have hx0 : 0 < x := lt_of_lt_of_le zero_lt_one hx
+  rw [intervalIntegral.integral_of_le hx,
+    setIntegral_congr_fun measurableSet_Ioc (eqOn_sum_Icc_div_mul c hx w)]
+  have hswap :
+      ∫ t in Set.Ioc 1 x,
+          ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n * (Set.Iic (x / n)).indicator w t =
+        ∑ n ∈ Finset.Icc 1 ⌊x⌋₊,
+          ∫ t in Set.Ioc 1 x, c n * (Set.Iic (x / n)).indicator w t :=
+    integral_finsetSum (Finset.Icc 1 ⌊x⌋₊) (integrableOn_sum_Icc_indicator c hx hw)
+  rw [hswap]
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
+  have hnx : (n : ℝ) ≤ x :=
+    le_trans (by exact_mod_cast (Finset.mem_Icc.mp hn).2) (Nat.floor_le hx0.le)
+  have h1xn : 1 ≤ x / n := (one_le_div (by exact_mod_cast hn1)).mpr hnx
+  have hxn_le : x / n ≤ x := div_le_self hx0.le (by exact_mod_cast hn1)
+  rw [integral_const_mul, setIntegral_indicator measurableSet_Iic, Set.Ioc_inter_Iic,
+    min_eq_right hxn_le, intervalIntegral.integral_of_le h1xn]
+
+/-- If `f` is interval integrable on `1..x` and has primitive `F` on `[1, x]` (`∫_1^y f = F y`),
+then `∫_1^x (∑_{1 ≤ n ≤ x / t} c n) * f t dt = ∑_{1 ≤ n ≤ x} c n * F (x / n)`. -/
+theorem integral_sum_Icc_div_mul_eq_sum {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {x : ℝ}
+    (hx : 1 ≤ x) {f F : ℝ → 𝕜} (hf : IntervalIntegrable f volume 1 x)
+    (hF : ∀ y ∈ Set.Icc 1 x, ∫ t in (1 : ℝ)..y, f t = F y) :
+    ∫ t in (1 : ℝ)..x, (∑ n ∈ Finset.Icc 1 ⌊x / t⌋₊, c n) * f t =
+      ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n * F (x / n) := by
+  have hx0 : 0 ≤ x := zero_le_one.trans hx
+  rw [integral_sum_Icc_div_mul c hx hf]
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
+  have hnx : (n : ℝ) ≤ x := le_trans (by exact_mod_cast (Finset.mem_Icc.mp hn).2) (Nat.floor_le hx0)
+  rw [hF (x / n) ⟨(one_le_div (by exact_mod_cast hn1)).mpr hnx,
+    div_le_self hx0 (by exact_mod_cast hn1)⟩]
+
+/-- FTC version of `integral_sum_Icc_div_mul_eq_sum`: if `F` is continuous on `[1, x]`, vanishes
+at `1`, and has derivative `f` away from a countable set `s`, with `f` interval integrable on
+`1..x`, then `∫_1^x (∑_{1 ≤ n ≤ x / t} c n) * f t dt = ∑_{1 ≤ n ≤ x} c n * F (x / n)`. -/
+theorem integral_sum_Icc_div_mul_of_hasDerivAt_off_countable {𝕜 : Type*} [RCLike 𝕜]
+    (c : ℕ → 𝕜) {x : ℝ} (hx : 1 ≤ x) {s : Set ℝ} (hs : s.Countable) {F f : ℝ → 𝕜}
+    (hFc : ContinuousOn F (Set.Icc 1 x)) (hF1 : F 1 = 0)
+    (hFd : ∀ t ∈ Set.Ioo 1 x \ s, HasDerivAt F (f t) t)
+    (hf : IntervalIntegrable f volume 1 x) :
+    ∫ t in (1 : ℝ)..x, (∑ n ∈ Finset.Icc 1 ⌊x / t⌋₊, c n) * f t =
+      ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n * F (x / n) := by
+  refine integral_sum_Icc_div_mul_eq_sum c hx hf fun y hy ↦ ?_
+  have hsub : Set.uIcc 1 y ⊆ Set.Icc 1 x := by
+    rw [Set.uIcc_of_le hy.1]
+    exact Set.Icc_subset_Icc_right hy.2
+  have hftc := integral_eq_of_hasDerivAt_off_countable F f hs
+    (hFc.mono hsub)
+    (fun t ht ↦ hFd t ⟨⟨(min_eq_left hy.1 ▸ ht.1.1),
+      (max_eq_right hy.1 ▸ ht.1.2).trans_le hy.2⟩, ht.2⟩)
+    (hf.mono_set (Set.uIcc_subset_uIcc_left (by rw [Set.uIcc_of_le hx]; exact hy)))
+  simpa [hF1] using hftc
 
 /-! ### Bounded partial sums -/
 

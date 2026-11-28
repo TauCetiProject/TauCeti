@@ -51,6 +51,9 @@ absolute value (`ArithmeticFunction.abs_moebius_mul_le`) or norm
 (`ArithmeticFunction.norm_mul_moebius_le`). The norm bound also holds for integer scalar
 multiplication in a seminormed additive group (`ArithmeticFunction.norm_moebius_smul_le`).
 
+Specializing weighted hyperbola sums (`ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`) to
+`μ * ζ = 1` yields hyperbola Möbius inversion (`ArithmeticFunction.sum_moebius_smul_sum_div`).
+
 Summed over the divisors `d` with `d² ∣ n`, the Möbius function gives back its own square:
 `μ(n)² = ∑_{d² ∣ n} μ(d)` (`ArithmeticFunction.sum_divisors_filter_sq_dvd_moebius`). The right side
 is multiplicative in `n` (`ArithmeticFunction.IsMultiplicative.sum_divisors_filter_pow_dvd_mul`),
@@ -78,6 +81,8 @@ so the identity reduces to prime powers, where both sides are `1` for exponents 
   divisors of a fixed nonzero integer `N`.
 * `ArithmeticFunction.sum_filter_natAbs_coprime_eq_sum_divisors_smul`: expand a sum over integers
   coprime to a modulus into sums over multiples of its divisors.
+* `ArithmeticFunction.sum_moebius_smul_sum_div`:
+  `∑_{1≤d≤N} μ(d) • ∑_{1≤m≤N/d} g(dm) = if 1 ≤ N then g 1 else 0`.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
 * `ArithmeticFunction.sum_divisors_filter_dvd_moebius`: `∑_{d ∣ r, d ∣ k} μ(d)` is `1` if
   `gcd(k, r) = 1` and `0` otherwise, for `r ≠ 0`.
@@ -394,6 +399,33 @@ theorem sum_divisors_filter_dvd_moebius [AddCommGroupWithOne R] {r : ℕ} (hr : 
   by_cases hk : k.gcd r = 1
   · rw [ite_eq_left hk, ite_eq_left (Nat.coprime_iff_gcd_eq_one.mpr hk), Int.cast_one]
   · rw [ite_eq_right hk, ite_eq_right (mt Nat.coprime_iff_gcd_eq_one.mp hk), Int.cast_zero]
+
+/-! ### Hyperbola Möbius inversion -/
+
+/-- Hyperbola Möbius inversion: for an additive commutative group `A`, `g : ℕ → A`, and `N : ℕ`,
+`∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m)` equals `g 1` when `1 ≤ N`, and `0`
+when `N = 0`. -/
+theorem sum_moebius_smul_sum_div {A : Type*} [AddCommGroup A] (N : ℕ) (g : ℕ → A) :
+    ∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m) =
+      if 1 ≤ N then g 1 else 0 := by
+  have h := sum_Ioc_mul_smul_eq_sum_sum (μ : ArithmeticFunction ℤ) (ζ : ArithmeticFunction ℤ) g N
+  rw [moebius_mul_coe_zeta] at h
+  simp_rw [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  have hzeta : ∀ d ∈ Icc 1 N,
+      ∑ m ∈ Icc 1 (N / d), (ζ : ArithmeticFunction ℤ) m • g (d * m) =
+        ∑ m ∈ Icc 1 (N / d), g (d * m) := fun d _ ↦
+    Finset.sum_congr rfl fun m hm ↦ by
+      rw [natCoe_apply, zeta_apply_ne (Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1),
+        Nat.cast_one, one_zsmul]
+  rw [Finset.sum_congr rfl fun d hd ↦ congrArg (μ d • ·) (hzeta d hd)] at h
+  rw [← h]
+  by_cases hN : 1 ≤ N
+  · simp only [hN, ↓reduceIte]
+    rw [Finset.sum_eq_single_of_mem 1 (Finset.mem_Icc.mpr ⟨le_rfl, hN⟩)
+      fun n _ hn ↦ by simp [ArithmeticFunction.one_apply_ne hn]]
+    simp
+  · obtain rfl : N = 0 := Nat.lt_one_iff.mp (not_le.mp hN)
+    simp
 
 /-! ### The Möbius function over square divisors -/
 
