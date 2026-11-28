@@ -28,19 +28,18 @@ The conditions on `F` are the ordinary counterparts of the axioms of an `∞`-op
 1. every inert map `F.obj x ⟶ n` lifts to a strongly coCartesian morphism with source `x`;
 2. every family of objects `cᵢ` over `⟨1⟩` is the family of targets of strongly coCartesian lifts
    `y ⟶ cᵢ` of the inert projections `ρ i : ⟨n⟩ ⟶ ⟨1⟩`;
-3. for every family `φᵢ : y ⟶ cᵢ` of morphisms over the projections `ρ i`, every object `x` and
-   every map `e : F.obj x ⟶ F.obj y`, postcomposition with the `φᵢ` is a bijection from the
-   morphisms `x ⟶ y` over `e` to the families of morphisms `x ⟶ cᵢ` over `e ≫ ρ i`.
+3. for every family `φᵢ : y ⟶ cᵢ` of strongly coCartesian lifts of the projections `ρ i`, every
+   object `x` and every map `e : F.obj x ⟶ F.obj y`, postcomposition with the `φᵢ` is a bijection
+   from the morphisms `x ⟶ y` over `e` to the families of morphisms `x ⟶ cᵢ` over `e ≫ ρ i`.
 
 The nerve of a category is an `∞`-category whose right mapping spaces are discrete
 (`SSet.rightMappingSpace.constEdgeIso`), so the Segal maps of `nerveMap F` are maps between
 discrete simplicial sets, and they are isomorphisms as soon as they are bijective on vertices,
 which is condition 3. Strongly coCartesian morphisms give coCartesian edges of the nerve
 (`CategoryTheory.nerve.isCoCartesian_edgeMk_of_isStronglyCocartesian`), which gives the lifts.
-Condition 3 is asked for all morphisms over the projections, not only for the strongly
-coCartesian ones: in `Assoc^⊗` and `LM^⊗`, whose only unary operations are identities, a morphism
-over a given inert map is determined by its source and target, so the morphisms over the
-projections are the strongly coCartesian lifts.
+Conversely, coCartesian edges of a nerve give strongly coCartesian morphisms
+(`CategoryTheory.nerve.isStronglyCocartesian_of_isCoCartesian_edgeMk`), so condition 3 applies
+to every family of coCartesian projection lifts in the operad axiom.
 
 ## Main results
 
@@ -154,9 +153,10 @@ private lemma bijective_segalMap_app_zero {x y : (nerve E) _⦋0⦌}
 /-- **The nerve of a category of operators is an `∞`-operad.** Let `F : E ⥤ Fin_*` be a functor
 such that inert maps lift to strongly coCartesian morphisms with any given source (`lift`), every
 family of objects over `⟨1⟩` is the family of targets of strongly coCartesian lifts of the inert
-projections from one object (`tuple`), and, for every family of morphisms `φ i : y ⟶ c i` over
-the inert projections `ρ i`, postcomposition with the `φ i` is a bijection from the morphisms
-`x ⟶ y` over a map `e` to the families of morphisms `x ⟶ c i` over `e ≫ ρ i` (`segal`).
+projections from one object (`tuple`), and, for every family of strongly coCartesian lifts
+`φ i : y ⟶ c i` of the inert projections `ρ i`, postcomposition with the `φ i` is a bijection
+from the morphisms `x ⟶ y` over a map `e` to the families of morphisms `x ⟶ c i` over
+`e ≫ ρ i` (`segal`).
 Then the map of nerves `nerveMap F : N(E) ⟶ N(Fin_*)` is an `∞`-operad. -/
 theorem of_nerveMap
     (lift : ∀ {x : E} {n : FinPointed.{u}} (g : F.obj x ⟶ n), g.IsInert →
@@ -165,7 +165,7 @@ theorem of_nerveMap
       ∃ (y : E) (φ : ∀ i, y ⟶ c i), F.obj y = n ∧
         ∀ i, F.IsStronglyCocartesian (FinPointed.ρ i) (φ i))
     (segal : ∀ {x y : E} {c : Fin (F.obj y).len → E} (φ : ∀ i, y ⟶ c i),
-      (∀ i, F.IsHomLift (FinPointed.ρ i) (φ i)) → ∀ e : F.obj x ⟶ F.obj y,
+      (∀ i, F.IsStronglyCocartesian (FinPointed.ρ i) (φ i)) → ∀ e : F.obj x ⟶ F.obj y,
         ∃ Φ : {g : x ⟶ y // F.IsHomLift e g} ≃
           ∀ i, {h : x ⟶ c i // F.IsHomLift (e ≫ FinPointed.ρ i) h},
           ∀ g i, (Φ g i).val = g.val ≫ φ i) :
@@ -206,7 +206,11 @@ theorem of_nerveMap
       (rightMappingSpace.surjective_map_const_of_isStrictSegal) n
     have := isIso_of_bijective_app_zero (L.segalMap x e) (hdisc _ _)
       (surjective_piObj_map_const _ fun _ ↦ hdisc _ _)
-      (bijective_segalMap_app_zero F L e (segal _ (isHomLift_homEquiv_edge F L) _))
+      (bijective_segalMap_app_zero F L e (segal _ (fun i ↦ by
+        have := isHomLift_homEquiv_edge F L i
+        exact nerve.isStronglyCocartesian_of_isCoCartesian_edgeMk F _ _
+          ((L.isCoCartesian i).of_edge_eq (by
+            exact congrArg Edge.edge (nerve.homEquiv.symm_apply_apply (L.edge i)).symm))) _))
     infer_instance
 
 end InfinityOperad

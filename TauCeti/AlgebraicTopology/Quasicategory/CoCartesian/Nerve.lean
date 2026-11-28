@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 import Mathlib.AlgebraicTopology.SimplicialSet.Coskeletal
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
+import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.HornFilling
 import TauCeti.CategoryTheory.ComposableArrows.Basic
 import TauCeti.CategoryTheory.FiberedCategory.HomLift
 
@@ -22,7 +23,9 @@ Let `F : E ⥤ B` be a functor. A morphism `φ : a ⟶ b` of `E` is strongly coC
 (Mathlib's `CategoryTheory.Functor.IsStronglyCocartesian`) when every morphism `a ⟶ b'` lying over
 a composite `F φ ≫ g` factors uniquely through `φ` by a morphism lying over `g`. Then the edge of
 the nerve given by `φ` is coCartesian for the map of nerves `nerveMap F`
-(`CategoryTheory.nerve.isCoCartesian_edgeMk_of_isStronglyCocartesian`). This is how ordinary
+(`CategoryTheory.nerve.isCoCartesian_edgeMk_of_isStronglyCocartesian`). Conversely, a coCartesian
+edge of a nerve represents a strongly coCartesian morphism
+(`CategoryTheory.nerve.isStronglyCocartesian_of_isCoCartesian_edgeMk`). This is how ordinary
 categories fibred over the category of finite pointed sets, such as categories of operators, give
 coCartesian edges of simplicial sets over its nerve.
 
@@ -37,12 +40,15 @@ over `g`. For `Λ[3, 0]`, the three given triangles determine every edge, and th
 commutes because two morphisms out of `b` lying over the same morphism agree once they agree after
 precomposition with `φ`. This case analysis follows the proof that the nerve of a groupoid is a Kan
 complex (`CategoryTheory.nerve.kanComplex`), with the inverse of an isomorphism replaced by the
-universal property of `φ`.
+universal property of `φ`. The converse uses the same two low-dimensional horns: `Λ[2, 0]`
+provides the factorization over any prescribed base arrow, and `Λ[3, 0]` makes it unique.
 
 ## Main results
 
 * `CategoryTheory.nerve.isCoCartesian_edgeMk_of_isStronglyCocartesian`: the edge of the nerve given
   by a strongly coCartesian morphism is coCartesian for the map of nerves.
+* `CategoryTheory.nerve.isStronglyCocartesian_of_isCoCartesian_edgeMk`: a morphism whose edge
+  is coCartesian for the map of nerves is strongly coCartesian for the functor.
 
 ## References
 
@@ -186,5 +192,82 @@ theorem isCoCartesian_edgeMk_of_isStronglyCocartesian {R S : B} {a b : E} (f : R
     -- filler lies over `τ` since simplices of the nerve of `B` are determined by horns.
     obtain ⟨σ, hσ, -⟩ := existsUnique_horn_extension_of_isCoskeletal (k := 2) (by omega) 0 σ₀
     exact ⟨σ, hσ, IsStrictSegal.hom_ext_of_horn 0 (by rw [reassoc_of% hσ, hτ])⟩
+
+/-- Cancellation after a coCartesian edge of a nerve follows by filling a `3`-horn. -/
+private lemma hom_ext_of_isCoCartesian_edgeMk {a b c : E} (φ : a ⟶ b)
+    (hφ : (edgeMk φ).IsCoCartesian (nerveMap F)) (ψ χ : b ⟶ c)
+    (hmap : F.map ψ = F.map χ) (hcomp : φ ≫ ψ = φ ≫ χ) : ψ = χ := by
+  let faces : ∀ j : Fin 4, j ≠ 0 → (Δ[2] ⟶ nerve E) := fun j _ ↦
+    ![(SSet.yonedaEquiv (X := nerve E)).symm (ComposableArrows.mk₂ φ ψ),
+      (SSet.yonedaEquiv (X := nerve E)).symm (ComposableArrows.mk₂ (φ ≫ ψ) (𝟙 c)),
+      (SSet.yonedaEquiv (X := nerve E)).symm (ComposableArrows.mk₂ φ χ),
+      (SSet.yonedaEquiv (X := nerve E)).symm (ComposableArrows.mk₂ φ ψ)] j
+  -- Elaborating rewrites identify nerve simplices with composable arrows when applying the
+  -- generic simplicial identities below.
+  have hfaces : horn.IsCompatible faces := by
+    rw [horn.isCompatible_iff]
+    intro j k hj hk hjk
+    fin_cases j <;> fin_cases k <;> simp at hj hk hjk
+    all_goals
+      dsimp only [faces, Matrix.cons_val_succ, Matrix.cons_val_zero, Fin.pred, Fin.castPred]
+      erw [stdSimplex.δ_comp_yonedaEquiv_symm, stdSimplex.δ_comp_yonedaEquiv_symm]
+      simp [δ₁_mk₂_eq, δ₂_mk₂_eq, hcomp,
+        show Fin.castPred (2 : Fin 4) (by decide) = 2 from rfl]
+  let τ : Δ[3] ⟶ nerve B := SSet.yonedaEquiv.symm
+    (ComposableArrows.mk₃ (F.map φ) (F.map ψ) (𝟙 (F.obj c)))
+  obtain ⟨σ, hσ, -⟩ := hφ.exists_lift_horn_zero hfaces.desc (by
+      rw [horn.edge_three_zero_eq_ι_app, hfaces.desc_app_ι_app, ← SSet.yonedaEquiv_comp]
+      dsimp only [faces, Matrix.cons_val_succ, Matrix.cons_val_zero, Fin.pred, Fin.castPred]
+      erw [stdSimplex.δ_comp_yonedaEquiv_symm, δ₂_mk₂_eq]
+      rfl) τ
+    (horn.hom_ext' fun j hj ↦ by
+      rw [hfaces.ι_desc_assoc, horn.ι_ι_assoc]
+      fin_cases j
+      · exact absurd rfl hj
+      all_goals
+        dsimp only [faces, τ, Matrix.cons_val_succ, Matrix.cons_val_zero]
+        erw [SSet.yonedaEquiv_symm_comp, stdSimplex.δ_comp_yonedaEquiv_symm,
+          nerveMap_app_mk₂]
+      · erw [δ₁_mk₃_eq, F.map_comp, F.map_id]
+      · erw [δ₂_mk₃_eq, hmap, Category.comp_id]
+      · erw [δ₃_mk₃_eq])
+  have face (j : Fin 4) (hj : j ≠ 0) := hfaces.δ_yonedaEquiv_of_desc_eq hσ.symm j hj
+  have h₁ := face 1 (by decide)
+  have h₂ := face 2 (by decide)
+  have h₃ := face 3 (by decide)
+  dsimp only [faces, Matrix.cons_val_succ, Matrix.cons_val_zero] at h₁ h₂ h₃
+  erw [Equiv.apply_symm_apply] at h₁ h₂ h₃
+  have d : Edge.CompStruct (edgeMk ψ) (edgeMk (𝟙 c)) (edgeMk χ) :=
+    .mk ((nerve E).δ 0 (SSet.yonedaEquiv σ))
+      (by erw [← δ_comp_δ_apply (i := 0) (j := 2) (by decide), h₃]; rfl)
+      (by erw [δ_comp_δ_self_apply (i := 0), h₁]; rfl)
+      (by erw [← δ_comp_δ_apply (i := 0) (j := 1) (by decide), h₂]; rfl)
+  simpa using (nonempty_compStruct_iff ψ (𝟙 c) χ).1 ⟨d⟩
+
+/-- **CoCartesian edges of nerves give strongly coCartesian morphisms.** If the edge given by
+`φ : a ⟶ b` is coCartesian for `nerveMap F`, then `φ` is strongly coCartesian for `F` over any
+morphism `f` that it lifts. -/
+theorem isStronglyCocartesian_of_isCoCartesian_edgeMk {R S : B} {a b : E} (f : R ⟶ S)
+    (φ : a ⟶ b) [F.IsHomLift f φ] (hφ : (edgeMk φ).IsCoCartesian (nerveMap F)) :
+    F.IsStronglyCocartesian f φ := by
+  obtain rfl := IsHomLift.domain_eq F f φ
+  obtain rfl := IsHomLift.codomain_eq F f φ
+  obtain rfl : F.map φ = f := (IsHomLift.eq_of_isHomLift F f φ).symm
+  refine ⟨fun {c} g ψ hψ ↦ ?_⟩
+  obtain ⟨χ, d, hd⟩ := Edge.exists_compStruct_of_exists_lift_horn_zero (nerveMap F)
+    (ComposableArrows.mk₂ (F.map φ) g) (edgeMk φ) (edgeMk ψ)
+    (by rw [δ₂_mk₂_eq, edgeMk_edge, nerveMap_app_mk₁])
+    (by rw [δ₁_mk₂_eq, edgeMk_edge, nerveMap_app_mk₁, isHomLift_iff_map_eq.1 hψ])
+    (fun σ₀ hσ₀ hτ ↦ hφ.exists_lift_horn_zero σ₀ hσ₀ _ hτ)
+  obtain ⟨χ, rfl⟩ := edgeMk_surjective χ
+  have hχ : F.map χ = g := by
+    have h := congrArg ((nerve B).δ 0) hd
+    rw [← SSet.δ_naturality_apply, d.d₀, edgeMk_edge, nerveMap_app_mk₁, δ₀_mk₂_eq] at h
+    exact (Arrow.mk_inj _ _).mp (ComposableArrows.mk₁_eq_mk₁_iff.mp h)
+  have hfac := (nonempty_compStruct_iff φ χ ψ).1 ⟨d⟩
+  refine ⟨χ, ⟨isHomLift_iff_map_eq.2 hχ, hfac⟩, ?_⟩
+  rintro χ' ⟨hχ', hfac'⟩
+  exact hom_ext_of_isCoCartesian_edgeMk F φ hφ χ' χ
+    ((isHomLift_iff_map_eq.1 hχ').trans hχ.symm) (hfac'.trans hfac.symm)
 
 end CategoryTheory.nerve

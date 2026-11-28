@@ -1055,8 +1055,9 @@ lemma unionJoinBoundaryHornOneOneIso_inv_ι :
 variable (n) in
 /-- Under `SSet.join.unionJoinBoundaryHornOneOneIso`, the edge `Δ[1]` of the pushout-join is the
 final edge of `Λ[n + 2, n + 2]`, from `n + 1` to `n + 2`. -/
+@[simp]
 lemma yonedaEquiv_inr_comp_unionJoinBoundaryHornOneOneIso_hom :
-    yonedaEquiv (join.inr (∂Δ[n] : SSet.{u}) Δ[1] ≫
+    dsimp% yonedaEquiv (join.inr (∂Δ[n] : SSet.{u}) Δ[1] ≫
         Subcomplex.unionJoin.ι₁ ∂Δ[n] Λ[1, 1] ≫ (unionJoinBoundaryHornOneOneIso n).hom) =
       horn.edge (n + 2) (Fin.last (n + 2)) (Fin.last (n + 1)).castSucc (Fin.last (n + 2))
         (Fin.le_last _) (by simp) := by

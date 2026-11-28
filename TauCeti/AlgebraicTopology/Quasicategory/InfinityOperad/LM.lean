@@ -58,6 +58,7 @@ instance infinityOperad : SSet.InfinityOperad.{u} (nerveMap toFinPointed.{u}) :=
         simpa using isStronglyCocartesian_of_isInert (ρ (Y := ⟨n.len, col⟩) i)
           (by simpa using FinPointed.isInert_ρ i)⟩)
     (fun {x y c} φ hφ e ↦ by
+      have hφ := fun i ↦ (hφ i).toIsHomLift
       -- The morphisms over the inert projections are the projections `LM.ρ`, so the
       -- postcomposition is the decomposition `LM.homLiftEquiv` into colored single-output lifts.
       obtain ⟨col, rfl⟩ := exists_eq_mk_one fun i ↦
