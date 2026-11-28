@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Trace
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -50,6 +51,8 @@ pairing `tr (T* U) = tr (T U)` is real.
   orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_eq_zero_of_inner_left_eq_neg`: a skew-adjoint endomorphism of a real inner
   product space has trace zero.
+* `LinearMap.trace_comp_eq_zero_of_inner_left_eq_neg`: so does its composite `A H` with a symmetric
+  endomorphism `H`.
 * `IsSelfAdjoint.conj_trace`, `IsSelfAdjoint.conj_trace_mul`: the trace of a self-adjoint
   endomorphism, and the trace pairing `tr (T U)` of two of them, are real.
 * `ContinuousLinearMap.traceCLM_symmPart_comp`: over `ℝ`, only the symmetric part of `A` enters
@@ -123,6 +126,21 @@ theorem trace_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup V]
     rw [real_inner_comm] at h
     linarith
   · exact DFunLike.congr_fun (TauCeti.LinearMap.trace_eq_zero_of_not_finite hV) A
+
+/-- The trace pairing `tr (A H)` of a skew-adjoint endomorphism `A`, one with
+`⟪A u, w⟫ = -⟪u, A w⟫`, and a symmetric endomorphism `H` of a real inner product space vanishes. -/
+theorem trace_comp_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {A H : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫_ℝ = -⟪u, A w⟫_ℝ) (hH : H.IsSymmetric) : trace ℝ V (A ∘ₗ H) = 0 := by
+  by_cases hV : Module.Finite ℝ V
+  · -- In an orthonormal basis, `tr (A H) = -∑ᵢ ⟪A bᵢ, H bᵢ⟫`, a vanishing contraction.
+    let b := stdOrthonormalBasis ℝ V
+    have hAH (i) : ⟪b i, (A ∘ₗ H) (b i)⟫_ℝ = -⟪A (b i), H (b i)⟫_ℝ := by
+      rw [comp_apply, hA, neg_neg]
+    rw [trace_eq_sum_inner _ b]
+    simpa only [hAH, Finset.sum_neg_distrib, neg_eq_zero, id_apply] using
+      b.sum_inner_map_map_symmetric_eq_zero LinearMap.id A H hA hH
+  · exact DFunLike.congr_fun (TauCeti.LinearMap.trace_eq_zero_of_not_finite hV) _
 
 end LinearMap
 
