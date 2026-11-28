@@ -11,6 +11,7 @@ public import TauCeti.Analysis.ODE.Propagator.Liouville
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.ODE.Propagator.Parameter
+import TauCeti.Analysis.ODE.Propagator.ParameterContinuity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -42,6 +43,10 @@ initial value `(1, 0)`, and its second column `(B, D)` the Dirichlet solution, w
   `M_q(t, z) v = v + ∫₀ᵗ -Ω (z - Q_q(s)) M_q(s, z) v ds`, with `M_q(0, z) = 1`
   (`TauCeti.diracFundamentalMatrix_zero`), and its integrand is interval integrable
   (`TauCeti.intervalIntegrable_diracCoeff_mulVec_diracFundamentalMatrix_mulVec`);
+* `TauCeti.continuousOn_diracFundamentalMatrix_apply`: the entries of `M_q(t, z)` are continuous
+  in `t` on closed intervals containing `0` on which `q` is integrable. They are also jointly
+  continuous in `(t, z)` on `[0, T] × ℂ` when `q` is integrable on `[0, T]`
+  (`TauCeti.continuousOn_diracFundamentalMatrix_apply_prod`);
 * `TauCeti.isDiracSolution_diracFundamentalMatrix_mulVec`: for every initial value `v`,
   `t ↦ M_q(t, z) v` solves the Dirac system;
 * `TauCeti.IsDiracSolution.eq_diracFundamentalMatrix_mulVec`: every solution is of this form, so
@@ -199,6 +204,43 @@ theorem continuousOn_diracFundamentalMatrix_apply (hq : IntegrableOn q (Icc a b)
   simpa only [Function.comp_def, mulVec_single_one, col_apply] using
     (continuous_apply i).comp_continuousOn
       (continuousOn_diracFundamentalMatrix_mulVec hq h0 z (Pi.single j 1))
+
+/-- **Joint continuity of the fundamental matrix.** If `q` is integrable on `[0, T]`, every entry
+of `M_q(t, z)` is continuous in `(t, z)` on `[0, T] × ℂ`. -/
+theorem continuousOn_diracFundamentalMatrix_apply_prod (hq : IntegrableOn q (Icc 0 T))
+    (i j : Fin 2) :
+    ContinuousOn (fun p : ℝ × ℂ ↦ diracFundamentalMatrix q p.1 p.2 i j) (Icc 0 T ×ˢ univ) := by
+  rcases lt_or_ge T 0 with hT | hT
+  · simp [Icc_eq_empty_of_lt hT]
+  have hint (z : ℂ) : IntegrableOn (fun t ↦ z • diracGen + diracPotential q t) (Icc 0 T) :=
+    (integrableOn_const measure_Icc_lt_top.ne).add (integrableOn_diracPotential hq)
+  -- The coefficient `z • diracGen + diracPotential q t` is affine in `z`, hence dominated on
+  -- compact sets of `z`, so its propagator is jointly continuous.
+  have hcont := continuousOn_propagator_parameter
+    (P := fun t (z : ℂ) ↦ z • diracGen + diracPotential q t) (U := univ) (a := 0) (b := T)
+    (fun z _ ↦ (hint z).aestronglyMeasurable) (ae_of_all _ fun t _ ↦ by fun_prop)
+    (fun K _ hK ↦ by
+      obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
+      refine ⟨fun t ↦ R * ‖diracGen‖ + ‖diracPotential q t‖, (integrableOn_const
+        measure_Icc_lt_top.ne).add (integrableOn_diracPotential hq).norm,
+        fun z hz ↦ ae_of_all _ fun t _ ↦ (norm_add_le _ _).trans ?_⟩
+      dsimp only
+      rw [norm_smul]
+      gcongr
+      exact hR z hz)
+  -- The entry functional `X ↦ (X e_j)_i` on operators.
+  let L : (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2)) →L[ℂ] ℂ :=
+    (EuclideanSpace.proj i).comp
+      (ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin 2)) (EuclideanSpace.single j 1))
+  have hL (A : Matrix (Fin 2) (Fin 2) ℂ) : L (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) A) = A i j := by
+    simp [L]
+  have hM (p : ℝ × ℂ) : diracFundamentalMatrix q p.1 p.2 i j =
+      L (propagator (fun t ↦ p.2 • diracGen + diracPotential q t) p.1 0) := by
+    rw [← funext (toEuclideanCLM_diracCoeff q p.2 ·), ← toEuclideanCLM_diracFundamentalMatrix, hL]
+  simp_rw [hM]
+  refine L.continuous.comp_continuousOn
+    ((hcont.comp (f := fun p : ℝ × ℂ ↦ ((p.1, (0 : ℝ)), p.2)) (by fun_prop) fun p hp ↦ ?_))
+  exact ⟨⟨hp.1, ⟨le_rfl, hT⟩⟩, mem_univ _⟩
 
 /-- **The integral equation of the fundamental matrix.** If `q` is integrable on an interval
 `[a, b]` containing `0` and `t`, then

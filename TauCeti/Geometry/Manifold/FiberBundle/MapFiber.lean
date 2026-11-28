@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
+public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.FiberBundle.MapFiber
+import TauCeti.Geometry.Manifold.FiberBundle.Submersion
 
 /-!
 # Smooth fibre bundles given by their total space
@@ -43,6 +45,8 @@ case, the fibres are the orbits of `G`, so this applies to invariant maps
 ## Main results
 
 * `TauCeti.MapFiber.Atlas.IsContMDiff.contMDiff_proj`: `proj` is `C^n`.
+* `TauCeti.MapFiber.Atlas.IsContMDiff.isRegularPoint_proj`: for `n ≠ 0`, every point of `P` is a
+  regular point of `proj`.
 * `TauCeti.MapFiber.Atlas.contMDiffFiberBundle`: the fibres of `proj` form a `C^n` fibre bundle.
 * `TauCeti.MapFiber.Atlas.proj_totalSpaceDiffeomorph`: the diffeomorphism lies over `B`.
 * `TauCeti.MapFiber.Atlas.totalSpaceDiffeomorph_smul`: it is equivariant for a fibre-preserving
@@ -85,12 +89,24 @@ a `C^n` diffeomorphism from its source, an open set of `P`, onto its target, an 
 product manifold `B × F`. -/
 structure IsContMDiff (A : Atlas F proj) : Prop where
   /-- Each trivialization of the atlas is `C^n` on its source. -/
-  contMDiffOn_trivAt : ∀ b, ContMDiffOn IP (IB.prod IF) n (A.trivAt b) (A.trivAt b).source
+  contMDiffOn : ∀ {t : Trivialization F proj}, t ∈ A.charts →
+    ContMDiffOn IP (IB.prod IF) n t t.source
   /-- The inverse of each trivialization of the atlas is `C^n` on its target. -/
-  contMDiffOn_trivAt_symm : ∀ b,
-    ContMDiffOn (IB.prod IF) IP n (A.trivAt b).toOpenPartialHomeomorph.symm (A.trivAt b).target
+  contMDiffOn_symm : ∀ {t : Trivialization F proj}, t ∈ A.charts →
+    ContMDiffOn (IB.prod IF) IP n t.toOpenPartialHomeomorph.symm t.target
 
 variable {A : Atlas F proj}
+
+/-- Each chosen trivialization `A.trivAt b` of a `C^n` atlas is `C^n` on its source. -/
+theorem IsContMDiff.contMDiffOn_trivAt (hA : A.IsContMDiff n IB IF IP) (b : B) :
+    ContMDiffOn IP (IB.prod IF) n (A.trivAt b) (A.trivAt b).source :=
+  hA.contMDiffOn (A.trivAt_mem_charts b)
+
+/-- The inverse of each chosen trivialization `A.trivAt b` of a `C^n` atlas is `C^n` on its
+target. -/
+theorem IsContMDiff.contMDiffOn_trivAt_symm (hA : A.IsContMDiff n IB IF IP) (b : B) :
+    ContMDiffOn (IB.prod IF) IP n (A.trivAt b).toOpenPartialHomeomorph.symm (A.trivAt b).target :=
+  hA.contMDiffOn_symm (A.trivAt_mem_charts b)
 
 /-- The map `proj` of a `C^n` atlas is `C^n`: near each point it is the first coordinate of a
 trivialization. -/
@@ -109,17 +125,17 @@ theorem contMDiffFiberBundle (hA : A.IsContMDiff n IB IF IP) :
     ContMDiffFiberBundle n F (MapFiber proj) IB IF := by
   let := A.fiberBundle
   refine ⟨fun e e' he he' ↦ ?_⟩
-  obtain ⟨a, rfl⟩ := (A.mem_trivializationAtlas_iff e).1 he.out
-  obtain ⟨c, rfl⟩ := (A.mem_trivializationAtlas_iff e').1 he'.out
+  obtain ⟨t, ht, rfl⟩ := (A.mem_trivializationAtlas_iff e).1 he.out
+  obtain ⟨t', ht', rfl⟩ := (A.mem_trivializationAtlas_iff e').1 he'.out
   rw [Bundle.Trivialization.toMapFiber_coordChange]
-  -- The coordinate change from `a` to `c` reads `(b, v) ↦ (trivAt c ((trivAt a)⁻¹ (b, v))).2`.
-  refine (contMDiff_snd.comp_contMDiffOn (hA.contMDiffOn_trivAt c) |>.comp
-    ((hA.contMDiffOn_trivAt_symm a).mono fun y hy ↦ ?_) fun y hy ↦ ?_).congr fun y _ ↦ rfl
+  -- The coordinate change from `t` to `t'` reads `(b, v) ↦ (t' (t⁻¹ (b, v))).2`.
+  refine (contMDiff_snd.comp_contMDiffOn (hA.contMDiffOn ht') |>.comp
+    ((hA.contMDiffOn_symm ht).mono fun y hy ↦ ?_) fun y hy ↦ ?_).congr fun y _ ↦ by
+      simp only [Bundle.Trivialization.coordChange, Function.comp_apply, Prod.mk.eta]
   · simp only [Bundle.Trivialization.toMapFiber_baseSet] at hy
-    exact (A.trivAt a).mem_target.2 hy.1.1
+    exact t.mem_target.2 hy.1.1
   · simp only [Bundle.Trivialization.toMapFiber_baseSet] at hy
-    rw [mem_preimage, (A.trivAt c).mem_source,
-      (A.trivAt a).proj_symm_apply ((A.trivAt a).mem_target.2 hy.1.1)]
+    rw [mem_preimage, t'.mem_source, t.proj_symm_apply (t.mem_target.2 hy.1.1)]
     exact hy.1.2
 
 /-- For a `C^n` atlas of `proj`, the map `⟨b, p⟩ ↦ p` from the charted total space of the fibres
@@ -134,7 +150,7 @@ private theorem contMDiff_totalSpaceHomeomorph (hA : A.IsContMDiff n IB IF IP) :
   obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F (MapFiber proj)).surjective x
   let t := A.trivAt z.proj
   have : MemTrivializationAtlas t.toMapFiber :=
-    ⟨(A.mem_trivializationAtlas_iff _).2 ⟨z.proj, rfl⟩⟩
+    ⟨(A.mem_trivializationAtlas_iff _).2 ⟨t, A.trivAt_mem_charts z.proj, rfl⟩⟩
   -- Read through the bundle of fibres, `t` is `C^n` on the preimage of its source.
   have ht := ManifoldTotalSpace.contMDiffOn_trivialization (n := n) (IB := IB) (IF := IF)
     t.toMapFiber
@@ -218,6 +234,18 @@ theorem proj_totalSpaceDiffeomorph (x : ManifoldTotalSpace F (MapFiber proj)) :
       ((ManifoldTotalSpace.homeomorph F (MapFiber proj)).symm x).proj := by
   rw [totalSpaceDiffeomorph_apply, proj_totalSpaceHomeomorph (proj := proj)]
 
+/-- For a `C^n` atlas of `proj` with `n ≠ 0`, every point of `P` is a regular point of `proj`: the
+diffeomorphism `totalSpaceDiffeomorph` carries `proj` to the projection of the fibre bundle, which
+is regular everywhere (`TauCeti.ManifoldTotalSpace.isRegularPoint_proj`). -/
+theorem IsContMDiff.isRegularPoint_proj (hA : A.IsContMDiff n IB IF IP) (hn : n ≠ 0) (p : P) :
+    IsRegularPoint IP IB proj p := by
+  let := A.fiberBundle
+  obtain ⟨x, rfl⟩ := (A.totalSpaceDiffeomorph hA).surjective p
+  have h : IsRegularPoint (IB.prod IF) IB (proj ∘ A.totalSpaceDiffeomorph hA) x :=
+    (ManifoldTotalSpace.isRegularPoint_proj IB IF x).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall (A.proj_totalSpaceDiffeomorph hA))
+  exact ((A.totalSpaceDiffeomorph hA).isRegularPoint_comp_iff hn).1 h
+
 /-- For a right action on `P` preserving the fibres of `proj`, the diffeomorphism
 `totalSpaceDiffeomorph` carries the fibrewise action on the total space to the action on `P`. -/
 theorem totalSpaceDiffeomorph_smul {α : Type*} [Monoid α] [MulAction α P]
@@ -276,27 +304,20 @@ end
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace HF G] [MulAction Gᵐᵒᵖ P]
 
-/-- **Descent of invariant maps.** Let the fibres of `proj` form a principal `G`-bundle for a
-`C^n` atlas of equivariant trivializations. Then a `C^n` map on `P` invariant under the action of
-`G` is the composite with `proj` of a unique `C^n` map on `B`, since the fibres of `proj` are the
-orbits of `G`. -/
+/-- **Descent of invariant maps.** Let `A` be a `C^n` atlas of `proj : P → B` whose chosen
+trivializations `A.trivAt b` are equivariant (additional charts in `A.charts` need not be
+equivariant). Then a `C^n` map on `P` invariant under the right action of `G` is the composite with
+`proj` of a unique `C^n` map on `B`, since on each fibre `proj p = proj q` the chosen chart
+`A.trivAt (proj p)` produces a group element carrying `p` to `q`. -/
 theorem existsUnique_contMDiff_comp_eq_of_smul {A : Atlas G proj}
     (hA : A.IsContMDiff n IB IF IP) (hproj : ∀ (g : Gᵐᵒᵖ) (p : P), proj (g • p) = proj p)
     (hequiv : ∀ b (p : P), proj p ∈ (A.trivAt b).baseSet → ∀ g : G,
       (A.trivAt b (op g • p)).2 = (A.trivAt b p).2 * g)
     {f : P → M} (hf : ContMDiff IP IM n f) (hinv : ∀ (g : G) (p : P), f (op g • p) = f p) :
     ∃! h : B → M, ContMDiff IB IM n h ∧ h ∘ proj = f := by
-  let := A.fiberBundle
-  let := mulAction hproj
-  have := A.principalBundle hproj hequiv
   refine hA.existsUnique_contMDiff_comp_eq hf fun p q hpq ↦ ?_
-  -- In the fibre over `proj p`, `q` is obtained from `p` by the action of `division p q`.
-  let p' : MapFiber proj (proj p) := ⟨p, rfl⟩
-  let q' : MapFiber proj (proj p) := ⟨q, hpq.symm⟩
-  have h := congrArg Subtype.val (PrincipalBundle.smul_division (G := G) p' q')
-  rw [coe_smul hproj] at h
-  rw [← hinv (PrincipalBundle.division G p' q') p]
-  exact congrArg f h
+  rw [← hinv _ p, (A.trivAt (proj p)).op_inv_mul_smul (fun g x ↦ hproj (op g) x)
+    (fun g x hx ↦ hequiv (proj p) x hx g) (A.mem_baseSet_trivAt (proj p)) hpq]
 
 end IsContMDiff
 

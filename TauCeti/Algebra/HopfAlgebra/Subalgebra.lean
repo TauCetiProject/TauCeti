@@ -58,6 +58,7 @@ and the antipode is read off from its inverse.
   flatness.
 * `Subalgebra.IsHopfSubalgebra.of_finiteDimensional`: over a field, a finite-dimensional
   subalgebra of a commutative Hopf algebra stable under comultiplication is a Hopf subalgebra.
+* `TauCeti.CommHopfAlgCat.HopfSubalgebra`: the Hopf subalgebras, ordered by inclusion.
 * `TauCeti.CommHopfAlgCat.ofHopfSubalgebra`: a Hopf subalgebra as a bundled commutative Hopf
   algebra.
 * `TauCeti.CommHopfAlgCat.hopfSubalgebraι`: the inclusion morphism, a bialgebra morphism which
@@ -372,6 +373,12 @@ namespace TauCeti.CommHopfAlgCat
 open CategoryTheory
 
 variable {R : Type u} [CommRing R] {H K : _root_.CommHopfAlgCat.{v} R} {A : Subalgebra R H}
+
+variable (H) in
+/-- The Hopf subalgebras of a commutative Hopf algebra, ordered by inclusion. -/
+abbrev HopfSubalgebra : Type v :=
+  {B : Subalgebra R H // B.IsHopfSubalgebra}
+
 variable [Module.Flat R H] [Module.Flat R A]
 
 /-- A flat Hopf subalgebra of a flat commutative Hopf algebra, as a bundled commutative Hopf
@@ -391,6 +398,12 @@ noncomputable abbrev ofHopfSubalgebra (hA : A.IsHopfSubalgebra) :
 theorem hopfSubalgebraι_apply (hA : A.IsHopfSubalgebra) (x : A) :
     (hopfSubalgebraι hA).hom x = x :=
   (rfl)
+
+/-- The range of the inclusion morphism of a Hopf subalgebra is the Hopf subalgebra. -/
+@[simp]
+theorem range_hopfSubalgebraι (hA : A.IsHopfSubalgebra) :
+    (hopfSubalgebraι hA).hom.toAlgHom.range = A :=
+  A.range_val
 
 /-- The inclusion morphism of a Hopf subalgebra is injective. -/
 theorem hopfSubalgebraι_injective (hA : A.IsHopfSubalgebra) :
