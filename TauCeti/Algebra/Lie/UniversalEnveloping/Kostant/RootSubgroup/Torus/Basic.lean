@@ -312,6 +312,17 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
 
+/-- Powers of the integral root operator act by powers of the ambient representation of the root
+vector. -/
+@[simp] theorem coe_pow_kostantRootOperator (k : ℕ) (v : M) :
+    (((kostantRootOperator e h ρ M hM i ^ k) v : M) : V) =
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ k) (v : V) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', pow_succ', mul_apply_eq_comp, mul_apply_eq_comp,
+      coe_kostantRootOperator_apply, ih]
+
 /-- The integral root operators compute the ambient action on a product. -/
 theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
     (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l) v : M) : V) =

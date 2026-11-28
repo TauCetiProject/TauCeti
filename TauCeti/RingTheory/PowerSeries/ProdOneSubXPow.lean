@@ -28,6 +28,7 @@ multiset of the weights `d i`.
 
 ## Main results
 
+* `PowerSeries.isUnit_one_sub_X_pow`: for `n ≠ 0`, `1 - X ^ n` is a unit in `R⟦X⟧`.
 * `PowerSeries.coeff_prod_expand_mk_one`: the `n`-th coefficient of `∏ c ∈ s, (1 - X ^ m c)⁻¹`,
   written as the product of the expanded geometric series, is the size of the weighted
   antidiagonal.
@@ -44,6 +45,11 @@ public section
 open Finset
 
 namespace PowerSeries
+
+/-- For `n ≠ 0`, the power series `1 - X ^ n` is a unit in `R⟦X⟧`. -/
+theorem isUnit_one_sub_X_pow {R : Type*} [Ring R] {n : ℕ} (hn : n ≠ 0) :
+    IsUnit (1 - (X : R⟦X⟧) ^ n) :=
+  isUnit_iff_constantCoeff.mpr (by simp [hn])
 
 variable {R : Type*} [CommRing R]
 
@@ -146,7 +152,7 @@ theorem eq_of_prod_map_one_sub_X_pow_eq {s t : Multiset ℕ} (hs : 0 ∉ s) (ht 
   have hnt : n ∈ t := by rwa [← count_pos, ← hcount, count_pos]
   obtain ⟨s', rfl⟩ := exists_cons_of_mem hns
   obtain ⟨t', rfl⟩ := exists_cons_of_mem hnt
-  have hunit : IsUnit (1 - X ^ n : R⟦X⟧) := isUnit_iff_constantCoeff.2 (by simp [hn0])
+  have hunit : IsUnit (1 - X ^ n : R⟦X⟧) := isUnit_one_sub_X_pow hn0
   rw [map_cons, map_cons, prod_cons, prod_cons, hunit.mul_right_inj] at h
   rw [ih (card s' + card t') (by simp; omega) (fun h0 ↦ hs (mem_cons_of_mem h0))
     (fun h0 ↦ ht (mem_cons_of_mem h0)) h rfl]
