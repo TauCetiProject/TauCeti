@@ -10,7 +10,6 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Convex.Integral
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -108,10 +107,14 @@ private lemma inv_sin_le_mul_integral {q b : ℕ} (hq : 0 < q) (hb2 : 2 ≤ b)
 private lemma sum_Ico_inv_sin_split {q : ℕ} (hq : 4 ≤ q) :
     ∑ b ∈ Ico 1 q, (sin (π * b / q))⁻¹ =
       2 * (sin (π / q))⁻¹ + ∑ b ∈ Ico 2 (q - 1), (sin (π * b / q))⁻¹ := by
+  have hsing : Ico (q - 1) q = {q - 1} := by
+    ext x
+    simp only [mem_Ico, mem_singleton]
+    omega
   have htop : ∑ b ∈ Ico 2 q, (sin (π * b / q))⁻¹ =
       (∑ b ∈ Ico 2 (q - 1), (sin (π * b / q))⁻¹) + (sin (π * ↑(q - 1) / q))⁻¹ := by
-    nth_rw 1 [show q = (q - 1) + 1 by omega]
-    rw [sum_Ico_succ_top (by omega)]
+    rw [← sum_Ico_consecutive _ (by omega : 2 ≤ q - 1) (by omega : q - 1 ≤ q), hsing,
+      sum_singleton]
   rw [sum_eq_sum_Ico_succ_bot (by omega : 1 < q), htop]
   have hsin_end : sin (π * ↑(q - 1) / q) = sin (π / q) := by
     have hq0 : (q : ℝ) ≠ 0 := by positivity
@@ -120,7 +123,7 @@ private lemma sum_Ico_inv_sin_split {q : ℕ} (hq : 4 ≤ q) :
   rw [Nat.cast_one, mul_one, hsin_end]
   ring
 
-/-- Upper bound on `log (tan (3π / (4q)))⁻¹` for `q ≥ 4` via `t < tan t`. -/
+/-- Upper bound on `log (tan (3π / (4q)))⁻¹` for `q ≥ 4` via `TauCeti.log_inv_tan_lt_neg_log`. -/
 private lemma log_tan_three_pi_div_four_mul_lt {q : ℕ} (hq : 4 ≤ q) :
     log (tan (3 * π / (4 * q)))⁻¹ < log q + log (4 / π) - log 3 := by
   have hqpos : (0 : ℝ) < q := by positivity
@@ -129,14 +132,10 @@ private lemma log_tan_three_pi_div_four_mul_lt {q : ℕ} (hq : 4 ≤ q) :
     have hq4 : (4 : ℝ) ≤ q := by exact_mod_cast hq
     rw [div_lt_div_iff₀ (by positivity) (by norm_num)]
     nlinarith [pi_pos]
-  have htan_gt : 3 * π / (4 * q) < tan (3 * π / (4 * q)) := lt_tan ht_pos ht_lt
-  have hinv_lt : (tan (3 * π / (4 * q)))⁻¹ < 4 * q / (3 * π) := by
-    rw [inv_eq_one_div, div_lt_div_iff₀ (ht_pos.trans htan_gt) (by positivity)]
-    linarith [(div_lt_iff₀ (by positivity : (0 : ℝ) < 4 * q)).mp htan_gt]
-  have heq : log (4 * q / (3 * π)) = log q + log (4 / π) - log 3 := by
-    have harg : 4 * (q : ℝ) / (3 * π) = (q : ℝ) * (4 / π) / 3 := by ring
-    rw [harg, log_div (by positivity) (by norm_num), log_mul hqpos.ne' (by positivity)]
-  exact (log_lt_log (inv_pos.mpr (ht_pos.trans htan_gt)) hinv_lt).trans_eq heq
+  refine (log_inv_tan_lt_neg_log ht_pos ht_lt).trans_eq ?_
+  rw [log_div (by positivity) (by positivity), log_mul (by norm_num) pi_ne_zero,
+    log_mul (by norm_num) hqpos.ne', log_div (by norm_num) pi_ne_zero]
+  ring
 
 /-- Bound on the interior cosecant sum `∑_{b=2}^{q-2} (sin (π b / q))⁻¹` for `q ≥ 4`. -/
 private lemma sum_Ico_mid_inv_sin_le {q : ℕ} (hq : 4 ≤ q) :
@@ -205,22 +204,26 @@ private lemma sum_Ico_inv_sin_pi_mul_div_lt_of_four_le {q : ℕ} (hq : 4 ≤ q) 
         have : 0 < 2 * (q : ℝ) / π := by positivity
         nlinarith
 
+/-- Exact value of the cosecant sum at `q = 2`. -/
+private lemma sum_Ico_inv_sin_pi_mul_div_two :
+    ∑ b ∈ Ico (1 : ℕ) 2, (sin (π * b / (2 : ℕ)))⁻¹ = 1 := by
+  have hI : Ico (1 : ℕ) 2 = {1} := by decide
+  rw [hI, sum_singleton]
+  simp
+
 /-- Base case `q = 2` of Pomerance's cosecant sum bound. -/
 private lemma sum_Ico_inv_sin_pi_mul_div_lt_two :
     ∑ b ∈ Ico 1 (2 : ℕ), (sin (π * b / (2 : ℕ)))⁻¹ <
       2 * (2 : ℕ) / π * (log (2 : ℕ) + log (4 / π) + π ^ 2 / (12 * ((2 : ℕ) : ℝ) ^ 2)) := by
   have hpi_gt : 3.14 < π := pi_gt_d4.trans' (by norm_num)
   have hpi_lt : π < 3.15 := pi_lt_d4.trans (by norm_num)
-  have hI : Ico 1 2 = {1} := by decide
-  rw [hI, sum_singleton]
-  have hval : (sin (π * ((1 : ℕ) : ℝ) / ((2 : ℕ) : ℝ)))⁻¹ = 1 := by simp
   have hlog2 : 0.693 < log 2 := log_two_gt_d9.trans' (by norm_num)
   have hinner : 1.1 < log 2 + log (4 / π) + π ^ 2 / (12 * (2 : ℝ) ^ 2) := by
     nlinarith [sq_nonneg (π - 3.14), one_sub_pi_div_four_le_log_four_div_pi]
   have hfac : 4 / 3.15 < 2 * (2 : ℝ) / π := by
     rw [div_lt_div_iff₀ (by norm_num) pi_pos]
     linarith
-  rw [hval]
+  rw [sum_Ico_inv_sin_pi_mul_div_two]
   push_cast
   calc
     (1 : ℝ) < 4 / 3.15 * 1.1 := by norm_num
@@ -318,18 +321,12 @@ theorem sum_Ico_inv_sin_pi_mul_div_lt_mul_log {q : ℕ} (hq : 2 ≤ q) :
       _ ≤ q * log q := mul_le_mul_of_nonneg_left h2 hqnn
   · have hq2 : q = 2 := by omega
     subst hq2
-    have hI : Ico 1 (2 : ℕ) = {1} := by decide
     have hlog2 : 0.693 < log 2 := log_two_gt_d9.trans' (by norm_num)
-    rw [hI, sum_singleton]
-    simp only [Nat.cast_one, mul_one, Nat.cast_ofNat, sin_pi_div_two, inv_one]
+    rw [sum_Ico_inv_sin_pi_mul_div_two]
+    push_cast
     linarith
 
 /-! ### Checks -/
-
-/-- At `q = 2`, the sum has the single term `(sin (π / 2))⁻¹ = 1`. -/
-example : ∑ b ∈ Ico (1 : ℕ) 2, (sin (π * b / (2 : ℕ)))⁻¹ = 1 := by
-  have hI : Ico (1 : ℕ) 2 = {1} := by decide
-  simp [hI]
 
 /-- At `q = 3`, the cosecant sum is `4 / √3 < 3 * log 3`. -/
 example : ∑ b ∈ Ico (1 : ℕ) 3, (sin (π * b / (3 : ℕ)))⁻¹ < 3 * log 3 := by

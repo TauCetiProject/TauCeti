@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.Analysis.Convex.SpecificFunctions.Deriv
+import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -173,24 +174,18 @@ theorem continuousOn_inv_sin_Ioo : ContinuousOn (fun x : ℝ ↦ (sin x)⁻¹) (
 
 /-- The function `x ↦ (sin x)⁻¹` is convex on `(0, π)`. -/
 theorem convexOn_inv_sin_Ioo : ConvexOn ℝ (Set.Ioo 0 π) (fun x : ℝ ↦ (sin x)⁻¹) := by
-  have hinv : ConvexOn ℝ (Set.Ioi 0) (fun y : ℝ ↦ y⁻¹) := by
+  have hsub : sin '' Set.Ioo 0 π ⊆ Set.Ioi 0 := by
+    rintro _ ⟨x, hx, rfl⟩
+    exact sin_pos_of_pos_of_lt_pi hx.1 hx.2
+  have hconv : Convex ℝ (sin '' Set.Ioo 0 π) :=
+    (isPreconnected_Ioo.image sin continuous_sin.continuousOn).convex
+  have hinv0 : ConvexOn ℝ (Set.Ioi 0) (fun y : ℝ ↦ y⁻¹) := by
     simpa only [zpow_neg, zpow_one] using convexOn_zpow (𝕜 := ℝ) (-1)
-  refine ⟨convex_Ioo 0 π, fun x hx y hy a b ha hb hab ↦ ?_⟩
-  have hsinx : 0 < sin x := sin_pos_of_pos_of_lt_pi hx.1 hx.2
-  have hsiny : 0 < sin y := sin_pos_of_pos_of_lt_pi hy.1 hy.2
-  have hxy : a • x + b • y ∈ Set.Ioo 0 π := convex_Ioo 0 π hx hy ha hb hab
-  have hcomb : 0 < a • sin x + b • sin y := by
-    rcases eq_or_lt_of_le ha with rfl | ha'
-    · rw [zero_add] at hab
-      rw [zero_smul, zero_add, hab, one_smul]
-      exact hsiny
-    · exact add_pos_of_pos_of_nonneg (smul_pos ha' hsinx) (smul_nonneg hb hsiny.le)
-  have hsin : a • sin x + b • sin y ≤ sin (a • x + b • y) :=
-    strictConcaveOn_sin_Icc.concaveOn.2 (Set.Ioo_subset_Icc_self hx)
-      (Set.Ioo_subset_Icc_self hy) ha hb hab
-  have hanti : (sin (a • x + b • y))⁻¹ ≤ (a • sin x + b • sin y)⁻¹ :=
-    antitoneOn_inv_pos hcomb (sin_pos_of_pos_of_lt_pi hxy.1 hxy.2) hsin
-  exact hanti.trans (hinv.2 hsinx hsiny ha hb hab)
+  have hinv : ConvexOn ℝ (sin '' Set.Ioo 0 π) (fun y : ℝ ↦ y⁻¹) :=
+    hinv0.subset hsub hconv
+  exact hinv.comp_concaveOn
+    (strictConcaveOn_sin_Icc.concaveOn.subset Set.Ioo_subset_Icc_self (convex_Ioo 0 π))
+    (antitoneOn_inv_pos.mono hsub)
 
 /-- The antiderivative of `(sin x)⁻¹` on `(0, π)` is `log (tan (x / 2))`. -/
 theorem hasDerivAt_log_tan_div_two {x : ℝ} (hx₀ : 0 < x) (hxπ : x < π) :

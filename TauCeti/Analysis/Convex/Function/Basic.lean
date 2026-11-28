@@ -7,11 +7,9 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.Normed.Field.Basic
-public import Mathlib.Basic.Real.Basic
 import Mathlib.Analysis.Convex.Slope
 import Mathlib.LinearAlgebra.AffineSpace.Slope
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
 /-!
 # Convex functions: affine maps, affine pullback, level sets and increments

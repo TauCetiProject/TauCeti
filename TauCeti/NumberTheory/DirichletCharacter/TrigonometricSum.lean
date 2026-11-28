@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 public import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
-import TauCeti.Data.ZMod.Count
+import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 import TauCeti.NumberTheory.GaussSum.Trigonometric
@@ -77,13 +77,6 @@ theorem Odd.intervalSum_mul_gaussSum_eq_I_mul_sum_im (hχ : χ.Odd) (hprim : χ.
   rw [← mul_sum, sum_comm]
   simp only [Complex.ofReal_sum, mul_sum]
 
-private lemma stdAddChar_intCast_mul_natCast {q : ℕ} [NeZero q] (n : ℤ) (b : ℕ) :
-    ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q)) = TauCeti.expTwoPiI ((b : ℝ) * n / q) := by
-  rw [← Int.cast_natCast b, ← Int.cast_mul, TauCeti.stdAddChar_intCast_eq_expTwoPiI]
-  congr 1
-  push_cast
-  ring
-
 /-- **Gauss-sum expansion of a primitive character:** for `χ` primitive modulo `q ≥ 1` and
 every integer `n`, `χ n * τ(χ⁻¹) = ∑_{b mod q} χ⁻¹ b * e(b.val * n / q)`. -/
 theorem mul_gaussSum_inv_stdAddChar_eq_sum (hχ : χ.IsPrimitive) (n : ℤ) :
@@ -93,9 +86,10 @@ theorem mul_gaussSum_inv_stdAddChar_eq_sum (hχ : χ.IsPrimitive) (n : ℤ) :
   rw [inv_inv] at h
   rw [← h, gaussSum]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
-  rw [AddChar.mulShift_apply]
-  nth_rw 2 [← ZMod.natCast_zmod_val b]
-  rw [stdAddChar_intCast_mul_natCast]
+  have hb :
+      ZMod.stdAddChar ((n : ZMod q) * b) = ZMod.stdAddChar ((n : ZMod q) * (b.val : ZMod q)) :=
+    congrArg (fun x : ZMod q ↦ ZMod.stdAddChar ((n : ZMod q) * x)) b.natCast_zmod_val.symm
+  rw [AddChar.mulShift_apply, hb, TauCeti.stdAddChar_intCast_mul_natCast]
 
 /-- **Gauss-sum expansion of a character interval sum:** for `χ` primitive modulo `q ≥ 2`, `M : ℤ`,
 and `N : ℕ`, `S_χ(M, N) = τ(χ⁻¹)⁻¹ * ∑_{1 ≤ b < q} χ⁻¹ b * ∑_{M < n ≤ M + N} e(b * n / q)`. -/
@@ -130,7 +124,7 @@ theorem Even.intervalSum_eq_inv_gaussSum_mul_sum_cos (hχe : χ.Even) (hχ : χ.
   simp only [Complex.ofReal_sum] at hre
   have hterm (b : ℕ) (n : ℤ) :
       (ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).re = Real.cos (2 * π * b * n / q) := by
-    rw [stdAddChar_intCast_mul_natCast, TauCeti.re_expTwoPiI]
+    rw [TauCeti.stdAddChar_intCast_mul_natCast, TauCeti.re_expTwoPiI]
     congr 1
     ring
   have hsum : (∑ b : ZMod q, χ⁻¹ b *
@@ -159,7 +153,7 @@ theorem Odd.intervalSum_eq_inv_gaussSum_mul_sum_sin (hχo : χ.Odd) (hχ : χ.Is
   simp only [Complex.ofReal_sum] at him
   have hterm (b : ℕ) (n : ℤ) :
       (ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).im = Real.sin (2 * π * b * n / q) := by
-    rw [stdAddChar_intCast_mul_natCast, TauCeti.im_expTwoPiI]
+    rw [TauCeti.stdAddChar_intCast_mul_natCast, TauCeti.im_expTwoPiI]
     congr 1
     ring
   have hsum : (∑ b : ZMod q, χ⁻¹ b *

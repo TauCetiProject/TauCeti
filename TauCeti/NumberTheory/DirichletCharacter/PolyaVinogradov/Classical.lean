@@ -11,12 +11,12 @@ public import Mathlib.RingTheory.Radical.NatInt
 public import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
 
 import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.CosecantSum
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.InducedSum
-import TauCeti.NumberTheory.DirichletCharacter.PolyaVinogradov.Basic
 
 /-!
 # The classical explicit Pólya–Vinogradov inequality
@@ -88,25 +88,12 @@ theorem norm_intervalSum_le_inv_sqrt_mul_sum_min {q : ℕ} {χ : DirichletCharac
   have hχ₀ : χ ≠ 1 := fun h ↦ by
     have := hχ.eq_one_iff.mp h
     omega
-  have hqpos : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
-  have hq_fac : Real.sqrt q / q = (Real.sqrt q)⁻¹ := by
-    rw [div_eq_iff hqpos.ne', inv_mul_eq_div, eq_div_iff (Real.sqrt_ne_zero'.mpr hqpos),
-      Real.mul_self_sqrt hqpos.le]
   let f : ℕ → ℝ := fun b ↦
     ‖∑ j ∈ range N, ZMod.stdAddChar ((b : ZMod q) * ((M : ZMod q) + 1 + (j : ZMod q)))‖
   have hsum_eq : ∑ k ∈ univ.erase (0 : ZMod q),
       ‖∑ j ∈ range N, ZMod.stdAddChar (k * ((M : ZMod q) + 1 + (j : ZMod q)))‖ =
       ∑ b ∈ Ico 1 q, f b := by
-    have h1 : ∑ k ∈ univ.erase (0 : ZMod q),
-        ‖∑ j ∈ range N, ZMod.stdAddChar (k * ((M : ZMod q) + 1 + (j : ZMod q)))‖ =
-        ∑ k ∈ univ.erase (0 : ZMod q), f k.val :=
-      sum_congr rfl fun k _ ↦ by simp only [f, ZMod.natCast_zmod_val]
-    have h2 : f 0 + ∑ k ∈ univ.erase (0 : ZMod q), f k.val = f 0 + ∑ b ∈ Ico 1 q, f b := by
-      rw [← ZMod.val_zero (n := q),
-        add_sum_erase univ (fun k : ZMod q ↦ f k.val) (mem_univ 0),
-        ZMod.sum_val_eq_sum_range, ← Nat.Ico_zero_eq_range,
-        sum_eq_sum_Ico_succ_bot (NeZero.pos q), ZMod.val_zero]
-    exact h1.trans (add_left_cancel h2)
+    simpa only [f, ZMod.natCast_zmod_val] using ZMod.sum_val_erase_zero_eq_sum_Ico_one (n := q) f
   have hterm (b : ℕ) (hb : b ∈ Ico 1 q) :
       f b ≤ min (N : ℝ) (Real.sin (π * b / q))⁻¹ := by
     have hgeom : ∑ j ∈ range N, ZMod.stdAddChar ((b : ZMod q) * ((M : ZMod q) + 1 + (j : ZMod q))) =
@@ -114,12 +101,8 @@ theorem norm_intervalSum_le_inv_sqrt_mul_sum_min {q : ℕ} {χ : DirichletCharac
       rw [Int.Ioc_eq_finset_map, add_sub_cancel_left, Int.toNat_natCast, sum_map]
       refine sum_congr rfl fun j _ ↦ ?_
       simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
-      rw [show (b : ZMod q) * ((M : ZMod q) + 1 + (j : ZMod q)) =
-          (((b : ℤ) * (M + 1 + j) : ℤ) : ZMod q) by push_cast; ring,
-        TauCeti.stdAddChar_intCast_eq_expTwoPiI]
-      congr 1
-      push_cast
-      ring
+      rw [mul_comm, ← Int.cast_one, ← Int.cast_natCast j, ← Int.cast_add, ← Int.cast_add,
+        TauCeti.stdAddChar_intCast_mul_natCast]
     rw [mem_Ico] at hb
     dsimp only [f]
     rw [hgeom]
@@ -131,7 +114,7 @@ theorem norm_intervalSum_le_inv_sqrt_mul_sum_min {q : ℕ} {χ : DirichletCharac
     _ ≤ (Real.sqrt q / q) * ∑ k ∈ univ.erase (0 : ZMod q),
           ‖∑ j ∈ range N, ZMod.stdAddChar (k * ((M : ZMod q) + 1 + (j : ZMod q)))‖ :=
         norm_sum_range_add_le_fourier χ hχ hχ₀ ((M : ZMod q) + 1) N
-    _ = (Real.sqrt q)⁻¹ * ∑ b ∈ Ico 1 q, f b := by rw [hq_fac, hsum_eq]
+    _ = (Real.sqrt q)⁻¹ * ∑ b ∈ Ico 1 q, f b := by rw [Real.sqrt_div_self, hsum_eq]
     _ ≤ (Real.sqrt q)⁻¹ * ∑ b ∈ Ico 1 q, min (N : ℝ) (Real.sin (π * b / q))⁻¹ :=
         mul_le_mul_of_nonneg_left (sum_le_sum hterm) (by positivity)
 
@@ -153,10 +136,8 @@ theorem polya_vinogradov_classical {q : ℕ} (χ : DirichletCharacter ℂ q)
   have hq_div : (Real.sqrt q)⁻¹ * (2 * (q : ℝ) / π) = 2 / π * Real.sqrt q := by
     calc
       (Real.sqrt q)⁻¹ * (2 * (q : ℝ) / π)
-        = (Real.sqrt q)⁻¹ * (2 * (Real.sqrt q * Real.sqrt q) / π) := by
-          rw [Real.mul_self_sqrt hqpos.le]
-      _ = 2 / π * Real.sqrt q := by
-          field_simp [hsqrt_pos.ne']
+        = 2 / π * ((q : ℝ) / Real.sqrt q) := by ring
+      _ = 2 / π * Real.sqrt q := by rw [Real.div_sqrt]
   calc
     ‖χ.intervalSum M N‖
       ≤ (Real.sqrt q)⁻¹ * ∑ b ∈ Ico 1 q, min (N : ℝ) (Real.sin (π * b / q))⁻¹ :=

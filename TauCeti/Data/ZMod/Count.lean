@@ -47,7 +47,6 @@ number `H_{n-1}`; the residue `0` contributes `0⁻¹ = 0`.
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
-* `ZMod.sum_val_eq_sum_Ico_one`: summing a function vanishing at `0` over `Ico 1 n`.
 * `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
   fibre of the reduction `ZMod (k * m) → ZMod m`.
 * `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`, the
@@ -98,13 +97,6 @@ theorem mul_card_filter_natCast_val [NeZero m] [NeZero n] (hmn : m ∣ n)
     m * #{x : ZMod n | Q (x.val : ZMod m)} = n * #{y : ZMod m | Q y} := by
   rw [card_filter, card_filter, sum_comp_natCast_val hmn fun y ↦ if Q y then 1 else 0,
     smul_eq_mul, ← mul_assoc, Nat.mul_div_cancel' hmn]
-
-/-- **Summing over the nonzero representatives.** If `f 0 = 0`, summing `f x.val` over `x : ZMod n`
-equals the sum of `f i` over `i ∈ Ico 1 n`. -/
-theorem sum_val_eq_sum_Ico_one {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M)
-    (hf0 : f 0 = 0) : ∑ x : ZMod n, f x.val = ∑ i ∈ Ico 1 n, f i := by
-  rw [sum_val_eq_sum_range, ← Nat.Ico_zero_eq_range,
-    sum_eq_sum_Ico_succ_bot (NeZero.pos n), hf0, zero_add]
 
 /-- **Summing over a fibre of the reduction.** The residues modulo `k * m` that reduce to
 `x : ZMod m` have the representatives `x.val + m * j` for `j < k`, so a function of the
