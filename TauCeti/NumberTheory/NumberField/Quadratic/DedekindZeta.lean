@@ -133,10 +133,8 @@ private theorem normCoeff_one_apply_prime_pow_of_split (hK : finrank ℚ K = 2) 
   have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ Set.mem_insert _ _
   have h𝔮 : 𝔮 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ by simp
   have := h𝔭.1; have := h𝔭.2; have := h𝔮.1; have := h𝔮.2
-  have hsplit : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K := by
-    rw [hT, Set.ncard_pair hne, hK]
-  have hN𝔭 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭 hsplit
-  have hN𝔮 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔮 hsplit
+  have hN𝔭 := absNorm_eq_of_fundamentalDiscriminantChar_discr_ne_neg_one hK p 𝔭 (by rw [h]; decide)
+  have hN𝔮 := absNorm_eq_of_fundamentalDiscriminantChar_discr_ne_neg_one hK p 𝔮 (by rw [h]; decide)
   rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔭] at hN𝔭
   rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔮] at hN𝔮
   have hne' : heightOneSpectrumOfLiesOver p 𝔭 ≠ heightOneSpectrumOfLiesOver p 𝔮 :=
@@ -160,15 +158,11 @@ private theorem normCoeff_one_apply_prime_pow_of_inert (hK : finrank ℚ K = 2) 
     normCoeff K 1 (p ^ k) = ∑ i ∈ Finset.range (k + 1),
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) p : ℤ) : ℂ) ^ i := by
   classical
-  obtain ⟨hunram, hone⟩ := (fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h
-  obtain ⟨𝔭, hT⟩ := Set.ncard_eq_one.mp hone
+  obtain ⟨𝔭, hT⟩ := Set.ncard_eq_one.mp
+    ((fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
   have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ rfl
   have := h𝔭.1; have := h𝔭.2
-  have he : 𝔭.ramificationIdx ℤ = 1 :=
-    (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp
-      (by simpa [hp.out] using hunram)) 𝔭 inferInstance
-  have hN : absNorm 𝔭 = p ^ 2 := by
-    rw [absNorm_eq_pow_finrank_of_primesOver_eq_singleton 𝔭 hT he, hK]
+  have hN := absNorm_eq_sq_of_fundamentalDiscriminantChar_discr_eq_neg_one hK p 𝔭 h
   rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
     (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT), h, Int.cast_neg,
     Int.cast_one, neg_one_geom_sum]
