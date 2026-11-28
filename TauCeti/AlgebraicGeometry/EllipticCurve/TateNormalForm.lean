@@ -464,6 +464,13 @@ homomorphism. -/
 theorem map_lift (h : IsUnit (tateNormalForm a b).Δ) : curve.map (lift h) = tateNormalForm a b := by
   simp [baseChange]
 
+/-- The base change of the universal Tate normal form over `ℤ[A, B][Δ⁻¹]` along a ring
+homomorphism `φ` is the Tate normal form with the images of `A` and `B` as coefficients. -/
+theorem map_curve {S : Type*} [CommRing S] (φ : Ring →+* S) :
+    curve.map φ = tateNormalForm (φ (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 0)))
+      (φ (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 1))) := by
+  simp [curve, polyCurve, baseChange]
+
 /-- The classifying homomorphism is natural in the base ring: followed by a ring homomorphism
 `φ : R →+* S`, the classifying homomorphism of `Y² + aXY + bY = X³ + bX²` is that of its base change
 `Y² + φ(a)XY + φ(b)Y = X³ + φ(b)X²`, whose discriminant is the unit `φ(Δ)`. -/
@@ -729,9 +736,7 @@ theorem existsUnique_comp_toUniversalTate_iff {S : Type*} [CommRing S]
   · have hΔ : IsUnit (tateNormalForm 1
         (φ (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 1)))).Δ := by
       have hmap := UniversalTate.curve.isUnit_Δ.map φ
-      rw [← WeierstrassCurve.map_Δ] at hmap
-      simpa [UniversalTate.curve, UniversalTate.polyCurve, WeierstrassCurve.baseChange, h₁] using
-        hmap
+      rwa [← WeierstrassCurve.map_Δ, UniversalTate.map_curve, h₁] at hmap
     refine ⟨lift hΔ, ⟨?_, lift_param hΔ⟩, fun ψ' ⟨_, hparam⟩ ↦ ?_⟩
     · ext
       · simp [h₁]
@@ -796,16 +801,16 @@ theorem existsUnique_comp_toUniversalTate_ulift_iff {S : Type*} [CommRing S]
     (∃! ψ : ULift.{u} Ring →+* S, ψ.comp toUniversalTate.ulift.{u, u} = φ ∧
       ψ (.up param) = φ UniversalTate.curveULift.a₃) ↔
       φ UniversalTate.curveULift.a₁ = 1 := by
-  refine ⟨?_, fun h₁ ↦ ?_⟩
-  · rintro ⟨ψ, ⟨hcomp, -⟩, -⟩
-    rw [← hcomp, RingHom.comp_apply, toUniversalTate_ulift_a₁, map_one]
-  · obtain ⟨hΔ', hφeq⟩ := UniversalTate.eq_liftULift φ
-    have hΔ : IsUnit (tateNormalForm 1 (φ UniversalTate.curveULift.a₃)).Δ := h₁ ▸ hΔ'
-    refine ⟨liftULift hΔ, ⟨?_, ?_⟩, fun ψ' ⟨_, hparam⟩ ↦ ?_⟩
-    · rw [liftULift_comp_toUniversalTate_ulift,
-        ← UniversalTate.liftULift_congr hΔ' hΔ h₁ rfl, ← hφeq]
-    · simp
-    · exact ringHom_ext_uLift (by simpa using hparam)
+  let e : (ULift.{u} Ring →+* S) ≃ (Ring →+* S) :=
+    { toFun := fun ψ ↦ ψ.comp ULift.ringEquiv.symm.toRingHom
+      invFun := fun ψ ↦ ψ.comp ULift.ringEquiv.toRingHom
+      left_inv := fun _ ↦ RingHom.ext fun _ ↦ rfl
+      right_inv := fun _ ↦ RingHom.ext fun _ ↦ rfl }
+  refine (e.existsUnique_congr fun ψ ↦ ?_).trans <|
+    existsUnique_comp_toUniversalTate_iff <|
+      φ.comp (ULift.ringEquiv.symm : UniversalTate.Ring ≃+* ULift.{u} UniversalTate.Ring).toRingHom
+  exact and_congr ⟨fun h ↦ RingHom.ext fun x ↦ RingHom.congr_fun h (.up x),
+    fun h ↦ RingHom.ext fun x ↦ RingHom.congr_fun h x.down⟩ Iff.rfl
 
 end UniversalGammaOneFour
 
