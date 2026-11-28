@@ -25,14 +25,15 @@ We develop once for all tagged spaces:
 * the Bochner `L¹` seminorm (`SeminormedAddCommGroup`, `NormedSpace`), realization `toL1` and
   linear isometry `toL1LI` into `Lp E 1 μ`, separation (`NormedAddCommGroup`) for full-support
   measures, and the isometric identification `completionEquivL1` of
-  `UniformSpace.Completion (CompactlySupportedL1 tag E μ)` with `Lp E 1 μ` on weakly locally
-  compact `R₁` spaces;
+  `UniformSpace.Completion (CompactlySupportedL1 tag E μ)` with `Lp E 1 μ` for a complete real
+  normed-space target `E` on a weakly locally compact `R₁` Borel space with `μ` finite on
+  compact sets and inner regular for compact sets on sets of finite measure;
 * builder helpers (`nonUnitalNonAssocRingOf`, `nonUnitalRingOf`, `norm_mul_le_of`, `starRingOf`,
   `normedStarGroupOf`, …) turning convolution and involution laws on `C_c(X, E)` into algebraic
   and normed structures on `CompactlySupportedL1 tag E μ`;
 * `CompactlySupportedL1.liftCLM`, bundling a `𝕜`-linear map on `C_c(X, E)` with an `L¹` bound
   `‖Φ f‖ ≤ C * ∫ s, ‖f s‖ ∂μ` into a bounded linear map `CompactlySupportedL1 tag E μ →L[𝕜] B`
-  of operator norm at most `C` (`norm_liftCLM_le`, contractive when `C ≤ 1`).
+  of operator norm at most `C` when `0 ≤ C` (`norm_liftCLM_le`, contractive when `0 ≤ C ≤ 1`).
 -/
 
 public section
@@ -307,10 +308,15 @@ end FullSupport
 section CompletionEquiv
 
 variable [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X] [NormedSpace ℝ E]
-  [μ.InnerRegularCompactLTTop] (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E]
+  [μ.InnerRegularCompactLTTop]
 
-/-- `CompactlySupportedL1` has dense image in `Lp E 1 μ` for any measure finite on compact sets
-and inner regular on sets of finite measure. -/
+section DenseRange
+
+variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- `CompactlySupportedL1` has dense image in `Lp E 1 μ` on a weakly locally compact `R₁` Borel
+space for a real normed space `E` and a measure finite on compact sets and inner regular for
+compact sets on sets of finite measure. -/
 theorem denseRange_toL1 : DenseRange (toL1 (tag := tag) (E := E) (μ := μ) 𝕜) := by
   refine (CompactlySupportedContinuousMap.denseRange_toLp ENNReal.one_ne_top μ 𝕜).mono ?_
   rintro _ ⟨f, rfl⟩
@@ -320,9 +326,11 @@ theorem denseRange_toL1 : DenseRange (toL1 (tag := tag) (E := E) (μ := μ) 𝕜
 theorem denseRange_toL1LI : DenseRange (toL1LI tag E μ 𝕜) :=
   denseRange_toL1 𝕜
 
+end DenseRange
+
 section Complete
 
-variable [CompleteSpace E]
+variable (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E] [CompleteSpace E]
 
 variable (tag E μ) in
 /-- **Identification of the abstract `L¹` completion with Bochner `L¹`**: `toL1` extends to a
@@ -453,8 +461,8 @@ theorem norm_mul_le_of [Mul (CompactlySupportedL1 tag E μ)]
     (f g : CompactlySupportedL1 tag E μ) : ‖f * g‖ ≤ ‖f‖ * ‖g‖ := by
   simpa only [norm_eq_integral_norm, h_mul] using h_norm_mul f.toFun g.toFun
 
-/-- An `L¹`-norm-preserving involution `inv` on `C_c(X, E)` makes `star` an `L¹` isometry on
-`CompactlySupportedL1 tag E μ`. -/
+/-- An `L¹`-norm-preserving involution `inv` on `C_c(X, E)` makes `star` preserve the `L¹` norm
+(`‖star f‖ = ‖f‖`) on `CompactlySupportedL1 tag E μ`. -/
 theorem norm_star_of [Star (CompactlySupportedL1 tag E μ)] (inv : C_c(X, E) → C_c(X, E))
     (h_star : ∀ f : CompactlySupportedL1 tag E μ, (star f).toFun = inv f.toFun)
     (h_norm_star : ∀ f : C_c(X, E), ∫ s, ‖inv f s‖ ∂μ = ∫ s, ‖f s‖ ∂μ)
@@ -463,7 +471,7 @@ theorem norm_star_of [Star (CompactlySupportedL1 tag E μ)] (inv : C_c(X, E) →
   rw [norm_eq_integral_norm, h_star, h_norm_star, norm_eq_integral_norm]
 
 /-- Construct `NormedStarGroup` on `CompactlySupportedL1 tag E μ` from an `L¹`-norm-preserving
-involution on `C_c(X, E)`. -/
+involution on `C_c(X, E)`, making `star` an `L¹` isometry when `StarAddMonoid` holds. -/
 theorem normedStarGroupOf [StarAddMonoid (CompactlySupportedL1 tag E μ)]
     (inv : C_c(X, E) → C_c(X, E))
     (h_star : ∀ f : CompactlySupportedL1 tag E μ, (star f).toFun = inv f.toFun)

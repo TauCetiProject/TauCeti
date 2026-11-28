@@ -176,8 +176,10 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
 
 /-- **Right approximation.** Let `φ i` be eventually nonnegative real functions of unit integral
 whose supports shrink to the identity, and let `lA` be an increasing approximate unit of `A`.
-Then `f ⋆ (φ i ⊗ e) → f` in the `L¹` norm of a Haar measure. -/
-theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l : Filter ι}
+Then `f ⋆ (φ i ⊗ e) → f` in the `L¹` norm of a left-invariant Borel measure finite on compact
+sets. -/
+theorem tendsto_mul_smulRight [BorelSpace G] [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
+    {ι : Type*} {l : Filter ι}
     {φ : ι → C_c(G, ℝ)} (hφ : ∀ᶠ i in l, 0 ≤ φ i) (hφ1 : ∀ᶠ i in l, ∫ s, φ i s ∂μ = 1)
     (hφs : Tendsto (fun i => tsupport (φ i)) l (𝓝 1).smallSets) {lA : Filter A}
     (hlA : lA.IsIncreasingApproximateUnit) (f : ConvolutionAlgebra α μ) :
@@ -242,9 +244,10 @@ theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l 
 /-- **Approximate units of the twisted convolution algebra.** Let `φ i` be eventually nonnegative
 real functions of unit integral whose supports shrink to the identity, and let `lA` be an
 increasing approximate unit of `A`. Then the elementary functions `φ i ⊗ e`, `e` along `lA`, form
-an approximate unit of the convolution algebra of a Haar measure. -/
-theorem isApproximateUnit_map_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*}
-    {l : Filter ι} [l.NeBot]
+an approximate unit of the convolution algebra of a left-invariant Borel measure finite on compact
+sets. -/
+theorem isApproximateUnit_map_smulRight [BorelSpace G] [IsFiniteMeasureOnCompacts μ]
+    [μ.IsMulLeftInvariant] {ι : Type*} {l : Filter ι} [l.NeBot]
     {φ : ι → C_c(G, ℝ)} (hφ : ∀ᶠ i in l, 0 ≤ φ i) (hφ1 : ∀ᶠ i in l, ∫ s, φ i s ∂μ = 1)
     (hφs : Tendsto (fun i => tsupport (φ i)) l (𝓝 1).smallSets) {lA : Filter A}
     (hlA : lA.IsIncreasingApproximateUnit) :

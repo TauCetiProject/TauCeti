@@ -21,7 +21,7 @@ measure.
 This file adds the algebraic norm bounds and star-isometry structure for `ConvolutionAlgebra α μ`:
 for a left-invariant measure the convolution estimate makes it a `NonUnitalSeminormedRing` (and a
 `NonUnitalNormedRing` for full-support measures), and the twisted involution is an `L¹` isometry
-(`norm_star`, `NormedStarGroup`), because the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))`
+(`NormedStarGroup`), because the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))`
 is the density of the inverted Haar measure.
 
 The completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
@@ -86,16 +86,10 @@ section Star
 variable {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
   [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsMulLeftInvariant]
 
-/-- For a left-invariant measure the twisted involution is an isometry for the L¹ seminorm,
-`‖f*‖₁ = ‖f‖₁`: the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))` is exactly the density
-of the inverted Haar measure. -/
-theorem norm_star (f : ConvolutionAlgebra α μ) : ‖star f‖ = ‖f‖ :=
-  CompactlySupportedL1.norm_star_of α.twistedInvolution toFun_star
-    (α.integral_norm_twistedInvolution μ) f
-
-/-- For a left-invariant measure the twisted convolution algebra is a seminormed ⋆-algebra. Its
-completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
-⋆-algebra. -/
+/-- For a left-invariant Borel measure finite on compact sets on a locally compact topological
+group, the twisted convolution algebra is a seminormed ⋆-algebra (`‖star f‖ = ‖f‖` by Mathlib's
+generic `norm_star`). Its completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the
+twisted L¹ Banach ⋆-algebra. -/
 instance : NormedStarGroup (ConvolutionAlgebra α μ) :=
   CompactlySupportedL1.normedStarGroupOf α.twistedInvolution toFun_star
     (α.integral_norm_twistedInvolution μ)

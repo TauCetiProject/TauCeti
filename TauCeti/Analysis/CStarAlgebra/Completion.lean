@@ -9,7 +9,6 @@ public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Normed.Group.Completion
 public import Mathlib.Analysis.Normed.Module.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
-public import TauCeti.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Topology.Algebra.Star.Completion
 
 /-!
@@ -28,7 +27,7 @@ gives a C⋆-ring.
 
 A continuous unital ⋆-homomorphism into a complete normed ⋆-algebra extends by continuity to a
 ⋆-homomorphism out of the completion of its domain (`StarAlgHom.fromCompletion`), building on
-`NonUnitalStarAlgHom.fromCompletion` from `TauCeti.Topology.Algebra.LinearMapCompletion`. This is
+`NonUnitalStarAlgHom.fromCompletion` from `TauCeti.Topology.Algebra.UniformRing`. This is
 how ⋆-homomorphisms bounded by a universal C⋆-seminorm pass to the universal C⋆-algebra.
 
 ## Main results

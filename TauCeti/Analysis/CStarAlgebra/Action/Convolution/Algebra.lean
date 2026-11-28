@@ -174,8 +174,8 @@ section SMulRight
 /-- The right product with an elementary function, after substituting `r = s * t⁻¹`:
 `(f ⋆ (φ ⊗ e)) s = ∫ t, φ t • c(t) • (f (s * t⁻¹) * α (s * t⁻¹) e) ∂μ`. -/
 theorem toFun_mul_smulRight_apply [IsTopologicalGroup G] [LocallyCompactSpace G]
-    [BorelSpace G] [μ.IsHaarMeasure] (f : ConvolutionAlgebra α μ)
-    (φ : C_c(G, ℝ)) (e : A) (s : G) :
+    [BorelSpace G] [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
+    (f : ConvolutionAlgebra α μ) (φ : C_c(G, ℝ)) (e : A) (s : G) :
     (f * smulRight φ e).toFun s = ∫ t, φ t • (Measure.modularCharacter t : ℝ) •
       (f.toFun (s * t⁻¹) * α (s * t⁻¹) e) ∂μ := by
   set g := f.toFun

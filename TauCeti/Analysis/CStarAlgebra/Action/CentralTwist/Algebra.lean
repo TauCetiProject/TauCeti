@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Convolution
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 
 /-!
 # The cocycle-twisted convolution ⋆-algebra and its L¹ norm
@@ -18,12 +17,13 @@ normalized continuous central multiplier cocycle `ω : CentralCocycle α`, and a
 When `G` is locally compact and Borel and `μ` is left-invariant and finite on compact sets,
 `TwistedConvolutionAlgebra ω μ` is a complex `StarRing` and `NormedStarGroup` whose uniform
 completion `UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` is the cocycle-twisted `L¹`
-Banach ⋆-algebra `L¹(G, A, α, ω)`. When `G` is weakly locally compact and `μ` is inner regular on
-finite-measure sets, `CompactlySupportedL1.completionEquivL1` identifies this completion
-isometrically with Bochner `Lp A 1 μ`. At `ω = 1`, `untwistStarAlgEquiv` identifies it isometrically
-with `ConvolutionAlgebra α μ`. Without local compactness, `untwistRingEquiv` provides the underlying
-isometric `ℂ`-linear ring equivalence; under `LocallyCompactSpace`, `untwistStarAlgEquiv` upgrades
-it to a `⋆`-algebra equivalence.
+Banach ⋆-algebra `L¹(G, A, α, ω)`. When `G` is a weakly locally compact `R₁` Borel space and `μ` is
+finite on compact sets and inner regular for compact sets on sets of finite measure,
+`CompactlySupportedL1.completionEquivL1` identifies this completion isometrically with Bochner
+`Lp A 1 μ`. At `ω = 1`, `untwistStarAlgEquiv` identifies the two compact-support convolution
+algebras `TwistedConvolutionAlgebra 1 μ` and `ConvolutionAlgebra α μ` isometrically as complex
+`⋆`-algebras (under `LocallyCompactSpace`); without local compactness, `untwistRingEquiv` provides
+the underlying isometric `ℂ`-linear ring equivalence.
 
 ## Main definitions
 
@@ -170,11 +170,9 @@ section NormedStar
 variable [IsFiniteMeasureOnCompacts μ] [IsTopologicalGroup G] [LocallyCompactSpace G]
   [BorelSpace G] [μ.IsMulLeftInvariant]
 
-/-- For a left-invariant measure, the `ω`-twisted involution is an `L¹` isometry:
-`‖star f‖ = ‖f‖`. -/
-theorem norm_star (f : TwistedConvolutionAlgebra ω μ) : ‖star f‖ = ‖f‖ :=
-  CompactlySupportedL1.norm_star_of ω.involution toFun_star (ω.integral_norm_involution μ) f
-
+/-- For a left-invariant Borel measure finite on compact sets on a locally compact topological
+group, `TwistedConvolutionAlgebra ω μ` is a seminormed ⋆-algebra (`‖star f‖ = ‖f‖` by Mathlib's
+generic `norm_star`). -/
 instance : NormedStarGroup (TwistedConvolutionAlgebra ω μ) :=
   CompactlySupportedL1.normedStarGroupOf ω.involution toFun_star (ω.integral_norm_involution μ)
 

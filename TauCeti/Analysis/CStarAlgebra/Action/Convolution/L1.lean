@@ -31,10 +31,11 @@ pulled back along `CompactlySupportedL1.toL1 ℂ : ConvolutionAlgebra α μ →�
 abstract completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted `L¹` Banach
 ⋆-algebra.
 
-When `G` is weakly locally compact and `μ` is finite on compact sets and inner regular on sets of
-finite measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), compactly supported
-continuous functions are dense in `Lp A 1 μ`. Consequently `CompactlySupportedL1.toL1 ℂ` has dense
-range and extends to a linear isometric equivalence
+When `G` is a weakly locally compact `R₁` Borel space and `μ` is finite on compact sets and inner
+regular for compact sets on sets of finite measure (`IsFiniteMeasureOnCompacts μ` and
+`μ.InnerRegularCompactLTTop`), compactly supported continuous functions are dense in `Lp A 1 μ`.
+Consequently `CompactlySupportedL1.toL1 ℂ` has dense range and extends to a linear isometric
+equivalence
 `CompactlySupportedL1.completionEquivL1 α A μ ℂ` from `Completion (ConvolutionAlgebra α μ)`
 to `Lp A 1 μ`. This holds without separability of `A`, second countability of `G`,
 σ-finiteness of `μ`, unitality of `A`, or full support of `μ`, including zero algebras and the zero

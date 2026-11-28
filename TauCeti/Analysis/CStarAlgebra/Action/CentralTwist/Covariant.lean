@@ -33,22 +33,24 @@ projective law combine into the algebraic identity `P.pi (f r) U_r P.pi (g t) U_
 P.pi (f r * α_r(g t) * ω(r, t)) U_{r * t}` (`CentralCovariantPair.pi_mul_unitaryMap_mul`). When `μ`
 is left-invariant, compact-support Fubini together with left-translation invariance makes
 `P.integratedOperator μ` multiplicative for `twistedConvolution`
-(`centralIntegrated_twistedConvolution`). Against any left-invariant measure finite on compact sets,
-the modular factor in `ω.involution` cancels Haar inversion so that `P.integratedOperator μ` sends
-`ω.involution` to the operator adjoint.
+(`centralIntegrated_twistedConvolution`). Against any left-invariant Borel measure finite on compact
+sets on a locally compact topological group (without requiring Haar measure), the modular factor in
+`ω.involution` cancels Haar inversion so that `P.integratedOperator μ` sends `ω.involution` to the
+operator adjoint.
 
 For the trivial cocycle `ω = 1`, `CentralCovariantPair H α 1` corresponds bijectively to
-nondegenerate `CovariantRepresentation α H` with matching integrated forms, while
-`CentralCovariantPair.ofScalar` constructs twisted covariant pairs for genuinely nontrivial scalar
-`unitary ℂ`-valued `2`-cocycles.
+nondegenerate `CovariantRepresentation α H` (`equivCovariantRepresentation`) with matching
+integrated forms, while `CentralCovariantPair.ofScalar` constructs twisted covariant pairs for
+genuinely nontrivial scalar `unitary ℂ`-valued `2`-cocycles.
 
 ## Main definitions
 
 * `TauCeti.CStarAction.CentralCovariantPair`: twisted covariant pair `(π, U)` for `(α, ω)`.
 * `TauCeti.CStarAction.CentralCovariantPair.comp`: pullback along `ContinuousMonoidHom`.
-* `TauCeti.CStarAction.CentralCovariantPair.toCovariantRepresentation` and
-  `TauCeti.CStarAction.CovariantRepresentation.toCentralCovariantPair`: comparison with untwisted
-  covariant representations at `ω = 1`.
+* `TauCeti.CStarAction.CentralCovariantPair.toCovariantRepresentation`,
+  `TauCeti.CStarAction.CovariantRepresentation.toCentralCovariantPair`, and
+  `TauCeti.CStarAction.CentralCovariantPair.equivCovariantRepresentation`: comparison and canonical
+  equivalence with untwisted nondegenerate covariant representations at `ω = 1`.
 * `TauCeti.CStarAction.CentralCovariantPair.ofScalar`: twisted covariant pair from a scalar
   projective unitary representation.
 * `TauCeti.CStarAction.CentralCovariantPair.integratedOperator`: vector-valued integrated form on
@@ -62,8 +64,8 @@ nondegenerate `CovariantRepresentation α H` with matching integrated forms, whi
   `TauCeti.CStarAction.centralIntegrated_twistedConvolution`: multiplicativity under
   `twistedConvolution` for left-invariant `μ`.
 * `TauCeti.CStarAction.CentralCovariantPair.integratedOperator_involution`:
-  `P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f)` for left-invariant
-  `μ` finite on compact sets.
+  `P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f)` for a left-invariant
+  Borel measure `μ` finite on compact sets on a locally compact topological group.
 
 ## References
 
@@ -410,8 +412,9 @@ theorem pi_involution_mul_unitaryMap (f : C_c(G, A)) (s : G) :
   rw [← P.pi.multiplierExtension_mul_eq_fst P.nondegenerate, mul_assoc, ← P.unitaryMap_mul_pi,
     ← mul_assoc, ← P.star_unitaryMap_inv, map_star, ← star_mul]
 
-/-- Against any left-invariant measure finite on compact sets, the integrated form of a twisted
-covariant pair sends the cocycle-twisted involution `ω.involution` to the operator adjoint. -/
+/-- Against any left-invariant Borel measure finite on compact sets on a locally compact
+topological group (without requiring Haar measure), the integrated form of a twisted covariant pair
+sends the cocycle-twisted involution `ω.involution` to the operator adjoint. -/
 @[simp]
 theorem integratedOperator_involution [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
     [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
@@ -510,6 +513,30 @@ theorem toCentralCovariantPair_toCovariantRepresentation (P : CentralCovariantPa
   funext s
   apply Subtype.ext
   simp
+
+/-- `CentralCovariantPair H α 1` is canonically equivalent to nondegenerate
+`CovariantRepresentation α H`. -/
+def equivCovariantRepresentation :
+    CentralCovariantPair H α 1 ≃
+      {Q : CovariantRepresentation α H // Q.coefficient.IsNondegenerate} where
+  toFun P :=
+    ⟨P.toCovariantRepresentation,
+      P.toCovariantRepresentation_coefficient.symm ▸ P.nondegenerate⟩
+  invFun Q := Q.val.toCentralCovariantPair Q.property
+  left_inv P := P.toCentralCovariantPair_toCovariantRepresentation
+    (P.toCovariantRepresentation_coefficient.symm ▸ P.nondegenerate)
+  right_inv Q := Subtype.ext (Q.val.toCovariantRepresentation_toCentralCovariantPair Q.property)
+
+@[simp] theorem coe_equivCovariantRepresentation_apply (P : CentralCovariantPair H α 1) :
+    ((equivCovariantRepresentation P :
+      {Q : CovariantRepresentation α H // Q.coefficient.IsNondegenerate}) :
+      CovariantRepresentation α H) = P.toCovariantRepresentation :=
+  (rfl)
+
+@[simp] theorem equivCovariantRepresentation_symm_apply
+    (Q : {Q : CovariantRepresentation α H // Q.coefficient.IsNondegenerate}) :
+    equivCovariantRepresentation.symm Q = Q.val.toCentralCovariantPair Q.property :=
+  (rfl)
 
 end CentralCovariantPair
 

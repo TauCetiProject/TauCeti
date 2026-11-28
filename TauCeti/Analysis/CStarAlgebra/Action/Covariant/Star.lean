@@ -54,8 +54,10 @@ theorem integratedOperator_twistedInvolution (f : C_c(G, A)) :
   rw [P.integratedOperator_eq_coefficient μ]
   refine P.coefficient.integratedOperator_eq_star P.continuous_orbit P.isUnitary.exists_norm_le μ
     (.of_forall fun g => ?_)
-  rw [twistedInvolution_apply, map_smul, smul_mul_assoc, ← P.group_mul_coefficient,
-    star_mul, map_star, P.isUnitary.star_eq_inv, inv_inv]
+  simp only [twistedInvolution_apply, map_smul, smul_mul_assoc, star_mul,
+    P.isUnitary.star_eq_inv, inv_inv]
+  rw [← P.group_mul_coefficient]
+  simp only [map_star]
 
 /-- The integrated form as a nonunital complex ⋆-algebra homomorphism on the compact-support
 convolution algebra. Its values are defined by Hilbert-space vector integrals. -/
