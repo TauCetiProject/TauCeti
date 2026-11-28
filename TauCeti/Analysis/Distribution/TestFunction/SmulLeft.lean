@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Wedge
 
 /-!
 # Smooth multiplication of test forms and the Leibniz rule for currents
@@ -58,10 +59,14 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 * `TestFunction.oneFormWedgeCLM`: the wedge `ω ↦ α ∧ ω` of test forms with a smooth one-form.
 * `TestFunction.norm_oneFormWedgeCLM_apply_le`: the pointwise bound
   `‖(α ∧ ω) x‖ ≤ (k + 1) ‖α x‖ ‖ω x‖`, with its extended-norm form
-  `TestFunction.enorm_oneFormWedgeCLM_apply_le`.
+  `TestFunction.enorm_oneFormWedgeCLM_apply_le`, and the sharp inner-product forms
+  `TestFunction.norm_oneFormWedgeCLM_apply_le_of_innerProductSpace` and
+  `TestFunction.enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace` without the `(k + 1)` factor.
 * `TestFunction.extDerivCLM_smulLeftCLM`: the Leibniz rule `d (f ω) = df ∧ ω + f dω`.
-* `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`: the boundary of a smooth multiple of
-  a current, `∂(fT) = f ∂T - T ⌞ df`.
+* `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`,
+  `ContinuousLinearMap.apply_smulLeftCLM_extDerivCLM_sub`: the boundary of a smooth multiple of
+  a current, `∂(fT) = f ∂T - T ⌞ df`, and its pointwise form
+  `T (f • dω) - (∂T) (f • ω) = -T (df ∧ ω)`.
 * `ContDiffMapSupportedIn.seminorm_bilinLeftCLM_mul_le`: the Leibniz bound
   `N_i(χ g) ≤ 2 ^ k N_k(χ) M` for the product of a complex smooth function `χ` supported in a
   compact set with a smooth function `g` whose derivatives of order at most `k` are bounded by `M`.
@@ -466,6 +471,32 @@ end Leibniz
 
 end TestFunction
 
+namespace TestFunction
+
+open TopologicalSpace ContinuousAlternatingMap
+open scoped Distributions
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞} {k : ℕ} {α : E → E →L[ℝ] ℝ}
+
+/-- On a real inner product space, the wedge `α ∧ ω` is bounded pointwise in operator norm by
+`‖α x‖ * ‖ω x‖`, without the `(k + 1)` factor. -/
+theorem norm_oneFormWedgeCLM_apply_le_of_innerProductSpace (hα : ContDiff ℝ n α)
+    (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    ‖oneFormWedgeCLM hα ω x‖ ≤ ‖α x‖ * ‖ω x‖ := by
+  rw [oneFormWedgeCLM_apply]
+  exact norm_alternatizeUncurryFin_smulRight_le (α x) (ω x)
+
+/-- Pointwise extended-norm bound for `oneFormWedgeCLM` on a real inner product space, without the
+`(k + 1)` factor. -/
+theorem enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace (hα : ContDiff ℝ n α)
+    (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    ‖oneFormWedgeCLM hα ω x‖ₑ ≤ ‖α x‖ₑ * ‖ω x‖ₑ := by
+  rw [oneFormWedgeCLM_apply]
+  exact enorm_alternatizeUncurryFin_smulRight_le (α x) (ω x)
+
+end TestFunction
+
 namespace ContinuousLinearMap
 
 open TestFunction
@@ -485,6 +516,17 @@ theorem comp_smulLeftCLM_comp_extDerivCLM
         T ∘L oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hf).2 := by
   ext ω
   simp [extDerivCLM_smulLeftCLM hf ω]
+
+/-- Pointwise Leibniz identity for currents: `T (f • dω) - (∂T) (f • ω) = -T (df ∧ ω)`. -/
+theorem apply_smulLeftCLM_extDerivCLM_sub
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) (hf : ContDiff ℝ (⊤ : ℕ∞) f)
+    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    T (smulLeftCLM hf (extDerivCLM ω)) - (T ∘L extDerivCLM) (smulLeftCLM hf ω) =
+      -T (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hf).2 ω) := by
+  have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T hf) ω
+  simp only [comp_apply, sub_apply] at hL ⊢
+  rw [hL]
+  abel
 
 end ContinuousLinearMap
 

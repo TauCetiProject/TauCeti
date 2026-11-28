@@ -8,13 +8,17 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
@@ -35,6 +39,12 @@ evaluation on integrable forms (`Distribution.extendL1`).
 
 ## Main declarations
 
+* `TestFunction.memLp_smul_of_continuous`, `TestFunction.memLp_intervalIntegral_smul`:
+  multiplying a test function by a continuous scalar function on `Ω`, or by the interval integral
+  of a jointly continuous scalar kernel on `Ω × ℝ`, stays in `Lᵖ(μ)`.
+* `TestFunction.continuous_toLp_smul`, `TestFunction.intervalIntegral_toLp_smul`: for a jointly
+  continuous scalar kernel `K` on `Ω × ℝ` and `1 ≤ p < ∞`, the curve `s ↦ [K(·, s) φ]` in
+  `Lᵖ(μ; F)` is continuous and its Bochner interval integral is `[(∫ K(·, t) dt) φ]`.
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
   ambient space, as a `𝕜`-linear map.
@@ -45,9 +55,13 @@ evaluation on integrable forms (`Distribution.extendL1`).
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
   It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
   (`TestFunction.indicatorToLp_empty`, `_univ`, `_union`).
+* `TestFunction.tendsto_toLp_smul_of_dominated`: dominated convergence in `Lᵖ(μ)` for
+  scalar-multiplied test functions `c i x • φ x`.
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
+* `TestFunction.exists_tendsto_lintegral_indicator`: on a finite-dimensional space `E`,
+  approximation of `1_{A ∩ K}` in `L¹(μ; ℝ)` by smooth scalar test functions on `Ω`.
 * `TestFunction.integrable_bilin_of_memLp`: a continuous bilinear map applied to a test function
   and an `Lᵖ` function is integrable.
 * `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
@@ -67,7 +81,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter Set Metric
-open scoped BoundedContinuousFunction ENNReal Distributions InnerProductSpace
+open scoped BoundedContinuousFunction ENNReal Distributions InnerProductSpace Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   {Ω : Opens E} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
@@ -115,6 +129,25 @@ theorem memLp_subtype [IsFiniteMeasureOnCompacts μ] (φ : 𝓓^{n}(Ω, F)) :
   rw [← funext (toCompactlySupportedContinuousMap_apply φ)]
   exact (map_continuous _).memLp_of_hasCompactSupport
     φ.toCompactlySupportedContinuousMap.hasCompactSupport
+
+/-- Multiplying a test function on `Ω` by a continuous scalar function on `Ω` lies in `Lᵖ(μ)` for
+every measure `μ` on `Ω` that is finite on compact sets. -/
+theorem memLp_smul_of_continuous [IsFiniteMeasureOnCompacts μ] {c : Ω → ℝ}
+    (hc : Continuous c) (φ : 𝓓^{n}(Ω, F)) :
+    MemLp (fun x : Ω => c x • φ x) p μ := by
+  simp_rw [← toCompactlySupportedContinuousMap_apply φ]
+  exact (hc.smul (map_continuous _)).memLp_of_hasCompactSupport
+    φ.toCompactlySupportedContinuousMap.hasCompactSupport.smul_left
+
+/-- Multiplying a test function on `Ω` by the interval integral of a scalar kernel jointly
+continuous on `Ω × ℝ` lies in `Lᵖ(μ)` for every measure `μ` on `Ω` that is finite on compact
+sets. -/
+theorem memLp_intervalIntegral_smul [IsFiniteMeasureOnCompacts μ] {K : E → ℝ → ℝ}
+    (hK : Continuous fun p : Ω × ℝ => K p.1 p.2) (a b : ℝ) (φ : 𝓓^{n}(Ω, F)) :
+    MemLp (fun x : Ω => (∫ t in a..b, K x t) • φ x) p μ :=
+  memLp_smul_of_continuous
+    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
+      (f := fun (x : Ω) (t : ℝ) => K x t) hK a b) φ
 
 variable {A : Set Ω}
 
@@ -242,6 +275,118 @@ theorem norm_indicatorToLp_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
   exact ENNReal.toReal_mono (memLp_subtype φ).eLpNorm_ne_top
     (eLpNorm_indicator_le _ hA.nullMeasurableSet)
 
+/-- Dominated convergence in `Lᵖ(μ; F)` (`1 ≤ p < ∞`) for scalar-multiplied test functions
+`c i x • φ x`. -/
+theorem tendsto_toLp_smul_of_dominated {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    (hp : p ≠ ∞) {φ : 𝓓^{n}(Ω, F)} {c : ι → Ω → ℝ} {c₀ : Ω → ℝ}
+    (hc : ∀ i, MemLp (fun x : Ω => c i x • φ x) p μ)
+    (hc₀ : MemLp (fun x : Ω => c₀ x • φ x) p μ) (C : ℝ)
+    (hbound : ∀ᶠ i in l, ∀ x : Ω, (x : E) ∈ tsupport φ → |c i x - c₀ x| ≤ C)
+    (hlim : ∀ x : Ω, (x : E) ∈ tsupport φ → Tendsto (fun i => c i x) l (𝓝 (c₀ x))) :
+    Tendsto (fun i => (hc i).toLp _) l (𝓝 (hc₀.toLp _)) := by
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ hc _ hc₀]
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := C.toNNReal) hp
+    (.of_forall fun i => (hc i).aestronglyMeasurable) (memLp_subtype φ)
+    (hbound.mono fun i hi => ae_of_all _ fun x => ?_) (ae_of_all _ fun x => ?_)
+  · by_cases hx : (x : E) ∈ tsupport φ
+    · rw [← sub_smul, eNorm_smul]
+      gcongr
+      rw [← ofReal_norm, Real.norm_eq_abs]
+      exact ENNReal.ofReal_le_ofReal (hi x hx)
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  · by_cases hx : (x : E) ∈ tsupport φ
+    · exact (hlim x hx).smul_const (φ x)
+    · simpa [image_eq_zero_of_notMem_tsupport hx] using tendsto_const_nhds
+
+/-- For a jointly continuous scalar kernel `K : E → ℝ → ℝ` on `Ω × ℝ`, `s ↦ (K · s • φ)` is
+continuous as a curve in `Lᵖ(μ; F)` (`1 ≤ p < ∞`). -/
+theorem continuous_toLp_smul (hp : p ≠ ∞) {K : E → ℝ → ℝ}
+    (hK : Continuous fun q : Ω × ℝ => K q.1 q.2) (φ : 𝓓^{n}(Ω, F)) :
+    Continuous fun s : ℝ =>
+      (memLp_smul_of_continuous (p := p) (μ := μ)
+        (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ).toLp
+        (fun x : Ω => K x s • φ x) := by
+  refine continuous_iff_continuousAt.2 fun s₀ => ?_
+  obtain ⟨M, hM⟩ :=
+    ((TestFunction.isCompact_preimage_tsupport φ).prod isCompact_Icc).exists_bound_of_continuousOn
+      (s := ((↑) ⁻¹' tsupport φ : Set Ω) ×ˢ Icc (s₀ - 1) (s₀ + 1)) hK.continuousOn
+  refine tendsto_toLp_smul_of_dominated hp
+    (fun s => memLp_smul_of_continuous
+      (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ)
+    (memLp_smul_of_continuous
+      (c := fun x : Ω => K x s₀) (hK.comp (continuous_id.prodMk continuous_const)) φ)
+    (M + M) ?_ fun x _ =>
+      (hK.comp (continuous_const.prodMk continuous_id)).tendsto s₀
+  filter_upwards
+      [Ioo_mem_nhds (a := s₀ - 1) (b := s₀ + 1) (by linarith) (by linarith)] with s hs x hx
+  have hsIcc : s ∈ Icc (s₀ - 1) (s₀ + 1) := Ioo_subset_Icc_self hs
+  have hs₀Icc : s₀ ∈ Icc (s₀ - 1) (s₀ + 1) := ⟨by linarith, by linarith⟩
+  refine (abs_sub _ _).trans (add_le_add ?_ ?_)
+  · simpa only [Real.norm_eq_abs] using hM ⟨x, s⟩ ⟨hx, hsIcc⟩
+  · simpa only [Real.norm_eq_abs] using hM ⟨x, s₀⟩ ⟨hx, hs₀Icc⟩
+
+/-- For a jointly continuous scalar kernel `K : E → ℝ → ℝ` on `Ω × ℝ` and `1 ≤ p < ∞`, integrating
+`t ↦ [K(·, t) φ]` in `Lᵖ(μ; F)` over `a..b` equals `[(∫ t in a..b, K(·, t)) φ]`. -/
+theorem intervalIntegral_toLp_smul [CompleteSpace F] (hp : p ≠ ∞) {K : E → ℝ → ℝ}
+    (hK : Continuous fun q : Ω × ℝ => K q.1 q.2) (a b : ℝ) (φ : 𝓓^{n}(Ω, F)) :
+    ∫ t in a..b,
+        (memLp_smul_of_continuous (p := p) (μ := μ)
+          (c := fun x : Ω => K x t) (hK.comp (continuous_id.prodMk continuous_const)) φ).toLp
+          (fun x : Ω => K x t • φ x) =
+      (memLp_intervalIntegral_smul (p := p) (μ := μ) hK a b φ).toLp _ := by
+  let J (s : ℝ) (x : Ω) : ℝ := ∫ t in a..s, K x t
+  have hcont_t (x : Ω) : Continuous fun t : ℝ => K x t :=
+    hK.comp (continuous_const.prodMk continuous_id)
+  let hmem (s : ℝ) := memLp_intervalIntegral_smul (p := p) (μ := μ) hK a s φ
+  let q (s : ℝ) : Lp F p μ := (hmem s).toLp _
+  have hderiv_q (s : ℝ) :
+      HasDerivAt q
+        ((memLp_smul_of_continuous (p := p) (μ := μ)
+          (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ).toLp
+          (fun x : Ω => K x s • φ x)) s := by
+    rw [hasDerivAt_iff_tendsto_slope_zero]
+    have hmem_sl (h : ℝ) :
+        MemLp (fun x : Ω => (h⁻¹ * (J (s + h) x - J s x)) • φ x) p μ :=
+      (((hmem (s + h)).sub (hmem s)).const_smul h⁻¹).ae_eq
+        (ae_of_all _ fun x => by simp [J, sub_smul, mul_smul])
+    have hq_sl (h : ℝ) : h⁻¹ • (q (s + h) - q s) = (hmem_sl h).toLp _ := by
+      rw [← MemLp.toLp_sub, ← MemLp.toLp_const_smul, MemLp.toLp_eq_toLp_iff]
+      exact ae_of_all _ fun x => by simp [J, sub_smul, mul_smul]
+    simp_rw [hq_sl]
+    obtain ⟨M, hM⟩ :=
+      ((TestFunction.isCompact_preimage_tsupport φ).prod isCompact_Icc).exists_bound_of_continuousOn
+        (s := ((↑) ⁻¹' tsupport φ : Set Ω) ×ˢ Icc (s - 1) (s + 1)) hK.continuousOn
+    refine tendsto_toLp_smul_of_dominated hp hmem_sl
+      (memLp_smul_of_continuous
+        (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ)
+      (M + M) ?_ fun x _ => ?_
+    · filter_upwards [mem_nhdsWithin_of_mem_nhds
+          (Ioo_mem_nhds (a := (-1 : ℝ)) (b := 1) (by norm_num) (by norm_num)),
+        self_mem_nhdsWithin] with h hh hh0 x hx
+      have hsub_J : J (s + h) x - J s x = ∫ t in s..(s + h), K x t :=
+        sub_eq_of_eq_add' (intervalIntegral.integral_add_adjacent_intervals
+          ((hcont_t x).intervalIntegrable a s) ((hcont_t x).intervalIntegrable s (s + h))).symm
+      have hint : |J (s + h) x - J s x| ≤ M * |h| := by
+        rw [hsub_J, ← Real.norm_eq_abs]
+        simpa only [add_sub_cancel_left] using
+          intervalIntegral.norm_integral_le_of_norm_le_const (a := s) (b := s + h) (C := M)
+            fun t ht => by
+              have htIcc : t ∈ Icc (s - 1) (s + 1) := by
+                rw [Set.mem_uIoc] at ht
+                rcases ht with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> constructor <;> linarith [hh.1, hh.2]
+              exact hM ⟨x, t⟩ ⟨hx, htIcc⟩
+      refine (abs_sub _ _).trans (add_le_add ?_ ?_)
+      · rw [abs_mul, abs_inv]
+        calc |h|⁻¹ * |J (s + h) x - J s x| ≤ |h|⁻¹ * (M * |h|) := by gcongr
+          _ = M := by field_simp [abs_ne_zero.2 (mem_compl_singleton_iff.1 hh0)]
+      · simpa only [Real.norm_eq_abs] using hM ⟨x, s⟩ ⟨hx, ⟨by linarith, by linarith⟩⟩
+    · simpa only [smul_eq_mul] using hasDerivAt_iff_tendsto_slope_zero.1 <|
+        intervalIntegral.integral_hasDerivAt_right ((hcont_t x).intervalIntegrable a s)
+          ((hcont_t x).stronglyMeasurableAtFilter volume (𝓝 s)) (hcont_t x).continuousAt
+  have hqa : q a = 0 := by rw [← norm_eq_zero, Lp.norm_toLp]; simp
+  simpa [q, hqa] using intervalIntegral.integral_eq_sub_of_hasDerivAt (f := q)
+    (fun s _ => hderiv_q s) ((continuous_toLp_smul hp hK φ).intervalIntegrable a b)
+
 end FiniteOnCompacts
 
 section Ambient
@@ -359,6 +504,27 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   rw [Metric.mem_closedEBall', ← Lp.toLp_coeFn f (Lp.memLp f), toLp_apply, Lp.edist_toLp_toLp,
     ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
+
+/-- On a finite-dimensional space `E`, for any locally finite Borel measure `μ` on `Ω`, a
+measurable set `A ⊆ Ω`, and a compact set `K ⊆ Ω`, the indicator `1_{A ∩ K}` can be approximated in
+`L¹(μ; ℝ)` by scalar test functions on `Ω`. -/
+theorem exists_tendsto_lintegral_indicator [FiniteDimensional ℝ E] (μ : Measure Ω)
+    [IsFiniteMeasureOnCompacts μ] (hA : MeasurableSet A) {K : Set Ω} (hK : IsCompact K) :
+    ∃ χ : ℕ → 𝓓(Ω, ℝ),
+      Tendsto (fun m => ∫⁻ x : Ω, ‖χ m x - (A ∩ K).indicator (1 : Ω → ℝ) x‖ₑ ∂μ) atTop (𝓝 0) := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  have hmem : MemLp ((A ∩ K).indicator (1 : Ω → ℝ)) 1 μ :=
+    memLp_indicator_const 1 (hA.inter hK.isClosed.measurableSet).nullMeasurableSet (1 : ℝ)
+      (Or.inr ((measure_mono inter_subset_right).trans_lt hK.measure_lt_top).ne)
+  have hd := denseRange_toLp (Ω := Ω) (n := ⊤) (F := ℝ) (μ := μ) ENNReal.one_ne_top (hmem.toLp _)
+  obtain ⟨u, hu_mem, hu_lim⟩ := mem_closure_iff_seq_limit.mp hd
+  choose χ hχ using hu_mem
+  refine ⟨χ, ?_⟩
+  rw [tendsto_iff_edist_tendsto_0] at hu_lim
+  refine hu_lim.congr fun m => ?_
+  rw [← hχ m, toLp_apply, Lp.edist_toLp_toLp,
+    eLpNorm_one_eq_lintegral_eNorm ((memLp_subtype (χ m)).sub hmem).aestronglyMeasurable]
+  rfl
 
 /-- A continuous bilinear map applied to a test function and an `Lᵖ` function, `1 ≤ p`, is
 integrable, for a measure that is finite on compact sets. -/

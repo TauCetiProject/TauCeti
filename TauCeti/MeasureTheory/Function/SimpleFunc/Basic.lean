@@ -37,12 +37,14 @@ this is how a simple function with values in a space of functions, such as `Lᵖ
 measurable function of two variables.
 
 A finite family of simple functions is one simple function into the product,
-`MeasureTheory.SimpleFunc.pi`.
+`MeasureTheory.SimpleFunc.pi`. A measurable `ℝ≥0∞`-valued function decomposes pointwise along
+the nonzero fibres of `MeasureTheory.SimpleFunc.eapproxDiff`
+(`MeasureTheory.SimpleFunc.eapproxDiff_eq_tsum_indicator`).
 -/
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory.SimpleFunc
 
@@ -194,5 +196,30 @@ theorem coe_pi {ι : Type*} [Finite ι] {β : ι → Type*} (f : ∀ i, SimpleFu
 theorem pi_apply {ι : Type*} [Finite ι] {β : ι → Type*} (f : ∀ i, SimpleFunc α (β i)) (a : α) :
     pi f a = fun i ↦ f i a :=
   (rfl)
+
+/-- A measurable `ℝ≥0∞`-valued function decomposes pointwise as the countable sum of its
+`eapproxDiff` values over their nonzero fibres. -/
+theorem eapproxDiff_eq_tsum_indicator {w : α → ℝ≥0∞} (hw : Measurable w) (x : α) :
+    w x = ∑' p : Σ n : ℕ, {r : ℝ≥0 // r ∈ (eapproxDiff w n).range.erase 0},
+      (p.snd.val : ℝ≥0∞) * (eapproxDiff w p.fst ⁻¹' {p.snd.val}).indicator 1 x := by
+  rw [tsum_sigma', ← tsum_eapproxDiff w hw x]
+  refine tsum_congr fun n => ?_
+  have hsum : ((eapproxDiff w n) x : ℝ≥0∞) =
+      ∑ r ∈ (eapproxDiff w n).range.erase 0,
+        (r : ℝ≥0∞) * (eapproxDiff w n ⁻¹' {r}).indicator 1 x := by
+    by_cases h0 : eapproxDiff w n x = 0
+    · rw [h0, ENNReal.coe_zero, eq_comm]
+      exact Finset.sum_eq_zero fun r hr => by
+        simp [(Finset.ne_of_mem_erase hr).symm, h0]
+    · have hmem : eapproxDiff w n x ∈ (eapproxDiff w n).range.erase 0 :=
+        Finset.mem_erase.2 ⟨h0, mem_range_self _ x⟩
+      rw [Finset.sum_eq_single_of_mem (eapproxDiff w n x) hmem]
+      · simp
+      · intro r _ hne
+        simp [Ne.symm hne]
+  rw [hsum, ← Finset.tsum_subtype' ((eapproxDiff w n).range.erase 0) fun r =>
+    (r : ℝ≥0∞) * (eapproxDiff w n ⁻¹' {r}).indicator 1 x]
+  -- `Finset.tsum_subtype'` uses `Coe.coe` on the subtype while `tsum_sigma'` uses `.val`.
+  rfl
 
 end MeasureTheory.SimpleFunc

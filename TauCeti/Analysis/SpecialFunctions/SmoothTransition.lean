@@ -105,6 +105,8 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   `ψ ((n + 1) (f - t))` converge pointwise to the indicator of `{f > t}`.
 * `Real.smoothTransition.enorm_sub_indicator_le_one`: `ψ y` differs from the indicator of any set
   by at most `1`.
+* `Real.smoothTransition.abs_intervalIntegral_mul_le`: integrating a function against `ψ ∘ f`
+  is bounded in absolute value by the integral of its absolute value.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
@@ -113,6 +115,7 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   `‖d(ψ(c (t - u)))‖ = c ψ'(c (t - u)) ‖du‖`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
   when `u` is.
+* `ContDiff.smoothTransition_mul_sub`: `ψ (c (t - u))` is `C^n` when `u` is.
 * `Real.smoothTransition.contDiff_add_mul_norm_sub_sq` and
   `Real.smoothTransition.hasFDerivAt_add_mul_norm_sub_sq`: on a real inner product space the radial
   cutoff `x ↦ ψ(a + b ‖x - c‖²)` is smooth, with derivative `ψ'(a + b ‖x - c‖²) b 2 ⟪x - c, ·⟫`.
@@ -620,6 +623,17 @@ theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition
   · simp [← h]
   · exact (h.trans_le (le_add_one_sub x)).ne'
 
+/-- Integrating a function against a composition with `Real.smoothTransition` is bounded in
+absolute value by the integral of its absolute value. -/
+theorem abs_intervalIntegral_mul_le {g f : ℝ → ℝ} {a b : ℝ}
+    (hg : IntervalIntegrable g volume a b) :
+    |∫ t in a..b, g t * smoothTransition (f t)| ≤ ∫ t in uIoc a b, |g t| := by
+  rw [intervalIntegral.abs_integral_eq_abs_integral_uIoc, ← Real.norm_eq_abs]
+  refine MeasureTheory.norm_integral_le_of_norm_le (intervalIntegrable_iff.1 hg.abs)
+    (ae_of_all _ fun t => ?_)
+  rw [Real.norm_eq_abs, abs_mul]
+  exact mul_le_of_le_one_right (abs_nonneg _) (abs_le_one _)
+
 /-- Every value in `[0, 1]` is attained by `smoothTransition` on `[0, 1]`. -/
 theorem surjOn_Icc : SurjOn smoothTransition (Icc 0 1) (Icc 0 1) := by
   have h := intermediate_value_Icc zero_le_one smoothTransition.continuous.continuousOn
@@ -670,6 +684,12 @@ theorem LocallyLipschitzOn.smoothTransition_mul_sub {α : Type*} [PseudoEMetricS
   ((Real.smoothTransition.contDiff (n := 1)).comp
     (contDiff_const.mul (contDiff_id.sub contDiff_const))).locallyLipschitz
     |>.locallyLipschitzOn.comp hu (mapsTo_univ _ _)
+
+/-- If `u` is `C^n`, then `ψ (c (t - u))` is `C^n` for the smooth transition function `ψ`. -/
+theorem ContDiff.smoothTransition_mul_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ∞} {u : E → ℝ} (hu : ContDiff ℝ n u) (c t : ℝ) :
+    ContDiff ℝ n fun x => Real.smoothTransition (c * (t - u x)) :=
+  Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_const.sub hu))
 
 /-! ### Radial cutoffs `ψ(a + b ‖x - c‖²)` -/
 

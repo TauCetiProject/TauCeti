@@ -10,6 +10,7 @@ public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Separable
 
 /-!
 # Mass of functionals on vector-valued test functions
@@ -42,6 +43,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.mass_add_le`, `Distribution.mass_smul`: the triangle inequality and homogeneity.
 * `Distribution.lowerSemicontinuous_mass`: mass is lower semicontinuous for pointwise
   (weak) convergence; `Distribution.mass_le_liminf` is the corresponding `liminf` bound.
+* `Distribution.measurable_localMass`, `Distribution.measurable_mass`: Borel measurability of local
+  and total mass for pointwise measurable families when test coefficients are second countable.
 * `Distribution.mass_comp_monoCLM`: the mass of the restriction to an open `Ω' ⊆ Ω` is the local
   mass on `Ω'`; `Distribution.localMass_comp_monoCLM` gives the local version.
 * `Distribution.HasLocallyFiniteMass.comp_monoCLM`: open restriction preserves local finiteness.
@@ -360,6 +363,69 @@ theorem mass_le_liminf {ι : Type*} {l : Filter ι} {fs : ι → 𝓓^{n}(Ω, F)
     _ = liminf (fun i => mass (fs i)) l := liminf_comp mass fs l |>.symm
 
 end Semicontinuity
+
+section Measurability
+
+/-- **Borel measurability of local mass.** For a family of continuous maps `f t : 𝓓^{n}(Ω, F) → V`
+that is pointwise measurable in `t`, if `F` is second countable then `t ↦ localMass (f t) U` is
+measurable for every set `U : Set E`. -/
+theorem measurable_localMass {α : Type*} [MeasurableSpace α] [SecondCountableTopology F]
+    [MeasurableSpace V] [OpensMeasurableSpace V] {f : α → 𝓓^{n}(Ω, F) → V}
+    (hfc : ∀ t, Continuous (f t)) (hfm : ∀ φ, Measurable fun t => f t φ) (U : Set E) :
+    Measurable fun t => localMass (f t) U := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · have h0 (t : α) : localMass (f t) U = ‖f t 0‖ₑ :=
+      le_antisymm
+        (localMass_le_iff.2 fun φ _ _ => by
+          rw [TestFunction.eq_zero_of_not_finiteDimensional φ hE])
+        (enorm_le_localMass (by simp) (by simp))
+    simp_rw [h0]
+    exact (hfm 0).eNorm
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  let Kex := CompactExhaustion.choice Ω
+  let C (m : ℕ) : Compacts E := ⟨(↑) '' Kex m, (Kex.isCompact m).image continuous_subtypeVal⟩
+  have hC (m : ℕ) : (C m : Set E) ⊆ Ω := Subtype.coe_image_subset _ _
+  let S (m : ℕ) : Set 𝓓^{n}_{C m}(E, F) :=
+    {ψ | tsupport (ψ : E → F) ⊆ U ∧ ∀ x, ‖ψ x‖ ≤ 1}
+  choose D hDc hDd using fun m : ℕ => TopologicalSpace.exists_countable_dense (S m)
+  have heq (t : α) : localMass (f t) U =
+      ⨆ (m : ℕ) (ψ : D m), ‖f t (TestFunction.ofSupportedIn (hC m) ψ.val.val)‖ₑ := by
+    refine le_antisymm (localMass_le_iff.2 fun φ hφU hφ => ?_)
+      (iSup_le fun m => iSup_le fun ψ => enorm_le_localMass ψ.val.property.1 ψ.val.property.2)
+    obtain ⟨m, hm⟩ := Kex.exists_superset_of_isCompact (TestFunction.isCompact_preimage_tsupport φ)
+    have hφCm : tsupport φ ⊆ C m := fun x hx => ⟨⟨x, φ.tsupport_subset hx⟩, hm hx, rfl⟩
+    let ψ₀ : 𝓓^{n}_{C m}(E, F) :=
+      ⟨φ, φ.contDiff, fun x hx => image_eq_zero_of_notMem_tsupport fun h => hx (hφCm h)⟩
+    have hψ₀ : ψ₀ ∈ S m := ⟨hφU, hφ⟩
+    have hcont : Continuous fun ψ : S m => ‖f t (TestFunction.ofSupportedIn (hC m) ψ.val)‖ₑ :=
+      ((hfc t).comp
+        ((TestFunction.continuous_ofSupportedIn (hC m)).comp continuous_subtypeVal)).eNorm
+    have hφ_eq : φ = TestFunction.ofSupportedIn (hC m) ψ₀ := TestFunction.ext fun _ => rfl
+    rw [hφ_eq]
+    have hsub : (D m : Set (S m)) ⊆ {ψ : S m |
+        ‖f t (TestFunction.ofSupportedIn (hC m) ψ.val)‖ₑ ≤
+          ⨆ (k : ℕ) (ψ' : D k), ‖f t (TestFunction.ofSupportedIn (hC k) ψ'.val.val)‖ₑ} :=
+      fun ψ hψ => le_trans
+        (le_iSup (fun ψ' : D m => ‖f t (TestFunction.ofSupportedIn (hC m) ψ'.val.val)‖ₑ) ⟨ψ, hψ⟩)
+        (le_iSup (fun k : ℕ =>
+          ⨆ ψ' : D k, ‖f t (TestFunction.ofSupportedIn (hC k) ψ'.val.val)‖ₑ) m)
+    exact (isClosed_le hcont continuous_const).closure_subset_iff.2 hsub
+      ((hDd m).closure_eq.symm ▸ mem_univ (⟨ψ₀, hψ₀⟩ : S m))
+  simp_rw [heq]
+  refine Measurable.iSup fun m => ?_
+  have : Countable (D m) := (hDc m).to_subtype
+  exact Measurable.iSup fun ψ => (hfm _).eNorm
+
+/-- **Borel measurability of mass.** For a family of continuous maps `f t : 𝓓^{n}(Ω, F) → V` that
+is pointwise measurable in `t`, if `F` is second countable then `t ↦ mass (f t)` is measurable. -/
+theorem measurable_mass {α : Type*} [MeasurableSpace α] [SecondCountableTopology F]
+    [MeasurableSpace V] [OpensMeasurableSpace V] {f : α → 𝓓^{n}(Ω, F) → V}
+    (hfc : ∀ t, Continuous (f t)) (hfm : ∀ φ, Measurable fun t => f t φ) :
+    Measurable fun t => mass (f t) := by
+  simpa only [localMass_univ] using measurable_localMass hfc hfm univ
+
+end Measurability
 
 section Restriction
 

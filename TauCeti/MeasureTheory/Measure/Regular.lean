@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
+import Mathlib.MeasureTheory.Integral.Lebesgue.Add
+import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
+import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
 
 /-!
 # Regularity under almost everywhere continuous maps, finite sums and absolute continuity
@@ -68,6 +72,8 @@ measures given only through a domination bound, such as the variation of a sum o
   contains a σ-compact subset of full measure.
 * `MeasureTheory.Measure.dirac.innerRegular`: a Dirac measure is inner regular; on an `R₁` space
   with its Borel σ-algebra it is therefore regular.
+* `MeasureTheory.Measure.lintegral_lintegral_le_of_isOpen`: passage from open-set domination
+  against an outer regular measure to Borel-weight domination.
 * `Measurable.exists_isClosed_measure_compl_iUnion_le`: for a weakly regular finite measure, every
   atom `a ⁻¹' {i}` of a measurable label `a` into a finite type contains a closed set `F i`, with
   `μ (⋃ i, F i)ᶜ` arbitrarily small.
@@ -89,7 +95,7 @@ generalized from compact sets to any property of sets stable under binary unions
 public section
 
 open MeasureTheory Set
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
@@ -198,6 +204,88 @@ instance dirac.innerRegular (x : α) : (dirac x).InnerRegular where
     · exact ⟨{x}, singleton_subset_iff.2 hx, isCompact_singleton,
         by rwa [dirac_apply_of_mem (mem_singleton x), ← dirac_apply_of_mem hx]⟩
     · simp [dirac_apply' x hU, hx] at hr
+
+/-- **Passage from open-set domination to Borel-weight domination.** If `c₀ < ∞` and a family of
+measures `μ t` on `α` is dominated on each open set `U` by a measurable majorant `m` (which may
+depend on `U`) satisfying `μ t U ≤ m t` for `ν`-almost every `t` and `∫⁻ t, m t ∂ν ≤ c₀ * ρ U`
+for an outer regular measure `ρ`, then for every measurable weight `w : α → ℝ≥0∞`,
+`∫⁻ t, ∫⁻ x, w x ∂μ t ∂ν ≤ c₀ * ∫⁻ x, w x ∂ρ`. -/
+theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β]
+    {ν : Measure β} {μ : β → Measure α} {ρ : Measure α} [ρ.OuterRegular] {c₀ : ℝ≥0∞}
+    (hc₀top : c₀ ≠ ⊤)
+    (hmaj : ∀ U : Set α, IsOpen U → ∃ m : β → ℝ≥0∞, Measurable m ∧
+      (∀ᵐ t ∂ν, μ t U ≤ m t) ∧ ∫⁻ t, m t ∂ν ≤ c₀ * ρ U)
+    {w : α → ℝ≥0∞} (hw : Measurable w) :
+    ∫⁻ t, ∫⁻ x, w x ∂μ t ∂ν ≤ c₀ * ∫⁻ x, w x ∂ρ := by
+  by_cases hc₀0 : c₀ = 0
+  · subst hc₀0
+    obtain ⟨m, hm_meas, hm_le, hm_int⟩ := hmaj univ isOpen_univ
+    have hm0 : ∀ᵐ t ∂ν, m t = 0 :=
+      (lintegral_eq_zero_iff hm_meas).1 (nonpos_iff_eq_zero.1 (by simpa using hm_int))
+    have hae : ∀ᵐ t ∂ν, ∫⁻ x, w x ∂μ t = 0 := by
+      filter_upwards [hm_le, hm0] with t hle hmt
+      have hμ0 : μ t = 0 :=
+        Measure.measure_univ_eq_zero.1 (nonpos_iff_eq_zero.1 (hle.trans_eq hmt))
+      simp [hμ0]
+    simp [lintegral_congr_ae hae]
+  by_cases hwint : ∫⁻ x, w x ∂ρ = ⊤
+  · rw [hwint, ENNReal.mul_top hc₀0]
+    exact le_top
+  -- Approximate `w` by the indicator sum `∑' p, c p * 1_{A p}` over the nonzero fibres of
+  -- `SimpleFunc.eapproxDiff w`, thicken each fibre `A p` to an open set `U p` with `ρ`-error
+  -- at most `δ p`, apply the open-set majorant hypothesis to each `U p`, and sum the errors.
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
+  have hε' : 0 < (ε : ℝ≥0∞) / c₀ :=
+    ENNReal.div_pos (ENNReal.coe_pos.2 hε).ne' hc₀top
+  let d : ℕ → SimpleFunc α ℝ≥0 := SimpleFunc.eapproxDiff w
+  let ι := Σ n : ℕ, {r : ℝ≥0 // r ∈ (d n).range.erase 0}
+  let c (p : ι) : ℝ≥0∞ := (p.snd.val : ℝ≥0∞)
+  let A (p : ι) : Set α := (d p.fst) ⁻¹' {p.snd.val}
+  have hc_pos (p : ι) : c p ≠ 0 :=
+    ENNReal.coe_ne_zero.2 (Finset.mem_erase.1 p.snd.property).1
+  have hw_int_eq := lintegral_eq_tsum_eapproxDiff_fibre ρ hw
+  have hA_fin (p : ι) : ρ (A p) ≠ ⊤ := by
+    have hle : c p * ρ (A p) ≤ ∫⁻ x, w x ∂ρ := by
+      rw [hw_int_eq]
+      exact le_tsum (fun p => c p * ρ (A p)) p
+    exact fun htop => hwint (top_le_iff.1 (by rw [← ENNReal.mul_top (hc_pos p), ← htop]; exact hle))
+  -- Thicken each fibre `A p` to an open set `U p` with `ρ (U p) < ρ (A p) + δ p`.
+  obtain ⟨δ, hδ_pos, hδ_sum⟩ :=
+    ENNReal.exists_pos_tsum_mul_lt_of_countable hε'.ne' c fun _ => ENNReal.coe_ne_top
+  have hU_ex (p : ι) : ∃ U : Set α, A p ⊆ U ∧ IsOpen U ∧ ρ U < ρ (A p) + δ p :=
+    (A p).exists_isOpen_lt_of_lt _
+      (ENNReal.lt_add_right (hA_fin p) (ENNReal.coe_pos.2 (hδ_pos p)).ne')
+  choose U hAU hUo hU_lt using hU_ex
+  choose m hm_meas hm_le hm_int using fun p : ι => hmaj (U p) (hUo p)
+  -- Bound `∫⁻ x, w x ∂μ t` by `∑' p, c p * m p t` a.e., then integrate and sum the `δ p` errors.
+  have hstep1 (t : β) : ∫⁻ x, w x ∂μ t ≤ ∑' p : ι, c p * μ t (U p) := by
+    rw [lintegral_eq_tsum_eapproxDiff_fibre (μ t) hw]
+    exact tsum_le_tsum fun p => mul_le_mul_right (measure_mono (hAU p)) (c p)
+  have hae_le : ∀ᵐ t ∂ν, ∫⁻ x, w x ∂μ t ≤ ∑' p : ι, c p * m p t := by
+    filter_upwards [ae_all_iff.2 hm_le] with t ht
+    refine (hstep1 t).trans (tsum_le_tsum fun p => ?_)
+    gcongr
+    exact ht p
+  calc ∫⁻ t, ∫⁻ x, w x ∂μ t ∂ν
+      ≤ ∫⁻ t, ∑' p : ι, c p * m p t ∂ν := lintegral_mono_ae hae_le
+    _ = ∑' p : ι, c p * ∫⁻ t, m p t ∂ν := by
+        rw [lintegral_tsum fun p => ((hm_meas p).const_mul (c p)).aemeasurable]
+        refine tsum_congr fun p => ?_
+        rw [lintegral_const_mul _ (hm_meas p)]
+    _ ≤ ∑' p : ι, c p * (c₀ * ρ (U p)) :=
+        tsum_le_tsum fun p => by gcongr; exact hm_int p
+    _ = c₀ * ∑' p : ι, c p * ρ (U p) := by
+        simp_rw [← mul_assoc, mul_comm (c _) c₀, mul_assoc, ENNReal.tsum_mul_left]
+    _ ≤ c₀ * ∑' p : ι, c p * (ρ (A p) + δ p) := by
+        gcongr with p
+        exact (hU_lt p).le
+    _ = c₀ * (∫⁻ x, w x ∂ρ + ∑' p : ι, c p * δ p) := by
+        congr 1
+        rw [tsum_congr fun p => mul_add (c p) _ _,
+          Summable.tsum_add CompleteLattice.summable CompleteLattice.summable, hw_int_eq]
+    _ ≤ c₀ * (∫⁻ x, w x ∂ρ + (ε : ℝ≥0∞) / c₀) := by gcongr
+    _ = c₀ * ∫⁻ x, w x ∂ρ + (ε : ℝ≥0∞) := by
+        rw [mul_add, ENNReal.mul_div_cancel hc₀0 hc₀top]
 
 end MeasureTheory.Measure
 

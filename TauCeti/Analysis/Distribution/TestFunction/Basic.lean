@@ -32,6 +32,10 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
 
 ## Main declarations
 
+* `TestFunction.isCompact_preimage_tsupport`: the preimage of a test function's support in
+  its open domain is compact.
+* `TestFunction.exists_pos_norm_lt_of_continuousOn`: a continuous function on `Ω` is strictly
+  bounded in norm on `tsupport φ` by some positive constant.
 * `TestFunction.monoCLM_eq_id`: extension by zero from `Ω` to itself is the identity.
 * `TestFunction.coe_monoCLM_of_le`: the inclusion `monoCLM` to a lower regularity and a larger
   open set does not change the underlying function.
@@ -88,6 +92,22 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
     (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
+
+/-- The preimage of a test function's support in the domain subtype `Ω` is compact. -/
+theorem isCompact_preimage_tsupport (φ : 𝓓^{n}(Ω, F)) :
+    IsCompact ((↑) ⁻¹' tsupport φ : Set Ω) :=
+  Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
+    (by simpa using φ.tsupport_subset)
+
+/-- Any continuous function `u : E → G` on `Ω` is strictly bounded in norm on `tsupport φ` by
+some positive constant `M > 0`. -/
+theorem exists_pos_norm_lt_of_continuousOn {G : Type*} [NormedAddCommGroup G]
+    (φ : 𝓓^{n}(Ω, F)) {u : E → G} (hu : ContinuousOn u Ω) :
+    ∃ M : ℝ, 0 < M ∧ ∀ x ∈ tsupport φ, ‖u x‖ < M := by
+  obtain ⟨R, hR⟩ := φ.hasCompactSupport.isCompact.exists_bound_of_continuousOn
+    (hu.mono φ.tsupport_subset)
+  exact ⟨max R 0 + 1, by positivity, fun x hx =>
+    ((hR x hx).trans (le_max_left _ _)).trans_lt (lt_add_one _)⟩
 
 /-- Extension by zero from `Ω` to itself is the identity. -/
 @[simp]
