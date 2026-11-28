@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Regular.Free
-import Mathlib.RingTheory.UniqueFactorizationDomain.Kaplansky
 import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.Regular.LinearMap
@@ -28,14 +27,12 @@ Let `A` be a regular local ring of dimension two and let `x, y` generate its max
 which `x, y` is a weakly regular sequence is free: modulo `x` it is a torsion-free finite module
 over a principal ideal domain, and freeness lifts along the regular element `x`.
 
-Applied to a prime `𝔭 ≠ 𝔪`, this shows that `𝔭` is a free `A`-module, hence principal. Every
-nonzero prime ideal therefore contains a prime element (for `𝔪`, a regular parameter), and
-Kaplansky's criterion shows that `A` is a unique factorization domain. In particular `A` is
-integrally closed. This is the dimension-two case of the theorem of Auslander and Buchsbaum that
-regular local rings are factorial; it supplies the normality of the base needed for going down
-from finite algebras over a two-dimensional regular local ring.
+Applied to a prime `𝔭 ≠ 𝔪`, this shows that `𝔭` is a free `A`-module, hence principal.
+Factoriality in arbitrary dimension is proved in
+`TauCeti.RingTheory.RegularLocalRing.UniqueFactorization`.
 
-The same criterion shows that the dual `N* = Hom(N, A)` of a finite module is free: a regular
+The same freeness criterion shows that the dual `N* = Hom(N, A)` of a finite module is free: a
+regular
 sequence `x, y` on `A` stays weakly regular on `Hom(N, A)`. Hence over a regular local ring of
 dimension at most two every finite reflexive module is free. This is the step of the structure
 theory of finitely generated modules over such rings, for instance over the Iwasawa algebra
@@ -47,8 +44,6 @@ theory of finitely generated modules over such rings, for instance over the Iwas
   generating the maximal ideal is weakly regular is free.
 * `TauCeti.IsRegularLocalRing.isPrincipal_of_ne_maximalIdeal`: a prime ideal other than the
   maximal ideal is principal.
-* `TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two`: a regular local
-  ring of dimension at most two is a unique factorization domain.
 * `TauCeti.IsRegularLocalRing.free_dual`: over a regular local ring of dimension at most two, the
   dual of a finite module is free.
 * `TauCeti.IsRegularLocalRing.free_of_isReflexive`: over a regular local ring of dimension at most
@@ -58,9 +53,6 @@ theory of finitely generated modules over such rings, for instance over the Iwas
 
 * [The Stacks Project, Lemma 10.106.5](https://stacks.math.columbia.edu/tag/00NS), lifting
   freeness along a regular element.
-* H. Matsumura, *Commutative Ring Theory*, Theorem 20.3 (Auslander–Buchsbaum): regular local
-  rings are unique factorization domains.
-* Kaplansky's criterion, `UniqueFactorizationMonoid.iff_exists_prime_mem_of_isPrime` in Mathlib.
 * [The Stacks Project, Lemma 15.24.10](https://stacks.math.columbia.edu/tag/0AV5), the depth of a
   module of homomorphisms.
 -/
@@ -185,27 +177,6 @@ theorem isPrincipal_of_ne_maximalIdeal (hdim : ringKrullDim A ≤ 2) {p : Ideal 
   have : Module.Free A p := free_of_isWeaklyRegular hxy hreg
   exact (Submodule.rank_le_one_iff_isPrincipal p).mp
     ((Submodule.rank_le p).trans_eq (Module.rank_self A))
-
-/-- **A regular local ring of dimension at most two is a unique factorization domain.** In
-dimension at most one it is a field or a discrete valuation ring. In dimension two every nonzero
-prime ideal contains a prime element, a regular parameter for the maximal ideal and a generator
-for every other prime, so Kaplansky's criterion applies. -/
-theorem uniqueFactorizationMonoid_of_ringKrullDim_le_two (hdim : ringKrullDim A ≤ 2) :
-    UniqueFactorizationMonoid A := by
-  rcases hdim.lt_or_eq with hlt | hdim
-  · have := valuationRing_of_ringKrullDim_le_one (Order.le_of_lt_succ hlt)
-    infer_instance
-  refine UniqueFactorizationMonoid.iff_exists_prime_mem_of_isPrime.mpr fun p hp0 hp ↦ ?_
-  by_cases hpm : p = maximalIdeal A
-  · obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
-    have hxm := mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy
-    have hprin : ¬ (maximalIdeal A).IsPrincipal :=
-      not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (hdim ▸ by decide)
-    exact ⟨x, hpm ▸ hxm, (span_singleton_prime (ne_zero_of_span_pair_eq_maximalIdeal hprin hxy)).mp
-      (span_singleton_isPrime_of_notMem_sq hxm (notMem_sq_of_span_pair_eq_maximalIdeal hprin hxy))⟩
-  · obtain ⟨f, rfl⟩ := (isPrincipal_of_ne_maximalIdeal hdim.le hpm).principal
-    have hf0 : f ≠ 0 := by rintro rfl; simp at hp0
-    exact ⟨f, mem_span_singleton_self f, (span_singleton_prime hf0).mp hp⟩
 
 /-- Over a regular local ring of dimension at most two, the dual `Hom(N, A)` of a finite module `N`
 is free. In dimension two a regular system of parameters `x, y` is a regular sequence on `A`, so

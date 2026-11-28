@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 import TauCeti.RingTheory.IntegralClosure.Reflexive
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
+import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 
 /-!
 # The reflexive hull up to pseudo-isomorphism
@@ -66,7 +67,6 @@ theorem exists_isPseudoIsomorphism_pi_of_isTorsionFree [IsRegularLocalRing A]
     (hdim : ringKrullDim A ≤ 2) [Module.Finite A M] [IsTorsionFree A M] :
     ∃ (n : ℕ) (f : M →ₗ[A] Fin n → A), IsPseudoIsomorphism f := by
   have := IsRegularLocalRing.free_dual hdim (Dual A M)
-  have := IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two hdim
   let b := finBasis A (Dual A (Dual A M))
   exact ⟨_, b.equivFun.toLinearMap ∘ₗ Dual.eval A M,
     (IsPseudoIsomorphism.of_bijective b.equivFun.bijective).comp isPseudoIsomorphism_dual_eval⟩

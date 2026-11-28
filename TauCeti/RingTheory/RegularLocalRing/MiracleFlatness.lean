@@ -15,6 +15,7 @@ import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 
 import TauCeti.RingTheory.Regular.Pair
+import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 
 /-!
 # Miracle flatness
@@ -94,8 +95,6 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
       IsDomain (Localization.AtPrime 𝔮) ∧ IsIntegrallyClosed (Localization.AtPrime 𝔮)) :
     Module.Free A B := by
   -- The base is factorial, hence integrally closed, so going down applies to `A → B`.
-  have : UniqueFactorizationMonoid A :=
-    TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two hdim.le
   obtain ⟨x, y, hxy⟩ := TauCeti.IsRegularLocalRing.exists_span_pair_eq_maximalIdeal hdim
   have hx0 := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal
     (not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (R := A) (hdim ▸ by decide)) hxy

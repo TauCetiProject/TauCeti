@@ -217,8 +217,6 @@ open _root_.PowerSeries in
 example (p : ℕ) [Fact p.Prime] :
     charIdeal ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {X ^ 2 - C (p : ℤ_[p])}) =
       Ideal.span {X ^ 2 - C (p : ℤ_[p])} := by
-  have := TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid (R := ℤ_[p]⟦X⟧)
-    TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing.le
   refine charIdeal_quotient_span_singleton fun h ↦ ?_
   simpa [-map_natCast, coeff_C] using congrArg (coeff 2) h
 

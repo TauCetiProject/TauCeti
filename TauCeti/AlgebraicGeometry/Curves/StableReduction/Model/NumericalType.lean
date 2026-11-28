@@ -117,7 +117,7 @@ theorem numericalType_weight (i : (M.numericalType hX hC).Component) :
 /-- The intersection matrix of `M.numericalType` is `M.toBase.specialFiberIntersectionMatrix`. -/
 @[simp]
 theorem numericalType_intersection :
-    (M.numericalType hX hC).intersection = M.toBase.specialFiberIntersectionMatrix hX
+    (M.numericalType hX hC).intersection = M.toBase.specialFiberIntersectionMatrix
       (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)) := (rfl)
 
 /-- The `(i, j)`-entry of the intersection matrix of `M.numericalType`. -/
@@ -129,9 +129,9 @@ theorem numericalType_intersection_apply (i j : (M.numericalType hX hC).Componen
       LineBundleClass.intersectionNumber (ResidueField R)
         (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι
         (LineBundleClass.mk
-          (Scheme.IdealSheafData.isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-            hX j.val.property).toInvertibleSheaf)⁻¹ :=
-  M.toBase.specialFiberIntersectionMatrix_apply hX _ i j
+          (Scheme.IdealSheafData.isEffectiveCartier_vanishingIdeal_closure_singleton
+            j.val.property).toInvertibleSheaf)⁻¹ :=
+  M.toBase.specialFiberIntersectionMatrix_apply _ i j
 
 /-- The genus of the `i`-th component in `M.numericalType` is `dim_{κᵢ} H¹(Cᵢ, 𝒪_{Cᵢ})`. -/
 @[simp]

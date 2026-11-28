@@ -68,7 +68,7 @@ open CategoryTheory AlgebraicGeometry IsLocalRing
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 open TauCeti.AlgebraicGeometry.LineBundleClass (intersectionNumber)
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
-  isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular)
+  isEffectiveCartier_vanishingIdeal_closure_singleton)
 
 universe u
 
@@ -403,7 +403,7 @@ theorem intersectionNumber_subschemeι_ker_specialFiberι_eq_sum [IsProper toBas
   exact (intersectionNumber_subschemeι_prod_pow_aux toBase (ι := S)
     (fun i ↦ vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩)
     (fun i ↦ toBase.specialFiberMultiplicity π i)
-    (fun i ↦ isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
+    (fun i ↦ isEffectiveCartier_vanishingIdeal_closure_singleton
       (i : CodimensionOnePoint X).property)
     (fun i ↦ toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
       ((Set.Finite.mem_toFinset _).mp i.property))
@@ -411,7 +411,7 @@ theorem intersectionNumber_subschemeι_ker_specialFiberι_eq_sum [IsProper toBas
     (fun i ↦ toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
       (fun h ↦ one_ne_zero ((i : CodimensionOnePoint X).property.symm.trans
         (Order.coheight_eq_zero.mpr h))) ((Set.Finite.mem_toFinset _).mp i.property))
-    a Finset.univ ((toBase.ker_specialFiberι_eq_prod_vanishingIdeal hX hη hπ).trans
+    a Finset.univ ((toBase.ker_specialFiberι_eq_prod_vanishingIdeal hη hπ).trans
       (Finset.prod_coe_sort S _).symm) le_rfl).2
 
 end Prod

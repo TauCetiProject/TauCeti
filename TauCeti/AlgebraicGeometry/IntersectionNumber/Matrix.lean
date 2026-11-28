@@ -38,6 +38,10 @@ the properties of [Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X):
   diagonal there is nothing to prove;
 * its off-diagonal entries are nonnegative.
 
+The matrix is defined more generally without the dimension or properness hypotheses: its entries
+are Euler-characteristic degrees. The numerical properties above use the proper-curve and
+cohomology hypotheses just stated.
+
 Since the multiplicities are positive, the intersection form `x ↦ xᵀ A x` is therefore negative
 semidefinite over every linearly ordered field.
 
@@ -91,7 +95,7 @@ open CategoryTheory AlgebraicGeometry IsLocalRing Order
 open scoped Matrix
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
-  isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+  isEffectiveCartier_vanishingIdeal_closure_singleton
   isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular)
 
 universe u
@@ -105,12 +109,13 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
   [TauCeti.AlgebraicGeometry.IsRegular X]
 
 /-- The **intersection matrix** of the special fibre of a regular model. Let `X` be a regular
-Noetherian integral scheme over a local ring `R` of dimension at most one, with all points of
-codimension at most two and generic point away from the closed point. Its entry at a pair of
-components `Cᵢ`, `Cⱼ` of the special fibre is the intersection number
-`(Cⱼ · Cᵢ) = deg 𝒪_X(Cⱼ)|_{Cᵢ}` over the residue field of `R`, where `Cᵢ` carries its reduced
-structure and its structure over the residue field through the special fibre. -/
-def specialFiberIntersectionMatrix (hX : ∀ x : X, coheight x ≤ 2)
+Noetherian integral scheme over a local ring `R` of dimension at most one, with generic point
+away from the closed point. Its entry at a pair of components `Cᵢ`, `Cⱼ` of the special fibre is
+the Euler-characteristic degree of `𝒪_X(Cⱼ)|_{Cᵢ}` over the residue field of `R`, where `Cᵢ`
+carries its reduced structure and its structure over the residue field through the special fibre.
+For proper curves with finite-dimensional `H⁰` and `H¹` of their structure sheaves, these are the
+usual intersection numbers `(Cⱼ · Cᵢ)`. -/
+def specialFiberIntersectionMatrix
     (hη : toBase (genericPoint X) ≠ closedPoint R) :
     Matrix (toBase.finite_setOf_base_eq_closedPoint
         (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset
@@ -121,21 +126,21 @@ def specialFiberIntersectionMatrix (hX : ∀ x : X, coheight x ≤ 2)
       ((Set.Finite.mem_toFinset _).mp i.property))
     LineBundleClass.intersectionNumber (ResidueField R)
       (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
-      (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
+      (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton
         (j : CodimensionOnePoint X).property).toInvertibleSheaf)⁻¹
 
 /-- The entry of the intersection matrix of the special fibre at a pair of components `Cᵢ`, `Cⱼ`
-is the intersection number `(Cⱼ · Cᵢ) = deg 𝒪_X(Cⱼ)|_{Cᵢ}` over the residue field of `R`. -/
+is the Euler-characteristic degree of `𝒪_X(Cⱼ)|_{Cᵢ}` over the residue field of `R`. -/
 @[simp]
-theorem specialFiberIntersectionMatrix_apply (hX : ∀ x : X, coheight x ≤ 2)
+theorem specialFiberIntersectionMatrix_apply
     (hη : toBase (genericPoint X) ≠ closedPoint R) (i j) :
-    toBase.specialFiberIntersectionMatrix hX hη i j =
+    toBase.specialFiberIntersectionMatrix hη i j =
       letI := subschemeOverResidueField
         (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
           ((Set.Finite.mem_toFinset _).mp i.property))
       LineBundleClass.intersectionNumber (ResidueField R)
         (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
-        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
+        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton
           (j : CodimensionOnePoint X).property).toInvertibleSheaf)⁻¹ := by
   rw [specialFiberIntersectionMatrix]
 
@@ -187,7 +192,7 @@ intersection matrix `A` of the special fibre kills the vector `m` of the multipl
 components: `Σⱼ (Cⱼ · Cᵢ) mⱼ = 0` for every component `Cᵢ`. -/
 theorem specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity [Flat toBase] {π : R}
     (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π) :
-    toBase.specialFiberIntersectionMatrix hX hη *ᵥ
+    toBase.specialFiberIntersectionMatrix hη *ᵥ
       (fun j ↦ (toBase.specialFiberMultiplicity π j : ℤ)) = 0 := by
   funext i
   have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp
@@ -196,7 +201,7 @@ theorem specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity [Flat toB
   obtain ⟨_, _, _, _⟩ := toBase.component_hypotheses hX h₀ h₁ hi
   have h := toBase.sum_specialFiberMultiplicity_mul_intersectionNumber_eq_zero (ResidueField R)
     (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
-    hX hη hπ hreg
+    hη hπ hreg
   rw [← Finset.sum_coe_sort] at h
   simpa [Matrix.mulVec, dotProduct, mul_comm] using h
 
@@ -207,7 +212,7 @@ special fibre. For distinct components, which meet properly, both are the dimens
 residue field of the ring of functions on the scheme-theoretic intersection `Cᵢ ∩ Cⱼ`; for
 `Cᵢ = Cⱼ` the statement is tautological. -/
 theorem specialFiberIntersectionMatrix_isSymm :
-    (toBase.specialFiberIntersectionMatrix hX hη).IsSymm := by
+    (toBase.specialFiberIntersectionMatrix hη).IsSymm := by
   refine Matrix.IsSymm.ext fun i j ↦ ?_
   rcases eq_or_ne i j with rfl | hij
   · rfl
@@ -222,20 +227,20 @@ theorem specialFiberIntersectionMatrix_isSymm :
   have hne : (j : CodimensionOnePoint X) ≠ i := fun h ↦ hij (Subtype.ext h).symm
   -- The two components carry the same structure over the residue field on their intersection.
   exact LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_comm (ResidueField R) _ _
-    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne)
-    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne.symm)
+    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hne)
+    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hne.symm)
     (pullback_fst_subschemeToSpecialFiber_assoc _ _ _)
 
 /-- **The off-diagonal entries of the intersection matrix are nonnegative.** Under the hypotheses
 of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, distinct components `Cᵢ`
 and `Cⱼ` of the special fibre meet properly, so `(Cⱼ · Cᵢ) ≥ 0`. -/
 theorem specialFiberIntersectionMatrix_nonneg_of_ne {i j} (hij : i ≠ j) :
-    0 ≤ toBase.specialFiberIntersectionMatrix hX hη i j := by
+    0 ≤ toBase.specialFiberIntersectionMatrix hη i j := by
   have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp
       i.property
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
   obtain ⟨_, _, _, _⟩ := toBase.component_hypotheses hX h₀ h₁ hi
-  exact LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne _ hX
+  exact LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne _
     fun h ↦ hij (Subtype.ext h)
 
 /-- **Distinct components meet positively exactly when they meet.** Under the hypotheses of
@@ -243,7 +248,7 @@ theorem specialFiberIntersectionMatrix_nonneg_of_ne {i j} (hij : i ≠ j) :
 and `Cⱼ` of the special fibre have `(Cⱼ · Cᵢ) > 0` if and only if they have a common point: the
 intersection number is the length of the finite scheme `Cᵢ ∩ Cⱼ`. -/
 theorem specialFiberIntersectionMatrix_pos_iff {i j} (hij : i ≠ j) :
-    0 < toBase.specialFiberIntersectionMatrix hX hη i j ↔
+    0 < toBase.specialFiberIntersectionMatrix hη i j ↔
       (closure {((i : CodimensionOnePoint X) : X)} ∩
         closure {((j : CodimensionOnePoint X) : X)}).Nonempty := by
   have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp
@@ -252,7 +257,7 @@ theorem specialFiberIntersectionMatrix_pos_iff {i j} (hij : i ≠ j) :
   obtain ⟨_, _, _, _⟩ := toBase.component_hypotheses hX h₀ h₁ hi
   rw [specialFiberIntersectionMatrix_apply,
     LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff _ _ _
-      (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX
+      (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular
         fun h ↦ hij (Subtype.ext h)),
     ← Set.image_nonempty, Set.image_preimage_eq_range_inter,
     IdealSheafData.range_subschemeι, IdealSheafData.coe_support_vanishingIdeal,
@@ -265,7 +270,7 @@ of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, for dis
 Only the finitely many points of `Cᵢ ∩ Cⱼ` contribute to the sum over `X`; the residue degrees
 are over the residue field `κ` of `R`. -/
 theorem specialFiberIntersectionMatrix_eq_finsum {i j} (hij : i ≠ j) :
-    toBase.specialFiberIntersectionMatrix hX hη i j = ∑ᶠ x : X,
+    toBase.specialFiberIntersectionMatrix hη i j = ∑ᶠ x : X,
       (toBase.residueDegree x : ℤ) * (Module.length (X.presheaf.stalk x)
         (X.presheaf.stalk x ⧸
           ((vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)},
@@ -285,9 +290,9 @@ theorem specialFiberIntersectionMatrix_eq_finsum {i j} (hij : i ≠ j) :
           (subschemeOverResidueField_comp hI)
         simpa only [Scheme.Hom.residueDegree_comp,
           Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks, mul_one, one_mul] using h)
-      (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
+      (isEffectiveCartier_vanishingIdeal_closure_singleton
         (j : CodimensionOnePoint X).property)
-      (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX
+      (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular
         fun h ↦ hij (Subtype.ext h)))
   rw [IdealSheafData.ker_subschemeι] at h
   refine h.trans ?_
@@ -313,7 +318,7 @@ intersection number is positive. -/
 theorem specialFiberIntersectionMatrix_reflTransGen
     (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R})) (i j) :
     Relation.ReflTransGen
-      (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
+      (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hη i j) i j := by
   rw [← iUnion_closure_eq_preimage_closedPoint toBase hη] at hconn
   have h := hconn.transGen_of_iUnion_of_isClosed (locallyFinite_of_finite _)
     (fun _ ↦ isClosed_closure) i j
@@ -331,7 +336,7 @@ the components with an edge where `(Cⱼ · Cᵢ) > 0` is connected
 ([Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z)). -/
 theorem isPreconnected_preimage_closedPoint_iff_reflTransGen :
     _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}) ↔ ∀ i j, Relation.ReflTransGen
-      (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
+      (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hη i j) i j := by
   refine ⟨toBase.specialFiberIntersectionMatrix_reflTransGen hX hη h₀ h₁, fun h ↦ ?_⟩
   -- Chained components with positive intersection number meet, so their union is connected.
   rw [← iUnion_closure_eq_preimage_closedPoint toBase hη]
@@ -359,7 +364,7 @@ omit [LinearOrder K] [IsStrictOrderedRing K] in
 include hπ hreg in
 /-- The intersection matrix, with entries cast to a field, kills the vector of multiplicities. -/
 private theorem map_mulVec_specialFiberMultiplicity :
-    (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → K) *ᵥ
+    (toBase.specialFiberIntersectionMatrix hη).map (Int.cast : ℤ → K) *ᵥ
       (fun j ↦ (toBase.specialFiberMultiplicity π j : K)) = 0 := by
   funext i
   have h := congrArg (Int.cast : ℤ → K) (congrFun
@@ -374,7 +379,7 @@ a linearly ordered field ([Stacks, Tag 0C5X](https://stacks.math.columbia.edu/ta
 theorem dotProduct_mulVec_specialFiberIntersectionMatrix_nonpos
     (x : (toBase.finite_setOf_base_eq_closedPoint
       (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → K) :
-    x ⬝ᵥ (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → K) *ᵥ x ≤ 0 :=
+    x ⬝ᵥ (toBase.specialFiberIntersectionMatrix hη).map (Int.cast : ℤ → K) *ᵥ x ≤ 0 :=
   Matrix.dotProduct_mulVec_nonpos_of_mulVec_eq_zero
     ((toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).map _)
     (fun _ _ hij ↦ Int.cast_nonneg_iff.mpr
@@ -395,7 +400,7 @@ theorem dotProduct_mulVec_specialFiberIntersectionMatrix_eq_zero_iff
     (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}))
     (x : (toBase.finite_setOf_base_eq_closedPoint
       (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → K) :
-    x ⬝ᵥ (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → K) *ᵥ x = 0 ↔
+    x ⬝ᵥ (toBase.specialFiberIntersectionMatrix hη).map (Int.cast : ℤ → K) *ᵥ x = 0 ↔
       ∃ c : K, ∀ j, x j = c * toBase.specialFiberMultiplicity π j := by
   refine (Matrix.dotProduct_mulVec_eq_zero_iff_of_mulVec_eq_zero
     ((toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).map _)

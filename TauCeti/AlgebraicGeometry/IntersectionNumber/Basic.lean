@@ -124,7 +124,8 @@ off-diagonal entries of the intersection matrix.
   `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_comm`: `(-D · E) = (-E · D)` and
   `(D · E) = (E · D)` for effective Cartier divisors `D` and `E` meeting properly;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne`: distinct prime
-  divisors on a regular surface have nonnegative intersection number.
+  divisors on a regular scheme have nonnegative intersection number when the tested divisor
+  is a proper curve with finite-dimensional `H⁰` and `H¹` of its structure sheaf.
 
 ## References
 
@@ -617,17 +618,16 @@ section PrimeDivisor
 
 open Order
 open _root_.AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
-  isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+  isEffectiveCartier_vanishingIdeal_closure_singleton
   isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular)
 
-/-- **Distinct prime divisors on a regular surface meet nonnegatively.** On a regular scheme `X`
-all of whose points have codimension at most two, let `η ≠ η'` be codimension-one points, and
+/-- **Distinct prime divisors on a regular scheme meet nonnegatively.** Let `η ≠ η'` be
+codimension-one points of a regular scheme `X`, and
 suppose that the closure `C` of `η`, with its reduced structure, is a proper curve over a field `k`
 with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)`. Then the intersection number of the prime
 divisor `C'`, the closure of `η'`, with `C` is nonnegative: `(C' · C) = dim_k Γ(C' ∩ C) ≥ 0`. -/
 theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne
-    [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, coheight x ≤ 2)
-    {η η' : CodimensionOnePoint X} (hne : η ≠ η')
+    [TauCeti.AlgebraicGeometry.IsRegular X] {η η' : CodimensionOnePoint X} (hne : η ≠ η')
     [(vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme.Over (Spec (.of k))]
     [IsProper ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ↘ Spec (.of k))]
     [RelativeDimensionLE 1
@@ -637,10 +637,10 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial
       (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)] :
     0 ≤ intersectionNumber k (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι
-      (mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-        hX η'.property).toInvertibleSheaf)⁻¹ :=
+      (mk (isEffectiveCartier_vanishingIdeal_closure_singleton
+        η'.property).toInvertibleSheaf)⁻¹ :=
   intersectionNumber_inv_mk_toInvertibleSheaf_nonneg k _ _
-    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne)
+    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hne)
 
 end PrimeDivisor
 

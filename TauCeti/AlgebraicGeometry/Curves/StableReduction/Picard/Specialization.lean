@@ -65,7 +65,7 @@ open Set.Finite (mem_toFinset)
 open scoped Matrix
 open TauCeti TauCeti.AlgebraicGeometry
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal inclusion
-  isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular)
+  isEffectiveCartier_vanishingIdeal_closure_singleton)
 
 universe u
 
@@ -86,16 +86,16 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
 `specialFiberWeightedIntersectionMatrix`. -/
 theorem specialFiberNumericalType_weightedIntersection :
     (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weightedIntersection =
-      toBase.specialFiberWeightedIntersectionMatrix hX hη := by
+      toBase.specialFiberWeightedIntersectionMatrix hη := by
   ext i j
   exact (NumericalType.weightedIntersection_apply _ i j).trans
-    (toBase.specialFiberWeightedIntersectionMatrix_apply hX hη i j).symm
+    (toBase.specialFiberWeightedIntersectionMatrix_apply hη i j).symm
 
 /-- The principal-divisor submodule of `specialFiberNumericalType` equals the row space of
 `specialFiberWeightedIntersectionMatrix`. -/
 theorem specialFiberNumericalType_principalDivisors :
     (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).principalDivisors =
-      LinearMap.range (toBase.specialFiberWeightedIntersectionMatrix hX hη).vecMulLinear := by
+      LinearMap.range (toBase.specialFiberWeightedIntersectionMatrix hη).vecMulLinear := by
   have h : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).principalDivisors =
       LinearMap.range (toBase.specialFiberNumericalType hX hη hC hπ hreg
         hconn).weightedIntersection.vecMulLinear := by
@@ -111,7 +111,7 @@ def specialFiberNumericalTypePicEquiv :
     (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Pic ≃ₗ[ℤ]
       (((toBase.finite_setOf_base_eq_closedPoint
             (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) ⧸
-        LinearMap.range (toBase.specialFiberWeightedIntersectionMatrix hX hη).vecMulLinear) :=
+        LinearMap.range (toBase.specialFiberWeightedIntersectionMatrix hη).vecMulLinear) :=
   Submodule.quotEquivOfEq _ _
     (toBase.specialFiberNumericalType_principalDivisors hX hη hC hπ hreg hconn)
 
@@ -270,8 +270,8 @@ theorem reducedSpecialFiberPicSpecialization_pullback_subschemeι (a : LineBundl
 theorem totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf
     (j : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component) :
     toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn (Additive.ofMul
-        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)⁻¹) = 0 := by
+        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton
+          j.val.property).toInvertibleSheaf)⁻¹) = 0 := by
   rw [totalSpecialFiberPicSpecialization_apply]
   refine (Submodule.Quotient.mk_eq_zero _).mpr ?_
   rw [(toBase.specialFiberMultidegree_inv_mk_toInvertibleSheaf hX hη
@@ -287,8 +287,8 @@ after `LineBundleClass.inv_mk`. -/
 theorem totalSpecialFiberPicSpecialization_ofMul_mk_toInvertibleSheaf_dual
     (j : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component) :
     toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn (Additive.ofMul
-        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf.dual)) = 0 := by
+        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton
+          j.val.property).toInvertibleSheaf.dual)) = 0 := by
   rw [← LineBundleClass.inv_mk,
     totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf]
 
@@ -297,8 +297,8 @@ theorem totalSpecialFiberPicSpecialization_ofMul_mk_toInvertibleSheaf_dual
 theorem totalSpecialFiberPicSpecialization_ofMul_mk_toInvertibleSheaf
     (j : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component) :
     toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn (Additive.ofMul
-        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)) = 0 := by
+        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton
+          j.val.property).toInvertibleSheaf)) = 0 := by
   rw [← neg_eq_zero, ← map_neg, ← ofMul_inv,
     totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf]
 
@@ -325,8 +325,8 @@ theorem mem_ker_totalSpecialFiberPicSpecialization_iff {a : Additive (LineBundle
             toBase.specialFiberCohomologyFiniteDimensional_zero
             hC.finiteDimensional_one
             (Additive.ofMul (∏ j, (LineBundleClass.mk
-              (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-                hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j)) := by
+              (isEffectiveCartier_vanishingIdeal_closure_singleton
+                j.val.property).toInvertibleSheaf)⁻¹ ^ v j)) := by
   rw [AddMonoidHom.mem_ker, totalSpecialFiberPicSpecialization_apply]
   refine (Submodule.Quotient.mk_eq_zero _).trans
     ((NumericalType.mem_principalDivisors_iff _).trans (exists_congr fun v ↦ ?_))
@@ -525,7 +525,7 @@ def numericalTypePicEquiv :
       (((M.toBase.finite_setOf_base_eq_closedPoint (IsDiscreteValuationRing.not_a_field R)
             (M.toBase.base_genericPoint_ne_closedPoint
               (IsDiscreteValuationRing.not_a_field R))).toFinset → ℤ) ⧸
-        LinearMap.range (M.toBase.specialFiberWeightedIntersectionMatrix hX
+        LinearMap.range (M.toBase.specialFiberWeightedIntersectionMatrix
           (M.toBase.base_genericPoint_ne_closedPoint
             (IsDiscreteValuationRing.not_a_field R))).vecMulLinear) :=
   M.toBase.specialFiberNumericalTypePicEquiv hX _ hC
@@ -758,8 +758,8 @@ theorem mem_ker_genericFiberPicSpecialization_iff {b : LineBundleClass C} :
 theorem totalPicSpecialization_ofMul_inv_mk_toInvertibleSheaf
     (j : (M.numericalType hX hC).Component) :
     M.totalPicSpecialization hX hC (Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)⁻¹) = 0 :=
+        (isEffectiveCartier_vanishingIdeal_closure_singleton
+          j.val.property).toInvertibleSheaf)⁻¹) = 0 :=
   M.toBase.totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf
     hX _ hC
     TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
@@ -772,8 +772,8 @@ theorem totalPicSpecialization_ofMul_inv_mk_toInvertibleSheaf
 theorem totalPicSpecialization_ofMul_mk_toInvertibleSheaf_dual
     (j : (M.numericalType hX hC).Component) :
     M.totalPicSpecialization hX hC (Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf.dual)) = 0 :=
+        (isEffectiveCartier_vanishingIdeal_closure_singleton
+          j.val.property).toInvertibleSheaf.dual)) = 0 :=
   M.toBase.totalSpecialFiberPicSpecialization_ofMul_mk_toInvertibleSheaf_dual
     hX _ hC
     TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
@@ -785,8 +785,8 @@ theorem totalPicSpecialization_ofMul_mk_toInvertibleSheaf_dual
 theorem totalPicSpecialization_ofMul_mk_toInvertibleSheaf
     (j : (M.numericalType hX hC).Component) :
     M.totalPicSpecialization hX hC (Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)) = 0 :=
+        (isEffectiveCartier_vanishingIdeal_closure_singleton
+          j.val.property).toInvertibleSheaf)) = 0 :=
   M.toBase.totalSpecialFiberPicSpecialization_ofMul_mk_toInvertibleSheaf
     hX _ hC
     TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
@@ -821,8 +821,8 @@ theorem mem_ker_totalPicSpecialization_iff {a : Additive (LineBundleClass M.tota
             M.toBase.specialFiberCohomologyFiniteDimensional_zero
             hC.finiteDimensional_one
             (Additive.ofMul (∏ j, (LineBundleClass.mk
-              (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-                hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j)) :=
+              (isEffectiveCartier_vanishingIdeal_closure_singleton
+                j.val.property).toInvertibleSheaf)⁻¹ ^ v j)) :=
   M.toBase.mem_ker_totalSpecialFiberPicSpecialization_iff hX _ hC
     TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
     TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose

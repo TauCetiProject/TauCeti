@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -68,6 +68,8 @@ ring is a regular ring in Mathlib's sense.
   is a regular ring.
 * `TauCeti.isRegularRing_of_isRegularLocalRing`: a regular local ring is a regular ring, so its
   localizations at primes are regular local rings (an instance).
+* `TauCeti.IsRegularLocalRing.spanFinrank_maximalIdeal_localization_lt`: localization at a
+  nonmaximal prime strictly lowers the number of maximal-ideal generators.
 * `TauCeti.IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat`: if a regular
   ring `R` is faithfully flat over a ring `A`, every finite `A`-module has projective dimension at
   most `dim R`.
@@ -468,6 +470,27 @@ use `TauCeti.Excellence.mem_regularLocus_iff_of_isLocalization` with
 instance isRegularRing_of_isRegularLocalRing {R : Type u} [CommRing R] [IsRegularLocalRing R] :
     IsRegularRing R :=
   isRegularRing_of_globalDimension_lt_top IsRegularLocalRing.globalDimension_lt_top.{u}
+
+/-- Localizing a regular local ring at a nonmaximal prime strictly lowers the number of
+generators needed for the maximal ideal. -/
+theorem IsRegularLocalRing.spanFinrank_maximalIdeal_localization_lt
+    {R : Type u} [CommRing R] [IsRegularLocalRing R] (p : Ideal R) [p.IsPrime]
+    (hp : p ≠ maximalIdeal R) :
+    (maximalIdeal (Localization.AtPrime p)).spanFinrank < (maximalIdeal R).spanFinrank := by
+  have hdim : ((maximalIdeal (Localization.AtPrime p)).spanFinrank : WithBot ℕ∞) =
+      ringKrullDim (Localization.AtPrime p) :=
+    _root_.IsRegularLocalRing.spanFinrank_maximalIdeal
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height p] at hdim
+  have hlt := Ideal.height_add_one_le_of_lt_of_isPrime
+    (lt_of_le_of_ne (le_maximalIdeal (Ideal.IsPrime.ne_top inferInstance)) hp)
+  have hmax := IsLocalRing.maximalIdeal_height_eq_ringKrullDim (R := R)
+  rw [← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal] at hmax
+  have hpdim : ((maximalIdeal (Localization.AtPrime p)).spanFinrank : ℕ∞) = p.height := by
+    exact_mod_cast hdim
+  have hmax' : (maximalIdeal R).height = (maximalIdeal R).spanFinrank := by
+    exact_mod_cast hmax
+  rw [← hpdim, hmax'] at hlt
+  exact_mod_cast (ENat.add_one_le_iff (ENat.natCast_ne_top _)).mp hlt
 
 section FaithfullyFlat
 

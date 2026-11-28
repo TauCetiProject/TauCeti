@@ -51,8 +51,8 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
   [TauCeti.AlgebraicGeometry.IsRegular X]
 
 /-- **An exceptional component of the special fibre is a `(-1)`-component.** Let `X` be a regular
-Noetherian integral scheme over a local ring `R` of dimension at most one, with all points of
-codimension at most two and generic point away from the closed point. If the component `Cⱼ` of
+Noetherian integral scheme over a local ring `R` of dimension at most one, with generic point
+away from the closed point. If the component `Cⱼ` of
 the special fibre, with its reduced structure, is an exceptional curve of the first kind, then the
 diagonal entry `aⱼⱼ = (Cⱼ · Cⱼ)` of the intersection matrix of the special fibre is minus the
 weight `wⱼ = dim_k H⁰(Cⱼ, 𝒪_{Cⱼ})` over the residue field `k` of `R`. Together with
@@ -60,12 +60,12 @@ weight `wⱼ = dim_k H⁰(Cⱼ, 𝒪_{Cⱼ})` over the residue field `k` of `R`.
 makes the genus of `Cⱼ` over its constant field zero, this is the condition of a `(-1)`-index of
 the numerical type. -/
 theorem specialFiberIntersectionMatrix_self_eq_neg_specialFiberWeight
-    (hX : ∀ x : X, coheight x ≤ 2) (hη : toBase (genericPoint X) ≠ closedPoint R)
+    (hη : toBase (genericPoint X) ≠ closedPoint R)
     (j : (toBase.finite_setOf_base_eq_closedPoint
         (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset)
     (hj : (vanishingIdeal ⟨closure {((j : CodimensionOnePoint X) : X)},
       isClosed_closure⟩).IsExceptionalCurveOfFirstKind) :
-    toBase.specialFiberIntersectionMatrix hX hη j j =
+    toBase.specialFiberIntersectionMatrix hη j j =
       -(toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp j.property) : ℤ) := by
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
     ((Set.Finite.mem_toFinset _).mp j.property))
