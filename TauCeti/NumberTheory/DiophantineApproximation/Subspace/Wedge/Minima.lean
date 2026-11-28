@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima.Bounds
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Wedge.Domain
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Wedge.Rank
 
@@ -46,6 +47,8 @@ has rank exactly `M - 1`.
 
 ## Main results
 
+* `TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`: the weight bound in terms of the
+  ratio of consecutive minima of the original domain.
 * `TauCeti.NumberField.exists_pos_forall_mul_div_le_successiveMinimum_wedge`: the lower bound
   on the last minimum, uniform over exterior degrees and bijections when the others are at most `1`.
 * `TauCeti.NumberField.exists_successiveMinimum_wedge`: Lemma 7.5.31, the successive minima of
@@ -71,24 +74,54 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
 
 /-! ### The successive minima of the wedge domain -/
 
-/-- For fixed forms, exterior degree `0 < p`, jump index `k` with `k + p = card ι` and constant
-`C > 0`, there is `A > 0` such that `Q ^ approxWeight` of the wedge exponents is at most
-`A · (μ (k - 1) / μ k) ^ [K : ℚ]` for all exponents `c`, levels `0 < Q ≠ 1` and bijections `σ`,
-where `μ` are the successive minima over `K` of `approxDomain S₀ L c Q`. -/
-private theorem exists_pos_rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
+/-- **The wedge domain of the successive minima is small after a large jump** (Bombieri–Gubler
+7.5.30, toward Lemma 7.5.31). Let `μ` be the successive minima over `K` of an approximation domain
+of level `0 < Q ≠ 1` with forms independent at the infinite places and at `S₀`. For `0 < p`,
+`k + p = card ι` and `0 < C`, `Q ^ approxWeight` of the wedge exponents is at most
+`A ^ e · C ^ (M · [K : ℚ]) · (μ (k - 1) / μ k) ^ [K : ℚ]`, where `A = approxUpperConst S₀ L` is
+the constant of Minkowski's second theorem for the domain, `e = (card ι - 1).choose (p - 1)` and
+`M = (card ι).choose p`. -/
+theorem rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {k p : ℕ} (hp : 0 < p)
-    (hkp : k + p = Fintype.card ι) {C : ℝ} (hC : 0 < C) :
-    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q → Q ≠ 1 →
-      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
-      Q ^ approxWeight S₀ (wedgeExponent c p k σ
-          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
-        A * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
-          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
-  have := approxUpperConst_pos hLinf hLfin
-  exact ⟨_, by positivity, fun c Q hQ hQ₁ σ ↦
-    rpow_approxWeight_wedgeExponent_le hLinf hLfin c hp hkp σ hC hQ hQ₁⟩
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (c : AbsoluteValue K ℝ → ι → ℝ)
+    {p k : ℕ} (hp : 0 < p) (hkp : k + p = Fintype.card ι)
+    (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι)
+    (hC : 0 < C) (hQ₀ : 0 < Q) (hQ₁ : Q ≠ 1) :
+    Q ^ approxWeight S₀ (wedgeExponent c p k σ
+        ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+      approxUpperConst S₀ L ^ (Fintype.card ι - 1).choose (p - 1) *
+        C ^ ((Fintype.card ι).choose p * finrank ℚ K) *
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
+            (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
+  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+  have hμ (l : ℕ) (hl : l < Fintype.card ι) : 0 < μ l :=
+    successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
+  set A := approxUpperConst S₀ L
+  set e := (Fintype.card ι - 1).choose (p - 1)
+  set d := finrank ℚ K
+  -- Minkowski's second theorem: `Q ^ weight · ∏ l, μ l ^ d ≤ A`.
+  have hmink : Q ^ approxWeight S₀ c * (∏ l : Fin (Fintype.card ι), μ l) ^ d ≤ A := by
+    have h := prod_successiveMinimum_approx_le hLinf hLfin c hQ₀
+    rw [Real.rpow_neg hQ₀.le, ← div_eq_mul_inv] at h
+    rw [← prod_pow, mul_comm]
+    exact (le_div_iff₀ (Real.rpow_pos_of_pos hQ₀ _)).1 h
+  have hP : 0 ≤ Q ^ approxWeight S₀ c * (∏ l : Fin (Fintype.card ι), μ l) ^ d :=
+    mul_nonneg (Real.rpow_pos_of_pos hQ₀ _).le
+      (pow_nonneg (prod_nonneg fun (l : Fin _) _ ↦ (hμ l l.isLt).le) _)
+  rw [rpow_approxWeight_wedgeExponent S₀ c hp hkp σ hμ hC hQ₀ hQ₁, mul_comm (e : ℝ),
+    Real.rpow_mul hQ₀.le, Real.rpow_natCast]
+  calc (Q ^ approxWeight S₀ c) ^ e *
+        (C ^ (Fintype.card ι).choose p * (∏ l : Fin (Fintype.card ι), μ l) ^ e *
+          (μ (k - 1) / μ k)) ^ d
+      = (Q ^ approxWeight S₀ c * (∏ l : Fin (Fintype.card ι), μ l) ^ d) ^ e *
+          C ^ ((Fintype.card ι).choose p * d) * (μ (k - 1) / μ k) ^ d := by
+        ring
+    _ ≤ A ^ e * C ^ ((Fintype.card ι).choose p * d) * (μ (k - 1) / μ k) ^ d := by
+        have hr : 0 ≤ μ (k - 1) / μ k := div_nonneg
+          (Submodule.successiveMinimum_nonneg (approxModule S₀ L c Q) (approxBody L c Q) _)
+          (Submodule.successiveMinimum_nonneg (approxModule S₀ L c Q) (approxBody L c Q) _)
+        gcongr
 
 variable [LinearOrder ι]
 
@@ -128,8 +161,8 @@ private theorem exists_pos_mul_div_le_successiveMinimum_wedge {S₀ : Finset (Fi
     linearIndependent_wedgeForms (hLfin v hv) p
   set A₁ := approxLowerConst S₀ L'
   have hA₁ : 0 < A₁ := approxLowerConst_pos hL'inf hL'fin
-  obtain ⟨A₂, hA₂, h₂⟩ :=
-    exists_pos_rpow_approxWeight_wedgeExponent_le (k := N - p) hLinf hLfin hpN.1 (by omega) hC
+  set A₂ := approxUpperConst S₀ L ^ (N - 1).choose (p - 1) * C ^ (N.choose p * d)
+  have hA₂ : 0 < A₂ := mul_pos (pow_pos (approxUpperConst_pos hLinf hLfin) _) (pow_pos hC _)
   refine ⟨(A₁ / A₂) ^ (d⁻¹ : ℝ), Real.rpow_pos_of_pos (div_pos hA₁ hA₂) _,
     fun k _ hkp c Q hQ hQ₁ σ hν ↦ ?_⟩
   obtain rfl : k = N - p := by omega
@@ -144,7 +177,8 @@ private theorem exists_pos_mul_div_le_successiveMinimum_wedge {S₀ : Finset (Fi
     have h := approxLowerConst_mul_rpow_le_last_successiveMinimum_pow hL'inf hL'fin
       (by rw [hMcard]; exact Nat.choose_pos hpN.2) c' hQ fun l hl ↦ hν l (by rwa [hMcard] at hl)
     rwa [hMcard] at h
-  have h₂' : Q ^ approxWeight S₀ c' ≤ A₂ * (μ (N - p - 1) / μ (N - p)) ^ d := h₂ c hQ hQ₁ σ
+  have h₂' : Q ^ approxWeight S₀ c' ≤ A₂ * (μ (N - p - 1) / μ (N - p)) ^ d :=
+    rpow_approxWeight_wedgeExponent_le hLinf hLfin c hpN.1 hkp σ hC hQ hQ₁
   refine (pow_le_pow_iff_left₀ (mul_pos (Real.rpow_pos_of_pos (div_pos hA₁ hA₂) _) hr).le
     (Submodule.successiveMinimum_nonneg _ _ _) hd).1 ?_
   calc ((A₁ / A₂) ^ (d⁻¹ : ℝ) * (μ (N - p) / μ (N - p - 1))) ^ d

@@ -162,15 +162,18 @@ theorem successiveMinimum_le {B : Set (ι → mixedSpace K)} {t : ℝ} (ht : 0 <
     successiveMinimum Λ B l ≤ t :=
   csInf_le ⟨0, fun _ hs ↦ hs.1.le⟩ ⟨ht, x, hx, fun k ↦ ⟨hxΛ k, hxB k⟩⟩
 
-/-- If the mixed embeddings of a set of module points lie in `t • B` and the set spans more than
-`l` dimensions over `K`, the `l`-th successive minimum is at most `t`. -/
-theorem successiveMinimum_le_of_lt_finrank_span {B : Set (ι → mixedSpace K)} {t : ℝ}
+/-- If the mixed embeddings of a set of module points lie in a positive dilate `t • B` and the
+cardinal rank of their `K`-span exceeds `l`, the `l`-th successive minimum is at most `t`. -/
+theorem successiveMinimum_le_of_lt_rank_span {B : Set (ι → mixedSpace K)} {t : ℝ}
     (ht : 0 < t) {s : Set (ι → K)}
     (hsΛ : s ⊆ Λ) (hsB : ∀ x ∈ s, (fun j ↦ mixedEmbedding K (x j)) ∈ t • B)
-    (hl : l < finrank K (span K s)) : successiveMinimum Λ B l ≤ t := by
-  let _ := Module.finite_of_finrank_pos (Nat.zero_lt_of_lt hl)
-  obtain ⟨x, hx, hxs⟩ := le_finrank_span_iff_exists_linearIndependent.1 hl
-  exact successiveMinimum_le ht hx (fun i ↦ hsΛ (hxs i)) fun i ↦ hsB _ (hxs i)
+    (hl : (l : Cardinal) < Module.rank K (span K s)) : successiveMinimum Λ B l ≤ t := by
+  obtain ⟨b, hbs, hbspan, hb⟩ := exists_linearIndependent K s
+  rw [← hbspan, rank_span_set hb, ← Cardinal.natCast_add_one_le_iff, ← Nat.cast_succ,
+    ← Cardinal.lift_mk_fin, ← Cardinal.lift_uzero (Cardinal.mk b), Cardinal.lift_mk_le'] at hl
+  obtain ⟨e⟩ := hl
+  exact successiveMinimum_le ht (hb.comp _ e.injective)
+    (fun i ↦ hsΛ (hbs (e i).property)) fun i ↦ hsB _ (hbs (e i).property)
 
 /-- Dilating `B` by `c > 0` divides every successive minimum over `K` by `c`. -/
 theorem successiveMinimum_smul (Λ : Submodule (𝓞 K) (ι → K)) (B : Set (ι → mixedSpace K))
@@ -518,8 +521,10 @@ theorem successiveMinimum_le_iff_lt_finrank_span [DiscreteTopology Λ.mixedImage
       l < finrank K (span K {x | x ∈ Λ ∧
         (fun j ↦ mixedEmbedding K (x j)) ∈ t • (B : Set (ι → mixedSpace K))}) := by
   refine ⟨fun hm ↦ le_finrank_span_iff_exists_linearIndependent.2
-    ((successiveMinimum_le_iff hB hl ht).1 hm),
-    successiveMinimum_le_of_lt_finrank_span ht (fun _ hx ↦ hx.1) (fun _ hx ↦ hx.2)⟩
+    ((successiveMinimum_le_iff hB hl ht).1 hm), fun h ↦ ?_⟩
+  refine successiveMinimum_le_of_lt_rank_span ht ?_ ?_ (lt_rank_of_lt_finrank h)
+  · exact fun _ hx ↦ hx.1
+  · exact fun _ hx ↦ hx.2
 
 open scoped Classical in
 /-- The rank of the lattice points in a positive dilate of a convex body is the number of

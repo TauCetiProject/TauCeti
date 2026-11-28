@@ -16,7 +16,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 If a domain contains the Plücker vectors of the `p`-subfamilies meeting the first `k` indices
 of a family, its span contains their wedge span. For an independent family of length `k + p`,
 this bounds the rank from below. For a full basis, a proper domain span is exactly that wedge
-span.
+span. The same containment bounds the first `N.choose p - 1` minima by one, where `N = k + p`,
+leaving only the last minimum to estimate for the wedge domain.
 -/
 
 public section

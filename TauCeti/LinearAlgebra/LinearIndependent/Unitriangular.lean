@@ -61,8 +61,8 @@ theorem LinearIndependent.of_eq_add_mem_span_image_Iio {x z : ι → M}
     ext j
     simp [hdz]
   intro f g hfg
-  rw [hz] at hfg
-  have hfg' : f + Finsupp.linearCombination R d f = g + Finsupp.linearCombination R d g := hx hfg
+  simp only [hz, LinearMap.comp_apply, LinearMap.add_apply, LinearMap.id_apply] at hfg
+  have hfg' := hx hfg
   by_contra hne
   set s := f.support ∪ g.support
   -- A maximal index `j` where `f` and `g` differ.

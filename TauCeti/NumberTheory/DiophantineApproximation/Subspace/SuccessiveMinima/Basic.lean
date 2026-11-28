@@ -12,7 +12,9 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMini
 # Basic properties of successive minima of an approximation domain
 
 For independent forms and positive level, the successive minima over the number field are
-positive below the ambient dimension and are realized by one linearly independent family.
+positive and nondecreasing below the ambient dimension and are realized by one linearly
+independent family. This family supplies simultaneous infinite-place bounds for the balancing
+argument and the estimates on individual minima.
 -/
 
 public section
@@ -58,5 +60,19 @@ theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
   let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
   obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLInf c hQ
   simpa only [hcoe] using (approxModule S₀ L c Q).successiveMinimum_pos hB hl
+
+/-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
+nondecreasing. -/
+theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
+    MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
+      (Set.Iio (Fintype.card ι)) := by
+  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
+  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  simpa only [hcoe] using (approxModule S₀ L c Q).monotoneOn_successiveMinimum hB
 
 end TauCeti.NumberField

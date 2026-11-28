@@ -70,8 +70,8 @@ theorem successiveMinimum_le_one_of_lt_finrank_approxSpan {S₀ : Finset (Finite
     {l : ℕ} (hl : l < finrank K (approxSpan S₀ L c Q)) :
     (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1 := by
   rw [approxSpan_eq_span] at hl
-  refine Submodule.successiveMinimum_le_of_lt_finrank_span one_pos
-    approxDomain_subset_approxModule (fun x hx ↦ ?_) hl
+  refine Submodule.successiveMinimum_le_of_lt_rank_span one_pos
+    approxDomain_subset_approxModule (fun x hx ↦ ?_) (lt_rank_of_lt_finrank hl)
   rw [one_smul, mixedEmbedding_mem_approxBody_iff]
   exact (mem_approxDomain.1 hx).1
 
@@ -93,20 +93,6 @@ theorem finrank_approxSpan {S₀ : Finset (FinitePlace K)}
   rw [approxSpan_eq_span_mixedEmbedding c hQ.le, ← hcoe]
   exact Submodule.finrank_span_setOf_mem (Λ := approxModule S₀ L c Q) hB
     (t := (1 : ℝ)) zero_lt_one
-
-/-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
-nondecreasing. -/
-theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
-    MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
-      (Iio (Fintype.card ι)) := by
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
-  simpa only [hcoe] using (approxModule S₀ L c Q).monotoneOn_successiveMinimum hB
 
 /-- Below `#ι`, a successive minimum over `K` of an approximation domain of positive level is at
 most one exactly when its index is below the rank of the domain. -/

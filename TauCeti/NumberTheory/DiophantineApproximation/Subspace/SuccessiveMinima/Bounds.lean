@@ -96,6 +96,14 @@ theorem approxLowerConst_def (S₀ : Finset (FinitePlace K))
       (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
         integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) * approxConst S₀ L) := (rfl)
 
+/-- The lower Minkowski constant depends on the forms only at the infinite places and at `S₀`. -/
+theorem approxLowerConst_congr {S₀ : Finset (FinitePlace K)}
+    {L₁ L₂ : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hInf : ∀ v : InfinitePlace K, L₁ v.val = L₂ v.val)
+    (hFin : ∀ v ∈ S₀, L₁ v.val = L₂ v.val) :
+    approxLowerConst S₀ L₁ = approxLowerConst S₀ L₂ := by
+  rw [approxLowerConst_def, approxLowerConst_def, approxConst_congr hInf hFin]
+
 /-- **The constant of the upper Minkowski bound for an approximation domain**:
 `2 ^ N · ∏ v ∈ S₀, N 𝔭_v ^ card ι / approxConst S₀ L`, where `N = [K : ℚ] · card ι`
 (`TauCeti.NumberField.prod_successiveMinimum_approx_le`). -/
@@ -111,6 +119,14 @@ theorem approxUpperConst_def (S₀ : Finset (FinitePlace K))
       (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L :=
   (rfl)
 
+/-- The upper Minkowski constant depends on the forms only at the infinite places and at `S₀`. -/
+theorem approxUpperConst_congr {S₀ : Finset (FinitePlace K)}
+    {L₁ L₂ : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hInf : ∀ v : InfinitePlace K, L₁ v.val = L₂ v.val)
+    (hFin : ∀ v ∈ S₀, L₁ v.val = L₂ v.val) :
+    approxUpperConst S₀ L₁ = approxUpperConst S₀ L₂ := by
+  rw [approxUpperConst_def, approxUpperConst_def, approxConst_congr hInf hFin]
+
 /-- The constant of the lower Minkowski bound is positive for forms independent at the infinite
 places and at `S₀`. -/
 theorem approxLowerConst_pos {S₀ : Finset (FinitePlace K)}
@@ -121,11 +137,6 @@ theorem approxLowerConst_pos {S₀ : Finset (FinitePlace K)}
   div_pos (by positivity) (mul_pos (mul_pos (by positivity) (pow_pos integralBasisHouse_pos _))
     (approxConst_pos hLInf hLFin))
 
-private theorem prod_absNorm_pow_pos (S₀ : Finset (FinitePlace K)) (n : ℕ) :
-    0 < ∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n :=
-  Finset.prod_pos fun v _ ↦ pow_pos (by
-    exact_mod_cast (HeightOneSpectrum.one_lt_absNorm v.maximalIdeal).pos) _
-
 /-- The constant of the upper Minkowski bound is positive for forms independent at the infinite
 places and at `S₀`. -/
 theorem approxUpperConst_pos {S₀ : Finset (FinitePlace K)}
@@ -133,7 +144,7 @@ theorem approxUpperConst_pos {S₀ : Finset (FinitePlace K)}
     (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
     (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) :
     0 < approxUpperConst S₀ L :=
-  div_pos (mul_pos (by positivity) (prod_absNorm_pow_pos S₀ _))
+  div_pos (mul_pos (by positivity) (FinitePlace.prod_absNorm_pow_pos S₀ _))
     (approxConst_pos hLInf hLFin)
 
 /-- **The successive minima of an approximation domain, lower bound** (Bombieri–Gubler, Theorem
@@ -184,10 +195,11 @@ theorem le_prod_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
         ring
     _ ≤ P := (div_le_iff₀ (mul_pos hconst hQw)).2 hA
 
-/-- **The last minimum of a domain controls its weight.** For forms independent at the infinite
-places and at `S₀` and a positive level `Q`, if every successive minimum over `K` of
-`approxDomain S₀ L c Q` but the last is at most `1`, then the `[K : ℚ]`-th power of the last
-is at least `approxLowerConst S₀ L · Q ^ (-approxWeight S₀ c)`. -/
+/-- **The last minimum of a domain controls its weight.** For a nonempty coordinate type, forms
+independent at the infinite places and at `S₀`, and a positive level `Q`, suppose every successive
+minimum over `K` of `approxDomain S₀ L c Q` before index `card ι - 1` is at most `1`. Then the
+`[K : ℚ]`-th power of the minimum at that last index is at least
+`approxLowerConst S₀ L · Q ^ (-approxWeight S₀ c)`. -/
 theorem approxLowerConst_mul_rpow_le_last_successiveMinimum_pow {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
@@ -234,7 +246,7 @@ theorem prod_successiveMinimum_approx_le {S₀ : Finset (FinitePlace K)}
   set C := ZLattice.covolume (approxModule S₀ L c Q).mixedImage
   set V := volume.real (approxBody L c Q)
   have hC : 0 < C := covolume_approxLattice_pos hLFin c hQ.ne'
-  have hD : 0 < D := prod_absNorm_pow_pos S₀ _
+  have hD : 0 < D := FinitePlace.prod_absNorm_pow_pos S₀ _
   have hk : 0 < approxConst S₀ L / D * Q ^ approxWeight S₀ c :=
     mul_pos (div_pos (approxConst_pos hLInf hLFin) hD) (Real.rpow_pos_of_pos hQ _)
   -- Minkowski's second theorem over `K`, upper bound: `P · V ≤ 2 ^ N · C`.

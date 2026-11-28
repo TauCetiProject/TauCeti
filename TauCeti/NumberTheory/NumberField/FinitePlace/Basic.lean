@@ -136,6 +136,12 @@ namespace NumberField.FinitePlace
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- The product of powers of the prime norms over a finite set of finite places is positive. -/
+theorem prod_absNorm_pow_pos (S : Finset (FinitePlace K)) (n : ℕ) :
+    0 < ∏ v ∈ S, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n :=
+  Finset.prod_pos fun v _ ↦ pow_pos (by
+    exact_mod_cast (HeightOneSpectrum.one_lt_absNorm v.maximalIdeal).pos) _
+
 /-- Every nonzero finite-place value is an integer power of the norm of its prime. -/
 theorem apply_eq_absNorm_zpow (v : FinitePlace K) {x : K} (hx : x ≠ 0) :
     v x = (v.maximalIdeal.asIdeal.absNorm : ℝ) ^
