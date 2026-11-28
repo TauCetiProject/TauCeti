@@ -7,10 +7,8 @@ module
 
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori.Valuation
 public import TauCeti.LinearAlgebra.Matrix.Permutation
-
-import TauCeti.RingTheory.Valuation.Basic
 
 /-!
 # The Iwasawa–Bruhat decomposition of `GL_m` over a valued field
@@ -20,7 +18,8 @@ nonarchimedean local field), and let `I₁ ⊆ GL_m(K)` be the image of the pro-
 `TauCeti.iwahoriOne m 𝒪` of `GL_m(𝒪)`: the integral invertible matrices that are upper
 unitriangular modulo the maximal ideal. In terms of the valuation `v` of `𝒪`, a matrix `k ∈ GL_m(K)`
 lies in `I₁` exactly when all its entries have `v ≤ 1`, its entries below the diagonal have
-`v < 1`, and `v (k i i - 1) < 1` for every `i` (`TauCeti.mem_map_iwahoriOne_iff`).
+`v < 1`, and `v (k i i - 1) < 1` for every `i` (imported as `TauCeti.mem_map_iwahoriOne_iff` from
+`UpperTriangular.Iwahori.Valuation`).
 
 The **Iwasawa–Bruhat decomposition** says that every `g ∈ GL_m(K)` factors as
 
@@ -54,8 +53,6 @@ factor `u`, with `t = σ = 1`.
 
 ## Main results
 
-* `TauCeti.mem_map_iwahoriOne_iff`: membership in the image of the pro-`p` Iwahori subgroup,
-  through valuations of the entries.
 * `TauCeti.exists_eq_mul_diagGL_mul_permutationGL_mul`: the Iwasawa–Bruhat decomposition
   `g = u * t * σ * k`.
 * `TauCeti.exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular`: the same
@@ -79,115 +76,6 @@ namespace TauCeti
 open Matrix
 
 variable {K : Type*} [Field K] (A : ValuationSubring K) {m : Type*} [Fintype m] [LinearOrder m]
-
-/-! ### The pro-`p` Iwahori subgroup in `GL_m(K)` -/
-
-/-- **Membership in the pro-`p` Iwahori subgroup of `GL_m(K)`.** An invertible matrix over `K`
-comes from the pro-`p` Iwahori subgroup of `GL_m(𝒪)` exactly when all its entries are integral,
-its entries below the diagonal lie in the maximal ideal, and its diagonal entries are congruent
-to `1` modulo the maximal ideal, all measured by the valuation of `𝒪`. -/
-theorem mem_map_iwahoriOne_iff {g : GL m K} :
-    g ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) ↔
-      (∀ i j, A.valuation (g i j) ≤ 1) ∧ (∀ ⦃i j⦄, j < i → A.valuation (g i j) < 1) ∧
-        ∀ i, A.valuation (g i i - 1) < 1 := by
-  rw [Subgroup.mem_map]
-  constructor
-  · rintro ⟨k, hk, rfl⟩
-    obtain ⟨hklow, hkdiag⟩ := mem_upperUnitriangularCongruenceSubgroup_iff.mp hk
-    refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ ?_⟩
-    · rw [GeneralLinearGroup.map_apply]
-      exact A.valuation_le_one _
-    · rw [GeneralLinearGroup.map_apply]
-      exact (A.valuation_lt_one_iff _).mp (hklow hji)
-    · rw [GeneralLinearGroup.map_apply, ← map_one (algebraMap A K), ← map_sub]
-      exact (A.valuation_lt_one_iff _).mp (hkdiag i)
-  · rintro ⟨h1, hlow, hdiag⟩
-    let M : Matrix m m A := of fun i j ↦ ⟨g i j, (A.valuation_le_one_iff _).mp (h1 i j)⟩
-    have hlowM : ∀ ⦃i j⦄, j < i → M i j ∈ IsLocalRing.maximalIdeal A := fun _ _ hji ↦
-      (A.valuation_lt_one_iff _).mpr (hlow hji)
-    have hdiagM : ∀ i, M i i - 1 ∈ IsLocalRing.maximalIdeal A := fun i ↦
-      (A.valuation_lt_one_iff _).mpr (hdiag i)
-    -- Modulo the maximal ideal, `M` is upper unitriangular, so its determinant is a unit.
-    have hdet : IsUnit M.det := by
-      refine isUnit_det_of_isUpperTriangular_map (f := IsLocalRing.residue A)
-        (fun _ _ hji ↦ (IsLocalRing.residue_eq_zero_iff _).mpr (hlowM hji)) fun i ↦ ?_
-      have hdiag_res : IsLocalRing.residue A (M i i) = 1 := by
-        simpa [sub_eq_zero] using (IsLocalRing.residue_eq_zero_iff _).mpr (hdiagM i)
-      simp [hdiag_res]
-    refine ⟨GeneralLinearGroup.mk'' M hdet, ?_, ?_⟩
-    · exact mem_upperUnitriangularCongruenceSubgroup_iff.mpr ⟨hlowM, hdiagM⟩
-    · ext i j
-      rw [GeneralLinearGroup.map_apply, GeneralLinearGroup.val_mk'']
-      simp [M, ValuationSubring.algebraMap_apply]
-
-/-- A diagonal matrix lies in the pro-`p` Iwahori subgroup of `GL m K` exactly when every diagonal
-entry satisfies `v (t i - 1) < 1`. -/
-theorem diagGL_mem_map_iwahoriOne_iff {t : m → Kˣ} :
-    diagGL t ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) ↔
-      ∀ i : m, A.valuation ((t i : K) - 1) < 1 := by
-  rw [mem_map_iwahoriOne_iff]
-  constructor
-  · rintro ⟨-, -, hdiag⟩
-    simpa [diagGL_coe] using hdiag
-  · intro hdiag
-    refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ by simpa [diagGL_coe] using hdiag i⟩
-    · simp only [diagGL_coe, diagonal_apply]
-      split_ifs with hij
-      · subst hij
-        have h1 : A.valuation ((t i : K) - 1 + 1) = A.valuation (1 : K) :=
-          Valuation.map_add_eq_of_lt_right A.valuation (by simpa using hdiag i)
-        simpa using h1.le
-      · simp
-    · simp [hji.ne']
-
-/-- Conjugating an upper-triangular element of `I₁` by a dominant diagonal matrix keeps it in
-`I₁`. -/
-theorem diagGL_mul_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular {t : m → Kˣ}
-    (ht : Monotone fun i ↦ A.valuation (t i : K)) {u : GL m K}
-    (hu : u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
-    (hutri : (u : Matrix m m K).IsUpperTriangular) :
-    diagGL t * u * (diagGL t)⁻¹ ∈
-      (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
-  obtain ⟨h1, -, hdiag⟩ := (mem_map_iwahoriOne_iff A).mp hu
-  rw [mem_map_iwahoriOne_iff]
-  refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ ?_⟩
-  · rw [diagGL_mul_mul_inv_apply]
-    rcases lt_or_ge j i with hji | hij
-    · simp [hutri hji]
-    · rw [Units.val_inv_eq_inv_val]
-      exact (A.valuation.map_mul_mul_inv_le (ht hij)).trans (h1 i j)
-  · rw [diagGL_mul_mul_inv_apply, hutri hji]
-    simp
-  · rw [diagGL_mul_mul_inv_apply]
-    simpa [mul_comm, mul_assoc] using hdiag i
-
-/-- Conjugating a lower-triangular element of `I₁` by the inverse of a dominant diagonal matrix
-keeps it in `I₁`. -/
-theorem diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular {t : m → Kˣ}
-    (ht : Monotone fun i ↦ A.valuation (t i : K)) {l : GL m K}
-    (hl : l ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
-    (hltri : (l : Matrix m m K).IsLowerTriangular) :
-    (diagGL t)⁻¹ * l * diagGL t ∈
-      (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
-  obtain ⟨h1, hlow, hdiag⟩ := (mem_map_iwahoriOne_iff A).mp hl
-  have hinv : (diagGL t)⁻¹ = diagGL t⁻¹ := (map_inv diagGL t).symm
-  rw [hinv, show diagGL t = (diagGL t⁻¹)⁻¹ by simp, mem_map_iwahoriOne_iff]
-  have hstep (i j : m) (hji : j ≤ i) :
-      A.valuation (((t⁻¹ i : Kˣ) : K) * l i j * ((t⁻¹ j)⁻¹ : Kˣ)) ≤ A.valuation (l i j) := by
-    have heq : ((t⁻¹ i : Kˣ) : K) * l i j * ((t⁻¹ j)⁻¹ : Kˣ) = (t j : K) * l i j * (t i : K)⁻¹ := by
-      simp [Pi.inv_apply, Units.val_inv_eq_inv_val]
-      ring
-    rw [heq]
-    exact A.valuation.map_mul_mul_inv_le (ht hji)
-  refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ ?_⟩
-  · rw [diagGL_mul_mul_inv_apply]
-    rcases lt_or_ge i j with hij | hji
-    · simp [hltri hij]
-    · exact (hstep i j hji).trans (h1 i j)
-  · rw [diagGL_mul_mul_inv_apply]
-    exact (hstep i j hji.le).trans_lt (hlow hji)
-  · rw [diagGL_mul_mul_inv_apply]
-    simpa [Pi.inv_apply, Units.val_inv_eq_inv_val, mul_comm, mul_assoc] using hdiag i
 
 /-! ### Pivots -/
 
