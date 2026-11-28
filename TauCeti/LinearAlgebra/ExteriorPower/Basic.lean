@@ -62,6 +62,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   the exterior power of a finitely generated submodule.
 * `exteriorPower.map_smul_eq_pow_smul`: the map induced by `c • f` on the `n`th exterior power is
   `c ^ n` times the map induced by `f`.
+* `exteriorPower.map_smulRight`: any rank-one linear map `x ↦ φ x • a` vanishes on `⋀ⁿ M` for
+  `2 ≤ n`.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
   factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
@@ -385,6 +387,17 @@ theorem exists_finite_mem_range_map {n : ℕ} (X : ⋀[R]^n M) :
   have hm : ⇑(c • f) ∘ m = fun i ↦ c • (f ∘ m) i := funext fun _ ↦ rfl
   simp only [LinearMap.compAlternatingMap_apply, map_apply_ιMulti, LinearMap.smul_apply, hm,
     AlternatingMap.map_smul_univ, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
+/-- Any rank-one linear map `x ↦ φ x • a` vanishes on `⋀ⁿ M` for `2 ≤ n`. -/
+theorem map_smulRight {n : ℕ} (hn : 2 ≤ n) (φ : M →ₗ[R] R) (a : N) :
+    map n (φ.smulRight a) = 0 := by
+  apply linearMap_ext
+  ext m
+  have hm : ⇑(φ.smulRight a) ∘ m = fun i ↦ φ (m i) • a := rfl
+  simp only [LinearMap.compAlternatingMap_apply, map_apply_ιMulti, LinearMap.zero_apply,
+    hm, AlternatingMap.map_smul_univ]
+  rw [(ιMulti R n).map_eq_zero_of_eq (fun _ ↦ a) (i := ⟨0, by omega⟩) (j := ⟨1, by omega⟩)
+    rfl (by simp), smul_zero]
 
 end Bijective
 

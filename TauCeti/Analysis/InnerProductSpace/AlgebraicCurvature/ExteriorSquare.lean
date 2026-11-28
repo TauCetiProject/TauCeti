@@ -52,6 +52,7 @@ LinearMap.BilinMap.metricTrace ((ricci r).compLeft A)`.
   `TauCeti.FourTensor.ofExteriorEnd_injective`, `TauCeti.FourTensor.ofExteriorEnd_inj`,
   `TauCeti.FourTensor.ofExteriorEnd_eq_zero_iff`,
   `TauCeti.FourTensor.ofExteriorEnd_curvatureEndomorphism_of_antisymm`,
+  `TauCeti.FourTensor.mem_range_ofExteriorEnd_iff`,
   `TauCeti.FourTensor.coe_curvatureEndomorphismEquiv_symm`,
   `TauCeti.FourTensor.curvatureEndomorphism_kulkarniNomizu`,
   `TauCeti.FourTensor.curvatureEndomorphism_kulkarniNomizu_innerₗ_comp`,
@@ -222,6 +223,10 @@ exterior square `⋀[ℝ]^2 V`. With this convention the identity on `⋀[ℝ]^2
 def ofExteriorEnd : Module.End ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V :=
   ofExteriorBilin.comp TauCeti.bilinFormToEnd.symm.toLinearMap
 
+private theorem ofExteriorEnd_eq_ofExteriorBilin (T : Module.End ℝ (⋀[ℝ]^2 V)) :
+    ofExteriorEnd T = ofExteriorBilin (TauCeti.bilinFormToEnd.symm T) :=
+  rfl
+
 /-- Evaluation of the four-tensor associated to an endomorphism of `⋀[ℝ]^2 V`. -/
 @[simp]
 theorem ofExteriorEnd_apply (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
@@ -231,13 +236,15 @@ theorem ofExteriorEnd_apply (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
 
 /-- The four-tensor of an endomorphism of `⋀[ℝ]^2 V` is antisymmetric in its first pair. -/
 theorem ofExteriorEnd_antisymm_first (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    ofExteriorEnd T ![u, v, z, w] = -ofExteriorEnd T ![v, u, z, w] :=
-  ofExteriorBilin_antisymm_first _ u v z w
+    ofExteriorEnd T ![u, v, z, w] = -ofExteriorEnd T ![v, u, z, w] := by
+  rw [ofExteriorEnd_eq_ofExteriorBilin]
+  exact ofExteriorBilin_antisymm_first _ u v z w
 
 /-- The four-tensor of an endomorphism of `⋀[ℝ]^2 V` is antisymmetric in its last pair. -/
 theorem ofExteriorEnd_antisymm_last (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    ofExteriorEnd T ![u, v, z, w] = -ofExteriorEnd T ![u, v, w, z] :=
-  ofExteriorBilin_antisymm_last _ u v z w
+    ofExteriorEnd T ![u, v, z, w] = -ofExteriorEnd T ![u, v, w, z] := by
+  rw [ofExteriorEnd_eq_ofExteriorBilin]
+  exact ofExteriorBilin_antisymm_last _ u v z w
 
 /-- `curvatureEndomorphism` is a left inverse to `ofExteriorEnd`. -/
 @[simp]
@@ -267,9 +274,8 @@ theorem ofExteriorEnd_eq_zero_iff {T : Module.End ℝ (⋀[ℝ]^2 V)} :
 @[simp]
 theorem isBivectorSymmetric_ofExteriorEnd_iff (T : Module.End ℝ (⋀[ℝ]^2 V)) :
     IsBivectorSymmetric (ofExteriorEnd T) ↔ T.IsSymmetric := by
-  rw [ofExteriorEnd, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    isBivectorSymmetric_ofExteriorBilin_iff, ← isSymmetric_bilinFormToEnd_iff,
-    LinearEquiv.apply_symm_apply]
+  rw [ofExteriorEnd_eq_ofExteriorBilin, isBivectorSymmetric_ofExteriorBilin_iff,
+    ← isSymmetric_bilinFormToEnd_iff, LinearEquiv.apply_symm_apply]
 
 /-- `ofExteriorEnd T` is an algebraic curvature tensor iff `IsAlgebraicCurvatureEndomorphism T`. -/
 @[simp]
@@ -289,6 +295,16 @@ theorem ofExteriorEnd_curvatureEndomorphism_of_antisymm {r : FourTensor V}
     ofExteriorEnd (curvatureEndomorphism r) = r := by
   refine ext_vec fun u v z w ↦ ?_
   rw [ofExteriorEnd_apply, inner_curvatureEndomorphism_ιMulti_of_antisymm h₁ h₂]
+
+/-- A four-tensor lies in the range of `ofExteriorEnd` iff it is antisymmetric in its first
+and last pairs. -/
+theorem mem_range_ofExteriorEnd_iff {r : FourTensor V} :
+    r ∈ LinearMap.range (ofExteriorEnd (V := V)) ↔
+      (∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) ∧
+        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :=
+  ⟨fun ⟨T, hT⟩ ↦ hT ▸ ⟨ofExteriorEnd_antisymm_first T, ofExteriorEnd_antisymm_last T⟩,
+   fun ⟨h₁, h₂⟩ ↦ ⟨curvatureEndomorphism r,
+     ofExteriorEnd_curvatureEndomorphism_of_antisymm h₁ h₂⟩⟩
 
 /-- On bivector-symmetric four-tensors, `ofExteriorEnd (curvatureEndomorphism r) = r`. -/
 @[simp]
@@ -479,8 +495,8 @@ theorem inner_curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) 
   rw [f.curvatureEndomorphism_compContinuousLinearMap, LinearMap.comp_apply,
     LinearMap.adjoint_inner_left, LinearMap.comp_apply]
 
-/-- Pulling back `ofExteriorEnd T` along a continuous linear map `f : W →L[ℝ] V` conjugates `T`
-by `exteriorPower.map 2 f.toLinearMap` and its adjoint. -/
+/-- Pulling back `ofExteriorEnd T` along a continuous linear map `f : W →L[ℝ] V` yields the
+adjoint pullback `A† ∘ T ∘ A` on `⋀[ℝ]^2 W`, where `A = exteriorPower.map 2 f.toLinearMap`. -/
 theorem ofExteriorEnd_compContinuousLinearMap (f : W →L[ℝ] V) (T : Module.End ℝ (⋀[ℝ]^2 V)) :
     (ofExteriorEnd T).compContinuousLinearMap (fun _ ↦ f) =
       ofExteriorEnd

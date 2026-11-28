@@ -208,21 +208,29 @@ theorem ker_bianchiAlternatingMap :
       w]⟩,
     fun h m ↦ h.cyclic_eq_zero (m 0) (m 1) (m 2) (m 3)⟩
 
-private theorem isBivectorSymmetric_toLinearMap₄_isAlt {r : FourTensor V}
-    (hr : IsBivectorSymmetric r) (u v : V) : (toLinearMap₄ r u v).IsAlt := fun z ↦ by
-  rw [toLinearMap₄_apply]; exact isBivectorSymmetric_self_last hr u v z
-
-private def exteriorBilinOfBivectorSymmetric (r : bivectorSymmetricSubmodule V) :
+private def exteriorBilinOfAntisymm {r : FourTensor V}
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
+    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
     BilinForm ℝ (⋀[ℝ]^2 V) :=
-  let hr := mem_bivectorSymmetricSubmodule.mp r.property
-  (toLinearMap₄ r.val).exteriorSquareBilinear
-    (fun _ _ _ ↦ by rw [toLinearMap₄_apply]; exact isBivectorSymmetric_self_first hr ..)
-    (isBivectorSymmetric_toLinearMap₄_isAlt hr)
+  (toLinearMap₄ r).exteriorSquareBilinear
+    (fun u v z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ u u v z))
+    (fun u v ↦ show (toLinearMap₄ r u v).IsAlt from
+      fun z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z))
 
-private theorem isSymm_exteriorBilinOfBivectorSymmetric (r : bivectorSymmetricSubmodule V) :
-    (exteriorBilinOfBivectorSymmetric r).IsSymm :=
-  ⟨fun a b ↦ (LinearMap.congr_fun₂ (LinearMap.flip_exteriorSquareBilinear (toLinearMap₄ r.val) _ _
-    (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using r.property.swap_pairs ..)) a b).symm⟩
+private theorem exteriorBilinOfAntisymm_ιMulti_ιMulti {r : FourTensor V}
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
+    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z])
+    (v w : Fin 2 → V) :
+    exteriorBilinOfAntisymm h₁ h₂ (exteriorPower.ιMulti ℝ 2 v)
+        (exteriorPower.ιMulti ℝ 2 w) = r ![v 0, v 1, w 0, w 1] :=
+  (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti (toLinearMap₄ r) _ _ v w).trans
+    (toLinearMap₄_apply r (v 0) (v 1) (w 0) (w 1))
+
+private theorem isSymm_exteriorBilinOfAntisymm {r : FourTensor V}
+    (hr : IsBivectorSymmetric r) :
+    (exteriorBilinOfAntisymm hr.antisymm_first hr.antisymm_last).IsSymm :=
+  ⟨fun a b ↦ (LinearMap.congr_fun₂ (LinearMap.flip_exteriorSquareBilinear (toLinearMap₄ r) _ _
+    (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr.swap_pairs ..)) a b).symm⟩
 
 end NormedSpace
 
@@ -321,42 +329,41 @@ theorem mem_range_ofExteriorBilin_iff {r : FourTensor V} :
   refine ⟨?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
   · rintro ⟨B, rfl⟩
     exact ⟨ofExteriorBilin_antisymm_first B, ofExteriorBilin_antisymm_last B⟩
-  · have halt₂ : ∀ u v, (toLinearMap₄ r u v).IsAlt := fun u v z ↦ by
-      rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z)
-    refine ⟨(toLinearMap₄ r).exteriorSquareBilinear
-      (fun u v z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ u u v z))
-      halt₂, ext_vec fun u v z w ↦ ?_⟩
-    rw [ofExteriorBilin_apply, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
-    exact toLinearMap₄_apply r u v z w
+  · refine ⟨exteriorBilinOfAntisymm h₁ h₂, ext_vec fun u v z w ↦ ?_⟩
+    exact (ofExteriorBilin_apply (exteriorBilinOfAntisymm h₁ h₂) u v z w).trans
+      (exteriorBilinOfAntisymm_ιMulti_ιMulti h₁ h₂ ![u, v] ![z, w])
 
 /-- Linear equivalence from `bivectorSymmetricSubmodule V` to symmetric forms on `⋀[ℝ]^2 V`. -/
 def bivectorSymmetricEquivSymmBilin :
     bivectorSymmetricSubmodule V ≃ₗ[ℝ] LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V) where
-  toFun r := ⟨exteriorBilinOfBivectorSymmetric r,
-    LinearMap.BilinForm.mem_symmSubmodule.mpr (isSymm_exteriorBilinOfBivectorSymmetric r)⟩
+  toFun r := ⟨exteriorBilinOfAntisymm r.property.antisymm_first r.property.antisymm_last,
+    LinearMap.BilinForm.mem_symmSubmodule.mpr (isSymm_exteriorBilinOfAntisymm r.property)⟩
   invFun B := ⟨ofExteriorBilin B.val,
     mem_bivectorSymmetricSubmodule.mpr
       ((isBivectorSymmetric_ofExteriorBilin_iff B.val).mpr
         (LinearMap.BilinForm.mem_symmSubmodule.mp B.property))⟩
-  map_add' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
-    simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
-  map_smul' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
-    simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
-  left_inv r := Subtype.ext <| toLinearMap₄_injective <| by
-    ext u v z w; simp only [toLinearMap₄_apply, ofExteriorBilin_apply]
-    exact (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti
-      (toLinearMap₄ r.val) _ _ ![u, v] ![z, w]).trans (toLinearMap₄_apply r.val u v z w)
-  right_inv _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun v w ↦ by
-    rw [toLinearMap₄_apply, ofExteriorBilin_apply, ← FinVec.etaExpand_eq v,
-      ← FinVec.etaExpand_eq w]; rfl
+  map_add' _ _ := Subtype.ext <|
+    exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
+      exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
+        simp [exteriorBilinOfAntisymm_ιMulti_ιMulti]
+  map_smul' _ _ := Subtype.ext <|
+    exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
+      exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
+        simp [exteriorBilinOfAntisymm_ιMulti_ιMulti]
+  left_inv r := Subtype.ext <| ext_vec fun u v z w ↦ by
+    simp [ofExteriorBilin_apply, exteriorBilinOfAntisymm_ιMulti_ιMulti]
+  right_inv _ := Subtype.ext <|
+    exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
+      exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
+        simp [exteriorBilinOfAntisymm_ιMulti_ιMulti, ofExteriorBilin_apply]
 
 /-- Evaluation of `bivectorSymmetricEquivSymmBilin` on pure wedges `u ∧ v` and `z ∧ w`. -/
 @[simp] theorem bivectorSymmetricEquivSymmBilin_apply_ιMulti (r : bivectorSymmetricSubmodule V)
     (u v z w : V) :
     (bivectorSymmetricEquivSymmBilin r).val (exteriorPower.ιMulti ℝ 2 ![u, v])
         (exteriorPower.ιMulti ℝ 2 ![z, w]) = r.val ![u, v, z, w] :=
-  (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti (toLinearMap₄ r.val) _ _ ![u, v] ![z, w]).trans
-    (toLinearMap₄_apply r.val u v z w)
+  exteriorBilinOfAntisymm_ιMulti_ιMulti
+    r.property.antisymm_first r.property.antisymm_last ![u, v] ![z, w]
 
 /-- Evaluation of `bivectorSymmetricEquivSymmBilin.symm` on four vectors via pure wedges. -/
 @[simp] theorem bivectorSymmetricEquivSymmBilin_symm_apply

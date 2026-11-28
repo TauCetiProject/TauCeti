@@ -52,7 +52,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
 * `LinearIsometryEquiv.exteriorPower`: the linear isometric equivalence on `⋀ⁿ E` induced by
-  `e : E ≃ₗᵢ[ℝ] F`.
+  `e : E ≃ₗᵢ[ℝ] F`, with `LinearIsometryEquiv.exteriorPower_refl` and
+  `LinearIsometryEquiv.exteriorPower_trans`.
 * `LinearIsometryEquiv.adjoint_exteriorPower_map` and
   `LinearIsometryEquiv.exteriorPower_map_comp_adjoint`:
   `LinearMap.adjoint (⋀ⁿ e) = ⋀ⁿ e.symm` and `⋀ⁿ e ∘ₗ LinearMap.adjoint (⋀ⁿ e) = id` for a
@@ -328,37 +329,46 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 noncomputable def exteriorPower (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
     (⋀[ℝ]^n E) ≃ₗᵢ[ℝ] ⋀[ℝ]^n F :=
   (e.toLinearEquiv.exteriorPower n).isometryOfInner fun x y ↦ by
-    have hmap : e.toLinearEquiv.toLinearMap = e.toLinearIsometry.toLinearMap :=
-      LinearMap.ext fun _ ↦ by simp
-    simp only [← LinearEquiv.coe_coe, LinearEquiv.exteriorPower_toLinearMap, hmap]
+    simp only [← LinearEquiv.coe_coe, LinearEquiv.exteriorPower_toLinearMap]
     exact _root_.exteriorPower.inner_map_map e.toLinearIsometry x y
-
-private theorem exteriorPower_toLinearEquiv (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
-    (e.exteriorPower n).toLinearEquiv = e.toLinearEquiv.exteriorPower n :=
-  LinearEquiv.isometryOfInner_toLinearEquiv _ _
-
-/-- Evaluation of `e.exteriorPower n` agrees with `exteriorPower.map n e.toLinearMap`. -/
-@[simp]
-theorem exteriorPower_apply (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) (x : ⋀[ℝ]^n E) :
-    e.exteriorPower n x = map n e.toLinearMap x := by
-  have he : e.toLinearEquiv.toLinearMap = e.toLinearMap := LinearMap.ext fun _ ↦ by simp
-  rw [← LinearIsometryEquiv.coe_toLinearEquiv, exteriorPower_toLinearEquiv,
-    ← LinearEquiv.coe_coe, LinearEquiv.exteriorPower_toLinearMap, he]
 
 /-- The underlying linear map of `e.exteriorPower n` is `exteriorPower.map n e.toLinearMap`. -/
 @[simp]
 theorem exteriorPower_toLinearMap (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
     (e.exteriorPower n).toLinearMap = map n e.toLinearMap :=
-  LinearMap.ext (e.exteriorPower_apply n)
+  LinearMap.ext fun x ↦ by
+    change ((e.exteriorPower n).toLinearEquiv : (⋀[ℝ]^n E) →ₗ[ℝ] ⋀[ℝ]^n F) x = _
+    rw [exteriorPower, LinearEquiv.isometryOfInner_toLinearEquiv,
+      LinearEquiv.exteriorPower_toLinearMap]
+
+/-- Evaluation of `e.exteriorPower n` agrees with `exteriorPower.map n e.toLinearMap`. -/
+@[simp]
+theorem exteriorPower_apply (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) (x : ⋀[ℝ]^n E) :
+    e.exteriorPower n x = map n e.toLinearMap x :=
+  LinearMap.congr_fun (e.exteriorPower_toLinearMap n) x
+
+/-- The identity linear isometric equivalence induces the identity on exterior powers. -/
+@[simp]
+theorem exteriorPower_refl (n : ℕ) :
+    (LinearIsometryEquiv.refl ℝ E).exteriorPower n = LinearIsometryEquiv.refl ℝ _ :=
+  LinearIsometryEquiv.toLinearEquiv_injective <| by
+    simp [exteriorPower, LinearEquiv.isometryOfInner_toLinearEquiv]
+
+/-- Exterior power of linear isometric equivalences respects composition (`trans`). -/
+@[simp]
+theorem exteriorPower_trans {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+    [FiniteDimensional ℝ G] (e : E ≃ₗᵢ[ℝ] F) (e' : F ≃ₗᵢ[ℝ] G) (n : ℕ) :
+    (e.trans e').exteriorPower n = (e.exteriorPower n).trans (e'.exteriorPower n) :=
+  LinearIsometryEquiv.toLinearEquiv_injective <| by
+    simp [exteriorPower, LinearEquiv.isometryOfInner_toLinearEquiv]
 
 /-- The inverse of `e.exteriorPower n` is `e.symm.exteriorPower n`. -/
 @[simp]
 theorem exteriorPower_symm (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
     (e.exteriorPower n).symm = e.symm.exteriorPower n :=
   LinearIsometryEquiv.toLinearEquiv_injective <| by
-    rw [LinearIsometryEquiv.toLinearEquiv_symm, exteriorPower_toLinearEquiv,
-      LinearEquiv.exteriorPower_symm, exteriorPower_toLinearEquiv,
-      LinearIsometryEquiv.toLinearEquiv_symm]
+    simp only [LinearIsometryEquiv.toLinearEquiv_symm, exteriorPower,
+      LinearEquiv.isometryOfInner_toLinearEquiv, LinearEquiv.exteriorPower_symm]
 
 /-- The adjoint of `exteriorPower.map n e.toLinearMap` is
 `exteriorPower.map n e.symm.toLinearMap`. -/
@@ -371,9 +381,8 @@ theorem adjoint_exteriorPower_map {n : ℕ} (e : E ≃ₗᵢ[ℝ] F) :
 /-- Composing `exteriorPower.map n e.toLinearMap` with its adjoint gives the identity. -/
 theorem exteriorPower_map_comp_adjoint {n : ℕ} (e : E ≃ₗᵢ[ℝ] F) :
     map n e.toLinearMap ∘ₗ LinearMap.adjoint (map n e.toLinearMap) = LinearMap.id := by
-  rw [e.adjoint_exteriorPower_map, ← map_comp]
-  have h : e.toLinearMap ∘ₗ e.symm.toLinearMap = LinearMap.id := by ext; simp
-  rw [h, map_id]
+  rw [e.adjoint_exteriorPower_map]
+  exact LinearMap.ext fun x ↦ map_map_symm e.toLinearEquiv x
 
 end LinearIsometryEquiv
 

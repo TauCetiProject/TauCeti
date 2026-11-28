@@ -104,25 +104,13 @@ theorem bivectorSharp_self (R : Module.End ℝ (⋀[ℝ]^2 V)) :
     bivectorSharp R R = bivectorAd ∘ₗ map 2 R ∘ₗ LinearMap.adjoint bivectorAd := by
   rw [bivectorSharp_apply, symmMap₂_self]
 
-/-- Quadratic expansion of `TauCeti.bivectorSharp` on a sum of endomorphisms. -/
-theorem bivectorSharp_add_self (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
-    bivectorSharp (R + S) (R + S) =
-      bivectorSharp R R + (2 : ℝ) • bivectorSharp R S + bivectorSharp S S := by
-  simp only [map_add, LinearMap.add_apply, bivectorSharp_comm S R, two_smul]
-  abel
-
 /-- Every rank-one operator `ξ ↦ ⟪β, ξ⟫ • α` on `⋀[ℝ]^2 V` has vanishing `#`-square. -/
 @[simp]
 theorem bivectorSharp_rankOne_self (α β : ⋀[ℝ]^2 V) :
     bivectorSharp (InnerProductSpace.rankOne ℝ α β).toLinearMap
         (InnerProductSpace.rankOne ℝ α β).toLinearMap = 0 := by
-  have hmap : map 2 (InnerProductSpace.rankOne ℝ α β).toLinearMap = 0 :=
-    linearMap_ext_inner_ιMulti_two fun X Y Z W ↦ by
-      rw [map_apply_ιMulti_two, inner_ιMulti_two]
-      simp only [ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
-        real_inner_smul_left, LinearMap.zero_apply, inner_zero_left]
-      ring
-  rw [bivectorSharp_self, hmap, LinearMap.zero_comp, LinearMap.comp_zero]
+  rw [bivectorSharp_self, InnerProductSpace.toLinearMap_rankOne,
+    exteriorPower.map_smulRight (by decide), LinearMap.zero_comp, LinearMap.comp_zero]
 
 /-- **`R#` in an orthonormal basis.** For every orthonormal basis `(eₚ)` of `V`,
 `⟪R# (u ∧ v), z ∧ w⟫ = ∑ₚ ∑_q (⟪R (u ∧ eₚ), z ∧ e_q⟫ ⟪R (v ∧ eₚ), w ∧ e_q⟫
@@ -162,7 +150,10 @@ theorem inner_bivectorSharp_ιMulti {ι : Type*} [Fintype ι] (b : OrthonormalBa
   -- Polarize the diagonal formula.
   have hpol : bivectorSharp R S = (1 / 2 : ℝ) •
       (bivectorSharp (R + S) (R + S) - bivectorSharp R R - bivectorSharp S S) := by
-    rw [bivectorSharp_add_self]
+    have hp := LinearMap.BilinMap.polar_toQuadraticMap (B := bivectorSharp (V := V)) R S
+    simp only [QuadraticMap.polar, LinearMap.BilinMap.toQuadraticMap_apply,
+      bivectorSharp_comm S R] at hp
+    rw [hp]
     module
   rw [hpol, LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.sub_apply, real_inner_smul_left,
     inner_sub_left, inner_sub_left, inner_bivectorSharp_self_ιMulti b,
