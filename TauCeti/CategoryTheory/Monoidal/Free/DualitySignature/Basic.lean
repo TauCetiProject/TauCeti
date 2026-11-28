@@ -1373,7 +1373,7 @@ instance : (toFreeRigid S).Monoidal := inferInstanceAs (FreeMonoidal.lift _ _).M
 @[simp] theorem toFreeRigid_obj_of (a : S.Obj) :
     (toFreeRigid S).obj (of a) = DualitySignature.FreeRigid.of a := rfl
 
-theorem toFreeRigid_map_coupon (g : S.Coupon) : (toFreeRigid S).map (coupon g) =
+@[simp] theorem toFreeRigid_map_coupon (g : S.Coupon) : (toFreeRigid S).map (coupon g) =
     eqToHom (toFreeRigid_obj S ⟨S.src g⟩) ≫
       DualitySignature.FreeRigid.coupon (S := S.toDualitySignature) g ≫
       eqToHom (toFreeRigid_obj S ⟨S.tgt g⟩).symm := FreeMonoidal.lift_map_coupon _ _ g
