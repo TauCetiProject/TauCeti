@@ -42,6 +42,8 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 * `FractionalIdeal.spanSingleton_smul_eq` and `FractionalIdeal.spanSingleton_units_smul`: scaling
   the generator of a principal fractional ideal by a unit of the base ring leaves the ideal
   unchanged.
+* `FractionalIdeal.mem_spanSingleton_sup_spanSingleton_iff`: the elements of `R x + R y` are the
+  combinations `a • x + b • y`.
 * `FractionalIdeal.coe_unitsMulEquivSubmodule`: the invertible submodule of an invertible
   fractional ideal is its underlying submodule.
 * `FractionalIdeal.tensorEquivMul` and `FractionalIdeal.coe_tensorEquivMul_tmul`: the isomorphism
@@ -180,6 +182,14 @@ unchanged. -/
 theorem spanSingleton_units_smul (u : Rˣ) (x : P) :
     spanSingleton S (u • x) = spanSingleton S x :=
   spanSingleton_smul_eq u.isUnit x
+
+/-- The elements of the fractional ideal `R x + R y` are the combinations `a • x + b • y` with
+`a, b ∈ R`. -/
+theorem mem_spanSingleton_sup_spanSingleton_iff {x y z : P} :
+    z ∈ spanSingleton S x ⊔ spanSingleton S y ↔ ∃ a b : R, a • x + b • y = z := by
+  rw [← mem_coeToSubmodule, coeToSubmodule_sup, coeToSubmodule_spanSingleton,
+    coeToSubmodule_spanSingleton, ← Submodule.span_union, Set.singleton_union,
+    Submodule.mem_span_pair]
 
 /-- **Criterion for invertibility of a fractional ideal.** A fractional ideal whose
 `A`-submodule has an `A`-submodule inverse for multiplication, with product the image of `R`,

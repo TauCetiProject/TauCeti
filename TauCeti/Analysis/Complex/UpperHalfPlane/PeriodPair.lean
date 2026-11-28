@@ -854,6 +854,10 @@ lemma mul_mem_lattice_smul_iff {x : ℂ} : (c : ℂ) * x ∈ (c • L).lattice �
   rw [lattice_smul, Submodule.mem_map]
   exact ⟨fun ⟨y, hy, hyx⟩ ↦ mul_right_injective₀ c.ne_zero hyx ▸ hy, fun h ↦ ⟨x, h, rfl⟩⟩
 
+/-- The lattice of `c • L` consists of the products `c w` with `w` in the lattice of `L`. -/
+lemma mem_lattice_smul_iff {z : ℂ} : z ∈ (c • L).lattice ↔ ∃ w ∈ L.lattice, (c : ℂ) * w = z := by
+  simp [lattice_smul]
+
 /-- **The index as a determinant.** If `c ω₁ = a ω₁' + b ω₂'` and `c ω₂ = e ω₁' + f ω₂'`, then
 `[Λ' : c Λ] = |a f - b e|`. -/
 theorem relIndex_lattice_smul_eq_natAbs {L L' : PeriodPair} (c : ℂˣ) {a b e f : ℤ}
