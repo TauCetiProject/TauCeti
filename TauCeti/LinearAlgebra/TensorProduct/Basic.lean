@@ -30,6 +30,8 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
+* `LinearMap.lTensor_lTensor_of_comp_eq_smul`: composing `lTensor` with maps whose composite is
+  scalar multiplication yields scalar multiplication by the extended scalar.
 * `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator
   `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` composed with itself, for an involution `τ`
   anticommuting with `b`.
@@ -118,6 +120,16 @@ theorem assoc_rTensor_lTensor_comp (f : N →ₗ[R] P) (g : Q →ₗ[R] S)
 theorem lTensor_rTensor_comm (f : M →ₗ[R] P) (g : N →ₗ[R] Q) (x : M ⊗[R] N) :
     g.lTensor P (f.rTensor N x) = f.rTensor Q (g.lTensor M x) := by
   rw [← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply]
+
+/-- If `g₂ ∘ₗ g₁ = r • LinearMap.id`, then
+`g₂.lTensor W (g₁.lTensor W x) = algebraMap R W r • x`. -/
+theorem lTensor_lTensor_of_comp_eq_smul {W A B : Type*} [Semiring W] [Algebra R W]
+    [AddCommMonoid A] [Module R A] [AddCommMonoid B] [Module R B]
+    (g₁ : A →ₗ[R] B) (g₂ : B →ₗ[R] A) {r : R} (hg : g₂ ∘ₗ g₁ = r • LinearMap.id)
+    (x : W ⊗[R] A) :
+    g₂.lTensor W (g₁.lTensor W x) = algebraMap R W r • x := by
+  rw [← LinearMap.lTensor_comp_apply, hg, LinearMap.lTensor_smul, LinearMap.lTensor_id,
+    LinearMap.smul_apply, LinearMap.id_apply, IsScalarTower.algebraMap_smul]
 
 /-- Injectivity of `f ⊗ 𝟙 M` only depends on `M` up to isomorphism. -/
 theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :

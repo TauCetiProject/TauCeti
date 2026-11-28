@@ -8,13 +8,15 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import TauCeti.CategoryTheory.Monoidal.Braided.Adjunction
+
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 
 /-!
 # Change of rings and tensor products of modules
 
 Extension and restriction of scalars along a morphism of commutative rings are compatible with the
-symmetric braiding on module categories.
+symmetric braiding on module categories (`TauCeti.ModuleCat.restrictScalarsLaxBraided`,
+`TauCeti.ModuleCat.extendScalarsBraided`).
 
 For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of scalars with `M`
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
@@ -24,6 +26,10 @@ projective resolution over `P` after a flat extension of scalars. Specializing t
 `P` over `A` (`ModuleCat.extendScalarsCompRestrictScalarsIso`). When restriction of scalars along
 `f` is full, the counit `P ⊗[A] M₂ ⟶ M₂` is an isomorphism, so restriction of scalars preserves
 binary tensor products (`ModuleCat.isIso_laxMonoidal_μ_restrictScalars`).
+
+For a morphism `f : R →+* S` of commutative rings, `ModuleCat.extendScalars_ε_apply` and
+`ModuleCat.extendScalars_μ_tmul` record the elementwise action of the monoidal unit and tensorator
+of `ModuleCat.extendScalars f`.
 -/
 
 public section
@@ -216,5 +222,31 @@ instance isIso_laxMonoidal_μ_restrictScalars [(restrictScalars.{u} f).Full]
     rfl
   rw [h]
   infer_instance
+
+section Monoidal
+
+variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+
+/-- The monoidal unit `Functor.LaxMonoidal.ε (extendScalars f)` sends `s : S` to `s ⊗ₜ 1`. -/
+@[simp]
+theorem extendScalars_ε_apply (s : S) :
+    Functor.LaxMonoidal.ε (extendScalars.{u, u, u} f) s = s ⊗ₜ[R, f] (1 : R) :=
+  letI := f.toAlgebra
+  (ConcreteCategory.congr_hom (extendScalars_ε f) s).trans
+    (TensorProduct.AlgebraTensorModule.rid_symm_apply R S s)
+
+/-- On pure tensors, the tensorator `Functor.LaxMonoidal.μ (extendScalars f)` sends
+`(s₁ ⊗ₜ m₁) ⊗ₜ (s₂ ⊗ₜ m₂)` to `(s₁ * s₂) ⊗ₜ (m₁ ⊗ₜ m₂)`. -/
+@[simp]
+theorem extendScalars_μ_tmul (M₁ M₂ : ModuleCat.{u} R) (s₁ s₂ : S) (m₁ : M₁) (m₂ : M₂) :
+    Functor.LaxMonoidal.μ (extendScalars.{u, u, u} f) M₁ M₂
+        (TensorProduct.tmul S (M := (extendScalars f).obj M₁) (N := (extendScalars f).obj M₂)
+          (s₁ ⊗ₜ[R, f] m₁) (s₂ ⊗ₜ[R, f] m₂)) =
+      (s₁ * s₂) ⊗ₜ[R, f] (TensorProduct.tmul R (M := M₁) (N := M₂) m₁ m₂ : ↑(M₁ ⊗ M₂)) :=
+  letI := f.toAlgebra
+  (ConcreteCategory.congr_hom (extendScalars_μ f M₁ M₂) _).trans
+    (TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul R S m₁ m₂ s₁ s₂)
+
+end Monoidal
 
 end ModuleCat

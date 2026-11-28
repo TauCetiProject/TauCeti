@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 public import Mathlib.CategoryTheory.Filtered.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.Algebra.Category.CommAlgCat.BaseChange
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
 
 /-!
@@ -31,7 +33,10 @@ Mathlib's `localizationAlgebra`. On `R`-algebra homomorphisms `f : A →ₐ[R] B
 `IsLocalization.map` induces a `Localization M`-algebra homomorphism acting as `f` on canonical
 numerators, assembling into `CommAlgCat.localizationFunctor M : CommAlgCat R ⥤ CommAlgCat
 (Localization M)` and agreeing as an `R`-linear map with the localized module map of `f`
-(`CommAlgCat.localizationFunctor_map_toLinearMap`).
+(`CommAlgCat.localizationFunctor_map_toLinearMap`). On objects, `CommAlgCat.localizationFunctor M`
+is identified with `Localization (Algebra.algebraMapSubmonoid A M)`
+(`CommAlgCat.localizationFunctorEquiv`), and as a functor it is naturally isomorphic to
+`CommAlgCat.extendScalars R (Localization M)` (`CommAlgCat.localizationFunctorIsoExtendScalars`).
 -/
 
 public section
@@ -368,5 +373,101 @@ theorem localizationFunctorObjAlgEquivOfIsUnit_apply {M : Submonoid R} (A : Comm
     localizationFunctorObjAlgEquivOfIsUnit A hM a =
       algebraMap A ((localizationFunctor M).obj A) a :=
   (rfl)
+
+section BaseChange
+
+open scoped TensorProduct
+
+universe w
+
+/-- For a commutative `R`-algebra `A`, `(localizationFunctor M).obj A` is canonically isomorphic
+as a `Localization M`-algebra to `Localization (Algebra.algebraMapSubmonoid A M)`. -/
+noncomputable def localizationFunctorEquiv (M : Submonoid R) (A : CommAlgCat.{v} R) :
+    ((localizationFunctor.{u, v} M).obj A) ≃ₐ[Localization M]
+      Localization (Algebra.algebraMapSubmonoid A M) :=
+  let e₁ : ((localizationFunctor.{u, v} M).obj A) ≃ₐ[A]
+      Localization (Algebra.algebraMapSubmonoid A M) :=
+    IsLocalization.algEquiv (Algebra.algebraMapSubmonoid A M) _ _
+  (e₁.restrictScalars R).extendScalarsOfIsLocalization (Localization M) M
+
+/-- `localizationFunctorEquiv` commutes with `algebraMap` from `A`. -/
+@[simp]
+theorem localizationFunctorEquiv_algebraMap (M : Submonoid R) (A : CommAlgCat.{v} R) (a : A) :
+    localizationFunctorEquiv M A (algebraMap A ((localizationFunctor M).obj A) a) =
+      algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a :=
+  (IsLocalization.algEquiv (Algebra.algebraMapSubmonoid A M) _ _).commutes a
+
+/-- The inverse of `localizationFunctorEquiv` commutes with `algebraMap` from `A`. -/
+@[simp]
+theorem localizationFunctorEquiv_symm_algebraMap (M : Submonoid R) (A : CommAlgCat.{v} R) (a : A) :
+    (localizationFunctorEquiv M A).symm
+        (algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a) =
+      algebraMap A ((localizationFunctor M).obj A) a :=
+  (IsLocalization.algEquiv (Algebra.algebraMapSubmonoid A M) _ _).symm.commutes a
+
+private noncomputable def localizationFunctorAlgEquiv (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) :
+    ((localizationFunctor.{u, max u w} M).obj A) ≃ₐ[Localization M]
+      (Localization M ⊗[R] A) :=
+  (localizationFunctorEquiv M A).trans (Localization.tensorRightAlgEquiv M A).symm
+
+private theorem localizationFunctorAlgEquiv_algebraMap (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) (a : A) :
+    localizationFunctorAlgEquiv M A
+        (algebraMap A ((localizationFunctor.{u, max u w} M).obj A) a) =
+      (1 : Localization M) ⊗ₜ[R] a := by
+  dsimp [localizationFunctorAlgEquiv]
+  rw [localizationFunctorEquiv_algebraMap, AlgEquiv.symm_apply_eq,
+    Localization.tensorRightAlgEquiv_apply_one_tmul]
+
+private noncomputable def localizationFunctorObjIso (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) :
+    (localizationFunctor.{u, max u w} M).obj A ≅
+      (extendScalars.{u, u, max u w} R (Localization M)).obj A :=
+  isoMk (localizationFunctorAlgEquiv M A)
+
+private theorem localizationFunctorObjIso_hom_algebraMap (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) (a : A) :
+    (localizationFunctorObjIso M A).hom.hom
+        (algebraMap A ((localizationFunctor.{u, max u w} M).obj A) a) =
+      (1 : Localization M) ⊗ₜ[R] a :=
+  localizationFunctorAlgEquiv_algebraMap M A a
+
+/-- Algebra localization at `M` is naturally isomorphic to extension of scalars along
+`R → Localization M`. -/
+noncomputable def localizationFunctorIsoExtendScalars (M : Submonoid R) :
+    localizationFunctor.{u, max u w} M ≅ extendScalars.{u, u, max u w} R (Localization M) :=
+  NatIso.ofComponents (localizationFunctorObjIso M) fun {A B} f ↦ by
+    apply hom_ext
+    apply AlgHom.toRingHom_injective
+    apply IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M)
+    ext a
+    simp only [hom_comp, AlgHom.coe_toRingHom, RingHom.coe_comp, AlgHom.coe_comp,
+      Function.comp_apply, localizationFunctor_map_hom_algebraMap, hom_ofHom]
+    rw [localizationFunctorObjIso_hom_algebraMap, localizationFunctorObjIso_hom_algebraMap,
+      Algebra.TensorProduct.map_tmul, AlgHom.id_apply]
+
+/-- The forward component of `localizationFunctorIsoExtendScalars` sends `algebraMap A _ a` to
+`1 ⊗ₜ a`. -/
+@[simp]
+theorem localizationFunctorIsoExtendScalars_hom_app_algebraMap (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) (a : A) :
+    (localizationFunctorIsoExtendScalars M).hom.app A
+        (algebraMap A ((localizationFunctor M).obj A) a) =
+      (1 : Localization M) ⊗ₜ[R] a :=
+  localizationFunctorAlgEquiv_algebraMap M A a
+
+/-- The inverse component of `localizationFunctorIsoExtendScalars` sends `1 ⊗ₜ a` to
+`algebraMap A _ a`. -/
+@[simp]
+theorem localizationFunctorIsoExtendScalars_inv_app_one_tmul (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) (a : A) :
+    (localizationFunctorIsoExtendScalars M).inv.app A ((1 : Localization M) ⊗ₜ[R] a) =
+      algebraMap A ((localizationFunctor M).obj A) a :=
+  (congrArg ((localizationFunctorIsoExtendScalars M).inv.app A)
+    (localizationFunctorIsoExtendScalars_hom_app_algebraMap M A a).symm).trans
+    (ConcreteCategory.congr_hom ((localizationFunctorIsoExtendScalars M).hom_inv_id_app A) _)
+
+end BaseChange
 
 end CommAlgCat

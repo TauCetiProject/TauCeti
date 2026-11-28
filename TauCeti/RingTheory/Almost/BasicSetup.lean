@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.LinearAlgebra.Isomorphisms
 public import TauCeti.RingTheory.Ideal.TensorProduct
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Basic setups for almost mathematics
@@ -75,8 +76,12 @@ pseudouniformiser.
   for every `δ ∈ m`, a linear map `g` back with `f ∘ g = δ • id` and `g ∘ f = δ • id`.
 * `TauCeti.Almost.BasicSetup.flat_tilde_map`: `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat, so basic setups
   base change (the isomorphism is `Ideal.baseChangeTensorSelfEquiv`, valid for every idempotent
-  ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
-  `m` makes the setup classical.
+  ideal); `TauCeti.Almost.BasicSetup.eq_classical_of_isUnit_mem` and
+  `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: a setup whose ideal contains a unit, in
+  particular after inverting an element of `m`, is the classical setup.
+* `TauCeti.Almost.BasicSetup.IsAlmostZero.subsingleton_tensorProduct` and
+  `TauCeti.Almost.BasicSetup.IsAlmostIso.bijective_lTensor`: base-changing along an algebra `W`
+  with `mW = W` kills almost zero modules and turns almost isomorphisms into bijections.
 * `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
   condition (B); `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.exists_le_span_singleton`: under
   condition (A), every finitely generated ideal inside `m` lies in a principal ideal `(z)` with
@@ -552,6 +557,13 @@ def classical : BasicSetup V where
 theorem classical_ideal : (classical V).ideal = ⊤ :=
   (rfl)
 
+variable {S} in
+/-- A basic setup whose ideal contains a unit is the classical setup. -/
+theorem eq_classical_of_isUnit_mem {ε : V} (hε : ε ∈ S.ideal)
+    (hu : IsUnit ε) : S = classical V := by
+  ext1
+  exact Ideal.eq_top_of_isUnit_mem S.ideal hε hu
+
 variable (V) in
 /-- The zero setup `(V, 0)`: the zero ideal is idempotent and `m~ = 0` is flat. Every module is
 almost zero for it. -/
@@ -650,15 +662,65 @@ theorem baseChange_classical : (classical V).baseChange W = classical W := by
 theorem baseChange_quotient_eq_zero : S.baseChange (V ⧸ S.ideal) = zero (V ⧸ S.ideal) := by
   ext1; exact Ideal.map_quotient_self S.ideal
 
+/-- Base change makes a basic setup classical iff its ideal generates the unit ideal in `W`. -/
+@[simp]
+theorem baseChange_eq_classical_iff :
+    S.baseChange W = classical W ↔ S.ideal.map (algebraMap V W) = ⊤ := by
+  simp [BasicSetup.ext_iff]
+
+/-- Base change along `V → W` makes a basic setup classical whenever `mW = ⊤`. -/
+theorem baseChange_eq_classical_of_map_eq_top (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    S.baseChange W = classical W :=
+  (S.baseChange_eq_classical_iff W).mpr hW
+
+/-- When an element of `m` is inverted in `W`, the extended ideal `mW` is the unit ideal. -/
+theorem ideal_map_eq_top_of_isLocalization_away {ε : V} (hε : ε ∈ S.ideal)
+    [IsLocalization.Away ε W] : S.ideal.map (algebraMap V W) = ⊤ :=
+  Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ hε)
+    (IsLocalization.Away.algebraMap_isUnit ε)
+
 /-- Inverting an element of `m` makes the setup classical (Gabber–Ramero Remark 2.1.4(ii)); this
 includes `ε = 0`, where `V[1/ε] = 0`. -/
 theorem baseChange_away_eq_classical {ε : V} (hε : ε ∈ S.ideal) [IsLocalization.Away ε W] :
-    S.baseChange W = classical W := by
-  ext1
-  exact Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ hε)
-    (IsLocalization.Away.algebraMap_isUnit ε)
+    S.baseChange W = classical W :=
+  S.baseChange_eq_classical_of_map_eq_top W (S.ideal_map_eq_top_of_isLocalization_away W hε)
 
 end BaseChange
+
+variable {S} in
+/-- Base-changing an almost zero `V`-module to a `V`-algebra `W` in which `m` generates the unit
+ideal gives a zero module. -/
+theorem IsAlmostZero.subsingleton_tensorProduct {M : Type*} [AddCommGroup M] [Module V M]
+    (hM : S.IsAlmostZero M) (W : Type*) [CommRing W] [Algebra V W]
+    (hW : S.ideal.map (algebraMap V W) = ⊤) : Subsingleton (W ⊗[V] M) := by
+  refine TauCeti.subsingleton_tensorProduct_of_isTorsionBySet_right (I := S.ideal) ?_
+    (BasicSetup.isAlmostZero_iff_isTorsionBySet.mp hM)
+  rw [Ideal.smul_top_eq_map, hW]
+  rfl
+
+variable {S} in
+/-- Base-changing along a `V`-algebra `W` in which `m` generates the unit ideal turns an almost
+isomorphism into a bijection. -/
+theorem IsAlmostIso.bijective_lTensor {M N : Type*} [AddCommGroup M] [Module V M]
+    [AddCommGroup N] [Module V N] {f : M →ₗ[V] N} (hf : S.IsAlmostIso f)
+    (W : Type*) [CommRing W] [Algebra V W] (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    Function.Bijective (f.lTensor W) := by
+  have h1 : (1 : W) ∈ S.ideal.map (algebraMap V W) := hW.ge Submodule.mem_top
+  rw [Ideal.map] at h1
+  obtain ⟨c, hc_supp, hc⟩ := (Finsupp.mem_span_image_iff_linearCombination W).mp h1
+  choose h hh1 hh2 using fun (δ : S.ideal) ↦ hf.exists_comp_eq_smul_id δ.property
+  let g : W ⊗[V] N → W ⊗[V] M := fun y ↦
+    ∑ δ ∈ c.support.attach, c δ.val • (h ⟨δ.val, hc_supp δ.property⟩).lTensor W y
+  have hsum : ∑ δ ∈ c.support.attach, c δ.val * algebraMap V W δ.val = 1 := by
+    rw [Finset.sum_attach c.support (fun δ ↦ c δ * algebraMap V W δ)]
+    simpa [Finsupp.linearCombination_apply, Finsupp.sum, smul_eq_mul] using hc
+  refine Function.bijective_iff_has_inverse.mpr ⟨g, fun x ↦ ?_, fun y ↦ ?_⟩
+  · simp only [g, LinearMap.lTensor_lTensor_of_comp_eq_smul f (h _) (hh2 _), smul_smul,
+      ← Finset.sum_smul, hsum, one_smul]
+  · have hsmul (w : W) (z : W ⊗[V] M) : f.lTensor W (w • z) = w • f.lTensor W z :=
+      (f.baseChange W).map_smul w z
+    simp only [g, map_sum, hsmul, LinearMap.lTensor_lTensor_of_comp_eq_smul (h _) f (hh1 _),
+      smul_smul, ← Finset.sum_smul, hsum, one_smul]
 
 /-! ### Conditions (A) and (B) -/
 

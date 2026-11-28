@@ -15,8 +15,8 @@ For a commutative ring `R` and a submonoid `T` of `R`, Mathlib's
 `ModuleCat.localizedModuleFunctor T` sends an `R`-module `M` to the shrunk localized module
 `Shrink (LocalizedModule T M)`. When `M` lives in a universe `max u v` at least that of `R`,
 unshrinking identifies `M.localizedModule T` with `LocalizedModule T M`
-(`ModuleCat.localizedModuleIso`), and composing with `ModuleCat.extendScalarsLocalizationIso` gives
-a natural isomorphism
+(`ModuleCat.localizedModuleIso`), naturally in `M` (`ModuleCat.localizedModuleIso_naturality`),
+and composing with `ModuleCat.extendScalarsLocalizationIso` gives a natural isomorphism
 `ModuleCat.localizedModuleFunctor T ≅ ModuleCat.extendScalars (algebraMap R (Localization T))`
 (`ModuleCat.localizedModuleFunctorIsoExtendScalars`). In particular, extension of scalars to a
 localization preserves finite limits.
@@ -60,6 +60,29 @@ theorem localizedModuleIso_inv_mk (M : ModuleCat.{max u v} R) (T : Submonoid R) 
   rw [← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply, map_smul,
     localizedModuleIso_hom_mkLinearMap, h]
 
+/-- Naturality of `ModuleCat.localizedModuleIso`: `(localizedModuleFunctor T).map f` corresponds
+to `LocalizedModule.map T f.hom`. -/
+@[reassoc]
+theorem localizedModuleIso_naturality {T : Submonoid R} {M₁ M₂ : ModuleCat.{max u v} R}
+    (f : M₁ ⟶ M₂) :
+    (localizedModuleFunctor.{max u v} T).map f ≫ (M₂.localizedModuleIso T).hom =
+      (M₁.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
+  have h : localizedModuleMap T f ≫ (M₂.localizedModuleIso T).hom =
+      (M₁.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
+    apply hom_ext
+    apply LinearMap.restrictScalars_injective R
+    apply IsLocalizedModule.linearMap_ext T (M₁.localizedModuleMkLinearMap T)
+      (LocalizedModule.mkLinearMap T M₂)
+    ext m
+    simp only [LinearMap.coe_restrictScalars, LinearMap.comp_apply, hom_comp,
+      ConcreteCategory.hom_ofHom]
+    rw [localizedModuleMap_hom_apply, IsLocalizedModule.map_apply T
+        (M₁.localizedModuleMkLinearMap T) (M₂.localizedModuleMkLinearMap T) f.hom m,
+      localizedModuleIso_hom_mkLinearMap, localizedModuleIso_hom_mkLinearMap,
+      LocalizedModule.map_mk]
+  rw [localizedModuleFunctor_map]
+  exact h
+
 /-- Naturality of `M.localizedModuleIso T ≪≫ (M.extendScalarsLocalizationIso T).symm`. -/
 private theorem localizedModuleMap_comp_extendScalarsLocalizationIso
     (T : Submonoid R) {M N : ModuleCat.{max u v} R} (f : M ⟶ N) :
@@ -67,39 +90,29 @@ private theorem localizedModuleMap_comp_extendScalarsLocalizationIso
         (N.localizedModuleIso T).hom ≫ (N.extendScalarsLocalizationIso T).inv =
       ((M.localizedModuleIso T).hom ≫ (M.extendScalarsLocalizationIso T).inv) ≫
         (extendScalars (algebraMap R (Localization T))).map f := by
-  rw [← cancel_mono (N.extendScalarsLocalizationIso T).hom]
-  ext x
-  have key :
-      ((localizedModuleMap T f ≫
-          (N.localizedModuleIso T).hom ≫
-          (N.extendScalarsLocalizationIso T).inv) ≫
-          (N.extendScalarsLocalizationIso T).hom).hom.restrictScalars R =
-        (((M.localizedModuleIso T).hom ≫ (M.extendScalarsLocalizationIso T).inv) ≫
-          (extendScalars (algebraMap R (Localization T))).map f ≫
-          (N.extendScalarsLocalizationIso T).hom).hom.restrictScalars R := by
-    refine IsLocalizedModule.ext T (M.localizedModuleMkLinearMap T)
-      (IsLocalizedModule.map_units (LocalizedModule.mkLinearMap T N)) ?_
+  have hnat : localizedModuleMap T f ≫ (N.localizedModuleIso T).hom =
+      (M.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
+    have h := localizedModuleIso_naturality (T := T) f
+    rw [localizedModuleFunctor_map] at h
+    exact h
+  have hmid : ofHom (LocalizedModule.map T f.hom) ≫ (N.extendScalarsLocalizationIso T).inv =
+      (M.extendScalarsLocalizationIso T).inv ≫
+        (extendScalars (algebraMap R (Localization T))).map f := by
+    rw [← cancel_mono (N.extendScalarsLocalizationIso T).hom]
+    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+    apply hom_ext
+    apply LinearMap.restrictScalars_injective R
+    apply IsLocalizedModule.linearMap_ext T (LocalizedModule.mkLinearMap T M)
+      (LocalizedModule.mkLinearMap T N)
     ext m
-    have hmap :
-        (localizedModuleMap T f) (M.localizedModuleMkLinearMap T m) =
-          N.localizedModuleMkLinearMap T (f m) :=
-      IsLocalizedModule.map_apply T (M.localizedModuleMkLinearMap T)
-        (N.localizedModuleMkLinearMap T) f.hom m
-    -- Evaluate `restrictScalars` and linear composition as `ModuleCat` morphism application.
-    change ((localizedModuleMap T f ≫
-        (N.localizedModuleIso T).hom ≫
-        (N.extendScalarsLocalizationIso T).inv) ≫
-        (N.extendScalarsLocalizationIso T).hom) (M.localizedModuleMkLinearMap T m) =
-      (((M.localizedModuleIso T).hom ≫ (M.extendScalarsLocalizationIso T).inv) ≫
-        (extendScalars (algebraMap R (Localization T))).map f ≫
-        (N.extendScalarsLocalizationIso T).hom) (M.localizedModuleMkLinearMap T m)
-    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, ConcreteCategory.comp_apply,
-      hmap]
-    rw [localizedModuleIso_hom_mkLinearMap, localizedModuleIso_hom_mkLinearMap,
-      extendScalarsLocalizationIso_inv_mk_one]
-    -- `ExtendScalars.map_tmul` acts on the underlying tensor product type of `extendScalars`.
+    simp only [LinearMap.coe_restrictScalars, LinearMap.comp_apply,
+      LocalizedModule.mkLinearMap_apply, ConcreteCategory.hom_ofHom, LocalizedModule.map_mk,
+      hom_comp]
+    rw [extendScalarsLocalizationIso_inv_mk_one]
+    -- `ExtendScalars.map_tmul` and `extendScalarsLocalizationIso_hom_one_tmul` act on the
+    -- `Module.compHom` tensor product presentation of `extendScalars`.
     erw [ExtendScalars.map_tmul, extendScalarsLocalizationIso_hom_one_tmul]
-  exact congr($key x)
+  rw [← Category.assoc, hnat, Category.assoc, hmid, Category.assoc]
 
 /-- Module localization at `T` is naturally isomorphic to extension of scalars along
 `R → Localization T`. -/
