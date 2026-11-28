@@ -53,20 +53,18 @@ theorem card_le_plotkin (C : Finset (ι → α)) {d : ℕ}
   -- The total distance `T` satisfies `c (c - 1) d ≤ T` and `q T ≤ (q - 1) n c²`.
   set T : ℕ := ∑ x ∈ C, ∑ y ∈ C, hammingDist x y with hT
   have hlow : c * (c - 1) * d ≤ T := by
-    have hrow (x) (hx : x ∈ C) : (#C - 1) * d ≤ ∑ y ∈ C, hammingDist x y :=
-      calc (#C - 1) * d = #(C.erase x) • d := by rw [card_erase_of_mem hx, smul_eq_mul]
-        _ ≤ ∑ y ∈ C.erase x, hammingDist x y := card_nsmul_le_sum _ _ _ fun y hy ↦
-          hd x hx y (mem_of_mem_erase hy) (ne_of_mem_erase hy).symm
-        _ = ∑ y ∈ C, hammingDist x y := sum_erase C (hammingDist_self x)
-    have hT := card_nsmul_le_sum C _ _ hrow
-    rw [smul_eq_mul] at hT
-    rcases C.eq_empty_or_nonempty with hC | hC
-    · simp [c, hC]
-    · have h1 : 1 ≤ #C := hC.card_pos
-      calc c * (c - 1) * d = ((#C * ((#C - 1) * d) : ℕ) : ℝ) := by
-            push_cast [Nat.cast_sub h1]
-            ring
-        _ ≤ T := by exact_mod_cast hT
+    have hoff : #C.offDiag • d ≤ T :=
+      calc #C.offDiag • d ≤ ∑ p ∈ C.offDiag, hammingDist p.1 p.2 :=
+            card_nsmul_le_sum _ _ _ fun p hp ↦
+              hd p.1 (mem_offDiag.1 hp).1 p.2 (mem_offDiag.1 hp).2.1 (mem_offDiag.1 hp).2.2
+        _ = ∑ p ∈ C ×ˢ C, hammingDist p.1 p.2 := by
+            rw [← diag_union_offDiag, sum_union (disjoint_diag_offDiag C), sum_diag]
+            simp only [hammingDist_self, sum_const_zero, zero_add]
+        _ = T := sum_product' ..
+    calc c * (c - 1) * d = ((#C.offDiag • d : ℕ) : ℝ) := by
+          push_cast [offDiag_card, Nat.cast_sub (Nat.le_mul_self _), smul_eq_mul]
+          ring
+      _ ≤ T := by exact_mod_cast hoff
   have hcs (i : ι) : c ^ 2 ≤ q * ∑ a, (#{x ∈ C | x i = a} : ℝ) ^ 2 := by
     have := sq_sum_le_card_mul_sum_sq (s := (univ : Finset α))
       (f := fun a ↦ (#{x ∈ C | x i = a} : ℝ))
