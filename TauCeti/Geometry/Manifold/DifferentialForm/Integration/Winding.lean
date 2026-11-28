@@ -128,8 +128,9 @@ private theorem isSmoothForm_wedge_angleForm {ψ z₀ z₁ : M → ℝ} (hψ : C
     rw [wedge_angleForm_eq_zero z₀ z₁ (hy'.mono fun _ h ↦ h.trans hy'y.symm)]
     -- The zero section is `y ↦ (y, 0)`.
     rfl
-  · have hdz (j : M → ℝ) (hj : ContMDiffAt I 𝓘(ℝ) 2 j y) :=
-      (contMDiffAt_mextDeriv_ofFunction hj).of_le zero_le_one
+  · have : IsManifold I (1 + 1) M := inferInstanceAs (IsManifold I 2 M)
+    have hdz (j : M → ℝ) (hj : ContMDiffAt I 𝓘(ℝ) 2 j y) :=
+      (contMDiffAt_mextDeriv_ofFunction (n := 1) hj).of_le zero_le_one
     rw [RoughForm.wedge_def]
     exact ((IsSmoothForm.continuous_mextDeriv (isSmoothForm_ofFunction_iff.2 hψ)).contMDiff
       y).wedgeWith_form _ (((hz₀.of_le (by norm_num)).smul_section (hdz z₁ hz₁)).sub_section
