@@ -22,7 +22,8 @@ for the form of a symmetric endomorphism commutes with that endomorphism
 For a bounded operator `A` on a Hilbert space and a complete subspace invariant under both `A`
 and its adjoint, the adjoint of the restriction of `A` is the restriction of the adjoint
 (`ContinuousLinearMap.adjoint_restrict`), so the restriction of a normal operator is normal
-(`IsStarNormal.restrict`).
+(`IsStarNormal.restrict`). The same holds for an endomorphism of a finite-dimensional space and a
+subspace invariant under it and its adjoint (`LinearMap.adjoint_restrict`).
 
 For a kernel, `Commute.starProjection_ker` deduces projection commutation
 from commutation with the operator and its adjoint. This kernel-projection argument is adapted
@@ -254,3 +255,17 @@ theorem _root_.IsStarNormal.restrict (hN : IsStarNormal A) (hA : ∀ x ∈ U, A 
   exact isStarNormal_iff_norm_eq_adjoint.mp hN x
 
 end ContinuousLinearMap
+
+namespace LinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] {U : Submodule 𝕜 E} {A : E →ₗ[𝕜] E}
+
+/-- The adjoint of the restriction of an endomorphism `A` of a finite-dimensional inner product
+space to a subspace invariant under both `A` and its adjoint is the restriction of the adjoint. -/
+theorem adjoint_restrict (hA : ∀ x ∈ U, A x ∈ U) (hA' : ∀ x ∈ U, adjoint A x ∈ U) :
+    adjoint (A.restrict hA) = (adjoint A).restrict hA' :=
+  ((eq_adjoint_iff _ _).mpr fun x y ↦ by
+    simp only [Submodule.coe_inner, coe_restrict_apply, adjoint_inner_left]).symm
+
+end LinearMap
