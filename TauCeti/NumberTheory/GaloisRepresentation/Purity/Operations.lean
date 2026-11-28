@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.GaloisRepresentation.Purity
 public import TauCeti.NumberTheory.WeilNumber.Pure
 import Mathlib.NumberTheory.Real.Irrational
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 import TauCeti.RepresentationTheory.Dual
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Quotient
@@ -77,6 +78,18 @@ variable {k G V W κ : Type*} [CommSemiring k] [Group G] [AddCommMonoid V] [Modu
   [AddCommMonoid W] [Module k W] {ρ : Representation k G V} {σ : Representation k G W}
   {I : κ → Subgroup G} {T : Set κ}
 
+/-- A representation mapping injectively into one unramified outside `T` is unramified
+outside `T`. -/
+theorem IsUnramifiedOutside.of_injective (h : ρ.IsUnramifiedOutside I T)
+    (i : IntertwiningMap σ ρ) (hi : Function.Injective i) : σ.IsUnramifiedOutside I T :=
+  h.of_ker_le (i.ker_le_ker_of_injective hi)
+
+/-- A representation onto which one unramified outside `T` maps surjectively is unramified
+outside `T`. -/
+theorem IsUnramifiedOutside.of_surjective (h : ρ.IsUnramifiedOutside I T)
+    (π : IntertwiningMap ρ σ) (hπ : Function.Surjective π) : σ.IsUnramifiedOutside I T :=
+  h.of_ker_le (π.ker_le_ker_of_surjective hπ)
+
 /-- A direct sum is unramified outside `T` exactly when both summands are. -/
 @[simp]
 theorem isUnramifiedOutside_prod_iff :
@@ -110,6 +123,22 @@ and each Frobenius element `ρ (F v)`, `v ∉ T`, is pure of weight `w` relative
 theorem isPureOutside_iff_isPure : ρ.IsPureOutside I F q T w ↔
     ρ.IsUnramifiedOutside I T ∧ ∀ v ∉ T, IsPure (q v : ℝ) w (ρ (F v)) := by
   simp only [isPureOutside_iff, isPure_iff_forall_mem_aroots (AlgebraicClosure E)]
+
+/-- A representation mapping injectively into one pure of weight `w` outside `T`, such as a
+subrepresentation, is pure of weight `w` outside `T`. -/
+theorem IsPureOutside.of_injective (h : ρ.IsPureOutside I F q T w) (i : IntertwiningMap σ ρ)
+    (hi : Function.Injective i) : σ.IsPureOutside I F q T w := by
+  rw [isPureOutside_iff_isPure] at h ⊢
+  exact ⟨h.1.of_injective i hi, fun v hv ↦
+    (h.2 v hv).of_injective (i := i.toLinearMap) hi (i.isIntertwining' (F v)).symm⟩
+
+/-- A representation onto which one pure of weight `w` outside `T` maps surjectively, such as a
+quotient, is pure of weight `w` outside `T`. -/
+theorem IsPureOutside.of_surjective (h : ρ.IsPureOutside I F q T w) (π : IntertwiningMap ρ τ)
+    (hπ : Function.Surjective π) : τ.IsPureOutside I F q T w := by
+  rw [isPureOutside_iff_isPure] at h ⊢
+  exact ⟨h.1.of_surjective π hπ, fun v hv ↦
+    (h.2 v hv).of_surjective (π := π.toLinearMap) hπ (π.isIntertwining' (F v))⟩
 
 /-- If the Frobenius characteristic polynomials of `ρ` are the products of those of `σ` and `τ`,
 and `σ` and `τ` are unramified wherever `ρ` is, then `ρ` is pure exactly when it is unramified and
@@ -179,6 +208,22 @@ end IsPureOutside
 section IsIotaPureOutside
 
 variable {ι : E →+* ℂ} {r : ℝ}
+
+/-- A representation mapping injectively into one `ι`-pure of weight `r` outside `T`, such as a
+subrepresentation, is `ι`-pure of weight `r` outside `T`. -/
+theorem IsIotaPureOutside.of_injective (h : ρ.IsIotaPureOutside ι I F q T r)
+    (i : IntertwiningMap σ ρ) (hi : Function.Injective i) : σ.IsIotaPureOutside ι I F q T r :=
+  ⟨h.isUnramifiedOutside.of_injective i hi, fun v hv z hz ↦ h.norm_eq v hv z <|
+    Multiset.mem_of_le (roots.le_of_dvd ((ρ (F v)).charpoly_monic.map ι).ne_zero <| map_dvd ι <|
+      LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp _ _ _ hi (i.isIntertwining' (F v))) hz⟩
+
+/-- A representation onto which one `ι`-pure of weight `r` outside `T` maps surjectively, such as
+a quotient, is `ι`-pure of weight `r` outside `T`. -/
+theorem IsIotaPureOutside.of_surjective (h : ρ.IsIotaPureOutside ι I F q T r)
+    (π : IntertwiningMap ρ τ) (hπ : Function.Surjective π) : τ.IsIotaPureOutside ι I F q T r :=
+  ⟨h.isUnramifiedOutside.of_surjective π hπ, fun v hv z hz ↦ h.norm_eq v hv z <|
+    Multiset.mem_of_le (roots.le_of_dvd ((ρ (F v)).charpoly_monic.map ι).ne_zero <| map_dvd ι <|
+      LinearMap.charpoly_dvd_of_surjective_of_comp_eq_comp _ _ _ hπ (π.isIntertwining' (F v))) hz⟩
 
 /-- If the Frobenius characteristic polynomials of `ρ` are the products of those of `σ` and `τ`,
 and `σ` and `τ` are unramified wherever `ρ` is, then `ρ` is `ι`-pure exactly when it is

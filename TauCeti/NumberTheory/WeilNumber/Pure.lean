@@ -54,6 +54,8 @@ endomorphisms of weight `n` are closed under subobjects, quotients, extensions a
 * `TauCeti.isPure_conj_iff`: purity is invariant under conjugation by a linear equivalence.
 * `TauCeti.IsPure.isUnit`: a pure endomorphism is invertible.
 * `TauCeti.IsPure.unique`: a pure endomorphism of a nonzero space has a unique weight.
+* `TauCeti.IsPure.of_injective`, `TauCeti.IsPure.of_surjective`: purity passes to subobjects and
+  quotients.
 * `TauCeti.isPure_of_subsingleton`: every endomorphism of the zero space is pure of every weight.
 * `TauCeti.isPure_iff_of_exact`, `TauCeti.isPure_iff_restrict_and_mapQ`: purity along a short
   exact sequence, and on an invariant subspace and its quotient.
@@ -158,6 +160,25 @@ section Extension
 
 variable {V₁ V₂ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
   [AddCommGroup V₂] [Module K V₂] [FiniteDimensional K V₂] {F₁ : End K V₁} {F₂ : End K V₂}
+
+/-- If the characteristic polynomial of `F₁` divides that of a pure endomorphism `F`, then `F₁` is
+pure of the same weight. -/
+theorem IsPure.of_charpoly_dvd (h : IsPure q n F) (hd : F₁.charpoly ∣ F.charpoly) :
+    IsPure q n F₁ := fun α hα ↦
+  h α <| Multiset.mem_of_le
+    (roots.le_of_dvd (F.charpoly_monic.map _).ne_zero (Polynomial.map_dvd _ hd)) hα
+
+/-- If an injective linear map `i` carries `F₁` into a pure endomorphism `F`, then `F₁` is pure of
+the same weight. -/
+theorem IsPure.of_injective (h : IsPure q n F) {i : V₁ →ₗ[K] V} (hi : Function.Injective i)
+    (hF : F ∘ₗ i = i ∘ₗ F₁) : IsPure q n F₁ :=
+  h.of_charpoly_dvd (LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp F₁ F i hi hF.symm)
+
+/-- If a surjective linear map `π` carries a pure endomorphism `F` onto `F₂`, then `F₂` is pure of
+the same weight. -/
+theorem IsPure.of_surjective (h : IsPure q n F) {π : V →ₗ[K] V₂} (hπ : Function.Surjective π)
+    (hF : π ∘ₗ F = F₂ ∘ₗ π) : IsPure q n F₂ :=
+  h.of_charpoly_dvd (LinearMap.charpoly_dvd_of_surjective_of_comp_eq_comp F₂ F π hπ hF)
 
 /-- If the characteristic polynomial of `F` is the product of those of `F₁` and `F₂`, then `F` is
 pure of weight `n` exactly when `F₁` and `F₂` both are: the characteristic roots of `F` are those
