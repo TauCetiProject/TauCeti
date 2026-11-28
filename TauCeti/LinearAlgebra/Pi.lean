@@ -71,6 +71,8 @@ weights.
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
   disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearEquiv.piRestrictOfSubsingleton`: restricting a dependent product along an index-set
+  inclusion `s ⊆ t` is a linear equivalence whenever all omitted factors are subsingletons.
 * `LinearEquiv.conj_lsmul_eq_piMap`: conjugating by an `A`-linear equivalence onto a product
   turns the action of `a : A` into the coordinatewise action of `a` on the factors.
 * `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
@@ -425,6 +427,45 @@ public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
   (rfl)
 
 end FinsetUnion
+
+section RestrictOfSubsingleton
+
+/-- Restricting a dependent product along an inclusion `s ⊆ t` of index sets is a linear
+equivalence whenever every omitted factor `M i` (`i ∈ t`, `i ∉ s`) is subsingleton. -/
+public noncomputable def piRestrictOfSubsingleton {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) :
+    (∀ i : t, M i) ≃ₗ[R] (∀ i : s, M i) :=
+  open scoped Classical in
+  { toFun x i := x ⟨i.val, hst i.property⟩
+    map_add' _ _ := rfl
+    map_smul' _ _ := rfl
+    invFun y i := if hi : i.val ∈ s then y ⟨i.val, hi⟩ else 0
+    left_inv x := funext fun i ↦ by
+      by_cases hi : i.val ∈ s
+      · simp [hi]
+      · have := hsub i.val i.property hi
+        exact Subsingleton.elim _ _
+    right_inv y := funext fun i ↦ by simp [i.property] }
+
+@[simp]
+public theorem piRestrictOfSubsingleton_apply {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) (x : ∀ i : t, M i) (i : s) :
+    piRestrictOfSubsingleton R M hst hsub x i = x ⟨i.val, hst i.property⟩ :=
+  (rfl)
+
+@[simp]
+public theorem piRestrictOfSubsingleton_symm_apply_of_mem {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) (y : ∀ i : s, M i) (i : t) (hi : i.val ∈ s) :
+    (piRestrictOfSubsingleton R M hst hsub).symm y i = y ⟨i.val, hi⟩ := by
+  simp [piRestrictOfSubsingleton, hi]
+
+@[simp]
+public theorem piRestrictOfSubsingleton_symm_apply_of_notMem {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) (y : ∀ i : s, M i) (i : t) (hi : i.val ∉ s) :
+    (piRestrictOfSubsingleton R M hst hsub).symm y i = 0 := by
+  simp [piRestrictOfSubsingleton, hi]
+
+end RestrictOfSubsingleton
 
 /-- **An equivalence onto a product diagonalizes the action of scalars.** Conjugating by an
 `A`-linear equivalence `e : M ≃ₗ[A] ∀ i, N i`, viewed over `R`, turns the action of `a : A` on `M`

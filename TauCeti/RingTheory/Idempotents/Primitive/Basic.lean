@@ -385,6 +385,19 @@ theorem isPrimitiveIdempotent_one [IsLocalRing A] : IsPrimitiveIdempotent (1 : A
   isPrimitiveIdempotent_one_iff.2 fun _ hf ↦
     IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hf
 
+/-- The left ideals `Ay` and `A(1 - y)` of an idempotent `y` are complementary. -/
+theorem _root_.IsIdempotentElem.isCompl_span_singleton_one_sub {y : A} (hy : IsIdempotentElem y) :
+    IsCompl (Ideal.span {y} : Ideal A) (Ideal.span {1 - y}) := by
+  refine ⟨Submodule.disjoint_def.2 fun z hz hz' ↦ ?_, codisjoint_iff.2 ?_⟩
+  · obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hz
+    obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp hz'
+    -- `z y = z` as `z ∈ Ay`, and `z y = 0` as `z ∈ A(1 - y)`.
+    have h₁ : b * (1 - y) * y = 0 := by rw [mul_assoc, hy.one_sub_mul_self, mul_zero]
+    rwa [hb, mul_assoc, hy.eq] at h₁
+  · refine Ideal.eq_top_of_isUnit_mem _ ?_ isUnit_one
+    simpa using Submodule.add_mem_sup (Ideal.mem_span_singleton_self y)
+      (Ideal.mem_span_singleton_self (1 - y))
+
 end Ring
 
 end TauCeti

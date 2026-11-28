@@ -9,6 +9,8 @@ public import Mathlib.Algebra.GroupWithZero.Indicator
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import Mathlib.Topology.Sets.Compacts
 
+import TauCeti.Topology.LocallyConstant.Algebra
+
 /-!
 # Characteristic functions of clopen and compact open sets
 
@@ -62,6 +64,23 @@ theorem comap_charFn {Y : Type*} [TopologicalSpace Y] {W : Set Y} (f : C(X, Y))
   ext x
   simp only [coe_comap_apply, coe_charFn]
   exact (Set.indicator_comp_right (g := 1) f).symm
+
+/-- A locally constant function that is constant on each piece of a finite clopen partition is
+the sum of its values times the characteristic functions of the pieces. -/
+theorem eq_sum_charFn_of_partition {Y : Type*} [NonAssocSemiring Y] (g : LocallyConstant X Y)
+    {ι : Type*} (s : Finset ι) (U : ι → TopologicalSpace.Clopens X) (c : ι → Y)
+    (hdisj : (s : Set ι).PairwiseDisjoint U) (hcover : s.sup U = ⊤)
+    (hval : ∀ i ∈ s, ∀ x ∈ U i, g x = c i) :
+    g = ∑ i ∈ s, c i • charFn Y (U i).isClopen := by
+  ext x
+  have hx : x ∈ s.sup U := hcover ▸ trivial
+  rw [← SetLike.mem_coe, TopologicalSpace.Clopens.coe_finset_sup, Set.mem_iUnion₂] at hx
+  obtain ⟨i₀, hi₀, hxi₀⟩ := hx
+  rw [finsetSum_apply, Finset.sum_eq_single_of_mem i₀ hi₀]
+  · simp [coe_charFn, hxi₀, hval i₀ hi₀ x hxi₀]
+  · intro j hj hne
+    have hnot : x ∉ U j := fun hxj ↦ (hdisj hj hi₀ hne).le_bot ⟨hxj, hxi₀⟩
+    simp [coe_charFn, hnot]
 
 end LocallyConstant
 

@@ -28,6 +28,7 @@ algebraic `K₀` have the same objects and morphisms.
 public section
 
 open CategoryTheory MonoidalCategory
+open scoped TensorProduct
 
 namespace TauCeti
 

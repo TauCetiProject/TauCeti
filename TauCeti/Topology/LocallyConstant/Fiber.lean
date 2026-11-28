@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyConstant.Basic
-public import Mathlib.Topology.Sets.Closeds
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Topology.LocallyConstant.Basic
+public import TauCeti.Topology.Sets.Clopens
 
 /-!
 # Fibers of a locally constant function as clopen sets
@@ -20,9 +20,16 @@ functions (`IsLocallyConstant.continuous_iff₂`) and for maps into a sigma spac
 corresponding summand (`IsLocallyConstant.continuous_iff_of_eq_sigmaMk`).
 
 This file also packages the fibers of `f : LocallyConstant X α` as elements of `Clopens X`
-(`LocallyConstant.fiberClopens`). Their underlying open sets `(f.fiberClopens a).toOpens` can
-index restrictions of sheaves, and they cover `X`. Their preimages under a continuous map `g` are
-the fibers of `f ∘ g` (`LocallyConstant.comap_toOpens_fiberClopens`).
+(`LocallyConstant.fiberClopens`). They are pairwise disjoint (`pairwise_disjoint_fiberClopens`),
+their underlying open sets `(f.fiberClopens a).toOpens` can index restrictions of sheaves and cover
+`X` (`iSup_toOpens_fiberClopens`), on a compact space the fibers over the finite range cover `X`
+(`finset_sup_fiberClopens`, and without compactness for any finite superset of the range via
+`finset_sup_fiberClopens_of_forall_mem`), and their preimages under a continuous map `g` are the
+fibers of `f ∘ g` (`LocallyConstant.comap_toOpens_fiberClopens`,
+`LocallyConstant.preimage_fiberClopens`).
+The joint fibers of two locally constant functions likewise form pairwise-disjoint covering clopen
+families (`pairwise_disjoint_fiberClopens_inf`, `finset_sup_fiberClopens_inf`,
+`finset_sup_fiberClopens_inf_of_forall_mem`).
 
 When `f` takes a constant value `b₀` off a compact set, its fibers over the other values are compact
 open, and `IsLocallyConstant.fiberCompactOpens` packages them as pairwise disjoint elements of
@@ -152,10 +159,66 @@ theorem toClopens_fiberCompactOpens [T2Space X] (f : LocallyConstant X α) {s : 
   Clopens.ext (by rw [CompactOpens.coe_toClopens, IsLocallyConstant.coe_fiberCompactOpens _ _ _ ha,
     toFun_eq_coe, coe_fiberClopens])
 
+/-- Distinct fibers of a locally constant function are disjoint clopen sets. -/
+theorem pairwise_disjoint_fiberClopens (f : LocallyConstant X α) :
+    Pairwise (Function.onFun Disjoint f.fiberClopens) := by
+  intro a b hab
+  dsimp only [Function.onFun]
+  rw [← Clopens.coe_disjoint, Set.disjoint_left]
+  intro x hxa hxb
+  exact hab ((mem_fiberClopens.1 hxa).symm.trans (mem_fiberClopens.1 hxb))
+
 /-- The fibers of a locally constant function, as open sets, cover its domain. -/
 theorem iSup_toOpens_fiberClopens (f : LocallyConstant X α) :
     ⨆ a, (f.fiberClopens a).toOpens = ⊤ :=
   top_unique fun x _ ↦ Opens.mem_iSup.2 ⟨f x, mem_fiberClopens.2 rfl⟩
+
+/-- If a finite set `s` contains every value of a locally constant function `f`, then the fibers
+over `s` cover the domain. -/
+theorem finset_sup_fiberClopens_of_forall_mem (f : LocallyConstant X α) {s : Finset α}
+    (hs : ∀ x, f x ∈ s) :
+    s.sup f.fiberClopens = ⊤ := by
+  apply Clopens.ext
+  rw [Clopens.coe_finset_sup, Clopens.coe_top]
+  exact Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion₂.2 ⟨f x, hs x, mem_fiberClopens.2 rfl⟩
+
+/-- On a compact space, the fibers over the finite range of a locally constant function cover the
+whole space. -/
+theorem finset_sup_fiberClopens [CompactSpace X] (f : LocallyConstant X α) :
+    f.range_finite.toFinset.sup f.fiberClopens = ⊤ :=
+  f.finset_sup_fiberClopens_of_forall_mem fun x ↦ f.range_finite.mem_toFinset.2 ⟨x, rfl⟩
+
+/-- A fiber of the pairing `f.prodMk g` is the intersection of the corresponding fibers of `f`
+and `g`. -/
+theorem fiberClopens_prodMk {β : Type*} (f : LocallyConstant X α)
+    (g : LocallyConstant X β) (ab : α × β) :
+    (f.prodMk g).fiberClopens ab = f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2 :=
+  Clopens.ext <| Set.ext fun _ ↦ Prod.ext_iff
+
+/-- Distinct joint fibers of two locally constant functions are disjoint clopen sets. -/
+theorem pairwise_disjoint_fiberClopens_inf {β : Type*} (f : LocallyConstant X α)
+    (g : LocallyConstant X β) :
+    Pairwise (Function.onFun Disjoint fun ab : α × β ↦
+      f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2) := by
+  simpa only [← fiberClopens_prodMk] using (f.prodMk g).pairwise_disjoint_fiberClopens
+
+/-- If `s` and `t` contain all values of `f` and `g`, then their joint fibers cover the domain. -/
+theorem finset_sup_fiberClopens_inf_of_forall_mem {β : Type*} (f : LocallyConstant X α)
+    (g : LocallyConstant X β) {s : Finset α} {t : Finset β}
+    (hs : ∀ x, f x ∈ s) (ht : ∀ x, g x ∈ t) :
+    (s ×ˢ t).sup (fun ab ↦ f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2) = ⊤ := by
+  simpa only [← fiberClopens_prodMk] using
+    (f.prodMk g).finset_sup_fiberClopens_of_forall_mem fun x ↦ Finset.mem_product.2 ⟨hs x, ht x⟩
+
+/-- On a compact space, the joint fibers over the finite ranges of two locally constant functions
+cover the whole space. -/
+theorem finset_sup_fiberClopens_inf [CompactSpace X] {β : Type*} (f : LocallyConstant X α)
+    (g : LocallyConstant X β) :
+    (f.range_finite.toFinset ×ˢ g.range_finite.toFinset).sup
+      (fun ab ↦ f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2) = ⊤ :=
+  finset_sup_fiberClopens_inf_of_forall_mem f g
+    (fun x ↦ f.range_finite.mem_toFinset.2 ⟨x, rfl⟩)
+    (fun x ↦ g.range_finite.mem_toFinset.2 ⟨x, rfl⟩)
 
 /-- The preimage under a continuous map `g` of the fiber of `f` over `a` is the fiber of `f ∘ g`
 over `a`. -/
@@ -163,5 +226,13 @@ theorem comap_toOpens_fiberClopens {Y : Type*} [TopologicalSpace Y] (g : C(Y, X)
     (f : LocallyConstant X α) (a : α) :
     Opens.comap g (f.fiberClopens a).toOpens = ((f.comap g).fiberClopens a).toOpens :=
   Opens.ext (by ext; simp)
+
+/-- The clopen preimage under a continuous map `g` of the fiber of `f` over `a` is the fiber of
+`f ∘ g` over `a`. -/
+@[simp]
+theorem preimage_fiberClopens {Y : Type*} [TopologicalSpace Y] (g : C(Y, X))
+    (f : LocallyConstant X α) (a : α) :
+    Clopens.comap g (f.fiberClopens a) = (f.comap g).fiberClopens a :=
+  Clopens.ext (by ext; simp)
 
 end LocallyConstant

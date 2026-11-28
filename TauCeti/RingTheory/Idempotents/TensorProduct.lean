@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
+import Mathlib.RingTheory.TensorProduct.Maps
+
 /-!
 # Tensor products of idempotent left ideals
 
@@ -167,5 +169,56 @@ theorem spanSingletonTensorProductEquiv_map_smul
       smul_eq_mul, Algebra.TensorProduct.tmul_mul_tmul]
   | add t t' ht ht' =>
     simp only [map_add, smul_add, Submodule.coe_add, ht, ht']
+
+private theorem map_lid_span_tmul (R : Type*) [CommSemiring R] {e f : R}
+    (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
+    Submodule.map ((Algebra.TensorProduct.lid R R).toLinearEquiv : R ⊗[R] R →ₗ[R] R)
+      ((Ideal.span {e ⊗ₜ[R] f} : Ideal (R ⊗[R] R)).restrictScalars R) =
+      (Ideal.span {e * f} : Ideal R) := by
+  ext y
+  simp only [Submodule.mem_map, Submodule.restrictScalars_mem,
+    mem_span_singleton_iff_mul_eq_self (he.tmul (k := R) hf),
+    mem_span_singleton_iff_mul_eq_self (he.mul hf),
+    LinearEquiv.coe_coe, AlgEquiv.toLinearEquiv_apply]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    rw [← smul_eq_mul (a := e), ← Algebra.TensorProduct.lid_tmul e f, ← map_mul, hx]
+  · intro hy
+    refine ⟨(y ⊗ₜ[R] (1 : R)) * (e ⊗ₜ[R] f), ?_, ?_⟩
+    · rw [mul_assoc, (he.tmul (k := R) hf).eq]
+    · rw [map_mul, Algebra.TensorProduct.lid_tmul, Algebra.TensorProduct.lid_tmul,
+        smul_eq_mul, smul_eq_mul, mul_one, hy]
+
+private noncomputable def lidSpanEquiv (R : Type*) [CommSemiring R] {e f : R}
+    (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
+    (Ideal.span {e ⊗ₜ[R] f} : Ideal (R ⊗[R] R)) ≃ₗ[R] (Ideal.span {e * f} : Ideal R) :=
+  LinearEquiv.ofSubmodules (Algebra.TensorProduct.lid R R).toLinearEquiv
+    ((Ideal.span {e ⊗ₜ[R] f} : Ideal (R ⊗[R] R)).restrictScalars R)
+    (Ideal.span {e * f} : Ideal R)
+    (map_lid_span_tmul R he hf)
+
+private theorem coe_lidSpanEquiv (R : Type*) [CommSemiring R] {e f : R}
+    (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (z : (Ideal.span {e ⊗ₜ[R] f} : Ideal (R ⊗[R] R))) :
+    (lidSpanEquiv R he hf z : R) = Algebra.TensorProduct.lid R R (z : R ⊗[R] R) :=
+  LinearEquiv.ofSubmodules_apply (Algebra.TensorProduct.lid R R).toLinearEquiv
+    (map_lid_span_tmul R he hf) z
+
+/-- For idempotents `e` and `f` of a commutative semiring `R`, the tensor product of the principal
+ideals `Re` and `Rf` is `R`-linearly equivalent to the principal ideal `R(ef)`. -/
+def spanSingletonTensorProductEquivSelf (R : Type*) [CommSemiring R] {e f : R}
+    (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
+    (Ideal.span {e} : Ideal R) ⊗[R] (Ideal.span {f} : Ideal R) ≃ₗ[R]
+      (Ideal.span {e * f} : Ideal R) :=
+  (spanSingletonTensorProductEquiv R he hf).trans (lidSpanEquiv R he hf)
+
+/-- On pure tensors, `TauCeti.spanSingletonTensorProductEquivSelf` is multiplication in `R`. -/
+@[simp]
+theorem coe_spanSingletonTensorProductEquivSelf_tmul (R : Type*) [CommSemiring R] {e f : R}
+    (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (x : (Ideal.span {e} : Ideal R)) (y : (Ideal.span {f} : Ideal R)) :
+    (spanSingletonTensorProductEquivSelf R he hf (x ⊗ₜ[R] y) : R) = (x : R) * (y : R) := by
+  rw [spanSingletonTensorProductEquivSelf, LinearEquiv.trans_apply, coe_lidSpanEquiv]
+  simp [Algebra.TensorProduct.lid_tmul]
 
 end TauCeti
