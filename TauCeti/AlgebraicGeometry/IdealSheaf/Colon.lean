@@ -227,15 +227,7 @@ theorem comap_colon_of_isOpenImmersion {Y : Scheme.{u}} (D E : Y.IdealSheafData)
     exact (hE ⟨f ''ᵁ U.val, U.property.image_of_isOpenImmersion f⟩).map _
   ext U : 2
   simp only [ideal_comap_of_isOpenImmersion, ideal_colon _ _ hE, ideal_colon _ _ hEf]
-  ext x
-  simp only [Ideal.mem_comap, Submodule.mem_colon, smul_eq_mul, SetLike.mem_coe]
-  refine ⟨fun h y hy ↦ ?_, fun h y hy ↦ ?_⟩
-  · have hxy := h ((f.appIso U).inv.hom y) hy
-    rwa [← map_mul] at hxy
-  · have hy' : (f.appIso U).inv.hom ((f.appIso U).hom.hom y) ∈
-        E.ideal ⟨f ''ᵁ U.val, U.property.image_of_isOpenImmersion f⟩ := by
-      simpa only [← CommRingCat.comp_apply, Iso.hom_inv_id, CommRingCat.id_apply] using hy
-    have hxy := h ((f.appIso U).hom.hom y) hy'
-    simpa only [map_mul, ← CommRingCat.comp_apply, Iso.hom_inv_id, CommRingCat.id_apply] using hxy
+  exact Ideal.comap_colon_of_surjective
+    (f.appIso U).commRingCatIsoToRingEquiv.symm.surjective _ _
 
 end AlgebraicGeometry.Scheme.IdealSheafData
