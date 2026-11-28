@@ -49,7 +49,8 @@ length is `ℓ(A ⧸ I) - ℓ(A ⧸ 𝔪ʳ)`.
 * `RingTheory.Sequence.IsWeaklyRegular.length_quotient_colon_add_length_quotient_pow_le`: the
   colength inequality `ℓ(B ⧸ I') + ℓ(A ⧸ 𝔪ʳ) ≤ ℓ(A ⧸ I)` for an `𝔪`-primary ideal `I` of order `r`.
 * `RingTheory.Sequence.IsWeaklyRegular.length_quotient_colon_lt`: the strict inequality
-  `ℓ(B ⧸ I') < ℓ(A ⧸ I)` when `A ⧸ I` has finite length and `r ≠ 0`.
+  `ℓ(B ⧸ I') < ℓ(A ⧸ I)` when `r ≠ 0`, as `A ⧸ I` has finite length
+  (`Ideal.isFiniteLength_quotient_pow_of_fg`).
 
 ## References
 
@@ -319,18 +320,21 @@ theorem length_quotient_colon_add_length_quotient_pow_le (hxy : IsWeaklyRegular 
   exact ⟨Submodule.Quotient.mk a, rfl⟩
 
 /-- **The colength drops under a quadratic transform.** Let `x, y` be a weakly regular sequence
-on `A` generating a maximal ideal `𝔪`, and let `I` be an ideal of finite colength, containing a
-power of `𝔪`, with `I ⊆ 𝔪ʳ` but `I ⊄ 𝔪ʳ⁺¹` for some `r ≠ 0`. Then the transform
+on `A` generating a maximal ideal `𝔪`, and let `I` be an ideal containing a power of `𝔪`, so of
+finite colength, with `I ⊆ 𝔪ʳ` but `I ⊄ 𝔪ʳ⁺¹` for some `r ≠ 0`. Then the transform
 `I' = (I B : xʳ)` on the chart `B = A[𝔪/x]` has `ℓ_A(B ⧸ I') < ℓ_A(A ⧸ I)`. -/
 theorem length_quotient_colon_lt (hxy : IsWeaklyRegular A [x, y]) {I : Ideal A} {r s : ℕ}
     (hs : Ideal.span {x, y} ^ s ≤ I) (hr : I ≤ Ideal.span {x, y} ^ r)
-    (hr' : ¬ I ≤ Ideal.span {x, y} ^ (r + 1)) (hr0 : r ≠ 0)
-    (hI : Module.length A (A ⧸ I) ≠ ⊤) :
+    (hr' : ¬ I ≤ Ideal.span {x, y} ^ (r + 1)) (hr0 : r ≠ 0) :
     Module.length A ((Ideal.span {x, y}).affineBlowup x S ⧸
         (I.map (algebraMap A ((Ideal.span {x, y}).affineBlowup x S))).colon
           {algebraMap A ((Ideal.span {x, y}).affineBlowup x S) x ^ r}) <
       Module.length A (A ⧸ I) := by
   have h := length_quotient_colon_add_length_quotient_pow_le S hxy hs hr hr'
+  -- `A ⧸ I` is a quotient of `A ⧸ 𝔪ˢ`, which has finite length as `𝔪` is finitely generated.
+  have hI : Module.length A (A ⧸ I) ≠ ⊤ := ne_top_of_le_ne_top
+    (Module.length_ne_top_iff.mpr (Ideal.isFiniteLength_quotient_pow_of_fg _
+      (Submodule.fg_span (Set.toFinite _)) s)) (TauCeti.length_quotient_anti hs)
   -- `A ⧸ 𝔪ʳ` is nonzero, as `𝔪ʳ ⊆ 𝔪 ≠ A`.
   have : Nontrivial (A ⧸ Ideal.span {x, y} ^ r) :=
     Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top (Ideal.IsMaximal.ne_top ‹_›)
