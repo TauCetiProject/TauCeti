@@ -24,9 +24,10 @@ the complex exponential kernel `t ↦ Complex.exp (-s * t)`.
   whenever `s₀.re ≤ s.re`.
 * `TauCeti.norm_cexp_neg_mul_smul_le_mul_exp`: a pointwise exponential bound on the integrand.
 * `TauCeti.integrable_cexp_neg_mul_smul_of_norm_le_mul_exp`: the integrand is integrable on
-  `(0, ∞)` when `f` is a.e. strongly measurable there, `‖f(t)‖ ≤ M e^{σt}` there, and `σ < Re s`.
+  `(c, ∞)` when `f` is a.e. strongly measurable there, `‖f(t)‖ ≤ M e^{σt}` a.e. there, and
+  `σ < Re s`.
 * `TauCeti.norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp`: the exponential bound and
-  `σ < Re s` give the integral norm bound `M / (Re s - σ)`.
+  `σ < Re s` give the bound `M e^{-(Re s - σ)c} / (Re s - σ)` on the integral over `(c, ∞)`.
 * `TauCeti.intervalIntegrable_cexp_neg_mul_smul_iff`: multiplying by `t ↦ exp (-s * t)` preserves
   `IntervalIntegrable` for vector-valued functions and arbitrary measures.
 * `TauCeti.intervalIntegrable_of_integrableOn_cexp_neg_mul_smul_Ioi`: integrability of
@@ -88,28 +89,25 @@ theorem norm_cexp_neg_mul_smul_le_mul_exp {E : Type*} [Norm E] [SMul ℂ E]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- If `f` is a.e. strongly measurable on `(0, ∞)` with `‖f(t)‖ ≤ M e^{σt}` there and
-`σ < Re s`, then the Laplace integrand `t ↦ e^{-st} f(t)` is integrable on `(0, ∞)`. -/
-theorem integrable_cexp_neg_mul_smul_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M : ℝ}
-    (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0)))
-    (hb : ∀ t ∈ Ioi (0 : ℝ), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
-    Integrable (fun t : ℝ => cexp (-s * t) • f t) (volume.restrict (Ioi 0)) :=
-  Integrable.mono' ((integrableOn_exp_mul_Ioi (by linarith) 0).const_mul M)
+/-- If `f` is a.e. strongly measurable on `(c, ∞)` with `‖f(t)‖ ≤ M e^{σt}` for almost every
+`t > c` and `σ < Re s`, then the Laplace integrand `t ↦ e^{-st} f(t)` is integrable on `(c, ∞)`. -/
+theorem integrable_cexp_neg_mul_smul_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M c : ℝ}
+    (hf : AEStronglyMeasurable f (volume.restrict (Ioi c)))
+    (hb : ∀ᵐ t ∂volume.restrict (Ioi c), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
+    Integrable (fun t : ℝ => cexp (-s * t) • f t) (volume.restrict (Ioi c)) :=
+  Integrable.mono' ((integrableOn_exp_mul_Ioi (by linarith) c).const_mul M)
     ((by fun_prop : Continuous fun t : ℝ => cexp (-s * t)).aestronglyMeasurable.smul hf)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht =>
-      norm_cexp_neg_mul_smul_le_mul_exp (hb t ht))
+    (hb.mono fun _ ht => norm_cexp_neg_mul_smul_le_mul_exp ht)
 
-/-- If `‖f(t)‖ ≤ M e^{σt}` on `(0, ∞)` and `σ < Re s`, then the Laplace integral of `f` at `s`
-has norm at most `M / (Re s - σ)`. -/
-theorem norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M : ℝ}
-    (hb : ∀ t ∈ Ioi (0 : ℝ), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
-    ‖∫ t in Ioi (0 : ℝ), cexp (-s * t) • f t‖ ≤ M / (s.re - σ) := by
+/-- If `‖f(t)‖ ≤ M e^{σt}` for almost every `t > c` and `σ < Re s`, then the Laplace integral of
+`f` over `(c, ∞)` at `s` has norm at most `M e^{-(Re s - σ)c} / (Re s - σ)`. -/
+theorem norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M c : ℝ}
+    (hb : ∀ᵐ t ∂volume.restrict (Ioi c), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
+    ‖∫ t in Ioi c, cexp (-s * t) • f t‖ ≤ M * Real.exp (-(s.re - σ) * c) / (s.re - σ) := by
   have hσs : -(s.re - σ) < 0 := by linarith
-  refine (norm_integral_le_of_norm_le ((integrableOn_exp_mul_Ioi hσs 0).const_mul M)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht =>
-      norm_cexp_neg_mul_smul_le_mul_exp (hb t ht))).trans_eq ?_
-  rw [integral_const_mul, integral_exp_mul_Ioi hσs, mul_zero, Real.exp_zero, neg_div_neg_eq,
-    mul_one_div]
+  refine (norm_integral_le_of_norm_le ((integrableOn_exp_mul_Ioi hσs c).const_mul M)
+    (hb.mono fun _ ht => norm_cexp_neg_mul_smul_le_mul_exp ht)).trans_eq ?_
+  rw [integral_const_mul, integral_exp_mul_Ioi hσs, neg_div_neg_eq, mul_div_assoc]
 
 end ExponentialGrowth
 

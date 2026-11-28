@@ -28,8 +28,8 @@ The file provides:
   sufficiently small, uniformly over expansion points in the set.
 * **Size of the remainder.** From the Lagrange form of the remainder, if `|f⁽ⁿ⁺¹⁾| ≤ M` between
   `x₀` and `x`, then `|f x - T(x)| ≤ M |x - x₀|ⁿ⁺¹ / (n+1)!`, where `T` is the Taylor polynomial
-  of order `n` expanded at `x₀`. For `f` of class `C^(n+1)` on a convex set, the remainder is
-  `O((x - x₀)ⁿ⁺¹)` as `x → x₀` within the set.
+  of order `n` expanded at `x₀`. For `f` of class `C^(n+1)` within a convex set at `x₀`, the
+  remainder is `O((x - x₀)ⁿ⁺¹)` as `x → x₀` within the set.
 * **Sign of the remainder.** As a function of the expansion point, the derivative of
   `x₀ ↦ taylorWithinEval f n s x₀ x` is `(x - x₀)ⁿ / n! · f⁽ⁿ⁺¹⁾(x₀)`. If `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0`
   on `(x, y)`, this derivative is nonnegative there, so the Taylor polynomial of order `n`
@@ -62,8 +62,8 @@ function divided by its parameter is completely monotone.
   an entire interval containing it.
 * `TauCeti.abs_sub_taylorWithinEval_le`: a bound on the Taylor remainder when the next derivative
   is bounded, with the error proportional to `|x - x₀|^(n+1)`.
-* `TauCeti.taylor_isBigO`: for `f` of class `C^(n+1)` on a convex set, the Taylor remainder of
-  order `n` is `O((x - x₀)^(n+1))` within the set.
+* `TauCeti.taylor_isBigO`: for `f` of class `C^(n+1)` within a convex set at `x₀`, the Taylor
+  remainder of order `n` is `O((x - x₀)^(n+1))` within the set.
 * `TauCeti.le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg`: if
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
@@ -113,24 +113,39 @@ theorem abs_sub_taylorWithinEval_le {f : ℝ → ℝ} {n : ℕ} {M x₀ x : ℝ}
   gcongr
   exact hM y hy
 
-/-- **Taylor's theorem with a big-O remainder.** If `f` is `C^(n+1)` on a convex set `s`
-containing `x₀`, then `f x - taylorWithinEval f n s x₀ x = O((x - x₀)^(n+1))` as `x → x₀` within
-`s`. Mathlib's `taylor_isLittleO` gives `o((x - x₀)^n)` for `C^n`. -/
+/-- **Taylor's theorem with a big-O remainder.** If `f` is `C^(n+1)` within a convex set `s` at a
+point `x₀ ∈ s`, then `f x - taylorWithinEval f n s x₀ x = O((x - x₀)^(n+1))` as `x → x₀` within
+`s`. Mathlib's `taylor_isLittleO` gives `o((x - x₀)^n)` for `f` of class `C^n` on `s`. -/
 theorem taylor_isBigO {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E}
     {x₀ : ℝ} {n : ℕ} {s : Set ℝ} (hs : Convex ℝ s) (hx₀s : x₀ ∈ s)
-    (hf : ContDiffOn ℝ (n + 1) f s) :
+    (hf : ContDiffWithinAt ℝ (n + 1) f s x₀) :
     (fun x ↦ f x - taylorWithinEval f n s x₀ x) =O[𝓝[s] x₀] fun x ↦ (x - x₀) ^ (n + 1) := by
+  -- `f` is `C^(n+1)` on the convex neighbourhood `t = s ∩ ball x₀ r` of `x₀` in `s`
+  obtain ⟨u, hu, hx₀u, hfu⟩ := hf.contDiffOn' le_rfl (by simp)
+  obtain ⟨r, hr, hru⟩ := Metric.isOpen_iff.1 hu x₀ hx₀u
+  set t := s ∩ Metric.ball x₀ r
+  have hft : ContDiffOn ℝ (n + 1) f t :=
+    hfu.mono (by rw [insert_eq_of_mem hx₀s]; exact inter_subset_inter_right _ hru)
+  have hball : Metric.ball x₀ r ∈ 𝓝 x₀ := Metric.ball_mem_nhds x₀ hr
+  -- near `x₀` the sets `t` and `s` agree, so they give the same Taylor polynomial at `x₀`
+  have hts : t =ᶠ[𝓝 x₀] s := by
+    filter_upwards [hball] with y hy
+    exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, hy⟩⟩
+  have htaylor (k : ℕ) (x : ℝ) : taylorWithinEval f k t x₀ x = taylorWithinEval f k s x₀ x := by
+    simp only [taylorWithinEval, taylorWithin, taylorCoeffWithin,
+      iteratedDerivWithin_eq_iteratedFDerivWithin, iteratedFDerivWithin_congr_set hts]
+  rw [← nhdsWithin_inter_of_mem' (mem_nhdsWithin_of_mem_nhds hball)]
   set c : ℝ := ((n + 1 : ℝ) * n !)⁻¹
-  set d : E := iteratedDerivWithin (n + 1) f s x₀
+  set d : E := iteratedDerivWithin (n + 1) f t x₀
   -- the term of order `n + 1` of the Taylor polynomial is `O((x - x₀)^(n+1))`
-  have hterm : (fun x ↦ (c * (x - x₀) ^ (n + 1)) • d) =O[𝓝[s] x₀]
+  have hterm : (fun x ↦ (c * (x - x₀) ^ (n + 1)) • d) =O[𝓝[t] x₀]
       fun x ↦ (x - x₀) ^ (n + 1) :=
     Asymptotics.IsBigO.of_bound (|c| * ‖d‖) (Eventually.of_forall fun x ↦ by
       rw [norm_smul, norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
       exact le_of_eq (by ring))
-  refine ((taylor_isLittleO hs hx₀s (n := n + 1) (mod_cast hf)).isBigO.add hterm).congr_left
-    fun x ↦ ?_
-  rw [taylorWithinEval_succ]
+  refine ((taylor_isLittleO (hs.inter (convex_ball x₀ r)) ⟨hx₀s, Metric.mem_ball_self hr⟩
+    (n := n + 1) (mod_cast hft)).isBigO.add hterm).congr_left fun x ↦ ?_
+  rw [taylorWithinEval_succ, htaylor]
   abel
 
 /-- The quadratic Taylor polynomial on the whole line, written using ordinary derivatives.

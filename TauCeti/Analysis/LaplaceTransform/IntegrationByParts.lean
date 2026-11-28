@@ -20,8 +20,8 @@ import TauCeti.MeasureTheory.Integral.Exp.Complex
 /-!
 # Laplace integrals by integration by parts
 
-Let `q : ℝ → ℂ` be `C^∞` on `[0, ε)` for some `ε > 0`, and let `t ↦ e^{-σt} q(t)` be integrable
-on `(0, ∞)` for some real `σ`. Then
+Let `q : ℝ → ℂ` be `C^∞` within `[0, ∞)` at `0` (for instance `C^∞` on `[0, ε)` for some
+`ε > 0`), and let `t ↦ e^{-σt} q(t)` be integrable on `(0, ∞)` for some real `σ`. Then
 
 `∫₀^∞ e^{-xt} q(t) dt ∼ ∑ q^{(s)}(0) x^{-s-1}`   as `x → +∞`
 
@@ -29,21 +29,21 @@ on `(0, ∞)` for some real `σ`. Then
 `Asymptotics.hasAsymptoticExpansion_laplace` with the exponents `α_s = s + 1` and the Taylor
 coefficients `c_s = q^{(s)}(0) / s!`, since `Γ(s + 1) = s!`.
 
-If `q` is `C^n` on `[0, ∞)` and `‖q^{(n)}(t)‖ ≤ M e^{σt}` for `t ≥ 0`, then `n` integrations by
-parts give, for `x > max(0, σ)`, the error bound
+If `q` is `C^n` on `[0, ∞)` and `‖q^{(n)}(t)‖ ≤ M e^{σt}` for `t > 0`, then `n` integrations by
+parts give, for complex `s` with `Re s > max(0, σ)`, the error bound
 
-`‖∫₀^∞ e^{-xt} q(t) dt - ∑_{s<n} q^{(s)}(0) x^{-s-1}‖ ≤ M / (xⁿ (x - σ))`
+`‖∫₀^∞ e^{-st} q(t) dt - ∑_{k<n} q^{(k)}(0) s^{-k-1}‖ ≤ M / (|s|ⁿ (Re s - σ))`
 
-(DLMF 2.3.3). DLMF takes `M = |q^{(n)}(0)|`, `q^{(n)}(0) ≠ 0`, and for `σ` the number
-`σ_n = sup_{t>0} t⁻¹ log |q^{(n)}(t) / q^{(n)}(0)|`, the least `σ` for which the hypothesis
-holds with that `M`; it also assumes `q` to be `C^∞`.
+(DLMF 2.3.3, where `s = x` is real). DLMF takes `M = |q^{(n)}(0)|`, `q^{(n)}(0) ≠ 0`, and for
+`σ` the number `σ_n = sup_{t>0} t⁻¹ log |q^{(n)}(t) / q^{(n)}(0)|`, the least `σ` for which the
+hypothesis holds with that `M`; it also assumes `q` to be `C^∞`.
 
 ## Main results
 
 * `TauCeti.integral_cexp_neg_mul_smul_eq_sum_add`: `n` integrations by parts in a Laplace
   integral, `L[q](s) = ∑_{k<n} s^{-k-1} q^{(k)}(0) + s^{-n} L[q^{(n)}](s)`, when the Laplace
   integrals of `q, q', …, q^{(n)}` converge at `s ≠ 0`.
-* `Asymptotics.hasAsymptoticExpansion_laplace_of_contDiffOn`: the expansion (DLMF 2.3.2).
+* `Asymptotics.hasAsymptoticExpansion_laplace_of_contDiffWithinAt`: the expansion (DLMF 2.3.2).
 * `Asymptotics.norm_integral_cexp_neg_mul_sub_sum_le`: the error bound (DLMF 2.3.3).
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
@@ -101,35 +101,27 @@ namespace Asymptotics
 open TauCeti
 
 /-- **Laplace integrals by integration by parts** (DLMF 2.3.1–2.3.2). Let `q : ℝ → ℂ` be `C^∞`
-on `[0, ε)` for some `ε > 0`, and let `t ↦ e^{-σt} q(t)` be integrable on `(0, ∞)` for some real
-`σ`. Then `∫₀^∞ e^{-xt} q(t) dt ∼ ∑ q^{(s)}(0) x^{-s-1}` as `x → +∞`, where `q^{(s)}(0)` is the
-`s`th derivative of `q` at `0` within `[0, ∞)`, in the sense of `HasAsymptoticExpansion`: for
-every `N` the remainder after `N` terms is `O(x^{-N-1})`. -/
-theorem hasAsymptoticExpansion_laplace_of_contDiffOn {q : ℝ → ℂ} {σ ε : ℝ} (hε : 0 < ε)
-    (hq : ContDiffOn ℝ ∞ q (Ico 0 ε))
+within `[0, ∞)` at `0`, and let `t ↦ e^{-σt} q(t)` be integrable on `(0, ∞)` for some real `σ`.
+Then `∫₀^∞ e^{-xt} q(t) dt ∼ ∑ q^{(s)}(0) x^{-s-1}` as `x → +∞`, where `q^{(s)}(0)` is the `s`th
+derivative of `q` at `0` within `[0, ∞)`, in the sense of `HasAsymptoticExpansion`: for every `N`
+the remainder after `N` terms is `O(x^{-N-1})`. The hypothesis holds when `q` is `C^∞` on
+`[0, ε)` for some `ε > 0`. -/
+theorem hasAsymptoticExpansion_laplace_of_contDiffWithinAt {q : ℝ → ℂ} {σ : ℝ}
+    (hq : ContDiffWithinAt ℝ ∞ q (Ici 0) 0)
     (hint : IntegrableOn (fun t => Real.exp (-σ * t) • q t) (Ioi 0)) :
     HasAsymptoticExpansion atTop (fun s (x : ℝ) => (x : ℂ) ^ (-((s : ℂ) + 1)))
       (fun s => iteratedDerivWithin s q (Ici 0) 0)
       fun x : ℝ => ∫ t in Ioi (0 : ℝ), cexp (-(x * t)) * q t := by
   set d : ℕ → ℂ := fun s => iteratedDerivWithin s q (Ici 0) 0
-  -- near `0` the sets `[0, ε)` and `[0, ∞)` agree, so they give the same derivatives at `0`
-  have hd (k : ℕ) : iteratedDerivWithin k q (Ico 0 ε) 0 = d k := by
-    have hset : Ico 0 ε =ᶠ[𝓝 (0 : ℝ)] Ici 0 := by
-      filter_upwards [Iio_mem_nhds hε] with t ht
-      exact ⟨fun (h : t ∈ Set.Ico 0 ε) => h.1, fun (h : t ∈ Set.Ici (0 : ℝ)) => ⟨h, ht⟩⟩
-    simp only [d, iteratedDerivWithin_eq_iteratedFDerivWithin,
-      iteratedFDerivWithin_congr_set hset]
-  have hle : 𝓝[>] (0 : ℝ) ≤ 𝓝[Ico 0 ε] 0 := by
-    rw [← nhdsWithin_Ioo_eq_nhdsGT hε]
-    exact nhdsWithin_mono _ Ioo_subset_Ico_self
+  have hle : 𝓝[>] (0 : ℝ) ≤ 𝓝[Ici 0] 0 := nhdsWithin_mono _ Ioi_subset_Ici_self
   -- Taylor's theorem: the remainder after `N` terms of the Taylor series is `O(t^N)` at `0+`
   have hT (N : ℕ) : (fun t : ℝ => q t - ∑ s ∈ range N, d s / s ! * (t : ℂ) ^ s)
       =O[𝓝[>] 0] fun t => t ^ N := by
     rcases N with _ | N
-    · simpa using ((hq.continuousOn _ (left_mem_Ico.2 hε)).tendsto.mono_left hle).isBigO_one ℝ
-    refine ((taylor_isBigO (convex_Ico 0 ε) (left_mem_Ico.2 hε) (n := N)
+    · simpa using (hq.continuousWithinAt.tendsto.mono_left hle).isBigO_one ℝ
+    refine ((taylor_isBigO (convex_Ici 0) self_mem_Ici (n := N)
       (hq.of_le (mod_cast le_top))).mono hle).congr (fun t => ?_) fun t => by simp
-    simp only [taylor_within_apply, hd, sub_zero, Complex.real_smul]
+    simp only [taylor_within_apply, d, sub_zero, Complex.real_smul]
     push_cast
     exact congrArg (q t - ·) (sum_congr rfl fun s _ => by ring)
   refine (hasAsymptoticExpansion_laplace (α := fun s => (s : ℂ) + 1) (c := fun s => d s / s !)
@@ -140,46 +132,55 @@ theorem hasAsymptoticExpansion_laplace_of_contDiffOn {q : ℝ → ℂ} {σ ε : 
     rw [Gamma_nat_eq_factorial, mul_div_cancel₀ _ hs]
 
 /-- **The error bound of integration by parts** (DLMF 2.3.3). Let `q` be `C^n` on `[0, ∞)` with
-`‖q^{(n)}(t)‖ ≤ M e^{σt}` for `t ≥ 0` (derivatives within `[0, ∞)`). Then for `x > 0` and
-`x > σ` the remainder after `n` terms of the expansion of
-`Asymptotics.hasAsymptoticExpansion_laplace_of_contDiffOn` is bounded by
-`‖∫₀^∞ e^{-xt} q(t) dt - ∑_{s<n} q^{(s)}(0) x^{-s-1}‖ ≤ M / (xⁿ (x - σ))`. DLMF's form is the
-case `M = ‖q^{(n)}(0)‖`, with `σ` the least admissible rate `σ_n`. -/
+`‖q^{(n)}(t)‖ ≤ M e^{σt}` for `t > 0` (derivatives within `[0, ∞)`). Then for `Re s > 0` and
+`Re s > σ` the remainder after `n` terms of the expansion of
+`Asymptotics.hasAsymptoticExpansion_laplace_of_contDiffWithinAt` is bounded by
+`‖∫₀^∞ e^{-st} q(t) dt - ∑_{k<n} s^{-k-1} q^{(k)}(0)‖ ≤ M / (|s|ⁿ (Re s - σ))`. DLMF's form is the
+case of real `s = x`, with `M = ‖q^{(n)}(0)‖` and `σ` the least admissible rate `σ_n`. -/
 theorem norm_integral_cexp_neg_mul_sub_sum_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] {q : ℝ → E} {n : ℕ} {σ M x : ℝ}
+    [NormedSpace ℂ E] [CompleteSpace E] {q : ℝ → E} {n : ℕ} {σ M : ℝ} {s : ℂ}
     (hq : ContDiffOn ℝ n q (Ici 0))
-    (hb : ∀ t ∈ Ici (0 : ℝ), ‖iteratedDerivWithin n q (Ici 0) t‖ ≤ M * Real.exp (σ * t))
-    (hx : 0 < x) (hσx : σ < x) :
-    ‖(∫ t in Ioi (0 : ℝ), cexp (-(x * t)) • q t) -
-        ∑ s ∈ range n, ((x : ℂ) ^ (s + 1))⁻¹ • iteratedDerivWithin s q (Ici 0) 0‖ ≤
-      M / (x ^ n * (x - σ)) := by
-  have hM : 0 ≤ M := by simpa using (norm_nonneg _).trans (hb 0 self_mem_Ici)
-  -- a common rate `α` with `max σ 0 < α < x` for the lower derivatives
-  obtain ⟨α, hσα, hα, hαx⟩ : ∃ α, σ ≤ α ∧ 0 < α ∧ α < x :=
-    ⟨(max σ 0 + x) / 2, by linarith [le_max_left σ 0, le_max_right σ 0], by positivity,
-      by linarith [max_lt hσx hx]⟩
+    (hb : ∀ t ∈ Ioi (0 : ℝ), ‖iteratedDerivWithin n q (Ici 0) t‖ ≤ M * Real.exp (σ * t))
+    (hs : 0 < s.re) (hσs : σ < s.re) :
+    ‖(∫ t in Ioi (0 : ℝ), cexp (-s * t) • q t) -
+        ∑ k ∈ range n, (s ^ (k + 1))⁻¹ • iteratedDerivWithin k q (Ici 0) 0‖ ≤
+      M / (‖s‖ ^ n * (s.re - σ)) := by
+  -- by continuity of `q^{(n)}` on `[0, ∞)`, the bound also holds at `t = 0`
+  have hb₀ : ∀ t ∈ Ici (0 : ℝ), ‖iteratedDerivWithin n q (Ici 0) t‖ ≤ M * Real.exp (σ * t) := by
+    intro t ht
+    rcases (mem_Ici.1 ht).eq_or_lt with rfl | ht
+    · exact ContinuousWithinAt.closure_le (by simp)
+        (((hq.continuousOn_iteratedDerivWithin le_rfl (uniqueDiffOn_Ici 0)) 0
+          self_mem_Ici).mono Ioi_subset_Ici_self).norm
+        (by fun_prop : Continuous fun t : ℝ => M * Real.exp (σ * t)).continuousWithinAt hb
+    · exact hb t ht
+  have hM : 0 ≤ M := by simpa using (norm_nonneg _).trans (hb₀ 0 self_mem_Ici)
+  -- a common rate `α` with `max σ 0 < α < Re s` for the lower derivatives
+  obtain ⟨α, hσα, hα, hαs⟩ : ∃ α, σ ≤ α ∧ 0 < α ∧ α < s.re :=
+    ⟨(max σ 0 + s.re) / 2, by linarith [le_max_left σ 0, le_max_right σ 0], by positivity,
+      by linarith [max_lt hσs hs]⟩
   have hb' : ∀ t ∈ Ici (0 : ℝ), ‖iteratedDerivWithin n q (Ici 0) t‖ ≤
-      M * Real.exp (α * (t - 0)) := fun t (ht : 0 ≤ t) => (hb t ht).trans (by
+      M * Real.exp (α * (t - 0)) := fun t (ht : 0 ≤ t) => (hb₀ t ht).trans (by
         rw [sub_zero]
         gcongr)
   have hint (k : ℕ) (hk : k ≤ n) : Integrable
-      (fun t : ℝ => cexp (-(x : ℂ) * t) • iteratedDerivWithin k q (Ici 0) t)
+      (fun t : ℝ => cexp (-s * t) • iteratedDerivWithin k q (Ici 0) t)
       (volume.restrict (Ioi 0)) := by
     obtain ⟨C, hC⟩ := hq.exists_norm_iteratedDerivWithin_le_mul_exp hα hb' hk
-    refine integrable_cexp_neg_mul_smul_of_norm_le_mul_exp
+    exact integrable_cexp_neg_mul_smul_of_norm_le_mul_exp
       (((hq.continuousOn_iteratedDerivWithin (mod_cast hk) (uniqueDiffOn_Ici 0)).mono
         Ioi_subset_Ici_self).aestronglyMeasurable measurableSet_Ioi)
-      (fun t (ht : 0 < t) => by simpa using hC t ht.le) (by simpa using hαx)
-  have hL := norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp (s := (x : ℂ))
-    (fun t (ht : 0 < t) => hb t ht.le) (by simpa using hσx)
-  simp_rw [← neg_mul]
-  rw [integral_cexp_neg_mul_smul_eq_sum_add (ofReal_ne_zero.2 hx.ne') hq hint,
-    add_sub_cancel_left, norm_smul, norm_inv, norm_pow, norm_real, Real.norm_of_nonneg hx.le]
-  calc (x ^ n)⁻¹ * ‖∫ t in Ioi (0 : ℝ), cexp (-(x : ℂ) * t) • iteratedDerivWithin n q (Ici 0) t‖
-      ≤ (x ^ n)⁻¹ * (M / (x - σ)) := by
-        gcongr
-        simpa using hL
-    _ = M / (x ^ n * (x - σ)) := by
-        rw [inv_mul_eq_div, div_div, mul_comm (x - σ)]
+      (ae_restrict_of_forall_mem measurableSet_Ioi fun t (ht : 0 < t) => by
+        simpa using hC t ht.le) hαs
+  have hL := norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp (c := 0)
+    (ae_restrict_of_forall_mem measurableSet_Ioi hb) hσs
+  rw [mul_zero, Real.exp_zero, mul_one] at hL
+  have hs₀ : s ≠ 0 := fun h => by simp [h] at hs
+  rw [integral_cexp_neg_mul_smul_eq_sum_add hs₀ hq hint, add_sub_cancel_left, norm_smul, norm_inv,
+    norm_pow]
+  calc (‖s‖ ^ n)⁻¹ * ‖∫ t in Ioi (0 : ℝ), cexp (-s * t) • iteratedDerivWithin n q (Ici 0) t‖
+      ≤ (‖s‖ ^ n)⁻¹ * (M / (s.re - σ)) := by gcongr
+    _ = M / (‖s‖ ^ n * (s.re - σ)) := by
+        rw [inv_mul_eq_div, div_div, mul_comm (s.re - σ)]
 
 end Asymptotics
