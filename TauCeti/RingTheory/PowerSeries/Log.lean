@@ -60,6 +60,7 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 * `PowerSeries.subst_exp_inj`: substitution into `exp` is injective on series without constant
   term.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
+* `PowerSeries.logOf_pow`: `log (f ^ m) = m • log f`.
 * `PowerSeries.logOf_rescale`, `PowerSeries.logOf_expand`: `log` commutes with rescaling and
   expansion.
 * `PowerSeries.map_logOf`, `PowerSeries.map_subst_exp`: the formal logarithm and substitution
@@ -251,6 +252,12 @@ theorem logOf_prod {ι : Type*} {s : Finset ι} {f : ι → A⟦X⟧}
       logOf_mul (hf a (Finset.mem_insert_self a s))
         (by rw [map_prod]; exact Finset.prod_eq_one hs),
       ih hs]
+
+/-- The formal logarithm turns powers into multiples: `log (f ^ m) = m • log f` when `f` has
+constant coefficient one. -/
+theorem logOf_pow {f : A⟦X⟧} (hf : constantCoeff f = 1) (m : ℕ) :
+    logOf (f ^ m) = m • logOf f := by
+  simpa using logOf_prod (s := Finset.range m) (f := fun _ ↦ f) fun _ _ ↦ hf
 
 /-- The formal logarithm commutes with rescaling when the constant coefficient is one. -/
 theorem logOf_rescale (q : A) {f : A⟦X⟧} (hf : constantCoeff f = 1) :
