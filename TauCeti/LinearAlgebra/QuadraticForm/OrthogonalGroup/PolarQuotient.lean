@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
+public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
 
@@ -57,10 +58,6 @@ theorem map_add_of_mem_ker_polarBilin (x : M) {y : M} (hy : y ∈ LinearMap.ker 
   rw [LinearMap.mem_ker] at hy
   rw [QuadraticMap.map_add (⇑Q), polar_comm, ← polarBilin_apply_apply, hy, LinearMap.zero_apply,
     add_zero]
-
-/-- The polar form of a quadratic map is reflexive. -/
-private theorem isRefl_polarBilin : (polarBilin Q).IsRefl := fun x y h ↦ by
-  rwa [polarBilin_apply_apply, polar_comm, ← polarBilin_apply_apply]
 
 /-- The polar form of `Q` on the quotient of `M` by the kernel of `polarBilin Q`: the class of `x`
 pairs with the class of `y` to `polar Q x y`. -/
