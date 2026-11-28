@@ -557,15 +557,15 @@ end AdicNormed
 
 section NormedPadicAlgebra
 
-variable {K : Type*} [NormedCommRing K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K]
-
-/-- Over an ultrametric normed commutative `ℚ_p`-algebra `K`, the coordinate of a weight is
-topologically nilpotent, without requiring an `Algebra ℤ_[p] K` instance. -/
-theorem tendsto_coord_pow_of_normedAlgebra (κ : WeightSpace p K) :
+/-- Over an ultrametric normed `ℚ_p`-algebra `K`, the coordinate of a weight is topologically
+nilpotent, without requiring an `Algebra ℤ_[p] K` instance. -/
+theorem tendsto_coord_pow_of_normedAlgebra {K : Type*} [NormedRing K] [NormedAlgebra ℚ_[p] K]
+    [IsUltrametricDist K] (κ : WeightSpace p K) :
     Tendsto (κ.coord ^ ·) atTop (𝓝 0) :=
   letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K; κ.tendsto_coord_pow
 
-variable [CompleteSpace K]
+variable {K : Type*} [NormedCommRing K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K]
+  [CompleteSpace K]
 
 /-- **Universal property of weights in a complete ultrametric normed `ℚ_p`-algebra.** -/
 theorem existsUnique_character_of_tendsto_pow_of_normedAlgebra

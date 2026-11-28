@@ -147,16 +147,17 @@ theorem padicUnitsCoordinateAt_apply (u : ℤ_[p]ˣ)
         (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) (u : ℤ_[p]) - 1)) := by
   let R := MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ
   let g : PowerSeries R := PowerSeries.binomialSeries R (u : ℤ_[p]) - 1
-  have hC (r : R) : padicUnitsCoordinateAt p u (PowerSeries.C r) =
-      padicUnitsCoordinate p (PowerSeries.C r) := by
-    induction r using MonoidAlgebra.induction_linear with
-    | zero => simp
-    | add x y hx hy => simp [map_add, hx, hy]
-    | single δ a => rw [padicUnitsCoordinateAt_C_single, padicUnitsCoordinate_C_single]
+  let ιC : R →ₐ[ℤ_[p]] PowerSeries R :=
+    { toRingHom := PowerSeries.C
+      commutes' a := by simp [PowerSeries.algebraMap_apply] }
+  have hC : (padicUnitsCoordinateAt p u).toAlgHom.comp ιC =
+      (padicUnitsCoordinate p).toAlgHom.comp ιC := by
+    refine MonoidAlgebra.algHom_ext (fun δ ↦ ?_) (Subsingleton.elim _ _)
+    simp [ιC, R]
   let σ : PowerSeries R →ₐ[R] PowerSeries R :=
     { ((padicUnitsCoordinate p).symm.toRingEquiv.toRingHom).comp
         (padicUnitsCoordinateAt p u).toRingEquiv.toRingHom with
-      commutes' r := (padicUnitsCoordinate p).symm_apply_eq.mpr (hC r) }
+      commutes' r := (padicUnitsCoordinate p).symm_apply_eq.mpr (AlgHom.congr_fun hC r) }
   have hσX : σ PowerSeries.X = g := by
     simp [σ, g, R, AlgEquiv.symm_apply_eq, padicUnitsCoordinate_binomialSeries]
   have hg : PowerSeries.HasSubst (σ PowerSeries.X) :=

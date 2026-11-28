@@ -674,18 +674,21 @@ open Filter Topology in
 open scoped PowerSeries.WithPiTopology in
 /-- Substituting a substitutable series `b` before evaluating via `evalAtAlgHom` at a
 topologically nilpotent element `t` agrees with evaluating at `evalAtAlgHom ... b`. -/
-theorem evalAtAlgHom_subst {A R : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+theorem evalAtAlgHom_subst {A R : Type*} [CommRing A]
     [NormedRing R] [Algebra A R] [IsUltrametricDist R] [CompleteSpace R]
-    (hAc : Continuous (algebraMap A R)) {C : ℝ} (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {C : ℝ} (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
     {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) {b : A⟦X⟧} (hb : HasSubst b) (f : A⟦X⟧) :
-    evalAtAlgHom hAc hA ht (f.subst b) =
-      evalAtAlgHom hAc hA (tendsto_evalAtAlgHom_pow hAc hA ht hb) f := by
+    evalAtAlgHom hA ht (f.subst b) =
+      evalAtAlgHom hA (tendsto_evalAtAlgHom_pow hA ht hb) f := by
+  let : TopologicalSpace A := ⊥
+  have : DiscreteTopology A := ⟨rfl⟩
   simpa [coe_substAlgHom] using AlgHom.congr_fun (WithPiTopology.algHom_ext
-    (φ := (evalAtAlgHom hAc hA ht).comp (substAlgHom hb))
-    (ψ := evalAtAlgHom hAc hA (tendsto_evalAtAlgHom_pow hAc hA ht hb))
-    (((continuous_evalAtAlgHom hAc hA ht).comp (hb.continuous_subst (A := A))).congr fun _ ↦
-      by simp [coe_substAlgHom])
-    (continuous_evalAtAlgHom hAc hA (tendsto_evalAtAlgHom_pow hAc hA ht hb))
+    (φ := (evalAtAlgHom hA ht).comp (substAlgHom hb))
+    (ψ := evalAtAlgHom hA (tendsto_evalAtAlgHom_pow hA ht hb))
+    (((continuous_evalAtAlgHom continuous_of_discreteTopology hA ht).comp
+      (hb.continuous_subst (A := A))).congr fun _ ↦ by simp [coe_substAlgHom])
+    (continuous_evalAtAlgHom continuous_of_discreteTopology hA
+      (tendsto_evalAtAlgHom_pow hA ht hb))
     (fun a ↦ by simp [C_eq_algebraMap]) (by simp [coe_substAlgHom, subst_X hb])) f
 
 end PowerSeries

@@ -114,7 +114,7 @@ theorem summable_coeff_smul_pow {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0))
 ultrametric normed `ℤ_p`-algebra `R` with contractive scalar action. -/
 noncomputable def padicPowerSeriesEval {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
     PowerSeries ℤ_[p] →ₐ[ℤ_[p]] R :=
-  PowerSeries.evalAtAlgHom (continuous_algebraMap_padicInt p) (norm_algebraMap_padicInt_le p) ht
+  PowerSeries.evalAtAlgHom (norm_algebraMap_padicInt_le p) ht
 
 theorem padicPowerSeriesEval_apply {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0))
     (φ : PowerSeries ℤ_[p]) : padicPowerSeriesEval p ht φ = φ.evalAt t :=
@@ -122,26 +122,24 @@ theorem padicPowerSeriesEval_apply {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)
 theorem hasSum_padicPowerSeriesEval {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0))
     (φ : PowerSeries ℤ_[p]) :
     HasSum (fun n : ℕ ↦ φ.coeff n • t ^ n) (padicPowerSeriesEval p ht φ) :=
-  PowerSeries.hasSum_evalAtAlgHom (continuous_algebraMap_padicInt p)
-    (norm_algebraMap_padicInt_le p) ht φ
+  PowerSeries.hasSum_evalAtAlgHom (norm_algebraMap_padicInt_le p) ht φ
 theorem continuous_padicPowerSeriesEval {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
     Continuous (padicPowerSeriesEval p ht) :=
   PowerSeries.continuous_evalAtAlgHom (continuous_algebraMap_padicInt p)
     (norm_algebraMap_padicInt_le p) ht
 @[simp] theorem padicPowerSeriesEval_X {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
     padicPowerSeriesEval p ht PowerSeries.X = t :=
-  PowerSeries.evalAtAlgHom_X (continuous_algebraMap_padicInt p) (norm_algebraMap_padicInt_le p) ht
+  PowerSeries.evalAtAlgHom_X (norm_algebraMap_padicInt_le p) ht
 @[simp] theorem padicPowerSeriesEval_C {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) (a : ℤ_[p]) :
     padicPowerSeriesEval p ht (PowerSeries.C a) = algebraMap ℤ_[p] R a :=
-  PowerSeries.evalAtAlgHom_C (continuous_algebraMap_padicInt p) (norm_algebraMap_padicInt_le p) ht a
+  PowerSeries.evalAtAlgHom_C (norm_algebraMap_padicInt_le p) ht a
 
 /-- Evaluating a substitutable power series `b ∈ ℤ_p⟦X⟧` at a topologically nilpotent element `t`
 produces a topologically nilpotent element. -/
 theorem tendsto_padicPowerSeriesEval_pow {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0))
     {b : PowerSeries ℤ_[p]} (hb : PowerSeries.HasSubst b) :
     Tendsto ((padicPowerSeriesEval p ht b) ^ ·) atTop (𝓝 0) :=
-  PowerSeries.tendsto_evalAtAlgHom_pow (continuous_algebraMap_padicInt p)
-    (norm_algebraMap_padicInt_le p) ht hb
+  PowerSeries.tendsto_evalAtAlgHom_pow (norm_algebraMap_padicInt_le p) ht hb
 
 /-- Substituting `b` (`PowerSeries.HasSubst b`) before evaluating at `t` equals evaluating at
 `padicPowerSeriesEval p ht b` (which is automatically topologically nilpotent). -/
@@ -149,8 +147,7 @@ theorem padicPowerSeriesEval_subst {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)
     {b : PowerSeries ℤ_[p]} (hb : PowerSeries.HasSubst b) (φ : PowerSeries ℤ_[p]) :
     padicPowerSeriesEval p ht (φ.subst b) =
       padicPowerSeriesEval p (tendsto_padicPowerSeriesEval_pow p ht hb) φ :=
-  PowerSeries.evalAtAlgHom_subst (continuous_algebraMap_padicInt p)
-    (norm_algebraMap_padicInt_le p) ht hb φ
+  PowerSeries.evalAtAlgHom_subst (norm_algebraMap_padicInt_le p) ht hb φ
 
 end PadicPowerSeriesEval
 

@@ -88,9 +88,12 @@ variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDis
       (continuous_completedGroupAlgebraEquiv_symm_weak (Γ := ℤ_[p]ˣ))).congr fun z ↦ by
         simp [Φ, measureFun_apply]
   have heq := κ.eq_specializeRingHom_of_continuous hΦ_cont fun x ↦ by simp [Φ]
-  rw [← completedGroupAlgebraEquiv_apply]
-  simpa [Φ, -completedGroupAlgebraEquiv_apply] using
-    (RingHom.congr_fun heq (completedGroupAlgebraEquiv ν)).symm
+  have hval := RingHom.congr_fun heq (toCompletedGroupAlgebra ν)
+  dsimp only [Φ] at hval
+  rw [RingHom.comp_apply, Pi.evalRingHom_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
+    completedGroupAlgebraEquiv_symm_toCompletedGroupAlgebra] at hval
+  exact hval.symm
 
 /-- Every field-valued weight specialisation takes values in the closed unit ball of `K`. -/
 theorem WeightSpace.norm_specializeRingHom_le_one (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ)
@@ -125,11 +128,15 @@ theorem completedMeasureFun_comp_toCompletedGroupAlgebra :
 variable (K) in
 /-- **`K`-valued weights separate elements of `ℤ_p[[ℤ_pˣ]]`.** -/
 theorem completedMeasureFun_injective :
-    Function.Injective (completedMeasureFun (p := p) K) := fun x y hxy ↦
-  (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm.injective <|
-    measureFun_injective K <| by
-      simpa [← completedMeasureFun_toCompletedGroupAlgebra,
-        ← completedGroupAlgebraEquiv_apply] using hxy
+    Function.Injective (completedMeasureFun (p := p) K) := by
+  intro x y hxy
+  refine (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm.injective
+    (measureFun_injective K ?_)
+  rw [← completedMeasureFun_toCompletedGroupAlgebra,
+    ← completedMeasureFun_toCompletedGroupAlgebra,
+    toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm,
+    toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm]
+  exact hxy
 
 end MeasureFunComparison
 
