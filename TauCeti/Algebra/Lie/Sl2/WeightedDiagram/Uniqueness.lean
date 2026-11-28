@@ -31,12 +31,12 @@ proves the complementary uniqueness statements:
 2. **Passage from the nilpositive element to the neutral element.** For `sl₂` triples
    `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` whose neutral elements lie in
    `RootPairing.Base.dominantNeutralElements b`, any Lie algebra automorphism `φ : L ≃ₗ⁅K⁆ L`
-   carrying `e₁` to `e₂` and preserving `S(L*)^L` forces `h₁ = h₂`
-   (`IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`): Kostant's conjugacy
-   theorem conjugates `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` by an element of
-   `expAdSubgroup K e₂ ≤ Int(L)`, which also preserves `S(L*)^L`, so `h₁` and `h₂` agree on
-   `S(L*)^L`. In particular, each `Int(L)`-orbit of neutral elements meets
-   `b.dominantNeutralElements` in a unique point
+   carrying `e₁` to `e₂` and fixing every invariant polynomial in `S(L*)^L` under pullback forces
+   `h₁ = h₂` (`IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`): Kostant's
+   conjugacy theorem conjugates `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` by an element of
+   `expAdSubgroup K e₂ ≤ Int(L)`, which also fixes every invariant polynomial in `S(L*)^L` under
+   pullback, so `h₁` and `h₂` agree on `S(L*)^L`. In particular, each `Int(L)`-orbit of neutral
+   elements meets `b.dominantNeutralElements` in a unique point
    (`RootPairing.Base.injOn_orbit_dominantNeutralElements`), so these orbits are exactly as many
    as the dominant neutral elements, and the weighted Dynkin diagram depends only on the
    `Int(L)`-orbit of the nilpositive element. Combined with Jacobson–Morozov, every nonzero
@@ -51,8 +51,9 @@ proves the complementary uniqueness statements:
   `RootPairing.Base.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral
   elements have disjoint `Int(L)`-orbits, so the number of `Int(L)`-orbits of neutral elements
   equals `b.dominantNeutralElements.ncard`.
-* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
-  automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂`.
+* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: a Lie automorphism
+  carrying `e₁` to `e₂` and fixing every invariant polynomial in `S(L*)^L` under pullback
+  identifies the dominant neutral elements `h₁` and `h₂`.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
   `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`: `Int(L)`-conjugate
   nilpositive elements share the same dominant neutral element and weighted Dynkin diagram.
