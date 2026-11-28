@@ -127,25 +127,6 @@ private lemma iCycles_restrictionDownICyclesRetraction (K : CochainComplex C ℤ
     ComplexShape.surjective_embeddingDownIntUpInt_f i (-i)
     (ComplexShape.embeddingDownIntUpInt_f i) (retraction (K.iCycles (-i))) (IsSplitMono.id _)
 
-/-- Transport a naturality square across a three-factor `LinearMap` composition. -/
-private lemma linearMap_comp_three_naturality {R : Type*} [Semiring R]
-    {A₁ A₂ B₁ B₂ C₁ C₂ D₁ D₂ : Type*}
-    [AddCommMonoid A₁] [AddCommMonoid A₂] [AddCommMonoid B₁] [AddCommMonoid B₂]
-    [AddCommMonoid C₁] [AddCommMonoid C₂] [AddCommMonoid D₁] [AddCommMonoid D₂]
-    [Module R A₁] [Module R A₂] [Module R B₁] [Module R B₂]
-    [Module R C₁] [Module R C₂] [Module R D₁] [Module R D₂]
-    {a₁ : A₁ →ₗ[R] B₁} {m₁ : B₁ →ₗ[R] C₁} {c₁ : C₁ →ₗ[R] D₁}
-    {a₂ : A₂ →ₗ[R] B₂} {m₂ : B₂ →ₗ[R] C₂} {c₂ : C₂ →ₗ[R] D₂}
-    {v₀ : A₁ →ₗ[R] A₂} {v₁ : B₁ →ₗ[R] B₂} {v₂ : C₁ →ₗ[R] C₂} {v₃ : D₁ →ₗ[R] D₂}
-    (ha : v₁ ∘ₗ a₁ = a₂ ∘ₗ v₀) (hm : v₂ ∘ₗ m₁ = m₂ ∘ₗ v₁) (hc : v₃ ∘ₗ c₁ = c₂ ∘ₗ v₂) :
-    v₃ ∘ₗ (c₁ ∘ₗ m₁ ∘ₗ a₁) = (c₂ ∘ₗ m₂ ∘ₗ a₂) ∘ₗ v₀ := by
-  calc
-    v₃ ∘ₗ (c₁ ∘ₗ m₁ ∘ₗ a₁)
-      = (v₃ ∘ₗ c₁) ∘ₗ m₁ ∘ₗ a₁ := by simp only [LinearMap.comp_assoc]
-    _ = c₂ ∘ₗ (v₂ ∘ₗ m₁) ∘ₗ a₁ := by rw [hc]; simp only [LinearMap.comp_assoc]
-    _ = c₂ ∘ₗ m₂ ∘ₗ (v₁ ∘ₗ a₁) := by rw [hm]; simp only [LinearMap.comp_assoc]
-    _ = (c₂ ∘ₗ m₂ ∘ₗ a₂) ∘ₗ v₀ := by rw [ha]; simp only [LinearMap.comp_assoc]
-
 private lemma projective_restriction_cycles_sub_one (K : CochainComplex C ℤ) (i : ℤ)
     [Projective (K.cycles (1 - i))] :
     Projective ((K.restriction ComplexShape.embeddingDownIntUpInt).cycles (i - 1)) :=
@@ -195,13 +176,6 @@ def linearHomComplexSingleKronecker (i : ℤ) :
   (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y)).toLinearMap ∘ₗ
     TauCeti.ChainComplex.kronecker k _ Y i ∘ₗ
     (linearHomComplexSingleHomologyIso k K Y i).toLinearEquiv.toLinearMap
-
-private lemma linearHomComplexSingleKronecker_eq (i : ℤ) :
-    linearHomComplexSingleKronecker k K Y i =
-      (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y)).toLinearMap ∘ₗ
-        TauCeti.ChainComplex.kronecker k _ Y i ∘ₗ
-        (linearHomComplexSingleHomologyIso k K Y i).hom.hom := by
-  rw [linearHomComplexSingleKronecker, CategoryTheory.Iso.toLinearMap_toLinearEquiv]
 
 /-- **The Kronecker map on classes**: evaluating the class of a cocycle `φ` of `Hom(K, Y[0])` of
 degree `i` on the class of a cocycle of `K` of degree `-i` is evaluating the morphism
@@ -262,44 +236,68 @@ private lemma linearHomComplexSingleKronecker_naturality_hom {K₁ K₂ : Cochai
         ModuleCat.ofHom (linearHomComplexSingleKronecker k K₁ Y i) =
       ModuleCat.ofHom (linearHomComplexSingleKronecker k K₂ Y i) ≫
         ModuleCat.ofHom (Linear.leftComp k Y (homologyMap φ (-i))) := by
-  refine ModuleCat.hom_ext ?_
-  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, linearHomComplexSingleKronecker_eq]
   -- Transport naturality along homology comparison, chain Kronecker, and homCongr.
-  have h1 := congrArg ModuleCat.Hom.hom
-    (homologyMap_precomp_linearHomComplexSingleHomologyIso_hom (k := k) φ Y i).symm
-  simp only [ModuleCat.hom_comp] at h1
-  have h2 : Linear.leftComp k Y (homologyMap
-        (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt) i) ∘ₗ
-      TauCeti.ChainComplex.kronecker k _ Y i =
-      TauCeti.ChainComplex.kronecker k _ Y i ∘ₗ
-        (homologyMap
-          (K := _root_.ChainComplex.linearYonedaObj
-            (K₂.restriction ComplexShape.embeddingDownIntUpInt) k Y)
-          (L := _root_.ChainComplex.linearYonedaObj
-            (K₁.restriction ComplexShape.embeddingDownIntUpInt) k Y)
-          ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map
-            (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op)
-          i).hom :=
-    LinearMap.ext fun x ↦ (TauCeti.ChainComplex.kronecker_naturality _ i x).symm
-  have h3 :
-      Linear.leftComp k Y (homologyMap φ (-i)) ∘ₗ
-        (Linear.homCongr k (restrictionDownHomologyIso K₂ i) (Iso.refl Y)).toLinearMap =
-      (Linear.homCongr k (restrictionDownHomologyIso K₁ i) (Iso.refl Y)).toLinearMap ∘ₗ
-        Linear.leftComp k Y (homologyMap
-          (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt) i) := by
-    ext g
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-      Linear.leftComp_apply, Linear.homCongr_apply, Iso.refl_hom, Category.comp_id]
-    have hinv : homologyMap φ (-i) ≫ (K₂.restrictionDownHomologyIso i).inv =
-        (K₁.restrictionDownHomologyIso i).inv ≫
-          homologyMap (HomologicalComplex.restrictionMap φ
-            ComplexShape.embeddingDownIntUpInt) i := by
-      dsimp only [restrictionDownHomologyIso]
-      rw [Iso.comp_inv_eq, Category.assoc,
-        homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom,
-        Iso.inv_hom_id_assoc]
-    rw [← Category.assoc, hinv, Category.assoc]
-  exact (linearMap_comp_three_naturality h1 h2 h3).symm
+  have sq1 : CommSq
+      (linearHomComplexSingleHomologyIso k K₂ Y i).hom
+      (homologyMap (linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y)) i)
+      (homologyMap
+        (K := _root_.ChainComplex.linearYonedaObj
+          (K₂.restriction ComplexShape.embeddingDownIntUpInt) k Y)
+        (L := _root_.ChainComplex.linearYonedaObj
+          (K₁.restriction ComplexShape.embeddingDownIntUpInt) k Y)
+        ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map
+          (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op) i)
+      (linearHomComplexSingleHomologyIso k K₁ Y i).hom :=
+    ⟨(homologyMap_precomp_linearHomComplexSingleHomologyIso_hom (k := k) φ Y i).symm⟩
+  have sq2 : CommSq
+      (ModuleCat.homEquiv.symm (TauCeti.ChainComplex.kronecker k
+        (K₂.restriction ComplexShape.embeddingDownIntUpInt) Y i))
+      (homologyMap
+        (K := _root_.ChainComplex.linearYonedaObj
+          (K₂.restriction ComplexShape.embeddingDownIntUpInt) k Y)
+        (L := _root_.ChainComplex.linearYonedaObj
+          (K₁.restriction ComplexShape.embeddingDownIntUpInt) k Y)
+        ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map
+          (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op) i)
+      (ModuleCat.ofHom (Linear.leftComp k Y (homologyMap
+        (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt) i)))
+      (ModuleCat.homEquiv.symm (TauCeti.ChainComplex.kronecker k
+        (K₁.restriction ComplexShape.embeddingDownIntUpInt) Y i)) :=
+    ⟨by ext x; exact (TauCeti.ChainComplex.kronecker_naturality _ i x).symm⟩
+  have sq3 : CommSq
+      (ModuleCat.ofHom
+        (Linear.homCongr k (restrictionDownHomologyIso K₂ i) (Iso.refl Y)).toLinearMap)
+      (ModuleCat.ofHom (Linear.leftComp k Y (homologyMap
+        (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt) i)))
+      (ModuleCat.ofHom (Linear.leftComp k Y (homologyMap φ (-i))))
+      (ModuleCat.ofHom
+        (Linear.homCongr k (restrictionDownHomologyIso K₁ i) (Iso.refl Y)).toLinearMap) :=
+    ⟨by
+      ext g
+      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp, LinearEquiv.coe_coe,
+        Function.comp_apply, Linear.leftComp_apply, Linear.homCongr_apply, Iso.refl_hom,
+        Category.comp_id]
+      have hinv : homologyMap φ (-i) ≫ (K₂.restrictionDownHomologyIso i).inv =
+          (K₁.restrictionDownHomologyIso i).inv ≫
+            homologyMap (HomologicalComplex.restrictionMap φ
+              ComplexShape.embeddingDownIntUpInt) i := by
+        dsimp only [restrictionDownHomologyIso]
+        rw [Iso.comp_inv_eq, Category.assoc,
+          homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom,
+          Iso.inv_hom_id_assoc]
+      rw [← Category.assoc, hinv, Category.assoc]⟩
+  refine ModuleCat.hom_ext ?_
+  have hcomp :
+      (homologyMap (linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y)) i ≫
+          ModuleCat.ofHom (linearHomComplexSingleKronecker k K₁ Y i)).hom =
+        linearHomComplexSingleKronecker k K₁ Y i ∘ₗ
+          (homologyMap (linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y)) i).hom := rfl
+  rw [hcomp]
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, linearHomComplexSingleKronecker,
+    Iso.toLinearMap_toLinearEquiv]
+  have hw := congrArg ModuleCat.Hom.hom ((sq1.horiz_comp sq2).horiz_comp sq3).w.symm
+  simpa only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, ModuleCat.homEquiv, Equiv.coe_fn_symm_mk,
+    LinearMap.comp_assoc] using hw
 
 /-- **Naturality of `linearHomComplexSingleKronecker` in the complex**: pulling back along
 `φ : K₁ ⟶ K₂` and evaluating on cohomology is pushing cohomology forward along `φ` and
@@ -317,25 +315,45 @@ private lemma linearHomComplexSingleKronecker_coefficient_naturality_hom {Y₁ Y
         ModuleCat.ofHom (linearHomComplexSingleKronecker k K Y₂ i) =
       ModuleCat.ofHom (linearHomComplexSingleKronecker k K Y₁ i) ≫
         ModuleCat.ofHom (Linear.rightComp k (K.homology (-i)) g) := by
-  refine ModuleCat.hom_ext ?_
-  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, linearHomComplexSingleKronecker_eq]
   -- Transport naturality along homology comparison, chain Kronecker, and homCongr.
-  have h1 := congrArg ModuleCat.Hom.hom
-    (homologyMap_postcomp_linearHomComplexSingleHomologyIso_hom (k := k) K g i).symm
-  simp only [ModuleCat.hom_comp] at h1
-  have h2 : Linear.rightComp k _ g ∘ₗ TauCeti.ChainComplex.kronecker k _ Y₁ i =
-      TauCeti.ChainComplex.kronecker k _ Y₂ i ∘ₗ
-        (homologyMap (_root_.ChainComplex.linearYonedaObjMap k
-          (K.restriction ComplexShape.embeddingDownIntUpInt) g) i).hom :=
-    LinearMap.ext fun x ↦ (TauCeti.ChainComplex.kronecker_coefficient_naturality g i x).symm
-  have h3 :
-      Linear.rightComp k (K.homology (-i)) g ∘ₗ
-        (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₁)).toLinearMap =
-      (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₂)).toLinearMap ∘ₗ
-        Linear.rightComp k _ g := by
-    ext f
-    simp [Linear.homCongr_apply, Linear.rightComp_apply, Category.assoc]
-  exact (linearMap_comp_three_naturality h1 h2 h3).symm
+  have sq1 : CommSq
+      (linearHomComplexSingleHomologyIso k K Y₁ i).hom
+      (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map g)) i)
+      (homologyMap (_root_.ChainComplex.linearYonedaObjMap k
+        (K.restriction ComplexShape.embeddingDownIntUpInt) g) i)
+      (linearHomComplexSingleHomologyIso k K Y₂ i).hom :=
+    ⟨(homologyMap_postcomp_linearHomComplexSingleHomologyIso_hom (k := k) K g i).symm⟩
+  have sq2 : CommSq
+      (ModuleCat.homEquiv.symm (TauCeti.ChainComplex.kronecker k
+        (K.restriction ComplexShape.embeddingDownIntUpInt) Y₁ i))
+      (homologyMap (_root_.ChainComplex.linearYonedaObjMap k
+        (K.restriction ComplexShape.embeddingDownIntUpInt) g) i)
+      (ModuleCat.ofHom (Linear.rightComp k
+        ((K.restriction ComplexShape.embeddingDownIntUpInt).homology i) g))
+      (ModuleCat.homEquiv.symm (TauCeti.ChainComplex.kronecker k
+        (K.restriction ComplexShape.embeddingDownIntUpInt) Y₂ i)) :=
+    ⟨by ext x; exact (TauCeti.ChainComplex.kronecker_coefficient_naturality g i x).symm⟩
+  have sq3 : CommSq
+      (ModuleCat.ofHom
+        (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₁)).toLinearMap)
+      (ModuleCat.ofHom (Linear.rightComp k
+        ((K.restriction ComplexShape.embeddingDownIntUpInt).homology i) g))
+      (ModuleCat.ofHom (Linear.rightComp k (K.homology (-i)) g))
+      (ModuleCat.ofHom
+        (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₂)).toLinearMap) :=
+    ⟨by ext f; simp [Linear.homCongr_apply, Linear.rightComp_apply, Category.assoc]⟩
+  refine ModuleCat.hom_ext ?_
+  have hcomp :
+      (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map g)) i ≫
+          ModuleCat.ofHom (linearHomComplexSingleKronecker k K Y₂ i)).hom =
+        linearHomComplexSingleKronecker k K Y₂ i ∘ₗ
+          (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map g)) i).hom := rfl
+  rw [hcomp]
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, linearHomComplexSingleKronecker,
+    Iso.toLinearMap_toLinearEquiv]
+  have hw := congrArg ModuleCat.Hom.hom ((sq1.horiz_comp sq2).horiz_comp sq3).w.symm
+  simpa only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, ModuleCat.homEquiv, Equiv.coe_fn_symm_mk,
+    LinearMap.comp_assoc] using hw
 
 /-- **Naturality of `linearHomComplexSingleKronecker` in the coefficient object**: postcomposing
 with `g : Y₁ ⟶ Y₂` commutes with `linearHomComplexSingleKronecker`. -/
@@ -409,17 +427,6 @@ def linearHomComplexSingleKroneckerSection (i : ℤ) [IsSplitMono (K.iCycles (-i
       (iCycles_restrictionDownICyclesRetraction K i) ∘ₗ
     (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y)).symm.toLinearMap
 
-private lemma linearHomComplexSingleKroneckerSection_eq (i : ℤ) [IsSplitMono (K.iCycles (-i))] :
-    linearHomComplexSingleKroneckerSection k K Y i =
-      (linearHomComplexSingleHomologyIso k K Y i).inv.hom ∘ₗ
-        TauCeti.ChainComplex.kroneckerSectionOfRetraction k
-          (K.restriction ComplexShape.embeddingDownIntUpInt) Y i
-          (restrictionDownICyclesRetraction K i)
-          (iCycles_restrictionDownICyclesRetraction K i) ∘ₗ
-        (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y)).symm.toLinearMap := by
-  rw [linearHomComplexSingleKroneckerSection, CategoryTheory.Iso.toLinearMap_toLinearEquiv,
-    Iso.symm_hom]
-
 /-- `linearHomComplexSingleKroneckerSection k K Y i g` is the cohomology class of any cocycle with
 underlying morphism `retraction (K.iCycles (-i)) ≫ K.homologyπ (-i) ≫ g`. -/
 lemma linearHomComplexSingleKroneckerSection_apply (i : ℤ) [IsSplitMono (K.iCycles (-i))]
@@ -484,35 +491,46 @@ private lemma linearHomComplexSingleKroneckerSection_coefficient_naturality_hom 
         homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map h)) i =
       ModuleCat.ofHom (Linear.rightComp k (K.homology (-i)) h) ≫
         ModuleCat.ofHom (linearHomComplexSingleKroneckerSection k K Y₂ i) := by
-  refine ModuleCat.hom_ext ?_
-  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, linearHomComplexSingleKroneckerSection_eq]
   -- Transport naturality along homCongr.symm, chain kroneckerSection, and homology comparison.
-  have h1 :
-      Linear.rightComp k ((K.restriction ComplexShape.embeddingDownIntUpInt).homology i) h ∘ₗ
-        (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₁)).symm.toLinearMap =
-      (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₂)).symm.toLinearMap ∘ₗ
-        Linear.rightComp k (K.homology (-i)) h := by
-    ext g
-    simp [Linear.homCongr_symm_apply, Linear.rightComp_apply, Category.assoc]
-  have h2 :
+  have sq1 : CommSq
+      (ModuleCat.ofHom
+        (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₁)).symm.toLinearMap)
+      (ModuleCat.ofHom (Linear.rightComp k (K.homology (-i)) h))
+      (ModuleCat.ofHom (Linear.rightComp k
+        ((K.restriction ComplexShape.embeddingDownIntUpInt).homology i) h))
+      (ModuleCat.ofHom
+        (Linear.homCongr k (restrictionDownHomologyIso K i) (Iso.refl Y₂)).symm.toLinearMap) :=
+    ⟨by ext g; simp [Linear.homCongr_symm_apply, Linear.rightComp_apply, Category.assoc]⟩
+  have sq2 : CommSq
+      (ModuleCat.homEquiv.symm (TauCeti.ChainComplex.kroneckerSectionOfRetraction k
+        (K.restriction ComplexShape.embeddingDownIntUpInt) Y₁ i
+        (restrictionDownICyclesRetraction K i)
+        (iCycles_restrictionDownICyclesRetraction K i)))
+      (ModuleCat.ofHom (Linear.rightComp k
+        ((K.restriction ComplexShape.embeddingDownIntUpInt).homology i) h))
       (homologyMap (_root_.ChainComplex.linearYonedaObjMap k
-          (K.restriction ComplexShape.embeddingDownIntUpInt) h) i).hom ∘ₗ
-        TauCeti.ChainComplex.kroneckerSectionOfRetraction k
-          (K.restriction ComplexShape.embeddingDownIntUpInt) Y₁ i
-          (restrictionDownICyclesRetraction K i)
-          (iCycles_restrictionDownICyclesRetraction K i) =
-      TauCeti.ChainComplex.kroneckerSectionOfRetraction k
-          (K.restriction ComplexShape.embeddingDownIntUpInt) Y₂ i
-          (restrictionDownICyclesRetraction K i)
-          (iCycles_restrictionDownICyclesRetraction K i) ∘ₗ
-        Linear.rightComp k ((K.restriction ComplexShape.embeddingDownIntUpInt).homology i) h :=
-    LinearMap.ext fun g ↦
-      TauCeti.ChainComplex.kroneckerSectionOfRetraction_coefficient_naturality h i
-        (restrictionDownICyclesRetraction K i) (iCycles_restrictionDownICyclesRetraction K i) g
-  have h3 := congrArg ModuleCat.Hom.hom
-    (homologyMap_postcomp_linearHomComplexSingleHomologyIso_inv (k := k) K h i)
-  simp only [ModuleCat.hom_comp] at h3
-  exact linearMap_comp_three_naturality h1 h2 h3
+        (K.restriction ComplexShape.embeddingDownIntUpInt) h) i)
+      (ModuleCat.homEquiv.symm (TauCeti.ChainComplex.kroneckerSectionOfRetraction k
+        (K.restriction ComplexShape.embeddingDownIntUpInt) Y₂ i
+        (restrictionDownICyclesRetraction K i)
+        (iCycles_restrictionDownICyclesRetraction K i))) :=
+    ⟨by
+      ext g
+      exact TauCeti.ChainComplex.kroneckerSectionOfRetraction_coefficient_naturality h i
+        (restrictionDownICyclesRetraction K i) (iCycles_restrictionDownICyclesRetraction K i) g⟩
+  have sq3 : CommSq
+      (linearHomComplexSingleHomologyIso k K Y₁ i).inv
+      (homologyMap (_root_.ChainComplex.linearYonedaObjMap k
+        (K.restriction ComplexShape.embeddingDownIntUpInt) h) i)
+      (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map h)) i)
+      (linearHomComplexSingleHomologyIso k K Y₂ i).inv :=
+    ⟨homologyMap_postcomp_linearHomComplexSingleHomologyIso_inv (k := k) K h i⟩
+  refine ModuleCat.hom_ext ?_
+  rw [ModuleCat.hom_comp, ModuleCat.hom_comp]
+  have hw := congrArg ModuleCat.Hom.hom ((sq1.horiz_comp sq2).horiz_comp sq3).w
+  simpa only [linearHomComplexSingleKroneckerSection, Iso.toLinearMap_toLinearEquiv, Iso.symm_hom,
+    ModuleCat.hom_comp, ModuleCat.hom_ofHom, ModuleCat.homEquiv, Equiv.coe_fn_symm_mk,
+    LinearMap.comp_assoc] using hw
 
 /-- **Coefficient naturality of `linearHomComplexSingleKroneckerSection`**:
 `linearHomComplexSingleKroneckerSection` commutes with postcomposition by any morphism
@@ -547,16 +565,6 @@ def linearHomComplexSingleExtToHomology (i : ℤ) [Projective (K.cycles (1 - i))
     TauCeti.ChainComplex.extToHomology k _ Y i (i - 1) ∘ₗ
     (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K i).symm
       (Iso.refl Y) 1).toLinearMap
-
-private lemma linearHomComplexSingleExtToHomology_eq (i : ℤ) [Projective (K.cycles (1 - i))]
-    [IsSplitMono (K.iCycles (1 - i))] :
-    linearHomComplexSingleExtToHomology.{w} k K Y i =
-      (linearHomComplexSingleHomologyIso k K Y i).inv.hom ∘ₗ
-        TauCeti.ChainComplex.extToHomology k _ Y i (i - 1) ∘ₗ
-        (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K i).symm
-          (Iso.refl Y) 1).toLinearMap := by
-  rw [linearHomComplexSingleExtToHomology, CategoryTheory.Iso.toLinearMap_toLinearEquiv,
-    Iso.symm_hom]
 
 /-- Transporting an extension class of the kernel sequence of `K` in degree `1 - i` along
 `restrictionHomologyIsoOfSurjective` gives the corresponding extension class of the kernel sequence
@@ -698,54 +706,6 @@ lemma linearHomComplexSingleUniversalCoefficientEquiv_apply_snd (i : ℤ)
     TauCeti.ChainComplex.universalCoefficientEquivOfRetraction_apply_snd,
     LinearMap.comp_apply, LinearEquiv.coe_coe]
 
-private lemma linearHomComplexSingleExtToHomology_naturality_linearMap {K₁ K₂ : CochainComplex C ℤ}
-    (φ : K₁ ⟶ K₂) (i : ℤ) [Projective (K₁.cycles (1 - i))] [IsSplitMono (K₁.iCycles (1 - i))]
-    [Projective (K₂.cycles (1 - i))] [IsSplitMono (K₂.iCycles (1 - i))] :
-    linearHomComplexSingleExtToHomology.{w} k K₁ Y i ∘ₗ
-        ((Ext.mk₀ (homologyMap φ (1 - i))).precompOfLinear k Y (zero_add 1)) =
-      (homologyMap (linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y)) i).hom ∘ₗ
-        linearHomComplexSingleExtToHomology.{w} k K₂ Y i := by
-  rw [linearHomComplexSingleExtToHomology_eq, linearHomComplexSingleExtToHomology_eq]
-  -- Transport naturality along extLinearEquivOfIso, chain extToHomology, and homology comparison.
-  have h1 :
-      ((Ext.mk₀ (homologyMap
-          (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt)
-          (i - 1))).precompOfLinear k Y (zero_add 1)) ∘ₗ
-        (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K₂ i).symm
-          (Iso.refl Y) 1).toLinearMap =
-      (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K₁ i).symm
-          (Iso.refl Y) 1).toLinearMap ∘ₗ
-        ((Ext.mk₀ (homologyMap φ (1 - i))).precompOfLinear k Y (zero_add 1)) := by
-    ext e
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-      Ext.bilinearCompOfLinear_apply_apply, TauCeti.extLinearEquivOfIso_apply, Iso.symm_inv,
-      Iso.refl_hom, Ext.comp_mk₀_id]
-    rw [← Ext.comp_assoc _ _ _ (zero_add 0) (zero_add 1) (zero_add 1),
-      ← Ext.comp_assoc _ _ _ (zero_add 0) (zero_add 1) (zero_add 1),
-      Ext.mk₀_comp_mk₀, Ext.mk₀_comp_mk₀,
-      ← homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom
-        ComplexShape.embeddingDownIntUpInt ComplexShape.surjective_embeddingDownIntUpInt_f]
-  have h2 :
-      (homologyMap
-          (K := _root_.ChainComplex.linearYonedaObj
-            (K₂.restriction ComplexShape.embeddingDownIntUpInt) k Y)
-          (L := _root_.ChainComplex.linearYonedaObj
-            (K₁.restriction ComplexShape.embeddingDownIntUpInt) k Y)
-          ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map
-            (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op)
-          i).hom ∘ₗ
-        TauCeti.ChainComplex.extToHomology.{w} k _ Y i (i - 1) =
-      TauCeti.ChainComplex.extToHomology.{w} k _ Y i (i - 1) ∘ₗ
-        ((Ext.mk₀ (homologyMap
-          (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt)
-          (i - 1))).precompOfLinear k Y (zero_add 1)) :=
-    LinearMap.ext fun e ↦ (TauCeti.ChainComplex.extToHomology_naturality
-      (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt) i (i - 1) e).symm
-  have h3 := congrArg ModuleCat.Hom.hom
-    (homologyMap_precomp_linearHomComplexSingleHomologyIso_inv (k := k) φ Y i)
-  simp only [ModuleCat.hom_comp] at h3
-  exact (linearMap_comp_three_naturality h1 h2 h3).symm
-
 /-- **Naturality of `linearHomComplexSingleExtToHomology` in the complex**: pulling an extension
 back along `homologyMap φ (1 - i)` and including it into cohomology agrees with including first and
 pulling back along `linearHomComplexPrecomp k φ _`. -/
@@ -756,42 +716,30 @@ theorem linearHomComplexSingleExtToHomology_naturality {K₁ K₂ : CochainCompl
     linearHomComplexSingleExtToHomology.{w} k K₁ Y i
         ((Ext.mk₀ (homologyMap φ (1 - i))).comp e (zero_add 1)) =
       (homologyMap (linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y)) i).hom
-        (linearHomComplexSingleExtToHomology.{w} k K₂ Y i e) :=
-  LinearMap.congr_fun (linearHomComplexSingleExtToHomology_naturality_linearMap φ i) e
-
-private lemma linearHomComplexSingleExtToHomology_coefficient_naturality_linearMap
-    {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) (i : ℤ) [Projective (K.cycles (1 - i))]
-    [IsSplitMono (K.iCycles (1 - i))] :
-    linearHomComplexSingleExtToHomology.{w} k K Y₂ i ∘ₗ
-        ((Ext.mk₀ g).postcompOfLinear k _ (add_zero 1)) =
-      (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map g)) i).hom ∘ₗ
-        linearHomComplexSingleExtToHomology.{w} k K Y₁ i := by
-  rw [linearHomComplexSingleExtToHomology_eq, linearHomComplexSingleExtToHomology_eq]
-  -- Transport naturality along extLinearEquivOfIso, chain extToHomology, and homology comparison.
+        (linearHomComplexSingleExtToHomology.{w} k K₂ Y i e) := by
   have h1 :
-      ((Ext.mk₀ g).postcompOfLinear k _ (add_zero 1)) ∘ₗ
-        (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K i).symm
-          (Iso.refl Y₁) 1).toLinearMap =
-      (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K i).symm
-          (Iso.refl Y₂) 1).toLinearMap ∘ₗ
-        ((Ext.mk₀ g).postcompOfLinear k _ (add_zero 1)) := by
-    ext e
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe, LinearMap.flip_apply,
-      Ext.bilinearCompOfLinear_apply_apply, TauCeti.extLinearEquivOfIso_apply, Iso.symm_inv,
-      Iso.refl_hom, Ext.comp_mk₀_id]
-    exact Ext.comp_assoc _ _ _ (zero_add 1) (add_zero 1) (zero_add 1)
-  have h2 :
-      (homologyMap (_root_.ChainComplex.linearYonedaObjMap k
-          (K.restriction ComplexShape.embeddingDownIntUpInt) g) i).hom ∘ₗ
-        TauCeti.ChainComplex.extToHomology.{w} k _ Y₁ i (i - 1) =
-      TauCeti.ChainComplex.extToHomology.{w} k _ Y₂ i (i - 1) ∘ₗ
-        ((Ext.mk₀ g).postcompOfLinear k _ (add_zero 1)) :=
-    LinearMap.ext fun e ↦
-      (TauCeti.ChainComplex.extToHomology_coefficient_naturality g i (i - 1) e).symm
-  have h3 := congrArg ModuleCat.Hom.hom
-    (homologyMap_postcomp_linearHomComplexSingleHomologyIso_inv (k := k) K g i)
-  simp only [ModuleCat.hom_comp] at h3
-  exact (linearMap_comp_three_naturality h1 h2 h3).symm
+      TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K₁ i).symm (Iso.refl Y) 1
+          ((Ext.mk₀ (homologyMap φ (1 - i))).comp e (zero_add 1)) =
+        (Ext.mk₀ (homologyMap
+            (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt)
+            (i - 1))).comp
+          (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K₂ i).symm
+            (Iso.refl Y) 1 e) (zero_add 1) := by
+    simp only [TauCeti.extLinearEquivOfIso_apply, Iso.symm_inv, Iso.refl_hom, Ext.comp_mk₀_id]
+    rw [← Ext.comp_assoc _ _ _ (zero_add 0) (zero_add 1) (zero_add 1),
+      ← Ext.comp_assoc _ _ _ (zero_add 0) (zero_add 1) (zero_add 1),
+      Ext.mk₀_comp_mk₀, Ext.mk₀_comp_mk₀,
+      ← homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom
+        ComplexShape.embeddingDownIntUpInt ComplexShape.surjective_embeddingDownIntUpInt_f]
+  have h2 := (TauCeti.ChainComplex.extToHomology_naturality (k := k)
+    (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt) i (i - 1)
+    (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K₂ i).symm
+      (Iso.refl Y) 1 e)).symm
+  have h3 := homologyMap_precomp_linearHomComplexSingleHomologyIso_inv (k := k) φ Y i
+  simp only [linearHomComplexSingleExtToHomology, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Iso.toLinearMap_toLinearEquiv, Iso.symm_hom]
+  rw [h1, ← h2]
+  exact ConcreteCategory.congr_hom h3.symm _
 
 /-- **Naturality of `linearHomComplexSingleExtToHomology` in the coefficient object**: pushing an
 extension forward along `g : Y₁ ⟶ Y₂` and including it into cohomology agrees with including first
@@ -801,9 +749,22 @@ theorem linearHomComplexSingleExtToHomology_coefficient_naturality {Y₁ Y₂ : 
     (e : Ext.{w} (K.homology (1 - i)) Y₁ 1) :
     linearHomComplexSingleExtToHomology.{w} k K Y₂ i (e.comp (Ext.mk₀ g) (add_zero 1)) =
       (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map g)) i).hom
-        (linearHomComplexSingleExtToHomology.{w} k K Y₁ i e) :=
-  LinearMap.congr_fun
-    (linearHomComplexSingleExtToHomology_coefficient_naturality_linearMap g i) e
+        (linearHomComplexSingleExtToHomology.{w} k K Y₁ i e) := by
+  have h1 :
+      TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K i).symm (Iso.refl Y₂) 1
+          (e.comp (Ext.mk₀ g) (add_zero 1)) =
+        (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K i).symm
+          (Iso.refl Y₁) 1 e).comp (Ext.mk₀ g) (add_zero 1) := by
+    simp only [TauCeti.extLinearEquivOfIso_apply, Iso.symm_inv, Iso.refl_hom, Ext.comp_mk₀_id]
+    exact (Ext.comp_assoc _ _ _ (zero_add 1) (add_zero 1) (zero_add 1)).symm
+  have h2 := (TauCeti.ChainComplex.extToHomology_coefficient_naturality (k := k) g i (i - 1)
+    (TauCeti.extLinearEquivOfIso k (restrictionDownHomologySubOneIso K i).symm
+      (Iso.refl Y₁) 1 e)).symm
+  have h3 := homologyMap_postcomp_linearHomComplexSingleHomologyIso_inv (k := k) K g i
+  simp only [linearHomComplexSingleExtToHomology, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Iso.toLinearMap_toLinearEquiv, Iso.symm_hom]
+  rw [h1, ← h2]
+  exact ConcreteCategory.congr_hom h3.symm _
 
 end Ext
 

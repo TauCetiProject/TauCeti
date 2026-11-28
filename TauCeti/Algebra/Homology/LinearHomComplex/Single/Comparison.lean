@@ -169,6 +169,19 @@ lemma linearHomComplexSingleIso_hom_f_apply (i : ℤ)
   -- `LinearEquiv.toModuleIso`, whose underlying map is that linear equivalence by definition
   homSingleXEquiv_apply K Y i α
 
+private lemma restrictionXIso_inv_comp_linearHomComplexSingleIso_hom_f_apply (i : ℤ)
+    (α : Cochain K ((singleFunctor C 0).obj Y) i) :
+    (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+        (ComplexShape.embeddingDownIntUpInt_f i)).inv ≫
+        (linearHomComplexSingleIso k K Y).hom.f i α =
+      (i * (i + 1) / 2).negOnePow • Cochain.toSingleEquiv (neg_add_cancel i) α := by
+  have hcomp : (linearHomComplexSingleIso k K Y).hom.f i α = homSingleXEquiv k K Y i α := rfl
+  rw [hcomp, homSingleXEquiv_apply, Units.smul_def, Preadditive.comp_zsmul,
+    HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv K Y
+      ComplexShape.embeddingDownIntUpInt (ComplexShape.embeddingDownIntUpInt_f i)
+      (neg_add_cancel i) (ComplexShape.embeddingDownIntUpInt_f_add_self i)]
+  simp only [homSingleSign, ← Units.smul_def]
+
 /-- In degree `i`, the inverse of `CochainComplex.linearHomComplexSingleIso` sends a morphism
 `f : K⁻ⁱ ⟶ Y` to the cochain of degree `i` it defines (`HomComplex.Cochain.toSingleMk`),
 multiplied by the sign `(-1)^(i(i+1)/2)`. -/
@@ -266,7 +279,7 @@ lemma iCycles_linearHomComplexSingleCyclesIso_hom_apply {k} [Ring k] [Linear k C
       (ComplexShape.embeddingDownIntUpInt_f i)).inv ≫ f =
       (i * (i + 1) / 2).negOnePow • Cochain.toSingleEquiv (neg_add_cancel i)
         (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) :=
-    (Category.id_comp _).trans (linearHomComplexSingleIso_hom_f_apply K Y i _)
+    restrictionXIso_inv_comp_linearHomComplexSingleIso_hom_f_apply K Y i _
   have h2 := congrArg (fun x ↦ (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
       (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫ ((i * (i + 1) / 2).negOnePow • x)) h1
   rw [Units.smul_def, Preadditive.comp_zsmul, Iso.hom_inv_id_assoc, ← Units.smul_def,

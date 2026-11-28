@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
 import Mathlib.Algebra.Homology.Double
 import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Algebra.Homology.LinearHomComplex.Single.Basic
+import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 
 /-!
 # Non-naturality of the cochain universal coefficient splitting
@@ -133,8 +133,7 @@ private instance (i : ℤ) : Module.Finite ℤ (singleIntComplex.X i) :=
   (singleIntComplex_free_and_finite i).2
 
 private instance : singleIntComplex.IsStrictlyLE 1 :=
-  (CochainComplex.isStrictlyLE_iff _ _).2 fun i hi ↦
-    isZero_single_obj_X (ComplexShape.up ℤ) 0 _ i (by omega)
+  CochainComplex.isStrictlyLE_of_le singleIntComplex 0 1 (by decide)
 
 /-- Any degree-0 cocycle of `linearHomComplex ℤ ℤ[0] ℤ[0]` whose Kronecker evaluation is the
 canonical isomorphism `H⁰(ℤ[0]) ≅ ℤ` has underlying degree-0 morphism equal to
@@ -194,40 +193,51 @@ theorem not_exists_natural_section_linearHomComplexSingleKronecker :
         (by simp only [ComplexShape.up_Rel] at hi; omega)).eq_of_src _ _)
   let g₀ : singleIntComplex.homology 0 ⟶ ModuleCat.of ℤ ℤ :=
     (singleObjHomologySelfIso (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom
-  let L₁ := linearHomComplex ℤ mulTwoCochainComplex singleIntComplex
   let L₂ := linearHomComplex ℤ singleIntComplex singleIntComplex
-  -- Lift `s ℤ[0] g₀` directly to a degree-0 cocycle of `Hom(ℤ[0], ℤ[0])`.
-  obtain ⟨cyc₂, hcyc₂⟩ := L₂.moduleCat_homologyπ_surjective 0 (s singleIntComplex g₀)
-  have hf₂ : Cochain.toSingleEquiv (neg_add_cancel 0) ((L₂.iCycles 0).hom cyc₂) =
-      (singleObjXSelf (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom :=
-    toSingleEquiv_singleIntComplex_of_kronecker cyc₂ (by rw [hcyc₂, hs_sec])
+  -- Express `s ℤ[0] g₀` via `homologyLinearEquiv` and identify its cocycle using Kronecker.
+  let D₂ := linearLeftHomologyData ℤ singleIntComplex singleIntComplex 0
+  obtain ⟨c₂, hc₂⟩ := (homologyLinearEquiv ℤ singleIntComplex singleIntComplex 0).symm.surjective
+    (s singleIntComplex g₀)
+  induction c₂ using CohomologyClass.rec with | mk x => ?_
+  have hcyc₂ : (L₂.homologyπ 0).hom (D₂.cyclesIso.inv.hom x) = s singleIntComplex g₀ := by
+    rw [← hc₂, ← ModuleCat.comp_apply]
+    dsimp only [HomologicalComplex.homologyπ, ShortComplex.homologyπ, L₂]
+    rw [← Category.assoc, ← ShortComplex.LeftHomologyData.π_comp_leftHomologyIso_inv,
+      Category.assoc]
+    rfl
+  have hf₂ := toSingleEquiv_singleIntComplex_of_kronecker (D₂.cyclesIso.inv.hom x)
+    (by rw [hcyc₂, hs_sec])
+  rw [← ModuleCat.comp_apply] at hf₂
+  dsimp only [HomologicalComplex.iCycles] at hf₂
+  rw [D₂.cyclesIso_inv_comp_iCycles] at hf₂
+  dsimp only [D₂] at hf₂
+  let x₀ : Cocycle singleIntComplex singleIntComplex 0 :=
+    Cocycle.toSingleMk (singleObjXSelf (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom
+      (add_zero 0) (-1) (by decide) (by simp)
+  have hx : x = x₀ := Cocycle.ext ((Cochain.toSingleEquiv (add_zero 0)).injective (by
+    simpa [x₀] using hf₂))
+  subst hx
   -- Naturality along `φ` forces the pulled-back cocycle to be a coboundary, since `H⁰(K₁) = 0`.
   have hpull := hs_nat mulTwoCochainComplex singleIntComplex φ g₀
   rw [isZero_homology_zero_mulTwoCochainComplex.eq_of_src (homologyMap φ 0 ≫ g₀) 0,
-    map_zero, ← hcyc₂, moduleCat_homologyMap_homologyπ] at hpull
-  obtain ⟨y, hy⟩ :=
-    (L₁.moduleCat_homologyπ_eq_zero_iff (by simp : (ComplexShape.up ℤ).prev (0 : ℤ) = -1) _).1
-      hpull
-  have hy' := congrArg (Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel 0))
-    (congrArg (L₁.iCycles 0).hom hy)
-  rw [moduleCat_iCycles_toCycles_apply, moduleCat_iCycles_cyclesMap_apply] at hy'
-  have hd : Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel 0)
-      ((L₁.d (-1) 0).hom y) =
-      mulTwoCochainComplex.d 0 1 ≫
-        Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel (-1)) y := by
-    simpa [L₁] using toSingleLinearEquiv_linearHomComplex_d_apply (k := ℤ)
-      mulTwoCochainComplex (ModuleCat.of ℤ ℤ) (-1) y
-  have hp : Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel 0)
-      (((linearHomComplexPrecomp ℤ φ singleIntComplex).f 0).hom ((L₂.iCycles 0).hom cyc₂)) =
-      φ.f 0 ≫ Cochain.toSingleEquiv (neg_add_cancel 0) ((L₂.iCycles 0).hom cyc₂) := by
-    simpa [Cochain.toSingleLinearEquiv_apply, AddEquiv.toFun_eq_coe] using
-      toSingleLinearEquiv_linearHomComplexPrecomp_f_apply (k := ℤ) φ
-        (ModuleCat.of ℤ ℤ) 0 ((L₂.iCycles 0).hom cyc₂)
-  dsimp only [L₂] at hp hf₂
-  rw [hd, hp, hf₂, HomologicalComplex.mkHomToSingle_f, Category.assoc, Iso.inv_hom_id,
-    Category.comp_id] at hy'
+    map_zero, ← hc₂] at hpull
+  let y₀ : Cocycle mulTwoCochainComplex singleIntComplex 0 :=
+    Cocycle.toSingleMk (doubleXIso₀ mulTwoHom up_rel_zero_one).hom (add_zero 0) (-1) (by decide)
+      (by rw [double_d_eq_zero₀ mulTwoHom up_rel_zero_one (-1) 0 (by decide), zero_comp])
+  have hclass := congrArg (homologyLinearEquiv ℤ mulTwoCochainComplex singleIntComplex 0) hpull
+  rw [map_zero, homologyLinearEquiv_homologyMap_symm_mk ℤ
+      (linearHomComplexPrecomp ℤ φ singleIntComplex) x₀ y₀ (by
+        have hpre := congrArg (fun (z : Cocycle mulTwoCochainComplex singleIntComplex 0) ↦
+            (z : Cochain mulTwoCochainComplex singleIntComplex 0))
+          (Cocycle.toSingleMk_precomp
+            (singleObjXSelf (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom
+            (add_zero 0) (-1) (by decide) (by simp) φ)
+        simpa [x₀, y₀, φ] using hpre),
+    CohomologyClass.mk_eq_zero_iff] at hclass
   exact not_exists_leftInverse_mulTwoCochainComplex_d
-    ⟨Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel (-1)) y, hy'⟩
+    ((Cocycle.toSingleMk_mem_coboundaries_iff _ (add_zero 0) (-1) (by decide)
+      (by rw [double_d_eq_zero₀ mulTwoHom up_rel_zero_one (-1) 0 (by decide), zero_comp])
+      1 (by decide)).1 hclass)
 
 end NonNaturality
 
