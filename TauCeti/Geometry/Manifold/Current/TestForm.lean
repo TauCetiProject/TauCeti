@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.TestDual
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.DualDensityTest
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -33,7 +34,8 @@ the exact support. It involves no orientation, metric or choice of frame.
 * `TauCeti.TestForm I M k`: the test `k`-forms, the bundle tests of `Hom(Hom(Λᵏ T*M, |Λ|), |Λ|)`.
 * `TauCeti.Current I M k`: the `k`-currents, the distributional sections of `Hom(Λᵏ T*M, |Λ|)`.
 * `TauCeti.TestForm.formEquiv`: the identification of test forms with compactly supported smooth
-  `k`-forms, as topological vector spaces.
+  `k`-forms, as topological vector spaces. It commutes with multiplication by smooth functions
+  (`TauCeti.TestForm.formEquiv_smulLeftCLM`).
 
 ## References
 
@@ -123,6 +125,16 @@ theorem formEquiv_apply_eq_zero_iff {s : TestForm I M k} {x : M} :
     formEquiv s x = 0 ↔ s x = 0 :=
   DualDensityTest.doubleDualEquiv_apply_eq_zero_iff (F := E [⋀^Fin k]→L[ℝ] ℝ)
     (V := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
+
+/-- The identification of test forms with compactly supported smooth forms commutes with
+multiplication by smooth functions. -/
+@[simp]
+theorem formEquiv_smulLeftCLM (ρ : C^∞⟮I, M; ℝ⟯) (s : TestForm I M k) :
+    formEquiv (BundleTest.smulLeftCLM ρ s) = BundleTest.smulLeftCLM ρ (formEquiv s) := by
+  apply formEquiv.symm.injective
+  ext x : 1
+  rw [ContinuousLinearEquiv.symm_apply_apply, BundleTest.smulLeftCLM_apply, formEquiv_symm_apply,
+    BundleTest.smulLeftCLM_apply, map_smul, formDensityDoubleDualEquiv_formEquiv_apply]
 
 end TestForm
 
