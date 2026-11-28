@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.ComplexAnalyticSpace.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Polynomial.ClosedSubspace
+import TauCeti.AlgebraicGeometry.GammaSpecAdjunction
 import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.RingTheory.Finiteness.Ideal
 
@@ -22,7 +23,8 @@ in place of the constant-section map. It is a morphism over
 `Spec (ULift ℂ)` in every universe. The analytic structure sheaf uses the extended ideal,
 so the construction retains the equations of nonreduced schemes.
 `Ideal.toSpecQuotient_mem_asIdeal_iff` computes the image prime by vanishing, and
-`Ideal.toSpecQuotient_Γ` computes the pullback on global sections.
+`Ideal.toSpecQuotient_Γ` computes the pullback on global sections using
+`AlgebraicGeometry.LocallyRingedSpace.Γ_map_toΓSpec_comp`.
 
 See SGA 1, Exposé XII, Theorem and Definition 1.1, for the affine construction.
 -/
@@ -127,7 +129,9 @@ theorem toComplexAnalyticSpaceHomeomorph_apply (I : Ideal 𝒫)
   (rfl)
 
 /-- A polynomial class belongs to the comparison point's prime ideal exactly when the
-polynomial vanishes at the analytic point. This is an explicit rewrite for the image prime. -/
+polynomial vanishes at the analytic point. -/
+-- Match the membership expression before `simp` normalizes its subterms.
+@[simp↓]
 theorem toSpecQuotient_mem_asIdeal_iff (I : Ideal 𝒫)
     (x : (toComplexAnalyticSpace.{u} I).obj.left) (p : 𝒫) :
     ULift.up (Ideal.Quotient.mk I p) ∈ ((toSpecQuotient I).left.base x).asIdeal ↔
@@ -182,23 +186,11 @@ theorem toSpecQuotient_Γ (I : Ideal 𝒫) :
     CommRingCat.ofHom (polynomialQuotientToSections I).ulift ≫ A.uliftΓIso.{u}.inv
   have hleft : eqToHom ((toComplexAnalyticSpace_left.{u} I).symm) ≫
       (toSpecQuotient.{u} I).left = A.ulift.{u}.toΓSpec ≫ Spec.locallyRingedSpaceMap f := by
-    rw [toSpecQuotient_left]
-    simp only [← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp, f, A]
+    simp only [toSpecQuotient_left, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, f, A]
   rw [hleft]
-  let adj := ΓSpec.locallyRingedSpaceAdjunction.{u}
-  have hform := ΓSpec.locallyRingedSpaceAdjunction_homEquiv_apply' f
-  have h := (congrArg (adj.homEquiv _ _).symm hform).symm.trans
-    ((adj.homEquiv _ _).symm_apply_apply f.op)
-  have hΓ : Scheme.SpecΓIdentity.inv.app _ ≫
-      LocallyRingedSpace.Γ.map (A.ulift.{u}.toΓSpec ≫ Spec.locallyRingedSpaceMap f).op = f :=
-    congrArg Quiver.Hom.unop ((adj.homEquiv_symm_apply _ _ _).symm.trans h)
-  have hend : f ≫ A.uliftΓIso.{u}.hom =
+  have hcancel : f ≫ A.uliftΓIso.{u}.hom =
       CommRingCat.ofHom (polynomialQuotientToSections I).ulift :=
-    (Category.assoc (CommRingCat.ofHom (polynomialQuotientToSections I).ulift)
-      A.uliftΓIso.{u}.inv A.uliftΓIso.{u}.hom).trans
-      ((congrArg (CommRingCat.ofHom (polynomialQuotientToSections I).ulift ≫ ·)
-        A.uliftΓIso.{u}.inv_hom_id).trans (Category.comp_id _))
-  exact (Category.assoc _ _ _).symm.trans
-    ((congrArg (· ≫ A.uliftΓIso.{u}.hom) hΓ).trans hend)
+    A.uliftΓIso.{u}.eq_comp_inv.mp rfl
+  exact (A.ulift.{u}.Γ_map_toΓSpec_comp_assoc f _).trans hcancel
 
 end Ideal
