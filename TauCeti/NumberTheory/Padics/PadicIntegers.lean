@@ -50,6 +50,8 @@ The ring `ℤ_[p]` is also profinite in the sequence-ultralimit sense
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
+* `PadicInt.isUnit_of_coe_eq_ratCast`: a `p`-adic integer representing a nonzero rational number
+  of valuation zero is a unit.
 * `PadicInt.isUnit_natCast_of_coprime`: a natural number prime to `p` is a unit of `ℤ_[p]`.
 * `PadicInt.isUnit_natCard_of_isPGroup`: the order of a finite `ℓ`-group is a unit of `ℤ_[p]` for
   a prime `ℓ ≠ p`.
@@ -527,6 +529,18 @@ theorem exists_forall_norm_pow_mul_le_one {ι : Type*} [Finite ι] (x : ι → �
   exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (x j)) (Finset.mem_univ i)).trans hk.le
 
 end Padic
+
+namespace PadicInt
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- A `p`-adic integer representing a nonzero rational number of valuation zero is a unit. -/
+theorem isUnit_of_coe_eq_ratCast {z : ℤ_[p]} {q : ℚ} (h : (z : ℚ_[p]) = (q : ℚ_[p]))
+    (hq : q ≠ 0) (hv : padicValRat p q = 0) : IsUnit z := by
+  rw [isUnit_iff, ← norm_coe, h]
+  exact Padic.norm_ratCast_eq_one_of_padicValRat_eq_zero hq hv
+
+end PadicInt
 
 namespace TauCeti.IsProfiniteRing
 

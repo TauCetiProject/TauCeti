@@ -46,15 +46,9 @@ theorem padicValRat_legendre_j_of_nonunit (hp : (p : ℕ) ≠ 2)
   have ht : t ≠ 0 := fun h ↦ hs (by simp only [h, padicValRat.zero])
   have ht' : 1 - t ≠ 0 := fun h ↦ hs (by simp only [← sub_eq_zero.mp h, padicValRat.one])
   have h256 : padicValRat p 256 = 0 := by
-    have hdvd : ¬ (p : ℕ) ∣ 256 := fun h ↦
-      hp (Nat.prime_eq_prime_of_dvd_pow p.prop Nat.prime_two (m := 8) (by
-        norm_num
-        exact h))
-    calc
-      padicValRat p 256 = padicValRat p ((256 : ℕ) : ℚ) := by norm_num
-      _ = 0 := by
-        rw [padicValRat.of_nat]
-        simp [multiplicity_eq_zero_of_not_dvd hdvd]
+    have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+    have hcast : (256 : ℚ) = ((2 ^ 8 : ℕ) : ℚ) := by norm_num
+    simp only [hcast, padicValRat.of_nat, multiplicity_prime_prime_pow 8 hp, Nat.cast_zero]
   have hj : (legendre l).j = 256 * (1 - t) ^ 3 / t ^ 2 := by
     rw [legendre_j]
     congr 1 <;> dsimp [t] <;> ring
@@ -96,12 +90,8 @@ theorem exists_isElliptic_legendre_padicInt (hp : (p : ℕ) ≠ 2) (h₀ : l ≠
   have hcoe : (lp : ℚ_[p]) = (l : ℚ_[p]) := PadicInt.coe_lift hn.le
   have hsubcoe : ((1 - lp : ℤ_[p]) : ℚ_[p]) = ((1 - l : ℚ) : ℚ_[p]) := by
     simp [hcoe]
-  have isUnit_of_ratCast {z : ℤ_[p]} {q : ℚ} (h : (z : ℚ_[p]) = (q : ℚ_[p]))
-      (hq : q ≠ 0) (hv : padicValRat p q = 0) : IsUnit z := by
-    rw [PadicInt.isUnit_iff, ← PadicInt.norm_coe, h]
-    exact Padic.norm_ratCast_eq_one_of_padicValRat_eq_zero hq hv
-  have hu := isUnit_of_ratCast hcoe h₀ hl
-  have husub := isUnit_of_ratCast hsubcoe (sub_ne_zero.mpr h₁.symm) hsub
+  have hu := PadicInt.isUnit_of_coe_eq_ratCast hcoe h₀ hl
+  have husub := PadicInt.isUnit_of_coe_eq_ratCast hsubcoe (sub_ne_zero.mpr h₁.symm) hsub
   exact ⟨lp, hcoe, (isElliptic_legendre_iff lp).mpr
     ((PadicInt.isUnit_two hp).mul hu |>.mul (by simpa only [neg_sub] using husub.neg))⟩
 
