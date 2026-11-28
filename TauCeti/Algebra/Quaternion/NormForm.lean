@@ -131,12 +131,21 @@ theorem normForm_mul (x y : ℍ[R,c₁,c₂,c₃]) :
   simp only [normForm_apply_coordinates, re_mul, imI_mul, imJ_mul, imK_mul]
   ring
 
+/-- The norm form of `1` is `1`. -/
+@[simp]
+theorem normForm_one : normForm c₁ c₂ c₃ (1 : ℍ[R,c₁,c₂,c₃]) = 1 := by
+  rw [← coe_one, normForm_coe, one_pow]
+
+/-- The norm forms of a unit and of its inverse are inverse to each other. -/
+theorem normForm_units_inv_mul (u : ℍ[R,c₁,c₂,c₃]ˣ) :
+    normForm c₁ c₂ c₃ ↑u⁻¹ * normForm c₁ c₂ c₃ ↑u = 1 := by
+  rw [← normForm_mul, Units.inv_mul, normForm_one]
+
 /-- **A quaternion is invertible exactly when its norm is.** -/
 theorem isUnit_iff_normForm_isUnit (x : ℍ[R,c₁,c₂,c₃]) :
     IsUnit x ↔ IsUnit (normForm c₁ c₂ c₃ x) := by
   refine ⟨fun ⟨u, hu⟩ => ?_, fun ⟨n, hn⟩ => ?_⟩
-  · refine IsUnit.of_mul_eq_one (normForm c₁ c₂ c₃ ↑u⁻¹) ?_
-    rw [← hu, ← normForm_mul, Units.mul_inv, ← coe_one, normForm_coe, one_pow]
+  · exact hu ▸ IsUnit.of_mul_eq_one_right _ (normForm_units_inv_mul c₁ c₂ c₃ u)
   · refine ⟨⟨x, star x * ((n⁻¹ : Rˣ) : R), ?_, ?_⟩, rfl⟩
     · rw [← mul_assoc, self_mul_star, ← hn, ← coe_mul, Units.mul_inv, coe_one]
     · rw [mul_assoc, coe_commutes, ← mul_assoc, star_mul_self, ← hn, ← coe_mul, Units.mul_inv,

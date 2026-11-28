@@ -56,6 +56,7 @@ square of opposite rings.
   `TauCeti.PatchedModule.fstHom` and `TauCeti.PatchedModule.sndHom`.
 * `TauCeti.PatchedModule.lift`: the universal property of the patched module.
 * `TauCeti.PatchedModule.map`: the `D`-linear map induced by a morphism of patching triples.
+* `TauCeti.PatchedModule.equivOfEq`: the isomorphism of the patched modules of equal gluing maps.
 * `TauCeti.BalancedExtension.commSqEquiv h P`: the gluing isomorphism
   `Q ⊗_{A₁} (A₁ ⊗_D P) ≃ Q ⊗_{A₂} (A₂ ⊗_D P)`, `t ⊗ (s ⊗ p) ↦ (t * π₁ s) ⊗ (1 ⊗ p)`, with
   inverse `t ⊗ (s ⊗ p) ↦ (t * π₂ s) ⊗ (1 ⊗ p)`.
@@ -275,6 +276,41 @@ theorem map_comp (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂
 
 end Map
 
+section EquivOfEq
+
+variable {α' : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
+
+/-- The `D`-linear isomorphism `M(P₁, P₂, α) ≃ M(P₁, P₂, α')`, `(x, y) ↦ (x, y)`, for equal gluing
+maps `α = α'`. -/
+def equivOfEq (hα : α = α') : PatchedModule h α ≃ₗ[D] PatchedModule h α' :=
+  LinearEquiv.ofLinearMap (map LinearMap.id LinearMap.id fun _ ↦ by simp [hα])
+    (map LinearMap.id LinearMap.id fun _ ↦ by simp [hα]) (LinearMap.ext fun _ ↦ rfl)
+    (LinearMap.ext fun _ ↦ rfl)
+
+@[simp]
+theorem fst_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα x).fst = x.fst :=
+  (rfl)
+
+@[simp]
+theorem snd_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα x).snd = x.snd :=
+  (rfl)
+
+@[simp]
+theorem equivOfEq_symm (hα : α = α') : (equivOfEq (h := h) hα).symm = equivOfEq hα.symm :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivOfEq_rfl : equivOfEq (h := h) (rfl : α = α) = LinearEquiv.refl D _ :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivOfEq_trans {α'' : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
+    (hα : α = α') (hα' : α' = α'') :
+    (equivOfEq (h := h) hα).trans (equivOfEq hα') = equivOfEq (hα.trans hα') :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+end EquivOfEq
+
 end PatchedModule
 
 end PatchedModule
@@ -373,9 +409,9 @@ private theorem bijective_toPatchedModule_pi (n : ℕ) :
     have h₁ := congrArg (fun x ↦ piScalarRight p₁ (Fin n) (PatchedModule.fst x) i) hd
     have h₂ := congrArg (fun x ↦ piScalarRight p₂ (Fin n) (PatchedModule.snd x) i) hd
     simp only [PatchedModule.fst_toPatchedModule, PatchedModule.snd_toPatchedModule,
-      PatchedModule.fst_zero, PatchedModule.snd_zero, piScalarRight_tmul, one_mul, map_zero,
+      PatchedModule.fst_zero, PatchedModule.snd_zero, piScalarRight_tmul, one_mul, _root_.map_zero,
       Pi.zero_apply] at h₁ h₂
-    exact (hD 0 0 (by simp)).unique ⟨h₁, h₂⟩ ⟨map_zero p₁, map_zero p₂⟩
+    exact (hD 0 0 (by simp)).unique ⟨h₁, h₂⟩ ⟨_root_.map_zero p₁, _root_.map_zero p₂⟩
   · intro m
     have key := (commSqEquiv_one_tmul_eq_iff h (Fin n) _ _).1 (PatchedModule.apply_one_tmul_fst m)
     choose d hd using fun i ↦ (hD _ _ (key i)).exists

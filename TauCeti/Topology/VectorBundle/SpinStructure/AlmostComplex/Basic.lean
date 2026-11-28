@@ -46,7 +46,8 @@ with the anticanonical line `Λ²_ℂ (E, J)` as line bundles in
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameBundle.toFrame_canonicalSpinCStructureInl`: the frame of the point
+* `TauCeti.OrthonormalFrameBundle.toFrame_canonicalSpinCStructureInl`,
+  `TauCeti.OrthonormalFrameBundle.frameAt_canonicalSpinCStructureInl`: the frame of the point
   `[p, 1]` (`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructureInl`) in the canonical `Spinᶜ`
   structure is the unitary frame `p`.
 * `TauCeti.OrthonormalFrameBundle.canonicalSpinCStructureInl_smul`,
@@ -111,6 +112,16 @@ theorem toFrame_canonicalSpinCStructureInl (x : X) (p : (unitaryFrameLift hJ hJ�
   (unitaryFrameLift hJ hJ₂ hJ₀ hF).toFrame_extendSpinC_inl (unitarySpinCLift hJ₀ e h₀ h₂)
     (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
     (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂) x p
+
+/-- **The frame of `E x` at `[p, 1]`** in the canonical `Spinᶜ` structure is the unitary frame
+`p`. -/
+@[simp]
+theorem frameAt_canonicalSpinCStructureInl {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
+    (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).frameAt
+      (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) = p.val.frame := by
+  have h := toFrame_canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ x p
+  rw [OrthonormalFrameLift.toFrame_mk] at h
+  exact OrthonormalFrameBundle.mk_eq_mk_iff.1 h
 
 /-- The map `p ↦ [p, 1]` from the total space of the unitary frame bundle to that of the principal
 bundle of the canonical `Spinᶜ` structure is continuous. -/

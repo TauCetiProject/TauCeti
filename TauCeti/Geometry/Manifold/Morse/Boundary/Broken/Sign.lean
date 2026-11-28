@@ -189,10 +189,8 @@ theorem signedMorseBoundary_signedMorseBoundary_single_apply {R : Type*} [Ring R
   · refine finsum_mem_congr (Set.ext fun _ ↦ hX.mem_morseBrokenTrajectorySet.symm) fun x hx ↦ ?_
     obtain ⟨hpq, hqr, -⟩ := hX.mem_morseBrokenTrajectorySet.1 hx
     rw [brokenTrajectorySign_of_morseIndex_eq_add_one hpq hqr, dite_eq_left hpq, dite_eq_left hqr]
-  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def]
-    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpq]
-  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hqr, signedTrajectoryCount_def]
-    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hqr]
+  · exact signedMorseBoundaryCoeff_eq_finsum_mem hpq
+  · exact signedMorseBoundaryCoeff_eq_finsum_mem hqr
 
 include h in
 /-- **`∂² = 0` reduces to signed counts of broken trajectories.** The Morse boundary with

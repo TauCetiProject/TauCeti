@@ -64,7 +64,9 @@ fibre norm of `ν_f` is continuous on its total space
 for any family of subspaces of the fibres). No compactness, injectivity
 of `f`, boundarylessness or choice of normal frame is assumed. The identity map has zero normal
 spaces and a constant map has the whole ambient tangent space as normal space
-(`TauCeti.orthogonalNormalSpace_id`, `TauCeti.orthogonalNormalSpace_const`).
+(`TauCeti.orthogonalNormalSpace_id`, `TauCeti.orthogonalNormalSpace_const`). Precomposition with a
+map whose differential is surjective does not change the normal space
+(`TauCeti.orthogonalNormalSpace_comp`).
 
 ## References
 
@@ -171,6 +173,17 @@ theorem orthogonalNormalSpace_const (y : N) (x : M) :
     orthogonalNormalSpace I J (fun _ : M ↦ y) x = ⊤ := by
   rw [orthogonalNormalSpace_def, mfderiv_const]
   simp
+
+/-- Precomposition with a map whose differential at `x'` is surjective does not change the normal
+space. -/
+theorem orthogonalNormalSpace_comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {f : M → N} {ψ : M' → M} {x' : M'} (hf : MDifferentiableAt I J f (ψ x'))
+    (hψ : MDifferentiableAt I' I ψ x') (hψ' : Function.Surjective (mfderiv I' I ψ x')) :
+    orthogonalNormalSpace I' J (f ∘ ψ) x' = orthogonalNormalSpace I J f (ψ x') := by
+  rw [orthogonalNormalSpace_def, orthogonalNormalSpace_def, mfderiv_comp x' hf hψ]
+  congr 1
+  exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr hψ')
 
 /-- The normal space of an immersion at `x` is a complement of `T_x M`: its dimension is
 `dim N - dim M`. -/

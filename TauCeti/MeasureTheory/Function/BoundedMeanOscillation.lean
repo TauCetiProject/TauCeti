@@ -71,6 +71,8 @@ easy half of Sarason's characterization.
 * `LipschitzWith.bmoSeminorm_comp_le`, `LipschitzWith.vmoModulus_comp_le`: Lipschitz
   postcomposition bounds for the BMO seminorm and VMO modulus, and
   `TauCeti.MemBMO.comp_lipschitz`, `TauCeti.MemVMO.comp_lipschitz`: preservation of BMO and VMO.
+* `LinearIsometry.bmoSeminorm_comp`, `LinearIsometry.vmoModulus_comp`: postcomposition with a
+  real linear isometry preserves the BMO seminorm and the VMO modulus.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
@@ -400,7 +402,7 @@ theorem _root_.LipschitzWith.vmoModulus_comp_le
     _ = K * ⨍⁻ x in ball c s, ⨍⁻ y in ball c s, ‖f x - f y‖ₑ ∂μ ∂μ := by
       simp_rw [laverage_const_mul ENNReal.coe_ne_top]
     _ ≤ K * (2 * ⨍⁻ x in ball c s, ‖f x - ⨍ y in ball c s, f y ∂μ‖ₑ ∂μ) :=
-      mul_le_mul_right setLAverage_setLAverage_enorm_sub_le _
+      mul_le_mul_right (setLAverage_setLAverage_enorm_sub_le _) _
     _ ≤ 2 * K * vmoModulus f μ r := by
       rw [mul_left_comm, ← mul_assoc]
       exact mul_le_mul_right (setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hs) _
@@ -415,31 +417,20 @@ theorem _root_.LipschitzWith.bmoSeminorm_comp_le
   exact iSup_le fun r => (hφ.vmoModulus_comp_le hf r).trans
     (le_iSup (fun s => 2 * (K : ℝ≥0∞) * vmoModulus f μ s) r)
 
-/-- Postcomposition with a real-linear isometry does not change the VMO modulus: the isometry
-commutes with averages and preserves distances. Unlike `LipschitzWith.vmoModulus_comp_le`, there
-is no loss of a factor of two. -/
+/-- Postcomposition with a real linear isometry does not change the VMO modulus: it commutes
+with averages and preserves the distance of each value to the average. -/
 @[simp]
 theorem _root_.LinearIsometry.vmoModulus_comp [CompleteSpace F]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
-    (L : F →ₗᵢ[ℝ] G) (f : X → F) (r : ℝ) :
-    vmoModulus (fun x => L (f x)) μ r = vmoModulus f μ r := by
-  have hball (c : X) (s : ℝ) :
-      ⨍⁻ y in ball c s, ‖L (f y) - ⨍ z in ball c s, L (f z) ∂μ‖ₑ ∂μ =
-        ⨍⁻ y in ball c s, ‖f y - ⨍ z in ball c s, f z ∂μ‖ₑ ∂μ := by
-    simp only [setAverage_eq', L.integral_comp_comm, ← map_sub, LinearIsometry.eNorm_map]
-  exact le_antisymm
-    (vmoModulus_le fun c s hs => (hball c s).trans_le
-      (setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hs))
-    (vmoModulus_le fun c s hs => (hball c s).symm.trans_le
-      (setLAverage_enorm_sub_setAverage_le_vmoModulus _ μ c hs))
+    (L : F →ₗᵢ[ℝ] G) (r : ℝ) : vmoModulus (L ∘ f) μ r = vmoModulus f μ r := by
+  have h (s : Set X) : ⨍ z in s, L (f z) ∂μ = L (⨍ z in s, f z ∂μ) := L.integral_comp_comm _
+  simp only [vmoModulus, Function.comp_apply, h, ← map_sub, L.eNorm_map]
 
-/-- Postcomposition with a real-linear isometry does not change the BMO seminorm. Unlike
-`LipschitzWith.bmoSeminorm_comp_le`, there is no loss of a factor of two. -/
+/-- Postcomposition with a real linear isometry does not change the BMO seminorm. -/
 @[simp]
 theorem _root_.LinearIsometry.bmoSeminorm_comp [CompleteSpace F]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
-    (L : F →ₗᵢ[ℝ] G) (f : X → F) :
-    bmoSeminorm (fun x => L (f x)) μ = bmoSeminorm f μ := by
+    (L : F →ₗᵢ[ℝ] G) : bmoSeminorm (L ∘ f) μ = bmoSeminorm f μ := by
   simp only [← iSup_vmoModulus, L.vmoModulus_comp]
 
 /-- A Lipschitz function of a BMO function is again BMO. -/
