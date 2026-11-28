@@ -122,6 +122,29 @@ theorem lt_supportDim_of_add_one_eq [FiniteRingKrullDim R] [Nontrivial M] {d : W
   rw [hk] at h ⊢
   exact ENat.WithBot.lt_natCast_of_add_one_eq h
 
+/-- The closure of any prime in the support of a module has dimension at most the dimension
+of the support. -/
+theorem ringKrullDim_quotient_le_supportDim_of_mem_support {p : PrimeSpectrum R}
+    (hp : p ∈ support R M) : ringKrullDim (R ⧸ p.asIdeal) ≤ supportDim R M := by
+  rw [← p.coheight_eq_ringKrullDim_quotient, Order.coheight_eq_krullDim_Ici, supportDim]
+  exact Order.krullDim_le_of_strictMono (fun q : Set.Ici p ↦
+    (⟨q.val, mem_support_mono q.property hp⟩ : support R M)) fun _ _ h ↦ h
+
+/-- Under a finite bound `d` on the dimension of the support, a prime of the support
+with `dim (R ⧸ p) = d` is minimal over the annihilator. -/
+theorem mem_minimalPrimes_annihilator_of_ringKrullDim_quotient_eq [Module.Finite R M]
+    {d : ℕ} (hM : supportDim R M ≤ d) {p : PrimeSpectrum R} (hp : p ∈ support R M)
+    (hd : ringKrullDim (R ⧸ p.asIdeal) = d) : p.asIdeal ∈ (annihilator R M).minimalPrimes := by
+  refine ⟨⟨p.isPrime, annihilator_le_of_mem_support hp⟩, fun q ⟨hq, haq⟩ hqp ↦ ?_⟩
+  by_contra hn
+  have hlt := TauCeti.ringKrullDim_quotient_add_one_le_of_lt (lt_of_le_not_ge hqp hn)
+  have hle := ringKrullDim_quotient_le_supportDim_of_mem_support (p := ⟨q, hq⟩)
+    ((mem_support_iff_of_finite (M := M)).2 haq)
+  rw [hd] at hlt
+  have := hlt.trans (hle.trans hM)
+  norm_cast at this
+  omega
+
 /-- A module whose support has at most one point has support of dimension at most zero. -/
 theorem supportDim_nonpos_of_support_subsingleton (h : (support R M).Subsingleton) :
     supportDim R M ≤ 0 :=

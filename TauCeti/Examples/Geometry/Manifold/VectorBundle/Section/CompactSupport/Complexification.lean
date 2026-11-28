@@ -145,7 +145,7 @@ def infiniteModelChartTest (φ : 𝓓((⟨(OpenPartialHomeomorph.refl ℝ).targe
   CompactlySupported.ITmul (n := (⊤ : ℕ∞)) (chartSection φ)
 
 variable (M : Type*) [TopologicalSpace M] [ChartedSpace ℝ M]
-  [T2Space M] [SigmaCompactSpace M] [IsManifold 𝓘(ℝ, ℝ) ∞ M]
+  [T2Space M] [IsManifold 𝓘(ℝ, ℝ) ∞ M]
 
 /-- The native final-topology pair equivalence for the trivial bundle on a real-line manifold. -/
 def trivialPairCLE :=
