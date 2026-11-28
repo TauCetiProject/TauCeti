@@ -582,10 +582,8 @@ private theorem eq_and_eq_of_add_mul_eq (hp : p.Monic) {q q' : R⟦X⟧} {r r' :
   set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
   have hc0 : 0 < c := by positivity
   have hrem (s : Polynomial R) (hs : s.degree < p.degree) :
-      ∀ m, p.natDegree ≤ m → coeff m (s : R⟦X⟧) = 0 := fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact Polynomial.coeff_eq_zero_of_degree_lt
-      (hs.trans_le (Polynomial.degree_le_natDegree.trans (by exact_mod_cast hm)))
+      ∀ m, p.natDegree ≤ m → coeff m (s : R⟦X⟧) = 0 := fun _ hm ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt (hs.trans_le Polynomial.degree_le_natDegree) hm
   have hmul : ∀ x, ‖x * coeff p.natDegree (p : R⟦X⟧)‖ = ‖x‖ * ‖coeff p.natDegree (p : R⟦X⟧)‖ := by
     simp [hp.coeff_natDegree]
   obtain ⟨hq_eq, hr_eq⟩ := TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hdist

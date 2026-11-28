@@ -27,8 +27,7 @@ assumed.
   `u.mapCoeffs` on `C₀` (`completedBaseChange_zeroAtInfty`), respects changing realisations
   (`completedBaseChange_trans`), and transports `TauCeti.HasPr`, `IsPrCompact`, Fredholm series,
   Hasse derivatives, good zeros, coprime reverse-polynomial invertibility, operator-norm continuity,
-  and Riesz projections (`IsRieszProjection.completedBaseChange`,
-  `IsRieszProjection.inverse_completedBaseChange`).
+  and Riesz projections (`IsRieszProjection.completedBaseChange`).
 
 ## References
 
@@ -547,19 +546,6 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
     simpa only [hu', h1sub, hE'] using
       hE.toIsSpectralProjection.map Φ fun {v} hv ↦
         completedBaseChange_mem_closure_adjoin hS hM α hv
-
-/-- Completed-tensor base change commutes with taking the complementary inverse of a Riesz
-projection. -/
-theorem IsRieszProjection.inverse_completedBaseChange [TauCeti.NormedRing.IsTate S]
-    [IsBoundedSMul R M₁] [IsBoundedSMul S N₁] (hM : HasPr R M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
-    {u E : M₁ →L[R] M₁} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E) :
-    (hE.completedBaseChange hS hM α).toIsSpectralProjection.inverse =
-      hE.toIsSpectralProjection.inverse.completedBaseChange α α :=
-  (hE.toIsSpectralProjection.inverse_map (completedBaseChangeRingHom α)
-    (hE.completedBaseChange hS hM α).toIsSpectralProjection
-    (by simp [completedBaseChangeRingHom_apply])
-    (completedBaseChangeRingHom_apply α _).symm).trans
-    (completedBaseChangeRingHom_apply α _)
 
 end PrTransport
 
