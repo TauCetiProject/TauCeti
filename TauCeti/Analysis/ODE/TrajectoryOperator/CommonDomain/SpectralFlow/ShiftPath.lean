@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SpectralFlow
+public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SpectralFlow.Basic
 import Mathlib.Analysis.InnerProductSpace.ProdL2
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.CommonDomain
 import TauCeti.Analysis.Normed.Group.Basic

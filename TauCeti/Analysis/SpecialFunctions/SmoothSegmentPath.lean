@@ -22,10 +22,12 @@ with prescribed limits at `±∞`.
 * `TauCeti.smoothSegmentPath`: the path `s ↦ x + ψ(s) (y - x)`.
 * `TauCeti.contDiff_smoothSegmentPath`: it is smooth.
 * `TauCeti.smoothSegmentPath_mem_segment`: it stays on the segment from `x` to `y`.
+* `TauCeti.smoothSegmentPath_self`: constant path when the endpoints coincide.
 * `TauCeti.smoothSegmentPath_of_nonpos` and `TauCeti.smoothSegmentPath_of_one_le`: it equals `x`
   for `s ≤ 0` and `y` for `s ≥ 1`.
 * `TauCeti.eventuallyEq_smoothSegmentPath_atBot` and
   `TauCeti.eventuallyEq_smoothSegmentPath_atTop`: it is eventually constant at `±∞`.
+* `AffineMap.map_smoothSegmentPath`: affine maps transport `TauCeti.smoothSegmentPath`.
 -/
 
 public section
@@ -47,6 +49,11 @@ def smoothSegmentPath (s : ℝ) : E :=
 theorem smoothSegmentPath_def (s : ℝ) :
     smoothSegmentPath x y s = x + Real.smoothTransition s • (y - x) :=
   (rfl)
+
+/-- The smooth path from a point to itself is constant. -/
+@[simp]
+theorem smoothSegmentPath_self (s : ℝ) : smoothSegmentPath x x s = x := by
+  simp [smoothSegmentPath_def]
 
 /-- The smooth path along a segment is smooth. -/
 theorem contDiff_smoothSegmentPath {n : ℕ∞} : ContDiff ℝ n (smoothSegmentPath x y) :=
@@ -74,3 +81,11 @@ theorem eventuallyEq_smoothSegmentPath_atTop : smoothSegmentPath x y =ᶠ[atTop]
   eventually_ge_atTop 1 |>.mono fun _ hs ↦ smoothSegmentPath_of_one_le x y hs
 
 end TauCeti
+
+/-- An affine map transports `TauCeti.smoothSegmentPath` to the smooth segment path between the
+images of its endpoints. -/
+theorem AffineMap.map_smoothSegmentPath {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (f : E →ᵃ[ℝ] F) (x y : E) (s : ℝ) :
+    f (TauCeti.smoothSegmentPath x y s) = TauCeti.smoothSegmentPath (f x) (f y) s := by
+  simpa only [TauCeti.smoothSegmentPath_def, AffineMap.lineMap_apply, vsub_eq_sub, vadd_eq_add,
+    add_comm _ x, add_comm _ (f x)] using f.apply_lineMap x y (Real.smoothTransition s)

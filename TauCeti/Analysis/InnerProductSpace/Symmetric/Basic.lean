@@ -27,7 +27,9 @@ satisfying this identity form a closed set
 (`ContinuousLinearMap.isClosed_setOf_inner_apply_eq_inner_apply`), so if operators converge along
 a filter and satisfy the identity for `x, y` frequently along it, so does their limit
 (`ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto`); and if an operator satisfies it
-for `x, y`, so does its negative (`ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply`).
+for `x, y`, so does its negative (`ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply`), and so
+does subtracting a real multiple of `ι`
+(`ContinuousLinearMap.inner_sub_ofReal_smul_apply_eq_inner_sub_ofReal_smul_apply`).
 -/
 
 public section
@@ -87,5 +89,15 @@ theorem inner_neg_apply_eq_inner_neg_apply {D H : Type*} [AddCommGroup D] [Topol
     [Module 𝕜 D] [SeminormedAddCommGroup H] [InnerProductSpace 𝕜 H] {ι B : D →L[𝕜] H}
     {x y : D} (hB : ⟪B x, ι y⟫_𝕜 = ⟪ι x, B y⟫_𝕜) : ⟪(-B) x, ι y⟫_𝕜 = ⟪ι x, (-B) y⟫_𝕜 := by
   simp only [neg_apply, inner_neg_left, inner_neg_right, hB]
+
+/-- **Real shifts along `ι` preserve symmetry relative to `ι`.** Fix a continuous linear map
+`ι : D →L[𝕜] H` and `x y : D`. If `B : D →L[𝕜] H` satisfies `⟪B x, ι y⟫ = ⟪ι x, B y⟫`, then so
+does `B - (c : 𝕜) • ι` for every real scalar `c`. -/
+theorem inner_sub_ofReal_smul_apply_eq_inner_sub_ofReal_smul_apply {D H : Type*} [AddCommGroup D]
+    [TopologicalSpace D] [Module 𝕜 D] [SeminormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+    {ι B : D →L[𝕜] H} {x y : D} (hB : ⟪B x, ι y⟫_𝕜 = ⟪ι x, B y⟫_𝕜) (c : ℝ) :
+    ⟪(B - (c : 𝕜) • ι) x, ι y⟫_𝕜 = ⟪ι x, (B - (c : 𝕜) • ι) y⟫_𝕜 := by
+  simp only [sub_apply, smul_apply, inner_sub_left, inner_sub_right, inner_smul_left,
+    inner_smul_right, RCLike.conj_ofReal, hB]
 
 end ContinuousLinearMap
