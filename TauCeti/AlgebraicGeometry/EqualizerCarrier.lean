@@ -37,10 +37,6 @@ they differ.
   change as points of the original scheme preserves and reflects emptiness of their equalizer.
 * `TauCeti.AlgebraicGeometry.range_equalizer_ι_left_of_left_eq_hom_comp`: the image of the
   equalizer of a point and the point given by a section is the set where they agree.
-* `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_forall_ne_of_left_eq_hom_comp`: a point and a
-  point given by a section have empty equalizer exactly when they agree nowhere.
-* `TauCeti.AlgebraicGeometry.isEmpty_equalizer_toUnit_comp_iff`: specialization to the pullback
-  `toUnit Z ≫ R` of a section `R`.
 * `TauCeti.AlgebraicGeometry.range_equalizer_ι_left_of_section`: the image of the equalizer of
   two sections is the set of points of the base at which they agree.
 * `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_forall_ne`: two sections have empty equalizer
@@ -175,24 +171,6 @@ theorem range_equalizer_ι_left_of_left_eq_hom_comp {X : Over S} (x y : Z ⟶ X)
       exact hp
     obtain ⟨p⟩ : Nonempty (Spec (Z.left.residueField z)) := inferInstance
     exact key (Z.left.fromSpecResidueField z) p (Scheme.fromSpecResidueField_apply z p)
-
-/-- A point `x : Z ⟶ X` and a point `y : Z ⟶ X` given by pulling back a section
-`R : 𝟙_ (Over S) ⟶ X` along `Z.hom` have empty equalizer exactly when `x` and `R` agree at no
-point of `Z`. -/
-theorem isEmpty_equalizer_iff_forall_ne_of_left_eq_hom_comp {X : Over S} (x y : Z ⟶ X)
-    (R : 𝟙_ (Over S) ⟶ X) (hy : y.left = Z.hom ≫ R.left) :
-    IsEmpty (equalizer x y).left ↔ ∀ z, x.left z ≠ R.left (Z.hom z) := by
-  rw [← Set.range_eq_empty_iff, range_equalizer_ι_left_of_left_eq_hom_comp x y R hy,
-    Set.eq_empty_iff_forall_notMem]
-  rfl
-
-/-- A point `x : Z ⟶ X` and the pullback `toUnit Z ≫ R` of a section `R : 𝟙_ (Over S) ⟶ X` have
-empty equalizer exactly when `x` and `R` agree at no point of `Z`. -/
-theorem isEmpty_equalizer_toUnit_comp_iff {X : Over S} (x : Z ⟶ X) (R : 𝟙_ (Over S) ⟶ X) :
-    IsEmpty (equalizer x (CartesianMonoidalCategory.toUnit Z ≫ R)).left ↔
-      ∀ z, x.left z ≠ R.left (Z.hom z) :=
-  isEmpty_equalizer_iff_forall_ne_of_left_eq_hom_comp x _ R (by
-    simp only [Over.comp_left, Over.toUnit_left])
 
 /-- **Where two sections agree.** For sections `Q` and `R` of a scheme `X` over `S`, the image of
 their equalizer is the set of points of `S` at which `Q` and `R` take the same value. -/

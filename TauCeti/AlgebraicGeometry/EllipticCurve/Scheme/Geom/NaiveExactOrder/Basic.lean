@@ -69,8 +69,6 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderPreimage N P`: the locus of `S`
   over which an `S`-point `P` has naive exact order `N ≠ 0`, with inclusion
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderPreimageι N P`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.naiveExactOrderPreimageMap`: the base-change
-  morphism between loci where a point and its pullback have naive exact order `N`.
 
 ## Main results
 
@@ -81,8 +79,6 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfNaiveExactOrder_pointsBaseChangeEquiv_iff`:
   identifying points of a base change with points valued in the new base preserves and reflects
   naive exact order.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfNaiveExactOrder_iff_of_isPullback`: naive exact
-  order is preserved and reflected along a pullback square of elliptic curves.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_isOfNaiveExactOrder_over`: over each
   separably closed field point where `N` is invertible, there is a point of naive exact order `N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder`: a
@@ -100,8 +96,6 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff`: a
   morphism `T ⟶ S` factors through the locus where `P` has naive exact order `N` exactly when the
   base change of `P` to `T` has naive exact order `N`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_naiveExactOrderPreimageMap`: the locus
-  where a point has naive exact order `N` commutes with pointed base change.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosedImmersion_naiveExactOrderPreimageι`: where
   `N` is invertible on `S`, the locus where `P` has naive exact order `N` is a closed subscheme
   of `S`.
@@ -206,34 +200,18 @@ variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.car
   {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
   (h0 : E'.zero ≫ g = f ≫ E.zero)
 
-include hg h0 in
-/-- Naive exact order is preserved and reflected under a pullback square of elliptic curves: for a
-`Z`-point `x'` of `E'` lying over a `Z`-point `x` of `E`, `x'` has naive exact order `N` if and
-only if `x` does. -/
-theorem isOfNaiveExactOrder_iff_of_isPullback {Z : Over S'} {x' : Z ⟶ Over.mk E'.structureMap}
-    {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f') {x : Over.mk f' ⟶ Over.mk E.structureMap}
-    (hx : x'.left ≫ g = x.left) :
-    E'.IsOfNaiveExactOrder x' N ↔ E.IsOfNaiveExactOrder x N := by
-  let eqv := pointsBaseChangeEquivOver hg h0 e
-  have hxx' : eqv x' = x := by
-    ext1
-    rw [pointsBaseChangeEquivOver_left]
-    exact hx
-  rw [← hxx']
-  simp only [isOfNaiveExactOrder_iff, ← map_pow, ← map_one eqv, eqv.injective.eq_iff]
-  refine (and_congr Iff.rfl (forall_congr' fun d ↦
-    imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_)).symm
-  exact (isEmpty_equalizer_iff_of_isPullback hg (x' ^ d) 1 _ _
-    (pointsBaseChangeEquivOver_left hg h0 e _).symm
-    (pointsBaseChangeEquivOver_left hg h0 e _).symm).symm
-
 /-- Under the group equivalence identifying points of a base change with points valued in
 the new base, naive exact order is preserved and reflected. -/
 theorem isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
     {P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap} :
-    E.IsOfNaiveExactOrder (pointsBaseChangeEquiv hg h0 P) N ↔ E'.IsOfNaiveExactOrder P N :=
-  (isOfNaiveExactOrder_iff_of_isPullback hg h0 (Category.id_comp f)
-    (pointsBaseChangeEquiv_left hg h0 P).symm).symm
+    E.IsOfNaiveExactOrder (pointsBaseChangeEquiv hg h0 P) N ↔ E'.IsOfNaiveExactOrder P N := by
+  simp only [isOfNaiveExactOrder_iff, ← map_pow, ← map_one (pointsBaseChangeEquiv hg h0),
+    (pointsBaseChangeEquiv hg h0).injective.eq_iff]
+  refine and_congr Iff.rfl (forall_congr' fun d ↦ ?_)
+  refine imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
+  exact (isEmpty_equalizer_iff_of_isPullback hg (P ^ d) 1 _ _
+    (pointsBaseChangeEquiv_left hg h0 _).symm
+    (pointsBaseChangeEquiv_left hg h0 _).symm).symm
 
 /-- **Points of naive exact order `N` are stable under base change**: if an `S`-point `P` of `E`
 has naive exact order `N`, then so does its base change, the `S'`-point `P'` of `E'`. -/
@@ -256,37 +234,6 @@ zero section at no point of `S`. -/
 theorem isEmpty_equalizer_one_iff (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
     IsEmpty (equalizer Q 1).left ↔ ∀ s, Q.left s ≠ E.zero s := by
   simp [isEmpty_equalizer_iff_forall_ne, hom_one_left]
-
-private theorem toUnit_comp_pow_eq_one_iff (Z : Over S)
-    (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (n : ℕ) :
-    (toUnit Z ≫ P) ^ n = 1 ↔ Z.hom ≫ (P ^ n).left = Z.hom ≫ E.zero := by
-  rw [← comp_pow]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have h' := congrArg CommaMorphism.left h
-    simpa only [Over.comp_left, Over.toUnit_left, Over.tensorUnit_left, Over.tensorUnit_hom,
-      Category.id_comp, hom_one_left] using h'
-  · ext1
-    simpa only [Over.comp_left, Over.toUnit_left, Over.tensorUnit_left, Over.tensorUnit_hom,
-      Category.id_comp, hom_one_left] using h
-
-private theorem isEmpty_equalizer_toUnit_comp_one_iff (Z : Over S)
-    (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (k : ℕ) :
-    IsEmpty (equalizer ((toUnit Z ≫ P) ^ k) 1).left ↔
-      ∀ z, (P ^ k).left (Z.hom z) ≠ E.zero (Z.hom z) := by
-  rw [← comp_pow, isEmpty_equalizer_iff_forall_ne_of_left_eq_hom_comp _ _ 1 (by
-    simp [hom_one_left])]
-  simp only [Over.comp_left, Over.toUnit_left, Over.tensorUnit_left, Over.tensorUnit_hom,
-    Category.id_comp, Scheme.Hom.comp_apply, hom_one_left]
-
-/-- A point `toUnit Z ≫ P` obtained by pulling back an `S`-point `P` along `Z.hom` has naive
-exact order `N` if and only if `N • P` agrees with the zero section along `Z.hom` and no proper
-divisor multiple `d • P` meets the zero section at any point of the image of `Z.hom`. -/
-theorem isOfNaiveExactOrder_toUnit_comp_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
-    E.IsOfNaiveExactOrder (toUnit Z ≫ P) N ↔
-      Z.hom ≫ (P ^ N).left = Z.hom ≫ E.zero ∧
-        ∀ d : ℕ, d ∣ N → d ≠ N → ∀ z, (P ^ d).left (Z.hom z) ≠ E.zero (Z.hom z) := by
-  simp only [isOfNaiveExactOrder_iff, toUnit_comp_pow_eq_one_iff,
-    isEmpty_equalizer_toUnit_comp_one_iff]
 
 /-- **Naive `[Γ₁(N)]`-structures are the `S`-points of naive exact order `N`.** A homomorphism
 `φ : ℤ/Nℤ →* E(S)` is injective on every fibre, that is, it is a naive `[Γ₁(N)]`-structure
@@ -400,17 +347,6 @@ theorem isOfNaiveExactOrder_iff_forall_lt :
   · have hN₀ := Nat.pos_of_ne_zero (NeZero.ne N)
     exact h d (Nat.pos_of_dvd_of_pos hd hN₀) ((Nat.le_of_dvd hN₀ hd).lt_of_ne hdN)
 
-/-- For `N ≠ 0`, a point `toUnit Z ≫ P` obtained by pulling back an `S`-point `P` along `Z.hom`
-has naive exact order `N` if and only if `N • P` agrees with the zero section along `Z.hom` and
-no multiple `k • P`, `0 < k < N`, meets the zero section at any point of the image of `Z.hom`. -/
-theorem isOfNaiveExactOrder_toUnit_comp_iff_forall_lt
-    (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
-    E.IsOfNaiveExactOrder (toUnit Z ≫ P) N ↔
-      Z.hom ≫ (P ^ N).left = Z.hom ≫ E.zero ∧
-        ∀ k : ℕ, 0 < k → k < N → ∀ z, (P ^ k).left (Z.hom z) ≠ E.zero (Z.hom z) := by
-  simp only [isOfNaiveExactOrder_iff_forall_lt, toUnit_comp_pow_eq_one_iff,
-    isEmpty_equalizer_toUnit_comp_one_iff]
-
 /-- **Points of `E[N]` of naive exact order `N`.** A point `y` of the `N`-torsion `E[N]` with
 values in `Z` has naive exact order `N`, as a point of `E`, exactly when it maps `Z` into the naive
 locus of the universal point `P` of `E[N]` (`EllipticCurveGeom.torsionPointHom`), the set of points
@@ -422,9 +358,9 @@ theorem isOfNaiveExactOrder_comp_torsionι_iff (y : Z ⟶ (E.torsion N).X) :
     simpa using E.comp_torsionι_zpow N y
   have hk (k : ℕ) : IsEmpty (equalizer ((y ≫ E.torsionι N) ^ k) 1).left ↔
       ∀ t, (y ≫ E.torsionι N ^ k).left t ≠ E.zero (Z.hom t) := by
-    rw [isEmpty_equalizer_iff_forall_ne_of_left_eq_hom_comp _ _ 1 (by simp [hom_one_left]),
+    rw [← Set.range_eq_empty_iff, range_equalizer_ι_left_one, Set.eq_empty_iff_forall_notMem,
       comp_pow]
-    simp [hom_one_left]
+    exact Iff.rfl
   simp only [isOfNaiveExactOrder_iff_forall_lt, h₁, true_and, hk,
     range_left_subset_naiveLocus_iff]
   -- every `a ≠ 0` in `ℤ/Nℤ` is `k • 1` for a unique `0 < k < N`
@@ -554,14 +490,6 @@ theorem exists_lift_naiveExactOrderPreimageι_iff {x : Z ⟶ Over.mk E.structure
     rw [← hx, ← hux]
     simp
 
-/-- A scheme `Z` over `S` factors through the locus where `P` has naive exact order `N`
-exactly when the restricted section `toUnit Z ≫ P` has naive exact order `N`. -/
-theorem exists_lift_naiveExactOrderPreimageι_toUnit_comp_iff (Z : Over S) :
-    (∃ l : Z.left ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = Z.hom) ↔
-      E.IsOfNaiveExactOrder (toUnit Z ≫ P) N :=
-  exists_lift_naiveExactOrderPreimageι_iff N P
-    (by simp only [Over.comp_left, Over.toUnit_left])
-
 /-- **The locus where `P` has naive exact order `N` is closed where `N` is invertible.** If `N` is
 invertible in every residue field of `S`, the naive locus of the universal point of `E[N]` is closed
 in `E[N]` (`EllipticCurveGeom.isClopen_naiveLocus`), so its preimage under `P` is a closed subscheme
@@ -575,94 +503,6 @@ theorem isClosedImmersion_naiveExactOrderPreimageι (hN : ∀ s : S, (N : S.resi
   exact MorphismProperty.of_isPullback (isPullback_naiveExactOrderPreimage N P).flip inferInstance
 
 end Locus
-
-section PreimageBaseChange
-
-variable (N) [NeZero N] {S' : Scheme.{u}} {E' : EllipticCurveGeom S'}
-  {g : E'.carrier ⟶ E.carrier} {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
-  (h0 : E'.zero ≫ g = f ≫ E.zero) {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
-  {P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap} (hP : P'.left ≫ g = f ≫ P.left)
-
-include hg h0 hP in
-/-- A morphism `t : T ⟶ S'` factors through the locus where `P'` has naive exact order `N` if
-and only if `t ≫ f` factors through the locus where `P` has naive exact order `N`. -/
-theorem exists_lift_naiveExactOrderPreimageι_iff_of_isPullback {T : Scheme.{u}} (t : T ⟶ S') :
-    (∃ l : T ⟶ naiveExactOrderPreimage N P', l ≫ naiveExactOrderPreimageι N P' = t) ↔
-      ∃ l : T ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = t ≫ f := by
-  have h₁ := exists_lift_naiveExactOrderPreimageι_toUnit_comp_iff N P' (Over.mk t)
-  have h₂ := exists_lift_naiveExactOrderPreimageι_toUnit_comp_iff N P (Over.mk (t ≫ f))
-  simp only [Over.mk_hom] at h₁ h₂
-  exact h₁.trans <| (isOfNaiveExactOrder_iff_of_isPullback hg h0 (Z := Over.mk t)
-    (by simp) (by simp [Category.assoc, hP])).trans h₂.symm
-
-/-- The morphism from the locus where `P'` has naive exact order `N` to the locus where `P` has
-naive exact order `N`, induced by a pullback square of elliptic curves carrying `P'` to `P`. -/
-noncomputable def naiveExactOrderPreimageMap :
-    naiveExactOrderPreimage N P' ⟶ naiveExactOrderPreimage N P :=
-  ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP
-    (naiveExactOrderPreimageι N P')).mp ⟨𝟙 _, Category.id_comp _⟩).choose
-
-/-- The base-change morphism `naiveExactOrderPreimageMap` lies over `f : S' ⟶ S`. -/
-@[reassoc (attr := simp)]
-theorem naiveExactOrderPreimageMap_naiveExactOrderPreimageι :
-    naiveExactOrderPreimageMap N hg h0 hP ≫ naiveExactOrderPreimageι N P =
-      naiveExactOrderPreimageι N P' ≫ f :=
-  ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP
-    (naiveExactOrderPreimageι N P')).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
-
-/-- The base-change morphism on `naiveExactOrderPreimage` along the identity square is the
-identity. -/
-@[simp]
-theorem naiveExactOrderPreimageMap_id (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
-    naiveExactOrderPreimageMap N (.id_horiz E.structureMap) (by simp) (by simp) =
-      𝟙 (naiveExactOrderPreimage N P) := by
-  refine (cancel_mono (naiveExactOrderPreimageι N P)).mp ?_
-  simp
-
-/-- The base-change morphism on `naiveExactOrderPreimage` is functorial along pasted pullback
-squares. -/
-theorem naiveExactOrderPreimageMap_comp {S'' : Scheme.{u}} {E'' : EllipticCurveGeom S''}
-    {g' : E''.carrier ⟶ E'.carrier} {f' : S'' ⟶ S'}
-    (hg' : IsPullback g' E''.structureMap E'.structureMap f')
-    (h0' : E''.zero ≫ g' = f' ≫ E'.zero)
-    {P'' : 𝟙_ (Over S'') ⟶ Over.mk E''.structureMap} (hP' : P''.left ≫ g' = f' ≫ P'.left) :
-    naiveExactOrderPreimageMap N (hg'.paste_horiz hg)
-        (by rw [← Category.assoc, h0', Category.assoc, h0, Category.assoc])
-        (by rw [← Category.assoc, hP', Category.assoc, hP, Category.assoc]) =
-      naiveExactOrderPreimageMap N hg' h0' hP' ≫ naiveExactOrderPreimageMap N hg h0 hP := by
-  refine (cancel_mono (naiveExactOrderPreimageι N P)).mp ?_
-  simp [Category.assoc]
-
--- Lift a morphism `t : T ⟶ S'` whose composition with `f` factors through `P`'s exact-order locus
--- to `P'`'s exact-order locus.
-private noncomputable def naiveExactOrderPreimageLift {T : Scheme.{u}} (t : T ⟶ S')
-    (h : ∃ l : T ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = t ≫ f) :
-    T ⟶ naiveExactOrderPreimage N P' :=
-  ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP t).mpr h).choose
-
-private theorem naiveExactOrderPreimageLift_ι {T : Scheme.{u}} (t : T ⟶ S')
-    (h : ∃ l : T ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = t ≫ f) :
-    naiveExactOrderPreimageLift N hg h0 hP t h ≫ naiveExactOrderPreimageι N P' = t :=
-  ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP t).mpr h).choose_spec
-
-/-- **The locus where a point has naive exact order `N` commutes with pointed base change.** For a
-pullback square of elliptic curves over `f : S' ⟶ S` carrying an `S'`-point `P'` to an `S`-point
-`P`, the locus of `S'` where `P'` has naive exact order `N` is the pullback along `f` of the locus
-of `S` where `P` has naive exact order `N`. -/
-theorem isPullback_naiveExactOrderPreimageMap :
-    IsPullback (naiveExactOrderPreimageMap N hg h0 hP)
-      (naiveExactOrderPreimageι N P') (naiveExactOrderPreimageι N P) f := by
-  refine IsPullback.of_isLimit' ⟨naiveExactOrderPreimageMap_naiveExactOrderPreimageι N hg h0 hP⟩ ?_
-  refine PullbackCone.IsLimit.mk _
-    (fun s ↦ naiveExactOrderPreimageLift N hg h0 hP s.snd ⟨s.fst, s.condition⟩)
-    (fun s ↦ (cancel_mono (naiveExactOrderPreimageι N P)).mp ?_)
-    (fun s ↦ naiveExactOrderPreimageLift_ι N hg h0 hP s.snd ⟨s.fst, s.condition⟩)
-    (fun s m _ hm₂ ↦ (cancel_mono (naiveExactOrderPreimageι N P')).mp ?_)
-  · rw [Category.assoc, naiveExactOrderPreimageMap_naiveExactOrderPreimageι,
-      reassoc_of% naiveExactOrderPreimageLift_ι, ← s.condition]
-  · exact hm₂.trans (naiveExactOrderPreimageLift_ι N hg h0 hP s.snd ⟨s.fst, s.condition⟩).symm
-
-end PreimageBaseChange
 
 end EllipticCurveGeom
 

@@ -386,6 +386,14 @@ noncomputable abbrev polyCurve : WeierstrassCurve (MvPolynomial (Fin 2) ℤ) :=
 the Tate normal form with coefficients `A` and `B`. -/
 abbrev Ring : Type := Localization.Away polyCurve.Δ
 
+/-- The ring `ℤ[A, B][Δ⁻¹]` is standard smooth of relative dimension `2` over `ℤ`: it is a
+localization of a polynomial ring in two variables. -/
+instance isStandardSmoothOfRelativeDimension :
+    Algebra.IsStandardSmoothOfRelativeDimension 2 ℤ Ring :=
+  have : Algebra.IsStandardSmoothOfRelativeDimension 0 (MvPolynomial (Fin 2) ℤ) Ring :=
+    .localization_away polyCurve.Δ
+  .trans 2 0 ℤ (MvPolynomial (Fin 2) ℤ) Ring
+
 /-- The ring `ℤ[A, B][Δ⁻¹]` is smooth over `ℤ`: it is a localisation of a polynomial ring in two
 variables. -/
 instance : Algebra.Smooth ℤ Ring :=

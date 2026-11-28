@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
@@ -13,7 +12,6 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.SourceDescent
 public import TauCeti.AlgebraicGeometry.Restrict
 public import Mathlib.CategoryTheory.MorphismProperty.Descent
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
-import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.SourceDescent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Descent
 
@@ -46,12 +44,6 @@ Cartier divisor.
 * `AlgebraicGeometry.SmoothOfRelativeDimension.of_comp_surjective`: if `g` is surjective and smooth
   of relative dimension `m`, `f` is locally of finite presentation, and `g ≫ f` is smooth of
   relative dimension `m + n`, then `f` is smooth of relative dimension `n`.
-* `AlgebraicGeometry.SmoothOfRelativeDimension.of_comp_of_etale_of_surjective`: if
-  `p : X' ⟶ X` is étale and surjective and `p ≫ f` is smooth of relative dimension `n`, then `f`
-  is smooth of relative dimension `n`.
-* `AlgebraicGeometry.Scheme.Hom.smoothOfRelativeDimension_comp_iff_of_etale_of_surjective`: for
-  `p : X' ⟶ X` étale and surjective and `f : X ⟶ Y`, `p ≫ f` is smooth of relative dimension `n`
-  if and only if `f` is.
 * `AlgebraicGeometry.SmoothOfRelativeDimension.descendsAlong_surjective_inf_flat_inf_quasiCompact`:
   being smooth of relative dimension `n` descends along flat, surjective, quasi-compact morphisms.
 -/
@@ -142,32 +134,4 @@ instance descendsAlong_surjective_inf_flat_inf_quasiCompact (n : ℕ) :
   exact (smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension g).mpr
     ⟨inferInstance, inferInstance⟩
 
-/-- **Smooth relative dimension descends along étale surjective morphisms on the source.** If
-`p : X' ⟶ X` is étale and surjective and `p ≫ f` is smooth of relative dimension `n`, then `f` is
-smooth of relative dimension `n`. -/
-theorem of_comp_of_etale_of_surjective {X X' Y : Scheme.{u}} {n : ℕ}
-    (p : X' ⟶ X) (f : X ⟶ Y) [Etale p] [Surjective p]
-    [SmoothOfRelativeDimension n (p ≫ f)] :
-    SmoothOfRelativeDimension n f := by
-  have : Smooth (p ≫ f) := SmoothOfRelativeDimension.smooth n (p ≫ f)
-  have : LocallyOfFinitePresentation f := LocallyOfFinitePresentation.of_comp_surjective p f
-  have : SmoothOfRelativeDimension (0 + n) (p ≫ f) := by simpa only [Nat.zero_add] using ‹_›
-  exact of_comp_surjective (m := 0) p f
-
 end AlgebraicGeometry.SmoothOfRelativeDimension
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
-
-/-- For an étale surjective morphism `p : X' ⟶ X` and any morphism `f : X ⟶ Y`, the composite
-`p ≫ f` is smooth of relative dimension `n` if and only if `f` is. -/
-theorem smoothOfRelativeDimension_comp_iff_of_etale_of_surjective {X X' Y : Scheme.{u}}
-    {n : ℕ} (p : X' ⟶ X) [Etale p] [Surjective p] (f : X ⟶ Y) :
-    SmoothOfRelativeDimension n (p ≫ f) ↔ SmoothOfRelativeDimension n f :=
-  ⟨fun _ ↦ SmoothOfRelativeDimension.of_comp_of_etale_of_surjective p f,
-    fun h ↦ by
-      have := SmoothOfRelativeDimension.smooth n f
-      exact Nat.zero_add n ▸ (inferInstance : SmoothOfRelativeDimension (0 + n) (p ≫ f))⟩
-
-end AlgebraicGeometry.Scheme.Hom

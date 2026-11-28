@@ -148,59 +148,32 @@ noncomputable def pointsPullback :
     congr 1
     apply pullback.hom_ext <;> simp [pointPullback_left_comp]
 
-/-- Points of a base change with values in a scheme `Z` over `S'` are the points of the original
-elliptic curve valued in `Z` over `S`. Composition with the pullback projection gives an
-equivalence of groups. -/
-noncomputable def pointsBaseChangeEquivOver {Z : Over S'} {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f') :
-    (Z ⟶ Over.mk E'.structureMap) ≃*
-      (Over.mk f' ⟶ Over.mk E.structureMap) where
-  toFun x := Over.homMk (x.left ≫ g)
-    (by have hx := Over.w x; simp at hx; simp [← e, hg.w, reassoc_of% hx])
-  invFun y := Over.homMk (hg.lift y.left Z.hom (by simpa [← e] using Over.w y)) (by simp)
-  left_inv x := by
-    ext1
-    exact hg.hom_ext (by simp) (by simpa using (Over.w x).symm)
-  right_inv y := by ext1; simp
-  map_mul' x y := by
-    ext1
-    exact mul_left_comp_eq_of_isPullback hg h0 e rfl rfl
-
-/-- The underlying morphism of the point corresponding to a base-changed point is its
-composite with the pullback projection. -/
-@[simp]
-theorem pointsBaseChangeEquivOver_left {Z : Over S'} {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f')
-    (x : Z ⟶ Over.mk E'.structureMap) :
-    (pointsBaseChangeEquivOver hg h0 e x).left = x.left ≫ g := by
-  rfl
-
-/-- The `Z`-point of `E'` given by a point `y` of `E` with values in `Z` over `S` is the unique
-point `x` of `E'` with `x ≫ g = y`. -/
-@[reassoc (attr := simp)]
-theorem pointsBaseChangeEquivOver_symm_apply_left_comp {Z : Over S'} {f' : Z.left ⟶ S}
-    (e : Z.hom ≫ f = f') (y : Over.mk f' ⟶ Over.mk E.structureMap) :
-    ((pointsBaseChangeEquivOver hg h0 e).symm y).left ≫ g = y.left :=
-  hg.lift_fst _ _ _
-
 /-- Points of a base change are the points of the original elliptic curve valued in the
 new base. Composition with the pullback projection gives an equivalence of groups. -/
 noncomputable def pointsBaseChangeEquiv :
     (𝟙_ (Over S') ⟶ Over.mk E'.structureMap) ≃*
-      (Over.mk f ⟶ Over.mk E.structureMap) :=
-  pointsBaseChangeEquivOver hg h0 (Category.id_comp f)
+      (Over.mk f ⟶ Over.mk E.structureMap) where
+  toFun P := Over.homMk (P.left ≫ g) (by simp [Category.assoc, hg.w])
+  invFun Q := Over.homMk (hg.lift Q.left (𝟙 S') (by simpa using Over.w Q)) (by simp)
+  left_inv P := point_ext hg (by simp)
+  right_inv Q := by ext1; simp
+  map_mul' P Q := by
+    ext1
+    exact mul_left_comp_eq_of_isPullback hg h0 (Category.id_comp f) rfl rfl
 
 /-- The underlying morphism of the point corresponding to a base-changed point is its
 composite with the pullback projection. -/
 @[simp]
 theorem pointsBaseChangeEquiv_left (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
     (pointsBaseChangeEquiv hg h0 P).left = P.left ≫ g := by
-  rw [pointsBaseChangeEquiv, pointsBaseChangeEquivOver_left]
+  rfl
 
 /-- The `S'`-point of `E'` given by a point `x` of `E` with values in `S'` is the unique section
 `P` of `E'` with `P ≫ g = x`. -/
 @[reassoc (attr := simp)]
 theorem pointsBaseChangeEquiv_symm_apply_left_comp (x : Over.mk f ⟶ Over.mk E.structureMap) :
-    ((pointsBaseChangeEquiv hg h0).symm x).left ≫ g = x.left := by
-  rw [pointsBaseChangeEquiv, pointsBaseChangeEquivOver_symm_apply_left_comp]
+    ((pointsBaseChangeEquiv hg h0).symm x).left ≫ g = x.left :=
+  hg.lift_fst _ _ _
 
 /-- The base change `P'` of a point `P` satisfies `P' ≫ g = f ≫ P`. -/
 @[reassoc (attr := simp)]

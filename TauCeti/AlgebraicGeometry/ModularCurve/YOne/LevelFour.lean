@@ -15,10 +15,10 @@ On an elliptic Tate normal form `Y² + AXY + BY = X³ + BX²` over an arbitrary 
 (`WeierstrassCurve.tateNormalForm_projModelMulBy_four_eq_projModelZero_iff`), while `(0, 0)`,
 `2 • (0, 0)` and `3 • (0, 0)` miss the zero section everywhere. Consequently the naive `Y₁(4)`
 moduli scheme over `ℤ` (`UniversalTate.yOne 4`, representing the naive `[Γ₁(4)]` problem) is
-isomorphic to `Spec ℤ[B, (B(1 - 16B))⁻¹]` (`UniversalTate.yOneFourIso`), and `EllObj.yOne B 4`
-is smooth of relative dimension `1` over every base scheme `B` without any invertibility
-assumption (`EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`). Where `4` (i.e. `2`) is
-invertible on `B`, naive `[Γ₁(4)]` agrees with the Drinfeld moduli problem `[Γ₁(4)]`.
+isomorphic to `Spec ℤ[B, (B(1 - 16B))⁻¹]` (`UniversalTate.yOneFourIso`) and smooth of relative
+dimension `1` over `Spec ℤ` (`UniversalTate.smoothOfRelativeDimension_one_terminal_from_yOne_four`).
+Where `4` (i.e. `2`) is invertible on `B`, naive `[Γ₁(4)]` agrees with the Drinfeld moduli problem
+`[Γ₁(4)]`.
 
 ## Main definitions
 
@@ -35,8 +35,6 @@ invertible on `B`, naive `[Γ₁(4)]` agrees with the Drinfeld moduli problem `[
   `yOneι 4` with the spectrum of the specialization map `A = 1`.
 * `TauCeti.AlgebraicGeometry.UniversalTate.smoothOfRelativeDimension_one_terminal_from_yOne_four`:
   naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`.
-* `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`:
-  naive `EllObj.yOne B 4` is smooth of relative dimension `1` over every base scheme `B`.
 
 ## References
 
@@ -166,19 +164,5 @@ instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
     yOneFourIso.{u}.hom _).mpr inferInstance
 
 end UniversalTate
-
-namespace EllObj
-
-/-- **Naive `Y₁(4)` is smooth of relative dimension `1` over every base scheme `B`** (and agrees
-with Drinfeld `Y₁(4)` where `4` is invertible). -/
-instance smoothOfRelativeDimension_one_yOne_four_structureMap (B : Scheme.{u}) :
-    SmoothOfRelativeDimension 1 (yOne B 4).structureMap := by
-  have hfst : SmoothOfRelativeDimension 1 (prod.fst : B ⨯ UniversalTate.yOne.{u} 4 ⟶ B) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
-  rw [← yOneBaseIsoProd_hom_fst]
-  exact (MorphismProperty.cancel_left_of_respectsIso (@SmoothOfRelativeDimension 1)
-    (yOneBaseIsoProd B 4).hom _).mpr hfst
-
-end EllObj
 
 end TauCeti.AlgebraicGeometry

@@ -162,26 +162,8 @@ theorem point_projModelMulBy_three_ne_projModelZero (s) :
 /-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth of relative dimension
 two over `Spec ℤ`, the terminal scheme: it is an open subscheme of the affine plane. -/
 instance smoothOfRelativeDimension_terminal_from :
-    SmoothOfRelativeDimension 2 (terminal.from (Spec (.of (ULift.{u} Ring)))) := by
-  let e₁ : ULift.{u} ℤ ≃+* ℤ := ULift.ringEquiv
-  let e₂ : Ring ≃+* ULift.{u} Ring := ULift.ringEquiv.symm
-  let f : ULift.{u} ℤ →+* ULift.{u} Ring :=
-    (e₂ : Ring →+* ULift.{u} Ring).comp ((algebraMap ℤ Ring).comp (e₁ : ULift.{u} ℤ →+* ℤ))
-  -- `ℤ[A, B][Δ⁻¹]` is a localisation away from one element of the polynomial ring `ℤ[A, B]`
-  have : Algebra.IsStandardSmoothOfRelativeDimension 0 (MvPolynomial (Fin 2) ℤ) Ring :=
-    .localization_away polyCurve.Δ
-  have : Algebra.IsStandardSmoothOfRelativeDimension 2 ℤ Ring :=
-    .trans (n := 2) (m := 0) ℤ (MvPolynomial (Fin 2) ℤ) Ring
-  have hf : f.IsStandardSmoothOfRelativeDimension (0 + (2 + 0)) :=
-    (RingHom.IsStandardSmoothOfRelativeDimension.equiv e₂).comp
-      (((RingHom.isStandardSmoothOfRelativeDimension_algebraMap 2).mpr inferInstance).comp
-        (RingHom.IsStandardSmoothOfRelativeDimension.equiv e₁))
-  have : SmoothOfRelativeDimension 2 (Spec.map (CommRingCat.ofHom f)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension 2)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hf
-  have e := specULiftZIsTerminal.{u}.uniqueUpToIso terminalIsTerminal
-  rw [terminal.hom_ext (terminal.from _) (Spec.map (CommRingCat.ofHom f) ≫ e.hom)]
-  exact inferInstanceAs (SmoothOfRelativeDimension (2 + 0) _)
+    SmoothOfRelativeDimension 2 (terminal.from (Spec (.of (ULift.{u} Ring)))) :=
+  SmoothOfRelativeDimension.terminal_from_Spec_ulift 2
 
 /-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth over `Spec ℤ`, the
 terminal scheme. -/
