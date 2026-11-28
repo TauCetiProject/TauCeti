@@ -10,11 +10,11 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
-import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 
 /-!
 # Colimits of modules
@@ -58,7 +58,8 @@ the homology of a space exhausted by subspaces whose successive relative homolog
 * `TauCeti.ModuleCat.exists_injective_of_iso_sigma`: a module isomorphic to a nonempty coproduct
   of copies of `R` receives an injective linear map from `R`.
 * `ModuleCat.telescopeDiff`: the map `⨁ₙ Fₙ → ⨁ₙ Fₙ`, `x ↦ x - φₙ(x)`, which is injective
-  (`ModuleCat.telescopeDiff_injective`).
+  (`ModuleCat.telescopeDiff_injective`), and equals `F.sequenceDifference` under
+  `coprodIsoDirectSum` (`ModuleCat.ofHom_telescopeDiff`).
 * `ModuleCat.telescopeShortComplex`: the telescope sequence of a cocone over `F : ℕ ⥤ ModuleCat R`,
   short exact when the cocone is a colimit (`ModuleCat.shortExact_telescopeShortComplex`).
 * `ModuleCat.injective_ι_app_of_isColimit`: the legs of a colimit of a sequence of injections are
@@ -175,30 +176,19 @@ variable {R : Type u} [Ring R]
 
 variable (F : ℕ ⥤ ModuleCat.{v} R)
 
-section
-
-local instance instHasCoproductNat : HasCoproduct F.obj :=
-  ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
-
 /-- The difference map of the telescope of a sequence `F₀ → F₁ → ⋯` of modules: the endomorphism
 of `⨁ₙ Fₙ` sending `x` in the summand `Fₙ` to `x - φₙ(x)`, where `φₙ(x)` lies in the summand
 `Fₙ₊₁`. -/
 noncomputable def telescopeDiff : (⨁ n, F.obj n) →ₗ[R] ⨁ n, F.obj n :=
+  letI : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
   ((coprodIsoDirectSum F.obj).inv ≫ F.sequenceDifference ≫ (coprodIsoDirectSum F.obj).hom).hom
-
-/-- As a morphism in `ModuleCat R`, `ofHom (telescopeDiff F)` is `F.sequenceDifference`
-conjugated by `coprodIsoDirectSum F.obj`. -/
-private theorem ofHom_telescopeDiff :
-    ofHom (telescopeDiff F) =
-      (coprodIsoDirectSum F.obj).inv ≫ F.sequenceDifference ≫
-        (coprodIsoDirectSum F.obj).hom := by
-  rw [telescopeDiff, ofHom_hom]
 
 @[simp]
 theorem telescopeDiff_lof (n : ℕ) (x : F.obj n) :
     telescopeDiff F (lof R ℕ (fun n ↦ F.obj n) n x) =
       lof R ℕ (fun n ↦ F.obj n) n x -
         lof R ℕ (fun n ↦ F.obj n) (n + 1) (F.map (homOfLE (n.le_add_right 1)) x) := by
+  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
   have hcomp : (ofHom (lof R ℕ (fun n ↦ F.obj n) n) ≫ (coprodIsoDirectSum F.obj).inv) ≫
       F.sequenceDifference ≫ (coprodIsoDirectSum F.obj).hom =
       ofHom (lof R ℕ (fun n ↦ F.obj n) n) -
@@ -206,6 +196,19 @@ theorem telescopeDiff_lof (n : ℕ) (x : F.obj n) :
     rw [lof_coprodIsoDirectSum_inv]
     simp [Functor.ι_sequenceDifference_assoc, Preadditive.sub_comp]
   exact congrArg (fun φ : F.obj n ⟶ of R (⨁ n, F.obj n) ↦ φ x) hcomp
+
+/-- As a morphism in `ModuleCat R`, `ofHom (telescopeDiff F)` is `F.sequenceDifference`
+conjugated by `coprodIsoDirectSum F.obj`, for any `HasCoproduct F.obj` instance. -/
+theorem ofHom_telescopeDiff [HasCoproduct F.obj] :
+    ofHom (telescopeDiff F) =
+      (coprodIsoDirectSum F.obj).inv ≫ F.sequenceDifference ≫
+        (coprodIsoDirectSum F.obj).hom := by
+  rw [← cancel_epi (coprodIsoDirectSum F.obj).hom, Iso.hom_inv_id_assoc]
+  refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
+  rw [← Category.assoc, ι_coprodIsoDirectSum_hom, Functor.ι_sequenceDifference_assoc,
+    Preadditive.sub_comp, ι_coprodIsoDirectSum_hom, Category.assoc, ι_coprodIsoDirectSum_hom]
+  ext x
+  simp
 
 @[simp]
 theorem telescopeDiff_apply_zero (a : ⨁ n, F.obj n) : telescopeDiff F a 0 = a 0 := by
@@ -274,33 +277,24 @@ theorem telescopeShortComplex_g (c : Cocone F) :
 /-- The telescope sequence of a colimit cocone over a sequence of modules is short exact. -/
 theorem shortExact_telescopeShortComplex {c : Cocone F} (hc : IsColimit c) :
     (telescopeShortComplex F c).ShortExact := by
+  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
   let S := telescopeShortComplex F c
   let e := coprodIsoDirectSum F.obj
-  have hg : (e ≪≫ eqToIso (telescopeShortComplex_X₂ F c).symm).hom ≫ S.g =
-      Sigma.desc (fun n : ℕ ↦ c.ι.app n) ≫ (eqToIso (telescopeShortComplex_X₃ F c).symm).hom := by
-    simp only [S, Iso.trans_hom, eqToIso.hom, Category.assoc, telescopeShortComplex_g,
-      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    rw [← Category.assoc]
-    refine congrArg (· ≫ eqToHom (telescopeShortComplex_X₃ F c).symm)
-      (Limits.Sigma.hom_ext _ _ fun n ↦ ?_)
+  have hg : e.hom ≫ S.g = Sigma.desc (fun n : ℕ ↦ c.ι.app n) ≫ (Iso.refl c.pt).hom := by
+    dsimp only [S, telescopeShortComplex]
+    rw [Iso.refl_hom, Category.comp_id]
+    refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
     rw [← Category.assoc, ι_coprodIsoDirectSum_hom, Sigma.ι_comp_desc]
     ext x
     simp
-  have hf : (e ≪≫ eqToIso (telescopeShortComplex_X₁ F c).symm).hom ≫ S.f =
-      F.sequenceDifference ≫ (e ≪≫ eqToIso (telescopeShortComplex_X₂ F c).symm).hom := by
-    simp only [S, e, Iso.trans_hom, eqToIso.hom, Category.assoc, telescopeShortComplex_f,
-      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ofHom_telescopeDiff,
-      Iso.hom_inv_id_assoc]
+  have hf : e.hom ≫ S.f = F.sequenceDifference ≫ e.hom := by
+    dsimp only [S, telescopeShortComplex]
+    rw [ofHom_telescopeDiff, Iso.hom_inv_id_assoc]
   have hcok : IsColimit (CokernelCofork.ofπ S.g S.zero) :=
-    IsCokernel.ofIso _ (F.isColimitCokernelCoforkOfIsColimit hc) _
-      (e ≪≫ eqToIso (telescopeShortComplex_X₁ F c).symm)
-      (e ≪≫ eqToIso (telescopeShortComplex_X₂ F c).symm)
-      (eqToIso (telescopeShortComplex_X₃ F c).symm) hf hg
+    IsCokernel.ofIso _ (F.isColimitCokernelCoforkOfIsColimit hc) _ e e (Iso.refl c.pt) hf hg
   have : Mono S.f := (mono_iff_injective _).2 (telescopeDiff_injective F)
   have : Epi S.g := epi_of_isColimit_cofork hcok
   exact ShortComplex.ShortExact.mk' (S.exact_of_g_is_cokernel hcok) inferInstance inferInstance
-
-end
 
 /-- **The legs of a sequential colimit of injections are injective.** If the transition maps
 `Fₙ → Fₙ₊₁` of a sequence of modules are injective, so are the legs `Fₙ → c.pt` of a colimit

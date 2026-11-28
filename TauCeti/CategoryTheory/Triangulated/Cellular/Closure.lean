@@ -169,21 +169,30 @@ theorem InCellClosure.of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M 
   have hS : InCellClosure G (∐ X.obj) := InCellClosure.coproduct_of_small X.obj hX
   exact InCellClosure.of_distTriang₃ ht hS hS
 
+/-- If every generator `G i` belongs to `InCellClosure G'`, then `InCellClosure G` is contained
+in `InCellClosure G'`. -/
+theorem InCellClosure.of_forall_inCellClosure {I' : Type v} {G' : I' → T}
+    (h : ∀ i, InCellClosure G' (G i)) {R : T} (hR : InCellClosure G R) :
+    InCellClosure G' R :=
+  hR.induction_on h (fun e hA ↦ hA.of_iso e)
+    (fun _ f hf ↦ InCellClosure.coproduct f hf)
+    (fun _ ht h₁ h₂ ↦ InCellClosure.of_distTriang₃ ht h₁ h₂)
+
 /-- Monotonicity of `InCellClosure` up to isomorphism of generators. -/
 theorem InCellClosure.mono {I' : Type v} {G' : I' → T}
     (h : ∀ i, ∃ j, Nonempty (G i ≅ G' j)) {R : T} (hR : InCellClosure G R) :
     InCellClosure G' R :=
-  hR.induction_on
-    (fun i ↦ let ⟨j, ⟨e⟩⟩ := h i; (InCellClosure.generator G' j).of_iso e.symm)
-    (fun e hA ↦ hA.of_iso e)
-    (fun _ f hf ↦ InCellClosure.coproduct f hf)
-    (fun _ ht h₁ h₂ ↦ InCellClosure.of_distTriang₃ ht h₁ h₂)
+  hR.of_forall_inCellClosure fun i ↦
+    let ⟨j, ⟨e⟩⟩ := h i
+    (InCellClosure.generator G' j).of_iso e.symm
 
 /-- Inclusion of generator ranges implies inclusion of cellular closures. -/
 theorem InCellClosure.of_range_subset {I' : Type v} {G' : I' → T}
     (h : Set.range G ⊆ Set.range G') {R : T} (hR : InCellClosure G R) :
     InCellClosure G' R :=
-  hR.mono fun i ↦ let ⟨j, hj⟩ := h ⟨i, rfl⟩; ⟨j, ⟨eqToIso hj.symm⟩⟩
+  hR.of_forall_inCellClosure fun i ↦
+    let ⟨j, hj⟩ := h ⟨i, rfl⟩
+    (InCellClosure.generator G' j).of_iso (eqToIso hj)
 
 /-- Replacing generators by isomorphic objects leaves `InCellClosure` unchanged. -/
 theorem inCellClosure_iff_of_iso_family {G' : I → T} (e : ∀ i, G i ≅ G' i) (R : T) :

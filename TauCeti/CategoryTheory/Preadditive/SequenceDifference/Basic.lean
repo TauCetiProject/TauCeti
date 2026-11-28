@@ -197,7 +197,7 @@ def isColimitCokernelCoforkOfIsColimit {c : Cocone X} (hc : IsColimit c) :
       (Fork.ext (Iso.refl _) (by simp [desc_op_comp_opCoproductIsoProduct_hom]))
   let kfOp : KernelFork X.sequenceDifference.op :=
     KernelFork.ofι (Sigma.desc fun n : ℕ ↦ c.ι.app n).op
-      (by rw [← op_comp, sequenceDifference_desc_ι_app, op_zero])
+      (by simp only [← op_comp, sequenceDifference_desc_ι_app, op_zero])
   have hforkOp : IsLimit kfOp :=
     IsKernel.ofIso _ hfork kfOp (opCoproductIsoProduct X.obj).symm
       (opCoproductIsoProduct X.obj).symm (Iso.refl _)

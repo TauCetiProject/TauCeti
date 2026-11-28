@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.CategoryTheory.Preadditive.Compact
 public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 
+import TauCeti.CategoryTheory.Preadditive.Yoneda
+
 /-!
 # Sequence–difference maps and compact objects
 
@@ -68,11 +70,16 @@ theorem coprodComparisonAddEquiv_telescopeDiff (A : T) (X : ℕ ⥤ T) [HasCopro
               (g ≫ X.map (homOfLE (n.le_add_right 1))) := by
         have hlof := ModuleCat.telescopeDiff_lof (X ⋙ preadditiveCoyonedaObj A) n g
         simp only [DirectSum.lof_eq_of] at hlof
+        simp only [Functor.comp_obj, Functor.comp_map, preadditiveCoyonedaObj_map_apply] at hlof
         exact hlof
-      have hsub := congrArg
-        (fun φ : (preadditiveCoyoneda.obj (op A)).obj (X.obj n) ⟶
-            (preadditiveCoyoneda.obj (op A)).obj (∐ X.obj) ↦ φ g)
-        (X.map_ι_comp_map_sequenceDifference (preadditiveCoyoneda.obj (op A)) n)
+      have hsub : (preadditiveCoyoneda.obj (op A)).map X.sequenceDifference
+          ((preadditiveCoyoneda.obj (op A)).map (Sigma.ι X.obj n) g) =
+          (preadditiveCoyoneda.obj (op A)).map (Sigma.ι X.obj n) g -
+            (preadditiveCoyoneda.obj (op A)).map (Sigma.ι X.obj (n + 1))
+              ((preadditiveCoyoneda.obj (op A)).map (X.map (homOfLE (n.le_add_right 1))) g) :=
+        ConcreteCategory.congr_hom
+          (X.map_ι_comp_map_sequenceDifference (preadditiveCoyoneda.obj (op A)) n) g
+      simp only [preadditiveCoyoneda_obj_map_apply] at hsub
       rw [hD, map_sub, coprodComparisonAddEquiv_of, coprodComparisonAddEquiv_of]
       exact hsub.symm
     | add a b ha hb => simp [map_add, ha, hb, Preadditive.add_comp]

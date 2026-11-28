@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Triangulated.Yoneda
 public import TauCeti.Algebra.Category.Grp.ZModuleEquivalence
 public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
@@ -15,6 +16,7 @@ public import TauCeti.CategoryTheory.Shift.Limits
 import Mathlib.Algebra.Category.Grp.FilteredColimits
 import TauCeti.CategoryTheory.ConcreteCategory.Basic
 import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
+import TauCeti.CategoryTheory.Preadditive.Yoneda
 import TauCeti.CategoryTheory.Triangulated.HomologicalFunctor
 
 /-!
@@ -34,13 +36,14 @@ We establish:
    (`comp_ι_comp_eq_zero_iff_of_milnorTriangle`).
 2. **The generic Milnor exact sequence:** for `F : Tᵒᵖ ⥤ ModuleCat.{s} R` homological taking
    countable coproducts to products, `0 ⟶ lim¹ F((Xₙ)⟦1⟧) ⟶ F(M) ⟶ lim F(Xₙ) ⟶ 0` is a
-   natural short exact sequence, with `TauCeti.exists_lift_of_milnorTriangle` for
-   `AddCommGrpCat`-valued functors.
+   natural short exact sequence (`CategoryTheory.Functor.milnorShortComplex`,
+   `CategoryTheory.Functor.shortExact_milnorShortComplex`), with
+   `TauCeti.exists_lift_of_milnorTriangle` for `AddCommGrpCat`-valued functors.
 
 ## Main definitions
 
 * `TauCeti.coconeOfMilnorTriangle`, `CategoryTheory.Functor.milnorObjToLim`,
-  `CategoryTheory.Functor.milnorLimOneToObj`
+  `CategoryTheory.Functor.milnorLimOneToObj`, `CategoryTheory.Functor.milnorShortComplex`
 
 ## Main results
 
@@ -50,6 +53,7 @@ We establish:
 * `CategoryTheory.Functor.milnorLimOneToObj_injective`,
   `CategoryTheory.Functor.exact_milnorLimOneToObj_milnorObjToLim`,
   `CategoryTheory.Functor.milnorObjToLim_surjective`,
+  `CategoryTheory.Functor.shortExact_milnorShortComplex`,
   `CategoryTheory.Functor.milnorObjToLim_bijective_of_subsingleton_limOne`,
   `CategoryTheory.Functor.milnorObjToLim_naturality`,
   `CategoryTheory.Functor.milnorLimOneToObj_naturality`
@@ -109,8 +113,8 @@ theorem surjective_comp_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {
   have hfδ : f ≫ δ = 0 := X.injective_comp_shift_sequenceDifference <| by
     have hδ : δ ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧' = 0 := comp_distTriang_mor_zero₃₁ _ ht
     dsimp only; rw [Category.assoc, hδ, comp_zero, zero_comp]
-  exact ((ShortComplex.ab_exact_iff _).1
-    ((preadditiveCoyoneda.obj (op A)).map_distinguished_exact _ (rot_of_distTriang _ ht))) f hfδ
+  obtain ⟨g, hg⟩ := Triangle.coyoneda_exact₃ _ ht f hfδ
+  exact ⟨g, hg.symm⟩
 
 /-- If `Hom(A, -)` preserves countable coproducts, then `Hom(A, -)` sends any Milnor homotopy
 colimit triangle to a colimit cocone in `AddCommGrpCat`. -/
@@ -128,16 +132,19 @@ def isColimitMapCoconeOfMilnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M :
   have hcomp := X.sigmaComparison_comp_map_sequenceDifference F
   have hψ : X.sequenceDifference ≫ ψ = 0 := comp_distTriang_mor_zero₁₂ _ ht
   have hz : (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj ≫ F.map ψ = 0 := by
-    rw [← Category.assoc, ← hcomp, Category.assoc, ← F.map_comp, hψ, F.map_zero, comp_zero]
+    simp only [← X.sigmaComparison_comp_map_sequenceDifference_assoc, ← F.map_comp, hψ, F.map_zero,
+      comp_zero]
   let iso : ∐ (X ⋙ F).obj ≅ F.obj (∐ X.obj) := asIso (sigmaComparison F X.obj)
   have hcok : IsColimit (CokernelCofork.ofπ (sigmaComparison F X.obj ≫ F.map ψ) hz) :=
     IsCokernel.ofIso _ hex.gIsCokernel _ iso.symm iso.symm (Iso.refl _)
       (by simp [iso, hcomp]) (by simp [iso])
   exact IsColimit.ofIsoColimit ((X ⋙ F).isColimitCoconeOfSequenceDifference hcok)
     (Cocone.ext (Iso.refl _) fun n ↦ by
-      dsimp only [Functor.coconeOfSequenceDifference, Cofork.ofπ_pt, coconeOfMilnorTriangle]
-      simp only [NatTrans.ofSequence_app, Cofork.π_ofπ, Iso.refl_hom, Category.comp_id,
-        Functor.mapCocone_ι_app]
+      rw [Functor.coconeOfSequenceDifference_ι_app, Functor.mapCocone_ι_app,
+        coconeOfMilnorTriangle_ι_app, Iso.refl_hom]
+      dsimp only [Functor.coconeOfSequenceDifference, Cofork.ofπ_pt, Functor.mapCocone,
+        coconeOfMilnorTriangle]
+      rw [Category.comp_id, Cofork.π_ofπ]
       exact (ι_comp_sigmaComparison_assoc F X.obj n (F.map ψ)).trans
         (F.map_comp (Sigma.ι X.obj n) ψ).symm)
 
@@ -154,7 +161,9 @@ theorem exists_factor_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M 
     (CategoryTheory.forget AddCommGrpCat.{v})
   have hc := isColimitOfPreserves (CategoryTheory.forget AddCommGrpCat.{v})
     (isColimitMapCoconeOfMilnorTriangle ht (A := A))
-  obtain ⟨N, h, hh⟩ := Types.jointly_surjective_of_isColimit hc g
+  obtain ⟨N, (h : A ⟶ X.obj N), hh⟩ := Types.jointly_surjective_of_isColimit hc g
+  change (preadditiveCoyoneda.obj (op A)).map ((coconeOfMilnorTriangle ht).ι.app N) h = g at hh
+  rw [preadditiveCoyoneda_obj_map_apply, coconeOfMilnorTriangle_ι_app] at hh
   exact ⟨N, h, hh.symm⟩
 
 /-- **Kernel criterion for morphisms out of a compact object into a Milnor homotopy colimit:**
@@ -176,8 +185,9 @@ theorem comp_ι_comp_eq_zero_iff_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct
   obtain ⟨m, f, hm⟩ := Concrete.exists_map_eq_zero_of_ι_eq_zero
     (X ⋙ preadditiveCoyoneda.obj (op A)) (isColimitMapCoconeOfMilnorTriangle ht (A := A))
     (n := n) (x := h) (by
-      rw [Functor.mapCocone_ι_app, coconeOfMilnorTriangle_ι_app]
+      rw [Functor.mapCocone_ι_app, preadditiveCoyoneda_obj_map_apply, coconeOfMilnorTriangle_ι_app]
       exact hzero)
+  rw [Functor.comp_map, preadditiveCoyoneda_obj_map_apply] at hm
   exact ⟨m, leOfHom f, by rwa [Subsingleton.elim (homOfLE (leOfHom f)) f]⟩
 
 end CompactMapping
@@ -240,6 +250,14 @@ section Additive
 
 variable [F.Additive]
 
+omit [HasZeroObject T] [HasShift T ℤ] [∀ (n : ℤ), (shiftFunctor T n).Additive]
+  [Pretriangulated T] in
+private theorem map_op_apply_eq_zero_of_comp_eq_zero {W Y Z : T} {f : W ⟶ Y} {g : Y ⟶ Z}
+    (h : f ≫ g = 0) (u : F.obj (op Z)) :
+    F.map f.op (F.map g.op u) = 0 := by
+  rw [← map_op_comp_apply, h, op_zero, F.map_zero]
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+
 private theorem map_δ_comp_cofanOpToPiLinearEquiv_symm_shift
     (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
     [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
@@ -253,10 +271,8 @@ private theorem map_δ_comp_cofanOpToPiLinearEquiv_symm_shift
       F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op (e₁.symm y) := e₁.injective <| by
     rw [LinearEquiv.apply_symm_apply, cofanOpToPiLinearEquiv_map_shift_sequenceDifference,
       LinearEquiv.apply_symm_apply]
-  have hδ : δ ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧' = 0 := comp_distTriang_mor_zero₃₁ _ ht
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, hshift,
-    ← map_op_comp_apply, hδ, op_zero, F.map_zero]
-  simp
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, hshift]
+  exact F.map_op_apply_eq_zero_of_comp_eq_zero (comp_distTriang_mor_zero₃₁ _ ht) _
 
 /-- The connecting map `lim¹ F((Xₙ)⟦1⟧) →ₗ[R] F(M)` of the Milnor exact sequence, induced
 by `F.map δ.op : F((∐ Xₙ)⟦1⟧) → F(M)`. -/
@@ -328,6 +344,61 @@ theorem milnorLimOneToObj_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : 
     milnorLimOneToObj_mk_map]
   exact (F.map_op_apply_eq_of_comp_eq φ.comm₃ y).symm
 
+/-- The composite `lim¹ F((Xₙ)⟦1⟧) → F(M) → lim F(Xₙ)` of the Milnor sequence is zero. -/
+@[simp]
+theorem milnorObjToLim_comp_milnorLimOneToObj
+    (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    F.milnorObjToLim ht ∘ₗ F.milnorLimOneToObj ht = 0 := by
+  refine LinearMap.ext fun z ↦ ?_
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+  refine Subtype.ext <| funext fun n ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero, Pi.zero_apply,
+    coe_milnorObjToLim_apply, F.milnorLimOneToObj_mk ht]
+  have hcomp : ψ ≫ δ = 0 := comp_distTriang_mor_zero₂₃ _ ht
+  exact F.map_op_apply_eq_zero_of_comp_eq_zero (by rw [Category.assoc, hcomp, comp_zero]) _
+
+/-- The Milnor short complex `lim¹ F((Xₙ)⟦1⟧) ⟶ F(M) ⟶ lim F(Xₙ)` in `ModuleCat R`
+attached to a Milnor homotopy colimit triangle. -/
+@[expose]
+def milnorShortComplex (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    ShortComplex (ModuleCat.{s} R) :=
+  ShortComplex.mk (ModuleCat.ofHom (F.milnorLimOneToObj ht))
+    (ModuleCat.ofHom (F.milnorObjToLim ht))
+    (ModuleCat.hom_ext (F.milnorObjToLim_comp_milnorLimOneToObj ht))
+
+@[simp]
+theorem milnorShortComplex_X₁ (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    (F.milnorShortComplex ht).X₁ =
+      ModuleCat.of R (ModuleTower.limOne ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)) :=
+  rfl
+
+@[simp]
+theorem milnorShortComplex_X₂ (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    (F.milnorShortComplex ht).X₂ = F.obj (op M) :=
+  rfl
+
+@[simp]
+theorem milnorShortComplex_X₃ (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    (F.milnorShortComplex ht).X₃ = ModuleCat.of R (ModuleTower.lim (X.op ⋙ F)) :=
+  rfl
+
+@[simp]
+theorem milnorShortComplex_f (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    (F.milnorShortComplex ht).f = ModuleCat.ofHom (F.milnorLimOneToObj ht) :=
+  rfl
+
+@[simp]
+theorem milnorShortComplex_g (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    (F.milnorShortComplex ht).g = ModuleCat.ofHom (F.milnorObjToLim ht) :=
+  rfl
+
 end Additive
 
 section Homological
@@ -342,9 +413,8 @@ theorem milnorObjToLim_surjective (ht : Triangle.mk X.sequenceDifference ψ δ �
   have hzero : F.map X.sequenceDifference.op (e.symm x) = 0 := e.injective <| by
     rw [cofanOpToPiLinearEquiv_map_sequenceDifference, LinearEquiv.apply_symm_apply, map_zero]
     exact LinearMap.mem_ker.1 (ModuleTower.lim_eq_ker (X.op ⋙ F) ▸ hx)
-  obtain ⟨u, hu⟩ := (ShortComplex.moduleCat_exact_iff _).1
-    (F.map_distinguished_op_exact _ ht) (e.symm x) hzero
-  dsimp at hu
+  obtain ⟨u, hu⟩ := F.exists_map_op_mor₂_eq_of_moduleCat ht hzero
+  simp only [Triangle.mk_mor₂] at hu
   refine ⟨u, Subtype.ext <| funext fun n ↦ ?_⟩
   rw [coe_milnorObjToLim_apply, map_op_comp_apply, hu]
   exact (coproductIsCoproduct X.obj).map_inj_cofanOpToPiLinearEquiv_symm F x n
@@ -381,19 +451,25 @@ theorem exact_milnorLimOneToObj_milnorObjToLim
         (fun v : ModuleTower.lim (X.op ⋙ F) ↦ (v : ModuleTower.Product (X.op ⋙ F)) n) hu
       rw [coe_milnorObjToLim_apply, map_op_comp_apply] at hcoord
       dsimp only [e]; rw [IsColimit.cofanOpToPiLinearEquiv_apply]; exact hcoord
-    obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).1
-      (F.map_distinguished_op_exact _ (rot_of_distTriang _ ht)) u hψ
-    dsimp at hy
+    obtain ⟨y, hy⟩ := F.exists_map_op_mor₂_eq_of_moduleCat (rot_of_distTriang _ ht) hψ
+    simp only [Triangle.rotate_mor₂, Triangle.mk_mor₃] at hy
     refine ⟨Submodule.Quotient.mk (e₁ y), ?_⟩
     rw [F.milnorLimOneToObj_mk ht, e₁.symm_apply_apply, hy]
   · rintro ⟨z, rfl⟩
-    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ z
-    have hψδ : ψ ≫ δ = 0 := comp_distTriang_mor_zero₂₃ _ ht
-    ext n
-    simp only [ModuleTower.limπ_apply, coe_milnorObjToLim_apply, F.milnorLimOneToObj_mk ht,
-      ZeroMemClass.coe_zero, Pi.zero_apply]
-    rw [← map_op_comp_apply, Category.assoc, hψδ, comp_zero, op_zero, F.map_zero]
-    simp
+    exact LinearMap.congr_fun (F.milnorObjToLim_comp_milnorLimOneToObj ht) z
+
+/-- The Milnor sequence `0 ⟶ lim¹ F((Xₙ)⟦1⟧) ⟶ F(M) ⟶ lim F(Xₙ) ⟶ 0` is short exact
+for any contravariant homological functor `F : Tᵒᵖ ⥤ ModuleCat R` preserving the countable
+products of `X` and `X⟦1⟧`. -/
+theorem shortExact_milnorShortComplex
+    (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op (X.obj n)) F]
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F] :
+    (F.milnorShortComplex ht).ShortExact :=
+  ModuleCat.shortComplex_shortExact (F.milnorShortComplex ht)
+    (F.exact_milnorLimOneToObj_milnorObjToLim ht)
+    (F.milnorLimOneToObj_injective ht)
+    (F.milnorObjToLim_surjective ht)
 
 /-- When `lim¹ F((Xₙ)⟦1⟧)` vanishes, the Milnor restriction map `F(M) →ₗ[R] lim F(Xₙ)`
 is bijective. -/

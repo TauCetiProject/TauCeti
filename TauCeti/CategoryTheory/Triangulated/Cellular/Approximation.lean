@@ -13,6 +13,8 @@ import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import Mathlib.CategoryTheory.Triangulated.Opposite.Pretriangulated
 import TauCeti.Algebra.Category.Grp.Products
 import TauCeti.CategoryTheory.ConcreteCategory.Basic
+import TauCeti.CategoryTheory.Preadditive.Yoneda
+import TauCeti.CategoryTheory.Triangulated.HomologicalFunctor
 
 /-!
 # Cellular approximation in pretriangulated categories with coproducts
@@ -110,10 +112,8 @@ private def approxStep (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHo
     dsimp only [Cofan.inj, Cofan.mk_ι_app]
     rw [← CategoryTheory.Functor.map_op_comp_apply, Sigma.ι_comp_desc]
     exact p.2.property
-  have hlift : ∃ u : E.obj (op nextObj), E.map j.op u = s.pt := by
-    have hex := (ShortComplex.ab_exact_iff _).1 (E.map_distinguished_op_exact _ ht)
-    dsimp only [ShortComplex.op, ShortComplex.map, shortComplexOfDistTriangle] at hex
-    exact hex s.pt hk0
+  have hlift : ∃ u : E.obj (op nextObj), E.map j.op u = s.pt :=
+    E.exists_map_op_mor₂_eq_of_addCommGrpCat ht hk0
   exact
     { next := ⟨nextObj, hcell, hlift.choose⟩
       mor := j
@@ -170,8 +170,13 @@ bijections `(G i ⟶ R) → (G i ⟶ Y)` by postcomposition for every `i`. -/
 theorem exists_inCellClosure_bijective_comp (G : I → T) (hG : ∀ i, IsCompactForCoproducts (G i))
     (Y : T) :
     ∃ R : T, InCellClosure G R ∧ ∃ u : R ⟶ Y,
-      ∀ i, Function.Bijective (fun f : G i ⟶ R ↦ f ≫ u) :=
-  exists_inCellClosure_bijective_map_op G hG (preadditiveYoneda.obj Y) fun _ ↦ inferInstance
+      ∀ i, Function.Bijective (fun f : G i ⟶ R ↦ f ≫ u) := by
+  obtain ⟨R, hR, (u : R ⟶ Y), hu⟩ :=
+    exists_inCellClosure_bijective_map_op G hG (preadditiveYoneda.obj Y) fun _ ↦ inferInstance
+  refine ⟨R, hR, u, fun i ↦ ?_⟩
+  have hui := hu i
+  simp only [preadditiveYoneda_obj_map_apply, Quiver.Hom.unop_op] at hui
+  exact hui
 
 end CellularApproximation
 
