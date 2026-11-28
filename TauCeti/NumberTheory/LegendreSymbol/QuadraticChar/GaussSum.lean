@@ -5,29 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 
 /-!
-# Twisting quadratic exponential sums by the quadratic character
+# Quadratic exponential sums and the quadratic character
 
-Let `F` be a finite field of odd characteristic, `χ` its quadratic character and `ψ` a primitive
-additive character of `F`. For `c ≠ 0`, the quadratic exponential sum `∑_x ψ(c x²)` is
-`χ(c) ∑_x ψ(x²)`. Grouping the terms by `a = c x²`, which has `1 + χ(c a)` preimages `x`, turns
-the sum into `∑_a χ(c a) ψ(a)`, since `ψ` sums to zero; multiplicativity of `χ` then extracts the
-factor `χ(c)` from this Gauss sum of `χ`.
+Let `F` be a finite field of odd characteristic with `q` elements, `χ` its quadratic character and
+`ψ` a nontrivial additive character of `F`. For `c ≠ 0`, the quadratic exponential sum
+`∑_x ψ(c x²)` is `χ(c) ∑_x ψ(x²)`. Grouping the terms by `a = c x²`, which has `1 + χ(c a)`
+preimages `x`, turns the sum into `∑_a χ(c a) ψ(a)`, since `ψ` sums to zero; multiplicativity of
+`χ` then extracts the factor `χ(c)` from this Gauss sum of `χ`.
 
 This is how the quadratic Gauss sums of a finite field with an arbitrary nonzero coefficient are
-reduced to the one with coefficient `1`.
+reduced to the one with coefficient `1`, which is the Gauss sum `g(χ, ψ)`. Its square is
+`χ(-1) q`. The file also records `∑_a χ(a) ψ(a b) = χ(b) ∑_x ψ(x²)`, an input of Ghosh and
+Sarnak's point counts on Markoff surfaces over `𝔽_p`. The character sum
+`∑_x χ(c - x²) = -χ(-1)` for `c ≠ 0`, another input of these counts, is
+`TauCeti.sum_quadraticChar_sub_sq` in
+`TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Jacobsthal.Basic`.
 
 ## Main results
 
 * `TauCeti.sum_addChar_mul_sq`: `∑_x ψ(c x²) = χ(c) ∑_x ψ(x²)` for `c ≠ 0`.
+* `TauCeti.sum_addChar_sq_eq_gaussSum`: `∑_x ψ(x²) = g(χ, ψ)`.
+* `TauCeti.sum_addChar_sq_sq`: `(∑_x ψ(x²))² = χ(-1) q`.
+* `TauCeti.sum_quadraticChar_mul_addChar_mul`: `∑_a χ(a) ψ(a b) = χ(b) ∑_x ψ(x²)`.
 
 ## References
 
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 6.
+* A. Ghosh and P. Sarnak, *Integral points on Markoff type cubic surfaces*, §6, proof of
+  Lemma 6.4.
 -/
 
 public section
@@ -54,5 +65,66 @@ theorem sum_addChar_mul_sq {F R : Type*} [Field F] [Fintype F] [DecidableEq F] [
   rw [htwist c hc, h1, mul_sum]
   refine sum_congr rfl fun a _ ↦ ?_
   rw [map_mul, Int.cast_mul, mul_assoc]
+
+variable {F R : Type*} [Field F] [Fintype F] [DecidableEq F] [CommRing R] [IsDomain R]
+
+/-- **The quadratic exponential sum is a Gauss sum**: for a nontrivial additive character `ψ` of a
+finite field of odd characteristic, `∑_x ψ(x²) = g(χ, ψ)`, with the quadratic character `χ` read
+in `R`. -/
+theorem sum_addChar_sq_eq_gaussSum (hF : ringChar F ≠ 2) {ψ : AddChar F R} (hψ : ψ ≠ 1) :
+    ∑ x, ψ (x ^ 2) = gaussSum ((quadraticChar F).ringHomComp (Int.castRingHom R)) ψ := by
+  -- Group `x` by `a = x²`, which has `1 + χ(a)` preimages, and use `∑_a ψ(a) = 0`.
+  have h := sum_comp_mul_sq hF one_ne_zero fun a ↦ ψ a
+  simp only [one_mul, zsmul_eq_mul, Int.cast_add, Int.cast_one, add_mul, sum_add_distrib,
+    AddChar.sum_eq_zero_of_ne_one hψ, zero_add] at h
+  rw [h, gaussSum]
+  simp only [MulChar.ringHomComp_apply, eq_intCast]
+
+/-- **The square of the quadratic Gauss sum**: for a nontrivial additive character `ψ` of a
+finite field of odd characteristic, `(∑_x ψ(x²))² = χ(-1) q`. -/
+theorem sum_addChar_sq_sq (hF : ringChar F ≠ 2) {ψ : AddChar F R} (hψ : ψ ≠ 1) :
+    (∑ x, ψ (x ^ 2)) ^ 2 = quadraticChar F (-1) * Fintype.card F := by
+  rcases eq_or_ne (ringChar R) 2 with hR | hR
+  · -- In characteristic `2`, `χ` reads as `1` off `0`, so both sides are `1`.
+    have : CharP R 2 := ringChar.of_eq hR
+    have hχ : (quadraticChar F).ringHomComp (Int.castRingHom R) = 1 := by
+      ext a
+      rcases quadraticChar_dichotomy a.ne_zero with h | h <;>
+        simp [MulChar.ringHomComp_apply, h, CharTwo.neg_eq]
+    have h1 := congr($hχ (-1))
+    simp only [MulChar.ringHomComp_apply, eq_intCast] at h1
+    rw [MulChar.one_apply isUnit_neg_one] at h1
+    obtain ⟨k, hk⟩ := Nat.odd_iff.mpr (FiniteField.odd_card_of_char_ne_two hF)
+    rw [sum_addChar_sq_eq_gaussSum hF hψ, hχ, gaussSum_one_left hψ, h1, hk]
+    simp [CharTwo.two_eq_zero]
+  have hχ : (quadraticChar F).ringHomComp (Int.castRingHom R) ≠ 1 := by
+    obtain ⟨a, ha⟩ := quadraticChar_exists_neg_one' hF
+    refine MulChar.ne_one_iff.mpr ⟨a, ?_⟩
+    simpa only [MulChar.ringHomComp_apply, ha, eq_intCast, Int.cast_neg, Int.cast_one] using
+      Ring.neg_one_ne_one_of_char_ne_two hR
+  rw [sum_addChar_sq_eq_gaussSum hF hψ, gaussSum_sq hχ ((quadraticChar_isQuadratic F).comp _)
+    (AddChar.IsPrimitive.of_ne_one hψ), MulChar.ringHomComp_apply, eq_intCast]
+
+/-- For a nontrivial additive character `ψ` of a finite field of odd characteristic and every
+`b`, `∑_a χ(a) ψ(a b) = χ(b) ∑_x ψ(x²)`. -/
+theorem sum_quadraticChar_mul_addChar_mul (hF : ringChar F ≠ 2) {ψ : AddChar F R} (hψ : ψ ≠ 1)
+    (b : F) :
+    ∑ a, (quadraticChar F a : R) * ψ (a * b) = quadraticChar F b * ∑ x, ψ (x ^ 2) := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · -- Both sides vanish, since `∑_a χ(a) = 0` and `χ(0) = 0`.
+    simp only [mul_zero, AddChar.map_zero_eq_one, mul_one, quadraticChar_zero, Int.cast_zero,
+      zero_mul]
+    rw [← Int.cast_sum, quadraticChar_sum_zero hF, Int.cast_zero]
+  -- `χ(b) g(χ, ψ_b) = g(χ, ψ)` for the shift `ψ_b(x) = ψ(b x)`, and `χ(b)² = 1`.
+  have h := gaussSum_mulShift ((quadraticChar F).ringHomComp (Int.castRingHom R)) ψ
+    (Units.mk0 b hb)
+  simp only [Units.val_mk0, gaussSum, AddChar.mulShift_apply, MulChar.ringHomComp_apply,
+    eq_intCast] at h
+  have hb2 : (quadraticChar F b : R) * quadraticChar F b = 1 := by
+    rw [← Int.cast_mul, ← sq, quadraticChar_sq_one hb, Int.cast_one]
+  rw [sum_addChar_sq_eq_gaussSum hF hψ, gaussSum]
+  simp only [MulChar.ringHomComp_apply, eq_intCast]
+  rw [← h, ← mul_assoc, hb2, one_mul]
+  simp_rw [mul_comm _ b]
 
 end TauCeti
