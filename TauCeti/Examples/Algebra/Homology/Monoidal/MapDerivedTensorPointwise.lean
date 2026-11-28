@@ -11,9 +11,8 @@ public import TauCeti.Algebra.Homology.Monoidal.KFlat.MapDerivedTensorPointwise
 # Identity check for the canonical derived tensor comparison
 
 The identity functor's canonical comparison agrees with the identifications induced by
-`mapDerivedCategoryIdIso`. Pointwise K-flat replacements, without a functorial choice, also
-verify its invertibility. The counit-naturality identity test follows the analogous
-uncurried test in [Tau Ceti PR #47457](https://github.com/TauCetiProject/TauCeti/pull/47457).
+`mapDerivedCategoryIdIso`, using the named library identity law. Pointwise K-flat replacements,
+without a functorial choice, also verify its invertibility.
 -/
 
 public section
@@ -38,21 +37,8 @@ variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPre
 
 namespace TauCeti.Examples.DerivedTensorPointwise
 
-/-- Cochain tensor compatibility for the identity functor. -/
-def identityCochainComparison : MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
-    (whiskeringRight _ _ _).obj ((𝟭 C).mapHomologicalComplex (.up ℤ)) ≅
-  (((whiskeringLeft₂ (CochainComplex C ℤ)).obj ((𝟭 C).mapHomologicalComplex (.up ℤ))).obj
-    ((𝟭 C).mapHomologicalComplex (.up ℤ))).obj
-      (MonoidalCategory.curriedTensor (CochainComplex C ℤ)) := by
-  let e := mapHomologicalComplexIdIso C (.up ℤ)
-  let T := MonoidalCategory.curriedTensor (CochainComplex C ℤ)
-  let W := whiskeringLeft₂ (C₁ := CochainComplex C ℤ) (C₂ := CochainComplex C ℤ)
-    (D₁ := CochainComplex C ℤ) (D₂ := CochainComplex C ℤ) (CochainComplex C ℤ)
-  exact isoWhiskerLeft T ((whiskeringRight _ _ _).mapIso e) ≪≫ rightUnitor T ≪≫
-    ((((W.mapIso e).app ((𝟭 C).mapHomologicalComplex (.up ℤ))).app T) ≪≫
-      (((W.obj (𝟭 _)).mapIso e).app T)).symm
-
-example : IsIso ((𝟭 C).mapDerivedTensorComparison (identityCochainComparison (C := C))) := by
+example : IsIso ((𝟭 C).mapDerivedTensorComparison
+    (TauCeti.identityCochainComparison (C := C)).inv) := by
   apply isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat_and_isKFlat_map
   intro K
   obtain ⟨P, f, hf, hP⟩ := K.exists_quasiIso_isKFlat_of_hasLeftResolutions
@@ -60,34 +46,8 @@ example : IsIso ((𝟭 C).mapDerivedTensorComparison (identityCochainComparison 
   exact CochainComplex.isKFlat_of_iso (K := P)
     ((mapHomologicalComplexIdIso C (.up ℤ)).app P).symm
 
-/-- The structural identity comparison on the derived tensor bifunctor. -/
-def identityDerivedComparison : derivedTensorOfMap (𝟭 C) ≅ mapDerivedTensor (𝟭 C) := by
-  let e := mapDerivedCategoryIdIso C
-  let T := TauCeti.derivedTensor C
-  let W := whiskeringLeft₂ (C₁ := DerivedCategory C) (C₂ := DerivedCategory C)
-    (D₁ := DerivedCategory C) (D₂ := DerivedCategory C) (DerivedCategory C)
-  exact (((W.mapIso e).app (𝟭 C).mapDerivedCategory).app T) ≪≫
-    (((W.obj (𝟭 _)).mapIso e).app T) ≪≫
-    (isoWhiskerLeft T ((whiskeringRight _ _ _).mapIso e) ≪≫ rightUnitor T).symm
-
-example : (𝟭 C).mapDerivedTensorComparison (identityCochainComparison (C := C)) =
-    (identityDerivedComparison (C := C)).hom := by
-  symm
-  apply mapDerivedTensorComparison_unique
-  intro K L
-  rw [← cancel_mono ((mapDerivedCategoryIdIso C).hom.app
-    (DerivedCategory.Q.obj (K ⊗ L)))]
-  have h₁ := (mapDerivedCategoryIdIso C).hom.naturality
-    (((TauCeti.derivedTensorCounit C).app K).app L)
-  have h₂ := (whiskeringLeft₂HomEquiv (TauCeti.derivedTensorCounit C)).naturality
-    (((mapHomologicalComplexIdIso C (.up ℤ)).hom.app K,
-      (mapHomologicalComplexIdIso C (.up ℤ)).hom.app L) : (_, _) ⟶ (K, L))
-  dsimp [whiskeringLeft₂HomEquiv] at h₁ h₂
-  -- Use naturality of the derived identity isomorphism, then naturality of the
-  -- tensor counit along the cochain identity isomorphism in both variables.
-  simp [identityDerivedComparison, identityCochainComparison,
-    mapDerivedCategoryIdIso_hom_app,
-    derivedTensorOfMapCounit_app_app] at h₁ h₂ ⊢
-  simp_all [← NatTrans.naturality_assoc]
+example : (𝟭 C).mapDerivedTensorComparison (TauCeti.identityCochainComparison (C := C)).inv =
+    (TauCeti.identityDerivedComparison (C := C)).hom :=
+  mapDerivedTensorComparison_id
 
 end TauCeti.Examples.DerivedTensorPointwise
