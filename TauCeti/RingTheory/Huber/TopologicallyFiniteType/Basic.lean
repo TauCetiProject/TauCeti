@@ -11,12 +11,13 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
 import TauCeti.Data.Set.Finite
-import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.Topology.Algebra.GroupCompletion
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import TauCeti.Topology.Algebra.Ring.Ideal
 import Mathlib.Topology.Baire.CompleteMetrizable
 
@@ -497,7 +498,8 @@ theorem isStrictlyTopologicallyFiniteType_of_surjective {k : ℕ}
     IsUniformAddGroup.uniformity_countably_generated
   exact isStrictlyTopologicallyFiniteType_iff.mpr
     ⟨k, π.toRingHom, ⟨hs, continuous_of_continuousAt_zero π.toLinearMap hπ,
-      π.toLinearMap.isOpenMap_of_isTateRing hs hπ⟩, π.comp_algebraMap⟩
+      TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul π.toLinearMap hs hπ⟩,
+      π.comp_algebraMap⟩
 
 end OpenMappingPresentation
 

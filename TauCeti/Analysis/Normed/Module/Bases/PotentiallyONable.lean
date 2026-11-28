@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.Bases.Orthonormal
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
+import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.MetricSpace.Ultra.Pi
 
 /-!

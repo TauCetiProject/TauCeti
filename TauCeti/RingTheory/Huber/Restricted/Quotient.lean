@@ -9,8 +9,9 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
-import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import TauCeti.Topology.LiftTendstoCofinite
 import Mathlib.Data.Finsupp.Encodable
 
@@ -93,8 +94,8 @@ theorem mem_map_weightedC_iff {J : Ideal A} (hJ : J.FG) (hJc : IsClosed (J : Set
     exact hg
   -- The presentation `Aⁿ → J` is open, by the open mapping theorem.
   have hopen := LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp <|
-    u.isStrictMap_of_isClosed_range_of_isTateRing (LinearMap.continuous_on_pi u).continuousAt
-      (hu ▸ hJc)
+    u.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul
+      (LinearMap.continuous_on_pi u).continuousAt (hu ▸ hJc)
   have hf₀ : Tendsto (fun ν ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A))
       cofinite (𝓝 0) :=
     isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.property)

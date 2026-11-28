@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
+import Mathlib.Topology.Baire.CompleteMetrizable
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 
 /-!
 # Bounds on maps from finite Banach modules
 
-Over a complete ultrametric Tate ring, every linear map from a finite complete normed module
-with contractive scalar action to a seminormed module with contractive scalar action is bounded.
-The target need not be complete or ultrametric. The ring need not be commutative or noetherian,
-and the modules need not be free.
+Over a complete Tate ring, every linear map from a finite complete normed module with contractive
+scalar action to a seminormed module with contractive scalar action is bounded. The target need not
+be complete, and neither the ring nor the modules need be ultrametric. The ring need not be
+commutative or noetherian, and the modules need not be free.
 
 The key input is quantitative finite spanning: a finite generating family admits coefficient
 lifts bounded linearly in the norm of the vector. The composite of an arbitrary linear map
@@ -49,14 +50,14 @@ public section
 
 namespace LinearMap
 
-variable {R M N : Type*} [SeminormedRing R] [IsUltrametricDist R] [CompleteSpace R]
+variable {R M N : Type*} [SeminormedRing R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M] [CompleteSpace M]
   [Module.Finite R M]
   [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
 
-/-- Every linear map from a finite Banach module over a complete ultrametric Tate ring is
-bounded. The target is only seminormed and need not be complete or ultrametric. -/
+/-- Every linear map from a finite Banach module over a complete Tate ring is bounded. The target
+is only seminormed and need not be complete. -/
 theorem exists_bound_of_module_finite (f : M →ₗ[R] N) :
     ∃ C > 0, ∀ x, ‖f x‖ ≤ C * ‖x‖ := by
   obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := R) (M := M)
@@ -77,7 +78,7 @@ end LinearMap
 
 namespace LinearEquiv
 
-variable {R M N : Type*} [SeminormedRing R] [IsUltrametricDist R] [CompleteSpace R]
+variable {R M N : Type*} [SeminormedRing R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M] [CompleteSpace M]
   [Module.Finite R M]

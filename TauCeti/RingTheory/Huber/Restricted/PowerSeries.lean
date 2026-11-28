@@ -700,8 +700,9 @@ a finitely generated `M` surjective.
 The hypothesis is the filter inequality the proof actually consumes rather than `IsOpenMap φ`,
 which is strictly stronger here: these modules carry `ContinuousAdd` rather than
 `IsTopologicalAddGroup`, so without translation invariance global openness does not follow from
-openness at `0`. A caller holding `IsOpenMap φ` — over a Tate ring, from
-`LinearMap.isOpenMap_of_isTateRing` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
+openness at `0`. A caller holding `IsOpenMap φ` — which over a Tate ring can be discharged via
+Henkel's theorem (`TauCeti.HasZeroSequenceOfUnits.isOpenMap`) when its source, target, and
+continuity assumptions hold — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
 theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*} [Semiring A]
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousConstSMul A M] [(nhds (0 : M)).IsCountablyGenerated]

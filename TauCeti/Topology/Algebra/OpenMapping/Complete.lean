@@ -6,132 +6,188 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Sequence
-public import TauCeti.Topology.Algebra.Nonarchimedean.FirstCountable
-public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Topology.Algebra.Group.FirstCountable
 
 /-!
 # Removing the closure from Henkel's approximation
 
 The Baire step of Henkel's open mapping theorem produces a point of `closure (f '' U)`, not of
 `f '' U`, and every step after it inherits that closure. This file removes it: over a complete
-source with a basis of open subgroups at zero, a point of `closure (f '' V 0)` really is the
-image of a point of `V 0`.
+uniform commutative additive group `M`, the approximating sequence of
+`TauCeti/Topology/Algebra/OpenMapping/Sequence.lean` sums to a preimage in `M`.
 
-Three ingredients meet here, and each supplies exactly one thing.
+Two settings are handled here.
 
-* The approximating sequence of `TauCeti/Topology/Algebra/OpenMapping/Sequence.lean` gives
-  errors `x n ∈ V n` whose partial sums leave a residual in `closure (f '' V (n + 1))`.
-* Completeness turns those errors into an actual sum: they tend to zero along the basis, and a
-  null sequence in a complete nonarchimedean group is summable.
-* Regularity of the target sends the residuals to zero. Continuity controls `f '' V (n + 1)`
-  and never its closure, so it cannot do this alone; what does it is that a neighbourhood of
-  zero in `N` contains the closure of a neighbourhood (`hasBasis_nhds_closure`).
-
-The subgroups do the rest of the work: the sum of the errors stays inside `V 0` because `V 0` is
-a subgroup and, being a neighbourhood of zero, is closed.
-
-When `M` is moreover first countable, such a basis exists, and the closure step alone makes the
-map open: if the closure of the image of every neighbourhood of zero is a neighbourhood of zero,
-then so is the image itself.
+* **General complete uniform commutative additive groups**
+  (`TauCeti.mem_image_of_mem_closure_image_of_add_subset` and
+  `TauCeti.isOpenMap_of_closure_image_mem_nhds`): for an additive map into a `T₀` topological
+  additive group `N`, along a sequence of sets `V : ℕ → Set M` with `V 0` closed, `0 ∈ V n`,
+  `V (n + 1) + V (n + 1) ⊆ V n`, and shrinking into every neighbourhood of zero, if the errors
+  satisfy `x i ∈ V (i + 1)`, every tail sum `∑_{i = n}^{n + m - 1} x i` lies in `V n`, so the
+  partial sums form a Cauchy sequence inside `V 0`. Completeness gives a limit in `V 0`, and
+  regularity of the `T₀` target (`hasBasis_nhds_closure`, together with uniqueness of limits) sends
+  the residuals to zero and identifies the image. When `𝓝 (0 : M)` is countably generated, such a
+  sequence exists inside any neighbourhood of zero, so `f` is open once the closure of the image
+  of every neighbourhood of zero is a neighbourhood of zero. No nonarchimedean, locally convex, or
+  normed structure is needed.
+* **Subgroup bases** (`TauCeti.mem_image_of_mem_closure_image`): the general lemma passes from `V 1`
+  to `V 0` (without requiring `V 0` to be strictly larger than `V 1`). When the basis consists of
+  subgroups `V n`, `V 0 + V 0 ⊆ V 0` holds, so applying the general lemma to the shifted sequence
+  `V 0, V 0, V 1, …` yields `closure (f '' V 0) ⊆ f '' V 0`.
 
 ## Main results
 
-* `TauCeti.mem_image_of_mem_closure_image`: `closure (f '' V 0) ⊆ f '' V 0`, in the presence of
-  a basis of subgroups, completeness, and the neighbourhood hypothesis the Baire step supplies.
-* `TauCeti.isOpenMap_of_closure_image_mem_nhds`: an additive map out of a complete
-  first-countable nonarchimedean group is open once the closures of the images of neighbourhoods
-  of zero are neighbourhoods of zero.
+* `TauCeti.mem_image_of_mem_closure_image_of_add_subset`: for `f` continuous at zero into a `T₀`
+  topological additive group `N`, along a shrinking sequence `V` of sets containing `0` with `V 0`
+  closed, `V (n + 1) + V (n + 1) ⊆ V n`, and `closure (f '' V (n + 2)) ∈ 𝓝 0` for all `n`, we
+  have `closure (f '' V 1) ⊆ f '' V 0`.
+* `TauCeti.mem_image_of_mem_closure_image`: the sharper subgroup form
+  `closure (f '' V 0) ⊆ f '' V 0` into a `T₀` topological additive group for an antitone basis of
+  subgroups when `f` is continuous at zero and `closure (f '' V (n + 1)) ∈ 𝓝 0` for all `n`.
+* `TauCeti.isOpenMap_of_closure_image_mem_nhds`: an additive map from a complete first-countable
+  uniform commutative additive group to a `T₀` topological additive group is open once the closures
+  of the images of neighbourhoods of zero are neighbourhoods of zero.
 
 ## References
 
 * L. Henkel, *An Open Mapping Theorem for rings which have a zero sequence of units*,
   [arXiv:1407.5647](https://arxiv.org/abs/1407.5647).
+* N. Bourbaki, *General Topology*, Chapter IX, §5, no. 3, and *Topological Vector Spaces*,
+  Chapter I, §3, no. 3 (Banach–Schauder theorem).
 -/
 
 public section
 
 open Filter Topology
+open scoped Pointwise Uniformity
 
 namespace TauCeti
 
 variable {M N : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
   [AddGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N] [T0Space N]
 
-/-- **Henkel's approximation converges.** Let `V` be an antitone basis of subgroups at zero in a
-complete group `M`, let `f : M → N` be an additive map continuous at zero, and suppose each
+/-- **Banach–Schauder / Henkel closure removal.** Let `V : ℕ → Set M` be a shrinking sequence of
+sets containing `0` in a complete uniform commutative additive group `M` such that `V 0` is closed,
+`V (n + 1) + V (n + 1) ⊆ V n` for all `n`, and every neighbourhood of `0` contains some `V n`.
+If `f : M → N` is an additive map into a `T₀` topological additive group `N`, continuous at zero,
+and each `closure (f '' V (n + 2))` is a neighbourhood of zero, then every point of
+`closure (f '' V 1)` lies in `f '' V 0`.
+
+No nonarchimedean or vector-space hypothesis is needed: for errors `x i ∈ V (i + 1)`, the doubling
+bound `V (n + 1) + V (n + 1) ⊆ V n` controls arbitrary finite tail sums, making the partial sums
+Cauchy inside `V 0`. -/
+theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
+    [AddMonoidHomClass F M N] (f : F) (hf : ContinuousAt (f : M → N) 0) {V : ℕ → Set M}
+    (hV0 : IsClosed (V 0)) (h0 : ∀ n, (0 : M) ∈ V n)
+    (hadd : ∀ n, V (n + 1) + V (n + 1) ⊆ V n)
+    (hbasis : ∀ U ∈ 𝓝 (0 : M), ∃ n, V n ⊆ U)
+    (hVN : ∀ n, closure ((f : M → N) '' V (n + 2)) ∈ 𝓝 (0 : N))
+    {y : N} (hy : y ∈ closure ((f : M → N) '' V 1)) :
+    y ∈ (f : M → N) '' V 0 := by
+  have hf' : Continuous (f : M → N) := continuous_of_continuousAt_zero f hf
+  have hanti : Antitone V := antitone_nat_of_succ_le fun n x hx ↦
+    hadd n (by simpa only [add_zero] using Set.add_mem_add hx (h0 (n + 1)))
+  obtain ⟨x, hxV, hxres⟩ :=
+    exists_seq_mem_and_sub_sum_mem f (fun n ↦ V (n + 1)) hVN hy
+  let s : ℕ → M := fun k ↦ ∑ i ∈ Finset.range k, x i
+  have hs_mem : ∀ k, s k ∈ V 0 := fun k ↦ by
+    simpa only [s, zero_add, Nat.Ico_zero_eq_range] using
+      Finset.sum_Ico_mem_of_add_subset h0 hadd hxV k 0
+  have hs_cauchy : CauchySeq s :=
+    (𝓝 (0 : M)).basis_sets.uniformity_of_nhds_zero_swapped.cauchySeq_iff'.mpr fun U hU ↦
+      let ⟨K, hK⟩ := hbasis U hU
+      ⟨K, fun n hn ↦ hK <| by
+        rw [← Finset.sum_Ico_eq_sub x hn, ← Nat.add_sub_of_le hn]
+        exact Finset.sum_Ico_mem_of_add_subset h0 hadd hxV (n - K) K⟩
+  obtain ⟨a, ha⟩ := cauchySeq_tendsto_of_complete hs_cauchy
+  refine ⟨a, hV0.mem_of_tendsto ha (Eventually.of_forall hs_mem), ?_⟩
+  have hpart : Tendsto (fun n ↦ (f : M → N) (s (n + 1))) atTop (𝓝 ((f : M → N) a)) :=
+    ((hf'.tendsto a).comp ha).comp (tendsto_add_atTop_nat 1)
+  refine tendsto_nhds_unique hpart ?_
+  have hres : Tendsto (fun n ↦ y - (f : M → N) (s (n + 1))) atTop (𝓝 (0 : N)) := by
+    refine (hasBasis_nhds_closure (0 : N)).tendsto_right_iff.mpr fun U hU ↦ ?_
+    have hpre : (f : M → N) ⁻¹' U ∈ 𝓝 (0 : M) :=
+      hf (by rw [map_zero]; exact hU)
+    obtain ⟨n₀, hn₀⟩ := hbasis _ hpre
+    filter_upwards [eventually_ge_atTop n₀] with n hn
+    exact closure_mono ((Set.image_mono
+      ((hanti (hn.trans (Nat.le_add_right n 2))).trans hn₀)).trans
+      (Set.image_preimage_subset _ _)) (hxres n)
+  simpa [s] using hres.neg.add_const y
+
+/-- **Henkel's approximation converges (subgroup form).** Let `V` be an antitone basis of subgroups
+at zero in a complete uniform commutative additive group `M`, let `f : M → N` be an additive map
+into a `T₀` topological additive group `N` continuous at zero, and suppose each
 `closure (f '' V (n + 1))` is a neighbourhood of zero — which is what the Baire step of Henkel's
 theorem provides. Then every point of `closure (f '' V 0)` is already the image of a point of
 `V 0`.
 
-`M` is not assumed nonarchimedean: a basis of subgroups at zero is exactly that condition, and
-the proof reconstructs the instance from `hV`. `N` need not be commutative, and separation of it
-is used only to identify the two limits of the partial sums. -/
+`M` is not assumed nonarchimedean: this follows directly from
+`TauCeti.mem_image_of_mem_closure_image_of_add_subset` applied to the shifted sequence
+`V 0, V 0, V 1, …`. `N` need not be commutative, and separation of it is used only to identify the
+two limits of the partial sums. -/
 theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
     (f : F) (hf : ContinuousAt (f : M → N) 0) {V : ℕ → AddSubgroup M}
     (hV : (𝓝 (0 : M)).HasAntitoneBasis fun n ↦ (V n : Set M))
     (hVN : ∀ n, closure ((f : M → N) '' (V (n + 1) : Set M)) ∈ 𝓝 (0 : N))
     {y : N} (hy : y ∈ closure ((f : M → N) '' (V 0 : Set M))) :
     y ∈ (f : M → N) '' (V 0 : Set M) := by
-  have hf' : Continuous (f : M → N) := continuous_of_continuousAt_zero f hf
-  obtain ⟨x, hxV, hxres⟩ :=
-    exists_seq_mem_and_sub_sum_mem f (fun n ↦ (V n : Set M)) hVN hy
-  -- A basis of subgroups at zero *is* nonarchimedeanness, so the instance need not be assumed.
-  have : NonarchimedeanAddGroup M :=
-    ⟨fun U hU ↦ by
-      obtain ⟨n, -, hn⟩ := hV.toHasBasis.mem_iff.mp hU
-      exact ⟨⟨V n, (V n).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial)⟩, hn⟩⟩
-  -- The errors tend to zero along the basis, so in a complete group they are summable.
-  have hsummable : Summable x :=
-    NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-      (by rw [Nat.cofinite_eq_atTop]; exact hV.tendsto hxV)
-  -- Their sum stays in `V 0`: an open subgroup is closed, and every error lies in it.
-  refine ⟨∑' n, x n, tsum_mem ((V 0).isClosed_of_isOpen
-    ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial)))
-    (fun n ↦ hV.antitone (Nat.zero_le n) (hxV n)), ?_⟩
-  -- The partial sums have two limits under `f`: its value at the sum, and `y`.
-  have hpart : Tendsto (fun n ↦ (f : M → N) (∑ i ∈ Finset.range (n + 1), x i)) atTop
-      (𝓝 ((f : M → N) (∑' n, x n))) :=
-    ((hf'.tendsto _).comp hsummable.hasSum.tendsto_sum_nat).comp (tendsto_add_atTop_nat 1)
-  refine tendsto_nhds_unique hpart ?_
-  -- The residuals tend to zero: the sets holding them shrink because `N` is regular.
-  have hres : Tendsto (fun n ↦ y - (f : M → N) (∑ i ∈ Finset.range (n + 1), x i)) atTop
-      (𝓝 (0 : N)) := by
-    refine (hasBasis_nhds_closure (0 : N)).tendsto_right_iff.mpr fun U hU ↦ ?_
-    have hpre : (f : M → N) ⁻¹' U ∈ 𝓝 (0 : M) :=
-      hf (by rw [map_zero]; exact hU)
-    obtain ⟨n₀, -, hn₀⟩ := hV.toHasBasis.mem_iff.mp hpre
-    filter_upwards [eventually_ge_atTop n₀] with n hn
-    exact closure_mono ((Set.image_mono
-      ((hV.antitone (hn.trans (Nat.le_succ n))).trans hn₀)).trans
-      (Set.image_preimage_subset _ _)) (hxres n)
-  -- `-(y - f s) + y = f s` reassociates without commuting anything in `N`.
-  simpa using hres.neg.add_const y
+  let W : ℕ → Set M
+    | 0 => (V 0 : Set M)
+    | n + 1 => (V n : Set M)
+  have hW0_eq : W 0 = (V 0 : Set M) := rfl
+  have hW1_eq : W 1 = (V 0 : Set M) := rfl
+  have hW_succ : ∀ n, W (n + 1) = (V n : Set M) := fun _ ↦ rfl
+  have hW0 : IsClosed (W 0) := by
+    rw [hW0_eq]
+    exact (V 0).isClosed_of_isOpen ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial))
+  have h0 : ∀ n, (0 : M) ∈ W n := fun n ↦ by
+    cases n with
+    | zero => exact (V 0).zero_mem
+    | succ n => exact (V n).zero_mem
+  have hadd : ∀ n, W (n + 1) + W (n + 1) ⊆ W n := by
+    rintro (_ | n)
+    · exact Set.add_subset_iff.mpr fun a ha b hb ↦ (V 0).add_mem ha hb
+    · simpa [hW_succ] using Set.add_subset_iff.mpr fun a ha b hb ↦
+        (V n).add_mem (hV.antitone (Nat.le_succ n) ha) (hV.antitone (Nat.le_succ n) hb)
+  have hbasis : ∀ U ∈ 𝓝 (0 : M), ∃ n, W n ⊆ U := by
+    intro U hU
+    obtain ⟨n, -, hn⟩ := hV.toHasBasis.mem_iff.mp hU
+    exact ⟨n + 1, by rw [hW_succ]; exact hn⟩
+  have hWN : ∀ n, closure ((f : M → N) '' W (n + 2)) ∈ 𝓝 (0 : N) := fun n ↦ by
+    rw [hW_succ]
+    exact hVN n
+  have hyW : y ∈ closure ((f : M → N) '' W 1) := by
+    rw [hW1_eq]
+    exact hy
+  have hmem := mem_image_of_mem_closure_image_of_add_subset f hf hW0 h0 hadd hbasis hWN hyW
+  rwa [hW0_eq] at hmem
 
 /-- **Openness from the closure step.** Let `f : M → N` be an additive map, continuous at zero,
-out of a complete first-countable nonarchimedean group. If the closure of the image of every
-neighbourhood of zero is a neighbourhood of zero, then `f` is open.
+from a complete first-countable uniform commutative additive group `M` into a `T₀` topological
+additive group `N`. If the closure of the image of every neighbourhood of zero is a neighbourhood
+of zero, then `f` is open.
 
 The hypothesis is what the Baire step of Henkel's theorem provides, and it can also be checked
-directly by approximating a dense subset of a neighbourhood of zero in `N` with control. -/
+directly by approximating a dense subset of a neighbourhood of zero in `N` with control. No
+nonarchimedean or locally convex hypothesis is required. -/
 theorem isOpenMap_of_closure_image_mem_nhds [(𝓝 (0 : M)).IsCountablyGenerated]
-    [NonarchimedeanAddGroup M] {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N] (f : F)
+    {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N] (f : F)
     (hfc : ContinuousAt (f : M → N) 0)
     (h : ∀ U ∈ 𝓝 (0 : M), closure ((f : M → N) '' U) ∈ 𝓝 (0 : N)) :
     IsOpenMap (f : M → N) := by
   refine IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr fun S hS ↦ ?_
   rw [Filter.mem_map] at hS
-  obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.exists_antitone_basis_openAddSubgroup (G := M)
-  obtain ⟨n₀, -, hn₀⟩ := hV.toHasBasis.mem_iff.mp hS
-  -- Shift the basis so that its zeroth term already lies inside `f ⁻¹' S`.
-  have hW : (𝓝 (0 : M)).HasAntitoneBasis fun n ↦ ((V (n₀ + n)).toAddSubgroup : Set M) :=
-    hV.comp_mono (fun _ _ hab ↦ Nat.add_le_add_left hab _)
-      (by simpa [Nat.add_comm] using tendsto_add_atTop_nat n₀)
-  have hnhds : ∀ n, closure ((f : M → N) ''
-      ((V (n₀ + n)).toAddSubgroup : Set M)) ∈ 𝓝 (0 : N) := fun n ↦
-    h _ (hW.toHasBasis.mem_of_mem (i := n) trivial)
-  refine Filter.mem_of_superset (hnhds 0) fun y hy ↦ ?_
-  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image f hfc hW (fun n ↦ hnhds (n + 1)) hy
-  exact hn₀ hx
+  obtain ⟨V, hV0_closed, hV0_sub, hV_nhds, hV_add, hV_basis⟩ :=
+    exists_closed_nhds_zero_add_subset hS
+  refine Filter.mem_of_superset (h _ (hV_nhds 1)) fun y hy ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image_of_add_subset f hfc hV0_closed
+    (fun n ↦ mem_of_mem_nhds (hV_nhds n)) hV_add hV_basis
+    (fun n ↦ h _ (hV_nhds (n + 2))) hy
+  exact hV0_sub hx
 
 end TauCeti
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 public import TauCeti.RingTheory.Huber.LocalizationTopology.PolynomialEvaluation
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
@@ -15,8 +14,9 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
-import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.Topology.Algebra.GroupCompletion
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
@@ -449,7 +449,7 @@ theorem isOpenMap_rationalEvalHom [IsTateRing A] {k : ℕ}
     IsUniformAddGroup.uniformity_countably_generated
   have _ : (uniformity (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
-  exact LinearMap.isOpenMap_of_isTateRing
+  exact TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul
     ({ rationalEvalHom P T s S hden t ht with
         commutes' := fun a ↦ by
           have h := congrArg (fun f ↦ f a) (rationalEvalHom_comp_algebraMap P T s S hden t ht)

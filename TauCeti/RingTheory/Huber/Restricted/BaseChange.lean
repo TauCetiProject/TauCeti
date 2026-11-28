@@ -411,8 +411,9 @@ and is `restrictedMvPowerSeriesBaseChange_injective_of_presentation`.
 `hmap` is stated as the filter inequality the proof consumes rather than as `IsOpenMap p`, which is
 strictly stronger: `M` carries `ContinuousAdd` rather than `IsTopologicalAddGroup`, so without
 translation invariance global openness does not follow from openness at `0`. A caller holding
-`IsOpenMap p` passes `map_zero p ▸ hopen.nhds_le 0`; over a complete Tate ring that open map is
-`LinearMap.isOpenMap_of_isTateRing`. -/
+`IsOpenMap p` passes `map_zero p ▸ hopen.nhds_le 0`; over a Tate ring, Henkel's open mapping
+theorem (`TauCeti.HasZeroSequenceOfUnits.isOpenMap`) is one way to establish `IsOpenMap p` when
+its source, target, and continuity assumptions hold. -/
 theorem restrictedMvPowerSeriesBaseChange_surjective_of_presentation {m : ℕ} {M : Type*}
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousSMul A M] [(nhds (0 : Fin m → A)).IsCountablyGenerated]

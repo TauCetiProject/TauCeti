@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Nat.Dist
@@ -42,6 +43,8 @@ discrete primitive vanishing at `0`. Grouping `i < n` into blocks of length `H`,
 A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
+Along a sequence of sets `V : ℕ → Set M` with `0 ∈ V n` and `V (n + 1) + V (n + 1) ⊆ V n`, any
+sequence satisfying `x i ∈ V (i + 1)` has tail sums `∑ i ∈ Ico n (n + m), x i` in `V n`.
 For naturals `N` and `K`, writing the weight `⌊K N / n⌋` of `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n)` as the
 number of `1 ≤ j < K` with `n ≤ K N / j` and swapping the sums gives
 `∑_{1 ≤ j < K} ∑_{N < n ≤ K N / j} f(n)`.
@@ -84,6 +87,8 @@ by at most two `n'`, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 �
   its sum over `Icc 1 N`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
+* `Finset.sum_Ico_mem_of_add_subset`: tail-sum bounds along a doubling sequence
+  `V (n + 1) + V (n + 1) ⊆ V n` for errors `x i ∈ V (i + 1)`.
 * `Finset.prod_Ico_mul_mul_endpoints`, `Finset.sum_Ico_add_add_endpoints`: trapezoidal pairing of
   adjacent products or sums over `Ico a n` (`a ≤ n` in `ℤ`) with the two endpoints.
 * `Finset.sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc`:
@@ -95,6 +100,8 @@ by at most two `n'`, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 �
 public section
 
 namespace Finset
+
+open scoped Pointwise
 
 /-- Counting pairs of natural numbers below `N` with prescribed integer difference, with
 one copy of `c` for each pair. There are `N - |k|` such pairs, truncated to zero. -/
@@ -395,6 +402,21 @@ theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f 
     (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
   all_goals simp only [mem_Ico, mem_filter, mem_range] at *
   all_goals first | omega | (congr 1; omega)
+
+/-- Tail sums of errors satisfying `x i ∈ V (i + 1)` along a doubling sequence
+`V (n + 1) + V (n + 1) ⊆ V n` stay inside `V n`. -/
+theorem sum_Ico_mem_of_add_subset {M : Type*} [AddCommMonoid M]
+    {V : ℕ → Set M} (h0 : ∀ n, (0 : M) ∈ V n)
+    (hadd : ∀ n, V (n + 1) + V (n + 1) ⊆ V n)
+    {x : ℕ → M} (hx : ∀ n, x n ∈ V (n + 1)) (m n : ℕ) :
+    ∑ i ∈ Ico n (n + m), x i ∈ V n := by
+  induction m generalizing n with
+  | zero => simpa using h0 n
+  | succ m ih =>
+    have hlt : n < n + (m + 1) := by omega
+    have hend : n + (m + 1) = (n + 1) + m := by omega
+    rw [sum_eq_sum_Ico_succ_bot hlt, hend]
+    exact hadd n (Set.add_mem_add (hx n) (ih (n + 1)))
 
 /-- Trapezoidal pairing on an integer interval `a ≤ n`: multiplying `g j * g (j + 1)` over
 `j ∈ Ico a n` together with the two endpoint values `g a` and `g n` yields the square of

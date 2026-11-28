@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 
-import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
@@ -116,7 +117,8 @@ theorem isClosedEmbedding_laurentCover :
     simpa only [l, Algebra.coe_linearMap, ← hρeq] using hrange
   -- Henkel makes the bijection onto this closed range a homeomorphism.
   have hemb := isEmbedding_iff_isStrictMap_injective.mpr
-    ⟨l.isStrictMap_of_isClosed_range_of_isTateRing hl.continuousAt hclosed, hinj⟩
+    ⟨l.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul hl.continuousAt
+      hclosed, hinj⟩
   simpa only [l, Algebra.coe_linearMap, ← hρeq] using (⟨hemb, hclosed⟩ : IsClosedEmbedding l)
 
 end Augmentation
@@ -218,7 +220,8 @@ theorem isOpenQuotientMap_laurentCover
     simpa only [← hdiff] using laurentCover_surjective P f S₁ S₂ S₁₂ hden₂
   -- Apply open mapping to the surjective difference of restrictions.
   simpa only [← hdiff] using
-    (⟨hsurj, hd, d.isOpenMap_of_isTateRing hsurj hd.continuousAt⟩ : IsOpenQuotientMap d)
+    (⟨hsurj, hd, TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul d hsurj
+      hd.continuousAt⟩ : IsOpenQuotientMap d)
 
 end Differential
 

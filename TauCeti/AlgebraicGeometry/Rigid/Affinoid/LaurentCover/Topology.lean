@@ -19,8 +19,7 @@ restriction minus first restriction, is an open quotient map. Thus compatible lo
 glue continuously, not merely algebraically.
 
 We allow complete Hausdorff topological modules with countably generated additive
-uniformities, nonarchimedean additive topologies, and continuous coefficient-algebra actions.
-The finite-module topology
+uniformities and continuous coefficient-algebra actions. The finite-module topology
 theorem identifies these topologies with the canonical module topologies. In particular,
 the results apply to compatible complete ultrametric module norms, without requiring equality
 of chosen norms, projectivity, or reducedness. Apply
@@ -135,7 +134,7 @@ variable [UniformSpace (L(f) ⊗[A] M)] [IsTopologicalAddGroup (L(f) ⊗[A] M)]
 topologically with the closed space of compatible pairs on the two Laurent pieces. -/
 theorem isClosedEmbedding_moduleAugmentation
     [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M] [(𝓤 M).IsCountablyGenerated]
-    [T2Space M] [NonarchimedeanAddGroup M] [ContinuousSMul A M]
+    [T2Space M] [ContinuousSMul A M]
     (hA : IsAffinoidAlgebra K A) : IsClosedEmbedding (moduleAugmentation M f) := by
   let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
   have : ContinuousSMul A (L(f) ⊗[A] M) := IsScalarTower.continuousSMul L(f)
@@ -148,15 +147,16 @@ theorem isClosedEmbedding_moduleAugmentation
     rw [hrange]
     exact isClosed_singleton.preimage (continuous_moduleDiff M f hA)
   exact ⟨isEmbedding_iff_isStrictMap_injective.mpr
-    ⟨(moduleAugmentation M f).isStrictMap_of_isClosed_range_of_isTateRing
-      hc.continuousAt hclosed, moduleAugmentation_injective M hA f⟩, hclosed⟩
+    ⟨LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul
+      (moduleAugmentation M f) hc.continuousAt hclosed,
+      moduleAugmentation_injective M hA f⟩, hclosed⟩
 
 omit [IsTopologicalAddGroup (L(f) ⊗[A] M)] [IsTopologicalAddGroup (G(f) ⊗[A] M)] in
 /-- **Strictness of the Laurent differential.** The overlap module carries the quotient
 topology for the difference of restrictions, including when some pieces are zero. -/
 theorem isOpenQuotientMap_moduleDiff
-    [IsUniformAddGroup (L(f) ⊗[A] M)] [NonarchimedeanAddGroup (L(f) ⊗[A] M)]
-    [IsUniformAddGroup (G(f) ⊗[A] M)] [NonarchimedeanAddGroup (G(f) ⊗[A] M)]
+    [IsUniformAddGroup (L(f) ⊗[A] M)]
+    [IsUniformAddGroup (G(f) ⊗[A] M)]
     [BaireSpace (O(f) ⊗[A] M)]
     (hA : IsAffinoidAlgebra K A) : IsOpenQuotientMap (moduleDiff M f) := by
   let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
@@ -165,7 +165,7 @@ theorem isOpenQuotientMap_moduleDiff
   have : ContinuousSMul A (O(f) ⊗[A] M) := IsScalarTower.continuousSMul O(f)
   have hc := continuous_moduleDiff M f hA
   exact ⟨moduleDiff_surjective M f, hc,
-    (moduleDiff M f).isOpenMap_of_isTateRing
+    TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul (moduleDiff M f)
       (moduleDiff_surjective M f) hc.continuousAt⟩
 
 end Strictness
