@@ -261,11 +261,8 @@ theorem IsMaximalTorus.apply_weylAdjointRepresentation_ne_zero (hT : IsMaximalTo
   rw [← hD.stabilizer_continuousAdjointRepresentation_eq_iff hT.isTorus rfl hB hsep hα hV] at hX ⊢
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
   -- The stabilizer of `Ad_n X` is the conjugate by `n` of the stabilizer `T` of `X`.
-  have := Representation.stabilizer_conj
-    (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation n X
-  simp only [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply,
-    hX] at this
-  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply, this]
+  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply,
+    stabilizer_continuousAdjointRepresentation_Ad, hX]
   exact Subgroup.mem_normalizer_iff_map_conj_eq.1 n.property
 
 /-- **The Weyl group acts freely on the regular elements.** For a compact connected group, an

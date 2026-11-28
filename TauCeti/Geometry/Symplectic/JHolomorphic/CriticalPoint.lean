@@ -97,6 +97,14 @@ structure up to a totally real boundary
 across the axis, then shows that the critical points of a nonconstant `u` are isolated in
 `Ω ∩ {0 ≤ im}`, also at the points of the axis
 (`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`).
+With the discreteness of the fibres of `u` under the same boundary condition
+(`TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`), this gives the last
+assertion of McDuff–Salamon, Lemma 2.4.1, up to the boundary: for compact subsets `K` and `K'` of
+`Ω ∩ {0 ≤ im}`, which may meet the axis, only finitely many points of `K` lie over the values of
+`u` at its critical points in `K'`
+(`TauCeti.finite_inter_preimage_image_sep_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg`).
+This is the finiteness of `u⁻¹(u(Crit u))` that the injective-point arguments for strips and
+discs with totally real boundary conditions start from.
 
 ## Main results
 
@@ -123,6 +131,10 @@ across the axis, then shows that the critical points of a nonconstant `u` are is
   `TauCeti.eqOn_const_of_cauchyRiemann_inter_im_nonneg_of_eventually_fderivWithin_eq_zero`: a
   solution with totally real boundary values whose differential vanishes to infinite order, or
   near one point, possibly on the real axis, is constant.
+* `TauCeti.finite_inter_preimage_image_sep_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg`
+  and its `_comp` version for `A = J ∘ u`: for compact `K, K' ⊆ Ω ∩ {0 ≤ im}`, a nonconstant
+  solution with totally real boundary values has finitely many points of `K` over the values of
+  `u` at its critical points in `K'`.
 
 ## References
 
@@ -684,6 +696,68 @@ theorem finite_inter_setOf_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg
     (A := fun z ↦ J (u z)) hΩ hΩc
     (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z ((hu z hz).of_le one_le_two)) hJJ hJR hu hCR
     hbd hne hK hKΩ
+
+/-! ### Fibres through critical points up to a totally real boundary -/
+
+/-- **Finitely many points over the critical values, up to a totally real boundary.** Let `Ω`,
+`u`, `A` and `R` be as in
+`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`, with
+`u` not constant on `Ω ∩ {0 ≤ im}`. For compact subsets `K` and `K'` of `Ω ∩ {0 ≤ im}`, which
+may meet the real axis, only finitely many points of `K` are mapped by `u` to the image of a
+critical point of `u` lying in `K'`. For `K = K'` this is the finiteness of `u⁻¹(u(Crit u))` on a
+compact domain up to its boundary. -/
+theorem finite_inter_preimage_image_sep_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg
+    {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, ∃ w ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ u w) {K K' : Set ℂ}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω ∩ {z | 0 ≤ z.im}) (hK' : IsCompact K')
+    (hK'Ω : K' ⊆ Ω ∩ {z | 0 ≤ z.im}) :
+    (K ∩ u ⁻¹' (u '' {z ∈ K' | fderivWithin ℝ u {z | 0 ≤ z.im} z = 0})).Finite := by
+  -- `u` takes two distinct values, so for each `c` a value other than `u c`
+  have hnt : (u '' (Ω ∩ {z | 0 ≤ z.im})).Nontrivial := by
+    obtain ⟨z, hz, w, hw, hzw⟩ := hne
+    exact ⟨u z, mem_image_of_mem u hz, u w, mem_image_of_mem u hw, hzw⟩
+  -- over each value `u c`, `c ∈ Ω ∩ {0 ≤ im}`, there are finitely many points of `K`
+  have hfib : ∀ c ∈ Ω ∩ {z | 0 ≤ z.im}, (K ∩ u ⁻¹' {u c}).Finite := by
+    intro c _
+    obtain ⟨_, ⟨z, hz, rfl⟩, hzc⟩ := hnt.exists_ne (u c)
+    exact finite_inter_preimage_singleton_of_cauchyRiemann_inter_im_nonneg hΩ hΩc hA hAA hAR
+      (hu.of_le one_le_two) hCR hbd ⟨z, hz, hzc⟩ hK hKΩ
+  -- and there are finitely many critical points in `K'`
+  refine ((finite_inter_setOf_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg hΩ hΩc hA hAA
+    hAR hu hCR hbd hne hK' hK'Ω).biUnion fun c hc ↦ hfib c (hK'Ω hc.1)).subset ?_
+  rintro z ⟨hzK, c, hc, hcz⟩
+  exact mem_biUnion hc ⟨hzK, hcz.symm⟩
+
+/-- **Finitely many points over the critical values of a J-holomorphic curve, up to a totally
+real boundary.** Let `Ω`, `u`, `J` and `R` be as in
+`TauCeti.setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg_comp`,
+with `u` not constant on `Ω ∩ {0 ≤ im}`. For compact subsets `K` and `K'` of `Ω ∩ {0 ≤ im}`,
+which may meet the real axis, only finitely many points of `K` are mapped by `u` to the image of
+a critical point of `u` lying in `K'`. For `K = K'` this is the finiteness of `u⁻¹(u(Crit u))` on
+a compact domain up to its boundary. -/
+theorem finite_inter_preimage_image_sep_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg_comp
+    {R : E ≃L[ℝ] E} {J : E → E →L[ℝ] E} (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hJ : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, ContDiffAt ℝ 1 J (u z))
+    (hJJ : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E)
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J (u x) v) = -J (u x) (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, ∃ w ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ u w) {K K' : Set ℂ}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω ∩ {z | 0 ≤ z.im}) (hK' : IsCompact K')
+    (hK'Ω : K' ⊆ Ω ∩ {z | 0 ≤ z.im}) :
+    (K ∩ u ⁻¹' (u '' {z ∈ K' | fderivWithin ℝ u {z | 0 ≤ z.im} z = 0})).Finite :=
+  finite_inter_preimage_image_sep_fderivWithin_eq_zero_of_cauchyRiemann_inter_im_nonneg
+    (A := fun z ↦ J (u z)) hΩ hΩc
+    (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z ((hu z hz).of_le one_le_two)) hJJ hJR hu hCR
+    hbd hne hK hKΩ hK' hK'Ω
 
 end FiniteDimensional
 

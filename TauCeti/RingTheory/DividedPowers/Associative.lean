@@ -204,6 +204,12 @@ theorem map_dividedPower {B : Type*} [Semiring B] [Algebra ℚ B]
     f (dividedPower n x) = dividedPower n (f x) := by
   simp [dividedPower_def]
 
+/-- Passing from the opposite algebra preserves divided powers. -/
+@[simp]
+theorem _root_.MulOpposite.unop_dividedPower (n : ℕ) (x : Aᵐᵒᵖ) :
+    MulOpposite.unop (dividedPower n x) = dividedPower n (MulOpposite.unop x) := by
+  simp only [dividedPower_def, MulOpposite.unop_smul, MulOpposite.unop_pow]
+
 /-- Multiplying an element on the left by a commuting element multiplies its `n`-th divided
 power by the `n`-th power of that element. -/
 theorem dividedPower_mul_left {a x : A} (hax : Commute a x) (n : ℕ) :

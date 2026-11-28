@@ -12,11 +12,13 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 /-!
 # Elementary bounds for the real logarithm
 
-From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x = 2` and `x / 2`,
-one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
-`x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
-with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums. Conversely, `e < 3` yields
+From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x = 2`, `x / 2`, and
+`η * x`, one obtains `log 4 = 2 log 2 ≤ 2`, `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
+`x = 0` via `0 / 0 = 0`), and the scaled tangent-line bound `log x ≤ η * x - log η - 1` for every
+`x > 0` and slope `η > 0`. The first compares explicit prime-counting constants involving `log 4`
+with rational constants, the second bounds the contribution `log p / p` of a single prime at a
+real cutoff `x` when passing between inclusive and strict prime sums, and the third bounds
+logarithmic growth linearly with arbitrarily small slope `η`. Conversely, `e < 3` yields
 `1 < log x` for every `x ≥ 3` (`Real.one_lt_log_of_three_le`). From `e² < (3 / 2) ^ 5`
 (Mathlib's `Real.exp_one_lt_d9`) one obtains `log (3 / 2) > 2 / 5`
 (`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
@@ -28,7 +30,9 @@ logarithmic-integral estimates.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
-decay of `log x`, as for the modulus `|α|²` of a section tending to one.
+decay of `log x`, as for the modulus `|α|²` of a section tending to one. For every `x ≤ 1` the
+truncation `min (-log x) 1` obeys the same bound (`Real.min_neg_log_one_le_two_mul_one_sub`),
+which compares the truncated logarithm of `|α|²` with the defect `1 - |α|²`.
 
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
 including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
@@ -55,9 +59,11 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
+* `Real.log_le_mul_sub_log_sub_one`: `log x ≤ η * x - log η - 1` for `x > 0` and `η > 0`.
 * `TauCeti.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
 * `TauCeti.le_log_log_two` and `TauCeti.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
+* `Real.min_neg_log_one_le_two_mul_one_sub`: `min (-log x) 1 ≤ 2 (1 - x)` for `x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
@@ -101,6 +107,14 @@ theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := b
   rw [div_le_iff₀ hx]
   linarith [log_le_sub_one_of_pos zero_lt_two]
 
+/-- For `x > 0` and any positive slope `η > 0`, `log x ≤ η * x - log η - 1`. This is the
+tangent-line inequality `log (η * x) ≤ η * x - 1` rearranged for `log x`. -/
+theorem log_le_mul_sub_log_sub_one {x η : ℝ} (hx : 0 < x) (hη : 0 < η) :
+    log x ≤ η * x - log η - 1 := by
+  have h := log_le_sub_one_of_pos (mul_pos hη hx)
+  rw [log_mul hη.ne' hx.ne'] at h
+  linarith
+
 /-- Near `1` from below the logarithm is controlled by the distance to `1`: for `1 / 2 ≤ x ≤ 1`,
 `|log x| ≤ 2 (1 - x)`. -/
 theorem abs_log_le_two_mul_one_sub {x : ℝ} (hx : 1 / 2 ≤ x) (hx₁ : x ≤ 1) :
@@ -111,6 +125,26 @@ theorem abs_log_le_two_mul_one_sub {x : ℝ} (hx : 1 / 2 ≤ x) (hx₁ : x ≤ 1
   rw [log_inv, inv_eq_one_div, div_sub_one hx₀.ne', le_div_iff₀ hx₀] at h
   rw [abs_of_nonpos (log_nonpos hx₀.le hx₁)]
   nlinarith
+
+/-- For every `x ≤ 1`, the truncation of `-log x` at height one is controlled by the distance
+to `1`: `min (-log x) 1 ≤ 2 (1 - x)`. For `x ≤ 0` the right side is at least `2`. -/
+theorem min_neg_log_one_le_two_mul_one_sub {x : ℝ} (hx₁ : x ≤ 1) :
+    min (-log x) 1 ≤ 2 * (1 - x) := by
+  rcases le_or_gt x 0 with hx | hx
+  · linarith [min_le_right (-log x) 1]
+  -- `1 - log x ≤ exp (-log x) = x⁻¹`, so `x (1 - log x) ≤ 1`.
+  have hexp : x * (-log x + 1) ≤ 1 := by
+    have h := add_one_le_exp (-log x)
+    rw [exp_neg, exp_log hx] at h
+    calc x * (-log x + 1) ≤ x * x⁻¹ := mul_le_mul_of_nonneg_left h hx.le
+      _ = 1 := mul_inv_cancel₀ hx.ne'
+  rcases le_total (-log x) 1 with h | h
+  · -- `(1 - x) (1 - log x) ≥ -log x` and `1 - log x ≤ 2`.
+    rw [min_eq_left h]
+    nlinarith [mul_le_mul_of_nonneg_left (show -log x + 1 ≤ 2 by linarith)
+      (sub_nonneg.2 hx₁)]
+  · rw [min_eq_right h]
+    nlinarith
 
 /-- The negative logarithm is bounded by an inverse-square-root majorant on the nonnegative
 half-line, including its totalized value at zero. -/

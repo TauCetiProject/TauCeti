@@ -23,12 +23,16 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 At a local extremum of the norm of a map, its derivative is orthogonal to its value. In
 particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
 a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
-vanish, and the `0`-homogeneous radial extension `TauCeti.sphereExtend f` has vanishing radial
-derivative everywhere (`TauCeti.fderiv_sphereExtend_self`). A function that is nonincreasing in
-the norm has derivatives of equal norm at any two points of one level where they do not vanish
-(`TauCeti.norm_fderiv_eq_of_antitone_norm`). The norm itself, being `1`-Lipschitz, has
-derivative of norm at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`). In any real normed
-space, a curve whose derivative is a multiple `c • f a` of its value has norm with derivative
+vanish, and a radial function on a real inner product space has Fréchet derivatives of equal
+operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). Moreover, along any
+unit ray a radial function's one-dimensional derivative is bounded in norm by the operator norm of
+its Fréchet derivative (`TauCeti.norm_deriv_comp_smul_le`), and a
+function that is nonincreasing in the norm has derivatives of equal norm at any two points of one
+level where they do not vanish (`TauCeti.norm_fderiv_eq_of_antitone_norm`). Likewise, the
+`0`-homogeneous radial extension `TauCeti.sphereExtend f` has vanishing radial derivative everywhere
+(`TauCeti.fderiv_sphereExtend_self`). The norm itself, being `1`-Lipschitz, has derivative of norm
+at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`). In any real normed space, a curve whose
+derivative is a multiple `c • f a` of its value has norm with derivative
 `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
@@ -71,6 +75,42 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : 
     hn.hasFDerivAt).fderiv.symm.trans hcrit) x)
   exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
 
+/-- A radial function `v : F → E` on a real inner product space has Fréchet derivatives of equal
+operator norm at points of equal norm, without any differentiability hypothesis on `v`. -/
+theorem norm_fderiv_eq_of_norm_eq {v : F → E} (hrad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
+    {x y : F} (hxy : ‖x‖ = ‖y‖) : ‖fderiv ℝ v x‖ = ‖fderiv ℝ v y‖ := by
+  let R := (ℝ ∙ (x - y))ᗮ.reflection
+  have hcomp : v ∘ R = v := funext fun z ↦ hrad (R z) z (R.norm_map z)
+  have h := R.toContinuousLinearEquiv.comp_right_fderiv (f := v) (x := x)
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, hcomp, Submodule.reflection_sub hxy] at h
+  have hnorm := congrArg norm h
+  simpa only [ContinuousLinearMap.opNorm_comp_linearIsometryEquiv] using hnorm
+
+/-- Along a unit ray `s ↦ s • e₀` at `r > 0`, the derivative of a radial function `v : F → E`
+on a real inner product space has norm bounded by `‖fderiv ℝ v (r • e₀)‖`. -/
+theorem norm_deriv_comp_smul_le {v : F → E} (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
+    {e₀ : F} (he₀ : ‖e₀‖ = 1) {r : ℝ} (hr : 0 < r) :
+    ‖deriv (fun s : ℝ ↦ v (s • e₀)) r‖ ≤ ‖fderiv ℝ v (r • e₀)‖ := by
+  set g : ℝ → E := fun s ↦ v (s • e₀)
+  by_cases hg : DifferentiableAt ℝ g r
+  · have hre₀_ne : r • e₀ ≠ 0 := fun h0 ↦ by
+      have := congrArg norm h0
+      simp [norm_smul, abs_of_pos hr, he₀, hr.ne'] at this
+    have hv_eq : v = g ∘ norm := funext fun x ↦ hv_rad x (‖x‖ • e₀) (by simp [norm_smul, he₀])
+    have hnorm_r : ‖r • e₀‖ = r := by simp [norm_smul, abs_of_pos hr, he₀]
+    have hv_diff : DifferentiableAt ℝ v (r • e₀) :=
+      hv_eq ▸ (hnorm_r ▸ hg).comp (r • e₀) (differentiableAt_id.norm ℝ hre₀_ne)
+    have hray : HasDerivAt (fun s : ℝ ↦ s • e₀) e₀ r := by
+      simpa only [id_eq, one_smul, ContinuousLinearMap.smulRight_apply,
+        ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_one] using
+        ((hasDerivAt_id r).hasFDerivAt.smul_const e₀).hasDerivAt
+    have hg_deriv : HasDerivAt g (fderiv ℝ v (r • e₀) e₀) r :=
+      hv_diff.hasFDerivAt.comp_hasDerivAt r hray
+    rw [hg_deriv.deriv]
+    simpa only [he₀, mul_one] using (fderiv ℝ v (r • e₀)).le_opNorm e₀
+  · rw [deriv_zero_of_not_differentiableAt hg, norm_zero]
+    exact norm_nonneg _
+
 /-- **Gradients of radially nonincreasing functions.** If `v` is nonincreasing in the norm, then
 its totalized derivatives have the same norm at any two points of the same level of `v` at which
 they do not vanish. -/
@@ -88,16 +128,7 @@ theorem norm_fderiv_eq_of_antitone_norm {v : F → ℝ} (hv : ∀ x y, ‖x‖ �
     · exact absurd (hmin h hxy) hx
     · exact h
     · exact absurd (hmin h hxy.symm) hy
-  -- The reflection exchanging `x` and `y` is a linear isometry preserving `v`.
-  let T := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).toContinuousLinearEquiv
-  have hT : v ∘ T = v := funext fun z ↦ by
-    have hz : ‖T z‖ = ‖z‖ := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).norm_map z
-    exact le_antisymm (hv _ _ hz.ge) (hv _ _ hz.le)
-  have hTx : T x = y := Submodule.reflection_sub hnorm
-  have hcomp := T.comp_right_fderiv (f := v) (x := x)
-  rw [hT, hTx] at hcomp
-  rw [hcomp]
-  exact (fderiv ℝ v y).opNorm_comp_linearIsometryEquiv (Submodule.reflection (ℝ ∙ (x - y))ᗮ)
+  exact norm_fderiv_eq_of_norm_eq (fun a b h ↦ le_antisymm (hv b a h.ge) (hv a b h.le)) hnorm
 
 /-- The derivative of the norm has norm at most `1` at every point, including the points where the
 norm is not differentiable and its derivative is `0` by definition. -/

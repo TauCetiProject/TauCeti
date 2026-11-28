@@ -48,6 +48,8 @@ two values at the differences divided by `ρ`.
   `Aᴴ * M * A` is that of `M` pulled back along `A`.
 * `Matrix.star_dotProduct_conjTranspose_mul_mulVec`: the sesquilinear form of `Aᴴ * A` is the
   standard form pulled back along `A`.
+* `Matrix.star_dotProduct_mulVec_self_mem_skewAdjoint`: `x* S x` is skew-adjoint for a
+  skew-hermitian `S`.
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
@@ -98,6 +100,17 @@ theorem Matrix.comp_equiv_symm_dotProduct_reindex_mulVec {I J α : Type*} [Finty
     u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
   simp [submatrix_mulVec_equiv, Function.comp_assoc]
 
+/-- An entry of `Aᴴ * M * B` pairs the corresponding columns of `A` and `B` through `M`. -/
+theorem Matrix.conjTranspose_mul_mul_apply {k l m n R : Type*} [Fintype k] [Fintype l]
+    [NonUnitalSemiring R] [Star R] (A : Matrix k m R) (M : Matrix k l R) (B : Matrix l n R)
+    (i : m) (j : n) : (Aᴴ * M * B) i j = star (A.col i) ⬝ᵥ (M *ᵥ B.col j) := by
+  rw [Matrix.mul_assoc]
+  calc
+    (Aᴴ * (M * B)) i j = (Aᴴ i) ⬝ᵥ (M * B).col j := Matrix.mul_apply'
+    _ = star (A.col i) ⬝ᵥ (M *ᵥ B.col j) := by
+      rw [Matrix.col_mul_eq_mulVec_col]
+      rfl
+
 /-- The sesquilinear form of a compression `Aᴴ * M * A` is the form of `M` pulled back along `A`:
 `star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y)`. -/
 theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fintype k]
@@ -111,6 +124,14 @@ theorem Matrix.star_dotProduct_conjTranspose_mul_mulVec {k l α : Type*} [Fintyp
     [Fintype l] [NonUnitalSemiring α] [StarRing α] (A : Matrix k l α) (x y : l → α) :
     star x ⬝ᵥ (Aᴴ * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ A *ᵥ y := by
   rw [← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
+
+/-- The value `x* S x` of the sesquilinear form of a skew-hermitian matrix `S` on the diagonal
+is skew-adjoint. -/
+theorem Matrix.star_dotProduct_mulVec_self_mem_skewAdjoint {n α : Type*} [Fintype n] [Ring α]
+    [StarRing α] {S : Matrix n n α} (hS : S ∈ skewAdjoint (Matrix n n α)) (x : n → α) :
+    star x ⬝ᵥ S *ᵥ x ∈ skewAdjoint α := by
+  rw [skewAdjoint.mem_iff, ← star_dotProduct_star, star_star, star_mulVec, ← dotProduct_mulVec,
+    ← star_eq_conjTranspose, skewAdjoint.mem_iff.1 hS, neg_mulVec, dotProduct_neg]
 
 /-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
 @[simp]

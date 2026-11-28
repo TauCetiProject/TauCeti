@@ -113,6 +113,33 @@ theorem basis_repr_algebraMap (r : R) :
   rw [Algebra.algebraMap_eq_smul_one, map_smul, basis_repr_one, Finsupp.smul_single,
     smul_eq_mul, mul_one]
 
+/-- The additive-index torus coefficients are the corresponding twisted-algebra coefficients. -/
+theorem basis_repr_apply (f : QuantumTorus R L u Λ) (a : L) :
+    (basis u Λ).repr f a =
+      (TwistedMonoidAlgebra.basis R (Multiplicative L) (factorSet u Λ)).repr f
+        (Multiplicative.ofAdd a) := by
+  simp only [basis, Module.Basis.repr_reindex_apply, Multiplicative.toAdd_symm_eq]
+
+/-- The coefficient at a free index after right multiplication by a monomial. -/
+@[simp]
+theorem basis_repr_mul_monomial_apply_sub (f : QuantumTorus R L u Λ) (b c : L) :
+    (basis u Λ).repr (f * monomial u Λ b) c =
+      (basis u Λ).repr f (c - b) * (u ^ (Λ (c - b) b) : Rˣ) := by
+  simpa only [basis_repr_apply, monomial_def, factorSet_apply, ← ofAdd_neg,
+    ← ofAdd_add, ← sub_eq_add_neg, toAdd_ofAdd] using
+    TwistedMonoidAlgebra.repr_mul_of_apply_mul_inv (β := factorSet u Λ) f
+      (Multiplicative.ofAdd b) (Multiplicative.ofAdd c)
+
+/-- The coefficient at a free index after left multiplication by a monomial. -/
+@[simp]
+theorem basis_repr_monomial_mul_apply_sub (f : QuantumTorus R L u Λ) (b c : L) :
+    (basis u Λ).repr (monomial u Λ b * f) c =
+      (basis u Λ).repr f (c - b) * (u ^ (Λ b (c - b)) : Rˣ) := by
+  simpa only [basis_repr_apply, monomial_def, factorSet_apply, ← ofAdd_neg,
+    ← ofAdd_add, add_comm (-b) c, ← sub_eq_add_neg, toAdd_ofAdd] using
+    TwistedMonoidAlgebra.repr_of_mul_apply_inv_mul (β := factorSet u Λ) f
+      (Multiplicative.ofAdd b) (Multiplicative.ofAdd c)
+
 /-- A map out of a based quantum torus is determined by its normalized monomials. -/
 @[ext]
 theorem algHom_ext {B : Type*} [Semiring B] [Algebra R B]
@@ -264,6 +291,22 @@ theorem untwistedEquiv_symm_single (h : ∀ a b, u ^ (Λ a b) = 1) (a : L) (r : 
   rw [map_smul]
   congr 1
   exact (untwistedEquiv u Λ h).symm_apply_eq.mpr (untwistedEquiv_monomial h a).symm
+
+/-- Untwisting preserves the coefficient at each exponent of the normalized monomial basis. -/
+@[simp]
+theorem coeff_untwistedEquiv (h : ∀ a b, u ^ (Λ a b) = 1)
+    (f : QuantumTorus R L u Λ) (a : L) :
+    (untwistedEquiv u Λ h f).coeff a = (basis u Λ).repr f a := by
+  have he : (AddMonoidAlgebra.coeffLinearEquiv R).toLinearMap.comp
+      (untwistedEquiv u Λ h).toLinearMap = (basis u Λ).repr.toLinearMap := by
+    apply (basis u Λ).ext
+    intro b
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearEquiv.coe_coe,
+      basis_apply, untwistedEquiv_monomial, AddMonoidAlgebra.coeffLinearEquiv_apply,
+      AddMonoidAlgebra.coeff_single, basis_repr_monomial]
+  simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearEquiv.coe_coe,
+    AddMonoidAlgebra.coeffLinearEquiv_apply] using
+      congrArg (fun c : L →₀ R ↦ c a) (LinearMap.congr_fun he f)
 
 end QuantumTorus
 

@@ -20,7 +20,9 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 Over the finite adeles of a Dedekind domain `R` with fraction field `K`, with `Ô` the integral
 adeles, the determinants of the levels of `GL₂` over a commutative ring
 (`TauCeti.GL2K1.map_det`, `TauCeti.GL2K0.map_det`) and of the reduction kernel
-(`Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`) give for every ideal `N` of `R`:
+(`Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`), transported along the inclusion
+`GL₂(Ô) → GL₂(𝔸_f)` (`IsDedekindDomain.FiniteAdeleRing.map_det_map_integralGL`), give for every
+ideal `N` of `R`:
 
 * `det K₀(N) = det K₁(N) = Ô^×`, the everywhere-integral units `integralUnits R K` of `𝔸_f`;
 * `det K(N) = {x ∈ Ô^× : x ≡ 1 mod NÔ}`.
@@ -29,8 +31,6 @@ For `R = ℤ` these are the determinants of `K₀(N)`, `K₁(N)` and `K(N)` in `
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.map_det_map_integralGL`: the determinant of the image in
-  `GL_n(𝔸_f)` of a subgroup of `GL_n(Ô)` is the image of its determinant.
 * `IsDedekindDomain.FiniteAdeleRing.map_det_level1`,
   `IsDedekindDomain.FiniteAdeleRing.map_det_level0`: `det K₁(N) = det K₀(N) = Ô^×`.
 * `IsDedekindDomain.FiniteAdeleRing.map_det_principalLevel`:
@@ -55,16 +55,6 @@ open TauCeti
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- The determinant of the image in `GL_n(𝔸_f)` of a subgroup `H ≤ GL_n(Ô)` is the image in
-`𝔸_f^×` of the determinant of `H`. -/
-theorem map_det_map_integralGL {n : ℕ} (H : Subgroup (GL (Fin n) (integralAdeles R K))) :
-    (H.map (integralGL K n)).map GeneralLinearGroup.det =
-      (H.map GeneralLinearGroup.det).map
-        (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])) := by
-  rw [Subgroup.map_map, Subgroup.map_map]
-  congr 1
-  exact MonoidHom.ext fun g ↦ det_integralGL g
-
 /-- **`det K₁(N) = Ô^×`**: the determinants of `K₁(N)` are the everywhere-integral units. -/
 theorem map_det_level1 (N : Ideal R) :
     (level1 K N).map GeneralLinearGroup.det = integralUnits R K := by
@@ -80,7 +70,7 @@ theorem map_det_level0 (N : Ideal R) :
 /-- **`det K(N) = {x ∈ Ô^× : x ≡ 1 mod NÔ}`**: the determinants of the principal level `K(N)` are
 the images in `𝔸_f^×` of the units of the integral adeles congruent to `1` modulo `NÔ`. -/
 theorem map_det_principalLevel (N : Ideal R) :
-    (principalLevel K N).map GeneralLinearGroup.det =
+    (principalLevel K (Fin 2) N).map GeneralLinearGroup.det =
       (Units.map (Ideal.Quotient.mk (completedIdeal K N) :
           integralAdeles R K →* integralAdeles R K ⧸ completedIdeal K N)).ker.map
         (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])) := by
@@ -91,13 +81,13 @@ variable {K}
 
 /-- For a unit `u` of the integral adeles, `diag(u, 1)` lies in `K₁(N)`. -/
 theorem integralGL_diagGL_mem_level1 (N : Ideal R) (u : (integralAdeles R K)ˣ) :
-    integralGL K 2 (diagGL ![u, 1]) ∈ level1 K N := by
+    integralGL K (Fin 2) (diagGL ![u, 1]) ∈ level1 K N := by
   rw [level1_def]
   exact Subgroup.mem_map_of_mem _ (GL2K1.diagGL_mem _ u)
 
 /-- For a unit `u` of the integral adeles, `diag(u, 1)` lies in `K₀(N)`. -/
 theorem integralGL_diagGL_mem_level0 (N : Ideal R) (u : (integralAdeles R K)ˣ) :
-    integralGL K 2 (diagGL ![u, 1]) ∈ level0 K N :=
+    integralGL K (Fin 2) (diagGL ![u, 1]) ∈ level0 K N :=
   level1_le_level0 K N (integralGL_diagGL_mem_level1 N u)
 
 end IsDedekindDomain.FiniteAdeleRing
