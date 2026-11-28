@@ -313,8 +313,9 @@ theorem surjective_cyclicTotalHomologyPeriodicity_of_isZero {m : ℕ}
     (h : Limits.IsZero (hochschildCohomology R A M (m + 2))) :
     Function.Surjective (cyclicTotalHomologyPeriodicity R A M m) := by
   have := ModuleCat.isZero_iff_subsingleton.1 h
-  exact fun c ↦ (exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHochschild
-    R A M m c).1 (Subsingleton.elim _ 0)
+  exact (LinearMap.surjective_iff_eq_zero_of_exact
+    (exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHochschild
+      R A M m)).2 (LinearMap.ext fun c ↦ Subsingleton.elim _ _)
 
 end Unital
 
@@ -448,11 +449,10 @@ theorem cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity (m : ℕ)
 theorem injective_cyclicTotalHomologyPeriodicity_of_isZero {m : ℕ}
     (h : Limits.IsZero (hochschildCohomology R A M (m + 1))) :
     Function.Injective (cyclicTotalHomologyPeriodicity R A M m) := by
-  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  obtain ⟨b, rfl⟩ :=
-    (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity R A M m c).1 hc
   have := ModuleCat.isZero_iff_subsingleton.1 h
-  rw [Subsingleton.elim b 0, map_zero]
+  exact (LinearMap.injective_iff_eq_zero_of_exact
+    (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity R A M m)).2
+    (LinearMap.ext fun b ↦ by rw [Subsingleton.elim b 0, map_zero, LinearMap.zero_apply])
 
 variable (R A M) in
 /-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring in which
