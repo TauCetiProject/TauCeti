@@ -59,9 +59,6 @@ is at most `2 b`. Finally, an upper bound `x ≤ y` may be checked against the f
   nonzero.
 * `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
   `L^(p * c)` is `p`, for `c` finite and nonzero.
-* `ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one`: truncates `a < p ≤ ∞` above a
-  finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
-* `ENNReal.inv_add_inv_two_lt_one_iff`: `p⁻¹ + 2⁻¹ < 1 ↔ 2 < p`.
 * `ENNReal.le_of_forall_nnreal_gt`: `x ≤ y` follows from `x ≤ r` for every finite `r > y`, the
   dual of Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 -/
@@ -311,37 +308,6 @@ theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ �
     (c * (p * c)⁻¹)⁻¹ = p := by
   rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
     inv_inv]
-
-/-- Given `a < p` (with `a : ℝ≥0`), a finite `r ≤ p`, and `p⁻¹ + q⁻¹ < 1` in `ℝ≥0∞` (allowing
-`p = ∞` and `q = ∞`), there exists a finite exponent `p₀ : ℝ≥0` with `a < p₀`, `r ≤ p₀`,
-`(p₀ : ℝ≥0∞) ≤ p`, and `(p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1`. -/
-theorem exists_nnreal_lt_and_le_and_inv_add_inv_lt_one {a : ℝ≥0} {p q r : ℝ≥0∞}
-    (hp : (a : ℝ≥0∞) < p) (hr_top : r ≠ ∞) (hrp : r ≤ p) (hpq : p⁻¹ + q⁻¹ < 1) :
-    ∃ p₀ : ℝ≥0, a < p₀ ∧ r ≤ p₀ ∧ (p₀ : ℝ≥0∞) ≤ p ∧ (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 := by
-  rcases ne_or_eq p ∞ with hp_top | rfl
-  · refine ⟨p.toNNReal, ?_, ?_, (coe_toNNReal hp_top).le, ?_⟩
-    · exact_mod_cast hp.trans_eq (coe_toNNReal hp_top).symm
-    · rwa [coe_toNNReal hp_top]
-    · rwa [coe_toNNReal hp_top]
-  · have hq_lt : q⁻¹ < 1 := by simpa using hpq
-    obtain ⟨n, hn⟩ := exists_inv_nat_lt (tsub_pos_of_lt hq_lt).ne'
-    let p₀ : ℝ≥0 := max (a + 1) (max r.toNNReal n)
-    refine ⟨p₀, (lt_add_one a).trans_le (le_max_left _ _), ?_, le_top, ?_⟩
-    · exact (coe_toNNReal hr_top).symm.trans_le
-        (ENNReal.coe_le_coe.2 ((le_max_left _ _).trans (le_max_right _ _)))
-    · have hnp : (n : ℝ≥0∞) ≤ p₀ := by
-        exact_mod_cast (le_max_right r.toNNReal n).trans (le_max_right (a + 1) _)
-      have hp₀_lt : (p₀ : ℝ≥0∞)⁻¹ < 1 - q⁻¹ := (ENNReal.inv_le_inv.2 hnp).trans_lt hn
-      calc (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 - q⁻¹ + q⁻¹ :=
-            ENNReal.add_lt_add_right (lt_of_lt_of_le hq_lt le_rfl).ne_top hp₀_lt
-        _ = 1 := tsub_add_cancel_of_le hq_lt.le
-
-/-- In `ℝ≥0∞`, `p⁻¹ + 2⁻¹ < 1` holds if and only if `2 < p`. -/
-theorem inv_add_inv_two_lt_one_iff {p : ℝ≥0∞} : p⁻¹ + 2⁻¹ < 1 ↔ 2 < p :=
-  ⟨fun h => ENNReal.inv_lt_inv.1 ((ENNReal.add_lt_add_iff_right (ENNReal.inv_ne_top.2
-      two_ne_zero)).1 (h.trans_eq ENNReal.inv_two_add_inv_two.symm)),
-    fun hp => (ENNReal.add_lt_add_right (ENNReal.inv_ne_top.2 two_ne_zero)
-      (ENNReal.inv_lt_inv.2 hp)).trans_eq ENNReal.inv_two_add_inv_two⟩
 
 /-- An upper bound in `ℝ≥0∞` may be checked against the finite values above it: `x ≤ y` follows
 from `x ≤ r` for every `r : ℝ≥0` with `y < r`. This is the dual of

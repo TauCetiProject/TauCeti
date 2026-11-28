@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.LebesgueDecomposition
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Topology.Sets.Opens
 

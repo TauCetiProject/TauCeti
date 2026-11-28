@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 import Mathlib.MeasureTheory.Measure.Haar.Unique

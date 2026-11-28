@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.Analysis.Distribution.Mass.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
 import TauCeti.Topology.ContinuousMap.CompactlySupported
 

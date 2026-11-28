@@ -81,7 +81,7 @@ theorem IsWeakCauchyRiemannOn.isWeakCRSolution {V : Type*} [NormedAddCommGroup V
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 ≤ p)
     {A : ℂ → V →L[ℝ] V} {DA : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {f u : ℂ → V}
     (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
-    (hc : IsSobolevCRCoefficients p Ω A DA 0) (hf : MemLpLoc p Ω f) :
+    (hc : IsSobolevCRCoefficients p Ω A DA 0) (_hf : MemLpLoc p Ω f) :
     IsWeakCRSolution p Ω A DA 0 u f := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   obtain ⟨-, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
@@ -89,9 +89,8 @@ theorem IsWeakCauchyRiemannOn.isWeakCRSolution {V : Type*} [NormedAddCommGroup V
   have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ ≤ 1 := by
     rw [← ENNReal.inv_two_add_inv_two]
     exact add_le_add (ENNReal.inv_le_inv.2 hp') (ENNReal.inv_le_inv.2 hp')
-  exact (hc.isWeakCRSolution_iff_ae hpp ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp
-    (hf.locallyIntegrableOn (by exact_mod_cast one_le_two.trans hp)
-      Ω.isOpen.isLocallyClosed)).2 (by simpa using hae)
+  exact (hc.isWeakCRSolution_iff_ae hpp ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp).2
+    (by simpa using hae)
 
 /-- **The linear step on an inner product space.** If `u` solves `∂ₛu + A ∂ₜu = f` weakly on `Ω`
 for `p > 2`, with `A, f ∈ W^{k+1,p}_loc` and `A² = -1`, then `u ∈ W^{k+2,p}_loc`. -/

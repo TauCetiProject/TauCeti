@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Mass.Polar.Vector
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 
 /-!
 # Examples of the Riesz representation for vector fields

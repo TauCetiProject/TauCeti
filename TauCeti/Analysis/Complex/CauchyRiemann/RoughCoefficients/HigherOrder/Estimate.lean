@@ -251,7 +251,7 @@ theorem CRInteriorEstimate.succ [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 
   have hDξ1 := eLpNormWkp_partial_s_le hq1.le hCq
     (Filter.Eventually.filter_mono (ae_mono (Measure.restrict_mono hUle le_rfl))
       ((hco.isWeakCRSolution_iff_ae hpq.le ENNReal.coe_ne_top ENNReal.coe_ne_top hDξ hξ.memLpLoc
-        hDξk.memLpLoc h.locallyIntegrableOn).1 h))
+        hDξk.memLpLoc).1 h))
     ((eLpNormWkp_mono_set hUle).trans ha) ((eLpNormWkp_mono_set (hW₂W.trans hWle)).trans hJM)
     ((eLpNormWkp_mono_set (hW₂W.trans hWle)).trans hSM) hT₂
     ((eLpNormWkp_mono_set hW₂W).trans hX)

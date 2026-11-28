@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Distribution
-public import TauCeti.Analysis.Distribution.TestFunction.Integral
+public import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import Mathlib.Topology.LocallyConstant.Basic
 

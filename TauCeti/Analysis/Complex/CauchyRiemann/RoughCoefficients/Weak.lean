@@ -354,22 +354,36 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
   rw [integral_add _ h₄, integral_sub _ h₃, integral_sub _ h₂, integral_neg]
   exacts [h₁.neg, h₁.neg.sub h₂, (h₁.neg.sub h₂).sub h₃]
 
+omit [CompleteSpace V] in
+/-- Local integrability of `J (Dξ · I)` derived from a weak Leibniz rule for `J ξ` and local
+integrability of `DJ · I ξ`. -/
+private theorem IsSobolevCRCoefficients.locallyIntegrableOn_apply_I_of_hasWeakLineDerivOn
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
+    {Dξ : ℂ → ℂ →L[ℝ] V} (hξq : MemLpLoc q Ω ξ)
+    (hJξ : HasWeakLineDerivOn volume Ω (fun z => J z (ξ z))
+      (fun z => DJ z I (ξ z) + J z (Dξ z I)) I) :
+    LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω := by
+  have hDJξ : LocallyIntegrableOn (fun z => DJ z I (ξ z)) Ω :=
+    (hc.memLpLoc_deriv_apply I).locallyIntegrableOn_clm_apply hξq hpq Ω.isOpen.isLocallyClosed
+  simpa only [Pi.sub_def, add_sub_cancel_left] using hJξ.locallyIntegrableOn_deriv.sub hDJξ
+
 /-- **Green's formula from a weak Leibniz rule for `J ξ`.** Parameterized by the weak
-directional derivative of `J ξ` along `I` and local integrability of `Dξ · 1` and `J (Dξ · I)`,
-so both finite-exponent (`1/p + 1/q ≤ 1`) and endpoint (`p = ∞` or `q = ∞` with continuous `J`)
-callers share the same integration-by-parts identity. -/
+directional derivative of `J ξ` along `I`, so both finite-exponent (`1/p + 1/q ≤ 1`) and endpoint
+(`p = ∞` or `q = ∞` with continuous `J`) callers share the same integration-by-parts identity. -/
 theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_of_hasWeakLineDerivOn
     [FiniteDimensional ℝ V]
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : HasWeakFDerivOn volume Ω ξ Dξ) (hξq : MemLpLoc q Ω ξ)
     (hJξ : HasWeakLineDerivOn volume Ω (fun z => J z (ξ z))
-      (fun z => DJ z I (ξ z) + J z (Dξ z I)) I)
-    (hDξ1 : LocallyIntegrableOn (fun z => Dξ z 1) Ω)
-    (hJξI : LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω) (φ : 𝓓(Ω, V)) :
+      (fun z => DJ z I (ξ z) + J z (Dξ z I)) I) (φ : 𝓓(Ω, V)) :
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
       ∫ z, ⟪(φ : ℂ → V) z, Dξ z 1 + J z (Dξ z I) + S z (ξ z)⟫_ℝ := by
   obtain ⟨-, -, hA, hC⟩ := integrable_crFormalAdjoint_terms hc.memLpLoc_coeff hc.memLpLoc_deriv
     hc.memLpLoc_zeroth hpq hξq φ
+  have hDξ1 : LocallyIntegrableOn (fun z => Dξ z 1) Ω :=
+    (hξ.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
+  have hJξI : LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω :=
+    hc.locallyIntegrableOn_apply_I_of_hasWeakLineDerivOn hpq hξq hJξ
   have hB := φ.integrable_inner hJξI
   have hD := φ.integrable_inner hDξ1
   have hξ1 : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ = -∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ := by
@@ -395,28 +409,34 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_of_hasWeakLineDer
 
 /-- **Weak solutions with a weak derivative from a weak Leibniz rule for `J ξ`.** Equivalence
 between the weak equation and `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`, parameterized
-by `HasWeakLineDerivOn` of `J ξ` and local integrability of `Dξ · 1` and `J (Dξ · I)`. -/
+by `HasWeakLineDerivOn` of `J ξ`. -/
 theorem IsSobolevCRCoefficients.isWeakCRSolution_iff_ae_of_hasWeakLineDerivOn
     [FiniteDimensional ℝ V] (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : HasWeakFDerivOn volume Ω ξ Dξ) (hξq : MemLpLoc q Ω ξ)
     (hJξ : HasWeakLineDerivOn volume Ω (fun z => J z (ξ z))
-      (fun z => DJ z I (ξ z) + J z (Dξ z I)) I)
-    (hDξ1 : LocallyIntegrableOn (fun z => Dξ z 1) Ω)
-    (hJξI : LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω)
-    (hη : LocallyIntegrableOn η Ω) :
+      (fun z => DJ z I (ξ z) + J z (Dξ z I)) I) :
     IsWeakCRSolution q Ω J DJ S ξ η ↔
       ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z := by
   have hloc := Ω.isOpen.isLocallyClosed
+  have hDξ1 : LocallyIntegrableOn (fun z => Dξ z 1) Ω :=
+    (hξ.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
+  have hJξI : LocallyIntegrableOn (fun z => J z (Dξ z I)) Ω :=
+    hc.locallyIntegrableOn_apply_I_of_hasWeakLineDerivOn hpq hξq hJξ
   have hL : LocallyIntegrableOn (fun z => Dξ z 1 + J z (Dξ z I) + S z (ξ z)) Ω :=
     (hDξ1.add hJξI).add (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξq hpq hloc)
-  simp only [isWeakCRSolution_iff,
-    hc.integral_inner_crFormalAdjoint_of_hasWeakLineDerivOn hpq hξ hξq hJξ hDξ1 hJξI,
-    hc.integrable_inner_crFormalAdjoint hpq hξq, hξq, hη, true_and]
-  refine ⟨ae_eq_of_forall_integral_inner_eq hL hη, fun h φ => integral_congr_ae ?_⟩
-  filter_upwards [ae_imp_of_ae_restrict h] with z hz
-  by_cases hzΩ : z ∈ (Ω : Set ℂ)
-  · rw [hz hzΩ]
-  · simp [image_eq_zero_of_notMem_tsupport fun h' => hzΩ (φ.tsupport_subset h')]
+  constructor
+  · intro h
+    refine ae_eq_of_forall_integral_inner_eq hL h.locallyIntegrableOn fun φ => ?_
+    rw [← hc.integral_inner_crFormalAdjoint_of_hasWeakLineDerivOn hpq hξ hξq hJξ φ]
+    exact h.integral_inner_crFormalAdjoint φ
+  · intro haeq
+    refine ⟨hξq, hL.congr haeq, fun φ => ⟨hc.integrable_inner_crFormalAdjoint hpq hξq φ, ?_⟩⟩
+    rw [hc.integral_inner_crFormalAdjoint_of_hasWeakLineDerivOn hpq hξ hξq hJξ φ]
+    refine integral_congr_ae ?_
+    filter_upwards [ae_imp_of_ae_restrict haeq] with z hz
+    by_cases hzΩ : z ∈ (Ω : Set ℂ)
+    · rw [hz hzΩ]
+    · simp [image_eq_zero_of_notMem_tsupport fun h' => hzΩ (φ.tsupport_subset h')]
 
 /-- The weak directional derivative of `J ξ` along `I` in the finite-exponent Hölder regime. -/
 private theorem IsSobolevCRCoefficients.hasWeakLineDerivOn_apply_I
@@ -451,13 +471,8 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
     (hDξq : MemLpLoc q Ω Dξ) (φ : 𝓓(Ω, V)) :
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
       ∫ z, ⟪(φ : ℂ → V) z, Dξ z 1 + J z (Dξ z I) + S z (ξ z)⟫_ℝ :=
-  have hq1 := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-  have hloc := Ω.isOpen.isLocallyClosed
   hc.integral_inner_crFormalAdjoint_of_hasWeakLineDerivOn hpq hξ hξq
-    (hc.hasWeakLineDerivOn_apply_I hpq hp hq hξ hξq hDξq)
-    ((hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)).locallyIntegrableOn hq1 hloc)
-    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq hloc) φ
+    (hc.hasWeakLineDerivOn_apply_I hpq hp hq hξ hξq hDξq) φ
 
 /-- **Weak solutions with a weak derivative.** If `ξ` has weak derivative `Dξ` on `Ω`, with `ξ`
 and `Dξ` locally `L^q`, `1/p + 1/q ≤ 1` and `p, q` finite, then `ξ` is a weak solution of
@@ -466,16 +481,11 @@ and `Dξ` locally `L^q`, `1/p + 1/q ≤ 1` and `p, q` finite, then `ξ` is a wea
 theorem IsSobolevCRCoefficients.isWeakCRSolution_iff_ae [FiniteDimensional ℝ V]
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp : p ≠ ⊤) (hq : q ≠ ⊤)
     {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : HasWeakFDerivOn volume Ω ξ Dξ) (hξq : MemLpLoc q Ω ξ)
-    (hDξq : MemLpLoc q Ω Dξ) (hη : LocallyIntegrableOn η Ω) :
+    (hDξq : MemLpLoc q Ω Dξ) :
     IsWeakCRSolution q Ω J DJ S ξ η ↔
       ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z :=
-  have hq1 := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-  have hloc := Ω.isOpen.isLocallyClosed
   hc.isWeakCRSolution_iff_ae_of_hasWeakLineDerivOn hpq hξ hξq
     (hc.hasWeakLineDerivOn_apply_I hpq hp hq hξ hξq hDξq)
-    ((hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)).locallyIntegrableOn hq1 hloc)
-    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply
-      (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq hloc) hη
 
 /-- **Comparison with `TauCeti.IsWeakLinearCauchyRiemannOn`.** Under Sobolev coefficients,
 `1/p + 1/q ≤ 1` and finite `p, q`, a field `ξ` solves the linear equation
@@ -490,12 +500,11 @@ theorem IsSobolevCRCoefficients.isWeakLinearCauchyRiemannOn_iff [FiniteDimension
   rw [TauCeti.isWeakLinearCauchyRiemannOn_iff, Opens.interior_coe, Ω.isOpen.interior_eq]
   constructor
   · rintro ⟨hcont, hξq, D, hD, hDq, hae⟩
-    exact ⟨hcont, (hc.isWeakCRSolution_iff_ae hpq hp hq hD hξq hDq locallyIntegrableOn_zero).2
+    exact ⟨hcont, (hc.isWeakCRSolution_iff_ae hpq hp hq hD hξq hDq).2
       (by simpa using hae), D, hD, hDq⟩
   · rintro ⟨hcont, hsol, D, hD, hDq⟩
     exact ⟨hcont, hsol.memLpLoc, D, hD, hDq, by
-      simpa using (hc.isWeakCRSolution_iff_ae hpq hp hq hD hsol.memLpLoc hDq
-        locallyIntegrableOn_zero).1 hsol⟩
+      simpa using (hc.isWeakCRSolution_iff_ae hpq hp hq hD hsol.memLpLoc hDq).1 hsol⟩
 
 end Holder
 
@@ -557,7 +566,6 @@ theorem isWeakCRSolution_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContD
   have hξ' : ContinuousOn (fderiv ℝ ξ) Ω := hξ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
   have hc := IsSobolevCRCoefficients.of_contDiffOn hJ hS 2
   have hξw : HasWeakFDerivOn volume Ω ξ (fderiv ℝ ξ) := hξ.hasWeakFDerivOn_fderiv
-  have hη' : LocallyIntegrableOn η Ω := hη.locallyIntegrableOn Ω.isOpen.measurableSet
   have hL : ContinuousOn (fun z => fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)) Ω :=
     ((hξ'.clm_apply continuousOn_const).add
       (hJ.continuousOn.clm_apply (hξ'.clm_apply continuousOn_const))).add
@@ -566,7 +574,7 @@ theorem isWeakCRSolution_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContD
       IsWeakCRSolution 2 Ω J (fderiv ℝ J) S ξ η := by
     simp only [isWeakCRSolution_iff, hξ.continuousOn.memLpLoc, true_and]
   rw [key, hc.isWeakCRSolution_iff_ae (by simp [ENNReal.inv_two_add_inv_two]) (by simp) (by simp)
-    hξw hξ.continuousOn.memLpLoc hξ'.memLpLoc hη']
+    hξw hξ.continuousOn.memLpLoc hξ'.memLpLoc]
   exact ⟨fun h => Measure.eqOn_open_of_ae_eq h Ω.isOpen hL hη, fun h =>
     (ae_restrict_iff' Ω.isOpen.measurableSet).2 (.of_forall h)⟩
 

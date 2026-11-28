@@ -9,11 +9,9 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrd
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Distribution.TestFunction.Inner
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
-import TauCeti.Data.ENNReal.Inv
+import TauCeti.Data.ENNReal.Holder
 
 /-!
 # `C^k`, `C^∞`, and normed-space interior regularity for Cauchy–Riemann equations
@@ -111,7 +109,7 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae [FiniteDimensional ℝ E]
     {p : ℝ≥0∞} (hp : 2 < p) {J S : ℂ → E →L[ℝ] E} {DJ : ℂ → ℂ →L[ℝ] E →L[ℝ] E}
     {ξ η : ℂ → E} {Dξ : ℂ → ℂ →L[ℝ] E}
     (hc : IsSobolevCRCoefficients p Ω J DJ S)
-    (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) (hη : LocallyIntegrableOn η Ω volume)
+    (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
     (heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z) :
     IsWeakCRSolution 2 Ω J DJ S ξ η := by
   have hloc := Ω.isOpen.isLocallyClosed
@@ -135,10 +133,6 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae [FiniteDimensional ℝ E]
       hc.memLpLoc_deriv, hc.memLpLoc_zeroth⟩
   have heq' : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J' z (Dξ z I) + S z (ξ z) = η z := by
     filter_upwards [heq, hJJ'] with z hz hJ using by rwa [← hJ]
-  have hDξ1 : LocallyIntegrableOn (fun z => Dξ z 1) Ω :=
-    (hDξ.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
-  have hJ'DξI : LocallyIntegrableOn (fun z => J' z (Dξ z I)) Ω :=
-    (hDξ.hasWeakLineDerivOn I).locallyIntegrableOn_deriv.continuousOn_clm_apply hloc hJ'cont
   have hJ'ξ : HasWeakLineDerivOn volume Ω (fun z => J' z (ξ z))
       (fun z => DJ z I (ξ z) + J' z (Dξ z I)) I := by
     simpa only [ContinuousLinearMap.id_apply] using
@@ -148,7 +142,7 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae [FiniteDimensional ℝ E]
           (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I)) K hKΩ hKc)
         (hDξ.hasWeakLineDerivOn I) (fun K hKc hKΩ => memLpLoc_iff.1 hξ2 K hKΩ hKc)
   exact (isWeakCRSolution_congr_ae hJJ' .rfl .rfl .rfl .rfl).2 <|
-    (hc'.isWeakCRSolution_iff_ae_of_hasWeakLineDerivOn hp2.le hDξ hξ2 hJ'ξ hDξ1 hJ'DξI hη).2 heq'
+    (hc'.isWeakCRSolution_iff_ae_of_hasWeakLineDerivOn hp2.le hDξ hξ2 hJ'ξ).2 heq'
 
 end InnerProductHelper
 
@@ -185,8 +179,7 @@ theorem HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann {Dξ : ℂ → ℂ �
     simpa [conjA, map_add] using congrArg A hz
   have hsol' : IsWeakCRSolution 2 Ω (fun z => conjA (J z)) DJ' (fun z => conjA (S z))
       (fun z => A (ξ z)) (fun z => A (η z)) :=
-    isWeakCRSolution_of_hasWeakFDerivOn_ae hp hc' (hDξ.clm_comp (A : V →L[ℝ] E))
-      (hη'.memLpLoc.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed) heq'
+    isWeakCRSolution_of_hasWeakFDerivOn_ae hp hc' (hDξ.clm_comp (A : V →L[ℝ] E)) heq'
   have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_two_lt_one_iff.2 hp
   have hJsq' : ∀ᵐ z ∂volume.restrict Ω, conjA (J z) * conjA (J z) = -1 := by
     filter_upwards [hJsq] with z hz

@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Measure.Decomposition.CommonDensity
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.OrderZero
 import TauCeti.Analysis.Distribution.TestFunction.Basic
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
 import TauCeti.MeasureTheory.Integral.DualPairing
 

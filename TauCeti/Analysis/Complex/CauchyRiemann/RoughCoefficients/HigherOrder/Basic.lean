@@ -12,7 +12,7 @@ import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
-import TauCeti.Data.ENNReal.Inv
+import TauCeti.Data.ENNReal.Holder
 
 /-!
 # Interior regularity of every order for real Cauchy–Riemann equations with Sobolev coefficients
@@ -83,7 +83,7 @@ theorem apply_I_of_hasWeakFDerivOn [FiniteDimensional ℝ V] {p q : ℝ≥0∞}
     (hη : HasWeakFDerivOn volume Ω η Dη) :
     IsWeakCRSolution q Ω J DJ (fun z => S z + DJ z I) (fun z => Dξ z I)
       (fun z => Dη z I - DS z I (ξ z)) := by
-  have heq := (hc.isWeakCRSolution_iff_ae hpq hp hq hξ h.memLpLoc hDξ h.locallyIntegrableOn).1 h
+  have heq := (hc.isWeakCRSolution_iff_ae hpq hp hq hξ h.memLpLoc hDξ).1 h
   -- The case `e = i` of the differentiated equation, with `(∂_t J) ∂_t ξ` moved into the
   -- zeroth-order coefficient.
   have hT := (hc.isWeakCRSolution_partial hpq hp hq hξ h.memLpLoc hDξ heq
@@ -148,7 +148,7 @@ theorem memWkpLoc_succ [FiniteDimensional ℝ V] {p q r : ℝ≥0∞} {k : ℕ}
         (hS.of_succ.add (hDJk.clm_comp (apply ℝ (V →L[ℝ] V) I)))
     -- `∂_s ξ = η - J ∂_t ξ - S ξ` almost everywhere, which is in `W^{k+1,r}_loc`.
     have heq := (hc.isWeakCRSolution_iff_ae hp₂.le ENNReal.coe_ne_top ENNReal.ofNat_ne_top hDξ
-      hξ₂.memLpLoc hDξ₂ h.locallyIntegrableOn).1 (h.of_memLpLoc hξ₂.memLpLoc)
+      hξ₂.memLpLoc hDξ₂).1 (h.of_memLpLoc hξ₂.memLpLoc)
     have h1 : MemWkpLoc r Ω (k + 1) (fun z => Dξ z 1) :=
       ((hη.sub (hJ.clm_apply_succ hp₀ hr₀ hrp₀' hTk)).sub
         (hS.clm_apply_succ hp₀ hr₀ hrp₀' hξ)).congr_ae

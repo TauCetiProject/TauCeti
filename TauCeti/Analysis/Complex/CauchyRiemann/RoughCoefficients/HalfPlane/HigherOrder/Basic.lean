@@ -190,8 +190,7 @@ theorem IsWeakCRSolution.crReflection_partial_one [FiniteDimensional ℝ V] {p q
   have hq1 : 1 ≤ q := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
   have hJJ := ae_crReflectionCoeff_mul_self (R := R) hΩ hJ2
   obtain ⟨Dξ', hDξ', hDξ'q⟩ := hw.exists_weakFDeriv_of_isOpen
-  have heq := (hc.isWeakCRSolution_iff_ae hpq hp hq hDξ' hw.memLpLoc hDξ'q.memLpLoc
-    h.locallyIntegrableOn).1 h
+  have heq := (hc.isWeakCRSolution_iff_ae hpq hp hq hDξ' hw.memLpLoc hDξ'q.memLpLoc).1 h
   -- The tangential derivatives of the reflected solution, zeroth-order term and right side.
   have hξs := (hDξ.hasWeakLineDerivOn 1).twistedReflection_one hΩ
     (h.memLpLoc.of_twistedReflection.mono_exponent hq1)
@@ -239,8 +238,7 @@ theorem ae_cauchyRiemann_of_crReflection [FiniteDimensional ℝ V] {p q : ℝ≥
     ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}),
       Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z := by
   obtain ⟨Dξ', hDξ', hDξ'q⟩ := hw.exists_weakFDeriv_of_isOpen
-  have heq := (hc.isWeakCRSolution_iff_ae hpq hp hq hDξ' hw.memLpLoc hDξ'q.memLpLoc
-    h.locallyIntegrableOn).1 h
+  have heq := (hc.isWeakCRSolution_iff_ae hpq hp hq hDξ' hw.memLpLoc hDξ'q.memLpLoc).1 h
   have hU : Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ≤ Ω :=
     fun z hz => (interior_subset hz).1
   have hD := (hDξ'.mono hU).ae_eq

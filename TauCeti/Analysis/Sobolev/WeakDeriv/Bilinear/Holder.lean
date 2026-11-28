@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.Analysis.Calculus.LineDeriv.Bilinear
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
@@ -33,10 +33,13 @@ subdomains. This follows the local mollification proof of the symmetric energy i
 `TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Basic`, using the existing general approximation
 and weak-limit APIs. No boundary regularity or boundedness of the original domain is required.
 
-At the endpoint where the left factor is continuous on `Ω` with `f' ∈ Lᵖ_loc(Ω)` and
-`g ∈ L^q_loc(Ω)` with `p⁻¹ + q⁻¹ ≤ 1` (allowing `p = ∞` or `q = ∞`, and without assuming
-`g' ∈ L^q_loc(Ω)`), `TauCeti.HasWeakLineDerivOn.bilin_of_continuousOn` obtains the same weak
-Leibniz rule by mollifying `g` first and then mollifying `f`.
+For a continuous left factor with a continuous directional derivative on `Ω`,
+`TauCeti.HasWeakLineDerivOn.bilin_of_hasLineDerivAt_left` proves the weak Leibniz rule for any
+weakly differentiable right factor `g` by mollifying `g`. At the endpoint where the left factor is
+continuous on `Ω` with `f' ∈ Lᵖ_loc(Ω)` and `g ∈ L^q_loc(Ω)` with `p⁻¹ + q⁻¹ ≤ 1` (allowing
+`p = ∞` or `q = ∞`, and without assuming `g' ∈ L^q_loc(Ω)`),
+`TauCeti.HasWeakLineDerivOn.bilin_of_continuousOn` obtains the same weak Leibniz rule by mollifying
+`f` and reducing to the classically differentiable case.
 
 ## References
 
@@ -228,56 +231,63 @@ section Endpoint
 
 open scoped Distributions LineDeriv
 
-/-- Stage 1 of the endpoint weak Leibniz rule: if `f₀` is continuous and has continuous directional
-derivative `f'₀` along `v` on `W₀`, and `g` has weak directional derivative `g'` on `Ω`, then
-`B(f₀, g)` has weak directional derivative `B(f'₀, g) + B(f₀, g')` on `W₀`, obtained by mollifying
-`(g, g')` on a larger relatively compact open set `W` and passing to the `L¹(W₀)` limit. -/
-private theorem hasWeakLineDerivOn_bilin_of_hasLineDerivAt_left (B : F →L[ℝ] G →L[ℝ] H)
-    {W₀ W : Opens E} (hW₀W : closure (W₀ : Set E) ⊆ W)
-    (hW₀c : IsCompact (closure (W₀ : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω)
-    {ρ : ℕ → ContDiffBump (0 : E)} (hρ0 : Tendsto (fun m => (ρ m).rOut) atTop (𝓝 0))
-    (hball : ∀ m, ∀ x ∈ (W₀ : Set E), ∀ y ∈ tsupport ((ρ m).normed μ), x - y ∈ W)
-    {f₀ f'₀ : E → F} (hf₀c : Continuous f₀) (hf'₀c : Continuous f'₀)
-    (hfd : ∀ x ∈ (W₀ : Set E), HasLineDerivAt ℝ f₀ (f'₀ x) x v)
-    {g g' : E → G} (hg : HasWeakLineDerivOn μ Ω g g' v)
-    (hg_int : Integrable ((W : Set E).indicator g) μ)
-    (hg'_int : Integrable ((W : Set E).indicator g') μ) :
-    HasWeakLineDerivOn μ W₀ (fun x => B (f₀ x) (g x))
+/-- **Endpoint directional weak Leibniz rule for a classically differentiable left factor.** If `f₀`
+is continuous on `Ω` and has continuous directional derivative `f'₀` along `v` at every point of
+`Ω`, and `g` has weak directional derivative `g'` along `v` on `Ω`, then `B(f₀, g)` has weak
+directional derivative `B(f'₀, g) + B(f₀, g')` along `v` on `Ω`. Neither `g` nor `g'` needs any
+integrability beyond the local integrability inherent in `HasWeakLineDerivOn`. -/
+theorem HasWeakLineDerivOn.bilin_of_hasLineDerivAt_left (B : F →L[ℝ] G →L[ℝ] H)
+    {f₀ f'₀ : E → F} (hf₀c : ContinuousOn f₀ Ω) (hf'₀c : ContinuousOn f'₀ Ω)
+    (hfd : ∀ x ∈ (Ω : Set E), HasLineDerivAt ℝ f₀ (f'₀ x) x v)
+    {g g' : E → G} (hg : HasWeakLineDerivOn μ Ω g g' v) :
+    HasWeakLineDerivOn μ Ω (fun x => B (f₀ x) (g x))
       (fun x => B (f'₀ x) (g x) + B (f₀ x) (g' x)) v := by
   have : CompleteSpace G := hg.completeSpace
+  rw [hasWeakLineDerivOn_iff_forall_isCompact_closure]
+  intro W₀ hW₀c hW₀Ω
+  obtain ⟨W, hW₀W, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hW₀c hW₀Ω
+  obtain ⟨ρ, hρ0, hball⟩ := ContDiffBump.exists_seq_sub_tsupport_subset (μ := μ) hW₀c hW₀W
+  have hWm : NullMeasurableSet (W : Set E) μ := W.isOpen.measurableSet.nullMeasurableSet
+  have hg_int := hg.locallyIntegrableOn.integrable_indicator_of_isCompact_closure hWm hWc hWΩ
+  have hg'_int := hg.locallyIntegrableOn_deriv.integrable_indicator_of_isCompact_closure hWm hWc hWΩ
   let g_m (m : ℕ) :=
     (ρ m).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator g
   let g'_m (m : ℕ) :=
     (ρ m).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator g'
   have hgm_cont (m : ℕ) : Continuous (g_m m) :=
-    (ρ m).continuous_normed_convolution hg_int.locallyIntegrable
+    ((ρ m).contDiff_normed_convolution hg_int.locallyIntegrable (n := 1)).continuous
   have hg'm_cont (m : ℕ) : Continuous (g'_m m) :=
-    (ρ m).continuous_normed_convolution hg'_int.locallyIntegrable
-  have hW₀Ω : (W₀ : Set E) ⊆ Ω := subset_closure.trans (hW₀W.trans (subset_closure.trans hWΩ))
+    ((ρ m).contDiff_normed_convolution hg'_int.locallyIntegrable (n := 1)).continuous
   have hW₀W' : (W₀ : Set E) ⊆ W := subset_closure.trans hW₀W
+  have hW₀Ω' : (W₀ : Set E) ⊆ Ω := subset_closure.trans hW₀Ω
+  have hf₀W₀ : ContinuousOn f₀ W₀ := hf₀c.mono hW₀Ω'
+  have hf'₀W₀ : ContinuousOn f'₀ W₀ := hf'₀c.mono hW₀Ω'
   -- Classical Leibniz rule for `(f₀, g_m)` on `W₀`.
   have hweak_m (m : ℕ) : HasWeakLineDerivOn μ W₀ (fun x => B (f₀ x) (g_m m x))
       (fun x => B (f'₀ x) (g_m m x) + B (f₀ x) (g'_m m x)) v := by
     refine hasWeakLineDerivOn_of_hasLineDerivAt
-      ((B.continuous₂.comp (hf₀c.prodMk (hgm_cont m))).locallyIntegrable.locallyIntegrableOn _)
-      (((B.continuous₂.comp (hf'₀c.prodMk (hgm_cont m))).add
-        (B.continuous₂.comp (hf₀c.prodMk (hg'm_cont m)))).locallyIntegrable.locallyIntegrableOn _)
+      ((B.continuous₂.comp_continuousOn (hf₀W₀.prodMk (hgm_cont m).continuousOn)
+        ).locallyIntegrableOn W₀.isOpen.measurableSet)
+      (((B.continuous₂.comp_continuousOn (hf'₀W₀.prodMk (hgm_cont m).continuousOn)).add
+        (B.continuous₂.comp_continuousOn (hf₀W₀.prodMk (hg'm_cont m).continuousOn))
+        ).locallyIntegrableOn W₀.isOpen.measurableSet)
       fun x hx => ?_
     have hgd := ((hg.mono (subset_closure.trans hWΩ)).indicator).hasLineDerivAt_convolution_right
       hg_int.locallyIntegrable _ (ρ m).contDiff_normed (ρ m).hasCompactSupport_normed x
       (hball m x hx)
     rw [convolution_flip, convolution_flip] at hgd
-    exact (hfd x hx).clm_bilin B hgd
+    exact (hfd x (hW₀Ω' hx)).clm_bilin B hgd
   -- Local integrability of the limit functions and `L¹(W₀)` convergence of `B(f₀, g_m)` and
   -- `B(f'₀, g_m) + B(f₀, g'_m)`.
-  have hBf_g := (hg.locallyIntegrableOn.mono_set hW₀Ω).continuousOn_clm_apply
-    W₀.isOpen.isLocallyClosed (B.continuous.comp_continuousOn hf₀c.continuousOn)
-  have hBf'_g := (hg.locallyIntegrableOn.mono_set hW₀Ω).continuousOn_clm_apply
-    W₀.isOpen.isLocallyClosed (B.continuous.comp_continuousOn hf'₀c.continuousOn)
-  have hBf_g' := (hg.locallyIntegrableOn_deriv.mono_set hW₀Ω).continuousOn_clm_apply
-    W₀.isOpen.isLocallyClosed (B.continuous.comp_continuousOn hf₀c.continuousOn)
-  obtain ⟨C₁, hC₁⟩ := hW₀c.exists_bound_of_continuousOn hf₀c.continuousOn
-  obtain ⟨C₂, hC₂⟩ := hW₀c.exists_bound_of_continuousOn hf'₀c.continuousOn
+  have hloc₀ := W₀.isOpen.isLocallyClosed
+  have hBf_g := (hg.locallyIntegrableOn.mono_set hW₀Ω').continuousOn_clm_apply
+    hloc₀ (B.continuous.comp_continuousOn hf₀W₀)
+  have hBf'_g := (hg.locallyIntegrableOn.mono_set hW₀Ω').continuousOn_clm_apply
+    hloc₀ (B.continuous.comp_continuousOn hf'₀W₀)
+  have hBf_g' := (hg.locallyIntegrableOn_deriv.mono_set hW₀Ω').continuousOn_clm_apply
+    hloc₀ (B.continuous.comp_continuousOn hf₀W₀)
+  obtain ⟨C₁, hC₁⟩ := hW₀c.exists_bound_of_continuousOn (hf₀c.mono hW₀Ω)
+  obtain ⟨C₂, hC₂⟩ := hW₀c.exists_bound_of_continuousOn (hf'₀c.mono hW₀Ω)
   have hC₁' : ∀ x ∈ (W₀ : Set E), ‖f₀ x‖ ≤ C₁ := fun x hx => hC₁ x (subset_closure hx)
   have hC₂' : ∀ x ∈ (W₀ : Set E), ‖f'₀ x‖ ≤ C₂ := fun x hx => hC₂ x (subset_closure hx)
   have hgm_lim := tendsto_setLIntegral_enorm_normed_convolution_indicator_sub hρ0
@@ -290,8 +300,9 @@ private theorem hasWeakLineDerivOn_bilin_of_hasLineDerivAt_left (B : F →L[ℝ]
         (B (f'₀ x) (g x) + B (f₀ x) (g' x))‖ₑ ∂μ) atTop (𝓝 0) :=
     tendsto_setLIntegral_enorm_add_sub
       (a := fun m x => B (f'₀ x) (g_m m x)) (b := fun m x => B (f₀ x) (g'_m m x))
-      (fun m => (B.continuous₂.comp (hf'₀c.prodMk (hgm_cont m))).aestronglyMeasurable.sub
-        hBf'_g.aestronglyMeasurable)
+      (fun m => ((B.continuous₂.comp_continuousOn
+        (hf'₀W₀.prodMk (hgm_cont m).continuousOn)).aestronglyMeasurable
+        W₀.isOpen.measurableSet).sub hBf'_g.aestronglyMeasurable)
       (B.tendsto_setLIntegral_enorm_bilin_sub_of_norm_le W₀.isOpen.measurableSet hC₂' hgm_lim)
       (B.tendsto_setLIntegral_enorm_bilin_sub_of_norm_le W₀.isOpen.measurableSet hC₁' hg'm_lim)
   exact hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub
@@ -337,9 +348,6 @@ theorem HasWeakLineDerivOn.bilin_of_continuousOn (B : F →L[ℝ] G →L[ℝ] H)
   have hf_int := hf.locallyIntegrableOn.integrable_indicator_of_isCompact_closure hWm hWc hWΩ
   have hf'_int :=
     hf.locallyIntegrableOn_deriv.integrable_indicator_of_isCompact_closure hWm hWc hWΩ
-  have hg_int := hg.locallyIntegrableOn.integrable_indicator_of_isCompact_closure hWm hWc hWΩ
-  have hg'_int :=
-    hg.locallyIntegrableOn_deriv.integrable_indicator_of_isCompact_closure hWm hWc hWΩ
   have hf'W : MemLp f' p (μ.restrict W) :=
     (hf'p _ hWc hWΩ).mono_measure (Measure.restrict_mono subset_closure le_rfl)
   have hgW : MemLp g q (μ.restrict W) :=
@@ -349,20 +357,19 @@ theorem HasWeakLineDerivOn.bilin_of_continuousOn (B : F →L[ℝ] G →L[ℝ] H)
   let f'_n (n : ℕ) :=
     (ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator f'
   have hfn_cont (n : ℕ) : Continuous (f_n n) :=
-    (ρ n).continuous_normed_convolution hf_int.locallyIntegrable
+    ((ρ n).contDiff_normed_convolution hf_int.locallyIntegrable (n := 1)).continuous
   have hf'n_cont (n : ℕ) : Continuous (f'_n n) :=
-    (ρ n).continuous_normed_convolution hf'_int.locallyIntegrable
+    ((ρ n).contDiff_normed_convolution hf'_int.locallyIntegrable (n := 1)).continuous
   have hW₀Ω : (W₀ : Set E) ⊆ Ω := subset_closure.trans (hW₀W.trans (subset_closure.trans hWΩ))
   -- Stage 1: mollify `g` and pass `m → ∞` in `L¹(W₀)` to get the weak Leibniz rule for `(f_n, g)`.
   have hweak_n (n : ℕ) : HasWeakLineDerivOn μ W₀ (fun x => B (f_n n x) (g x))
       (fun x => B (f'_n n x) (g x) + B (f_n n x) (g' x)) v :=
-    hasWeakLineDerivOn_bilin_of_hasLineDerivAt_left B hW₀W hW₀c hWΩ hρ0 hball
-      (hfn_cont n) (hf'n_cont n) (fun x hx => by
+    (hg.mono hW₀Ω).bilin_of_hasLineDerivAt_left B (hfn_cont n).continuousOn
+      (hf'n_cont n).continuousOn fun x hx => by
         have hfd := ((hf.mono (subset_closure.trans hWΩ)).indicator
           ).hasLineDerivAt_convolution_right hf_int.locallyIntegrable _ (ρ n).contDiff_normed
           (ρ n).hasCompactSupport_normed x (hball n x hx)
-        rwa [convolution_flip, convolution_flip] at hfd)
-      hg hg_int hg'_int
+        rwa [convolution_flip, convolution_flip] at hfd
   -- Stage 2: test against `φ` and pass `n → ∞` using `f_n → f` uniformly on `tsupport φ` (`ht1`,
   -- `ht3`) and `f'_n → f'` weakly in `Lᵖ(W)` against `φ • g ∈ L^{p'}` (`ht2`).
   let φ₀ : 𝓓(W₀, ℝ) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφW₀⟩
