@@ -69,6 +69,7 @@ theorem covariantDefectFunctor_map {Y Y' : ModuleCat.{max u v} A} (a : Y ⟶ Y')
   (rfl)
 
 /-- On a quotient class, the covariant defect functor postcomposes its representative. -/
+@[simp↓]
 theorem covariantDefectFunctor_map_mk {Y Y' : ModuleCat.{max u v} A} (a : Y ⟶ Y')
     (x : L →ₗ[A] Y) :
     (eqToHom (covariantDefectFunctor_obj R f Y).symm ≫ (covariantDefectFunctor R f).map a ≫
@@ -299,6 +300,9 @@ private theorem stableDefectFormulaApp_hom_comp (X : FinitelyPresentedStableModu
         (stableCovariantDefect R S.f).map
           (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X).hom =
       (hS.defectFormulaEquiv (FinitelyPresentedStableModule.presentation X)).toModuleIso.hom := by
+  -- The component is `toModuleIso ≪≫ F.mapIso e.symm` by definition, but its objects are written
+  -- as values of composite functors, so `rw [Iso.trans_hom]` does not find the pattern. We
+  -- restate the composite with the objects spelled out and cancel `e.inv ≫ e.hom`.
   let _ := hS.mono_f
   let F := stableCovariantDefect R S.f
   let e := F.mapIso (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X)
