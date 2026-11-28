@@ -53,6 +53,11 @@ Gibbs kernels `exp (-c / ε)` are required to be positive definite and universal
 * `Matrix.PosSemidef.inner_kernelMeanEmbedding`: `⟪m μ, m ν⟫ = ∫ y, ∫ x, k x y ∂μ ∂ν`.
 * `Matrix.PosSemidef.norm_kernelMeanEmbedding_sub_sq`: the kernel energy of `μ - ν` is
   `‖m μ - m ν‖ ^ 2`, hence nonnegative.
+* `Matrix.PosSemidef.inner_kernelMeanEmbedding_eq_integral_inner`: every `f ∈ H` integrates
+  against `μ` through the embedding, `⟪f, m μ⟫ = ∫ ⟪f, Φ x⟫ dμ`; hence
+  `Matrix.PosSemidef.integral_inner_sub_integral_inner` for a difference of measures.
+* `Matrix.PosSemidef.inner_kolmogorovFeature_kernelMeanEmbedding_sub`: the coefficient
+  `⟪Φ x, m μ - m ν⟫` is `∫ k x y dμ - ∫ k x y dν`.
 * `Matrix.PosSemidef.integrable_kolmogorovFeature`: on a compact space the feature map of a
   continuous kernel is integrable for every finite measure.
 * `TauCeti.IsUniversalKernel.ext_of_forall_integral_eq`: on a compact metrizable space, finite
@@ -190,6 +195,33 @@ theorem norm_kernelMeanEmbedding_sub_sq (hk : Matrix.PosSemidef k) {μ ν : Meas
   rw [norm_sub_sq_real, ← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq,
     inner_kernelMeanEmbedding hk hμ hμ, inner_kernelMeanEmbedding hk hμ hν,
     inner_kernelMeanEmbedding hk hν hν]
+
+/-- Every vector `f` of the Kolmogorov space integrates against `μ` through the mean embedding:
+`⟪f, m μ⟫ = ∫ ⟪f, Φ x⟫ dμ`. -/
+theorem inner_kernelMeanEmbedding_eq_integral_inner (hk : Matrix.PosSemidef k) {μ : Measure X}
+    (hμ : Integrable hk.kolmogorovFeature μ) (f : hk.KolmogorovSpace) :
+    ⟪f, hk.kernelMeanEmbedding μ⟫_ℝ = ∫ x, ⟪f, hk.kolmogorovFeature x⟫_ℝ ∂μ := by
+  rw [kernelMeanEmbedding_def, integral_inner hμ]
+
+/-- The difference of the integrals of `x ↦ ⟪f, Φ x⟫` is the coefficient of `f` against the
+difference of the mean embeddings. -/
+theorem integral_inner_sub_integral_inner (hk : Matrix.PosSemidef k) {μ ν : Measure X}
+    (hμ : Integrable hk.kolmogorovFeature μ) (hν : Integrable hk.kolmogorovFeature ν)
+    (f : hk.KolmogorovSpace) :
+    ∫ x, ⟪f, hk.kolmogorovFeature x⟫_ℝ ∂μ - ∫ x, ⟪f, hk.kolmogorovFeature x⟫_ℝ ∂ν =
+      ⟪f, hk.kernelMeanEmbedding μ - hk.kernelMeanEmbedding ν⟫_ℝ := by
+  rw [inner_sub_right, hk.inner_kernelMeanEmbedding_eq_integral_inner hμ,
+    hk.inner_kernelMeanEmbedding_eq_integral_inner hν]
+
+/-- **The witness function.** The coefficient of a feature vector `Φ x` against `m μ - m ν` is
+`∫ k x y dμ - ∫ k x y dν`. -/
+theorem inner_kolmogorovFeature_kernelMeanEmbedding_sub (hk : Matrix.PosSemidef k)
+    {μ ν : Measure X} (hμ : Integrable hk.kolmogorovFeature μ)
+    (hν : Integrable hk.kolmogorovFeature ν) (x : X) :
+    ⟪hk.kolmogorovFeature x, hk.kernelMeanEmbedding μ - hk.kernelMeanEmbedding ν⟫_ℝ =
+      ∫ y, k x y ∂μ - ∫ y, k x y ∂ν := by
+  rw [inner_sub_right, hk.inner_kolmogorovFeature_kernelMeanEmbedding hμ,
+    hk.inner_kolmogorovFeature_kernelMeanEmbedding hν]
 
 section Universal
 
