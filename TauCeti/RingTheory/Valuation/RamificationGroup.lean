@@ -38,6 +38,8 @@ maximal ideal.
   inertia group exactly when it fixes the residue of every element of `A`.
 * `ValuationSubring.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal`: equivalently, when it moves
   every element of `A` by an element of the maximal ideal.
+* `ValuationSubring.residue_smul_eq_pow_iff`: an element of the decomposition group acts on the
+  residue of `x` as the `q`-th power exactly when `g x - x ^ q` is a nonunit of `A`.
 * `ValuationSubring.map_restrictScalarsHom_inertiaSubgroup`: the inertia group of `A` over an
   intermediate field `E`, read as automorphisms over `K`, is the part of the inertia group over `K`
   that fixes `E` pointwise.
@@ -122,6 +124,16 @@ theorem mem_inertiaSubgroup_iff_sub_mem_maximalIdeal (A : ValuationSubring L)
     g ∈ A.inertiaSubgroup K ↔ ∀ x : A, g • x - x ∈ IsLocalRing.maximalIdeal A := by
   refine (mem_inertiaSubgroup_iff A g).trans <| forall_congr' fun x ↦ ?_
   rw [← IsLocalRing.residue_eq_zero_iff, map_sub, sub_eq_zero]
+
+/-- An element `g` of the decomposition group of `A` moves the residue of `x ∈ A` to its `q`-th
+power exactly when `g x - x ^ q` is a nonunit of `A`. -/
+theorem residue_smul_eq_pow_iff (A : ValuationSubring L) (g : A.decompositionSubgroup K) (x : A)
+    (q : ℕ) :
+    IsLocalRing.residue A (g • x) = IsLocalRing.residue A x ^ q ↔
+      (g : L ≃ₐ[K] L) • (x : L) - (x : L) ^ q ∈ A.nonunits := by
+  rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff,
+    ← coe_mem_nonunits_iff]
+  simp [AlgEquiv.smul_def]
 
 /-- **The inertia group over an intermediate field**: the inertia group of `A` over an intermediate
 field `E` of `L / K`, read as automorphisms over `K`, is the part of the inertia group of `A` over

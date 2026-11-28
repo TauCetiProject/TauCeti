@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
-public import TauCeti.Topology.Algebra.Module.WeakSpace
+public import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 

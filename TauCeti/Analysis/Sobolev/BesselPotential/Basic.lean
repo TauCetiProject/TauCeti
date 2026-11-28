@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
@@ -239,10 +240,9 @@ theorem mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv {p : ℝ≥0∞
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∀ {k : ℕ} {f : E → ℝ}, ContDiff ℝ k f → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p volume) →
       f ∈ realSobolevFunctions E k p
-  | 0, f, hf, hmem => by
+  | 0, f, _, hmem => by
     rw [Nat.cast_zero, mem_realSobolevFunctions_zero_iff]
-    exact (hmem 0 le_rfl).congr_norm hf.continuous.aestronglyMeasurable
-      (.of_forall fun _ ↦ norm_iteratedFDeriv_zero)
+    exact memLp_iteratedFDeriv_zero_iff.1 (hmem 0 le_rfl)
   | k + 1, f, hf, hmem => by
     have hDf : ContDiff ℝ k (fderiv ℝ f) := hf.fderiv_right (by push_cast; rfl)
     push_cast

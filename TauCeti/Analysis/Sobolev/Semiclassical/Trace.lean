@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Semiclassical.Mixed
 public import TauCeti.Analysis.Sobolev.Semiclassical.UniformlyLocal
 public import TauCeti.Analysis.Sobolev.Trace.IteratedFDeriv
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 
 /-!
 # Traces of semiclassical Sobolev norms on hyperplanes
@@ -47,8 +49,24 @@ because `h⁻¹ • ((a, y) - (a, x)) = (0, h⁻¹ • (y - x))`
 (`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_hyperplane_le`), with no compact support needed
 for `f`.
 
-These are the trace estimates for the semiclassical and uniformly local norms in which Taubes
-measures the fields near a pseudoholomorphic curve, at the scale `h = (2r)^(-1/2)`.
+The mixed norms `‖·‖_{j,h,V}` of a tube (`Submodule.mixedSemiclassicalSobolevNorm`), which weight
+derivatives along a normal subspace `V` by `h` and leave the horizontal ones unscaled, have the same
+trace estimate. Take a subspace `p` of `ℝ`, so that the normal subspace of the tube `ℝ × E` is the
+product `p × V`, the subspace `(p.prod V).comap (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap`
+of `WithLp 2 (ℝ × E)`: the coordinate cut by the hyperplane `{a} × E` is normal
+for `p = ⊤` and horizontal for `p = ⊥`. For `u` compactly supported of class `Cʲ⁺¹`,
+
+`‖u(a, ·)‖_{j,h,V} ≤ (j + 1) 2ʲ⁺² ‖u‖_{j+1,h,p×V}`
+
+(`Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le`), uniformly in `h`. The normal dilation
+along `p × V` dilates each factor (`Submodule.normalDilation_comap_prod`), so dilating the
+restriction normally along `V` restricts the normally dilated `u` to the hyperplane
+`{b} × E` with `a = normalDilation p h b`. The mixed norm at scale `h` is equivalent to the
+unscaled Sobolev norm of the normally dilated field, and the trace estimate at scale one applies to
+that field.
+
+These are the trace estimates for the semiclassical, uniformly local and mixed norms in which
+Taubes measures the fields near a pseudoholomorphic curve, at the scale `h = (2r)^(-1/2)`.
 
 ## Main results
 
@@ -59,6 +77,8 @@ measures the fields near a pseudoholomorphic curve, at the scale `h = (2r)^(-1/2
   `(a, x)`.
 * `TauCeti.uniformlyLocalSemiclassicalSobolevNorm_hyperplane_le`: the trace estimate for the
   uniformly local norms.
+* `Submodule.mixedSemiclassicalSobolevNorm_hyperplane_le`: the trace estimate for the mixed norms of
+  a tube, uniformly in `h`, across a normal or a horizontal coordinate.
 
 ## References
 
@@ -168,3 +188,62 @@ theorem uniformlyLocalSemiclassicalSobolevNorm_hyperplane_le (hη : ContDiff ℝ
         (semiclassicalSobolevNorm_le_uniformlyLocalSemiclassicalSobolevNorm hb _) zero_le_two)
 
 end TauCeti
+
+/-! ### Traces of the mixed norms -/
+
+namespace Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (V : Submodule ℝ E) (p : Submodule ℝ ℝ) {j : ℕ} {h : ℝ} {u : WithLp 2 (ℝ × E) → F}
+
+/-- **The trace estimate for the mixed norms, uniformly in the scale.** Let `V` be a subspace of
+`E` and `p` a subspace of `ℝ`, so that `p × V` is the normal subspace of the tube `ℝ × E`: the
+coordinate cut by the hyperplane is normal for `p = ⊤` and horizontal for `p = ⊥`. For `h > 0`
+and `u` compactly supported of class `Cʲ⁺¹` on `ℝ × E`, the restriction of `u` to the hyperplane
+`{a} × E` satisfies `‖u(a, ·)‖_{j,h,V} ≤ (j + 1) 2ʲ⁺² ‖u‖_{j+1,h,p×V}`. -/
+theorem mixedSemiclassicalSobolevNorm_hyperplane_le (hu : ContDiff ℝ (j + 1) u)
+    (hsupp : HasCompactSupport u) (hh : 0 < h) (a : ℝ) :
+    V.mixedSemiclassicalSobolevNorm j h (fun y : E ↦ u (WithLp.toLp 2 (a, y))) ≤
+      (j + 1) * 2 ^ (j + 2) *
+        mixedSemiclassicalSobolevNorm
+          ((p.prod V).comap (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap) (j + 1) h u := by
+  set W := (p.prod V).comap (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap
+  set U := u ∘ W.normalDilation h
+  set b := p.normalDilation h⁻¹ a
+  have hU : ContDiff ℝ (j + 1) U := hu.comp (W.normalDilation h).contDiff
+  have hUc : HasCompactSupport U := by
+    have he := (W.normalDilationEquiv hh.ne').toHomeomorph.isClosedEmbedding
+    rw [ContinuousLinearEquiv.coe_toHomeomorph, coeFn_normalDilationEquiv] at he
+    exact hsupp.comp_isClosedEmbedding he
+  have hb : p.normalDilation h b = a := p.normalDilation_normalDilation_inv hh.ne' a
+  -- Dilating the restriction normally along `V` restricts the dilation of `u` to `{b} × E`.
+  have hdil : (fun y : E ↦ u (WithLp.toLp 2 (a, y))) ∘ V.normalDilation h =
+      fun y ↦ U (WithLp.toLp 2 (b, y)) := by
+    ext y
+    simp only [Function.comp_apply, U, W, normalDilation_comap_prod, WithLp.toLp_fst,
+      WithLp.toLp_snd, hb]
+  have hres : ContDiff ℝ j fun y : E ↦ U (WithLp.toLp 2 (b, y)) :=
+    (hU.of_le (by norm_cast; omega)).comp
+      (WithLp.contDiff_toLp.comp (contDiff_const.prodMk contDiff_id))
+  have hresc : HasCompactSupport fun y : E ↦ U (WithLp.toLp 2 (b, y)) :=
+    hUc.comp_isClosedEmbedding (WithLp.isClosedEmbedding_toLp_prodMk_left 2 b)
+  have hle :=
+    (V.memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation hh
+      (j := j) (by
+        rw [hdil]
+        exact fun n hn ↦ hres.memLp_iteratedFDeriv_of_hasCompactSupport (by exact_mod_cast hn)
+          hresc)).2
+  rw [hdil] at hle
+  have hmix := (W.memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le hu
+    (fun n hn _ _ ↦ W.memLp_mixedIteratedFDeriv
+      (hu.memLp_iteratedFDeriv_of_hasCompactSupport (by exact_mod_cast hn) hsupp) _) hh).2
+  calc V.mixedSemiclassicalSobolevNorm j h (fun y : E ↦ u (WithLp.toLp 2 (a, y)))
+      ≤ (j + 1) * TauCeti.semiclassicalSobolevNorm j 1 fun y : E ↦ U (WithLp.toLp 2 (b, y)) := hle
+    _ ≤ (j + 1) * (2 * (2 ^ (j + 1) * W.mixedSemiclassicalSobolevNorm (j + 1) h u)) := by
+        gcongr
+        exact (TauCeti.semiclassicalSobolevNorm_hyperplane_le hU hUc one_pos b).trans
+          (mul_le_mul_of_nonneg_left hmix zero_le_two)
+    _ = (j + 1) * 2 ^ (j + 2) * W.mixedSemiclassicalSobolevNorm (j + 1) h u := by ring
+
+end Submodule

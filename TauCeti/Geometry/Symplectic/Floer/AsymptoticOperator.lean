@@ -1021,8 +1021,7 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
   have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
     ω.continuous_fderiv_hamiltonianVectorField_comp hH
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
-  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 :=
-    fun t ↦ by simp only [hHp t, hxp t]
+  have hSp := ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp
   have hclosed := Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul hSc hSp hJc hJp
   have h₀ :=
     (isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero ω hX hH hHp hx hxp
@@ -1042,12 +1041,8 @@ theorem exists_loop_eq_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H 
     ∃ S : C(AddCircle (1 : ℝ), V →L[ℝ] V),
       (∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ∧
         ContDiff ℝ 1 fun t : ℝ ↦ S t := by
-  set f : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
-  have hf : ContDiff ℝ 1 f :=
-    ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hx
-      (by norm_num)
-  have hper : Periodic f 1 := fun t ↦ by simp only [f, hHp t, hxp t]
+  have hf := ω.contDiff_fderiv_hamiltonianVectorField_comp (n := 1) hH hx
+  have hper := ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp
   refine ⟨⟨hper.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hf.continuous⟩,
     fun t ↦ hper.lift_coe t, ?_⟩
   simpa only [ContinuousMap.coe_mk, hper.lift_coe] using hf

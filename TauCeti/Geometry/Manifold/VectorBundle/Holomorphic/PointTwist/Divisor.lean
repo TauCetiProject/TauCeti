@@ -33,7 +33,7 @@ C.1.10, step 5:
   without changing `σ` near the other zeros (`TauCeti.exists_untwist_section_of_finset`, built
   on `TauCeti.exists_untwist_section_of_isSignedTransverseZero`), so their chart readings,
   hence their signs, are unchanged
-  (`TauCeti.negPointTwistChartReading_eventuallyEq_of_pointTwistDiv`).
+  (`TauCeti.preferredChartReading_eventuallyEq_of_pointTwistDiv`).
 * After all zeros are removed the section vanishes nowhere, and a line bundle with a nowhere-zero
   smooth section is isomorphic to the trivial bundle (`TauCeti.contMDiff_lineCoord`).
 * Twisting back with the opposite signs, cancellation (`TauCeti.signedPointTwistCancelEquiv`) and
@@ -188,25 +188,27 @@ theorem divisorCore_nil_trivializationAt_snd (z₀ : X) (q : TotalSpace ℂ (div
 variable [ContMDiffVectorBundle n ℂ L 𝓘(ℝ, ℂ)]
 
 /-- **A line bundle with a nowhere-zero section is trivial.** If `σ` is a real-`C^n` section of a
-real-`C^n` complex line bundle `L` without zeros, the coordinates `VectorBundle.lineCoord ℂ (hσ₀ z)`
-along `σ`, as fiber isomorphisms of `L` with the trivial bundle `𝒪(0)`, are real `C^n` on total
-spaces. -/
+real-`C^n` complex line bundle `L` without zeros, the coordinates
+`VectorBundle.lineCoord (Module.finrank_self ℂ) (hσ₀ z)` along `σ`, as fiber isomorphisms of `L`
+with the trivial bundle `𝒪(0)`, are real `C^n` on total spaces. -/
 theorem contMDiff_lineCoord {σ : ∀ z, L z}
     (hσ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n fun z ↦ TotalSpace.mk' ℂ z (σ z))
     (hσ₀ : ∀ z, σ z ≠ 0) :
     ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ L ↦ TotalSpace.mk' ℂ (E := (divisorCore []).Fiber) p.proj
-        (VectorBundle.lineCoord ℂ (hσ₀ p.proj) p.snd) := by
+        (VectorBundle.lineCoord (Module.finrank_self ℂ) (hσ₀ p.proj) p.snd) := by
   have : IsManifold 𝓘(ℝ, ℂ) n X := IsManifold.restrictScalars ℝ ‹_›
   -- The inverse family `w ↦ w • σ z`, from the fibers of `𝒪(0)`, which are `ℂ` by definition.
   let e : ∀ z, (divisorCore []).Fiber z ≃L[ℝ] L z := fun z ↦
-    ((VectorBundle.lineCoord ℂ (hσ₀ z)).restrictScalars' ℝ).symm
+    ((VectorBundle.lineCoord (Module.finrank_self ℂ) (hσ₀ z)).restrictScalars' ℝ).symm
   have he (z : X) (w : ℂ) : e z w = w • σ z :=
     (congrFun (ContinuousLinearEquiv.coe_restrictScalars'_symm (R := ℝ)
-      (VectorBundle.lineCoord ℂ (hσ₀ z))) w).trans (VectorBundle.lineCoord_symm_apply (hσ₀ z) w)
-  have he' (z : X) (v : L z) : (e z).symm v = VectorBundle.lineCoord ℂ (hσ₀ z) v :=
+      (VectorBundle.lineCoord (Module.finrank_self ℂ) (hσ₀ z))) w).trans
+      (VectorBundle.lineCoord_symm_apply (Module.finrank_self ℂ) (hσ₀ z) w)
+  have he' (z : X) (v : L z) :
+      (e z).symm v = VectorBundle.lineCoord (Module.finrank_self ℂ) (hσ₀ z) v :=
     congrFun (ContinuousLinearEquiv.coe_restrictScalars' (R := ℝ)
-      (VectorBundle.lineCoord ℂ (hσ₀ z))) v
+      (VectorBundle.lineCoord (Module.finrank_self ℂ) (hσ₀ z))) v
   -- It is smooth: in a chart of `L` it is `w` times the reading of `σ`.
   have h : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ (divisorCore []).Fiber ↦ TotalSpace.mk' ℂ (E := L) p.proj
@@ -298,7 +300,8 @@ theorem exists_contMDiff_divisorCore_equiv_of_section (l : List (X × Bool))
   | nil =>
     -- No zeros: `σ` trivializes `L`.
     have hσ₀ : ∀ z, σ z ≠ 0 := fun z h ↦ by simpa using (hZ z).1 h
-    exact ⟨fun z ↦ VectorBundle.lineCoord ℂ (hσ₀ z), contMDiff_lineCoord hσ hσ₀⟩
+    exact ⟨fun z ↦ VectorBundle.lineCoord (Module.finrank_self ℂ) (hσ₀ z),
+      contMDiff_lineCoord hσ hσ₀⟩
   | cons p l ih =>
     classical
     obtain ⟨x, s⟩ := p
@@ -309,7 +312,7 @@ theorem exists_contMDiff_divisorCore_equiv_of_section (l : List (X × Bool))
       (S := (l.map Prod.fst).toFinset) (by simpa using hl.1) hσ (by simpa using hZ) hT.1
     have hne : ∀ q ∈ l, q.1 ≠ x := fun q hq h ↦ hl.1 (h ▸ List.mem_map_of_mem hq)
     obtain ⟨e, he⟩ := ih hl.2 hτ (fun z ↦ by simpa using hτZ z) fun q hq ↦ (hT.2 q hq).congr
-      (negPointTwistChartReading_eventuallyEq_of_pointTwistDiv (hne q hq)
+      (preferredChartReading_eventuallyEq_of_pointTwistDiv (hne q hq)
         (hτσ q.1 (List.mem_toFinset.2 (List.mem_map_of_mem hq)))).symm
     -- `L ≅ L(±x)(∓x) ≅ 𝒪(D')(∓x)`, by cancellation and functoriality.
     refine ⟨fun z ↦ (signedPointTwistCancelEquiv ℂ L x s z).symm.trans

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.TypeTags
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 
@@ -221,6 +222,25 @@ theorem equivMultiplicative_symm_rightTranslation (g : Multiplicative A)
   ext x
   simp
 
+/-- `equivMultiplicative` intertwines pullback along `φ` with pullback along
+`ContinuousAddMonoidHom.toMultiplicative φ`. -/
+@[simp]
+theorem equivMultiplicative_compRightAlgHom {B : Type*} [AddGroup B] [TopologicalSpace B]
+    [IsTopologicalAddGroup B] (φ : A →ₜ+ B) (f : AddUCB B) :
+    equivMultiplicative (compRightAlgHom φ f) =
+      UCB.compRightAlgHom φ.toMultiplicative (equivMultiplicative f) := by
+  ext x
+  simp
+
+/-- `equivMultiplicative.symm` intertwines pullback along
+`ContinuousAddMonoidHom.toMultiplicative φ` with pullback along `φ`. -/
+@[simp]
+theorem equivMultiplicative_symm_compRightAlgHom {B : Type*} [AddGroup B] [TopologicalSpace B]
+    [IsTopologicalAddGroup B] (φ : A →ₜ+ B) (f : UCB (Multiplicative B)) :
+    equivMultiplicative.symm (UCB.compRightAlgHom φ.toMultiplicative f) =
+      compRightAlgHom φ (equivMultiplicative.symm f) := by
+  rw [AlgEquiv.symm_apply_eq, equivMultiplicative_compRightAlgHom, AlgEquiv.apply_symm_apply]
+
 end AddUCB
 
 namespace UCB
@@ -335,6 +355,25 @@ theorem equivAdditive_symm_rightTranslation (a : Additive G) (f : AddUCB (Additi
       rightTranslation a.toMul (equivAdditive.symm f) := by
   ext x
   simp
+
+/-- `equivAdditive` intertwines pullback along `φ` with pullback along
+`ContinuousMonoidHom.toAdditive φ`. -/
+@[simp]
+theorem equivAdditive_compRightAlgHom {H : Type*} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : G →ₜ* H) (f : UCB H) :
+    equivAdditive (compRightAlgHom φ f) =
+      AddUCB.compRightAlgHom φ.toAdditive (equivAdditive f) := by
+  ext x
+  simp
+
+/-- `equivAdditive.symm` intertwines pullback along `ContinuousMonoidHom.toAdditive φ` with
+pullback along `φ`. -/
+@[simp]
+theorem equivAdditive_symm_compRightAlgHom {H : Type*} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : G →ₜ* H) (f : AddUCB (Additive H)) :
+    equivAdditive.symm (AddUCB.compRightAlgHom φ.toAdditive f) =
+      compRightAlgHom φ (equivAdditive.symm f) := by
+  rw [AlgEquiv.symm_apply_eq, equivAdditive_compRightAlgHom, AlgEquiv.apply_symm_apply]
 
 end Additive
 

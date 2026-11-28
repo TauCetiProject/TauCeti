@@ -367,6 +367,17 @@ theorem doubleAlongSwap_mk_inl_eq_self_iff {a : X} (ha : a ∈ A) (v : Fin C.ran
 
 end Double
 
+/-- The common chart domain of the doubles of two cores at `i` and `j` is the preimage under the
+fold of the common chart domain of the cores at the folded points. -/
+theorem baseSet_inter_baseSet_doubleAlong {C C' : FiniteRankBundleCore ℂ X}
+    (hC : C.IsRealAlong A) (hC' : C'.IsRealAlong A) (i j : DoubleAlong A) :
+    (C.doubleAlong hC).core.baseSet i ∩ (C'.doubleAlong hC').core.baseSet j =
+      DoubleAlong.fold A ⁻¹' (C.core.baseSet (DoubleAlong.fold A i) ∩
+        C'.core.baseSet (DoubleAlong.fold A j)) := by
+  ext y
+  rw [Set.mem_inter_iff, mem_baseSet_doubleAlong, mem_baseSet_doubleAlong, Set.mem_preimage,
+    Set.mem_inter_iff]
+
 /-- The double of a trivial core is trivial, by the identity in coordinates. Under this
 identification the lifted swap `doubleAlongSwap` is `(z, v) ↦ (swap z, conj v)`
 (`doubleAlongSwap_mk`). -/
@@ -492,6 +503,15 @@ theorem fiberMap_doubleAlongMap (y : DoubleAlong A) :
       (star (toConv (φ.fiberMap x))).ofConv := by
   rw [fiberMap_doubleAlongMap, DoubleAlong.conjExtend_inr]
   exact fun hx => (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 (hφ x hx)
+
+/-- The double of a bundle map whose fibre maps commute with coordinatewise conjugation at every
+point is the bundle map at the folded point, on both sheets. -/
+theorem fiberMap_doubleAlongMap_of_forall_star
+    (hφ' : ∀ x v, φ.fiberMap x (star v) = star (φ.fiberMap x v)) (y : DoubleAlong A) :
+    (doubleAlongMap hC hC' φ hφ).fiberMap y = φ.fiberMap (DoubleAlong.fold A y) := by
+  rw [fiberMap_doubleAlongMap]
+  exact DoubleAlong.conjExtend_of_forall_isSelfAdjoint A
+    (fun x ↦ (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 (hφ' x)) y
 
 /-- Doubling preserves identities. -/
 @[simp] theorem doubleAlongMap_id (h : ∀ a ∈ A, ∀ v, (𝟙 C : C ⟶ C).fiberMap a (star v) =
