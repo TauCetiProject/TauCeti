@@ -11,6 +11,8 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Regularity
 import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
+import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
 # Dimensions of closed subgroups
@@ -20,11 +22,11 @@ has strictly smaller dimension. In coordinate rings, a nonzero Hopf ideal `I` sa
 `dim (H ⧸ I) + 1 ≤ dim H`. The subgroup may be disconnected or non-smooth. Reducedness of
 the ambient group matters: a proper infinitesimal subgroup can have the same dimension.
 
-For smooth ambient groups and smooth closed subgroups, group dimension equals Lie dimension,
-so the dimension drop is an inequality of natural numbers. This provides a measure for
-induction through proper smooth closed subgroups, including reduced identity components of
-closed subgroups. The connectedness assumption is only on the ambient group, and no
-perfectness assumption on the field is needed.
+A proper smooth closed subgroup has strictly smaller Lie dimension even when the ambient
+group is non-smooth. Indeed, if the subgroup had at least the ambient Lie dimension, then its
+dimension would force equality of the ambient group dimension and Lie dimension, hence
+ambient smoothness. This provides a measure for induction through proper smooth closed subgroups
+over any field.
 
 The proof uses irreducibility of geometrically connected affine groups and Mathlib's
 `ringKrullDim_succ_le_of_surjective`: a nonzero function in the defining ideal is a
@@ -48,6 +50,8 @@ public section
 namespace TauCeti.HopfIdeal
 
 universe u v
+
+open scoped TensorProduct
 
 variable {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k}
   [Algebra.FiniteType k H]
@@ -73,22 +77,35 @@ theorem ringKrullDim_quotient_add_one_le (I : HopfIdeal k H) [IsReduced H]
     Ideal.Quotient.mk_surjective (mem_nonZeroDivisors_iff_ne_zero.mpr hx0)
     (Ideal.Quotient.eq_zero_iff_mem.mpr hx)
 
-/-- A proper smooth closed subgroup of a smooth geometrically connected affine group has
-strictly smaller Lie dimension. The closed subgroup may be disconnected, and the base
-field may be imperfect. -/
+/-- A proper smooth closed subgroup of a geometrically connected affine group has strictly
+smaller Lie dimension. The ambient group may be non-smooth and the subgroup may be disconnected. -/
 theorem finrank_quotientLie_lt (I : HopfIdeal k H)
-    [Algebra.Smooth k H] [Algebra.Smooth k (H ⧸ I.toIdeal)]
+    [Algebra.Smooth k (H ⧸ I.toIdeal)]
     (hH : geometricallyConnectedCommHopfAlgProperty k H) (hI : I ≠ ⊥) :
     Module.finrank k
         (Derivation k (H ⧸ I.toIdeal) (Bialgebra.CounitAlgebra k (H ⧸ I.toIdeal) k)) <
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
+  by_contra! hle
+  have hbound : ringKrullDim H ≤
+      (Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) : WithBot ℕ∞) := by
+    simpa only [finrank_lie_baseChange, ringKrullDim_tensorProduct_field_of_finiteType]
+      using (HopfAlgebra.ringKrullDim_le_finrank_lie
+        (k := AlgebraicClosure k) (H := AlgebraicClosure k ⊗[k] H))
+  have : Algebra.Smooth k H := by
+    rw [HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim]
+    refine le_antisymm ?_ hbound
+    apply le_trans _ (ringKrullDim_le_of_surjective (Ideal.Quotient.mk I.toIdeal)
+      Ideal.Quotient.mk_surjective)
+    rw [← HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp
+      (inferInstance : Algebra.Smooth k (H ⧸ I.toIdeal))]
+    exact_mod_cast hle
   let _ : IsReduced H := isReduced_of_smooth k H
   have hdim := I.ringKrullDim_quotient_add_one_le hH hI
   rw [← HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp
     (inferInstance : Algebra.Smooth k H),
     ← HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp
       (inferInstance : Algebra.Smooth k (H ⧸ I.toIdeal))] at hdim
-  exact Nat.lt_of_succ_le (by exact_mod_cast hdim)
+  exact (Nat.lt_of_succ_le (by exact_mod_cast hdim)).not_ge hle
 
 section LieDimension
 
