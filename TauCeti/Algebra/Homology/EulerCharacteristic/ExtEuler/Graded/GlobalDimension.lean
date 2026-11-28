@@ -60,7 +60,7 @@ theorem isGradedExtBoundedBy_of_globalDimension_le [IsNoetherianRing A] {n : ℕ
     [Module.Finite A X] :
     IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) X Y (n + 1) :=
   isGradedExtBoundedBy_of_hasProjectiveDimensionLE
-    ((globalDimension_le_iff_hasProjectiveDimensionLE A n).1 h _)
+    ((Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat A) n).1 h _)
 
 section Field
 
@@ -77,7 +77,8 @@ theorem isGradedEulerAdmissibleOn_gradedFiniteModules_of_globalDimension_le {n :
   have : IsNoetherianRing A := IsNoetherianRing.of_finite k A
   apply isGradedEulerAdmissibleOn_gradedFiniteModules
   apply gradedFiniteModules_le_admitsFiniteResolution_of_finite_projectiveDimension
-  exact fun M _ ↦ ⟨n, (globalDimension_le_iff_hasProjectiveDimensionLE A n).1 h _⟩
+  exact fun M _ ↦
+    ⟨n, (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat A) n).1 h _⟩
 
 end Field
 
