@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
 
-import TauCeti.CategoryTheory.Sites.JointlySurjective
+import TauCeti.Data.Set.Lattice
 
 /-!
 # Locally constant sheaves on the small étale site

@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Kernels
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Sites.Limits
 
-import TauCeti.CategoryTheory.Sites.JointlySurjective
+import TauCeti.Data.Set.Lattice
 
 /-!
 # Finite lisse étale sheaves form a weak Serre class

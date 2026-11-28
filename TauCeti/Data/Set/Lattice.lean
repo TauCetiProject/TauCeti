@@ -27,6 +27,8 @@ and the later sets, and these pieces are disjoint.
 ## Main results
 
 * `Set.iUnion_vecCons_pair`: the union of a family of two sets.
+* `Set.iUnion_range_comp_sigma`: refining a family of functions by jointly surjective families
+  preserves the union of ranges.
 * `TauCeti.setOf_apply_eq_biUnion_iInter`:
   `{x | Φ (g · x)} = ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | g i x = ε i}`.
 * `TauCeti.exists_notMem_succ_of_notMem_iInter`: a point outside the intersection of a decreasing
@@ -47,6 +49,18 @@ open Function Set
 @[simp]
 theorem Set.iUnion_vecCons_pair {X : Type*} (U V : Set X) : ⋃ i, ![U, V] i = U ∪ V := by
   simp only [Matrix.vecCons, Set.iUnion_cons, Set.iUnion_of_empty, Set.union_empty]
+
+/-- Refining a family of functions `u : ∀ i, U i → S` by families `v i : ∀ k, V i k → U i` whose
+ranges cover each `U i` preserves the union of ranges. -/
+theorem Set.iUnion_range_comp_sigma {S : Type*} {ι : Type*} {U : ι → Type*}
+    (u : ∀ i, U i → S) {κ : ι → Type*} {V : ∀ i, κ i → Type*}
+    {v : ∀ i, ∀ k : κ i, V i k → U i} (hv : ∀ i, ⋃ k, Set.range (v i k) = .univ) :
+    (⋃ p : Σ i, κ i, Set.range (u p.1 ∘ v p.1 p.2)) = ⋃ i, Set.range (u i) := by
+  ext s
+  simp only [Set.mem_iUnion, Set.mem_range, Function.comp_apply, Sigma.exists]
+  refine ⟨fun ⟨i, k, z, hz⟩ ↦ ⟨i, v i k z, hz⟩, fun ⟨i, x, hx⟩ ↦ ?_⟩
+  obtain ⟨k, z, rfl⟩ := Set.mem_iUnion.mp (hv i ▸ Set.mem_univ x)
+  exact ⟨i, k, z, hx⟩
 
 namespace TauCeti
 
