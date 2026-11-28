@@ -118,7 +118,7 @@ theorem cochainHomLinearEquivDGCycles_sub_mem_dgBoundaries_iff {F G : CochainCom
 
 /-- Composition of closed degree-zero morphisms of cochain complexes is composition of cochain
 maps. -/
-theorem dgCompZero_cochainHomLinearEquivDGCycles {F G K : CochainComplex C ℤ} (f : F ⟶ G)
+theorem dgCompZero_ofHom {F G K : CochainComplex C ℤ} (f : F ⟶ G)
     (g : G ⟶ K) :
     dgCompZero R (X := F) (Y := G) (Z := K) (Cochain.ofHom f) (Cochain.ofHom g) =
       Cochain.ofHom (f ≫ g) :=
@@ -149,7 +149,7 @@ def cochainComplexToDGClosed :
   map_comp f g := dgClosedHom_injective R (by
     rw [dgClosedHom_dgClosedHomOf, dgClosedHom_comp, dgClosedHom_dgClosedHomOf,
       dgClosedHom_dgClosedHomOf]
-    exact (dgCompZero_cochainHomLinearEquivDGCycles R f g).symm)
+    exact (dgCompZero_ofHom R f g).symm)
 
 /-- The functor `TauCeti.cochainComplexToDGClosed` is the identity on complexes. -/
 @[simp]

@@ -112,7 +112,7 @@ closed morphism `Cochain.ofHom` of its replacement. -/
     exact (DGFullSubcategory.dgId_eq R (replacement K)).symm
   map_comp f g := dgClosedHom_injective R <| (dgClosedHom_dgClosedHomOf R _ _).trans <| by
     simp only [cochainHomLinearEquivDGCycles_apply_coe]
-    rw [CategoryTheory.Functor.map_comp, ← dgCompZero_cochainHomLinearEquivDGCycles,
+    rw [CategoryTheory.Functor.map_comp, ← dgCompZero_ofHom,
       dgClosedHom_comp, dgClosedHom_dgClosedHomOf, dgClosedHom_dgClosedHomOf, dgCompZero_def,
       dgCompZero_def, DGFullSubcategory.dgComp_eq]
 

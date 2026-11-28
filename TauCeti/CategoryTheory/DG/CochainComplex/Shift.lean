@@ -130,7 +130,7 @@ private theorem shiftZeroHom_naturality {K L : CochainComplex C ℤ} (p : ℤ)
       simp only [add_zero])
 
 /-- The concrete shift is formal translation followed by evaluation of formal shifts. -/
-theorem shiftFunctor_eq (a : ℤ) :
+theorem shiftFunctor_eq_comp_toCochainComplex (a : ℤ) :
     shiftFunctor (C := C) R a =
       ((DGShiftClosure.ι R).comp _ (DGShiftClosure.shiftFunctor R a)).comp _
         (DGShiftClosure.toCochainComplex R) := by
@@ -155,113 +155,55 @@ theorem shiftFunctor_eq (a : ℤ) :
     rfl
   apply EnrichedFunctor.ext _ (fun K ↦ by simp [EnrichedFunctor.comp_obj])
   intro K L
-  have heqMap {G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
-      (CochainComplex C ℤ) (CochainComplex C ℤ)} (e : G = H) :
-      G.map K L ≍ H.map K L := by subst H; rfl
-  have hs := heqMap (congrArg (shiftFunctor (C := C) R) (zero_add a).symm)
+  have hs := congr_arg_heq (fun G : EnrichedFunctor
+      (CochainComplex (ModuleCat.{v} R) ℤ) (CochainComplex C ℤ) (CochainComplex C ℤ) ↦
+        G.map K L) (congrArg (shiftFunctor (C := C) R) (zero_add a).symm)
   exact eq_of_heq ((comp_eqToHom_heq _ _).trans (hs.trans (heq_of_eq (h K L))))
-
-/-- The DG transformation identifying shift by zero with the identity. -/
-def shiftZeroHom : DGNatTrans (shiftFunctor (C := C) R 0) (EnrichedFunctor.id _ _) :=
-  DGNatTrans.ofDGApp
-    (fun K ↦ Cochain.ofHom (F := K⟦(0 : ℤ)⟧) (G := K)
-      ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).hom.app K))
-    (fun _ ↦ (mem_dgCycles R).2
-      ((dgDifferential_linearHomComplex R 0 _).trans (δ_ofHom _)))
-    (fun p z ↦ shiftZeroHom_naturality R p z)
-
-private theorem shiftZeroInv_naturality {K L : CochainComplex C ℤ} (p : ℤ)
-    (z : DGHom R p K L) :
-    dgComp R ((EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ)
-          (CochainComplex C ℤ)).dgMap p z)
-      (Cochain.ofHom ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).inv.app L))
-        (add_zero p) =
-      dgComp R
-        (Cochain.ofHom ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).inv.app K))
-        ((shiftFunctor (C := C) R 0).dgMap p z) (zero_add p) := by
-  apply dgComp_inv_naturality R _ _ _ _ _ _ _ _ (shiftZeroHom_naturality R p z)
-  · let e := (CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).app K
-    -- Normalize the enriched object endpoints before using the ordinary inverse law.
-    change dgComp R (X := K) (Y := K⟦(0 : ℤ)⟧) (Z := K)
-      (Cochain.ofHom e.inv) (Cochain.ofHom e.hom) _ = dgId R (K)
-    rw [← dgCompZero_def, dgCompZero_cochainHomLinearEquivDGCycles,
-      e.inv_hom_id, dgId_linearHomComplex]
-    simp only [Functor.id_obj]
-  · let e := (CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).app L
-    -- The other inverse law has the forward comparison's source as both endpoints.
-    change dgComp R (X := L⟦(0 : ℤ)⟧) (Y := L)
-      (Z := L⟦(0 : ℤ)⟧) (Cochain.ofHom e.hom) (Cochain.ofHom e.inv) _ =
-        dgId R (L⟦(0 : ℤ)⟧)
-    rw [← dgCompZero_def, dgCompZero_cochainHomLinearEquivDGCycles,
-      e.hom_inv_id, dgId_linearHomComplex]
-
-/-- The DG transformation from the identity to shift by zero. -/
-def shiftZeroInv : DGNatTrans
-    (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) _) (shiftFunctor (C := C) R 0) :=
-  DGNatTrans.ofDGApp
-    (fun K ↦ Cochain.ofHom (F := K) (G := K⟦(0 : ℤ)⟧)
-      ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).inv.app K))
-    (fun _ ↦ (mem_dgCycles R).2
-      ((dgDifferential_linearHomComplex R 0 _).trans (δ_ofHom _)))
-    (fun p z ↦ shiftZeroInv_naturality R p z)
-
-/-- The component of the zero-shift comparison is Mathlib's cochain shift comparison. -/
-@[simp]
-theorem dgApp_shiftZeroHom (K : CochainComplex C ℤ) :
-    (shiftZeroHom (C := C) R).dgApp K =
-      Cochain.ofHom (F := K⟦(0 : ℤ)⟧) (G := K)
-        ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).hom.app K) := by
-  unfold shiftZeroHom
-  exact DGNatTrans.dgApp_ofDGApp _ _ (fun p z ↦ shiftZeroHom_naturality R p z) K
-
-/-- The inverse zero-shift comparison has the ordinary inverse component. -/
-@[simp]
-theorem dgApp_shiftZeroInv (K : CochainComplex C ℤ) :
-    (shiftZeroInv (C := C) R).dgApp K =
-      Cochain.ofHom (F := K) (G := K⟦(0 : ℤ)⟧)
-        ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).inv.app K) := by
-  unfold shiftZeroInv
-  exact DGNatTrans.dgApp_ofDGApp _ _ (fun p z ↦ shiftZeroInv_naturality R p z) K
 
 /-- Shift by zero is DG naturally isomorphic to the identity. -/
 def shiftZeroIso : (⟨shiftFunctor (C := C) R 0⟩ : DGFunctor R _ _) ≅
-    ⟨EnrichedFunctor.id _ _⟩ where
-  hom := shiftZeroHom R
-  inv := shiftZeroInv R
-  hom_inv_id := by
-    -- Categorical composition of DG transformations is their defined DG composition.
-    change DGNatTrans.comp (shiftZeroHom R) (shiftZeroInv R) = DGNatTrans.id _
-    apply DGNatTrans.ext_dgApp
-    intro K
-    rw [DGNatTrans.dgApp_comp, dgApp_shiftZeroHom, dgApp_shiftZeroInv, DGNatTrans.dgApp_id]
-    let e := (CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).app K
-    -- Normalize the endpoints of the enriched comparison to ordinary complexes.
-    change dgCompZero R (X := K⟦(0 : ℤ)⟧) (Y := K) (Z := K⟦(0 : ℤ)⟧)
-      (Cochain.ofHom e.hom) (Cochain.ofHom e.inv) = dgId R (K⟦(0 : ℤ)⟧)
-    rw [dgCompZero_cochainHomLinearEquivDGCycles, e.hom_inv_id,
-      dgId_linearHomComplex]
-  inv_hom_id := by
-    -- The same identification applies to the other inverse law.
-    change DGNatTrans.comp (shiftZeroInv R) (shiftZeroHom R) = DGNatTrans.id _
-    apply DGNatTrans.ext_dgApp
-    intro K
-    rw [DGNatTrans.dgApp_comp, dgApp_shiftZeroInv, dgApp_shiftZeroHom, DGNatTrans.dgApp_id]
-    let e := (CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).app K
-    -- Normalize the endpoints of the enriched comparison to ordinary complexes.
-    change dgCompZero R (X := K) (Y := K⟦(0 : ℤ)⟧) (Z := K)
-      (Cochain.ofHom e.inv) (Cochain.ofHom e.hom) = dgId R K
-    rw [dgCompZero_cochainHomLinearEquivDGCycles, e.inv_hom_id, dgId_linearHomComplex]
-    simp only [Functor.id_obj]
+    ⟨EnrichedFunctor.id _ _⟩ :=
+  DGFunctor.isoOfComponents
+    (fun K ↦ (cochainComplexToDGClosed R C).mapIso
+      ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).app K))
+    (fun p z ↦ by
+      dsimp only [Functor.mapIso_hom, Iso.app_hom]
+      -- The closed-category object wrappers reduce to the shifted cochain endpoints.
+      erw [dgClosedHom_cochainComplexToDGClosed_map, dgClosedHom_cochainComplexToDGClosed_map]
+      simp only [cochainHomLinearEquivDGCycles_apply_coe]
+      exact shiftZeroHom_naturality R p z)
 
-/-- The hom of the DG shift comparison is its specified transformation. -/
+/-- The component of the zero-shift comparison is Mathlib's cochain shift comparison. -/
 @[simp]
-theorem shiftZeroIso_hom :
-    (shiftZeroIso (C := C) R).hom = shiftZeroHom R := (rfl)
+theorem dgApp_shiftZeroIso_hom (K : CochainComplex C ℤ) :
+    (shiftZeroIso (C := C) R).hom.dgApp K =
+      Cochain.ofHom (F := K⟦(0 : ℤ)⟧) (G := K)
+        ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).hom.app K) := by
+  unfold shiftZeroIso
+  generalize_proofs
+  -- The DGFunctor projections reduce to the concrete cochain functors at the endpoints.
+  erw [DGFunctor.dgApp_isoOfComponents_hom]
+  · dsimp only [Functor.mapIso_hom, Iso.app_hom]
+    -- Identify the ordinary closed-category object with its underlying cochain complex.
+    erw [dgClosedHom_cochainComplexToDGClosed_map]
+    exact cochainHomLinearEquivDGCycles_apply_coe R _
+  · assumption
 
-/-- The inv of the DG shift comparison is its specified transformation. -/
+/-- The inverse zero-shift comparison has the ordinary inverse component. -/
 @[simp]
-theorem shiftZeroIso_inv :
-    (shiftZeroIso (C := C) R).inv = shiftZeroInv R := (rfl)
+theorem dgApp_shiftZeroIso_inv (K : CochainComplex C ℤ) :
+    (shiftZeroIso (C := C) R).inv.dgApp K =
+      Cochain.ofHom (F := K) (G := K⟦(0 : ℤ)⟧)
+        ((CategoryTheory.shiftFunctorZero (CochainComplex C ℤ) ℤ).inv.app K) := by
+  unfold shiftZeroIso
+  generalize_proofs
+  -- The DGFunctor projections reduce to the concrete cochain functors at the endpoints.
+  erw [DGFunctor.dgApp_isoOfComponents_inv]
+  · dsimp only [Functor.mapIso_inv, Iso.app_inv]
+    -- Identify the ordinary closed-category object with its underlying cochain complex.
+    erw [dgClosedHom_cochainComplexToDGClosed_map]
+    exact cochainHomLinearEquivDGCycles_apply_coe R _
+  · assumption
 
 private theorem shiftAddHom_naturality (a b : ℤ) {K L : CochainComplex C ℤ}
     (p : ℤ) (z : DGHom R p K L) :
@@ -298,155 +240,97 @@ private theorem shiftAddHom_naturality (a b : ℤ) {K L : CochainComplex C ℤ}
       ⟨i + b + a, j + b + a, by omega⟩ from by
         congr 1 <;> omega)
 
-/-- The DG comparison between a shift by a sum and the two successive shifts. -/
-def shiftAddHom (a b : ℤ) : DGNatTrans (shiftFunctor (C := C) R (a + b))
-    ((shiftFunctor R a).comp _ (shiftFunctor R b)) :=
-  DGNatTrans.ofDGApp
-    (fun K ↦ Cochain.ofHom
-      ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).hom.app K))
-    (fun _ ↦ (mem_dgCycles R).2
-      ((dgDifferential_linearHomComplex R 0 _).trans (δ_ofHom _)))
-    (fun p z ↦ shiftAddHom_naturality R a b p z)
-
-private theorem shiftAddInv_naturality (a b : ℤ) {K L : CochainComplex C ℤ}
-    (p : ℤ) (z : DGHom R p K L) :
-    dgComp R (((shiftFunctor R a).comp _ (shiftFunctor R b)).dgMap p z)
-      (Cochain.ofHom ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).inv.app L))
-        (add_zero p) =
-    dgComp R
-      (Cochain.ofHom ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).inv.app K))
-      ((shiftFunctor R (a + b)).dgMap p z) (zero_add p) := by
-  apply dgComp_inv_naturality R _ _ _ _ _ _ _ _ (shiftAddHom_naturality R a b p z)
-  · let e := (CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).app K
-    -- Normalize the enriched object endpoints before using the ordinary inverse law.
-    change dgComp R (X := K⟦a⟧⟦b⟧) (Y := K⟦a + b⟧) (Z := K⟦a⟧⟦b⟧)
-      (Cochain.ofHom e.inv) (Cochain.ofHom e.hom) _ = dgId R (K⟦a⟧⟦b⟧)
-    rw [← dgCompZero_def, dgCompZero_cochainHomLinearEquivDGCycles,
-      e.inv_hom_id, dgId_linearHomComplex]
-    simp only [Functor.comp_obj]
-  · let e := (CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).app L
-    -- The other inverse law has the forward comparison's source as both endpoints.
-    change dgComp R (X := L⟦a + b⟧) (Y := L⟦a⟧⟦b⟧)
-      (Z := L⟦a + b⟧) (Cochain.ofHom e.hom) (Cochain.ofHom e.inv) _ =
-        dgId R (L⟦a + b⟧)
-    rw [← dgCompZero_def, dgCompZero_cochainHomLinearEquivDGCycles,
-      e.hom_inv_id, dgId_linearHomComplex]
-
-/-- The inverse DG comparison from successive shifts to the shift by their sum. -/
-def shiftAddInv (a b : ℤ) : DGNatTrans
-    ((shiftFunctor (C := C) R a).comp _ (shiftFunctor R b)) (shiftFunctor R (a + b)) :=
-  DGNatTrans.ofDGApp
-    (fun K ↦ Cochain.ofHom
-      ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).inv.app K))
-    (fun _ ↦ (mem_dgCycles R).2
-      ((dgDifferential_linearHomComplex R 0 _).trans (δ_ofHom _)))
-    (fun p z ↦ shiftAddInv_naturality R a b p z)
+/-- Shift by a sum is DG naturally isomorphic to the two successive shifts. -/
+def shiftAddIso (a b : ℤ) : (⟨shiftFunctor (C := C) R (a + b)⟩ : DGFunctor R _ _) ≅
+    ⟨(shiftFunctor R a).comp _ (shiftFunctor R b)⟩ :=
+  DGFunctor.isoOfComponents
+    (fun K ↦ (cochainComplexToDGClosed R C).mapIso
+      ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).app K))
+    (fun p z ↦ by
+      dsimp only [Functor.mapIso_hom, Iso.app_hom]
+      -- The closed-category object wrappers reduce to the shifted cochain endpoints.
+      erw [dgClosedHom_cochainComplexToDGClosed_map, dgClosedHom_cochainComplexToDGClosed_map]
+      simp only [cochainHomLinearEquivDGCycles_apply_coe]
+      exact shiftAddHom_naturality R a b p z)
 
 /-- The forward DG addition comparison has the ordinary cochain comparison as component. -/
 @[simp]
-theorem dgApp_shiftAddHom (a b : ℤ) (K : CochainComplex C ℤ) :
-    (shiftAddHom R a b).dgApp K =
-      Cochain.ofHom (F := K⟦a + b⟧) (G := K⟦a⟧⟦b⟧)
-        ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).hom.app K) := by
-  unfold shiftAddHom
-  exact DGNatTrans.dgApp_ofDGApp _ _ (fun p z ↦ shiftAddHom_naturality R a b p z) K
+theorem dgApp_shiftAddIso_hom (a b : ℤ) (K : CochainComplex C ℤ) :
+    (shiftAddIso (C := C) R a b).hom.dgApp K =
+      Cochain.ofHom ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).hom.app K) := by
+  unfold shiftAddIso
+  generalize_proofs
+  -- The DGFunctor projections reduce to the concrete cochain functors at the endpoints.
+  erw [DGFunctor.dgApp_isoOfComponents_hom]
+  · dsimp only [Functor.mapIso_hom, Iso.app_hom]
+    -- Identify the ordinary closed-category object with its underlying cochain complex.
+    erw [dgClosedHom_cochainComplexToDGClosed_map]
+    exact cochainHomLinearEquivDGCycles_apply_coe R _
+  · assumption
 
-/-- The inverse DG addition comparison has the ordinary inverse as component. -/
+/-- The inverse DG addition comparison has the ordinary inverse cochain comparison as component. -/
 @[simp]
-theorem dgApp_shiftAddInv (a b : ℤ) (K : CochainComplex C ℤ) :
-    (shiftAddInv R a b).dgApp K =
-      Cochain.ofHom (F := K⟦a⟧⟦b⟧) (G := K⟦a + b⟧)
-        ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).inv.app K) := by
-  unfold shiftAddInv
-  exact DGNatTrans.dgApp_ofDGApp _ _ (fun p z ↦ shiftAddInv_naturality R a b p z) K
-
-/-- Shift by a sum is DG naturally isomorphic to the two successive shifts. -/
-def shiftAddIso (a b : ℤ) : (⟨shiftFunctor (C := C) R (a + b)⟩ : DGFunctor R _ _) ≅
-    ⟨(shiftFunctor R a).comp _ (shiftFunctor R b)⟩ where
-  hom := shiftAddHom R a b
-  inv := shiftAddInv R a b
-  hom_inv_id := by
-    -- Categorical composition is the defined DG composition.
-    change DGNatTrans.comp (shiftAddHom R a b) (shiftAddInv R a b) = DGNatTrans.id _
-    apply DGNatTrans.ext_dgApp
-    intro K
-    rw [DGNatTrans.dgApp_comp, dgApp_shiftAddHom, dgApp_shiftAddInv, DGNatTrans.dgApp_id]
-    let e := (CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).app K
-    -- Normalize the endpoints before computing the composite cochain.
-    change dgCompZero R (X := K⟦a + b⟧) (Y := K⟦a⟧⟦b⟧) (Z := K⟦a + b⟧)
-      (Cochain.ofHom e.hom) (Cochain.ofHom e.inv) = dgId R (K⟦a + b⟧)
-    rw [dgCompZero_cochainHomLinearEquivDGCycles, e.hom_inv_id,
-      dgId_linearHomComplex]
-  inv_hom_id := by
-    -- Categorical composition is the defined DG composition.
-    change DGNatTrans.comp (shiftAddInv R a b) (shiftAddHom R a b) = DGNatTrans.id _
-    apply DGNatTrans.ext_dgApp
-    intro K
-    rw [DGNatTrans.dgApp_comp, dgApp_shiftAddInv, dgApp_shiftAddHom, DGNatTrans.dgApp_id]
-    let e := (CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).app K
-    -- Normalize the endpoints before computing the composite cochain.
-    change dgCompZero R (X := K⟦a⟧⟦b⟧) (Y := K⟦a + b⟧) (Z := K⟦a⟧⟦b⟧)
-      (Cochain.ofHom e.inv) (Cochain.ofHom e.hom) = dgId R (K⟦a⟧⟦b⟧)
-    rw [dgCompZero_cochainHomLinearEquivDGCycles, e.inv_hom_id, dgId_linearHomComplex]
-    simp only [Functor.comp_obj]
-
-/-- The hom of the DG shift comparison is its specified transformation. -/
-@[simp]
-theorem shiftAddIso_hom (a b : ℤ) :
-    (shiftAddIso (C := C) R a b).hom = shiftAddHom R a b := (rfl)
-
-/-- The inv of the DG shift comparison is its specified transformation. -/
-@[simp]
-theorem shiftAddIso_inv (a b : ℤ) :
-    (shiftAddIso (C := C) R a b).inv = shiftAddInv R a b := (rfl)
+theorem dgApp_shiftAddIso_inv (a b : ℤ) (K : CochainComplex C ℤ) :
+    (shiftAddIso (C := C) R a b).inv.dgApp K =
+      Cochain.ofHom ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).inv.app K) := by
+  unfold shiftAddIso
+  generalize_proofs
+  -- The DGFunctor projections reduce to the concrete cochain functors at the endpoints.
+  erw [DGFunctor.dgApp_isoOfComponents_inv]
+  · dsimp only [Functor.mapIso_inv, Iso.app_inv]
+    -- Identify the ordinary closed-category object with its underlying cochain complex.
+    erw [dgClosedHom_cochainComplexToDGClosed_map]
+    exact cochainHomLinearEquivDGCycles_apply_coe R _
+  · assumption
 
 /-- Associativity of DG shift addition, with Mathlib's transport between the two sums. -/
-theorem dgApp_shiftAddHom_assoc (a b c : ℤ) (K : CochainComplex C ℤ) :
-    dgCompZero R ((shiftAddHom R (a + b) c).dgApp K)
-        ((shiftFunctor R c).dgMap 0 ((shiftAddHom R a b).dgApp K)) =
+theorem dgApp_shiftAddIso_hom_assoc (a b c : ℤ) (K : CochainComplex C ℤ) :
+    dgCompZero R ((shiftAddIso R (a + b) c).hom.dgApp K)
+        ((shiftFunctor R c).dgMap 0 ((shiftAddIso R a b).hom.dgApp K)) =
       dgCompZero R
         (Cochain.ofHom ((CategoryTheory.shiftFunctorAdd' (CochainComplex C ℤ)
           a (b + c) (a + b + c) (add_assoc a b c).symm).hom.app K))
-        ((shiftAddHom R b c).dgApp (K⟦a⟧)) := by
+        ((shiftAddIso R b c).hom.dgApp (K⟦a⟧)) := by
   -- Composite enriched objects reduce to successive ordinary shifts in the cochain endpoints.
-  erw [dgApp_shiftAddHom, dgApp_shiftAddHom, dgApp_shiftAddHom, dgMap_shiftFunctor_ofHom]
+  erw [dgApp_shiftAddIso_hom, dgApp_shiftAddIso_hom, dgApp_shiftAddIso_hom,
+    dgMap_shiftFunctor_ofHom]
   -- Use concrete complexes to make the component compositions independent of enriched wrappers.
   change dgCompZero R (X := K⟦a + b + c⟧) (Y := K⟦a + b⟧⟦c⟧)
       (Z := K⟦a⟧⟦b⟧⟦c⟧)
       (Cochain.ofHom ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) (a + b) c).hom.app K))
       (Cochain.ofHom (((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a b).hom.app K)⟦c⟧')) =
     dgCompZero R (X := K⟦a + b + c⟧) (Y := K⟦a⟧⟦b + c⟧) (Z := K⟦a⟧⟦b⟧⟦c⟧) _ _
-  simp only [dgCompZero_cochainHomLinearEquivDGCycles]
+  simp only [dgCompZero_ofHom]
   exact congrArg Cochain.ofHom
     (CategoryTheory.shiftFunctorAdd_assoc_hom_app a b c K)
 
 /-- The left unit law for DG shift addition. -/
-theorem dgApp_shiftAddHom_zero_add (a : ℤ) (K : CochainComplex C ℤ) :
-    (shiftAddHom R 0 a).dgApp K =
+theorem dgApp_shiftAddIso_hom_zero_add (a : ℤ) (K : CochainComplex C ℤ) :
+    (shiftAddIso R 0 a).hom.dgApp K =
       dgCompZero R
         (Cochain.ofHom (eqToHom (congrArg (fun n : ℤ ↦ K⟦n⟧) (zero_add a))))
-        ((shiftFunctor R a).dgMap 0 ((shiftZeroInv R).dgApp K)) := by
+        ((shiftFunctor R a).dgMap 0 ((shiftZeroIso R).inv.dgApp K)) := by
   -- The identity enriched functor's object reduces to the original complex.
-  erw [dgApp_shiftAddHom, dgApp_shiftZeroInv, dgMap_shiftFunctor_ofHom]
+  erw [dgApp_shiftAddIso_hom, dgApp_shiftZeroIso_inv, dgMap_shiftFunctor_ofHom]
   -- The source of the unit comparison is shifted by 0 + a.
   change Cochain.ofHom ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) 0 a).hom.app K) =
     dgCompZero R (X := K⟦0 + a⟧) (Y := K⟦a⟧) (Z := K⟦(0 : ℤ)⟧⟦a⟧) _ _
   -- The equality transport and the shifted enriched endpoints are definitionally equal.
-  erw [dgCompZero_cochainHomLinearEquivDGCycles]
+  erw [dgCompZero_ofHom]
   exact congrArg Cochain.ofHom
     (CategoryTheory.shiftFunctorAdd_zero_add_hom_app a K)
 
 /-- The right unit law for DG shift addition. -/
-theorem dgApp_shiftAddHom_add_zero (a : ℤ) (K : CochainComplex C ℤ) :
-    (shiftAddHom R a 0).dgApp K =
+theorem dgApp_shiftAddIso_hom_add_zero (a : ℤ) (K : CochainComplex C ℤ) :
+    (shiftAddIso R a 0).hom.dgApp K =
       dgCompZero R
         (Cochain.ofHom (eqToHom (congrArg (fun n : ℤ ↦ K⟦n⟧) (add_zero a))))
-        ((shiftZeroInv R).dgApp (K⟦a⟧)) := by
-  rw [dgApp_shiftAddHom, dgApp_shiftZeroInv]
+        ((shiftZeroIso R).inv.dgApp (K⟦a⟧)) := by
+  rw [dgApp_shiftAddIso_hom, dgApp_shiftZeroIso_inv]
   -- The source of the unit comparison is shifted by a + 0.
   change Cochain.ofHom ((CategoryTheory.shiftFunctorAdd (CochainComplex C ℤ) a 0).hom.app K) =
     dgCompZero R (X := K⟦a + 0⟧) (Y := K⟦a⟧) (Z := K⟦a⟧⟦(0 : ℤ)⟧) _ _
-  simp only [dgCompZero_cochainHomLinearEquivDGCycles]
+  simp only [dgCompZero_ofHom]
   exact congrArg Cochain.ofHom
     (CategoryTheory.shiftFunctorAdd_add_zero_hom_app a K)
 
@@ -562,6 +446,21 @@ theorem dgNerveHomotopyCategoryEquivShiftIso_hom_app [HasKInjectiveResolutions A
         ((dgNerve.fromHomotopyCategory R (KInjectiveDGCategory A)).obj X) ≫
       (CategoryTheory.shiftFunctor (DerivedCategory A) a).map
         (eqToHom (Functor.congr_obj (dgNerveHomotopyCategoryEquiv_functor R A).symm X)) := by
+  simp [dgNerveHomotopyCategoryEquivShiftIso]
+
+/-- The inverse native comparison reverses the canonical transports and the derived comparison. -/
+@[simp]
+theorem dgNerveHomotopyCategoryEquivShiftIso_inv_app [HasKInjectiveResolutions A] (a : ℤ)
+    (X : (dgNerve R (KInjectiveDGCategory A)).HomotopyCategory) :
+    (dgNerveHomotopyCategoryEquivShiftIso R a).inv.app X =
+      (CategoryTheory.shiftFunctor (DerivedCategory A) a).map
+        (eqToHom (Functor.congr_obj (dgNerveHomotopyCategoryEquiv_functor R A) X)) ≫
+      (toDerivedCategoryShiftIso R a).inv.app
+        ((dgNerve.fromHomotopyCategory R (KInjectiveDGCategory A)).obj X) ≫
+      (toDerivedCategory R A).map (eqToHom (Functor.congr_obj
+        ((shiftFunctor R a).mapDGNerve_comp_fromHomotopyCategory).symm X)) ≫
+      eqToHom (Functor.congr_obj (dgNerveHomotopyCategoryEquiv_functor R A).symm
+        ((SSet.mapHomotopyCategory (shiftFunctor R a).mapDGNerve).obj X)) := by
   simp [dgNerveHomotopyCategoryEquivShiftIso]
 
 end KInjectiveDGCategory

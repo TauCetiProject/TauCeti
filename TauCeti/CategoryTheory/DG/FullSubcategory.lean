@@ -34,7 +34,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe v u
+universe v u u₂ u₃
 
 variable (R : Type v) [CommRing R] {C : Type u} [DGCategory R C]
 
@@ -90,20 +90,22 @@ theorem inclusion_dgMap_heq {X Y : DGFullSubcategory P} {n : ℤ} (f : DGHom R n
   rw [CategoryTheory.EnrichedFunctor.dgMap_apply, inclusion_map]
   rfl
 
-/-- Restrict an enriched endofunctor to a full DG subcategory it preserves. -/
+variable {D : Type u₂} [DGCategory R D] {Q : D → Prop}
+
+/-- Restrict an enriched functor to full DG subcategories it maps into one another. -/
 -- The underlying object must compute to type homogeneous morphisms in the ambient category.
 @[expose]
-def restrict (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C C)
-    (hF : ∀ X, P X → P (F.obj X)) :
+def restrict (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
+    (hF : ∀ X, P X → Q (F.obj X)) :
     EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
-      (DGFullSubcategory P) (DGFullSubcategory P) where
+      (DGFullSubcategory P) (DGFullSubcategory Q) where
   obj X := ⟨F.obj X.obj, hF X.obj X.property⟩
   map X Y := F.map X.obj Y.obj
   map_id X := F.map_id X.obj
   map_comp X Y Z := F.map_comp X.obj Y.obj Z.obj
 
-variable (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C C)
-  (hF : ∀ X, P X → P (F.obj X))
+variable (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
+  (hF : ∀ X, P X → Q (F.obj X))
 
 /-- Restriction retains the underlying object map. -/
 @[simp]
@@ -127,6 +129,24 @@ theorem restrict_comp_inclusion :
   simp only [EnrichedFunctor.comp_map, inclusion_map]
   -- Expose the restriction's map and the full-subcategory Hom complexes to compose transports.
   erw [Category.assoc, eqToHom_trans]
+
+/-- An enriched functor into a full DG subcategory is determined by its ambient composite. -/
+theorem comp_inclusion_injective {E : Type u₃} [DGCategory R E] :
+    Function.Injective (fun F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
+      E (DGFullSubcategory P) ↦ F.comp _ (inclusion (R := R))) := by
+  intro F G h
+  have ho (X : E) : F.obj X = G.obj X := by
+    apply DGFullSubcategory.ext
+    simpa only [EnrichedFunctor.comp_obj, inclusion_obj] using
+      congrArg (fun H ↦ H.obj X) h
+  apply EnrichedFunctor.ext _ ho
+  intro X Y
+  have hm := congr_arg_heq (fun H : EnrichedFunctor
+    (CochainComplex (ModuleCat.{v} R) ℤ) E C ↦ H.map X Y) h
+  have hm' : F.map X Y ≍ G.map X Y := by
+    dsimp only [EnrichedFunctor.comp, inclusion] at hm
+    simpa only [Category.comp_id] using hm
+  exact eq_of_heq ((comp_eqToHom_heq _ _).trans hm')
 
 /-- The Hom complex in the full DG subcategory is the ambient Hom complex. -/
 @[simp]
