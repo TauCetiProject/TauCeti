@@ -100,17 +100,13 @@ lemma toExt_pullback (α : N' ⟶ N) (x : N.HodgeCohomology.{t} q) :
 @[simp]
 lemma pullback_id (N : CommAlgCat.{u} k ⥤ AddCommGrpCat.{max u w}) (q : ℕ) :
     pullback.{t} (𝟙 N) q = LinearMap.id := by
-  ext x
-  apply (ExtWithAction.toExt _).injective
-  rw [toExt_pullback, whiskerLeft_id', Ext.mk₀_id_comp, LinearMap.id_apply]
+  rw [pullback, whiskerLeft_id', ExtWithAction.precompLinearMap_mk₀_id]
 
 /-- Pull-backs are contravariantly functorial. -/
 lemma pullback_comp (α : N'' ⟶ N') (β : N' ⟶ N) (q : ℕ) :
     pullback.{t} (α ≫ β) q = (pullback α q).comp (pullback β q) := by
-  ext x
-  apply (ExtWithAction.toExt _).injective
-  rw [LinearMap.comp_apply, toExt_pullback, toExt_pullback, toExt_pullback, whiskerLeft_comp,
-    ← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero]
+  unfold pullback
+  rw [whiskerLeft_comp, ExtWithAction.precompLinearMap_mk₀_comp]
 
 /-! ### Scaling -/
 
@@ -132,29 +128,21 @@ lemma toExt_scale (c : k) (x : N.HodgeCohomology.{t} q) :
 @[simp]
 lemma scale_one (N : CommAlgCat.{u} k ⥤ AddCommGrpCat.{max u w}) (q : ℕ) :
     scale.{t} 1 N q = LinearMap.id := by
-  ext x
-  apply (ExtWithAction.toExt _).injective
-  rw [toExt_scale, HodgePair.sqZeroScale_one, whiskerRight_id', Ext.mk₀_id_comp,
-    LinearMap.id_apply]
+  rw [scale, HodgePair.sqZeroScale_one, whiskerRight_id', ExtWithAction.precompLinearMap_mk₀_id]
 
 /-- The scalings form an action of the multiplicative monoid of `k`. -/
 lemma scale_mul (c d : k) (N : CommAlgCat.{u} k ⥤ AddCommGrpCat.{max u w}) (q : ℕ) :
     scale.{t} (c * d) N q = (scale d N q).comp (scale c N q) := by
-  ext x
-  apply (ExtWithAction.toExt _).injective
-  rw [LinearMap.comp_apply, toExt_scale, toExt_scale, toExt_scale, HodgePair.sqZeroScale_mul,
-    whiskerRight_comp, ← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero]
+  unfold scale
+  rw [HodgePair.sqZeroScale_mul, whiskerRight_comp, ExtWithAction.precompLinearMap_mk₀_comp]
 
 /-- Pull-backs commute with the scalings. -/
 lemma pullback_scale (α : N' ⟶ N) (c : k) (x : N.HodgeCohomology.{t} q) :
     pullback α q (scale c N q x) = scale c N' q (pullback α q x) := by
-  apply (ExtWithAction.toExt _).injective
-  rw [toExt_pullback, toExt_scale, toExt_scale, toExt_pullback,
-    ← Ext.comp_assoc_of_second_deg_zero, ← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀,
-    Ext.mk₀_comp_mk₀]
-  congr 2
-  ext P : 2
-  exact (α.naturality _).symm
+  rw [← LinearMap.comp_apply, ← LinearMap.comp_apply]
+  unfold pullback scale
+  rw [← ExtWithAction.precompLinearMap_mk₀_comp, ← ExtWithAction.precompLinearMap_mk₀_comp,
+    whiskerLeft_comp_whiskerRight]
 
 /-! ### Base change -/
 
