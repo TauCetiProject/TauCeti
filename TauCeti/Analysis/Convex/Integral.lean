@@ -14,11 +14,12 @@ public import Mathlib.Topology.Semicontinuity.Basic
 Mathlib proves Jensen's inequality `g (⨍ x, f x ∂μ) ≤ ⨍ x, g (f x) ∂μ` for a Bochner integrable
 `f : α → E` with values almost everywhere in a closed convex set `s`, and a convex function `g`
 that is *continuous* on `s` (`ConvexOn.map_average_le`). This file weakens continuity to lower
-semicontinuity on `s`. A convex function on a closed convex set is in general only lower
-semicontinuous at the boundary of the set, and in infinite dimensions closed convex sets often
-have empty interior. For instance, in a strictly convex space the function on the closed unit ball
-that vanishes on the open ball and equals one on the sphere is convex and lower semicontinuous on
-the ball, but not continuous there. Only the values of `g` on `s` matter, so a convex function
+semicontinuity on `s`. A convex function that is lower semicontinuous on a closed convex set need
+not be continuous at its boundary, and in infinite dimensions closed convex sets often have empty
+interior. For instance, on `s = {(x, y) ∈ ℝ² | y ^ 2 ≤ x ≤ 1}` the function with
+`g (x, y) = y ^ 2 / x` for `x > 0` and `g (0, 0) = 0` is convex (a perspective of `y ^ 2`) and
+lower semicontinuous on `s` (as `g ≥ 0 = g (0, 0)`), but not continuous at the origin, since
+`g = 1` along the curve `x = y ^ 2`. Only the values of `g` on `s` matter, so a convex function
 defined on `s` alone may be extended to `E` arbitrarily.
 
 ## Implementation notes
@@ -27,6 +28,13 @@ Lower semicontinuity of `g` on the closed set `s` is exactly closedness of the e
 `{p | p.1 ∈ s ∧ g p.1 ≤ p.2}` (`lowerSemicontinuousOn_iff_isClosed_epigraph`), and the epigraph of
 a convex function is convex, so `Convex.average_mem` applies to `x ↦ (f x, g (f x))`. Concave,
 upper semicontinuous functions are treated through hypographs.
+
+The statements, their order and the proofs are adapted from Mathlib's
+`Mathlib/Analysis/Convex/Integral.lean` (`ConvexOn.average_mem_epigraph`,
+`ConcaveOn.average_mem_hypograph`, `ConvexOn.map_average_le`, `ConvexOn.map_set_average_le`,
+`ConvexOn.map_integral_le` and their concave counterparts), with `ContinuousOn` replaced by
+semicontinuity through `lowerSemicontinuousOn_iff_isClosed_epigraph` and
+`upperSemicontinuousOn_iff_isClosed_hypograph`.
 
 ## Main results
 
@@ -38,10 +46,11 @@ upper semicontinuous functions are treated through hypographs.
 * `ConcaveOn.le_map_average_of_upperSemicontinuousOn`,
   `ConcaveOn.le_map_setAverage_of_upperSemicontinuousOn` and
   `ConcaveOn.le_map_integral_of_upperSemicontinuousOn`: the concave counterparts.
-* `integral_mem_closedConvexHull_image`, `average_mem_closedConvexHull_image` and
-  `setAverage_mem_closedConvexHull_image`: an integral against a probability measure, or an
-  average, lies in the closed convex hull of the values of the function on any set of full
-  measure.
+* `MeasureTheory.Integrable.integral_mem_closedConvexHull_image`,
+  `MeasureTheory.Integrable.average_mem_closedConvexHull_image` and
+  `MeasureTheory.IntegrableOn.setAverage_mem_closedConvexHull_image`: an integral against a
+  probability measure, or an average, lies in the closed convex hull of the values of the
+  function on any set of full measure.
 
 ## References
 
@@ -151,22 +160,23 @@ theorem ConcaveOn.le_map_integral_of_upperSemicontinuousOn [IsProbabilityMeasure
 
 /-- The integral of an integrable function against a probability measure lies in the closed convex
 hull of the values of the function on any set of full measure. -/
-theorem integral_mem_closedConvexHull_image [IsProbabilityMeasure μ] (hfi : Integrable f μ)
-    (ht : ∀ᵐ x ∂μ, x ∈ t) : ∫ x, f x ∂μ ∈ closedConvexHull ℝ (f '' t) :=
+theorem MeasureTheory.Integrable.integral_mem_closedConvexHull_image [IsProbabilityMeasure μ]
+    (hfi : Integrable f μ) (ht : ∀ᵐ x ∂μ, x ∈ t) : ∫ x, f x ∂μ ∈ closedConvexHull ℝ (f '' t) :=
   convex_closedConvexHull.integral_mem isClosed_closedConvexHull
     (ht.mono fun _ hx ↦ subset_closedConvexHull (mem_image_of_mem f hx)) hfi
 
 /-- The average of an integrable function over a finite nonzero measure lies in the closed convex
 hull of the values of the function on any set of full measure. -/
-theorem average_mem_closedConvexHull_image [IsFiniteMeasure μ] [NeZero μ] (hfi : Integrable f μ)
-    (ht : ∀ᵐ x ∂μ, x ∈ t) : ⨍ x, f x ∂μ ∈ closedConvexHull ℝ (f '' t) :=
+theorem MeasureTheory.Integrable.average_mem_closedConvexHull_image [IsFiniteMeasure μ]
+    [NeZero μ] (hfi : Integrable f μ) (ht : ∀ᵐ x ∂μ, x ∈ t) :
+    ⨍ x, f x ∂μ ∈ closedConvexHull ℝ (f '' t) :=
   convex_closedConvexHull.average_mem isClosed_closedConvexHull
     (ht.mono fun _ hx ↦ subset_closedConvexHull (mem_image_of_mem f hx)) hfi
 
 /-- The average of a function over a null measurable set `t` of finite positive measure, on which
 it is integrable, lies in the closed convex hull of its values on `t`. -/
-theorem setAverage_mem_closedConvexHull_image (htm : NullMeasurableSet t μ) (h0 : μ t ≠ 0)
-    (ht : μ t ≠ ∞) (hfi : IntegrableOn f t μ) :
+theorem MeasureTheory.IntegrableOn.setAverage_mem_closedConvexHull_image
+    (hfi : IntegrableOn f t μ) (htm : NullMeasurableSet t μ) (h0 : μ t ≠ 0) (ht : μ t ≠ ∞) :
     ⨍ x in t, f x ∂μ ∈ closedConvexHull ℝ (f '' t) :=
   convex_closedConvexHull.set_average_mem isClosed_closedConvexHull h0 ht
     ((ae_restrict_mem₀ htm).mono fun _ hx ↦ subset_closedConvexHull (mem_image_of_mem f hx)) hfi
