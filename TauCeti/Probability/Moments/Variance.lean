@@ -90,10 +90,6 @@ measure is a probability measure) tends to zero in measure when the variances te
   variances imply that the deviations of square-integrable functions from their own integrals
   (their means when each measure is a probability measure) tend to zero in measure, including on
   varying finite measure spaces.
-* `TauCeti.Probability.tendsto_measure_abs_sub_ge_of_tendsto_integral`: for a fixed threshold
-  `ε > 0`, a vanishing fluctuation tail at `ε / 2` together with integral convergence to `c`
-  yields a vanishing tail around `c` at `ε`; applying this for every `ε > 0` gives convergence in
-  measure.
 * `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: on a finite measure space,
   summable variances imply that the deviations of square-integrable functions from their own
   integrals (their means when the measure is a probability measure) tend to zero almost everywhere.
@@ -399,28 +395,6 @@ theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l 
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hreal)
     (fun _ ↦ bot_le) (fun i ↦ meas_ge_le_variance_div_sq (hX i) hε)
-
-/-- **Tail transfer from integral convergence and fluctuation concentration.** If the integrals of
-real-valued functions on possibly varying measure spaces converge to `c` along a filter `l` and,
-for a fixed threshold `0 < ε`, the measure of the fluctuation tail
-`ε / 2 ≤ |X i ω - ∫ ω', X i ω' ∂P i|` tends to `0`, then the measure of the tail
-`ε ≤ |X i ω - c|` tends to `0` along `l`; applying this for every `0 < ε` gives convergence in
-measure to `c`. -/
-theorem tendsto_measure_abs_sub_ge_of_tendsto_integral {ι : Type*} {l : Filter ι}
-    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
-    {P : (i : ι) → Measure (Ω i)}
-    {X : (i : ι) → Ω i → ℝ} {c : ℝ}
-    (hmean : Tendsto (fun i ↦ ∫ ω, X i ω ∂P i) l (𝓝 c))
-    {ε : ℝ} (hε : 0 < ε)
-    (hfluc : Tendsto (fun i ↦ P i {ω | ε / 2 ≤ |X i ω - ∫ ω', X i ω' ∂P i|}) l (𝓝 0)) :
-    Tendsto (fun i ↦ P i {ω | ε ≤ |X i ω - c|}) l (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hfluc
-    (.of_forall fun _ ↦ bot_le) ?_
-  filter_upwards [Metric.tendsto_nhds.1 hmean (ε / 2) (half_pos hε)] with i hi
-  rw [Real.dist_eq] at hi
-  refine measure_mono fun ω hω ↦ ?_
-  simp only [Set.mem_ofPred_eq] at hω ⊢
-  linarith [abs_sub_le (X i ω) (∫ ω', X i ω' ∂P i) c]
 
 /-- **Borel--Cantelli almost-everywhere convergence from summable variances.** On a finite measure
 space, if a sequence of square-integrable real-valued functions has summable variances, then its

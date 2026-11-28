@@ -9,6 +9,7 @@ public import TauCeti.Probability.RandomMatrix.Covariance
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Expected
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!

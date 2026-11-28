@@ -79,6 +79,9 @@ between equivalent finite measures.
   term tending to zero for every `δ > 0` tends to zero.
 * `TauCeti.tendsto_measure_lt_of_tendstoInMeasure`: real functions tending to zero in measure
   have upper tails of measure tending to zero.
+* `TauCeti.tendsto_measure_abs_sub_ge_of_tendsto_integral`: for a fixed threshold `ε > 0`, a
+  vanishing fluctuation tail at `ε / 2` together with integral convergence to `c` yields a
+  vanishing tail around `c` at `ε`; applying this for every `ε > 0` gives convergence in measure.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
@@ -214,6 +217,35 @@ theorem tendsto_measure_lt_of_tendstoInMeasure {f : ι → α → ℝ}
     (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by
       simp only [Set.mem_ofPred_eq] at hx ⊢
       exact hx.le.trans (le_abs_self _)
+
+end TauCeti
+
+namespace TauCeti
+
+open Filter MeasureTheory
+open scoped Topology
+
+/-- **Tail transfer from integral convergence and fluctuation concentration.** If the integrals of
+real-valued functions on possibly varying measure spaces converge to `c` along a filter `l` and,
+for a fixed threshold `0 < ε`, the measure of the fluctuation tail
+`ε / 2 ≤ |X i ω - ∫ ω', X i ω' ∂P i|` tends to `0`, then the measure of the tail
+`ε ≤ |X i ω - c|` tends to `0` along `l`; applying this for every `0 < ε` gives convergence in
+measure to `c`. -/
+theorem tendsto_measure_abs_sub_ge_of_tendsto_integral {ι : Type*} {l : Filter ι}
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
+    {P : (i : ι) → Measure (Ω i)}
+    {X : (i : ι) → Ω i → ℝ} {c : ℝ}
+    (hmean : Tendsto (fun i ↦ ∫ ω, X i ω ∂P i) l (𝓝 c))
+    {ε : ℝ} (hε : 0 < ε)
+    (hfluc : Tendsto (fun i ↦ P i {ω | ε / 2 ≤ |X i ω - ∫ ω', X i ω' ∂P i|}) l (𝓝 0)) :
+    Tendsto (fun i ↦ P i {ω | ε ≤ |X i ω - c|}) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hfluc
+    (.of_forall fun _ ↦ bot_le) ?_
+  filter_upwards [Metric.tendsto_nhds.1 hmean (ε / 2) (half_pos hε)] with i hi
+  rw [Real.dist_eq] at hi
+  refine measure_mono fun ω hω ↦ ?_
+  simp only [Set.mem_ofPred_eq] at hω ⊢
+  linarith [abs_sub_le (X i ω) (∫ ω', X i ω' ∂P i) c]
 
 end TauCeti
 
