@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.FiniteRank.ModelEquiv
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Analysis.Normed.Operator.PiTranspose
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import Mathlib.Topology.VectorBundle.Constructions
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
@@ -37,6 +39,11 @@ total space of Mathlib's dual bundle of `A`, the bundle of continuous linear map
 fibres of `A` to the trivial line, over the identity of the base. Under this identification
 `dualMap f` is precomposition with `f` (`dualFiberEquiv_fiberMap_dualMap`). Thus the transposed
 chart transitions present the actual dual bundle, with its Hom-bundle topology.
+
+For an actual vector bundle `V` presented as `ofBundle 𝕜 e V` along a model coordinate
+equivalence `e : F ≃L[𝕜] (Fin r → 𝕜)`, `ofBundleDualTotalSpaceHomeomorph e V` identifies
+`(ofBundle 𝕜 e V).dual` with Mathlib's dual bundle `fun x ↦ V x →L[𝕜] 𝕜`, compatibly with
+changes of coordinate equivalence (`ofBundleDualFiberEquiv_dualMap_changeIso`).
 
 The scalar field is assumed complete, as for Mathlib's identification
 `ContinuousLinearEquiv.piRing` of a coordinate space with its continuous dual. The base is
@@ -521,5 +528,241 @@ noncomputable def dualTensorIsoUnit (A : FiniteRankBundleCore 𝕜 B) (hA : A.ra
   fiberMap_isoTrivialOfCoordChangeEqId_inv _ _ _ x
 
 end RankOne
+
+section OfBundleDual
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+section DualBundle
+
+variable {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type*)
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- On the fibre over `x`, identify a dual coordinate vector `w : Fin r → 𝕜` of
+`(ofBundle 𝕜 e V).dual` with the continuous linear functional on `V x` pairing a vector with
+coordinates `u = e ((trivializationAt F V x) ⟨x, v⟩).2` to `∑ k, u k * w k`. -/
+noncomputable def ofBundleDualFiberEquiv (x : B) :
+    (ofBundle 𝕜 e V).dual.core.Fiber x ≃L[𝕜] (V x →L[𝕜] 𝕜) :=
+  (dualFiberEquiv (ofBundle 𝕜 e V) x).trans
+    ((ofBundleFiberEquiv e V x).arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))
+
+/-- Forward precomposition formula: `ofBundleDualFiberEquiv e V x w` is `dualFiberEquiv` composed
+with `(ofBundleFiberEquiv e V x).symm`. -/
+theorem ofBundleDualFiberEquiv_apply (x : B) (w : Fin r → 𝕜) :
+    ofBundleDualFiberEquiv e V x w =
+      (dualFiberEquiv (ofBundle 𝕜 e V) x w).comp
+        (ofBundleFiberEquiv e V x).symm.toContinuousLinearMap := by
+  ext v
+  exact (congrFun (congrArg DFunLike.coe
+    (ContinuousLinearEquiv.trans_apply (dualFiberEquiv (ofBundle 𝕜 e V) x)
+      ((ofBundleFiberEquiv e V x).arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) w)) v).trans
+    (by simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.refl_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe])
+
+/-- Inverse precomposition formula: `(ofBundleDualFiberEquiv e V x).symm α` is the dual
+coordinates of `α` precomposed with `ofBundleFiberEquiv e V x`. -/
+theorem ofBundleDualFiberEquiv_symm (x : B) (α : V x →L[𝕜] 𝕜) :
+    (ofBundleDualFiberEquiv e V x).symm α =
+      (dualFiberEquiv (ofBundle 𝕜 e V) x).symm
+        (α.comp (ofBundleFiberEquiv e V x).toContinuousLinearMap) := by
+  refine (ContinuousLinearEquiv.symm_trans_apply _ _ α).trans <|
+    congrArg (dualFiberEquiv (ofBundle 𝕜 e V) x).symm <|
+      (ContinuousLinearEquiv.symm_apply_eq _).2 ?_
+  ext v
+  simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.refl_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- Explicit dual pairing convention: a dual coordinate vector `w` evaluates on `v : V x` by
+pairing the `e`-coordinates of `v` in `trivializationAt F V x` with `w`. -/
+@[simp]
+theorem ofBundleDualFiberEquiv_apply_apply (x : B) (w : Fin r → 𝕜) (v : V x) :
+    ofBundleDualFiberEquiv e V x w v =
+      ∑ k, e ((trivializationAt F V x) ⟨x, v⟩).2 k * w k := by
+  rw [ofBundleDualFiberEquiv_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ofBundleFiberEquiv_symm_apply]
+  exact dualFiberEquiv_apply_apply (ofBundle 𝕜 e V) x w _
+
+/-- Evaluated on a vector `(trivializationAt F V x).symm x u` of the preferred trivialization at
+`x`, a dual coordinate vector `w` pairs `e u` with `w`. -/
+theorem ofBundleDualFiberEquiv_apply_symm (x : B) (w : Fin r → 𝕜) (u : F) :
+    ofBundleDualFiberEquiv e V x w ((trivializationAt F V x).symm x u) =
+      ∑ k, e u k * w k := by
+  rw [ofBundleDualFiberEquiv_apply_apply,
+    (trivializationAt F V x).apply_mk_symm (mem_baseSet_trivializationAt F V x) u]
+
+/-- The `i`th standard basis vector `Pi.single i 1` of the dual core corresponds to the `i`th
+coordinate functional `u ↦ e u i` on the preferred trivialization at `x`. -/
+theorem ofBundleDualFiberEquiv_single_apply_symm (x : B) (i : Fin r) (u : F) :
+    ofBundleDualFiberEquiv e V x (Pi.single i 1) ((trivializationAt F V x).symm x u) =
+      e u i :=
+  (ofBundleDualFiberEquiv_apply_symm e V x (Pi.single i 1) u).trans
+    (by simp [Pi.single_apply])
+
+/-- The dual coordinates of a functional `α : V x →L[𝕜] 𝕜` are its values on the basis vectors
+`(trivializationAt F V x).symm x (e.symm (Pi.single i 1))`. -/
+@[simp]
+theorem ofBundleDualFiberEquiv_symm_apply (x : B) (α : V x →L[𝕜] 𝕜) (i : Fin r) :
+    (ofBundleDualFiberEquiv e V x).symm α i =
+      α ((trivializationAt F V x).symm x (e.symm (Pi.single i 1))) := by
+  rw [ofBundleDualFiberEquiv_symm]
+  exact (dualFiberEquiv_symm_apply (ofBundle 𝕜 e V) x _ i).trans <|
+    (ContinuousLinearMap.comp_apply _ _ _).trans <|
+      congrArg α (ofBundleFiberEquiv_apply e V x (Pi.single i 1))
+
+/-- In the preferred Hom-bundle chart at `a`, `ofBundleDualFiberEquiv` reads a dual-core
+coordinate vector through the constant continuous linear equivalence
+`w ↦ (ContinuousLinearEquiv.piRing.symm w) ∘L e`. -/
+theorem ofBundleDualFiberEquiv_inCoordinates (a : B) {x : B}
+    (hx : x ∈ (trivializationAt F V a).baseSet) (w : Fin r → 𝕜) :
+    ContinuousLinearMap.inCoordinates F V 𝕜 (Trivial B 𝕜) a x a x
+        (ofBundleDualFiberEquiv e V x w) =
+      ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm
+        (((ofBundle 𝕜 e V).dual.core.localTriv a ⟨x, w⟩).2)).comp e.toContinuousLinearMap := by
+  have hx' : x ∈ (ofBundle 𝕜 e V).core.baseSet a := (baseSet_ofBundle e V a).symm ▸ hx
+  have hdual := congrArg (·.comp e.toContinuousLinearMap)
+    (dualFiberEquiv_inCoordinates (ofBundle 𝕜 e V) a x hx' w)
+  refine ContinuousLinearMap.ext fun u ↦ ?_
+  have hin := congrArg (fun f : F →L[𝕜] 𝕜 ↦ f u) hdual
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inCoordinates,
+    ContinuousLinearEquiv.coe_coe, (ofBundle 𝕜 e V).trivializationAt_core] at hin
+  let v₀ : (ofBundle 𝕜 e V).core.Fiber x :=
+    ((ofBundle 𝕜 e V).core.localTriv a).symmL 𝕜 x (e u)
+  have htriv_snd : (trivializationAt F V a ⟨x, ofBundleFiberEquiv e V x v₀⟩).2 = u := by
+    refine (trivializationAt_ofBundleFiberEquiv_snd e V a hx v₀).trans ?_
+    have hv₀ : (((ofBundle 𝕜 e V).core.localTriv a) ⟨x, v₀⟩).2 = e u := by
+      dsimp only [v₀]
+      rw [((ofBundle 𝕜 e V).core.localTriv a).symmL_apply hx']
+      exact congrArg Prod.snd (((ofBundle 𝕜 e V).core.localTriv a).apply_mk_symm hx' (e u))
+    rw [hv₀, e.symm_apply_apply]
+  have hfib : ofBundleFiberEquiv e V x v₀ = (trivializationAt F V a).symmL 𝕜 x u := by
+    rw [(trivializationAt F V a).symmL_apply hx, ← htriv_snd]
+    exact ((trivializationAt F V a).symm_apply_apply_mk hx (ofBundleFiberEquiv e V x v₀)).symm
+  refine (congrArg (fun g : 𝕜 →L[𝕜] 𝕜 ↦ g _)
+    (Trivial.continuousLinearMapAt_trivialization 𝕜 B 𝕜 x)).trans ?_
+  rw [ContinuousLinearMap.id_apply]
+  refine (congrArg (ofBundleDualFiberEquiv e V x w) hfib.symm).trans ?_
+  have hpair : ofBundleDualFiberEquiv e V x w (ofBundleFiberEquiv e V x v₀) =
+      dualFiberEquiv (ofBundle 𝕜 e V) x w v₀ := by
+    rw [ofBundleDualFiberEquiv_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, (ofBundleFiberEquiv e V x).symm_apply_apply]
+  refine hpair.trans ?_
+  refine (congrArg (fun g : 𝕜 →L[𝕜] 𝕜 ↦ g _)
+    (Trivial.continuousLinearMapAt_trivialization 𝕜 B 𝕜 x)).symm.trans ?_
+  exact hin
+
+/-- Near any `p₀`, reading `ofBundleDualFiberEquiv` in the Hom-bundle chart at `p₀.proj`
+eventually agrees with a fixed continuous linear equivalence applied to the dual core chart at
+`p₀.proj`. -/
+theorem eventuallyEq_inCoordinates_ofBundleDualFiberEquiv
+    (p₀ : (ofBundle 𝕜 e V).dual.core.TotalSpace) :
+    (fun q : (ofBundle 𝕜 e V).dual.core.TotalSpace ↦
+        ContinuousLinearMap.inCoordinates F V 𝕜 (Trivial B 𝕜) p₀.proj q.proj p₀.proj q.proj
+          (ofBundleDualFiberEquiv e V q.proj q.snd)) =ᶠ[nhds p₀]
+      fun q ↦
+        ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm.trans
+          (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))).toContinuousLinearMap
+          (((ofBundle 𝕜 e V).dual.core.localTriv p₀.proj q).2) := by
+  have hnhds := (ofBundle 𝕜 e V).dual.core.localTrivAt_source_mem_nhds p₀
+  rw [VectorBundleCore.localTrivAt, (ofBundle 𝕜 e V).dual.indexAt_eq] at hnhds
+  filter_upwards [hnhds] with q hq
+  exact (ofBundleDualFiberEquiv_inCoordinates e V p₀.proj
+    ((baseSet_ofBundle e V p₀.proj) ▸
+      ((ofBundle 𝕜 e V).dual.core.mem_localTriv_source p₀.proj q).1 hq) q.snd).trans
+    (ContinuousLinearEquiv.piRing_symm_trans_arrowCongr_apply e _).symm
+
+/-- Reading dual-core coordinates as functionals on `V` is continuous on total spaces. -/
+theorem continuous_ofBundleDualFiberEquiv :
+    Continuous fun p : (ofBundle 𝕜 e V).dual.core.TotalSpace ↦
+      TotalSpace.mk' (F →L[𝕜] 𝕜) (E := fun x ↦ V x →L[𝕜] 𝕜) p.proj
+        (ofBundleDualFiberEquiv e V p.proj p.snd) := by
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  rw [continuousAt_hom_bundle]
+  refine ⟨(ofBundle 𝕜 e V).dual.core.continuous_proj.continuousAt, ?_⟩
+  let L : (Fin r → 𝕜) →L[𝕜] (F →L[𝕜] 𝕜) :=
+    ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm.trans
+      (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))).toContinuousLinearMap
+  have hc : ContinuousAt
+      (fun q : (ofBundle 𝕜 e V).dual.core.TotalSpace ↦
+        ((ofBundle 𝕜 e V).dual.core.localTriv p.proj q).2) p := by
+    simpa only [VectorBundleCore.localTrivAt, (ofBundle 𝕜 e V).dual.indexAt_eq] using
+      (ofBundle 𝕜 e V).dual.core.continuousAt_localTrivAt_snd p
+  exact (L.continuous.continuousAt.comp hc).congr_of_eventuallyEq
+    (eventuallyEq_inCoordinates_ofBundleDualFiberEquiv e V p)
+
+/-- The reconstructed total space of `(ofBundle 𝕜 e V).dual` is homeomorphic to Mathlib's dual
+bundle `fun x ↦ V x →L[𝕜] 𝕜`, over the identity of the base and by `ofBundleDualFiberEquiv` on
+each fibre. -/
+noncomputable def ofBundleDualTotalSpaceHomeomorph :
+    (ofBundle 𝕜 e V).dual.core.TotalSpace ≃ₜ
+      TotalSpace (F →L[𝕜] 𝕜) (fun x ↦ V x →L[𝕜] 𝕜) :=
+  bundleHomeomorph (𝕜 := 𝕜) (ofBundleDualFiberEquiv e V)
+    (continuous_ofBundleDualFiberEquiv e V)
+
+@[simp]
+theorem ofBundleDualTotalSpaceHomeomorph_apply
+    (p : (ofBundle 𝕜 e V).dual.core.TotalSpace) :
+    ofBundleDualTotalSpaceHomeomorph e V p =
+      ⟨p.proj, ofBundleDualFiberEquiv e V p.proj p.snd⟩ :=
+  bundleHomeomorph_apply _ _ p
+
+@[simp]
+theorem ofBundleDualTotalSpaceHomeomorph_symm_apply
+    (p : TotalSpace (F →L[𝕜] 𝕜) (fun x ↦ V x →L[𝕜] 𝕜)) :
+    (ofBundleDualTotalSpaceHomeomorph e V).symm p =
+      ⟨p.proj, (ofBundleDualFiberEquiv e V p.proj).symm p.snd⟩ :=
+  bundleHomeomorph_symm_apply _ _ p
+
+end DualBundle
+
+section DualChange
+
+variable {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜))
+  (V : B → Type*) [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- Composing the dual change-of-coordinates maps `e₁ ↦ e₂` and `e₂ ↦ e₁` yields the identity
+morphism on `(ofBundle 𝕜 e₂ V).dual`. -/
+theorem dualMap_changeIso_comp_eq_id :
+    (dualMap (ofBundleChangeIso e₁ e₂ V).hom) ≫
+        (dualMap (ofBundleChangeIso e₂ e₁ V).hom) =
+      𝟙 (ofBundle 𝕜 e₂ V).dual := by
+  rw [← ofBundleChangeIso_inv e₂ e₁ V]
+  exact ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso e₂ e₁ V).op).inv_hom_id
+
+end DualChange
+
+section DualChangeBundle
+
+variable {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜))
+  (V : B → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- Changing the coordinate equivalence acts contravariantly on the dual core and commutes with the
+identification `ofBundleDualFiberEquiv` to `V x →L[𝕜] 𝕜`. -/
+theorem ofBundleDualFiberEquiv_dualMap_changeIso (x : B) (w : Fin r₁ → 𝕜) :
+    ofBundleDualFiberEquiv e₂ V x
+        ((dualMap (ofBundleChangeIso e₂ e₁ V).hom).fiberMap x w) =
+      ofBundleDualFiberEquiv e₁ V x w := by
+  ext v
+  refine (congrArg (· v) (ofBundleDualFiberEquiv_apply e₂ V x _)).trans ?_
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ofBundleDualFiberEquiv_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  refine (congrArg (fun f ↦ f ((ofBundleFiberEquiv e₂ V x).symm v))
+    (dualFiberEquiv_fiberMap_dualMap (ofBundleChangeIso e₂ e₁ V).hom x w)).trans ?_
+  refine (ContinuousLinearMap.comp_apply (dualFiberEquiv (ofBundle 𝕜 e₁ V) x w)
+    ((ofBundleChangeIso e₂ e₁ V).hom.fiberMap x) ((ofBundleFiberEquiv e₂ V x).symm v)).trans ?_
+  refine congrArg (dualFiberEquiv (ofBundle 𝕜 e₁ V) x w) ?_
+  refine (ofBundleFiberEquiv e₁ V x).eq_symm_apply.mpr <|
+    (ofBundleFiberEquiv_changeIso e₂ e₁ V x _).trans ?_
+  exact (ofBundleFiberEquiv e₂ V x).apply_symm_apply v
+
+end DualChangeBundle
+
+end OfBundleDual
 
 end TauCeti.FiniteRankBundleCore

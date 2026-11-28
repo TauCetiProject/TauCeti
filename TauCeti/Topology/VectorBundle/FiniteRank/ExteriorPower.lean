@@ -35,7 +35,9 @@ In low degrees the exterior powers are identified explicitly:
   rank of `A`.
 
 In the top degree, the rank `r` of `A`, the exterior power is the determinant line
-`FiniteRankBundleCore.det A = ⋀^r A`. It has rank one (`FiniteRankBundleCore.rank_det`), and its
+`FiniteRankBundleCore.det A = ⋀^r A`. It has rank one (`FiniteRankBundleCore.rank_det`), its
+coordinate fibre is canonically identified with `𝕜` by `FiniteRankBundleCore.detScalarEquiv`
+(with `det_fiber_apply_eq_detScalarEquiv` and `detScalarEquiv_eqToIso_hom_comp_inv`), and its
 transitions are multiplication by the determinants of the transitions of `A`
 (`FiniteRankBundleCore.coordChange_det`).
 
@@ -270,17 +272,60 @@ transitions of the core. -/
   rw [det_def, coordChange_exteriorPower_obj]
   exact ContinuousLinearMap.exteriorPowerCoords_self _
 
+/-- Canonical identification of the rank-one coordinate fibre `Fin A.det.rank → 𝕜` of the
+determinant line bundle core with the scalar field `𝕜`. -/
+noncomputable def detScalarEquiv (A : FiniteRankBundleCore 𝕜 B) :
+    (Fin A.det.rank → 𝕜) ≃L[𝕜] 𝕜 :=
+  (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin 1 ↦ 𝕜) (finCongr A.rank_det)).trans
+    (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜)
+
+theorem detScalarEquiv_apply (A : FiniteRankBundleCore 𝕜 B) (v : Fin A.det.rank → 𝕜) :
+    detScalarEquiv A v = v ⟨0, A.rank_det ▸ Nat.zero_lt_one⟩ := (rfl)
+
+@[simp]
+theorem detScalarEquiv_symm_apply (A : FiniteRankBundleCore 𝕜 B) (c : 𝕜) (i : Fin A.det.rank) :
+    (detScalarEquiv A).symm c i = c := (rfl)
+
+@[simp]
+theorem detScalarEquiv_const (A : FiniteRankBundleCore 𝕜 B) (c : 𝕜) :
+    detScalarEquiv A (fun _ ↦ c) = c := (rfl)
+
+/-- Every coordinate vector in the rank-one fibre `Fin A.det.rank → 𝕜` is constant with value
+`detScalarEquiv A v`. -/
+theorem det_fiber_apply_eq_detScalarEquiv (A : FiniteRankBundleCore 𝕜 B) (v : Fin A.det.rank → 𝕜)
+    (i : Fin A.det.rank) :
+    v i = detScalarEquiv A v :=
+  congrArg v (Fin.ext (Nat.lt_one_iff.mp (A.rank_det ▸ i.isLt)))
+
+/-- Transporting a bundle morphism `g : Z₁ ⟶ Z₂` along equalities `h₁ : A₁.det = Z₁` and
+`h₂ : A₂.det = Z₂` scales the `detScalarEquiv` coordinate by `c` whenever `g` scales the
+corresponding coordinate by `c`. -/
+theorem detScalarEquiv_eqToIso_hom_comp_inv {A₁ A₂ Z₁ Z₂ : FiniteRankBundleCore 𝕜 B}
+    (h₁ : A₁.det = Z₁) (h₂ : A₂.det = Z₂) (g : Z₁ ⟶ Z₂) (x : B)
+    (w : Fin A₁.det.rank → 𝕜) (c : 𝕜)
+    (hg : ∀ (u : Fin Z₁.rank → 𝕜) (j₁ : Fin Z₁.rank) (j₂ : Fin Z₂.rank),
+      j₁.val = j₂.val → g.fiberMap x u j₂ = c * u j₁) :
+    detScalarEquiv A₂ (((eqToIso h₁).hom ≫ g ≫ (eqToIso h₂).inv).fiberMap x w) =
+      c * detScalarEquiv A₁ w :=
+  (detScalarEquiv_apply A₂ _).trans <|
+    (fiberMap_eqToIso_hom_comp_inv_apply h₁ h₂ g x w _).trans <|
+      (hg (w ∘ Fin.cast (congrArg rank h₁).symm)
+        (Fin.cast (congrArg rank h₁) ⟨0, A₁.rank_det ▸ Nat.zero_lt_one⟩)
+        (Fin.cast (congrArg rank h₂) ⟨0, A₂.rank_det ▸ Nat.zero_lt_one⟩) rfl).trans <|
+        congrArg (c * ·) ((congrArg w (Fin.ext rfl)).trans (detScalarEquiv_apply A₁ w).symm)
+
 /-- The determinant core of a bundle has transition scalar equal to the determinant of the
 bundle transition in the preferred charts. -/
 theorem coordChange_det_ofBundle (n : ℕ) (E : B → Type*)
     [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
     [∀ x, TopologicalSpace (E x)] [TopologicalSpace (Bundle.TotalSpace (Fin n → 𝕜) E)]
     [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (i i' x : B) :
-    (ofBundle 𝕜 n E).det.core.coordChange i i' x =
+    (ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.coordChange i i' x =
       ((trivializationAt (Fin n → 𝕜) E i).coordChangeL 𝕜
         (trivializationAt (Fin n → 𝕜) E i') x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)).det •
         ContinuousLinearMap.id 𝕜 _ := by
-  rw [coordChange_det, core_ofBundle, pointIndexedCore_coordChange]
+  rw [coordChange_det, coordChange_ofBundle]
+  congr 2
 
 /-! ### Twisting by a line bundle -/
 

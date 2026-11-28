@@ -248,16 +248,17 @@ theorem homotopic_iff_exists_continuousLinearEquiv_pullback
       (E := Tautological 𝕜 k)).imp fun _ hΦ ↦ hΦ.1,
    fun ⟨Φ, hΦ⟩ ↦ homotopic_of_continuousLinearEquiv_pullback Φ hΦ⟩
 
-open FiniteRankBundleCore (ofBundle ofBundleIso pullback_ofBundle pullbackOfBundleHomeomorph
-  pullbackOfBundleHomeomorph_apply isoOfContinuousEquiv fiberMap_isoOfContinuousEquiv_hom
-  fiberMap_isoOfContinuousEquiv_inv fiberMap_ofBundleIso_hom fiberMap_ofBundleIso_inv
-  fiberMap_eqToHom_apply fiberMap_comp pullbackRankClass pullbackRankClass_mk)
+open FiniteRankBundleCore (ofBundle ofBundleIso ofBundleFiberEquiv ofBundleFiberEquiv_refl
+  pullback_ofBundle pullbackOfBundleHomeomorph pullbackOfBundleHomeomorph_apply
+  isoOfContinuousEquiv fiberMap_isoOfContinuousEquiv_hom fiberMap_isoOfContinuousEquiv_inv
+  fiberMap_ofBundleIso_hom fiberMap_ofBundleIso_inv fiberMap_eqToHom_apply fiberMap_comp
+  pullbackRankClass pullbackRankClass_mk)
 section CoreComparisons
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {X : Type*} [TopologicalSpace X]
 variable (𝕜) in
 /-- `Tautological 𝕜 k` as an object of `FiniteRankBundleCore 𝕜 (infiniteGrassmannian 𝕜 k)`. -/
 abbrev tautologicalCore (k : ℕ) : FiniteRankBundleCore 𝕜 (infiniteGrassmannian 𝕜 k) :=
-  ofBundle 𝕜 k (Tautological 𝕜 k)
+  ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜)) (Tautological 𝕜 k)
 
 /-- Continuous fibrewise linear equivalences of `Tautological` pullbacks yield core isomorphisms. -/
 theorem nonempty_pullback_iso_of_continuousLinearEquiv_pullback [CompleteSpace 𝕜] {k : ℕ}
@@ -268,8 +269,8 @@ theorem nonempty_pullback_iso_of_continuousLinearEquiv_pullback [CompleteSpace �
           (Φ p.proj p.snd)) :
     Nonempty ((tautologicalCore 𝕜 k).pullback f₀ ≅ (tautologicalCore 𝕜 k).pullback f₁) := by
   rw [pullback_ofBundle, pullback_ofBundle]
-  exact ⟨ofBundleIso (E₀ := (f₀ : _ → _) *ᵖ (Tautological 𝕜 k))
-    (E₁ := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k)) Φ hΦ⟩
+  exact ⟨ofBundleIso (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+    (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜)) Φ hΦ⟩
 
 /-- Core isomorphisms of `tautologicalCore` pullbacks yield continuous fibrewise equivalences. -/
 theorem exists_continuousLinearEquiv_pullback_of_pullback_iso {k : ℕ}
@@ -280,8 +281,9 @@ theorem exists_continuousLinearEquiv_pullback_of_pullback_iso {k : ℕ}
         TotalSpace.mk' (Fin k → 𝕜) (E := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k))
           p.proj (Φ p.proj p.snd) :=
   FiniteRankBundleCore.exists_continuousLinearEquiv_of_ofBundle_iso
+    (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜)) (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
     (E₀ := (f₀ : _ → _) *ᵖ (Tautological 𝕜 k)) (E₁ := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k))
-    ((eqToIso (pullback_ofBundle _ f₀)).symm.trans (α.trans (eqToIso (pullback_ofBundle _ f₁))))
+    ((eqToIso (pullback_ofBundle _ _ f₀)).symm.trans (α.trans (eqToIso (pullback_ofBundle _ _ f₁))))
 
 section OfClassifying
 variable [CompleteSpace 𝕜] {k : ℕ} {A : FiniteRankBundleCore 𝕜 X} (hA : A.rank = k)
@@ -296,8 +298,9 @@ def tautologicalPullbackIsoOfClassifyingCoordinates :
   let eT := pointIndexedCoreFiberEquiv 𝕜 (Fin k → 𝕜) (Tautological 𝕜 k)
   isoOfContinuousEquiv (fun x ↦ (eT (f x)).trans (hj.classifyTautologicalEquiv hk x).symm)
     (((hj.classifyTautologicalHomeomorph hk).symm.continuous.comp
-      (pullbackOfBundleHomeomorph (Tautological 𝕜 k) f).continuous).congr fun ⟨x, v⟩ ↦ by
-        rw [comp_apply, pullbackOfBundleHomeomorph_apply]
+      (pullbackOfBundleHomeomorph (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+        (Tautological 𝕜 k) f).continuous).congr fun ⟨x, v⟩ ↦ by
+        rw [comp_apply, pullbackOfBundleHomeomorph_apply, ofBundleFiberEquiv_refl]
         exact hj.classifyTautologicalHomeomorph_symm_apply hk ⟨x, eT (f x) v⟩)
 @[simp] theorem fiberMap_tautologicalPullbackIsoOfClassifyingCoordinates_hom (x : X) :
     (tautologicalPullbackIsoOfClassifyingCoordinates hA hj).hom.fiberMap x =
@@ -362,10 +365,13 @@ private theorem continuous_toInfiniteTautologicalEquiv (k n : ℕ) :
 isomorphic to `ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n)`. -/
 def _root_.TauCeti.finiteGrassmannian.pullbackTautologicalCoreIso (k n : ℕ) :
     (tautologicalCore 𝕜 k).pullback (toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)) ≅
-      ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n) :=
-  (eqToIso (pullback_ofBundle (Tautological 𝕜 k)
+      ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+        (finiteGrassmannian.Tautological 𝕜 k n) :=
+  (eqToIso (pullback_ofBundle (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜)) (Tautological 𝕜 k)
     (toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)))).trans
-    (ofBundleIso (E₀ := finiteGrassmannian.Tautological 𝕜 k n) (E₁ := stagePullback k n)
+    (ofBundleIso (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+      (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+      (E₀ := finiteGrassmannian.Tautological 𝕜 k n) (E₁ := stagePullback k n)
       toInfiniteTautologicalEquiv (continuous_toInfiniteTautologicalEquiv k n)).symm
 @[simp] theorem _root_.TauCeti.finiteGrassmannian.fiberMap_pullbackTautologicalCoreIso_hom
     (k n : ℕ) (V : finiteGrassmannian 𝕜 k n) :
@@ -378,11 +384,13 @@ def _root_.TauCeti.finiteGrassmannian.pullbackTautologicalCoreIso (k n : ℕ) :
   rw [finiteGrassmannian.pullbackTautologicalCoreIso, Iso.trans_hom, Iso.symm_hom, eqToIso.hom,
     fiberMap_comp]
   have hIso := DFunLike.congr_fun (fiberMap_ofBundleIso_inv
+    (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜)) (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
     (E₀ := finiteGrassmannian.Tautological 𝕜 k n) (E₁ := stagePullback k n)
     toInfiniteTautologicalEquiv (continuous_toInfiniteTautologicalEquiv k n) V)
+  simp only [ofBundleFiberEquiv_refl] at hIso
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have hv : (eqToHom (pullback_ofBundle (Tautological 𝕜 k)
-      (toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)))).fiberMap V v = v :=
+  have hv : (eqToHom (pullback_ofBundle (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+      (Tautological 𝕜 k) (toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)))).fiberMap V v = v :=
     funext fun _ ↦ by simp only [fiberMap_eqToHom_apply, Fin.cast_refl, id_eq]
   rw [ContinuousLinearMap.comp_apply, hv, hIso]
   exact congrArg ((pointIndexedCoreFiberEquiv 𝕜 (Fin k → 𝕜)
@@ -398,8 +406,10 @@ def _root_.TauCeti.finiteGrassmannian.pullbackTautologicalCoreIso (k n : ℕ) :
   rw [finiteGrassmannian.pullbackTautologicalCoreIso, Iso.trans_inv, Iso.symm_inv, eqToIso.inv,
     fiberMap_comp]
   have hIso := DFunLike.congr_fun (fiberMap_ofBundleIso_hom
+    (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜)) (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
     (E₀ := finiteGrassmannian.Tautological 𝕜 k n) (E₁ := stagePullback k n)
     toInfiniteTautologicalEquiv (continuous_toInfiniteTautologicalEquiv k n) V)
+  simp only [ofBundleFiberEquiv_refl] at hIso
   refine ContinuousLinearMap.ext fun v ↦ funext fun i ↦ ?_
   rw [ContinuousLinearMap.comp_apply, fiberMap_eqToHom_apply, hIso]
   simp only [Fin.cast_refl, id_eq]
@@ -469,13 +479,15 @@ theorem classificationEquiv_id (k : ℕ) :
 /-- `finiteGrassmannian.toInfiniteContinuousMap` classifies `finiteGrassmannian.Tautological`. -/
 theorem classificationEquiv_toInfiniteContinuousMap (k n : ℕ) :
     classificationEquiv 𝕜 (finiteGrassmannian 𝕜 k n) k (Quotient.mk _ toInfiniteContinuousMap) =
-      Quotient.mk _ ⟨ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩ :=
+      Quotient.mk _ ⟨ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+        (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩ :=
   Quotient.sound ⟨finiteGrassmannian.pullbackTautologicalCoreIso k n⟩
 /-- `(classificationEquiv _ _ k).symm` sends `finiteGrassmannian.Tautological` to
 `[toInfiniteContinuousMap]`. -/
 @[simp] theorem classificationEquiv_symm_finiteTautological (k n : ℕ) :
     (classificationEquiv 𝕜 (finiteGrassmannian 𝕜 k n) k).symm
-      (Quotient.mk _ ⟨ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩) =
+      (Quotient.mk _ ⟨ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+        (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩) =
         Quotient.mk _ toInfiniteContinuousMap :=
   (classificationEquiv 𝕜 (finiteGrassmannian 𝕜 k n) k).injective <| by
     rw [Equiv.apply_symm_apply, classificationEquiv_toInfiniteContinuousMap]

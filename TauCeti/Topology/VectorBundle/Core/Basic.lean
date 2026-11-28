@@ -181,12 +181,31 @@ theorem trivializationAt_pointIndexedCoreHomeomorph (b : B)
       (pointIndexedCore 𝕜 F E).localTriv b p :=
   trivializationAt_pointIndexedCoreTotalEquiv 𝕜 F E b p hp
 
+/-- The inverse reconstruction homeomorphism intertwines the original chart with the core chart,
+wherever that chart is defined. -/
+theorem localTriv_pointIndexedCoreHomeomorph_symm (b : B) (p : TotalSpace F E)
+    (hp : p.proj ∈ (trivializationAt F E b).baseSet) :
+    (pointIndexedCore 𝕜 F E).localTriv b ((pointIndexedCoreHomeomorph 𝕜 F E).symm p) =
+      (trivializationAt F E b) p :=
+  ((trivializationAt_pointIndexedCoreHomeomorph 𝕜 F E b _ hp).symm).trans <|
+    congrArg (trivializationAt F E b) ((pointIndexedCoreHomeomorph 𝕜 F E).apply_symm_apply p)
+
 end TauCeti
 
 namespace VectorBundleCore
 
 variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The domain of the preferred core chart at `p.proj` is a neighbourhood of `p`. -/
+theorem localTrivAt_source_mem_nhds (Z : VectorBundleCore 𝕜 B F ι) (p : Z.TotalSpace) :
+    (Z.localTrivAt p.proj).source ∈ nhds p :=
+  (Z.localTrivAt p.proj).open_source.mem_nhds (Z.mem_source_at p.proj p.snd)
+
+/-- The fibre coordinate in the preferred core chart at `p.proj` is continuous at `p`. -/
+theorem continuousAt_localTrivAt_snd (Z : VectorBundleCore 𝕜 B F ι) (p : Z.TotalSpace) :
+    ContinuousAt (fun q : Z.TotalSpace ↦ (Z.localTrivAt p.proj q).2) p :=
+  ((Z.localTrivAt p.proj).continuousOn.continuousAt (localTrivAt_source_mem_nhds Z p)).snd
 
 /-- Points of the total space of a vector bundle core agree exactly when their base points and
 their vectors in the model fibre do. Unlike `Bundle.TotalSpace.mk_inj`, the base points may

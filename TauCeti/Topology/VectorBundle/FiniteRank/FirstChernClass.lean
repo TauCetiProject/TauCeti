@@ -56,19 +56,16 @@ theorem firstChernClass_def (C : FiniteRankBundleCore ℂ B) :
 /-- The first Chern class of the core presenting an actual complex vector bundle `E` is the first
 Chern class of `E`: the reconstructed bundle is isomorphic to `E`. -/
 @[simp]
-theorem firstChernClass_ofBundle (n : ℕ) (E : B → Type) [∀ b, AddCommGroup (E b)]
-    [∀ b, Module ℂ (E b)] [∀ b, TopologicalSpace (E b)]
-    [TopologicalSpace (TotalSpace (Fin n → ℂ) E)] [FiberBundle (Fin n → ℂ) E]
-    [VectorBundle ℂ (Fin n → ℂ) E] :
-    (ofBundle ℂ n E).firstChernClass = _root_.TauCeti.firstChernClass (Fin n → ℂ) E := by
-  -- `ofBundle ℂ n E` has rank `n` and core `pointIndexedCore ℂ (Fin n → ℂ) E` by definition
-  -- (`rank_ofBundle`, `core_ofBundle`); the rank occurs in the model fibre, so the class is
-  -- restated rather than rewritten.
-  change _root_.TauCeti.firstChernClass (Fin n → ℂ) (pointIndexedCore ℂ (Fin n → ℂ) E).Fiber = _
+theorem firstChernClass_ofBundle {F : Type} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [FiniteDimensional ℂ F] {n : ℕ} (e : F ≃L[ℂ] (Fin n → ℂ)) (E : B → Type)
+    [∀ b, AddCommGroup (E b)] [∀ b, Module ℂ (E b)] [∀ b, TopologicalSpace (E b)]
+    [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E] :
+    (ofBundle ℂ e E).firstChernClass = _root_.TauCeti.firstChernClass F E := by
+  rw [firstChernClass_def]
   exact _root_.TauCeti.firstChernClass_eq_of_fiberwise
-    (φ := pointIndexedCoreFiberEquiv ℂ (Fin n → ℂ) E)
-    ((pointIndexedCoreHomeomorph ℂ (Fin n → ℂ) E).continuous.congr
-      (pointIndexedCoreHomeomorph_apply ℂ (Fin n → ℂ) E))
+    (φ := ofBundleFiberEquiv e E)
+    ((ofBundleTotalSpaceHomeomorph e E).continuous.congr
+      (ofBundleTotalSpaceHomeomorph_apply e E))
 
 /-- **Isomorphic cores have the same first Chern class.** -/
 theorem firstChernClass_eq_of_iso {C C' : FiniteRankBundleCore ℂ B} (e : C ≅ C') :
