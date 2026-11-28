@@ -52,6 +52,7 @@ elements of `B`, so `𝒪_{L,T}` is spanned over `𝒪_{K,S}` by `B`.
   `𝒪_{K,S}` in `L`.
 * `IsDedekindDomain.finrank_integer_primesAbove`: the rank of `𝒪_{L,T}` over `𝒪_{K,S}` is
   `[L : K]`.
+* The canonical `𝒪_{K,S}`-module `𝒪_{L,T}` is torsion-free.
 * The instances `Module.Finite` of `𝒪_{L,T}` over `𝒪_{K,S}`, for `B` finite over `R` and for
   `L / K` finite and separable, and `Module.Projective`, whenever `𝒪_{L,T}` is finite.
 
@@ -98,6 +99,11 @@ noncomputable instance integerAlgebraIntegerPrimesAbove :
 /-- The inclusions `𝒪_{K,S} → 𝒪_{L,T} → L` compose to the inclusion `𝒪_{K,S} → K → L`. -/
 instance : IsScalarTower (S.integer K) ((primesAbove R B S).integer L) L :=
   .of_algebraMap_eq fun _ ↦ (rfl)
+
+/-- The canonical extension of rings of `S`-integers along `K → L` is torsion-free. -/
+instance : Module.IsTorsionFree (S.integer K) ((primesAbove R B S).integer L) := by
+  have : FaithfulSMul (S.integer K) ((primesAbove R B S).integer L) := .tower_bot _ _ L
+  exact FaithfulSMul.to_isTorsionFree ..
 
 /-- The inclusions `R → 𝒪_{K,S} → 𝒪_{L,T}` compose to the inclusion `R → 𝒪_{L,T}`. -/
 instance : IsScalarTower R (S.integer K) ((primesAbove R B S).integer L) :=

@@ -7,7 +7,10 @@ module
 
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.ClassGroup.ExtendedHom
+public import Mathlib.RingTheory.DedekindDomain.Dvr
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
+public import Mathlib.RingTheory.Localization.Finiteness
+public import TauCeti.RingTheory.Localization.Defs
 import Mathlib.GroupTheory.Congruence.Basic
 
 /-!
@@ -37,6 +40,9 @@ descent instead goes through the monoid congruence `Con.ker` and
   `ClassGroup.relNorm_comp_extendedHom` the same statement as an identity of monoid homomorphisms.
   The extension direction is Mathlib's `ClassGroup.extendedHom`; the composite itself is the
   source's `ClassGroup.relNorm_comp_map`, respelt against it.
+* `ClassGroup.relNorm_map_eq_map_relNorm`: the relative norm commutes with
+  extension to localizations when the upper ring is localized at the images of the base
+  denominators.
 
 ## Provenance
 
@@ -162,5 +168,37 @@ theorem relNorm_comp_extendedHom :
     (relNorm R).comp (ClassGroup.extendedHom R S) = powMonoidHom (Module.finrank R S) := by
   ext c
   rw [MonoidHom.comp_apply, powMonoidHom_apply, relNorm_extendedHom]
+
+section Localization
+
+variable {Rₘ Sₘ : Type*} [CommRing Rₘ] [CommRing Sₘ] [Nontrivial Rₘ]
+  [Algebra R Rₘ] [Algebra S Sₘ] [Algebra Rₘ Sₘ] [Algebra R Sₘ]
+  [IsScalarTower R Rₘ Sₘ] [IsScalarTower R S Sₘ]
+
+/-- For a module-finite extension of Dedekind domains, the class-group norm commutes with
+extension of ideals to localizations at matching denominators. The localized domain,
+Dedekind, torsion-free and finiteness instances are derived from the localization data. -/
+theorem relNorm_map_eq_map_relNorm (c : ClassGroup S) (M : Submonoid R)
+    [IsLocalization M Rₘ] [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ] :
+    let hM := TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial M Rₘ
+    let hSM : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
+      map_le_nonZeroDivisors_of_injective _ (FaithfulSMul.algebraMap_injective R S) hM
+    let _ := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
+    let _ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hSM
+    let _ := IsLocalization.isDedekindDomain R hM Rₘ
+    let _ := IsLocalization.isDedekindDomain S hSM Sₘ
+    let _ := Module.IsTorsionFree.of_isLocalization R S hM (Rₚ := Rₘ) (Sₚ := Sₘ)
+    let _ := Module.Finite.of_isLocalization R S M (Rₚ := Rₘ) (Sₚ := Sₘ)
+    relNorm Rₘ (map (algebraMap S Sₘ) (IsLocalization.injective Sₘ hSM) c) =
+      map (algebraMap R Rₘ) (IsLocalization.injective Rₘ hM) (relNorm R c) := by
+  intro hM hSM hRₘ hSₘ hDRₘ hDSₘ hTF hF
+  obtain ⟨I, rfl⟩ := mk0_surjective c
+  rw [map_mk0, relNorm_mk0, relNorm_mk0, map_mk0]
+  apply congrArg mk0
+  apply Subtype.ext
+  simpa only [Ideal.coe_relNorm0, ← Ideal.spanNorm_eq] using
+    Ideal.spanIntNorm_localization R (I : Ideal S) M hM Sₘ
+
+end Localization
 
 end ClassGroup
