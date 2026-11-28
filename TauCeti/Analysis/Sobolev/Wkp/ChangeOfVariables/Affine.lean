@@ -791,8 +791,9 @@ theorem norm_iteratedGradient_compAffineEquiv_le (B : E ≃L[ℝ] E) (b : E)
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp μ W p (k + 1)) :
     ‖iteratedGradient k (compAffineEquiv μ B b hUW (k + 1) u)‖ ≤
       ‖(B : E →L[ℝ] E)‖ ^ (k + 1) * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal *
-        ‖iteratedGradient k u‖ :=
-  norm_iteratedGradient_compAffineL_le B b (hUW ▸ mapsTo_preimage _ _) k u
+        ‖iteratedGradient k u‖ := by
+  rw [compAffineEquiv_apply]
+  exact norm_iteratedGradient_compAffineL_le B b (hUW ▸ mapsTo_preimage _ _) k u
 
 /-- **Reverse order-by-order seminorm scaling (`1 ≤ p ≤ ∞`).** For `F x = B x + b` with
 `U = F ⁻¹' W`,
@@ -814,8 +815,9 @@ theorem seminorm_compAffineEquiv_le (B : E ≃L[ℝ] E) (b : E)
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) {j k : ℕ} (hj : j ≤ k) (u : Wkp μ W p k) :
     seminorm k j hj (compAffineEquiv μ B b hUW k u) ≤
       ‖(B : E →L[ℝ] E)‖ ^ j * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal *
-        seminorm k j hj u :=
-  seminorm_compAffineL_le B b (hUW ▸ mapsTo_preimage _ _) hj u
+        seminorm k j hj u := by
+  rw [compAffineEquiv_apply]
+  exact seminorm_compAffineL_le B b (hUW ▸ mapsTo_preimage _ _) hj u
 
 /-- **Reverse `Wkp.seminorm` scaling on preimages (`1 ≤ p ≤ ∞`).** For `F x = B x + b` with
 `U = F ⁻¹' W` and any derivative order `j ≤ k`,
