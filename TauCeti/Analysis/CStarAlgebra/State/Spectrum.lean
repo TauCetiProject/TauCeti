@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.CStarAlgebra.State.Space
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.Unitization
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
@@ -22,11 +23,13 @@ spectral value `z ∈ spectrum ℂ a` of a normal `a` a state sending `star a ^ 
 `star z ^ m * z ^ n`
 (`exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`), hence a state on
 any `0 ≤ a` attaining `‖a‖ ^ n` (`exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
-`exists_positiveContinuousLinearMap_apply_eq_norm`), and a state on any normal `a` with
-`‖ω a‖ = ‖a‖` (`exists_positiveContinuousLinearMap_norm_apply_eq_norm`). Pulling back along
-`A → 𝓜(ℂ, A)` via `TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`
-yields a norm-one positive functional on any nontrivial C⋆-algebra `A` with `ω a = ‖a‖` and
-`ω (a * a) = ‖a‖ ^ 2` (`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
+`exists_positiveContinuousLinearMap_apply_eq_norm`), a state on any self-adjoint `a` attaining
+`|(ω a).re| = ‖a‖` (`exists_positiveContinuousLinearMap_abs_re_apply_eq_norm`), and a state on
+any normal `a` with `‖ω a‖ = ‖a‖` (`exists_positiveContinuousLinearMap_norm_apply_eq_norm`).
+Pulling back along `A → 𝓜(ℂ, A)` via
+`TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero` yields a norm-one
+positive functional on any nontrivial C⋆-algebra `A` with `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
+(`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
 
 Applying spectral attainment on normal elements to `star x * x` or `x * star x` for
 `x = algebraMap ℂ B z - b` together with Cauchy–Schwarz removes the normality hypothesis on a
@@ -134,6 +137,22 @@ theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNor
   refine ⟨ω, h1, hn, ?_⟩
   have hωa : ω a = z := by simpa using hp 0 1
   rw [hωa, ← coe_nnNorm, ← coe_nnNorm, hza]
+
+/-- On a nontrivial unital C⋆-algebra, every self-adjoint element `a` admits a state `ω` with
+`|(ω a).re| = ‖a‖`. -/
+theorem exists_positiveContinuousLinearMap_abs_re_apply_eq_norm {a : M}
+    (ha : IsSelfAdjoint a) :
+    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ |(ω a).re| = ‖a‖ := by
+  have : IsStarNormal a := ha.isStarNormal
+  obtain ⟨ω, h1, hω_norm, hωa⟩ := exists_positiveContinuousLinearMap_norm_apply_eq_norm a
+  refine ⟨ω, h1, hω_norm, ?_⟩
+  have him : (ω a).im = 0 := by
+    have hstar : star (ω a) = ω a := by rw [← map_star, ha.star_eq]
+    have h := congrArg Complex.im hstar
+    simp only [Complex.star_def, Complex.conj_im] at h
+    linarith
+  rwa [← Complex.re_add_im (ω a), him, Complex.ofReal_zero, zero_mul, add_zero,
+    Complex.norm_real, Real.norm_eq_abs] at hωa
 
 end Unital
 

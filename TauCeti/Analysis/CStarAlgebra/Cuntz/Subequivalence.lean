@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.NonUnital
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Analysis.Real.Sqrt
 
 /-!

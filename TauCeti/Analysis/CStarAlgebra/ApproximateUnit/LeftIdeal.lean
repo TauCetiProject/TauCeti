@@ -10,7 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Algebra.Algebra.Spectrum.Quasispectrum
 import TauCeti.Algebra.Star.Submodule
-import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Topology.ApproximateUnit
 
 /-!

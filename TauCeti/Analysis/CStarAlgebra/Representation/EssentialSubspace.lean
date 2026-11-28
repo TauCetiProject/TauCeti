@@ -102,6 +102,17 @@ theorem apply_eq_zero_of_mem_orthogonal_essentialSubspace {ξ : H}
     (hξ : ξ ∈ π.essentialSubspaceᗮ) (a : A) : π a ξ = 0 :=
   π.mem_orthogonal_essentialSubspace_iff.1 hξ a
 
+/-- Every operator `π a` agrees on `ξ` and on its orthogonal projection onto
+`π.essentialSubspace`. -/
+@[simp]
+theorem apply_starProjection_essentialSubspace (a : A) (ξ : H) :
+    π a (π.essentialSubspace.starProjection ξ) = π a ξ := by
+  have hzero : π a (ξ - π.essentialSubspace.starProjection ξ) = 0 :=
+    π.apply_eq_zero_of_mem_orthogonal_essentialSubspace
+      (π.essentialSubspace.sub_starProjection_mem_orthogonal ξ) a
+  rw [map_sub, sub_eq_zero] at hzero
+  exact hzero.symm
+
 /-- A representation is nondegenerate if and only if its essential subspace is `⊤`. -/
 theorem isNondegenerate_iff_essentialSubspace_eq_top :
     π.IsNondegenerate ↔ π.essentialSubspace = ⊤ := by

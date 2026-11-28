@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Topology.MetricSpace.UniformConvergence
 
@@ -25,9 +26,11 @@ Separately, uniform equicontinuity of a family `(g_k)` turns a bound `F k p ≤ 
 valid whenever `g_k` moves by at most `η` over distances at most `√(s p)`, into the uniform
 smallness `F k p < ε` for all `k` once `s p` is small enough.
 
-Finally, the iterates of a `1`-Lipschitz map are `1`-Lipschitz, so they form a uniformly
-equicontinuous family, and maps that are Hölder on a set with one constant and one positive exponent
-form a family uniformly equicontinuous on that set.
+Finally, a family that is eventually uniformly Lipschitz along a filter and converges pointwise on
+a dense set to a limit continuous at `x` converges at `x`
+(`TauCeti.tendsto_of_dense_of_eventually_lipschitz`), the iterates of a `1`-Lipschitz map are
+`1`-Lipschitz, so they form a uniformly equicontinuous family, and maps that are Hölder on a set
+with one constant and one positive exponent form a family uniformly equicontinuous on that set.
 
 ## Main statements
 
@@ -37,6 +40,8 @@ form a family uniformly equicontinuous on that set.
   equicontinuous.
 * `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
   `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
+* `TauCeti.tendsto_of_dense_of_eventually_lipschitz`: pointwise convergence on a dense set extends
+  to every point under an eventual uniform Lipschitz bound.
 * `LipschitzWith.uniformEquicontinuous_iterate`: the iterates of a `1`-Lipschitz map are uniformly
   equicontinuous.
 * `HolderOnWith.uniformEquicontinuousOn`: maps sharing a Hölder constant and a positive exponent on
@@ -139,6 +144,45 @@ theorem exists_forall_lt_of_le_mul_add_mul {κ X P : Type*} [PseudoMetricSpace X
     _ < ε := by linarith
 
 end UniformEquicontinuous
+
+namespace TauCeti
+
+open scoped NNReal
+
+/-- If `F : ι → X → Y` is eventually uniformly `K`-Lipschitz along `l`, `g : X → Y` is continuous
+at `x`, and `F i d → g d` along `l` for every `d` in a dense set `D`, then `F i x → g x`. -/
+theorem tendsto_of_dense_of_eventually_lipschitz {ι X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {l : Filter ι} {F : ι → X → Y} {g : X → Y} {D : Set X}
+    (hD : Dense D) {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzWith K (F i)) {x : X}
+    (hg : ContinuousAt g x) (hlim : ∀ d ∈ D, Tendsto (fun i => F i d) l (𝓝 (g d))) :
+    Tendsto (fun i => F i x) l (𝓝 (g x)) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨δ₁, hδ₁, hδ₁g⟩ := Metric.continuousAt_iff.mp hg (ε / 3) (by positivity)
+  let δ : ℝ := min δ₁ (ε / (3 * ((K : ℝ) + 1)))
+  have hδ : 0 < δ := lt_min hδ₁ (by positivity)
+  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x hδ
+  have hdx₁ : dist d x < δ₁ := by
+    rw [dist_comm]
+    exact hxd.trans_le (min_le_left _ _)
+  have hgd : dist (g d) (g x) < ε / 3 := hδ₁g hdx₁
+  have hxd₂ : dist x d < ε / (3 * ((K : ℝ) + 1)) := hxd.trans_le (min_le_right _ _)
+  have hprod : (K : ℝ) * dist x d < ε / 3 := by
+    calc (K : ℝ) * dist x d
+        ≤ ((K : ℝ) + 1) * dist x d := mul_le_mul_of_nonneg_right (by linarith) dist_nonneg
+      _ < ((K : ℝ) + 1) * (ε / (3 * ((K : ℝ) + 1))) :=
+          mul_lt_mul_of_pos_left hxd₂ (by positivity)
+      _ = ε / 3 := by field_simp
+  filter_upwards [hF, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 3) (by positivity)] with i hi hid
+  have hdist : dist (F i x) (g x) ≤ (K : ℝ) * dist x d + dist (F i d) (g d) + dist (g d) (g x) := by
+    calc dist (F i x) (g x)
+        ≤ dist (F i x) (F i d) + dist (F i d) (g d) + dist (g d) (g x) := dist_triangle4 _ _ _ _
+      _ ≤ K * dist x d + dist (F i d) (g d) + dist (g d) (g x) := by
+          gcongr
+          exact hi.dist_le_mul x d
+  linarith
+
+end TauCeti
 
 /-- The iterates of a `1`-Lipschitz map are uniformly equicontinuous. -/
 theorem LipschitzWith.uniformEquicontinuous_iterate {X : Type*} [PseudoEMetricSpace X]

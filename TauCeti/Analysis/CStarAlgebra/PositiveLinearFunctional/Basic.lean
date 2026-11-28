@@ -9,41 +9,50 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Norms of positive functionals on C⋆-algebras
 
-## Pullback and lifting along star homomorphisms
+## Norm along approximate units
 
 The norm of a positive functional on a possibly nonunital C⋆-algebra is its limit along any
-increasing approximate unit, Mathlib's `PositiveContinuousLinearMap.tendsto_nhds_opNorm`. A
-surjective star-algebra homomorphism carries increasing approximate units to increasing
-approximate units, so pulling a positive functional back along it does not change the norm,
-`PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`. In particular states pull back
-to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
-For the same reason the norm is additive on positive functionals,
-`PositiveContinuousLinearMap.opNorm_add`.
-Positive functionals are closed under scaling by a nonnegative real, so they form an
-`ℝ≥0`-module, and scaling multiplies the norm (`PositiveContinuousLinearMap.opNorm_smul`);
-Mathlib only provides the `ℕ`-action.
-Along a star isomorphism `e`, pulling back along `e` and then along `e.symm` (or the other way
-round) recovers the functional,
-`PositiveContinuousLinearMap.comp_ofClass_comp_ofClass_symm` and
-`PositiveContinuousLinearMap.comp_ofClass_symm_comp_ofClass`. On unital C⋆-algebras,
-`‖ω‖ = ω 1`, so pulling back along any star homomorphism that preserves `1` also preserves the
-norm (`PositiveContinuousLinearMap.opNorm_comp_ofClass_of_map_one`,
-`PositiveContinuousLinearMap.opNorm_comp_ofClass`).
+increasing approximate unit, Mathlib's `PositiveContinuousLinearMap.tendsto_nhds_opNorm`. As direct
+consequences:
 
-The bound `‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖` of Mathlib's
-`PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul` shows that a positive functional vanishes
-at every `a` with `ω (star a * a) = 0`
-(`PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`). More generally, by the
-Cauchy–Schwarz inequality a positive linear functional `f` vanishing at `b⋆ b` kills every product
-`a b` (`PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero`), and one vanishing at `b b⋆`
-kills every product `b a` (`PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`).
+* `PositiveContinuousLinearMap.opNorm_add`: the operator norm is additive on positive functionals,
+  `‖ω₁ + ω₂‖ = ‖ω₁‖ + ‖ω₂‖`.
+* `PositiveContinuousLinearMap.opNorm_smul`: positive functionals form an `ℝ≥0`-module, and
+  scaling by a nonnegative real multiplies the norm.
+* `PositiveContinuousLinearMap.tendsto_mul_self_nhds_opNorm`: along any increasing approximate unit
+  `e`, the squared values `ω (e * e)` also tend to `‖ω‖`.
+
+## Pullback and lifting along star homomorphisms
+
+* `PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`: a surjective star-algebra
+  homomorphism carries increasing approximate units to increasing approximate units, so pulling a
+  positive functional back along it does not change the norm. In particular states pull back to
+  states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
+  Along a star isomorphism `e`, pulling back along `e` and then along `e.symm` (or the other way
+  round) recovers the functional,
+  `PositiveContinuousLinearMap.comp_ofClass_comp_ofClass_symm` and
+  `PositiveContinuousLinearMap.comp_ofClass_symm_comp_ofClass`. On unital C⋆-algebras,
+  `‖ω‖ = ω 1`, so pulling back along any star homomorphism that preserves `1` also preserves the
+  norm (`PositiveContinuousLinearMap.opNorm_comp_ofClass_of_map_one`,
+  `PositiveContinuousLinearMap.opNorm_comp_ofClass`).
+
+## Cauchy–Schwarz vanishing criteria
+
+* `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero` and
+  `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`: if a positive linear functional
+  vanishes on `star b * b` (resp. `b * star b`), it vanishes on `a * b` (resp. `b * a`).
+* `PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero` and
+  `PositiveLinearMap.map_eq_zero_of_map_mul_star_self_eq_zero`: on a C⋆-algebra, a positive linear
+  functional vanishing on `star x * x` or `x * star x` vanishes on `x`.
+* `PositiveLinearMap.map_eq_zero_of_re_eq_zero`: a positive map vanishing in real part on a
+  nonnegative element vanishes on that element.
 
 Conversely, any positive functional `ω : A →P[ℂ] ℂ` vanishing on the kernel of a surjective star
 homomorphism `f : A → B` lifts uniquely (`PositiveContinuousLinearMap.eq_liftOfSurjective_iff`) to
@@ -122,11 +131,37 @@ theorem opNorm_add (τ σ : A →P[ℂ] ℂ) :
   push_cast
   exact (τ.tendsto_nhds_opNorm hl).add (σ.tendsto_nhds_opNorm hl)
 
-/-- A positive functional vanishes at every element `a` with `ω (star a * a) = 0`, since
-`‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖`. -/
-theorem map_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
-    (ha : ω (star a * a) = 0) : ω a = 0 := by
-  simpa [ha] using ω.norm_map_sq_le_opNorm_mul a
+/-- Along any increasing approximate unit `e`, the values `ω (e * e)` of a positive continuous
+linear functional tend to `‖ω‖`. -/
+theorem tendsto_mul_self_nhds_opNorm (ω : A →P[ℂ] ℂ) {l : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) :
+    Tendsto (fun e => ω (e * e)) l (𝓝 (‖(ω : A →L[ℂ] ℂ)‖ : ℂ)) := by
+  by_cases h0 : ‖(ω : A →L[ℂ] ℂ)‖ = 0
+  · have hω : (ω : A →L[ℂ] ℂ) = 0 := norm_eq_zero.mp h0
+    have hval : ∀ x, ω x = 0 := fun x => by
+      simpa using DFunLike.congr_fun hω x
+    simpa [h0, hval] using tendsto_const_nhds
+  have hpos : 0 < ‖(ω : A →L[ℂ] ℂ)‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm h0)
+  have hlim : Tendsto (fun e => ‖ω e‖) l (𝓝 ‖(ω : A →L[ℂ] ℂ)‖) := by
+    simpa [Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)] using
+      (ω.tendsto_nhds_opNorm hl).norm
+  have hnorm : Tendsto (fun e => ‖ω (e * e)‖) l (𝓝 ‖(ω : A →L[ℂ] ℂ)‖) := by
+    have hlo : Tendsto (fun e => ‖ω e‖ ^ 2 / ‖(ω : A →L[ℂ] ℂ)‖) l (𝓝 ‖(ω : A →L[ℂ] ℂ)‖) := by
+      have h := (hlim.pow 2).div_const ‖(ω : A →L[ℂ] ℂ)‖
+      rwa [sq, mul_div_cancel_right₀ _ h0] at h
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlo hlim ?_ ?_
+    · filter_upwards [hl.eventually_nonneg] with e he
+      have hsq : star e * e = e * e := by rw [he.isSelfAdjoint.star_eq]
+      rw [div_le_iff₀ hpos, mul_comm, ← hsq]
+      exact ω.norm_map_sq_le_opNorm_mul e
+    · filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
+      refine CStarAlgebra.norm_le_norm_of_le_of_nonneg (ω.mono ?_) (ω.map_nonneg ?_)
+      · exact CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he₀ he₁
+      · simpa [he₀.isSelfAdjoint.star_eq] using star_mul_self_nonneg e
+  refine hnorm.ofReal.congr' ?_
+  filter_upwards [hl.eventually_nonneg] with e he₀
+  have hsq : 0 ≤ e * e := by simpa [he₀.isSelfAdjoint.star_eq] using star_mul_self_nonneg e
+  exact Complex.norm_of_nonneg' (ω.map_nonneg hsq)
 
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
@@ -253,14 +288,15 @@ theorem opNorm_comp_ofClass {A B F : Type*}
   opNorm_comp_ofClass_of_map_one ω f (map_one f)
 
 end Unital
-
 end PositiveContinuousLinearMap
 
 namespace PositiveLinearMap
 
-variable {A F : Type*} [NonUnitalRing A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
-  [Module ℂ A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
-  [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
+section StarOrdered
+
+variable {A : Type*} [NonUnitalRing A] [PartialOrder A] [Module ℂ A] [StarRing A]
+  [StarOrderedRing A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
+  {F : Type*} [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
 
 /-- A positive linear functional that vanishes at `b⋆ b` kills every product `a * b`, by the
 Cauchy–Schwarz inequality. -/
@@ -277,6 +313,42 @@ theorem map_mul_eq_zero_of_map_mul_star_eq_zero (f : F) {b : A} (hb : f (b * sta
   have h := norm_map_mul_star_le f b (star a)
   simp only [star_star, hb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
   exact h
+
+end StarOrdered
+
+section Order
+
+/-- A positive map vanishing in real part on a nonnegative element vanishes on that element. -/
+theorem map_eq_zero_of_re_eq_zero {A : Type*} [Preorder A] [Zero A]
+    {F : Type*} [FunLike F A ℂ] [ZeroHomClass F A ℂ] [OrderHomClass F A ℂ]
+    (f : F) {x : A} (hx : 0 ≤ x) (hre : (f x).re = 0) : f x = 0 :=
+  Complex.ext hre (Complex.nonneg_iff.mp (map_nonneg f hx)).2.symm
+
+end Order
+
+section CStar
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {F : Type*} [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
+
+/-- On a C⋆-algebra, if a positive linear functional vanishes on `star x * x`, it vanishes on
+`x`. -/
+theorem map_eq_zero_of_map_star_mul_self_eq_zero (f : F) {x : A} (hx : f (star x * x) = 0) :
+    f x = 0 := by
+  have hcs := (PositiveContinuousLinearMap.ofClass (R := ℂ) f).norm_map_le_sqrt_opNorm_mul x
+  rw [PositiveContinuousLinearMap.coe_ofClass, hx, norm_zero, Real.sqrt_zero, mul_zero] at hcs
+  exact norm_eq_zero.mp (le_antisymm hcs (norm_nonneg _))
+
+/-- On a C⋆-algebra, if a positive linear functional vanishes on `x * star x`, it vanishes on
+`x`. -/
+theorem map_eq_zero_of_map_mul_star_self_eq_zero (f : F) {x : A} (hx : f (x * star x) = 0) :
+    f x = 0 := by
+  have h : f (star x) = 0 :=
+    map_eq_zero_of_map_star_mul_self_eq_zero f (x := star x) (by rwa [star_star])
+  have hstar : star (f x) = 0 := by simpa only [map_star] using h
+  exact star_eq_zero.mp hstar
+
+end CStar
 
 end PositiveLinearMap
 

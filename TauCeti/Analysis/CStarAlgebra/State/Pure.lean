@@ -117,8 +117,9 @@ theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.S
   have hfac {ψ : WeakDual ℂ A} (hψ : ψ ∈ stateSpace A)
       (h0 : ∀ k, f k = 0 → ψ (star k * k) = 0) : ψ ∈ pullbackFunctional A f '' stateSpace B :=
     (mem_image_pullbackFunctional_stateSpace_iff f hf).2 ⟨hψ, fun k hk ↦
-      (PositiveContinuousLinearMap.mk₀ (toStrongDual ψ) fun _ ↦
-        map_nonneg_of_mem_stateSpace hψ).map_eq_zero_of_map_star_mul_self_eq_zero (h0 k hk)⟩
+      PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero
+        (PositiveContinuousLinearMap.mk₀ (toStrongDual ψ) fun _ ↦
+          map_nonneg_of_mem_stateSpace hψ) (h0 k hk)⟩
   obtain ⟨χ₁, hχ₁, rfl⟩ := hfac hψ₁ fun k hk ↦ (hker k hk).1
   obtain ⟨χ₂, hχ₂, rfl⟩ := hfac hψ₂ fun k hk ↦ (hker k hk).2
   obtain ⟨s, t, hs, ht, hst, h⟩ := hseg

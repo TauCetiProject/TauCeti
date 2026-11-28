@@ -16,15 +16,15 @@ representation `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` to `𝓜(ℂ, A)` via
 produces a canonical nonunital star-algebra homomorphism
 `π.nonUnitalMultiplierExtension : 𝓜(ℂ, A) →⋆ₙₐ[ℂ] (H →L[ℂ] H)` on the *same* Hilbert space `H`.
 It sends `1 : 𝓜(ℂ, A)` to `π.essentialSubspace.starProjection`, converges strongly along any
-increasing approximate unit of `A`, and agrees with `π.multiplierExtension hπ` whenever `π` is
-nondegenerate.
+eventually norm-bounded left approximate unit of `A`, and agrees with `π.multiplierExtension hπ`
+whenever `π` is nondegenerate.
 
 ## Main definitions and results
 
 * `NonUnitalStarAlgHom.nonUnitalMultiplierExtension`: the canonical extension
   `𝓜(ℂ, A) →⋆ₙₐ[ℂ] (H →L[ℂ] H)` of a possibly degenerate representation, uniquely characterized
   by `eq_nonUnitalMultiplierExtension_iff`, sending `1` to `π.essentialSubspace.starProjection`,
-  converging strongly along increasing approximate units
+  converging strongly along eventually norm-bounded left approximate units
   (`tendsto_nonUnitalMultiplierExtension_apply`), and agreeing with `π.multiplierExtension` when
   `π.IsNondegenerate`.
 
@@ -120,25 +120,18 @@ theorem nonUnitalMultiplierExtension_one :
     π.nonUnitalMultiplierExtension 1 = π.essentialSubspace.starProjection := by
   simp [nonUnitalMultiplierExtension]
 
-/-- Along any increasing approximate unit `e`, `π (m.fst e)` converges strongly on all of `H` to
-`π.nonUnitalMultiplierExtension m`. -/
-theorem tendsto_nonUnitalMultiplierExtension_apply [PartialOrder A] {l : Filter A}
-    (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (ξ : H) :
+/-- Along any eventually norm-bounded net `e` with `e * a → a` for all `a : A`, `π (m.fst e)`
+converges strongly on all of `H` to `π.nonUnitalMultiplierExtension m`. -/
+theorem tendsto_nonUnitalMultiplierExtension_apply {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (m : 𝓜(ℂ, A)) (ξ : H) :
     Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (π.nonUnitalMultiplierExtension m ξ)) := by
   rw [π.nonUnitalMultiplierExtension_eq_extendByZero, Submodule.extendByZero_apply]
-  have := hl.neBot
   have hlim := (π.essentialSubspace.subtypeL.continuous.tendsto _).comp
     (tendsto_multiplierExtension_apply π.isNondegenerate_restrictEssentialSubspace
-      hl.eventually_norm hl.tendsto_mul_right m (π.essentialSubspace.orthogonalProjectionOnto ξ))
+      hC hl m (π.essentialSubspace.orthogonalProjectionOnto ξ))
   refine hlim.congr fun e => ?_
-  calc (π.restrictEssentialSubspace (m.fst e)
-        (π.essentialSubspace.orthogonalProjectionOnto ξ) : H)
-      = π (m.fst e) (π.essentialSubspace.starProjection ξ) +
-          π (m.fst e) (ξ - π.essentialSubspace.starProjection ξ) := by
-        rw [π.coe_restrictEssentialSubspace_apply, Submodule.coe_orthogonalProjectionOnto_apply,
-          π.apply_eq_zero_of_mem_orthogonal_essentialSubspace
-            (π.essentialSubspace.sub_starProjection_mem_orthogonal ξ), add_zero]
-    _ = π (m.fst e) ξ := by rw [← map_add, add_sub_cancel]
+  rw [Function.comp_apply, Submodule.subtypeL_apply, π.coe_restrictEssentialSubspace_apply,
+    Submodule.coe_orthogonalProjectionOnto_apply, π.apply_starProjection_essentialSubspace]
 
 /-- Strict left continuity of a norm-bounded family of multipliers implies strong continuity under
 `π.nonUnitalMultiplierExtension`. -/

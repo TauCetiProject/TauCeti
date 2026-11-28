@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.Normed.Group.Star
 public import TauCeti.RingTheory.TwoSidedIdeal.Basic
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic

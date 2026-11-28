@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sequences
+import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 import TauCeti.Topology.Sequences.Basic
 
 /-!
@@ -25,6 +26,9 @@ to closure of `s` under limits of weakly convergent sequences
 (`TauCeti.isSeqClosed_toWeakSpace_image_iff`), and a weakly Cauchy sequence converges weakly as
 soon as one of its subsequences does
 (`TauCeti.tendsto_toWeakSpace_of_forall_cauchySeq_of_tendsto_subseq`).
+
+Weak convergence in an indexed product is equivalent to coordinatewise weak convergence
+(`TauCeti.tendsto_toWeakSpace_pi_apply` and `TauCeti.tendsto_toWeakSpace_pi_iff`).
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -51,6 +55,80 @@ theorem tendsto_toWeakSpace_iff_forall_eval_tendsto {α : Type*} {l : Filter α}
     Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) l (𝓝 (toWeakSpace 𝕜 E x)) ↔
       ∀ f : StrongDual 𝕜 E, Tendsto (fun n ↦ f (u n)) l (𝓝 (f x)) :=
   (IsInducing.induced _).tendsto_nhds_iff.trans tendsto_pi_nhds
+
+/-- Weak convergence in a product of topological modules implies coordinatewise weak convergence. -/
+theorem tendsto_toWeakSpace_pi_apply {ι α : Type*} {F : ι → Type*}
+    [∀ i, AddCommMonoid (F i)] [∀ i, Module 𝕜 (F i)] [∀ i, TopologicalSpace (F i)]
+    {l : Filter α} {u : α → ∀ i, F i} {x : ∀ i, F i}
+    (h : Tendsto (fun n ↦ toWeakSpace 𝕜 (∀ i, F i) (u n)) l (𝓝 (toWeakSpace 𝕜 (∀ i, F i) x)))
+    (i : ι) :
+    Tendsto (fun n ↦ toWeakSpace 𝕜 (F i) (u n i)) l (𝓝 (toWeakSpace 𝕜 (F i) (x i))) := by
+  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto] at h ⊢
+  intro f
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] using
+    h (f.comp (ContinuousLinearMap.proj (R := 𝕜) (φ := F) i))
+
+/-- Weak convergence in an indexed product of topological modules is equivalent to coordinatewise
+weak convergence. -/
+theorem tendsto_toWeakSpace_pi_iff {ι α : Type*} {F : ι → Type*}
+    [∀ i, AddCommMonoid (F i)] [∀ i, Module 𝕜 (F i)] [∀ i, TopologicalSpace (F i)]
+    {l : Filter α} {u : α → ∀ i, F i} {x : ∀ i, F i} :
+    Tendsto (fun n ↦ toWeakSpace 𝕜 (∀ i, F i) (u n)) l (𝓝 (toWeakSpace 𝕜 (∀ i, F i) x)) ↔
+      ∀ i : ι, Tendsto (fun n ↦ toWeakSpace 𝕜 (F i) (u n i)) l (𝓝 (toWeakSpace 𝕜 (F i) (x i))) := by
+  classical
+  refine ⟨tendsto_toWeakSpace_pi_apply, fun h ↦ ?_⟩
+  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto]
+  intro Λ
+  rw [Filter.tendsto_def]
+  intro U hU
+  -- Split `U ∈ 𝓝 (Λ x)` into `W₁ + B ⊆ U` with `W₁` open around `Λ x` and `B ∈ 𝓝 0`.
+  have hmem : (fun p : 𝕜 × 𝕜 ↦ p.1 + p.2) ⁻¹' U ∈ 𝓝 (Λ x, (0 : 𝕜)) :=
+    continuous_add.continuousAt.preimage_mem_nhds (by simpa using hU)
+  rw [nhds_prod_eq, Filter.mem_prod_iff] at hmem
+  obtain ⟨A, hA, B, hB, hAB⟩ := hmem
+  obtain ⟨W₁, hW₁A, hW₁_open, hxW₁⟩ := mem_nhds_iff.mp hA
+  have hW₁₂ : ∀ a ∈ W₁, ∀ b ∈ B, a + b ∈ U := fun a ha b hb ↦ hAB (Set.mk_mem_prod (hW₁A ha) hb)
+  -- Choose finite coordinate supports for `Λ ⁻¹' W₁ ∈ 𝓝 x` and `Λ ⁻¹' B ∈ 𝓝 0`.
+  have hpre₁ : Λ ⁻¹' W₁ ∈ 𝓝 x :=
+    Λ.continuous.continuousAt.preimage_mem_nhds (hW₁_open.mem_nhds hxW₁)
+  rw [nhds_pi] at hpre₁
+  obtain ⟨s₁, V₁, hV₁, hs₁⟩ := Filter.mem_pi'.1 hpre₁
+  have hpre₂ : Λ ⁻¹' B ∈ 𝓝 (0 : ∀ i, F i) :=
+    Λ.continuous.continuousAt.preimage_mem_nhds (by simpa using hB)
+  rw [nhds_pi] at hpre₂
+  obtain ⟨s₂, V₂, hV₂, hs₂⟩ := Filter.mem_pi'.1 hpre₂
+  let s : Finset ι := s₁ ∪ s₂
+  let x₀ : ∀ i, F i := fun i ↦ if i ∈ s then x i else 0
+  have hx₀_eq : x₀ = ∑ i ∈ s, Pi.single i (x i) := by
+    ext j
+    by_cases hj : j ∈ s <;> simp [x₀, hj, Finset.sum_apply]
+  have hx₀_mem : Λ x₀ ∈ W₁ :=
+    hs₁ fun i hi ↦ by
+      have his : i ∈ s := Finset.mem_union_left s₂ hi
+      simpa [x₀, his] using mem_of_mem_nhds (hV₁ i)
+  have hsum : Tendsto (fun n ↦ ∑ i ∈ s, Λ (Pi.single i (u n i))) l (𝓝 (Λ x₀)) := by
+    have hcoord : ∀ i : ι,
+        Tendsto (fun n ↦ (Λ.comp (ContinuousLinearMap.single 𝕜 F i)) (u n i)) l
+          (𝓝 ((Λ.comp (ContinuousLinearMap.single 𝕜 F i)) (x i))) := fun i ↦
+      (tendsto_toWeakSpace_iff_forall_eval_tendsto.mp (h i))
+        (Λ.comp (ContinuousLinearMap.single 𝕜 F i))
+    have hfin := tendsto_finsetSum s fun i _ ↦ hcoord i
+    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.single_apply,
+      ← map_sum, ← hx₀_eq] using hfin
+  have hev : ∀ᶠ n in l, (∑ i ∈ s, Λ (Pi.single i (u n i))) ∈ W₁ :=
+    hsum (hW₁_open.mem_nhds hx₀_mem)
+  filter_upwards [hev] with n hn
+  let y : ∀ i, F i := fun i ↦ if i ∈ s then 0 else u n i
+  have hy_mem : Λ y ∈ B :=
+    hs₂ fun i hi ↦ by
+      have his : i ∈ s := Finset.mem_union_right s₁ hi
+      simpa [y, his] using mem_of_mem_nhds (hV₂ i)
+  have hun : u n = (∑ i ∈ s, Pi.single i (u n i)) + y := by
+    ext j
+    by_cases hj : j ∈ s <;> simp [y, hj, Finset.sum_apply]
+  have hΛ : Λ (u n) = (∑ i ∈ s, Λ (Pi.single i (u n i))) + Λ y := by
+    conv_lhs => rw [hun, map_add, map_sum]
+  simpa only [Set.mem_preimage, hΛ] using hW₁₂ _ hn _ hy_mem
 
 /-- Sequential closedness of `toWeakSpace 𝕜 E '' s` in `WeakSpace 𝕜 E` is equivalent to closure of
 `s` under limits of weakly convergent sequences in `E`. -/

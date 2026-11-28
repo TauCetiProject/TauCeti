@@ -150,7 +150,7 @@ instance isClosed_traceKernel : IsClosed (τ.traceKernel hτ : Set A) := by
 
 /-- `τ` vanishes on its trace kernel. -/
 theorem map_eq_zero_of_mem_traceKernel {a : A} (ha : a ∈ τ.traceKernel hτ) : τ a = 0 :=
-  τ.map_eq_zero_of_map_star_mul_self_eq_zero ((mem_traceKernel_iff τ hτ).mp ha)
+  PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero τ ((mem_traceKernel_iff τ hτ).mp ha)
 
 /-- An element lies in the trace kernel exactly when `τ (a * b) = 0` for every `b`. The
 right-hand side is the trace radical of `τ` as a linear map, see `asIdeal_traceKernel`. -/
@@ -367,7 +367,7 @@ noncomputable def gnsRangeTrace (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a
     (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom.range →P[ℂ] ℂ :=
   τ.liftOfSurjective (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom.rangeRestrict
     (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom.rangeRestrict_surjective fun _ ha =>
-      τ.map_eq_zero_of_map_star_mul_self_eq_zero
+      PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero τ
         ((τ.gnsNonUnitalStarAlgHom_apply_eq_zero_iff hτ).mp (congrArg Subtype.val ha))
 
 /-- `τ.gnsRangeTrace hτ` evaluates on `π_τ(a)` as `τ a`. -/

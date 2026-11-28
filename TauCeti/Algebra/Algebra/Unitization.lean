@@ -68,6 +68,8 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
   identity and the augmentation (`Unitization.fst_comp_prodAlgEquiv`,
   `Unitization.snd_comp_prodAlgEquiv`).
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
+* `Unitization.fst_smul_one_add_inr_snd`: decomposition of elements of `Unitization R A` as
+  `x.fst • 1 + (x.snd : Unitization R A)`.
 * `Unitization.prodStarAlgEquiv`: for a unital star algebra `A`, the splitting
   `Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
@@ -99,6 +101,16 @@ theorem inr_mul_eq_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring
     [SMulWithZero R A] (a : A) (x : Unitization R A) :
     (inr a : Unitization R A) * x = inr (x.fst • a + a * x.snd) :=
   Unitization.ext (by simp) (by simp)
+
+section Decomposition
+
+/-- Every element of `Unitization R A` decomposes as `x.fst • 1 + (x.snd : Unitization R A)`. -/
+theorem fst_smul_one_add_inr_snd {R A : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+    (x : Unitization R A) :
+    x.fst • (1 : Unitization R A) + (x.snd : Unitization R A) = x :=
+  Unitization.ext (by simp) (by simp)
+
+end Decomposition
 
 /-- An element of the unitization with scalar part `0` is the image of its `A`-part. -/
 theorem inr_snd_of_fst_eq_zero {R A : Type*} [Zero R] {w : Unitization R A} (h : w.fst = 0) :

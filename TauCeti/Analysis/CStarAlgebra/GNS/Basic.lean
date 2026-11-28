@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 import Mathlib.Analysis.Normed.Operator.Mul
-import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Basic
 
 /-!
 # The GNS class map and cyclic vector

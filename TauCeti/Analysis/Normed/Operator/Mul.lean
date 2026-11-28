@@ -12,15 +12,16 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 /-!
 # Multiplication operators in seminormed algebras
 
-This file identifies the underlying linear maps of bounded left and right multiplication,
+This file identifies the underlying linear maps of bounded left and right multiplication
 and evaluates their powers. These identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
 Writing `L_x = mul 𝕜 R x` and `R_x = (mul 𝕜 R).flip x`, it records the composition rules
 `L_{xy} = L_x ∘ L_y` (`ContinuousLinearMap.mul_apply_mul`) and `R_{xy} = R_y ∘ R_x`
 (`ContinuousLinearMap.flip_mul_apply_mul`), the commutation of `L_x` with `R_y`
-(`ContinuousLinearMap.commute_mul_apply_flip_mul_apply`), and the operator norm of `R_x`, which is
+(`ContinuousLinearMap.commute_mul_apply_flip_mul_apply`), the operator norm of `R_x`, which is
 at most `‖x‖` (`ContinuousLinearMap.opNorm_mul_flip_apply_le`) and equals `‖x‖` when `‖1‖ = 1`
-(`ContinuousLinearMap.opNorm_mul_flip_apply_of_normOneClass`). Mathlib's
+(`ContinuousLinearMap.opNorm_mul_flip_apply_of_normOneClass`), and the bound `2 * ‖x‖` on the
+commutator operator `L_x - R_x` (`ContinuousLinearMap.opNorm_mul_sub_flip_le`). Mathlib's
 `ContinuousLinearMap.opNorm_mul_apply` is the corresponding statement for `L_x`, and Mathlib's
 `ContinuousLinearMap.opNorm_mul_flip_apply` gives the same equality for C⋆-rings instead.
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
@@ -99,6 +100,11 @@ right-multiplication counterpart of Mathlib's `ContinuousLinearMap.opNorm_mul_ap
 @[simp]
 theorem opNorm_mul_flip_apply_le (x : R) : ‖(mul 𝕜 R).flip x‖ ≤ ‖x‖ :=
   opNorm_le_bound _ (norm_nonneg x) fun y ↦ by simpa [mul_comm ‖x‖] using norm_mul_le y x
+
+/-- The commutator operator `y ↦ x * y - y * x` has operator norm at most `2 * ‖x‖`. -/
+theorem opNorm_mul_sub_flip_le (x : R) : ‖mul 𝕜 R x - (mul 𝕜 R).flip x‖ ≤ 2 * ‖x‖ :=
+  (norm_sub_le _ _).trans <| by
+    linarith [opNorm_mul_apply_le 𝕜 R x, opNorm_mul_flip_apply_le (𝕜 := 𝕜) x]
 
 /-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
 bounded endomorphism ring are subsingletons. -/
