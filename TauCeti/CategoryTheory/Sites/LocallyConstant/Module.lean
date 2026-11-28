@@ -17,6 +17,7 @@ public import TauCeti.CategoryTheory.Sites.Grothendieck
 public import TauCeti.CategoryTheory.Sites.Limits
 public import TauCeti.CategoryTheory.Sites.LocallyBijective
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
+import TauCeti.Algebra.Category.ModuleCat.Kernels
 
 /-!
 # Kernels and cokernels of locally constant sheaves of modules
@@ -276,8 +277,7 @@ theorem IsLocallyConstantIn.cokernel [HasWeakSheafify J (ModuleCat.{w} Λ)]
   refine (isLocallyConstantIn_iff _ _).2 fun X ↦
     J.superset_covering (fun Y f hf ↦ ?_) (hF.locallyConstantMapSieve_mem hG φ X)
   obtain ⟨M, N, -, hN, g, eF, eG, w⟩ := hf
-  refine (locallyConstantSieve_apply _ _ f).2 ⟨Limits.cokernel g,
-    Module.Finite.equiv (ModuleCat.cokernelIsoRangeQuotient g).symm.toLinearEquiv,
+  refine (locallyConstantSieve_apply _ _ f).2 ⟨Limits.cokernel g, inferInstance,
     ⟨PreservesCokernel.iso (J.overPullback (ModuleCat.{w} Λ) Y) φ ≪≫ cokernel.mapIso _ _ eF eG w ≪≫
       (PreservesCokernel.iso (J.overPullback (ModuleCat.{w} Λ) Y) _).symm ≪≫
       (J.overPullback (ModuleCat.{w} Λ) Y).mapIso

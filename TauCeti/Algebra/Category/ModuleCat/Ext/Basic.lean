@@ -7,9 +7,14 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.Basic
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Homology.Ext.Basic
 
 /-!
-# Annihilators of `Ext` groups of modules
+# Vanishing of `Ext` groups of modules
+
+A module with zero dual has vanishing `Ext` into a projective-injective module in every
+degree. This gives dimension shifting along a projective-injective embedding even in degree zero.
 
 For modules `N` and `M` over a commutative ring `R`, the `R`-module `Ext N M n` is killed both by
 the annihilator of `N` and by the annihilator of `M`, since multiplication by `r` on `Ext N M n`
@@ -22,6 +27,10 @@ compute depths.
 
 ## Main results
 
+* `ModuleCat.subsingleton_ext_of_projective_of_injective`: `Ext T I i` vanishes when `T` has zero
+  dual and `I` is projective-injective.
+* `ModuleCat.subsingleton_ext_cokernel_iff`: for such `T` and a monomorphism `f : M ⟶ I`,
+  vanishing of `Ext T (cokernel f) i` is equivalent to vanishing of `Ext T M (i + 1)`.
 * `CategoryTheory.Abelian.Ext.smul_eq_zero_of_mem_annihilator_left` and
   `CategoryTheory.Abelian.Ext.smul_eq_zero_of_mem_annihilator_right`: elements of the annihilator
   of either argument act by zero on `Ext N M n`.
@@ -36,6 +45,46 @@ public section
 universe v u
 
 open CategoryTheory
+
+namespace ModuleCat
+
+open CategoryTheory.Abelian CategoryTheory.Limits
+
+variable {A : Type u} [Ring A] [Small.{v} A]
+
+/-- All Ext groups from a module with zero regular-module dual to a projective-injective module
+vanish, including in degree zero. -/
+theorem subsingleton_ext_of_projective_of_injective {T I : ModuleCat.{v} A}
+    [Projective I] [Injective I] (hT : Subsingleton (T →ₗ[A] A)) (i : ℕ) :
+    Subsingleton (Ext T I i) := by
+  cases i with
+  | succ i => exact Ext.subsingleton_of_injective T I i
+  | zero =>
+    apply Ext.addEquiv₀.subsingleton_congr.mpr
+    have : Module.Projective A I := ModuleCat.projective_of_module_projective I
+    refine subsingleton_of_forall_eq 0 fun f ↦ ?_
+    ext x
+    refine (Module.forall_dual_apply_eq_zero_iff A (f.hom x)).mp fun φ ↦ ?_
+    simpa using LinearMap.congr_fun (hT.elim (φ ∘ₗ f.hom) 0) x
+
+/-- If `T` has zero regular-module dual and `f : M ⟶ I` is a monomorphism into a
+projective-injective module, then vanishing of `Ext T (cokernel f) i` is equivalent to
+vanishing of `Ext T M (i + 1)` for every `i`, including zero. -/
+theorem subsingleton_ext_cokernel_iff {T M I : ModuleCat.{v} A} (f : M ⟶ I)
+    [Mono f] [Projective I] [Injective I] (hT : Subsingleton (T →ₗ[A] A)) (i : ℕ) :
+    Subsingleton (Ext T (cokernel f) i) ↔ Subsingleton (Ext T M (i + 1)) := by
+  -- Use the explicit short complex to keep its middle object reducibly equal to `I`.
+  let S := ShortComplex.mk f (cokernel.π f) (cokernel.condition f)
+  have h : S.ShortExact := TauCeti.cokernelSequence_shortExact f
+  have : Injective S.X₂ := ‹Injective I›
+  refine ⟨fun h₀ ↦ TauCeti.subsingleton_ext_succ_of_comp_extClass_eq_zero h T i
+    (fun x ↦ by rw [h₀.elim x 0, Ext.zero_comp]), fun h₁ ↦ ?_⟩
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨y, rfl⟩ := Ext.covariant_sequence_exact₃ T h x rfl (h₁.elim _ _)
+  have hmid := subsingleton_ext_of_projective_of_injective (I := I) hT i
+  rw [hmid.elim y 0, Ext.zero_comp]
+
+end ModuleCat
 
 namespace CategoryTheory.Abelian
 

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
+import TauCeti.Algebra.Category.ModuleCat.Kernels
 
 /-!
 # Cokernels of matrix factorizations
@@ -57,11 +58,6 @@ open CategoryTheory Limits
 
 variable {S : Type u} [CommRing S] {w : S}
 
-private theorem finite_cokernel (X : MatrixFactorization S w) :
-    Module.Finite S (cokernel X.obj.d₀.hom : ModuleCat.{u} S) := by
-  exact Module.Finite.of_surjective (cokernel.π X.obj.d₀.hom).hom
-    ((ModuleCat.epi_iff_surjective _).mp inferInstance)
-
 /-- Take the cokernel of the even-to-odd differential. Its finite generation follows from
 that of the odd component, without any condition on the potential. -/
 def cokernelFunctor : MatrixFactorization S w ⥤ FGModuleCat.{u} S := by
@@ -71,7 +67,8 @@ def cokernelFunctor : MatrixFactorization S w ⥤ FGModuleCat.{u} S := by
         (congrArg (fun k => k.hom) g.hom.comm₀)
       map_id X := by ext <;> simp
       map_comp g h := by ext <;> simp }
-  exact (ModuleCat.isFG S).lift (G ⋙ coker (ModuleCat.{u} S)) finite_cokernel
+  exact (ModuleCat.isFG S).lift (G ⋙ coker (ModuleCat.{u} S))
+    fun X ↦ inferInstanceAs (Module.Finite S (cokernel X.obj.d₀.hom : ModuleCat.{u} S))
 
 /-- The underlying module of the finite cokernel functor is the categorical cokernel of the
 even differential. This isomorphism permits use of Mathlib's cokernel API without
