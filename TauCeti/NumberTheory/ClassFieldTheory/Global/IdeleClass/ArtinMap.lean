@@ -17,8 +17,10 @@ For a number field `K`, `absoluteGlobalArtinMap` maps the idele class group `C_K
 topological abelianization of the absolute Galois group. It specializes
 `ClassFormation.absoluteArtinMap` to the global class formation. Its finite restrictions
 recover `globalArtinMap` and, for abelian extensions, `ideleClassArtinMap`.
-Continuity follows from the openness of the idele-class norm subgroups
-(`isOpen_globalNormSubgroup`) and the open subgroup basis of a profinite group.
+The finite restriction equation `abelianizationRestrictNormalHom_comp_absoluteGlobalArtinMap`
+characterizes the map by `eq_absoluteGlobalArtinMap_of_forall_abelianizationRestrictNormalHom`.
+Open subgroups pull back to norm subgroups by `ClassFormation.exists_absoluteArtinMap_mem_iff`;
+their openness (`isOpen_globalNormSubgroup`) gives continuity.
 
 ## References
 
@@ -60,6 +62,31 @@ theorem absoluteGlobalArtinMap_restrict (K : Type) [Field K] [NumberField K]
   rw [absoluteGlobalArtinMap_apply, ← ContinuousMulEquiv.topologicalAbelianizationCongr_symm,
     ContinuousMulEquiv.apply_symm_apply]
 
+/-- Transport membership of an absolute global Artin symbol to the separable-closure model:
+membership in the original open subgroup is equivalent to membership of the formation symbol
+in the comapped subgroup, without expanding either model's Artin map. -/
+theorem absoluteGlobalArtinMap_mem_iff_mem_comap {K : Type}
+    [Field K] [NumberField K] {U : OpenSubgroup (Field.absoluteGaloisGroupAbelianization K)}
+    {c : IdeleClassGroup (𝓞 K) K} :
+    absoluteGlobalArtinMap K c ∈ U ↔
+      ((globalClassFormation K).absoluteArtinMap (globalGroundEquiv K (.ofMul c))).toMul ∈
+        U.comap (↑(absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr)
+          (map_continuous
+            (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr) := by
+  rw [OpenSubgroup.mem_comap, MonoidHom.coe_ofClass, absoluteGlobalArtinMap_apply]
+
+-- Use this existence theorem to choose a layer, not as a simp rule for membership.
+/-- The preimage of any open subgroup of `G_K^ab` is the norm subgroup of a finite Galois layer. -/
+theorem _root_.OpenSubgroup.exists_absoluteGlobalArtinMap_mem_iff {K : Type}
+    [Field K] [NumberField K] (U : OpenSubgroup (Field.absoluteGaloisGroupAbelianization K)) :
+    ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K), ∀ c : IdeleClassGroup (𝓞 K) K,
+      absoluteGlobalArtinMap K c ∈ U ↔ c ∈ globalNormSubgroup K V := by
+  let e := (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr
+  obtain ⟨V, hV⟩ := (globalClassFormation K).exists_absoluteArtinMap_mem_iff
+    (U.comap (↑e) (map_continuous e))
+  exact ⟨V, fun c ↦ absoluteGlobalArtinMap_mem_iff_mem_comap.trans
+    ((hV (globalGroundEquiv K (.ofMul c))).trans mem_globalNormSubgroup_iff.symm)⟩
+
 /-- The kernel of the absolute global Artin map modulo an open normal subgroup of `G_K^ab`
 is the norm subgroup of a finite Galois layer. -/
 theorem _root_.OpenNormalSubgroup.exists_ker_mk'_comp_absoluteGlobalArtinMap_eq {K : Type}
@@ -67,19 +94,10 @@ theorem _root_.OpenNormalSubgroup.exists_ker_mk'_comp_absoluteGlobalArtinMap_eq 
     ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K),
       ((QuotientGroup.mk' U.toSubgroup).comp (absoluteGlobalArtinMap K)).ker =
         globalNormSubgroup K V := by
-  let e := (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr
-  obtain ⟨V, hV⟩ := (globalClassFormation K).exists_absoluteArtinMap_mem_iff
-    (U.toOpenSubgroup.comap e.toMonoidHom (map_continuous e))
+  obtain ⟨V, hV⟩ := U.toOpenSubgroup.exists_absoluteGlobalArtinMap_mem_iff
   refine ⟨V, Subgroup.ext fun c ↦ ?_⟩
-  -- Triviality in the finite quotient is membership in the open subgroup.
-  rw [MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
-    QuotientGroup.eq_one_iff]
-  rw [absoluteGlobalArtinMap_apply, mem_globalNormSubgroup_iff, ← hV]
-  simpa only [e, OpenSubgroup.mem_toSubgroup, ContinuousMulEquiv.toMulEquiv_eq_coe,
-    MulEquiv.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, ContinuousMulEquiv.coe_toMulEquiv] using
-    (OpenSubgroup.mem_comap (H := U.toOpenSubgroup) (f := e.toMonoidHom)
-      (hf := map_continuous e)).symm
+  rw [MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
+  exact hV c
 
 variable (K : Type) [Field K] [NumberField K]
 
@@ -107,7 +125,42 @@ section Finite
 
 open scoped IsMulCommutative
 
+variable {F : Type} {E : Type*} [Field F] [Field E] [Algebra F E]
+  [FiniteDimensional F E] [IsGalois F E]
+
+/-- Restriction from the absolute Galois abelianization to `Gal(E/F)^ab` along a
+separable-closure embedding of a finite Galois extension. -/
+def _root_.AlgHom.abelianizationRestrictNormalHom (ι : E →ₐ[F] SeparableClosure F) :
+    Additive (Field.absoluteGaloisGroupAbelianization F) →+
+      Additive (Group.Abelianization Gal(E/F)) :=
+  (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr).toAddMonoidHom.comp <|
+    (NormalLayer.abelianizationRestrict (fixingOpenNormalSubgroup F E)).comp <|
+      MonoidHom.toAdditive (↑(absoluteGaloisGroupRestrictEquiv F).topologicalAbelianizationCongr)
+
+/-- Finite restriction transports the absolute symbol to the separable-closure model, then
+projects to the finite layer and identifies its Galois group with `Gal(E/F)`. -/
+theorem _root_.AlgHom.abelianizationRestrictNormalHom_apply (ι : E →ₐ[F] SeparableClosure F)
+    (x : Field.absoluteGaloisGroupAbelianization F) :
+    ι.abelianizationRestrictNormalHom (.ofMul x) =
+      MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr
+        (NormalLayer.abelianizationRestrict (fixingOpenNormalSubgroup F E)
+          (.ofMul ((absoluteGaloisGroupRestrictEquiv F).topologicalAbelianizationCongr x))) := (rfl)
+
 variable (L : Type*) [Field L] [NumberField L] [Algebra K L]
+
+/-- The restriction of the absolute global Artin map to a finite Galois extension of number
+fields is the finite global Artin map, with both maps written additively. -/
+@[simp]
+theorem abelianizationRestrictNormalHom_comp_absoluteGlobalArtinMap [IsGalois K L]
+    (ι : L →ₐ[K] SeparableClosure K) :
+    ι.abelianizationRestrictNormalHom.comp (MonoidHom.toAdditive (absoluteGlobalArtinMap K)) =
+      globalArtinMap K L ι := by
+  refine AddMonoidHom.ext fun c ↦ ?_
+  obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
+  rw [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
+    ι.abelianizationRestrictNormalHom_apply, absoluteGlobalArtinMap_restrict, ofMul_toMul,
+    ClassFormation.abelianizationRestrict_absoluteArtinMap, globalArtinMap_apply,
+    globalArtinEquiv_mk]
 
 /-- Restricting a representative of an absolute global Artin symbol to a finite Galois extension
 gives the finite Artin symbol in the abelianization of its Galois group. -/
@@ -134,5 +187,25 @@ theorem ideleClassArtinMap_eq_of_mk_eq_absoluteGlobalArtinMap [IsAbelianGalois K
     globalArtinMap_eq_of_mk_eq_absoluteGlobalArtinMap K L ι hg, toMul_ofMul]
 
 end Finite
+
+/-- A homomorphism from `C_K` to `G_K^ab` is the absolute global Artin map if its restriction
+to every finite Galois layer is the finite global Artin map. -/
+theorem eq_absoluteGlobalArtinMap_of_forall_abelianizationRestrictNormalHom
+    {φ : IdeleClassGroup (𝓞 K) K →* Field.absoluteGaloisGroupAbelianization K}
+    (hφ : ∀ (L : Type) [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
+      (ι : L →ₐ[K] SeparableClosure K),
+      ι.abelianizationRestrictNormalHom.comp (MonoidHom.toAdditive φ) = globalArtinMap K L ι) :
+    φ = absoluteGlobalArtinMap K := by
+  refine MonoidHom.ext fun c ↦ ?_
+  apply (absoluteGaloisGroupRestrictEquiv K).topologicalAbelianizationCongr.injective
+  refine Additive.ofMul.injective (NormalLayer.eq_of_forall_abelianizationRestrict_eq fun V ↦ ?_)
+  let ι := (classField K V).val
+  have h := DFunLike.congr_fun ((hφ (classField K V) ι).trans
+    (abelianizationRestrictNormalHom_comp_absoluteGlobalArtinMap K (classField K V) ι).symm)
+    (Additive.ofMul c)
+  simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
+    AlgHom.abelianizationRestrictNormalHom_apply] at h
+  rw [← fixingOpenNormalSubgroup_classField V]
+  exact (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr).injective h
 
 end TauCeti.ClassFieldTheory
