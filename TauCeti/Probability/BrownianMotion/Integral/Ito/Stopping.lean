@@ -9,6 +9,7 @@ public import Mathlib.Probability.Process.Stopping
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
+import TauCeti.Order.Interval.Set.Piecewise
 import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.Finance.SimpleStrategy.Stopping
 import TauCeti.Probability.Process.StochasticInterval

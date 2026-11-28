@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
 import TauCeti.Probability.BrownianMotion.Integral.Process
@@ -231,28 +232,6 @@ theorem IsFilteredPreBrownianReal.tendsto_measure_exists_le_simpleGains_sub_lt
 
 /-! ### L² square compensation, conditional increments, and predictable measure -/
 
-private theorem tendsto_eLpNorm_integral_sq_timeMeasure_sub [IsFiniteMeasure P]
-    {K : ℕ → ℝ≥0 → Ω → ℝ} {t : ℝ≥0}
-    (hK : ∀ k, MemLp (Function.uncurry (K k)) 2 ((timeMeasure t).prod P))
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
-    (hK_lim : Tendsto (fun k ↦ eLpNorm (fun p ↦ K k p.1 p.2 - H p.1 p.2) 2
-      ((timeMeasure t).prod P)) atTop (𝓝 0)) :
-    Tendsto (fun k ↦ eLpNorm
-      (fun ω ↦ (∫ s, K k s ω ^ 2 ∂timeMeasure t) - ∫ s, H s ω ^ 2 ∂timeMeasure t) 1 P)
-      atTop (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [Real.norm_eq_abs, sq_abs] using tendsto_eLpNorm_norm_sq_sub hH hK_lim)
-    (fun _ ↦ zero_le) fun k ↦ ?_
-  have hKsec : ∀ᵐ ω ∂P, Integrable (fun s ↦ K k s ω ^ 2) (timeMeasure t) :=
-    (hK k).integrable_sq.prod_left_ae
-  have hHsec : ∀ᵐ ω ∂P, Integrable (fun s ↦ H s ω ^ 2) (timeMeasure t) :=
-    hH.integrable_sq.prod_left_ae
-  have hdiff_sm : AEStronglyMeasurable
-      (fun p : ℝ≥0 × Ω ↦ K k p.fst p.snd ^ 2 - H p.fst p.snd ^ 2)
-      ((timeMeasure t).prod P) :=
-    (hK k).integrable_sq.aestronglyMeasurable.sub hH.integrable_sq.aestronglyMeasurable
-  exact TauCeti.eLpNorm_integral_sub_integral_le_eLpNorm_prod hKsec hHsec hdiff_sm
-
 private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) :
     ∃ Z : ℝ≥0 → Ω → ℝ, Martingale Z ℱ P ∧ (∀ t, Z t =ᵐ[P] I t) ∧ (∀ t, MemLp (Z t) 2 P) ∧
@@ -279,13 +258,6 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
       (fun ω ↦ (h.elem k).integral W t ω ^ 2 - Z t ω ^ 2) 1 P) atTop (𝓝 0) := by
     simpa only [Real.norm_eq_abs, sq_abs] using
       tendsto_eLpNorm_norm_sq_sub (hZmem t) (h.tendsto_eLpNorm_integral_sub (hZmem t) (hZL t))
-  have hKmem (k : ℕ) :
-      MemLp (Function.uncurry (h.elem k).toProcess) 2 ((timeMeasure t).prod P) := by
-    obtain ⟨C, hC⟩ := (h.elem k).exists_bound_toProcess
-    exact MemLp.of_bound
-      (((h.elem k).isStronglyPredictable.mono ℱ.predictable_le_prod).aestronglyMeasurable) C
-      (.of_forall fun p ↦ by
-        simpa [Function.uncurry_def, Real.norm_eq_abs] using hC p.1 p.2)
   have henergy_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ B k t ω - ∫ s, H s ω ^ 2 ∂timeMeasure t) 1 P) atTop (𝓝 0) := by
     have heq (k : ℕ) :
@@ -296,8 +268,8 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
       simp only [B, ← Finance.integral_sq_simpleHolding_timeMeasure (h.strictMonoOn k).monotoneOn t,
         h.simpleHolding_eq_toProcess k]
     simp_rw [heq]
-    exact tendsto_eLpNorm_integral_sq_timeMeasure_sub hKmem (hH.memLp_timeMeasure t)
-      (h.tendsto_holding t)
+    simpa only [Real.norm_eq_abs, sq_abs] using TauCeti.tendsto_eLpNorm_integral_norm_sq_sub
+      (hH.memLp_timeMeasure t) (h.tendsto_holding t)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa only [zero_add] using hsq_lim.add henergy_lim) (fun _ ↦ zero_le) fun k ↦ ?_
   have hsplit : ((fun ω ↦ (h.elem k).integral W t ω ^ 2 - B k t ω) -

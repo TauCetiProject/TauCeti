@@ -96,15 +96,12 @@ variable {hW : IsFilteredPreBrownianReal ℱ W P} {hH : BrownianIntegrable ℱ P
 def n (m : ℕ) : ℕ := (h.elem m).n
 
 /-- Canonical total-index deterministic grid at stage `m`, clamped at the terminal endpoint. -/
-@[expose]
 def τ (m j : ℕ) : ℝ≥0 := (h.elem m).dates j
 
 /-- Canonical total-index holding height at stage `m`, extended by zero beyond `h.n m`. -/
-@[expose]
 def a (m j : ℕ) : Ω → ℝ := (h.elem m).positions j
 
 /-- Canonical uniform bound on the holding heights at stage `m`. -/
-@[expose]
 def C (m : ℕ) : ℝ := ⨆ i : Fin (h.elem m).n, ⨆ ω, |(h.elem m).height i ω|
 
 /-- Definitional reduction for the canonical interval count `h.n m`. -/
@@ -114,47 +111,27 @@ theorem n_eq (m : ℕ) : h.n m = (h.elem m).n :=
 
 /-- Definitional formula relating `h.τ m j` to `(h.elem m).dates j`. -/
 theorem tau_def (m j : ℕ) : h.τ m j = (h.elem m).dates j :=
-  rfl
+  (rfl)
 
 /-- In-range formula for the canonical deterministic grid `h.τ`. -/
 theorem tau_of_le (m : ℕ) {j : ℕ} (hj : j ≤ h.n m) :
-    h.τ m j = (h.elem m).grid ⟨j, Nat.lt_succ_of_le hj⟩ :=
-  (h.elem m).dates_of_le hj
-
-/-- On `Fin (h.n m + 1)`, the canonical grid `h.τ` agrees with `(h.elem m).grid`. -/
-@[simp]
-theorem tau_coe (m : ℕ) (i : Fin (h.n m + 1)) : h.τ m i = (h.elem m).grid i :=
-  (h.elem m).dates_coe i
-
-/-- At or beyond `(h.elem m).n`, the canonical grid `h.τ` is clamped at the terminal grid
-point. -/
-@[simp]
-theorem tau_of_ge (m : ℕ) {j : ℕ} (hj : (h.elem m).n ≤ j) :
-    h.τ m j = (h.elem m).grid (Fin.last (h.elem m).n) :=
-  (h.elem m).dates_of_ge hj
+    h.τ m j = (h.elem m).grid ⟨j, Nat.lt_succ_of_le hj⟩ := by
+  rw [h.tau_def]
+  exact (h.elem m).dates_of_le hj
 
 /-- Definitional formula relating `h.a m j` to `(h.elem m).positions j`. -/
 theorem a_def (m j : ℕ) : h.a m j = (h.elem m).positions j :=
-  rfl
+  (rfl)
 
 /-- In-range formula for the canonical holding heights `h.a`. -/
 theorem a_of_lt (m : ℕ) {j : ℕ} (hj : j < h.n m) :
-    h.a m j = (h.elem m).height ⟨j, hj⟩ :=
-  (h.elem m).positions_of_lt hj
-
-/-- On `Fin (h.n m)`, the canonical holding heights `h.a` agree with `(h.elem m).height`. -/
-@[simp]
-theorem a_coe (m : ℕ) (i : Fin (h.n m)) : h.a m i = (h.elem m).height i :=
-  (h.elem m).positions_coe i
-
-/-- At or beyond `(h.elem m).n`, the canonical holding heights `h.a` vanish. -/
-@[simp]
-theorem a_of_ge (m : ℕ) {j : ℕ} (hj : (h.elem m).n ≤ j) : h.a m j = 0 :=
-  (h.elem m).positions_of_ge hj
+    h.a m j = (h.elem m).height ⟨j, hj⟩ := by
+  rw [h.a_def]
+  exact (h.elem m).positions_of_lt hj
 
 /-- Definitional formula for the canonical uniform height bound `h.C m`. -/
 theorem C_def (m : ℕ) : h.C m = ⨆ i : Fin (h.n m), ⨆ ω, |(h.elem m).height i ω| :=
-  rfl
+  (rfl)
 
 /-- Every canonical approximating grid starts at time zero. -/
 @[simp]
@@ -169,8 +146,9 @@ theorem strictMonoOn (m : ℕ) : StrictMonoOn (h.τ m) (Iic (h.n m)) := by
 
 /-- Each canonical holding height is strongly measurable at its left grid endpoint. -/
 theorem stronglyMeasurable (m j : ℕ) (hj : j < h.n m) :
-    StronglyMeasurable[ℱ (h.τ m j)] (h.a m j) :=
-  (h.elem m).measurable_positions j hj
+    StronglyMeasurable[ℱ (h.τ m j)] (h.a m j) := by
+  rw [h.tau_def, h.a_def]
+  exact (h.elem m).measurable_positions j hj
 
 /-- Each canonical holding height at stage `m` is uniformly bounded by `h.C m`. -/
 theorem norm_le (m j : ℕ) (hj : j < h.n m) (ω : Ω) : ‖h.a m j ω‖ ≤ h.C m := by
@@ -180,21 +158,26 @@ theorem norm_le (m j : ℕ) (hj : j < h.n m) (ω : Ω) : ‖h.a m j ω‖ ≤ h.
     exact ⟨B, Set.forall_mem_range.mpr hB⟩
   have hle_i : |(h.elem m).height ⟨j, hj⟩ ω| ≤ ⨆ ω', |(h.elem m).height ⟨j, hj⟩ ω'| :=
     le_ciSup (hbdd ⟨j, hj⟩) ω
-  have hle_sup : (⨆ ω', |(h.elem m).height ⟨j, hj⟩ ω'|) ≤ h.C m :=
-    le_ciSup (Set.Finite.bddAbove (Set.finite_range
-      (fun i : Fin (h.elem m).n ↦ ⨆ ω', |(h.elem m).height i ω'|))) ⟨j, hj⟩
+  have hle_sup : (⨆ ω', |(h.elem m).height ⟨j, hj⟩ ω'|) ≤ h.C m := by
+    rw [h.C_def]
+    exact le_ciSup (Set.Finite.bddAbove (Set.finite_range
+      (fun i : Fin (h.n m) ↦ ⨆ ω', |(h.elem m).height i ω'|))) ⟨j, hj⟩
   rw [h.a_of_lt m hj, Real.norm_eq_abs]
   exact hle_i.trans hle_sup
 
 /-- The canonical total-index `Finance.simpleHolding` equals `(h.elem m).toProcess`. -/
 theorem simpleHolding_eq_toProcess (m : ℕ) :
-    Finance.simpleHolding (h.τ m) (h.n m) (h.a m) = (h.elem m).toProcess :=
-  (h.elem m).simpleHolding_dates_positions
+    Finance.simpleHolding (h.τ m) (h.n m) (h.a m) = (h.elem m).toProcess := by
+  rw [show h.τ m = (h.elem m).dates from funext (h.tau_def m),
+    show h.a m = (h.elem m).positions from funext (h.a_def m), h.n_eq m]
+  exact (h.elem m).simpleHolding_dates_positions
 
 /-- The canonical total-index `Finance.simpleGains` equals `(h.elem m).integral W`. -/
 theorem simpleGains_eq_integral (m : ℕ) :
-    Finance.simpleGains (h.τ m) (h.n m) (h.a m) W = (h.elem m).integral W :=
-  (h.elem m).simpleGains_dates_positions W
+    Finance.simpleGains (h.τ m) (h.n m) (h.a m) W = (h.elem m).integral W := by
+  rw [show h.τ m = (h.elem m).dates from funext (h.tau_def m),
+    show h.a m = (h.elem m).positions from funext (h.a_def m), h.n_eq m]
+  exact (h.elem m).simpleGains_dates_positions W
 
 /-- The approximating simple holdings converge to `H` in square energy in probability on
 `[0, T]`. -/

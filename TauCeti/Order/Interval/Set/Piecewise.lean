@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Order.Interval.Set.Basic
 import Mathlib.Algebra.Group.Indicator
 import Mathlib.Order.Interval.Set.LinearOrder
+import Mathlib.Tactic.Abel
 
 /-!
 # Functions pasted at a point of an order
@@ -20,7 +21,9 @@ on `Iic b` it is `f` by `ite_eq_left`, as Mathlib's `Set.piecewise_eqOn` says fo
 `Icc a b` and `g` maps `Icc b c` (`Set.MapsTo.ite_le_Icc`).
 
 For half-open intervals `(a, b]`, restricting a value to `a < x ∧ x ≤ b` decomposes as a
-difference of initial cutoffs `x ≤ b` and `x ≤ a` (`TauCeti.ite_Ioc_eq_sub_ite_le`).
+difference of initial cutoffs `x ≤ b` and `x ≤ a` (`TauCeti.ite_Ioc_eq_sub_ite_le`), with
+function-level cutoff decomposition and concatenation in `TauCeti.ite_Ioc_fun_eq_sub_ite_le` and
+`TauCeti.ite_Ioc_fun_eq_add_ite_Ioc`.
 -/
 
 public section
@@ -60,5 +63,28 @@ theorem ite_Ioc_eq_sub_ite_le {α G : Type*} [LinearOrder α] [AddGroup G]
     (if a < x ∧ x ≤ b then r else 0) = (if x ≤ b then r else 0) - (if x ≤ a then r else 0) := by
   have h1 := congrFun (Set.indicator_sdiff (Iic_subset_Iic.mpr hab) (fun _ : α ↦ r)) x
   simpa only [Iic_sdiff_Iic, Set.indicator_apply, mem_Ioc, mem_Iic, Pi.sub_apply] using h1
+
+/-- Function-level restriction to an interval `(σ ω, τ ω]` equals subtracting the cutoff
+at `σ` from the cutoff at `τ`, whenever `σ ≤ τ`. -/
+theorem ite_Ioc_fun_eq_sub_ite_le {ι Ω α G : Type*} [LinearOrder α] [AddGroup G]
+    {σ τ : Ω → α} (hστ : σ ≤ τ) (x : ι → α) (H : ι → Ω → G) :
+    (fun (t : ι) ω ↦ if σ ω < x t ∧ x t ≤ τ ω then H t ω else 0) =
+      fun (t : ι) ω ↦
+        (if x t ≤ τ ω then H t ω else 0) - (if x t ≤ σ ω then H t ω else 0) := by
+  ext t ω
+  exact ite_Ioc_eq_sub_ite_le (hστ ω) (H t ω)
+
+/-- Function-level restriction to `(σ ω, ρ ω]` splits as the sum of restrictions to `(σ ω, τ ω]`
+and `(τ ω, ρ ω]`, whenever `σ ≤ τ ≤ ρ`. -/
+theorem ite_Ioc_fun_eq_add_ite_Ioc {ι Ω α G : Type*} [LinearOrder α] [AddCommGroup G]
+    {σ τ ρ : Ω → α} (hστ : σ ≤ τ) (hτρ : τ ≤ ρ) (x : ι → α) (H : ι → Ω → G) :
+    (fun (t : ι) ω ↦ if σ ω < x t ∧ x t ≤ ρ ω then H t ω else 0) =
+      fun (t : ι) ω ↦
+        (if σ ω < x t ∧ x t ≤ τ ω then H t ω else 0) +
+          (if τ ω < x t ∧ x t ≤ ρ ω then H t ω else 0) := by
+  ext t ω
+  rw [ite_Ioc_eq_sub_ite_le ((hστ.trans hτρ) ω), ite_Ioc_eq_sub_ite_le (hστ ω),
+    ite_Ioc_eq_sub_ite_le (hτρ ω)]
+  abel
 
 end TauCeti
