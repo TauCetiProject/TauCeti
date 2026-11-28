@@ -186,3 +186,33 @@ theorem finrank_eq_sq_of_algEquiv_matrix (K : Type*) [Field K] (A : Type*) [Ring
 end Algebra
 
 end TauCeti
+
+namespace TauCeti.Algebra
+
+open scoped _root_.TensorProduct
+open TauCeti.Algebra.TensorProduct
+
+section Coherence
+
+variable (A B R S : Type*) [CommSemiring A] [CommSemiring B] [Algebra A B]
+  [Semiring R] [Algebra A R] [CommSemiring S] [Algebra A S] [Algebra B S]
+  [IsScalarTower A B S] (n : Type*) [Fintype n] [DecidableEq n]
+  (ρ : R →ₐ[A] Matrix n n A)
+
+/-- Tensor cancellation commutes with scalar extension of matrix representations. -/
+theorem matrixBaseChangeAlgEquiv_comp_tower :
+      (Algebra.matrixBaseChangeAlgEquiv A S n).toAlgHom.comp
+        ((Algebra.TensorProduct.map (AlgHom.id S S) ρ).comp
+          (baseChangeTowerAlgEquiv A B R S).toAlgHom) =
+      (Algebra.matrixBaseChangeAlgEquiv B S n).toAlgHom.comp
+        (Algebra.TensorProduct.map (AlgHom.id S S)
+          ((Algebra.matrixBaseChangeAlgEquiv A B n).toAlgHom.comp
+            (Algebra.TensorProduct.map (AlgHom.id B B) ρ))) := by
+  apply AlgHom.toLinearMap_injective
+  ext
+  simp [Algebra.smul_def,
+    IsScalarTower.algebraMap_apply A B S]
+
+end Coherence
+
+end TauCeti.Algebra

@@ -182,6 +182,23 @@ theorem cancelBaseChangeTensor_tmul_distribBaseChange (n : N) (b : B) (z : P ⊗
 
 end CancelBaseChangeTensor
 
+/-- The action of tensor cancellation is independent of the chosen scalar semiring. -/
+theorem cancelBaseChange_apply_eq (S : Type*) [Semiring S] [Algebra B S]
+    [Algebra R S] [IsScalarTower R B S] (x : S ⊗[B] (B ⊗[R] P)) :
+    cancelBaseChange R B B S P x = cancelBaseChange R B S S P x := by
+  have h : cancelBaseChange R B B S P = (cancelBaseChange R B S S P).restrictScalars B := by
+    apply LinearEquiv.toLinearMap_injective
+    ext
+    simp
+  exact DFunLike.congr_fun h x
+
+/-- Inverse tensor cancellation is independent of the chosen scalar semiring. -/
+theorem cancelBaseChange_symm_apply_eq (S : Type*) [Semiring S] [Algebra B S]
+    [Algebra R S] [IsScalarTower R B S] (x : S ⊗[R] P) :
+    (cancelBaseChange R B B S P).symm x = (cancelBaseChange R B S S P).symm x := by
+  apply (cancelBaseChange R B S S P).injective
+  rw [← cancelBaseChange_apply_eq, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
 /-- Tensor cancellation commutes with tensoring the underlying linear map on the right. -/
 theorem cancelBaseChange_rTensor (f : N →ₗ[B] N') (z : N ⊗[B] (B ⊗[R] P)) :
     cancelBaseChange R B B N' P (f.rTensor (B ⊗[R] P) z) =

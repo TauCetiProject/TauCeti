@@ -648,3 +648,100 @@ theorem _root_.Algebra.TensorProduct.rightMulSemiringAction_smul_eq_baseChangeAu
 end AutHom
 
 end TauCeti.Algebra.TensorProduct
+
+namespace Algebra.TensorProduct
+
+open TauCeti.Algebra.TensorProduct (baseChangeTensorAlgEquiv baseChangeTowerAlgEquiv)
+
+section ScalarRestriction
+
+variable {A : Type*} [CommSemiring A] {R : Type*} [Semiring R] [Algebra A R]
+  (B : Type*) [CommSemiring B] [Algebra A B]
+
+/-- Insert unit coefficients into both factors of an algebra tensor product. -/
+def scalarRestrictionInput (S : Type*) [Semiring S] [Algebra A S] :
+    S ⊗[A] R →ₐ[A] (B ⊗[A] S) ⊗[B] (B ⊗[A] R) :=
+  ((baseChangeTensorAlgEquiv A B S R).toAlgHom.restrictScalars A).comp
+    Algebra.TensorProduct.includeRight
+
+/-- At a commutative test algebra, the input map is the inverse tower comparison
+after including the test algebra. -/
+theorem scalarRestrictionInput_apply (S : Type*) [CommSemiring S] [Algebra A S]
+    (x : S ⊗[A] R) :
+    scalarRestrictionInput B S x = (baseChangeTowerAlgEquiv A B R (B ⊗[A] S)).symm
+      (Algebra.TensorProduct.map Algebra.TensorProduct.includeRight (AlgHom.id A R) x) := by
+  have h : scalarRestrictionInput (R := R) B S =
+      ((baseChangeTowerAlgEquiv A B R (B ⊗[A] S)).symm.toAlgHom.restrictScalars A).comp
+        (Algebra.TensorProduct.map Algebra.TensorProduct.includeRight (AlgHom.id A R)) := by
+    apply AlgHom.toLinearMap_injective
+    ext
+    simp [scalarRestrictionInput]
+  exact AlgHom.congr_fun h x
+
+/-- The scalar-restriction input map inserts unit coefficients in both factors. -/
+@[simp]
+theorem scalarRestrictionInput_tmul {S : Type*} [Semiring S] [Algebra A S] (s : S) (r : R) :
+    scalarRestrictionInput (R := R) B S (s ⊗ₜ[A] r) = (1 ⊗ₜ[A] s) ⊗ₜ[B] (1 ⊗ₜ[A] r) := by
+  simp [scalarRestrictionInput]
+
+/-- Remove the scalar unit factor and swap the coefficients for restriction of scalars. -/
+def scalarRestrictionOutput (S : Type*) [Semiring S] [Algebra A S] :
+    (B ⊗[A] S) ⊗[B] B ≃ₐ[A] S ⊗[A] B :=
+  ((Algebra.TensorProduct.rid B B (B ⊗[A] S)).restrictScalars A).trans
+    (Algebra.TensorProduct.comm A B S)
+
+/-- The scalar-restriction output cancels the unit factor and swaps the scalar factors. -/
+theorem scalarRestrictionOutput_apply (S : Type*) [Semiring S] [Algebra A S]
+    (x : (B ⊗[A] S) ⊗[B] B) :
+    scalarRestrictionOutput B S x = Algebra.TensorProduct.comm A B S
+      (Algebra.TensorProduct.rid B B (B ⊗[A] S) x) :=
+  (rfl)
+
+/-- The scalar-restriction output equivalence multiplies the two coefficients. -/
+@[simp]
+theorem scalarRestrictionOutput_tmul {S : Type*} [Semiring S] [Algebra A S]
+    (b c : B) (s : S) :
+    scalarRestrictionOutput B S ((b ⊗ₜ[A] s) ⊗ₜ[B] c) = s ⊗ₜ[A] (c * b) := by
+  simp [scalarRestrictionOutput, _root_.TensorProduct.smul_tmul', smul_eq_mul]
+
+end ScalarRestriction
+
+end Algebra.TensorProduct
+
+namespace TauCeti.Algebra.TensorProduct
+
+section UnitorCoherence
+
+variable (A : Type*) [CommSemiring A] (R : Type*) [Semiring R] [Algebra A R]
+  (S : Type*) [CommSemiring S] [Algebra A S]
+
+/-- Cancelling extension from the original base agrees with applying the left unitor. -/
+theorem baseChangeTowerAlgEquiv_self :
+      (baseChangeTowerAlgEquiv A A R S).toAlgHom.restrictScalars A =
+        Algebra.TensorProduct.map (AlgHom.id A S) (Algebra.TensorProduct.lid A R).toAlgHom := by
+  apply AlgHom.toLinearMap_injective
+  ext
+  simp
+
+end UnitorCoherence
+
+section TowerCoherence
+
+variable (A B R C S : Type*) [CommSemiring A] [CommSemiring B] [Algebra A B]
+  [Semiring R] [Algebra A R] [CommSemiring C] [Algebra A C] [Algebra B C]
+  [IsScalarTower A B C] [CommSemiring S] [Algebra A S] [Algebra B S] [Algebra C S]
+  [IsScalarTower A B S] [IsScalarTower A C S] [IsScalarTower B C S]
+
+/-- Tensor cancellation commutes with scalar extension in stages. -/
+theorem baseChangeTowerAlgEquiv_comp :
+      ((baseChangeTowerAlgEquiv A B R S).toAlgHom.comp
+        (baseChangeTowerAlgEquiv B C (B ⊗[A] R) S).toAlgHom).restrictScalars C =
+      ((baseChangeTowerAlgEquiv A C R S).toAlgHom.restrictScalars C).comp
+        (Algebra.TensorProduct.map (AlgHom.id C S) (baseChangeTowerAlgEquiv A B R C).toAlgHom) := by
+  apply AlgHom.toLinearMap_injective
+  ext
+  simp [Algebra.smul_def, IsScalarTower.algebraMap_apply B C S]
+
+end TowerCoherence
+
+end TauCeti.Algebra.TensorProduct
