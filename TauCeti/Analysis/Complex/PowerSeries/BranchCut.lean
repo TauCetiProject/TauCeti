@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -39,14 +40,15 @@ requiring only convergence of `∑ c_s (z - z₀)^s` on `‖z - z₀‖ < r`. -/
 theorem hasDerivAt_cpow_mul_tsum {z₀ σ : ℂ} {r : ℝ} {c : ℕ → ℂ}
     (hc : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ c s * (z - z₀) ^ s)
     {z : ℂ} (hzs : z - z₀ ∈ slitPlane) (hzb : ‖z - z₀‖ < r) :
-    let A : ℂ → ℂ := fun u ↦ ∑' s, c s * u ^ s
-    HasDerivAt (fun w : ℂ ↦ (w - z₀) ^ σ * A (w - z₀))
-      ((z - z₀) ^ (σ - 1) * (σ * A (z - z₀) + (z - z₀) * deriv A (z - z₀))) z := by
-  intro A
+    HasDerivAt (fun w : ℂ ↦ (w - z₀) ^ σ * ∑' s, c s * (w - z₀) ^ s)
+      ((z - z₀) ^ (σ - 1) * (σ * (∑' s, c s * (z - z₀) ^ s) +
+        (z - z₀) * deriv (fun u ↦ ∑' s, c s * u ^ s) (z - z₀))) z := by
   have hr : 0 < r := (norm_nonneg _).trans_lt hzb
   have hu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
-  have hA_diff := (FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt c z₀ hr
-    (fun w _ hwr ↦ hc w hwr) (z - z₀) (mem_ball_zero_iff.mpr hzb)).differentiableAt
+  have hp := hasFPowerSeriesOnBall_tsum_mul_pow c (ENNReal.ofReal_pos.mpr hr)
+    (le_radius_ofScalars_of_summable_sub c fun w _ hwr ↦ hc w hwr)
+  have hA_diff := (hp.analyticOnNhd (z - z₀) (by
+    simpa [Metric.mem_eball, edist_zero_right] using eNorm_lt_ofReal_iff.mpr hzb)).differentiableAt
   have hpow := ((hasDerivAt_id z).sub_const z₀).cpow_const (c := σ) hzs
   refine (hpow.mul (hA_diff.hasDerivAt.comp_sub_const z z₀)).congr_deriv ?_
   dsimp only [id]
@@ -61,8 +63,9 @@ theorem eq_zero_of_cpow_mul_tsum_eq_zero {z₀ α : ℂ} {d : ℕ → ℂ} {r : 
     (hzero : ∀ z : ℂ, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
       (z - z₀) ^ α * (∑' s, d s * (z - z₀) ^ s) = 0) :
     ∀ s : ℕ, d s = 0 := by
-  have hp := FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt d z₀ hr
-    fun z hz0 hzr ↦ hd (z - z₀) (norm_pos_iff.mp hz0) hzr
+  have hp := hasFPowerSeriesOnBall_tsum_mul_pow d (ENNReal.ofReal_pos.mpr hr)
+    (le_radius_ofScalars_of_summable_sub d fun z hz0 hzr ↦
+      hd (z - z₀) (norm_pos_iff.mp hz0) hzr)
   set u₀ : ℂ := ((r / 2 : ℝ) : ℂ)
   have hu₀_ball : u₀ ∈ ball (0 : ℂ) r := by simp [u₀, abs_of_pos hr, half_lt_self hr]
   have hev : (fun u : ℂ ↦ ∑' s, d s * u ^ s) =ᶠ[𝓝 u₀] 0 := by

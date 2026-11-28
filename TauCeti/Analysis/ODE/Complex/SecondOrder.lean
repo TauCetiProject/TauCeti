@@ -42,11 +42,12 @@ differentiable near `z` and `deriv w` is differentiable at `z`, then
 theorem deriv_deriv_add_mul_deriv_add_mul_mul_log_sub
     {z₀ z : ℂ} (hzs : z - z₀ ∈ Complex.slitPlane) {f g w : ℂ → ℂ}
     (hw : ∀ᶠ u in 𝓝 z, DifferentiableAt ℂ w u) (hdw : DifferentiableAt ℂ (deriv w) z) :
-    let Φ : ℂ → ℂ := fun u ↦ w u * Complex.log (u - z₀)
-    (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) -
+    (deriv (deriv fun u ↦ w u * Complex.log (u - z₀)) z +
+        f z * deriv (fun u ↦ w u * Complex.log (u - z₀)) z +
+        g z * (w z * Complex.log (z - z₀))) -
         Complex.log (z - z₀) * (deriv (deriv w) z + f z * deriv w z + g z * w z) =
       ((z - z₀) ^ 2)⁻¹ * (2 * (z - z₀) * deriv w z + ((z - z₀) * f z - 1) * w z) := by
-  intro Φ
+  set Φ : ℂ → ℂ := fun u ↦ w u * Complex.log (u - z₀)
   have hzu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
   have hsub : HasDerivAt (fun u : ℂ ↦ u - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
   have hU_log : ∀ᶠ u in 𝓝 z, u - z₀ ∈ Complex.slitPlane :=
@@ -65,6 +66,8 @@ theorem deriv_deriv_add_mul_deriv_add_mul_mul_log_sub
     rw [(((hdw.hasDerivAt.mul (hsub.clog hzs)).add
       ((hsub.inv hzu0).mul hw.self_of_nhds.hasDerivAt)).congr_of_eventuallyEq hev).deriv]
     simp only [Pi.inv_apply]; field_simp [hzu0]; ring
+  change (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) -
+      Complex.log (z - z₀) * (deriv (deriv w) z + f z * deriv w z + g z * w z) = _
   rw [hd1, hd2]
   dsimp only [Φ]
   field_simp [hzu0]
@@ -79,11 +82,12 @@ theorem operator_mul_log {z₀ : ℂ} {U : Set ℂ} (hU : IsOpen U)
     (hU_slit : ∀ z ∈ U, z - z₀ ∈ slitPlane) {f g w₁ : ℂ → ℂ}
     (hw₁ : DifferentiableOn ℂ w₁ U)
     (hsol₁ : ∀ z ∈ U, deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0) :
-    let Φ : ℂ → ℂ := fun z => w₁ z * Complex.log (z - z₀)
-    DifferentiableOn ℂ Φ U ∧
-      ∀ z ∈ U, deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z =
-        ((z - z₀) ^ 2)⁻¹ * (2 * (z - z₀) * deriv w₁ z + ((z - z₀) * f z - 1) * w₁ z) := by
-  intro Φ
+    DifferentiableOn ℂ (fun z => w₁ z * Complex.log (z - z₀)) U ∧
+      ∀ z ∈ U,
+        deriv (deriv fun w => w₁ w * Complex.log (w - z₀)) z +
+            f z * deriv (fun w => w₁ w * Complex.log (w - z₀)) z +
+            g z * (w₁ z * Complex.log (z - z₀)) =
+          ((z - z₀) ^ 2)⁻¹ * (2 * (z - z₀) * deriv w₁ z + ((z - z₀) * f z - 1) * w₁ z) := by
   have hw₁_at (z) (hz : z ∈ U) : DifferentiableAt ℂ w₁ z := hw₁.differentiableAt (hU.mem_nhds hz)
   refine ⟨fun z hz =>
       ((hw₁_at z hz).hasDerivAt.mul_log_sub (hU_slit z hz)).differentiableAt.differentiableWithinAt,

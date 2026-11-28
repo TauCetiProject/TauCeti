@@ -7,15 +7,18 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.Analytic.OfScalars
+public import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
 import TauCeti.Analysis.ODE.Complex.RegularSingularity.Primary
+import TauCeti.Analysis.ODE.Complex.SecondOrder
+import TauCeti.Analysis.ODE.SecondOrder.Operator
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Deriv
 import TauCeti.Data.Nat.Choose.Sum
 
@@ -28,7 +31,8 @@ simple pole and `g` at most a double pole, so that on a punctured disc `0 < |z -
 * `(z - z₀) f(z) = ∑ fₛ (z - z₀)ˢ` and
 * `(z - z₀)² g(z) = ∑ gₛ (z - z₀)ˢ`,
 
-with both series convergent there. Its indicial polynomial is `Q(α) = α (α - 1) + f₀ α + g₀`.
+with both series convergent there. Its indicial polynomial is
+`Q(α) = TauCeti.indicialPoly (fs 0) (gs 0) α = α (α - 1) + f₀ α + g₀`.
 Let `ρ` be a root of `Q`, and let
 
 `Q(ρ + s) aₛ = -∑_{k < s} ((ρ + k) f_{s-k} + g_{s-k}) aₖ` for `s ≥ 1`
@@ -53,13 +57,13 @@ form (DLMF 2.7.6)
 
 where `w₁` is the Frobenius solution at `α₁`. Substituting it into the equation gives the
 recursion for the `bₛ` at `α₂`, forced from the index `N` on by `c dₛ`, where
-`dₛ = (2 (α₁ + s) - 1) aₛ + ∑_{k ≤ s} f_{s-k} aₖ` are the coefficients of the terms of the equation
-applied to `c w₁ log (z - z₀)` that do not involve the logarithm. Every solution of this recursion
-gives a convergent series and a solution of the equation (`TauCeti.regularSingular_log_solution`);
-the Frobenius solution is its case `c = 0`, `N = 0`. With DLMF's normalization (`c = 1` when
-`N = 0`; `b₀ = 1` and `b_N = 0` when `N ≥ 1`), together with the additional convention `b₀ = 0`
-when `N = 0`, which fixes the free multiple of `w₁`, the recursion has exactly one solution
-(`TauCeti.existsUnique_regularSingular_log_coeff`).
+`d_{s + N} = TauCeti.regularSingularLogForcing fs a α₂ N (s + N)` are the coefficients of the
+terms of the equation applied to `c w₁ log (z - z₀)` that do not involve the logarithm. Every
+solution of this recursion gives a convergent series and a solution of the equation
+(`TauCeti.regularSingular_log_solution`); the Frobenius solution is its case `c = 0`, `N = 0`. With
+DLMF's normalization (`c = 1` when `N = 0`; `b₀ = 1` and `b_N = 0` when `N ≥ 1`), together with
+the additional convention `b₀ = 0` when `N = 0`, which fixes the free multiple of `w₁`, the
+recursion has exactly one solution (`TauCeti.existsUnique_regularSingular_log_coeff`).
 
 By Abel's identity, the Wronskian `w₁ w₂' - w₁' w₂` of any two
 solutions on the slit punctured disc is `C (z - z₀)^{-f₀} exp(-∑_{s ≥ 1} fₛ (z - z₀)ˢ / s)` for a
@@ -79,12 +83,9 @@ Convergence is proved by a majorant argument, for the recursion with a forcing t
 Since `Q(ρ + s) = s² + (2ρ - 1 + f₀) s + Q(ρ)`, `|Q(ρ + s)| ≥ s² / 2` for all large `s`; no
 condition on `ρ` is needed. For `t` below the radii of convergence of the series of the `fₛ`,
 `gₛ` and `eₛ`, `|aₛ| tˢ` is then bounded by a constant times the binomial coefficient
-`C(s + m, m)` for a fixed `m`. The equation is verified on coefficients: in terms of the Euler
-operator `ζ d/dζ`, `(z - z₀)^{2 - ρ}` times the left-hand side is the power series whose
-coefficient of index `s` is `Q(ρ + s) aₛ + ∑_{k < s} ((ρ + k) f_{s-k} + g_{s-k}) aₖ`, a Cauchy
-product of absolutely convergent series. For the logarithmic solution,
-`(u log)'' + f (u log)' + g u log = (u'' + f u' + g u) log + 2 u' / ζ + (f - 1 / ζ) u / ζ`,
-and for `u = w₁` the last two terms are `ζ^{α₁ - 2} ∑ dₛ ζˢ`.
+`C(s + m, m)` for a fixed `m`. The equation is verified using the Euler–Frobenius operator
+identity (`TauCeti.deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum`) and the logarithmic-product
+identity (`TauCeti.operator_mul_log`).
 
 For the Wronskian, write `f = f₀ / ζ + Φ'` with `Φ = ∑_{s ≥ 1} fₛ ζˢ / s`, holomorphic on the
 whole disc. Abel's identity `W' = -f W` makes `ζ^{f₀} exp(Φ) W` constant on the slit punctured
@@ -108,12 +109,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 /-! ### Convergence of the Frobenius series -/
-
-/-- The indicial polynomial at `ρ + s`, expanded in powers of `s`. -/
-private theorem indicial_add_eq (ρ f₀ g₀ s : ℂ) :
-    (ρ + s) * (ρ + s - 1) + f₀ * (ρ + s) + g₀ =
-      s ^ 2 + (2 * ρ - 1 + f₀) * s + (ρ * (ρ - 1) + f₀ * ρ + g₀) := by
-  ring
 
 /-- A monic quadratic `s² + β s + γ` has norm at least `s² / 2` once `s ≥ 2 (‖β‖ + ‖γ‖) + 1`. -/
 private theorem sq_div_two_le_norm {β γ : ℂ} {s : ℕ} (hs : 2 * (‖β‖ + ‖γ‖) + 1 ≤ s) :
@@ -240,7 +235,7 @@ many `s`, and finitely many coefficients do not affect convergence. -/
 theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs es a : ℕ → ℂ} {r : ℝ≥0∞}
     {s₀ : ℕ} (hfs : r ≤ (ofScalars ℂ fs).radius) (hgs : r ≤ (ofScalars ℂ gs).radius)
     (hes : r ≤ (ofScalars ℂ es).radius)
-    (ha : ∀ s : ℕ, s₀ ≤ s → ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s +
+    (ha : ∀ s : ℕ, s₀ ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) * a s +
       ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k + es s = 0) :
     r ≤ (ofScalars ℂ a).radius := by
   refine ENNReal.le_of_forall_nnreal_lt fun R hRr ↦ ?_
@@ -256,13 +251,15 @@ theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs es a : ℕ → 
   simp only [ofScalars_norm] at hMf hMg hMe
   -- from `s₁` on, `|Q(ρ + s)| ≥ s² / 2`
   set β : ℂ := 2 * ρ - 1 + fs 0
-  set γ : ℂ := ρ * (ρ - 1) + fs 0 * ρ + gs 0
+  set γ : ℂ := indicialPoly (fs 0) (gs 0) ρ
   obtain ⟨s₁, hs₁⟩ := exists_nat_ge (2 * (‖β‖ + ‖γ‖) + 1)
   set s₂ := max s₀ (max s₁ 1)
   have hq (s : ℕ) (hs : s₂ ≤ s) :
-      (s : ℝ) ^ 2 / 2 ≤ ‖(ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0‖ := by
+      (s : ℝ) ^ 2 / 2 ≤ ‖indicialPoly (fs 0) (gs 0) (ρ + s)‖ := by
     have hs' : s₁ ≤ s := (le_max_left _ _).trans ((le_max_right _ _).trans hs)
-    rw [indicial_add_eq]
+    have heq : indicialPoly (fs 0) (gs 0) (ρ + s) = (s : ℂ) ^ 2 + β * s + γ := by
+      rw [indicialPoly_add]; dsimp [β, γ]; ring
+    rw [heq]
     exact sq_div_two_le_norm (hs₁.trans (by exact_mod_cast hs'))
   obtain ⟨m, hm⟩ := exists_nat_ge (2 * ((‖ρ‖ + 1) * max Mf Mg))
   set B : ℝ := 2 * Me + ∑ k ∈ range s₂, ‖a k‖ * t ^ k
@@ -271,8 +268,8 @@ theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs es a : ℕ → 
     have := single_le_sum (f := fun k ↦ ‖a k‖ * (t : ℝ) ^ k) (fun _ _ ↦ by positivity)
       (mem_range.2 hk)
     linarith
-  have hbound := norm_mul_pow_le_mul_choose (a := a) (q := fun s ↦
-      (ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) t.property
+  have hbound := norm_mul_pow_le_mul_choose (a := a)
+    (q := fun s ↦ indicialPoly (fs 0) (gs 0) (ρ + s)) t.property
     (le_max_of_le_right (le_max_right _ _)) hq
     (fun n ↦ (hMf n).trans (le_max_left _ _)) (fun n ↦ (hMg n).trans (le_max_right _ _)) hMe hm
     (by simp only [B]; linarith [sum_nonneg fun k (_ : k ∈ range s₂) ↦
@@ -290,222 +287,18 @@ theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs es a : ℕ → 
     ← mul_assoc, ← mul_assoc]
   exact mul_le_mul_of_nonneg_right (hbound n) (by positivity)
 
-/-! ### The Frobenius series solves the equation -/
-
-/-- The Euler-operator form of the equation, at a point `ζ` of the disc: with `S = ∑ aₛ ζˢ`,
-`F = ∑ fₛ ζˢ`, `G = ∑ gₛ ζˢ` and `E = ∑ eₛ ζˢ`, the expression below, which is `ζ^{2 - ρ}` times
-the left-hand side of the equation applied to `ζ^ρ S` plus `E`, vanishes. -/
-private theorem euler_form_eq_zero {ρ ζ F G E : ℂ} {fs gs es a : ℕ → ℂ} {S : ℂ → ℂ} {R : ℝ≥0∞}
-    (hS : HasFPowerSeriesOnBall S (ofScalars ℂ a) 0 R) (hζ : ‖ζ‖ₑ < R)
-    (hζf : ‖ζ‖ₑ < (ofScalars ℂ fs).radius) (hζg : ‖ζ‖ₑ < (ofScalars ℂ gs).radius)
-    (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) (hG : HasSum (fun s ↦ gs s * ζ ^ s) G)
-    (hE : HasSum (fun s ↦ es s * ζ ^ s) E)
-    (ha : ∀ s : ℕ, ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s +
-      ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k + es s = 0) :
-    ρ * (ρ - 1) * S ζ + 2 * ρ * (ζ * deriv S ζ) + ζ ^ 2 * deriv (deriv S) ζ +
-      F * (ρ * S ζ + ζ * deriv S ζ) + G * S ζ + E = 0 := by
-  have htotal := (hasSum_eulerOperator_ofScalars (σ := ρ) hS hζ hζf hζg hF hG).add hE
-  refine htotal.unique ((hasSum_zero).congr_fun fun s ↦ ?_)
-  have hs := congrArg (· * ζ ^ s) (ha s)
-  simp only [indicialPoly_def]
-  linear_combination hs
-
-/-- The derivative of `y ↦ y ^ ρ * S y` on the slit disc of convergence of `S`. -/
-private theorem hasDerivAt_cpow_mul {ρ y : ℂ} {S : ℂ → ℂ} {p : FormalMultilinearSeries ℂ ℂ ℂ}
-    {R : ℝ≥0∞} (hS : HasFPowerSeriesOnBall S p 0 R) (hy : y ∈ slitPlane) (hyR : ‖y‖ₑ < R) :
-    HasDerivAt (fun y ↦ y ^ ρ * S y) (ρ * y ^ (ρ - 1) * S y + y ^ ρ * deriv S y) y := by
-  have hSd := (hS.differentiableOn.differentiableAt
-    (Metric.isOpen_eball.mem_nhds (mem_eball_zero_iff.mpr hyR))).hasDerivAt
-  simpa using ((hasDerivAt_id' y).cpow_const (c := ρ) hy).fun_mul hSd
-
-/-- The equation at a point `ζ` of the slit disc, for the Frobenius series about the origin with a
-forcing term: `w(ζ) = ζ ^ ρ S(ζ)` with `S = ∑ aₛ ζˢ`, where `ζ fζ = ∑ fₛ ζˢ`, `ζ² gζ = ∑ gₛ ζˢ`
-and `E = ∑ eₛ ζˢ`, satisfies `w'' + fζ w' + gζ w + ζ^{ρ - 2} E = 0`. -/
-private theorem deriv_deriv_cpow_mul_add_eq_zero {ρ ζ fζ gζ E : ℂ} {fs gs es a : ℕ → ℂ}
-    {S : ℂ → ℂ} {R : ℝ≥0∞} (hS : HasFPowerSeriesOnBall S (ofScalars ℂ a) 0 R)
-    (hζs : ζ ∈ slitPlane) (hζ : ‖ζ‖ₑ < R) (hζf : ‖ζ‖ₑ < (ofScalars ℂ fs).radius)
-    (hζg : ‖ζ‖ₑ < (ofScalars ℂ gs).radius)
-    (hF : HasSum (fun s ↦ fs s * ζ ^ s) (ζ * fζ)) (hG : HasSum (fun s ↦ gs s * ζ ^ s) (ζ ^ 2 * gζ))
-    (hE : HasSum (fun s ↦ es s * ζ ^ s) E)
-    (ha : ∀ s : ℕ, ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s +
-      ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k + es s = 0) :
-    deriv (deriv fun y ↦ y ^ ρ * S y) ζ + fζ * deriv (fun y ↦ y ^ ρ * S y) ζ +
-      gζ * (ζ ^ ρ * S ζ) + ζ ^ (ρ - 1 - 1) * E = 0 := by
-  -- `deriv w` agrees near `ζ` with the formula of `hasDerivAt_cpow_mul`, which we differentiate
-  have hU : IsOpen (slitPlane ∩ Metric.eball (0 : ℂ) R) :=
-    isOpen_slitPlane.inter Metric.isOpen_eball
-  have hζU : ζ ∈ slitPlane ∩ Metric.eball (0 : ℂ) R := ⟨hζs, mem_eball_zero_iff.mpr hζ⟩
-  have hderiv : deriv (fun y ↦ y ^ ρ * S y) =ᶠ[𝓝 ζ]
-      fun y ↦ ρ * y ^ (ρ - 1) * S y + y ^ ρ * deriv S y :=
-    Filter.eventually_of_mem (hU.mem_nhds hζU) fun y hy ↦
-      (hasDerivAt_cpow_mul hS hy.1 (mem_eball_zero_iff.mp hy.2)).deriv
-  have hd1 := hasDerivAt_cpow_mul (ρ := ρ - 1) hS hζs hζ
-  have hd2 := hasDerivAt_cpow_mul (ρ := ρ) hS.deriv_ofScalars hζs hζ
-  have hd : HasDerivAt (fun y ↦ ρ * y ^ (ρ - 1) * S y + y ^ ρ * deriv S y)
-      (ρ * ((ρ - 1) * ζ ^ (ρ - 1 - 1) * S ζ + ζ ^ (ρ - 1) * deriv S ζ) +
-        (ρ * ζ ^ (ρ - 1) * deriv S ζ + ζ ^ ρ * deriv (deriv S) ζ)) ζ := by
-    convert (hd1.const_mul ρ).fun_add hd2 using 1
-    ext y
-    ring
-  rw [hderiv.deriv_eq, hd.deriv, (hasDerivAt_cpow_mul hS hζs hζ).deriv]
-  have hζ0 : ζ ≠ 0 := slitPlane_ne_zero hζs
-  have e1 : ζ ^ (ρ - 1) = ζ ^ (ρ - 1 - 1) * ζ := by
-    conv_lhs => rw [show ρ - 1 = ρ - 1 - 1 + 1 by ring, cpow_add _ _ hζ0, cpow_one]
-  have e2 : ζ ^ ρ = ζ ^ (ρ - 1) * ζ := by
-    conv_lhs => rw [show ρ = ρ - 1 + 1 by ring, cpow_add _ _ hζ0, cpow_one]
-  rw [e2, e1]
-  linear_combination ζ ^ (ρ - 1 - 1) * euler_form_eq_zero hS hζ hζf hζg hF hG hE ha
-
-/-- The recursion of the Frobenius series, with the indicial equation as its case `s = 0`, in the
-uniform form with zero forcing term. -/
-private theorem regularSingular_recursion {ρ : ℂ} {fs gs a : ℕ → ℂ}
-    (hρ : ρ * (ρ - 1) + fs 0 * ρ + gs 0 = 0)
-    (ha : ∀ s : ℕ, 1 ≤ s → ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s =
-      -∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k) (s : ℕ) :
-    ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s +
-      ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k + (0 : ℕ → ℂ) s = 0 := by
-  rcases Nat.eq_zero_or_pos s with rfl | hs
-  · simpa using congrArg (· * a 0) hρ
-  · rw [ha s hs, Pi.zero_apply]
-    ring
-
-/-! ### The logarithmic solution -/
-
-private theorem hasSum_log_forcing_of_eq {α₁ α₂ c ζ F : ℂ} {N : ℕ} {fs a : ℕ → ℂ}
-    {S : ℂ → ℂ} {R : ℝ≥0∞} (hS : HasFPowerSeriesOnBall S (ofScalars ℂ a) 0 R)
-    (hζ : ‖ζ‖ₑ < R) (hζf : ‖ζ‖ₑ < (ofScalars ℂ fs).radius)
-    (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) (hN : α₁ = α₂ + N) :
-    HasSum (fun s ↦ (if s < N then 0 else c * ((2 * (α₁ + (s - N : ℕ)) - 1) * a (s - N) +
-      ∑ k ∈ range (s - N + 1), fs (s - N - k) * a k)) * ζ ^ s)
-      (c * ζ ^ N * (2 * α₁ * S ζ + 2 * (ζ * deriv S ζ) - S ζ + F * S ζ)) := by
-  have hfor := hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := c) (N := N)
-    hS hζ hζf hF
-  rw [← hN] at hfor
-  refine hfor.congr_fun fun s ↦ congrArg (· * ζ ^ s) ?_
-  rcases lt_or_ge s N with hs | hs
-  · simp [hs]
-  · simp only [not_lt_of_ge hs, ↓reduceIte, regularSingularLogForcing_of_le _ _ _ hs, hN,
-      sum_range_succ, Nat.sub_self]
-    have hs' : (s : ℂ) = N + ((s - N : ℕ) : ℂ) := by exact_mod_cast (Nat.add_sub_of_le hs).symm
-    rw [hs']
-    ring
-
-/-- The two recursions of the logarithmic solution combine into one recursion for all `s`, with
-the forcing term `eₛ = c d_{s-N}` for `s ≥ N` and `eₛ = 0` for `s < N`. -/
-private theorem log_recursion_iff {α₁ α₂ c : ℂ} {N : ℕ} {fs gs a b : ℕ → ℂ}
-    (hN : α₁ = α₂ + N) :
-    ((∀ s < N, ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s =
-        -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) ∧
-      ∀ s : ℕ, ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * b (s + N) =
-        -∑ k ∈ range (s + N), ((α₂ + k) * fs (s + N - k) + gs (s + N - k)) * b k -
-          c * ((2 * (α₁ + s) - 1) * a s + ∑ k ∈ range (s + 1), fs (s - k) * a k)) ↔
-      ∀ s : ℕ, ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s +
-        ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k +
-        (if s < N then 0 else c * ((2 * (α₁ + (s - N : ℕ)) - 1) * a (s - N) +
-          ∑ k ∈ range (s - N + 1), fs (s - N - k) * a k)) = 0 := by
-  subst hN
-  constructor
-  · rintro ⟨hlt, hge⟩ s
-    rcases lt_or_ge s N with hs | hs
-    · simp only [hs, ↓reduceIte]
-      linear_combination hlt s hs
-    · obtain ⟨j, rfl⟩ : ∃ j, s = j + N := ⟨s - N, by omega⟩
-      simp only [show ¬j + N < N by omega, ↓reduceIte, Nat.add_sub_cancel]
-      push_cast
-      linear_combination hge j
-  · intro h
-    refine ⟨fun s hs ↦ ?_, fun s ↦ ?_⟩
-    · have := h s
-      simp only [hs, ↓reduceIte] at this
-      linear_combination this
-    · have := h (s + N)
-      simp only [show ¬s + N < N by omega, ↓reduceIte, Nat.add_sub_cancel] at this
-      push_cast at this
-      linear_combination this
-
-/-- The equation at a point `ζ` of the slit disc, for the logarithmic solution about the origin:
-`w(ζ) = ζ^{α₂} T(ζ) + c ζ^{α₁} S(ζ) log ζ`, where `ζ^{α₁} S` is a Frobenius solution and the
-coefficients of `T` satisfy the recursion forced by `c ζ^{α₁ - α₂} D`. -/
-private theorem deriv_deriv_log_add_eq_zero {α₁ α₂ c ζ fζ gζ : ℂ} {N : ℕ} {fs gs a b : ℕ → ℂ}
-    {S T w : ℂ → ℂ} {R : ℝ≥0∞} (hS : HasFPowerSeriesOnBall S (ofScalars ℂ a) 0 R)
-    (hT : HasFPowerSeriesOnBall T (ofScalars ℂ b) 0 R) (hζs : ζ ∈ slitPlane) (hζ : ‖ζ‖ₑ < R)
-    (hζf : ‖ζ‖ₑ < (ofScalars ℂ fs).radius) (hζg : ‖ζ‖ₑ < (ofScalars ℂ gs).radius)
-    (hF : HasSum (fun s ↦ fs s * ζ ^ s) (ζ * fζ)) (hG : HasSum (fun s ↦ gs s * ζ ^ s) (ζ ^ 2 * gζ))
-    (hN : α₁ = α₂ + N)
-    (ha : ∀ s : ℕ, ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * a s +
-      ∑ k ∈ range s, ((α₁ + k) * fs (s - k) + gs (s - k)) * a k + (0 : ℕ → ℂ) s = 0)
-    (hb : ∀ s : ℕ, ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s +
-        ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k +
-        (if s < N then 0 else c * ((2 * (α₁ + (s - N : ℕ)) - 1) * a (s - N) +
-          ∑ k ∈ range (s - N + 1), fs (s - N - k) * a k)) = 0)
-    (hw : w = fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) :
-    deriv (deriv w) ζ + fζ * deriv w ζ + gζ * w ζ = 0 := by
-  have hζ0 : ζ ≠ 0 := slitPlane_ne_zero hζs
-  set U := slitPlane ∩ Metric.eball (0 : ℂ) R
-  have hU : IsOpen U := isOpen_slitPlane.inter Metric.isOpen_eball
-  have hUn : U ∈ 𝓝 ζ := hU.mem_nhds ⟨hζs, mem_eball_zero_iff.mpr hζ⟩
-  have hdiff {ρ : ℂ} {V : ℂ → ℂ} {p : ℕ → ℂ} (hV : HasFPowerSeriesOnBall V (ofScalars ℂ p) 0 R) :
-      DifferentiableOn ℂ (fun y ↦ y ^ ρ * V y) U := fun y hy ↦
-    (hasDerivAt_cpow_mul hV hy.1 (mem_eball_zero_iff.mp hy.2)).differentiableAt
-      |>.differentiableWithinAt
-  set W₁ : ℂ → ℂ := fun y ↦ y ^ α₁ * S y
-  set W₂ : ℂ → ℂ := fun y ↦ y ^ α₂ * T y
-  set L : ℂ → ℂ := fun y ↦ W₁ y * log y
-  have h1 : DifferentiableOn ℂ W₁ U := hdiff hS
-  have h2 : DifferentiableOn ℂ W₂ U := hdiff hT
-  have hL : DifferentiableOn ℂ L U := h1.mul fun y hy ↦
-    (differentiableAt_log hy.1).differentiableWithinAt
-  -- the equations for `W₁` and `W₂`, and the derivatives of `W₁ log`
-  have eq1 := deriv_deriv_cpow_mul_add_eq_zero hS hζs hζ hζf hζg hF hG
-    (by simp only [Pi.zero_apply, zero_mul]; exact hasSum_zero) ha
-  have eq2 := deriv_deriv_cpow_mul_add_eq_zero hT hζs hζ hζf hζg hF hG
-    (hasSum_log_forcing_of_eq (c := c) hS hζ hζf hF hN) hb
-  have hL1 := Complex.deriv_mul_log (h1.differentiableAt hUn) hζs
-  have hL2 := Complex.deriv_deriv_mul_log (eventually_of_mem hUn fun y hy ↦
-    h1.differentiableAt (hU.mem_nhds hy)) ((h1.deriv hU).differentiableAt hUn) hζs
-  have hW₁ : deriv W₁ ζ = α₁ * ζ ^ (α₁ - 1) * S ζ + ζ ^ α₁ * deriv S ζ :=
-    (hasDerivAt_cpow_mul hS hζs hζ).deriv
-  -- `w = W₂ + c L`, so its derivatives split
-  have hw' : w = fun y ↦ W₂ y + c * L y := hw
-  have hdw {y : ℂ} (hy : y ∈ U) : deriv w y = deriv W₂ y + c * deriv L y := by
-    rw [hw']
-    exact ((h2.differentiableAt (hU.mem_nhds hy)).hasDerivAt.add
-      ((hL.differentiableAt (hU.mem_nhds hy)).hasDerivAt.const_mul c)).deriv
-  have hddw : deriv (deriv w) ζ = deriv (deriv W₂) ζ + c * deriv (deriv L) ζ := by
-    have hev : deriv w =ᶠ[𝓝 ζ] fun y ↦ deriv W₂ y + c * deriv L y :=
-      Filter.eventually_of_mem hUn fun y hy ↦ hdw hy
-    rw [hev.deriv_eq]
-    exact ((((h2.deriv hU).differentiableAt hUn).hasDerivAt).add
-      ((((hL.deriv hU).differentiableAt hUn).hasDerivAt).const_mul c)).deriv
-  rw [hddw, hdw (mem_of_mem_nhds hUn), hL2, hL1, hw']
-  simp only [W₁, W₂, L] at eq1 eq2 hW₁ ⊢
-  rw [hW₁] at eq1 ⊢
-  -- write the powers of `ζ` through `P = ζ^{α₂ - 2}`
-  have e1 : ζ ^ (α₁ - 1) = ζ ^ (α₂ - 1 - 1) * ζ ^ N * ζ := by
-    rw [hN, show α₂ + N - 1 = α₂ - 1 - 1 + N + 1 by ring, cpow_add _ _ hζ0, cpow_add _ _ hζ0,
-      cpow_natCast, cpow_one]
-  have e2 : ζ ^ α₁ = ζ ^ (α₂ - 1 - 1) * ζ ^ N * ζ ^ 2 := by
-    rw [hN, show α₂ + N = α₂ - 1 - 1 + N + 2 by ring, cpow_add _ _ hζ0, cpow_add _ _ hζ0,
-      cpow_natCast, show (2 : ℂ) = (2 : ℕ) by norm_num, cpow_natCast]
-  rw [e1, e2] at eq1 ⊢
-  have hinv : ζ * ζ⁻¹ = 1 := mul_inv_cancel₀ hζ0
-  -- `eq2 + c log ζ eq1` leaves the terms of `c (W₁ log)'' + c fζ (W₁ log)'` without `log ζ`,
-  -- `c (2 W₁' ζ⁻¹ + (fζ - ζ⁻¹) W₁ ζ⁻¹)`, against the forcing term of `eq2`,
-  -- `c ζ^{α₂ - 2} ζᴺ (2 α₁ S + 2 ζ S' - S + ζ fζ S)` (`hasSum_log_coeff`). With
-  -- `W₁ = ζ^{α₂ - 2} ζᴺ ζ² S` they agree once `ζ ζ⁻¹ = 1`, and the last coefficient below
-  -- collects the terms that contain `ζ ζ⁻¹`.
-  linear_combination eq2 + c * log ζ * eq1 + c * ζ ^ (α₂ - 1 - 1) * ζ ^ N *
-    (2 * α₁ * S ζ + 2 * ζ * deriv S ζ + fζ * ζ * S ζ - S ζ * (ζ * ζ⁻¹ + 1)) * hinv
+/-! ### The Frobenius and logarithmic solutions -/
 
 /-- **The logarithmic solution at a regular singularity** (DLMF 2.7.6). Suppose that
 `(z - z₀) f(z) = ∑ fₛ (z - z₀)ˢ` and `(z - z₀)² g(z) = ∑ gₛ (z - z₀)ˢ` on the punctured disc
-`0 < ‖z - z₀‖ < r`, let `Q(α) = α (α - 1) + f₀ α + g₀` be the indicial polynomial, and let
-`w₁(z) = (z - z₀)^{α₁} ∑ aₛ (z - z₀)ˢ` be the Frobenius solution at a root `α₁` of `Q`
-(`TauCeti.regularSingular_solution`). Let `α₂ = α₁ - N` for a natural number `N`, put
-`dₛ = (2 (α₁ + s) - 1) aₛ + ∑_{k ≤ s} f_{s-k} aₖ`, and let `c` and the `bₛ` satisfy
+`0 < ‖z - z₀‖ < r`, let `Q(α) = indicialPoly (fs 0) (gs 0) α` be the indicial polynomial, and
+let `w₁(z) = (z - z₀)^{α₁} ∑ aₛ (z - z₀)ˢ` be the Frobenius solution at a root `α₁` of `Q`
+(`TauCeti.regularSingular_solution`). Let `α₂ = α₁ - N` for a natural number `N`, let `c` and the
+`bₛ` satisfy
 
 * `Q(α₂ + s) bₛ = -∑_{k < s} ((α₂ + k) f_{s-k} + g_{s-k}) bₖ` for `s < N`, and
-* `Q(α₁ + s) b_{s+N} = -∑_{k < s + N} ((α₂ + k) f_{s+N-k} + g_{s+N-k}) bₖ - c dₛ` for all `s`.
+* `Q(α₁ + s) b_{s+N} = -∑_{k < s + N} ((α₂ + k) f_{s+N-k} + g_{s+N-k}) bₖ -`
+  `c * regularSingularLogForcing fs a α₂ N (s + N)` for all `s`.
 
 Then `∑ bₛ (z - z₀)ˢ` converges on the disc `‖z - z₀‖ < r`, and
 `w(z) = (z - z₀)^{α₂} ∑ bₛ (z - z₀)ˢ + c w₁(z) log (z - z₀)`, with the principal power and
@@ -521,70 +314,119 @@ theorem regularSingular_log_solution {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r : �
       HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hα₁ : α₁ * (α₁ - 1) + fs 0 * α₁ + gs 0 = 0) (hN : α₁ = α₂ + N)
-    (ha : ∀ s : ℕ, 1 ≤ s → ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * a s =
+    (hα₁ : indicialPoly (fs 0) (gs 0) α₁ = 0) (hN : α₁ = α₂ + N)
+    (ha : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) * a s =
       -∑ k ∈ range s, ((α₁ + k) * fs (s - k) + gs (s - k)) * a k)
-    (hb : ∀ s < N, ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s =
+    (hb : ∀ s < N, indicialPoly (fs 0) (gs 0) (α₂ + s) * b s =
       -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k)
-    (hb' : ∀ s : ℕ, ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * b (s + N) =
+    (hb' : ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (α₁ + s) * b (s + N) =
       -∑ k ∈ range (s + N), ((α₂ + k) * fs (s + N - k) + gs (s + N - k)) * b k -
-        c * ((2 * (α₁ + s) - 1) * a s + ∑ k ∈ range (s + 1), fs (s - k) * a k))
+        c * regularSingularLogForcing fs a α₂ N (s + N))
     (hw : w = fun z ↦ (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) +
       c * ((z - z₀) ^ α₁ * (∑' s, a s * (z - z₀) ^ s) * log (z - z₀))) :
     (∀ z, ‖z - z₀‖ < r → Summable fun s ↦ b s * (z - z₀) ^ s) ∧
       DifferentiableOn ℂ w {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
       ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
         deriv (deriv w) z + f z * deriv w z + g z * w z = 0 := by
-  -- the series of `a` converges on the disc of radius `r` about the origin
+  subst hN
   have hfr := le_radius_ofScalars_of_summable_sub fs fun z h0 hz ↦ (hf z h0 hz).summable
   have hgr := le_radius_ofScalars_of_summable_sub gs fun z h0 hz ↦ (hg z h0 hz).summable
-  have hrecA := regularSingular_recursion hα₁ ha
-  have har := le_radius_ofScalars_of_regularSingular (s₀ := 0) hfr hgr (by simp)
-    fun s _ ↦ hrecA s
-  have hr {ζ : ℂ} (hζ : ‖ζ‖ₑ < ENNReal.ofReal r) : 0 < ENNReal.ofReal r :=
-    (zero_le).trans_lt hζ
-  -- the series of the forcing term converges on the disc, hence so does that of the `bₛ`
+  have hrecA : ∀ s : ℕ, indicialPoly (fs 0) (gs 0) ((α₂ + N) + s) * a s +
+      ∑ k ∈ range s, (((α₂ + (N : ℂ)) + k) * fs (s - k) + gs (s - k)) * a k +
+      (0 : ℕ → ℂ) s = 0 := by
+    intro s
+    rcases Nat.eq_zero_or_pos s with rfl | hs
+    · simpa using congrArg (· * a 0) hα₁
+    · rw [ha s hs, Pi.zero_apply]; ring
+  have har := le_radius_ofScalars_of_regularSingular (s₀ := 0) hfr hgr (by simp) fun s _ ↦ hrecA s
+  have hrecB : ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
+      ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k +
+      c * regularSingularLogForcing fs a α₂ N s = 0 := by
+    intro s
+    rcases lt_or_ge s N with hs | hs
+    · rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero]
+      linear_combination hb s hs
+    · obtain ⟨j, rfl⟩ : ∃ j, s = j + N := ⟨s - N, by omega⟩
+      have hj := hb' j
+      rw [show (α₂ + (N : ℂ)) + (j : ℂ) = α₂ + ((j + N : ℕ) : ℂ) by push_cast; ring] at hj
+      linear_combination hj
+  have hr {ζ : ℂ} (hζ : ‖ζ‖ₑ < ENNReal.ofReal r) : 0 < ENNReal.ofReal r := zero_le.trans_lt hζ
   have hes := le_radius_ofScalars_of_summable _ fun ζ _ hζ ↦
-    (hasSum_log_forcing_of_eq (c := c) (hasFPowerSeriesOnBall_tsum_mul_pow a (hr hζ) har)
-      hζ (hζ.trans_le hfr)
-      (summable_norm_mul_pow_of_lt_radius fs (hζ.trans_le hfr)).of_norm.hasSum hN).summable
-  have hrecB := (log_recursion_iff hN).1 ⟨hb, hb'⟩
+    (hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := c) (N := N)
+      (hasFPowerSeriesOnBall_tsum_mul_pow a (hr hζ) har) hζ (hζ.trans_le hfr)
+      (summable_norm_mul_pow_of_lt_radius fs (hζ.trans_le hfr)).of_norm.hasSum).summable
   have hbr := le_radius_ofScalars_of_regularSingular (s₀ := 0) hfr hgr hes fun s _ ↦ hrecB s
   have hlt {z : ℂ} (hz : ‖z - z₀‖ < r) := eNorm_lt_ofReal_iff.2 hz
-  refine ⟨fun z hz ↦ (summable_norm_mul_pow_of_lt_radius b ((hlt hz).trans_le hbr)).of_norm, ?_⟩
-  -- `w` as a translate of `W(ζ) = ζ ^ α₂ T(ζ) + c ζ ^ α₁ S(ζ) log ζ`
-  set S : ℂ → ℂ := fun ζ ↦ ∑' s, a s * ζ ^ s
-  set T : ℂ → ℂ := fun ζ ↦ ∑' s, b s * ζ ^ s
-  set W : ℂ → ℂ := fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)
-  have hwW : w = fun z ↦ W (z - z₀) := hw
-  have hd1 : deriv w = fun z ↦ deriv W (z - z₀) := by
-    rw [hwW]
-    exact funext fun z ↦ deriv_comp_sub_const W z₀ z
-  have hd2 : deriv (deriv w) = fun z ↦ deriv (deriv W) (z - z₀) := by
-    rw [hd1]
-    exact funext fun z ↦ deriv_comp_sub_const (deriv W) z₀ z
-  refine ⟨fun z hz ↦ ?_, fun z hzs hz ↦ ?_⟩
-  · have hz' := hlt hz.2
-    have hW : DifferentiableAt ℂ W (z - z₀) :=
-      (hasDerivAt_cpow_mul (hasFPowerSeriesOnBall_tsum_mul_pow b (hr hz') hbr) hz.1
-        hz').differentiableAt.add
-        (((hasDerivAt_cpow_mul (hasFPowerSeriesOnBall_tsum_mul_pow a (hr hz') har) hz.1
-          hz').differentiableAt.mul (differentiableAt_log hz.1)).const_mul c)
-    rw [hwW]
-    exact (hW.hasDerivAt.comp_sub_const z z₀).differentiableAt.differentiableWithinAt
-  · have h0 : 0 < ‖z - z₀‖ := norm_pos_iff.mpr (slitPlane_ne_zero hzs)
-    have hz' := hlt hz
-    rw [hd2, hd1, hwW]
-    exact deriv_deriv_log_add_eq_zero (hasFPowerSeriesOnBall_tsum_mul_pow a (hr hz') har)
-      (hasFPowerSeriesOnBall_tsum_mul_pow b (hr hz') hbr) hzs hz'
-      (hz'.trans_le hfr) (hz'.trans_le hgr) (hf z h0 hz) (hg z h0 hz) hN hrecA hrecB rfl
+  have ha_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ a s * (z - z₀) ^ s := fun z hz ↦
+    (summable_norm_mul_pow_of_lt_radius a ((hlt hz).trans_le har)).of_norm
+  have hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ b s * (z - z₀) ^ s := fun z hz ↦
+    (summable_norm_mul_pow_of_lt_radius b ((hlt hz).trans_le hbr)).of_norm
+  refine ⟨hb_sum, ?_⟩
+  set U : Set ℂ := {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}
+  have hopen : IsOpen U := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
+  set w₁ : ℂ → ℂ := fun z ↦ (z - z₀) ^ (α₂ + (N : ℂ)) * ∑' s, a s * (z - z₀) ^ s
+  set w₂ : ℂ → ℂ := fun z ↦ (z - z₀) ^ α₂ * ∑' s, b s * (z - z₀) ^ s
+  set Φ : ℂ → ℂ := fun z ↦ w₁ z * log (z - z₀)
+  have hw' : w = fun z ↦ w₂ z + c * Φ z := by rw [hw]
+  have hw₁_diff : DifferentiableOn ℂ w₁ U := fun z hz ↦
+    (hasDerivAt_cpow_mul_tsum ha_sum hz.1 hz.2).differentiableAt.differentiableWithinAt
+  have hw₁_op : ∀ z ∈ U, deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0 := by
+    intro z hz
+    rw [deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum hf hg ha_sum hz.1 hz.2]
+    have hzero : ∀ s : ℕ, (indicialPoly (fs 0) (gs 0) ((α₂ + (N : ℂ)) + s) * a s +
+        ∑ k ∈ range s, (((α₂ + (N : ℂ)) + k) * fs (s - k) + gs (s - k)) * a k) *
+        (z - z₀) ^ s = 0 := fun s ↦ by
+      have hs := hrecA s
+      rw [Pi.zero_apply, add_zero] at hs
+      rw [hs, zero_mul]
+    simp [hzero]
+  obtain ⟨hΦ_diff, hΦ_op⟩ := operator_mul_log (z₀ := z₀) hopen (fun _ hz ↦ hz.1) hw₁_diff hw₁_op
+  have hw₂_diff : DifferentiableOn ℂ w₂ U := fun z hz ↦
+    (hasDerivAt_cpow_mul_tsum hb_sum hz.1 hz.2).differentiableAt.differentiableWithinAt
+  refine ⟨by rw [hw']; exact hw₂_diff.add (hΦ_diff.const_mul c), fun z hzs hzb ↦ ?_⟩
+  have hzU : z ∈ U := ⟨hzs, hzb⟩
+  have hlin := secondOrder_operator_add_const_mul (f := f) (g := g) (c' := c) (z := z)
+    (Eventually.mono (hopen.mem_nhds hzU) fun _ hu ↦ hw₂_diff.differentiableAt (hopen.mem_nhds hu))
+    (Eventually.mono (hopen.mem_nhds hzU) fun _ hu ↦ hΦ_diff.differentiableAt (hopen.mem_nhds hu))
+    ((hw₂_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
+    ((hΦ_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
+  rw [hw', hlin,
+    deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum (σ := α₂) hf hg hb_sum hzs hzb,
+    hΦ_op z hzU]
+  have hu0 : z - z₀ ≠ 0 := slitPlane_ne_zero hzs
+  have hfor := hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := c) (N := N)
+    (hasFPowerSeriesOnBall_tsum_mul_pow a (hr (hlt hzb)) har) (hlt hzb)
+    ((hlt hzb).trans_le hfr) (hf z (norm_pos_iff.mpr hu0) hzb)
+  have htsum_eq : (∑' s : ℕ, (indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
+        ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) * (z - z₀) ^ s) =
+      -(c * (z - z₀) ^ N * (2 * (α₂ + N) * (∑' s, a s * (z - z₀) ^ s) +
+        2 * ((z - z₀) * deriv (fun u ↦ ∑' s, a s * u ^ s) (z - z₀)) -
+        (∑' s, a s * (z - z₀) ^ s) + (z - z₀) * f z * (∑' s, a s * (z - z₀) ^ s))) := by
+    rw [← hfor.tsum_eq, ← tsum_neg]
+    exact tsum_congr fun s ↦ by linear_combination (z - z₀) ^ s * hrecB s
+  have hdw₁ : deriv w₁ z = (z - z₀) ^ (α₂ + (N : ℂ) - 1) *
+      ((α₂ + N) * (∑' s, a s * (z - z₀) ^ s) +
+        (z - z₀) * deriv (fun u ↦ ∑' s, a s * u ^ s) (z - z₀)) :=
+    (hasDerivAt_cpow_mul_tsum ha_sum hzs hzb).deriv
+  rw [htsum_eq, hdw₁]
+  dsimp only [w₁]
+  have e1 : (z - z₀) ^ (α₂ + (N : ℂ) - 1) = (z - z₀) ^ (α₂ - 2) * (z - z₀) ^ N * (z - z₀) := by
+    rw [show α₂ + (N : ℂ) - 1 = α₂ - 2 + (N : ℂ) + 1 by ring, cpow_add _ _ hu0,
+      cpow_add _ _ hu0, cpow_natCast, cpow_one]
+  have e2 : (z - z₀) ^ (α₂ + (N : ℂ)) = (z - z₀) ^ (α₂ - 2) * (z - z₀) ^ N * (z - z₀) ^ 2 := by
+    rw [show α₂ + (N : ℂ) = α₂ - 2 + (N : ℂ) + 2 by ring, cpow_add _ _ hu0,
+      cpow_add _ _ hu0, cpow_natCast, show (2 : ℂ) = (2 : ℕ) by norm_num, cpow_natCast]
+  rw [e1, e2]
+  field_simp [hu0]
+  ring
 
 /-! ### The Frobenius solution -/
 
 /-- **The Frobenius series solution at a regular singularity** (DLMF 2.7.2–2.7.5). Suppose that
 `(z - z₀) f(z) = ∑ fₛ (z - z₀)ˢ` and `(z - z₀)² g(z) = ∑ gₛ (z - z₀)ˢ` on the punctured disc
-`0 < ‖z - z₀‖ < r`. Let `ρ` be a root of the indicial polynomial `Q(α) = α (α - 1) + f₀ α + g₀`,
-and let `Q(ρ + s) aₛ = -∑_{k < s} ((ρ + k) f_{s-k} + g_{s-k}) aₖ` for `s ≥ 1`. Then
+`0 < ‖z - z₀‖ < r`. Let `ρ` be a root of the indicial polynomial
+`Q(α) = indicialPoly (fs 0) (gs 0) α`, and let
+`Q(ρ + s) aₛ = -∑_{k < s} ((ρ + k) f_{s-k} + g_{s-k}) aₖ` for `s ≥ 1`. Then
 `∑ aₛ (z - z₀)ˢ` converges on the disc `‖z - z₀‖ < r`, and `w(z) = (z - z₀) ^ ρ ∑ aₛ (z - z₀)ˢ` is
 holomorphic on the slit punctured disc `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}` and solves
 `w'' + f w' + g w = 0` there.
@@ -598,8 +440,8 @@ theorem regularSingular_solution {z₀ ρ : ℂ} {r : ℝ} {f g w : ℂ → ℂ}
       HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hρ : ρ * (ρ - 1) + fs 0 * ρ + gs 0 = 0)
-    (ha : ∀ s : ℕ, 1 ≤ s → ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s =
+    (hρ : indicialPoly (fs 0) (gs 0) ρ = 0)
+    (ha : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) * a s =
       -∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k)
     (hw : w = fun z ↦ (z - z₀) ^ ρ * ∑' s, a s * (z - z₀) ^ s) :
     (∀ z, ‖z - z₀‖ < r → Summable fun s ↦ a s * (z - z₀) ^ s) ∧
@@ -607,11 +449,11 @@ theorem regularSingular_solution {z₀ ρ : ℂ} {r : ℝ} {f g w : ℂ → ℂ}
       ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
         deriv (deriv w) z + f z * deriv w z + g z * w z = 0 := by
   -- the case `c = 0`, `N = 0`, `α₂ = ρ`, `b = a` of the logarithmic solution
-  have hrec := regularSingular_recursion hρ ha
   refine regularSingular_log_solution (c := 0) (N := 0) (α₂ := ρ) (b := a) hf hg hρ (by simp) ha
     (fun s hs ↦ absurd hs (Nat.not_lt_zero s)) (fun s ↦ ?_) (by simp [hw])
-  rw [add_zero, zero_mul, sub_zero, eq_neg_iff_add_eq_zero]
-  simpa using hrec s
+  rcases Nat.eq_zero_or_pos s with rfl | hs
+  · simpa using congrArg (· * a 0) hρ
+  · simpa using ha s hs
 
 /-- A check of the hypotheses: for `w'' - 2 z⁻² w = 0` at `z₀ = 0` the indicial roots are `2` and
 `-1`, and at `ρ = 2` the recursion gives `a₀ = 1` and `aₛ = 0` for `s ≥ 1`, so the Frobenius series
@@ -629,7 +471,7 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
   refine (regularSingular_solution (z₀ := 0) (ρ := 2) (r := ‖z‖ + 1) (f := 0)
     (g := fun y ↦ -2 / y ^ 2) (fs := 0) (gs := fun s ↦ if s = 0 then -2 else 0)
     (a := fun s ↦ if s = 0 then 1 else 0) (fun y _ _ ↦ by simp [hasSum_zero])
-    (fun y hy _ ↦ by simpa using hgs y (by simpa using hy)) (by norm_num)
+    (fun y hy _ ↦ by simpa using hgs y (by simpa using hy)) (by norm_num [indicialPoly_def])
     (fun s hs ↦ ?_) (by simp)).2.2 z (by simpa using hz) (by simp)
   have hs0 : s ≠ 0 := by omega
   simp only [hs0, ↓reduceIte, mul_zero]
@@ -638,175 +480,66 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
 
 /-! ### The coefficients of the logarithmic solution -/
 
-/-- The solution of the triangular system `qₛ bₛ + ∑_{k < s} K s k bₖ + eₛ = 0` at the indices
-with `qₛ ≠ 0`, taking the prescribed value `vₛ` at the indices with `qₛ = 0`. -/
-private noncomputable def triangularSolve (q : ℕ → ℂ) (K : ℕ → ℕ → ℂ) (e v : ℕ → ℂ) (s : ℕ) :
-    ℂ :=
-  if q s = 0 then v s else -(∑ k : Fin s, K s k * triangularSolve q K e v k + e s) / q s
-termination_by s
-decreasing_by exact k.isLt
-
-private theorem triangularSolve_eq (q : ℕ → ℂ) (K : ℕ → ℕ → ℂ) (e v : ℕ → ℂ) (s : ℕ) :
-    triangularSolve q K e v s = if q s = 0 then v s else
-      -(∑ k ∈ range s, K s k * triangularSolve q K e v k + e s) / q s := by
-  rw [triangularSolve, Fin.sum_univ_eq_sum_range (fun k ↦ K s k * triangularSolve q K e v k)]
-
-private theorem triangularSolve_of_eq_zero {q : ℕ → ℂ} (K : ℕ → ℕ → ℂ) (e v : ℕ → ℂ) {s : ℕ}
-    (hq : q s = 0) : triangularSolve q K e v s = v s := by
-  rw [triangularSolve_eq]
-  simp [hq]
-
-private theorem triangularSolve_spec {q : ℕ → ℂ} (K : ℕ → ℕ → ℂ) (e v : ℕ → ℂ) {s : ℕ}
-    (hq : q s ≠ 0) : q s * triangularSolve q K e v s +
-      ∑ k ∈ range s, K s k * triangularSolve q K e v k + e s = 0 := by
-  rw [triangularSolve_eq q K e v s]
-  simp only [hq, ↓reduceIte]
-  field_simp
-  ring
-
-/-- Two solutions of a triangular system, with forcing terms that agree below `n`, agree below
-`n` as soon as they agree at the indices `j < n` with `qⱼ = 0`. -/
-private theorem eq_of_triangular {q : ℕ → ℂ} {K : ℕ → ℕ → ℂ} {e e' x y : ℕ → ℂ} {n : ℕ}
-    (hx : ∀ j < n, q j ≠ 0 → q j * x j + ∑ k ∈ range j, K j k * x k + e j = 0)
-    (hy : ∀ j < n, q j ≠ 0 → q j * y j + ∑ k ∈ range j, K j k * y k + e' j = 0)
-    (he : ∀ j < n, e j = e' j) (hxy : ∀ j < n, q j = 0 → x j = y j) :
-    ∀ j < n, x j = y j := by
-  intro j
-  induction j using Nat.strong_induction_on with
-  | ind j ih =>
-    intro hj
-    by_cases hq : q j = 0
-    · exact hxy j hj hq
-    · have hs : ∑ k ∈ range j, K j k * x k = ∑ k ∈ range j, K j k * y k :=
-        sum_congr rfl fun k hk ↦ by rw [ih k (mem_range.1 hk) ((mem_range.1 hk).trans hj)]
-      apply mul_left_cancel₀ hq
-      linear_combination hx j hj hq - hy j hj hq - hs - he j hj
-
-/-- Existence for the triangular system of the logarithmic solution, whose forcing term is
-`c d_{s-N}` from the index `N` on and whose diagonal `q` vanishes exactly at `0` and `N`: the
-values at those indices are prescribed by `v`, `c = 1` when `N = 0`, and otherwise `c` is fixed by
-the equation at index `N`. -/
-private theorem exists_log_triangular {q : ℕ → ℂ} {K : ℕ → ℕ → ℂ} {d v : ℕ → ℂ} {N : ℕ}
-    (hq : ∀ s, q s = 0 ↔ s = 0 ∨ s = N) (hd₀ : N = 0 → d 0 = 0) (hd₀' : N ≠ 0 → d 0 ≠ 0) :
-    ∃ (b : ℕ → ℂ) (c : ℂ), (N = 0 → c = 1) ∧ (∀ s, q s = 0 → b s = v s) ∧
-      ∀ s, q s * b s + ∑ k ∈ range s, K s k * b k +
-        (if s < N then 0 else c * d (s - N)) = 0 := by
-  set e : ℂ → ℕ → ℂ := fun c s ↦ if s < N then 0 else c * d (s - N)
-  -- below `N` the forcing term vanishes, so `c` may be read off a solution with `c = 0`
-  set b₀ := triangularSolve q K (e 0) v
-  set c : ℂ := if N = 0 then 1 else -(∑ k ∈ range N, K N k * b₀ k) / d 0
-  set b := triangularSolve q K (e c) v
-  have hbb₀ : ∀ j < N, b j = b₀ j :=
-    eq_of_triangular (fun j _ hq ↦ triangularSolve_spec K (e c) v hq)
-      (fun j _ hq ↦ triangularSolve_spec K (e 0) v hq) (fun j hj ↦ by simp [e, hj])
-      (fun j _ hq ↦ by
-        simp only [b, b₀]
-        rw [triangularSolve_of_eq_zero K _ v hq, triangularSolve_of_eq_zero K _ v hq])
-  refine ⟨b, c, fun hN0 ↦ by simp [c, hN0], fun s hs ↦ triangularSolve_of_eq_zero K _ v hs,
-    fun s ↦ ?_⟩
-  by_cases hqs : q s = 0
-  · -- the equation at `s = 0` and `s = N`, where `q s = 0`
-    rw [hqs, zero_mul, zero_add]
-    rcases eq_or_ne N 0 with hN0 | hN0
-    · obtain rfl : s = 0 := by simpa [hN0] using (hq s).1 hqs
-      simp [hN0, hd₀ hN0]
-    · rcases (hq s).1 hqs with h | h
-      · simp [h, Nat.pos_of_ne_zero hN0]
-      · rw [h]
-        have hsum : ∑ k ∈ range N, K N k * b k = ∑ k ∈ range N, K N k * b₀ k :=
-          sum_congr rfl fun k hk ↦ by rw [hbb₀ k (mem_range.1 hk)]
-        have := hd₀' hN0
-        simp only [lt_irrefl, ↓reduceIte, Nat.sub_self, c, hN0, hsum]
-        field_simp
-        ring
-  · exact triangularSolve_spec K (e c) v hqs
-
-/-- Uniqueness for the triangular system of `exists_log_triangular`: two solutions that agree at
-the zeros `0` and `N` of `q`, and whose constants `c` agree when `N = 0`, are equal. -/
-private theorem log_triangular_unique {q : ℕ → ℂ} {K : ℕ → ℕ → ℂ} {d b b' : ℕ → ℂ} {c c' : ℂ}
-    {N : ℕ} (hq : ∀ s, q s = 0 ↔ s = 0 ∨ s = N) (hd₀' : N ≠ 0 → d 0 ≠ 0)
-    (hb : ∀ s, q s * b s + ∑ k ∈ range s, K s k * b k +
-      (if s < N then 0 else c * d (s - N)) = 0)
-    (hb' : ∀ s, q s * b' s + ∑ k ∈ range s, K s k * b' k +
-      (if s < N then 0 else c' * d (s - N)) = 0)
-    (hbb' : ∀ s, q s = 0 → b s = b' s) (hc : N = 0 → c = c') :
-    b = b' ∧ c = c' := by
-  -- first below `N`, where the forcing term vanishes, then `c`, then everywhere
-  have hlow : ∀ j < N, b j = b' j :=
-    eq_of_triangular (fun j _ _ ↦ hb j) (fun j _ _ ↦ hb' j) (fun j hj ↦ by simp [hj])
-      (fun j _ hq ↦ hbb' j hq)
-  obtain rfl : c = c' := by
-    rcases eq_or_ne N 0 with hN0 | hN0
-    · exact hc hN0
-    · have hsum : ∑ k ∈ range N, K N k * b k = ∑ k ∈ range N, K N k * b' k :=
-        sum_congr rfl fun k hk ↦ by rw [hlow k (mem_range.1 hk)]
-      have e₁ := hb N
-      have e₂ := hb' N
-      simp only [lt_irrefl, ↓reduceIte, Nat.sub_self, (hq N).2 (Or.inr rfl), zero_mul,
-        zero_add, hsum] at e₁ e₂
-      exact mul_right_cancel₀ (hd₀' hN0) (by linear_combination e₁ - e₂)
-  exact ⟨funext fun j ↦ eq_of_triangular (fun j _ _ ↦ hb j) (fun j _ _ ↦ hb' j)
-    (fun _ _ ↦ rfl) (fun j _ hq ↦ hbb' j hq) j j.lt_succ_self, rfl⟩
-
 /-- **The coefficients of the logarithmic solution** (DLMF 2.7.6). Let `α₁` and `α₂` be the roots
-of the indicial polynomial, `Q(α) = α (α - 1) + f₀ α + g₀ = (α - α₁)(α - α₂)`, with
-`α₁ = α₂ + N` for a natural number `N`, and let `a₀ ≠ 0`. Put
-`dₛ = (2 (α₁ + s) - 1) aₛ + ∑_{k ≤ s} f_{s-k} aₖ`. Then the recursions of
+of the indicial polynomial, `Q(α) = indicialPoly (fs 0) (gs 0) α = (α - α₁)(α - α₂)`, with
+`α₁ = α₂ + N` for a natural number `N`, and let `a₀ ≠ 0`. Then the recursions of
 `TauCeti.regularSingular_log_solution`,
 
 * `Q(α₂ + s) bₛ = -∑_{k < s} ((α₂ + k) f_{s-k} + g_{s-k}) bₖ` for `s < N`, and
-* `Q(α₁ + s) b_{s+N} = -∑_{k < s + N} ((α₂ + k) f_{s+N-k} + g_{s+N-k}) bₖ - c dₛ` for all `s`,
+* `Q(α₁ + s) b_{s+N} = -∑_{k < s + N} ((α₂ + k) f_{s+N-k} + g_{s+N-k}) bₖ -`
+  `c * regularSingularLogForcing fs a α₂ N (s + N)` for all `s`,
 
 have exactly one solution `(b, c)` with DLMF's normalization (`c = 1` when `N = 0`; `b₀ = 1` and
 `b_N = 0` when `N ≥ 1`), together with the additional convention `b₀ = 0` when `N = 0`, which
-fixes the free multiple of `w₁`.
-
-The recursion determines `bₛ` whenever `Q(α₂ + s) = s (s - N)` is nonzero, that is for
-`s ∉ {0, N}`. At `s = 0` and `s = N` the normalization fixes `b₀` and `b_N`, and when `N ≥ 1`
-the recursion at index `N` determines `c`, since `d₀ = N a₀`. -/
+fixes the free multiple of `w₁`. -/
 theorem existsUnique_regularSingular_log_coeff {α₁ α₂ : ℂ} {N : ℕ} {fs gs a : ℕ → ℂ}
-    (hQ : ∀ α : ℂ, α * (α - 1) + fs 0 * α + gs 0 = (α - α₁) * (α - α₂)) (hN : α₁ = α₂ + N)
+    (hQ : ∀ α : ℂ, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂)) (hN : α₁ = α₂ + N)
     (ha₀ : a 0 ≠ 0) :
     ∃! bc : (ℕ → ℂ) × ℂ, (N = 0 → bc.2 = 1 ∧ bc.1 0 = 0) ∧ (N ≠ 0 → bc.1 0 = 1 ∧ bc.1 N = 0) ∧
-      (∀ s < N, ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * bc.1 s =
+      (∀ s < N, indicialPoly (fs 0) (gs 0) (α₂ + s) * bc.1 s =
         -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * bc.1 k) ∧
-      ∀ s : ℕ, ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * bc.1 (s + N) =
+      ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (α₁ + s) * bc.1 (s + N) =
         -∑ k ∈ range (s + N), ((α₂ + k) * fs (s + N - k) + gs (s + N - k)) * bc.1 k -
-          bc.2 * ((2 * (α₁ + s) - 1) * a s + ∑ k ∈ range (s + 1), fs (s - k) * a k) := by
-  -- `f₀ = 1 - α₁ - α₂`, and `Q(α₂ + s) = s (s - N)` vanishes exactly at `s = 0` and `s = N`
-  have hf₀ : fs 0 = 1 - α₁ - α₂ := by linear_combination hQ 1 - hQ 0
-  have hq0 (s : ℕ) : (α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0 = 0 ↔ s = 0 ∨ s = N := by
-    rw [hQ, hN, show α₂ + s - (α₂ + N) = s - N by ring, add_sub_cancel_left, mul_eq_zero,
-      sub_eq_zero, or_comm]
-    norm_cast
-  set d : ℕ → ℂ := fun j ↦ (2 * (α₁ + j) - 1) * a j + ∑ k ∈ range (j + 1), fs (j - k) * a k
-  have hd₀ : d 0 = N * a 0 := by
-    simp [d, hf₀, hN]
-    ring
-  have hd₀' (hN0 : N ≠ 0) : (N : ℂ) * a 0 ≠ 0 := mul_ne_zero (by exact_mod_cast hN0) ha₀
-  -- DLMF's normalization prescribes the values at `0` and `N`, and `c` when `N = 0`
-  set v : ℕ → ℂ := fun s ↦ if s = 0 ∧ N ≠ 0 then 1 else 0
-  have hnorm {b : ℕ → ℂ} {c : ℂ} (h₁ : N = 0 → c = 1 ∧ b 0 = 0) (h₂ : N ≠ 0 → b 0 = 1 ∧ b N = 0)
-      (s : ℕ) (hs : s = 0 ∨ s = N) : b s = v s := by
-    rcases eq_or_ne N 0 with hN0 | hN0
-    · obtain rfl : s = 0 := by omega
-      simp [v, hN0, (h₁ hN0).2]
-    · rcases hs with rfl | rfl
-      · simp [v, hN0, (h₂ hN0).1]
-      · simp [v, hN0, (h₂ hN0).2]
-  obtain ⟨b, c, hc, hbv, hrec⟩ := exists_log_triangular (K := fun s k ↦ (α₂ + k) * fs (s - k) +
-    gs (s - k)) (d := d) (v := v) (fun s ↦ hq0 s) (fun hN0 ↦ by rw [hd₀, hN0]; simp) fun hN0 ↦ by
-      rw [hd₀]; exact hd₀' hN0
-  have hbv' (s : ℕ) (hs : s = 0 ∨ s = N) : b s = v s := hbv s ((hq0 s).2 hs)
-  refine ⟨(b, c), ⟨fun hN0 ↦ ⟨hc hN0, ?_⟩, fun hN0 ↦ ?_, (log_recursion_iff hN).2 hrec⟩, ?_⟩
-  · simp [hbv' 0 (Or.inl rfl), v, hN0]
-  · simp [hbv' 0 (Or.inl rfl), hbv' N (Or.inr rfl), v, hN0]
-  rintro ⟨b', c'⟩ ⟨h₁, h₂, h₃⟩
-  obtain ⟨rfl, rfl⟩ := log_triangular_unique (fun s ↦ hq0 s) (fun hN0 ↦ by
-    rw [hd₀]; exact hd₀' hN0) ((log_recursion_iff hN).1 h₃) hrec
-    (fun s hs ↦ (hnorm h₁ h₂ s ((hq0 s).1 hs)).trans (hbv' s ((hq0 s).1 hs)).symm)
-    (fun hN0 ↦ (h₁ hN0).1.trans (hc hN0).symm)
-  rfl
+          bc.2 * regularSingularLogForcing fs a α₂ N (s + N) := by
+  subst hN
+  set c : ℂ := if N = 0 then 1 else (a 0)⁻¹ * regularSingularLogMultiplier fs gs α₂ N
+  have hc : 1 ≤ N → c * a 0 = regularSingularLogMultiplier fs gs α₂ N := fun hN1 ↦ by
+    simp only [c, show N ≠ 0 by omega, ↓reduceIte]
+    rw [mul_right_comm, inv_mul_cancel₀ ha₀, one_mul]
+  set b := regularSingularLogCoeff fs gs a α₂ c N
+  have hrec := regularSingularLogCoeff_rec hQ hc
+  refine ⟨(b, c), ?_, ?_⟩
+  · refine ⟨fun hN0 ↦ ⟨by simp [c, hN0], by simp [b, hN0]⟩,
+      fun hN0 ↦ ⟨regularSingularLogCoeff_zero_of_pos fs gs a α₂ c (Nat.pos_of_ne_zero hN0),
+        regularSingularLogCoeff_self fs gs a α₂ c N⟩,
+      fun s hs ↦ ?_, fun s ↦ ?_⟩
+    · have hs' := hrec s
+      rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero] at hs'
+      linear_combination hs'
+    · have hs' := hrec (s + N)
+      rw [show α₂ + ((s + N : ℕ) : ℂ) = (α₂ + N) + s by push_cast; ring] at hs'
+      linear_combination hs'
+  · rintro ⟨b', c'⟩ ⟨h0, hne, hlt, hge⟩
+    have hrec' : ∀ s : ℕ,
+        (indicialPoly (fs 0) (gs 0) (α₂ + s) * b' s +
+          ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) +
+        c' * regularSingularLogForcing fs a α₂ N s = 0 := by
+      intro s
+      rcases lt_or_ge s N with hs | hs
+      · rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero]
+        linear_combination hlt s hs
+      · obtain ⟨j, rfl⟩ : ∃ j, s = j + N := ⟨s - N, by omega⟩
+        have hj := hge j
+        rw [show (α₂ + (N : ℂ)) + (j : ℂ) = α₂ + ((j + N : ℕ) : ℂ) by push_cast; ring] at hj
+        linear_combination hj
+    have hb'N : b' N = 0 := by
+      rcases eq_or_ne N 0 with rfl | hN0
+      · exact (h0 rfl).2
+      · exact (hne hN0).2
+    obtain ⟨rfl, rfl⟩ := eq_regularSingularLogCoeff_of_rec hQ ha₀ hc hb'N
+      (fun hN0 ↦ by simp only [c, hN0, ↓reduceIte]; exact (h0 hN0).1)
+      (fun hN1 ↦ (hne (by omega)).1) hrec'
+    rfl
 
 /-- A check of the hypotheses with coincident indicial roots: `z² w'' + z w' = 0`, that is
 `f(z) = 1/z` and `g = 0` at `z₀ = 0`, has the double indicial root `0`, the Frobenius solution
@@ -828,20 +561,23 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
     (r := ‖z‖ + 1) (f := fun y ↦ y⁻¹) (g := 0) (fs := fun s ↦ if s = 0 then 1 else 0) (gs := 0)
     (a := fun s ↦ if s = 0 then 1 else 0) (b := 0)
     (fun y hy _ ↦ by simpa using hfs y (by simpa using hy)) (fun y _ _ ↦ by simp [hasSum_zero])
-    (by simp) (by simp) (fun s hs ↦ ?_) (fun s hs ↦ by omega) (fun s ↦ ?_)
+    (by simp [indicialPoly_def]) (by simp) (fun s hs ↦ ?_) (fun s hs ↦ by omega) (fun s ↦ ?_)
     (by simp)).2.2 z (by simpa using hz) (by simp)
   · have hs0 : s ≠ 0 := by omega
     simp only [hs0, ↓reduceIte, mul_zero]
     rw [eq_comm, neg_eq_zero]
     exact sum_eq_zero fun k hk ↦ by simp [Nat.sub_ne_zero_of_lt (mem_range.1 hk)]
   · rcases Nat.eq_zero_or_pos s with rfl | hs
-    · simp
+    · simp [indicialPoly_def, regularSingularLogForcing_self]
     · have hs0 : s ≠ 0 := by omega
-      simp only [hs0, ↓reduceIte, Pi.zero_apply, mul_zero, sum_const_zero, neg_zero, zero_sub,
-        add_zero, one_mul, zero_add]
-      rw [sum_eq_single_of_mem s (mem_range.2 s.lt_succ_self) fun k hk hks ↦ ?_]
+      simp only [Nat.add_zero, regularSingularLogForcing_of_le _ _ _ (Nat.zero_le s),
+        Nat.sub_zero, hs0, ↓reduceIte, Pi.zero_apply, mul_zero, sum_const_zero, neg_zero,
+        zero_sub, one_mul, zero_add]
+      rw [eq_comm, neg_eq_zero]
+      refine sum_eq_zero fun k hk ↦ ?_
+      rcases eq_or_ne k 0 with rfl | hk0
       · simp [hs0]
-      · simp [Nat.sub_ne_zero_of_lt (lt_of_le_of_ne (mem_range_succ_iff.1 hk) hks)]
+      · simp [hk0]
 
 /-- A check of the hypotheses with indicial roots differing by an integer: for `w'' - 2 z⁻² w = 0`
 at `z₀ = 0` the roots are `α₁ = 2` and `α₂ = -1` (`N = 3`), the Frobenius solution is `z²`, and
@@ -869,12 +605,13 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
     (r := ‖z‖ + 1) (f := 0) (g := fun y ↦ -2 / y ^ 2) (fs := 0)
     (gs := fun s ↦ if s = 0 then -2 else 0) (a := fun s ↦ if s = 0 then 1 else 0)
     (b := fun s ↦ if s = 0 then 1 else 0) (fun y _ _ ↦ by simp [hasSum_zero])
-    (fun y hy _ ↦ by simpa using hgs y (by simpa using hy)) (by norm_num) (by norm_num)
-    (fun s hs ↦ ?_) (fun s hs ↦ ?_) (fun s ↦ ?_) (by simp)).2.2 z (by simpa using hz) (by simp)
+    (fun y hy _ ↦ by simpa using hgs y (by simpa using hy)) (by norm_num [indicialPoly_def])
+    (by norm_num) (fun s hs ↦ ?_) (fun s hs ↦ ?_) (fun s ↦ ?_) (by simp)).2.2 z
+    (by simpa using hz) (by simp)
   · rw [hsum s (by omega)]
     simp [show s ≠ 0 by omega]
   · rcases eq_or_ne s 0 with rfl | hs0
-    · norm_num
+    · norm_num [indicialPoly_def]
     · rw [hsum s hs0]
       simp [hs0]
   · rw [hsum (s + 3) (by omega)]
@@ -888,22 +625,34 @@ private theorem add_ofReal_mem_slitDisc {z₀ : ℂ} {t r : ℝ} (ht : 0 < t) (h
   refine ⟨by simpa using ofReal_mem_slitPlane.2 ht, ?_⟩
   rwa [add_sub_cancel_left, norm_real, Real.norm_of_nonneg ht.le]
 
-/-- The Wronskian of `ζ^{α₁} S` and `ζ^{α₂} T + c ζ^{α₁} S log ζ` at a point `y` of the slit disc of
-convergence of `S` and `T` is `y^{α₁ + α₂ - 1} H(y)`, with `H` holomorphic on that disc, provided
-that `c = 0` or `α₁ = α₂ + N`. -/
-private theorem wronskian_cpow_mul_log_eq {α₁ α₂ c y : ℂ} {N : ℕ} {S T : ℂ → ℂ}
-    {p q : FormalMultilinearSeries ℂ ℂ ℂ} {R : ℝ≥0∞} (hS : HasFPowerSeriesOnBall S p 0 R)
-    (hT : HasFPowerSeriesOnBall T q 0 R) (hc : c = 0 ∨ α₁ = α₂ + N) (hy : y ∈ slitPlane)
-    (hyR : ‖y‖ₑ < R) :
-    y ^ α₁ * S y * deriv (fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) y -
-        deriv (fun y ↦ y ^ α₁ * S y) y * (y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) =
-      y ^ (α₁ + α₂ - 1) * ((α₂ - α₁) * S y * T y + y * (S y * deriv T y - deriv S y * T y) +
-        c * y ^ N * S y ^ 2) := by
+/-- The Wronskian of `y^{α₁} ∑ aₛ yˢ` and `y^{α₂} ∑ bₛ yˢ + c y^{α₁} (∑ aₛ yˢ) log y` at a point
+`y` of the slit disc of convergence is `y^{α₁ + α₂ - 1} H(y)`, with `H` holomorphic on that disc,
+provided that `c = 0` or `α₁ = α₂ + N`. -/
+private theorem wronskian_cpow_mul_log_eq {α₁ α₂ c y : ℂ} {N : ℕ} {r : ℝ} {a b : ℕ → ℂ}
+    (ha : ∀ u, ‖u‖ < r → Summable fun s ↦ a s * u ^ s)
+    (hb : ∀ u, ‖u‖ < r → Summable fun s ↦ b s * u ^ s)
+    (hc : c = 0 ∨ α₁ = α₂ + N) (hy : y ∈ slitPlane) (hyr : ‖y‖ < r) :
+    y ^ α₁ * (∑' s, a s * y ^ s) *
+        deriv (fun y ↦ y ^ α₂ * (∑' s, b s * y ^ s) +
+          c * (y ^ α₁ * (∑' s, a s * y ^ s) * log y)) y -
+        deriv (fun y ↦ y ^ α₁ * (∑' s, a s * y ^ s)) y *
+          (y ^ α₂ * (∑' s, b s * y ^ s) + c * (y ^ α₁ * (∑' s, a s * y ^ s) * log y)) =
+      y ^ (α₁ + α₂ - 1) * ((α₂ - α₁) * (∑' s, a s * y ^ s) * (∑' s, b s * y ^ s) +
+        y * ((∑' s, a s * y ^ s) * deriv (fun u ↦ ∑' s, b s * u ^ s) y -
+          deriv (fun u ↦ ∑' s, a s * u ^ s) y * (∑' s, b s * y ^ s)) +
+        c * y ^ N * (∑' s, a s * y ^ s) ^ 2) := by
   have hy0 : y ≠ 0 := slitPlane_ne_zero hy
-  have h1 := hasDerivAt_cpow_mul (ρ := α₁) hS hy hyR
-  have h2 := (hasDerivAt_cpow_mul (ρ := α₂) hT hy hyR).fun_add
-    ((h1.fun_mul (hasDerivAt_log hy)).const_mul c)
+  have h1 := hasDerivAt_cpow_mul_tsum (z₀ := 0) (σ := α₁)
+    (fun u hu ↦ by simpa using ha u (by simpa using hu)) (by simpa using hy) (by simpa using hyr)
+  have h2 := (hasDerivAt_cpow_mul_tsum (z₀ := 0) (σ := α₂)
+    (fun u hu ↦ by simpa using hb u (by simpa using hu)) (by simpa using hy)
+    (by simpa using hyr)).fun_add ((h1.fun_mul (hasDerivAt_log hy)).const_mul c)
+  simp only [sub_zero] at h1 h2
   rw [h2.deriv, h1.deriv]
+  set S := ∑' s, a s * y ^ s
+  set T := ∑' s, b s * y ^ s
+  set dS := deriv (fun u ↦ ∑' s, a s * u ^ s) y
+  set dT := deriv (fun u ↦ ∑' s, b s * u ^ s) y
   -- write every power through `y ^ (α₁ - 1)` and `y ^ (α₂ - 1)`
   have e₁ : y ^ α₁ = y ^ (α₁ - 1) * y := by
     conv_lhs => rw [show α₁ = α₁ - 1 + 1 by ring, cpow_add _ _ hy0, cpow_one]
@@ -919,8 +668,8 @@ private theorem wronskian_cpow_mul_log_eq {α₁ α₂ c y : ℂ} {N : ℕ} {S T
     · rw [show α₂ + N - 1 = α₂ - 1 + N by ring, cpow_add _ _ hy0, cpow_natCast]
   rw [e₁, e₂, e₁₂]
   -- the terms with `log y` cancel, and `y * y⁻¹ = 1` in the term of `c`
-  linear_combination c * y ^ (α₁ - 1) * y ^ (α₁ - 1) * y * S y ^ 2 * mul_inv_cancel₀ hy0 +
-    y ^ (α₁ - 1) * y * S y ^ 2 * eN
+  linear_combination c * y ^ (α₁ - 1) * y ^ (α₁ - 1) * y * S ^ 2 * mul_inv_cancel₀ hy0 +
+    y ^ (α₁ - 1) * y * S ^ 2 * eN
 
 /-- **Abel's identity with its integrating factor.** In the setting of
 `TauCeti.exists_wronskian_eq_of_regularSingular`, the product of the Wronskian `W = w₁ w₂' - w₁' w₂`
@@ -1098,14 +847,15 @@ private theorem wronskian_eq_of_regularSingular_of_tsum {z₀ α₁ α₂ c : �
       exact deriv_comp_sub_const (fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) z₀ x
     rw [hd₁, hd₂, hw₁, hw₂]
     dsimp only
-    rw [wronskian_cpow_mul_log_eq hS hT hc hx (eNorm_lt_ofReal_iff.2 hxr), hf₀]
+    rw [wronskian_cpow_mul_log_eq (fun u hu ↦ by simpa using hsa (z₀ + u) (by simpa using hu))
+      (fun u hu ↦ by simpa using hsb (z₀ + u) (by simpa using hu)) hc hx hxr, hf₀]
   · have hS0 : S 0 = a 0 := by simpa using (hS.coeff_zero ![]).symm
     have hT0 : T 0 = b 0 := by simpa using (hT.coeff_zero ![]).symm
     simp only [hS0, hT0, zero_mul, add_zero]
 
 /-- **The Wronskian of the logarithmic solution** (DLMF 2.7.6). In the setting of
 `TauCeti.regularSingular_log_solution`, let `α₁` and `α₂ = α₁ - N` be the two roots of the
-indicial polynomial, `Q(α) = α (α - 1) + f₀ α + g₀ = (α - α₁)(α - α₂)`, let
+indicial polynomial, `Q(α) = indicialPoly (fs 0) (gs 0) α = (α - α₁)(α - α₂)`, let
 `w₁(z) = (z - z₀)^{α₁} ∑ aₛ (z - z₀)ˢ` be the Frobenius solution at `α₁`, and let
 `w₂(z) = (z - z₀)^{α₂} ∑ bₛ (z - z₀)ˢ + c w₁(z) log (z - z₀)` be the logarithmic solution. Then on
 the slit punctured disc
@@ -1119,22 +869,23 @@ theorem regularSingular_log_wronskian {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r : 
       HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hQ : ∀ α : ℂ, α * (α - 1) + fs 0 * α + gs 0 = (α - α₁) * (α - α₂)) (hN : α₁ = α₂ + N)
-    (ha : ∀ s : ℕ, 1 ≤ s → ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * a s =
+    (hQ : ∀ α : ℂ, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂)) (hN : α₁ = α₂ + N)
+    (ha : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) * a s =
       -∑ k ∈ range s, ((α₁ + k) * fs (s - k) + gs (s - k)) * a k)
-    (hb : ∀ s < N, ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s =
+    (hb : ∀ s < N, indicialPoly (fs 0) (gs 0) (α₂ + s) * b s =
       -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k)
-    (hb' : ∀ s : ℕ, ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * b (s + N) =
+    (hb' : ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (α₁ + s) * b (s + N) =
       -∑ k ∈ range (s + N), ((α₂ + k) * fs (s + N - k) + gs (s + N - k)) * b k -
-        c * ((2 * (α₁ + s) - 1) * a s + ∑ k ∈ range (s + 1), fs (s - k) * a k))
+        c * regularSingularLogForcing fs a α₂ N (s + N))
     (hw₁ : w₁ = fun z ↦ (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s)
     (hw₂ : w₂ = fun z ↦ (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) +
       c * ((z - z₀) ^ α₁ * (∑' s, a s * (z - z₀) ^ s) * log (z - z₀)))
     {z : ℂ} (hz : z - z₀ ∈ slitPlane) (hzr : ‖z - z₀‖ < r) :
     w₁ z * deriv w₂ z - deriv w₁ z * w₂ z = (c * 0 ^ N * a 0 - N * b 0) * a 0 *
       (z - z₀) ^ (-fs 0) * cexp (-∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) := by
-  have hα₁ : α₁ * (α₁ - 1) + fs 0 * α₁ + gs 0 = 0 := by rw [hQ, sub_self, zero_mul]
-  have hf₀ : -fs 0 = α₁ + α₂ - 1 := by linear_combination hQ 0 - hQ 1
+  have hα₁ : indicialPoly (fs 0) (gs 0) α₁ = 0 := by rw [hQ, sub_self, zero_mul]
+  have hf₀ : -fs 0 = α₁ + α₂ - 1 := by
+    linear_combination -(forall_indicialPoly_eq_sub_mul_sub_iff.mp hQ).1
   obtain ⟨hsa, hd₁, he₁⟩ := regularSingular_solution hf hg hα₁ ha hw₁
   obtain ⟨hsb, hd₂, he₂⟩ := regularSingular_log_solution hf hg hα₁ hN ha hb hb' hw₂
   rw [wronskian_eq_of_regularSingular_of_tsum hf hd₁ hd₂ he₁ he₂ hf₀ (.inr hN) hsa hsb hw₁ hw₂
@@ -1151,14 +902,14 @@ theorem regularSingular_log_wronskian_ne_zero {z₀ α₁ α₂ c : ℂ} {N : �
       HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hQ : ∀ α : ℂ, α * (α - 1) + fs 0 * α + gs 0 = (α - α₁) * (α - α₂)) (hN : α₁ = α₂ + N)
-    (ha : ∀ s : ℕ, 1 ≤ s → ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * a s =
+    (hQ : ∀ α : ℂ, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂)) (hN : α₁ = α₂ + N)
+    (ha : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) * a s =
       -∑ k ∈ range s, ((α₁ + k) * fs (s - k) + gs (s - k)) * a k)
-    (hb : ∀ s < N, ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s =
+    (hb : ∀ s < N, indicialPoly (fs 0) (gs 0) (α₂ + s) * b s =
       -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k)
-    (hb' : ∀ s : ℕ, ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * b (s + N) =
+    (hb' : ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (α₁ + s) * b (s + N) =
       -∑ k ∈ range (s + N), ((α₂ + k) * fs (s + N - k) + gs (s + N - k)) * b k -
-        c * ((2 * (α₁ + s) - 1) * a s + ∑ k ∈ range (s + 1), fs (s - k) * a k))
+        c * regularSingularLogForcing fs a α₂ N (s + N))
     (ha₀ : a 0 ≠ 0) (hc : N = 0 → c ≠ 0) (hb₀ : N ≠ 0 → b 0 ≠ 0)
     (hw₁ : w₁ = fun z ↦ (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s)
     (hw₂ : w₂ = fun z ↦ (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) +
@@ -1174,7 +925,7 @@ theorem regularSingular_log_wronskian_ne_zero {z₀ α₁ α₂ c : ℂ} {N : �
 
 /-- **The Wronskian of two Frobenius solutions** (DLMF 2.7.4). In the setting of
 `TauCeti.regularSingular_solution`, let `α₁` and `α₂` be the two roots of the indicial polynomial,
-`Q(α) = α (α - 1) + f₀ α + g₀ = (α - α₁)(α - α₂)`, and let
+`Q(α) = indicialPoly (fs 0) (gs 0) α = (α - α₁)(α - α₂)`, and let
 `w₁(z) = (z - z₀)^{α₁} ∑ aₛ (z - z₀)ˢ` and `w₂(z) = (z - z₀)^{α₂} ∑ bₛ (z - z₀)ˢ` be Frobenius
 solutions at `α₁` and at `α₂`. Then on the slit punctured disc
 
@@ -1185,17 +936,18 @@ theorem regularSingular_wronskian {z₀ α₁ α₂ : ℂ} {r : ℝ} {f g w₁ w
       HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hQ : ∀ α : ℂ, α * (α - 1) + fs 0 * α + gs 0 = (α - α₁) * (α - α₂))
-    (ha : ∀ s : ℕ, 1 ≤ s → ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * a s =
+    (hQ : ∀ α : ℂ, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂))
+    (ha : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) * a s =
       -∑ k ∈ range s, ((α₁ + k) * fs (s - k) + gs (s - k)) * a k)
-    (hb : ∀ s : ℕ, 1 ≤ s → ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s =
+    (hb : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + s) * b s =
       -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k)
     (hw₁ : w₁ = fun z ↦ (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s)
     (hw₂ : w₂ = fun z ↦ (z - z₀) ^ α₂ * ∑' s, b s * (z - z₀) ^ s)
     {z : ℂ} (hz : z - z₀ ∈ slitPlane) (hzr : ‖z - z₀‖ < r) :
     w₁ z * deriv w₂ z - deriv w₁ z * w₂ z = (α₂ - α₁) * a 0 * b 0 * (z - z₀) ^ (-fs 0) *
       cexp (-∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) := by
-  have hf₀ : -fs 0 = α₁ + α₂ - 1 := by linear_combination hQ 0 - hQ 1
+  have hf₀ : -fs 0 = α₁ + α₂ - 1 := by
+    linear_combination -(forall_indicialPoly_eq_sub_mul_sub_iff.mp hQ).1
   obtain ⟨hsa, hd₁, he₁⟩ := regularSingular_solution hf hg (by rw [hQ, sub_self, zero_mul]) ha hw₁
   obtain ⟨hsb, hd₂, he₂⟩ := regularSingular_solution hf hg (by rw [hQ, sub_self, mul_zero]) hb hw₂
   -- the case `c = 0` of the logarithmic solution
@@ -1212,10 +964,10 @@ theorem regularSingular_wronskian_ne_zero {z₀ α₁ α₂ : ℂ} {r : ℝ} {f 
       HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hQ : ∀ α : ℂ, α * (α - 1) + fs 0 * α + gs 0 = (α - α₁) * (α - α₂)) (hα : α₁ ≠ α₂)
-    (ha : ∀ s : ℕ, 1 ≤ s → ((α₁ + s) * (α₁ + s - 1) + fs 0 * (α₁ + s) + gs 0) * a s =
+    (hQ : ∀ α : ℂ, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂)) (hα : α₁ ≠ α₂)
+    (ha : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) * a s =
       -∑ k ∈ range s, ((α₁ + k) * fs (s - k) + gs (s - k)) * a k)
-    (hb : ∀ s : ℕ, 1 ≤ s → ((α₂ + s) * (α₂ + s - 1) + fs 0 * (α₂ + s) + gs 0) * b s =
+    (hb : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + s) * b s =
       -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k)
     (ha₀ : a 0 ≠ 0) (hb₀ : b 0 ≠ 0)
     (hw₁ : w₁ = fun z ↦ (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s)
@@ -1240,8 +992,8 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
     · field_simp
   -- every term of the recursion sums vanishes: `g_{s-k} aₖ = 0` unless `k = 0 = s`
   have hrec (ρ : ℂ) (s : ℕ) (hs : 1 ≤ s) :
-      ((ρ + s) * (ρ + s - 1) + (0 : ℕ → ℂ) 0 * (ρ + s) +
-        (fun s ↦ if s = 0 then (-2 : ℂ) else 0) 0) * (fun s ↦ if s = 0 then (1 : ℂ) else 0) s =
+      indicialPoly ((0 : ℕ → ℂ) 0) ((fun s ↦ if s = 0 then (-2 : ℂ) else 0) 0) (ρ + s) *
+        (fun s ↦ if s = 0 then (1 : ℂ) else 0) s =
       -∑ k ∈ range s, ((ρ + k) * (0 : ℕ → ℂ) (s - k) +
         (fun s ↦ if s = 0 then (-2 : ℂ) else 0) (s - k)) *
           (fun s ↦ if s = 0 then (1 : ℂ) else 0) k := by
@@ -1253,8 +1005,9 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
     (g := fun y ↦ -2 / y ^ 2) (fs := 0) (gs := fun s ↦ if s = 0 then -2 else 0)
     (a := fun s ↦ if s = 0 then 1 else 0) (b := fun s ↦ if s = 0 then 1 else 0)
     (w₁ := fun y ↦ y ^ (2 : ℂ)) (w₂ := fun y ↦ y ^ (-1 : ℂ)) (fun y _ _ ↦ by simp [hasSum_zero])
-    (fun y hy _ ↦ by simpa using hgs y (by simpa using hy)) (fun α ↦ by simp; ring) (hrec 2)
-    (hrec (-1)) (by simp) (by simp) (by simpa using hz) (by simp)
+    (fun y hy _ ↦ by simpa using hgs y (by simpa using hy))
+    (fun α ↦ by simp [indicialPoly_def]; ring)
+    (hrec 2) (hrec (-1)) (by simp) (by simp) (by simpa using hz) (by simp)
   norm_num at h ⊢
   linear_combination h
 end TauCeti

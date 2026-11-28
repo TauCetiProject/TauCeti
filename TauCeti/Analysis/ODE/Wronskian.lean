@@ -17,10 +17,6 @@ For two solutions `φ`, `ψ` of the equation `f'' = q f` on a preconnected open 
 `ψ φ' - φ ψ'` has derivative `ψ q φ - φ q ψ = 0`, so it is constant. For the fundamental pair of
 global solutions with `φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1` it is identically one.
 
-More generally, on any open preconnected subset `U` of `ℝ` or `ℂ`, if two solutions `w₁`, `w₂` of
-`w'' + f w' + g w = 0` are paired with an integrating factor `E` satisfying `E' = f E` on `U`,
-then `E (w₁ w₂' - w₁' w₂)` has zero derivative and is constant on `U` (Abel–Liouville identity).
-
 For an equation in Sturm–Liouville form `(p f')' + q f = 0`, written out as
 `p f'' + p' f' + q f = 0`, the product `p (f g' - f' g)` of `p` with the Wronskian of two
 solutions has derivative `(q₁ - q₂) f g` when `f` solves the equation with `q₁` and `g` with
@@ -35,8 +31,6 @@ constant on every open preconnected set where both solve the equation. Only the 
 * `TauCeti.wronskian_eq_of_iteratedDeriv_eq_mul`: the same for `C²` solutions, with the equation
   written with `iteratedDeriv 2` and the Wronskian with `deriv`.
 * `TauCeti.wronskian_eq_one_of_hasDerivAt`: the Wronskian of the fundamental pair is one.
-* `TauCeti.mul_wronskian_eq_of_hasDerivAt`: Abel–Liouville constancy of `E (w₁ w₂' - w₁' w₂)` on
-  an open preconnected domain in `ℝ` or `ℂ`.
 * `TauCeti.hasDerivAt_mul_wronskian_of_sturmLiouville`: Lagrange's identity
   `(p (f g' - f' g))' = (q₁ - q₂) f g` for the expanded Sturm–Liouville equation.
 * `TauCeti.mul_wronskian_eq_of_sturmLiouville`: Abel's identity, `p (f g' - f' g)` is constant on
@@ -53,27 +47,6 @@ public section
 open Set
 
 namespace TauCeti
-
-/-- **Abel–Liouville Wronskian constancy** on an open preconnected domain `U` in `ℝ` or `ℂ`: if
-`w₁` and `w₂` satisfy `w'' + f w' + g w = 0` on `U` and `E` is an integrating factor with
-`E' = f * E` on `U`, then `E * (w₁ * w₂' - w₁' * w₂)` is constant on `U`. -/
-theorem mul_wronskian_eq_of_hasDerivAt {𝕜 : Type*} [RCLike 𝕜] {U : Set 𝕜}
-    (hU : IsOpen U) (hconn : IsPreconnected U) {f g E w₁ w₁' w₂ w₂' : 𝕜 → 𝕜}
-    (hE : ∀ z ∈ U, HasDerivAt E (f z * E z) z)
-    (hw₁ : ∀ z ∈ U, HasDerivAt w₁ (w₁' z) z)
-    (hw₁' : ∀ z ∈ U, HasDerivAt w₁' (-(f z * w₁' z + g z * w₁ z)) z)
-    (hw₂ : ∀ z ∈ U, HasDerivAt w₂ (w₂' z) z)
-    (hw₂' : ∀ z ∈ U, HasDerivAt w₂' (-(f z * w₂' z + g z * w₂ z)) z)
-    {z₁ z₂ : 𝕜} (hz₁ : z₁ ∈ U) (hz₂ : z₂ ∈ U) :
-    E z₁ * (w₁ z₁ * w₂' z₁ - w₁' z₁ * w₂ z₁) =
-      E z₂ * (w₁ z₂ * w₂' z₂ - w₁' z₂ * w₂ z₂) := by
-  have hderiv : ∀ z ∈ U, HasDerivAt (fun w ↦ E w * (w₁ w * w₂' w - w₁' w * w₂ w)) 0 z :=
-    fun z hz ↦
-      ((hE z hz).mul (((hw₁ z hz).mul (hw₂' z hz)).sub ((hw₁' z hz).mul (hw₂ z hz)))).congr_deriv
-        (by dsimp; ring)
-  exact hU.is_const_of_deriv_eq_zero hconn
-    (fun z hz ↦ (hderiv z hz).differentiableAt.differentiableWithinAt)
-    (fun z hz ↦ (hderiv z hz).deriv) hz₁ hz₂
 
 variable {𝕜 : Type*}
 

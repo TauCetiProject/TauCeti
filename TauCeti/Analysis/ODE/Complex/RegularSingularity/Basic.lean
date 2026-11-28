@@ -44,10 +44,10 @@ punctured disc `TauCeti.regularSingularSlitDisc z₀ r`
   `N = 0`, `b₀ = 1` for `N ≥ 1`) with `∑ b_s (z - z₀)^s` convergent on `‖z - z₀‖ < r` and solving
   `TauCeti.regularSingularEquation` (`TauCeti.regularSingular_second_solution`, uniqueness
   `TauCeti.eq_regularSingularSecondCoeff_of_solution`).
-* Worked Euler–Cauchy example: `w'' - 2 z⁻² w = 0` at `z₀ = 0` (`α₁ = 2`, `α₂ = -1`, `c = 0`).
 
-Abel–Liouville Wronskian formulas and fundamental pairs are in
-`TauCeti.Analysis.ODE.Complex.RegularSingularity.Wronskian`.
+Fundamental-pair existence for `TauCeti.regularSingularEquation` is in
+`TauCeti.Analysis.ODE.Complex.RegularSingularity.Wronskian` (via the Abel–Liouville Wronskian
+theorems in `TauCeti.Analysis.ODE.Complex.RegularSingularPoint`).
 
 ## References
 * NIST DLMF §2.7(ii), 2.7.1–2.7.6, <https://dlmf.nist.gov/2.7.ii>.
@@ -80,11 +80,6 @@ theorem mem_regularSingularSlitDisc {z₀ z : ℂ} {r : ℝ} :
 theorem coe_regularSingularSlitDisc (z₀ : ℂ) (r : ℝ) :
     (regularSingularSlitDisc z₀ r : Set ℂ) = {z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} :=
   (rfl)
-
-/-- Preconnectedness of `regularSingularSlitDisc z₀ r`. -/
-theorem isPreconnected_regularSingularSlitDisc (z₀ : ℂ) (r : ℝ) :
-    IsPreconnected (regularSingularSlitDisc z₀ r : Set ℂ) :=
-  isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
 
 /-- The slit punctured open disc `regularSingularSlitDisc z₀ r` is contained in the punctured open
 ball `ball z₀ r \ {z₀}`. -/
@@ -186,10 +181,8 @@ theorem regularSingularCoeff_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → �
     (hres : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) ≠ 0) :
     (∀ z, ‖z - z₀‖ < r → Summable fun s => regularSingularCoeff fs gs ρ s * (z - z₀) ^ s) ∧
       (regularSingularEquation hf hg).IsSolution (regularSingularSolution fs gs z₀ ρ) := by
-  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg
-    (by simpa [indicialPoly_def] using hρ)
-    (fun s hs => by
-      simpa [indicialPoly_def] using indicialPoly_mul_regularSingularCoeff hs (hres s hs))
+  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg hρ
+    (fun s hs => indicialPoly_mul_regularSingularCoeff hs (hres s hs))
     (regularSingularSolution_eq fs gs z₀ ρ)
   exact ⟨hsum, (isSolution_regularSingularEquation_iff hf hg _).mpr
     ⟨hdiff, fun z hz => hsol z hz.1 hz.2⟩⟩
@@ -230,18 +223,16 @@ theorem hasSum_regularSingularLogForcing_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => fs s * (z - z₀) ^ s)
     (ha : ∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s)
     {u : ℂ} (hu : ‖u‖ < r) :
-    let A₁ : ℂ → ℂ := fun w => ∑' s, a s * w ^ s
     HasSum (fun s => regularSingularLogForcing fs a α₂ N s * u ^ s)
-      (u ^ N * (2 * u * deriv A₁ u +
-        (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * A₁ u)) := by
-  intro A₁
+      (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
+        (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s)) := by
   have hr : 0 < r := (norm_nonneg u).trans_lt hu
   have hue : ‖u‖ₑ < ENNReal.ofReal r := eNorm_lt_ofReal_iff.mpr hu
-  have hpA := FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt a z₀ hr
-    fun z _ hzr => ha z hzr
-  have hfr := (FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt fs z₀ hr
-    hf).r_le
-  have hf_sum := (FormalMultilinearSeries.summable_norm_mul_pow_of_norm_sub_lt fs z₀ hf hu).of_norm
+  have har := le_radius_ofScalars_of_summable_sub a fun z _ hzr => ha z hzr
+  have hfr := le_radius_ofScalars_of_summable_sub fs hf
+  have hpA := hasFPowerSeriesOnBall_tsum_mul_pow a (ENNReal.ofReal_pos.mpr hr) har
+  have hf_sum := (FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius fs
+    (hue.trans_le hfr)).of_norm
   have hfor := hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := 1) (N := N)
     hpA hue (hue.trans_le hfr) hf_sum.hasSum
   simp only [one_mul] at hfor
@@ -383,10 +374,13 @@ theorem regularSingularCoeff_solution_add_nat {z₀ α₂ : ℂ} {N : ℕ} {r : 
       (regularSingularEquation hf hg).IsSolution
         (regularSingularSolution fs gs z₀ (α₂ + N)) ∧
       ∀ u : ℂ, ‖u‖ < r →
-        let a := regularSingularCoeff fs gs (α₂ + N)
-        HasSum (fun s => regularSingularLogForcing fs a α₂ N s * u ^ s)
-          (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
-            (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s)) := by
+        HasSum
+          (fun s =>
+            regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s * u ^ s)
+          (u ^ N * (2 * u *
+              deriv (fun w => ∑' s, regularSingularCoeff fs gs (α₂ + N) s * w ^ s) u +
+            (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) *
+              ∑' s, regularSingularCoeff fs gs (α₂ + N) s * u ^ s)) := by
   obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
     fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
   exact ⟨ha_sum, hw₁_sol, fun u hu => hasSum_regularSingularLogForcing_mul_pow (α₂ := α₂) (N := N)
@@ -416,22 +410,16 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
     (b := regularSingularSecondCoeff fs gs α₂ N)
     (c := regularSingularLogMultiplier fs gs α₂ N)
     (w := regularSingularSecondSolution fs gs z₀ α₂ N)
-    hf hg (by simpa [indicialPoly_def] using hfact (α₂ + N)) rfl
-    (fun s hs => by
-      simpa [indicialPoly_def] using
-        indicialPoly_mul_regularSingularCoeff hs
-          (indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs))
+    hf hg (by simp [hfact]) rfl
+    (fun s hs => indicialPoly_mul_regularSingularCoeff hs
+      (indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs))
     (fun s hs => by
       have hrec := regularSingularSecondCoeff_rec hfact s
       rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero] at hrec
-      simp only [indicialPoly_def] at hrec
       linear_combination hrec)
     (fun s => by
       have hrec := regularSingularSecondCoeff_rec hfact (s + N)
-      rw [regularSingularLogForcing_of_le _ _ _ (Nat.le_add_left N s), Nat.add_sub_cancel] at hrec
-      simp only [indicialPoly_def] at hrec
-      push_cast at hrec
-      rw [Finset.sum_range_succ, Nat.sub_self]
+      rw [show α₂ + ((s + N : ℕ) : ℂ) = (α₂ + N) + s by push_cast; ring] at hrec
       linear_combination hrec)
     (by
       funext w
@@ -458,10 +446,14 @@ theorem eq_regularSingularSecondCoeff_of_solution {z₀ α₁ α₂ : ℂ} {N : 
     (hb'0 : 1 ≤ N → b' 0 = 1)
     (hb'_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b' s * (z - z₀) ^ s)
     (hsol : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      let w₂' := fun w =>
+      deriv (deriv (fun w =>
         (w - z₀) ^ α₂ * (∑' s, b' s * (w - z₀) ^ s) +
-          c' * regularSingularSolution fs gs z₀ α₁ w * Complex.log (w - z₀)
-      deriv (deriv w₂') z + f z * deriv w₂' z + g z * w₂' z = 0) :
+          c' * regularSingularSolution fs gs z₀ α₁ w * Complex.log (w - z₀))) z +
+        f z * deriv (fun w =>
+          (w - z₀) ^ α₂ * (∑' s, b' s * (w - z₀) ^ s) +
+            c' * regularSingularSolution fs gs z₀ α₁ w * Complex.log (w - z₀)) z +
+        g z * ((z - z₀) ^ α₂ * (∑' s, b' s * (z - z₀) ^ s) +
+          c' * regularSingularSolution fs gs z₀ α₁ z * Complex.log (z - z₀)) = 0) :
     b' = regularSingularSecondCoeff fs gs α₂ N ∧
       c' = regularSingularLogMultiplier fs gs α₂ N := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
@@ -472,52 +464,5 @@ theorem eq_regularSingularSecondCoeff_of_solution {z₀ α₁ α₂ : ℂ} {N : 
   exact eq_regularSingularSecondCoeff_of_rec hfact hb'N hc'0 hb'0 <|
     eq_zero_of_cpow_mul_tsum_eq_zero (z₀ := z₀) (α := α₂ - 2) hr (fun u _ hu => hD_sum u hu)
       fun z hzs hzb => (hD_op z ⟨hzs, hzb⟩).symm.trans (hsol z hzs hzb)
-
-/-! ### Worked example: Euler–Cauchy equation `w'' - 2 z⁻² w = 0` at `z₀ = 0` -/
-
--- For `f = 0` and `g(z) = -2 z⁻²` at `z₀ = 0` (`f₀ = 0`, `g₀ = -2`), the indicial polynomial
--- factors as `(α - 2)(α + 1)` with roots `2` and `-1` differing by `N = 3`, all higher series
--- coefficients vanish, `c = 0`, and the canonical solutions on `slitPlane` are `z²` and `z⁻¹`.
-example :
-    let fs : ℕ → ℂ := 0
-    let gs : ℕ → ℂ := Pi.single 0 (-2)
-    (∀ α, indicialPoly (fs 0) (gs 0) α = (α - 2) * (α - (-1))) ∧
-      (∀ s : ℕ, 1 ≤ s → regularSingularCoeff fs gs 2 s = 0) ∧
-      regularSingularLogMultiplier fs gs (-1) 3 = 0 ∧
-      (∀ s : ℕ, 1 ≤ s → regularSingularSecondCoeff fs gs (-1) 3 s = 0) ∧
-      (∀ z ∈ slitPlane,
-        (z ^ (2 : ℂ) * ∑' s, regularSingularCoeff fs gs 2 s * z ^ s) = z ^ 2) ∧
-      ∀ z ∈ slitPlane,
-        (z ^ (-1 : ℂ) * (∑' s, regularSingularSecondCoeff fs gs (-1) 3 s * z ^ s) +
-          regularSingularLogMultiplier fs gs (-1) 3 *
-            (z ^ (2 : ℂ) * ∑' s, regularSingularCoeff fs gs 2 s * z ^ s) * Complex.log z) =
-          z⁻¹ := by
-  intro fs gs
-  have hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - 2) * (α - (-1)) := fun α => by
-    simp only [indicialPoly_def, fs, gs, Pi.zero_apply, Pi.single_eq_same]; ring
-  have hconv0 (σ : ℂ) (d : ℕ → ℂ) (m : ℕ) :
-      (∑ k ∈ range m, ((σ + (k : ℂ)) * fs (m - k) + gs (m - k)) * d k) = 0 :=
-    sum_eq_zero fun k hk => by
-      have hmk : m - k ≠ 0 := by have := mem_range.mp hk; omega
-      simp [fs, gs, Pi.single_eq_of_ne hmk]
-  have ha_zero : ∀ s : ℕ, 1 ≤ s → regularSingularCoeff fs gs 2 s = 0 := fun s hs => by
-    rw [regularSingularCoeff_of_ne_zero fs gs 2 (by omega), hconv0, mul_zero]
-  have hc_zero : regularSingularLogMultiplier fs gs (-1) 3 = 0 := by
-    rw [regularSingularLogMultiplier_of_ne_zero fs gs (-1) (by decide), hconv0, mul_zero]
-  have hb_zero : ∀ s : ℕ, 1 ≤ s → regularSingularSecondCoeff fs gs (-1) 3 s = 0 := fun s hs => by
-    rcases lt_trichotomy s 3 with hs3 | rfl | hs3
-    · rw [regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt fs gs (-1) hs3,
-        regularSingularCoeff_of_ne_zero fs gs (-1) (by omega), hconv0, mul_zero]
-    · exact regularSingularSecondCoeff_self fs gs (-1) 3
-    · have htwo : (-1 : ℂ) + (3 : ℂ) = 2 := by norm_num
-      have hQ := indicialPoly_add_nat_ne_zero_of_ne (f₀ := fs 0) (g₀ := gs 0) (α₂ := -1) (N := 3)
-        (fun α => by simpa [htwo] using hfact α)
-        (by omega) hs3.ne'
-      exact mul_left_cancel₀ hQ (by
-        simp [indicialPoly_mul_regularSingularSecondCoeff_of_gt hs3 hQ, hc_zero, hconv0])
-  refine ⟨hfact, ha_zero, hc_zero, hb_zero, fun z _ => ?_, fun z _ => ?_⟩
-  · rw [tsum_eq_single 0 fun s hs => by simp [ha_zero s (Nat.pos_of_ne_zero hs)]]; simp
-  · rw [tsum_eq_single 0 fun s hs => by simp [hb_zero s (Nat.pos_of_ne_zero hs)]]
-    simp [hc_zero, Complex.cpow_neg_one]
 
 end TauCeti

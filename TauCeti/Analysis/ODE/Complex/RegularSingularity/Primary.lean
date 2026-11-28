@@ -108,20 +108,22 @@ theorem hasSum_eulerOperator_ofScalars_of_norm_sub_lt {z₀ σ : ℂ} {r : ℝ} 
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s ↦ gs s * (z - z₀) ^ s)
     (hc : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ c s * (z - z₀) ^ s)
     {u : ℂ} (hu : ‖u‖ < r) :
-    let A : ℂ → ℂ := fun w ↦ ∑' s, c s * w ^ s
     HasSum (fun s : ℕ ↦ (indicialPoly (fs 0) (gs 0) (σ + s) * c s +
         ∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * u ^ s)
-      ((u ^ 2 * deriv (deriv A) u + 2 * σ * (u * deriv A u) + σ * (σ - 1) * A u) +
-        (u * deriv A u + σ * A u) * (∑' s, fs s * u ^ s) +
-        A u * (∑' s, gs s * u ^ s)) := by
-  intro A
+      ((u ^ 2 * deriv (deriv fun w ↦ ∑' s, c s * w ^ s) u +
+          2 * σ * (u * deriv (fun w ↦ ∑' s, c s * w ^ s) u) +
+          σ * (σ - 1) * ∑' s, c s * u ^ s) +
+        (u * deriv (fun w ↦ ∑' s, c s * w ^ s) u + σ * ∑' s, c s * u ^ s) *
+          (∑' s, fs s * u ^ s) +
+        (∑' s, c s * u ^ s) * (∑' s, gs s * u ^ s)) := by
   have hr : 0 < r := (norm_nonneg u).trans_lt hu
   have hue : ‖u‖ₑ < ENNReal.ofReal r := eNorm_lt_ofReal_iff.mpr hu
-  have hpA := hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt c z₀ hr fun z _ hzr ↦ hc z hzr
-  have hfr := (hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt fs z₀ hr hf).r_le
-  have hgr := (hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt gs z₀ hr hg).r_le
-  have hf_sum := (summable_norm_mul_pow_of_norm_sub_lt fs z₀ hf hu).of_norm
-  have hg_sum := (summable_norm_mul_pow_of_norm_sub_lt gs z₀ hg hu).of_norm
+  have hpA := hasFPowerSeriesOnBall_tsum_mul_pow c (ENNReal.ofReal_pos.mpr hr)
+    (le_radius_ofScalars_of_summable_sub c fun z _ hzr ↦ hc z hzr)
+  have hfr := le_radius_ofScalars_of_summable_sub fs hf
+  have hgr := le_radius_ofScalars_of_summable_sub gs hg
+  have hf_sum := (summable_norm_mul_pow_of_lt_radius fs (hue.trans_le hfr)).of_norm
+  have hg_sum := (summable_norm_mul_pow_of_lt_radius gs (hue.trans_le hgr)).of_norm
   have heul := hasSum_eulerOperator_ofScalars (σ := σ) hpA hue (hue.trans_le hfr) (hue.trans_le hgr)
     hf_sum.hasSum hg_sum.hasSum
   convert heul using 1
@@ -139,21 +141,25 @@ theorem deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum {z₀ σ : ℂ} {r : ℝ
       HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
     (hc : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ c s * (z - z₀) ^ s)
     {z : ℂ} (hzs : z - z₀ ∈ slitPlane) (hzb : ‖z - z₀‖ < r) :
-    let ψ : ℂ → ℂ := fun w ↦ (w - z₀) ^ σ * ∑' s, c s * (w - z₀) ^ s
-    deriv (deriv ψ) z + f z * deriv ψ z + g z * ψ z =
+    deriv (deriv fun w ↦ (w - z₀) ^ σ * ∑' s, c s * (w - z₀) ^ s) z +
+        f z * deriv (fun w ↦ (w - z₀) ^ σ * ∑' s, c s * (w - z₀) ^ s) z +
+        g z * ((z - z₀) ^ σ * ∑' s, c s * (z - z₀) ^ s) =
       (z - z₀) ^ (σ - 2) * ∑' s : ℕ,
         (indicialPoly (fs 0) (gs 0) (σ + s) * c s +
           ∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * (z - z₀) ^ s := by
-  intro ψ
+  set ψ : ℂ → ℂ := fun w ↦ (w - z₀) ^ σ * ∑' s, c s * (w - z₀) ^ s
   set A : ℂ → ℂ := fun u ↦ ∑' s, c s * u ^ s
   set u : ℂ := z - z₀
   have hr : 0 < r := (norm_nonneg u).trans_lt hzb
   have hu0 : u ≠ 0 := Complex.slitPlane_ne_zero hzs
-  have han := analyticOnNhd_tsum_ofScalars_of_norm_sub_lt c z₀ hr fun w _ ↦ hc w
+  have han := (hasFPowerSeriesOnBall_tsum_mul_pow c (ENNReal.ofReal_pos.mpr hr)
+    (le_radius_ofScalars_of_summable_sub c fun w _ hwr ↦ hc w hwr)).analyticOnNhd
+  have hu_mem : u ∈ Metric.eball (0 : ℂ) (ENNReal.ofReal r) := by
+    simpa [Metric.mem_eball, edist_zero_right] using eNorm_lt_ofReal_iff.mpr hzb
   have hsub : HasDerivAt (fun w : ℂ ↦ w - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-  have hinner := (((han u (mem_ball_zero_iff.mpr hzb)).differentiableAt.hasDerivAt.comp_sub_const
-    z z₀).const_mul σ).add (hsub.mul
-      ((han.deriv u (mem_ball_zero_iff.mpr hzb)).differentiableAt.hasDerivAt.comp_sub_const z z₀))
+  have hinner :=
+    (((han u hu_mem).differentiableAt.hasDerivAt.comp_sub_const z z₀).const_mul σ).add
+      (hsub.mul ((han.deriv u hu_mem).differentiableAt.hasDerivAt.comp_sub_const z z₀))
   have hev : deriv ψ =ᶠ[𝓝 z] ((fun w : ℂ ↦ (w - z₀) ^ (σ - 1)) *
       ((fun w : ℂ ↦ σ * A (w - z₀)) + (fun w : ℂ ↦ w - z₀) * fun w : ℂ ↦ deriv A (w - z₀))) := by
     filter_upwards [(isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r).mem_nhds ⟨hzs, hzb⟩]
