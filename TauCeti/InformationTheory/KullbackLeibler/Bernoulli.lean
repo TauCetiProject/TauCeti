@@ -51,7 +51,7 @@ Fano's inequality.
   `a, b ∈ [0, 1]`.
 * `TauCeti.mul_log_sub_log_two_le_klBin`: `a log M - log 2 ≤ klBin a (1 / M)` for `a ∈ [0, 1]`
   and `M : ℕ`.
-* `TauCeti.ofReal_klBin_le_klDiv`: data processing to an event,
+* `MeasureTheory.Measure.ofReal_klBin_le_klDiv`: data processing to an event,
   `ENNReal.ofReal (klBin (P.real A) (Q.real A)) ≤ klDiv P Q` for probability measures `P`, `Q`
   and any set `A`.
 
@@ -334,6 +334,12 @@ theorem convexOn_klBin :
   rwa [hsmul s, hsmul t,
     ← ENNReal.ofReal_add h₁ h₂, ENNReal.ofReal_le_ofReal_iff (add_nonneg h₁ h₂)] at key
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
 /-- **Data processing to an event.** For probability measures `P`, `Q` and any set `A`,
 `ENNReal.ofReal (klBin (P.real A) (Q.real A)) ≤ klDiv P Q`: the binary divergence of the masses
 of `A`, read in `ℝ≥0∞`, is at most the divergence of `P` from `Q`. The set need not be
@@ -376,4 +382,4 @@ theorem ofReal_klBin_le_klDiv {X : Type*} [MeasurableSpace X] (P Q : Measure X)
   rwa [hlaw P, hlaw Q, klDiv_bernoulliMeasure (measurableSet_singleton (1 : ℝ)) rfl
     (by norm_num) hp ⟨hq₀, hq₁⟩] at hle
 
-end TauCeti
+end MeasureTheory.Measure
