@@ -51,23 +51,7 @@ theorem eLpNorm_heatKernel_convolution_le {t : ℝ} (ht : 0 < t) {p q : ℝ≥0�
     eLpNorm (heatKernel t ⋆ f) q volume ≤
       ENNReal.ofReal ((4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2 *
         (1 / p.toReal - 1 / q.toReal))) * eLpNorm f p volume := by
-  let r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
-  have hpi : p⁻¹ ≤ 1 := ENNReal.inv_le_one.2 hp
-  have hqi : q⁻¹ ≤ p⁻¹ := ENNReal.inv_le_inv.2 hpq
-  have hr : 1 ≤ r := by
-    apply ENNReal.one_le_inv.2
-    exact tsub_le_iff_right.2 (by simpa [add_comm] using add_le_add_left hqi 1)
-  have hrp : r⁻¹ + p⁻¹ = 1 + q⁻¹ := by
-    simp only [r, inv_inv]
-    exact tsub_add_cancel_of_le (hpi.trans le_self_add)
-  have hreal : 1 / r.toReal + 1 / p.toReal = 1 + 1 / q.toReal := by
-    have h := congrArg ENNReal.toReal hrp
-    rw [ENNReal.toReal_add (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hr).ne')
-        (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp).ne'),
-      ENNReal.toReal_add ENNReal.one_ne_top
-        (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le (hp.trans hpq)).ne')] at h
-    simpa only [ENNReal.toReal_inv, ENNReal.toReal_one, one_div] using h
-  have he : 1 - 1 / r.toReal = 1 / p.toReal - 1 / q.toReal := by linarith
+  obtain ⟨r, hr, hrp, he⟩ := ENNReal.exists_inv_add_inv_eq_one_add_inv hp hpq
   have h := eLpNorm_convolution_le_of_inv_add_inv_eq (.lsmul ℝ ℝ) hr hp hrp
     ((contDiff_heatKernel (k := ⊤) t).continuous.aestronglyMeasurable) hf
   grw [ContinuousLinearMap.opENorm_lsmul_le, one_mul, eLpNorm_heatKernel_le ht hr] at h

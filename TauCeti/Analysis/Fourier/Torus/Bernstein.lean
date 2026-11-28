@@ -462,17 +462,7 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm :
   refine ⟨max 1 (∫ y, ‖𝓕⁻ (cutoffSymbol (d := d)) y‖) * 7 ^ Fintype.card d, by positivity, ?_⟩
   intro E _ _ _ p q hp hpq R hR f hf hspec
   -- The exponent `r` of Young's inequality, with `1/r + 1/p = 1 + 1/q`.
-  set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
-  have hqp : q⁻¹ ≤ p⁻¹ := ENNReal.inv_le_inv.2 hpq
-  have hp1 : p⁻¹ ≤ 1 + q⁻¹ := (ENNReal.inv_le_one.2 hp).trans le_self_add
-  have hq1 : q⁻¹ ≠ ⊤ := ENNReal.inv_ne_top.2 (one_pos.trans_le (hp.trans hpq)).ne'
-  have hr : 1 ≤ r := ENNReal.one_le_inv.2 (tsub_le_iff_right.2 (by gcongr))
-  have hrpq : r⁻¹ + p⁻¹ = 1 + q⁻¹ := by rw [inv_inv, tsub_add_cancel_of_le hp1]
-  have hrexp : 1 - r⁻¹.toReal = p.toReal⁻¹ - q.toReal⁻¹ := by
-    rw [inv_inv, ENNReal.toReal_sub_of_le hp1 (ENNReal.add_ne_top.2 ⟨ENNReal.one_ne_top, hq1⟩),
-      ENNReal.toReal_add ENNReal.one_ne_top hq1, ENNReal.toReal_inv, ENNReal.toReal_inv,
-      ENNReal.toReal_one]
-    ring
+  obtain ⟨r, hr, hrpq, hrexp⟩ := ENNReal.exists_inv_add_inv_eq_one_add_inv hp hpq
   have hR0 : 0 < R := one_pos.trans_le hR
   set K := cutoffKernel (d := d) R
   have hK : Continuous K := continuous_cutoffKernel R
@@ -491,7 +481,7 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm :
         gcongr
         · exact ContinuousLinearMap.opENorm_lsmul_le
         · exact eLpNorm_cutoffKernel_le hR hr
-    _ = _ := by rw [one_mul, hrexp]
+    _ = _ := by rw [one_mul, ENNReal.toReal_inv, ← one_div, hrexp, one_div, one_div]
 
 /-- **Bernstein's inequality for one derivative at a fixed exponent.** If `f` is integrable with
 Fourier coefficients vanishing outside the ball `‖n‖ ≤ R`, and `g` is integrable with Fourier

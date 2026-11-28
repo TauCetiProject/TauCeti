@@ -82,6 +82,8 @@ of their norms, so this inequality also bounds the `Lᵠ` norm of `f ⋆[L] g`
 * `MeasureTheory.eLpNorm_lconvolution_le`: Young's inequality `Lᵖ ⋆ Lʳ ⊆ Lᵠ`.
 * `MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`: the same bound for the convolution
   `f ⋆[L, μ] g` of vector-valued functions along a continuous bilinear map `L`.
+* `ENNReal.exists_inv_add_inv_eq_one_add_inv`: for `1 ≤ p ≤ q ≤ ∞`, the exponent `r` with
+  `1/r + 1/p = 1 + 1/q` for which Young's inequality maps `Lᵖ` to `Lᵠ`.
 
 ## References
 
@@ -361,3 +363,22 @@ theorem eLpNorm_convolution_le_of_inv_add_inv_eq {𝕜 E E' F : Type*} [Nontrivi
         rw [eLpNorm_eNorm f hf, eLpNorm_eNorm g hg, mul_assoc]
 
 end MeasureTheory
+
+namespace ENNReal
+
+/-- **The exponent of Young's inequality from `Lᵖ` to `Lᵠ`.** For `1 ≤ p ≤ q ≤ ∞`, the exponent
+`r = (1 + 1/q - 1/p)⁻¹` satisfies `1 ≤ r` and `1/r + 1/p = 1 + 1/q`, so that convolution with an
+`Lʳ` kernel maps `Lᵖ` to `Lᵠ`; in real terms, `1 - 1/r = 1/p - 1/q`. -/
+theorem exists_inv_add_inv_eq_one_add_inv {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) :
+    ∃ r : ℝ≥0∞, 1 ≤ r ∧ r⁻¹ + p⁻¹ = 1 + q⁻¹ ∧
+      1 - 1 / r.toReal = 1 / p.toReal - 1 / q.toReal := by
+  have hp1 : p⁻¹ ≤ 1 + q⁻¹ := (ENNReal.inv_le_one.2 hp).trans le_self_add
+  have hq1 : q⁻¹ ≠ ∞ := inv_ne_top.2 (zero_lt_one.trans_le (hp.trans hpq)).ne'
+  refine ⟨(1 + q⁻¹ - p⁻¹)⁻¹, ENNReal.one_le_inv.2 (tsub_le_iff_right.2 ?_), ?_, ?_⟩
+  · simpa [add_comm] using add_le_add_left (ENNReal.inv_le_inv.2 hpq) 1
+  · rw [inv_inv, tsub_add_cancel_of_le hp1]
+  · rw [one_div, ← toReal_inv, inv_inv, toReal_sub_of_le hp1 (add_ne_top.2 ⟨one_ne_top, hq1⟩),
+      toReal_add one_ne_top hq1, toReal_inv, toReal_inv, toReal_one]
+    ring
+
+end ENNReal

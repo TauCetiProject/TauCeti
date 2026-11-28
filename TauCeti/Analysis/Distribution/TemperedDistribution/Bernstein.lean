@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.Support
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -150,20 +151,12 @@ theorem exists_eq_and_norm_le_of_isVanishingOn_fourier {p q : ℝ≥0∞} [hp : 
       ∃ g : Lp F q (volume : Measure E), (f : 𝓢'(E, F)) = g ∧
         ‖g‖ ≤ C * R ^ ((finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹)) * ‖f‖ := by
   -- The exponent `r` of Young's inequality, with `1/p + 1/r = 1 + 1/q`.
-  set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
-  have hqp : q⁻¹ ≤ p⁻¹ := ENNReal.inv_le_inv.2 hpq
-  have hp1 : p⁻¹ ≤ 1 + q⁻¹ := (ENNReal.inv_le_one.2 hp.out).trans le_self_add
-  have hq1 : q⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (zero_lt_one.trans_le Fact.out).ne'
-  have hr : 1 ≤ r := ENNReal.one_le_inv.2 (tsub_le_iff_right.2 (by gcongr))
-  have hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹ := by rw [inv_inv, add_tsub_cancel_of_le hp1]
+  obtain ⟨r, hr, hrpq, he⟩ := ENNReal.exists_inv_add_inv_eq_one_add_inv hp.out hpq
+  have hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹ := by rw [add_comm, hrpq]
   have hrexp : (finrank ℝ E : ℝ) - finrank ℝ E / r.toReal =
       finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹) := by
-    have : r.toReal⁻¹ = 1 + q.toReal⁻¹ - p.toReal⁻¹ := by
-      rw [← ENNReal.toReal_inv, inv_inv, ENNReal.toReal_sub_of_le hp1
-        (ENNReal.add_ne_top.2 ⟨ENNReal.one_ne_top, hq1⟩),
-        ENNReal.toReal_add ENNReal.one_ne_top hq1, ENNReal.toReal_inv, ENNReal.toReal_inv,
-        ENNReal.toReal_one]
-    rw [div_eq_mul_inv, this]
+    simp only [one_div] at he
+    rw [div_eq_mul_inv, ← he]
     ring
   refine ⟨(eLpNorm (𝓕⁻ ((bump (E := E)).lowPassSchwartz one_ne_zero : E → ℂ)) r volume).toReal,
     ENNReal.toReal_nonneg, fun {R} hR f hf ↦ ?_⟩
