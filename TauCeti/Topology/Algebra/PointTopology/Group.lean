@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
+import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
 # The topological group of points of an affine group scheme
@@ -93,12 +94,7 @@ variable [Bialgebra k H] [IsTopologicalSemiring R]
 when the coefficients form a topological semiring. -/
 instance instContinuousMulWithConv : ContinuousMul (WithConv (H →ₐ[k] R)) where
   continuous_mul := continuous_withConv_iff.2 fun h ↦ by
-    -- Writing `Δ h = ∑ i, h₁ i ⊗ h₂ i`, the value of `f * g` at `h` is `∑ i, f (h₁ i) * g (h₂ i)`.
-    have hsum (p : WithConv (H →ₐ[k] R) × WithConv (H →ₐ[k] R)) : (p.fst * p.snd).ofConv h =
-        ∑ i ∈ (ℛ k h).index, p.fst.ofConv ((ℛ k h).left i) * p.snd.ofConv ((ℛ k h).right i) := by
-      rw [AlgHom.convMul_apply, ← (ℛ k h).eq, map_sum]
-      simp
-    simp_rw [hsum]
+    simp_rw [(ℛ k h).algHom_convMul_apply]
     refine continuous_finsetSum _ fun i _ ↦ .mul ?_ ?_
     · exact (continuous_eval_ofConv _).comp continuous_fst
     · exact (continuous_eval_ofConv _).comp continuous_snd
