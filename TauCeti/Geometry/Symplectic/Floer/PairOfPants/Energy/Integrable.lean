@@ -36,12 +36,15 @@ namespace TauCeti.SmoothTwoForm
 open Floer
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I (⊤ : ℕ∞) M]
   [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
 
-/-- **Automatic integrability of a nonnegative Floer energy density on a compact set.** Compactness
-of `[0, 1] × B` uniformly bounds `∫₀¹ H_q(t, u(φ_q(±σ, t))) dt` for `σ > 0`, making the Floer energy
-density integrable over `S` without global bounds on `H_q` or end convergence. -/
+/-- **Automatic integrability of a nonnegative Floer energy density on a compact set.** For `K`
+equal to `H_q(t) dt` beyond `T₀` on each end `q`, if `u` maps `S` into a compact set `B` with
+nonnegative Floer energy density and integrable symplectic area density and curvature over `S`,
+then compactness of `[0, 1] × B` uniformly bounds `∫₀¹ H_q(t, u(φ_q(±σ, t))) dt` for `σ > 0`,
+making the Floer energy density integrable over `S` without global bounds on `H_q` or end
+convergence. -/
 theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
     {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
     (hω : ω.IsNondegenerate)
@@ -70,7 +73,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularFor
   have hbound : ∀ q, ∃ C : ℝ, ∀ p ∈ Icc (0 : ℝ) 1 ×ˢ B, ‖uncurry (H q) p‖ ≤ C := fun q ↦
     (isCompact_Icc.prod hB).exists_bound_of_continuousOn (hHc q).continuousOn
   choose C hC using hbound
-  refine ⟨hω.aestronglyMeasurable_floerEnergyDensity hK hu hR, ?_⟩
+  refine ⟨hω.aestronglyMeasurable_floerEnergyDensity hK hu, ?_⟩
   rw [HasFiniteIntegral, lintegral_congr_ae (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦
     Real.eNorm_eq_ofReal (he z hz))]
   refine lt_of_le_of_lt

@@ -92,26 +92,25 @@ cylinders, over which the energy tends to `0`. As at a single end, no bound on t
 the solutions is needed.
 
 For convergence along the whole end, the loops of `e ∘ u` converge to a single periodic solution
-of `y' = Y(t, y)` when the derivative of `e ∘ u` is bounded and these solutions are isolated in
-`e(K)`
-(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). Since `e` restricts to a closed
-embedding of `K`, isolation of the orbits in `K` is isolation of their images in `e(K)`. When some
-slice loop `t ↦ u(s, t)` is contractible in `M`, every uniform cluster point of the slices is
-contractible (`TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`), so isolation or
+of `y' = Y(t, y)` when the derivative of `e ∘ u` is bounded and these cluster-point solutions are
+isolated in `e(K)`
+(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_isolated_clusterPt`). Since `e`
+restricts to a closed embedding of `K`, isolation of the orbits in `K` is isolation of their images
+in `e(K)`. When `e ∘ u` has bounded derivative on `s > a` and every subsequential uniform-limit
+`1`-periodic orbit of `X_{H_t}` in `K` is isolated at time `0` among such orbits, `t ↦ u(s, t)`
+converges as `s → ∞` (in `IsNondegenerate`:
+`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt`);
+requiring isolation among all `1`-periodic orbits in `K` gives
+`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact` (and
+`..._of_isolated` when the derivative bound is only on the strip), while on a compact Hausdorff
+boundaryless manifold nondegeneracy (`TauCeti.IsNondegenerateFixedPt`) supplies isolation in
+`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer`. When some slice loop `t ↦ u(s, t)`
+(`s > a`) is null-homotopic in `M`, all loops on `(a, ∞)` are null-homotopic and every uniform
+cluster point of the slices is contractible
+(`TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`), so isolation or
 nondegeneracy is only needed on `TauCeti.contractiblePeriodicSolutions`
-(`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated`,
-`..._of_isCompact`, and `..._of_floer` in `IsNondegenerate`).
-
-When `e ∘ u` has bounded derivative on `s > a` and every subsequential uniform-limit `1`-periodic
-orbit of `X_{H_t}` in `K` is isolated at time `0` among such orbits, `t ↦ u(s, t)` converges as
-`s → ∞`
-(`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt`,
-via `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). For a `C²` Hamiltonian on a
-Hausdorff boundaryless manifold, nondegeneracy (`TauCeti.IsNondegenerateFixedPt`) supplies this
-isolation (`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`, and
-`..._of_floer` on a compact manifold). If one loop `t ↦ u(s, t)` (`s > a`) is null-homotopic in `M`,
-all loops on `(a, ∞)` are null-homotopic and parallel `contractiblePeriodicSolutions` theorems
-require isolation or nondegeneracy only on contractible orbits.
+(`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt`,
+`..._of_isolated`, `..._of_isCompact`, and `..._of_floer`).
 
 ## References
 
@@ -409,9 +408,8 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_of_floer_of_is
   obtain ⟨x, hx, hxK, φ, hφa, hφ, hconv, hpt, hL2⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_of_floer_of_isCompact
       hH hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE
-  exact ⟨x, mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic hx zero_lt_one
-    hxK (hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj).isInducing
-    (Eventually.of_forall hφa) hu.continuousOn hper huK hnull hconv,
+  exact ⟨x, mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi zero_lt_one he.continuous hK
+    he_inj hu.continuousOn hper huK hnull (Eventually.of_forall hφa) hx hxK hconv,
     hxK, φ, hφa, hφ, hconv, hpt, hL2⟩
 
 /-- **Convergence of a contractible Floer half-cylinder to an isolated contractible orbit.** Variant
@@ -436,17 +434,15 @@ theorem
     ∃ x ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       (∀ t, x t ∈ K) ∧ TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  have hind : IsInducing fun p : K ↦ e p :=
-    (hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj).isInducing
   obtain ⟨x, hx, hxK, hconv, hpt⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
       hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE hH hC
       (forall_mem_periodicSolutions_eventually_eq_of_forall_mem
         (fun x hx hxK ⟨φ, hφa, _, hφx⟩ ↦
-          mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic hx zero_lt_one hxK
-            hind (Eventually.of_forall hφa) hu.continuousOn hper huK hnull hφx) hiso)
-  exact ⟨x, mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic hx zero_lt_one
-    hxK hind (eventually_gt_atTop a) hu.continuousOn hper huK hnull hconv, hxK, hconv, hpt⟩
+          mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi zero_lt_one he.continuous hK
+            he_inj hu.continuousOn hper huK hnull (Eventually.of_forall hφa) hx hxK hφx) hiso)
+  exact ⟨x, mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi zero_lt_one he.continuous hK
+    he_inj hu.continuousOn hper huK hnull (eventually_gt_atTop a) hx hxK hconv, hxK, hconv, hpt⟩
 
 end Compact
 
@@ -752,43 +748,12 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
           (∀ t, x' t ∈ K) → x' 0 = p → x' = x) :
     ∃ x ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       (∀ t, x t ∈ K) ∧ TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
-      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  have hKe : IsCompact (e '' K) := hK.image he.continuous
-  have hu' : ContDiffOn ℝ 1 (e ∘ u) (Ioi a ×ˢ univ) :=
-    contMDiffOn_iff_contDiffOn.1 (he.comp_contMDiffOn hu)
-  have hC' : ∀ z ∈ Ioi a ×ˢ (univ : Set ℝ), ‖fderiv ℝ (e ∘ u) z‖ ≤ C := fun z hz ↦
-    norm_fderiv_le_of_periodic (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hC hz
-  obtain ⟨Y, hYc, hYper, hYe, hfin⟩ :=
-    hω.exists_lintegral_norm_sq_sliceDefect_comp_ne_top hH hHper he hK he_inj hu huK J hc hJc
-      hfloer hE
-  -- Every uniform cluster point of `e ∘ u(s, ·)` lifts to a contractible periodic orbit in `K`.
-  have hlift {y : ℝ → F} (hyper : Periodic y 1) (hy : ∀ t, HasDerivAt y (Y t (y t)) t)
-      (hyK : ∀ t, y t ∈ e '' K)
-      (hcl : MapClusterPt (UniformFun.ofFun y) atTop fun s ↦
-        UniformFun.ofFun fun t ↦ (e ∘ u) (s, t)) :
-      ∃ x ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
-        (∀ t, x t ∈ K) ∧ e ∘ x = y := by
-    obtain ⟨σ, hσa, -, _, hσy⟩ := exists_tendstoUniformly_of_mapClusterPt hu' hYc hfin hC' hcl
-    obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hyper hy hyK
-    exact ⟨x, mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi one_pos he.continuous hK
-      he_inj hu.continuousOn hper huK hnull (Eventually.of_forall hσa) hx hxK hσy, hxK, rfl⟩
-  obtain ⟨y, hyper, hy, hconv⟩ := exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_mapClusterPt
-    hu' (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hKe
-    (fun s hs t ↦ mem_image_of_mem e (huK s hs t)) hYc hYper hfin hC' fun y hyper hy hyK hcl ↦ by
-      obtain ⟨x, hx, hxK, rfl⟩ := hlift hyper hy hyK hcl
-      obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he.continuous.continuousOn
-        he_inj (hxK 0) (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK))
-      obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
-      refine ⟨ε, hε, fun y' hy'per hy' hy'K hcl' hdist ↦ ?_⟩
-      obtain ⟨x', hx', hx'K, rfl⟩ := hlift hy'per hy' hy'K hcl'
-      rw [hVx ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩ x' hx' hx'K rfl]
-  obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hyper hy
-    fun t ↦ hKe.isClosed.mem_of_tendsto (hconv.tendsto_at t)
-      ((eventually_gt_atTop a).mono fun s hs ↦ mem_image_of_mem e (huK s hs t))
-  exact ⟨x, mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi one_pos he.continuous hK
-    he_inj hu.continuousOn hper huK hnull (eventually_gt_atTop a) hx hxK hconv, hxK, hconv,
-    fun t ↦ hK.tendsto_nhds_of_tendsto_comp he.continuous.continuousOn he_inj
-      ((eventually_gt_atTop a).mono fun s hs ↦ huK s hs t) (hxK t) (hconv.tendsto_at t)⟩
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
+  hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
+    hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE hH hnull
+    (fun z hz ↦ norm_fderiv_le_of_periodic
+      (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hC hz)
+    (forall_mem_eventually_eq_of_forall_eventually_eq hiso)
 
 /-- **Convergence along a contractible Floer half-cylinder to a nondegenerate contractible orbit.**
 Under the hypotheses of
@@ -821,10 +786,8 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
   hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
     (hH.of_le one_le_two) hHper he hK he_inj hde hu hper huK hnull J hc hJc hfloer hE hC
-    fun x hx hxK ↦
-      (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH
-        (contractiblePeriodicSolutions_subset hx) (hnd x hx hxK)).mono fun _ hp x' hx' _ ↦
-          hp x' (contractiblePeriodicSolutions_subset hx')
+    (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hH
+      contractiblePeriodicSolutions_subset hnd)
 
 /-- **Convergence along a contractible Floer half-cylinder in a closed manifold.** The
 specialization of

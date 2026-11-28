@@ -1356,26 +1356,28 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularFor
       ((tendsto_sum_integral_deriv_smoothTransition_mul hK hKH hH hu hh).comp hT)).sub
       ((SymplecticForm.tendsto_integral_truncation_mul hR).comp hT))
 
-/-- **The Floer energy density of a `C¹` map into a manifold is a.e. strongly measurable.** -/
+/-- **The Floer energy density of a `C¹` map into a manifold is a.e. strongly measurable.**
+If `K` is `C¹` on `S × M` and `u` is `C¹` on `S`, the energy density is continuous on `S` and hence
+a.e. strongly measurable on `ℝ × ℝ`. -/
 theorem IsNondegenerate.aestronglyMeasurable_floerEnergyDensity
     (hω : ω.IsNondegenerate)
     (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
-    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) :
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) :
     AEStronglyMeasurable (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) volume := by
-  refine aestronglyMeasurable_of_tendsto_ae (u := atTop) (f := fun n : ℕ ↦ fun z ↦
-    SymplecticForm.truncation n z * ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
-    (fun n ↦ (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR n).1.1) ?_
-  filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
-  simpa using ((SymplecticForm.tendsto_truncation hz).comp
-    tendsto_natCast_atTop_atTop).mul_const _
+  have hX (v : ℂ) : ContinuousOn
+      (fun p : (ℝ × ℝ) × M ↦ (⟨p.2, ω.hamiltonianVectorField
+        (fun x ↦ K (Complex.equivRealProdCLM.symm p.1) x v) p.2⟩ : TangentBundle I M))
+      (thricePuncturedSphereReal ×ˢ univ) := fun q hq ↦
+    (hω.contMDiffAt_hamiltonianVectorField_uncurry (n := 0) (by simp) (by
+      simpa using (contMDiffOn_perturbation hK v).contMDiffAt
+        ((isOpen_thricePuncturedSphereReal.prod isOpen_univ).mem_nhds
+          hq))).continuousAt.continuousWithinAt
+  rw [← Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal]
+  exact (ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu (hX 1)
+    (hX Complex.I)).aestronglyMeasurable isOpen_thricePuncturedSphereReal.measurableSet
 
 /-- **A nonnegative energy density is integrable, for a manifold target.** Under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm`, the
@@ -1405,7 +1407,7 @@ theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
     Integrable (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) := by
-  refine ⟨hω.aestronglyMeasurable_floerEnergyDensity hK hu hR, ?_⟩
+  refine ⟨hω.aestronglyMeasurable_floerEnergyDensity hK hu, ?_⟩
   rw [HasFiniteIntegral, lintegral_congr_ae (g := fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)) (by
@@ -1482,5 +1484,15 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularFor
 end Limit
 
 end SmoothTwoForm
+
+namespace Floer
+
+/-- Restricting Lebesgue measure on `ℝ × ℝ` to `thricePuncturedSphereReal` leaves it unchanged. -/
+@[simp]
+theorem volume_restrict_thricePuncturedSphereReal :
+    (volume : Measure (ℝ × ℝ)).restrict thricePuncturedSphereReal = volume :=
+  Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
+
+end Floer
 
 end TauCeti

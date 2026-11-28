@@ -578,4 +578,17 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le (q : Punctu
 
 end SmoothTwoForm
 
+namespace Floer
+
+/-- A predicate on `positiveEndChart q z` holding on `Ioi b ×ˢ Icc 0 1` extends to all
+`z : ℝ × ℝ` with `b < z.1`, by `1`-periodicity of `positiveEndChart q` in the angular coordinate. -/
+theorem forall_positiveEndChart_of_mem_Ioi_prod_Icc {P : ℝ × ℝ → Prop} {q : Puncture} {b : ℝ}
+    (hP : ∀ z ∈ Ioi b ×ˢ Icc 0 1, P (positiveEndChart q z)) {z : ℝ × ℝ} (hz : b < z.1) :
+    P (positiveEndChart q z) := by
+  obtain ⟨t', ht', h⟩ := Periodic.exists_mem_Ico₀ (f := fun t ↦ positiveEndChart q (z.1, t))
+    (positiveEndChart_add_one q z.1) zero_lt_one z.2
+  exact h ▸ hP (z.1, t') ⟨hz, Ico_subset_Icc_self ht'⟩
+
+end Floer
+
 end TauCeti

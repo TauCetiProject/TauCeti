@@ -134,9 +134,6 @@ orbit at that end.
   whose `T`-periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible `T`-periodic
   solutions, assuming only that they are nondegenerate.
-* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic`: a periodic
-  solution that is a uniform limit (along an inducing map) of loops from a continuous half-cylinder
-  with a null-homotopic slice is contractible.
 * `TauCeti.forall_mem_periodicSolutions_eventually_eq_of_forall_mem`: isolation within a subset
   containing all periodic solutions satisfying a side predicate implies isolation among all
   periodic solutions satisfying that predicate.
@@ -323,30 +320,6 @@ theorem mem_contractiblePeriodicSolutions {γ : ℝ → M} :
 theorem contractiblePeriodicSolutions_subset :
     contractiblePeriodicSolutions X T ⊆ periodicSolutions X T :=
   fun _ hγ ↦ hγ.1
-
-/-- **Uniform limits of a continuous half-cylinder of periodic curves with one null-homotopic
-loop are contractible periodic solutions.** If a continuous family `t ↦ u (s, t)` (`s > a`) of
-`T`-periodic curves (`0 < T`) in `K` has one null-homotopic loop, and `e ∘ u (r i, ·)` converges
-uniformly along a filter staying in `(a, ∞)` to `e ∘ γ` for a `T`-periodic solution `γ` in `K`
-(with `e` topologically inducing on `K`), then `γ` is contractible. -/
-theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic {γ : ℝ → M}
-    (hγ : γ ∈ periodicSolutions X T) (hT : 0 < T) {K : Set M} (hγK : ∀ t, γ t ∈ K)
-    {F : Type*} [UniformSpace F] {e : M → F} (he : IsInducing fun p : K ↦ e p)
-    {ι : Type*} {l : Filter ι} [NeBot l] {a : ℝ} {r : ι → ℝ} (hr : ∀ᶠ i in l, a < r i)
-    {u : ℝ × ℝ → M} (hu : ContinuousOn u (Ioi a ×ˢ univ))
-    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) T) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
-    (hnull : ∃ s > a, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t))
-    (hunif : TendstoUniformly (fun i t ↦ e (u (r i, t))) (e ∘ γ) l) :
-    γ ∈ contractiblePeriodicSolutions X T := by
-  have : Fact (0 < T) := ⟨hT⟩
-  let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
-  let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-  obtain ⟨s₀, hs₀, hg₀⟩ := hnull
-  have hall := forall_exists_nullhomotopic_of_isPreconnected isPreconnected_Ioi
-    (u := fun s t ↦ u (s, t)) hu (fun s hs ↦ hper s hs) hs₀ hg₀
-  exact ⟨hγ, (periodic_of_mem_periodicSolutions hγ).exists_nullhomotopic_of_tendstoUniformly
-    (continuous_of_mem_periodicSolutions hγ)
-    hγK he (hr.mono fun _ hi t ↦ huK _ hi t) hunif (hr.mono fun _ hi ↦ hall _ hi).frequently⟩
 
 /-- The **loop of a contractible `1`-periodic solution** `γ`: the loop `t ↦ γ t`, `t ∈ [0, 1]`,
 based at `γ 0`. -/

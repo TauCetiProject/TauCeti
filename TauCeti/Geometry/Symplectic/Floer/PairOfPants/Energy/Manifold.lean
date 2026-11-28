@@ -162,10 +162,11 @@ private theorem exists_energy_of_endConvergence {P : Puncture → Set (ℝ → M
   exact hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu hEint hA hR hlim
 
 /-- **The manifold pair-of-pants energy identity at isolated asymptotic periodic orbits.** Under
-compact image `B`, pointwise tameness of `J`, uniform tameness through `e` and bounded derivative of
-`e ∘ u ∘ φ'_q` on each end tail strip `(b_q, ∞) × [0, 1]`, and isolation at time `0` of
-subsequential uniform-limit orbits in `B`, `u` has integrable Floer energy density, converges along
-each end to an orbit `y_q` in `B`, and satisfies the energy identity. -/
+compact image `B`, integrable symplectic area density and curvature along `u`, pointwise tameness of
+`J`, uniform tameness through `e` and bounded derivative of `e ∘ u ∘ φ'_q` on each end tail strip
+`(b_q, ∞) × [0, 1]`, and isolation at time `0` of subsequential uniform-limit orbits in `B`, `u`
+has integrable Floer energy density, converges along each end to an orbit `y_q` in `B`, and
+satisfies the energy identity. -/
 theorem exists_integral_floerEnergyDensity_of_cylindricalEnds_of_isCompact_of_isolated_clusterPt
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     (hiso : ∀ q, ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,

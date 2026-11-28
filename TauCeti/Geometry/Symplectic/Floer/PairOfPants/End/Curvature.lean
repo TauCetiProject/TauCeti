@@ -265,10 +265,10 @@ theorem hamiltonianCurvature_perturbationPullback_endChart_of_eq (ω : SmoothTwo
 
 /-- **The integrated curvature over an end strip, from a pointwise bound along `u`.** Let `K` be
 a perturbation one-form on `ℂ` which is differentiable on `S` separately in the domain point and
-in the target point. If for a map `u` into the target the curvature of its pullback along the end
-chart of `q` is at most `f(s)` at `(s, t, u (endChart q (s, t)))` for every `(s, t)` in the strip
-of `q`, for any function `f`, then the integral of `|R_K(z, u(z))|` over the image of the strip of
-`q` is at most `∫ f(s) ds`. -/
+in the target point. If for a map `u` into the target the extended norm (absolute value) of the
+curvature of its pullback along the end chart of `q` is at most `f(s)` at
+`(s, t, u (endChart q (s, t)))` for every `(s, t)` in the strip of `q`, for any function `f`, then
+the integral of `|R_K(z, u(z))|` over the image of the strip of `q` is at most `∫ f(s) ds`. -/
 theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
     (ω : SmoothTwoForm I M) {q : Puncture}
     (hKd : ∀ w : ℂ, w ≠ 0 ∧ w ≠ 1 → ∀ x v, DifferentiableAt ℝ (fun w' ↦ K w' x v) w)

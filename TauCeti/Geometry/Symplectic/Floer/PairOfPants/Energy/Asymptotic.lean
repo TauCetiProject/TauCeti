@@ -57,9 +57,10 @@ specializations to the constant form `SymplecticForm.constSmooth`.
   of a Hamiltonian along the end loops converge to its integral along their pointwise limits,
   either when the Hamiltonian is globally bounded or when the map takes values in a compact set.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`
-  gives the manifold pair-of-pants energy identity for maps into a compact set `B` with pointwise
-  end limits, without assuming finite energy or global bounds on `H_q` a priori (using
-  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable` for automatic integrability).
+  gives the manifold pair-of-pants energy identity for `C¹` maps into a compact set `B` with
+  nonnegative energy density, integrable area density and curvature, `K = H_q(t) dt` beyond `T₀` on
+  each end, and pointwise end limits, without finite energy or global bounds on `H_q` a priori
+  (using `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable`).
 * `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact`: when `u` maps
   `S` into a compact set `B`, a nonnegative Floer energy density has finite integral as soon as the
   area density and curvature term are integrable, without assuming convergence of the end integrals
@@ -228,17 +229,11 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact
     ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ := by
-  choose C hC using fun q ↦ (isCompact_Icc.prod hB).exists_bound_of_continuousOn
-    (s := Icc (0 : ℝ) 1 ×ˢ B) (hHc q).continuousOn
-  refine ne_of_lt ((hω.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm hK hKH hH hu he
-    hA hR (C := fun q ↦ max (C q) 0) fun q s hs ↦ ?_).trans_lt ENNReal.ofReal_lt_top)
-  have hs_pos : 0 < q.endSign * s := by linarith [le_max_left 2 T₀]
-  refine (Real.norm_eq_abs _).symm.trans_le ((intervalIntegral.norm_integral_le_of_norm_le_const
-    (C := max (C q) 0) fun t ht ↦ ?_).trans_eq (by norm_num))
-  rw [uIoc_of_le zero_le_one] at ht
-  exact (hC q (t, u (endChart q (s, t)))
-    ⟨⟨ht.1.le, ht.2⟩, huB _ (endChart_mem_thricePuncturedSphereReal hs_pos.le)⟩).trans
-    (le_max_left _ _)
+  have hE := (hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact hK hKH hH
+    hHc hB hu huB he hA.integrableOn hR.integrableOn).hasFiniteIntegral
+  rw [HasFiniteIntegral, volume_restrict_thricePuncturedSphereReal, lintegral_congr_ae
+    (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦ Real.eNorm_eq_ofReal (he z hz))] at hE
+  exact hE.ne
 
 end
 
@@ -246,8 +241,11 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
 
-/-- **The manifold pair-of-pants energy identity on a compact target set.** If `t ↦ u(φ_q(±s, t))`
-converges pointwise to `y_q` as `s → ∞` on each end `q`, then
+/-- **The manifold pair-of-pants energy identity on a compact target set.** For `K` equal to
+`H_q(t) dt` beyond `T₀` on each end `q` with `1`-periodic continuous Hamiltonians `H_q`, if `u` is
+`C¹` on `S` taking values in a compact set `B` with nonnegative Floer energy density, integrable
+symplectic area density and curvature over `S`, and `t ↦ u(φ_q(±s, t))` converges pointwise to
+`y_q` as `s → ∞` on each end `q`, then
 `∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t)) dt - ∫_S R_K(u)` without finite energy a priori. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
     {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
