@@ -9,6 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Action
 public import TauCeti.Analysis.CStarAlgebra.Module.Self
 
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Automatic continuity on finitely generated free right Hilbert C⋆-modules
@@ -35,17 +36,6 @@ open MulOpposite
 open scoped WithCStarModule
 
 namespace LinearMap
-
-/-- For a split linear surjection `f ∘ₗ g = LinearMap.id`, the graph of `g` consists of pairs
-`(x, y)` such that `f y = x` and `g (f y) = y`. -/
-private theorem coe_graph_eq_of_comp_eq_id {R M N : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] [AddCommMonoid N] [Module R N] (f : N →ₗ[R] M) (g : M →ₗ[R] N)
-    (hfg : f ∘ₗ g = LinearMap.id) :
-    (g.graph : Set (M × N)) = {p : M × N | f p.2 = p.1 ∧ (g ∘ₗ f) p.2 = p.2} := by
-  ext ⟨x, y⟩
-  have hfg_apply (z : M) : f (g z) = z := LinearMap.congr_fun hfg z
-  simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq, LinearMap.comp_apply]
-  exact ⟨fun h ↦ ⟨by rw [h, hfg_apply], by rw [h, hfg_apply]⟩, fun ⟨h1, h2⟩ ↦ by rw [← h1, h2]⟩
 
 variable {A E : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]

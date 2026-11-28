@@ -38,9 +38,9 @@ as well.
   with `CompleteLattice`, `SMul A F`, `CStarModule A F`, and `topologicalClosure`.
 * `TauCeti.CStarSubmodule.ofRightIdeal`, `TauCeti.CStarSubmodule.ofClosedRightAddSubgroup`,
   `TauCeti.CStarSubmodule.rightFixedSubmodule`, `TwoSidedIdeal.toCStarSubmodule`,
-  `Ideal.toCStarSubmodule`, `Submodule.toCStarSubmodule`, `Submodule.instCStarModule`: right
-  ideals of `A` as submodules of the right self-module `CStarModule Aᵐᵒᵖ A`, and unital
-  submodules as `CStarSubmodule`s and `CStarModule`s.
+  `Ideal.toCStarSubmodule`, `Submodule.toCStarSubmodule`, `Submodule.instCStarModule`,
+  `Submodule.coe_inner_cstarModule`: right ideals of `A` as submodules of the right self-module
+  `CStarModule Aᵐᵒᵖ A`, and unital submodules as `CStarSubmodule`s and `CStarModule`s.
 
 ## References
 
@@ -787,5 +787,14 @@ instance instCStarModule {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [Par
     inner_smul_right_complex := inst.inner_smul_right_complex
     star_inner := inst.star_inner
     norm_eq_sqrt_norm_inner_self := inst.norm_eq_sqrt_norm_inner_self }
+
+/-- The `A`-valued inner product on an `A`-submodule agrees with that of the ambient
+`CStarModule`. -/
+@[simp]
+theorem coe_inner_cstarModule {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A]
+    [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E]
+    [CStarModule A E] (K : Submodule A E) (x y : K) :
+    inner A x y = inner A (x : E) (y : E) :=
+  (rfl)
 
 end Submodule

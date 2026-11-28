@@ -50,6 +50,8 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `LinearMap.isCompl_graph_ker_fst`: the graph of a linear map `M → M₂` is a complement of
   `0 × M₂`.
+* `LinearMap.coe_graph_eq_of_comp_eq_id`: for a split surjection `f ∘ₗ g = LinearMap.id`, the
+  graph of `g` is `{p | f p.2 = p.1 ∧ (g ∘ₗ f) p.2 = p.2}`.
 * `TauCeti.antidiagDiagEquiv`: when `2` is invertible, the linear automorphism
   `(x, y) ↦ (x, -x) + (y, y)` of `M × M`, carrying the two coordinate axes onto the antidiagonal
   `(-LinearMap.id).graph` and the diagonal `LinearMap.id.graph`.
@@ -446,6 +448,17 @@ theorem map_prodMap_graph {R M₁ M₂ M₃ M₄ : Type*} [Semiring R] [AddCommM
     exact LinearMap.congr_fun h x
   · obtain ⟨x, rfl⟩ := hf a
     exact ⟨x, φ x, rfl, rfl, (LinearMap.congr_fun h x).trans hb.symm⟩
+
+/-- For a split linear surjection `f ∘ₗ g = LinearMap.id`, the graph of `g` consists of pairs
+`(x, y)` such that `f y = x` and `g (f y) = y`. -/
+theorem coe_graph_eq_of_comp_eq_id {R M N : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid N] [Module R N] (f : N →ₗ[R] M) (g : M →ₗ[R] N)
+    (hfg : f ∘ₗ g = LinearMap.id) :
+    (g.graph : Set (M × N)) = {p : M × N | f p.2 = p.1 ∧ (g ∘ₗ f) p.2 = p.2} := by
+  ext ⟨x, y⟩
+  have hfg_apply (z : M) : f (g z) = z := LinearMap.congr_fun hfg z
+  simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq, LinearMap.comp_apply]
+  exact ⟨fun h ↦ ⟨by rw [h, hfg_apply], by rw [h, hfg_apply]⟩, fun ⟨h1, h2⟩ ↦ by rw [← h1, h2]⟩
 
 end LinearMap
 
