@@ -46,9 +46,8 @@ theorem eq_neg_one_of_pow_eq_neg_one_two_pow {s k : ℕ} {a : ZMod (2 ^ (s + 1))
       simp
     have hc : (Nat.card (ZMod (2 ^ (s + 1 + 1)))ˣ).Coprime k := by
       rw [hcard]
-      have h₂k := (Nat.Prime.coprime_iff_not_dvd Nat.prime_two).mpr
-        (show ¬ 2 ∣ k by rwa [← even_iff_two_dvd])
-      exact h₂k.pow_left _
+      have h₂k : ¬ 2 ∣ k := by rwa [← even_iff_two_dvd]
+      exact ((Nat.Prime.coprime_iff_not_dvd Nat.prime_two).mpr h₂k).pow_left _
     have hu' : u = -1 := (powCoprime hc).injective (by
       rw [powCoprime_apply, powCoprime_apply, he, (Nat.not_even_iff_odd.mp hk).neg_one_pow])
     exact congrArg Units.val hu'

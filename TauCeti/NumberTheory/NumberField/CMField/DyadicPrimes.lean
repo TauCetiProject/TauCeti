@@ -24,7 +24,9 @@ This congruence occurs as `New.Parameters.natCast_eq_neg_one_of_star_eq` in
 
 public section
 
-namespace NumberField.IsCMField
+open NumberField IsCMField
+
+namespace Ideal
 
 /-- Let `w` be a conjugation-fixed prime above an odd rational prime `p` in a CM field.
 If the field contains a primitive `2 ^ (s + 1)`-th root of unity, then `p` is `-1`
@@ -37,7 +39,7 @@ theorem natCast_eq_neg_one_of_conj_fixed {K : Type*} [Field K] [NumberField K] [
   have hn : ((2 ^ (s + 1) : ℕ) : 𝓞 K) ∉ w := by
     push_cast
     exact fun h ↦ h₂ (Ideal.IsPrime.mem_of_pow_mem inferInstance _ h)
-  have h := natCast_card_quotient_under_eq_neg_one w hw hζ hn
+  have h := w.natCast_card_quotient_under_eq_neg_one hw hζ hn
   let v := w.under (𝓞 (maximalRealSubfield K))
   have : v.IsPrime := inferInstanceAs (Ideal.IsPrime (w.under (𝓞 (maximalRealSubfield K))))
   have : v.LiesOver (Ideal.span {(p : ℤ)}) :=
@@ -47,4 +49,4 @@ theorem natCast_eq_neg_one_of_conj_fixed {K : Type*} [Field K] [NumberField K] [
   rw [← hv, Nat.cast_pow] at h
   exact ZMod.eq_neg_one_of_pow_eq_neg_one_two_pow (Ideal.inertiaDeg_pos v ℤ).ne' h
 
-end NumberField.IsCMField
+end Ideal

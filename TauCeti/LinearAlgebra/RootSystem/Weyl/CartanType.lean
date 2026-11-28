@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+public import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 -- `TauCeti.LinearAlgebra.RootSystem.Weyl.Bases` supplies the simple transitivity of the Weyl group
 -- on the bases, `RootPairing.Base.existsUnique_map_eq`, behind the independence of the Cartan type

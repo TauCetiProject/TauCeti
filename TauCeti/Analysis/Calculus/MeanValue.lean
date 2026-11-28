@@ -129,12 +129,26 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+Over `ℝ`, if the derivative of a function in a direction `e` is a constant `c` along the
+segment from `x + a • e` to `x + b • e`, the function grows by `(b - a) • c` along it
+(`TauCeti.sub_eq_smul_of_fderiv_apply_eq`).
 
 ## Constancy from a vanishing derivative
 
 A function on a preconnected subset of `ℝ` whose derivative within the set vanishes is constant
 there (`IsPreconnected.eq_of_hasDerivWithinAt_zero`). A function `𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`,
 with zero derivative at every point is constant (`TauCeti.is_const_of_hasDerivAt_zero`).
+
+## Open-intersected convex sets
+
+Intersecting a convex set `C` with a non-convex open set `U` destroys global convexity while
+preserving local convexity on open balls inside `U`. A `C¹` map on `U ∩ C` is therefore still
+locally Lipschitz on `U ∩ C` (`Convex.locallyLipschitzOn_inter_of_contDiffOn`), and along any
+compact subset `K ⊆ U ∩ C` a map with a continuous family of within-derivatives on `U ∩ C`
+satisfies a uniform first-order Taylor remainder bound for nearby points in `C`
+(`Convex.exists_pos_norm_image_sub_sub_le_of_hasFDerivWithinAt_of_isCompact`, specialized to
+`fderivWithin` when `U ∩ C` has unique derivatives in
+`Convex.exists_pos_norm_image_sub_sub_fderivWithin_le_of_isCompact`).
 
 ## Signs from monotonicity on the real line
 
@@ -504,6 +518,25 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
 
 end Direction
 
+/-- If `f` is differentiable at every point `x + s • e` with `s ∈ [a, b]` and its derivative in
+the direction `e` is the constant `c` there, then `f` grows by `(b - a) • c` from `x + a • e` to
+`x + b • e`. Unlike `TauCeti.apply_add_smul_eq_of_fderiv_apply_eq`, differentiability and the
+directional derivative are only assumed on the segment. -/
+theorem sub_eq_smul_of_fderiv_apply_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : E → G} (x e : E) {a b : ℝ} {c : G} (hab : a ≤ b)
+    (hf : ∀ s ∈ Set.Icc a b, DifferentiableAt ℝ f (x + s • e) ∧ fderiv ℝ f (x + s • e) e = c) :
+    f (x + b • e) - f (x + a • e) = (b - a) • c := by
+  have hd : ∀ s ∈ Set.Icc a b, HasDerivAt (fun s ↦ f (x + s • e) - s • c) 0 s := fun s hs ↦ by
+    refine (((hf s hs).1.hasFDerivAt.comp_hasDerivAt s
+      (((hasDerivAt_id s).smul_const e).const_add x)).sub
+      ((hasDerivAt_id s).smul_const c)).congr_deriv ?_
+    simp [(hf s hs).2]
+  have h := constant_of_has_deriv_right_zero
+    (fun s hs ↦ (hd s hs).continuousAt.continuousWithinAt)
+    (fun s hs ↦ (hd s (Set.Ico_subset_Icc_self hs)).hasDerivWithinAt) b ⟨hab, le_rfl⟩
+  rw [sub_smul]
+  exact sub_eq_sub_iff_sub_eq_sub.1 h
+
 /-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
 `[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
 `‖g y - g x‖ ≤ L (‖x - p‖ + ‖p - q‖ + ‖q - y‖)`. Compare
@@ -760,6 +793,79 @@ This is the `HasDerivAt` form of Mathlib's `is_const_of_deriv_eq_zero`. -/
 theorem TauCeti.is_const_of_hasDerivAt_zero {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G]
     [NormedSpace 𝕜 G] {f : 𝕜 → G} (hf : ∀ t, HasDerivAt f 0 t) (t s : 𝕜) : f t = f s :=
   is_const_of_deriv_eq_zero (fun t ↦ (hf t).differentiableAt) (fun t ↦ (hf t).deriv) t s
+
+section OpenInterConvex
+
+open Filter Metric Set
+open scoped Topology
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A `C¹` map on `U ∩ C`, where `U` is open and `C` is convex, is locally Lipschitz on `U ∩ C`. -/
+theorem Convex.locallyLipschitzOn_inter_of_contDiffOn {C U : Set E} (hC : Convex ℝ C)
+    (hU : IsOpen U) {f : E → F} (hf : ContDiffOn ℝ 1 f (U ∩ C)) :
+    LocallyLipschitzOn (U ∩ C) f := by
+  intro x hx
+  have hfC : ContDiffWithinAt ℝ 1 f C x :=
+    (contDiffWithinAt_inter (hU.mem_nhds hx.1)).mp (inter_comm U C ▸ hf x hx)
+  obtain ⟨K, t, ht, hLip⟩ := hfC.exists_lipschitzOnWith hC
+  obtain ⟨V, hV, hVt⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp ht
+  exact ⟨K, U ∩ t, mem_nhdsWithin_iff_exists_mem_nhds_inter.mpr
+    ⟨U ∩ V, inter_mem (hU.mem_nhds hx.1) hV,
+      fun y ⟨⟨hyU, hyV⟩, _, hyC⟩ ↦ ⟨hyU, hVt ⟨hyV, hyC⟩⟩⟩, hLip.mono inter_subset_right⟩
+
+/-- **Uniform first-order Taylor bound on a compact subset of `U ∩ C`.** If `C` is convex, `U` is
+open, and `f` has a continuous family of derivatives `D` within `U ∩ C`, then for every compact
+subset `K ⊆ U ∩ C` and `η > 0` there is a uniform radius `ρ > 0` such that
+`‖f z₂ - f z₁ - D z₁ (z₂ - z₁)‖ ≤ η * ‖z₂ - z₁‖` for all `z₁ ∈ K` and `z₂ ∈ C` within
+distance `ρ` of `z₁`. -/
+theorem Convex.exists_pos_norm_image_sub_sub_le_of_hasFDerivWithinAt_of_isCompact
+    {C U K : Set E} (hC : Convex ℝ C) (hU : IsOpen U) {f : E → F} {D : E → E →L[ℝ] F}
+    (hf : ∀ z ∈ U ∩ C, HasFDerivWithinAt f (D z) (U ∩ C) z) (hD : ContinuousOn D (U ∩ C))
+    (hK : IsCompact K) (hKsub : K ⊆ U ∩ C) {η : ℝ} (hη : 0 < η) :
+    ∃ ρ > 0, ∀ z₁ ∈ K, ∀ z₂ ∈ C, dist z₂ z₁ < ρ →
+      ‖f z₂ - f z₁ - D z₁ (z₂ - z₁)‖ ≤ η * ‖z₂ - z₁‖ := by
+  have hloc (x : K) : ∃ r > 0, ball x.val (2 * r) ⊆ U ∧
+      ∀ z ∈ ball x.val (2 * r) ∩ C, ‖D z - D x.val‖ ≤ η / 2 := by
+    obtain ⟨r₁, hr₁, hsubU⟩ := Metric.isOpen_iff.mp hU x.val (hKsub x.property).1
+    obtain ⟨r₂, hr₂, hclose⟩ :=
+      Metric.continuousWithinAt_iff.mp (hD x.val (hKsub x.property)) (η / 2) (half_pos hη)
+    have hmin : 2 * (min r₁ r₂ / 3) ≤ min r₁ r₂ := by linarith [lt_min hr₁ hr₂]
+    refine ⟨min r₁ r₂ / 3, by positivity, (ball_subset_ball (hmin.trans (min_le_left _ _))).trans
+      hsubU, fun z hz ↦ ?_⟩
+    simpa [dist_eq_norm] using
+      (hclose ⟨hsubU (ball_subset_ball (hmin.trans (min_le_left _ _)) hz.1), hz.2⟩
+        (lt_of_lt_of_le hz.1 (hmin.trans (min_le_right _ _)))).le
+  choose r hr_pos hr_U hr_df using hloc
+  obtain ⟨F, hFcov⟩ := hK.elim_finite_subcover (fun x : K ↦ ball x.val (r x))
+    (fun _ ↦ isOpen_ball) fun x hx ↦ mem_iUnion.mpr ⟨⟨x, hx⟩, mem_ball_self (hr_pos ⟨x, hx⟩)⟩
+  rcases F.eq_empty_or_nonempty with rfl | hFne
+  · exact ⟨1, zero_lt_one, fun _ hz₁ ↦ False.elim (by simpa using hFcov hz₁)⟩
+  refine ⟨F.inf' hFne r, (Finset.lt_inf'_iff hFne).mpr fun x _ ↦ hr_pos x,
+    fun z₁ hz₁ z₂ hz₂C hdist ↦ ?_⟩
+  obtain ⟨x, hxF, hz₁x⟩ := mem_iUnion₂.mp (hFcov hz₁)
+  have hsub : ball x.val (2 * r x) ∩ C ⊆ U ∩ C := fun _ hw ↦ ⟨hr_U x hw.1, hw.2⟩
+  exact ((convex_ball x.val (2 * r x)).inter hC).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    (fun w hw ↦ (hf w (hsub hw)).mono hsub)
+    (fun w hw ↦ (norm_sub_le_norm_sub_add_norm_sub _ (D x.val) _).trans
+      (by rw [norm_sub_rev (D x.val)]; linarith [hr_df x w hw,
+        hr_df x z₁ ⟨ball_subset_ball (by linarith [hr_pos x]) hz₁x, (hKsub hz₁).2⟩]))
+    ⟨ball_subset_ball (by linarith [hr_pos x]) hz₁x, (hKsub hz₁).2⟩
+    ⟨by rw [mem_ball] at hz₁x ⊢; linarith [Finset.inf'_le r hxF, dist_triangle z₂ z₁ x.val], hz₂C⟩
+
+/-- **Uniform first-order Taylor bound for `fderivWithin` on a compact subset of `U ∩ C`.** -/
+theorem Convex.exists_pos_norm_image_sub_sub_fderivWithin_le_of_isCompact
+    {C U K : Set E} (hC : Convex ℝ C) (hU : IsOpen U) (hU_uniq : UniqueDiffOn ℝ (U ∩ C))
+    {f : E → F} (hf : ContDiffOn ℝ 1 f (U ∩ C)) (hK : IsCompact K) (hKsub : K ⊆ U ∩ C)
+    {η : ℝ} (hη : 0 < η) :
+    ∃ ρ > 0, ∀ z₁ ∈ K, ∀ z₂ ∈ C, dist z₂ z₁ < ρ →
+      ‖f z₂ - f z₁ - fderivWithin ℝ f (U ∩ C) z₁ (z₂ - z₁)‖ ≤ η * ‖z₂ - z₁‖ :=
+  hC.exists_pos_norm_image_sub_sub_le_of_hasFDerivWithinAt_of_isCompact hU
+    (fun _ hz ↦ (hf.differentiableOn one_ne_zero _ hz).hasFDerivWithinAt)
+    (hf.continuousOn_fderivWithin hU_uniq le_rfl) hK hKsub hη
+
+end OpenInterConvex
 
 namespace TauCeti
 

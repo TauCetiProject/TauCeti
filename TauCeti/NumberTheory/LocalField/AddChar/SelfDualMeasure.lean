@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.CharacterAnnihilator
 public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice
-public import TauCeti.NumberTheory.LocalField.HaarCharacter
+public import TauCeti.NumberTheory.LocalField.Haar.Character
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.Topology.Algebra.Group.LocallyConstant
@@ -178,6 +178,12 @@ theorem addHaar_eq_selfDualMeasure_iff (μ : Measure K) [μ.IsAddHaarMeasure] (m
     ring_nf
   rw [addHaarMeasure_unique μ (integerPositiveCompacts K), coe_integerPositiveCompacts, hc,
     selfDualMeasure]
+
+/-- The positive and negative Fourier kernels have the same self-dual measure. -/
+@[simp]
+theorem selfDualMeasure_inv {N : Type*} [CommMonoid N] (χ : AddChar K N) :
+    χ⁻¹.selfDualMeasure = χ.selfDualMeasure := by
+  simp [selfDualMeasure]
 
 end Measure
 
