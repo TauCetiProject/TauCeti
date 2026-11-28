@@ -145,6 +145,27 @@ theorem comp {f : β → γ} {g : α → β} (hf : ComputableIn O f) (hg : Compu
   exact (Nat.RecursiveIn.comp hf hg).of_eq fun n => by
     cases decode (α := α) n <;> simp [Encodable.encodek]
 
+/-- An oracle-computable function whose range is the encoding of `S` can be decoded to an
+oracle-computable function with range `S`. Decoding preserves injectivity, and `a` supplies a
+default for numbers outside the encoding. -/
+theorem exists_decoded_range {f : α → ℕ} {S : Set β} (hf : ComputableIn O f) (a : β)
+    (hr : Set.range f = encode '' S) :
+    ∃ g : α → β, ComputableIn O g ∧ Set.range g = S ∧
+      (Function.Injective f → Function.Injective g) := by
+  let d (n : ℕ) := (decode n).getD a
+  have hd : Computable d := Computable.decode.option_getD (Computable.const a)
+  have hinv : Function.LeftInverse d (encode (α := β)) := fun x => by simp [d]
+  refine ⟨d ∘ f, hd.computableIn.comp hf, ?_, ?_⟩
+  · rw [Set.range_comp, hr]
+    exact hinv.image_image S
+  · intro h m n he
+    obtain ⟨x, _, hx⟩ := hr ▸ Set.mem_range_self m
+    obtain ⟨y, _, hy⟩ := hr ▸ Set.mem_range_self n
+    apply h
+    rw [← hx, ← hy]
+    apply congrArg encode
+    simpa only [Function.comp_apply, ← hx, ← hy, hinv x, hinv y] using he
+
 /-- Pairing total oracle-computable functions. -/
 theorem pair {f : α → β} {g : α → γ} (hf : ComputableIn O f) (hg : ComputableIn O g) :
     ComputableIn O (fun a => (f a, g a)) := by

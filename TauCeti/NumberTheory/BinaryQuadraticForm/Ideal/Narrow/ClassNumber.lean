@@ -13,7 +13,7 @@ public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NormNum.Prime
-import TauCeti.NumberTheory.FundamentalDiscriminant
+import TauCeti.NumberTheory.FundamentalDiscriminant.Basic
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
 import TauCeti.NumberTheory.QuadraticOrder.Field

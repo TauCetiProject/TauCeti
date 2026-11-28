@@ -11,7 +11,9 @@ public import Mathlib.LinearAlgebra.LinearPMap
 public import TauCeti.Algebra.Lie.Weights.Span
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Submodule.Finrank
 import TauCeti.Algebra.Lie.Weights.Basic
+import TauCeti.LinearAlgebra.Dimension.DirectSum
 
 /-!
 # The nilradicals and the Borel subalgebra of a positive system
@@ -55,6 +57,13 @@ function.
 * `TauCeti.mem_positiveNilradical_of_mem_rootSpace` and
   `TauCeti.mem_negativeNilradical_of_mem_rootSpace` say the nilradicals contain the root spaces
   they are built from.
+* `TauCeti.lie_mem_rootSpaceSpan`: the span of a set `S` of roots is stable under the bracket with
+  the span of the weight spaces at a set `T` of weights when the root spaces at the sums of
+  members of `T` and of `S` lie in the span of `S`.
+* `TauCeti.finrank_rootSpaceSpan`: the span of the root spaces of a set `S` of roots has
+  dimension `#S`.
+* `TauCeti.rootSpace_add_le_rootSpaceSpan_of_forall`: the root space at a nonzero sum `γ + δ` of
+  two roots lies in the span of the root spaces of `S` when every root equal to `γ + δ` is in `S`.
 * `TauCeti.neg_mem_posRoots_of_mem_negRoots` and `TauCeti.neg_mem_negRoots_of_mem_posRoots` say
   that negation exchanges negative and positive roots.
 * `TauCeti.killingForm_eq_zero_of_mem_posRoots`: positive root spaces are Killing-orthogonal.
@@ -155,19 +164,21 @@ theorem rootSpaceSpan_le_iff {S : Set H.root} {N : LieSubmodule K H L} :
   ⟨fun h _ hα => (rootSpace_le_rootSpaceSpan hα).trans h,
     fun h => genWeightSpaceSpan_le_iff.mpr (by rintro _ ⟨α, hα, rfl⟩; exact h α hα)⟩
 
-/-- The span of the root spaces indexed by `S` is closed under the bracket as soon as the root
-space of the sum of any two members of `S` lies back inside it. -/
-theorem lie_mem_rootSpaceSpan {S : Set H.root}
-    (hS : ∀ α ∈ S, ∀ β ∈ S,
-      rootSpace H ((α : H → K) + (β : H → K)) ≤ rootSpaceSpan H S)
-    {x y : L} (hx : x ∈ rootSpaceSpan H S) (hy : y ∈ rootSpaceSpan H S) :
+/-- The span of the root spaces indexed by `S` is stable under the bracket with the span of the
+weight spaces at a set `T` of weights, as soon as the root space at the sum of any member of `T`
+and any member of `S` lies back inside it. Taking for `T` the weights of `S` itself, the span of
+`S` is closed under the bracket. -/
+theorem lie_mem_rootSpaceSpan {T : Set (H → K)} {S : Set H.root}
+    (hS : ∀ χ ∈ T, ∀ β ∈ S, rootSpace H (χ + (β : H → K)) ≤ rootSpaceSpan H S)
+    {x y : L} (hx : x ∈ genWeightSpaceSpan H L T) (hy : y ∈ rootSpaceSpan H S) :
     ⁅x, y⁆ ∈ rootSpaceSpan H S := by
-  rw [rootSpaceSpan_eq_iSup] at hx hy
+  rw [genWeightSpaceSpan_eq_iSup] at hx
+  rw [rootSpaceSpan_eq_iSup] at hy
   refine LieSubmodule.iSup_induction (motive := fun x => ⁅x, y⁆ ∈ rootSpaceSpan H S) _ hx
-    (fun α x hx => ?_) (by simp) (fun x z hx hz => by rw [add_lie]; exact add_mem hx hz)
+    (fun χ x hx => ?_) (by simp) (fun x z hx hz => by rw [add_lie]; exact add_mem hx hz)
   refine LieSubmodule.iSup_induction (motive := fun y => ⁅x, y⁆ ∈ rootSpaceSpan H S) _ hy
     (fun β y hy => ?_) (by simp) (fun y z hy hz => by rw [lie_add]; exact add_mem hy hz)
-  exact hS α α.property β β.property (lie_mem_genWeightSpace_of_mem_genWeightSpace hx hy)
+  exact hS χ χ.property β β.property (lie_mem_genWeightSpace_of_mem_genWeightSpace hx hy)
 
 end RootSpaceSpan
 
@@ -194,32 +205,53 @@ structure IsSpecialClosedRootSet (S : Set H.root) : Prop where
   /-- No member of `S` has its negative in `S`. -/
   reflectionPerm_self_notMem : ∀ α ∈ S, (IsKilling.rootSystem H).reflectionPerm α α ∉ S
 
+variable (H) in
+/-- **The span of the root spaces of a set of roots has dimension the number of roots in it**,
+each root space being a line and distinct root spaces being independent. -/
+theorem finrank_rootSpaceSpan (S : Set H.root) : finrank K (rootSpaceSpan H S) = S.ncard := by
+  classical
+  have := Fintype.ofFinite S
+  have hind : iSupIndep fun α : S ↦ (rootSpace H ((α : H.root) : H → K)).toSubmodule :=
+    LieSubmodule.iSupIndep_toSubmodule.mpr <| (iSupIndep_genWeightSpace' K H L).comp
+      (f := fun α : S ↦ ((α : H.root) : Weight K H L))
+      (Subtype.val_injective.comp Subtype.val_injective)
+  rw [← LieSubmodule.finrank_toSubmodule, rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule,
+    finrank_iSup_eq_sum_finrank_of_iSupIndep hind]
+  calc _ = ∑ _α : S, 1 := Finset.sum_congr rfl fun α _ ↦ (LieSubmodule.finrank_toSubmodule _).trans
+        (IsKilling.finrank_rootSpace_eq_one ((α : H.root) : Weight K H L)
+          (H.isNonZero_coe_root α))
+    _ = S.ncard := by
+      rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_one, ← Nat.card_coe_set_eq,
+        Nat.card_eq_fintype_card]
+
+/-- The root space at a sum `γ + δ` of two roots lies in the span of the root spaces of a set `S`
+of roots as soon as `γ + δ` is nonzero and every root equal to `γ + δ` lies in `S`. -/
+theorem rootSpace_add_le_rootSpaceSpan_of_forall {S : Set H.root} {γ δ : H.root}
+    (h0 : (IsKilling.rootSystem H).root γ + (IsKilling.rootSystem H).root δ ≠ 0)
+    (hS : ∀ k : H.root, (IsKilling.rootSystem H).root k =
+      (IsKilling.rootSystem H).root γ + (IsKilling.rootSystem H).root δ → k ∈ S) :
+    rootSpace H ((γ : H → K) + (δ : H → K)) ≤ rootSpaceSpan H S := by
+  rcases eq_or_ne (rootSpace H ((γ : H → K) + (δ : H → K))) ⊥ with h | h
+  · rw [h]; exact bot_le
+  -- the sum is a nonzero weight, hence a root `k`
+  have hne : (⟨(γ : H → K) + (δ : H → K), h⟩ : Weight K H L).IsNonZero := by
+    intro hzero
+    refine h0 (LinearMap.ext fun z ↦ ?_)
+    simpa [Weight.toLinear_apply] using congrFun hzero z
+  let k : H.root := ⟨⟨(γ : H → K) + (δ : H → K), h⟩, by simpa [LieSubalgebra.root] using hne⟩
+  have hk : (IsKilling.rootSystem H).root k =
+      (IsKilling.rootSystem H).root γ + (IsKilling.rootSystem H).root δ :=
+    LinearMap.ext fun z ↦ by simp [k, Weight.toLinear_apply]
+  exact rootSpace_le_rootSpaceSpan (α := k) (hS k hk)
+
 /-- The root space of the sum of two members of a special closed set of roots lies in the span of
 that set. -/
 theorem rootSpace_add_le_rootSpaceSpan {S : Set H.root} (hS : IsSpecialClosedRootSet H S)
     {α β : H.root} (hα : α ∈ S) (hβ : β ∈ S) :
-    rootSpace H ((α : H → K) + (β : H → K)) ≤ rootSpaceSpan H S := by
-  rcases eq_or_ne (rootSpace H ((α : H → K) + (β : H → K))) ⊥ with h | h
-  · rw [h]; exact bot_le
-  -- The sum is a weight; it is nonzero, since `α = -β` would put an opposite pair inside `S`.
-  have hne : (⟨(α : H → K) + (β : H → K), h⟩ : Weight K H L).IsNonZero := by
-    intro hzero
-    have hroot : (IsKilling.rootSystem H).root α = -(IsKilling.rootSystem H).root β := by
-      ext x
-      have hx := congrFun hzero x
-      simp only [Weight.coe_weight_mk, Pi.add_apply, Pi.zero_apply,
-        Weight.toLinear_apply] at hx
-      simp only [IsKilling.rootSystem_root_apply, LinearMap.neg_apply, Weight.toLinear_apply]
-      linear_combination hx
-    rw [RootPairing.root_eq_neg_iff] at hroot
-    exact hS.reflectionPerm_self_notMem β hβ (hroot ▸ hα)
-  set k : H.root := ⟨⟨(α : H → K) + (β : H → K), h⟩, by simpa [LieSubalgebra.root] using hne⟩
-    with hk_def
-  have hk : (IsKilling.rootSystem H).root k =
-      (IsKilling.rootSystem H).root α + (IsKilling.rootSystem H).root β := by
-    ext x
-    simp [hk_def]
-  exact rootSpace_le_rootSpaceSpan (S := S) (α := k) (hS.add_mem α hα β hβ k hk)
+    rootSpace H ((α : H → K) + (β : H → K)) ≤ rootSpaceSpan H S :=
+  -- the sum is nonzero, since `α = -β` would put an opposite pair inside `S`
+  rootSpace_add_le_rootSpaceSpan_of_forall (fun h => hS.reflectionPerm_self_notMem β hβ <|
+    (RootPairing.root_eq_neg_iff _).mp (eq_neg_of_add_eq_zero_left h) ▸ hα) (hS.add_mem α hα β hβ)
 
 variable (b : (IsKilling.rootSystem H).Base)
 
@@ -387,7 +419,8 @@ of `L`. -/
 def rootSpaceSubalgebra (S : Set H.root) (hS : IsSpecialClosedRootSet H S) : LieSubalgebra K L where
   __ := (rootSpaceSpan H S : Submodule K L)
   lie_mem' hx hy :=
-    lie_mem_rootSpaceSpan (fun _ hα _ hβ => rootSpace_add_le_rootSpaceSpan hS hα hβ) hx hy
+    lie_mem_rootSpaceSpan
+      (by rintro _ ⟨α, hα, rfl⟩ β hβ; exact rootSpace_add_le_rootSpaceSpan hS hα hβ) hx hy
 
 @[simp]
 theorem mem_rootSpaceSubalgebra {S : Set H.root} (hS : IsSpecialClosedRootSet H S) (x : L) :

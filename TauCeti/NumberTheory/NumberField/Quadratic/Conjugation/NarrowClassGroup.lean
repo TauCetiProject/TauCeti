@@ -7,8 +7,10 @@ module
 
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.Algebra.Group.Hom.Lift
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.NegOne
+import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
 /-!
 # The narrow-versus-ordinary defect of a quadratic field
@@ -412,5 +414,37 @@ theorem card_eq_two_mul_card_classGroup_of_forall_norm_ne_neg_one
     Nat.card (NarrowClassGroup K) = 2 * Nat.card (ClassGroup (𝓞 K)) := by
   rw [card_eq_card_classGroup_mul_card_ker,
     card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one hmin hgen hd hu, mul_comm]
+
+/-- A natural divisor of the field discriminant congruent to `3` modulo `4` forces the
+narrow class of the quadratic generator to be nontrivial. -/
+theorem mkPrincipal_gen_ne_one_of_dvd_discr_of_mod_four_eq_three
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (hd : 0 < d) {p : ℕ}
+    (hpd : (p : ℤ) ∣ discr K) (hp3 : p % 4 = 3) :
+    mkPrincipal (Units.mk0 (θ : K) (coe_gen_ne_zero hmin)) ≠ 1 := by
+  have hpd' : (p : ℤ) ∣ d := by
+    by_cases hd4 : d % 4 = 1
+    · rwa [discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4] at hpd
+    · rw [discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4] at hpd
+      have hpodd : Odd p := Nat.odd_iff.mpr (by omega)
+      have hcop : IsCoprime (p : ℤ) (4 : ℤ) := by
+        rw [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast]
+        exact hpodd.coprime_two_right.pow_right 2
+      exact hcop.dvd_of_dvd_mul_left hpd
+  intro h
+  obtain ⟨u, hu⟩ := (mkPrincipal_gen_eq_one_iff_exists_norm_eq_neg_one hmin hgen hd).mp h
+  exact norm_ne_neg_one_of_mod_four_eq_three_of_dvd hmin hgen hsf hp3 hpd' (u : 𝓞 K) hu
+
+/-- The narrow class number is twice the ordinary class number if the field discriminant
+has a natural divisor congruent to `3` modulo `4`. -/
+theorem card_eq_two_mul_card_classGroup_of_dvd_discr_of_mod_four_eq_three
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (hd : 0 < d) {p : ℕ}
+    (hpd : (p : ℤ) ∣ discr K) (hp3 : p % 4 = 3) :
+    Nat.card (NarrowClassGroup K) = 2 * Nat.card (ClassGroup (𝓞 K)) := by
+  apply card_eq_two_mul_card_classGroup_of_forall_norm_ne_neg_one hmin hgen hd
+  intro u hu
+  exact mkPrincipal_gen_ne_one_of_dvd_discr_of_mod_four_eq_three hmin hgen hsf hd hpd hp3
+    ((mkPrincipal_gen_eq_one_iff_exists_norm_eq_neg_one hmin hgen hd).mpr ⟨u, hu⟩)
 
 end TauCeti.NumberField.NarrowClassGroup

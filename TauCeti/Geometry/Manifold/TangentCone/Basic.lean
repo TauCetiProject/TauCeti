@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.TransverseDisc
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import Mathlib.Analysis.Calculus.TangentCone.ProperSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -24,10 +25,12 @@ with charts in its model space it is read in the preferred chart itself
 (`TauCeti.mtangentConeAt_eq_tangentConeAt_chartAt`); read in any other chart around `y`, it is
 carried onto the tangent cone in that chart by the derivative of the transition map
 (`TauCeti.image_mtangentConeAt_eq_tangentConeAt`). The velocity of an integral curve that stays
-in `s` lies in it (`IsMIntegralCurveAt.mem_mtangentConeAt`), and the derivative of a map within
-`s` carries it into the tangent cone of the image of `s`
-(`HasMFDerivWithinAt.mapsTo_mtangentConeAt`), so a map with surjective derivative carries
-transverse sets to transverse sets (`HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top`).
+in `s` lies in it (`IsMIntegralCurveAt.mem_mtangentConeAt`). At an accumulation point of `s` it
+contains a nonzero vector when the model space is proper
+(`TauCeti.mtangentConeAt_nonempty_of_properSpace`). The derivative of a map within `s` carries it
+into the tangent cone of the image of `s` (`HasMFDerivWithinAt.mapsTo_mtangentConeAt`), so a map
+with surjective derivative carries transverse sets to transverse sets
+(`HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top`).
 
 For a manifold modelled on a vector space `E` with charts in `E`, a chart of the maximal atlas that
 flattens `s` onto a closed linear subspace `L` near `y` makes the span of the tangent cone the
@@ -56,6 +59,8 @@ at `y`.
 
 * `TauCeti.mtangentConeAt`: the tangent cone of a subset of a manifold, read in the preferred
   chart.
+* `TauCeti.mtangentConeAt_nonempty_of_properSpace`: at an accumulation point of the set, the
+  tangent cone contains a nonzero vector.
 * `IsMIntegralCurveAt.mem_mtangentConeAt`: the velocity of an integral curve lies in the tangent
   cone of every set the curve stays in.
 * `HasMFDerivWithinAt.mapsTo_mtangentConeAt`: the derivative of a map within a set maps the
@@ -130,6 +135,21 @@ usual sense. -/
 theorem mtangentConeAt_eq_tangentConeAt (s : Set E) (y : E) :
     mtangentConeAt 𝓘(𝕜, E) s y = tangentConeAt 𝕜 s y := by
   simp [mtangentConeAt_def]
+
+/-- **At a non-isolated point the tangent cone is nontrivial.** If the model space is proper and
+`y` is an accumulation point of `s`, then the tangent cone of `s` at `y` contains a nonzero vector.
+This is the manifold form of `tangentConeAt_nonempty_of_properSpace`. -/
+theorem mtangentConeAt_nonempty_of_properSpace [ProperSpace E] {s : Set M} {y : M}
+    (hy : AccPt y (𝓟 s)) : (mtangentConeAt I s y ∩ {0}ᶜ).Nonempty := by
+  rw [mtangentConeAt_def]
+  refine tangentConeAt_nonempty_of_properSpace (accPt_iff_frequently.2 ?_)
+  -- The points of `s` near `y`, other than `y`, are read in the chart at `y` as distinct points.
+  refine (continuousAt_extChartAt (I := I) y).tendsto.frequently_map _ (fun w hw ↦ ?_)
+    ((accPt_iff_frequently.1 hy).and_eventually (extChartAt_source_mem_nhds (I := I) y))
+  obtain ⟨⟨hwy, hws⟩, hwsrc⟩ := hw
+  exact ⟨fun h ↦ hwy ((extChartAt I y).injOn hwsrc (mem_extChartAt_source y) h),
+    by rw [mem_preimage, (extChartAt I y).left_inv hwsrc]; exact hws,
+    extChartAt_target_subset_range y ((extChartAt I y).map_source hwsrc)⟩
 
 end Defs
 

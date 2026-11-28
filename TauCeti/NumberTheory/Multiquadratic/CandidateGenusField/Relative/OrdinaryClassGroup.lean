@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter
-public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.OrdinaryTwoRank
+public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.DistinguishedClass
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!

@@ -12,6 +12,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Topology.MetricSpace.Holder
@@ -110,9 +111,9 @@ theorem ContDiff.iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {f : E → F} 
 `(i + 1)`-th iterated derivative of `f`: `‖Dⁱ (y ↦ Df(y) v) (x)‖ ≤ ‖D^{i+1} f (x)‖ ‖v‖`. -/
 theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le {n : WithTop ℕ∞} {f : E → F}
     (hf : ContDiff 𝕜 n f) {i : ℕ} (hi : minSmoothness 𝕜 (i + 1) ≤ n) (v x : E) :
-    ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ := by
-  rw [hf.iteratedFDeriv_fderiv_apply hi, ← norm_fderiv_iteratedFDeriv]
-  exact (fderiv 𝕜 (iteratedFDeriv 𝕜 i f) x).le_opNorm v
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ :=
+  ((hf.of_le (le_minSmoothness.trans hi)).contDiffOn.norm_iteratedFDeriv_fderiv_apply_le
+    isOpen_univ v le_rfl (Set.mem_univ x)).trans_eq (mul_comm _ _)
 
 /-- A uniform bound `C` on the iterated derivatives of `f` up to order `k + 1` bounds those of a
 directional derivative `y ↦ Df(y) v` up to order `k` by `C ‖v‖`. -/

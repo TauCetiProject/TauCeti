@@ -119,6 +119,22 @@ theorem gradedMatrix_degree_intCast {R : Type*} [Zero R] {ι : Type*} {B : Type*
     (i k : ι) (h : D i k ≠ 0) : (e k : B) = e i + 1 := by
   rw [hD i k h, Int.cast_add, Int.cast_one]
 
+/-- Applying a map that fixes zero to the entries keeps a matrix raising the degrees by one raising
+them by one: this is the degree hypothesis of `TauCeti.gradedMatrixComplex` after a change of
+coefficients, for instance along a ring homomorphism. -/
+theorem gradedMatrix_degree_map {R S : Type*} [Zero R] [Zero S] {ι : Type*} {B : Type*} [Add B]
+    [One B] {e : ι → B} {D : Matrix ι ι R} (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1) {f : R → S}
+    (hf : f 0 = 0) (i k : ι) (h : D.map f i k ≠ 0) : e k = e i + 1 :=
+  hD i k fun h' ↦ h (by rw [Matrix.map_apply, h', hf])
+
+/-- Applying a ring homomorphism to the entries of a square matrix squaring to zero gives a matrix
+squaring to zero: this is the hypothesis `D * D = 0` of `TauCeti.gradedMatrixComplex` after a
+change of coefficients. -/
+theorem gradedMatrix_map_mul_map_eq_zero {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    {ι : Type*} [Fintype ι] {D : Matrix ι ι R} (hDD : D * D = 0) (f : R →+* S) :
+    D.map f * D.map f = 0 := by
+  rw [← Matrix.map_mul, hDD, Matrix.map_zero _ (map_zero f)]
+
 end Degree
 
 section Complex

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Tactic.FieldSimp
@@ -23,12 +24,15 @@ the uniform bound `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)
 the linear growth `α r exp (-α r²) t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and
 `0 ≤ t ≤ r`, which makes a Gaussian a barrier with a positive inward slope at a sphere,
 the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-shift bounds for
-`z ↦ exp (δ * (z - θ) ^ 2)`, together with the complex derivative of `w ↦ exp (a (w - b)²)`.
+`z ↦ exp (δ * (z - θ) ^ 2)`, the real derivatives of `e^{∓x²/2}`, together with the complex
+derivative of `w ↦ exp (a (w - b)²)`.
 
 ## Main results
 
 * `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`: an explicit upper bound for
   `(1 + r) ^ m * exp (-a r²)`.
+* `TauCeti.abs_pow_mul_exp_neg_pi_mul_sq_le`: an exponential majorant for a monomial times the
+  standard Gaussian.
 * `TauCeti.exp_neg_mul_sq_sub_mul_le`: uniform completing-the-square bound for
   `exp (-b u² - c u)` when `0 < b`.
 * `TauCeti.mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub`: moving inward from radius `r`, the
@@ -42,6 +46,8 @@ the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-sh
   `TauCeti.norm_exp_ofReal_mul_sq_mul_add_mul_I_sq_le`: vertical-shift Gaussian decay bounds.
 * `TauCeti.tendsto_exp_sub_mul_sq_cocompact`,
   `TauCeti.tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul`: cocompact decay and uniform damping.
+* `TauCeti.hasDerivAt_exp_neg_sq_div_two`, `TauCeti.hasDerivAt_exp_sq_div_two`: the derivatives
+  of the standard Gaussian weight `e^{-x²/2}` and of its reciprocal `e^{x²/2}`.
 * `Complex.hasDerivAt_cexp_mul_sub_sq`: the complex derivative of `w ↦ exp (a (w - b)²)`, for
   complex `a` and `b`; Gaussian kernels such as `z ↦ exp (-(c (t - z))²)` and
   `w ↦ exp (-(z + w)² / 2)` are the cases `a = -c²`, `b = t` and `a = -1/2`, `b = -z`.
@@ -97,6 +103,24 @@ theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : 
       _ = m ! / (a / 2) ^ m * Real.exp a := by
         rw [mul_assoc, mul_left_comm (Real.exp (a / 2 * u ^ 2)), ← Real.exp_add, add_neg_cancel,
           Real.exp_zero, mul_one]
+
+/-- The monomial of degree `j` times the standard Gaussian is bounded in absolute value by
+`j! exp(1 - |x|)`. -/
+theorem abs_pow_mul_exp_neg_pi_mul_sq_le (j : ℕ) (x : ℝ) :
+    |x ^ j * Real.exp (-Real.pi * x ^ 2)| ≤ (j.factorial : ℝ) * Real.exp 1 * Real.exp (-|x|) := by
+  rw [abs_mul, abs_pow, Real.abs_exp, ← sq_abs x]
+  calc
+    _ ≤ (j.factorial : ℝ) * Real.exp |x| * Real.exp (-Real.pi * |x| ^ 2) := by
+      gcongr
+      simpa [mul_comm] using (div_le_iff₀ (by positivity : 0 < (j.factorial : ℝ))).mp
+        (Real.pow_div_factorial_le_exp |x| (abs_nonneg x) j)
+    _ = (j.factorial : ℝ) * Real.exp (|x| - Real.pi * |x| ^ 2) := by
+      rw [mul_assoc, ← Real.exp_add, neg_mul, sub_eq_add_neg]
+    _ ≤ (j.factorial : ℝ) * Real.exp (1 + -|x|) := by
+      gcongr
+      have hπ : 0 ≤ Real.pi - 1 := by linarith [Real.two_le_pi]
+      nlinarith [sq_nonneg (|x| - 1), mul_nonneg hπ (sq_nonneg |x|)]
+    _ = _ := by rw [Real.exp_add, mul_assoc]
 
 /-- For `0 < b`, `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)` uniformly in
 `c u : ℝ`. -/
@@ -240,6 +264,19 @@ theorem tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul {E : Type*} [Seminorme
     have := (mul_lt_mul_of_pos_left hft (by positivity : 0 < Real.exp 1 + 1)).trans_eq
       (mul_div_cancel₀ ε (by positivity))
     linarith [mul_le_mul_of_nonneg_right hexp (norm_nonneg (f t))]
+
+/-- The derivative of the standard Gaussian weight `e^{-x²/2}` is `-x e^{-x²/2}`. -/
+theorem hasDerivAt_exp_neg_sq_div_two (x : ℝ) :
+    HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2 / 2))) (Real.exp (-(x ^ 2 / 2)) * -x) x := by
+  convert ((hasDerivAt_pow 2 x).div_const 2).fun_neg.exp using 1
+  ring
+
+/-- The derivative of the reciprocal `e^{x²/2}` of the standard Gaussian weight is
+`x e^{x²/2}`. -/
+theorem hasDerivAt_exp_sq_div_two (x : ℝ) :
+    HasDerivAt (fun u : ℝ => Real.exp (u ^ 2 / 2)) (Real.exp (x ^ 2 / 2) * x) x := by
+  convert ((hasDerivAt_pow 2 x).div_const 2).exp using 1
+  ring
 
 end TauCeti
 

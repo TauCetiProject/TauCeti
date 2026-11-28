@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LegendreTwist
 
 /-!
 # The remainders `R_q` of the one-sided prime sum bound
@@ -105,13 +106,20 @@ theorem quadraticTwist_apply {q : ℕ} (ψ : DirichletCharacter ℂ q) (a : (ZMo
       ψ (ZMod.cast (a : ZMod (q * d))) * quadraticChar (ZMod d) (ZMod.cast (a : ZMod (q * d))) := by
   simp [quadraticTwist_def, DirichletCharacter.changeLevel_eq_cast_of_dvd]
 
+/-- The quadratic twist at level `q * d` is the Legendre twist by `d`. -/
+theorem quadraticTwist_eq_legendreTwist {q : ℕ} (ψ : DirichletCharacter ℂ q) :
+    quadraticTwist d ψ = ψ.legendreTwist d := by
+  refine MulChar.ext fun a ↦ ?_
+  rw [quadraticTwist_apply, ← ZMod.intCast_zmod_cast (a : ZMod (q * d)),
+    DirichletCharacter.legendreTwist_apply]
+  simp [legendreSym]
+
 variable [NeZero q]
 
 /-- The mean of logarithmic derivatives
 `G_q(s) = φ(q)⁻¹ (Σ_ψ (E'_{ψχ_K} / E_{ψχ_K}(s) - E'_ψ / E_ψ(s)) - 1)`, the sum over all
 Dirichlet characters `ψ` modulo `q`. -/
 noncomputable def logDerivMean (s : ℂ) : ℂ :=
-  haveI : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
   (∑ ψ : DirichletCharacter ℂ q,
     (logDeriv (quadraticTwist d ψ).entireLFunction s - logDeriv ψ.entireLFunction s) - 1) /
       (Nat.totient q : ℂ)
@@ -119,7 +127,6 @@ noncomputable def logDerivMean (s : ℂ) : ℂ :=
 /-- The definition of `logDerivMean`. -/
 theorem logDerivMean_def (s : ℂ) :
     logDerivMean d q s =
-      haveI : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
       (∑ ψ : DirichletCharacter ℂ q,
         (logDeriv (quadraticTwist d ψ).entireLFunction s -
           logDeriv ψ.entireLFunction s) - 1) / (Nat.totient q : ℂ) :=

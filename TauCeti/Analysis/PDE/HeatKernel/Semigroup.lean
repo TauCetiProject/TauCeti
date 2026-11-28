@@ -176,6 +176,18 @@ theorem heatSemigroup_ae_eq_convolution_coeFn (hp : p ≠ ∞) {t : ℝ≥0} (ht
     heatSemigroup hp t f =ᵐ[volume] heatKernel t ⋆ (f : E → F) := by
   simpa only [Lp.toLp_coeFn] using heatSemigroup_ae_eq_convolution hp ht (Lp.memLp f)
 
+/-- Splitting the evolution in two half-steps writes the heat semigroup at a positive time as the
+heat convolution of an essentially bounded function: `e^{tΔ} f = K_{t/2} ⋆ e^{(t/2)Δ} f`. -/
+theorem heatSemigroup_ae_eq_convolution_heatSemigroup_half {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) {t : ℝ≥0} (ht : t ≠ 0) (f : Lp F p (volume : Measure E)) :
+    (heatSemigroup hp t f : E → F) =ᵐ[volume]
+      heatKernel ((t / 2 : ℝ≥0) : ℝ) ⋆ (heatSemigroup hp (t / 2) f : E → F) := by
+  have he : heatSemigroup hp t f = heatSemigroup hp (t / 2) (heatSemigroup hp (t / 2) f) := by
+    simpa only [add_halves, Semigroups.ContractionSemigroup.toStronglyContinuousSemigroup_apply]
+      using (heatSemigroup hp).toStronglyContinuousSemigroup.map_add_apply (t / 2) (t / 2) f
+  rw [he]
+  exact heatSemigroup_ae_eq_convolution_coeFn hp (by positivity) _
+
 /-- **The heat semigroup preserves positivity.** If `f ∈ Lᵖ` is nonnegative almost everywhere,
 so is `e^{tΔ} f`. -/
 theorem heatSemigroup_nonneg (hp : p ≠ ∞) (t : ℝ≥0) {f : Lp ℝ p (volume : Measure E)}

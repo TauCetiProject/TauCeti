@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.Gaussian
 public import TauCeti.Analysis.BoundedVariation.Compactness
 import Mathlib.MeasureTheory.Measure.TightNormed
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Order.Filter.AtTopBot
 
 /-!
 # Compactness for sets of bounded weighted perimeter
@@ -17,7 +18,9 @@ Let `W` be a `C¹` weight on a finite-dimensional real inner product space `E` w
 `μ = e^{−W} · volume` is finite. Every sequence of Lebesgue-measurable sets `U k` with
 `sup_k P_μ(U k) < ∞` has a subsequence whose indicators converge in `L¹(μ)` to the indicator of a
 measurable set `U`: `μ(U (φ j) ∆ U) → 0`
-(`TauCeti.exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le`). For the
+(`TauCeti.exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le`), and finitely
+many such sequences converge along one common subsequence
+(`TauCeti.exists_subseq_forall_tendsto_withDensity_symmDiff_of_weightedPerimeter_le`). For the
 Gaussian weight, `μ` is the standard Gaussian measure
 (`TauCeti.withDensity_exp_neg_gaussianWeight`), so sequences of bounded Gaussian perimeter have
 subsequences converging in `L¹(γ)`
@@ -98,6 +101,31 @@ theorem exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le
     _ ≤ ε / 2 + ε / 2 := add_le_add ((hνK _).trans hj)
         ((measure_mono fun _ (hx : _ ∈ _ \ K) => hx.2).trans hR)
     _ = ε := ENNReal.add_halves ε
+
+/-- **Compactness for finitely many sequences of bounded weighted perimeter.** Let `W` be a `C¹`
+weight whose measure `μ = e^{−W} · volume` is finite, and `s i n` finitely many sequences of
+null-measurable sets with weighted perimeters `P_μ(s i n) ≤ M`. Along one common subsequence `φ`,
+each of them converges in `L¹(μ)` to a measurable set `t i`: `μ(s i (φ j) ∆ t i) → 0`. -/
+theorem exists_subseq_forall_tendsto_withDensity_symmDiff_of_weightedPerimeter_le
+    (hW : ContDiff ℝ 1 W)
+    [IsFiniteMeasure (volume.withDensity fun x => ENNReal.ofReal (Real.exp (-W x)))]
+    {ι : Type*} [Finite ι] {s : ι → ℕ → Set E} (hs : ∀ i n, NullMeasurableSet (s i n))
+    {M : ℝ≥0} (hP : ∀ i n, weightedPerimeter W ⊤ (s i n) ≤ M) :
+    ∃ t : ι → Set E, (∀ i, MeasurableSet (t i)) ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      ∀ i, Tendsto (fun j => volume.withDensity (fun x => ENNReal.ofReal (Real.exp (-W x)))
+        (s i (φ j) ∆ t i)) atTop (𝓝 0) := by
+  set ν := volume.withDensity fun x => ENNReal.ofReal (Real.exp (-W x))
+  have := Fintype.ofFinite ι
+  obtain ⟨φ, hφ, h⟩ := extraction_forall_mem_finset (s := Finset.univ)
+    (P := fun i ψ ↦ ∃ t, MeasurableSet t ∧ Tendsto (fun j => ν (s i (ψ j) ∆ t)) atTop (𝓝 0))
+    (fun i _ ψ _ ↦ by
+      obtain ⟨t, ht, ψ', hψ', h⟩ :=
+        exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le hW
+          (fun n => hs i (ψ n)) fun n => hP i (ψ n)
+      exact ⟨ψ', hψ', t, ht, h⟩)
+    fun _ _ _ _ hψ' ⟨t, ht, h⟩ ↦ ⟨t, ht, h.comp hψ'.tendsto_atTop⟩
+  choose t ht h using fun i ↦ h i (Finset.mem_univ i)
+  exact ⟨t, ht, φ, hφ, h⟩
 
 /-- **Compactness for bounded Gaussian perimeter.** Every sequence of null-measurable sets with
 Gaussian perimeters `P_γ(s n) ≤ M` has a subsequence converging in `L¹(γ)` to a measurable set

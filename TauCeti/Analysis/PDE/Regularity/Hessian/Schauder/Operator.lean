@@ -168,15 +168,12 @@ theorem nonDivergenceOperatorL_apply (u : CkHolderSpaceOn 2 α Ω ℝ)
 /-- With the identity matrix as principal coefficient and no lower-order terms, the operator is the
 Laplacian. -/
 theorem nonDivergenceOperatorL_eq_laplacianL :
-    nonDivergenceOperatorL hΩ hb hα (fun i j ↦ if i = j then 1 else 0) 0 0 =
+    nonDivergenceOperatorL hΩ hb hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0 =
       laplacianL α Ω ℝ := by
   ext u x
   rw [nonDivergenceOperatorL_apply hΩ hb hα u u.extend_apply, laplacianL_apply_eq_laplacian_extend,
     laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
-  have hδ (i j : ι) :
-      (if i = j then (1 : HolderSpace α Ω ℝ) else 0) x = if i = j then 1 else 0 := by
-    split_ifs <;> simp [HolderSpace.one_apply, HolderSpace.zero_apply]
-  simp [hδ, iteratedFDeriv_two_apply, HolderSpace.zero_apply]
+  simp [Matrix.one_apply, iteratedFDeriv_two_apply, HolderSpace.zero_apply]
 
 /-- The operator is affine in its coefficients: along the segment between two sets of
 coefficients it moves along the segment between the two operators. With `a₀ = I` and

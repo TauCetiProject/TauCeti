@@ -38,6 +38,9 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.tendsto_integral_excise`: excising a symmetric interval around an
+  interior point `c ∈ uIoo a b` from an interval-integrable function recovers the full interval
+  integral as `ε → 0`.
 * `TauCeti.intervalIntegral.continuousOn_integral_prod`: the interval integral
   `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
   `uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms.
@@ -49,6 +52,10 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo` and
   `TauCeti.intervalIntegral.integral_norm_primitive_le`: such a primitive is integrable on
   `(a, b)`, with `L¹(a, b)` norm at most `(b - a) ‖f‖₁`.
+* `MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left`: if `f` is integrable on
+  `[a, b]`, the primitive `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
+  `[a, b]`; this is the `Icc` form of Mathlib's
+  `intervalIntegral.continuousOn_primitive_interval_left`.
 * `Continuous.contDiff_one_primitive`: the primitive of a continuous function is `C¹`.
 * `TauCeti.intervalIntegral.memLp_primitive`: on a bounded interval `(a, b)`, the primitive based
   at a point of `[a, b]` of a function integrable on `(a, b)` lies in every `Lᵖ(a, b)`, for any
@@ -112,6 +119,37 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- Symmetric excision around an interior point `c ∈ uIoo a b` of an interval-integrable function
+recovers the full interval integral as `ε → 0`. -/
+theorem tendsto_integral_excise {μ : Measure ℝ} [NullSingletonClass μ]
+    {c : ℝ} (hc : c ∈ uIoo a b) (hf : IntervalIntegrable f μ a b) :
+    Tendsto (fun ε : ℝ ↦ (∫ t in a..(c - ε), f t ∂μ) + ∫ t in (c + ε)..b, f t ∂μ)
+      (𝓝 0) (𝓝 (∫ t in a..b, f t ∂μ)) := by
+  have hcont : ContinuousOn (fun y : ℝ ↦ ∫ t in a..y, f t ∂μ) (uIcc a b) :=
+    _root_.intervalIntegral.continuousOn_primitive_interval' hf left_mem_uIcc
+  have hprim : ContinuousAt (fun y : ℝ ↦ ∫ t in a..y, f t ∂μ) c :=
+    hcont.continuousAt (Icc_mem_nhds hc.1 hc.2)
+  have ha1 : Tendsto (fun ε : ℝ ↦ ∫ t in a..(c - ε), f t ∂μ) (𝓝 0)
+      (𝓝 (∫ t in a..c, f t ∂μ)) :=
+    hprim.tendsto.comp (by simpa using (continuous_sub_left c).tendsto 0)
+  have ha2 : Tendsto (fun ε : ℝ ↦ ∫ t in a..(c + ε), f t ∂μ) (𝓝 0)
+      (𝓝 (∫ t in a..c, f t ∂μ)) :=
+    hprim.tendsto.comp (by simpa using (continuous_const_add c).tendsto 0)
+  have hlim : Tendsto
+      (fun ε : ℝ ↦ (∫ t in a..(c - ε), f t ∂μ) +
+        ((∫ t in a..b, f t ∂μ) - ∫ t in a..(c + ε), f t ∂μ))
+      (𝓝 0) (𝓝 (∫ t in a..b, f t ∂μ)) := by
+    simpa [add_sub_cancel] using ha1.add (tendsto_const_nhds.sub ha2)
+  refine hlim.congr' ?_
+  have hmem : ∀ᶠ ε : ℝ in 𝓝 0, c + ε ∈ uIcc a b :=
+    (by simpa using (continuous_const_add c).tendsto 0 : Tendsto (c + ·) (𝓝 0) (𝓝 c)).eventually
+      (Icc_mem_nhds hc.1 hc.2)
+  filter_upwards [hmem] with ε hε
+  have hsplit := _root_.intervalIntegral.integral_add_adjacent_intervals
+    (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hε))
+    (hf.mono_set (uIcc_subset_uIcc hε right_mem_uIcc))
+  rw [← hsplit, add_sub_cancel_left]
 
 /-- The interval integral `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
 `uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms. -/
@@ -432,6 +470,18 @@ theorem integral_deriv_smul_primitive_eq_sub_of_le {𝕜 : Type*} [RCLike 𝕜] 
 end intervalIntegral
 
 end TauCeti
+
+/-- An interval integral `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
+`[a, b]` when `f` is integrable on `[a, b]`. This is the `Icc` form of Mathlib's
+`intervalIntegral.continuousOn_primitive_interval_left`. -/
+theorem MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {a b : ℝ} (hf : IntegrableOn f (Icc a b)) :
+    ContinuousOn (fun s ↦ ∫ r in s..b, f r) (Icc a b) := by
+  rcases le_or_gt a b with hab | hab
+  · rw [← uIcc_of_le hab] at hf ⊢
+    exact intervalIntegral.continuousOn_primitive_interval_left hf
+  · simp [Icc_eq_empty_of_lt hab]
 
 /-- The primitive `z ↦ ∫ s in a..z, f s` of a continuous function is `C¹`, with derivative `f`. -/
 theorem Continuous.contDiff_one_primitive {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

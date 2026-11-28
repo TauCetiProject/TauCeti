@@ -14,6 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
 # The curvature and the energy identity of the perturbation on a PSS plane
@@ -266,6 +267,19 @@ theorem exists_realChart_cylindricalEndLift_eq (p : PSSPlane) {T : ℝ} {z : ℝ
   rw [← hζ] at hz
   exact p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.1 hz
 
+/-- The end lift maps the half-strip `ε s > R`, `0 ≤ t < 1` onto the part `‖w‖ > exp (2π R)` of
+the plane. -/
+theorem image_realChart_cylindricalEndLift_prod_Ico (p : PSSPlane) (R : ℝ) :
+    realChart p.cylindricalEndLift '' ({s : ℝ | R < p.endSign * s} ×ˢ Ico 0 1) =
+      {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖} := by
+  ext z
+  constructor
+  · rintro ⟨ζ, hζ, rfl⟩
+    exact p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ.1
+  · intro hz
+    obtain ⟨ζ, hζ1, hζ2, hζz⟩ := p.exists_realChart_cylindricalEndLift_eq hz
+    exact ⟨ζ, ⟨hζ1, hζ2⟩, hζz⟩
+
 /-- The half-cylinder `s > a` of the positive plane lies in the part `‖w‖ > exp (2πa)` of the
 plane. -/
 theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1) :
@@ -280,6 +294,17 @@ theorem injOn_realChart_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
   TauCeti.Complex.injOn_realChart <| (p.injOn_cylindricalEndLift t₀).mono <| by
     rintro _ ⟨q, hq, rfl⟩
     simpa using hq.2
+
+/-- The end lift in real coordinates is an open map: it is the exponential map after a nonzero
+rescaling. -/
+theorem isOpenMap_realChart_cylindricalEndLift (p : PSSPlane) :
+    IsOpenMap (realChart p.cylindricalEndLift) := by
+  have hc : ((2 * π * p.endSign : ℝ) : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, p.endSign_ne_zero]
+  convert (Complex.equivRealProdCLM.toHomeomorph.isOpenMap.comp (Complex.isOpenMap_exp.comp
+    (Homeomorph.mulLeft₀ _ hc).isOpenMap)).comp
+      Complex.equivRealProdCLM.symm.toHomeomorph.isOpenMap using 1
+  funext z
+  simp [TauCeti.Complex.realChart_apply, cylindricalEndLift_def]
 
 /-- **The end lift recovers a point from its end coordinates.** At a point `w ≠ 0` of the plane,
 the end lift of the positive plane sends the end coordinates `(log ‖w‖ / 2π, arg w / 2π)` of `w`
@@ -450,12 +475,9 @@ theorem setIntegral_det_mul_comp_realChart_cylindricalEndLift_le_integral (p : P
         refine setIntegral_congr_set ?_
         rw [Measure.volume_eq_prod]
         exact (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc).symm
-    _ = ∫ z in realChart p.cylindricalEndLift '' (Ioo a b ×ˢ Ioo (0 : ℝ) 1), g z := by
-        refine (integral_image_eq_integral_of_eq_abs_det_smul hs hinj
-          (fun ζ _ ↦ (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable
-            one_ne_zero ζ) fun ζ _ ↦ ?_).symm
-        rw [abs_of_pos (p.det_fderiv_realChart_cylindricalEndLift_pos ζ), smul_eq_mul]
-    _ ≤ _ := setIntegral_le_integral hgi (ae_of_all _ hg)
+    _ ≤ _ := setIntegral_det_mul_comp_le_integral hs hinj
+        (fun ζ _ ↦ (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable
+          one_ne_zero ζ) (fun ζ _ ↦ (p.det_fderiv_realChart_cylindricalEndLift_pos ζ).le) hg hgi
 
 end Floer.PSSPlane
 

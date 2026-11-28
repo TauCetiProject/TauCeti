@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassNumberOne.HeegnerNumbers
-import TauCeti.NumberTheory.FundamentalDiscriminant
+import TauCeti.NumberTheory.FundamentalDiscriminant.Basic
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 
 /-!

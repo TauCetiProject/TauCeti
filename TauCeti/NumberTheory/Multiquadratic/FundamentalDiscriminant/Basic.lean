@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.FundamentalDiscriminant
+public import TauCeti.NumberTheory.FundamentalDiscriminant.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
 
 /-!
@@ -57,7 +57,7 @@ shown to be fundamental in `FundamentalDiscriminant/Examples.lean`.
   discriminants whose product is a fundamental discriminant has at most one even member.
 
 The generic `Int.IsFundamentalDiscr` fact `Int.IsFundamentalDiscr.not_isSquare_rat` lives in
-`TauCeti.NumberTheory.FundamentalDiscriminant`.
+`TauCeti.NumberTheory.FundamentalDiscriminant.Basic`.
 -/
 
 public section

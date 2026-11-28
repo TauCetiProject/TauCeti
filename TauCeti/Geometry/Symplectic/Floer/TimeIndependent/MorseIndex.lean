@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Geometry.Symplectic.Complex.ImInner.ConstantOrbit
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -36,11 +37,17 @@ their critical points: `‖dX_{H₋}(p₋)‖ < 2π` and `‖dX_{H₊}(p₊)‖ 
 solve the Floer equation, and neither `u` nor the data need be independent of `s` or `t` away
 from the ends. The case `H₋ = H₊` is a cylinder of a single autonomous Hamiltonian.
 
-In the grading `μ(p) = ind_p(H) - n` of the constant orbits of a `C²`-small Morse Hamiltonian on
-a space of complex dimension `n`, the grading by minus the Conley–Zehnder index of their
-linearized flows
-(`TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_card_sub_morseIndex`), the index is
-`μ(p₊) - μ(p₋)`, with the gradings of `H₊` and of `H₋` respectively.
+Under the same bounds the index is a difference of Conley–Zehnder indices. On a space of complex
+dimension `n`, the constant orbit at a nondegenerate critical point `p` of a Hamiltonian `H` with
+`‖dX_H(p)‖ < 2π` has Conley–Zehnder index `CZ(p) = ind_p(H) - n`
+(`TauCeti.SymplecticForm.orbitConleyZehnderIndex_const_eq_morseIndex_sub_finrank`), read in
+symplectic bases in which `ω` has the matrix `J`. Hence
+
+`ind D_u = CZ(p₊) - CZ(p₋)`
+
+(`index_floerSobolevOperator_eq_orbitConleyZehnderIndex_sub_orbitConleyZehnderIndex`, in the
+namespace `TauCeti.SymplecticForm`), the Conley–Zehnder index of `p₊` for `H₊` minus that of `p₋`
+for `H₋`: in the grading `μ = CZ` of the generators, the index is `μ(p₊) - μ(p₋)`.
 
 The proof compares `D_u` with the operator along the time-independent cylinder
 `(s, t) ↦ γ(s)` over the path `γ(s) = p₋ + ψ(s) (p₊ - p₋)` (`TauCeti.smoothSegmentPath`), where
@@ -180,7 +187,7 @@ private theorem index_floerSobolevOperator_comparisonHamiltonian
     (ham : ‖fderiv ℝ (ω.hamiltonianVectorField Hm) pm‖ < 2 * Real.pi)
     (hap : ‖fderiv ℝ (ω.hamiltonianVectorField Hp) pp‖ < 2 * Real.pi)
     (hpm : IsNondegenerateCriticalPoint Hm pm) (hpp : IsNondegenerateCriticalPoint Hp pp) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ comparisonHamiltonian Hm Hp pm pp z.1)
         (fun z ↦ smoothSegmentPath pm pp z.1)).index =
@@ -250,7 +257,7 @@ theorem index_floerSobolevOperator_eq_morseIndex_sub_morseIndex
     (hup : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ pp) atTop (Icc 0 1))
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun _ ↦ ω.hamiltonianVectorField Hp) u (s, t)) 0 atTop (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).index = (morseIndex Hp pp : ℤ) - morseIndex Hm pm := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have hHm₂ : ContDiff ℝ 2 Hm := hHm.of_le (by norm_num)
@@ -300,6 +307,58 @@ theorem index_floerSobolevOperator_eq_morseIndex_sub_morseIndex
   exact index_floerSobolevOperator_comparisonHamiltonian hω hHm₂ hHp₂ ham hap
     (ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' hHm₂ hpm hXm hndm)
     (ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' hHp₂ hpp hXp hndp)
+
+/-- **The index of the linearized Floer operator between critical points is a difference of
+Conley–Zehnder indices.** Under the hypotheses of
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_morseIndex_sub_morseIndex`, on a
+finite-dimensional complex inner product space `F` whose symplectic form `ω` is `Im ⟪·, ·⟫`, the
+realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator along a
+cylinder `u` from the constant orbit at `p₋` of `H₋` to the constant orbit at `p₊` of `H₊` has
+index `CZ(p₊) - CZ(p₋)`, the Conley–Zehnder index of the constant orbit at `p₊` of `H₊` minus that
+of the constant orbit at `p₋` of `H₋`, read in symplectic bases in which `ω` has the matrix `J`. -/
+theorem index_floerSobolevOperator_eq_orbitConleyZehnderIndex_sub_orbitConleyZehnderIndex
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hHm : ContDiff ℝ 3 Hm) (hHp : ContDiff ℝ 3 Hp)
+    {Km Kp : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension fun _ ↦ Hm))
+    (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension fun _ ↦ Hp))
+    (ham : ‖fderiv ℝ (ω.hamiltonianVectorField Hm) pm‖ < 2 * Real.pi)
+    (hap : ‖fderiv ℝ (ω.hamiltonianVectorField Hp) pp‖ < 2 * Real.pi)
+    (hpm : fderiv ℝ Hm pm = 0)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow (fun _ ↦ Hm) hXm 0 1)
+      pm)
+    (hpp : fderiv ℝ Hp pp = 0)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow (fun _ ↦ Hp) hXp 0 1)
+      pp)
+    {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ → F → ℝ}
+    {Jm Jp : ℝ → F → AlmostComplexStructure F} {R : ℝ} {u : ℝ × ℝ → F}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp (fun _ ↦ Hm) (fun _ ↦ Hp) R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u)
+    (hum : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ pm) atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun _ ↦ ω.hamiltonianVectorField Hm) u (s, t)) 0 atBot (Icc 0 1))
+    (hup : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ pp) atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun _ ↦ ω.hamiltonianVectorField Hp) u (s, t)) 0 atTop (Icc 0 1)) :
+    ((ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      u).index : ℝ) =
+      ω.orbitConleyZehnderIndex (H := fun _ ↦ Hp) ((hHp.comp contDiff_snd).of_le (by norm_num))
+          (continuous_const : Continuous fun _ : ℝ ↦ pp) -
+        ω.orbitConleyZehnderIndex (H := fun _ ↦ Hm) ((hHm.comp contDiff_snd).of_le (by norm_num))
+          (continuous_const : Continuous fun _ : ℝ ↦ pm) := by
+  -- At each end, the constant orbit has Conley–Zehnder index its Morse index minus `n`.
+  have hczm := orbitConleyZehnderIndex_const_eq_morseIndex_sub_finrank hω
+    ((hHm.comp contDiff_snd).of_le (by norm_num))
+    (ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' (hHm.of_le (by norm_num)) hpm hXm
+      hndm).hessianQuadraticForm_nondegenerate ham
+  have hczp := orbitConleyZehnderIndex_const_eq_morseIndex_sub_finrank hω
+    ((hHp.comp contDiff_snd).of_le (by norm_num))
+    (ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' (hHp.of_le (by norm_num)) hpp hXp
+      hndp).hessianQuadraticForm_nondegenerate hap
+  rw [ω.index_floerSobolevOperator_eq_morseIndex_sub_morseIndex hω hHm hHp hXm hXp ham hap hpm hndm
+      hpp hndp hcyl hJ hKs hKt hJc hu hum hδm hup hδp, hczm, hczp]
+  push_cast
+  ring
 
 end Unitary
 
