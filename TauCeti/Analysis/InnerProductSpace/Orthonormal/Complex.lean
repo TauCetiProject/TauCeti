@@ -22,7 +22,9 @@ Consequently, every `𝕜`-orthonormal family is `ℝ`-orthonormal (`Orthonormal
 `ℝ`-orthonormal family `v` is `ℂ`-orthonormal (unitary) if and only if the imaginary parts of its
 complex inner products vanish (`Orthonormal.complex_iff`). Since `Im ⟪x, x⟫_ℂ = 0` holds
 unconditionally by Hermitian symmetry, the imaginary condition may be written either pairwise for
-`i ≠ j` or for all `i, j` (`Orthonormal.complex_iff_forall_im_inner_eq_zero`).
+`i ≠ j` or for all `i, j` (`Orthonormal.complex_iff_forall_im_inner_eq_zero`). For any
+complex-orthonormal family `u`, its underlying real family `(u₀, i • u₀, …)`
+(`TauCeti.complexToRealFamily u`) is real-orthonormal (`TauCeti.orthonormal_complexToRealFamily`).
 
 Over `ℂ`, a complex orthonormal family `v` moreover gives the real orthonormal family
 `(v i, I • v i)` (`Orthonormal.complexToReal`), indexed by `ι × Fin 2` as the real basis
@@ -41,6 +43,8 @@ the real orthonormal basis `b.complexToReal`, whose underlying basis is `b.toBas
 * `Orthonormal.complex_iff`, `Orthonormal.complex_iff_forall_im_inner_eq_zero`: an `ℝ`-orthonormal
   family is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` (pairwise for `i ≠ j`, or for all
   `i, j`).
+* `TauCeti.orthonormal_complexToRealFamily`: the underlying real family `(u₀, i • u₀, …)` of a
+  complex-orthonormal family is real-orthonormal for any compatible real inner product.
 * `Orthonormal.complex_iff_forall_real_inner_I_smul_eq_zero`: equivalently, `⟪I • v i, v j⟫_ℝ = 0`
   for all `i, j`; for a `ℂ`-orthonormal family this is `Orthonormal.real_inner_I_smul_eq_zero`,
   or `Orthonormal.real_inner_ofComplexModule_eq_zero` with the complex structure
@@ -116,7 +120,7 @@ end Orthonormal
 
 section ComplexToReal
 
-variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
+variable {ι E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
 
 /-- The family `(v i, I • v i)`, indexed by `ι × Fin 2` as in `Module.Basis.complexToReal`, of a
 complex orthonormal family `v` is orthonormal for any real inner product with the same norm. -/
@@ -129,9 +133,23 @@ theorem Orthonormal.complexToReal {v : ι → E} (hv : Orthonormal ℂ v) :
   fin_cases k <;> fin_cases l <;>
     simp [inner_smul_left, inner_smul_right, hv, apply_ite]
 
-namespace OrthonormalBasis
+/-- The underlying real family `(u₀, i • u₀, …)` of a complex-orthonormal family is
+real-orthonormal for any compatible real inner product. -/
+theorem TauCeti.orthonormal_complexToRealFamily {r : ℕ} {u : Fin r → E} (hu : Orthonormal ℂ u) :
+    Orthonormal ℝ (TauCeti.complexToRealFamily u) := by
+  convert hu.complexToReal.comp _ (TauCeti.complexRealIndexEquiv r).symm.injective
+  funext i
+  obtain ⟨⟨a, k⟩, rfl⟩ := (TauCeti.complexRealIndexEquiv r).surjective i
+  simp
 
-variable [Fintype ι] [IsScalarTower ℝ ℂ E]
+end ComplexToReal
+
+section OrthonormalBasis
+
+variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
+  [Fintype ι] [IsScalarTower ℝ ℂ E]
+
+namespace OrthonormalBasis
 
 /-- The real orthonormal basis underlying a complex orthonormal basis `b`: its vectors are `b i` at
 index `(i, 0)` and `I • b i` at index `(i, 1)`. -/
@@ -165,4 +183,4 @@ theorem complexToReal_repr_apply (b : OrthonormalBasis ι ℂ E) (x : E) (i : ι
 
 end OrthonormalBasis
 
-end ComplexToReal
+end OrthonormalBasis

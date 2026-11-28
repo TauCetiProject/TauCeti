@@ -168,6 +168,30 @@ theorem complexRealIndexEquiv_apply_val (n : ℕ) (i : Fin n) (k : Fin 2) :
     (complexRealIndexEquiv n (i, k) : ℕ) = 2 * i + k := by
   simp [complexRealIndexEquiv, Nat.add_comm]
 
+/-- Under `complexRealIndexEquiv`, `(i, 0)` maps to the even index `2 * i`. -/
+@[simp]
+theorem complexRealIndexEquiv_zero (n : ℕ) (i : Fin n) :
+    complexRealIndexEquiv n (i, 0) = ⟨2 * (i : ℕ), by omega⟩ :=
+  Fin.ext (by simp)
+
+/-- Under `complexRealIndexEquiv`, `(i, 1)` maps to the odd index `2 * i + 1`. -/
+@[simp]
+theorem complexRealIndexEquiv_one (n : ℕ) (i : Fin n) :
+    complexRealIndexEquiv n (i, 1) = ⟨2 * (i : ℕ) + 1, by omega⟩ :=
+  Fin.ext (by simp)
+
+/-- Under `(complexRealIndexEquiv n).symm`, an even index `2 * i` maps to `(i, 0)`. -/
+@[simp]
+theorem complexRealIndexEquiv_symm_even (n : ℕ) (i : Fin n) :
+    (complexRealIndexEquiv n).symm ⟨2 * (i : ℕ), by omega⟩ = (i, 0) :=
+  (Equiv.symm_apply_eq _).2 (complexRealIndexEquiv_zero n i).symm
+
+/-- Under `(complexRealIndexEquiv n).symm`, an odd index `2 * i + 1` maps to `(i, 1)`. -/
+@[simp]
+theorem complexRealIndexEquiv_symm_odd (n : ℕ) (i : Fin n) :
+    (complexRealIndexEquiv n).symm ⟨2 * (i : ℕ) + 1, by omega⟩ = (i, 1) :=
+  (Equiv.symm_apply_eq _).2 (complexRealIndexEquiv_one n i).symm
+
 /-- Casting along an equality of real dimensions commutes with `complexRealIndexEquiv`. -/
 @[simp]
 theorem cast_complexRealIndexEquiv {m n : ℕ} (h : 2 * m = 2 * n) (i : Fin m) (k : Fin 2) :
@@ -231,6 +255,20 @@ noncomputable def complexToRealFamily (v : Fin n → E) : Fin (2 * n) → E := f
 theorem complexToRealFamily_complexRealIndexEquiv (v : Fin n → E) (i : Fin n) (k : Fin 2) :
     complexToRealFamily v (complexRealIndexEquiv n (i, k)) = Complex.basisOneI k • v i := by
   simp [complexToRealFamily]
+
+/-- At even index `2 * i`, `TauCeti.complexToRealFamily v` equals `v i`. -/
+@[simp]
+theorem complexToRealFamily_even (v : Fin n → E) (i : Fin n) :
+    complexToRealFamily v ⟨2 * (i : ℕ), by omega⟩ = v i := by
+  rw [← complexRealIndexEquiv_zero, complexToRealFamily_complexRealIndexEquiv]
+  simp
+
+/-- At odd index `2 * i + 1`, `TauCeti.complexToRealFamily v` equals `I • v i`. -/
+@[simp]
+theorem complexToRealFamily_odd (v : Fin n → E) (i : Fin n) :
+    complexToRealFamily v ⟨2 * (i : ℕ) + 1, by omega⟩ = Complex.I • v i := by
+  rw [← complexRealIndexEquiv_one, complexToRealFamily_complexRealIndexEquiv]
+  simp
 
 /-- The real family underlying a complex basis is its real basis `b.complexToReal`, listed as
 `(b₀, I • b₀, b₁, I • b₁, …)`. -/

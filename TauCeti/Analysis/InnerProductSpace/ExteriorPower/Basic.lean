@@ -70,6 +70,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `⋀ⁿ E` is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
+* `OrthonormalBasis.inner_sum_ιMulti_two_apply_eq_sub`: pairing `∑ i, b i ∧ T (b i)` with
+  `u ∧ w` evaluates the skew-symmetrization `⟪T u, w⟫ - ⟪T w, u⟫`.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
   `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
@@ -94,7 +96,9 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
-  `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
+  `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`), and
+  when `u ⌟ F` is block-diagonal in an orthonormal basis, `F` decomposes into the corresponding
+  sum of wedges (`TauCeti.twoVector_eq_sum_of_skew_normalForm`).
 * `TauCeti.twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint`: in finite dimension, up to
   sign `F ↦ (u ↦ u ⌟ F)` is the identification
   `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of `⋀² V` with the skew-adjoint
@@ -452,6 +456,20 @@ theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι �
   rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.inner_eq_ite]
 
+/-- In any orthonormal basis `b` of a finite-dimensional real inner product space, pairing
+`∑ i, b i ∧ T (b i)` with `u ∧ w` for a real linear endomorphism `T` evaluates the
+skew-symmetrization `⟪T u, w⟫ - ⟪T w, u⟫`. -/
+theorem inner_sum_ιMulti_two_apply_eq_sub (b : OrthonormalBasis ι ℝ E) (T : E →ₗ[ℝ] E)
+    (u w : E) :
+    ⟪∑ i, exteriorPower.ιMulti ℝ 2 ![b i, T (b i)], exteriorPower.ιMulti ℝ 2 ![u, w]⟫ =
+      ⟪T u, w⟫ - ⟪T w, u⟫ := by
+  have hsum (x y : E) : ∑ i, ⟪b i, x⟫ * ⟪T (b i), y⟫ = ⟪T x, y⟫ := by
+    calc ∑ i, ⟪b i, x⟫ * ⟪T (b i), y⟫
+        = ⟪T (∑ i, ⟪b i, x⟫ • b i), y⟫ := by
+          simp only [map_sum, map_smul, sum_inner, real_inner_smul_left]
+      _ = ⟪T x, y⟫ := by rw [b.sum_repr' x]
+  simp only [sum_inner, exteriorPower.inner_ιMulti_two, Finset.sum_sub_distrib, hsum]
+
 end General
 
 /-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
@@ -708,6 +726,26 @@ theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
   rw [real_inner_comm w, real_inner_comm _ F]
   simpa using (LinearMap.congr_fun key F).symm
 
+/-- A two-vector `F ∈ ⋀² V` whose skew-adjoint contraction `TauCeti.twoVectorContraction F` is
+block-diagonal in an orthonormal basis `(b (j, 0), b (j, 1))` with weights `μ j` decomposes as
+`F = ∑ j, μ j • (b (j, 0) ∧ b (j, 1))`. -/
+theorem twoVector_eq_sum_of_skew_normalForm {r : ℕ} (F : ⋀[ℝ]^2 V)
+    (b : OrthonormalBasis (Fin r × Fin 2) ℝ V) (μ : Fin r → ℝ)
+    (h0 : ∀ j, twoVectorContraction F (b (j, 0)) = μ j • b (j, 1))
+    (h1 : ∀ j, twoVectorContraction F (b (j, 1)) = -(μ j • b (j, 0))) :
+    F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2 ![b (j, 0), b (j, 1)] := by
+  refine exteriorPower.ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [← inner_twoVectorContraction_apply]
+  have expand (x : V) : x = ∑ j : Fin r,
+      (⟪b (j, 0), x⟫ • b (j, 0) + ⟪b (j, 1), x⟫ • b (j, 1)) := by
+    conv_lhs => rw [← b.sum_repr' x]
+    rw [Fintype.sum_prod_type]
+    simp [Fin.sum_univ_two]
+  conv_lhs => rw [expand u]
+  simp only [map_sum, map_add, map_smul, h0, h1, sum_inner, inner_add_left,
+    inner_neg_left, real_inner_smul_left, exteriorPower.inner_ιMulti_two]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
 /-- The skew endomorphism `u ↦ u ⌟ F` is the negative of the image of `F` under the
 identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of `⋀² V` with the skew-adjoint
 endomorphisms for the inner product, whose sign is chosen to match the Clifford bivector action. -/
