@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Algebra.Derivation.Basic
 public import TauCeti.Analysis.Normed.Module.Essential
-import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
 import TauCeti.Topology.ApproximateUnit
 
 /-!
@@ -66,41 +65,6 @@ variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 
   [NonUnitalSeminormedRing A] [NormedSpace 𝕜 A]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {L R : A →L[𝕜] E →L[𝕜] E}
-
-/-- Weak-star residual innerness: if `A` has a bounded right approximate identity, then any
-bounded derivation `D₁ : A →L[𝕜] E*` annihilating all left action products `L b x` is inner. -/
-private theorem exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero
-    {l : Filter A} [l.NeBot] {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
-    (hl : ∀ a, Tendsto (a * ·) l (𝓝 a))
-    (D₁ : A →L[𝕜] StrongDual 𝕜 E)
-    (hD₁ : ∀ a b, D₁ (a * b) = dualAction R a (D₁ b) + dualAction L b (D₁ a))
-    (hD₁_L : ∀ a b x, D₁ a (L b x) = 0) :
-    ∃ φ₁ : StrongDual 𝕜 E, ∀ a, D₁ a = dualAction R a φ₁ - dualAction L a φ₁ := by
-  have : ProperSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
-  -- Since `D₁ a (L b x) = 0`, we have `D₁ a · b = 0` and hence `D₁ (a * b) = a · D₁ b`.
-  have hD₁_mul (a b : A) (x : E) : D₁ (a * b) x = D₁ b (R a x) := by
-    have h := congr($(hD₁ a b) x)
-    simp only [add_apply, dualAction_apply_apply, hD₁_L, add_zero] at h
-    exact h
-  -- Take a weak-star limit `φ₁` of `D₁ e` along an ultrafilter finer than `l`.
-  have hC₁ : ∀ᶠ e in Ultrafilter.of l, ‖D₁ e‖ ≤ ‖D₁‖ * C :=
-    mem_of_superset (Ultrafilter.of_le l hC) fun e he ↦
-      (D₁.le_opNorm e).trans (mul_le_mul_of_nonneg_left he (norm_nonneg D₁))
-  obtain ⟨φ₁, -, hφ₁⟩ := (Ultrafilter.of l).exists_tendsto_toWeakDual D₁ hC₁
-  have hφ₁_eval (x : E) : Tendsto (fun e ↦ D₁ e x) (Ultrafilter.of l) (𝓝 (φ₁ x)) :=
-    ((WeakDual.eval_continuous x).tendsto (StrongDual.toWeakDual φ₁)).comp hφ₁
-  have hφ₁R (a : A) (x : E) : φ₁ (R a x) = D₁ a x := by
-    refine tendsto_nhds_unique (hφ₁_eval (R a x)) ?_
-    have hlim : Tendsto (fun e ↦ D₁ (a * e) x) (Ultrafilter.of l) (𝓝 (D₁ a x)) :=
-      (((D₁.continuous.clm_apply (continuous_const (y := x))).tendsto a).comp (hl a)).mono_left
-        (Ultrafilter.of_le l)
-    exact hlim.congr fun e ↦ hD₁_mul a e x
-  have hφ₁L (a : A) (x : E) : φ₁ (L a x) = 0 := by
-    refine tendsto_nhds_unique (hφ₁_eval (L a x)) ?_
-    simp [hD₁_L _ a x]
-  refine ⟨φ₁, fun a ↦ ?_⟩
-  ext x
-  simp only [sub_apply, dualAction_apply_apply, hφ₁R, hφ₁L, sub_zero]
 
 /-- **Left-essential reduction.** If `A` has a bounded right approximate identity, then a bounded
 derivation `D : A →L[𝕜] E*` is inner as soon as its restriction to the left-essential part

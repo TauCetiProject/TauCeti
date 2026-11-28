@@ -57,15 +57,14 @@ theorem isAmenable_iff_forall_essential_exists_eq_dualAction_sub_dualAction
         (∀ a b x, L (a * b) x = L a (L b x)) →
         (∀ a b x, R (a * b) x = R b (R a x)) →
         (∀ a b x, L a (R b x) = R b (L a x)) →
-        L.essentialSubmodule = ⊤ →
-        R.essentialSubmodule = ⊤ →
+        essentialBimoduleSubmodule L R = ⊤ →
         ∀ D : A →L[𝕜] StrongDual 𝕜 E,
           (∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) →
           ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
   have := hl.neBot
   rw [isAmenable_def]
   constructor
-  · intro h E _ _ _ L R hL hR hLR _ _ D hD
+  · intro h E _ _ _ L R hL hR hLR _ D hD
     exact h E L R hL hR hLR D hD
   · intro h E _ _ _ L R hL hR hLR D hD
     let Eess := essentialBimoduleSubmodule L R
@@ -88,9 +87,11 @@ theorem isAmenable_iff_forall_essential_exists_eq_dualAction_sub_dualAction
     have hR_top : Ress.essentialSubmodule = ⊤ :=
       essentialSubmodule_restrictAction_eq_top_right R hR hC hl.tendsto_mul_left Eess
         (essentialBimoduleSubmodule_le_right hLR) hR_inv
+    have hess_top : essentialBimoduleSubmodule Less Ress = ⊤ :=
+      (essentialBimoduleSubmodule_eq_top_iff hLRess).2 ⟨hL_top, hR_top⟩
     let Dess : A →L[𝕜] StrongDual 𝕜 Eess := (precomp 𝕜 Eess.subtypeL) ∘L D
     have hDess := Submodule.precomp_subtypeL_comp_mul_apply Eess hL_inv hR_inv hD
-    obtain ⟨ψ₀, hψ₀⟩ := h Eess Less Ress hLess hRess hLRess hL_top hR_top Dess hDess
+    obtain ⟨ψ₀, hψ₀⟩ := h Eess Less Ress hLess hRess hLRess hess_top Dess hDess
     exact exists_eq_dualAction_sub_dualAction_of_restrict_essential hL hR hLR hl hC D hD
       ⟨ψ₀, fun a ↦ by simpa only [Dess, comp_apply, precomp_apply] using hψ₀ a⟩
 

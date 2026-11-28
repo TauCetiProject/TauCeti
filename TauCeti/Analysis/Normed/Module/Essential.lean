@@ -55,6 +55,8 @@ This file proves:
 * `ContinuousLinearMap.apply_mem_essentialSubmodule` and
   `ContinuousLinearMap.apply_mem_essentialSubmodule_of_comm`: invariance of `M.essentialSubmodule`
   under `M` and under any commuting bounded bilinear action.
+* `ContinuousLinearMap.essentialBimoduleSubmodule_eq_top_iff`: characterization of when
+  `essentialBimoduleSubmodule L R = ⊤` for commuting actions.
 * `ContinuousLinearMap.apply_left_apply_right_mem_essentialBimoduleSubmodule`,
   `ContinuousLinearMap.apply_left_mem_essentialBimoduleSubmodule`,
   `ContinuousLinearMap.apply_right_mem_essentialBimoduleSubmodule`,
@@ -283,6 +285,20 @@ theorem apply_right_mem_essentialBimoduleSubmodule_of_mem_left {L R : A →L[�
     R b y ∈ essentialBimoduleSubmodule L R := by
   rw [essentialBimoduleSubmodule_comm hLR]
   exact apply_left_mem_essentialBimoduleSubmodule_of_mem_right b hy
+
+/-- When two bounded actions `L` and `R` commute, the two-sided essential submodule
+`essentialBimoduleSubmodule L R` is `⊤` if and only if both one-sided essential submodules
+`L.essentialSubmodule` and `R.essentialSubmodule` are `⊤`. -/
+theorem essentialBimoduleSubmodule_eq_top_iff {L R : A →L[𝕜] E →L[𝕜] E}
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) :
+    essentialBimoduleSubmodule L R = ⊤ ↔
+      L.essentialSubmodule = ⊤ ∧ R.essentialSubmodule = ⊤ := by
+  refine ⟨fun h ↦ ⟨eq_top_iff.2 (h ▸ essentialBimoduleSubmodule_le_left L R),
+    eq_top_iff.2 (h ▸ essentialBimoduleSubmodule_le_right hLR)⟩, fun ⟨hL, hR⟩ ↦ ?_⟩
+  have hle : R.essentialSubmodule ≤ essentialBimoduleSubmodule L R :=
+    (essentialSubmodule_le_iff (isClosed_essentialBimoduleSubmodule L R)).2 fun b y ↦
+      apply_right_mem_essentialBimoduleSubmodule_of_mem_left hLR b (hL ▸ Submodule.mem_top)
+  exact eq_top_iff.2 (hR ▸ hle)
 
 /-- The right-essential submodule of `L.essentialSubmodule` maps onto the two-sided essential
 submodule `essentialBimoduleSubmodule L R` under the subtype inclusion. -/

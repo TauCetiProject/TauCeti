@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
+import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
 
 /-!
 # Basic closure and restriction lemmas for bounded derivations
@@ -22,7 +23,10 @@ or a dual bimodule `E*`. This file provides basic algebraic and submodule-restri
   (`Submodule.precomp_subtypeL_comp_mul_apply`);
 * when the restriction to a jointly invariant submodule `p` is inner, Hahn–Banach extension
   produces a bounded derivation `D₁` annihilating `p` such that `D` equals `D₁` plus an inner
-  derivation (`TauCeti.exists_eq_add_dualAction_sub_dualAction_of_restrict`).
+  derivation (`TauCeti.exists_eq_add_dualAction_sub_dualAction_of_restrict`);
+* when `A` has a bounded right approximate identity, any bounded derivation into `E*` annihilating
+  all left action products `L b x` is inner
+  (`TauCeti.exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero`).
 
 ## Main results
 
@@ -34,13 +38,16 @@ or a dual bimodule `E*`. This file provides basic algebraic and submodule-restri
 * `TauCeti.exists_eq_add_dualAction_sub_dualAction_of_restrict`: Hahn–Banach reduction of a bounded
   derivation that is inner on a jointly invariant submodule to a derivation vanishing on that
   submodule plus an inner derivation.
+* `TauCeti.exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero`: weak-star innerness
+  for a bounded derivation into `E*` annihilating all left action products over an algebra with a
+  bounded right approximate identity.
 -/
 
 public section
 
 noncomputable section
 
-open ContinuousLinearMap
+open Filter Topology ContinuousLinearMap
 
 namespace TauCeti
 
@@ -115,6 +122,42 @@ theorem exists_eq_add_dualAction_sub_dualAction_of_restrict [IsRCLikeNormedField
     simpa only [sub_apply, flip_apply, comp_apply, Submodule.subtypeL_apply, zero_apply] using
       congrArg (fun f : StrongDual 𝕜 p ↦ f ⟨x, hx⟩) hcomp
   · simp
+
+/-- Weak-star residual innerness: if `A` has a bounded right approximate identity, then any
+bounded derivation `D : A →L[𝕜] E*` annihilating all left action products `L b x` is inner. -/
+theorem exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero
+    [IsRCLikeNormedField 𝕜] {L R : A →L[𝕜] E →L[𝕜] E}
+    {l : Filter A} [l.NeBot] {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    (hl : ∀ a, Tendsto (a * ·) l (𝓝 a))
+    (D : A →L[𝕜] StrongDual 𝕜 E)
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a))
+    (hD_L : ∀ a b x, D a (L b x) = 0) :
+    ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
+  have : ProperSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
+  -- Since `D a (L b x) = 0`, we have `D a · b = 0` and hence `D (a * b) = a · D b`.
+  have hD_mul (a b : A) (x : E) : D (a * b) x = D b (R a x) := by
+    have h := congr($(hD a b) x)
+    simp only [add_apply, dualAction_apply_apply, hD_L, add_zero] at h
+    exact h
+  -- Take a weak-star limit `φ` of `D e` along an ultrafilter finer than `l`.
+  have hC₁ : ∀ᶠ e in Ultrafilter.of l, ‖D e‖ ≤ ‖D‖ * C :=
+    mem_of_superset (Ultrafilter.of_le l hC) fun e he ↦
+      (D.le_opNorm e).trans (mul_le_mul_of_nonneg_left he (norm_nonneg D))
+  obtain ⟨φ, -, hφ⟩ := (Ultrafilter.of l).exists_tendsto_toWeakDual D hC₁
+  have hφ_eval (x : E) : Tendsto (fun e ↦ D e x) (Ultrafilter.of l) (𝓝 (φ x)) :=
+    ((WeakDual.eval_continuous x).tendsto (StrongDual.toWeakDual φ)).comp hφ
+  have hφR (a : A) (x : E) : φ (R a x) = D a x := by
+    refine tendsto_nhds_unique (hφ_eval (R a x)) ?_
+    have hlim : Tendsto (fun e ↦ D (a * e) x) (Ultrafilter.of l) (𝓝 (D a x)) :=
+      (((ContinuousLinearMap.apply 𝕜 𝕜 x).continuous.tendsto (D a)).comp
+        ((D.continuous.tendsto a).comp (hl a))).mono_left (Ultrafilter.of_le l)
+    exact hlim.congr fun e ↦ hD_mul a e x
+  have hφL (a : A) (x : E) : φ (L a x) = 0 := by
+    refine tendsto_nhds_unique (hφ_eval (L a x)) ?_
+    simp [hD_L _ a x]
+  refine ⟨φ, fun a ↦ ?_⟩
+  ext x
+  simp only [sub_apply, dualAction_apply_apply, hφR, hφL, sub_zero]
 
 end DerivationHelpers
 
