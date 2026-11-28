@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Group.AddCircle
 public import TauCeti.Analysis.Fourier.Fejer
 import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.InnerProductSpace.Gram.RowSum
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
 import TauCeti.Analysis.Normed.Group.AddCircle.Cosecant
@@ -32,14 +33,23 @@ proof via Selberg's weighted Gram inequality
   decaying linearly over `N ≤ |n| ≤ N + L`, and vanishing outside `|n| < N + L`.
 * `TauCeti.taperedFourierVec`: the vector in `EuclideanSpace ℂ (Fin (2 * (N + L) + 1))` with
   frequency `n = k - (N + L)` carrying entry `√(taperWeight N L n) * Real.fourierChar (-n * x)`.
+* `TauCeti.intervalVector`: zero-padding of an integer-interval sequence on `[M, M + H)` into
+  `EuclideanSpace ℂ (Fin (2 * (N + L) + 1))`.
 
 ## Main results
 
 * `TauCeti.inner_taperedFourierVec_eq_sum_taperWeight`, `TauCeti.inner_taperedFourierVec`,
   `TauCeti.norm_taperedFourierVec_sq`, and `TauCeti.norm_inner_taperedFourierVec_le`: Gram entries
   of `taperedFourierVec`.
-* `Finset.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le`: the cosecant-row large sieve for
-  core-supported vectors.
+* `TauCeti.intervalVector_apply`, `TauCeti.intervalVector_eq_zero_of_lt_abs`,
+  `TauCeti.norm_intervalVector_sq`, `TauCeti.fourierChar_mul_sum_intervalVector`, and
+  `TauCeti.norm_sum_intervalVector_fourierChar`: coordinate, core-support, norm-preservation, and
+  phase-translation laws for `intervalVector`.
+* `TauCeti.natFloor_inv_add_pi_sq_div_le`: explicit taper-width estimate
+  `⌊1 / δ⌋₊ + (π ^ 2 / (12 * δ ^ 2)) / ⌊1 / δ⌋₊ ≤ 2 / δ` for `0 < δ ≤ 1 / 2`.
+* `Finset.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le` and
+  `Finset.sum_norm_sum_fourierChar_sq_le_of_core_support`: the cosecant-row and centered-core
+  large sieves for core-supported vectors.
 * `Finset.sum_norm_sum_Ico_fourierChar_sq_le` and `Finset.sum_norm_sum_fourierChar_sq_le`:
   **Bombieri's additive large sieve inequality** with constant `H + 2 / δ` for arbitrary `H : ℕ`,
   `M : ℤ`, `0 < δ`, and `δ`-separated points in `UnitAddCircle`.
@@ -98,6 +108,7 @@ theorem taperWeight_le_one (N L : ℕ) (n : ℤ) : taperWeight N L n ≤ 1 := by
     linarith [le_max_right (0 : ℝ) ((N : ℝ) - |(n : ℝ)|)]
 
 /-- On the flat core `|n| ≤ N` with positive taper width `0 < L`, `taperWeight N L n = 1`. -/
+@[simp]
 theorem taperWeight_eq_one {N L : ℕ} {n : ℤ} (hL : 0 < L) (hn : |n| ≤ (N : ℤ)) :
     taperWeight N L n = 1 := by
   have hn' : |(n : ℝ)| ≤ (N : ℝ) := by exact_mod_cast hn
@@ -121,9 +132,10 @@ theorem taperWeight_eq_div {N L : ℕ} {n : ℤ} (h1 : (N : ℤ) ≤ |n|)
     sub_zero]
 
 /-- Outside the open interval `|n| < N + L`, `taperWeight N L n = 0`. -/
-theorem taperWeight_eq_zero {N L : ℕ} {n : ℤ} (hn : ((N + L : ℕ) : ℤ) ≤ |n|) :
+@[simp]
+theorem taperWeight_eq_zero {N L : ℕ} {n : ℤ} (hn : (N : ℤ) + (L : ℤ) ≤ |n|) :
     taperWeight N L n = 0 := by
-  have hn' : ((N + L : ℕ) : ℝ) ≤ |(n : ℝ)| := by exact_mod_cast hn
+  have hn' : ((N + L : ℕ) : ℝ) ≤ |(n : ℝ)| := by push_cast; exact_mod_cast hn
   have hN' : (N : ℝ) ≤ |(n : ℝ)| :=
     le_trans (Nat.cast_le.mpr (Nat.le_add_right N L)) hn'
   rw [taperWeight_def, max_eq_left (sub_nonpos.mpr hn'), max_eq_left (sub_nonpos.mpr hN'),
@@ -315,48 +327,49 @@ theorem inner_taperedFourierVec_eq_sum {N L : ℕ} (hL : 0 < L) (x : ℝ)
 /-- Zero-padding an integer-interval sequence `a` on `[M, M + H)` into coordinates `L ≤ k < L + H`
 of `EuclideanSpace ℂ (Fin (2 * (N + L) + 1))` (which lies in the flat core `|k - (N + L)| ≤ N` when
 `H ≤ 2 * N + 1`, and truncates entries when `L + H > 2 * (N + L) + 1`). -/
-private noncomputable def icoCorePadVec (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ) :
+noncomputable def intervalVector (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ) :
     EuclideanSpace ℂ (Fin (2 * (N + L) + 1)) :=
   WithLp.toLp 2 fun k ↦
     if L ≤ k.val ∧ k.val - L < H then a (M + ((k.val - L : ℕ) : ℤ)) else 0
 
-/-- Coordinate formula for `icoCorePadVec`. -/
-private theorem icoCorePadVec_apply (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ)
+/-- Coordinate formula for `intervalVector`. -/
+@[simp]
+theorem intervalVector_apply (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ)
     (k : Fin (2 * (N + L) + 1)) :
-    icoCorePadVec M H N L a k =
+    intervalVector M H N L a k =
       if L ≤ k.val ∧ k.val - L < H then a (M + ((k.val - L : ℕ) : ℤ)) else 0 :=
   PiLp.toLp_apply 2 _ _ k
 
-/-- When `H ≤ 2 * N + 1`, `icoCorePadVec M H N L a` vanishes outside the flat core
+/-- When `H ≤ 2 * N + 1`, `intervalVector M H N L a` vanishes outside the flat core
 `|k - (N + L)| ≤ N` for every taper width `L`. -/
-private theorem icoCorePadVec_eq_zero_of_lt_abs {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ)
+theorem intervalVector_eq_zero_of_lt_abs {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ)
     (a : ℤ → ℂ) {k : Fin (2 * (N + L) + 1)}
     (hk : (N : ℤ) < |(k : ℤ) - ((N + L : ℕ) : ℤ)|) :
-    icoCorePadVec M H N L a k = 0 := by
+    intervalVector M H N L a k = 0 := by
   have hnot : ¬ (L ≤ k.val ∧ k.val - L < H) := by
     rcases abs_cases ((k : ℤ) - ((N + L : ℕ) : ℤ)) with ⟨_, _⟩ | ⟨_, _⟩ <;> omega
-  rw [icoCorePadVec_apply, ite_eq_right hnot]
+  rw [intervalVector_apply, ite_eq_right hnot]
 
-/-- When `L + H ≤ 2 * (N + L) + 1`, the squared norm of `icoCorePadVec M H N L a` equals the
+/-- When `L + H ≤ 2 * (N + L) + 1`, the squared norm of `intervalVector M H N L a` equals the
 squared `ℓ²` norm of `a` on `Finset.Ico M (M + H)`. -/
-private theorem norm_icoCorePadVec_sq {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1)
+theorem norm_intervalVector_sq {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1)
     (a : ℤ → ℂ) :
-    ‖icoCorePadVec M H N L a‖ ^ 2 = ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
+    ‖intervalVector M H N L a‖ ^ 2 = ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
   rw [EuclideanSpace.norm_sq_eq, Finset.sum_Ico_int_add_eq_sum_range M H (fun n ↦ ‖a n‖ ^ 2),
     ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) hLH
       (fun j ↦ ‖a (M + (j : ℤ))‖ ^ 2)]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [icoCorePadVec_apply]
+  rw [intervalVector_apply]
   by_cases hk : L ≤ k.val ∧ k.val - L < H <;> simp [hk]
 
-/-- When `L + H ≤ 2 * (N + L) + 1`, shifting the centered Fourier sum of `icoCorePadVec M H N L a`
+/-- When `L + H ≤ 2 * (N + L) + 1`, shifting the centered Fourier sum of `intervalVector M H N L a`
 by the unimodular phase `Real.fourierChar ((M + N) * t)` recovers the Fourier sum of `a` on
 `Finset.Ico M (M + H)`. -/
-private theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N L : ℕ}
+theorem fourierChar_mul_sum_intervalVector {M : ℤ} {H N L : ℕ}
     (hLH : L + H ≤ 2 * (N + L) + 1) (a : ℤ → ℂ) (t : ℝ) :
     (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
         ∑ k : Fin (2 * (N + L) + 1),
-          icoCorePadVec M H N L a k *
+          intervalVector M H N L a k *
             (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ) =
       ∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ) := by
   rw [Finset.mul_sum, Finset.sum_Ico_int_add_eq_sum_range M H
@@ -364,7 +377,7 @@ private theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N L : ℕ}
     ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) hLH (fun j ↦
       a (M + (j : ℤ)) * (Real.fourierChar (((M + (j : ℤ) : ℤ) : ℝ) * t) : ℂ))]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [icoCorePadVec_apply]
+  rw [intervalVector_apply]
   by_cases hk : L ≤ k.val ∧ k.val - L < H
   · simp only [hk]
     calc
@@ -384,15 +397,22 @@ private theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N L : ℕ}
           rw [heq]; push_cast; ring
   · simp [hk]
 
-/-- When `L + H ≤ 2 * (N + L) + 1`, the centered Fourier sum of `icoCorePadVec M H N L a` has the
+/-- When `L + H ≤ 2 * (N + L) + 1`, the centered Fourier sum of `intervalVector M H N L a` has the
 same norm as the Fourier sum of `a` on `Finset.Ico M (M + H)`. -/
-private theorem norm_sum_icoCorePadVec_fourierChar {M : ℤ} {H N L : ℕ}
+theorem norm_sum_intervalVector_fourierChar {M : ℤ} {H N L : ℕ}
     (hLH : L + H ≤ 2 * (N + L) + 1) (a : ℤ → ℂ) (t : ℝ) :
     ‖∑ k : Fin (2 * (N + L) + 1),
-        icoCorePadVec M H N L a k *
+        intervalVector M H N L a k *
           (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)‖ =
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ := by
-  rw [← fourierChar_mul_sum_icoCorePadVec hLH a t, norm_mul, Circle.norm_coe, one_mul]
+  rw [← fourierChar_mul_sum_intervalVector hLH a t, norm_mul, Circle.norm_coe, one_mul]
+
+/-- Taper-width estimate for `L = ⌊1 / δ⌋₊` when `0 < δ ≤ 1 / 2` (with `0 < L` by
+`TauCeti.natFloor_one_div_pos`): `L + (π ^ 2 / (12 * δ ^ 2)) / L ≤ 2 / δ`. -/
+theorem natFloor_inv_add_pi_sq_div_le {δ : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2) :
+    (⌊1 / δ⌋₊ : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (⌊1 / δ⌋₊ : ℝ) ≤ 2 / δ := by
+  have hpi : Real.pi ^ 2 / 12 ≤ 8 / 9 := by nlinarith [Real.pi_lt_d2, Real.pi_pos]
+  simpa only [div_div] using natFloor_one_div_add_div_le hδ hδ' hpi
 
 end TauCeti
 
@@ -449,41 +469,9 @@ theorem sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le {ι : Type*} [Decida
     _ ≤ (L : ℝ)⁻¹ * S := mul_le_mul_of_nonneg_left (hrow i.val i.property) (by positivity)
     _ = S / (L : ℝ) := by ring
 
-/-- Taper-width estimate for `L = ⌊1 / δ⌋₊` when `0 < δ ≤ 1 / 2`:
-`L + (π ^ 2 / (12 * δ ^ 2)) / L ≤ 2 / δ`. -/
-private theorem natFloor_inv_add_pi_sq_div_le {δ : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2) :
-    (⌊1 / δ⌋₊ : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (⌊1 / δ⌋₊ : ℝ) ≤ 2 / δ := by
-  let L : ℕ := ⌊1 / δ⌋₊
-  have hL_ge_two : 2 ≤ L := Nat.le_floor (by rw [Nat.cast_ofNat, le_div_iff₀ hδ]; linarith)
-  have hL_pos : (0 : ℝ) < (L : ℝ) := Nat.cast_pos.mpr (by omega)
-  have hr_le : (L : ℝ) * δ ≤ 1 := (le_div_iff₀ hδ).mp (Nat.floor_le (by positivity))
-  have hr_ge : 2 / 3 ≤ (L : ℝ) * δ := by
-    have h1 : (1 : ℝ) < ((L : ℝ) + 1) * δ := (div_lt_iff₀ hδ).mp (Nat.lt_floor_add_one (1 / δ))
-    have h2 : (2 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL_ge_two
-    -- `3 * (L * δ) = 2 * ((L + 1) * δ) + (L - 2) * δ > 2`
-    nlinarith [mul_nonneg (sub_nonneg.mpr h2) hδ.le]
-  have hsq : (1 - (L : ℝ) * δ) ^ 2 ≤ (1 / 3 : ℝ) ^ 2 := by
-    nlinarith [hr_le, hr_ge]
-  have hpi : Real.pi ^ 2 / 12 ≤ 8 / 9 := by
-    nlinarith [Real.pi_lt_d2, Real.pi_pos]
-  have hquad : ((L : ℝ) * δ) ^ 2 + Real.pi ^ 2 / 12 ≤ 2 * ((L : ℝ) * δ) := by
-    linarith [hsq, hpi]
-  have hmul :
-      ((L : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (L : ℝ)) * ((L : ℝ) * δ ^ 2) ≤
-        (2 / δ) * ((L : ℝ) * δ ^ 2) := by
-    have hLHS :
-        ((L : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (L : ℝ)) * ((L : ℝ) * δ ^ 2) =
-          ((L : ℝ) * δ) ^ 2 + Real.pi ^ 2 / 12 := by
-      field_simp [hL_pos.ne', hδ.ne']
-    have hRHS : (2 / δ) * ((L : ℝ) * δ ^ 2) = 2 * ((L : ℝ) * δ) := by
-      field_simp [hδ.ne']
-    rw [hLHS, hRHS]
-    exact hquad
-  exact le_of_mul_le_mul_right hmul (by positivity)
-
 /-- Centered core additive large sieve for `0 < δ ≤ 1 / 2`: taking taper width `L = ⌊1 / δ⌋₊`
 yields the explicit constant `2 * N + 2 / δ`. -/
-private theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
+theorem sum_norm_sum_fourierChar_sq_le_of_core_support {ι : Type*}
     (s : Finset ι) (x : ι → ℝ) {δ : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2)
     (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ ‖((x i - x j : ℝ) : UnitAddCircle)‖)
     (N : ℕ) (f : EuclideanSpace ℂ (Fin (2 * (N + ⌊1 / δ⌋₊) + 1)))
@@ -496,7 +484,7 @@ private theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
       (2 * (N : ℝ) + 2 / δ) * ‖f‖ ^ 2 := by
   classical
   let L : ℕ := ⌊1 / δ⌋₊
-  have hL_pos : 0 < L := Nat.floor_pos.mpr (by rw [le_div_iff₀ hδ]; linarith)
+  have hL_pos : 0 < L := natFloor_one_div_pos hδ (hδ'.trans (by norm_num))
   have hwidth := natFloor_inv_add_pi_sq_div_le hδ hδ'
   have hsin : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → Real.sin (Real.pi * (x i - x j)) ≠ 0 := by
     intro i hi j hj hne hzero
@@ -508,7 +496,7 @@ private theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
   exact le_trans hmain (mul_le_mul_of_nonneg_right (by linarith) (sq_nonneg _))
 
 /-- Small-spacing branch (`δ ≤ 1 / 2`) of Bombieri's additive large sieve on `Finset.Ico M (M + H)`,
-obtained by applying the centered core sieve to `icoCorePadVec M H (H / 2) ⌊1 / δ⌋₊ a`. -/
+obtained by applying the centered core sieve to `intervalVector M H (H / 2) ⌊1 / δ⌋₊ a`. -/
 private theorem sum_norm_sum_Ico_fourierChar_sq_le_of_le_half {ι : Type*}
     (s : Finset ι) (M : ℤ) (H : ℕ) (a : ℤ → ℂ) (x : ι → ℝ) {δ : ℝ}
     (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2)
@@ -518,19 +506,19 @@ private theorem sum_norm_sum_Ico_fourierChar_sq_le_of_le_half {ι : Type*}
   let N : ℕ := H / 2
   have hHN : H ≤ 2 * N + 1 := by omega
   have hLH : ⌊1 / δ⌋₊ + H ≤ 2 * (N + ⌊1 / δ⌋₊) + 1 := by omega
-  let f := icoCorePadVec M H N ⌊1 / δ⌋₊ a
+  let f := intervalVector M H N ⌊1 / δ⌋₊ a
   have h2N : 2 * (N : ℝ) ≤ (H : ℝ) := by exact_mod_cast (by omega : 2 * (H / 2) ≤ H)
-  simp_rw [← norm_sum_icoCorePadVec_fourierChar hLH a]
+  simp_rw [← norm_sum_intervalVector_fourierChar hLH a]
   calc
     ∑ i ∈ s,
         ‖∑ k : Fin (2 * (N + ⌊1 / δ⌋₊) + 1),
             f k *
               (Real.fourierChar ((((k : ℤ) - ((N + ⌊1 / δ⌋₊ : ℕ) : ℤ) : ℤ) : ℝ) * x i) : ℂ)‖ ^ 2
         ≤ (2 * (N : ℝ) + 2 / δ) * ‖f‖ ^ 2 :=
-      s.sum_norm_sum_fourierChar_sq_le_of_support x hδ hδ' hsep N f
-        (fun k hk ↦ icoCorePadVec_eq_zero_of_lt_abs hHN ⌊1 / δ⌋₊ a hk)
+      s.sum_norm_sum_fourierChar_sq_le_of_core_support x hδ hδ' hsep N f
+        (fun k hk ↦ intervalVector_eq_zero_of_lt_abs hHN ⌊1 / δ⌋₊ a hk)
     _ = (2 * (N : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-      rw [norm_icoCorePadVec_sq hLH]
+      rw [norm_intervalVector_sq hLH]
     _ ≤ ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 :=
       mul_le_mul_of_nonneg_right (by linarith) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
