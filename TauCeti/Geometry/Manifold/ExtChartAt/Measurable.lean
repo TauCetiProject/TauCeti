@@ -24,6 +24,8 @@ change-of-variables or Haar integration dependencies.
   measurable iff its image under `e.extend I` is Borel measurable.
 * `OpenPartialHomeomorph.measurableSet_image_extend`: the image under `e.extend I` of a
   measurable subset of `e.source` is measurable.
+* `OpenPartialHomeomorph.continuous_domRestrict_extend`: `e.extend I` restricted to `e.source` is
+  continuous.
 * `OpenPartialHomeomorph.measurableSet_preimage_extend_inter`: Borel preimages under `e.extend I`
   intersected with `e.source` are measurable.
 * `ModelWithCorners.measurableSet_extendCoordChange_source`: the source of an extended
@@ -89,15 +91,19 @@ theorem measurableSet_image_extend [MeasurableSpace E] [OpensMeasurableSpace E]
     have : BorelSpace E := ⟨rfl⟩
     exact (e.measurableSet_image_extend_iff I hsub).2 hs
 
+/-- Restricting an extended chart `e.extend I` to `e.source` gives a continuous map. -/
+theorem continuous_domRestrict_extend (e : OpenPartialHomeomorph M H)
+    (I : ModelWithCorners 𝕜 E H) :
+    Continuous (e.source.domRestrict (e.extend I)) := by
+  rw [← continuousOn_iff_continuous_domRestrict, ← e.extend_source (I := I)]
+  exact e.continuousOn_extend
+
 /-- The preimage of a Borel measurable set in `E` under `e.extend I`, intersected with `e.source`,
 is measurable whenever open subsets of `M` are measurable. -/
 theorem measurableSet_preimage_extend_inter [MeasurableSpace E] [BorelSpace E]
     [MeasurableSpace M] [OpensMeasurableSpace M] (e : OpenPartialHomeomorph M H)
     (I : ModelWithCorners 𝕜 E H) {A : Set E} (hA : MeasurableSet A) :
     MeasurableSet (e.extend I ⁻¹' A ∩ e.source) := by
-  have hcont : Continuous (e.source.domRestrict (e.extend I)) := by
-    rw [← continuousOn_iff_continuous_domRestrict, ← e.extend_source (I := I)]
-    exact e.continuousOn_extend
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
     .subtypeVal e.open_source.measurableSet
   have hseq : e.extend I ⁻¹' A ∩ e.source =
@@ -105,7 +111,7 @@ theorem measurableSet_preimage_extend_inter [MeasurableSpace E] [BorelSpace E]
     ext x
     simp [and_comm]
   rw [hseq]
-  exact hval.measurableSet_image.2 (hcont.measurable hA)
+  exact hval.measurableSet_image.2 ((e.continuous_domRestrict_extend I).measurable hA)
 
 end OpenPartialHomeomorph
 

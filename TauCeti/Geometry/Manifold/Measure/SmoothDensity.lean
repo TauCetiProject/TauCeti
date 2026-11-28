@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Integral.CompactlySupported
 import TauCeti.Analysis.Calculus.FDeriv.Equiv

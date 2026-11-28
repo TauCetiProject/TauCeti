@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
 import TauCeti.Geometry.Manifold.ChartedSpace
+public import TauCeti.Geometry.Manifold.ExtChartAt.CoordChange
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
@@ -289,6 +290,9 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
 
+/-- The preferred extended chart at `x` is the extension of `chartAt H x` by `I`. -/
+theorem extChartAt_eq_extend (x : M) : extChartAt I x = (chartAt H x).extend I := rfl
+
 /-- The inverse of the extended chart at `x` sends a point of its target into the source of the
 chart at `x`. -/
 theorem extChartAt_symm_mem_chart_source {x : M} {z : E} (hz : z ∈ (extChartAt I x).target) :
@@ -372,10 +376,8 @@ omit [ChartedSpace H M] in
 any point in both chart domains. -/
 theorem _root_.ModelWithCorners.extendCoordChange_source_mem_nhds [I.Boundaryless]
     {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
-    (I.extendCoordChange e e').source ∈ 𝓝 (I (e x)) := by
-  apply I.isOpen_extendCoordChange_source.mem_nhds
-  rw [← OpenPartialHomeomorph.extend_image_source_inter]
-  exact Set.mem_image_of_mem _ ⟨hx, hx'⟩
+    (I.extendCoordChange e e').source ∈ 𝓝 (I (e x)) :=
+  I.isOpen_extendCoordChange_source.mem_nhds (I.extend_mem_extendCoordChange_source hx hx')
 
 omit [ChartedSpace H M] in
 /-- A change of extended charts sends the coordinate of a point in the first chart to its

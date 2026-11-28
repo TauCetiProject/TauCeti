@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.Paracompact
-public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ExtChartAt
@@ -103,20 +103,10 @@ private theorem finsum_partitionSummand_pos (ρ : PartitionOfUnity M M univ)
   obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ hy
   have hfin : (Function.support fun i ↦ partitionSummand (I := I) ρ x₀ i y).Finite :=
     hNfin.subset fun i hi ↦ ⟨y, mem_of_mem_nhdsWithin hy hN, hi⟩
-  have hsum1 : ∑ᶠ i, ρ i ((extChartAt I x₀).symm y) = 1 := ρ.sum_eq_one (mem_univ _)
-  obtain ⟨i, hi_ne⟩ : ∃ i, ρ i ((extChartAt I x₀).symm y) ≠ 0 := by
-    by_contra hall
-    have h0 : ∀ i, ρ i ((extChartAt I x₀).symm y) = 0 := fun i ↦ not_not.1 fun h ↦ hall ⟨i, h⟩
-    have : (fun i ↦ ρ i ((extChartAt I x₀).symm y)) = fun _ ↦ 0 := funext h0
-    rw [this, finsum_zero] at hsum1
-    exact zero_ne_one hsum1
-  have hi_pos : 0 < ρ i ((extChartAt I x₀).symm y) := lt_of_le_of_ne (ρ.nonneg i _) hi_ne.symm
-  have hxe : (extChartAt I x₀).symm y ∈ (chartAt H x₀).source := by
-    simpa only [← extChartAt_source (I := I)] using (extChartAt I x₀).map_target hy
-  have hyΦ : y ∈ (I.extendCoordChange (chartAt H x₀) (chartAt H i)).source := by
-    rw [← OpenPartialHomeomorph.extend_image_source_inter (f := chartAt H x₀) (f' := chartAt H i)]
-    exact ⟨(extChartAt I x₀).symm y, ⟨hxe, hρ i (subset_tsupport _ hi_ne)⟩,
-      (extChartAt I x₀).right_inv hy⟩
+  obtain ⟨i, hi_pos⟩ := ρ.exists_pos (mem_univ ((extChartAt I x₀).symm y))
+  have hyΦ : y ∈ (I.extendCoordChange (chartAt H x₀) (chartAt H i)).source :=
+    I.mem_extendCoordChange_source (extChartAt_eq_extend (I := I) x₀ ▸ hy)
+      (extChartAt_eq_extend (I := I) x₀ ▸ hρ i (subset_tsupport _ hi_pos.ne'))
   have hhi_pos : 0 < partitionSummand (I := I) ρ x₀ i y := by
     rw [partitionSummand, indicator_of_mem hyΦ]
     exact mul_pos (I.abs_det_fderivWithin_extendCoordChange_pos
@@ -197,14 +187,14 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
   ext A hA
   have hpre := (chartAt H x₀).measurableSet_preimage_extend_inter I hA
   rw [extChartAt_source]
-  conv_lhs => rw [extChartAt]
+  conv_lhs => rw [extChartAt_eq_extend]
   rw [(chartAt H x₀).map_restrict_extend_apply I _ hA, Measure.sum_apply _ hpre,
     withDensity_apply _ hA, Measure.restrict_restrict hA]
   have hterm (i : M) : (chartAt H i).localChartMeasure I ν (ρ i)
       ((chartAt H x₀).extend I ⁻¹' A ∩ (chartAt H x₀).source) =
       ∫⁻ y in A ∩ (extChartAt I x₀).target,
         ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i y) ∂ν := by
-    rw [← (chartAt H x₀).map_restrict_extend_apply I _ hA, ← extChartAt]
+    rw [← (chartAt H x₀).map_restrict_extend_apply I _ hA, ← extChartAt_eq_extend]
     exact (chartAt H x₀).map_restrict_localChartMeasure_apply (chartAt H i) I
       (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i) ν (ρ i) hA
   have haem (i : S) : AEMeasurable

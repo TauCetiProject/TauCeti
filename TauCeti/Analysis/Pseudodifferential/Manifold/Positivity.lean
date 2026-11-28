@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Basic
-public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.Positivity
 import TauCeti.Geometry.Manifold.Measure.Chart

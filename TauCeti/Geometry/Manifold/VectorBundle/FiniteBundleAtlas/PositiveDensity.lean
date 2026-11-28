@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.Geometry.Manifold.ExtChartAt.SelfModel
-public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 
 /-!

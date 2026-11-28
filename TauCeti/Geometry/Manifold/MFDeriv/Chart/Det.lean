@@ -100,16 +100,11 @@ theorem abs_det_fderivWithin_extendCoordChange_comp
         |(fderivWithin ℝ (I.extendCoordChange e e') (Set.range I) (e.extend I x)).det| := by
   set y := e.extend I x
   set z := e'.extend I x
-  have hy_ee' : y ∈ (I.extendCoordChange e e').source := by
-    rw [← OpenPartialHomeomorph.extend_image_source_inter (f := e) (f' := e')]
-    exact Set.mem_image_of_mem _ ⟨hxe, hxe'⟩
-  have hz_e'e'' : z ∈ (I.extendCoordChange e' e'').source := by
-    rw [← OpenPartialHomeomorph.extend_image_source_inter (f := e') (f' := e'')]
-    exact Set.mem_image_of_mem _ ⟨hxe', hxe''⟩
-  have hΦy : I.extendCoordChange e e' y = z := by
-    have hye : x ∈ (e.extend I).source := by rwa [e.extend_source]
-    simp only [y, z, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
-      (e.extend I).left_inv hye]
+  have hy_ee' : y ∈ (I.extendCoordChange e e').source :=
+    I.extend_mem_extendCoordChange_source hxe hxe'
+  have hz_e'e'' : z ∈ (I.extendCoordChange e' e'').source :=
+    I.extend_mem_extendCoordChange_source hxe' hxe''
+  have hΦy : I.extendCoordChange e e' y = z := I.extendCoordChange_extend_apply hxe
   have hd1 : DifferentiableWithinAt ℝ (I.extendCoordChange e e') (Set.range I) y :=
     (I.contDiffWithinAt_extendCoordChange he he' hy_ee').differentiableWithinAt one_ne_zero
   have hd2 : DifferentiableWithinAt ℝ (I.extendCoordChange e' e'') (Set.range I) z :=
@@ -126,15 +121,13 @@ theorem abs_det_fderivWithin_extendCoordChange_comp
       Filter.inter_mem (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe')
         (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe'')
     filter_upwards [hmem] with w hw
-    have hxw' : (e.extend I).symm w ∈ (e'.extend I).source := hw.1.2
-    simp only [Function.comp_apply, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
-      (e'.extend I).left_inv hxw']
+    rw [Function.comp_apply, I.extendCoordChange_apply_eq e e',
+      I.extendCoordChange_extend_apply (e'.extend_source (I := I) ▸ hw.1.2),
+      I.extendCoordChange_apply_eq]
   have heq0 : I.extendCoordChange e e'' y =
       (I.extendCoordChange e' e'' ∘ I.extendCoordChange e e') y := by
-    have hxw' : x ∈ (e'.extend I).source := by rwa [e'.extend_source]
-    have hxe_s : x ∈ (e.extend I).source := by rwa [e.extend_source]
-    simp only [Function.comp_apply, y, ModelWithCorners.extendCoordChange,
-      PartialEquiv.trans_apply, (e.extend I).left_inv hxe_s, (e'.extend I).left_inv hxw']
+    rw [Function.comp_apply, I.extendCoordChange_extend_apply hxe,
+      I.extendCoordChange_extend_apply hxe, I.extendCoordChange_extend_apply hxe']
   rw [heq.fderivWithin_eq heq0, fderivWithin_comp y (hΦy ▸ hd2) hd1 hmaps hU, hΦy]
   simp only [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
     abs_mul]
@@ -167,12 +160,8 @@ theorem OpenPartialHomeomorph.continuousOn_abs_det_fderivWithin_extendCoordChang
     refine ((hcont y hyΦ).mono_of_mem_nhdsWithin hmem).congr_of_eventuallyEq
       (Filter.eventuallyEq_of_mem hmem fun z hz ↦ Set.indicator_of_mem hz _)
       (Set.indicator_of_mem hyΦ _)
-  · have hnotSupp : (e₀.extend I).symm y ∉ tsupport f := fun hmem ↦ by
-      have hxe : (e₀.extend I).symm y ∈ e₀.source :=
-        e₀.extend_source (I := I) ▸ (e₀.extend I).map_target hy
-      apply hyΦ
-      rw [← OpenPartialHomeomorph.extend_image_source_inter (f := e₀) (f' := e₁)]
-      exact ⟨(e₀.extend I).symm y, ⟨hxe, hsupp hmem⟩, (e₀.extend I).right_inv hy⟩
+  · have hnotSupp : (e₀.extend I).symm y ∉ tsupport f := fun hmem ↦
+      hyΦ (I.mem_extendCoordChange_source hy (hsupp hmem))
     have hmem : (e₀.extend I).symm ⁻¹' (tsupport f)ᶜ ∈ 𝓝[(e₀.extend I).target] y :=
       (e₀.continuousOn_extend_symm y hy).preimage_mem_nhdsWithin
         ((isClosed_tsupport f).isOpen_compl.mem_nhds hnotSupp)

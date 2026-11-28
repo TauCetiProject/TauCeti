@@ -38,6 +38,9 @@ a single set of positive finite measure are equal.
   left-invariant measure against a Haar measure multiplies the density by
   `Measure.haarScalarFactor`. The additive version is
   `MeasureTheory.Measure.withDensity_eq_withDensity_addHaarScalarFactor_mul`.
+* `MeasureTheory.Measure.restrict_withDensity_ofReal_eq_haarScalarFactor_mul` and
+  `MeasureTheory.Measure.restrict_withDensity_ofReal_eq_addHaarScalarFactor_mul`: the same identity
+  for a measure restricted to a measurable set with a real-valued `ENNReal.ofReal ∘ w` density.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_measure_univ_eq`: a left-invariant measure
   with the same total mass as a finite Haar measure coincides with it.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_apply_eq`: a left-invariant measure that is
@@ -206,6 +209,23 @@ theorem withDensity_eq_withDensity_haarScalarFactor_mul {G : Type*} [Group G] [T
   conv_lhs => rw [hμ]
   rw [withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.coe_ne_top]
   simp only [Pi.smul_def, smul_eq_mul]
+
+/-- Changing the reference Haar measure on a measurable subset `s` multiplies a real-valued
+`ENNReal.ofReal ∘ w` density by `Measure.haarScalarFactor`. -/
+@[to_additive restrict_withDensity_ofReal_eq_addHaarScalarFactor_mul
+/-- Changing the reference additive Haar measure on a measurable subset `s` multiplies a
+real-valued `ENNReal.ofReal ∘ w` density by `Measure.addHaarScalarFactor`. -/]
+theorem restrict_withDensity_ofReal_eq_haarScalarFactor_mul {G : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
+    [MeasurableSpace G] [BorelSpace G]
+    (μ' μ : Measure G) [IsHaarMeasure μ] [IsMulLeftInvariant μ'] [Regular μ] [Regular μ']
+    {s : Set G} (hs : MeasurableSet s) (w : G → ℝ) :
+    (μ'.restrict s).withDensity (fun x ↦ ENNReal.ofReal (w x)) =
+      (μ.restrict s).withDensity fun x ↦ ENNReal.ofReal ((haarScalarFactor μ' μ : ℝ) * w x) := by
+  rw [← restrict_withDensity hs, withDensity_eq_withDensity_haarScalarFactor_mul μ' μ,
+    restrict_withDensity hs]
+  refine congrArg (μ.restrict s).withDensity (funext fun x ↦ ?_)
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
 
 end MeasureTheory.Measure
 

@@ -127,7 +127,7 @@ measure of its preimage in the chart source. -/
 theorem map_restrict_extChartAt_source_apply (x : M) {A : Set E} (hA : MeasurableSet A) :
     (μ.restrict (extChartAt I x).source).map (extChartAt I x) A =
       μ ((extChartAt I x) ⁻¹' A ∩ (extChartAt I x).source) := by
-  rw [extChartAt_source, extChartAt]
+  rw [extChartAt_source, extChartAt_eq_extend]
   exact (chartAt H x).map_restrict_extend_apply I μ hA
 
 /-- The pushforward of `μ` restricted to a chart source gives the coordinate image of a measurable
@@ -145,36 +145,9 @@ theorem setLIntegral_eq_setLIntegral_map_extChartAt {x : M} {s : Set M}
     (hsub : s ⊆ (extChartAt I x).source) (φ : M → ℝ≥0∞) :
     ∫⁻ z in s, φ z ∂μ = ∫⁻ y in extChartAt I x '' s, φ ((extChartAt I x).symm y)
       ∂(μ.restrict (extChartAt I x).source).map (extChartAt I x) := by
-  set e := extChartAt I x
-  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
-  -- `measurableEmbedding_extChartAt_restrict` is stated for the Borel σ-algebra of `E`.
-  have hR : MeasurableEmbedding (e.source.domRestrict e) := by
-    obtain rfl : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
-    exact measurableEmbedding_extChartAt_restrict x
-  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    MeasurableEmbedding.subtypeVal hsrc
-  -- The chart pushforward of `μ` is the pushforward of `μ` pulled back to the chart source.
-  have hmap : (μ.restrict e.source).map e = (μ.comap Subtype.val).map (e.source.domRestrict e) := by
-    ext A hA
-    rw [map_restrict_extChartAt_source_apply x hA, hR.map_apply, hval.comap_apply]
-    congr 1
-    ext z
-    simp only [mem_inter_iff, mem_preimage, mem_image, Set.domRestrict_apply, Subtype.exists,
-      exists_and_right, exists_eq_right]
-    tauto
-  -- `φ` read in the chart and composed with the chart is `φ` on the chart source.
-  have hφ : ∀ z : e.source, φ (e.symm (e.source.domRestrict e z)) = φ z := fun z ↦ by
-    rw [Set.domRestrict_apply, e.left_inv z.property]
-  have hpre : e.source.domRestrict e ⁻¹' (e '' s) = Subtype.val ⁻¹' s := by
-    ext z
-    exact e.injOn.mem_image_iff hsub z.property
-  -- Pulled back to the chart source, `μ` restricted to `s` pushes forward to `μ` restricted to `s`.
-  have hleft : ((μ.comap (Subtype.val : e.source → M)).restrict (Subtype.val ⁻¹' s)).map
-      Subtype.val = μ.restrict s := by
-    rw [hval.restrict_comap, hval.map_comap, Subtype.range_coe, Measure.restrict_restrict hsrc,
-      Subtype.image_preimage_coe, inter_eq_right.2 hsub, inter_eq_right.2 hsub]
-  rw [hmap, hR.restrict_map, hR.lintegral_map, hpre, ← hleft, hval.lintegral_map]
-  simp only [hφ]
+  rw [extChartAt_source, extChartAt_eq_extend]
+  exact (chartAt H x).setLIntegral_eq_setLIntegral_map_extend I μ
+    (extChartAt_source (I := I) x ▸ hsub) φ
 
 /-- Two measures with the same pushforward from a chart source agree on that source. -/
 theorem restrict_extChartAt_source_eq_of_map_eq {x : M} {α β : Measure M}
