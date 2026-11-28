@@ -252,20 +252,23 @@ theorem exp_mul_exp_mul_exp_neg_eq_exp_expAd {x y : A} (hx : IsNilpotent x) :
 
 end Conjugation
 
-variable {A : Type*} [Ring A] [Algebra ℚ A]
+variable {A : Type*} [Ring A] [Module ℚ A]
 
 /-- **The central-commutator exponential relation.** If `[x, y] = z`, the element `z` commutes
-with `x` and `y`, and `x` and `y` are nilpotent, then
-`exp(x) exp(y) = exp(y) exp(z) exp(x)`.
+with `x` and `y`, then `exp(x) exp(y) = exp(y) exp(z) exp(x)`. If either `x` or `y` is not
+nilpotent, both sides are zero by the convention for the finite exponential.
 
 For root vectors whose roots form an `A₂` pair, this is the Chevalley commutator relation. The
-hypotheses are stated for arbitrary elements of an associative `ℚ`-algebra so the result also
-applies directly to their images in finite-dimensional representations. -/
+additive group of the ring need only be a `ℚ`-module. -/
 theorem exp_mul_exp_eq_exp_mul_exp_mul_of_lie_eq_of_commute {x y z : A}
-    (hxy : ⁅x, y⁆ = z) (hxz : Commute x z) (hyz : Commute y z)
-    (hx : IsNilpotent x) (hy : IsNilpotent y) :
+    (hxy : ⁅x, y⁆ = z) (hxz : Commute x z) (hyz : Commute y z) :
     IsNilpotent.exp x * IsNilpotent.exp y =
       IsNilpotent.exp y * IsNilpotent.exp z * IsNilpotent.exp x := by
+  by_cases hx : IsNilpotent x
+  case neg => simp only [IsNilpotent.exp_eq_zero_of_not_isNilpotent hx, zero_mul, mul_zero]
+  by_cases hy : IsNilpotent y
+  case neg => simp only [IsNilpotent.exp_eq_zero_of_not_isNilpotent hy, zero_mul, mul_zero]
+  let : Algebra ℚ A := .ofModule smul_mul_assoc mul_smul_comm
   have hz : IsNilpotent z :=
     Associative.isNilpotent_of_commutator_eq (by rw [← hxy, Ring.lie_def]; abel) hxz hyz hx
   have hconj : IsNilpotent.exp x * IsNilpotent.exp y * IsNilpotent.exp (-x) =
