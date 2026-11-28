@@ -677,9 +677,11 @@ theorem objective_le_of_sharedOuterApprox {β : Type*} [Preorder β] [Finite ι]
     (hzT : zT ∈ sharedOuterApprox D E g h a Dg Dh b)
     (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApprox D E g h a Dg Dh b) zT)
     (hxS : xS ∈ originalSet D g h b) :
-    f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS :=
-  ⟨hminU (fst_image_sharedOuterApprox_subset_directOuterApprox hD ⟨zT, hzT, rfl⟩),
-    hminT (mk_mem_sharedOuterApprox_of_mem_originalSet hgE hc hh ha hg hdh hxS)⟩
+    f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS := by
+  rw [← sharedOuterApproxOn_empty] at hzT hminT
+  exact objective_le_of_sharedOuterApproxOn (J := ∅) hgE (fun j _ ↦ hc j) hh ha hg hdh
+    (fun i v hv _ ↦ (monotone_iff_map_nonneg (Dh i)).1 (hD i) v hv)
+    (fun _ _ hj ↦ (notMem_empty _ hj).elim) hminU hzT hminT hxS
 
 /-- **Weak objective-value ordering for a monotone outer function.** When `g` maps `D` into `E`,
 every coordinate of `g` is convex on `D`, `h` is convex on `E` and monotone on the whole height
@@ -699,9 +701,9 @@ theorem objective_le_of_sharedOuterApprox_of_monotone {β : Type*} [Preorder β]
     (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApprox D E g h a Dg Dh b) zT)
     (hxS : xS ∈ originalSet D g h b) :
     f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS :=
-  ⟨hminU (fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone hm hdh ⟨zT, hzT, rfl⟩),
-    hminT (mk_mem_sharedOuterApprox_of_mem_originalSet hgE hc hh ha hg
-      (fun i ↦ (hdh i).hasFDerivWithinAt) hxS)⟩
+  have := Fintype.ofFinite ι
+  objective_le_of_sharedOuterApprox hgE hc hh ha hg (fun i ↦ (hdh i).hasFDerivWithinAt)
+    (fun i ↦ (hdh i).monotone_of_monotone hm) hminU hzT hminT hxS
 
 end Sets
 
