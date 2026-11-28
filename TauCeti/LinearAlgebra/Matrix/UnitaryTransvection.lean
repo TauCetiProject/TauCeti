@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Algebra.Star.Pi
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -47,8 +50,9 @@ are in `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/Transvection.le
 
 * `Matrix.unitaryTransvection_mulVec`: the action `x ↦ x + a B(v, x) v`; as a linear map
   `τ_{v,a}` is Mathlib's `LinearMap.transvection` (`Matrix.toLin'_unitaryTransvection`).
-* `Matrix.unitaryTransvection_mul_unitaryTransvection`: `τ_{v,a} τ_{v,b} = τ_{v,a+b}` for
-  isotropic `v`.
+* `Matrix.unitaryTransvection_mul_unitaryTransvection_eq`: the product formula
+  `τ_{v,a} τ_{v,b} = τ_{v, a + b + a b B(v, v)}`, which for isotropic `v` is
+  `τ_{v,a} τ_{v,b} = τ_{v,a+b}` (`Matrix.unitaryTransvection_mul_unitaryTransvection`).
 * `Matrix.det_unitaryTransvection_eq` and `Matrix.det_unitaryTransvection`: the determinant
   `1 + a B(v, v)`, which is `1` when `v` is isotropic.
 * `Matrix.unitaryTransvection_smul`: rescaling the vector, `τ_{c v,a} = τ_{v, a c σ(c)}`.
@@ -59,6 +63,13 @@ are in `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/Transvection.le
   `ε`-Hermitian form `B`, giving isometries when the coefficient vanishes
   (`Matrix.transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero`,
   `Matrix.transpose_map_unitaryTransvection_mul_mul_self`).
+* `Matrix.star_unitaryTransvection_mul_mul_self_of_eq_zero` and
+  `Matrix.unitaryTransvection_mul_unitaryTransvection_star_param_eq_one_of_eq_zero`: for
+  `σ = starRingEnd R` and a Hermitian Gram matrix `A`, `τ_{v,a}` preserves the form and is inverted
+  by `τ_{v,star a}` when `a + star a + a star a B(v, v) = 0`.
+* `Matrix.unitaryTransvection_mulVec_of_dotProduct_eq_zero` and
+  `Matrix.unitaryTransvection_sub_mulVec_eq`: `τ_{v,a}` fixes every `x` with `B(v, x) = 0`, and
+  if `a B(x - y, y) = 1`, then `τ_{x - y,a}` sends `y` to `x`.
 * `Matrix.exists_eq_unitaryTransvection_smul_iff`: over a field, the transvections along a nonzero
   multiple of `v` are those along `v`.
 
@@ -102,6 +113,11 @@ theorem unitaryTransvection_mulVec (a : R) (x : n → R) :
   rw [unitaryTransvection_def, add_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec,
     op_smul_eq_smul, ← dotProduct_mulVec, smul_smul]
 
+/-- A transvection fixes vectors orthogonal to its direction for the sesquilinear form. -/
+theorem unitaryTransvection_mulVec_of_dotProduct_eq_zero (a : R) {x : n → R}
+    (hx : (σ ∘ v) ⬝ᵥ Q *ᵥ x = 0) : Q.unitaryTransvection σ v a *ᵥ x = x := by
+  simp [unitaryTransvection_mulVec, hx]
+
 /-- As a linear map, the unitary transvection `τ_{v,a}` is Mathlib's transvection
 `x ↦ x + f x • v` for the linear form `f = a B(v, ·)`. -/
 theorem toLin'_unitaryTransvection (a : R) :
@@ -110,6 +126,22 @@ theorem toLin'_unitaryTransvection (a : R) :
   rw [toLin'_apply, unitaryTransvection_mulVec, LinearMap.transvection.apply,
     LinearMap.smul_apply, toBilin'_apply', smul_eq_mul]
 
+/-- **The product of two transvections or quasi-reflections along the same vector**:
+`τ_{v,a} τ_{v,b} = τ_{v, a + b + a b B(v, v)}`. -/
+theorem unitaryTransvection_mul_unitaryTransvection_eq (a b : R) :
+    Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
+      Q.unitaryTransvection σ v (a + b + a * b * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))) := by
+  apply toLin'.injective
+  have h (r : R) : LinearMap.transvection (r • toBilin' Q (σ ∘ v)) v =
+      LinearMap.transvection (toBilin' Q (σ ∘ v)) (r • v) := by
+    ext x
+    simp [LinearMap.transvection.apply, mul_smul, mul_comm, mul_assoc]
+  have hc : a + b + b * toBilin' Q (σ ∘ v) v * a = a + b + a * b * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
+    rw [toBilin'_apply']
+    ring
+  simp only [toLin'_mul, toLin'_unitaryTransvection, h]
+  rw [LinearMap.transvection.comp_smul_smul, hc]
+
 /-- **The parameter of a transvection along an isotropic vector is additive.** If `B(v, v) = 0`,
 then `τ_{v,a} τ_{v,b} = τ_{v,a+b}`, so `a ↦ τ_{v,a}` turns addition into multiplication. Over a
 commutative ring, where `τ_{v,-a}` inverts `τ_{v,a}`, these transvections form a one-parameter
@@ -117,11 +149,7 @@ group. -/
 theorem unitaryTransvection_mul_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a b : R) :
     Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
       Q.unitaryTransvection σ v (a + b) := by
-  refine toLin'.injective ?_
-  rw [toLin'_mul, toLin'_unitaryTransvection, toLin'_unitaryTransvection,
-    LinearMap.transvection.comp_of_right_eq (by
-      rw [LinearMap.smul_apply, toBilin'_apply', hv, smul_zero]),
-    ← add_smul, toLin'_unitaryTransvection]
+  rw [unitaryTransvection_mul_unitaryTransvection_eq, hv, mul_zero, add_zero]
 
 /-- Rescaling the vector of a unitary transvection rescales its parameter by the norm of the
 scalar: `τ_{c v,a} = τ_{v, a c σ(c)}`. -/
@@ -175,9 +203,44 @@ theorem transpose_map_unitaryTransvection_mul_mul_self (hσ : Function.Involutiv
     ((Q.unitaryTransvection σ v a).map σ)ᵀ * Q * Q.unitaryTransvection σ v a = Q :=
   transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero hσ hQ (by simp [hv, ha])
 
+section StarRing
+
+variable [StarRing R] {A : Matrix n n R} {a : R}
+
+/-- **Admissible unitary transvections preserve a Hermitian form.** For Hermitian `A`, the unitary
+transvection `τ_{v,a} = 1 + a • v (star v ᵥ* A)` satisfies `star τ_{v,a} * A * τ_{v,a} = A` when
+`a + star a + a * star a * ⟨v, v⟩ = 0`, where `⟨x, y⟩ = star x ⬝ᵥ A *ᵥ y`. This is
+`Matrix.transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero` for `σ = starRingEnd R` and
+`ε = 1`. -/
+theorem star_unitaryTransvection_mul_mul_self_of_eq_zero (hA : A.IsHermitian)
+    (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0) :
+    star (A.unitaryTransvection (starRingEnd R) v a) * A *
+      A.unitaryTransvection (starRingEnd R) v a = A := by
+  have h := transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero (v := v) (a := a)
+    starRingEnd_self_apply (by rw [one_smul, transpose_map_starRingEnd, hA.eq])
+    (by rwa [one_mul, one_mul, TauCeti.starRingEnd_comp_eq_star, starRingEnd_apply])
+  rwa [transpose_map_starRingEnd, ← star_eq_conjTranspose] at h
+
+/-- For `a + star a + a * star a * ⟨v, v⟩ = 0`, the unitary transvection `τ_{v,star a}` is a right
+inverse of `τ_{v,a}`. -/
+theorem unitaryTransvection_mul_unitaryTransvection_star_param_eq_one_of_eq_zero
+    (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0) :
+    A.unitaryTransvection (starRingEnd R) v a * A.unitaryTransvection (starRingEnd R) v (star a) =
+      1 := by
+  rw [unitaryTransvection_mul_unitaryTransvection_eq, TauCeti.starRingEnd_comp_eq_star, ha,
+    unitaryTransvection_zero]
+
+end StarRing
+
 section CommRing
 
 variable {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R} {v : n → R}
+
+/-- A transvection along `x - y` sends `y` to `x` when its action coefficient is one. -/
+theorem unitaryTransvection_sub_mulVec_eq {x y : n → R} {a : R}
+    (hxy : a * ((σ ∘ (x - y)) ⬝ᵥ Q *ᵥ y) = 1) :
+    Q.unitaryTransvection σ (x - y) a *ᵥ y = x := by
+  simp only [unitaryTransvection_mulVec, hxy, one_smul, add_sub_cancel]
 
 /-- **Determinant of a unitary transvection or quasi-reflection**:
 `det(τ_{v,a}) = 1 + a B(v, v)`. -/

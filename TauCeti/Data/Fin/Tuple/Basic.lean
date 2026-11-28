@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Defs
+public import Mathlib.Algebra.Notation.Pi.Basic
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
@@ -23,6 +25,7 @@ the entry of an insertion at one of them in the other position, and compares upd
 insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
 send the last position to the last position. The image of an initial segment under `Fin.cons`
 is obtained by inserting the first entry into the corresponding image for the tail.
+Dropping the first entries of a tuple corresponds to `List.drop` on its list of entries.
 A tuple of length three is determined by its three entries. A tuple in a sum type that starts on
 the left, ends on the right and never steps from right to left steps from left to right exactly
 once. Finally, a tuple can be built by finite dependent choice, each entry chosen relative to the
@@ -40,6 +43,10 @@ set of the earlier ones.
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
   appending.
+* `Fin.cons_comp_swap_succ`: exchanging two entries other than the first one commutes with
+  prepending.
+* `Fin.tail_tail_comp_swap_zero_one`: exchanging the first two entries leaves
+  `Fin.tail (Fin.tail a)` unchanged.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.init_comp_rev`: dropping the last entry of the reversed tuple is reversing the tail.
@@ -54,6 +61,10 @@ set of the earlier ones.
 * `Fin.comp_append`, `Fin.comp_append_comp_cast`, `Fin.comp_cast_comp_cast`: postcomposing an
   appended (or casted appended) tuple with a function, and collapsing nested `Fin.cast`
   precompositions.
+* `Fin.append_comp_finSumFinEquiv`, `Fin.sumElim_comp_finSumFinEquiv_symm`: converting between
+  `Fin.append` and `Sum.elim` across `finSumFinEquiv`.
+* `Fin.append_single_zero`, `Fin.append_zero_single`: padding `Pi.single` on the right or left by
+  `0` reindexes `Pi.single` by `Fin.castAdd` or `Fin.natAdd`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -96,6 +107,8 @@ set of the earlier ones.
   tuple.
 * `Fin.insertNth_comp_succAbove_eq_comp_swap`: inserting `f i.castSucc` at `i.succ.succ` and
   deleting `i.castSucc.castSucc` swaps the entries of `f` at `i.castSucc` and `i.succ`.
+* `Fin.ofFn_drop_eq_drop_ofFn`: dropping the first `s` entries of a tuple is `List.drop s` of
+  its list of entries.
 * `Fin.exists_tuple_forall_image_Iio`: finite dependent choice, building a tuple each of whose
   entries is chosen relative to the set of the earlier entries.
 -/
@@ -151,6 +164,24 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
     simp
+
+/-- Exchanging the entries `j.succ` and `k.succ` of `Fin.cons z c` is prepending `z` to `c` with
+the entries `j` and `k` exchanged. -/
+theorem cons_comp_swap_succ {n : ℕ} (z : α) (c : Fin n → α) (j k : Fin n) :
+    cons z c ∘ Equiv.swap j.succ k.succ = cons z (c ∘ Equiv.swap j k) := by
+  funext i
+  refine cases ?_ (fun i ↦ ?_) i
+  · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero j).symm, (succ_ne_zero k).symm]
+  · rw [Function.comp_apply, ← (succ_injective n).map_swap j k i]
+    simp
+
+/-- Swapping the first two entries of a tuple of length at least two leaves `Fin.tail (Fin.tail a)`
+unchanged. -/
+@[simp]
+theorem tail_tail_comp_swap_zero_one {n : ℕ} (a : Fin (n + 2) → α) :
+    tail (tail (a ∘ Equiv.swap 0 1)) = tail (tail a) :=
+  funext fun r => by
+    simp [tail, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) (succ_succ_ne_one r)]
 
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
@@ -244,6 +275,43 @@ theorem comp_append_comp_cast {β : Sort*} {n k : ℕ} (f : α → β) (u : Fin 
 theorem comp_cast_comp_cast {k n : ℕ} (u : Fin n → α) (h₁ : k = m) (h₂ : m = n) :
     (u ∘ Fin.cast h₂) ∘ Fin.cast h₁ = u ∘ Fin.cast (h₁.trans h₂) :=
   rfl
+
+/-- Reindexing `Fin.append u v` along `finSumFinEquiv` gives `Sum.elim u v`. -/
+theorem append_comp_finSumFinEquiv {n : ℕ} (u : Fin m → α) (v : Fin n → α) :
+    (append u v : Fin (m + n) → α) ∘ finSumFinEquiv = Sum.elim u v :=
+  Fin.append_comp_sumElim
+
+/-- Reindexing `Sum.elim u v` along `finSumFinEquiv.symm` gives `Fin.append u v`. -/
+theorem sumElim_comp_finSumFinEquiv_symm {n : ℕ} (u : Fin m → α) (v : Fin n → α) :
+    Sum.elim u v ∘ finSumFinEquiv.symm = append u v := by
+  rw [← append_comp_finSumFinEquiv u v, Function.comp_assoc, Equiv.self_comp_symm,
+    Function.comp_id]
+
+/-- Padding `Pi.single i a` on the right with `0` gives `Pi.single (Fin.castAdd n i) a`. -/
+@[simp]
+theorem append_single_zero {α : Type*} [Zero α] {m n : ℕ} (i : Fin m) (a : α) :
+    append (Pi.single i a) (0 : Fin n → α) = Pi.single (castAdd n i) a := by
+  funext k
+  refine addCases (fun j ↦ ?_) (fun j ↦ ?_) k
+  · simp [Pi.single_apply]
+  · rw [append_right, Pi.zero_apply, Pi.single_apply, ite_eq_right]
+    intro h
+    have hv := congrArg Fin.val h
+    simp at hv
+    omega
+
+/-- Padding `Pi.single i a` on the left with `0` gives `Pi.single (Fin.natAdd m i) a`. -/
+@[simp]
+theorem append_zero_single {α : Type*} [Zero α] {m n : ℕ} (i : Fin n) (a : α) :
+    append (0 : Fin m → α) (Pi.single i a) = Pi.single (natAdd m i) a := by
+  funext k
+  refine addCases (fun j ↦ ?_) (fun j ↦ ?_) k
+  · rw [append_left, Pi.zero_apply, Pi.single_apply, ite_eq_right]
+    intro h
+    have hv := congrArg Fin.val h
+    simp at hv
+    omega
+  · simp [Pi.single_apply]
 
 section ContractNth
 
@@ -617,5 +685,10 @@ theorem exists_tuple_forall_image_Iio {α : Type*} {Q : Set α → α → Prop} 
       rwa [hIio, ← Set.range_comp, snoc_comp_castSucc, snoc_last]
     · rw [← image_castSucc_Iio, ← Set.image_comp, snoc_comp_castSucc, snoc_castSucc]
       exact hp i
+
+/-- Dropping the first `s` entries of a tuple intertwines with `List.drop` via `List.ofFn`. -/
+theorem ofFn_drop_eq_drop_ofFn {α : Type*} {n : ℕ} (s : ℕ) (a : Fin n → α) :
+    List.ofFn (fun l : Fin (n - s) ↦ a ⟨s + l, by have := l.isLt; omega⟩) = (List.ofFn a).drop s :=
+  List.ext_getElem (by simp) fun m _ _ ↦ by simp
 
 end Fin

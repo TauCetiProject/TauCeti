@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
+import Mathlib.Tactic.Ring.RingNF
 
 /-!
 # Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
@@ -21,7 +22,8 @@ and `IsScalarTower R A A`, applying `star` shows that scalars commute with left 
 In a star ring whose star is proper (`IsProperStar`: `star x * x = 0` forces `x = 0`), such as a
 C⋆-algebra, an element killed by every two-sided multiplication `star d * X * c` vanishes. This is
 how entrywise identities are read off from sesquilinear forms with coefficients in the ring, for
-instance for matrices over a C⋆-algebra.
+instance for matrices over a C⋆-algebra. Properness itself follows from a positive functional:
+an involution with `t (x x*) > 0` for every `x ≠ 0`, for an additive `t`, is proper.
 
 In particular, a ring with proper star has zero left and right annihilators. These are recorded
 as the instances `FaithfulSMul Rᵐᵒᵖ R` and `FaithfulSMul R R` for the actions of `R` on itself by
@@ -41,6 +43,8 @@ equivalence of complex vector spaces is real-linear.
 * `TauCeti.exists_left_identity_iff` and `TauCeti.exists_right_identity_iff`: in a magma with an
   antimultiplicative involution, a left (respectively, right) identity exists if and only if a
   two-sided identity exists.
+* `TauCeti.isProperStar_of_forall_pos_mul_star`: an involution with a positive functional
+  `t (x x*) > 0` is proper.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -49,6 +53,8 @@ equivalence of complex vector spaces is real-linear.
 * `TauCeti.mul_smul_comm_of_starModule`: in a star module with a multiplicative star and a scalar
   tower, scalars commute with left multiplication, so no `SMulCommClass` assumption is needed
   there.
+* `TauCeti.inv_add_star_inv_add_mul_eq_zero_of_add_star_add_eq_zero`: in a field with
+  involution, `b + star b + c = 0` implies `b⁻¹ + star b⁻¹ + b⁻¹ star b⁻¹ c = 0`, also at `b = 0`.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
 * `Units.star_neg`: in a star ring, `star (-u) = -star u` for a unit `u`; in particular `star`
@@ -97,6 +103,17 @@ theorem exists_right_identity_iff {A : Type*} [Mul A] [StarMul A] :
   exact ⟨e'.unop, fun b ↦
     ⟨by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).2,
       by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).1⟩⟩
+
+/-- An involution with `t (x x*) > 0` for every `x ≠ 0`, for some additive map `t` to a preorder,
+is proper. -/
+theorem isProperStar_of_forall_pos_mul_star {R M : Type*} [NonUnitalSemiring R] [StarRing R]
+    [AddMonoid M] [Preorder M] (t : R →+ M) (h : ∀ x : R, x ≠ 0 → 0 < t (x * star x)) :
+    IsProperStar R where
+  eq_zero_of_star_mul_self_eq_zero {x} hx := by
+    by_contra hx0
+    have := h (star x) (star_ne_zero.mpr hx0)
+    rw [star_star, hx, map_zero] at this
+    exact lt_irrefl _ this
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 
@@ -147,6 +164,59 @@ theorem mul_smul_comm_of_starModule (c : R) (x y : A) : x * (c • y) = c • (x
   -- star c • (star y * star x)`, an instance of `IsScalarTower R A A`
   apply star_injective
   rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
+
+end TauCeti
+
+namespace TauCeti
+
+/-- Admissibility for the scalar equation `a + star a + a * star a * d = 0` is preserved by
+conjugating the parameter. -/
+theorem add_star_add_mul_eq_zero_star {R : Type*} [CommSemiring R] [StarRing R]
+    {a d : R} (ha : a + star a + a * star a * d = 0) :
+    star a + star (star a) + star a * star (star a) * d = 0 := by
+  rw [star_star, add_comm (star a), mul_comm (star a), ha]
+
+/-- Two parameters admissible for a star-fixed scalar `d` compose to the admissible parameter
+`a + b + a * b * d`. -/
+theorem add_star_add_mul_eq_zero_add_add_mul {R : Type*} [CommSemiring R] [StarRing R]
+    {a b d : R} (hd : star d = d) (ha : a + star a + a * star a * d = 0)
+    (hb : b + star b + b * star b * d = 0) :
+    let c := a + b + a * b * d
+    c + star c + c * star c * d = 0 := by
+  dsimp only
+  simp only [star_add, star_mul, hd]
+  calc
+    _ = (1 + (b + star b) * d + b * star b * d ^ 2) *
+        (a + star a + a * star a * d) + (b + star b + b * star b * d) := by ring
+    _ = 0 := by rw [ha, hb, mul_zero, add_zero]
+
+/-- The reflection parameter `-(2 / d)` is admissible for every star-fixed scalar `d`, including
+`d = 0` and characteristic two. -/
+theorem neg_two_div_add_star_add_mul_eq_zero {K : Type*} [Field K] [StarRing K]
+    {d : K} (hd : star d = d) :
+    let a := -(2 / d)
+    a + star a + a * star a * d = 0 := by
+  dsimp only
+  simp only [star_neg, star_div₀, star_ofNat, hd]
+  by_cases h : d = 0
+  · simp [h]
+  · simp only [div_eq_mul_inv]
+    calc
+      _ = (4 * (d⁻¹ * d) - 4) * d⁻¹ := by ring
+      _ = 0 := by rw [inv_mul_cancel₀ h]; ring
+
+/-- **Inverting a solution of `b + star b + c = 0`.** In a field with involution, if
+`b + star b + c = 0`, then `b⁻¹ + star b⁻¹ + b⁻¹ * star b⁻¹ * c = 0`; this also holds at `b = 0`,
+where `b⁻¹ = 0`. For `c = ⟨v, v⟩` the value of a Hermitian form, it says that `b⁻¹` is an
+admissible parameter for a unitary transvection along `v`. -/
+theorem inv_add_star_inv_add_mul_eq_zero_of_add_star_add_eq_zero {K : Type*} [Field K]
+    [StarRing K] {b c : K} (h : b + star b + c = 0) :
+    b⁻¹ + star b⁻¹ + b⁻¹ * star b⁻¹ * c = 0 := by
+  rw [star_inv₀]
+  rcases eq_or_ne b 0 with rfl | h0
+  · simp
+  have h0' : star b ≠ 0 := star_ne_zero.mpr h0
+  rw [inv_add_inv h0 h0', div_eq_inv_mul, mul_inv, ← mul_add, h, mul_zero]
 
 end TauCeti
 

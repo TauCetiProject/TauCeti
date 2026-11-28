@@ -10,8 +10,10 @@ public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Instances.Matrix
+import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
@@ -30,11 +32,13 @@ that use the topology or the order of `ℝ` and `ℂ`.
   the same values on the diagonal and so the same isometries.
 * Over `ℝ` or `ℂ`, the form `⟨z, z⟩` of `J = indefiniteDiagonal p q 𝕜` is the real number
   `Σ_{i ∈ p} ‖zᵢ‖² - Σ_{j ∈ q} ‖zⱼ‖²`.
-* Over a Hausdorff topological ring with continuous star, `unitaryGroupOf A` is a closed subgroup
-  of the general linear group, with the topology of units. For invertible `A` it is also a closed
-  subset of the matrices, with the subspace topology, since its inverse `A⁻¹ * star g * A` is a
-  continuous function of `g`; over `ℝ` or `ℂ` this makes `U(p, q)` locally compact and second
-  countable.
+* For invertible `A` over a Hausdorff commutative topological ring with continuous star,
+  `unitaryGroupOf A` is a closed subset of the matrices with the subspace topology
+  (`Matrix.unitaryGroupOf.isClosedEmbedding_val`, in
+  `TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic`); over `ℝ` or `ℂ` this makes
+  `U(p, q)` locally compact and second countable.
+* Over a topological ring, the conjugation `g ↦ b⁻¹ g b` and the bijection `g ↦ a g b` between the
+  unitary groups of congruent forms `A` and `bᴴ (t A) b` are continuous.
 * For a unitary Gram matrix `A` over `ℝ` or `ℂ`, such as `diag(1, …, 1, -1, …, -1)`, the inverse
   `A⁻¹ * star g * A` of `g ∈ unitaryGroupOf A` has the operator norm of `g`, since multiplying by
   a unitary matrix and taking adjoints preserve the operator norm. As `1 ≤ ‖g‖ * ‖g⁻¹‖`, every such
@@ -51,9 +55,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
 * `Matrix.norm_val_inv_of_mem_unitaryGroupOf`: for unitary `A`, `‖g⁻¹‖ = ‖g‖` in the operator
   norm.
 * `Matrix.one_le_norm_val_of_mem_unitaryGroupOf`: for unitary `A`, `1 ≤ ‖g‖` in the operator norm.
-* `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
-* `Matrix.unitaryGroupOf.isClosedEmbedding_val`: for invertible `A`, the coercion of
-  `unitaryGroupOf A` to the matrices is a closed embedding.
+* `Matrix.unitaryGroupOf.continuous_conjEquiv`, `Matrix.unitaryGroupOf.continuous_transport`: the
+  conjugation and transport maps between unitary groups of congruent forms are continuous.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.continuous_fromBlocksHom`: the block-diagonal embedding
   of `U(p) × U(q)` is continuous.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.isCompact_range_fromBlocksHom`: the block-diagonal
@@ -80,44 +83,27 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- `unitaryGroupOf A` is a closed subgroup of `GL n R`: it is cut out by the continuous equation
-`star g * A * g = A`. -/
-theorem isClosed_unitaryGroupOf {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] [ContinuousStar R] [T2Space R] (A : Matrix n n R) :
-    IsClosed (unitaryGroupOf A : Set (GL n R)) := by
-  have h : (unitaryGroupOf A : Set (GL n R)) =
-      {g : GL n R | star (g : Matrix n n R) * A * g = A} :=
-    Set.ext fun _ => mem_unitaryGroupOf_iff
-  rw [h]
-  exact isClosed_eq (((Units.continuous_val.star).matrix_mul continuous_const).matrix_mul
-    Units.continuous_val) continuous_const
+section Congruence
 
-/-- **`unitaryGroupOf A` is a closed subset of the matrices**, for invertible `A`: the coercion to
-matrices is a closed embedding. The topology of `GL n R` is that of the pair `(g, g⁻¹)`, and on
-`unitaryGroupOf A` the inverse `A⁻¹ * star g * A` is a continuous function of `g`; the image is
-cut out by the continuous equation `star M * A * M = A`, every solution of which is invertible. -/
-theorem unitaryGroupOf.isClosedEmbedding_val {R : Type*} [CommRing R] [StarRing R]
-    [TopologicalSpace R] [IsTopologicalRing R] [ContinuousStar R] [T2Space R] {A : Matrix n n R}
-    (hA : IsUnit A) :
-    Topology.IsClosedEmbedding fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) := by
-  have hc : Continuous fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) :=
-    Units.continuous_val.comp continuous_subtypeVal
-  have hrange : Set.range (fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R)) =
-      {M | star M * A * M = A} :=
-    Set.ext fun M => ⟨fun ⟨g, hg⟩ => hg ▸ mem_unitaryGroupOf_iff.mp g.property,
-      fun hM => ⟨ofMatrix hA M hM, val_ofMatrix hA M hM⟩⟩
-  refine ⟨⟨Topology.IsInducing.of_comp hc
-      (g := fun M : Matrix n n R => (M, MulOpposite.op (A⁻¹ * star M * A)))
-      (continuous_id.prodMk (MulOpposite.continuous_op.comp
-        ((continuous_const.matrix_mul continuous_id.star).matrix_mul continuous_const))) ?_,
-    fun g h hgh => unitaryGroupOf.ext hgh⟩, ?_⟩
-  · -- The composite is `g ↦ (g, g⁻¹)`, the inducing map defining the topology of `GL n R`.
-    convert Units.isInducing_embedProduct.comp Topology.IsInducing.subtypeVal using 1
-    funext g
-    simp [Units.embedProduct_apply, val_inv_of_mem_unitaryGroupOf hA g.property]
-  · rw [hrange]
-    exact isClosed_eq ((continuous_id.star.matrix_mul continuous_const).matrix_mul continuous_id)
-      continuous_const
+variable {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  {A A' : Matrix n n R} {b : GL n R} {K : Type*} [Semifield K] [Algebra K R] {t : K}
+
+/-- The conjugation isomorphism `g ↦ b⁻¹ g b` between unitary groups of congruent forms is
+continuous. -/
+theorem unitaryGroupOf.continuous_conjEquiv (ht : t ≠ 0)
+    (hb : star (b : Matrix n n R) * (t • A) * b = A') : Continuous (conjEquiv ht hb) :=
+  (((continuous_const.mul continuous_subtypeVal).mul continuous_const).subtype_mk
+    fun g ↦ inv_mul_mul_mem hb g.property).congr fun g ↦ (conjEquiv_apply ht hb g).symm
+
+/-- The bijection `g ↦ a g b` between unitary groups of congruent forms
+(`Matrix.unitaryGroupOf.transport`) is continuous. -/
+theorem unitaryGroupOf.continuous_transport (ht : t ≠ 0)
+    (hb : star (b : Matrix n n R) * (t • A) * b = A') {a : GL n R}
+    (hab : a * b ∈ unitaryGroupOf A') : Continuous (transport ht hb hab) :=
+  ((continuous_const (y := (⟨a * b, hab⟩ : unitaryGroupOf A'))).mul
+    (continuous_conjEquiv ht hb)).congr fun g ↦ (transport_apply ht hb hab g).symm
+
+end Congruence
 
 /-- **Membership in `unitaryGroupOf A` by polarization.** Over `ℝ` or `ℂ` and for Hermitian `A`,
 `g ∈ unitaryGroupOf A` exactly when `⟨g z, g z⟩ = ⟨z, z⟩` for every `z`, where

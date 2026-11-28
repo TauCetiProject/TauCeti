@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Isometry
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
@@ -43,6 +44,8 @@ square root of `b`, and studies subgroups `G` of `ℂ ≃ₗᵢ[ℝ] ℂ` throug
 * `TauCeti.Complex.nonempty_mulEquiv_dihedralGroup`: **a finite group of isometries containing a
   reflection is dihedral**, `G ≃* DihedralGroup N` for `N` the order of its rotation subgroup,
   so `Nat.card G = 2 N` (`natCard_eq_two_mul_natCard_rotationSubgroup`).
+* `TauCeti.Complex.conjReflection_mem_iff_exists_exp`: if `G` contains `conjReflection c` and its
+  rotation subgroup is finite of order `N`, its reflections are the `conjReflection (c e^{2πik/N})`.
 
 These facts are used by `TauCeti/Dynamics/Billiard/ReflectionGroup.lean` for the reflection
 group of a polygonal billiard table.
@@ -294,5 +297,25 @@ theorem natCard_eq_two_mul_natCard_rotationSubgroup {b : Circle} (hb : conjRefle
     have : Infinite (rotationSubgroup G) :=
       not_finite_iff_infinite.1 (finite_iff_finite_rotationSubgroup.not.1 hG)
     rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite]
+
+/-- **The reflections of a group with finitely many rotations.** If `G` contains the reflection
+`conjReflection c` and its rotation subgroup is finite of order `N`, then `G` contains the
+reflection `conjReflection b` exactly when `b = c e^{2πik/N}` for some `k ∈ ℤ`: the rotation
+subgroup is the group of `N`-th roots of unity (`Circle.mem_iff_pow_natCard_eq_one`). -/
+theorem conjReflection_mem_iff_exists_exp [Finite (rotationSubgroup G)] {b c : Circle}
+    (hc : conjReflection c ∈ G) :
+    conjReflection b ∈ G ↔
+      ∃ k : ℤ, b = c * Circle.exp (k * (2 * Real.pi / Nat.card (rotationSubgroup G))) := by
+  have hN : Nat.card (rotationSubgroup G) ≠ 0 := Nat.card_pos.ne'
+  rw [conjReflection_mem_iff hc, Circle.mem_iff_pow_natCard_eq_one]
+  constructor
+  · intro h
+    rw [← Circle.exp_arg (b * c⁻¹), Circle.exp_pow_eq_one_iff hN] at h
+    obtain ⟨k, hk⟩ := h
+    refine ⟨k, ?_⟩
+    rw [← hk, Circle.exp_arg, mul_comm, inv_mul_cancel_right]
+  · rintro ⟨k, rfl⟩
+    rw [mul_comm c, mul_assoc, mul_inv_cancel, mul_one, Circle.exp_pow_eq_one_iff hN]
+    exact ⟨k, rfl⟩
 
 end TauCeti.Complex

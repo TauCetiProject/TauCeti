@@ -18,6 +18,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.RationalPoint.Affine
 import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.RingTheory.Etale.Field
 import TauCeti.RingTheory.TotallySplit
 
 /-!
@@ -78,6 +79,8 @@ restrictions to both summands are (`TauCeti.AlgebraicGeometry.etale_coprodDesc`)
   étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra.
 * `TauCeti.AlgebraicGeometry.etale_specAlgebraMap`: for any étale `R`-algebra `A`,
   `Spec.algebraMap R A` is étale.
+* `TauCeti.AlgebraicGeometry.etale_specAlgebraMap_of_isSeparable`: for a finite separable field
+  extension `L / K`, `Spec.algebraMap K L` is étale.
 * `TauCeti.AlgebraicGeometry.etaleSpecAlgebraMapHomEquiv`: morphisms in `(Spec (.of R)).Etale`
   between affine étale `R`-schemes `Spec A` and `Spec B` correspond to `B →ₐ[R] A`.
 * `TauCeti.AlgebraicGeometry.etale_coprodDesc`: `coprod.desc f g` is étale when `f` and `g` are.
@@ -253,6 +256,15 @@ instance etale_specAlgebraMap {R A : Type u} [CommRing R] [CommRing A] [Algebra 
     _root_.AlgebraicGeometry.Etale (_root_.AlgebraicGeometry.Spec.algebraMap R A) :=
   (_root_.AlgebraicGeometry.HasRingHomProperty.Spec_iff (P := @_root_.AlgebraicGeometry.Etale)).mpr
     (RingHom.etale_algebraMap.mpr inferInstance)
+
+/-- For a finite separable field extension `L / K`, `Spec.algebraMap K L : Spec L ⟶ Spec K` is
+étale. This is the field case of `etale_specAlgebraMap`, needed as its own instance because
+`Algebra.Etale.of_isSeparable` is a theorem rather than an instance. -/
+instance etale_specAlgebraMap_of_isSeparable {K L : Type u} [Field K] [Field L] [Algebra K L]
+    [Module.Finite K L] [Algebra.IsSeparable K L] :
+    _root_.AlgebraicGeometry.Etale (_root_.AlgebraicGeometry.Spec.algebraMap K L) :=
+  have := Algebra.Etale.of_isSeparable K L
+  inferInstance
 
 /-- Morphisms in `(Spec (.of R)).Etale` between affine étale `R`-schemes `Spec A` and `Spec B`
 correspond bijectively to `R`-algebra homomorphisms `B →ₐ[R] A`. -/

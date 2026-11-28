@@ -48,6 +48,9 @@ group.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization_of_continuousOn_smul_mem`: a set of frames
   stable exactly under `H` is locally trivial with fibre `H` wherever a local frame can be
   corrected into it continuously.
+* `TauCeti.OrthonormalFrameBundle.isLocallyTrivialReduction_of_forall_exists_section`: a set of
+  frames stable exactly under `H`, with continuous local sections near every point, is a locally
+  trivial reduction to `H`.
 
 ## References
 
@@ -86,6 +89,15 @@ theorem SMulMemIff.exists_mem_smul_eq {p q : OrthonormalFrameBundle ℝ F E V} (
     (hq : q ∈ S) (h : p.proj = q.proj) : ∃ g ∈ H, op g • p = q := by
   obtain ⟨g, rfl⟩ := OrthonormalFrameBundle.exists_smul_eq_iff.2 h
   exact ⟨g, (smul_mem_iff (H := H) hp).1 hq, rfl⟩
+
+/-- The frames lying in two sets of frames, stable exactly under `H` and `K`, are stable exactly
+under `H ⊓ K`. -/
+instance SMulMemIff.inter {K : Subgroup (unitary (V →L[ℝ] V))}
+    {T : Set (OrthonormalFrameBundle ℝ F E V)} [SMulMemIff K T] :
+    SMulMemIff (H ⊓ K) (S ∩ T) :=
+  ⟨fun hp _ ↦ by
+    rw [Set.mem_inter_iff, smul_mem_iff (H := H) hp.1, smul_mem_iff (H := K) hp.2,
+      Subgroup.mem_inf]⟩
 
 /-- The right action of `H` on `S`, by precomposition: the action of the orthogonal group on
 all orthonormal frames, restricted (`TauCeti.reductionMulAction`). -/
@@ -175,5 +187,47 @@ theorem exists_trivialization_of_continuousOn_smul_mem (hUT : U ⊆ T.baseSet)
     (fun y hy ↦ T.op_smul_symm_one (fun _ _ ↦ rfl) he (hUT hy) (c y) ▸ hcS y hy) hU hc hx
 
 end Reduction
+
+section Section
+
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
+  [ContinuousFiberNorm F E] [FiniteDimensional ℝ F]
+  {H : Subgroup (unitary (V →L[ℝ] V))} {S : Set (OrthonormalFrameBundle ℝ F E V)} [SMulMemIff H S]
+
+/-- **A set of frames with continuous local sections is a locally trivial reduction.** If `S` is
+carried into itself by exactly the elements of `H`, and every point of the base has an open
+neighbourhood `U` with a continuous local section `q` of frames of `S` over `U`, then `S` is a
+locally trivial reduction of the orthonormal frame bundle to `H`. -/
+theorem isLocallyTrivialReduction_of_forall_exists_section
+    (hsec : ∀ x : B, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧ ∃ q : B → OrthonormalFrameBundle ℝ F E V,
+      (∀ y ∈ U, q y ∈ S ∧ (q y).proj = y) ∧ ContinuousOn q U) :
+    IsLocallyTrivialReduction (proj : OrthonormalFrameBundle ℝ F E V → B) H S := by
+  refine isLocallyTrivialReduction_iff.2 fun x ↦ ?_
+  obtain ⟨U, hU, hxU, q, hqS, hq⟩ := hsec x
+  -- The frame `q x` identifies `V` with the model fibre `F`.
+  obtain ⟨eV⟩ := (q x).nonempty_linearEquiv
+  have : FiniteDimensional ℝ V := LinearEquiv.finiteDimensional eV.symm
+  obtain ⟨T, hxT, hT⟩ := exists_trivialization (E := E) (V := V) eV.finrank_eq x
+  have : T.orthonormalFrameBundleFiber.IsEquivariant :=
+    T.isEquivariant_orthonormalFrameBundleFiber_iff.2 fun p _ g ↦ congrArg Prod.snd (hT g p)
+  -- Over `U ∩ T.baseSet` the section is the local frame of `T` corrected by its fibre coordinate.
+  have hsrc : ∀ y ∈ U ∩ T.baseSet, q y ∈ T.source := fun y hy ↦
+    T.mem_source.2 ((hqS y hy.1).2.symm ▸ hy.2)
+  have hqT : ∀ y ∈ U ∩ T.baseSet, T.toOpenPartialHomeomorph.symm (y, (T (q y)).2) = q y :=
+    fun y hy ↦ by
+      have hpair : (y, (T (q y)).2) = T (q y) :=
+        Prod.ext (by rw [T.coe_fst (hsrc y hy), (hqS y hy.1).2]) rfl
+      rw [hpair]
+      exact T.toOpenPartialHomeomorph.left_inv (hsrc y hy)
+  have hcont : ContinuousOn (fun y ↦ T (q y)) (U ∩ T.baseSet) :=
+    T.continuousOn_toFun.comp (hq.mono inter_subset_left) hsrc
+  obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem (T := T) (H := H)
+    (S := S) (c := fun y ↦ (T (q y)).2) inter_subset_right (fun y hy ↦ by
+      rw [T.op_smul_symm_one (fun _ _ ↦ proj_smul _ _) (fun g p _ ↦ by rw [hT g p]) hy.2, hqT y hy]
+      exact (hqS y hy.1).1)
+    (hU.inter T.open_baseSet) (continuous_snd.comp_continuousOn hcont) ⟨hxU, hxT⟩
+  exact ⟨t, ht ▸ ⟨hxU, hxT⟩, fun g p hgp hp ↦ hteq g p hgp (ht ▸ hp)⟩
+
+end Section
 
 end TauCeti.OrthonormalFrameBundle

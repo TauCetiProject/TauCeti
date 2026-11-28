@@ -5,9 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.LinearAlgebra.Basis.Basic
+public import TauCeti.LinearAlgebra.Basis.Diagonal
+public import Mathlib.LinearAlgebra.Charpoly.Basic
+import Mathlib.LinearAlgebra.Charpoly.ToMatrix
+import TauCeti.LinearAlgebra.End.Aeval
+import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Invariant subspaces of an endomorphism diagonal in a basis
@@ -36,8 +43,12 @@ algebraic closedness, and the answer names the basis vectors involved.
 
 ## Main results
 
-* `Module.Basis.repr_apply_of_apply_basis`: the coordinates of `f w` are those of `w` scaled by
-  the eigenvalues.
+* `Module.Basis.repr_aeval_apply_of_apply_basis`: the coordinates of `q(f) w` are those of `w`
+  scaled by the values of the polynomial `q` at the eigenvalues (the polynomial form of
+  `Module.Basis.repr_apply_eq_mul_of_apply_eq_smul`).
+* `Module.Basis.aeval_apply_eq_zero_iff_repr_mem_supported`: if the roots of `q` among the
+  eigenvalues are those of the indices in `S`, then `q(f)` kills exactly the vectors supported
+  on `S`.
 * `Module.Basis.repr_eq_zero_of_weight_ne`: a joint eigenvector has zero coordinate at a basis
   vector of a different joint weight.
 * `Module.Basis.self_mem_of_repr_ne_zero`, `Module.Basis.eq_span_self_mem`,
@@ -51,6 +62,9 @@ algebraic closedness, and the answer names the basis vectors involved.
 * `Module.Basis.eigenspace_eq_span_image` and `Module.Basis.finrank_eigenspace_eq_card`: with
   repeated eigenvalues allowed, the `μ`-eigenspace is spanned by the basis vectors of eigenvalue
   `μ`, and its dimension is their number.
+* `LinearMap.charpoly_eq_prod_of_apply_eq_smul`, `LinearMap.roots_charpoly_of_apply_eq_smul`: the
+  characteristic polynomial of an endomorphism diagonal in a basis is `∏ i, (X - a i)`, with roots
+  the eigenvalues `a i` counted with multiplicity.
 -/
 
 public section
@@ -65,18 +79,22 @@ section CommSemiring
 
 variable [CommSemiring K] [AddCommMonoid V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
 
-/-- **An endomorphism diagonal in a basis scales the coordinates**: if `f (b i) = a i • b i` for
-every `i`, then `f` multiplies the `i`-th coordinate of every vector by `a i`. -/
-theorem _root_.Module.Basis.repr_apply_of_apply_basis (b : Module.Basis ι K V)
-    (hf : ∀ i, f (b i) = a i • b i) (w : V) (i : ι) :
-    b.repr (f w) i = a i * b.repr w i := by
-  have key : (Finsupp.lapply i).comp ((b.repr : V →ₗ[K] ι →₀ K).comp f)
-      = (a i • Finsupp.lapply i).comp (b.repr : V →ₗ[K] ι →₀ K) := by
-    refine b.ext fun j => ?_
-    rcases eq_or_ne j i with rfl | hj
-    · simp [hf j]
-    · simp [hf j, hj]
-  simpa using LinearMap.congr_fun key w
+open Polynomial in
+/-- **A polynomial in an endomorphism diagonal in a basis scales the coordinates**: if
+`f (b i) = a i • b i` for every `i`, then `q(f)` multiplies the `i`-th coordinate of every vector
+by `q(a i)`. -/
+theorem _root_.Module.Basis.repr_aeval_apply_of_apply_basis (b : Module.Basis ι K V)
+    (hf : ∀ i, f (b i) = a i • b i) (q : K[X]) (w : V) (i : ι) :
+    b.repr (aeval f q w) i = q.eval (a i) * b.repr w i := by
+  let F := Finsupp.lapply i ∘ₗ (b.repr : V →ₗ[K] ι →₀ K)
+  have h : algebraMap K (Module.End K K) (a i) ∘ₗ F = F ∘ₗ f :=
+    LinearMap.ext fun v ↦ by
+      rw [LinearMap.comp_apply, Module.algebraMap_end_apply]
+      simp [F, b.repr_apply_eq_mul_of_apply_eq_smul b hf]
+  have hv := congr($(Module.End.aeval_comp_of_comp_eq h q) w)
+  rw [aeval_algebraMap_apply_eq_algebraMap_eval, LinearMap.comp_apply,
+    Module.algebraMap_end_apply] at hv
+  simpa [F] using hv.symm
 
 end CommSemiring
 
@@ -91,13 +109,31 @@ theorem _root_.Module.Basis.repr_eq_zero_of_weight_ne (b : Module.Basis ι K V)
     (hf : ∀ i j, f j (b i) = a i j • b i) {w : V} {c : κ → K}
     (hw : ∀ j, f j w = c j • w) {i : ι} (hi : a i ≠ c) : b.repr w i = 0 := by
   obtain ⟨j, hj⟩ := Function.ne_iff.mp hi
-  have hcoord := b.repr_apply_of_apply_basis (f := f j) (a := fun k => a k j)
+  have hcoord := b.repr_apply_eq_mul_of_apply_eq_smul b (g := f j) (w := fun k => a k j)
     (fun k => hf k j) w i
   rw [hw j, map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
   by_contra hne
   exact hj (mul_right_cancel₀ hne hcoord).symm
 
 end IsCancelMulZero
+
+section NoZeroDivisors
+
+variable [CommSemiring K] [NoZeroDivisors K] [AddCommMonoid V] [Module K V] {f : V →ₗ[K] V}
+  {a : ι → K}
+
+open Polynomial in
+/-- **The kernel of a polynomial in an endomorphism diagonal in a basis is a coordinate
+subspace**: if the roots of `q` among the eigenvalues `a i` are exactly those with `i ∈ S`, then
+`q(f)` kills exactly the vectors supported on `S`. -/
+theorem _root_.Module.Basis.aeval_apply_eq_zero_iff_repr_mem_supported (b : Module.Basis ι K V)
+    (hf : ∀ i, f (b i) = a i • b i) {q : K[X]} {S : Set ι} (hq : ∀ i, q.eval (a i) = 0 ↔ i ∈ S)
+    (w : V) : aeval f q w = 0 ↔ b.repr w ∈ Finsupp.supported K K S := by
+  rw [← b.repr.map_eq_zero_iff, Finsupp.mem_supported', Finsupp.ext_iff]
+  simp only [b.repr_aeval_apply_of_apply_basis hf, Finsupp.coe_zero, Pi.zero_apply, mul_eq_zero,
+    hq, or_iff_not_imp_left]
+
+end NoZeroDivisors
 
 /-! ### Invariant subspaces are spanned by basis vectors -/
 
@@ -111,7 +147,7 @@ private theorem repr_sub_smul_apply (b : Module.Basis ι K V) (hf : ∀ i, f (b 
     (w : V) (j k : ι) :
     b.repr (f w - a j • w) k = (a k - a j) * b.repr w k := by
   rw [map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply,
-    b.repr_apply_of_apply_basis hf, smul_eq_mul, sub_mul]
+    b.repr_apply_eq_mul_of_apply_eq_smul b hf, smul_eq_mul, sub_mul]
 
 /-- The cleared vector has strictly smaller support: it loses the `j`-th coordinate and gains
 none. -/
@@ -233,7 +269,8 @@ theorem _root_.Module.Basis.exists_apply_eq_and_mem_span_singleton (b : Module.B
   classical
   have hcoord : ∀ k : ι, a k * b.repr w k = c * b.repr w k := by
     intro k
-    rw [← b.repr_apply_of_apply_basis hf, hfw, map_smul, Finsupp.smul_apply, smul_eq_mul]
+    rw [← b.repr_apply_eq_mul_of_apply_eq_smul b hf, hfw, map_smul, Finsupp.smul_apply,
+      smul_eq_mul]
   have hrne : b.repr w ≠ 0 := fun h => hw (b.repr.map_eq_zero_iff.1 h)
   obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 hrne
   rw [Finsupp.coe_zero, Pi.zero_apply] at hi
@@ -261,7 +298,7 @@ theorem _root_.Module.Basis.eigenspace_eq_span_image (b : Module.Basis ι K V)
     (hf : ∀ i, f (b i) = a i • b i) (μ : K) :
     f.eigenspace μ = Submodule.span K (b '' {i | a i = μ}) := by
   refine le_antisymm (fun w hw => b.mem_span_image.mpr fun i hi => ?_) (Submodule.span_le.mpr ?_)
-  · have h := b.repr_apply_of_apply_basis hf w i
+  · have h := b.repr_apply_eq_mul_of_apply_eq_smul b hf w i
     rw [Module.End.mem_eigenspace_iff.mp hw, map_smul, Finsupp.smul_apply, smul_eq_mul] at h
     exact (mul_right_cancel₀ (Finsupp.mem_support_iff.mp hi) h).symm
   · rintro _ ⟨i, hi, rfl⟩
@@ -281,3 +318,26 @@ theorem _root_.Module.Basis.finrank_eigenspace_eq_card [Nontrivial K] (b : Modul
 end Eigenspace
 
 end TauCeti
+
+namespace LinearMap
+
+open Polynomial
+
+variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
+  [Module.Finite R M] [Fintype ι]
+
+/-- The characteristic polynomial of an endomorphism diagonal in a basis `b`, with
+`f (b i) = d i • b i`, is `∏ i, (X - d i)`. -/
+theorem charpoly_eq_prod_of_apply_eq_smul {f : M →ₗ[R] M} (b : Module.Basis ι R M) {d : ι → R}
+    (hf : ∀ i, f (b i) = d i • b i) : f.charpoly = ∏ i, (X - C (d i)) := by
+  classical
+  rw [← f.charpoly_toMatrix b, (b.toMatrix_eq_diagonal_iff b f d).2 hf, Matrix.charpoly_diagonal]
+
+/-- The roots of the characteristic polynomial of an endomorphism diagonal in a basis `b`, with
+`f (b i) = d i • b i`, are the `d i`, counted with multiplicity. -/
+theorem roots_charpoly_of_apply_eq_smul [IsDomain R] {f : M →ₗ[R] M} (b : Module.Basis ι R M)
+    {d : ι → R} (hf : ∀ i, f (b i) = d i • b i) :
+    f.charpoly.roots = Finset.univ.val.map d := by
+  rw [charpoly_eq_prod_of_apply_eq_smul b hf, roots_prod_X_sub_C_map]
+
+end LinearMap

@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Initial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Cone
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Finite
+public import TauCeti.RingTheory.MvPolynomial.Groebner.Map
 
 /-!
 # Computing weight-initial ideals by Gröbner bases
@@ -22,6 +23,13 @@ ensure both stability of the Gröbner basis and a unique maximal-weight term in 
 element. A positive integral weight realizing these comparisons identifies the weight-initial
 ideal with the original monomial-order leading-term ideal. This only represents the finite
 data needed for this ideal, not every comparison of the monomial order.
+
+Since an injective change of coefficients carries a Gröbner basis whose nonzero members have
+unit leading coefficients to a Gröbner basis of the extended ideal, it commutes with taking
+weight-initial ideals whenever the weight-refined order admits such a basis. Over a field `k`,
+for every ring homomorphism `φ : k →+* S`, for instance a field extension, the weight-initial
+ideal of the extension of an ideal `I` is the extension of the weight-initial ideal of `I`
+(`Ideal.weightInitialIdeal_map`).
 
 ## References
 
@@ -146,6 +154,38 @@ theorem exists_pos_weight_weightInitialIdeal_eq_span_leadingTerm {k : Type*} [Fi
     fun g _ ↦ m.isUnit_leadingCoeff.2
   exact ⟨w, hw, heq⟩
 
+/-- **Weight-initial ideals under extension of coefficients.** If `I` has a Gröbner basis for the
+weight-refined order whose nonzero members have unit leading coefficients, then the weight-initial
+ideal of the extension of `I` along an injective coefficient map `φ` is the extension of the
+weight-initial ideal of `I`. -/
+theorem IsGroebnerBasis.weightInitialIdeal_map {S : Type*} [CommRing S] {φ : R →+* S}
+    (hφ : Function.Injective φ) (h : (m.weightRefinement w).IsGroebnerBasis G I)
+    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit ((m.weightRefinement w).leadingCoeff g)) :
+    (I.map (MvPolynomial.map φ)).weightInitialIdeal w =
+      (I.weightInitialIdeal w).map (MvPolynomial.map φ) := by
+  rw [(h.map hφ hG).weightInitialIdeal_eq_span, h.weightInitialIdeal_eq_span, Ideal.map_span,
+    Set.image_image, Set.image_image]
+  simp_rw [weightInitialForm_map_of_injective w φ hφ]
+
 end CommRing
 
 end MonomialOrder
+
+namespace Ideal
+
+/-- **Weight-initial ideals under extension of a field of coefficients.** For a field `k` and a
+ring homomorphism `φ : k →+* S`, for instance a field extension, the weight-initial ideal of the
+extension of an ideal `I` of `k[σ]` is the extension of the weight-initial ideal of `I`. -/
+@[simp]
+theorem weightInitialIdeal_map {σ k S : Type*} [Field k] [CommRing S] (φ : k →+* S)
+    (I : Ideal (MvPolynomial σ k)) (w : σ → ℕ) :
+    (I.map (MvPolynomial.map φ)).weightInitialIdeal w =
+      (I.weightInitialIdeal w).map (MvPolynomial.map φ) := by
+  rcases subsingleton_or_nontrivial S with _ | _
+  · exact Subsingleton.elim _ _
+  -- Any monomial order refined by `w` computes the weight-initial ideal; use a lexicographic one.
+  obtain ⟨_, _⟩ := exists_wellFoundedGT σ
+  exact (MonomialOrder.isGroebnerBasis_self I).weightInitialIdeal_map (m := MonomialOrder.lex)
+    φ.injective fun _ _ ↦ MonomialOrder.isUnit_leadingCoeff.2
+
+end Ideal

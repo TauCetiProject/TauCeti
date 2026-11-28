@@ -14,7 +14,9 @@ Let `f : α → β` be a map between linear orders that is monotone on a finite 
 Its fibres cut `s` into consecutive intervals, and they form the partition `σ_f` of `s` into the
 fibres of `f`. Pulling back a partition of the image `f '' s` along `f`
 (`Finpartition.comap`) preserves and reflects noncrossingness, so it is an order embedding
-`NC(f '' s) ↪o NC(s)`, and its image is the upper interval `[σ_f, 1_s]` of `NC(s)`.
+`NC(f '' s) ↪o NC(s)`, and its image is the upper interval `[σ_f, 1_s]` of `NC(s)`. When `f` is
+strictly monotone on `s`, the fibres are singletons and the embedding is an order isomorphism: a
+noncrossing partition only depends on the relative order of its positions.
 
 For `s = Finset.univ : Finset (Fin n)` and a monotone surjection `f : Fin n → Fin m`, the partition
 `σ_f` is the interval partition grouping the positions `1, …, n` into `m` consecutive blocks, and
@@ -26,6 +28,8 @@ letters.
 
 * `TauCeti.NoncrossingPartition.comap hf` — the order embedding `NC(f '' s) ↪o NC(s)` given by
   pulling back along a map `f` that is monotone on `s`.
+* `TauCeti.NoncrossingPartition.comapOrderIso hf` — the order isomorphism `NC(f '' s) ≃o NC(s)`
+  given by pulling back along a map `f` that is strictly monotone on `s`.
 
 ## Main results
 
@@ -124,6 +128,26 @@ theorem exists_comap_eq_iff {hf : MonotoneOn f s} {π : NoncrossingPartition s} 
   rw [coe_comap, coe_bot] at h'
   obtain ⟨P, hP⟩ := Finpartition.exists_comap_eq_iff.2 h'
   exact ⟨⟨P, (Finpartition.isNoncrossing_comap_iff hf).1 (hP ▸ π.property)⟩, Subtype.ext hP⟩
+
+/-- Pulling back along a map `f` that is strictly monotone on `s` identifies the noncrossing
+partitions of the image `f '' s` with those of `s`: the partition of `s` into the fibres of `f` is
+the finest one, so every noncrossing partition of `s` is a pullback. -/
+noncomputable def comapOrderIso (hf : StrictMonoOn f s) :
+    NoncrossingPartition (s.image f) ≃o NoncrossingPartition s :=
+  OrderIso.ofSurjective (comap hf.monotoneOn) fun _ => exists_comap_eq_iff.2 <|
+    (Subtype.ext ((Finpartition.comap_bot_of_injOn hf.injOn).trans coe_bot.symm) :
+      comap hf.monotoneOn ⊥ = ⊥).le.trans bot_le
+
+@[simp]
+theorem comapOrderIso_apply (hf : StrictMonoOn f s) (ρ : NoncrossingPartition (s.image f)) :
+    comapOrderIso hf ρ = comap hf.monotoneOn ρ :=
+  (rfl)
+
+/-- Pulling back the preimage of `π` under `comapOrderIso hf` recovers `π`. -/
+@[simp]
+theorem comap_comapOrderIso_symm_apply (hf : StrictMonoOn f s) (π : NoncrossingPartition s) :
+    comap hf.monotoneOn ((comapOrderIso hf).symm π) = π :=
+  (comapOrderIso hf).apply_symm_apply π
 
 /-- Let `f` be monotone on `s` and identify no two positions other than `i ≤ j`, which are adjacent
 in `s`. If the join in `NC(s)` of `π` with the partition `σ_f` into the fibres of `f` is `1`, then

@@ -33,6 +33,8 @@ For the inner product of a Riemannian bundle the tensor is Mathlib's
 * `CovariantDerivative.derivBilinearTensor`: the covariant derivative `∇b` of a field of
   bilinear forms `b`, as a map `V x →L[ℝ] V x →L[ℝ] (T_x M →L[ℝ] ℝ)`.
 * `CovariantDerivative.derivBilinearTensor_apply`: its value on differentiable sections.
+* `CovariantDerivative.derivBilinearTensor_congr`: `∇b` at a point depends only on the connection on
+  sections differentiable there.
 * `CovariantDerivative.derivBilinearTensor_eq_zero_iff`: `∇b` vanishes exactly when `∇` satisfies
   the product rule `v (b(σ, τ)) = b(∇_v σ, τ) + b(σ, ∇_v τ)`.
 * `CovariantDerivative.derivBilinearTensor_apply_eq_smul_swap`: if `b(v, w) = c b(w, v)` for a
@@ -190,6 +192,18 @@ theorem derivBilinearTensor_apply_eq_extend
         b x (cov (extend F σ₀) x v) τ₀ - b x σ₀ (cov (extend F τ₀) x v) := by
   simpa using cov.derivBilinearTensor_apply hb (mdifferentiableAt_extend I F σ₀)
     (mdifferentiableAt_extend I F τ₀) v
+
+/-- The covariant derivative of a field of bilinear forms at `x` depends only on the values at `x`
+of the connection on sections differentiable there. -/
+theorem derivBilinearTensor_congr {cov' : CovariantDerivative I F V}
+    (h : ∀ ⦃σ : Π x : M, V x⦄, MDiffAt (T% σ) x → cov σ x = cov' σ x) :
+    cov.derivBilinearTensor b x = cov'.derivBilinearTensor b x := by
+  by_cases hb : ∀ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x
+  · ext σ₀ τ₀ v
+    rw [cov.derivBilinearTensor_apply_eq_extend hb, cov'.derivBilinearTensor_apply_eq_extend hb,
+      h (mdifferentiableAt_extend I F σ₀), h (mdifferentiableAt_extend I F τ₀)]
+  · rw [cov.derivBilinearTensor_eq_zero_of_not hb, cov'.derivBilinearTensor_eq_zero_of_not hb]
 
 /-- If a field of bilinear forms satisfies `b(v, w) = c b(w, v)` for a constant `c`, so does its
 covariant derivative in its two fibre arguments. -/

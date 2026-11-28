@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.Analysis.Convex.Function
 public import TauCeti.Analysis.Convex.Lifting.Basic
+public import TauCeti.Analysis.Convex.Lifting.SupportRows
 import Mathlib.Algebra.Order.Hom.Monoid
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Prod
@@ -45,7 +46,20 @@ shared approximation lies in the direct one. Hence
 so the shared rows are valid and at least as tight as the direct ones with the same anchors. For
 `J = ∅` the sign condition says that each `Dh i` is monotone; when `h` is monotone on the whole
 height space this follows from differentiability. On coordinates in `J` the outer derivatives may
-have either sign. No monotonicity of `h` itself enters the first inclusion.
+have either sign. No monotonicity of `h` itself enters the first inclusion. In particular, objective
+values pulled back from `X` are weakly ordered across the nested sets
+(`TauCeti.ConvexLifting.objective_le_of_sharedOuterApproxOn` and its one-sided bounds
+`TauCeti.ConvexLifting.le_of_isMinOn_directOuterApprox_of_mem_sharedOuterApproxOn` and
+`TauCeti.ConvexLifting.le_of_isMinOn_sharedOuterApproxOn_of_mem_originalSet`).
+
+For the outer sum `h y = ∑ j, y j` with the sum of the coordinate projections as outer derivative,
+every outer row is the sum of the heights, so the rows become the finite support rows of
+`TauCeti.ConvexLifting.sharedRows` and `TauCeti.ConvexLifting.independentRows`: the coordinates
+`j` of the component rows at all anchors are the support rows of the height `y j`. With
+unrestricted heights the shared approximation is then `sharedRows`, so its projection is cut out by
+the sum of the coordinatewise row maxima, equivalently by every mixed choice of one anchor per
+coordinate. The direct approximation is the projection of `independentRows`, cut out by the
+same-anchor choices only.
 
 The inner map `g` is differentiated within `D` and the outer function `h` within `E`, so anchors
 and heights may lie on the boundary of the domains. Only the full-space comparison for a monotone
@@ -73,6 +87,12 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   with inequality heights only, under monotone outer derivatives.
 * `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone`:
   the same comparison when `h` is monotone on the whole height space.
+* `TauCeti.ConvexLifting.le_of_isMinOn_directOuterApprox_of_mem_sharedOuterApproxOn`,
+  `TauCeti.ConvexLifting.le_of_isMinOn_sharedOuterApproxOn_of_mem_originalSet`,
+  `TauCeti.ConvexLifting.objective_le_of_sharedOuterApproxOn`,
+  `TauCeti.ConvexLifting.objective_le_of_sharedOuterApprox` and
+  `TauCeti.ConvexLifting.objective_le_of_sharedOuterApprox_of_monotone`:
+  weak objective-value bounds and chains across the nested outer approximations.
 * `TauCeti.ConvexLifting.directOuterApprox_subset_fst_image_sharedOuterApproxOn` and
   `TauCeti.ConvexLifting.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
   inclusion when, at every point of the direct approximation, all anchors share a common component
@@ -80,6 +100,14 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
 * `TauCeti.ConvexLifting.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
   `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
   combined into an equality.
+* `TauCeti.ConvexLifting.mem_sharedOuterApprox_sum_coord_iff`: with at least one anchor, for the
+  outer sum, membership in the shared approximation is membership in the shared support rows
+  together with the height condition `z.2 ∈ E`.
+* `TauCeti.ConvexLifting.sharedOuterApprox_univ_sum_coord_eq_sharedRows`,
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_univ_sum_coord`,
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_univ_sum_coord_eq_forall` and
+  `TauCeti.ConvexLifting.directOuterApprox_sum_coord_eq_fst_image_independentRows`: for the outer
+  sum, the shared and direct approximations as shared and independent support rows.
 * `TauCeti.ConvexLifting.sharedOuterApprox_empty_heights`,
   `TauCeti.ConvexLifting.sharedOuterApproxOn_empty_heights`,
   `TauCeti.ConvexLifting.directOuterApprox_of_isEmpty`,
@@ -99,6 +127,9 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   pairs, keeps affine inner coordinates as equalities and assumes monotonicity of the outer
   function in the other coordinates; here the budget is a fixed scalar and the sign condition is
   stated for the outer derivatives at the anchors.
+* J. Kronqvist, A. Lundell and T. Westerlund, *Reformulations for utilizing separability when
+  solving convex MINLP problems*, Journal of Global Optimization 71 (2018), 571–592, §3,
+  Eqs. (4)–(7) and Proposition 1, p. 574.
 -/
 
 public section
@@ -576,6 +607,172 @@ theorem originalSet_subset_directOuterApprox [Finite ι] (hc : ConvexOn ℝ D (h
     (directRow_le hc hgE (ha i) (mem_originalSet_iff.1 hx).1 (hdh i) (hg i)).trans
       (mem_originalSet_iff.1 hx).2⟩
 
+/-- **Lower objective bound from `directOuterApprox` to `sharedOuterApproxOn`.** If every outer
+derivative `Dh i` is nonnegative on nonnegative directions vanishing on `J`, `f xU` bounds `f`
+from below on `directOuterApprox` (with no feasibility requirement on `xU`), and `zT` lies in
+`sharedOuterApproxOn J`, then `f xU ≤ f zT.1`. Neither `[Finite ι]`, convexity, nor
+differentiability is needed. -/
+theorem le_of_isMinOn_directOuterApprox_of_mem_sharedOuterApproxOn {β : Type*} [Preorder β]
+    {f : X → β} (hD : ∀ i, ∀ v : ι → ℝ, 0 ≤ v → (∀ j ∈ J, v j = 0) → 0 ≤ Dh i v)
+    {xU : X} {zT : X × (ι → ℝ)}
+    (hminU : IsMinOn f (directOuterApprox D g h a Dg Dh b) xU)
+    (hzT : zT ∈ sharedOuterApproxOn J D E g h a Dg Dh b) :
+    f xU ≤ f zT.1 :=
+  hminU (fst_image_sharedOuterApproxOn_subset_directOuterApprox hD ⟨zT, hzT, rfl⟩)
+
+/-- **Upper objective bound from `sharedOuterApproxOn` to `originalSet`.** Assume that `g` maps `D`
+into `E`, the coordinates of `g` outside `J` are convex on `D`, `h` is convex on `E`, `g` and `h`
+have derivatives `Dg i` within `D` at `a i ∈ D` and `Dh i` within `E` at `g (a i)`, and `xS` is a
+point of `originalSet` at which every component row is exact on `J`. If `zT` bounds `f ∘ Prod.fst`
+from below on `sharedOuterApproxOn J` (with no feasibility requirement on `zT`), then
+`f zT.1 ≤ f xS`. -/
+theorem le_of_isMinOn_sharedOuterApproxOn_of_mem_originalSet {β : Type*} [Preorder β] [Finite ι]
+    {f : X → β} (hgE : MapsTo g D E) (hc : ∀ j ∉ J, ConvexOn ℝ D fun x ↦ g x j)
+    (hh : ConvexOn ℝ E h) (ha : ∀ i, a i ∈ D) (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
+    (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i)))
+    {xS : X} {zT : X × (ι → ℝ)}
+    (hexact : ∀ i, ∀ j ∈ J, componentRow g (a i) (Dg i) xS j = g xS j)
+    (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApproxOn J D E g h a Dg Dh b) zT)
+    (hxS : xS ∈ originalSet D g h b) :
+    f zT.1 ≤ f xS :=
+  hminT (mk_mem_sharedOuterApproxOn_of_mem_originalSet hgE hc hh ha hg hdh hexact hxS)
+
+/-- **Weak objective-value ordering across the nested outer approximations with exact rows on `J`.**
+Assume that `g` maps `D` into `E`, the coordinates of `g` outside `J` are convex on `D`, `h` is
+convex on `E`, `g` and `h` have derivatives `Dg i` within `D` at `a i ∈ D` and `Dh i` within `E`
+at `g (a i)`, and every `Dh i` is nonnegative on nonnegative directions vanishing on `J`. If
+`f xU` bounds `f` from below on `directOuterApprox`, `zT` is feasible in and minimizes
+`f ∘ Prod.fst` on `sharedOuterApproxOn J`, and `xS` is a point of `originalSet` at which every
+component row is exact on `J` (in particular, for feasible minimizers `xU`, `zT`, and `xS`;
+feasibility of `xU` and optimality of `xS` are not needed, and attainment is not inferred), then
+`f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS`. -/
+theorem objective_le_of_sharedOuterApproxOn {β : Type*} [Preorder β] [Finite ι] {f : X → β}
+    (hgE : MapsTo g D E) (hc : ∀ j ∉ J, ConvexOn ℝ D fun x ↦ g x j) (hh : ConvexOn ℝ E h)
+    (ha : ∀ i, a i ∈ D) (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
+    (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i)))
+    (hD : ∀ i, ∀ v : ι → ℝ, 0 ≤ v → (∀ j ∈ J, v j = 0) → 0 ≤ Dh i v)
+    {xU xS : X} {zT : X × (ι → ℝ)}
+    (hexact : ∀ i, ∀ j ∈ J, componentRow g (a i) (Dg i) xS j = g xS j)
+    (hminU : IsMinOn f (directOuterApprox D g h a Dg Dh b) xU)
+    (hzT : zT ∈ sharedOuterApproxOn J D E g h a Dg Dh b)
+    (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApproxOn J D E g h a Dg Dh b) zT)
+    (hxS : xS ∈ originalSet D g h b) :
+    f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS :=
+  ⟨le_of_isMinOn_directOuterApprox_of_mem_sharedOuterApproxOn hD hminU hzT,
+    le_of_isMinOn_sharedOuterApproxOn_of_mem_originalSet hgE hc hh ha hg hdh hexact hminT hxS⟩
+
+/-- **Weak objective-value ordering across the nested outer approximations.** When `g` maps `D`
+into `E`, every coordinate of `g` is convex on `D`, `h` is convex on `E`, `g` and `h` have
+derivatives `Dg i` within `D` at `a i ∈ D` and `Dh i` within `E` at `g (a i)`, and every outer
+derivative `Dh i` is monotone, any lower bound `xU` on `directOuterApprox`, feasible minimizer
+`zT` on `sharedOuterApprox`, and feasible point `xS` of `originalSet` satisfy
+`f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS` (in particular, for feasible minimizers `xU`, `zT`, and `xS`;
+feasibility of `xU` and optimality of `xS` are not needed, and attainment is not inferred). -/
+theorem objective_le_of_sharedOuterApprox {β : Type*} [Preorder β] [Finite ι] {f : X → β}
+    (hgE : MapsTo g D E) (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j) (hh : ConvexOn ℝ E h)
+    (ha : ∀ i, a i ∈ D) (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
+    (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i))) (hD : ∀ i, Monotone (Dh i))
+    {xU xS : X} {zT : X × (ι → ℝ)}
+    (hminU : IsMinOn f (directOuterApprox D g h a Dg Dh b) xU)
+    (hzT : zT ∈ sharedOuterApprox D E g h a Dg Dh b)
+    (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApprox D E g h a Dg Dh b) zT)
+    (hxS : xS ∈ originalSet D g h b) :
+    f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS := by
+  rw [← sharedOuterApproxOn_empty] at hzT hminT
+  exact objective_le_of_sharedOuterApproxOn (J := ∅) hgE (fun j _ ↦ hc j) hh ha hg hdh
+    (fun i v hv _ ↦ (monotone_iff_map_nonneg (Dh i)).1 (hD i) v hv)
+    (fun _ _ hj ↦ (notMem_empty _ hj).elim) hminU hzT hminT hxS
+
+/-- **Weak objective-value ordering for a monotone outer function.** When `g` maps `D` into `E`,
+every coordinate of `g` is convex on `D`, `h` is convex on `E` and monotone on the whole height
+space, `a i ∈ D`, `g` has derivative `Dg i` within `D` at `a i`, and `h` has derivative `Dh i` at
+`g (a i)`, any lower bound `xU` on `directOuterApprox`, feasible minimizer `zT` on
+`sharedOuterApprox`, and feasible point `xS` of `originalSet` satisfy
+`f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS` (in particular, for feasible minimizers `xU`, `zT`, and `xS`;
+feasibility of `xU` and optimality of `xS` are not needed, and attainment is not inferred). -/
+theorem objective_le_of_sharedOuterApprox_of_monotone {β : Type*} [Preorder β] [Finite ι]
+    {f : X → β} (hgE : MapsTo g D E) (hm : Monotone h)
+    (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j) (hh : ConvexOn ℝ E h) (ha : ∀ i, a i ∈ D)
+    (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
+    (hdh : ∀ i, HasFDerivAt h (Dh i) (g (a i)))
+    {xU xS : X} {zT : X × (ι → ℝ)}
+    (hminU : IsMinOn f (directOuterApprox D g h a Dg Dh b) xU)
+    (hzT : zT ∈ sharedOuterApprox D E g h a Dg Dh b)
+    (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApprox D E g h a Dg Dh b) zT)
+    (hxS : xS ∈ originalSet D g h b) :
+    f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS :=
+  have := Fintype.ofFinite ι
+  objective_le_of_sharedOuterApprox hgE hc hh ha hg (fun i ↦ (hdh i).hasFDerivWithinAt)
+    (fun i ↦ (hdh i).monotone_of_monotone hm) hminU hzT hminT hxS
+
 end Sets
+
+/-! ### The outer sum: finite support rows -/
+
+section SumCoord
+
+open ContinuousLinearMap (proj)
+
+variable [Fintype ι] {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ} {a : κ → X}
+  {Dg : κ → X →L[ℝ] ι → ℝ} {b : ℝ}
+
+/-- **Shared heights for the outer sum are shared support rows.** For the outer sum and at least one
+anchor, a pair lies in the shared approximation exactly when its height is admissible and the pair
+lies in `sharedRows` whose support rows for the coordinate `j` are the coordinates `j` of the
+component rows at all anchors. -/
+theorem mem_sharedOuterApprox_sum_coord_iff [Fintype κ] [Nonempty κ] {z : X × (ι → ℝ)} :
+    z ∈ sharedOuterApprox D E g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b ↔
+      z ∈ sharedRows D (fun j i x ↦ componentRow g (a i) (Dg i) x j) (fun _ ↦ Finset.univ) b ∧
+        z.2 ∈ E := by
+  simp only [mem_sharedOuterApprox, outerRow_sum_coord, forall_and, forall_const, Pi.le_def,
+    mem_sharedRows_iff, Finset.mem_univ]
+  rw [forall_comm (α := κ)]
+  tauto
+
+/-- For the outer sum, unrestricted heights and at least one anchor, the shared approximation is
+`sharedRows` whose support rows for the coordinate `j` are the coordinates `j` of the component
+rows at all anchors. -/
+theorem sharedOuterApprox_univ_sum_coord_eq_sharedRows [Fintype κ] [Nonempty κ] :
+    sharedOuterApprox D univ g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      sharedRows D (fun j i x ↦ componentRow g (a i) (Dg i) x j) (fun _ ↦ Finset.univ) b := by
+  ext z
+  rw [mem_sharedOuterApprox_sum_coord_iff, and_iff_left (mem_univ _)]
+
+/-- **Shared heights for the outer sum through row maxima.** For the outer sum, unrestricted heights
+and finitely many anchors, at least one, the shared approximation projects onto the points of `D`
+at which the coordinatewise maxima of the component rows over all anchors sum to at most `b`. -/
+theorem fst_image_sharedOuterApprox_univ_sum_coord [Fintype κ] [Nonempty κ] :
+    Prod.fst '' sharedOuterApprox D univ g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      {x | x ∈ D ∧ ∑ j, Finset.univ.sup' Finset.univ_nonempty
+        (fun i ↦ componentRow g (a i) (Dg i) x j) ≤ b} := by
+  rw [sharedOuterApprox_univ_sum_coord_eq_sharedRows,
+    fst_image_sharedRows fun _ ↦ Finset.univ_nonempty]
+
+/-- **Shared heights for the outer sum through mixed choices of anchors.** For the outer sum,
+unrestricted heights and finitely many anchors, at least one, the shared approximation projects onto
+the points of `D` at which, for every choice `c j` of an anchor for each coordinate `j`, the
+coordinates `j` of the component rows at `a (c j)` sum to at most `b`. -/
+theorem fst_image_sharedOuterApprox_univ_sum_coord_eq_forall [Finite κ] [Nonempty κ] :
+    Prod.fst '' sharedOuterApprox D univ g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      {x | x ∈ D ∧ ∀ c : ι → κ, ∑ j, componentRow g (a (c j)) (Dg (c j)) x j ≤ b} := by
+  have := Fintype.ofFinite κ
+  ext x
+  rw [sharedOuterApprox_univ_sum_coord_eq_sharedRows]
+  simpa only [mem_image, Prod.exists, exists_and_right, exists_eq_right, mem_ofPred_eq,
+    Finset.mem_univ, implies_true, true_implies] using
+    exists_mem_sharedRows_iff_forall_sum_le (fun _ ↦ Finset.univ_nonempty) x
+
+/-- **Direct rows for the outer sum are independent support rows.** For the outer sum, the direct
+approximation is the projection of `independentRows` whose rows at the anchor `i` are the
+coordinates of the component row at `a i`, with the budget `b` at every anchor: each direct row is
+the sum of the coordinates of the component row at the same anchor. -/
+theorem directOuterApprox_sum_coord_eq_fst_image_independentRows :
+    directOuterApprox D g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      Prod.fst '' independentRows D (fun i j x ↦ componentRow g (a i) (Dg i) x j) fun _ ↦ b := by
+  rw [fst_image_independentRows]
+  ext x
+  simp
+
+end SumCoord
 
 end TauCeti.ConvexLifting

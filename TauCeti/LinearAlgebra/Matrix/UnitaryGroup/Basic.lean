@@ -23,6 +23,8 @@ permutation matrices over a possibly noncommutative star semiring are unitary. A
 `Matrix.mem_unitary_iff_conjTranspose` characterizes `unitary (Matrix n n R)` via the conjugate
 transpose over any star semiring, and `Matrix.conjTranspose_mul_mul_mem_unitary` transfers
 unitarity along a possibly rectangular matrix whose conjugate transpose is a two-sided inverse.
+`Matrix.map_mem_unitary` says that a star-preserving ring homomorphism applied entrywise preserves
+unitary matrices.
 
 `Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
 `1` except one is unitary exactly when that entry is. Multiplying one column `j` of a unitary
@@ -83,6 +85,15 @@ theorem conjTranspose_mul_mul_mem_unitary
   constructor <;>
     simp only [conjTranspose_mul, conjTranspose_conjTranspose,
       ← Matrix.mul_assoc Pᴴ Xᴴ P, hcancel, hX.1, hX.2, Matrix.mul_one, hP]
+
+/-- Applying a star-preserving ring homomorphism entrywise preserves unitary matrices. -/
+theorem map_mem_unitary {R S n : Type*} [Semiring R] [StarRing R] [Semiring S] [StarRing S]
+    [Fintype n] [DecidableEq n] (f : R →+* S) (hf : ∀ x, f (star x) = star (f x))
+    {M : Matrix n n R} (hM : M ∈ unitary (Matrix n n R)) : M.map f ∈ unitary (Matrix n n S) := by
+  rw [mem_unitary_iff_conjTranspose] at hM ⊢
+  rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, hM.1, hM.2,
+    Matrix.map_one _ f.map_zero f.map_one]
+  exact ⟨rfl, rfl⟩
 
 /-- A diagonal matrix whose diagonal entries are all `1` except the `i`-th one is unitary exactly
 when its `i`-th diagonal entry is unitary. -/
@@ -168,23 +179,27 @@ section DiagonalStabilizer
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
   [CommSemiring R] [IsLeftCancelMulZero R] [StarRing R]
 
+omit [IsLeftCancelMulZero R] in
+/-- A diagonal unitary fixes every diagonal matrix under conjugation. -/
+theorem conjStarAlgAut_diagonal_eq_of_isDiag (d : ι → R) (U : unitary (Matrix ι ι R))
+    (h : Matrix.IsDiag (U : Matrix ι ι R)) :
+    Unitary.conjStarAlgAut ℕ _ U (diagonal d) = diagonal d := by
+  have hcomm : Commute (U : Matrix ι ι R) (diagonal d) := by
+    rw [← h.diagonal_diag]
+    exact Matrix.commute_diagonal _ _
+  rw [Unitary.conjStarAlgAut_apply, hcomm.eq]
+  simp [Matrix.mul_assoc]
+
 /-- A diagonal with distinct entries has exactly the diagonal unitary frames in its stabilizer. -/
 theorem conjStarAlgAut_diagonal_eq_iff {d : ι → R} (hd : Function.Injective d)
     (U : unitary (Matrix ι ι R)) :
     Unitary.conjStarAlgAut ℕ _ U (diagonal d) = diagonal d ↔ Matrix.IsDiag (U : Matrix ι ι R) := by
-  rw [Unitary.conjStarAlgAut_apply]
-  constructor
-  · intro h
-    apply TauCeti.isDiag_of_commute_diagonal hd
-    calc
-      diagonal d * (U : Matrix ι ι R) = (U * diagonal d * (star U : Matrix ι ι R)) * U := by rw [h]
-      _ = U * diagonal d := by simp [Matrix.mul_assoc]
-  · intro h
-    have hcomm : Commute (U : Matrix ι ι R) (diagonal d) := by
-      rw [← h.diagonal_diag]
-      exact Matrix.commute_diagonal _ _
-    rw [hcomm.eq]
-    simp [Matrix.mul_assoc]
+  refine ⟨fun h ↦ ?_, conjStarAlgAut_diagonal_eq_of_isDiag d U⟩
+  rw [Unitary.conjStarAlgAut_apply] at h
+  apply TauCeti.isDiag_of_commute_diagonal hd
+  calc
+    diagonal d * (U : Matrix ι ι R) = (U * diagonal d * (star U : Matrix ι ι R)) * U := by rw [h]
+    _ = U * diagonal d := by simp [Matrix.mul_assoc]
 
 /-- Two frames give the same conjugate of a simple diagonal exactly when they differ
 by a right diagonal unitary. -/

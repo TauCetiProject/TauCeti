@@ -1,0 +1,273 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.Valuation.ColengthDvd
+import TauCeti.LinearAlgebra.Matrix.Divisibility
+
+/-!
+# Congruences for paired theta directions
+
+A block of directions of height one is distinguished at each end of a pairing. To make
+Frobenius-twisted pairings vanish modulo a scalar, one can scale a whole block or impose one
+linear congruence against a distinguished direction. These options have different costs on
+the two sides: the Frobenius allows the left modulus to be a root of the right modulus.
+`TauCeti.exists_colengthDvd_frobenius_pairing` gives coefficient submodules that enforce
+every nonexempt pairing with a weighted colength cost. The submodules can be intersected
+to impose constraints from several partners on the same directions before passing to valuations.
+`TauCeti.DirectionPairExempt` and `TauCeti.directionDeductionCost` describe which pairs
+are exempt and the resulting cost in powers of the source modulus.
+`TauCeti.directionDeductionCost_eq_unmarked` expresses marking as deletion of
+distinguished columns in the cost formula.
+
+The allocation follows `New.exists_congruenceChoice_cost_eq_and_covers` and
+`New.exists_newDirection_dvd` in `grh/src/New/Derivatives/Divisibility/NullFrames.lean`.
+The exemption and cost follow `New.IsExemptPair` and `New.deductionTerm` in the same file,
+and the marked cost identity follows `New.deductionTerm_eraseHeightOne` in
+`grh/src/New/Derivatives/Divisibility/Count.lean` of grh-lean
+(https://github.com/lsernau/grh-lean) at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`.
+-/
+
+public section
+
+open Finset Matrix Pointwise
+
+namespace TauCeti
+
+variable {R ι n : Type*} [CommRing R]
+
+section PairedDirections
+
+variable [Fintype n] {height : ι → ℕ}
+
+/-- The distinguished block has one coordinate; other block sizes are given by `height`. -/
+private abbrev directionBlockSize (height : ι → ℕ) (h : Option ι) : ℕ := h.elim 1 height
+
+/-- Divisibility in a paired block follows from scaling either argument, or from one
+linear test when the opposite argument comes from the distinguished block. -/
+private theorem dvd_of_direction_cover {p e : ℕ} (hp : p.Prime) {d : R}
+    (hd : d ^ (p ^ e) ∣ (p : R))
+    (Y Z : ∀ h : Option ι, (Fin (directionBlockSize height h) → R) →ₗ[R] (n → R))
+    (root : n → R) (hroot : ∀ i, d ^ (p ^ e) ∣ Z none 1 i - root i ^ (p ^ e))
+    {h j : Option ι} (x : Fin (directionBlockSize height h) → R)
+    (y : Fin (directionBlockSize height j) → R)
+    (hcover : (∃ x', x = d • x') ∨ (∃ y', y = d ^ (p ^ e) • y') ∨
+      (j = none ∧ d ∣ root ⬝ᵥ Y h x) ∨
+      (h = none ∧ d ^ (p ^ e) ∣ (fun i ↦ (Y none 1 i) ^ (p ^ e)) ⬝ᵥ Z j y)) :
+    d ^ (p ^ e) ∣ (fun i ↦ (Y h x i) ^ (p ^ e)) ⬝ᵥ Z j y := by
+  have scalePow (c : R) (v : n → R) :
+      (fun i ↦ (c • v) i ^ (p ^ e)) = c ^ (p ^ e) • (fun i ↦ v i ^ (p ^ e)) := by
+    ext i
+    simp [mul_pow]
+  have oneDirection (f : (Fin 1 → R) →ₗ[R] (n → R)) (v : Fin 1 → R) :
+      f v = v 0 • f 1 := by
+    have hv : v = v 0 • (1 : Fin 1 → R) := by
+      ext i
+      rw [Subsingleton.elim i 0]
+      simp
+    exact (congrArg f hv).trans (map_smul f ..)
+  rcases hcover with ⟨x', rfl⟩ | ⟨y', rfl⟩ | ⟨rfl, hx⟩ | ⟨rfl, hy⟩
+  · rw [map_smul, scalePow, smul_dotProduct, smul_eq_mul]
+    exact dvd_mul_right ..
+  · rw [map_smul, dotProduct_smul, smul_eq_mul]
+    exact dvd_mul_right ..
+  · have hy : Z none y = y (0 : Fin 1) • Z none 1 := oneDirection (Z none) y
+    rw [hy, dotProduct_smul, smul_eq_mul]
+    rw [dotProduct_comm] at hx
+    exact dvd_mul_of_dvd_right (pow_dvd_dotProduct_pow_of_dvd_sub_pow hp hd hroot hx) _
+  · have hx : Y none x = x (0 : Fin 1) • Y none 1 := oneDirection (Y none) x
+    rw [hx, scalePow, smul_dotProduct, smul_eq_mul]
+    exact dvd_mul_of_dvd_right hy _
+
+/-- A pairing with a distinguished source block is exempt when the source is marked or
+when the partner block is distinguished and its place is marked. -/
+def DirectionPairExempt (markL markR : Bool) (h j : Option ι) : Prop :=
+  h = none ∧ (markL = true ∨ j = none ∧ markR = true)
+
+/-- For arbitrary block labels, exemption requires a distinguished source and either a marked
+source place or a marked partner place with a distinguished partner block. -/
+@[grind =] theorem directionPairExempt_def (markL markR : Bool) (h j : Option ι) :
+    DirectionPairExempt markL markR h j ↔ h = none ∧ (markL = true ∨ j = none ∧ markR = true) :=
+  Iff.rfl
+
+/-- Exemption is decidable by testing the marks and whether each label is `none`. -/
+instance instDecidableDirectionPairExempt (markL markR : Bool) (h j : Option ι) :
+    Decidable (DirectionPairExempt markL markR h j) :=
+  decidable_of_iff _ (directionPairExempt_def markL markR h j).symm
+
+/-- An ordinary source block is never exempt. -/
+@[simp] theorem directionPairExempt_some_left (markL markR : Bool) (i : ι) (j : Option ι) :
+    DirectionPairExempt markL markR (some i) j ↔ False := by simp [directionPairExempt_def]
+
+/-- With an ordinary partner block, exemption requires a marked distinguished source. -/
+@[simp] theorem directionPairExempt_none_some (markL markR : Bool) (j : ι) :
+    DirectionPairExempt markL markR (none : Option ι) (some j) ↔ markL = true := by
+  simp [directionPairExempt_def]
+
+/-- A pair of distinguished blocks is exempt when either place is marked. -/
+@[simp] theorem directionPairExempt_none_none (markL markR : Bool) :
+    DirectionPairExempt markL markR (none : Option ι) none ↔ markL = true ∨ markR = true := by
+  simp [directionPairExempt_def]
+
+/-- The deduction in powers of the source modulus, where the partner modulus is its
+`q`-th power. The functions `a` and `b` give the per-block column multiplicities at the
+source and partner, while `height` gives the size of each ordinary (`some`) block.
+The two minima choose between covering the source and covering the partner. -/
+def directionDeductionCost [Fintype ι] (height : ι → ℕ) (a b : Option ι → ℕ) (q : ℕ)
+    (markL markR : Bool) : ℕ :=
+  min (if markL then 0 else a none)
+    (q * ((∑ i, b (some i)) + if markR then 0 else b none)) +
+  (∑ i, a (some i)) + min (∑ i, a (some i) * height i) (q * (∑ i, b (some i) * height i))
+
+/-- The scaled deduction is the sum of the two minimum costs and the number of
+columns in the ordinary source blocks. -/
+theorem directionDeductionCost_def [Fintype ι] (height : ι → ℕ) (a b : Option ι → ℕ)
+    (q : ℕ) (markL markR : Bool) :
+    directionDeductionCost height a b q markL markR =
+      min (if markL then 0 else a none)
+        (q * ((∑ i, b (some i)) + if markR then 0 else b none)) +
+      (∑ i, a (some i)) + min (∑ i, a (some i) * height i) (q * (∑ i, b (some i) * height i)) :=
+  (rfl)
+
+/-- The marked deduction equals the unmarked deduction after deleting the distinguished columns
+at marked endpoints. The multiplicities in ordinary blocks are unchanged. -/
+theorem directionDeductionCost_eq_unmarked [Fintype ι] (height : ι → ℕ) (a b : Option ι → ℕ)
+    (q : ℕ) (markL markR : Bool) :
+    directionDeductionCost height a b q markL markR =
+      directionDeductionCost height
+        (fun h ↦ h.elim (if markL then 0 else a none) (fun i ↦ a (some i)))
+        (fun h ↦ h.elim (if markR then 0 else b none) (fun i ↦ b (some i))) q false false := by
+  simp only [directionDeductionCost_def, Option.elim_some, Option.elim_none, Bool.false_eq_true,
+    ite_false]
+
+/-- Choosing the cheaper side for the two variable costs pays the deduction exactly. -/
+private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q : ℕ)
+    (markL markR : Bool) :
+    let t := if markL then 0 else a none
+    let u := if markR then 0 else b none
+    let A := ∑ i, a (some i) * height i
+    let B := ∑ i, b (some i) * height i
+    let f := ∑ i, b (some i)
+    let leftOne := t ≤ q * (f + u)
+    let leftTall := A ≤ q * B
+    let l (h : Option ι) := h.elim (if !markL && decide leftOne then 1 else 0)
+      (fun i ↦ (if leftTall then height i else 0) + 1)
+    let r (h : Option ι) :=
+      (if h.isSome && !decide leftTall then directionBlockSize height h else 0) +
+      (if !markL && !decide leftOne && (h.isSome || !markR) then 1 else 0)
+    (∑ h, a h * l h) + q * (∑ h, b h * r h) =
+      directionDeductionCost height a b q markL markR := by
+  classical
+  dsimp only
+  rw [directionDeductionCost_def, Fintype.sum_option, Fintype.sum_option]
+  split_ifs <;> simp_all only [Finset.sum_add_distrib, Nat.mul_add, min_def,
+    zero_add, add_zero, mul_zero, mul_one, Option.elim_none, Option.elim_some,
+    Option.isSome_none, Option.isSome_some, Bool.true_and, Bool.false_and, Bool.true_or,
+    Bool.false_or, Bool.and_true, Bool.and_false, Bool.not_true, Bool.not_false,
+    Bool.false_eq_true, Bool.not_eq_eq_eq_not, decide_eq_true_eq,
+    not_le, zero_le, ite_true, ite_false, mul_ite, sum_ite_irrel, sum_const_zero] <;>
+    (try split_ifs) <;>
+    simp_all (config := { failIfUnchanged := false }) only
+      [not_true_eq_false, decide_true, decide_false, Bool.true_eq_false] <;> omega
+
+/-- Every nonexempt pair is covered by either a block scaling or a linear test. -/
+private theorem directionChoices_cover (markL markR leftOne leftTall : Bool) (h j : Option ι)
+    (he : ¬DirectionPairExempt markL markR h j) :
+    h.elim (!markL && leftOne) (fun _ ↦ leftTall) = true ∨
+    (j.isSome && !leftTall) = true ∨ (j = none ∧ h.isSome = true) ∨
+    (h = none ∧ (!markL && !leftOne && (j.isSome || !markR)) = true) := by
+  cases h with
+  | none =>
+    have hmarkL : markL = false := by cases markL <;> cases j <;> simp_all
+    cases leftOne with
+    | true => exact .inl (by simp [hmarkL])
+    | false =>
+      refine .inr (.inr (.inr ⟨rfl, ?_⟩))
+      cases j <;> cases markR <;> simp_all
+  | some i =>
+    cases j with
+    | none => exact .inr (.inr (.inl ⟨rfl, rfl⟩))
+    | some j => cases leftTall <;> simp
+
+/-- For two families of theta directions at a place and its partner, impose coefficient
+submodules that make all nonexempt pairings divisible by `d^(p^e)`. The `none` blocks have
+size one, and `some i` has size `height i`. The functions `a` and `b` count columns per block
+at the source and partner, respectively. A pair is exempt only when its left block is
+`none` and either its left place is marked or its right block is `none` at a marked place.
+
+The partner's distinguished coordinates admit roots modulo `d^(p^e)`. The weighted sum
+of the colength exponents, measured in powers of `d`, is the sum of the two minimum costs
+and the number of columns in ordinary (`some`) source blocks, regardless of height. The
+exponent on the right is measured first in powers of `d^(p^e)`, so its contribution is
+multiplied by `p^e`.
+The submodules can be intersected before extracting any determinant witnesses. -/
+theorem exists_colengthDvd_frobenius_pairing [PreValuationRing R] [Fintype ι]
+    {p e : ℕ} (hp : p.Prime) {d : R} (hd : d ^ (p ^ e) ∣ (p : R))
+    (Y Z : ∀ h : Option ι, (Fin (h.elim 1 height) → R) →ₗ[R] (n → R))
+    (root : n → R) (hroot : ∀ i, d ^ (p ^ e) ∣ Z none 1 i - root i ^ (p ^ e))
+    (a b : Option ι → ℕ) (markL markR : Bool) :
+    ∃ (L M : ∀ h : Option ι, Submodule R (Fin (h.elim 1 height) → R)) (l r : Option ι → ℕ),
+      (∀ h, (⊤ : Submodule R _).ColengthDvd (L h) (d ^ l h)) ∧
+      (∀ h, (⊤ : Submodule R _).ColengthDvd (M h) ((d ^ (p ^ e)) ^ r h)) ∧
+      ((∑ h, a h * l h) + p ^ e * (∑ h, b h * r h) =
+        directionDeductionCost height a b (p ^ e) markL markR) ∧
+      (∀ h j, ¬DirectionPairExempt markL markR h j →
+        ∀ x ∈ L h, ∀ y ∈ M j,
+        d ^ (p ^ e) ∣ (fun i ↦ (Y h x i) ^ (p ^ e)) ⬝ᵥ Z j y) := by
+  classical
+  let q := p ^ e
+  let leftOne := (if markL then 0 else a none) ≤
+    q * ((∑ i, b (some i)) + if markR then 0 else b none)
+  let leftTall := (∑ i, a (some i) * height i) ≤ q * (∑ i, b (some i) * height i)
+  let sL (h : Option ι) := h.elim (!markL && decide leftOne) (fun _ ↦ decide leftTall)
+  let sR (h : Option ι) := h.isSome && !decide leftTall
+  let tR (h : Option ι) := !markL && !decide leftOne && (h.isSome || !markR)
+  let fL (h : Option ι) := (dotProductBilin R R root).comp (Y h)
+  let fR (h : Option ι) := (dotProductBilin R R (fun i ↦ Y none 1 i ^ q)).comp (Z h)
+  let L (h : Option ι) : Submodule R _ :=
+    (if sL h then d • ⊤ else ⊤) ⊓ (if h.isSome then Submodule.comap (fL h) (Ideal.span {d}) else ⊤)
+  let M (h : Option ι) : Submodule R _ :=
+    (if sR h then d ^ q • ⊤ else ⊤) ⊓
+      (if tR h then Submodule.comap (fR h) (Ideal.span {d ^ q}) else ⊤)
+  let l (h : Option ι) := (if sL h then directionBlockSize height h else 0) +
+    (if h.isSome then 1 else 0)
+  let r (h : Option ι) := (if sR h then directionBlockSize height h else 0) +
+    (if tR h then 1 else 0)
+  refine ⟨L, M, l, r, fun h ↦ ?_, fun h ↦ ?_, ?_, ?_⟩
+  · simpa only [Fintype.card_fin, ← pow_add] using
+      Submodule.colengthDvd_top_smul_inf_comap_span d d (fL h) (sL h = true) (h.isSome = true)
+  · simpa only [Fintype.card_fin, ← pow_add] using
+      Submodule.colengthDvd_top_smul_inf_comap_span (d ^ q) (d ^ q) (fR h)
+        (sR h = true) (tR h = true)
+  · have hl (h : Option ι) : l h = h.elim (if !markL && decide leftOne then 1 else 0)
+        (fun i ↦ (if leftTall then height i else 0) + 1) := by
+      cases h <;> simp [l, sL, directionBlockSize]
+    simpa only [hl] using pairedDirection_cost (height := height) a b q markL markR
+  · intro h j he x hx y hy
+    apply dvd_of_direction_cover hp hd Y Z root hroot x y
+    have hsL (hs : sL h = true) : ∃ x', x = d • x' := by
+      simpa [eq_comm] using (Submodule.mem_smul_pointwise_iff_exists x d ⊤).mp
+        (by simpa only [hs, ite_true] using (Submodule.mem_inf.mp hx).1)
+    have hsR (hs : sR j = true) : ∃ y', y = d ^ q • y' := by
+      simpa [eq_comm] using (Submodule.mem_smul_pointwise_iff_exists y (d ^ q) ⊤).mp
+        (by simpa only [hs, ite_true] using (Submodule.mem_inf.mp hy).1)
+    have htL (ht : h.isSome = true) : d ∣ root ⬝ᵥ Y h x := by
+      simpa only [← Ideal.mem_span_singleton, ht, ite_true, Submodule.mem_comap,
+        fL, LinearMap.comp_apply, dotProductBilin_apply_apply] using (Submodule.mem_inf.mp hx).2
+    have htR (ht : tR j = true) : d ^ q ∣ (fun i ↦ Y none 1 i ^ q) ⬝ᵥ Z j y := by
+      simpa only [← Ideal.mem_span_singleton, ht, ite_true, Submodule.mem_comap,
+        fR, LinearMap.comp_apply, dotProductBilin_apply_apply] using (Submodule.mem_inf.mp hy).2
+    rcases directionChoices_cover markL markR (decide leftOne) (decide leftTall) h j he with
+      hs | hs | ⟨hj, ht⟩ | ⟨hh, ht⟩
+    · exact .inl (hsL hs)
+    · exact .inr (.inl (hsR hs))
+    · exact .inr (.inr (.inl ⟨hj, htL ht⟩))
+    · exact .inr (.inr (.inr ⟨hh, htR ht⟩))
+
+end PairedDirections
+
+end TauCeti

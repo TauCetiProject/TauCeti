@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FiniteSet
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 
 /-!
 # Projective schemes over a ring
@@ -85,6 +86,33 @@ theorem IsProjectiveOver.of_isClosedImmersion {Y : Scheme.{u}} [Y.Over (Spec (.o
   obtain ⟨M, _, _, _, g, hg, hgR⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := Y)
   exact ⟨⟨M, inferInstance, inferInstance, inferInstance, f ≫ g, inferInstance, inferInstance⟩⟩
 
+/-- Given a finite `R`-module `M`, there exist `n : ℕ` and a surjective linear map
+`q : (Fin (n + 2) → R) →ₗ[R] M` whose graded symmetric-algebra homomorphism is surjective and
+induces a closed immersion `Proj (Sym_R M) ⟶ Proj (Sym_R (Fin (n + 2) → R))` over `Spec R`. -/
+theorem _root_.TauCeti.SymmetricAlgebra.exists_surjective_gradedMap_isClosedImmersion
+    (M : Type u) [AddCommMonoid M] [Module R M] [Module.Finite R M] :
+    ∃ (n : ℕ) (q : (Fin (n + 2) → R) →ₗ[R] M)
+      (hirr : HomogeneousIdeal.irrelevant (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) ≤
+        (HomogeneousIdeal.irrelevant
+          (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Fin (n + 2) → R))).map
+            (_root_.SymmetricAlgebra.gradedMap R q)),
+      Function.Surjective (_root_.SymmetricAlgebra.gradedMap R q) ∧
+        IsClosedImmersion
+          (Proj.map (_root_.SymmetricAlgebra.gradedMap R q) hirr) ∧
+        (Proj.map (_root_.SymmetricAlgebra.gradedMap R q) hirr).IsOver (Spec (.of R)) := by
+  obtain ⟨n, p, hp⟩ := Module.Finite.exists_fin' R M
+  -- The surjection `R^{n+2} → Rⁿ → M` forgets the last two coordinates.
+  let q : (Fin (n + 2) → R) →ₗ[R] M := p ∘ₗ LinearMap.funLeft R R (Fin.castAdd 2)
+  have hq : Function.Surjective q :=
+    hp.comp (LinearMap.funLeft_surjective_of_injective _ _ _ (Fin.castAdd_injective n 2))
+  let φ := _root_.SymmetricAlgebra.gradedMap R q
+  have hφ : Function.Surjective φ := fun a ↦ by
+    obtain ⟨x, hx⟩ := _root_.SymmetricAlgebra.map_surjective R q hq a
+    exact ⟨x, (_root_.SymmetricAlgebra.gradedMap_apply R q x).trans hx⟩
+  have hirr := HomogeneousIdeal.irrelevant_le_map_of_surjective φ hφ
+  exact ⟨n, q, hirr, hφ, Proj.isClosedImmersion_map φ hirr hφ,
+    ⟨Proj.map_gradedMap_projToSpec R q hirr⟩⟩
+
 /-- **A projective scheme is a closed subscheme of a projective space.** A scheme projective over
 `R` admits a closed immersion over `R` into `ℙⁿ⁺¹_R = Proj (Sym_R R^{n+2})` for some `n`. The
 finite module `M` of the definition is a quotient of some `Rⁿ`, hence of `R^{n+2}`, and the
@@ -95,10 +123,9 @@ theorem IsProjectiveOver.exists_isClosedImmersion_pi [X.IsProjectiveOver R] :
     ∃ (n : ℕ) (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Fin (n + 2) → R))),
       IsClosedImmersion f ∧ f.IsOver (Spec (.of R)) := by
   obtain ⟨M, _, _, _, f, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  obtain ⟨d, j, _, _, _⟩ :=
-    TauCeti.SymmetricAlgebra.exists_isClosedImmersion_proj_fin_add_with_pullbackTwistingSheafIso
-      R M 2
-  exact ⟨d, f ≫ j, inferInstance, inferInstance⟩
+  obtain ⟨n, q, hirr, -, _, _⟩ :=
+    TauCeti.SymmetricAlgebra.exists_surjective_gradedMap_isClosedImmersion R M
+  exact ⟨n, f ≫ Proj.map (_root_.SymmetricAlgebra.gradedMap R q) hirr, inferInstance, inferInstance⟩
 
 /-- **A projective scheme is proper**: a scheme projective over `R` is proper over `R`. -/
 instance IsProjectiveOver.isProper [X.IsProjectiveOver R] : IsProper (X ↘ Spec (.of R)) := by

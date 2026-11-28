@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # Products and norms of orthogonal projections
@@ -81,11 +82,19 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## Main results
 
+* `Submodule.starProjection_eq_iff_mem_orthogonal_inf`: nested projections of a vector agree
+  exactly when the vector is orthogonal to the complement of the smaller subspace in the larger.
+* `LinearMap.map_starProjection_eq_of_le_comap`: a semilinear map preserving the subspace and
+  its orthogonal complement commutes with the projections, by
+  `Submodule.projection_map_apply_of_mem`.
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
 * `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
   orthogonal projection onto `U` is the cylinder `{y + z | y ∈ s, z ∈ Uᗮ}`.
+* `Submodule.preimage_orthogonalProjectionOnto_setOf_inner`: for `u ∈ U` and a predicate `p`,
+  the preimage of `{y ∈ U | p ⟪y, u⟫}` under the orthogonal projection onto `U` is
+  `{x | p ⟪x, u⟫}`.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
   onto that subspace.
 * `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
@@ -138,6 +147,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
+* `Submodule.inner_sub_starProjection_singleton`:
+  inner product of components orthogonal to a vector `u`.
 * `Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`: the sign identity
   `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫` for the projection `P` onto a real line.
 * `Submodule.inner_starProjection_sq_of_finrank_eq_one`: `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫` for the
@@ -183,6 +194,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   plus a multiple of `‖D (P.starProjection w)‖`.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
   equivalence `e` gives the orthogonal projection onto `e(V)`.
+* `Submodule.ker_one_sub_starProjection_comp`: the kernel of `(1 - P_W) ∘L T` is
+  `W.comap T`.
+* `Submodule.starProjection_orthogonal_ker_one_sub_mul`: the orthogonal projection onto
+  `(ker ((1 - P_U) * P_V))ᗮ` is `P_V - P_{U ⊓ V}`.
 -/
 
 public section
@@ -197,6 +212,31 @@ open ContinuousLinearMap
 open scoped InnerProductSpace
 
 variable {𝕜 : Type*} {E : Type u} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+/-- For `Z ≤ V`, the projections of `x` onto `Z` and `V` agree exactly when `x` is orthogonal
+to the complement of `Z` inside `V`. -/
+theorem starProjection_eq_iff_mem_orthogonal_inf {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {Z V : Submodule 𝕜 E}
+    [Z.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (hZ : Z ≤ V) {x : E} :
+    Z.starProjection x = V.starProjection x ↔ x ∈ (V ⊓ Zᗮ)ᗮ := by
+  constructor
+  · intro h
+    have hv := Submodule.orthogonal_le (inf_le_left : V ⊓ Zᗮ ≤ V)
+      (V.sub_starProjection_mem_orthogonal x)
+    have hz := Submodule.orthogonal_le (inf_le_right : V ⊓ Zᗮ ≤ Zᗮ)
+      (Z.le_orthogonal_orthogonal (Z.starProjection_apply_mem x))
+    rw [h] at hz
+    simpa only [sub_add_cancel] using ((V ⊓ Zᗮ)ᗮ).add_mem hv hz
+  · intro hx
+    have hV : Z ⊔ (V ⊓ Zᗮ) = V := by
+      rw [inf_comm, Submodule.sup_orthogonal_inf_of_hasOrthogonalProjection hZ]
+    symm
+    refine V.eq_starProjection_of_mem_orthogonal (hZ (Z.starProjection_apply_mem x)) ?_
+    rw [← hV, ← Submodule.inf_orthogonal]
+    refine ⟨Z.sub_starProjection_mem_orthogonal x, Submodule.sub_mem _ hx ?_⟩
+    exact Submodule.orthogonal_le inf_le_right
+      (Z.le_orthogonal_orthogonal (Z.starProjection_apply_mem x))
+
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
 /-- An orthogonal projection is idempotent, evaluated at a vector: `P_U (P_U x) = P_U x`. -/
@@ -479,6 +519,14 @@ theorem preimage_orthogonalProjectionOnto_eq (s : Set U) :
   rwa [Set.mem_preimage, map_add, U.orthogonalProjectionOnto_mem_subspace_eq_self,
     U.orthogonalProjectionOnto_eq_zero_iff.2 hz, add_zero]
 
+/-- For `u ∈ U` and any predicate `p` on `𝕜`, the cylinder over `{y ∈ U | p ⟪y, u⟫}` is
+`{x ∈ E | p ⟪x, u⟫}`. For instance, over `ℝ` with `p = (· < s)`, the cylinder over the
+half-space `{y ∈ U | ⟪y, u⟫ < s}` of `U` is the half-space `{x ∈ E | ⟪x, u⟫ < s}` of `E`. -/
+theorem preimage_orthogonalProjectionOnto_setOf_inner (u : U) (p : 𝕜 → Prop) :
+    U.orthogonalProjectionOnto ⁻¹' {y | p ⟪y, u⟫_𝕜} = {x : E | p ⟪x, (u : E)⟫_𝕜} := by
+  ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, inner_orthogonalProjectionOnto_eq_of_mem_right]
+
 /-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
 Both maps are regarded as finite-dimensional algebraic linear maps. -/
 @[simp]
@@ -582,6 +630,20 @@ theorem norm_sub_add_sq_of_mem_of_mem_orthogonal (v : F) {b c : F} (hb : b ∈ R
     norm_sub_sq_real, real_inner_comm]
   ring
 
+omit R [R.HasOrthogonalProjection] in
+/-- The inner product of the components of `v` and `w` orthogonal to a vector `u`:
+`⟪v - P_u v, w - P_u w⟫ = ⟪v, w⟫ - ⟪v, u⟫ * ⟪w, u⟫ / ‖u‖²`. Holds for `u = 0` as well by the
+division-by-zero convention `x / 0 = 0`. -/
+theorem inner_sub_starProjection_singleton (u v w : F) :
+    ⟪v - (ℝ ∙ u).starProjection v, w - (ℝ ∙ u).starProjection w⟫_ℝ =
+      ⟪v, w⟫_ℝ - ⟪v, u⟫_ℝ * ⟪w, u⟫_ℝ / ‖u‖ ^ 2 := by
+  have hperp : ⟪v - (ℝ ∙ u).starProjection v, (ℝ ∙ u).starProjection w⟫_ℝ = 0 :=
+    (ℝ ∙ u).starProjection_inner_eq_zero v _ ((ℝ ∙ u).starProjection_apply_mem w)
+  rw [inner_sub_right, hperp, sub_zero, inner_sub_left, Submodule.starProjection_singleton]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, real_inner_smul_left, real_inner_comm u v,
+    real_inner_comm u w]
+  ring
+
 /-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`: if `n`
 spans the line, both sides are `⟪n, x⟫ ⟪n, y⟫² ⟪n, z⟫ / ‖n‖⁴`. In particular, lying strictly on the
 same side of the orthogonal hyperplane is a transitive relation. -/
@@ -657,6 +719,41 @@ theorem apply_mem_of_commute_starProjection {U : Submodule 𝕜 E} [U.HasOrthogo
     _root_.mul_apply_eq_comp, U.starProjection_eq_self_iff.2 hx]
 
 end Commute
+
+/-- The kernel of `(1 - P_W) ∘L T` is the preimage `W.comap T`. -/
+theorem ker_one_sub_starProjection_comp {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
+    [TopologicalSpace F] (W : Submodule 𝕜 E) [W.HasOrthogonalProjection] (T : F →L[𝕜] E) :
+    ((1 - W.starProjection) ∘L T).ker = W.comap (T : F →ₗ[𝕜] E) := by
+  ext x
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+    _root_.sub_apply, one_apply_eq_self, Submodule.mem_comap, sub_eq_zero]
+  exact eq_comm.trans W.starProjection_eq_self_iff
+
+/-- The orthogonal projection onto `(ker ((1 - P_U) * P_V))ᗮ` is `P_V - P_{U ⊓ V}`. -/
+theorem starProjection_orthogonal_ker_one_sub_mul [CompleteSpace E]
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    [(U ⊓ V).HasOrthogonalProjection] :
+    ((1 - U.starProjection) * V.starProjection).kerᗮ.starProjection =
+      V.starProjection - (U ⊓ V).starProjection := by
+  set x : E →L[𝕜] E := (1 - U.starProjection) * V.starProjection
+  set r : E →L[𝕜] E := V.starProjection - (U ⊓ V).starProjection
+  have hcomp' : (U ⊓ V).starProjection * V.starProjection = (U ⊓ V).starProjection := by
+    rw [ContinuousLinearMap.mul_def]
+    exact Submodule.starProjection_comp_starProjection_of_le inf_le_right
+  have hr : IsStarProjection r :=
+    isStarProjection_starProjection.sub_of_mul_eq_left isStarProjection_starProjection hcomp'
+  have hr_eq : r = (1 - (U ⊓ V).starProjection) * V.starProjection := by
+    rw [sub_mul, one_mul, hcomp']
+  have hker : x.ker = r.ker := by
+    simp only [x, hr_eq, ContinuousLinearMap.mul_def, ker_one_sub_starProjection_comp,
+      Submodule.comap_inf]
+    exact (inf_of_le_left fun ξ _ => V.starProjection_apply_mem ξ).symm
+  obtain ⟨hr_has, hr_eq_proj⟩ := isStarProjection_iff_eq_starProjection_range.mp hr
+  have hker_r : r.ker = r.rangeᗮ := by
+    conv_lhs => rw [hr_eq_proj]
+    exact Submodule.ker_starProjection r.range
+  refine IsStarProjection.ext isStarProjection_starProjection hr ?_
+  rw [Submodule.range_starProjection, hker, hker_r, Submodule.orthogonal_orthogonal]
 
 end Submodule
 
@@ -896,6 +993,20 @@ theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E)
 end LinearIsometry
 
 namespace LinearMap
+
+open scoped InnerProductSpace
+
+/-- A semilinear map taking `V` into `W` and `Vᗮ` into `Wᗮ` commutes with their orthogonal
+projections. -/
+theorem map_starProjection_eq_of_le_comap {𝕜 𝕝 E F : Type*} [RCLike 𝕜] [RCLike 𝕝]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕝 F]
+    {σ : 𝕜 →+* 𝕝} (f : E →ₛₗ[σ] F) {V : Submodule 𝕜 E} {W : Submodule 𝕝 F}
+    [V.HasOrthogonalProjection] [W.HasOrthogonalProjection]
+    (hV : V ≤ W.comap f) (hV' : Vᗮ ≤ Wᗮ.comap f) (x : E) :
+    f (V.starProjection x) = W.starProjection (f x) := by
+  rw [V.starProjection_apply_eq_isComplProjection, W.starProjection_apply_eq_isComplProjection]
+  exact (Submodule.projection_map_apply_of_mem V.isCompl_orthogonal W.isCompl_orthogonal
+    f.toAddMonoidHom (fun _ hx ↦ hV hx) (fun _ hx ↦ hV' hx) x).symm
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [AddCommMonoid F] [Module 𝕜 F]

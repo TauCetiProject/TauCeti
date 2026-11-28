@@ -37,6 +37,7 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   of `M`.
 * `LinearMap.tmul_mem_ker_rTensor`: tensoring an element of the kernel of `f` with any `w` gives
   an element of the kernel of `f ⊗ 𝟙`.
+* `TauCeti.tensorProductMulLeft`: multiply the first two algebra factors in `S ⊗ (S ⊗ M)`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponentEquiv`: tensors as linear maps from the dual of a finite projective
   right factor.
@@ -49,11 +50,14 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   reassociation.
 * `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
   functional which splits on products splits the contraction accordingly.
-* `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.lid_lTensor_apply` and `LinearMap.rid_rTensor_apply`: naturality of the left and
+  right tensor unitors.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
 * `TensorProduct.tmul_multiset_sum`, `TensorProduct.multiset_sum_tmul`: a pure tensor with a
   multiset sum in one factor is the sum of the pure tensors.
+* `TensorProduct.map_neg_left` and `TensorProduct.map_neg_right`: negating either argument of
+  `TensorProduct.map` negates the tensor-product map.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
@@ -63,6 +67,9 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   stays injective after tensoring with `M`.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
+* `TensorProduct.outerComm`: three-factor tensor reversal `M ⊗ (N ⊗ P) ≃ P ⊗ (N ⊗ M)`.
+* `TensorProduct.outerComm_comp_assoc_comp_rTensor`, `TensorProduct.outerComm_comp_lTensor`:
+  naturality of `outerComm` with maps into a tensor product on either factor.
 * `TensorProduct.assoc_rTensor_tensorTensorTensorComm_tmul`: reassociating both arguments of
   `tensorTensorTensorComm` reassociates its value, and
   `TensorProduct.assoc_rTensor_comp_map_tensorTensorTensorComm_tmul` is its form after maps into
@@ -126,6 +133,11 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
 theorem tmul_mem_ker_rTensor {f : N →ₗ[R] P} {x : N} (hx : x ∈ ker f) (w : M) :
     x ⊗ₜ w ∈ ker (f.rTensor M) := by
   rw [mem_ker, rTensor_tmul, mem_ker.mp hx, zero_tmul]
+
+/-- Tensoring any `w` with the kernel of a linear map `f` lands in the kernel of `𝟙 ⊗ f`. -/
+theorem tmul_mem_ker_lTensor {f : N →ₗ[R] P} {x : N} (w : M) (hx : x ∈ ker f) :
+    w ⊗ₜ x ∈ ker (f.lTensor M) := by
+  rw [mem_ker, lTensor_tmul, mem_ker.mp hx, tmul_zero]
 
 /-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
@@ -302,6 +314,14 @@ theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C
 
 end
 
+/-- The left tensor unitor is natural with respect to a linear map in its right factor. -/
+@[simp]
+theorem lid_lTensor_apply (f : M →ₗ[R] N) (t : R ⊗[R] M) :
+    TensorProduct.lid R N (lTensor R f t) = f (TensorProduct.lid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 /-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
 @[simp]
 theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
@@ -440,6 +460,25 @@ theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGrou
     LinearMap.lTensor_def]
   abel
 
+/-- Negating the left map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_left {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommMonoid N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map (-f) g = -map f g := by
+  simpa only [LinearMap.flip_apply, mapBilinear_apply] using
+    map_neg ((mapBilinear σ₁₂ M N M₂ N₂).flip g) f
+
+/-- Negating the right map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_right {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommGroup N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map f (-g) = -map f g := by
+  simpa only [mapBilinear_apply] using map_neg (mapBilinear σ₁₂ M N M₂ N₂ f) g
+
 variable {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
 
 /-- Exchanging the factors of both arguments of `tensorTensorTensorComm` exchanges the factors of
@@ -522,6 +561,59 @@ theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
     not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
 
+section OuterComm
+
+variable (R M N P) in
+/-- Reverses the three factors of a right-associated triple tensor product, sending
+`m ⊗ₜ (n ⊗ₜ p)` to `p ⊗ₜ (n ⊗ₜ m)`. -/
+def outerComm : M ⊗[R] (N ⊗[R] P) ≃ₗ[R] P ⊗[R] (N ⊗[R] M) :=
+  (TensorProduct.assoc R M N P).symm ≪≫ₗ
+    TensorProduct.comm R (M ⊗[R] N) P ≪≫ₗ
+    LinearEquiv.lTensor P (TensorProduct.comm R M N)
+
+/-- `outerComm` reverses the three factors on pure tensors. -/
+@[simp]
+theorem outerComm_tmul (m : M) (n : N) (p : P) :
+    outerComm R M N P (m ⊗ₜ[R] (n ⊗ₜ[R] p)) = p ⊗ₜ[R] (n ⊗ₜ[R] m) := by
+  simp [outerComm]
+
+/-- `outerComm` is self-inverse up to swapping the outer module arguments. -/
+@[simp]
+theorem outerComm_symm : (outerComm R M N P).symm = outerComm R P N M :=
+  LinearEquiv.toLinearMap_injective <| ext_threefold' fun _ _ _ ↦ rfl
+
+/-- Naturality of `outerComm` with a map `f` applied on the left factor before reassociation:
+reversing after `assoc ∘ₗ f.rTensor Q` agrees with swapping the inputs and applying `comm ∘ₗ f` on
+the right factor. -/
+theorem outerComm_comp_assoc_comp_rTensor (f : M →ₗ[R] N ⊗[R] P) :
+    (outerComm R N P Q).toLinearMap ∘ₗ
+        (TensorProduct.assoc R N P Q).toLinearMap ∘ₗ f.rTensor Q =
+      ((TensorProduct.comm R N P).toLinearMap ∘ₗ f).lTensor Q ∘ₗ
+        (TensorProduct.comm R M Q).toLinearMap := by
+  refine TensorProduct.ext' fun m q ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.rTensor_tmul,
+    LinearMap.lTensor_tmul, comm_tmul]
+  induction f m using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [add_tmul, tmul_add, map_add, hu, hv]
+  | tmul n p => simp
+
+/-- Naturality of `outerComm` with a map `f` applied on the right factor: reversing after
+`f.lTensor M` agrees with swapping the inputs, applying `comm ∘ₗ f` on the left factor, and
+reassociating. -/
+theorem outerComm_comp_lTensor (f : Q →ₗ[R] N ⊗[R] P) :
+    (outerComm R M N P).toLinearMap ∘ₗ f.lTensor M =
+      (TensorProduct.assoc R P N M).toLinearMap ∘ₗ
+        ((TensorProduct.comm R N P).toLinearMap ∘ₗ f).rTensor M ∘ₗ
+        (TensorProduct.comm R M Q).toLinearMap := by
+  refine TensorProduct.ext' fun m q ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.lTensor_tmul,
+    LinearMap.rTensor_tmul, comm_tmul]
+  induction f q using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [tmul_add, add_tmul, map_add, hu, hv]
+  | tmul n p => simp
+
+end OuterComm
+
 variable (M) in
 /-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is `(Algebra.linearMap R A).rTensor M` composed with the
 identification `M ≃ R ⊗[R] M`. -/
@@ -569,6 +661,34 @@ theorem map_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[R] P) (g : ι �
   simp only [← mapBilinear_apply, map_sum]
 
 end TensorProduct
+
+namespace TauCeti
+
+variable {R : Type*} [CommSemiring R] (S M : Type*) [Semiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M]
+
+/-- Multiply the first two factors of `S ⊗[R] (S ⊗[R] M)`, leaving the module factor fixed. -/
+noncomputable def tensorProductMulLeft : S ⊗[R] (S ⊗[R] M) →ₗ[R] S ⊗[R] M :=
+  (LinearMap.mul' R S).rTensor M ∘ₗ (TensorProduct.assoc R S S M).symm.toLinearMap
+
+/-- Express multiplication of the first two factors using reassociation and tensoring. -/
+theorem tensorProductMulLeft_def : tensorProductMulLeft (R := R) S M =
+    (LinearMap.mul' R S).rTensor M ∘ₗ (TensorProduct.assoc R S S M).symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem tensorProductMulLeft_tmul (s t : S) (m : M) :
+    tensorProductMulLeft S M (s ⊗ₜ[R] (t ⊗ₜ[R] m)) = (s * t) ⊗ₜ[R] m := by
+  simp [tensorProductMulLeft]
+
+@[simp]
+theorem tensorProductMulLeft_one_tmul (x : S ⊗[R] M) :
+    tensorProductMulLeft S M (1 ⊗ₜ[R] x) = x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s m => simp
+  | add x y hx hy => simp [tmul_add, hx, hy]
+
+end TauCeti
 
 namespace TensorProduct
 

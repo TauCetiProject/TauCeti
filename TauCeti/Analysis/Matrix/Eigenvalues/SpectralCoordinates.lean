@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
-public import Mathlib.Analysis.Matrix.Spectrum
+public import TauCeti.Analysis.Matrix.Eigenvalues.Basic
+public import Mathlib.LinearAlgebra.Vandermonde
 public import TauCeti.Analysis.Matrix.Exponential.SkewAdjoint
 public import TauCeti.Analysis.Matrix.SelfAdjoint
-import Mathlib.Analysis.Calculus.FDeriv.Star
+import TauCeti.Analysis.Calculus.FDeriv.Unitary
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
-import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.LinearAlgebra.Vandermonde
+import TauCeti.Topology.Order.FiniteFamily
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -117,29 +120,27 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
   let L := fderiv ℝ F x.2
   have hF : HasFDerivAt F L x.2 :=
     ((contDiff_relativeFrame x.2 (k := 1)).differentiable one_ne_zero x.2).hasFDerivAt
-  have h1 : F x.2 = 1 := by simp [F]
   have hFF := hF.comp x (ContinuousLinearMap.snd ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
   have hd := ((selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)).subtypeL.comp
     selfAdjointDiagonal).hasFDerivAt.comp x
     (ContinuousLinearMap.fst ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
-  have h := selfAdjointCoordinatesLinearMap.hasFDerivAt.comp x ((hFF.fun_mul' hd).fun_mul' hFF.star)
+  have hD := hFF.unitary_conj_of_eq_one hd
+    (.of_forall fun y ↦ (relativeFrame x.2 y.2).property) (by simp [F])
+  have h := selfAdjointCoordinatesLinearMap.hasFDerivAt.comp x hD
   refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)).congr_fderiv ?_
   · simp only [Unitary.conjStarAlgAut_apply, Function.comp_apply, F,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', Submodule.subtypeL_apply]
   · apply ContinuousLinearMap.ext
     intro v
-    have hs (i j : Fin n) : star (L v.2 j i) = -(L v.2 i j) := by
-      simpa only [Matrix.star_apply, Matrix.neg_apply] using
-        congrFun₂ (star_fderiv_relativeFrame x.2 v.2) i j
     simp only [ContinuousLinearMap.comp_apply, Function.comp_apply,
-      ContinuousLinearMap.coe_prodMap',
-      ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst', add_apply, smul_apply,
-      h1, star_one, Matrix.one_mul, ContinuousLinearMap.coe_comp, Submodule.coe_subtypeL,
-      Submodule.coe_subtype, coe_selfAdjointDiagonal]
+      ContinuousLinearMap.coe_prodMap', ContinuousLinearMap.coe_snd',
+      ContinuousLinearMap.coe_fst', add_apply,
+      sub_apply, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',
+      Submodule.subtypeL_apply, coe_selfAdjointDiagonal]
     apply Prod.ext <;> funext i
-    · simp [mul_diagonal, diagonal_mul, hs, mul_comm]
+    · simp [mul_diagonal, diagonal_mul, mul_comm]
     · simp [spectralAngularFDeriv_apply, mul_diagonal, diagonal_mul,
-        diagonal_apply_ne _ i.property.ne, hs, Algebra.smul_def]
+        diagonal_apply_ne _ i.property.ne, Algebra.smul_def]
       ring
 
 /-- The spectral parametrization is smooth in the diagonal and angular variables. -/
@@ -147,19 +148,14 @@ theorem contDiff_spectralCoordinates {k : WithTop ℕ∞} :
     ContDiff ℝ k (spectralCoordinates (n := n) (𝕜 := 𝕜)) := by
   let D := (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)).subtypeL.comp
     (selfAdjointDiagonal (n := n) (𝕜 := 𝕜))
-  have hparam : spectralCoordinates (n := n) (𝕜 := 𝕜) = fun x ↦
-      selfAdjointCoordinatesLinearMap ((expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜) *
-        D x.1 * star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) := by
-    funext x
-    rw [spectralCoordinates, Unitary.conjStarAlgAut_apply, ContinuousLinearMap.comp_apply,
-      Submodule.subtypeL_apply]
-  rw [hparam]
-  have h := (contDiff_expStrictUpper (n := n) (𝕜 := 𝕜) (k := k)).comp
+  have h := Matrix.UnitaryGroup.contDiff_conjStarAlgAut_expStrictUpper
+    (1 : unitaryGroup (Fin n) 𝕜)
+    (D.contDiff.comp contDiff_fst)
     (contDiff_snd : ContDiff ℝ k (Prod.snd : SelfAdjointCoordinates n 𝕜 → _))
-  let S := (starL' ℝ : Matrix (Fin n) (Fin n) 𝕜 ≃L[ℝ] _).toContinuousLinearMap
-  have hstar := S.contDiff.comp h
-  exact (selfAdjointCoordinatesLinearMap (n := n) (𝕜 := 𝕜)).contDiff.comp
-    ((h.mul (D.contDiff.comp contDiff_fst)).mul hstar)
+  convert (selfAdjointCoordinatesLinearMap (n := n) (𝕜 := 𝕜)).contDiff.comp h using 1
+  funext x
+  simp only [Function.comp_apply, one_mul, D, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply, spectralCoordinates]
 
 /-- In the moving frame, the differential is the angular differential followed by the
 gap operator, with the diagonal component fixed. -/
@@ -183,11 +179,30 @@ diagonal, raised to the real dimension of the scalar field. -/
 theorem abs_det_fderiv_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
     |(fderiv ℝ spectralCoordinates x).det| =
       |(spectralAngularFDeriv x.2).det| *
-        ∏ ij : FinStrictUpper n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜 := by
+        |(vandermonde x.1).det| ^ Module.finrank ℝ 𝕜 := by
+  rw [abs_det_vandermonde_pow_eq_prod]
   rw [(hasFDerivAt_spectralCoordinates x).fderiv]
   simp only [ContinuousLinearMap.det_comp, ContinuousLinearMap.det_prodMap,
     ContinuousLinearMap.det_id, det_spectralGapMap, abs_mul, abs_det_unitaryConjCoordinates,
     Finset.abs_prod, abs_pow, one_mul, mul_comm]
+
+/-- The absolute determinant of the angular differential is continuous in the base angle. -/
+theorem continuous_abs_det_spectralAngularFDeriv :
+    Continuous fun a : FinStrictUpper n → 𝕜 ↦ |(spectralAngularFDeriv a).det| := by
+  -- At a fixed simple diagonal, the full Jacobian differs by a nonzero constant factor.
+  let d₀ (i : Fin n) : ℝ := (i : ℕ)
+  let g : ℝ := |(vandermonde d₀).det| ^ Module.finrank ℝ 𝕜
+  have hg : g ≠ 0 :=
+    pow_ne_zero _ (abs_ne_zero.mpr (det_vandermonde_ne_zero_iff.mpr
+      (Nat.cast_injective.comp Fin.val_injective)))
+  have h : (fun a : FinStrictUpper n → 𝕜 ↦ |(spectralAngularFDeriv a).det|) =
+      fun a ↦ |(fderiv ℝ spectralCoordinates (d₀, a)).det| / g := by
+    funext a
+    rw [abs_det_fderiv_spectralCoordinates, mul_div_cancel_right₀ _ hg]
+  rw [h]
+  exact ((ContinuousLinearMap.continuous_det.comp
+    ((contDiff_spectralCoordinates (k := 1)).continuous_fderiv one_ne_zero)).comp
+      (continuous_const.prodMk continuous_id)).abs.div_const _
 
 /-- At a diagonal with distinct entries, spectral coordinates give a local chart
 centered at zero angle, in any fixed unitary frame. -/
@@ -202,9 +217,7 @@ theorem exists_spectralCoordinates_openPartialHomeomorph (d : Fin n → ℝ)
     rw [← abs_ne_zero]
     rw [abs_det_fderiv_spectralCoordinates]
     simp only [x, spectralAngularFDeriv_zero, ContinuousLinearMap.det_id, abs_one, one_mul]
-    refine Finset.prod_ne_zero_iff.mpr fun ij _ ↦ ?_
-    have hne := hd.ne ij.property.ne.symm
-    exact pow_ne_zero _ (abs_ne_zero.mpr (sub_ne_zero.mpr hne))
+    exact pow_ne_zero _ (abs_ne_zero.mpr (det_vandermonde_ne_zero_iff.mpr hd))
   have hF' : HasFDerivAt spectralCoordinates
       (L.toContinuousLinearEquivOfDetNeZero hL : _ →L[ℝ] _) x := by
     rw [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero]
@@ -229,6 +242,12 @@ spectral parametrization. -/
       unitaryConjCoordinates U (spectralCoordinates x) :=
   selfAdjointCoordinates.apply_symm_apply _
 
+/-- For any fixed frame the spectral chart is smooth in the diagonal and angular variables. -/
+theorem contDiff_spectralMatrix {k : WithTop ℕ∞} (U : unitaryGroup (Fin n) 𝕜) :
+    ContDiff ℝ k (spectralMatrix U) :=
+  selfAdjointCoordinates.symm.toContinuousLinearMap.contDiff.comp
+    ((unitaryConjCoordinates U).toContinuousLinearMap.contDiff.comp contDiff_spectralCoordinates)
+
 /-- The fixed-frame chart conjugates the self-adjoint diagonal by the product of the fixed frame
 and the transverse unitary exponential. -/
 theorem spectralMatrix_eq_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
@@ -239,6 +258,11 @@ theorem spectralMatrix_eq_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
     unitaryConjCoordinates_selfAdjointCoordinatesLinearMap_conjStarAlgAut,
     ← selfAdjointCoordinates_selfAdjointConj, ContinuousLinearEquiv.symm_apply_apply]
 
+/-- At zero angles the spectral chart conjugates the diagonal by the fixed frame. -/
+@[simp] theorem spectralMatrix_zero (U : unitaryGroup (Fin n) 𝕜) (d : Fin n → ℝ) :
+    spectralMatrix U (d, 0) = UnitaryGroup.selfAdjointConj U (selfAdjointDiagonal d) := by
+  rw [spectralMatrix_eq_selfAdjointConj, expStrictUpper_zero, mul_one]
+
 /-- Ambient matrix formula for spectral coordinates in a fixed unitary frame. -/
 theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
     (spectralMatrix U x : Matrix (Fin n) (Fin n) 𝕜) =
@@ -247,19 +271,24 @@ theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoord
     coe_selfAdjointDiagonal, Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
 
 /-- In the decreasing chamber the diagonal coordinate is the ordered eigenvalue vector. -/
-theorem eigenvalues₀_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜)
-    (hd : Antitone x.1) :
-    (selfAdjoint.isHermitian_coe (spectralMatrix U x)).eigenvalues₀ =
-      x.1 ∘ Fin.cast (Fintype.card_fin n) := by
-  let hA := selfAdjoint.isHermitian_coe (spectralMatrix U x)
-  have hB : (Unitary.conjStarAlgAut ℝ _ (U * expStrictUpper x.2)
-      (diagonal fun i ↦ (x.1 i : 𝕜))).IsHermitian := coe_spectralMatrix U x ▸ hA
-  rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, coe_spectralMatrix,
-    hB.sort_roots_charpoly_eq_eigenvalues₀,
-    eigenvalues₀_conjStarAlgAut_diagonal (U * expStrictUpper x.2) hd hB,
-    Subsingleton.elim (Fintype.orderIsoFinOfCardEq (Fin n) rfl)
-      (Fin.castOrderIso (Fintype.card_fin n))]
-  simp only [Function.comp_def, Fin.castOrderIso_apply]
+@[simp] theorem orderedEigenvalues_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
+    (x : SelfAdjointCoordinates n 𝕜) (hd : Antitone x.1) :
+    selfAdjoint.orderedEigenvalues (spectralMatrix U x) = x.1 := by
+  rw [spectralMatrix_eq_selfAdjointConj, selfAdjoint.orderedEigenvalues_selfAdjointConj]
+  exact selfAdjoint.orderedEigenvalues_selfAdjointDiagonal hd
+
+/-- At a distinct real diagonal, the fixed-frame spectral matrix map is a local chart
+containing the zero-angle parameter. -/
+theorem exists_spectralMatrix_openPartialHomeomorph_at_diagonal (d : Fin n → ℝ)
+    (hd : Function.Injective d) (U : unitaryGroup (Fin n) 𝕜) :
+    ∃ e : OpenPartialHomeomorph (SelfAdjointCoordinates n 𝕜)
+        (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)),
+      (e : _ → _) = spectralMatrix U ∧ (d, 0) ∈ e.source := by
+  obtain ⟨e, he, hsource⟩ := exists_spectralCoordinates_openPartialHomeomorph d hd U
+  refine ⟨e.transHomeomorph selfAdjointCoordinates.symm.toHomeomorph, ?_, ?_⟩
+  · rw [OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph, he]
+    rfl
+  · simpa only [OpenPartialHomeomorph.transHomeomorph_source] using hsource
 
 /-- Every simple self-adjoint matrix is the center of a local spectral chart. -/
 theorem exists_spectralMatrix_openPartialHomeomorph
@@ -270,16 +299,109 @@ theorem exists_spectralMatrix_openPartialHomeomorph
         (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))),
       (e : _ → _) = spectralMatrix U ∧ (d, 0) ∈ e.source ∧ e (d, 0) = A := by
   let hA := selfAdjoint.isHermitian_coe A
-  obtain ⟨e, he, hsource⟩ := exists_spectralCoordinates_openPartialHomeomorph hA.eigenvalues hs
-    hA.eigenvectorUnitary
-  have he' : (e.transHomeomorph selfAdjointCoordinates.symm.toHomeomorph : _ → _) =
-      spectralMatrix hA.eigenvectorUnitary := by
-    rw [OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph, he]
-    funext x
-    rw [Function.comp_apply, Function.comp_apply, spectralMatrix]
-  refine ⟨hA.eigenvectorUnitary, hA.eigenvalues, _, he', hsource, ?_⟩
+  obtain ⟨e, he, hsource⟩ := exists_spectralMatrix_openPartialHomeomorph_at_diagonal
+    hA.eigenvalues hs hA.eigenvectorUnitary
+  refine ⟨hA.eigenvectorUnitary, hA.eigenvalues, e, he, hsource, ?_⟩
   apply Subtype.ext
-  rw [he', coe_spectralMatrix, expStrictUpper_zero, mul_one]
+  rw [he, coe_spectralMatrix, expStrictUpper_zero, mul_one]
   exact hA.spectral_theorem.symm
+
+section DecreasingChamber
+
+open Filter Set Matrix.UnitaryGroup
+open scoped Topology
+
+local notation "chamber" => Set.ofPred (fun d : Fin n → ℝ ↦ StrictAnti d)
+local notation "Frames" => unitaryGroup (Fin n) 𝕜
+local notation "Angles" => FinStrictUpper n → 𝕜
+
+/-- Injectivity on the angular slice of any diagonal extends to the same set of
+angles over the whole decreasing chamber. -/
+theorem injOn_spectralMatrix_one {d₀ : Fin n → ℝ}
+    {B : Set Angles} (hB : InjOn (spectralMatrix (1 : Frames)) ({d₀} ×ˢ B)) :
+    InjOn (spectralMatrix (1 : Frames)) (chamber ×ˢ B) := by
+  rintro ⟨d, a⟩ ⟨hd, ha⟩ ⟨e, b⟩ ⟨he, hb⟩ h
+  have hde : d = e := by
+    have hh := congrArg selfAdjoint.orderedEigenvalues h
+    rwa [orderedEigenvalues_spectralMatrix 1 (d, a) (StrictAnti.antitone hd),
+      orderedEigenvalues_spectralMatrix 1 (e, b) (StrictAnti.antitone he)] at hh
+  subst e
+  simp only [spectralMatrix_eq_selfAdjointConj, one_mul,
+    selfAdjointConj_diagonal_eq_iff (StrictAnti.injective hd)] at h
+  have h' : spectralMatrix (1 : Frames) (d₀, a) = spectralMatrix 1 (d₀, b) := by
+    simp only [spectralMatrix_eq_selfAdjointConj, one_mul]
+    apply (selfAdjointConj (star (expStrictUpper b))).injective
+    simp only [← selfAdjointConj_mul_apply, Unitary.star_mul_self, selfAdjointConj_one,
+      LinearIsometryEquiv.coe_refl, id_eq]
+    apply Subtype.ext
+    simpa only [coe_selfAdjointConj_apply, coe_selfAdjointDiagonal, Unitary.conjStarAlgAut_apply,
+      star_eq_conjTranspose, Function.comp_def] using
+      conjStarAlgAut_diagonal_eq_of_isDiag (fun i ↦ (d₀ i : 𝕜)) _ h
+  have ha₀ : (d₀, a) ∈ {d₀} ×ˢ B := ⟨mem_singleton _, ha⟩
+  have hb₀ : (d₀, b) ∈ {d₀} ×ˢ B := ⟨mem_singleton _, hb⟩
+  have hab : a = b := congrArg Prod.snd (hB ha₀ hb₀ h')
+  exact Prod.ext rfl hab
+
+/-- The frames whose conjugate lies in an identity-frame spectral patch are independent of the
+choice of strictly decreasing diagonal. -/
+theorem conj_diagonal_mem_spectralPatch_iff {d d₀ : Fin n → ℝ}
+    (hd : StrictAnti d) (hd₀ : StrictAnti d₀) {B : Set Angles} (U : Frames) :
+    selfAdjointConj U (selfAdjointDiagonal d) ∈ spectralMatrix 1 '' (chamber ×ˢ B) ↔
+      selfAdjointConj U (selfAdjointDiagonal d₀) ∈ spectralMatrix 1 '' (chamber ×ˢ B) := by
+  suffices ∀ e : Fin n → ℝ, StrictAnti e →
+      (selfAdjointConj U (selfAdjointDiagonal e) ∈ spectralMatrix 1 '' (chamber ×ˢ B) ↔
+        ∃ a ∈ B, Matrix.IsDiag ((star (expStrictUpper a) * U : Frames) :
+          Matrix (Fin n) (Fin n) 𝕜)) by
+    exact (this d hd).trans (this d₀ hd₀).symm
+  intro e he
+  constructor
+  · rintro ⟨⟨b, a⟩, ⟨hb, ha⟩, h⟩
+    have hbe : b = e := by
+      have hh := congrArg selfAdjoint.orderedEigenvalues (h.trans (spectralMatrix_zero U e).symm)
+      rwa [orderedEigenvalues_spectralMatrix 1 (b, a) (StrictAnti.antitone hb),
+        orderedEigenvalues_spectralMatrix U (e, 0) he.antitone] at hh
+    subst b
+    have h' := h.symm
+    simp only [spectralMatrix_eq_selfAdjointConj, one_mul,
+      selfAdjointConj_diagonal_eq_iff he.injective] at h'
+    exact ⟨a, ha, h'⟩
+  · rintro ⟨a, ha, h⟩
+    refine ⟨(e, a), ⟨he, ha⟩, ?_⟩
+    symm
+    simpa only [spectralMatrix_eq_selfAdjointConj, one_mul,
+      selfAdjointConj_diagonal_eq_iff he.injective] using h
+
+/-- Around zero angle, a simple diagonal has an injective angular ball whose patch over the
+decreasing chamber contains the diagonal in its interior. -/
+theorem exists_spectralMatrix_angularBall (d₀ : Fin n → ℝ) (hd₀ : StrictAnti d₀) :
+    ∃ r > 0, InjOn (spectralMatrix (1 : Frames)) ({d₀} ×ˢ Metric.ball (0 : Angles) r) ∧
+      (selfAdjointDiagonal (𝕜 := 𝕜) d₀) ∈
+        interior (spectralMatrix 1 '' (chamber ×ˢ Metric.ball (0 : Angles) r)) := by
+  obtain ⟨E, hE, hsource⟩ := exists_spectralMatrix_openPartialHomeomorph_at_diagonal
+    d₀ hd₀.injective (1 : Frames)
+  have hnhds : E.source ∩ (chamber ×ˢ (univ : Set Angles)) ∈ 𝓝 (d₀, 0) := by
+    exact inter_mem (E.open_source.mem_nhds hsource)
+      ((isOpen_setOf_strictAnti.prod isOpen_univ).mem_nhds ⟨hd₀, mem_univ _⟩)
+  obtain ⟨s, hs, t, ht, hst⟩ := mem_nhds_prod_iff.mp hnhds
+  obtain ⟨r, hr, hrt⟩ := Metric.mem_nhds_iff.mp ht
+  obtain ⟨u, hus, huo, hdu⟩ := mem_nhds_iff.mp hs
+  have hsub : u ×ˢ Metric.ball (0 : Angles) r ⊆ E.source :=
+    subset_trans (prod_mono hus hrt) (hst.trans inter_subset_left)
+  have huC : u ⊆ chamber := by
+    intro d hd
+    have hmem : (d, (0 : Angles)) ∈ s ×ˢ t := ⟨hus hd, mem_of_mem_nhds ht⟩
+    exact (hst hmem).2.1
+  refine ⟨r, hr, ?_, ?_⟩
+  · rw [← hE]
+    exact E.injOn.mono ((prod_mono (singleton_subset_iff.2 hdu) subset_rfl).trans hsub)
+  · have hcenter : spectralMatrix (1 : Frames) (d₀, 0) = selfAdjointDiagonal d₀ := by
+      simp only [spectralMatrix_zero, selfAdjointConj_one, LinearIsometryEquiv.coe_refl, id_eq]
+    rw [← hcenter, ← hE]
+    refine mem_interior_iff_mem_nhds.mpr (mem_of_superset
+      ((E.isOpen_image_of_subset_source (huo.prod Metric.isOpen_ball) hsub).mem_nhds
+        (mem_image_of_mem _ ⟨hdu, Metric.mem_ball_self hr⟩)) ?_)
+    exact image_mono (prod_mono huC subset_rfl)
+
+end DecreasingChamber
 
 end TauCeti

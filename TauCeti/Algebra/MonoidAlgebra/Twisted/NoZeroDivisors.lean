@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
-public import Mathlib.Algebra.Group.UniqueProds.Basic
 
 /-!
 # Zero divisors in twisted monoid algebras
@@ -16,14 +15,14 @@ its scalar semiring has none. In particular, the based quantum torus of a free a
 lattice over a domain ring is a domain, including at finite-order parameters.
 This is the algebraic input to constructing its fraction division ring.
 
-The coefficient formula is stated using the existing monomial basis. At a uniquely
+The coefficient formula from `Twisted.Basic` uses the existing monomial basis. At a uniquely
 represented product of support elements, the coefficient is the product of the two
-coefficients times the factor-set unit, so it cannot vanish.
+coefficients times the factor-set unit. When the scalar semiring has no zero divisors, this
+coefficient cannot vanish.
 
-The unique-product argument adapts `MonoidAlgebra.coeff_mul_mul_of_uniqueMul` and the
-`NoZeroDivisors` and `IsCancelMulZero` instances in `Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors`
-to the table of `TwistedMonoidAlgebra.of`. No ordering or finite generation of the monoid is
-required.
+The `NoZeroDivisors` and `IsCancelMulZero` instance arguments adapt the corresponding instances
+in `Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors` to the table of `TwistedMonoidAlgebra.of`.
+No ordering or finite generation of the monoid is required.
 -/
 
 public section
@@ -32,27 +31,6 @@ namespace TauCeti.TwistedMonoidAlgebra
 
 variable {k G : Type*} [CommSemiring k] [Monoid G]
   {α : G → G → kˣ} [IsFactorSet α]
-
-/-- If no pair in the supports of `f` and `g` other than `(a, b)` has product `a * b`, the
-coefficient of `f * g` at `a * b` is
-`(basis k G α).repr f a * (basis k G α).repr g b * α a b`. -/
-theorem repr_mul_apply_of_uniqueMul {f g : twistedMonoidAlgebra k G α} {a b : G}
-    (h : UniqueMul ((basis k G α).repr f).support ((basis k G α).repr g).support a b) :
-    (basis k G α).repr (f * g) (a * b) =
-      (basis k G α).repr f a * (basis k G α).repr g b * (α a b : k) := by
-  classical
-  rw [repr_mul]
-  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
-  rw [← Finset.sum_product']
-  refine (Finset.sum_eq_single (a, b) ?_ ?_).trans (ite_eq_left rfl)
-  · intro p hp hpne
-    rw [Finset.mem_product] at hp
-    exact ite_eq_right fun he ↦ hpne (Prod.ext (h hp.1 hp.2 he).1 (h hp.1 hp.2 he).2)
-  · intro hab
-    simp only [Finset.mem_product, not_and_or] at hab
-    rcases hab with ha | hb
-    · simp [Finsupp.notMem_support_iff.mp ha]
-    · simp [Finsupp.notMem_support_iff.mp hb]
 
 /-- A unit-valued twist does not introduce zero divisors on a unique-product monoid. -/
 instance [NoZeroDivisors k] [UniqueProds G] :

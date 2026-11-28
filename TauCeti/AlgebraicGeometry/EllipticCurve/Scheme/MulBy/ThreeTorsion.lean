@@ -76,26 +76,13 @@ private theorem projModelAffinePoint_projModelMulBy_two_eq_projModelNeg_iff {x y
     (h : W.toAffine.Equation x y) (hψ₂ : IsUnit (W.ψ₂.evalEval x y)) :
     W.projModelAffinePoint h ≫ W.projModelMulBy 2 = W.projModelAffinePoint h ≫ W.projModelNeg ↔
       W.Ψ₃.eval x = 0 := by
-  -- `W.map (RingHom.id R)` is `W` only up to unfolding `Projective.map`, so it is rewritten away
-  have hW : W.toProjective.map (RingHom.id R) = W.toProjective := W.map_id
-  have hE : W.toProjective.Equation ![x, y, 1] := (Projective.equation_some _ _).mpr h
-  have hdbl : (W.toProjective.map (RingHom.id R)).dblAddXYZ ![x, y, 1] ![x, y, 1] =
-      W.toProjective.dblXYZ ![x, y, 1] := by
-    rw [Projective.dblAddXYZ_self (hW ▸ hE), hW]
-  have hm : IsUnit ((W.toProjective.map (RingHom.id R)).dblAddXYZ ![x, y, 1] ![x, y, 1] 2) := by
-    rw [hdbl, Projective.dblXYZ_some h]
-    simpa using hψ₂.pow 3
-  rw [comp_projModelMulBy_two,
-    projModelAffinePoint_projModelNeg, projModelAffinePoint_def, projModelAffinePoint_def,
-    lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
-    projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h]
-  refine ⟨fun ⟨_, u, hu⟩ ↦ ?_, fun h₃ ↦ ⟨rfl, (hψ₂.pow 3).unit, by simp [h₃]⟩⟩
-  -- the `Z`-coordinates force `u = ψ₂³`, and then the `X`-coordinates give `Ψ₃(x) ψ₂ = 0`
-  have hz := congrFun hu 2
+  rw [projModelAffinePoint_projModelNeg,
+    projModelAffinePoint_projModelMulBy_two_eq_iff h hψ₂ ((W.toAffine.equation_neg x y).mpr h),
+    Projective.dblXYZ_some h]
+  refine ⟨fun hu ↦ ?_, fun h₃ ↦ by simp [h₃]⟩
   have hx := congrFun hu 0
-  simp only [Pi.add_apply, Pi.smul_apply, Matrix.cons_val_zero, Matrix.cons_val_two,
-    Matrix.tail_cons, Matrix.head_cons, smul_eq_mul, mul_zero, add_zero, Units.smul_def] at hz hx
-  exact hψ₂.mul_left_eq_zero.mp (by linear_combination -hx + x * hz)
+  simp only [Pi.add_apply, Pi.smul_apply, Matrix.cons_val_zero, smul_eq_mul] at hx
+  exact hψ₂.mul_left_eq_zero.mp (by linear_combination -hx)
 
 /-- **Points killed by `3`.** Let `W` be an elliptic Weierstrass curve over a commutative ring `R`
 and `(x, y)` a solution of its affine equation over `R`. The point `[x : y : 1]` of the projective

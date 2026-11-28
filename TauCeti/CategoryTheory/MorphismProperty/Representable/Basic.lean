@@ -21,8 +21,9 @@ change satisfies `P` after a further base change along a morphism satisfying `Q`
 that a relatively representable monomorphism is relatively a monomorphism, computes the base
 changes of a relatively representable diagonal `X ⟶ X ⨯ X`, and shows that the kernel pair
 `U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y` is an internal equivalence relation on
-`U`. Finally, relative representability is unchanged when the target is replaced through an
-equivalence `e : D ≌ D'` and `F` by a functor `F'` with `F ⋙ e.functor ≅ F'`.
+`U`, the diagonal when `f` is a monomorphism. Finally, relative representability is unchanged
+when the target is replaced through an equivalence `e : D ≌ D'` and `F` by a functor `F'` with
+`F ⋙ e.functor ≅ F'`.
 
 ## Main results
 
@@ -40,6 +41,9 @@ equivalence `e : D ≌ D'` and `F` by a functor `F'` with `F ⋙ e.functor ≅ F
   `F.map u ≫ f = F.map v ≫ f`.
 * `CategoryTheory.Functor.relativelyRepresentable.isEquivalenceRelation`: the kernel pair
   `U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y` is an internal equivalence relation.
+* `CategoryTheory.Functor.relativelyRepresentable.fst'_self_eq_snd_of_mono` and
+  `CategoryTheory.Functor.relativelyRepresentable.isIso_snd_self_of_mono`: for a monomorphism `f`,
+  the kernel pair `U ×_Y U` is the diagonal: its projections agree and are isomorphisms.
 * `CategoryTheory.Functor.relativelyRepresentable_equivalence_map_iff` and
   `CategoryTheory.MorphismProperty.relative_equivalence_map_iff`: transport along an equivalence
   of target categories.
@@ -165,6 +169,18 @@ theorem isEquivalenceRelation [HasPullback (hf.snd f) (hf.fst' f)] :
     fun h h' ↦ hf.ofPairHom_iff.mpr ?_⟩
   · exact (hf.ofPairHom_iff.mp h).symm
   · exact (hf.ofPairHom_iff.mp h).trans (hf.ofPairHom_iff.mp h')
+
+/-- For a relatively representable monomorphism `f : F.obj U ⟶ Y`, the two projections of the
+kernel pair `U ×_Y U` to `U` agree. -/
+theorem fst'_self_eq_snd_of_mono [Mono f] : hf.fst' f = hf.snd f :=
+  F.map_injective ((cancel_mono f).1 (hf.isPullback' f).w)
+
+/-- For a relatively representable monomorphism `f : F.obj U ⟶ Y`, the second projection of the
+kernel pair `U ×_Y U` to `U` is an isomorphism. Together with `fst'_self_eq_snd_of_mono`, the
+kernel pair is the diagonal relation on `U`. -/
+theorem isIso_snd_self_of_mono [Mono f] : IsIso (hf.snd f) :=
+  have := (hf.isPullback' f).flip.isIso_fst_of_mono
+  isIso_of_fully_faithful F _
 
 end Functor.relativelyRepresentable
 

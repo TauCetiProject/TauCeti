@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
-public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+public import TauCeti.RingTheory.DedekindDomain.Localization.AtPrime
 -- Proof-only: descent of a change of variables between integral models to `O`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 -- Proof-only: the comparison of two minimal models at one prime.
@@ -79,7 +79,7 @@ The predicates are unexposed. Their interface is the `simp` lemmas `isGlobalMini
   records.
 The localisation instances that make `IsMinimal Oᵥ W` and `IsIntegral Oᵥ W` typecheck for an
 abstract fraction field `K` are in `TauCeti/RingTheory/Localization/AtPrime/FractionRing.lean` and
-`TauCeti/RingTheory/DedekindDomain/LocalizationAtPrime.lean`.
+`TauCeti/RingTheory/DedekindDomain/Localization/AtPrime.lean`.
 
 ## Provenance
 

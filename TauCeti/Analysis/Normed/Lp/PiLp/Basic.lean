@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
+import Mathlib.Analysis.Normed.Group.Indicator
 import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+import TauCeti.Topology.UniformSpace.Pi
 
 /-!
 # Comparisons of finite product norms and distances
@@ -28,7 +30,8 @@ distance is at most the square root of the number of coordinates times the sup d
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm;
 conversely, for `p ≥ 1` the `Lᵖ` norm is at most the sum of coordinate norms
-(`PiLp.norm_le_sum_norm`).
+(`PiLp.norm_le_sum_norm`). Together, a bound between sums of coordinate norms gives a bound between
+an `Lᵖ` norm and an `L²` norm (`PiLp.exists_norm_le_mul_norm_of_sum_norm_le`).
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
 also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
@@ -44,12 +47,17 @@ The finite sum against a zero-extended vector reduces to the sum over its origin
 Over an index type with at most one element and for `p ≠ 0`, the `Lᵖ` norm is the norm of the
 coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
-Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
+Maps into `PiLp p β` converge uniformly exactly when each coordinate does. A product
+`PiLp p E` of nonempty uniform spaces is complete if and only if every factor `E i` is
+(`PiLp.completeSpace_iff`).
 
-We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
-continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
-coordinatewise decomposition `ContinuousLinearMap.sum_comp_piLpSingleCLM`,
-and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
+We also record `PiLp.univ_sum_single`, the norm congruence `PiLp.norm_eq_of_forall_norm_eq` (and
+`PiLp.norm_toLp_comp_separationQuotient`), the scaled comparison
+`PiLp.norm_le_mul_of_forall_norm_le_mul`, the coordinatewise mask `PiLp.coordIndicator`, the
+coordinate isometry `PiLp.singleLI` (and the continuous coordinate inclusion `PiLp.singleCLM`),
+the power identity `PiLp.norm_rpow_eq_sum`, coordinatewise decomposition
+`ContinuousLinearMap.sum_comp_piLpSingleCLM`, and coordinatewise submodule restriction
+`LinearIsometryEquiv.submodulePiLp`.
 
 For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operator
 `PiLp.piMap p T : PiLp p E →L[𝕜] PiLp p F` acts coordinatewise; it is
@@ -98,6 +106,12 @@ theorem norm_mono [∀ i, SeminormedAddGroup (E i)] [∀ i, Norm (F i)]
     · exact Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _
     · exact h _
 
+/-- Coordinatewise equality of norms implies equality of finite `Lᵖ` norms. -/
+theorem norm_eq_of_forall_norm_eq [∀ i, SeminormedAddGroup (E i)]
+    [∀ i, SeminormedAddGroup (F i)] {x : PiLp p E} {y : PiLp p F}
+    (h : ∀ i, ‖x i‖ = ‖y i‖) : ‖x‖ = ‖y‖ :=
+  le_antisymm (norm_mono fun i ↦ (h i).le) (norm_mono fun i ↦ (h i).ge)
+
 /-- The finite `Lᵖ` norm is nonnegative for every exponent, including `p < 1`, where `PiLp p E`
 carries a norm but no seminormed group structure. -/
 protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) : 0 ≤ ‖x‖ := by
@@ -108,6 +122,15 @@ protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) 
     exact Real.iSup_nonneg fun i ↦ norm_nonneg _
   · rw [norm_eq_sum hp]
     exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
+
+/-- If every coordinate of a vector in `PiLp p E` has norm zero, then the `Lᵖ` norm is zero,
+for every exponent including `p < 1`. -/
+theorem norm_eq_zero_of_forall_norm_eq_zero [∀ i, SeminormedAddGroup (E i)] {x : PiLp p E}
+    (h : ∀ i, ‖x i‖ = 0) : ‖x‖ = 0 := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · simp [norm_eq_card, h]
+  · simp [norm_eq_ciSup, h]
+  · simp [norm_eq_sum hp, h, Real.zero_rpow hp.ne', Real.zero_rpow (inv_ne_zero hp.ne')]
 
 /-- For `0 < p < ∞`, the `p`-th power of the finite `PiLp` norm equals the sum of the `p`-th powers
 of the coordinate norms. -/
@@ -181,6 +204,12 @@ variable {p E}
 
 end SingleLI
 
+/-- Taking coordinatewise separation quotients preserves the finite `Lᵖ` norm. -/
+@[simp]
+theorem norm_toLp_comp_separationQuotient (x : ∀ i, E i) :
+    ‖WithLp.toLp p (fun i ↦ SeparationQuotient.mk (x i))‖ = ‖WithLp.toLp p x‖ :=
+  norm_eq_of_forall_norm_eq fun i ↦ by simp [SeparationQuotient.norm_mk]
+
 /-- For `p ≥ 1`, the `Lᵖ` norm of a vector is at most the sum of the norms of its coordinates, by
 the triangle inequality for its decomposition into coordinate vectors. -/
 theorem norm_le_sum_norm [Fact (1 ≤ p)] (x : PiLp p E) : ‖x‖ ≤ ∑ i, ‖x i‖ := by
@@ -194,6 +223,22 @@ theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
     ∑ i, ‖x i‖ ≤ Real.sqrt (Fintype.card ι) * ‖x‖ := by
   simpa [PiLp.norm_eq_of_L2] using
     Real.sum_mul_le_sqrt_mul_sqrt Finset.univ (fun _ : ι ↦ 1) (fun i ↦ ‖x i‖)
+
+/-- **Comparing norms through sums of coordinate norms.** If the coordinate norms of `f x` add up
+to at most `C` times those of `g x`, for every `x`, then for `p ≥ 1` the `Lᵖ` norm of `f x` is at
+most a constant times the `L²` norm of `g x`, uniformly in `x`: compare both norms with the sums
+of coordinate norms (`PiLp.norm_le_sum_norm`, `PiLp.sum_norm_le_sqrt_card_mul_norm`). -/
+theorem exists_norm_le_mul_norm_of_sum_norm_le [Fact (1 ≤ p)] {X κ : Type*} [Fintype κ]
+    {β : κ → Type*} [∀ j, SeminormedAddCommGroup (β j)] {f : X → PiLp p β} {g : X → PiLp 2 E}
+    {C : ℝ} (h : ∀ x, ∑ j, ‖f x j‖ ≤ C * ∑ i, ‖g x i‖) :
+    ∃ C', ∀ x, ‖f x‖ ≤ C' * ‖g x‖ := by
+  refine ⟨|C| * Real.sqrt (Fintype.card ι), fun x ↦ ?_⟩
+  calc ‖f x‖ ≤ ∑ j, ‖f x j‖ := norm_le_sum_norm _
+    _ ≤ |C| * ∑ i, ‖g x i‖ := (h x).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
+        (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _))
+    _ ≤ |C| * (Real.sqrt (Fintype.card ι) * ‖g x‖) :=
+      mul_le_mul_of_nonneg_left (sum_norm_le_sqrt_card_mul_norm _) (abs_nonneg C)
+    _ = |C| * Real.sqrt (Fintype.card ι) * ‖g x‖ := (mul_assoc ..).symm
 
 /-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm, for every
 exponent. -/
@@ -221,6 +266,26 @@ theorem norm_toLp_smul_const {F 𝕜 : Type*} [SeminormedAddGroup F] [Seminormed
       Real.mul_rpow (PiLp.norm_nonneg' _) (norm_nonneg y), norm_rpow_eq_sum hp_pos,
       norm_rpow_eq_sum hp_pos, Finset.sum_mul]
     simp only [norm_smul, Real.mul_rpow (norm_nonneg _) (norm_nonneg y)]
+
+/-- If `‖x i‖ ≤ C * ‖y i‖` for every coordinate `i`, then `‖x‖ ≤ C * ‖y‖` in `PiLp p`,
+for `1 ≤ p`. -/
+theorem norm_le_mul_of_forall_norm_le_mul [Fact (1 ≤ p)]
+    [∀ i, SeminormedAddCommGroup (F i)] {x : PiLp p E} {y : PiLp p F} {C : ℝ}
+    (h : ∀ i, ‖x i‖ ≤ C * ‖y i‖) : ‖x‖ ≤ C * ‖y‖ := by
+  by_cases hC : 0 ≤ C
+  · calc
+      ‖x‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖y i‖)‖ :=
+        norm_mono fun i ↦ by simpa [abs_of_nonneg hC] using h i
+      _ = C * ‖y‖ := by
+        rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hC, norm_norm y]
+  · -- A negative constant forces every norm to vanish.
+    have hy0 (i : ι) : ‖y i‖ = 0 :=
+      le_antisymm (by nlinarith [norm_nonneg (x i), norm_nonneg (y i), h i]) (norm_nonneg _)
+    have hy : ‖y‖ = 0 := le_antisymm
+      (by simpa using norm_mono (y := (0 : PiLp p F)) fun i ↦ by simp [hy0])
+      (norm_nonneg _)
+    rw [hy, mul_zero]
+    simpa using norm_mono (y := (0 : PiLp p E)) fun i ↦ by simpa [hy0] using h i
 
 /-- A real family with a positive coordinate has positive `Lᵖ` norm. -/
 theorem norm_toLp_pos [Fact (1 ≤ p)] {c : ι → ℝ} {i : ι} (hi : 0 < c i) : 0 < ‖WithLp.toLp p c‖ :=
@@ -258,22 +323,8 @@ variable [Fact (1 ≤ p)] {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAd
 /-- Applying a map with `‖g v‖ ≤ C * ‖v‖` to each member of a finite family multiplies its
 `Lᵖ` norm by at most `C`. -/
 theorem norm_toLp_comp_le {g : E → F} {C : ℝ} (hg : ∀ v, ‖g v‖ ≤ C * ‖v‖)
-    (x : ι → E) : ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ C * ‖WithLp.toLp p x‖ := by
-  by_cases hC : 0 ≤ C
-  · calc
-      ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ :=
-        norm_mono fun i ↦ by simpa [abs_of_nonneg hC] using hg (x i)
-      _ = C * ‖WithLp.toLp p x‖ := by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hC, norm_norm (WithLp.toLp p x)]
-  · -- A negative constant forces every norm to vanish.
-    have hv (v : E) : ‖v‖ = 0 :=
-      le_antisymm (by nlinarith [norm_nonneg (g v), norm_nonneg v, hg v]) (norm_nonneg v)
-    have hx : ‖WithLp.toLp p x‖ = 0 := le_antisymm
-      (by simpa using norm_mono (y := (0 : PiLp p fun _ : ι ↦ E)) fun i ↦ by simp [hv])
-      (norm_nonneg _)
-    rw [hx, mul_zero]
-    simpa using norm_mono (y := (0 : PiLp p fun _ : ι ↦ F))
-      fun i ↦ by simpa [hv] using hg (x i)
+    (x : ι → E) : ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ C * ‖WithLp.toLp p x‖ :=
+  norm_le_mul_of_forall_norm_le_mul fun i ↦ hg (x i)
 
 /-- A linear combination `∑ i, s i • v i` whose coefficients are the coordinates of a vector `s`
 of `Lᵖ`, `p ≥ 1`, has norm at most `‖s‖ * ∑ i, ‖v i‖`. -/
@@ -404,6 +455,33 @@ theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedFie
 
 end Single
 
+section coordIndicator
+
+variable {ι' α : Type*}
+
+/-- Coordinatewise masking of a `PiLp` vector onto a set `s : Set α`. -/
+noncomputable def coordIndicator [Zero α] (s : Set α) (g : PiLp p fun _ : ι' ↦ α) :
+    PiLp p fun _ : ι' ↦ α :=
+  WithLp.toLp p fun i ↦ s.indicator id (g i)
+
+@[simp]
+theorem coordIndicator_apply [Zero α] (s : Set α) (g : PiLp p fun _ : ι' ↦ α) (i : ι') :
+    coordIndicator s g i = s.indicator id (g i) := by
+  simp [coordIndicator]
+
+/-- Masking onto `s` and onto `sᶜ` partition a `PiLp` vector into two summands. -/
+theorem coordIndicator_add_compl [AddCommGroup α] (s : Set α) (g : PiLp p fun _ : ι' ↦ α) :
+    coordIndicator s g + coordIndicator sᶜ g = g := by
+  ext i
+  exact congrFun (Set.indicator_self_add_compl s id) (g i)
+
+/-- Coordinatewise masking onto a set does not increase the `Lᵖ` norm. -/
+theorem norm_coordIndicator_le [Fintype ι'] [SeminormedAddGroup α] (s : Set α)
+    (g : PiLp p fun _ : ι' ↦ α) : ‖coordIndicator s g‖ ≤ ‖g‖ :=
+  PiLp.norm_mono fun i ↦ norm_indicator_le_norm_self (f := id) (s := s) (a := g i)
+
+end coordIndicator
+
 end PiLp
 
 namespace ContinuousLinearMap
@@ -498,6 +576,11 @@ noncomputable def piMap (T : ∀ i, E i →L[𝕜] F i) : PiLp p E →L[𝕜] Pi
 theorem piMap_apply (T : ∀ i, E i →L[𝕜] F i) (x : PiLp p E) (i : ι) :
     piMap p T x i = T i (x i) :=
   (rfl)
+
+/-- A block-diagonal operator with injective blocks is injective. -/
+theorem piMap_injective {T : ∀ i, E i →L[𝕜] F i} (hT : ∀ i, Function.Injective (T i)) :
+    Function.Injective (piMap p T) := fun _ _ h ↦
+  WithLp.ofLp_injective p (Function.Injective.piMap hT (congrArg WithLp.ofLp h))
 
 /-- Under the identification `PiLp.continuousLinearEquiv` of `Lᵖ` products with plain products,
 the block-diagonal operator `PiLp.piMap p T` is `ContinuousLinearMap.piMap T`. -/
@@ -618,3 +701,20 @@ theorem coe_submodulePiLp_symm_single [DecidableEq ι] (j : ι) (h : ↥(N j)) :
 end SubmodulePiLp
 
 end LinearIsometryEquiv
+
+namespace PiLp
+
+variable {ι : Type*} {E : ι → Type*} (p : ℝ≥0∞) [∀ i, UniformSpace (E i)] [∀ i, Nonempty (E i)]
+
+/-- Each factor of a complete `L^p` product of nonempty uniform spaces is complete. -/
+theorem completeSpace_of_completeSpace [CompleteSpace (PiLp p E)] (i : ι) :
+    CompleteSpace (E i) :=
+  have := (uniformEquiv p E).completeSpace_iff.1 ‹_›
+  .of_pi i
+
+/-- An `L^p` product of nonempty uniform spaces is complete if and only if every factor is
+complete. -/
+theorem completeSpace_iff : CompleteSpace (PiLp p E) ↔ ∀ i, CompleteSpace (E i) :=
+  (uniformEquiv p E).completeSpace_iff.trans completeSpace_pi_iff
+
+end PiLp

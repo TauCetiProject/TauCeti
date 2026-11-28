@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Tensor
 
 /-!
 # Direct sums of `𝒪ₓ`-modules
@@ -43,7 +44,7 @@ public section
 
 namespace AlgebraicGeometry.Scheme.Modules
 
-open AlgebraicGeometry CategoryTheory Limits MonoidalCategory TauCeti
+open AlgebraicGeometry CategoryTheory Limits MonoidalCategory BraidedCategory TauCeti
 
 universe u
 
@@ -104,12 +105,11 @@ noncomputable def biproductIsoFreeTensor (M : X.Modules) {I : Type u} [Finite I]
     (⨁ fun _ : J ↦ M) ≅
       (SheafOfModules.free (R := X.ringCatSheaf) I : X.Modules) ⊗ M :=
   letI : Fintype I := Fintype.ofFinite I
-  biproduct.mapIso (fun _ : J ↦ (λ_ M).symm) ≪≫
-    ((tensorRight M).mapBiproduct (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
-    whiskerRightIso
-      (biproduct.whiskerEquiv (f := fun _ : J ↦ 𝟙_ X.Modules)
-          (g := fun _ : I ↦ 𝟙_ X.Modules) e (fun _ ↦ Iso.refl _) ≪≫
-        TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I) M
+  let eConst : (⨁ fun _ : I ↦ M) ≅
+      M ⊗ (SheafOfModules.free (R := X.ringCatSheaf) I : X.Modules) :=
+    M.biproductConstIsoTensorFree (R := X.sheaf) I
+  biproduct.whiskerEquiv (f := fun _ : J ↦ M) (g := fun _ : I ↦ M) e (fun _ ↦ Iso.refl _) ≪≫
+    eConst ≪≫ β_ M (SheafOfModules.free (R := X.ringCatSheaf) I : X.Modules)
 
 /-- `biproductIsoFreeTensor` sends the `j`-th summand `M` to the `(e j)`-th basis summand of
 `(free I) ⊗ M` via the inverse left unitor `M ≅ 𝒪ₓ ⊗ M`. -/
@@ -118,28 +118,21 @@ lemma biproduct_ι_biproductIsoFreeTensor_hom (M : X.Modules) {I : Type u} [Fini
     {J : Type*} [Fintype J] (e : J ≃ I) (j : J) :
     biproduct.ι (fun _ : J ↦ M) j ≫ (biproductIsoFreeTensor M e).hom =
       (λ_ M).inv ≫ (SheafOfModules.ιFree (R := X.ringCatSheaf) (e j) ▷ M) := by
-  let _ : Fintype I := Fintype.ofFinite I
-  dsimp [biproductIsoFreeTensor]
-  rw [biproduct.mapIso_hom, biproduct.ι_map_assoc, Functor.mapBiproduct_inv]
-  have h1 : biproduct.ι (fun _ : J ↦ 𝟙_ X.Modules ⊗ M) j ≫
-      biproduct.desc (fun j' ↦ (tensorRight M).map (biproduct.ι (fun _ : J ↦ 𝟙_ X.Modules) j')) =
-      biproduct.ι (fun _ : J ↦ 𝟙_ X.Modules) j ▷ M :=
-    biproduct.ι_desc _ j
-  refine (Category.assoc _ _ _).trans ((congrArg (· ≫ _)
-    ((Category.assoc _ _ _).trans (congrArg ((λ_ M).inv ≫ ·) h1))).trans ?_)
-  refine (Category.assoc _ _ _).trans (congrArg ((λ_ M).inv ≫ ·) ?_)
-  have h2 : biproduct.ι (fun _ : J ↦ 𝟙_ X.Modules) j ≫
-      (biproduct.whiskerEquiv (f := fun _ : J ↦ 𝟙_ X.Modules)
-        (g := fun _ : I ↦ 𝟙_ X.Modules) e (fun _ ↦ Iso.refl _)).hom ≫
-        (TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I).hom =
-      (SheafOfModules.ιFree (R := X.ringCatSheaf) (e j) :
-        𝟙_ X.Modules ⟶ (SheafOfModules.free (R := X.ringCatSheaf) I : X.Modules)) := by
-    refine (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) ?_).trans
-      (TauCeti.SheafOfModules.biproduct_ι_biproductIsoFree_hom (R := X.sheaf) (e j)))
-    rw [biproduct.whiskerEquiv_hom, biproduct.ι_desc, Iso.refl_inv, Category.id_comp]
-    rfl
-  exact ((comp_whiskerRight _ _ M).symm.trans (congrArg (· ▷ M)
-    ((Category.assoc _ _ _).trans h2)))
+  have : Fintype I := Fintype.ofFinite I
+  let freeX : X.Modules := SheafOfModules.free (R := X.ringCatSheaf) I
+  let ιj : 𝟙_ X.Modules ⟶ freeX := SheafOfModules.ιFree (R := X.ringCatSheaf) (e j)
+  let eConst : (⨁ fun _ : I ↦ M) ≅ M ⊗ freeX :=
+    M.biproductConstIsoTensorFree (R := X.sheaf) I
+  change biproduct.ι (fun _ : J ↦ M) j ≫
+      (biproduct.whiskerEquiv (f := fun _ : J ↦ M) (g := fun _ : I ↦ M) e
+        (fun _ ↦ Iso.refl _)).hom ≫ eConst.hom ≫ (β_ M freeX).hom =
+      (λ_ M).inv ≫ (ιj ▷ M)
+  rw [← Category.assoc, biproduct.whiskerEquiv_hom, biproduct.ι_desc, Iso.refl_inv,
+    Category.id_comp]
+  have h1 : biproduct.ι (fun _ : I ↦ M) (e j) ≫ eConst.hom = (ρ_ M).inv ≫ (M ◁ ιj) :=
+    SheafOfModules.biproduct_ι_biproductConstIsoTensorFree_hom M (R := X.sheaf) (e j)
+  rw [reassoc_of% h1, braiding_naturality_right]
+  simp
 
 /-- The inverse of `biproductIsoFreeTensor` sends the `i`-th basis summand of `(free I) ⊗ M` to
 the `(e.symm i)`-th summand `M` via the left unitor `𝒪ₓ ⊗ M ≅ M`. -/
@@ -162,31 +155,31 @@ lemma biproductIsoFreeTensor_inv_biproduct_π (M : X.Modules) {I : Type u} [Fini
     (biproductIsoFreeTensor M e).inv ≫ biproduct.π (fun _ : J ↦ M) j =
       ((TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I).inv ▷ M) ≫
         (biproduct.π (fun _ : I ↦ 𝟙_ X.Modules) (e j) ▷ M) ≫ (λ_ M).hom := by
-  let _ : Fintype I := Fintype.ofFinite I
-  dsimp [biproductIsoFreeTensor]
-  simp only [Category.assoc, biproduct.mapIso_inv, biproduct.map_π, Functor.mapBiproduct_hom]
-  have h1 : biproduct.lift
-        (fun j' ↦ (tensorRight M).map (biproduct.π (fun _ : J ↦ 𝟙_ X.Modules) j')) ≫
-      biproduct.π (fun _ : J ↦ 𝟙_ X.Modules ⊗ M) j =
-      biproduct.π (fun _ : J ↦ 𝟙_ X.Modules) j ▷ M :=
-    biproduct.lift_π _ j
-  refine (congrArg (_ ≫ ·)
-    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ (λ_ M).hom) h1))).trans ?_
-  have h2 : (biproduct.whiskerEquiv (f := fun _ : J ↦ 𝟙_ X.Modules)
-        (g := fun _ : I ↦ 𝟙_ X.Modules) e (fun _ ↦ Iso.refl _)).inv ≫
-      biproduct.π (fun _ : J ↦ 𝟙_ X.Modules) j =
-      biproduct.π (fun _ : I ↦ 𝟙_ X.Modules) (e j) := by
-    rw [biproduct.whiskerEquiv_inv_eq_lift, biproduct.lift_π, Iso.refl_hom, Category.comp_id]
-  have h3 : ((TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I).inv ≫
-      (biproduct.whiskerEquiv (f := fun _ : J ↦ 𝟙_ X.Modules)
-        (g := fun _ : I ↦ 𝟙_ X.Modules) e (fun _ ↦ Iso.refl _)).inv) ▷ M ≫
-      biproduct.π (fun _ : J ↦ 𝟙_ X.Modules) j ▷ M =
-      ((TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I).inv ▷ M) ≫
-      (biproduct.π (fun _ : I ↦ 𝟙_ X.Modules) (e j) ▷ M) :=
-    (congrArg (· ≫ _) (comp_whiskerRight _ _ M)).trans
-      ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-        ((comp_whiskerRight _ _ M).symm.trans (congrArg (· ▷ M) h2))))
-  exact (Category.assoc _ _ _).symm.trans (congrArg (· ≫ (λ_ M).hom) h3) |>.trans
-    (Category.assoc _ _ _)
+  classical
+  have : Fintype I := Fintype.ofFinite I
+  refine (Iso.inv_comp_eq _).2 (biproduct.hom_ext' _ _ fun j' ↦ ?_)
+  let freeX : X.Modules := SheafOfModules.free (R := X.ringCatSheaf) I
+  let ιj' : 𝟙_ X.Modules ⟶ freeX := SheafOfModules.ιFree (R := X.ringCatSheaf) (e j')
+  let invFree : freeX ⟶ ⨁ fun _ : I ↦ 𝟙_ X.Modules :=
+    (TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I).inv
+  change biproduct.ι (fun _ : J ↦ M) j' ≫ biproduct.π (fun _ : J ↦ M) j =
+    (biproduct.ι (fun _ : J ↦ M) j' ≫ (biproductIsoFreeTensor M e).hom) ≫
+      (invFree ▷ M) ≫ (biproduct.π (fun _ : I ↦ 𝟙_ X.Modules) (e j) ▷ M) ≫ (λ_ M).hom
+  have h0 : biproduct.ι (fun _ : J ↦ M) j' ≫ (biproductIsoFreeTensor M e).hom =
+      (λ_ M).inv ≫ (ιj' ▷ M) :=
+    biproduct_ι_biproductIsoFreeTensor_hom M e j'
+  have hι : ιj' ≫ invFree = biproduct.ι (fun _ : I ↦ 𝟙_ X.Modules) (e j') :=
+    (Iso.comp_inv_eq (TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I)).2
+      (TauCeti.SheafOfModules.biproduct_ι_biproductIsoFree_hom (R := X.sheaf) (e j')).symm
+  have hιM : (ιj' ▷ M) ≫ (invFree ▷ M) =
+      biproduct.ι (fun _ : I ↦ 𝟙_ X.Modules) (e j') ▷ M := by
+    rw [← comp_whiskerRight, hι]
+  rw [biproduct.ι_π, h0, Category.assoc, reassoc_of% hιM, ← comp_whiskerRight_assoc,
+    biproduct.ι_π]
+  by_cases hjj' : j' = j
+  · subst hjj'
+    simp
+  · have hij : e j' ≠ e j := fun h ↦ hjj' (e.injective h)
+    simp [hjj', hij]
 
 end AlgebraicGeometry.Scheme.Modules

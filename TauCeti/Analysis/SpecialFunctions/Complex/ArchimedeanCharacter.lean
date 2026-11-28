@@ -54,6 +54,8 @@ angular frequency `k` of a character of `ℂˣ` from its restriction to the unit
   classification of the continuous characters of `ℂˣ`.
 * `TauCeti.realUnitsCharacter_map_normSq`, `TauCeti.complexUnitsCharacter_map_conj`: the
   pullbacks of these characters along the norm `ℂˣ → ℝˣ` and along complex conjugation.
+* `TauCeti.complexUnitsCharacter_comp_starMulAut_ne_iff`: `complexUnitsCharacter s k` is fixed
+  by complex conjugation exactly when `k = 0`.
 * `TauCeti.existsUnique_norm_coe_realUnits_eq_rpow`,
   `TauCeti.existsUnique_norm_coe_complexUnits_eq_rpow`: every quasi-character has a unique real
   exponent `σ` with `‖ω(x)‖ = |x| ^ σ`, for the normalized absolute values `|x|` of `ℝ` and
@@ -425,6 +427,32 @@ theorem complexUnitsCharacter_inj {s t : ℂ} {k l : ℤ} :
     complexUnitsCharacter s k = complexUnitsCharacter t l ↔ s = t ∧ k = l := by
   exact complexUnitsCharacter_injective2.eq_iff
 
+/-- Precomposing `complexUnitsCharacter s k` with complex conjugation gives
+`complexUnitsCharacter s (-k)`. -/
+theorem complexUnitsCharacter_comp_starMulAut (s : ℂ) (k : ℤ) :
+    (complexUnitsCharacter s k : ℂˣ →* ℂˣ).comp (starMulAut : MulAut ℂˣ).toMonoidHom =
+      (complexUnitsCharacter s (-k) : ℂˣ →* ℂˣ) := by
+  ext z
+  have h := complexUnitsCharacter_map_conj s k z
+  have hz : Units.map (starRingEnd ℂ : ℂ →* ℂ) z = star z := Units.ext (by simp)
+  rw [hz] at h
+  simp [h]
+
+/-- The character `complexUnitsCharacter s k` is fixed by complex conjugation exactly when
+`k = 0`. -/
+theorem complexUnitsCharacter_comp_starMulAut_ne_iff (s : ℂ) (k : ℤ) :
+    (complexUnitsCharacter s k : ℂˣ →* ℂˣ).comp (starMulAut : MulAut ℂˣ).toMonoidHom ≠
+      (complexUnitsCharacter s k : ℂˣ →* ℂˣ) ↔ k ≠ 0 := by
+  rw [complexUnitsCharacter_comp_starMulAut, Ne, Ne, not_iff_not]
+  constructor
+  · intro h
+    have h' : complexUnitsCharacter s (-k) = complexUnitsCharacter s k :=
+      ContinuousMonoidHom.toMonoidHom_injective h
+    rw [complexUnitsCharacter_inj] at h'
+    omega
+  · intro h
+    simp [h]
+
 /-- **Classification of the continuous characters of `ℂˣ`.** The continuous characters of `ℂˣ`
 are exactly the characters `z ↦ |z| ^ s * (z / |z|) ^ k`, for unique `s : ℂ` and `k : ℤ`, and
 multiplying characters adds their parameters. -/
@@ -474,13 +502,11 @@ there is a unique real `σ` with `‖χ(z)‖ = |z|_ℂ ^ σ`, for the normalize
 `|z|_ℂ = z conj(z) = normSq z`. -/
 theorem existsUnique_norm_coe_complexUnits_eq_rpow (χ : ℂˣ →ₜ* ℂˣ) :
     ∃! σ : ℝ, ∀ z : ℂˣ, ‖(χ z : ℂ)‖ = normSq (z : ℂ) ^ σ := by
-  have hnormSq (z : ℂ) (σ : ℝ) : normSq z ^ σ = ‖z‖ ^ (2 * σ) := by
-    rw [normSq_eq_norm_sq, Real.rpow_mul (norm_nonneg z), Real.rpow_two]
   obtain ⟨s, k, rfl⟩ := exists_eq_complexUnitsCharacter χ
   refine ⟨s.re / 2, fun z ↦ ?_, fun σ hσ ↦ ?_⟩
-  · rw [norm_coe_complexUnitsCharacter_apply, hnormSq, mul_div_cancel₀ _ two_ne_zero]
+  · rw [norm_coe_complexUnitsCharacter_apply, normSq_rpow, mul_div_cancel₀ _ two_ne_zero]
   · have h := (hσ (Units.mk0 2 two_ne_zero)).symm
-    rw [norm_coe_complexUnitsCharacter_apply, hnormSq, Units.val_mk0, norm_ofNat] at h
+    rw [norm_coe_complexUnitsCharacter_apply, normSq_rpow, Units.val_mk0, norm_ofNat] at h
     linarith [(Real.rpow_right_inj two_pos (by norm_num)).1 h]
 
 /-- In Kudla's normal form, `realUnitsCharacter (s - a) a` is `x ↦ x ^ (-a) |x| ^ s` with

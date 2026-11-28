@@ -61,6 +61,8 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   to an open subscheme is an open subspace of the fibre of the morphism.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtSource` and
   `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtTarget`: locality.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_fiber_of_isPullback`: for `f` locally of finite
+  type, the fibres of a base change of `f` have the dimensions of the corresponding fibres of `f`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback`: stability under base change of
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
@@ -75,6 +77,10 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   locally Noetherian schemes of relative dimension at most `d`, `dim X ≤ dim Y + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.comp`: relative dimensions at most `d` and `e`
   compose to relative dimension at most `d + e` for morphisms locally of finite type.
+* `AlgebraicGeometry.Scheme.Hom.coheight_le_add_of_relativeDimensionLE`,
+  `AlgebraicGeometry.Scheme.Hom.coheight_le_add_of_krullDimLE`, and
+  `AlgebraicGeometry.Scheme.Hom.coheight_le_add_one_of_krullDimLE`: point codimension bounds
+  from `RelativeDimensionLE d` and a finite Krull-dimension bound on the base.
 
 ## References
 
@@ -239,12 +245,12 @@ instance RelativeDimensionLE.isZariskiLocalAtTarget (d : ℕ) :
     fun x hx ↦ by simpa [Set.mem_singleton_iff.mp hx] using hi]
   exact topologicalKrullDim_preimage_le _ y
 
-/-- Having relative dimension at most `d` is stable under base change of morphisms locally of
-finite type. -/
-theorem RelativeDimensionLE.of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
-    {f : X ⟶ Z} {g : Y ⟶ Z} (h : IsPullback fst snd f g) [LocallyOfFiniteType f]
-    [RelativeDimensionLE d f] : RelativeDimensionLE d snd := by
-  refine ⟨fun y ↦ ?_⟩
+/-- **Fibre dimension under base change.** For a cartesian square with `f` locally of finite
+type, the fibre of the base change `snd` over `y` has the Krull dimension of the fibre of `f`
+over `g y`. -/
+theorem topologicalKrullDim_fiber_of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ Z} {g : Y ⟶ Z} (h : IsPullback fst snd f g) [LocallyOfFiniteType f] (y : Y) :
+    topologicalKrullDim (snd.fiber y) = topologicalKrullDim (f.fiber (g y)) := by
   have : LocallyOfFiniteType (f.fiberToSpecResidueField (g y)) :=
     inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Z.fromSpecResidueField (g y))))
   let := (g.residueFieldMap y).hom.toAlgebra
@@ -253,10 +259,17 @@ theorem RelativeDimensionLE.of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd 
   -- `isPullback_fiberToSpecResidueField_of_isPullback` has `snd.fiber y` as its corner, since
   -- `Scheme.Hom.fiber` is defined as that pullback.
   exact ((isPullback_fiberToSpecResidueField_of_isPullback h y).isoPullback.hom.homeomorph
-    |>.isHomeomorph.topologicalKrullDim_eq).trans_le <|
-    (topologicalKrullDim_pullback_Spec_map_of_field (K := Z.residueField (g y))
-      (L := Y.residueField y) (f.fiberToSpecResidueField (g y))).trans_le
-      (topologicalKrullDim_fiber_le (g y))
+    |>.isHomeomorph.topologicalKrullDim_eq).trans <|
+    topologicalKrullDim_pullback_Spec_map_of_field (K := Z.residueField (g y))
+      (L := Y.residueField y) (f.fiberToSpecResidueField (g y))
+
+/-- Having relative dimension at most `d` is stable under base change of morphisms locally of
+finite type. -/
+theorem RelativeDimensionLE.of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ Z} {g : Y ⟶ Z} (h : IsPullback fst snd f g) [LocallyOfFiniteType f]
+    [RelativeDimensionLE d f] : RelativeDimensionLE d snd :=
+  ⟨fun y ↦ (topologicalKrullDim_fiber_of_isPullback h y).trans_le
+    (topologicalKrullDim_fiber_le (g y))⟩
 
 /-- The base change `pullback.snd f g` of a morphism `f` locally of finite type has relative
 dimension at most that of `f`. -/
@@ -405,3 +418,40 @@ theorem coheight_le_of_relativeDimensionLE_of_field {K : Type u} [Field K]
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a locally
+Noetherian scheme of Krull dimension at most `e` has codimension at most `d + e`. -/
+theorem coheight_le_add_of_relativeDimensionLE {X Y : Scheme.{u}} [IsLocallyNoetherian X]
+    [IsLocallyNoetherian Y] (f : X ⟶ Y) {d : ℕ} [TauCeti.AlgebraicGeometry.RelativeDimensionLE d f]
+    {e : ℕ} (hY : topologicalKrullDim Y ≤ e) (x : X) :
+    Order.coheight x ≤ d + e := by
+  have hx : (Order.coheight x : WithBot ℕ∞) ≤ ((d + e : ℕ) : WithBot ℕ∞) :=
+    (TauCeti.coheight_le_topologicalKrullDim x).trans
+      ((TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE
+        (d := d) f).trans
+        ((add_le_add_left hY _).trans_eq (by rw [Nat.cast_add, add_comm])))
+  exact_mod_cast hx
+
+/-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a Noetherian
+ring of Krull dimension at most `e` has codimension at most `d + e`. -/
+theorem coheight_le_add_of_krullDimLE {R : Type u} [CommRing R] [IsNoetherianRing R] (e : ℕ)
+    [Ring.KrullDimLE e R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsLocallyNoetherian X]
+    {d : ℕ} [TauCeti.AlgebraicGeometry.RelativeDimensionLE d toBase] (x : X) :
+    Order.coheight x ≤ d + e :=
+  toBase.coheight_le_add_of_relativeDimensionLE
+    ((PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim R).trans_le
+      (Order.KrullDimLE.krullDim_le (n := e) (α := PrimeSpectrum R))) x
+
+/-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a Noetherian
+ring of Krull dimension at most one has codimension at most `d + 1`. -/
+theorem coheight_le_add_one_of_krullDimLE {R : Type u} [CommRing R] [IsNoetherianRing R]
+    [Ring.KrullDimLE 1 R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsLocallyNoetherian X]
+    {d : ℕ} [TauCeti.AlgebraicGeometry.RelativeDimensionLE d toBase] (x : X) :
+    Order.coheight x ≤ d + 1 :=
+  toBase.coheight_le_add_of_krullDimLE 1 x
+
+end AlgebraicGeometry.Scheme.Hom

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
@@ -29,6 +30,9 @@ antipode calculations.
   scheme of `GL_N`.
 * `TauCeti.GeneralLinear.mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero`: its
   algebra-valued points are exactly the matrices preserving every weight space.
+* `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_weightLeviDefiningHopfIdeal_eq_leviSubgroup`:
+  the points over `W` of the weight Levi of a labelling `τ : Fin k → ℕ` form the Levi subgroup
+  `TauCeti.leviSubgroup τ W`, the matrices with `g i j = 0` whenever `τ i ≠ τ j`.
 
 ## References
 
@@ -142,6 +146,25 @@ theorem mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero (w : Fin N → �
     · exact hlower hji
   · intro h
     exact ⟨fun i j hij ↦ h i j hij.ne, fun i j hji ↦ h i j hji.ne'⟩
+
+section LeviSubgroup
+
+variable {W : Type*} [CommRing W] {k : ℕ}
+
+/-- The matrix points over `W` of the weight Levi of a labelling `τ : Fin k → ℕ` of the indices
+form the Levi subgroup `TauCeti.leviSubgroup τ W`: the `g ∈ GL_k(W)` with `g i j = 0` whenever
+`τ i ≠ τ j`. -/
+theorem hopfIdealPointsSubgroup_weightLeviDefiningHopfIdeal_eq_leviSubgroup (τ : Fin k → ℕ) :
+    hopfIdealPointsSubgroup k (weightLeviDefiningHopfIdeal ℤ fun i ↦ (τ i : ℤ)) W =
+      TauCeti.leviSubgroup τ W := by
+  ext g
+  have h := mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero ℤ (fun i ↦ (τ i : ℤ))
+    ((pointsMulEquiv k).symm g)
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, MulEquiv.apply_symm_apply] at h
+  rw [mem_hopfIdealPointsSubgroup_iff, h, TauCeti.mem_leviSubgroup]
+  simp only [ne_eq, Nat.cast_inj]
+
+end LeviSubgroup
 
 /-- In the weight-Levi quotient, an ambient entry between different weight blocks is zero. -/
 @[simp]

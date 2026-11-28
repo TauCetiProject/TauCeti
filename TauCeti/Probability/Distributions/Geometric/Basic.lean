@@ -294,20 +294,6 @@ theorem pgf_geometricMeasure_zero (t : ℝ) : pgf id (geometricMeasure 0) t = 1 
   rw [measureReal_def, Measure.dirac_apply_of_mem (by simp)]
   simp
 
-/-- A real random variable with a geometric law has mean `(1 - p) / p`. -/
-theorem integral_of_hasLaw_map_cast_geometricMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {X : Ω → ℝ}
-    (hX : HasLaw X ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) P) :
-    P[X] = (1 - (p : ℝ)) / (p : ℝ) := by
-  rw [hX.integral_eq, integral_id_map_cast_geometricMeasure]
-
-/-- A real random variable with a geometric law has variance `(1 - p) / p²`. -/
-theorem variance_of_hasLaw_map_cast_geometricMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {X : Ω → ℝ}
-    (hX : HasLaw X ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) P) :
-    variance X P = (1 - (p : ℝ)) / (p : ℝ) ^ 2 := by
-  rw [hX.variance_eq, variance_id_map_cast_geometricMeasure]
-
 end Probability
 
 end TauCeti
