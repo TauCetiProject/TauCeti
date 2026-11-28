@@ -124,12 +124,8 @@ theorem isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_ringKrul
     IsGorensteinProjective (S ⧸ span {w}) M ↔
       HasProjectiveDimensionLE ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M)
         1 := by
-  obtain ⟨d, hd⟩ : ∃ d : ℕ, ringKrullDim S ≤ d := by
-    cases h : ringKrullDim S with
-    | bot => exact ⟨0, bot_le⟩
-    | coe e => lift e to ℕ using fun he ↦ hdim.ne (by simp [h, he]); exact ⟨e, le_rfl⟩
-  exact isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_isNoetherianRing hw d
-    (IsRegularRing.hasProjectiveDimensionLE hd) M
+  obtain ⟨d, hd⟩ := IsRegularRing.exists_hasProjectiveDimensionLE.{u} hdim
+  exact isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_isNoetherianRing hw d hd M
 
 end IsRegularRing
 
