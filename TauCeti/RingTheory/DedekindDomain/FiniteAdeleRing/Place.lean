@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 /-!
-# The finite adele ring at a single place
+# The finite adele ring at a single place or a set of places
 
 Let `R` be a Dedekind domain with fraction field `K`. The finite adele ring `𝔸ᶠ = 𝔸ᶠ[R, K]` is the
 restricted product of the completions `K_v = v.adicCompletion K` over the height one primes `v`
@@ -28,10 +28,18 @@ The multiplicative counterpart of `single K v` is Mathlib's
 `IsDedekindDomain.FiniteAdeleRing.ofAdicCompletion`, which puts `1` rather than `0` at the other
 places; it is a closed embedding as well.
 
+For a set `S` of places, possibly infinite or empty, `placeIdempotent S` is the finite adele equal
+to `1` at the places of `S` and `0` elsewhere, and `projectPlaces S` multiplies each coordinate of
+a vector in a power of `𝔸ᶠ` by it, keeping the components at `S` and setting the others to `0`.
+This projection is continuous, additive, idempotent and commutes with finite ideles.
+
 ## Main definitions
 
 * `IsDedekindDomain.FiniteAdeleRing.proj`: the projection onto the completion at a finite place.
 * `IsDedekindDomain.FiniteAdeleRing.single`: the finite adeles supported at a single place.
+* `IsDedekindDomain.FiniteAdeleRing.placeIdempotent`: the idempotent of a set of places.
+* `IsDedekindDomain.FiniteAdeleRing.projectPlaces`: projection of an adelic vector onto a set of
+  places.
 
 ## Main results
 
@@ -240,5 +248,94 @@ theorem image_proj_integralAdeles (v : HeightOneSpectrum R) :
     mem_integralAdeles.mpr ((single_mem_integralAdeles_iff v).mpr hx), single_apply_self v x⟩⟩
   rintro ⟨a, ha, rfl⟩
   exact mem_integralAdeles.mp ha v
+
+/-! ### Projection onto a set of places -/
+
+section ProjectPlaces
+
+variable {ι : Type*}
+
+open Classical in
+/-- The finite adele equal to one at the places of `S` and zero elsewhere. -/
+noncomputable def placeIdempotent (S : Set (HeightOneSpectrum R)) : FiniteAdeleRing R K :=
+  ⟨fun v ↦ if v ∈ S then 1 else 0, Filter.Eventually.of_forall fun v ↦ by
+    dsimp
+    split_ifs <;> simp⟩
+
+open Classical in
+/-- The components of the place idempotent. -/
+@[simp]
+theorem placeIdempotent_apply (S : Set (HeightOneSpectrum R)) (v : HeightOneSpectrum R) :
+    placeIdempotent (K := K) S v = if v ∈ S then 1 else 0 := (rfl)
+
+/-- Projection of an adelic vector onto a set of finite places. -/
+noncomputable def projectPlaces (S : Set (HeightOneSpectrum R)) (x : ι → FiniteAdeleRing R K) :
+    ι → FiniteAdeleRing R K := fun i ↦ placeIdempotent S * x i
+
+open Classical in
+/-- Projection is computed by keeping the selected components. -/
+@[simp]
+theorem projectPlaces_apply (S : Set (HeightOneSpectrum R)) (x : ι → FiniteAdeleRing R K)
+    (i : ι) (v : HeightOneSpectrum R) :
+    projectPlaces S x i v = if v ∈ S then x i v else 0 := by
+  simp [projectPlaces, mul_apply]
+
+/-- Projection onto places is continuous, also for an infinite set of places. -/
+@[fun_prop]
+theorem continuous_projectPlaces (S : Set (HeightOneSpectrum R)) :
+    Continuous (projectPlaces (K := K) (ι := ι) S) := by
+  unfold projectPlaces
+  fun_prop
+
+/-- Projecting twice onto the same set of places does not change a vector. -/
+@[simp]
+theorem projectPlaces_projectPlaces (S : Set (HeightOneSpectrum R))
+    (x : ι → FiniteAdeleRing R K) : projectPlaces S (projectPlaces S x) = projectPlaces S x := by
+  ext i v
+  by_cases hv : v ∈ S <;> simp [hv]
+
+/-- Projection is additive. -/
+@[simp]
+theorem projectPlaces_add (S : Set (HeightOneSpectrum R)) (x y : ι → FiniteAdeleRing R K) :
+    projectPlaces S (x + y) = projectPlaces S x + projectPlaces S y := by
+  funext i
+  exact mul_add _ _ _
+
+/-- Projection preserves zero. -/
+@[simp]
+theorem projectPlaces_zero (S : Set (HeightOneSpectrum R)) :
+    projectPlaces (K := K) (ι := ι) S 0 = 0 := by
+  funext _
+  exact mul_zero _
+
+/-- Projection preserves subtraction. -/
+@[simp]
+theorem projectPlaces_sub (S : Set (HeightOneSpectrum R)) (x y : ι → FiniteAdeleRing R K) :
+    projectPlaces S (x - y) = projectPlaces S x - projectPlaces S y := by
+  funext i
+  exact mul_sub _ _ _
+
+/-- The projection onto all places is the identity. -/
+@[simp]
+theorem projectPlaces_univ (x : ι → FiniteAdeleRing R K) : projectPlaces Set.univ x = x := by
+  ext i v
+  simp
+
+/-- The projection onto no places is zero. -/
+@[simp]
+theorem projectPlaces_empty (x : ι → FiniteAdeleRing R K) : projectPlaces ∅ x = 0 := by
+  ext i v
+  simp
+
+/-- Projection commutes with multiplication by a finite idele. -/
+@[simp]
+theorem projectPlaces_smul (S : Set (HeightOneSpectrum R)) (t : (FiniteAdeleRing R K)ˣ)
+    (x : ι → FiniteAdeleRing R K) : projectPlaces S (t • x) = t • projectPlaces S x := by
+  funext i
+  -- Units act through their underlying scalars, and projection is multiplication by an idempotent.
+  simp only [projectPlaces, Pi.smul_apply, Units.smul_def, smul_eq_mul]
+  exact mul_left_comm _ _ _
+
+end ProjectPlaces
 
 end IsDedekindDomain.FiniteAdeleRing
