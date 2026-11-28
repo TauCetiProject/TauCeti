@@ -24,6 +24,50 @@ public noncomputable section
 open TauCeti
 open scoped Manifold ContDiff CliffordAlgebra.NegativeMetric
 
+namespace CliffordAlgebra
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+  [FiniteDimensional ℝ W] {EM HM M : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM]
+  [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  {n : ℕ∞ω} {m : M} (e : M → V ≃ₗᵢ[ℝ] W)
+
+/-- A smooth family of linear isometries induces a smooth family of Clifford equivalences,
+including joint evaluation on a varying Clifford element. -/
+theorem contMDiffAt_equivOfIsometry_apply
+    (he : ∀ v, ContMDiffAt IM 𝓘(ℝ, W) n (fun y ↦ e y v) m)
+    {x : M → CliffordAlgebra (negNormSqForm V)}
+    (hx : ContMDiffAt IM 𝓘(ℝ, CliffordAlgebra (negNormSqForm V)) n x m) :
+    ContMDiffAt IM 𝓘(ℝ, CliffordAlgebra (negNormSqForm W)) n
+      (fun y ↦ equivOfIsometry (e y).negNormSqFormIsometryEquiv (x y)) m := by
+  have hfixed (a : CliffordAlgebra (negNormSqForm V)) :
+      ContMDiffAt IM 𝓘(ℝ, CliffordAlgebra (negNormSqForm W)) n
+        (fun y ↦ equivOfIsometry (e y).negNormSqFormIsometryEquiv a) m := by
+    induction a using CliffordAlgebra.induction with
+    | algebraMap r => simpa only [AlgEquiv.commutes] using contMDiffAt_const
+    | ι v =>
+      simp only [equivOfIsometry_ι, LinearIsometryEquiv.negNormSqFormIsometryEquiv_apply]
+      exact (CliffordAlgebra.ι (negNormSqForm W)).toContinuousLinearMap.contMDiffAt.comp m (he v)
+    | mul a b ha hb =>
+      simp only [map_mul]
+      exact ((NegativeMetric.mulCLM W).isBoundedBilinearMap.contDiff.contMDiff.contMDiffAt.comp m
+        (ha.prodMk_space hb)).congr_of_eventuallyEq <|
+          Filter.Eventually.of_forall fun _ ↦ (NegativeMetric.mulCLM_apply W _ _).symm
+    | add a b ha hb =>
+      exact (ha.add hb).congr_of_eventuallyEq <| Filter.Eventually.of_forall fun y ↦
+        map_add (equivOfIsometry (e y).negNormSqFormIsometryEquiv) a b
+  let f (y : M) :=
+    (equivOfIsometry (e y).negNormSqFormIsometryEquiv).toLinearMap.toContinuousLinearMap
+  have hf : ContMDiffAt IM 𝓘(ℝ, CliffordAlgebra (negNormSqForm V) →L[ℝ]
+      CliffordAlgebra (negNormSqForm W)) n f m :=
+    TauCeti.contMDiffAt_clm_apply.mpr fun a ↦ by
+      simpa only [f, LinearMap.coe_toContinuousLinearMap', AlgEquiv.toLinearMap_apply] using
+        hfixed a
+  simpa only [f, LinearMap.coe_toContinuousLinearMap', AlgEquiv.toLinearMap_apply] using
+    hf.clm_apply hx
+
+end CliffordAlgebra
+
 namespace Unitary
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -113,18 +157,15 @@ instance instIsIsometricSMulCliffordAlgebra : IsIsometricSMul (unitary (V →L[�
 
 private theorem contMDiff_cliffordAlgEquiv_apply (x : C) :
     ContMDiff (model (V →L[ℝ] V)) 𝓘(ℝ, C) ∞ (fun g ↦ cliffordAlgEquiv g x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => simpa only [AlgEquiv.commutes] using contMDiff_const
-  | ι v =>
-    simp only [cliffordAlgEquiv_ι]
-    exact (CliffordAlgebra.ι (negNormSqForm V)).toContinuousLinearMap.contMDiff.comp
-      ((contMDiff_val (R := V →L[ℝ] V)).clm_apply (contMDiff_const (c := v)))
-  | mul x y hx hy =>
-    simp only [map_mul]
-    exact ((CliffordAlgebra.NegativeMetric.mulCLM V).isBoundedBilinearMap.contDiff.comp_contMDiff
-      (hx.prodMk_space hy)).congr fun _ ↦ (CliffordAlgebra.NegativeMetric.mulCLM_apply V _ _).symm
-  | add x y hx hy =>
-    exact (hx.add hy).congr fun g ↦ map_add (cliffordAlgEquiv g) x y
+  simp only [cliffordAlgEquiv_def]
+  intro g
+  apply CliffordAlgebra.contMDiffAt_equivOfIsometry_apply (fun h ↦ linearIsometryEquiv h)
+  · intro v
+    have h := ((contMDiff_val (R := V →L[ℝ] V)).clm_apply
+      (contMDiff_const (c := v))).contMDiffAt (x := g)
+    refine h.congr_of_eventuallyEq <| Filter.Eventually.of_forall fun h ↦ ?_
+    exact congrArg (fun f : V →L[ℝ] V ↦ f v) (coe_linearIsometryEquiv_apply h)
+  · exact contMDiffAt_const
 
 /-- The orthogonal action on the Euclidean Clifford algebra is smooth. -/
 instance instContMDiffSMulCliffordAlgebra :
