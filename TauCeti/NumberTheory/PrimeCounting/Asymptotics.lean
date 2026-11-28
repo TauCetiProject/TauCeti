@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.LSeries.WeakPNT
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
-import TauCeti.NumberTheory.PrimeCounting
 
 /-!
 # Prime counts in fixed multiplicative intervals
@@ -101,14 +100,15 @@ theorem eventually_card_primesLE_filter_gt_three_mul_bounds :
   filter_upwards [hlo, hhi, TauCeti.Real.tendsto_div_log_atTop.eventually_gt_atTop 8,
     eventually_ge_atTop (0 : ℝ)] with x hl hu hx hx0
   have hfloor : ⌊x⌋₊ ≤ ⌊3 * x⌋₊ := Nat.floor_mono (by nlinarith : x ≤ 3 * x)
+  have hsub : Nat.primesLE ⌊x⌋₊ ⊆ Nat.primesLE ⌊3 * x⌋₊ := Nat.primesLE_mono hfloor
   have heq : (Nat.primesLE ⌊3 * x⌋₊).filter (fun p : ℕ ↦ x < (p : ℝ)) =
-      {p ∈ Finset.Icc (⌊x⌋₊ + 1) ⌊3 * x⌋₊ | p.Prime} := by
+      Nat.primesLE ⌊3 * x⌋₊ \ Nat.primesLE ⌊x⌋₊ := by
     ext p
-    simp only [Finset.mem_filter, Nat.mem_primesLE, Finset.mem_Icc, Nat.add_one_le_iff,
-      Nat.floor_lt hx0]
+    simp only [Finset.mem_filter, Nat.mem_primesLE, Finset.mem_sdiff,
+      Nat.le_floor_iff hx0, not_and_or, not_le]
     tauto
-  rw [heq, Nat.card_filter_Icc_prime, ← Nat.primeCounting_eq_primeCounting'_succ,
-    Nat.cast_sub (Nat.monotone_primeCounting hfloor)]
+  rw [heq, Finset.card_sdiff_of_subset hsub, Nat.primesLE_card_eq_primeCounting,
+    Nat.primesLE_card_eq_primeCounting, Nat.cast_sub (Nat.monotone_primeCounting hfloor)]
   have hpos : 0 < x / Real.log x := lt_trans (by norm_num) hx
   have hl' := (lt_div_iff₀ hpos).mp hl
   have hu' := (div_lt_iff₀ hpos).mp hu
