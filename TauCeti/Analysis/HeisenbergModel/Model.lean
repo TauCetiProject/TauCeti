@@ -469,6 +469,13 @@ theorem innerSL_heisenbergRep :
   simp only [innerSL_apply, heisenbergRep_apply, h_point]
   exact integral_sub_right_eq_self (fun y ↦ conj (v y) * w y) x
 
+/-- The adjoint of `ϱ x` is `ϱ (-x)`: `⟨ϱ x v, w⟩ = ⟨v, ϱ (-x) w⟩`. -/
+theorem innerSL_heisenbergRep_left :
+    innerSL (heisenbergRep x v) w = innerSL v (heisenbergRep (-x) w) := by
+  conv_lhs => rw [← HeisenbergDatum.Representation.apply_neg_apply (ϱ := heisenbergRep) (x := x)
+    (v := w)]
+  exact innerSL_heisenbergRep ..
+
 /-- The reproducing property `⟨ϱ x e, v⟩ = v x`. -/
 @[simp]
 theorem innerSL_heisenbergRep_vacuum : innerSL (heisenbergRep x vacuum) v = v x := by

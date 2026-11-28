@@ -32,7 +32,9 @@ integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the squared no
 element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`). The `L²` seminorm of
 `V • g` is the square root of `∫⁻ V² ‖g‖²` (`TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow`),
 so a bound `∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²` gives `‖V • g‖₂ ≤ √K ‖g‖₂`
-(`MeasureTheory.MemLp.eLpNorm_two_smul_le_of_lintegral_le`). The `Lᵖ` seminorm of the pairing
+(`MeasureTheory.MemLp.eLpNorm_two_smul_le_of_lintegral_le`), and a bound
+`∫⁻ W² ‖y‖² ≤ K₀ ∫⁻ W² ‖f‖²` passes to any weight `w` comparable to `W`
+(`TauCeti.eLpNorm_two_smul_le_of_lintegral_le_of_sq_le`). The `Lᵖ` seminorm of the pairing
 `x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of `f`
 (`MeasureTheory.eLpNorm_inner_const_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
@@ -45,8 +47,9 @@ in the other order for an L² function given by an almost-everywhere representat
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). Integration against a square-integrable real function
 `h` is the inner product with `h`, hence Lipschitz on `Lp ℝ 2 μ` with constant `‖h‖₂`
 (`MeasureTheory.MemLp.lipschitzWith_integral_mul`). On a finite measure space the pairing of a
-constant class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`). The zero class
-pairs to zero with every function
+constant class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`), and in the other
+order `⟪∫ f, c⟫` (`MeasureTheory.L2.inner_const_right`). The zero class pairs to zero with every
+function
 (`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
 preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
@@ -170,6 +173,41 @@ theorem MemLp.eLpNorm_two_smul_le_of_lintegral_le {F : Type*} [NormedAddCommGrou
   rw [hg.eLpNorm_two_eq_ofReal_sqrt_integral,
     ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.sqrt_eq_rpow,
     Real.sqrt_mul hK, ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
+
+/-- **Changing a weight to a comparable one in a weighted `L²` bound.** If the real weights `w`
+and `W` satisfy `w² ≤ E W²` and `W² ≤ E w²`, a bound `∫⁻ W² ‖y‖² ≤ K₀ ∫⁻ W² ‖f‖²` gives
+`‖w • y‖₂ ≤ √(E² K₀) ‖w • f‖₂`, where either side may be infinite. -/
+theorem _root_.TauCeti.eLpNorm_two_smul_le_of_lintegral_le_of_sq_le {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {w W : α → ℝ} (hw : AEStronglyMeasurable w μ)
+    {E K₀ : ℝ} (hE : 0 ≤ E) (hK₀ : 0 ≤ K₀) (hwW : ∀ x, w x ^ 2 ≤ E * W x ^ 2)
+    (hWw : ∀ x, W x ^ 2 ≤ E * w x ^ 2) {f y : α → F} (hf : AEStronglyMeasurable f μ)
+    (hy : AEStronglyMeasurable y μ)
+    (h : ∫⁻ x, ENNReal.ofReal (W x ^ 2 * ‖y x‖ ^ 2) ∂μ ≤
+      ENNReal.ofReal K₀ * ∫⁻ x, ENNReal.ofReal (W x ^ 2 * ‖f x‖ ^ 2) ∂μ) :
+    eLpNorm (fun x ↦ w x • y x) 2 μ ≤
+      Real.toNNReal √(E * E * K₀) * eLpNorm (fun x ↦ w x • f x) 2 μ := by
+  have hcmp {u v : α → ℝ} (huv : ∀ x, u x ^ 2 ≤ E * v x ^ 2) (g : α → F) :
+      ∫⁻ x, ENNReal.ofReal (u x ^ 2 * ‖g x‖ ^ 2) ∂μ ≤
+        ENNReal.ofReal E * ∫⁻ x, ENNReal.ofReal (v x ^ 2 * ‖g x‖ ^ 2) ∂μ := by
+    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine lintegral_mono fun x ↦ ?_
+    rw [← ENNReal.ofReal_mul hE, ← mul_assoc]
+    exact ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_right (huv x) (sq_nonneg _))
+  -- Convert to `L²` norms.
+  rw [TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hw.smul hy),
+    TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hw.smul hf)]
+  have hK : (Real.toNNReal √(E * E * K₀) : ℝ≥0∞) = ENNReal.ofReal (E * E * K₀) ^ (1 / 2 : ℝ) := by
+    rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
+      ← Real.sqrt_eq_rpow, ← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (Real.sqrt_nonneg _)]
+  rw [hK, ← ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
+  gcongr
+  calc ∫⁻ x, ENNReal.ofReal (w x ^ 2 * ‖y x‖ ^ 2) ∂μ
+      ≤ ENNReal.ofReal E * (ENNReal.ofReal K₀ *
+          (ENNReal.ofReal E * ∫⁻ x, ENNReal.ofReal (w x ^ 2 * ‖f x‖ ^ 2) ∂μ)) :=
+        (hcmp hwW y).trans (by gcongr; exact h.trans (by gcongr; exact hcmp hWw f))
+    _ = ENNReal.ofReal (E * E * K₀) * ∫⁻ x, ENNReal.ofReal (w x ^ 2 * ‖f x‖ ^ 2) ∂μ := by
+        rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hE]
+        ring
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
@@ -329,6 +367,13 @@ theorem MemLp.lipschitzWith_integral_mul {h : α → ℝ} (hh : MemLp h 2 μ) :
 theorem L2.inner_const_left [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E] (c : E)
     (f : Lp E 2 μ) : ⟪Lp.const 2 μ c, f⟫_𝕜 = ⟪c, ∫ x, f x ∂μ⟫_𝕜 := by
   rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_eq_inner_setIntegral, setIntegral_univ]
+
+/-- On a finite measure space, the L² inner product of an L² function `f` with the constant class
+`c` is the inner product of `∫ f` with `c`. -/
+@[simp]
+theorem L2.inner_const_right [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E] (c : E)
+    (f : Lp E 2 μ) : ⟪f, Lp.const 2 μ c⟫_𝕜 = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
+  rw [← inner_conj_symm, L2.inner_const_left, inner_conj_symm]
 
 /-- The pointwise inner product of the zero class of `Lᵖ` with any function integrates to zero. -/
 theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :

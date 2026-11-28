@@ -254,6 +254,21 @@ theorem eulerChar_disjointSum_cyclicTriple (hm : m ≠ 0) (hn : n ≠ 0) :
   rw [eulerChar_disjointSum, eulerChar_cyclicTriple hm, eulerChar_cyclicTriple hn]
   norm_num
 
+/-- Two copies of the cyclic double cover have diagonal monodromy: the permutation
+interchanging the sheets of only the first copy witnesses strict containment in the product. -/
+theorem monodromyGroup_disjointSum_cyclicTriple_two_lt :
+    ((cyclicTriple 2).disjointSum (cyclicTriple 2)).monodromyGroup <
+      ((cyclicTriple 2).monodromyGroup.prod (cyclicTriple 2).monodromyGroup).map
+        (finSumPermHom 2 2) := by
+  refine lt_of_le_of_ne (monodromyGroup_disjointSum_le _ _) fun h => ?_
+  have hmem : finSumPerm (finRotate 2) 1 ∈
+      ((cyclicTriple 2).disjointSum (cyclicTriple 2)).monodromyGroup := by
+    rw [h]
+    refine Subgroup.mem_map.mpr ⟨(finRotate 2, 1), ?_, finSumPermHom_apply _⟩
+    simp [Subgroup.mem_prod, monodromyGroup_cyclicTriple]
+  have hne : finRotate 2 ≠ 1 := by decide
+  exact hne ((finSumPerm_mem_monodromyGroup_disjointSum_self_iff _ _ _).mp hmem).2
+
 /-- Relabeling the sheets of `cyclicTriple 4` by a transposition changes the triple. -/
 theorem swap_smul_cyclicTriple_four_ne :
     (swap 0 1 : Perm (Fin 4)) • cyclicTriple 4 ≠ cyclicTriple 4 := by
