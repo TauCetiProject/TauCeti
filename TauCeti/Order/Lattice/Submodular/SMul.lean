@@ -22,7 +22,7 @@ namespace TauCeti.IsSubmodular
 variable {K L : Type*}
 
 /-- Pointwise multiplication by a nonnegative scalar preserves submodularity. -/
-theorem smul {R : Type*} [Zero R] [Preorder R] [AddMonoid K] [Preorder K]
+theorem smul {R : Type*} [Zero R] [Preorder R] [AddZeroClass K] [Preorder K]
     [DistribSMul R K] [PosSMulMono R K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {c : R} (hc : 0 ≤ c) : IsSubmodular (c • f) := by
   rw [isSubmodular_def]
