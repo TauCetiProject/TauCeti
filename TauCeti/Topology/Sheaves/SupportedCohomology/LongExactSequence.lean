@@ -148,11 +148,12 @@ private lemma exact_supportedModuleHPresheaf_of_exact_postcomp
   rw [ShortComplex.exact_iff_evaluation]
   intro W
   rw [ShortComplex.moduleCat_exact_iff]
+  simp only [ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_f, ShortComplex.map_g,
+    evaluation_obj_obj, evaluation_obj_map]
   intro x hx
   -- Expose the `supportedModuleH` carrier of `(F₂.supportedModuleHPresheaf S n₂).obj W`.
   let x' : F₂.supportedModuleH S W.unop n₂ := x
-  change ψ.app W x' = 0 at hx
-  rw [hψ] at hx
+  rw [hψ W x'] at hx
   obtain ⟨y, hy⟩ := h W x' hx
   exact ⟨y, (hφ W y).trans hy⟩
 

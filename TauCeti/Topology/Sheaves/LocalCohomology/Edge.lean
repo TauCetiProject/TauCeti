@@ -634,8 +634,13 @@ lemma supportedModuleHZeroEquiv_supportedModuleHPresheafEdgeIso_hom_app
         ((F.supportedModuleHPresheafEdgeIso h hZS (add_zero n)).hom.app (op W) x) =
       F.supportedModuleHEdgeEquiv (fun q hq ↦ h q hq.le hq.ne) hZS W x := by
   simp only [supportedModuleHPresheafEdgeIso, supportedModuleHPresheafEdgeIsoZero, eqToIso_refl,
-    Iso.refl_trans, Iso.trans_hom, Iso.symm_hom, TopCat.Presheaf.comp_app, ModuleCat.hom_comp,
-    LinearMap.coe_comp, Function.comp_def,
+    Iso.refl_trans, Iso.trans_hom, Iso.symm_hom]
+  -- `x` has type `F.supportedModuleH Z W n` rather than
+  -- `(F.supportedModuleHPresheaf Z n).obj (op W)`, so `CategoryTheory.comp_apply` needs the
+  -- first map and `x` explicitly to match.
+  rw [NatTrans.comp_app,
+    CategoryTheory.comp_apply
+      ((F.supportedModuleHPresheafIsoSupportedSubmodule _ hZS).hom.app (op W)) _ x,
     supportedModuleHPresheafIsoSupportedSubmodule_hom_app_apply,
     supportedModuleHPresheafZeroIso_inv_app_apply, LinearEquiv.apply_symm_apply]
 

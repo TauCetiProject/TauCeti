@@ -742,6 +742,22 @@ private lemma supportedModuleHPresheaf_add_app_apply {S₁ S₂ : Closeds X}
     (φ + ψ).app W x = φ.app W x + ψ.app W x :=
   (rfl)
 
+variable {S} in
+/-- Evaluating a composite of morphisms of supported cohomology presheaves on a class applies them
+successively. -/
+private lemma supportedModuleHPresheaf_comp_app_apply {S₁ S₂ S₃ : Closeds X}
+    {F G H : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m k l : ℕ}
+    (φ : F.supportedModuleHPresheaf S₁ m ⟶ G.supportedModuleHPresheaf S₂ k)
+    (ψ : G.supportedModuleHPresheaf S₂ k ⟶ H.supportedModuleHPresheaf S₃ l)
+    (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH S₁ W.unop m) :
+    (φ ≫ ψ).app W x = ψ.app W (φ.app W x) := by
+  rw [NatTrans.comp_app]
+  -- `x` has type `F.supportedModuleH S₁ W.unop m` rather than
+  -- `(F.supportedModuleHPresheaf S₁ m).obj W`, so `CategoryTheory.comp_apply` needs the
+  -- presheaf-object domain type explicitly.
+  exact CategoryTheory.comp_apply (φ.app W) (ψ.app W)
+    (x : (F.supportedModuleHPresheaf S₁ m).obj W)
+
 /-- The morphism of presheaves `H_Sᵐ(-, F) ⟶ H_Sᵏ(-, G)` given by the Yoneda
 product with an `Ext` class `α : Extⁿ(F, G)`, where `m + n = k`. For
 `α = Ext.mk₀ f` this is the map induced by a morphism of sheaves `f : F ⟶ G`,
@@ -817,8 +833,7 @@ lemma supportedModuleHPresheafPostcomp_comp
     supportedModuleHPresheafPostcomp S α hk ≫ supportedModuleHPresheafPostcomp S β hl =
       supportedModuleHPresheafPostcomp S (α.comp β hp) (by omega) := by
   refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
-  simp only [TopCat.Presheaf.comp_app, ModuleCat.hom_comp, LinearMap.coe_comp,
-    Function.comp_def, supportedModuleHPresheafPostcomp_app_apply]
+  simp only [supportedModuleHPresheaf_comp_app_apply, supportedModuleHPresheafPostcomp_app_apply]
   exact Ext.comp_assoc x α β hk hp (by omega)
 
 variable {S} in
@@ -830,8 +845,7 @@ lemma supportedModuleHPresheafMap_supportedModuleHPresheafPostcomp {Z : Closeds 
     F.supportedModuleHPresheafMap hZS m ≫ supportedModuleHPresheafPostcomp S α hk =
       supportedModuleHPresheafPostcomp Z α hk ≫ G.supportedModuleHPresheafMap hZS k := by
   refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
-  simp only [TopCat.Presheaf.comp_app, ModuleCat.hom_comp, LinearMap.coe_comp,
-    Function.comp_def, supportedModuleHPresheafMap_app_apply,
+  simp only [supportedModuleHPresheaf_comp_app_apply, supportedModuleHPresheafMap_app_apply,
     supportedModuleHPresheafPostcomp_app_apply]
   exact Ext.comp_assoc _ x α (zero_add m) hk (by omega)
 
