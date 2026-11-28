@@ -91,6 +91,11 @@ singular chains.
   (`TauCeti.filteredSpaceSpectralSequenceMap_comp_filteredSpaceSpectralSequenceCoefficientMap`),
   so the spectral sequence is functorial in the pair of the filtered space and the coefficients.
 
+Independently of the spectral sequence, vanishing passes along the filtration: if the steps
+`(X (q + 1), X q)`, `a ≤ q < b`, have vanishing relative homology in degree `n`, so does
+`(X b, X a)` (`Monotone.isZero_singularHomology_ofInclusion_of_forall_mem_Ico`), by the long exact
+sequences of the triples `(X (q + 1), X q, X a)`.
+
 For the skeletal filtration of a CW complex the first page consists of the groups
 `Hₙ(Xⁿ, Xⁿ⁻¹)`, and its differential is the connecting map of three consecutive skeleta, which is
 the differential of `TauCeti.cellularChainComplex` by
@@ -254,6 +259,17 @@ lemma filteredSpaceSpectralSequenceFirstPageXIso_hom (pq : ℤ × ℤ) (a b : �
     ((congrArg (· ≫ _) ((homologyFunctor A _ m).map_comp _ _)).trans
       (Category.assoc _ _ _)).trans <|
       congrArg (_ ≫ ·) (extendHomologyIso_hom_naturality _ _ _)
+
+/-- The identification of the first page of the spectral sequence of a filtered space with
+relative singular homology only depends on the value of the total degree `m`, not on the equation
+`hm` that presents it. -/
+lemma filteredSpaceSpectralSequenceFirstPageXIso_congr (pq : ℤ × ℤ) (a b : ℤ) (ha : a = pq.2)
+    (hb : b = pq.2 + 1) (m m' : ℤ) (hm : m = pq.1 + pq.2) (hm' : m' = pq.1 + pq.2) (n : ℕ)
+    (hn : m = -n) (hn' : m' = -n) :
+    filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m hm n hn =
+      filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m' hm' n hn' := by
+  subst hm hm'
+  rfl
 
 /-- The first page of the spectral sequence of a filtered space vanishes in positive total
 degree `p + q`, since singular chains are concentrated in nonpositive cohomological degrees. -/
@@ -906,6 +922,37 @@ lemma filteredSpaceSpectralSequenceCoefficientMap_comp :
     filteredSpaceSpectralSequenceCoefficientMap_def, filteredSpaceCoefficientFiltrationMap_comp,
     CochainComplex.spectralObjectMap_comp, Abelian.SpectralObject.spectralSequenceMap_comp]
 
+/-- **The isomorphism of spectral sequences induced by an isomorphism of coefficients.** An
+isomorphism `e : R ≅ R'` induces an isomorphism from the spectral sequence of the filtration of `Y`
+by the `X q` with coefficients in `R` to the one with coefficients in `R'`, with the morphisms
+`TauCeti.filteredSpaceSpectralSequenceCoefficientMap` of `e` and of its inverse. -/
+def filteredSpaceSpectralSequenceCoefficientIso (e : R ≅ R') :
+    filteredSpaceSpectralSequence R hX ≅ filteredSpaceSpectralSequence R' hX where
+  hom := filteredSpaceSpectralSequenceCoefficientMap hX e.hom
+  inv := filteredSpaceSpectralSequenceCoefficientMap hX e.inv
+  hom_inv_id := by
+    rw [← filteredSpaceSpectralSequenceCoefficientMap_comp, e.hom_inv_id,
+      filteredSpaceSpectralSequenceCoefficientMap_id]
+  inv_hom_id := by
+    rw [← filteredSpaceSpectralSequenceCoefficientMap_comp, e.inv_hom_id,
+      filteredSpaceSpectralSequenceCoefficientMap_id]
+
+/-- The morphism of the isomorphism of spectral sequences induced by an isomorphism of coefficients
+is the morphism induced by the forward map. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceCoefficientIso_hom (e : R ≅ R') :
+    (filteredSpaceSpectralSequenceCoefficientIso hX e).hom =
+      filteredSpaceSpectralSequenceCoefficientMap hX e.hom :=
+  (rfl)
+
+/-- The inverse of the isomorphism of spectral sequences induced by an isomorphism of coefficients
+is the morphism induced by the inverse map. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceCoefficientIso_inv (e : R ≅ R') :
+    (filteredSpaceSpectralSequenceCoefficientIso hX e).inv =
+      filteredSpaceSpectralSequenceCoefficientMap hX e.inv :=
+  (rfl)
+
 /-- On the stage `F_b`, identified with the singular chains of `X b`, the morphism of filtrations
 induced by `φ` is the chain map induced by `φ` on the singular chains of `X b`. -/
 @[reassoc]
@@ -1050,3 +1097,26 @@ end Bifunctoriality
 end CoefficientNaturality
 
 end TauCeti
+
+namespace Monotone
+
+open TauCeti
+
+variable {Y : TopCat.{w}} {X : ℤ → Set Y} (hX : Monotone X)
+
+/-- **Vanishing along a filtration.** If the steps `(X (q + 1), X q)`, `a ≤ q < b`, have vanishing
+relative homology in degree `n`, so does `(X b, X a)`, with coefficients in any abelian category
+with coproducts. -/
+theorem isZero_singularHomology_ofInclusion_of_forall_mem_Ico {A : Type*} [Category A] [Abelian A]
+    [HasCoproducts.{w} A] (R : A) {a b : ℤ} (hab : a ≤ b) (n : ℕ)
+    (h : ∀ q ∈ Finset.Ico a b,
+      IsZero ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology R n)) :
+    IsZero ((TopPair.ofInclusion (hX hab)).singularHomology R n) := by
+  induction b, hab using Int.leInduction with
+  | base => exact TopPair.isZero_singularHomology_ofInclusion_self R (X a) n
+  | succ b hab ih =>
+    exact (TopTriple.ofInclusions (hX hab) (hX (lt_add_one b).le)).isZero_singularHomology_totalPair
+      R n (ih fun q hq ↦ h q (Finset.Ico_subset_Ico_right (lt_add_one b).le hq))
+      (h b (Finset.mem_Ico.2 ⟨hab, lt_add_one b⟩))
+
+end Monotone

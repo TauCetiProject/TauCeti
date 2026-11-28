@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.AbelianVariety.End.Basic
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.BaseChange
-import TauCeti.AlgebraicGeometry.GroupScheme.Flat
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
@@ -26,8 +24,6 @@ a homomorphism.
 
 ## Main results
 
-* `AbelianVariety.flat_toSchemeHom_of_surjective` proves faithful flatness of surjective
-  homomorphisms, including isogenies, over any field;
 * `AbelianVariety.IsIsogeny.comp` composes isogenies;
 * `AbelianVariety.IsIsogeny.baseChange` shows that an isogeny remains one after extending the
   ground field;
@@ -54,15 +50,6 @@ namespace AbelianVariety
 variable {K : Type u} [Field K]
 
 noncomputable section
-
-/-- A surjective homomorphism of abelian varieties is flat over any field. -/
-theorem flat_toSchemeHom_of_surjective {A B : AbelianVariety K} (f : A ⟶ B)
-    [Surjective (Hom.toSchemeHom f)] : Flat (Hom.toSchemeHom f) := by
-  let g := Hom.toOverHom f
-  let : IsProper (g.left ≫ B.toOver.hom) :=
-    (Over.w g).symm ▸ inferInstanceAs (IsProper A.toOver.hom)
-  let : IsProper g.left := IsProper.of_comp g.left B.toOver.hom
-  exact g.flat_left_of_surjective
 
 /-- The morphism property of being an isogeny of abelian varieties over `K`: the underlying
 scheme morphism is finite and surjective. -/
@@ -127,11 +114,6 @@ lemma isFinite (hf : IsIsogeny f) : IsFinite (Hom.toSchemeHom f) :=
 /-- The underlying scheme morphism of an isogeny is surjective. -/
 lemma surjective (hf : IsIsogeny f) : Surjective (Hom.toSchemeHom f) :=
   (isIsogeny_iff f).mp hf |>.2
-
-/-- The underlying scheme morphism of an isogeny is flat, including in positive characteristic. -/
-lemma flat (hf : IsIsogeny f) : Flat (Hom.toSchemeHom f) :=
-  have := hf.surjective
-  flat_toSchemeHom_of_surjective f
 
 /-- A composite of isogenies is an isogeny. -/
 lemma comp (hf : IsIsogeny f) (hg : IsIsogeny g) : IsIsogeny (f ≫ g) :=

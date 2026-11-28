@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AbelianScheme.AbelianVariety
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny
 public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.BaseChange
-import TauCeti.AlgebraicGeometry.GroupScheme.Flat
+import TauCeti.AlgebraicGeometry.GroupScheme.FaithfullyFlat
 import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 
 /-!
