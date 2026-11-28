@@ -540,6 +540,11 @@ private theorem exists_cutoffs_shift [NormedSpace ℝ E] {L V : ℕ → Set E} {
   · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hmn
     exact (hLmono (by omega)).trans (heta_one (m + k))
 
+/-- A point in the interior of the preimage of `{1}` is mapped to `1`. -/
+private theorem eq_one_of_mem_interior {f : E → ℝ} {y : E}
+    (h : y ∈ interior (f ⁻¹' {1})) : f y = 1 := by
+  simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
+
 /-- Differences `zeta j = eta' (j + 1) - eta' j` of cutoffs `eta' n`, where `eta' 0 = 0` and
 `eta' n` is one near `L m` for `m < n` and supported in `V n`, are smooth, compactly supported and
 nonnegative, telescope to `eta' N`, and have support in `V (j + 1)` away from `L (j - 1)`. -/
@@ -553,14 +558,13 @@ private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V :
     ∃ zeta : ℕ → E → ℝ, (∀ j, ContDiff ℝ ∞ (zeta j)) ∧ (∀ j, HasCompactSupport (zeta j)) ∧
       (∀ j, tsupport (zeta j) ⊆ V (j + 1) \ L (j - 1)) ∧ (∀ j x, 0 ≤ zeta j x) ∧
       ∀ N y, ∑ j ∈ Finset.range N, zeta j y = eta' N y := by
-  have one_of_mem : ∀ {f : E → ℝ} {y : E}, y ∈ interior (f ⁻¹' {1}) → f y = 1 := fun h => by
-    simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
   let zeta : ℕ → E → ℝ := fun j x => eta' (j + 1) x - eta' j x
   -- `eta' (j + 1) = 1` on `V j ⊆ L j`, so `tsupport (eta' j) ⊆ tsupport (eta' (j + 1))`
   have hzeta_ts : ∀ j, tsupport (zeta j) ⊆ V (j + 1) := fun j =>
     (tsupport_sub _ _).trans <| union_subset (heta'_ts (j + 1)) fun x hx =>
       heta'_ts (j + 1) <| subset_tsupport _ <| by
-        rw [mem_support, one_of_mem (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))]
+        rw [mem_support,
+          eq_one_of_mem_interior (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))]
         exact one_ne_zero
   -- `zeta j` vanishes near `L (j - 1)`, where both cutoffs equal one
   have hzeta_L : ∀ j, ∀ x ∈ L (j - 1), x ∉ tsupport (zeta j) := fun j x hx => by
@@ -572,8 +576,8 @@ private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V :
           (heta'_one k (k + 1) k.lt_succ_self hx)),
         interior_mem_nhds.2 (mem_interior_iff_mem_nhds.1
           (heta'_one k (k + 2) (by omega) hx))] with y hy₁ hy₂
-      have h₁ : eta' (k + 1) y = 1 := one_of_mem hy₁
-      have h₂ : eta' (k + 1 + 1) y = 1 := one_of_mem hy₂
+      have h₁ : eta' (k + 1) y = 1 := eq_one_of_mem_interior hy₁
+      have h₂ : eta' (k + 1 + 1) y = 1 := eq_one_of_mem_interior hy₂
       simp only [zeta, Pi.zero_apply, h₁, h₂, sub_self]
   refine ⟨zeta, fun j => (heta'_smooth (j + 1)).sub (heta'_smooth j),
     fun j => (heta'_cpt (j + 1)).sub (heta'_cpt j),
@@ -582,11 +586,48 @@ private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V :
   -- `eta' (j + 1) = 1` on the support of `eta' j`, so the differences are nonnegative
   by_cases hx : x ∈ tsupport (eta' j)
   · have h₁ : eta' (j + 1) x = 1 :=
-      one_of_mem (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))
+      eq_one_of_mem_interior
+        (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))
     simp only [zeta, h₁, sub_nonneg]
     exact (heta'_range j x).2
   · simp only [zeta, image_eq_zero_of_notMem_tsupport hx, sub_zero]
     exact (heta'_range (j + 1) x).1
+
+/-- The data of a compact exhaustion of an open set `U` of a finite-dimensional space, as sets `L n`
+(compact) and `V n ⊆ L n` (open), together with cutoffs `eta' n` with `eta' 0 = 0` that are one
+near `L m` for `m < n` and supported in `V n`. -/
+private theorem exists_exhaustion_cutoffs [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {U : Set E} (hU : IsOpen U) :
+    ∃ (L V : ℕ → Set E) (eta' : ℕ → E → ℝ), L 0 = ∅ ∧ (∀ n, IsCompact (L n)) ∧
+      (∀ n, IsOpen (V n)) ∧ (∀ n, V n ⊆ L n) ∧ Monotone L ∧ (∀ n, V n ⊆ U) ∧
+      (∀ x ∈ U, ∃ n, x ∈ V n) ∧ eta' 0 = 0 ∧ (∀ n, ContDiff ℝ ∞ (eta' n)) ∧
+      (∀ n, HasCompactSupport (eta' n)) ∧ (∀ n x, eta' n x ∈ Icc (0 : ℝ) 1) ∧
+      (∀ n, tsupport (eta' n) ⊆ V n) ∧ ∀ m n, m < n → L m ⊆ interior (eta' n ⁻¹' {1}) := by
+  let Omega : Opens E := ⟨U, hU⟩
+  have : LocallyCompactSpace Omega := hU.locallyCompactSpace
+  let K : CompactExhaustion Omega := (CompactExhaustion.choice Omega).shiftr
+  -- `L n` is the `n`-th compact set of the exhaustion, `V n` the image of its interior
+  let L : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' K n
+  let V : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' interior (K n)
+  have hK0 : K 0 = ∅ := rfl
+  have hL0 : L 0 = ∅ := by simp only [L, hK0, image_empty]
+  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtypeVal
+  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtypeVal _ isOpen_interior
+  have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
+  have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
+  have hVsub : ∀ n, V n ⊆ U := fun n => by
+    rintro _ ⟨y, -, rfl⟩
+    exact y.property
+  have hcover : ∀ x ∈ U, ∃ n, x ∈ V n := fun x hx => by
+    obtain ⟨n, hn⟩ := K.exists_mem ⟨x, hx⟩
+    exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩
+  choose eta heta heta_range heta_one heta_cpt heta_ts using K.exists_contDiff_cutoff
+  -- `eta' (n + 1) = eta n` is a cutoff for `L n`; prepending `eta' 0 = 0` makes the
+  -- differences `zeta j = eta' (j + 1) - eta' j` telescope to `eta' N`.
+  obtain ⟨eta', heta'0, heta'_smooth, heta'_cpt, heta'_range, heta'_ts, heta'_one⟩ :=
+    exists_cutoffs_shift (L := L) (V := V) heta heta_range heta_one heta_cpt heta_ts hLmono
+  exact ⟨L, V, eta', hL0, hLcpt, hVopen, hVL, hLmono, hVsub, hcover, heta'0, heta'_smooth,
+    heta'_cpt, heta'_range, heta'_ts, heta'_one⟩
 
 /-- **A smooth decomposition of unity of an open set, with cutoffs.** Every open set `U` of a
 finite-dimensional real normed space carries smooth compactly supported functions `ζ j` and
@@ -607,31 +648,9 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
       (∀ j, EqOn (χ j) 1 (tsupport (ζ j))) ∧
       ∀ x ∈ U, ∃ m, ∀ᶠ y in 𝓝 x, (∀ j, m ≤ j → χ j y = 0) ∧
         ∀ N, m ≤ N → ∑ j ∈ Finset.range N, ζ j y = 1 := by
-  let Omega : Opens E := ⟨U, hU⟩
-  have : LocallyCompactSpace Omega := hU.locallyCompactSpace
-  let K : CompactExhaustion Omega := (CompactExhaustion.choice Omega).shiftr
-  -- `L n` is the `n`-th compact set of the exhaustion, `V n` the image of its interior
-  let L : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' K n
-  let V : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' interior (K n)
-  have hK0 : K 0 = ∅ := rfl
-  have hL0 : L 0 = ∅ := by simp only [L, hK0, image_empty]
-  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtypeVal
-  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtypeVal _ isOpen_interior
-  have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
-  have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
-  have hVsub : ∀ n, V n ⊆ U := fun n => by
-    rintro _ ⟨y, -, rfl⟩
-    exact y.property
-  have hcover : ∀ x ∈ U, ∃ n, x ∈ V n := fun x hx => by
-    obtain ⟨n, hn⟩ := K.exists_mem ⟨x, hx⟩
-    exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩
-  have one_of_mem : ∀ {f : E → ℝ} {y : E}, y ∈ interior (f ⁻¹' {1}) → f y = 1 := fun h => by
-    simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
-  choose eta heta heta_range heta_one heta_cpt heta_ts using K.exists_contDiff_cutoff
-  -- `eta' (n + 1) = eta n` is a cutoff for `L n`; prepending `eta' 0 = 0` makes the
-  -- differences `zeta j = eta' (j + 1) - eta' j` telescope to `eta' N`.
-  obtain ⟨eta', heta'0, heta'_smooth, heta'_cpt, heta'_range, heta'_ts, heta'_one⟩ :=
-    exists_cutoffs_shift (L := L) (V := V) heta heta_range heta_one heta_cpt heta_ts hLmono
+  obtain ⟨L, V, eta', hL0, hLcpt, hVopen, hVL, hLmono, hVsub, hcover, heta'0, heta'_smooth,
+    heta'_cpt, heta'_range, heta'_ts, heta'_one⟩ :=
+    exists_exhaustion_cutoffs hU
   obtain ⟨zeta, hzeta_smooth, hzeta_cpt, hU, hzeta_nonneg, hsum⟩ :=
     exists_telescoping_cutoff_differences hL0 hVL heta'0 heta'_smooth heta'_cpt
       heta'_range heta'_ts heta'_one
@@ -642,7 +661,7 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
     fun j => ⟨hzeta_smooth j, hzeta_cpt j, ((hU j).trans sdiff_subset).trans (hVsub _)⟩,
     hzeta_nonneg, fun N x => (hsum N x).trans_le (heta'_range N x).2,
     fun j => ⟨hchi_smooth j, hchi_cpt j, (hchi_ts j).trans (sdiff_subset.trans (hVsub _))⟩,
-    fun j x hx => one_of_mem (hchi_one j hx), fun x hx => ?_⟩
+    fun j x hx => eq_one_of_mem_interior (hchi_one j hx), fun x hx => ?_⟩
   obtain ⟨n, hn⟩ := hcover x hx
   refine ⟨n + 1, ?_⟩
   filter_upwards [(hVopen n).mem_nhds hn] with y hy
@@ -650,7 +669,7 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
     fun N hN => ?_⟩
   · exact hLmono (by omega) (hVL n hy)
   · rw [hsum]
-    exact one_of_mem (heta'_one n N (by omega) (hVL n hy))
+    exact eq_one_of_mem_interior (heta'_one n N (by omega) (hVL n hy))
 
 open Filter in
 /-- **The integer translates of a compactly supported map are locally finite.** Near any point,
