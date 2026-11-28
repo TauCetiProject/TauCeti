@@ -25,13 +25,14 @@ When the nonunits also form an open set, as in a complete discretely valued ring
 there is no such boundary and `Ring.inverse` is continuous everywhere.
 
 The Neumann series also gives explicit bounds: `‖(1 - x)⁻¹‖ ≤ ‖1‖ - 1 + (1 - ‖x‖)⁻¹` when
-`‖x‖ < 1`, and `‖(u + t)⁻¹‖ ≤ ‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)` for a unit `u` with
-`‖u⁻¹‖ * ‖t‖ < 1`; in particular `(1 - w) * u + d` is a unit with
+`‖x‖ < 1`, `‖a⁻¹‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖)` when `b` is a two-sided approximate inverse with
+`‖1 - a * b‖ < 1` and `‖1 - b * a‖ < 1`, and `‖(u + t)⁻¹‖ ≤ ‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)` for a unit
+`u` with `‖u⁻¹‖ * ‖t‖ < 1`; in particular `(1 - w) * u + d` is a unit with
 `‖((1 - w) * u + d)⁻¹‖ ≤ M / (1 - ‖w‖ - M * ‖d‖)` when `‖u⁻¹‖ ≤ M`, `‖w‖ < 1` and
 `M * ‖d‖ < 1 - ‖w‖`.
 Mathlib records these inverses only through asymptotic `O`-bounds such as
-`NormedRing.inverse_add_norm`; the explicit constants are needed for inductive constructions
-that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
+`NormedRing.inverse_add_norm`; the explicit constants are needed for stability criteria and
+inductive constructions that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
 
 The Jacobson radical is closed, as an intersection of maximal left ideals, using
 Mathlib's `Ring.jacobson_eq_sInf_isMaximal` and `Ideal.IsMaximal.isClosed`.
@@ -75,6 +76,40 @@ theorem norm_inverse_one_sub_le {x : R} (hx : ‖x‖ < 1) :
     ‖Ring.inverse (1 - x)‖ ≤ ‖(1 : R)‖ - 1 + (1 - ‖x‖)⁻¹ := by
   rw [inverse_one_sub x hx]
   exact tsum_geometric_le_of_norm_lt_one x hx
+
+/-- A two-sided approximate inverse in a normed ring with summable geometric series makes an
+element invertible, with an explicit bound on its inverse: if `‖1 - a * b‖ < 1` and
+`‖1 - b * a‖ < 1`, then `a` is a unit and `‖a⁻¹‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖)`. -/
+theorem isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt {a b : R}
+    (hr : ‖1 - a * b‖ < 1) (hl : ‖1 - b * a‖ < 1) :
+    IsUnit a ∧ ‖Ring.inverse a‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖) := by
+  obtain ⟨ur, hur⟩ := IsUnit.one_sub_of_norm_lt_one hr
+  obtain ⟨ul, hul⟩ := IsUnit.one_sub_of_norm_lt_one hl
+  simp only [sub_sub_cancel] at hur hul
+  have haR : a * (b * ↑ur⁻¹) = 1 := by simp [← mul_assoc, ← hur]
+  have haL : (↑ul⁻¹ * b) * a = 1 := by simp [mul_assoc, ← hul]
+  have hu : IsUnit a := ⟨⟨a, b * ↑ur⁻¹, haR, left_inv_eq_right_inv haL haR ▸ haL⟩, rfl⟩
+  have hinv : Ring.inverse a = b * ↑ur⁻¹ :=
+    left_inv_eq_right_inv (Ring.inverse_mul_cancel a hu) haR
+  have hu_eq : (b * ↑ur⁻¹ : R) = b + (b * ↑ur⁻¹) * (1 - a * b) := by
+    simp [mul_sub, ← hur, mul_assoc]
+  have hstep : ‖(b * ↑ur⁻¹ : R)‖ ≤ ‖b‖ + ‖(b * ↑ur⁻¹ : R)‖ * ‖1 - a * b‖ :=
+    (congrArg norm hu_eq).le.trans <| (norm_add_le _ _).trans <|
+      add_le_add_right (norm_mul_le _ _) _
+  refine ⟨hu, ?_⟩
+  rw [hinv, le_div_iff₀ (sub_pos.mpr hr)]
+  linarith
+
+/-- A two-sided `1 / 2`-approximate inverse in a normed ring with summable geometric series makes
+an element invertible with inverse norm at most `2 * ‖b‖`. -/
+theorem isUnit_and_norm_inverse_le_two_mul_of_norm_one_sub_mul_lt {a b : R}
+    (hr : ‖1 - a * b‖ < 1 / 2) (hl : ‖1 - b * a‖ < 1 / 2) :
+    IsUnit a ∧ ‖Ring.inverse a‖ ≤ 2 * ‖b‖ := by
+  obtain ⟨hu, hle⟩ := isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt
+    (hr.trans (by norm_num)) (hl.trans (by norm_num))
+  refine ⟨hu, hle.trans ?_⟩
+  calc ‖b‖ / (1 - ‖1 - a * b‖) ≤ ‖b‖ / (1 / 2) := by gcongr; linarith
+    _ = 2 * ‖b‖ := by ring
 
 omit [HasSummableGeomSeries R] in
 /-- In a normed ring, perturbing a unit `u` by `t` with `‖u⁻¹‖ * ‖t‖ < 1` gives an element whose

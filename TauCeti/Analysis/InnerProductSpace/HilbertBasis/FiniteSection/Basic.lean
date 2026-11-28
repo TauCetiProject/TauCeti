@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Map
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Projection
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
@@ -18,8 +19,13 @@ A countable Hilbert basis identifies the first `n + 1` coordinates with the genu
 Euclidean space on `Fin (n + 1)`. Compression to these coordinates is contractive,
 commutes with adjoints, and its zero extension converges strongly to the original
 operator, together with its adjoint. The finite-coordinate projection is the coordinate
-projection `b.projection (Set.Iio (n + 1))`. This provides the common finite-section
-construction for native square-summable sequences and Hardy space via its Hilbert basis.
+projection `b.projection (Set.Iio (n + 1))`. Bundling the finite sections into the `ℓ^∞`
+bounded product via `HilbertBasis.finiteSectionLpₗᵢ` (with operator-first form
+`ContinuousLinearMap.finiteSectionLp`) gives a linear isometric embedding
+`‖T.finiteSectionLp b‖ = ‖T‖`, and transporting the Hilbert basis along a linear
+isometric equivalence `HilbertBasis.mapₗᵢ` conjugates projections and sections.
+This provides the common finite-section construction for native square-summable
+sequences and Hardy space via its Hilbert basis.
 
 ## References
 
@@ -29,7 +35,7 @@ construction for native square-summable sequences and Hardy space via its Hilber
 
 public section
 
-open scoped InnerProductSpace Topology
+open scoped ENNReal InnerProductSpace Topology
 open Filter
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
@@ -54,6 +60,15 @@ theorem finiteInclusion_single (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (i : Fin (n + 1)) : b.finiteInclusion n (PiLp.single 2 i (1 : 𝕜)) = b i := by
   rw [finiteInclusion_apply]
   simp [PiLp.single_apply]
+
+/-- Transporting a Hilbert basis across a linear isometric equivalence post-composes
+`HilbertBasis.finiteInclusion` with that equivalence. -/
+@[simp]
+theorem finiteInclusion_mapₗᵢ {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
+    (b : HilbertBasis ℕ 𝕜 H) (e : H ≃ₗᵢ[𝕜] H') (n : ℕ) :
+    (b.mapₗᵢ e).finiteInclusion n = e.toLinearIsometry.comp (b.finiteInclusion n) := by
+  ext x
+  simp [finiteInclusion_apply, map_sum, map_smul]
 
 variable [CompleteSpace H]
 
@@ -105,6 +120,12 @@ theorem finiteInclusion_comp_coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n :
     (b.finiteInclusion n).toContinuousLinearMap ∘L b.coordinateCutoff n =
       b.finiteProjection n :=
   (rfl)
+
+/-- Extending the finite identity operator by zero gives `b.finiteProjection n`. -/
+theorem cornerEmbedding_finiteInclusion_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (b.finiteInclusion n).cornerEmbedding
+      (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) = b.finiteProjection n := by
+  simp
 
 /-- The projection is the partial Hilbert expansion. -/
 theorem finiteProjection_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
@@ -171,6 +192,29 @@ theorem norm_finiteProjection_le (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
       · exact b.norm_coordinateCutoff_le n
     _ = 1 := by simp
 
+/-- Every finite-coordinate projection has operator norm one. -/
+@[simp]
+theorem norm_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    ‖b.finiteProjection n‖ = 1 := by
+  apply le_antisymm (b.norm_finiteProjection_le n)
+  simpa [b.orthonormal.norm_eq_one] using (b.finiteProjection n).le_opNorm (b 0)
+
+/-- The complementary tail projection `1 - b.finiteProjection n` has operator norm one. -/
+@[simp]
+theorem norm_one_sub_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    ‖(1 : H →L[𝕜] H) - b.finiteProjection n‖ = 1 := by
+  refine le_antisymm ?_ ?_
+  · rw [b.finiteProjection_eq_projection]
+    exact IsStarProjection.norm_le _ (b.isStarProjection_projection _).one_sub
+  · simpa [b.orthonormal.norm_eq_one] using
+      ((1 : H →L[𝕜] H) - b.finiteProjection n).le_opNorm (b (n + 1))
+
+/-- The difference `b.finiteProjection n - 1` has operator norm one. -/
+@[simp]
+theorem norm_finiteProjection_sub_one (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    ‖b.finiteProjection n - 1‖ = 1 := by
+  rw [← norm_neg, neg_sub, norm_one_sub_finiteProjection]
+
 /-- The partial Hilbert expansions converge to the original vector. -/
 theorem tendsto_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (x : H) :
     Tendsto (fun n ↦ b.finiteProjection n x) atTop (𝓝 x) := by
@@ -179,6 +223,26 @@ theorem tendsto_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (x : H) :
   funext n
   exact (b.finiteProjection_apply n x).trans
     (Fin.sum_univ_eq_sum_range (fun i : ℕ ↦ b.repr x i • b i) (n + 1))
+
+/-- Transporting a Hilbert basis across a linear isometric equivalence pre-composes
+`HilbertBasis.coordinateCutoff` with the inverse equivalence. -/
+@[simp]
+theorem coordinateCutoff_mapₗᵢ {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
+    [CompleteSpace H'] (b : HilbertBasis ℕ 𝕜 H) (e : H ≃ₗᵢ[𝕜] H') (n : ℕ) :
+    (b.mapₗᵢ e).coordinateCutoff n = b.coordinateCutoff n ∘L (e.symm : H' →L[𝕜] H) := by
+  ext y i
+  simp
+
+/-- Transporting a Hilbert basis across a linear isometric equivalence conjugates
+`HilbertBasis.finiteProjection` by that equivalence. -/
+@[simp]
+theorem finiteProjection_mapₗᵢ {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
+    [CompleteSpace H'] (b : HilbertBasis ℕ 𝕜 H) (e : H ≃ₗᵢ[𝕜] H') (n : ℕ) :
+    (b.mapₗᵢ e).finiteProjection n =
+      (e : H →L[𝕜] H') ∘L b.finiteProjection n ∘L (e.symm : H' →L[𝕜] H) := by
+  rw [finiteProjection, finiteProjection]
+  ext y
+  simp
 
 end HilbertBasis
 
@@ -235,6 +299,12 @@ theorem finiteSection_sub (T S : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (
     (T - S).finiteSection b n = T.finiteSection b n - S.finiteSection b n := by
   simp [finiteSection]
 
+/-- Compression preserves negation of operators. -/
+@[simp]
+theorem finiteSection_neg (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (-T).finiteSection b n = -T.finiteSection b n := by
+  rw [← zero_sub, finiteSection_sub, finiteSection_zero, zero_sub]
+
 /-- Compression preserves scalar multiplication of operators. -/
 @[simp]
 theorem finiteSection_smul (c : 𝕜) (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
@@ -249,11 +319,33 @@ theorem finiteSection_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
   ext x
   simp [finiteSection]
 
+/-- Compression preserves the multiplicative identity operator. -/
+@[simp]
+theorem finiteSection_one (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (1 : H →L[𝕜] H).finiteSection b n = 1 :=
+  finiteSection_id b n
+
 /-- Compression commutes with the Hilbert adjoint. -/
 @[simp]
 theorem adjoint_finiteSection (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (T.finiteSection b n).adjoint = T.adjoint.finiteSection b n := by
   simp only [finiteSection, adjoint_compression]
+
+/-- Compression preserves the star operation on the operator algebra. -/
+@[simp]
+theorem finiteSection_star (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (star T).finiteSection b n = star (T.finiteSection b n) := by
+  simp only [star_eq_adjoint, adjoint_finiteSection]
+
+/-- Finite sections in a Hilbert basis transported across a linear isometric equivalence agree
+with finite sections of the conjugated operator in the original basis. -/
+@[simp]
+theorem finiteSection_mapₗᵢ {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
+    [CompleteSpace H'] (S : H' →L[𝕜] H') (b : HilbertBasis ℕ 𝕜 H) (e : H ≃ₗᵢ[𝕜] H') (n : ℕ) :
+    S.finiteSection (b.mapₗᵢ e) n =
+      ((e.symm : H' →L[𝕜] H) ∘L S ∘L (e : H →L[𝕜] H')).finiteSection b n := by
+  ext x i
+  simp
 
 /-- Finite-section operator norms are bounded by the original operator norm. -/
 theorem norm_finiteSection_le (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
@@ -289,6 +381,13 @@ theorem zeroExtendedFiniteSection_zero (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (0 : H →L[𝕜] H).zeroExtendedFiniteSection b n = 0 := by
   simp [zeroExtendedFiniteSection]
 
+/-- Zero extension of finite sections preserves negation of operators. -/
+@[simp]
+theorem zeroExtendedFiniteSection_neg (T : H →L[𝕜] H)
+    (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (-T).zeroExtendedFiniteSection b n = -T.zeroExtendedFiniteSection b n := by
+  simp [zeroExtendedFiniteSection]
+
 /-- Zero extension of finite sections preserves addition of operators. -/
 @[simp]
 theorem zeroExtendedFiniteSection_add (T S : H →L[𝕜] H)
@@ -310,6 +409,12 @@ theorem zeroExtendedFiniteSection_sub (T S : H →L[𝕜] H)
 theorem zeroExtendedFiniteSection_smul (c : 𝕜) (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (c • T).zeroExtendedFiniteSection b n = c • T.zeroExtendedFiniteSection b n := by
+  simp [zeroExtendedFiniteSection]
+
+/-- The zero-extended `n`-th finite section of the identity map is `b.finiteProjection n`. -/
+@[simp]
+theorem zeroExtendedFiniteSection_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 H).zeroExtendedFiniteSection b n = b.finiteProjection n := by
   simp [zeroExtendedFiniteSection]
 
 /-- A finite section and its zero extension have exactly the same operator norm. -/
@@ -349,6 +454,26 @@ theorem adjoint_zeroExtendedFiniteSection (T : H →L[𝕜] H)
   simp only [zeroExtendedFiniteSection, LinearIsometry.adjoint_cornerEmbedding,
     adjoint_finiteSection]
 
+/-- Zero extension of finite sections preserves `star`. -/
+@[simp]
+theorem zeroExtendedFiniteSection_star (T : H →L[𝕜] H)
+    (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (star T).zeroExtendedFiniteSection b n = star (T.zeroExtendedFiniteSection b n) := by
+  simp only [star_eq_adjoint, adjoint_zeroExtendedFiniteSection]
+
+/-- Transporting a Hilbert basis across a linear isometric equivalence conjugates
+`ContinuousLinearMap.zeroExtendedFiniteSection`. -/
+@[simp]
+theorem zeroExtendedFiniteSection_mapₗᵢ {H' : Type*} [NormedAddCommGroup H']
+    [InnerProductSpace 𝕜 H'] [CompleteSpace H'] (S : H' →L[𝕜] H') (b : HilbertBasis ℕ 𝕜 H)
+    (e : H ≃ₗᵢ[𝕜] H') (n : ℕ) :
+    S.zeroExtendedFiniteSection (b.mapₗᵢ e) n =
+      (e : H →L[𝕜] H') ∘L
+        ((e.symm : H' →L[𝕜] H) ∘L S ∘L (e : H →L[𝕜] H')).zeroExtendedFiniteSection b n ∘L
+        (e.symm : H' →L[𝕜] H) := by
+  ext y
+  simp [zeroExtendedFiniteSection_eq]
+
 /-- Zero extensions of finite sections converge strongly to the original bounded operator. -/
 theorem tendsto_zeroExtendedFiniteSection (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (x : H) :
@@ -365,5 +490,137 @@ theorem tendsto_adjoint_zeroExtendedFiniteSection (T : H →L[𝕜] H)
     Tendsto (fun n ↦ (T.zeroExtendedFiniteSection b n).adjoint x) atTop
       (𝓝 (T.adjoint x)) := by
   simpa using T.adjoint.tendsto_zeroExtendedFiniteSection b x
+
+-- Try `Module`-based `SMul` before `Algebra.toSMul`, which times out unifying `Semiring` paths on
+-- `lp (fun n ↦ EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) ∞`.
+attribute [local instance 2000] SMulZeroClass.toSMul
+
+private noncomputable def finiteSectionLpAux (b : HilbertBasis ℕ 𝕜 H) (T : H →L[𝕜] H) :
+    lp (fun n ↦ EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) ∞ :=
+  ⟨fun n ↦ T.finiteSection b n,
+    memℓp_infty ⟨‖T‖, Set.forall_mem_range.mpr (T.norm_finiteSection_le b)⟩⟩
+
+private theorem finiteSectionLpAux_apply (b : HilbertBasis ℕ 𝕜 H) (T : H →L[𝕜] H) (n : ℕ) :
+    finiteSectionLpAux b T n = T.finiteSection b n :=
+  rfl
+
+private theorem finiteSectionLpAux_add (b : HilbertBasis ℕ 𝕜 H) (T S : H →L[𝕜] H) :
+    finiteSectionLpAux b (T + S) = finiteSectionLpAux b T + finiteSectionLpAux b S := by
+  ext n
+  simp [finiteSectionLpAux_apply]
+
+private theorem finiteSectionLpAux_smul (b : HilbertBasis ℕ 𝕜 H) (c : 𝕜) (T : H →L[𝕜] H) :
+    finiteSectionLpAux b (c • T) = c • finiteSectionLpAux b T := by
+  ext n
+  simp [finiteSectionLpAux_apply]
+
+private theorem norm_finiteSectionLpAux (b : HilbertBasis ℕ 𝕜 H) (T : H →L[𝕜] H) :
+    ‖finiteSectionLpAux b T‖ = ‖T‖ := by
+  apply le_antisymm
+  · exact lp.norm_le_of_forall_le (norm_nonneg T) (T.norm_finiteSection_le b)
+  · refine T.opNorm_le_bound (norm_nonneg _) fun x ↦ ?_
+    refine le_of_tendsto' (T.tendsto_zeroExtendedFiniteSection b x).norm fun n ↦ ?_
+    calc
+      ‖T.zeroExtendedFiniteSection b n x‖ ≤ ‖T.zeroExtendedFiniteSection b n‖ * ‖x‖ :=
+        le_opNorm _ _
+      _ = ‖finiteSectionLpAux b T n‖ * ‖x‖ := by
+        rw [norm_zeroExtendedFiniteSection_eq, finiteSectionLpAux_apply]
+      _ ≤ ‖finiteSectionLpAux b T‖ * ‖x‖ :=
+        mul_le_mul_of_nonneg_right
+          (lp.norm_apply_le_norm ENNReal.top_ne_zero (finiteSectionLpAux b T) n) (norm_nonneg x)
+
+/-- Bundle the finite sections in a Hilbert basis `b` as a linear isometry into the bounded product
+`lp (fun n ↦ EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) ∞`. -/
+noncomputable def _root_.HilbertBasis.finiteSectionLpₗᵢ (b : HilbertBasis ℕ 𝕜 H) :
+    (H →L[𝕜] H) →ₗᵢ[𝕜]
+      lp (fun n ↦ EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) ∞ where
+  toLinearMap :=
+    { toFun := finiteSectionLpAux b
+      map_add' := finiteSectionLpAux_add b
+      map_smul' := finiteSectionLpAux_smul b }
+  norm_map' := norm_finiteSectionLpAux b
+
+/-- Bundle the finite sections of `T` in a Hilbert basis `b` as an element of the bounded product
+`lp (fun n ↦ EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) ∞`. -/
+noncomputable def finiteSectionLp (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    lp (fun n ↦ EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) ∞ :=
+  b.finiteSectionLpₗᵢ T
+
+/-- Applying `HilbertBasis.finiteSectionLpₗᵢ` gives `ContinuousLinearMap.finiteSectionLp`. -/
+@[simp]
+theorem _root_.HilbertBasis.finiteSectionLpₗᵢ_apply (b : HilbertBasis ℕ 𝕜 H) (T : H →L[𝕜] H) :
+    b.finiteSectionLpₗᵢ T = T.finiteSectionLp b :=
+  (rfl)
+
+/-- Coercing `T.finiteSectionLp b` to a sequence returns `T.finiteSection b`. -/
+theorem coeFn_finiteSectionLp (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    ⇑(T.finiteSectionLp b) = T.finiteSection b :=
+  (rfl)
+
+/-- Evaluating `T.finiteSectionLp b` at index `n` returns `T.finiteSection b n`. -/
+@[simp]
+theorem finiteSectionLp_apply (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    T.finiteSectionLp b n = T.finiteSection b n :=
+  (rfl)
+
+/-- Bundling finite sections preserves `0`. -/
+@[simp]
+theorem finiteSectionLp_zero (b : HilbertBasis ℕ 𝕜 H) :
+    (0 : H →L[𝕜] H).finiteSectionLp b = 0 :=
+  b.finiteSectionLpₗᵢ.map_zero
+
+/-- Bundling finite sections preserves `1`. -/
+@[simp]
+theorem finiteSectionLp_one (b : HilbertBasis ℕ 𝕜 H) :
+    (1 : H →L[𝕜] H).finiteSectionLp b = 1 := by
+  ext n
+  simp [lp.infty_coeFn_one, ContinuousLinearMap.one_def]
+
+/-- Bundling finite sections preserves negation. -/
+@[simp]
+theorem finiteSectionLp_neg (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    (-T).finiteSectionLp b = -T.finiteSectionLp b :=
+  b.finiteSectionLpₗᵢ.map_neg T
+
+/-- Bundling finite sections preserves addition. -/
+@[simp]
+theorem finiteSectionLp_add (T S : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    (T + S).finiteSectionLp b = T.finiteSectionLp b + S.finiteSectionLp b :=
+  b.finiteSectionLpₗᵢ.map_add T S
+
+/-- Bundling finite sections preserves subtraction. -/
+@[simp]
+theorem finiteSectionLp_sub (T S : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    (T - S).finiteSectionLp b = T.finiteSectionLp b - S.finiteSectionLp b :=
+  b.finiteSectionLpₗᵢ.map_sub T S
+
+/-- Bundling finite sections preserves scalar multiplication. -/
+@[simp]
+theorem finiteSectionLp_smul (c : 𝕜) (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    (c • T).finiteSectionLp b = c • T.finiteSectionLp b :=
+  b.finiteSectionLpₗᵢ.map_smul c T
+
+/-- Bundling finite sections commutes with `star`. -/
+@[simp]
+theorem finiteSectionLp_star (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    (star T).finiteSectionLp b = star (T.finiteSectionLp b) := by
+  ext n
+  simp
+
+/-- Bundled finite sections in a transported Hilbert basis agree with those of the conjugated
+operator in the original basis. -/
+@[simp]
+theorem finiteSectionLp_mapₗᵢ {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
+    [CompleteSpace H'] (S : H' →L[𝕜] H') (b : HilbertBasis ℕ 𝕜 H) (e : H ≃ₗᵢ[𝕜] H') :
+    S.finiteSectionLp (b.mapₗᵢ e) =
+      ((e.symm : H' →L[𝕜] H) ∘L S ∘L (e : H →L[𝕜] H')).finiteSectionLp b := by
+  ext n
+  simp
+
+/-- The supremum norm of the finite sections of `T` equals the operator norm of `T`. -/
+@[simp]
+theorem norm_finiteSectionLp (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) :
+    ‖T.finiteSectionLp b‖ = ‖T‖ :=
+  b.finiteSectionLpₗᵢ.norm_map T
 
 end ContinuousLinearMap
