@@ -228,6 +228,12 @@ theorem positivePoints_le_normalizer_puncturedPositivePoints (i : Fin t.rank) :
   exact sup_le (Subgroup.le_normalizer (H := _))
     (D.range_rootSubgroupPoints_le_normalizer_puncturedPositivePoints A i)
 
+/-- The punctured positive subgroup is normal in the positive point subgroup. -/
+instance normal_puncturedPositivePoints_subgroupOf (i : Fin t.rank) :
+    ((D.puncturedPositivePoints A i).subgroupOf (D.positivePoints A)).Normal :=
+  Subgroup.normal_subgroupOf_of_le_normalizer
+    (D.positivePoints_le_normalizer_puncturedPositivePoints A i)
+
 /-- The actual character-lattice torus normalizes the punctured positive subgroup `U⁽ⁱ⁾`. -/
 theorem range_torusPoints_le_normalizer_puncturedPositivePoints (i : Fin t.rank) :
     (D.torusPoints A).range ≤

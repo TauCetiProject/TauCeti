@@ -7,9 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Dimension
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
 /-!
-# The Weyl dimension product in type A₂
+# Roots and the Weyl dimension product in type A₂
 
 For the pinned simply connected root datum of type `A₂`, the three positive roots are
 `α₁`, `α₂`, and `α₁ + α₂`.  Consequently the Weyl dimension product at the
@@ -20,6 +21,8 @@ dominant weight with fundamental-weight coordinates `(a, b)` is
 This is the root-datum computation needed to specialize the abstract Weyl dimension formula to
 the `A₂` worked example.  The numerator and denominator are first stated integrally, making the
 factor `2` contributed by the nonsimple positive root explicit; their quotient is stated in `ℚ`.
+The highest-root relation also holds in the rational root system with the same numbered
+indices; it is positive and distinct from both simple roots.
 
 ## Main results
 
@@ -209,6 +212,45 @@ theorem weylDimensionProduct_typeA_two (a b : ℤ) :
       (((a + 1) * (b + 1) * (a + b + 2) : ℤ) : ℚ) / 2 := by
   rw [prod_shiftedCorootPairing_typeA_two, prod_positiveCorootHeight_typeA_two]
   norm_num
+
+section Rational
+
+local instance : NeZero (DynkinType.A 2).rank := ⟨by simp⟩
+
+variable {ht : (DynkinType.A 2).Valid}
+
+/-- The highest rational A₂ root is the sum of its two numbered simple roots. -/
+theorem root_rationalRootSystem_typeA2HighestRootIndex :
+    ((DynkinType.A 2).rationalRootSystem ht).root typeA2HighestRootIndex =
+      ((DynkinType.A 2).rationalRootSystem ht).root ((DynkinType.A 2).simpleIndex ht 0) +
+      ((DynkinType.A 2).rationalRootSystem ht).root ((DynkinType.A 2).simpleIndex ht 1) := by
+  have hs (i : Fin (DynkinType.A 2).rank) :
+      (DynkinType.A 2).simpleIndex ht i = typeASimpleIndex 2 i := simpleIndex_A 2 ht i
+  simpa only [one_nsmul] using
+    ((DynkinType.A 2).root_rationalRootSystem_eq_nsmul_add_iff ht
+      ((DynkinType.A 2).simpleIndex ht 0) ((DynkinType.A 2).simpleIndex ht 1)
+      typeA2HighestRootIndex 1).mpr
+        (by
+          rw [one_nsmul, hs 0, hs 1]
+          -- Normalize the dispatcher carriers before applying the integral family relation.
+          dsimp only [DynkinType.rank, DynkinType.numRoots]
+          rw [simplyConnectedRootDatum_A]
+          exact root_typeA2HighestRootIndex)
+
+/-- The highest A₂ root belongs to the positive rational roots. -/
+theorem typeA2HighestRootIndex_mem_posRoots_rational : typeA2HighestRootIndex ∈
+    posRoots ((DynkinType.A 2).rationalRootSystem ht) ((DynkinType.A 2).rationalBase ht) :=
+  add_mem_posRoots _ _ (simpleIndex_mem_posRoots (t := .A 2) (ht := ht) 0)
+    (simpleIndex_mem_posRoots (t := .A 2) (ht := ht) 1)
+    root_rationalRootSystem_typeA2HighestRootIndex
+
+/-- The highest A₂ root is distinct from every numbered simple root. -/
+theorem typeA2HighestRootIndex_ne_simpleIndex (i : Fin 2) :
+    typeA2HighestRootIndex ≠ (DynkinType.A 2).simpleIndex ht i := by
+  rw [simpleIndex_A 2 ht i]
+  exact typeA2HighestRootIndex_ne_simple i
+
+end Rational
 
 end DynkinType
 
