@@ -365,33 +365,28 @@ private theorem quotientMk_orbitRelFiberAtlasSection :
 end Atlas
 
 variable (I G I' M) in
+private noncomputable def orbitRelFiberTrivAt (q : MulAction.orbitRel.Quotient G M) :
+    Trivialization G (orbitRelFiber.proj G M) :=
+  haveI : Nonempty M := ⟨q.out⟩
+  orbitRelFiberTrivialization (isOpen_orbitRelFiberAtlasSet I G I' M q)
+    (contMDiffOn_orbitRelFiberAtlasSection I G I' M q)
+    (quotientMk_orbitRelFiberAtlasSection I G I' M q)
+
+variable (I G I' M) in
 /-- An atlas of the orbit projection: around every orbit, the trivialization induced by a smooth
 local section through it. -/
-def orbitRelFiberAtlas : MapFiber.Atlas G (orbitRelFiber.proj G M) where
-  trivAt q :=
-    haveI : Nonempty M := ⟨q.out⟩
-    orbitRelFiberTrivialization (isOpen_orbitRelFiberAtlasSet I G I' M q)
-      (contMDiffOn_orbitRelFiberAtlasSection I G I' M q)
-      (quotientMk_orbitRelFiberAtlasSection I G I' M q)
-  mem_baseSet_trivAt q := mem_orbitRelFiberAtlasSet I G I' M q
-
-/-- The trivializations of `orbitRelFiberAtlas` turn the right action into right multiplication. -/
-private theorem orbitRelFiberAtlas_apply_op_smul (q : MulAction.orbitRel.Quotient G M)
-    {p : LeftToRightAction G M}
-    (hp : orbitRelFiber.proj G M p ∈ ((orbitRelFiberAtlas I G I' M).trivAt q).baseSet) (g : G) :
-    ((orbitRelFiberAtlas I G I' M).trivAt q (op g • p)).2 =
-      ((orbitRelFiberAtlas I G I' M).trivAt q p).2 * g :=
-  haveI : Nonempty M := ⟨q.out⟩
-  orbitRelFiberTrivialization_apply_op_smul (isOpen_orbitRelFiberAtlasSet I G I' M q)
-    (contMDiffOn_orbitRelFiberAtlasSection I G I' M q)
-    (quotientMk_orbitRelFiberAtlasSection I G I' M q) hp g
+def orbitRelFiberAtlas : MapFiber.Atlas G (orbitRelFiber.proj G M) :=
+  MapFiber.Atlas.ofTrivAt (orbitRelFiberTrivAt I G I' M) fun q ↦ by
+    rw [orbitRelFiberTrivAt, orbitRelFiberTrivialization_baseSet]
+    exact mem_orbitRelFiberAtlasSet I G I' M q
 
 /-- The trivializations of `orbitRelFiberAtlas` are diffeomorphisms onto their images. -/
 theorem isContMDiff_orbitRelFiberAtlas :
     letI := orbitRelQuotientChartedSpace I G I' M
     (orbitRelFiberAtlas I G I' M).IsContMDiff ∞ 𝓘(ℝ, QuotientModelSpace E E') I I' := by
   let _ := orbitRelQuotientChartedSpace I G I' M
-  refine ⟨fun q ↦ ?_, fun q ↦ ?_⟩ <;> have : Nonempty M := ⟨q.out⟩
+  refine ⟨?_, ?_⟩ <;> rw [orbitRelFiberAtlas, MapFiber.Atlas.charts_ofTrivAt] <;>
+    rintro _ ⟨q, rfl⟩ <;> have : Nonempty M := ⟨q.out⟩
   · exact contMDiffOn_orbitRelFiberTrivialization (isOpen_orbitRelFiberAtlasSet I G I' M q)
       (contMDiffOn_orbitRelFiberAtlasSection I G I' M q)
       (quotientMk_orbitRelFiberAtlasSection I G I' M q)
@@ -412,8 +407,13 @@ def orbitRelFiberBundle : FiberBundle G (orbitRelFiber G M) :=
 theorem principalBundle_orbitRelFiber :
     letI := orbitRelFiberBundle I G I' M
     PrincipalBundle G (orbitRelFiber G M) :=
-  (orbitRelFiberAtlas I G I' M).principalBundle orbitRelFiber.proj_smul fun q _ hp g ↦
-    orbitRelFiberAtlas_apply_op_smul q hp g
+  (orbitRelFiberAtlas I G I' M).principalBundle orbitRelFiber.proj_smul (by
+    rw [orbitRelFiberAtlas, MapFiber.Atlas.charts_ofTrivAt]
+    rintro _ ⟨q, rfl⟩ _ hp g
+    have : Nonempty M := ⟨q.out⟩
+    exact orbitRelFiberTrivialization_apply_op_smul (isOpen_orbitRelFiberAtlasSet I G I' M q)
+      (contMDiffOn_orbitRelFiberAtlasSection I G I' M q)
+      (quotientMk_orbitRelFiberAtlasSection I G I' M q) hp g)
 
 /-- **Free proper quotients are smooth bundles.** The bundle of orbits of a free proper smooth
 action has smooth coordinate changes for the quotient manifold structure on `M ⧸ G`. -/
