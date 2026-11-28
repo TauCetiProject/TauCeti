@@ -39,4 +39,17 @@ theorem isEventuallyConstantFrom_of_isIso_map_succ {F : J ⥤ C} {m : J}
     rw [← homOfLE_comp hj (Order.le_succ j), F.map_comp]
     infer_instance
 
+/-- A tower on a succ-archimedean order whose successor transitions are isomorphisms from
+`m` on is eventually constant to `op m`. -/
+theorem isEventuallyConstantTo_of_isIso_map_succ {F : Jᵒᵖ ⥤ C} {m : J}
+    (h : ∀ j, m ≤ j → IsIso (F.map (homOfLE (Order.le_succ j)).op)) :
+    F.IsEventuallyConstantTo (Opposite.op m) := by
+  have hF : F.rightOp.IsEventuallyConstantFrom m :=
+    isEventuallyConstantFrom_of_isIso_map_succ (F := F.rightOp) (m := m) fun j hj ↦ by
+      have := h j hj
+      exact inferInstanceAs (IsIso ((F.map (homOfLE (Order.le_succ j)).op).op))
+  intro j f
+  have : IsIso (F.map f).op := hF f.unop
+  exact isIso_of_op (F.map f)
+
 end CategoryTheory.Functor

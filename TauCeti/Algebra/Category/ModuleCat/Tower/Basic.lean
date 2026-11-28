@@ -12,6 +12,9 @@ public import Mathlib.CategoryTheory.Limits.IsLimit
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Quotient.Basic
+import Mathlib.Order.SuccPred.Nat
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+import TauCeti.CategoryTheory.Limits.Constructions.EventuallyConstant
 
 /-!
 # `lim` and `lim¹` of towers of modules
@@ -381,6 +384,17 @@ theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : 
     Function.Surjective (F.limπ n) := fun _ ↦
   F.exists_limπ_eq_of_forall_exists_transition_eq (fun _ _ ↦ True)
     (fun k y _ ↦ (h k y).imp fun _ hy ↦ ⟨trivial, hy⟩) trivial
+
+/-- If every transition map of a tower from the index `N` on is bijective, then so is every
+projection `lim A → Aₙ` with `N ≤ n`: the tower is constant from `N` on. -/
+theorem limπ_bijective_of_le (N : ℕ) (h : ∀ k, N ≤ k → Function.Bijective (F.transition k))
+    {n : ℕ} (hn : N ≤ n) : Function.Bijective (F.limπ n) := by
+  have hF : F.IsEventuallyConstantTo (op N) :=
+    Functor.isEventuallyConstantTo_of_isIso_map_succ (F := F) (m := N) fun k hk ↦
+      (ConcreteCategory.isIso_iff_bijective _).2 (h k hk)
+  have := hF.isIso_π_of_isLimit' F.isLimitLimCone (op n) (homOfLE hn).op
+  rw [← F.limCone_π_app]
+  exact (ConcreteCategory.isIso_iff_bijective _).1 this
 
 /-- If every transition map of a tower is a split epimorphism, then so is its shift map. -/
 theorem isSplitEpi_shift (h : ∀ n, IsSplitEpi (F.map (homOfLE (Nat.le_succ n)).op)) :

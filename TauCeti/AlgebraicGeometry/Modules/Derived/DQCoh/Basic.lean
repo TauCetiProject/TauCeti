@@ -32,7 +32,8 @@ complexes all of whose cohomology sheaves are quasi-coherent. It is the property
   `DQCoh.mem_iff_of_iSup_eq_top`: membership in `D_QCoh(𝒪_X)` is local on `X`.
 * `DQCoh.mapDerivedCategory_tildeFunctor_obj`: for a commutative ring `A`, the derived functor of
   `M ↦ M~` sends `D(A)` into `D_QCoh(𝒪_{Spec A})`, the easy half of the equivalence
-  `D(A) ≌ D_QCoh(𝒪_{Spec A})` of [Stacks, Lemma 36.3.5](https://stacks.math.columbia.edu/tag/06Z0).
+  `D(A) ≌ D_QCoh(𝒪_{Spec A})` of [Stacks, Lemma 36.3.5](https://stacks.math.columbia.edu/tag/06Z0),
+  which is `DQCoh.affineEquiv` in `TauCeti.AlgebraicGeometry.Modules.Derived.DQCoh.Affine`.
 
 The category of `𝒪_X`-modules is a Grothendieck abelian category, so it has K-injective
 resolutions and exact coproducts; these give the coproducts in `D(𝒪_X)` and their homology.

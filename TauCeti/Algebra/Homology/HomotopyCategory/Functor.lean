@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory
+public import Mathlib.CategoryTheory.CatCommSq
 
 /-!
 # Functors induced on homotopy categories
@@ -97,5 +98,17 @@ lemma mapHomotopyCategoryCompIso_inv_app_quotient_obj (K : HomologicalComplex V 
     (mapHomotopyCategoryCompIso e c).inv.app ((HomotopyCategory.quotient V c).obj K) =
       (HomotopyCategory.quotient W' c).map ((mapHomologicalComplexCompIso e c).inv.app K) :=
   Quotient.natTransLift_app _ _ _ _ K
+
+end CategoryTheory.Functor
+
+namespace CategoryTheory.Functor
+
+/-- The functor induced by an additive functor on homotopy categories commutes with the quotient
+functors. -/
+instance catCommSqMapHomotopyCategory {V W : Type*} [Category* V] [Preadditive V]
+    [Category* W] [Preadditive W] (F : V ⥤ W) [F.Additive] {ι : Type*} (c : ComplexShape ι) :
+    CatCommSq (F.mapHomologicalComplex c) (HomotopyCategory.quotient V c)
+      (HomotopyCategory.quotient W c) (F.mapHomotopyCategory c) :=
+  ⟨(F.mapHomotopyCategoryFactors c).symm⟩
 
 end CategoryTheory.Functor

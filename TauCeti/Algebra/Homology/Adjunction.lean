@@ -17,7 +17,8 @@ In particular, applying this construction to extension and restriction of scalar
 adjunction on unbounded module complexes used to derive extension of scalars.
 
 The construction uses Mathlib's `NatTrans.mapHomologicalComplex` for the unit and counit;
-no exactness, boundedness or existence of homology is required.
+no exactness, boundedness or existence of homology is required. The adjunction on homotopy
+categories is in `TauCeti.Algebra.Homology.HomotopyCategory.Adjunction`.
 -/
 
 public section

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
@@ -394,6 +395,15 @@ lemma exact_of_eq_epi_comp_of_eq_comp_mono {X₁ A₁ X₂ A₂ X₃ : C} {f : X
   exact (exact_iff_of_epi_of_isIso_of_mono
     (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w]))
     (S₂ := ShortComplex.mk (e ≫ i) (g' ≫ m) zero) { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := m }).1 h₁
+
+/-- A left exact additive functor between abelian categories preserves a short exact sequence
+as soon as the image of its final map is an epimorphism. -/
+lemma ShortExact.map_of_epi {D : Type*} [Category* D] [Abelian D]
+    {S : ShortComplex C} (hS : S.ShortExact) (F : C ⥤ D) [F.Additive]
+    [Limits.PreservesFiniteLimits F] [Epi (F.map S.g)] : (S.map F).ShortExact := by
+  obtain ⟨h, hf⟩ := (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono F).1
+    inferInstance S hS
+  exact { exact := h, mono_f := hf, epi_g := (inferInstance : Epi (F.map S.g)) }
 
 end CategoryTheory.ShortComplex
 

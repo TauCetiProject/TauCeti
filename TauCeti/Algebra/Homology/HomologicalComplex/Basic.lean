@@ -130,6 +130,23 @@ lemma iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology j] :
     K.iCycles i ≫ K.toCycles i j = 0 := by
   rw [← cancel_mono (K.iCycles j), Category.assoc, toCycles_i, iCycles_d, zero_comp]
 
+/-- The kernel of the corestricted differential `Kᵢ ⟶ Zⱼ` is the cycles in degree `i`,
+when `j` is the next degree. -/
+noncomputable def kernelToCyclesIso (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [HasKernel (K.toCycles i j)] (hij : c.next i = j) :
+    kernel (K.toCycles i j) ≅ K.cycles i :=
+  (kernelIsKernel _).conePointUniqueUpToIso
+    (isKernelOfComp (K.iCycles j) (K.d i j) (K.cyclesIsKernel i j hij)
+      (K.iCycles_toCycles i j) (K.toCycles_i i j))
+
+/-- The identification of the kernel of the corestricted differential with cycles respects the
+inclusion into the term of the complex. -/
+@[reassoc (attr := simp)]
+lemma kernelToCyclesIso_hom_iCycles (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [HasKernel (K.toCycles i j)] (hij : c.next i = j) :
+    (K.kernelToCyclesIso i j hij).hom ≫ K.iCycles i = kernel.ι (K.toCycles i j) := by
+  exact IsLimit.conePointUniqueUpToIso_hom_comp _ _ WalkingParallelPair.zero
+
 /-- The short complex `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` cut out of a homological complex. Its
 second map is the differential with codomain restricted to the cycles in degree `j`. -/
 noncomputable def cyclesShortComplex (i j : ι) [K.HasHomology i] [K.HasHomology j] :
@@ -750,4 +767,28 @@ lemma cyclesComparison_homologyπ :
   exact congrArg (fun f ↦ ((K.sc i).mapCyclesIso G).inv ≫
     HomologicalComplex.cyclesMap φ i ≫ f)
     ((L.sc i).homologyπ_comp_mapHomologyIso_hom H)
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+/-- A functor preserving the homology of the short complexes in degree `i` of two homological
+complexes sends a map between them which is a quasi-isomorphism in degree `i` to a
+quasi-isomorphism in degree `i`. -/
+lemma quasiIsoAt_map_of_preservesLeftHomologyOf {C D ι : Type*} [Category* C] [Category* D]
+    [HasZeroMorphisms C] [HasZeroMorphisms D] {c : ComplexShape ι} (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] {K L : HomologicalComplex C c} (f : K ⟶ L) (i : ι) [K.HasHomology i]
+    [L.HasHomology i] [((F.mapHomologicalComplex c).obj K).HasHomology i]
+    [((F.mapHomologicalComplex c).obj L).HasHomology i] [F.PreservesLeftHomologyOf (K.sc i)]
+    [F.PreservesLeftHomologyOf (L.sc i)] [QuasiIsoAt f i] :
+    QuasiIsoAt ((F.mapHomologicalComplex c).map f) i := by
+  rw [quasiIsoAt_iff] at *
+  -- Evaluating the mapped complex at its three adjacent degrees gives the same short complex
+  -- as mapping `K.sc i`: both constructions apply F to the same objects and differentials.
+  have : (F.mapShortComplex.obj ((shortComplexFunctor C c i).obj K)).HasHomology :=
+    ‹((F.mapHomologicalComplex c).obj K).HasHomology i›
+  have : (F.mapShortComplex.obj ((shortComplexFunctor C c i).obj L)).HasHomology :=
+    ‹((F.mapHomologicalComplex c).obj L).HasHomology i›
+  exact ShortComplex.quasiIso_map_of_preservesLeftHomology F ((shortComplexFunctor C c i).map f)
+
+
 end HomologicalComplex
