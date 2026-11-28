@@ -22,6 +22,9 @@ assumed. This lets the root bound
 `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero` use the leading-term criterion
 `IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`, which assumes invariance under negation,
 without taking that invariance as a hypothesis.
+
+Any power-multiplicative function sending `0` to `0` into a monoid with zero and no zero divisors
+vanishes on nilpotent elements (`IsPowMul.eq_zero_of_isNilpotent`).
 -/
 
 public section
@@ -64,3 +67,11 @@ theorem IsPowMul.map_neg_eq_map (hf_pm : IsPowMul f) (hf_nn : ∀ a, 0 ≤ f a)
     _ ≤ f (-1) * f b := hf_mul _ _
     _ ≤ 1 * f b := mul_le_mul_of_nonneg_right hm1 (hf_nn b)
     _ = f b := one_mul _
+
+/-- A power-multiplicative function sending `0` to `0` vanishes on nilpotent elements. -/
+theorem IsPowMul.eq_zero_of_isNilpotent {R S : Type*} [MonoidWithZero R] [MonoidWithZero S]
+    [IsReduced S] {f : R → S} (hf : IsPowMul f) (h0 : f 0 = 0) {x : R}
+    (hx : IsNilpotent x) : f x = 0 := by
+  obtain ⟨n, hn⟩ := hx
+  exact eq_zero_of_pow_eq_zero <| by
+    rw [← hf x (Nat.le_add_left 1 n), pow_succ, hn, zero_mul, h0]
