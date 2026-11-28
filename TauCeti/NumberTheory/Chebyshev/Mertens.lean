@@ -19,11 +19,11 @@ import TauCeti.NumberTheory.PrimeCounting
 
 Chebyshev's identity `log ⌊x⌋₊! = ∑_{1 ≤ n ≤ x} Λ(n) ⌊x / n⌋₊`
 (`Chebyshev.log_floor_factorial_eq_sum_vonMangoldt`) sandwiches `log ⌊x⌋₊!` between
-`x ∑_{1 ≤ n ≤ x} Λ(n) / n - ψ(x)` and `x ∑_{1 ≤ n ≤ x} Λ(n) / n`. Combining the half-logarithmic
-Stirling bounds on `log ⌊x⌋₊!` (`Real.log_floor_factorial_le`, `Real.le_log_floor_factorial`) with
-Chebyshev's linear estimate `ψ(x) ≤ (log 4 + 4) x` (`Chebyshev.psi_le_const_mul_self`) proves
-Mertens' first theorem in von Mangoldt form with explicit effective constants:
-`log x - 3 / 2 ≤ ∑_{1 ≤ n ≤ x} Λ(n) / n ≤ log x + log 4 + 4` for `x ≥ 1`.
+`x ∑_{1 ≤ n ≤ x} Λ(n) / n - ψ(x)` and `x ∑_{1 ≤ n ≤ x} Λ(n) / n`. The central binomial
+coefficient bounds the growth of `Nat.lcmUpto` from half the cutoff, giving `ψ(x) ≤ x log 4`.
+Together with the Stirling bounds on `log ⌊x⌋₊!` (`Real.log_floor_factorial_le`,
+`Real.le_log_floor_factorial`), this gives
+`log x - 3 / 2 ≤ ∑_{1 ≤ n ≤ x} Λ(n) / n ≤ log x + log 4` for `x ≥ 1`.
 
 Subtracting the convergent higher-prime-power contribution (`≤ 2 log 4` by
 `ArithmeticFunction.vonMangoldt.sum_Icc_nonprime_div_le_two_mul_log_four`) transfers the estimate
@@ -118,17 +118,75 @@ theorem mul_sum_vonMangoldt_div_sub_psi_le_log_floor_factorial (x : ℝ) :
     _ ≤ Λ n * (⌊x / n⌋₊ : ℝ) :=
         mul_le_mul_of_nonneg_left (Nat.sub_one_lt_floor (x / n)).le vonMangoldt_nonneg
 
+/-- Prime powers above both summands contribute carries to the binomial coefficient. -/
+private theorem lcmUpto_add_dvd_mul_choose (m k : ℕ) (hk : k ≤ m) :
+    Nat.lcmUpto (m + k) ∣ Nat.lcmUpto m * (m + k).choose k := by
+  rw [← Nat.factorization_prime_le_iff_dvd (Nat.lcmUpto_ne_zero _)
+    (mul_ne_zero (Nat.lcmUpto_ne_zero _) (Nat.choose_ne_zero (Nat.le_add_left _ _)))]
+  intro p hp
+  by_cases hm : m = 0
+  · have : k = 0 := by omega
+    simp [hm, this]
+  rw [Nat.factorization_mul (Nat.lcmUpto_ne_zero _)
+    (Nat.choose_ne_zero (Nat.le_add_left _ _)), Finsupp.add_apply,
+    Nat.factorization_lcmUpto _ hp, Nat.factorization_lcmUpto _ hp,
+    Nat.factorization_choose' hp (Nat.lt_succ_self _), Nat.succ_eq_add_one]
+  have hcard : #(Ioc (p.log m) (p.log (m + k))) ≤
+      #{i ∈ Ico 1 (p.log (m + k) + 1) | p ^ i ≤ k % p ^ i + m % p ^ i} := by
+    apply card_le_card
+    intro i hi
+    obtain ⟨hlo, hhi⟩ := mem_Ioc.mp hi
+    have hm' := (Nat.log_lt_iff_lt_pow hp.one_lt hm).mp hlo
+    have hpow := Nat.pow_le_of_le_log (y := m + k) (by omega) hhi
+    exact mem_filter.mpr ⟨mem_Ico.mpr ⟨by omega, by omega⟩,
+      by rwa [Nat.mod_eq_of_lt (hk.trans_lt hm'), Nat.mod_eq_of_lt hm', add_comm]⟩
+  rw [Nat.card_Ioc] at hcard
+  omega
+
+/-- Iterating the binomial bound with the upper half of each cutoff gives a power of four. -/
+private theorem lcmUpto_le_four_pow (n : ℕ) : Nat.lcmUpto n ≤ 4 ^ n := by
+  induction n using Nat.strong_induction_on with
+  | ind n ih =>
+    by_cases hn : n ≤ 1
+    · interval_cases n <;> decide
+    let k := n / 2
+    let m := n - k
+    have hmk : m + k = n := by dsimp [m, k]; omega
+    have hkm : k ≤ m := by dsimp [m, k]; omega
+    have hm : m < n := by dsimp [m, k]; omega
+    have hnk : n ≤ 2 * k + 1 := by dsimp [k]; omega
+    have hchoose : n.choose k ≤ 4 ^ k := calc
+      _ ≤ (2 * k + 1).choose k := Nat.choose_le_choose k hnk
+      _ ≤ 2 ^ (2 * k) := Nat.choose_succ_le_two_pow _ _
+      _ = _ := by norm_num [pow_mul]
+    calc
+      Nat.lcmUpto n ≤ Nat.lcmUpto m * n.choose k := by
+        rw [← hmk]
+        exact Nat.le_of_dvd (Nat.mul_pos (Nat.lcmUpto_pos _) (Nat.choose_pos (Nat.le_add_left _ _)))
+          (lcmUpto_add_dvd_mul_choose m k hkm)
+      _ ≤ 4 ^ m * 4 ^ k := Nat.mul_le_mul (ih m hm) hchoose
+      _ = 4 ^ n := by rw [← pow_add, hmk]
+
+theorem psi_le_mul_log_four {x : ℝ} (hx : 0 ≤ x) : ψ x ≤ x * Real.log 4 := by
+  rw [psi_eq_psi_coe_floor, psi_eq_log_lcmUpto]
+  calc
+    _ ≤ Real.log ((4 : ℝ) ^ ⌊x⌋₊) := Real.log_le_log
+      (Nat.cast_pos.mpr (Nat.lcmUpto_pos _)) (by exact_mod_cast lcmUpto_le_four_pow ⌊x⌋₊)
+    _ = (⌊x⌋₊ : ℝ) * Real.log 4 := Real.log_pow ..
+    _ ≤ x * Real.log 4 := mul_le_mul_of_nonneg_right (Nat.floor_le hx)
+      (Real.log_nonneg (by norm_num))
+
 /-- Explicit upper bound in Mertens' first theorem for `Λ`: for `x ≥ 1`,
-`∑_{1 ≤ n ≤ x} Λ(n) / n ≤ log x + log 4 + 4`. -/
+`∑_{1 ≤ n ≤ x} Λ(n) / n ≤ log x + log 4`. -/
 theorem sum_vonMangoldt_div_le {x : ℝ} (hx : 1 ≤ x) :
-    ∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n / n ≤ Real.log x + (Real.log 4 + 4) := by
+    ∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n / n ≤ Real.log x + Real.log 4 := by
   have hx0 : 0 < x := zero_lt_one.trans_le hx
   have h1 := mul_sum_vonMangoldt_div_sub_psi_le_log_floor_factorial x
   have h2 := Real.log_floor_factorial_le hx
-  have h3 := psi_le_const_mul_self hx0.le
+  have h3 := psi_le_mul_log_four hx0.le
   have hlog : Real.log x ≤ x - 1 := Real.log_le_sub_one_of_pos hx0
   refine le_of_mul_le_mul_left ?_ hx0
-  nlinarith
+  linarith only [h1, h2, h3, hlog, hx]
 
 /-- Explicit lower bound in Mertens' first theorem for `Λ`: for `x ≥ 0`,
 `log x - 3 / 2 ≤ ∑_{1 ≤ n ≤ x} Λ(n) / n`. -/
@@ -200,7 +258,8 @@ theorem sum_vonMangoldt_div_sub_sum_primesLE_log_div_le (N : ℕ) :
 `∑_{p ≤ x} log p / p ≤ log x + log 4 + 4`. -/
 theorem sum_primesLE_log_div_le {x : ℝ} (hx : 1 ≤ x) :
     ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p ≤ Real.log x + (Real.log 4 + 4) :=
-  (sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊).trans (sum_vonMangoldt_div_le hx)
+  (sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊).trans
+    ((sum_vonMangoldt_div_le hx).trans (by linarith))
 
 /-- `∑_{p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log 2` for `x ≥ 1`, a crude form of Mertens's first
 theorem. -/

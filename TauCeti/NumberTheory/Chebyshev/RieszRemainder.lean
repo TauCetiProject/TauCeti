@@ -27,13 +27,13 @@ trivial character the Riesz remainder is `G_1(y) = ∑_{1 ≤ n ≤ y} Λ(n) (y 
 (1 + γ) y`, with the real sum written as `∑ n ∈ Ioc 0 ⌊y⌋₊, …`, the index set of `Chebyshev.psi`.
 The Lipschitz bounds for Riesz sums (`TauCeti.norm_rieszSum_sub_rieszSum_le`,
 `TauCeti.norm_mul_rieszSum_div_sub_mul_rieszSum_div_le`), Chebyshev's bound `ψ(y) ≤ 3 y`
-(`Chebyshev.psi_le_three_mul_self`) and Mertens' first theorem
-`|∑_{n ≤ y} Λ(n) / n - log y| ≤ log 4 + 4` (`Chebyshev.abs_sum_vonMangoldt_div_sub_log_le`)
+(`Chebyshev.psi_le_three_mul_self`) and the bounds from Mertens' first theorem
+(`Chebyshev.sum_vonMangoldt_div_le`, `Chebyshev.abs_sum_vonMangoldt_div_sub_log_le`)
 give, for `a ≥ 0`, `w, w' > 0` and `y, z ≥ 1`,
 * `|w G(a / w) - w' G(a / w')| ≤ 3 (a / min w w') |w - w'|`, also for `G_1`;
-* `|G(y) - G(z)| ≤ |y - z| (log (max y z) + log 4 + 4 + ‖D‖)` and
+* `|G(y) - G(z)| ≤ |y - z| (log (max y z) + log 4 + ‖D‖)` and
   `|G_1(y) - G_1(z)| ≤ (log 4 + 4 + γ) |y - z|`;
-* `|G(y)| ≤ y (log y + log 4 + 4 + ‖D‖)` and `|G_1(y)| ≤ (log 4 + 6 + γ) y`.
+* `|G(y)| ≤ y (log y + log 4 + ‖D‖)` and `|G_1(y)| ≤ (log 4 + 6 + γ) y`.
 
 All constants above are at most `2 + γ + (log 4 + 4)`, so this one absolute constant serves in the
 bounds for `G_χ` and `G_1`.
@@ -110,16 +110,16 @@ theorem norm_mul_rieszSum_div_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c
 
 /-- **Lipschitz bound for the Riesz remainder.** Let `‖c(n)‖ ≤ Λ(n)` for all
 `n`, let `D ∈ ℂ` and `G(y) = TauCeti.rieszSum c y + y D`. If `max y z ≥ 1`, then
-`‖G(y) - G(z)‖ ≤ |y - z| (log (max y z) + log 4 + 4 + ‖D‖)`. -/
+`‖G(y) - G(z)‖ ≤ |y - z| (log (max y z) + log 4 + ‖D‖)`. -/
 theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (D : ℂ) {y z : ℝ}
     (h : 1 ≤ max y z) :
     ‖(rieszSum c y + y * D) - (rieszSum c z + z * D)‖ ≤
-      |y - z| * (Real.log (max y z) + (Real.log 4 + 4) + ‖D‖) := by
+      |y - z| * (Real.log (max y z) + Real.log 4 + ‖D‖) := by
   wlog hzy : z ≤ y generalizing y z
   · rw [norm_sub_rev, abs_sub_comm, max_comm]
     exact this (by rwa [max_comm]) (not_le.1 hzy).le
   rw [max_eq_left hzy] at h ⊢
-  have hsum : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ / n ≤ Real.log y + (Real.log 4 + 4) := by
+  have hsum : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ / n ≤ Real.log y + Real.log 4 := by
     have hΛ := sum_vonMangoldt_div_le h
     rw [← Icc_add_one_left_eq_Ioc, zero_add] at hΛ
     exact (sum_le_sum fun n _ ↦ div_le_div_of_nonneg_right (hc n) n.cast_nonneg).trans hΛ
@@ -132,10 +132,10 @@ theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ �
       Real.norm_of_nonneg (sub_nonneg.2 hzy), le_refl]
 
 /-- **Size bound for the Riesz remainder.** Let `‖c(n)‖ ≤ Λ(n)` for all `n` and
-`D ∈ ℂ`. For `y ≥ 1`, `‖TauCeti.rieszSum c y + y D‖ ≤ y (log y + log 4 + 4 + ‖D‖)`. -/
+`D ∈ ℂ`. For `y ≥ 1`, `‖TauCeti.rieszSum c y + y D‖ ≤ y (log y + log 4 + ‖D‖)`. -/
 theorem norm_rieszSum_add_mul_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (D : ℂ) {y : ℝ}
     (hy : 1 ≤ y) :
-    ‖rieszSum c y + y * D‖ ≤ y * (Real.log y + (Real.log 4 + 4) + ‖D‖) := by
+    ‖rieszSum c y + y * D‖ ≤ y * (Real.log y + Real.log 4 + ‖D‖) := by
   have hy0 : 0 ≤ y := zero_le_one.trans hy
   simpa [abs_of_nonneg hy0, max_eq_left hy0] using
     norm_rieszSum_add_mul_sub_le hc D (z := 0) (le_max_of_le_left hy)

@@ -36,7 +36,8 @@ theorem norm_logDeriv_one_le_of_truncation {q : ℕ} [NeZero q] (χ : DirichletC
     (h : ‖logDeriv χ.LFunction 1 + ∑ n ∈ Ioc 0 ⌊z⌋₊, χ n * (Λ n : ℂ) / n‖ ≤ E) :
     ‖logDeriv χ.LFunction 1‖ ≤ E + (Real.log z + (Real.log 4 + 4)) := by
   have hsum : ‖∑ n ∈ Ioc 0 ⌊z⌋₊, χ n * (Λ n : ℂ) / n‖ ≤ Real.log z + (Real.log 4 + 4) := by
-    refine (norm_sum_le_of_le _ (fun n _ ↦ ?_)).trans (Chebyshev.sum_vonMangoldt_div_le hz)
+    refine (norm_sum_le_of_le _ (fun n _ ↦ ?_)).trans
+      ((Chebyshev.sum_vonMangoldt_div_le hz).trans (by linarith))
     rw [norm_div, Complex.norm_natCast]
     exact div_le_div_of_nonneg_right (χ.norm_mul_vonMangoldt_le n) (Nat.cast_nonneg n)
   exact (norm_le_add_norm_add _ _).trans (add_le_add h hsum)

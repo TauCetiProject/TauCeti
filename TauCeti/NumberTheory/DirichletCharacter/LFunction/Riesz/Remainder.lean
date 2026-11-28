@@ -19,8 +19,8 @@ For a Dirichlet character `χ` the *Riesz remainder* is
 `TauCeti.NumberTheory.Chebyshev.RieszRemainder` for coefficients dominated by `Λ` give, for
 `a ≥ 0`, `w, w' > 0` and `y, z` with `max y z ≥ 1`, resp. `y ≥ 1`,
 * `‖w G_χ(a / w) - w' G_χ(a / w')‖ ≤ 3 (a / min w w') |w - w'|`;
-* `‖G_χ(y) - G_χ(z)‖ ≤ |y - z| (log (max y z) + log 4 + 4 + ‖(L′/L)(1, χ)‖)`;
-* `‖G_χ(y)‖ ≤ y (log y + log 4 + 4 + ‖(L′/L)(1, χ)‖)`.
+* `‖G_χ(y) - G_χ(z)‖ ≤ |y - z| (log (max y z) + log 4 + ‖(L′/L)(1, χ)‖)`;
+* `‖G_χ(y)‖ ≤ y (log y + log 4 + ‖(L′/L)(1, χ)‖)`.
 
 The statements carry no hypothesis on `χ`: for a nonprincipal `χ` they bound the Riesz remainder,
 while for a principal `χ` the function `L(·, χ)` has a pole at `1` and the constant is Mathlib's
@@ -74,21 +74,21 @@ theorem norm_mul_rieszSum_div_add_mul_logDeriv_sub_le {a w w' : ℝ} (ha : 0 ≤
 
 /-- **Lipschitz bound for the Riesz remainder of a Dirichlet character.**
 Let `G_χ(y) = ∑_{1 ≤ n ≤ y} χ(n) Λ(n) (y / n - 1) + y (L′/L)(1, χ)`. If `max y z ≥ 1`, then
-`‖G_χ(y) - G_χ(z)‖ ≤ |y - z| (log (max y z) + log 4 + 4 + ‖(L′/L)(1, χ)‖)`. For a principal `χ`
+`‖G_χ(y) - G_χ(z)‖ ≤ |y - z| (log (max y z) + log 4 + ‖(L′/L)(1, χ)‖)`. For a principal `χ`
 the constant `(L′/L)(1, χ)` is Mathlib's junk value at the pole. -/
 theorem norm_rieszSum_add_mul_logDeriv_sub_le {y z : ℝ} (h : 1 ≤ max y z) :
     ‖(rieszSum (fun n ↦ χ n * Λ n) y + y * logDeriv (LFunction χ) 1) -
         (rieszSum (fun n ↦ χ n * Λ n) z + z * logDeriv (LFunction χ) 1)‖ ≤
-      |y - z| * (Real.log (max y z) + (Real.log 4 + 4) + ‖logDeriv (LFunction χ) 1‖) :=
+      |y - z| * (Real.log (max y z) + Real.log 4 + ‖logDeriv (LFunction χ) 1‖) :=
   Chebyshev.norm_rieszSum_add_mul_sub_le χ.norm_mul_vonMangoldt_le _ h
 
 /-- **Size bound for the Riesz remainder of a Dirichlet character.** For
 `y ≥ 1`, `‖∑_{1 ≤ n ≤ y} χ(n) Λ(n) (y / n - 1) + y (L′/L)(1, χ)‖ ≤
-y (log y + log 4 + 4 + ‖(L′/L)(1, χ)‖)`. For a principal `χ` the constant `(L′/L)(1, χ)` is
+y (log y + log 4 + ‖(L′/L)(1, χ)‖)`. For a principal `χ` the constant `(L′/L)(1, χ)` is
 Mathlib's junk value at the pole. -/
 theorem norm_rieszSum_add_mul_logDeriv_le {y : ℝ} (hy : 1 ≤ y) :
     ‖rieszSum (fun n ↦ χ n * Λ n) y + y * logDeriv (LFunction χ) 1‖ ≤
-      y * (Real.log y + (Real.log 4 + 4) + ‖logDeriv (LFunction χ) 1‖) :=
+      y * (Real.log y + Real.log 4 + ‖logDeriv (LFunction χ) 1‖) :=
   Chebyshev.norm_rieszSum_add_mul_le χ.norm_mul_vonMangoldt_le _ hy
 
 end DirichletCharacter
