@@ -8,9 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.Analysis.Analytic.Inverse
 
 /-!
