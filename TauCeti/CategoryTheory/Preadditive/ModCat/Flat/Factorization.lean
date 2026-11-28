@@ -55,22 +55,11 @@ private theorem exists_biproduct_desc_app_id (y : ∀ j, F.obj.obj (op (Y j))) :
     ∃ p : (⨁ (yoneda C).obj ∘ Y) ⟶ F, ∀ j,
       (biproduct.ι ((yoneda C).obj ∘ Y) j ≫ p).hom.app (op (Y j)) (𝟙 (Y j)) = y j := by
   have := (additiveFunctor_iff F.obj).1 F.property
-  let a (j : Fin m) : (yoneda C).obj (Y j) ⟶ F := by
-    let p : CategoryTheory.yoneda.obj (Y j) ⟶ F.obj ⋙ forget AddCommGrpCat :=
-      yonedaEquiv.symm (y j)
-    exact ObjectProperty.homMk
-      { app T := AddCommGrpCat.ofHom
-          (AddMonoidHom.mk' (fun f ↦ p.app T f) (fun f g ↦ by
-            -- The inverse Yoneda component evaluates the action of the arrow on `y j`.
-            change F.obj.map (f + g).op (y j) = F.obj.map f.op (y j) + F.obj.map g.op (y j)
-            simp only [op_add, Functor.map_add, AddCommGrpCat.hom_add_apply]) :
-            (T.unop ⟶ Y j) →+ F.obj.obj T)
-        naturality T U g := by
-          ext (f : T.unop ⟶ Y j)
-          exact p.naturality_apply g f }
-  refine ⟨biproduct.desc a, fun j ↦ ?_⟩
+  refine ⟨biproduct.desc fun j ↦ ObjectProperty.homMk (preadditiveYonedaHomOfElement (y j)),
+    fun j ↦ ?_⟩
   rw [biproduct.ι_desc]
-  exact (yonedaEquiv (X := Y j) (F := F.obj ⋙ forget AddCommGrpCat)).apply_symm_apply (y j)
+  exact (preadditiveYonedaHomOfElement_app_apply (y j) (op (Y j)) (𝟙 (Y j))).trans
+    (ConcreteCategory.congr_hom (F.obj.map_id (op (Y j))) (y j))
 
 private theorem biproduct_lift_comp_app_id {A : C} (β : ∀ j, A ⟶ Y j)
     (p : (⨁ (yoneda C).obj ∘ Y) ⟶ F) :

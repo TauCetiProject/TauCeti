@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.Grp.FilteredColimits
 public import Mathlib.CategoryTheory.Presentable.Finite
 public import Mathlib.CategoryTheory.Presentable.StrongGenerator
 public import TauCeti.CategoryTheory.Functor.LocallySmall
+public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 
 /-!
@@ -329,7 +330,12 @@ theorem isCardinalPresentable_iff_cokernel_of_representables [EssentiallySmall.{
   · rintro ⟨I, J, hI, hJ, X, Y, d, ⟨e⟩⟩
     exact ⟨⟨I, J, X, Y, d, _, _, cokernel.cokernelIso d (cokernel.π d ≫ e.hom) e rfl⟩, hI, hJ⟩
 
-local instance : Fact (ℵ₁ : Cardinal.{v}).IsRegular := ⟨isRegular_aleph_one⟩
+/-- The cardinal `ℵ₁` is regular, as a `Fact`; the analogue of `Cardinal.fact_isRegular_aleph0`.
+Enable it with `attribute [local instance]` where `ℵ₁`-presentability is used. -/
+lemma _root_.Cardinal.fact_isRegular_aleph_one : Fact (ℵ₁ : Cardinal.{v}).IsRegular :=
+  ⟨isRegular_aleph_one⟩
+
+attribute [local instance] Cardinal.fact_isRegular_aleph_one
 
 /-- The `ℵ₁`-presentable modules are precisely the cokernels of maps between countable sums
 of representables. -/
@@ -341,29 +347,23 @@ theorem isCardinalPresentable_aleph_one_iff [EssentiallySmall.{v} C] (F : ModCat
   simpa [HasCardinalLT, lt_aleph_one_iff, mk_le_aleph0_iff, and_assoc, and_left_comm,
     exists_prop] using isCardinalPresentable_iff_cokernel_of_representables ℵ₁ F
 
+/-- The inclusion into all functors sends a coproduct of representable modules to the coproduct
+of the representable functors. -/
+private noncomputable def ιSigmaYonedaIso {I : Type*} [Small.{v} I] (X : I → C) :
+    (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.obj (∐ fun i ↦ (yoneda C).obj (X i)) ≅
+      ∐ fun i ↦ preadditiveYoneda.obj (X i) :=
+  PreservesCoproduct.iso (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι _ ≪≫
+    Sigma.mapIso fun i ↦ ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).liftCompιIso preadditiveYoneda
+      fun _ ↦ (additiveFunctor_iff _).2 inferInstance).app (X i)
+
 private theorem exists_cokernel_yoneda_iff {I J : Type*} [Small.{v} I] [Small.{v} J]
     (X : I → C) (Y : J → C) (F : ModCat.{v} C) :
     (∃ (d : (∐ fun j ↦ (yoneda C).obj (Y j)) ⟶ ∐ fun i ↦ (yoneda C).obj (X i)),
       Nonempty (cokernel d ≅ F)) ↔
     ∃ (d : (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ⟶ ∐ fun i ↦ preadditiveYoneda.obj (X i)),
-      Nonempty (cokernel d ≅ F.obj) := by
-  let incl := (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
-  let eX : incl.obj (∐ fun i ↦ (yoneda C).obj (X i)) ≅ ∐ fun i ↦ preadditiveYoneda.obj (X i) :=
-    PreservesCoproduct.iso incl _
-  let eY : incl.obj (∐ fun j ↦ (yoneda C).obj (Y j)) ≅ ∐ fun j ↦ preadditiveYoneda.obj (Y j) :=
-    PreservesCoproduct.iso incl _
-  constructor
-  · rintro ⟨d, ⟨e⟩⟩
-    let f := eY.inv ≫ incl.map d ≫ eX.hom
-    let i := cokernel.mapIso (incl.map d) f eY eX (by simp [f])
-    exact ⟨f, ⟨i.symm ≪≫ (PreservesCokernel.iso incl d).symm ≪≫ incl.mapIso e⟩⟩
-  · rintro ⟨f, ⟨e⟩⟩
-    let d := incl.preimage (eY.hom ≫ f ≫ eX.inv)
-    let i := cokernel.mapIso (incl.map d) f eY eX (by
-      dsimp only [d]
-      rw [Functor.map_preimage]
-      simp)
-    exact ⟨d, ⟨incl.preimageIso (PreservesCokernel.iso incl d ≪≫ i ≪≫ e)⟩⟩
+      Nonempty (cokernel d ≅ F.obj) :=
+  exists_cokernel_iso_iff_of_fullyFaithful (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
+    (ιSigmaYonedaIso Y) (ιSigmaYonedaIso X) F
 
 /-- A module is finitely presentable exactly when its underlying functor has a finite
 presentation by representables. -/
