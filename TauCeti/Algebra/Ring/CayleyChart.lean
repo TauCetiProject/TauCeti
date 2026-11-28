@@ -68,8 +68,7 @@ provides the algebra behind Cayley charts of unitary groups.
   inverse Cayley transform `j * (1 + η) * (1 - η)⁻¹`.
 * `TauCeti.isUnit_add_iff_isUnit_one_sub_mul`: `j + J` is invertible exactly when `1 - j * J` is.
 * `TauCeti.map_cayleyParam`, `TauCeti.map_cayleyCoord`: both maps commute with ring isomorphisms,
-  such as reading fibre endomorphisms in a trivialization; `TauCeti.map_cayleyCoord_of_isUnit`:
-  every ring homomorphism commutes with the Cayley coordinate where its denominator is a unit.
+  such as reading fibre endomorphisms in a trivialization.
 
 ## References
 
@@ -350,12 +349,6 @@ theorem map_cayleyParam {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass
 theorem map_cayleyCoord {S F : Type*} [Ring S] [FunLike F A S] [RingHomClass F A S]
     (f : F) [IsLocalHom f] (j J : A) : f (cayleyCoord j J) = cayleyCoord (f j) (f J) := by
   simp only [cayleyCoord_def, map_mul, map_add, map_sub, map_ringInverse]
-
-/-- Every ring homomorphism commutes with the Cayley coordinate of `J` relative to `j` when the
-denominator `j + J` is a unit. -/
-theorem map_cayleyCoord_of_isUnit {S F : Type*} [Ring S] [FunLike F A S] [RingHomClass F A S]
-    (f : F) (hJ : IsUnit (j + J)) : f (cayleyCoord j J) = cayleyCoord (f j) (f J) := by
-  rw [cayleyCoord_def, cayleyCoord_def, map_mul, map_sub, hJ.map_ringInverse, map_add]
 
 /-! ### The Cayley coordinate relative to `1` -/
 

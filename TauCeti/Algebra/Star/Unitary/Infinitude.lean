@@ -5,64 +5,80 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.Unitary.Basic
-public import TauCeti.Algebra.Ring.CayleyChart
-public import Mathlib.Algebra.Star.Rat
-public import Mathlib.Algebra.CharZero.Infinite
-import Mathlib.Tactic.FieldSimp
+public import Mathlib.Algebra.Star.SelfAdjoint
+public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Data.Fintype.Prod
+import Mathlib.Algebra.Field.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Infinitely many norm-one elements
+# Infinitely many unitary elements
 
-A characteristic-zero field with a nontrivial involution has infinitely many
-norm-one elements. A nonzero skew element `a` gives the injective rational family
-`q ↦ (1 - q a) / (1 + q a)`. In particular scalar unitary matrices provide infinitely
-many translates for avoiding the complement of a Cayley chart.
+An infinite field whose involution is not the identity has infinitely many unitary (norm-one)
+elements, in every characteristic. For `z` not fixed by `star`, the quotients
+`(m + z) / (m + star z)`, with `m` self-adjoint, are pairwise distinct unitary elements, and there
+are infinitely many self-adjoint `m` because `x` is determined by the self-adjoint elements
+`x + star x` and `z * x + star (z * x)`.
+
+For a CM field with complex conjugation, the unitary elements are the norm-one elements of the
+field, the unitary scalars of every unitary group over it. Infinitely many such scalars are what
+lets a scalar translate avoid the complement of a Cayley chart.
+
+## Main results
+
+* `selfAdjoint.infinite_of_exists_star_ne`: an infinite commutative ring without zero divisors
+  whose involution is not the identity has infinitely many self-adjoint elements.
+* `Unitary.infinite_of_exists_star_ne`: an infinite field whose involution is not the identity
+  has infinitely many unitary elements.
 -/
 
 public section
 
-namespace TauCeti
+/-- An infinite commutative ring without zero divisors whose involution is not the identity has
+infinitely many self-adjoint elements. -/
+theorem selfAdjoint.infinite_of_exists_star_ne {R : Type*} [CommRing R] [NoZeroDivisors R]
+    [StarRing R] [Infinite R] (h : ∃ z : R, star z ≠ z) : Infinite (selfAdjoint R) := by
+  obtain ⟨z, hz⟩ := h
+  -- An element `x` is determined by the self-adjoint elements `x + star x` and
+  -- `z * x + star (z * x)`.
+  let T : R → selfAdjoint R := fun x ↦ ⟨x + star x, IsSelfAdjoint.add_star_self x⟩
+  have hinj : Function.Injective (fun x ↦ (T x, T (z * x))) := by
+    intro x y hxy
+    have h₁ : x + star x = y + star y := congrArg (fun p ↦ (p.1 : R)) hxy
+    have h₂ : z * x + star z * star x = z * y + star z * star y := by
+      simpa [T, star_mul, mul_comm] using congrArg (fun p ↦ (p.2 : R)) hxy
+    exact mul_left_cancel₀ (sub_ne_zero.mpr hz.symm) (by linear_combination h₂ - star z * h₁)
+  have : Infinite (selfAdjoint R × selfAdjoint R) := Infinite.of_injective _ hinj
+  exact (infinite_prod.mp inferInstance).elim And.left And.right
 
-variable {K : Type*} [Field K] [StarRing K] [CharZero K]
+namespace Unitary
 
-/-- A nonzero skew element in a characteristic-zero field produces infinitely many
-norm-one elements by rational parametrization. -/
-theorem infinite_unitary_of_skew {a : K} (ha : star a = -a) (ha0 : a ≠ 0) :
-    Infinite (unitary K) := by
-  have hden (q : ℚ) : 1 + (q : K) * a ≠ 0 := by
-    intro h
-    have hs := congrArg star h
-    simp only [star_add, star_one, star_mul, star_ratCast, ha, star_zero] at hs
-    have ht : (2 : K) = 0 := by linear_combination h + hs
-    exact two_ne_zero ht
-  let c (q : ℚ) : K := cayleyCoord 1 ((q : K) * a)
-  have hc_eq (q : ℚ) : c q = (1 - (q : K) * a) / (1 + (q : K) * a) := by
-    simp only [c, cayleyCoord_def, Ring.inverse_eq_inv, div_eq_mul_inv]
-  have hc (q : ℚ) : c q ∈ unitary K := by
-    rw [Unitary.mem_iff_star_mul_self]
-    simp only [hc_eq, star_div₀, star_sub, star_one, star_mul, star_ratCast, ha,
-      star_add]
-    have hnum : 1 - (q : K) * a ≠ 0 := by
-      simpa only [Rat.cast_neg, neg_mul, sub_eq_add_neg] using hden (-q)
-    simp only [neg_mul, sub_neg_eq_add, mul_comm a (q : K)]
-    field_simp [hden q, hnum]
-    rw [← sub_eq_add_neg, div_self hnum]
-  let u (q : ℚ) : unitary K := ⟨c q, hc q⟩
-  refine Infinite.of_injective u fun p q h ↦ ?_
-  have heq : c p = c q := congrArg Subtype.val h
-  have hmul : (p : K) * a = (q : K) * a := by
-    simpa only [c, cayleyCoord_one_cayleyCoord_one (isUnit_iff_ne_zero.2 two_ne_zero)
-      (isUnit_iff_ne_zero.2 (hden _))] using congrArg (cayleyCoord 1) heq
-  exact Rat.cast_injective (mul_right_cancel₀ ha0 hmul)
+/-- **An infinite field whose involution is not the identity has infinitely many unitary
+elements**, in every characteristic. -/
+theorem infinite_of_exists_star_ne {K : Type*} [Field K] [Infinite K] [StarRing K]
+    (h : ∃ z : K, star z ≠ z) : Infinite (unitary K) := by
+  have := selfAdjoint.infinite_of_exists_star_ne h
+  obtain ⟨z, hz⟩ := h
+  have hden : ∀ m : selfAdjoint K, (m : K) + star z ≠ 0 := by
+    intro m hm
+    apply hz
+    have hs := congrArg star hm
+    simp only [star_add, selfAdjoint.star_val_eq, star_star, star_zero] at hs
+    linear_combination hm - hs
+  have hnum : ∀ m : selfAdjoint K, (m : K) + z ≠ 0 := by
+    intro m hm
+    apply hden m
+    simpa only [star_add, selfAdjoint.star_val_eq, star_zero] using congrArg star hm
+  have hmem : ∀ m : selfAdjoint K, ((m : K) + z) / (m + star z) ∈ unitary K := by
+    intro m
+    rw [mem_iff_star_mul_self, star_div₀, star_add, star_add,
+      selfAdjoint.star_val_eq, star_star, div_mul_div_comm,
+      mul_comm ((m : K) + star z), div_self (mul_ne_zero (hnum m) (hden m))]
+  -- The quotients `(m + z) / (m + star z)` are pairwise distinct.
+  refine Infinite.of_injective (fun m : selfAdjoint K ↦ ⟨_, hmem m⟩) fun m m' hmm' ↦ ?_
+  have h : ((m : K) + z) / (m + star z) = ((m' : K) + z) / (m' + star z) :=
+    congrArg Subtype.val hmm'
+  rw [div_eq_div_iff (hden m) (hden m')] at h
+  exact Subtype.ext (mul_left_cancel₀ (sub_ne_zero.mpr hz.symm) (by linear_combination -h))
 
-/-- A characteristic-zero field with a nontrivial involution has infinitely many
-norm-one elements. -/
-theorem infinite_unitary_of_exists_star_ne (hstar : ∃ x : K, star x ≠ x) :
-    Infinite (unitary K) := by
-  obtain ⟨x, hx⟩ := hstar
-  exact infinite_unitary_of_skew (a := x - star x) (by simp [star_sub])
-    (sub_ne_zero.2 hx.symm)
-
-end TauCeti
+end Unitary
