@@ -39,13 +39,6 @@ open Filter Topology Finset PowerSeries
 
 namespace Asymptotics
 
-private lemma constantCoeff_C_cexp_neg_log_mul_sub_one {P : ℂ⟦X⟧}
-    (hP : constantCoeff P ∈ Complex.slitPlane) :
-    constantCoeff (C (Complex.exp (-Complex.log (constantCoeff P))) * P - 1) = 0 := by
-  rw [map_sub, map_one,
-    constantCoeff_C_cexp_neg_mul (Complex.exp_log (Complex.mem_slitPlane_iff_arg.mp hP).2).symm,
-    sub_self]
-
 private lemma hasAsymptoticExpansion_pow_unit_sub_one {α : Type*} {l : Filter α} {w : α → ℂ}
     {P : ℂ⟦X⟧} {f : α → ℂ}
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) :
@@ -63,14 +56,11 @@ private lemma tendsto_C_cexp_neg_log_mul_sub_one {α : Type*} {l : Filter α} {w
     (hP : constantCoeff P ∈ Complex.slitPlane)
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) :
     Tendsto (fun x => Complex.exp (-Complex.log (constantCoeff P)) * f x - 1) l (𝓝 0) := by
-  simpa only [constantCoeff_C_cexp_neg_log_mul_sub_one hP] using
+  have hU0 : constantCoeff (C (Complex.exp (-Complex.log (constantCoeff P))) * P - 1) = 0 :=
+    constantCoeff_C_cexp_neg_mul_sub_one
+      (Complex.exp_log (Complex.mem_slitPlane_iff_arg.mp hP).2).symm
+  simpa only [hU0] using
     (hasAsymptoticExpansion_pow_unit_sub_one hf).tendsto_constantCoeff hw
-
-private lemma eq_mul_one_add_cexp_neg_log_mul_sub_one {p₀ : ℂ} (hp₀ : p₀ ≠ 0) (y : ℂ) :
-    y = p₀ * (1 + (Complex.exp (-Complex.log p₀) * y - 1)) := by
-  rw [Complex.exp_neg, Complex.exp_log hp₀]
-  field_simp [hp₀]
-  ring
 
 /-- Principal logarithm of a complex asymptotic power series whose constant coefficient lies in
 `Complex.slitPlane` (DLMF §2.1(iii)). -/
@@ -83,7 +73,8 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
         PowerSeries.logOf (C (Complex.exp (-Complex.log (constantCoeff P))) * P)))
       fun x => Complex.log (f x) := by
   have hp₀_ne : constantCoeff P ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hP).2
-  have hU0 := constantCoeff_C_cexp_neg_log_mul_sub_one hP
+  have hU0 : constantCoeff (C (Complex.exp (-Complex.log (constantCoeff P))) * P - 1) = 0 :=
+    constantCoeff_C_cexp_neg_mul_sub_one (Complex.exp_log hp₀_ne).symm
   have hu_exp := hasAsymptoticExpansion_pow_unit_sub_one hf
   have hu0 := tendsto_C_cexp_neg_log_mul_sub_one hw hP hf
   have hlog_at0 : HasAsymptoticExpansion (𝓝 (0 : ℂ)) (fun n z => z ^ n)
@@ -100,9 +91,10 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
   have hadd := hasAsymptoticExpansion_pow_add
     (hasAsymptoticExpansion_pow_const (l := l) (w := w) (Complex.log (constantCoeff P))) hcomp
   refine (hadd.congr_coeff fun n => by rw [PowerSeries.logOf_eq]).congr' ?_
-  filter_upwards [Complex.eventually_log_mul_one_add hP hu0] with x hx
+  filter_upwards [(constantCoeff P).eventually_log_mul_one_add hP hu0] with x hx
   dsimp only [Pi.add_apply]
-  conv_rhs => rw [eq_mul_one_add_cexp_neg_log_mul_sub_one hp₀_ne (f x), hx]
+  conv_rhs =>
+    rw [(constantCoeff P).eq_mul_one_add_cexp_neg_log_mul_sub_one hp₀_ne (f x), hx]
 
 /-- Principal complex power of a complex asymptotic power series whose constant coefficient lies in
 `Complex.slitPlane` (DLMF §2.1(iii)). -/
@@ -116,7 +108,8 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
   set p₀ : ℂ := constantCoeff P
   set ℓ : ℂ := Complex.log p₀
   have hp₀_ne : p₀ ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hP).2
-  have hU0 := constantCoeff_C_cexp_neg_log_mul_sub_one hP
+  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 :=
+    constantCoeff_C_cexp_neg_mul_sub_one (Complex.exp_log hp₀_ne).symm
   have hu_exp := hasAsymptoticExpansion_pow_unit_sub_one hf
   have hu0 := tendsto_C_cexp_neg_log_mul_sub_one hw hP hf
   have hbin_at0 : HasAsymptoticExpansion (𝓝 (0 : ℂ)) (fun n z => z ^ n)
@@ -126,9 +119,9 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
   have hcomp := hasAsymptoticExpansion_pow_subst hw hu0 hU0 hbin_at0 hu_exp
   have hmul := hasAsymptoticExpansion_pow_const_mul (Complex.exp (r * ℓ)) hcomp
   refine (hmul.congr_coeff fun n => by rw [formalCpow_def, binomialPow_def]).congr' ?_
-  filter_upwards [Complex.eventually_log_mul_one_add hP hu0,
+  filter_upwards [p₀.eventually_log_mul_one_add hP hu0,
     (hf.tendsto_constantCoeff hw).eventually_ne hp₀_ne] with x hx hfne
-  have hfx := eq_mul_one_add_cexp_neg_log_mul_sub_one hp₀_ne (f x)
+  have hfx := p₀.eq_mul_one_add_cexp_neg_log_mul_sub_one hp₀_ne (f x)
   have h1ne : 1 + (Complex.exp (-ℓ) * f x - 1) ≠ 0 :=
     right_ne_zero_of_mul (hfx ▸ hfne)
   conv_rhs => rw [hfx, Complex.cpow_def_of_ne_zero (hfx ▸ hfne), hx]

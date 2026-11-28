@@ -30,10 +30,12 @@ The branch parameter `ℓ` fixes the constant term to `Complex.exp (r * ℓ)`, m
 
 ## Main results
 
-* `PowerSeries.constantCoeff_formalCpow`: the constant term of `P.formalCpow ℓ r` is
-  `Complex.exp (r * ℓ)`.
+* `PowerSeries.constantCoeff_C_cexp_neg_mul`, `PowerSeries.constantCoeff_C_cexp_neg_mul_sub_one`,
+  `PowerSeries.constantCoeff_formalCpow`: rescaling and constant-term normalization for
+  `formalCpow`.
 * `PowerSeries.formalCpow_zero`, `PowerSeries.formalCpow_one`, `PowerSeries.formalCpow_add`,
-  `PowerSeries.formalCpow_natCast`, `PowerSeries.formalCpow_neg`: exponent laws for `formalCpow`.
+  `PowerSeries.formalCpow_natCast`, `PowerSeries.formalCpow_intCast`, `PowerSeries.formalCpow_neg`:
+  exponent laws for `formalCpow`.
 * `PowerSeries.formalCpow_C_cexp`, `PowerSeries.formalCpow_mul`: base-side rules for constant
   series and products with compatible branch parameters.
 * `PowerSeries.formalCpow_one_add_X_branch_zero`: on `1 + X` with branch `ℓ = 0`, `formalCpow`
@@ -72,6 +74,13 @@ theorem constantCoeff_C_cexp_neg_mul {ℓ : ℂ} {P : ℂ⟦X⟧}
     (hP : constantCoeff P = Complex.exp ℓ) :
     constantCoeff (C (Complex.exp (-ℓ)) * P) = 1 := by
   rw [map_mul, constantCoeff_C, hP, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
+
+/-- Rescaling a power series `P` with constant coefficient `Complex.exp ℓ` by `Complex.exp (-ℓ)`
+and subtracting `1` yields a power series with constant coefficient `0`. -/
+theorem constantCoeff_C_cexp_neg_mul_sub_one {P : ℂ⟦X⟧} {ℓ : ℂ}
+    (hP : constantCoeff P = Complex.exp ℓ) :
+    constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
+  rw [map_sub, map_one, constantCoeff_C_cexp_neg_mul hP, sub_self]
 
 /-- The constant term of `P.formalCpow ℓ r` is `Complex.exp (r * ℓ)` when
 `constantCoeff P = Complex.exp ℓ`. -/
@@ -141,6 +150,23 @@ theorem formalCpow_neg {P : ℂ⟦X⟧} {ℓ : ℂ} (hP : constantCoeff P = Comp
   · rw [constantCoeff_formalCpow hP]
     exact Complex.exp_ne_zero _
   · rw [← formalCpow_add hP (-r) r, neg_add_cancel, formalCpow_zero]
+
+/-- For a unit `u : ℂ⟦X⟧ˣ` with compatible branch `constantCoeff (u : ℂ⟦X⟧) = Complex.exp ℓ`,
+the formal complex power at an integer exponent `(z : ℂ)` agrees with the coerced unit power
+`↑(u ^ z)`. -/
+@[simp]
+theorem formalCpow_intCast {u : ℂ⟦X⟧ˣ} {ℓ : ℂ}
+    (hu : constantCoeff (u : ℂ⟦X⟧) = Complex.exp ℓ) (z : ℤ) :
+    (u : ℂ⟦X⟧).formalCpow ℓ (z : ℂ) = ↑(u ^ z) := by
+  cases z with
+  | ofNat n =>
+    simp [hu]
+  | negSucc n =>
+    rw [Int.cast_negSucc, formalCpow_neg hu, formalCpow_natCast hu (n + 1), zpow_negSucc]
+    refine ((PowerSeries.eq_inv_iff_mul_eq_one ?_).mpr ?_).symm
+    · rw [map_pow, hu, ← Complex.exp_natCast_mul]
+      exact Complex.exp_ne_zero _
+    · rw [← Units.val_pow_eq_pow_val, ← Units.val_mul, inv_mul_cancel, Units.val_one]
 
 /-- On `1 + X` with branch `ℓ = 0`, `formalCpow` reduces to `PowerSeries.binomialSeries ℂ r`. -/
 @[simp]

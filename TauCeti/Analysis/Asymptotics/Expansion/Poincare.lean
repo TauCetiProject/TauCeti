@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 
+import Mathlib.Analysis.Analytic.Within
+import TauCeti.Analysis.Normed.Field.AtInfinity
+
 /-!
 # Poincaré asymptotic expansions and scales
 
@@ -31,9 +34,10 @@ inverse powers, and convergent power series.
   `Asymptotics.hasAsymptoticExpansion_of_hasSum`: coefficient and tail estimates for convergent
   inverse-power series, showing that a series `∑ (z ^ s)⁻¹ • a s` converging outside a ball is
   the Poincaré expansion of its sum along `Bornology.cobounded`.
-* `HasFPowerSeriesAt.hasAsymptoticExpansion`, `HasFPowerSeriesAt.hasAsymptoticExpansion_zero`:
-  a convergent power series at `c` (or `0`) is the Poincaré expansion of its sum along `𝓝 c`
-  (or `𝓝 0`).
+* `HasFPowerSeriesWithinAt.hasAsymptoticExpansion`, `HasFPowerSeriesAt.hasAsymptoticExpansion`,
+  `HasFPowerSeriesAt.hasAsymptoticExpansion_zero`: a convergent power series at `c` (within `s`,
+  on a neighborhood, or at `0`) is the Poincaré expansion of its sum along `𝓝[s] c` (or `𝓝 c` or
+  `𝓝 0`).
 
 ## References
 
@@ -86,12 +90,6 @@ section Poincare
 
 variable {𝕜 E : Type*}
 
-private lemma eventually_inv_pow_ne_zero_cobounded [NormedField 𝕜] (X : Set 𝕜) (n : ℕ) :
-    ∀ᶠ z in Bornology.cobounded 𝕜 ⊓ 𝓟 X, (z ^ n)⁻¹ ≠ 0 := by
-  filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left]
-    with z hz
-  exact inv_ne_zero (pow_ne_zero n (norm_pos_iff.mp hz))
-
 /-- Uniqueness of Poincaré expansions at infinity on an unbounded subset `X`
 (`(Bornology.cobounded 𝕜 ⊓ 𝓟 X).NeBot`). -/
 theorem HasAsymptoticExpansion.unique_inv_pow_cobounded [NormedField 𝕜]
@@ -101,7 +99,9 @@ theorem HasAsymptoticExpansion.unique_inv_pow_cobounded [NormedField 𝕜]
     (hb : HasAsymptoticExpansion (Bornology.cobounded 𝕜 ⊓ 𝓟 X) (fun n z => (z ^ n)⁻¹) b f) :
     a = b :=
   ha.unique (isAsymptoticScale_inv_pow_cobounded X)
-    (fun n => (eventually_inv_pow_ne_zero_cobounded X n).frequently) hb
+    (fun n =>
+      ((TauCeti.eventually_inv_pow_ne_zero_cobounded 𝕜 n).filter_mono inf_le_left).frequently)
+    hb
 
 /-- Uniqueness of Poincaré expansions along `atTop` on `ℝ`. -/
 theorem HasAsymptoticExpansion.unique_inv_pow_atTop [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -135,7 +135,7 @@ theorem hasAsymptoticExpansion_inv_pow_iff_tendsto [NormedField 𝕜] [NormedAdd
       ∀ n, Tendsto (fun z => z ^ n • (f z - ∑ s ∈ range n, (z ^ s)⁻¹ • a s))
         (Bornology.cobounded 𝕜 ⊓ 𝓟 X) (𝓝 (a n)) :=
   ((isAsymptoticScale_inv_pow_cobounded X).hasAsymptoticExpansion_iff_tendsto
-    (eventually_inv_pow_ne_zero_cobounded X)).trans
+    (fun n => (TauCeti.eventually_inv_pow_ne_zero_cobounded 𝕜 n).filter_mono inf_le_left)).trans
     (forall_congr' fun _ => by simp only [inv_inv])
 
 /-- A summable inverse-power series at `z₀ ≠ 0` has coefficients bounded by `M * ‖z₀‖ ^ s`. -/
@@ -158,29 +158,26 @@ theorem norm_sub_sum_le_of_hasSum [NormedField 𝕜] [SeminormedAddCommGroup E]
     ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖ ≤ 2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ := by
   have hM : 0 ≤ M := (norm_nonneg (a 0)).trans (by simpa using hcoeff 0)
   have hz_pos : 0 < ‖z‖ := by linarith
-  have htail : HasSum (fun k => (z ^ (k + N))⁻¹ • a (k + N))
-      (v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s) :=
-    (hasSum_nat_add_iff' N).mpr hf
-  have hgeom : HasSum (fun k : ℕ => (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * ((1 / 2 : ℝ) ^ k))
-      ((M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2)⁻¹) :=
-    (hasSum_geometric_of_lt_one (by positivity) (by norm_num)).mul_left _
-  have hle : ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖ ≤
-      (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2)⁻¹ := by
-    refine htail.norm_le_of_bounded hgeom fun k => ?_
-    have hratio : ‖z₀‖ / ‖z‖ ≤ 1 / 2 := by
-      rw [div_le_div_iff₀ hz_pos (by norm_num : (0 : ℝ) < 2)]
-      linarith
+  have hratio : ‖z₀‖ / ‖z‖ ≤ 1 / 2 := by
+    rw [div_le_div_iff₀ hz_pos (by norm_num : (0 : ℝ) < 2)]
+    linarith
+  have hbound : ∀ s : ℕ, ‖(z ^ s)⁻¹ • a s‖ ≤ M * (‖z₀‖ / ‖z‖) ^ s := fun s => by
     calc
-      ‖(z ^ (k + N))⁻¹ • a (k + N)‖
-          = (‖z‖ ^ (k + N))⁻¹ * ‖a (k + N)‖ := by rw [norm_smul, norm_inv, norm_pow]
-      _ ≤ (‖z‖ ^ (k + N))⁻¹ * (M * ‖z₀‖ ^ (k + N)) := by gcongr; exact hcoeff (k + N)
-      _ = M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ * (‖z₀‖ / ‖z‖) ^ k := by
-        rw [norm_inv, norm_pow, pow_add, pow_add, mul_inv, div_pow]
-        ring
-      _ ≤ M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ * (1 / 2 : ℝ) ^ k := by gcongr
-  have hconst : (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2 : ℝ)⁻¹ =
-      2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ := by ring
-  rwa [hconst] at hle
+      ‖(z ^ s)⁻¹ • a s‖ = (‖z‖ ^ s)⁻¹ * ‖a s‖ := by rw [norm_smul, norm_inv, norm_pow]
+      _ ≤ (‖z‖ ^ s)⁻¹ * (M * ‖z₀‖ ^ s) := by gcongr; exact hcoeff s
+      _ = M * (‖z₀‖ / ‖z‖) ^ s := by rw [div_pow]; ring
+  have hgeom := norm_sub_le_of_geometric_bound_of_hasSum
+    (hr := hratio.trans_lt (by norm_num)) hbound hf N
+  rw [norm_sub_rev] at hgeom
+  calc
+    ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖
+        ≤ M * (‖z₀‖ / ‖z‖) ^ N / (1 - ‖z₀‖ / ‖z‖) := hgeom
+    _ ≤ M * (‖z₀‖ / ‖z‖) ^ N / (1 / 2) := by
+          gcongr
+          linarith
+    _ = 2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ := by
+          rw [div_pow, norm_inv, norm_pow]
+          ring
 
 /-- A series `∑ (z ^ s)⁻¹ • a s` convergent for `‖z‖ > R` is the Poincaré asymptotic expansion
 of its sum along `Bornology.cobounded 𝕜`. -/
@@ -211,16 +208,17 @@ theorem hasAsymptoticExpansion_of_hasSum [NormedField 𝕜] [NormedAddCommGroup 
     rw [hbot]
     exact isBigO_bot _ _
 
-/-- A convergent power series at `c` is the Poincaré asymptotic expansion of its sum along `𝓝 c`
-(DLMF 2.1.8, 2.1.16). -/
-theorem _root_.HasFPowerSeriesAt.hasAsymptoticExpansion [NontriviallyNormedField 𝕜]
+/-- A convergent power series at `c` within `s` is the Poincaré asymptotic expansion of its sum
+along `𝓝[s] c` in shifted powers (DLMF 2.1.8, 2.1.16). -/
+theorem _root_.HasFPowerSeriesWithinAt.hasAsymptoticExpansion [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E}
-    {p : FormalMultilinearSeries 𝕜 𝕜 E} {c : 𝕜} (hf : HasFPowerSeriesAt f p c) :
-    HasAsymptoticExpansion (𝓝 c) (fun n z => (z - c) ^ n) p.coeff f := by
+    {p : FormalMultilinearSeries 𝕜 𝕜 E} {s : Set 𝕜} {c : 𝕜}
+    (hf : HasFPowerSeriesWithinAt f p s c) :
+    HasAsymptoticExpansion (𝓝[s] c) (fun n z => (z - c) ^ n) p.coeff f := by
   rw [hasAsymptoticExpansion_iff]
   intro N
-  have h0 : (fun y : 𝕜 => f (c + y) - ∑ n ∈ range N, y ^ n • p.coeff n) =O[𝓝 0]
-      fun y : 𝕜 => y ^ N := by
+  have h0 : (fun y : 𝕜 => f (c + y) - ∑ n ∈ range N, y ^ n • p.coeff n)
+      =O[𝓝[(fun y => c + y) ⁻¹' insert c s] 0] fun y : 𝕜 => y ^ N := by
     rw [← isBigO_norm_right]
     refine (hf.isBigO_sub_partialSum_pow N).congr'
       (Eventually.of_forall fun y => ?_) (Eventually.of_forall fun y => ?_)
@@ -231,11 +229,27 @@ theorem _root_.HasFPowerSeriesAt.hasAsymptoticExpansion [NontriviallyNormedField
       rw [FormalMultilinearSeries.apply_eq_pow_smul_coeff]
     · dsimp only
       rw [norm_pow]
-  have hsub : Tendsto (fun z : 𝕜 => z - c) (𝓝 c) (𝓝 0) := by
-    simpa using (continuous_sub_right c).tendsto c
+  have hsub : Tendsto (fun z : 𝕜 => z - c) (𝓝[s] c) (𝓝[(fun y => c + y) ⁻¹' insert c s] 0) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · have h : Tendsto (fun z : 𝕜 => z - c) (𝓝 c) (𝓝 0) := by
+        simpa using (continuous_sub_right c).tendsto c
+      exact h.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with z hz
+      change c + (z - c) ∈ insert c s
+      rw [add_sub_cancel]
+      exact mem_insert_of_mem c hz
   have hcomp := h0.comp_tendsto hsub
   refine hcomp.congr' (Eventually.of_forall fun z => ?_) EventuallyEq.rfl
   simp only [Function.comp_apply, add_sub_cancel]
+
+/-- A convergent power series at `c` is the Poincaré asymptotic expansion of its sum along `𝓝 c`
+(DLMF 2.1.8, 2.1.16). -/
+theorem _root_.HasFPowerSeriesAt.hasAsymptoticExpansion [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E}
+    {p : FormalMultilinearSeries 𝕜 𝕜 E} {c : 𝕜} (hf : HasFPowerSeriesAt f p c) :
+    HasAsymptoticExpansion (𝓝 c) (fun n z => (z - c) ^ n) p.coeff f := by
+  simpa only [nhdsWithin_univ] using
+    (hasFPowerSeriesWithinAt_univ.mpr hf).hasAsymptoticExpansion
 
 /-- A convergent power series at `0` is the Poincaré asymptotic expansion of its sum along `𝓝 0`
 in the scale `z ↦ z ^ n` (DLMF 2.1.8, 2.1.16). -/
