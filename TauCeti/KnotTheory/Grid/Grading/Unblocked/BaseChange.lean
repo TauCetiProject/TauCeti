@@ -13,9 +13,13 @@ public import TauCeti.KnotTheory.Grid.Grading.Unblocked.MonomialDegree
 # Base change for the unblocked grid chain module `GC⁻`
 
 Extending scalars from a commutative semiring `F` to an `F`-algebra `R` identifies `R ⊗[F] GC⁻(F)`
-with `GC⁻(R)` (`GridChainMinus.baseChangeChainEquiv`), built from `TensorProduct.finsuppRight` and
-`MvPolynomial.algebraTensorAlgEquiv`. The same scalar extension restricts to each monomial-degree
-supported submodule (`GridChainMinus.baseChangeSupportedEquiv`), independently of the base ring.
+with `GC⁻(R)` (`GridChainMinus.baseChangeChainEquiv`), mapping polynomial coefficients along
+`algebraMap F R` and scaling by the left tensor factor. The same scalar extension restricts to each
+monomial-degree supported submodule (`GridChainMinus.baseChangeSupportedEquiv`), independently of
+the base ring. Because it intertwines the unblocked differentials
+(`GridDiagram.baseChangeChainEquiv_comp_baseChange_unblockedDifferential`), the cycle-finiteness
+results in `TauCeti.KnotTheory.Grid.Grading.Unblocked.Finite` transfer from `ZMod 2` to every
+commutative ring of characteristic two.
 
 ## Main definitions
 
@@ -50,8 +54,9 @@ section Semiring
 
 variable (n : ℕ) (F R : Type*) [CommSemiring F] [CommSemiring R] [Algebra F R]
 
-/-- Scalar extension of the unblocked chain module `GC⁻` along an algebra map `F →+* R`, built
-from `TensorProduct.finsuppRight` and `MvPolynomial.algebraTensorAlgEquiv`. -/
+/-- Scalar extension of the unblocked chain module `GC⁻` along an algebra map `F →+* R`,
+identifying `R ⊗[F] GC⁻(F)` with `GC⁻(R)` by mapping polynomial coefficients along `algebraMap F R`
+and scaling by the left tensor factor. -/
 noncomputable def baseChangeChainEquiv :
     R ⊗[F] GridChainMinus F n ≃ₗ[R] GridChainMinus R n :=
   (TensorProduct.finsuppRight F R R (MvPolynomial (Fin n) F) (GridState n)).trans

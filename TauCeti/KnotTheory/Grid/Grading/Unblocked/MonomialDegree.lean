@@ -80,6 +80,15 @@ theorem monomialChainBasis_apply (ix : Σ _ : GridState n, Fin n →₀ ℕ) :
     monomialChainBasis (n := n) R ix = Finsupp.single ix.fst (monomial ix.snd 1) := by
   simp [monomialChainBasis, Finsupp.coe_basis]
 
+/-- The coordinate of a chain `c` in `monomialChainBasis` at `(x, e)` is the polynomial
+coefficient `(c x).coeff e`. -/
+@[simp]
+theorem monomialChainBasis_repr {R : Type*} [CommSemiring R] (c : GridChainMinus R n)
+    (ix : Σ _ : GridState n, Fin n →₀ ℕ) :
+    (monomialChainBasis (n := n) R).repr c ix = (c ix.fst).coeff ix.snd := by
+  simp only [monomialChainBasis, Finsupp.basis_repr]
+  rfl
+
 /-- The chains of `GC⁻` all of whose monomials `V^e · x` have degree `deg x e` in an arbitrary set
 `S`. For example, taking `S` to be a singleton gives the homogeneous piece `monomialDegreePiece`,
 taking its complement is used to prove independence of the pieces, and taking degree sets with
@@ -116,15 +125,13 @@ theorem monomialDegreeSupported_eq_span (R : Type*) [CommSemiring R]
   rw [b.mem_span_image]
   constructor
   · intro hc ix hix
-    dsimp only [b, monomialChainBasis] at hix
-    rw [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.basis_repr] at hix
+    rw [Finset.mem_coe, Finsupp.mem_support_iff, monomialChainBasis_repr] at hix
     exact mem_monomialDegreeSupported.mp hc ix.fst ix.snd (MvPolynomial.mem_support_iff.mpr hix)
   · intro hc
     rw [mem_monomialDegreeSupported]
     intro x e he
     have hmem : (⟨x, e⟩ : Σ _ : GridState n, Fin n →₀ ℕ) ∈ (b.repr c).support := by
-      dsimp only [b, monomialChainBasis]
-      rw [Finsupp.mem_support_iff, Finsupp.basis_repr]
+      rw [Finsupp.mem_support_iff, monomialChainBasis_repr]
       exact MvPolynomial.mem_support_iff.mp he
     exact hc hmem
 
@@ -152,6 +159,27 @@ theorem coe_monomialDegreeSupportedBasis_apply (R : Type*) [CommSemiring R]
         monomialDegreeSupported R deg S) : GridChainMinus R n) =
       monomialChainBasis (n := n) R i.val := by
   simp [monomialDegreeSupportedBasis]
+
+/-- The coordinate of a supported chain `c` in `monomialDegreeSupportedBasis` at `i = (x, e)` is
+the polynomial coefficient `((c : GridChainMinus R n) x).coeff e`. -/
+@[simp]
+theorem monomialDegreeSupportedBasis_repr {R : Type*} [CommSemiring R]
+    {deg : GridState n → (Fin n →₀ ℕ) → ι} {S : Set ι}
+    (c : monomialDegreeSupported R deg S)
+    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}) :
+    (monomialDegreeSupportedBasis R deg S).repr c i =
+      ((c : GridChainMinus R n) i.val.fst).coeff i.val.snd := by
+  have hsum := (monomialDegreeSupportedBasis R deg S).linearCombination_repr c
+  have hcoe := congrArg (monomialDegreeSupported R deg S).subtype hsum
+  have hrepr := congrArg (fun x ↦ (monomialChainBasis (n := n) R).repr x i.val) hcoe
+  rw [Finsupp.linearCombination_apply, map_finsuppSum, map_finsuppSum, Finsupp.sum_apply] at hrepr
+  simp only [map_smul, Submodule.coe_subtype, coe_monomialDegreeSupportedBasis_apply,
+    Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply,
+    Subtype.val_injective.eq_iff, monomialChainBasis_repr] at hrepr
+  rw [Finsupp.sum_ite_eq'] at hrepr
+  split_ifs at hrepr with h0
+  · exact hrepr
+  · rw [Finsupp.notMem_support_iff.mp h0, hrepr]
 
 /-- When only finitely many monomial generators have degree in `S`, the supported submodule is
 finitely generated over `R`. -/

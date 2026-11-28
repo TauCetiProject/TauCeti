@@ -31,11 +31,13 @@ For a knot grid, specializing all grid variables to `U` makes the commutation ma
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1, and
 Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Section 3.1.
-The knot homogeneity and commutation invariance theorems adapt their Alexander-graded counterparts
+The knot homogeneity theorem adapts its Alexander-graded counterpart
 `GridDiagram.IsKnot.isHomogeneous_unblockedHomologyCommutationLinearMap`
-(`TauCeti.KnotTheory.Grid.Homology.Commutation.Basic`) and
-`GridDiagram.IsKnot.unblockedHomologyIsomorphic_of_isCommutation`
-(`TauCeti.KnotTheory.Grid.Homology.Commutation.Invariance`).
+(`TauCeti.KnotTheory.Grid.Homology.Commutation.Basic`); Alexander-graded commutation invariance
+follows from bigraded commutation invariance
+(`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_of_isCommutation`, in
+`TauCeti.KnotTheory.Grid.Homology.Bigraded.Invariance`) by coarsening
+(`GridDiagram.IsKnot.BigradedUnblockedHomologyIsomorphic.unblockedHomologyIsomorphic`).
 -/
 
 public section

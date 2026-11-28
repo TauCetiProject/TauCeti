@@ -155,6 +155,20 @@ theorem X_pow_smul_mem_bigradedUnblockedHomologyGrading_piece (k : ℕ) {g : ℤ
       apply Prod.ext <;> simp <;> omega
     rwa [heq] at h
 
+/-- Multiplication by a monomial `r * U ^ k` lowers the `(O-Maslov, Alexander)` bidegree of knot
+grid homology by `(2 * k, k)`. -/
+theorem monomial_smul_mem_bigradedUnblockedHomologyGrading_piece (k : ℕ) (r : R) {g : ℤ × ℤ}
+    {y : G.unblockedHomology R}
+    (hy : y ∈ (hG.bigradedUnblockedHomologyGrading R).piece g) :
+    letI := hG.unblockedHomologyModule R
+    (Polynomial.monomial k r : Polynomial R) • y ∈
+      (hG.bigradedUnblockedHomologyGrading R).piece (g - (2 * (k : ℤ), (k : ℤ))) := by
+  let _ := hG.unblockedHomologyModule R
+  have := hG.isScalarTower_unblockedHomology (R := R)
+  rw [← Polynomial.C_mul_X_pow_eq_monomial, mul_smul, Polynomial.C_eq_algebraMap,
+    algebraMap_smul]
+  exact Submodule.smul_mem _ r (hG.X_pow_smul_mem_bigradedUnblockedHomologyGrading_piece R k hy)
+
 /-- On a knot grid, the class of the `X`-marking state is homogeneous of bidegree
 `(M_O(G.X), A(G.X))`. -/
 theorem XMarkingClass_mem_bigradedUnblockedHomologyGrading_piece :
