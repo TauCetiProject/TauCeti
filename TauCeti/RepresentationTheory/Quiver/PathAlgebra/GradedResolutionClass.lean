@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Quiver.Star
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedSimple
 
 /-!
@@ -14,6 +15,9 @@ The first-arrow resolution of a vertex simple gives its class in the graded Grot
 as the class of the vertex projective minus the class of the direct sum of shifted projectives
 indexed by outgoing arrows. This is the resolution identity behind the graded Cartan inverse
 and the q-Euler form for a path algebra. The path-length shift is retained in the kernel term.
+
+In `K₀^gr(proj kQ)`, `TauCeti.PathAlgebra.laurentK0_gradedArrowSum_eq_sum` expresses the arrow
+kernel class `[⨁_{a : j ⟶ i} (kQ eᵢ){1}]` explicitly as `∑ i, |j ⟶ i| q [kQ eᵢ]`.
 
 The resolution is the graded form of the projective resolution in Assem--Simson--Skowroński,
 *Elements of the Representation Theory of Associative Algebras I*, Chapter III, Section 2.
@@ -25,11 +29,46 @@ noncomputable section
 
 namespace TauCeti.PathAlgebra
 
-open CategoryTheory
+open CategoryTheory LaurentPolynomial
 
 universe u v w
 
-variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite Q]
+variable (k : Type w) (Q : Type u) [Quiver.{v} Q]
+
+section ArrowSumClass
+
+variable [CommRing k] [Fintype Q]
+
+/-- The class of the arrow kernel `⨁_{a : j ⟶ i} (kQ eᵢ){1}` in `K₀^gr(proj kQ)` is
+`∑ i, |j ⟶ i| q [kQ eᵢ]`. -/
+theorem laurentK0_gradedArrowSum_eq_sum (j : Q) [Finite ((i : Q) × (j ⟶ i))] :
+    LaurentK0.of.{max u v w}
+        (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
+        ⟨gradedArrowSum k Q j, gradedFiniteProjectiveModules_gradedArrowSum k Q j⟩ =
+      ∑ i : Q, ((Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1) •
+        gradedVertexProjectiveClass k Q i := by
+  classical
+  let _ (i : Q) : Finite (j ⟶ i) := Quiver.finiteHomOfFiniteStar j i
+  let _ (i : Q) : Fintype (j ⟶ i) := Fintype.ofFinite (j ⟶ i)
+  rw [laurentK0_projective_of_directSumObj
+    (M := fun a : (i : Q) × (j ⟶ i) => (gradedVertexProjective k Q a.1).shiftObj 1)
+    (fun a => gradedFiniteProjectiveModules_shiftObj
+      (gradedFiniteProjectiveModules_gradedVertexProjective k Q a.1) 1)]
+  simp_rw [laurentK0_projective_of_shiftObj
+      ⟨gradedVertexProjective k Q _,
+        gradedFiniteProjectiveModules_gradedVertexProjective k Q _⟩ 1,
+    ← gradedVertexProjectiveClass_eq]
+  rw [Fintype.sum_sigma]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  dsimp only
+  rw [Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, ← Nat.cast_smul_eq_nsmul
+    (LaurentPolynomial ℤ), smul_smul]
+
+end ArrowSumClass
+
+section SimpleClass
+
+variable [Field k] [Finite Q]
 
 /-- The first-arrow resolution expresses a graded vertex simple in `G₀^gr(mod kQ)` as its
 projective cover minus the shifted direct sum of vertex projectives at the heads of its outgoing
@@ -69,5 +108,7 @@ theorem laurentK0_gradedVertexSimple_eq_projective_sub_arrowSum (i : Q)
   rw [eq_sub_iff_add_eq]
   simp only [S, gradedVertexSimpleResolution_def] at h
   exact (add_comm _ _).trans h.symm
+
+end SimpleClass
 
 end TauCeti.PathAlgebra
