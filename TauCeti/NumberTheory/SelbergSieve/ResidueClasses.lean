@@ -25,11 +25,12 @@ lies in a removed class at every prime factor of `d`, and `b` survives every loc
 exactly when `L(b)` is coprime to the prime product.
 
 `BoundingSieve.ofResidueClasses` is the resulting sieve: its sieving primes are the `p ∈ Q` with
-`Ω p` nonempty, its density is the multiplicative function `ν(d) = ∏_{p ∣ d} #(Ω p) / p`, its
-approximate mass is an arbitrary real `X`, and its population is the weighted family of labels
-`a ↦ L(x a)`. Primes with `Ω p` empty are dropped, since they would have density zero, outside
-the range `0 < ν(p) < 1` that `BoundingSieve` demands. Primes with `Ω p` everything are excluded
-by the hypothesis `#(Ω p) < p`; for them the avoiding sum simply vanishes
+`Ω p` nonempty, its density is the multiplicative function with `ν(0) = 0` and
+`ν(d) = ∏_{p ∣ d} #(Ω p) / p` for `d ≠ 0`, its approximate mass is an arbitrary real `X`, and
+its population is the weighted family of labels `a ↦ L(x a)`. Primes with `Ω p` empty are
+dropped, since they would have density zero, outside the range `0 < ν(p) < 1` that
+`BoundingSieve` demands. Primes with `Ω p` everything are excluded by the hypothesis
+`#(Ω p) < p`; for them the avoiding sum simply vanishes
 (`TauCeti.sum_filter_forall_notMem_eq_zero_of_card_eq`).
 
 ## Main results
@@ -68,8 +69,8 @@ private theorem prime_of_mem_filter {Q : Finset ℕ} (hQ : ∀ p ∈ Q, p.Prime)
 
 /-- The sieve removing, at each prime `p ∈ Q`, the residue classes `Ω p` from the integers `x a`
 of a weighted finite family. The sieving primes are the `p ∈ Q` with `Ω p` nonempty, the density
-is `ν(d) = ∏_{p ∣ d} #(Ω p) / p`, the approximate mass is `X`, and the index `a` is recorded at
-its residue label `∏_{q ∈ Q, x a mod q ∈ Ω q} q`. -/
+is `ν(d) = ∏_{p ∣ d} #(Ω p) / p` for `d ≠ 0` with `ν(0) = 0`, the approximate mass is `X`, and
+the index `a` is recorded at its residue label `∏_{q ∈ Q, x a mod q ∈ Ω q} q`. -/
 noncomputable def ofResidueClasses : BoundingSieve :=
   ofFiniteFamily
     { support := ∅
@@ -115,7 +116,8 @@ noncomputable def ofResidueClasses : BoundingSieve :=
     (ofResidueClasses A x w hw Q hQ Ω hΩ X).totalMass = X := by
   rw [ofResidueClasses, ofFiniteFamily_totalMass]
 
-/-- The density is the multiplicative function `d ↦ ∏_{p ∣ d} #(Ω p) / p`. -/
+/-- The density is the multiplicative function sending `d ≠ 0` to `∏_{p ∣ d} #(Ω p) / p` and
+`0` to `0`. -/
 theorem ofResidueClasses_nu :
     (ofResidueClasses A x w hw Q hQ Ω hΩ X).nu = prodPrimeFactors fun p ↦ (#(Ω p) : ℝ) / p := by
   rw [ofResidueClasses, ofFiniteFamily_nu]
