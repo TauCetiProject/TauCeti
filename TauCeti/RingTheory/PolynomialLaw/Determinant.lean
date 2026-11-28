@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.RingTheory.GrothendieckRing
 import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -49,6 +50,16 @@ to be a ring.
 * `TauCeti.Determinant.trace`: the trace `Λ₁` as an `A`-linear map, with `D.trace 1 = d`.
 * `TauCeti.Determinant.charCoeff_smul`, `TauCeti.Determinant.coeff_charpoly_smul`: the
   characteristic coefficients are homogeneous, `Λᵢ(a x) = aⁱ Λᵢ(x)`.
+* `TauCeti.Determinant.monic_rid_toFun_one_tmul_add_X_tmul_one`: the unsigned polynomial
+  `D(X + x)` is monic, by the characteristic-coefficient expansion.
+* `TauCeti.Determinant.rid_toFun_one_tmul_mul_add_X_tmul_one_comm`,
+  `TauCeti.Determinant.charCoeff_mul_comm`, `TauCeti.Determinant.trace_mul_comm` and
+  `TauCeti.Determinant.charpoly_mul_comm`: exchanging two factors preserves the unsigned
+  polynomial, characteristic coefficients and trace over additively cancellative semirings,
+  and the signed characteristic polynomial over rings. Splitting a word into the products on
+  either side of a cut and exchanging those factors shows that its characteristic coefficients
+  are independent of the cut. The unsigned identity uses `PolynomialLaw.isCompat_apply` to
+  specialize the extra polynomial variable.
 * `TauCeti.Determinant.charCoeff_inv_mul_apply`: `Λ_(d - i)(u⁻¹) D(u) = Λᵢ(u)` for a unit `u`.
 * `TauCeti.Determinant.charpoly`: the characteristic polynomial, monic of degree `d`, with
   `χ(x, 0) = (-1)ᵈ D x` and `χ(1, X) = (X - 1)ᵈ`.
@@ -283,6 +294,97 @@ theorem map_smul_add_algebraMap (s t : A) (x : R) :
 theorem charCoeff_zero (x : R) : D.charCoeff 0 x = 1 := by
   simpa [Finset.sum_range_succ'] using (D.map_smul_add_algebraMap 0 1 x).symm
 
+/-- The unsigned polynomial `D(X + x)` is monic over every commutative coefficient extension. -/
+theorem monic_rid_toFun_one_tmul_add_X_tmul_one
+    (S : Type*) [CommSemiring S] [Algebra A S] (x : R) :
+    (Algebra.TensorProduct.rid A A S[X]
+      (D.toLaw.toFun S[X] (1 ⊗ₜ x + (X : S[X]) ⊗ₜ 1))).Monic := by
+  have hexpand : Algebra.TensorProduct.rid A A S[X]
+      (D.toLaw.toFun S[X] (1 ⊗ₜ x + (X : S[X]) ⊗ₜ 1)) =
+      ∑ i ∈ Finset.range (d + 1), C (algebraMap A S (D.charCoeff i x)) * X ^ (d - i) := by
+    rw [D.toFun_tmul_add_tmul_one, map_sum]
+    simp only [one_pow, one_mul, Algebra.TensorProduct.rid_tmul, Algebra.smul_def,
+      IsScalarTower.algebraMap_apply A S S[X], Polynomial.algebraMap_apply,
+      Algebra.algebraMap_self, RingHom.id_apply]
+  rw [hexpand]
+  apply monic_of_natDegree_le_of_coeff_eq_one d
+  · exact natDegree_sum_le_of_forall_le _ _ fun i _ ↦
+      (natDegree_C_mul_X_pow_le _ _).trans (Nat.sub_le d i)
+  · rw [finsetSum_coeff]
+    simp only [coeff_C_mul_X_pow]
+    rw [Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr (by lia))]
+    · simp only [Nat.sub_zero, ite_true, D.charCoeff_zero, _root_.map_one]
+    · intro i hi hne
+      have hid := Finset.mem_range.mp hi
+      rw [ite_eq_right (by lia)]
+
+section IsCancelAdd
+
+variable [IsCancelAdd A]
+
+/-- Over an additively cancellative semiring, the unsigned polynomial `D(X + xy)`
+is invariant under exchanging the factors
+([Chenevier, Lemma 1.12(i)](https://arxiv.org/abs/0809.0415)). -/
+theorem rid_toFun_one_tmul_mul_add_X_tmul_one_comm (x y : R) :
+    Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun A[X] (1 ⊗ₜ (x * y) + X ⊗ₜ 1)) =
+      Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun A[X] (1 ⊗ₜ (y * x) + X ⊗ₜ 1)) := by
+  -- Adapt the former cancellation proof of `TauCeti.Determinant.map_one_add_mul_comm`.
+  -- The outer variable can be specialized to zero without changing the inner variable.
+  let u : A[X][X] ⊗[A] R := 1 ⊗ₜ x + X ⊗ₜ 1
+  let v : A[X][X] ⊗[A] R := 1 ⊗ₜ y
+  let t : A[X][X] ⊗[A] R := C X ⊗ₜ 1
+  let e := Algebra.TensorProduct.rid A A A[X][X]
+  let F := fun z : A[X][X] ⊗[A] R ↦ e (D.toLaw.toFun A[X][X] z)
+  have hF (a b : A[X][X] ⊗[A] R) : F (a * b) = F a * F b := by
+    simp only [F, D.isMultiplicative.toFun_mul, _root_.map_mul]
+  have hut : Commute u t :=
+    ((Commute.one_left _).tmul (Commute.one_right _)).add_left
+      ((Commute.all _ _).tmul (Commute.refl _))
+  have hprod : (u * v + t) * u = u * (v * u + t) := by
+    rw [add_mul (u * v) t u, mul_add u (v * u) t, hut.eq, mul_assoc]
+  have h := congrArg F hprod
+  rw [hF, hF, mul_comm (F (u * v + t))] at h
+  -- Additive cancellation embeds the coefficients into a ring, where the monic factor cancels.
+  let φ : A[X][X] →+* (Algebra.GrothendieckAddGroup A[X])[X] :=
+    mapRingHom Algebra.GrothendieckAddGroup.ofRingHom
+  have hφ : Function.Injective φ := by
+    rw [coe_mapRingHom]
+    apply map_injective
+    rw [Algebra.GrothendieckAddGroup.coe_ofRingHom]
+    exact Algebra.GrothendieckAddGroup.of_injective
+  have hu : (F u).Monic := D.monic_rid_toFun_one_tmul_add_X_tmul_one A[X] x
+  have hφprod := congrArg φ h
+  rw [_root_.map_mul, _root_.map_mul] at hφprod
+  have hcancel := e.injective (hφ ((hu.map _).isRegular.left hφprod))
+  -- Specialize the outer variable on the tensor outputs, before applying the algebra unitor.
+  let ψ : A[X][X] →ₐ[A] A[X] := (aeval (0 : A[X])).restrictScalars A
+  set g := Algebra.TensorProduct.map ψ (AlgHom.id A R) with hg_def
+  have hg (p : A[X][X]) (z : R) : g (p ⊗ₜ z) = aeval (0 : A[X]) p ⊗ₜ z := by
+    simp only [hg_def, Algebra.TensorProduct.map_tmul, AlgHom.id_apply, ψ,
+      AlgHom.restrictScalars_apply]
+  have gu : g u = (1 : A[X]) ⊗ₜ x := by
+    simp only [u, map_add, hg, _root_.map_one, aeval_X, zero_tmul, add_zero]
+  have gv : g v = (1 : A[X]) ⊗ₜ y := by
+    simp only [v, hg, _root_.map_one]
+  have gt : g t = (X : A[X]) ⊗ₜ (1 : R) := by
+    simp only [t, hg, aeval_C, Algebra.algebraMap_self, RingHom.id_apply]
+  have hspec := congrArg (ψ.toLinearMap.rTensor A) hcancel
+  rw [PolynomialLaw.isCompat_apply, PolynomialLaw.isCompat_apply] at hspec
+  simp only [AlgHom.rTensor_toLinearMap_apply, ← hg_def, map_add, _root_.map_mul, gu, gv, gt,
+    Algebra.TensorProduct.tmul_mul_tmul, mul_one] at hspec
+  exact congrArg (Algebra.TensorProduct.rid A A A[X]) hspec
+
+/-- Over an additively cancellative semiring, each characteristic coefficient of a product
+is invariant under cyclic rotation. -/
+theorem charCoeff_mul_comm (i : ℕ) (x y : R) : D.charCoeff i (x * y) = D.charCoeff i (y * x) := by
+  by_cases hi : i ≤ d
+  · rw [← D.coeff_rid_toFun_one_tmul_add_X_tmul_one hi,
+      D.rid_toFun_one_tmul_mul_add_X_tmul_one_comm,
+      D.coeff_rid_toFun_one_tmul_add_X_tmul_one hi]
+  · simp only [D.charCoeff_eq_zero (Nat.lt_of_not_ge hi)]
+
+end IsCancelAdd
+
 /-- The top characteristic coefficient `Λ_d` is the determinant itself. -/
 @[simp]
 theorem charCoeff_dim (x : R) : D.charCoeff d x = D x := by
@@ -316,6 +418,10 @@ def trace : R →ₗ[A] A where
 /-- The trace is the first characteristic coefficient. -/
 theorem trace_apply (x : R) : D.trace x = D.charCoeff 1 x :=
   (rfl)
+
+/-- The trace of a determinant over an additively cancellative semiring is central. -/
+theorem trace_mul_comm [IsCancelAdd A] (x y : R) : D.trace (x * y) = D.trace (y * x) := by
+  simp only [trace_apply, D.charCoeff_mul_comm]
 
 /-- The trace of `1` is the dimension. -/
 @[simp]
@@ -370,6 +476,12 @@ theorem charpoly_eq_sum (x : R) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Algebra.TensorProduct.rid_tmul, smul_eq_C_mul, C_mul, C_pow, C_neg, C_1]
   ring
+
+/-- Over a commutative ring, the characteristic polynomial of a product is invariant under
+exchanging its two factors, extending `Matrix.charpoly_mul_comm` to determinants. This is the
+characteristic-polynomial form of [Chenevier, Lemma 1.12(i)](https://arxiv.org/abs/0809.0415). -/
+theorem charpoly_mul_comm (x y : R) : D.charpoly (x * y) = D.charpoly (y * x) := by
+  simp only [charpoly_eq_sum, D.charCoeff_mul_comm]
 
 /-- The coefficient of `X ^ j` in the characteristic polynomial is `(-1)^(d - j) Λ_(d - j)(x)`
 for `j ≤ d`, and `0` above the dimension. -/
