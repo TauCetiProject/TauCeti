@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.CategoryTheory.Subobject.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.CommGrp_
 public import TauCeti.CategoryTheory.Monoidal.Grp.Over
+import TauCeti.CategoryTheory.Monoidal.Mon
 import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
@@ -33,6 +34,8 @@ specialized constructions that import this generic API.
 * `TauCeti.ClosedSubgroupScheme.mapIso`: transport of closed subgroups along an isomorphism of
   ambient group schemes, compatible with composition of isomorphisms
   (`TauCeti.ClosedSubgroupScheme.mapIso_trans`).
+* `TauCeti.ClosedSubgroupScheme.isCommMonObj_underlying`: every closed subgroup scheme of a
+  commutative group scheme is commutative.
 -/
 
 public section
@@ -206,6 +209,13 @@ lemma mapIso_symm_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ H)
     (mapIso e).symm (mk i) = mk (i ≫ e.inv) :=
   Subtype.ext (by
     rw [coe_mapIso_symm, coe_mk, coe_mk, Subobject.map_mk])
+
+attribute [local instance] Over.cartesianMonoidalCategory Over.braidedCategory in
+/-- Every closed subgroup scheme of a commutative group scheme is commutative. -/
+instance isCommMonObj_underlying [IsCommMonObj G.X] (P : ClosedSubgroupScheme G) :
+    IsCommMonObj (P.val : Grp (Over X)).X := by
+  have := Over.mono_of_mono_left P.val.arrow.hom.hom
+  exact isCommMonObj_of_mono P.val.arrow.hom.hom
 
 end ClosedSubgroupScheme
 

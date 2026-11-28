@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.CategoryTheory.Comma.Over
-import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 
 /-!
@@ -22,7 +22,15 @@ to `Y` is the group scheme `(Over.pullback s).mapGrp.obj G` over `Y`. This file 
 subgroup scheme `P` of `G` base-changes to a closed subgroup scheme of the base change of `G`: the
 base change of a closed immersion of group schemes is again a closed immersion, since its
 underlying morphism is the pullback of the original one along the projection
-`G ×_X Y ⟶ G`.
+`G ×_X Y ⟶ G`. The carrier of `baseChange s P` is canonically a pullback of the carrier of `P`
+along `s` (`isPullback_baseChange_hom`), so finiteness, flatness, local finite presentation, and
+`Scheme.Hom.finrank` are preserved (`finrank_baseChange`).
+
+Base change of closed subgroup schemes is compatible with identity morphisms
+(`Grp.pullbackIdIso`), composition (`Over.mapGrpPullbackComp`), and equality of base morphisms
+(`Grp.pullbackCongrIso`), so the two pullbacks of `baseChange p P` to the self-fibre product
+`Y ×_X Y` correspond under the canonical overlap isomorphism `Grp.pullbackOverlapIso p G`
+(`mapIso_pullbackOverlapIso_baseChange`).
 
 More generally, let `g : G' ⟶ G` be a morphism of group schemes lying over `f : S' ⟶ S` and
 compatible with multiplication, let `V(D)` be a closed subscheme of `G`, and let
@@ -44,6 +52,15 @@ base changes (`TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.FlatDescent`
   represented by a closed immersion `i` is represented by the base change of `i`.
 * `TauCeti.ClosedSubgroupScheme.baseChange_mono`: base change preserves inclusions of closed
   subgroup schemes.
+* `TauCeti.ClosedSubgroupScheme.baseChangeCarrierIso`,
+  `TauCeti.ClosedSubgroupScheme.isPullback_baseChange_hom`, and
+  `TauCeti.ClosedSubgroupScheme.finrank_baseChange`: carrier pullback square and preservation of
+  finiteness, flatness, local finite presentation, and rank under base change.
+* `TauCeti.ClosedSubgroupScheme.mapIso_pullbackIdIso_baseChange`,
+  `TauCeti.ClosedSubgroupScheme.mapIso_mapGrpPullbackComp_symm_app_baseChange`,
+  `TauCeti.ClosedSubgroupScheme.mapIso_pullbackCongrIso_baseChange`,
+  `TauCeti.ClosedSubgroupScheme.mapIso_pullbackOverlapIso_baseChange`: `@[simp]` transport lemmas
+  relating `baseChange` to the canonical pullback isomorphisms of group schemes.
 * `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_le`: the closed-subgroup criterion for an
   inverse image `V(D.comap g)`, stated in terms of `D`.
 * `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap`: inverse images of closed subgroup schemes
@@ -56,6 +73,7 @@ base changes (`TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.FlatDescent`
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
+open scoped CategoryTheory.Obj
 
 namespace TauCeti.ClosedSubgroupScheme
 
@@ -99,6 +117,126 @@ theorem baseChange_mono : Monotone (baseChange (G := G) s) := by
   exact Subobject.mk_le_mk_of_comm
     ((Over.pullback s).mapGrp.map (Subobject.ofLE _ _ (Subtype.coe_le_coe.2 h)))
     (by rw [← Functor.map_comp, Subobject.ofLE_arrow])
+
+/-- The canonical isomorphism between the group scheme underlying `baseChange s P` and the
+base-changed group scheme `(Over.pullback s).mapGrp.obj (P.val : Grp (Over X))`. -/
+noncomputable def baseChangeCarrierIso (P : ClosedSubgroupScheme G) :
+    ((baseChange s P).val : Grp (Over Y)) ≅ (Over.pullback s).mapGrp.obj (P.val : Grp (Over X)) :=
+  mkIso ((Over.pullback s).mapGrp.map P.val.arrow)
+
+/-- The inverse of `baseChangeCarrierIso` intertwines the inclusion of `baseChange s P` with the
+base-changed inclusion of `P`. -/
+@[simp]
+theorem baseChangeCarrierIso_inv_comp_arrow (P : ClosedSubgroupScheme G) :
+    (baseChangeCarrierIso s P).inv ≫ (baseChange s P).val.arrow =
+      (Over.pullback s).mapGrp.map P.val.arrow :=
+  mkIso_inv_comp_arrow ((Over.pullback s).mapGrp.map P.val.arrow)
+
+/-- The structure morphism to `Y` of `baseChange s P` factors through the second pullback
+projection via `baseChangeCarrierIso s P`. -/
+@[reassoc]
+theorem baseChangeCarrierIso_hom_left_snd (P : ClosedSubgroupScheme G) :
+    (baseChangeCarrierIso s P).hom.hom.hom.left ≫ pullback.snd (P.val : Grp (Over X)).X.hom s =
+      ((baseChange s P).val : Grp (Over Y)).X.hom :=
+  Over.w (baseChangeCarrierIso s P).hom.hom.hom
+
+/-- `baseChangeCarrierIso s P` exhibits the structure morphism to `Y` of `baseChange s P` as a
+pullback of the structure morphism to `X` of `P` along `s`. -/
+theorem isPullback_baseChange_hom (P : ClosedSubgroupScheme G) :
+    IsPullback ((baseChange s P).val : Grp (Over Y)).X.hom
+      ((baseChangeCarrierIso s P).hom.hom.hom.left ≫ pullback.fst (P.val : Grp (Over X)).X.hom s)
+      s (P.val : Grp (Over X)).X.hom := by
+  let e : ((baseChange s P).val : Grp (Over Y)).X.left ≅ pullback (P.val : Grp (Over X)).X.hom s :=
+    (Grp.forget (Over Y) ⋙ Over.forget Y).mapIso (baseChangeCarrierIso s P)
+  exact (IsPullback.of_hasPullback (P.val : Grp (Over X)).X.hom s).flip.of_iso
+    e.symm (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    (by
+      rw [Iso.refl_hom, Category.comp_id, ← baseChangeCarrierIso_hom_left_snd]
+      exact (e.inv_hom_id_assoc _).symm)
+    (by rw [Iso.refl_hom, Category.comp_id]; exact (e.inv_hom_id_assoc _).symm)
+    (by simp) (by simp)
+
+section BaseChangeProperties
+
+variable (P : ClosedSubgroupScheme G)
+
+/-- If a closed subgroup scheme `P` of `G` is finite over `X`, then `baseChange s P` is finite
+over `Y`. -/
+instance isFinite_baseChange [IsFinite (P.val : Grp (Over X)).X.hom] :
+    IsFinite ((baseChange s P).val : Grp (Over Y)).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_baseChange_hom s P).flip ‹_›
+
+/-- If a closed subgroup scheme `P` of `G` is flat over `X`, then `baseChange s P` is flat over
+`Y`. -/
+instance flat_baseChange [Flat (P.val : Grp (Over X)).X.hom] :
+    Flat ((baseChange s P).val : Grp (Over Y)).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_baseChange_hom s P).flip ‹_›
+
+/-- If a closed subgroup scheme `P` of `G` is locally of finite presentation over `X`, then
+`baseChange s P` is locally of finite presentation over `Y`. -/
+instance locallyOfFinitePresentation_baseChange
+    [LocallyOfFinitePresentation (P.val : Grp (Over X)).X.hom] :
+    LocallyOfFinitePresentation ((baseChange s P).val : Grp (Over Y)).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_baseChange_hom s P).flip ‹_›
+
+/-- **Base-change invariance of rank for closed subgroup schemes.** If `P` is finite and flat over
+`X`, the rank of `baseChange s P` over `Y` is the rank of `P` pulled back along `s`. -/
+theorem finrank_baseChange [IsFinite (P.val : Grp (Over X)).X.hom]
+    [Flat (P.val : Grp (Over X)).X.hom] :
+    ((baseChange s P).val : Grp (Over Y)).X.hom.finrank =
+      (P.val : Grp (Over X)).X.hom.finrank ∘ s := by
+  funext y
+  exact Scheme.Hom.finrank_of_isPullback _ _ _ _ (isPullback_baseChange_hom s P).flip y
+
+end BaseChangeProperties
+
+section Functoriality
+
+/-- Base change along the identity morphism fixes every closed subgroup scheme under
+`Grp.pullbackIdIso`. -/
+@[simp]
+theorem mapIso_pullbackIdIso_baseChange (P : ClosedSubgroupScheme G) :
+    mapIso (Grp.pullbackIdIso G) (baseChange (𝟙 X) P) = P := by
+  refine Subtype.ext ?_
+  rw [baseChange_def, mapIso_mk, coe_mk]
+  exact (Subobject.mk_eq_mk_of_comm _ _ (Grp.pullbackIdIso (P.val : Grp (Over X)))
+    (Grp.pullbackIdIso_hom_naturality P.val.arrow).symm).trans (Subobject.mk_arrow P.val)
+
+/-- Iterated base change of a closed subgroup scheme agrees with base change along the composite
+morphism under `(Over.mapGrpPullbackComp t s).symm`. -/
+@[simp]
+theorem mapIso_mapGrpPullbackComp_symm_app_baseChange {Z : Scheme.{u}} (t : Z ⟶ Y) (s : Y ⟶ X)
+    (P : ClosedSubgroupScheme G) :
+    mapIso (G := (Over.pullback t).mapGrp.obj ((Over.pullback s).mapGrp.obj G))
+        ((Over.mapGrpPullbackComp t s).symm.app G) (baseChange t (baseChange s P)) =
+      baseChange (t ≫ s) P := by
+  refine Subtype.ext ?_
+  rw [baseChange_def s P, baseChange_mk, mapIso_mk, baseChange_def, coe_mk, coe_mk]
+  exact Subobject.mk_eq_mk_of_comm _ _
+    ((Over.mapGrpPullbackComp t s).symm.app (P.val : Grp (Over X)))
+    ((Over.mapGrpPullbackComp t s).inv.naturality P.val.arrow).symm
+
+/-- Transporting `baseChange s₁ P` along `Grp.pullbackCongrIso h G` yields `baseChange s₂ P`. -/
+@[simp]
+theorem mapIso_pullbackCongrIso_baseChange {s₁ s₂ : Y ⟶ X} (h : s₁ = s₂)
+    (P : ClosedSubgroupScheme G) :
+    mapIso (Grp.pullbackCongrIso h G) (baseChange s₁ P) = baseChange s₂ P := by
+  subst h
+  ext1
+  simp [Subobject.map_id]
+
+/-- The two pullbacks to `Y ×_X Y` of the base change `baseChange p P` of any closed subgroup
+scheme `P` of `G` agree under `Grp.pullbackOverlapIso p G`. -/
+@[simp]
+theorem mapIso_pullbackOverlapIso_baseChange (p : Y ⟶ X) (P : ClosedSubgroupScheme G) :
+    mapIso (Grp.pullbackOverlapIso p G) (baseChange (pullback.fst p p) (baseChange p P)) =
+      baseChange (pullback.snd p p) (baseChange p P) := by
+  refine Subtype.ext ?_
+  rw [baseChange_def p P, baseChange_mk, baseChange_mk, mapIso_mk, coe_mk, coe_mk]
+  exact Subobject.mk_eq_mk_of_comm _ _ (Grp.pullbackOverlapIso p (P.val : Grp (Over X)))
+    (Grp.pullbackOverlapIso_hom_naturality p P.val.arrow).symm
+
+end Functoriality
 
 end TauCeti.ClosedSubgroupScheme
 

@@ -18,6 +18,10 @@ Mathlib identifies base change `Over.pullback` along an identity with the identi
 (`Over.pullbackComp`). This file records that these identifications are coherent, up to the
 equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 
+* `CategoryTheory.Over.pullbackComp_hom_app_left_fst_fst`,
+  `CategoryTheory.Over.pullbackComp_hom_app_left_fst_snd`,
+  `CategoryTheory.Over.pullbackComp_inv_app_left_fst`, and
+  `CategoryTheory.Over.pullbackComp_inv_app_left_snd`: projection identities for `pullbackComp`;
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
 * `CategoryTheory.Over.pullbackComp_id_left_hom_app_comp_pullbackId`: `pullbackComp (𝟙 X) f`
@@ -78,6 +82,44 @@ variable {C : Type u} [Category.{v} C]
 section Coherence
 
 attribute [local instance] hasPullback_of_right_iso
+
+/-- Under `(Over.pullbackComp t s).hom`, the iterated first projection from `(A ×_X Y) ×_Y Z` to
+`A` is the first projection from `A ×_X Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_hom_app_left_fst_fst {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).hom.app A).left ≫
+        pullback.fst (pullback.snd A.hom s) t ≫ pullback.fst A.hom s =
+      pullback.fst A.hom (t ≫ s) := by
+  simp [pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).hom`, the `Y`-coordinate of the first projection from
+`(A ×_X Y) ×_Y Z` to `A ×_X Y` is the `Z`-coordinate of `A ×_X Z` mapped along `t`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_hom_app_left_fst_snd {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).hom.app A).left ≫
+        pullback.fst (pullback.snd A.hom s) t ≫ pullback.snd A.hom s =
+      pullback.snd A.hom (t ≫ s) ≫ t := by
+  simp [pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).inv`, the first projection from `A ×_X Z` to `A` is the
+iterated first projection from `(A ×_X Y) ×_Y Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_inv_app_left_fst {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).inv.app A).left ≫ pullback.fst A.hom (t ≫ s) =
+      pullback.fst (pullback.snd A.hom s) t ≫ pullback.fst A.hom s := by
+  simp [pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).inv`, the second projection from `A ×_X Z` to `Z` is the second
+projection from `(A ×_X Y) ×_Y Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_inv_app_left_snd {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).inv.app A).left ≫ pullback.snd A.hom (t ≫ s) =
+      pullback.snd (pullback.snd A.hom s) t := by
+  simp [pullbackComp]
 
 /-- Base change along `f : X ⟶ Y` of the identification `pullbackId` of base change along the
 identity is the composition isomorphism `pullbackComp f (𝟙 Y)`, up to the equality
@@ -155,13 +197,8 @@ theorem pullbackPullbackIsoOfComm_hom_app_left_fst (h : i' ≫ g = t ≫ i) (A :
         pullback.fst A.hom i =
       pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
   simp only [pullbackPullbackIsoOfComm_hom_app, comp_left, eqToHom_left, Category.assoc]
-  have h₁ : ((pullbackComp t i).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
-      pullback.fst A.hom i = pullback.fst A.hom (t ≫ i) := by
-    simp [pullbackComp]
-  have h₂ : ((pullbackComp i' g).inv.app A).left ≫ pullback.fst A.hom (i' ≫ g) =
-      pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
-    simp [pullbackComp]
-  rw [h₁, eqToHom_comp_pullback_fst A.hom h, h₂]
+  rw [pullbackComp_hom_app_left_fst_fst, eqToHom_comp_pullback_fst A.hom h,
+    pullbackComp_inv_app_left_fst]
 
 /-- `pullbackPullbackIsoOfComm` commutes with the projections to `s'`. -/
 @[reassoc (attr := simp)]

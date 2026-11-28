@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Comma.Over.Pullback
-public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Descent data on objects over a base, relative to a morphism
@@ -67,6 +66,11 @@ construct.
   canonical descent datum, the descent datum on `Z ⟶ X₀ ×_S S'` relative to the base change
   `X₀ ×_S S' ⟶ X₀` of `p`, with `TauCeti.DescentDatum.Hom.ofOverBaseChange` translating effectivity
   of it back to effectivity of `D`, compatibly with `f` (`Hom.comp_ofOverBaseChange`).
+* `TauCeti.DescentDatum.overlap_act_comp_left`, `TauCeti.DescentDatum.ofMono`,
+  `TauCeti.DescentDatum.ofMonoHom`, and `TauCeti.DescentDatum.Hom.mkOfCompMono`: turning an overlap
+  comparison under `Over.pullbackPullbackIsoOfComm` into an equivariant action, and restricting
+  descent data and morphisms of descent data along morphisms in `Over S'` whose underlying map in
+  `C` is a monomorphism.
 
 A descent datum `D` is *effective* when there are an object `X` over `S` and a morphism
 `baseChange p X ⟶ D` of descent data which is an isomorphism over `S'`.
@@ -972,6 +976,160 @@ theorem Hom.comp_ofOverBaseChange {W : Over X₀.left}
   refine pullback.hom_ext ?_ ?_ <;> simp [-Hom.hom_left_snd, reassoc_of% hh, ← pullback.condition]
 
 end OverBaseChange
+
+section MonoRestrict
+
+/-- Given a morphism `f : X ⟶ A ×_S S'` over `S'` and a morphism `u` between the two pullbacks of
+`X` to `S' ×_S S'` intertwining `f` with `Over.pullbackPullbackIsoOfComm` for `pullback.condition`,
+evaluating `u` on `(x, (π x, s₂))` and projecting to `X` yields an action `S' ×_S X ⟶ X` that
+intertwines `f` with the canonical descent action on `A ×_S S'`. -/
+theorem overlap_act_comp_left {A : Over S} {X : Over S'}
+    (f : X ⟶ (Over.pullback p).obj A)
+    (u : (Over.pullback (pullback.fst p p)).obj X ⟶
+      (Over.pullback (pullback.snd p p)).obj X)
+    (hu : u ≫ (Over.pullback (pullback.snd p p)).map f =
+      (Over.pullback (pullback.fst p p)).map f ≫
+        (Over.pullbackPullbackIsoOfComm (pullback.condition (f := p) (g := p))).hom.app A) :
+    (pullback.lift (pullback.snd p (X.hom ≫ p))
+        (pullback.lift (pullback.snd p (X.hom ≫ p) ≫ X.hom) (pullback.fst p (X.hom ≫ p))
+          (by rw [Category.assoc, ← pullback.condition]))
+        (by simp) ≫
+      u.left ≫ pullback.fst X.hom (pullback.snd p p)) ≫ f.left =
+      pullback.map p (X.hom ≫ p) p (((Over.pullback p).obj A).hom ≫ p) (𝟙 S') f.left
+        (𝟙 S) (by simp) (by rw [← Over.w_assoc f, Category.comp_id]) ≫
+        (baseChange p A).act := by
+  let θ : pullback p (X.hom ≫ p) ⟶ pullback X.hom (pullback.fst p p) :=
+    pullback.lift (pullback.snd p (X.hom ≫ p))
+      (pullback.lift (pullback.snd p (X.hom ≫ p) ≫ X.hom) (pullback.fst p (X.hom ≫ p))
+        (by rw [Category.assoc, ← pullback.condition]))
+      (by simp)
+  have hf₂_fst : pullback.fst X.hom (pullback.snd p p) ≫ f.left =
+      ((Over.pullback (pullback.snd p p)).map f).left ≫
+        pullback.fst ((Over.pullback p).obj A).hom (pullback.snd p p) := by simp
+  have hu_left : u.left ≫ ((Over.pullback (pullback.snd p p)).map f).left =
+      ((Over.pullback (pullback.fst p p)).map f).left ≫
+        ((Over.pullbackPullbackIsoOfComm
+          (pullback.condition (f := p) (g := p))).hom.app A).left :=
+    congrArg CommaMorphism.left hu
+  have hθ : (θ ≫ u.left ≫ pullback.fst X.hom (pullback.snd p p)) ≫ f.left =
+      θ ≫ ((Over.pullback (pullback.fst p p)).map f).left ≫
+        ((Over.pullbackPullbackIsoOfComm
+          (pullback.condition (f := p) (g := p))).hom.app A).left ≫
+          pullback.fst ((Over.pullback p).obj A).hom (pullback.snd p p) := by
+    simp only [Category.assoc, hf₂_fst, reassoc_of% hu_left]
+  rw [hθ]
+  refine pullback.hom_ext ?_ ?_
+  · simp [θ]
+  · simp [θ, pullback.condition (f := pullback.snd A.hom p) (g := pullback.snd p p)]
+
+/-- An action `act : pullback p (X.hom ≫ p) ⟶ X.left` intertwining `f.left` with `E.act` lies over
+`pullback.fst p (X.hom ≫ p)`. -/
+private theorem ofMono_act_hom {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y)
+    (act : pullback p (X.hom ≫ p) ⟶ X.left)
+    (hact : act ≫ f.left = pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S)
+      (by simp) (by simp) ≫ E.act) :
+    act ≫ X.hom = pullback.fst p (X.hom ≫ p) :=
+  (congrArg (act ≫ ·) (Over.w f)).symm.trans <| by
+    rw [reassoc_of% hact, E.act_hom, pullback.lift_fst, Category.comp_id]
+
+/-- **Restriction of a descent datum along a monomorphism.** If `f : X ⟶ Y` in `Over S'` has monic
+underlying morphism in `C` and `act : pullback p (X.hom ≫ p) ⟶ X.left` intertwines `f.left` with
+the action of `E : DescentDatum p Y`, then `act` automatically satisfies `act_hom`, `lift_act`, and
+`act_assoc`, defining a descent datum on `X`. -/
+noncomputable def ofMono {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y) [Mono f.left]
+    (act : pullback p (X.hom ≫ p) ⟶ X.left)
+    (hact : act ≫ f.left = pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S)
+      (by simp) (by simp) ≫ E.act) :
+    DescentDatum p X where
+  act := act
+  act_hom := ofMono_act_hom E f act hact
+  lift_act := by
+    rw [← cancel_mono f.left, Category.id_comp, Category.assoc, hact]
+    have hmap : pullback.lift X.hom (𝟙 X.left) (by simp) ≫
+        pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S) (by simp) (by simp) =
+        f.left ≫ pullback.lift Y.hom (𝟙 Y.left) (by simp) := by
+      refine pullback.hom_ext ?_ ?_ <;> simp
+    rw [reassoc_of% hmap, E.lift_act, Category.comp_id]
+  act_assoc := by
+    rw [← cancel_mono f.left]
+    simp only [Category.assoc, hact]
+    let m := pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S) (by simp) (by simp)
+    let M := pullback.map p (pullback.fst p (X.hom ≫ p) ≫ p)
+      p (pullback.fst p (Y.hom ≫ p) ≫ p) (𝟙 S') m (𝟙 S) (by simp) (by simp [m])
+    have h₁ : pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+          (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ act)
+          (by
+            rw [Category.assoc, reassoc_of% ofMono_act_hom E f act hact]
+            exact pullback.condition) ≫ m =
+        M ≫ pullback.lift (pullback.fst p (pullback.fst p (Y.hom ≫ p) ≫ p))
+          (pullback.snd p (pullback.fst p (Y.hom ≫ p) ≫ p) ≫ E.act)
+          (by rw [Category.assoc, reassoc_of% E.act_hom]; exact pullback.condition) := by
+      refine pullback.hom_ext (by simp [M, m]) (by simp [M, m, hact])
+    have h₂ : pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+          (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ pullback.snd p (X.hom ≫ p))
+          (by
+            rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
+            exact pullback.condition) ≫ m =
+        M ≫ pullback.lift (pullback.fst p (pullback.fst p (Y.hom ≫ p) ≫ p))
+          (pullback.snd p (pullback.fst p (Y.hom ≫ p) ≫ p) ≫ pullback.snd p (Y.hom ≫ p))
+          (by
+            rw [Category.assoc, ← pullback.condition (f := p) (g := Y.hom ≫ p)]
+            exact pullback.condition) := by
+      refine pullback.hom_ext ?_ ?_ <;> simp [M, m]
+    rw [reassoc_of% h₁, E.act_assoc, ← reassoc_of% h₂]
+
+/-- The action of `ofMono E f act hact` is `act`. -/
+@[simp]
+theorem ofMono_act {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y) [Mono f.left]
+    (act : pullback p (X.hom ≫ p) ⟶ X.left)
+    (hact : act ≫ f.left = pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S)
+      (by simp) (by simp) ≫ E.act) :
+    (ofMono E f act hact).act = act :=
+  (rfl)
+
+/-- The monomorphism `f : X ⟶ Y` as a morphism of descent data `ofMono E f act hact ⟶ E`. -/
+noncomputable def ofMonoHom {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y) [Mono f.left]
+    (act : pullback p (X.hom ≫ p) ⟶ X.left)
+    (hact : act ≫ f.left = pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S)
+      (by simp) (by simp) ≫ E.act) :
+    Hom (ofMono E f act hact) E where
+  hom := f
+  map_act := hact.symm
+
+/-- The underlying morphism of `ofMonoHom` is `f`. -/
+@[simp]
+theorem ofMonoHom_hom {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y) [Mono f.left]
+    (act : pullback p (X.hom ≫ p) ⟶ X.left)
+    (hact : act ≫ f.left = pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S)
+      (by simp) (by simp) ≫ E.act) :
+    (ofMonoHom E f act hact).hom = f :=
+  (rfl)
+
+/-- A morphism `f : X ⟶ Y` in `Over S'` whose composite with a monomorphic morphism of descent data
+`g : E ⟶ F` is a morphism of descent data `h : D ⟶ F` is itself a morphism of descent data
+`D ⟶ E`. -/
+noncomputable def Hom.mkOfCompMono {X Y Z : Over S'} {D : DescentDatum p X}
+    {E : DescentDatum p Y} {F : DescentDatum p Z} (f : X ⟶ Y) (g : Hom E F) [Mono g.hom.left]
+    (h : Hom D F) (hfg : f ≫ g.hom = h.hom) :
+    Hom D E where
+  hom := f
+  map_act := by
+    have hfg_left : f.left ≫ g.hom.left = h.hom.left := by
+      rw [← Over.comp_left, hfg]
+    rw [← cancel_mono g.hom.left, Category.assoc, Category.assoc, hfg_left, ← h.map_act,
+      ← g.map_act, ← Category.assoc]
+    congr 1
+    refine pullback.hom_ext ?_ ?_ <;> simp [hfg_left]
+
+/-- The underlying morphism of `Hom.mkOfCompMono` is `f`. -/
+@[simp]
+theorem Hom.mkOfCompMono_hom {X Y Z : Over S'} {D : DescentDatum p X}
+    {E : DescentDatum p Y} {F : DescentDatum p Z} (f : X ⟶ Y) (g : Hom E F) [Mono g.hom.left]
+    (h : Hom D F) (hfg : f ≫ g.hom = h.hom) :
+    (Hom.mkOfCompMono f g h hfg).hom = f :=
+  (rfl)
+
+end MonoRestrict
 
 end DescentDatum
 
