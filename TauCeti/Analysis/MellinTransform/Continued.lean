@@ -615,10 +615,13 @@ end AtTop
 /-! ### Expansions in the powers `t^{-k-α}`, `0 < α < 1`
 
 For an expansion `f(t) = ∑_{k<n} a_k t^{-k-α} + O(t^{-n-α})` at `+∞` with `0 < α < 1`, the
-continued Mellin transform `mellinContAtTop f a (k ↦ k + α) n` at the integers `s + 1 ≤ n + 1` does
-not depend on further terms and, at `n + 1`, is the absolutely convergent Mellin integral of the
-remainder. These are the moments `𝓜f(s + 1)` that appear in the expansions of Stieltjes transforms
-and fractional integrals (DLMF §2.6). -/
+continued Mellin transform `mellinContAtTop f a (k ↦ k + α) n` at the integers `s + 1 ≤ n` does
+not change when the term `k = n` is also subtracted
+(`TauCeti.mellinContAtTop_succ_natCast_add_one`).
+For an expansion through `n + 1` terms, `f(t) = ∑_{k≤n} a_k t^{-k-α} + O(t^{-n-1-α})`, its value at
+`n + 1` through `n + 1` terms is the absolutely convergent Mellin integral of the remainder
+(`TauCeti.mellinContAtTop_natCast_add_one_eq_integral`). These are the moments `𝓜f(s + 1)` that
+appear in the expansions of Stieltjes transforms and fractional integrals (DLMF §2.6). -/
 
 section PowerExpansion
 

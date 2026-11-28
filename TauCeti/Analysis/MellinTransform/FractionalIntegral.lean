@@ -8,12 +8,13 @@ module
 public import TauCeti.Analysis.MellinTransform.Continued
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Integral.Asymptotics
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.MeasureTheory.Integral.Asymptotics
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -48,18 +49,18 @@ The case `α = 1` (DLMF 2.6.46), where logarithms appear, is not treated here.
 ## Main results
 
 * `TauCeti.fractionalIntegral_eq`: the exact identity DLMF 2.6.45 for every `x > 0`.
-* `TauCeti.intervalIntegrable_rpow_sub_smul_of_continuousOn`,
-  `TauCeti.intervalIntegrable_rpow_sub_smul_pow_smul_repeatedIntegralAtTop`: the integrals in it
-  converge absolutely.
+* `TauCeti.intervalIntegrable_rpow_sub_smul_pow_smul_repeatedIntegralAtTop`, with
+  `TauCeti.intervalIntegrable_rpow_sub_smul_of_continuousOn` from
+  `TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds`: the integrals in it converge
+  absolutely.
 * `TauCeti.sum_choose_mul_descPochhammer_smul_fractionalIntegral_succ`: integration by parts along
   a chain of antiderivatives, `δ_{n+1}(x) = x δ_n(x)` plus a boundary term at `0`.
 * `TauCeti.repeatedIntegralAtTop_succ_eq_neg_integral`, `TauCeti.hasDerivAt_repeatedIntegralAtTop`:
   Cauchy's formula for repeated integration from `+∞` and the derivatives of the repeated
   integrals.
-* `TauCeti.integral_Ioi_integral_Ioi_pow_smul`: the Fubini step behind Cauchy's formula,
-  `∫_t^∞ ∫_s^∞ (τ - s)^j g(τ) dτ ds = (j + 1)⁻¹ ∫_t^∞ (τ - t)^(j + 1) g(τ) dτ`.
-* `TauCeti.integrableOn_Ioi_sub_pow_smul`: the integrability of `(τ - u)^i g(τ)` on `(s, ∞)` for
-  `g = O(τ^(-b))`, `i + 1 < b`, which makes the repeated integrals converge.
+  Cauchy's formula rests on the Fubini step `TauCeti.integral_Ioi_integral_Ioi_pow_smul` of
+  `TauCeti.MeasureTheory.Integral.Prod`, and the repeated integrals of `f_n` converge by
+  `TauCeti.integrableOn_Ioi_sub_pow_smul` of `TauCeti.MeasureTheory.Integral.Asymptotics`.
 * `TauCeti.fractionalIntegral_rpow`: the Beta integral
   `I^μ(t^β)(x) = Γ(β + 1) / Γ(β + μ + 1) x^(β + μ)`.
 
@@ -125,91 +126,6 @@ theorem repeatedIntegralAtTop_succ (g : ℝ → E) (j : ℕ) (t : ℝ) :
       ((-1) ^ (j + 1) / (j ! : ℝ)) • ∫ τ in Ioi t, (τ - t) ^ j • g τ :=
   (rfl)
 
-/-- `∫_t^τ (τ - s)^j ds = (τ - t)^(j + 1) / (j + 1)`, written over `(t, ∞)`. -/
-theorem integral_Ioi_indicator_Iio_pow {t τ : ℝ} (h : t < τ) (j : ℕ) :
-    ∫ s in Ioi t, (Iio τ).indicator (fun s ↦ (τ - s) ^ j) s = (τ - t) ^ (j + 1) / (j + 1) := by
-  rw [integral_indicator measurableSet_Iio, Measure.restrict_restrict measurableSet_Iio,
-    Iio_inter_Ioi, ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le h.le,
-    intervalIntegral.integral_comp_sub_left (fun s ↦ s ^ j), sub_self, integral_pow]
-  simp
-
-/-- If `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`, so is `g`, up to measurability. -/
-theorem aestronglyMeasurable_of_integrableOn_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
-    (hg : IntegrableOn (fun τ ↦ (τ - t) ^ j • g τ) (Ioi t)) :
-    AEStronglyMeasurable g (volume.restrict (Ioi t)) := by
-  refine ((((measurable_id.sub_const t).pow_const j).inv).aestronglyMeasurable.smul
-    hg.aestronglyMeasurable).congr ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
-  simp [smul_smul, inv_mul_cancel₀ (pow_ne_zero j (sub_pos.mpr hτ).ne')]
-
-/-- The integrand `1_{s < τ} (τ - s)^j g(τ)` of `TauCeti.integral_Ioi_integral_Ioi_pow_smul` is
-integrable on `(t, ∞)²` when `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`. -/
-theorem integrable_indicator_lt_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
-    (hg : IntegrableOn (fun τ ↦ (τ - t) ^ (j + 1) • g τ) (Ioi t)) :
-    Integrable ({q : ℝ × ℝ | q.1 < q.2}.indicator fun q ↦ (q.2 - q.1) ^ j • g q.2)
-      ((volume.restrict (Ioi t)).prod (volume.restrict (Ioi t))) := by
-  set F : ℝ × ℝ → E := {q : ℝ × ℝ | q.1 < q.2}.indicator fun q ↦ (q.2 - q.1) ^ j • g q.2 with hF
-  have hFm : AEStronglyMeasurable F ((volume.restrict (Ioi t)).prod (volume.restrict (Ioi t))) :=
-    (((continuous_snd.sub continuous_fst).pow j).aestronglyMeasurable.smul
-      (aestronglyMeasurable_of_integrableOn_pow_smul hg).comp_snd).indicator
-      (measurableSet_lt measurable_fst measurable_snd)
-  have hsec (τ : ℝ) : (fun s ↦ F (s, τ)) = (Iio τ).indicator fun s ↦ (τ - s) ^ j • g τ := by
-    ext s
-    simp only [hF, indicator, mem_Iio]
-    rfl
-  refine (integrable_prod_iff' hFm).2 ⟨?_, ?_⟩
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ _
-    rw [hsec]
-    refine (integrable_indicator_iff measurableSet_Iio).2 ?_
-    rw [IntegrableOn, Measure.restrict_restrict measurableSet_Iio, Iio_inter_Ioi]
-    exact (((continuous_const.sub continuous_id).pow j).smul
-      continuous_const).integrableOn_Icc.mono_set Ioo_subset_Icc_self
-  · -- the integral of the norm of a section is `(j + 1)⁻¹ ‖(τ - t)^(j + 1) g(τ)‖`
-    refine (hg.norm.const_mul ((j : ℝ) + 1)⁻¹).congr ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
-    have h : (fun s ↦ ‖F (s, τ)‖) = fun s ↦ (Iio τ).indicator (fun s ↦ (τ - s) ^ j) s * ‖g τ‖ := by
-      ext s
-      rw [congrFun (hsec τ) s]
-      by_cases hs : s < τ
-      · simp [indicator, hs, norm_smul, abs_of_pos (sub_pos.mpr hs)]
-      · simp [indicator, hs]
-    rw [h, integral_mul_const, integral_Ioi_indicator_Iio_pow hτ j, norm_smul, norm_pow,
-      Real.norm_of_nonneg (sub_pos.mpr hτ).le]
-    ring
-
-/-- Fubini on the region `t < s < τ`: if `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`, then
-`s ↦ ∫_s^∞ (τ - s)^j g(τ) dτ` is integrable on `(t, ∞)`, with integral
-`(j + 1)⁻¹ ∫_t^∞ (τ - t)^(j + 1) g(τ) dτ`. -/
-theorem integral_Ioi_integral_Ioi_pow_smul [CompleteSpace E] {g : ℝ → E} {t : ℝ} {j : ℕ}
-    (hg : IntegrableOn (fun τ ↦ (τ - t) ^ (j + 1) • g τ) (Ioi t)) :
-    IntegrableOn (fun s ↦ ∫ τ in Ioi s, (τ - s) ^ j • g τ) (Ioi t) ∧
-      ∫ s in Ioi t, ∫ τ in Ioi s, (τ - s) ^ j • g τ =
-        ((j : ℝ) + 1)⁻¹ • ∫ τ in Ioi t, (τ - t) ^ (j + 1) • g τ := by
-  set ν := volume.restrict (Ioi t)
-  set F : ℝ × ℝ → E := {q : ℝ × ℝ | q.1 < q.2}.indicator fun q ↦ (q.2 - q.1) ^ j • g q.2 with hF
-  have hFi : Integrable F (ν.prod ν) := integrable_indicator_lt_pow_smul hg
-  -- the inner integrals in `τ` and in `s`
-  have hleft : ∀ᵐ s ∂ν, ∫ τ, F (s, τ) ∂ν = ∫ τ in Ioi s, (τ - s) ^ j • g τ := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : t < s)
-    have hsec : (fun τ ↦ F (s, τ)) = (Ioi s).indicator fun τ ↦ (τ - s) ^ j • g τ := by
-      ext τ
-      simp only [hF, indicator, mem_Ioi]
-      rfl
-    rw [hsec, integral_indicator measurableSet_Ioi, Measure.restrict_restrict measurableSet_Ioi,
-      inter_eq_left.mpr (Ioi_subset_Ioi hs.le)]
-  have hright (τ : ℝ) (hτ : t < τ) :
-      ∫ s, F (s, τ) ∂ν = ((τ - t) ^ (j + 1) / (j + 1)) • g τ := by
-    rw [← integral_Ioi_indicator_Iio_pow hτ j, ← integral_smul_const]
-    congr 1
-    ext s
-    by_cases hs : s < τ <;> simp [hF, indicator, hs]
-  refine ⟨hFi.integral_prod_left.congr hleft, ?_⟩
-  rw [← integral_congr_ae hleft, integral_integral_swap (f := fun s τ ↦ F (s, τ)) hFi,
-    ← integral_smul]
-  refine integral_congr_ae ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
-  rw [hright τ hτ, smul_smul, div_eq_inv_mul]
-
 /-- The repeated integral of order `1` is `-∫_t^∞ g`. -/
 theorem repeatedIntegralAtTop_one (g : ℝ → E) (t : ℝ) :
     repeatedIntegralAtTop g 1 t = -∫ τ in Ioi t, g τ := by
@@ -266,22 +182,14 @@ private theorem hasDerivAt_repeatedIntegralAtTop_of_continuousOn [CompleteSpace 
     {a : ℝ} {j : ℕ} (hc : ContinuousOn (repeatedIntegralAtTop g j) (Ioi a))
     (hint : ∀ s, a < s → IntegrableOn (fun τ ↦ (τ - s) ^ j • g τ) (Ioi s)) {t : ℝ} (ht : a < t) :
     HasDerivAt (repeatedIntegralAtTop g (j + 1)) (repeatedIntegralAtTop g j t) t := by
-  set c := (a + t) / 2 with hc_def
-  have hac : a < c := by rw [hc_def]; linarith
-  have hct : c < t := by rw [hc_def]; linarith
-  have hIc := integrableOn_repeatedIntegralAtTop (hint c hac)
-  -- on `(c, ∞)`, the repeated integral of order `j + 1` is `∫_c^s` minus a constant
-  have heq : (fun s ↦ (∫ u in c..s, repeatedIntegralAtTop g j u) -
-      ∫ u in Ioi c, repeatedIntegralAtTop g j u) =ᶠ[𝓝 t] repeatedIntegralAtTop g (j + 1) := by
-    filter_upwards [Ioi_mem_nhds hct] with s (hs : c < s)
-    rw [repeatedIntegralAtTop_succ_eq_neg_integral (hint s (hac.trans hs)),
-      ← intervalIntegral.integral_Ioi_sub_Ioi hIc hs.le]
-    abel
-  refine HasDerivAt.congr_of_eventuallyEq ?_ heq.symm
-  exact (intervalIntegral.integral_hasDerivAt_right
-    ((intervalIntegrable_iff_integrableOn_Ioc_of_le hct.le).2 (hIc.mono_set Ioc_subset_Ioi_self))
-    (hc.stronglyMeasurableAtFilter isOpen_Ioi t (hac.trans hct))
-    (hc.continuousAt (Ioi_mem_nhds (hac.trans hct)))).sub_const _
+  have heq : (fun s ↦ -∫ u in Ioi s, repeatedIntegralAtTop g j u) =ᶠ[𝓝 t]
+      repeatedIntegralAtTop g (j + 1) := by
+    filter_upwards [Ioi_mem_nhds ht] with s (hs : a < s)
+    exact (repeatedIntegralAtTop_succ_eq_neg_integral (hint s hs)).symm
+  have h := (hasDerivAt_integral_Ioi_of_continuousOn
+    (fun s hs ↦ integrableOn_repeatedIntegralAtTop (hint s hs)) hc ht).neg
+  rw [neg_neg] at h
+  exact h.congr_of_eventuallyEq heq.symm
 
 /-- The repeated integrals of `g` differentiate down the chain: if `g` is continuous on `(a, ∞)`
 and every `(τ - s)^i g(τ)`, `i ≤ j`, is integrable on `(s, ∞)` for `s > a`, then the repeated
@@ -336,26 +244,6 @@ theorem continuousWithinAt_pow_smul_repeatedIntegralAtTop {g : ℝ → E} {k j :
     refine (ContinuousWithinAt.congr_of_eventuallyEq ?_ hev.symm ?_)
     · exact (by fun_prop : Continuous fun t : ℝ ↦ (t ^ k * (τ - t) ^ j) • g τ).continuousWithinAt
     · simp [F, indicator, hτ]
-
-/-- A function continuous on `(0, ∞)` and `O(t^(-b))` at `+∞`, times `(τ - u)^i` with
-`i + 1 < b`, is integrable on `(s, ∞)` for `s > 0`. -/
-theorem integrableOn_Ioi_sub_pow_smul {h : ℝ → E} (hc : ContinuousOn h (Ioi 0)) {b : ℝ}
-    (hO : h =O[atTop] fun t ↦ t ^ (-b)) {i : ℕ} (hib : (i : ℝ) + 1 < b) {s : ℝ} (hs : 0 < s)
-    (u : ℝ) : IntegrableOn (fun τ ↦ (τ - u) ^ i • h τ) (Ioi s) := by
-  refine (LocallyIntegrableOn.integrableOn_of_isBigO_atTop (g := fun τ ↦ τ ^ ((i : ℝ) - b))
-    ?_ ?_ (integrableAtFilter_rpow_atTop_iff.mpr (by linarith))).mono_set Ioi_subset_Ici_self
-  · have hsub : Ici s ⊆ Ioi 0 := fun _ hτ ↦ hs.trans_le hτ
-    exact ((continuous_id.sub continuous_const).pow i).continuousOn.smul (hc.mono hsub)
-      |>.locallyIntegrableOn measurableSet_Ici
-  · have hlin : (fun τ : ℝ ↦ (τ - u) ^ i) =O[atTop] fun τ ↦ τ ^ i := by
-      refine IsBigO.pow (IsBigO.of_bound 2 ?_) i
-      filter_upwards [eventually_ge_atTop |u|, eventually_ge_atTop 0] with τ hτ hτ0
-      rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hτ0]
-      calc |τ - u| ≤ |τ| + |u| := abs_sub _ _
-        _ ≤ 2 * τ := by rw [abs_of_nonneg hτ0]; linarith
-    refine (hlin.smul hO).congr' (Eventually.of_forall fun _ ↦ rfl) ?_
-    filter_upwards [eventually_gt_atTop 0] with τ hτ
-    rw [smul_eq_mul, sub_eq_add_neg, Real.rpow_add hτ, Real.rpow_natCast]
 
 /-! ### Integration by parts along a chain of antiderivatives -/
 
@@ -599,31 +487,6 @@ theorem fractionalIntegral_rpow {μ β : ℝ} (hμ : 0 < μ) (hβ : -1 < β) {x 
   have hΓ : Real.Gamma μ ≠ 0 := (Real.Gamma_pos_of_pos hμ).ne'
   field_simp
 
-/-- A kernel `(x - t)^(μ - 1)` against a function integrable near `0` and continuous up to `x`. -/
-theorem intervalIntegrable_rpow_sub_smul {h : ℝ → E} {μ x c : ℝ} (hμ : 0 < μ)
-    (hc : 0 < c) (hcx : c < x) (h₀ : IntegrableOn h (Ioc 0 c)) (h₁ : ContinuousOn h (Icc c x)) :
-    IntervalIntegrable (fun t ↦ (x - t) ^ (μ - 1) • h t) volume 0 x := by
-  refine IntervalIntegrable.trans (b := c) ?_ ?_
-  · refine IntervalIntegrable.continuousOn_smul
-      ((intervalIntegrable_iff_integrableOn_Ioc_of_le hc.le).2 h₀) ?_
-    refine ContinuousOn.rpow_const (continuousOn_const.sub continuousOn_id) fun t ht ↦ Or.inl ?_
-    rw [uIcc_of_le hc.le] at ht
-    exact (sub_pos.mpr (ht.2.trans_lt hcx)).ne'
-  · refine IntervalIntegrable.smul_continuousOn ?_ (by rwa [uIcc_of_le hcx.le])
-    have := (intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := x - c)
-      (by linarith : -1 < μ - 1)).comp_sub_left x
-    simpa using this.symm
-
-/-- If `g` is locally integrable on `[0, ∞)` and continuous on `(0, ∞)`, then the integral
-defining `I^μ g(x)`, `μ > 0`, `x > 0`, converges absolutely. -/
-theorem intervalIntegrable_rpow_sub_smul_of_continuousOn {μ x : ℝ} (hμ : 0 < μ) (hx : 0 < x)
-    {g : ℝ → E} (hg : LocallyIntegrableOn g (Ici 0)) (hgc : ContinuousOn g (Ioi 0)) :
-    IntervalIntegrable (fun t ↦ (x - t) ^ (μ - 1) • g t) volume 0 x :=
-  intervalIntegrable_rpow_sub_smul hμ (half_pos hx) (by linarith)
-    ((hg.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
-      Ioc_subset_Icc_self)
-    (hgc.mono fun _ ht ↦ (half_pos hx).trans_le ht.1)
-
 /-! ### Remainders of an expansion at `+∞` -/
 
 variable {α : ℝ} {f : ℝ → E} {a : ℕ → E}
@@ -843,7 +706,7 @@ private theorem sum_smul_fractionalIntegral_rpow_smul [CompleteSpace E] {μ : �
   rw [Finset.sum_congr rfl fun j hj ↦ by rw [hterm j hj]]
   simp only [smul_smul, ← Finset.sum_smul]
   congr 1
-  have hV := sum_choose_mul_descPochhammer_eval n μ (-α)
+  have hV := sum_choose_mul_descPochhammer_eval n (Commute.all μ (-α))
   have h₁ := Real.inv_Gamma_sub_natCast (1 - α) n
   have h₂ := Real.inv_Gamma_sub_natCast (μ + 1 - α) n
   have e₁ : 1 - α - (n : ℝ) = 1 - n - α := by ring

@@ -79,7 +79,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.descPochhammer_eval_ne_zero`: over a domain, the falling factorial does not vanish at
   a point that is not a natural number.
 * `TauCeti.sum_choose_mul_descPochhammer_eval`: the Chu–Vandermonde identity
-  `∑_{j ≤ n} C(n, j) u^{(j)} v^{(n - j)} = (u + v)^{(n)}` for falling factorials.
+  `∑_{j ≤ n} C(n, j) u^{(j)} v^{(n - j)} = (u + v)^{(n)}` for falling factorials of commuting
+  `u` and `v`.
 * `TauCeti.ascPochhammer_eval_neg_mul_ascPochhammer_eval`,
   `TauCeti.ascPochhammer_eval_neg_mul_ascPochhammer_eval_add_two`: the products
   `(−a)ₖ (a)ₖ = (−1)ᵏ ∏_{l<k} (a² − l²)` and `(−a)ₖ (a + 2)ₖ = (−1)ᵏ ∏_{l<k} ((a + 1)² − (l + 1)²)`.
@@ -352,17 +353,18 @@ theorem descPochhammer_eval_ne_zero {R : Type*} [Ring R] [IsDomain R] {c : R}
   rw [ascPochhammer_eval_neg_eq_descPochhammer] at h
   exact right_ne_zero_of_mul h
 
-/-- **The Chu–Vandermonde identity** for falling factorials over a commutative ring:
+/-- **The Chu–Vandermonde identity** for falling factorials of commuting elements of a ring:
 `∑_{j ≤ n} C(n, j) u^{(j)} v^{(n - j)} = (u + v)^{(n)}`, where `u^{(j)}` is the falling factorial
 `(descPochhammer R j).eval u`. It is Mathlib's `Ring.descPochhammer_smeval_add`, written with
 polynomial evaluation. -/
-theorem sum_choose_mul_descPochhammer_eval {R : Type*} [CommRing R] (n : ℕ) (u v : R) :
+theorem sum_choose_mul_descPochhammer_eval {R : Type*} [Ring R] (n : ℕ) {u v : R}
+    (h : Commute u v) :
     ∑ j ∈ Finset.range (n + 1), (n.choose j : R) * (descPochhammer R j).eval u *
       (descPochhammer R (n - j)).eval v = (descPochhammer R n).eval (u + v) := by
   have hbridge (k : ℕ) (r : R) : (descPochhammer R k).eval r = (descPochhammer ℤ k).smeval r := by
     rw [descPochhammer_smeval_eq_ascPochhammer, ascPochhammer_smeval_eq_eval,
       descPochhammer_eval_eq_ascPochhammer]
-  rw [hbridge, Ring.descPochhammer_smeval_add n (Commute.all u v),
+  rw [hbridge, Ring.descPochhammer_smeval_add n h,
     Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [hbridge, hbridge, mul_assoc]
