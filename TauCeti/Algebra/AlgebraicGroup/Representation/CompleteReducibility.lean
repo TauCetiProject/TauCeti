@@ -16,7 +16,7 @@ public import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
 /-!
 # Complete reducibility from a semisimple Lie algebra in characteristic zero
 
-Let `G` be a connected affine group of finite type over an algebraically closed field `k` of
+Let `G` be a connected affine group of finite type over a field `k` of
 characteristic zero. If the Lie algebra `Lie(G)` has nondegenerate Killing form, equivalently
 (by Cartan's criterion) `Lie(G)` is semisimple, then every finite-dimensional representation of
 `G` is completely reducible, so `G` is linearly reductive.
@@ -28,13 +28,12 @@ subrepresentations, so these complements are subrepresentations. Connectedness i
 that identification; characteristic zero is used there, through Cartier's theorem, and in Weyl's
 theorem.
 
-Over an arbitrary field of characteristic zero the same holds for geometrically connected `G`:
-nondegeneracy of the Killing form survives extension to an algebraic closure, and linear
-reductivity descends from it.
+Connectedness and geometric connectedness agree for affine group schemes over a field.
+The criterion is also available with geometric connectedness as an explicit hypothesis.
 
 ## Main declarations
 
-* `TauCeti.Comodule.isCompletelyReducible_of_isKilling`: over an algebraically closed field, a
+* `TauCeti.Comodule.isCompletelyReducible_of_isKilling`: over a field, a
   finite-dimensional representation of a connected group whose Lie algebra has nondegenerate
   Killing form is completely reducible.
 * `TauCeti.Coalgebra.isLinearlyReductive_of_isKilling` and
@@ -63,15 +62,15 @@ universe u w
 
 namespace TauCeti
 
-section AlgClosed
+section Connected
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 variable [LieAlgebra.IsKilling k (Derivation k H (Bialgebra.CounitAlgebra k H k))]
 
 namespace Comodule
 
-/-- **Weyl's theorem for algebraic groups.** Over an algebraically closed field of characteristic
+/-- **Weyl's theorem for algebraic groups.** Over a field of characteristic
 zero, every finite-dimensional representation of a connected group whose Lie algebra has
 nondegenerate Killing form is completely reducible. -/
 theorem isCompletelyReducible_of_isKilling
@@ -96,7 +95,7 @@ theorem isCompletelyReducible_of_isKilling
 
 end Comodule
 
-/-- Over an algebraically closed field of characteristic zero, a connected group whose Lie algebra
+/-- Over a field of characteristic zero, a connected group whose Lie algebra
 has nondegenerate Killing form is linearly reductive, with comodule carriers in any universe. -/
 theorem Coalgebra.isLinearlyReductive_of_isKilling :
     Coalgebra.IsLinearlyReductive.{u, u, w} k H :=
@@ -104,13 +103,13 @@ theorem Coalgebra.isLinearlyReductive_of_isKilling :
     let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
     exact Comodule.isCompletelyReducible_of_isKilling
 
-/-- Over an algebraically closed field of characteristic zero, the coordinate Hopf algebra of a
+/-- Over a field of characteristic zero, the coordinate Hopf algebra of a
 connected group whose Lie algebra has nondegenerate Killing form is linearly reductive. -/
 theorem linearlyReductiveCommHopfAlgProperty.of_isKilling :
     linearlyReductiveCommHopfAlgProperty k H.obj :=
   (linearlyReductiveCommHopfAlgProperty_iff k H.obj).2 Coalgebra.isLinearlyReductive_of_isKilling
 
-end AlgClosed
+end Connected
 
 /-- **Lie-semisimple groups are linearly reductive in characteristic zero.** Over a field of
 characteristic zero, a geometrically connected finite-type affine group whose Lie algebra has

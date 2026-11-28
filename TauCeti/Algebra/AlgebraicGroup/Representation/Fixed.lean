@@ -12,8 +12,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 /-!
 # Fixed vectors and differentiation
 
-For a connected affine group over an algebraically closed field of characteristic zero (or a
-geometrically connected finite-type affine group over any field of characteristic zero),
+For a connected affine group of finite type over a field of characteristic zero,
 a vector in a rational representation is fixed exactly when its differentiated action is
 zero. More generally, a linear map intertwines rational representations exactly when it
 intertwines their differentials, so a rational representation is determined on its underlying
@@ -75,12 +74,12 @@ theorem map_coact_iff_map_differential_of_geometricallyConnected
 
 end GeometricallyConnected
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 variable {N : Type x} [AddCommGroup N] [Module k N] [Comodule k H N]
 
-/-- For a connected affine group over an algebraically closed field of characteristic zero,
+/-- For a connected affine group over a field of characteristic zero,
 a linear map is a rational representation morphism exactly when it intertwines the
 differentiated actions. -/
 theorem map_coact_iff_map_differential (f : M →ₗ[k] N) :
@@ -133,11 +132,11 @@ theorem coact_eq_tmul_one_iff_forall_differential_eq_zero_of_geometricallyConnec
 
 end GeometricallyConnected
 
-/-- For a connected affine group over an algebraically closed field of characteristic zero,
+/-- For a connected affine group over a field of characteristic zero,
 rational invariants are exactly the vectors killed by every tangent vector.
 No dimension assumption is needed. -/
 theorem coact_eq_tmul_one_iff_forall_differential_eq_zero
-    {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+    {k : Type u} [Field k] [CharZero k]
     {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
     {V : Type w} [AddCommGroup V] [Module k V] [Comodule k H V] (v : V) :
     coact (R := k) (C := H) v = v ⊗ₜ[k] (1 : H) ↔

@@ -12,7 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 /-!
 # Lie ideals as adjoint subrepresentations
 
-For a connected affine group of finite type over an algebraically closed field of
+For a connected affine group of finite type over a field of
 characteristic zero, Lie ideals in its tangent Lie algebra are exactly the subrepresentations
 of its adjoint representation. The identification preserves the underlying subspace and its
 order. In particular, it turns the solvable radical of the tangent Lie algebra into an
@@ -71,13 +71,13 @@ end TauCeti.Subcomodule
 
 namespace LieIdeal
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 
 attribute [local instance] Derivation.adjointComodule
 
 /-- A Lie ideal of a connected affine group in characteristic zero is a subrepresentation
-of its adjoint representation, over an algebraically closed field. -/
+of its adjoint representation, over a field. -/
 noncomputable def toAdjointSubcomodule
     (I : LieIdeal k (Module.Dual k (Bialgebra.CotangentSpace k H))) :
     Subcomodule k H (Module.Dual k (Bialgebra.CotangentSpace k H)) where
@@ -114,7 +114,7 @@ end LieIdeal
 
 namespace TauCeti
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 
 attribute [local instance] Derivation.adjointComodule
@@ -129,7 +129,7 @@ theorem Subcomodule.toLieIdeal_toAdjointSubcomodule
 
 variable (H)
 
-/-- For a connected affine group over an algebraically closed field of characteristic zero,
+/-- For a connected affine group over a field of characteristic zero,
 adjoint subrepresentations and Lie ideals are the same ordered collection of subspaces. -/
 noncomputable def adjointSubcomoduleOrderIsoLieIdeal :
     Subcomodule k H (Module.Dual k (Bialgebra.CotangentSpace k H)) ≃o

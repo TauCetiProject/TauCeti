@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.Basic.Finite.Sigma
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
 # The hull of subquotients of finite direct sums of an object
@@ -27,6 +28,10 @@ a finite-dimensional endomorphism algebra. The hulls are ordered by membership
 (`TauCeti.subquotientHull_le_iff`), so nested hulls give the transition maps between these
 algebras.
 
+Functors preserving finite biproducts, monomorphisms and epimorphisms send hulls into the
+hulls of their images, and equivalences preserve and reflect hull membership. These transport
+results need only preadditive categories with finite biproducts, without abelianness.
+
 ## Main definitions and results
 
 * `TauCeti.subquotientHull X`: subquotients of finite direct sums of copies of `X`.
@@ -35,6 +40,10 @@ algebras.
 * The hull is closed under subobjects, quotients and finite products, and contains zero.
 * `TauCeti.subquotientHull_le`: the hull is the smallest such property containing `X`.
 * `TauCeti.subquotientHull_le_iff`: `⟨Y⟩ ≤ ⟨X⟩` if and only if `Y ∈ ⟨X⟩`.
+* `CategoryTheory.Functor.map_subquotientHull`: preservation of hull membership by functors
+  preserving finite biproducts, monomorphisms and epimorphisms.
+* `CategoryTheory.Equivalence.subquotientHull_obj_iff`: preservation and reflection of hull
+  membership under equivalences.
 
 ## References
 
@@ -159,3 +168,37 @@ theorem subquotientHull_le_iff : subquotientHull Y ≤ subquotientHull X ↔ sub
 end Abelian
 
 end TauCeti
+
+namespace CategoryTheory
+
+open Limits TauCeti
+
+universe v' u'
+
+section
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
+  {D : Type u'} [Category.{v'} D] [Preadditive D] [HasFiniteBiproducts D]
+
+/-- A functor preserving finite biproducts, monomorphisms and epimorphisms maps a finite-sum
+and subquotient hull into the hull of the image. -/
+theorem Functor.map_subquotientHull (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [PreservesFiniteBiproducts F] [F.PreservesMonomorphisms] [F.PreservesEpimorphisms]
+    {X Y : C} (h : subquotientHull X Y) : subquotientHull (F.obj X) (F.obj Y) := by
+  obtain ⟨ι, _, Z, i, p, _, _⟩ := h
+  exact subquotientHull.mk (F.map i ≫ (F.mapBiproduct (fun _ : ι ↦ X)).hom) (F.map p)
+
+/-- An equivalence identifies membership in finite-sum and subquotient hulls. -/
+@[simp]
+theorem Equivalence.subquotientHull_obj_iff (E : C ≌ D) (X Y : C) :
+    subquotientHull (E.functor.obj X) (E.functor.obj Y) ↔ subquotientHull X Y := by
+  let : E.functor.Additive := Functor.additive_of_preserves_binary_products _
+  refine ⟨fun h ↦ ?_, E.functor.map_subquotientHull⟩
+  obtain ⟨ι, _, Z, i, p, _, _⟩ := E.inverse.map_subquotientHull h
+  exact subquotientHull.mk
+    (i ≫ (biproduct.mapIso (fun _ : ι ↦ (E.unitIso.app X).symm)).hom)
+    (p ≫ (E.unitIso.app Y).inv)
+
+end
+
+end CategoryTheory

@@ -22,8 +22,8 @@ the scheme-theoretic centralizer.
 The main result identifies its Lie algebra with the kernel of `ad x`
 (`TauCeti.lieSubalgebra_centralizerHopfIdeal`). The proof differentiates the adjoint
 representation, whose differential is the adjoint action of `𝔤` on itself. No smoothness,
-connectedness or characteristic assumption is needed. For a connected group over an
-algebraically closed field of characteristic zero, the centralizer is the whole group exactly when
+connectedness or characteristic assumption is needed. For a connected group over a
+field of characteristic zero, the centralizer is the whole group exactly when
 `x` is central in `𝔤`.
 
 Over a field of characteristic zero the centralizer is smooth, by Cartier's theorem, so its
@@ -211,10 +211,10 @@ end Basic
 
 section Connected
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 
-/-- For a connected affine group over an algebraically closed field of characteristic zero, the
+/-- For a connected affine group over a field of characteristic zero, the
 centralizer of `x` is the whole group exactly when `x` is central in the Lie algebra. -/
 theorem centralizerHopfIdeal_eq_bot_iff_mem_center
     (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
