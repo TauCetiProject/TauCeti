@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealBoundary
 
 The ideal boundary of a geodesic line consists of its two endpoints. The ideal boundary of
 its closed left half-plane is the corresponding closed arc. These identities relate the
-orbit-closure definition of ideal boundary to the endpoint tests for extended geodesic segments.
+closure in the Riemann sphere to the endpoint tests for extended geodesic segments.
 -/
 
 public section
@@ -23,39 +23,18 @@ open scoped MatrixGroups OnePoint Pointwise
 
 namespace TauCeti.UpperHalfPlane
 
-private theorem coe_mem_idealBoundary_preimage_re_iff (s : Set ℝ) {x : ℝ} :
-    (x : OnePoint ℝ) ∈ idealBoundary (UpperHalfPlane.re ⁻¹' s) ↔ x ∈ closure s := by
-  rw [coe_mem_idealBoundary_iff, Metric.mem_closure_iff]
-  constructor
-  · intro h ε hε
-    obtain ⟨z, hz, hd⟩ := h ε hε
-    refine ⟨z.re, hz, ?_⟩
-    rw [Complex.dist_eq] at hd
-    have hr := Complex.abs_re_le_norm ((z : ℂ) - (x : ℂ))
-    simp only [Complex.sub_re, Complex.ofReal_re, UpperHalfPlane.coe_re] at hr
-    rw [dist_comm, Real.dist_eq]
-    exact hr.trans_lt hd
-  · intro h ε hε
-    obtain ⟨y, hy, hd⟩ := h (ε / 2) (half_pos hε)
-    let z : ℍ := ⟨⟨y, ε / 2⟩, half_pos hε⟩
-    refine ⟨z, hy, (dist_triangle _ (y : ℂ) _).trans_lt ?_⟩
-    have hz : dist (z : ℂ) (y : ℂ) = ε / 2 := by
-      rw [Complex.dist_of_re_eq (by simp [z])]
-      simp [z, abs_of_pos hε]
-    have hxy : dist (y : ℂ) (x : ℂ) < ε / 2 := by
-      rw [Complex.dist_of_im_eq (by simp)]
-      simpa [dist_comm] using hd
-    linarith
-
 private theorem infty_mem_idealBoundary_range_geodesicLine_one :
     (∞ : OnePoint ℝ) ∈ idealBoundary (range (geodesicLine 1)) := by
-  rw [infty_mem_idealBoundary_iff, range_geodesicLine_one]
+  rw [infty_mem_idealBoundary_iff]
   intro r
-  let z : ℍ := ⟨⟨0, max r 0 + 1⟩, by positivity⟩
-  refine ⟨z, rfl, ?_⟩
-  calc
-    r < z.im := by dsimp [z]; linarith [le_max_left r 0]
-    _ ≤ ‖(z : ℂ)‖ := by simpa [abs_of_pos z.im_pos] using Complex.abs_im_le_norm (z : ℂ)
+  have ht := Filter.tendsto_comap_iff.1
+    (tendsto_geodesicLine_atTop_atImInfty (g := 1) (by simp))
+  obtain ⟨t, ht⟩ := (ht.eventually (Filter.eventually_ge_atTop (r + 1))).exists
+  refine ⟨geodesicLine 1 t, mem_range_self _, ?_⟩
+  have him := Complex.abs_im_le_norm (geodesicLine 1 t : ℂ)
+  simp only [UpperHalfPlane.coe_im, abs_of_pos (geodesicLine 1 t).im_pos] at him
+  change r + 1 ≤ (geodesicLine 1 t).im at ht
+  linarith
 
 /-- The ideal boundary of a geodesic line is the pair of its backward and forward endpoints. -/
 theorem idealBoundary_range_geodesicLine (g : PSL(2, ℝ)) :
@@ -74,6 +53,14 @@ theorem idealBoundary_range_geodesicLine (g : PSL(2, ℝ)) :
       rw [haxis, coe_mem_idealBoundary_preimage_re_iff, closure_singleton, mem_singleton_iff]
   rw [← mul_one g, ← smul_range_geodesicLine, idealBoundary_smul, h]
   rw [Set.smul_set_insert, Set.smul_set_singleton, mul_one]
+
+/-- Transport ideal-boundary membership for a closed left half-plane to the identity. -/
+theorem mem_idealBoundary_closure_leftHalfPlane_iff_inv_smul_mem
+    {g : PSL(2, ℝ)} {ξ : OnePoint ℝ} :
+    ξ ∈ idealBoundary (closure (leftHalfPlane g)) ↔
+      g⁻¹ • ξ ∈ idealBoundary (closure (leftHalfPlane 1)) := by
+  conv_lhs => rw [← mul_one g, ← smul_leftHalfPlane, closure_smul, idealBoundary_smul]
+  exact Set.mem_smul_set_iff_inv_smul_mem
 
 /-- The closed left half-plane has the closed left ideal arc as its ideal boundary. -/
 theorem mem_idealBoundary_closure_leftHalfPlane_iff {g : PSL(2, ℝ)} {ξ : OnePoint ℝ} :
@@ -95,13 +82,13 @@ theorem mem_idealBoundary_closure_leftHalfPlane_iff {g : PSL(2, ℝ)} {ξ : OneP
       rw [hclosure, coe_mem_idealBoundary_preimage_re_iff, isClosed_Iic.closure_eq,
         inr_mem_extClosedLeftHalfPlane_iff]
       simp [coe_mem_boundaryLeftHalfPlane_iff, sideForm_one, le_iff_eq_or_lt]
-  rw [← mul_one g, ← smul_leftHalfPlane, closure_smul, idealBoundary_smul,
-    ← smul_extClosedLeftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem,
-    Set.mem_smul_set_iff_inv_smul_mem, Sum.smul_inr, h]
+  rw [mem_idealBoundary_closure_leftHalfPlane_iff_inv_smul_mem, h]
+  conv_rhs => rw [← mul_one g, ← smul_extClosedLeftHalfPlane]
+  rw [Set.mem_smul_set_iff_inv_smul_mem, Sum.smul_inr]
 
 /-- For a geodesic from `a` to `b` with `a < b`, the closed left half-plane has the
 complement of the open real interval `(a,b)` as its ideal boundary. -/
-theorem idealBoundary_closure_leftHalfPlane_eq_compl_Ioo {g : PSL(2, ℝ)} {a b : ℝ}
+theorem idealBoundary_closure_leftHalfPlane_eq_compl_image_coe_Ioo {g : PSL(2, ℝ)} {a b : ℝ}
     (hab : a < b) (ha : g • ((0 : ℝ) : OnePoint ℝ) = a) (hb : g • (∞ : OnePoint ℝ) = b) :
     idealBoundary (closure (leftHalfPlane g)) = (((↑) : ℝ → OnePoint ℝ) '' Ioo a b)ᶜ := by
   ext ξ

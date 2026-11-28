@@ -79,6 +79,24 @@ theorem rayToward_inr_infty (A : ℍ) : rayToward A (.inr ∞) = toPoint A :=
     (by rw [geodesicLine_rayToward_zero, geodesicLine_zero, toPoint_smul_I])
     (by rw [rayToward_inr_smul_infty, toPoint_smul_infty])
 
+/-- The forward ray towards infinity consists of points with the same real coordinate and
+at least the height of its base point. -/
+theorem mem_image_geodesicLine_rayToward_inr_infty_iff {A z : ℍ} :
+    z ∈ geodesicLine (rayToward A (.inr ∞)) '' Set.Ici 0 ↔
+      z.re = A.re ∧ A.im ≤ z.im := by
+  rw [rayToward_inr_infty]
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    rw [re_geodesicLine_toPoint, im_geodesicLine_toPoint]
+    exact ⟨rfl, le_mul_of_one_le_right A.im_pos.le (Real.one_le_exp ht)⟩
+  · rintro ⟨hre, him⟩
+    have hratio : 0 < z.im / A.im := div_pos z.im_pos A.im_pos
+    refine ⟨Real.log (z.im / A.im), Real.log_nonneg ((one_le_div A.im_pos).2 him), ?_⟩
+    apply UpperHalfPlane.ext_re_im
+    · rw [re_geodesicLine_toPoint, hre]
+    · rw [im_geodesicLine_toPoint, Real.exp_log hratio]
+      field_simp
+
 /-- A ray from `A` towards `p ≠ A` runs from `A` to `p`. -/
 theorem isGeodesicFromTo_rayToward {A : ℍ} {p : ℍ ⊕ OnePoint ℝ} (hAp : .inl A ≠ p) :
     IsGeodesicFromTo (rayToward A p) (.inl A) p := by

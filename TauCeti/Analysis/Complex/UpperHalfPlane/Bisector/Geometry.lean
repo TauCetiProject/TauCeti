@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Segment
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
+import Mathlib.Topology.MetricSpace.HausdorffDistance
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
@@ -21,7 +22,9 @@ left half-plane consists of the points at least as close to `p`, and its line co
 points equidistant from the two centres. In particular, distance dominance regions are
 geodesically convex, the geometric ingredient in convexity of Dirichlet domains. The
 equidistant locus has zero invariant area (`volume_setOf_dist_eq_dist`), as every geodesic
-line does.
+line does. A closed geodesically convex set can be separated from an exterior point by
+the bisector between the point and its nearest point in the set
+(`exists_subset_closure_leftHalfPlane_of_isClosed`).
 
 The closed Euclidean half-planes `{z | a ≤ Re z}` and `{z | Re z ≤ b}` bounded by vertical lines,
 and the closed exteriors `{z | ρ ≤ |z - c|²}` of discs centred on the real axis, are such
@@ -251,5 +254,92 @@ theorem notMem_leftHalfPlane_of_range_eq_perpBisector {p q : ℍ} {k : PSL(2, �
   · rw [leftHalfPlane_mul_dilation, leftHalfPlane_mul_pslS,
       mem_rightHalfPlane_perpBisector_iff hpq, dist_self] at hp
     exact absurd hp dist_nonneg.not_gt
+
+private theorem cosh_dist_geodesicLine_one (w : ℍ) (t : ℝ) :
+    Real.cosh (dist w (geodesicLine 1 t)) =
+      (w.re ^ 2 + w.im ^ 2 + Real.exp t ^ 2) / (2 * w.im * Real.exp t) := by
+  rw [cosh_dist', geodesicLine_one_apply]
+  simp only [UpperHalfPlane.mk_re, UpperHalfPlane.mk_im, sub_zero]
+
+private theorem normSq_le_one_of_dist_geodesicLine_min {w : ℍ} {d : ℝ} (hd : 0 < d)
+    (h : ∀ t ∈ Icc 0 d, dist w (geodesicLine 1 0) ≤ dist w (geodesicLine 1 t)) :
+    w.re ^ 2 + w.im ^ 2 ≤ 1 := by
+  by_contra! hn
+  -- At any height strictly between 1 and the squared norm, the distance decreases.
+  let a := min (Real.exp d) ((w.re ^ 2 + w.im ^ 2 + 1) / 2)
+  have ha : 1 < a := lt_min (Real.one_lt_exp_iff.2 hd) (by linarith)
+  have ha' : 0 < a := zero_lt_one.trans ha
+  have haNorm : a < w.re ^ 2 + w.im ^ 2 := (min_le_right _ _).trans_lt (by linarith)
+  have ht : Real.log a ∈ Icc 0 d := ⟨Real.log_nonneg ha.le,
+    (Real.log_le_iff_le_exp ha').2 (min_le_left _ _)⟩
+  have hle : Real.cosh (dist w (geodesicLine 1 0)) ≤
+      Real.cosh (dist w (geodesicLine 1 (Real.log a))) := by
+    simpa only [Real.cosh_le_cosh, abs_of_nonneg dist_nonneg] using h (Real.log a) ht
+  rw [cosh_dist_geodesicLine_one, cosh_dist_geodesicLine_one, Real.exp_zero, Real.exp_log ha',
+    one_pow, mul_one, div_le_div_iff₀ (by positivity) (by positivity)] at hle
+  have hneg : (2 * w.im) * ((a - 1) * (a - (w.re ^ 2 + w.im ^ 2))) < 0 :=
+    mul_neg_of_pos_of_neg (by positivity)
+      (mul_neg_of_pos_of_neg (sub_pos.2 ha) (sub_neg.2 haNorm))
+  nlinarith only [hle, hneg]
+
+private theorem dist_geodesicLine_one_le_dist_of_normSq_le_one {w : ℍ} {d : ℝ}
+    (hd : 0 ≤ d) (h : w.re ^ 2 + w.im ^ 2 ≤ 1) :
+    dist (geodesicLine 1 0) (geodesicLine 1 d) ≤ dist w (geodesicLine 1 d) := by
+  have him : w.im ≤ 1 := by
+    nlinarith only [w.im_pos, h, sq_nonneg w.re]
+  have he := Real.one_le_exp_iff.2 hd
+  rw [← abs_of_nonneg (dist_nonneg (x := geodesicLine 1 0) (y := geodesicLine 1 d)),
+    ← abs_of_nonneg (dist_nonneg (x := w) (y := geodesicLine 1 d)), ← Real.cosh_le_cosh]
+  rw [cosh_dist_geodesicLine_one, cosh_dist_geodesicLine_one,
+    geodesicLine_one_apply (t := 0)]
+  simp only [UpperHalfPlane.mk_re, UpperHalfPlane.mk_im, Real.exp_zero,
+    zero_pow (by decide : 2 ≠ 0), one_pow, zero_add, mul_one]
+  rw [div_le_div_iff₀ (by positivity) (by positivity)]
+  -- The distance comparison at height 1 is nonnegative, and only increases with height.
+  have hnonneg : 0 ≤ (2 * Real.exp d) *
+      (w.re ^ 2 + (w.im - 1) ^ 2 + (1 - w.im) * (Real.exp d ^ 2 - 1)) := by
+    exact mul_nonneg (by positivity) (add_nonneg (by positivity)
+      (mul_nonneg (sub_nonneg.2 him) (by nlinarith only [he, sq_nonneg (Real.exp d - 1)])))
+  nlinarith only [hnonneg]
+
+/-- If the initial point of a geodesic segment minimizes distance to a point along the
+segment, then the other endpoint is at least as close to the initial point as to the given point. -/
+theorem dist_le_dist_of_forall_mem_geodesicSegment {x p q : ℍ}
+    (h : ∀ z ∈ geodesicSegment p q, dist x p ≤ dist x z) : dist q p ≤ dist q x := by
+  by_cases hpq : p = q
+  · simp [← hpq]
+  let g := geodesicBetween p q
+  let w : ℍ := g⁻¹ • x
+  have hg (t : ℝ) : g⁻¹ • geodesicLine g t = geodesicLine 1 t := by
+    rw [smul_geodesicLine, inv_mul_cancel]
+  have h0 : g⁻¹ • p = geodesicLine 1 0 := by
+    rw [← hg, geodesicLine_geodesicBetween_zero]
+  have hd : g⁻¹ • q = geodesicLine 1 (dist p q) := by
+    rw [← hg, geodesicLine_geodesicBetween_dist]
+  have hmin (t : ℝ) (ht : t ∈ Icc 0 (dist p q)) :
+      dist w (geodesicLine 1 0) ≤ dist w (geodesicLine 1 t) := by
+    rw [← h0, ← hg]
+    simpa only [w, dist_smul] using h _ ((mem_geodesicSegment_iff _ _ _).2 ⟨t, ht, rfl⟩)
+  rw [dist_comm q p, dist_comm q x, ← dist_smul g⁻¹ p q, ← dist_smul g⁻¹ x q, h0, hd]
+  exact dist_geodesicLine_one_le_dist_of_normSq_le_one dist_nonneg
+    (normSq_le_one_of_dist_geodesicLine_min (dist_pos.2 hpq) hmin)
+
+/-- A point outside a closed geodesically convex set is separated from it by a closed
+geodesic half-plane. -/
+theorem exists_subset_closure_leftHalfPlane_of_isClosed {C : Set ℍ} (hC : IsClosed C)
+    (hconv : ∀ ⦃p q⦄, p ∈ C → q ∈ C → geodesicSegment p q ⊆ C) {x : ℍ} (hx : x ∉ C) :
+    ∃ g : PSL(2, ℝ), C ⊆ closure (leftHalfPlane g) ∧ x ∉ closure (leftHalfPlane g) := by
+  have exclude {p : ℍ} (hpx : p ≠ x) : x ∉ closure (leftHalfPlane (perpBisector p x)) := by
+    rw [mem_closure_leftHalfPlane_perpBisector_iff hpx, dist_self, not_le]
+    exact dist_pos.2 hpx.symm
+  rcases C.eq_empty_or_nonempty with rfl | hne
+  · obtain ⟨p, hp⟩ := exists_ne x
+    exact ⟨perpBisector p x, empty_subset _, exclude hp⟩
+  obtain ⟨p, hp, hpdist⟩ := hC.exists_infDist_eq_dist hne x
+  have hpx : p ≠ x := fun e ↦ hx (e ▸ hp)
+  refine ⟨perpBisector p x, fun q hq ↦ ?_, exclude hpx⟩
+  rw [mem_closure_leftHalfPlane_perpBisector_iff hpx]
+  exact dist_le_dist_of_forall_mem_geodesicSegment fun z hz ↦
+    hpdist ▸ Metric.infDist_le_dist_of_mem (hconv hp hq hz)
 
 end TauCeti.UpperHalfPlane

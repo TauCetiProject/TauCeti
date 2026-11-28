@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Conj
 public import TauCeti.Analysis.Complex.Fuchsian.LimitSet
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ConvexHull
-import Mathlib.Topology.LocalAtTarget
+import Mathlib.Topology.ContinuousMap.Basic
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The Nielsen hull and its coarse quotient
@@ -18,8 +19,9 @@ It is invariant under the subgroup and equivariant under conjugation. If the lim
 more than two points, the hull has nonempty interior, the open Nielsen region.
 
 The coarse Nielsen core is the image of the hull in the ambient orbit space. Its subspace topology
-is the quotient topology from the hull, and its ambient frontier is the image of the frontier of
-the hull.
+is the quotient topology from the hull. The quotient by the restricted orbit relation is
+canonically homeomorphic to the core. The ambient interior pulls back to the open Nielsen region,
+and the ambient frontier is the image of the frontier of the hull.
 
 See W. Duke, Ö. Imamoglu and Á. Tóth, *Geometric invariants for real quadratic fields*,
 Ann. of Math. 184 (2016), 949–990, §2, for the Nielsen region and the convex core.
@@ -52,7 +54,7 @@ theorem interior_nielsenHull_nonempty (hΓ : 3 ≤ Γ.limitSet.encard) :
 
 /-- The Nielsen hull fills the upper half-plane exactly when the limit set is the whole circle. -/
 theorem nielsenHull_eq_univ_iff : Γ.nielsenHull = univ ↔ Γ.limitSet = univ :=
-  idealConvexHull_eq_univ_iff Γ.isClosed_limitSet
+  idealConvexHull_eq_univ_iff.trans Γ.isClosed_limitSet.dense_iff
 
 /-- A conjugate subgroup has the translated Nielsen hull. -/
 theorem nielsenHull_conjAct_smul (g : PSL(2, ℝ)) :
@@ -83,22 +85,24 @@ def nielsenCore : Set (orbitRel.Quotient Γ ℍ) :=
 theorem nielsenCore_def :
     Γ.nielsenCore = Quotient.mk (orbitRel Γ ℍ) '' Γ.nielsenHull := (rfl)
 
-/-- An orbit lies in the core exactly when its representative lies in the hull. -/
-@[simp]
-theorem quotientMk_mem_nielsenCore_iff (z : ℍ) :
-    Quotient.mk (orbitRel Γ ℍ) z ∈ Γ.nielsenCore ↔ z ∈ Γ.nielsenHull := by
-  rw [nielsenCore_def]
-  constructor
-  · rintro ⟨w, hw, heq⟩
-    obtain ⟨g, rfl⟩ := mem_orbit_iff.1 (orbitRel_apply.1 (Quotient.exact heq.symm))
-    exact (Γ.smul_mem_nielsenHull_iff g w).2 hw
-  · exact mem_image_of_mem _
-
 /-- The inverse image of the core under the orbit projection is the entire Nielsen hull. -/
 @[simp]
 theorem preimage_quotientMk_nielsenCore :
-    Quotient.mk (orbitRel Γ ℍ) ⁻¹' Γ.nielsenCore = Γ.nielsenHull :=
-  Set.ext (Γ.quotientMk_mem_nielsenCore_iff)
+    Quotient.mk (orbitRel Γ ℍ) ⁻¹' Γ.nielsenCore = Γ.nielsenHull := by
+  rw [nielsenCore_def]
+  calc
+    _ = ⋃ g : Γ, (g • ·) '' Γ.nielsenHull :=
+      MulAction.quotient_preimage_image_eq_union_mul (G := Γ) Γ.nielsenHull
+    _ = Γ.nielsenHull := by
+      have hinv (g : Γ) : (g : PSL(2, ℝ)) • Γ.nielsenHull = Γ.nielsenHull :=
+        Γ.smul_nielsenHull (le_normalizer g.property)
+      simp only [Set.image_smul, Subgroup.smul_def, hinv, Set.iUnion_const]
+
+/-- An orbit lies in the core exactly when its representative lies in the hull. -/
+@[simp]
+theorem quotientMk_mem_nielsenCore_iff (z : ℍ) :
+    Quotient.mk (orbitRel Γ ℍ) z ∈ Γ.nielsenCore ↔ z ∈ Γ.nielsenHull :=
+  Set.ext_iff.1 Γ.preimage_quotientMk_nielsenCore z
 
 /-- The coarse Nielsen core is closed in the ambient orbit space. -/
 theorem isClosed_nielsenCore : IsClosed Γ.nielsenCore := by
@@ -108,11 +112,12 @@ theorem isClosed_nielsenCore : IsClosed Γ.nielsenCore := by
 
 /-- The projection of the Nielsen hull onto the coarse core. -/
 def nielsenCoreProjection (z : Γ.nielsenHull) : Γ.nielsenCore :=
-  ⟨Quotient.mk (orbitRel Γ ℍ) z.val, (Γ.quotientMk_mem_nielsenCore_iff z.val).2 z.property⟩
+  (Set.mapsTo_image (Quotient.mk (orbitRel Γ ℍ)) Γ.nielsenHull).restrict
+    (Quotient.mk (orbitRel Γ ℍ)) Γ.nielsenHull Γ.nielsenCore z
 
 /-- The core projection sends a point of the hull to its orbit in the full orbit space. -/
 @[simp]
-theorem coe_nielsenCoreProjection (z : Γ.nielsenHull) :
+theorem val_nielsenCoreProjection_apply (z : Γ.nielsenHull) :
     (Γ.nielsenCoreProjection z).val = Quotient.mk (orbitRel Γ ℍ) z.val := (rfl)
 
 /-- The core projection equips the coarse core with the quotient topology of the hull. -/
@@ -123,14 +128,45 @@ theorem isOpenQuotientMap_nielsenCoreProjection : IsOpenQuotientMap Γ.nielsenCo
   convert h.comp e.isOpenQuotientMap using 1
   funext z
   apply Subtype.ext
-  rw [coe_nielsenCoreProjection]
-  rfl
+  rw [val_nielsenCoreProjection_apply]
+  change _ = (Γ.nielsenCore.restrictPreimage (Quotient.mk (orbitRel Γ ℍ)) (e z)).val
+  simp only [e, Homeomorph.setCongr_apply, Set.restrictPreimage_mk]
 
 /-- The fibres of the core projection are exactly the `Γ`-orbits in the hull. -/
 theorem nielsenCoreProjection_eq_iff {z w : Γ.nielsenHull} :
     Γ.nielsenCoreProjection z = Γ.nielsenCoreProjection w ↔ ∃ g : Γ, g • w.val = z.val := by
-  rw [Subtype.ext_iff, coe_nielsenCoreProjection, coe_nielsenCoreProjection, Quotient.eq,
-    orbitRel_apply, mem_orbit_iff]
+  rw [Subtype.ext_iff, val_nielsenCoreProjection_apply, val_nielsenCoreProjection_apply,
+    Quotient.eq, orbitRel_apply, mem_orbit_iff]
+
+/-- The quotient of the hull by the restricted ambient orbit relation is the coarse core. -/
+def nielsenCoreQuotientHomeomorph :
+    Quotient ((orbitRel Γ ℍ).comap (Subtype.val : Γ.nielsenHull → ℍ)) ≃ₜ Γ.nielsenCore :=
+  (Homeomorph.Quotient.congrRight fun z w ↦ by
+    change orbitRel Γ ℍ z.val w.val ↔ Γ.nielsenCoreProjection z = Γ.nielsenCoreProjection w
+    rw [Subtype.ext_iff, val_nielsenCoreProjection_apply, val_nielsenCoreProjection_apply,
+      Quotient.eq]).trans
+    (Γ.isOpenQuotientMap_nielsenCoreProjection.isQuotientMap.homeomorph
+      (f := ⟨Γ.nielsenCoreProjection,
+        Γ.isOpenQuotientMap_nielsenCoreProjection.continuous⟩))
+
+/-- A representative of the restricted orbit quotient maps to its orbit in the core. -/
+@[simp]
+theorem nielsenCoreQuotientHomeomorph_mk (z : Γ.nielsenHull) :
+    Γ.nielsenCoreQuotientHomeomorph (Quotient.mk _ z) = Γ.nielsenCoreProjection z := by
+  rw [nielsenCoreQuotientHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.Quotient.congrRight_mk,
+    Topology.IsQuotientMap.homeomorph_apply
+      (f := ⟨Γ.nielsenCoreProjection,
+        Γ.isOpenQuotientMap_nielsenCoreProjection.continuous⟩), Setoid.kerLift_mk,
+    ContinuousMap.coe_mk]
+
+/-- The ambient open Nielsen region is the inverse image of the interior of the core. -/
+@[simp]
+theorem preimage_quotientMk_interior_nielsenCore :
+    Quotient.mk (orbitRel Γ ℍ) ⁻¹' interior Γ.nielsenCore = interior Γ.nielsenHull := by
+  have h := MulAction.isOpenQuotientMap_quotientMk (Γ := Γ) (T := ℍ)
+  rw [h.isOpenMap.preimage_interior_eq_interior_preimage h.continuous,
+    preimage_quotientMk_nielsenCore]
 
 /-- The frontier of the coarse core in the ambient orbit space is the image of the upstairs
 frontier. -/
@@ -159,7 +195,7 @@ def nielsenCoreConjHomeomorph (h : ConjAct.toConjAct g • Γ = Γ') :
 
 /-- The core homeomorphism is the restriction of the ambient quotient homeomorphism. -/
 @[simp]
-theorem coe_nielsenCoreConjHomeomorph (h : ConjAct.toConjAct g • Γ = Γ') (q : Γ.nielsenCore) :
+theorem val_nielsenCoreConjHomeomorph_apply (h : ConjAct.toConjAct g • Γ = Γ') (q : Γ.nielsenCore) :
     (nielsenCoreConjHomeomorph h q).val = quotientConjHomeomorph h q.val := by
   simp [nielsenCoreConjHomeomorph]
 
