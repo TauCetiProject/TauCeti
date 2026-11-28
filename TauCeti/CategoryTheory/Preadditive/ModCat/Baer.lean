@@ -212,16 +212,10 @@ private theorem maximal_graph_isIso (hE : E.Baer)
     intro X
     apply (AddCommGrpCat.epi_iff_surjective _).2
     intro x
-    have : M.obj.Additive := (additiveFunctor_iff M.obj).1 M.property
-    let f : (yoneda C).obj X.unop ⟶ M :=
-      ObjectProperty.homMk ((preadditiveYonedaHomEquiv (X := X.unop) (F := M.obj)).symm x)
-    obtain ⟨g, hg⟩ := maximal_graph_factors hE s hs f
-    refine ⟨g.hom.app X (𝟙 X.unop), ?_⟩
-    have hx := congrArg (fun k : (yoneda C).obj X.unop ⟶ M ↦ k.hom.app X (𝟙 X.unop)) hg
-    have hfx : f.hom.app X (𝟙 X.unop) = x :=
-      (preadditiveYonedaHomEquiv_apply (X := X.unop) (F := M.obj) f.hom).symm.trans
-        ((preadditiveYonedaHomEquiv (X := X.unop) (F := M.obj)).apply_symm_apply x)
-    exact hx.trans hfx
+    obtain ⟨g, hg⟩ := maximal_graph_factors hE s hs (yonedaHomEquiv.symm x)
+    refine ⟨yonedaHomEquiv g, ?_⟩
+    exact (yonedaHomEquiv_comp g p).symm.trans
+      ((congrArg yonedaHomEquiv hg).trans (yonedaHomEquiv.apply_symm_apply x))
   exact isIso_of_mono_of_epi p
 
 end
