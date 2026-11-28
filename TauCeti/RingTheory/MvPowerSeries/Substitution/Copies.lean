@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
-import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Data.Nat.Choose.Multinomial
 import TauCeti.Data.Finsupp.MapDomain.Prod
@@ -56,7 +55,7 @@ therefore no larger than those of `F`.
   from a factorial identity through jets along linear substitutions, and the norm bound is over
   `ℂ_[p]`. Here the substitution allows any set of variables, the formula holds over every
   commutative ring, proved by the multinomial theorem, and the bound holds over every ultrametric
-  seminormed commutative ring with `‖1‖ = 1`; its intermediate step
+  seminormed commutative ring; its intermediate step
   `MvPowerSeries.coeff_prod_sum_smul_X_pow` is new.
 -/
 
@@ -218,19 +217,21 @@ end Fintype
 
 /-- **Integral copies do not enlarge coefficients.** Over an ultrametric ring, if the
 coefficients `a k` have norm at most `1`, then each coefficient of `F (∑ a_k z_k)` is at most as
-large as the coefficient of `F` at the exponent that adds up the copies of each variable. -/
+large as the coefficient of `F` at the exponent that adds up the copies of each variable. The
+normalisation `‖1‖ = 1` is not needed. -/
 theorem norm_coeff_copySubst_le [Finite σ] {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
-    [NormOneClass R] {a : K → R} (ha : ∀ k, ‖a k‖ ≤ 1) (F : MvPowerSeries σ R)
-    (γ : σ × K →₀ ℕ) :
+    {a : K → R} (ha : ∀ k, ‖a k‖ ≤ 1) (F : MvPowerSeries σ R) (γ : σ × K →₀ ℕ) :
     ‖coeff γ (copySubst a F)‖ ≤ ‖coeff (γ.mapDomain Prod.fst) F‖ := by
   have := Fintype.ofFinite σ
-  rw [coeff_copySubst]
-  have h_prod : ‖∏ y : σ × K, a y.2 ^ γ y‖ ≤ 1 :=
-    TauCeti.norm_prod_le_one fun y _ ↦
-      (norm_pow_le _ _).trans (pow_le_one₀ (norm_nonneg _) (ha y.2))
-  have h_mult : ‖∏ x : σ, (Nat.multinomial univ fun k : K ↦ γ (x, k) : R)‖ ≤ 1 :=
-    TauCeti.norm_prod_le_one fun _ _ ↦ IsUltrametricDist.norm_natCast_le_one R _
-  exact TauCeti.norm_mul_le_of_norm_le_one_left
-    (TauCeti.norm_mul_le_of_norm_le_one_right h_mult _ |>.trans h_prod) _
+  rw [coeff_copySubst, ← Nat.cast_prod]
+  set N : ℕ := ∏ x : σ, Nat.multinomial univ fun k : K ↦ γ (x, k)
+  set c := coeff (γ.mapDomain Prod.fst) F
+  -- The multinomial factor is an integer multiple, and the powers of the `a k` have norm `≤ 1`.
+  calc _ = ‖N • (c * ∏ y : σ × K, a y.2 ^ γ y)‖ := by rw [nsmul_eq_mul]; ring
+    _ ≤ ‖c * ∏ y : σ × K, a y.2 ^ γ y‖ := IsUltrametricDist.norm_nsmul_le _ _
+    _ ≤ ‖c‖ * ∏ y : σ × K, ‖a y.2‖ ^ γ y :=
+        Finset.norm_mul_prod_pow_le univ (fun y ↦ a y.2) (fun y ↦ γ y) c
+    _ ≤ ‖c‖ := mul_le_of_le_one_right (norm_nonneg _)
+        (prod_le_one₀ (fun _ _ ↦ by positivity) fun y _ ↦ pow_le_one₀ (norm_nonneg _) (ha y.2))
 
 end MvPowerSeries
