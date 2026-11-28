@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 
 /-!
 # Positive divided differences of the real exponential
@@ -17,11 +18,20 @@ The divided difference of the exponential is the integral of the exponential alo
 between its arguments. In particular it is strictly positive, including when the arguments
 coincide. It is jointly real analytic, including on the diagonal. These divided differences
 are the scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
+
+At base point `0`, `TauCeti.dslope_exp_zero_of_ne` identifies `dslope exp 0 u` with
+`(exp u - 1) / u` away from `0`, so `(exp u - 1) / u` agrees almost everywhere with a continuous
+function (`TauCeti.continuous_dslope_exp_zero`) and is interval integrable on every closed interval
+(`Real.intervalIntegrable_exp_sub_one_div`), with Taylor series
+`∑' n, u ^ n / (n + 1)!` (`Real.hasSum_dslope_exp_zero`, `Real.dslope_exp_zero_eq_tsum`). Termwise
+integration and quantitative estimates for the resulting exponential-integral series live in
+`TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries`.
 -/
 
 public section
 
-open scoped ContDiff
+open Filter MeasureTheory
+open scoped ContDiff Nat
 
 namespace Real
 
@@ -68,5 +78,54 @@ theorem contDiff_dslope_exp (m : ℕ∞ω) :
   convert h using 1
   funext p
   exact dslope_exp_eq_exp_mul_dslope_zero p.1 p.2
+
+end Real
+
+namespace TauCeti
+
+open _root_.Real
+
+/-- Away from `0`, `dslope exp 0 u = (exp u - 1) / u`. -/
+theorem dslope_exp_zero_of_ne {u : ℝ} (hu : u ≠ 0) :
+    dslope exp 0 u = (exp u - 1) / u := by
+  rw [dslope_of_ne exp hu, slope_def_field, exp_zero, sub_zero]
+
+/-- `dslope exp 0` is continuous on `ℝ`. -/
+@[fun_prop]
+theorem continuous_dslope_exp_zero : Continuous (dslope exp 0) :=
+  (contDiff_dslope_exp 0).continuous.comp (continuous_const.prodMk continuous_id)
+
+end TauCeti
+
+namespace Real
+
+/-- Power series for `dslope exp 0`: `∑' n, u ^ n / (n + 1)! = dslope exp 0 u` for all `u : ℝ`. -/
+theorem hasSum_dslope_exp_zero (u : ℝ) :
+    HasSum (fun n : ℕ ↦ u ^ n / ((n + 1)! : ℝ)) (dslope exp 0 u) := by
+  by_cases hu : u = 0
+  · subst hu
+    rw [dslope_same, Real.deriv_exp, exp_zero]
+    simpa using hasSum_single (0 : ℕ) (f := fun n : ℕ ↦ (0 : ℝ) ^ n / ((n + 1)! : ℝ))
+      (fun n hn ↦ by simp [zero_pow hn])
+  · have hsumm : Summable fun n : ℕ ↦ u ^ n / ((n + 1)! : ℝ) := by
+      refine .of_norm_bounded (summable_pow_div_factorial |u|) fun n ↦ ?_
+      simp only [norm_eq_abs, abs_div, abs_pow, Nat.abs_cast]
+      gcongr
+      exact Nat.le_succ n
+    rw [TauCeti.dslope_exp_zero_of_ne hu, ← Real.tsum_pow_div_factorial_succ hu]
+    exact hsumm.hasSum
+
+/-- `tsum` form of `Real.hasSum_dslope_exp_zero`. -/
+theorem dslope_exp_zero_eq_tsum (u : ℝ) :
+    dslope exp 0 u = ∑' n : ℕ, u ^ n / ((n + 1)! : ℝ) :=
+  (hasSum_dslope_exp_zero u).tsum_eq.symm
+
+/-- The function `u ↦ (exp u - 1) / u` is interval integrable on every closed interval `[a, b]`
+(including across `0`). -/
+theorem intervalIntegrable_exp_sub_one_div (a b : ℝ) :
+    IntervalIntegrable (fun u : ℝ ↦ (exp u - 1) / u) volume a b := by
+  refine (TauCeti.continuous_dslope_exp_zero.intervalIntegrable a b).congr_ae ?_
+  filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℝ))] with u hu
+  exact TauCeti.dslope_exp_zero_of_ne hu
 
 end Real

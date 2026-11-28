@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Order.SuccPred.Nat
+public import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Proper powers in monoids
@@ -47,13 +48,8 @@ exponent of a proper power is positive. -/
 theorem map {N F : Type*} [Monoid N] [FunLike F M N] [MulHomClass F M N] (f : F) {x : M}
     (hx : IsProperPower x) : IsProperPower (f x) := by
   obtain ⟨y, n, hn, rfl⟩ := hx
-  -- `f` preserves every positive power, by induction from the exponent `1`.
-  have key (m : ℕ) : f (y ^ (m + 1)) = f y ^ (m + 1) := by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [pow_succ, map_mul, ih, ← pow_succ]
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  exact ⟨f y, m + 1, hn, key m⟩
+  exact ⟨f y, m + 1, hn, map_pow_succ f y m⟩
 
 /-- The identity is a proper power in every monoid. -/
 @[simp] theorem one : IsProperPower (1 : M) :=

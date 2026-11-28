@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 
-import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # Frobenius-shifted Fontaine map

@@ -42,6 +42,8 @@ representation:
   determined by its values with the generator as second argument.
 * `TauCeti.sum_smul_apply_eq_zero_of_isCocycle₁`: on a finite group, the group norm kills
   every value of a one-cocycle.
+* `TauCeti.apply_mem_span_range_of_cocycle`: if `z (g * h) = z g + σ g (z h)` for `O`-linear
+  endomorphisms `σ g`, each `σ g` sends the span of the values of `z` into itself.
 
 For the bundled one-cocycles `groupCohomology.cocycles₁ A` of a representation `A`:
 
@@ -286,6 +288,31 @@ end Rep
 end groupCohomology
 
 namespace TauCeti
+
+section Span
+
+variable {G O M : Type*} [Mul G] [Ring O] [AddCommGroup M] [Module O M]
+
+/-- **The span of the values of a cocycle is stable.** If `z : G → M` satisfies
+`z (g * h) = z g + σ g (z h)` for linear maps `σ g`, then every `σ g` maps the span of the values
+of `z` into itself, since `σ g (z h) = z (g * h) - z g`. -/
+theorem apply_mem_span_range_of_cocycle {σ : G → Module.End O M} {z : G → M}
+    (hz : ∀ g h, z (g * h) = z g + σ g (z h)) (g : G) {m : M}
+    (hm : m ∈ Submodule.span O (Set.range z)) : σ g m ∈ Submodule.span O (Set.range z) := by
+  induction hm using Submodule.span_induction with
+  | mem _ hx =>
+    obtain ⟨h, rfl⟩ := hx
+    have : σ g (z h) = z (g * h) - z g := by
+      rw [hz]
+      abel
+    rw [this]
+    exact sub_mem (Submodule.subset_span (Set.mem_range_self _))
+      (Submodule.subset_span (Set.mem_range_self _))
+  | zero => simp
+  | add _ _ _ _ hx hy => simpa using Submodule.add_mem _ hx hy
+  | smul r _ _ hx => simpa using Submodule.smul_mem _ r hx
+
+end Span
 
 open groupCohomology
 

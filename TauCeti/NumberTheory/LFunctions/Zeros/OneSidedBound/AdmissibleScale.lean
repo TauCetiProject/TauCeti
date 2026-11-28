@@ -12,7 +12,7 @@ import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.WeightBounds
 /-!
 # The ranks and scales of an admissible datum
 
-A single choice of dyadic chain length determines the cyclotomic order dividing the rounded
+A single choice of dyadic chain length determines the cyclotomic order dividing the large
 cutoff. Bundling these quantities with the ternary target rank keeps the divisibility and
 separation laws attached to the very cutoffs used in the weights. The scale does not depend
 on the choice of places or of auxiliary primes.
@@ -39,9 +39,9 @@ bound `C` on `log log b`. Ranks are stored by their exponents; the cyclotomic to
   x₁ : ℕ
   /-- The larger weight, and the largest of the three scales. -/
   b : ℕ
-  /-- The chain length is a positive power of two. -/
+  /-- The dyadic exponent is positive. -/
   e_pos : 0 < e
-  /-- The target rank is a positive power of three. -/
+  /-- The ternary exponent is positive. -/
   e'_pos : 0 < e'
   /-- The chain length is at least `√x`. -/
   sqrt_le : √(x : ℝ) ≤ (2 : ℝ) ^ e
@@ -53,10 +53,10 @@ bound `C` on `log log b`. Ranks are stored by their exponents; the cyclotomic to
   le_three_mul_pow_five : 3 ^ e' ≤ 3 * x ^ 5
   /-- The tower exponent is at most `32 log x`. -/
   tower_le : (22 * e : ℝ) ≤ 32 * log x
-  /-- The large cutoff is rounded to a multiple of the tower order times the second cutoff. -/
+  /-- The large cutoff is a multiple of the tower order times the second cutoff. -/
   level_mul_dvd_b : P.q₁ (22 * e) * x₁ ∣ b
   /-- The lower bound on the iterated logarithm of the large cutoff. -/
-  log_log_lower : C ≤ log (log b)
+  le_log_log : C ≤ log (log b)
   /-- The logarithm of the large cutoff is small relative to the first cutoff. -/
   log_pow_le : log b ^ (100 : ℕ) ≤ x
   /-- The second cutoff dominates a power of the first. -/
@@ -96,19 +96,19 @@ theorem b_pos (D : AdmissibleScale P C x) : 0 < D.b :=
 
 /-- The shorter weight `x b / x₁` is an exact quotient, so it can be used in real prime sums
 without any rounding error. -/
-theorem cast_shortWeight (D : AdmissibleScale P C x) :
+theorem natCast_mul_div (D : AdmissibleScale P C x) :
     ((x * D.b / D.x₁ : ℕ) : ℝ) = (x : ℝ) * D.b / D.x₁ := by
   have hd : D.x₁ ∣ x * D.b :=
     ((dvd_mul_left D.x₁ (P.q₁ (22 * D.e))).trans D.level_mul_dvd_b).trans (dvd_mul_left _ _)
-  rw [Nat.cast_div hd (by exact_mod_cast D.x₁_pos.ne'), Nat.cast_mul]
+  rw [Nat.cast_div_charZero hd, Nat.cast_mul]
 
 /-- Both cutoff weights lie in `[x^k, b]` for `k < 10^6`, and are divisible by the order of
 the cyclotomic tower used to choose the large cutoff. -/
-theorem cutoffWeight_dvd_and_mem_Icc (D : AdmissibleScale P C x) (large : Prop)
+theorem dvd_and_cutoffWeight_mem_Icc (D : AdmissibleScale P C x) (large : Prop)
     [Decidable large] {k : ℕ} (hk : k < 10 ^ 6) :
     let κ := if large then D.b else x * D.b / D.x₁
     P.q₁ (22 * D.e) ∣ κ ∧ κ ∈ Set.Icc (x ^ k) D.b := by
-  have h := dvd_and_cutoffWeight_mem_Icc large D.x_le_x₁ D.level_mul_dvd_b
+  have h := OneSidedBound.dvd_and_cutoffWeight_mem_Icc large D.x_le_x₁ D.level_mul_dvd_b
   have h₁ := (Nat.pow_le_pow_right D.x_pos hk).trans D.first_pow_le
   have h₂ := (Nat.pow_le_pow_right D.x₁_pos hk).trans D.second_pow_le
   have hlo : x ^ k ≤ x * D.b / D.x₁ := (cutoffWeight_mem_Icc D.x_pos h₁ h₂).1

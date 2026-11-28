@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Invariance
 public import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Topology.LocalAtTarget
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # The interior of a manifold with corners is a manifold without boundary
@@ -61,6 +63,13 @@ For a manifold `M` that is already boundaryless as a `C¹` manifold,
   `C^n` manifold modelled on `E`.
 * `ModelWithCorners.contMDiff_subtypeVal_interior`: its inclusion into `M` is `C^n`.
 * `ModelWithCorners.range_subtypeVal_interior`: the interior is the complement of the boundary.
+* `ModelWithCorners.hasMFDerivWithinAt_subtypeVal_comp_iff`,
+  `ModelWithCorners.hasMFDerivAt_subtypeVal_comp_iff`: a map into the interior has the same
+  derivatives as a map into `M`, since the charts of the interior are those of `M`.
+* `ModelWithCorners.mfderiv_subtypeVal_interior`: the differential of the inclusion is the identity
+  of `E`.
+* `ModelWithCorners.isLocalDiffeomorph_subtypeVal_interior`: the inclusion of the interior is a
+  `C^n` local diffeomorphism.
 
 ## References
 
@@ -258,6 +267,77 @@ omit [FiniteDimensional 𝕜 E] in
 theorem range_subtypeVal_interior :
     range (Subtype.val : I.interior M → M) = (range (Subtype.val : I.boundary M → M))ᶜ := by
   rw [Subtype.range_coe, Subtype.range_coe, compl_boundary]
+
+/-! ### Derivatives of maps into the interior -/
+
+section Derivative
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- The extended preferred chart of the interior at `x` is the extended preferred chart of `M` at
+`x`, read on the interior. -/
+theorem extChartAt_interior_apply (x y : I.interior M) :
+    extChartAt 𝓘(𝕜, E) x y = extChartAt I (x : M) y := by
+  simp only [extChartAt_coe, modelWithCornersSelf_coe, Function.comp_apply, id_eq,
+    chartAt_interior_apply]
+
+/-- A map into the interior and its composite with the inclusion into `M` are written alike in
+the extended preferred charts. -/
+theorem writtenInExtChartAt_subtypeVal_comp (f : N → I.interior M) (x : N) :
+    writtenInExtChartAt J I x (Subtype.val ∘ f) = writtenInExtChartAt J 𝓘(𝕜, E) x f := by
+  funext v
+  simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_interior_apply]
+
+/-- **Derivatives of maps into the interior.** A map `f` into the interior of `M` has derivative
+`f'` within `s` at `x` if and only if its composite with the inclusion into `M` does: the charts of
+the interior are the extended charts of `M`, and both tangent spaces are `E`. -/
+theorem hasMFDerivWithinAt_subtypeVal_comp_iff {f : N → I.interior M} {s : Set N} {x : N}
+    {f' : TangentSpace J x →L[𝕜] E} :
+    HasMFDerivWithinAt J I (Subtype.val ∘ f) s x f' ↔ HasMFDerivWithinAt J 𝓘(𝕜, E) f s x f' := by
+  simp only [HasMFDerivWithinAt, writtenInExtChartAt_subtypeVal_comp,
+    ← IsInducing.subtypeVal.continuousWithinAt_iff]
+  -- The two sides differ only in the casts `tangentSpaceCastModel I` and
+  -- `tangentSpaceCastModel 𝓘(𝕜, E)` of the tangent space at `f x` to `E`, both the identity.
+  exact Iff.rfl
+
+/-- A map `f` into the interior of `M` has derivative `f'` at `x` if and only if its composite
+with the inclusion into `M` does. -/
+theorem hasMFDerivAt_subtypeVal_comp_iff {f : N → I.interior M} {x : N}
+    {f' : TangentSpace J x →L[𝕜] E} :
+    HasMFDerivAt J I (Subtype.val ∘ f) x f' ↔ HasMFDerivAt J 𝓘(𝕜, E) f x f' :=
+  hasMFDerivWithinAt_univ.symm.trans ((hasMFDerivWithinAt_subtypeVal_comp_iff I).trans
+    hasMFDerivWithinAt_univ)
+
+/-- The inclusion of the interior has the identity of `E` as its derivative. -/
+theorem hasMFDerivAt_subtypeVal_interior (x : I.interior M) :
+    HasMFDerivAt 𝓘(𝕜, E) I (Subtype.val : I.interior M → M) x (ContinuousLinearMap.id 𝕜 E) :=
+  (hasMFDerivAt_subtypeVal_comp_iff (f := id)).2 (hasMFDerivAt_id x)
+
+/-- The differential of the inclusion of the interior is the identity of `E`. -/
+@[simp]
+theorem mfderiv_subtypeVal_interior (x : I.interior M) :
+    mfderiv 𝓘(𝕜, E) I (Subtype.val : I.interior M → M) x = ContinuousLinearMap.id 𝕜 E :=
+  (I.hasMFDerivAt_subtypeVal_interior x).mfderiv
+
+/-- **The inclusion of the interior is a local diffeomorphism.** For a `C^n` manifold with
+corners `M`, the inclusion of its interior, with its charts in `E`, is a `C^n` local
+diffeomorphism: read in the extended preferred charts it is the identity of `E` near each point. -/
+theorem isLocalDiffeomorph_subtypeVal_interior {n : WithTop ℕ∞} [IsManifold I n M] :
+    IsLocalDiffeomorph 𝓘(𝕜, E) I n (Subtype.val : I.interior M → M) := by
+  intro x
+  have hx : extChartAt 𝓘(𝕜, E) x x ∈ (extChartAt 𝓘(𝕜, E) x).target := mem_extChartAt_target x
+  refine TauCeti.isLocalDiffeomorphAt_of_writtenInExtChartAt
+    BoundarylessManifold.isInteriorPoint x.property continuous_subtypeVal.continuousAt ?_
+  have h := I.writtenInExtChartAt_subtypeVal_comp (J := 𝓘(𝕜, E)) id x
+  rw [Function.comp_id] at h
+  rw [h]
+  refine ((Diffeomorph.refl 𝓘(𝕜, E) E n).isLocalDiffeomorph _).congr_of_eventuallyEq ?_
+  -- Near the chart image of `x`, the chart at `x` undoes its inverse.
+  filter_upwards [(isOpen_extChartAt_target (I := 𝓘(𝕜, E)) x).mem_nhds hx] with v hv
+  exact (extChartAt 𝓘(𝕜, E) x).right_inv hv
+
+end Derivative
 
 /-! ### Interiors of open subsets -/
 
