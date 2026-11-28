@@ -112,15 +112,8 @@ private lemma map_localBand {U V : C} {z : G.obj (.mk (op U))}
     (η.naturalityObjIso g.op.toLoc hz.witness ≪≫ (G.map g.op.toLoc).toFunctor.mapIso hz.getIso)]
   rw [localBand, chart_apply, chart_apply]
   rw [Functor.mapAut_autMulEquivOfIso]
-  have h := Functor.mapAut_eq_autMulEquivOfIso_app
-    (Cat.Hom.toNatIso (η.naturality g.op.toLoc)) hz.witness (b.mulEquiv U hz.witness a)
-  simp only [Cat.Hom.comp_toFunctor, Functor.comp_mapAut, b.mapAut_mulEquiv] at h
-  rw [h]
+  rw [η.mapAut_naturality, b.mapAut_mulEquiv]
   simp only [Aut.autMulEquivOfIso_trans, MulEquiv.trans_apply]
-  have he : η.naturalityObjIso g.op.toLoc hz.witness =
-      (Cat.Hom.toNatIso (η.naturality g.op.toLoc)).app hz.witness :=
-    Iso.ext (η.naturalityObjIso_hom g.op.toLoc hz.witness)
-  rw [he]
 
 private lemma localBand_hom_comp {U : C} {z z' : G.obj (.mk (op U))}
     (hz : (η.app (.mk (op U))).toFunctor.essImage z)
@@ -162,6 +155,14 @@ private def bandDescentIso {U : C} (z : G.obj (.mk (op U)))
       simp only [Functor.mapAut_apply_asIso, Functor.mapIso_hom] at h₁' h₂'
       exact (congrArg (· ≫ _) h₁').trans (h.trans (congrArg (_ ≫ ·) h₂'.symm)))
 
+private lemma bandDescentIso_hom_hom {U : C} (z : G.obj (.mk (op U)))
+    (a : Multiplicative (A.obj.obj (op U))) (i : (η.localImageSieve z).arrows.category) :
+    (bandDescentIso b η hη z a).hom.hom i =
+      (localBand b η hη ((η.mem_localImageSieve_iff z i.obj.hom).1 i.property)
+        (.ofAdd (A.obj.map i.obj.hom.op a.toAdd))).asIso.hom := by
+  dsimp only [bandDescentIso]
+  exact DescentData.isoMk_hom_hom _ _ _
+
 variable [G.IsPrestack J] [η.IsLocallyEssSurj J]
 
 private def bandAut {U : C} (z : G.obj (.mk (op U)))
@@ -169,14 +170,6 @@ private def bandAut {U : C} (z : G.obj (.mk (op U)))
   .of ((G.isPrestackFor' (η.localImageSieve z)
     (η.localImageSieve_mem J z)).fullyFaithful.preimageIso
     (bandDescentIso b η hη z a))
-
-private lemma bandAut_asIso_hom {U : C} (z : G.obj (.mk (op U)))
-    (a : Multiplicative (A.obj.obj (op U))) :
-    (bandAut b η hη z a).asIso.hom =
-      ((G.isPrestackFor' (η.localImageSieve z)
-        (η.localImageSieve_mem J z)).fullyFaithful.preimageIso
-        (bandDescentIso b η hη z a)).hom :=
-  (rfl)
 
 private lemma map_bandAut {U V : C} (z : G.obj (.mk (op U)))
     (a : Multiplicative (A.obj.obj (op U))) (g : V ⟶ U) (hg : η.localImageSieve z g) :
@@ -188,8 +181,8 @@ private lemma map_bandAut {U V : C} (z : G.obj (.mk (op U)))
   have h := congrArg (fun t ↦ DescentData.Hom.hom t ⟨Over.mk g, hg⟩)
     ((G.isPrestackFor' (η.localImageSieve z) (η.localImageSieve_mem J z)).fullyFaithful.map_preimage
       (bandDescentIso b η hη z a).hom)
-  simp only [toDescentData_map_hom, bandDescentIso] at h
-  rw [Functor.mapAut_apply_asIso, Functor.mapIso_hom, bandAut_asIso_hom,
+  simp only [toDescentData_map_hom, bandDescentIso_hom_hom] at h
+  rw [Functor.mapAut_apply_asIso, Functor.mapIso_hom, bandAut,
     Functor.FullyFaithful.preimageIso_hom]
   exact h
 
@@ -219,10 +212,6 @@ private def bandHom {U : C} (z : G.obj (.mk (op U))) :
   map_mul' a a' := by
     refine IsPrestack.aut_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
     simp only [map_mul, map_bandAut b η hη z _ g hg, toAdd_mul, map_add, ofAdd_add]
-
-private lemma bandHom_apply {U : C} (z : G.obj (.mk (op U)))
-    (a : Multiplicative (A.obj.obj (op U))) : bandHom b η hη z a = bandAut b η hη z a :=
-  (rfl)
 
 omit [G.IsPrestack J] [η.IsLocallyEssSurj J] in
 private lemma localBand_comp {U V W : C} (z : G.obj (.mk (op U)))
@@ -263,7 +252,7 @@ private lemma bandHom_bijective {U : C} (z : G.obj (.mk (op U))) :
     Function.Bijective (bandHom b η hη z) := by
   constructor
   · intro a a' h
-    rw [bandHom_apply, bandHom_apply] at h
+    dsimp only [bandHom, MonoidHom.coe_mk, OneHom.coe_mk] at h
     have hA := (A.isSheaf_obj_comp (forget AddCommGrpCat)).isSeparated
       (η.localImageSieve z) (η.localImageSieve_mem J z)
     apply Multiplicative.toAdd.injective
@@ -277,7 +266,7 @@ private lemma bandHom_bijective {U : C} (z : G.obj (.mk (op U))) :
     have hA := A.isSheaf_obj_comp (forget AddCommGrpCat)
       (η.localImageSieve z) (η.localImageSieve_mem J z)
     refine ⟨.ofAdd (hA.amalgamate s hs), ?_⟩
-    rw [bandHom_apply]
+    dsimp only [bandHom, MonoidHom.coe_mk, OneHom.coe_mk]
     refine IsPrestack.aut_ext (η.localImageSieve_mem J z) ?_
     intro V g hg
     have h := map_bandAut b η hη z (.ofAdd (hA.amalgamate s hs)) g hg
@@ -315,10 +304,12 @@ def descend : G.AbelianBanding J A where
   mulEquiv U z := MulEquiv.ofBijective (bandHom b η hη z)
     (bandHom_bijective b η hη z)
   mapAut_mulEquiv f z a := by
-    rw [MulEquiv.ofBijective_apply, MulEquiv.ofBijective_apply, bandHom_apply, bandHom_apply]
+    rw [MulEquiv.ofBijective_apply, MulEquiv.ofBijective_apply]
+    dsimp only [bandHom, MonoidHom.coe_mk, OneHom.coe_mk]
     exact mapAut_bandAut b η hη f z a
   autMulEquivOfIso_mulEquiv e a := by
-    rw [MulEquiv.ofBijective_apply, MulEquiv.ofBijective_apply, bandHom_apply, bandHom_apply]
+    rw [MulEquiv.ofBijective_apply, MulEquiv.ofBijective_apply]
+    dsimp only [bandHom, MonoidHom.coe_mk, OneHom.coe_mk]
     exact conjugate_bandAut b η hη e a
 
 /-- On an object in the image, the descended band is the image of the original band. -/
@@ -331,7 +322,8 @@ theorem descend_mulEquiv_obj (U : C) (x : F.obj (.mk (op U)))
     (congrArg (fun t : Multiplicative (A.obj.obj (op U)) ≃* Aut _ ↦ t a)
       (localBand_eq b η hη _ x (Iso.refl _)))
   dsimp only [descend]
-  rw [MulEquiv.ofBijective_apply, bandHom_apply]
+  rw [MulEquiv.ofBijective_apply]
+  dsimp only [bandHom, MonoidHom.coe_mk, OneHom.coe_mk]
   simpa only [chart_apply, Aut.autMulEquivOfIso_refl, MulEquiv.refl_apply] using h
 
 /-- The transformation used to descend a banding preserves that banding. -/
@@ -345,6 +337,26 @@ theorem descend_mulEquiv_of_iso {U : C} {z : G.obj (.mk (op U))}
     (b.descend η hη).mulEquiv U z a = Aut.autMulEquivOfIso e
       ((η.app (.mk (op U))).toFunctor.mapAut x (b.mulEquiv U x a)) := by
   rw [← (b.descend η hη).autMulEquivOfIso_mulEquiv e a, descend_mulEquiv_obj]
+
+/-- Descending along the identity leaves a banding unchanged. -/
+@[simp]
+theorem descend_id [F.IsPrestack J] :
+    b.descend (StrongTrans.id F) (fun _ ↦ .id _) = b := by
+  let := b.bandPreserving_descend (StrongTrans.id F) (fun _ ↦ .id _)
+  exact b.eq_of_bandPreserving (StrongTrans.id F) _ _
+
+open scoped StrongTrans in
+/-- Descending successively along two transformations agrees with descending along their
+composite. -/
+theorem descend_comp {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+    (θ : G ⟶ H) (hθ : ∀ U : C, (θ.app (.mk (op U))).toFunctor.FullyFaithful)
+    [H.IsPrestack J] [θ.IsLocallyEssSurj J] :
+    (b.descend η hη).descend θ hθ =
+      b.descend (η ≫ θ) (fun U ↦ by
+        simpa only [StrongTrans.comp_app, Cat.Hom.comp_toFunctor] using (hη U).comp (hθ U)) := by
+  have := BandPreserving.comp (bF := b) (bH := (b.descend η hη).descend θ hθ)
+    (b.descend η hη) η θ
+  exact b.eq_of_bandPreserving (η ≫ θ) _ _
 
 include hη in
 /-- There is a unique abelian banding on the target for which the given transformation

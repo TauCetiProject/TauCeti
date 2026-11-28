@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Aut.Conjugation
-public import TauCeti.CategoryTheory.Endomorphism
 public import TauCeti.CategoryTheory.Sites.Descent.Banding
 public import TauCeti.CategoryTheory.Sites.Descent.LocallyEssSurj
 
@@ -26,32 +24,6 @@ noncomputable section
 universe w v u v' u'
 
 open CategoryTheory Opposite Bicategory
-
-namespace CategoryTheory.Pseudofunctor.AbelianBanding
-
-variable {C : Type u} [Category.{v} C]
-  {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
-  {J : GrothendieckTopology C} {A : Sheaf J AddCommGrpCat.{w}}
-  (b : F.AbelianBanding J A) (η : StrongTrans F G)
-
-/-- Two target bandings coincide if a locally essentially surjective strong transformation
-preserves the same source banding for both. -/
-theorem eq_of_bandPreserving [η.IsLocallyEssSurj J]
-    (bG bG' : G.AbelianBanding J A) [BandPreserving b bG η] [BandPreserving b bG' η] :
-    bG = bG' := by
-  apply AbelianBanding.ext
-  intro U z a
-  refine bG.aut_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
-  rw [bG.mapAut_mulEquiv, bG'.mapAut_mulEquiv]
-  obtain ⟨x, ⟨e⟩⟩ := (η.mem_localImageSieve_iff z g).1 hg
-  have h := (BandPreserving.mapAut_mulEquiv (bF := b) (bG := bG) (η := η) V x
-    (.ofAdd (A.obj.map g.op a.toAdd))).symm.trans
-    (BandPreserving.mapAut_mulEquiv (bF := b) (bG := bG') (η := η) V x
-      (.ofAdd (A.obj.map g.op a.toAdd)))
-  have h' := congrArg (Aut.autMulEquivOfIso e) h
-  simpa only [AbelianBanding.autMulEquivOfIso_mulEquiv] using h'
-
-end CategoryTheory.Pseudofunctor.AbelianBanding
 
 namespace CategoryTheory.Pseudofunctor
 
@@ -83,17 +55,16 @@ theorem BandCompatible.of_comp (φ : A ⟶ B) (η : F ⟶ G) (θ : G ⟶ H)
           bH.mulEquiv V ((θ.app (.mk (op V))).toFunctor.obj
             ((η.app (.mk (op V))).toFunctor.obj hy.witness))
             (.ofAdd (φ.hom.app (op V) c.toAdd)) := by
-        exact (Functor.comp_mapAut _ _ _ _).symm.trans
+        exact (StrongTrans.comp_app_mapAut η θ _ _ _).symm.trans
           (BandCompatible.mapAut_mulEquiv (bF := bF) (bG := bH) (φ := φ) (η := η ≫ θ)
             V hy.witness c)
       rw [h, bH.autMulEquivOfIso_mulEquiv]
     refine bH.aut_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
-    have h := Functor.mapAut_eq_autMulEquivOfIso_app
-      (Cat.Hom.toNatIso (θ.naturality g.op.toLoc)) z (bG.mulEquiv U z a)
-    simp only [Cat.Hom.comp_toFunctor, Functor.comp_mapAut, bG.mapAut_mulEquiv] at h
+    have h := θ.mapAut_naturality g.op.toLoc z (bG.mulEquiv U z a)
+    rw [bG.mapAut_mulEquiv] at h
     rw [hlocal V _ ((η.mem_localImageSieve_iff z g).1 hg)] at h
     have h' := h.trans (bH.autMulEquivOfIso_mulEquiv
-      ((Cat.Hom.toNatIso (θ.naturality g.op.toLoc)).app z)
+      (θ.naturalityObjIso g.op.toLoc z)
       (.ofAdd (φ.hom.app (op V) (A.obj.map g.op a.toAdd))))
     have hφ : φ.hom.app (op V) (A.obj.map g.op a.toAdd) =
         B.obj.map g.op (φ.hom.app (op U) a.toAdd) :=
@@ -108,6 +79,24 @@ theorem BandPreserving.of_comp {bH : H.AbelianBanding J A} (η : F ⟶ G) (θ : 
     [η.IsLocallyEssSurj J] [BandPreserving bF bG η]
     [BandPreserving bF bH (η ≫ θ)] : BandPreserving bG bH θ :=
   (bandCompatible_id_iff θ).1 (BandCompatible.of_comp (bF := bF) bG (𝟙 A) η θ)
+
+namespace AbelianBanding
+
+/-- Two target bandings coincide if a locally essentially surjective strong transformation
+preserves the same source banding for both. -/
+theorem eq_of_bandPreserving (b : F.AbelianBanding J A) (η : F ⟶ G)
+    [η.IsLocallyEssSurj J] (bG bG' : G.AbelianBanding J A)
+    [BandPreserving b bG η] [BandPreserving b bG' η] : bG = bG' := by
+  have := BandPreserving.comp (bF := b) (bH := bG') bG' η (StrongTrans.id G)
+  have := BandPreserving.of_comp (bF := b) (bH := bG') bG η (StrongTrans.id G)
+  apply AbelianBanding.ext
+  intro U z a
+  apply Aut.ext
+  apply Iso.ext
+  -- Each component of the identity is the identity functor on the fibre.
+  exact BandPreserving.map_mulEquiv_hom (bF := bG) (bG := bG') (StrongTrans.id G) U z a
+
+end AbelianBanding
 
 end CategoryTheory.Pseudofunctor
 

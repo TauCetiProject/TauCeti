@@ -28,16 +28,9 @@ variable {C : Type (u + 1)} [Category.{u} C] {J : GrothendieckTopology C}
   {A : Sheaf J AddCommGrpCat.{u}}
   {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{u, u + 1}}
 
-local instance : (StrongTrans.id F).IsLocallyEssSurj J :=
-  StrongTrans.isLocallyEssSurj_of_essSurj _ fun _ ↦ by
-    dsimp only [StrongTrans.id, Cat.Hom.id_toFunctor]
-    infer_instance
-
 example [F.IsPrestack J] (b : F.AbelianBanding J A) :
     b.descend (StrongTrans.id F) (fun _ ↦ .id _) = b := by
-  let := b.bandPreserving_descend (StrongTrans.id F) (fun _ ↦ .id _)
-  exact b.eq_of_bandPreserving (StrongTrans.id F)
-    (b.descend (StrongTrans.id F) (fun _ ↦ .id _)) b
+  simp
 
 example [G.IsPrestack J] (b : F.AbelianBanding J A) (η : StrongTrans F G)
     (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)

@@ -143,6 +143,30 @@ theorem localImageSieve_mem [η.IsLocallyEssSurj J] {U : C} (z : G.obj (.mk (op 
 
 end LocalImageSieve
 
+/-- The identity strong transformation is locally essentially surjective for every topology. -/
+instance isLocallyEssSurj_id (J : GrothendieckTopology C) :
+    (StrongTrans.id F).IsLocallyEssSurj J :=
+  isLocallyEssSurj_of_essSurj _ fun _ ↦ by
+    dsimp only [StrongTrans.id, Cat.Hom.id_toFunctor]
+    infer_instance
+
+open scoped StrongTrans in
+/-- Local essential surjectivity is stable under composition of strong transformations. -/
+instance isLocallyEssSurj_comp {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+    (η : F ⟶ G) (θ : G ⟶ H) (J : GrothendieckTopology C)
+    [η.IsLocallyEssSurj J] [θ.IsLocallyEssSurj J] : (η ≫ θ).IsLocallyEssSurj J := by
+  apply (isLocallyEssSurj_iff_localImageSieve_mem _).2
+  intro U z
+  refine J.transitive (θ.localImageSieve_mem J z) _ fun V f hf ↦ ?_
+  obtain ⟨y, ⟨e⟩⟩ := (θ.mem_localImageSieve_iff z f).1 hf
+  refine J.superset_covering (fun W g hg ↦ ?_) (η.localImageSieve_mem J y)
+  obtain ⟨x, ⟨d⟩⟩ := (η.mem_localImageSieve_iff y g).1 hg
+  refine ⟨x, ⟨?_⟩⟩
+  simpa only [comp_app, Cat.Hom.comp_toFunctor, Functor.comp_obj] using
+    (θ.app (.mk (op W))).toFunctor.mapIso d ≪≫ θ.naturalityObjIso g.op.toLoc y ≪≫
+      (H.map g.op.toLoc).toFunctor.mapIso e ≪≫
+        (H.compIso f.op g.op (g ≫ f).op op_comp.symm z).symm
+
 variable {P : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
   {η : F ⟶ P} {Φ Φ' : P ⟶ G} (Γ : η ≫ Φ ⟶ η ≫ Φ')
 

@@ -118,7 +118,7 @@ theorem bandCompatible_stackificationMap_iff [G.IsPrestack J] (ψ : F ⟶ G) :
     apply (Stackification.Obj.fullyFaithfulToObjFunctor.{t} J G U).autMulEquivOfFullyFaithful
       ((ψ.app (.mk (op U))).toFunctor.obj x) |>.injective
     simp only [Functor.FullyFaithful.autMulEquivOfFullyFaithful_apply]
-    exact (Functor.comp_mapAut _ _ _ _).symm.trans
+    exact (StrongTrans.comp_app_mapAut ψ (toStackification.{t, v', u'} J G) _ _ _).symm.trans
       ((BandCompatible.mapAut_mulEquiv (bF := b)
         (bG := stackification.{w, v, u, v', u', t} bG) (φ := φ)
         (η := ψ ≫ toStackification.{t, v', u'} J G) U x a).trans
