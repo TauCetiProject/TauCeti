@@ -163,6 +163,13 @@ theorem scalarCurvature_eq_zero_of_curvatureTensor_eq_zero (x : M)
   scalarCurvature_eq_zero_of_ricciTensor_eq_zero cov x
     (ricciTensor_eq_zero_of_curvatureTensor_eq_zero cov x h)
 
+/-- On a base of tangent dimension at most `1`, the scalar curvature of every smooth connection
+vanishes. -/
+theorem scalarCurvature_eq_zero_of_finrank_le_one (x : M)
+    (hdim : Module.finrank ℝ (TangentSpace I x) ≤ 1) : cov.scalarCurvature x = 0 :=
+  cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x
+    (cov.curvatureTensor_eq_zero_of_finrank_le_one x hdim)
+
 /-- If Ricci curvature is a scalar multiple of the metric, scalar curvature is that scalar times
 the real dimension. -/
 theorem scalarCurvature_eq_of_ricciTensor_eq_smul_inner (x : M) (c : ℝ)

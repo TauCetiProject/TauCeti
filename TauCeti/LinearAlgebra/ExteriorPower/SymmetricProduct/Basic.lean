@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.ExteriorPower
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import Mathlib.Tactic.Module
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
@@ -17,6 +18,7 @@ When `2` is invertible in a commutative ring `R`, any two linear maps `f, g : M 
 `exteriorPower.symmMap₂ f g : ⋀[R]^2 M →ₗ[R] ⋀[R]^2 N` given on pure wedges by
 `(f ∧ g)(u ∧ v) = ⅟2 • (f u ∧ g v + g u ∧ f v)`. On the diagonal `symmMap₂ f f = map 2 f`, and
 pairing an endomorphism with `id` gives half the derivation action `exteriorPower.lieMap 2`.
+Polarizing `map 2` yields `symmMap₂ f g = ⅟2 • (map 2 (f + g) - map 2 f - map 2 g)`.
 
 In Riemannian geometry (`Böhm–Wilking, Section 2`; cf. `Besse, Section 1.G` for the unnormalized
 bilinear-form Kulkarni–Nomizu product `h ⊙ k`), this `⅟2`-normalized operator wedge product is the
@@ -30,9 +32,10 @@ via `id ∧ id = id` and the traceless-Ricci operator via `Ric₀ ∧ id`.
 ## Main results
 
 * `exteriorPower.symmMap₂_apply_ιMulti`, `exteriorPower.symmMap₂_comm`,
-  `exteriorPower.symmMap₂_self`, `exteriorPower.symmMap₂_id_right`,
-  `exteriorPower.symmMap₂_id_left`, `exteriorPower.symmMap₂_comp_symmMap₂`,
-  `exteriorPower.map_comp_symmMap₂`, and `exteriorPower.symmMap₂_comp_map`.
+  `exteriorPower.symmMap₂_self`, `exteriorPower.symmMap₂_eq_invOf_two_smul_map_add_sub`,
+  `exteriorPower.symmMap₂_id_right`, `exteriorPower.symmMap₂_id_left`,
+  `exteriorPower.symmMap₂_comp_symmMap₂`, `exteriorPower.map_comp_symmMap₂`,
+  `exteriorPower.symmMap₂_comp_map`, and `LinearEquiv.exteriorPower_arrowCongr_symmMap₂`.
 
 ## References
 
@@ -91,6 +94,15 @@ theorem symmMap₂_comm (f g : M →ₗ[R] N) : symmMap₂ f g = symmMap₂ g f 
   linearMap_ext_ιMulti_two fun _ _ ↦ by simp only [symmMap₂_apply_ιMulti, map_apply_ιMulti_two,
     ← two_smul R, smul_smul, invOf_mul_self, one_smul]
 
+/-- Polarization identity expressing `symmMap₂ f g` in terms of `exteriorPower.map 2`. -/
+theorem symmMap₂_eq_invOf_two_smul_map_add_sub (f g : M →ₗ[R] N) :
+    symmMap₂ f g = ⅟(2 : R) • (map 2 (f + g) - map 2 f - map 2 g) := by
+  have h : map 2 (f + g) - map 2 f - map 2 g = (2 : R) • symmMap₂ f g := by
+    rw [← symmMap₂_self (f + g), ← symmMap₂_self f, ← symmMap₂_self g]
+    simp only [map_add, LinearMap.add_apply, symmMap₂_comm g f, two_smul]
+    abel
+  rw [h, smul_smul, invOf_mul_self, one_smul]
+
 /-- Pairing an endomorphism `f` with `id` gives half the derivation action `lieMap 2 f`. -/
 theorem symmMap₂_id_right (f : Module.End R M) :
     symmMap₂ f LinearMap.id = ⅟(2 : R) • lieMap 2 f :=
@@ -123,3 +135,25 @@ theorem symmMap₂_comp_map (f g : N →ₗ[R] P) (h : M →ₗ[R] N) :
   rw [← symmMap₂_self h, symmMap₂_comp_symmMap₂, ← two_smul R, smul_smul, invOf_mul_self, one_smul]
 
 end exteriorPower
+
+namespace LinearEquiv
+
+variable {R M N M' N' : Type*} [CommRing R] [Invertible (2 : R)]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+
+/-- Transporting `exteriorPower.symmMap₂ f g` along domain and codomain equivalences `e₁` and `e₂`
+transports each factor via `e₁.arrowCongr e₂`. -/
+theorem exteriorPower_arrowCongr_symmMap₂ (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
+    (f g : M →ₗ[R] N) :
+    ((e₁.exteriorPower 2).arrowCongr (e₂.exteriorPower 2)) (exteriorPower.symmMap₂ f g) =
+      exteriorPower.symmMap₂ (e₁.arrowCongr e₂ f) (e₁.arrowCongr e₂ g) := by
+  refine LinearMap.ext fun x ↦ ?_
+  have h (k : M →ₗ[R] N) : e₁.arrowCongr e₂ k = e₂.toLinearMap ∘ₗ k ∘ₗ e₁.symm.toLinearMap :=
+    LinearMap.ext fun _ ↦ LinearEquiv.arrowCongr_apply e₁ e₂ k _
+  rw [LinearEquiv.arrowCongr_apply, h, h]
+  simp only [LinearEquiv.exteriorPower_symm, ← exteriorPower.map_comp_symmMap₂,
+    ← exteriorPower.symmMap₂_comp_map, LinearMap.comp_apply, ← LinearEquiv.coe_toLinearMap,
+    LinearEquiv.exteriorPower_toLinearMap]
+
+end LinearEquiv

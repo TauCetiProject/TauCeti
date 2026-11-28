@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Multilinear.CurvatureDimThree
 
@@ -41,15 +42,17 @@ orthogonal to both in every dimension.
 
 ## Main results
 
-* `TauCeti.FourTensor.weyl_add_tracelessRicciPart_add_scalarPart`, the nine unconditional
-  projection laws, `TauCeti.FourTensor.ricci_weyl_of_antisymm`,
+* `TauCeti.FourTensor.weyl_add_tracelessRicciPart_add_scalarPart`,
+  `TauCeti.FourTensor.kulkarniNomizu_schouten_innerₗ`,
   `TauCeti.FourTensor.weyl_eq_sub_kulkarniNomizu_schouten`,
+  `TauCeti.FourTensor.isSymm_schouten_iff`, `TauCeti.FourTensor.ricci_eq_smul_schouten_add`,
+  the nine unconditional projection laws, `TauCeti.FourTensor.ricci_weyl_of_antisymm`,
   `TauCeti.FourTensor.weyl_kulkarniNomizu_innerₗ`,
   `TauCeti.FourTensor.curvatureEndomorphism_eq_add`, trace-pairing orthogonality (coinciding with
   Hilbert–Schmidt orthogonality when at least one factor is self-adjoint),
   `TauCeti.FourTensor.sum_kulkarniNomizu_innerₗ_mul_of_antisymm`,
   `TauCeti.FourTensor.sum_sq_eq_scalar_sq_add_sum_tracelessRicci_sq_add_sum_weyl_sq_of_antisymm`,
-  and
+  `TauCeti.FourTensor.eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm`, and
   `TauCeti.FourTensor.weyl_eq_zero_of_finrank_le_three_of_antisymm`.
 
 ## References
@@ -76,7 +79,7 @@ namespace TauCeti.FourTensor
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-! ### Trace-free Ricci form and Ricci endomorphisms -/
+/-! ### Trace-free Ricci form, Ricci endomorphisms, and Schouten form -/
 
 /-- The trace-free Ricci contraction `Ric₀ = Ric - (Scal / n) g` of a four-tensor. -/
 def tracelessRicci : FourTensor V →ₗ[ℝ] BilinForm ℝ V :=
@@ -86,6 +89,11 @@ def tracelessRicci : FourTensor V →ₗ[ℝ] BilinForm ℝ V :=
 theorem tracelessRicci_apply (r : FourTensor V) :
     tracelessRicci r = ricci r - (scalar r / Module.finrank ℝ V) • innerₗ V := by
   ext; simp [tracelessRicci, div_eq_inv_mul, sub_eq_add_neg]
+
+/-- Pointwise evaluation of `tracelessRicci`. -/
+theorem tracelessRicci_apply_apply (r : FourTensor V) (u v : V) :
+    tracelessRicci r u v = ricci r u v - scalar r / Module.finrank ℝ V * ⟪u, v⟫ := by
+  simp [tracelessRicci_apply]
 
 /-- The trace-free Ricci contraction has zero metric trace in every dimension. -/
 @[simp] theorem metricTrace_tracelessRicci (r : FourTensor V) :
@@ -107,6 +115,17 @@ theorem tracelessRicci_eq_zero_of_finrank_le_one (r : FourTensor V)
     refine b.toBasis.ext fun i ↦ b.toBasis.ext fun j ↦ ?_
     rcases Fin.eq_zero i with rfl; rcases Fin.eq_zero j with rfl
     simp [tracelessRicci_apply, scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b, h1]
+
+/-- The trace-free Ricci tensor of the constant-curvature tensor vanishes in every dimension. -/
+@[simp] theorem tracelessRicci_constantCurvature :
+    tracelessRicci (constantCurvature V) = 0 := by
+  rcases eq_or_ne (Module.finrank ℝ V) 0 with h0 | hn
+  · exact tracelessRicci_eq_zero_of_finrank_le_one _ (by omega)
+  · have hn' : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+    ext u v
+    rw [tracelessRicci_apply_apply, ricci_constantCurvature, scalar_constantCurvature,
+      mul_div_cancel_left₀ _ hn']
+    simp
 
 /-- `tracelessRicci r` is symmetric iff `ricci r` is symmetric. -/
 @[simp] theorem isSymm_tracelessRicci_iff {r : FourTensor V} :
@@ -238,6 +257,10 @@ theorem weyl_apply (r : FourTensor V) : weyl r = r - scalarPart r - tracelessRic
 theorem weyl_add_tracelessRicciPart_add_scalarPart (r : FourTensor V) :
     weyl r + tracelessRicciPart r + scalarPart r = r := by rw [weyl_apply]; abel
 
+private theorem scalarPart_eq_zero_of_finrank_le_one (hdim : Module.finrank ℝ V ≤ 1)
+    (r : FourTensor V) : scalarPart r = 0 := by
+  simp [scalarPart_apply, isAlgebraicCurvature_constantCurvature.eq_zero_of_finrank_le_one hdim]
+
 /-- `scalarPart r` is always an algebraic curvature tensor. -/
 theorem isAlgebraicCurvature_scalarPart (r : FourTensor V) : IsAlgebraicCurvature (scalarPart r) :=
   mem_algebraicCurvatureSubmodule.mp <| Submodule.smul_mem _ _
@@ -287,10 +310,6 @@ private theorem weyl_antisymm_last {r : FourTensor V}
     weyl r ![u, v, z, w] = -weyl r ![u, v, w, z] := by
   simp only [weyl_apply, sub_apply, h₂ u v z w, tracelessRicciPart_antisymm_last r u v z w,
     (isAlgebraicCurvature_scalarPart r).antisymm_last u v z w]; ring
-
-private theorem scalarPart_eq_zero_of_finrank_le_one (hdim : Module.finrank ℝ V ≤ 1)
-    (r : FourTensor V) : scalarPart r = 0 := by
-  simp [scalarPart_apply, isAlgebraicCurvature_constantCurvature.eq_zero_of_finrank_le_one hdim]
 
 private theorem tracelessRicciPart_eq_zero_of_finrank_eq_two (hdim : Module.finrank ℝ V = 2)
     (r : FourTensor V) : tracelessRicciPart r = 0 := by
@@ -502,6 +521,16 @@ theorem schouten_apply_apply (r : FourTensor V) (u v : V) :
 theorem isSymm_schouten {r : FourTensor V} (hr : (ricci r).IsSymm) : (schouten r).IsSymm :=
   ⟨fun u v ↦ by simp [schouten_apply_apply, hr.eq u v, real_inner_comm u v]⟩
 
+/-- Away from dimension `2`, `schouten r` is symmetric if and only if `ricci r` is symmetric. -/
+theorem isSymm_schouten_iff (hdim : Module.finrank ℝ V ≠ 2) {r : FourTensor V} :
+    (schouten r).IsSymm ↔ (ricci r).IsSymm := by
+  refine ⟨fun h ↦ ⟨fun u v ↦ ?_⟩, isSymm_schouten⟩
+  have h2 : ((Module.finrank ℝ V : ℝ) - 2) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hdim)
+  have heq := congrArg (((Module.finrank ℝ V : ℝ) - 2) * ·) (h.eq u v)
+  simp only [schouten_apply_apply, ← mul_assoc, mul_inv_cancel₀ h2, one_mul,
+    real_inner_comm u v] at heq
+  linarith
+
 /-- For a bivector-symmetric four-tensor `r`, `schouten r` is symmetric. -/
 theorem IsBivectorSymmetric.isSymm_schouten {r : FourTensor V} (hr : IsBivectorSymmetric r) :
     (schouten r).IsSymm := FourTensor.isSymm_schouten hr.isSymm_ricci
@@ -577,6 +606,24 @@ theorem IsAlgebraicCurvature.metricTrace_schouten {r : FourTensor V}
     LinearMap.BilinMap.metricTrace (schouten r) =
       scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) :=
   FourTensor.metricTrace_schouten_of_antisymm_first hn hr.antisymm_first
+
+/-- Away from dimension `2` (and assuming `scalar r = 0` in dimension `1`), the Ricci contraction
+decomposes as `ricci r = (dim V - 2) • schouten r + metricTrace (schouten r) • innerₗ V`. -/
+theorem ricci_eq_smul_schouten_add {r : FourTensor V} (h2 : Module.finrank ℝ V ≠ 2)
+    (h1 : Module.finrank ℝ V = 1 → scalar r = 0) :
+    ricci r = ((Module.finrank ℝ V : ℝ) - 2) • schouten r +
+      LinearMap.BilinMap.metricTrace (schouten r) • innerₗ V := by
+  have htr : LinearMap.BilinMap.metricTrace (schouten r) =
+      scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) := by
+    by_cases hn1 : Module.finrank ℝ V = 1
+    · have hsch : schouten r = ((Module.finrank ℝ V : ℝ) - 2)⁻¹ • ricci r := by
+        ext; simp [schouten_apply_apply, h1 hn1]
+      rw [hsch, map_smul, ← scalar_apply, h1 hn1, smul_zero, zero_div]
+    · exact metricTrace_schouten_of_finrank_ne_one_of_finrank_ne_two hn1 h2 r
+  have hn2 := finrank_sub_two_ne_zero h2
+  ext u v
+  simp only [htr, LinearMap.add_apply, LinearMap.smul_apply, schouten_apply_apply,
+    innerₗ_apply_apply, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hn2, one_mul, sub_add_cancel]
 
 /-- In dimension at least `3`, `schouten` is a left inverse to `h ↦ kulkarniNomizu h (innerₗ V)`. -/
 @[simp] theorem schouten_kulkarniNomizu_innerₗ_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V)
@@ -740,6 +787,17 @@ private theorem weyl_eq_zero_of_finrank_eq_three_of_antisymm {r : FourTensor V}
     have h := congr($(ricci_weyl_of_antisymm h₁ h₂) u v)
     simp only [ricci_apply_orthonormalBasis b, LinearMap.zero_apply] at h
     simpa [weyl_antisymm_last h₂ _ u v] using h
+
+/-- In dimension `3`, every pair-antisymmetric four-tensor is the Kulkarni–Nomizu product of its
+Schouten tensor with the inner product. -/
+theorem eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm
+    (hdim : Module.finrank ℝ V = 3) {r : FourTensor V}
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
+    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
+    r = kulkarniNomizu (schouten r) (innerₗ V) := by
+  have h := weyl_eq_zero_of_finrank_eq_three_of_antisymm hdim h₁ h₂
+  rw [weyl_eq_sub_kulkarniNomizu_schouten (by omega) r] at h
+  exact sub_eq_zero.mp h
 
 /-- **In dimension at most `3`, the Weyl part of every pair-antisymmetric four-tensor vanishes.** -/
 theorem weyl_eq_zero_of_finrank_le_three_of_antisymm {r : FourTensor V}

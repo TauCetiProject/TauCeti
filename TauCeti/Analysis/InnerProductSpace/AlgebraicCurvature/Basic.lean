@@ -74,6 +74,9 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
+* `TauCeti.FourTensor.IsBivectorSymmetric` and
+  `TauCeti.FourTensor.bivectorSymmetricSubmodule`: pair-antisymmetric, pair-interchange-symmetric
+  four-tensors and their submodule.
 * `TauCeti.FourTensor.ofLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄`, and
   `TauCeti.FourTensor.toLinearMap₄Equiv`: currying four-tensors into four-fold linear forms and the
   finite-dimensional linear equivalence between them.
@@ -106,6 +109,10 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.coe_algebraicCurvatureLinearIsometryEquiv`: linear/isometric equivalences
   identify algebraic curvature tensors.
+* `TauCeti.FourTensor.IsBivectorSymmetric.self_first`,
+  `TauCeti.FourTensor.IsBivectorSymmetric.self_last`, and
+  `TauCeti.FourTensor.IsBivectorSymmetric.isSymm_ricci`: diagonal vanishing and symmetry of the
+  Ricci contraction for a bivector-symmetric four-tensor.
 * `TauCeti.FourTensor.ricci_apply`: the Ricci contraction `ricci r u v` is the metric trace of
   `ricciSlice r u v`.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
@@ -119,7 +126,8 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   and positivity of `r(u, v, u, v)` on linearly independent pairs.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
-* `TauCeti.FourTensor.ricci_constantCurvature` and `TauCeti.FourTensor.scalar_constantCurvature`.
+* `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`, and
+  `TauCeti.FourTensor.constantCurvature_ne_zero_of_two_le_finrank`.
 * `TauCeti.FourTensor.curvatureAction_apply_orthonormalBasis` and
   `TauCeti.FourTensor.curvatureAction_innerₗ`: basis independence of the action and `r(g) = Ric(r)`.
 * `TauCeti.FourTensor.sum_mul_kulkarniNomizu_innerₗ_last`,
@@ -253,6 +261,45 @@ def algebraicCurvatureSubmodule : Submodule ℝ (FourTensor V) where
 theorem mem_algebraicCurvatureSubmodule {r : FourTensor V} :
     r ∈ algebraicCurvatureSubmodule V ↔ IsAlgebraicCurvature r :=
   Iff.rfl
+
+/-- Pair-antisymmetric, pair-interchange-symmetric four-tensors (symmetric forms on `⋀[ℝ]^2 V`). -/
+structure IsBivectorSymmetric (r : FourTensor V) : Prop where
+  /-- Antisymmetry in the first pair of arguments. -/
+  antisymm_first : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]
+  /-- Antisymmetry in the last pair of arguments. -/
+  antisymm_last : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]
+  /-- Symmetry under interchanging the two pairs of arguments. -/
+  swap_pairs : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]
+
+/-- Every algebraic curvature tensor is bivector-symmetric. -/
+theorem IsAlgebraicCurvature.isBivectorSymmetric {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
+    IsBivectorSymmetric r := ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs⟩
+
+/-- A bivector-symmetric four-tensor vanishes when its first two arguments coincide. -/
+@[simp] theorem IsBivectorSymmetric.self_first {r : FourTensor V} (hr : IsBivectorSymmetric r)
+    (x z w : V) : r ![x, x, z, w] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_first x x z w)
+
+/-- A bivector-symmetric four-tensor vanishes when its last two arguments coincide. -/
+@[simp] theorem IsBivectorSymmetric.self_last {r : FourTensor V} (hr : IsBivectorSymmetric r)
+    (u v z : V) : r ![u, v, z, z] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_last u v z z)
+
+variable (V) in
+/-- The submodule of bivector-symmetric four-tensors on `V`. -/
+def bivectorSymmetricSubmodule : Submodule ℝ (FourTensor V) where
+  carrier := {r | IsBivectorSymmetric r}
+  zero_mem' := ⟨by simp, by simp, by simp⟩
+  add_mem' hr hq := ⟨fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_first,
+      hq.antisymm_first, neg_add],
+    fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_last, hq.antisymm_last, neg_add],
+    fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.swap_pairs, hq.swap_pairs]⟩
+  smul_mem' _ _ hr := ⟨fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_first,
+      mul_neg],
+    fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_last, mul_neg],
+    fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.swap_pairs]⟩
+
+/-- Membership in `bivectorSymmetricSubmodule V` is `IsBivectorSymmetric`. -/
+@[simp] theorem mem_bivectorSymmetricSubmodule {r : FourTensor V} :
+    r ∈ bivectorSymmetricSubmodule V ↔ IsBivectorSymmetric r := (Iff.rfl)
 
 /-- The algebraic curvature tensors form a closed subspace: each of their defining identities is
 the vanishing of a continuous linear functional of the tensor. -/
@@ -611,6 +658,10 @@ theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
 theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
 
+/-- The Ricci contraction of a bivector-symmetric four-tensor is symmetric. -/
+theorem IsBivectorSymmetric.isSymm_ricci {r : FourTensor V} (hr : IsBivectorSymmetric r) :
+    (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
+
 /-- The Ricci contraction is equivariant under linear isometric equivalences: the Ricci contraction
 of the pullback of `r` by `e` is the pullback of the Ricci contraction of `r`. -/
 theorem ricci_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W]
@@ -749,6 +800,15 @@ theorem scalar_constantCurvature :
   rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ,
     LinearMap.BilinMap.metricTrace_inner, smul_eq_mul]
   ring
+
+/-- In dimension at least `2`, the constant-curvature tensor is nonzero. -/
+theorem constantCurvature_ne_zero_of_two_le_finrank (hdim : 2 ≤ Module.finrank ℝ V) :
+    constantCurvature V ≠ 0 := by
+  intro h
+  have hs := congrArg scalar h
+  rw [scalar_constantCurvature, map_zero] at hs
+  have hdim' : (2 : ℝ) ≤ Module.finrank ℝ V := by exact_mod_cast hdim
+  nlinarith
 
 /-- A curvature operator of constant curvature `κ`, `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)` as in
 `Bundle.RiemannianMetric.IsConstantCurvatureTensor`, has four-tensor

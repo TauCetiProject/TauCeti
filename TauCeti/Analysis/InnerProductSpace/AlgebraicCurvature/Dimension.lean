@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
-public import TauCeti.LinearAlgebra.BilinearForm.Symmetric
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.BivectorForm
 import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
@@ -14,8 +13,6 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
 import TauCeti.Data.Nat.Choose.Basic
-import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
-import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 import TauCeti.LinearAlgebra.SesquilinearForm.Basic
 
@@ -38,15 +35,14 @@ four-tensor equals `(Scal / 2) • constantCurvature V` and satisfies `Ric = (Sc
 
 ## Main definitions
 
-* `TauCeti.FourTensor.IsBivectorSymmetric`, `TauCeti.FourTensor.bivectorSymmetricSubmodule`,
-  `TauCeti.FourTensor.bivectorSymmetricEquivSymmBilin`, and
-  `TauCeti.FourTensor.bianchiAlternatingMap`.
+* `TauCeti.FourTensor.bianchiAlternatingMap`.
 
 ## Main results
 
 * `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq`,
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent`,
   `TauCeti.FourTensor.eq_zero_of_finrank_le_one_of_antisymm_first`,
+  `TauCeti.FourTensor.kulkarniNomizu_eq_zero_of_finrank_le_one`,
   `TauCeti.FourTensor.finrank_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm`.
 
@@ -110,43 +106,6 @@ theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
     (h : ∀ u v, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
   hr₁.eq_of_apply_self_eq_of_linearIndependent hr₂ fun u v _ ↦ h u v
 
-/-- Pair-antisymmetric, pair-interchange-symmetric four-tensors (symmetric forms on `⋀[ℝ]^2 V`). -/
-structure IsBivectorSymmetric (r : FourTensor V) : Prop where
-  /-- Antisymmetry in the first pair of arguments. -/
-  antisymm_first : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]
-  /-- Antisymmetry in the last pair of arguments. -/
-  antisymm_last : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]
-  /-- Symmetry under interchanging the two pairs of arguments. -/
-  swap_pairs : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]
-
-/-- Every algebraic curvature tensor is bivector-symmetric. -/
-theorem IsAlgebraicCurvature.isBivectorSymmetric {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
-    IsBivectorSymmetric r := ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs⟩
-
-variable (V) in
-/-- The submodule of bivector-symmetric four-tensors on `V`. -/
-def bivectorSymmetricSubmodule : Submodule ℝ (FourTensor V) where
-  carrier := {r | IsBivectorSymmetric r}
-  zero_mem' := ⟨by simp, by simp, by simp⟩
-  add_mem' hr hq := ⟨fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_first,
-      hq.antisymm_first, neg_add],
-    fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_last, hq.antisymm_last, neg_add],
-    fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.swap_pairs, hq.swap_pairs]⟩
-  smul_mem' _ _ hr := ⟨fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_first,
-      mul_neg],
-    fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_last, mul_neg],
-    fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.swap_pairs]⟩
-
-/-- Membership in `bivectorSymmetricSubmodule V` is `IsBivectorSymmetric`. -/
-@[simp] theorem mem_bivectorSymmetricSubmodule {r : FourTensor V} :
-    r ∈ bivectorSymmetricSubmodule V ↔ IsBivectorSymmetric r := (Iff.rfl)
-
-private theorem isBivectorSymmetric_self_first {r : FourTensor V} (hr : IsBivectorSymmetric r)
-    (x z w : V) : r ![x, x, z, w] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_first x x z w)
-
-private theorem isBivectorSymmetric_self_last {r : FourTensor V} (hr : IsBivectorSymmetric r)
-    (u v z : V) : r ![u, v, z, z] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_last u v z z)
-
 private def bianchiMultilinear (r : FourTensor V) :
     MultilinearMap (RingHom.id ℝ) (fun _ : Fin 4 ↦ V) ℝ :=
   MultilinearMap.mk'
@@ -160,7 +119,7 @@ private theorem bianchiMultilinear_map_eq_zero_of_lt {r : FourTensor V}
     (hr : IsBivectorSymmetric r) (m : Fin 4 → V) {i j : Fin 4} (hm : m i = m j) (hij : i < j) :
     bianchiMultilinear r m = 0 := by
   simp only [bianchiMultilinear, MultilinearMap.mk'_apply]
-  have hf := isBivectorSymmetric_self_first hr; have hl := isBivectorSymmetric_self_last hr
+  have hf := hr.self_first; have hl := hr.self_last
   fin_cases i <;> fin_cases j <;> first | exact absurd hij (by decide) | (
     simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue] at hm ⊢; rw [hm])
   · rw [hf, hr.antisymm_first (m 2) (m 1)]; ring
@@ -199,22 +158,6 @@ theorem ker_bianchiAlternatingMap :
       w]⟩,
     fun h m ↦ h.cyclic_eq_zero (m 0) (m 1) (m 2) (m 3)⟩
 
-private theorem isBivectorSymmetric_toLinearMap₄_isAlt {r : FourTensor V}
-    (hr : IsBivectorSymmetric r) (u v : V) : (toLinearMap₄ r u v).IsAlt := fun z ↦ by
-  rw [toLinearMap₄_apply]; exact isBivectorSymmetric_self_last hr u v z
-
-private def exteriorBilinOfBivectorSymmetric (r : bivectorSymmetricSubmodule V) :
-    BilinForm ℝ (⋀[ℝ]^2 V) :=
-  let hr := mem_bivectorSymmetricSubmodule.mp r.property
-  (toLinearMap₄ r.val).exteriorSquareBilinear
-    (fun _ _ _ ↦ by rw [toLinearMap₄_apply]; exact isBivectorSymmetric_self_first hr ..)
-    (isBivectorSymmetric_toLinearMap₄_isAlt hr)
-
-private theorem isSymm_exteriorBilinOfBivectorSymmetric (r : bivectorSymmetricSubmodule V) :
-    (exteriorBilinOfBivectorSymmetric r).IsSymm :=
-  ⟨fun a b ↦ (LinearMap.congr_fun₂ (LinearMap.flip_exteriorSquareBilinear (toLinearMap₄ r.val) _ _
-    (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using r.property.swap_pairs ..)) a b).symm⟩
-
 end NormedSpace
 
 section FiniteDimensional
@@ -241,58 +184,10 @@ theorem algebraicCurvatureSubmodule_eq_bot_of_finrank_le_one (hdim : Module.finr
   (Submodule.eq_bot_iff _).mpr fun _ hr ↦
     (mem_algebraicCurvatureSubmodule.mp hr).eq_zero_of_finrank_le_one hdim
 
-private def fourTensorOfExteriorBilin (B : BilinForm ℝ (⋀[ℝ]^2 V)) : FourTensor V :=
-  ofLinearMap₄ <| MultilinearMap.toBilinMap
-    ((TauCeti.BilinForm.ofExteriorSquareDual.comp B).compMultilinearMap
-      (exteriorPower.ιMulti ℝ 2).toMultilinearMap)
-
-private theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    fourTensorOfExteriorBilin B ![u, v, z, w] =
-      B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
-  simp [fourTensorOfExteriorBilin]
-
-private theorem isBivectorSymmetric_fourTensorOfExteriorBilin
-    (B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V)) :
-    IsBivectorSymmetric (fourTensorOfExteriorBilin B.val) := by
-  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
-    simp only [fourTensorOfExteriorBilin_apply]
-  · rw [exteriorPower.ιMulti_two_swap v u, map_neg, LinearMap.neg_apply]
-  · rw [exteriorPower.ιMulti_two_swap w z, map_neg]
-  · exact (LinearMap.BilinForm.mem_symmSubmodule.mp B.property).eq _ _
-
-/-- Linear equivalence from `bivectorSymmetricSubmodule V` to symmetric forms on `⋀[ℝ]^2 V`. -/
-def bivectorSymmetricEquivSymmBilin :
-    bivectorSymmetricSubmodule V ≃ₗ[ℝ] LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V) where
-  toFun r := ⟨exteriorBilinOfBivectorSymmetric r,
-    LinearMap.BilinForm.mem_symmSubmodule.mpr (isSymm_exteriorBilinOfBivectorSymmetric r)⟩
-  invFun B := ⟨fourTensorOfExteriorBilin B.val,
-    mem_bivectorSymmetricSubmodule.mpr (isBivectorSymmetric_fourTensorOfExteriorBilin B)⟩
-  map_add' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
-    simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
-  map_smul' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
-    simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
-  left_inv r := Subtype.ext <| toLinearMap₄_injective <| by
-    ext u v z w; simp only [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply]
-    exact (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti
-      (toLinearMap₄ r.val) _ _ ![u, v] ![z, w]).trans (toLinearMap₄_apply r.val u v z w)
-  right_inv _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun v w ↦ by
-    rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply, ← FinVec.etaExpand_eq v,
-      ← FinVec.etaExpand_eq w]; rfl
-
-/-- Evaluation of `bivectorSymmetricEquivSymmBilin` on pure wedges `u ∧ v` and `z ∧ w`. -/
-@[simp] theorem bivectorSymmetricEquivSymmBilin_apply_ιMulti (r : bivectorSymmetricSubmodule V)
-    (u v z w : V) :
-    (bivectorSymmetricEquivSymmBilin r).val (exteriorPower.ιMulti ℝ 2 ![u, v])
-        (exteriorPower.ιMulti ℝ 2 ![z, w]) = r.val ![u, v, z, w] :=
-  (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti (toLinearMap₄ r.val) _ _ ![u, v] ![z, w]).trans
-    (toLinearMap₄_apply r.val u v z w)
-
-/-- Evaluation of `bivectorSymmetricEquivSymmBilin.symm` on four vectors via pure wedges. -/
-@[simp] theorem bivectorSymmetricEquivSymmBilin_symm_apply
-    (B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    (bivectorSymmetricEquivSymmBilin.symm B).val ![u, v, z, w] =
-      B.val (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) :=
-  fourTensorOfExteriorBilin_apply B.val u v z w
+/-- On a space of dimension at most `1`, every Kulkarni–Nomizu four-tensor vanishes. -/
+theorem kulkarniNomizu_eq_zero_of_finrank_le_one (hdim : Module.finrank ℝ V ≤ 1)
+    (h k : BilinForm ℝ V) : kulkarniNomizu h k = 0 :=
+  eq_zero_of_finrank_le_one_of_antisymm_first hdim (kulkarniNomizu_antisymm_first h k)
 
 /-- `bianchiAlternatingMap` is surjective onto alternating four-forms. -/
 theorem bianchiAlternatingMap_surjective :
@@ -346,7 +241,8 @@ theorem finrank_algebraicCurvatureSubmodule :
     Module.finrank ℝ (algebraicCurvatureSubmodule V) =
       Module.finrank ℝ V ^ 2 * (Module.finrank ℝ V ^ 2 - 1) / 12 := by
   have hle : algebraicCurvatureSubmodule V ≤ bivectorSymmetricSubmodule V :=
-    fun _ hr ↦ (mem_algebraicCurvatureSubmodule.mp hr).isBivectorSymmetric
+    fun _ hr ↦ mem_bivectorSymmetricSubmodule.mpr
+      (mem_algebraicCurvatureSubmodule.mp hr).isBivectorSymmetric
   have hrk := LinearMap.finrank_range_add_finrank_ker (K := ℝ) (V := bivectorSymmetricSubmodule V)
     (V₂ := V [⋀^Fin 4]→ₗ[ℝ] ℝ) (bianchiAlternatingMap (V := V))
   rw [LinearMap.range_eq_top.mpr bianchiAlternatingMap_surjective, finrank_top,
@@ -376,10 +272,6 @@ end FiniteDimensional
 section InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- The Ricci contraction of a bivector-symmetric four-tensor is symmetric. -/
-theorem IsBivectorSymmetric.isSymm_ricci {r : FourTensor V} (hr : IsBivectorSymmetric r) :
-    (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
 
 /-- In dimension `2`, every pair-antisymmetric `r` is `(scalar r / 2) • constantCurvature V`. -/
 theorem eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm {r : FourTensor V}

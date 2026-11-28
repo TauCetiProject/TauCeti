@@ -801,16 +801,16 @@ end ExteriorAlgebra
 
 namespace exteriorPower
 
-variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
-  [AddCommGroup W] [Module K W]
+section
 
-/-- A positive exterior power of an infinite-dimensional vector space over a field is
-infinite-dimensional: it has a basis indexed by the `n`-element subsets of a basis index set. -/
-theorem _root_.exteriorPower.not_finite_of_not_finite (hV : ¬ Module.Finite K V) {n : ℕ}
-    (hn : n ≠ 0) : ¬ Module.Finite K (⋀[K]^n V) := by
+/-- A positive exterior power of an infinite-rank free module over a nontrivial commutative ring is
+not finitely generated: it has a basis indexed by the `n`-element subsets of a basis index set. -/
+theorem _root_.exteriorPower.not_finite_of_not_finite {R V : Type*} [CommRing R] [Nontrivial R]
+    [AddCommGroup V] [Module R V] [Module.Free R V] (hV : ¬ Module.Finite R V) {n : ℕ}
+    (hn : n ≠ 0) : ¬ Module.Finite R (⋀[R]^n V) := by
   intro h
   classical
-  have ⟨I, b⟩ := Module.Free.exists_basis K V
+  have ⟨I, b⟩ := Module.Free.exists_basis R V
   have : Infinite I := by
     by_contra hI
     have := not_infinite_iff_finite.1 hI
@@ -819,6 +819,11 @@ theorem _root_.exteriorPower.not_finite_of_not_finite (hV : ¬ Module.Finite K V
   have : NeZero n := ⟨hn⟩
   have := Module.Finite.finite_basis (b.exteriorPower n)
   exact not_finite (Set.powersetCard I n)
+
+end
+
+variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
+  [AddCommGroup W] [Module K W]
 
 /-- Over a field, the image of the `n`th exterior power of `V` under the map induced by an
 injective linear map has dimension `(dim V).choose n`. For an infinite-dimensional `V`, where

@@ -18,12 +18,12 @@ import TauCeti.Algebra.BigOperators.Ring.List
 Fix a matrix `S`. This file expands the quadratic map `M ↦ trace (M * S * M * S)` at a sum, so
 that polarization recovers the symmetric bilinear map `(M, N) ↦ trace (M * S * N * S)` from it.
 It also computes the trace of `2 P - 1`, which vanishes for a trace-one `2 × 2` matrix `P` such as
-the orthogonal projector onto a line of `ℂ²`, and records that reindexing rows and columns along
-one equivalence preserves the trace. Two square matrices intertwined by a matrix whose
-determinant is a non-zero-divisor have the same trace; over a domain this applies to every
-intertwiner of nonzero determinant, such as the inclusion matrix of a full-rank sublattice.
-The trace of a product of two skew-Hermitian matrices is fixed by `star` (in particular,
-it is real over `ℂ`).
+the orthogonal projector onto a line of `ℂ²`, records that reindexing rows and columns along
+one equivalence preserves the trace, and relates double sums of `2 × 2` minor terms to products
+of traces and traces of products. Two square matrices intertwined by a matrix whose determinant is
+a non-zero-divisor have the same trace; over a domain this applies to every intertwiner of nonzero
+determinant, such as the inclusion matrix of a full-rank sublattice. The trace of a product of two
+skew-Hermitian matrices is fixed by `star` (in particular, it is real over `ℂ`).
 
 ## Main results
 
@@ -32,6 +32,7 @@ it is real over `ℂ`).
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
+* `Matrix.sum_symmMinor_eq_two_mul_trace_sub`: double-sum identity for symmetrized `2 × 2` minors.
 * `Matrix.trace_eq_of_mul_eq_mul`: if `A * P = P * B` and `det P` is a non-zero-divisor, then
   `trace A = trace B`.
 * `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
@@ -70,6 +71,19 @@ trace. -/
 theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matrix m m R) :
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
+
+/-- The double sum of symmetrized `2 × 2` minor terms equals
+`2 * (A.trace * C.trace - (A * C).trace)`. -/
+theorem sum_symmMinor_eq_two_mul_trace_sub {R : Type*} [CommRing R] (A C : Matrix m m R) :
+    ∑ i, ∑ j, (A i i * C j j - A j i * C i j + C i i * A j j - C j i * A i j) =
+      2 * (A.trace * C.trace - (A * C).trace) := by
+  have hdiag (X Y : Matrix m m R) : ∑ i, ∑ j, X i i * Y j j = X.trace * Y.trace :=
+    (Fintype.sum_mul_sum (fun i ↦ X i i) (fun j ↦ Y j j)).symm
+  have hcross (X Y : Matrix m m R) : ∑ i, ∑ j, X j i * Y i j = (X * Y).trace := by
+    simpa only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply, Matrix.transpose_apply] using
+      Matrix.trace_transpose_mul X Y
+  simp only [Finset.sum_sub_distrib, Finset.sum_add_distrib, hdiag, hcross, trace_mul_comm C A]
+  ring
 
 /-- **Intertwined matrices have equal traces.** If `A * P = P * B` and the determinant of `P` is a
 non-zero-divisor, then `trace A = trace B`. The matrix `P` need not be invertible; over `ℤ`, for
