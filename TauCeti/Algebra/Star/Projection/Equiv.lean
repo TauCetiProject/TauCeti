@@ -1,0 +1,60 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.Algebra.Star.StarProjection
+
+/-!
+# Star algebra equivalences on star projections
+
+A star algebra equivalence restricts to an equivalence of the subtypes of star projections.
+Its restriction preserves and reflects zero products when zero is an additive identity on
+both sides.
+-/
+
+public section
+
+namespace StarAlgEquiv
+
+section
+
+variable {R A B : Type*} [Add A] [Mul A] [Star A] [SMul R A]
+  [Add B] [Mul B] [Star B] [SMul R B]
+
+/-- Restrict a star algebra equivalence to the star projections of its domain and codomain. -/
+def starProjectionCongr (φ : A ≃⋆ₐ[R] B) :
+    {p : A // IsStarProjection p} ≃ {q : B // IsStarProjection q} :=
+  (φ : A ≃ B).subtypeEquiv fun p ↦ by
+    rw [EquivLike.coe_coe φ]
+    exact ⟨fun hp ↦ hp.map φ, fun hp ↦ by
+      simpa only [symm_apply_apply] using hp.map φ.symm⟩
+
+/-- The restriction acts by the original equivalence on the underlying elements. -/
+@[simp]
+theorem starProjectionCongr_apply (φ : A ≃⋆ₐ[R] B) (p : {p : A // IsStarProjection p}) :
+    (φ.starProjectionCongr p).val = φ p.val := by
+  simp only [starProjectionCongr, Equiv.subtypeEquiv_apply, EquivLike.coe_coe φ]
+
+/-- The inverse restriction acts by the inverse star algebra equivalence. -/
+@[simp]
+theorem starProjectionCongr_symm_apply (φ : A ≃⋆ₐ[R] B) (q : {q : B // IsStarProjection q}) :
+    (φ.starProjectionCongr.symm q).val = φ.symm q.val := by
+  apply φ.eq_symm_apply.mpr
+  rw [← starProjectionCongr_apply, Equiv.apply_symm_apply]
+
+end
+
+/-- A star algebra equivalence preserves and reflects zero products of projections when zero
+is an additive identity in the domain and codomain. -/
+theorem starProjectionCongr_mul_eq_zero_iff {R A B : Type*}
+    [AddZeroClass A] [Mul A] [Star A] [SMul R A]
+    [AddZeroClass B] [Mul B] [Star B] [SMul R B]
+    (φ : A ≃⋆ₐ[R] B) (p q : {x : A // IsStarProjection x}) :
+    (φ.starProjectionCongr p).val * (φ.starProjectionCongr q).val = 0 ↔ p.val * q.val = 0 := by
+  simp only [starProjectionCongr_apply, ← map_mul, map_eq_zero_iff φ φ.injective]
+
+end StarAlgEquiv

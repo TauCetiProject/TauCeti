@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.Data.Matrix.Basis
 public import TauCeti.Data.Matrix.Block
 public import TauCeti.Data.Matrix.Composition
-public import TauCeti.LinearAlgebra.Matrix.StarProjection
+public import TauCeti.LinearAlgebra.Matrix.StarProjection.Basic
 public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
