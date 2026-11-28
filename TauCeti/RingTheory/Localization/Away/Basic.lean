@@ -72,6 +72,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   induced by `f : A →+* B` sends `[a]` to `[f a]` and the fraction `a / s` to `f a / f s`.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
+* `IsLocalization.Away.algebraMap_mul_invSelf_mul_inv_mul_algebraMap`: scaling `invSelf s` by a
+  unit `u` cancels `u⁻¹ · s` to `1`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
   through compatible algebra towers.
 * `Localization.isScalarTower_awayMap`: the algebra structure on `B_z` over `A_z` given by
@@ -110,6 +112,10 @@ proved here directly from Mathlib's `IsLocalization.injective_iff_isRegular`.
 `IsLocalization.Away.isSMulRegular_algebraMap`, which says when an element stays a
 nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
 here directly from Mathlib's `mk'` API.
+
+`IsLocalization.Away.algebraMap_mul_invSelf_mul_inv_mul_algebraMap` is **also a later addition with
+no AINTLIB analogue**, proved here directly from `IsLocalization.Away.mul_invSelf` and
+`Units.mul_inv`.
 
 `Localization.isScalarTower_awayMap` is **also a later addition with no AINTLIB analogue**, proved
 here directly from Mathlib's `IsLocalization.map_eq`.
@@ -552,6 +558,16 @@ theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
   refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
   have := h (r ^ n * c) (by linear_combination hn)
   linear_combination this
+
+/-- In a localization away from `s` over a base ring `k`, scaling `invSelf s` by a unit `u : kˣ`
+cancels `u⁻¹ • s` to `1`. -/
+theorem algebraMap_mul_invSelf_mul_inv_mul_algebraMap {k R S : Type*}
+    [CommSemiring k] [CommSemiring R] [CommSemiring S] [Algebra k S] [Algebra R S]
+    (s : R) [IsLocalization.Away s S] (u : kˣ) :
+    (algebraMap k S u * invSelf (S := S) s) *
+      (algebraMap k S (↑u⁻¹ : k) * algebraMap R S s) = 1 := by
+  rw [mul_mul_mul_comm, ← map_mul, Units.mul_inv, map_one, mul_comm (invSelf s),
+    mul_invSelf, mul_one]
 
 end IsLocalization.Away
 
