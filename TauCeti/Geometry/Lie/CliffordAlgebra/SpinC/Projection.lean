@@ -156,14 +156,14 @@ theorem realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom :
         (realCliffordSpinContinuousMulEquivUnitsRange n :
           spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange) := by
   ext1 s
-  apply Subtype.ext
-  change (realToSpecialOrthogonalRange n hQ (ofSpinContinuousMonoidHom _ hQ s)).val =
-    (realCliffordSpinToSpecialOrthogonalRange n
-      (realCliffordSpinContinuousMulEquivUnitsRange n s)).val
-  rw [realToSpecialOrthogonalRange_apply, ofSpinContinuousMonoidHom_apply,
+  rw [ContinuousMonoidHom.coe_comp, ContinuousMonoidHom.coe_comp,
+    Function.comp_apply, Function.comp_apply, ContinuousMonoidHom.coe_coe,
+    realToSpecialOrthogonalRange_apply, ofSpinContinuousMonoidHom_apply,
     toSpecialOrthogonal_ofSpin, realCliffordSpecialOrthogonalContinuousMulEquivRange_apply,
-    realCliffordSpinContinuousMulEquivUnitsRange_apply,
-    realCliffordSpinToSpecialOrthogonalRange_apply_toUnits]
+    realCliffordSpinContinuousMulEquivUnitsRange_apply]
+  -- The `show ... from` wrapper only swaps `Pi.topologicalSpace` for the definitionally equal
+  -- local `Matrix.linftyOpTopologicalSpace` instance.
+  exact (realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n s).symm
 
 local notation "πO" =>
   ContinuousMonoidHom.lieMap (I := IC) (I' := ISO) (realToSpecialOrthogonalRange n hQ)

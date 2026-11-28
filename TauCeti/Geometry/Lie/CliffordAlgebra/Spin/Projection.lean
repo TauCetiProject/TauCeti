@@ -322,11 +322,8 @@ theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLie
         (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n)))
         (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
           realCliffordSpinToSpecialOrthogonalRange n) := by
-  let p : SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) :=
-    realCliffordSpinToSpecialOrthogonalRange n
-  change _root_.lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) =
-    ContinuousMonoidHom.lieMap p
-  rw [ContinuousMonoidHom.lieMap_def]
+  rw [realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap,
+    ContinuousMonoidHom.lieMap_def]
   apply congrArg _root_.lieMap
   apply DFunLike.coe_injective
   rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
