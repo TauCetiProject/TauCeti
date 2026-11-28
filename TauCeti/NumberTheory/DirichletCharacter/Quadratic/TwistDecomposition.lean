@@ -13,8 +13,10 @@ import TauCeti.NumberTheory.DirichletCharacter.CoprimeLevel
 /-!
 # Quadratic characters with two auxiliary prime factors
 
-In a tower of moduli `2 ^ k * m * q * d`, where `q` and `d` are distinct auxiliary primes
-coprime to the base level, every quadratic character is induced by a quadratic character
+At a product level `m * q * d`, a quadratic character is a lift of a quadratic character
+modulo `m` or one of its three Legendre twists. In a tower of moduli `2 ^ k * m * q * d`,
+where `q` and `d` are distinct auxiliary primes coprime to the dyadic base level, every
+quadratic character is induced by a quadratic character
 of conductor dividing `8 * m`, or by one of its three Legendre twists. Thus zero-free
 conditions imposed on twists of the fixed finite family at `8 * m` can control real
 characters even when the dyadic layer grows.
@@ -44,6 +46,26 @@ theorem exists_eq_changeLevel_or_eq_legendreTwist {m p : ℕ} [Fact p.Prime]
   · exact Or.inl (by simpa only [map_one, mul_one] using heq.symm)
   · exact Or.inr (heq.symm.trans (legendreTwist_def ψ p).symm)
 
+/-- A quadratic character at level `m * q * d` comes from a quadratic character at level `m`
+by twisting at neither, either, or both of the two coprime auxiliary primes. All four
+possibilities are compared at the common level `m * q * d`. -/
+theorem exists_eq_legendreTwists_of_isQuadratic {m q d : ℕ} [Fact q.Prime] [Fact d.Prime]
+    (χ : DirichletCharacter ℂ (m * q * d)) (hχ : χ.IsQuadratic)
+    (hq : m.Coprime q) (hd : (m * q).Coprime d) :
+    ∃ ψ : DirichletCharacter ℂ m, ψ.IsQuadratic ∧
+      (χ = ψ.changeLevel ((dvd_mul_right m q).trans (dvd_mul_right (m * q) d)) ∨
+        χ = (ψ.legendreTwist q).changeLevel (dvd_mul_right (m * q) d) ∨
+        χ = (ψ.legendreTwist d).changeLevel (Nat.mul_dvd_mul_right (dvd_mul_right m q) d) ∨
+        χ = (ψ.legendreTwist q).legendreTwist d) := by
+  obtain ⟨η, hη, hχη⟩ := exists_eq_changeLevel_or_eq_legendreTwist hd hχ
+  obtain ⟨ψ, hψ, hηψ⟩ := exists_eq_changeLevel_or_eq_legendreTwist hq hη
+  refine ⟨ψ, hψ, ?_⟩
+  rcases hχη with hχη | hχη <;> rcases hηψ with hηψ | hηψ
+  · exact Or.inl (by rw [hχη, hηψ, ← changeLevel_trans])
+  · exact Or.inr (Or.inl (by rw [hχη, hηψ]))
+  · exact Or.inr (Or.inr (Or.inl (by rw [hχη, hηψ, legendreTwist_changeLevel])))
+  · exact Or.inr (Or.inr (Or.inr (by rw [hχη, hηψ])))
+
 open TauCeti in
 /-- A quadratic character at level `2 ^ k * m * q * d` is induced by a primitive quadratic
 character of conductor dividing `8 * m`, possibly twisted by either or both auxiliary
@@ -64,8 +86,7 @@ theorem exists_primitive_legendreTwist_of_isQuadratic {m k q d : ℕ} [NeZero m]
   let : NeZero q := ⟨(Fact.out : q.Prime).ne_zero⟩
   let : NeZero d := ⟨(Fact.out : d.Prime).ne_zero⟩
   let : NeZero (2 ^ k * m) := ⟨mul_ne_zero (pow_ne_zero _ (by decide)) (NeZero.ne m)⟩
-  obtain ⟨η, hη, hχeq⟩ := exists_eq_changeLevel_or_eq_legendreTwist hd hχ
-  obtain ⟨ψ, hψ, hηeq⟩ := exists_eq_changeLevel_or_eq_legendreTwist hq hη
+  obtain ⟨ψ, hψ, hχeq⟩ := χ.exists_eq_legendreTwists_of_isQuadratic hχ hq hd
   let ρ := PrimitiveDirichletCharacter.of ψ
   have hρ := PrimitiveDirichletCharacter.level_of_dvd ψ
   have hlift : changeLevel hρ ρ.character = ψ :=
@@ -74,13 +95,13 @@ theorem exists_primitive_legendreTwist_of_isQuadratic {m k q d : ℕ} [NeZero m]
   · simpa only [ρ, PrimitiveDirichletCharacter.level_of] using
       conductor_dvd_eight_mul_of_sq_eq_one hψ.sq_eq_one
   -- Each twist commutes with raising the level, which the primitive bundle forgets.
-  rcases hχeq with hχeq | hχeq <;> rcases hηeq with hηeq | hηeq
-  · exact Or.inl (by simp only [hχeq, hηeq, PrimitiveDirichletCharacter.of_changeLevel, ρ])
-  · exact Or.inr (Or.inl (by simp only [hχeq, hηeq, ← hlift, legendreTwist_changeLevel,
+  rcases hχeq with hχeq | hχeq | hχeq | hχeq
+  · exact Or.inl (by simp only [hχeq, PrimitiveDirichletCharacter.of_changeLevel, ρ])
+  · exact Or.inr (Or.inl (by simp only [hχeq, ← hlift, legendreTwist_changeLevel,
       PrimitiveDirichletCharacter.of_changeLevel]))
-  · exact Or.inr (Or.inr (Or.inl (by simp only [hχeq, hηeq, ← hlift, legendreTwist_changeLevel,
+  · exact Or.inr (Or.inr (Or.inl (by simp only [hχeq, ← hlift, legendreTwist_changeLevel,
       PrimitiveDirichletCharacter.of_changeLevel])))
-  · exact Or.inr (Or.inr (Or.inr (by simp only [hχeq, hηeq, ← hlift, legendreTwist_changeLevel,
+  · exact Or.inr (Or.inr (Or.inr (by simp only [hχeq, ← hlift, legendreTwist_changeLevel,
       PrimitiveDirichletCharacter.of_changeLevel])))
 
 end DirichletCharacter

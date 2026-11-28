@@ -9,7 +9,8 @@ public import Mathlib.Data.ZMod.Units
 public import TauCeti.Algebra.Ring.Idempotent.Units
 public import TauCeti.Data.ZMod.Divisibility
 public import TauCeti.Data.Nat.ExactDivisor
-public import Mathlib.Algebra.Group.Prod
+public import TauCeti.Data.ZMod.ChineseRemainder
+import TauCeti.Data.ZMod.Cast
 
 /-!
 # The Chinese remainder splitting of `ZMod N` at an exact divisor
@@ -110,21 +111,22 @@ theorem ringEquivProd_apply (h : Q ∥ N) (x : ZMod N) :
 modulo `N` is identified with its reductions modulo `Q` and modulo `N / Q`. -/
 noncomputable def unitsEquivProd (h : Q ∥ N) :
     (ZMod N)ˣ ≃* (ZMod Q)ˣ × (ZMod (N / Q))ˣ :=
-  (Units.mapEquiv h.ringEquivProd.toMulEquiv).trans MulEquiv.prodUnits
+  (Units.mapEquiv (ZMod.ringEquivCongr (Nat.mul_div_cancel' h.dvd).symm).toMulEquiv).trans
+    (ZMod.unitsChineseRemainder h.coprime)
 
 /-- The first component of the unit-group Chinese remainder equivalence is reduction modulo the
 exact divisor. -/
 @[simp]
 theorem unitsEquivProd_apply_fst (h : Q ∥ N) (u : (ZMod N)ˣ) :
     (h.unitsEquivProd u).1 = ZMod.unitsMap h.dvd u :=
-  Units.ext congr(($(h.ringEquivProd_apply u)).1)
+  Units.ext <| by simp [unitsEquivProd, ZMod.unitsMap_val]
 
 /-- The second component of the unit-group Chinese remainder equivalence is reduction modulo the
 complementary divisor. -/
 @[simp]
 theorem unitsEquivProd_apply_snd (h : Q ∥ N) (u : (ZMod N)ˣ) :
     (h.unitsEquivProd u).2 = ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) u :=
-  Units.ext congr(($(h.ringEquivProd_apply u)).2)
+  Units.ext <| by simp [unitsEquivProd, ZMod.unitsMap_val]
 
 /-- A character modulo `N` splits as the product of its restrictions to the Chinese
 remainder factors modulo `Q` and `N / Q`. -/
@@ -134,18 +136,9 @@ theorem eq_mul_comp_unitsMap {G : Type*} [CommMonoid G] (h : Q ∥ N)
         (MonoidHom.inl (ZMod Q)ˣ (ZMod (N / Q))ˣ)).comp (ZMod.unitsMap h.dvd) *
       ((χ.comp h.unitsEquivProd.symm.toMonoidHom).comp
         (MonoidHom.inr (ZMod Q)ˣ (ZMod (N / Q))ˣ)).comp
-          (ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd)) := by
-  let χ' := χ.comp h.unitsEquivProd.symm.toMonoidHom
-  apply MonoidHom.ext
-  intro u
-  have hu := DFunLike.congr_fun (MonoidHom.coprod_unique χ') (h.unitsEquivProd u)
-  calc
-    χ u = χ' (h.unitsEquivProd u) := by simp [χ']
-    _ = (χ'.comp (MonoidHom.inl _ _)) (h.unitsEquivProd u).1 *
-        (χ'.comp (MonoidHom.inr _ _)) (h.unitsEquivProd u).2 := hu.symm
-    _ = _ := by
-      simp only [unitsEquivProd_apply_fst, unitsEquivProd_apply_snd,
-        MonoidHom.mul_apply, MonoidHom.comp_apply, χ']
+          (ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd)) :=
+  ZMod.eq_mul_comp_unitsMap_of_mulEquiv _ _ _ h.unitsEquivProd_apply_fst
+    h.unitsEquivProd_apply_snd χ
 
 /-- **An element of `ZMod N` is determined by its residues modulo `Q` and modulo `N / Q`**, for an
 exact divisor `Q` of `N`: the injectivity half of the Chinese remainder theorem. -/
@@ -161,8 +154,12 @@ reduction of `a`. -/
 theorem unitsMap_unitsEquivProd_symm_of_dvd {d : ℕ} (h : Q ∥ N) (hd : d ∣ Q)
     (a : (ZMod Q)ˣ) (b : (ZMod (N / Q))ˣ) :
     ZMod.unitsMap (hd.trans h.dvd) (h.unitsEquivProd.symm (a, b)) = ZMod.unitsMap hd a := by
-  rw [← ZMod.unitsMap_comp hd h.dvd, MonoidHom.comp_apply, ← h.unitsEquivProd_apply_fst,
-    MulEquiv.apply_symm_apply]
+  rw [← ZMod.unitsMap_comp hd h.dvd, MonoidHom.comp_apply]
+  congr 1
+  apply Units.ext
+  simpa [unitsEquivProd, ZMod.unitsMap_val, ZMod.ringEquivCongr_symm,
+    -ZMod.unitsMap_unitsChineseRemainder_symm_fst] using
+    congrArg Units.val (ZMod.unitsMap_unitsChineseRemainder_symm_fst h.coprime (a, b))
 
 /-- **Reducing a Chinese remainder lift modulo a divisor of `N / Q`.** For `Q ∥ N` and
 `d ∣ N / Q`, the unit modulo `N` with residues `a` modulo `Q` and `b` modulo `N / Q` reduces modulo
@@ -171,8 +168,12 @@ theorem unitsMap_unitsEquivProd_symm_of_dvd_div {d : ℕ} (h : Q ∥ N) (hd : d 
     (a : (ZMod Q)ˣ) (b : (ZMod (N / Q))ˣ) :
     ZMod.unitsMap (hd.trans (Nat.div_dvd_of_dvd h.dvd)) (h.unitsEquivProd.symm (a, b)) =
       ZMod.unitsMap hd b := by
-  rw [← ZMod.unitsMap_comp hd (Nat.div_dvd_of_dvd h.dvd), MonoidHom.comp_apply,
-    ← h.unitsEquivProd_apply_snd, MulEquiv.apply_symm_apply]
+  rw [← ZMod.unitsMap_comp hd (Nat.div_dvd_of_dvd h.dvd), MonoidHom.comp_apply]
+  congr 1
+  apply Units.ext
+  simpa [unitsEquivProd, ZMod.unitsMap_val, ZMod.ringEquivCongr_symm,
+    -ZMod.unitsMap_unitsChineseRemainder_symm_snd] using
+    congrArg Units.val (ZMod.unitsMap_unitsChineseRemainder_symm_snd h.coprime (a, b))
 
 /-- A Chinese remainder lift reduces to the lift of the reduced pair when both target factors
 divide the corresponding source factors. -/

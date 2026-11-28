@@ -5,12 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Data.ZMod.Units
 import Mathlib.Data.Nat.Factorization.LCM
 import Mathlib.Tactic.Ring
 
 /-!
-# The Chinese remainder theorem in gcd–lcm form
+# The Chinese remainder theorem on unit groups and in gcd–lcm form
+
+For coprime `m` and `n`, Mathlib's ring equivalence `ZMod.chineseRemainder` is the pair of
+reductions modulo `m` and modulo `n` (`ZMod.chineseRemainder_eq_prod_castHom`), and
+`ZMod.unitsChineseRemainder` identifies `(ZMod (m * n))ˣ` with `(ZMod m)ˣ × (ZMod n)ˣ` through
+the two reductions (`ZMod.unitsChineseRemainder_apply_fst`,
+`ZMod.unitsChineseRemainder_apply_snd`). The inverse lifts a pair of units to the unit with those
+reductions (`ZMod.unitsMap_unitsChineseRemainder_symm_fst`,
+`ZMod.unitsMap_unitsChineseRemainder_symm_snd`). The splitting theorem
+`ZMod.eq_mul_comp_unitsMap_of_mulEquiv` expresses a hom on units as the product of its
+restrictions to the two factors, composed with the reductions.
 
 Mathlib's `ZMod.chineseRemainder` splits `ZMod (m * n)` as `ZMod m × ZMod n` for coprime `m` and
 `n`. Without coprimality, `ZMod a × ZMod b` is still isomorphic to
@@ -27,6 +38,70 @@ remaining prime powers of `b` (Mathlib's `Nat.factorizationLCMLeft` and
 public section
 
 namespace ZMod
+
+/-- The Chinese remainder ring equivalence is the pair of reductions modulo `m` and modulo `n`. -/
+theorem chineseRemainder_eq_prod_castHom {m n : ℕ} (h : m.Coprime n) :
+    (chineseRemainder h : ZMod (m * n) →+* ZMod m × ZMod n) =
+      (castHom (dvd_mul_right m n) (ZMod m)).prod (castHom (dvd_mul_left n m) (ZMod n)) :=
+  RingHom.ext_zmod _ _
+
+section Units
+
+variable {m n : ℕ}
+
+/-- **The Chinese remainder equivalence on unit groups.** For coprime `m` and `n`, a unit modulo
+`m * n` is identified with its reductions modulo `m` and modulo `n`
+(`ZMod.unitsChineseRemainder_apply_fst`, `ZMod.unitsChineseRemainder_apply_snd`). -/
+def unitsChineseRemainder (h : m.Coprime n) : (ZMod (m * n))ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ :=
+  (Units.mapEquiv (chineseRemainder h).toMulEquiv).trans MulEquiv.prodUnits
+
+/-- The first component of the unit-group Chinese remainder equivalence is reduction modulo
+`m`. -/
+@[simp]
+theorem unitsChineseRemainder_apply_fst (h : m.Coprime n) (u : (ZMod (m * n))ˣ) :
+    (unitsChineseRemainder h u).1 = unitsMap (dvd_mul_right m n) u :=
+  Units.ext congr(($(chineseRemainder_eq_prod_castHom h) u).1)
+
+/-- The second component of the unit-group Chinese remainder equivalence is reduction modulo
+`n`. -/
+@[simp]
+theorem unitsChineseRemainder_apply_snd (h : m.Coprime n) (u : (ZMod (m * n))ˣ) :
+    (unitsChineseRemainder h u).2 = unitsMap (dvd_mul_left n m) u :=
+  Units.ext congr(($(chineseRemainder_eq_prod_castHom h) u).2)
+
+/-- A Chinese remainder lift of a pair of units reduces modulo `m` to its first component. -/
+@[simp]
+theorem unitsMap_unitsChineseRemainder_symm_fst (h : m.Coprime n)
+    (p : (ZMod m)ˣ × (ZMod n)ˣ) :
+    unitsMap (dvd_mul_right m n) ((unitsChineseRemainder h).symm p) = p.1 := by
+  rw [← unitsChineseRemainder_apply_fst h, MulEquiv.apply_symm_apply]
+
+/-- A Chinese remainder lift of a pair of units reduces modulo `n` to its second component. -/
+@[simp]
+theorem unitsMap_unitsChineseRemainder_symm_snd (h : m.Coprime n)
+    (p : (ZMod m)ˣ × (ZMod n)ˣ) :
+    unitsMap (dvd_mul_left n m) ((unitsChineseRemainder h).symm p) = p.2 := by
+  rw [← unitsChineseRemainder_apply_snd h, MulEquiv.apply_symm_apply]
+
+/-- A hom out of `(ZMod N)ˣ` into a commutative monoid splits along any identification
+`e : (ZMod N)ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ` whose components are the reductions modulo `m` and
+modulo `n`: it is the product of its restrictions to the two factors, composed with the
+reductions. -/
+theorem eq_mul_comp_unitsMap_of_mulEquiv {N : ℕ} {G : Type*} [CommMonoid G] (hm : m ∣ N)
+    (hn : n ∣ N) (e : (ZMod N)ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ) (he₁ : ∀ u, (e u).1 = unitsMap hm u)
+    (he₂ : ∀ u, (e u).2 = unitsMap hn u) (χ : (ZMod N)ˣ →* G) :
+    χ = ((χ.comp e.symm.toMonoidHom).comp (MonoidHom.inl (ZMod m)ˣ (ZMod n)ˣ)).comp (unitsMap hm) *
+      ((χ.comp e.symm.toMonoidHom).comp (MonoidHom.inr (ZMod m)ˣ (ZMod n)ˣ)).comp
+        (unitsMap hn) := by
+  let χ' := χ.comp e.symm.toMonoidHom
+  refine MonoidHom.ext fun u ↦ ?_
+  have hu := DFunLike.congr_fun (MonoidHom.coprod_unique χ') (e u)
+  calc
+    χ u = χ' (e u) := by simp [χ']
+    _ = (χ'.comp (MonoidHom.inl _ _)) (e u).1 * (χ'.comp (MonoidHom.inr _ _)) (e u).2 := hu.symm
+    _ = _ := by simp only [he₁, he₂, MonoidHom.mul_apply, MonoidHom.comp_apply, χ']
+
+end Units
 
 /-- **Chinese remainder theorem in gcd–lcm form.** For all natural numbers `a` and `b`, the rings
 `ZMod a × ZMod b` and `ZMod (gcd a b) × ZMod (lcm a b)` are isomorphic. -/

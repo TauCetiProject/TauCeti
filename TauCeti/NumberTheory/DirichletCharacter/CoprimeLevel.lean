@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+import TauCeti.Data.ZMod.ChineseRemainder
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.MulChar.Prod
 
@@ -40,8 +41,7 @@ theorem coprimeLevelEquiv_apply (h : m.Coprime n)
   -- The components of the Chinese remainder map are reduction to the two levels.
   have hcast (x : ZMod (m * n)) : ZMod.chineseRemainder h x =
       (ZMod.castHom (dvd_mul_right m n) _ x, ZMod.castHom (dvd_mul_left n m) _ x) :=
-    DFunLike.congr_fun (RingHom.ext_zmod (ZMod.chineseRemainder h).toRingHom
-      ((ZMod.castHom (dvd_mul_right m n) _).prod (ZMod.castHom (dvd_mul_left n m) _))) x
+    DFunLike.congr_fun (ZMod.chineseRemainder_eq_prod_castHom h) x
   apply MulChar.ext
   intro u
   rw [MulChar.mul_apply, changeLevel_apply_unitsMap, changeLevel_apply_unitsMap]
