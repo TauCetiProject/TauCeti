@@ -493,15 +493,12 @@ end GeneratorsNeZero
 /-- **A highest-weight vector of every weight.** For a generalized Cartan matrix and every
 functional `μ` on `H`, the Kac–Moody algebra has a module with a nonzero vector on which each
 `h ∈ H` acts by `μ(h)` and which every raising generator `eᵢ` kills. -/
-theorem exists_highestWeightVector (hdiag : ∀ i, A i i = 2)
-    (hneg : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 → A j i = 0)
-    (μ : Module.Dual K H) :
+theorem exists_highestWeightVector (hA : A.IsGeneralizedCartan) (μ : Module.Dual K H) :
     ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V)
       (_ : LieRingModule (PresentedLieAlgebra R) V) (_ : LieModule K (PresentedLieAlgebra R) V)
       (w : V), w ≠ 0 ∧ (∀ x, ⁅cartanElement R x, w⁆ = μ x • w) ∧
         ∀ i, ⁅positiveGenerator R i, w⁆ = 0 := by
   classical
-  let hA : A.IsGeneralizedCartan := ⟨hdiag, hneg, fun i j => ⟨hzero i j, hzero j i⟩⟩
   let ρ := lift (satisfiesRelations_quotient R μ hA)
   let _ : LieRingModule (PresentedLieAlgebra R) (SerreQuotient R μ hA) :=
     LieRingModule.compLieHom _ ρ

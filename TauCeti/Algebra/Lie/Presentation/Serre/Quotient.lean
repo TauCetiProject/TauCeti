@@ -139,16 +139,26 @@ theorem serreIdeal_induction {R : Type*} [CommRing R] {B : Type*} {CM : Matrix B
   | smul c _ hx hu => exact smul c _ hx hu
   | lie u _ hv ih => exact lie u _ hv ih
 
+private theorem freeNeg_relator (R : Type*) [CommRing R] {B : Type*} (CM : Matrix B B ℤ)
+    (i j : B) :
+    TauCeti.FreeLieAlgebra.freeNeg R B
+        ((ad R _ (FreeLieAlgebra.of R i) ^ (-CM i j).toNat)
+          ⁅FreeLieAlgebra.of R i, FreeLieAlgebra.of R j⁆) =
+      ((-1 : R) ^ (-CM i j).toNat) •
+        (ad R _ (FreeLieAlgebra.of R i) ^ (-CM i j).toNat)
+          ⁅FreeLieAlgebra.of R i, FreeLieAlgebra.of R j⁆ := by
+  rw [← LieEquiv.coe_toLieHom, LieHom.map_ad_pow, LieHom.map_lie, LieEquiv.coe_toLieHom,
+    TauCeti.FreeLieAlgebra.freeNeg_of, TauCeti.FreeLieAlgebra.freeNeg_of, ad_neg_pow_apply,
+    neg_lie, lie_neg, neg_neg]
+
 /-- Negating every free generator preserves the same-sign Serre ideal. -/
 theorem freeNeg_mem_serreIdeal {R : Type*} [CommRing R] {B : Type*} {CM : Matrix B B ℤ}
     {b : FreeLieAlgebra R B} (hb : b ∈ serreIdeal R CM) :
     TauCeti.FreeLieAlgebra.freeNeg R B b ∈ serreIdeal R CM := by
   induction hb using serreIdeal_induction with
   | relator i j =>
-    have hmem := Submodule.smul_mem (serreIdeal R CM).toSubmodule ((-1 : R) ^ (-CM i j).toNat)
-      (relator_mem_serreIdeal R CM i j)
-    rw [← LieEquiv.coe_toLieHom]
-    simpa [LieHom.map_ad_pow, ad_neg_pow_apply, -map_neg] using hmem
+    rw [freeNeg_relator]
+    exact Submodule.smul_mem (serreIdeal R CM).toSubmodule _ (relator_mem_serreIdeal R CM i j)
   | zero => simp
   | add _ _ _ _ hu hv => simpa [map_add] using add_mem hu hv
   | smul c _ _ hu => simpa [map_smul] using Submodule.smul_mem _ c hu

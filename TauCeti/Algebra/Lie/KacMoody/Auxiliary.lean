@@ -64,137 +64,29 @@ section Auxiliary
 private abbrev AuxLieAlgebra : Type _ :=
   FreeLieAlgebra K (Generator I H) ⧸ auxIdeal R
 
-private noncomputable def auxMk :
-    FreeLieAlgebra K (Generator I H) →ₗ⁅K⁆ AuxLieAlgebra R :=
-  LieIdeal.mkQ (auxIdeal R)
-
-private noncomputable def auxCartan : H →ₗ[K] AuxLieAlgebra R :=
+private noncomputable abbrev auxCartan : H →ₗ[K] AuxLieAlgebra R :=
   quotientCartanElement R le_rfl
 
-private noncomputable def auxPos (i : I) : AuxLieAlgebra R :=
-  auxMk R (FreeLieAlgebra.of K (Generator.positive i))
+private noncomputable abbrev auxPos (i : I) : AuxLieAlgebra R :=
+  (auxIdeal R).mkQ (FreeLieAlgebra.of K (Generator.positive i))
 
-private noncomputable def auxNeg (i : I) : AuxLieAlgebra R :=
-  auxMk R (FreeLieAlgebra.of K (Generator.negative i))
-
-@[simp]
-private theorem auxMk_of_cartan (x : H) :
-    auxMk R (FreeLieAlgebra.of K (Generator.cartan x)) = auxCartan R x :=
-  (quotientCartanElement_apply R le_rfl x).symm
-
-@[simp]
-private theorem auxMk_of_pos (i : I) :
-    auxMk R (FreeLieAlgebra.of K (Generator.positive i)) = auxPos R i := rfl
-
-@[simp]
-private theorem auxMk_of_neg (i : I) :
-    auxMk R (FreeLieAlgebra.of K (Generator.negative i)) = auxNeg R i := rfl
+private noncomputable abbrev auxNeg (i : I) : AuxLieAlgebra R :=
+  (auxIdeal R).mkQ (FreeLieAlgebra.of K (Generator.negative i))
 
 private theorem satisfiesAuxRelations_aux :
     SatisfiesAuxRelations R (auxCartan R) (auxPos R) (auxNeg R) :=
   satisfiesAuxRelations_quotient R le_rfl
 
-@[simp]
-private theorem lie_auxCartan_auxCartan (x y : H) :
-    ⁅auxCartan R x, auxCartan R y⁆ = 0 :=
-  (satisfiesAuxRelations_aux R).lie_cartan_cartan x y
-
-@[simp]
-private theorem lie_auxCartan_auxPos (x : H) (j : I) :
-    ⁅auxCartan R x, auxPos R j⁆ = R.root j x • auxPos R j :=
-  (satisfiesAuxRelations_aux R).lie_cartan_positive x j
-
-@[simp]
-private theorem lie_auxPos_auxCartan (j : I) (x : H) :
-    ⁅auxPos R j, auxCartan R x⁆ = -(R.root j x • auxPos R j) := by
-  rw [← lie_skew, lie_auxCartan_auxPos]
-
-@[simp]
-private theorem lie_auxCartan_auxNeg (x : H) (j : I) :
-    ⁅auxCartan R x, auxNeg R j⁆ = -(R.root j x • auxNeg R j) :=
-  (satisfiesAuxRelations_aux R).lie_cartan_negative x j
-
-@[simp]
-private theorem lie_auxPos_auxNeg_self (i : I) :
-    ⁅auxPos R i, auxNeg R i⁆ = auxCartan R (R.coroot i) :=
-  (satisfiesAuxRelations_aux R).lie_positive_negative_self i
-
-@[simp]
-private theorem lie_auxNeg_auxPos_self (i : I) :
-    ⁅auxNeg R i, auxPos R i⁆ = -auxCartan R (R.coroot i) := by
-  rw [← lie_skew, lie_auxPos_auxNeg_self]
-
-@[simp]
-private theorem lie_auxPos_auxNeg_of_ne {i j : I} (hij : i ≠ j) :
-    ⁅auxPos R i, auxNeg R j⁆ = 0 :=
-  (satisfiesAuxRelations_aux R).lie_positive_negative_of_ne i j hij
-
-@[simp]
-private theorem lie_auxNeg_auxPos_of_ne {i j : I} (hij : i ≠ j) :
-    ⁅auxNeg R i, auxPos R j⁆ = 0 := by
-  rw [← lie_skew, lie_auxPos_auxNeg_of_ne R hij.symm, neg_zero]
-
-section AuxUniversal
-
-variable {R} {L : Type*} [LieRing L] [LieAlgebra K L]
-
-private noncomputable def auxLift {φ : H →ₗ[K] L} {E F : I → L}
-    (h : SatisfiesAuxRelations R φ E F) : AuxLieAlgebra R →ₗ⁅K⁆ L :=
-  (auxIdeal R).liftQ (FreeLieAlgebra.lift K (generatorMap φ E F)) (auxIdeal_le_ker h)
-
-@[simp]
-private theorem auxLift_auxCartan {φ : H →ₗ[K] L} {E F : I → L}
-    (h : SatisfiesAuxRelations R φ E F) (x : H) : auxLift h (auxCartan R x) = φ x := by
-  rw [auxCartan, quotientCartanElement_apply]
-  exact ((LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)).trans
-    (generatorMap_cartan x)
-
-@[simp]
-private theorem auxLift_auxPos {φ : H →ₗ[K] L} {E F : I → L}
-    (h : SatisfiesAuxRelations R φ E F) (i : I) : auxLift h (auxPos R i) = E i :=
-  ((LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)).trans
-    (generatorMap_positive i)
-
-@[simp]
-private theorem auxLift_auxNeg {φ : H →ₗ[K] L} {E F : I → L}
-    (h : SatisfiesAuxRelations R φ E F) (i : I) : auxLift h (auxNeg R i) = F i :=
-  ((LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)).trans
-    (generatorMap_negative i)
-
-private theorem aux_hom_ext {g₁ g₂ : AuxLieAlgebra R →ₗ⁅K⁆ L}
-    (hH : ∀ x, g₁ (auxCartan R x) = g₂ (auxCartan R x))
-    (hE : ∀ i, g₁ (auxPos R i) = g₂ (auxPos R i))
-    (hF : ∀ i, g₁ (auxNeg R i) = g₂ (auxNeg R i)) : g₁ = g₂ :=
-  TauCeti.FreeLieAlgebra.quotient_hom_ext fun
-    | .cartan x => by simpa [auxCartan] using hH x
-    | .positive i => hE i
-    | .negative i => hF i
-
-end AuxUniversal
-
 private theorem lieSpan_auxGenerators_eq_top :
     LieSubalgebra.lieSpan K (AuxLieAlgebra R)
       (Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R)) = ⊤ := by
-  rw [← range_generator (fun g => auxMk R (FreeLieAlgebra.of K g))
-    (auxMk_of_cartan R) (auxMk_of_pos R) (auxMk_of_neg R)]
+  rw [← range_generator (fun g => (auxIdeal R).mkQ (FreeLieAlgebra.of K g))
+    (fun x => (quotientCartanElement_apply R le_rfl x).symm) (fun _ => rfl) (fun _ => rfl)]
   exact TauCeti.FreeLieAlgebra.lieSpan_range_mkQ_of_eq_top (auxIdeal R)
 
-private noncomputable def auxChevalleyHom : AuxLieAlgebra R →ₗ⁅K⁆ AuxLieAlgebra R :=
-  auxLift (satisfiesAuxRelations_aux R).neg_swap
-
-private theorem auxChevalley_comp :
-    (auxChevalleyHom R).comp (auxChevalleyHom R) = LieHom.id :=
-  aux_hom_ext (by simp [auxChevalleyHom]) (by simp [auxChevalleyHom]) (by simp [auxChevalleyHom])
-
-private noncomputable def auxChevalley : AuxLieAlgebra R ≃ₗ⁅K⁆ AuxLieAlgebra R :=
-  LieEquiv.ofLieHoms (auxChevalleyHom R) (auxChevalleyHom R)
-    (auxChevalley_comp R) (auxChevalley_comp R)
-
-@[simp]
-private theorem auxChevalley_involutive (y : AuxLieAlgebra R) :
-    auxChevalley R (auxChevalley R y) = y := by
-  have hsymm : (auxChevalley R).symm = auxChevalley R := LieEquiv.symm_ofLieHoms _ _ _ _
-  simpa only [hsymm] using (auxChevalley R).symm_apply_apply y
+private noncomputable abbrev auxChevalley : AuxLieAlgebra R ≃ₗ⁅K⁆ AuxLieAlgebra R :=
+  quotientChevalleyInvolution R le_rfl
+    (auxIdeal_le_ker (satisfiesAuxRelations_aux R).neg_swap)
 
 private noncomputable def auxPosHom : FreeLieAlgebra K I →ₗ⁅K⁆ AuxLieAlgebra R :=
   FreeLieAlgebra.lift K (auxPos R)
@@ -205,19 +97,19 @@ private noncomputable def auxNegHom : FreeLieAlgebra K I →ₗ⁅K⁆ AuxLieAlg
 private theorem auxChevalley_auxPosHom (b : FreeLieAlgebra K I) :
     auxChevalley R (auxPosHom R b) = auxNegHom R (TauCeti.FreeLieAlgebra.freeNeg K I b) :=
   DFunLike.congr_fun (FreeLieAlgebra.hom_ext fun i => by
-    simp [auxChevalley, auxChevalleyHom, auxPosHom, auxNegHom] :
+    simp [auxChevalley, auxPosHom, auxNegHom] :
     (auxChevalley R).toLieHom.comp (auxPosHom R) =
       (auxNegHom R).comp (TauCeti.FreeLieAlgebra.freeNeg K I).toLieHom) b
 
 private theorem auxChevalley_auxNegHom (b : FreeLieAlgebra K I) :
     auxChevalley R (auxNegHom R b) = auxPosHom R (TauCeti.FreeLieAlgebra.freeNeg K I b) :=
   DFunLike.congr_fun (FreeLieAlgebra.hom_ext fun i => by
-    simp [auxChevalley, auxChevalleyHom, auxPosHom, auxNegHom] :
+    simp [auxChevalley, auxPosHom, auxNegHom] :
     (auxChevalley R).toLieHom.comp (auxNegHom R) =
       (auxPosHom R).comp (TauCeti.FreeLieAlgebra.freeNeg K I).toLieHom) b
 
 private noncomputable def auxToPresented : AuxLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R :=
-  auxLift (satisfiesRelations_generators R).toSatisfiesAuxRelations
+  quotientLift (auxIdeal_le_ker (satisfiesRelations_generators R).toSatisfiesAuxRelations)
 
 /-! ### Kac's Verma-type representation on formal words -/
 
@@ -230,7 +122,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 open scoped Classical in
 private noncomputable def auxRep (lam : Module.Dual K H) :
     AuxLieAlgebra R →ₗ⁅K⁆ Module.End K K[FreeMonoid I] :=
-  auxLift (satisfiesAuxRelations_wordRep R lam)
+  quotientLift (auxIdeal_le_ker (satisfiesAuxRelations_wordRep R lam))
 
 open scoped Classical in
 private theorem auxRep_auxPosHom_one (lam : Module.Dual K H) (b : FreeLieAlgebra K I) :
@@ -258,7 +150,8 @@ private theorem auxRep_auxNegHom_apply_one (lam : Module.Dual K H) (a : FreeLieA
   | mem _ hx =>
     rcases hx with ⟨i, rfl⟩
     intro v
-    simp only [auxNegHom, FreeLieAlgebra.lift_of_apply, auxRep, auxLift_auxNeg]
+    simp only [auxNegHom, FreeLieAlgebra.lift_of_apply, auxRep, LieIdeal.mkQ_apply,
+      quotientLift_mk_of, generatorMap_negative]
     induction v using MonoidAlgebra.induction_on with
     | of w =>
       rw [MonoidAlgebra.of_apply, lowering_single]
@@ -342,7 +235,8 @@ section AuxSerre
 private theorem lie_auxCartan_mem_range_auxPosHom (x : H) {y : AuxLieAlgebra R}
     (hy : y ∈ (auxPosHom R).range) : ⁅auxCartan R x, y⁆ ∈ (auxPosHom R).range := by
   rw [auxPosHom, TauCeti.FreeLieAlgebra.range_lift_eq_lieSpan] at hy ⊢
-  exact LieSubalgebra.lie_mem_lieSpan_range_of_lie_eq_smul (lie_auxCartan_auxPos R x) hy
+  exact LieSubalgebra.lie_mem_lieSpan_range_of_lie_eq_smul
+    (lie_quotientCartanElement_mk_positive R le_rfl x) hy
 
 private theorem lie_auxNeg_mem_range_auxPosHom_sup_range_auxCartan (k : I) {y : AuxLieAlgebra R}
     (hy : y ∈ (auxPosHom R).range) :
@@ -356,9 +250,9 @@ private theorem lie_auxNeg_mem_range_auxPosHom_sup_range_auxCartan (k : I) {y : 
     exact lie_auxCartan_mem_range_auxPosHom R x hz
   · rintro _ ⟨j, rfl⟩
     rcases eq_or_ne k j with rfl | hkj
-    · rw [lie_auxNeg_auxPos_self]
+    · rw [lie_mk_negative_mk_positive_self R le_rfl]
       exact Submodule.mem_sup_right ⟨-R.coroot k, map_neg _ _⟩
-    · rw [lie_auxNeg_auxPos_of_ne R hkj]
+    · rw [lie_mk_negative_mk_positive_of_ne R le_rfl hkj]
       exact zero_mem _
 
 private noncomputable def auxSerrePosSubmodule : Submodule K (AuxLieAlgebra R) :=
@@ -385,7 +279,8 @@ private theorem lie_auxCartan_auxSerrePosSubmodule (x : H) {y : AuxLieAlgebra R}
   | relator i j =>
     rw [auxPosHom_serreRelator, ← ad_pow_succ_apply]
     have hshift := lie_pow_toEnd_eq_smul (R := K) (L := AuxLieAlgebra R) (M := AuxLieAlgebra R)
-      (lie_auxCartan_auxPos R x j) (lie_auxCartan_auxPos R x i) ((-A i j).toNat + 1)
+      (lie_quotientCartanElement_mk_positive R le_rfl x j)
+      (lie_quotientCartanElement_mk_positive R le_rfl x i) ((-A i j).toNat + 1)
     simp only [← ad_eq_toEnd] at hshift
     rw [hshift]
     refine Submodule.smul_mem _ _ ⟨_, relator_mem_serreIdeal K A i j, ?_⟩
@@ -457,7 +352,7 @@ private theorem mem_auxSerreNegIdeal_iff (hA : A.IsGeneralizedCartan) {y : AuxLi
     simp only [LieHom.coe_toLinearMap] at hEq
     refine ⟨TauCeti.FreeLieAlgebra.freeNeg K I b, TauCeti.freeNeg_mem_serreIdeal hb, ?_⟩
     rw [← auxChevalley_auxPosHom, hEq]
-    exact auxChevalley_involutive R y
+    exact quotientChevalleyInvolution_apply_apply R _ _ y
   · rintro ⟨a, ha, rfl⟩
     rw [auxSerreNegIdeal, LieIdeal.mem_comap, LieEquiv.coe_toLieHom, auxChevalley_auxNegHom]
     exact ⟨_, TauCeti.freeNeg_mem_serreIdeal ha, rfl⟩
@@ -473,7 +368,7 @@ private theorem satisfiesRelations_auxQuotient (hA : A.IsGeneralizedCartan) :
   · simp only [Function.comp_apply, ← LieHom.map_lie, ← LieHom.map_ad_pow, ← LieHom.mem_ker,
       LieIdeal.mkQ_ker]
     exact LieSubmodule.mem_sup_right
-      ⟨_, relator_mem_serreIdeal K A i j, auxPosHom_serreRelator R i j⟩
+      ⟨_, relator_mem_serreIdeal K A i j, by simp [auxPosHom]⟩
   · simp only [Function.comp_apply, ← LieHom.map_lie, ← LieHom.map_ad_pow, ← LieHom.mem_ker,
       LieIdeal.mkQ_ker]
     refine LieSubmodule.mem_sup_left ((mem_auxSerreNegIdeal_iff R hA).mpr ?_)
@@ -492,7 +387,7 @@ private theorem ker_auxToPresented_eq (hA : A.IsGeneralizedCartan) :
   refine le_antisymm ?_ ?_
   · set J := auxSerreNegIdeal R hA ⊔ auxSerrePosIdeal R hA
     have hcomp : (lift (satisfiesRelations_auxQuotient R hA)).comp (auxToPresented R) = J.mkQ :=
-      aux_hom_ext (fun _ => by simp [auxToPresented])
+      quotient_hom_ext R le_rfl (fun _ => by simp [auxToPresented])
         (fun _ => by simp [auxToPresented]) (fun _ => by simp [auxToPresented])
     intro z hz
     rw [LieHom.mem_ker] at hz
@@ -524,7 +419,7 @@ theorem quotientTriangular_eq_zero (hA : A.IsGeneralizedCartan)
       auxToPresented R (auxPosHom R b₀) := by
     rw [← LieHom.comp_apply, positiveQuotientHom_comp_mkQ, ← auxToPresented_comp_auxPosHom,
       LieHom.comp_apply]
-  have hcart : cartanElement R x = auxToPresented R (auxCartan R x) := (auxLift_auxCartan _ x).symm
+  have hcart : cartanElement R x = auxToPresented R (auxCartan R x) := by simp [auxToPresented]
   rw [hneg, hcart, hpos, ← map_add, ← map_add, ← LieHom.mem_ker, ker_auxToPresented_eq R hA] at h
   obtain ⟨u, hu, _, ⟨b', hb', rfl⟩, heq⟩ := (LieSubmodule.mem_sup _ _ _).mp h
   obtain ⟨a', ha', rfl⟩ := (mem_auxSerreNegIdeal_iff R hA).mp hu

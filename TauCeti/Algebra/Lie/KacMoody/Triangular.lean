@@ -23,9 +23,9 @@ import TauCeti.LinearAlgebra.Matrix.Cartan.Generalized
 Let `A` be a square matrix of integers and `R` a realization of `A` over a field `K`, with
 presented Lie algebra `TauCeti.KacMoody.PresentedLieAlgebra R`. Over an arbitrary field `K` and for
 an arbitrary integer matrix `A`, this file defines the positive, negative, and Cartan Lie
-subalgebras `n⁺`, `n⁻`, and `𝔥`, constructs the involutive Chevalley automorphism exchanging `n⁺`
-and `n⁻`, proves local nilpotence of `ad eᵢ` and `ad fᵢ`, and establishes the direct-sum triangular
-decomposition `𝔤 = n⁻ ⊕ 𝔥 ⊕ n⁺` together with the intersection formula
+subalgebras `n⁺`, `n⁻`, and `𝔥`, shows that `TauCeti.KacMoody.chevalleyInvolution` exchanges
+`n⁺` and `n⁻` and preserves `𝔥`, proves local nilpotence of `ad eᵢ` and `ad fᵢ`, and establishes
+the direct-sum triangular decomposition `𝔤 = n⁻ ⊕ 𝔥 ⊕ n⁺` together with the intersection formula
 `⁅𝔤, 𝔤⁆ ∩ 𝔥 = cartanElement '' R.corootSpan` via the principal `ℤ`-grading into
 `LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)`.
 
@@ -35,9 +35,9 @@ additionally identifies both `n⁺` and `n⁻` with `FreeLieAlgebra K I ⧸ serr
 linear independence of the raising and lowering generators `eᵢ` and `fᵢ`, and shows that
 `TauCeti.KacMoody.serreHom R : Matrix.ToLieAlgebra K A →ₗ⁅K⁆ PresentedLieAlgebra R` is injective.
 
-The Chevalley involution construction closely follows `serreChevalleyInvolution` in
-`TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean`, while local nilpotence of `ad eᵢ` and
-the spanning triangular decomposition transport `engel_serreE_eq_top` from
+The Chevalley involution compatibility with `serreHom` closely follows `serreChevalleyInvolution`
+in `TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean`, while local nilpotence of `ad eᵢ`
+and the spanning triangular decomposition transport `engel_serreE_eq_top` from
 `TauCeti/Algebra/Lie/Presentation/Serre/Integrable.lean` and
 `lieSpan_serreF_sup_span_serreH_sup_lieSpan_serreE_eq_top` from
 `TauCeti/Algebra/Lie/Presentation/Serre/Triangular.lean` along `TauCeti.KacMoody.serreHom`.
@@ -47,8 +47,6 @@ the spanning triangular decomposition transport `engel_serreE_eq_top` from
 * `TauCeti.KacMoody.cartanSubalgebra`: the Lie subalgebra `𝔥` of
   `TauCeti.KacMoody.PresentedLieAlgebra R`, together with the linear equivalence
   `TauCeti.KacMoody.cartanEquiv : H ≃ₗ[K] cartanSubalgebra R` when `cartanElement R` is injective.
-* `TauCeti.KacMoody.chevalleyInvolution`: the involutive automorphism `x ↦ -x`, `eᵢ ↦ -fᵢ`,
-  `fᵢ ↦ -eᵢ` of `TauCeti.KacMoody.PresentedLieAlgebra R`.
 * `TauCeti.KacMoody.triangularEquiv`: the direct-sum triangular linear equivalence
   `(negativeSubalgebra R × cartanSubalgebra R × positiveSubalgebra R) ≃ₗ[K] PresentedLieAlgebra R`.
 * `TauCeti.KacMoody.negativeProjection`, `TauCeti.KacMoody.cartanProjection`, and
@@ -176,66 +174,6 @@ theorem map_serreHom_lieSpan_serreF [DecidableEq I] :
 /-! ## The Chevalley involution -/
 
 section Chevalley
-
-private noncomputable def chevalleyHom : PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R :=
-  lift (satisfiesRelations_generators R).neg_swap
-
-private theorem chevalleyHom_comp : (chevalleyHom R).comp (chevalleyHom R) = LieHom.id := by
-  ext <;> simp [chevalleyHom]
-
-/-- The **Chevalley involution** of `TauCeti.KacMoody.PresentedLieAlgebra R`: the Lie algebra
-automorphism acting as `-1` on `H` and exchanging `eᵢ` with `-fᵢ`. -/
-noncomputable def chevalleyInvolution : PresentedLieAlgebra R ≃ₗ⁅K⁆ PresentedLieAlgebra R where
-  toLieHom := chevalleyHom R
-  invFun := chevalleyHom R
-  left_inv x := by simpa using DFunLike.congr_fun (chevalleyHom_comp R) x
-  right_inv x := by simpa using DFunLike.congr_fun (chevalleyHom_comp R) x
-
-/-- The Chevalley involution negates Cartan elements. -/
-@[simp] theorem chevalleyInvolution_cartanElement (x : H) :
-    chevalleyInvolution R (cartanElement R x) = -cartanElement R x :=
-  lift_cartanElement _ x
-
-/-- The Chevalley involution sends `eᵢ` to `-fᵢ`. -/
-@[simp] theorem chevalleyInvolution_positiveGenerator (i : I) :
-    chevalleyInvolution R (positiveGenerator R i) = -negativeGenerator R i :=
-  lift_positiveGenerator _ i
-
-/-- The Chevalley involution sends `fᵢ` to `-eᵢ`. -/
-@[simp] theorem chevalleyInvolution_negativeGenerator (i : I) :
-    chevalleyInvolution R (negativeGenerator R i) = -positiveGenerator R i :=
-  lift_negativeGenerator _ i
-
-variable {R} in
-/-- `TauCeti.KacMoody.chevalleyInvolution` is the unique Lie endomorphism negating `H` and
-exchanging `eᵢ` with `-fᵢ`. -/
-theorem eq_chevalleyInvolution {g : PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R}
-    (hH : ∀ x, g (cartanElement R x) = -cartanElement R x)
-    (hE : ∀ i, g (positiveGenerator R i) = -negativeGenerator R i)
-    (hF : ∀ i, g (negativeGenerator R i) = -positiveGenerator R i) :
-    g = (chevalleyInvolution R : PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R) :=
-  eq_lift hH hE hF
-
-/-- Applying the Chevalley involution twice is the identity. -/
-@[simp] theorem chevalleyInvolution_chevalleyInvolution (x : PresentedLieAlgebra R) :
-    chevalleyInvolution R (chevalleyInvolution R x) = x :=
-  (chevalleyInvolution R).left_inv x
-
-/-- The Chevalley involution is involutive. -/
-theorem chevalleyInvolution_involutive : Function.Involutive (chevalleyInvolution R) :=
-  chevalleyInvolution_chevalleyInvolution R
-
-/-- The Chevalley involution is its own inverse. -/
-@[simp]
-theorem chevalleyInvolution_symm : (chevalleyInvolution R).symm = chevalleyInvolution R := by
-  ext <;> apply (LieEquiv.symm_apply_eq _).2 <;> simp
-
-/-- Naturality of the Chevalley involution with respect to `TauCeti.KacMoody.lift`. -/
-@[simp] theorem lift_comp_chevalleyInvolution {L : Type*} [LieRing L] [LieAlgebra K L]
-    {φ : H →ₗ[K] L} {E F : I → L} (h : SatisfiesRelations R φ E F) :
-    (lift h).comp (chevalleyInvolution R : PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R) =
-      lift h.neg_swap := by
-  ext <;> simp
 
 /-- `TauCeti.KacMoody.serreHom` intertwines the Chevalley involutions of Serre's presentation and
 of the full realization. -/
