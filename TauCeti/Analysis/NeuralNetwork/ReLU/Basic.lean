@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Neuromanifold.MLP.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import Mathlib.Topology.Algebra.Ring.Real
+import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -215,7 +216,7 @@ private theorem reluNetRealizes_depth_two {a b c : ℕ}
     (W₀ : Matrix (Fin b) (Fin a) ℝ) (b₀ : Fin b → ℝ)
     (W₁ : Matrix (Fin c) (Fin b) ℝ) (b₁ : Fin c → ℝ)
     (f : (Fin a → ℝ) → (Fin c → ℝ))
-    (hf : ∀ x j, (∑ k : Fin b, W₁ j k * max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁ j = f x j) :
+    (hf : ∀ x j, (W₁ *ᵥ (fun k => max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁) j = f x j) :
     ReLUNetRealizes ![a, b, c] f := by
   let θ : (reluSpec ![a, b, c]).Parameters :=
     Fin.cons (W₀, b₀) (Fin.cons (W₁, b₁) fun i => i.elim0)
@@ -240,8 +241,8 @@ private theorem reluNetRealizes_depth_two {a b c : ℕ}
   have hlhs : ∀ (x₀ : Fin ((reluSpec ![a, b, c]).width 0) → ℝ),
       ((θ (Fin.last 1)).1 *ᵥ (reluSpec ![a, b, c]).evalPrefix θ x₀ (Fin.last 1).castSucc +
         (θ (Fin.last 1)).2) (Fin.cast (rfl : ![a, b, c] (Fin.last 2) = c).symm j) =
-      (∑ k : Fin b, W₁ j k * (reluSpec ![a, b, c]).evalPrefix θ
-        x₀ (0 : Fin 2).succ (Fin.cast hb.symm k)) + b₁ j := fun _ =>
+      (W₁ *ᵥ (fun k => (reluSpec ![a, b, c]).evalPrefix θ
+        x₀ (0 : Fin 2).succ (Fin.cast hb.symm k)) + b₁) j := fun _ =>
     rfl
   refine (hlhs (fun i => x (Fin.cast ha i))).trans ?_
   simp_rw [h1 _ fun _ => rfl]
@@ -252,36 +253,30 @@ private theorem reluNetRealizes_depth_two {a b c : ℕ}
 theorem ReLUNetRealizes.id_depth_two (m : ℕ) :
     ReLUNetRealizes ![m, 2 * m, m] (id : (Fin m → ℝ) → (Fin m → ℝ)) := by
   have hm : 2 * m = m + m := Nat.two_mul m
-  let W₀ : Matrix (Fin (2 * m)) (Fin m) ℝ := fun r c =>
-    Fin.addCases (fun r₁ => if r₁ = c then 1 else 0) (fun r₂ => if r₂ = c then -1 else 0)
-      (Fin.cast hm r)
-  let W₁ : Matrix (Fin m) (Fin (2 * m)) ℝ := fun r c =>
-    Fin.addCases (fun c₁ => if r = c₁ then 1 else 0) (fun c₂ => if r = c₂ then -1 else 0)
-      (Fin.cast hm c)
+  let e : Fin (2 * m) ≃ Fin m ⊕ Fin m := (finCongr hm).trans finSumFinEquiv.symm
+  let W₀ : Matrix (Fin (2 * m)) (Fin m) ℝ :=
+    (Matrix.fromRows (1 : Matrix (Fin m) (Fin m) ℝ) (-1)).submatrix e (Equiv.refl _)
+  let W₁ : Matrix (Fin m) (Fin (2 * m)) ℝ :=
+    (Matrix.fromCols (1 : Matrix (Fin m) (Fin m) ℝ) (-1)).submatrix (Equiv.refl _) e
   refine reluNetRealizes_depth_two W₀ 0 W₁ 0 id fun x j => ?_
-  have h0 : ∀ r : Fin (2 * m), (W₀ *ᵥ x) r =
-      Fin.addCases (fun r₁ => x r₁) (fun r₂ => -x r₂) (Fin.cast hm r) := by
-    intro r
-    simp only [Matrix.mulVec, dotProduct]
-    cases hr : Fin.cast hm r using Fin.addCases with
-    | left r₁ =>
-      simp only [W₀, hr, Fin.addCases_left, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq,
-        Finset.mem_univ, ↓reduceIte]
-    | right r₂ =>
-      simp only [W₀, hr, Fin.addCases_right, ite_mul, neg_mul, one_mul, zero_mul,
-        Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
-  simp only [Pi.zero_apply, add_zero]
-  simp_rw [h0]
-  have hsum : (∑ k : Fin (2 * m), W₁ j k *
-      max 0 (Fin.addCases (fun r₁ => x r₁) (fun r₂ => -x r₂) (Fin.cast hm k))) =
-      ∑ k : Fin (m + m), W₁ j (Fin.cast hm.symm k) *
-        max 0 (Fin.addCases (fun r₁ => x r₁) (fun r₂ => -x r₂) k) := by
-    refine Fintype.sum_equiv (finCongr hm) _ _ fun k => ?_
-    simp [finCongr_apply]
-  rw [hsum, Fin.sum_univ_add]
-  simp only [W₁, Fin.cast_cast, Fin.cast_refl, id_eq, Fin.addCases_left, Fin.addCases_right,
-    ite_mul, one_mul, neg_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
-  simpa [max_comm, mul_neg_one, sub_eq_add_neg] using max_zero_sub_max_neg_zero_eq_self (x j)
+  have h0 : W₀ *ᵥ x = (Sum.elim x (-x)) ∘ e := by
+    dsimp only [W₀]
+    rw [Matrix.submatrix_mulVec_equiv]
+    simp [Matrix.neg_mulVec, Matrix.one_mulVec]
+  have hact : (fun k : Fin (2 * m) => max 0 ((W₀ *ᵥ x) k + (0 : Fin (2 * m) → ℝ) k)) =
+      (fun s : Fin m ⊕ Fin m => max 0 (Sum.elim x (-x) s)) ∘ e := by
+    funext k
+    simp [h0]
+  rw [hact]
+  have h1 : W₁ *ᵥ ((fun s : Fin m ⊕ Fin m => max 0 (Sum.elim x (-x) s)) ∘ e) =
+      (Matrix.fromCols (1 : Matrix (Fin m) (Fin m) ℝ) (-1)) *ᵥ
+        (fun s : Fin m ⊕ Fin m => max 0 (Sum.elim x (-x) s)) := by
+    dsimp only [W₁]
+    rw [Matrix.submatrix_mulVec_equiv]
+    simp [Function.comp_assoc]
+  simp only [Pi.add_apply, Pi.zero_apply, add_zero, h1, Matrix.fromCols_mulVec,
+    Matrix.one_mulVec, Matrix.neg_mulVec]
+  simpa [max_comm, sub_eq_add_neg] using max_zero_sub_max_neg_zero_eq_self (x j)
 
 /-- A depth-zero ReLU network on `ℝ` computes only the identity `x ↦ x 0`. -/
 theorem reluNetComputes_depth_zero_iff {f : (Fin 1 → ℝ) → ℝ} :
