@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.Loop
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes.Winding
-import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 
 /-!

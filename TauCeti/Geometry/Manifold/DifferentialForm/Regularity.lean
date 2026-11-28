@@ -45,9 +45,7 @@ differentiation commutes with this extension.
 * `TauCeti.contMDiffAt_mpullback_extChartAt`: a flat form that is `C^n` within the model range
   pulls back along a chart to a `C^n` section.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`,
-  `TauCeti.isSmoothForm_mextDeriv`: the exterior derivative lowers regularity by one;
-  `TauCeti.contMDiffAt_mextDeriv_ofFunction` is the pointwise form for the differential of a
-  function, from `C^(n+1)` to `C^n`.
+  `TauCeti.isSmoothForm_mextDeriv`: the exterior derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothBundleForms`: the exterior derivative preserves smooth forms.
 * `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: a global function which near
   every point differs by a constant from a local primitive of a `1`-form is itself a primitive.
@@ -526,34 +524,6 @@ theorem mdifferentiableAt_ofFunction [IsManifold I 1 M] {f : M → F} {x : M}
   rw [heq]
   exact ((ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
     : F →L[ℝ] E [⋀^Fin 0]→L[ℝ] F).mdifferentiableAt.comp x hf
-
-/-- The differential of a function that is `C^(n+1)` at `x` is a `C^n` section at `x`. -/
-theorem contMDiffAt_mextDeriv_ofFunction [IsManifold I 2 M] {n : WithTop ℕ∞}
-    [IsManifold I (n + 1) M] {f : M → F} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, F) (n + 1) f x) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) n
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (mextDeriv (RoughForm.ofFunction I f) y))
-      x := by
-  -- `C^∞` regularity is regularity of every finite order.
-  suffices key : ∀ m : WithTop ℕ∞, m ≠ ∞ → m + 1 ≤ n + 1 →
-      ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) m
-        (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (mextDeriv (RoughForm.ofFunction I f) y))
-        x by
-    rcases eq_or_ne n ∞ with rfl | hn
-    · exact contMDiffAt_infty.2 fun m ↦ key m (by simp) (by gcongr; exact_mod_cast le_top)
-    · exact key n hn le_rfl
-  intro m hm hmn
-  have : IsManifold I (m + 1) M := .of_le hmn
-  -- On an open neighbourhood `v` of `x` the function is `C^(m+1)`, so `mextDerivWithin f v` is
-  -- `C^m`.
-  obtain ⟨u, hu, hfu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simpa using hm)).1 (hf.of_le hmn)
-  obtain ⟨v, hvu, hv, hxv⟩ := mem_nhds_iff.1 hu
-  have h := contMDiffOn_mextDerivWithin (n := m) (RoughForm.ofFunction I f) (s := v)
-    (fun y hy ↦ (contMDiffAt_ofFunction_iff.2 ((hfu y (hvu hy)).contMDiffAt
-      (Filter.mem_of_superset (hv.mem_nhds hy) hvu))).contMDiffWithinAt)
-    hv.uniqueMDiffOn (by rw [hv.interior_eq]; exact subset_closure)
-  refine ((h x hxv).contMDiffAt (hv.mem_nhds hxv)).congr_of_eventuallyEq ?_
-  filter_upwards [hv.mem_nhds hxv] with y hy
-  rw [mextDerivWithin_of_isOpen hv hy]
 
 /-- **Local primitives glue to a global one.** If near every point `x` the function `f` differs by
 a constant from a function `g` which is `C^r` at `x` with `d g = φ` at `x`, then the
