@@ -610,6 +610,11 @@ variable {R : Type*} [CommSemiring R] (S M : Type*) [Semiring S] [Algebra R S]
 noncomputable def tensorProductMulLeft : S ⊗[R] (S ⊗[R] M) →ₗ[R] S ⊗[R] M :=
   (LinearMap.mul' R S).rTensor M ∘ₗ (TensorProduct.assoc R S S M).symm.toLinearMap
 
+/-- Express multiplication of the first two factors using reassociation and tensoring. -/
+theorem tensorProductMulLeft_def : tensorProductMulLeft (R := R) S M =
+    (LinearMap.mul' R S).rTensor M ∘ₗ (TensorProduct.assoc R S S M).symm.toLinearMap :=
+  (rfl)
+
 @[simp]
 theorem tensorProductMulLeft_tmul (s t : S) (m : M) :
     tensorProductMulLeft S M (s ⊗ₜ[R] (t ⊗ₜ[R] m)) = (s * t) ⊗ₜ[R] m := by

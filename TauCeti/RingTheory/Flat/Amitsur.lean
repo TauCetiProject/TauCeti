@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
-import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Degree-one exactness of the Amitsur complex
@@ -57,6 +57,11 @@ theorem d₀_def : d₀ (R := R) S M =
   ext s m
   simp [d₀, sub_tmul]
 
+/-- Express the degree-one differential as left unit insertion plus the tensored `d₀`. -/
+theorem d₁_def : d₁ (R := R) S M =
+    TensorProduct.mk R S (S ⊗[R] (S ⊗[R] M)) 1 + (d₀ S M).lTensor S :=
+  (rfl)
+
 @[simp]
 theorem d₀_tmul (s : S) (m : M) :
     d₀ S M (s ⊗ₜ[R] m) = s ⊗ₜ[R] (1 ⊗ₜ[R] m) - 1 ⊗ₜ[R] (s ⊗ₜ[R] m) := by
@@ -74,6 +79,12 @@ theorem d₁_tmul (s t : S) (m : M) :
 @[simp]
 theorem d₀_comp_mk_one : d₀ (R := R) S M ∘ₗ TensorProduct.mk R S M 1 = 0 := by
   ext m
+  simp
+
+/-- Multiplication of the first two factors annihilates the degree-zero differential. -/
+@[simp]
+theorem tensorProductMulLeft_comp_d₀ : tensorProductMulLeft (R := R) S M ∘ₗ d₀ S M = 0 := by
+  ext s m
   simp
 
 /-- The first two Amitsur differentials compose to zero over any algebra. -/

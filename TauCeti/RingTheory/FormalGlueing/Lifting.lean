@@ -98,7 +98,7 @@ private theorem amitsur_differential_eq_zero_of_locally_in_range
       (Submodule.fg_span G.finite_toSet) z).symm.trans (congrArg Subtype.val hz)
   -- Multiplication retracts `1 ⊗ -` and annihilates the Amitsur obstruction.
   let μ := tensorProductMulLeft (R := R) S M
-  have hμ : μ ∘ₗ d = 0 := by ext s m; simp [μ, d]
+  have hμ : μ ∘ₗ d = 0 := Amitsur.tensorProductMulLeft_comp_d₀ S M
   have hz0 : (z : S ⊗[R] M) = 0 := by
     have h := congr(μ $hz')
     have hμy : μ (d y) = 0 := LinearMap.congr_fun hμ y
