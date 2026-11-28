@@ -8,10 +8,14 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Hartogs
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
+public import Mathlib.AlgebraicGeometry.Group.Affine
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.Regular.Flat
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.Pullback.SpecMap
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.CohenMacaulay.Normal
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.IntegralClosure.GoingDown
@@ -63,6 +67,8 @@ punctured spectrum of `A` has `B` as its ring of global functions.
   an affine form of Stacks, Lemma 58.20.1 (0BM8).
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed`: the finite
   normal case.
+* `TauCeti.IsLocalRing.exists_overHom_lift_quotient`: section recovery on a punctured quotient
+  and lifting algebra homomorphisms across the quotient lift morphisms of affine schemes.
 * `TauCeti.IsLocalRing.isIso_appTop_pullback_fst_puncturedSpectrum`: the finite normal case,
   as recovery of `B` from the base change of `Spec B` to the punctured spectrum.
 
@@ -151,6 +157,67 @@ end TauCeti.AlgebraicGeometry.Spec
 namespace TauCeti.IsLocalRing
 
 open CategoryTheory.Limits
+
+/-- If `Spec (B ⧸ I.map (algebraMap A B))` is recovered from its sections over the punctured
+spectrum of `A ⧸ I`, and algebra maps from `C` lift across the quotient, then morphisms over
+that punctured spectrum lift to maps `Spec B ⟶ Spec C` over `Spec A`. -/
+theorem exists_overHom_lift_quotient {A B C : Type u} [CommRing A] [CommRing B]
+    [Algebra A B] [CommRing C] [Algebra A C] (I : Ideal A) [IsLocalRing (A ⧸ I)]
+    (hΓ : IsIso (pullback.fst (Spec.algebraMap (A ⧸ I) (B ⧸ I.map (algebraMap A B)))
+      (puncturedSpectrum (A ⧸ I)).ι).appTop)
+    (hlift : ∀ g₀ : C →ₐ[A] B ⧸ I.map (algebraMap A B),
+      ∃ g : C →ₐ[A] B, (Ideal.Quotient.mkₐ A _).comp g = g₀) :
+    let Y := (algSpec (.of A)).obj (.op (CommAlgCat.of A B))
+    let Z := (algSpec (.of A)).obj (.op (CommAlgCat.of A C))
+    let F := Over.pullback (Spec.algebraMap A (A ⧸ I)) ⋙ Over.pullback (puncturedSpectrum (A ⧸ I)).ι
+    ∀ α : F.obj Y ⟶ F.obj Z, ∃ g : Y ⟶ Z, F.map g = α := by
+  intro Y Z F α
+  let J := I.map (algebraMap A B)
+  let j₀ := (puncturedSpectrum (A ⧸ I)).ι
+  let q := Spec.algebraMap A (A ⧸ I)
+  let p₀ := Spec.algebraMap (A ⧸ I) (B ⧸ J)
+  let H := TauCeti.AlgebraicGeometry.isPullback_SpecMap_quotient A B I
+  let e : Over.mk p₀ ≅ (Over.pullback q).obj Y := Over.isoMk H.isoPullback H.isoPullback_hom_snd
+  let Z₀ := (Over.pullback q).obj Z
+  have : IsAffineHom Z₀.hom := inferInstanceAs (IsAffineHom (pullback.snd (Spec.algebraMap A C) q))
+  have : IsAffine Z₀.left := isAffine_of_isAffineHom Z₀.hom
+  obtain ⟨φ, hφ⟩ := (TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop j₀
+    (Y := Over.mk p₀) (Y' := Z₀) hΓ).surjective ((Over.pullback j₀).map e.hom ≫ α)
+  have hp₀ : p₀ ≫ q = Spec.algebraMap A (B ⧸ J) := by
+    simp only [p₀, q, Spec.algebraMap, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    rw [← IsScalarTower.algebraMap_eq A (A ⧸ I) (B ⧸ J)]
+  let ψ : (algSpec (.of A)).obj (.op (CommAlgCat.of A (B ⧸ J))) ⟶ Z :=
+    Over.homMk (φ.left ≫ pullback.fst Z.hom q) (calc
+      (φ.left ≫ pullback.fst Z.hom q) ≫ Z.hom =
+          (φ.left ≫ pullback.snd Z.hom q) ≫ q := by simp only [Category.assoc, pullback.condition]
+      _ = _ := (congrArg (fun k ↦ k ≫ q) (Over.w φ)).trans hp₀)
+  let m := (algSpec.fullyFaithful (R := .of A)).preimage ψ
+  obtain ⟨g, hg⟩ := hlift m.unop.hom
+  let g' : Y ⟶ Z := (algSpec (.of A)).map (CommAlgCat.ofHom g).op
+  have hmap : e.hom ≫ (Over.pullback q).map g' = φ := by
+    apply Over.OverMorphism.ext
+    apply pullback.hom_ext
+    · have hfst : ((Over.pullback q).map g').left ≫ pullback.fst Z.hom q =
+          pullback.fst Y.hom q ≫ g'.left := pullback.lift_fst _ _ _
+      have he : e.hom.left ≫ pullback.fst Y.hom q = _ := H.isoPullback_hom_fst
+      rw [Over.comp_left_assoc, hfst, ← Category.assoc, he]
+      have hm : Spec.map (CommRingCat.ofHom m.unop.hom.toRingHom) =
+          φ.left ≫ pullback.fst Z.hom q :=
+        congrArg (fun k ↦ k.left) ((algSpec.fullyFaithful (R := .of A)).map_preimage ψ)
+      have hg' : g'.left = Spec.map (CommRingCat.ofHom g.toRingHom) := by
+        rw [algSpec_map_left]
+        exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext fun x ↦
+          AlgHom.toUnder_right (R := .of A) g x))
+      have heq : Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk J)) ≫
+          Spec.map (CommRingCat.ofHom g.toRingHom) =
+          Spec.map (CommRingCat.ofHom ((Ideal.Quotient.mkₐ A J).comp g).toRingHom) := by
+        exact TauCeti.AlgebraicGeometry.SpecMap_quotient_mk_comp_SpecMap_algHom J g
+      exact (congrArg (fun k ↦ Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk J)) ≫ k) hg').trans
+        (heq.trans ((congrArg (fun k ↦ Spec.map (CommRingCat.ofHom k.toRingHom)) hg).trans hm))
+    · exact (Over.w (e.hom ≫ (Over.pullback q).map g')).trans (Over.w φ).symm
+  refine ⟨g', (cancel_epi ((Over.pullback j₀).map e.hom)).mp ?_⟩
+  exact ((Over.pullback j₀).map_comp _ _).symm.trans
+    ((congrArg ((Over.pullback j₀).map) hmap).trans hφ)
 
 variable (A : Type u) [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 

@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.RingTheory.PolynomialAlgebra
 import Mathlib.RingTheory.TensorProduct.Pi
+import Mathlib.RingTheory.TensorProduct.Quotient
 
 /-!
 # Pullback of schemes along `Spec.map`
@@ -46,6 +47,8 @@ with model `Spec (ι → F)` and compatibility with both pullback projections.
   of an affine chart is an affine chart of the base change.
 * `TauCeti.AlgebraicGeometry.isPullback_SpecMap_polynomial`: `Spec S[X]` is the base change of
   `Spec R[X]` along `Spec S ⟶ Spec R`.
+* `TauCeti.AlgebraicGeometry.isPullback_SpecMap_quotient`: base change to a quotient of the base
+  ring is the spectrum of the quotient by the extended ideal.
 * `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
   identifies an affine base change over its new base.
 * `CategoryTheory.IsPullback.exists_split`: a scheme split over a commutative ring stays split
@@ -115,6 +118,32 @@ lemma isPullback_SpecMap_polynomial (R S : Type u) [CommRing R] [CommRing S] [Al
     (CommRingCat.isPushout_of_isPushout R S R[X] S[X]).flip
 
 end Polynomial
+
+/-- Pulling back `Spec B` along `Spec (A ⧸ I) ⟶ Spec A` gives the spectrum of the quotient
+of `B` by the extended ideal. -/
+theorem isPullback_SpecMap_quotient (A B : Type u) [CommRing A] [CommRing B] [Algebra A B]
+    (I : Ideal A) :
+    IsPullback (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (I.map (algebraMap A B)))))
+      (Spec.algebraMap (A ⧸ I) (B ⧸ I.map (algebraMap A B)))
+      (Spec.algebraMap A B) (Spec.algebraMap A (A ⧸ I)) := by
+  let e := Algebra.TensorProduct.quotIdealMapEquivQuotTensor B I
+  let E := (Scheme.Spec.mapIso e.toRingEquiv.toCommRingCatIso.symm.op) ≪≫
+    (pullbackSpecIso A (A ⧸ I) B).symm ≪≫ pullbackSymmetry _ _
+  have h₁ : E.hom ≫ pullback.fst _ _ =
+      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (I.map (algebraMap A B)))) := by
+    simp only [E, Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, Scheme.Spec_map, Iso.symm_hom,
+      Category.assoc, pullbackSymmetry_hom_comp_fst, pullbackSpecIso_inv_snd, ← Spec.map_comp]
+    congr 1
+    ext b
+    exact e.symm_apply_eq.mpr (Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk B I b).symm
+  have h₂ : E.hom ≫ pullback.snd _ _ = Spec.algebraMap (A ⧸ I) (B ⧸ I.map (algebraMap A B)) := by
+    simp only [E, Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, Scheme.Spec_map, Iso.symm_hom,
+      Category.assoc, pullbackSymmetry_hom_comp_snd, pullbackSpecIso_inv_fst', ← Spec.map_comp]
+    congr 1
+    ext a
+    exact e.symm.commutes a
+  exact IsPullback.of_iso_pullback ⟨by rw [← h₁, ← h₂, Category.assoc, Category.assoc,
+    pullback.condition]⟩ E h₁ h₂
 
 /-- An algebraic identification of a base-changed algebra induces an isomorphism over the
 new affine base. No finiteness or étaleness assumptions are needed for this transport. -/
