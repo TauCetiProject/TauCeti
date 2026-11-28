@@ -21,7 +21,7 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.ManifoldTotalSpace
 
-variable {n : ℕ∞ω} {𝕜 B B' F : Type*} [NontriviallyNormedField 𝕜]
+variable {n : ℕ∞ω} {𝕜 B B' F F' : Type*} [NontriviallyNormedField 𝕜]
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   [TopologicalSpace B] [ChartedSpace HB B]
@@ -31,25 +31,30 @@ variable {n : ℕ∞ω} {𝕜 B B' F : Type*} [NontriviallyNormedField 𝕜]
   {EF : Type*} [NormedAddCommGroup EF] [NormedSpace 𝕜 EF]
   {HF : Type*} [TopologicalSpace HF] {IF : ModelWithCorners 𝕜 EF HF}
   [TopologicalSpace F] [ChartedSpace HF F]
+  {EF' : Type*} [NormedAddCommGroup EF'] [NormedSpace 𝕜 EF']
+  {HF' : Type*} [TopologicalSpace HF'] {IF' : ModelWithCorners 𝕜 EF' HF'}
+  [TopologicalSpace F'] [ChartedSpace HF' F']
   {P Q : B → Type*}
   [TopologicalSpace (TotalSpace F P)] [∀ b, TopologicalSpace (P b)] [FiberBundle F P]
   [∀ b, Nonempty (P b)]
-  [TopologicalSpace (TotalSpace F Q)] [∀ b, TopologicalSpace (Q b)] [FiberBundle F Q]
+  [TopologicalSpace (TotalSpace F' Q)] [∀ b, TopologicalSpace (Q b)] [FiberBundle F' Q]
   [∀ b, Nonempty (Q b)]
   {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
 
 /-- Pullback along a smooth base map preserves smoothness of fibrewise maps. -/
 theorem contMDiff_fiberwiseMap_pullback (f : K) (hf : ContMDiff IB' IB n f)
     {φ : ∀ b, P b → Q b}
-    (hφ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) φ)) :
-    ContMDiff (IB'.prod IF) (IB'.prod IF) n
-      (fiberwiseMap (F := F) (E := (f : B' → B) *ᵖ P) (E' := (f : B' → B) *ᵖ Q)
+    (hφ : ContMDiff (IB.prod IF) (IB.prod IF') n
+      (fiberwiseMap (F := F) (F' := F') φ)) :
+    ContMDiff (IB'.prod IF) (IB'.prod IF') n
+      (fiberwiseMap (F := F) (F' := F')
+        (E := (f : B' → B) *ᵖ P) (E' := (f : B' → B) *ᵖ Q)
         fun b ↦ φ (f b)) := by
-  let q : ManifoldTotalSpace F ((f : B' → B) *ᵖ P) → TotalSpace F ((f : B' → B) *ᵖ Q) :=
+  let q : ManifoldTotalSpace F ((f : B' → B) *ᵖ P) → TotalSpace F' ((f : B' → B) *ᵖ Q) :=
     fun x ↦ ⟨((homeomorph F ((f : B' → B) *ᵖ P)).symm x).proj,
       φ _ ((homeomorph F ((f : B' → B) *ᵖ P)).symm x).snd⟩
-  have h : ContMDiff (IB'.prod IF) (IB'.prod IF) n
-      (fun x ↦ homeomorph F ((f : B' → B) *ᵖ Q) (q x)) := by
+  have h : ContMDiff (IB'.prod IF) (IB'.prod IF') n
+      (fun x ↦ homeomorph F' ((f : B' → B) *ᵖ Q) (q x)) := by
     refine (contMDiff_pullback_iff f hf).2 ⟨?_, ?_⟩
     · exact contMDiff_proj n F ((f : B' → B) *ᵖ P) IB' IF
     · convert hφ.comp (contMDiff_pullbackLift (E := P) n IF f hf) using 1

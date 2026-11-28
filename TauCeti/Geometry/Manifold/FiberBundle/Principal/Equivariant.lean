@@ -54,8 +54,8 @@ variable {n : ℕ∞ω} {𝕜 B G : Type*} [NontriviallyNormedField 𝕜]
 theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
     (e : ∀ b, P b ≃ Q b)
     (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
-    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e b)) :
-    ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ (e b).symm) := by
+    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) (F' := G) fun b ↦ e b)) :
+    ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) (F' := G) fun b ↦ (e b).symm) := by
   classical
   have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   intro q
@@ -93,7 +93,7 @@ No separate smoothness hypothesis on the inverse is required. -/
 def diffeomorphOfEquivariant [LieGroup IG n G]
     (e : ∀ b, P b ≃ Q b)
     (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
-    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e b)) :
+    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) (F' := G) fun b ↦ e b)) :
     Diffeomorph (IB.prod IG) (IB.prod IG) (ManifoldTotalSpace G P) (ManifoldTotalSpace G Q) n where
   toFun := fiberwiseMap fun b ↦ e b
   invFun := fiberwiseMap fun b ↦ (e b).symm
@@ -110,7 +110,7 @@ section
 
 variable [LieGroup IG n G] (e : ∀ b, P b ≃ Q b)
   (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
-  (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e b))
+  (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) (F' := G) fun b ↦ e b))
 
 /-- On each fibre the induced diffeomorphism is the given equivalence. -/
 @[simp]
@@ -184,7 +184,7 @@ variable {R : B → Type*}
 /-- Passing from smooth equivariant equivalences to diffeomorphisms preserves composition. -/
 theorem diffeomorphOfEquivariant_trans (e' : ∀ b, Q b ≃ R b)
     (he' : ∀ b (g : G) (q : Q b), e' b (op g • q) = op g • e' b q)
-    (hf' : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e' b)) :
+    (hf' : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) (F' := G) fun b ↦ e' b)) :
     diffeomorphOfEquivariant G (fun b ↦ (e b).trans (e' b))
       (fun b g p ↦ by simp only [_root_.Equiv.trans_apply, he, he'])
       (by simpa only [_root_.Equiv.coe_trans] using

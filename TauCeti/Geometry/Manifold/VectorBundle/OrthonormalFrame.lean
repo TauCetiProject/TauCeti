@@ -665,7 +665,7 @@ theorem contMDiff_fiberwiseMap_map {Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b}
     (hΦ : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F')) n
       (fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.snd⟩ : TotalSpace F' E'))) :
     ContMDiff (IB.prod (Unitary.model (V →L[ℝ] V))) (IB.prod (Unitary.model (V →L[ℝ] V))) n
-      (ManifoldTotalSpace.fiberwiseMap (F := unitary (V →L[ℝ] V))
+      (ManifoldTotalSpace.fiberwiseMap (F := unitary (V →L[ℝ] V)) (F' := unitary (V →L[ℝ] V))
         (fun b ↦ Fiber.map (F := F) (F' := F') (V := V) Φ (b := b))) := by
   let f₀ : ManifoldTotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) →
       TotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) :=
@@ -696,7 +696,7 @@ of fibrewise linear isometric equivalences `Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b`
 frame bundles is `C^n` if and only if `Φ` is `C^n` on vector-bundle total spaces. -/
 theorem contMDiff_fiberwiseMap_map_iff {Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b} :
     ContMDiff (IB.prod (Unitary.model (V →L[ℝ] V))) (IB.prod (Unitary.model (V →L[ℝ] V))) n
-        (ManifoldTotalSpace.fiberwiseMap (F := unitary (V →L[ℝ] V))
+        (ManifoldTotalSpace.fiberwiseMap (F := unitary (V →L[ℝ] V)) (F' := unitary (V →L[ℝ] V))
           (fun b ↦ Fiber.map (F := F) (F' := F') (V := V) Φ (b := b))) ↔
       ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F')) n
         (fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.snd⟩ : TotalSpace F' E')) := by
