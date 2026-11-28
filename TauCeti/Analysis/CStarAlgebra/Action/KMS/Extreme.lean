@@ -16,7 +16,9 @@ import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Separating
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.TomitaCommutation
+import TauCeti.Analysis.CStarAlgebra.OrderUnit
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -82,14 +84,13 @@ theorem IsKMSState.gnsVectorFunctional_mul_entireExtension_mul_I (hω : α.IsKMS
         exact congrArg (⟪f.gnsVector, ·⟫_ℂ) (hcomm a (π (α.entireExtension b (β * I)) f.gnsVector))
     _ = ⟪(f.toPreGNS (star a) : f.GNS),
           z (f.toPreGNS (α.entireExtension b (β * I)) : f.GNS)⟫_ℂ := by
-        rw [show π a = star (π (star a)) by rw [map_star, star_star], star_eq_adjoint,
-          adjoint_inner_right, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
-          f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one, mul_one, f.toGNS_apply, f.toGNS_apply]
+        nth_rw 1 [← star_star a]
+        rw [map_star, star_eq_adjoint, adjoint_inner_right,
+          f.gnsNonUnitalStarAlgHom_apply_gnsVector, f.gnsNonUnitalStarAlgHom_apply_gnsVector]
     _ = ⟪(f.toPreGNS (star a * star b) : f.GNS), z (f.toPreGNS 1 : f.GNS)⟫_ℂ :=
         hω.inner_apply_toPreGNS_entireExtension_mul_I hz_adj (star a) hb
     _ = ⟪π (star (b * a)) f.gnsVector, z f.gnsVector⟫_ℂ := by
-        rw [star_mul, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one,
-          f.toGNS_apply, f.toGNS_apply]
+        rw [star_mul, f.gnsNonUnitalStarAlgHom_apply_gnsVector, f.gnsVector_def]
     _ = f.gnsVectorFunctional z (b * a) := by
         rw [map_star, star_eq_adjoint, adjoint_inner_left, ← hcomm, gnsVectorFunctional_apply]
         simp [π, gnsStarAlgHom_apply]
@@ -178,8 +179,8 @@ private theorem comm_entireExtension_mul_I_of_gnsRadonNikodym (hω : α.IsKMSSta
   have ha := mem_entireAnalytic.mp a.property
   calc ⟪f.toGNS (a : A), (B * π c) (f.toPreGNS 1)⟫_ℂ
       = ⟪(f.toPreGNS (a : A) : f.GNS), B (f.toPreGNS c)⟫_ℂ := by
-        rw [mul_apply_eq_comp, ← f.toGNS_apply 1, f.gnsNonUnitalStarAlgHom_apply_toGNS,
-          mul_one, f.toGNS_apply, f.toGNS_apply]
+        rw [mul_apply_eq_comp, ← f.gnsVector_def, f.gnsNonUnitalStarAlgHom_apply_gnsVector,
+          f.toGNS_apply]
     _ = ⟪(f.toPreGNS ((a : A) * star b) : f.GNS), B (f.toPreGNS 1)⟫_ℂ :=
         hω.inner_apply_toPreGNS_entireExtension_mul_I hB_adj (a : A) hb
     _ = φ (b * star (a : A)) := by
@@ -187,8 +188,8 @@ private theorem comm_entireExtension_mul_I_of_gnsRadonNikodym (hω : α.IsKMSSta
           inner_gnsRadonNikodym_toGNS hφ]; simp [star_mul]
     _ = φ (star (a : A) * c) := (hkms (star (a : A)) ha.star b hb).symm
     _ = ⟪f.toGNS (a : A), (T * π c) f.gnsVector⟫_ℂ := by
-        rw [mul_apply_eq_comp, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
-          mul_one, inner_gnsRadonNikodym_toGNS hφ]
+        rw [mul_apply_eq_comp, f.gnsNonUnitalStarAlgHom_apply_gnsVector, ← f.toGNS_apply,
+          inner_gnsRadonNikodym_toGNS hφ]
     _ = ⟪f.toGNS (a : A), (π c * B) (f.toPreGNS 1)⟫_ℂ := by
         rw [← hT_comm _ ⟨c, rfl⟩, mul_apply_eq_comp, mul_apply_eq_comp, ← gnsVector_def, hBΩ]
 
@@ -232,18 +233,9 @@ theorem IsKMSState.gnsRadonNikodym_mem_center (hω : α.IsKMSState β ω) {φ : 
       using (comm_entireExtension_mul_I_of_gnsRadonNikodym hω hφ hkms hB_vN hBΩ
         (isEntireAnalytic_entireExtension α c (-(β * I)))).symm
   -- 4. Conclude `B = T` using cyclicity of `Ω`, hence `T ∈ M_ω ⊓ M_ω'`.
-  have hBT : B = T := by
-    ext v; refine f.denseRange_toGNS.induction_on v (isClosed_eq (by fun_prop) (by fun_prop))
-      fun a => ?_
-    calc B (f.toGNS a) = (B * π a) f.gnsVector := by
-          rw [mul_apply_eq_comp, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
-            mul_one]
-      _ = (T * π a) f.gnsVector := by
-          rw [mul_apply_eq_comp, ← f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hB_comm a _,
-            hBΩ, f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hT_comm a _, mul_apply_eq_comp]
-      _ = T (f.toGNS a) := by
-          rw [mul_apply_eq_comp, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
-            mul_one]
+  have hBT : B = T := f.eq_of_apply_gnsVector_eq
+    (by simpa only [← SetLike.mem_coe, coe_commutant_gnsVonNeumannAlgebra] using hB_comm)
+    (by simpa only [← SetLike.mem_coe, coe_commutant_gnsVonNeumannAlgebra] using hT_comm) hBΩ
   exact VonNeumannAlgebra.mem_inf.mpr ⟨by simpa only [f, T, ← hBT] using hB_vN, hT_comm⟩
 
 /-- Normalizing the vector functional of a positive commutant operator by `t > 0` yields a positive
@@ -274,113 +266,12 @@ private theorem isKMSState_kmsStateOfCentralPositive (hω : α.IsKMSState β ω)
       using hyΩ)
     fun a _ b hb => hω.gnsVectorFunctional_mul_entireExtension_mul_I hyZ a hb
 
-/-- Operator order bounds `(1/4) • 1 ≤ y ≤ (3/4) • 1` for
-`y = (1/2) • 1 + (4 (‖z‖ + 1))⁻¹ • z` when `z` is self-adjoint. -/
-private theorem half_add_smul_bounds {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {z : H →L[ℂ] H} (hz : IsSelfAdjoint z) :
-    let r : ℝ := 4 * (‖z‖ + 1)
-    let y : H →L[ℂ] H := (2⁻¹ : ℂ) • 1 + ((r⁻¹ : ℝ) : ℂ) • z
-    algebraMap ℝ (H →L[ℂ] H) (1 / 4) ≤ y ∧ y ≤ algebraMap ℝ (H →L[ℂ] H) (3 / 4) := by
-  intro r y
-  have hr : 0 < r := by positivity
-  have h1 : (0 : H →L[ℂ] H) ≤ 1 := ContinuousLinearMap.nonneg_iff_isPositive.mpr isPositive_one
-  have hr_norm : r⁻¹ * ‖z‖ ≤ 1 / 4 := by
-    have : 4 * ‖z‖ ≤ r := by simp only [r]; linarith
-    rw [inv_mul_le_iff₀ hr]; linarith
-  have hlo : algebraMap ℝ (H →L[ℂ] H) (-(1 / 4)) ≤ (r⁻¹ : ℝ) • z := by
-    refine (smul_le_smul_of_nonneg_right (neg_le_neg hr_norm) h1).trans ?_
-    calc (-(r⁻¹ * ‖z‖)) • (1 : H →L[ℂ] H)
-        = r⁻¹ • (-algebraMap ℝ (H →L[ℂ] H) ‖z‖) := by
-          rw [Algebra.algebraMap_eq_smul_one, neg_smul, smul_neg, smul_smul]
-      _ ≤ r⁻¹ • z :=
-        smul_le_smul_of_nonneg_left hz.neg_algebraMap_norm_le_self (inv_nonneg.mpr hr.le)
-  have hhi : (r⁻¹ : ℝ) • z ≤ algebraMap ℝ (H →L[ℂ] H) (1 / 4) := by
-    refine (smul_le_smul_of_nonneg_left hz.le_algebraMap_norm_self (inv_nonneg.mpr hr.le)).trans ?_
-    calc r⁻¹ • algebraMap ℝ (H →L[ℂ] H) ‖z‖
-        = (r⁻¹ * ‖z‖) • (1 : H →L[ℂ] H) := by rw [Algebra.algebraMap_eq_smul_one, smul_smul]
-      _ ≤ algebraMap ℝ (H →L[ℂ] H) (1 / 4) := by
-          rw [Algebra.algebraMap_eq_smul_one]; exact smul_le_smul_of_nonneg_right hr_norm h1
-  have hy_eq : y = algebraMap ℝ (H →L[ℂ] H) (1 / 2) + (r⁻¹ : ℝ) • z := by
-    simp only [y, Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, one_div,
-      Complex.ofReal_inv, Complex.ofReal_ofNat]
-  rw [hy_eq]
-  refine ⟨?_, ?_⟩
-  · calc algebraMap ℝ (H →L[ℂ] H) (1 / 4)
-        = algebraMap ℝ (H →L[ℂ] H) (1 / 2) + algebraMap ℝ (H →L[ℂ] H) (-(1 / 4)) := by
-          rw [← map_add]; norm_num
-      _ ≤ algebraMap ℝ (H →L[ℂ] H) (1 / 2) + (r⁻¹ : ℝ) • z := add_le_add_right hlo _
-  · calc algebraMap ℝ (H →L[ℂ] H) (1 / 2) + (r⁻¹ : ℝ) • z
-        ≤ algebraMap ℝ (H →L[ℂ] H) (1 / 2) + algebraMap ℝ (H →L[ℂ] H) (1 / 4) :=
-          add_le_add_right hhi _
-      _ = algebraMap ℝ (H →L[ℂ] H) (3 / 4) := by rw [← map_add]; norm_num
-
-/-- Quadratic-form bounds `(1/4)‖v‖² ≤ Re ⟪y v, v⟫ ≤ (3/4)‖v‖²` for the perturbation
-`y = (1/2) • 1 + (4 (‖z‖ + 1))⁻¹ • z` when `z` is self-adjoint. -/
-private theorem re_inner_half_add_smul_bounds {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {z : H →L[ℂ] H} (hz : IsSelfAdjoint z) (v : H) :
-    let r : ℝ := 4 * (‖z‖ + 1)
-    let y : H →L[ℂ] H := (2⁻¹ : ℂ) • 1 + ((r⁻¹ : ℝ) : ℂ) • z
-    (1 / 4 : ℝ) * ‖v‖ ^ 2 ≤ (⟪y v, v⟫_ℂ).re ∧ (⟪y v, v⟫_ℂ).re ≤ (3 / 4 : ℝ) * ‖v‖ ^ 2 := by
-  intro r y
-  obtain ⟨hlo, hhi⟩ := half_add_smul_bounds hz
-  have h1 := (Complex.le_def.mp ((ContinuousLinearMap.le_def.mp hlo).inner_nonneg_left v)).1
-  have h2 := (Complex.le_def.mp ((ContinuousLinearMap.le_def.mp hhi).inner_nonneg_left v)).1
-  have hv : (⟪v, v⟫_ℂ).re = ‖v‖ ^ 2 := by rw [← RCLike.re_to_complex, inner_self_eq_norm_sq]
-  simp only [sub_apply, Algebra.algebraMap_eq_smul_one, smul_apply, one_apply_eq_self,
-    inner_sub_left, ← Complex.coe_smul, inner_smul_left, Complex.conj_ofReal, Complex.sub_re,
-    Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero, Complex.zero_re,
-    hv, sub_nonneg] at h1 h2
-  exact ⟨h1, h2⟩
-
-/-- For a self-adjoint operator `z`, `y = (1/2) • 1 + (4 (‖z‖ + 1))⁻¹ • z` and `1 - y` are
-both positive. -/
-private theorem isPositive_half_add_smul {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {z : H →L[ℂ] H} (hz : IsSelfAdjoint z) :
-    let y : H →L[ℂ] H := (2⁻¹ : ℂ) • 1 + (((4 * (‖z‖ + 1))⁻¹ : ℝ) : ℂ) • z
-    y.IsPositive ∧ (1 - y).IsPositive := by
-  intro y
-  obtain ⟨hlo, hhi⟩ := half_add_smul_bounds hz
-  have h1 : (0 : H →L[ℂ] H) ≤ 1 := ContinuousLinearMap.nonneg_iff_isPositive.mpr isPositive_one
-  have h0 : (0 : H →L[ℂ] H) ≤ algebraMap ℝ (H →L[ℂ] H) (1 / 4) := by
-    rw [Algebra.algebraMap_eq_smul_one]
-    exact smul_nonneg (by norm_num) h1
-  have h34 : algebraMap ℝ (H →L[ℂ] H) (3 / 4) ≤ 1 := by
-    rw [Algebra.algebraMap_eq_smul_one]
-    simpa using smul_le_smul_of_nonneg_right (by norm_num : (3 / 4 : ℝ) ≤ 1) h1
-  have h1y : (0 : H →L[ℂ] H) ≤ 1 - y := sub_nonneg.mpr (hhi.trans h34)
-  exact ⟨ContinuousLinearMap.nonneg_iff_isPositive.mp (h0.trans hlo),
-    ContinuousLinearMap.nonneg_iff_isPositive.mp h1y⟩
-
 /-- The canonical GNS vector of a KMS state has norm one. -/
 private theorem IsKMSState.norm_gnsVector (hω : α.IsKMSState β ω) :
     ‖ω.toPositiveLinearMap.gnsVector‖ = 1 :=
   ω.toPositiveLinearMap.norm_gnsVector (by
     simpa using (PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one ω).symm.trans
       (by rw [hω.norm_eq_one, Complex.ofReal_one]))
-
-/-- A central operator in the GNS representation of a β-KMS state is uniquely determined by its
-vector functional on `Ω`. -/
-private theorem IsKMSState.eq_smul_one_of_gnsVectorFunctional_eq (hω : α.IsKMSState β ω)
-    {T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS}
-    (hT : T ∈ ω.toPositiveLinearMap.gnsVonNeumannAlgebra ⊓
-      ω.toPositiveLinearMap.gnsVonNeumannAlgebra.commutant)
-    {c : ℂ} (hval : ∀ a : A, ω.toPositiveLinearMap.gnsVectorFunctional T a = c * ω a) :
-    T = c • (1 : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) := by
-  let f := ω.toPositiveLinearMap
-  obtain ⟨hsubM, hsubM'⟩ := VonNeumannAlgebra.mem_inf.mp
-    (sub_mem hT (SMulMemClass.smul_mem c (one_mem _)))
-  have hvan : f.gnsVectorFunctional (T - c • (1 : f.GNS →L[ℂ] f.GNS)) = 0 := by
-    ext a; simp [gnsVectorFunctional_sub, gnsVectorFunctional_smul,
-      show f.gnsVectorFunctional T a = c * f a from hval a]
-  have hsubM_adj : T - c • (1 : f.GNS →L[ℂ] f.GNS) ∈
-      VonNeumannAlgebra.adjoin (Set.range f.gnsStarAlgHom) := by
-    rwa [← gnsVonNeumannAlgebra_eq_adjoin_range_gnsStarAlgHom]
-  have hsubM'_cent : T - c • (1 : f.GNS →L[ℂ] f.GNS) ∈
-      Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom) := by
-    simpa only [← SetLike.mem_coe, coe_commutant_gnsVonNeumannAlgebra] using hsubM'
-  exact sub_eq_zero.mp (hω.eq_zero_of_apply_toPreGNS_one_eq_zero hsubM_adj (by
-    rw [← gnsVector_def]
-    exact apply_gnsVector_eq_zero_of_gnsVectorFunctional_eq_zero f hsubM'_cent hvan))
 
 /-- Self-adjoint operators in the GNS centre of an extreme β-KMS state are scalar multiples of
 the identity. -/
@@ -393,19 +284,39 @@ private theorem eq_smul_one_of_mem_extremePoints_of_isSelfAdjoint (hω : α.IsKM
     ∃ c : ℂ, z = c • (1 : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) := by
   -- Shift and scale `z` into `[1/4, 3/4]` via `y = (1/2) • 1 + (4 (‖z‖ + 1))⁻¹ • z` so that
   -- `ω = t ω₁ + (1 - t) ω₂` is a proper convex combination of KMS vector states `ω₁, ω₂` of `y`
-  -- and `1 - y`; extremality forces `ω₁ = ω`, hence `y = t • 1` by uniqueness on the centre.
+  -- and `1 - y`; extremality forces `ω₁ = ω`, hence `y = t • 1` by uniqueness on the commutant.
   let f := ω.toPositiveLinearMap
   let Z : VonNeumannAlgebra f.GNS := f.gnsVonNeumannAlgebra ⊓ f.gnsVonNeumannAlgebra.commutant
   set r : ℝ := 4 * (‖z‖ + 1); have hr : 0 < r := by positivity
   let y : f.GNS →L[ℂ] f.GNS := (2⁻¹ : ℂ) • 1 + ((r⁻¹ : ℝ) : ℂ) • z
   have hyZ : y ∈ Z := add_mem (SMulMemClass.smul_mem _ (one_mem Z)) (SMulMemClass.smul_mem _ hz)
   have h1yZ : (1 : f.GNS →L[ℂ] f.GNS) - y ∈ Z := sub_mem (one_mem Z) hyZ
-  obtain ⟨hy_pos, h1y_pos⟩ := isPositive_half_add_smul hz_sa
+  have hr_norm : |r⁻¹| * ‖z‖ ≤ 1 / 4 := by
+    rw [abs_of_pos (inv_pos.mpr hr), inv_mul_le_iff₀ hr]
+    simp only [r]
+    linarith [norm_nonneg z]
+  have hy_eq : y = algebraMap ℝ (f.GNS →L[ℂ] f.GNS) (1 / 2) + r⁻¹ • z := by
+    simp only [y, Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, one_div,
+      Complex.ofReal_inv, Complex.ofReal_ofNat]
+  have hy_lo : ((1 / 4 : ℝ) : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) ≤ y := by
+    have h := hz_sa.algebraMap_sub_le_algebraMap_add_smul (1 / 2) hr_norm
+    norm_num at h
+    simpa only [hy_eq, Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul] using h
+  have hy_hi : y ≤ ((3 / 4 : ℝ) : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) := by
+    have h := hz_sa.algebraMap_add_smul_le_algebraMap_add (1 / 2) hr_norm
+    norm_num at h
+    simpa only [hy_eq, Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul] using h
+  have hy_pos : y.IsPositive :=
+    ContinuousLinearMap.IsPositive.of_smul_one_le (c := 1 / 4) (by norm_num) hy_lo
+  have h1y_pos : (1 - y).IsPositive :=
+    ContinuousLinearMap.IsPositive.one_sub_of_le_smul_one (b := 3 / 4) (by norm_num) hy_hi
   have hΩ_norm : ‖f.gnsVector‖ = 1 := hω.norm_gnsVector
   set t : ℝ := (⟪y f.gnsVector, f.gnsVector⟫_ℂ).re
   have ht_bounds : (1 / 4 : ℝ) ≤ t ∧ t ≤ 3 / 4 := by
-    simpa only [t, y, r, hΩ_norm, one_pow, mul_one] using
-      re_inner_half_add_smul_bounds hz_sa f.gnsVector
+    have hlo := ContinuousLinearMap.mul_norm_sq_le_re_inner_of_smul_one_le hy_lo f.gnsVector
+    have hhi := ContinuousLinearMap.re_inner_le_mul_norm_sq_of_le_smul_one hy_hi f.gnsVector
+    rw [hΩ_norm, one_pow, mul_one, RCLike.re_to_complex] at hlo hhi
+    exact ⟨hlo, hhi⟩
   have ht_pos : 0 < t := by linarith
   have h1t_pos : 0 < 1 - t := by linarith
   have hyΩ : ⟪f.gnsVector, y f.gnsVector⟫_ℂ = (t : ℂ) := by
@@ -435,16 +346,23 @@ private theorem eq_smul_one_of_mem_extremePoints_of_isSelfAdjoint (hω : α.IsKM
       (isKMSState_kmsStateOfCentralPositive hω hyZ hy_pos ht_pos hyΩ)) _
     (toWeakDual_mem_kmsStates_iff.mpr
       (isKMSState_kmsStateOfCentralPositive hω h1yZ h1y_pos h1t_pos h1yΩ)) hseg
-  have hy_eq : y = (t : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) :=
-    hω.eq_smul_one_of_gnsVectorFunctional_eq hyZ fun a => by
-      have heval := DFunLike.congr_fun hω₁_eq a
-      simp only [StrongDual.toWeakDual_apply, PositiveContinuousLinearMap.coe_toContinuousLinearMap,
-        kmsStateOfCentralPositive_apply _ _ ht_pos] at heval
-      simpa [← mul_assoc, mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr ht_pos.ne'), f] using
-        congrArg (fun w => (t : ℂ) * w) heval
+  have hy_smul : y = (t : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) := by
+    refine f.eq_of_gnsVectorFunctional_eq
+      (by simpa only [← SetLike.mem_coe, coe_commutant_gnsVonNeumannAlgebra] using
+        (VonNeumannAlgebra.mem_inf.mp hyZ).2)
+      (fun _ _ => by simp) ?_
+    ext a
+    have heval := DFunLike.congr_fun hω₁_eq a
+    simp only [StrongDual.toWeakDual_apply, PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+      kmsStateOfCentralPositive_apply _ _ ht_pos] at heval
+    have hmul := congrArg (fun w => (t : ℂ) * w) heval
+    rw [← mul_assoc, ← Complex.ofReal_mul, mul_inv_cancel₀ ht_pos.ne', Complex.ofReal_one,
+      one_mul] at hmul
+    simp only [gnsVectorFunctional_smul, smul_apply, gnsVectorFunctional_one, smul_eq_mul]
+    exact hmul
   refine ⟨(r : ℂ) * ((t : ℂ) - 2⁻¹), ?_⟩
   have hrz : ((r⁻¹ : ℝ) : ℂ) • z = ((t : ℂ) - 2⁻¹) • (1 : f.GNS →L[ℂ] f.GNS) := by
-    rw [sub_smul]; exact eq_sub_of_add_eq' hy_eq
+    rw [sub_smul]; exact eq_sub_of_add_eq' hy_smul
   simpa [smul_smul, mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr hr.ne')] using
     congrArg (fun S : f.GNS →L[ℂ] f.GNS => (r : ℂ) • S) hrz
 

@@ -33,6 +33,7 @@ case, `J₀` fixes the cyclic GNS vector `Ω = [1]`
 ## Main statements
 
 * `TauCeti.CStarAction.IsKMSState.modularConjugation_apply_toGNS`: `J₀ [a] = [α_{iβ/2}(a⋆)]`.
+* `TauCeti.CStarAction.IsKMSState.modularConjugation_unique`: uniqueness of `J₀`.
 * `TauCeti.CStarAction.IsKMSState.inner_modularConjugation`: `⟪J₀ u, J₀ v⟫ = ⟪v, u⟫`.
 * `TauCeti.CStarAction.IsKMSState.conjOperator_modularConjugation_mem_commutant`: `J₀ M J₀ ⊆ M'`.
 
@@ -152,6 +153,20 @@ theorem IsKMSState.modularConjugation_apply_toGNS (hω : α.IsKMSState β ω) {a
       ω.toPositiveLinearMap.toGNS (α.entireExtension (star a) ((β / 2 : ℝ) * I)) :=
   modularConjugationIsometry_apply_toGNS hω ha
 
+/-- **Uniqueness of the modular conjugation:** any antiunitary on `H_ω` satisfying
+`J [a] = [α_{iβ/2}(a⋆)]` on all entire analytic classes equals `hω.modularConjugation`. -/
+theorem IsKMSState.modularConjugation_unique (hω : α.IsKMSState β ω)
+    (J : ω.toPositiveLinearMap.GNS ≃ₗᵢ⋆[ℂ] ω.toPositiveLinearMap.GNS)
+    (hJ : ∀ a, α.IsEntireAnalytic a →
+      J (ω.toPositiveLinearMap.toGNS a) =
+        ω.toPositiveLinearMap.toGNS (α.entireExtension (star a) ((β / 2 : ℝ) * I))) :
+    J = hω.modularConjugation := by
+  ext v
+  refine (denseRange_toGNS_entireAnalytic α ω.toPositiveLinearMap).induction_on v
+    (isClosed_eq J.continuous hω.modularConjugation.continuous) fun a => ?_
+  have ha := mem_entireAnalytic.mp a.property
+  rw [hJ a ha, hω.modularConjugation_apply_toGNS ha]
+
 /-- The modular conjugation is an involution: `J₀ (J₀ v) = v`. -/
 @[simp] theorem IsKMSState.modularConjugation_modularConjugation (hω : α.IsKMSState β ω)
     (v : ω.toPositiveLinearMap.GNS) :
@@ -219,8 +234,8 @@ theorem IsKMSState.modularConjugation_gnsImplementingGroup (hω : α.IsKMSState 
     fun s a => hω.apply_action hβ s a
   refine (denseRange_toGNS_entireAnalytic α ω.toPositiveLinearMap).induction_on v
     (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
-  have ha := mem_entireAnalytic.mp a.property; set r : ℝ := Multiplicative.toAdd t
-  rw [show t = Multiplicative.ofAdd r from (ofAdd_toAdd t).symm]
+  have ha := mem_entireAnalytic.mp a.property
+  obtain ⟨r, rfl⟩ := Multiplicative.ofAdd.surjective t
   rw [α.gnsImplementingGroup_apply_toGNS hinv, hω.modularConjugation_apply_toGNS (ha.apply r),
     hω.modularConjugation_apply_toGNS ha, α.gnsImplementingGroup_apply_toGNS hinv,
     ← map_star, entireExtension_action, ← entireExtension_add_ofReal, add_comm]

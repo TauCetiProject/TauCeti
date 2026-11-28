@@ -187,13 +187,15 @@ theorem differentiable_integral_gaussianKernel_smul {E : Type*} [NormedAddCommGr
 
 private theorem heatKernel_one_div_four_mul_sq_eq_gaussianDensity {c : ℝ} (hc : 0 < c) (t : ℝ) :
     TauCeti.heatKernel (1 / (4 * c ^ 2)) t = Real.gaussianDensity c t := by
+  have hc0 : c ≠ 0 := hc.ne'
+  have hvar : 4 * π * (1 / (4 * c ^ 2)) = π / c ^ 2 := by field_simp
+  have hexp : -(t ^ 2 / (4 * (1 / (4 * c ^ 2)))) = -(c * t) ^ 2 := by field_simp
+  have hsqrt : √(4 * π * (1 / (4 * c ^ 2))) = √π / c := by
+    rw [hvar, Real.sqrt_div pi_pos.le, Real.sqrt_sq hc.le]
   rw [TauCeti.heatKernel_apply, Real.gaussianDensity_def]
   simp only [Module.finrank_self, Nat.cast_one, Real.norm_eq_abs, sq_abs, neg_div,
     Real.rpow_neg (by positivity : 0 ≤ 4 * π * (1 / (4 * c ^ 2))), ← Real.sqrt_eq_rpow]
-  have hsqrt : √(4 * π * (1 / (4 * c ^ 2))) = √π / c := by
-    rw [show 4 * π * (1 / (4 * c ^ 2)) = π / c ^ 2 by field_simp, Real.sqrt_div pi_pos.le,
-      Real.sqrt_sq hc.le]
-  rw [hsqrt, show -(t ^ 2 / (4 * (1 / (4 * c ^ 2)))) = -(c * t) ^ 2 by field_simp, inv_div]
+  rw [hsqrt, hexp, inv_div]
   ring
 
 /-- As `c → ∞`, integrating a bounded continuous function against `Complex.gaussianKernel c · 0`

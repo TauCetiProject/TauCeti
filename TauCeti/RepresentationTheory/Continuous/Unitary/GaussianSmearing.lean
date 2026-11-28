@@ -26,7 +26,8 @@ converging strongly to `R` at `z = 0` as `c → ∞` (`tendsto_gaussianSmear_app
 ## Main statements
 
 * `ContRepresentation.IsUnitary.differentiable_gaussianSmear_apply`, `locallyBounded_gaussianSmear`,
-  `star_gaussianSmear_conj`, `gaussianSmear_ofReal`, `tendsto_gaussianSmear_apply`.
+  `gaussianSmear_zero`, `gaussianSmear_add`, `gaussianSmear_smul`, `star_gaussianSmear_conj`,
+  `gaussianSmear_ofReal`, `tendsto_gaussianSmear_apply`.
 -/
 
 public section
@@ -85,6 +86,55 @@ theorem gaussianSmear_apply (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g 
     hU.gaussianSmear hcont R c z v =
       ∫ t : ℝ, Complex.gaussianKernel c t z • U (.ofAdd t) (R (U (.ofAdd (-t)) v)) := by
   simp [gaussianSmear, LinearMap.mkContinuous_apply]
+
+/-- Gaussian smearing of the zero operator is zero. -/
+@[simp]
+theorem gaussianSmear_zero (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (c : ℝ) (z : ℂ) :
+    hU.gaussianSmear hcont 0 c z = 0 := by
+  ext v; simp
+
+/-- Gaussian smearing with parameter `0` is zero. -/
+@[simp]
+theorem gaussianSmear_zero_param (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (R : H →L[ℂ] H) (z : ℂ) :
+    hU.gaussianSmear hcont R 0 z = 0 := by
+  ext v; simp
+
+/-- Gaussian smearing is additive in the operator argument. -/
+@[simp]
+theorem gaussianSmear_add (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (R₁ R₂ : H →L[ℂ] H) (c : ℝ) (z : ℂ) :
+    hU.gaussianSmear hcont (R₁ + R₂) c z =
+      hU.gaussianSmear hcont R₁ c z + hU.gaussianSmear hcont R₂ c z := by
+  ext v
+  simp only [add_apply, gaussianSmear_apply, map_add, smul_add]
+  exact integral_add (integrable_gaussianSmear hU hcont R₁ c z v)
+    (integrable_gaussianSmear hU hcont R₂ c z v)
+
+/-- Gaussian smearing negates with the operator argument. -/
+@[simp]
+theorem gaussianSmear_neg (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (R : H →L[ℂ] H) (c : ℝ) (z : ℂ) :
+    hU.gaussianSmear hcont (-R) c z = -hU.gaussianSmear hcont R c z := by
+  ext v
+  simp only [neg_apply, gaussianSmear_apply, map_neg, smul_neg, integral_neg]
+
+/-- Gaussian smearing is subtractive in the operator argument. -/
+@[simp]
+theorem gaussianSmear_sub (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (R₁ R₂ : H →L[ℂ] H) (c : ℝ) (z : ℂ) :
+    hU.gaussianSmear hcont (R₁ - R₂) c z =
+      hU.gaussianSmear hcont R₁ c z - hU.gaussianSmear hcont R₂ c z := by
+  rw [sub_eq_add_neg, gaussianSmear_add, gaussianSmear_neg, sub_eq_add_neg]
+
+/-- Gaussian smearing commutes with complex scalar multiplication in the operator argument. -/
+@[simp]
+theorem gaussianSmear_smul (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (r : ℂ) (R : H →L[ℂ] H) (c : ℝ) (z : ℂ) :
+    hU.gaussianSmear hcont (r • R) c z = r • hU.gaussianSmear hcont R c z := by
+  ext v
+  simp only [smul_apply, gaussianSmear_apply, map_smul, smul_comm _ r, integral_smul]
 
 /-- Complex-time Gaussian smearing is strongly entire in `z`. -/
 theorem differentiable_gaussianSmear_apply (hU : U.IsUnitary)

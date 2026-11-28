@@ -175,13 +175,19 @@ theorem gnsImplementingGroup_commute_gnsRadonNikodym
   refine ext_inner_left ℂ fun u =>
     f.denseRange_toGNS.induction_on u (isClosed_eq (by fun_prop) (by fun_prop)) fun a =>
       f.denseRange_toGNS.induction_on v (isClosed_eq (by fun_prop) (by fun_prop)) fun b => ?_
-  simp only [mul_apply_eq_comp]
-  rw [(ContinuousLinearMap.adjoint_inner_left (U t) _ _).symm, hU.adjoint_eq_inv t,
-    α.gnsImplementingGroup_apply_toGNS hf, α.gnsImplementingGroup_apply_toGNS hf,
-    inner_gnsRadonNikodym_toGNS hfg, inner_gnsRadonNikodym_toGNS hfg,
-    show star (α t⁻¹ a) * b = α t⁻¹ (star a * α t b) by
-      rw [map_mul, map_star, ← CStarAction.mul_apply, inv_mul_cancel, CStarAction.one_apply],
-    hg]
+  calc ⟪f.toGNS a, (U t * f.gnsRadonNikodym g) (f.toGNS b)⟫_ℂ
+      = ⟪U t⁻¹ (f.toGNS a), f.gnsRadonNikodym g (f.toGNS b)⟫_ℂ := by
+        rw [mul_apply_eq_comp, ← ContinuousLinearMap.adjoint_inner_left (U t),
+          hU.adjoint_eq_inv t]
+    _ = g (star (α t⁻¹ a) * b) := by
+        rw [α.gnsImplementingGroup_apply_toGNS hf, inner_gnsRadonNikodym_toGNS hfg]
+    _ = g (α t⁻¹ (star a * α t b)) := by
+        rw [map_mul (α t⁻¹), map_star (α t⁻¹), ← CStarAction.mul_apply, inv_mul_cancel,
+          CStarAction.one_apply]
+    _ = g (star a * α t b) := hg t⁻¹ _
+    _ = ⟪f.toGNS a, (f.gnsRadonNikodym g * U t) (f.toGNS b)⟫_ℂ := by
+        rw [mul_apply_eq_comp, α.gnsImplementingGroup_apply_toGNS hf,
+          inner_gnsRadonNikodym_toGNS hfg]
 
 end ImplementingGroup
 

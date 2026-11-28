@@ -96,24 +96,34 @@ private theorem conjOperator_modularConjugation_mem_gnsVonNeumannAlgebra_of_zero
   have hprod : R * La * star R' ∈ f.gnsVonNeumannAlgebra.commutant :=
     mul_mem (mul_mem hR hLa) (star_mem hR')
   have h1 : R' (f.toGNS a) = ρ a (R' f.gnsVector) := by
-    conv_lhs => rw [← mul_one a, ← f.gnsNonUnitalStarAlgHom_apply_toGNS, ← f.gnsVector_eq_toGNS_one]
+    rw [f.toGNS_apply, ← f.gnsNonUnitalStarAlgHom_apply_gnsVector]
     exact (f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hR' a f.gnsVector).symm
   have h2 : hω.modularConjugation (R' (f.toGNS a)) = (La * star R') f.gnsVector := by
     rw [h1, mul_apply_eq_comp, ← hω.modularConjugation_apply_gnsVector_of_zero hR']
     simp [La, f, LinearIsometryEquiv.conjOperator_apply]
-  simp only [mul_apply_eq_comp, LinearIsometryEquiv.conjOperator_apply, hω.modularConjugation_symm]
-  rw [h2, ← mul_apply_eq_comp, ← mul_assoc, hω.modularConjugation_apply_gnsVector_of_zero hprod,
-    show star (R * La * star R') = R' * star La * star R by simp [star_mul, mul_assoc]]
-  simp only [mul_apply_eq_comp]
-  rw [← hω.modularConjugation_apply_gnsVector_of_zero hR,
-    show star La = hω.modularConjugation.conjOperator (ρ (star a)) by
-      simp only [La, map_star, LinearIsometryEquiv.conjOperator_star]]
-  simp only [LinearIsometryEquiv.conjOperator_apply, hω.modularConjugation_symm,
-    hω.modularConjugation_modularConjugation]
-  rw [f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hR (star a) f.gnsVector,
-    show ρ (star a) f.gnsVector = hω.modularConjugation (f.toGNS a) by
-      rw [hω.modularConjugation_apply_toGNS_of_zero a, f.gnsVector_eq_toGNS_one,
-        f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one]]
+  symm
+  calc (hω.modularConjugation.conjOperator R * R') (f.toGNS a)
+      = hω.modularConjugation (R (hω.modularConjugation (R' (f.toGNS a)))) := by
+        simp [mul_apply_eq_comp, LinearIsometryEquiv.conjOperator_apply]
+    _ = hω.modularConjugation ((R * La * star R') f.gnsVector) := by
+        rw [h2, ← mul_apply_eq_comp, ← mul_assoc]
+    _ = (R' * star La * star R) f.gnsVector := by
+        rw [hω.modularConjugation_apply_gnsVector_of_zero hprod, star_mul, star_mul, star_star,
+          mul_assoc]
+    _ = R' (hω.modularConjugation (ρ (star a) (R f.gnsVector))) := by
+        have hstarLa : star La = hω.modularConjugation.conjOperator (ρ (star a)) := by
+          simp [La, LinearIsometryEquiv.conjOperator_star, map_star]
+        rw [mul_apply_eq_comp, mul_apply_eq_comp,
+          ← hω.modularConjugation_apply_gnsVector_of_zero hR, hstarLa,
+          LinearIsometryEquiv.conjOperator_apply, hω.modularConjugation_symm,
+          hω.modularConjugation_modularConjugation]
+    _ = R' (hω.modularConjugation (R (hω.modularConjugation (f.toGNS a)))) := by
+        rw [f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hR (star a) f.gnsVector,
+          f.gnsNonUnitalStarAlgHom_apply_gnsVector, ← f.toGNS_apply,
+          ← hω.modularConjugation_apply_toGNS_of_zero a]
+    _ = (R' * hω.modularConjugation.conjOperator R) (f.toGNS a) := by
+        rw [mul_apply_eq_comp, LinearIsometryEquiv.conjOperator_apply, hω.modularConjugation_symm,
+          f.toGNS_apply]
 
 /-! ### Gaussian smearing of commutant operators and the `β ≠ 0` commutation theorem -/
 
@@ -159,10 +169,11 @@ private theorem IsAnalyticCommutantFamily.add_ofReal {hω : α.IsKMSState β ω}
     |>.eq_of_ofReal_eq ((U (.ofAdd t)).differentiable.comp (hS.differentiable_apply _))
       fun s => ?_) w
   have heq : S (s + t : ℝ) = U (.ofAdd t) * S s * U (.ofAdd (-t)) := by
-    rw [hS.apply_ofReal (s + t), hS.apply_ofReal s,
-      show U (.ofAdd (s + t)) = U (.ofAdd t) * U (.ofAdd s) by rw [add_comm, ofAdd_add, map_mul],
-      show U (.ofAdd (-(s + t))) = U (.ofAdd (-s)) * U (.ofAdd (-t)) by
-        rw [neg_add, ofAdd_add, map_mul]]; simp only [U, mul_assoc]
+    rw [hS.apply_ofReal (s + t), hS.apply_ofReal s, add_comm s t, neg_add, ofAdd_add, ofAdd_add,
+      map_mul, map_mul]
+    have hcommU : U (.ofAdd (-t)) * U (.ofAdd (-s)) = U (.ofAdd (-s)) * U (.ofAdd (-t)) := by
+      rw [← map_mul U, ← ofAdd_add, add_comm (-t) (-s), ofAdd_add, map_mul U]
+    simp only [U, mul_assoc, hcommU]
   simpa [Complex.ofReal_add, mul_apply_eq_comp] using congrArg (fun X => X v) heq
 
 /-- **Key identity for analytic commutant families:** `J₀ (S 0 Ω) = (S (iβ/2))⋆ Ω`. -/
@@ -189,21 +200,25 @@ private theorem IsAnalyticCommutantFamily.modularConjugation_apply_gnsVector
     have hTt : star (S (conj (t : ℂ))) = U (.ofAdd t) * star (S 0) * U (.ofAdd (-t)) := by
       simp only [U, Complex.conj_ofReal, hS.apply_ofReal t, star_mul, star_kmsUnitary, neg_neg,
         mul_assoc]
-    have h1 : ⟪f.toGNS (a : A), U (.ofAdd t) ((star (S 0)) f.gnsVector)⟫_ℂ =
-        ⟪U (.ofAdd (-t)) (f.toGNS (a : A)), (star (S 0)) f.gnsVector⟫_ℂ := by
-      rw [← star_kmsUnitary hω hβ t]; exact (adjoint_inner_left (U (.ofAdd t)) _ _).symm
-    simp only [F, G, hTt, mul_apply_eq_comp, hUΩ]
-    rw [h1, star_eq_adjoint, adjoint_inner_right,
-      α.gnsImplementingGroup_apply_toGNS _ (.ofAdd (-t)) (a : A),
-      ← mul_one (α (.ofAdd (-t)) (a : A)), ← f.gnsNonUnitalStarAlgHom_apply_toGNS,
-      ← f.gnsVector_eq_toGNS_one,
-      ← f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp (hS.mem_commutant 0) _ f.gnsVector,
-      show ⟪ρ (α (.ofAdd (-t)) (a : A)) (S 0 f.gnsVector), f.gnsVector⟫_ℂ =
-        ⟪S 0 f.gnsVector, ρ (star (α (.ofAdd (-t)) (a : A))) f.gnsVector⟫_ℂ by
-        rw [map_star, star_eq_adjoint, adjoint_inner_right]]
-    congr 1; rw [← map_star (α (.ofAdd (-t))) (a : A), ← Complex.ofReal_neg,
-      ha.star.entireExtension_ofReal (-t), f.gnsVector_eq_toGNS_one,
-      f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one]
+    calc F t
+        = ⟪f.toGNS (a : A), U (.ofAdd t) ((star (S 0)) f.gnsVector)⟫_ℂ := by
+          simp only [F, hTt, mul_apply_eq_comp, hUΩ]
+      _ = ⟪U (.ofAdd (-t)) (f.toGNS (a : A)), (star (S 0)) f.gnsVector⟫_ℂ := by
+          rw [← star_kmsUnitary hω hβ t]; exact (adjoint_inner_left (U (.ofAdd t)) _ _).symm
+      _ = ⟪S 0 (ρ (α (.ofAdd (-t)) (a : A)) f.gnsVector), f.gnsVector⟫_ℂ := by
+          rw [star_eq_adjoint, adjoint_inner_right,
+            α.gnsImplementingGroup_apply_toGNS _ (.ofAdd (-t)) (a : A), f.toGNS_apply,
+            ← f.gnsNonUnitalStarAlgHom_apply_gnsVector]
+      _ = ⟪ρ (α (.ofAdd (-t)) (a : A)) (S 0 f.gnsVector), f.gnsVector⟫_ℂ := by
+          rw [← f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp (hS.mem_commutant 0) _
+            f.gnsVector]
+      _ = ⟪S 0 f.gnsVector, ρ (star (α (.ofAdd (-t)) (a : A))) f.gnsVector⟫_ℂ := by
+          rw [← adjoint_inner_right, ← star_eq_adjoint, ← map_star]
+      _ = G t := by
+          dsimp only [G]
+          rw [f.gnsNonUnitalStarAlgHom_apply_gnsVector, ← f.toGNS_apply,
+            ← map_star (α (.ofAdd (-t))) (a : A), ← Complex.ofReal_neg,
+            ha.star.entireExtension_ofReal (-t)]
   have heval := congrFun hFG (-((β / 2 : ℝ) * I))
   have hconj : conj (-((β / 2 : ℝ) * I)) = (β / 2 : ℝ) * I := by
     rw [map_neg, map_mul, Complex.conj_ofReal, Complex.conj_I, mul_neg, neg_neg]
@@ -251,12 +266,15 @@ private theorem IsAnalyticCommutantFamily.shiftedStar {hω : α.IsKMSState β ω
     (hR' : IsAnalyticCommutantFamily hω hβ R') :
     IsAnalyticCommutantFamily hω hβ (fun z => star (R' (conj z + (β / 2 : ℝ) * I))) where
   differentiable_apply v := by
+    -- Move `+ iβ/2` inside `conj` so the function matches `hR'.differentiable_star_conj_apply`
+    -- composed with the complex-differentiable translation `z ↦ z - iβ/2`.
     rw [show (fun z : ℂ => star (R' (conj z + (β / 2 : ℝ) * I)) v) =
         fun z => star (R' (conj (z - (β / 2 : ℝ) * I))) v from
       funext fun z => by
         simp only [map_sub, map_mul, Complex.conj_ofReal, Complex.conj_I, mul_neg, sub_neg_eq_add]]
     exact (hR'.differentiable_star_conj_apply v).comp (differentiable_id.sub_const _)
   differentiable_star_conj_apply v := by
+    -- Cancel `star ∘ star` and `conj ∘ conj` so `R'` is composed directly with `z ↦ z + iβ/2`.
     rw [show (fun z : ℂ => star (star (R' (conj (conj z) + (β / 2 : ℝ) * I))) v) =
         fun z => R' (z + (β / 2 : ℝ) * I) v from funext fun z => by simp]
     exact (hR'.differentiable_apply v).comp (differentiable_id.add_const _)
@@ -283,6 +301,8 @@ private theorem isAnalyticCommutantFamily_rightMul (hω : α.IsKMSState β ω) (
     simp [Φ, ρL]
   have hdiff : Differentiable ℂ fun z : ℂ =>
       hω.modularConjugation.conjOperator (ρ (α.entireExtension a (conj z))) := by
+    -- Absorb `conj z` via `entireExtension_star` into the `ℂ`-linear composition `Φ ∘ ρL` before
+    -- differentiating `z ↦ α.entireExtension (star a) z`.
     rw [show (fun z : ℂ => hω.modularConjugation.conjOperator (ρ (α.entireExtension a (conj z)))) =
         fun z => Φ (ρL (α.entireExtension (star a) z)) from funext fun z => by
       rw [hΦρ, ← map_star, entireExtension_star, star_star]]
@@ -291,7 +311,9 @@ private theorem isAnalyticCommutantFamily_rightMul (hω : α.IsKMSState β ω) (
     fun v => ?_, fun z₀ => ?_,
     fun _ => hω.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_mem_commutant _,
     fun t => ?_⟩
-  · rw [show (fun z : ℂ => star (hω.modularConjugation.conjOperator
+  · -- Cancel `conj ∘ conj` and pull `star` inside `conjOperator` so the map factors through the
+    -- `ℂ`-linear evaluation `(apply v) ∘ Φ ∘ ρL` on `α.entireExtension a`.
+    rw [show (fun z : ℂ => star (hω.modularConjugation.conjOperator
         (ρ (α.entireExtension a (conj (conj z))))) v) =
         fun z => Φ (ρL (α.entireExtension a z)) v from funext fun z => by
       rw [hΦρ, conj_conj, LinearIsometryEquiv.conjOperator_star]]
@@ -382,7 +404,7 @@ private theorem commute_conjOperator_modularConjugation_of_isAnalyticCommutantFa
       simpa only [S', map_zero, zero_add] using hR'.modularConjugation_apply_gnsVector.symm
     have hcommR' : ρ (a : A) (R' 0 f.gnsVector) = R' 0 (f.toGNS (a : A)) := by
       rw [f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp (hR'.mem_commutant 0) (a : A)
-        f.gnsVector, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one]
+        f.gnsVector, f.gnsNonUnitalStarAlgHom_apply_gnsVector, ← f.toGNS_apply]
     have hLa0 : La 0 = hω.modularConjugation.conjOperator (ρ (a : A)) := by
       simp [La, ha.entireExtension_apply_zero]
     simp only [mul_apply_eq_comp, hS'0, hLa0, LinearIsometryEquiv.conjOperator_apply,
@@ -401,7 +423,7 @@ private theorem commute_conjOperator_modularConjugation_of_isAnalyticCommutantFa
         R 0 (hω.modularConjugation (f.toGNS (a : A))) := by
       rw [hω.modularConjugation_apply_toGNS ha,
         f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp (hR.mem_commutant 0) _ f.gnsVector,
-        f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one]
+        f.gnsNonUnitalStarAlgHom_apply_gnsVector, ← f.toGNS_apply]
     rw [star_mul, star_mul, hS'val, hLaval, mul_apply_eq_comp, mul_apply_eq_comp,
       hR.modularConjugation_apply_gnsVector.symm, LinearIsometryEquiv.conjOperator_apply,
       hω.modularConjugation_symm, hω.modularConjugation_modularConjugation, hcommR]

@@ -47,6 +47,9 @@ bijection between dominated positive functionals and positive operators in the G
   functionals.
 * `PositiveLinearMap.gnsVectorFunctional_gnsRadonNikodym` and
   `PositiveLinearMap.gnsRadonNikodym_gnsVectorFunctional`: inverse laws for unital algebras.
+* `PositiveLinearMap.eq_of_apply_gnsVector_eq`, `PositiveLinearMap.eq_of_gnsVectorFunctional_eq`,
+  and `PositiveLinearMap.injOn_gnsVectorFunctional`: commutant operators are determined by their
+  action on `Ω_f` and `gnsVectorFunctional` is injective on the GNS commutant.
 
 ## References
 
@@ -294,6 +297,31 @@ theorem gnsVectorFunctional_le_opNorm_mul (f : B →ₚ[ℂ] ℂ) {T : f.GNS →
   rw [Complex.coe_smul, ← Algebra.algebraMap_eq_smul_one, ← ContinuousLinearMap.le_def]
   exact IsSelfAdjoint.le_algebraMap_norm_self T hTsa
 
+/-- Two operators in the GNS commutant that agree on the cyclic vector are equal. -/
+theorem eq_of_apply_gnsVector_eq (f : B →ₚ[ℂ] ℂ) {S T : f.GNS →L[ℂ] f.GNS}
+    (hS : S ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
+    (hST : S f.gnsVector = T f.gnsVector) : S = T := by
+  ext v
+  refine f.denseRange_gnsStarAlgHom_gnsVector.induction_on v
+    (isClosed_eq S.continuous T.continuous) fun a => ?_
+  calc S (f.gnsStarAlgHom a f.gnsVector)
+      = (S * f.gnsNonUnitalStarAlgHom a) f.gnsVector := by
+        simp [gnsStarAlgHom_apply, mul_apply_eq_comp]
+    _ = f.gnsNonUnitalStarAlgHom a (S f.gnsVector) := by
+        rw [← hS _ ⟨a, rfl⟩, mul_apply_eq_comp]
+    _ = f.gnsNonUnitalStarAlgHom a (T f.gnsVector) := by rw [hST]
+    _ = (T * f.gnsNonUnitalStarAlgHom a) f.gnsVector := by
+        rw [← mul_apply_eq_comp, hT _ ⟨a, rfl⟩]
+    _ = T (f.gnsStarAlgHom a f.gnsVector) := by
+        simp [gnsStarAlgHom_apply, mul_apply_eq_comp]
+
+/-- An operator in the GNS commutant that kills the cyclic vector is zero. -/
+theorem eq_zero_of_apply_gnsVector_eq_zero (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
+    (hTΩ : T f.gnsVector = 0) : T = 0 :=
+  f.eq_of_apply_gnsVector_eq hT (fun _ _ => by simp) (by simpa using hTΩ)
+
 /-- An operator in the GNS commutant whose vector functional vanishes kills the cyclic vector. -/
 theorem apply_gnsVector_eq_zero_of_gnsVectorFunctional_eq_zero (f : B →ₚ[ℂ] ℂ)
     {T : f.GNS →L[ℂ] f.GNS} (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
@@ -306,6 +334,28 @@ theorem apply_gnsVector_eq_zero_of_gnsVectorFunctional_eq_zero (f : B →ₚ[ℂ
     _ = f.gnsVectorFunctional T (star a) := by
         rw [hT _ ⟨star a, rfl⟩, mul_apply_eq_comp]; simp [gnsVectorFunctional_apply]
     _ = ⟪f.toGNS a, 0⟫_ℂ := by simp [hvan]
+
+/-- An operator in the GNS commutant whose vector functional vanishes is zero. -/
+theorem eq_zero_of_gnsVectorFunctional_eq_zero (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
+    (hvan : f.gnsVectorFunctional T = 0) : T = 0 :=
+  f.eq_zero_of_apply_gnsVector_eq_zero hT
+    (f.apply_gnsVector_eq_zero_of_gnsVectorFunctional_eq_zero hT hvan)
+
+/-- **Injectivity of `gnsVectorFunctional` on the GNS commutant:** two operators in the GNS
+commutant with the same vector functional are equal. -/
+theorem eq_of_gnsVectorFunctional_eq (f : B →ₚ[ℂ] ℂ) {S T : f.GNS →L[ℂ] f.GNS}
+    (hS : S ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
+    (hST : f.gnsVectorFunctional S = f.gnsVectorFunctional T) : S = T := by
+  have hsub : S - T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom) := fun x hx => by
+    rw [mul_sub, sub_mul, hS x hx, hT x hx]
+  exact sub_eq_zero.mp (f.eq_zero_of_gnsVectorFunctional_eq_zero hsub (by simp [hST]))
+
+/-- `gnsVectorFunctional` is injective on the GNS commutant. -/
+theorem injOn_gnsVectorFunctional (f : B →ₚ[ℂ] ℂ) :
+    Set.InjOn f.gnsVectorFunctional (Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom)) :=
+  fun _ hS _ hT hST => f.eq_of_gnsVectorFunctional_eq hS hT hST
 
 /-- The vector functional of the GNS Radon–Nikodym operator of `g` recovers `g`. -/
 theorem gnsVectorFunctional_gnsRadonNikodym {f g : B →ₚ[ℂ] ℂ} {C : ℝ}

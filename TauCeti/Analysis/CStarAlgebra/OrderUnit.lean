@@ -23,6 +23,9 @@ and their Lipschitz seminorms applies to `selfAdjoint A`.
 
 * `TauCeti.isOrderUnitNorm_selfAdjoint_one`: the C⋆-norm on `selfAdjoint A` is the order-unit
   norm of `1`.
+* `IsSelfAdjoint.algebraMap_sub_le_algebraMap_add_smul` and
+  `IsSelfAdjoint.algebraMap_add_smul_le_algebraMap_add`: C⋆-order perturbation bounds for adding
+  a real multiple of a self-adjoint element to a real scalar.
 
 ## References
 
@@ -49,5 +52,49 @@ theorem isOrderUnitNorm_selfAdjoint_one : IsOrderUnitNorm (1 : selfAdjoint A) wh
       le_algebraMap_iff_spectrum_le ha, AddSubgroup.coe_norm,
       ha.norm_le_iff_spectrum_subset_Icc hr]
     simp only [Set.subset_def, Set.mem_Icc, forall₂_and]
+
+section Perturbation
+
+variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- Adding a real multiple of a self-adjoint element to a real scalar shifts it below by at most
+`b`: if `z` is self-adjoint and `|r| * ‖z‖ ≤ b`, then `a - b ≤ a + r • z` in the C⋆-order. -/
+theorem _root_.IsSelfAdjoint.algebraMap_sub_le_algebraMap_add_smul {z : A} (hz : IsSelfAdjoint z)
+    (a : ℝ) {r b : ℝ} (hrb : |r| * ‖z‖ ≤ b) :
+    algebraMap ℝ A (a - b) ≤ algebraMap ℝ A a + r • z := by
+  have hrz : IsSelfAdjoint (r • z) := by
+    rw [IsSelfAdjoint, star_smul, star_trivial, hz.star_eq]
+  have hnorm : ‖r • z‖ ≤ b := by simpa [norm_smul, Real.norm_eq_abs] using hrb
+  have h1 : (0 : A) ≤ 1 := zero_le_one
+  have hneg : algebraMap ℝ A (-b) ≤ r • z := by
+    calc algebraMap ℝ A (-b)
+        = (-b) • (1 : A) := Algebra.algebraMap_eq_smul_one (-b)
+      _ ≤ (-‖r • z‖) • (1 : A) := smul_le_smul_of_nonneg_right (neg_le_neg hnorm) h1
+      _ = -algebraMap ℝ A ‖r • z‖ := by rw [Algebra.algebraMap_eq_smul_one, neg_smul]
+      _ ≤ r • z := hrz.neg_algebraMap_norm_le_self
+  calc algebraMap ℝ A (a - b)
+      = algebraMap ℝ A a + algebraMap ℝ A (-b) := by rw [sub_eq_add_neg, map_add]
+    _ ≤ algebraMap ℝ A a + r • z := add_le_add_right hneg _
+
+/-- Adding a real multiple of a self-adjoint element to a real scalar shifts it above by at most
+`b`: if `z` is self-adjoint and `|r| * ‖z‖ ≤ b`, then `a + r • z ≤ a + b` in the C⋆-order. -/
+theorem _root_.IsSelfAdjoint.algebraMap_add_smul_le_algebraMap_add {z : A} (hz : IsSelfAdjoint z)
+    (a : ℝ) {r b : ℝ} (hrb : |r| * ‖z‖ ≤ b) :
+    algebraMap ℝ A a + r • z ≤ algebraMap ℝ A (a + b) := by
+  have hrz : IsSelfAdjoint (r • z) := by
+    rw [IsSelfAdjoint, star_smul, star_trivial, hz.star_eq]
+  have hnorm : ‖r • z‖ ≤ b := by simpa [norm_smul, Real.norm_eq_abs] using hrb
+  have h1 : (0 : A) ≤ 1 := zero_le_one
+  have hpos : r • z ≤ algebraMap ℝ A b := by
+    calc r • z
+        ≤ algebraMap ℝ A ‖r • z‖ := hrz.le_algebraMap_norm_self
+      _ = ‖r • z‖ • (1 : A) := Algebra.algebraMap_eq_smul_one _
+      _ ≤ b • (1 : A) := smul_le_smul_of_nonneg_right hnorm h1
+      _ = algebraMap ℝ A b := (Algebra.algebraMap_eq_smul_one b).symm
+  calc algebraMap ℝ A a + r • z
+      ≤ algebraMap ℝ A a + algebraMap ℝ A b := add_le_add_right hpos _
+    _ = algebraMap ℝ A (a + b) := (map_add _ a b).symm
+
+end Perturbation
 
 end TauCeti
