@@ -60,8 +60,9 @@ This file constructs the extension in the two main cases of Stacks Project, Lemm
 * `DividedPowers.extensionCoeff_eq_of_sum_eq`: presentation independence of `extensionCoeff` over a
   flat algebra.
 * `DividedPowers.flatAdditivePowers`: the additive divided-power candidate over a flat algebra.
-* `DividedPowers.mapOfFlat`: extension of divided powers along a flat algebra map, with
-  transitivity (`mapOfFlat_comp`, `mapOfFlat_comp_dpow`) and comparison with `ofRingEquiv` and
+* `DividedPowers.mapOfFlat`: extension of divided powers along a flat algebra map, linked
+  pointwise to `flatAdditivePowers` (`mapOfFlat_dpow_eq_flatAdditivePowers`), with transitivity
+  (`mapOfFlat_comp`, `mapOfFlat_comp_dpow`) and comparison with `ofRingEquiv` and
   `mapOfSpanSingleton`.
 * `DividedPowers.mapOfIsLocalization`: extension of divided powers along a localization, with the
   fraction formula `mapOfIsLocalization_dpow_mk'`.
@@ -493,8 +494,7 @@ private theorem flatDpow_sum [Module.Flat A B] {ι : Type*} [DecidableEq ι] (hI
       extensionCoeff hI (algebraMap A B) n s b x := by
   classical
   have hz : ∑ i ∈ s, b i * algebraMap A B (x i) ∈ I.map (algebraMap A B) :=
-    Submodule.sum_mem _ fun i hi ↦
-      (I.map (algebraMap A B)).mul_mem_left _ (Ideal.mem_map_of_mem _ (hx i hi))
+    Ideal.sum_mul_map_mem (algebraMap A B) b hx
   simp only [flatDpow, dite_eq_left hz]
   set h := Ideal.mem_map_iff_exists_sum_mul_map (algebraMap A B) |>.mp hz
   exact extensionCoeff_eq_of_sum_eq hI n
@@ -592,15 +592,17 @@ theorem flatAdditivePowers_dpow_sum [Module.Flat A B] {ι : Type*} [DecidableEq 
     (hI : DividedPowers I) (n : ℕ) {s : Finset ι} (b : ι → B) {x : ι → A}
     (hx : ∀ i ∈ s, x i ∈ I) :
     (hI.flatAdditivePowers B).dpow n (∑ i ∈ s, b i * algebraMap A B (x i)) =
-      extensionCoeff hI (algebraMap A B) n s b x :=
-  flatDpow_sum hI n b hx
+      extensionCoeff hI (algebraMap A B) n s b x := by
+  rw [flatAdditivePowers_dpow]
+  exact flatDpow_sum hI n b hx
 
 /-- On an element `algebraMap A B x` with `x ∈ I`, `flatAdditivePowers` agrees with `hI`. -/
 @[simp]
 theorem flatAdditivePowers_dpow_algebraMap [Module.Flat A B] (hI : DividedPowers I)
     (n : ℕ) {x : A} (hx : x ∈ I) :
-    (hI.flatAdditivePowers B).dpow n (algebraMap A B x) = algebraMap A B (hI.dpow n x) :=
-  flatDpow_algebraMap hI n hx
+    (hI.flatAdditivePowers B).dpow n (algebraMap A B x) = algebraMap A B (hI.dpow n x) := by
+  rw [flatAdditivePowers_dpow]
+  exact flatDpow_algebraMap hI n hx
 
 /-- **Flat extension of divided powers** (Stacks 23.4.2, tag 07H1, condition (3)): if `B` is a flat
 `A`-algebra, then `hI` extends uniquely to a divided power structure on `I.map (algebraMap A B)`. -/
@@ -619,9 +621,12 @@ noncomputable def mapOfFlat (hI : DividedPowers I) (B : Type*) [CommRing B] [Alg
         flatDpow_algebraMap hI _ (hI.dpow_mem hn hx)]
       rw [hI.dpow_comp hn hx, map_mul, map_natCast])
 
-private theorem mapOfFlat_dpow [Module.Flat A B] (hI : DividedPowers I) (n : ℕ) (z : B) :
-    (hI.mapOfFlat B).dpow n z = flatDpow hI B n z := by
-  rw [mapOfFlat, TauCeti.PD.AdditivePowers.toDividedPowers_dpow, flatAdditivePowers_dpow]
+/-- Pointwise, the divided power operation of `DividedPowers.mapOfFlat` agrees with that of
+`DividedPowers.flatAdditivePowers`. -/
+theorem mapOfFlat_dpow_eq_flatAdditivePowers [Module.Flat A B] (hI : DividedPowers I)
+    (n : ℕ) (z : B) :
+    (hI.mapOfFlat B).dpow n z = (hI.flatAdditivePowers B).dpow n z := by
+  rw [mapOfFlat, TauCeti.PD.AdditivePowers.toDividedPowers_dpow]
 
 /-- On any finite `B`-linear combination `∑ i ∈ s, b i * algebraMap A B (x i)` with `x i ∈ I`,
 `mapOfFlat` evaluates via `extensionCoeff`. -/
@@ -629,8 +634,7 @@ theorem mapOfFlat_dpow_sum [Module.Flat A B] {ι : Type*} [DecidableEq ι] (hI :
     (n : ℕ) {s : Finset ι} (b : ι → B) {x : ι → A} (hx : ∀ i ∈ s, x i ∈ I) :
     (hI.mapOfFlat B).dpow n (∑ i ∈ s, b i * algebraMap A B (x i)) =
       extensionCoeff hI (algebraMap A B) n s b x := by
-  rw [mapOfFlat_dpow]
-  exact flatDpow_sum hI n b hx
+  rw [mapOfFlat_dpow_eq_flatAdditivePowers, flatAdditivePowers_dpow_sum hI n b hx]
 
 /-- `algebraMap A B` is a divided power morphism from `(I, hI)` to
 `(I.map (algebraMap A B), hI.mapOfFlat B)`. -/
@@ -638,8 +642,7 @@ theorem isDPMorphism_mapOfFlat [Module.Flat A B] (hI : DividedPowers I) :
     IsDPMorphism hI (hI.mapOfFlat B) (algebraMap A B) where
   ideal_comp := le_rfl
   dpow_comp {n} x hx := by
-    rw [mapOfFlat_dpow]
-    exact flatDpow_algebraMap hI n hx
+    rw [mapOfFlat_dpow_eq_flatAdditivePowers, flatAdditivePowers_dpow_algebraMap hI n hx]
 
 /-- On an element `algebraMap A B x` with `x ∈ I`, `mapOfFlat` agrees with `hI`. -/
 @[simp]
@@ -672,6 +675,11 @@ theorem isDPMorphism_mapOfFlat_iff [Module.Flat A B] {C : Type*} [CommSemiring C
     IsDPMorphism (hI.mapOfFlat B) hK g ↔ IsDPMorphism hI hK (g.comp (algebraMap A B)) :=
   isDPMorphism_comp_iff_of_map hI (isDPMorphism_mapOfFlat hI) hK g
 
+private theorem eqRec_dpow {R : Type*} [CommSemiring R] {J J' : Ideal R} (h : J = J')
+    (hJ : DividedPowers J) : (h ▸ hJ).dpow = hJ.dpow := by
+  subst h
+  rfl
+
 /-- Transitivity of flat extension for a tower of flat algebras `A → B → C`, equating the two
 `DividedPowers` structures after transport along `Ideal.map_algebraMap_map_algebraMap`. -/
 theorem mapOfFlat_comp {C : Type*} [CommRing C] [Algebra B C] [Algebra A C]
@@ -692,12 +700,8 @@ theorem mapOfFlat_comp_dpow {C : Type*} [CommRing C] [Algebra B C] [Algebra A C]
     (hI : DividedPowers I) (n : ℕ) (c : C) :
     ((hI.mapOfFlat B).mapOfFlat C).dpow n c =
       (have : Module.Flat A C := Module.Flat.trans A B C; hI.mapOfFlat C).dpow n c := by
-  have : Module.Flat A C := Module.Flat.trans A B C
-  have hcomp : IsDPMorphism hI ((hI.mapOfFlat B).mapOfFlat C) (algebraMap A C) := by
-    rw [IsScalarTower.algebraMap_eq A B C]
-    exact (isDPMorphism_mapOfFlat (hI.mapOfFlat B)).comp _ (isDPMorphism_mapOfFlat hI)
-  exact congrFun (congrFun (dpow_eq_of_isDPMorphism_map hI (algebraMap A C)
-    (Ideal.map_algebraMap_map_algebraMap I) hcomp (isDPMorphism_mapOfFlat hI)) n) c
+  rw [← eqRec_dpow (Ideal.map_algebraMap_map_algebraMap (R := A) (A := B) (B := C) I)
+    ((hI.mapOfFlat B).mapOfFlat C), mapOfFlat_comp]
 
 /-- When `algebraMap A B` comes from a ring equivalence `e : A ≃+* B`, `mapOfFlat` coincides with
 Mathlib's `DividedPowers.ofRingEquiv`. -/

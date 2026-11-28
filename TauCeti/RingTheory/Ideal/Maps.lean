@@ -110,6 +110,12 @@ theorem mem_map_iff_exists_sum_mul_map {R S F : Type*} [Semiring R] [Semiring S]
   rw [Ideal.map, Submodule.mem_span_image_iff_exists_fun]
   simp only [smul_eq_mul]
 
+/-- A finite `S`-linear combination of images of elements of `I` lies in `I.map f`. -/
+theorem sum_mul_map_mem {R S F ι : Type*} [Semiring R] [Semiring S] [FunLike F R S]
+    (f : F) {I : Ideal R} {s : Finset ι} (b : ι → S) {x : ι → R} (hx : ∀ i ∈ s, x i ∈ I) :
+    ∑ i ∈ s, b i * f (x i) ∈ I.map f :=
+  Submodule.sum_mem _ fun i hi ↦ (I.map f).mul_mem_left _ (Ideal.mem_map_of_mem f (hx i hi))
+
 /-- An element belongs to `(Ideal.span {x}).map f` if and only if it is a left `S`-multiple of
 `f x`. -/
 theorem mem_map_span_singleton {R S F : Type*} [Semiring R] [Semiring S]

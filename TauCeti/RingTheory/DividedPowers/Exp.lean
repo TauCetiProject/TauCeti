@@ -128,12 +128,9 @@ theorem rescale_map_exp_sum {κ : Type*} (hI : DividedPowers I) (f : A →+* B)
   classical
   induction t using Finset.induction with
   | empty =>
-    ext n
-    cases n with
-    | zero =>
-      simpa [PowerSeries.coeff_zero_eq_constantCoeff_apply] using
-        constantCoeff_rescale_map_exp hI f 0 hx
-    | succ n => simp
+    rw [sum_empty, prod_empty, PowerSeries.rescale_zero_apply,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
+      PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_exp hI hx, map_one, map_one]
   | insert j t hj ih =>
     rw [sum_insert hj, prod_insert hj, rescale_map_exp_add hI f _ _ hx, ih]
 
