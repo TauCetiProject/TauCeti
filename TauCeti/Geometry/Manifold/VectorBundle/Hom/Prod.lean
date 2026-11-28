@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Smooth Hom-bundle sections into a direct sum
@@ -21,6 +22,8 @@ the readings of its components (`ContinuousLinearMap.inCoordinates_prod`).
 
 * `ContMDiffWithinAt.clm_bundle_prod`, `ContMDiffOn.clm_bundle_prod`: the fibrewise `prod` of
   two `C^n` Hom-bundle sections is `C^n`.
+* `TauCeti.contMDiff_const_trivialProdHom`: a constant linear map is a smooth section of the Hom
+  bundle from a trivial bundle to a sum of two trivial bundles.
 -/
 
 public section
@@ -87,5 +90,21 @@ theorem ContMDiffOn.clm_bundle_prod
       (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
         ((ϕ m).prod (ψ m))) s :=
   fun x hx ↦ (hϕ x hx).clm_bundle_prod (hψ x hx)
+
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+  [∀ x, IsTopologicalAddGroup (E₃ x)] [∀ x, ContinuousSMul 𝕜 (E₃ x)] in
+/-- A constant linear map from the model fibre `F₁` to `F₂ × F₃` is a smooth section of the hom
+bundle from the trivial bundle with fibre `F₁` to the sum of the trivial bundles with fibres `F₂`
+and `F₃`. -/
+theorem TauCeti.contMDiff_const_trivialProdHom (L : F₁ →L[𝕜] F₂ × F₃) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ × F₃)) n fun x : B ↦
+      TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃)
+        (E := fun x ↦ Trivial B F₁ x →L[𝕜] (Trivial B F₂ ×ᵇ Trivial B F₃) x) x L := by
+  have h := contMDiffOn_univ.1 <|
+    (TauCeti.contMDiff_const_trivialHom (M := B) (I := IB) (n := n)
+      ((ContinuousLinearMap.fst 𝕜 F₂ F₃).comp L)).contMDiffOn.clm_bundle_prod
+      (TauCeti.contMDiff_const_trivialHom ((ContinuousLinearMap.snd 𝕜 F₂ F₃).comp L)).contMDiffOn
+  convert h using 3
+  ext <;> simp
 
 end Smooth

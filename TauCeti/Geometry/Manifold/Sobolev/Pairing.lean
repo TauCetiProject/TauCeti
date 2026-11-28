@@ -252,9 +252,10 @@ omit [T2Space M] in
 /-- The pairing with the zero function vanishes. -/
 @[simp]
 theorem chartSobolevPairing_zero (s : ℝ) : chartSobolevPairing μ he ψ 0 s = 0 :=
-  chartSobolevSpace_ext he ψ fun u ↦ by
-    rw [chartSobolevPairing, LinearMap.extendOfNorm_eq (denseRange_toChartSobolevSpace he ψ s)
-      ⟨0, fun w ↦ by simp [integralInner_apply]⟩]
+  LinearMap.rangeClosure_ext _ fun u ↦ by
+    rw [chartSobolevPairing,
+      LinearMap.extendOfNorm_eq (chartReading he ψ s).denseRange_toRangeClosure
+        ⟨0, fun w ↦ by simp [integralInner_apply]⟩]
     simp [integralInner_apply]
 
 variable (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
@@ -268,10 +269,10 @@ pairing `∫ ⟪v, u⟫ dμ`. -/
 theorem chartSobolevPairing_toChartSobolevSpace (v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
     (s : ℝ) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     chartSobolevPairing μ he ψ v s (toChartSobolevSpace he ψ s u) = ∫ x, ⟪v x, u x⟫_ℂ ∂μ :=
-  LinearMap.extendOfNorm_eq (denseRange_toChartSobolevSpace he ψ s)
+  LinearMap.extendOfNorm_eq (chartReading he ψ s).denseRange_toRangeClosure
     (by
       obtain ⟨C, hC⟩ := exists_norm_integral_inner_le_norm_chartReading he ψ hμ hψ s v
-      exact ⟨C, fun u ↦ by rw [integralInner_apply, norm_toChartSobolevSpace]; exact hC u⟩) u
+      exact ⟨C, fun u ↦ by rw [integralInner_apply, LinearMap.norm_toRangeClosure]; exact hC u⟩) u
 
 /-- **Uniqueness of the pairing.** A continuous linear functional on `H^s(M)` that is the `L²`
 pairing `∫ ⟪v, u⟫ dμ` on smooth functions `u` is the pairing with `v`. -/
@@ -279,7 +280,7 @@ theorem chartSobolevPairing_eq {v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; �
     (L : chartSobolevSpace he ψ s →L[ℂ] ℂ)
     (hL : ∀ u, L (toChartSobolevSpace he ψ s u) = ∫ x, ⟪v x, u x⟫_ℂ ∂μ) :
     chartSobolevPairing μ he ψ v s = L :=
-  chartSobolevSpace_ext he ψ fun u ↦ by
+  LinearMap.rangeClosure_ext _ fun u ↦ by
     rw [chartSobolevPairing_toChartSobolevSpace hμ hψ, hL]
 
 /-- The pairing is additive in the smooth function. -/
@@ -309,7 +310,7 @@ theorem chartSobolevPairing_comp_chartSobolevInclusion
     (chartSobolevPairing μ he ψ v r).comp (chartSobolevInclusion he ψ h) =
       chartSobolevPairing μ he ψ v s :=
   (chartSobolevPairing_eq hμ hψ _ fun u ↦ by
-    rw [ContinuousLinearMap.comp_apply, chartSobolevInclusion_toChartSobolevSpace,
+    rw [ContinuousLinearMap.comp_apply, LinearMap.rangeClosureMap_toRangeClosure,
       chartSobolevPairing_toChartSobolevSpace hμ hψ]).symm
 
 /-- The `L²` pairing of a Schwartz function `b` with the `i`-th component of an element `x` of
@@ -333,7 +334,7 @@ private theorem exists_chartSobolevPairing_eq_inner (s : ℝ) (i : ι) (b : 𝓢
       (ContMDiffMap.ofContDiff b (b.smooth ⊤))) s = L :=
     chartSobolevPairing_eq hμ hψ L fun u ↦ by
       simp only [L, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-        coe_toChartSobolevSpace, PiLp.proj_apply, chartReading_apply,
+        LinearMap.coe_toRangeClosure, PiLp.proj_apply, chartReading_apply,
         LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
         BesselPotentialSpace.toLpₗᵢ_apply, innerSL_apply_apply]
       rw [integral_inner_complexCutoffPullback_eq (he i) hint (ψ i) θ hθ,

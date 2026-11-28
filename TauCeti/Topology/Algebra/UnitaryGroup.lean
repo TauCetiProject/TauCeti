@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import TauCeti.Topology.Algebra.Star.Unitary
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 
 /-!
@@ -62,6 +63,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
 
 * `TauCeti.GLSpecialUnitary.continuousMulEquiv`: the special unitary subgroup of the general linear
   group is the matrix special unitary group, as a topological group.
+* `TauCeti.GLSpecialUnitary.fromBlocksInl`: the block inclusion `g ↦ diag(g, 1)` of special unitary
+  groups, as a continuous homomorphism.
 * `ClosedSubgroup.unitary`: the full unitary group `U(n)` as a `ClosedSubgroup`.
 * `ClosedSubgroup.specialUnitary`: the special unitary group `SU(n)` as a `ClosedSubgroup`.
 * `ClosedSubgroup.reindex`: transports a closed subgroup `G ≤ U(n)` along `e : n ≃ m`.
@@ -226,6 +229,49 @@ instance GLSpecialUnitary.instCompactSpace {𝕜 : Type*} [RCLike 𝕜] :
   (GLSpecialUnitary.continuousMulEquiv n 𝕜).toHomeomorph.symm.compactSpace
 
 end GeneralLinearEquiv
+
+section GeneralLinearBlock
+
+variable (n : Type*) [Fintype n] [DecidableEq n] (𝕜 : Type*) [CommRing 𝕜] [StarRing 𝕜]
+  [TopologicalSpace 𝕜] (m : Type*) [Fintype m] [DecidableEq m]
+
+/-- **The block inclusion `g ↦ diag(g, 1)`** of the special unitary group of `n × n` matrices into
+that of `(n ⊕ m) × (n ⊕ m)` matrices, as a continuous homomorphism. It is the restriction of the
+block-diagonal homomorphism `TauCeti.fromBlocksGL` to `GL n 𝕜 × {1}`. -/
+noncomputable def GLSpecialUnitary.fromBlocksInl :
+    GLSpecialUnitary n 𝕜 →ₜ* GLSpecialUnitary (n ⊕ m) 𝕜 where
+  toMonoidHom :=
+    ((fromBlocksGL.comp (MonoidHom.inl (GL n 𝕜) (GL m 𝕜))).comp
+      (GLSpecialUnitary n 𝕜).subtype).codRestrict _ fun g ↦ by
+        have hg := GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup.mp g.property
+        rw [GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup, Matrix.mem_specialUnitaryGroup_iff]
+        rw [Matrix.mem_specialUnitaryGroup_iff] at hg
+        simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, MonoidHom.inl_apply,
+          coe_fromBlocksGL, Units.val_one]
+        exact ⟨Matrix.fromBlocks_zero_zero_mem_unitary_iff.2 ⟨hg.1, one_mem _⟩,
+          by simpa [Matrix.det_fromBlocks_zero₂₁] using hg.2⟩
+  continuous_toFun := by
+    have h : Continuous fun g : GLSpecialUnitary n 𝕜 ↦
+        fromBlocksGL ((g : GL n 𝕜), (1 : GL m 𝕜)) := by
+      refine Units.continuous_iff.2 ⟨?_, ?_⟩
+      · simp only [Function.comp_def, coe_fromBlocksGL, Units.val_one]
+        exact (Units.continuous_val.comp continuous_subtypeVal).matrix_fromBlocks continuous_const
+          continuous_const continuous_const
+      · simp only [← map_inv, Prod.inv_mk, inv_one, coe_fromBlocksGL, Units.val_one]
+        exact (Units.continuous_coe_inv.comp continuous_subtypeVal).matrix_fromBlocks
+          continuous_const continuous_const continuous_const
+    exact h.subtype_mk _
+
+variable {n 𝕜 m}
+
+/-- The matrix of `TauCeti.GLSpecialUnitary.fromBlocksInl n 𝕜 m g` is `diag(g, 1)`. -/
+@[simp]
+theorem GLSpecialUnitary.coe_fromBlocksInl_apply (g : GLSpecialUnitary n 𝕜) :
+    (((GLSpecialUnitary.fromBlocksInl n 𝕜 m g : GL (n ⊕ m) 𝕜)) : Matrix (n ⊕ m) (n ⊕ m) 𝕜) =
+      Matrix.fromBlocks ((g : GL n 𝕜) : Matrix n n 𝕜) 0 0 1 :=
+  coe_fromBlocksGL _
+
+end GeneralLinearBlock
 
 end TauCeti
 

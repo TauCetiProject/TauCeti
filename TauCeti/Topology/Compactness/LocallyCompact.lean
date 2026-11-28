@@ -21,6 +21,10 @@ import Mathlib.Topology.Separation.Hausdorff
 A space in which every point has a locally compact neighbourhood is locally compact
 (`TauCeti.locallyCompactSpace_of_forall_exists_mem_nhds`).
 
+On an open subset of a locally compact space, functions eventually bounded above on every compact
+subset are eventually bounded above near each point
+(`TauCeti.forall_exists_mem_nhds_eventually_forall_le_of_isCompact`).
+
 Along an open map out of a weakly locally compact space, every compact subset of the range lies in
 the image of a compact set (`IsOpenMap.exists_isCompact_subset_image`); if the map is continuous,
 every closed compact subset of the range is exactly such an image
@@ -58,6 +62,17 @@ theorem locallyCompactSpace_of_forall_exists_mem_nhds {X : Type*} [TopologicalSp
   obtain ⟨K, hKx, hKW, hKc⟩ := local_compact_nhds hW
   exact ⟨(↑) '' K, Filter.image_mem_map hKx, image_subset_iff.mpr hKW,
     hKc.image continuous_subtypeVal⟩
+
+/-- **Local bounds from bounds on compact sets.** On an open subset `O` of a locally compact
+space, if functions `gᵢ` are eventually bounded above on every compact subset of `O` along `l`,
+then they are eventually bounded above on a neighbourhood of every point of `O`. -/
+theorem forall_exists_mem_nhds_eventually_forall_le_of_isCompact {X ι β : Type*}
+    [TopologicalSpace X] [LocallyCompactSpace X] [Preorder β] {O : Set X} (hO : IsOpen O)
+    {l : Filter ι} {g : ι → X → β}
+    (hbd : ∀ K, IsCompact K → K ⊆ O → ∃ A, ∀ᶠ i in l, ∀ y ∈ K, g i y ≤ A) :
+    ∀ y ∈ O, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ i in l, ∀ x ∈ N, g i x ≤ A := fun y hy ↦ by
+  obtain ⟨N, hN, hNO, hNc⟩ := local_compact_nhds (hO.mem_nhds hy)
+  exact ⟨N, hN, hbd N hNc hNO⟩
 
 /-- Let `q` be a continuous function which is above `a` off a compact set `Z`, and suppose every
 point `x` lies in a preconnected set meeting `Z` on which `q ≤ q x`. Then for every open
