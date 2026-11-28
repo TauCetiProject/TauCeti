@@ -41,6 +41,12 @@ universe v u
 
 namespace TauCeti.universalGradingGroup
 
+private theorem degree_dual_eq {C : Type u} [Category.{v} C] [Abelian C]
+    [MonoidalCategory C] [RigidCategory C] [MonoidalPreadditive C] (S : SimpleClasses C) :
+    degree S.dual = degree (SimpleClasses.classOf S.reprᘁ) := by
+  rw [← SimpleClasses.classOf_repr S.dual,
+    (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 ⟨SimpleClasses.dualReprIso S⟩]
+
 section SimpleUnit
 
 /-- In an exact pairing of simple objects when `𝟙_ C` is simple, `degree (classOf Y)` is the
@@ -58,9 +64,8 @@ finite semisimplicity. -/
     [MonoidalCategory C] [RigidCategory C] [MonoidalPreadditive C] [Simple (𝟙_ C)]
     (S : SimpleClasses C) :
     degree S.dual = (degree S)⁻¹ := by
-  rw [← SimpleClasses.classOf_repr S.dual,
-    (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 ⟨SimpleClasses.dualReprIso S⟩,
-    degree_classOf_of_exactPairing_of_simple_unit (X := S.repr), SimpleClasses.classOf_repr]
+  rw [degree_dual_eq S, degree_classOf_of_exactPairing_of_simple_unit (X := S.repr),
+    SimpleClasses.classOf_repr]
 
 end SimpleUnit
 
@@ -91,9 +96,7 @@ variable [RigidCategory C] [MonoidalPreadditive C]
 
 /-- Dual simple objects have inverse universal degrees. -/
 @[simp] theorem degree_dual (S : SimpleClasses C) : degree S.dual = (degree S)⁻¹ := by
-  rw [← SimpleClasses.classOf_repr S.dual,
-    (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 ⟨SimpleClasses.dualReprIso S⟩,
-    degree_classOf_rightDual S.repr, SimpleClasses.classOf_repr]
+  rw [degree_dual_eq S, degree_classOf_rightDual S.repr, SimpleClasses.classOf_repr]
 
 variable [Simple (𝟙_ C)]
 
@@ -103,10 +106,7 @@ theorem degree_surjective :
   obtain ⟨S, hL, hR, hg⟩ := universalGradingGroupoid.exists_degree_eq
     (universalGradingGroupoid.vertexGroupMulEquiv.symm x)
   have h := congrArg universalGradingGroupoid.vertexGroupMulEquiv hg
-  rw [MulEquiv.apply_symm_apply,
-    Subsingleton.elim hL.symm (Subsingleton.elim _ _),
-    Subsingleton.elim hR (Subsingleton.elim _ _),
-    universalGradingGroupoid.vertexGroupMulEquiv_degree] at h
+  rw [MulEquiv.apply_symm_apply, universalGradingGroupoid.vertexGroupMulEquiv_degree] at h
   exact ⟨S, h.symm⟩
 
 /-- Finitely many simple classes give a finite universal grading group. -/

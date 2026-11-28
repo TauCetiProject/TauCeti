@@ -61,24 +61,6 @@ universe v₁ v₂ u₁ u₂
 
 namespace TauCeti
 
-section SplitMono
-
-variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [HasZeroMorphisms C]
-
-/-- If `Z ◁ f = 0` for a split monomorphism `f : U ⟶ V`, then `Z ⊗ U` is zero. -/
-theorem isZero_whiskerLeft_of_isSplitMono {Z U V : C} (f : U ⟶ V) [IsSplitMono f]
-    (h : Z ◁ f = 0) : IsZero (Z ⊗ U) :=
-  (IsZero.iff_id_eq_zero _).2 <| by
-    rw [← whiskerLeft_id, ← IsSplitMono.id f, whiskerLeft_comp, h, zero_comp]
-
-/-- If `f ▷ Z = 0` for a split monomorphism `f : U ⟶ V`, then `U ⊗ Z` is zero. -/
-theorem isZero_whiskerRight_of_isSplitMono {U V Z : C} (f : U ⟶ V) [IsSplitMono f]
-    (h : f ▷ Z = 0) : IsZero (U ⊗ Z) :=
-  (IsZero.iff_id_eq_zero _).2 <| by
-    rw [← id_whiskerRight, ← IsSplitMono.id f, comp_whiskerRight, h, zero_comp]
-
-end SplitMono
-
 section Semisimple
 
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
@@ -197,10 +179,13 @@ theorem ι_comp_π_ne {I J : UnitSimpleClasses C} (h : I ≠ J) : ι I ≫ π J 
   dsimp only [ι, π]; have hne := (chosenTensorUnitDecomp C).equiv.symm.injective.ne h
   simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_π_ne_assoc _ hne, zero_comp,
     comp_zero]
+instance (I : UnitSimpleClasses C) : IsSplitMono (ι I) := .mk' ⟨π I, ι_comp_π_self I⟩
+instance (I : UnitSimpleClasses C) : IsSplitEpi (π I) := .mk' ⟨ι I, ι_comp_π_self I⟩
+
 theorem ι_ne_zero (I : UnitSimpleClasses C) : ι I ≠ 0 :=
-  fun h ↦ CategoryTheory.id_ne_zero I.repr (by rw [← ι_comp_π_self I, h, zero_comp])
+  mt (IsZero.iff_isSplitMono_eq_zero (ι I)).mpr (Simple.not_isZero _)
 theorem π_ne_zero (I : UnitSimpleClasses C) : π I ≠ 0 :=
-  fun h ↦ CategoryTheory.id_ne_zero I.repr (by rw [← ι_comp_π_self I, h, comp_zero])
+  mt (IsZero.iff_isSplitEpi_eq_zero (π I)).mpr (Simple.not_isZero _)
 
 /-- Biproduct decomposition of the tensor unit `𝟙_ C` indexed by `UnitSimpleClasses C`. -/
 @[expose] def tensorUnitBicone : Bicone (fun I : UnitSimpleClasses C ↦ I.repr) where
@@ -303,7 +288,7 @@ def tensorSelfIso (I : UnitSimpleClasses C) : I.repr ⊗ I.repr ≅ I.repr :=
 
 /-- The inverse of `tensorSelfIso I` is nonzero. -/
 theorem tensorSelfIso_inv_ne_zero (I : UnitSimpleClasses C) : (tensorSelfIso I).inv ≠ 0 :=
-  fun h ↦ CategoryTheory.id_ne_zero I.repr (by rw [← (tensorSelfIso I).inv_hom_id, h, zero_comp])
+  mt (IsZero.iff_isSplitMono_eq_zero (tensorSelfIso I).inv).mpr (Simple.not_isZero _)
 
 end UnitSimpleClasses
 
@@ -510,7 +495,7 @@ unit class. -/
 theorem leftUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple X] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : leftUnitClass U = leftUnitClass X := by
   symm; rw [leftUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  exact not_isZero_leftUnitClass_tensorObj U <| isZero_whiskerLeft_of_isSplitMono f <|
+  exact not_isZero_leftUnitClass_tensorObj U <| isZero_tensorObj_of_whiskerLeft_eq_zero f <|
     (((tensorRight Y).map_isZero hz).of_iso (α_ _ X Y).symm).eq_of_tgt _ _
 
 /-- Along a nonzero morphism `U ⟶ X ⊗ Y` with `U` and `Y` simple, `U` and `Y` have the same right
@@ -518,7 +503,7 @@ unit class. -/
 theorem rightUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple Y] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : rightUnitClass U = rightUnitClass Y := by
   symm; rw [rightUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  exact not_isZero_tensorObj_rightUnitClass U <| isZero_whiskerRight_of_isSplitMono f <|
+  exact not_isZero_tensorObj_rightUnitClass U <| isZero_tensorObj_of_whiskerRight_eq_zero f <|
     (((tensorLeft X).map_isZero hz).of_iso (α_ X Y _)).eq_of_tgt _ _
 
 section Equivalence

@@ -63,8 +63,8 @@ theorem exists_hom_to_unit_ne_zero (I : UnitSimpleClasses C) :
 /-- Construct a `UnitSimpleClasses C` element from a nonzero morphism out of a simple object into
 `𝟙_ C`. -/
 def mkOfHomNeZero {X : C} [Simple X] {f : X ⟶ 𝟙_ C} (hf : f ≠ 0) : UnitSimpleClasses C :=
-  ⟨SimpleClasses.classOf X, ⟨(SimpleClasses.classOfReprIso X).hom ≫ f, fun h ↦
-    hf (by simpa using (SimpleClasses.classOfReprIso X).inv ≫= h)⟩⟩
+  ⟨SimpleClasses.classOf X, ⟨(SimpleClasses.classOfReprIso X).hom ≫ f,
+    by simpa [comp_eq_zero_iff_of_epi] using hf⟩⟩
 @[simp] theorem val_mkOfHomNeZero {X : C} [Simple X] {f : X ⟶ 𝟙_ C} (hf : f ≠ 0) :
     (mkOfHomNeZero hf).val = SimpleClasses.classOf X := (rfl)
 
@@ -82,8 +82,8 @@ private theorem map_unit_hom_ne_zero (e : C ≌ D) [e.functor.Monoidal] (I : Uni
   obtain ⟨f, hf⟩ := I.property
   have : e.functor.PreservesZeroMorphisms := e.functor.preservesZeroMorphisms_of_isLeftAdjoint
   let d := SimpleClasses.equivApplyReprIso e I.val; let u := Functor.Monoidal.εIso e.functor
-  refine ⟨d.hom ≫ e.functor.map f ≫ u.inv, fun h ↦ hf <| e.functor.map_injective ?_⟩
-  rw [e.functor.map_zero]; simpa using d.inv ≫= h =≫ u.hom
+  exact ⟨d.hom ≫ e.functor.map f ≫ u.inv, by
+    simpa [comp_eq_zero_iff_of_epi, comp_eq_zero_iff_of_mono, e.functor.map_eq_zero_iff] using hf⟩
 
 /-- A monoidal equivalence induces a bijection between the simple summand classes of the tensor
 units. -/

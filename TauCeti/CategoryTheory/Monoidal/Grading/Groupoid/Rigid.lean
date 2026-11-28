@@ -133,7 +133,7 @@ theorem exists_degree_eq {x y : universalGradingGroupoid C} (g : x ⟶ y) :
         (Y' := T.reprᘁ)).2 hmid
     obtain ⟨W, hW, f, hf⟩ := exists_simple_hom_ne_zero hnz
     let _ := hW; let dW := SimpleClasses.classOfReprIso W
-    have hf' : dW.hom ≫ f ≠ 0 := fun h ↦ hf <| by rw [← dW.inv_hom_id_assoc f, h, comp_zero]
+    have hf' : dW.hom ≫ f ≠ 0 := by simpa [comp_eq_zero_iff_of_epi] using hf
     refine ⟨SimpleClasses.classOf W,
       (congrArg mkObj (leftUnitClass_eq_of_hom_ne_zero hf')).trans hSL,
       (congrArg mkObj (rightUnitClass_eq_of_hom_ne_zero hf')).trans hTR, ?_⟩

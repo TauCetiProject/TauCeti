@@ -65,7 +65,7 @@ theorem not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass (X Y : C) {Y' :
   have := isSplitMono_of_nonzero_from_simple hf
   subst hI
   exact not_isZero_tensorObj_rightUnitClass X <|
-    isZero_whiskerLeft_of_isSplitMono (UnitSimpleClasses.ι (rightUnitClass X) ≫ η_ Y Y') <|
+    isZero_tensorObj_of_whiskerLeft_eq_zero (UnitSimpleClasses.ι (rightUnitClass X) ≫ η_ Y Y') <|
       (((tensorRight Y').map_isZero hz).of_iso (α_ X Y Y').symm).eq_of_tgt _ _
 
 /-- In an exact pairing of simple objects, the left unit class of the right member equals the right

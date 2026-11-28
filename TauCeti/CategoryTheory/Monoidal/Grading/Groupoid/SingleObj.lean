@@ -56,10 +56,6 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
 
 section SingleObjComparison
 
-private theorem eqToHom_core_singleObj_iso_hom {G : Type w} [Monoid G]
-    {x y : Core (SingleObj G)} (p : x = y) : (eqToHom p).iso.hom = 𝟙 (SingleObj.star G) := by
-  rw [Core.eqToHom_iso_hom, SingleObj.eqToHom_as_one, SingleObj.id_as_one]
-
 private theorem liftCoreEquiv_symm_deg_iso_hom {G : Type w} [Monoid G]
     (F : universalGradingGroupoid C ⥤ SingleObj G) (S : SimpleClasses C) :
     ((liftCoreEquiv.symm F).deg S).iso.hom = F.map (degree S) := by simp
@@ -69,7 +65,7 @@ private theorem liftCoreEquiv_map_degree {G : Type w} [Monoid G]
     (liftCoreEquiv γ).map (degree S) = (γ.deg S).iso.hom := by
   rw [liftCoreEquiv_apply, CategoryTheory.Functor.comp_map, lift_degree]
   simp only [Core.inclusion_map, coreCategory_comp_iso, Iso.trans_hom,
-    eqToHom_core_singleObj_iso_hom, SingleObj.comp_as_mul, SingleObj.id_as_one, one_mul, mul_one]
+    Core.eqToHom_iso_hom, SingleObj.eqToHom_as_one, SingleObj.comp_as_mul, one_mul, mul_one]
 
 /-- For any monoid `G`, functors `universalGradingGroupoid C ⥤ SingleObj G` correspond
 bijectively to monoid homomorphisms `universalGradingGroup C →* Gᵐᵒᵖ` (the opposite monoid
@@ -81,8 +77,8 @@ def singleObjFunctorEquiv (G : Type w) [Monoid G] :
   toFun F := universalGradingGroup.liftOfIsUnit (fun S ↦ MulOpposite.op (F.map (degree S)))
     (fun S ↦ ((SingleObj.isIso_iff_isUnit (F.map (degree S))).mp inferInstance).op)
     fun S T U f hf ↦ MulOpposite.unop_injective <| by
-      simpa [SingleObj.comp_as_mul, SingleObj.id_as_one, eqToHom_core_singleObj_iso_hom,
-        liftCoreEquiv_symm_deg_iso_hom] using
+      simpa [SingleObj.comp_as_mul, SingleObj.id_as_one, Core.eqToHom_iso_hom,
+        SingleObj.eqToHom_as_one, liftCoreEquiv_symm_deg_iso_hom] using
         congrArg (fun m ↦ m.iso.hom) ((liftCoreEquiv.symm F).deg_comp f hf)
   invFun χ := liftCoreEquiv
     { obj := fun _ ↦ Core.mk (SingleObj.star G)
@@ -94,8 +90,8 @@ def singleObjFunctorEquiv (G : Type w) [Monoid G] :
           inv_hom_id := MulOpposite.op_injective <| by
             simp [SingleObj.comp_as_mul, SingleObj.id_as_one, ← map_mul] } }
       deg_comp := fun {S T U} f hf ↦ Core.hom_ext <| by
-        simp only [eqToHom_core_singleObj_iso_hom, Category.id_comp, Category.comp_id,
-          coreCategory_comp_iso, Iso.trans_hom, SingleObj.comp_as_mul]
+        simp only [Core.eqToHom_iso_hom, SingleObj.eqToHom_as_one, coreCategory_comp_iso,
+          Iso.trans_hom, SingleObj.comp_as_mul, one_mul, mul_one]
         rw [universalGradingGroup.degree_mul S T U f hf, map_mul, MulOpposite.unop_mul] }
   left_inv F := functor_ext (fun _ ↦ rfl) fun S ↦ by
     rw [liftCoreEquiv_map_degree]
@@ -269,13 +265,16 @@ def vertexGroupMulEquiv :
   map_mul' _ _ := by
     rw [CategoryTheory.Groupoid.vertexGroup_mul, CategoryTheory.Functor.map_comp,
       SingleObj.comp_as_mul, MulOpposite.unop_mul]
-@[simp] theorem vertexGroupMulEquiv_degree (S : SimpleClasses C) :
-    vertexGroupMulEquiv (eqToHom (Subsingleton.elim _ _) ≫ degree S ≫
-      eqToHom (Subsingleton.elim _ _)) = universalGradingGroup.degree S := by
+@[simp] theorem vertexGroupMulEquiv_degree (S : SimpleClasses C)
+    {p : (default : universalGradingGroupoid C) = mkObj (leftUnitClass S.repr)}
+    {q : mkObj (rightUnitClass S.repr) = default} :
+    vertexGroupMulEquiv (eqToHom p ≫ degree S ≫ eqToHom q) =
+      universalGradingGroup.degree S := by
   simp [vertexGroupMulEquiv, toSingleObjGradingGroup, eqToHom_map, eqToHom_refl]
-@[simp] theorem vertexGroupMulEquiv_degreeOf (X : C) [Simple X] :
-    vertexGroupMulEquiv (eqToHom (Subsingleton.elim _ _) ≫ degreeOf X ≫
-      eqToHom (Subsingleton.elim _ _)) =
+@[simp] theorem vertexGroupMulEquiv_degreeOf (X : C) [Simple X]
+    {p : (default : universalGradingGroupoid C) = mkObj (leftUnitClass X)}
+    {q : mkObj (rightUnitClass X) = default} :
+    vertexGroupMulEquiv (eqToHom p ≫ degreeOf X ≫ eqToHom q) =
       universalGradingGroup.degree (SimpleClasses.classOf X) := by
   simp [vertexGroupMulEquiv, toSingleObjGradingGroup, eqToHom_map, eqToHom_refl]
 @[simp] theorem vertexGroupMulEquiv_symm_degree (S : SimpleClasses C) :

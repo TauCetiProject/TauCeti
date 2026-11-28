@@ -71,7 +71,8 @@ theorem degree_classOf_eq_mul {X Y U : C} [Simple X] [Simple Y] [Simple U] (f : 
       degree (SimpleClasses.classOf X) * degree (SimpleClasses.classOf Y) := by
   let e := SimpleClasses.classOfReprIso U
   let t := SimpleClasses.classOfReprIso X ⊗ᵢ SimpleClasses.classOfReprIso Y
-  refine degree_mul _ _ _ (e.hom ≫ f ≫ t.inv) fun h ↦ hf ?_; simpa using e.inv ≫= h =≫ t.hom
+  exact degree_mul _ _ _ (e.hom ≫ f ≫ t.inv)
+    (by simpa [comp_eq_zero_iff_of_epi, comp_eq_zero_iff_of_mono] using hf)
 
 /-- A simple object admitting a nonzero morphism into its tensor square has neutral universal
 degree. -/
@@ -172,8 +173,8 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [MonoidalCategory C]
 
 /-- The tensor unit has neutral universal degree. -/
 @[simp] theorem degree_unit : degree (SimpleClasses.classOf (𝟙_ C)) = 1 :=
-  degree_classOf_eq_one_of_hom_tensor_self_ne_zero (f := (λ_ (𝟙_ C)).inv) fun h ↦
-    CategoryTheory.id_ne_zero (𝟙_ C) (by rw [← (λ_ (𝟙_ C)).inv_hom_id, h, zero_comp])
+  degree_classOf_eq_one_of_hom_tensor_self_ne_zero
+    (mt (IsZero.iff_isSplitMono_eq_zero (λ_ (𝟙_ C)).inv).mpr (Simple.not_isZero _))
 
 end universalGradingGroup
 

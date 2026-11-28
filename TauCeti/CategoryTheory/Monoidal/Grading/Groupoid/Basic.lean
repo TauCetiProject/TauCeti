@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Groupoid.FreeGroupoid
 public import TauCeti.CategoryTheory.Core
 public import TauCeti.CategoryTheory.Semisimple.UnitSummands.Basic
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # The universal grading groupoid of a multitensor category
@@ -166,7 +167,7 @@ theorem degOf_comp {X Y U : C} [Simple X] [Simple Y] [Simple U] (f : U ⟶ X ⊗
   let eU := SimpleClasses.classOfReprIso U
   let eXY := SimpleClasses.classOfReprIso X ⊗ᵢ SimpleClasses.classOfReprIso Y
   have hf' : eU.hom ≫ f ≫ eXY.inv ≠ 0 :=
-    fun h ↦ hf <| by simpa [Category.assoc] using eU.inv ≫= h =≫ eXY.hom
+    by simpa [comp_eq_zero_iff_of_epi, comp_eq_zero_iff_of_mono] using hf
   have hdeg := γ.deg_comp (eU.hom ≫ f ≫ eXY.inv) hf'
   simp only [degOf, hdeg, Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 
@@ -343,11 +344,6 @@ private theorem fromQuotient_comp_lift (γ : GroupoidGrading C G) :
       eqToHom (lift_mkObj γ _) ≫ γ.degOf X ≫ eqToHom (lift_mkObj γ _).symm := by
   simp [degreeOf_def, GroupoidGrading.degOf, eqToHom_map, Category.assoc]
 
-private theorem heq_eqRecOn {G : Type u₂} [Quiver.{v₂} G] {a b c d : G}
-    (p : b = a) (q : c = d) (m : b ⟶ c) :
-    m ≍ (Eq.recOn q (Eq.recOn p m : a ⟶ c) : a ⟶ d) := by
-  subst p q; rfl
-
 private theorem functor_ext_of_groupoid {F₁ F₂ : universalGradingGroupoid C ⥤ G}
     (hobj : ∀ I : UnitSimpleClasses C, F₁.obj (mkObj I) = F₂.obj (mkObj I))
     (hdeg : ∀ S : SimpleClasses C,
@@ -360,8 +356,9 @@ private theorem functor_ext_of_groupoid {F₁ F₂ : universalGradingGroupoid C 
     have hφ : Quiver.FreeGroupoid.of (GeneratingQuiver C) ⋙q
         (CategoryTheory.Quotient.functor (Rel C) ⋙ fromQuotientFunctor ⋙ F₁).toPrefunctor = φ := by
       refine Prefunctor.ext (fun x ↦ hobj x.unit) ?_; rintro _ _ ⟨S⟩
-      exact eq_of_heq <| ((conj_eqToHom_iff_heq (F₁.map (degree S)) (F₂.map (degree S))
-        (hobj _) (hobj _)).1 (hdeg S)).trans (heq_eqRecOn _ _ _)
+      exact heq_eqRecOn (hobj _) (hobj _)
+        ((conj_eqToHom_iff_heq (F₁.map (degree S)) (F₂.map (degree S))
+          (hobj _) (hobj _)).1 (hdeg S))
     rw [Quiver.FreeGroupoid.lift_unique φ _ hφ, Quiver.FreeGroupoid.lift_unique φ _ rfl]
   simpa [← Functor.assoc, toQuotient_comp_fromQuotient, Functor.id_comp] using
     congrArg (toQuotientFunctor (C := C) ⋙ ·) hcomp
@@ -447,8 +444,8 @@ private def gradingOfEquivalence (e : C ≌ D) [e.functor.Monoidal] :
     let dU := SimpleClasses.equivApplyReprIso e U
     let dST := (SimpleClasses.equivApplyReprIso e S ⊗ᵢ SimpleClasses.equivApplyReprIso e T) ≪≫
       Functor.Monoidal.μIso e.functor S.repr T.repr
-    have hg : dU.hom ≫ e.functor.map f ≫ dST.inv ≠ 0 := fun h ↦ hf <| e.functor.map_injective <|
-      by rw [e.functor.map_zero]; simpa [Category.assoc] using dU.inv ≫= h =≫ dST.hom
+    have hg : dU.hom ≫ e.functor.map f ≫ dST.inv ≠ 0 := by
+      simpa [comp_eq_zero_iff_of_epi, comp_eq_zero_iff_of_mono, e.functor.map_eq_zero_iff] using hf
     simp [degree_comp _ hg, Category.assoc]
 
 /-- Functorial transport of `universalGradingGroupoid` along a monoidal equivalence `e : C ≌ D`. -/
@@ -469,39 +466,62 @@ def mapEquivalence (e : C ≌ D) [e.functor.Monoidal] :
     Category.assoc]
   rw [degree_congr (SimpleClasses.equiv_apply_classOf e X)]
   simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+
+private theorem mapEquivalence_comp_degree {C₁ : Type u₁} [Category.{v₁} C₁] [Abelian C₁]
+    [MonoidalCategory C₁] [MonoidalPreadditive C₁] [IsFiniteSemisimpleCategory C₁]
+    {D₁ : Type u₂} [Category.{v₂} D₁] [Abelian D₁] [MonoidalCategory D₁]
+    [MonoidalPreadditive D₁] [IsFiniteSemisimpleCategory D₁]
+    {E : Type u₃} [Category.{v₃} E] [Abelian E] [MonoidalCategory E]
+    [MonoidalPreadditive E] [IsFiniteSemisimpleCategory E]
+    (e₁ : C₁ ≌ D₁) (e₂ : D₁ ≌ E) [e₁.functor.Monoidal] [e₂.functor.Monoidal]
+    (S : SimpleClasses C₁) :
+    (mapEquivalence e₁ ⋙ mapEquivalence e₂).map (degree S) =
+      eqToHom (by simp) ≫ degree (SimpleClasses.equiv e₂ (SimpleClasses.equiv e₁ S)) ≫
+        eqToHom (by simp) := by
+  simp [eqToHom_map]
+
+private theorem functor_ext_degree {C₁ : Type u₁} [Category.{v₁} C₁] [Abelian C₁]
+    [MonoidalCategory C₁] [MonoidalPreadditive C₁] [IsFiniteSemisimpleCategory C₁]
+    {E : Type u₃} [Category.{v₃} E] [Abelian E] [MonoidalCategory E]
+    [MonoidalPreadditive E] [IsFiniteSemisimpleCategory E]
+    {F₁ F₂ : universalGradingGroupoid C₁ ⥤ universalGradingGroupoid E}
+    (hobj : ∀ I : UnitSimpleClasses C₁, F₁.obj (mkObj I) = F₂.obj (mkObj I))
+    {φ ψ : SimpleClasses C₁ → SimpleClasses E} (hφψ : ∀ S, φ S = ψ S)
+    {p₁ : ∀ S, F₁.obj (mkObj (leftUnitClass S.repr)) = mkObj (leftUnitClass (φ S).repr)}
+    {q₁ : ∀ S, mkObj (rightUnitClass (φ S).repr) = F₁.obj (mkObj (rightUnitClass S.repr))}
+    (hF₁ : ∀ S, F₁.map (degree S) = eqToHom (p₁ S) ≫ degree (φ S) ≫ eqToHom (q₁ S))
+    {p₂ : ∀ S, F₂.obj (mkObj (leftUnitClass S.repr)) = mkObj (leftUnitClass (ψ S).repr)}
+    {q₂ : ∀ S, mkObj (rightUnitClass (ψ S).repr) = F₂.obj (mkObj (rightUnitClass S.repr))}
+    (hF₂ : ∀ S, F₂.map (degree S) = eqToHom (p₂ S) ≫ degree (ψ S) ≫ eqToHom (q₂ S)) :
+    F₁ = F₂ := by
+  refine functor_ext hobj fun S ↦ ?_
+  rw [hF₁ S, hF₂ S, degree_congr (hφψ S)]
+  simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+
 @[simp] theorem mapEquivalence_refl :
     mapEquivalence (CategoryTheory.Equivalence.refl (C := C)) = 𝟭 (universalGradingGroupoid C) :=
-  functor_ext (fun _ ↦ by simp) fun S ↦ by
-    simp only [mapEquivalence_degree, Functor.id_map]
-    rw [degree_congr (SimpleClasses.equiv_refl S)]
-    simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+  functor_ext_degree (fun _ ↦ by simp) SimpleClasses.equiv_refl
+    (mapEquivalence_degree _) (p₂ := fun _ ↦ rfl) (q₂ := fun _ ↦ rfl) fun _ ↦ by simp
 @[simp] theorem mapEquivalence_trans {E : Type u₃} [Category.{v₃} E] [Abelian E]
     [MonoidalCategory E] [MonoidalPreadditive E] [IsFiniteSemisimpleCategory E]
     (e₁ : C ≌ D) (e₂ : D ≌ E) [e₁.functor.Monoidal] [e₂.functor.Monoidal] :
     mapEquivalence (e₁.trans e₂) = mapEquivalence e₁ ⋙ mapEquivalence e₂ :=
-  functor_ext (fun _ ↦ by simp) fun S ↦ by
-    simp only [mapEquivalence_degree, Functor.comp_map, CategoryTheory.Functor.map_comp,
-      eqToHom_map]
-    rw [degree_congr (SimpleClasses.equiv_trans e₁ e₂ S)]
-    simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+  functor_ext_degree (fun _ ↦ by simp) (SimpleClasses.equiv_trans e₁ e₂)
+    (mapEquivalence_degree _) (mapEquivalence_comp_degree e₁ e₂)
 theorem mapEquivalence_comp_symm (e : C ≌ D) [e.functor.Monoidal] : letI := e.inverseMonoidal
     mapEquivalence e ⋙ mapEquivalence e.symm = 𝟭 (universalGradingGroupoid C) := by
   let _ := e.inverseMonoidal
-  refine functor_ext (fun I ↦ by
-    simp [-UnitSimpleClasses.equiv_symm, ← UnitSimpleClasses.equiv_symm e]) fun S ↦ ?_
-  simp only [Functor.comp_map, mapEquivalence_degree, CategoryTheory.Functor.map_comp, eqToHom_map,
-    Functor.id_map]
-  rw [degree_congr (SimpleClasses.equiv_symm_equiv e S)]
-  simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+  exact functor_ext_degree (fun I ↦ by
+      simp [-UnitSimpleClasses.equiv_symm, ← UnitSimpleClasses.equiv_symm e])
+    (SimpleClasses.equiv_symm_equiv e) (mapEquivalence_comp_degree e e.symm)
+    (p₂ := fun _ ↦ rfl) (q₂ := fun _ ↦ rfl) fun _ ↦ by simp
 theorem symm_mapEquivalence_comp (e : C ≌ D) [e.functor.Monoidal] : letI := e.inverseMonoidal
     mapEquivalence e.symm ⋙ mapEquivalence e = 𝟭 (universalGradingGroupoid D) := by
   let _ := e.inverseMonoidal
-  refine functor_ext (fun J ↦ by
-    simp [-UnitSimpleClasses.equiv_symm, ← UnitSimpleClasses.equiv_symm e]) fun T ↦ ?_
-  simp only [Functor.comp_map, mapEquivalence_degree, CategoryTheory.Functor.map_comp, eqToHom_map,
-    Functor.id_map]
-  rw [degree_congr (SimpleClasses.equiv_equiv_symm e T)]
-  simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+  exact functor_ext_degree (fun J ↦ by
+      simp [-UnitSimpleClasses.equiv_symm, ← UnitSimpleClasses.equiv_symm e])
+    (SimpleClasses.equiv_equiv_symm e) (mapEquivalence_comp_degree e.symm e)
+    (p₂ := fun _ ↦ rfl) (q₂ := fun _ ↦ rfl) fun _ ↦ by simp
 
 /-- A monoidal equivalence `C ≌ D` induces an equivalence of universal grading groupoids. -/
 def congrEquivalence (e : C ≌ D) [e.functor.Monoidal] :
@@ -526,16 +546,6 @@ private theorem quotFunctor_map_of (S : SimpleClasses C) :
     fromQuotientFunctor.map ((CategoryTheory.Quotient.functor (Rel C)).map
       ((Quiver.FreeGroupoid.of (GeneratingQuiver C)).map (GeneratingEdge.mk S))) ≍ degree S :=
   HEq.rfl
-private theorem inv_heq_inv {G : Type u₂} [Category.{v₂} G] {X₁ Y₁ X₂ Y₂ : G}
-    (hX : X₁ = X₂) (hY : Y₁ = Y₂) {f : X₁ ⟶ Y₁} {g : X₂ ⟶ Y₂} [IsIso f] [IsIso g]
-    (h : f ≍ g) : inv f ≍ inv g := by
-  subst hX hY; cases h; rfl
-
-private theorem prop_conj_eqToHom {G : Type u₂} [Category.{v₂} G]
-    {P : ∀ {x y : G}, (x ⟶ y) → Prop} {x₁ y₁ x₂ y₂ : G} (hx : x₂ = x₁) (hy : y₁ = y₂)
-    {m : x₁ ⟶ y₁} (hm : P m) : P (eqToHom hx ≫ m ≫ eqToHom hy) := by
-  subst hx hy; simpa using hm
-
 private theorem quotFunctor_map_inv_of (S : SimpleClasses C) :
     fromQuotientFunctor.map ((CategoryTheory.Quotient.functor (Rel C)).map
       (inv ((Quiver.FreeGroupoid.of (GeneratingQuiver C)).map (GeneratingEdge.mk S)))) ≍
