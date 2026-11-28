@@ -53,6 +53,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 * `MvPowerSeries.hasSubst_pair` and `MvPowerSeries.hasSubst_pair_of_hasSubst` : a pair of series
   with vanishing (or nilpotent) constant coefficient is a legitimate substitution family for the
   two variables indexed by `Unit ⊕ Unit`.
+* `MvPowerSeries.substLaw`, `MvPowerSeries.subst_substLaw`, `MvPowerSeries.subst_substLaw_blocks` :
+  substitution into two blocks of coordinates and its composition over coefficient algebras.
 * `MvPowerSeries.coordSpecialize`, `MvPowerSeries.hasSubst_coordSpecialize` and the two
   `subst_coordSpecialize_X_*` lemmas : the substitution sending one coordinate variable to `X` and
   every other to `0`, for an index type of any size.
@@ -241,18 +243,54 @@ theorem subst_X_add_X {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
 section Blocks
 
-variable {R : Type*} [CommRing R] {n : ℕ}
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {n : ℕ}
 
-/-- Substituting a family of coordinate blocks at a variable recovers that coordinate. -/
+/-- Substitute two blocks of coordinates using the total operation `MvPowerSeries.subst`.
+For general power series, formal evaluation requires admissible tuples. Polynomial coordinates
+evaluate on arbitrary tuples. -/
+noncomputable def substLaw (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
+    (x y : Fin n → MvPowerSeries σ S) (i : Fin n) : MvPowerSeries σ S :=
+  (φ i).subst (Function.uncurry ![x, y])
+
+/-- The coordinate formula for substituting two tuples into a binary law. -/
+theorem substLaw_def (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
+    (x y : Fin n → MvPowerSeries σ S) (i : Fin n) :
+    substLaw φ x y i = (φ i).subst (Function.uncurry ![x, y]) := (rfl)
+
+/-- Evaluating a binary law on its two blocks of independent variables recovers the law. -/
 @[simp]
-theorem subst_block {k : ℕ} (a : Fin k → Fin n → MvPowerSeries σ R) (j : Fin k) (i : Fin n) :
-    (X (R := R) (j, i)).subst (Function.uncurry a) = a j i := by
-  simp only [← MvPolynomial.coe_X, subst_coe, MvPolynomial.aeval_X, Function.uncurry_apply_pair]
+theorem substLaw_X (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R) :
+    substLaw φ (fun i ↦ X (0, i)) (fun i ↦ X (1, i)) = φ := by
+  have h : Function.uncurry ![(fun i : Fin n ↦ X (R := R) ((0 : Fin 2), i)),
+      (fun i : Fin n ↦ X (R := R) ((1 : Fin 2), i))] = X := by
+    funext ⟨j, i⟩
+    fin_cases j <;> simp [Function.uncurry]
+  funext i
+  simp only [substLaw_def, h, subst_self, id_eq]
 
-/-- The variables in one finite coordinate block form an admissible substitution family. -/
-theorem hasSubst_block {k : ℕ} (j : Fin k) :
-    HasSubst (fun i : Fin n ↦ X (R := R) (j, i)) :=
-  hasSubst_of_constantCoeff_zero fun _ ↦ by simp
+/-- For admissible input tuples and an admissible subsequent family, substitution composes. -/
+theorem subst_substLaw {T : Type*} [CommRing T] [Algebra S T] [Algebra R T] [IsScalarTower R S T]
+    (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
+    {x y : Fin n → MvPowerSeries σ S} (hx : HasSubst x) (hy : HasSubst y)
+    {a : σ → MvPowerSeries τ T} (ha : HasSubst a) (i : Fin n) :
+    (substLaw φ x y i).subst a =
+      substLaw φ (fun j ↦ (x j).subst a) (fun j ↦ (y j).subst a) i := by
+  unfold substLaw
+  rw [subst_comp_subst_apply (hx.pair hy) ha]
+  congr 1
+  funext ⟨k, j⟩
+  fin_cases k <;> simp [Function.uncurry]
+
+/-- Substituting a family into a law on two universal blocks selects the corresponding tuples. -/
+theorem subst_substLaw_blocks {k : ℕ}
+    (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
+    {a : Fin k → Fin n → MvPowerSeries σ S} (ha : HasSubst (Function.uncurry a))
+    (j₁ j₂ : Fin k) (i : Fin n) :
+    (substLaw φ (fun j ↦ X (R := R) (j₁, j)) (fun j ↦ X (j₂, j)) i).subst (Function.uncurry a) =
+      substLaw φ (a j₁) (a j₂) i := by
+  simpa only [subst_X ha, Function.uncurry_apply_pair] using
+    (subst_substLaw φ (x := fun j ↦ X (R := R) (j₁, j)) (y := fun j ↦ X (j₂, j))
+      (HasSubst.X.curry j₁) (HasSubst.X.curry j₂) ha i)
 
 end Blocks
 
