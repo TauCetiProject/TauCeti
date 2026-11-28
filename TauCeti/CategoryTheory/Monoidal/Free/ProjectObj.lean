@@ -155,11 +155,14 @@ theorem projectObjIso_projectObj {C' : Type u''} {f g : C' → D} (e : ∀ b, f 
       TauCeti.eqToHom_tensorHom_eqToHom]
     rw [projectObjIso_congr_word e (projectObj_tensorObj h X Y), projectObjIso_tensor,
       tensorIso_hom]
-    refine TauCeti.eq_of_heq_conj
-      (m := (projectObjIso e (projectObj h X)).hom ⊗ₘ (projectObjIso e (projectObj h Y)).hom)
-      ((eqToHom_comp_heq _ _).trans (comp_eqToHom_heq _ _))
-      ((eqToHom_comp_heq _ _).trans ((comp_eqToHom_heq _ _).trans
-        ((eqToHom_comp_heq _ _).trans (comp_eqToHom_heq _ _))))
-      HEq.rfl
+    refine (congrArg₂ (· ≫ ·)
+      (TauCeti.eqToHom_comp_eqToHom (projectObj_projectObj f h (X ⊗ Y)).symm
+        (congrArg (projectObj f) (projectObj_tensorObj h X Y)) _).symm
+      (congrArg (_ ≫ ·) (TauCeti.eqToHom_comp_eqToHom
+        (congrArg (projectObj g) (projectObj_tensorObj h X Y)).symm
+        (projectObj_projectObj g h (X ⊗ Y)) _).symm)).trans ?_
+    exact (Category.assoc _ _ _).trans <|
+      congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans
+        (Category.assoc _ _ _).symm)
 
 end CategoryTheory.FreeMonoidalCategory

@@ -35,8 +35,6 @@ and avoid exposing the definitional equality of the objects being transported.
 * `TauCeti.eqToHom_conjugate_square`: conjugating every edge preserves and reflects commutativity of
   a square.
 * `TauCeti.eq_of_eqToHom_conjugate`: two morphisms with equal conjugates are equal.
-* `TauCeti.eq_of_heq_conj`: two parallel morphisms heterogeneously equal to heterogeneously equal
-  morphisms are equal.
 * `TauCeti.eqToHom_conjugate_vertical_square_of_horizontal_square`: commutativity with conjugated
   horizontal edges gives commutativity after moving the conjugations to the vertical edges.
 * `TauCeti.eqToHom_eq_iso_hom_map_eqToHom`: transport along an index equality is conjugate, through
@@ -178,12 +176,6 @@ theorem eq_of_eqToHom_conjugate {C : Type*} [Category* C] {X X' Y Y' : C} (hX : 
   (eqToHom_conjugate_cancel hX hY.symm f).symm.trans
     ((congrArg (fun u : X' ⟶ Y' ↦ eqToHom hX.symm ≫ u ≫ eqToHom hY.symm) h).trans
       (eqToHom_conjugate_cancel hX hY.symm g))
-
-/-- Two parallel morphisms `f g : X ⟶ Y` that are heterogeneously equal to morphisms `m` and
-`m'` with `m ≍ m'` are equal. -/
-theorem eq_of_heq_conj {C : Type*} [Category* C] {X Y A B A' B' : C} {f g : X ⟶ Y}
-    {m : A ⟶ B} {m' : A' ⟶ B'} (hf : f ≍ m) (hg : g ≍ m') (hm : m ≍ m') : f = g :=
-  eq_of_heq (hf.trans (hm.trans hg.symm))
 
 /-- **A square with conjugated horizontal edges yields a square with conjugated vertical edges.**
 The horizontal conjugations cancel from the conclusion, while the vertical edges acquire the
