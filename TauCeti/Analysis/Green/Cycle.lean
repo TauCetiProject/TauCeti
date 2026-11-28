@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.FiniteSum
-public import TauCeti.Analysis.Contour.Cycle.Winding
+public import TauCeti.Analysis.Green.WindingWeight.Cycle
 public import TauCeti.Analysis.Contour.Cycle.Trace
 import TauCeti.Analysis.Green.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
@@ -18,6 +18,15 @@ import TauCeti.Analysis.Convex.Segment
 The canonical support and integer coefficients of an existing contour cycle give its circulation.
 The area weight is the existing cycle winding number, set to zero on its null trace. Affine
 normalization of each generator handles both orientations and constant parameter intervals.
+
+## Main results
+
+* `TauCeti.Contour.Cycle.green_winding`: Green's theorem for an existing contour cycle with its
+  trace-zero winding weight.
+* `TauCeti.Contour.Cycle.re_integral_eq_sum_circulationFun` and
+  `TauCeti.Contour.Cycle.im_integral_eq_sum_circulationFun`: the real and imaginary parts of
+  `C.integral F` written as coefficient-weighted sums of planar circulations of `(Re F, -Im F)`
+  and `(Im F, Re F)`.
 -/
 
 public section
@@ -27,25 +36,6 @@ noncomputable section
 open MeasureTheory Set Function
 
 namespace TauCeti.Green
-
-/-- The winding weights of the affine normalizations of the generators of a cycle add up, almost
-everywhere, to the winding weight of the cycle. -/
-private theorem sum_windingWeight_comp_lineMap_ae (C : Contour.Cycle) :
-    (fun z ↦ ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
-      windingWeight (γ ∘ AffineMap.lineMap γ.a γ.b) 0 1 z) =ᵐ[volume] C.windingWeight := by
-  have hnot : ∀ᵐ z ∂volume, z ∉ Contour.Cycle.trace C := by
-    rw [ae_iff]
-    simpa only [not_not, ofPred_mem_eq] using Contour.Cycle.addHaar_trace_eq_zero C volume
-  filter_upwards [hnot] with z hz
-  rw [Contour.Cycle.windingWeight_eq_of_notMem C hz,
-    Contour.Cycle.windingNumber_eq_sum_support, Complex.re_sum]
-  apply Finset.sum_congr rfl
-  intro γ hγ
-  have hzγ : z ∉ γ '' uIcc γ.a γ.b := by
-    exact fun hm ↦ hz (Contour.Cycle.mem_trace_iff.mpr ⟨γ, hγ, hm⟩)
-  rw [windingWeight_eq_of_notMem (by rwa [Set.image_comp_lineMap_uIcc_zero_one]),
-    γ.absolutelyContinuousOnInterval.windingNumber_comp_lineMap hzγ]
-  simp
 
 /-- Green's theorem for an existing contour cycle, with its actual total winding number.
 The circulation uses the cycle's canonical support and coefficients. Only the total index must
@@ -102,5 +92,42 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
   · exact hi.congr (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz)
   · simp only [η, integral_circulationFun_comp_lineMap] at heq
     exact heq.trans (integral_congr_ae (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz))
+
+private theorem clm_integral_eq_sum (C : Contour.Cycle) {F : ℂ → ℂ}
+    (hF : ∀ γ ∈ FreeAddCommGroup.support C,
+      IntervalIntegrable (fun t ↦ deriv γ t • F (γ t)) volume γ.a γ.b)
+    (L : ℂ →L[ℝ] ℝ) {P Q : ℂ → ℝ}
+    (hpt : ∀ γ t, L (deriv γ t * F (γ t)) = circulationFun P Q γ t) :
+    L (C.integral F) =
+      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
+        ∫ t in γ.a..γ.b, circulationFun P Q γ t := by
+  rw [Contour.Cycle.integral_eq_sum_support, map_sum]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [map_zsmul, zsmul_eq_mul, ← L.intervalIntegral_comp_comm (hF γ hγ)]
+  exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦ hpt γ t)
+
+/-- When `t ↦ deriv γ t • F (γ t)` is interval-integrable along every curve `γ` in the support
+of `C`, the real part of `C.integral F` equals the coefficient-weighted sum of the real
+circulations of `(Re F, -Im F)` over the supported generators. -/
+theorem _root_.TauCeti.Contour.Cycle.re_integral_eq_sum_circulationFun (C : Contour.Cycle)
+    {F : ℂ → ℂ}
+    (hF : ∀ γ ∈ FreeAddCommGroup.support C,
+      IntervalIntegrable (fun t ↦ deriv γ t • F (γ t)) volume γ.a γ.b) :
+    (C.integral F).re =
+      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
+        ∫ t in γ.a..γ.b, circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t :=
+  clm_integral_eq_sum C hF Complex.reCLM fun γ t ↦ re_deriv_mul_eq_circulationFun F γ t
+
+/-- When `t ↦ deriv γ t • F (γ t)` is interval-integrable along every curve `γ` in the support
+of `C`, the imaginary part of `C.integral F` equals the coefficient-weighted sum of the real
+circulations of `(Im F, Re F)` over the supported generators. -/
+theorem _root_.TauCeti.Contour.Cycle.im_integral_eq_sum_circulationFun (C : Contour.Cycle)
+    {F : ℂ → ℂ}
+    (hF : ∀ γ ∈ FreeAddCommGroup.support C,
+      IntervalIntegrable (fun t ↦ deriv γ t • F (γ t)) volume γ.a γ.b) :
+    (C.integral F).im =
+      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
+        ∫ t in γ.a..γ.b, circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t :=
+  clm_integral_eq_sum C hF Complex.imCLM fun γ t ↦ im_deriv_mul_eq_circulationFun F γ t
 
 end TauCeti.Green

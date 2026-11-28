@@ -95,6 +95,8 @@ integrable `f` it is holomorphic off the closed support `tsupport f`, with compl
   at infinity.
 * `TauCeti.eq_pi_inv_smul_setIntegral_of_differentiableOn`: cutoff Cauchy–Pompeiu representation of
   a holomorphic function on `V` as a set integral over `tsupport α \ V`.
+* `TauCeti.integrableOn_sub_inv_smul_conjWirtingerDeriv`: area integrability of
+  `z ↦ (z - ξ)⁻¹ • \bar∂ f(z)` on bounded sets `Δ` with `closure Δ ⊆ Ω` for real `C¹` `f` on `Ω`.
 
 ## References
 
@@ -722,5 +724,20 @@ theorem eq_pi_inv_smul_setIntegral_of_differentiableOn {V U : Set ℂ} {α : ℂ
         simp [u, hy]
       rw [hne.conjWirtingerDeriv_eq, (differentiableAt_const (0 : F)).conjWirtingerDeriv_eq_zero]
       simp
+
+open Bornology in
+/-- If `Δ` is a bounded plane set with `closure Δ ⊆ Ω` (`Ω` open) and `f : ℂ → E` is real `C¹`
+on `Ω`, then `z ↦ (z - ξ)⁻¹ • conjWirtingerDeriv f z 1` is integrable on `Δ` for every `ξ : ℂ`. -/
+theorem integrableOn_sub_inv_smul_conjWirtingerDeriv {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hbounded : IsBounded Δ)
+    (hclosure : closure Δ ⊆ Ω) {f : ℂ → E} (hf : ContDiffOn ℝ 1 f Ω) (ξ : ℂ) :
+    IntegrableOn (fun z ↦ (z - ξ)⁻¹ • conjWirtingerDeriv f z 1) Δ := by
+  have hcont : ContinuousOn (fun z ↦ conjWirtingerDeriv f z 1) Ω :=
+    (hf.conjWirtingerDeriv_apply_of_isOpen hΩ (m := 0) (by simp) 1).continuousOn
+  obtain ⟨M, hM⟩ := (Metric.isCompact_of_isClosed_isBounded isClosed_closure
+    hbounded.closure).exists_bound_of_continuousOn (hcont.mono hclosure)
+  exact (integrableOn_sub_inv_smul_of_isBounded hbounded.closure
+    ((hcont.mono hclosure).aestronglyMeasurable isClosed_closure.measurableSet)
+    (ae_restrict_of_forall_mem isClosed_closure.measurableSet hM) ξ).mono_set subset_closure
 
 end TauCeti

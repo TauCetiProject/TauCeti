@@ -62,6 +62,9 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_ofReal_comp_apply`: for real-valued `f`, `\bar∂f = conj ∂f`;
   `TauCeti.conjWirtingerDeriv_ofReal_comp_apply_eq_lineDeriv` writes `\bar∂f` with directional
   derivatives.
+* `TauCeti.wirtingerDeriv_conj_comp_apply`, `TauCeti.conjWirtingerDeriv_conj_comp_apply`, and
+  `DifferentiableAt.wirtingerDeriv_conj_comp_eq_zero`: post-composing with conjugation swaps `∂`
+  and `\bar∂` up to conjugation, so `conj ∘ g` has vanishing `∂` whenever `g` is holomorphic.
 * `TauCeti.wirtingerDeriv_smul_apply`, `TauCeti.conjWirtingerDeriv_smul_apply`: the product rules
   `∂(c g) = c ∂g + (∂c) g` and `\bar∂(c g) = c \bar∂g + (\bar∂c) g` for a complex-valued factor `c`.
 * `TauCeti.norm_wirtingerDeriv_smul_sub_smul_le`,
@@ -457,6 +460,35 @@ theorem conjWirtingerDeriv_ofReal_comp_apply_eq_lineDeriv {f : V → ℝ} {x : V
     conjWirtingerDeriv (fun y ↦ (f y : ℂ)) x v =
       (2 : ℂ)⁻¹ * (((lineDeriv ℝ f x v : ℝ) : ℂ) + I * ((lineDeriv ℝ f x (I • v) : ℝ) : ℂ)) := by
   simp [conjWirtingerDeriv_apply, hf.lineDeriv_eq_fderiv]
+
+/-- Post-composing `g : V → ℂ` with complex conjugation turns its complex-linear Wirtinger
+derivative into the conjugate of its conjugate Wirtinger derivative:
+`∂(conj ∘ g)(x) v = conj (\bar∂g(x) v)`. -/
+theorem wirtingerDeriv_conj_comp_apply (g : V → ℂ) (x v : V) :
+    wirtingerDeriv (fun y ↦ conj (g y)) x v = conj (conjWirtingerDeriv g x v) := by
+  have hcomp : (fun y ↦ conj (g y)) = (Complex.conjCLE : ℂ ≃L[ℝ] ℂ) ∘ g :=
+    funext fun y ↦ (Complex.conjCLE_apply (g y)).symm
+  rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply, hcomp, Complex.conjCLE.comp_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
+    smul_eq_mul, map_mul, map_add, conj_I, map_inv₀, map_ofNat]
+  ring
+
+/-- Post-composing `g : V → ℂ` with complex conjugation turns its conjugate Wirtinger derivative
+into the conjugate of its complex-linear Wirtinger derivative:
+`\bar∂(conj ∘ g)(x) v = conj (∂g(x) v)`. -/
+theorem conjWirtingerDeriv_conj_comp_apply (g : V → ℂ) (x v : V) :
+    conjWirtingerDeriv (fun y ↦ conj (g y)) x v = conj (wirtingerDeriv g x v) := by
+  have h := congrArg conj (wirtingerDeriv_conj_comp_apply (fun y ↦ conj (g y)) x v)
+  simpa only [starRingEnd_self_apply] using h.symm
+
+/-- If `g : V → ℂ` is complex differentiable at `x`, then the complex-linear Wirtinger derivative
+`∂(conj ∘ g)` vanishes at `x`. -/
+@[simp]
+theorem _root_.DifferentiableAt.wirtingerDeriv_conj_comp_eq_zero {g : V → ℂ} {x : V}
+    (hg : DifferentiableAt ℂ g x) : wirtingerDeriv (fun y ↦ conj (g y)) x = 0 := by
+  ext v
+  rw [wirtingerDeriv_conj_comp_apply, hg.conjWirtingerDeriv_eq_zero,
+    zero_apply, map_zero, zero_apply]
 
 end Wirtinger
 
