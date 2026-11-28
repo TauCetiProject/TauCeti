@@ -39,6 +39,18 @@ Conversely, given a duality, `τ Z` represents `D Ext¹_E(Z, -)` on `E/ℐ` with
 endomorphism ring, and the local theorem gives an almost-split conflation ending at `Z`; dually
 through `τ⁻¹`.
 
+Two Auslander–Reiten dualities with the same coefficient module `Q` have canonically isomorphic
+translate functors when both costable pairings are bijective at every pair of objects.
+The comparison identifies their Ext pairings. In particular, the pairings are bijective by
+`AuslanderReitenDuality.bijective_costablePairing_form` when every Yoneda `Ext¹` has finite length
+over `R`, `Q` is injective, `R` is small in the universe of `Q`, and
+`Hom_R(R / 𝔪, Q)` has length one at every maximal ideal `𝔪`. This applies when comparing a
+translate from almost-split conflations with one defined using a transpose and a dual.
+
+The component at `Z` is the comparison of two representations of `D Ext¹(Z, -)` on the
+injectively stable category. Naturality uses compatibility of both pairings with pullback
+of extensions, as in the determination of the translate on morphisms in [INP, Lemma 3.10].
+
 ## Main definitions
 
 * `TauCeti.ExactStructure.AuslanderReitenDuality E R Q`: an Auslander–Reiten duality.
@@ -58,6 +70,8 @@ through `τ⁻¹`.
 * `TauCeti.ExactStructure.nonempty_auslanderReitenDuality_iff`: **the existence theorem**.
 * `TauCeti.ExactStructure.AuslanderReitenDuality.isoTranslateOfIsAlmostSplit`: the left-hand end of
   the almost-split conflation ending at `Z` is `τ Z` in `E/ℐ`.
+* `TauCeti.ExactStructure.AuslanderReitenDuality.translateIso`: the canonical natural
+  isomorphism identifying the Ext pairings of two translates.
 
 ## References
 
@@ -565,6 +579,134 @@ theorem exists_isAlmostSplit_of_indecomposable_of_not_isInjective
     bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ (hfin Z X')) hb'⟩
 
 end Converse
+
+section Comparison
+
+variable (B : E.AuslanderReitenDuality R Q)
+  (hA : ∀ Z X : C, Function.Bijective (costablePairing (A.form Z) X))
+  (hB : ∀ Z X : C, Function.Bijective (costablePairing (B.form Z) X))
+
+private noncomputable def translateIsoApp (Z : C) :
+    A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z) ≅
+      B.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z) :=
+  costableIsoOfBijective (hA Z) (hB Z)
+
+private theorem costablePairing_translateIsoApp_hom (Z : C) :
+    costablePairing (B.form Z) (A.translateObj Z) (translateIsoApp A B hA hB Z).hom =
+      A.form Z :=
+  costablePairing_costableIsoOfBijective_hom (hA Z) (hB Z)
+
+/-- The canonical natural isomorphism between the translates of two Auslander–Reiten dualities
+with the same coefficient module, when both universal elements give bijective costable pairings
+at every pair of objects. Its components identify the two pairings with extensions. -/
+noncomputable def translateIso : A.functor ≅ B.functor :=
+  NatIso.ofComponents (fun Z ↦ translateIsoApp A B hA hB Z.as) (by
+    rintro ⟨Z⟩ ⟨Z'⟩ f
+    obtain ⟨u, rfl⟩ := E.projectivelyTrivialIdeal.quotientFunctor.map_surjective
+      (X := Z) (Y := Z') f
+    -- Express the components on the chosen representatives so the pairing lemmas match.
+    change A.functor.map (E.projectivelyTrivialIdeal.quotientFunctor.map u) ≫
+        (translateIsoApp A B hA hB Z').hom =
+      (translateIsoApp A B hA hB Z).hom ≫
+        B.functor.map (E.projectivelyTrivialIdeal.quotientFunctor.map u)
+    apply (hB Z' (A.translateObj Z)).injective
+    rw [costablePairing_comp, costablePairing_translateIsoApp_hom]
+    ext ξ
+    calc
+      _ = A.form Z (ξ.pullback u) := by
+        simp only [costablePairing_form, form_apply, A.linearEquiv_pullback]
+        exact congrArg (A.linearEquiv Z' (A.translateObj Z) ξ) (Category.id_comp _).symm
+      _ = costablePairing (B.form Z) (A.translateObj Z)
+          (translateIsoApp A B hA hB Z).hom (ξ.pullback u) :=
+        (LinearMap.congr_fun (costablePairing_translateIsoApp_hom A B hA hB Z) _).symm
+      _ = _ := by simp only [costablePairing_form, B.linearEquiv_pullback])
+
+private theorem translateIso_app (Z : E.projectivelyTrivialIdeal.Quotient) :
+    (A.translateIso B hA hB).app Z = translateIsoApp A B hA hB Z.as :=
+  NatIso.ofComponents.app _ _ _
+
+/-- The comparison component at `Z` pairs with the second duality's universal element to give
+the first duality's universal element. -/
+@[simp]
+theorem costablePairing_translateIso_hom (Z : C) :
+    costablePairing (B.form Z) (A.translateObj Z)
+      ((A.translateIso B hA hB).hom.app (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) =
+      A.form Z := by
+  rw [← Iso.app_hom, translateIso_app]
+  exact costablePairing_translateIsoApp_hom A B hA hB Z
+
+/-- The inverse comparison component at `Z` pairs with the first duality's universal element
+to give the second duality's universal element. -/
+@[simp]
+theorem costablePairing_translateIso_inv (Z : C) :
+    costablePairing (A.form Z) (B.translateObj Z)
+      ((A.translateIso B hA hB).inv.app (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) =
+      B.form Z := by
+  rw [← Iso.app_inv, translateIso_app]
+  exact costablePairing_costableIsoOfBijective_inv (hA Z) (hB Z)
+
+/-- Postcomposition with the translate comparison identifies the two Ext pairings. -/
+@[simp]
+theorem linearEquiv_comp_translateIso_hom (Z X : C) (ξ : E.Ext1 Z X)
+    (a : E.injectivelyTrivialIdeal.quotientFunctor.obj X ⟶
+      A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) :
+    B.linearEquiv Z X ξ
+      (a ≫ (A.translateIso B hA hB).hom.app (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) =
+      A.linearEquiv Z X ξ a := by
+  rw [← B.costablePairing_form]
+  simp only [costablePairing_comp, costablePairing_translateIso_hom, costablePairing_form]
+
+/-- The translate comparison is the unique natural transformation whose components identify
+the universal elements of the two dualities. -/
+theorem translateIso_hom_unique (α : A.functor ⟶ B.functor)
+    (hα : ∀ Z : C, costablePairing (B.form Z) (A.translateObj Z)
+      (α.app (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) = A.form Z) :
+    α = (A.translateIso B hA hB).hom := by
+  ext ⟨Z⟩
+  exact (hB Z (A.translateObj Z)).injective
+    ((hα Z).trans (A.costablePairing_translateIso_hom B hA hB Z).symm)
+
+/-- Postcomposition with the inverse translate comparison identifies the Ext pairings in the
+reverse direction. -/
+@[simp]
+theorem linearEquiv_comp_translateIso_inv (Z X : C) (ξ : E.Ext1 Z X)
+    (b : E.injectivelyTrivialIdeal.quotientFunctor.obj X ⟶
+      B.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) :
+    A.linearEquiv Z X ξ
+      (b ≫ (A.translateIso B hA hB).inv.app (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) =
+      B.linearEquiv Z X ξ b := by
+  rw [← A.costablePairing_form]
+  simp only [costablePairing_comp, costablePairing_translateIso_inv, costablePairing_form]
+
+/-- Reversing the two dualities inverts the canonical comparison. -/
+@[simp]
+theorem translateIso_symm : (A.translateIso B hA hB).symm = B.translateIso A hB hA := by
+  apply Iso.ext
+  ext ⟨Z⟩
+  simpa only [Iso.symm_hom, ← Iso.app_inv, ← Iso.app_hom, translateIso_app, translateIsoApp] using
+    congrArg Iso.hom (costableIsoOfBijective_symm (hA Z) (hB Z))
+
+/-- Comparing an Auslander–Reiten duality with itself gives the identity isomorphism. -/
+@[simp]
+theorem translateIso_refl : A.translateIso A hA hA = Iso.refl A.functor := by
+  symm
+  apply Iso.ext
+  apply A.translateIso_hom_unique A hA hA
+  intro Z
+  exact costablePairing_id (A.form Z)
+
+/-- The canonical comparisons compose across three models of Auslander–Reiten duality. -/
+@[simp]
+theorem translateIso_trans (D : E.AuslanderReitenDuality R Q)
+    (hD : ∀ Z X : C, Function.Bijective (costablePairing (D.form Z) X)) :
+    A.translateIso B hA hB ≪≫ B.translateIso D hB hD = A.translateIso D hA hD := by
+  apply Iso.ext
+  apply A.translateIso_hom_unique D hA hD
+  intro Z
+  simp only [Iso.trans_hom, NatTrans.comp_app, costablePairing_comp,
+    costablePairing_translateIso_hom]
+
+end Comparison
 
 end AuslanderReitenDuality
 

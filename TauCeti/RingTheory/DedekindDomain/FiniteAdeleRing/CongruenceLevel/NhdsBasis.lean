@@ -95,12 +95,11 @@ theorem hasBasis_nhds_one_map_ker_integralGL_natCast [CharZero R] [Ring.HasFinit
       (completedIdeal_mono K ((Ideal.span_singleton_le_iff_mem N).mpr (Ideal.absNorm_mem N)))
   · exact ⟨Ideal.span {(M : R)}, by simpa using hM, le_rfl⟩
 
-/-- **The principal levels `K(N)` form a basis of neighbourhoods of `1` in `GL₂(𝔸_f)`**, as `N`
+/-- **The principal levels `K(N)` form a basis of neighbourhoods of `1` in `GL_n(𝔸_f)`**, as `N`
 runs over the nonzero ideals of `R`. -/
 theorem hasBasis_nhds_one_principalLevel :
-    (𝓝 (1 : GL (Fin 2) 𝔸ᶠ[R, K])).HasBasis (fun N : Ideal R ↦ N ≠ ⊥) fun N ↦
-      (principalLevel K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
-  simpa only [principalLevel_eq_map_ker] using
-    hasBasis_nhds_one_map_ker_integralGL (R := R) K (Fin 2)
+    (𝓝 (1 : GL ι 𝔸ᶠ[R, K])).HasBasis (fun N : Ideal R ↦ N ≠ ⊥) fun N ↦
+      (principalLevel K ι N : Set (GL ι 𝔸ᶠ[R, K])) := by
+  simpa only [principalLevel_eq_map_ker] using hasBasis_nhds_one_map_ker_integralGL (R := R) K ι
 
 end IsDedekindDomain.FiniteAdeleRing

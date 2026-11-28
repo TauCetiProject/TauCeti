@@ -14,7 +14,7 @@ import Mathlib.RingTheory.Norm.Basic
 import TauCeti.FieldTheory.Minpoly
 import TauCeti.NumberTheory.Cyclotomic.IntegralClosure
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
-import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure
+import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure.Basic
 import TauCeti.RingTheory.PowerBasis.Basic
 
 /-!

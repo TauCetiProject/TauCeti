@@ -37,6 +37,8 @@ to pointwise convergence of cumulative distribution functions at every real poin
   limiting `cdf`.
 * `MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_cdf` — for an atomless limit law, weak
   convergence is equivalent to pointwise `cdf` convergence everywhere.
+* `MeasureTheory.FiniteMeasure.tendsto_of_tendsto_mass_of_tendsto_Iic_rat` — convergence of total
+  masses and cumulative masses at rational points implies weak convergence of finite measures.
 * `MeasureTheory.tendsto_cdf_of_eventually_ae_le_iff_lt` — pointwise `cdf` convergence transferred
   across an eventual almost-everywhere sublevel equivalence `X i ω ≤ x ↔ Y i ω < α i` with
   `α i → x` at a continuity point of the limiting `cdf`.
@@ -129,6 +131,37 @@ theorem tendsto_iff_tendsto_cdf [l.IsCountablyGenerated]
 end MeasureTheory.ProbabilityMeasure
 
 namespace MeasureTheory
+
+open FiniteMeasure in
+/-- Finite measures on the real line converge weakly if their total masses and their cumulative
+masses at rational points converge to those of the limiting measure. -/
+theorem FiniteMeasure.tendsto_of_tendsto_mass_of_tendsto_Iic_rat {ι : Type*} {l : Filter ι}
+    {μs : ι → FiniteMeasure ℝ} {μ : FiniteMeasure ℝ}
+    (hm : Tendsto (fun i ↦ (μs i).mass) l (𝓝 μ.mass))
+    (h : ∀ q : ℚ, Tendsto (fun i ↦ μs i (Iic (q : ℝ))) l (𝓝 (μ (Iic (q : ℝ))))) :
+    Tendsto μs l (𝓝 μ) := by
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · exact tendsto_zero_of_tendsto_zero_mass (by simpa only [zero_mass] using hm)
+  -- The filter testing only the total mass and rational cutoffs is countably generated.
+  let massData (ν : FiniteMeasure ℝ) := (ν.mass, fun q : ℚ ↦ ν (Iic (q : ℝ)))
+  let L := Filter.comap massData (𝓝 (massData μ))
+  have : L.IsCountablyGenerated :=
+    inferInstanceAs (Filter.comap massData (𝓝 (massData μ))).IsCountablyGenerated
+  have hL : Tendsto massData L (𝓝 (massData μ)) := tendsto_comap
+  suffices hlim : Tendsto id L (𝓝 μ) from
+    hlim.comp (tendsto_comap_iff.2 (hm.prodMk_nhds (tendsto_pi_nhds.2 h)))
+  have hmL : Tendsto (fun ν : FiniteMeasure ℝ ↦ ν.mass) L (𝓝 μ.mass) :=
+    (continuous_fst.tendsto _).comp hL
+  have hmass := (mass_ne_zero_iff μ).2 hμ
+  refine (tendsto_normalize_iff_tendsto hμ).1 ⟨?_, hmL⟩
+  apply ProbabilityMeasure.tendsto_of_tendsto_cdf_of_dense Rat.denseRange_cast
+  rintro _ ⟨q, rfl⟩
+  simp only [cdf_eq_real, ProbabilityMeasure.measureReal_eq_coe_coeFn, NNReal.tendsto_coe]
+  rw [normalize_eq_of_ne_zero _ hμ]
+  have hq := tendsto_pi_nhds.1 ((continuous_snd.tendsto _).comp hL) q
+  refine ((hmL.inv₀ hmass).mul hq).congr' ?_
+  filter_upwards [hmL.eventually_ne hmass] with ν hν
+  exact (ν.normalize_eq_of_ne_zero ((mass_ne_zero_iff ν).1 hν) _).symm
 
 variable {ι Ω' : Type*} {Ω : ι → Type*} {m : ∀ i, MeasurableSpace (Ω i)}
   {μ : (i : ι) → Measure (Ω i)} [∀ i, IsProbabilityMeasure (μ i)]
