@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
@@ -56,6 +57,8 @@ covariant tensor, making it independent of any choice of basis.
 * `LinearMap.metricTraceCompl₂_comp`: if `L` and `K` intertwine `C` and `C'`,
   `C' u (L p) = K (C u p)`, then contracting `C'` against `L ∘ A` is `K` applied to the
   contraction of `C` against `A`.
+* `ContinuousLinearMap.trace_comp_eq_sum_sum_inner_mul_inner`: in an orthonormal basis, the trace
+  of a composition is `tr (B ∘ A) = ∑ᵢⱼ ⟪bᵢ, A bⱼ⟫ ⟪bⱼ, B bᵢ⟫`.
 -/
 
 public section
@@ -219,3 +222,21 @@ theorem metricTraceCompl₂_comp {P' N' : Type*} [AddCommMonoid P'] [Module ℝ 
   exact ext₂ fun u w ↦ by simp only [compl₂_apply, compr₂_apply, comp_apply, h]
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+
+/-- The trace of a composition in an orthonormal basis:
+`tr (B ∘ A) = ∑ᵢⱼ ⟪bᵢ, A bⱼ⟫ ⟪bⱼ, B bᵢ⟫`. -/
+theorem trace_comp_eq_sum_sum_inner_mul_inner (A B : W →L[ℝ] W) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ W) :
+    LinearMap.trace ℝ W (B ∘L A).toLinearMap =
+      ∑ i, ∑ j, ⟪b i, A (b j)⟫_ℝ * ⟪b j, B (b i)⟫_ℝ := by
+  rw [LinearMap.trace_eq_sum_inner _ b, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  conv_lhs => rw [coe_coe, comp_apply, ← b.sum_repr' (A (b j)), map_sum, inner_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [map_smul, real_inner_smul_right, mul_comm]
+
+end ContinuousLinearMap

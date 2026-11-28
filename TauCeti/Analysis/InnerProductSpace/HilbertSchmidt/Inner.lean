@@ -38,9 +38,7 @@ the diagonal it is the square of the Frobenius seminorm
 * `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_frobenius` and
   `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm`: `⟪A, A⟫_HS = ‖A‖_F²`
   and `⟪A, A⟫_HS = ‖A‖_HS²`.
-* `ContinuousLinearMap.hilbertSchmidtInner_adjoint_right`: `⟪A, B†⟫_HS = tr (B ∘ A)`, and
-  `ContinuousLinearMap.trace_comp_eq_sum_sum_inner_mul_inner`: the trace of a composition in an
-  orthonormal basis.
+* `ContinuousLinearMap.hilbertSchmidtInner_adjoint_right`: `⟪A, B†⟫_HS = tr (B ∘ A)`.
 * `ContinuousLinearMap.sq_hilbertSchmidtNorm_sub_adjoint`:
   `‖A - A†‖_HS² = 2 ‖A‖_HS² - 2 tr (A²)`.
 * `ContinuousLinearMap.hilbertSchmidtInner_self_nonneg` and
@@ -208,17 +206,6 @@ theorem hilbertSchmidtInner_adjoint_right (A : W →L[ℝ] V) (B : V →L[ℝ] W
   rw [adjoint_inner_right, real_inner_comm, coe_coe, comp_apply]
 
 end Adjoint
-
-/-- The trace of a composition in an orthonormal basis:
-`tr (B ∘ A) = ∑ᵢⱼ ⟪bᵢ, A bⱼ⟫ ⟪bⱼ, B bᵢ⟫`. -/
-theorem trace_comp_eq_sum_sum_inner_mul_inner (A B : W →L[ℝ] W) {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ W) :
-    LinearMap.trace ℝ W (B ∘L A).toLinearMap =
-      ∑ i, ∑ j, ⟪b i, A (b j)⟫_ℝ * ⟪b j, B (b i)⟫_ℝ := by
-  rw [← hilbertSchmidtInner_adjoint_right, hilbertSchmidtInner_eq_sum_sum_inner_mul_inner _ _ b b,
-    Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [adjoint_inner_left, real_inner_comm (A (b j))]
 
 /-- **The antisymmetric part of an operator.** For `A` on a finite-dimensional real inner product
 space, `‖A - A†‖_HS² = 2 ‖A‖_HS² - 2 tr (A²)`. -/
