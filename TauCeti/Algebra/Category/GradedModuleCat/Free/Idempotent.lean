@@ -31,7 +31,6 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 
 /-- A degree-zero idempotent `p` on `I → A` exhibits `rangeObjOfPiEnd s p hhom` as a graded
 retract of `free 𝒜 s`. -/
-@[expose]
 noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A)) (hp : p.comp p = p)
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
@@ -58,7 +57,7 @@ theorem retractRangeOfPiIdempotent_i_hom_apply {I : Type uI} [Fintype I] (s : I 
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j))
     (x : rangeObjOfPiEnd s p hhom) :
     (retractRangeOfPiIdempotent s p hp hhom).i.hom x = x.val :=
-  rfl
+  (rfl)
 
 /-- Applying the retraction of `retractRangeOfPiIdempotent` and coercing to `free 𝒜 s` computes
 `freeEndOfPiEnd`. -/
@@ -69,7 +68,7 @@ theorem coe_retractRangeOfPiIdempotent_r_hom_apply {I : Type uI} [Fintype I] (s 
     (x : free 𝒜 s) :
     ((retractRangeOfPiIdempotent s p hp hhom).r.hom x).val =
       (freeEndOfPiEnd s p hhom).hom x :=
-  rfl
+  (rfl)
 
 /-- Composing the retraction and inclusion of `retractRangeOfPiIdempotent` recovers the transported
 endomorphism `freeEndOfPiEnd`. -/
