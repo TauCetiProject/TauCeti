@@ -31,6 +31,8 @@ every real `x ≥ 0`.
 
 ## Main results
 
+* `Real.log_factorial_le_add_sub_mul_log`: increasing the factorial argument from `m` to `n`
+  costs at most `(n - m : ℕ)` copies of `log n`.
 * `Real.log_factorial_le`: `log n! ≤ n log n - n + (1 / 2) log n + 1` for every `n`.
 * `Real.log_floor_factorial_le`: `log ⌊x⌋₊! ≤ x log x - x + (1 / 2) log x + 1` for `1 ≤ x`.
 * `Real.le_log_floor_factorial`: `x log x - x - (1 / 2) log x + (1 / 2) log π ≤ log ⌊x⌋₊!`
@@ -48,6 +50,40 @@ open Stirling
 namespace Real
 
 variable {x : ℝ}
+
+/-- Bound the increase of `log n!` by charging every new factor at most `log n`.
+For `n ≤ m` the natural subtraction vanishes, and this is monotonicity. -/
+theorem log_factorial_le_add_sub_mul_log (m n : ℕ) :
+    log n ! ≤ log m ! + (n - m : ℕ) * log n := by
+  rcases le_or_gt n m with h | h
+  · simpa [Nat.sub_eq_zero_of_le h] using
+      (log_le_log (by positivity : (0 : ℝ) < n !) (by exact_mod_cast factorial_le h))
+  · have he : m + (n - m) = n := Nat.add_sub_of_le h.le
+    have hfac : n ! ≤ m ! * n ^ (n - m) := by
+      calc
+        _ = m ! * (m + 1).ascFactorial (n - m) := by rw [factorial_mul_ascFactorial, he]
+        _ ≤ _ := Nat.mul_le_mul_left _ (by simpa only [he] using
+            (ascFactorial_le_pow_add m (n - m)))
+    have hlog := log_le_log (by positivity : (0 : ℝ) < n !)
+      (by exact_mod_cast hfac : (n ! : ℝ) ≤ (m ! : ℝ) * (n : ℝ) ^ (n - m))
+    have hn : (n : ℝ) ≠ 0 := by exact_mod_cast (Nat.zero_lt_of_lt h).ne'
+    rwa [log_mul (by positivity) (pow_ne_zero _ hn), log_pow] at hlog
+
+/-- For the logarithmic cost `log(l!) + l C` with `C ≥ 0`, increasing the order by
+at most `e` costs at most `e (log B + C)` when the resulting order is at most `B`. -/
+theorem log_factorial_add_mul_le_of_le_add {l r e B : ℕ} {C : ℝ} (hC : 0 ≤ C)
+    (hl : l ≤ r + e) (hB : l ≤ B) :
+    log l ! + l * C ≤ log r ! + r * C + e * (log B + C) := by
+  have he : ((l - r : ℕ) : ℝ) ≤ e := by
+    exact_mod_cast Nat.sub_le_iff_le_add.mpr (by simpa [add_comm] using hl)
+  have hlog : log (l : ℝ) ≤ log (B : ℝ) := by
+    by_cases h : l = 0
+    · simpa [h] using log_natCast_nonneg B
+    · exact log_le_log (by exact_mod_cast Nat.pos_of_ne_zero h) (by exact_mod_cast hB)
+  have hfac := (log_factorial_le_add_sub_mul_log r l).trans
+    (add_le_add_right (mul_le_mul he hlog (log_natCast_nonneg _) (Nat.cast_nonneg _)) _)
+  have hlin := mul_le_mul_of_nonneg_right (by exact_mod_cast hl : (l : ℝ) ≤ (r : ℝ) + e) hC
+  linarith only [hfac, hlin]
 
 /-- The upper Stirling bound `log n! ≤ n log n - n + (1 / 2) log n + 1` for every natural number
 `n`, with equality at `n = 1`. -/
