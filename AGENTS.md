@@ -118,7 +118,8 @@ The `quality-pass` review angle checks it.
 
 ## How review works
 
-Open a PR. After CI passes, AI review agents judge it against the rubrics in
+Open a PR, on [GitHub](https://github.com/TauCetiProject/TauCeti) or on
+[Forgejo](https://git.taucetiproject.org/TauCetiProject/TauCeti); both work identically. After CI passes, AI review agents judge it against the rubrics in
 [TauCetiReview](https://github.com/TauCetiProject/TauCetiReview) (correctness, reuse, API,
 naming, placement, proofs, and more) and post `approve` / `request_changes` / `block`
 verdicts. Address their findings and push; re-review runs automatically on new commits, and a
