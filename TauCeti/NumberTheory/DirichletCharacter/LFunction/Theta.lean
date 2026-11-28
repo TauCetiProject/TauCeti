@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 public import TauCeti.NumberTheory.LSeries.ThetaInversion
 

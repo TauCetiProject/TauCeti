@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Topology.Order.Interval.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -85,6 +86,9 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
   function for such a continuous representative.
 * `TauCeti.HasWeakLineDerivOn.norm_sub_le_integral_norm`: the oscillation bound
   `‖v t - v s‖ ≤ ∫ r in (a, b), ‖u' r‖` of a continuous representative `v`.
+* `TauCeti.HasWeakLineDerivOn.norm_sub_le_rpow_mul_eLpNorm`: if `u' ∈ Lʳ(a, b)`, `1 ≤ r ≤ ∞`, a
+  continuous representative is Hölder continuous with exponent `1 - 1 / r`:
+  `‖v t - v s‖ ≤ |t - s| ^ (1 - 1 / r) ‖u'‖_{Lʳ(a, b)}`.
 * `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: for `a < b`, the pointwise bound
   `‖v t‖ ≤ ⨍ s in (a, b), ‖u s‖ + ∫ s in (a, b), ‖u' s‖` of a continuous representative `v`.
 * `TauCeti.HasWeakLineDerivOn.eLpNorm_sub_setAverage_le`: the Poincaré–Wirtinger inequality
@@ -483,6 +487,31 @@ theorem HasWeakLineDerivOn.norm_sub_le_integral_norm
     ((integrableOn_Icc_iff_integrableOn_Ioo (f := u') (a := a) (b := b)).2 hu').norm
     (Eventually.of_forall fun _ ↦ norm_nonneg _) (Eventually.of_forall ?_))
   exact uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)
+
+/-- **Hölder continuity of a continuous representative.** Let `u'` be the weak derivative of `u`
+on `Ioo a b`, with `u' ∈ Lʳ(a, b)` for some `1 ≤ r ≤ ∞`, and let `v` be continuous on `Icc a b`
+and equal to `u` almost everywhere on `Ioo a b`. Then `v` is Hölder continuous with exponent
+`1 - 1 / r`: `‖v t - v s‖ ≤ |t - s| ^ (1 - 1 / r) ‖u'‖_{Lʳ(a, b)}` for all `s, t ∈ Icc a b`. -/
+theorem HasWeakLineDerivOn.norm_sub_le_rpow_mul_eLpNorm {r : ℝ≥0∞} (hr : 1 ≤ r)
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
+    (hu' : MemLp u' r (volume.restrict (Ioo a b))) (hv : ContinuousOn v (Icc a b))
+    (hae : u =ᵐ[volume.restrict (Ioo a b)] v) {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖v t - v s‖ ≤
+      |t - s| ^ (1 - 1 / r.toReal) * (eLpNorm u' r (volume.restrict (Ioo a b))).toReal := by
+  have hsub : Ι s t ⊆ Icc a b := uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)
+  have hrestr : volume.restrict (Ι s t) ≤ volume.restrict (Ioo a b) := by
+    rw [Measure.restrict_congr_set Ioo_ae_eq_Icc]
+    exact Measure.restrict_mono hsub le_rfl
+  have : IsFiniteMeasure (volume.restrict (Ι s t)) :=
+    isFiniteMeasure_restrict.2 (by simp [Real.volume_uIoc])
+  -- Hölder's inequality on `Ι s t`, then monotonicity of the `Lʳ` norm in the measure.
+  rw [← h.integral_eq_sub (hu'.integrable hr) hv hae hs ht]
+  refine norm_integral_le_integral_norm_uIoc.trans
+    (((hu'.mono_measure hrestr).integral_norm_le_mul_eLpNorm hr).trans ?_)
+  rw [Measure.restrict_apply_univ, Real.volume_uIoc, ← ENNReal.toReal_rpow,
+    ENNReal.toReal_ofReal (abs_nonneg _)]
+  exact mul_le_mul_of_nonneg_left (ENNReal.toReal_mono hu'.eLpNorm_ne_top
+    (eLpNorm_mono_measure _ hrestr)) (Real.rpow_nonneg (abs_nonneg _) _)
 
 /-- **The `W^{1,1}` bound.** Let the weak derivative `u'` of `u` on `Ioo a b`, `a < b`, be
 integrable on `Ioo a b`, and let `v` be continuous on `Icc a b` and equal to `u` almost everywhere

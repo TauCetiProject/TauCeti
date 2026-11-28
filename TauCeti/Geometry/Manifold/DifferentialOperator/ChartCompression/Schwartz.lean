@@ -40,6 +40,8 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
   by a cutoff equal to `1` on the support of `τ`.
 * `OpenPartialHomeomorph.cutoffPushforwardSchwartz_complexCutoffPullback_apply_of_eq_one`: reading
   through `τ` the pullback of `G` by a cutoff equal to `1` on the support of `τ` gives `τ · G`.
+* `OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM`: cutting a chart compression
+  down by a cutoff `φ`, on both sides, gives the chart compression by `φ` and `φ`.
 * `OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function is
   determined by its readings through cutoffs whose readings on `M` add up to `1`.
 * `OpenPartialHomeomorph.sum_indicator_cutoffPushforwardSchwartz_apply`: such a function is
@@ -153,6 +155,41 @@ theorem cutoffPushforwardSchwartz_complexCutoffPullback_apply_of_eq_one
   have hy : y ∈ e.target := τ.tsupport_subset (subset_tsupport _ hτ)
   rw [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy), e.right_inv hy,
     hχ _ (subset_tsupport _ hτ), one_smul]
+
+/-- **Reading a cut-off Schwartz function on `M`.** If `χ = 1` on the support of `φ`, the Schwartz
+function `φ u` read on `M` through `χ` is `u` read on `M` through `φ`. -/
+theorem complexCutoffPullback_ofContDiff_smulLeftCLM {φ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hχ : ∀ y ∈ tsupport φ, χ y = 1) (u : 𝓢(CoordinateSpace n, ℂ)) :
+    e.complexCutoffPullback he χ (ContMDiffMap.ofContDiff (SchwartzMap.smulLeftCLM ℂ ⇑φ u)
+        (SchwartzMap.smooth _ ⊤)) =
+      e.complexCutoffPullback he φ (ContMDiffMap.ofContDiff u (u.smooth ⊤)) := by
+  have hφt : (⇑φ : CoordinateSpace n → ℝ).HasTemperateGrowth :=
+    φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  ext q
+  by_cases hq : q ∈ e.source
+  · simp only [complexCutoffPullback_apply_of_mem he _ _ hq, ContMDiffMap.coe_ofContDiff,
+      SchwartzMap.smulLeftCLM_apply_apply hφt]
+    by_cases hφq : φ (e q) = 0
+    · simp [hφq]
+    · rw [hχ _ (subset_tsupport _ hφq), one_smul]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
+
+/-- **Compressing a chart compression.** If `χ` and `χ₂` equal `1` on the support of `φ`, then
+`φ · Cχ,χ₂(D) (φ u)` is the chart compression of `D` by `φ` and `φ`, where `Cχ,χ₂(D)` is the
+compression of `D` by `χ` and `χ₂`. -/
+theorem smul_complexChartCompression_smulLeftCLM {φ χ χ₂ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hχ : ∀ y ∈ tsupport φ, χ y = 1) (hχ₂ : ∀ y ∈ tsupport φ, χ₂ y = 1)
+    (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n) :
+    φ y • e.complexChartCompression he χ χ₂ D (ContMDiffMap.ofContDiff
+        (SchwartzMap.smulLeftCLM ℂ ⇑φ u) (SchwartzMap.smooth _ ⊤)) y =
+      e.complexChartCompression he φ φ D (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y := by
+  rw [complexChartCompression_apply, complexChartCompression_apply,
+    complexCutoffPullback_ofContDiff_smulLeftCLM he hχ₂]
+  by_cases hφy : φ y = 0
+  · simp [hφy]
+  rw [hχ _ (subset_tsupport _ hφy), one_smul]
 
 omit he in
 /-- **A function is recovered from its readings.** If the readings `ψᵢ ∘ eᵢ` on `M` of finitely

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Module.Equiv.Basic
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Invertible matrices of linear automorphisms in a basis
@@ -26,6 +27,8 @@ the composite, which sends a linear automorphism to its invertible matrix in the
 * `Module.Basis.toLin'_toGL`: reading the matrix back through `toLin'` recovers the automorphism.
 * `Module.Basis.coe_toGL`: the matrix of `f` is `LinearMap.toMatrix b b f`, so its `(i, j)` entry
   is the `i`-th coordinate of `f (b j)`.
+* `Module.Basis.toGL_map`: mapping the basis by a linear automorphism conjugates the matrix,
+  using `LinearMap.toMatrix_map_left` and `LinearMap.toMatrix_map_right`.
 * `Module.Basis.toGL_smulOfUnit`: multiplication by a unit has the scalar matrix of that unit.
 * `Module.Basis.finTwoProd_toGL_symm_apply`: in the standard basis of `R × R`, an invertible
   `2 × 2` matrix acts by multiplication of column vectors.
@@ -68,6 +71,15 @@ theorem coe_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
   have h := Matrix.GeneralLinearGroup.toLin'_apply b (b.toGL f) v
   rw [toLin'_toGL, hf] at h
   simpa [Matrix.toLin_apply, Fintype.linearCombination_apply] using h.symm
+
+/-- In the basis obtained by applying `e` to `b`, the matrix of `f` is conjugated by the inverse
+of the matrix of `e` in `b`. -/
+theorem toGL_map (b : Module.Basis ι k V) (e f : V ≃ₗ[k] V) :
+    (b.map e).toGL f = MulAut.conj (b.toGL e)⁻¹ (b.toGL f) := by
+  rw [MulAut.conj_apply, inv_inv, ← map_inv, ← map_mul, ← map_mul]
+  apply Units.ext
+  simp only [coe_toGL, LinearMap.toMatrix_map_left, LinearMap.toMatrix_map_right,
+    LinearEquiv.symm_eq_inv, LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp]
 
 /-- Multiplication by a unit `a` has matrix the scalar matrix `a` in every basis. -/
 @[simp]

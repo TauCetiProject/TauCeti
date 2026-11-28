@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Topology.Algebra.UniformRing
 
+import TauCeti.Algebra.Order.Ring.IsPowMul
+
 /-!
 # Pulling back and completing multiplicative seminorms
 
@@ -19,6 +21,10 @@ acts contravariantly on spaces of multiplicative seminorms such as Berkovich spe
 A uniformly continuous multiplicative seminorm on a uniform ring extends by continuity to a
 multiplicative seminorm on the completion, `MulRingSeminorm.completion`, since the seminorm laws
 are closed conditions and the ring is dense in its completion.
+
+Every multiplicative ring seminorm can be viewed as a `RingSeminorm`
+(`MulRingSeminorm.toRingSeminorm`), is power-multiplicative (`MulRingSeminorm.isPowMul`), and
+vanishes on nilpotent elements (`MulRingSeminorm.eq_zero_of_isNilpotent`).
 -/
 
 public section
@@ -94,5 +100,34 @@ theorem continuous_completion (p : MulRingSeminorm R) (hp : UniformContinuous p)
   exact Completion.continuous_extension
 
 end completion
+
+section NonAssocRing
+
+variable {R : Type*} [NonAssocRing R]
+
+/-- View a multiplicative ring seminorm as a `RingSeminorm`. -/
+def toRingSeminorm (α : MulRingSeminorm R) : RingSeminorm R where
+  __ := α.toAddGroupSeminorm
+  mul_le' a b := (map_mul α a b).le
+
+end NonAssocRing
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+@[simp]
+theorem coe_toRingSeminorm (α : MulRingSeminorm R) : ⇑α.toRingSeminorm = ⇑α :=
+  (rfl)
+
+/-- Every multiplicative ring seminorm is power-multiplicative. -/
+theorem isPowMul (α : MulRingSeminorm R) : IsPowMul α :=
+  MulHomClass.isPowMul α
+
+/-- Every multiplicative ring seminorm vanishes on nilpotent elements. -/
+theorem eq_zero_of_isNilpotent (α : MulRingSeminorm R) {x : R} (hx : IsNilpotent x) : α x = 0 :=
+  α.isPowMul.eq_zero_of_isNilpotent (map_zero α) hx
+
+end Ring
 
 end MulRingSeminorm

@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Basic
+public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.ZMod
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.QuadraticAlgebra.Ideal
+import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 
 /-!
 # Reduction of an integral quadratic algebra modulo `m`
@@ -33,6 +34,9 @@ infinite, and at `m = 1` the quotient is the zero ring.
 * `QuadraticAlgebra.card_quotient_span_natCast`: `ℤ[ω]/(m)` has `m²` elements, read as `0`
   for the infinite quotient at `m = 0`; `QuadraticAlgebra.finite_quotient_span_natCast_iff`:
   the quotient is finite exactly when `m ≠ 0`.
+* `QuadraticAlgebra.ker_unitsMap_quotient_span_natCast`: for negative discriminant and `N ≠ 0`,
+  the kernel of `(ℤ[ω])ˣ →* (ℤ[ω]/(N))ˣ` is `⊤` at `N = 1`, `Subgroup.zpowers (-1)` at `N = 2`,
+  and `⊥` for `3 ≤ N`.
 
 ## References
 
@@ -168,5 +172,45 @@ theorem finite_quotient_span_natCast_iff :
 instance [NeZero m] :
     Finite (QuadraticAlgebra ℤ a b ⧸ Ideal.span {(m : QuadraticAlgebra ℤ a b)}) :=
   finite_quotient_span_natCast_iff.mpr (NeZero.ne m)
+
+/-- **Kernel of unit reduction modulo `(N)` for `discr a b < 0`**: for `N ≠ 0`, the units of
+`QuadraticAlgebra ℤ a b` congruent to `1` modulo `(N)` are all units for `N = 1`, `{±1}` for
+`N = 2`, and `{1}` for `3 ≤ N` — including at discriminants `-3` and `-4`. -/
+theorem ker_unitsMap_quotient_span_natCast (hd : discr a b < 0) {N : ℕ} (hN : N ≠ 0) :
+    (Units.map (Ideal.Quotient.mk (Ideal.span {(N : QuadraticAlgebra ℤ a b)}) :
+        QuadraticAlgebra ℤ a b →*
+          QuadraticAlgebra ℤ a b ⧸ Ideal.span {(N : QuadraticAlgebra ℤ a b)})).ker =
+      if N = 1 then ⊤ else if N = 2 then Subgroup.zpowers (-1) else ⊥ := by
+  have hmem (u : (QuadraticAlgebra ℤ a b)ˣ) :
+      u ∈ (Units.map (Ideal.Quotient.mk (Ideal.span {(N : QuadraticAlgebra ℤ a b)}) :
+          QuadraticAlgebra ℤ a b →*
+            QuadraticAlgebra ℤ a b ⧸ Ideal.span {(N : QuadraticAlgebra ℤ a b)})).ker ↔
+        (N : ℤ) ∣ ((u : QuadraticAlgebra ℤ a b).re - 1) ∧
+          (N : ℤ) ∣ (u : QuadraticAlgebra ℤ a b).im := by
+    rw [MonoidHom.mem_ker, Units.ext_iff, Units.coe_map, MonoidHom.coe_ofClass, Units.val_one,
+      ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq, mem_span_natCast_iff]
+    simp
+  split_ifs with h1 h2
+  · subst h1; rw [Subgroup.eq_top_iff']; exact fun u ↦ (hmem u).mpr (by simp)
+  · subst h2
+    refine le_antisymm (fun u hu ↦ ?_) (Subgroup.zpowers_le.mpr ((hmem _).mpr (by simp)))
+    obtain ⟨_, him⟩ := (hmem u).mp hu
+    rcases units_re_or_im_of_discr_lt_zero hd u with (rfl | rfl) | (him1 | him1)
+    · exact ⟨0, by simp⟩
+    · exact ⟨1, by simp⟩
+    · rw [him1] at him; omega
+    · rw [him1] at him; omega
+  · have hN3 : 3 ≤ N := by omega
+    rw [Subgroup.eq_bot_iff_forall]
+    intro u hu
+    obtain ⟨hre, him⟩ := (hmem u).mp hu
+    rcases units_re_or_im_of_discr_lt_zero hd u with (rfl | rfl) | (him1 | him1)
+    · rfl
+    · simp only [Units.val_neg, Units.val_one, re_neg, re_one] at hre
+      have h2 : (N : ℤ) ∣ 2 := by
+        simpa [show -(-1 - 1 : ℤ) = 2 by omega] using dvd_neg.mpr hre
+      have := Int.le_of_dvd (by omega) h2; omega
+    · rw [him1] at him; have := Int.le_of_dvd (by omega) him; omega
+    · rw [him1] at him; have := Int.le_of_dvd (by omega) (dvd_neg.mpr him); omega
 
 end QuadraticAlgebra
