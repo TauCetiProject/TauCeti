@@ -33,6 +33,8 @@ simple over a field with a nonzero element whose square is not one.
 
 ## Main results
 
+* `TauCeti.GLSymplecticFin.le_center_of_normal_of_ne_top` shows that every proper normal
+  subgroup of a perfect symplectic group is central.
 * `TauCeti.GLSymplecticFin.isSimpleGroup_quotient_center`: `PSp_{2m}(K)` is simple when
   `Sp_{2m}(K)` is perfect and `m ≠ 0`.
 * `TauCeti.GLSymplecticFin.isSimpleGroup_quotient_center_of_two_le` and
@@ -56,6 +58,22 @@ namespace TauCeti.GLSymplecticFin
 universe u
 
 variable {K : Type u} [Field K] {m : ℕ}
+
+/-- Every proper normal subgroup of a perfect symplectic group is contained in its centre. -/
+theorem le_center_of_normal_of_ne_top (hperfect : commutator (GLSymplecticFin m K) = ⊤)
+    (N : Subgroup (GLSymplecticFin m K)) [N.Normal] (hN : N ≠ ⊤) :
+    N ≤ Subgroup.center (GLSymplecticFin m K) := by
+  by_cases hm : m = 0
+  · subst m
+    have : Subsingleton (GLSymplecticFin 0 K) :=
+      ⟨fun x y ↦ Subtype.ext <| Units.ext <| funext fun i ↦ Fin.elim0 i⟩
+    exact (hN (Subsingleton.elim _ _)).elim
+  have : NeZero m := ⟨hm⟩
+  have : Group.IsPerfect (GLSymplecticFin m K) := ⟨hperfect⟩
+  have hfix := (iwasawaStructure.fixedPoints_eq_univ_or_eq_top N).resolve_right hN
+  intro g hg
+  apply (forall_projective_smul_eq_iff_mem_center g).mp
+  exact fun p ↦ (Set.eq_univ_iff_forall.mp hfix p) ⟨g, hg⟩
 
 /-- **Iwasawa's theorem for the projective symplectic group.** In positive rank, the quotient
 `PSp_{2m}(K)` of the symplectic group by its centre is simple as soon as `Sp_{2m}(K)` is

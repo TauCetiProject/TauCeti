@@ -86,6 +86,36 @@ theorem isCentralPoint_rootsOfUnityScalarPoints {R : Type u} [CommRing R]
   simp only [Subgroup.coe_mul, Units.val_mul, GLSymplecticFin.coe_rootsOfUnityScalar]
   exact (Matrix.scalar_commute _ (fun r ↦ Commute.all _ r) _).eq
 
+private theorem exists_rootsOfUnityScalarPoints_of_mem_center {R : Type u} [CommRing R]
+    {A : Type v} [CommRing A] [Algebra R A]
+    (g : WithConv (coordinateHopfAlgebra R m →ₐ[R] A))
+    (hg : pointsMulEquiv R m (A := A) g ∈ Subgroup.center (GLSymplecticFin m A)) :
+    ∃ f, rootsOfUnityScalarPoints m f = g := by
+  obtain ⟨c, hc, hc2⟩ := (GLSymplecticFin.mem_center_iff _).mp hg
+  let ζ : rootsOfUnity 2 A :=
+    ⟨Units.mkOfMulEqOne c c (by simpa [sq] using hc2), (mem_rootsOfUnity' 2 _).mpr hc2⟩
+  refine ⟨(RootsOfUnityGroup.pointsMulEquiv (R := R) (A := A) 2).symm ζ, ?_⟩
+  apply (pointsMulEquiv R m (A := A)).injective
+  rw [pointsMulEquiv_rootsOfUnityScalarPoints, MulEquiv.apply_symm_apply]
+  apply Subtype.ext
+  apply Units.ext
+  rw [GLSymplecticFin.coe_rootsOfUnityScalar]
+  exact hc.symm
+
+/-- A symplectic point over any commutative value algebra is universally central exactly when
+its matrix belongs to the center of the symplectic group over that algebra. -/
+theorem isCentralPoint_iff_mem_center_pointsMulEquiv {R : Type u} [CommRing R]
+    {A : Type v} [CommRing A] [Algebra R A]
+    (g : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
+    HopfAlgebra.IsCentralPoint g ↔
+      pointsMulEquiv R m (A := A) g ∈ Subgroup.center (GLSymplecticFin m A) := by
+  constructor
+  · exact fun hg ↦ MulEquivClass.apply_mem_center (pointsMulEquiv R m (A := A))
+      (HopfAlgebra.center_le_center (HopfAlgebra.mem_center.mpr hg))
+  · intro hg
+    obtain ⟨f, rfl⟩ := exists_rootsOfUnityScalarPoints_of_mem_center m g hg
+    exact isCentralPoint_rootsOfUnityScalarPoints m f
+
 variable {m}
 
 /-- In positive rank distinct square roots of one give distinct scalar symplectic points. -/
@@ -113,20 +143,8 @@ theorem isCentralPoint_iff_existsUnique_rootsOfUnityScalarPoints
     HopfAlgebra.IsCentralPoint g ↔ ∃! f, rootsOfUnityScalarPoints m f = g := by
   constructor
   · intro hg
-    have hcenter := MulEquivClass.apply_mem_center (pointsMulEquiv R m (A := A))
-      (HopfAlgebra.center_le_center (HopfAlgebra.mem_center.mpr hg))
-    obtain ⟨c, hc, hc2⟩ := (GLSymplecticFin.mem_center_iff _).mp hcenter
-    let ζ : rootsOfUnity 2 A :=
-      ⟨Units.mkOfMulEqOne c c (by simpa [sq] using hc2),
-        (mem_rootsOfUnity' 2 _).mpr hc2⟩
-    have hf : rootsOfUnityScalarPoints m
-        ((RootsOfUnityGroup.pointsMulEquiv (R := R) (A := A) 2).symm ζ) = g := by
-      apply (pointsMulEquiv R m (A := A)).injective
-      rw [pointsMulEquiv_rootsOfUnityScalarPoints, MulEquiv.apply_symm_apply]
-      apply Subtype.ext
-      apply Units.ext
-      rw [GLSymplecticFin.coe_rootsOfUnityScalar]
-      exact hc.symm
+    obtain ⟨f, hf⟩ := exists_rootsOfUnityScalarPoints_of_mem_center m g
+      ((isCentralPoint_iff_mem_center_pointsMulEquiv m g).mp hg)
     exact ⟨_, hf, fun f hh ↦ rootsOfUnityScalarPoints_injective hm (hh.trans hf.symm)⟩
   · rintro ⟨f, rfl, -⟩
     exact isCentralPoint_rootsOfUnityScalarPoints m f
