@@ -80,10 +80,13 @@ normed spaces:
   action of a normed division ring, and `σ t ≠ 0`, rescaling by `(σ t)⁻¹` turns the error at
   `t • v` into the error at `v`: `‖(σ t)⁻¹ • w - L v‖ = ‖σ t‖⁻¹ * ‖w - L (t • v)‖`. No continuity
   of `L` is needed.
-* `NormedAddCommGroup.ofCore_toPseudoMetricSpace` and
-  `NormedAddCommGroup.ofCore_toTopologicalSpace`: constructing a `NormedAddCommGroup` via `ofCore`
-  on a type already carrying a `SeminormedAddCommGroup` recovers the same pseudometric and
-  topological structures.
+* `NormedSpace.Core.induced`: pulling back a `NormedSpace.Core` along an injective
+  norm-preserving linear map.
+* `NormedAddCommGroup.ofCore_toPseudoMetricSpace`,
+  `NormedAddCommGroup.ofCore_toTopologicalSpace`, and
+  `NormedAddCommGroup.completeSpace_ofCore`: constructing a `NormedAddCommGroup` via `ofCore`
+  on a type already carrying a `SeminormedAddCommGroup` recovers the same pseudometric,
+  topological, and completeness structures.
 
 The coordinate bound is adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
 commit `65810c73f9dd7945fc646ab484cb19d673f5291d`,
@@ -424,6 +427,21 @@ theorem Continuous.div_norm_smul {X F : Type*} [TopologicalSpace X] [SeminormedA
   simpa [hτ0 p hpf, hp] using
     ((hτ.norm.tendsto p).add (hy.norm.tendsto p)).add hfract.norm
 
+/-- Pull back a `NormedSpace.Core` along an injective norm-preserving linear map. -/
+theorem NormedSpace.Core.induced {𝕜 E F : Type*} [NormedField 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [Norm E]
+    [AddCommGroup F] [Module 𝕜 F] [Norm F]
+    (core : NormedSpace.Core 𝕜 F) (f : E →ₗ[𝕜] F) (hf : Function.Injective f)
+    (hnorm : ∀ x : E, ‖f x‖ = ‖x‖) : NormedSpace.Core 𝕜 E where
+  norm_nonneg x := hnorm x ▸ core.norm_nonneg (f x)
+  norm_smul c x := by
+    rw [← hnorm (c • x), map_smul, core.norm_smul, hnorm]
+  norm_triangle x y := by
+    rw [← hnorm (x + y), map_add, ← hnorm x, ← hnorm y]
+    exact core.norm_triangle (f x) (f y)
+  norm_eq_zero_iff x := by
+    rw [← hnorm x, core.norm_eq_zero_iff, map_eq_zero_iff f hf]
+
 /-- Constructing a `NormedAddCommGroup` via `ofCore` on a type that already carries a
 `SeminormedAddCommGroup` instance recovers the same underlying pseudometric space. -/
 theorem NormedAddCommGroup.ofCore_toPseudoMetricSpace {𝕜 E : Type*} [NormedField 𝕜]
@@ -442,5 +460,14 @@ theorem NormedAddCommGroup.ofCore_toTopologicalSpace {𝕜 E : Type*} [NormedFie
       hE.toUniformSpace.toTopologicalSpace :=
   congrArg (fun m : PseudoMetricSpace E => m.toUniformSpace.toTopologicalSpace)
     (NormedAddCommGroup.ofCore_toPseudoMetricSpace core)
+
+/-- Constructing a `NormedAddCommGroup` via `ofCore` on a type that already carries a complete
+`SeminormedAddCommGroup` instance preserves completeness. -/
+theorem NormedAddCommGroup.completeSpace_ofCore {𝕜 E : Type*} [NormedField 𝕜]
+    [hE : SeminormedAddCommGroup E] [Module 𝕜 E] [hc : CompleteSpace E]
+    (core : NormedSpace.Core 𝕜 E) :
+    @CompleteSpace E (NormedAddCommGroup.ofCore core).toUniformSpace := by
+  have := NormedAddCommGroup.ofCore_toPseudoMetricSpace core
+  convert hc using 2
 
 end

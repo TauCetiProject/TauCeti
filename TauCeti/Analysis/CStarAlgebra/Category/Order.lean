@@ -10,15 +10,17 @@ public import TauCeti.Analysis.CStarAlgebra.Category.Basic
 import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
-# Order, spectral positivity, congruence, and operator-order Cauchy–Schwarz
+# Order, congruence, and operator-order bounds
 
 In a C*-category `C`, each endomorphism algebra `CategoryTheory.End X` carries the spectral
 partial order `CStarAlgebra.spectralOrder (End X)`. This file proves:
 
-* spectral nonnegativity of `End.of (f ≫ dagger f)` over `ℝ` and `ℂ`;
 * congruence positivity and monotonicity across arbitrary objects
   `a ↦ End.of (f ≫ a.asHom ≫ dagger f)` and `a ↦ End.of (dagger g ≫ a.asHom ≫ g)`;
-* operator-order bounds and Cauchy–Schwarz inequalities in `End X`;
+* operator-order composition bounds `CategoryTheory.End.comp_dagger_self_comp_le` and
+  `CategoryTheory.End.dagger_comp_self_comp_le` in `End X` (whose specializations
+  `comp_dagger_self_comp_le f (dagger g)` and `dagger_comp_self_comp_le (dagger f) g` give the
+  categorical Cauchy–Schwarz inequalities);
 * `TauCeti.CStarCategory.ofSpectrumNonneg`: constructing a `TauCeti.CStarCategory` instance from
   spectral nonnegativity of `End.of (f ≫ dagger f)` over `ℂ` instead of explicit square-root
   witnesses `exists_self_comp_dagger_eq`.
@@ -44,20 +46,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
   [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
 variable {X Y Z : C}
 
-/-- Every real spectral value of `End.of (f ≫ dagger f)` is nonnegative. -/
-theorem spectrum_self_comp_dagger_nonneg (f : X ⟶ Y) ⦃x : ℝ⦄
-    (hx : x ∈ spectrum ℝ (End.of (f ≫ dagger f))) : 0 ≤ x :=
-  spectrum_nonneg_of_nonneg (self_comp_dagger_nonneg f) hx
-
-/-- Every complex spectral value of `End.of (f ≫ dagger f)` has nonnegative real part and zero
-imaginary part. -/
-theorem complexSpectrum_self_comp_dagger_nonneg (f : X ⟶ Y) ⦃z : ℂ⦄
-    (hz : z ∈ spectrum ℂ (End.of (f ≫ dagger f))) : 0 ≤ z.re ∧ z.im = 0 := by
-  open ComplexOrder in
-  obtain ⟨hre, him⟩ :=
-    Complex.nonneg_iff.mp (spectrum_nonneg_of_nonneg (self_comp_dagger_nonneg f) hz)
-  exact ⟨hre, him.symm⟩
-
 /-- Congruence `a ↦ End.of (f ≫ a.asHom ≫ dagger f)` sends positive elements of `End Y` to
 positive elements of `End X` for any `f : X ⟶ Y`. -/
 theorem comp_comp_dagger_nonneg (f : X ⟶ Y) {a : End Y} (ha : 0 ≤ a) :
@@ -76,7 +64,8 @@ theorem dagger_comp_comp_mono (g : X ⟶ Y) {a b : End X} (hab : a ≤ b) :
   simpa only [dagger_dagger] using comp_comp_dagger_mono (dagger g) hab
 
 /-- Categorical operator-order bound: `End.of ((f ≫ g) ≫ dagger (f ≫ g))` is bounded in `End X` by
-`(‖g‖ ^ 2) • End.of (f ≫ dagger f)`. -/
+`(‖g‖ ^ 2) • End.of (f ≫ dagger f)`. Specializing `g` to `dagger h` gives the operator-order
+Cauchy–Schwarz inequality for `f ≫ dagger h`. -/
 theorem comp_dagger_self_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) :
     End.of ((f ≫ g) ≫ dagger (f ≫ g)) ≤ (‖g‖ ^ 2) • End.of (f ≫ dagger f) := by
   simpa only [Category.assoc, dagger_comp, End.norm_of,
@@ -85,27 +74,12 @@ theorem comp_dagger_self_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) :
       (End.self_comp_dagger_nonneg g).isSelfAdjoint
 
 /-- Dual operator-order bound: `End.of (dagger (f ≫ g) ≫ (f ≫ g))` is bounded in `End Z` by
-`(‖f‖ ^ 2) • End.of (dagger g ≫ g)`. -/
+`(‖f‖ ^ 2) • End.of (dagger g ≫ g)`. Specializing `f` to `dagger h` gives the operator-order
+Cauchy–Schwarz inequality for `dagger h ≫ g`. -/
 theorem dagger_comp_self_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) :
     End.of (dagger (f ≫ g) ≫ (f ≫ g)) ≤ (‖f‖ ^ 2) • End.of (dagger g ≫ g) := by
   simpa only [dagger_comp, dagger_dagger, CStarCategory.norm_dagger] using
     comp_dagger_self_comp_le (dagger g) (dagger f)
-
-/-- Categorical Cauchy–Schwarz inequality in `End X` for two co-targeted morphisms `f : X ⟶ Y` and
-`g : Z ⟶ Y`: `<f, g> <f, g>† ≤ ‖<g, g>‖ • <f, f>` where `<f, g> = f ≫ dagger g`. -/
-theorem comp_dagger_comp_dagger_le_norm_smul (f : X ⟶ Y) (g : Z ⟶ Y) :
-    End.of ((f ≫ dagger g) ≫ dagger (f ≫ dagger g)) ≤
-      ‖g ≫ dagger g‖ • End.of (f ≫ dagger f) := by
-  simpa only [CStarCategory.norm_dagger, CStarCategory.norm_self_comp_dagger] using
-    comp_dagger_self_comp_le f (dagger g)
-
-/-- Dual categorical Cauchy–Schwarz inequality in `End Z` for two co-sourced morphisms `f : Y ⟶ X`
-and `g : Y ⟶ Z`. -/
-theorem dagger_comp_dagger_comp_le_norm_smul (f : Y ⟶ X) (g : Y ⟶ Z) :
-    End.of (dagger (dagger f ≫ g) ≫ (dagger f ≫ g)) ≤
-      ‖dagger f ≫ f‖ • End.of (dagger g ≫ g) := by
-  simpa only [CStarCategory.norm_dagger, CStarCategory.norm_dagger_comp_self] using
-    dagger_comp_self_comp_le (dagger f) g
 
 end CategoryTheory.End
 

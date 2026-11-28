@@ -22,9 +22,9 @@ norm recovery and Paschke's inequality, available on Hom spaces.
 Read through this instance, its norm recovery says that `‖f‖` is the largest value of
 `‖g†f‖` over `‖g‖ ≤ 1`, and its norm monotonicity says that `f†f ≤ g†g` implies `‖f‖ ≤ ‖g‖`.
 The conjugation bounds, which use only the C*-identity and the order on `End X`, are in
-`TauCeti.Analysis.CStarAlgebra.Category.Basic`, and the general operator-order Cauchy–Schwarz
-inequality `CategoryTheory.End.comp_dagger_comp_dagger_le_norm_smul` is in
-`TauCeti.Analysis.CStarAlgebra.Category.Order`.
+`TauCeti.Analysis.CStarAlgebra.Category.Basic`, and the operator-order composition bounds
+`CategoryTheory.End.comp_dagger_self_comp_le` (giving operator-order Cauchy–Schwarz when
+specialized to `dagger g`) are in `TauCeti.Analysis.CStarAlgebra.Category.Order`.
 
 The polarization identity for `f†g` holds in any complex linear dagger category
 (`TauCeti.comp_dagger_polarization`).

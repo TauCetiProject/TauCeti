@@ -95,6 +95,10 @@ def daggerLinearIsometryEquiv (X Y : C) :
   ext f
   exact (daggerLinearIsometryEquiv X Y).injective (by simp)
 
+/-- Forgetting the norm from `daggerLinearIsometryEquiv` recovers `daggerLinearEquiv ℂ`. -/
+@[simp] theorem daggerLinearIsometryEquiv_toLinearEquiv (X Y : C) :
+    (daggerLinearIsometryEquiv X Y).toLinearEquiv = daggerLinearEquiv ℂ X Y := (rfl)
+
 /-! ### Continuous bilinear composition, annihilators, and intertwiners -/
 
 /-- Categorical composition bundled as a continuous `ℂ`-bilinear map of norm at most `1`,
@@ -231,5 +235,10 @@ def linearIsometryEquiv (X : C) : End X ≃ₗᵢ[ℂ] (X ⟶ X) :=
 @[simp] theorem linearIsometryEquiv_symm_apply {X : C} (f : X ⟶ X) :
     (linearIsometryEquiv X).symm f = End.of f :=
   linearIsometryEquivOf_symm_apply _ f
+
+/-- Forgetting the norm from `End.linearIsometryEquiv` recovers `End.linearEquiv`. -/
+@[simp] theorem linearIsometryEquiv_toLinearEquiv (X : C) :
+    (linearIsometryEquiv X).toLinearEquiv = End.linearEquiv :=
+  linearIsometryEquivOf_toLinearEquiv _
 
 end CategoryTheory.End

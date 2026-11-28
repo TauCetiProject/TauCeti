@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.CategoryTheory.Dagger.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.CategoryTheory.Dagger.Polarization
 
 /-!
@@ -230,14 +231,9 @@ variable [Preadditive C] [∀ X Y : C, Norm (X ⟶ Y)] {X : C}
 
 /-- Transport `NormedSpace.Core` from `X ⟶ X` to `End X` along `End.asHom`. -/
 theorem normedSpaceCoreOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
-    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) : NormedSpace.Core 𝕜 (End X) where
-  norm_nonneg a := hcore.norm_nonneg a.asHom
-  norm_smul c a := by
-    simpa only [norm_def, smul_asHom] using hcore.norm_smul c a.asHom
-  norm_triangle a b := by
-    simpa only [norm_def, add_asHom] using hcore.norm_triangle a.asHom b.asHom
-  norm_eq_zero_iff a := by
-    rw [norm_def, hcore.norm_eq_zero_iff, End.ext_iff, zero_asHom]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) : NormedSpace.Core 𝕜 (End X) :=
+  hcore.induced (End.linearEquiv (R := 𝕜)).toLinearMap
+    (End.linearEquiv (R := 𝕜)).injective fun _ => rfl
 
 /-- Transport `NormedRing` on `End X` from a `NormedSpace.Core` on `X ⟶ X` and submultiplicative
 composition. -/
@@ -285,6 +281,13 @@ def linearIsometryEquivOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
     letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
     letI := NormedAddCommGroup.ofCore hcore
     (linearIsometryEquivOf hcore).symm f = End.of f := (rfl)
+
+/-- Forgetting the norm from `End.linearIsometryEquivOf` recovers `End.linearEquiv`. -/
+@[simp] theorem linearIsometryEquivOf_toLinearEquiv {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    (linearIsometryEquivOf hcore).toLinearEquiv = End.linearEquiv := (rfl)
 
 /-- Transport completeness from `X ⟶ X` to `End X` along `End.linearIsometryEquivOf`. -/
 theorem completeSpaceOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]

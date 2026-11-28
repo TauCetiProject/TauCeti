@@ -11,7 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.Category.Basic
 public import TauCeti.CategoryTheory.Dagger.Functor
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import TauCeti.CategoryTheory.Linear.FullyFaithful
+public import TauCeti.CategoryTheory.Linear.FullyFaithful
 
 /-!
 # Automatic contractivity and isometricity of linear dagger functors
@@ -101,9 +101,11 @@ theorem norm_mapCLM_le (X Y : C) : ‖F.mapCLM X Y‖ ≤ 1 :=
 
 /-- `F.map` is `1`-Lipschitz on every Hom space (with its norm-induced metric). -/
 theorem lipschitzWith_map (X Y : C) :
-    LipschitzWith 1 (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) :=
-  AddMonoidHomClass.lipschitz_of_bound_nnNorm (F.mapLinearMap ℂ) 1 fun f => by
-    simpa using F.nnNorm_map_le f
+    LipschitzWith 1 (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) := by
+  rw [show (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) = F.mapCLM X Y from
+    funext fun f => (F.mapCLM_apply X Y f).symm]
+  exact ContinuousLinearMap.lipschitzWith_of_opNorm_le (K := 1)
+    (by simpa using F.norm_mapCLM_le X Y)
 
 /-- `F.map` is continuous on every Hom space (with its norm-induced topology). -/
 @[fun_prop] theorem continuous_map (X Y : C) :
@@ -150,6 +152,15 @@ def mapLinearIsometry [F.Faithful] (X Y : C) :
 @[simp] theorem mapLinearIsometry_apply [F.Faithful] (X Y : C) (f : X ⟶ Y) :
     F.mapLinearIsometry X Y f = F.map f := (rfl)
 
+/-- Forgetting isometricity from `F.mapLinearIsometry` recovers `F.mapCLM`. -/
+@[simp] theorem mapLinearIsometry_toContinuousLinearMap [F.Faithful] (X Y : C) :
+    (F.mapLinearIsometry X Y).toContinuousLinearMap = F.mapCLM X Y := by
+  ext f; rfl
+
+/-- Forgetting continuity from `F.mapLinearIsometry` recovers `F.mapLinearMap ℂ`. -/
+@[simp] theorem mapLinearIsometry_toLinearMap [F.Faithful] (X Y : C) :
+    (F.mapLinearIsometry X Y).toLinearMap = F.mapLinearMap ℂ := (rfl)
+
 /-- A `ℂ`-linear dagger functor between C*-categories is faithful if and only if it preserves the
 norm of every morphism. -/
 theorem faithful_iff_forall_norm_map_eq :
@@ -188,6 +199,15 @@ def mapLinearIsometryEquiv [F.Full] [F.Faithful] (X Y : C) :
     (F.mapLinearIsometryEquiv X Y).symm g = F.preimage g := by
   apply (F.mapLinearIsometryEquiv X Y).injective
   simp
+
+/-- Forgetting invertibility from `F.mapLinearIsometryEquiv` recovers `F.mapLinearIsometry`. -/
+@[simp] theorem mapLinearIsometryEquiv_toLinearIsometry [F.Full] [F.Faithful] (X Y : C) :
+    (F.mapLinearIsometryEquiv X Y).toLinearIsometry = F.mapLinearIsometry X Y := by
+  ext f; simp
+
+/-- Forgetting the norm from `F.mapLinearIsometryEquiv` recovers `F.homLinearEquiv ℂ`. -/
+@[simp] theorem mapLinearIsometryEquiv_toLinearEquiv [F.Full] [F.Faithful] (X Y : C) :
+    (F.mapLinearIsometryEquiv X Y).toLinearEquiv = F.homLinearEquiv ℂ X Y := (rfl)
 
 /-- Taking `F.preimage` along a fully faithful `ℂ`-linear dagger functor preserves norms. -/
 @[simp] theorem norm_preimage [F.Full] [F.Faithful] {X Y : C} (g : F.obj X ⟶ F.obj Y) :

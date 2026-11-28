@@ -336,16 +336,6 @@ theorem normedSpaceCore (X Y : HilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (
   norm_triangle := norm_add_le
   norm_eq_zero_iff _ := norm_eq_zero
 
-/-- The normed group structure induced by the operator norm is the one of continuous linear
-maps, so the completeness of the Hom space carries over. -/
-private theorem completeSpace_ofCore (X Y : HilbertCat.{u, v} 𝕜) :
-    letI := NormedAddCommGroup.ofCore (normedSpaceCore X Y)
-    CompleteSpace (X ⟶ Y) := by
-  have h := NormedAddCommGroup.ofCore_toPseudoMetricSpace (normedSpaceCore X Y)
-  have hc : CompleteSpace (X ⟶ Y) := inferInstance
-  -- The goal and `hc` are completeness for two metric structures, which `h` identifies.
-  convert hc using 2
-
 /-- For a morphism `f` of complex Hilbert spaces, the positive operator `f†f` is `g†g` for its
 square root `g`. -/
 theorem exists_self_comp_dagger_eq {X Y : HilbertCat.{0, v} ℂ} (f : X ⟶ Y) :
@@ -359,7 +349,7 @@ theorem exists_self_comp_dagger_eq {X Y : HilbertCat.{0, v} ℂ} (f : X ⟶ Y) :
 /-- Complex Hilbert spaces with operator norms and adjoints form a C*-category. -/
 instance : CStarCategory (HilbertCat.{0, v} ℂ) where
   normedSpaceCore := normedSpaceCore
-  completeSpace := completeSpace_ofCore
+  completeSpace X Y := NormedAddCommGroup.completeSpace_ofCore (normedSpaceCore X Y)
   norm_comp_le f g := (norm_comp_le f g).trans_eq (mul_comm _ _)
   norm_mul_self_le f := by rw [norm_self_comp_dagger, pow_two]
   exists_self_comp_dagger_eq := exists_self_comp_dagger_eq
@@ -456,14 +446,11 @@ abbrev of (𝕜 : Type u) [RCLike 𝕜] (E : Type v) [NormedAddCommGroup E]
     (of 𝕜 E : Type v) = E := (rfl)
 
 /-- The operator norms on Hom spaces of `FDHilbertCat 𝕜` satisfy the normed-space axioms. -/
-theorem normedSpaceCore (X Y : FDHilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) where
-  norm_nonneg f := norm_nonneg f.hom
-  norm_smul c f := norm_smul c f.hom
-  norm_triangle f g := norm_add_le f.hom g.hom
-  norm_eq_zero_iff f := by
-    change ‖f.hom‖ = 0 ↔ f = 0
-    rw [norm_eq_zero]
-    exact ⟨fun h => InducedCategory.hom_ext h, fun h => congrArg InducedCategory.Hom.hom h⟩
+theorem normedSpaceCore (X Y : FDHilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) :=
+  (HilbertCat.normedSpaceCore X.obj Y.obj).induced
+    (InducedCategory.homLinearEquiv (R := 𝕜) (F := ObjectProperty.FullSubcategory.obj)
+      (X := X) (Y := Y)).toLinearMap
+    InducedCategory.homLinearEquiv.injective fun _ => rfl
 
 /-- Hom spaces in `FDHilbertCat 𝕜` carry the normed group structure of their underlying
 continuous linear maps. -/
@@ -473,13 +460,6 @@ instance (X Y : FDHilbertCat.{u, v} 𝕜) : NormedAddCommGroup (X ⟶ Y) :=
 /-- Hom spaces in `FDHilbertCat 𝕜` are normed spaces over `𝕜`. -/
 instance (X Y : FDHilbertCat.{u, v} 𝕜) : NormedSpace 𝕜 (X ⟶ Y) :=
   .ofCore (normedSpaceCore X Y)
-
-/-- Hom spaces in `FDHilbertCat 𝕜` are complete. -/
-instance (X Y : FDHilbertCat.{u, v} 𝕜) : CompleteSpace (X ⟶ Y) :=
-  let e : (X ⟶ Y) ≃ₗᵢ[𝕜] (X.obj ⟶ Y.obj) :=
-    { toLinearEquiv := InducedCategory.homLinearEquiv
-      norm_map' _ := rfl }
-  e.toIsometryEquiv.completeSpace
 
 /-- Every Hom space between finite-dimensional Hilbert spaces is finite-dimensional. -/
 instance instFiniteDimensionalHom (X Y : FDHilbertCat.{u, v} 𝕜) :
@@ -491,6 +471,14 @@ instance instFiniteDimensionalHom (X Y : FDHilbertCat.{u, v} 𝕜) :
   exact Module.Finite.equiv
     (InducedCategory.homLinearEquiv (R := 𝕜) (F := ObjectProperty.FullSubcategory.obj)
       (X := X) (Y := Y)).symm
+
+/-- Hom spaces in `FDHilbertCat 𝕜` are complete. -/
+instance (X Y : FDHilbertCat.{u, v} 𝕜) : CompleteSpace (X ⟶ Y) :=
+  FiniteDimensional.completeSpace 𝕜 _
+
+-- Ambient isometric identification of `FDHilbertCat 𝕜` Hom spaces over arbitrary `RCLike 𝕜`.
+example (X Y : FDHilbertCat.{u, v} 𝕜) : (X ⟶ Y) ≃ₗᵢ[𝕜] (X.obj ⟶ Y.obj) :=
+  ObjectProperty.homLinearIsometryEquiv X Y
 
 /-- An object of `FDHilbertCat 𝕜` is a categorical zero object if and only if its carrier is a
 subsingleton. -/
