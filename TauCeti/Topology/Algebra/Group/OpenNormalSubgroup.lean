@@ -22,6 +22,8 @@ the group operations is required.
   group homomorphism.
 * `OpenNormalSubgroup.prod`: the product of two open normal subgroups, as an open normal subgroup
   of the product group.
+* `ContinuousMulEquiv.openNormalSubgroupOrderIso`: transport of open normal subgroups along an
+  isomorphism of topological groups.
 
 ## Main instances
 
@@ -37,6 +39,9 @@ the group operations is required.
 * `OpenNormalSubgroup.mem_top`, `OpenNormalSubgroup.mem_bot`: the top open normal subgroup
   contains every element, and the bottom one only the identity.
 * `OpenNormalSubgroup.comap_mono`: taking preimages preserves inclusions.
+* `ContinuousMulEquiv.openNormalSubgroupOrderIso_apply_toSubgroup`,
+  `ContinuousMulEquiv.mem_openNormalSubgroupOrderIso`: the underlying subgroup and membership of a
+  transported open normal subgroup.
 -/
 
 public section
@@ -181,3 +186,66 @@ theorem mem_prod {U : OpenNormalSubgroup G} {V : OpenNormalSubgroup H} {x : G ×
   Iff.rfl
 
 end OpenNormalSubgroup
+
+namespace ContinuousMulEquiv
+
+variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
+
+/-- A topological group isomorphism transports open normal subgroups, preserving inclusion. -/
+def openNormalSubgroupOrderIso (e : G ≃ₜ* H) :
+    OpenNormalSubgroup G ≃o OpenNormalSubgroup H :=
+  let h_symm : Continuous e.toMulEquiv.symm.toMonoidHom := e.symm.continuous
+  let h_fwd : Continuous e.toMulEquiv.toMonoidHom := e.continuous
+  { toFun := fun U ↦ U.comap e.toMulEquiv.symm.toMonoidHom h_symm
+    invFun := fun V ↦ V.comap e.toMulEquiv.toMonoidHom h_fwd
+    left_inv := fun U ↦ SetLike.ext fun g ↦ by
+      dsimp only
+      rw [OpenNormalSubgroup.mem_comap, OpenNormalSubgroup.mem_comap,
+        MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, e.toMulEquiv.symm_apply_apply]
+    right_inv := fun V ↦ SetLike.ext fun h ↦ by
+      dsimp only
+      rw [OpenNormalSubgroup.mem_comap, OpenNormalSubgroup.mem_comap,
+        MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, e.toMulEquiv.apply_symm_apply]
+    map_rel_iff' := fun {U V} ↦
+      Set.preimage_subset_preimage_iff (by simp) }
+
+/-- The underlying subgroup transported by `ContinuousMulEquiv.openNormalSubgroupOrderIso` is the
+image of the original subgroup. -/
+@[simp]
+theorem openNormalSubgroupOrderIso_apply_toSubgroup
+    (e : G ≃ₜ* H) (U : OpenNormalSubgroup G) :
+    (e.openNormalSubgroupOrderIso U).toSubgroup =
+      U.toSubgroup.map e.toMulEquiv.toMonoidHom :=
+  (U.toSubgroup.map_equiv_eq_comap_symm e.toMulEquiv).symm
+
+/-- The inverse transport of an open normal subgroup is its image under the inverse topological
+group isomorphism. -/
+@[simp]
+theorem openNormalSubgroupOrderIso_symm_apply_toSubgroup
+    (e : G ≃ₜ* H) (V : OpenNormalSubgroup H) :
+    (e.openNormalSubgroupOrderIso.symm V).toSubgroup =
+      V.toSubgroup.map e.symm.toMulEquiv.toMonoidHom :=
+  (V.toSubgroup.map_equiv_eq_comap_symm e.toMulEquiv.symm).symm
+
+/-- An element lies in a transported open normal subgroup exactly when its inverse image lies in
+the original one. -/
+@[simp]
+theorem mem_openNormalSubgroupOrderIso (e : G ≃ₜ* H)
+    (U : OpenNormalSubgroup G) {h : H} : h ∈ e.openNormalSubgroupOrderIso U ↔ e.symm h ∈ U :=
+  OpenNormalSubgroup.mem_comap
+
+/-- An element lies in an inversely transported open normal subgroup exactly when its image lies in
+the original one. -/
+@[simp]
+theorem mem_openNormalSubgroupOrderIso_symm (e : G ≃ₜ* H)
+    (V : OpenNormalSubgroup H) {g : G} : g ∈ e.openNormalSubgroupOrderIso.symm V ↔ e g ∈ V :=
+  OpenNormalSubgroup.mem_comap
+
+/-- The image of an element lies in a transported open normal subgroup exactly when the element lies
+in the original one. This is not marked `@[simp]`: `simp` already reaches `g ∈ U` through
+`ContinuousMulEquiv.mem_openNormalSubgroupOrderIso` and `ContinuousMulEquiv.symm_apply_apply`. -/
+theorem apply_mem_openNormalSubgroupOrderIso (e : G ≃ₜ* H)
+    (U : OpenNormalSubgroup G) {g : G} : e g ∈ e.openNormalSubgroupOrderIso U ↔ g ∈ U := by
+  rw [e.mem_openNormalSubgroupOrderIso, e.symm_apply_apply]
+
+end ContinuousMulEquiv

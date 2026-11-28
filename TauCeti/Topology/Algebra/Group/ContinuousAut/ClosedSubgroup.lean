@@ -8,42 +8,52 @@ module
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
-# Continuous outer automorphisms acting on closed subgroups up to conjugacy
+# Continuous outer automorphisms acting on closed and open normal subgroups
 
 A continuous automorphism `φ` of a topological group `G` is a homeomorphism, so it carries a
-closed subgroup `H` to the closed subgroup `φ • H`, its image. This is an action of
-`ContinuousAut G` on Mathlib's `ClosedSubgroup G`. Through the inner automorphisms
-`ContinuousAut.conj`, the group `G` itself acts on its closed subgroups by conjugation; this is
-recorded as an action of Mathlib's `ConjAct G`, whose orbits are the conjugacy classes of closed
-subgroups, `ClosedSubgroupConjClasses G`.
+closed subgroup `H` to the closed subgroup `φ • H`, its image, and likewise transports open
+normal subgroups (`OpenNormalSubgroup G`) by order isomorphisms. These give actions of
+`ContinuousAut G` on `ClosedSubgroup G` and on `OpenNormalSubgroup G`. Through the inner
+automorphisms `ContinuousAut.conj`, the group `G` itself acts on its closed subgroups by
+conjugation; this is recorded as an action of Mathlib's `ConjAct G`, whose orbits are the
+conjugacy classes of closed subgroups, `ClosedSubgroupConjClasses G`.
 
-A continuous automorphism carries conjugate closed subgroups to conjugate closed subgroups,
-because `φ * conj g = conj (φ g) * φ`, so the action descends to `ClosedSubgroupConjClasses G`.
-Inner automorphisms fix every class, so the action on classes factors through the continuous
-outer automorphism group `ContinuousOut G`. This is the action in which outer actions on
-profinite groups, such as an outer Galois action on a profinite fundamental group, are stated on
-closed subgroups (for instance decomposition and inertia groups), which are only defined up to
-conjugacy. The companion action on conjugacy classes of elements is in
-`TauCeti.Topology.Algebra.Group.ContinuousAut.ConjClasses`.
+Inner automorphisms fix every normal closed subgroup and in particular every open normal subgroup,
+so `ContinuousOut G` acts on `OpenNormalSubgroup G` by order isomorphisms
+(`ContinuousOut.openNormalOrderIso`). A continuous automorphism carries conjugate closed subgroups
+to conjugate closed subgroups, because `φ * conj g = conj (φ g) * φ`, so the action also descends
+through `ContinuousOut G` to `ClosedSubgroupConjClasses G`. This is the action in which outer
+actions on profinite groups, such as an outer Galois action on a profinite fundamental group, are
+stated on closed subgroups (for instance decomposition and inertia groups), which are only defined
+up to conjugacy, and on open normal subgroups (for finite quotients). The companion action on
+conjugacy classes of elements is in `TauCeti.Topology.Algebra.Group.ContinuousAut.ConjClasses`.
 
-All actions here are algebraic: they need a topology on `G` to speak of continuous automorphisms
-and closed subgroups, but no topology on `ContinuousAut G`.
+All actions here are algebraic: they need a topology on `G` to speak of continuous automorphisms,
+closed subgroups, and open normal subgroups, but no topology on `ContinuousAut G`.
 
 ## Main definitions
 
-* The action of `ContinuousAut G` on `ClosedSubgroup G` by images, with
-  `ContinuousAut.smul_closedSubgroup_toSubgroup` computing the underlying subgroup.
+* The actions of `ContinuousAut G` on `ClosedSubgroup G` and `OpenNormalSubgroup G` by images,
+  with `ContinuousAut.smul_closedSubgroup_toSubgroup` and
+  `ContinuousAut.smul_openNormalSubgroup_toSubgroup` computing the underlying subgroups.
 * The conjugation action of `ConjAct G` on `ClosedSubgroup G`, through `ContinuousAut.conj`
   (`ConjAct.smul_closedSubgroup_eq_conj_smul`), compatible with Mathlib's pointwise conjugation
   of subgroups (`ConjAct.smul_closedSubgroup_toSubgroup`).
 * `TauCeti.ClosedSubgroupConjClasses G`: closed subgroups of `G` up to conjugacy, the orbit
   quotient of that action, with the class map `TauCeti.ClosedSubgroupConjClasses.mk`.
-* The actions of `ContinuousAut G` and of `ContinuousOut G` on `ClosedSubgroupConjClasses G`.
+* The actions of `ContinuousAut G` and of `ContinuousOut G` on `ClosedSubgroupConjClasses G`, and
+  the action of `ContinuousOut G` on `OpenNormalSubgroup G` with its bundled order isomorphism
+  `TauCeti.ContinuousOut.openNormalOrderIso`.
 
 ## Main results
 
+* `TauCeti.ContinuousAut.conj_smul_closedSubgroup_of_normal`: inner automorphisms fix every normal
+  closed subgroup.
+* `TauCeti.ContinuousAut.conj_smul_openNormalSubgroup`: inner automorphisms fix every open normal
+  subgroup.
 * `TauCeti.ClosedSubgroupConjClasses.mk_eq_mk_iff`: two closed subgroups have the same class
   exactly when one is a conjugate of the other.
 * `TauCeti.ContinuousAut.smul_closedSubgroupConjClass`: a continuous automorphism sends the
@@ -52,6 +62,8 @@ and closed subgroups, but no topology on `ContinuousAut G`.
   class.
 * `TauCeti.ContinuousOut.mk_smul_closedSubgroupConjClass`: the class of `φ` in `ContinuousOut G`
   sends the class of `H` to the class of `φ • H`.
+* `TauCeti.ContinuousOut.openNormalOrderIso_mul`: `ContinuousOut.openNormalOrderIso` reverses
+  `OrderIso.trans` (`(α * β).openNormalOrderIso = β.openNormalOrderIso.trans α.openNormalOrderIso`).
 
 ## References
 
@@ -94,6 +106,32 @@ theorem mem_smul_closedSubgroup_iff {φ : ContinuousAut G} {H : ClosedSubgroup G
     x ∈ φ • H ↔ φ.symm x ∈ H :=
   φ.mem_closedSubgroupOrderIso H
 
+/-- A continuous automorphism acts on open normal subgroups by taking images via
+`ContinuousMulEquiv.openNormalSubgroupOrderIso`. -/
+instance : MulAction (ContinuousAut G) (OpenNormalSubgroup G) where
+  smul φ U := φ.openNormalSubgroupOrderIso U
+  one_smul U := SetLike.ext fun _ ↦ ContinuousMulEquiv.mem_openNormalSubgroupOrderIso _ U
+  mul_smul φ ψ U := SetLike.ext fun _ ↦ ((φ * ψ).mem_openNormalSubgroupOrderIso U).trans <|
+    (ψ.mem_openNormalSubgroupOrderIso U).symm.trans (φ.mem_openNormalSubgroupOrderIso _).symm
+
+/-- The action of a continuous automorphism on open normal subgroups is transport along
+`ContinuousMulEquiv.openNormalSubgroupOrderIso`. -/
+theorem smul_openNormalSubgroup_def (φ : ContinuousAut G) (U : OpenNormalSubgroup G) :
+    φ • U = φ.openNormalSubgroupOrderIso U :=
+  (rfl)
+
+/-- The underlying subgroup of `φ • U` is the image of `U` under `φ`. -/
+@[simp]
+theorem smul_openNormalSubgroup_toSubgroup (φ : ContinuousAut G) (U : OpenNormalSubgroup G) :
+    (φ • U).toSubgroup = U.toSubgroup.map φ.toMulEquiv.toMonoidHom :=
+  φ.openNormalSubgroupOrderIso_apply_toSubgroup U
+
+/-- An element lies in `φ • U` exactly when its preimage under `φ` lies in `U`. -/
+@[simp]
+theorem mem_smul_openNormalSubgroup_iff {φ : ContinuousAut G} {U : OpenNormalSubgroup G} {x : G} :
+    x ∈ φ • U ↔ φ.symm x ∈ U :=
+  φ.mem_openNormalSubgroupOrderIso U
+
 end ContinuousAut
 
 section Conjugation
@@ -129,6 +167,28 @@ applying the automorphism: `φ * conj g = conj (φ g) * φ`. -/
 theorem ContinuousAut.smul_conj_smul_closedSubgroup (φ : ContinuousAut G) (g : G)
     (H : ClosedSubgroup G) : φ • conj g • H = conj (φ g) • φ • H := by
   rw [smul_smul, smul_smul, ← mul_conj_mul_inv, inv_mul_cancel_right]
+
+/-- Inner automorphisms fix every normal closed subgroup. -/
+@[simp]
+theorem ContinuousAut.conj_smul_closedSubgroup_of_normal (g : G) (H : ClosedSubgroup G)
+    [H.toSubgroup.Normal] : conj g • H = H := by
+  apply ClosedSubgroup.toSubgroup_injective
+  rw [← ConjAct.ofConjAct_toConjAct g, ← ConjAct.smul_closedSubgroup_eq_conj_smul,
+    ConjAct.smul_closedSubgroup_toSubgroup]
+  exact Subgroup.Normal.conjAct ‹H.toSubgroup.Normal› _
+
+/-- Inner automorphisms fix every open normal subgroup. -/
+@[simp]
+theorem ContinuousAut.conj_smul_openNormalSubgroup (g : G) (U : OpenNormalSubgroup G) :
+    conj g • U = U := by
+  apply OpenNormalSubgroup.toSubgroup_injective
+  dsimp only
+  rw [smul_openNormalSubgroup_toSubgroup]
+  have hconj : (conj g).toMulEquiv.toMonoidHom = (MulAut.conj g : G →* G) :=
+    MonoidHom.ext (conj_apply g)
+  rw [hconj]
+  have : U.toSubgroup.Normal := U.isNormal'
+  exact Subgroup.Normal.map_conj_eq U.toSubgroup g
 
 end Conjugation
 
@@ -228,6 +288,70 @@ theorem mk_smul_closedSubgroupConjClass (φ : ContinuousAut G) (H : ClosedSubgro
     (φ : ContinuousOut G) • ClosedSubgroupConjClasses.mk H =
       ClosedSubgroupConjClasses.mk (φ • H) := by
   rw [mk_smul_closedSubgroupConjClasses, ContinuousAut.smul_closedSubgroupConjClass]
+
+/-- The action of continuous automorphisms on open normal subgroups factors through continuous
+outer automorphisms, since inner automorphisms fix every normal subgroup. -/
+instance : MulAction (ContinuousOut G) (OpenNormalSubgroup G) :=
+  MulAction.compHom (OpenNormalSubgroup G) <|
+    QuotientGroup.lift (ContinuousAut.conj : G →* ContinuousAut G).range
+      (MulAction.toPermHom (ContinuousAut G) (OpenNormalSubgroup G)) (by
+        rintro φ ⟨g, rfl⟩
+        exact MonoidHom.mem_ker.mpr <| Equiv.ext fun U ↦ by
+          simpa only [MulAction.toPermHom_apply, MulAction.toPerm_apply,
+            Equiv.Perm.one_apply] using ContinuousAut.conj_smul_openNormalSubgroup g U)
+
+/-- The outer action on open normal subgroups is computed using any representative continuous
+automorphism. -/
+@[simp]
+theorem mk_smul_openNormalSubgroup (φ : ContinuousAut G) (U : OpenNormalSubgroup G) :
+    (φ : ContinuousOut G) • U = φ • U := by
+  -- The quotient coercion exposes the `QuotientGroup.lift` computation.
+  rw [MulAction.compHom_smul_def, QuotientGroup.lift_mk, Equiv.Perm.smul_def,
+    MulAction.toPermHom_apply, MulAction.toPerm_apply]
+
+/-- A continuous outer automorphism induces an order automorphism of `OpenNormalSubgroup G`. -/
+def openNormalOrderIso (α : ContinuousOut G) :
+    OpenNormalSubgroup G ≃o OpenNormalSubgroup G where
+  toFun U := α • U
+  invFun U := α⁻¹ • U
+  left_inv U := by dsimp only; rw [inv_smul_smul]
+  right_inv U := by dsimp only; rw [smul_inv_smul]
+  map_rel_iff' {U V} := by
+    obtain ⟨φ, rfl⟩ := QuotientGroup.mk_surjective α
+    simp only [mk_smul_openNormalSubgroup, ContinuousAut.smul_openNormalSubgroup_def]
+    exact φ.openNormalSubgroupOrderIso.le_iff_le
+
+/-- Applying `ContinuousOut.openNormalOrderIso` to an open normal subgroup is the outer action
+on `OpenNormalSubgroup G`. -/
+@[simp]
+theorem openNormalOrderIso_apply (α : ContinuousOut G) (U : OpenNormalSubgroup G) :
+    α.openNormalOrderIso U = α • U :=
+  (rfl)
+
+/-- On a class represented by `φ : ContinuousAut G`, `ContinuousOut.openNormalOrderIso` is
+`φ.openNormalSubgroupOrderIso`. -/
+theorem mk_openNormalOrderIso (φ : ContinuousAut G) :
+    ContinuousOut.openNormalOrderIso (φ : ContinuousOut G) = φ.openNormalSubgroupOrderIso := by
+  ext U
+  rw [openNormalOrderIso_apply, mk_smul_openNormalSubgroup,
+    ContinuousAut.smul_openNormalSubgroup_def]
+
+@[simp]
+theorem openNormalOrderIso_one :
+    (1 : ContinuousOut G).openNormalOrderIso = OrderIso.refl _ := by
+  ext U
+  simp
+
+theorem openNormalOrderIso_mul (α β : ContinuousOut G) :
+    (α * β).openNormalOrderIso = β.openNormalOrderIso.trans α.openNormalOrderIso := by
+  ext U
+  simp [mul_smul]
+
+@[simp]
+theorem openNormalOrderIso_symm (α : ContinuousOut G) :
+    α.openNormalOrderIso.symm = α⁻¹.openNormalOrderIso := by
+  ext U
+  rfl
 
 end ContinuousOut
 

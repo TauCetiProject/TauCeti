@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.Galois.Restriction
+public import TauCeti.FieldTheory.KrullTopology
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # The Galois group of a normal subextension as a quotient
@@ -43,6 +45,8 @@ covering an algebraic closure; that identification is also one of abstract group
   `Gal(E/F) ⧸ M.fixingSubgroup ≃ₜ* Gal(M/F)`, for `E/F` and `M/F` normal.
 * `TauCeti.isOpenMap_restrictNormalHom`, `TauCeti.isQuotientMap_restrictNormalHom`: restriction
   `Gal(E/F) → Gal(M/F)` is an open quotient map.
+* `AlgHom.quotientKerRestrictNormalHomEquiv`: the isomorphism of topological groups
+  `Gal(E/F) ⧸ f.restrictNormalHom.ker ≃ₜ* Gal(M/F)` along `f : M →ₐ[F] E`.
 -/
 
 public section
@@ -96,6 +100,8 @@ theorem quotientFixingSubgroupEquiv_symm_restrictNormalHom (σ : Gal(E/F)) :
       (σ : Gal(E/F) ⧸ M.fixingSubgroup) := by
   rw [← quotientFixingSubgroupEquiv_mk σ, ContinuousMulEquiv.symm_apply_apply]
 
+section
+
 variable (M)
 
 /-- **Restriction to a normal intermediate field is an open map** `Gal(E/F) → Gal(M/F)`: it is the
@@ -115,5 +121,42 @@ theorem isQuotientMap_restrictNormalHom :
     Topology.IsQuotientMap (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) M) :=
   (isOpenMap_restrictNormalHom M).isQuotientMap (InfiniteGalois.restrictNormalHom_continuous M)
     (AlgEquiv.restrictNormalHom_surjective E)
+
+end
+
+section RestrictAlong
+
+variable {F K M : Type*} [Field F] [Field K] [Field M] [Algebra F K] [Algebra F M] [Normal F M]
+
+/-- **The Galois group of an embedded normal extension is the topological quotient by the
+restriction kernel**: `Gal(K/F) ⧸ f.restrictNormalHom.ker ≃ₜ* Gal(M/F)` for `K/F` and `M/F`
+normal. -/
+def _root_.AlgHom.quotientKerRestrictNormalHomEquiv (f : M →ₐ[F] K) [Normal F K] :
+    Gal(K/F) ⧸ f.restrictNormalHom.ker ≃ₜ* Gal(M/F) :=
+  (Subgroup.quotientContinuousMulEquivOfEq f.ker_restrictNormalHom).trans <|
+    (quotientFixingSubgroupEquiv F K f.fieldRange).trans
+      f.equivFieldRange.symm.autCongrContinuousMulEquiv
+
+/-- `quotientKerRestrictNormalHomEquiv` sends the class of `σ` to `f.restrictNormalHom σ`. -/
+@[simp]
+theorem _root_.AlgHom.quotientKerRestrictNormalHomEquiv_mk (f : M →ₐ[F] K) [Normal F K]
+    (σ : Gal(K/F)) :
+    f.quotientKerRestrictNormalHomEquiv (σ : Gal(K/F) ⧸ f.restrictNormalHom.ker) =
+      f.restrictNormalHom σ := by
+  rw [AlgHom.quotientKerRestrictNormalHomEquiv, ContinuousMulEquiv.trans_apply,
+    ContinuousMulEquiv.trans_apply, Subgroup.quotientContinuousMulEquivOfEq_mk,
+    quotientFixingSubgroupEquiv_mk, AlgEquiv.autCongrContinuousMulEquiv_apply]
+  exact (f.restrictNormalHom_eq_autCongr σ).symm
+
+/-- The inverse of `quotientKerRestrictNormalHomEquiv` sends `f.restrictNormalHom σ` back to the
+class of `σ`. -/
+@[simp]
+theorem _root_.AlgHom.quotientKerRestrictNormalHomEquiv_symm_restrictNormalHom (f : M →ₐ[F] K)
+    [Normal F K] (σ : Gal(K/F)) :
+    f.quotientKerRestrictNormalHomEquiv.symm (f.restrictNormalHom σ) =
+      (σ : Gal(K/F) ⧸ f.restrictNormalHom.ker) := by
+  rw [← f.quotientKerRestrictNormalHomEquiv_mk σ, ContinuousMulEquiv.symm_apply_apply]
+
+end RestrictAlong
 
 end TauCeti

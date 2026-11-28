@@ -48,6 +48,9 @@ carried out after a finite constant field extension.
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
 * `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
   `F · k'` over `k'`.
+* `TauCeti.constantCompositum_eq_top_of_X_mem` and
+  `TauCeti.constantCompositum_ratFunc_eq_top`: a compositum inside `k'(X)` containing `X`
+  (in particular `k(X) · k'`) is all of `k'(X)`.
 * `TauCeti.isSeparable_adjoin_image_of_constantCompositum_eq_top` and
   `TauCeti.isSeparable_ratFunc_of_constantCompositum_eq_top`: if `F` is separable over `k(S)` or
   `RatFunc k`, then `F · k'` is separable over `k'(S)` or `RatFunc k'`.
@@ -312,5 +315,37 @@ theorem exists_finiteDimensional_normal_splits_constantCompositum_eq_top (f : Po
   obtain ⟨w, hw, hwx⟩ := hle x.property
   obtain rfl : w = x := Subtype.ext hwx
   exact hw
+
+end TauCeti
+
+namespace TauCeti
+
+section RatFuncCompositum
+
+variable {k k' : Type*} [Field k] [Field k']
+
+/-- **A compositum with `k'` containing `X` is all of `k'(X)`**: for any field `F` inside `k'(X)`,
+if `X` lies in `F · k'`, then `F · k' = k'(X)`. -/
+theorem constantCompositum_eq_top_of_X_mem {F : Type*} [Field F] [Algebra F (RatFunc k')]
+    (hX : (RatFunc.X : RatFunc k') ∈ constantCompositum F k' (RatFunc k')) :
+    constantCompositum F k' (RatFunc k') = ⊤ := by
+  set K := constantCompositum F k' (RatFunc k')
+  -- `K` contains the constants `k'`, so it is an intermediate field of `k'(X) / k'`; it contains
+  -- `X`, which generates `k'(X)` over `k'`.
+  let E : IntermediateField k' (RatFunc k') :=
+    { K.toSubfield with
+      algebraMap_mem' := algebraMap_mem_constantCompositum F k' (RatFunc k') }
+  have hE : E = ⊤ := eq_top_iff.mpr <|
+    RatFunc.adjoin_X.symm.le.trans (IntermediateField.adjoin_simple_le_iff.mpr hX)
+  exact eq_top_iff.mpr fun f _ ↦ (hE ▸ IntermediateField.mem_top : f ∈ E)
+
+/-- **`k'(X)` is the compositum of `k(X)` with the constants `k'`**, for any `k(X)`-algebra
+structure on `k'(X)` sending `X` to `X`. -/
+theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) :
+    constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ :=
+  constantCompositum_eq_top_of_X_mem (hX ▸ IntermediateField.algebraMap_mem _ RatFunc.X)
+
+end RatFuncCompositum
 
 end TauCeti
