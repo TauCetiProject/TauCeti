@@ -18,7 +18,8 @@ import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 # Fourier expansion and bounds for Dirichlet character interval sums
 
 * `DirichletCharacter.sum_range_add_eq_inv_gaussSum_mul_sum` sums
-  `DirichletCharacter.IsPrimitive.apply_eq_inv_gaussSum_mul_sum_erase_zero` over an interval.
+  `DirichletCharacter.IsPrimitive.apply_eq_inv_gaussSum_mul_sum_erase_zero` over an interval,
+  for any primitive additive character into a field.
 * `DirichletCharacter.norm_sum_range_add_le_sum_norm_stdAddChar` bounds a character sum by
   the sum of the norms of its additive interval sums, using
   `DirichletCharacter.IsPrimitive.norm_gaussSum`.
@@ -42,16 +43,18 @@ namespace DirichletCharacter
 
 variable {q : ℕ} [NeZero q]
 
-/-- The Gauss-sum expansion of an interval sum of a primitive nonprincipal character, with the
-inverse character in the coefficients and the Gauss-sum denominator. For an interval
-`(M, M + H]`, take the starting residue `a = (M : ZMod q) + 1`. See Pomerance,
-*Remarks on the Pólya–Vinogradov inequality*, (7). -/
-theorem sum_range_add_eq_inv_gaussSum_mul_sum (χ : DirichletCharacter ℂ q)
-    (hχ : χ.IsPrimitive) (hχ₀ : χ ≠ 1) (a : ZMod q) (H : ℕ) :
+/-- The Gauss-sum expansion of an interval sum of a primitive nonprincipal character against a
+primitive additive character `e`, with the inverse character in the coefficients and the
+Gauss-sum denominator. For an interval `(M, M + H]`, take the starting residue
+`a = (M : ZMod q) + 1`. See Pomerance, *Remarks on the Pólya–Vinogradov inequality*, (7) for
+the complex case. -/
+theorem sum_range_add_eq_inv_gaussSum_mul_sum {R : Type*} [Field R] (χ : DirichletCharacter R q)
+    (hχ : χ.IsPrimitive) (hχ₀ : χ ≠ 1) {e : AddChar (ZMod q) R} (he : e.IsPrimitive)
+    (a : ZMod q) (H : ℕ) :
     ∑ j ∈ range H, χ (a + (j : ZMod q)) =
-      (gaussSum χ⁻¹ stdAddChar)⁻¹ * ∑ k ∈ univ.erase (0 : ZMod q),
-        χ⁻¹ k * ∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod q))) := by
-  simp_rw [hχ.apply_eq_inv_gaussSum_mul_sum_erase_zero hχ₀, ← mul_sum]
+      (gaussSum χ⁻¹ e)⁻¹ * ∑ k ∈ univ.erase (0 : ZMod q),
+        χ⁻¹ k * ∑ j ∈ range H, e (k * (a + (j : ZMod q))) := by
+  simp_rw [hχ.apply_eq_inv_gaussSum_mul_sum_erase_zero hχ₀ he, ← mul_sum]
   rw [sum_comm]
   simp_rw [← mul_sum]
 
@@ -62,8 +65,9 @@ theorem norm_sum_range_add_le_sum_norm_stdAddChar (χ : DirichletCharacter ℂ q
     ‖∑ j ∈ range H, χ (a + (j : ZMod q))‖ ≤
       (Real.sqrt q)⁻¹ * ∑ k ∈ univ.erase (0 : ZMod q),
         ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod q)))‖ := by
-  rw [χ.sum_range_add_eq_inv_gaussSum_mul_sum hχ hχ₀, norm_mul, norm_inv,
-    hχ.inv.norm_gaussSum (isPrimitive_stdAddChar q)]
+  have he := isPrimitive_stdAddChar q
+  rw [χ.sum_range_add_eq_inv_gaussSum_mul_sum hχ hχ₀ he, norm_mul, norm_inv,
+    hχ.inv.norm_gaussSum he]
   refine mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ ?_))
     (by positivity)
   rw [norm_mul]
