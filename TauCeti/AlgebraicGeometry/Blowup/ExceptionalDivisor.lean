@@ -67,6 +67,8 @@ The results on the blowup along an ideal sheaf are in the namespace
 * `blowupLift_eq_id`: the lift of `Bl_I X ⟶ X` through itself is the identity.
 * `isIso_blowupToBase_iff`: `Bl_I X ⟶ X` is an isomorphism if and only if `V(I)` is an effective
   Cartier divisor on `X`.
+* `isSplitEpi_blowupToBase_iff`: admitting a section is already enough for the blowup to be an
+  isomorphism.
 * `IsEffectiveCartier.comap_blowupToBase`: any effective Cartier divisor on `X` pulls back to an
   effective Cartier divisor along `Bl_I X ⟶ X`.
 
@@ -267,6 +269,20 @@ theorem isIso_blowupToBase_iff : IsIso I.blowupToBase ↔ I.IsEffectiveCartier :
     · rw [Category.assoc, blowupLift_blowupToBase, Category.comp_id, Category.id_comp]
     · rw [Category.assoc, blowupLift_blowupToBase, Category.comp_id]
       exact I.isEffectiveCartier_comap_blowupToBase
+
+/-- The blowup morphism admits a section exactly when its centre is an effective Cartier
+divisor. See the Stacks Project, [Lemma 31.33.5 (0806)](https://stacks.math.columbia.edu/tag/0806),
+for the universal property of the blowup. -/
+theorem isSplitEpi_blowupToBase_iff {I : X.IdealSheafData} :
+    IsSplitEpi I.blowupToBase ↔ I.IsEffectiveCartier := by
+  rw [← I.isIso_blowupToBase_iff]
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  refine ⟨section_ I.blowupToBase, ?_, IsSplitEpi.id _⟩
+  have h : (𝟙 I.blowup) ≫ I.blowupToBase =
+      (I.blowupToBase ≫ section_ I.blowupToBase) ≫ I.blowupToBase := by
+    simp only [Category.id_comp, Category.assoc, IsSplitEpi.id, Category.comp_id]
+  exact (I.blowup_hom_ext h (by
+    simpa only [Category.id_comp] using I.isEffectiveCartier_comap_blowupToBase)).symm
 
 /-- **Pullback along any blowup preserves effective Cartier divisors.** If `D` is an effective
 Cartier divisor on an arbitrary scheme `X`, then `D.comap J.blowupToBase` is an effective Cartier

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
+public import Mathlib.CategoryTheory.Comma.Over.Pullback
 import Mathlib.AlgebraicGeometry.PullbackCarrier
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 
@@ -59,6 +60,8 @@ global functions of the base change.
   to an isomorphism over `U`, every point of `U` has a unique preimage under `f`.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
+* `CategoryTheory.Over.isIso_pullback_map_ι_iff`: base change of an over-morphism along an open
+  inclusion is an isomorphism exactly when its restriction over the inverse image is.
 * `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
   open `U`, the two ways of pulling a function on `U` back to the source of the square agree.
 * `CategoryTheory.IsPullback.isIso_appLE`: in a pullback square of the inclusion of an open `U`
@@ -275,6 +278,23 @@ end AlgebraicGeometry
 namespace CategoryTheory
 
 open AlgebraicGeometry
+
+/-- Base change of a morphism over `S` along the inclusion of an open `U` is an isomorphism
+exactly when the underlying morphism is an isomorphism over the inverse image of `U` in its
+target. -/
+theorem Over.isIso_pullback_map_ι_iff {S : Scheme.{u}} {X Y : Over S} {m : X ⟶ Y}
+    {U : S.Opens} :
+    IsIso ((Over.pullback U.ι).map m) ↔ IsIso (m.left ∣_ Y.hom ⁻¹ᵁ U) := by
+  let p := ((Over.pullback U.ι).map m).left
+  have hp : p ≫ Limits.pullback.fst Y.hom U.ι = Limits.pullback.fst X.hom U.ι ≫ m.left := by
+    simp only [p, Over.pullback_map_left, Limits.pullback.lift_fst]
+  let e := m.left.morphismRestrictArrowIso p hp.symm (by
+    simp only [Scheme.Hom.opensRange_pullbackFst, ← Scheme.Hom.comp_preimage, Over.w])
+  have hU : (Limits.pullback.fst Y.hom U.ι).opensRange = Y.hom ⁻¹ᵁ U := by
+    simp only [Scheme.Hom.opensRange_pullbackFst, Scheme.Opens.opensRange_ι]
+  have h := (MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff e
+  exact (isIso_iff_of_reflects_iso ((Over.pullback U.ι).map m) (Over.forget _)).symm.trans
+    (h.symm.trans (congrArg (fun W : Y.left.Opens ↦ IsIso (m.left ∣_ W)) hU).to_iff)
 
 variable {Z Y T : Scheme.{u}} {U : T.Opens} {j : Z ⟶ Y} {g : Z ⟶ U} {f : Y ⟶ T}
 
