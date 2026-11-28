@@ -8,8 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.Density.Chebotarev
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible
-import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Transitivity
-import TauCeti.RingTheory.Invariant.Profinite.Frobenius
+import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Frobenius
 
 /-!
 # Density of Frobenius elements in the absolute Galois group of a number field
@@ -47,11 +46,6 @@ representations by their Frobenius characteristic polynomials.
 ## Main results
 
 * `TauCeti.GaloisRep.conj_mem_frobeniusSet`: the Frobenius set is stable under conjugation.
-* `TauCeti.GaloisRep.IsArithFrobAtIntegralPrime.restrictNormalHom`: the restriction of a Frobenius
-  lift at `Q` to a normal subextension `E` is an arithmetic Frobenius at `Q ∩ 𝓞 E`.
-* `TauCeti.GaloisRep.restrictNormalHom_eq_of_isArithFrobAtIntegralPrime`: above a place
-  unramified in a finite Galois subextension `E`, all Frobenius lifts at a prime restrict to the
-  same element of `Gal(E/F)`.
 * `TauCeti.GaloisRep.mem_frobeniusPrimeSet_restrictNormalHom_iff`: a place `v` lies in the
   Chebotarev set of the class of `g|_E` exactly when it is unramified in `E` and all Frobenius
   lifts at some maximal ideal above `v` restrict to `g|_E`.
@@ -119,46 +113,7 @@ theorem conj_mem_frobeniusSet (hσ : σ ∈ frobeniusSet Pl) (τ : Field.absolut
 
 /-! ### Frobenius lifts and finite Galois subextensions -/
 
-/-- **Restriction of a Frobenius lift.** If `σ ∈ G_F` is an arithmetic Frobenius at an ideal `Q`
-of `O`, its restriction to a normal subextension `E` of `F^alg / F` is an arithmetic Frobenius
-at `Q ∩ 𝓞 E`. -/
-theorem IsArithFrobAtIntegralPrime.restrictNormalHom (E : IntermediateField F (AlgebraicClosure F))
-    [Normal F E] {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))}
-    (hσ : IsArithFrobAtIntegralPrime σ Q) :
-    IsArithFrobAt (𝓞 F) (AlgEquiv.restrictNormalHom E σ)
-      (Q.comap (ringOfIntegersToIntegralClosure E)) := by
-  have : Q.LiesOver (Q.under (𝓞 F)) := ⟨rfl⟩
-  intro y
-  rw [← Ideal.over_def (Q.comap (ringOfIntegersToIntegralClosure E)) (Q.under (𝓞 F)),
-    Ideal.mem_comap, MulSemiringAction.toAlgHom_apply, map_sub, map_pow,
-    ringOfIntegersToIntegralClosure_smul]
-  exact hσ _
-
 variable [NumberField F]
-
-/-- **Frobenius lifts above an unramified place restrict uniformly.** Let `E` be a finite normal
-subextension of `F^alg / F` and `Q` an ideal of `O` above a place `v` unramified in `E`. Two
-arithmetic Frobenius lifts at `Q` differ by an element of the inertia group `I_Q`, which lies in
-the inertia group of a maximal ideal containing `Q` and therefore fixes `E`; so they have the same
-restriction to `E`. -/
-theorem restrictNormalHom_eq_of_isArithFrobAtIntegralPrime
-    (E : IntermediateField F (AlgebraicClosure F)) [NumberField E] [Normal F E]
-    {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))}
-    {v : HeightOneSpectrum (𝓞 F)} (hQv : Q.under (𝓞 F) = v.asIdeal)
-    (hv : v ∉ Chebotarev.ramifiedPrimes F E) {σ σ' : Field.absoluteGaloisGroup F}
-    (hσ : IsArithFrobAtIntegralPrime σ Q) (hσ' : IsArithFrobAtIntegralPrime σ' Q) :
-    AlgEquiv.restrictNormalHom E σ = AlgEquiv.restrictNormalHom E σ' := by
-  -- a maximal ideal `M ⊇ Q` still lies over `v`, and `I_Q ≤ I_M`
-  obtain ⟨M, hM, hQM⟩ := Ideal.exists_le_maximal Q fun h ↦
-    v.isPrime.ne_top (by rw [← hQv, h, Ideal.under, Ideal.comap_top])
-  have hMv : M.under (𝓞 F) = v.asIdeal :=
-    (v.isMaximal.eq_of_le (Ideal.comap_ne_top _ hM.ne_top) (hQv ▸ Ideal.comap_mono hQM)).symm
-  have := hM.isPrime
-  have h : σ * σ'⁻¹ ∈ (AlgEquiv.restrictNormalHom E).ker := E.restrictNormalHom_ker ▸
-    inertiaGroup_le_fixingSubgroup E hMv hv
-      (AddSubgroup.inertia_mono (G := Field.absoluteGaloisGroup F) (fun _ hx ↦ hQM hx)
-        (hσ.mul_inv_mem_inertia hσ'))
-  exact (MonoidHom.eq_iff _).2 ((MonoidHom.normal_ker _).mem_comm h)
 
 /-- **A Frobenius lift witnesses the Chebotarev set of its restriction.** If `σ ∈ G_F` is an
 arithmetic Frobenius at an ideal `Q` of `O` above a place `v` unramified in a finite Galois
@@ -173,19 +128,6 @@ theorem mem_frobeniusPrimeSet_restrictNormalHom (E : IntermediateField F (Algebr
   have : Q.LiesOver v.asIdeal := ⟨hQv.symm⟩
   have := Ideal.comap_liesOver Q v.asIdeal (ringOfIntegersToIntegralClosure E)
   exact Chebotarev.mem_frobeniusPrimeSet_mk_of_isArithFrobAt hv _ (hσ.restrictNormalHom E)
-
-/-- An arithmetic Frobenius lift exists at every maximal ideal of `O` above a finite place. -/
-private theorem exists_isArithFrobAtIntegralPrime
-    {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))} [Q.IsPrime]
-    {v : HeightOneSpectrum (𝓞 F)} (hQv : Q.under (𝓞 F) = v.asIdeal) :
-    ∃ σ : Field.absoluteGaloisGroup F, IsArithFrobAtIntegralPrime σ Q := by
-  let _ : TopologicalSpace (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⊥
-  have : DiscreteTopology (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⟨rfl⟩
-  have := continuousSMul_integralClosure F
-  have : Finite (𝓞 F ⧸ Q.under (𝓞 F)) := by
-    rw [hQv]
-    exact Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  exact IsArithFrobAt.exists_of_isInvariant_of_profinite (𝓞 F) (Field.absoluteGaloisGroup F) Q
 
 /-- **The Chebotarev set of a restriction, in terms of Frobenius lifts.** Let `E` be a finite
 Galois subextension of `F^alg / F` and `g ∈ G_F`. A finite place `v` of `F` lies in the Chebotarev
@@ -210,7 +152,9 @@ theorem mem_frobeniusPrimeSet_restrictNormalHom_iff
       (S := integralClosure (𝓞 F) (AlgebraicClosure F)) v.asIdeal
     have hQ₀v : Q₀.under (𝓞 F) = v.asIdeal := ((Ideal.liesOver_iff _ _).1 hQ₀v).symm
     have := hQ₀.isPrime
-    obtain ⟨σ₀, hσ₀⟩ := exists_isArithFrobAtIntegralPrime hQ₀v
+    have : Q₀.LiesOver v.asIdeal := ⟨hQ₀v.symm⟩
+    obtain ⟨σ₀, hσ₀⟩ := exists_isArithFrobAtIntegralPrime_of_ne_bot Q₀
+      (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q₀)
     have hclass : ConjClasses.mk (AlgEquiv.restrictNormalHom E σ₀) =
         ConjClasses.mk (AlgEquiv.restrictNormalHom E g) := by
       by_contra hne
@@ -228,7 +172,9 @@ theorem mem_frobeniusPrimeSet_restrictNormalHom_iff
       -- `rw [map_mul]` fails here: `G_F` is `Gal(F^alg/F)` only up to unfolding a definition
       exact (map_mul _ _ _).trans (congrArg₂ (· * ·) (map_mul _ _ _) (map_inv _ _))
   · have := hQ.isPrime
-    obtain ⟨σ, hσ⟩ := exists_isArithFrobAtIntegralPrime hQv
+    have : Q.LiesOver v.asIdeal := ⟨hQv.symm⟩
+    obtain ⟨σ, hσ⟩ := exists_isArithFrobAtIntegralPrime_of_ne_bot Q
+      (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
     rw [← h σ hσ]
     exact mem_frobeniusPrimeSet_restrictNormalHom E hQv hv hσ
 
@@ -286,7 +232,9 @@ theorem dense_frobeniusSet (hPl : NumberField.Set.HasDirichletDensity Pl 1) :
   obtain ⟨v, hv, -, Q, hQ, hQv, h⟩ :=
     ((hasDirichletDensity_setOf_forall_isArithFrobAtIntegralPrime E hPl g).infinite hpos).nonempty
   have := hQ.isPrime
-  obtain ⟨σ, hσ⟩ := exists_isArithFrobAtIntegralPrime hQv
+  have : Q.LiesOver v.asIdeal := ⟨hQv.symm⟩
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAtIntegralPrime_of_ne_bot Q
+    (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
   refine ⟨σ, ?_, v, hv, Q, hQ, hQv, hσ⟩
   have hmem : g⁻¹ * σ ∈ E.fixingSubgroup :=
     E.restrictNormalHom_ker ▸ (MonoidHom.eq_iff _).1 (h σ hσ)
