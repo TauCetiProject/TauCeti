@@ -17,7 +17,8 @@ import TauCeti.RingTheory.Polynomial.CyclicInvariants.Basic
 # The norm of a polynomial under the `e`-th roots of unity
 
 Let `ζ` be a primitive `e`-th root of unity in a domain `R` and let `p ∈ R[X]`. The product
-`N(p) = ∏_{k < e} p(ζᵏ X)` is invariant under `X ↦ ζ X`, so its coefficients vanish outside the
+`N(p) = ∏_{k < e} p(ζᵏ X)` is invariant under `X ↦ ζ X` (this needs only `ζᵉ = 1`, over any
+commutative semiring), so its coefficients vanish outside the
 multiples of `e`, and `N(p) = Q(Xᵉ)` for `Q = contract e N(p)`. When `e ≠ 0` and
 `N(p) = Q(Xᵉ)`, the value `p(u)` divides `Q(uᵉ)`, since `p(u)` is the factor `k = 0` of `N(p)(u)`.
 Over a commutative ring `K`, if `Xᵉ - w` is prime, `ζ ≠ 0`, `deg p < e` and `Q(w) = 0`, then
@@ -28,6 +29,8 @@ Stepanov's method for `y^e = f(x)` uses this norm in place of the squaring of th
 
 ## Main results
 
+* `Polynomial.prod_comp_C_mul_X_comp_C_mul_X`: if `ζᵉ = 1`, then `∏_{k < e} p(ζᵏ X)` is invariant
+  under `X ↦ ζ X`.
 * `Polynomial.coeff_prod_comp_C_mul_X_eq_zero`: the coefficients of `∏_{k < e} p(ζᵏ X)` vanish
   outside the multiples of `e`.
 * `Polynomial.expand_contract_prod_comp_C_mul_X`: `∏_{k < e} p(ζᵏ X)` is `Q(Xᵉ)` for its
@@ -44,9 +47,10 @@ open Polynomial
 
 namespace Polynomial
 
-/-- If `ζᵉ = 1`, the norm `∏_{k < e} p(ζᵏ X)` is invariant under `X ↦ ζ X`. For `e = 0` it is
-the empty product `1`. -/
-private theorem prod_comp_C_mul_X_comp_C_mul_X {R : Type*} [CommSemiring R] {ζ : R} {e : ℕ}
+/-- Over a commutative semiring, if `ζᵉ = 1`, the norm `∏_{k < e} p(ζᵏ X)` is invariant under
+`X ↦ ζ X`: the substitution maps the factor `k` to the factor `k + 1`, and the factor `e` is the
+factor `0`. For `e = 0` the norm is the empty product `1`. -/
+theorem prod_comp_C_mul_X_comp_C_mul_X {R : Type*} [CommSemiring R] {ζ : R} {e : ℕ}
     (hζ : ζ ^ e = 1) (p : R[X]) :
     (∏ k ∈ Finset.range e, p.comp (C (ζ ^ k) * X)).comp (C ζ * X) =
       ∏ k ∈ Finset.range e, p.comp (C (ζ ^ k) * X) := by

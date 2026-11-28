@@ -81,10 +81,10 @@ private theorem dvd_eval_sub_sum {e : ℕ} (a : F) (f : F[X]) (c : ℕ) (A : Fin
   rw [pow_mul', mul_comm, ← mul_sub]
   exact dvd_mul_of_dvd_right (dvd_sub_comm.1 (X_sub_C_pow_natCard_dvd_eval_sub_eval a (A i))) _
 
-/-- If `(X - a) ^ q` divides `Q(f ^ (q - 1))`, where `f ≠ 0`, `deg Q < e` and the coefficients
-of `Q` have degree at most `E` with `E + (e - 1) deg f < q`, then `Q(f(a) / f) = 0` in the
-fraction field. -/
-private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0) {a : F}
+/-- If `(X - a) ^ q` divides `Q(f ^ (q - 1))`, where `deg Q < e` and the coefficients of `Q` have
+degree at most `E` with `E + (e - 1) deg f < q`, then `Q(f(a) / f) = 0` in the fraction field. For
+`f = 0` the point is `0`, and `(X - a) ^ q` divides `Q(0)`, of degree at most `E < q`. -/
+private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} {a : F}
     {Q : F[X][X]} (hQdeg : Q.natDegree < e) (hQcd : ∀ j, (Q.coeff j).natDegree ≤ E)
     (hE : E + (e - 1) * f.natDegree < Nat.card F)
     (hdvd : (X - C a) ^ Nat.card F ∣ Q.eval (f ^ (Nat.card F - 1))) :
@@ -92,6 +92,18 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
       algebraMap F[X] (FractionRing F[X]) f) Q = 0 := by
   set q := Nat.card F
   have hq : q ≠ 0 := (Nat.zero_lt_of_lt hE).ne'
+  set φ := algebraMap F[X] (FractionRing F[X])
+  by_cases hf₀ : f = 0
+  · have : Finite F := Nat.finite_of_card_ne_zero hq
+    have hq1 : q - 1 ≠ 0 := by
+      have := Finite.one_lt_card (α := F)
+      lia
+    rw [hf₀, zero_pow hq1, ← coeff_zero_eq_eval_zero] at hdvd
+    have h0 : Q.coeff 0 = 0 := by
+      refine eq_zero_of_dvd_of_natDegree_lt hdvd ?_
+      rw [natDegree_pow, natDegree_X_sub_C, mul_one]
+      exact (hQcd 0).trans_lt ((Nat.le_add_right _ _).trans_lt hE)
+    rw [hf₀, map_zero, div_zero, ← coeff_zero_eq_aeval_zero', h0, map_zero]
   -- `f ^ q ≡ f(a)` modulo `(X - a) ^ q`, so `G = (scaleRoots Q f)(f(a))` is congruent to
   -- `(scaleRoots Q f)(f ^ q) = f ^ deg Q · Q(f ^ (q - 1))` (`Polynomial.scaleRoots_eval_mul`).
   have hfq : (X - C a) ^ q ∣ f ^ q - C (f.eval a) :=
@@ -110,7 +122,6 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
     refine (natDegree_mul_C_le _ _).trans (natDegree_mul_le.trans (add_le_add (hQcd _) ?_))
     exact natDegree_pow_le.trans (Nat.mul_le_mul_right _ (by lia))
   -- In the fraction field, `G = f ^ deg Q · Q(f(a) / f)` (`Polynomial.scaleRoots_eval₂_mul`).
-  set φ := algebraMap F[X] (FractionRing F[X])
   have hfK : φ f ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective F[X] _)).2 hf₀
   have h := scaleRoots_eval₂_mul (p := Q) φ (φ (C (f.eval a)) / φ f) f
   rw [mul_div_cancel₀ _ hfK, eval₂_at_apply, hG0, map_zero, eq_comm, ← aeval_def] at h
@@ -118,11 +129,12 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
 
 /-- For `P` of degree `< e` whose coefficients have degree at most `D`, the norm
 `∏_{k < e} P(ζᵏ T)` is `Q(Tᵉ)` with `deg Q < e` and coefficients of degree at most `e D`. -/
-private theorem exists_prod_comp_eq_expand {e D : ℕ} (he : e ≠ 0) {ζ : F}
+private theorem exists_prod_comp_eq_expand {e D : ℕ} {ζ : F}
     (hζ : IsPrimitiveRoot ζ e) {P : F[X][X]} (hPdeg : P.natDegree < e)
     (hPcd : ∀ j, (P.coeff j).natDegree ≤ D) :
     ∃ Q : F[X][X], ∏ k ∈ Finset.range e, P.comp (C (C ζ ^ k) * X) = expand F[X] e Q ∧
       Q.natDegree < e ∧ ∀ j, (Q.coeff j).natDegree ≤ e * D := by
+  have he : e ≠ 0 := by lia
   set N := ∏ k ∈ Finset.range e, P.comp (C (C ζ ^ k) * X)
   have hN : expand F[X] e (contract e N) = N :=
     expand_contract_prod_comp_C_mul_X (hζ.map_of_injective C_injective) P
@@ -172,12 +184,12 @@ private theorem eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
     rwa [hR, sub_zero, ← ofFn_eq_sum_monomial] at this
   -- `∏ₖ P(ζᵏ T) = Q(Tᵉ)` with `(X - a) ^ q ∣ Q(f ^ (q - 1))`, so `Q(f a / f) = 0`.
   obtain ⟨ζ, hζ⟩ := TauCeti.exists_isPrimitiveRoot_of_dvd_natCard_sub_one he
-  obtain ⟨Q, hNQ, hQdeg, hQcd⟩ := exists_prod_comp_eq_expand he0 hζ hPdeg hPcd
+  obtain ⟨Q, hNQ, hQdeg, hQcd⟩ := exists_prod_comp_eq_expand hζ hPdeg hPcd
   have hfc : f ^ (q - 1) = (f ^ c) ^ e := by rw [← pow_mul, Nat.div_mul_cancel he]
   have hQdvd : (X - C a) ^ q ∣ Q.eval (f ^ (q - 1)) := by
     rw [hfc]
     exact hPu.trans (eval_dvd_eval_pow_of_prod_comp_C_mul_X_eq_expand he0 hNQ _)
-  have hQw := aeval_div_eq_zero_of_dvd (fun h ↦ hfa (by rw [h, eval_zero])) hQdeg hQcd hD hQdvd
+  have hQw := aeval_div_eq_zero_of_dvd hQdeg hQcd hD hQdvd
   -- Map to the fraction field and apply Capelli's theorem.
   have hinj := IsFractionRing.injective F[X] (FractionRing F[X])
   set φ := algebraMap F[X] (FractionRing F[X])
@@ -205,40 +217,40 @@ private theorem forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
     ∀ i, A i = 0 := by
   induction hn : ∑ i, (A i).natDegree using Nat.strong_induction_on generalizing A with
   | _ n ih =>
-  by_cases hA0 : ∀ i, A i = 0
-  · exact hA0
-  obtain ⟨i₀, hi₀⟩ := not_forall.1 hA0
-  have h0 := eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he hfa hf hA hD hR
-  set A' : Fin e → F[X][X] := fun i ↦ A i /ₘ (X - C (C a))
-  have hAA' (i : Fin e) : A i = (X - C (C a)) * A' i :=
-    (mul_divByMonic_eq_iff_isRoot.2 (h0 i)).symm
-  have hA' (i : Fin e) (j : ℕ) : ((A' i).coeff j).natDegree ≤ D := by
-    rw [coeff_divByMonic_X_sub_C]
-    exact natDegree_sum_le_of_forall_le _ _ fun k _ ↦ by
-      rw [← C_pow]
-      exact (natDegree_C_mul_le _ _).trans (hA _ _)
-  have hR' : ∑ i : Fin e, f ^ ((i : ℕ) * ((Nat.card F - 1) / e)) *
-      (A' i).eval (X ^ Nat.card F) = 0 := by
-    have hXq : (X ^ Nat.card F - C a : F[X]) ≠ 0 := X_pow_sub_C_ne_zero (Nat.zero_lt_of_lt hD) a
-    refine (mul_eq_zero.1 (Eq.trans ?_ hR)).resolve_left hXq
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hAA' i, eval_mul, eval_sub, eval_X, eval_C]
-    ring
-  have hdeg (i : Fin e) (hi : A' i ≠ 0) : (A' i).natDegree < (A i).natDegree := by
-    rw [hAA' i, natDegree_mul (X_sub_C_ne_zero _) hi, natDegree_X_sub_C]
-    lia
-  have hlt : ∑ i, (A' i).natDegree < n := by
-    rw [← hn]
-    refine Finset.sum_lt_sum (fun i _ ↦ ?_) ⟨i₀, Finset.mem_univ _, hdeg i₀ fun h ↦ hi₀ ?_⟩
-    · by_cases hi : A' i = 0
-      · rw [hi, natDegree_zero]
-        exact Nat.zero_le _
-      · exact (hdeg i hi).le
-    · rw [hAA' i₀, h, mul_zero]
-  have h' := ih _ hlt hA' hR' rfl
-  intro i
-  rw [hAA' i, h' i, mul_zero]
+    by_cases hA0 : ∀ i, A i = 0
+    · exact hA0
+    obtain ⟨i₀, hi₀⟩ := not_forall.1 hA0
+    have h0 := eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he hfa hf hA hD hR
+    set A' : Fin e → F[X][X] := fun i ↦ A i /ₘ (X - C (C a))
+    have hAA' (i : Fin e) : A i = (X - C (C a)) * A' i :=
+      (mul_divByMonic_eq_iff_isRoot.2 (h0 i)).symm
+    have hA' (i : Fin e) (j : ℕ) : ((A' i).coeff j).natDegree ≤ D := by
+      rw [coeff_divByMonic_X_sub_C]
+      exact natDegree_sum_le_of_forall_le _ _ fun k _ ↦ by
+        rw [← C_pow]
+        exact (natDegree_C_mul_le _ _).trans (hA _ _)
+    have hR' : ∑ i : Fin e, f ^ ((i : ℕ) * ((Nat.card F - 1) / e)) *
+        (A' i).eval (X ^ Nat.card F) = 0 := by
+      have hXq : (X ^ Nat.card F - C a : F[X]) ≠ 0 := X_pow_sub_C_ne_zero (Nat.zero_lt_of_lt hD) a
+      refine (mul_eq_zero.1 (Eq.trans ?_ hR)).resolve_left hXq
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [hAA' i, eval_mul, eval_sub, eval_X, eval_C]
+      ring
+    have hdeg (i : Fin e) (hi : A' i ≠ 0) : (A' i).natDegree < (A i).natDegree := by
+      rw [hAA' i, natDegree_mul (X_sub_C_ne_zero _) hi, natDegree_X_sub_C]
+      lia
+    have hlt : ∑ i, (A' i).natDegree < n := by
+      rw [← hn]
+      refine Finset.sum_lt_sum (fun i _ ↦ ?_) ⟨i₀, Finset.mem_univ _, hdeg i₀ fun h ↦ hi₀ ?_⟩
+      · by_cases hi : A' i = 0
+        · rw [hi, natDegree_zero]
+          exact Nat.zero_le _
+        · exact (hdeg i hi).le
+      · rw [hAA' i₀, h, mul_zero]
+    have h' := ih _ hlt hA' hR' rfl
+    intro i
+    rw [hAA' i, h' i, mul_zero]
 
 /-- **Stepanov's auxiliary polynomial is nonzero.** Let `F` be a finite field with `q` elements,
 `e ∣ q - 1` and `c = (q - 1) / e`, and let `f` not be of the form `C b * hˡ` for any `ℓ > 1`
