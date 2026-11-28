@@ -8,18 +8,30 @@ module
 public import Mathlib.Topology.Separation.Basic
 
 /-!
-# Avoiding finitely many points, and dense sets near non-isolated points
+# Separation properties in `T₁` spaces
 
-In a `T1Space` the complement of a point is open (Mathlib's `isOpen_ne`). Intersecting finitely
-many such complements and pulling back along a continuous map shows that the points where a
-continuous map into a `T1Space` avoids finitely many given values form an open set
-(`TauCeti.isOpen_forall_ne`). For instance, the real coordinates of the complex plane minus
-finitely many points form an open subset of `ℝ × ℝ`.
+In a `T₁` topological space, every specialization `x ⤳ y` is an equality (`specializes_iff_eq`), so
+any map into a `T₁` space trivially lifts generalizations without any continuity assumption on
+the map (`TauCeti.generalizingMap_of_t1Space`).
+
+Furthermore, the complement of a point is open (`isOpen_ne`). Intersecting finitely many such
+complements and pulling back along a continuous map shows that the points where a continuous map
+into a `T1Space` avoids finitely many given values form an open set (`TauCeti.isOpen_forall_ne`).
+For instance, the real coordinates of the complex plane minus finitely many points form an open
+subset of `ℝ × ℝ`.
 
 Mathlib's `Dense.infinite` shows that a dense set in an infinite `T1Space` is infinite. This file
 also gives the local version: a dense set meets every neighbourhood of a non-isolated point in
 infinitely many points (`Dense.infinite_inter_of_mem_nhds`). For instance, a dense set of regular
 values of a map to `ℂ` contains any number of values close to a given one.
+
+## Main results
+
+* `TauCeti.generalizingMap_of_t1Space`: any map into a `T₁` space is a `GeneralizingMap`.
+* `TauCeti.isOpen_forall_ne`: the points where a continuous map into a `T₁` space avoids finitely
+  many values form an open set.
+* `Dense.infinite_inter_of_mem_nhds`: a dense set meets every neighbourhood of a non-isolated point
+  of a `T₁` space in infinitely many points.
 -/
 
 public section
@@ -27,6 +39,18 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
+
+section
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T1Space Y] {f : X → Y}
+
+/-- Any map into a `T₁` space lifts generalizations, since specializations in the target are
+equalities. -/
+@[simp]
+theorem generalizingMap_of_t1Space : GeneralizingMap f :=
+  fun x _ hx ↦ ⟨x, specializes_rfl, (specializes_iff_eq.mp hx).symm⟩
+
+end
 
 /-- The points where a continuous map into a `T1Space` avoids finitely many values `c i` form an
 open set. -/
