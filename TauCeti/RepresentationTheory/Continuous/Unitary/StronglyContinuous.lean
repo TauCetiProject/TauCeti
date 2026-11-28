@@ -29,9 +29,11 @@ continuity of `π` with continuity into `StrongUnitary 𝕜 V`.
 ## Main declarations
 
 * `ContRepresentation.IsUnitary.continuous_apply_prod`,
-  `ContRepresentation.IsUnitary.continuous_inv_apply`, and
+  `ContRepresentation.IsUnitary.continuous_inv_apply`,
+  `ContRepresentation.IsUnitary.continuous_conj_apply`, and
   `ContRepresentation.IsUnitary.continuous_apply_iff_continuous_inner`: joint continuity, continuity
-  through inverses, and equivalence of strong continuity with continuity of matrix coefficients.
+  through inverses, continuity of operator-conjugation orbits, and equivalence of strong continuity
+  with continuity of matrix coefficients.
 * `TauCeti.StrongUnitary.toContRepresentation` and
   `ContRepresentation.IsUnitary.toStrongUnitaryHom`: correspondence between homomorphisms into
   `StrongUnitary 𝕜 V` and unitary representations on a complete inner product space, with
@@ -93,6 +95,15 @@ theorem continuous_inv_apply [Group G] {π : ContRepresentation 𝕜 G V} (hπ :
   rw [tendsto_iff_dist_tendsto_zero] at hlim
   rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
   simpa only [hdist] using hlim
+
+/-- Conjugating a continuous linear operator by a strongly continuous unitary group
+representation yields a continuous orbit `g ↦ π g (R (π g⁻¹ v))`. Continuity of inversion in
+`G` is not needed. -/
+theorem continuous_conj_apply [Group G] {π : ContRepresentation 𝕜 G V} (hπ : IsUnitary π)
+    (hcont : ∀ v, Continuous fun g => π g v) (R : V →L[𝕜] V) (v : V) :
+    Continuous fun g => π g (R (π g⁻¹ v)) :=
+  (hπ.continuous_apply_prod hcont).comp
+    (continuous_id.prodMk (R.continuous.comp (hπ.continuous_inv_apply hcont v)))
 
 /-- A unitary monoid representation is strongly continuous if and only if all of its matrix
 coefficients `g ↦ ⟪v, π g w⟫_𝕜` are continuous. Completeness of `V` is not needed. -/

@@ -42,25 +42,18 @@ namespace ContRepresentation.IsUnitary
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   {U : ContRepresentation ℂ (Multiplicative ℝ) H}
 
-private theorem continuous_conj_apply (hU : U.IsUnitary)
-    (hcont : ∀ v, Continuous fun g => U g v) (R : H →L[ℂ] H) (v : H) :
-    Continuous fun t : ℝ => U (.ofAdd t) (R (U (.ofAdd (-t)) v)) := by
-  have h1 : Continuous fun t : ℝ => U (.ofAdd (-t)) v := by
-    convert (hU.continuous_inv_apply hcont v).comp continuous_ofAdd using 1; ext t; simp [ofAdd_neg]
-  exact (hU.continuous_apply_prod hcont).comp (continuous_ofAdd.prodMk (R.continuous.comp h1))
-
-private theorem norm_conj_apply_le (hU : U.IsUnitary) (R : H →L[ℂ] H) (v : H) (t : ℝ) :
-    ‖U (.ofAdd t) (R (U (.ofAdd (-t)) v))‖ ≤ ‖R‖ * ‖v‖ := by
-  rw [hU.norm_map]; simpa only [hU.norm_map] using R.le_opNorm (U (.ofAdd (-t)) v)
-
 private theorem integrable_gaussianSmear (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (R : H →L[ℂ] H) (c : ℝ) (z : ℂ) (v : H) :
     Integrable fun t : ℝ =>
       Complex.gaussianKernel c t z • U (.ofAdd t) (R (U (.ofAdd (-t)) v)) := by
   refine ((Complex.integrable_norm_gaussianKernel c z).mul_const (‖R‖ * ‖v‖)).mono'
-    ((Complex.continuous_gaussianKernel c z).smul
-      (continuous_conj_apply hU hcont R v)).aestronglyMeasurable (ae_of_all _ fun t => ?_)
-  rw [norm_smul]; exact mul_le_mul_of_nonneg_left (norm_conj_apply_le hU R v t) (norm_nonneg _)
+    ((Complex.continuous_gaussianKernel c z).smul (by
+      simpa only [ofAdd_neg, Function.comp_def] using
+        (hU.continuous_conj_apply hcont R v).comp continuous_ofAdd)).aestronglyMeasurable
+    (ae_of_all _ fun t => ?_)
+  rw [norm_smul]
+  exact mul_le_mul_of_nonneg_left
+    (by simpa only [ofAdd_neg] using hU.norm_conj_apply_le R (.ofAdd t) v) (norm_nonneg _)
 
 /-- Complex-time Gaussian smearing of an operator `R` under a strongly continuous unitary
 representation `U` of `Multiplicative ℝ`. -/
@@ -77,7 +70,9 @@ def gaussianSmear (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v) 
       refine (norm_integral_le_of_norm_le
         ((Complex.integrable_norm_gaussianKernel c z).mul_const (‖R‖ * ‖v‖))
         (ae_of_all _ fun t => ?_)).trans_eq (by rw [integral_mul_const, mul_assoc])
-      rw [norm_smul]; exact mul_le_mul_of_nonneg_left (norm_conj_apply_le hU R v t) (norm_nonneg _)
+      rw [norm_smul]
+      exact mul_le_mul_of_nonneg_left
+        (by simpa only [ofAdd_neg] using hU.norm_conj_apply_le R (.ofAdd t) v) (norm_nonneg _)
 
 /-- Pointwise evaluation of the complex-time Gaussian smearing operator. -/
 @[simp]
@@ -140,8 +135,10 @@ theorem gaussianSmear_smul (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g =
 theorem differentiable_gaussianSmear_apply (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (R : H →L[ℂ] H) (c : ℝ) (v : H) :
     Differentiable ℂ fun z => hU.gaussianSmear hcont R c z v := by
-  simpa only [gaussianSmear_apply] using Complex.differentiable_integral_gaussianKernel_smul
-    (continuous_conj_apply hU hcont R v) (norm_conj_apply_le hU R v) c
+  simpa only [gaussianSmear_apply, ofAdd_neg, Function.comp_def] using
+    Complex.differentiable_integral_gaussianKernel_smul
+      ((hU.continuous_conj_apply hcont R v).comp continuous_ofAdd)
+      (fun t => hU.norm_conj_apply_le R (.ofAdd t) v) c
 
 /-- Complex-time Gaussian smearing is locally norm-bounded in `z`. -/
 theorem locallyBounded_gaussianSmear (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
@@ -213,7 +210,9 @@ theorem gaussianSmear_ofReal (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g
 theorem tendsto_gaussianSmear_apply (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
     (R : H →L[ℂ] H) (v : H) :
     Tendsto (fun c : ℝ => hU.gaussianSmear hcont R c 0 v) atTop (𝓝 (R v)) := by
-  simpa [gaussianSmear_apply] using Complex.tendsto_integral_gaussianKernel_smul
-    (continuous_conj_apply hU hcont R v) (norm_conj_apply_le hU R v)
+  simpa only [gaussianSmear_apply, ofAdd_neg, Function.comp_def, ofAdd_zero, inv_one, map_one,
+    one_apply_eq_self] using Complex.tendsto_integral_gaussianKernel_smul
+      ((hU.continuous_conj_apply hcont R v).comp continuous_ofAdd)
+      (fun t => hU.norm_conj_apply_le R (.ofAdd t) v)
 
 end ContRepresentation.IsUnitary
