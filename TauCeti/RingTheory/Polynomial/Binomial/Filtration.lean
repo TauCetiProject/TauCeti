@@ -157,14 +157,12 @@ theorem mem_ringChooseSpan_X_iff_exists_mem_ringChooseDegreeLE (p : K[X]) :
   · rintro ⟨n, hn⟩
     exact ((mem_ringChooseDegreeLE_iff K p n).mp hn).1
 
+omit [Nontrivial K] in
 /-- Multiplication of integral degree stages adds their degree bounds. -/
 theorem mul_mem_ringChooseDegreeLE {p q : K[X]} {m n : ℕ}
     (hp : p ∈ ringChooseDegreeLE K m) (hq : q ∈ ringChooseDegreeLE K n) :
     p * q ∈ ringChooseDegreeLE K (m + n) := by
-  obtain ⟨hp, hpm⟩ := (mem_ringChooseDegreeLE_iff K p m).mp hp
-  obtain ⟨hq, hqn⟩ := (mem_ringChooseDegreeLE_iff K q n).mp hq
-  exact (mem_ringChooseDegreeLE_iff K _ _).mpr
-    ⟨mul_mem_ringChooseSpan _ hp hq,
-      (degree_mul_le p q).trans (by exact_mod_cast add_le_add hpm hqn)⟩
+  rw [ringChooseDegreeLE_def] at hp hq ⊢
+  exact mul_mem_span_ringChoose_Iic (X : K[X]) hp hq
 
 end TauCeti

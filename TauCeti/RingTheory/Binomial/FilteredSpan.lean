@@ -192,14 +192,6 @@ theorem mul_le_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
     simpa only [List.ofFn_succ, List.prod_cons, hswap.mul_mul_mul_comm,
       ← Fin.tail_def, Fin.cons_self_tail] using hmem
 
-/-- For a commuting family, products of elements in two stages lie in the stage with the sum
-of their bounds. -/
-theorem mul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
-    (hcomm : ∀ i j, Commute (h i) (h j)) {u v : R} {m n : ℕ}
-    (hu : u ∈ ringChooseFilteredSpan h m) (hv : v ∈ ringChooseFilteredSpan h n) :
-    u * v ∈ ringChooseFilteredSpan h (m + n) :=
-  mul_le_ringChooseFilteredSpan h hcomm m n (mul_mem_mul hu hv)
-
 /-- The degree-`n` binomial coefficient of an integer linear combination of a commuting family
 has an integral ordered expansion of total degree at most `n`. -/
 theorem ringChoose_sum_zsmul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
