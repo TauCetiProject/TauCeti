@@ -26,6 +26,8 @@ homomorphism `ExteriorAlgebra.algebraMapInv` is given by
   `ExteriorAlgebra.mapSemilinear_algebraMap`: action on generators, scalars, and embedded scalars.
 * `ExteriorAlgebra.algebraMapInv_mapSemilinear`: `mapSemilinear f` acts on the degree-zero part
   through `σ`.
+* `ExteriorAlgebra.mapSemilinear_id`, `ExteriorAlgebra.mapSemilinear_comp`: `mapSemilinear` is
+  functorial for the identity and for composites of semilinear maps.
 
 ## Provenance
 
@@ -73,6 +75,7 @@ theorem mapSemilinear_algebraMap (f : M →ₛₗ[σ] N) (r : R) :
   rw [Algebra.algebraMap_eq_smul_one, mapSemilinear_smul, map_one, ← Algebra.algebraMap_eq_smul_one]
 
 /-- `mapSemilinear f` acts on the degree-zero (scalar) component through `σ`. -/
+@[simp]
 theorem algebraMapInv_mapSemilinear (f : M →ₛₗ[σ] N) (x : ExteriorAlgebra R M) :
     algebraMapInv (mapSemilinear f x) = σ (algebraMapInv x) := by
   induction x using ExteriorAlgebra.induction with
@@ -85,5 +88,29 @@ theorem algebraMapInv_mapSemilinear (f : M →ₛₗ[σ] N) (x : ExteriorAlgebra
     rw [map_mul, map_mul, map_mul, map_mul, hx, hy]
   | add x y hx hy =>
     rw [map_add, map_add, map_add, map_add, hx, hy]
+
+/-- `mapSemilinear` of the identity map is the identity ring homomorphism. -/
+@[simp]
+theorem mapSemilinear_id :
+    mapSemilinear (LinearMap.id : M →ₗ[R] M) = RingHom.id (ExteriorAlgebra R M) := by
+  ext x
+  induction x using ExteriorAlgebra.induction with
+  | algebraMap r => simp
+  | ι m => simp
+  | mul x y hx hy => simp_all
+  | add x y hx hy => simp_all
+
+/-- `mapSemilinear` of a composite of semilinear maps is the composite of the induced ring
+homomorphisms. -/
+@[simp]
+theorem mapSemilinear_comp {T : Type*} {P : Type*} [CommRing T] [AddCommGroup P] [Module T P]
+    {τ : S →+* T} {ρ : R →+* T} [RingHomCompTriple σ τ ρ] (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ] N) :
+    mapSemilinear (g.comp f : M →ₛₗ[ρ] P) = (mapSemilinear g).comp (mapSemilinear f) := by
+  ext x
+  induction x using ExteriorAlgebra.induction with
+  | algebraMap r => simp
+  | ι m => simp
+  | mul x y hx hy => simp_all
+  | add x y hx hy => simp_all
 
 end ExteriorAlgebra
