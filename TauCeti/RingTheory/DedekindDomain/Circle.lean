@@ -200,26 +200,29 @@ variable {k' S' : Type*} [CommRing k'] [CommRing S']
 
 /-- Base change of the circle coordinate ring along a ring homomorphism `f : k' →+* S'`. -/
 noncomputable def map (f : k' →+* S') : CircleRing k' →+* CircleRing S' :=
-  Ideal.Quotient.lift _
-    (MvPolynomial.eval₂Hom ((algebraMap S' (CircleRing S')).comp f) ![x, y]) fun p hp => by
-      obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.mp hp
-      simp [x_sq_add_y_sq]
+  Ideal.quotientMap
+    (Ideal.span {(X 0 ^ 2 + X 1 ^ 2 - 1 : MvPolynomial (Fin 2) S')})
+    (MvPolynomial.map f)
+    (Ideal.span_le.2 <| Set.singleton_subset_iff.2 <| by
+      simp only [SetLike.mem_coe, Ideal.mem_comap, map_sub, map_add, map_pow, map_one,
+        MvPolynomial.map_X]
+      exact Ideal.subset_span rfl)
 
 /-- Base change on `CircleRing` preserves `x`. -/
 @[simp]
 theorem map_x (f : k' →+* S') : map f (x : CircleRing k') = x :=
-  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
+  Ideal.quotientMap_mk.trans (congrArg _ (MvPolynomial.map_X f 0))
 
 /-- Base change on `CircleRing` preserves `y`. -/
 @[simp]
 theorem map_y (f : k' →+* S') : map f (y : CircleRing k') = y :=
-  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
+  Ideal.quotientMap_mk.trans (congrArg _ (MvPolynomial.map_X f 1))
 
 /-- Base change on `CircleRing` acts on scalars via `f`. -/
 @[simp]
 theorem map_algebraMap (f : k' →+* S') (a : k') :
     map f (algebraMap k' (CircleRing k') a) = algebraMap S' (CircleRing S') (f a) :=
-  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
+  Ideal.quotientMap_mk.trans (congrArg _ (MvPolynomial.map_C f a))
 
 /-- Base change on `CircleRing` intertwines the canonical scalar maps. -/
 @[simp]

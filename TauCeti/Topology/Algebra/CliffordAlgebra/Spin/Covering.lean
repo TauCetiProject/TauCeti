@@ -86,16 +86,6 @@ theorem coe_realCliffordSpinProjectionZero (n : ℕ) [NeZero n] :
         (realCliffordSpinDoubleCoverZero n).rightHom :=
   funext (realCliffordSpinProjectionZero_apply n)
 
-/-- The compact real Spin projection acts on vectors by `CliffordAlgebra.spinVectorAction`. -/
-theorem coe_realCliffordSpinProjectionZero_apply (n : ℕ) [NeZero n]
-    (x : realCliffordSpinGroupZero n) (v : Fin n → ℝ) :
-    ((realCliffordSpinProjectionZero n x :
-        QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
-        (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v =
-      spinVectorAction (realCliffordForm n 0) x v := by
-  rw [realCliffordSpinProjectionZero_apply, realCliffordSpinDoubleCoverZero_rightHom,
-    coe_spinToSpecialOrthogonal_apply]
-
 /-- The compact Spin projection sends the element `-1` of `Spin(n)` to the identity of `SO(n)`. -/
 theorem realCliffordSpinProjectionZero_negOne (n : ℕ) [NeZero n] :
     realCliffordSpinProjectionZero n

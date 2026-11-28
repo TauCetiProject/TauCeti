@@ -65,7 +65,6 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 
 * `TauCeti.stabilizeGL_apply`, `TauCeti.coe_stabilizeGL_apply`: block and entry formulas for a
   stabilized matrix.
-* `TauCeti.stabilizeGL_mul_transpose`: stabilization preserves orthogonality.
 * `TauCeti.coe_stabilizeGL_mem_unitary`: stabilization preserves unitary matrices.
 * `Function.Embedding.extendGL_castLEEmb`: stabilization is extension by the identity along the
   inclusion `Fin m ↪ Fin n` of the first `m` indices.
@@ -226,26 +225,6 @@ commutative ring. -/
 theorem det_stabilizeGL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) R) :
     GeneralLinearGroup.det (stabilizeGL R h u) = GeneralLinearGroup.det u := by
   rw [← Function.Embedding.extendGL_castLEEmb, Function.Embedding.det_extendGL]
-
-private theorem coe_stabilizeGL_transpose_eq_inv {m n : ℕ} (h : m ≤ n)
-    {u : GL (Fin m) A} (hu : (u : Matrix (Fin m) (Fin m) A)ᵀ = ↑u⁻¹) :
-    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A)ᵀ = ↑(stabilizeGL A h u)⁻¹ := by
-  rw [← map_inv (stabilizeGL A h) u]
-  ext i j
-  rw [Matrix.transpose_apply, coe_stabilizeGL_apply, coe_stabilizeGL_apply]
-  by_cases hij : (i : ℕ) < m ∧ (j : ℕ) < m
-  · simp only [hij.1, hij.2, and_self, ↓reduceDIte, ← hu, Matrix.transpose_apply]
-  · have hij' : ¬((j : ℕ) < m ∧ (i : ℕ) < m) := fun ⟨hj, hi⟩ ↦ hij ⟨hi, hj⟩
-    simp only [hij, hij', ↓reduceDIte, Matrix.one_apply, eq_comm]
-
-/-- Stabilization preserves orthogonality: if `u * uᵀ = 1`, then
-`(stabilizeGL A h u) * (stabilizeGL A h u)ᵀ = 1`. -/
-theorem stabilizeGL_mul_transpose {m n : ℕ} (h : m ≤ n) {u : GL (Fin m) A}
-    (hu : (u : Matrix (Fin m) (Fin m) A) * (u : Matrix (Fin m) (Fin m) A)ᵀ = 1) :
-    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A) *
-      (stabilizeGL A h u : Matrix (Fin n) (Fin n) A)ᵀ = 1 := by
-  rw [coe_stabilizeGL_transpose_eq_inv h (Units.eq_inv_of_mul_eq_one_left hu),
-    ← Units.val_mul, mul_inv_cancel, Units.val_one]
 
 /-- Stabilization maps the elementary subgroup into the elementary subgroup. -/
 theorem map_stabilizeGL_elementarySubgroup_le {m n : ℕ} (h : m ≤ n) :

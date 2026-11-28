@@ -14,10 +14,10 @@ import TauCeti.Topology.Circle.CoordinateRing
 /-!
 # Nontriviality of `SK₁` for the algebraic circle
 
-Although the coordinate ring `CircleRing k = k[x, y] ⧸ (x² + y² - 1)` of the algebraic circle
-over a field `k` with `2 ≠ 0` is a Dedekind domain (`TauCeti.CircleRing.instIsDedekindDomain`),
-its special Whitehead group `SK₁(CircleRing k)` does not vanish whenever `k` admits a ring
-homomorphism `k →+* ℝ` (for instance `k = ℤ`, `ℚ`, or `ℝ`). For any commutative ring `k`, the
+For a field `k` with `2 ≠ 0`, the coordinate ring `CircleRing k = k[x, y] ⧸ (x² + y² - 1)` of the
+algebraic circle is a Dedekind domain (`TauCeti.CircleRing.instIsDedekindDomain`). Over any
+commutative ring `k` admitting a ring homomorphism `k →+* ℝ` (for instance `k = ℤ`, `ℚ`, or `ℝ`),
+its special Whitehead group `SK₁(CircleRing k)` does not vanish. For any commutative ring `k`, the
 determinant-one rotation matrix
 
   `circleRotation k = !![x, -y; y, x] ∈ SL₂(CircleRing k)`
@@ -43,7 +43,7 @@ propagates nonvanishing from `ℝ` to `k`.
   `SK₁(CircleRing k)`.
 * `TauCeti.map_circleRotation`, `TauCeti.map_toGL_circleRotation`: base change on `CircleRing`
   preserves `circleRotation`.
-* `TauCeti.circleRotation_not_mem_elementarySubgroup`: no stabilization of `circleRotation k` is
+* `TauCeti.circleRotation_notMem_elementarySubgroup`: no stabilization of `circleRotation k` is
   elementary when `k` admits `k →+* ℝ`.
 * `TauCeti.circle_rotation_not_stably_elementary`: the class of `circleRotation k` in
   `TauCeti.AlgebraicK1 (CircleRing k)` is nontrivial when `k` admits `k →+* ℝ`.
@@ -139,7 +139,7 @@ private theorem evalGL_stabilizeGL_circleRotation (N : ℕ) (hN : 2 ≤ N) :
       first | (exfalso; dsimp at hij; omega) | simp
   · by_cases h : i = j <;> simp [Matrix.one_apply, h]
 
-private theorem circleRotation_not_mem_elementarySubgroup_real (N : ℕ) (hN : 2 ≤ N) :
+private theorem circleRotation_notMem_elementarySubgroup_real (N : ℕ) (hN : 2 ≤ N) :
     stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ)) ∉
       elementarySubgroup (Fin N) (CircleRing ℝ) := by
   intro hg
@@ -154,7 +154,7 @@ private theorem circle_rotation_not_stably_elementary_real :
     AlgebraicK1.mk (CircleRing ℝ) 2 (SpecialLinearGroup.toGL (circleRotation ℝ)) ≠ 1 := by
   rw [ne_eq, AlgebraicK1.mk_eq_one_iff]
   rintro ⟨N, hN, hmem⟩
-  exact circleRotation_not_mem_elementarySubgroup_real N hN hmem
+  exact circleRotation_notMem_elementarySubgroup_real N hN hmem
 
 /-- Base change along `f : k →+* S` carries `circleRotation k` to `circleRotation S`. -/
 @[simp]
@@ -185,7 +185,7 @@ theorem circle_rotation_not_stably_elementary {k : Type*} [CommRing k] (f : k �
 
 /-- **No identity stabilization of `circleRotation k` is elementary** when `k` admits a ring
 homomorphism `k →+* ℝ`. -/
-theorem circleRotation_not_mem_elementarySubgroup {k : Type*} [CommRing k] (f : k →+* ℝ)
+theorem circleRotation_notMem_elementarySubgroup {k : Type*} [CommRing k] (f : k →+* ℝ)
     (N : ℕ) (hN : 2 ≤ N) :
     stabilizeGL (CircleRing k) hN (SpecialLinearGroup.toGL (circleRotation k)) ∉
       elementarySubgroup (Fin N) (CircleRing k) := by
