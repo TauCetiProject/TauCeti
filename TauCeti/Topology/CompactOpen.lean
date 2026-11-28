@@ -34,6 +34,9 @@ Postcomposition with a closed embedding `g` is a closed embedding
 closed range of `g`, a condition closed under pointwise limits. Dually, when `X` is compact,
 postcomposition with an open embedding is an open embedding
 (`ContinuousMap.isOpenEmbedding_postcomp`): having values in an open set is an open condition.
+More generally, postcomposition by a map `g : Y → Z` that is only continuous on a subset `s : Set Y`
+preserves convergence in the compact-open topology for families staying in `s`
+(`ContinuousMap.tendsto_of_eventually_eq_comp`).
 -/
 
 public section
@@ -103,5 +106,25 @@ theorem isOpenEmbedding_postcomp [CompactSpace X] (g : C(Y, Z))
   refine ⟨isEmbedding_postcomp g hg.isEmbedding, ?_⟩
   rw [range_postcomp g hg.isInducing]
   simpa only [Set.range_subset_iff] using isOpen_setOfPred_range_subset (X := X) hg.isOpen_range
+
+/-- If `φ i → φ₀` in the compact-open topology on `C(X, Y)`, the values of `φ₀` and eventually of
+`φ i` lie in a subset `s : Set Y`, and `g : Y → Z` is continuous on `s`, then any family
+`ψ : ι → C(X, Z)` eventually agreeing pointwise with `g ∘ φ i` converges in `C(X, Z)` to `ψ₀`
+agreeing pointwise with `g ∘ φ₀`. -/
+theorem tendsto_of_eventually_eq_comp {ι : Type*} {l : Filter ι} {s : Set Y} {g : Y → Z}
+    (hg : ContinuousOn g s) {φ : ι → C(X, Y)} {φ₀ : C(X, Y)}
+    (hφ : Filter.Tendsto φ l (nhds φ₀))
+    (hφ_mem : ∀ᶠ i in l, ∀ x, φ i x ∈ s) (hφ₀_mem : ∀ x, φ₀ x ∈ s)
+    {ψ : ι → C(X, Z)} {ψ₀ : C(X, Z)}
+    (hψ : ∀ᶠ i in l, ∀ x, ψ i x = g (φ i x)) (hψ₀ : ∀ x, ψ₀ x = g (φ₀ x)) :
+    Filter.Tendsto ψ l (nhds ψ₀) := by
+  rw [tendsto_nhds_compactOpen]
+  intro K hK U hU hψ₀KU
+  obtain ⟨V, hV, hVs⟩ := isOpen_induced_iff.1 (hU.preimage hg.domRestrict)
+  have hV_iff {y : Y} (hy : y ∈ s) : y ∈ V ↔ g y ∈ U := Set.ext_iff.1 hVs ⟨y, hy⟩
+  have hφ₀KV : Set.MapsTo φ₀ K V := fun x hx ↦ (hV_iff (hφ₀_mem x)).2 (hψ₀ x ▸ hψ₀KU hx)
+  filter_upwards [tendsto_nhds_compactOpen.1 hφ K hK V hV hφ₀KV, hφ_mem, hψ] with i hiV his hiψ x hx
+  rw [hiψ x]
+  exact (hV_iff (his x)).1 (hiV hx)
 
 end ContinuousMap

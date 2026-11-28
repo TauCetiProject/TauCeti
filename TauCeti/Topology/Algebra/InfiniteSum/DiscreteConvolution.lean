@@ -39,6 +39,10 @@ convolution into the familiar sums `∑' y, L (f (x / y)) (g y)` and `∑' y, L 
 * `DiscreteConvolution.single_ringConvolution_single` and its additive version
   `DiscreteConvolution.single_addRingConvolution_single`:
   `Pi.single m a ⋆ᵣ Pi.single n b = Pi.single (m * n) (a * b)`.
+* `DiscreteConvolution.convolution_single_apply`, `DiscreteConvolution.single_convolution_apply`,
+  and their additive versions `addConvolution_single_apply`, `single_addConvolution_apply`: on a
+  group, convolution on either side with a single-point family evaluates the other factor at a
+  shifted index.
 * `DiscreteConvolution.ringConvolution_assoc` and its additive version
   `DiscreteConvolution.addRingConvolution_assoc`: ring convolution is associative when the triple
   family and the inner convolutions are summable.
@@ -224,6 +228,24 @@ theorem convolution_eq_tsum_inv_mul (L : E →ₗ[S] E' →ₗ[S] F) (f : M → 
         Subtype.ext <| Prod.ext rfl (eq_inv_mul_of_mul_eq (mem_mulFiber.1 ab.property)).symm }
   rw [convolution]
   exact (e.tsum_eq fun ab ↦ L (f ab.val.1) (g ab.val.2)).symm
+
+/-- On a group, convolution on the right with a single-point family `Pi.single k b` evaluates at
+`x` to `L (f (x / k)) b`. -/
+@[to_additive (dont_translate := S E E' F) (attr := simp high) addConvolution_single_apply
+  /-- On an additive group, additive convolution on the right with a single-point family
+  `Pi.single k b` evaluates at `x` to `L (f (x - k)) b`. -/]
+theorem convolution_single_apply [DecidableEq M] (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (k : M)
+    (b : E') (x : M) : (f ⋆[L] Pi.single k b) x = L (f (x / k)) b := by
+  rw [convolution_eq_tsum_div, tsum_eq_single k fun y hy ↦ by simp [hy]]; simp
+
+/-- On a group, convolution on the left with a single-point family `Pi.single k a` evaluates at
+`x` to `L a (g (k⁻¹ * x))`. -/
+@[to_additive (dont_translate := S E E' F) (attr := simp high) single_addConvolution_apply
+  /-- On an additive group, additive convolution on the left with a single-point family
+  `Pi.single k a` evaluates at `x` to `L a (g (-k + x))`. -/]
+theorem single_convolution_apply [DecidableEq M] (L : E →ₗ[S] E' →ₗ[S] F) (k : M) (a : E)
+    (g : M → E') (x : M) : (Pi.single k a ⋆[L] g) x = L a (g (k⁻¹ * x)) := by
+  rw [convolution_eq_tsum_inv_mul, tsum_eq_single k fun y hy ↦ by simp [hy]]; simp
 
 end Bilinear
 

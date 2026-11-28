@@ -50,14 +50,18 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
 
 * `TauCeti.CircleSobolev.coeff_ofContinuousMap`: the coefficients of `ofContinuousMap T f` are
   the Fourier coefficients of `f`.
-* `TauCeti.CircleSobolev.rotate_ofContinuousMap`: the rotation by `θ` of the class of a loop
-  `f` is the class of the translated loop `x ↦ f (x + θ)`.
+* `TauCeti.CircleSobolev.mapCLM_ofContinuousMap` and `TauCeti.CircleSobolev.rotate_ofContinuousMap`:
+  `ofContinuousMap T` intertwines `mapCLM` with pointwise postcomposition and `rotate` with
+  translation of the loop.
 * `TauCeti.CircleSobolev.ofContinuousMap_toContinuousMap`: for `s > 1/2`, the continuous
   representative of `a ∈ H^s(E)` is sent back to `a`, regarded as an element of `H⁰(E)`.
 * `TauCeti.CircleSobolev.ofContinuousMap_injective`: a continuous loop is determined by its
   class in `H⁰(E)`.
-* `TauCeti.CircleSobolev.toContinuousMap_eq_iff`: for `s > 1/2`, the continuous representative of
-  `a ∈ H^s(E)` is the continuous loop with the Fourier coefficients of `a`.
+* `TauCeti.CircleSobolev.toContinuousMap_eq_iff` and
+  `TauCeti.CircleSobolev.tendsto_inclusion_of_norm_le_of_tendsto_toContinuousMap`: for `s > 1/2`,
+  the continuous representative of `a ∈ H^s(E)` is the continuous loop with the Fourier
+  coefficients of `a`, and norm-bounded families in `H^r(E)` (`r > 1/2`) whose continuous
+  representatives converge uniformly converge in every lower `H^{r'}(E)` (`r' < r`).
 * `TauCeti.CircleSobolev.hasDerivAt_toContinuousMap_of_derivative_eq` and
   `TauCeti.CircleSobolev.exists_toContinuousMap_eq_and_derivative_eq`: continuous weak
   derivatives in `H¹(E)` are classical derivatives, and conversely.
@@ -65,9 +69,10 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
   Parseval's identity, the inner product in `H⁰` of two continuous loops is the mean of their
   pointwise inner product.
 * `TauCeti.CircleSobolev.norm_ofContinuousMap_sq`,
-  `TauCeti.CircleSobolev.norm_ofContinuousMap_le_of_forall_norm_le`: the squared `H⁰` norm of a
-  continuous loop is the mean of its squared pointwise norm, so pointwise domination of loops
-  gives domination in `H⁰`.
+  `TauCeti.CircleSobolev.norm_ofContinuousMap_le_of_forall_norm_le`, and
+  `TauCeti.CircleSobolev.exists_norm_ofContinuousMap_le_of_forall_norm_le`: the squared `H⁰` norm
+  of a continuous loop is the mean of its squared pointwise norm, so pointwise domination of loops
+  gives domination in `H⁰` (up to an equivalence constant on general finite-dimensional spaces).
 * `TauCeti.CircleSobolev.integral_norm_sq_eq_mul_norm_ofContinuousMap_sq`: Parseval on a period,
   `∫_{[0, T]} ‖f‖² = T ‖ofContinuousMap T f‖²`.
 * `TauCeti.CircleSobolev.eq_zero_of_abs_le_of_hilbertBasis`: a real-linear functional on
@@ -165,6 +170,19 @@ theorem coeff_ofContinuousMap (f : C(AddCircle T, E)) (n : ℤ) :
   congr 1
   exact (coeff_toLpₗᵢ_symm T _ n).trans (fourierCoeff_toLp _ n)
 
+/-- Postcomposing `ofContinuousMap T f` with a continuous complex-linear map `L` corresponds to
+pointwise composition `x ↦ L (f x)`. -/
+@[simp]
+theorem mapCLM_ofContinuousMap {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [FiniteDimensional ℂ F] (L : E →L[ℂ] F) (f : C(AddCircle T, E)) :
+    mapCLM L (ofContinuousMap T f) =
+      ofContinuousMap T ((ContinuousMap.mk L L.continuous).comp f) := by
+  have := FiniteDimensional.completeSpace ℂ E
+  have := FiniteDimensional.completeSpace ℂ F
+  refine CircleSobolev.ext <| funext fun n ↦ ?_
+  rw [coeff_mapCLM, coeff_ofContinuousMap, coeff_ofContinuousMap]
+  exact (L.fourierCoeff_comp (f.integrable AddCircle.haarAddCircle) n).symm
+
 /-- The rotation by `θ` of the class in `H⁰(E)` of a continuous loop `f` is the class of the
 translated loop `x ↦ f (x + θ)`. -/
 @[simp]
@@ -191,6 +209,49 @@ theorem toContinuousMap_eq_iff (hs : 1 / 2 < s) (a : CircleSobolev s E) (F : C(A
     |>.ae_eq_of_forall_fourierCoeff_eq (F.integrable AddCircle.haarAddCircle) fun n ↦ by
     rw [fourierCoeff_toContinuousMap, h]
   exact ContinuousMap.ext (congrFun ((map_continuous _).ae_eq_iff_eq _ F.continuous |>.1 hae))
+
+/-- If a family `g : ι → H^r(E)` (`r > 1/2`) is eventually norm-bounded in `H^r` and its continuous
+representatives converge uniformly to that of `g₀`, then `g i → g₀` in `H^{r'}(E)` for every
+`r' < r`. -/
+theorem tendsto_inclusion_of_norm_le_of_tendsto_toContinuousMap {r' r : ℝ} (hr'r : r' < r)
+    (hr : 1 / 2 < r) {ι : Type*} {l : Filter ι} {g : ι → CircleSobolev r E}
+    {g₀ : CircleSobolev r E} {B : ℝ} (hB : ∀ᶠ i in l, ‖g i‖ ≤ B)
+    (hcont : Filter.Tendsto (fun i ↦ toContinuousMap T hr (g i)) l
+      (nhds (toContinuousMap T hr g₀))) :
+    Filter.Tendsto (fun i ↦ inclusion hr'r.le (g i)) l (nhds (inclusion hr'r.le g₀)) := by
+  -- Interpolate between `H^r` and a negative order `s₀ < -1`, where uniform convergence controls
+  -- the Sobolev norm directly via `fourierCoeff` and `summable_weight`.
+  set s₀ : ℝ := min r' (-1) - 1
+  have hs₀_r' : s₀ ≤ r' := by linarith [min_le_left r' (-1)]
+  have hs₀_2 : 2 * s₀ < -1 := by linarith [min_le_right r' (-1)]
+  have hK : 0 ≤ ∑' n : ℤ, weight (2 * s₀) n := tsum_nonneg fun n ↦ weight_nonneg _ n
+  have hs₀_bound (d : CircleSobolev r E) :
+      ‖inclusion (hs₀_r'.trans hr'r.le) d‖ ≤
+        √(∑' n, weight (2 * s₀) n) * ‖toContinuousMap T hr d‖ := by
+    refine (Real.le_sqrt_of_sq_le ?_).trans_eq
+      (by rw [Real.sqrt_mul hK, Real.sqrt_sq (norm_nonneg (toContinuousMap T hr d))])
+    rw [norm_sq_eq_tsum, ← tsum_mul_right]
+    refine Summable.tsum_le_tsum (fun n ↦ ?_) (hasSum_norm_sq _).summable
+      ((summable_weight hs₀_2).mul_right _)
+    rw [coeff_inclusion, ← fourierCoeff_toContinuousMap T hr d n]
+    refine mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) ?_ 2) (weight_nonneg _ n)
+    rw [fourierCoeff]
+    exact (norm_integral_le_of_norm_le_const (.of_forall fun x ↦ by
+      simpa [norm_smul, fourier_apply] using
+        (toContinuousMap T hr d).norm_coe_le_norm x)).trans_eq (by simp)
+  rw [Metric.tendsto_nhds]; intro ε hε
+  set M := max (B + ‖g₀‖) 1; have hM : 0 < M := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
+  obtain ⟨C, hC0, hC⟩ := exists_norm_inclusion_le (E := E) hs₀_r' hr'r (div_pos (half_pos hε) hM)
+  have h0 : Filter.Tendsto (fun i ↦ C * (√(∑' n, weight (2 * s₀) n) *
+      ‖toContinuousMap T hr (g i) - toContinuousMap T hr g₀‖)) l (nhds 0) := by
+    simpa using ((tendsto_sub_nhds_zero_iff.2 hcont).norm.const_mul _).const_mul C
+  filter_upwards [hB, (tendsto_order.1 h0).2 (ε / 2) (half_pos hε)] with i hi hi0
+  rw [dist_eq_norm, ← map_sub]
+  have hnorm_d : ‖g i - g₀‖ ≤ M := by linarith [norm_sub_le (g i) g₀, le_max_left (B + ‖g₀‖) 1]
+  have h1 := (hC (g i - g₀)).trans (add_le_add
+    ((mul_le_mul_of_nonneg_left hnorm_d (by positivity)).trans_eq (div_mul_cancel₀ _ hM.ne'))
+    (mul_le_mul_of_nonneg_left (by simpa only [map_sub] using hs₀_bound (g i - g₀)) hC0))
+  linarith
 
 end ContinuousRepresentative
 
@@ -341,17 +402,19 @@ theorem norm_ofContinuousMap_sq (f : C(AddCircle T, F)) :
   rw [← real_inner_self_eq_norm_sq, real_inner_ofContinuousMap]
   simp only [← RCLike.re_eq_complex_re, inner_self_eq_norm_sq]
 
-/-- Pointwise domination `‖f x‖ ≤ C ‖g x‖` of continuous loops gives the same domination of their
-Fourier coefficient sequences in `H⁰`. -/
-theorem norm_ofContinuousMap_le_of_forall_norm_le {f g : C(AddCircle T, F)} {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ x, ‖f x‖ ≤ C * ‖g x‖) :
+/-- Pointwise domination `‖f x‖ ≤ C ‖g x‖` of continuous loops in finite-dimensional complex inner
+product spaces gives the same domination of their Fourier coefficient sequences in `H⁰`. -/
+theorem norm_ofContinuousMap_le_of_forall_norm_le {F' : Type*} [NormedAddCommGroup F']
+    [InnerProductSpace ℂ F'] [FiniteDimensional ℂ F'] {f : C(AddCircle T, F)}
+    {g : C(AddCircle T, F')} {C : ℝ} (hC : 0 ≤ C) (h : ∀ x, ‖f x‖ ≤ C * ‖g x‖) :
     ‖ofContinuousMap T f‖ ≤ C * ‖ofContinuousMap T g‖ := by
-  have hint (u : C(AddCircle T, F)) :
-      Integrable (fun x ↦ ‖u x‖ ^ 2) AddCircle.haarAddCircle :=
-    (u.continuous.norm.pow 2).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  have hf_int : Integrable (fun x ↦ ‖f x‖ ^ 2) AddCircle.haarAddCircle :=
+    (f.continuous.norm.pow 2).integrable_of_hasCompactSupport (.of_compactSpace _)
+  have hg_int : Integrable (fun x ↦ ‖g x‖ ^ 2) AddCircle.haarAddCircle :=
+    (g.continuous.norm.pow 2).integrable_of_hasCompactSupport (.of_compactSpace _)
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
   rw [mul_pow, norm_ofContinuousMap_sq, norm_ofContinuousMap_sq, ← integral_const_mul]
-  refine integral_mono (hint f) ((hint g).const_mul _) fun x ↦ ?_
+  refine integral_mono hf_int (hg_int.const_mul _) fun x ↦ ?_
   simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) (h x) 2
 
 /-- **Parseval's identity on a period.** For a continuous loop `f` of period `T`,
@@ -400,6 +463,39 @@ theorem eq_zero_of_abs_le_of_hilbertBasis (Λ : C(AddCircle T, F) →ₗ[ℝ] �
   exact (h1.trans h2).not_gt h3
 
 end Inner
+
+/-- Pointwise domination `‖f x‖ ≤ M ‖g x‖` of continuous loops in finite-dimensional complex
+normed spaces `E` and `G` gives `H⁰` norm domination up to a space-dependent constant `C ≥ 0`. -/
+theorem exists_norm_ofContinuousMap_le_of_forall_norm_le [FiniteDimensional ℂ E]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G] :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {M : ℝ} (f : C(AddCircle T, G)) (g : C(AddCircle T, E)),
+      (∀ x, ‖f x‖ ≤ M * ‖g x‖) → ‖ofContinuousMap T f‖ ≤ C * M * ‖ofContinuousMap T g‖ := by
+  let eE := ((Module.finBasis ℂ E).equiv (EuclideanSpace.basisFun _ ℂ).toBasis (.refl _)
+    ).toContinuousLinearEquiv
+  let eG := ((Module.finBasis ℂ G).equiv (EuclideanSpace.basisFun _ ℂ).toBasis (.refl _)
+    ).toContinuousLinearEquiv
+  let LE := eE.toContinuousLinearMap; let LEi := eE.symm.toContinuousLinearMap
+  let LG := eG.toContinuousLinearMap; let LGi := eG.symm.toContinuousLinearMap
+  refine ⟨‖LGi‖ * ‖LG‖ * ‖LEi‖ * ‖LE‖, by positivity, fun {M} f g hpt ↦ ?_⟩
+  rcases lt_or_ge M 0 with hM | hM
+  · have hg0 : g = 0 := ContinuousMap.ext fun x ↦ norm_le_zero_iff.1 <| by
+      nlinarith [norm_nonneg (f x), norm_nonneg (g x), hpt x]
+    have hf0 : f = 0 := ContinuousMap.ext fun x ↦ norm_le_zero_iff.1 <| by
+      simpa [hg0] using hpt x
+    simp [hf0, hg0]
+  let f' := (ContinuousMap.mk LG LG.continuous).comp f
+  let g' := (ContinuousMap.mk LE LE.continuous).comp g
+  have hL2 : ‖ofContinuousMap T f'‖ ≤ (‖LG‖ * M * ‖LEi‖) * ‖ofContinuousMap T g'‖ :=
+    norm_ofContinuousMap_le_of_forall_norm_le T (by positivity) fun x ↦ by
+      have hg : ‖g x‖ ≤ ‖LEi‖ * ‖g' x‖ := eE.symm_apply_apply (g x) ▸ LEi.le_opNorm (g' x)
+      exact ((LG.le_opNorm _).trans <| mul_le_mul_of_nonneg_left
+        ((hpt x).trans (mul_le_mul_of_nonneg_left hg hM)) (norm_nonneg _)).trans_eq (by ring)
+  have hf : ofContinuousMap T f = mapCLM LGi (ofContinuousMap T f') := ((mapCLM_ofContinuousMap T
+    LGi f').trans <| congrArg _ (ContinuousMap.ext fun x ↦ eG.symm_apply_apply (f x))).symm
+  rw [← mapCLM_ofContinuousMap T LE g] at hL2; rw [hf]
+  exact ((norm_mapCLM_le _ _).trans <| mul_le_mul_of_nonneg_left (hL2.trans <|
+    mul_le_mul_of_nonneg_left (norm_mapCLM_le _ _) (by positivity)) (norm_nonneg _)).trans_eq
+    (by ring)
 
 end CircleSobolev
 

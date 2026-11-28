@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Circle.Nemytskii
+public import TauCeti.Analysis.Sobolev.Circle.Nemytskii.Basic
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
 import Mathlib.Analysis.Fourier.AddCircle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv

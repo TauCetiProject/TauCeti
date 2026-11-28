@@ -42,6 +42,11 @@ hypotheses, and then transferred to real sums.
 * `DiscreteConvolution.tsum_sq_mul_addRingConvolution_le`: the weighted (tame) estimate
   `‖ω (f ⋆ g)‖₂² ≤ 2 c² (‖g‖₁² ‖ω f‖₂² + ‖f‖₁² ‖ω g‖₂²)` for a weight with
   `ω (x + y) ≤ c (ω x + ω y)`.
+* `DiscreteConvolution.mul_addRingConvolution_le`,
+  `DiscreteConvolution.tsum_sq_mul_addRingConvolution_le_of_le_mul`, and
+  `DiscreteConvolution.tsum_sq_mul_addRingConvolution_le_of_le_mul'`: pointwise and squared
+  weighted Young's inequalities `‖ω (f ⋆ g)‖₂ ≤ ‖ω₂ g‖₁ ‖ω₁ f‖₂` and
+  `‖ω (f ⋆ g)‖₂ ≤ ‖ω₁ f‖₁ ‖ω₂ g‖₂` for weights with `ω (x + y) ≤ ω₁ x * ω₂ y`.
 * `DiscreteConvolution.tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le`: the weighted `ℓ²`
   bilinear convolution estimate with weights `(1 + ‖x‖) ^ s`, in `ℝ≥0∞`.
 * `DiscreteConvolution.tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le` and
@@ -184,6 +189,38 @@ theorem tsum_sq_mul_addRingConvolution_le [AddGroup G] {ω : G → ℝ≥0∞} {
         gcongr
         · exact tsum_addRingConvolution_sq_le _ _
         · exact tsum_addRingConvolution_sq_le' _ _
+
+/-- Pointwise weighted convolution bound on an additive monoid: if `ω (x + y) ≤ ω₁ x * ω₂ y`,
+then `ω x * (f ⋆ᵣ₊ g) x ≤ ((ω₁ * f) ⋆ᵣ₊ (ω₂ * g)) x`. -/
+theorem mul_addRingConvolution_le {M : Type*} [AddMonoid M] {ω ω₁ ω₂ : M → ℝ≥0∞}
+    (hω : ∀ x y, ω (x + y) ≤ ω₁ x * ω₂ y) (f g : M → ℝ≥0∞) (x : M) :
+    ω x * (f ⋆ᵣ₊ g) x ≤ ((fun y ↦ ω₁ y * f y) ⋆ᵣ₊ fun y ↦ ω₂ y * g y) x := by
+  simp_rw [addRingConvolution_apply, ← ENNReal.tsum_mul_left]
+  refine _root_.tsum_le_tsum fun ab ↦ ?_
+  calc ω x * (f ab.val.1 * g ab.val.2)
+      ≤ ω₁ ab.val.1 * ω₂ ab.val.2 * (f ab.val.1 * g ab.val.2) := by
+        gcongr
+        exact (congrArg ω (mem_addFiber.1 ab.property)).symm.trans_le (hω ab.val.1 ab.val.2)
+    _ = ω₁ ab.val.1 * f ab.val.1 * (ω₂ ab.val.2 * g ab.val.2) := by ring
+
+/-- **Weighted Young's inequality** `‖ω (f ⋆ g)‖₂ ≤ ‖ω₂ g‖₁ ‖ω₁ f‖₂` for families in `ℝ≥0∞` on an
+additive group, in squared form, for weights satisfying `ω (x + y) ≤ ω₁ x * ω₂ y`. -/
+theorem tsum_sq_mul_addRingConvolution_le_of_le_mul [AddGroup G] {ω ω₁ ω₂ : G → ℝ≥0∞}
+    (hω : ∀ x y, ω (x + y) ≤ ω₁ x * ω₂ y) (f g : G → ℝ≥0∞) :
+    ∑' x, (ω x * (f ⋆ᵣ₊ g) x) ^ 2 ≤
+      (∑' x, ω₂ x * g x) ^ 2 * ∑' x, (ω₁ x * f x) ^ 2 :=
+  (_root_.tsum_le_tsum fun x ↦ pow_le_pow_left' (mul_addRingConvolution_le hω f g x) 2).trans
+    (tsum_addRingConvolution_sq_le _ _)
+
+/-- **Weighted Young's inequality** in the other orientation,
+`‖ω (f ⋆ g)‖₂ ≤ ‖ω₁ f‖₁ ‖ω₂ g‖₂`, for families in `ℝ≥0∞` on an additive group, in squared form,
+for weights satisfying `ω (x + y) ≤ ω₁ x * ω₂ y`. -/
+theorem tsum_sq_mul_addRingConvolution_le_of_le_mul' [AddGroup G] {ω ω₁ ω₂ : G → ℝ≥0∞}
+    (hω : ∀ x y, ω (x + y) ≤ ω₁ x * ω₂ y) (f g : G → ℝ≥0∞) :
+    ∑' x, (ω x * (f ⋆ᵣ₊ g) x) ^ 2 ≤
+      (∑' x, ω₁ x * f x) ^ 2 * ∑' x, (ω₂ x * g x) ^ 2 :=
+  (_root_.tsum_le_tsum fun x ↦ pow_le_pow_left' (mul_addRingConvolution_le hω f g x) 2).trans
+    (tsum_addRingConvolution_sq_le' _ _)
 
 end ENNReal
 

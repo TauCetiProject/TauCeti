@@ -50,6 +50,8 @@ product when `E` has them.
   `TauCeti.CircleSobolev.restrictEquiv`, its analogue for continuous linear isomorphisms.
 * `TauCeti.CircleSobolev.toContinuousMap`: for `s > 1/2`, the continuous function on
   `AddCircle T` given by the uniformly convergent Fourier series.
+* `TauCeti.CircleSobolev.mapCLM` and `TauCeti.CircleSobolev.prodEquiv`: functorial action of
+  `E →L[ℂ] F` on `H^s` and the equivalence `H^s(E × F) ≃L[ℂ] H^s(E) × H^s(F)`.
 
 ## Main statements
 
@@ -407,8 +409,9 @@ theorem ofReal_norm_sq_eq_tsum (a : CircleSobolev s E) :
     (fun n ↦ by positivity [weight_nonneg (2 * s) n]) (hasSum_norm_sq a).summable]
 
 /-- A coefficientwise bound of weighted norms gives the corresponding bound on the norms, possibly
-between different orders. -/
-theorem norm_le_of_forall_le {a : CircleSobolev s E} {b : CircleSobolev t E} {C : ℝ}
+between different orders and target spaces. -/
+theorem norm_le_of_forall_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    {a : CircleSobolev s E} {b : CircleSobolev t F} {C : ℝ}
     (h : ∀ n, weight t n * ‖b.coeff n‖ ≤ C * (weight s n * ‖a.coeff n‖)) :
     ‖b‖ ≤ C * ‖a‖ := by
   rcases lt_or_ge C 0 with hC | hC
@@ -417,15 +420,12 @@ theorem norm_le_of_forall_le {a : CircleSobolev s E} {b : CircleSobolev t E} {C 
       have := (mul_nonneg (weight_nonneg t n) (norm_nonneg (b.coeff n))).trans (h n)
       nlinarith [mul_nonneg (weight_nonneg s n) (norm_nonneg (a.coeff n))]
     have hy (n : ℤ) : weight t n * ‖b.coeff n‖ = 0 :=
-      le_antisymm (by simpa [hx n] using h n)
-        (mul_nonneg (weight_nonneg t n) (norm_nonneg _))
-    have hzero {r : ℝ} {c : ℤ → E} {w : ℤ → ℝ} (hc : ∀ n, w n * ‖c n‖ = 0)
-        (hs : HasSum (fun n ↦ (w n * ‖c n‖) ^ 2) (r ^ 2)) : r = 0 := by
-      have h0 : HasSum (fun n ↦ (w n * ‖c n‖) ^ 2) 0 := by simp [hc]
-      exact pow_eq_zero_iff two_ne_zero |>.1 (hs.unique h0)
-    rw [hzero (w := weight s) (c := a.coeff) hx (hasSum_sq_weight_mul_norm_coeff a),
-      hzero (w := weight t) (c := b.coeff) hy (hasSum_sq_weight_mul_norm_coeff b)]
-    simp
+      le_antisymm (by simpa [hx n] using h n) (mul_nonneg (weight_nonneg t n) (norm_nonneg _))
+    have ha0 : ‖a‖ = 0 := (pow_eq_zero_iff two_ne_zero).1
+      ((hasSum_sq_weight_mul_norm_coeff a).unique (by simp [hx]))
+    have hb0 : ‖b‖ = 0 := (pow_eq_zero_iff two_ne_zero).1
+      ((hasSum_sq_weight_mul_norm_coeff b).unique (by simp [hy]))
+    simp [ha0, hb0]
   have hle : ‖b‖ ^ 2 ≤ (C * ‖a‖) ^ 2 := by
     rw [mul_pow]
     refine hasSum_le (fun n ↦ ?_) (hasSum_sq_weight_mul_norm_coeff b)
@@ -455,7 +455,8 @@ theorem opNorm_coeffCLM_le (n : ℤ) : ‖(coeffCLM n : CircleSobolev s E →L[�
 
 /-- A sequence whose weighted norms of order `t` are bounded by a multiple of the weighted norms of
 order `s` of an element of `H^s` is the coefficient sequence of an element of `H^t`. -/
-theorem memℓp_of_forall_le {a : CircleSobolev s E} {c : ℤ → E} {C : ℝ}
+theorem memℓp_of_forall_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    {a : CircleSobolev s E} {c : ℤ → F} {C : ℝ}
     (h : ∀ n, weight t n * ‖c n‖ ≤ C * (weight s n * ‖a.coeff n‖)) :
     Memℓp (fun n ↦ weight t n • c n) 2 := by
   refine (a.memℓp_weight_smul_coeff.const_smul C).mono' fun n ↦ ?_
@@ -1055,6 +1056,105 @@ theorem isOpen_setOf_forall_toContinuousMap_pi_mem (hs : 1 / 2 < s) {ι : Type*}
 
 end Continuous
 
-end CircleSobolev
+/-! ### Complex-linear functoriality and product spaces -/
 
+section Functorial
+
+variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+private theorem weight_mul_norm_apply_le (L : E →L[ℂ] F) (a : CircleSobolev s E) (n : ℤ) :
+    weight s n * ‖L (a.coeff n)‖ ≤ ‖L‖ * (weight s n * ‖a.coeff n‖) := by
+  simpa only [mul_left_comm] using mul_le_mul_of_nonneg_left (L.le_opNorm _) (weight_nonneg s n)
+
+/-- Functorial action of a continuous complex-linear map `L : E →L[ℂ] F` on the Fourier
+coefficients of `H^s`, bundled as a continuous bilinear map. -/
+def mapCLM : (E →L[ℂ] F) →L[ℂ] CircleSobolev s E →L[ℂ] CircleSobolev s F :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℂ
+      (fun L a ↦ ⟨fun n ↦ L (a.coeff n), memℓp_of_forall_le (weight_mul_norm_apply_le L a)⟩)
+      (fun _ _ _ ↦ CircleSobolev.ext rfl) (fun _ _ _ ↦ CircleSobolev.ext rfl)
+      (fun L _ _ ↦ CircleSobolev.ext <| funext fun _ ↦ L.map_add _ _)
+      (fun c L _ ↦ CircleSobolev.ext <| funext fun _ ↦ L.map_smul c _))
+    1 fun L a ↦ by simpa using norm_le_of_forall_le (weight_mul_norm_apply_le L a)
+
+@[simp] theorem coeff_mapCLM (L : E →L[ℂ] F) (a : CircleSobolev s E) (n : ℤ) :
+    (mapCLM L a).coeff n = L (a.coeff n) := (rfl)
+
+theorem norm_mapCLM_le (L : E →L[ℂ] F) (a : CircleSobolev s E) : ‖mapCLM L a‖ ≤ ‖L‖ * ‖a‖ :=
+  norm_le_of_forall_le (weight_mul_norm_apply_le L a)
+
+@[simp] theorem mapCLM_id (a : CircleSobolev s E) : mapCLM (.id ℂ E) a = a :=
+  CircleSobolev.ext <| funext fun _ ↦ by simp
+
+@[simp] theorem mapCLM_comp (L : F →L[ℂ] G) (M : E →L[ℂ] F) (a : CircleSobolev s E) :
+    mapCLM (L.comp M) a = mapCLM L (mapCLM M a) := CircleSobolev.ext <| funext fun _ ↦ by simp
+
+@[simp] theorem mapCLM_single (L : E →L[ℂ] F) (n : ℤ) (v : E) :
+    mapCLM L (single (s := s) n v) = single n (L v) :=
+  CircleSobolev.ext <| funext fun m ↦ by rcases eq_or_ne m n with rfl | hm <;> simp [*]
+
+@[simp] theorem mapCLM_inclusion (h : t ≤ s) (L : E →L[ℂ] F) (a : CircleSobolev s E) :
+    mapCLM L (inclusion h a) = inclusion h (mapCLM L a) :=
+  CircleSobolev.ext <| funext fun _ ↦ by simp
+
+/-- On continuous representatives (`s > 1/2`), `mapCLM L` acts pointwise as `x ↦ L (a x)`. -/
+@[simp] theorem toContinuousMap_mapCLM_apply (T : ℝ) [Fact (0 < T)] [CompleteSpace E]
+    [CompleteSpace F] (hs : 1 / 2 < s) (L : E →L[ℂ] F) (a : CircleSobolev s E) (x : AddCircle T) :
+    toContinuousMap T hs (mapCLM L a) x = L (toContinuousMap T hs a x) := by
+  have h := ((hasSum_toContinuousMap T hs a).mapL (ContinuousMap.evalCLM ℂ x)).mapL L
+  simp only [ContinuousMap.evalCLM_apply, ContinuousMap.smul_apply', ContinuousMap.const_apply] at h
+  refine ((hasSum_toContinuousMap T hs (mapCLM L a)).mapL (ContinuousMap.evalCLM ℂ x)).unique ?_
+  convert h using 1; ext n; simp [ContinuousMap.smul_apply']
+
+/-- The canonical continuous linear equivalence `H^s(E × F) ≃L[ℂ] H^s(E) × H^s(F)` splitting
+Fourier coefficients componentwise. -/
+def prodEquiv : CircleSobolev s (E × F) ≃L[ℂ] CircleSobolev s E × CircleSobolev s F :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((mapCLM (.fst ℂ E F)).prod (mapCLM (.snd ℂ E F)))
+    ((mapCLM (.inl ℂ E F)).coprod (mapCLM (.inr ℂ E F)))
+    (ContinuousLinearMap.ext fun _ ↦ Prod.ext (CircleSobolev.ext <| funext fun _ ↦ by simp)
+      (CircleSobolev.ext <| funext fun _ ↦ by simp))
+    (ContinuousLinearMap.ext fun _ ↦ CircleSobolev.ext <| funext fun _ ↦ Prod.ext (by simp)
+      (by simp))
+
+@[simp] theorem coeff_prodEquiv_fst (u : CircleSobolev s (E × F)) (n : ℤ) :
+    (prodEquiv u).1.coeff n = (u.coeff n).1 := by simp [prodEquiv]
+
+@[simp] theorem coeff_prodEquiv_snd (u : CircleSobolev s (E × F)) (n : ℤ) :
+    (prodEquiv u).2.coeff n = (u.coeff n).2 := by simp [prodEquiv]
+
+@[simp] theorem coeff_prodEquiv_symm (p : CircleSobolev s E × CircleSobolev s F) (n : ℤ) :
+    (prodEquiv.symm p).coeff n = (p.1.coeff n, p.2.coeff n) := by simp [prodEquiv]
+
+@[simp] theorem prodEquiv_single (k : ℤ) (p : E × F) :
+    prodEquiv (single (s := s) k p) = (single k p.1, single k p.2) :=
+  Prod.ext (CircleSobolev.ext <| funext fun n ↦ by rcases eq_or_ne n k with rfl | hn <;> simp [*])
+    (CircleSobolev.ext <| funext fun n ↦ by rcases eq_or_ne n k with rfl | hn <;> simp [*])
+
+@[simp] theorem prodEquiv_symm_single (k : ℤ) (v : E) (w : F) :
+    prodEquiv.symm (single (s := s) k v, single (s := s) k w) = single k (v, w) :=
+  CircleSobolev.ext <| funext fun n ↦ by rcases eq_or_ne n k with rfl | hn <;> simp [*]
+
+/-- The first factor of `prodEquiv u` evaluates pointwise to the first coordinate of `u`. -/
+@[simp] theorem toContinuousMap_prodEquiv_fst (T : ℝ) [Fact (0 < T)] [CompleteSpace E]
+    [CompleteSpace F] (hs : 1 / 2 < s) (u : CircleSobolev s (E × F)) (x : AddCircle T) :
+    toContinuousMap T hs (prodEquiv u).1 x = (toContinuousMap T hs u x).1 := by simp [prodEquiv]
+
+/-- The second factor of `prodEquiv u` evaluates pointwise to the second coordinate of `u`. -/
+@[simp] theorem toContinuousMap_prodEquiv_snd (T : ℝ) [Fact (0 < T)] [CompleteSpace E]
+    [CompleteSpace F] (hs : 1 / 2 < s) (u : CircleSobolev s (E × F)) (x : AddCircle T) :
+    toContinuousMap T hs (prodEquiv u).2 x = (toContinuousMap T hs u x).2 := by simp [prodEquiv]
+
+/-- On continuous representatives (`s > 1/2`), `prodEquiv.symm (p.1, p.2)` evaluates pointwise to
+`x ↦ (p.1 x, p.2 x)`. -/
+@[simp] theorem toContinuousMap_prodEquiv_symm_apply (T : ℝ) [Fact (0 < T)] [CompleteSpace E]
+    [CompleteSpace F] (hs : 1 / 2 < s) (p : CircleSobolev s E × CircleSobolev s F)
+    (x : AddCircle T) : toContinuousMap T hs (prodEquiv.symm p) x =
+      (toContinuousMap T hs p.1 x, toContinuousMap T hs p.2 x) :=
+  Prod.ext (by simpa using (toContinuousMap_prodEquiv_fst T hs (prodEquiv.symm p) x).symm)
+    (by simpa using (toContinuousMap_prodEquiv_snd T hs (prodEquiv.symm p) x).symm)
+
+end Functorial
+end CircleSobolev
 end TauCeti

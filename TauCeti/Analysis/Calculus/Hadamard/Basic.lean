@@ -16,6 +16,7 @@ import TauCeti.MeasureTheory.Constructions.UnitInterval
 This file develops the first-order factorization of a smooth map through displacement from a
 basepoint. It is the analytic input for identifying point derivations on a finite-dimensional
 smooth manifold with tangent vectors.
+On open sets `U`, `TauCeti.segmentPreimage U` gives the open domain of the segment factorization.
 
 The factor `hadamardFactor f x y`, the averaged derivative of `f` along the segment from `x` to
 `y`, depends smoothly on `x` and `y` jointly. Since `hadamardFactor f x x` is the derivative of `f`
@@ -145,21 +146,70 @@ theorem ContDiff.contDiff_hadamardFactor_of_succ
   have hd : ContDiff ℝ n (fderiv ℝ f) := hf.fderiv_right (m := n) (by norm_num)
   exact (hd.contDiff_segmentAverage intervalIntegrable_const x).comp (by fun_prop)
 
+namespace TauCeti
+
+/-- Pairs `(x, y) ∈ E × E` whose closed line segment `[x, y]` lies inside `U`. -/
+def segmentPreimage (U : Set E) : Set (E × E) :=
+  {p : E × E | ∀ τ : unitInterval, p.1 + (τ : ℝ) • (p.2 - p.1) ∈ U}
+
+/-- Membership in `segmentPreimage U` means every point of the closed segment lies in `U`. -/
+@[simp] theorem mem_segmentPreimage_iff {U : Set E} {p : E × E} :
+    p ∈ segmentPreimage U ↔ ∀ τ : unitInterval, p.1 + (τ : ℝ) • (p.2 - p.1) ∈ U := Iff.rfl
+
+/-- The left endpoint of a pair in `segmentPreimage U` belongs to `U`. -/
+theorem fst_mem_of_mem_segmentPreimage {U : Set E} {p : E × E} (hp : p ∈ segmentPreimage U) :
+    p.1 ∈ U := by simpa using hp ⟨0, unitInterval.zero_mem⟩
+
+/-- The right endpoint of a pair in `segmentPreimage U` belongs to `U`. -/
+theorem snd_mem_of_mem_segmentPreimage {U : Set E} {p : E × E} (hp : p ∈ segmentPreimage U) :
+    p.2 ∈ U := by simpa using hp ⟨1, unitInterval.one_mem⟩
+
+/-- Every diagonal pair `(x, x)` with `x ∈ U` belongs to `segmentPreimage U`. -/
+theorem mem_segmentPreimage_diag {U : Set E} {x : E} (hx : x ∈ U) :
+    (x, x) ∈ segmentPreimage U := fun _ ↦ by simpa using hx
+
+/-- If `U` is open, then `segmentPreimage U` is open in `E × E` by compactness of `[0, 1]`. -/
+theorem isOpen_segmentPreimage {U : Set E} (hU : IsOpen U) : IsOpen (segmentPreimage U) :=
+  isOpen_forall_prodMk_mem continuous_subtypeVal
+    (hU.preimage (by fun_prop : Continuous fun q : (E × E) × ℝ ↦ q.1.1 + q.2 • (q.1.2 - q.1.1)))
+
+/-- If `f` is `C^{m + 1}` on an open set `U`, its uncurried Hadamard factor is `C^m` on
+`segmentPreimage U`. -/
+theorem contDiffOn_uncurry_hadamardFactor {U : Set E} (hU : IsOpen U) {m : ℕ∞} {f : E → F}
+    (hf : ContDiffOn ℝ (m + 1) f U) :
+    ContDiffOn ℝ m (Function.uncurry (hadamardFactor f)) (segmentPreimage U) := by
+  have hseg : ContDiff ℝ m (fun q : (E × E) × ℝ ↦ q.1.1 + q.2 • (q.1.2 - q.1.1)) := by fun_prop
+  refine (contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure unitInterval))
+    (U := segmentPreimage U) (integrable_const (1 : ℝ)) continuous_subtypeVal
+    (hU.preimage hseg.continuous)
+    ((hf.fderiv_of_isOpen hU (m := (m : ℕ∞ω)) (by norm_cast)).comp hseg.contDiffOn fun _ h ↦ h)
+    fun p hp τ ↦ hp τ).congr fun ⟨x, y⟩ _ ↦ by
+      rw [Function.uncurry_apply_pair, hadamardFactor, segmentAverage,
+        intervalIntegral_eq_integral_unitInterval]; rfl
+
+/-- First-order Taylor factorization along `[p.1, p.2] ⊆ U` for `f` of class `C^1` on open `U`. -/
+theorem sub_eq_hadamardFactor_apply_of_contDiffOn [CompleteSpace F] {U : Set E} (hU : IsOpen U)
+    {f : E → F} (hf : ContDiffOn ℝ 1 f U) {p : E × E} (hp : p ∈ segmentPreimage U) :
+    f p.2 - f p.1 = hadamardFactor f p.1 p.2 (p.2 - p.1) := by
+  have hInt : IntervalIntegrable (fun t : ℝ ↦ fderiv ℝ f (p.1 + t • (p.2 - p.1))) volume 0 1 :=
+    (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).2
+      (((hf.continuousOn_fderiv_of_isOpen hU le_rfl).comp
+        (by fun_prop : Continuous fun t : ℝ ↦ p.1 + t • (p.2 - p.1)).continuousOn
+        fun t ht ↦ hp ⟨t, ht⟩).integrableOn_Icc)
+  rw [hadamardFactor, segmentAverage]
+  simp only [one_smul, ContinuousLinearMap.intervalIntegral_apply hInt (p.2 - p.1)]
+  simpa [sub_eq_iff_eq_add, add_comm] using map_add_eq_sum_add_integral_iteratedFDeriv (n := 0)
+    (f := f) (x := p.1) (y := p.2 - p.1) fun τ hτ ↦ hf.contDiffAt (hU.mem_nhds (hp ⟨τ, hτ⟩))
+
+end TauCeti
+
 /-- First-order Taylor expansion along a segment, with its coefficient bundled as a continuous
 linear map. -/
 theorem ContDiff.sub_eq_hadamardFactor_apply [CompleteSpace F]
     (f : E → F) (hf : ContDiff ℝ 1 f) (x y : E) :
-    f y - f x = hadamardFactor f x y (y - x) := by
-  have hTaylor := map_add_eq_sum_add_integral_iteratedFDeriv (n := 0) (x := x) (y := y - x)
-    (fun _ _ ↦ hf.contDiffAt)
-  have hIntegrable : IntervalIntegrable (fun t : ℝ ↦ fderiv ℝ f (x + t • (y - x)))
-      volume 0 1 := by
-    apply Continuous.intervalIntegrable
-    exact (hf.fderiv_right (m := 0) (by norm_num)).continuous.comp (by fun_prop)
-  rw [hadamardFactor, segmentAverage]
-  simp only [one_smul]
-  rw [ContinuousLinearMap.intervalIntegral_apply hIntegrable (y - x)]
-  simpa [sub_eq_iff_eq_add, add_comm] using hTaylor
+    f y - f x = hadamardFactor f x y (y - x) :=
+  TauCeti.sub_eq_hadamardFactor_apply_of_contDiffOn isOpen_univ hf.contDiffOn (p := (x, y))
+    fun _ ↦ Set.mem_univ _
 
 /-- For a smooth function, the averaged derivative in Hadamard's factorization depends smoothly on
 the endpoint. -/

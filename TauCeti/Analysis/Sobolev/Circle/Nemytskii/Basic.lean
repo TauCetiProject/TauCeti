@@ -41,12 +41,13 @@ series expansion of the Nemytskii map around `p`.
 
 ## Main definitions
 
+* `TauCeti.CircleSobolev.nemytskii F u`: for `F : E → E'` between complete complex normed spaces,
+  the element of `H^s(E')` whose continuous representative is `F ∘ u`, when there is one (and `0`
+  otherwise).
 * `TauCeti.CircleSobolev.nemytskiiPi F u`: for `F : (Fin n → ℂ) → ℂ` and `u : Fin n → H^s`, the
   element of `H^s` whose continuous representative is `x ↦ F (fun i ↦ u i x)`, when there is one
-  (and `0` otherwise).
-* `TauCeti.CircleSobolev.nemytskii F u`: for `F : ℂ → ℂ` and `u ∈ H^s`, the element of `H^s` whose
-  continuous representative is `F ∘ u`, when there is one (and `0` otherwise). It is the Nemytskii
-  map of one variable (`TauCeti.CircleSobolev.nemytskii_eq_nemytskiiPi`).
+  (and `0` otherwise). On `ℂ → ℂ`, `nemytskii` agrees with the one-variable `nemytskiiPi`
+  (`TauCeti.CircleSobolev.nemytskii_eq_nemytskiiPi`).
 
 ## Main statements
 
@@ -234,6 +235,78 @@ private theorem exists_toContinuousMap_eq_comp_sum_single (hs : 1 / 2 < s) (S : 
 
 variable [hs : Fact (1 / 2 < s)]
 
+section General
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+  [NormedAddCommGroup E'] [NormedSpace ℂ E'] [CompleteSpace E']
+
+open Classical in
+/-- The **Nemytskii map** of `F : E → E'` on `H^s`, `s > 1/2`: it sends `u ∈ H^s(E)` to the
+element of `H^s(E')` whose continuous representative is `F ∘ u`, if there is one, and to `0`
+otherwise. The composition is tested on the circle `AddCircle 1`; it does not depend on the length
+of the circle (`nemytskii_eq_of_forall_toContinuousMap_apply`). For `F : ℂ → ℂ` holomorphic on an
+open set containing the values of `u`, `F ∘ u` lies in `H^s` (`toContinuousMap_nemytskii`). -/
+def nemytskii (F : E → E') (u : CircleSobolev s E) : CircleSobolev s E' :=
+  haveI : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  if h : ∃ w : CircleSobolev s E', ∀ x : AddCircle (1 : ℝ),
+      toContinuousMap 1 hs.out w x = F (toContinuousMap 1 hs.out u x) then h.choose else 0
+
+/-- The Nemytskii map is determined by continuous representatives: if the continuous
+representative of `w ∈ H^s(E')` is `F ∘ u` on some circle, then `nemytskii F u = w`. -/
+theorem nemytskii_eq_of_forall_toContinuousMap_apply {F : E → E'} {u : CircleSobolev s E}
+    {w : CircleSobolev s E'}
+    (h : ∀ x, toContinuousMap T hs.out w x = F (toContinuousMap T hs.out u x)) :
+    nemytskii F u = w := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  have h1 (x : AddCircle (1 : ℝ)) :
+      toContinuousMap 1 hs.out w x = F (toContinuousMap 1 hs.out u x) := by
+    obtain ⟨y, rfl⟩ := (AddCircle.equivAddCircle T 1 hT.out.ne' one_ne_zero).surjective x
+    simpa only [toContinuousMap_equivAddCircle] using h y
+  have hex : ∃ w' : CircleSobolev s E', ∀ x : AddCircle (1 : ℝ),
+      toContinuousMap 1 hs.out w' x = F (toContinuousMap 1 hs.out u x) := ⟨w, h1⟩
+  rw [nemytskii, dite_eq_left hex]
+  exact toContinuousMap_injective 1 hs.out
+    (ContinuousMap.ext fun x ↦ (hex.choose_spec x).trans (h1 x).symm)
+
+open Classical in
+/-- `nemytskii F u` depends on `F` only through its values along the continuous representative of
+`u`. -/
+theorem nemytskii_congr {F₁ F₂ : E → E'} {u : CircleSobolev s E}
+    (h : ∀ x, F₁ (toContinuousMap T hs.out u x) = F₂ (toContinuousMap T hs.out u x)) :
+    nemytskii F₁ u = nemytskii F₂ u := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  have h1 : (fun y : AddCircle 1 ↦ F₁ (toContinuousMap 1 hs.out u y)) =
+      fun y ↦ F₂ (toContinuousMap 1 hs.out u y) := funext fun y ↦ by
+    obtain ⟨x, rfl⟩ := (AddCircle.equivAddCircle T 1 hT.out.ne' one_ne_zero).surjective y
+    simpa only [toContinuousMap_equivAddCircle] using h x
+  exact congrArg (fun g : AddCircle 1 → E' ↦
+    if h : ∃ w : CircleSobolev s E', ∀ y, toContinuousMap 1 hs.out w y = g y then h.choose else 0)
+    h1
+
+/-- The Nemytskii map of a constant function `x ↦ c` sends every `u` to `single 0 c`. -/
+@[simp] theorem nemytskii_const (c : E') (u : CircleSobolev s E) :
+    nemytskii (fun _ : E ↦ c) u = single 0 c :=
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  nemytskii_eq_of_forall_toContinuousMap_apply 1 fun _ ↦ by simp
+
+/-- The Nemytskii map of any `F` sends the constant function `single 0 v` to `single 0 (F v)`. -/
+@[simp] theorem nemytskii_single_zero (F : E → E') (v : E) :
+    nemytskii F (single (s := s) 0 v) = single 0 (F v) :=
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  nemytskii_eq_of_forall_toContinuousMap_apply 1 fun _ ↦ by simp
+
+/-- The Nemytskii map of any `F` sends the zero function to the constant function `F 0`. -/
+@[simp] theorem nemytskii_zero (F : E → E') :
+    nemytskii F (0 : CircleSobolev s E) = single 0 (F 0) := by
+  simpa using nemytskii_single_zero (s := s) F 0
+
+/-- The Nemytskii map of the identity is the identity. -/
+@[simp] theorem nemytskii_id (u : CircleSobolev s E) : nemytskii (id : E → E) u = u :=
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  nemytskii_eq_of_forall_toContinuousMap_apply 1 fun _ ↦ rfl
+
+end General
+
 open Classical in
 /-- The **Nemytskii map** of `F : (Fin n → ℂ) → ℂ` on families of elements of `H^s`, `s > 1/2`: it
 sends `u` to the element of `H^s` whose continuous representative is
@@ -246,14 +319,6 @@ def nemytskiiPi (F : (Fin n → ℂ) → ℂ) (u : Fin n → CircleSobolev s ℂ
   if h : ∃ w : CircleSobolev s ℂ, ∀ x : AddCircle (1 : ℝ),
       toContinuousMap 1 hs.out w x = F (fun i ↦ toContinuousMap 1 hs.out (u i) x) then h.choose
   else 0
-
-/-- The **Nemytskii map** of `F : ℂ → ℂ` on `H^s`, `s > 1/2`: the Nemytskii map of one variable.
-It sends `u` to the element of `H^s` whose continuous representative is `F ∘ u`, if there is one,
-and to `0` otherwise (`nemytskii_eq_of_forall_toContinuousMap_apply`). For `F` holomorphic on an
-open set containing the values of `u`, the composition `F ∘ u` always lies in `H^s`
-(`toContinuousMap_nemytskii`). -/
-def nemytskii (F : ℂ → ℂ) (u : CircleSobolev s ℂ) : CircleSobolev s ℂ :=
-  nemytskiiPi (fun z : Fin 1 → ℂ ↦ F (z 0)) fun _ ↦ u
 
 /-- The scalar Nemytskii map is the Nemytskii map of one variable. -/
 theorem nemytskii_eq_nemytskiiPi (F : ℂ → ℂ) (u : CircleSobolev s ℂ) :
@@ -284,15 +349,6 @@ theorem nemytskiiPi_eq_of_forall_toContinuousMap_apply {F : (Fin n → ℂ) → 
   rw [nemytskiiPi, dite_eq_left hex]
   exact toContinuousMap_injective 1 hs.out
     (ContinuousMap.ext fun x ↦ (hex.choose_spec x).trans (h1 x).symm)
-
-/-- The Nemytskii map is determined by continuous representatives: if the continuous
-representative of `w ∈ H^s` is `F ∘ u` on some circle, then `nemytskii F u = w`. -/
-theorem nemytskii_eq_of_forall_toContinuousMap_apply {F : ℂ → ℂ} {u w : CircleSobolev s ℂ}
-    (h : ∀ x, toContinuousMap T hs.out w x = F (toContinuousMap T hs.out u x)) :
-    nemytskii F u = w :=
-  (nemytskii_eq_nemytskiiPi F u).trans
-    (nemytskiiPi_eq_of_forall_toContinuousMap_apply T (F := fun z : Fin 1 → ℂ ↦ F (z 0))
-      (u := fun _ ↦ u) h)
 
 /-- **Taylor coefficients around a family of trigonometric polynomials.** Let `F` be holomorphic on
 `U` and bounded by `M` on the closed `3ε`-neighbourhood of a set `R`, contained in `U`, and let `p`
@@ -722,12 +778,6 @@ theorem analyticAt_nemytskii {F : ℂ → ℂ} (hF : Differentiable ℂ F) (u : 
     AnalyticAt ℂ (nemytskii F) u := by
   have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
   exact analyticOnNhd_nemytskii 1 isOpen_univ hF.differentiableOn u fun _ ↦ Set.mem_univ _
-
-/-- The Nemytskii map of any `F` sends the zero function to the constant function `F 0`. -/
-@[simp]
-theorem nemytskii_zero (F : ℂ → ℂ) : nemytskii F (0 : CircleSobolev s ℂ) = single 0 (F 0) := by
-  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
-  exact nemytskii_eq_of_forall_toContinuousMap_apply 1 fun x ↦ by simp
 
 /-- **The derivative of the holomorphic Nemytskii map.** If `F` is holomorphic on an open set `U`
 and `u ∈ H^s` takes values in `U`, then the derivative of `nemytskii F` at `u` is multiplication by
