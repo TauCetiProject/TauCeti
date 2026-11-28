@@ -12,10 +12,11 @@ public import TauCeti.FieldTheory.RatFunc.Map
 public import TauCeti.FieldTheory.RatFunc.NumDenom
 -- Proof-only: `isIntegrallyClosedIn_ratFunc` shows `F(X)`-automorphisms of `K(X)` preserve `K`,
 -- `ConstantExtension.Algebraic` supplies `isAlgebraic_of_constantCompositum_eq_top` and
--- `isSeparable_of_constantCompositum_eq_top`, and `ConstantExtension.RatFunc` supplies
+-- `isSeparable_of_constantCompositum_eq_top`, and `ConstantExtension.Basic` supplies
 -- `constantCompositum_ratFunc_eq_top`.
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
+import TauCeti.FieldTheory.KrullTopology
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -295,27 +296,22 @@ theorem continuous_mapAlgEquivHom : Continuous (mapAlgEquivHom hX) := by
     (b i : RatFunc K).num.coeffs ∪ (b i : RatFunc K).denom.coeffs
   let E₀ := IntermediateField.adjoin F (S : Set K)
   refine ⟨E₀, inferInstance, fun σ hσ ↦ hEU ?_⟩
-  rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hσ ⊢
+  rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hσ
   have hmap {p : K[X]} (hp : (p.coeffs : Set K) ⊆ E₀) : p.map (σ.toRingEquiv : K →+* K) = p := by
     ext m
     rw [Polynomial.coeff_map]
     exact (eq_or_ne (p.coeff m) 0).elim (fun hm ↦ by rw [hm, map_zero]) fun hm ↦
       hσ _ (hp (Polynomial.coeff_mem_coeffs hm))
-  have hbi (i) : mapAlgEquivHom hX σ (b i : RatFunc K) = b i := by
-    have hsub {p : K[X]} (hp : p.coeffs ⊆ S) : (p.coeffs : Set K) ⊆ E₀ :=
-      fun _ hc ↦ IntermediateField.subset_adjoin F (S : Set K) (Finset.mem_coe.mpr (hp hc))
-    have hnum := hmap (p := (b i : RatFunc K).num) <| hsub fun _ hc ↦
-      Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, Finset.mem_union_left _ hc⟩
-    have hden := hmap (p := (b i : RatFunc K).denom) <| hsub fun _ hc ↦
-      Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, Finset.mem_union_right _ hc⟩
-    conv_lhs => rw [← num_div_denom (b i : RatFunc K)]
-    rw [mapAlgEquivHom_apply, coe_mapAlgEquiv, map_div₀, mapRingEquiv_algebraMap,
-      mapRingEquiv_algebraMap, hnum, hden, num_div_denom]
-  intro y hy
-  have hy' := congrArg Subtype.val (b.sum_repr ⟨y, hy⟩).symm
-  push_cast at hy'
-  rw [hy', map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, hbi]
+  refine IntermediateField.mem_fixingSubgroup_of_basis b fun i ↦ ?_
+  have hsub {p : K[X]} (hp : p.coeffs ⊆ S) : (p.coeffs : Set K) ⊆ E₀ :=
+    fun _ hc ↦ IntermediateField.subset_adjoin F (S : Set K) (Finset.mem_coe.mpr (hp hc))
+  have hnum := hmap (p := (b i : RatFunc K).num) <| hsub fun _ hc ↦
+    Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, Finset.mem_union_left _ hc⟩
+  have hden := hmap (p := (b i : RatFunc K).denom) <| hsub fun _ hc ↦
+    Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, Finset.mem_union_right _ hc⟩
+  conv_lhs => rw [← num_div_denom (b i : RatFunc K)]
+  rw [mapAlgEquivHom_apply, coe_mapAlgEquiv, map_div₀, mapRingEquiv_algebraMap,
+    mapRingEquiv_algebraMap, hnum, hden, num_div_denom]
 
 private theorem continuous_mapAlgEquivMulEquiv_symm :
     Continuous (mapAlgEquivMulEquiv hX).symm := by
@@ -329,17 +325,13 @@ private theorem continuous_mapAlgEquivMulEquiv_symm :
   let E := IntermediateField.adjoin (RatFunc F) (Set.range fun i ↦ algebraMap K (RatFunc K) (b₀ i))
   refine ⟨E, inferInstance, fun ψ hψ ↦ hE₀U ?_⟩
   rw [MulEquiv.coe_toMonoidHom]
-  rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hψ ⊢
+  rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hψ
   set σ := (mapAlgEquivMulEquiv hX).symm ψ
   have hψσ : mapAlgEquivHom hX σ = ψ := (mapAlgEquivMulEquiv hX).apply_symm_apply ψ
-  have hbi (i) : σ (b₀ i : K) = b₀ i := (algebraMap K (RatFunc K)).injective <| by
-    rw [← mapAlgEquiv_algebraMap_const hX, ← mapAlgEquivHom_apply, hψσ]
-    exact hψ _ (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)
-  intro c hc
-  have hc' := congrArg Subtype.val (b₀.sum_repr ⟨c, hc⟩).symm
-  push_cast at hc'
-  rw [hc', map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, hbi]
+  refine IntermediateField.mem_fixingSubgroup_of_basis b₀ fun i ↦
+    (algebraMap K (RatFunc K)).injective ?_
+  rw [← mapAlgEquiv_algebraMap_const hX, ← mapAlgEquivHom_apply, hψσ]
+  exact hψ _ (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)
 
 /-- **Galois group of a rational function field over an algebraic extension of constants**: for
 algebraic `K / F` and any `F`-algebra map `F(X) → K(X)` fixing `X`, coefficientwise action is a

@@ -45,11 +45,6 @@ covering an algebraic closure; that identification is also one of abstract group
   `Gal(E/F) ⧸ M.fixingSubgroup ≃ₜ* Gal(M/F)`, for `E/F` and `M/F` normal.
 * `TauCeti.isOpenMap_restrictNormalHom`, `TauCeti.isQuotientMap_restrictNormalHom`: restriction
   `Gal(E/F) → Gal(M/F)` is an open quotient map.
-* `AlgHom.continuous_restrictNormalHom`, `AlgEquiv.continuous_restrictNormalHom`: Krull continuity
-  of Galois restriction along an `F`-embedding `f : M →ₐ[F] K` or scalar tower `F → M → K` of a
-  normal extension `M/F`, without normality of `K/F`.
-* `AlgHom.isOpen_ker_restrictNormalHom`: openness of `f.restrictNormalHom.ker` when `M/F` is finite
-  and normal.
 * `AlgHom.quotientKerRestrictNormalHomEquiv`: the isomorphism of topological groups
   `Gal(E/F) ⧸ f.restrictNormalHom.ker ≃ₜ* Gal(M/F)` along `f : M →ₐ[F] E`.
 -/
@@ -133,29 +128,6 @@ section RestrictAlong
 
 variable {F K M : Type*} [Field F] [Field K] [Field M] [Algebra F K] [Algebra F M] [Normal F M]
 
-/-- **Restriction along an embedding of a normal extension is continuous** for the Krull
-topologies, with no normality assumption on `K/F` or finiteness assumption on `M/F`. -/
-theorem _root_.AlgHom.continuous_restrictNormalHom (f : M →ₐ[F] K) :
-    Continuous f.restrictNormalHom :=
-  (f.equivFieldRange.symm.continuous_autCongr.comp
-    (InfiniteGalois.restrictNormalHom_continuous f.fieldRange)).congr
-    f.restrictNormalHom_eq_autCongr
-
-/-- **Restriction to a normal intermediate field in a scalar tower is continuous** for the Krull
-topologies, with no normality assumption on the top field `K/F`. -/
-theorem _root_.AlgEquiv.continuous_restrictNormalHom (M : Type*) [Field M] [Algebra F M]
-    [Algebra M K] [IsScalarTower F M K] [Normal F M] :
-    Continuous (AlgEquiv.restrictNormalHom (F := F) (K₁ := K) M) := by
-  rw [← AlgHom.restrictNormalHom_toAlgHom]
-  exact (IsScalarTower.toAlgHom F M K).continuous_restrictNormalHom
-
-/-- **The kernel of restriction to a finite normal extension is open** in the Krull topology. -/
-theorem _root_.AlgHom.isOpen_ker_restrictNormalHom (f : M →ₐ[F] K) [FiniteDimensional F M] :
-    IsOpen (f.restrictNormalHom.ker : Set Gal(K/F)) := by
-  have : FiniteDimensional F f.fieldRange := f.equivFieldRange.toLinearEquiv.finiteDimensional
-  rw [f.ker_restrictNormalHom]
-  exact f.fieldRange.fixingSubgroup_isOpen
-
 /-- **The Galois group of an embedded normal extension is the topological quotient by the
 restriction kernel**: `Gal(K/F) ⧸ f.restrictNormalHom.ker ≃ₜ* Gal(M/F)` for `K/F` and `M/F`
 normal. -/
@@ -174,7 +146,7 @@ theorem _root_.AlgHom.quotientKerRestrictNormalHomEquiv_mk (f : M →ₐ[F] K) [
   rw [AlgHom.quotientKerRestrictNormalHomEquiv, ContinuousMulEquiv.trans_apply,
     ContinuousMulEquiv.trans_apply, Subgroup.quotientContinuousMulEquivOfEq_mk,
     quotientFixingSubgroupEquiv_mk, AlgEquiv.autCongrContinuousMulEquiv_apply]
-  exact f.restrictNormalHom_eq_autCongr σ
+  exact (f.restrictNormalHom_eq_autCongr σ).symm
 
 /-- The inverse of `quotientKerRestrictNormalHomEquiv` sends `f.restrictNormalHom σ` back to the
 class of `σ`. -/

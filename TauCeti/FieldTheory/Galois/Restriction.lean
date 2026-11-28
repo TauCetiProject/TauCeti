@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+public import TauCeti.FieldTheory.KrullTopology
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.FieldTheory.Galois.Profinite
 import TauCeti.FieldTheory.Galois.FixedField
-import TauCeti.FieldTheory.KrullTopology
 import TauCeti.GroupTheory.Index.Basic
 
 /-!
@@ -46,6 +47,9 @@ restriction, and conjugation transport properties.
   restriction is surjective, and its kernel is the subgroup fixing the image of `f`.
 * `AlgHom.restrictNormalHom_eq_autCongr`: restriction along `f` is restriction to `f.fieldRange`
   conjugated by `f.equivFieldRange.symm`.
+* `AlgHom.continuous_restrictNormalHom`, `AlgEquiv.continuous_restrictNormalHom`, and
+  `AlgHom.isOpen_ker_restrictNormalHom`: Krull continuity of restriction and openness of its kernel
+  for a finite normal subextension.
 * `IntermediateField.fixingSubgroup_normal`: the fixing subgroup of a normal intermediate field is
   a normal subgroup.
 * `AlgHom.normal_fieldRange`: the image of a normal extension is normal.
@@ -139,14 +143,37 @@ theorem _root_.AlgHom.ker_restrictNormalHom (f : M →ₐ[F] K) [Normal F M] :
 along `f : M →ₐ[F] K` is restricting `σ` to `f.fieldRange` conjugated by
 `f.equivFieldRange.symm`. -/
 theorem _root_.AlgHom.restrictNormalHom_eq_autCongr (f : M →ₐ[F] K) [Normal F M] (σ : Gal(K/F)) :
-    f.equivFieldRange.symm.autCongr (AlgEquiv.restrictNormalHom f.fieldRange σ) =
-      f.restrictNormalHom σ := by
-  symm
+    f.restrictNormalHom σ =
+      f.equivFieldRange.symm.autCongr (AlgEquiv.restrictNormalHom f.fieldRange σ) := by
   refine f.restrictNormalHom_eq_iff.2 fun x ↦ ?_
   simp only [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm]
   symm
   rw [← AlgHom.equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply,
     AlgEquiv.restrictNormalHom_apply, ← AlgHom.equivFieldRange_apply_coe]
+
+/-- **Restriction along an embedding of a normal extension is continuous** for the Krull
+topologies, with no normality assumption on `K/F` or finiteness assumption on `M/F`. -/
+theorem _root_.AlgHom.continuous_restrictNormalHom (f : M →ₐ[F] K) [Normal F M] :
+    Continuous f.restrictNormalHom :=
+  (f.equivFieldRange.symm.continuous_autCongr.comp
+    (InfiniteGalois.restrictNormalHom_continuous f.fieldRange)).congr
+    fun σ ↦ (f.restrictNormalHom_eq_autCongr σ).symm
+
+/-- **Restriction to a normal intermediate field in a scalar tower is continuous** for the Krull
+topologies, with no normality assumption on the top field `K/F`. -/
+theorem _root_.AlgEquiv.continuous_restrictNormalHom (M : Type*) [Field M] [Algebra F M]
+    [Algebra M K] [IsScalarTower F M K] [Normal F M] :
+    Continuous (AlgEquiv.restrictNormalHom (F := F) (K₁ := K) M) := by
+  rw [← AlgHom.restrictNormalHom_toAlgHom]
+  exact (IsScalarTower.toAlgHom F M K).continuous_restrictNormalHom
+
+/-- **The kernel of restriction to a finite normal extension is open** in the Krull topology. -/
+theorem _root_.AlgHom.isOpen_ker_restrictNormalHom (f : M →ₐ[F] K) [Normal F M]
+    [FiniteDimensional F M] :
+    IsOpen (f.restrictNormalHom.ker : Set Gal(K/F)) := by
+  have : FiniteDimensional F f.fieldRange := f.equivFieldRange.toLinearEquiv.finiteDimensional
+  rw [f.ker_restrictNormalHom]
+  exact f.fieldRange.fixingSubgroup_isOpen
 
 /-- **The fixing subgroup of a normal intermediate field is normal**, being the kernel of
 restriction. Neither separability nor normality of the ambient extension `K/F` is used. -/

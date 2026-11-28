@@ -58,8 +58,9 @@ ramification index `n / gcd(n, a)` over `0`, `n / gcd(n, b)` over `1` and `n / g
   `y ^ n = c t ^ a (t - 1) ^ b`.
 * `TauCeti.isAlgebraicBelyiPair_adjoin_of_pow_eq` and
   `TauCeti.isAlgebraicBelyiPair_adjoin_of_pow_eq_X_zpow_mul_X_sub_one_zpow`: adjoining an `n`-th
-  root over an algebraically closed constant field `k` yields an algebraic Belyi pair with no
-  coprimality hypothesis.
+  root (`n ≠ 0`) over an algebraically closed constant field `k` yields an algebraic Belyi pair
+  (with no coprimality hypothesis) whenever `n ∣ P.ord u` at every unmarked place `P`, and in
+  particular for the marked-point monomial `u = c t ^ a (t - 1) ^ b` (`c ≠ 0`).
 * `TauCeti.isAlgebraicBelyiPair_adjoinRoot_X_pow_sub_C_X`: the power map is a Belyi pair.
 
 ## References

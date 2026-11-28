@@ -195,6 +195,16 @@ theorem AlgEquiv.autCongrContinuousMulEquiv_symm {L' : Type*} [Field L'] [Algebr
     (e : L ≃ₐ[K] L') : e.autCongrContinuousMulEquiv.symm = e.symm.autCongrContinuousMulEquiv :=
   (rfl)
 
+/-- An automorphism fixing every element of a basis of `E` fixes `E` pointwise. -/
+theorem IntermediateField.mem_fixingSubgroup_of_basis {E : IntermediateField K L}
+    {ι : Type*} (b : Module.Basis ι K E) {σ : Gal(L/K)}
+    (hσ : ∀ i, σ (b i : L) = b i) : σ ∈ E.fixingSubgroup := by
+  rw [IntermediateField.mem_fixingSubgroup_iff]
+  intro x hx
+  have hlin : (σ.toLinearMap.comp E.val.toLinearMap : E →ₗ[K] L) = E.val.toLinearMap :=
+    b.ext fun i ↦ by simpa using hσ i
+  exact congrArg (· ⟨x, hx⟩) hlin
+
 section RestrictScalars
 
 variable {F : Type*} [Field F] [Algebra F K] [Algebra F L] [IsScalarTower F K L]
@@ -212,16 +222,11 @@ theorem AlgEquiv.continuous_restrictScalarsHom :
   have : FiniteDimensional K E' := IntermediateField.finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦
     hi ▸ ((Algebra.IsIntegral.isIntegral (R := F) (b i)).map E.val).tower_top
   refine Filter.mem_map.2 <| (krullTopology_mem_nhds_one_iff K L _).2
-    ⟨E', inferInstance, fun τ hτ ↦ hEU <| (IntermediateField.mem_fixingSubgroup_iff E _).2
-      fun x hx ↦ ?_⟩
-  have hx' : x = ∑ i, b.repr ⟨x, hx⟩ i • (b i : L) := by
-    simpa only [map_sum, map_smul, IntermediateField.coe_val] using
-      congrArg E.val (b.sum_repr ⟨x, hx⟩).symm
-  rw [AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_apply, hx', map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [← AlgEquiv.restrictScalars_apply F, map_smul, AlgEquiv.restrictScalars_apply,
-      (IntermediateField.mem_fixingSubgroup_iff E' τ).mp hτ _
-        (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)]
+    ⟨E', inferInstance, fun τ hτ ↦ hEU <|
+      IntermediateField.mem_fixingSubgroup_of_basis b fun i ↦ ?_⟩
+  rw [AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_apply]
+  exact (IntermediateField.mem_fixingSubgroup_iff E' τ).mp hτ _
+    (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)
 
 /-- **Pointwise characterization of the image of restriction of scalars**: an `F`-automorphism of
 `L` lies in the image of `Gal(L/K)` under `AlgEquiv.restrictScalarsHom F` iff it fixes the image
@@ -271,16 +276,11 @@ private theorem continuous_restrictScalarsHomRangeMulEquiv_symm :
   refine Filter.mem_map.2 <| Filter.mem_of_superset
     (continuous_subtypeVal.continuousAt (E₀.fixingSubgroup_isOpen.mem_nhds (one_mem _)))
     fun σ hσ ↦ hEU ?_
-  rw [MulEquiv.coe_toMonoidHom, SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff]
-  intro x hx
-  have hx' : x = ∑ i, b.repr ⟨x, hx⟩ i • (b i : L) := by
-    simpa only [map_sum, map_smul, IntermediateField.coe_val] using
-      congrArg E.val (b.sum_repr ⟨x, hx⟩).symm
-  rw [hx', map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [map_smul, restrictScalarsHomRangeMulEquiv_symm_apply_apply,
-      (IntermediateField.mem_fixingSubgroup_iff E₀ _).mp hσ _
-        (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)]
+  rw [MulEquiv.coe_toMonoidHom, SetLike.mem_coe]
+  refine IntermediateField.mem_fixingSubgroup_of_basis b fun i ↦ ?_
+  rw [restrictScalarsHomRangeMulEquiv_symm_apply_apply]
+  exact (IntermediateField.mem_fixingSubgroup_iff E₀ _).mp hσ _
+    (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)
 
 /-- **Restriction of scalars embeds `Gal(L/K)` as a topological subgroup of `Gal(L/F)`** when `K/F`
 is algebraic, with no normality or algebraicity assumption on `L/K`. -/

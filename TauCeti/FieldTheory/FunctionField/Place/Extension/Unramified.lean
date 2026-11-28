@@ -12,7 +12,7 @@ import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 /-!
-# Unramified places in composita and Galois closures
+# Unramified places in composita and normal closures
 
 A place `P` of `F / k` is **unramified** in an algebraic extension `F' / k'` when some place of
 `F'` lies above it and every place `P'` of `F'` above it has ramification index
@@ -30,11 +30,12 @@ Corollary 3.9.3, for arbitrary residue fields. The fixing subgroup of a composit
 intersection of the fixing subgroups, so a place is unramified in `E₁ E₂` exactly when it is
 unramified in `E₁` and in `E₂`. The Galois group permutes the places above `P` and carries their
 inertia fields along (`TauCeti.Place.inertiaField_smul`), so a place unramified in `E` is
-unramified in every conjugate of `E`, hence in the Galois closure of `E`, which those conjugates
-generate. Every finite separable extension of `F` embeds into a finite Galois one, and
-unramifiedness is invariant under isomorphism over `F`
-(`TauCeti.Place.isUnramified_iff_of_algEquiv`), so these statements cover the composita and
-Galois closures of finite separable extensions. This transport through a finite Galois overfield
+unramified in every conjugate of `E`, hence in the normal closure of `E` inside `M` (the Galois
+closure when `M / F` contains all conjugates), which those conjugates generate. Every finite
+separable extension of `F` embeds into a finite Galois one, and unramifiedness is invariant under
+isomorphism over `F` (`TauCeti.Place.isUnramified_iff_of_algEquiv`), so these statements cover
+the composita and normal closures inside `M` (and Galois closures when `M` contains all
+conjugates) of finite separable extensions. This transport through a finite Galois overfield
 follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
 `TauCeti/FieldTheory/FunctionField/Place/Extension/Splitting/Compositum.lean`.
 
@@ -73,8 +74,9 @@ unramified in it; for finite maps of curves `f : X → Y` and `g : Y → Z` the 
 * `TauCeti.Place.isUnramified_sup_iff` and `TauCeti.Place.isUnramified_iSup_iff`: **a place is
   unramified in a finite compositum of finite separable extensions exactly when it is unramified
   in each constituent**.
-* `TauCeti.Place.isUnramified_normalClosure_iff`: **a place is unramified in the Galois closure
-  of a finite separable intermediate field `E` exactly when it is unramified in `E`**.
+* `TauCeti.Place.isUnramified_normalClosure_iff`: **a place is unramified in the normal closure
+  inside `M` (the Galois closure when `M` contains all conjugates) of a finite separable
+  intermediate field `E` exactly when it is unramified in `E`**.
 
 ## References
 
@@ -428,9 +430,10 @@ theorem isUnramified_iSup_iff {ι : Type*} [Finite ι]
     huniv]
   simp
 
-/-- **Unramifiedness in a Galois closure** (Stichtenoth, Corollary 3.9.3): a place is unramified
-in the normal closure inside `M` of a finite separable intermediate field `E` of `M / F` iff it is
-unramified in `E`. The ambient extension `M / F` need not be finite or Galois. -/
+/-- **Unramifiedness in a normal closure** (Stichtenoth, Corollary 3.9.3): a place is unramified
+in the normal closure inside `M` (the Galois closure when `M` contains all conjugates) of a finite
+separable intermediate field `E` of `M / F` iff it is unramified in `E`. The ambient extension
+`M / F` need not be finite or Galois. -/
 @[simp]
 theorem isUnramified_normalClosure_iff
     (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E : IntermediateField F M)

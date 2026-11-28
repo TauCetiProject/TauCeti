@@ -8,10 +8,11 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 import Mathlib.FieldTheory.Galois.Infinite
 import Mathlib.RingTheory.Invariant.Basic
-import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.GroupAction.Hom
 
@@ -123,6 +124,10 @@ the closure of `H`.
 * `TauCeti.apply_fixedField_stabilizer_smul` and
   `TauCeti.apply_fixedField_stabilizer_out_of_injective`: every `K`-algebra isomorphism invariant
   of intermediate fields is constant along orbits and along equivariant injections
+* `InfiniteGalois.intermediateFieldEquivOpenSubgroup` and
+  `InfiniteGalois.intermediateFieldEquivOpenNormalSubgroup`: the infinite Galois correspondence
+  restricted to finite (respectively finite Galois) intermediate fields and open (respectively open
+  normal) subgroups
 -/
 
 public section
@@ -885,3 +890,81 @@ theorem finrank_fixedField_stabilizer_out (K : Type*) [Field K] {M X : Type*}
   apply_fixedField_stabilizer_out K (fun e ↦ e.toLinearEquiv.finrank_eq) hx
 
 end TauCeti
+
+namespace InfiniteGalois
+
+variable (k K : Type*) [Field k] [Field K] [Algebra k K] [IsGalois k K]
+
+private theorem fixingSubgroup_le_fixingSubgroup_iff
+    {k K : Type*} [Field k] [Field K] [Algebra k K] [IsGalois k K]
+    (E₁ E₂ : IntermediateField k K) :
+    E₂.fixingSubgroup ≤ E₁.fixingSubgroup ↔ E₁ ≤ E₂ :=
+  (OrderDual.toDual_le_toDual (a := (⟨E₁.fixingSubgroup,
+    InfiniteGalois.fixingSubgroup_isClosed E₁⟩ : ClosedSubgroup Gal(K/k)))
+    (b := ⟨E₂.fixingSubgroup, InfiniteGalois.fixingSubgroup_isClosed E₂⟩)).symm.trans
+    ((InfiniteGalois.IntermediateFieldEquivClosedSubgroup (k := k) (K := K)).map_rel_iff
+      (a := E₁) (b := E₂))
+
+/-- The infinite Galois correspondence restricted to finite intermediate fields and open subgroups
+of `Gal(K/k)`. -/
+noncomputable def intermediateFieldEquivOpenSubgroup :
+    {E : IntermediateField k K // FiniteDimensional k E} ≃o (OpenSubgroup Gal(K/k))ᵒᵈ where
+  toFun E := OrderDual.toDual
+    ⟨E.val.fixingSubgroup, letI := E.property; E.val.fixingSubgroup_isOpen⟩
+  invFun U := ⟨IntermediateField.fixedField U.ofDual.toSubgroup,
+    IntermediateField.finiteDimensional_fixedField_of_isOpen U.ofDual.isOpen⟩
+  left_inv E := Subtype.ext (InfiniteGalois.fixedField_fixingSubgroup E.val)
+  right_inv U := OrderDual.toDual.injective <| OpenSubgroup.toSubgroup_injective <|
+    IntermediateField.fixingSubgroup_fixedField_of_isOpen U.ofDual.isOpen
+  map_rel_iff' {E₁ E₂} :=
+    (OrderDual.toDual_le_toDual (α := OpenSubgroup Gal(K/k))).trans
+      (fixingSubgroup_le_fixingSubgroup_iff E₁.val E₂.val)
+
+@[simp]
+theorem intermediateFieldEquivOpenSubgroup_apply_toSubgroup
+    (E : {E : IntermediateField k K // FiniteDimensional k E}) :
+    (OrderDual.ofDual (intermediateFieldEquivOpenSubgroup k K E)).toSubgroup =
+      E.val.fixingSubgroup :=
+  (rfl)
+
+@[simp]
+theorem intermediateFieldEquivOpenSubgroup_symm_apply (U : (OpenSubgroup Gal(K/k))ᵒᵈ) :
+    ((intermediateFieldEquivOpenSubgroup k K).symm U).val =
+      IntermediateField.fixedField U.ofDual.toSubgroup :=
+  (rfl)
+
+/-- The infinite Galois correspondence restricted to finite Galois intermediate fields and open
+normal subgroups of `Gal(K/k)`. -/
+noncomputable def intermediateFieldEquivOpenNormalSubgroup :
+    {E : IntermediateField k K // FiniteDimensional k E ∧ IsGalois k E} ≃o
+      (OpenNormalSubgroup Gal(K/k))ᵒᵈ where
+  toFun E := OrderDual.toDual
+    ⟨⟨E.val.fixingSubgroup, letI := E.property.1; E.val.fixingSubgroup_isOpen⟩,
+      (InfiniteGalois.normal_iff_isGalois E.val).mpr E.property.2⟩
+  invFun U := ⟨IntermediateField.fixedField U.ofDual.toSubgroup,
+    IntermediateField.finiteDimensional_fixedField_of_isOpen U.ofDual.isOpen,
+    (InfiniteGalois.normal_iff_isGalois _).mp <| by
+      rw [IntermediateField.fixingSubgroup_fixedField_of_isOpen U.ofDual.isOpen]
+      exact U.ofDual.isNormal'⟩
+  left_inv E := Subtype.ext (InfiniteGalois.fixedField_fixingSubgroup E.val)
+  right_inv U := OrderDual.toDual.injective <| OpenNormalSubgroup.toSubgroup_injective <|
+    IntermediateField.fixingSubgroup_fixedField_of_isOpen U.ofDual.isOpen
+  map_rel_iff' {E₁ E₂} :=
+    (OrderDual.toDual_le_toDual (α := OpenNormalSubgroup Gal(K/k))).trans
+      (fixingSubgroup_le_fixingSubgroup_iff E₁.val E₂.val)
+
+@[simp]
+theorem intermediateFieldEquivOpenNormalSubgroup_apply_toSubgroup
+    (E : {E : IntermediateField k K // FiniteDimensional k E ∧ IsGalois k E}) :
+    (OrderDual.ofDual (intermediateFieldEquivOpenNormalSubgroup k K E)).toSubgroup =
+      E.val.fixingSubgroup :=
+  (rfl)
+
+@[simp]
+theorem intermediateFieldEquivOpenNormalSubgroup_symm_apply
+    (U : (OpenNormalSubgroup Gal(K/k))ᵒᵈ) :
+    ((intermediateFieldEquivOpenNormalSubgroup k K).symm U).val =
+      IntermediateField.fixedField U.ofDual.toSubgroup :=
+  (rfl)
+
+end InfiniteGalois
