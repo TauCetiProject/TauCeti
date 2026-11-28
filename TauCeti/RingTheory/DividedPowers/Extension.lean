@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Localization.Defs
 import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Localization
-import TauCeti.Algebra.Group.Pow
 import TauCeti.RingTheory.DividedPowers.Exp
 public import TauCeti.RingTheory.DividedPowers.Generators
 public import TauCeti.RingTheory.Ideal.Maps
@@ -143,7 +142,9 @@ theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) (f : A →+* B)
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   · obtain ⟨a, ha⟩ := exists_dpow_eq_mul hI hIx hn
-    rw [ha, map_mul, ← mul_assoc, TauCeti.pow_mul_eq_pow_mul_of_mul_eq hbc n, mul_assoc]
+    have hs : SemiconjBy (f x) b c := by simpa only [SemiconjBy, mul_comm] using hbc
+    have hpow : b ^ n * f x = c ^ n * f x := by simpa only [mul_comm] using (hs.pow_right n).eq
+    rw [ha, map_mul, ← mul_assoc, hpow, mul_assoc]
 
 private noncomputable def principalDpow (hI : DividedPowers I) (f : A →+* B)
     {x : A} (hIx : I = Ideal.span {x}) (n : ℕ) (z : B) : B :=

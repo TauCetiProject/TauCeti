@@ -36,8 +36,6 @@ import TauCeti.Data.Nat.Periodic.Basic
   powers of an `n`-th root of `a`.
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
   power `(n + 1) / 2` inverts squaring on elements killed by `n`.
-* `TauCeti.pow_mul_eq_pow_mul_of_mul_eq` and `TauCeti.nsmul_add_eq_nsmul_add_of_add_eq`:
-  `b * y = c * y` implies `b ^ k * y = c ^ k * y` in a commutative monoid.
 * `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
 * `Function.Surjective.surjective_pow`: a surjective multiplicative map preserves surjectivity of
   the `n`-th power map.
@@ -140,20 +138,6 @@ theorem pow_two_pow_of_odd {n : ℕ} (hn : Odd n) {a : M} (ha : a ^ n = 1) :
     (a ^ 2) ^ ((n + 1) / 2) = a := by
   obtain ⟨t, rfl⟩ := hn
   rw [← pow_mul, show 2 * ((2 * t + 1 + 1) / 2) = 2 * t + 1 + 1 by omega, pow_succ, ha, one_mul]
-
-/-- In a commutative monoid, `b * y = c * y` implies `b ^ k * y = c ^ k * y` for every `k : ℕ`. -/
-@[to_additive /-- In an additive commutative monoid, `b + y = c + y` implies
-`k • b + y = k • c + y` for every `k : ℕ`. -/]
-theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
-    (h : b * y = c * y) (k : ℕ) : b ^ k * y = c ^ k * y := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    calc b ^ (k + 1) * y
-        = b * (b ^ k * y) := by rw [pow_succ', mul_assoc]
-      _ = c ^ k * (b * y) := by rw [ih]; ac_rfl
-      _ = c ^ k * (c * y) := by rw [h]
-      _ = c ^ (k + 1) * y := by rw [pow_succ', mul_assoc]; ac_rfl
 
 /-- The powers of an element of a monoid form a directed family for divisibility. For example,
 this is the directedness hypothesis for inverse limits along the powers of one element. -/
