@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Substitution
 public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Basic
+public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Interpretation
 
 /-!
 # Substitution of rigid expressions for coupons
@@ -23,8 +24,12 @@ A `DualitySignature.Substitution S T` replaces object generators of `S` by objec
   `S.FreeRigid ⥤ T.FreeRigid` via `FreeRigid.lift`, agreeing with raw substitution.
 * `Substitution.id` and `Substitution.comp`: identity and diagrammatic composition of
   substitutions, with two-sided unit laws (`id_comp`, `comp_id`), associativity (`comp_assoc`),
-  raw substitution laws (`Hom.subst_substitutionId_heq`, `Hom.subst_subst_heq`), and functoriality
-  (`toFunctor_id`, `toFunctor_comp`).
+  coupon and raw substitution laws (`id_coupon`, `comp_coupon`, `Hom.subst_substitutionId`,
+  `Hom.subst_subst`, and their `HEq` forms), and functoriality (`toFunctor_id`, `toFunctor_comp`).
+* `Interpretation.reindex` and `Interpretation.extensionReindexIso`: reindexing of
+  `DualitySignature.Interpretation` in an arbitrary rigid target along a substitution, with
+  generator/coupon computation rules and a monoidal natural isomorphism comparing its extension with
+  precomposition by `σ.toFunctor`.
 * `DualitySignature.Renaming` and `Renaming.toSubstitution`: boundary-preserving renamings of
   generators and coupons, inducing substitutions with object and coupon computation rules.
 
@@ -91,13 +96,11 @@ theorem eval_of (X : RigidObject S.Obj) :
 
 /-- Interpreting a formal rigid object after replacing generators by objects of `T.FreeRigid`
 agrees with interpreting the outer assignment at the interpreted replacements. -/
-theorem eval_eval (f : S.Obj → T.FreeRigid) (g : T.Obj → U.FreeRigid) (X : RigidObject S.Obj) :
+theorem eval_eval {D : Type u''} [Category.{v''} D] [MonoidalCategory D] [RigidCategory D]
+    (f : S.Obj → T.FreeRigid) (g : T.Obj → D) (X : RigidObject S.Obj) :
     RigidObject.eval g (RigidObject.eval f X).as =
       RigidObject.eval (fun a ↦ RigidObject.eval g (f a).as) X := by
-  rw [as_eval_eq_subst, eval_eq_subst, RigidObject.subst_subst, eval_eq_subst]
-  refine congrArg FreeRigid.mk (congrArg (RigidObject.subst · X) ?_)
-  funext a
-  exact (as_eval_eq_subst g (f a).as).symm
+  rw [as_eval_eq_subst, RigidObject.eval_subst]
 
 /-- Substitute formal rigid object expressions for object generators and raw morphism expressions
 for coupons. Endpoints are interpreted by `RigidObject.eval`. -/
@@ -258,8 +261,8 @@ theorem hext {σ σ' : Substitution S T} (hobj : σ.obj = σ'.obj)
 
 variable (S) in
 /-- The identity substitution, replacing each generating object and each coupon of `S` by
-itself. -/
-def id : Substitution S S where
+itself. Exposed so that dependent morphism types over substituted endpoints reduce. -/
+@[expose] def id : Substitution S S where
   obj := FreeRigid.of
   coupon g := cast (by rw [FreeRigid.eval_of, FreeRigid.eval_of]) (Hom.coupon g)
 
@@ -271,9 +274,19 @@ each boundary object with its interpretation by `FreeRigid.of`. -/
 theorem id_coupon_heq (g : S.Coupon) : (Substitution.id S).coupon g ≍ Hom.coupon g :=
   cast_heq _ _
 
+/-- The identity substitution replaces each coupon `g` by `Hom.coupon g`, transported along the
+boundary identifications `FreeRigid.eval_of`. -/
+@[simp]
+theorem id_coupon (g : S.Coupon) :
+    (Substitution.id S).coupon g =
+      cast (congrArg₂ Hom (congrArg FreeRigid.as (eval_of (S.src g))).symm
+        (congrArg FreeRigid.as (eval_of (S.tgt g))).symm) (Hom.coupon g) :=
+  (rfl)
+
 /-- The diagrammatic composite of `σ` and `τ`: each generating object and coupon of `S` is
-replaced by its replacement under `σ`, into which `τ` is substituted. -/
-def comp (σ : Substitution S T) (τ : Substitution T U) : Substitution S U where
+replaced by its replacement under `σ`, into which `τ` is substituted. Exposed so that dependent
+morphism types over substituted endpoints reduce. -/
+@[expose] def comp (σ : Substitution S T) (τ : Substitution T U) : Substitution S U where
   obj a := RigidObject.eval τ.obj (σ.obj a).as
   coupon g := cast (by rw [FreeRigid.eval_eval, FreeRigid.eval_eval]) ((σ.coupon g).subst τ)
 
@@ -286,6 +299,16 @@ under `σ`, up to the identification of boundary objects given by `FreeRigid.eva
 theorem comp_coupon_heq (σ : Substitution S T) (τ : Substitution T U) (g : S.Coupon) :
     (σ.comp τ).coupon g ≍ (σ.coupon g).subst τ :=
   cast_heq _ _
+
+/-- The composite substitution replaces each coupon `g` by `(σ.coupon g).subst τ`, transported
+along the boundary identifications `FreeRigid.eval_eval`. -/
+@[simp]
+theorem comp_coupon (σ : Substitution S T) (τ : Substitution T U) (g : S.Coupon) :
+    (σ.comp τ).coupon g =
+      cast (congrArg₂ Hom (congrArg FreeRigid.as (eval_eval σ.obj τ.obj (S.src g)))
+        (congrArg FreeRigid.as (eval_eval σ.obj τ.obj (S.tgt g))))
+        ((σ.coupon g).subst τ) :=
+  (rfl)
 
 end Substitution
 
@@ -389,6 +412,25 @@ theorem Hom.subst_subst_heq (σ : Substitution S T) (τ : Substitution T U)
   | whiskerLeft X _ hf => exact whiskerLeft_heq (h X) (h _) (h _) hf
   | whiskerRight _ X hf => exact whiskerRight_heq (h _) (h _) (h X) hf
   | tensor _ _ hf hg => exact tensor_heq (h _) (h _) (h _) (h _) hf hg
+
+/-- Substituting the identity substitution into a raw expression returns the expression itself,
+transported along the boundary identifications `FreeRigid.eval_of`. -/
+@[simp]
+theorem Hom.subst_substitutionId {X Y : RigidObject S.Obj} (f : Hom X Y) :
+    f.subst (Substitution.id S) =
+      cast (congrArg₂ Hom (congrArg FreeRigid.as (eval_of X)).symm
+        (congrArg FreeRigid.as (eval_of Y)).symm) f :=
+  eq_of_heq (f.subst_substitutionId_heq.trans (cast_heq _ f).symm)
+
+/-- Substituting `σ` and then `τ` into a raw expression agrees with substituting their composite,
+transported along the boundary identifications `FreeRigid.eval_eval`. -/
+@[simp]
+theorem Hom.subst_subst (σ : Substitution S T) (τ : Substitution T U)
+    {X Y : RigidObject S.Obj} (f : Hom X Y) :
+    (f.subst σ).subst τ =
+      cast (congrArg₂ Hom (congrArg FreeRigid.as (eval_eval σ.obj τ.obj X)).symm
+        (congrArg FreeRigid.as (eval_eval σ.obj τ.obj Y)).symm) (f.subst (σ.comp τ)) :=
+  eq_of_heq ((f.subst_subst_heq σ τ).trans (cast_heq _ (f.subst (σ.comp τ))).symm)
 
 end FreeRigid
 
@@ -496,8 +538,9 @@ def comp (r : Renaming S T) (s : Renaming T U) : Renaming S U where
 
 /-- The typed substitution induced by a boundary-preserving renaming, sending each generating
 object `a` to `FreeRigid.of (r.obj a)` and transporting each coupon
-`FreeRigid.Hom.coupon (r.coupon g)` across the preserved boundaries. -/
-def toSubstitution (r : Renaming S T) : Substitution S T where
+`FreeRigid.Hom.coupon (r.coupon g)` across the preserved boundaries. Exposed so that dependent
+morphism types over substituted endpoints reduce. -/
+@[expose] def toSubstitution (r : Renaming S T) : Substitution S T where
   obj a := FreeRigid.of (r.obj a)
   coupon g :=
     cast (congrArg₂ FreeRigid.Hom
@@ -515,6 +558,18 @@ target boundaries. -/
 theorem toSubstitution_coupon_heq (r : Renaming S T) (g : S.Coupon) :
     r.toSubstitution.coupon g ≍ FreeRigid.Hom.coupon (r.coupon g) :=
   cast_heq _ _
+
+/-- The substitution induced by a renaming replaces each coupon `g` by
+`FreeRigid.Hom.coupon (r.coupon g)`, transported across the preserved source and target
+boundaries. -/
+@[simp]
+theorem toSubstitution_coupon (r : Renaming S T) (g : S.Coupon) :
+    r.toSubstitution.coupon g =
+      cast (congrArg₂ FreeRigid.Hom
+        ((r.src_eq g).trans (FreeRigid.as_eval_eq_subst _ _).symm)
+        ((r.tgt_eq g).trans (FreeRigid.as_eval_eq_subst _ _).symm))
+        (FreeRigid.Hom.coupon (r.coupon g)) :=
+  (rfl)
 
 /-- The functor induced by `r.toSubstitution` acts on objects by syntactic renaming
 `RigidObject.subst (fun a ↦ .of (r.obj a))`. -/
@@ -565,5 +620,254 @@ theorem toSubstitution_comp (r : Renaming S T) (s : Renaming T U) :
   exact (Substitution.comp_coupon_heq r.toSubstitution s.toSubstitution g).symm
 
 end Renaming
+
+namespace Interpretation
+
+open FreeRigid
+
+variable {D : Type u''} [Category.{v''} D] [MonoidalCategory D] [RigidCategory D]
+
+/-- Reindex an interpretation `I` of `T` in a rigid monoidal category `D` along a substitution
+`σ : Substitution S T`. Each generating object `a` of `S` is interpreted by evaluating `I` at
+`σ.obj a`, and each coupon `g` of `S` is interpreted by lifting `I` to `σ.coupon g`, conjugated by
+`eqToHom` along `FreeRigid.eval_eval`. -/
+@[expose]
+def reindex (I : Interpretation T D) (σ : Substitution S T) : Interpretation S D where
+  obj a := RigidObject.eval I.obj (σ.obj a).as
+  coupon g :=
+    eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.src g)).symm ≫
+      (FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) ≫
+      eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.tgt g))
+
+/-- Reindexing `I` along `σ` evaluates `I` on each substituted object generator `σ.obj a`. -/
+@[simp]
+theorem reindex_obj (I : Interpretation T D) (σ : Substitution S T) (a : S.Obj) :
+    (I.reindex σ).obj a = RigidObject.eval I.obj (σ.obj a).as := (rfl)
+
+/-- Reindexing `I` along `σ` evaluates the lift of `I` on each substituted coupon `σ.coupon g`,
+conjugated by `eqToHom` along `FreeRigid.eval_eval`. -/
+@[simp]
+theorem reindex_coupon (I : Interpretation T D) (σ : Substitution S T) (g : S.Coupon) :
+    (I.reindex σ).coupon g =
+      eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.src g)).symm ≫
+        (FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) ≫
+        eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.tgt g)) := (rfl)
+
+private theorem comp_lift_mapRightDualIso (I : Interpretation T D) (σ : Substitution S T)
+    (X : S.FreeRigid) :
+    (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).mapRightDualIso X = Iso.refl _ := by
+  ext
+  refine (congrArg Iso.hom
+    (Functor.mapRightDualIso_comp (FreeRigid.lift I.obj I.coupon) X)).trans ?_
+  rw [Iso.trans_hom, FreeRigid.lift_mapRightDualIso, Iso.refl_hom, Functor.mapIso_hom]
+  have hhom : (σ.toFunctor.mapRightDualIso X).hom = 𝟙 (σ.toFunctor.obj Xᘁ) := by
+    rw [Substitution.toFunctor_mapRightDualIso, Iso.refl_hom]
+  have hmap : (FreeRigid.lift I.obj I.coupon).map (σ.toFunctor.mapRightDualIso X).hom =
+      𝟙 ((FreeRigid.lift I.obj I.coupon).obj (σ.toFunctor.obj Xᘁ)) :=
+    (congrArg (FreeRigid.lift I.obj I.coupon).map hhom).trans (FreeRigid.liftMap_id _ _ _)
+  exact (congrArg (· ≫ 𝟙 _) hmap).trans (Category.id_comp _)
+
+private theorem comp_lift_mapLeftDualIso (I : Interpretation T D) (σ : Substitution S T)
+    (X : S.FreeRigid) :
+    (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).mapLeftDualIso X = Iso.refl _ := by
+  ext
+  refine ExactPairing.leftDualHom_ext
+    (Y := (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).obj X) ?_
+  have hμ : Functor.LaxMonoidal.μ (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon) X (ᘁX) =
+      𝟙 ((FreeRigid.lift I.obj I.coupon).obj (σ.toFunctor.obj X) ⊗
+        (FreeRigid.lift I.obj I.coupon).obj (σ.toFunctor.obj (ᘁX))) :=
+    ((Functor.LaxMonoidal.comp_μ σ.toFunctor (FreeRigid.lift I.obj I.coupon) X (ᘁX)).trans
+      (congrArg₂ (· ≫ ·) (lift_μ _ _ _ _)
+        ((congrArg (FreeRigid.lift I.obj I.coupon).map
+          (Substitution.toFunctor_μ σ X (ᘁX))).trans (FreeRigid.liftMap_id _ _ _)))).trans
+      (Category.id_comp _)
+  have hη : Functor.OplaxMonoidal.η (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon) = 𝟙 (𝟙_ D) :=
+    ((Functor.OplaxMonoidal.comp_η σ.toFunctor (FreeRigid.lift I.obj I.coupon)).trans
+      (congrArg₂ (· ≫ ·) (FreeRigid.liftMap_id _ _ _) (lift_η _ _))).trans
+      (Category.id_comp _)
+  have hε : (FreeRigid.lift I.obj I.coupon).map (σ.toFunctor.map (ε_ (ᘁX : S.FreeRigid) X)) =
+      ε_ (ᘁ((FreeRigid.lift I.obj I.coupon).obj (σ.toFunctor.obj X)))
+        ((FreeRigid.lift I.obj I.coupon).obj (σ.toFunctor.obj X)) :=
+    (congrArg (FreeRigid.lift I.obj I.coupon).map (lift_map_evaluation_leftDual _ _ X)).trans
+      (lift_map_evaluation_leftDual _ _ (σ.toFunctor.obj X))
+  refine (Functor.whiskerLeft_mapLeftDualIso_hom_evaluation X).trans ?_
+  refine (congrArg₂ (· ≫ ·) hμ (congrArg₂ (· ≫ ·) hε hη)).trans ?_
+  exact ((Category.id_comp _).trans (Category.comp_id _)).trans
+    ((congrArg (· ≫ _) (MonoidalCategory.whiskerLeft_id _ _)).trans (Category.id_comp _)).symm
+
+private theorem eqToHom_rightDual {X Y : D} (h : X = Y) :
+    (eqToHom h)ᘁ = eqToHom (congrArg (fun Z : D ↦ Zᘁ) h.symm) := by
+  subst h
+  simp
+
+private theorem eqToHom_leftDual {X Y : D} (h : X = Y) :
+    (ᘁ(eqToHom h)) = eqToHom (congrArg (fun Z : D ↦ (ᘁZ : D)) h.symm) := by
+  subst h
+  simp
+
+omit [RigidCategory D] in
+private theorem tensorHom_eqToHom {W X Y Z : D} (h₁ : W = X) (h₂ : Y = Z) :
+    eqToHom h₁ ⊗ₘ eqToHom h₂ = eqToHom (congrArg₂ (· ⊗ ·) h₁ h₂) := by
+  subst h₁ h₂
+  simp
+
+private theorem comp_lift_obj_eq (I : Interpretation T D) (σ : Substitution S T)
+    (X : RigidObject S.Obj) :
+    (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).obj ⟨X⟩ =
+      RigidObject.eval (fun a ↦ (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).obj (of a)) X :=
+  FreeRigid.eval_eval σ.obj I.obj X
+
+private theorem mapWordIso_comp_lift (I : Interpretation T D) (σ : Substitution S T)
+    (X : RigidObject S.Obj) :
+    mapWordIso (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon) X =
+      eqToIso (comp_lift_obj_eq I σ X) := by
+  induction X with
+  | of a =>
+    ext
+    rw [mapWordIso_of, Iso.refl_hom, eqToIso.hom]
+    exact (eqToHom_refl _ _).symm
+  | unit =>
+    ext
+    rw [mapWordIso_unit_hom, Functor.OplaxMonoidal.comp_η, lift_η, eqToIso.hom]
+    -- `η σ.toFunctor` is `𝟙 (𝟙_ T.FreeRigid)`, whose endpoints agree definitionally with
+    -- `σ.toFunctor.obj (𝟙_ S.FreeRigid)`.
+    have hη : (FreeRigid.lift I.obj I.coupon).map (Functor.OplaxMonoidal.η σ.toFunctor) =
+        𝟙 (𝟙_ D) :=
+      FreeRigid.liftMap_id _ _ (𝟙_ T.FreeRigid)
+    exact (congrArg (· ≫ 𝟙 (𝟙_ D)) hη).trans
+      ((Category.id_comp _).trans (eqToHom_refl (𝟙_ D) _).symm)
+  | tensor X Y ihX ihY =>
+    ext
+    rw [mapWordIso_tensor_hom, Functor.OplaxMonoidal.comp_δ, lift_δ, ihX, ihY, eqToIso.hom,
+      eqToIso.hom, eqToIso.hom, tensorHom_eqToHom]
+    -- `δ σ.toFunctor ⟨X⟩ ⟨Y⟩` is `𝟙 _`, whose endpoints agree definitionally after unfolding
+    -- `lift`.
+    have hδ : (FreeRigid.lift I.obj I.coupon).map
+          (Functor.OplaxMonoidal.δ σ.toFunctor ⟨X⟩ ⟨Y⟩) =
+        𝟙 (RigidObject.eval I.obj (RigidObject.eval σ.obj X).as ⊗
+          RigidObject.eval I.obj (RigidObject.eval σ.obj Y).as) :=
+      FreeRigid.liftMap_id _ _ _
+    refine (congrArg (fun f ↦ (f ≫ 𝟙 _) ≫ _) hδ).trans ?_
+    exact (congrArg (· ≫ _) (Category.id_comp _)).trans (Category.id_comp _)
+  | rightDual X ih =>
+    ext
+    rw [mapWordIso_rightDual_hom, comp_lift_mapRightDualIso, ih, Iso.refl_hom, eqToIso.inv,
+      eqToHom_rightDual, eqToIso.hom]
+    exact Category.id_comp _
+  | leftDual X ih =>
+    ext
+    rw [mapWordIso_leftDual_hom, comp_lift_mapLeftDualIso, ih, Iso.refl_hom, eqToIso.inv,
+      eqToHom_leftDual, eqToIso.hom]
+    exact Category.id_comp _
+
+private def reindexGenIso (I : Interpretation T D) (σ : Substitution S T) (a : S.Obj) :
+    (FreeRigid.lift (I.reindex σ).obj (I.reindex σ).coupon).obj (of a) ≅
+      (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).obj (of a) :=
+  Iso.refl _
+
+private theorem wordIso_lift_comp_lift_hom (I : Interpretation T D) (σ : Substitution S T)
+    (X : RigidObject S.Obj) :
+    (wordIso (FreeRigid.lift (I.reindex σ).obj (I.reindex σ).coupon)
+        (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon) (reindexGenIso I σ) X).hom =
+      eqToHom (FreeRigid.eval_eval σ.obj I.obj X).symm := by
+  have hF :
+      (mapWordIso (FreeRigid.lift (I.reindex σ).obj (I.reindex σ).coupon) X).hom =
+        𝟙 (RigidObject.eval (I.reindex σ).obj X) := by
+    rw [mapWordIso_lift, Iso.refl_hom]
+  have hE :
+      (RigidObject.evalIso (reindexGenIso I σ) X).hom =
+        𝟙 (RigidObject.eval (I.reindex σ).obj X) :=
+    congrArg Iso.hom (RigidObject.evalIso_refl X)
+  have hG :
+      (mapWordIso (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon) X).inv =
+        eqToHom (comp_lift_obj_eq I σ X).symm := by
+    rw [mapWordIso_comp_lift, eqToIso.inv]
+  refine (congrArg Iso.hom (wordIso_eq_mapWordIso _ _ (reindexGenIso I σ) X)).trans ?_
+  rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, hG]
+  exact (congrArg (fun f ↦ f ≫ (RigidObject.evalIso (reindexGenIso I σ) X).hom ≫
+      eqToHom (comp_lift_obj_eq I σ X).symm) hF).trans
+    ((Category.id_comp _).trans ((congrArg (· ≫ _) hE).trans (Category.id_comp _)))
+
+private theorem extension_reindex_coupon_comm (I : Interpretation T D) (σ : Substitution S T)
+    (g : S.Coupon) :
+    (FreeRigid.lift (I.reindex σ).obj (I.reindex σ).coupon).map (FreeRigid.coupon g) ≫
+        (wordIso (FreeRigid.lift (I.reindex σ).obj (I.reindex σ).coupon)
+          (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon) (reindexGenIso I σ) (S.tgt g)).hom =
+      (wordIso (FreeRigid.lift (I.reindex σ).obj (I.reindex σ).coupon)
+          (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon) (reindexGenIso I σ) (S.src g)).hom ≫
+        (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).map (FreeRigid.coupon g) := by
+  have hleft :
+      (FreeRigid.lift (I.reindex σ).obj (I.reindex σ).coupon).map (FreeRigid.coupon g) =
+        eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.src g)).symm ≫
+          (FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) ≫
+          eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.tgt g)) :=
+    (lift_map_coupon _ _ g).trans (reindex_coupon I σ g)
+  have hright :
+      (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).map (FreeRigid.coupon g) =
+        (FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) :=
+    congrArg (FreeRigid.lift I.obj I.coupon).map (Substitution.toFunctor_map_coupon σ g)
+  have hmid :
+      (eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.src g)).symm ≫
+            (FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) ≫
+            eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.tgt g))) ≫
+          eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.tgt g)).symm =
+        eqToHom (FreeRigid.eval_eval σ.obj I.obj (S.src g)).symm ≫
+          (FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) := by
+    refine (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ?_)
+    exact (Category.assoc _ _ _).trans
+      ((congrArg (_ ≫ ·) ((eqToHom_trans _ _).trans (eqToHom_refl _ _))).trans
+        (Category.comp_id _))
+  exact (congrArg₂ (· ≫ ·) hleft (wordIso_lift_comp_lift_hom I σ (S.tgt g))).trans
+    (hmid.trans (congrArg₂ (· ≫ ·) (wordIso_lift_comp_lift_hom I σ (S.src g)).symm hright.symm))
+
+/-- The monoidal natural isomorphism comparing the extension of `I.reindex σ` with precomposition
+of the extension of `I` by `σ.toFunctor`. -/
+noncomputable def extensionReindexIso (I : Interpretation T D) (σ : Substitution S T) :
+    ((extension S D).obj (I.reindex σ)).of ≅
+      MonoidalFunctor.of (σ.toFunctor ⋙ ((extension T D).obj I).of.toFunctor) :=
+  @MonoidalFunctor.isoMk _ _ _ _ _ _ (.of _) (MonoidalFunctor.of _)
+    (monoidalNatIso (extension_reindex_coupon_comm I σ))
+    (isMonoidal_monoidalNatIso_hom (extension_reindex_coupon_comm I σ))
+
+/-- The forward component of `extensionReindexIso I σ` at any object `X` is the endpoint
+identification `eqToHom (FreeRigid.eval_eval σ.obj I.obj X.as).symm`. -/
+theorem extensionReindexIso_hom_hom_hom_app (I : Interpretation T D) (σ : Substitution S T)
+    (X : S.FreeRigid) :
+    (extensionReindexIso I σ).hom.hom.hom.app X =
+      eqToHom (FreeRigid.eval_eval σ.obj I.obj X.as).symm := by
+  -- As in `Interpretation.extension`, monoidality is supplied explicitly to
+  -- `MonoidalFunctor.isoMk`, so `change` exposes the underlying component of `monoidalNatIso`.
+  change (monoidalNatIso (extension_reindex_coupon_comm I σ)).hom.app X = _
+  rw [monoidalNatIso_hom_app, wordIso_lift_comp_lift_hom]
+
+/-- The inverse component of `extensionReindexIso I σ` at any object `X` is the endpoint
+identification `eqToHom (FreeRigid.eval_eval σ.obj I.obj X.as)`. -/
+theorem extensionReindexIso_inv_hom_hom_app (I : Interpretation T D) (σ : Substitution S T)
+    (X : S.FreeRigid) :
+    (extensionReindexIso I σ).inv.hom.hom.app X =
+      eqToHom (FreeRigid.eval_eval σ.obj I.obj X.as) := by
+  rw [← MonoidalFunctor.toFunctorIso_inv, ← Iso.app_inv,
+    ← eqToIso.inv (FreeRigid.eval_eval σ.obj I.obj X.as).symm]
+  exact congrArg Iso.inv (Iso.ext (extensionReindexIso_hom_hom_hom_app I σ X))
+
+/-- At a generating object `of a`, the forward component of `extensionReindexIso I σ` is the
+identity. -/
+@[simp]
+theorem extensionReindexIso_hom_hom_hom_app_of (I : Interpretation T D) (σ : Substitution S T)
+    (a : S.Obj) :
+    (extensionReindexIso I σ).hom.hom.hom.app (of a) =
+      𝟙 (RigidObject.eval I.obj (σ.obj a).as) :=
+  (extensionReindexIso_hom_hom_hom_app I σ (of a)).trans (eqToHom_refl _ _)
+
+/-- At a generating object `of a`, the inverse component of `extensionReindexIso I σ` is the
+identity. -/
+@[simp]
+theorem extensionReindexIso_inv_hom_hom_app_of (I : Interpretation T D) (σ : Substitution S T)
+    (a : S.Obj) :
+    (extensionReindexIso I σ).inv.hom.hom.app (of a) =
+      𝟙 (RigidObject.eval I.obj (σ.obj a).as) :=
+  (extensionReindexIso_inv_hom_hom_app I σ (of a)).trans (eqToHom_refl _ _)
+
+end Interpretation
 
 end TauCeti.DualitySignature
