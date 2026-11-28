@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex, Claude Code
+Authors: Codex, Claude Code, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -57,6 +57,11 @@ open TauCeti.WallComplement
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
 
+/-- An allowed endpoint for a finite polyhedral complex `C`: an ambient point lying on no wall of
+`C`. -/
+abbrev WallComplement (C : FinitePolyhedralComplex h) : Type _ :=
+  TauCeti.WallComplement (fun P : C.walls => (P : Set V))
+
 section Segment
 
 variable (C : FinitePolyhedralComplex h)
@@ -73,7 +78,7 @@ theorem eq_of_mem_wall_of_notMem_singularSupport {P Q : C.walls} {x : V}
     (mem_intrinsicInterior_of_notMem_singularSupport (W := fun W : C.walls => (W : Set V))
       hxQ hx)
 
-variable {x y z : WallComplement (fun P : C.walls => (P : Set V))}
+variable {x y z : C.WallComplement}
 
 /-- On an admissible segment through the walls of a complex, the crossing time determines the
 crossed wall. -/
@@ -135,6 +140,14 @@ theorem orderedCrossings_eq_iff (e : x ⟶ y) (l : List (C.walls × ℝ)) :
     exact (C.pairwise_orderedCrossings e).eq_of_mem_iff hpair
       fun a => (C.mem_orderedCrossings e a).trans (hmem a).symm
 
+/-- A segment whose crossing set through `C` is a singleton `{(P, t)}` has ordered crossing list
+`[(P, t)]`. -/
+theorem orderedCrossings_of_crossings_eq_singleton (e : x ⟶ y) {P : C.walls} {t : ℝ}
+    (hcr : crossings x y = {(P, t)}) :
+    C.orderedCrossings e = [(P, t)] :=
+  (C.orderedCrossings_eq_iff e [(P, t)]).mpr
+    ⟨List.pairwise_singleton _ _, fun a => by simp [hcr]⟩
+
 /-- The distinct crossing times of a segment through a complex are the times of its ordered
 crossings. -/
 theorem orderedCrossingTimes_eq_map_snd (e : x ⟶ y) :
@@ -185,20 +198,18 @@ theorem orderedCrossings_subdivide (e : x ⟶ y) (e₁ : x ⟶ z) (e₂ : z ⟶ 
 
 /-- The signed generator of a crossing of the wall `P` by the segment `[x, y]`: the inverse
 generator when the velocity is positive on the coorientation, and the generator otherwise. -/
-def crossingLetter (ν : C.walls → V →ₗ[ℝ] ℝ) (x y : WallComplement (fun P : C.walls => (P : Set V)))
-    (P : C.walls) : FreeGroup C.walls :=
+def crossingLetter (ν : C.walls → V →ₗ[ℝ] ℝ) (x y : C.WallComplement) (P : C.walls) :
+    FreeGroup C.walls :=
   if 0 < ν P (y.val - x.val) then (FreeGroup.of P)⁻¹ else FreeGroup.of P
 
 /-- The sign convention defining each crossing letter. -/
-theorem crossingLetter_def (ν : C.walls → V →ₗ[ℝ] ℝ)
-    (x y : WallComplement (fun P : C.walls => (P : Set V))) (P : C.walls) :
+theorem crossingLetter_def (ν : C.walls → V →ₗ[ℝ] ℝ) (x y : C.WallComplement) (P : C.walls) :
     C.crossingLetter ν x y P =
       if 0 < ν P (y.val - x.val) then (FreeGroup.of P)⁻¹ else FreeGroup.of P := (rfl)
 
 /-- A crossing letter is the generator raised to the crossing exponent of the signed crossing
 events. -/
-theorem crossingLetter_eq_zpow (ν : C.walls → V →ₗ[ℝ] ℝ)
-    (x y : WallComplement (fun P : C.walls => (P : Set V))) (P : C.walls) :
+theorem crossingLetter_eq_zpow (ν : C.walls → V →ₗ[ℝ] ℝ) (x y : C.WallComplement) (P : C.walls) :
     C.crossingLetter ν x y P =
       FreeGroup.of P ^ (if 0 < ν P (y.val - x.val) then -1 else 1 : ℤ) := by
   rw [crossingLetter_def]
@@ -217,7 +228,7 @@ theorem crossingLetter_swap (ν : C.walls → V →ₗ[ℝ] ℝ) (P : C.walls)
 /-- Positive rescaling of the coorientations leaves every crossing letter unchanged. -/
 @[simp]
 theorem crossingLetter_smul (ν : C.walls → V →ₗ[ℝ] ℝ) (r : C.walls → ℝ) (hr : ∀ P, 0 < r P)
-    (x y : WallComplement (fun P : C.walls => (P : Set V))) (P : C.walls) :
+    (x y : C.WallComplement) (P : C.walls) :
     C.crossingLetter (fun Q => r Q • ν Q) x y P = C.crossingLetter ν x y P := by
   simp [crossingLetter_def, mul_pos_iff_of_pos_left (hr P)]
 
@@ -257,6 +268,13 @@ theorem segmentCrossingWord_eq_one_of_crossings_eq_empty (ν : C.walls → V →
   have hl : C.orderedCrossings e = [] :=
     List.eq_nil_iff_forall_not_mem.mpr fun a => by simp [he]
   simp [segmentCrossingWord_def, hl]
+
+/-- A segment whose crossing set through `C` is a singleton `{(P, t)}` has segment crossing word
+`C.crossingLetter ν x y P`. -/
+theorem segmentCrossingWord_of_crossings_eq_singleton (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x ⟶ y)
+    {P : C.walls} {t : ℝ} (hcr : crossings x y = {(P, t)}) :
+    C.segmentCrossingWord ν e = C.crossingLetter ν x y P := by
+  simp [C.segmentCrossingWord_def, C.orderedCrossings_of_crossings_eq_singleton e hcr]
 
 /-- A stationary segment has trivial crossing word. -/
 @[simp]
@@ -361,7 +379,7 @@ theorem wallDeletion_comp {E : FinitePolyhedralComplex h} (hW : E.walls ⊆ D.wa
   · rw [dite_eq_left hD, wallDeletion_of]
   · rw [dite_eq_right hD, dite_eq_right fun hE => hD (hW hE), map_one]
 
-variable (hW : D.walls ⊆ C.walls) {x y : WallComplement (fun P : C.walls => (P : Set V))}
+variable (hW : D.walls ⊆ C.walls) {x y : C.WallComplement}
 
 /-- Deleting walls filters the crossing list of a segment, keeping the times of the retained
 crossings. -/
@@ -443,7 +461,7 @@ open TauCeti TauCeti.WallComplement TauCeti.FinitePolyhedralComplex
 
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i} {C D : FinitePolyhedralComplex h}
-  {x y z : WallComplement (fun P : C.walls => (P : Set V))}
+  {x y z : C.WallComplement}
 
 /-- The signed crossing word of an admissible polygonal path through the walls of a complex,
 with the first crossing rightmost. -/

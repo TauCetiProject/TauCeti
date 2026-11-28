@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Codex
+Authors: The Tau Ceti contributors, Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -145,6 +145,26 @@ theorem eq_of_subset_of_finrank_direction_le (C : FinitePolyhedralComplex h)
     (C.disjoint_intrinsicInterior hP hQ hne)
   rw [direction_affineSpan, direction_affineSpan] at hdim
   exact hlt.not_ge hdim
+
+/-- A subset `Q` is contained in at most one cell of `C` having the same affine span as `Q`:
+the intersection of two such cells is again a cell of `C` with the same affine dimension. -/
+theorem eq_of_subset_of_affineSpan_eq (C : FinitePolyhedralComplex h)
+    {Q P₁ P₂ : Set V} (hP₁ : P₁ ∈ C.cells) (hP₂ : P₂ ∈ C.cells)
+    (hQP₁ : Q ⊆ P₁) (hQP₂ : Q ⊆ P₂)
+    (hspan₁ : affineSpan ℝ Q = affineSpan ℝ P₁)
+    (hspan₂ : affineSpan ℝ Q = affineSpan ℝ P₂) : P₁ = P₂ := by
+  have hQne : Q.Nonempty :=
+    (affineSpan_nonempty ℝ).mp (hspan₁.symm ▸ (C.nonempty P₁ hP₁).affineSpan ℝ)
+  have hI : P₁ ∩ P₂ ∈ C.cells :=
+    C.inter_mem_cells hP₁ hP₂ (hQne.mono (Set.subset_inter hQP₁ hQP₂))
+  have heq : ∀ {P : Set V}, P ∈ C.cells → P₁ ∩ P₂ ⊆ P → affineSpan ℝ Q = affineSpan ℝ P →
+      P₁ ∩ P₂ = P := fun {P} hP hIP hspan => by
+    have hspanI : affineSpan ℝ (P₁ ∩ P₂) = affineSpan ℝ P :=
+      le_antisymm (affineSpan_mono ℝ hIP)
+        (hspan ▸ affineSpan_mono ℝ (Set.subset_inter hQP₁ hQP₂))
+    exact C.eq_of_subset_of_finrank_direction_le hI hP hIP (by rw [hspanI])
+  exact (heq hP₁ Set.inter_subset_left hspan₁).symm.trans
+    (heq hP₂ Set.inter_subset_right hspan₂)
 
 /-- A cell contained in another cell is a face of it. -/
 theorem isPolyhedralFace_of_subset (C : FinitePolyhedralComplex h) {P Q : Set V}
@@ -323,6 +343,41 @@ noncomputable abbrev walls (C : FinitePolyhedralComplex h) : Finset (Set V) :=
 /-- The joints of a complex are its cells of codimension two. -/
 noncomputable abbrev joints (C : FinitePolyhedralComplex h) : Finset (Set V) :=
   C.cellsOfCodimension 2
+
+/-- Every codimension-`k` cell of a subcomplex is a codimension-`k` cell of the ambient complex. -/
+theorem IsSubcomplex.cellsOfCodimension_subset {C D : FinitePolyhedralComplex h}
+    (hCD : C.IsSubcomplex D) (k : ℕ) :
+    C.cellsOfCodimension k ⊆ D.cellsOfCodimension k := fun _ hP =>
+  mem_cellsOfCodimension.mpr
+    ⟨isSubcomplex_iff.mp hCD (mem_cellsOfCodimension.mp hP).1, (mem_cellsOfCodimension.mp hP).2⟩
+
+/-- A nonempty subset of ambient codimension `k` lies in at most one codimension-`k` cell of `C`. -/
+theorem eq_of_subset_of_mem_cellsOfCodimension (C : FinitePolyhedralComplex h) {k : ℕ}
+    {Q P₁ P₂ : Set V} (hne : Q.Nonempty)
+    (hdim : Module.finrank ℝ (affineSpan ℝ Q).direction + k = Module.finrank ℝ V)
+    (hP₁ : P₁ ∈ C.cellsOfCodimension k) (hP₂ : P₂ ∈ C.cellsOfCodimension k)
+    (hQP₁ : Q ⊆ P₁) (hQP₂ : Q ⊆ P₂) : P₁ = P₂ := by
+  have := h.finiteDimensional
+  obtain ⟨x, hx⟩ := hne
+  have hspan : ∀ {P : Set V}, P ∈ C.cellsOfCodimension k → Q ⊆ P →
+      affineSpan ℝ Q = affineSpan ℝ P := fun {P} hP hQP => by
+    have hd := (mem_cellsOfCodimension.mp hP).2
+    refine AffineSubspace.ext_of_direction_eq ?_
+      ⟨x, subset_affineSpan ℝ Q hx, subset_affineSpan ℝ P (hQP hx)⟩
+    exact Submodule.eq_of_le_of_finrank_eq
+      (AffineSubspace.direction_le (affineSpan_mono ℝ hQP)) (by omega)
+  exact C.eq_of_subset_of_affineSpan_eq
+    (mem_cellsOfCodimension.mp hP₁).1 (mem_cellsOfCodimension.mp hP₂).1
+    hQP₁ hQP₂ (hspan hP₁ hQP₁) (hspan hP₂ hQP₂)
+
+/-- Any codimension-`k` cell of a complex `C'` is contained in at most one codimension-`k` cell of
+a complex `C`. -/
+theorem eq_of_cellsOfCodimension_subset {C C' : FinitePolyhedralComplex h} {k : ℕ}
+    {P' : C'.cellsOfCodimension k} {P₁ P₂ : C.cellsOfCodimension k}
+    (h₁ : (P' : Set V) ⊆ (P₁ : Set V)) (h₂ : (P' : Set V) ⊆ (P₂ : Set V)) : P₁ = P₂ :=
+  Subtype.ext (C.eq_of_subset_of_mem_cellsOfCodimension
+    (C'.nonempty P' (mem_cellsOfCodimension.mp P'.property).1)
+    (mem_cellsOfCodimension.mp P'.property).2 P₁.property P₂.property h₁ h₂)
 
 end FinitePolyhedralComplex
 

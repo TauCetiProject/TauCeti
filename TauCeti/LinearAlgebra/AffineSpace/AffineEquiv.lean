@@ -33,6 +33,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
 
 * `AffineEquiv.apply_eq_linear_add`: an affine equivalence between modules is its linear part
   followed by the translation by the image of `0`.
+* `AffineEquiv.linear_symm_apply_vsub`, `AffineEquiv.linear_symm_apply_sub`: the inverse linear
+  part of an affine equivalence pulls back displacements and differences between image points.
 * `AffineEquiv.apply_eq_linear_one_mul_add`: an affine self-equivalence of a commutative ring is
   `x ↦ a * x + b`.
 * `AffineEquiv.linear_mul_apply_one`: the linear coefficients `a` of affine self-equivalences of a
@@ -62,6 +64,19 @@ theorem apply_eq_linear_add (f : V₁ ≃ᵃ[k] V₂) (x : V₁) : f x = f.linea
 theorem symm_apply_zero (f : V₁ ≃ᵃ[k] V₂) : f.symm 0 = f.linear.symm (-f 0) := by
   rw [LinearEquiv.eq_symm_apply]
   exact eq_neg_of_add_eq_zero_left (by rw [← apply_eq_linear_add, apply_symm_apply])
+
+/-- Pulling back the displacement between two images along `e.linear.symm` recovers the original
+displacement vector. -/
+theorem linear_symm_apply_vsub {P₁ P₂ : Type*} [AddTorsor V₁ P₁] [AddTorsor V₂ P₂]
+    (e : P₁ ≃ᵃ[k] P₂) (x y : P₁) :
+    e.linear.symm (e x -ᵥ e y) = x -ᵥ y := by
+  simpa using e.symm.toAffineMap.linear_apply_vsub (e x) (e y)
+
+/-- Pulling back the difference of two module images along `e.linear.symm` recovers the original
+difference. -/
+theorem linear_symm_apply_sub (e : V₁ ≃ᵃ[k] V₂) (x y : V₁) :
+    e.linear.symm (e x - e y) = x - y := by
+  simpa only [vsub_eq_sub] using e.linear_symm_apply_vsub x y
 
 /-- **The semidirect product `L ⋊ W` in the affine group.** For a group `W` of linear automorphisms
 of a module `V` and an additive subgroup `L` stable under `W`, the affine automorphisms of `V`

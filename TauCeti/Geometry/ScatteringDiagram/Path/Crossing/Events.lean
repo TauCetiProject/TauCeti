@@ -1,12 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
-public import TauCeti.Geometry.ScatteringDiagram.Path.Basic
+public import TauCeti.Geometry.ScatteringDiagram.Path.Subdivision
+public import TauCeti.Geometry.ScatteringDiagram.Path.Affine
 public import Mathlib.Data.Finset.Sort
+import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
 
 /-!
 # Simultaneous signed wall crossings
@@ -21,15 +23,19 @@ Signs are the exponents for left wall actions: positive normal velocity gives
 `-1`, and negative normal velocity gives `1`. Reversal reverses the event list
 and negates every sign. Polygonal paths concatenate the lists, retaining separate
 visits, so these events can be used to form products of commuting coplanar labels.
+Subdividing an admissible polygonal path or transporting it along a continuous affine
+equivalence with pushed-forward coorientations leaves its ordered signed crossing
+events unchanged.
 
 The construction uses the existing geometric `WallComplement.crossings` and
 Mathlib's `Finset.sort`; its order is on crossing times alone.
 
 ## Attribution
 
-Adapted in full from `Mei/Geometry/Convex/Polyhedron/CrossingEvents.lean` in
+Adapted from `Mei/Geometry/Convex/Polyhedron/CrossingEvents.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at
-`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0), with path subdivision
+and affine transport invariance added here.
 Original author credit is retained.
 -/
 
@@ -128,6 +134,55 @@ theorem orderedCrossingTimes_reverse (e : x ⟶ y) :
     exact ⟨1 - t, (mem_orderedCrossingTimes e _).mpr ht, by simp⟩
   · rintro ⟨s, hs, rfl⟩
     simpa only [sub_sub_cancel] using (mem_orderedCrossingTimes e s).mp hs
+
+/-- Splitting an admissible segment at an interior allowed point partitions its ordered
+crossing times into the rescaled crossing times of the two subsegments. -/
+theorem orderedCrossingTimes_subdivide {z : WallComplement W}
+    (e : x ⟶ y) (e₁ : x ⟶ z) (e₂ : z ⟶ y)
+    {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) (hz : z.val = AffineMap.lineMap x.val y.val t) :
+    orderedCrossingTimes e =
+      (orderedCrossingTimes e₁).map (· * t) ++
+        (orderedCrossingTimes e₂).map (fun s => 1 - (1 - s) * (1 - t)) := by
+  have hp₁ : ((orderedCrossingTimes e₁).map (· * t)).Pairwise (· < ·) :=
+    List.pairwise_map.mpr ((pairwise_orderedCrossingTimes e₁).imp fun h =>
+      mul_lt_mul_of_pos_right h ht.1)
+  have hp₂ : ((orderedCrossingTimes e₂).map (fun s => 1 - (1 - s) * (1 - t))).Pairwise (· < ·) :=
+    List.pairwise_map.mpr ((pairwise_orderedCrossingTimes e₂).imp fun h => by
+      nlinarith [ht.2])
+  have hp : ((orderedCrossingTimes e₁).map (· * t) ++
+      (orderedCrossingTimes e₂).map (fun s => 1 - (1 - s) * (1 - t))).Pairwise (· < ·) := by
+    refine List.pairwise_append.mpr ⟨hp₁, hp₂, fun a ha b hb => ?_⟩
+    obtain ⟨s₁, hs₁, rfl⟩ := List.mem_map.mp ha
+    obtain ⟨s₂, hs₂, rfl⟩ := List.mem_map.mp hb
+    have h₁ := mem_Ioo_of_mem_orderedCrossingTimes e₁ hs₁
+    have h₂ := mem_Ioo_of_mem_orderedCrossingTimes e₂ hs₂
+    nlinarith [ht.1, ht.2, h₁.2, h₂.1]
+  refine (pairwise_orderedCrossingTimes e).eq_of_mem_iff hp fun u => ?_
+  simp only [mem_orderedCrossingTimes, List.mem_append, List.mem_map]
+  constructor
+  · rintro ⟨i, hiu⟩
+    rw [crossings_subdivide hz ht] at hiu
+    rcases hiu with ⟨⟨j, s⟩, hs, heq⟩ | ⟨⟨j, s⟩, hs, heq⟩
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj heq
+      exact .inl ⟨s, ⟨j, hs⟩, rfl⟩
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj heq
+      exact .inr ⟨s, ⟨j, hs⟩, rfl⟩
+  · rintro (⟨s, ⟨i, hs⟩, rfl⟩ | ⟨s, ⟨i, hs⟩, rfl⟩)
+    · exact ⟨i, ((mem_crossings_subdivide_left hz ⟨ht.1, ht.2.le⟩ i s).mp hs).1⟩
+    · exact ⟨i, ((mem_crossings_subdivide_right hz ⟨ht.1.le, ht.2⟩ i s).mp hs).1⟩
+
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+preserves the ordered crossing times of a segment. -/
+theorem orderedCrossingTimes_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) (b : x.mapReindex e r hW ⟶ y.mapReindex e r hW) :
+    orderedCrossingTimes b = orderedCrossingTimes a := by
+  refine (pairwise_orderedCrossingTimes b).eq_of_mem_iff (pairwise_orderedCrossingTimes a)
+    fun t => ?_
+  simp only [mem_orderedCrossingTimes]
+  exact ⟨fun ⟨i', hi'⟩ => ⟨r.symm i', (mem_crossings_mapReindex x y e r hW _ t).mp
+      (by simpa using hi')⟩,
+    fun ⟨i, hi⟩ => ⟨r i, (mem_crossings_mapReindex x y e r hW i t).mpr hi⟩⟩
 
 variable (ν : ι → V →ₗ[ℝ] ℝ)
 
@@ -258,6 +313,90 @@ theorem segmentCrossingEvents_smul (r : ι → ℝ) (hr : ∀ i, 0 < r i) (e : x
   intro t _
   exact signedCrossingEvent_smul ν r hr x y t
 
+/-- Rescaling the first subsegment's parameter `s ≤ 1` preserves its signed crossing event. -/
+theorem signedCrossingEvent_subdivide_left {z : WallComplement W} {t s : ℝ}
+    (hz : z.val = AffineMap.lineMap x.val y.val t) (ht : t ∈ Ioc (0 : ℝ) 1) (hs : s ≤ 1) :
+    signedCrossingEvent ν x z s = signedCrossingEvent ν x y (s * t) := by
+  ext ⟨i, m⟩
+  have hzx : z.val - x.val = t • (y.val - x.val) := by
+    simp only [hz, AffineMap.lineMap_apply_module']
+    module
+  simp only [mem_signedCrossingEvent, mem_crossings_subdivide_left hz ht, hs, and_true, hzx,
+    map_smul, smul_eq_mul, mul_pos_iff_of_pos_left ht.1]
+
+/-- Rescaling the second subsegment's parameter `0 ≤ s` preserves its signed crossing event. -/
+theorem signedCrossingEvent_subdivide_right {z : WallComplement W} {t s : ℝ}
+    (hz : z.val = AffineMap.lineMap x.val y.val t) (ht : t ∈ Ico (0 : ℝ) 1) (hs : 0 ≤ s) :
+    signedCrossingEvent ν z y s = signedCrossingEvent ν x y (1 - (1 - s) * (1 - t)) := by
+  ext ⟨i, m⟩
+  have hyz : y.val - z.val = (1 - t) • (y.val - x.val) := by
+    simp only [hz, AffineMap.lineMap_apply_module']
+    module
+  simp only [mem_signedCrossingEvent, mem_crossings_subdivide_right hz ht, hs, and_true, hyz,
+    map_smul, smul_eq_mul, mul_pos_iff_of_pos_left (sub_pos.mpr ht.2)]
+
+/-- Splitting an admissible segment at an interior allowed point splits its signed crossing
+event list into the concatenation of the two subsegments' event lists. -/
+theorem segmentCrossingEvents_subdivide {z : WallComplement W}
+    (e : x ⟶ y) (e₁ : x ⟶ z) (e₂ : z ⟶ y)
+    {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) (hz : z.val = AffineMap.lineMap x.val y.val t) :
+    segmentCrossingEvents ν e = segmentCrossingEvents ν e₁ ++ segmentCrossingEvents ν e₂ := by
+  simp only [segmentCrossingEvents_def, orderedCrossingTimes_subdivide e e₁ e₂ ht hz,
+    List.map_append, List.map_map, Function.comp_def]
+  congr 1
+  · refine (List.map_congr_left fun s hs => ?_).symm
+    exact signedCrossingEvent_subdivide_left ν hz ⟨ht.1, ht.2.le⟩
+      (mem_Ioo_of_mem_orderedCrossingTimes e₁ hs).2.le
+  · refine (List.map_congr_left fun s hs => ?_).symm
+    exact signedCrossingEvent_subdivide_right ν hz ⟨ht.1.le, ht.2⟩
+      (mem_Ioo_of_mem_orderedCrossingTimes e₂ hs).1.le
+
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+maps each signed crossing event along `Equiv.prodCongr r (Equiv.refl ℤ)` when coorientations are
+pushed forward along the linear part. -/
+@[simp]
+theorem signedCrossingEvent_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (x y : WallComplement W) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) (t : ℝ) :
+    signedCrossingEvent
+        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        (x.mapReindex e r hW) (y.mapReindex e r hW) t =
+      (signedCrossingEvent ν x y t).map
+        (Equiv.prodCongr r (Equiv.refl ℤ)).toEmbedding := by
+  ext ⟨i', s⟩
+  obtain ⟨i, rfl⟩ := r.surjective i'
+  have hsub : e.toAffineEquiv.linear.symm (e y.val - e x.val) = y.val - x.val :=
+    e.toAffineEquiv.linear_symm_apply_sub y.val x.val
+  simp only [Finset.mem_map, Prod.exists, Equiv.toEmbedding_apply, Equiv.prodCongr_apply,
+    Prod.map_apply, Equiv.refl_apply, Prod.mk.injEq, mem_signedCrossingEvent,
+    mem_crossings_mapReindex, Equiv.symm_apply_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, hsub]
+  exact ⟨fun h => ⟨i, s, h, rfl, rfl⟩,
+    fun ⟨j, _, hm, hij, rfl⟩ => r.injective hij ▸ hm⟩
+
+/-- Continuous affine coordinate transport preserves each signed crossing event when the
+coorientations are pushed forward along the linear part. -/
+@[simp]
+theorem signedCrossingEvent_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (x y : WallComplement W) (e : V ≃ᴬ[ℝ] U) (t : ℝ) :
+    signedCrossingEvent (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        (x.map e) (y.map e) t =
+      signedCrossingEvent ν x y t := by
+  simpa using signedCrossingEvent_mapReindex ν x y e (Equiv.refl ι) (fun _ => rfl) t
+
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+maps a segment's signed crossing event list along `Equiv.prodCongr r (Equiv.refl ℤ)`. -/
+theorem segmentCrossingEvents_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) (b : x.mapReindex e r hW ⟶ y.mapReindex e r hW) :
+    segmentCrossingEvents
+        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) b =
+      (segmentCrossingEvents ν a).map
+        (fun S => S.map (Equiv.prodCongr r (Equiv.refl ℤ)).toEmbedding) := by
+  rw [segmentCrossingEvents_def, segmentCrossingEvents_def,
+    orderedCrossingTimes_mapReindex a e r hW b, List.map_map]
+  exact List.map_congr_left fun t _ => signedCrossingEvent_mapReindex ν x y e r hW t
+
 end TauCeti.WallComplement
 
 namespace Quiver.Path
@@ -347,5 +486,45 @@ theorem signedCrossingEvents_smul (ν : ι → V →ₗ[ℝ] ℝ)
   induction p with
   | nil => simp
   | cons p e ih => simp [ih, segmentCrossingEvents_smul ν r hr]
+
+/-- Subdividing an admissible polygonal path by allowed interior vertices leaves its ordered
+list of signed crossing events unchanged. -/
+theorem IsSubdivision.signedCrossingEvents_eq (ν : ι → V →ₗ[ℝ] ℝ)
+    {p q : AdmissiblePLPath x y} (h : IsSubdivision p q) :
+    p.signedCrossingEvents ν = q.signedCrossingEvents ν := by
+  induction h with
+  | refl => rfl
+  | split e e₁ e₂ ht hz =>
+    simp [Quiver.Hom.toPath, segmentCrossingEvents_subdivide ν e e₁ e₂ ht hz]
+  | comp _ _ ihp ihq => simp [ihp, ihq]
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+
+/-- Transporting an admissible polygonal path along a continuous affine equivalence `e` and a
+wall-index equivalence `r : ι ≃ ι'` maps its signed crossing events along
+`Equiv.prodCongr r (Equiv.refl ℤ)` under pushed-forward coorientations. -/
+@[simp]
+theorem signedCrossingEvents_affineMapReindex {U ι' : Type*}
+    [NormedAddCommGroup U] [NormedSpace ℝ U] [Finite ι'] {W' : ι' → Set U}
+    (ν : ι → V →ₗ[ℝ] ℝ) (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) :
+    (p.affineMapReindex e r hW).signedCrossingEvents
+        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) =
+      (p.signedCrossingEvents ν).map
+        (fun S => S.map (Equiv.prodCongr r (Equiv.refl ℤ)).toEmbedding) := by
+  induction p with
+  | nil => simp
+  | cons p a ih => simp [ih, segmentCrossingEvents_mapReindex ν a e r hW]
+
+/-- Transporting an admissible polygonal path along a continuous affine equivalence preserves
+its signed crossing events under pushed-forward coorientations. -/
+@[simp]
+theorem signedCrossingEvents_affineMap {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (ν : ι → V →ₗ[ℝ] ℝ) (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) :
+    (p.affineMap e).signedCrossingEvents
+        (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) =
+      p.signedCrossingEvents ν := by
+  rw [← affineMapReindex_refl]
+  simpa using signedCrossingEvents_affineMapReindex (W' := fun i => e '' W i)
+    ν p e (Equiv.refl ι) (fun _ => rfl)
 
 end Quiver.Path

@@ -137,6 +137,33 @@ theorem mem_cellsOfCodimension_image (C : FinitePolyhedralComplex h)
   · rintro ⟨P, ⟨hP, hdim⟩, rfl⟩
     exact ⟨⟨P, hP, rfl⟩, by rw [hd, ← hv]; exact hdim⟩
 
+/-- The bijection `P ↦ e '' P` between the codimension-`k` cells of `C` and those of `C.image e`. -/
+noncomputable def cellsOfCodimensionEquiv (C : FinitePolyhedralComplex h)
+    (e : Toric.IntegralAffineEquiv h h') (k : ℕ) :
+    C.cellsOfCodimension k ≃ (C.image e).cellsOfCodimension k where
+  toFun P := ⟨e '' P.val, (C.mem_cellsOfCodimension_image e k _).mpr ⟨P.val, P.property, rfl⟩⟩
+  invFun Q := ⟨e.symm '' Q.val, by
+    obtain ⟨P, hP, hPQ⟩ := (C.mem_cellsOfCodimension_image e k Q.val).mp Q.property
+    rwa [← hPQ, e.symm_image_image]⟩
+  left_inv P := Subtype.ext (e.symm_image_image P.val)
+  right_inv Q := Subtype.ext (e.image_symm_image Q.val)
+
+@[simp]
+theorem coe_cellsOfCodimensionEquiv_apply (C : FinitePolyhedralComplex h)
+    (e : Toric.IntegralAffineEquiv h h') (k : ℕ) (P : C.cellsOfCodimension k) :
+    (C.cellsOfCodimensionEquiv e k P : Set W) = e '' (P : Set V) := (rfl)
+
+@[simp]
+theorem coe_cellsOfCodimensionEquiv_symm_apply (C : FinitePolyhedralComplex h)
+    (e : Toric.IntegralAffineEquiv h h') (k : ℕ) (Q : (C.image e).cellsOfCodimension k) :
+    ((C.cellsOfCodimensionEquiv e k).symm Q : Set V) = e.symm '' (Q : Set W) := (rfl)
+
+/-- The bijection `w ↦ e '' w` between the walls of `C` and the walls of `C.image e`. -/
+noncomputable abbrev wallsEquiv (C : FinitePolyhedralComplex h)
+    (e : Toric.IntegralAffineEquiv h h') :
+    C.walls ≃ (C.image e).walls :=
+  C.cellsOfCodimensionEquiv e 1
+
 end FinitePolyhedralComplex
 
 end TauCeti

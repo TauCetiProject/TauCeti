@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -10,6 +10,7 @@ public import TauCeti.Geometry.ScatteringDiagram.Path.Generic
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Combinatorics.Quiver.Prefunctor
+public import TauCeti.Combinatorics.Quiver.Symmetric
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -37,7 +38,8 @@ endpoints of a segment meeting no wall, by connectedness of the unit interval.
 
 Adapted from `Mei/Geometry/Convex/Polyhedron/AdmissiblePath.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0), with reversal for
+`WallComplement.restrictPrefunctor` added here.
 Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
@@ -292,6 +294,11 @@ theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → 
 instance : Quiver.HasInvolutiveReverse (WallComplement W) where
   reverse' e := ⟨e.down.symm⟩
   inv' _ := Subsingleton.elim _ _
+
+/-- Forgetting walls commutes with segment reversal. -/
+instance {κ : Type*} (W : ι → Set V) (f : κ → ι) :
+    (restrictPrefunctor W f).MapReverse where
+  map_reverse' _ := Subsingleton.elim _ _
 
 end WallComplement
 

@@ -506,6 +506,11 @@ def toContinuousAffineEquiv (e : IntegralAffineEquiv h h') : V ≃ᴬ[ℝ] V' :=
 theorem coe_toContinuousAffineEquiv (e : IntegralAffineEquiv h h') :
     ⇑e.toContinuousAffineEquiv = e := (rfl)
 
+/-- Forgetting continuity gives the original affine equivalence. -/
+@[simp]
+theorem toContinuousAffineEquiv_toAffineEquiv (e : IntegralAffineEquiv h h') :
+    e.toContinuousAffineEquiv.toAffineEquiv = e.toAffineEquiv := (rfl)
+
 /-- Rationality with the exact bundled continuous-map type, for use in public
 constructions without relying on unfolding the rational-map predicate. -/
 theorem isRational_toContinuousAffineMap (e : IntegralAffineEquiv h h') :
