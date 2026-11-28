@@ -17,8 +17,8 @@ Let `I : H →ₗ[R] R` be a left invariant integral on a bialgebra. Integrating
 variable of an `(n + 1)`-cochain, with sign `(-1)^(n + 1)`, gives a homotopy for multiplication
 by `I 1` in positive degrees. When `I 1 = 1`, this gives a primitive for every positive-degree
 cocycle. In degree zero the same identity involves averaging the coaction on the coefficients.
-The equivalence to the fixed submodule in degree zero uses `Homotopy.mkCochainComplex`,
-with the degree-zero maps assembled as in `Comodule.hochschildComplexCofreeHomotopyEquiv`.
+A normalized integral gives a homotopy equivalence between the Hochschild cochain complex and
+the fixed submodule concentrated in degree zero.
 
 Over a field, a linearly reductive bialgebra has Sweedler's normalized invariant integral.
 Its Hochschild cohomology therefore vanishes in positive degrees for arbitrary comodules.
@@ -116,6 +116,7 @@ theorem exactAt_succ_of_isLeftInvariantIntegral_of_isUnit {I : H →ₗ[R] R}
   exact (map_smul (d R H M n) _ _).trans (by
     rw [d_signedContractLast_of_cocycle M hI n hz, ← ha, smul_smul, a.inv_mul, one_smul])
 
+-- The degree-zero maps are assembled as in `Comodule.hochschildComplexCofreeHomotopyEquiv`.
 /-- A normalized left invariant integral retracts the Hochschild complex onto the fixed
 submodule placed in degree zero. The projection in degree zero is the Reynolds operator. -/
 def homotopyEquivFixed {I : H →ₗ[R] R} (hI : I.IsLeftInvariantIntegral) (h1 : I 1 = 1) :
