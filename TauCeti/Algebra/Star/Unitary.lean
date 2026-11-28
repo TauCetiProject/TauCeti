@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Algebra.Star.Prod
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Data.Fintype.Prod
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Unitary elements
@@ -19,6 +23,12 @@ sends `1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps 
 unitaries, and the ring inverse of a unitary element is its adjoint. Finally, the unitary
 elements of a subgroup of the units are identified with the unitary elements whose unit lies in
 that subgroup.
+
+An infinite field whose involution is not the identity has infinitely many unitary elements, in
+every characteristic: for `z` not fixed by `star`, the quotients `(m + z) / (m + star z)`, with
+`m` self-adjoint, are pairwise distinct unitary elements. For a CM field with complex conjugation,
+the unitary elements are the norm-one elements of the field, the unitary scalars of every unitary
+group over it.
 
 For a subgroup `H` of the units `Mˣ` of a star monoid `M`, the unitary part `H.unitaryPart` is the
 subgroup of `unitary M` consisting of the unitary elements whose unit lies in `H`. For a subgroup
@@ -36,6 +46,10 @@ the Cartan decomposition of `H`. The same elements also form the subgroup
 * `Unitary.map_mem_of_map_one`: a star-preserving multiplicative map with `f 1 = 1` maps
   unitaries to unitaries.
 * `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
+* `selfAdjoint.infinite_of_exists_star_ne`: an infinite commutative ring without zero divisors
+  whose involution is not the identity has infinitely many self-adjoint elements.
+* `Unitary.infinite_of_exists_star_ne`: an infinite field whose involution is not the identity
+  has infinitely many unitary elements.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
 * `Subgroup.unitaryInfEquiv`: the unitary elements of a subgroup `H` of `Mˣ` are the unitary
@@ -86,6 +100,55 @@ theorem map_mem_of_map_one {R S F : Type*} [Monoid R] [StarMul R] [Monoid S] [St
 theorem ringInverse_coe {R : Type*} [MonoidWithZero R] [StarMul R] (u : unitary R) :
     Ring.inverse (u : R) = star (u : R) :=
   Ring.inverse_unit (Unitary.toUnits u)
+
+end Unitary
+
+/-- An infinite commutative ring without zero divisors whose involution is not the identity has
+infinitely many self-adjoint elements. -/
+theorem selfAdjoint.infinite_of_exists_star_ne {R : Type*} [CommRing R] [NoZeroDivisors R]
+    [StarRing R] [Infinite R] (h : ∃ z : R, star z ≠ z) : Infinite (selfAdjoint R) := by
+  obtain ⟨z, hz⟩ := h
+  -- An element `x` is determined by the self-adjoint elements `x + star x` and
+  -- `z * x + star (z * x)`.
+  let T : R → selfAdjoint R := fun x ↦ ⟨x + star x, IsSelfAdjoint.add_star_self x⟩
+  have hinj : Function.Injective (fun x ↦ (T x, T (z * x))) := by
+    intro x y hxy
+    have h₁ : x + star x = y + star y := congrArg (fun p ↦ (p.1 : R)) hxy
+    have h₂ : z * x + star z * star x = z * y + star z * star y := by
+      simpa [T, star_mul, mul_comm] using congrArg (fun p ↦ (p.2 : R)) hxy
+    exact mul_left_cancel₀ (sub_ne_zero.mpr hz.symm) (by linear_combination h₂ - star z * h₁)
+  have : Infinite (selfAdjoint R × selfAdjoint R) := Infinite.of_injective _ hinj
+  exact (infinite_prod.mp inferInstance).elim And.left And.right
+
+namespace Unitary
+
+/-- **An infinite field whose involution is not the identity has infinitely many unitary
+elements**, in every characteristic. -/
+theorem infinite_of_exists_star_ne {K : Type*} [Field K] [Infinite K] [StarRing K]
+    (h : ∃ z : K, star z ≠ z) : Infinite (unitary K) := by
+  have := selfAdjoint.infinite_of_exists_star_ne h
+  obtain ⟨z, hz⟩ := h
+  have hden : ∀ m : selfAdjoint K, (m : K) + star z ≠ 0 := by
+    intro m hm
+    apply hz
+    have hs := congrArg star hm
+    simp only [star_add, selfAdjoint.star_val_eq, star_star, star_zero] at hs
+    linear_combination hm - hs
+  have hnum : ∀ m : selfAdjoint K, (m : K) + z ≠ 0 := by
+    intro m hm
+    apply hden m
+    simpa only [star_add, selfAdjoint.star_val_eq, star_zero] using congrArg star hm
+  have hmem : ∀ m : selfAdjoint K, ((m : K) + z) / (m + star z) ∈ unitary K := by
+    intro m
+    rw [mem_iff_star_mul_self, star_div₀, star_add, star_add,
+      selfAdjoint.star_val_eq, star_star, div_mul_div_comm,
+      mul_comm ((m : K) + star z), div_self (mul_ne_zero (hnum m) (hden m))]
+  -- The quotients `(m + z) / (m + star z)` are pairwise distinct.
+  refine Infinite.of_injective (fun m : selfAdjoint K ↦ ⟨_, hmem m⟩) fun m m' hmm' ↦ ?_
+  have h : ((m : K) + z) / (m + star z) = ((m' : K) + z) / (m' + star z) :=
+    congrArg Subtype.val hmm'
+  rw [div_eq_div_iff (hden m) (hden m')] at h
+  exact Subtype.ext (mul_left_cancel₀ (sub_ne_zero.mpr hz.symm) (by linear_combination -h))
 
 end Unitary
 

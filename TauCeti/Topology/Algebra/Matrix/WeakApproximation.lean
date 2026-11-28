@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Cayley
 public import TauCeti.Topology.Algebra.IsOpenUnits
 public import TauCeti.Topology.Instances.Matrix
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Weak approximation for the unitary group of a hermitian form
@@ -162,10 +163,9 @@ theorem mem_closure_range_map_unitaryGroupOf_of_isUnit_one_add [IsOpenUnits A]
   refine closure_mono ?_ hgc
   rintro _ ⟨_, ⟨hY1A, Y, hY, rfl⟩, rfl⟩
   -- `Y` is skew with `1 + Y` invertible, so its Cayley transform is a rational unitary matrix.
-  have hY1 : IsUnit (1 + Y) := by
-    rw [isUnit_iff_isUnit_det, ← isUnit_map_iff f, RingHom.map_det, map_add, map_one,
-      RingHom.mapMatrix_apply, ← isUnit_iff_isUnit_det]
-    exact hY1A
+  have hY1 : IsUnit (1 + Y) :=
+    (Matrix.isUnit_map_iff f (1 + Y)).1 <| by
+      rwa [Matrix.map_add f (map_add f), Matrix.map_one _ f.map_zero f.map_one]
   refine ⟨unitaryGroupOf.ofMatrix hJu _ (star_cayleyCoord_one_mul_mul_cayleyCoord_one hY hY1), ?_⟩
   simp only [unitaryGroupOf.val_ofMatrix]
   rw [← RingHom.mapMatrix_apply,
