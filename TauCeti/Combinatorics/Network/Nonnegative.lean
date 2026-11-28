@@ -227,9 +227,9 @@ theorem nonnegAssignment_apply_eq_natCast (f : Flow cap s t) {x y : V} (e : Q x 
 nonnegative arrow values of an integer flow to its natural arrow values. -/
 @[simp]
 theorem nonnegAssignment_map_intOrderAddMonoidIsoNat (f : Flow cap s t) :
-    f.nonnegAssignment.map Nonneg.intOrderAddMonoidIsoNat = f.natAssignment := by
+    f.nonnegAssignment.map nonnegIntOrderAddMonoidIsoNat = f.natAssignment := by
   funext x y e
-  simp only [Assignment.map_apply, Nonneg.intOrderAddMonoidIsoNat_apply, natAssignment_apply]
+  simp only [Assignment.map_apply, nonnegIntOrderAddMonoidIsoNat_apply, natAssignment_apply]
   rw [coe_nonnegAssignment]
 
 end Flow

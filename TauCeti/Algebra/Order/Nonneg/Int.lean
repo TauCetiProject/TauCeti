@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Algebra.Order.Nonneg.Basic
-public import Mathlib.Algebra.Order.Ring.Int
+public import Mathlib.Algebra.Ring.Int.Defs
 
 /-!
 # Nonnegative integers
@@ -19,10 +19,10 @@ nonnegative subtype.
 
 public section
 
-namespace Nonneg
+namespace TauCeti
 
 /-- Nonnegative integers are order-additively equivalent to natural numbers via `Int.toNat`. -/
-def intOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
+def nonnegIntOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
   let e : ℕ ≃+o Nonneg ℤ :=
     {
       toFun := fun n ↦ (n : Nonneg ℤ)
@@ -37,14 +37,14 @@ def intOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
     }
   e.symm
 
-theorem intOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
-    intOrderAddMonoidIsoNat n = n.val.toNat :=
-  by rw [intOrderAddMonoidIsoNat, ← OrderAddMonoidIso.invFun_eq_symm]
+theorem nonnegIntOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
+    nonnegIntOrderAddMonoidIsoNat n = n.val.toNat :=
+  by rw [nonnegIntOrderAddMonoidIsoNat, ← OrderAddMonoidIso.invFun_eq_symm]
 
-theorem intOrderAddMonoidIsoNat_symm_apply (n : ℕ) :
-    intOrderAddMonoidIsoNat.symm n = (Nat.cast n : Nonneg ℤ) :=
+theorem nonnegIntOrderAddMonoidIsoNat_symm_apply (n : ℕ) :
+    nonnegIntOrderAddMonoidIsoNat.symm n = (Nat.cast n : Nonneg ℤ) :=
   by
-    rw [intOrderAddMonoidIsoNat, OrderAddMonoidIso.symm_symm]
+    rw [nonnegIntOrderAddMonoidIsoNat, OrderAddMonoidIso.symm_symm]
     rfl
 
-end Nonneg
+end TauCeti
