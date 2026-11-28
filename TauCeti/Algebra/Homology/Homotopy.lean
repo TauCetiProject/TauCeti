@@ -94,10 +94,10 @@ where the differential out of the source and the differential into the target va
 `Homotopy.equivSubZero_apply_hom` computes the components of the homotopy from `f - g` to `0`
 that Mathlib's `Homotopy.equivSubZero` builds from a homotopy from `f` to `g`.
 
-`HomotopyEquiv.ofHomotopyRetract` and `HomotopyEquiv.ofHomotopyRetractOfComm` transfer a homotopy
-equivalence `e : HomotopyEquiv K₁ L₁` to a morphism `i₂ : K₂ ⟶ L₂` that is a retract up to homotopy
-of `e.hom`, with transferred inverse `rL ≫ e.inv ≫ jK` and without assuming any homotopy on the
-composites `jK ≫ rK` or `jL ≫ rL`.
+`HomotopyEquiv.ofHomotopyRetract` transfers a homotopy equivalence `e : HomotopyEquiv K₁ L₁` to a
+morphism `i₂ : K₂ ⟶ L₂` that is a retract up to homotopy of `e.hom`, with transferred inverse
+`rL ≫ e.inv ≫ jK` and without assuming any homotopy on the composites `jK ≫ rK` or `jL ≫ rL`,
+together with component equations for its inverse homotopies and the identity-retract check.
 
 `HomotopyEquiv.homotopyInv` shows that two homotopy equivalences with homotopic forward maps
 have homotopic inverses and induce the same isomorphism on homology
@@ -150,13 +150,11 @@ homotopy equivalences `e₁` and `e₂` commute with `a` and `b` up to chain hom
 def _root_.HomotopyEquiv.invNaturality (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
     (w : Homotopy (e₁.hom ≫ b) (a ≫ e₂.hom)) :
     Homotopy (e₁.inv ≫ a) (b ≫ e₂.inv) :=
-  (Homotopy.ofEq (Category.comp_id (e₁.inv ≫ a)).symm).trans <|
-    (e₂.homotopyHomInvId.symm.compLeft (e₁.inv ≫ a)).trans <|
-      (Homotopy.ofEq (by simp only [Category.assoc])).trans <|
-        ((w.symm.compRight e₂.inv).compLeft e₁.inv).trans <|
-          (Homotopy.ofEq (by simp only [Category.assoc])).trans <|
-            (e₁.homotopyInvHomId.compRight (b ≫ e₂.inv)).trans <|
-              Homotopy.ofEq (Category.id_comp (b ≫ e₂.inv))
+  (e₂.homotopyHomInvId.compLeftId (e₁.inv ≫ a)).symm.trans <|
+    (Homotopy.ofEq (by simp only [Category.assoc])).trans <|
+      ((w.symm.compRight e₂.inv).compLeft e₁.inv).trans <|
+        (Homotopy.ofEq (by simp only [Category.assoc])).trans <|
+          e₁.homotopyInvHomId.compRightId (b ≫ e₂.inv)
 
 end Squares
 
@@ -601,14 +599,12 @@ def ofHomotopyRetract (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
     (Homotopy.ofEq (Category.assoc i₂ rL (e.inv ≫ jK)).symm).trans
       ((hr.compRight (e.inv ≫ jK)).trans
         ((Homotopy.ofEq (by simp only [Category.assoc])).trans
-          (((e.homotopyHomInvId.compRight jK).compLeft rK).trans
-            ((Homotopy.ofEq (by simp only [Category.id_comp])).trans hK))))
+          (((e.homotopyHomInvId.compRightId jK).compLeft rK).trans hK)))
   homotopyInvHomId :=
     (Homotopy.ofEq (by simp only [Category.assoc])).trans
       (((hj.compLeft e.inv).compLeft rL).trans
         ((Homotopy.ofEq (by simp only [Category.assoc])).trans
-          (((e.homotopyInvHomId.compRight jL).compLeft rL).trans
-            ((Homotopy.ofEq (by simp only [Category.id_comp])).trans hL))))
+          (((e.homotopyInvHomId.compRightId jL).compLeft rL).trans hL)))
 
 /-- The forward morphism of `ofHomotopyRetract` is `i₂`. -/
 @[simp]
@@ -628,34 +624,59 @@ lemma ofHomotopyRetract_inv (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
     (e.ofHomotopyRetract i₂ hK hL hj hr).inv = rL ≫ e.inv ≫ jK :=
   (rfl)
 
-/-- Transfer a homotopy equivalence `e : HomotopyEquiv K₁ L₁` to a morphism `i₂ : K₂ ⟶ L₂` along
-strictly commutative squares `jK ≫ i₂ = e.hom ≫ jL` and `i₂ ≫ rL = rK ≫ e.hom` with homotopies
-`rK ≫ jK ~ 𝟙 K₂` and `rL ≫ jL ~ 𝟙 L₂`. -/
-@[no_expose]
-def ofHomotopyRetractOfComm (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
-    {jK : K₁ ⟶ K₂} {jL : L₁ ⟶ L₂} {rK : K₂ ⟶ K₁} {rL : L₂ ⟶ L₁}
-    (hK : Homotopy (rK ≫ jK) (𝟙 K₂)) (hL : Homotopy (rL ≫ jL) (𝟙 L₂))
-    (hj : jK ≫ i₂ = e.hom ≫ jL) (hr : i₂ ≫ rL = rK ≫ e.hom) :
-    HomotopyEquiv K₂ L₂ :=
-  e.ofHomotopyRetract i₂ hK hL (.ofEq hj) (.ofEq hr)
-
-/-- The forward morphism of `ofHomotopyRetractOfComm` is `i₂`. -/
+/-- Components of the `hom ≫ inv ~ 𝟙` homotopy of `ofHomotopyRetract`. -/
 @[simp]
-lemma ofHomotopyRetractOfComm_hom (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
+lemma ofHomotopyRetract_homotopyHomInvId_hom (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
     {jK : K₁ ⟶ K₂} {jL : L₁ ⟶ L₂} {rK : K₂ ⟶ K₁} {rL : L₂ ⟶ L₁}
     (hK : Homotopy (rK ≫ jK) (𝟙 K₂)) (hL : Homotopy (rL ≫ jL) (𝟙 L₂))
-    (hj : jK ≫ i₂ = e.hom ≫ jL) (hr : i₂ ≫ rL = rK ≫ e.hom) :
-    (e.ofHomotopyRetractOfComm i₂ hK hL hj hr).hom = i₂ :=
-  (rfl)
+    (hj : Homotopy (jK ≫ i₂) (e.hom ≫ jL)) (hr : Homotopy (i₂ ≫ rL) (rK ≫ e.hom))
+    (p q : ι) :
+    (e.ofHomotopyRetract i₂ hK hL hj hr).homotopyHomInvId.hom p q =
+      hr.hom p q ≫ e.inv.f q ≫ jK.f q + rK.f p ≫ e.homotopyHomInvId.hom p q ≫ jK.f q +
+        hK.hom p q := by
+  simp [ofHomotopyRetract, add_assoc]
 
-/-- The homotopy inverse of `ofHomotopyRetractOfComm` is `rL ≫ e.inv ≫ jK`. -/
+/-- Components of the `inv ≫ hom ~ 𝟙` homotopy of `ofHomotopyRetract`. -/
 @[simp]
-lemma ofHomotopyRetractOfComm_inv (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
+lemma ofHomotopyRetract_homotopyInvHomId_hom (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
     {jK : K₁ ⟶ K₂} {jL : L₁ ⟶ L₂} {rK : K₂ ⟶ K₁} {rL : L₂ ⟶ L₁}
     (hK : Homotopy (rK ≫ jK) (𝟙 K₂)) (hL : Homotopy (rL ≫ jL) (𝟙 L₂))
-    (hj : jK ≫ i₂ = e.hom ≫ jL) (hr : i₂ ≫ rL = rK ≫ e.hom) :
-    (e.ofHomotopyRetractOfComm i₂ hK hL hj hr).inv = rL ≫ e.inv ≫ jK :=
-  (rfl)
+    (hj : Homotopy (jK ≫ i₂) (e.hom ≫ jL)) (hr : Homotopy (i₂ ≫ rL) (rK ≫ e.hom))
+    (p q : ι) :
+    (e.ofHomotopyRetract i₂ hK hL hj hr).homotopyInvHomId.hom p q =
+      rL.f p ≫ e.inv.f p ≫ hj.hom p q + rL.f p ≫ e.homotopyInvHomId.hom p q ≫ jL.f q +
+        hL.hom p q := by
+  simp [ofHomotopyRetract, add_assoc]
+
+/-- For the identity retract on `e`, the transferred inverse agrees with `e.inv`. -/
+lemma ofHomotopyRetract_id_inv (e : HomotopyEquiv K₁ L₁)
+    (hK : Homotopy (𝟙 K₁ ≫ 𝟙 K₁) (𝟙 K₁)) (hL : Homotopy (𝟙 L₁ ≫ 𝟙 L₁) (𝟙 L₁))
+    (hj : Homotopy (𝟙 K₁ ≫ e.hom) (e.hom ≫ 𝟙 L₁))
+    (hr : Homotopy (e.hom ≫ 𝟙 L₁) (𝟙 K₁ ≫ e.hom)) :
+    (e.ofHomotopyRetract e.hom hK hL hj hr).inv = e.inv := by
+  simp
+
+/-- For the identity retract on `e` with zero witness homotopies, the transferred `hom ≫ inv ~ 𝟙`
+homotopy agrees componentwise with `e.homotopyHomInvId`. -/
+lemma ofHomotopyRetract_id_homotopyHomInvId_hom (e : HomotopyEquiv K₁ L₁)
+    (hK : Homotopy (𝟙 K₁ ≫ 𝟙 K₁) (𝟙 K₁)) (hL : Homotopy (𝟙 L₁ ≫ 𝟙 L₁) (𝟙 L₁))
+    (hj : Homotopy (𝟙 K₁ ≫ e.hom) (e.hom ≫ 𝟙 L₁))
+    (hr : Homotopy (e.hom ≫ 𝟙 L₁) (𝟙 K₁ ≫ e.hom))
+    (hhK : hK.hom = 0) (hhr : hr.hom = 0) (p q : ι) :
+    (e.ofHomotopyRetract e.hom hK hL hj hr).homotopyHomInvId.hom p q =
+      e.homotopyHomInvId.hom p q := by
+  simp [hhK, hhr]
+
+/-- For the identity retract on `e` with zero witness homotopies, the transferred `inv ≫ hom ~ 𝟙`
+homotopy agrees componentwise with `e.homotopyInvHomId`. -/
+lemma ofHomotopyRetract_id_homotopyInvHomId_hom (e : HomotopyEquiv K₁ L₁)
+    (hK : Homotopy (𝟙 K₁ ≫ 𝟙 K₁) (𝟙 K₁)) (hL : Homotopy (𝟙 L₁ ≫ 𝟙 L₁) (𝟙 L₁))
+    (hj : Homotopy (𝟙 K₁ ≫ e.hom) (e.hom ≫ 𝟙 L₁))
+    (hr : Homotopy (e.hom ≫ 𝟙 L₁) (𝟙 K₁ ≫ e.hom))
+    (hhL : hL.hom = 0) (hhj : hj.hom = 0) (p q : ι) :
+    (e.ofHomotopyRetract e.hom hK hL hj hr).homotopyInvHomId.hom p q =
+      e.homotopyInvHomId.hom p q := by
+  simp [hhL, hhj]
 
 end Retract
 
@@ -703,9 +724,9 @@ lemma homologyMap_comp_toHomologyIso_inv (e₁ : HomotopyEquiv K₁ L₁) (e₂ 
     [K₁.HasHomology i] [L₁.HasHomology i] [K₂.HasHomology i] [L₂.HasHomology i] :
     HomologicalComplex.homologyMap fL i ≫ (e₂.toHomologyIso i).inv =
       (e₁.toHomologyIso i).inv ≫ HomologicalComplex.homologyMap fK i := by
-  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp, toHomologyIso_hom, toHomologyIso_hom,
-    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
-  exact (h.homologyMap_eq i).symm
+  rw [toHomologyIso_inv, toHomologyIso_inv, ← HomologicalComplex.homologyMap_comp,
+    ← HomologicalComplex.homologyMap_comp]
+  exact ((e₁.invNaturality e₂ h.symm).homologyMap_eq i).symm
 
 end InverseUniqueness
 

@@ -14,7 +14,6 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 public import TauCeti.Topology.Homotopy.RealProd
 
 import Mathlib.CategoryTheory.MorphismProperty.Retract
-import TauCeti.Algebra.Homology.Homotopy
 import TauCeti.Geometry.Manifold.ContMDiff.Homotopy
 
 /-!
@@ -55,11 +54,8 @@ quasi-isomorphism for `N` then it is one for `M`
 inverse of `f`, only a smooth homotopy from the identity to `g ∘ f`; for mutually inverse smooth
 maps, take the constant homotopy `Prod.snd`.
 
-Any two chain homotopy equivalences from smooth singular chains to continuous singular chains whose
-forward map is the subcomplex inclusion have chain-homotopic inverses (`HomotopyEquiv.homotopyInv`)
-and induce the same isomorphism on homology (`HomotopyEquiv.toHomologyIso_eq_of_homotopy`). On a
-subsingleton manifold, the inclusion of smooth singular chains is an isomorphism and hence a chain
-homotopy equivalence (`ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`).
+On a subsingleton manifold, the inclusion of smooth singular chains is an isomorphism and hence a
+chain homotopy equivalence (`ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`).
 
 Homotopy invariance is an input of the comparison of smooth with continuous singular homology by a
 Mayer–Vietoris induction; its consequences for smoothly contractible manifolds are in
@@ -383,6 +379,37 @@ theorem smoothSingularChainHomotopyEquivOfContMDiff_inv
     (smoothSingularChainHomotopyEquivOfContMDiff R hF c h₀ h₁).inv =
       SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R := by
   rfl
+
+/-- Collapsing `X` to the constant point `c` sends every singular `0`-simplex of `X` to the
+smooth `0`-simplex `(SmoothSimplex.equiv₀ I M).symm c`. -/
+@[simp]
+theorem constToSmoothSingularSubcomplex_app_zero (X : TopCat.{u}) (c : M)
+    (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((constToSmoothSingularSubcomplex I X c).app (Opposite.op ⦋0⦌) σ)) =
+      (SmoothSimplex.equiv₀ I M).symm c := by
+  refine (SmoothSimplex.equiv₀ I M).eq_symm_apply.2 ?_
+  rw [SmoothSimplex.equiv₀_apply, SmoothSimplex.toContinuousMap_apply]
+  change ((TopCat.of M).toSSetObjEquiv (Opposite.op ⦋0⦌)
+    (((constToSmoothSingularSubcomplex I X c ≫
+      (smoothSingularSubcomplex I M).ι).app (Opposite.op ⦋0⦌)) σ)) _ = c
+  rw [constToSmoothSingularSubcomplex_ι, TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app]
+  rfl
+
+/-- On a smoothly contractible charted space with contraction centre `c`, the homotopy inverse of
+`smoothSingularChainHomotopyEquivOfContMDiff` sends the summand of every singular `0`-simplex to
+the summand of the smooth `0`-simplex at `c`. -/
+@[reassoc]
+theorem ι_smoothSingularChainHomotopyEquivOfContMDiff_inv_f_zero
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
+    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
+    (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c)
+    (σ : (TopCat.toSSet.obj (TopCat.of M)) _⦋0⦌) :
+    (TopCat.toSSet.obj (TopCat.of M)).ιChainComplex σ ≫
+        (smoothSingularChainHomotopyEquivOfContMDiff R hF c h₀ h₁).inv.f 0 =
+      (smoothSingularSubcomplex I M : SSet).ιChainComplex ((SmoothSimplex.equiv₀ I M).symm c) := by
+  rw [smoothSingularChainHomotopyEquivOfContMDiff_inv, SSet.ι_chainComplexMap_f,
+    constToSmoothSingularSubcomplex_app_zero]
 
 /-- On a smoothly contractible charted space, the inclusion of smooth singular chains into singular
 chains is a quasi-isomorphism. -/

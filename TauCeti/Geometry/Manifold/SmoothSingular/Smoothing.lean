@@ -355,8 +355,8 @@ theorem smoothSingularChainHomotopyEquiv_hom_naturality {f : M → N}
         SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R =
       SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R ≫
         (smoothSingularChainHomotopyEquiv J N R).hom := by
-  rw [smoothSingularChainHomotopyEquiv_hom, smoothSingularChainHomotopyEquiv_hom,
-    ← Functor.map_comp, ← Functor.map_comp, smoothSingularSubcomplexMap_ι]
+  simpa only [smoothSingularChainHomotopyEquiv_hom] using
+    (chainComplexMap_smoothSingularSubcomplexMap_ι hf R).symm
 
 variable {I M J N} in
 /-- **Naturality up to chain homotopy of the smoothing inverse.** For any smooth map `f : M → N`,

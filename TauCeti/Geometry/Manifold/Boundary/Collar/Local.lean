@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Chart
+public import TauCeti.Geometry.Manifold.Instances.HalfLine
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -30,8 +31,6 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
 
 * `TauCeti.EuclideanHalfSpace.interiorEmbedding`: a homeomorphism of `ℝⁿ⁺¹` onto the open
   half-space, through which charts of a boundaryless manifold become interior half-space charts.
-* `TauCeti.EuclideanHalfSpace.normalRay`: the inward normal ray `[0, ∞) → EuclideanHalfSpace 1`,
-  the parametrization by which the one-dimensional half-space model is a half-line.
 * `TauCeti.EuclideanHalfSpace.normalIio`: the initial segment `[0, ε)` of the one-dimensional
   half-space model, cut out by the normal coordinate, and
   `TauCeti.EuclideanHalfSpace.normalIioOpens`: the same segment as an open subspace.
@@ -55,7 +54,6 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
 
 * `TauCeti.EuclideanHalfSpace.exists_normalIio_subset`: the segments `[0, ε)` are a neighbourhood
   basis of the origin of the one-dimensional half-space model.
-* `TauCeti.EuclideanHalfSpace.contMDiffOn_normalRay`: the normal ray is smooth on `[0, ∞)`.
 * `TauCeti.EuclideanHalfSpace.contMDiff_interiorEmbedding` and
   `TauCeti.EuclideanHalfSpace.contMDiffOn_interiorEmbedding_symm`: `interiorEmbedding` is smooth,
   and so is its inverse on the open half-space, so charts of a boundaryless manifold followed by it
@@ -103,72 +101,6 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 namespace EuclideanHalfSpace
-
-/-- The inward normal ray of the one-dimensional half-space model: the point of
-`EuclideanHalfSpace 1` at normal distance `r` from the boundary, for `r ≤ 0` the origin.
-
-Truncating at `0` is what makes the ray a globally defined continuous map on `ℝ`; it is used
-only for `0 ≤ r`, where `normalRay_normalCoord` inverts it. -/
-def normalRay (r : ℝ) : EuclideanHalfSpace 1 := ⟨toLp 2 fun _ ↦ max r 0, le_max_right r 0⟩
-
-/-- The normal coordinate of a point of the normal ray. -/
-@[simp]
-theorem normalRay_coe_apply (r : ℝ) : (normalRay r).val 0 = max r 0 := (rfl)
-
-/-- The origin of the one-dimensional half-space model has vanishing normal coordinate. -/
-@[simp]
-theorem val_zero_apply : (0 : EuclideanHalfSpace 1).val 0 = 0 := (rfl)
-
-/-- The normal ray starts at the origin. -/
-@[simp]
-theorem normalRay_zero : normalRay 0 = 0 := by
-  refine EuclideanHalfSpace.ext _ _ ?_
-  ext i
-  rw [Subsingleton.elim i 0]
-  simp [normalRay]
-
-/-- The normal ray parametrizes the one-dimensional half-space model by its normal coordinate. -/
-@[simp]
-theorem normalRay_normalCoord (t : EuclideanHalfSpace 1) : normalRay (t.val 0) = t := by
-  refine EuclideanHalfSpace.ext _ _ ?_
-  ext i
-  rw [Subsingleton.elim i 0]
-  simp [normalRay, max_eq_left t.property]
-
-/-- The normal ray is the inverse of the model with corners of the half-line, applied to the
-reals viewed as `ℝ¹`. -/
-theorem normalRay_eq_symm (r : ℝ) :
-    normalRay r = (𝓡∂ 1).symm ((PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm r) := by
-  refine EuclideanHalfSpace.ext _ _ ?_
-  ext i
-  rw [Subsingleton.elim i 0]
-  simp [modelWithCornersEuclideanHalfSpace_symm_apply]
-
-/-- The normal ray is continuous. -/
-theorem continuous_normalRay : Continuous normalRay := by
-  refine Continuous.subtype_mk ?_ _
-  fun_prop
-
-/-- The normal ray along a nonnegative `C^k` function is `C^k` into the one-dimensional
-half-space model. -/
-theorem _root_.ContMDiff.normalRay {E' H' M : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [TopologicalSpace H'] {I : ModelWithCorners ℝ E' H'} [TopologicalSpace M]
-    [ChartedSpace H' M] {k : WithTop ℕ∞} {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f)
-    (hf0 : ∀ x, 0 ≤ f x) : ContMDiff I (𝓡∂ 1) k fun x ↦ normalRay (f x) := by
-  have hcoord : ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k
-      fun x ↦ (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm (f x) :=
-    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.comp hf
-  have hrange (x : M) : (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm (f x) ∈ range (𝓡∂ 1) := by
-    rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
-    simpa using hf0 x
-  exact ((𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hcoord hrange).congr fun x ↦ normalRay_eq_symm _
-
-/-- A point of the one-dimensional half-space model vanishes exactly when its normal coordinate
-does. -/
-@[simp]
-theorem eq_zero_iff {t : EuclideanHalfSpace 1} : t = 0 ↔ t.val 0 = 0 := by
-  refine ⟨fun h ↦ by rw [h]; rfl, fun h ↦ ?_⟩
-  rw [← normalRay_normalCoord t, h, normalRay_zero]
 
 /-- The initial segment `[0, ε)` of the one-dimensional half-space model: the points whose normal
 coordinate is smaller than `ε`. It is empty for `ε ≤ 0`, and is the model factor of the collar
@@ -357,16 +289,6 @@ theorem range_interiorEmbedding (n : ℕ) :
     refine congrArg _ (Prod.ext rfl ?_)
     rw [expRay, Real.exp_log hy, ← collarDiffeomorph_symm_apply_snd_apply_zero (k := ⊤),
       normalRay_normalCoord]
-
-/-- The normal ray is `C^k` on the nonnegative reals, where it is the inverse of the model with
-corners of the half-line. -/
-theorem contMDiffOn_normalRay {k : WithTop ℕ∞} :
-    ContMDiffOn 𝓘(ℝ) (𝓡∂ 1) k normalRay (Ici 0) := by
-  refine ((𝓡∂ 1).contMDiffOn_symm.comp
-    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.contMDiffOn
-    fun r hr ↦ ?_).congr fun r _ ↦ normalRay_eq_symm r
-  rw [mem_preimage, range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
-  simpa using hr
 
 /-- `interiorEmbedding` is `C^k`, from `ℝⁿ⁺¹` to the half-space with its model with corners. -/
 theorem contMDiff_interiorEmbedding (n : ℕ) {k : WithTop ℕ∞} :
