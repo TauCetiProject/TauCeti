@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
+import TauCeti.Analysis.Normed.Group.InfiniteSum
 
 /-!
 # A gliding hump lemma for absolutely summable rows
@@ -71,18 +72,6 @@ private theorem exists_strictMono_glidingHump {a : ℕ → ℕ → E} {ε δ : �
     _ = δ / 4 * ∑ l ∈ range i, (1 / 2 : ℝ) ^ l := (mul_sum _ _ _).symm
     _ ≤ δ / 4 * 2 := by gcongr; exact sum_geometric_two_le i
     _ < δ := by linarith
-
-/-- A subfamily of a row indexed beyond the cut-off `N` is bounded by the tail of the row from
-`N` on. -/
-private theorem norm_tsum_comp_le_tsum_norm_add {r : ℕ → E} (hr : Summable fun k ↦ ‖r k‖)
-    {φ : ℕ → ℕ} (hφ : Function.Injective φ) {N : ℕ} (hN : ∀ l, N ≤ φ l) :
-    ‖∑' l, r (φ l)‖ ≤ ∑' k, ‖r (k + N)‖ := by
-  have hrφ : Summable fun l ↦ ‖r (φ l)‖ := hr.comp_injective hφ
-  have hinj : Function.Injective fun l ↦ φ l - N := fun l l' h ↦
-    hφ (by have := hN l; have := hN l'; simp only at h; omega)
-  refine (norm_tsum_le_tsum_norm hrφ).trans (hrφ.tsum_le_tsum_of_inj _ hinj
-    (fun _ _ ↦ norm_nonneg _) (fun l ↦ by rw [Nat.sub_add_cancel (hN l)]) ?_)
-  exact (summable_nat_add_iff (f := fun k ↦ ‖r k‖) N).2 hr
 
 /-- **Gliding hump lemma.** If the rows of a matrix with entries in a Banach space are absolutely
 summable and the row sums over every fixed set of columns tend to zero, then the diagonal entries

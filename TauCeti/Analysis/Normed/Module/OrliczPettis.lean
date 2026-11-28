@@ -111,18 +111,6 @@ private theorem exists_hasSum_indicator_sum {x : ℕ → X}
     simp only [U, mem_iUnion, Finset.mem_coe, not_exists]
     exact fun k' hk' hnk' ↦ hk (hunique hn hnk' ▸ hk')
 
-/-- A weak sum of a subseries lies in the closed linear span of the terms. -/
-private theorem mem_topologicalClosure_span_range {u : ℕ → X} {A : Set ℕ} {y : X}
-    (hy : ∀ f : StrongDual 𝕜 X, HasSum (fun n ↦ f (A.indicator u n)) (f y)) :
-    y ∈ (Submodule.span 𝕜 (range u)).topologicalClosure := by
-  rw [Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero]
-  intro f hf
-  refine (hy f).unique ?_
-  convert hasSum_zero with n
-  by_cases hn : n ∈ A
-  · simp [hn, hf _ (Submodule.subset_span (mem_range_self _))]
-  · simp [hn]
-
 /-- If functionals `zⱼ` tend to zero on every weak subseries sum of a weakly subseries summable
 series `∑ uₖ`, then `zⱼ (uⱼ)` tends to zero. -/
 private theorem tendsto_apply_diag_zero {u : ℕ → X}
@@ -162,7 +150,8 @@ private theorem tendsto_zero_of_forall_hasSum_indicator {u : ℕ → X}
     refine tendsto_apply_diag_zero (u := u ∘ φ) (exists_hasSum_indicator_comp hu hφ.injective)
       fun A y hy ↦ ?_
     have hy₀ := Submodule.topologicalClosure_mono
-      (Submodule.span_mono (range_comp_subset_range φ u)) (mem_topologicalClosure_span_range hy)
+      (Submodule.span_mono (range_comp_subset_range φ u))
+      (mem_topologicalClosure_span_range_of_forall_hasSum_indicator hy)
     simpa [φ] using (hW y hy₀).sub_const (W y)
   have hW0 : Tendsto (fun j ↦ W (u (φ j))) atTop (𝓝 0) := by
     obtain ⟨y, hy⟩ := exists_hasSum_indicator_comp hu hφ.injective univ
@@ -183,23 +172,14 @@ private theorem exists_forall_disjoint_norm_sum_lt {x : ℕ → X}
   -- form a weakly subseries summable series whose terms do not tend to zero.
   by_contra! h
   choose T hTs hTε using h
-  -- The blocks `B k = T (range (M k))` lie in the consecutive intervals `[M k, M (k + 1))`.
-  let M : ℕ → ℕ := fun k ↦ Nat.rec 0 (fun _ m ↦ max m ((T (range m)).sup id + 1)) k
-  let B : ℕ → Finset ℕ := fun k ↦ T (range (M k))
-  have hM : Monotone M := monotone_nat_of_le_succ fun k ↦ le_max_left _ _
-  have hB (k : ℕ) {n : ℕ} (hn : n ∈ B k) : M k ≤ n ∧ n < M (k + 1) :=
-    ⟨not_lt.1 fun hlt ↦ Finset.disjoint_left.1 (hTs _) hn (mem_range.2 hlt),
-      (Nat.lt_succ_of_le (Finset.le_sup (f := id) hn)).trans_le (le_max_right _ _)⟩
-  have hdisj : Pairwise (Disjoint on B) := by
-    have hlt {k l : ℕ} (hkl : k < l) : Disjoint (B k) (B l) := Finset.disjoint_left.2
-      fun n hk hl ↦ ((hB k hk).2.trans_le (hM (Nat.succ_le_of_lt hkl))).not_ge (hB l hl).1
-    intro k l hkl
-    rcases hkl.lt_or_gt with h | h
-    · exact hlt h
-    · exact (hlt h).symm
+  -- Each finite family of blocks is avoided by a further block `T (⋃ S)`.
+  obtain ⟨B, hBε, hdisj⟩ := exists_seq_of_forall_finset_exists'
+    (fun B : Finset ℕ ↦ ε ≤ ‖∑ n ∈ B, x n‖) Disjoint fun S _ ↦
+      ⟨T (S.biUnion id), hTε _,
+        fun B hB ↦ ((Finset.disjoint_biUnion_right _ S id).1 (hTs _) B hB).symm⟩
   have h0 := tendsto_zero_of_forall_hasSum_indicator (exists_hasSum_indicator_sum hx hdisj)
   obtain ⟨k, hk⟩ := (h0.norm.eventually (gt_mem_nhds (by simpa using hε))).exists
-  exact (hTε _).not_gt hk
+  exact (hBε k).not_gt hk
 
 /-- **Orlicz–Pettis theorem.** In a real or complex normed space, a series every subseries of
 which is weakly summable converges unconditionally in norm to its weak sum: if for every set
