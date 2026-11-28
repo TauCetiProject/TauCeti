@@ -21,6 +21,8 @@ a period pair `L`:
 
 * `PeriodPair.countable_lattice`, `PeriodPair.eventually_notMem_lattice`: the lattice is countable
   and avoided by a punctured neighbourhood of every point;
+* `PeriodPair.eq_of_eqOn_compl_lattice`: continuous functions that agree off the lattice are
+  equal;
 * `PeriodPair.differentiable_of_periodic`: a lattice-periodic function that is differentiable at
   `0` and off the lattice is entire.
 
@@ -36,6 +38,13 @@ a period exactly when `m` and `n` are even (`PeriodPair.div_two_mem_lattice_iff`
 this also shows that `ℂ / Λ` has exactly three points of order two: given three distinct ones `t`,
 `t'`, `t - t'`, every half-period is congruent to `0`, `t`, `t'` or `t - t'`
 (`PeriodPair.mem_lattice_or_sub_mem_lattice_of_two_mul_mem`).
+
+## Provenance
+
+`PeriodPair.eq_of_eqOn_compl_lattice` is adapted from `PeriodPair.eq_of_eq_off_lattice` (file
+`src/Lib/CM/Sigma/Basic.lean`) in grh-lean (https://github.com/lsernau/grh-lean, commit `72fead1`,
+Apache 2.0, Copyright 2026 Anthropic, PBC). There the functions are entire and agree off a
+translate of the lattice; here they are continuous and agree off the lattice itself.
 -/
 
 public section
@@ -75,6 +84,11 @@ lemma countable_lattice : (L.lattice : Set ℂ).Countable :=
 lemma eventually_notMem_lattice (l₀ : ℂ) : ∀ᶠ u in 𝓝[≠] l₀, u ∉ L.lattice := by
   filter_upwards [nhdsWithin_le_nhds (L.compl_lattice_sdiff_singleton_mem_nhds l₀),
     self_mem_nhdsWithin] with u hu hne using fun h ↦ hu ⟨h, hne⟩
+
+/-- Two continuous functions that agree off the lattice are equal. -/
+lemma eq_of_eqOn_compl_lattice {f g : ℂ → ℂ} (hf : Continuous f) (hg : Continuous g)
+    (h : Set.EqOn f g (L.lattice : Set ℂ)ᶜ) : f = g :=
+  hf.ext_on (L.countable_lattice.dense_compl ℝ) hg h
 
 /-- A function that is periodic under every lattice vector, differentiable at `0` and
 differentiable off the lattice is differentiable everywhere. -/

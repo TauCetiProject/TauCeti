@@ -75,6 +75,12 @@ variable {D}
 theorem IsPositive.pos (hD : D.IsPositive) {u : V} (hu : u ≠ 0) : 0 < D.riemannForm (I • u) u :=
   D.isPositive_iff.mp hD u hu
 
+/-- A nonzero multiple of a datum with positive Riemann form has positive Riemann form. -/
+theorem IsPositive.nsmul (hD : D.IsPositive) {n : ℕ} (hn : n ≠ 0) : (n • D).IsPositive :=
+  fun u hu ↦ by
+    rw [riemannForm_nsmul, LinearMap.smul_apply, LinearMap.smul_apply, nsmul_eq_mul]
+    exact mul_pos (by positivity) (hD.pos hu)
+
 /-- A positive Riemann form is bounded below by a positive multiple of `‖u‖²` on the diagonal
 `(i u, u)`. -/
 theorem IsPositive.exists_pos_mul_sq_le [FiniteDimensional ℂ V] (hD : D.IsPositive) :

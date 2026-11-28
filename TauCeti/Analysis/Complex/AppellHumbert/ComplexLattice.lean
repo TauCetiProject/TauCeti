@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Complex
 public import TauCeti.Analysis.Complex.AppellHumbert.Basic
+public import TauCeti.Analysis.Complex.AppellHumbert.Positive
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import TauCeti.LinearAlgebra.Complex.Determinant
@@ -58,13 +59,19 @@ the theta functions, are the same in both conventions.
 
 * `ZLattice.hermitianForm`: the Hermitian form `H (z, u) = z ū / A` of a lattice in `ℂ`.
 * `ZLattice.exists_im_hermitianForm_eq_intCast`: `Im H` is integral on `Λ`.
+* `ZLattice.mem_of_forall_im_hermitianForm_eq_intCast`: `Λ` is self-dual for `Im H`.
 * `ZLattice.im_hermitianForm_basis_eq_one_or_eq_neg_one`: `Im H = ±1` on a basis.
 * `ZLattice.IsAppellHumbertMultiplier`, `ZLattice.appellHumbertData`: Appell–Humbert multipliers
   for `H` and their data.
+* `ZLattice.isPositive_appellHumbertData`, `ZLattice.isPositive_sigmaSignData`: the Riemann
+  forms of `(H, χ)` and `(H, ε)` are positive.
 * `ZLattice.sigmaSign`, `ZLattice.isAppellHumbertMultiplier_sigmaSign`, `ZLattice.sigmaSignData`:
   the sign `ε` and the datum `(H, ε)`, whose semicharacter, form, Riemann form and factor are
   `simp` lemmas (`ZLattice.semichar_sigmaSignData`, `ZLattice.form_sigmaSignData_apply`,
-  `ZLattice.riemannForm_sigmaSignData_apply`, `ZLattice.factor_sigmaSignData`).
+  `ZLattice.riemannForm_sigmaSignData_apply`, `ZLattice.factor_sigmaSignData`); `z ↦ f (-z)`
+  preserves its theta functions (`ZLattice.comp_neg_mem_thetaSpace_sigmaSignData`).
+* `ZLattice.exists_eq_appellHumbertData`: a datum with the form of `H` is `(H, χ)` for its
+  semicharacter `χ`.
 
 ## Provenance
 
@@ -77,6 +84,12 @@ and `ZLattice.im_hermitianForm_basis_eq_one_or_eq_neg_one` are adapted from
 Apache 2.0, Copyright 2026 Anthropic, PBC). There the objects are attached to a period pair and
 the area is `|Im (conj(ω₁) ω₂)|`; here they are attached to the lattice, with the area its
 covolume. The isogenies of that file are in `TauCeti.Algebra.Module.ZLattice.Complex`.
+`ZLattice.mem_of_forall_im_hermitianForm_eq_intCast` is adapted from
+`New.riemannForm_periods_mul_eq_sub` and the second half of the proof of
+`New.addSubgroupOf_dualLattice_nsmul_eq_range`, and
+`ZLattice.comp_neg_mem_thetaSpace_sigmaSignData` from `New.comp_neg_mem_thetaSpace`, in the same
+file. `ZLattice.exists_eq_appellHumbertData` is new here: grh-lean keeps the form and the
+multiplier as separate data.
 
 ## References
 
@@ -160,6 +173,28 @@ theorem exists_im_hermitianForm_eq_intCast (l m : Λ) :
   rw [← hl, ← hm]
   rcases im_hermitianForm_periods L a b c d with h | h <;> exact ⟨_, h⟩
 
+variable {Λ} in
+/-- **A lattice is self-dual for its Riemann form**: a point `x ∈ ℂ` with `E (x, l) ∈ ℤ` for
+every `l ∈ Λ` lies in `Λ`. -/
+theorem mem_of_forall_im_hermitianForm_eq_intCast {x : ℂ}
+    (hx : ∀ l ∈ Λ, ∃ n : ℤ, (hermitianForm Λ x l).im = n) : x ∈ Λ := by
+  -- With `E (ω₁, ω₂) = k = ±1`, `k x = E (x, ω₂) ω₁ - E (x, ω₁) ω₂`.
+  obtain ⟨L, rfl⟩ := Submodule.exists_periodPair_lattice_eq_of_isZLattice Λ
+  obtain ⟨p, hp⟩ := hx _ L.ω₁_mem_lattice
+  obtain ⟨q, hq⟩ := hx _ L.ω₂_mem_lattice
+  have key : ((hermitianForm L.lattice L.ω₁ L.ω₂).im : ℂ) * x =
+      (hermitianForm L.lattice x L.ω₂).im * L.ω₁ - (hermitianForm L.lattice x L.ω₁).im * L.ω₂ := by
+    simp only [im_hermitianForm, ofReal_div]
+    linear_combination ((covolume L.lattice : ℂ))⁻¹ * TauCeti.im_mul_conj_mul L.ω₁ L.ω₂ x
+  rw [hp, hq] at key
+  push_cast at key
+  have hk := im_hermitianForm_basis_eq_one_or_eq_neg_one L.lattice L.latticeBasis
+  simp only [PeriodPair.latticeBasis_zero, PeriodPair.latticeBasis_one] at hk
+  refine PeriodPair.mem_lattice.mpr ?_
+  rcases hk with hk | hk <;> simp only [hk, ofReal_one, ofReal_neg, one_mul, neg_one_mul] at key
+  · exact ⟨q, -p, by push_cast; linear_combination -key⟩
+  · exact ⟨-q, p, by push_cast; linear_combination key⟩
+
 /-! ### Appell–Humbert multipliers -/
 
 /-- An **Appell–Humbert multiplier** for the Hermitian form `H` of a lattice `Λ` in `ℂ`: a map
@@ -206,6 +241,11 @@ theorem riemannForm_appellHumbertData_I_mul_self_pos {u : ℂ} (hu : u ≠ 0) :
   simp only [riemannForm_appellHumbertData_apply, mul_assoc, mul_conj', ← ofReal_pow, I_mul_im,
     ofReal_re]
   exact div_pos (by positivity) (covolume_pos Λ)
+
+/-- The Riemann form `E = Im H` of the Appell–Humbert datum `(H, χ)` of a lattice is positive. -/
+theorem isPositive_appellHumbertData : (appellHumbertData Λ χ hχ).IsPositive :=
+  (TauCeti.AppellHumbertData.isPositive_iff _).mpr fun _ hu ↦ by
+    simpa [smul_eq_mul] using riemannForm_appellHumbertData_I_mul_self_pos hχ hu
 
 /-- The Riemann form of the Appell–Humbert datum of a lattice is `±1` on every `ℤ`-basis. -/
 theorem riemannForm_appellHumbertData_basis_eq_one_or_eq_neg_one (b : Basis (Fin 2) ℤ Λ) :
@@ -319,6 +359,12 @@ theorem sigmaSignData_def : sigmaSignData Λ =
   rw [sigmaSignData]
 
 variable (Λ) in
+/-- The Riemann form of the datum `(H, ε)` of a lattice is positive. -/
+theorem isPositive_sigmaSignData : (sigmaSignData Λ).IsPositive := by
+  rw [sigmaSignData_def]
+  exact isPositive_appellHumbertData _
+
+variable (Λ) in
 /-- The semicharacter of the datum `(H, ε)` is the sign `ε`. -/
 @[simp]
 theorem semichar_sigmaSignData : (sigmaSignData Λ).semichar = sigmaSign Λ := by
@@ -346,5 +392,33 @@ theorem factor_sigmaSignData (l : Λ) (z : ℂ) :
     (sigmaSignData Λ).factor l z =
       sigmaSign Λ l * exp (π * (z * conj (l : ℂ) + ‖(l : ℂ)‖ ^ 2 / 2) / covolume Λ) := by
   rw [sigmaSignData_def, factor_appellHumbertData]
+
+/-- `z ↦ f (-z)` preserves the theta functions of `(H, ε)`, as `ε` is even. -/
+theorem comp_neg_mem_thetaSpace_sigmaSignData {f : ℂ → ℂ}
+    (hf : f ∈ (sigmaSignData Λ).thetaSpace) :
+    (fun z ↦ f (-z)) ∈ (sigmaSignData Λ).thetaSpace := by
+  refine (TauCeti.AppellHumbertData.mem_thetaSpace_iff _).mpr
+    ⟨(TauCeti.AppellHumbertData.differentiable_of_mem_thetaSpace hf).comp differentiable_neg,
+      fun l z ↦ ?_⟩
+  have h := TauCeti.AppellHumbertData.apply_add_of_mem_thetaSpace hf (-l) (-z)
+  rw [factor_sigmaSignData] at h
+  rw [factor_sigmaSignData, neg_add]
+  simpa using h
+
+/-- An Appell–Humbert datum on `Λ` with the form `B (l, z) = (π / A) conj(l) z` of `H` is the datum
+`(H, χ)` of its semicharacter `χ`, which is then an Appell–Humbert multiplier for `H`. -/
+theorem exists_eq_appellHumbertData {D : TauCeti.AppellHumbertData Λ}
+    (hD : ∀ l z, D.form l z = π / covolume Λ * (conj l * z)) :
+    ∃ hχ : IsAppellHumbertMultiplier Λ D.semichar, D = appellHumbertData Λ D.semichar hχ := by
+  have hE (u v : ℂ) : D.riemannForm u v = (hermitianForm Λ u v).im := by
+    rw [TauCeti.AppellHumbertData.riemannForm_apply, hD, hD, im_hermitianForm, ← mul_sub]
+    simp [field]
+    ring
+  have hχ : IsAppellHumbertMultiplier Λ D.semichar := fun l m n hn ↦
+    D.semichar_add_eq_neg_one_zpow_mul l m ((hE l m).trans hn)
+  refine ⟨hχ, TauCeti.AppellHumbertData.ext ?_ ?_⟩
+  · ext l
+    rw [hD, form_appellHumbertData_apply]
+  · rw [semichar_appellHumbertData]
 
 end ZLattice

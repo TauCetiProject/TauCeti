@@ -29,7 +29,15 @@ Two complex numbers `ω₁`, `ω₂` are linearly independent over `ℝ` exactly
 determinant, the oriented area `Im (conj ω₁ ω₂)` of the parallelogram they span, is nonzero
 (`TauCeti.linearIndependent_pair_iff_im_conj_mul_ne_zero`). Passing to the integral combinations
 `a ω₁ + b ω₂`, `c ω₁ + d ω₂` multiplies this oriented area by the determinant `a d - b c`
-(`TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add`).
+(`TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add`). Oriented areas also give the coordinates
+of any `x` in the frame `u, v` (`TauCeti.im_mul_conj_mul`).
+
+## Provenance
+
+`TauCeti.im_mul_conj_mul` is adapted from `New.riemannForm_periods_mul_eq_sub` (file
+`src/Lib/CM/Sigma/Basic.lean`) in grh-lean (https://github.com/lsernau/grh-lean, commit `72fead1`,
+Apache 2.0, Copyright 2026 Anthropic, PBC). There it is stated for the Riemann form of a period
+pair; here it is the underlying identity for arbitrary `u, v, x ∈ ℂ`.
 -/
 
 public section
@@ -125,6 +133,12 @@ theorem linearIndependent_pair_iff_im_conj_mul_ne_zero {ω₁ ω₂ : ℂ} :
 `Im (u conj v) = -Im (conj u v)`. -/
 theorem im_mul_conj_eq_neg_im_conj_mul (u v : ℂ) : (u * conj v).im = -(conj u * v).im := by
   rw [← conj_im, map_mul, conj_conj]
+
+/-- **Coordinates by oriented areas.** For `u, v, x ∈ ℂ`:
+`Im (u conj v) x = Im (x conj v) u - Im (x conj u) v`. -/
+theorem im_mul_conj_mul (u v x : ℂ) :
+    ((u * conj v).im : ℂ) * x = (x * conj v).im * u - (x * conj u).im * v := by
+  apply Complex.ext <;> simp <;> ring
 
 /-- **The orientation of a sublattice basis.** For integers `a, b, c, d`,
 `Im (conj (a ω₁ + b ω₂) (c ω₁ + d ω₂)) = (a d - b c) Im (conj ω₁ ω₂)`. -/
