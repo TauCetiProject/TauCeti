@@ -36,6 +36,8 @@ instance `K₂`) `B = 0` and the formulas fail.
 
 ## Main results
 
+* `SimpleGraph.det_one_sub_smul_hashimotoMatrix_of_isRegularOfDegree`: for every `u` in a
+  commutative ring, `det (1 - u B) = (1 - u²) ^ (e - n) det ((1 + q u²) - u A)`.
 * `SimpleGraph.charpolyRev_hashimotoMatrix_of_isRegularOfDegree`:
   `det (1 - X B) = (1 - X²) ^ (e - n) ∏ᵥ (1 - λ_v X + q X²)`.
 * `SimpleGraph.charpoly_hashimotoMatrix_of_isRegularOfDegree`:
@@ -56,6 +58,26 @@ namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V} [Fintype V] [DecidableEq V] [DecidableRel G.Adj] {q : ℕ}
 
+/-- **The determinant `det (1 - u B)` of a regular graph.** If `G` is `(q + 1)`-regular with
+`q ≥ 1`, then for every `u` in a commutative ring,
+`det (1 - u B) = (1 - u²) ^ (e - n) det ((1 + q u²) - u A)`, where `n` is the number of vertices,
+`e` the number of edges and `A` the adjacency matrix. -/
+theorem det_one_sub_smul_hashimotoMatrix_of_isRegularOfDegree {R : Type*} [CommRing R]
+    (hG : G.IsRegularOfDegree (q + 1)) (hq : 1 ≤ q) (u : R) :
+    (1 - u • G.hashimotoMatrix R).det = (1 - u ^ 2) ^ (#G.edgeFinset - Fintype.card V) *
+      (scalar V (1 + q * u ^ 2) - u • G.adjMatrix R).det := by
+  rw [← eval_charpolyRev_eq_det_one_sub_smul,
+    charpolyRev_eq_of_add_dartSymmMatrix_eq_of_card_le G hashimotoMatrix_add_dartSymmMatrix
+      (hG.card_le_card_edgeFinset (by omega)), hG.degMatrix_eq R[X], ← coe_evalRingHom, map_mul,
+    RingHom.map_det]
+  congr 2
+  · simp
+  · ext i j
+    by_cases hij : i = j
+    · subst hij
+      simp [Matrix.natCast_apply, mul_comm]
+    · simp [one_apply_ne hij, Matrix.natCast_apply, hij, apply_ite (eval u)]
+
 /-- **The reversed characteristic polynomial of the Hashimoto matrix of a regular graph.** If `G`
 is `(q + 1)`-regular with `q ≥ 1`, then `det (1 - X B) = (1 - X²) ^ (e - n) ∏ᵥ (1 - λ_v X + q X²)`,
 where `n` is the number of vertices, `e` the number of edges and `λ_v` the adjacency
@@ -64,30 +86,22 @@ theorem charpolyRev_hashimotoMatrix_of_isRegularOfDegree (hG : G.IsRegularOfDegr
     (hq : 1 ≤ q) :
     (G.hashimotoMatrix ℝ).charpolyRev = (1 - X ^ 2) ^ (#G.edgeFinset - Fintype.card V) *
       ∏ v, (1 - C ((G.isHermitian_adjMatrix ℝ).eigenvalues v) * X + C (q : ℝ) * X ^ 2) := by
-  rw [charpolyRev_eq_of_add_dartSymmMatrix_eq_of_card_le G hashimotoMatrix_add_dartSymmMatrix
-    (hG.card_le_card_edgeFinset (by omega)), hG.degMatrix_eq ℝ[X]]
-  congr 1
   refine Polynomial.funext fun t ↦ ?_
-  have hM : (evalRingHom t).mapMatrix
-      (1 - (X : ℝ[X]) • G.adjMatrix ℝ[X] + (X ^ 2 : ℝ[X]) • (((q + 1 : ℕ) : Matrix V V ℝ[X]) - 1)) =
-      scalar V (1 + q * t ^ 2) - t • G.adjMatrix ℝ := by
-    ext i j
-    by_cases hij : i = j
-    · subst hij
-      simp [Matrix.natCast_apply, mul_comm]
-    · simp [one_apply_ne hij, Matrix.natCast_apply, hij, apply_ite (eval t)]
   -- `c - t A = c (1 - (t / c) A)` for the unit `c = 1 + q t²`, and `1 - s A` is diagonalised by
   -- the spectral theorem.
   have hc : (1 + q * t ^ 2 : ℝ) ≠ 0 := by positivity
   have hsmul : scalar V (1 + q * t ^ 2) - t • G.adjMatrix ℝ =
       (1 + q * t ^ 2) • (1 - (t / (1 + q * t ^ 2)) • G.adjMatrix ℝ) := by
     rw [smul_sub, smul_smul, mul_div_cancel₀ _ hc, smul_one_eq_diagonal, scalar_apply]
-  rw [← coe_evalRingHom, RingHom.map_det, hM, hsmul, det_smul,
+  rw [eval_charpolyRev_eq_det_one_sub_smul,
+    det_one_sub_smul_hashimotoMatrix_of_isRegularOfDegree hG hq, hsmul, det_smul,
     (G.isHermitian_adjMatrix ℝ).det_one_sub_smul, ← card_univ, ← prod_const, ← prod_mul_distrib,
-    map_prod]
+    eval_mul, eval_prod]
+  congr 1
+  · simp
   refine prod_congr rfl fun v _ ↦ ?_
-  simp only [RCLike.ofReal_real_eq_id, id_eq, map_natCast, coe_evalRingHom, eval_add, eval_sub,
-    eval_one, eval_mul, eval_C, eval_X, eval_natCast, eval_pow]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, eval_add, eval_sub, eval_one, eval_mul, eval_C,
+    eval_X, eval_pow]
   field_simp
   ring
 
