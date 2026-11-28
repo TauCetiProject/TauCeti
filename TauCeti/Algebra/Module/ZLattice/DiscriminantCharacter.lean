@@ -40,6 +40,9 @@ acts on the coset theta series `θ_γ`.
 * `ZLattice.IsEven.discriminantQuadraticChar_mk`: on `x ∈ L^∨`, `e(q_L(x)) = exp (πi ‖x‖²)`.
 * `ZLattice.IsEven.discriminantQuadraticChar_add`:
   `e(q_L(γ + δ)) = e(q_L(γ)) e(q_L(δ)) e(b_L(γ, δ))`.
+* `ZLattice.IsIntegral.discriminantPairingChar_orthSum` and
+  `ZLattice.IsEven.discriminantQuadraticChar_orthSum`: the pairing and quadratic phases factor
+  under `ZLattice.discriminantGroupOrthSumEquiv`, using Mathlib's product inner product and norm.
 * `ZLattice.IsEven.discriminantQuadraticChar_nsmul`,
   `ZLattice.IsEven.discriminantQuadraticChar_zsmul`: `e(q_L(n • γ)) = e(q_L(γ))^(n²)`.
 * `ZLattice.IsEven.discriminantQuadraticChar_pow_eq_one_iff`: `e(q_L(γ))^n = 1` if and only if
@@ -271,5 +274,45 @@ theorem cexp_two_pi_mul_I_div_eq_discriminantQuadraticChar_iff (hL : IsEven L)
     (AddChar.injective_iff.2 fun _ ↦ TauCeti.expCircle_eq_one_iff.mp).eq_iff]
 
 end IsEven
+
+section OrthSum
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] {M : Submodule ℤ F} [DiscreteTopology M] [IsZLattice ℝ M]
+
+/-- The discriminant pairing phase of an integral orthogonal sum is the product of the
+pairing phases on the two components of its discriminant group. -/
+@[simp]
+theorem IsIntegral.discriminantPairingChar_orthSum (h : IsIntegral (orthSum L M))
+    (γ δ : DiscriminantGroup (orthSum L M)) :
+    h.discriminantPairingChar γ δ =
+      (isIntegral_orthSum_iff.mp h).1.discriminantPairingChar
+        (discriminantGroupOrthSumEquiv L M γ).1
+        (discriminantGroupOrthSumEquiv L M δ).1 *
+      (isIntegral_orthSum_iff.mp h).2.discriminantPairingChar
+        (discriminantGroupOrthSumEquiv L M γ).2
+        (discriminantGroupOrthSumEquiv L M δ).2 := by
+  induction γ using Submodule.Quotient.induction_on
+  induction δ using Submodule.Quotient.induction_on
+  simp only [discriminantGroupOrthSumEquiv_mk, IsIntegral.discriminantPairingChar_mk_mk,
+    coe_dualOrthSumEquiv_apply_fst, coe_dualOrthSumEquiv_apply_snd, WithLp.prod_inner_apply,
+    WithLp.ofLp_fst, WithLp.ofLp_snd, Complex.ofReal_add, mul_add, Complex.exp_add]
+
+/-- The discriminant quadratic phase of an even orthogonal sum is the product of the
+quadratic phases on the two components of its discriminant group. -/
+@[simp]
+theorem IsEven.discriminantQuadraticChar_orthSum (h : IsEven (orthSum L M))
+    (γ : DiscriminantGroup (orthSum L M)) :
+    h.discriminantQuadraticChar γ =
+      (isEven_orthSum_iff.mp h).1.discriminantQuadraticChar
+        (discriminantGroupOrthSumEquiv L M γ).1 *
+      (isEven_orthSum_iff.mp h).2.discriminantQuadraticChar
+        (discriminantGroupOrthSumEquiv L M γ).2 := by
+  induction γ using Submodule.Quotient.induction_on
+  simp only [discriminantGroupOrthSumEquiv_mk, IsEven.discriminantQuadraticChar_mk,
+    coe_dualOrthSumEquiv_apply_fst, coe_dualOrthSumEquiv_apply_snd, WithLp.prod_norm_sq_eq_of_L2,
+    Complex.ofReal_add, mul_add, Complex.exp_add]
+
+end OrthSum
 
 end ZLattice
