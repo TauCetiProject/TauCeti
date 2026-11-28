@@ -24,6 +24,9 @@ These examples test the unitisation `R_!! = (V ⊕ m~ ⊗[V] R) ⧸ I` of
 * the classical, zero-setup and unit-algebra cases are exact, and so is every almost algebra in
   the classical setup.
 
+The adjunction counit is invertible at the unit algebra and at all classical algebras.
+In the zero setup it need not be invertible, as the product algebra `ℤ × ℤ` shows.
+
 ## References
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.2.
@@ -56,13 +59,14 @@ example :
 example (S : BasicSetup V) : Function.Bijective (S.shriekShriekCounit V) :=
   S.shriekShriekCounit_self_bijective
 
--- For every setup, the unitisation of the almost algebra `V^a` is `V`.
+-- At the unit algebra, the counit gives the isomorphism from the unitisation to `V`.
 example {V : Type} [CommRing V] (S : BasicSetup V) :
-    Nonempty (((Algebra.shriekShriek S).obj ((Algebra.toAlmost S).obj (CommAlgCat.of V V))) ≃ₐ[V]
-      V) :=
-  ⟨(AlgEquiv.ofBijective _ (S.shriekShriekMap_bijective_of_isAlmostIso
-    (Algebra.isAlmostIso_adj_unit_app S _))).symm.trans
-      (AlgEquiv.ofBijective _ S.shriekShriekCounit_self_bijective)⟩
+    IsIso ((Algebra.shriekShriekAdj S).counit.app (CommAlgCat.of V V)) := by
+  rw [← isIso_comp_left_iff (S.shriekShriekFunctor.map
+    ((Algebra.adj S).unit.app (CommAlgCat.of V V)))]
+  rw [Algebra.map_adj_unit_comp_shriekShriekAdj_counit_app,
+    shriekShriekToId_app, ConcreteCategory.isIso_iff_bijective]
+  exact S.shriekShriekCounit_self_bijective
 
 -- `V` is exact for every setup: `t ↦ t ⊗ 1` is injective on `m~`.
 example (S : BasicSetup V) : S.IsShriekShriekExact V :=
@@ -77,11 +81,23 @@ example (R : Type*) [CommRing R] [Algebra V R] :
     Function.Bijective ((classical V).shriekShriekCounit R) :=
   isAlmostIso_classical_iff.mp ((classical V).isAlmostIso_shriekShriekCounit R)
 
+-- Over a classical setup, the counit is an isomorphism even away from the unit algebra.
+example {V : Type} [CommRing V] (R : CommAlgCat V) :
+    IsIso ((Algebra.shriekShriekAdj (classical V)).counit.app R) := by
+  rw [← isIso_comp_left_iff ((classical V).shriekShriekFunctor.map
+    ((Algebra.adj (classical V)).unit.app R))]
+  rw [Algebra.map_adj_unit_comp_shriekShriekAdj_counit_app,
+    shriekShriekToId_app, ConcreteCategory.isIso_iff_bijective]
+  exact isAlmostIso_classical_iff.mp ((classical V).isAlmostIso_shriekShriekCounit R)
+
 -- In the classical setup, `B_!! → B_*` is an isomorphism for every almost algebra `B`.
 example {V : Type} [CommRing V] (B : Algebra (classical V)) :
     IsIso ((Algebra.shriekShriekToElements (classical V)).app B) := by
   rw [ConcreteCategory.isIso_iff_bijective]
-  exact isAlmostIso_classical_iff.mp ((classical V).isAlmostIso_shriekShriekCounit _)
+  have hf : Function.Bijective ⇑((Algebra.shriekShriekToElements (classical V)).app B).hom := by
+    rw [Algebra.shriekShriekToElements_app_hom]
+    exact isAlmostIso_classical_iff.mp ((classical V).isAlmostIso_shriekShriekCounit _)
+  exact hf
 
 -- In the classical setup every algebra is exact, since `m~ → m = V` is injective.
 example (R : Type*) [CommRing R] [Algebra V R] : (classical V).IsShriekShriekExact R :=
@@ -113,3 +129,25 @@ example (R : Type*) [CommRing R] [Algebra V R] :
     exact (Unitization.inl_injective ht).symm
   · obtain ⟨v, z, rfl⟩ := ShriekShriek.exists_eq_algebraMap_add_inr (zero V) R x
     exact ⟨v, by rw [hz, add_zero]⟩
+
+-- In the zero setup, the counit misses `(0, 1)` in the product algebra.
+example : ¬ IsIso ((Algebra.shriekShriekAdj (zero ℤ)).counit.app (CommAlgCat.of ℤ (ℤ × ℤ))) := by
+  let R := CommAlgCat.of ℤ (ℤ × ℤ)
+  rw [← isIso_comp_left_iff ((zero ℤ).shriekShriekFunctor.map
+    ((Algebra.adj (zero ℤ)).unit.app R))]
+  rw [Algebra.map_adj_unit_comp_shriekShriekAdj_counit_app,
+    shriekShriekToId_app, ConcreteCategory.isIso_iff_bijective]
+  intro h
+  have hz (z : (zero ℤ).Shriek R) : Shriek.act (zero ℤ) R z = 0 := by
+    induction z using Shriek.induction_on with
+    | add z z' hz hz' => rw [map_add, hz, hz', add_zero]
+    | tmul t r => rw [Shriek.act_tmul, zero_tildeMul, LinearMap.zero_apply, zero_smul]
+  obtain ⟨x, hx⟩ := h.surjective ((0, 1) : ℤ × ℤ)
+  obtain ⟨v, z, rfl⟩ := ShriekShriek.exists_eq_algebraMap_add_inr (zero ℤ) R x
+  have hv : algebraMap ℤ R v = (0, 1) := by
+    have hx' : (zero ℤ).shriekShriekCounit R
+        (algebraMap ℤ _ v + ShriekShriek.inr (zero ℤ) R z) = (0, 1) := hx
+    rwa [map_add, AlgHom.commutes, shriekShriekCounit_inr, hz, add_zero] at hx'
+  have h₀ := congrArg Prod.fst hv
+  have h₁ := congrArg Prod.snd hv
+  exact zero_ne_one (h₀.symm.trans h₁)

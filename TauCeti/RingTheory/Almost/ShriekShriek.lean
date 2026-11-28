@@ -27,8 +27,9 @@ The unitisation receives the natural `V`-algebra map `R_!! → R`, `(v, t ⊗ r)
 and this map is an almost isomorphism. For an almost algebra `B`, applying the construction to the
 algebra `B_*` of almost elements gives the functor `B ↦ B_!!` from almost `V`-algebras to
 commutative `V`-algebras, together with the natural map `B_!! → B_*` and the isomorphism
-`B ≅ (B_!!)^a`. The construction is the input of the left adjoint `B ↦ B_!!` of
-almostification on algebras and of the comparison of faithful flatness of `φ` and `φ_!!`.
+`B ≅ (B_!!)^a`. The adjunction `shriekShriekAdj` exhibits this functor as the left adjoint
+of almostification. Its unit is this isomorphism. Its counit is induced by the ordinary
+unitisation map because an almost isomorphism induces an isomorphism on unitisations.
 
 ## Main definitions
 
@@ -602,6 +603,31 @@ theorem shriekShriekCounit_comp_shriekShriekMap (f : R →ₐ[V] R') :
     (S.shriekShriekCounit R').comp (S.shriekShriekMap f) = f.comp (S.shriekShriekCounit R) := by
   ext; simp
 
+/-- Applying unitisation to the canonical map `R_!! → R` gives the canonical map
+`(R_!!)_!! → R_!!`. This compatibility uses the relation identifying `t ⊗ 1`
+with the scalar image of `t` (Gabber–Ramero, Proposition 2.2.27). -/
+theorem shriekShriekMap_shriekShriekCounit :
+    S.shriekShriekMap (S.shriekShriekCounit R) = S.shriekShriekCounit (S.ShriekShriek R) := by
+  apply ShriekShriek.algHom_ext
+  intro t x
+  simp only [shriekShriekMap_inr, Shriek.map_tmul, shriekShriekCounit_tmul]
+  have h (x : S.ShriekShriek R) :
+      ShriekShriek.inr S R (equiv S R (t ⊗ₜ S.shriekShriekCounit R x)) =
+        S.tildeMul t • x := by
+    obtain ⟨v, z, rfl⟩ := ShriekShriek.exists_eq_algebraMap_add_inr S R x
+    simp only [map_add, AlgHom.commutes, shriekShriekCounit_inr, tmul_add, smul_add]
+    congr 1
+    · -- Move the scalar through the tensor and use the relation on `t ⊗ 1`.
+      rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, tmul_smul,
+        map_smul, map_smul, ShriekShriek.inr_tmul_one, Algebra.algebraMap_eq_smul_one, smul_comm]
+    · induction z using Shriek.induction_on with
+      | add z z' hz hz' => rw [map_add, tmul_add, map_add, map_add, map_add, smul_add, hz, hz']
+      | tmul t' r =>
+        have ht : t ⊗ₜ[V] (S.tildeMul t' • r) = S.tildeMul t • (t' ⊗ₜ[V] r) := by
+          rw [← smul_tmul, S.tildeMul_smul_comm t' t, smul_tmul']
+        rw [Shriek.act_tmul, ht, map_smul, map_smul]
+  exact h x
+
 /-- **`R_!!` only depends on `R^a`**: if `f : R → R'` is an almost isomorphism, then
 `R_!! → R'_!!` is bijective, as `m~ ⊗[V] f` is. -/
 theorem shriekShriekMap_bijective_of_isAlmostIso {f : R →ₐ[V] R'}
@@ -626,6 +652,29 @@ theorem shriekShriekMap_bijective_of_isAlmostIso {f : R →ₐ[V] R'}
 
 end Functoriality
 
+/-- The unitisation functor `R ↦ R_!!` on ordinary commutative `V`-algebras, using
+`shriekShriekMap` on morphisms. It sends almost isomorphisms to isomorphisms. -/
+noncomputable abbrev shriekShriekFunctor : CommAlgCat.{u} V ⥤ CommAlgCat.{u} V where
+  obj R := CommAlgCat.of V (S.ShriekShriek R)
+  map f := CommAlgCat.ofHom (S.shriekShriekMap f.hom)
+  map_id _ := by ext1; simp only [CommAlgCat.hom_ofHom, CommAlgCat.hom_id, shriekShriekMap_id]
+  map_comp f g := by
+    ext1
+    simp only [CommAlgCat.hom_ofHom, CommAlgCat.hom_comp, shriekShriekMap_comp]
+
+/-- Comparison from the ordinary unitisation back to the original algebra. -/
+noncomputable def shriekShriekToId : shriekShriekFunctor S ⟶ 𝟭 (CommAlgCat.{u} V) where
+  app R := CommAlgCat.ofHom (S.shriekShriekCounit R)
+  naturality R R' f := by
+    ext1
+    exact S.shriekShriekCounit_comp_shriekShriekMap f.hom
+
+/-- The comparison on each ordinary algebra is its unitisation counit. -/
+@[simp]
+theorem shriekShriekToId_app (S : BasicSetup V) (R : CommAlgCat.{u} V) :
+    S.shriekShriekToId.app R = CommAlgCat.ofHom (S.shriekShriekCounit R) :=
+  (rfl)
+
 end TauCeti.Almost.BasicSetup
 
 namespace TauCeti.Almost.Algebra
@@ -637,28 +686,21 @@ variable {V : Type u} [CommRing V] (S : BasicSetup V)
 /-- The functor **`B ↦ B_!!`** from almost `V`-algebras to commutative `V`-algebras: the
 unitisation `(B_*)_!! = (V ⊕ m~ ⊗[V] B_*) ⧸ I` of the non-unital algebra `B_! = m~ ⊗[V] B_*`
 (Gabber–Ramero §2.2). The algebra `B` is recovered as `(B_!!)^a` (`shriekShriekUnitIso`). -/
-@[expose]
-noncomputable def shriekShriek : Algebra S ⥤ CommAlgCat.{u} V where
-  obj B := CommAlgCat.of V (S.ShriekShriek ((elements S).obj B))
-  map f := CommAlgCat.ofHom (S.shriekShriekMap ((elements S).map f).hom)
-  map_id B := by ext1; simp
-  map_comp f g := by ext1; simp [shriekShriekMap_comp]
+noncomputable abbrev shriekShriek : Algebra S ⥤ CommAlgCat.{u} V :=
+  elements S ⋙ S.shriekShriekFunctor
 
 /-- The natural map `B_!! → B_*`, `(v, t ⊗ b) ↦ v + t • b`, an almost isomorphism
 (`isIso_toAlmost_map_shriekShriekToElements_app`). -/
 @[expose]
 noncomputable def shriekShriekToElements : shriekShriek S ⟶ elements S where
-  app B := CommAlgCat.ofHom (X := S.ShriekShriek ((elements S).obj B)) (Y := (elements S).obj B)
-    (S.shriekShriekCounit ((elements S).obj B))
-  naturality B B' f := by
-    ext1
-    exact S.shriekShriekCounit_comp_shriekShriekMap ((elements S).map f).hom
+  app B := (S.shriekShriekToId).app ((elements S).obj B)
+  naturality _ _ f := (S.shriekShriekToId).naturality ((elements S).map f)
 
 theorem shriekShriek_obj (B : Algebra S) :
     (shriekShriek S).obj B = CommAlgCat.of V (S.ShriekShriek ((elements S).obj B)) :=
   (rfl)
 
-@[simp]
+/-- The map on almost algebras unitises the map on almost elements. -/
 theorem shriekShriek_map_hom {B B' : Algebra S} (f : B ⟶ B') :
     ((shriekShriek S).map f).hom = S.shriekShriekMap ((elements S).map f).hom :=
   (rfl)
@@ -712,5 +754,101 @@ theorem shriekShriekUnitIso_hom_app (B : Algebra S) :
     (shriekShriekUnitIso S).hom.app B =
       (counitIso S).inv.app B ≫ inv ((toAlmost S).map ((shriekShriekToElements S).app B)) := by
   simp [shriekShriekUnitIso]
+
+/-- The unitisation of `R → (R^a)_*` is an isomorphism because the map is an almost
+isomorphism. -/
+instance isIso_shriekShriekFunctor_map_adj_unit_app (R : CommAlgCat.{u} V) :
+    IsIso ((S.shriekShriekFunctor).map ((adj S).unit.app R)) := by
+  rw [ConcreteCategory.isIso_iff_bijective]
+  exact S.shriekShriekMap_bijective_of_isAlmostIso (isAlmostIso_adj_unit_app S R)
+
+private instance isIso_whiskerRight_adj_unit :
+    IsIso (Functor.whiskerRight (adj S).unit (S.shriekShriekFunctor)) :=
+  have (R : CommAlgCat.{u} V) :
+      IsIso ((Functor.whiskerRight (adj S).unit (S.shriekShriekFunctor)).app R) := by
+    rw [Functor.whiskerRight_app]
+    infer_instance
+  NatIso.isIso_of_isIso_app _
+
+/-- The counit of the unitisation adjunction is the map `R_!! → R`, transported
+along the isomorphism `R_!! ≅ ((R^a)_*)_!!`. -/
+@[simps! app]
+private noncomputable def shriekShriekAdjCounit :
+    toAlmost S ⋙ shriekShriek S ⟶ 𝟭 (CommAlgCat.{u} V) :=
+  (Functor.associator (toAlmost S) (elements S) (S.shriekShriekFunctor)).inv ≫
+    inv (Functor.whiskerRight (adj S).unit (S.shriekShriekFunctor)) ≫
+    (Functor.leftUnitor (S.shriekShriekFunctor)).hom ≫ S.shriekShriekToId
+
+/-- Precomposing the adjunction counit with the unitised map `R → (R^a)_*` gives the
+canonical map `R_!! → R`. -/
+private theorem unitisation_map_adj_unit_app_comp_counit (R : CommAlgCat.{u} V) :
+    (S.shriekShriekFunctor).map ((adj S).unit.app R) ≫ (shriekShriekAdjCounit S).app R =
+      (S.shriekShriekToId).app R := by
+  rw [shriekShriekAdjCounit_app, IsIso.hom_inv_id_assoc, shriekShriekToId_app]
+
+/-- Gabber–Ramero's unitisation `B ↦ B_!!` is left adjoint to almostification of
+commutative algebras (Gabber–Ramero, Proposition 2.2.27). -/
+noncomputable def shriekShriekAdj : shriekShriek S ⊣ toAlmost S where
+  unit := (shriekShriekUnitIso S).hom
+  counit := shriekShriekAdjCounit S
+  left_triangle_components B := by
+    have hc : (S.shriekShriekFunctor).map ((adj S).unit.app ((shriekShriek S).obj B)) ≫
+        (shriekShriek S).map ((shriekShriekUnitIso S).inv.app B) =
+        (S.shriekShriekToId).app ((shriekShriek S).obj B) := by
+      rw [shriekShriekUnitIso_inv_app]
+      have hn := (adj S).unit.naturality ((shriekShriekToElements S).app B)
+      simp only [Functor.id_map, Functor.comp_map] at hn
+      have hcomp :=
+        congrArg (fun f ↦ f ≫ (elements S).map ((adj S).counit.app B)) hn.symm
+      simp only [Category.assoc, Adjunction.right_triangle_components] at hcomp
+      calc
+        _ = S.shriekShriekFunctor.map
+              (((adj S).unit.app ((shriekShriek S).obj B)) ≫
+                (elements S).map ((toAlmost S).map ((shriekShriekToElements S).app B)) ≫
+                (elements S).map ((adj S).counit.app B)) := by
+            rw [Functor.comp_map, (elements S).map_comp]
+            exact (S.shriekShriekFunctor.map_comp _ _).symm
+        _ = S.shriekShriekFunctor.map ((shriekShriekToElements S).app B) :=
+          congrArg (S.shriekShriekFunctor.map) hcomp
+        _ = _ := by
+            ext1
+            exact S.shriekShriekMap_shriekShriekCounit
+    have he := unitisation_map_adj_unit_app_comp_counit S ((shriekShriek S).obj B)
+    rw [← hc] at he
+    rw [(cancel_epi _).mp he, ← (shriekShriek S).map_comp, Iso.hom_inv_id_app]
+    exact (shriekShriek S).map_id B
+  right_triangle_components R := by
+    have hc : (toAlmost S).map ((S.shriekShriekFunctor).map ((adj S).unit.app R)) ≫
+        (shriekShriekUnitIso S).inv.app ((toAlmost S).obj R) =
+        (toAlmost S).map ((S.shriekShriekToId).app R) := by
+      rw [shriekShriekUnitIso_inv_app, ← Category.assoc, ← Functor.map_comp]
+      have hn := (S.shriekShriekToId).naturality ((adj S).unit.app R)
+      simp only [Functor.id_map, Functor.comp_obj, Functor.id_obj] at hn
+      have h : (shriekShriekToElements S).app ((toAlmost S).obj R) =
+          (S.shriekShriekToId).app ((elements S).obj ((toAlmost S).obj R)) := rfl
+      -- Naturality puts the almostification unit next to its counit.
+      rw [h, hn, Functor.map_comp, Category.assoc, Adjunction.left_triangle_components,
+        Category.comp_id]
+    have he := congrArg ((toAlmost S).map) (unitisation_map_adj_unit_app_comp_counit S R)
+    rw [Functor.map_comp, ← hc] at he
+    simpa only [(cancel_epi _).mp he, Functor.id_obj] using
+      (shriekShriekUnitIso S).hom_inv_id_app ((toAlmost S).obj R)
+
+/-- The unit of the adjunction is the comparison `B ≅ (B_!!)^a`. -/
+@[simp]
+theorem shriekShriekAdj_unit : (shriekShriekAdj S).unit = (shriekShriekUnitIso S).hom :=
+  (rfl)
+
+/-- On the ordinary unitisation of `R`, the counit of the adjunction is the canonical
+map `R_!! → R`. -/
+@[reassoc (attr := simp)]
+theorem map_adj_unit_comp_shriekShriekAdj_counit_app (S : BasicSetup V) (R : CommAlgCat.{u} V) :
+    S.shriekShriekFunctor.map ((adj S).unit.app R) ≫
+        (shriekShriekAdj S).counit.app R = S.shriekShriekToId.app R :=
+  unitisation_map_adj_unit_app_comp_counit S R
+
+/-- Unitisation of almost algebras preserves colimits by the unitisation adjunction. -/
+instance shriekShriek_isLeftAdjoint : (shriekShriek S).IsLeftAdjoint :=
+  (shriekShriekAdj S).isLeftAdjoint
 
 end TauCeti.Almost.Algebra
