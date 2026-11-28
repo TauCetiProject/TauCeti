@@ -268,9 +268,26 @@ open Classical in
 theorem placeIdempotent_apply (S : Set (HeightOneSpectrum R)) (v : HeightOneSpectrum R) :
     placeIdempotent (K := K) S v = if v ∈ S then 1 else 0 := (rfl)
 
+/-- The place idempotent is idempotent. -/
+theorem isIdempotentElem_placeIdempotent (S : Set (HeightOneSpectrum R)) :
+    IsIdempotentElem (placeIdempotent (K := K) S) := by
+  refine FiniteAdeleRing.ext K fun v ↦ ?_
+  rw [mul_apply]
+  by_cases hv : v ∈ S <;> simp [hv]
+
+/-- The place idempotent is integral. -/
+theorem placeIdempotent_mem_integralAdeles (S : Set (HeightOneSpectrum R)) :
+    placeIdempotent (K := K) S ∈ integralAdeles R K := by
+  refine mem_integralAdeles.2 fun v ↦ ?_
+  by_cases hv : v ∈ S <;> simp [hv]
+
 /-- Projection of an adelic vector onto a set of finite places. -/
 noncomputable def projectPlaces (S : Set (HeightOneSpectrum R)) (x : ι → FiniteAdeleRing R K) :
     ι → FiniteAdeleRing R K := fun i ↦ placeIdempotent S * x i
+
+/-- Projection onto `S` is multiplication by the place idempotent of `S`. -/
+theorem projectPlaces_eq_smul (S : Set (HeightOneSpectrum R)) (x : ι → FiniteAdeleRing R K) :
+    projectPlaces S x = placeIdempotent (K := K) S • x := (rfl)
 
 open Classical in
 /-- Projection is computed by keeping the selected components. -/

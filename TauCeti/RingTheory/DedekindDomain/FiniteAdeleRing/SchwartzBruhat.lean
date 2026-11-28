@@ -24,6 +24,9 @@ infinite or empty.
 of indicators of cosets of any open subgroup on whose cosets it is constant and which contains
 the kernel of the projection. The coefficients are values at distinct representatives in its
 support. Taking the subgroup to be a scaled integral box gives the box-coset expansion.
+Translates, and products with locally constant functions depending only on the projection, are
+again Schwartz–Bruhat above `S` (`IsSchwartzBruhatAbove.comp_add`,
+`IsSchwartzBruhatAbove.mul_left`).
 
 The definitions and expansion follow `New.IsSchwartzBruhat`, `New.integralBox`, and
 `New.IsSchwartzBruhat.eq_sum_cosetIndicator` in [ShortProof], grh-lean
@@ -166,6 +169,26 @@ theorem smul (hf : IsSchwartzBruhatAbove S f) (c : ℂ) : IsSchwartzBruhatAbove 
   · simp [hc]
   · refine ⟨hf.isLocallyConstant.comp (fun z ↦ c • z), fun x ↦ by simp [hf.project_eq], ?_⟩
     simpa only [support_const_smul_of_ne_zero c f hc] using hf.isCompact_image_support
+
+/-- A translate of a Schwartz–Bruhat function above `S` is Schwartz–Bruhat above `S`. -/
+theorem comp_add (hf : IsSchwartzBruhatAbove S f) (y : ι → FiniteAdeleRing R K) :
+    IsSchwartzBruhatAbove S fun x ↦ f (x + y) := by
+  refine isSchwartzBruhatAbove_iff.2 ⟨hf.isLocallyConstant.comp_continuous
+    (continuous_id.add continuous_const), fun x ↦ ?_, (· - projectPlaces S y) '' (projectPlaces S ''
+    support f), hf.isCompact_image_support.image (continuous_sub_right _), ?_⟩
+  · rw [← hf.project_eq (projectPlaces S x + y), ← hf.project_eq (x + y)]
+    simp only [projectPlaces_add, projectPlaces_projectPlaces]
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨projectPlaces S (x + y), ⟨x + y, hx, rfl⟩, by simp⟩
+
+/-- The product of a Schwartz–Bruhat function above `S` with a locally constant function that
+depends only on the projection onto `S` is Schwartz–Bruhat above `S`. -/
+theorem mul_left (hf : IsSchwartzBruhatAbove S f) {φ : (ι → FiniteAdeleRing R K) → ℂ}
+    (hφ : IsLocallyConstant φ) (hφS : ∀ x, φ (projectPlaces S x) = φ x) :
+    IsSchwartzBruhatAbove S fun x ↦ φ x * f x :=
+  isSchwartzBruhatAbove_iff.2 ⟨hφ.mul hf.isLocallyConstant,
+    fun x ↦ by simp only [hφS, hf.project_eq], _, hf.isCompact_image_support,
+    image_mono fun _ hx ↦ right_ne_zero_of_mul hx⟩
 
 open Classical in
 /-- A Schwartz–Bruhat function above `S` has a finite expansion in cosets of any open additive
