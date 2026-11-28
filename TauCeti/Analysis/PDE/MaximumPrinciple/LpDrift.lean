@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
 import TauCeti.MeasureTheory.Function.L2Space
@@ -93,32 +94,6 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b e : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c d : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma sigma : ℝ} {p q : ℝ≥0∞}
-
-/-- If `d ∈ Lᵖ`, `g ∈ L²` and `f ∈ L² ∩ L^q` with `1/p + 1/q = 1/2`, then `(C + |d|) |g| |f|` is
-integrable for every constant `C`. -/
-private theorem integrable_const_add_norm_mul_norm_mul_norm {μ : Measure (EuclideanSpace ℝ ι)}
-    (C : ℝ) (hd : MemLp d p μ) (hpq : p⁻¹ + q⁻¹ = 2⁻¹)
-    {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 μ)
-    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 μ) (hfq : MemLp f q μ) :
-    Integrable (fun x ↦ (C + ‖d x‖) * (‖g x‖ * ‖f x‖)) μ := by
-  have : p.HolderTriple q 2 := ⟨hpq⟩
-  exact (((hg.norm.integrable_mul hf.norm).const_mul C).add
-    (hd.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) hg hfq)).congr
-    (ae_of_all _ fun x ↦ by simp only [Pi.add_apply, Pi.mul_apply]; ring)
-
-/-- If `‖b‖ ≤ β + |d|` on `Ω` with `d ∈ Lᵖ`, `u ∈ H¹(Ω)` and `φ ∈ H¹(Ω) ∩ L^q` with
-`1/p + 1/q = 1/2`, then the drift term `⟪b, ∇u⟫ φ` of the weak form is integrable. -/
-private theorem integrable_inner_gradient_mul_value
-    (hb : AEStronglyMeasurable b (mu.restrict Omega)) (hd : MemLp d p (mu.restrict Omega))
-    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta + ‖d x‖)
-    (hpq : p⁻¹ + q⁻¹ = 2⁻¹) (u : W1p mu Omega 2) {φ : W1p mu Omega 2}
-    (hφ : MemLp (W1p.value φ) q (mu.restrict Omega)) :
-    Integrable (fun x ↦ ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value φ x) (mu.restrict Omega) :=
-  (integrable_const_add_norm_mul_norm_mul_norm beta hd hpq (Lp.memLp (W1p.gradient u))
-    (Lp.memLp _) hφ).mono'
-    ((hb.inner (Lp.aestronglyMeasurable _)).mul (Lp.aestronglyMeasurable _))
-    ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦
-      norm_inner_mul_le_of_norm_le (hb_bound x hx) _ _)
 
 variable [DecidableEq ι]
 
