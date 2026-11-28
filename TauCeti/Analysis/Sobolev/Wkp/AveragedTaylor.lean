@@ -51,19 +51,17 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-private def averagedTaylorTerm {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
-    (mu : Measure E) (Omega : Opens E) (φ w : E → ℝ) (r : ℕ) : E → ℝ := fun x =>
-  ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι, ∫ y in Omega,
-    iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x - z⟫_ℝ) * φ z) y (b ∘ I) * w y ∂mu
-
 omit [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
-private theorem fderiv_averagedTaylorTerm {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
-    {u u' : E → ℝ} {h : E} (hu : HasWeakLineDerivOn mu Omega u u' h) (d : ℕ) {φ : E → ℝ}
-    (hφ : ContDiff ℝ (d + 1) φ) (hφc : HasCompactSupport φ) (hφs : tsupport φ ⊆ Omega) (x : E) :
-    fderiv ℝ (averagedTaylorTerm b mu Omega φ u (d + 1)) x h =
-      averagedTaylorTerm b mu Omega φ u' d x := by
-  unfold averagedTaylorTerm
-  rw [hu.fderiv_const_mul_sum_setIntegral_iteratedFDeriv_prod_inner_sub_mul b _ d hφ hφc hφs x,
+private theorem fderiv_setIntegral_taylorKernelTerm_mul {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) {u u' : E → ℝ} {h : E} (hu : HasWeakLineDerivOn mu Omega u u' h)
+    (d : ℕ) {φ : E → ℝ} (hφ : ContDiff ℝ (d + 1) φ) (hφc : HasCompactSupport φ)
+    (hφs : tsupport φ ⊆ Omega) (x : E) :
+    fderiv ℝ (fun x' => ∫ y in Omega, taylorKernelTerm (⇑b) φ (d + 1) x' y * u y ∂mu) x h =
+      ∫ y in Omega, taylorKernelTerm (⇑b) φ d x y * u' y ∂mu := by
+  rw [funext (setIntegral_taylorKernelTerm_mul_eq (⇑b) hφ hφc hφs hu.locallyIntegrableOn),
+    setIntegral_taylorKernelTerm_mul_eq (⇑b) (hφ.of_le (by exact_mod_cast Nat.le_succ d))
+      hφc hφs hu.locallyIntegrableOn_deriv,
+    hu.fderiv_const_mul_sum_setIntegral_iteratedFDeriv_prod_inner_sub_mul b _ d hφ hφc hφs x,
     Nat.factorial_succ]
   have hd1 : (d + 1 : ℝ) ≠ 0 := by positivity
   push_cast; field_simp [hd1]; ring
@@ -73,8 +71,10 @@ private theorem iteratedFDerivAlong_replicate_sum_eq_of_ge
     (hφs : tsupport φ ⊆ Omega) (h : E) :
     ∀ (j d : ℕ) (u : Wkp mu Omega p (j + 1)), ContDiff ℝ (d + j + 1) φ → ∀ x : E,
       iteratedFDerivAlong ℝ (List.replicate (j + 1) h)
-        (averagedTaylorTerm b mu Omega φ (value (j + 1) u) (d + j + 1)) x =
-        averagedTaylorTerm b mu Omega φ (fun y => fullContractL j h (iteratedGradient j u y)) d x
+        (fun x' => ∫ y in Omega,
+          taylorKernelTerm (⇑b) φ (d + j + 1) x' y * value (j + 1) u y ∂mu) x =
+        ∫ y in Omega, taylorKernelTerm (⇑b) φ d x y *
+          fullContractL j h (iteratedGradient j u y) ∂mu
   | 0, d, u, hφ, x => by
       have hw : HasWeakLineDerivOn mu Omega (value 1 u)
           (fun y => fullContractL 0 h (iteratedGradient 0 u y)) h :=
@@ -83,16 +83,20 @@ private theorem iteratedFDerivAlong_replicate_sum_eq_of_ge
       simp only [Nat.zero_add, List.replicate_one, iteratedFDerivAlong_cons_apply,
         iteratedFDerivAlong_nil]
       simp only [Nat.add_zero] at hφ ⊢
-      exact fderiv_averagedTaylorTerm b hw d hφ hφc hφs x
+      exact fderiv_setIntegral_taylorKernelTerm_mul b hw d hφ hφc hφs x
   | j + 1, d, u, hφ, x => by
       have hidx : d + (j + 1) + 1 = (d + 1) + j + 1 := by omega
       have hih : iteratedFDerivAlong ℝ (List.replicate (j + 1) h)
-          (averagedTaylorTerm b mu Omega φ (value (j + 1 + 1) u) (d + (j + 1) + 1)) =
-          averagedTaylorTerm b mu Omega φ (fun y => fullContractL j h
-            (iteratedGradient j (lowerOrder (j + 1) u) y)) (d + 1) := funext fun x' => by
-        rw [hidx, value_succ]
-        exact iteratedFDerivAlong_replicate_sum_eq_of_ge b hφc hφs h j (d + 1)
-          (lowerOrder (j + 1) u) (hφ.of_le (by norm_cast; omega)) x'
+          (fun x' => ∫ y in Omega, taylorKernelTerm (⇑b) φ (d + (j + 1) + 1) x' y *
+            value (j + 1 + 1) u y ∂mu) =
+          fun x' => ∫ y in Omega, taylorKernelTerm (⇑b) φ (d + 1) x' y *
+            fullContractL j h (iteratedGradient j (lowerOrder (j + 1) u) y) ∂mu :=
+        funext fun x' => by
+          have hval : value (j + 1 + 1) u = value (j + 1) (lowerOrder (j + 1) u) :=
+            value_succ (j + 1) u
+          simp_rw [hidx, hval]
+          exact iteratedFDerivAlong_replicate_sum_eq_of_ge b hφc hφs h j (d + 1)
+            (lowerOrder (j + 1) u) (hφ.of_le (by norm_cast; omega)) x'
       have hw : HasWeakLineDerivOn mu Omega
           (fun y => fullContractL j h (iteratedGradient j (lowerOrder (j + 1) u) y))
           (fun y => fullContractL (j + 1) h (iteratedGradient (j + 1) u y)) h :=
@@ -101,7 +105,8 @@ private theorem iteratedFDerivAlong_replicate_sum_eq_of_ge
             simp only [fullContractL_succ, ContinuousLinearMap.comp_apply]
             rw [ContinuousLinearMap.apply_apply])
       rw [List.replicate_succ, iteratedFDerivAlong_cons_apply, hih]
-      exact fderiv_averagedTaylorTerm b hw d (hφ.of_le (by norm_cast; omega)) hφc hφs x
+      exact fderiv_setIntegral_taylorKernelTerm_mul b hw d (hφ.of_le (by norm_cast; omega))
+        hφc hφs x
 
 /-- **Brenner–Scott weak derivative commutation identity.** For `u ∈ W^{j+1,p}(Ω)` (`1 ≤ p ≤ ∞`),
 `h : E`, and `φ : E → ℝ` of class `C^m` compactly supported in `Ω`, contracting
@@ -118,7 +123,8 @@ theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
       ∑ d ∈ Finset.range (m - j), ((-1 : ℝ) ^ d / (d.factorial : ℝ)) * ∑ J : Fin d → ι,
         ∫ y in Omega, iteratedFDeriv ℝ d (fun z => (∏ l : Fin d, ⟪b (J l), x - z⟫_ℝ) * φ z)
           y (b ∘ J) * fullContractL j h (iteratedGradient j u y) ∂mu := by
-  let term := averagedTaylorTerm b mu Omega φ (value (j + 1) u)
+  let term (r : ℕ) (x' : E) : ℝ :=
+    ∫ y in Omega, taylorKernelTerm (⇑b) φ r x' y * value (j + 1) u y ∂mu
   have hloc : LocallyIntegrableOn (value (j + 1) u) Omega mu := Lp.locallyIntegrableOn _ Fact.out
   have hI : ∀ {k : ℕ∞ω} {r : ℕ}, r ≤ m → ∀ I : Fin r → ι, ContDiff ℝ k (fun x' =>
       ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
@@ -129,11 +135,22 @@ theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
       ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
         y (b ∘ I) * value (j + 1) u y ∂mu) := fun hr => ContDiff.sum fun I _ => hI hr I
   have hterm_smooth : ∀ {k : ℕ∞ω}, ∀ r ∈ Finset.range (m + 1), ContDiff ℝ k (term r) :=
-    fun _ hr => contDiff_const.mul (hS_smooth (Nat.lt_succ_iff.1 (Finset.mem_range.1 hr)))
+    fun r hr => by
+      have hrm : r ≤ m := Nat.lt_succ_iff.1 (Finset.mem_range.1 hr)
+      rw [show term r = fun x' => ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
+          ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
+            y (b ∘ I) * value (j + 1) u y ∂mu from
+        funext fun x' => setIntegral_taylorKernelTerm_mul_eq (⇑b)
+          (hφ.of_le (by exact_mod_cast hrm)) hφc hφs hloc x']
+      exact contDiff_const.mul (hS_smooth hrm)
   have hvanish : ∀ r ≤ m, r ≤ j →
       iteratedFDerivAlong ℝ (List.replicate (j + 1) h) (term r) x = 0 := fun r hrm hrj => by
-    dsimp only [term]; unfold averagedTaylorTerm
-    rw [congrFun (iteratedFDerivAlong_const_mul (n := ∞) (hS_smooth hrm) _ _ (by simp)) x,
+    rw [show term r = fun x' => ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
+        ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
+          y (b ∘ I) * value (j + 1) u y ∂mu from
+      funext fun x' => setIntegral_taylorKernelTerm_mul_eq (⇑b)
+        (hφ.of_le (by exact_mod_cast hrm)) hφc hφs hloc x',
+      congrFun (iteratedFDerivAlong_const_mul (n := ∞) (hS_smooth hrm) _ _ (by simp)) x,
       iteratedFDerivAlong_fun_sum (n := ∞) Finset.univ (fun I _ => hI hrm I) _ (by simp),
       Finset.sum_eq_zero fun I _ => by
         simpa only [Function.comp_apply] using
@@ -142,7 +159,9 @@ theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
   have hgoal : (fun x' => ∑ r ∈ Finset.range (m + 1), term r x') =
       fun x' => ∑ r ∈ Finset.range (m + 1), ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
         ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
-          y (b ∘ I) * value (j + 1) u y ∂mu := by ext x'; simp [term, averagedTaylorTerm]
+          y (b ∘ I) * value (j + 1) u y ∂mu := funext fun x' =>
+    Finset.sum_congr rfl fun r hr => setIntegral_taylorKernelTerm_mul_eq (⇑b)
+      (hφ.of_le (by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hr))) hφc hφs hloc x'
   rw [← hgoal, fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong j
       (ContDiff.sum hterm_smooth).contDiffAt h,
     iteratedFDerivAlong_fun_sum (n := ∞) _ hterm_smooth _ (by simp)]
@@ -154,8 +173,13 @@ theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
     refine Finset.sum_congr rfl fun d hd => ?_
     have hdm : d + j + 1 ≤ m := by have := Finset.mem_range.1 hd; omega
     have heq_idx : j + 1 + d = d + j + 1 := by omega
-    dsimp only [term]; rw [heq_idx]
-    exact iteratedFDerivAlong_replicate_sum_eq_of_ge b hφc hφs h j d u (hφ.of_le (by norm_cast)) x
+    have hloc_g : LocallyIntegrableOn (fun y => fullContractL j h (iteratedGradient j u y))
+        Omega mu :=
+      (fullContractL j h).locallyIntegrableOn_comp (Lp.locallyIntegrableOn _ Fact.out)
+    dsimp only [term]; rw [heq_idx, iteratedFDerivAlong_replicate_sum_eq_of_ge b hφc hφs h j d u
+      (hφ.of_le (by norm_cast)) x]
+    exact setIntegral_taylorKernelTerm_mul_eq (⇑b)
+      (hφ.of_le (by exact_mod_cast (by omega : d ≤ m))) hφc hφs hloc_g x
   · rw [Nat.sub_eq_zero_of_le hmj, Finset.range_zero, Finset.sum_empty]
     exact Finset.sum_eq_zero fun r hr => hvanish r (Nat.lt_succ_iff.1 (Finset.mem_range.1 hr))
       ((Nat.lt_succ_iff.1 (Finset.mem_range.1 hr)).trans hmj)
