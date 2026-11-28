@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.NumberTheory.LocalField.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.LocallyCompact
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.Separation
 public import TauCeti.Topology.Algebra.ValuativeRel.Integer
+import TauCeti.NumberTheory.LocalField.NormedField
+import TauCeti.Topology.Algebra.PointTopology.Scheme.Smooth
 
 /-!
 # Points of schemes over a nonarchimedean local field
@@ -25,7 +28,10 @@ For a scheme `X` separated and locally of finite type over `E`, the points `X(E)
 Hausdorff, locally compact space; for a scheme `𝒳` locally of finite type over `𝒪[E]`, such as an
 integral model of finite type of an algebraic group, the points `𝒳(𝒪[E])` form a locally compact
 space. These are the spaces of points of groups over local fields on which Haar measures and
-compact open subgroups live.
+compact open subgroups live. A smooth map over any commutative ring with an `E`-algebra
+structure induces an open map on its `E`-points, by using the normalized norm and transporting
+the openness back
+to the valuative topology.
 
 ## Applying the general results
 
@@ -71,5 +77,20 @@ general result applied over `𝒪[E]`, whose open units come from `TauCeti.instI
 example {X : Scheme.{u}} (f : X ⟶ Spec (.of 𝒪[E])) [LocallyOfFiniteType f] :
     LocallyCompactSpace (Points (R := 𝒪[E]) f) :=
   locallyCompactSpace_of_locallyOfFiniteType f
+
+/-- A smooth morphism over a commutative ring induces an open map on points valued in a
+nonarchimedean local field algebra, with the valuative point topology. -/
+theorem isOpenMap_map_of_smooth_of_isNonarchimedeanLocalField
+    {k : Type u} [CommRing k] [Algebra k E]
+    {X Y : Scheme.{u}} {fX : X ⟶ Spec (.of k)} {fY : Y ⟶ Spec (.of k)}
+    (g : X ⟶ Y) (hg : g ≫ fY = fX) [Smooth g] :
+    IsOpenMap (map (R := E) g hg) := by
+  have h : @IsOpenMap _ _
+      (@topology k E _ _ _ X fX (normalizedNormedFieldTopology E))
+      (@topology k E _ _ _ Y fY (normalizedNormedFieldTopology E)) (map (R := E) g hg) := by
+    let _ := normalizedNontriviallyNormedField E
+    let _ := normalizedNormedField_completeSpace E
+    exact isOpenMap_map_of_smooth g hg
+  rwa [normalizedNormedField_topology_eq E] at h
 
 end TauCeti.SchemePointTopology

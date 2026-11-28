@@ -7,14 +7,12 @@ module
 
 public import Mathlib.RingTheory.Smooth.StandardSmoothOfFree
 public import Mathlib.Topology.IsLocalHomeomorph
-public import TauCeti.Analysis.MvPolynomial.Jacobian
 public import TauCeti.RingTheory.Extension.Presentation.Submersive
 public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Localization
 public import TauCeti.Topology.Algebra.PointTopology.Presentation
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
-import TauCeti.Analysis.Calculus.ImplicitFunction.Data
-import TauCeti.LinearAlgebra.Matrix.MaximalMinor
+import TauCeti.Analysis.MvPolynomial.Implicit
+import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Local charts on the points of smooth algebras
@@ -29,11 +27,8 @@ coordinates on the space of points with its evaluation topology: the map
 `Algebra.SubmersivePresentation.basisKaehler`, the differentials of the same generators form a
 basis of the Kähler differentials of `S` over `K`.
 
-The proof applies Mathlib's implicit function theorem, `ImplicitFunctionData`, to the relations
-as left function and to the coordinate projection as right function, at the coordinate vector of
-the point, through `ImplicitFunctionData.levelSetChart`. The two kernels are complementary
-(`Matrix.isCompl_ker_mulVecLin_ker_funLeft`) because the Jacobian minor is invertible at every
-point of a submersive presentation
+The polynomial zero-set chart `TauCeti.exists_openPartialHomeomorph_zeroSet` applies
+because the Jacobian minor is invertible at every point of a submersive presentation
 (`Algebra.SubmersivePresentation.isUnit_det_jacobiMatrix_solution`). No hypothesis on the
 characteristic of `K` is needed, and the theorem applies over `ℝ`, `ℂ` and every nonarchimedean
 local field.
@@ -93,72 +88,22 @@ end Algebra
 variable {K S ι σ : Type*} [NontriviallyNormedField K] [CompleteSpace K] [CommRing S]
   [Algebra K S] [Finite ι] [Finite σ] (P : SubmersivePresentation K S ι σ)
 
-/-- The coordinate projection onto the variables outside the range of `P.map`. -/
-private noncomputable def coordProj : (ι → K) →L[K] ↥(Set.range P.map)ᶜ → K :=
-  ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj i.val
-
-omit [CompleteSpace K] [Finite ι] in
-private theorem coordProj_apply (v : ι → K) (i : ↥(Set.range P.map)ᶜ) :
-    P.coordProj v i = v i := by
-  simp [coordProj]
-
-omit [CompleteSpace K] [Finite ι] in
-private theorem toLinearMap_coordProj :
-    (P.coordProj : (ι → K) →ₗ[K] ↥(Set.range P.map)ᶜ → K) =
-      LinearMap.funLeft K K Subtype.val := by
-  ext v i
-  simp [coordProj_apply]
-
-section Fintype
-
-variable [Fintype ι] [Fintype σ] [DecidableEq σ] [Fintype ↥(Set.range P.map)ᶜ]
-
-/-- The implicit-function data at the coordinate vector of a point: the relations as left
-function and the coordinate projection onto the variables outside `range P.map` as right
-function. -/
-private noncomputable abbrev implicitData (x : S →ₐ[K] K) :
-    ImplicitFunctionData K (ι → K) (σ → K) (↥(Set.range P.map)ᶜ → K) :=
-  have hπ := P.toLinearMap_coordProj
-  have hJ := fderiv_eval_family P.relation fun i ↦ x (P.val i)
-  have hA := P.isUnit_det_jacobiMatrixAt_submatrix x
-  { leftFun := fun y j ↦ eval y (P.relation j)
-    leftDeriv := fderiv K (fun y j ↦ eval y (P.relation j)) fun i ↦ x (P.val i)
-    rightFun := P.coordProj
-    rightDeriv := P.coordProj
-    pt := fun i ↦ x (P.val i)
-    hasStrictFDerivAt_leftFun := (analyticOnNhd_eval_family P.relation _ trivial).hasStrictFDerivAt
-    hasStrictFDerivAt_rightFun := P.coordProj.hasStrictFDerivAt
-    range_leftDeriv := by
-      rw [hJ, LinearMap.range_eq_top, Matrix.coe_mulVecLin]
-      exact Matrix.mulVec_surjective_of_isUnit_det_submatrix _ P.map_inj hA
-    range_rightDeriv := by
-      rw [hπ, LinearMap.range_eq_top]
-      exact LinearMap.funLeft_surjective_of_injective K K _ Subtype.val_injective
-    isCompl_ker := by
-      rw [hJ, hπ]
-      exact Matrix.isCompl_ker_mulVecLin_ker_funLeft _ P.map_inj hA }
-
-end Fintype
-
 /-- The implicit function theorem gives a chart at each point, computed by `pointCoords`. -/
 private theorem exists_openPartialHomeomorph_pointCoords (x : S →ₐ[K] K) :
     ∃ e : OpenPartialHomeomorph (S →ₐ[K] K) (↥(Set.range P.map)ᶜ → K),
       x ∈ e.source ∧ ∀ y, e y = P.pointCoords y := by
   classical
-  let := Fintype.ofFinite ι
   let := Fintype.ofFinite σ
-  let e := (P.implicitData x).levelSetChart (c := 0) (funext (P.eval_relation_eq_zero x))
-  have he := (P.implicitData x).mem_levelSetChart_source (c := 0)
-    (funext (P.eval_relation_eq_zero x))
-  refine ⟨P.pointsHomeomorphZeroSet.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
-      Set.univ_inter, Set.mem_preimage, Homeomorph.toOpenPartialHomeomorph_apply]
-    convert he using 1
-    exact Subtype.ext (P.toPresentation.coe_pointsHomeomorphZeroSet_apply x)
-  · rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      Homeomorph.toOpenPartialHomeomorph_apply, ImplicitFunctionData.levelSetChart_apply]
-    ext i
-    simp [coordProj_apply]
+  let h := P.toPresentation.pointsHomeomorphZeroSet (K := K)
+  obtain ⟨e, hx, he⟩ := TauCeti.exists_openPartialHomeomorph_zeroSet P.relation
+    (h x) (by simpa only [h, Presentation.coe_pointsHomeomorphZeroSet_apply] using
+      P.isUnit_det_jacobiMatrixAt_submatrix x)
+  refine ⟨h.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_⟩
+  · simpa [OpenPartialHomeomorph.trans_source] using hx
+  · ext i
+    simp only [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
+      Homeomorph.toOpenPartialHomeomorph_apply, he, h,
+      Presentation.coe_pointsHomeomorphZeroSet_apply, pointCoords_apply]
 
 /-- **Local charts on the points of a submersive presentation.** The values of a point at the
 variables outside the range of `P.map` form a local homeomorphism from the points, with their
