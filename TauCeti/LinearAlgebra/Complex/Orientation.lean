@@ -232,6 +232,23 @@ theorem complexToRealFamily_complexRealIndexEquiv (v : Fin n → E) (i : Fin n) 
     complexToRealFamily v (complexRealIndexEquiv n (i, k)) = Complex.basisOneI k • v i := by
   simp [complexToRealFamily]
 
+open scoped Pointwise in
+/-- The paired family spans the restriction of scalars of the complex span, even when the
+original family is linearly dependent. -/
+theorem span_range_complexToRealFamily [Module ℝ E] [IsScalarTower ℝ ℂ E] (v : Fin n → E) :
+    Submodule.span ℝ (Set.range (complexToRealFamily v)) =
+      (Submodule.span ℂ (Set.range v)).restrictScalars ℝ := by
+  have h : Set.range (complexToRealFamily v) = Set.range Complex.basisOneI • Set.range v := by
+    ext x
+    constructor
+    · rintro ⟨j, rfl⟩
+      obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv n).surjective j
+      rw [complexToRealFamily_complexRealIndexEquiv]
+      exact Set.smul_mem_smul (Set.mem_range_self k) (Set.mem_range_self i)
+    · rintro ⟨_, ⟨k, rfl⟩, _, ⟨i, rfl⟩, rfl⟩
+      exact ⟨complexRealIndexEquiv n (i, k), complexToRealFamily_complexRealIndexEquiv v i k⟩
+  rw [h, Submodule.span_smul_of_span_eq_top Complex.basisOneI.span_eq]
+
 /-- The real family underlying a complex basis is its real basis `b.complexToReal`, listed as
 `(b₀, I • b₀, b₁, I • b₁, …)`. -/
 theorem _root_.Module.Basis.coe_complexToReal_reindex_complexRealIndexEquiv [Module ℝ E]

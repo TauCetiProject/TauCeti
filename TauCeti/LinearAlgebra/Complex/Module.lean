@@ -122,6 +122,30 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
 
 end Complex
 
+namespace Submodule
+
+/-- A real submodule of a complex module is the restriction of scalars of a complex submodule
+exactly when it is closed under multiplication by `Complex.I`. -/
+theorem exists_restrictScalars_eq_iff_I_smul_mem {V : Type*} [AddCommGroup V] [Module ℝ V]
+    [Module ℂ V] [IsScalarTower ℝ ℂ V] (P : Submodule ℝ V) :
+    (∃ Q : Submodule ℂ V, Q.restrictScalars ℝ = P) ↔ ∀ z ∈ P, Complex.I • z ∈ P := by
+  constructor
+  · rintro ⟨Q, rfl⟩ z hz
+    simpa only [restrictScalars_mem] using Q.smul_mem Complex.I
+      ((restrictScalars_mem ℝ Q z).1 hz)
+  · intro h
+    let Q : Submodule ℂ V :=
+      { P.toAddSubmonoid with
+        smul_mem' := fun c z hz ↦ by
+          rw [← Complex.re_smul_add_im_smul c z]
+          exact P.add_mem (P.smul_mem c.re hz) (P.smul_mem c.im (h z hz)) }
+    refine ⟨Q, Submodule.ext fun z ↦ ?_⟩
+    -- Q and P have the same underlying additive submonoid.
+    rw [restrictScalars_mem]
+    rfl
+
+end Submodule
+
 namespace Module.Basis
 
 /-- A vector lies in the real span of a complex basis exactly when its coordinates are real. -/
