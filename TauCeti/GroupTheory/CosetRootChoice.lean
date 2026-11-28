@@ -20,7 +20,7 @@ Given a group homomorphism `π : E →* Γ` and an element `σ : Γ`, a *coset r
 conjugation-equivariant for `G`, and any element of `ker π` conjugating `r δ` to `r γ` lies in
 `j.range`.
 
-We prove that `j` lands in `ker π`, that for finite `G` and `E` every element of `π ⁻¹' {σ}` is
+We prove that `j` lands in `ker π`, that when `ker π` is finite every element of `π ⁻¹' {σ}` is
 `ker π`-conjugate to some `r γ`, and that the cardinality of the set of `ker π`-conjugators
 between two elements is invariant under simultaneous conjugation by elements with equal `π`-image.
 
@@ -58,12 +58,18 @@ theorem CosetRootChoice.map_emb_eq_one {G E Γ : Type*} [Group G] [Group E] [Gro
     π (j γ) = 1 := by
   rw [← R.pow_orderOf γ, map_pow, R.map_apply, pow_orderOf_eq_one]
 
-/-- For a coset root choice `R` between finite groups, every element `s : E` in the fiber over `σ`
+/-- For a coset root choice `R` with finite kernel `ker π`, every `s : E` in the fiber over `σ`
 is conjugate to some `r γ` by an element of `ker π`. -/
 theorem CosetRootChoice.exists_conj_eq_of_map_eq {G E Γ : Type*} [Group G] [Group E] [Group Γ]
-    [Finite E] [Finite G] {π : E →* Γ} {σ : Γ} {j : G →* E} {r : G → E}
+    {π : E →* Γ} [Finite ↥π.ker] {σ : Γ} {j : G →* E} {r : G → E}
     (R : CosetRootChoice π σ j r) {s : E} (hs : π s = σ) :
     ∃ (x : E) (γ : G), π x = 1 ∧ x * r γ * x⁻¹ = s := by
+  have : Finite G :=
+    Finite.of_injective (j.codRestrict π.ker R.map_emb_eq_one) fun _ _ h ↦
+      R.injective (congrArg Subtype.val h)
+  have : Finite (π ⁻¹' {σ}) := by
+    rw [← R.map_apply 1]
+    exact Finite.of_equiv _ (π.fiberEquivKer (r 1)).symm
   let H : Subgroup π.ker := (j.codRestrict π.ker R.map_emb_eq_one).range
   let f : (π.ker ⧸ H) × G → π ⁻¹' {σ} := fun z ↦
     ⟨(z.fst.out : E) * r z.snd * (z.fst.out : E)⁻¹, by
