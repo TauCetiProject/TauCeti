@@ -5,19 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Dagger.Basic
 public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.NatIso
+public import TauCeti.CategoryTheory.Dagger.Basic
+public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.CategoryTheory.Linear.Endomorphism
+public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 
 /-!
 # Dagger-preserving functors and natural transformations
 
-Preserving a chosen dagger is a property of a native functor. Natural transformations between
-dagger-preserving functors admit a pointwise dagger, and pointwise unitary transformations
-give natural isomorphisms. These constructions require no additive or analytic structure.
-A linear dagger-preserving functor restricts to unital star algebra homomorphisms between
-endomorphism algebras.
+Preserving a chosen dagger is a property of a native functor. Induced and full-subcategory
+inclusions preserve the inherited dagger, and fully faithful dagger-preserving functors commute
+with daggers on preimages. When the categories and functor are additive and scalar-linear,
+`Functor.mapEndAlgHom` upgrades to a unital star-algebra homomorphism `Functor.mapEndStarAlgHom`
+(and a star-algebra equivalence `Functor.mapEndStarAlgEquiv` when the functor is fully faithful),
+and unitary object isomorphisms conjugate endomorphism algebras by star-algebra equivalences.
+
+Natural transformations between dagger-preserving functors admit a pointwise dagger, and
+pointwise unitary transformations give natural isomorphisms.
 -/
 
 public section
@@ -49,6 +56,22 @@ instance : (𝟭 C).PreservesDagger where
 instance (F : C ⥤ D) (G : D ⥤ E) [F.PreservesDagger] [G.PreservesDagger] :
     (F ⋙ G).PreservesDagger where
   map_dagger f := by simp
+
+/-- The canonical functor from an induced category preserves the inherited dagger. -/
+instance instPreservesDaggerInducedFunctor {S : Type*} (F : S → C) :
+    (inducedFunctor F).PreservesDagger where
+  map_dagger _ := (rfl)
+
+/-- Full subcategory inclusions preserve the inherited dagger. -/
+instance instPreservesDaggerFullSubcategoryInclusion (P : ObjectProperty C) :
+    P.ι.PreservesDagger where
+  map_dagger _ := (rfl)
+
+/-- Preimages along a fully faithful dagger-preserving functor commute with daggers. -/
+@[simp] theorem preimage_dagger (F : C ⥤ D) [F.Full] [F.Faithful] [F.PreservesDagger]
+    {X Y : C} (g : F.obj X ⟶ F.obj Y) :
+    F.preimage (dagger g) = dagger (F.preimage g) :=
+  F.map_injective (by simp)
 
 /-- Dagger-preserving functors take unitary arrows to unitary arrows. -/
 theorem map_isUnitary (F : C ⥤ D) [F.PreservesDagger] {X Y : C} {f : X ⟶ Y}
@@ -88,11 +111,51 @@ def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
     (F.mapEndStarAlgHom R X).toAlgHom = F.mapEndAlgHom R X := (rfl)
 
 /-- The star algebra homomorphism of a functor applies the functor to the underlying arrow. -/
-@[simp] theorem mapEndStarAlgHom_asHom (X : C) (a : End X) :
+@[simp, grind =] theorem mapEndStarAlgHom_asHom (X : C) (a : End X) :
     (F.mapEndStarAlgHom R X a).asHom = F.map a.asHom :=
   F.mapEndAlgHom_asHom R X a
 
 end Linear
+
+section EndStarAlgEquiv
+
+variable (F : C ⥤ D) (R : Type w) [Semiring R]
+  [Preadditive C] [Preadditive D] [CategoryTheory.Linear R C] [CategoryTheory.Linear R D]
+  [F.Additive] [F.Linear R] [F.PreservesDagger] [F.Full] [F.Faithful]
+
+/-- A fully faithful linear dagger functor induces a star-algebra equivalence on endomorphism
+algebras over any `Semiring R`. -/
+noncomputable def mapEndStarAlgEquiv (X : C) :
+    End X ≃⋆ₐ[R] End (F.obj X) :=
+  { (FullyFaithful.ofFullyFaithful F).ringEquivEnd X with
+    map_smul' r f := by ext; simp
+    map_star' f := by ext; simp }
+
+/-- Forgetting linearity and star from `CategoryTheory.Functor.mapEndStarAlgEquiv` recovers
+`CategoryTheory.Functor.FullyFaithful.ringEquivEnd`. -/
+@[simp] theorem toRingEquiv_mapEndStarAlgEquiv (X : C) :
+    (F.mapEndStarAlgEquiv R X).toRingEquiv = (FullyFaithful.ofFullyFaithful F).ringEquivEnd X :=
+  (rfl)
+
+/-- Forward evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
+@[simp, grind =] theorem mapEndStarAlgEquiv_apply_asHom (X : C) (f : End X) :
+    (F.mapEndStarAlgEquiv R X f).asHom = F.map f.asHom :=
+  (FullyFaithful.ofFullyFaithful F).ringEquivEnd_apply_asHom X f
+
+/-- Inverse evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
+@[simp, grind =] theorem mapEndStarAlgEquiv_symm_apply_asHom (X : C) (g : End (F.obj X)) :
+    ((F.mapEndStarAlgEquiv R X).symm g).asHom = F.preimage g.asHom :=
+  (FullyFaithful.ofFullyFaithful F).ringEquivEnd_symm_apply_asHom X g
+
+end EndStarAlgEquiv
+
+/-- Forgetting invertibility from `CategoryTheory.Functor.mapEndStarAlgEquiv` recovers
+`CategoryTheory.Functor.mapEndStarAlgHom`. -/
+@[simp] theorem toStarAlgHom_mapEndStarAlgEquiv {R : Type w} [CommSemiring R]
+    [Preadditive C] [Preadditive D] [CategoryTheory.Linear R C] [CategoryTheory.Linear R D]
+    (F : C ⥤ D) [F.Additive] [F.Linear R] [F.PreservesDagger] [F.Full] [F.Faithful] (X : C) :
+    (F.mapEndStarAlgEquiv R X).toStarAlgHom = F.mapEndStarAlgHom R X := by
+  ext; simp
 
 end CategoryTheory.Functor
 
@@ -179,5 +242,42 @@ theorem inv_eq_dagger_iff (e : F ≅ G) :
   · intro h
     ext X
     exact ((e.app X).isUnitary_hom_iff.mp (h X)).symm
+
+section EndStarAlgEquiv
+
+variable (R : Type w) [Semiring R] [Preadditive C] [CategoryTheory.Linear R C]
+
+/-- A unitary isomorphism between objects conjugates their endomorphism star-algebras by a
+star-algebra equivalence. -/
+def endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) :
+    End X ≃⋆ₐ[R] End Y where
+  __ := e.endRingEquiv
+  map_smul' r f := by ext; simp
+  map_star' f := by
+    ext
+    simp [← e.dagger_hom_eq_inv_of_isUnitary he]
+
+/-- Forgetting linearity and star from `CategoryTheory.Iso.endStarAlgEquiv` recovers
+`CategoryTheory.Iso.endRingEquiv`. -/
+@[simp] theorem toRingEquiv_endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) :
+    (e.endStarAlgEquiv R he).toRingEquiv = e.endRingEquiv := (rfl)
+
+/-- Conjugation by a unitary isomorphism acts as `dagger e.hom ≫ f.asHom ≫ e.hom`. -/
+@[simp, grind =] theorem endStarAlgEquiv_apply_asHom {X Y : C} (e : X ≅ Y)
+    (he : IsUnitary e.hom) (f : End X) :
+    (e.endStarAlgEquiv R he f).asHom = dagger e.hom ≫ f.asHom ≫ e.hom := by
+  rw [e.dagger_hom_eq_inv_of_isUnitary he]
+  exact e.endRingEquiv_apply_asHom f
+
+/-- Inverse conjugation by a unitary isomorphism acts as `e.hom ≫ g.asHom ≫ dagger e.hom`. -/
+@[simp, grind =] theorem endStarAlgEquiv_symm_apply_asHom {X Y : C} (e : X ≅ Y)
+    (he : IsUnitary e.hom) (g : End Y) :
+    ((e.endStarAlgEquiv R he).symm g).asHom = e.hom ≫ g.asHom ≫ dagger e.hom := by
+  have h := congrArg End.asHom ((e.endStarAlgEquiv R he).apply_symm_apply g)
+  rw [endStarAlgEquiv_apply_asHom, e.dagger_hom_eq_inv_of_isUnitary he] at h
+  rw [e.dagger_hom_eq_inv_of_isUnitary he, ← h]
+  simp
+
+end EndStarAlgEquiv
 
 end CategoryTheory.Iso

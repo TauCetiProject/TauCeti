@@ -7,8 +7,12 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.CategoryTheory.Dagger.Basic
+import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.CategoryTheory.Dagger.Polarization
 
 /-!
 # C*-categories
@@ -28,7 +32,12 @@ is stated as `f ≫ dagger f = g ≫ dagger g` for an endomorphism `g` of `X`; i
 * `TauCeti.CStarCategory`: the C*-category axioms on given Hom norms.
 * `TauCeti.CStarCategory.norm_dagger` and `TauCeti.CStarCategory.norm_self_comp_dagger`: the
   dagger is isometric and the C*-identity holds with equality.
-* `TauCeti.CStarCategory.norm_id`: identities of nonzero objects have norm one.
+* `TauCeti.CStarCategory.norm_comp_dagger_sq_le` and `TauCeti.CStarCategory.norm_dagger_comp_sq_le`:
+  norm Cauchy–Schwarz inequalities.
+* `TauCeti.CStarCategory.norm_comp_dagger_le_polarization`: polarization norm bound.
+* `TauCeti.CStarCategory.norm_id`, `TauCeti.CStarCategory.isZero_iff_norm_id_eq_zero`, and
+  `TauCeti.CStarCategory.not_isZero_iff_norm_id_eq_one`: zero-object vs nonzero identity norms,
+  together with norm formulas for unitary arrows.
 * `CategoryTheory.End.instCStarAlgebra`: each endomorphism algebra `End X` is a unital
   C*-algebra, with Mathlib's operator-order multiplication and the dagger as star.
 * `CategoryTheory.End.nonneg_iff`: the positive elements of `End X` are exactly the composites
@@ -103,7 +112,7 @@ abbrev normedSpace (X Y : C) :
   letI := normedAddCommGroup X Y
   .ofCore (normedSpaceCore X Y)
 
-variable {X Y Z : C}
+variable {W X Y Z : C}
 
 /-- Hom norms are nonnegative. -/
 theorem norm_nonneg (f : X ⟶ Y) : 0 ≤ ‖f‖ :=
@@ -159,19 +168,36 @@ theorem norm_dagger_comp_self (f : X ⟶ Y) : ‖dagger f ≫ f‖ = ‖f‖ ^ 2
 @[simp] theorem dagger_comp_self_eq_zero {f : X ⟶ Y} : dagger f ≫ f = 0 ↔ f = 0 := by
   rw [← norm_eq_zero, norm_dagger_comp_self, pow_eq_zero_iff two_ne_zero, norm_eq_zero]
 
-/-- The norm of an identity arrow is idempotent under squaring. -/
-private theorem sq_norm_id (X : C) : ‖𝟙 X‖ ^ 2 = ‖𝟙 X‖ := by
-  simpa using (norm_self_comp_dagger (𝟙 X)).symm
+/-- Norm Cauchy–Schwarz inequality for `f ≫ dagger g`:
+`‖f ≫ dagger g‖ ^ 2 ≤ ‖f ≫ dagger f‖ * ‖g ≫ dagger g‖`. -/
+theorem norm_comp_dagger_sq_le (f : X ⟶ Y) (g : Z ⟶ Y) :
+    ‖f ≫ dagger g‖ ^ 2 ≤ ‖f ≫ dagger f‖ * ‖g ≫ dagger g‖ := by
+  calc
+    ‖f ≫ dagger g‖ ^ 2 ≤ (‖f‖ * ‖dagger g‖) ^ 2 :=
+      pow_le_pow_left₀ (norm_nonneg _) (norm_comp_le f (dagger g)) 2
+    _ = ‖f‖ ^ 2 * ‖g‖ ^ 2 := by rw [norm_dagger, mul_pow]
+    _ = ‖f ≫ dagger f‖ * ‖g ≫ dagger g‖ := by
+      rw [norm_self_comp_dagger, norm_self_comp_dagger]
 
-/-- The identity of an object has norm at most one. -/
-theorem norm_id_le_one (X : C) : ‖𝟙 X‖ ≤ 1 := by
-  nlinarith [norm_nonneg (𝟙 X), sq_norm_id X]
+/-- Norm Cauchy–Schwarz inequality for `dagger f ≫ g`:
+`‖dagger f ≫ g‖ ^ 2 ≤ ‖dagger f ≫ f‖ * ‖dagger g ≫ g‖`. -/
+theorem norm_dagger_comp_sq_le (f : Y ⟶ X) (g : Y ⟶ Z) :
+    ‖dagger f ≫ g‖ ^ 2 ≤ ‖dagger f ≫ f‖ * ‖dagger g ≫ g‖ := by
+  simpa only [dagger_dagger] using norm_comp_dagger_sq_le (dagger f) (dagger g)
 
-/-- The identity of an object that is not a zero object has norm one. -/
-theorem norm_id {X : C} (hX : ¬ Limits.IsZero X) : ‖𝟙 X‖ = 1 := by
-  have hne : ‖𝟙 X‖ ≠ 0 := by
-    rwa [Ne, norm_eq_zero, ← Limits.IsZero.iff_id_eq_zero]
-  exact (mul_eq_left₀ hne).1 (by rw [← pow_two, sq_norm_id])
+/-- Polarization norm bound on `f ≫ dagger g` in terms of the four polarized combinations. -/
+theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
+    ‖f ≫ dagger g‖ ≤
+      (4 : ℝ)⁻¹ * (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
+        ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2) := by
+  let := normedAddCommGroup X X
+  have h4 : ‖(4 : ℂ)⁻¹‖ = (4 : ℝ)⁻¹ := by norm_num
+  rw [← norm_dagger (f ≫ dagger g), dagger_comp, dagger_dagger,
+    comp_dagger_polarization f g, norm_smul, h4]
+  gcongr
+  conv_lhs => rw [sub_eq_add_neg, sub_eq_add_neg]
+  refine norm_add₄_le.trans_eq ?_
+  simp only [_root_.norm_neg, norm_smul, Complex.norm_I, one_mul, norm_self_comp_dagger]
 
 end CStarCategory
 
@@ -199,55 +225,143 @@ theorem norm_def (a : End X) : ‖a‖ = ‖a.asHom‖ := (rfl)
 
 end Norm
 
+section Transport
+
+variable [Preadditive C] [∀ X Y : C, Norm (X ⟶ Y)] {X : C}
+
+/-- Transport `NormedSpace.Core` from `X ⟶ X` to `End X` along `End.asHom`. -/
+theorem normedSpaceCoreOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) : NormedSpace.Core 𝕜 (End X) :=
+  hcore.induced (End.linearEquiv (R := 𝕜)).toLinearMap
+    (End.linearEquiv (R := 𝕜)).injective fun _ => rfl
+
+/-- Transport `NormedRing` on `End X` from a `NormedSpace.Core` on `X ⟶ X` and submultiplicative
+composition. -/
+@[expose, instance_reducible]
+def normedRingOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖) : NormedRing (End X) where
+  __ := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+  __ := (inferInstance : Ring (End X))
+  norm_mul_le a b := by
+    simpa only [norm_def, mul_asHom, mul_comm ‖a.asHom‖] using hcomp b.asHom a.asHom
+
+/-- Transport `NormedAlgebra` on `End X` from a `NormedSpace.Core` on `X ⟶ X` and
+submultiplicative composition. -/
+@[expose, instance_reducible]
+def normedAlgebraOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖) :
+    letI := normedRingOf hcore hcomp
+    NormedAlgebra 𝕜 (End X) :=
+  letI := normedRingOf hcore hcomp
+  ⟨fun c a => ((normedSpaceCoreOf hcore).norm_smul c a).le⟩
+
+/-- Transport `End X ≃ₗᵢ[𝕜] (X ⟶ X)` from a `NormedSpace.Core` on `X ⟶ X`. -/
+def linearIsometryEquivOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    End X ≃ₗᵢ[𝕜] (X ⟶ X) :=
+  letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+  letI := NormedAddCommGroup.ofCore hcore
+  { toLinearEquiv := End.linearEquiv
+    norm_map' _ := rfl }
+
+/-- Forward evaluation of `End.linearIsometryEquivOf`. -/
+@[simp] theorem linearIsometryEquivOf_apply {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) (a : End X) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    linearIsometryEquivOf hcore a = a.asHom := (rfl)
+
+/-- Inverse evaluation of `End.linearIsometryEquivOf`. -/
+@[simp] theorem linearIsometryEquivOf_symm_apply {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) (f : X ⟶ X) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    (linearIsometryEquivOf hcore).symm f = End.of f := (rfl)
+
+/-- Forgetting the norm from `End.linearIsometryEquivOf` recovers `End.linearEquiv`. -/
+@[simp] theorem linearIsometryEquivOf_toLinearEquiv {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    (linearIsometryEquivOf hcore).toLinearEquiv = End.linearEquiv := (rfl)
+
+/-- Transport completeness from `X ⟶ X` to `End X` along `End.linearIsometryEquivOf`. -/
+theorem completeSpaceOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomplete : letI := NormedAddCommGroup.ofCore hcore; CompleteSpace (X ⟶ X)) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    CompleteSpace (End X) :=
+  letI := NormedAddCommGroup.ofCore hcore
+  haveI := hcomplete
+  letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+  (linearIsometryEquivOf hcore).toIsometryEquiv.completeSpace
+
+/-- Transport `CStarRing` on `End X` from a `NormedSpace.Core` on `X ⟶ X`, submultiplicative
+composition, and the C*-inequality on `X ⟶ X`. -/
+theorem cstarRingOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    [DaggerCategory C] [DaggerPreadditive C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖)
+    (hmul_self : ∀ f : X ⟶ X, ‖f‖ * ‖f‖ ≤ ‖f ≫ dagger f‖) :
+    letI := normedRingOf hcore hcomp
+    CStarRing (End X) :=
+  letI := normedRingOf hcore hcomp
+  ⟨fun a => by simpa only [norm_def, mul_asHom, star_asHom] using hmul_self a.asHom⟩
+
+/-- Transport `CStarAlgebra` on `End X` from a complex `NormedSpace.Core`, completeness,
+submultiplicative composition, and the C*-inequality on `X ⟶ X`. -/
+@[expose, instance_reducible]
+def cstarAlgebraOf [Linear ℂ C] [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+    (hcore : NormedSpace.Core ℂ (X ⟶ X))
+    (hcomplete : letI := NormedAddCommGroup.ofCore hcore; CompleteSpace (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖)
+    (hmul_self : ∀ f : X ⟶ X, ‖f‖ * ‖f‖ ≤ ‖f ≫ dagger f‖) :
+    CStarAlgebra (End X) :=
+  letI := normedRingOf hcore hcomp
+  letI := normedAlgebraOf hcore hcomp
+  haveI := completeSpaceOf hcore hcomplete
+  haveI := cstarRingOf hcore hcomp hmul_self
+  {}
+
+end Transport
+
 variable [Preadditive C] [Linear ℂ C] [DaggerCategory C] [DaggerPreadditive C]
   [DaggerLinear ℂ C] [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C] {X : C}
 
 /-- The normed space axioms for `End X`, transported from the Hom space of `X`. -/
-theorem normedSpaceCore (X : C) : NormedSpace.Core ℂ (End X) where
-  norm_nonneg a := CStarCategory.norm_nonneg a.asHom
-  norm_smul c a := by
-    simpa only [norm_def, smul_asHom] using
-      (CStarCategory.normedSpaceCore X X).norm_smul c a.asHom
-  norm_triangle a b := by
-    simpa only [norm_def, add_asHom] using
-      (CStarCategory.normedSpaceCore X X).norm_triangle a.asHom b.asHom
-  norm_eq_zero_iff a := by
-    rw [norm_def, CStarCategory.norm_eq_zero, End.ext_iff, zero_asHom]
+theorem normedSpaceCore (X : C) : NormedSpace.Core ℂ (End X) :=
+  normedSpaceCoreOf (CStarCategory.normedSpaceCore X X)
 
 /-- `End X` is a normed group for the norm of its underlying arrows. -/
 instance instNormedAddCommGroup : NormedAddCommGroup (End X) :=
   .ofCore (normedSpaceCore X)
 
 /-- `End X` is a normed ring: its operator-order multiplication is submultiplicative. -/
-instance instNormedRing : NormedRing (End X) where
-  __ := (inferInstance : NormedAddCommGroup (End X))
-  __ := (inferInstance : Ring (End X))
-  norm_mul_le a b := by
-    simpa only [norm_def, mul_asHom, mul_comm ‖a.asHom‖] using
-      CStarCategory.norm_comp_le b.asHom a.asHom
+instance instNormedRing : NormedRing (End X) :=
+  normedRingOf (CStarCategory.normedSpaceCore X X) (fun f g => CStarCategory.norm_comp_le f g)
 
 /-- `End X` is a normed complex algebra. -/
-instance instNormedAlgebra : NormedAlgebra ℂ (End X) where
-  norm_smul_le c a := ((normedSpaceCore X).norm_smul c a).le
+instance instNormedAlgebra : NormedAlgebra ℂ (End X) :=
+  normedAlgebraOf (CStarCategory.normedSpaceCore X X) (fun f g => CStarCategory.norm_comp_le f g)
 
 /-- `End X` is complete, since the Hom space of `X` is. -/
-instance instCompleteSpace : CompleteSpace (End X) := by
-  let := CStarCategory.normedAddCommGroup X X
-  have : CompleteSpace (X ⟶ X) := CStarCategory.completeSpace X X
-  let e : End X ≃ᵢ (X ⟶ X) :=
-    { toEquiv := End.addEquiv.toEquiv
-      isometry_toFun := AddMonoidHomClass.isometry_of_norm End.addEquiv fun a => by
-        rw [End.addEquiv_apply, End.norm_def] }
-  exact e.completeSpace
+instance instCompleteSpace : CompleteSpace (End X) :=
+  completeSpaceOf (CStarCategory.normedSpaceCore X X) (CStarCategory.completeSpace X X)
 
 /-- The C*-identity in `End X`, from the C*-inequality of the category. -/
-instance instCStarRing : CStarRing (End X) where
-  norm_mul_self_le a := by
-    simpa only [norm_def, mul_asHom, star_asHom] using CStarCategory.norm_mul_self_le a.asHom
+instance instCStarRing : CStarRing (End X) :=
+  cstarRingOf (CStarCategory.normedSpaceCore X X) (fun f g => CStarCategory.norm_comp_le f g)
+    (fun f => CStarCategory.norm_mul_self_le f)
 
 /-- Each endomorphism algebra of a C*-category is a unital C*-algebra, with the dagger as
 star and Mathlib's operator-order multiplication. -/
-instance instCStarAlgebra : CStarAlgebra (End X) where
+instance instCStarAlgebra : CStarAlgebra (End X) :=
+  cstarAlgebraOf (CStarCategory.normedSpaceCore X X) (CStarCategory.completeSpace X X)
+    (fun f g => CStarCategory.norm_comp_le f g) (fun f => CStarCategory.norm_mul_self_le f)
 
 /-- The positive cone of the C*-algebra `End X`: self-adjoint elements with nonnegative
 spectrum. -/
@@ -263,6 +377,10 @@ theorem self_comp_dagger_nonneg {Y : C} (f : X ⟶ Y) : 0 ≤ End.of (f ≫ dagg
   obtain ⟨g, hg⟩ := CStarCategory.exists_self_comp_dagger_eq f
   rw [hg]
   exact star_mul_self_nonneg (End.of g)
+
+/-- For an arrow `f : X ⟶ Y`, the endomorphism `dagger f ≫ f` is positive in `End Y`. -/
+theorem dagger_comp_self_nonneg {Y : C} (f : X ⟶ Y) : 0 ≤ End.of (dagger f ≫ f) := by
+  simpa only [dagger_dagger] using self_comp_dagger_nonneg (dagger f)
 
 /-- The positive elements of `End X` are exactly the endomorphisms `f ≫ dagger f`, for arrows
 `f` out of `X`. -/
@@ -297,3 +415,117 @@ theorem comp_comp_dagger_le_norm_smul {Y : C} (g : X ⟶ Y) (a : End Y)
   simp [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul]
 
 end CategoryTheory.End
+
+namespace TauCeti.CStarCategory
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
+  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
+variable {W X Y Z : C}
+
+/-! ### Identity, unitary, and zero-object norm formulas -/
+
+/-- The identity arrow of any object in a C*-category has norm `0` or `1`. -/
+theorem norm_id_eq_zero_or_one (X : C) : ‖(𝟙 X : X ⟶ X)‖ = 0 ∨ ‖(𝟙 X : X ⟶ X)‖ = 1 := by
+  by_cases hX : (𝟙 X : X ⟶ X) = 0
+  · left; simp [hX]
+  · right
+    exact (End.norm_of (𝟙 X)).symm.trans <|
+      (IsStarProjection.one (End X)).norm_eq_one (mt (congrArg End.asHom) hX)
+
+/-- The identity of an object has norm at most one. -/
+theorem norm_id_le_one (X : C) : ‖𝟙 X‖ ≤ 1 :=
+  (End.norm_of (𝟙 X)).symm.trans_le (IsStarProjection.one (End X)).norm_le
+
+/-- The identity of an object that is not a zero object has norm one. -/
+theorem norm_id {X : C} (hX : ¬ Limits.IsZero X) : ‖𝟙 X‖ = 1 :=
+  (End.norm_of (𝟙 X)).symm.trans <|
+    (IsStarProjection.one (End X)).norm_eq_one
+      (mt (congrArg End.asHom) (mt (Limits.IsZero.iff_id_eq_zero X).mpr hX))
+
+/-- Every arrow out of a zero object has norm `0`. -/
+theorem _root_.CategoryTheory.Limits.IsZero.norm_hom_left (hX : Limits.IsZero X) (f : X ⟶ Y) :
+    ‖f‖ = 0 := by
+  rw [hX.eq_of_src f 0, norm_zero]
+
+/-- Every arrow into a zero object has norm `0`. -/
+theorem _root_.CategoryTheory.Limits.IsZero.norm_hom_right (hY : Limits.IsZero Y) (f : X ⟶ Y) :
+    ‖f‖ = 0 := by
+  rw [hY.eq_of_tgt f 0, norm_zero]
+
+/-- The identity arrow of a zero object has norm `0`. -/
+theorem _root_.CategoryTheory.Limits.IsZero.norm_id (hX : Limits.IsZero X) :
+    ‖(𝟙 X : X ⟶ X)‖ = 0 :=
+  hX.norm_hom_left (𝟙 X)
+
+/-- An object in a C*-category is a zero object precisely when its identity arrow has norm `0`. -/
+theorem isZero_iff_norm_id_eq_zero (X : C) : Limits.IsZero X ↔ ‖(𝟙 X : X ⟶ X)‖ = 0 := by
+  rw [Limits.IsZero.iff_id_eq_zero, norm_eq_zero]
+
+/-- An object in a C*-category is nonzero precisely when its identity arrow has norm `1`. -/
+theorem not_isZero_iff_norm_id_eq_one (X : C) : ¬ Limits.IsZero X ↔ ‖(𝟙 X : X ⟶ X)‖ = 1 := by
+  rw [isZero_iff_norm_id_eq_zero]
+  rcases norm_id_eq_zero_or_one X with h | h <;> simp [h]
+
+/-- If `X ⟶ X` is nontrivial, the identity arrow `𝟙 X` has norm `1`. -/
+@[simp] theorem norm_id_of_nontrivial (X : C) [Nontrivial (X ⟶ X)] :
+    ‖(𝟙 X : X ⟶ X)‖ = 1 := by
+  refine (not_isZero_iff_norm_id_eq_one X).mp fun hX => ?_
+  obtain ⟨f, g, hfg⟩ := exists_pair_ne (X ⟶ X)
+  exact hfg (hX.eq_of_src f g)
+
+/-- In a C*-category with a chosen zero object `0`, `‖𝟙 (0 : C)‖ = 0`. -/
+theorem norm_id_zero_object [Limits.HasZeroObject C] :
+    open scoped ZeroObject in
+    ‖(𝟙 (0 : C) : (0 : C) ⟶ 0)‖ = 0 :=
+  (Limits.isZero_zero C).norm_id
+
+/-- Pre-composing with an arrow satisfying `dagger u ≫ u = 𝟙 Y` preserves norms. -/
+theorem norm_comp_of_dagger_comp_id {u : X ⟶ Y} (hu : dagger u ≫ u = 𝟙 Y) (g : Y ⟶ Z) :
+    ‖u ≫ g‖ = ‖g‖ := by
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
+  have hcomp : dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ g := by
+    calc
+      dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ (dagger u ≫ u) ≫ g := by
+        simp only [dagger_comp, Category.assoc]
+      _ = dagger g ≫ g := by rw [hu, Category.id_comp]
+  rw [← norm_dagger_comp_self, hcomp, norm_dagger_comp_self]
+
+/-- Post-composing with an arrow satisfying `u ≫ dagger u = 𝟙 X` preserves norms. -/
+theorem norm_comp_of_comp_dagger_id {u : X ⟶ Y} (hu : u ≫ dagger u = 𝟙 X) (f : W ⟶ X) :
+    ‖f ≫ u‖ = ‖f‖ := by
+  calc
+    ‖f ≫ u‖ = ‖dagger (f ≫ u)‖ := (norm_dagger _).symm
+    _ = ‖dagger u ≫ dagger f‖ := by rw [dagger_comp]
+    _ = ‖dagger f‖ := norm_comp_of_dagger_comp_id (by rw [dagger_dagger]; exact hu) (dagger f)
+    _ = ‖f‖ := norm_dagger f
+
+/-- Pre-composing with a unitary arrow preserves norms. -/
+@[simp] theorem _root_.TauCeti.IsUnitary.norm_comp_left {u : X ⟶ Y} (hu : IsUnitary u)
+    (g : Y ⟶ Z) : ‖u ≫ g‖ = ‖g‖ :=
+  norm_comp_of_dagger_comp_id hu.dagger_hom_id g
+
+/-- Post-composing with a unitary arrow preserves norms. -/
+@[simp] theorem _root_.TauCeti.IsUnitary.norm_comp_right {u : X ⟶ Y} (hu : IsUnitary u)
+    (f : W ⟶ X) : ‖f ≫ u‖ = ‖f‖ :=
+  norm_comp_of_comp_dagger_id hu.hom_dagger_id f
+
+/-- The norm of a unitary arrow `u : X ⟶ Y` equals `‖𝟙 X‖` (`1` when `X` is nonzero, `0` when `X`
+is a zero object). -/
+theorem _root_.TauCeti.IsUnitary.norm_eq_norm_id {u : X ⟶ Y} (hu : IsUnitary u) :
+    ‖u‖ = ‖(𝟙 X : X ⟶ X)‖ := by
+  calc
+    ‖u‖ = ‖dagger u‖ := (norm_dagger u).symm
+    _ = ‖u ≫ dagger u‖ := (hu.norm_comp_left (dagger u)).symm
+    _ = ‖(𝟙 X : X ⟶ X)‖ := by rw [hu.hom_dagger_id]
+
+/-- Every unitary arrow is a contraction (`‖u‖ ≤ 1`). -/
+theorem _root_.TauCeti.IsUnitary.norm_le_one {u : X ⟶ Y} (hu : IsUnitary u) : ‖u‖ ≤ 1 :=
+  hu.norm_eq_norm_id.trans_le (norm_id_le_one X)
+
+/-- A unitary arrow out of an object with nontrivial endomorphisms has norm `1`. -/
+theorem _root_.TauCeti.IsUnitary.norm_eq_one {u : X ⟶ Y} (hu : IsUnitary u)
+    [Nontrivial (X ⟶ X)] : ‖u‖ = 1 := by
+  rw [hu.norm_eq_norm_id, norm_id_of_nontrivial]
+
+end TauCeti.CStarCategory

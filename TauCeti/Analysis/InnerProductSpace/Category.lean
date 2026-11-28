@@ -9,18 +9,30 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import TauCeti.Analysis.CStarAlgebra.Category.Basic
+public import TauCeti.Analysis.CStarAlgebra.Category.Subcategory
+public import TauCeti.CategoryTheory.Dagger.Functor
+import Mathlib.Analysis.CStarAlgebra.Hom
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
-# The dagger category of Hilbert spaces
+# The dagger and C*-category of Hilbert spaces
 
 `TauCeti.HilbertCat 𝕜` bundles complete inner product spaces over an `RCLike` field.
 Its morphisms are Mathlib continuous linear maps, with their existing Banach-space
 structures. Composition and addition give the native linear category structure, and
 Mathlib's `ContinuousLinearMap.adjoint` supplies the conjugate-linear dagger.
 
-Unitary arrows are precisely the maps underlying linear isometric equivalences.
-The operator norm satisfies the C*-identity in categorical composition order, and complex
-Hilbert spaces form a `TauCeti.CStarCategory`.
+Unitary arrows are precisely the maps underlying linear isometric equivalences, endomorphism
+algebras `End X` identify as `⋆`-algebras with `X →L[𝕜] X`, and categorical zero objects are
+characterized by `Subsingleton`. The operator norm satisfies the C*-identity in categorical
+composition order, and complex Hilbert spaces form a `TauCeti.CStarCategory` whose spectral
+order on `End X` matches the Loewner inner-product order on `X →L[ℂ] X`.
+
+The full subcategory `TauCeti.FDHilbertCat 𝕜` of finite-dimensional spaces inherits the linear
+dagger structure with finite-dimensional Banach Hom spaces, and over `ℂ` automatically inherits its
+`TauCeti.CStarCategory` structure via
+`CategoryTheory.ObjectProperty.instCStarCategoryFullSubcategory`, with explicit zero-object
+(`PUnit`, `‖𝟙 _‖ = 0`) and nontrivial (`ℂ`, `‖𝟙 _‖ = 1`) behavior.
 -/
 
 public section
@@ -324,21 +336,6 @@ theorem normedSpaceCore (X Y : HilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (
   norm_triangle := norm_add_le
   norm_eq_zero_iff _ := norm_eq_zero
 
-/-- The normed group structure induced by the operator norm is the one of continuous linear
-maps, so the completeness of the Hom space carries over. -/
-private theorem completeSpace_ofCore (X Y : HilbertCat.{u, v} 𝕜) :
-    letI := NormedAddCommGroup.ofCore (normedSpaceCore X Y)
-    CompleteSpace (X ⟶ Y) := by
-  have h : (NormedAddCommGroup.ofCore (normedSpaceCore X Y)).toPseudoMetricSpace =
-      (inferInstance : NormedAddCommGroup (X ⟶ Y)).toPseudoMetricSpace := by
-    ext f g
-    rw [@dist_eq_norm_neg_add _ (NormedAddCommGroup.ofCore
-      (normedSpaceCore X Y)).toSeminormedAddCommGroup.toSeminormedAddGroup, norm_neg_add,
-      dist_eq_norm]
-  have hc : CompleteSpace (X ⟶ Y) := inferInstance
-  -- The goal and `hc` are completeness for two metric structures, which `h` identifies.
-  convert hc using 2
-
 /-- For a morphism `f` of complex Hilbert spaces, the positive operator `f†f` is `g†g` for its
 square root `g`. -/
 theorem exists_self_comp_dagger_eq {X Y : HilbertCat.{0, v} ℂ} (f : X ⟶ Y) :
@@ -352,11 +349,217 @@ theorem exists_self_comp_dagger_eq {X Y : HilbertCat.{0, v} ℂ} (f : X ⟶ Y) :
 /-- Complex Hilbert spaces with operator norms and adjoints form a C*-category. -/
 instance : CStarCategory (HilbertCat.{0, v} ℂ) where
   normedSpaceCore := normedSpaceCore
-  completeSpace := completeSpace_ofCore
+  completeSpace X Y := NormedAddCommGroup.completeSpace_ofCore (normedSpaceCore X Y)
   norm_comp_le f g := (norm_comp_le f g).trans_eq (mul_comm _ _)
   norm_mul_self_le f := by rw [norm_self_comp_dagger, pow_two]
   exists_self_comp_dagger_eq := exists_self_comp_dagger_eq
 
+/-- The topology on Hom spaces of `HilbertCat ℂ` induced by `CStarCategory` agrees with the
+native continuous-linear-map topology. -/
+theorem cstarNormedAddCommGroup_toTopologicalSpace (X Y : HilbertCat.{0, v} ℂ) :
+    (CStarCategory.normedAddCommGroup X Y).toUniformSpace.toTopologicalSpace =
+      (inferInstance : TopologicalSpace (X ⟶ Y)) :=
+  NormedAddCommGroup.ofCore_toTopologicalSpace (normedSpaceCore X Y)
+
+/-- A bundled Hilbert space is a categorical zero object precisely when its underlying type is a
+subsingleton. -/
+theorem isZero_iff_subsingleton (X : HilbertCat.{u, v} 𝕜) :
+    Limits.IsZero X ↔ Subsingleton X := by
+  rw [Limits.IsZero.iff_id_eq_zero, id_eq_id]
+  constructor
+  · intro h
+    refine ⟨fun x y => ?_⟩
+    have hx : (ContinuousLinearMap.id 𝕜 X) x = 0 := by simp [h]
+    have hy : (ContinuousLinearMap.id 𝕜 X) y = 0 := by simp [h]
+    simpa using hx.trans hy.symm
+  · intro
+    exact ContinuousLinearMap.ext fun _ => Subsingleton.elim _ _
+
+/-- A subsingleton Hilbert space is a zero object of `HilbertCat 𝕜`. -/
+theorem isZero_of_subsingleton (X : HilbertCat.{u, v} 𝕜) [Subsingleton X] :
+    Limits.IsZero X :=
+  (isZero_iff_subsingleton X).mpr inferInstance
+
+/-- A nontrivial Hilbert space is not a zero object of `HilbertCat 𝕜`. -/
+theorem not_isZero_of_nontrivial (X : HilbertCat.{u, v} 𝕜) [Nontrivial X] :
+    ¬ Limits.IsZero X := by
+  rw [isZero_iff_subsingleton]
+  exact not_subsingleton X
+
+/-- Because `CategoryTheory.End X` multiplies in operator order while `HilbertCat 𝕜` composes
+arrows in diagrammatic order, `End X` is canonically `⋆`-algebra equivalent to `X →L[𝕜] X`. -/
+def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L[𝕜] X) where
+  toFun a := a.asHom
+  invFun f := End.of f
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_star' _ := rfl
+
+/-- Forward evaluation of `HilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_apply (X : HilbertCat.{u, v} 𝕜) (a : End X) :
+    X.endStarAlgEquiv a = a.asHom := (rfl)
+
+/-- Inverse evaluation of `HilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
+    X.endStarAlgEquiv.symm f = End.of f := (rfl)
+
+/-- `HilbertCat.endStarAlgEquiv` is isometric on endomorphisms. -/
+theorem norm_endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) (a : End X) :
+    ‖X.endStarAlgEquiv a‖ = ‖a‖ := (rfl)
+
+/-- The spectral order on `End.of` in `HilbertCat ℂ` matches the Loewner order on `X →L[ℂ] X`. -/
+@[simp] theorem end_of_le_iff {X : HilbertCat.{0, v} ℂ} {f g : X →L[ℂ] X} :
+    End.of (X := X) f ≤ End.of g ↔ f ≤ g :=
+  (map_le_map_iff X.endStarAlgEquiv).symm
+
+/-- Spectral positivity on `End.of` in `HilbertCat ℂ` matches Loewner positivity on `X →L[ℂ] X`. -/
+@[simp] theorem end_of_nonneg_iff {X : HilbertCat.{0, v} ℂ} {f : X →L[ℂ] X} :
+    0 ≤ End.of (X := X) f ↔ 0 ≤ f := by
+  simpa only [End.of_zero] using end_of_le_iff (X := X) (f := 0) (g := f)
+
+/-- Finite-dimensional Hilbert spaces, as an object property on `HilbertCat 𝕜`. -/
+abbrev isFiniteDimensional (𝕜 : Type u) [RCLike 𝕜] : ObjectProperty (HilbertCat.{u, v} 𝕜) :=
+  fun H => FiniteDimensional 𝕜 H
+
+/-- Membership in `HilbertCat.isFiniteDimensional` means `FiniteDimensional 𝕜 H`. -/
+@[simp] theorem isFiniteDimensional_iff (H : HilbertCat.{u, v} 𝕜) :
+    isFiniteDimensional 𝕜 H ↔ FiniteDimensional 𝕜 H := Iff.rfl
+
 end HilbertCat
+
+/-- The full subcategory of finite-dimensional Hilbert spaces over `𝕜`. It inherits linear and
+dagger structures (and over `ℂ`, the C*-category structure) from `HilbertCat 𝕜`. -/
+abbrev FDHilbertCat (𝕜 : Type u) [RCLike 𝕜] :=
+  (HilbertCat.isFiniteDimensional.{u, v} 𝕜).FullSubcategory
+
+namespace FDHilbertCat
+
+variable {𝕜 : Type u} [RCLike 𝕜]
+
+instance : CoeSort (FDHilbertCat.{u, v} 𝕜) (Type v) := ⟨fun H => H.obj.carrier⟩
+
+instance (H : FDHilbertCat.{u, v} 𝕜) : FiniteDimensional 𝕜 H := H.property
+
+/-- Bundle a finite-dimensional inner product space as an object of `FDHilbertCat 𝕜`.
+Completeness is supplied automatically by finite-dimensionality. -/
+abbrev of (𝕜 : Type u) [RCLike 𝕜] (E : Type v) [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [hE : FiniteDimensional 𝕜 E] : FDHilbertCat.{u, v} 𝕜 :=
+  let _ := FiniteDimensional.completeSpace 𝕜 E
+  ⟨HilbertCat.of 𝕜 E, hE⟩
+
+/-- The underlying `HilbertCat 𝕜` object of `FDHilbertCat.of 𝕜 E` has carrier `E`. -/
+@[simp] theorem of_carrier (E : Type v) [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] :
+    (of 𝕜 E : Type v) = E := (rfl)
+
+/-- The operator norms on Hom spaces of `FDHilbertCat 𝕜` satisfy the normed-space axioms. -/
+theorem normedSpaceCore (X Y : FDHilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) :=
+  InducedCategory.normedSpaceCoreOf ObjectProperty.FullSubcategory.obj
+    (HilbertCat.normedSpaceCore X.obj Y.obj)
+
+/-- Hom spaces in `FDHilbertCat 𝕜` carry the normed group structure of their underlying
+continuous linear maps. -/
+instance (X Y : FDHilbertCat.{u, v} 𝕜) : NormedAddCommGroup (X ⟶ Y) :=
+  .ofCore (normedSpaceCore X Y)
+
+/-- Hom spaces in `FDHilbertCat 𝕜` are normed spaces over `𝕜`. -/
+instance (X Y : FDHilbertCat.{u, v} 𝕜) : NormedSpace 𝕜 (X ⟶ Y) :=
+  .ofCore (normedSpaceCore X Y)
+
+/-- Every Hom space between finite-dimensional Hilbert spaces is finite-dimensional. -/
+instance instFiniteDimensionalHom (X Y : FDHilbertCat.{u, v} 𝕜) :
+    FiniteDimensional 𝕜 (X ⟶ Y) := by
+  have : FiniteDimensional 𝕜 X.obj := X.property
+  have : FiniteDimensional 𝕜 Y.obj := Y.property
+  have : FiniteDimensional 𝕜 (X.obj ⟶ Y.obj) :=
+    inferInstanceAs (FiniteDimensional 𝕜 (X.obj →L[𝕜] Y.obj))
+  exact Module.Finite.equiv
+    (InducedCategory.homLinearEquiv (R := 𝕜) (F := ObjectProperty.FullSubcategory.obj)
+      (X := X) (Y := Y)).symm
+
+/-- Hom spaces in `FDHilbertCat 𝕜` are complete. -/
+instance (X Y : FDHilbertCat.{u, v} 𝕜) : CompleteSpace (X ⟶ Y) :=
+  FiniteDimensional.completeSpace 𝕜 _
+
+/-- An object of `FDHilbertCat 𝕜` is a categorical zero object if and only if its carrier is a
+subsingleton. -/
+theorem isZero_iff_subsingleton (X : FDHilbertCat.{u, v} 𝕜) :
+    Limits.IsZero X ↔ Subsingleton X := by
+  let ι := (HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι
+  refine ⟨fun hX => X.obj.isZero_iff_subsingleton.mp (ι.map_isZero hX), fun hX => ?_⟩
+  exact Limits.IsZero.of_full_of_faithful_of_isZero ι X (X.obj.isZero_iff_subsingleton.mpr hX)
+
+/-- A subsingleton finite-dimensional Hilbert space is a zero object of `FDHilbertCat 𝕜`. -/
+theorem isZero_of_subsingleton (X : FDHilbertCat.{u, v} 𝕜) [Subsingleton X] :
+    Limits.IsZero X :=
+  (isZero_iff_subsingleton X).mpr inferInstance
+
+/-- A nontrivial finite-dimensional Hilbert space is not a zero object of `FDHilbertCat 𝕜`. -/
+theorem not_isZero_of_nontrivial (X : FDHilbertCat.{u, v} 𝕜) [Nontrivial X] :
+    ¬ Limits.IsZero X := by
+  rw [isZero_iff_subsingleton]
+  exact not_subsingleton X
+
+/-- Endomorphisms of `X : FDHilbertCat 𝕜` identify as a `⋆`-algebra with `X →L[𝕜] X`,
+composing `CategoryTheory.Functor.mapEndStarAlgEquiv` along the full subcategory inclusion
+with `HilbertCat.endStarAlgEquiv`. -/
+def endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L[𝕜] X) :=
+  (((HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι).mapEndStarAlgEquiv 𝕜 X).trans
+    X.obj.endStarAlgEquiv
+
+/-- Forward evaluation of `FDHilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_apply (X : FDHilbertCat.{u, v} 𝕜) (a : End X) :
+    X.endStarAlgEquiv a = a.asHom.hom := by
+  unfold endStarAlgEquiv
+  simp only [StarAlgEquiv.trans_apply, HilbertCat.endStarAlgEquiv_apply,
+    Functor.mapEndStarAlgEquiv_apply_asHom, ObjectProperty.ι_map]
+
+/-- Inverse evaluation of `FDHilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_symm_apply (X : FDHilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
+    X.endStarAlgEquiv.symm f = End.of (ObjectProperty.homMk f) :=
+  EquivLike.injective X.endStarAlgEquiv <| by
+    rw [StarAlgEquiv.apply_symm_apply, endStarAlgEquiv_apply]
+    rfl
+
+/-- `FDHilbertCat.endStarAlgEquiv` is isometric on endomorphisms. -/
+theorem norm_endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) (a : End X) :
+    ‖X.endStarAlgEquiv a‖ = ‖a‖ := by
+  rw [endStarAlgEquiv_apply, End.norm_def, ObjectProperty.norm_def]
+
+/-- The spectral order on `End.of` in `FDHilbertCat ℂ` matches the Loewner order on underlying
+operators in `X →L[ℂ] X`. -/
+@[simp] theorem end_of_le_iff {X : FDHilbertCat.{0, v} ℂ} {a b : X ⟶ X} :
+    End.of a ≤ End.of b ↔ @LE.le (X →L[ℂ] X) _ a.hom b.hom := by
+  simpa only [endStarAlgEquiv_apply] using
+    (map_le_map_iff X.endStarAlgEquiv (a := End.of a) (b := End.of b)).symm
+
+/-- Spectral positivity on `End.of` in `FDHilbertCat ℂ` matches Loewner positivity on underlying
+operators in `X →L[ℂ] X`. -/
+@[simp] theorem end_of_nonneg_iff {X : FDHilbertCat.{0, v} ℂ} {a : X ⟶ X} :
+    0 ≤ End.of a ↔ @LE.le (X →L[ℂ] X) _ 0 a.hom := by
+  rw [← End.of_zero]
+  exact end_of_le_iff
+
+/-- The topology on Hom spaces of `FDHilbertCat ℂ` induced by `CStarCategory` agrees with the
+native normed-space topology. -/
+theorem cstarNormedAddCommGroup_toTopologicalSpace (X Y : FDHilbertCat.{0, v} ℂ) :
+    (CStarCategory.normedAddCommGroup X Y).toUniformSpace.toTopologicalSpace =
+      (inferInstance : TopologicalSpace (X ⟶ Y)) :=
+  NormedAddCommGroup.ofCore_toTopologicalSpace (CStarCategory.normedSpaceCore X Y)
+
+-- `FDHilbertCat ℂ` inherits `CStarCategory` automatically as a full subcategory of `HilbertCat ℂ`.
+example : CStarCategory (FDHilbertCat.{0, v} ℂ) := inferInstance
+
+-- Explicit zero-object (`PUnit`) vs nontrivial-object (`ℂ`) norm checks in `FDHilbertCat ℂ`.
+example : ‖(𝟙 (FDHilbertCat.of ℂ PUnit.{v + 1}))‖ = 0 :=
+  (isZero_of_subsingleton (FDHilbertCat.of ℂ PUnit.{v + 1})).norm_id
+
+example : ‖(𝟙 (FDHilbertCat.of ℂ ℂ))‖ = 1 :=
+  CStarCategory.norm_id (not_isZero_of_nontrivial (FDHilbertCat.of ℂ ℂ))
+
+end FDHilbertCat
 
 end TauCeti

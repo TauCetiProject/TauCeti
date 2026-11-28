@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Dagger.Karoubi
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import TauCeti.Algebra.Group.Idempotent
 import TauCeti.Algebra.Star.Projection.Commute
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # The dagger Karoubi envelope of a C*-category
@@ -79,13 +80,12 @@ variable [Preadditive C] [Linear ℂ C] [DaggerPreadditive C] [DaggerLinear ℂ 
 
 /-- The normed space axioms for the Hom spaces of the dagger Karoubi envelope, transported from
 those of `C`. -/
-theorem normedSpaceCore (P Q : DaggerKaroubi C) : NormedSpace.Core ℂ (P ⟶ Q) where
-  norm_nonneg f := CStarCategory.norm_nonneg f.hom.f
-  norm_smul c f := CStarCategory.norm_smul c f.hom.f
-  norm_triangle f g := CStarCategory.norm_add_le f.hom.f g.hom.f
-  norm_eq_zero_iff f := by
-    rw [norm_def, CStarCategory.norm_eq_zero]
-    exact ⟨fun h => hom_ext h, fun h => by rw [h, zero_hom_f]⟩
+theorem normedSpaceCore (P Q : DaggerKaroubi C) : NormedSpace.Core ℂ (P ⟶ Q) :=
+  (CStarCategory.normedSpaceCore P.obj.X Q.obj.X).induced
+    { toFun := fun f => f.hom.f
+      map_add' := fun _ _ => rfl
+      map_smul' := fun _ _ => rfl }
+    (fun _ _ h => hom_ext h) fun _ => rfl
 
 /-- The Hom spaces of the dagger Karoubi envelope are complete: they are isometric to the closed
 subspaces of arrows `f` of `C` with `p ≫ f ≫ q = f`. -/

@@ -19,11 +19,12 @@ Hilbert modules, this is the instance `CStarModule (End X)ᵐᵒᵖ (X ⟶ Y)`, 
 action `SMul (End X)ᵐᵒᵖ (X ⟶ Y)`. It makes the Hilbert-module theory, such as Cauchy–Schwarz,
 norm recovery and Paschke's inequality, available on Hom spaces.
 
-Read through this instance, the module's Cauchy–Schwarz inequality is
-`(f†g)†(f†g) ≤ ‖f‖² g†g` for parallel arrows `f g : X ⟶ Y`, and its norm recovery says that
-`‖f‖` is the largest value of `‖g†f‖` over `‖g‖ ≤ 1`, and its norm monotonicity says that
-`f†f ≤ g†g` implies `‖f‖ ≤ ‖g‖`. The conjugation bounds, which use only the C*-identity and the
-order on `End X`, are in `TauCeti.Analysis.CStarAlgebra.Category.Basic`.
+Read through this instance, its norm recovery says that `‖f‖` is the largest value of
+`‖g†f‖` over `‖g‖ ≤ 1`, and its norm monotonicity says that `f†f ≤ g†g` implies `‖f‖ ≤ ‖g‖`.
+The conjugation bounds, which use only the C*-identity and the order on `End X`, are in
+`TauCeti.Analysis.CStarAlgebra.Category.Basic`, and the operator-order composition bounds
+`CategoryTheory.End.comp_dagger_self_comp_le` (giving operator-order Cauchy–Schwarz when
+specialized to `dagger g`) are in `TauCeti.Analysis.CStarAlgebra.Category.Order`.
 
 The polarization identity for `f†g` holds in any complex linear dagger category
 (`TauCeti.comp_dagger_polarization`).
@@ -31,8 +32,6 @@ The polarization identity for `f†g` holds in any complex linear dagger categor
 ## Main declarations
 
 * `TauCeti.CStarCategory.instCStarModule`: `X ⟶ Y` is a right Hilbert `End X`-module.
-* `CategoryTheory.End.comp_dagger_comp_comp_dagger_le`: the Cauchy–Schwarz inequality
-  `(f†g)†(f†g) ≤ ‖f‖² g†g`.
 * `TauCeti.CStarCategory.isGreatest_norm_comp_dagger`: `‖f‖` is the largest value of `‖g†f‖`
   over arrows `g` of norm at most one.
 * `TauCeti.CStarCategory.norm_le_norm_of_self_comp_dagger_le`: `f†f ≤ g†g` implies
@@ -100,31 +99,6 @@ theorem inner_def (f g : X ⟶ Y) :
 `g ≫ dagger f`. -/
 @[simp] theorem unop_inner (f g : X ⟶ Y) :
     MulOpposite.unop (inner (End X)ᵐᵒᵖ f g) = .of (g ≫ dagger f) := (rfl)
-
-end TauCeti.CStarCategory
-
-namespace CategoryTheory.End
-
-open TauCeti
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
-  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
-  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C] {X Y : C}
-
-/-- The Cauchy–Schwarz inequality for parallel arrows `f g : X ⟶ Y` of a C*-category:
-`(f†g)†(f†g) ≤ ‖f‖² g†g` in `End X`, that is
-`g ≫ dagger f ≫ f ≫ dagger g ≤ ‖f‖ ^ 2 • (g ≫ dagger g)`. -/
-theorem comp_dagger_comp_comp_dagger_le (f g : X ⟶ Y) :
-    End.of (g ≫ dagger f ≫ f ≫ dagger g) ≤ ‖f‖ ^ 2 • End.of (g ≫ dagger g) := by
-  convert CStarModule.star_unop_inner_mul_unop_inner_le (A := End X) f g using 2 <;> simp
-
-end CategoryTheory.End
-
-namespace TauCeti.CStarCategory
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
-  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
-  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C] {X Y : C}
 
 /-- Norm recovery: `‖f‖` is the largest value of `‖g†f‖`, that is `‖f ≫ dagger g‖`, over arrows
 `g : X ⟶ Y` of norm at most one. -/
