@@ -142,10 +142,11 @@ theorem IsSobolevCRCoefficients.memWkpLoc_succ_of_forall_integral_inner_eq_zero 
   have hweak := (hc.forall_integral_inner_eq_zero_iff hpq.le (Ω' := Ω') (fun _ ↦ Iff.rfl) hv).1 h
   -- The reflected coefficients `J'` and `S'` are in `W^{k,p}_loc`; `S'` involves `DJ`.
   have hDJ : MemWkpLoc p Ω k DJ := hJ.memWkpLoc_of_hasWeakFDerivOn hc.hasWeakFDerivOn
-  have hW := hweak.memWkpLoc_succ (hc.crReflectedAdjoint hρ) hp
-    (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2) hpq hqp
-    (hJ.of_succ.crReflectedAdjointCoeff hρ) (hDJ.crReflectedAdjointZeroth hS hρ)
-    memWkpLoc_zero_fun
+  have hW := hweak.memWkpLoc_succ (hc.crReflectedAdjoint hρ) (by exact_mod_cast hp)
+    (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2) hpq
+    (ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)) ENNReal.coe_ne_top
+    (by exact_mod_cast hqp) (hJ.of_succ.crReflectedAdjointCoeff hρ)
+    (hDJ.crReflectedAdjointZeroth hS hρ) memWkpLoc_zero_fun
   -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`.
   simpa using hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz
 

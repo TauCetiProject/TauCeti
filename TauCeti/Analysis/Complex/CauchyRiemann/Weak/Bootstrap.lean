@@ -8,11 +8,8 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
-import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
-import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Regularity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
-import TauCeti.Data.ENNReal.Holder
 
 /-!
 # Interior elliptic bootstrapping for the nonlinear Cauchy–Riemann equation
@@ -35,10 +32,10 @@ The proof freezes the solution in the coefficients. The map `u` solves the linea
 `∂ₛu + A ∂ₜu = f` with `A(z) = J(z, u z)` and `f(z) = η(z, u z)`. If `u ∈ W^{m,p}_loc` with
 `1 ≤ m ≤ ℓ`, then `A, f ∈ W^{m,p}_loc` by the composition theorem
 `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ` (which uses `p > 2` and the continuity of `u`),
-and interior regularity for real Cauchy–Riemann equations with Sobolev coefficients
-(`TauCeti.IsWeakCRSolution.memWkpLoc_succ`, McDuff–Salamon, Proposition B.4.9, with `S = 0` and
-`q = p`) gives `u ∈ W^{m+1,p}_loc`. The linear theory needs an inner product on the target, so a
-finite-dimensional normed `V` is first identified with a Euclidean space.
+and interior regularity for real Cauchy–Riemann equations with Sobolev coefficients on arbitrary
+finite-dimensional real normed spaces
+(`TauCeti.HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann`, McDuff–Salamon, Proposition B.4.9,
+with `S = 0` and `r = p`) gives `u ∈ W^{m+1,p}_loc`.
 
 The exponent `p = ∞` is excluded from the Sobolev conclusion: a `W^{1,∞}` solution for a `C¹`
 structure need not be `W^{2,∞}` (`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`).
@@ -74,14 +71,14 @@ namespace TauCeti
 /-! ### The linear step -/
 
 /-- **The frozen equation as a real Cauchy–Riemann equation.** Let `p ≥ 2` be finite. If `u` solves
-`∂ₛu + A ∂ₜu = f` weakly on `Ω`, with `A ∈ W^{1,p}_loc` of weak derivative `DA` and `f` locally
-`Lᵖ`, then `u` is a weak solution of the real Cauchy–Riemann equation with coefficients
-`(A, DA, 0)` and right side `f`, in the sense of `TauCeti.IsWeakCRSolution`. -/
+`∂ₛu + A ∂ₜu = f` weakly on `Ω`, with `A ∈ W^{1,p}_loc` of weak derivative `DA`, then `u` is a
+weak solution of the real Cauchy–Riemann equation with coefficients `(A, DA, 0)` and right side
+`f`, in the sense of `TauCeti.IsWeakCRSolution`. -/
 theorem IsWeakCauchyRiemannOn.isWeakCRSolution {V : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 ≤ p)
     {A : ℂ → V →L[ℝ] V} {DA : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {f u : ℂ → V}
     (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
-    (hc : IsSobolevCRCoefficients p Ω A DA 0) (hf : MemLpLoc p Ω f) :
+    (hc : IsSobolevCRCoefficients p Ω A DA 0) :
     IsWeakCRSolution p Ω A DA 0 u f := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   obtain ⟨-, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
@@ -89,47 +86,8 @@ theorem IsWeakCauchyRiemannOn.isWeakCRSolution {V : Type*} [NormedAddCommGroup V
   have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ ≤ 1 := by
     rw [← ENNReal.inv_two_add_inv_two]
     exact add_le_add (ENNReal.inv_le_inv.2 hp') (ENNReal.inv_le_inv.2 hp')
-  exact (hc.isWeakCRSolution_iff_ae hpp ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp
-    (hf.locallyIntegrableOn (by exact_mod_cast one_le_two.trans hp)
-      Ω.isOpen.isLocallyClosed)).2 (by simpa using hae)
-
-/-- **The linear step on an inner product space.** If `u` solves `∂ₛu + A ∂ₜu = f` weakly on `Ω`
-for `p > 2`, with `A, f ∈ W^{k+1,p}_loc` and `A² = -1`, then `u ∈ W^{k+2,p}_loc`. -/
-private theorem memWkpLoc_add_two_of_inner {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 < p)
-    {k : ℕ} {A : ℂ → V →L[ℝ] V} {f u : ℂ → V}
-    (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
-    (hA : MemWkpLoc p Ω (k + 1) A) (hA2 : ∀ᵐ z ∂volume.restrict Ω, A z * A z = -1)
-    (hf : MemWkpLoc p Ω (k + 1) f) : MemWkpLoc p Ω (k + 2) u := by
-  obtain ⟨DA, hDA, hDAk⟩ := hA.exists_weakFDeriv_of_isOpen
-  have hc : IsSobolevCRCoefficients p Ω A DA 0 :=
-    ⟨hDA, hA.memLpLoc, hDAk.memLpLoc, memLpLoc_zero⟩
-  exact (h.isWeakCRSolution hp.le hc hf.memLpLoc).memWkpLoc_succ hc hp hA2
-    (ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp)) le_rfl hA memWkpLoc_zero_fun hf
-
-/-- **The linear step.** If `u` solves `∂ₛu + A ∂ₜu = f` weakly on `Ω` for `p > 2`, with
-`A, f ∈ W^{k+1,p}_loc` and `A² = -1`, then `u ∈ W^{k+2,p}_loc`. The target is read in a
-Euclidean model, where the linear theory applies. -/
-private theorem memWkpLoc_add_two {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 < p) {k : ℕ}
-    {A : ℂ → V →L[ℝ] V} {f u : ℂ → V}
-    (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
-    (hA : MemWkpLoc p Ω (k + 1) A) (hA2 : ∀ᵐ z ∂volume.restrict Ω, A z * A z = -1)
-    (hf : MemWkpLoc p Ω (k + 1) f) : MemWkpLoc p Ω (k + 2) u := by
-  let E := EuclideanSpace ℝ (Fin (Module.finrank ℝ V))
-  let e : V ≃L[ℝ] E := toEuclidean
-  let A' : ℂ → E →L[ℝ] E := fun z => (e : V →L[ℝ] E) ∘L A z ∘L (e.symm : E →L[ℝ] V)
-  have hA' : MemWkpLoc p Ω (k + 1) A' := by
-    simpa [A', ← ContinuousLinearEquiv.conjContinuousAlgEquiv_apply] using
-      hA.clm_comp (e.conjContinuousAlgEquiv.toContinuousLinearEquiv :
-        (V →L[ℝ] V) ≃L[ℝ] (E →L[ℝ] E)).toContinuousLinearMap
-  have hA2' : ∀ᵐ z ∂volume.restrict Ω, A' z * A' z = -1 := by
-    filter_upwards [hA2] with z hz
-    simp only [A', ← ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, ← map_mul, hz, map_neg,
-      map_one]
-  have h' := memWkpLoc_add_two_of_inner hp (h.continuousLinearEquiv_comp e) hA' hA2'
-    (hf.clm_comp (e : V →L[ℝ] E))
-  simpa using h'.clm_comp (e.symm : E →L[ℝ] V)
+  exact (hc.isWeakCRSolution_iff_ae hpp ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp).2
+    (by simpa using hae)
 
 /-! ### Bootstrapping -/
 
@@ -154,6 +112,10 @@ theorem memWkpLoc_of_isWeakCauchyRiemannOn {p : ℝ≥0∞} (hp : 2 < p) (hp' : 
   have hlin : IsWeakCauchyRiemannOn p Ω (fun z _ => J z (u z)) (fun z _ => η z (u z)) u :=
     (isWeakCauchyRiemannOn_congr_ae (J' := fun z _ => J z (u z)) (η' := fun z _ => η z (u z))
       (.of_forall fun _ => rfl) (.of_forall fun _ => rfl)).1 h
+  obtain ⟨-, -, D, hD, -, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 hlin
+  have heq : ∀ᵐ z ∂volume.restrict Ω,
+      D z 1 + J z (u z) (D z I) + (0 : ℂ → V →L[ℝ] V) z (u z) = η z (u z) := by
+    simpa using hae
   suffices ∀ m ≤ ℓ, MemWkpLoc p Ω (m + 1) u from this ℓ le_rfl
   intro m hm
   induction m with
@@ -162,9 +124,13 @@ theorem memWkpLoc_of_isWeakCauchyRiemannOn {p : ℝ≥0∞} (hp : 2 < p) (hp' : 
     -- The frozen coefficients are as regular as `u`, which gains one derivative.
     have hu := ih (by omega)
     have hmℓ : ((m + 1 : ℕ) : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast hm
-    exact memWkpLoc_add_two hp2 hlin
-      (hu.contDiffOn_comp_graph_succ hp2 h.continuousOn hW (hJ.of_le hmℓ) huW) hJ2
-      (hu.contDiffOn_comp_graph_succ hp2 h.continuousOn hW (hη.of_le hmℓ) huW)
+    have hA : MemWkpLoc p Ω (max 1 (m + 1)) (fun z => J z (u z)) := by
+      simpa [Nat.max_eq_right (Nat.succ_pos m)] using
+        hu.contDiffOn_comp_graph_succ hp2 h.continuousOn hW (hJ.of_le hmℓ) huW
+    exact hD.memWkpLoc_succ_of_ae_cauchyRiemann (by exact_mod_cast hp2)
+      (by exact_mod_cast one_lt_two.trans hp2) ENNReal.coe_ne_top le_rfl hA hJ2
+      memWkpLoc_zero_fun
+      (hu.contDiffOn_comp_graph_succ hp2 h.continuousOn hW (hη.of_le hmℓ) huW) heq
 
 /-- **Interior regularity of weak solutions** (McDuff–Salamon, Remark B.4.3, interior case). Let
 `p > 2`, possibly `p = ∞`, and `ℓ ≤ ∞`, and let `J` and `η` be of class `C^ℓ` jointly in `(z, x)`

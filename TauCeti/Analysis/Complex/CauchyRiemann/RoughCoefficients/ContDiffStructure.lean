@@ -87,8 +87,9 @@ private theorem memWkpLoc_two_of_two_lt (hA : ContDiffOn ℝ 1 A Ω)
   have hJ2 : ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), A z * A z = -1 :=
     (ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall hAA)
   exact (isWeakCRSolution_of_cauchyRiemann hA hAA hu hCR).memWkpLoc_succ (k := 1)
-    (.of_contDiffOn hA continuous_zero.continuousOn p) hp hJ2
-    (ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp)) le_rfl
+    (.of_contDiffOn hA continuous_zero.continuousOn p) (by exact_mod_cast hp) hJ2
+    (ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp))
+    (by exact_mod_cast one_lt_two.trans hp) ENNReal.coe_ne_top le_rfl
     (hA.memWkpLoc subset_rfl) memWkpLoc_zero_fun memWkpLoc_zero_fun
 
 /-- `∂ₜu` solves the linearized equation weakly, for `2 < p < ∞`, on an inner product space. -/

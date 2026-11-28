@@ -26,6 +26,11 @@ radius `R φ.rOut`.
 A bump function centred at `0` can be dilated by any factor `c > 0`: scaling both radii by `c`
 gives the bump function `ξ ↦ φ (c⁻¹ • ξ)`.
 
+The standard shrinking sequence `ContDiffBump.shrinking` provides bumps of radii `R / (n + 1)`
+and `R / (2 * (n + 1))` tending to zero; on any compact subset of an open set,
+`ContDiffBump.exists_seq_tendsto_rOut_closedBall_subset` selects such a sequence keeping closed
+outer balls inside the open set.
+
 ## Main results
 
 * `TauCeti.exists_contDiffBump_tsupport_subset_ball`: a bump centred at `c` whose topological
@@ -39,6 +44,8 @@ gives the bump function `ξ ↦ φ (c⁻¹ • ξ)`.
 * `ContDiffBump.apply_center`: a bump function is `1` at its centre.
 * `ContDiffBump.dilate`: the dilation of a bump function centred at `0` by a factor `c > 0`, with
   `ContDiffBump.dilate_apply`: its value at `ξ` is `φ (c⁻¹ • ξ)`.
+* `ContDiffBump.shrinking`, `ContDiffBump.exists_seq_tendsto_rOut_closedBall_subset`: shrinking
+  bump sequences and interior radius selection on compact subsets of open sets.
 -/
 
 public section
@@ -158,5 +165,63 @@ theorem ofReal_apply_inv_smul_eq_zero {R : ℝ} (hR : 0 < R) :
   rw [φ.apply_inv_smul_eq_zero_of_le_norm hR hξ.le, Complex.ofReal_zero]
 
 end Rescale
+
+section Shrinking
+
+variable {X : Type*} {c : X} {R : ℝ}
+
+/-- The bumps of outer radius `R / (n + 1)` and inner radius half of that. Their radii shrink to
+zero while the outer radius stays twice the inner one, as Lebesgue differentiation along
+normalized bump convolutions requires. -/
+noncomputable def shrinking (hR : 0 < R) (n : ℕ) : ContDiffBump c where
+  rIn := R / (2 * (n + 1))
+  rOut := R / (n + 1)
+  rIn_pos := by positivity
+  rIn_lt_rOut := div_lt_div_of_pos_left hR (by positivity) (by linarith)
+
+/-- The inner radius of `ContDiffBump.shrinking`. -/
+@[simp]
+theorem rIn_shrinking (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rIn = R / (2 * (n + 1)) :=
+  (rfl)
+
+/-- The outer radius of `ContDiffBump.shrinking`. -/
+@[simp]
+theorem rOut_shrinking (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut = R / (n + 1) :=
+  (rfl)
+
+/-- The outer radius of `ContDiffBump.shrinking` is at most `R`. -/
+theorem rOut_shrinking_le (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut ≤ R := by
+  rw [rOut_shrinking]
+  exact div_le_self hR.le (by simp)
+
+/-- The outer radius of `ContDiffBump.shrinking` is twice its inner radius. -/
+theorem rOut_shrinking_eq_two_mul_rIn (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut = 2 * (shrinking hR n : ContDiffBump c).rIn := by
+  simp only [rOut_shrinking, rIn_shrinking]
+  field_simp
+
+/-- The radii of `ContDiffBump.shrinking` tend to zero. -/
+theorem tendsto_rOut_shrinking (hR : 0 < R) :
+    Tendsto (fun n : ℕ => (shrinking hR n : ContDiffBump c).rOut) atTop (𝓝 0) := by
+  simp only [rOut_shrinking]
+  exact tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+
+/-- On a compact subset `K` of an open set `U`, there exists a sequence of bumps centred at zero
+whose outer radii tend to zero and keep every closed `(ρ n).rOut`-ball around points of `K` inside
+`U`. -/
+theorem exists_seq_tendsto_rOut_closedBall_subset {E : Type*} [PseudoMetricSpace E]
+    [Zero E] {U K : Set E} (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ ρ : ℕ → ContDiffBump (0 : E),
+      Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) ∧
+      ∀ n, ∀ x ∈ K, closedBall x (ρ n).rOut ⊆ U := by
+  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
+  refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, fun n x hx => ?_⟩
+  exact (closedBall_subset_closedBall (rOut_shrinking_le hδ n)).trans
+    ((closedBall_subset_cthickening hx δ).trans hδU)
+
+end Shrinking
 
 end ContDiffBump

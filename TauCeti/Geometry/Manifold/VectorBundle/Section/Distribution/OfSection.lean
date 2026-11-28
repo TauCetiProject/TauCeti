@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartCutoffs
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ExtChartAt.Image
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic

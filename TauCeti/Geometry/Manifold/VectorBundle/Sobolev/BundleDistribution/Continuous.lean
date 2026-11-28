@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BundleDistribution
 import Mathlib.MeasureTheory.Function.Holder
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.BaseSetChart
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.LocalRep

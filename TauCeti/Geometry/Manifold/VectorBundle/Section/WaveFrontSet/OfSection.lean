@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.OfSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 

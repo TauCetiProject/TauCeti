@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Topology.MetricSpace.Thickening
 
 /-!

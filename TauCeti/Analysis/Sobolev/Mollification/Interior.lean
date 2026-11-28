@@ -24,7 +24,9 @@ the support condition ensures that no boundary term enters the identity.
 `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed` specializes to normalized smooth bumps,
 with the geometric condition that the closed ball of the outer radius lies inside the domain.
 `HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply` restates the derivative identity in a
-fixed direction, with the bump as the left factor of the convolution.
+fixed direction, with the bump as the left factor of the convolution;
+`HasWeakLineDerivOn.hasLineDerivAt_normed_convolution_indicator` gives the corresponding
+directional `HasLineDerivAt` statement for a locally integrable zero extension.
 The vector-valued formulation applies to successive weak derivative fields when constructing
 smooth local approximations in higher-order Sobolev spaces.
 
@@ -187,5 +189,22 @@ theorem HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply
   by_cases hy : x - y ∈ (Omega : Set E)
   · simp [Set.indicator_of_mem hy]
   · simp [Set.indicator_of_notMem hy]
+
+/-- Interior directional derivative of a normalized mollification of a zero-extended weakly
+differentiable function, in left-kernel convolution form. -/
+theorem HasWeakLineDerivOn.hasLineDerivAt_normed_convolution_indicator
+    [FiniteDimensional ℝ E] [HasContDiffBump E]
+    [mu.IsAddLeftInvariant] [mu.IsOpenPosMeasure] [mu.IsNegInvariant]
+    {u u' : E → F} {v : E} (h : HasWeakLineDerivOn mu Omega u u' v)
+    (hu : LocallyIntegrable ((Omega : Set E).indicator u) mu)
+    (phi : ContDiffBump (0 : E)) {x : E}
+    (hx : ∀ y ∈ tsupport (phi.normed mu), x - y ∈ Omega) :
+    HasLineDerivAt ℝ
+      (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator u)
+      ((phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator u') x)
+      x v := by
+  have hd := h.indicator.hasLineDerivAt_convolution_right hu _
+    phi.contDiff_normed phi.hasCompactSupport_normed x hx
+  rwa [convolution_flip, convolution_flip] at hd
 
 end TauCeti

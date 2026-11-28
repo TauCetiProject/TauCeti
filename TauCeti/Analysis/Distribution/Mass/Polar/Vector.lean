@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Distribution.Mass.Measure
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.Mass.Polar.Density
 import TauCeti.Analysis.Distribution.TestFunction.Basic
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.MeasureTheory.Integral.DualPairing
 import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 import TauCeti.Topology.Instances.ENNReal

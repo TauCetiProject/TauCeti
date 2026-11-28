@@ -232,7 +232,8 @@ theorem CRInteriorEstimate.succ [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 
   have hJk := (eLpNormWkp_mono_order (max_le k.le_succ (Nat.le_add_left 1 k))).trans hJM
   -- Qualitative regularity and weak derivatives on `Ω`; `ξ` on `W` by the estimate of order `k`.
   have hS1 := memWkpLoc_of_eLpNormWkp_ne_top (ne_top_of_le_ne_top ENNReal.coe_ne_top hSM)
-  have hξ : MemWkpLoc q Ω (k + 1) ξ := h.memWkpLoc_succ hco hp hJ2 hpq hqp
+  have hξ : MemWkpLoc q Ω (k + 1) ξ := h.memWkpLoc_succ hco (by exact_mod_cast hp) hJ2 hpq
+    hq1 ENNReal.coe_ne_top (by exact_mod_cast hqp)
     (memWkpLoc_of_eLpNormWkp_ne_top (ne_top_of_le_ne_top ENNReal.coe_ne_top hJM)).of_succ
     hS1.of_succ hη.of_succ
   obtain ⟨Dξ, hDξ, hDξk⟩ := hξ.exists_weakFDeriv_of_isOpen
@@ -250,7 +251,7 @@ theorem CRInteriorEstimate.succ [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 
   have hDξ1 := eLpNormWkp_partial_s_le hq1.le hCq
     (Filter.Eventually.filter_mono (ae_mono (Measure.restrict_mono hUle le_rfl))
       ((hco.isWeakCRSolution_iff_ae hpq.le ENNReal.coe_ne_top ENNReal.coe_ne_top hDξ hξ.memLpLoc
-        hDξk.memLpLoc h.locallyIntegrableOn).1 h))
+        hDξk.memLpLoc).1 h))
     ((eLpNormWkp_mono_set hUle).trans ha) ((eLpNormWkp_mono_set (hW₂W.trans hWle)).trans hJM)
     ((eLpNormWkp_mono_set (hW₂W.trans hWle)).trans hSM) hT₂
     ((eLpNormWkp_mono_set hW₂W).trans hX)

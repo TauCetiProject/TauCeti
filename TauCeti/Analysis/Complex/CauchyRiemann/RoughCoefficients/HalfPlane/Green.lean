@@ -194,7 +194,7 @@ theorem isWeakCRSolutionHalf_iff_ae (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp : p ≠ �
   have hc : IsSobolevCRCoefficients p Ω.upperHalf J DJ S :=
     ⟨hJ, hJp.mono_set hsub, hDJp.mono_set hsub, hSp.mono_set hsub⟩
   refine ⟨fun h => (hc.isWeakCRSolution_iff_ae hpq hp hq hξ (hξq.mono_set hsub)
-    (hDξq.mono_set hsub) (h.locallyIntegrableOn.mono_set hsub)).1 h.isWeakCRSolution,
+    (hDξq.mono_set hsub)).1 h.isWeakCRSolution,
     fun h => ?_⟩
   have hH : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
   -- `η` agrees almost everywhere on `Ω ∩ {0 ≤ t}` with the left-hand side, since `ℝ` is null.

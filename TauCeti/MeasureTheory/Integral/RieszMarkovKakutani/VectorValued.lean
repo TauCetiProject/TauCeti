@@ -15,7 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Distribution.Mass.Polar.Density
 import TauCeti.Analysis.Distribution.Mass.Polar.Vector
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.MeasureTheory.Integral.DualPairing
 import TauCeti.Topology.ContinuousMap.CompactlySupported
 import TauCeti.Topology.Sets.Opens

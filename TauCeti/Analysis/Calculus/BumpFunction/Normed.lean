@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.MeasureTheory.Measure.Comap
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Analysis.Calculus.BumpFunction.Basic
 
 /-!
 # Integrals against normalized bumps
@@ -39,6 +42,9 @@ infinity, since its integral is one over a ball of vanishing measure.
   `ContDiffBump.ae_mem_closedBall_normedMeasure`.
 * `ContDiffBump.tendsto_normed_center_atTop`: normalized bumps with outer radii tending to zero
   tend to infinity at their centre.
+* `ContDiffBump.exists_seq_sub_tsupport_subset`: on a relatively compact open subdomain, selects a
+  shrinking sequence of normalized bump kernels whose translated supports stay in the ambient open
+  domain.
 -/
 
 public section
@@ -141,5 +147,19 @@ theorem tendsto_normed_center_atTop [Nontrivial E] [μ.IsAddHaarMeasure] {ι : T
       Eventually.of_forall fun i ↦ (σ i).integral_pos⟩
   simp_rw [hval]
   exact tendsto_inv_nhdsGT_zero.comp hint
+
+/-- On a relatively compact open subdomain, a shrinking sequence of normalized bump kernels
+has every translated support inside the ambient open domain. -/
+theorem exists_seq_sub_tsupport_subset {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {W Ω : TopologicalSpace.Opens E}
+    (hWc : IsCompact (closure (W : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω) :
+    ∃ φ : ℕ → ContDiffBump (0 : E),
+      Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) ∧
+      ∀ n x, x ∈ (W : Set E) → ∀ y ∈ tsupport ((φ n).normed μ), x - y ∈ Ω := by
+  obtain ⟨φ, hφ, hball⟩ := exists_seq_tendsto_rOut_closedBall_subset Ω.isOpen hWc hWΩ
+  refine ⟨φ, hφ, fun n x hx y hy => hball n x (subset_closure hx) ?_⟩
+  rw [(φ n).tsupport_normed_eq, mem_closedBall, dist_zero_right] at hy
+  simpa [mem_closedBall, dist_eq_norm] using hy
 
 end ContDiffBump

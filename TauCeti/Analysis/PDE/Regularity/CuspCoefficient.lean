@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!

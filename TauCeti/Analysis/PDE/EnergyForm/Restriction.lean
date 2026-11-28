@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.EnergyForm.SmallDrift
 

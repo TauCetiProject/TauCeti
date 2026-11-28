@@ -12,7 +12,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Integral.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Projection
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
