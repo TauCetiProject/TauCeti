@@ -23,7 +23,7 @@ and the vacuum of the reproducing model at the finite places:
 * the **finite Heisenberg datum** `β_f(x, y) = ψ₀(½ y* x)` on `𝔸_fⁿ`
   (`TauCeti.WeilData.finiteDatum`). It is the finite part `ψ_f(½ j · y* x)` of the adelic
   Heisenberg datum read in the finite coordinates `x = α z`
-  (`TauCeti.WeilData.finiteHeisenbergDatum_smul_smul_eq_finiteDatum`);
+  (`TauCeti.finiteHeisenbergDatum_smul_smul`);
 * the **finite vacuum** `e_f`, equal to `semi(z)` for `z ∈ Ôⁿ` and to `0` otherwise
   (`TauCeti.WeilData.finiteVacuum`).
 
@@ -46,8 +46,6 @@ and `e_f` is defined. It is an instance of the abstract lattice vacuum
 ## Main results
 
 * `TauCeti.WeilData.finiteDatum_apply`: `β_f(x, y) = ψ₀(½ y* x)`.
-* `TauCeti.WeilData.finiteHeisenbergDatum_smul_smul_eq_finiteDatum`: `β_f` is the finite part of
-  the adelic Heisenberg datum in finite coordinates.
 * `TauCeti.WeilData.forall_finiteDatum_sq_eq_one_iff`: self-duality of `Ôⁿ` for `β_f²`.
 * `TauCeti.WeilData.isVacuum_finiteVacuum`: `e_f` is a vacuum for `β_f`.
 
@@ -93,18 +91,10 @@ private theorem algebraMap_j_div_two_mem_skewAdjoint :
 /-- The **finite Heisenberg datum** `β_f(x, y) = ψ₀(½ y* x)` on `𝔸_fⁿ` of Weil data
 (`TauCeti.WeilData.finiteDatum_apply`): the datum `ψ_f(t · y* x)` of `t = α (j / 2) (conj α)`.
 It is the finite part `ψ_f(½ j · y* x)` of the adelic Heisenberg datum, read in the finite
-coordinates `x = α z` (`TauCeti.WeilData.finiteHeisenbergDatum_smul_smul_eq_finiteDatum`). -/
+coordinates `x = α z` (`TauCeti.finiteHeisenbergDatum_smul_smul`). -/
 def finiteDatum : HeisenbergDatum (n → 𝔸ᶠ[E]) :=
   finiteHeisenbergDatum n ((W.α : 𝔸ᶠ[E]) * algebraMap E 𝔸ᶠ[E] (W.j / 2) * star (W.α : 𝔸ᶠ[E]))
     (skewAdjoint.conjugate W.algebraMap_j_div_two_mem_skewAdjoint _)
-
-/-- In the finite coordinates `x = α z`, the finite Heisenberg datum `ψ_f(½ j · y* x)` of `j / 2`
-(the finite part of the adelic Heisenberg datum) is `β_f`. -/
-theorem finiteHeisenbergDatum_smul_smul_eq_finiteDatum
-    (h : algebraMap E 𝔸ᶠ[E] (W.j / 2) ∈ skewAdjoint 𝔸ᶠ[E]) (x y : n → 𝔸ᶠ[E]) :
-    finiteHeisenbergDatum n (algebraMap E 𝔸ᶠ[E] (W.j / 2)) h ((W.α : 𝔸ᶠ[E]) • x)
-        ((W.α : 𝔸ᶠ[E]) • y) = W.finiteDatum n x y :=
-  finiteHeisenbergDatum_smul_smul _ h _ x y
 
 variable {n} in
 /-- **`β_f(x, y) = ψ₀(½ y* x)`**. -/
