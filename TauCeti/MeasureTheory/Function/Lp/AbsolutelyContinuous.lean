@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.LpSeminorm.AbsolutelyContinuous
 
 /-!
 # `L∞` along absolutely continuous measures
 
 Let `ν ≪ μ`. A function essentially bounded for `μ` is essentially bounded for `ν`, with no
-larger essential supremum, and functions equal `μ`-almost everywhere are equal `ν`-almost
-everywhere. Taking `ν`-classes of `μ`-classes is therefore a well-defined linear map
+larger essential supremum (`MeasureTheory.MemLp.mono_ac_top`), and functions equal
+`μ`-almost everywhere are equal `ν`-almost everywhere. Taking `ν`-classes of `μ`-classes is
+therefore a well-defined linear map
 `MeasureTheory.Lp.linftyOfAbsolutelyContinuous 𝕜 h : Lp E ∞ μ →L[𝕜] Lp E ∞ ν` of norm at most
 one. At the exponent `∞` this extends Mathlib's `MeasureTheory.Lp.LpToLpOfMeasureLeSMul`, which
 needs `ν ≤ c • μ` for a finite constant `c`, to every absolutely continuous `ν`: `L∞` only sees
@@ -56,18 +58,6 @@ open scoped ENNReal BoundedContinuousFunction
 namespace MeasureTheory
 
 variable {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E] {μ ν ρ : Measure α}
-
-/-- The essential supremum norm does not increase when passing to an absolutely continuous
-measure. -/
-theorem eLpNorm_top_mono_ac (f : α → E) (h : ν ≪ μ) : eLpNorm f ∞ ν ≤ eLpNorm f ∞ μ := by
-  by_cases hf : AEStronglyMeasurable f μ
-  · rw [eLpNorm_exponent_top hf, eLpNorm_exponent_top (hf.mono_ac h)]
-    exact eLpNormEssSup_mono_measure f h
-  · simp [eLpNorm_of_not_aestronglyMeasurable hf]
-
-/-- An essentially bounded function for `μ` is essentially bounded for every `ν ≪ μ`. -/
-theorem MemLp.mono_ac_top {f : α → E} (hf : MemLp f ∞ μ) (h : ν ≪ μ) : MemLp f ∞ ν :=
-  memLp_iff.2 <| (eLpNorm_top_mono_ac f h).trans_lt (memLp_iff.1 hf)
 
 namespace Lp
 

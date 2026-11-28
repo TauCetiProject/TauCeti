@@ -16,24 +16,26 @@ import TauCeti.MeasureTheory.Function.Holder
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
-import TauCeti.MeasureTheory.Function.Lp.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.Lp.Exponent
+import TauCeti.MeasureTheory.Function.LpSeminorm.AbsolutelyContinuous
 
 /-!
 # Representation of continuous functionals on `Lᵖ`
 
 On a σ-finite measure space, the integral pairing identifies the continuous dual of `Lᵠ`
 with `Lᵖ` for conjugate exponents `1 ≤ q < ∞`, including the endpoint `L¹(μ)⋆ = L^∞(μ)`. The
-isometric embedding is supplied by `MeasureTheory.Lp.toDual`. For `1 < q`, surjectivity follows
-from reflexivity of `Lᵠ`: a functional annihilating the closed range is evaluation at an `Lᵠ`
-function, which must vanish by the injectivity of the reversed integral pairing.
+isometric embedding is supplied by `MeasureTheory.Lp.toDual`.
 
 The same holds, again for `1 ≤ q < ∞`, for functions with values in a Hilbert space `H`, where
 `Lᵖ(μ; H⋆)` represents the continuous dual of `Lᵠ(μ; H)` by `g ↦ (f ↦ ∫ g x (f x) dμ)`, with
 `H⋆ = StrongDual 𝕜 H` (`MeasureTheory.Lp.strongDualEquiv`). The pairing is bilinear, with no
-complex conjugation. Its norm is computed by testing against the pointwise Riesz representative of
-`g`, and for `1 < q` surjectivity again follows from reflexivity of `Lᵠ(μ; H)`, which is uniformly
-convex.
+complex conjugation. It is a linear isometry `MeasureTheory.Lp.toStrongDual` for all Hölder
+conjugate exponents, `q = ∞` included: its norm is computed by testing against the pointwise Riesz
+representative of `g`. For `1 < q < ∞`, surjectivity follows from reflexivity of `Lᵠ(μ; H)`, which
+is uniformly convex: a functional annihilating the closed range is evaluation at an `Lᵠ(μ; H)`
+function, which must vanish because it pairs to zero with every Riesz dual of a test function.
+The scalar case is `H = 𝕜`: a density `G` with values in `𝕜⋆` gives the scalar density
+`x ↦ G x 1`.
 
 At the endpoint `q = 1`, for a finite measure, the density of `φ ∈ L¹(μ; H)⋆` is found in
 `L²(μ; H)`. As `L²(μ; H)` maps continuously into `L¹(μ; H)` (`MeasureTheory.Lp.ofExponentLEL`), `φ`
@@ -47,9 +49,8 @@ measure `μ` has a positive weight `w` with `∫ w dμ < ∞`
 the same null sets as `μ`. Multiplication by `w` maps `L¹(ν; H)` linearly and isometrically onto
 `L¹(μ; H)` (`MeasureTheory.withDensitySMulLIE`), so `φ` pulls back to a functional on `L¹(ν; H)`,
 whose density `g ∈ L^∞(ν; H⋆) = L^∞(μ; H⋆)` represents `φ`:
-`φ (w u) = ∫ g u dν = ∫ g (w u) dμ`. The scalar endpoint is the case `H = 𝕜`: a density `G` with
-values in `𝕜⋆` gives the scalar density `x ↦ G x 1`. Some hypothesis on `μ` is needed: for the
-measure on a point that gives it infinite mass, `L¹(μ) = 0` while `L^∞(μ) = 𝕜`.
+`φ (w u) = ∫ g u dν = ∫ g (w u) dμ`. Some hypothesis on `μ` is needed: for the measure on a point
+that gives it infinite mass, `L¹(μ) = 0` while `L^∞(μ) = 𝕜`.
 
 This representation passes distributional test-function bounds to actual `Lᵖ` weak derivatives.
 
@@ -59,6 +60,8 @@ For a real inner product space `E` with a finite orthonormal basis `b`, the dual
 
 ## Main declarations
 
+* `MeasureTheory.Lp.toStrongDual`: the integral pairing as a linear isometry
+  `Lᵖ(μ; H⋆) → (Lᵠ(μ; H))⋆` for a Hilbert space `H` and any Hölder conjugate exponents.
 * `MeasureTheory.Lp.strongDualEquiv`: the isometric isomorphism `Lᵖ(μ; H⋆) ≃ (Lᵠ(μ; H))⋆` for a
   Hilbert space `H` and `1 ≤ q < ∞`.
 * `MeasureTheory.Lp.toDual_surjective`: for `1 ≤ q < ∞`, every continuous linear functional on
@@ -135,9 +138,8 @@ private theorem eq_zero_of_forall_lpPairing_eq_zero (f : Lp H q μ)
       (q' := p) fun g s hs hgs hg ↦ ?_
     have hgp : MemLp g p μ := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
     set G : α → StrongDual 𝕜 H := fun x ↦ InnerProductSpace.toDual 𝕜 H (g x)
-    have hGp : MemLp G p μ := hgp.congr_norm
-      ((InnerProductSpace.toDual 𝕜 H).continuous.comp_aestronglyMeasurable hgp.aestronglyMeasurable)
-      (ae_of_all _ fun x ↦ by simp [G])
+    have hGp : MemLp G p μ :=
+      (InnerProductSpace.toDualMap 𝕜 H).toContinuousLinearMap.comp_memLp' hgp
     -- The pairing of `f` with `g` is the conjugate of the pairing of `G` with `f`, which is zero.
     have hpair : ∫ x, ⟪f x, g x⟫_𝕜 ∂μ = conj
         ((ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q (hGp.toLp G) f) := by
@@ -149,8 +151,9 @@ private theorem eq_zero_of_forall_lpPairing_eq_zero (f : Lp H q μ)
 
 variable (𝕜 μ p q) in
 /-- The integral pairing `g ↦ (f ↦ ∫ g x (f x) dμ)` as a linear isometry from `Lᵖ(μ; H⋆)` to the
-continuous dual of `Lᵠ(μ; H)`. -/
-private noncomputable def toStrongDual :
+continuous dual of `Lᵠ(μ; H)`, for every pair of Hölder conjugate exponents, including `q = ∞`.
+It is onto for `q ≠ ∞` (`MeasureTheory.Lp.strongDualEquiv`). -/
+noncomputable def toStrongDual :
     Lp (StrongDual 𝕜 H) p μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp H q μ) where
   toLinearMap := (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q
   norm_map' g := by
@@ -162,9 +165,13 @@ private noncomputable def toStrongDual :
     · rw [← toReal_eNorm g, ← toReal_eNorm (B.lpPairing μ p q g), Lp.eNorm_def]
       exact ENNReal.toReal_mono eNorm_ne_top (eLpNorm_le_enorm_lpPairing g)
 
-private theorem toStrongDual_apply (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
-    toStrongDual 𝕜 μ p q g f = (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q g f :=
-  rfl
+/-- Evaluation of the integral pairing between `Lᵖ(μ; H⋆)` and `Lᵠ(μ; H)`. -/
+@[simp]
+theorem toStrongDual_apply (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
+    toStrongDual 𝕜 μ p q g f = ∫ x, g x (f x) ∂μ := by
+  rw [toStrongDual, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.lpPairing_eq_integral]
+  simp only [ContinuousLinearMap.id_apply]
 
 /-- For a finite measure `ν`, every continuous linear functional `φ` on `L¹(ν; H)` is integration
 against an essentially bounded `H⋆`-valued function: the pointwise dual of the Riesz
@@ -194,17 +201,15 @@ private theorem exists_toStrongDual_eq_of_isFiniteMeasure {ν : Measure α} [IsF
           exact integral_congr_ae (hg₁.coeFn_toLp.mono fun x hx => by simp only [hx])
         rw [hpair, ← eNorm_toLp hg₁]
         exact φ.le_opENorm _
+  have hu_top : MemLp u ∞ ν := memLp_iff.2 (hbound.trans_lt eNorm_lt_top)
   set G : α → StrongDual 𝕜 H := fun x ↦ InnerProductSpace.toDual 𝕜 H (u x)
   have hG : MemLp G ∞ ν :=
-    (show MemLp u ∞ ν from memLp_iff.2 (hbound.trans_lt eNorm_lt_top)).congr_norm
-      ((InnerProductSpace.toDual 𝕜 H).continuous.comp_aestronglyMeasurable
-        (Lp.aestronglyMeasurable u))
-      (ae_of_all _ fun x ↦ by simp [G])
+    (InnerProductSpace.toDualMap 𝕜 H).toContinuousLinearMap.comp_memLp' hu_top
   refine ⟨hG.toLp G, ContinuousLinearMap.ext fun f => ?_⟩
   -- Both functionals are continuous, and they agree on indicator functions.
   induction f using Lp.induction ENNReal.one_ne_top with
   | indicatorConst c hs hμs =>
-    rw [Lp.simpleFunc.coe_indicatorConst, toStrongDual_apply, lpPairing_id_eq_integral_inner,
+    rw [Lp.simpleFunc.coe_indicatorConst, toStrongDual_apply,
       hφ _ (indicatorConstLp 2 hs hμs.ne c)
         (indicatorConstLp_coeFn.trans indicatorConstLp_coeFn.symm)]
     exact integral_congr_ae (by filter_upwards [hG.coeFn_toLp] with x hx; simp [hx, G])
@@ -234,16 +239,14 @@ private theorem exists_toStrongDual_eq (φ : StrongDual 𝕜 (Lp H 1 μ)) :
   obtain ⟨u, rfl⟩ := T.surjective f
   calc toStrongDual 𝕜 μ ∞ 1 (hgμ.toLp g) (T u)
       = ∫ x, (w x : ℝ) • g x (u x) ∂μ := by
-        rw [toStrongDual_apply, ContinuousLinearMap.lpPairing_eq_integral]
+        rw [toStrongDual_apply]
         refine integral_congr_ae ?_
-        filter_upwards [hgμ.coeFn_toLp, coeFn_withDensitySMulLIE 𝕜 hwm hw0' u]
-          with x h₁ h₂
-        rw [ContinuousLinearMap.id_apply, h₁, h₂, NNReal.smul_def,
-          RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+        have hTu := coeFn_withDensitySMulLI hwm u
+        rw [← coe_withDensitySMulLIE 𝕜 hwm hw0'] at hTu
+        filter_upwards [hgμ.coeFn_toLp, hTu] with x h₁ h₂
+        rw [h₁, h₂, NNReal.smul_def, map_real_smul (g x) (g x).continuous]
     _ = ∫ x, g x (u x) ∂ν := (integral_withDensity_eq_integral_smul hwm _).symm
-    _ = toStrongDual 𝕜 ν ∞ 1 g u := by
-        rw [toStrongDual_apply, ContinuousLinearMap.lpPairing_eq_integral]
-        simp only [ContinuousLinearMap.id_apply]
+    _ = toStrongDual 𝕜 ν ∞ 1 g u := (toStrongDual_apply g u).symm
     _ = φ (T u) := by
         rw [hg, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
           LinearIsometryEquiv.coe_toContinuousLinearEquiv]
@@ -259,9 +262,7 @@ private theorem toStrongDual_surjective (hq_top : q ≠ ∞) :
     infer_instance
   refine LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
     (surjective_inclusionInDoubleDual (𝕜 := 𝕜) (μ := μ) hq hq_top)
-    fun f hf ↦ eq_zero_of_forall_lpPairing_eq_zero (𝕜 := 𝕜) (p := p) f fun g ↦ ?_
-  rw [← toStrongDual_apply]
-  exact hf g
+    fun f hf ↦ eq_zero_of_forall_lpPairing_eq_zero (𝕜 := 𝕜) (p := p) f fun g ↦ hf g
 
 variable (𝕜 μ p q) in
 /-- **Duality of Lebesgue–Bochner spaces with values in a Hilbert space.** On a σ-finite measure
@@ -272,13 +273,17 @@ noncomputable def strongDualEquiv (hq_top : q ≠ ∞) :
     Lp (StrongDual 𝕜 H) p μ ≃ₗᵢ[𝕜] StrongDual 𝕜 (Lp H q μ) :=
   LinearIsometryEquiv.ofSurjective _ (toStrongDual_surjective hq_top)
 
-/-- Evaluation of the integral representation of functionals on `Lᵠ(μ; H)`. -/
+/-- The integral representation equivalence for `Lᵠ(μ; H)` is the integral pairing
+`MeasureTheory.Lp.toStrongDual`. -/
 @[simp]
+theorem coe_strongDualEquiv (hq_top : q ≠ ∞) :
+    ⇑(strongDualEquiv 𝕜 μ p q hq_top) = toStrongDual 𝕜 μ p q (H := H) :=
+  LinearIsometryEquiv.coe_ofSurjective _ _
+
+/-- Evaluation of the integral representation of functionals on `Lᵠ(μ; H)`. -/
 theorem strongDualEquiv_apply (hq_top : q ≠ ∞) (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
     strongDualEquiv 𝕜 μ p q hq_top g f = ∫ x, g x (f x) ∂μ := by
-  rw [strongDualEquiv, LinearIsometryEquiv.coe_ofSurjective, toStrongDual_apply,
-    ContinuousLinearMap.lpPairing_eq_integral]
-  simp only [ContinuousLinearMap.id_apply]
+  rw [coe_strongDualEquiv, toStrongDual_apply]
 
 /-- The representing density of a functional on `Lᵠ(μ; H)` integrates to its value on every
 `f ∈ Lᵠ(μ; H)`. -/
@@ -296,23 +301,17 @@ end StrongDual
 functional on `Lᵠ` is integration against an `Lᵖ` function, for Hölder conjugate exponents with
 `1 ≤ q < ∞`. -/
 theorem toDual_surjective (hq_top : q ≠ ∞) : Function.Surjective (toDual 𝕜 μ p q) := by
-  rcases (Fact.out : 1 ≤ q).eq_or_lt with rfl | hq
-  · -- The case `q = 1` is the endpoint for `H = 𝕜`: a density `G` with values in `𝕜⋆` gives the
-    -- scalar density `x ↦ G x 1`.
-    obtain rfl : p = ∞ := (ENNReal.HolderConjugate.eq_top_iff_eq_one p 1).2 rfl
-    intro φ
-    obtain ⟨G, hG⟩ := exists_toStrongDual_eq (H := 𝕜) φ
-    refine ⟨(ContinuousLinearMap.apply 𝕜 𝕜 (1 : 𝕜)).compLp G, ContinuousLinearMap.ext fun f ↦ ?_⟩
-    rw [← hG, toDual_apply, toStrongDual_apply, ContinuousLinearMap.lpPairing_eq_integral]
-    refine integral_congr_ae ?_
-    filter_upwards [(ContinuousLinearMap.apply 𝕜 𝕜 (1 : 𝕜)).coeFn_compLp' G] with x hx
-    rw [hx, ContinuousLinearMap.apply_apply, ContinuousLinearMap.id_apply, mul_comm,
-      ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
-  exact LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
-    (surjective_inclusionInDoubleDual (E := 𝕜) hq hq_top) fun f hf ↦
-    (toDual 𝕜 μ q p).injective <| ContinuousLinearMap.ext fun g ↦ by
-      rw [map_zero, zero_apply, toDual_apply]
-      simpa only [toDual_apply, mul_comm] using hf g
+  -- This is the case `H = 𝕜`: a density `G` with values in `𝕜⋆` gives the scalar density
+  -- `x ↦ G x 1`.
+  intro φ
+  obtain ⟨G, rfl⟩ := toStrongDual_surjective (H := 𝕜) (p := p) hq_top φ
+  refine ⟨(ContinuousLinearMap.apply 𝕜 𝕜 (1 : 𝕜)).compLp G, ContinuousLinearMap.ext fun f ↦ ?_⟩
+  rw [toDual_apply, toStrongDual_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [(ContinuousLinearMap.apply 𝕜 𝕜 (1 : 𝕜)).coeFn_compLp' G] with x hx
+  -- A scalar functional is multiplication by its value at `1`.
+  conv_rhs => rw [← (G x).toSpanSingleton_apply_map_one, ContinuousLinearMap.toSpanSingleton_apply]
+  rw [hx, ContinuousLinearMap.apply_apply, smul_eq_mul, mul_comm]
 
 variable (𝕜 μ p q) in
 /-- The norm-preserving integral representation of the continuous dual of `Lᵠ` by `Lᵖ`, for

@@ -239,7 +239,7 @@ private theorem flip_besselPotentialPairing_eq_comp (hp_top : p ≠ ∞) (s : �
       (Lp.strongDualEquiv ℂ volume q p hp_top w.toLp).comp
         (toLpₗᵢ E F s p : H^{s, p}(E, F) →L[ℂ] Lp F p (volume : Measure E)) := by
   ext u
-  simp [ContinuousLinearMap.besselPotentialPairing_apply, Lp.strongDualEquiv_apply]
+  simp [ContinuousLinearMap.besselPotentialPairing_apply]
 
 variable (s) in
 /-- The density pairing as a linear isometry `H^{-s,q}(E, F⋆) → (H^{s,p}(E, F))⋆`: through the

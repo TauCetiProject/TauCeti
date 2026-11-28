@@ -20,10 +20,10 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 For conjugate exponents `p` and `1 ≤ q < ∞`, a distributional directional derivative bounded by
 `C ≥ 0` times the `Lᵠ` norm of test functions is represented by an `Lᵖ` weak derivative of norm
 at most `C`. This applies to locally integrable functions without assuming differentiability or a
-weak derivative in advance. For a finite-dimensional real codomain the same holds coordinatewise,
-with a constant depending only on the codomain. The proof extends the distributional functional
-from the image of test functions in `Lᵠ` by Hahn–Banach, then uses the integral representation
-of the dual.
+weak derivative in advance. For a finite-dimensional real codomain the same holds
+coordinatewise for a finite bound `M < ∞` in place of `C`, with a constant depending only on
+the codomain. The proof extends the distributional functional from the image of test functions
+in `Lᵠ` by Hahn–Banach, then uses the integral representation of the dual.
 
 The result assumes σ-finiteness on the open domain. The Hilbert-space theorem in
 `TestFunctionLp/Basic` remains available without that measure hypothesis.
@@ -92,8 +92,9 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNo
     simp only [smul_eq_mul]
 
 /-- **Vector-valued `Lᵖ` representation.** For a finite-dimensional real codomain, a
-distributional directional derivative bounded by `M` times the conjugate `Lᵠ` test norm is an
-`Lᵖ` weak derivative of norm at most `C * M`. The constant depends only on the codomain. -/
+distributional directional derivative bounded by a finite `M < ∞` times the conjugate `Lᵠ` test
+norm is an `Lᵖ` weak derivative of norm at most `C * M`. The constant depends only on the
+codomain. -/
 theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
     (hq_top : q ≠ ⊤) :

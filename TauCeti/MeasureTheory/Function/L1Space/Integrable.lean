@@ -71,11 +71,13 @@ even when that measure is infinite (`AEMeasurable.integrable_inv_toReal_withDens
 
 Mathlib's real-linear isometry `MeasureTheory.withDensitySMulLI`, multiplication by a weight
 `w : α → ℝ≥0` from `L¹(w μ)` to `L¹(μ)`, is `w • u` almost everywhere
-(`MeasureTheory.coeFn_withDensitySMulLI`) and commutes with every scalar action on the values that
-commutes with that of `ℝ` (`MeasureTheory.withDensitySMulLI_smul`). When `w` vanishes only on a
-`μ`-null set, it is onto (`MeasureTheory.withDensitySMulLI_surjective`), and
-`MeasureTheory.withDensitySMulLIE` packages it as a linear isometric equivalence whose inverse is
-division by `w` (`MeasureTheory.coeFn_withDensitySMulLIE_symm`). This transports statements about
+(`MeasureTheory.coeFn_withDensitySMulLI`) and commutes with every bounded scalar action on the
+values (`MeasureTheory.withDensitySMulLI_smul`); such an action automatically commutes with that of
+`ℝ`. When `w` vanishes only on a `μ`-null set, it is onto
+(`MeasureTheory.withDensitySMulLI_surjective`), and `MeasureTheory.withDensitySMulLIE` packages it
+as a linear isometric equivalence, which simplifies to `withDensitySMulLI`
+(`MeasureTheory.coe_withDensitySMulLIE`) and whose inverse is division by `w`
+(`MeasureTheory.coeFn_withDensitySMulLIE_symm`). This transports statements about
 `L¹` of a finite measure to `L¹` of a σ-finite one.
 -/
 
@@ -309,13 +311,17 @@ variable {α E : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddC
 /-- The image of `u ∈ L¹(w μ)` under `withDensitySMulLI` is `w • u`, almost everywhere. -/
 theorem coeFn_withDensitySMulLI (hw : Measurable w)
     (u : Lp E 1 (μ.withDensity fun x ↦ (w x : ℝ≥0∞))) :
-    withDensitySMulLI μ hw u =ᵐ[μ] fun x ↦ w x • u x :=
-  (memL1_smul_of_L1_withDensity hw u).coeFn_toLp
+    withDensitySMulLI μ hw u =ᵐ[μ] fun x ↦ w x • u x := by
+  rw [withDensitySMulLI_apply]
+  exact MemLp.coeFn_toLp _
 
-/-- Multiplication by a weight `w`, from `L¹(w μ)` to `L¹(μ)`, commutes with every scalar action
-on `E` that commutes with the action of `ℝ`. -/
+/-- Multiplication by a weight `w`, from `L¹(w μ)` to `L¹(μ)`, commutes with every bounded scalar
+action on `E`. Such an action commutes with that of `ℝ`, since `x ↦ c • x` is continuous and
+additive. The priority puts this lemma ahead of Mathlib's `withDensitySMulLI_apply`, so that `simp`
+moves the scalar out instead of unfolding the map. -/
+@[simp high]
 theorem withDensitySMulLI_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-    [SMulCommClass ℝ 𝕜 E] (hw : Measurable w) (c : 𝕜)
+    (hw : Measurable w) (c : 𝕜)
     (u : Lp E 1 (μ.withDensity fun x ↦ (w x : ℝ≥0∞))) :
     withDensitySMulLI μ hw (c • u) = c • withDensitySMulLI μ hw u := by
   ext1
@@ -325,7 +331,8 @@ theorem withDensitySMulLI_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] 
   rw [h₂, h₃, Pi.smul_apply, h₄]
   rcases eq_or_ne (w x) 0 with hx | hx
   · simp [hx]
-  · rw [h₁ (ENNReal.coe_ne_zero.2 hx), Pi.smul_apply, smul_comm]
+  · rw [h₁ (ENNReal.coe_ne_zero.2 hx), Pi.smul_apply, NNReal.smul_def, NNReal.smul_def]
+    exact (map_real_smul (DistribSMul.toAddMonoidHom E c) (continuous_const_smul c) _ _).symm
 
 /-- Multiplication by a weight `w` vanishing only on a `μ`-null set maps `L¹(w μ)` onto `L¹(μ)`:
 the preimage of `f` is `w⁻¹ • f`. -/
@@ -344,11 +351,12 @@ theorem withDensitySMulLI_surjective (hw : Measurable w) (hw0 : ∀ᵐ x ∂μ, 
     with x h₁ h₂ h₃
   rw [h₁, h₂, h₃]
 
-variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
 
 /-- For a weight `w` vanishing only on a `μ`-null set, multiplication by `w` is a linear isometric
 equivalence from `L¹(w μ)` onto `L¹(μ)`. It is `withDensitySMulLI`, made linear over every scalar
-ring acting on `E` compatibly with `ℝ`; its inverse is division by `w`
+ring acting boundedly on `E`, so that `coeFn_withDensitySMulLI` computes it after
+`coe_withDensitySMulLIE`; its inverse is division by `w`
 (`MeasureTheory.coeFn_withDensitySMulLIE_symm`). -/
 noncomputable def withDensitySMulLIE (hw : Measurable w) (hw0 : ∀ᵐ x ∂μ, w x ≠ 0) :
     Lp E 1 (μ.withDensity fun x ↦ (w x : ℝ≥0∞)) ≃ₗᵢ[𝕜] Lp E 1 μ :=
@@ -364,19 +372,12 @@ theorem coe_withDensitySMulLIE (hw : Measurable w) (hw0 : ∀ᵐ x ∂μ, w x �
     ⇑(withDensitySMulLIE 𝕜 hw hw0) = withDensitySMulLI μ (E := E) hw :=
   LinearIsometryEquiv.coe_ofSurjective _ _
 
-/-- The image of `u ∈ L¹(w μ)` under `withDensitySMulLIE` is `w • u`, almost everywhere. -/
-theorem coeFn_withDensitySMulLIE (hw : Measurable w) (hw0 : ∀ᵐ x ∂μ, w x ≠ 0)
-    (u : Lp E 1 (μ.withDensity fun x ↦ (w x : ℝ≥0∞))) :
-    withDensitySMulLIE 𝕜 hw hw0 u =ᵐ[μ] fun x ↦ w x • u x := by
-  rw [coe_withDensitySMulLIE]
-  exact coeFn_withDensitySMulLI hw u
-
 /-- The inverse of `withDensitySMulLIE` is division by the weight, almost everywhere. -/
 theorem coeFn_withDensitySMulLIE_symm (hw : Measurable w) (hw0 : ∀ᵐ x ∂μ, w x ≠ 0)
     (f : Lp E 1 μ) :
     (withDensitySMulLIE 𝕜 hw hw0).symm f =ᵐ[μ] fun x ↦ (w x : ℝ)⁻¹ • f x := by
-  have h := coeFn_withDensitySMulLIE 𝕜 hw hw0 ((withDensitySMulLIE 𝕜 hw hw0).symm f)
-  rw [LinearIsometryEquiv.apply_symm_apply] at h
+  have h := coeFn_withDensitySMulLI hw ((withDensitySMulLIE 𝕜 hw hw0).symm f)
+  rw [← coe_withDensitySMulLIE 𝕜 hw hw0, LinearIsometryEquiv.apply_symm_apply] at h
   filter_upwards [h, hw0] with x hx hx0
   rw [hx, NNReal.smul_def, inv_smul_smul₀ (NNReal.coe_ne_zero.2 hx0)]
 
