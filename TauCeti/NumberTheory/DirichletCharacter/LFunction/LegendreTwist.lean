@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.Data.Nat.GCD
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LegendreTwist
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Char
+import TauCeti.Data.Nat.Prime.Finset
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 
 /-!
-# L-functions of Legendre twists at coprime levels
+# L-functions of Legendre twists
 
-At a prime level the Jacobi character is the Legendre character. For coprime levels,
-Mathlib's product of characters at the least common multiple therefore has the same
-L-function as `DirichletCharacter.legendreTwist` at the product level.
+The quadratic twist used in prime selection is the common-level product with a Jacobi
+character. Raising its level from the least common multiple to the product introduces no
+new Euler factors, so its L-function agrees with that of the product-level Legendre twist
+away from the possible principal pole. For coprime levels the least common multiple is
+already the product, so the continued functions agree everywhere.
 -/
 
 public section
@@ -39,5 +44,21 @@ theorem LFunction_mul_jacobiChar_eq_legendreTwist {q d : ℕ} [NeZero q] [Fact d
     exact this _ hqd.lcm_eq_mul (Nat.dvd_lcm_left ..) (Nat.dvd_lcm_right ..)
   intro m _ rfl hq hdm
   rw [TauCeti.jacobiChar_eq_ringHomComp_quadraticChar, legendreTwist_def]
+
+/-- The product-level Legendre twist and the common-level product with the Jacobi character
+have the same L-function away from the possible principal pole. No coprimality is required. -/
+theorem LFunction_legendreTwist_eq_mul_jacobiChar {q d : ℕ} [NeZero q] [Fact d.Prime]
+    (χ : DirichletCharacter ℂ q) {s : ℂ}
+    (hs : χ.mul (TauCeti.jacobiChar ℂ d) ≠ 1 ∨ s ≠ 1) :
+    (χ.legendreTwist d).LFunction s = (χ.mul (TauCeti.jacobiChar ℂ d)).LFunction s := by
+  have hprimes : (q * d).primeFactors = (q.lcm d).primeFactors := by
+    rw [Nat.primeFactors_mul (NeZero.ne q) (NeZero.ne d),
+      Nat.primeFactors_lcm (NeZero.ne q) (NeZero.ne d)]
+  have htwist : (χ.mul (TauCeti.jacobiChar ℂ d)).changeLevel (Nat.lcm_dvd_mul q d) =
+      χ.legendreTwist d := by
+    rw [legendreTwist_def, TauCeti.jacobiChar_eq_ringHomComp_quadraticChar (R := ℂ) d]
+    simp only [DirichletCharacter.mul, map_mul, ← changeLevel_trans]
+  rw [← htwist]
+  exact LFunction_changeLevel_eq_of_primeFactors_eq _ _ hprimes hs
 
 end DirichletCharacter
