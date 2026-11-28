@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import Mathlib.Analysis.SpecialFunctions.Log.Base
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -94,6 +96,16 @@ proof of the Gelfond–Schneider theorem.
 
 For all reals `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `Real.exp (a * b)` as the real
 number `x` tends to infinity (`Real.tendsto_one_add_div_rpow_mul_exp`).
+
+## A power saving against two logarithms
+
+The logarithm of an affine function is `O(log x)`: `log (a + b * x) = O(log x)` as `x → ∞` for
+all real `a` and `b` (`Real.isBigO_log_add_mul_log_atTop`).
+
+For `δ > 0` and every real `c`, `L ^ (1 - δ) * log (1 + L / c) = o(L / log L)` as `L → ∞`
+(`Real.isLittleO_rpow_one_sub_mul_log_one_add_div_div_log_atTop`): the saving `L ^ (-δ)` beats
+the two logarithms, each of which is `O(log L)`. This makes the contribution of the small primes
+negligible in the maximal order of the divisor function.
 -/
 
 public section
@@ -394,6 +406,19 @@ end Asymptotics
 
 namespace Real
 
+/-- The logarithm of an affine function is `O(log x)` at infinity: `log (a + b * x) = O(log x)`
+as `x → ∞`, for all real `a` and `b`. -/
+theorem isBigO_log_add_mul_log_atTop (a b : ℝ) :
+    (fun x : ℝ ↦ log (a + b * x)) =O[atTop] log := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simpa using (isLittleO_const_log_atTop (c := log a)).isBigO
+  have hshift : (fun x : ℝ ↦ log (x + a / b)) =O[atTop] log :=
+    (IsEquivalent.log ((IsEquivalent.refl (u := fun x : ℝ ↦ x)).add_const_of_norm_tendsto_atTop
+      (c := a / b) tendsto_norm_atTop_atTop) tendsto_id).isBigO
+  refine (((isBigO_log_const_mul_log_atTop b).comp_tendsto
+    (tendsto_atTop_add_const_right atTop (a / b) tendsto_id)).trans hshift).congr_left fun x ↦ ?_
+  simp only [Function.comp_apply, id_eq, mul_add, mul_div_cancel₀ a hb, add_comm]
+
 /-- The Mellin growth scale `(1+r) log (2+r)` is negligible compared with every power above one. -/
 theorem isLittleO_add_one_mul_log_add_two_rpow {p : ℝ} (hp : 1 < p) :
     (fun r : ℝ ↦ (1 + r) * log (2 + r)) =o[atTop] fun r ↦ r ^ p := by
@@ -404,13 +429,7 @@ theorem isLittleO_add_one_mul_log_add_two_rpow {p : ℝ} (hp : 1 < p) :
       abs_of_nonneg (by linarith)]
     linarith
   have hlog : (fun r : ℝ ↦ log (2 + r)) =O[atTop] log := by
-    apply IsBigO.of_bound 2
-    filter_upwards [eventually_ge_atTop (2 : ℝ)] with r hr
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (log_nonneg (by linarith)),
-      abs_of_nonneg (log_nonneg (by linarith))]
-    calc
-      log (2 + r) ≤ log (r * r) := log_le_log (by linarith) (by nlinarith)
-      _ = 2 * log r := by rw [log_mul (by linarith) (by linarith)]; ring
+    simpa using isBigO_log_add_mul_log_atTop 2 1
   refine (hlin.mul_isLittleO (hlog.trans_isLittleO
     (isLittleO_log_rpow_atTop (sub_pos.mpr hp)))).congr' .rfl ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr
@@ -533,5 +552,24 @@ theorem tendsto_one_add_div_rpow_mul_exp (a b : ℝ) :
   refine h1.congr' ?_
   filter_upwards [hpos] with x hbase
   rw [← rpow_mul hbase, mul_comm x b]
+
+/-- For `δ > 0` and every real `c`, the power saving `L ^ (-δ)` beats two logarithms:
+`L ^ (1 - δ) * log (1 + L / c) = o(L / log L)` as `L → ∞`. -/
+theorem isLittleO_rpow_one_sub_mul_log_one_add_div_div_log_atTop {δ : ℝ} (hδ : 0 < δ) (c : ℝ) :
+    (fun L : ℝ ↦ L ^ (1 - δ) * log (1 + L / c)) =o[atTop] fun L ↦ L / log L := by
+  have hlog : (fun L : ℝ ↦ log (1 + L / c)) =O[atTop] log := by
+    simpa [div_eq_inv_mul] using isBigO_log_add_mul_log_atTop 1 c⁻¹
+  -- The two logarithms together are `o(L ^ δ)`.
+  have h1 : (fun L : ℝ ↦ log L * log (1 + L / c)) =o[atTop] fun L ↦ L ^ δ :=
+    (((isBigO_refl log atTop).mul hlog).congr_right fun L ↦ by
+      rw [rpow_two, sq]).trans_isLittleO (isLittleO_log_rpow_rpow_atTop 2 hδ)
+  -- Multiply by `L ^ (1 - δ)`, then move `log L` to the denominator.
+  have h2 : (fun L : ℝ ↦ log L * (L ^ (1 - δ) * log (1 + L / c))) =o[atTop] fun L ↦ L := by
+    refine (((isBigO_refl (fun L : ℝ ↦ L ^ (1 - δ)) atTop).mul_isLittleO h1).congr_left
+      fun L ↦ by ring).congr' .rfl ?_
+    filter_upwards [eventually_gt_atTop 0] with L hL
+    rw [← rpow_add hL, sub_add_cancel, rpow_one]
+  exact (isLittleO_mul_iff_isLittleO_div
+    ((tendsto_log_atTop.eventually_gt_atTop 0).mono fun _ h ↦ h.ne')).1 h2
 
 end Real
