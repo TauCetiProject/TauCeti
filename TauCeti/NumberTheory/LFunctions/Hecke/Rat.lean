@@ -17,9 +17,9 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 Over `ℚ`, `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter` identifies any ray
 class character `χ` of a modulus `𝔪` with a Dirichlet character `ψ = χ.toDirichletCharacter` modulo
 `Ideal.absNorm 𝔪.finitePart` (`TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_rat_eq`). Since
-`DirichletCharacter.LFunction` is meromorphic on `ℂ` (entire when `ψ ≠ 1`, and agreeing with a
-finite Euler product times `riemannZeta` when `ψ = 1`), the canonical meromorphic continuation
-`TauCeti.LFunctions.heckeLFunctionC χ` equals
+`DirichletCharacter.LFunction` is meromorphic on `ℂ` (entire when `ψ ≠ 1`, and agreeing away from
+`s = 1` with a finite Euler product times `riemannZeta` when `ψ = 1`), the canonical meromorphic
+continuation `TauCeti.LFunctions.heckeLFunctionC χ` equals
 `toMeromorphicNFOn (DirichletCharacter.LFunction χ.toDirichletCharacter) Set.univ` for every `χ`
 (including the principal character), yielding unconditional series agreement on `Re s > 1`, entire
 continuation when `χ ≠ 1`, and nonvanishing (meromorphic order `0`) on `Re s ≥ 1` whenever

@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Meromorphic.NormalForm
-public import Mathlib.Analysis.Meromorphic.Order
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Quadratic
 public import TauCeti.NumberTheory.LSeries.EntireExtension
 import Mathlib.Analysis.Complex.RemovableSingularity
-import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
@@ -60,7 +58,7 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
    instantiates `L` with `continuedLFunctionOfWeight` for weights with cancellation.
 
 For sharpness, see `TauCeti.MultiplicativeIdealWeight.`
-`exists_differentiableOn_eqOn_LSeries_liouville_and_eval_one_eq_zero`
+`exists_differentiableOn_eqOn_LSeries_liouville_and_apply_one_eq_zero`
 in `TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Liouville`, which shows that local
 analytic continuation across `s = 1` alone does not rule out `L 1 = 0`.
 
@@ -98,6 +96,25 @@ analytic continuation across `s = 1` alone does not rule out `L 1 = 0`.
 -/
 
 public section
+
+section
+open Complex Filter
+open scoped Topology
+
+/-- Continuity of `Z` at `σ₀` and of `L` at `σ₀ + v` prevents `(Z σ * L (σ + v)).re` from
+tending to `+∞` as real `σ → σ₀⁺`. -/
+private theorem ContinuousAt.not_tendsto_re_mul_add_atTop {Z L : ℂ → ℂ} {σ₀ : ℝ} {v : ℂ}
+    (hZ : ContinuousAt Z (σ₀ : ℂ)) (hL : ContinuousAt L ((σ₀ : ℂ) + v)) :
+    ¬ Tendsto (fun σ : ℝ ↦ (Z σ * L ((σ : ℂ) + v)).re) (𝓝[>] σ₀) atTop := by
+  have hLshift : ContinuousAt (fun z : ℂ ↦ L (z + v)) (σ₀ : ℂ) :=
+    hL.comp_of_eq (continuousAt_id.add_const v) rfl
+  have hcont : ContinuousAt (fun σ : ℝ ↦ (Z σ * L ((σ : ℂ) + v)).re) σ₀ :=
+    continuous_re.continuousAt.comp
+      ((hZ.comp continuous_ofReal.continuousAt).mul
+        (hLshift.comp continuous_ofReal.continuousAt))
+  exact not_tendsto_atTop_of_tendsto_nhds (hcont.tendsto.mono_left nhdsWithin_le_nhds)
+
+end
 
 namespace TauCeti.MultiplicativeIdealWeight
 
@@ -300,8 +317,8 @@ theorem continuation_one_ne_zero_of_continuousAt_half {χ : MultiplicativeIdealW
     (hZhalf : ContinuousAt Z (1 / 2 : ℂ)) (hLhalf : ContinuousAt L (1 / 2 : ℂ)) :
     L 1 ≠ 0 :=
   continuation_one_ne_zero_of_eqOn_LSeries hχ hZ hZζ hL hLL <| by
-    simpa using Complex.not_tendsto_re_mul_add_atTop_of_continuousAt
-      (σ₀ := 1 / 2) (v := 0) (by simpa using hZhalf) (by simpa using hLhalf)
+    simpa using (by simpa using hZhalf : ContinuousAt Z ((1 / 2 : ℝ) : ℂ))
+      |>.not_tendsto_re_mul_add_atTop (v := 0) (by simpa using hLhalf)
 
 /-- **Landau's nonvanishing theorem at `s = 1`, open half-plane past `1 / 2`.** If `σ₁ < 1 / 2`
 and `Z`, `L` continue `ζ_K` and `L(χ, ·)` holomorphically to `{s | σ₁ < s.re}` (with `1` punctured
@@ -371,8 +388,8 @@ theorem continuation_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq_of_co
     (hLhalf : ContinuousAt L (1 / 2 + (u : ℂ) / 2 * I)) :
     L (1 + (u : ℂ) / 2 * I) ≠ 0 :=
   continuation_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq hχ hZ hZζ hL hLL
-    (Complex.not_tendsto_re_mul_add_atTop_of_continuousAt (σ₀ := 1 / 2)
-      (v := (u : ℂ) / 2 * I) (by simpa using hZhalf) (by simpa using hLhalf))
+    ((by simpa using hZhalf : ContinuousAt Z ((1 / 2 : ℝ) : ℂ)).not_tendsto_re_mul_add_atTop
+      (v := (u : ℂ) / 2 * I) (by simpa using hLhalf))
 
 /-! ### Full closed half-plane `Re s ≥ 1` nonvanishing -/
 
@@ -443,8 +460,19 @@ theorem ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt
   ne_zero_of_one_le_re_of_isNormTwistOnGood_sq hχ hLL hs hLs fun hsu ↦ by
     obtain ⟨Z, hZ, hZζ, hZhalf, hL, hLhalf⟩ := hlandau hsu
     exact ⟨Z, hZ, hZζ, hL,
-      Complex.not_tendsto_re_mul_add_atTop_of_continuousAt (σ₀ := 1 / 2)
-        (v := (u : ℂ) / 2 * I) (by simpa using hZhalf) (by simpa using hLhalf)⟩
+      (by simpa using hZhalf : ContinuousAt Z ((1 / 2 : ℝ) : ℂ)).not_tendsto_re_mul_add_atTop
+        (v := (u : ℂ) / 2 * I) (by simpa using hLhalf)⟩
+
+/-- Any function agreeing on `Re z > 1` with the `L`-series of a unitary ideal weight is in
+meromorphic normal form at every `s` with `1 < Re s`. -/
+theorem _root_.TauCeti.UnitaryIdealWeight.meromorphicNFAt_of_eqOn_LSeries
+    (χ : UnitaryIdealWeight K) {L : ℂ → ℂ}
+    (hLL : EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re})
+    {s : ℂ} (hs : 1 < s.re) : MeromorphicNFAt L s := by
+  have hopen : IsOpen {z : ℂ | 1 < z.re} := isOpen_lt continuous_const Complex.continuous_re
+  have hana : AnalyticAt ℂ (LSeries (normCoeff K χ.toIdealArithmeticFunction)) s :=
+    analyticOnNhd_LSeries_of_unitary χ s hs
+  exact (hana.congr ((Filter.eventuallyEq_of_mem (hopen.mem_nhds hs) hLL).symm)).meromorphicNFAt
 
 /-- **Meromorphic order zero throughout `Re s ≥ 1`.** Under the branch-minimal hypotheses of
 `ne_zero_of_one_le_re_of_isNormTwistOnGood_sq` together with meromorphic normal form on `Re s = 1`
@@ -466,18 +494,8 @@ theorem meromorphicOrderAt_eq_zero_of_one_le_re_of_isNormTwistOnGood_sq
     ne_zero_of_one_le_re_of_isNormTwistOnGood_sq hχ hLL hs hLs hlandau
   have hnf : MeromorphicNFAt L s := by
     rcases hs.lt_or_eq with hsgt | hseq
-    · have hopen : IsOpen {z : ℂ | 1 < z.re} := isOpen_lt continuous_const Complex.continuous_re
-      have hana :
-          AnalyticAt ℂ
-            (LSeries (normCoeff K (unitaryOfIsNormTwistOnGoodSq hχ).toIdealArithmeticFunction))
-            s :=
-        analyticOnNhd_LSeries_of_unitary (unitaryOfIsNormTwistOnGoodSq hχ) s hsgt
-      have hLL' : EqOn L
-          (LSeries (normCoeff K (unitaryOfIsNormTwistOnGoodSq hχ).toIdealArithmeticFunction))
-          {z | 1 < z.re} := by
-        simpa [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] using hLL
-      exact (hana.congr
-        ((Filter.eventuallyEq_of_mem (hopen.mem_nhds hsgt) hLL').symm)).meromorphicNFAt
+    · exact (unitaryOfIsNormTwistOnGoodSq hχ).meromorphicNFAt_of_eqOn_LSeries (by
+        simpa [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] using hLL) hsgt
     · by_cases hsu : s = 1 + (u : ℂ) / 2 * I
       · obtain ⟨_, _, _, hL, _⟩ := hlandau hsu
         have hopen : IsOpen {z : ℂ | (1 / 2 : ℝ) < z.re} :=

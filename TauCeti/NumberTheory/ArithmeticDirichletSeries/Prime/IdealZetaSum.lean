@@ -14,7 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Tail
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 import TauCeti.Topology.Algebra.Order.Field
 
 /-!

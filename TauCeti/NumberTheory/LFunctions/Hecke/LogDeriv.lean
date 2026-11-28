@@ -42,7 +42,7 @@ theorem threeFourOne_re_neg_logDeriv_LSeries_nonneg (χ : RayClassCharacter 𝔪
         ((σ : ℂ) + I * t)).re +
       (-logDeriv (LSeries (normCoeff K (χ ^ 2).toUnitaryIdealWeight.toIdealArithmeticFunction))
         ((σ : ℂ) + 2 * I * t)).re := by
-  rw [pow_two, toUnitaryIdealWeight_mul, ← pow_two,
+  rw [toUnitaryIdealWeight_pow χ two_ne_zero,
     UnitaryIdealWeight.toIdealArithmeticFunction_eq_val
       (1 : RayClassCharacter 𝔪).toUnitaryIdealWeight]
   exact χ.toUnitaryIdealWeight.threeFourOne_re_neg_logDeriv_LSeries_nonneg

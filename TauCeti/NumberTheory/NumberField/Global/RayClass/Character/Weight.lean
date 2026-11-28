@@ -84,6 +84,18 @@ theorem toMultiplicativeIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
     TauCeti.MultiplicativeIdealWeight.ofIntegralIdealsAway_mul]
   rfl
 
+/-- Pointwise powers of ray class characters (for `n ≠ 0`) agree with powers of ideal weights,
+including at ideals meeting the modulus. -/
+theorem toMultiplicativeIdealWeight_pow (χ : RayClassCharacter 𝔪) {n : ℕ} (hn : n ≠ 0) :
+    toMultiplicativeIdealWeight (χ ^ n) = χ.toMultiplicativeIdealWeight ^ n := by
+  induction n with
+  | zero => exact absurd rfl hn
+  | succ k ih =>
+    rcases eq_or_ne k 0 with rfl | hk
+    · have h1 : χ ^ (0 + 1) = χ := MonoidHom.ext fun c ↦ by simp
+      rw [h1, zero_add, pow_one]
+    · rw [pow_succ χ k, pow_succ _ k, toMultiplicativeIdealWeight_mul, ih hk]
+
 /-- The inverse character gives the conjugate ideal weight, including at ideals meeting the
 modulus, where both weights vanish. -/
 @[simp]
@@ -138,6 +150,12 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
     (χ * ψ).toUnitaryIdealWeight = χ.toUnitaryIdealWeight * ψ.toUnitaryIdealWeight := by
   apply Subtype.ext
   simp
+
+/-- The unitary extension respects positive powers of characters. -/
+theorem toUnitaryIdealWeight_pow (χ : RayClassCharacter 𝔪) {n : ℕ} (hn : n ≠ 0) :
+    (χ ^ n).toUnitaryIdealWeight = χ.toUnitaryIdealWeight ^ n := by
+  apply Subtype.ext
+  simp [toMultiplicativeIdealWeight_pow χ hn]
 
 /-- The ideal weight of the inverse character is the conjugate ideal weight. -/
 @[simp]

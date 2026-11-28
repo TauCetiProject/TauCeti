@@ -291,32 +291,6 @@ theorem exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub : ∃ G : ℂ → 
     deriv_sub_const, deriv_id'']
   ring
 
-/-- **Real limit of `(σ - 1) * ζ_K(σ)` at `1⁺`.** As real `σ → 1⁺`,
-`(σ - 1) * (ζ_K σ).re → dedekindZeta_residue K`. -/
-theorem tendsto_sub_one_mul_re_dedekindZeta_nhdsGT :
-    Tendsto (fun σ : ℝ ↦ (σ - 1) * (dedekindZeta K σ).re) (𝓝[>] 1)
-      (𝓝 (dedekindZeta_residue K)) := by
-  have h := (Complex.continuous_re.tendsto _).comp (tendsto_sub_one_mul_dedekindZeta_nhdsGT K)
-  refine (Complex.ofReal_re (dedekindZeta_residue K) ▸ h).congr fun σ ↦ ?_
-  simp only [Function.comp_apply]
-  rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.re_ofReal_mul]
-
-/-- **Real blowup of the Dedekind zeta function at `1⁺`.** As real `σ → 1⁺`, the real part of
-`ζ_K(σ)` tends to `+∞`, since `(σ - 1) ζ_K(σ)` tends to the positive residue
-`NumberField.dedekindZeta_residue K`. -/
-theorem tendsto_re_dedekindZeta_nhdsGT_one :
-    Tendsto (fun σ : ℝ ↦ (dedekindZeta K σ).re) (𝓝[>] 1) atTop := by
-  have hsub0 : Tendsto (fun σ : ℝ ↦ σ - 1) (𝓝 1) (𝓝 0) := by
-    simpa using (continuous_sub_right (1 : ℝ)).tendsto 1
-  have hsub : Tendsto (fun σ : ℝ ↦ σ - 1) (𝓝[>] 1) (𝓝[>] 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (hsub0.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun σ (hσ : 1 < σ) ↦ sub_pos.mpr hσ)
-  refine (Filter.Tendsto.atTop_mul_pos (dedekindZeta_residue_pos K)
-    (tendsto_inv_nhdsGT_zero.comp hsub) (tendsto_sub_one_mul_re_dedekindZeta_nhdsGT K)).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-  simp [inv_mul_cancel_left₀ (sub_ne_zero.mpr (ne_of_gt hσ))]
-
 /-- On a small punctured disc around `1`, `(s - 1) * f s` agrees with the regularized Dedekind
 zeta continuation `H s` whenever `f` is differentiable on a punctured neighbourhood of `1` and
 agrees with `ζ_K` on the right side of a neighbourhood of `1`. -/
@@ -339,7 +313,7 @@ private theorem eventuallyEq_sub_one_mul_of_eventuallyEq_dedekindZeta {K : Type*
   have hFH : (fun s : ℂ ↦ (s - 1) * f s) =ᶠ[𝓝[{s : ℂ | 1 < s.re}] 1] H := by
     filter_upwards [hfζ, self_mem_nhdsWithin] with s hfs hs
     rw [hfs, hHζ s hs]
-  exact eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt hFdiff hHdiff
+  exact TauCeti.eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt hFdiff hHdiff
     (by simpa using hFH)
 
 variable {K} in

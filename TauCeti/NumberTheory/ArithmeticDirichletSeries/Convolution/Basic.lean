@@ -9,9 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Basic
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Finite
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
-public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.Ideal.Operations
-import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 
 /-!
 # Ideal convolution of ideal arithmetic functions

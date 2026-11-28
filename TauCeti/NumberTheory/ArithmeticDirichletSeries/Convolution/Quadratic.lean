@@ -7,14 +7,12 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 import Mathlib.Algebra.GroupWithZero.Torsion
-import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Algebra.GroupWithZero.NonZeroDivisors
+import TauCeti.Algebra.Group.Submonoid.Operations
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Multiplicative
 import TauCeti.NumberTheory.LSeries.Positivity
+import TauCeti.NumberTheory.LSeries.Term
 
 /-!
 # Ideal convolution positivity for quadratic ideal weights
@@ -39,8 +37,9 @@ product `ζ_K(s) L(χ, s)`:
   `ζ_K(2σ) ≤ L(1 * χ, σ)`.
 
 Both endpoints of the abscissa interval `[1 / 2, 1]` are sharp: the trivial weight `1` attains `1`
-(`TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one`), and the ideal Liouville weight
-`TauCeti.MultiplicativeIdealWeight.liouville K` attains `1 / 2` (see
+(`TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one` in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Analytic.lean`), and the ideal Liouville
+weight `TauCeti.MultiplicativeIdealWeight.liouville K` attains `1 / 2` (see
 `TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Liouville.lean`).
 
 ## Main results
@@ -56,7 +55,6 @@ Both endpoints of the abscissa interval `[1 / 2, 1]` are sharp: the trivial weig
   `TauCeti.dedekindZeta_two_mul_le_LSeries_convolution_one`: summability transfer, failure of
   absolute convergence on `Re s ≤ 1 / 2`, abscissa bounds in `[1 / 2, 1]`, and the real-line
   comparison with `ζ_K(2σ)`.
-* `TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one`: sharpness of the upper endpoint `1`.
 
 ## References
 
@@ -78,17 +76,6 @@ open scoped ComplexOrder nonZeroDivisors NumberField
 variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### Prime-power values and ideal-level positivity of `1 * χ` -/
-
-/-- Prime-power evaluation when `χ 𝔭 = -1`. -/
-theorem convolution_one_primeIdealPow_of_apply_eq_neg_one
-    {χ : MultiplicativeIdealWeight K} {P : HeightOneSpectrum (𝓞 K)}
-    (hP : χ P.asIdeal = -1) (n : ℕ) :
-    IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction (P.primeIdealPow n) =
-      if Even n then 1 else 0 := by
-  rw [convolution_one_primeIdealPow, hP, neg_one_geom_sum]
-  by_cases hn : Even n
-  · simp [hn, Nat.not_even_iff_odd.mpr hn.add_one]
-  · simp [hn, (Nat.not_even_iff_odd.mp hn).add_one]
 
 /-- Three-case evaluation of `(1 * χ)(𝔭 ^ n)` when `(χ ^ 2).IsTrivialOnGood`. -/
 private theorem convolution_one_primeIdealPow_cases {χ : MultiplicativeIdealWeight K}
@@ -211,14 +198,14 @@ private theorem norm_term_normCoeff_one_two_mul_le {χ : MultiplicativeIdealWeig
     ‖LSeries.term (normCoeff K (1 : IdealArithmeticFunction K)) (2 * s) m‖ ≤
       ‖LSeries.term (normCoeff K (IdealArithmeticFunction.convolution 1
         χ.toIdealArithmeticFunction)) s (m ^ 2)‖ := by
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  have hm2 : m ^ 2 ≠ 0 := pow_ne_zero 2 hm
-  rw [LSeries.term_of_ne_zero hm, LSeries.term_of_ne_zero hm2, norm_div, norm_div,
-    Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Nat.cast_ofNat]
-  gcongr
-  exact CStarAlgebra.norm_le_norm_of_le_of_nonneg
-    (normCoeff_one_le_normCoeff_convolution_one_sq hχ m) (normCoeff_one_nonneg K m)
+  rw [TauCeti.LSeries.term_sq]
+  refine LSeries.norm_term_le (2 * s) ?_
+  have h0 : 0 ≤ normCoeff K (1 : IdealArithmeticFunction K) m := normCoeff_one_nonneg K m
+  have hle := normCoeff_one_le_normCoeff_convolution_one_sq hχ m
+  have h1 := h0.trans hle
+  rw [Complex.eq_coe_norm_of_nonneg h0, Complex.eq_coe_norm_of_nonneg h1,
+    Complex.real_le_real] at hle
+  exact hle
 
 /-- **Summability transfer from `L(1 * χ, s)` to `ζ_K(2s)`.** If `χ ^ 2` is trivial on its good
 ideals and `L(1 * χ, s)` converges absolutely at `s`, then `ζ_K(2s)` converges absolutely. -/
@@ -279,30 +266,5 @@ theorem dedekindZeta_two_mul_le_LSeries_convolution_one {χ : MultiplicativeIdea
     (Nat.pow_left_injective two_ne_zero) (fun _ _ ↦ norm_nonneg _) (fun m ↦ ?_)
     (summable_norm_iff.mpr hσ)
   simpa [Complex.ofReal_mul] using norm_term_normCoeff_one_two_mul_le hχ σ m
-
-/-- **Sharpness of the upper bound `1`.** The trivial weight `1` satisfies `(1 ^ 2).IsTrivialOnGood`
-and its convolution `1 * 1` (the ideal divisor function) has exact abscissa of absolute convergence
-`1`. -/
-theorem abscissaOfAbsConv_normCoeff_convolution_one_one :
-    LSeries.abscissaOfAbsConv (normCoeff K (IdealArithmeticFunction.convolution 1
-      (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction)) = 1 := by
-  have h1sq : ((1 : MultiplicativeIdealWeight K) ^ 2).IsTrivialOnGood := by
-    rw [one_pow]; exact MultiplicativeIdealWeight.isTrivialOnGood_one
-  refine le_antisymm (abscissaOfAbsConv_normCoeff_convolution_one_le_one h1sq) ?_
-  by_contra hlt
-  have hsum : LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1
-      (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction)) 1 :=
-    LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using not_le.mp hlt)
-  apply not_LSeriesSummable_normCoeff_one K
-  rw [LSeriesSummable, ← summable_norm_iff] at hsum ⊢
-  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hsum
-  refine LSeries.norm_term_le 1
-    (CStarAlgebra.norm_le_norm_of_le_of_nonneg ?_ (normCoeff_one_nonneg K n))
-  rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
-  refine Finset.sum_le_sum fun A _ ↦ ?_
-  rw [Pi.one_apply, MultiplicativeIdealWeight.toIdealArithmeticFunction_one,
-    IdealArithmeticFunction.convolution_one_one_apply]
-  exact_mod_cast (Finset.one_le_card.mpr ⟨(1, A), by simp⟩ :
-    1 ≤ (Ideal.divisorsAntidiagonal A).card)
 
 end TauCeti

@@ -99,9 +99,7 @@ and an open disc `ball c R` with `θ + R ≤ c.re`, lie in the open half-plane `
 (`Complex.closedBall_subset_setOfPred_lt_re`, `Complex.ball_subset_setOfPred_lt_re`).
 
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
-(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`). Continuity of `Z` at `σ₀` and `L` at
-`σ₀ + v` prevents `(Z σ * L (σ + v)).re` from tending to `+∞` as real `σ → σ₀⁺`
-(`Complex.not_tendsto_re_mul_add_atTop_of_continuousAt`).
+(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
 At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 (`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
@@ -626,20 +624,6 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
-
-/-- Continuity of `Z` at `σ₀` and of `L` at `σ₀ + v` prevents `(Z σ * L (σ + v)).re` from
-tending to `+∞` as real `σ → σ₀⁺`. -/
-theorem not_tendsto_re_mul_add_atTop_of_continuousAt {Z L : ℂ → ℂ} {σ₀ : ℝ} {v : ℂ}
-    (hZ : ContinuousAt Z (σ₀ : ℂ)) (hL : ContinuousAt L ((σ₀ : ℂ) + v)) :
-    ¬ Filter.Tendsto (fun σ : ℝ ↦ (Z σ * L ((σ : ℂ) + v)).re)
-      (nhdsWithin σ₀ (Set.Ioi σ₀)) Filter.atTop := by
-  have hLshift : ContinuousAt (fun z : ℂ ↦ L (z + v)) (σ₀ : ℂ) :=
-    hL.comp_of_eq (continuousAt_id.add_const v) rfl
-  have hcont : ContinuousAt (fun σ : ℝ ↦ (Z σ * L ((σ : ℂ) + v)).re) σ₀ :=
-    continuous_re.continuousAt.comp
-      ((hZ.comp continuous_ofReal.continuousAt).mul
-        (hLshift.comp continuous_ofReal.continuousAt))
-  exact not_tendsto_atTop_of_tendsto_nhds (hcont.tendsto.mono_left nhdsWithin_le_nhds)
 
 /-- Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies
 `ε ≤ ‖w‖ ≤ 2 * ε`. -/

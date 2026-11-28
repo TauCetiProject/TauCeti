@@ -37,6 +37,8 @@ theorem DifferentiableOn.eqOn_of_eqOn_re_gt {E : Type*} [NormedAddCommGroup E]
     (z₀ := ((max a b + 1 : ℝ) : ℂ)) ?_ (hfg.eventuallyEq_of_mem ((hopen b).mem_nhds ?_)) <;>
     simp <;> grind
 
+namespace TauCeti
+
 /-- **Punctured-neighbourhood identity theorem on a right half-plane boundary.** Two functions
 differentiable on a punctured neighbourhood of `a` that agree on the `Re z > a.re` side of a
 neighbourhood of `a` agree on a punctured neighbourhood of `a`. -/
@@ -80,3 +82,5 @@ theorem eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt
       (Filter.eventuallyEq_of_mem hnhds fun s hs ↦ hFHr₃ (Metric.mem_ball.mp hs.1) hs.2)
   filter_upwards [inter_mem_nhdsWithin _ (Metric.ball_mem_nhds a hr)] with s hs
   exact hEqV ⟨hs.2, hs.1⟩
+
+end TauCeti
