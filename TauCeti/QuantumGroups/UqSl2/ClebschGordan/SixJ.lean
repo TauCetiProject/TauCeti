@@ -58,23 +58,23 @@ open BialgebraModule LadderModule
 
 /-- Admissible left intermediate highest weights `u` in `(L_m ⊗ L_n) ⊗ L_p` coupling to `k`. -/
 abbrev LeftSixJChannel (m n p k : ℕ) : Type :=
-  {u : ℕ // IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k}
+  {u : ℕ // SU2.IsTriad m n u ∧ SU2.IsTriad u p k}
 
 /-- Admissible right intermediate highest weights `v` in `L_m ⊗ (L_n ⊗ L_p)` coupling to `k`. -/
 abbrev RightSixJChannel (m n p k : ℕ) : Type :=
-  {v : ℕ // IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k}
+  {v : ℕ // SU2.IsTriad n p v ∧ SU2.IsTriad m v k}
 
 instance (m n p k : ℕ) : Fintype (LeftSixJChannel m n p k) :=
-  Fintype.ofFinset (p := {u : ℕ | IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k})
+  Fintype.ofFinset (p := {u : ℕ | SU2.IsTriad m n u ∧ SU2.IsTriad u p k})
     ((Finset.range (m + n + 1)).filter fun u =>
-      IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k) fun _ => by
+      SU2.IsTriad m n u ∧ SU2.IsTriad u p k) fun _ => by
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨fun h => h.2, fun h => ⟨Nat.lt_succ_of_le h.1.le_add, h⟩⟩
 
 instance (m n p k : ℕ) : Fintype (RightSixJChannel m n p k) :=
-  Fintype.ofFinset (p := {v : ℕ | IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k})
+  Fintype.ofFinset (p := {v : ℕ | SU2.IsTriad n p v ∧ SU2.IsTriad m v k})
     ((Finset.range (n + p + 1)).filter fun v =>
-      IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k) fun _ => by
+      SU2.IsTriad n p v ∧ SU2.IsTriad m v k) fun _ => by
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨fun h => h.2, fun h => ⟨Nat.lt_succ_of_le h.1.le_add, h⟩⟩
 
@@ -90,8 +90,8 @@ intermediate channel `u` to right intermediate channel `v` (extended by `0` outs
 channels). Unlike the Racah/Kirillov–Reshetikhin symbol, it is not rescaled to tetrahedral
 symmetry and depends on `ε, δ, ζ`. -/
 def sixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k u v : ℕ) : ℂ :=
-  if h : (IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k) ∧
-      (IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k) then
+  if h : (SU2.IsTriad m n u ∧ SU2.IsTriad u p k) ∧
+      (SU2.IsTriad n p v ∧ SU2.IsTriad m v k) then
     recouplingCoeff hq ε δ ζ h.1.1.index
       (h.1.2.index.cast (congrArg (min · p + 1) h.1.1.sub_two_mul_index.symm))
       h.2.1.index
@@ -102,8 +102,8 @@ def sixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k u v : �
 total highest weight `k` in the `α₀ = 1` normalization of `clebschGordanInclusion`, from right
 channel `v` to left channel `u` (extended by `0` outside admissible channels). -/
 def invSixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k v u : ℕ) : ℂ :=
-  if h : (IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k) ∧
-      (IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k) then
+  if h : (SU2.IsTriad n p v ∧ SU2.IsTriad m v k) ∧
+      (SU2.IsTriad m n u ∧ SU2.IsTriad u p k) then
     invRecouplingCoeff hq ε δ ζ h.1.1.index
       (h.1.2.index.cast (congrArg (min m · + 1) h.1.1.sub_two_mul_index.symm))
       h.2.1.index
@@ -119,11 +119,11 @@ theorem sixJ_eq_recouplingCoeff (hq : IsGenericQuantumParameter q) (ε δ ζ : �
     (hv : n + p - 2 * (r : ℕ) = v) (hk' : m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = k) :
     sixJ hq ε δ ζ m n p k u v = recouplingCoeff hq ε δ ζ i j r s := by
   subst hu hv hk
-  have hu₁ := isClebschGordanChannel_sub_two_mul i
-  have hu₂ := isClebschGordanChannel_sub_two_mul j
-  have hv₁ := isClebschGordanChannel_sub_two_mul r
-  have hv₂ : IsClebschGordanChannel m (n + p - 2 * (r : ℕ))
-      (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ)) := isClebschGordanChannel_def.mpr ⟨s, hk'⟩
+  have hu₁ := SU2.isTriad_sub_two_mul i
+  have hu₂ := SU2.isTriad_sub_two_mul j
+  have hv₁ := SU2.isTriad_sub_two_mul r
+  have hv₂ : SU2.IsTriad m (n + p - 2 * (r : ℕ))
+      (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ)) := SU2.isTriad_def.mpr ⟨s, hk'⟩
   rw [sixJ, dite_eq_left ⟨⟨hu₁, hu₂⟩, ⟨hv₁, hv₂⟩⟩]
   exact recouplingCoeff_congr hq ε δ ζ (by simp) (by simp) (by simp)
     (by simp [hv₂.index_eq_of_eq hk'])
@@ -137,11 +137,11 @@ theorem invSixJ_eq_invRecouplingCoeff (hq : IsGenericQuantumParameter q) (ε δ 
     (hu : m + n - 2 * (i : ℕ) = u) (hk' : m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) = k) :
     invSixJ hq ε δ ζ m n p k v u = invRecouplingCoeff hq ε δ ζ r s i j := by
   subst hv hu hk
-  have hv₁ := isClebschGordanChannel_sub_two_mul r
-  have hv₂ := isClebschGordanChannel_sub_two_mul s
-  have hu₁ := isClebschGordanChannel_sub_two_mul i
-  have hu₂ : IsClebschGordanChannel (m + n - 2 * (i : ℕ)) p
-      (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ)) := isClebschGordanChannel_def.mpr ⟨j, hk'⟩
+  have hv₁ := SU2.isTriad_sub_two_mul r
+  have hv₂ := SU2.isTriad_sub_two_mul s
+  have hu₁ := SU2.isTriad_sub_two_mul i
+  have hu₂ : SU2.IsTriad (m + n - 2 * (i : ℕ)) p
+      (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ)) := SU2.isTriad_def.mpr ⟨j, hk'⟩
   rw [invSixJ, dite_eq_left ⟨⟨hv₁, hv₂⟩, ⟨hu₁, hu₂⟩⟩]
   exact invRecouplingCoeff_congr hq ε δ ζ (by simp) (by simp) (by simp)
     (by simp [hu₂.index_eq_of_eq hk'])
@@ -149,15 +149,15 @@ theorem invSixJ_eq_invRecouplingCoeff (hq : IsGenericQuantumParameter q) (ε δ 
 /-- `sixJ` vanishes when any of its four binary channel conditions fails. -/
 @[simp] theorem sixJ_eq_zero_of_not (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
     {m n p k u v : ℕ}
-    (h : ¬ ((IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k) ∧
-      (IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k))) :
+    (h : ¬ ((SU2.IsTriad m n u ∧ SU2.IsTriad u p k) ∧
+      (SU2.IsTriad n p v ∧ SU2.IsTriad m v k))) :
     sixJ hq ε δ ζ m n p k u v = 0 := by simp [sixJ, h]
 
 /-- `invSixJ` vanishes when any of its four binary channel conditions fails. -/
 @[simp] theorem invSixJ_eq_zero_of_not (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
     {m n p k v u : ℕ}
-    (h : ¬ ((IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k) ∧
-      (IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k))) :
+    (h : ¬ ((SU2.IsTriad n p v ∧ SU2.IsTriad m v k) ∧
+      (SU2.IsTriad m n u ∧ SU2.IsTriad u p k))) :
     invSixJ hq ε δ ζ m n p k v u = 0 := by simp [invSixJ, h]
 
 /-- `recouplingCoeff` equals `sixJ` when the total highest weights agree, and `0` otherwise. -/
@@ -210,8 +210,8 @@ def invSixJMatrix (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k
 
 /-- Orthogonality of `invSixJ` and `sixJ` summed over `v ∈ Finset.range (n + p + 1)`. -/
 theorem sum_invSixJ_mul_sixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {m n p k u₁ u₂ : ℕ}
-    (hu₁ : IsClebschGordanChannel m n u₁ ∧ IsClebschGordanChannel u₁ p k)
-    (hu₂ : IsClebschGordanChannel m n u₂ ∧ IsClebschGordanChannel u₂ p k) :
+    (hu₁ : SU2.IsTriad m n u₁ ∧ SU2.IsTriad u₁ p k)
+    (hu₂ : SU2.IsTriad m n u₂ ∧ SU2.IsTriad u₂ p k) :
     ∑ v ∈ Finset.range (n + p + 1), invSixJ hq ε δ ζ m n p k v u₁ * sixJ hq ε δ ζ m n p k u₂ v =
       if u₁ = u₂ then 1 else 0 := by
   let j₁ := hu₁.2.index.cast (congrArg (min · p + 1) hu₁.1.sub_two_mul_index.symm)
@@ -227,7 +227,7 @@ theorem sum_invSixJ_mul_sixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
           recouplingCoeff hq ε δ ζ hu₂.1.index j₂ r s) =
         invSixJ hq ε δ ζ m n p k (n + p - 2 * (r : ℕ)) u₁ *
           sixJ hq ε δ ζ m n p k u₂ (n + p - 2 * (r : ℕ)) := by
-    by_cases hmv : IsClebschGordanChannel m (n + p - 2 * (r : ℕ)) k
+    by_cases hmv : SU2.IsTriad m (n + p - 2 * (r : ℕ)) k
     · rw [Finset.sum_eq_single hmv.index]
       · rw [invSixJ_eq_invRecouplingCoeff hq ε δ ζ rfl hmv.sub_two_mul_index
             hu₁.1.sub_two_mul_index hk₁,
@@ -240,7 +240,7 @@ theorem sum_invSixJ_mul_sixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
       exact Finset.sum_eq_zero fun s _ => by
         rw [recouplingCoeff_eq_zero_of_not_channel_right hq ε δ ζ hk₂ hmv, mul_zero]
   simp_rw [hinner] at horth
-  rw [← sum_fin_channel_eq_sum_range n p _ fun v hnp => by
+  rw [← SU2.sum_fin_sub_two_mul_eq_sum_range n p _ fun v hnp => by
     rw [sixJ_eq_zero_of_not hq ε δ ζ (fun h => hnp h.2.1), mul_zero], horth]
   have hiff : ((hu₁.1.index : ℕ) = (hu₂.1.index : ℕ) ∧ (j₁ : ℕ) = (j₂ : ℕ)) ↔ u₁ = u₂ :=
     ⟨fun ⟨hi, _⟩ => by rw [← hu₁.1.sub_two_mul_index, ← hu₂.1.sub_two_mul_index, hi],
@@ -249,8 +249,8 @@ theorem sum_invSixJ_mul_sixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
 
 /-- Orthogonality of `sixJ` and `invSixJ` summed over `u ∈ Finset.range (m + n + 1)`. -/
 theorem sum_sixJ_mul_invSixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {m n p k v₁ v₂ : ℕ}
-    (hv₁ : IsClebschGordanChannel n p v₁ ∧ IsClebschGordanChannel m v₁ k)
-    (hv₂ : IsClebschGordanChannel n p v₂ ∧ IsClebschGordanChannel m v₂ k) :
+    (hv₁ : SU2.IsTriad n p v₁ ∧ SU2.IsTriad m v₁ k)
+    (hv₂ : SU2.IsTriad n p v₂ ∧ SU2.IsTriad m v₂ k) :
     ∑ u ∈ Finset.range (m + n + 1), sixJ hq ε δ ζ m n p k u v₁ * invSixJ hq ε δ ζ m n p k v₂ u =
       if v₁ = v₂ then 1 else 0 := by
   let s₁ := hv₁.2.index.cast (congrArg (min m · + 1) hv₁.1.sub_two_mul_index.symm)
@@ -266,7 +266,7 @@ theorem sum_sixJ_mul_invSixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
           invRecouplingCoeff hq ε δ ζ hv₂.1.index s₂ i j) =
         sixJ hq ε δ ζ m n p k (m + n - 2 * (i : ℕ)) v₁ *
           invSixJ hq ε δ ζ m n p k v₂ (m + n - 2 * (i : ℕ)) := by
-    by_cases hup : IsClebschGordanChannel (m + n - 2 * (i : ℕ)) p k
+    by_cases hup : SU2.IsTriad (m + n - 2 * (i : ℕ)) p k
     · rw [Finset.sum_eq_single hup.index]
       · rw [sixJ_eq_recouplingCoeff hq ε δ ζ rfl hup.sub_two_mul_index
             hv₁.1.sub_two_mul_index hk₁,
@@ -279,7 +279,7 @@ theorem sum_sixJ_mul_invSixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
       exact Finset.sum_eq_zero fun j _ => by
         rw [invRecouplingCoeff_eq_zero_of_not_channel_left hq ε δ ζ hk₂ hup, mul_zero]
   simp_rw [hinner] at horth
-  rw [← sum_fin_channel_eq_sum_range m n _ fun u hmn => by
+  rw [← SU2.sum_fin_sub_two_mul_eq_sum_range m n _ fun u hmn => by
     rw [sixJ_eq_zero_of_not hq ε δ ζ (fun h => hmn h.1.1), zero_mul], horth]
   have hiff : ((hv₁.1.index : ℕ) = (hv₂.1.index : ℕ) ∧ (s₁ : ℕ) = (s₂ : ℕ)) ↔ v₁ = v₂ :=
     ⟨fun ⟨hr, _⟩ => by rw [← hv₁.1.sub_two_mul_index, ← hv₂.1.sub_two_mul_index, hr],
@@ -342,7 +342,7 @@ theorem card_leftSixJChannel_eq_card_rightSixJChannel (m n p k : ℕ) :
 /-- When the first factor is `L_0^ε`, `sixJ` on any admissible channel `k` of `L_n^δ ⊗ L_p^ζ`
 equals `1`. -/
 @[simp] theorem sixJ_zero_left (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {n p k : ℕ}
-    (hk : IsClebschGordanChannel n p k) : sixJ hq ε δ ζ 0 n p k n k = 1 := by
+    (hk : SU2.IsTriad n p k) : sixJ hq ε δ ζ 0 n p k n k = 1 := by
   let : Fact (q ≠ 0) := ⟨hq.ne_zero⟩
   let j₀ : Fin (min (0 + n - 2 * ↑(0 : Fin (min 0 n + 1))) p + 1) := hk.index.cast (by simp)
   have hj₀ : (j₀ : ℕ) = (hk.index : ℕ) := Fin.val_cast _ _
@@ -368,7 +368,7 @@ equals `1`. -/
 /-- When the third factor is `L_0^ζ`, `sixJ` on an admissible channel `k` of `L_m^ε ⊗ L_n^δ`
 equals `ζ^((m + n - k) / 2)`, reflecting the `K⁻¹` factor in `ΔF = F ⊗ K⁻¹ + 1 ⊗ F`. -/
 @[simp] theorem sixJ_zero_right (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {m n k : ℕ}
-    (hk : IsClebschGordanChannel m n k) :
+    (hk : SU2.IsTriad m n k) :
     sixJ hq ε δ ζ m n 0 k k n = (ζ : ℂ) ^ ((m + n - k) / 2) := by
   let : Fact (q ≠ 0) := ⟨hq.ne_zero⟩
   let s₀ : Fin (min m (n + 0 - 2 * ↑(0 : Fin (min n 0 + 1))) + 1) := hk.index.cast (by simp)
@@ -605,7 +605,7 @@ private theorem sixJ_mul_invSixJ_spinHalf (hq : IsGenericQuantumParameter q) (ε
       sixJ hq ε δ ζ 1 1 1 1 2 v₁ * invSixJ hq ε δ ζ 1 1 1 1 v₂ 2 =
       if v₁ = v₂ then 1 else 0 := by
   have hch {v : ℕ} (hv : v = 0 ∨ v = 2) :
-      IsClebschGordanChannel 1 1 v ∧ IsClebschGordanChannel 1 v 1 := by
+      SU2.IsTriad 1 1 v ∧ SU2.IsTriad 1 v 1 := by
     rcases hv with rfl | rfl <;> decide
   have horth := sum_sixJ_mul_invSixJ hq ε δ ζ (hch hv₁) (hch hv₂)
   rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one,

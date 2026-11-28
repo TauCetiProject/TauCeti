@@ -1078,6 +1078,34 @@ theorem quantizeSchwartzValue_map_singleEntryMap [CompleteSpace V] [CompleteSpac
   rw [coefficient_map_eq_comp_comp _ K (singleEntryMap_apply K w),
     quantizeSchwartzValue_comp_comp, ContinuousLinearMap.toSpanSingleton_apply]
 
+/-- Quantizing the scalar entry `ℓ ∘ a ∘ v` of a symbol (`TauCeti.Symbol.entryMap ℓ v`) on a
+scalar Schwartz function `u` gives `ℓ` of the quantization of `a` on `u v`. -/
+theorem quantizeSchwartzValue_map_entryMap [CompleteSpace V] [CompleteSpace W]
+    (a : Symbol n V W m) (ℓ : W →L[ℂ] ℂ) (v : V) (u : 𝓢(CoordinateSpace n, ℂ))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.map (entryMap ℓ v)).coefficient u x =
+      ℓ (quantizeSchwartzValue a.coefficient
+        (u.postcompCLM (ContinuousLinearMap.toSpanSingleton ℂ v)) x) := by
+  rw [coefficient_map_eq_comp_comp ℓ _ (entryMap_apply ℓ v), quantizeSchwartzValue_comp_comp]
+
+/-- **Components of a matrix-valued quantization.** For a functional `ℓ` on `W` and a basis
+`(bᵢ)` of `V` with coordinate functionals `bᵢ*`, the component `ℓ (Op(a) u)` of the quantization
+of a symbol `a` with values in `V →L[ℂ] W` is the sum over `i` of the scalar quantizations of the
+entries `ℓ ∘ a ∘ bᵢ`, applied to the coordinates `bᵢ* ∘ u`. -/
+theorem apply_quantizeSchwartzValue_eq_sum [FiniteDimensional ℂ V] [CompleteSpace W]
+    (a : Symbol n V W m) {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V) (ℓ : W →L[ℂ] ℂ)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    ℓ (quantizeSchwartzValue a.coefficient u x) =
+      ∑ i, quantizeSchwartzValue (a.map (entryMap ℓ (b i))).coefficient
+        (u.postcompCLM (b.coord i).toContinuousLinearMap) x := by
+  have := FiniteDimensional.completeSpace ℂ V
+  have hu : u = ∑ i, (u.postcompCLM (b.coord i).toContinuousLinearMap).postcompCLM
+      (ContinuousLinearMap.toSpanSingleton ℂ (b i)) := by
+    ext y
+    simp [b.sum_repr]
+  conv_lhs => rw [hu, quantizeSchwartzValue_sum_right, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ (quantizeSchwartzValue_map_entryMap a ℓ (b i) _ x).symm
+
 open scoped ContDiff in
 /-- **Multiplication by a smooth function of the position.** The quantization of the symbol
 `ψ(x) a(x, ξ)` is `ψ Op(a)`: `Op(ψ a) u (x) = ψ(x) Op(a) u (x)`. -/

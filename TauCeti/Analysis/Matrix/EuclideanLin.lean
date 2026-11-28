@@ -56,6 +56,8 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * `TauCeti.inner_self_toEuclideanLin_diagonal_apply` — the quadratic form `⟪x, diag(w) x⟫` of
   `diag(w)` is `∑ᵢ |xᵢ|² wᵢ`; for real weights the real part of `⟪diag(w) x, x⟫` is the same sum
   (`Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
+* `Matrix.inner_toEuclideanLin_toLp_eq_dotProduct_mulVec` — for a real matrix `A`, the form
+  `⟪A x, x⟫` on Euclidean space is the coordinate dot product `xᵀAx`;
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
   form of `A` on an orthonormal basis are the diagonal entries of a unitary conjugate `U A Uᴴ`;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
@@ -74,6 +76,9 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
   the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
+* `Matrix.inner_toEuclideanCLM_left_of_conjTranspose_eq_neg`,
+  `Matrix.re_inner_toEuclideanCLM_self_eq_zero_of_conjTranspose_eq_neg` — a skew-Hermitian matrix
+  acts by a skew-adjoint operator, whose quadratic form has zero real part;
 * `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group isomorphism from the unitary group to
   the linear isometry group of Euclidean space, acting as the matrix does
   (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it preserves determinants
@@ -91,7 +96,8 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
   `Matrix.coe_specialUnitaryGroup_smul_unitSphere`), which are jointly continuous;
 * `Matrix.toEuclideanCLM_apply_apply`, `Matrix.toEuclideanLin_single_basisFun`,
   `Matrix.toEuclideanCLM_single_basisFun` — the coordinate and matrix-unit formulas for the
-  continuous linear map of a matrix, which depends continuously on the matrix
+  continuous linear map of a matrix, whose columns have squared norms
+  `Matrix.norm_toEuclideanCLM_single_sq`, and which depends continuously on the matrix
   (`Matrix.continuous_toEuclideanCLM`) and conversely (`Matrix.continuous_toEuclideanCLM_symm`);
 * `Matrix.toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply` — the map of an invertible
   matrix undoes the map of its inverse;
@@ -181,6 +187,12 @@ theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : Euclid
   rw [inner_re_symm]
   simp only [TauCeti.inner_self_toEuclideanLin_diagonal_apply, ← RCLike.ofReal_pow,
     ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
+
+/-- The real quadratic form `⟪A x, x⟫` of a real square matrix `A` on Euclidean space, read on
+coordinates, is the dot product `xᵀAx`. -/
+theorem inner_toEuclideanLin_toLp_eq_dotProduct_mulVec (A : Matrix ι ι ℝ) (x : ι → ℝ) :
+    ⟪toEuclideanLin A (WithLp.toLp 2 x), WithLp.toLp 2 x⟫_ℝ = x ⬝ᵥ (A *ᵥ x) := by
+  simp [EuclideanSpace.inner_toLp_toLp]
 
 /-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives a unitary matrix `U`, whose rows are
 the conjugates of the vectors `e k`, such that the diagonal entries of `U A Uᴴ` are the values
@@ -284,6 +296,11 @@ theorem toEuclideanCLM_apply_single (A : Matrix ι ι 𝕜) (j : ι) :
   rw [toEuclideanCLM_apply, toLpLin_apply, PiLp.ofLp_single,
     Matrix.mulVec_single_one, Matrix.col_apply']
 
+/-- The column `A e_j` of a matrix has squared norm `∑ᵢ ‖Aᵢⱼ‖²`. -/
+theorem norm_toEuclideanCLM_single_sq (A : Matrix ι ι 𝕜) (j : ι) :
+    ‖toEuclideanCLM (𝕜 := 𝕜) A (EuclideanSpace.single j 1)‖ ^ 2 = ∑ i, ‖A i j‖ ^ 2 := by
+  rw [toEuclideanCLM_apply_single, EuclideanSpace.norm_sq_eq]
+
 /-- The Euclidean linear map of a matrix unit `Matrix.single i j c` sends the standard orthonormal
 basis vector `e_k` to `c • e_i` when `k = j` and `0` otherwise. -/
 theorem toEuclideanLin_single_basisFun (i : κ) (j k : ι) (c : 𝕜) :
@@ -335,6 +352,21 @@ transpose. -/
 theorem adjoint_toEuclideanCLM (A : Matrix ι ι 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) A).adjoint = toEuclideanCLM (𝕜 := 𝕜) Aᴴ := by
   rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star, star_eq_conjTranspose]
+
+/-- A skew-Hermitian matrix, `Aᴴ = -A`, acts by a skew-adjoint operator:
+`⟪A x, y⟫ = -⟪x, A y⟫`. -/
+theorem inner_toEuclideanCLM_left_of_conjTranspose_eq_neg {A : Matrix ι ι 𝕜} (hA : Aᴴ = -A)
+    (x y : EuclideanSpace 𝕜 ι) :
+    ⟪toEuclideanCLM (𝕜 := 𝕜) A x, y⟫_𝕜 = -⟪x, toEuclideanCLM (𝕜 := 𝕜) A y⟫_𝕜 := by
+  rw [← ContinuousLinearMap.adjoint_inner_left, adjoint_toEuclideanCLM, hA, map_neg,
+    neg_apply, inner_neg_left, neg_neg]
+
+/-- The quadratic form `⟪x, A x⟫` of a skew-Hermitian matrix, `Aᴴ = -A`, has zero real part. -/
+theorem re_inner_toEuclideanCLM_self_eq_zero_of_conjTranspose_eq_neg {A : Matrix ι ι 𝕜}
+    (hA : Aᴴ = -A) (x : EuclideanSpace 𝕜 ι) : RCLike.re ⟪x, toEuclideanCLM (𝕜 := 𝕜) A x⟫_𝕜 = 0 := by
+  have h := congrArg RCLike.re (inner_toEuclideanCLM_left_of_conjTranspose_eq_neg hA x x)
+  rw [← inner_conj_symm, RCLike.conj_re, map_neg] at h
+  linarith
 
 /-- Congruence by `A` on the operator side: the sesquilinear form of `A * B * Aᴴ` at `x, y` is
 the sesquilinear form of `B` at `Aᴴ x, Aᴴ y`. -/

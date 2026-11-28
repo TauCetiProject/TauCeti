@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -44,6 +45,8 @@ slice.
   `C^n` along a slice `{p₀} × M` are jointly `C^n` along it.
 * `TauCeti.eventually_mdifferentiableAt_slice`: a jointly `C¹` family along a compact slice
   has differentiable slices uniformly on that compact set for all nearby parameters.
+* `TauCeti.eventually_mdifferentiableAt_family`: a family `Φ : P → M → N` which is jointly `C^n`,
+  `n ≠ 0`, at `(p₀, x)` has `Φ p` differentiable at `x` for all `p` near `p₀`.
 * `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
   `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
 * `TauCeti.contMDiff_prodMk_equivRealProdCLM_symm`: the same on `(P × (ℝ × ℝ)) × M` for a
@@ -178,10 +181,24 @@ theorem eventually_mdifferentiableAt_slice [IsManifold I' 1 M]
   exact (hpt.comp y (contDiff_prodMk_right u).contMDiff.contMDiffAt).mdifferentiableAt
     one_ne_zero
 
+/-- If a family `Φ : P → M → N` is jointly `C^n` at `(p₀, x)` with `n ≠ 0`, then for every `p`
+near `p₀` the map `Φ p` is differentiable at `x`. -/
+theorem eventually_mdifferentiableAt_family {EP HP P : Type*} [NormedAddCommGroup EP]
+    [NormedSpace 𝕜 EP] [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P]
+    [ChartedSpace HP P] [IsManifold IP 1 P] [IsManifold I' 1 M] [IsManifold J 1 N]
+    {Φ : P → M → N} {p₀ : P} {x : M}
+    (hΦ : ContMDiffAt (IP.prod I') J n (Function.uncurry Φ) (p₀, x)) (hn : n ≠ 0) :
+    ∀ᶠ p in 𝓝 p₀, MDifferentiableAt I' J (Φ p) x := by
+  have hcont : ContinuousAt (fun p : P ↦ (p, x)) p₀ := by fun_prop
+  filter_upwards [hcont.eventually ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1
+    (hΦ.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn)))] with p hp
+  exact hp.curry_right.mdifferentiableAt one_ne_zero
+
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by
-conjugating with the extended chart. -/
-theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : M)
+conjugating with the extended chart. The base point is an interior point, as every point of a
+boundaryless manifold is (`BoundarylessManifold.isInteriorPoint`). -/
+theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod (a : M) (ha : I'.IsInteriorPoint a)
     {φ : E' → 𝕜 → E'} (hφ : ContDiffAt 𝕜 n (fun p : E' × 𝕜 ↦ φ p.1 p.2) (extChartAt I' a a, 0))
     (hφ0 : φ (extChartAt I' a a) 0 = extChartAt I' a a) :
     ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) I' n
@@ -198,9 +215,11 @@ theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : 
       (fun p : M × 𝕜 ↦ φ (extChartAt I' a p.1) p.2) (a, 0) := by
     have h := hφM.comp (a, 0) hcoord
     simpa only [Function.comp_def] using h
-  have hinv : ContMDiffAt 𝓘(𝕜, E') I' n (extChartAt I' a).symm (extChartAt I' a a) := by
-    rw [← contMDiffWithinAt_univ, ← I'.range_eq_univ]
-    exact contMDiffWithinAt_extChartAt_symm_range_self a
+  -- At an interior point the range of the model is a neighbourhood of the chart point.
+  have hinv : ContMDiffAt 𝓘(𝕜, E') I' n (extChartAt I' a).symm (extChartAt I' a a) :=
+    (contMDiffWithinAt_extChartAt_symm_range_self a).contMDiffAt
+      (Filter.mem_of_superset (isOpen_interior.mem_nhds (I'.isInteriorPoint_iff.mp ha))
+        (interior_subset.trans (extChartAt_target_subset_range a)))
   have hcomp := hinv.comp_of_eq hinner hφ0
   simpa only [Function.comp_def] using hcomp
 

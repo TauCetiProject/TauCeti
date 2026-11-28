@@ -90,6 +90,8 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_comp_le_right`: if `‖C x‖ ≤ c ‖x‖` for every `x`, with `c ≥ 0`, then
+  `σᵢ(A C) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_le_of_norm_apply_le`: if `‖A x‖ ≤ c ‖x‖` for every `x`, with
   `c ≥ 0`, then `σᵢ(A) ≤ c` for every `i`.
 * `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
@@ -411,6 +413,28 @@ theorem apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
   · rw [(A.apply_rightSingularBasis_eq_zero_iff).mpr hc, smul_zero]
   · rw [mul_inv_cancel₀ (by simpa using hc), one_smul]
 
+/-- A map factors `A` through its modulus exactly when it sends each right singular
+vector of nonzero singular value to its corresponding left singular vector. -/
+theorem comp_operatorAbs_eq_iff_apply_rightSingularBasis (D : E →ₗ[𝕜] F) :
+    D ∘ₗ A.operatorAbs = A ↔
+      ∀ i : Fin (finrank 𝕜 E), A.singularValues i ≠ 0 →
+        D (A.rightSingularBasis i) = A.leftSingularVector i := by
+  constructor
+  · intro h i hi
+    have hσ : ((A.singularValues i : ℝ) : 𝕜) ≠ 0 := by simpa using hi
+    have hv := LinearMap.congr_fun h (A.rightSingularBasis i)
+    rw [comp_apply, A.operatorAbs_rightSingularBasis, map_smul, A.apply_rightSingularBasis i] at hv
+    exact smul_right_injective F hσ hv
+  · intro h
+    apply A.rightSingularBasis.toBasis.ext
+    intro i
+    simp only [OrthonormalBasis.coe_toBasis, comp_apply, A.operatorAbs_rightSingularBasis,
+      map_smul]
+    rw [A.apply_rightSingularBasis i]
+    by_cases hi : A.singularValues i = 0
+    · simp [hi]
+    · rw [h i hi]
+
 /-- The left singular vectors are orthonormal up to the zero vectors at the vanishing singular
 values: `⟪uᵢ, uⱼ⟫` is `1` if `i = j` and `σᵢ ≠ 0`, and `0` otherwise. -/
 theorem inner_leftSingularVector (i j : Fin (finrank 𝕜 E)) :
@@ -575,6 +599,14 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
     (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) (i : ℕ) :
     (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
+
+/-- **Bounded-factor domination on the right.** If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`,
+then `σᵢ(A C) ≤ c σᵢ(A)` for every `i`. -/
+theorem singularValues_comp_le_right (A : F →ₗ[𝕜] G) (C : E →ₗ[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+    (hC : ∀ x, ‖C x‖ ≤ c * ‖x‖) (i : ℕ) :
+    (A ∘ₗ C).singularValues i ≤ c * A.singularValues i := by
+  rw [← singularValues_adjoint, adjoint_comp, ← A.singularValues_adjoint]
+  exact singularValues_comp_le _ _ (norm_adjoint_apply_le hc hC) i
 
 /-- If `‖A x‖ ≤ c * ‖x‖` for every `x` (for `c ≥ 0`: if `A` has operator norm at most `c`), then
 every singular value of `A` is at most `c`. -/

@@ -44,6 +44,9 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
   stays surjective under a perturbation bounded by `θ < 1` times the map.
 * `ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`: a perturbation smaller than
   the reciprocal bound of a given bounded nonlinear right inverse stays surjective.
+* `ContinuousLinearMap.exists_injective_ker_of_norm_mul_norm_sub_lt_one`: if `A` has a bounded
+  linear right inverse `Q`, the kernel of every `A'` with `‖Q‖ ‖A' - A‖ < 1` embeds into the
+  kernel of `A`.
 * `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_lt` and its special case
   `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_le_half`: an approximate bounded
   linear right inverse, with `‖T ∘ Q₀ - id‖ < 1`, corrects to an exact one.
@@ -167,6 +170,33 @@ theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
   apply Submodule.eq_top_of_nonempty_interior'
   rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, hopen.interior_eq]
   exact ⟨0, 0, map_zero S⟩
+
+/-- **Kernels of operators near a surjection.** If `A` has a bounded linear right inverse `Q` and
+`‖Q‖ ‖A' - A‖ < 1`, then `ξ ↦ ξ - Q (A ξ)` embeds the kernel of `A'` linearly into that of `A`. -/
+theorem exists_injective_ker_of_norm_mul_norm_sub_lt_one {A A' : E →L[𝕜] F} {Q : F →L[𝕜] E}
+    (hQ : A.comp Q = ContinuousLinearMap.id 𝕜 F) (h : ‖Q‖ * ‖A' - A‖ < 1) :
+    ∃ f : A'.ker →ₗ[𝕜] A.ker, Function.Injective f := by
+  have hAQ : ∀ y, A (Q y) = y := fun y ↦ by
+    simpa using congr($hQ y)
+  refine ⟨LinearMap.codRestrict A.ker
+    ((ContinuousLinearMap.id 𝕜 E - Q.comp A : E →L[𝕜] E).toLinearMap ∘ₗ A'.ker.subtype)
+    fun ξ ↦ by simp [hAQ], (injective_iff_map_eq_zero _).2 fun ξ hξ ↦ ?_⟩
+  -- An element of the kernel of `A'` killed by the embedding is `Q (A - A') ξ`, so it is zero.
+  have hξ : (ξ : E) = Q ((A - A') ξ) := by
+    have h0 : (ξ : E) - Q (A ξ) = 0 := congr(($hξ : E))
+    have hA' : A' ξ = 0 := ξ.property
+    rw [sub_apply, hA', sub_zero]
+    exact sub_eq_zero.1 h0
+  have hle : ‖(ξ : E)‖ ≤ ‖Q‖ * ‖A' - A‖ * ‖(ξ : E)‖ := by
+    calc ‖(ξ : E)‖ = ‖Q ((A - A') ξ)‖ := by rw [← hξ]
+      _ ≤ ‖Q‖ * (‖A - A'‖ * ‖(ξ : E)‖) :=
+        (Q.le_opNorm _).trans (mul_le_mul_of_nonneg_left ((A - A').le_opNorm _) (norm_nonneg _))
+      _ = ‖Q‖ * ‖A' - A‖ * ‖(ξ : E)‖ := by rw [norm_sub_rev, mul_assoc]
+  have hz : ‖(ξ : E)‖ = 0 := by
+    by_contra hne
+    have hpos := lt_of_le_of_ne (norm_nonneg (ξ : E)) (Ne.symm hne)
+    exact lt_irrefl _ (hle.trans_lt (mul_lt_of_lt_one_left hpos h))
+  exact Subtype.ext (norm_eq_zero.1 hz)
 
 /-- **Approximate right inverses can be corrected.** If `Q₀` is an approximate bounded linear
 right inverse of `T`, with `‖T ∘ Q₀ - id‖ < 1`, then `T` has a bounded linear right inverse `Q`

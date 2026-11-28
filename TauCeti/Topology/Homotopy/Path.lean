@@ -39,7 +39,10 @@ prescribed end paths as a path between paths. The smoothing of caps in
 of paths pointwise. A homotopy between constant maps is such a family
 (`ContinuousMap.Homotopy.evalAtEquiv`), and this identification matches the concatenation and
 reversal of homotopies with `pathTrans` and `pathSymm`; the paths traced by concatenated and
-reversed homotopies are computed by `ContinuousMap.Homotopy.evalAt_trans` and `evalAt_symm`.
+reversed homotopies are computed by `ContinuousMap.Homotopy.evalAt_trans` and `evalAt_symm`, and
+those traced by reversed pullbacks with their ends rewritten by
+`ContinuousMap.Homotopy.coe_map_evalAt_cast_symm_compContinuousMap` and
+`coe_cast_evalAt_cast_symm_compContinuousMap`.
 `Topology/Homotopy/Homotopic/Homotopy.lean` reads homotopy of homotopies between constant maps
 through `evalAtEquiv`.
 
@@ -59,7 +62,10 @@ detour `(α · ρ⁻¹) · (ρ · β⁻¹)` to `α · β⁻¹` uniformly in a pa
 space of paths; it compares families of loops on spheres with products of loops in
 `AlgebraicTopology/Sphere/Stiefel/MeridianProduct.lean`. The lemma
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
-`AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
+`AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`,
+`Path.Homotopic.refl_of_compact_nullhomotopic` specializes it to spaces in which every map from a
+compact space is null-homotopic, and `TauCeti.simplyConnectedSpace_of_compact_nullhomotopic`
+upgrades compact-source null-homotopy on a path-connected space to `SimplyConnectedSpace`.
 
 `Path.exists_monotone_range_subpath_subset` subdivides a path, by the Lebesgue number lemma on the
 unit interval, so that each consecutive subpath lies in a member of a given family of sets. It is
@@ -96,6 +102,8 @@ mapping a composite class and casting its endpoints composes the cast images of 
 (`Path.Homotopic.Quotient.map_trans_cast`). `Path.refl_trans_eq_reparam`, the left counterpart of
 Mathlib's `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps
 along a pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+`Path.Homotopic.of_coe_eq` transfers a homotopy to paths with the same values whose end points are
+written differently.
 `Path.Homotopy.reflTransSymm_apply` evaluates Mathlib's homotopy from the constant path to
 `p.trans p.symm`, which has no `simps` lemmas of its own.
 
@@ -703,6 +711,34 @@ theorem evalAt_trans (F : Homotopy f₀ f₁) (G : Homotopy f₁ f₂) (x : X) :
   ext t
   simp only [evalAt_apply, trans_apply, Path.trans_apply]
 
+/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at `z`
+and mapping it by `φ` traces the reverse of the evaluation of `F` at `g z` mapped by a map `ψ`
+agreeing with `φ`. It is stated for the underlying functions, so that `exact` matches it against
+evaluations whose spaces are only definitionally equal to the ones here, such as objects of
+`TopCat`, which rewriting does not see through. -/
+theorem coe_map_evalAt_cast_symm_compContinuousMap {Z W : Type*} [TopologicalSpace Z]
+    [TopologicalSpace W] (F : f₀.Homotopy f₁) (g : C(Z, X)) {k₀ k₁ : C(Z, Y)}
+    (h₀ : f₁.comp g = k₀) (h₁ : f₀.comp g = k₁) (z : Z) {φ ψ : Y → W} (hφ : Continuous φ)
+    (hψ : Continuous ψ) (hφψ : ∀ y, φ y = ψ y) :
+    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).map hφ) =
+      ⇑((F.evalAt (g z)).map hψ).symm := by
+  funext t
+  simp [hφψ]
+
+/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at a
+point `z` with `g z = x` traces the reverse of the evaluation of `F` at `x`, whatever the end
+points of the two paths are written as. Like `coe_map_evalAt_cast_symm_compContinuousMap`, it is
+stated for the underlying functions. -/
+theorem coe_cast_evalAt_cast_symm_compContinuousMap {Z : Type*} [TopologicalSpace Z]
+    (F : f₀.Homotopy f₁) (g : C(Z, X)) {k₀ k₁ : C(Z, Y)} (h₀ : f₁.comp g = k₀)
+    (h₁ : f₀.comp g = k₁) {z : Z} {x : X} (hz : g z = x) {a b a' b' : Y} (ha : a = k₀ z)
+    (hb : b = k₁ z) (ha' : a' = f₀ x) (hb' : b' = f₁ x) :
+    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).cast ha hb) =
+      ⇑((F.evalAt x).cast ha' hb').symm := by
+  subst hz
+  funext t
+  simp
+
 @[simp]
 theorem symm_refl (f : C(X, Y)) : (Homotopy.refl f).symm = Homotopy.refl f := by
   ext
@@ -918,6 +954,15 @@ theorem trans_right_cancel {x₀ x₁ x₂ : X} {γ δ : Path x₀ x₁} {e : Pa
   have hδ : ((δ.trans e).trans e.symm).Homotopic δ :=
     (trans_assoc δ e e.symm).trans (trans_right_of_nullhomotopic (trans_symm e))
   exact hγ.symm.trans ((h.hcomp (refl e.symm)).trans hδ)
+
+/-- **Paths with the values of homotopic paths are homotopic.** If `p` and `q` have the same values
+as the homotopic paths `p'` and `q'`, possibly with end points written differently, then `p` and
+`q` are homotopic. -/
+theorem of_coe_eq {a b a' b' : X} {p q : Path a b} {p' q' : Path a' b'} (hp : ⇑p = ⇑p')
+    (hq : ⇑q = ⇑q') (h : p'.Homotopic q') : p.Homotopic q := by
+  obtain rfl : a = a' := p.source.symm.trans ((congrFun hp 0).trans p'.source)
+  obtain rfl : b = b' := p.target.symm.trans ((congrFun hp 1).trans p'.target)
+  rwa [Path.ext hp, Path.ext hq]
 
 /-- Left cancellation in the fundamental groupoid: if `e.trans γ` and `e.trans δ` are homotopic,
 then `γ` and `δ` are homotopic. This is the path-homotopy analogue of `c * a = c * b → a = b`. -/
@@ -1164,3 +1209,30 @@ theorem Path.Homotopic.trans_of_subpath_trans {x y x' y' : X}
   exact h_last.symm.trans ((h_chain (Fin.last n)).trans h_zero)
 
 end Pasting
+
+namespace Path.Homotopic
+
+/-- In a space in which every continuous map from a compact space is null-homotopic, every loop is
+null-homotopic. -/
+theorem refl_of_compact_nullhomotopic.{u} {X : Type u} [TopologicalSpace X]
+    (hnull : ∀ {K : Type u} [TopologicalSpace K] [CompactSpace K] (f : C(K, X)), f.Nullhomotopic)
+    {x : X} (γ : Path x x) : γ.Homotopic (Path.refl x) := by
+  have : CompactSpace (Set.range γ) :=
+    isCompact_iff_compactSpace.mp (isCompact_range γ.continuous)
+  exact refl_of_forall_mem_of_nullhomotopic
+    (hnull (ContinuousMap.subtypeVal (Set.range γ))) γ Set.mem_range_self
+
+end Path.Homotopic
+
+namespace TauCeti
+
+/-- A path-connected space in which every continuous map from a compact space is null-homotopic is
+simply connected. -/
+theorem simplyConnectedSpace_of_compact_nullhomotopic.{u} {X : Type u} [TopologicalSpace X]
+    [PathConnectedSpace X]
+    (hnull : ∀ {K : Type u} [TopologicalSpace K] [CompactSpace K] (f : C(K, X)), f.Nullhomotopic) :
+    SimplyConnectedSpace X :=
+  simply_connected_iff_loops_nullhomotopic.mpr
+    ⟨‹_›, fun _ γ ↦ Path.Homotopic.refl_of_compact_nullhomotopic hnull γ⟩
+
+end TauCeti

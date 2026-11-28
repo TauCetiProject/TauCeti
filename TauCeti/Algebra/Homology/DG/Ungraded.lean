@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Ungraded differential algebras and modules, and matrices over them
@@ -25,7 +26,9 @@ algebras are graded by noncommutative groups rather than by `ℤ`. Tau Ceti's di
 graded algebras (`TauCeti.IsDGAlgebra`) are internally `ℤ`-graded with a differential of degree
 one, so an ungraded differential does not fit them: placing an algebra in degree zero forces the
 differential to vanish. Over a ring of characteristic two the Koszul signs of the graded theory
-all disappear, which is why the ungraded Leibniz rule is the right one there.
+all disappear, which is why the ungraded Leibniz rule is the right one there: forgetting the
+grading, the differential of a nonunital DG algebra is then an ungraded differential
+(`TauCeti.IsNonUnitalDGAlgebra.isUngradedDGAlgebra`).
 
 The differential acts on matrices over `A` entrywise, through `Matrix.map`, and satisfies the
 Leibniz rule for matrix products (`TauCeti.IsUngradedDGAlgebra.map_mul_matrix`) and for the action
@@ -59,6 +62,8 @@ characteristic-two counterpart of the signed tensor differential of
 
 * `TauCeti.IsUngradedDGAlgebra.isUngradedDGRightModule`: an ungraded differential algebra is an
   ungraded differential right module over itself.
+* `TauCeti.IsNonUnitalDGAlgebra.isUngradedDGAlgebra`: in characteristic two, the differential of a
+  `ℤ`-graded nonunital DG algebra is an ungraded differential.
 * `TauCeti.IsUngradedDGAlgebra.map_mul_matrix`: `d (F * G) = d F * G + F * d G` for matrices.
 * `TauCeti.IsUngradedDGRightModule.map_continuationMap`: `dM (φ ⬝ F) = dM φ ⬝ F + φ ⬝ d F`.
 * `TauCeti.IsUngradedDGAlgebra.tensorProduct`: in characteristic two, the tensor product of
@@ -138,6 +143,31 @@ theorem map_map_matrix (hd : IsUngradedDGAlgebra d) (F : Matrix m n A) :
   simp [hd.map_map]
 
 end IsUngradedDGAlgebra
+
+namespace IsNonUnitalDGAlgebra
+
+variable {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜]
+  {d : A →ₗ[R] A}
+
+/-- **Forgetting the grading of a DG algebra in characteristic two.** Over a ring of
+characteristic two, the differential of a `ℤ`-graded nonunital DG algebra is an ungraded
+differential: the Koszul sign `(-1) ^ p` of the graded Leibniz rule `d (a * b) = d a * b +
+(-1) ^ p a * d b`, for `a` of degree `p`, is `1`, and both sides of the ungraded Leibniz rule are
+additive in `a`, which is a sum of homogeneous elements. -/
+theorem isUngradedDGAlgebra [CharP R 2] (h : IsNonUnitalDGAlgebra 𝒜 d) :
+    IsUngradedDGAlgebra d where
+  map_mul a b := by
+    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | homogeneous a =>
+      rw [h.leibniz a.property b,
+        negOnePow_smul_eq_self_of_neg_one_eq_one (R := R) (CharTwo.neg_eq 1)]
+    | add a a' ha ha' =>
+      rw [add_mul, map_add, ha, ha', map_add, add_mul, add_mul]
+      abel
+  map_map := h.sq_zero
+
+end IsNonUnitalDGAlgebra
 
 
 namespace IsUngradedDGRightModule

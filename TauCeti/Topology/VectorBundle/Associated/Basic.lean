@@ -34,6 +34,7 @@ public section
 noncomputable section
 
 open Bundle MulOpposite Set
+open scoped TensorProduct
 
 namespace TauCeti.AssociatedBundle
 
@@ -51,6 +52,14 @@ instance instAddCommGroup (b : B) : AddCommGroup (AssociatedBundle G P F b) :=
 
 instance instModule (b : B) : Module 𝕜 (AssociatedBundle G P F b) :=
   inferInstanceAs (Module 𝕜 F)
+
+/-- A scalar tower on the model descends to the associated fibres. For a complex model with its
+real structure, each fibre is a complex vector space whose real structure is the restriction of
+scalars, as complex line bundles require. -/
+instance instIsScalarTower {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' F]
+    [SMul 𝕜 𝕜'] [IsScalarTower 𝕜 𝕜' F] (b : B) :
+    IsScalarTower 𝕜 𝕜' (AssociatedBundle G P F b) :=
+  inferInstanceAs (IsScalarTower 𝕜 𝕜' F)
 
 /-- Addition is continuous for the existing associated-fibre topology. This delegate keeps
 native bundle-metric constructions from having to unfold the fibre presentation. -/
@@ -151,6 +160,23 @@ theorem mk_smul_scalar {b : B} (p : P b) (r : 𝕜) (v : F) :
     mk G p (r • v) = r • mk G p v :=
   by simpa only [mkContinuousLinearEquiv_apply] using
     (mkContinuousLinearEquiv 𝕜 G p).map_smul r v
+
+/-- With scalar model fibre, the class of `r` in a fixed principal frame is `r` times the class
+of `1`. -/
+theorem mk_eq_smul_mk_one [DistribMulAction G 𝕜] [SMulCommClass G 𝕜 𝕜] [ContinuousSMul G 𝕜]
+    {b : B} (p : P b) (r : 𝕜) : mk G p r = r • mk G p (1 : 𝕜) := by
+  rw [← mk_smul_scalar, smul_eq_mul, mul_one]
+
+/-- **Pure tensors in fixed frames**: for associated bundles with scalar model fibre,
+`[p, a] ⊗ [q, c] = (a c) ([p, 1] ⊗ [q, 1])`. -/
+theorem mk_tmul_mk_eq_smul [DistribMulAction G 𝕜] [SMulCommClass G 𝕜 𝕜] [ContinuousSMul G 𝕜]
+    {G' : Type*} [Group G'] [TopologicalSpace G']
+    {Q : B → Type*} [TopologicalSpace (TotalSpace G' Q)] [∀ b, TopologicalSpace (Q b)]
+    [FiberBundle G' Q] [∀ b, MulAction G'ᵐᵒᵖ (Q b)] [PrincipalBundle G' Q]
+    [DistribMulAction G' 𝕜] [SMulCommClass G' 𝕜 𝕜] [ContinuousSMul G' 𝕜]
+    {b : B} (p : P b) (q : Q b) (a c : 𝕜) :
+    mk G p a ⊗ₜ[𝕜] mk G' q c = (a * c) • (mk G p (1 : 𝕜) ⊗ₜ[𝕜] mk G' q (1 : 𝕜)) := by
+  rw [mk_eq_smul_mk_one p a, mk_eq_smul_mk_one q c, TensorProduct.smul_tmul_smul]
 
 /-- The zero class is independent of the principal frame. -/
 @[simp]
