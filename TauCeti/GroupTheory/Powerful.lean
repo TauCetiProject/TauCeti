@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.PLowerCentralSeries
 import TauCeti.GroupTheory.Commutator
+import TauCeti.GroupTheory.Nilpotent.LowerCentralSeries
 
 /-!
 # Finite powerful `p`-groups and powerfully embedded subgroups
@@ -295,7 +296,8 @@ private theorem commutator_powClosure_eq_bot [hp : Fact p.Prime] [Finite G] (hG 
     · subst hp2; exact (hN.map hq).commutator_powClosure_eq_bot_of_two hexp' hcent'
     · exact (hN.map hq).commutator_powClosure_eq_bot_of_odd (hp.out.odd_of_ne_two hp2)
         (by simpa [hp2] using hexp') hcent'
-  exact hG.eq_bot_of_le_commutator_top <| by
+  have := hG.isNilpotent
+  exact Subgroup.eq_bot_of_le_commutator_top <| by
     have hML : M ≤ L := by
       rw [← QuotientGroup.ker_mk' L, ← Subgroup.map_eq_bot_iff, ← hM']
       exact hbot'

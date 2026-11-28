@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Nilpotent.LowerCentralSeries
+public import Mathlib.GroupTheory.Nilpotent
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -23,6 +23,8 @@ length of a nilpotent group logarithmically in its nilpotency class. Mathlib's
 * `Subgroup.commutator_lowerCentralSeries_le`: `⁅γ_{i+1}, γ_{j+1}⁆ ≤ γ_{i+j+2}`, written with
   Mathlib's indexing as `⁅H.lowerCentralSeries i, H.lowerCentralSeries j⁆ ≤
   H.lowerCentralSeries (i + j + 1)`.
+* `Subgroup.eq_bot_of_le_commutator_top`: nilpotency descent in a nilpotent group
+  (`K ≤ ⁅K, ⊤⁆ → K = ⊥`).
 * `TauCeti.derivedSeries_le_lowerCentralSeries_top_two_pow_sub_one`: `G⁽ᵏ⁾ ≤ γ_{2^k}`.
 
 ## References
@@ -63,6 +65,20 @@ theorem commutator_lowerCentralSeries_le (H : Subgroup G) (i j : ℕ) :
   -- Transport the case `⊤` in the group `H` along the inclusion `H → G`.
   simpa only [map_commutator, top_subtype_lowerCentralSeries] using
     map_mono (f := H.subtype) (commutator_lowerCentralSeries_le_of_normal (⊤ : Subgroup H) i j)
+
+/-- **Nilpotency descent**: in a nilpotent group, a subgroup contained in its commutator with the
+whole group is trivial. -/
+theorem eq_bot_of_le_commutator_top [Group.IsNilpotent G] {K : Subgroup G}
+    (hK : K ≤ ⁅K, (⊤ : Subgroup G)⁆) : K = ⊥ := by
+  have hle : ∀ n, K ≤ (⊤ : Subgroup G).lowerCentralSeries n := fun n ↦ by
+    induction n with
+    | zero => exact le_top
+    | succ n ih =>
+      rw [lowerCentralSeries_succ]
+      exact hK.trans (commutator_mono ih le_rfl)
+  exact le_bot_iff.mp
+    ((hle (Group.nilpotencyClass G)).trans
+      (lowerCentralSeries_eq_bot_iff_nilpotencyClass_le.mpr le_rfl).le)
 
 end Subgroup
 

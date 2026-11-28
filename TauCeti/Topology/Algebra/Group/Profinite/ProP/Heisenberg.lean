@@ -279,8 +279,8 @@ theorem not_isMulCommutative_level : ¬ IsMulCommutative (level p n).toSubgroup 
     ⟨⟨0, (p : ℤ_[p]) ^ n, 0⟩, (mem_level_iff p n).mpr ⟨dvd_zero _, dvd_rfl, dvd_zero _⟩⟩
   have hz := congrArg (fun g : (level p n).toSubgroup ↦ g.val.z) (hcomm.is_comm.comm a b)
   simp only [Subgroup.coe_mul, mul_z, zero_add, add_zero, mul_zero, a, b] at hz
-  exact pow_ne_zero (n + n) (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-    (show (p : ℤ_[p]) ^ (n + n) = 0 by rw [pow_add]; exact hz)
+  have hpow : (p : ℤ_[p]) ^ (n + n) = 0 := by rw [pow_add]; exact hz
+  exact pow_ne_zero (n + n) (Nat.cast_ne_zero.mpr hp.out.ne_zero) hpow
 
 end Level
 

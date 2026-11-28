@@ -37,6 +37,8 @@ import TauCeti.Data.Nat.Periodic.Basic
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
   power `(n + 1) / 2` inverts squaring on elements killed by `n`.
 * `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
+* `TauCeti.pow_add_dvd_mul`, `TauCeti.pow_two_mul_dvd_mul`: divisibility of a product by
+  `a ^ (m + n)` and `a ^ (2 * m)` in a commutative monoid.
 * `Function.Surjective.surjective_pow`: a surjective multiplicative map preserves surjectivity of
   the `n`-th power map.
 -/
@@ -159,6 +161,16 @@ theorem eq_one_of_pow_pow_eq_one {p k : ℕ} {m : M}
     apply hM
     rw [← pow_mul, ← pow_succ]
     exact hk
+
+/-- If `a ^ m ∣ x` and `a ^ n ∣ y` in a commutative monoid, then `a ^ (m + n) ∣ x * y`. -/
+theorem pow_add_dvd_mul {N : Type*} [CommMonoid N] (a : N) {m n : ℕ} {x y : N}
+    (hx : a ^ m ∣ x) (hy : a ^ n ∣ y) : a ^ (m + n) ∣ x * y :=
+  pow_add a m n ▸ mul_dvd_mul hx hy
+
+/-- If `a ^ m ∣ x` and `a ^ m ∣ y` in a commutative monoid, then `a ^ (2 * m) ∣ x * y`. -/
+theorem pow_two_mul_dvd_mul {N : Type*} [CommMonoid N] (a : N) {m : ℕ} {x y : N}
+    (hx : a ^ m ∣ x) (hy : a ^ m ∣ y) : a ^ (2 * m) ∣ x * y :=
+  two_mul m ▸ pow_add_dvd_mul a hx hy
 
 end TauCeti
 

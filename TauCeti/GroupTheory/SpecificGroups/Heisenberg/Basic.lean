@@ -52,6 +52,8 @@ group.
 ## Main results
 
 * `TauCeti.HeisenbergGroup.commutatorElement_eq`: the commutator formula.
+* `TauCeti.HeisenbergGroup.commutatorElement_z_mk_fst_snd`: the `z`-coordinate of
+  `⁅(u, 0, 0), (0, v, 0)⁆` is `u * v`.
 * `TauCeti.HeisenbergGroup.center_eq_zAxis`: the centre is the `z`-axis.
 * `TauCeti.HeisenbergGroup.commutator_eq_zAxis`: the commutator subgroup is the `z`-axis.
 * The Heisenberg group is nilpotent (`Group.IsNilpotent` instance).
@@ -145,6 +147,12 @@ theorem commutatorElement_eq (a b : HeisenbergGroup R) :
     ⁅a, b⁆ = ⟨0, 0, a.x * b.y - b.x * a.y⟩ := by
   ext <;> simp [commutatorElement_def, add_mul]
   abel
+
+/-- The `z`-coordinate of the commutator `⁅(u, 0, 0), (0, v, 0)⁆` is `u * v`. -/
+theorem commutatorElement_z_mk_fst_snd (u v : R) :
+    (⁅(⟨u, 0, 0⟩ : HeisenbergGroup R), (⟨0, v, 0⟩ : HeisenbergGroup R)⁆).z = u * v := by
+  rw [commutatorElement_eq]
+  simp
 
 /-- **The power formula**: `(x, y, z) ^ n = (n • x, n • y, n • z + (n choose 2) • (x * y))`. -/
 theorem pow_eq (a : HeisenbergGroup R) (n : ℕ) :

@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Heisenberg
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Uniform
 import Mathlib.GroupTheory.Commutator.Basic
+import TauCeti.Algebra.Group.Pow
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Congruence levels of the `p`-adic Heisenberg group as uniform pro-`p` groups
@@ -48,23 +50,6 @@ namespace HeisenbergGroup
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
-private theorem pow_add_dvd_mul {R : Type*} [CommMonoid R] (a : R) {m n : ℕ} {x y : R}
-    (hx : a ^ m ∣ x) (hy : a ^ n ∣ y) : a ^ (m + n) ∣ x * y :=
-  pow_add a m n ▸ mul_dvd_mul hx hy
-
-private theorem pow_two_mul_dvd_mul {R : Type*} [CommMonoid R] (a : R) {m : ℕ} {x y : R}
-    (hx : a ^ m ∣ x) (hy : a ^ m ∣ y) : a ^ (2 * m) ∣ x * y :=
-  two_mul m ▸ pow_add_dvd_mul a hx hy
-
-private theorem commutatorElement_z_mk_fst_snd {R : Type*} [Ring R] (u v : R) :
-    (⁅(⟨u, 0, 0⟩ : HeisenbergGroup R), (⟨0, v, 0⟩ : HeisenbergGroup R)⁆).z = u * v := by
-  rw [commutatorElement_eq]
-  simp
-
-private theorem not_pow_succ_dvd_pow (s : ℕ) :
-    ¬ (p : ℤ_[p]) ^ (s + 1) ∣ (p : ℤ_[p]) ^ s := fun hdvd ↦
-  absurd ((pow_dvd_pow_iff PadicInt.prime_p.ne_zero PadicInt.prime_p.not_isUnit).mp hdvd) (by omega)
-
 /-- For every prime `p` and every `m ≥ 1` (with `m ≥ 2` at `p = 2`), the congruence level
 `HeisenbergGroup.level p m` is powerful. -/
 theorem isPowerful_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
@@ -82,7 +67,8 @@ theorem isPowerful_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
     rw [Subgroup.coe_commutatorElement, commutatorElement_eq, Subgroup.coe_pow, ← hr, pow_eq]
     refine HeisenbergGroup.ext (by simp [c]) (by simp [c]) ?_
     simp only [c, nsmul_eq_mul, Nat.cast_pow, mul_zero, add_zero, hxa, hya, hxb, hyb]
-    rw [← mul_assoc ((p : ℤ_[p]) ^ r), ← pow_add, show r + (2 * m - r) = m + m by omega, pow_add]
+    have hrm : r + (2 * m - r) = m + m := by omega
+    rw [← mul_assoc ((p : ℤ_[p]) ^ r), ← pow_add, hrm, pow_add]
     ring
   exact hcomm ▸ pow_mem_closedPowerSubgroup c
 
@@ -181,7 +167,7 @@ theorem not_isPowerful_level_two_one : ¬ IsPowerful 2 (level 2 1).toSubgroup :=
     hle ((isPowerful_two_iff.mp hpow) (_root_.commutator_def (level 2 1).toSubgroup ▸
       commutator_mem_commutator (mem_top a) (mem_top b))))).2.2
   rw [Subgroup.coe_commutatorElement, commutatorElement_z_mk_fst_snd, ← sq] at hz
-  exact not_pow_succ_dvd_pow 2 2 hz
+  exact PadicInt.not_pow_p_succ_dvd_pow_p 2 hz
 
 /-- At `p = 2`, `HeisenbergGroup.level 2 1` is not uniform. -/
 theorem not_isUniform_level_two_one : ¬ IsUniform 2 (level 2 1).toSubgroup :=
@@ -264,7 +250,7 @@ theorem exists_openSubgroup_not_isPowerful_and_not_isUniform_level {m : ℕ}
           commutator_mem_commutator (mem_top a) (mem_top b))))).2.2
     rw [Subgroup.coe_commutatorElement, Subgroup.coe_commutatorElement,
       commutatorElement_z_mk_fst_snd, ← pow_add, ← two_mul] at hz
-    exact not_pow_succ_dvd_pow p (2 * m) hz
+    exact PadicInt.not_pow_p_succ_dvd_pow_p (2 * m) hz
   exact ⟨U, hnotpow, fun hU ↦ hnotpow hU.isPowerful⟩
 
 end HeisenbergGroup

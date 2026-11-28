@@ -55,13 +55,15 @@ theorem not_isPowerful_two_dihedralGroup {n : ℕ} (hn : 4 ∣ n)
     (closedPowerSubgroup_le_iff (isClosed_discrete _)).mpr <| by
       rintro (i | i)
       · exact ⟨i, by rw [DihedralGroup.r_pow, Nat.cast_ofNat, mul_comm]⟩
-      · exact ⟨0, by rw [show (4 : ℕ) = 2 * 2 by decide, pow_mul]; simp [sq]⟩
+      · have h4 : (4 : ℕ) = 2 * 2 := by decide
+        exact ⟨0, by rw [h4, pow_mul]; simp [sq]⟩
   have hr2 : DihedralGroup.r (2 : ZMod n) ∈ K :=
     Subgroup.zpowers_le.mp <|
       commutator_dihedralGroup_eq_zpowers n ▸ (isPowerful_two_iff.mp hpow).trans h4le
   obtain ⟨i, hi⟩ := hr2
   have h := congrArg (ZMod.castHom hn (ZMod 4)) (DihedralGroup.r.inj hi)
-  rw [map_ofNat, map_mul, map_ofNat, show (4 : ZMod 4) = 0 by decide, zero_mul] at h
+  have h4z : (4 : ZMod 4) = 0 := by decide
+  rw [map_ofNat, map_mul, map_ofNat, h4z, zero_mul] at h
   exact (by decide : (2 : ZMod 4) ≠ 0) h
 
 /-- For every prime `p`, the finite Heisenberg group `HeisenbergGroup (ZMod p)` is not powerful
@@ -71,7 +73,7 @@ theorem not_isPowerful_heisenbergGroup_zmod (p : ℕ) [hp : Fact p.Prime] :
     ¬ IsPowerful p (HeisenbergGroup (ZMod p)) := fun hpow ↦ by
   set e : ℕ := if p = 2 then 4 else p
   have hpe : p ∣ e := by
-    change p ∣ if p = 2 then 4 else p
+    dsimp only [e]
     rw [← pow_ite_eq_ite_four p]
     exact dvd_pow_self p (by split_ifs <;> omega)
   have hpe2 : p ∣ e.choose 2 := dvd_choose_two_ite_four hp.out

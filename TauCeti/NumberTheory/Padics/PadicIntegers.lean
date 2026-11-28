@@ -57,6 +57,7 @@ The ring `ℤ_[p]` is also profinite in the sequence-ultralimit sense
   ideal.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
+* `PadicInt.not_pow_p_succ_dvd_pow_p`: `(p : ℤ_[p]) ^ (s + 1)` does not divide `(p : ℤ_[p]) ^ s`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
 * `PadicInt.mem_span_singleton_iff_norm_le`: the `ℤ_p`-line through `y` in `ℚ_p` is the ball
   `‖x‖ ≤ ‖y‖`, so lines are compared by the norms of their generators
@@ -207,6 +208,11 @@ number version of `PadicInt.pow_p_dvd_int_iff`. -/
 @[simp]
 theorem pow_p_dvd_natCast_iff (n a : ℕ) : (p : ℤ_[p]) ^ n ∣ (a : ℤ_[p]) ↔ p ^ n ∣ a := by
   rw [← Int.cast_natCast a, pow_p_dvd_int_iff, ← Nat.cast_pow, Int.natCast_dvd_natCast]
+
+/-- In `ℤ_[p]`, `(p : ℤ_[p]) ^ (s + 1)` does not divide `(p : ℤ_[p]) ^ s`. -/
+theorem not_pow_p_succ_dvd_pow_p (s : ℕ) :
+    ¬ (p : ℤ_[p]) ^ (s + 1) ∣ (p : ℤ_[p]) ^ s := fun hdvd ↦
+  absurd ((pow_dvd_pow_iff prime_p.ne_zero prime_p.not_isUnit).mp hdvd) (by omega)
 
 /-- A unit of `ℤ_p` acts isometrically on every module with contractive scalar action. -/
 theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]

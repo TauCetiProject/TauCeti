@@ -37,8 +37,6 @@ a pro-`p` group.
 * `Subgroup.normalizer_le_normalizer_pLowerCentralSeries`: whatever normalises `S` normalises every
   term; in particular the terms are normal when `S` is, and characteristic when `S` is.
 * `IsPGroup.exists_pLowerCentralSeries_eq_bot`: the series of a finite `p`-subgroup reaches `⊥`.
-* `IsPGroup.eq_bot_of_le_commutator_top`: nilpotency descent in a finite `p`-group
-  (`K ≤ ⁅K, ⊤⁆ → K = ⊥`).
 * `Subgroup.exists_pLowerCentral_filtration_of_isPGroup`: the packaged filtration of a finite
   normal `p`-subgroup by normal subgroups with elementary abelian factors.
 
@@ -278,20 +276,6 @@ theorem exists_pLowerCentralSeries_eq_bot {S : Subgroup G} [Finite S] (hS : IsPG
   have h := congrArg (Subgroup.map S.subtype) hn
   rwa [Subgroup.pLowerCentralSeries_map, ← MonoidHom.range_eq_map, S.range_subtype,
     Subgroup.map_bot] at h
-
-/-- **Nilpotency descent in a finite `p`-group**: a subgroup contained in its commutator with the
-whole group is trivial. -/
-theorem eq_bot_of_le_commutator_top [Finite G] (hG : IsPGroup p G) {K : Subgroup G}
-    (hK : K ≤ ⁅K, (⊤ : Subgroup G)⁆) : K = ⊥ := by
-  have hle : ∀ n, K ≤ (⊤ : Subgroup G).lowerCentralSeries n := fun n ↦ by
-    induction n with
-    | zero => exact le_top
-    | succ n ih =>
-      rw [Subgroup.lowerCentralSeries_succ]
-      exact hK.trans (Subgroup.commutator_mono ih le_rfl)
-  obtain ⟨n, hn⟩ := (hG.to_subgroup ⊤).exists_pLowerCentralSeries_eq_bot
-  exact le_bot_iff.mp
-    ((hle n).trans ((Subgroup.lowerCentralSeries_le_pLowerCentralSeries p ⊤ n).trans hn.le))
 
 end IsPGroup
 
