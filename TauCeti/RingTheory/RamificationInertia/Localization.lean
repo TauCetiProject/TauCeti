@@ -17,7 +17,8 @@ This file relates `Ideal.ramificationIdx` at a prime to local rings:
 
 * `IsLocalRing.ramificationIdx_maximalIdeal`,
   `IsLocalRing.ramificationIdx_maximalIdeal_of_isLocalHom`,
-  `IsLocalRing.ramificationIdx_maximalIdeal_eq_one_iff`: length characterization of
+  `IsLocalRing.ramificationIdx_maximalIdeal_eq_one_iff`,
+  `IsLocalRing.ramificationIdx_maximalIdeal_eq_one_iff_of_isLocalHom`: length characterization of
   `(maximalIdeal S).ramificationIdx R`.
 * `Ideal.ramificationIdx_maximalIdeal_localization`,
   `Ideal.ramificationIdx_maximalIdeal_localization_of_liesOver`: localization invariance.
@@ -65,6 +66,14 @@ theorem ramificationIdx_maximalIdeal_eq_one_iff {R S : Type*} [CommRing R] [Comm
   rw [ramificationIdx_maximalIdeal, ENat.toNat_eq_iff_eq_natCast, Nat.cast_one,
     Module.length_eq_one_iff, isSimpleModule_iff_isCoatom, ← Ideal.isMaximal_def,
     IsLocalRing.isMaximal_iff]
+
+/-- For a local homomorphism `R → S` of local rings, `(maximalIdeal S).ramificationIdx R = 1` iff
+the extended maximal ideal `(maximalIdeal R) S` is `maximalIdeal S`. -/
+theorem ramificationIdx_maximalIdeal_eq_one_iff_of_isLocalHom {R S : Type*} [CommRing R]
+    [CommRing S] [IsLocalRing R] [IsLocalRing S] [Algebra R S] [IsLocalHom (algebraMap R S)] :
+    (maximalIdeal S).ramificationIdx R = 1 ↔
+      (maximalIdeal R).map (algebraMap R S) = maximalIdeal S := by
+  rw [ramificationIdx_maximalIdeal_eq_one_iff, Ideal.under, maximalIdeal_comap]
 
 end IsLocalRing
 

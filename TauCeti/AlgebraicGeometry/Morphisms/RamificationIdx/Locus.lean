@@ -35,35 +35,15 @@ theorem notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable
       f.ramificationIdxAt x = 1 ∧
         letI := (f.residueFieldMap x).hom.toAlgebra
         Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x) := by
-  let R := Y.presheaf.stalk (f x); let S := X.presheaf.stalk x
-  algebraize [(f.stalkMap x).hom]
-  have : IsLocalHom (algebraMap R S) := inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
-  have : Algebra.EssFiniteType R S :=
-    RingHom.essFiniteType_algebraMap.mp (LocallyOfFiniteType.stalkMap f x)
-  have halg : (f.residueFieldMap x).hom.toAlgebra =
-      (inferInstance : Algebra (ResidueField R) (ResidueField S)) := by
-    apply Algebra.algebra_ext
-    intro r
-    obtain ⟨a, rfl⟩ := Y.residue_surjective (f x) r
-    have h := congr($(Scheme.residue_residueFieldMap f x) a)
-    rw [CommRingCat.comp_apply, CommRingCat.comp_apply] at h
-    rw [RingHom.algebraMap_toAlgebra]
-    refine h.trans ?_
-    -- `Y.residue (f x)` / `X.residue x` are definitionally `IsLocalRing.residue`, and
-    -- `Algebra.algebra_ext` leaves `Y.residueField (f x)` / `X.residueField x` on the RHS,
-    -- which only match `ResidueField R` / `ResidueField S` at default transparency so `rw` fails.
-    change IsLocalRing.residue S ((f.stalkMap x).hom a) =
-      algebraMap (ResidueField R) (ResidueField S) (IsLocalRing.residue R a)
-    rw [ResidueField.algebraMap_residue, RingHom.algebraMap_toAlgebra]
-  have hsep : Algebra.IsSeparable (ResidueField R) (ResidueField S) ↔
-      letI := (f.residueFieldMap x).hom.toAlgebra
-      Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x) :=
-    iff_of_eq (congrArg (fun inst ↦ @Algebra.IsSeparable (ResidueField R) (ResidueField S) _ _ inst)
-      halg.symm)
-  rw [mem_ramificationLocus_iff, not_not, RingHom.FormallyUnramified,
-    ← RingHom.algebraMap_toAlgebra (f.stalkMap x).hom,
-    Algebra.FormallyUnramified.iff_map_maximalIdeal_eq, hsep, ramificationIdxAt_def,
-    ramificationIdx_maximalIdeal_eq_one_iff, Ideal.under, maximalIdeal_comap, and_comm]
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  have := essFiniteType_stalkMap_toAlgebra f x
+  have hfu : (f.stalkMap x).hom.FormallyUnramified ↔
+      Algebra.FormallyUnramified (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
+    RingHom.formallyUnramified_algebraMap
+  rw [mem_ramificationLocus_iff, not_not, hfu, Algebra.FormallyUnramified.iff_map_maximalIdeal_eq]
+  simp only [← isSeparable_residueFieldMap_iff, ramificationIdxAt_def,
+    ramificationIdx_maximalIdeal_eq_one_iff_of_isLocalHom, and_comm]
 
 /-- Outside `f.ramificationLocus` (for `f` locally of finite type), `f.ramificationIdxAt x = 1`. -/
 theorem ramificationIdxAt_eq_one_of_notMem_ramificationLocus {X Y : Scheme.{u}} (f : X ⟶ Y)

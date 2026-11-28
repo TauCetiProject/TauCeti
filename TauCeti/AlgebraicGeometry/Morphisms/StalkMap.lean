@@ -530,6 +530,36 @@ theorem isLocalHom_stalkMap_toAlgebra :
     IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
   inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
 
+/-- The algebra structure on `X.residueField x` over `Y.residueField (f x)` induced by
+`f.residueFieldMap x` equals the local-ring residue-field algebra induced by `f.stalkMap x`. -/
+theorem residueFieldMap_toAlgebra_eq_residueField_algebra :
+    letI := (f.stalkMap x).hom.toAlgebra
+    letI := isLocalHom_stalkMap_toAlgebra f x
+    (f.residueFieldMap x).hom.toAlgebra =
+      (inferInstance : Algebra (ResidueField (Y.presheaf.stalk (f x)))
+        (ResidueField (X.presheaf.stalk x))) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  refine Algebra.algebra_ext _ _ fun r ↦ ?_
+  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
+  rfl
+
+/-- Separability of `X.residueField x` over `Y.residueField (f x)` along `f.residueFieldMap x`
+agrees with separability of the residue-field extension induced by the local stalk map
+`f.stalkMap x`. -/
+theorem isSeparable_residueFieldMap_iff :
+    (letI := (f.residueFieldMap x).hom.toAlgebra
+    Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x)) ↔
+      (letI := (f.stalkMap x).hom.toAlgebra
+      letI := isLocalHom_stalkMap_toAlgebra f x
+      Algebra.IsSeparable (ResidueField (Y.presheaf.stalk (f x)))
+        (ResidueField (X.presheaf.stalk x))) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  exact iff_of_eq <| congrArg
+    (fun inst ↦ @Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x) _ _ inst)
+    (residueFieldMap_toAlgebra_eq_residueField_algebra f x)
+
 /-- The stalk map at `x` of a morphism `f : X ⟶ Y` locally of finite type, as an algebra, is
 essentially of finite type. -/
 theorem essFiniteType_stalkMap_toAlgebra [LocallyOfFiniteType f] :
