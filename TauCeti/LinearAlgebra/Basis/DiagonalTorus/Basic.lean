@@ -66,15 +66,15 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
   evaluation of the reflected character.
 * `TauCeti.torusCharacter_surjective`: every nonzero character is surjective on points when the
   coefficient ring has divisible units, even when the character is not primitive.
-* `TauCeti.exists_ringEquiv_of_additive_equivariant`: an additive surjection intertwining two
-  split-torus characters over a field with divisible units is a unit multiple of a field
-  automorphism.
+* `TauCeti.exists_ringEquiv_of_additive_equivariant`: an additive surjection intertwining a
+  nonzero split-torus character with another over a field with divisible units is a unit multiple
+  of a field automorphism.
 * `TauCeti.exists_torusCharacter_eq_of_sum_mul_eq_one`: a weight whose coordinates have a
   `ℤ`-linear combination equal to one takes every unit as a value.
 * `TauCeti.weightChar_injective`: over an infinite field, distinct weights give distinct
   characters of the torus; `TauCeti.weightChar_injective_of_algebraRat` specializes this to
   fields that are `ℚ`-algebras, `TauCeti.exists_torusCharacter_ne` reads it pointwise, and
-  `TauCeti.smul_eq_smul_of_torusCharacter_ker_le` deduces proportionality from kernel inclusion.
+  `TauCeti.smul_eq_smul_of_weightChar_ker_le` deduces proportionality from kernel inclusion.
 * `TauCeti.eq_of_span_eq_top_of_torusCharacter_eq`: dually, weights generating the whole character
   lattice separate the points of the torus, over any coefficient ring.
 * `TauCeti.basisDiagonalHom_injective` and `TauCeti.basisWeightTorus_injective`: a diagonal
@@ -264,7 +264,14 @@ theorem exists_ringEquiv_of_additive_equivariant {K : Type*} [Field K] [Rootable
     obtain ⟨u, hu⟩ := hf_surj ((c : K) * v)
     refine ⟨u, mul_left_cancel₀ hf1_ne ?_⟩
     simpa only [c, Units.val_mk0, ← hfg' u] using hu
-  exact ⟨c, RingEquiv.ofBijective g ⟨g.injective, hg_surj⟩, fun u => hfg' u, fun s => hg_char s⟩
+  have hg_bij : Function.Bijective g := ⟨g.injective, hg_surj⟩
+  exact ⟨c, RingEquiv.ofBijective g hg_bij,
+    fun u => by
+      rw [RingEquiv.ofBijective_apply]
+      simpa only [c, Units.val_mk0] using hfg' u,
+    fun s => by
+      rw [RingEquiv.ofBijective_apply]
+      exact hg_char s⟩
 
 /-! ## Reflections of split-torus points -/
 
@@ -448,12 +455,11 @@ theorem exists_torusCharacter_ne {K : Type*} [Field K] [Infinite K] {μ ν : κ 
     (h : μ ≠ ν) : ∃ s : κ → Kˣ, torusCharacter s μ ≠ torusCharacter s ν := by
   simpa only [weightChar_apply] using DFunLike.ne_iff.mp (weightChar_injective.ne h)
 
-/-- Over an infinite field, if every torus point annihilating a character `α` also annihilates
-`μ`, then `α` and `μ` are proportional: `α i • μ = μ i • α` for every coordinate `i`. In
-particular, when `α ≠ 0`, `μ` is a rational multiple of `α`. -/
-theorem smul_eq_smul_of_torusCharacter_ker_le {K : Type*} [Field K] [Infinite K]
-    {α μ : κ → ℤ}
-    (h : ∀ s : κ → Kˣ, torusCharacter s α = 1 → torusCharacter s μ = 1) (i : κ) :
+/-- Over an infinite field, if the kernel of `weightChar K α` is contained in that of
+`weightChar K μ`, then `α` and `μ` are proportional: `α i • μ = μ i • α` for every coordinate
+`i`. In particular, when `α ≠ 0`, `μ` is a rational multiple of `α`. -/
+theorem smul_eq_smul_of_weightChar_ker_le {K : Type*} [Field K] [Infinite K]
+    {α μ : κ → ℤ} (h : (weightChar K α).ker ≤ (weightChar K μ).ker) (i : κ) :
     α i • μ = μ i • α := by
   classical
   ext j
@@ -465,12 +471,14 @@ theorem smul_eq_smul_of_torusCharacter_ker_le {K : Type*} [Field K] [Infinite K]
   obtain ⟨v, hv⟩ := exists_torusCharacter_ne (K := K) hwt
   let u : Kˣ := v ()
   let s : κ → Kˣ := Pi.mulSingle i (u ^ (-α j)) * Pi.mulSingle j (u ^ (α i))
-  have hsα : torusCharacter s α = 1 := by
+  have hsα : s ∈ (weightChar K α).ker := by
+    rw [MonoidHom.mem_ker, weightChar_apply]
     simp only [s, torusCharacter_mul, torusCharacter_mulSingle, ← _root_.zpow_mul,
       ← _root_.zpow_add]
     have hexp : -α j * α i + α i * α j = 0 := by ring
     rw [hexp, zpow_zero]
-  have hsμ : torusCharacter s μ = 1 := h s hsα
+  have hsμ : torusCharacter s μ = 1 := by
+    simpa only [MonoidHom.mem_ker, weightChar_apply] using h hsα
   simp only [s, torusCharacter_mul, torusCharacter_mulSingle, ← _root_.zpow_mul,
     ← _root_.zpow_add] at hsμ
   have hexp : -α j * μ i + α i * μ j = α i * μ j - μ i * α j := by ring

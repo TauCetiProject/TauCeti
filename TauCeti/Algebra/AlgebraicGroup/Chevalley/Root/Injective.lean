@@ -25,7 +25,7 @@ The separation argument reduces to an algebraically closed field by passing to
 `AlgebraicClosure (FractionRing A)`, where the field is infinite: if two distinct roots share a
 nontrivial element over an infinite field, conjugating by the annihilator of the first root
 character forces the second root character to be proportional to it
-(`TauCeti.smul_eq_smul_of_torusCharacter_ker_le`). Reducedness of the pinned root datum leaves only
+(`TauCeti.smul_eq_smul_of_weightChar_ker_le`). Reducedness of the pinned root datum leaves only
 the opposite root, which is ruled out by the opposite-intersection theorem via
 `ChevalleyDatum.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots`.
 
@@ -82,9 +82,10 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
     rintro rfl
     rw [ofAdd_zero, map_one] at h
     exact ha (ofAdd_eq_one.mp ((D.rootSubgroupPoints_eq_one_iff α K).mp h))
-  have hker : ∀ s : Fin t.rank → Kˣ,
-      torusCharacter s (D.coordinateRoot α) = 1 → torusCharacter s (D.coordinateRoot β) = 1 := by
+  have hker : (weightChar K (D.coordinateRoot α)).ker ≤
+      (weightChar K (D.coordinateRoot β)).ker := by
     intro s hsα
+    rw [MonoidHom.mem_ker, weightChar_apply] at hsα ⊢
     have hconj := congrArg (fun g => D.torusPoints K s * g * (D.torusPoints K s)⁻¹) h
     rw [D.torusPoints_conj_rootSubgroupPoints, D.torusPoints_conj_rootSubgroupPoints,
       hsα, Units.val_one, one_mul, h] at hconj
@@ -93,7 +94,7 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
     exact Units.ext ((mul_right_cancel₀ hb (by simpa using heq.symm)).trans rfl)
   obtain ⟨i, hi⟩ := D.exists_coordinateRoot_ne_zero α
   rcases D.eq_or_eq_reflectionPerm_of_smul_coordinateRoot_eq hi
-      (smul_eq_smul_of_torusCharacter_ker_le hker i) with heq | hα
+      (smul_eq_smul_of_weightChar_ker_le hker i) with heq | hα
   · exact hαβ heq
   · have hcontra {γ δ : Fin t.numRoots} {x y : K} (hy : y ≠ 0)
         (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))

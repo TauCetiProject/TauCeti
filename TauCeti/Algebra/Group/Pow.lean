@@ -34,8 +34,9 @@ import TauCeti.Data.Nat.Periodic.Basic
   `a * h ^ m = b * h ^ n`.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
-* `TauCeti.pow_natAbs_eq_of_zpow_eq`: equal integer powers in a division monoid give equal
-  `natAbs` powers.
+* `TauCeti.pow_natAbs_eq_of_zpow_eq` and `TauCeti.nsmul_natAbs_eq_of_zsmul_eq`: equal integer
+  powers in a division monoid (or integer multiples in a subtraction monoid) give equal `natAbs`
+  powers (or multiples).
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
   power `(n + 1) / 2` inverts squaring on elements killed by `n`.
 * `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
@@ -113,6 +114,8 @@ theorem pow_mul_mul_pow_mul_eq {α a : M} {n : ℕ} (hα : α ^ n = a) {m d p q 
   split_ifs <;> simp
 
 /-- Equal integer powers in a division monoid imply equal `natAbs` powers. -/
+@[to_additive /-- Equal integer scalar multiples in a subtraction monoid imply equal `natAbs`
+multiples. -/]
 theorem pow_natAbs_eq_of_zpow_eq {G : Type*} [DivisionMonoid G] {a b : G} {n : ℤ}
     (h : a ^ n = b ^ n) : a ^ n.natAbs = b ^ n.natAbs := by
   cases n with

@@ -181,6 +181,24 @@ end BruhatNormalizer
 
 /-! ## Rank-one normalizer criterion -/
 
+private theorem torusPoints_mul_rootSubgroupPoints (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    (s : Fin t.rank → Aˣ) (u : A) :
+    D.torusPoints A s * D.rootSubgroupPoints γ A (ofAdd u) =
+      D.rootSubgroupPoints γ A (ofAdd ((torusCharacter s (D.coordinateRoot γ) : A) * u)) *
+        D.torusPoints A s :=
+  mul_inv_eq_iff_eq_mul.mp (D.torusPoints_conj_rootSubgroupPoints γ A s u)
+
+private theorem rootSubgroupPoints_mul_torusPoints (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    (s : Fin t.rank → Aˣ) (u : A) :
+    D.rootSubgroupPoints γ A (ofAdd u) * D.torusPoints A s =
+      D.torusPoints A s *
+        D.rootSubgroupPoints γ A
+          (ofAdd (((torusCharacter s (D.coordinateRoot γ))⁻¹ : Aˣ) * u)) := by
+  have hc := D.torusPoints_mul_rootSubgroupPoints γ A s
+    (((torusCharacter s (D.coordinateRoot γ))⁻¹ : Aˣ) * u)
+  rw [← mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mul] at hc
+  exact hc.symm
+
 /-- Over an infinite field, any element in opposite-root–torus–root form normalizing the actual
 torus has trivial outer root parameters. -/
 theorem eq_zero_of_opposite_mul_torus_mul_mem_normalizer
@@ -197,23 +215,7 @@ theorem eq_zero_of_opposite_mul_torus_mul_mem_normalizer
   obtain ⟨s', hs'⟩ : w * D.torusPoints K s * w⁻¹ ∈ (D.torusPoints K).range :=
     ((Subgroup.mem_normalizer_iff.mp hnorm) (D.torusPoints K s)).mp ⟨s, rfl⟩
   -- Commute `T s` left past `x_β(b)` and `T s'` right past `x_{-β}(a)` to equate factorizations.
-  have hR : D.rootSubgroupPoints β K (ofAdd b) * D.torusPoints K s =
-      D.torusPoints K s * D.rootSubgroupPoints β K
-        (ofAdd (((torusCharacter s (D.coordinateRoot β))⁻¹ : Kˣ) * b)) := by
-    have hc := D.torusPoints_conj_rootSubgroupPoints β K s⁻¹ b
-    have hinv : torusCharacter s⁻¹ (D.coordinateRoot β) =
-        (torusCharacter s (D.coordinateRoot β))⁻¹ := by
-      rw [← weightChar_apply, map_inv, weightChar_apply]
-    rw [map_inv, inv_inv, hinv] at hc
-    rw [← hc]
-    group
-  have hL : D.torusPoints K s' * D.rootSubgroupPoints β' K (ofAdd a) =
-      D.rootSubgroupPoints β' K (ofAdd (((torusCharacter s' (D.coordinateRoot β))⁻¹ : Kˣ) * a)) *
-        D.torusPoints K s' := by
-    have hc := D.torusPoints_conj_rootSubgroupPoints β' K s' a
-    rw [D.coordinateRoot_reflectionPerm_self β, torusCharacter_neg] at hc
-    rw [← hc]
-    group
+  have hcomm : w * D.torusPoints K s = D.torusPoints K s' * w := by rw [hs']; group
   have hfac :
       D.rootSubgroupPoints β' K (ofAdd a) * D.torusPoints K (h * s) *
           D.rootSubgroupPoints β K
@@ -221,14 +223,25 @@ theorem eq_zero_of_opposite_mul_torus_mul_mem_normalizer
         D.rootSubgroupPoints β' K
             (ofAdd (((torusCharacter s' (D.coordinateRoot β))⁻¹ : Kˣ) * a)) *
           D.torusPoints K (s' * h) * D.rootSubgroupPoints β K (ofAdd b) := by
-    have hcomm : w * D.torusPoints K s = D.torusPoints K s' * w := by rw [hs']; group
-    have h1 : D.rootSubgroupPoints β' K (ofAdd a) * D.torusPoints K h *
-        (D.rootSubgroupPoints β K (ofAdd b) * D.torusPoints K s) =
-        D.torusPoints K s' * D.rootSubgroupPoints β' K (ofAdd a) * D.torusPoints K h *
-          D.rootSubgroupPoints β K (ofAdd b) := by
-      simpa only [w, mul_assoc] using hcomm
-    rw [hR, hL] at h1
-    simpa only [map_mul, mul_assoc] using h1
+    calc
+      D.rootSubgroupPoints β' K (ofAdd a) * D.torusPoints K (h * s) *
+            D.rootSubgroupPoints β K
+              (ofAdd (((torusCharacter s (D.coordinateRoot β))⁻¹ : Kˣ) * b))
+          = D.rootSubgroupPoints β' K (ofAdd a) * D.torusPoints K h *
+              (D.torusPoints K s * D.rootSubgroupPoints β K
+                (ofAdd (((torusCharacter s (D.coordinateRoot β))⁻¹ : Kˣ) * b))) := by
+            simp only [map_mul, mul_assoc]
+      _ = w * D.torusPoints K s := by
+            rw [← D.rootSubgroupPoints_mul_torusPoints]
+            simp only [w, mul_assoc]
+      _ = D.torusPoints K s' * w := hcomm
+      _ = (D.torusPoints K s' * D.rootSubgroupPoints β' K (ofAdd a)) * D.torusPoints K h *
+            D.rootSubgroupPoints β K (ofAdd b) := by
+            simp only [w, mul_assoc]
+      _ = _ := by
+            rw [D.torusPoints_mul_rootSubgroupPoints, D.coordinateRoot_reflectionPerm_self,
+              torusCharacter_neg]
+            simp only [map_mul, mul_assoc]
   -- Uniqueness of the opposite-root–torus–root factorization forces `s' = s` and kills `a, b`.
   obtain ⟨hx', ht, hy'⟩ := D.eq_and_eq_and_eq_of_opposite_mul_torus_mul_eq β hfac
   have hss' : s' = s := by

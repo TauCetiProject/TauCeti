@@ -217,7 +217,7 @@ theorem conj_weylElement_comp_frobenius_comp_self_eq_on_rootTorusSubgroup_typeA1
     F (F x) = D.frobenius p (2 * k) A x := by
   intro F
   have hsq := DFunLike.congr_fun (D.conj_weylElement_comp_frobenius_comp_self A i p k) x
-  have hmem := D.map_frobenius_rootTorusSubgroup_le p (2 * k) A ⟨x, hx, rfl⟩
+  have hmem := D.map_rootTorusSubgroup_frobenius_le p (2 * k) A ⟨x, hx, rfl⟩
   have hcent := DFunLike.congr_fun
     (conj_weylElement_sq_eq_on_rootTorusSubgroup_typeA1 A D i)
     ⟨D.frobenius p (2 * k) A x, hmem⟩

@@ -139,7 +139,7 @@ theorem frobenius_weylElement (γ : Fin t.numRoots) (u : Aˣ) :
   rw [D.map_weylElement (iterateFrobenius A p k) γ u, hu]
 
 /-- Frobenius preserves the root–torus subgroup `D.rootTorusSubgroup A`. -/
-theorem map_frobenius_rootTorusSubgroup_le :
+theorem map_rootTorusSubgroup_frobenius_le :
     (D.rootTorusSubgroup A).map (D.frobenius p k A) ≤ D.rootTorusSubgroup A := by
   rw [Subgroup.map_le_iff_le_comap, D.rootTorusSubgroup_le_iff]
   refine ⟨fun γ u => ?_, fun s => ?_⟩

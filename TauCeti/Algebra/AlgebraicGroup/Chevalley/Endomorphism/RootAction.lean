@@ -28,9 +28,9 @@ with root negation and `g_{-α} = g_α`.
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.rootIndex_eq_and_ringHom_eq_of_torusCharacter_eq`: an
-  injective character map uniquely determines both the target root (including sign) and the field
-  endomorphism.
+* `TauCeti.DynkinType.ChevalleyDatum.rootIndex_eq_and_ringHom_eq_of_torusCharacter_eq`: over an
+  infinite field, an injective character map and a fixed source root jointly determine both the
+  target root (including sign) and the field endomorphism.
 * `TauCeti.DynkinType.ChevalleyDatum.exists_root_and_ringEquiv_of_isStandardEndomorphism`: root
   action `F (x_α(u)) = x_β(c · g(u))` on a single root subgroup.
 * `TauCeti.DynkinType.ChevalleyDatum.exists_rootPerm_of_isStandardEndomorphism`: over an infinite
@@ -86,11 +86,12 @@ private theorem smul_coordinateRoot_eq_of_forall_ringHom_torusCharacter
     {i : Fin t.rank} (hi : D.coordinateRoot α i ≠ 0) :
     D.coordinateRoot α i • φ (D.coordinateRoot β) =
       φ (D.coordinateRoot β) i • D.coordinateRoot α ∧ φ (D.coordinateRoot β) i ≠ 0 := by
-  have hk : ∀ s : Fin t.rank → Kˣ,
-      torusCharacter s (D.coordinateRoot α) = 1 →
-        torusCharacter s (φ (D.coordinateRoot β)) = 1 :=
-    fun s hs => Units.ext <| by simpa only [hs, Units.val_one, map_one] using (hg s).symm
-  have hp := smul_eq_smul_of_torusCharacter_ker_le hk i
+  have hk : (weightChar K (D.coordinateRoot α)).ker ≤
+      (weightChar K (φ (D.coordinateRoot β))).ker := by
+    intro s hs
+    rw [MonoidHom.mem_ker, weightChar_apply] at hs ⊢
+    exact Units.ext <| by simpa only [hs, Units.val_one, map_one] using (hg s).symm
+  have hp := smul_eq_smul_of_weightChar_ker_le hk i
   refine ⟨hp, fun h0 => ?_⟩
   rw [h0, zero_smul] at hp
   have hφβ0 : φ (D.coordinateRoot β) = 0 := (smul_eq_zero.mp hp).resolve_left hi
@@ -291,7 +292,12 @@ theorem exists_rootPerm_of_isStandardEndomorphism {K : Type v} [Field K] [Infini
     Equiv.ofBijective β
       (Finite.injective_iff_bijective.mp
         (D.rootPerm_injective_of_prop (fun α => (hneg_and_g α).1) hprop))
-  exact ⟨π, c, g, hF, hchar, fun α => (hneg_and_g α).1, fun α => (hneg_and_g α).2, hprop⟩
+  exact ⟨π, c, g,
+    fun α u => by simpa only [π, Equiv.coe_ofBijective] using hF α u,
+    fun α s => by simpa only [π, Equiv.coe_ofBijective] using hchar α s,
+    fun α => by simpa only [π, Equiv.coe_ofBijective] using (hneg_and_g α).1,
+    fun α => (hneg_and_g α).2,
+    fun α => by simpa only [π, Equiv.coe_ofBijective] using hprop α⟩
 
 /-- If a based endomorphism maps `x_α` onto `x_{π α}` over a nontrivial commutative ring, then `π`
 preserves the set of positive roots. -/

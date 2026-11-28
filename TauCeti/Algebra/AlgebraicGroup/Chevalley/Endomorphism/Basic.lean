@@ -159,6 +159,26 @@ theorem IsBasedEndomorphism.comp {F G : D.points A →* D.points A}
     obtain ⟨γ, hγ, hmapF⟩ := hF.2 β hβ
     exact ⟨γ, hγ, by rw [← Subgroup.map_map, hmapG, hmapF]⟩⟩
 
+/-- Powers of a standard endomorphism are standard. -/
+theorem IsStandardEndomorphism.pow {F : _root_.Monoid.End (D.points A)}
+    (hF : D.IsStandardEndomorphism A F) (n : ℕ) :
+    D.IsStandardEndomorphism A (HPow.hPow (α := _root_.Monoid.End (D.points A)) F n) := by
+  induction n with
+  | zero => exact D.isStandardEndomorphism_id A
+  | succ n ih =>
+      rw [pow_succ']
+      exact hF.comp ih
+
+/-- Powers of a based endomorphism are based. -/
+theorem IsBasedEndomorphism.pow {F : _root_.Monoid.End (D.points A)}
+    (hF : D.IsBasedEndomorphism A F) (n : ℕ) :
+    D.IsBasedEndomorphism A (HPow.hPow (α := _root_.Monoid.End (D.points A)) F n) := by
+  induction n with
+  | zero => exact D.isBasedEndomorphism_id A
+  | succ n ih =>
+      rw [pow_succ']
+      exact hF.comp ih
+
 /-- Over a nontrivial ring, a standard endomorphism sending `D.torusPoints A` into
 `D.borelSubgroup A` is based if and only if it maps `D.borelSubgroup A` into itself. -/
 theorem isBasedEndomorphism_iff_map_borelSubgroup_le [Nontrivial A]
