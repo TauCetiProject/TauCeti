@@ -14,6 +14,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Data.Fin.Rev
 import Mathlib.Tactic.Abel
+import TauCeti.Data.Finset.Sort
 
 /-!
 # Finite partial sums
@@ -51,6 +52,8 @@ This file contains basic facts about finite partial sums.
   by parts, writing `∑ᵢ yᵢ • xᵢ` through the prefix sums of `x`.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
+* `Antitone.sum_le_prefixSum`: the sum of an antitone tuple over a set of indices is at most its
+  prefix sum of the same length.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a function on a locally finite order whose sums
   over all lower intervals `Iic k` vanish is zero.
 -/
@@ -287,6 +290,21 @@ theorem prefixSum_le_of_sum_le [Preorder M] [IsOrderedCancelAddMonoid M] {k : �
     ← sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ (i : ℕ) < k) y] at hsum
   rw [prefixSum_def, prefixSum_def]
   exact le_of_add_le_add_right (hsum.trans (add_le_add le_rfl htail))
+
+/-- The sum of an antitone tuple over a set of indices is at most its prefix sum of the same
+length. -/
+theorem _root_.Antitone.sum_le_prefixSum [Preorder M] [IsOrderedAddMonoid M] {f : Fin n → M}
+    (hf : Antitone f) (s : Finset (Fin n)) : ∑ i ∈ s, f i ≤ prefixSum #s f := by
+  have hk : #s ≤ n := by simpa using s.card_le_univ
+  let e := s.orderEmbOfFin rfl
+  -- The `j`-th smallest element of `s` is at least `j`.
+  have hle (j : Fin #s) : Fin.castLE hk j ≤ e j := by
+    simpa [Fin.le_iff_val_le_val, e] using s.val_le_val_orderEmbOfFin rfl j
+  calc ∑ i ∈ s, f i = ∑ j : Fin #s, f (e j) := by
+        conv_lhs => rw [← map_orderEmbOfFin_univ s rfl, sum_map]
+        rfl
+    _ ≤ ∑ j : Fin #s, f (Fin.castLE hk j) := sum_le_sum fun j _ ↦ hf (hle j)
+    _ = prefixSum #s f := (prefixSum_eq_sum_castLE hk f).symm
 
 /-- Prefix sums of length `k` only see the coordinates below `k`. -/
 theorem prefixSum_congr {k : ℕ} {x y : Fin n → M} (h : ∀ i : Fin n, (i : ℕ) < k → x i = y i) :

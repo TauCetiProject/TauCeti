@@ -8,11 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import Mathlib.Data.Fin.Tuple.Basic
-public import TauCeti.Algebra.BigOperators.Finset.PartialSum
+public import TauCeti.Algebra.Order.BigOperators.Majorization
 
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Pi
-import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.GroupTheory.Perm.Sign
 
 /-!
@@ -76,6 +74,8 @@ compared by their Ky Fan sums, every symmetric gauge of them is compared at once
   values of the coordinates.
 * `Seminorm.IsSymmetricGauge.ext_of_antitone`: symmetric gauges are determined by their values
   on nonincreasing nonnegative tuples.
+* `TauCeti.weaklyMajorizes_iff_isWeaklyMajorizedBy`: on antitone nonnegative tuples,
+  `IsWeaklyMajorizedBy` is the weak majorization `TauCeti.WeaklyMajorizes` by largest subset sums.
 
 ## References
 
@@ -758,5 +758,13 @@ namespace TauCeti
 theorem IsWeaklyMajorizedBy.apply_le {n : ℕ} {x y : Fin n → ℝ} (h : IsWeaklyMajorizedBy x y)
     {p : Seminorm ℝ (Fin n → ℝ)} (hp : p.IsSymmetricGauge) : p x ≤ p y :=
   hp.apply_le_of_prefixSum_le h.antitone_left h.nonneg_left h.prefixSum_le
+
+/-- On antitone nonnegative tuples, weak majorization by largest subset sums
+(`TauCeti.WeaklyMajorizes`) is `IsWeaklyMajorizedBy`. -/
+theorem weaklyMajorizes_iff_isWeaklyMajorizedBy {n : ℕ} {x y : Fin n → ℝ} (hx : Antitone x)
+    (hy : Antitone y) (hx0 : 0 ≤ x) (hy0 : 0 ≤ y) :
+    WeaklyMajorizes x y ↔ IsWeaklyMajorizedBy x y := by
+  rw [weaklyMajorizes_iff_prefixSum_of_antitone hx hy]
+  exact ⟨fun h ↦ ⟨hx, hy, hx0, hy0, h⟩, fun h ↦ h.prefixSum_le⟩
 
 end TauCeti
