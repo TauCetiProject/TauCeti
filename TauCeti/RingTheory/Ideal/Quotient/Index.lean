@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Index
 import Mathlib.Data.SetLike.Fintype
+import TauCeti.Algebra.Module.Submodule.Quotient
 
 /-!
 # Submodules between a module and an ideal multiple
@@ -29,10 +30,7 @@ theorem finite_Icc_smul {R V : Type*} [CommRing R] [AddCommMonoid V] [Module R V
   let K := I • (⊤ : Submodule R N)
   have := Module.Finite.of_fg hN
   have : Finite (N ⧸ K) := finite_quotient_smul I Module.Finite.fg_top
-  have : Finite (Set.Ici K) := Finite.of_equiv _ K.comapMkQRelIso.toEquiv
-  refine (Set.finite_range fun P : Set.Ici K => P.val.map N.subtype).subset ?_
-  intro M hM
-  refine ⟨⟨M.comap N.subtype, fun x hx => hM.1 ((mem_smul_top_iff I N x).1 hx)⟩, ?_⟩
-  exact (map_comap_subtype N M).trans (inf_eq_right.mpr hM.2)
+  have hK : K.map N.subtype = I • N := by simp only [K, map_smul'', map_subtype_top]
+  exact Set.finite_coe_iff.1 (Finite.of_equiv _ (iccOrderIsoQuotientOfMapEq K hK).symm.toEquiv)
 
 end Submodule

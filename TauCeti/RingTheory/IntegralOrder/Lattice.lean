@@ -7,9 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import TauCeti.LinearAlgebra.Span.ScalarTower
-public import TauCeti.RingTheory.IntegralOrder.Basic
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
-import TauCeti.Algebra.MonoidAlgebra.Trace
 import TauCeti.RingTheory.Ideal.Quotient.Index
 
 /-!
@@ -21,10 +19,6 @@ When the base ring has finite quotients, only finitely many `M` can therefore gi
 same finitely generated `N`. They represent every `Λ`-lattice whose enlarged span is isomorphic
 to `N`, even in a different representation. This is the reduction to an overorder in the
 Jordan–Zassenhaus theorem (I. Reiner, *Maximal Orders*, §26).
-
-For the integral group ring of a finite group, the group order itself is a common denominator
-for all overorders. The regular trace of the product with a group basis element extracts the
-corresponding coefficient multiplied by the group order.
 -/
 
 public section
@@ -47,11 +41,11 @@ theorem finite_setOf_span_eq_of_smul_mem {R A V : Type*} [CommRing R] [Semiring 
   refine ⟨hM ▸ M.smul_restrictScalars_span_le h, ?_⟩
   exact fun x hx => hM ▸ subset_span hx
 
-/-- **Finite fibers up to isomorphism in the reduction to an overorder.** Let `Λ ≤ Γ` be
-subalgebras with `Γ` finite over `R` and contained in the fraction-field span of `Λ`. For each
-finitely generated `Γ`-module `N` inside a representation, there is a finite family of
-`Λ`-submodules spanning `N` which represents every `Λ`-submodule with `Γ`-span isomorphic to `N`.
-The representatives work in every ambient representation. -/
+/-- **Finite fibers up to isomorphism in the reduction to an overorder.** Suppose `R` has finite
+quotients by nonzero ideals. Let `Λ ≤ Γ` be subalgebras with `Γ` finite over `R` and contained in
+the fraction-field span of `Λ`. For each finitely generated `Γ`-module `N` inside a representation,
+there is a finite family of `Λ`-submodules spanning `N` which represents every `Λ`-submodule with
+`Γ`-span isomorphic to `N`. The representatives work in every ambient representation. -/
 theorem exists_finset_representatives_of_span {R K A V : Type*} [CommRing R] [Field K]
     [Algebra R K] [IsFractionRing R K] [Semiring A] [Algebra R A] [Algebra K A]
     [IsScalarTower R K A] [Ring.HasFiniteQuotients R]
@@ -81,24 +75,3 @@ theorem exists_finset_representatives_of_span {R K A V : Type*} [CommRing R] [Fi
   exact ⟨P, hs.mem_toFinset.2 hP, eP⟩
 
 end Submodule
-
-namespace TauCeti.IntegralOrder
-
-/-- Multiplication by the group order takes every integral overorder of `R[G]` into `R[G]`,
-where `R` is integrally closed in its fraction field. -/
-theorem card_smul_mem_groupRingSubalgebra {R K G : Type*} [CommRing R] [Field K] [Algebra R K]
-    [IsFractionRing R K] [IsIntegrallyClosed R] [Group G]
-    {Γ : Subalgebra R (MonoidAlgebra K G)} (hle : groupRingSubalgebra R K G ≤ Γ)
-    (hint : ∀ y ∈ Γ, IsIntegral R y) {x : MonoidAlgebra K G} (hx : x ∈ Γ) :
-    (Nat.card G : R) • x ∈ groupRingSubalgebra R K G := by
-  rcases finite_or_infinite G with hG | hG
-  · apply mem_groupRingSubalgebra.2
-    intro g
-    have ht := toSubmodule_le_dualSubmodule_regularTraceForm (F := K) hint hx
-      _ (hle (single_one_mem_groupRingSubalgebra g⁻¹))
-    rw [MonoidAlgebra.regularTraceForm_apply, mem_one] at ht
-    rw [MonoidAlgebra.coeff_smul, Finsupp.smul_apply, Algebra.smul_def]
-    simpa using ht
-  · simp
-
-end TauCeti.IntegralOrder
