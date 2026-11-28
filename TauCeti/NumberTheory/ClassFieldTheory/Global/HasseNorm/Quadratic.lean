@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
+public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.Algebra.QuadraticAlgebra.Basic
 import Mathlib.Algebra.Ring.Shrink
@@ -35,6 +36,11 @@ every finite and infinite completion to number fields in any universe.
 `exists_sq_sub_five_mul_sq_iff_forall_completion` gives the explicit equation `a = x² - 5y²`
 over `ℚ` and its completions.
 Infinite places remain in the statement, including complex places for a general number field.
+
+Locally, at a finite place `v` of `K` above which `K(√d) / K` is unramified at some place, every
+unit of `K_v` is a value of `x² - d y²` over `K_v`
+(`exists_sq_sub_mul_sq_of_isUnramifiedAt`): the norm maps the units of an unramified extension of
+local fields onto the units.
 
 ## References
 
@@ -114,5 +120,26 @@ theorem exists_sq_sub_five_mul_sq_iff_forall_completion (a : ℚˣ) :
         algebraMap ℚ w.Completion (a : ℚ) = x ^ 2 - 5 * y ^ 2 := by
   simpa using exists_sq_sub_mul_sq_iff_forall_completion
     (K := ℚ) (d := 5) (by norm_num) a
+
+/-- **Local norms of units in an unramified quadratic extension.** Let `L = K(θ)` be a quadratic
+extension of number fields with `θ² = d`, and `v` a finite place of `K` such that `L / K` is
+unramified at some place of `L` above `v`. Then every unit `a` of the completion `K_v` is a value
+`x² - d y²` with `x, y ∈ K_v`. -/
+theorem exists_sq_sub_mul_sq_of_isUnramifiedAt {L : Type*} [Field L] [NumberField L]
+    [Algebra K L] [Algebra.IsQuadraticExtension K L] {θ : L} {d : K}
+    (hθ : θ ∉ Set.range (algebraMap K L)) (hθ2 : θ ^ 2 = algebraMap K L d)
+    {v : HeightOneSpectrum (𝓞 K)}
+    (hU : ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+      Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal)
+    {a : v.adicCompletion K} (ha : Valued.v a = 1) :
+    ∃ x y : v.adicCompletion K, a = x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 := by
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    simp at ha
+  -- `a` is a product of norms from the completions of `L` above `v`, hence a norm from
+  -- `K_v ⊗[K] L`, whose norm form is `x² - d y²`
+  obtain ⟨u, hu, -⟩ := exists_unit_preimages_of_isUnramifiedAt K L v (Units.mk0 a ha0) ha hU
+  have hmem := (mem_range_normUnits_adicCompletion_iff K L v (Units.mk0 a ha0)).2 ⟨u, hu⟩
+  exact (Algebra.mem_range_normUnits_baseChange_iff_exists_sq_sub_mul_sq _ hθ hθ2 _).1 hmem
 
 end TauCeti.ClassFieldTheory
