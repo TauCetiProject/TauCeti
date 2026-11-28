@@ -40,6 +40,14 @@ over the circle (`MappingTorus.proj_comp_map`), restrict to `g` on the fibres at
 `MappingTorus.map_comp`). They are the maps needed to state naturality of constructions on mapping
 tori under commuting squares of monodromies.
 
+A homeomorphism `e : F ≃ₜ G` conjugating `φ` to `ψ`, `e ∘ φ = ψ ∘ e`, induces the homeomorphism
+`MappingTorus.congr e h : MappingTorus φ ≃ₜ MappingTorus ψ`, whose forward map is
+`MappingTorus.map φ ψ e h` (`MappingTorus.coe_congr`) and whose inverse is the map induced by
+`e.symm` (`MappingTorus.congr_symm`). It lies over the circle (`MappingTorus.proj_congr`),
+restricts to `e` on the fibres at height zero (`MappingTorus.congr_incl`), and respects identities
+and composition of conjugacies (`MappingTorus.congr_refl`, `MappingTorus.congr_trans`). In
+particular conjugate monodromies have homeomorphic mapping tori.
+
 The construction follows the standard mapping-torus model, e.g. Hatcher,
 *Algebraic Topology*, Section 2.2.
 -/
@@ -333,6 +341,81 @@ lemma proj_comp_map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
   simp
 
 end Map
+
+section Congr
+
+variable {G : Type*} [TopologicalSpace G] {φ : F ≃ₜ F} {ψ : G ≃ₜ G}
+
+/-- The homeomorphism `[x, t] ↦ [e x, t]` of mapping tori induced by a homeomorphism `e`
+conjugating `φ` to `ψ`, `e ∘ φ = ψ ∘ e`. Its forward map is `MappingTorus.map φ ψ e h`
+(`MappingTorus.coe_congr`) and its inverse is the map induced by `e.symm`
+(`MappingTorus.congr_symm`). -/
+def congr (e : F ≃ₜ G) (h : Function.Semiconj e φ ψ) : MappingTorus φ ≃ₜ MappingTorus ψ where
+  toFun := map φ ψ e h
+  invFun := map ψ φ e.symm (h.inverse_left e.symm_apply_apply e.apply_symm_apply)
+  left_inv z := by
+    have := map_comp φ ψ φ e e.symm h (h.inverse_left e.symm_apply_apply e.apply_symm_apply)
+    simp only [Homeomorph.symm_comp_toContinuousMap, map_id] at this
+    exact DFunLike.congr_fun this z
+  right_inv z := by
+    have := map_comp ψ φ ψ e.symm e (h.inverse_left e.symm_apply_apply e.apply_symm_apply) h
+    simp only [Homeomorph.toContinuousMap_comp_symm, map_id] at this
+    exact DFunLike.congr_fun this z
+  continuous_toFun := (map φ ψ e h).continuous
+  continuous_invFun := (map ψ φ e.symm _).continuous
+
+/-- The homeomorphism induced by a conjugacy `e` has the induced map of `e` as its underlying
+continuous map. -/
+@[simp]
+theorem coe_congr (e : F ≃ₜ G) (h : Function.Semiconj e φ ψ) :
+    (congr e h : C(MappingTorus φ, MappingTorus ψ)) = map φ ψ e h :=
+  (rfl)
+
+/-- The inverse of the homeomorphism induced by a conjugacy `e` is induced by `e.symm`. -/
+@[simp]
+theorem congr_symm (e : F ≃ₜ G) (h : Function.Semiconj e φ ψ) :
+    (congr e h).symm = congr e.symm (h.inverse_left e.symm_apply_apply e.apply_symm_apply) :=
+  (rfl)
+
+/-- The homeomorphism induced by a conjugacy `e` acts on cylinder representatives by `e`. -/
+@[simp]
+theorem congr_mk (e : F ≃ₜ G) (h : Function.Semiconj e φ ψ) (x : F) (t : ℝ) :
+    congr e h (mk φ x t) = mk ψ (e x) t :=
+  (rfl)
+
+/-- The inverse of the homeomorphism induced by a conjugacy `e` acts on cylinder
+representatives by `e.symm`. -/
+theorem congr_symm_mk (e : F ≃ₜ G) (h : Function.Semiconj e φ ψ) (y : G) (t : ℝ) :
+    (congr e h).symm (mk ψ y t) = mk φ (e.symm y) t :=
+  (rfl)
+
+/-- The homeomorphism induced by a conjugacy lies over the circle. -/
+@[simp]
+theorem proj_congr (e : F ≃ₜ G) (h : Function.Semiconj e φ ψ) (z : MappingTorus φ) :
+    proj ψ (congr e h z) = proj φ z :=
+  DFunLike.congr_fun (proj_comp_map φ ψ e h) z
+
+/-- The homeomorphism induced by a conjugacy `e` restricts to `e` on the fibres at height
+zero. -/
+theorem congr_incl (e : F ≃ₜ G) (h : Function.Semiconj e φ ψ) (x : F) :
+    congr e h (incl φ x) = incl ψ (e x) :=
+  (rfl)
+
+/-- The identity conjugacy induces the identity of the mapping torus. -/
+@[simp]
+theorem congr_refl :
+    congr (Homeomorph.refl F) (Function.Semiconj.id_left (ga := φ)) =
+      Homeomorph.refl (MappingTorus φ) :=
+  Homeomorph.ext fun z ↦ DFunLike.congr_fun (map_id φ) z
+
+/-- The homeomorphisms induced by conjugacies respect composition. -/
+@[simp]
+theorem congr_trans {H : Type*} [TopologicalSpace H] {χ : H ≃ₜ H} (e : F ≃ₜ G) (e' : G ≃ₜ H)
+    (h : Function.Semiconj e φ ψ) (h' : Function.Semiconj e' ψ χ) :
+    (congr e h).trans (congr e' h') = congr (e.trans e') (h.trans h') :=
+  Homeomorph.ext fun z ↦ DFunLike.congr_fun (map_comp φ ψ χ e e' h h') z
+
+end Congr
 
 end MappingTorus
 
