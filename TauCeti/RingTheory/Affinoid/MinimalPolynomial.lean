@@ -50,6 +50,8 @@ are retained throughout.
   value of a monic polynomial generating the annihilator of `f`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minpoly_coeff_rpow`: `|f|sup` is the spectral
   value of the minimal polynomial of `f` over an integrally closed domain.
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly`:
+  `|f|sup = spectralValue (minpoly B f)` when `supSeminorm K` agrees with the norm on `B`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_smul_of_isTorsionFree`: scaling `f` by an element `a` of
   `A` whose multiplication scales `|·|sup` on `A` multiplies `|f|sup` by `|a|sup`.
 
@@ -66,7 +68,10 @@ namespace TauCeti.IsAffinoidAlgebra
 open Polynomial
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
+
+section
+
+variable {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
   [Algebra A B] [IsScalarTower K A B]
 
 /-- A root `α` of `p` in a field `Ω` over `A`, whose kernel on `A` is maximal, is the value of
@@ -105,8 +110,9 @@ private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
       (fun s ↦ Algebra.IsIntegral.isIntegral (R := A) s) _ (hcomap ▸ hΩ)
   -- It lies under a classical point of `B`, which is integral over `S`.
   have : Algebra.IsIntegral S B := Algebra.IsIntegral.tower_top A
-  obtain ⟨y, hy⟩ := hB.maximalSpectrumComap_surjective (S.val.restrictScalars K)
-    (fun b ↦ Algebra.IsIntegral.isIntegral (R := S) b) Subtype.val_injective ⟨_, hmax⟩
+  obtain ⟨y, hy⟩ := hB.maximalSpectrumComap_surjective_of_isIntegral_of_ker_le_jacobson
+    (S.val.restrictScalars K) (fun b ↦ Algebra.IsIntegral.isIntegral (R := S) b)
+    (((RingHom.injective_iff_ker_eq_bot _).mp Subtype.val_injective).trans_le bot_le) ⟨_, hmax⟩
   refine ⟨y, ?_⟩
   have hfS : f ∈ S := (AlgHom.mem_range _).mpr ⟨X, aeval_X f⟩
   have hfα : χ ⟨f, hfS⟩ = α := by
@@ -132,9 +138,10 @@ theorem exists_pointNorm_coeff_le_pointNorm_pow (hB : IsAffinoidAlgebra K B)
   have := hp.faithfulSMul_of_dvd hpos hdvd
   -- Compute the point norms at `x` in an algebraic closure `Ω` of the residue field.
   let := Ideal.Quotient.field x.asIdeal
-  have := hB.finite_quotient_of_isIntegral (IsScalarTower.toAlgHom K A B)
-    (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B)
-    x.asIdeal
+  have := hB.finite_quotient_of_isIntegral_of_ker_le (IsScalarTower.toAlgHom K A B)
+    (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) x.asIdeal
+    (((RingHom.injective_iff_ker_eq_bot _).mp (FaithfulSMul.algebraMap_injective A B)).trans_le
+      bot_le)
   let Ω := AlgebraicClosure (A ⧸ x.asIdeal)
   have : Algebra.IsAlgebraic K Ω := Algebra.IsAlgebraic.trans K (A ⧸ x.asIdeal) Ω
   have hker : RingHom.ker (algebraMap A Ω) = x.asIdeal := by
@@ -184,8 +191,10 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
   -- A nonzero element of `A` is not divisible by `p`, so `A` embeds into `B`.
   have := hp.faithfulSMul_of_dvd hpos hdvd
   have hcoeff (a : A) : supSeminorm K (algebraMap A B a) = supSeminorm K a :=
-    hB.supSeminorm_map_of_isIntegral (IsScalarTower.toAlgHom K A B)
-      (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B) a
+    (IsScalarTower.toAlgHom K A B).supSeminorm_map_of_isIntegral_of_ker_le_jacobson
+      (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b)
+      (((RingHom.injective_iff_ker_eq_bot _).mp
+        (FaithfulSMul.algebraMap_injective A B)).trans_le bot_le) a
   refine le_antisymm ?_ (Real.iSup_le (fun i ↦ ?_) (supSeminorm_nonneg f))
   · have h := hB.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero (hp.map (algebraMap A B))
       (f := f) (by rwa [eval_map_algebraMap])
@@ -211,6 +220,26 @@ theorem supSeminorm_eq_iSup_minpoly_coeff_rpow (hB : IsAffinoidAlgebra K B) [IsD
   have hf := Algebra.IsIntegral.isIntegral (R := A) f
   hB.supSeminorm_eq_iSup_coeff_rpow_of_dvd (minpoly.monic hf) (minpoly.aeval A f)
     fun _ ↦ TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hf
+
+end
+
+/-- **Bosch–Güntzer–Remmert, §6.2.1, Proposition 4(iii).**
+Over a complete nontrivially normed ultrametric field `K`, let `A` be an affinoid `K`-algebra
+integral and torsion-free over an integrally closed seminormed domain `B` whose supremum seminorm
+agrees with its norm. Then for every `f : A`, `supSeminorm K f = spectralValue (minpoly B f)`. -/
+theorem supSeminorm_eq_spectralValue_minpoly
+    {B : Type*} [SeminormedCommRing B] [IsDomain B] [IsIntegrallyClosed B] [Algebra K B]
+    {A : Type*} [CommRing A] [Algebra K A] (hA : IsAffinoidAlgebra K A)
+    [Algebra B A] [IsScalarTower K B A] [Module.IsTorsionFree B A] [Algebra.IsIntegral B A]
+    (hB : ∀ b : B, supSeminorm K b = ‖b‖) (f : A) :
+    supSeminorm K f = spectralValue (minpoly B f) := by
+  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := B) f, spectralValue_eq_iSup_fin]
+  simp_rw [hB]
+
+section
+
+variable {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
+  [Algebra A B] [IsScalarTower K A B]
 
 /-- **Multiplicativity of the supremum seminorm under torsion-free integral scalar
 multiplication.** Let `B` be an affinoid algebra which is integral and torsion-free
@@ -249,5 +278,7 @@ theorem supSeminorm_smul_of_isTorsionFree (hB : IsAffinoidAlgebra K B) [IsDomain
   · rw [hB.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := A) f,
       Real.mul_iSup_of_nonneg (supSeminorm_nonneg a)]
     exact congrArg iSup (funext hterm)
+
+end
 
 end TauCeti.IsAffinoidAlgebra

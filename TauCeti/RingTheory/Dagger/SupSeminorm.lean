@@ -71,7 +71,7 @@ norm. -/
 theorem pointNorm_le_norm (x : MaximalSpectrum (W σ)) (f : W σ) : pointNorm K x f ≤ ‖f‖ := by
   obtain ⟨y, rfl⟩ := (maximalSpectrumComap_toTate_bijective (σ := σ) (K := K)).surjective x
   rw [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap, ← norm_toTate]
-  exact isAffinoidAlgebra_tate.pointNorm_le_norm y _
+  exact MaximalSpectrum.pointNorm_le_norm y _
 
 /-- **Maximum modulus principle for overconvergent series.** Every `f ∈ K⟨X₁, …, Xₙ⟩†` attains
 its Gauss norm at a classical point: `|f(x)| = ‖f‖` for some maximal ideal `x`. -/
@@ -110,7 +110,7 @@ theorem pointNorm_map_le_norm {φ : W σ →ₐ[K] A} (hφ : Function.Surjective
     (x : MaximalSpectrum A) (f : W σ) : pointNorm K x (φ f) ≤ ‖f‖ := by
   -- The pullback of `x` is a classical point of `W` at which `f` has the same absolute value.
   have hx : (x.asIdeal.comap φ).IsMaximal := Ideal.comap_isMaximal_of_surjective φ hφ
-  rw [← pointNorm_comap φ x hx]
+  rw [← φ.pointNorm_comap x hx]
   exact pointNorm_le_norm _ f
 
 /-- **The supremum seminorm is bounded by residue norms.** For a surjection `φ : W ↠ A`,

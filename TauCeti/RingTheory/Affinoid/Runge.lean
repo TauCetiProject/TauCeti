@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.Subdomain.Laurent
 public import TauCeti.RingTheory.Affinoid.Subdomain.Preimage
 
+import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Affinoid.Restricted.Perturbation
 

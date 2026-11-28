@@ -367,7 +367,7 @@ theorem comap_ker_reductionMap_eq_radical (f : A →ₐ[K] B) (hA : IsAffinoidAl
     have hfb : f b = f ((a : A) ^ n) := by simpa [g] using congr_arg Subtype.val hbn
     -- The element `b` has `|b|sup ≤ ‖b‖ < 1`, and `a ^ n - b` lies in the kernel of `f`.
     have hbsup : supSeminorm K b < 1 :=
-      (hA.supSeminorm_le_norm b).trans_lt (mem_ball_zero_iff.mp hb)
+      (supSeminorm_le_norm b).trans_lt (mem_ball_zero_iff.mp hb)
     have hbA : b ∈ powerBoundedSubring A := mem_powerBoundedSubring.mpr <|
       hA.isPowerBounded_iff_supSeminorm_le_one.mpr hbsup.le
     refine ⟨n, ?_⟩
@@ -451,7 +451,7 @@ theorem bijective_reductionMap_of_surjective_of_ker_le_nilradical (f : A →ₐ[
     (hker : RingHom.ker f ≤ nilradical A) :
     Function.Bijective (f.reductionMap hA hB) := by
   have hsup (a : A) : supSeminorm K (f a) = supSeminorm K a :=
-    supSeminorm_map_of_ker_le_nilradical hf hker a
+    supSeminorm_map_of_surjective_of_ker_le_nilradical hf hker a
   refine ⟨(f.injective_reductionMap_iff_supSeminorm_eq hA hB).mpr hsup, fun y ↦ ?_⟩
   obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
   obtain ⟨a, ha⟩ := hf b

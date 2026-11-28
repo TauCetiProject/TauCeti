@@ -1,0 +1,102 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
+public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+public import Mathlib.RingTheory.Jacobson.Ideal
+public import Mathlib.RingTheory.Spectrum.Maximal.Basic
+
+import Mathlib.RingTheory.Ideal.GoingUp
+
+/-!
+# Maximal spectra of integral ring extensions
+
+An integral ring homomorphism `f : A →+* B` contracts maximal ideals of `B` to maximal ideals
+of `A`, inducing `MaximalSpectrum.comapOfIsIntegral`. When the kernel of `f` is contained in the
+Jacobson radical of `A` (in particular, when `f` is injective or has nilpotent kernel), lying-over
+ensures that every maximal ideal of `A` lies under a maximal ideal of `B`, so `comapOfIsIntegral`
+is surjective (`MaximalSpectrum.comapOfIsIntegral_surjective_of_ker_le_jacobson`).
+
+## Main definitions
+
+* `MaximalSpectrum.comapOfIsIntegral`: the map `MaximalSpectrum B → MaximalSpectrum A` induced by
+  an integral ring homomorphism `f : A →+* B`.
+
+## Main results
+
+* `MaximalSpectrum.comapOfIsIntegral_asIdeal`:
+  `(comapOfIsIntegral f hf y).asIdeal = y.asIdeal.comap f`.
+* `MaximalSpectrum.comapOfIsIntegral_id`, `MaximalSpectrum.comapOfIsIntegral_comp`, and
+  `MaximalSpectrum.comapOfIsIntegral_comp_apply`: identity and contravariant composition laws for
+  `comapOfIsIntegral`.
+* `MaximalSpectrum.mem_range_comapOfIsIntegral_iff`: a maximal ideal of `A` lies in the image of
+  `comapOfIsIntegral f hf` if and only if it contains `RingHom.ker f`.
+* `MaximalSpectrum.comapOfIsIntegral_surjective_of_ker_le_jacobson`: if
+  `RingHom.ker f ≤ Ideal.jacobson ⊥`, then `comapOfIsIntegral f hf` is surjective.
+-/
+
+public section
+
+namespace MaximalSpectrum
+
+variable {A B : Type*} [CommRing A] [CommRing B]
+
+/-- Contraction on maximal spectra induced by an integral ring homomorphism `f : A →+* B`. -/
+def comapOfIsIntegral (f : A →+* B) (hf : f.IsIntegral) :
+    MaximalSpectrum B → MaximalSpectrum A :=
+  fun y ↦ ⟨y.asIdeal.comap f, Ideal.isMaximal_comap_of_isIntegral_of_isMaximal f hf y.asIdeal⟩
+
+@[simp]
+theorem comapOfIsIntegral_asIdeal (f : A →+* B) (hf : f.IsIntegral) (y : MaximalSpectrum B) :
+    (comapOfIsIntegral f hf y).asIdeal = y.asIdeal.comap f :=
+  (rfl)
+
+@[simp]
+theorem comapOfIsIntegral_id (A : Type*) [CommRing A]
+    (h : (RingHom.id A).IsIntegral := fun _ ↦ RingHom.isIntegralElem_map (RingHom.id A)) :
+    comapOfIsIntegral (RingHom.id A) h = id := by
+  funext x
+  exact MaximalSpectrum.ext (Ideal.comap_id x.asIdeal)
+
+@[simp]
+theorem comapOfIsIntegral_comp {C : Type*} [CommRing C] (f : A →+* B) (hf : f.IsIntegral)
+    (g : B →+* C) (hg : g.IsIntegral) :
+    comapOfIsIntegral f hf ∘ comapOfIsIntegral g hg =
+      comapOfIsIntegral (g.comp f) (RingHom.IsIntegral.trans f g hf hg) := by
+  funext x
+  exact MaximalSpectrum.ext (Ideal.comap_comap f g)
+
+@[simp]
+theorem comapOfIsIntegral_comp_apply {C : Type*} [CommRing C] (f : A →+* B) (hf : f.IsIntegral)
+    (g : B →+* C) (hg : g.IsIntegral) (x : MaximalSpectrum C) :
+    comapOfIsIntegral f hf (comapOfIsIntegral g hg x) =
+      comapOfIsIntegral (g.comp f) (RingHom.IsIntegral.trans f g hf hg) x :=
+  MaximalSpectrum.ext (Ideal.comap_comap f g)
+
+/-- A maximal ideal `x` of `A` lies in the image of `comapOfIsIntegral f hf` if and only if
+`x.asIdeal` contains `RingHom.ker f`. -/
+theorem mem_range_comapOfIsIntegral_iff (f : A →+* B) (hf : f.IsIntegral)
+    {x : MaximalSpectrum A} :
+    x ∈ Set.range (comapOfIsIntegral f hf) ↔ RingHom.ker f ≤ x.asIdeal := by
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨y, rfl⟩ a ha
+    rw [comapOfIsIntegral_asIdeal, Ideal.mem_comap, RingHom.mem_ker.mp ha]
+    exact y.asIdeal.zero_mem
+  · algebraize [f]
+    let _ : Algebra.IsIntegral A B := ⟨hf⟩
+    obtain ⟨m, hm, hmcomap⟩ := Ideal.exists_ideal_over_maximal_of_isIntegral x.asIdeal hx
+    exact ⟨⟨m, hm⟩, MaximalSpectrum.ext hmcomap⟩
+
+/-- If an integral ring homomorphism `f : A →+* B` has kernel contained in the Jacobson radical
+`Ideal.jacobson (⊥ : Ideal A)`, then its contraction map `comapOfIsIntegral f hf` on maximal
+spectra is surjective. -/
+theorem comapOfIsIntegral_surjective_of_ker_le_jacobson (f : A →+* B) (hf : f.IsIntegral)
+    (hker : RingHom.ker f ≤ Ideal.jacobson (⊥ : Ideal A)) :
+    Function.Surjective (comapOfIsIntegral f hf) :=
+  fun x ↦ (mem_range_comapOfIsIntegral_iff f hf).mpr (hker.trans (sInf_le ⟨bot_le, x.isMaximal⟩))
+
+end MaximalSpectrum

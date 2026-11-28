@@ -110,7 +110,7 @@ private theorem supSeminorm_le_one (J : Ideal (W σ)) {S : Type*}
       Subtype.ext ((coe_ofRestricted hr _ x).trans (coe_X (R := K) i).symm)
     have hφ : φ x = e (Ideal.Quotient.mk J (X σ K i)) := by simp [φ, hx]
     have h1 := hT.supSeminorm_map_le hS φ x
-    have h2 := hT.supSeminorm_le_norm x
+    have h2 := TauCeti.supSeminorm_le_norm (K := K) x
     rw [_root_.MvPowerSeries.norm_X] at h2
     rw [hφ] at h1
     calc _ ≤ (‖c‖ ^ (m : ℝ)⁻¹) ^ m := pow_le_pow_left₀ (supSeminorm_nonneg _) (h1.trans h2) m

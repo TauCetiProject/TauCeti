@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.Restricted
 
 import TauCeti.RingTheory.Affinoid.ContractiveRenorming
+import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Polynomial

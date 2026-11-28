@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.RingTheory.Localization.BaseChange
+public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.Localization.Basic
 
@@ -16,6 +18,11 @@ Let `K` be a localization of `R` and let `A` be an `R`-algebra. Mathlib's
 `IsLocalization.linearMap_compatibleSMul` says that an `R`-linear map between `K`-modules is
 automatically `K`-linear. This file records the analogue for the ring `K ⊗[R] A`: on modules where
 `q ⊗ₜ a` acts as `q • a • _`, every `A`-linear map is `K ⊗[R] A`-linear.
+
+When `A` is an injective localization of `R` (in particular, a total ring of fractions) and `M` is
+a torsion-free `R`-module, the map `m ↦ 1 ⊗ₜ m : M →ₗ[R] A ⊗[R] M` is injective without requiring
+`M` to be flat over `R`; for a torsion-free `R`-algebra `B`, the right inclusion
+`B →ₐ[R] A ⊗[R] B` is therefore injective.
 
 Localizing the first factor of a tensor product localizes the tensor product: if `B` is a
 localization of `A` at `M`, then `B ⊗[R] S` is the localization of `A ⊗[R] S` at the image of `M`.
@@ -37,6 +44,11 @@ of a finite sum of elementary tensors.
 * `TauCeti.IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq`: if `B` is a localization
   of `A` at `M`, then `B ⊗[R] S` is the localization of `A ⊗[R] S` at the image of `M`, along the
   map induced by `A → B`.
+* `Algebra.TensorProduct.mk_one_injective_of_isLocalization_of_injective`: injectivity of
+  `m ↦ 1 ⊗ₜ[R] m` for an injective localization and a torsion-free `R`-module.
+* `Algebra.TensorProduct.includeRight_injective_of_isLocalization_of_injective` and
+  `Algebra.TensorProduct.includeRight_injective_of_isFractionRing`: injectivity of
+  `B →ₐ[R] A ⊗[R] B` for an injective localization or fraction ring and a torsion-free `R`-algebra.
 * `IsLocalization.Away.tensorProductEquivTMulRight_one_tmul`: the base-change isomorphism on
   elements `1 ⊗ₜ z` is the induced map of localizations.
 * `TensorProduct.exists_eq_inv_natCast_tmul`: every element of `ℚ ⊗[ℤ] M` is an elementary
@@ -85,6 +97,43 @@ theorem tensorProduct_tensorProduct_of_algebraMap_eq (R : Type*) [CommSemiring R
   exact _root_.IsLocalization.tensorProduct_tensorProduct R S M B (by ext; simp [H])
 
 end TauCeti.IsLocalization
+
+open scoped TensorProduct in
+/-- Tensoring a torsion-free `R`-module `M` on the left with an injective localization `A` of a
+commutative semiring `R` at `S` gives an injective map `m ↦ 1 ⊗ₜ[R] m : M →ₗ[R] A ⊗[R] M`.
+Unlike flatness-based criteria, `M` need not be flat over `R`. -/
+theorem Algebra.TensorProduct.mk_one_injective_of_isLocalization_of_injective {R : Type*}
+    [CommSemiring R] (S : Submonoid R) {A M : Type*} [CommSemiring A] [Algebra R A]
+    [IsLocalization S A] [AddCommMonoid M] [Module R M] [Module.IsTorsionFree R M]
+    (ha : Function.Injective (algebraMap R A)) :
+    Function.Injective (TensorProduct.mk R A M 1) :=
+  (IsLocalizedModule.injective_iff_isRegular S (TensorProduct.mk R A M 1)).mpr fun c ↦
+    ((IsLocalization.injective_iff_isRegular S).mp ha c).isSMulRegular
+
+open scoped TensorProduct in
+/-- Tensoring a torsion-free `R`-algebra `B` on the left with an injective localization `A` of a
+commutative semiring `R` at `S` gives an injective right inclusion `B →ₐ[R] A ⊗[R] B`. Unlike
+`Algebra.TensorProduct.includeRight_injective`, `B` need not be flat over `R`. -/
+theorem Algebra.TensorProduct.includeRight_injective_of_isLocalization_of_injective {R : Type*}
+    [CommSemiring R] (S : Submonoid R) {A B : Type*} [CommSemiring A] [Algebra R A]
+    [IsLocalization S A] [Semiring B] [Algebra R B] [Module.IsTorsionFree R B]
+    (ha : Function.Injective (algebraMap R A)) :
+    Function.Injective (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) := by
+  intro b₁ b₂ h
+  apply mk_one_injective_of_isLocalization_of_injective S (A := A) (M := B) ha
+  rwa [TensorProduct.mk_apply, TensorProduct.mk_apply,
+    ← Algebra.TensorProduct.includeRight_apply, ← Algebra.TensorProduct.includeRight_apply]
+
+open scoped TensorProduct nonZeroDivisors in
+/-- Tensoring a torsion-free `R`-algebra `B` on the left with a total ring of fractions `A` of a
+commutative ring `R` gives an injective right inclusion `B →ₐ[R] A ⊗[R] B`. Unlike
+`Algebra.TensorProduct.includeRight_injective`, `B` need not be flat over `R`. -/
+theorem Algebra.TensorProduct.includeRight_injective_of_isFractionRing {R A B : Type*}
+    [CommRing R] [CommSemiring A] [Algebra R A] [IsFractionRing R A] [Semiring B]
+    [Algebra R B] [Module.IsTorsionFree R B] :
+    Function.Injective (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) :=
+  includeRight_injective_of_isLocalization_of_injective R⁰
+    (IsLocalization.injectiveₛ A (M := R⁰) fun _ hx ↦ isRegular_iff_mem_nonZeroDivisors.mpr hx)
 
 namespace IsLocalization.Away
 
