@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.Analytic.ConvergenceRadius
 public import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
+public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 /-!
 # The Gelfand radius: idempotents, nonunital elements, and power series
 
 The Gelfand radius `gelfandRadius a` of an element of a normed ring is the limit of
-`‖a ^ k‖ ^ (1 / k)`. A nonzero idempotent has Gelfand radius one, whatever its norm, since all
+`‖a ^ k‖ ^ (1 / k)`. The powers of `a` tend to zero exactly when its Gelfand radius is less
+than one. A nonzero idempotent has Gelfand radius one, whatever its norm, since all
 of its positive powers coincide with it.
 
 In a unital complex Banach algebra, Gelfand's spectral radius formula implies that if
@@ -35,6 +37,8 @@ of `∑ p.coeff k • (a - z₀ 1) ^ k` whenever `spectrum ℂ a ⊆ Metric.ebal
 
 ## Main results
 
+* `TauCeti.isTopologicallyNilpotent_iff_gelfandRadius_lt_one`: powers tend to zero exactly
+  when the Gelfand radius is less than one.
 * `IsIdempotentElem.gelfandRadius_eq_one`: a nonzero idempotent has Gelfand radius one.
 * `IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse`: a lower bound on the Gelfand radius
   of elements of the corner `p R p`.
@@ -170,6 +174,24 @@ theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [Norme
 end FormalMultilinearSeries
 
 namespace TauCeti
+
+/-- In a seminormed ring, the powers of an element tend to zero exactly when its Gelfand radius
+is strictly less than one. -/
+theorem isTopologicallyNilpotent_iff_gelfandRadius_lt_one {A : Type*} [SeminormedRing A]
+    (a : A) : IsTopologicallyNilpotent a ↔ gelfandRadius a < 1 := by
+  rw [IsTopologicallyNilpotent, tendsto_zero_iff_norm_tendsto_zero]
+  constructor
+  · intro h
+    have hsmall : ∀ᶠ n : ℕ in atTop, ‖a ^ n‖ < 1 := h.eventually_lt_const one_pos
+    obtain ⟨n, hn, hnorm⟩ := (eventually_ne_atTop 0 |>.and hsmall).exists
+    exact (pow_lt_one_iff_of_nonneg (gelfandRadius_nonneg a) hn).1
+      ((gelfandRadius_pow_le_norm_pow a hn).trans_lt hnorm)
+  · intro h
+    obtain ⟨r, hr, hr₁⟩ := exists_between h
+    obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt a hr
+    have hr₀ := (gelfandRadius_nonneg a).trans hr.le
+    have hlim := (tendsto_pow_atTop_nhds_zero_of_lt_one hr₀ hr₁).const_mul C
+    exact squeeze_zero (fun n ↦ norm_nonneg (a ^ n)) hC (by simpa using hlim)
 
 /-- If `spectrum ℂ a` lies in the open extended ball `Metric.eball z₀ r` and `r` does not exceed
 the convergence radius of a formal power series `p : FormalMultilinearSeries ℂ ℂ ℂ`, then
