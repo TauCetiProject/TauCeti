@@ -46,6 +46,19 @@ base set of a trivialization `t` and the model fibre `F`, given by
 def fiberIso (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) : p.fiber x ≅ F :=
   isoOfHomeo (t.preimageSingletonHomeomorph hx)
 
+/-- Evaluating `(t.fiberIso hx).hom` at a fibre point returns its model-fibre coordinate in `t`. -/
+@[simp]
+theorem fiberIso_hom_apply (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet)
+    (y : p.fiber x) : (t.fiberIso hx).hom y = (t y).2 :=
+  (rfl)
+
+/-- Evaluating `(t.fiberIso hx).inv` at a model-fibre point gives
+`t.toOpenPartialHomeomorph.symm (x, f)` in `E`. -/
+@[simp]
+theorem coe_fiberIso_inv_apply (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet)
+    (f : F) : ((t.fiberIso hx).inv f : E) = t.toOpenPartialHomeomorph.symm (x, f) :=
+  congrArg Subtype.val (t.preimageSingletonHomeomorph_symm_apply hx f)
+
 /-- The inclusion `f ↦ t⁻¹(x, f)` of the model fibre `F` into `E` as the fibre of `p` over a point
 `x` of the base set of a trivialization `t` of `p`. -/
 def fiberInclusion (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) : F ⟶ E :=
@@ -61,8 +74,7 @@ theorem fiberIso_inv_comp_fiberι (t : Bundle.Trivialization F p) {x : B} (hx : 
 @[simp]
 theorem fiberInclusion_apply (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) (f : F) :
     t.fiberInclusion hx f = t.toOpenPartialHomeomorph.symm (x, f) := by
-  rw [fiberInclusion, ConcreteCategory.comp_apply, Hom.fiberι_apply]
-  exact congrArg Subtype.val (t.preimageSingletonHomeomorph_symm_apply hx f)
+  rw [fiberInclusion, ConcreteCategory.comp_apply, Hom.fiberι_apply, coe_fiberIso_inv_apply]
 
 /-- The fibre inclusion of a trivialization lies over the constant map at `x`. -/
 @[reassoc (attr := simp)]

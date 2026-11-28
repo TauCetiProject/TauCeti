@@ -17,8 +17,8 @@ Khovanov complex `⟦D⟧ʲ = TauCeti.PDCode.khovanovBracket D hD R j` is the si
 the degree-`j` cube of resolutions, whose vertex `S` is the degree `j - |S|` piece of the circle
 tensor of the resolution of `S`. These pieces are finite free, so `⟦D⟧ʲ` is a complex of finite
 free modules concentrated in the cochain degrees `0, …, n`. By Euler–Poincaré for cubes, over a
-Noetherian ring with the rank-nullity property (such as `ℤ` or a field) the Euler characteristic of
-the cohomology of `⟦D⟧ʲ` is `∑ S, (-1) ^ |S| rank V(S)_{j - |S|}`.
+commutative ring with the rank-nullity property (such as `ℤ` or a field) the Euler characteristic
+of the cohomology of `⟦D⟧ʲ` is `∑ S, (-1) ^ |S| rank V(S)_{j - |S|}`.
 
 For an oriented code with `n₊` positive and `n₋` negative crossings, the normalized Khovanov
 complex in bidegree `(i, j)` is `⟦D⟧` in bidegree `(i + n₋, j - n₊ + 2 n₋)`. Comparing with the
@@ -112,13 +112,13 @@ theorem eulerChar_khovanovBracket [Nontrivial R] :
   refine Finset.sum_congr rfl fun S _ ↦ ?_
   rw [resolutionCube_obj]
 
-/-- **Euler–Poincaré for the unnormalized Khovanov complex.** Over a Noetherian commutative ring
-with the rank-nullity property, such as `ℤ` or a field, the Euler characteristic of the cohomology
-of the degree-`j` component of the unnormalized Khovanov complex of a planar code is the sum over
-the vertices `S` of the cube of resolutions of the rank of the degree `j - |S|` piece of the
-circle tensor of the resolution of `S`, with sign `(-1) ^ |S|`. Over `ℤ` the rank of a cohomology
-group is the rank of its free part, so torsion does not contribute. -/
-theorem homologyEulerChar_khovanovBracket [IsNoetherianRing R] [HasRankNullity.{u} R] :
+/-- **Euler–Poincaré for the unnormalized Khovanov complex.** Over a commutative ring with the
+rank-nullity property, such as `ℤ` or a field, the Euler characteristic of the cohomology of the
+degree-`j` component of the unnormalized Khovanov complex of a planar code is the sum over the
+vertices `S` of the cube of resolutions of the rank of the degree `j - |S|` piece of the circle
+tensor of the resolution of `S`, with sign `(-1) ^ |S|`. Over `ℤ` the rank of a cohomology group
+is the rank of its free part, so torsion does not contribute. -/
+theorem homologyEulerChar_khovanovBracket [HasRankNullity.{u} R] :
     (D.khovanovBracket hD R j).homologyEulerChar = ∑ S : Finset (Fin n),
       ((#S : ℤ).negOnePow : ℤ) *
         finrank R ((Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState S))).piece
@@ -132,13 +132,13 @@ end PDCode
 namespace OrientedPDCode
 
 variable (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
-  [IsNoetherianRing R] [HasRankNullity.{u} R] (j : ℤ)
+  [HasRankNullity.{u} R] (j : ℤ)
 
 /-- **The enhanced state sum as the Euler characteristic of Khovanov cohomology.** For a planar
 oriented code with `n₊` positive and `n₋` negative crossings, the coefficient of `q ^ j` of the
 enhanced state sum is `(-1) ^ n₋` times the Euler characteristic of the cohomology of the
-unnormalized Khovanov complex in quantum degree `j - n₊ + 2 n₋`, computed over any Noetherian
-commutative ring with the rank-nullity property, such as `ℤ` or a field. -/
+unnormalized Khovanov complex in quantum degree `j - n₊ + 2 n₋`, computed over any commutative
+ring with the rank-nullity property, such as `ℤ` or a field. -/
 theorem coeff_enhancedStateSum_eq_homologyEulerChar_khovanovBracket :
     D.enhancedStateSum.coeff j = ((D.negativeCrossingCount : ℤ).negOnePow : ℤ) *
       (D.toPDCode.khovanovBracket hD R
@@ -159,8 +159,8 @@ theorem coeff_enhancedStateSum_eq_homologyEulerChar_khovanovBracket :
 planar oriented code with `n₊` positive and `n₋` negative crossings, the coefficient of `q ^ j` of
 `(q + q⁻¹)` times the Jones polynomial at `t ^ (1/2) = -q` is `(-1) ^ n₋` times the Euler
 characteristic of the cohomology of the unnormalized Khovanov complex in quantum degree
-`j - n₊ + 2 n₋`, computed over any Noetherian commutative ring with the rank-nullity property,
-such as `ℤ` or a field. The hypothesis `0 < componentCount` says that the diagram is nonempty. -/
+`j - n₊ + 2 n₋`, computed over any commutative ring with the rank-nullity property, such as `ℤ` or
+a field. The hypothesis `0 < componentCount` says that the diagram is nonempty. -/
 theorem coeff_mul_eval₂_jonesPolynomial_eq_homologyEulerChar_khovanovBracket
     (h : 0 < D.toPDCode.componentCount) :
     ((T 1 + T (-1)) * eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) D.jonesPolynomial).coeff j =

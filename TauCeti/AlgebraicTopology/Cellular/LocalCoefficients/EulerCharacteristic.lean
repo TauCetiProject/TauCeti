@@ -18,8 +18,11 @@ import TauCeti.Algebra.Homology.ModuleCat.Noetherian
 Let `L` be a local coefficient system on a CW complex `C` whose fibres are finitely generated
 modules. The cellular chain group `Hₙ(Xⁿ, Xⁿ⁻¹; L)` is the direct sum of the fibres of `L` at the
 centres of the `n`-cells (`TauCeti.twistedCellularChainGroupIso`), so it is finitely generated
-when there are finitely many `n`-cells, and its rank is `#(n-cells) · r` when every fibre is free
-of rank `r` (over a ring with the strong rank condition). Through the comparison of cellular and
+when there are finitely many `n`-cells, and its `finrank` is `#(n-cells) · r` when every fibre is
+free of `finrank` `r` (over a ring with the strong rank condition,
+`TauCeti.finrank_twistedCellularChainGroup`) or when every fibre is finitely generated of `finrank`
+`r` over a ring satisfying the strong rank condition and rank--nullity
+(`TauCeti.finrank_twistedCellularChainGroup_of_finite`). Through the comparison of cellular and
 singular homology with local coefficients (`TauCeti.twistedCellularSingularHomologyIso`), this
 gives, as for constant coefficients:
 
@@ -28,30 +31,38 @@ gives, as for constant coefficients:
 * over any ring, `Hₙ(C; L)` vanishes in every degree without cells;
 * over a ring satisfying the strong rank condition and rank--nullity (such as a division ring or
   a commutative domain), for a finite CW complex and a system of finitely generated fibres all of
-  rank `r`, the alternating sum of the dimensions of `Hᵢ(C; L)` is `r` times the alternating count
-  of the cells (Euler--Poincaré).
+  `finrank` `r`, the alternating sum of the finranks of `Hᵢ(C; L)` is `r` times the alternating
+  count of the cells (Euler--Poincaré).
 
 Homology with local coefficients is a homotopy invariant
-(`ContinuousMap.HomotopyEquiv.isIso_twistedHomologyMap`), so the same holds for every space `X` of
-finite CW type: `Hₙ(X; L)` is finitely generated, vanishes in all large degrees, and its
-alternating sum of dimensions is `r · χ(X)`, with `χ(X)` the Euler characteristic
-`TauCeti.eulerChar X`. A local system has isomorphic fibres along each path, so a system on a
-path-connected space has constant rank, the dimension of any one fibre. For a system of rank one,
-such as the orientation system of a real vector bundle with coefficients in a field, the twisted
-Euler characteristic is therefore the ordinary one.
+(`ContinuousMap.HomotopyEquiv.isIso_twistedHomologyMap`), so the same three conclusions pass to
+every space `X` of finite CW type: `Hₙ(X; L)` vanishes unconditionally in all large degrees; over
+a noetherian ring with finitely generated fibres, `Hₙ(X; L)` is finitely generated in every degree;
+and over a ring satisfying the strong rank condition and rank--nullity, for a system of finitely
+generated fibres all of `finrank` `r`, the alternating sum of the finranks of `Hᵢ(X; L)` is
+`r · χ(X)`, with `χ(X)` the Euler characteristic `TauCeti.eulerChar X`. A local system has
+isomorphic fibres along each path, so a system on a path-connected space has constant `finrank`,
+the `finrank` of any one fibre. For a system of `finrank` one, such as the orientation system of a
+real vector bundle with coefficients in a field, the twisted Euler characteristic is therefore the
+ordinary one.
 
 Compact Hausdorff boundaryless smooth manifolds with a finite-dimensional model have finite CW
 type (`TauCeti.FiniteCWType.of_isManifold`), so these results apply to the homology of such a
-manifold with coefficients in any local system. Mathematically, this includes homology twisted by
-the orientation system of a vector bundle over the manifold, a local system that this file does
-not construct. Twisted homology of this kind is what the Thom isomorphism of a nonorientable bundle
-produces, for instance the contribution of a critical submanifold of a Morse--Bott function, so its
-dimensions are finite.
+manifold with coefficients in a local system: unconditionally for eventual vanishing, over a
+noetherian ring with finitely generated fibres for degreewise finite generation, and over a ring
+satisfying the strong rank condition and rank--nullity with finitely generated fibres of constant
+`finrank` for Euler--Poincaré. Mathematically, this includes homology twisted by the orientation
+system of a vector bundle over the manifold, a local system that this file does not construct.
+Twisted homology of this kind is what the Thom isomorphism of a nonorientable bundle produces, for
+instance the contribution of a critical submanifold of a Morse--Bott function, so over a noetherian
+ring (such as a field) its homology groups are finitely generated of finite `finrank`.
 
 ## Main results
 
-* `TauCeti.finrank_twistedCellularChainGroup`: the rank of the cellular chain group with local
-  coefficients whose fibres are free of constant rank `r` is `#(n-cells) · r`.
+* `TauCeti.finrank_twistedCellularChainGroup` and
+  `TauCeti.finrank_twistedCellularChainGroup_of_finite`: the `finrank` of the cellular chain group
+  with local coefficients whose fibres are free (or finitely generated, under rank--nullity) of
+  constant `finrank` `r` is `#(n-cells) · r`.
 * `TauCeti.finite_twistedHomology_complexBasePair`,
   `TauCeti.isZero_twistedHomology_complexBasePair_of_isEmpty_cell` and
   `TauCeti.eventually_isZero_twistedHomology_complexBasePair`: finite generation and vanishing of
@@ -179,10 +190,22 @@ variable {k : Type u} [Ring k] [StrongRankCondition k] [HasRankNullity.{max w v}
   (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of C))
   [∀ x, Module.Finite k (L.obj x)] {r : ℕ}
 
+/-- For a local system `L` of finitely generated modules whose fibres all have `finrank` `r` over a
+ring satisfying the strong rank condition and rank--nullity, if there are finitely many `n`-cells
+then the cellular chain group with coefficients in `L` in degree `n` has `finrank`
+`#(n-cells) · r`. -/
+theorem finrank_twistedCellularChainGroup_of_finite (hL : ∀ x, finrank k (L.obj x) = r)
+    (n : ℕ) [Finite (cell C n)] :
+    finrank k (twistedCellularChainGroup C L n) = Nat.card (cell C n) * r := by
+  let _ : Fintype (cell C n) := Fintype.ofFinite (cell C n)
+  rw [(twistedCellularChainGroupIso C L n).toLinearEquiv.finrank_eq,
+    ModuleCat.finrank_sigma _ fun _ ↦ Module.rank_lt_aleph0 _ _]
+  simp [hL, Nat.card_eq_fintype_card]
+
 /-- **Euler--Poincaré for cellular chains with local coefficients.** For a finite relative CW
-complex and a local system of finitely generated modules whose fibres all have rank `r` over a ring
-satisfying the strong rank condition and rank--nullity, the alternating sum of the ranks of the
-cellular homology groups is `r` times the alternating count of the cells. -/
+complex and a local system of finitely generated modules whose fibres all have `finrank` `r` over a
+ring satisfying the strong rank condition and rank--nullity, the alternating sum of the finranks of
+the cellular homology groups is `r` times the alternating count of the cells. -/
 theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
     (hL : ∀ x, finrank k (L.obj x) = r) :
     (twistedCellularChainComplex C L).homologyEulerChar = r * cwEulerChar C := by
@@ -194,22 +217,18 @@ theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
       have : IsEmpty (cell C n) := hn
       isZero_twistedCellularChainComplex_X C L n
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
-      ((twistedCellularChainComplex C L).finite_not_isZero_X_of_eventually_isZero hzero),
+      (Filter.eventually_cofinite.mp (by rwa [Nat.cofinite_eq_atTop])),
     ChainComplex.eulerChar_eq_finsum_finrank, cwEulerChar_def, mul_finsum]
   refine finsum_congr fun i ↦ ?_
   have := FiniteType.finite_cell (C := C) (D := D) i
-  let _ := Fintype.ofFinite (cell C i)
-  rw [twistedCellularChainComplex_X,
-    (twistedCellularChainGroupIso C L i).toLinearEquiv.finrank_eq,
-    ModuleCat.finrank_sigma _ fun _ ↦ Module.rank_lt_aleph0 _ _]
-  simp only [hL, Finset.sum_const, Finset.card_univ, smul_eq_mul, ← Nat.card_eq_fintype_card]
+  rw [twistedCellularChainComplex_X, finrank_twistedCellularChainGroup_of_finite C L hL i]
   push_cast
   ring
 
 /-- **Euler--Poincaré for relative homology with local coefficients.** For a finite relative CW
-complex and a local system of finitely generated modules whose fibres all have rank `r` over a ring
-satisfying the strong rank condition and rank--nullity, the alternating sum of the ranks of the
-relative homology groups is `r` times the alternating count of the relative cells. -/
+complex and a local system of finitely generated modules whose fibres all have `finrank` `r` over a
+ring satisfying the strong rank condition and rank--nullity, the alternating sum of the finranks of
+the relative homology groups is `r` times the alternating count of the relative cells. -/
 theorem finsum_finrank_twistedHomology_complexBasePair [RelCWComplex.Finite C]
     (hL : ∀ x, finrank k (L.obj x) = r) :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k ((complexBasePair C).twistedHomology L i) =
@@ -245,7 +264,7 @@ lemma twistedHomologyIsoComplexBasePair_hom (n : ℕ) :
   rw [twistedHomologyIsoComplexBasePair]
   exact @asIso_hom _ _ _ _ _ (TopPair.isIso_twistedHomologyπ_of_isEmpty (complexBasePair C) L n)
 
-/-- The homology with local coefficients of a CW complex has the dimension of its homology
+/-- The homology with local coefficients of a CW complex has the `finrank` of its homology
 relative to the empty subspace. -/
 theorem finrank_twistedHomology_eq_complexBasePair (n : ℕ) :
     finrank R (L.twistedHomology n) = finrank R ((complexBasePair C).twistedHomology L n) :=

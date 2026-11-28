@@ -31,7 +31,8 @@ The coefficient ring `R` satisfies the strong rank condition (`StrongRankConditi
 rank-nullity theorem (`HasRankNullity`), covering division rings, where finrank is dimension, and
 commutative domains such as `ℤ`, where finrank is the rank of the free part of a finitely
 generated abelian group, so that torsion in the terms or in the homology contributes nothing.
-Rank-nullity makes finrank additive on short exact sequences, while
+Rank-nullity makes finrank additive on short exact sequences whose middle term is finitely
+generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`), while
 `HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank` additionally assumes `R` is
 Noetherian so that homology can be computed inside `FGModuleCat R`.
 

@@ -234,8 +234,9 @@ theorem homologyEulerChar_cellularChainComplex [RelCWComplex.Finite C] :
     have := FiniteType.finite_cell (C := C) (D := D) i
     finite_cellularChainComplex_X C M i
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar (cellularChainComplex C M)
-      ((cellularChainComplex C M).finite_not_isZero_X_of_eventually_isZero
-        (by simpa [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M)),
+      (Filter.eventually_cofinite.mp (by
+        rw [Nat.cofinite_eq_atTop]
+        simpa [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M)),
     eulerChar_cellularChainComplex_of_finiteType]
 
 end RankNullity
