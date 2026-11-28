@@ -112,6 +112,12 @@ variable (R) in
 theorem groupLikeT_val : (groupLikeT R).val = LaurentPolynomial.T 1 :=
   (rfl)
 
+/-- **The characters of `𝔾ₘ`.** Over a domain, the group-like elements of `R[T, T⁻¹]` are exactly
+the monomials `T n`. -/
+theorem _root_.LaurentPolynomial.isGroupLikeElem_iff_mem_range_T {R : Type*} [CommRing R]
+    [IsDomain R] {x : R[T;T⁻¹]} : IsGroupLikeElem R x ↔ x ∈ Set.range LaurentPolynomial.T :=
+  AddMonoidAlgebra.isGroupLikeElem_iff_mem_range_single_one
+
 end GroupLike
 
 /-- The counit of the multiplicative group is evaluation at the identity. -/

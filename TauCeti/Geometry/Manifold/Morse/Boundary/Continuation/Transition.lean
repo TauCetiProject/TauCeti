@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Basic
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
+public import TauCeti.Geometry.Manifold.Flow.TimeDependent.Parametric
 
 /-!
 # Continuation trajectories through the transition diffeomorphisms of the slab
@@ -56,7 +57,8 @@ this form the transversality condition for continuations is the transversality o
 
 * `TauCeti.continuationSpaceField`: the space component of a field on `M × ℝ` along the base
   trajectory, a time-dependent vector field on `M`.
-* `TauCeti.contMDiff_continuationSpaceField`: it is as smooth as the field.
+* `TauCeti.contMDiff_continuationSpaceField`: it is as smooth as the field, and
+  `TauCeti.contMDiff_continuationSpaceField_param` states this for families of fields.
 * `TauCeti.isMIntegralCurve_timeDependentFlowOf_continuationSpaceField`: the curves
   `s ↦ (φ_{τ, s} x, β s)` are trajectories of `V`.
 * `TauCeti.exists_eq_timeDependentFlowOf_continuationSpaceField`: every trajectory of `V` through
@@ -65,11 +67,18 @@ this form the transversality condition for continuations is the transversality o
   `TauCeti.IsAdaptedPseudoGradient.eqOn_timeDependentFlowOf_flow_of_gt`: a time-dependent flow
   follows the flow of an adapted pseudo-gradient on the times where its field is that
   pseudo-gradient.
+* `TauCeti.IsAdaptedPseudoGradient.timeDependentFlowOf_eq_flow_of_lt`,
+  `TauCeti.IsAdaptedPseudoGradient.timeDependentFlowOf_eq_flow_of_gt`: between two such times
+  the time-dependent flow is the flow of that pseudo-gradient.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet`,
   `TauCeti.IsAdaptedPseudoGradient.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet`: a
   time-dependent flow line `s ↦ φ_{τ, s} x` tends to a point `p` at `-∞`, resp. `+∞`,
   exactly when its value at one very negative, resp. very positive, time lies in the unstable,
   resp. stable, manifold of `p`.
+* `TauCeti.timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow`,
+  `TauCeti.timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow_symm`: when the field is `X₀`
+  before a window and `X₁` after it, the time-dependent flow from before the window to after it,
+  and back, is the flow across the window between the end flows of `X₀` and `X₁`.
 * `TauCeti.IsContinuationField.eventually_atBot_continuationSpaceField_eq`,
   `TauCeti.IsContinuationField.eventually_atTop_continuationSpaceField_eq`: the space component
   along the base trajectory is `X₀` at very negative times and `X₁` at very positive times.
@@ -86,6 +95,9 @@ this form the transversality condition for continuations is the transversality o
   as a smooth diffeomorphism of `M`.
 * `TauCeti.IsContinuationField.eventually_continuationTransition_apply_eq_flow`: moving the
   endpoints `a` and `b` further out composes the transition map with the flows of `X₀` and `X₁`.
+* `TauCeti.contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField`: on a compact manifold
+  `M`, the transition maps of a smooth family of fields, indexed by a boundaryless manifold, are
+  jointly smooth in the parameter and the point.
 
 ## References
 
@@ -126,6 +138,29 @@ theorem continuationSpaceField_apply (s : ℝ) (x : M) :
     continuationSpaceField C V s x = (V (x, intervalBaseOrbit C s) : E × ℝ).1 :=
   (rfl)
 
+/-- **The space components of a family of fields form a family**: for a family `V a` of vector
+fields on `M × ℝ`, indexed by the points `a` of a manifold `N` and jointly `C^n` in the parameter
+and the point, the time-dependent fields `continuationSpaceField C (V a)` are jointly `C^n` in the
+parameter, the time and the point. -/
+theorem contMDiff_continuationSpaceField_param [IsManifold 𝓘(ℝ, E) 1 M] {n : ℕ∞ω}
+    {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+    {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
+    {V : N → (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z}
+    (hV : ContMDiff (J.prod (𝓘(ℝ, E).prod 𝓘(ℝ))) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent n
+      fun w : N × (M × ℝ) ↦ (⟨w.2, V w.1 w.2⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ))) :
+    ContMDiff (J.prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E))) 𝓘(ℝ, E).tangent n
+      fun z : N × ℝ × M ↦
+        (⟨z.2.2, continuationSpaceField C (V z.1) z.2.1 z.2.2⟩ : TangentBundle 𝓘(ℝ, E) M) := by
+  have hq : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ) n (intervalBaseOrbit C) :=
+    contMDiff_iff_contDiff.2 (contDiff_intervalBaseOrbit C)
+  have hg : ContMDiff (J.prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E))) (J.prod (𝓘(ℝ, E).prod 𝓘(ℝ))) n
+      fun z : N × ℝ × M ↦ (z.1, (z.2.2, intervalBaseOrbit C z.2.1)) :=
+    contMDiff_fst.prodMk ((contMDiff_snd.comp contMDiff_snd).prodMk
+      (hq.comp (contMDiff_fst.comp contMDiff_snd)))
+  -- The tangent bundle of `M × ℝ` splits as a product, and the first factor of the split
+  -- section is the space component.
+  exact contMDiff_fst.comp (contMDiff_equivTangentBundleProd.comp (hV.comp hg))
+
 /-- **The space component along the base trajectory is as smooth as the field**: for a `C^n`
 vector field `V` on `M × ℝ`, the time-dependent field `continuationSpaceField C V` is jointly
 `C^n` in the time and the point. -/
@@ -133,15 +168,10 @@ theorem contMDiff_continuationSpaceField [IsManifold 𝓘(ℝ, E) 1 M] {n : ℕ�
     (hV : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent n
       fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ))) :
     ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E).tangent n
-      fun p : ℝ × M ↦ (⟨p.2, continuationSpaceField C V p.1 p.2⟩ : TangentBundle 𝓘(ℝ, E) M) := by
-  have hq : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ) n (intervalBaseOrbit C) :=
-    contMDiff_iff_contDiff.2 (contDiff_intervalBaseOrbit C)
-  have hg : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) (𝓘(ℝ, E).prod 𝓘(ℝ)) n
-      fun p : ℝ × M ↦ (p.2, intervalBaseOrbit C p.1) :=
-    contMDiff_snd.prodMk (hq.comp contMDiff_fst)
-  -- The tangent bundle of `M × ℝ` splits as a product, and the first factor of the split
-  -- section is the space component.
-  exact contMDiff_fst.comp (contMDiff_equivTangentBundleProd.comp (hV.comp hg))
+      fun p : ℝ × M ↦ (⟨p.2, continuationSpaceField C V p.1 p.2⟩ : TangentBundle 𝓘(ℝ, E) M) :=
+  -- The constant family at `V`, indexed by `ℝ`, read at the parameter `0`.
+  (contMDiff_continuationSpaceField_param (J := 𝓘(ℝ, ℝ)) (V := fun _ ↦ V)
+    (hV.comp contMDiff_snd)).comp ((contMDiff_const (c := (0 : ℝ))).prodMk contMDiff_id)
 
 /-! ### Trajectories through the slab -/
 
@@ -247,6 +277,32 @@ theorem eqOn_timeDependentFlowOf_flow_of_gt (hYX : ∀ u > a, Y u = X) (hab : a 
   hX.eqOn_flow_of_isMIntegralCurveOn_Ioi (isMIntegralCurveOn_timeDependentFlowOf
     (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY (T := Ioi a) hYX) hab
 
+/-- **Before a time `b` up to which a time-dependent field is `X`, its flow is the flow of `X`.**
+If the `C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times before `b`,
+then for times `τ, a < b` the time-dependent flow from `τ` to `a` is the flow of `X` for the time
+`a - τ`. -/
+theorem timeDependentFlowOf_eq_flow_of_lt (hYX : ∀ u < b, Y u = X) (hτ : τ < b) (ha : a < b) :
+    timeDependentFlowOf Y τ a x = hX.flow (a - τ) x := by
+  have h := hX.eqOn_timeDependentFlowOf_flow_of_lt hY (τ := τ) (x := x) hYX (max_lt hτ ha)
+  have hx := h (show τ ∈ Iic (max τ a) from le_max_left τ a)
+  simp only [timeDependentFlowOf_self] at hx
+  refine (h (show a ∈ Iic (max τ a) from le_max_right τ a)).trans ?_
+  -- The flows at the times `a - τ` and `τ - max τ a` compose.
+  conv_rhs => rw [hx, ← Flow.map_add, sub_add_sub_cancel]
+
+/-- **After a time `a` from which on a time-dependent field is `X`, its flow is the flow of `X`.**
+If the `C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times after `a`,
+then for times `τ, b > a` the time-dependent flow from `τ` to `b` is the flow of `X` for the time
+`b - τ`. -/
+theorem timeDependentFlowOf_eq_flow_of_gt (hYX : ∀ u > a, Y u = X) (hτ : a < τ) (hb : a < b) :
+    timeDependentFlowOf Y τ b x = hX.flow (b - τ) x := by
+  have h := hX.eqOn_timeDependentFlowOf_flow_of_gt hY (τ := τ) (x := x) hYX (lt_min hτ hb)
+  have hx := h (show τ ∈ Ici (min τ b) from min_le_left τ b)
+  simp only [timeDependentFlowOf_self] at hx
+  refine (h (show b ∈ Ici (min τ b) from min_le_right τ b)).trans ?_
+  -- The flows at the times `b - τ` and `τ - min τ b` compose.
+  conv_rhs => rw [hx, ← Flow.map_add, sub_add_sub_cancel]
+
 /-- **A time-dependent flow line tends to a point at `-∞` along its unstable manifold.** If the
 `C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times before `b`, and
 `a < b`, then the curve `s ↦ φ_{τ, s} x` of its time-dependent flow tends to `p` at `-∞` exactly
@@ -270,6 +326,50 @@ theorem tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet (hYX : ∀ u > a, Y 
 end IsAdaptedPseudoGradient
 
 end Ends
+
+/-! ### Time-dependent flows across a window -/
+
+section Window
+
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  {f₀ f₁ : M → ℝ} {X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+  (hX₀ : IsAdaptedPseudoGradient f₀ X₀) (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
+  {Y : ℝ → (x : M) → TangentSpace 𝓘(ℝ, E) x}
+  (hY : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E).tangent 1
+    fun p : ℝ × M ↦ (⟨p.2, Y p.1 p.2⟩ : TangentBundle 𝓘(ℝ, E) M))
+  {T₀ T₁ s₀ s₁ a b : ℝ} (hY₀ : ∀ u < T₀, Y u = X₀) (hY₁ : ∀ u > T₁, Y u = X₁)
+  (hs₀ : s₀ < T₀) (hs₁ : T₁ < s₁) (ha : a ≤ s₀) (hb : s₁ ≤ b)
+include hX₀ hX₁ hY hY₀ hY₁ hs₀ hs₁ ha hb
+
+/-- **A time-dependent flow across a window.** Let the `C¹` time-dependent field `Y` be the adapted
+pseudo-gradient `X₀` before the time `T₀` and the adapted pseudo-gradient `X₁` after the time `T₁`.
+For times `s₀ < T₀` and `s₁ > T₁`, the time-dependent flow from a time `a ≤ s₀` to a time `b ≥ s₁`
+is the flow of `X₀` for the time `s₀ - a`, then the time-dependent flow across the window from `s₀`
+to `s₁`, then the flow of `X₁` for the time `b - s₁`. -/
+theorem timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow (x : M) :
+    timeDependentFlowOf Y a b x =
+      hX₁.flow (b - s₁) (timeDependentFlowOf Y s₀ s₁ (hX₀.flow (s₀ - a) x)) := by
+  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
+  -- Before the window the time-dependent flow is the flow of `X₀`, and after it that of `X₁`.
+  rw [← hX₀.timeDependentFlowOf_eq_flow_of_lt hY hY₀ (ha.trans_lt hs₀) hs₀,
+    ← hX₁.timeDependentFlowOf_eq_flow_of_gt hY hY₁ hs₁ (hs₁.trans_le hb),
+    timeDependentFlowOf_trans hcomp hY, timeDependentFlowOf_trans hcomp hY]
+
+/-- **A time-dependent flow back across a window.** Let the `C¹` time-dependent field `Y` be the
+adapted pseudo-gradient `X₀` before the time `T₀` and the adapted pseudo-gradient `X₁` after the
+time `T₁`. For times `s₀ < T₀` and `s₁ > T₁`, the time-dependent flow from a time `b ≥ s₁` back to
+a time `a ≤ s₀` is the flow of `X₁` for the time `s₁ - b`, then the time-dependent flow back across
+the window from `s₁` to `s₀`, then the flow of `X₀` for the time `a - s₀`. -/
+theorem timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow_symm (x : M) :
+    timeDependentFlowOf Y b a x =
+      hX₀.flow (a - s₀) (timeDependentFlowOf Y s₁ s₀ (hX₁.flow (s₁ - b) x)) := by
+  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
+  -- After the window the time-dependent flow is the flow of `X₁`, and before it that of `X₀`.
+  rw [← hX₁.timeDependentFlowOf_eq_flow_of_gt hY hY₁ (hs₁.trans_le hb) hs₁,
+    ← hX₀.timeDependentFlowOf_eq_flow_of_lt hY hY₀ hs₀ (ha.trans_lt hs₀),
+    timeDependentFlowOf_trans hcomp hY, timeDependentFlowOf_trans hcomp hY]
+
+end Window
 
 /-! ### The slices of the continuation map -/
 
@@ -463,6 +563,35 @@ theorem continuationTransition_symm_apply (a b : ℝ) (x : M) :
 
 end TransitionDiffeomorph
 
+/-! ### Families of transition maps -/
+
+section Family
+
+variable [CompleteSpace E] [IsManifold 𝓘(ℝ, E) 1 M] [CompactSpace M] [T2Space M]
+  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N] [T2Space N]
+  [BoundarylessManifold J N] [IsManifold J 1 N]
+
+/-- **The transition maps of a family of fields depend smoothly on the parameter.** Let `M` be
+compact, and let `V a` be a family of vector fields on `M × ℝ`, indexed by the points `a` of a
+boundaryless manifold `N` and jointly `C^n` in the parameter and the point, with `1 ≤ n`. Let
+`φ^a_{s, t}` be the time-dependent flow of the space component of `V a` along the base trajectory
+(`TauCeti.continuationSpaceField`), which is defined at all times since `M` is compact. Then for
+all times `a₀` and `b₀` the transition maps `(a, y) ↦ φ^a_{a₀, b₀} y` are jointly `C^n` in the
+parameter and the point. -/
+theorem contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField {n : ℕ∞} (hn : 1 ≤ n)
+    [IsManifold 𝓘(ℝ, E) n M] [IsManifold J n N]
+    {V : N → (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z}
+    (hV : ContMDiff (J.prod (𝓘(ℝ, E).prod 𝓘(ℝ))) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent n
+      fun w : N × (M × ℝ) ↦ (⟨w.2, V w.1 w.2⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)))
+    (a₀ b₀ : ℝ) :
+    ContMDiff (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, E) n
+      (Function.uncurry fun a ↦ timeDependentFlowOf (continuationSpaceField C (V a)) a₀ b₀) :=
+  contMDiff_uncurry_timeDependentFlowOf_param (X := fun a ↦ continuationSpaceField C (V a)) hn
+    (contMDiff_continuationSpaceField_param hV) a₀ b₀
+
+end Family
+
 /-! ### Moving the endpoints of the slab -/
 
 namespace IsContinuationField
@@ -488,26 +617,14 @@ theorem eventually_continuationTransition_apply_eq_flow :
   have hVs₁ : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent 1
       fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)) := hVs.of_le (by simp)
   have hY := contMDiff_continuationSpaceField (C := C) hVs₁
-  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
   obtain ⟨A, hA⟩ := eventually_atBot.1 (hV.eventually_atBot_continuationSpaceField_eq hC)
   obtain ⟨B, hB⟩ := eventually_atTop.1 (hV.eventually_atTop_continuationSpaceField_eq hC)
   filter_upwards [eventually_lt_atBot A] with a₀ ha₀
   filter_upwards [eventually_gt_atTop B] with b₀ hb₀ a ha b hb x
   -- Before `A` the time-dependent flow is the flow of `X₀`, and after `B` that of `X₁`.
-  have h₀ : timeDependentFlowOf (continuationSpaceField C V) a a₀ x = hX₀.flow (a₀ - a) x := by
-    have h := hX₀.eqOn_timeDependentFlowOf_flow_of_lt hY (τ := a) (x := x)
-      (fun u hu ↦ hA u hu.le) ha₀ (show a ∈ Iic a₀ from ha)
-    simp only [timeDependentFlowOf_self] at h
-    -- The flows at times `a₀ - a` and `a - a₀` cancel.
-    conv_rhs => rw [h, ← Flow.map_add]
-    simp
-  have h₁ (w : M) : timeDependentFlowOf (continuationSpaceField C V) b₀ b w =
-      hX₁.flow (b - b₀) w := by
-    have h := hX₁.eqOn_timeDependentFlowOf_flow_of_gt hY (τ := b₀) (x := w)
-      (fun u hu ↦ hB u hu.le) hb₀ (show b ∈ Ici b₀ from hb)
-    simpa only [timeDependentFlowOf_self] using h
-  rw [coe_continuationTransition, coe_continuationTransition, ← h₀, ← h₁,
-    timeDependentFlowOf_trans hcomp hY, timeDependentFlowOf_trans hcomp hY]
+  rw [coe_continuationTransition, coe_continuationTransition]
+  exact timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow hX₀ hX₁ hY (fun u hu ↦ hA u hu.le)
+    (fun u hu ↦ hB u hu.le) ha₀ hb₀ ha hb x
 
 end IsContinuationField
 

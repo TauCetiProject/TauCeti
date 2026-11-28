@@ -35,6 +35,8 @@ continuous when `G` is first countable.
 * `TauCeti.ReproducingModel.weilOp_inv_mul_weilOp_mul_weilOp`: `ω((gh)⁻¹) ω(g) ω(h) = c g h`.
 * `TauCeti.ReproducingModel.weilOp_mul`, `TauCeti.ReproducingModel.innerSL_weilOp`: if
   `c g 1 = 1` for all `g`, then `ω(g) ω(h) = c g h • ω(gh)` and `ω(g)` preserves `⟨·, ·⟩`.
+* `TauCeti.ReproducingModel.innerSL_heisenbergRep_weilOp`: the Heisenberg coefficients of a Weil
+  operator, `⟨u, ϱ(x) ω(g) w⟩ = Δ g * ∫ w (g⁻¹ • z) * β x z * conj (u (x + z)) dμ(z)`.
 * `TauCeti.ReproducingModel.weilRep_heisenbergRep`, `TauCeti.ReproducingModel.weilRep_apply`,
   `TauCeti.ReproducingModel.weilRep_apply_of_vacuum`,
   `TauCeti.ReproducingModel.conj_mul_weilRep_vacuum_apply_zero`,
@@ -209,6 +211,19 @@ theorem innerSL_weilOp (hc : Δ.cocycle e g 1 = 1) :
       _ = conj (innerSL w (weilOp e Δ g⁻¹ u)) := by
         simp [weilOp_apply_eq, map_integrated, h_coeff, ← integral_conj, mul_comm, Δ.map_inv]
   rw [h_adjoint, h_inv, conj_innerSL]
+
+/-- The *Heisenberg coefficients* of a Weil operator as an integral:
+`⟨u, ϱ(x) ω(g) w⟩ = Δ g * ∫ w (g⁻¹ • z) * β x z * conj (u (x + z)) dμ(z)`. -/
+theorem innerSL_heisenbergRep_weilOp (u : ReproducingModel β μ e) :
+    innerSL u (heisenbergRep x (weilOp e Δ g w)) =
+      Δ g * ∫ z, w (g⁻¹ • z) * (β x z * conj (u (x + z))) ∂μ := by
+  have h_coeff (z : W) : innerSL u (heisenbergRep x (heisenbergRep z vacuum)) =
+      β x z * conj (u (x + z)) := by
+    rw [HeisenbergDatum.Representation.apply_apply, map_smul, innerSL_heisenbergRep_vacuum_right,
+      smul_eq_mul]
+  have h := map_integrated_twist Δ g vacuum w ((innerSL u).comp (heisenbergRep x))
+  simp only [ContinuousLinearMap.comp_apply, h_coeff] at h
+  rw [weilOp_apply_eq, map_smul, map_smul, h, smul_eq_mul]
 
 /-- For a multiplier with `c g 1 = 1` for every `g`, the subgroup of the `s ∈ G` with `c g s = 1`
 for every `g`. It is closed under products and inverses by the cocycle identity of `c`, which

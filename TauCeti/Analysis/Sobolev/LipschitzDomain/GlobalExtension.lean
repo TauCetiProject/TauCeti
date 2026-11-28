@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Extension
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
+import TauCeti.Analysis.Sobolev.W1p.AddHaar
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Extension from bounded Lipschitz domains
@@ -25,6 +28,29 @@ As a consequence, restrictions to `Ω` of test functions on the whole space are 
 `W^{1,p}(Ω)` for `p < ∞` (`TauCeti.W1p.denseRange_restrictL_ofTestFunctionₗ_top`). These
 restrictions are smooth up to the boundary, so a bounded operator on `W^{1,p}(Ω)` is determined
 by its values on functions continuous on `closure Ω`.
+
+The extension operator also exists on a bounded Lipschitz domain `U` of any finite-dimensional
+real inner product space `F`, such as `EuclideanSpace ℝ (Fin (n + 1))`, for the intrinsic predicate
+`Set.IsLipschitzDomain` and every additive Haar measure on `F`
+(`TauCeti.W1p.exists_extensionL_of_isLipschitzDomain`). The operator is transported from the
+model space: a boundary chart is an affine isometry `g : F ≃ᵃⁱ[ℝ] ℝ × E` carrying `U` onto a
+bounded Lipschitz domain of the model space
+(`Set.IsLipschitzDomain.exists_isLipschitzDomainWith_image`), precomposition with `g` and with
+`g⁻¹` moves Sobolev functions between the two
+(`TauCeti.W1p.compAffineIsometryEquivL`, which commutes with restriction by
+`TauCeti.W1p.restrictL_compAffineIsometryEquivL`), and the change of Haar measure
+`TauCeti.W1p.addHaarEquivL` passes from Lebesgue measure to any other. When the frontier of `U`
+is empty, `U` is closed and open, hence empty or the whole space, and the extension is zero or the
+identity.
+
+## Main declarations
+
+* `TauCeti.W1p.exists_extensionL_of_isLipschitzDomainWith`: the extension operator on a bounded
+  Lipschitz domain of the model space `ℝ × E`, for Lebesgue measure.
+* `TauCeti.W1p.exists_extensionL_of_isLipschitzDomain`: the extension operator on a bounded
+  Lipschitz domain of a finite-dimensional inner product space, for every additive Haar measure.
+* `TauCeti.W1p.denseRange_restrictL_ofTestFunctionₗ_top`: density of the restrictions of test
+  functions in the model space.
 
 ## References
 
@@ -176,5 +202,111 @@ theorem W1p.denseRange_restrictL_ofTestFunctionₗ_top (hp : p ≠ (∞ : ℝ≥
       (le_top : Ω ≤ ⊤)) := fun u => ⟨T u, by simpa using congrArg (· u) hT⟩
   exact hsurj.denseRange.comp (W1p.denseRange_ofTestFunctionₗ_top hp)
     (W1p.restrictL le_top).continuous
+
+/-! ### Bounded Lipschitz domains of a Euclidean space -/
+
+section Intrinsic
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] {U : Opens F}
+
+/-- The extension theorem, for Lebesgue measure, on an open set `U` that an affine isometry `g`
+carries onto a bounded Lipschitz domain `W` of the model space. The extension of `u` is the
+pullback by `g` of the extension of `u ∘ g⁻¹` from `W`. -/
+private theorem exists_extensionL_of_image
+    (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) {W : Opens (WithLp 2 (ℝ × E))}
+    (hUW : (U : Set F) = g ⁻¹' W) (hW : (W : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hbW : Bornology.IsBounded (W : Set (WithLp 2 (ℝ × E)))) :
+    ∃ T : W1p volume U p →L[ℝ] W1p volume (⊤ : Opens F) p,
+      (W1p.restrictL le_top).comp T = ContinuousLinearMap.id ℝ (W1p volume U p) ∧
+      ∀ u, (∀ᵐ x ∂volume.restrict U, 0 ≤ W1p.value u x) →
+        ∀ᵐ x ∂volume, 0 ≤ W1p.value (T u) x := by
+  have hWU : (W : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' U := by
+    rw [hUW, ← preimage_comp]
+    ext x
+    simp
+  have htop : ((⊤ : Opens F) : Set F) = g ⁻¹' (⊤ : Opens (WithLp 2 (ℝ × E))) := by simp
+  obtain ⟨T₀, hT₀, hT₀0⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hW hbW
+  refine ⟨(W1p.compAffineIsometryEquivL g htop).comp
+    (T₀.comp (W1p.compAffineIsometryEquivL g.symm hWU)), ?_, fun u hu => ?_⟩
+  · refine ContinuousLinearMap.ext fun u => ?_
+    have h₀ := congrArg (· (W1p.compAffineIsometryEquivL g.symm hWU u)) hT₀
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at h₀ ⊢
+    rw [W1p.restrictL_compAffineIsometryEquivL g htop le_top le_top hUW, h₀]
+    exact W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g.symm hWU hUW u
+  · -- `u ∘ g⁻¹` is nonnegative on `W`, so is its extension, and so is the pullback by `g`.
+    have h := W1p.value_compAffineIsometryEquivL_ae_nonneg g htop
+      (ae_restrict_of_ae (hT₀0 _ (W1p.value_compAffineIsometryEquivL_ae_nonneg g.symm hWU hu)))
+    simpa only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.comp_apply] using h
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+
+/-- The extension theorem on a bounded Lipschitz domain of `F`, for Lebesgue measure. -/
+private theorem exists_extensionL_volume (hU : (U : Set F).IsLipschitzDomain E')
+    (hb : Bornology.IsBounded (U : Set F)) :
+    ∃ T : W1p volume U p →L[ℝ] W1p volume (⊤ : Opens F) p,
+      (W1p.restrictL le_top).comp T = ContinuousLinearMap.id ℝ (W1p volume U p) ∧
+      ∀ u, (∀ᵐ x ∂volume.restrict U, 0 ≤ W1p.value u x) →
+        ∀ᵐ x ∂volume, 0 ≤ W1p.value (T u) x := by
+  rcases (frontier (U : Set F)).eq_empty_or_nonempty with hfr | hne
+  · -- With empty frontier `U` is closed and open, hence empty or the whole space.
+    rcases isClopen_iff.1 (isClopen_iff_frontier_eq_empty.2 hfr) with hU0 | hU1
+    · -- `W^{1,p}(∅)` is zero, and the zero operator is an extension.
+      have hsub (u v : W1p volume U p) : u = v :=
+        W1p.ext_value (Lp.ext (by simp [hU0, Filter.EventuallyEq]))
+      refine ⟨0, ContinuousLinearMap.ext fun u => hsub _ _, fun u _ => ?_⟩
+      have h0 := Lp.coeFn_zero ℝ p (volume.restrict ((⊤ : Opens F) : Set F))
+      simp only [Opens.coe_top, Measure.restrict_univ] at h0
+      filter_upwards [h0] with x hx
+      rw [zero_apply, W1p.value_zero, hx, Pi.zero_apply]
+    · -- On the whole space the identity is an extension.
+      obtain rfl : U = ⊤ := Opens.ext (by simpa using hU1)
+      exact ⟨ContinuousLinearMap.id ℝ _, ContinuousLinearMap.ext fun u => W1p.restrictL_self u,
+        fun u hu => by simpa using hu⟩
+  -- A boundary chart `g` carries `U` onto a bounded Lipschitz domain of the model space.
+  obtain ⟨g, L, hL⟩ := hU.exists_isLipschitzDomainWith_image hb hne
+  -- Give `E'` the inner product, finite dimension and Borel structure of its image in `F`.
+  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E') := g.linearIsometryEquiv
+  let _ : InnerProductSpace ℝ E' := .ofLinearIsometry e.symmInr
+  have _ : FiniteDimensional ℝ E' := e.finiteDimensional_snd
+  let _ : MeasurableSpace E' := borel E'
+  have _ : BorelSpace E' := ⟨rfl⟩
+  let W : Opens (WithLp 2 (ℝ × E')) :=
+    ⟨g '' (U : Set F), ((isLipschitzDomainWith_iff _ _).1 hL).1⟩
+  exact exists_extensionL_of_image g (preimage_image_eq _ g.injective).symm hL
+    (g.lipschitzWith.isBounded_image hb) (W := W)
+
+variable {mu : Measure F} [mu.IsAddHaarMeasure]
+
+/-- **Extension theorem for bounded Lipschitz domains of a Euclidean space.** Let `U` be a
+bounded open subset of a finite-dimensional real inner product space `F` satisfying the
+Lipschitz-domain condition, let `μ` be an additive Haar measure on `F` and let `1 ≤ p ≤ ∞`. There
+is a bounded linear extension from `W^{1,p}(U)` to `W^{1,p}(F)`, and restriction to `U` recovers
+the original function. The extension preserves almost-everywhere nonnegativity. -/
+theorem W1p.exists_extensionL_of_isLipschitzDomain (hU : (U : Set F).IsLipschitzDomain E')
+    (hb : Bornology.IsBounded (U : Set F)) :
+    ∃ T : W1p mu U p →L[ℝ] W1p mu (⊤ : Opens F) p,
+      (W1p.restrictL le_top).comp T = ContinuousLinearMap.id ℝ (W1p mu U p) ∧
+      ∀ u, (∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x) →
+        ∀ᵐ x ∂mu, 0 ≤ W1p.value (T u) x := by
+  obtain ⟨T, hT, hT0⟩ := exists_extensionL_volume (p := p) hU hb
+  -- Conjugate by the changes of Haar measure between `μ` and Lebesgue measure.
+  let A : W1p mu U p ≃L[ℝ] W1p volume U p := W1p.addHaarEquivL mu volume
+  let B : W1p volume (⊤ : Opens F) p ≃L[ℝ] W1p mu (⊤ : Opens F) p :=
+    W1p.addHaarEquivL volume mu
+  refine ⟨(B : W1p volume (⊤ : Opens F) p →L[ℝ] W1p mu (⊤ : Opens F) p).comp
+    (T.comp (A : W1p mu U p →L[ℝ] W1p volume U p)), ?_, fun u hu => ?_⟩
+  · refine ContinuousLinearMap.ext fun u => ?_
+    have h₀ := congrArg (· (A u)) hT
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearEquiv.coe_coe] at h₀ ⊢
+    rw [← W1p.addHaarEquivL_restrictL, h₀, ← W1p.addHaarEquivL_symm mu volume]
+    exact A.symm_apply_apply u
+  · have h := W1p.value_addHaarEquivL_ae_nonneg volume mu
+      (ae_restrict_of_ae (hT0 _ (W1p.value_addHaarEquivL_ae_nonneg mu volume hu)))
+    simpa only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe] using h
+
+end Intrinsic
 
 end TauCeti

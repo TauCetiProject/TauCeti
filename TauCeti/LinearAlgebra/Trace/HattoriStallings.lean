@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.Algebra.Algebra.CyclicQuotient
 public import TauCeti.LinearAlgebra.Basis.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 public import TauCeti.LinearAlgebra.Trace.Projective
 
 /-!
@@ -20,7 +21,9 @@ of an endomorphism takes values in the additive cyclic quotient `R / [R, R]`, im
 as `TauCeti.cyclicQuotient ℤ R`. Compute it on a finite free retract by summing the diagonal
 coefficients. The answer is independent of the retract and of its basis, and is cyclic
 across different finite projective modules. In particular it is invariant under linear
-equivalences and additive on products and split exact sequences.
+equivalences, commutes with extension of scalars along any ring homomorphism and with
+semilinear equivalences along ring isomorphisms, and is additive on products and split exact
+sequences.
 
 Right modules are covered by taking `R` to be an opposite ring. No commutativity of `R`,
 constant-rank hypothesis, or division by a group order is involved.
@@ -227,7 +230,57 @@ theorem hattoriStallingsTrace_eq_zero_of_subsingleton [Module.Finite R M]
     hattoriStallingsTrace R M f = 0 := by
   rw [Subsingleton.elim f 0, map_zero]
 
+/-- **Extension of scalars commutes with the Hattori–Stallings trace.** For any ring homomorphism
+`φ : R →+* S` of possibly noncommutative rings and any endomorphism `f` of a finite projective left
+`R`-module `M`, the Hattori–Stallings trace of `S ⊗_R f` on `S ⊗_R M` is the image under `φ` of the
+Hattori–Stallings trace of `f`. -/
+@[simp]
+theorem hattoriStallingsTrace_balancedExtension_map {S : Type*} [Ring S] (φ : R →+* S)
+    [Module.Finite R M] [Module.Projective R M] (f : Module.End R M) :
+    hattoriStallingsTrace S (TauCeti.BalancedExtension φ M)
+        (TauCeti.BalancedExtension.map φ f) =
+      TauCeti.cyclicQuotientRingHomMap φ (hattoriStallingsTrace R M f) := by
+  classical
+  obtain ⟨n, r, i, -, -, hr⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  let e := TauCeti.BalancedExtension.piScalarRight φ (Fin n)
+  let i' := e.toLinearMap ∘ₗ TauCeti.BalancedExtension.map φ i
+  let r' := TauCeti.BalancedExtension.map φ r ∘ₗ e.symm.toLinearMap
+  have hr' : r' ∘ₗ i' = .id := by
+    simp [r', i', comp_assoc, ← TauCeti.BalancedExtension.map_comp, hr]
+  rw [hattoriStallingsTrace_eq_of_retract (Pi.basisFun S (Fin n)) i' r' hr',
+    hattoriStallingsTrace_eq_of_retract (Pi.basisFun R (Fin n)) i r hr,
+    Basis.hattoriStallingsTrace_apply, Basis.hattoriStallingsTrace_apply,
+    Submodule.mkQ_apply, Submodule.mkQ_apply, TauCeti.cyclicQuotientRingHomMap_mk]
+  congr 1; rw [map_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  have hsymm : e.symm (Pi.single k 1) = TauCeti.BalancedExtension.tmul φ 1 (Pi.single k 1) := by
+    rw [TauCeti.BalancedExtension.piScalarRight_symm_apply,
+      Finset.sum_eq_single k (fun j _ hjk ↦ by simp [Pi.single_eq_of_ne hjk]) (by simp)]; simp
+  simp [i', r', e, hsymm]
+
 end LinearMap
+
+namespace LinearEquiv
+
+variable {R S M M' : Type*} [Ring R] [Ring S]
+  [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module S M']
+  [Module.Finite R M] [Module.Projective R M] [Module.Finite S M'] [Module.Projective S M']
+  {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- **Semilinear equivalences twist the Hattori–Stallings trace.** If `j : M ≃ₛₗ[σ] M'` is a
+semilinear equivalence along mutually inverse ring homomorphisms `σ : R →+* S` and `σ' : S →+* R`,
+and `T : M →ₗ[R] M` and `T' : M' →ₗ[S] M'` satisfy `T' (j x) = j (T x)`, then
+`Tr_HS(T') = σ(Tr_HS(T))`. -/
+theorem hattoriStallingsTrace_eq_cyclicQuotientRingHomMap (j : M ≃ₛₗ[σ] M')
+    {T : M →ₗ[R] M} {T' : M' →ₗ[S] M'} (h : ∀ x, T' (j x) = j (T x)) :
+    LinearMap.hattoriStallingsTrace S M' T' =
+      TauCeti.cyclicQuotientRingHomMap σ (LinearMap.hattoriStallingsTrace R M T) := by
+  have hconj : j.conjRingEquiv T = T' := by
+    ext y; simpa using (h (j.symm y)).symm
+  rw [← hconj, ← TauCeti.BalancedExtension.conjRingEquiv_equivOfSemilinearEquiv_map,
+    LinearMap.hattoriStallingsTrace_conj, LinearMap.hattoriStallingsTrace_balancedExtension_map]
+
+end LinearEquiv
 
 namespace LinearMap
 
@@ -247,5 +300,21 @@ theorem hattoriStallingsTrace_eq_projectiveTrace (f : Module.End R M) :
   rw [hattoriStallingsTrace_eq_of_retract b i r hr, Basis.hattoriStallingsTrace_apply, ← h,
     projectiveTrace_eq_trace, trace_eq_matrix_trace R b]
   simp only [Matrix.trace, Matrix.diag_apply, LinearMap.toMatrix_apply]
+
+open TauCeti (BalancedExtension) in
+/-- For an `R`-algebra `S` (not necessarily commutative), the Hattori–Stallings trace commutes
+with `LinearMap.baseChange`. -/
+@[simp]
+theorem hattoriStallingsTrace_baseChange {S : Type*} [Ring S] [Algebra R S]
+    (f : Module.End R M) :
+    hattoriStallingsTrace S (TensorProduct R S M) (f.baseChange S) =
+      TauCeti.cyclicQuotientRingHomMap (algebraMap R S) (hattoriStallingsTrace R M f) := by
+  let e := BalancedExtension.tensorProductEquiv R S M
+  have hconj : e.conjRingEquiv (BalancedExtension.map (algebraMap R S) f) = f.baseChange S := by
+    apply LinearMap.ext; intro x
+    exact LinearMap.congr_fun
+      (BalancedExtension.tensorProductEquiv_comp_map R S M f) (e.symm x) |>.trans
+      (by simp [e])
+  rw [← hconj, hattoriStallingsTrace_conj, hattoriStallingsTrace_balancedExtension_map]
 
 end LinearMap

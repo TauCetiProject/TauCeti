@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.BaseCircle
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FirstCohomology
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
+import TauCeti.Algebra.Module.Equiv.IntLinear
 
 /-!
 # The integral class of the time form of a mapping torus
@@ -150,15 +151,12 @@ theorem intTimePeriodHom_eq_neg_wangClass
 
 /-- The time period homomorphism as a morphism `H₁(Y_φ; ℤ) ⟶ ℤ` of `ℤ`-modules. The `ℤ`-module
 structure of a homology module is not definitionally the canonical one `AddCommGroup.toIntModule`
-of `AddMonoidHom.toIntLinearMap`, so linearity is proved through `int_smul_eq_zsmul`. -/
+of `AddMonoidHom.toIntLinearMap`, so the linear map is `TauCeti.intLinearMapAddEquivAddMonoidHom`,
+which accepts any `ℤ`-module structures. -/
 private def intTimePeriodModuleHom :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
       (𝟙_ (ModuleCat.{0} ℤ))).obj (TopCat.of (SmoothMappingTorus φ)) ⟶ 𝟙_ (ModuleCat.{0} ℤ) :=
-  ModuleCat.ofHom
-    { toFun := intTimePeriodHom φ
-      map_add' := map_add _
-      map_smul' := fun n c ↦ (congrArg (intTimePeriodHom φ) (int_smul_eq_zsmul _ n c)).trans
-        (map_zsmul _ n c) }
+  ModuleCat.ofHom (intLinearMapAddEquivAddMonoidHom.symm (intTimePeriodHom φ))
 
 /-- **The integral class of the time form** `[dt] ∈ H¹(Y_φ; ℤ)`: under the universal coefficient
 isomorphism `H¹(Y_φ; ℤ) ≃ Hom(H₁(Y_φ; ℤ), ℤ)`, the class of the time period homomorphism, so that
@@ -179,7 +177,7 @@ theorem singularKronecker_timeClass
     (𝟙_ (ModuleCat.{0} ℤ))).apply_symm_apply (intTimePeriodModuleHom φ)
   rw [TopCat.singularKroneckerEquivOne_apply] at h
   -- `intTimePeriodModuleHom φ` evaluates as `intTimePeriodHom φ` by its definition.
-  exact congr($h c)
+  exact congr($h c).trans (intLinearMapAddEquivAddMonoidHom_symm_apply_apply _ c)
 
 /-- **`[dt]` is the integral class of `dt`**: its pairing with a class of `H₁(Y_φ; ℤ)` is the
 integral of the closed form `dt` over that class. -/

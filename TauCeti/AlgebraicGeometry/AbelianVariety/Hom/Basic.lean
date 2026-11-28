@@ -86,6 +86,12 @@ private lemma Hom.toOverHom_def {A B : AbelianVariety K} (f : A ⟶ B) :
     Hom.toOverHom f = f.hom.hom.hom.hom :=
   rfl
 
+/-- The underlying morphism over `Spec K` of a homomorphism of abelian varieties is that of the
+underlying homomorphism of group objects, `(CommGrp.forget₂Grp _).map f.hom`. -/
+lemma toOverHom_eq_forget₂Grp_map {A B : AbelianVariety K} (f : A ⟶ B) :
+    Hom.toOverHom f = ((CommGrp.forget₂Grp _).map f.hom).hom.hom :=
+  (rfl)
+
 /-- The underlying morphism of an abelian-variety homomorphism preserves the group-object
 structure. -/
 instance {A B : AbelianVariety K} (f : A ⟶ B) : IsMonHom (Hom.toOverHom f) :=

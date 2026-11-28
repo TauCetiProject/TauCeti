@@ -114,6 +114,10 @@ instance smooth (A : AbelianVariety K) : Smooth A.toOver.hom := by
 instance isLocallyNoetherian (A : AbelianVariety K) : IsLocallyNoetherian A.toScheme :=
   LocallyOfFiniteType.isLocallyNoetherian A.toOver.hom
 
+/-- The underlying scheme of an abelian variety is quasi-compact: it is proper over `Spec K`. -/
+instance compactSpace_toScheme (A : AbelianVariety K) : CompactSpace A.toScheme :=
+  QuasiCompact.compactSpace_of_compactSpace A.toOver.hom
+
 /-- An abelian variety is geometrically connected over the base field. -/
 instance geometricallyConnected (A : AbelianVariety K) :
     GeometricallyConnected A.toOver.hom :=

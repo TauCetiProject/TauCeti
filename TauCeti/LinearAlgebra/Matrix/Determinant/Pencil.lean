@@ -30,6 +30,8 @@ a small integral matrix (`TauCeti.LinearAlgebra.Matrix.ReductionKernel`).
 
 ## Main results
 
+* `Matrix.finite_setOf_det_smul_add_eq_zero`: if some member of a pencil `t • A + B` over a
+  domain has nonzero determinant, then only finitely many parameters `t` give zero determinant.
 * `Polynomial.eval_det_X_add_C`: `det (X • A + B)`, evaluated at `t`, is `det (t • A + B)`.
 * `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: over a field with more than `n` elements,
   a subspace of `n × n` matrices whose invertible elements are the nonzero multiples of one
@@ -54,6 +56,25 @@ theorem eval_det_X_add_C (A B : Matrix n n R) (t : R) :
   simp [mul_comm (A i j)]
 
 end Polynomial
+
+namespace Matrix
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [IsDomain R]
+
+/-- If some member `t₀ • A + B` of a matrix pencil over a domain has nonzero determinant, then the
+parameters `t` with `det (t • A + B) = 0` form a finite set. -/
+theorem finite_setOf_det_smul_add_eq_zero (A B : Matrix n n R)
+    (h : ∃ t₀ : R, (t₀ • A + B).det ≠ 0) :
+    {t : R | (t • A + B).det = 0}.Finite := by
+  let q : Polynomial R := ((X : R[X]) • A.map C + B.map C).det
+  have hq (t : R) : q.eval t = (t • A + B).det := eval_det_X_add_C A B t
+  have hq0 : q ≠ 0 := by
+    obtain ⟨t₀, ht₀⟩ := h
+    intro hzero
+    exact ht₀ (by rw [← hq, hzero, eval_zero])
+  simpa only [Polynomial.IsRoot.def, hq] using finite_setOfPred_isRoot hq0
+
+end Matrix
 
 namespace Submodule
 
