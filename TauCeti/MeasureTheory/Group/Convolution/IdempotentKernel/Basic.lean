@@ -19,17 +19,29 @@ An **idempotent kernel** on a group `G` with a measure `μ` is a continuous inte
 ∫ z, e z * e ((z * x)⁻¹ * y) ∂μ = e x⁻¹ / e 1 * e y
 ```
 
-for all `x` and `y`. In terms of convolution the last identity reads
-`e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e`: the compression by `e` of every point mass `δ_x` is a multiple
-of `e`, so that the corner cut out by `e` in the convolution algebra is spanned by `e`, the
-defining property of a minimal idempotent. This is a statement about the convolution algebra,
-not about the rank of the operator `ρ(e)` of `TauCeti.rightRegularIntegral`, which need not be
-one: for a coefficient of an infinite-dimensional discrete series, `ρ(e)` has infinite rank.
-Taking `x = 1` shows `e ⋆ e = e`, and evaluating at `y = 1`, with `e 1⁻¹ = conj (e 1)`, gives
-`e 1 = ∫ ‖e‖²`, a positive real number. On the operator side, `ρ(e)` is idempotent and
-`ρ(e) R_x ρ(e) = (e x⁻¹ / e 1) • ρ(e)` for the right translations `R_x`. The normalized
-coefficients `deg_π · conj ⟨π(g) v, v⟩` of a unit vector `v` in an integrable discrete series
-representation `π` are the basic examples.
+for all `x` and `y`. The predicate is stated for an arbitrary measure `μ`, and so are its
+consequences that only use the identity: taking `x = 1` gives `∫ z, e z * e (z⁻¹ * y) ∂μ = e y`,
+and evaluating that at `y = 1`, with `e 1⁻¹ = conj (e 1)`, gives `e 1 = ∫ ‖e‖²`, a positive real
+number.
+
+The reading of the identity in the convolution algebra needs `μ` to be a left Haar measure. Then
+`(f ⋆ g) y = ∫ z, f z * g (z⁻¹ * y) ∂μ` is the associative convolution of `L¹(G, μ)`, and
+`(δ_x ⋆ g) y = g (x⁻¹ * y)` for the point mass `δ_x`, so the identity reads
+`e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e` and its case `x = 1` reads `e ⋆ e = e`: the compression by `e`
+of every point mass is a multiple of `e`, so that the corner cut out by `e` in the convolution
+algebra is spanned by `e`, the defining property of a minimal idempotent. For a measure that is
+not left invariant the integral `∫ z, f z * g (z⁻¹ * y) ∂μ` need not be associative in `f` and
+`g`, and the identity carries no such meaning. Minimal idempotence is a statement about the
+convolution algebra, not about the rank of the operator `ρ(e)` of `TauCeti.rightRegularIntegral`,
+which need not be one: for a coefficient of an infinite-dimensional discrete series, `ρ(e)` has
+infinite rank.
+
+On the operator side, for a first-countable topological group `G` with `BorelSpace G` and
+`MeasurableMul₂ G` and an s-finite left-invariant measure `μ`, `ρ(e)` is idempotent and
+`ρ(e) R_x ρ(e) = (e x⁻¹ / e 1) • ρ(e)` for the right translations `R_x`; both laws go through
+`TauCeti.rightRegularIntegral_rightRegularIntegral_apply`, which uses the left invariance. The
+normalized coefficients `deg_π · conj ⟨π(g) v, v⟩` of a unit vector `v` in an integrable discrete
+series representation `π`, with a Haar measure `μ`, are the basic examples.
 
 ## Main definitions
 
@@ -37,12 +49,14 @@ representation `π` are the basic examples.
 
 ## Main results
 
-* `TauCeti.IsIdempotentKernel.integral_mul_inv_mul`: an idempotent kernel satisfies `e ⋆ e = e`.
+* `TauCeti.IsIdempotentKernel.integral_mul_inv_mul`: `∫ z, e z * e (z⁻¹ * y) ∂μ = e y` for any
+  `μ`, which is `e ⋆ e = e` when `μ` is a left Haar measure.
 * `TauCeti.IsIdempotentKernel.apply_one_eq_integral_norm_sq`,
-  `TauCeti.IsIdempotentKernel.integral_norm_sq_pos`: `e 1 = ∫ ‖e‖² > 0`.
-* `TauCeti.IsIdempotentKernel.isIdempotentElem_rightRegularIntegral`: `ρ(e)` is idempotent.
+  `TauCeti.IsIdempotentKernel.integral_norm_sq_pos`: `e 1 = ∫ ‖e‖² > 0`, for any `μ`.
+* `TauCeti.IsIdempotentKernel.isIdempotentElem_rightRegularIntegral`: `ρ(e)` is idempotent, for
+  an s-finite left-invariant `μ`.
 * `TauCeti.IsIdempotentKernel.rightRegularIntegral_compContinuous_mulRight_rightRegularIntegral`:
-  `ρ(e) R_x ρ(e) = (e x⁻¹ / e 1) • ρ(e)`.
+  `ρ(e) R_x ρ(e) = (e x⁻¹ / e 1) • ρ(e)`, for an s-finite left-invariant `μ`.
 
 ## Provenance
 
@@ -65,11 +79,14 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
 
 /-- An **idempotent kernel** on a group `G` with a measure `μ`: a continuous integrable
 `e : G → ℂ` with `e g⁻¹ = conj (e g)`, `e 1 ≠ 0` and
-`∫ z, e z * e ((z * x)⁻¹ * y) ∂μ = e x⁻¹ / e 1 * e y` for all `x` and `y`. In terms of
-convolution the last identity reads `e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e`: the compression by `e` of
-every point mass is a multiple of `e`, so that `e` is a minimal idempotent of the convolution
-algebra (`TauCeti.IsIdempotentKernel.integral_mul_inv_mul`). This is not a statement about the
-rank of the operator `TauCeti.rightRegularIntegral e μ`. -/
+`∫ z, e z * e ((z * x)⁻¹ * y) ∂μ = e x⁻¹ / e 1 * e y` for all `x` and `y`. The predicate is
+stated for an arbitrary measure `μ`. When `μ` is a left Haar measure, the last identity reads
+`e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e` in the convolution algebra `L¹(G, μ)`, whose case `x = 1` is
+`e ⋆ e = e` (`TauCeti.IsIdempotentKernel.integral_mul_inv_mul`): the compression by `e` of every
+point mass is a multiple of `e`, so that `e` is a minimal idempotent of that algebra. Without left
+invariance the convolution integral need not be associative and this reading is not available.
+Minimal idempotence is not a statement about the rank of the operator
+`TauCeti.rightRegularIntegral e μ`. -/
 structure IsIdempotentKernel (e : G → ℂ) (μ : Measure G) : Prop where
   /-- An idempotent kernel is continuous. -/
   continuous : Continuous e
@@ -79,14 +96,17 @@ structure IsIdempotentKernel (e : G → ℂ) (μ : Measure G) : Prop where
   apply_inv (g : G) : e g⁻¹ = conj (e g)
   /-- An idempotent kernel does not vanish at `1`. -/
   apply_one_ne_zero : e 1 ≠ 0
-  /-- The minimal idempotence identity `e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e`. -/
+  /-- The identity `∫ z, e z * e ((z * x)⁻¹ * y) ∂μ = e x⁻¹ / e 1 * e y`; when `μ` is a left
+  Haar measure it is the minimal idempotence `e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e`. -/
   integral_mul_mul_inv_mul (x y : G) : ∫ z, e z * e ((z * x)⁻¹ * y) ∂μ = e x⁻¹ / e 1 * e y
 
 namespace IsIdempotentKernel
 
 variable {e : G → ℂ} {μ : Measure G}
 
-/-- **An idempotent kernel is idempotent for convolution**: `∫ z, e z * e (z⁻¹ * y) ∂μ = e y`. -/
+/-- The case `x = 1` of the defining identity of an idempotent kernel:
+`∫ z, e z * e (z⁻¹ * y) ∂μ = e y`, for any measure `μ`. When `μ` is a left Haar measure, this is
+**the idempotence `e ⋆ e = e` in the convolution algebra**. -/
 @[simp]
 theorem integral_mul_inv_mul (he : IsIdempotentKernel e μ) (y : G) :
     ∫ z, e z * e (z⁻¹ * y) ∂μ = e y := by
@@ -113,14 +133,15 @@ theorem memLp_two (he : IsIdempotentKernel e μ) : MemLp e 2 μ :=
 variable [IsTopologicalGroup G] [FirstCountableTopology G] [BorelSpace G] [MeasurableMul₂ G]
   [μ.IsMulLeftInvariant] [SFinite μ]
 
-/-- The operator `ρ(e)` of an idempotent kernel is idempotent. -/
+/-- The operator `ρ(e)` of an idempotent kernel is idempotent, for an s-finite left-invariant
+measure `μ`. -/
 theorem isIdempotentElem_rightRegularIntegral (he : IsIdempotentKernel e μ) :
     IsIdempotentElem (rightRegularIntegral e μ) :=
   TauCeti.isIdempotentElem_rightRegularIntegral (Eventually.of_forall he.integral_mul_inv_mul)
 
 /-- **The sandwich law of an idempotent kernel**: `ρ(e) R_x ρ(e) = (e x⁻¹ / e 1) • ρ(e)` for the
-right translation `(R_x F)(y) = F (y * x)`, the operator form of `e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e`.
--/
+right translation `(R_x F)(y) = F (y * x)` and an s-finite left-invariant measure `μ`, the operator
+form of `e ⋆ δ_x ⋆ e = (e x⁻¹ / e 1) • e`. -/
 theorem rightRegularIntegral_compContinuous_mulRight_rightRegularIntegral
     (he : IsIdempotentKernel e μ) (F : G →ᵇ ℂ) (x : G) :
     rightRegularIntegral e μ ((rightRegularIntegral e μ F).compContinuous
