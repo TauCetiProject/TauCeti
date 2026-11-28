@@ -131,13 +131,9 @@ theorem map_quotientMk_stalkMap_surjective (q : Spf (A ⧸ J)) :
   obtain ⟨s, hs⟩ := map_quotientMk_appLE_basicOpen_surjective J f
     ((Spf (A ⧸ J)).presheaf.map (homOfLE hbU).op t)
   refine ⟨(Spf A).presheaf.germ W ((qmap).base q) hp s, ?_⟩
-  have hgerm : (Spf A).presheaf.germ W ((qmap).base q) hp ≫ (qmap).stalkMap q =
-      (qmap).toHom.appLE W V hpre ≫ (Spf (A ⧸ J)).presheaf.germ V q hb := by
-    refine (LocallyRingedSpace.stalkMap_germ (qmap) W q hp).trans ?_
-    rw [PresheafedSpace.Hom.appLE_def, Category.assoc, TopCat.Presheaf.germ_res]
   calc
     _ = (Spf (A ⧸ J)).presheaf.germ V q hb ((qmap).toHom.appLE W V hpre s) :=
-      ConcreteCategory.congr_hom hgerm s
+      ConcreteCategory.congr_hom ((qmap).toHom.germ_stalkMap_appLE W V hpre q hb) s
     _ = _ := by
       rw [hs]
       exact (Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hbU) q hb t

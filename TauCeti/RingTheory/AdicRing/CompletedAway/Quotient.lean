@@ -42,9 +42,10 @@ private noncomputable def quotientForward :
       simp only [u, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem.mpr hb, map_zero])
   exact RingHom.mem_ker.mp (hJ ha)
 
-private theorem continuous_quotientForward : Continuous (quotientForward J f) :=
-  (QuotientRing.isOpenQuotientMap_mk _).isQuotientMap.continuous_iff.mpr
-    (continuous_lift _ _ _)
+private theorem continuous_quotientForward : Continuous (quotientForward J f) := by
+  apply (QuotientRing.isOpenQuotientMap_mk _).isQuotientMap.continuous_iff.mpr
+  rw [← RingHom.coe_comp, quotientForward, Ideal.Quotient.lift_comp_mk]
+  exact continuous_lift _ _ _
 
 private theorem quotientForward_algebraMap (a : A) :
     quotientForward J f (Ideal.Quotient.mk _ (algebraMap A (CompletedAway A f) a)) =
@@ -70,8 +71,9 @@ private noncomputable def quotientBackward :
       rw [Ideal.quotientMap_mk]
       exact (isUnit_algebraMap_self A f).map (Ideal.Quotient.mk _))
 
-private theorem continuous_quotientBackward : Continuous (quotientBackward J f) :=
-  continuous_lift _ _ _
+private theorem continuous_quotientBackward : Continuous (quotientBackward J f) := by
+  unfold quotientBackward
+  exact continuous_lift _ _ _
 
 private theorem quotientBackward_algebraMap (a : A) :
     quotientBackward J f
@@ -101,12 +103,15 @@ noncomputable def quotientEquiv :
       simp only [RingHom.comp_apply, quotientForward_algebraMap, quotientBackward_algebraMap])
 
 /-- The forward quotient comparison is continuous for the quotient topology. -/
-theorem continuous_quotientEquiv : Continuous (quotientEquiv J f) :=
-  continuous_quotientForward J f
+theorem continuous_quotientEquiv : Continuous (quotientEquiv J f) := by
+  rw [← RingEquiv.coe_toRingHom, quotientEquiv, RingEquiv.toRingHom_ofRingHom]
+  exact continuous_quotientForward J f
 
 /-- The inverse quotient comparison is continuous. -/
-theorem continuous_quotientEquiv_symm : Continuous (quotientEquiv J f).symm :=
-  continuous_quotientBackward J f
+theorem continuous_quotientEquiv_symm : Continuous (quotientEquiv J f).symm := by
+  rw [← RingEquiv.coe_toRingHom, quotientEquiv, RingEquiv.ofRingHom_symm,
+    RingEquiv.toRingHom_ofRingHom]
+  exact continuous_quotientBackward J f
 
 /-- The quotient comparison takes the class of a coefficient to its image in the completed
 localization of the quotient. -/
@@ -116,7 +121,7 @@ theorem quotientEquiv_algebraMap (a : A) :
         (algebraMap A (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) a) =
       algebraMap (A ⧸ J) (CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f))
         (Ideal.Quotient.mk J a) := by
-  rw [← Ideal.Quotient.mk_algebraMap]
+  rw [quotientEquiv, RingEquiv.ofRingHom_apply, ← Ideal.Quotient.mk_algebraMap]
   exact quotientForward_algebraMap J f a
 
 /-- The inverse quotient comparison takes a localized coefficient to its class in the quotient
