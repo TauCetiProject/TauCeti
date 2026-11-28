@@ -57,6 +57,17 @@ theorem specTargetImageIdeal_specMap (f : R ⟶ S) :
 
 end TauCeti
 
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+/-- Pulling an ideal sheaf back through the schematic image agrees with pulling it back
+along the original morphism. -/
+@[simp]
+theorem comap_imageι_comap_toImage {X Y : Scheme} (I : Y.IdealSheafData) (f : X ⟶ Y) :
+    (I.comap f.imageι).comap f.toImage = I.comap f := by
+  rw [← comap_comp, Scheme.Hom.toImage_imageι]
+
+end AlgebraicGeometry.Scheme.IdealSheafData
+
 namespace AlgebraicGeometry.Scheme.Hom
 
 universe u

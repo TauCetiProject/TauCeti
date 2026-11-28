@@ -6,19 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.Pullback
-public import TauCeti.AlgebraicGeometry.Blowup.Restriction
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.SchematicDensity
-public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
-public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 
 /-!
 # Schematic images under admissible blowups
 
 Let `v : V ⟶ W` be quasi-compact, let `p : W ⟶ X`, and let `I` be an ideal sheaf on `X`
-whose support misses the image of `v ≫ p`. Inside `W ×[X] Bl_I X`, the schematic image of
-the lift of `v` is the strict transform of `v.image`. Equivalently, it is the blowup of
-`v.image` along the inverse image of `I`. The comparison is an isomorphism respecting
+whose pullback along `v ≫ p` is an effective Cartier divisor. Inside `W ×[X] Bl_I X`,
+the schematic image of the lift of `v` is the strict transform of `v.image`. Equivalently, it is the
+blowup of `v.image` along the inverse image of `I`. The comparison is an isomorphism respecting
 the closed embeddings into the base-changed blowup and the maps to the original image.
 
 This applies in particular to the closure of a subscheme of a product when one factor is
@@ -41,37 +38,7 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {V X : Scheme.{u}} (I : X.IdealSheafData) (f : V ⟶ X)
-
-/-- A quasi-compact schematically dominant morphism avoiding the centre remains
-schematically dominant after lifting to the blowup. -/
-theorem isSchemeTheoreticallyDominant_blowupLift_of_comap_eq_top
-    [QuasiCompact f] [IsSchemeTheoreticallyDominant f] (hf : I.comap f = ⊤) :
-    IsSchemeTheoreticallyDominant
-      (I.blowupLift f (hf ▸ isEffectiveCartier_top V)) := by
-  let U : X.Opens := I.support.compl
-  let B := I.blowupToBase ⁻¹ᵁ U
-  have hrange : Set.range f ⊆ Set.range U.ι := by
-    rw [Scheme.Opens.range_ι]
-    rintro _ ⟨v, rfl⟩
-    have h := (I.comap_eq_top_iff f).mp hf
-    exact h.ge (Set.mem_univ v)
-  let g := IsOpenImmersion.lift U.ι f hrange
-  have hB : IsSchemeTheoreticallyDominant B.ι := by
-    dsimp only [B, U]
-    rw [← I.compl_support_comap I.blowupToBase]
-    exact I.isEffectiveCartier_comap_blowupToBase
-      |>.isSchemeTheoreticallyDominant_support_compl_ι
-  have heq : g ≫ inv (I.blowupToBase ∣_ U) ≫ B.ι =
-      I.blowupLift f (hf ▸ isEffectiveCartier_top V) := by
-    apply I.eq_blowupLift
-    simp only [Category.assoc]
-    rw [← morphismRestrict_ι, IsIso.inv_hom_id_assoc,
-      IsOpenImmersion.lift_fac]
-  rw [← heq]
-  infer_instance
-
-variable {W : Scheme.{u}} (p : W ⟶ X) (v : V ⟶ W)
+variable {V W X : Scheme.{u}} (I : X.IdealSheafData) (p : W ⟶ X) (v : V ⟶ W)
 
 /-- The strict transform of the schematic image of `v`, embedded in the base change
 of the blowup along `p`. -/
@@ -106,35 +73,31 @@ instance isClosedImmersion_blowupImageι : IsClosedImmersion (I.blowupImageι p 
 /-- The canonical lift to the blowup of the schematic image factors any lift of `v`
 through the strict-transform embedding. -/
 @[reassoc]
-theorem blowupLift_toImage_blowupImageι (hv : I.comap (v ≫ p) = ⊤)
+theorem blowupLift_toImage_blowupImageι (hv : (I.comap (v ≫ p)).IsEffectiveCartier)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
-    (I.comap (v.imageι ≫ p)).blowupLift v.toImage (by
-      rw [← comap_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, hv]
-      exact isEffectiveCartier_top V) ≫ I.blowupImageι p v = g := by
+    (I.comap (v.imageι ≫ p)).blowupLift v.toImage (by simpa using hv) ≫
+      I.blowupImageι p v = g := by
   refine I.pullback_blowupToBase_hom_ext p (by simp [hg]) ?_
-  simp [hv]
+  simpa using hv
 
 variable [QuasiCompact v]
 
-/-- Schematic closure commutes with a blowup away from `v`: inside the base-changed
-blowup, the schematic image of a lift is the strict transform of the schematic image. -/
-theorem ker_eq_ker_blowupImageι (hv : I.comap (v ≫ p) = ⊤)
+/-- When the pulled-back centre is effective Cartier, the schematic image of a lift is the strict
+transform of the original schematic image. -/
+theorem ker_eq_ker_blowupImageι (hv : (I.comap (v ≫ p)).IsEffectiveCartier)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
     g.ker = (I.blowupImageι p v).ker := by
   -- Lift the schematically dense map to its image; it stays dense on the blowup.
-  have hvi : (I.comap (v.imageι ≫ p)).comap v.toImage = ⊤ := by
-    rw [← comap_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, hv]
-  let l := (I.comap (v.imageι ≫ p)).blowupLift v.toImage (hvi ▸ isEffectiveCartier_top V)
+  let l := (I.comap (v.imageι ≫ p)).blowupLift v.toImage (by simpa using hv)
   have : IsSchemeTheoreticallyDominant l :=
-    (I.comap (v.imageι ≫ p)).isSchemeTheoreticallyDominant_blowupLift_of_comap_eq_top
-      v.toImage hvi
+    (I.comap (v.imageι ≫ p)).isSchemeTheoreticallyDominant_blowupLift v.toImage _
   have hlg : l ≫ I.blowupImageι p v = g :=
     I.blowupLift_toImage_blowupImageι p v hv g hg
   rw [← hlg, Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant]
 
-/-- The schematic image of a lift through a blowup avoiding `v` is canonically
+/-- The schematic image of a lift through the blowup is canonically
 isomorphic to the blowup of the schematic image along the inverse image of the centre. -/
-def imageBlowupIso (hv : I.comap (v ≫ p) = ⊤)
+def imageBlowupIso (hv : (I.comap (v ≫ p)).IsEffectiveCartier)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
     g.image ≅ (I.comap (v.imageι ≫ p)).blowup :=
   have hker : (I.blowupImageι p v).ker = g.imageι.ker := by
@@ -144,14 +107,14 @@ def imageBlowupIso (hv : I.comap (v ≫ p) = ⊤)
 
 /-- The comparison respects the closed embeddings into the base-changed blowup. -/
 @[reassoc (attr := simp)]
-theorem imageBlowupIso_hom_blowupImageι (hv : I.comap (v ≫ p) = ⊤)
+theorem imageBlowupIso_hom_blowupImageι (hv : (I.comap (v ≫ p)).IsEffectiveCartier)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
     (I.imageBlowupIso p v hv g hg).hom ≫ I.blowupImageι p v = g.imageι := by
   simp only [imageBlowupIso, asIso_hom, IsClosedImmersion.lift_fac]
 
 /-- The inverse comparison also respects the closed embeddings. -/
 @[reassoc (attr := simp)]
-theorem imageBlowupIso_inv_imageι (hv : I.comap (v ≫ p) = ⊤)
+theorem imageBlowupIso_inv_imageι (hv : (I.comap (v ≫ p)).IsEffectiveCartier)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
     (I.imageBlowupIso p v hv g hg).inv ≫ g.imageι = I.blowupImageι p v := by
   rw [Iso.inv_comp_eq, imageBlowupIso_hom_blowupImageι]
@@ -159,12 +122,10 @@ theorem imageBlowupIso_inv_imageι (hv : I.comap (v ≫ p) = ⊤)
 /-- The comparison carries the map from `V` to its schematic image to the canonical
 lift into the blowup of the original schematic image. -/
 @[reassoc (attr := simp)]
-theorem toImage_imageBlowupIso_hom (hv : I.comap (v ≫ p) = ⊤)
+theorem toImage_imageBlowupIso_hom (hv : (I.comap (v ≫ p)).IsEffectiveCartier)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
     g.toImage ≫ (I.imageBlowupIso p v hv g hg).hom =
-      (I.comap (v.imageι ≫ p)).blowupLift v.toImage (by
-        rw [← comap_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, hv]
-        exact isEffectiveCartier_top V) := by
+      (I.comap (v.imageι ≫ p)).blowupLift v.toImage (by simpa using hv) := by
   apply (cancel_mono (I.blowupImageι p v)).mp
   rw [Category.assoc, imageBlowupIso_hom_blowupImageι, Scheme.Hom.toImage_imageι,
     blowupLift_toImage_blowupImageι I p v hv g hg]

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Blowup.Flat
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
+import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 
 /-!
 # Blowing up a model in a centre of its special fibre
@@ -87,12 +88,11 @@ private lemma genericToCompl_ι :
 /-- The generic fibre `C` of `M`, lifted to the blowup through the open `X ∖ V(I)` over which the
 blowup is an isomorphism. -/
 private def genericLift : C ⟶ I.blowup :=
-  genericToCompl M I hC ≫ inv (I.blowupToBase ∣_ I.support.compl) ≫
-    (I.blowupToBase ⁻¹ᵁ I.support.compl).ι
-
-@[reassoc]
-private lemma genericLift_blowupToBase : genericLift M I hC ≫ I.blowupToBase = M.genericι := by
-  simp [genericLift, ← morphismRestrict_ι, genericToCompl_ι]
+  I.blowupLift M.genericι (by
+    have h : I.comap M.genericι = ⊤ := (I.comap_eq_top_iff _).mpr
+      (eq_top_iff.mpr fun x _ ↦ hC.subset_compl_right ⟨x, rfl⟩)
+    rw [h]
+    exact Scheme.IdealSheafData.isEffectiveCartier_top C)
 
 /-- The generic fibre `C` of `M` is the pullback of the blowup along the inclusion `C ⟶ X`. -/
 private lemma isPullback_genericLift :
@@ -103,7 +103,8 @@ private lemma isPullback_genericLift :
       ⟨by simp⟩).paste_horiz
     (isPullback_morphismRestrict I.blowupToBase I.support.compl).flip
   rw [genericToCompl_ι, Category.assoc] at h
-  exact h
+  rwa [I.eq_comp_inv_blowupToBase_restrict_compl_support (genericLift M I hC)
+    (genericToCompl M I hC) (by simp [genericLift, genericToCompl_ι])]
 
 /-- The generic fibre of the blowup, over the fraction field, is `C`. -/
 private lemma isPullback_genericLift_toBase :
@@ -160,7 +161,7 @@ lemma genericι_blowupToBase :
     simp only [genericι_def, blowup, blowupGenericFiberIso, Over.isoMk_inv_left, Iso.symm_inv]
     exact IsPullback.isoPullback_hom_fst _
   rw [h]
-  exact genericLift_blowupToBase M I hC
+  exact I.blowupLift_blowupToBase _ _
 
 /-- **The blowup morphism of models.** The blowup morphism `Bl_I X ⟶ X` is a morphism from the
 blowup model to `M`. -/

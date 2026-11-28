@@ -6,8 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.UniversalProperty
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import TauCeti.Algebra.Regular.SMul
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
+import TauCeti.AlgebraicGeometry.Blowup.Restriction
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.SchematicDensity
+import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 
 /-!
 # The exceptional divisor of a blowup
@@ -214,5 +219,23 @@ theorem isIso_blowupToBase_iff : IsIso I.blowupToBase ↔ I.IsEffectiveCartier :
     · rw [Category.assoc, blowupLift_blowupToBase, Category.comp_id, Category.id_comp]
     · rw [Category.assoc, blowupLift_blowupToBase, Category.comp_id]
       exact I.isEffectiveCartier_comap_blowupToBase
+
+/-- A quasi-compact schematically dominant morphism stays schematically dominant after
+lifting to the blowup when the pulled-back centre is an effective Cartier divisor. -/
+theorem isSchemeTheoreticallyDominant_blowupLift {V : Scheme.{u}} (f : V ⟶ X)
+    [QuasiCompact f] [IsSchemeTheoreticallyDominant f] (hf : (I.comap f).IsEffectiveCartier) :
+    IsSchemeTheoreticallyDominant (I.blowupLift f hf) := by
+  let U : X.Opens := I.support.compl
+  have : IsSchemeTheoreticallyDominant (f ∣_ U) :=
+    .of_isPullback (isPullback_morphismRestrict f U).flip
+  have : IsSchemeTheoreticallyDominant (I.blowupToBase ⁻¹ᵁ U).ι := by
+    dsimp only [U]
+    rw [← I.compl_support_comap]
+    exact I.isEffectiveCartier_comap_blowupToBase.isSchemeTheoreticallyDominant_support_compl_ι
+  -- On the complement the lift factors through two schematically dominant maps and an isomorphism.
+  refine @IsSchemeTheoreticallyDominant.of_comp _ _ _ (f ⁻¹ᵁ U).ι _ ?_
+  rw [I.eq_comp_inv_blowupToBase_restrict_compl_support ((f ⁻¹ᵁ U).ι ≫ I.blowupLift f hf)
+    (f ∣_ U) (by simp [U])]
+  infer_instance
 
 end AlgebraicGeometry.Scheme.IdealSheafData

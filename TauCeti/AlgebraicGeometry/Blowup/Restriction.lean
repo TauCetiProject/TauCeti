@@ -95,4 +95,15 @@ instance isIso_blowupToBase_restrict_compl_support :
     IsIso (I.blowupToBase ∣_ I.support.compl) :=
   I.isIso_blowupToBase_restrict_of_disjoint_support disjoint_compl_left
 
+/-- Over the complement of the centre, any map to the blowup is obtained by applying the
+inverse of the restricted blowup morphism to its map to the complement. -/
+theorem eq_comp_inv_blowupToBase_restrict_compl_support {Y : Scheme.{u}}
+    (l : Y ⟶ I.blowup) (g : Y ⟶ I.support.compl)
+    (h : l ≫ I.blowupToBase = g ≫ Scheme.Opens.ι I.support.compl) :
+    l = g ≫ inv (I.blowupToBase ∣_ I.support.compl) ≫
+      (I.blowupToBase ⁻¹ᵁ I.support.compl).ι := by
+  have H := (isPullback_morphismRestrict I.blowupToBase I.support.compl).flip
+  have e := (asIso (I.blowupToBase ∣_ I.support.compl)).eq_comp_inv.mpr (H.lift_snd l g h)
+  rw [← H.lift_fst l g h, e, Category.assoc, asIso_inv]
+
 end AlgebraicGeometry.Scheme.IdealSheafData
