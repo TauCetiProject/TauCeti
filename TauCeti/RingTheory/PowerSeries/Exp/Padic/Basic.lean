@@ -134,7 +134,8 @@ private theorem norm_coeff_rescale_exp_sub_one_mul_pow_le {x : A} {c : ℝ} (hc 
         (Nat.one_le_iff_ne_zero.mpr hn))
 
 /-- The rescaled exponential has a Gauss norm on the closed p-adic exponential disc, including
-its boundary, where it is not restricted. -/
+its boundary (without asserting restrictedness there; over a normed field it is not restricted at
+the boundary). -/
 theorem hasGaussNorm_rescale_exp {x : A} {c : ℝ} (hc : 0 ≤ c)
     (hxc : ‖x‖ * c ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) :
     (rescale x (exp A)).HasGaussNorm norm c :=
