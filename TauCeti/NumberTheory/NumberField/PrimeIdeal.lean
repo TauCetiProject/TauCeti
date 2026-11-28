@@ -11,10 +11,10 @@ public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Int
+public import Mathlib.RingTheory.RamificationInertia.Inertia
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.KrullDimension.Basic
 import Mathlib.RingTheory.RamificationInertia.Basic
-import Mathlib.RingTheory.RamificationInertia.Inertia
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.RamificationInertia.Inert
 import TauCeti.RingTheory.Ideal.Span
@@ -48,6 +48,10 @@ prime into them.
   lie over a nonzero prime of `ℤ`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
   `K` generates the squarefree product of the primes of `𝓞 K` above it.
+* `TauCeti.NumberField.natCast_dvd_iff_forall_mem_primesOver`: divisibility by an unramified
+  rational prime is equivalent to membership in all the primes above it.
+* `Ideal.under_eq_span_natCast_of_inertiaDeg_ne_zero`: if `(p)` has nonzero residue degree in
+  `𝓞 K`, any ideal in an extension lying over `(p)` contracts to `(p)` in `𝓞 K`.
 * `TauCeti.NumberField.isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow`: if a rational
   prime generates a power `e` of the product of the primes above it, it stays prime iff a single
   prime lies above it and `e = 1`.
@@ -301,6 +305,49 @@ theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
   have := hun P
   rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P,
     Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
+
+/-- At an unramified rational prime, an algebraic integer is divisible by `p` if and only if
+it belongs to every prime above `p`. -/
+theorem natCast_dvd_iff_forall_mem_primesOver {p : ℕ} [Fact p.Prime]
+    (hun : ∀ (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})],
+      Algebra.IsUnramifiedAt (𝓞 ℚ) Q) (x : 𝓞 K) :
+    (p : 𝓞 K) ∣ x ↔ ∀ Q ∈ (span {(p : ℤ)}).primesOver (𝓞 K), x ∈ Q := by
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa using (Fact.out : p.Prime).ne_zero
+  have hmem {Q : Ideal (𝓞 K)} := IsDedekindDomain.mem_primesOverFinset_iff hp0 (𝓞 K) (P := Q)
+  rw [← mem_span_singleton, span_natCast_eq_prod_primesOverFinset hun,
+    prod_eq_iInf_of_pairwise_isCoprime (J := fun Q ↦ Q)]
+  · simp only [mem_iInf, hmem]
+  · intro I hI J hJ hne
+    obtain ⟨hIp, hIo⟩ := hmem.mp hI
+    obtain ⟨hJp, hJo⟩ := hmem.mp hJ
+    exact (heightOneSpectrumOfLiesOver p I).isCoprime_of_ne (heightOneSpectrumOfLiesOver p J)
+      (fun h ↦ hne (congrArg IsDedekindDomain.HeightOneSpectrum.asIdeal h))
+
+/-- If the principal ideal `(p)` has nonzero residue degree over `ℤ` in `𝓞 K`, then every
+ideal `Q` in an extension lying over `(p)` in `ℤ` contracts to `(p)` in `𝓞 K`. -/
+theorem _root_.Ideal.under_eq_span_natCast_of_inertiaDeg_ne_zero {E : Type*} [Field E]
+    [Algebra K E] {p : ℕ} (Q : Ideal (𝓞 E)) [Q.LiesOver (span {(p : ℤ)})]
+    (hf : (span {(p : 𝓞 K)}).inertiaDeg ℤ ≠ 0) :
+    Q.under (𝓞 K) = span {(p : 𝓞 K)} := by
+  obtain rfl | hp := eq_or_ne p 0
+  · have : Q.LiesOver (⊥ : Ideal ℤ) := by simpa using ‹Q.LiesOver (span {(↑(0 : ℕ) : ℤ)})›
+    simp [Q.eq_bot_of_liesOver_bot ℤ, Ideal.under_bot]
+  have hprime : (span {(p : 𝓞 K)}).IsPrime := by
+    by_contra h
+    exact hf (inertiaDeg_of_not_isPrime _ _ h)
+  have hmax := hprime.isMaximal (by simpa using hp)
+  have hQ : (Q.under (𝓞 K)).LiesOver (span {(p : ℤ)}) := LiesOver.tower_bot Q _ _
+  have hne : Q.under (𝓞 K) ≠ ⊤ := by
+    intro htop
+    have hover := hQ.over
+    rw [htop, under_top] at hover
+    have hmap := congrArg (Ideal.map (algebraMap ℤ (𝓞 K))) hover
+    exact hprime.ne_top (by
+      simpa only [map_span, Set.image_singleton, map_natCast, Ideal.map_top] using hmap)
+  refine (hmax.eq_of_le hne ?_).symm
+  rw [span_singleton_le_iff_mem, mem_under, map_natCast]
+  simpa using (mem_of_liesOver Q (span {(p : ℤ)}) (p : ℤ)).mp (mem_span_singleton_self _)
 
 /-- **Primes above distinct rational primes are distinct.** The finsets of primes of `𝓞 K` lying
 over two distinct rational primes are disjoint, since a prime lies over exactly one of them. -/
