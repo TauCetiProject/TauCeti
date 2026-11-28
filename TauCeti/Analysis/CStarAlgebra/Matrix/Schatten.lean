@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Matrix.SquareFunction
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
 
+import TauCeti.Analysis.CStarAlgebra.Matrix.LinearMap
 import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Duality
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung

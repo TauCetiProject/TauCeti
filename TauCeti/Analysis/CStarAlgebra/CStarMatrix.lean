@@ -120,8 +120,6 @@ embeddings into block-diagonal matrices.
   `Π i, M_{n i}(B) → M_{Σ i, n i}(B)`, `x ↦ diag(x_i)`, an injective star homomorphism.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
-* `CStarMatrix.entryLinearMap`, `CStarMatrix.traceLinearMap`: entry extraction and matrix trace on
-  `CStarMatrix` as linear maps.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
@@ -577,26 +575,6 @@ theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum [Fintype n] [NonUnitalRing A] 
     MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, star_mul, star_star,
     ofMatrix_symm_apply] at this
   rw [star_apply, mul_sub, sub_mul, this, mul_assoc, sub_self]
-
-/-- Extracting the `(i, j)`-th entry of a `CStarMatrix` as an `R`-linear map. -/
-def entryLinearMap (R A : Type*) {m n : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
-    (i : m) (j : n) : CStarMatrix m n A →ₗ[R] A :=
-  (Matrix.entryLinearMap R A i j).comp (ofMatrixₗ (R := R)).symm.toLinearMap
-
-@[simp]
-theorem entryLinearMap_apply {R A m n : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
-    (i : m) (j : n) (M : CStarMatrix m n A) : entryLinearMap R A i j M = M i j := (rfl)
-
-/-- The matrix trace of a C⋆-matrix bundled as a linear map. -/
-def traceLinearMap (n R A : Type*) [Fintype n] [AddCommMonoid A] [Semiring R] [Module R A] :
-    CStarMatrix n n A →ₗ[R] A :=
-  (Matrix.traceLinearMap n R A).comp (ofMatrixₗ (R := R)).symm.toLinearMap
-
-/-- Applying `CStarMatrix.traceLinearMap` yields the matrix trace of the underlying matrix. -/
-@[simp]
-theorem traceLinearMap_apply {n R A : Type*} [Fintype n] [AddCommMonoid A] [Semiring R]
-    [Module R A] (M : CStarMatrix n n A) :
-    traceLinearMap n R A M = Matrix.trace (ofMatrix.symm M) := (rfl)
 
 end Algebraic
 

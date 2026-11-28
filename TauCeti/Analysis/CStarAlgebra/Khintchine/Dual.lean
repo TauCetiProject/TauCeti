@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.CStarAlgebra.Matrix.HermitianDilation
+import TauCeti.Analysis.CStarAlgebra.Matrix.LinearMap
 import TauCeti.Analysis.CStarAlgebra.RademacherSum
 
 /-!

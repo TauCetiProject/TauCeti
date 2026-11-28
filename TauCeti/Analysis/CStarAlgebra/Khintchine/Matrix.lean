@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 
 import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.Analysis.CStarAlgebra.Khintchine.Dual
+import TauCeti.Analysis.CStarAlgebra.Matrix.LinearMap
 import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Duality
 import TauCeti.Analysis.CStarAlgebra.RademacherSum
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
