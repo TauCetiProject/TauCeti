@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Hom.Defs
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Combinatorics.Quiver.Path.Weight
+public import Mathlib.Combinatorics.Quiver.Cast
 
 /-!
 # Path weights
@@ -38,6 +39,18 @@ by a prefix.
 public section
 
 universe u v
+
+/-- Changing the recorded endpoints of a path does not change its weight. -/
+@[to_additive (attr := simp) addWeight_cast
+  /-- Changing the recorded endpoints of a path does not change
+its additive weight. -/, simp]
+theorem _root_.Quiver.Path.weight_cast {V : Type*} [Quiver V] {M : Type*} [Monoid M]
+    (wt : ∀ {a b : V}, (a ⟶ b) → M) {a b a' b' : V}
+    (p : Quiver.Path a b) (ha : a = a') (hb : b = b') :
+    (p.cast ha hb).weight wt = p.weight wt := by
+  cases ha
+  cases hb
+  rfl
 
 variable {V : Type u} [Quiver.{v} V] {M : Type*} [AddMonoid M]
 
