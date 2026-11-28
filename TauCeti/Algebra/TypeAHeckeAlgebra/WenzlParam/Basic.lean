@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.Order.Interval.Set.Basic
+import TauCeti.Algebra.Ring.Units
 import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Wenzl's discrete Markov trace parameters
@@ -25,9 +24,13 @@ with the removable value `a_d(1) = (d + 1) / (2 * d)`. In Wenzl's classification
 Markov traces on the type-A Hecke algebras, which is not proved here, the projection parameters at
 `Q = q ^ 2 > 0` form a closed interval together with the discrete values `a_d(Q)`, and at the
 roots of unity `Q = exp (± 2 π i / l)` they are the values `a_k(Q)`, `1 ≤ k ≤ l - 1`. This file
-develops the parameters themselves, and identifies `a_(r + 1)(q ^ 2)` as the projection parameter
-of the Ocneanu trace realized by the atomic model on `r + 1` positive letters with geometric
-weights.
+develops the algebraic theory of the parameters themselves, characterizes the closed and open real
+interval at `Q > -1` by the quadratic relation `a_(-2)(Q) ≤ η * (1 - η)`, and expresses
+`a_(-r)(Q)` in terms of geometric weights. Continuity and exponential evaluations are in
+`TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Analytic`, root-of-unity evaluations are in
+`TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.RootOfUnity`, and the identification with the Ocneanu
+trace of the geometric atomic model is in
+`TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Geometric`.
 
 We define `a_d(Q)` (`TauCeti.wenzlParam`) without division by `1 - Q`: for `d = r ≥ 0` and for
 `d = -r`, with `[n]_Q = ∑ i < n, Q ^ i`,
@@ -43,24 +46,24 @@ whenever `Q ≠ 0, 1`, and its value at `Q = 1` is the removable limit.
 
 ## Main results
 
-* `TauCeti.wenzlParam_eq_div`: the closed form `(1 - Q ^ (d + 1)) / ((1 + Q) * (1 - Q ^ d))`.
-* `TauCeti.wenzlParam_one` and `TauCeti.tendsto_one_sub_zpow_div_nhdsNE_one`: the value
-  `(d + 1) / (2 * d)` at `Q = 1`, and the closed form tends to it as `Q → 1`.
+* `TauCeti.wenzlParam_eq_div` and `TauCeti.map_wenzlParam`: the closed form
+  `(1 - Q ^ (d + 1)) / ((1 + Q) * (1 - Q ^ d))`, and compatibility with field homomorphisms.
+* `TauCeti.wenzlParam_one`: the value `(d + 1) / (2 * d)` at `Q = 1`.
 * `TauCeti.wenzlParam_add_wenzlParam_neg`: the complement identity `a_d + a_(-d) = 1`.
 * `TauCeti.wenzlParam_inv`: the inversion symmetry `a_d(Q⁻¹) = a_d(Q)`.
-* `TauCeti.wenzlParam_neg_two_sq`: the Jones value `a_(-2)(q ^ 2) = (q + q⁻¹)⁻²`.
-* `TauCeti.wenzlParam_exp_mul_I`: `a_k(exp (2 θ i)) = sin ((k + 1) θ) / (2 cos θ sin (k θ))`;
-  `TauCeti.wenzlParam_exp_two_pi_mul_I_div`, `TauCeti.wenzlParam_exp_neg_two_pi_mul_I_div` and
-  `TauCeti.wenzlParam_exp_two_pi_mul_I_div_two_mul` give the real values at the roots of unity
-  `exp (± 2 π i / l)` and the middle value `a_m = 1 / 2` for `l = 2 * m`.
+* `TauCeti.wenzlParam_neg_one`, `TauCeti.wenzlParam_one_left`, `TauCeti.wenzlParam_natCast_zero`,
+  `TauCeti.wenzlParam_neg_natCast_zero`, `TauCeti.wenzlParam_neg_two`, `TauCeti.wenzlParam_two`,
+  and `TauCeti.wenzlParam_neg_two_sq`: the scalar values `a_(-1) = 0`, `a_1 = 1`, the `Q = 0`
+  values, and the Jones values `a_(-2)(Q) = Q / (1 + Q) ^ 2 = (q + q⁻¹)⁻²` and `a_2(Q)`.
+* `TauCeti.wenzlParam_neg_two_eq_mul_one_sub_iff`,
+  `TauCeti.wenzlParam_neg_two_le_mul_one_sub_iff`, and
+  `TauCeti.wenzlParam_neg_two_lt_mul_one_sub_iff`: `a_(-2)(Q) = η * (1 - η)` characterizes the
+  endpoints `1 / (1 + Q)` and `Q / (1 + Q)`, and `≤` / `<` characterize the closed and open
+  intervals between them whenever `1 + Q ≠ 0`.
 * `TauCeti.wenzlParam_add_of_pow_eq_one`: `a_d` is periodic in `d` modulo the order of `Q`; in
   particular `a_(l - 2) = a_(-2)` when `Q ^ l = 1`.
 * `TauCeti.wenzlParam_neg_natCast_eq_sum`: for the normalized geometric weights
   `p_i = Q ^ i / [r]_Q`, `i < r`, the sum `∑ i < j, p_i * p_j` is `a_(-r)(Q)`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric`: the Ocneanu
-  trace realized by the atomic model on `r + 1` positive letters with geometric weights
-  (`TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_eq`) has projection parameter
-  `a_(r + 1)(q ^ 2)`.
 
 ## References
 
@@ -199,7 +202,38 @@ theorem wenzlParam_add_of_pow_eq_one {Q : K} (hQ₁ : Q ≠ 1) {l : ℕ} (hl : Q
   rw [wenzlParam_eq_div hQ₀ hQ₁, wenzlParam_eq_div hQ₀ hQ₁, add_right_comm d,
     zpow_add₀ hQ₀ (d + 1) l, zpow_add₀ hQ₀ d l, h, mul_one, mul_one]
 
-/-! ### The Jones parameter -/
+/-- `wenzlParam` commutes with every ring homomorphism between fields. -/
+theorem map_wenzlParam {L F : Type*} [Field L] [FunLike F K L] [RingHomClass F K L] (f : F)
+    (d : ℤ) (Q : K) : f (wenzlParam d Q) = wenzlParam d (f Q) := by
+  obtain ⟨r, rfl | rfl⟩ := Int.eq_nat_or_neg d
+  · simp [wenzlParam_natCast]
+  · simp [wenzlParam_neg_natCast]
+
+/-! ### Scalar values, the Jones parameter, and the interval boundary relation -/
+
+/-- The scalar endpoint value `a_(-1)(Q) = 0`. -/
+@[simp]
+theorem wenzlParam_neg_one (Q : K) : wenzlParam (-1) Q = 0 := by
+  simpa using wenzlParam_neg_natCast 1 Q
+
+/-- The scalar endpoint value `a_1(Q) = 1`, whenever `1 + Q ≠ 0`. -/
+theorem wenzlParam_one_left {Q : K} (hQ : 1 + Q ≠ 0) : wenzlParam 1 Q = 1 := by
+  have h := wenzlParam_natCast 1 Q
+  simp only [Nat.cast_one, sum_range_succ, sum_range_zero, zero_add, pow_zero, pow_one,
+    mul_one] at h
+  rw [h, div_self hQ]
+
+/-- At `Q = 0`, `a_r(0) = 1` for every positive natural `r`. -/
+@[simp]
+theorem wenzlParam_natCast_zero {r : ℕ} (hr : r ≠ 0) : wenzlParam (r : ℤ) (0 : K) = 1 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hr
+  rw [wenzlParam_natCast]
+  simp [sum_range_succ']
+
+/-- At `Q = 0`, `a_(-r)(0) = 0` for every natural `r`. -/
+@[simp]
+theorem wenzlParam_neg_natCast_zero (r : ℕ) : wenzlParam (-(r : ℤ)) (0 : K) = 0 := by
+  simp [wenzlParam_neg_natCast]
 
 /-- The parameter `a_(-2)(Q) = Q / (1 + Q) ^ 2`. -/
 theorem wenzlParam_neg_two (Q : K) : wenzlParam (-2) Q = Q / (1 + Q) ^ 2 := by
@@ -208,13 +242,69 @@ theorem wenzlParam_neg_two (Q : K) : wenzlParam (-2) Q = Q / (1 + Q) ^ 2 := by
   rw [h]
   simp [sum_range_succ, sq]
 
+/-- The complementary Jones parameter `a_2(Q) = (1 + Q + Q ^ 2) / (1 + Q) ^ 2`. -/
+theorem wenzlParam_two (Q : K) :
+    wenzlParam 2 Q = (1 + Q + Q ^ 2) / (1 + Q) ^ 2 := by
+  have h := wenzlParam_natCast 2 Q
+  push_cast at h
+  rw [h]
+  simp only [sum_range_succ, sum_range_zero, zero_add, pow_zero, pow_one, sq]
+
 /-- **The Jones parameter.** At `Q = q ^ 2`, `a_(-2)(Q) = (q + q⁻¹)⁻²`, the parameter `τ` of the
 Jones quotient. -/
 theorem wenzlParam_neg_two_sq (q : K) :
     wenzlParam (-2) (q ^ 2) = ((q + q⁻¹) ^ 2)⁻¹ := by
   rcases eq_or_ne q 0 with rfl | hq
   · simp [wenzlParam_neg_two]
-  rw [wenzlParam_neg_two, show q + q⁻¹ = (1 + q ^ 2) / q by field_simp; ring, div_pow, inv_div]
+  have hadd : q + q⁻¹ = (1 + q ^ 2) / q := by
+    rw [eq_div_iff hq, mul_comm]
+    simpa [Units.val_mk0] using (Units.mk0 q hq).val_mul_val_add_val_inv
+  rw [wenzlParam_neg_two, hadd, div_pow, inv_div]
+
+/-- **Factorization of the boundary defect `a_(-2)(Q) - η * (1 - η)`.** When `1 + Q ≠ 0`,
+`a_(-2)(Q) - η * (1 - η) = (η - 1 / (1 + Q)) * (η - Q / (1 + Q))`. -/
+theorem wenzlParam_neg_two_sub_mul_one_sub {Q : K} (hQ : 1 + Q ≠ 0) (η : K) :
+    wenzlParam (-2) Q - η * (1 - η) = (η - 1 / (1 + Q)) * (η - Q / (1 + Q)) := by
+  rw [wenzlParam_neg_two]
+  field_simp
+  ring
+
+/-- **Boundary characterization `τ = η * (1 - η)`.** When `1 + Q ≠ 0`, the Jones parameter
+`a_(-2)(Q)` equals `η * (1 - η)` if and only if `η = 1 / (1 + Q)` or `η = Q / (1 + Q)`. -/
+theorem wenzlParam_neg_two_eq_mul_one_sub_iff {Q η : K} (hQ : 1 + Q ≠ 0) :
+    wenzlParam (-2) Q = η * (1 - η) ↔ η = 1 / (1 + Q) ∨ η = Q / (1 + Q) := by
+  rw [← sub_eq_zero, wenzlParam_neg_two_sub_mul_one_sub hQ, mul_eq_zero, sub_eq_zero, sub_eq_zero]
+
+private theorem wenzlParam_neg_two_sub_mul_one_sub_eq_min_max [LinearOrder K] {Q : K}
+    (hQ : 1 + Q ≠ 0) (η : K) :
+    wenzlParam (-2) Q - η * (1 - η) =
+      (η - min (1 / (1 + Q)) (Q / (1 + Q))) * (η - max (1 / (1 + Q)) (Q / (1 + Q))) := by
+  rw [wenzlParam_neg_two_sub_mul_one_sub hQ]
+  rcases le_total (1 / (1 + Q)) (Q / (1 + Q)) with h | h
+  · rw [min_eq_left h, max_eq_right h]
+  · rw [min_eq_right h, max_eq_left h, mul_comm]
+
+/-- **Closed-interval characterization `τ ≤ η * (1 - η)`.** Over a linear ordered field, when
+`1 + Q ≠ 0`, the inequality `a_(-2)(Q) ≤ η * (1 - η)` holds if and only if `η` lies in the closed
+interval between `1 / (1 + Q)` and `Q / (1 + Q)`. -/
+theorem wenzlParam_neg_two_le_mul_one_sub_iff [LinearOrder K] [IsStrictOrderedRing K] {Q η : K}
+    (hQ : 1 + Q ≠ 0) :
+    wenzlParam (-2) Q ≤ η * (1 - η) ↔
+      η ∈ Set.Icc (min (1 / (1 + Q)) (Q / (1 + Q))) (max (1 / (1 + Q)) (Q / (1 + Q))) := by
+  rw [← sub_nonpos, wenzlParam_neg_two_sub_mul_one_sub_eq_min_max hQ, mul_nonpos_iff,
+    sub_nonneg, sub_nonpos, sub_nonpos, sub_nonneg, Set.mem_Icc]
+  exact ⟨fun h ↦ h.elim id fun ⟨h1, h2⟩ ↦ ⟨min_le_max.trans h2, h1.trans min_le_max⟩, Or.inl⟩
+
+/-- **Open-interval characterization `τ < η * (1 - η)`.** Over a linear ordered field, when
+`1 + Q ≠ 0`, the strict inequality `a_(-2)(Q) < η * (1 - η)` holds if and only if `η` lies in the
+open interval between `1 / (1 + Q)` and `Q / (1 + Q)`. -/
+theorem wenzlParam_neg_two_lt_mul_one_sub_iff [LinearOrder K] [IsStrictOrderedRing K] {Q η : K}
+    (hQ : 1 + Q ≠ 0) :
+    wenzlParam (-2) Q < η * (1 - η) ↔
+      η ∈ Set.Ioo (min (1 / (1 + Q)) (Q / (1 + Q))) (max (1 / (1 + Q)) (Q / (1 + Q))) := by
+  rw [← sub_neg, wenzlParam_neg_two_sub_mul_one_sub_eq_min_max hQ, mul_neg_iff,
+    sub_pos, sub_neg, sub_neg, sub_pos, Set.mem_Ioo]
+  exact ⟨fun h ↦ h.elim id fun ⟨h1, h2⟩ ↦ absurd (h2.trans h1) (not_lt_of_ge min_le_max), Or.inl⟩
 
 /-! ### Geometric weights -/
 
@@ -243,148 +333,5 @@ theorem wenzlParam_neg_natCast_eq_sum {Q : K} (hQ : 1 + Q ≠ 0) (r : ℕ) :
   · simp [hZ]
   rw [eq_div_iff (mul_ne_zero hZ hZ), div_mul_eq_mul_div, div_eq_iff (mul_ne_zero hQ hZ)]
   linear_combination -(∑ k ∈ range (r + 1), Q ^ k) * key r
-
-/-! ### Continuity and the removable value at `Q = 1` -/
-
-section Topology
-
-open Filter Topology
-
-variable [TopologicalSpace K] [IsTopologicalDivisionRing K]
-
-/-- `a_d` is continuous at every `Q` where its denominator `(1 + Q) * [|d|]_Q` is nonzero. -/
-theorem continuousAt_wenzlParam {d : ℤ} {Q : K} (h : (1 + Q) * ∑ i ∈ range d.natAbs, Q ^ i ≠ 0) :
-    ContinuousAt (wenzlParam d) Q := by
-  obtain ⟨r, rfl | rfl⟩ := Int.eq_nat_or_neg d
-  · rw [funext (wenzlParam_natCast r)]
-    exact ContinuousAt.div (by fun_prop) (by fun_prop) (by simpa using h)
-  · rw [funext (wenzlParam_neg_natCast r)]
-    exact ContinuousAt.div (by fun_prop) (by fun_prop) (by simpa using h)
-
-/-- **The removable limit.** As `Q → 1`, the closed form
-`(1 - Q ^ (d + 1)) / ((1 + Q) * (1 - Q ^ d))` tends to `a_d(1) = (d + 1) / (2 * d)`. -/
-theorem tendsto_one_sub_zpow_div_nhdsNE_one [T1Space K] [CharZero K] {d : ℤ} (hd : d ≠ 0) :
-    Tendsto (fun Q : K ↦ (1 - Q ^ (d + 1)) / ((1 + Q) * (1 - Q ^ d))) (𝓝[≠] 1)
-      (𝓝 ((d + 1) / (2 * d))) := by
-  rw [← wenzlParam_one]
-  have hc : ContinuousAt (wenzlParam d) (1 : K) :=
-    continuousAt_wenzlParam (by simp [one_add_one_eq_two, hd])
-  refine (hc.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (eventually_ne_nhds (one_ne_zero (α := K)))] with Q hQ₁ hQ₀
-  exact wenzlParam_eq_div hQ₀ hQ₁ d
-
-end Topology
-
-/-! ### Roots of unity -/
-
-section RootOfUnity
-
-open Complex
-open scoped Real
-
-/-- **The trigonometric form.** At `Q = exp (2 θ i)`,
-`a_k(Q) = sin ((k + 1) θ) / (2 * cos θ * sin (k θ))`, whenever `cos θ ≠ 0` and `sin (k θ) ≠ 0`. -/
-theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin (k * θ) ≠ 0) :
-    wenzlParam k (exp (2 * θ * I)) = sin ((k + 1) * θ) / (2 * cos θ * sin (k * θ)) := by
-  have e₁ (x : ℂ) : exp (-x * I) * exp (x * I) = 1 := by rw [← exp_add]; simp
-  have e₂ (x : ℂ) : exp (x * I) * exp (x * I) = exp (2 * x * I) := by rw [← exp_add]; ring_nf
-  -- `1 - exp (2 x i) = -i * (2 * sin x) * exp (x i)` and `1 + exp (2 x i) = 2 * cos x * exp (x i)`.
-  have one_sub_exp (x : ℂ) : 1 - exp (2 * x * I) = -I * (2 * sin x) * exp (x * I) := by
-    rw [two_sin]
-    linear_combination (-1) * e₁ x + e₂ x + (exp (-x * I) - exp (x * I)) * exp (x * I) * I_sq
-  have one_add_exp (x : ℂ) : 1 + exp (2 * x * I) = 2 * cos x * exp (x * I) := by
-    rw [two_cos]
-    linear_combination -e₁ x - e₂ x
-  have hpow (n : ℤ) : 1 - exp (2 * θ * I) ^ n = -I * (2 * sin (n * θ)) * exp (n * θ * I) := by
-    rw [← exp_intCast_mul, ← one_sub_exp]
-    ring_nf
-  have hk' : 1 - exp (2 * θ * I) ^ k ≠ 0 := by
-    rw [hpow]
-    simp [hk, exp_ne_zero, I_ne_zero]
-  have hQ₁ : exp (2 * θ * I) ≠ 1 := by
-    rintro h
-    simp [h] at hk'
-  have hexp : exp ((k + 1) * θ * I) = exp (θ * I) * exp (k * θ * I) := by
-    rw [← exp_add]
-    ring_nf
-  rw [wenzlParam_eq_div (exp_ne_zero _) hQ₁, hpow, hpow, one_add_exp]
-  push_cast
-  rw [hexp]
-  field_simp [exp_ne_zero, I_ne_zero]
-
-/-- **The values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at `Q = exp (2 π i / l)`,
-`a_k(Q) = sin ((k + 1) π / l) / (2 * cos (π / l) * sin (k π / l))`, a real number. -/
-theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
-    wenzlParam (k : ℤ) (exp (2 * π * I / l)) =
-      ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
-  have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
-  have hcos : 0 < Real.cos (π / l) := cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))
-  have hsin : 0 < Real.sin (k * π / l) := by
-    refine Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_
-    rw [div_lt_iff₀ hl₀, mul_comm π]
-    exact mul_lt_mul_of_pos_right (by exact_mod_cast hkl) Real.pi_pos
-  have h := wenzlParam_exp_mul_I k (θ := π / l) (by exact_mod_cast hcos.ne')
-    (by rw [Int.cast_natCast, ← mul_div_assoc]; exact_mod_cast hsin.ne')
-  rw [show 2 * (π / l : ℂ) * I = 2 * π * I / l by ring] at h
-  rw [h]
-  push_cast
-  ring_nf
-
-/-- The values at the conjugate roots of unity `Q = exp (-2 π i / l)` agree with those at
-`exp (2 π i / l)`. -/
-theorem wenzlParam_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
-    wenzlParam (k : ℤ) (exp (-(2 * π * I / l))) =
-      ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
-  rw [exp_neg, wenzlParam_inv, wenzlParam_exp_two_pi_mul_I_div hl hk₀ hkl]
-
-/-- **The middle value.** For `l = 2 * m ≥ 4`, at `Q = exp (2 π i / l)`, `a_m(Q) = 1 / 2`. -/
-theorem wenzlParam_exp_two_pi_mul_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
-    wenzlParam (m : ℤ) (exp (2 * π * I / (2 * m))) = 1 / 2 := by
-  have h := wenzlParam_exp_two_pi_mul_I_div (l := 2 * m) (k := m) (by omega) (by omega) (by omega)
-  simp only [Nat.cast_mul, Nat.cast_ofNat] at h
-  have hcos : Real.cos (π / (2 * m)) ≠ 0 := by
-    have : (2 : ℝ) ≤ m := by exact_mod_cast hm
-    exact (cos_pi_div_pos (by linarith)).ne'
-  -- With `θ = π / (2 * m)`: `sin ((m + 1) θ) = cos θ` and `sin (m θ) = 1`.
-  have h₁ : (m + 1) * π / (2 * m) = π / (2 * m) + π / 2 := by field_simp; ring
-  have h₂ : m * π / (2 * m) = π / 2 := by field_simp
-  rw [h, h₁, h₂, Real.sin_add_pi_div_two, Real.sin_pi_div_two, mul_one,
-    div_mul_cancel_right₀ hcos]
-  norm_num
-
-end RootOfUnity
-
-/-! ### The discrete Markov traces of the geometric atomic models -/
-
-namespace InfiniteTypeAHeckeAlgebra
-
-variable {q : Kˣ}
-
-/-- **The projection parameter of a geometric atomic model.** Let `Q = q ^ 2` and
-`c * [r + 1]_Q = 1`. The Ocneanu trace with parameter `z = c * q ^ (2 * r + 1)`, which the atomic
-model on `r + 1` positive letters with weights `c * Q ^ a` realizes
-(`TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_eq`), multiplies by `a_(r + 1)(Q)` when the
-eigenprojection `s⁻¹ • (T n + q⁻¹)`, `s = q + q⁻¹`, is appended to an element of the stage on
-`n + 1` strands. -/
-theorem ocneanuTrace_mul_eigenprojection_geometric (s : Kˣ) (hs : (s : K) = q + ↑q⁻¹) {r : ℕ}
-    {c : K} (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) {n : ℕ}
-    {x : InfiniteTypeAHeckeAlgebra K q} (hx : x ∈ stage K q (n + 1)) :
-    ocneanuTrace K q (c * (q : K) ^ (2 * r + 1))
-        (x * (↑s⁻¹ : K) • (T q n + algebraMap K _ (↑q⁻¹ : K))) =
-      wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) *
-        ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) x := by
-  refine (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs ?_ hx
-  have hq : (q : K) ≠ 0 := q.ne_zero
-  have hZ : ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a ≠ 0 := right_ne_zero_of_mul_eq_one hc
-  -- `1 + q ^ 2 = q * s` is nonzero since `s` is a unit.
-  have hQ : 1 + (q : K) ^ 2 ≠ 0 := by
-    rw [show 1 + (q : K) ^ 2 = q * s by rw [hs, Units.val_inv_eq_inv_val]; field_simp; ring]
-    exact mul_ne_zero hq s.ne_zero
-  rw [wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]
-  field_simp
-  linear_combination ((1 + (q : K) ^ 2) * (q : K) ^ (2 * r + 2)) * hc
-
-end InfiniteTypeAHeckeAlgebra
 
 end TauCeti
