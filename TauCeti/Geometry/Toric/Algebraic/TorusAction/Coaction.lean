@@ -112,7 +112,7 @@ theorem affineCoordinateRingCoaction_bot (hi : IsIntegralLattice i) :
       Bialgebra.comulAlgHom ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)) := by
   rw [affineCoordinateRingCoaction,
     show AddMonoidHom.toMultiplicative (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)) =
-      MonoidHom.id _ from by ext m; rfl,
+      MonoidHom.id _ from by ext m; simp,
     MonoidAlgebra.gradedCoaction_id]
 
 /-- A map of lattice cones intertwines their coactions and the induced map of dense tori.

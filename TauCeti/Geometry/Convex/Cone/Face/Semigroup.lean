@@ -25,8 +25,10 @@ compare as follows:
 1. Over any ordered semiring `R`, restricting faces of `C` and pulling back along `i : M →+ V`
    give order embeddings `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid` and
    `PointedCone.hullFaceOrderEmbedding`.
-2. Over `ℚ`, every face of `C` spans a cone face (`PointedCone.faceOrderIsoSaturatedAddSubmonoid`),
-   yielding `(PointedCone.hull ℚ (i '' S)).Face ≃o SaturatedAddSubmonoid S`
+2. Over `ℚ`, every saturated additive submonoid of `C` spans a face of `C`
+   (`PointedCone.isFaceOf_hull_rat_of_saturatedAddSubmonoid`), so
+   `PointedCone.faceOrderIsoSaturatedAddSubmonoid` is an order isomorphism, yielding
+   `(PointedCone.hull ℚ (i '' S)).Face ≃o SaturatedAddSubmonoid S`
    (`PointedCone.hullRatFaceOrderIso`) for injective `i` without finite-generation assumptions.
 3. For FG `S` in a free abelian group `L`, Tucker's theorem over `ℤ` exposes every face by an
    integral functional (`SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff`), giving

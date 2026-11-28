@@ -16,10 +16,8 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.LinearIndependent.Basic
-import Mathlib.RingTheory.FiniteType
 import TauCeti.Algebra.Group.UniqueProds.TorsionFree
 import TauCeti.Algebra.MonoidAlgebra.Localization
-import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
 # Orbit localizations, diagonalizable-group coactions, and Krull dimensions of face algebras
@@ -214,33 +212,40 @@ section KrullDimension
 
 variable {G : Type*} [AddCommGroup G] [HasUniqueDiv G] {S : AddSubmonoid G}
 
+omit [HasUniqueDiv G] in
+private theorem moduleFinite_faceSubgroup (hS : S.FG) (F : SaturatedAddSubmonoid S) :
+    Module.Finite ℤ F.faceSubgroup :=
+  have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
+  Module.Finite.iff_addGroup_fg.2
+    ((AddGroup.fg_iff_addSubgroup_fg F.faceSubgroup).2 (F.fg_faceSubgroup F.fg_toAddSubmonoid))
+
+private theorem hasUniqueDiv_faceSubgroup (F : SaturatedAddSubmonoid S) :
+    HasUniqueDiv F.faceSubgroup :=
+  Function.Injective.hasUniqueDiv
+    ((AddSubgroup.closure (S : Set G)).subtype.comp F.faceSubgroup.subtype)
+    ((AddSubgroup.closure (S : Set G)).subtype_injective.comp F.faceSubgroup.subtype_injective)
+
 /-- Over a field `k`, the localized orbit coordinate algebra `k[F.faceSubgroup]` of a face `F` of a
 finitely generated submonoid `S` has Krull dimension `Module.finrank ℤ F.faceSubgroup`. -/
 theorem ringKrullDim_addMonoidAlgebra_faceSubgroup (hS : S.FG) (F : SaturatedAddSubmonoid S)
     (k : Type*) [Field k] :
-    ringKrullDim (AddMonoidAlgebra k F.faceSubgroup) = Module.finrank ℤ F.faceSubgroup := by
-  have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
-  have : Module.Finite ℤ F.faceSubgroup := Module.Finite.iff_addGroup_fg.2
-    ((AddGroup.fg_iff_addSubgroup_fg F.faceSubgroup).2 (F.fg_faceSubgroup F.fg_toAddSubmonoid))
-  have : HasUniqueDiv F.faceSubgroup := Function.Injective.hasUniqueDiv
-    ((AddSubgroup.closure (S : Set G)).subtype.comp F.faceSubgroup.subtype)
-    ((AddSubgroup.closure (S : Set G)).subtype_injective.comp F.faceSubgroup.subtype_injective)
-  exact AddMonoidAlgebra.ringKrullDim_of_free k F.faceSubgroup
+    ringKrullDim (AddMonoidAlgebra k F.faceSubgroup) = Module.finrank ℤ F.faceSubgroup :=
+  have := F.moduleFinite_faceSubgroup hS
+  have := F.hasUniqueDiv_faceSubgroup
+  AddMonoidAlgebra.ringKrullDim_of_free k F.faceSubgroup
 
 /-- Over a field `k`, the closed face algebra `k[F]` of a face `F` of a finitely generated
 submonoid `S` has Krull dimension `Module.finrank ℤ F.faceSubgroup`. -/
 theorem ringKrullDim_addMonoidAlgebra (hS : S.FG) (F : SaturatedAddSubmonoid S)
     (k : Type*) [Field k] :
-    ringKrullDim (AddMonoidAlgebra k F) = Module.finrank ℤ F.faceSubgroup := by
-  have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
-  have : Algebra.FiniteType k (AddMonoidAlgebra k F) := AddMonoidAlgebra.finiteType_of_fg k F
+    ringKrullDim (AddMonoidAlgebra k F) = Module.finrank ℤ F.faceSubgroup :=
+  have : AddMonoid.FG F := have := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS; F.fg_toAddSubmonoid
   have : UniqueSums F := .of_injective_addHom (S.subtype.comp F.toAddSubmonoid.subtype).toAddHom
     (S.subtype_injective.comp F.toAddSubmonoid.subtype_injective) inferInstance
-  obtain ⟨u, _⟩ := F.exists_isLocalization_away_faceSubgroup hS k
-  let := (mapDomainRingHom k F.toFaceSubgroup).toAlgebra
-  rw [← TauCeti.ringKrullDim_localization_away k
-    (single_ne_zero.2 (one_ne_zero : (1 : k) ≠ 0) : single u (1 : k) ≠ 0)
-    (AddMonoidAlgebra k F.faceSubgroup), F.ringKrullDim_addMonoidAlgebra_faceSubgroup hS k]
+  have := F.moduleFinite_faceSubgroup hS
+  have := F.hasUniqueDiv_faceSubgroup
+  AddMonoidAlgebra.ringKrullDim_of_exists_add_eq F.toFaceSubgroup_injective
+    F.exists_add_toFaceSubgroup_eq k
 
 end KrullDimension
 
@@ -254,9 +259,7 @@ theorem finrank_faceSubgroup_strictMono (hS : S.FG) :
     StrictMono (fun F : SaturatedAddSubmonoid S ↦ Module.finrank ℤ F.faceSubgroup) := by
   intro F₁ F₂ hlt
   obtain ⟨s, hs₂, hs₁⟩ := IsConcreteLE.exists_of_lt hlt
-  have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
-  have : Module.Finite ℤ F₂.faceSubgroup := Module.Finite.iff_addGroup_fg.2
-    ((AddGroup.fg_iff_addSubgroup_fg F₂.faceSubgroup).2 (F₂.fg_faceSubgroup F₂.fg_toAddSubmonoid))
+  have := F₂.moduleFinite_faceSubgroup hS
   let H : Submodule ℤ F₂.faceSubgroup :=
     F₁.faceSubgroup.toIntSubmodule.comap F₂.faceSubgroup.toIntSubmodule.subtype
   have hle : F₁.faceSubgroup.toIntSubmodule ≤ F₂.faceSubgroup.toIntSubmodule :=
@@ -284,8 +287,7 @@ theorem finrank_faceSubgroup_strictMono (hS : S.FG) :
   have hq_pos : 1 ≤ Module.finrank ℤ (F₂.faceSubgroup ⧸ H) := by
     simpa using hq_ind.fintype_card_le_finrank
   have hsplit := Submodule.finrank_quotient_add_finrank H
-  dsimp only
-  omega
+  dsimp only; omega
 
 end Rank
 
